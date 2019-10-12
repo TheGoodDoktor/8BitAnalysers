@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+/.vs
+/VSProject/.vs/SpeccyExplorer/v15
+/VSProject/SpeccyExplorer/Debug
+/VSProject/SpeccyExplorer/x64/Debug
+/VSProject/SpeccyExplorer/imgui.ini
+/VSProject/SpeccyExplorer/SpeccyExplorer.vcxproj.user
+/VSProject/x64/Debug
