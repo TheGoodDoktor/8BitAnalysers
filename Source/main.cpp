@@ -9,6 +9,9 @@
 #include <dinput.h>
 #include <tchar.h>
 
+#include "Speccy/Speccy.h"
+#include "UI/SpeccyUI.h"
+
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
 static ID3D11DeviceContext*     g_pd3dDeviceContext = NULL;
@@ -98,6 +101,10 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+	// Speccy 
+	FSpeccyConfig config;
+	FSpeccy *pSpeccy = InitSpeccy(config);
+
     // Main loop
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
@@ -119,6 +126,10 @@ int main(int, char**)
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
+
+		// speccy update & render
+		TickSpeccy(*pSpeccy);
+		DrawSpeccyUI(*pSpeccy);
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
@@ -173,6 +184,10 @@ int main(int, char**)
         g_pSwapChain->Present(1, 0); // Present with vsync
         //g_pSwapChain->Present(0, 0); // Present without vsync
     }
+
+	// shutdown the speccy stuff
+	ShutdownSpeccyUI(*pSpeccy);
+	ShutdownSpeccy(pSpeccy);
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
