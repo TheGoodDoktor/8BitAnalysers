@@ -1,12 +1,23 @@
 #pragma once
 
+#include "imgui.h"
+
+enum class SpeccyModel
+{
+	Spectrum48K,
+	Spectrum128K
+};
+
 struct FSpeccyConfig
 {
-
+	SpeccyModel	Model;
 };
 
 struct FSpeccy
 {
+	void*		EmuState;		// opaque point to zx state
+	void*		FrameBuffer;	// pixel buffer to store emu output
+	ImTextureID	Texture;		// texture 
 
 };
 
