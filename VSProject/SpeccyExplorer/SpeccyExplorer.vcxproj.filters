@@ -69,6 +69,9 @@
     <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\imgui_impl_lucidextra.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h">
@@ -298,6 +301,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\SpeccyUI.h">
       <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

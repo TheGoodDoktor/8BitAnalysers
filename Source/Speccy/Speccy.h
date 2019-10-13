@@ -16,7 +16,7 @@ struct FSpeccyConfig
 struct FSpeccy
 {
 	void*		EmuState;		// opaque point to zx state
-	void*		FrameBuffer;	// pixel buffer to store emu output
+	unsigned char* FrameBuffer;	// pixel buffer to store emu output
 	ImTextureID	Texture;		// texture 
 
 };

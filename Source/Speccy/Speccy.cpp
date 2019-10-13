@@ -9,19 +9,14 @@
 #include "chips/mem.h"
 #include "systems/zx.h"
 #include "zx-roms.h"
+#include "../imgui_impl_lucidextra.h"
 
 /* audio-streaming callback */
 static void PushAudio(const float* samples, int num_samples, void* user_data) 
 {
 	//saudio_push(samples, num_samples);
 }
-
-void SetupZXDesc(zx_desc_t & desc,zx_type_t type, zx_joystick_type_t joy_type)
-{
-	desc.type = type;
-	
-}
-
+static zx_t state;
 FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 {
 	FSpeccy *pNewInstance = new FSpeccy();
@@ -32,10 +27,10 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 	// setup pixel buffer
 	const size_t pixelBufferSize = 320 * 256 * 4;
-	pNewInstance->FrameBuffer = new char[pixelBufferSize];
+	pNewInstance->FrameBuffer = new unsigned char[pixelBufferSize * 2];
 
-	// TODO: setup texture
-
+	// setup texture
+	pNewInstance->Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(pNewInstance->FrameBuffer), 320, 256);
 	// setup emu
 	zx_type_t type = config.Model == SpeccyModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
 	zx_joystick_type_t joy_type = ZX_JOYSTICKTYPE_NONE;
@@ -45,6 +40,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	desc.pixel_buffer = pNewInstance->FrameBuffer;
 	desc.pixel_buffer_size = pixelBufferSize;
 	desc.audio_cb = PushAudio;	// our audio callback
+	desc.audio_num_samples = ZX_DEFAULT_AUDIO_SAMPLES;
 	desc.audio_sample_rate = 44100;// saudio_sample_rate();
 	desc.rom_zx48k = dump_amstrad_zx48k_bin;
 	desc.rom_zx48k_size = sizeof(dump_amstrad_zx48k_bin);
@@ -53,7 +49,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	desc.rom_zx128_1 = dump_amstrad_zx128k_1_bin;
 	desc.rom_zx128_1_size = sizeof(dump_amstrad_zx128k_1_bin);
 
-	pNewInstance->EmuState = new zx_t;
+	pNewInstance->EmuState = &state;// new zx_t;
 	zx_init((zx_t*)pNewInstance->EmuState, &desc);
 #ifdef CHIPS_USE_UI
 	zxui_init(&zx);
@@ -63,9 +59,9 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 void TickSpeccy(FSpeccy &speccyInstance)
 {
-	zx_exec((zx_t*)speccyInstance.EmuState, 16);//16ms - todo proper timings
+	zx_exec((zx_t*)speccyInstance.EmuState, 1000000.0f / ImGui::GetIO().Framerate);
 
-	// TODO: update texture
+	ImGui_ImplDX11_UpdateTextureRGBA(speccyInstance.Texture, speccyInstance.FrameBuffer, 320, 256);
 }
 
 void ShutdownSpeccy(FSpeccy*&pSpeccy)
