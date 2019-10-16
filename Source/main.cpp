@@ -107,6 +107,7 @@ int main(int, char**)
 	// Speccy 
 	FSpeccyConfig config;
 	FSpeccy *pSpeccy = InitSpeccy(config);
+	InitSpeccyUI(*pSpeccy);
 
     // Main loop
     MSG msg;

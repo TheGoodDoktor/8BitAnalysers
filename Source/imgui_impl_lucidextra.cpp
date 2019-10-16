@@ -36,7 +36,7 @@ ImTextureID ImGui_ImplDX11_CreateTextureRGBA(unsigned char* pixels, int width, i
 		subResource.pSysMem = pixels;
 		subResource.SysMemPitch = desc.Width * 4;
 		subResource.SysMemSlicePitch = 0;
-		pDevice->CreateTexture2D(&desc, &subResource, &pTexture);
+		pDevice->CreateTexture2D(&desc, pixels == nullptr ? nullptr: &subResource, &pTexture);
 
 		// Create texture view
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
