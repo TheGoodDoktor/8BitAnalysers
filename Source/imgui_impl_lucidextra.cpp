@@ -55,7 +55,7 @@ ImTextureID ImGui_ImplDX11_CreateTextureRGBA(unsigned char* pixels, int width, i
 	return newTex;
 }
 
-void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels, int width, int height)
+void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels)
 {
 	ID3D11ShaderResourceView*	pTextureView = (ID3D11ShaderResourceView*)texture;
 	ID3D11DeviceContext* pDeviceCtx = GetDx11DeviceContext();
@@ -63,11 +63,15 @@ void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels,
 	
 	ID3D11Texture2D *pTexture = nullptr;
 	pTextureView->GetResource(reinterpret_cast<ID3D11Resource**>(&pTexture));
+
+	D3D11_TEXTURE2D_DESC desc;
+	pTexture->GetDesc(&desc);
+	
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	HRESULT hr = pDeviceCtx->Map(pTexture,0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (hr == S_OK)
 	{
-		memcpy(mappedResource.pData, pixels, width * height * 4);	// assume 32bpp
+		memcpy(mappedResource.pData, pixels, desc.Width * desc.Height * 4);	// assume 32bpp
 		pDeviceCtx->Unmap(pTexture, 0);
 	}
 }

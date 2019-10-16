@@ -1,21 +1,40 @@
 #include "Speccy.h"
 
 #define CHIPS_IMPL
+#define UI_DBG_USE_Z80
+#define UI_DASM_USE_Z80
 #include "chips/z80.h"
 #include "chips/beeper.h"
 #include "chips/ay38910.h"
+#include "util/z80dasm.h"
+#include "chips/mem.h"
 #include "chips/kbd.h"
 #include "chips/clk.h"
-#include "chips/mem.h"
 #include "systems/zx.h"
+#include "chips/mem.h"
+#include "ui/ui_util.h"
+#include "ui/ui_chip.h"
+#include "ui/ui_z80.h"
+#include "ui/ui_ay38910.h"
+#include "ui/ui_audio.h"
+#include "ui/ui_kbd.h"
+#include "ui/ui_dasm.h"
+#include "ui/ui_dbg.h"
+#include "ui/ui_memedit.h"
+#include "ui/ui_memmap.h"
+#include "ui/ui_zx.h"
 #include "zx-roms.h"
 #include "../imgui_impl_lucidextra.h"
+
 
 /* audio-streaming callback */
 static void PushAudio(const float* samples, int num_samples, void* user_data) 
 {
 	//saudio_push(samples, num_samples);
 }
+
+
+
 static zx_t state;
 FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 {
@@ -51,9 +70,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 	pNewInstance->EmuState = &state;// new zx_t;
 	zx_init((zx_t*)pNewInstance->EmuState, &desc);
-#ifdef CHIPS_USE_UI
-	zxui_init(&zx);
-#endif
+
 	return pNewInstance;
 }
 
@@ -61,7 +78,7 @@ void TickSpeccy(FSpeccy &speccyInstance)
 {
 	zx_exec((zx_t*)speccyInstance.EmuState, 1000000.0f / ImGui::GetIO().Framerate);
 
-	ImGui_ImplDX11_UpdateTextureRGBA(speccyInstance.Texture, speccyInstance.FrameBuffer, 320, 256);
+	ImGui_ImplDX11_UpdateTextureRGBA(speccyInstance.Texture, speccyInstance.FrameBuffer);
 }
 
 void ShutdownSpeccy(FSpeccy*&pSpeccy)
