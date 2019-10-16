@@ -79,5 +79,11 @@ void ShutdownSpeccyUI(const FSpeccy &speccyInstance)
 
 void DrawSpeccyUI(FSpeccy &speccyInstance)
 {
+	if (ui_zx_before_exec(&g_UIZX))
+	{
+		zx_exec(g_UIZX.zx, 1000000.0f / ImGui::GetIO().Framerate);
+		ui_zx_after_exec(&g_UIZX);
+	}
+	
 	ui_zx_draw(&g_UIZX, 16);//TODO
 }

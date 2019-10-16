@@ -76,7 +76,8 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 void TickSpeccy(FSpeccy &speccyInstance)
 {
-	zx_exec((zx_t*)speccyInstance.EmuState, 1000000.0f / ImGui::GetIO().Framerate);
+	
+	//zx_exec((zx_t*)speccyInstance.EmuState, 1000000.0f / ImGui::GetIO().Framerate);
 
 	ImGui_ImplDX11_UpdateTextureRGBA(speccyInstance.Texture, speccyInstance.FrameBuffer);
 }
