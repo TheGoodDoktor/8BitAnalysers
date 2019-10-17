@@ -224,6 +224,18 @@ static void UpdateMemmap(ui_zx_t* ui)
 	}
 }
 
+void DrawDebuggerUI(ui_dbg_t *pDebugger)
+{
+	ui_dbg_draw(pDebugger);
+	/*
+	if (!(pDebugger->ui.open || pDebugger->ui.show_heatmap || pDebugger->ui.show_breakpoints)) {
+		return;
+	}
+	_ui_dbg_dbgwin_draw(pDebugger);
+	_ui_dbg_heatmap_draw(pDebugger);
+	_ui_dbg_bp_draw(pDebugger);*/
+}
+
 void DrawSpeccyUI(FSpeccy &speccyInstance)
 {
 	ui_zx_t* pUI = &g_UIZX;
@@ -255,7 +267,8 @@ void DrawSpeccyUI(FSpeccy &speccyInstance)
 		ui_dasm_draw(&pUI->dasm[i]);
 	}
 
-	ui_dbg_draw(&pUI->dbg);
+	DrawDebuggerUI(&pUI->dbg);
+	
 
 	// show spectrum window
 	ImGui::Begin("Spectrum View");
