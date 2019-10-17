@@ -26,6 +26,32 @@
 #include "zx-roms.h"
 #include "../imgui_impl_lucidextra.h"
 
+#include "Util/FileUtil.h"
+
+std::vector<std::string> g_GamesList;
+
+bool EnumerateGames(void)
+{
+	FDirFileList listing;
+
+	if (EnumerateDirectory(".", listing) == false)
+		return false;
+
+	for (const auto &file : listing)
+	{
+		const std::string &fn = file.FileName;
+		if ((fn.substr(fn.find_last_of(".") + 1) == "z80") || (fn.substr(fn.find_last_of(".") + 1) == "Z80"))
+		{
+			g_GamesList.push_back(fn);
+		}
+	}
+	return true;
+}
+
+const std::vector<std::string>& GetGameList()
+{
+	return g_GamesList;
+}
 
 /* audio-streaming callback */
 static void PushAudio(const float* samples, int num_samples, void* user_data) 
@@ -55,6 +81,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	zx_joystick_type_t joy_type = ZX_JOYSTICKTYPE_NONE;
 	
 	zx_desc_t desc;
+	desc.type = type;
 	desc.joystick_type = joy_type;
 	desc.pixel_buffer = pNewInstance->FrameBuffer;
 	desc.pixel_buffer_size = pixelBufferSize;
@@ -70,6 +97,8 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 	pNewInstance->EmuState = &state;// new zx_t;
 	zx_init((zx_t*)pNewInstance->EmuState, &desc);
+
+	EnumerateGames();
 
 	return pNewInstance;
 }
@@ -91,6 +120,10 @@ void ShutdownSpeccy(FSpeccy*&pSpeccy)
 
 bool LoadZ80File(FSpeccy &speccyInstance, const char *fName)
 {
+	size_t byteCount = 0;
+	void *pData = LoadBinaryFile(fName, byteCount);
 
-	return true;
+	const bool bSuccess = zx_quickload((zx_t*)speccyInstance.EmuState, (const uint8_t *)pData, (int)byteCount);
+	free(pData);
+	return bSuccess;
 }

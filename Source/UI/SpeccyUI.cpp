@@ -79,7 +79,7 @@ void ShutdownSpeccyUI(const FSpeccy &speccyInstance)
 
 }
 
-static void DrawMainMenu(ui_zx_t* pUI, double timeMS)
+static void DrawMainMenu(FSpeccy &speccyInstance, ui_zx_t* pUI , double timeMS)
 {
 	assert(pUI && pUI->zx && pUI->boot_cb);
 	
@@ -89,14 +89,13 @@ static void DrawMainMenu(ui_zx_t* pUI, double timeMS)
 		{
 			if (ImGui::BeginMenu( "Open Z80 File"))
 			{
-				/*for (int i = 0; i < GetNoDatasets(); i++)
+				for (const std::string& file : GetGameList())
 				{
-					const char *dataSetName = GetDatasetName(i);
-					if (ImGui::MenuItem(dataSetName))
+					if (ImGui::MenuItem(file.c_str()))
 					{
-						StartImportFromDirThread(dataSetName);
+						LoadZ80File(speccyInstance, file.c_str());
 					}
-				}*/
+				}
 
 				ImGui::EndMenu();
 			}
@@ -236,7 +235,7 @@ void DrawSpeccyUI(FSpeccy &speccyInstance)
 		ui_zx_after_exec(&g_UIZX);
 	}
 	
-	DrawMainMenu(pUI, timeMS);
+	DrawMainMenu(speccyInstance, pUI, timeMS);
 
 	if (pUI->memmap.open)
 	{

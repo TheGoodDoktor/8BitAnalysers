@@ -1,7 +1,6 @@
 #pragma once
-#include "EASTL/string.h"
-#include "EASTL/vector.h"
-#include "rapidjson/document.h"
+#include <string>
+#include <vector>
 
 struct FDirEntry
 {
@@ -11,14 +10,14 @@ struct FDirEntry
 		File
 	};
 
-	eastl::string	FileName;
+	std::string	FileName;
 	EType			FileType;
 };
 
-typedef eastl::vector<FDirEntry>	FDirFileList;
+typedef std::vector<FDirEntry>	FDirFileList;
 
 bool DetermineDataDirectory(const char *pRouteIdentifier);
-const eastl::string &GetDataDirectory();
+const std::string &GetDataDirectory();
 
 void NormaliseFilePath(char* filePath);
 void NormaliseFilePath(char* outFilePath, const char* inFilePath);
@@ -28,14 +27,12 @@ bool EnsureDirectoryExists(const char *pDirectory);	// Ensure a directory exists
 
 bool FileExists(const char *pFilename);
 char *LoadTextFile(const char *pFilename);
-bool LoadJSONFileIntoDocument(const char *pPath, rapidjson::Document &document);
-bool WriteJsonDocumentToFile(rapidjson::Document &doc, const char *pFileName);
+void *LoadBinaryFile(const char *pFilename, size_t &byteCount);
 
 bool OpenURLInBrowser(const char *pURL);
 bool OpenDirectory(const char *pDirName);
 bool DownloadURLToTextFile(const char*site, const char *url, bool bHttps, const char *fname);
 bool DownloadURLToBinaryFile(const char*site, const char *url, bool bHttps, const char *fname);
-bool DownloadURLToString(const char*site, const char *url, bool bHttps, eastl::string &outputString);
-bool DownloadURLToJSONDocument(const char*site, const char *url, bool bHttps, rapidjson::Document &document);
+bool DownloadURLToString(const char*site, const char *url, bool bHttps, std::string &outputString);
 
-bool OpenFileDialog(eastl::string &outFile, const char *pInitialDir);
+bool OpenFileDialog(std::string &outFile, const char *pInitialDir);

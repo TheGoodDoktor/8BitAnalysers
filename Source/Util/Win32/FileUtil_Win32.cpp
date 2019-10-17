@@ -1,13 +1,14 @@
 #include  "../FileUtil.h"
 
-#include "Debug/Debug.h"
-
+//#include "Debug/Debug.h"
+#include <assert.h>"
 #include <windows.h>
 #include <winhttp.h>
 #include <strsafe.h>
 #include <shobjidl.h> 
 #include <functional>
 #pragma comment(lib, "User32.lib")
+#pragma comment(lib, "WinHttp.lib")
 
 bool EnumerateDirectory(const char *dir, FDirFileList &outDirListing)
 {
@@ -28,7 +29,7 @@ bool EnumerateDirectory(const char *dir, FDirFileList &outDirListing)
 	{
 		FDirEntry entry;
 
-		entry.FileName = eastl::string(ffd.cFileName);
+		entry.FileName = std::string(ffd.cFileName);
 
 		if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
@@ -59,13 +60,13 @@ bool CreateDir(const char* osDir)
 		if ((ftyp & FILE_ATTRIBUTE_DIRECTORY) != 0)
 			return true;
 
-		LOGERROR("File obstructing dir creation %s", osDir);
+		//LOGERROR("File obstructing dir creation %s", osDir);
 		return false;
 	}
 
 	if (!CreateDirectoryA(osDir, NULL) && GetLastError() != ERROR_PATH_NOT_FOUND)
 	{
-		LOGERROR("Mkdir failed for %s", osDir);
+		//LOGERROR("Mkdir failed for %s", osDir);
 		return false;
 	}
 
@@ -140,7 +141,7 @@ void NormaliseFilePath(char* filePath)
 	}
 }
 
-eastl::string g_BrowserURL;
+std::string g_BrowserURL;
 
 bool OpenURLInBrowser(const char *pURL)
 {
@@ -175,7 +176,7 @@ bool DownloadURLToFile(const char*site, const char *url, bool bHttps, std::funct
 	HINTERNET hSession = WinHttpOpen(L"MapDataTool/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	if (!hSession)
 	{
-		LOGERROR("DownloadFileFromURL: couldn't create session");
+		//LOGERROR("DownloadFileFromURL: couldn't create session");
 		return false;
 	}
 	
@@ -186,13 +187,13 @@ bool DownloadURLToFile(const char*site, const char *url, bool bHttps, std::funct
 		switch (errorCode)
 		{
 		case ERROR_WINHTTP_INCORRECT_HANDLE_TYPE:
-			LOGERROR("DownloadFileFromURL: couldn't create connection - Incorrect Handle Type");
+			//LOGERROR("DownloadFileFromURL: couldn't create connection - Incorrect Handle Type");
 			break;
 		case ERROR_WINHTTP_INVALID_URL:
-			LOGERROR("DownloadFileFromURL: couldn't create connection - Invalid URL: %S", siteStr);
+			//LOGERROR("DownloadFileFromURL: couldn't create connection - Invalid URL: %S", siteStr);
 			break;
 		default:
-			LOGERROR("DownloadFileFromURL: couldn't create connection - Error Code %d", errorCode);
+			//LOGERROR("DownloadFileFromURL: couldn't create connection - Error Code %d", errorCode);
 			break;
 
 		}
@@ -203,7 +204,7 @@ bool DownloadURLToFile(const char*site, const char *url, bool bHttps, std::funct
 	HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET",urlStr,NULL, WINHTTP_NO_REFERER,NULL, bHttps ? WINHTTP_FLAG_SECURE : NULL);
 	if (!hRequest)
 	{
-		LOGERROR("DownloadFileFromURL: couldn't create request- %d", GetLastError());
+		//LOGERROR("DownloadFileFromURL: couldn't create request- %d", GetLastError());
 		//fclose(fp);
 		WinHttpCloseHandle(hConnect);
 		WinHttpCloseHandle(hSession);
@@ -227,10 +228,10 @@ bool DownloadURLToFile(const char*site, const char *url, bool bHttps, std::funct
 		switch(errorCode)
 		{
 		case ERROR_WINHTTP_TIMEOUT:
-			LOGERROR("DownloadFileFromURL: WinHttp request timed out");
+			//LOGERROR("DownloadFileFromURL: WinHttp request timed out");
 			break;
 		default:
-			LOGERROR("DownloadFileFromURL: couldn't receive response. Error %u", errorCode);
+			//LOGERROR("DownloadFileFromURL: couldn't receive response. Error %u", errorCode);
 			break;
 		}
 		return false;
@@ -242,14 +243,14 @@ bool DownloadURLToFile(const char*site, const char *url, bool bHttps, std::funct
 		dwSize = 0;
 		if (!WinHttpQueryDataAvailable(hRequest, &dwSize))
 		{
-			LOGERROR("Error %u in WinHttpQueryDataAvailable.\n", GetLastError());
+			//LOGERROR("Error %u in WinHttpQueryDataAvailable.\n", GetLastError());
 		}
 
 		// Allocate space for the buffer.
 		char *pszOutBuffer = new char[dwSize + 1];
 		if (!pszOutBuffer)
 		{
-			LOGERROR("Out of memory\n");
+			//LOGERROR("Out of memory\n");
 			dwSize = 0;
 		}
 		else
@@ -259,7 +260,7 @@ bool DownloadURLToFile(const char*site, const char *url, bool bHttps, std::funct
 
 			if (!WinHttpReadData(hRequest, (LPVOID)pszOutBuffer, dwSize, &dwDownloaded))
 			{
-				LOGERROR("Error %u in WinHttpReadData.\n", GetLastError());
+				//LOGERROR("Error %u in WinHttpReadData.\n", GetLastError());
 			}
 			else
 			{
@@ -290,7 +291,7 @@ bool DownloadURLToTextFile(const char*site, const char *url,bool bHttps, const c
 	FILE *fp = fopen(fname, "wt");
 	if (fp == NULL)
 	{
-		LOGERROR("Couldn't open file %s for writing", fname);
+		//LOGERROR("Couldn't open file %s for writing", fname);
 		return false;
 	}
 	const bool bSuccess =  DownloadURLToFile(site, url, bHttps,
@@ -308,7 +309,7 @@ bool DownloadURLToBinaryFile(const char*site, const char *url, bool bHttps, cons
 	FILE *fp = fopen(fname, "wb");
 	if (fp == NULL)
 	{
-		LOGERROR("Couldn't open file %s for writing", fname);
+		//LOGERROR("Couldn't open file %s for writing", fname);
 		return false;
 	}
 	
@@ -322,12 +323,12 @@ bool DownloadURLToBinaryFile(const char*site, const char *url, bool bHttps, cons
 	return bSuccess;
 }
 
-bool DownloadURLToString(const char*site, const char *url, bool bHttps, eastl::string &outputString)
+bool DownloadURLToString(const char*site, const char *url, bool bHttps, std::string &outputString)
 {
 	const bool bSuccess = DownloadURLToFile(site, url, bHttps,
 		[&outputString](const void *dataPtr, size_t dataSize)
 		{
-			outputString += eastl::string((const char *)dataPtr, dataSize);
+			outputString += std::string((const char *)dataPtr, dataSize);
 		}
 	);
 
@@ -335,7 +336,7 @@ bool DownloadURLToString(const char*site, const char *url, bool bHttps, eastl::s
 }
 
 
-bool OpenFileDialog(eastl::string &outFile,const char *pInitialDir)
+bool OpenFileDialog(std::string &outFile,const char *pInitialDir)
 {
 	OPENFILENAMEA openFileName = {};
 	char szFile[128];

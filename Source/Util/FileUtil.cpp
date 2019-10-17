@@ -1,17 +1,10 @@
 #include "FileUtil.h"
 
-#include "Debug/Debug.h"
 
-#include "rapidjson/writer.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/filereadstream.h"
-#include "rapidjson/filewritestream.h"
-#include "rapidjson/error/en.h"
+static std::string g_DataDirFromRoot("Tools/MapDataTool/Data/");
+static std::string g_DataDirectory;
 
-static eastl::string g_DataDirFromRoot("Tools/MapDataTool/Data/");
-static eastl::string g_DataDirectory;
-
-const eastl::string &GetDataDirectory()
+const std::string &GetDataDirectory()
 {
 	return g_DataDirectory;
 }
@@ -75,86 +68,20 @@ char *LoadTextFile(const char *pFilename)
 	return pTextData;
 }
 
-bool ParseJSONStringIntoDocument(const char *pJsonString, rapidjson::Document &document)
+void *LoadBinaryFile(const char *pFilename, size_t &byteCount)
 {
-	document.Parse<rapidjson::kParseStopWhenDoneFlag>(pJsonString);
-	if (document.HasParseError())
-	{
-		switch (document.GetParseError())
-		{
-		case rapidjson::kParseErrorDocumentEmpty:                   //!< The document is empty.
-			break;
-		case rapidjson::kParseErrorDocumentRootNotSingular:         //!< The document root must not follow by other values.
-			break;
-		case rapidjson::kParseErrorValueInvalid:                    //!< Invalid value.
-			break;
-		case rapidjson::kParseErrorObjectMissName:                  //!< Missing a name for object member.
-			break;
-		case rapidjson::kParseErrorObjectMissColon:                 //!< Missing a colon after a name of object member.
-			break;
-		case rapidjson::kParseErrorObjectMissCommaOrCurlyBracket:   //!< Missing a comma or '}' after an object member.
-			break;
-		case rapidjson::kParseErrorArrayMissCommaOrSquareBracket:   //!< Missing a comma or ']' after an array element.
-			break;
-		case rapidjson::kParseErrorStringUnicodeEscapeInvalidHex:   //!< Incorrect hex digit after \\u escape in string.
-			break;
-		case rapidjson::kParseErrorStringUnicodeSurrogateInvalid:   //!< The surrogate pair in string is invalid.
-			break;
-		case rapidjson::kParseErrorStringEscapeInvalid:             //!< Invalid escape character in string.
-			break;
-		case rapidjson::kParseErrorStringMissQuotationMark:         //!< Missing a closing quotation mark in string.
-			break;
-		case rapidjson::kParseErrorStringInvalidEncoding:           //!< Invalid encoding in string.
-			break;
-		case rapidjson::kParseErrorNumberTooBig:                    //!< Number too big to be stored in double.
-			break;
-		case rapidjson::kParseErrorNumberMissFraction:              //!< Miss fraction part in number.
-			break;
-		case rapidjson::kParseErrorNumberMissExponent:              //!< Miss exponent in number.
-			break;
-		case rapidjson::kParseErrorTermination:                     //!< Parsing was terminated.
-			break;
-		case rapidjson::kParseErrorUnspecificSyntaxError:            //!< Unspecific syntax error.
-			break;
-		}
-	}
-	return true;
-}
+	FILE *fp = fopen(pFilename, "rb");
+	if (fp == nullptr)
+		return nullptr;
 
-bool LoadJSONFileIntoDocument(const char *pPath, rapidjson::Document &document)
-{
-	char *pJsonFile = LoadTextFile(pPath);
-	if (pJsonFile == nullptr)
-		return false;
-	const bool bSuccess = ParseJSONStringIntoDocument(pJsonFile, document);
-
-	delete[] pJsonFile;
-
-	return bSuccess;
-}
-
-bool WriteJsonDocumentToFile(rapidjson::Document &doc, const char *pFileName)
-{
-	FILE *fp = fopen(pFileName, "wt");
-	if (fp == NULL)
-	{
-		LOGERROR("Can't create JSON file %s", pFileName);
-		return false;
-	}
-
-	char writeBuffer[65536];
-	rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
-	rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
-	doc.Accept(writer);
+	fseek(fp, 0, SEEK_END);
+	byteCount = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	void *pFileData = malloc(byteCount);
+	if (pFileData == nullptr)
+		return nullptr;
+	fread(pFileData, byteCount, 1, fp);
 	fclose(fp);
-	return true;
-}
 
-bool DownloadURLToJSONDocument(const char*site, const char *url, bool bHttps, rapidjson::Document &document)
-{
-	eastl::string output;
-	if (DownloadURLToString(site, url, bHttps, output) == false)
-		return false;
-	
-	return ParseJSONStringIntoDocument(output.c_str(), document);
+	return pFileData;
 }

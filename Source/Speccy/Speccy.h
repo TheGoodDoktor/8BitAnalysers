@@ -1,6 +1,8 @@
 #pragma once
 
 #include "imgui.h"
+#include <string>
+#include <vector>
 
 enum class SpeccyModel
 {
@@ -25,4 +27,5 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config);
 void TickSpeccy(FSpeccy &speccyInstance);
 void ShutdownSpeccy(FSpeccy*&pSpeccy);
 
+const std::vector<std::string>& GetGameList();
 bool LoadZ80File(FSpeccy &speccyInstance, const char *fName);
