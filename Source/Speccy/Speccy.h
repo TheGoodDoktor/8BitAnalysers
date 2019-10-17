@@ -25,3 +25,4 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config);
 void TickSpeccy(FSpeccy &speccyInstance);
 void ShutdownSpeccy(FSpeccy*&pSpeccy);
 
+bool LoadZ80File(FSpeccy &speccyInstance, const char *fName);

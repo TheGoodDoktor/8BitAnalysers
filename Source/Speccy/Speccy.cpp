@@ -87,3 +87,10 @@ void ShutdownSpeccy(FSpeccy*&pSpeccy)
 	delete pSpeccy;
 	pSpeccy = nullptr;
 }
+
+
+bool LoadZ80File(FSpeccy &speccyInstance, const char *fName)
+{
+
+	return true;
+}
