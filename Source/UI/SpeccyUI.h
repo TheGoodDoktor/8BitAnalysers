@@ -6,6 +6,8 @@ struct FSpeccyUI
 {
 	FSpeccy*		pSpeccy;
 	ui_zx_t			UIZX;
+
+	unsigned char*	GraphicsViewPixelBuffer;
 	ImTextureID		GraphicsViewTexture;
 };
 

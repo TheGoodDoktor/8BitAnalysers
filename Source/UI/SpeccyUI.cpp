@@ -53,6 +53,14 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	desc.dbg_keys.toggle_breakpoint_name = "F9";
 	ui_zx_init(&pUI->UIZX, &desc);
 
+	// setup pixel buffer
+	const int graphicsViewSize = 64;
+	const size_t pixelBufferSize = graphicsViewSize * graphicsViewSize * 4;
+	pUI->GraphicsViewPixelBuffer = new unsigned char[pixelBufferSize];
+
+	pUI->GraphicsViewTexture = ImGui_ImplDX11_CreateTextureRGBA(pUI->GraphicsViewPixelBuffer, graphicsViewSize, graphicsViewSize);
+
+
 	return pUI;
 }
 
@@ -225,6 +233,31 @@ void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 	pUI->pSpeccy->ExecThisFrame = ui_zx_before_exec(&pUI->UIZX);
 }
 
+void DrawGraphicsView(FSpeccyUI* pUI)
+{
+	ImGui::Begin("Graphics View");
+	ImGui::Image(pUI->GraphicsViewTexture, ImVec2(256, 256));
+	ImGui::End();
+
+	static int memOffset = 0;
+	int byteOff = 0;
+
+	unsigned int *pPix = (unsigned int*)pUI->GraphicsViewPixelBuffer;
+
+	for (int y = 0; y < 64; y++)
+	{ 
+		for (int x = 0; x < 64; x++)
+		{
+			uint8_t memVal = pUI->pSpeccy->CurrentState.ram[0][memOffset + byteOff];
+			bool bSet = memVal & (1<<(x & 7)) !=0;
+
+			*pPix = bSet ? 0 : 0xffffffff;
+			pPix++;
+		}
+	}
+	ImGui_ImplDX11_UpdateTextureRGBA(pUI->GraphicsViewTexture, pUI->GraphicsViewPixelBuffer);
+}
+
 void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 {
 	ui_zx_t* pZXUI = &pUI->UIZX;
@@ -262,4 +295,8 @@ void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 	ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
+
+
+	DrawGraphicsView(pUI);
 }
+
