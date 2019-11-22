@@ -84,6 +84,9 @@
     <ClCompile Include="..\..\Source\Util\Win32\FileUtil_Win32.cpp">
       <Filter>Source Files\Util\Win32</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp">
+      <Filter>Source Files\Speccy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h">

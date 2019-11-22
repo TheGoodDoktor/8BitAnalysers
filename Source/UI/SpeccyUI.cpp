@@ -2,33 +2,9 @@
 #include "SpeccyUI.h"
 #include <windows.h>
 
-#include "Speccy/Speccy.h"
-#define UI_DBG_USE_Z80
-#define UI_DASM_USE_Z80
 
-#include "chips/z80.h"
-#include "chips/beeper.h"
-#include "chips/ay38910.h"
-#include "chips/mem.h"
-#include "chips/kbd.h"
-#include "chips/clk.h"
-#include "systems/zx.h"
-#include "chips/mem.h"
-#include "ui/ui_chip.h"
-#include "ui/ui_util.h"
-#include "ui/ui_z80.h"
-#include "ui/ui_ay38910.h"
-#include "ui/ui_audio.h"
-#include "ui/ui_kbd.h"
-#include "ui/ui_dasm.h"
-#include "ui/ui_dbg.h"
-#include "ui/ui_memedit.h"
-#include "ui/ui_memmap.h"
-#include "ui/ui_zx.h"
 #include "imgui_impl_lucidextra.h"
 
-
-static ui_zx_t g_UIZX;
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -52,11 +28,15 @@ void gfx_destroy_texture(void* h)
 	
 }
 
-void InitSpeccyUI(const FSpeccy &speccyInstance)
+FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 {
+	FSpeccyUI *pUI = new FSpeccyUI;
+	memset(pUI, 0, sizeof(FSpeccyUI));
+
+	pUI->pSpeccy = pSpeccy;
 	//ui_init(zxui_draw);
 	ui_zx_desc_t desc = { 0 };
-	desc.zx = (zx_t*)speccyInstance.EmuState;
+	desc.zx = &pSpeccy->CurrentState;
 	desc.boot_cb = boot_cb;
 	desc.create_texture_cb = gfx_create_texture;
 	desc.update_texture_cb = gfx_update_texture;
@@ -71,17 +51,21 @@ void InitSpeccyUI(const FSpeccy &speccyInstance)
 	desc.dbg_keys.step_into_name = "F7";
 	desc.dbg_keys.toggle_breakpoint_keycode = VK_F9;
 	desc.dbg_keys.toggle_breakpoint_name = "F9";
-	ui_zx_init(&g_UIZX, &desc);
+	ui_zx_init(&pUI->UIZX, &desc);
+
+	return pUI;
 }
 
-void ShutdownSpeccyUI(const FSpeccy &speccyInstance)
+void ShutdownSpeccyUI(FSpeccyUI* pUI)
 {
 
 }
 
-static void DrawMainMenu(FSpeccy &speccyInstance, ui_zx_t* pUI , double timeMS)
+static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 {
-	assert(pUI && pUI->zx && pUI->boot_cb);
+	ui_zx_t* pZXUI = &pUI->UIZX;
+	FSpeccy *pSpeccy = pUI->pSpeccy;
+	assert(pZXUI && pZXUI->zx && pZXUI->boot_cb);
 	
 	if (ImGui::BeginMainMenuBar()) 
 	{
@@ -93,7 +77,7 @@ static void DrawMainMenu(FSpeccy &speccyInstance, ui_zx_t* pUI , double timeMS)
 				{
 					if (ImGui::MenuItem(file.c_str()))
 					{
-						LoadZ80File(speccyInstance, file.c_str());
+						LoadZ80File(*pSpeccy, file.c_str());
 					}
 				}
 
@@ -106,36 +90,36 @@ static void DrawMainMenu(FSpeccy &speccyInstance, ui_zx_t* pUI , double timeMS)
 		{
 			if (ImGui::MenuItem("Reset")) 
 			{
-				zx_reset(pUI->zx);
-				ui_dbg_reset(&pUI->dbg);
+				zx_reset(pZXUI->zx);
+				ui_dbg_reset(&pZXUI->dbg);
 			}
-			if (ImGui::MenuItem("ZX Spectrum 48K", 0, (pUI->zx->type == ZX_TYPE_48K)))
+			if (ImGui::MenuItem("ZX Spectrum 48K", 0, (pZXUI->zx->type == ZX_TYPE_48K)))
 			{
-				pUI->boot_cb(pUI->zx, ZX_TYPE_48K);
-				ui_dbg_reboot(&pUI->dbg);
+				pZXUI->boot_cb(pZXUI->zx, ZX_TYPE_48K);
+				ui_dbg_reboot(&pZXUI->dbg);
 			}
-			if (ImGui::MenuItem("ZX Spectrum 128", 0, (pUI->zx->type == ZX_TYPE_128)))
+			if (ImGui::MenuItem("ZX Spectrum 128", 0, (pZXUI->zx->type == ZX_TYPE_128)))
 			{
-				pUI->boot_cb(pUI->zx, ZX_TYPE_128);
-				ui_dbg_reboot(&pUI->dbg);
+				pZXUI->boot_cb(pZXUI->zx, ZX_TYPE_128);
+				ui_dbg_reboot(&pZXUI->dbg);
 			}
 			if (ImGui::BeginMenu("Joystick")) 
 			{
-				if (ImGui::MenuItem("None", 0, (pUI->zx->joystick_type == ZX_JOYSTICKTYPE_NONE)))
+				if (ImGui::MenuItem("None", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_NONE)))
 				{
-					pUI->zx->joystick_type = ZX_JOYSTICKTYPE_NONE;
+					pZXUI->zx->joystick_type = ZX_JOYSTICKTYPE_NONE;
 				}
-				if (ImGui::MenuItem("Kempston", 0, (pUI->zx->joystick_type == ZX_JOYSTICKTYPE_KEMPSTON)))
+				if (ImGui::MenuItem("Kempston", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_KEMPSTON)))
 				{
-					pUI->zx->joystick_type = ZX_JOYSTICKTYPE_KEMPSTON;
+					pZXUI->zx->joystick_type = ZX_JOYSTICKTYPE_KEMPSTON;
 				}
-				if (ImGui::MenuItem("Sinclair #1", 0, (pUI->zx->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_1)))
+				if (ImGui::MenuItem("Sinclair #1", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_1)))
 				{
-					pUI->zx->joystick_type = ZX_JOYSTICKTYPE_SINCLAIR_1;
+					pZXUI->zx->joystick_type = ZX_JOYSTICKTYPE_SINCLAIR_1;
 				}
-				if (ImGui::MenuItem("Sinclair #2", 0, (pUI->zx->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_2)))
+				if (ImGui::MenuItem("Sinclair #2", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_2)))
 				{
-					pUI->zx->joystick_type = ZX_JOYSTICKTYPE_SINCLAIR_2;
+					pZXUI->zx->joystick_type = ZX_JOYSTICKTYPE_SINCLAIR_2;
 				}
 				ImGui::EndMenu();
 			}
@@ -143,45 +127,45 @@ static void DrawMainMenu(FSpeccy &speccyInstance, ui_zx_t* pUI , double timeMS)
 		}
 		if (ImGui::BeginMenu("Hardware")) 
 		{
-			ImGui::MenuItem("Memory Map", 0, &pUI->memmap.open);
-			ImGui::MenuItem("Keyboard Matrix", 0, &pUI->kbd.open);
-			ImGui::MenuItem("Audio Output", 0, &pUI->audio.open);
-			ImGui::MenuItem("Z80 CPU", 0, &pUI->cpu.open);
-			if (pUI->zx->type == ZX_TYPE_128)
+			ImGui::MenuItem("Memory Map", 0, &pZXUI->memmap.open);
+			ImGui::MenuItem("Keyboard Matrix", 0, &pZXUI->kbd.open);
+			ImGui::MenuItem("Audio Output", 0, &pZXUI->audio.open);
+			ImGui::MenuItem("Z80 CPU", 0, &pZXUI->cpu.open);
+			if (pZXUI->zx->type == ZX_TYPE_128)
 			{
-				ImGui::MenuItem("AY-3-8912", 0, &pUI->ay.open);
+				ImGui::MenuItem("AY-3-8912", 0, &pZXUI->ay.open);
 			}
 			else 
 			{
-				pUI->ay.open = false;
+				pZXUI->ay.open = false;
 			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Debug")) 
 		{
-			ImGui::MenuItem("CPU Debugger", 0, &pUI->dbg.ui.open);
-			ImGui::MenuItem("Breakpoints", 0, &pUI->dbg.ui.show_breakpoints);
-			ImGui::MenuItem("Memory Heatmap", 0, &pUI->dbg.ui.show_heatmap);
+			ImGui::MenuItem("CPU Debugger", 0, &pZXUI->dbg.ui.open);
+			ImGui::MenuItem("Breakpoints", 0, &pZXUI->dbg.ui.show_breakpoints);
+			ImGui::MenuItem("Memory Heatmap", 0, &pZXUI->dbg.ui.show_heatmap);
 			if (ImGui::BeginMenu("Memory Editor")) 
 			{
-				ImGui::MenuItem("Window #1", 0, &pUI->memedit[0].open);
-				ImGui::MenuItem("Window #2", 0, &pUI->memedit[1].open);
-				ImGui::MenuItem("Window #3", 0, &pUI->memedit[2].open);
-				ImGui::MenuItem("Window #4", 0, &pUI->memedit[3].open);
+				ImGui::MenuItem("Window #1", 0, &pZXUI->memedit[0].open);
+				ImGui::MenuItem("Window #2", 0, &pZXUI->memedit[1].open);
+				ImGui::MenuItem("Window #3", 0, &pZXUI->memedit[2].open);
+				ImGui::MenuItem("Window #4", 0, &pZXUI->memedit[3].open);
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Disassembler")) 
 			{
-				ImGui::MenuItem("Window #1", 0, &pUI->dasm[0].open);
-				ImGui::MenuItem("Window #2", 0, &pUI->dasm[1].open);
-				ImGui::MenuItem("Window #3", 0, &pUI->dasm[2].open);
-				ImGui::MenuItem("Window #4", 0, &pUI->dasm[3].open);
+				ImGui::MenuItem("Window #1", 0, &pZXUI->dasm[0].open);
+				ImGui::MenuItem("Window #2", 0, &pZXUI->dasm[1].open);
+				ImGui::MenuItem("Window #3", 0, &pZXUI->dasm[2].open);
+				ImGui::MenuItem("Window #4", 0, &pZXUI->dasm[3].open);
 				ImGui::EndMenu();
 			}
 			ImGui::EndMenu();
 		}
 		
-		ui_util_options_menu(timeMS, pUI->dbg.dbg.stopped);
+		ui_util_options_menu(timeMS, pZXUI->dbg.dbg.stopped);
 
 		ImGui::EndMainMenuBar();
 	}
@@ -236,43 +220,46 @@ void DrawDebuggerUI(ui_dbg_t *pDebugger)
 	_ui_dbg_bp_draw(pDebugger);*/
 }
 
-void DrawSpeccyUI(FSpeccy &speccyInstance)
+void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 {
-	ui_zx_t* pUI = &g_UIZX;
+	pUI->pSpeccy->ExecThisFrame = ui_zx_before_exec(&pUI->UIZX);
+}
+
+void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
+{
+	ui_zx_t* pZXUI = &pUI->UIZX;
+	FSpeccy *pSpeccy = pUI->pSpeccy;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 	
-	if (ui_zx_before_exec(&g_UIZX))
-	{
-		zx_exec(g_UIZX.zx, static_cast<uint32_t>(1000000.0f / ImGui::GetIO().Framerate));
-		ui_zx_after_exec(&g_UIZX);
-	}
+	if(pSpeccy->ExecThisFrame)
+		ui_zx_after_exec(pZXUI);
 	
-	DrawMainMenu(speccyInstance, pUI, timeMS);
+	DrawMainMenu(pUI, timeMS);
 
-	if (pUI->memmap.open)
+	if (pZXUI->memmap.open)
 	{
-		UpdateMemmap(pUI);
+		UpdateMemmap(pZXUI);
 	}
 
 	// call the Chips UI functions
-	ui_audio_draw(&pUI->audio, pUI->zx->sample_pos);
-	ui_z80_draw(&pUI->cpu);
-	ui_ay38910_draw(&pUI->ay);
-	ui_kbd_draw(&pUI->kbd);
-	ui_memmap_draw(&pUI->memmap);
+	ui_audio_draw(&pZXUI->audio, pZXUI->zx->sample_pos);
+	ui_z80_draw(&pZXUI->cpu);
+	ui_ay38910_draw(&pZXUI->ay);
+	ui_kbd_draw(&pZXUI->kbd);
+	ui_memmap_draw(&pZXUI->memmap);
 
 	for (int i = 0; i < 4; i++)
 	{
-		ui_memedit_draw(&pUI->memedit[i]);
-		ui_dasm_draw(&pUI->dasm[i]);
+		ui_memedit_draw(&pZXUI->memedit[i]);
+		ui_dasm_draw(&pZXUI->dasm[i]);
 	}
 
-	DrawDebuggerUI(&pUI->dbg);
+	DrawDebuggerUI(&pZXUI->dbg);
 	
 
 	// show spectrum window
 	ImGui::Begin("Spectrum View");
-	ImGui::Image(speccyInstance.Texture, ImVec2(320, 256));
+	ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
 }

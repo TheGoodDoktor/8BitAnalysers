@@ -135,6 +135,7 @@
     <ClCompile Include="..\..\Source\imgui_impl_lucidextra.cpp" />
     <ClCompile Include="..\..\Source\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\Source\main.cpp" />
+    <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp" />
     <ClCompile Include="..\..\Source\Speccy\Speccy.cpp" />
     <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp" />
     <ClCompile Include="..\..\Source\Util\FileUtil.cpp" />

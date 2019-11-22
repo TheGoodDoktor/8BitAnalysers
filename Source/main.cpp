@@ -106,8 +106,10 @@ int main(int, char**)
 
 	// Speccy 
 	FSpeccyConfig config;
+	config.NoStateBuffers = 10;
 	FSpeccy *pSpeccy = InitSpeccy(config);
-	InitSpeccyUI(*pSpeccy);
+	FSpeccy &speccy = *pSpeccy;
+	FSpeccyUI *pSpeccyUI = InitSpeccyUI(pSpeccy);
 
     // Main loop
     MSG msg;
@@ -132,8 +134,10 @@ int main(int, char**)
         ImGui::NewFrame();
 
 		// speccy update & render
-		TickSpeccy(*pSpeccy);
-		DrawSpeccyUI(*pSpeccy);
+		UpdatePreTickSpeccyUI(pSpeccyUI);
+		if(speccy.ExecThisFrame)
+			TickSpeccy(*pSpeccy);
+		UpdatePostTickSpeccyUI(pSpeccyUI);
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
@@ -157,7 +161,7 @@ int main(int, char**)
     }
 
 	// shutdown the speccy stuff
-	ShutdownSpeccyUI(*pSpeccy);
+	ShutdownSpeccyUI(pSpeccyUI);
 	ShutdownSpeccy(pSpeccy);
 
     // Cleanup
