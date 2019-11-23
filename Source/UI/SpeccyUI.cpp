@@ -4,6 +4,7 @@
 
 
 #include "imgui_impl_lucidextra.h"
+#include "GameViewers/StarquakeViewer.h"
 
 
 /* reboot callback */
@@ -31,7 +32,7 @@ void gfx_destroy_texture(void* h)
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 {
 	FSpeccyUI *pUI = new FSpeccyUI;
-	memset(pUI, 0, sizeof(FSpeccyUI));
+	memset(&pUI->UIZX, 0, sizeof(ui_zx_t));
 
 	pUI->pSpeccy = pSpeccy;
 	//ui_init(zxui_draw);
@@ -60,7 +61,9 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 
 	pUI->GraphicsViewTexture = ImGui_ImplDX11_CreateTextureRGBA(pUI->GraphicsViewPixelBuffer, graphicsViewSize, graphicsViewSize);
 
-
+	// register Viewers
+	RegisterStarquakeViewer(pUI);
+	
 	return pUI;
 }
 
@@ -172,6 +175,16 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 			}
 			ImGui::EndMenu();
 		}
+
+		if (ImGui::BeginMenu("Game Viewers"))
+		{
+			for (auto &viewerIt : pUI->GameViewers)
+			{
+				FGameViewer &viewer = viewerIt.second;
+				ImGui::MenuItem(viewerIt.first.c_str(), 0, &viewer.bOpen);
+			}
+			ImGui::EndMenu();
+		}
 		
 		ui_util_options_menu(timeMS, pZXUI->dbg.dbg.stopped);
 
@@ -253,40 +266,34 @@ void PlotCharacterAt(const uint8_t *pSrc, int xp,int yp,uint32_t *pDest, int des
 	}
 }
 
-void PlotCharacterBlockAt(const uint8_t *pSrc, int xp, int yp,int w,int h, uint32_t *pDest, int destWidth)
+void PlotCharacterBlockAt(const FSpeccy *pSpeccy,uint16_t addr, int xp, int yp,int w,int h, uint32_t *pDest, int destWidth)
 {
-	const uint8_t* pChar = pSrc;
+	uint16_t currAddr = addr;
 
 	for (int y = yp; y < yp + h; y++)
 	{
 		for (int x = xp; x < xp + w; x++)
 		{
+			const uint8_t *pChar = GetSpeccyMemPtr(*pSpeccy, currAddr);
 			PlotCharacterAt(pChar, x, y, pDest, destWidth);
-			pChar += 8;
+			currAddr += 8;
 		}
 	}
 }
 
 void DrawGraphicsView(FSpeccyUI* pUI)
 {
-	static int memBank = 0;
 	static int memOffset = 0;
 	int byteOff = 0;
-	int offsetMax = 0x4000 - (64 * 8);
-
-	int realAddr = 0x4000 + (memBank * 0x40000) + memOffset;
+	int offsetMax = 0xffff - (64 * 8);
 	
 	ImGui::Begin("Graphics View");
-	ImGui::Text("Memory Map Address: 0x%x", realAddr);
+	ImGui::Text("Memory Map Address: 0x%x", memOffset);
 	ImGui::Image(pUI->GraphicsViewTexture, ImVec2(256, 256));
 	ImGui::SameLine();
 	ImGui::VSliderInt("##int", ImVec2(64, 256), &memOffset, 0, offsetMax);//,"0x%x");
-	ImGui::InputInt("Bank", &memBank, 1,1);
-	ImGui::InputInt("Bank Address", &memOffset,8,8*8, ImGuiInputTextFlags_CharsHexadecimal);
+	ImGui::InputInt("Address", &memOffset,8,8*8, ImGuiInputTextFlags_CharsHexadecimal);
 
-	memBank = min(memBank, 7);
-	memBank = max(memBank, 0);
-	uint8_t *pGfxMem = &pUI->pSpeccy->CurrentState.ram[memBank][memOffset];
 	uint32_t *pPix = (uint32_t*)pUI->GraphicsViewPixelBuffer;
 
 	memset(pPix, 0, 64 * 64 * 4);
@@ -294,18 +301,20 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	// draw 64 * 8 bytes
 	static int xs = 1;
 	static int ys = 1;
-	ImGui::SliderInt("XSize", &xs, 1, 4);
-	ImGui::SliderInt("YSize", &ys, 1, 4);
+	ImGui::InputInt("XSize", &xs, 1, 4);
+	ImGui::InputInt("YSize", &ys, 1, 4);
+	
 	const int xcount = 8 / xs;
 	const int ycount = 8 / ys;
 
+	uint16_t speccyAddr = memOffset;
 	int y = 0;
 	for (int y = 0; y < ycount; y++)
 	{
 		for (int x = 0; x < xcount; x++)
 		{
-			PlotCharacterBlockAt(pGfxMem, x * xs, y * ys,xs,ys, pPix, 64);
-			pGfxMem += xs * ys * 8;
+			PlotCharacterBlockAt(pUI->pSpeccy,speccyAddr, x * xs, y * ys,xs,ys, pPix, 64);
+			speccyAddr += xs * ys * 8;
 		}
 	}
 
@@ -365,7 +374,25 @@ void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
 
+	for(auto&viewerIt : pUI->GameViewers)
+	{
+		FGameViewer & viewer = viewerIt.second;
+		if (viewer.bOpen)
+		{
+			if (ImGui::Begin(viewer.Name.c_str(), &viewer.bOpen))
+			{
+				viewer.pDrawFunction(pUI, viewer);
+				ImGui::End();
+			}
+		}
+	}
 
 	DrawGraphicsView(pUI);
 }
 
+FGameViewer &AddGameViewer(FSpeccyUI *pUI,const char *pName)
+{
+	FGameViewer &gameViewer = pUI->GameViewers[pName];
+	gameViewer.Name = pName;
+	return gameViewer;
+}

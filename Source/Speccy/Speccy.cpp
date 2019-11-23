@@ -114,3 +114,4 @@ bool LoadZ80File(FSpeccy &speccyInstance, const char *fName)
 	free(pData);
 	return bSuccess;
 }
+

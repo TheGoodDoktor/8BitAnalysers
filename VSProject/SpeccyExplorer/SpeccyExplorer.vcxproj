@@ -137,6 +137,7 @@
     <ClCompile Include="..\..\Source\main.cpp" />
     <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp" />
     <ClCompile Include="..\..\Source\Speccy\Speccy.cpp" />
+    <ClCompile Include="..\..\Source\UI\GameViewers\StarquakeViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp" />
     <ClCompile Include="..\..\Source\Util\FileUtil.cpp" />
     <ClCompile Include="..\..\Source\Util\Win32\FileUtil_Win32.cpp" />
@@ -150,6 +151,7 @@
     <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h" />
     <ClInclude Include="..\..\Source\imgui_impl_win32.h" />
     <ClInclude Include="..\..\Source\Speccy\Speccy.h" />
+    <ClInclude Include="..\..\Source\UI\GameViewers\StarquakeViewer.h" />
     <ClInclude Include="..\..\Source\UI\SpeccyUI.h" />
     <ClInclude Include="..\..\Source\Util\FileUtil.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\chips\am40010.h" />

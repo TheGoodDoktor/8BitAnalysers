@@ -59,3 +59,27 @@ void ShutdownSpeccy(FSpeccy*&pSpeccy);
 
 const std::vector<std::string>& GetGameList();
 bool LoadZ80File(FSpeccy &speccyInstance, const char *fName);
+
+inline uint8_t	ReadySpeccyByte(const FSpeccy &speccy, uint16_t address)
+{
+	const int bank = address >> 14;
+	const int bankAddr = address & 0x3fff;
+
+	return speccy.CurrentState.ram[bank][bankAddr];
+}
+
+inline const uint8_t*	GetSpeccyMemPtr(const FSpeccy &speccy, uint16_t address)
+{
+	const int bank = address >> 14;
+	const int bankAddr = address & 0x3fff;
+
+	return &speccy.CurrentState.ram[bank][bankAddr];
+}
+
+inline void	WriteSpeccyByte(FSpeccy &speccy, uint16_t address, uint8_t value)
+{
+	const int bank = address >> 14;
+	const int bankAddr = address & 0x3fff;
+
+	speccy.CurrentState.ram[bank][bankAddr] = value;
+}

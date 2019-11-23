@@ -46,6 +46,9 @@
     <Filter Include="Source Files\Util\Win32">
       <UniqueIdentifier>{09fb0a56-281f-4a0f-b4da-a758df00a29a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\UI\GameViewers">
+      <UniqueIdentifier>{971a47f7-a713-4a08-a416-4fdcd6812e97}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\imgui_impl_dx11.cpp">
@@ -86,6 +89,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp">
       <Filter>Source Files\Speccy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\GameViewers\StarquakeViewer.cpp">
+      <Filter>Source Files\UI\GameViewers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -322,6 +328,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Util\FileUtil.h">
       <Filter>Source Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\GameViewers\StarquakeViewer.h">
+      <Filter>Source Files\UI\GameViewers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
