@@ -65,7 +65,10 @@ inline uint8_t	ReadySpeccyByte(const FSpeccy &speccy, uint16_t address)
 	const int bank = address >> 14;
 	const int bankAddr = address & 0x3fff;
 
-	return speccy.CurrentState.ram[bank][bankAddr];
+	if(bank == 0)
+		return speccy.CurrentState.rom[0][bankAddr];
+	else
+		return speccy.CurrentState.ram[bank-1][bankAddr];
 }
 
 inline const uint8_t*	GetSpeccyMemPtr(const FSpeccy &speccy, uint16_t address)
@@ -73,7 +76,10 @@ inline const uint8_t*	GetSpeccyMemPtr(const FSpeccy &speccy, uint16_t address)
 	const int bank = address >> 14;
 	const int bankAddr = address & 0x3fff;
 
-	return &speccy.CurrentState.ram[bank][bankAddr];
+	if (bank == 0)
+		return &speccy.CurrentState.rom[0][bankAddr];
+	else
+		return &speccy.CurrentState.ram[bank - 1][bankAddr];
 }
 
 inline void	WriteSpeccyByte(FSpeccy &speccy, uint16_t address, uint8_t value)
@@ -81,5 +87,6 @@ inline void	WriteSpeccyByte(FSpeccy &speccy, uint16_t address, uint8_t value)
 	const int bank = address >> 14;
 	const int bankAddr = address & 0x3fff;
 
-	speccy.CurrentState.ram[bank][bankAddr] = value;
+	if(bank > 0)
+		speccy.CurrentState.ram[bank-1][bankAddr] = value;
 }

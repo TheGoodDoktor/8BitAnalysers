@@ -246,27 +246,31 @@ void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 	pUI->pSpeccy->ExecThisFrame = ui_zx_before_exec(&pUI->UIZX);
 }
 
-// coords are in character units
-void PlotCharacterAt(const uint8_t *pSrc, int xp,int yp,uint32_t *pDest, int destWidth)
+// coords are in pixel units
+// w & h in characters
+void PlotImageAt(const uint8_t *pSrc, int xp,int yp,int w,int h,uint32_t *pDest, int destWidth)
 {
-	uint32_t* pBase = pDest + ((xp*8) + ((yp*8) * destWidth));
-	
-	for(int y=0;y<8;y++)
+	uint32_t* pBase = pDest + (xp + (yp * destWidth));
+	*pBase = 0;
+	for(int y=0;y<h*8;y++)
 	{
-		uint8_t charLine = *pSrc++;
-		
-		for(int x=0;x<8;x++)
+		for (int x = 0; x < w; x++)
 		{
-			const bool bSet = (charLine & (1 << (7 - x))) != 0;
-			const uint32_t col = bSet ? 0xffffffff : 0;
-			*(pBase + x) = col;
+			const uint8_t charLine = *pSrc++;
+
+			for (int xpix = 0; xpix < 8; xpix++)
+			{
+				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
+				const uint32_t col = bSet ? 0xffffffff : 0;
+				*(pBase + xpix + (x * 8)) = col;
+			}
 		}
 
 		pBase += destWidth;
 	}
 }
 
-void PlotCharacterBlockAt(const FSpeccy *pSpeccy,uint16_t addr, int xp, int yp,int w,int h, uint32_t *pDest, int destWidth)
+/*void PlotCharacterBlockAt(const FSpeccy *pSpeccy,uint16_t addr, int xp, int yp,int w,int h, uint32_t *pDest, int destWidth)
 {
 	uint16_t currAddr = addr;
 
@@ -275,11 +279,11 @@ void PlotCharacterBlockAt(const FSpeccy *pSpeccy,uint16_t addr, int xp, int yp,i
 		for (int x = xp; x < xp + w; x++)
 		{
 			const uint8_t *pChar = GetSpeccyMemPtr(*pSpeccy, currAddr);
-			PlotCharacterAt(pChar, x, y, pDest, destWidth);
+			PlotImageAt(pChar, x, y,1,1 pDest, destWidth);
 			currAddr += 8;
 		}
 	}
-}
+}*/
 
 void DrawGraphicsView(FSpeccyUI* pUI)
 {
@@ -292,7 +296,7 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	ImGui::Image(pUI->GraphicsViewTexture, ImVec2(256, 256));
 	ImGui::SameLine();
 	ImGui::VSliderInt("##int", ImVec2(64, 256), &memOffset, 0, offsetMax);//,"0x%x");
-	ImGui::InputInt("Address", &memOffset,8,8*8, ImGuiInputTextFlags_CharsHexadecimal);
+	ImGui::InputInt("Address", &memOffset,1,8, ImGuiInputTextFlags_CharsHexadecimal);
 
 	uint32_t *pPix = (uint32_t*)pUI->GraphicsViewPixelBuffer;
 
@@ -303,6 +307,9 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	static int ys = 1;
 	ImGui::InputInt("XSize", &xs, 1, 4);
 	ImGui::InputInt("YSize", &ys, 1, 4);
+
+	xs = min(max(1, xs), 8);
+	ys = min(max(1, ys), 8);
 	
 	const int xcount = 8 / xs;
 	const int ycount = 8 / ys;
@@ -313,26 +320,15 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	{
 		for (int x = 0; x < xcount; x++)
 		{
-			PlotCharacterBlockAt(pUI->pSpeccy,speccyAddr, x * xs, y * ys,xs,ys, pPix, 64);
+			const uint8_t *pImage = GetSpeccyMemPtr(*pUI->pSpeccy, speccyAddr);
+			PlotImageAt(pImage, x * xs * 8, y * ys * 8, xs, ys, pPix, 64);
+			//PlotCharacterBlockAt(pUI->pSpeccy,speccyAddr, x * xs, y * ys,xs,ys, pPix, 64);
 			speccyAddr += xs * ys * 8;
 		}
 	}
 
 	ImGui::End();
 
-	/*
-
-	for (int y = 0; y < 64; y++)
-	{ 
-		for (int x = 0; x < 64; x++)
-		{
-			uint8_t memVal = pUI->pSpeccy->CurrentState.ram[0][memOffset + byteOff];
-			bool bSet = memVal & (1<<(x & 7)) !=0;
-
-			*pPix = bSet ? 0 : 0xffffffff;
-			pPix++;
-		}
-	}*/
 	ImGui_ImplDX11_UpdateTextureRGBA(pUI->GraphicsViewTexture, pUI->GraphicsViewPixelBuffer);
 }
 
