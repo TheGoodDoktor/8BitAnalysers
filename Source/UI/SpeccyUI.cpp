@@ -233,16 +233,62 @@ void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 	pUI->pSpeccy->ExecThisFrame = ui_zx_before_exec(&pUI->UIZX);
 }
 
+// coords are in character units
+void PlotCharacterAt(const uint8_t *pSrc, int x,int y,uint32_t *pDest, int destWidth)
+{
+	uint32_t* pBase = pDest + ((x*8) + ((y*8) * destWidth));
+	
+	for(int y=0;y<8;y++)
+	{
+		uint8_t charLine = *pSrc++;
+		
+		for(int x=0;x<8;x++)
+		{
+			const bool bSet = (charLine & (1 << (7 - x))) != 0;
+			const uint32_t col = bSet ? 0xffffffff : 0;
+			*(pBase + x) = col;
+		}
+
+		pBase += destWidth;
+	}
+}
+
 void DrawGraphicsView(FSpeccyUI* pUI)
 {
-	ImGui::Begin("Graphics View");
-	ImGui::Image(pUI->GraphicsViewTexture, ImVec2(256, 256));
-	ImGui::End();
-
+	static int memBank = 0;
 	static int memOffset = 0;
 	int byteOff = 0;
+	int offsetMax = 0x4000 - (64 * 8);
 
-	unsigned int *pPix = (unsigned int*)pUI->GraphicsViewPixelBuffer;
+	int realAddr = 0x4000 + (memBank * 0x40000) + memOffset;
+	
+	ImGui::Begin("Graphics View");
+	ImGui::Text("Memory Map Address: 0x%x", realAddr);
+	ImGui::Image(pUI->GraphicsViewTexture, ImVec2(256, 256));
+	ImGui::SameLine();
+	ImGui::VSliderInt("##int", ImVec2(64, 256), &memOffset, offsetMax, 0);//,"0x%x");
+	ImGui::InputInt("Bank", &memBank, 1,1);
+	ImGui::InputInt("Bank Address", &memOffset,8*8,64*8, ImGuiInputTextFlags_CharsHexadecimal);
+
+	memBank = min(memBank, 7);
+	memBank = max(memBank, 0);
+	uint8_t *pGfxMem = &pUI->pSpeccy->CurrentState.ram[memBank][memOffset];
+	uint32_t *pPix = (uint32_t*)pUI->GraphicsViewPixelBuffer;
+
+	// view 1 - straight character
+	// draw 64 * 8 bytes
+	for (int y = 0; y < 8; y++)
+	{
+		for (int x = 0; x < 8; x++)
+		{
+			PlotCharacterAt(pGfxMem, x, y, pPix, 64);
+			pGfxMem += 8;
+		}
+	}
+
+	ImGui::End();
+
+	/*
 
 	for (int y = 0; y < 64; y++)
 	{ 
@@ -254,7 +300,7 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 			*pPix = bSet ? 0 : 0xffffffff;
 			pPix++;
 		}
-	}
+	}*/
 	ImGui_ImplDX11_UpdateTextureRGBA(pUI->GraphicsViewTexture, pUI->GraphicsViewPixelBuffer);
 }
 
