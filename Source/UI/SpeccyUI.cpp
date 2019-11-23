@@ -234,9 +234,9 @@ void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 }
 
 // coords are in character units
-void PlotCharacterAt(const uint8_t *pSrc, int x,int y,uint32_t *pDest, int destWidth)
+void PlotCharacterAt(const uint8_t *pSrc, int xp,int yp,uint32_t *pDest, int destWidth)
 {
-	uint32_t* pBase = pDest + ((x*8) + ((y*8) * destWidth));
+	uint32_t* pBase = pDest + ((xp*8) + ((yp*8) * destWidth));
 	
 	for(int y=0;y<8;y++)
 	{
@@ -253,6 +253,20 @@ void PlotCharacterAt(const uint8_t *pSrc, int x,int y,uint32_t *pDest, int destW
 	}
 }
 
+void PlotCharacterBlockAt(const uint8_t *pSrc, int xp, int yp,int w,int h, uint32_t *pDest, int destWidth)
+{
+	const uint8_t* pChar = pSrc;
+
+	for (int y = yp; y < yp + h; y++)
+	{
+		for (int x = xp; x < xp + w; x++)
+		{
+			PlotCharacterAt(pChar, x, y, pDest, destWidth);
+			pChar += 8;
+		}
+	}
+}
+
 void DrawGraphicsView(FSpeccyUI* pUI)
 {
 	static int memBank = 0;
@@ -266,23 +280,32 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	ImGui::Text("Memory Map Address: 0x%x", realAddr);
 	ImGui::Image(pUI->GraphicsViewTexture, ImVec2(256, 256));
 	ImGui::SameLine();
-	ImGui::VSliderInt("##int", ImVec2(64, 256), &memOffset, offsetMax, 0);//,"0x%x");
+	ImGui::VSliderInt("##int", ImVec2(64, 256), &memOffset, 0, offsetMax);//,"0x%x");
 	ImGui::InputInt("Bank", &memBank, 1,1);
-	ImGui::InputInt("Bank Address", &memOffset,8*8,64*8, ImGuiInputTextFlags_CharsHexadecimal);
+	ImGui::InputInt("Bank Address", &memOffset,8,8*8, ImGuiInputTextFlags_CharsHexadecimal);
 
 	memBank = min(memBank, 7);
 	memBank = max(memBank, 0);
 	uint8_t *pGfxMem = &pUI->pSpeccy->CurrentState.ram[memBank][memOffset];
 	uint32_t *pPix = (uint32_t*)pUI->GraphicsViewPixelBuffer;
 
+	memset(pPix, 0, 64 * 64 * 4);
 	// view 1 - straight character
 	// draw 64 * 8 bytes
-	for (int y = 0; y < 8; y++)
+	static int xs = 1;
+	static int ys = 1;
+	ImGui::SliderInt("XSize", &xs, 1, 4);
+	ImGui::SliderInt("YSize", &ys, 1, 4);
+	const int xcount = 8 / xs;
+	const int ycount = 8 / ys;
+
+	int y = 0;
+	for (int y = 0; y < ycount; y++)
 	{
-		for (int x = 0; x < 8; x++)
+		for (int x = 0; x < xcount; x++)
 		{
-			PlotCharacterAt(pGfxMem, x, y, pPix, 64);
-			pGfxMem += 8;
+			PlotCharacterBlockAt(pGfxMem, x * xs, y * ys,xs,ys, pPix, 64);
+			pGfxMem += xs * ys * 8;
 		}
 	}
 
