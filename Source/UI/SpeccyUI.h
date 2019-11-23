@@ -1,7 +1,19 @@
 #pragma once
 
-struct FSpeccy;
+#include "Speccy/Speccy.h"
 
-void InitSpeccyUI(const FSpeccy &speccyInstance);
-void ShutdownSpeccyUI(const FSpeccy &speccyInstance);
-void DrawSpeccyUI(FSpeccy &speccyInstance);
+struct FSpeccyUI
+{
+	FSpeccy*		pSpeccy;
+	ui_zx_t			UIZX;
+
+	unsigned char*	GraphicsViewPixelBuffer;
+	ImTextureID		GraphicsViewTexture;
+};
+
+
+FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy);
+void ShutdownSpeccyUI(FSpeccyUI*pSpeccyUI);
+void UpdatePreTickSpeccyUI(FSpeccyUI*pSpeccyUI);
+void UpdatePostTickSpeccyUI(FSpeccyUI*pSpeccyUI);
+

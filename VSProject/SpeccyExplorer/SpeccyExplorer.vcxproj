@@ -77,6 +77,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -89,6 +90,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -103,6 +105,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -119,6 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -131,8 +135,11 @@
     <ClCompile Include="..\..\Source\imgui_impl_lucidextra.cpp" />
     <ClCompile Include="..\..\Source\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\Source\main.cpp" />
+    <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp" />
     <ClCompile Include="..\..\Source\Speccy\Speccy.cpp" />
     <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp" />
+    <ClCompile Include="..\..\Source\Util\FileUtil.cpp" />
+    <ClCompile Include="..\..\Source\Util\Win32\FileUtil_Win32.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_draw.cpp" />
@@ -144,6 +151,7 @@
     <ClInclude Include="..\..\Source\imgui_impl_win32.h" />
     <ClInclude Include="..\..\Source\Speccy\Speccy.h" />
     <ClInclude Include="..\..\Source\UI\SpeccyUI.h" />
+    <ClInclude Include="..\..\Source\Util\FileUtil.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\chips\am40010.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\chips\ay38910.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\chips\beeper.h" />

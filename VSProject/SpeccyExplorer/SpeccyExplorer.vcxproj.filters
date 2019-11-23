@@ -40,6 +40,12 @@
     <Filter Include="Source Files\Speccy">
       <UniqueIdentifier>{c6110ae3-aea2-496c-b2da-1ee7c7a04ec9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Util">
+      <UniqueIdentifier>{912e893f-31c6-4756-8479-1e111f08b585}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Util\Win32">
+      <UniqueIdentifier>{09fb0a56-281f-4a0f-b4da-a758df00a29a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\imgui_impl_dx11.cpp">
@@ -71,6 +77,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\imgui_impl_lucidextra.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Util\FileUtil.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Util\Win32\FileUtil_Win32.cpp">
+      <Filter>Source Files\Util\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp">
+      <Filter>Source Files\Speccy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -304,6 +319,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Util\FileUtil.h">
+      <Filter>Source Files\Util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

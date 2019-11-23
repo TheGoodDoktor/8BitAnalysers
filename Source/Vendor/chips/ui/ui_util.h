@@ -61,7 +61,7 @@ void ui_util_b8(const char* label, uint8_t val);
 /* get an ImGui style color (ImGuiCol_*) with overall alpha applied */
 uint32_t ui_util_color(int imgui_color);
 /* inject the common options menu */
-void ui_util_options_menu(double time_ms);
+void ui_util_options_menu(double time_ms, bool stopped);
 
 #ifdef __cplusplus
 } /* extern "C" */
