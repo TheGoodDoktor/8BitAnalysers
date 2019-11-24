@@ -1,6 +1,7 @@
 #include "StarquakeViewer.h"
 #include "UI/SpeccyUI.h"
 #include "imgui_impl_lucidextra.h"
+#include <algorithm>
 
 // Starquake addresses
 static const uint16_t kPlatformGfxAddr = 0xeb23;
@@ -9,6 +10,7 @@ static const uint16_t kBigPlatformDataAddr = 0x9840;
 static const uint16_t kScreenDataAddr = 0x7530;
 
 static const uint16_t kBlobSpritesAddr = 0xe074;
+static const int kNoBlobSprites = 52;
 
 // Firelord
 namespace Firelord
@@ -60,6 +62,36 @@ struct FSpriteDef
 	int			Height;	// height in chars
 };
 
+struct FSpriteDefList
+{
+	uint16_t	BaseAddress;
+	int			Width;
+	int			Height;
+
+	std::vector< FSpriteDef>	Sprites;
+};
+
+void GenerateSpriteList(FSpriteDefList &spriteList, uint16_t startAddress, int count, int width, int height)
+{
+	spriteList.Sprites.clear();
+	spriteList.BaseAddress = startAddress;
+	spriteList.Width = width;
+	spriteList.Height = height;
+
+	uint16_t spriteAddress = startAddress;
+	for (int i = 0; i < count; i++)
+	{
+		FSpriteDef blobDef;
+
+		blobDef.Address = spriteAddress;
+		blobDef.Width = width;
+		blobDef.Height = height;
+
+		spriteAddress += width * height * 8;	// 8 bytes per char
+		spriteList.Sprites.push_back(blobDef);
+	}
+}
+
 // Sprite instance
 struct FSprite
 {
@@ -74,37 +106,34 @@ void DrawSpriteOnGraphicsView(const FSpriteDef &spriteDef,int x,int y,FGraphicsV
 	PlotImageAt(pImage, 0, 0, spriteDef.Width, spriteDef.Height, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width);
 }
 
+void DrawSpriteList(const FSpriteDefList &spriteList, int &selection, FGraphicsView *pGraphicsView, FSpeccy *pSpeccy)
+{
+	ImGui::InputInt("SpriteNo", &selection, 1, 1);
+	selection = std::min(std::max(selection, 0), (int)spriteList.Sprites.size() - 1);
+
+	DrawSpriteOnGraphicsView(spriteList.Sprites[selection], 0, 0, pGraphicsView, pSpeccy);
+}
+
+
 // StarQuake Stuuf
 
 struct FStarquakeViewerData
 {
-	FGraphicsView*				pGraphicsView = nullptr;
-	std::vector< FSpriteDef>	BlobSprites;
+	FGraphicsView*		pGraphicsView = nullptr;
+	FSpriteDefList		BlobSprites;
 };
+
+
 
 void InitStarquakeViewer(FStarquakeViewerData *pStarquakeViewer)
 {
 	pStarquakeViewer->pGraphicsView = CreateGraphicsView(256, 256);
-
-	const int kNoBlobSprites = 52;
-	uint16_t spriteAddress = kBlobSpritesAddr;
-	for(int i=0;i< kNoBlobSprites;i++)
-	{
-		FSpriteDef blobDef;
-
-		blobDef.Address = spriteAddress;
-		blobDef.Width = 3;
-		blobDef.Height = 2;
-
-		spriteAddress += 3 * 2 * 8;	// 8 bytes per char
-		pStarquakeViewer->BlobSprites.push_back(blobDef);
-	}
-	
+	GenerateSpriteList(pStarquakeViewer->BlobSprites, kBlobSpritesAddr, kNoBlobSprites, 3, 2);	
 }
 
 void DrawStarquakeViewer(FSpeccyUI *pUI, FGameViewer &viewer)
 {
-	FStarquakeViewerData* pData = (FStarquakeViewerData*)viewer.pUserData;
+	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)viewer.pUserData;
 
 	ImGui::BeginTabBar("StarquakeTabBar");
 
@@ -113,17 +142,23 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGameViewer &viewer)
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Blob Sprites"))
+	if (ImGui::BeginTabItem("Sprites"))
 	{
 		static int blobSpriteNo = 0;
-		ImGui::InputInt("SpriteNo", &blobSpriteNo, 1, 1);
-
-		DrawSpriteOnGraphicsView(pData->BlobSprites[blobSpriteNo], 0, 0, pData->pGraphicsView, pUI->pSpeccy);
-		/*uint16_t speccyAddr = kBlobSpritesAddr + (blobSpriteNo * 3 * 2 * 8);
-		const uint8_t *pImage = GetSpeccyMemPtr(*pUI->pSpeccy, speccyAddr);
-		PlotImageAt(pImage, 0,0, 3, 2, (uint32_t*)pData->pGraphicsView->PixelBuffer, 256);
-		*/
-		DrawGraphicsView(*pData->pGraphicsView);
+		static int baseAddress = pStarquakeViewer->BlobSprites.BaseAddress;
+		static int w = pStarquakeViewer->BlobSprites.Width;
+		static int h = pStarquakeViewer->BlobSprites.Height;
+		static int count = (int)pStarquakeViewer->BlobSprites.Sprites.size();
+		ImGui::InputInt("BaseAddress", &baseAddress);
+		ImGui::InputInt("Width", &w);
+		ImGui::InputInt("Height", &h);
+		if (ImGui::Button("Regenerate"))
+		{
+			GenerateSpriteList(pStarquakeViewer->BlobSprites, baseAddress, count, w, h);
+		}
+		
+		DrawSpriteList(pStarquakeViewer->BlobSprites, blobSpriteNo, pStarquakeViewer->pGraphicsView, pUI->pSpeccy);
+		DrawGraphicsView(*pStarquakeViewer->pGraphicsView);
 
 		ImGui::EndTabItem();
 	}
