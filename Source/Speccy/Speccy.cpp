@@ -37,7 +37,25 @@ static void PushAudio(const float* samples, int num_samples, void* user_data)
 {
 	//saudio_push(samples, num_samples);
 }
- 
+
+int MyTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
+{
+	FSpeccy *pSpeccy = (FSpeccy *)user_data;
+
+	const uint16_t addr = Z80_GET_ADDR(pins);
+	if ((pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_RD)) 
+	{
+		const uint16_t addr = Z80_GET_ADDR(pins);
+		//win->heatmap.items[addr].read_count++;
+	}
+	else if ((pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR)) 
+	{
+		const uint16_t addr = Z80_GET_ADDR(pins);
+		//win->heatmap.items[addr].write_count++;
+	}
+	return 0;
+}
+
 FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 {
 	FSpeccy *pNewInstance = new FSpeccy();
@@ -72,6 +90,8 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	desc.rom_zx128_1_size = sizeof(dump_amstrad_zx128k_1_bin);
 
 	zx_init(&pNewInstance->CurrentState, &desc);
+	//static int _ui_dbg_bp_eval(uint16_t pc, int ticks, uint64_t pins, void* user_data) {
+	z80_trap_cb(&pNewInstance->CurrentState.cpu, MyTrapCallback, pNewInstance);
 
 	EnumerateGames();
 
