@@ -288,6 +288,9 @@ void PlotImageAt(const uint8_t *pSrc, int xp,int yp,int w,int h,uint32_t *pDest,
 void DrawGraphicsView(FSpeccyUI* pUI)
 {
 	static int memOffset = 0;
+	static int xs = 1;
+	static int ys = 1;
+
 	int byteOff = 0;
 	int offsetMax = 0xffff - (64 * 8);
 	
@@ -297,16 +300,28 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	ImGui::SameLine();
 	ImGui::VSliderInt("##int", ImVec2(64, 256), &memOffset, 0, offsetMax);//,"0x%x");
 	ImGui::InputInt("Address", &memOffset,1,8, ImGuiInputTextFlags_CharsHexadecimal);
+	if (ImGui::Button("<<"))
+		memOffset -= xs * ys * 8;
+	ImGui::SameLine();
+	if (ImGui::Button(">>"))
+		memOffset += xs * ys * 8;
 
 	uint32_t *pPix = (uint32_t*)pUI->GraphicsViewPixelBuffer;
 
 	memset(pPix, 0, 64 * 64 * 4);
 	// view 1 - straight character
 	// draw 64 * 8 bytes
-	static int xs = 1;
-	static int ys = 1;
 	ImGui::InputInt("XSize", &xs, 1, 4);
 	ImGui::InputInt("YSize", &ys, 1, 4);
+
+	static char configName[64];
+	ImGui::Separator();
+	ImGui::InputText("Config Name", configName, 64);
+	ImGui::SameLine();
+	if (ImGui::Button("Store"))
+	{
+		// TODO: store this in the config map
+	}
 
 	xs = min(max(1, xs), 8);
 	ys = min(max(1, ys), 8);
@@ -330,6 +345,28 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	ImGui::End();
 
 	ImGui_ImplDX11_UpdateTextureRGBA(pUI->GraphicsViewTexture, pUI->GraphicsViewPixelBuffer);
+}
+
+void ReadSpeccyKeys(FSpeccy *pSpeccy)
+{
+	ImGuiIO &io = ImGui::GetIO();
+	for(int i=0;i<10;i++)
+	{
+		if (io.KeysDown[0x30+i] == 1)
+		{
+			zx_key_down(&pSpeccy->CurrentState, '0' + i);
+			zx_key_up(&pSpeccy->CurrentState, '0' + i);
+		}
+	}
+
+	for (int i = 0; i < 26; i++)
+	{
+		if (io.KeysDown[0x41 + i] == 1)
+		{
+			zx_key_down(&pSpeccy->CurrentState, 'a' + i);
+			zx_key_up(&pSpeccy->CurrentState, 'a' + i);
+		}
+	}
 }
 
 void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
@@ -362,12 +399,19 @@ void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 	}
 
 	DrawDebuggerUI(&pZXUI->dbg);
+
 	
 
 	// show spectrum window
 	ImGui::Begin("Spectrum View");
 	ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+	// read keys
+	if (ImGui::IsWindowFocused())
+	{
+		ReadSpeccyKeys(pUI->pSpeccy);
+	}
 	ImGui::End();
 
 	for(auto&viewerIt : pUI->GameViewers)

@@ -28,6 +28,8 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+FSpeccy *g_pSpeccy = nullptr;
+
 // Main code
 int main(int, char**)
 {
@@ -106,9 +108,9 @@ int main(int, char**)
 	// Speccy 
 	FSpeccyConfig config;
 	config.NoStateBuffers = 10;
-	FSpeccy *pSpeccy = InitSpeccy(config);
-	FSpeccy &speccy = *pSpeccy;
-	FSpeccyUI *pSpeccyUI = InitSpeccyUI(pSpeccy);
+	g_pSpeccy = InitSpeccy(config);
+	FSpeccy &speccy = *g_pSpeccy;
+	FSpeccyUI *pSpeccyUI = InitSpeccyUI(g_pSpeccy);
 
     // Main loop
     MSG msg;
@@ -135,7 +137,7 @@ int main(int, char**)
 		// speccy update & render
 		UpdatePreTickSpeccyUI(pSpeccyUI);
 		if(speccy.ExecThisFrame)
-			TickSpeccy(*pSpeccy);
+			TickSpeccy(*g_pSpeccy);
 		UpdatePostTickSpeccyUI(pSpeccyUI);
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
@@ -161,7 +163,7 @@ int main(int, char**)
 
 	// shutdown the speccy stuff
 	ShutdownSpeccyUI(pSpeccyUI);
-	ShutdownSpeccy(pSpeccy);
+	ShutdownSpeccy(g_pSpeccy);
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
@@ -249,6 +251,21 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             CreateRenderTarget();
         }
         return 0;
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+		if (g_pSpeccy != nullptr && wParam < 256)
+		{
+			//zx_key_down(&g_pSpeccy->CurrentState, '1');
+		}
+			//io.KeysDown[wParam] = 1;
+		return 0;
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		if (g_pSpeccy != nullptr && wParam < 256)
+		{
+			//zx_key_up(&g_pSpeccy->CurrentState, '1');
+		}
+		return 0;
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
             return 0;

@@ -19,6 +19,15 @@ namespace Firelord
 	static const uint16_t kBlobSpritesAddr = 0xb3b0;
 }
 
+// Cybernoid II
+namespace CybernoidII
+{
+	static uint16_t kSprites3x2 = 0xc19f;
+	static uint16_t kSprites2x2 = 0xce5f;
+	//bfc7
+
+}
+
 // Graphics View Code - TODO: Move
 struct FGraphicsView
 {
@@ -149,9 +158,10 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGameViewer &viewer)
 		static int w = pStarquakeViewer->BlobSprites.Width;
 		static int h = pStarquakeViewer->BlobSprites.Height;
 		static int count = (int)pStarquakeViewer->BlobSprites.Sprites.size();
-		ImGui::InputInt("BaseAddress", &baseAddress);
+		ImGui::InputInt("BaseAddress", &baseAddress,1, 8, ImGuiInputTextFlags_CharsHexadecimal);
 		ImGui::InputInt("Width", &w);
 		ImGui::InputInt("Height", &h);
+		ImGui::InputInt("Count", &count);
 		if (ImGui::Button("Regenerate"))
 		{
 			GenerateSpriteList(pStarquakeViewer->BlobSprites, baseAddress, count, w, h);
