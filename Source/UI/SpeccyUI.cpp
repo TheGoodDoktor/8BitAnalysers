@@ -82,7 +82,22 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::BeginMenu( "Open Z80 File"))
+			if (ImGui::BeginMenu("Open Z80 File"))
+			{
+				for (const auto& game : GetGameList())
+				{
+					if (ImGui::MenuItem(game.c_str()))
+					{
+						if (LoadZ80File(*pSpeccy, game.c_str()))
+						{
+							pUI->pActiveGame = nullptr;
+						}
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu( "Open Game"))
 			{
 				for (const auto& gameConfig : pUI->GameConfigs)
 				{
