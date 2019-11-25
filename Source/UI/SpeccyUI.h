@@ -2,6 +2,7 @@
 
 #include "Speccy/Speccy.h"
 #include <map>
+#include "SpriteViewer.h"
 
 struct FSpeccyUI;
 
@@ -22,6 +23,10 @@ struct FSpeccyUI
 	ImTextureID		GraphicsViewTexture;
 
 	std::map<std::string, FGameViewer>	GameViewers;
+
+	std::string				SelectedSpriteList;
+	std::map<std::string, FUISpriteList>	SpriteLists;
+	
 };
 
 
@@ -33,7 +38,7 @@ void UpdatePreTickSpeccyUI(FSpeccyUI*pSpeccyUI);
 void UpdatePostTickSpeccyUI(FSpeccyUI*pSpeccyUI);
 
 FGameViewer &AddGameViewer(FSpeccyUI *pUI, const char *pName);
-void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth);
+void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth, uint8_t colAttr = 0x7);
 
 //void PlotCharacterBlockAt(const FSpeccy *pSpeccy, uint16_t addr, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth);
 //void PlotCharacterAt(const uint8_t *pSrc, int xp, int yp, uint32_t *pDest, int destWidth);

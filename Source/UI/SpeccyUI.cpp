@@ -246,11 +246,33 @@ void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 	pUI->pSpeccy->ExecThisFrame = ui_zx_before_exec(&pUI->UIZX);
 }
 
+static const uint32_t g_kColourLUT[8]=
+{
+	0xFF000000,     // black
+	0xFFFF0000,     // blue
+	0xFF0000FF,     // red
+	0xFFFF00FF,     // magenta
+	0xFF00FF00,     // green
+	0xFFFFFF00,     // cyan
+	0xFF00FFFF,     // yellow
+	0xFFFFFFFF,     // white
+};
+
 // coords are in pixel units
 // w & h in characters
-void PlotImageAt(const uint8_t *pSrc, int xp,int yp,int w,int h,uint32_t *pDest, int destWidth)
+void PlotImageAt(const uint8_t *pSrc, int xp,int yp,int w,int h,uint32_t *pDest, int destWidth, uint8_t colAttr)
 {
 	uint32_t* pBase = pDest + (xp + (yp * destWidth));
+	uint32_t inkCol = g_kColourLUT[colAttr & 7];
+	uint32_t paperCol = g_kColourLUT[(colAttr>>3) & 7];
+
+	if (0 == (colAttr & (1 << 6))) 
+	{
+		// standard brightness
+		inkCol &= 0xFFD7D7D7;
+		paperCol &= 0xFFD7D7D7;
+	}
+	
 	*pBase = 0;
 	for(int y=0;y<h*8;y++)
 	{
@@ -261,7 +283,7 @@ void PlotImageAt(const uint8_t *pSrc, int xp,int yp,int w,int h,uint32_t *pDest,
 			for (int xpix = 0; xpix < 8; xpix++)
 			{
 				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
-				const uint32_t col = bSet ? 0xffffffff : 0;
+				const uint32_t col = bSet ? inkCol : paperCol;
 				*(pBase + xpix + (x * 8)) = col;
 			}
 		}
@@ -369,7 +391,8 @@ void ReadSpeccyKeys(FSpeccy *pSpeccy)
 	}
 }
 
-void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
+
+void DrawSpeccyUI(FSpeccyUI* pUI)
 {
 	ui_zx_t* pZXUI = &pUI->UIZX;
 	FSpeccy *pSpeccy = pUI->pSpeccy;
@@ -428,6 +451,76 @@ void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 	}
 
 	DrawGraphicsView(pUI);
+}
+
+bool DrawDockingView(FSpeccyUI *pUI)
+{
+	//SCOPE_PROFILE_CPU("UI", "DrawUI", ProfCols::UI);
+
+	static bool opt_fullscreen_persistant = true;
+	bool opt_fullscreen = opt_fullscreen_persistant;
+	//static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+	bool bOpen = false;
+	ImGuiDockNodeFlags dockFlags = 0;
+
+	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+	// because it would be confusing to have two docking targets within each others.
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	if (opt_fullscreen)
+	{
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->Pos);
+		ImGui::SetNextWindowSize(viewport->Size);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	}
+
+	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
+	if (dockFlags & ImGuiDockNodeFlags_PassthruCentralNode)
+		window_flags |= ImGuiWindowFlags_NoBackground;
+
+	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive, 
+	// all active windows docked into it will lose their parent and become undocked.
+	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise 
+	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+	bool bQuit = false;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	if (ImGui::Begin("DockSpace Demo", &bOpen, window_flags))
+	{
+		ImGui::PopStyleVar();
+
+		if (opt_fullscreen)
+			ImGui::PopStyleVar(2);
+
+		// DockSpace
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+		{
+			const ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
+			ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockFlags);
+		}
+
+		//bQuit = MainMenu();
+		//DrawDebugWindows(uiState);
+		DrawSpeccyUI(pUI);
+		ImGui::End();
+	}
+	else
+	{
+		ImGui::PopStyleVar();
+		bQuit = true;
+	}
+
+	return bQuit;
+}
+
+void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
+{
+	DrawDockingView(pUI);
 }
 
 FGameViewer &AddGameViewer(FSpeccyUI *pUI,const char *pName)
