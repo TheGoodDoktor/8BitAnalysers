@@ -84,11 +84,14 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 		{
 			if (ImGui::BeginMenu( "Open Z80 File"))
 			{
-				for (const std::string& file : GetGameList())
+				for (const auto& gameConfig : pUI->GameConfigs)
 				{
-					if (ImGui::MenuItem(file.c_str()))
+					if (ImGui::MenuItem(gameConfig->Name.c_str()))
 					{
-						LoadZ80File(*pSpeccy, file.c_str());
+						if(LoadZ80File(*pSpeccy, gameConfig->Z80file.c_str()))
+						{
+							pUI->pActiveGame = gameConfig;
+						}
 					}
 				}
 
@@ -176,7 +179,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Game Viewers"))
+		/*if (ImGui::BeginMenu("Game Viewers"))
 		{
 			for (auto &viewerIt : pUI->GameViewers)
 			{
@@ -184,7 +187,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				ImGui::MenuItem(viewerIt.first.c_str(), 0, &viewer.bOpen);
 			}
 			ImGui::EndMenu();
-		}
+		}*/
 		
 		ui_util_options_menu(timeMS, pZXUI->dbg.dbg.stopped);
 
@@ -436,8 +439,19 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 		ReadSpeccyKeys(pUI->pSpeccy);
 	}
 	ImGui::End();
+	
+	if (ImGui::Begin("Game Viewer"))
+	{
+		if (pUI->pActiveGame != nullptr)
+		{
+			ImGui::Text(pUI->pActiveGame->Name.c_str());
+			pUI->pActiveGame->pDrawFunction(pUI, pUI->pActiveGame);
+		}
+		
+		ImGui::End();
+	}
 
-	for(auto&viewerIt : pUI->GameViewers)
+	/*for(auto&viewerIt : pUI->GameViewers)
 	{
 		FGameViewer & viewer = viewerIt.second;
 		if (viewer.bOpen)
@@ -448,7 +462,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 				ImGui::End();
 			}
 		}
-	}
+	}*/
 
 	DrawGraphicsView(pUI);
 }
@@ -522,10 +536,12 @@ void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 {
 	DrawDockingView(pUI);
 }
-
+/*
 FGameViewer &AddGameViewer(FSpeccyUI *pUI,const char *pName)
 {
 	FGameViewer &gameViewer = pUI->GameViewers[pName];
 	gameViewer.Name = pName;
 	return gameViewer;
-}
+}*/
+
+

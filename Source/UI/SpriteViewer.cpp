@@ -39,6 +39,8 @@ void DrawSpriteList(const FSpriteDefList &spriteList, int &selection, FGraphicsV
 	ImGui::InputInt("SpriteNo", &selection, 1, 1);
 	selection = std::min(std::max(selection, 0), (int)spriteList.Sprites.size() - 1);
 
+	memset(pGraphicsView->PixelBuffer, 0, pGraphicsView->Width * pGraphicsView->Height * 4);
+
 	DrawSpriteOnGraphicsView(spriteList.Sprites[selection], 0, 0, pGraphicsView, pSpeccy);
 }
 

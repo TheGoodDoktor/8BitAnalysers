@@ -42,6 +42,8 @@ std::map<std::string, FSpriteDefConfig> g_SpriteConfigs =
 	{{"Firelord_Blobs"}, {0xb3b0,52,3,2}},	// 
 };
 
+
+
 // Sprite instance
 struct FSprite
 {
@@ -54,7 +56,8 @@ struct FSprite
 struct FGameViewerData
 {
 	FSpeccyUI*			pUI = nullptr;
-	FGraphicsView*		pGraphicsView = nullptr;
+	FGraphicsView*		pSpriteGraphicsView = nullptr;
+	FGraphicsView*		pScreenGraphicsView = nullptr;
 };
 
 // StarQuake Stuff
@@ -64,13 +67,16 @@ struct FStarquakeViewerData : FGameViewerData
 };
 
 
-void InitStarquakeViewer(FStarquakeViewerData *pStarquakeViewer)
+void InitStarquakeViewer(FStarquakeViewerData *pStarquakeViewer, FGameConfig *pGameConfig)
 {
 	FSpeccyUI *pUI = pStarquakeViewer->pUI;
 	
-	pStarquakeViewer->pGraphicsView = CreateGraphicsView(256, 256);
+	pStarquakeViewer->pSpriteGraphicsView = CreateGraphicsView(64, 64);
+	pStarquakeViewer->pScreenGraphicsView = CreateGraphicsView(256, 256);
 
-	for (const auto &sprConfIt : g_SpriteConfigs)
+	// Could be moved to a generic function
+	pUI->SpriteLists.clear();
+	for (const auto &sprConfIt : pGameConfig->SpriteConfigs)
 	{
 		const FSpriteDefConfig& config = sprConfIt.second;
 		FUISpriteList &sprites = pUI->SpriteLists[sprConfIt.first];
@@ -82,10 +88,12 @@ void InitStarquakeViewer(FStarquakeViewerData *pStarquakeViewer)
 void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pStarquakeViewer)
 {
 	FSpeccyUI *pUI = pStarquakeViewer->pUI;
-	FGraphicsView *pGraphicsView = pStarquakeViewer->pGraphicsView;
+	FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 	
 	const uint16_t kSmallPlatformLUT = 0xeb23;
 	const uint16_t kPlatformPtr = kSmallPlatformLUT + (platformNum * 2);
+
+	memset(pGraphicsView->PixelBuffer, 0, pGraphicsView->Width * pGraphicsView->Height * 4);
 
 	uint16_t kPlatformAddr = ReadySpeccyByte(*pUI->pSpeccy, kPlatformPtr);
 	kPlatformAddr = kPlatformAddr | (ReadySpeccyByte(*pUI->pSpeccy, kPlatformPtr+1) << 8);
@@ -121,36 +129,73 @@ void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pSta
 
 }
 
-void DrawStarquakeViewer(FSpeccyUI *pUI, FGameViewer &viewer)
+void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
 {
-	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)viewer.pUserData;
+}
+
+void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
+{
+}
+
+void DrawStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
+{
+	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)pGameConfig->pUserData;
 
 	ImGui::BeginTabBar("StarquakeTabBar");
 
 	if (ImGui::BeginTabItem("Small Platforms"))
 	{
-		DrawSmallPlatform(0, 0,0, pStarquakeViewer);
+		static int platformNo = 0;
+		ImGui::InputInt("Platform No", &platformNo);
+		DrawSmallPlatform(platformNo, 0,0, pStarquakeViewer);
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("Big Platforms"))
+	{
+		static int platformNo = 0;
+		ImGui::InputInt("Platform No", &platformNo);
+		DrawBigPlatform(platformNo, 0, 0, pStarquakeViewer);
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("Screens"))
+	{
+		static int screenNo = 0;
+		ImGui::InputInt("Screen No", &screenNo);
+		DrawScreen(screenNo, 0, 0, pStarquakeViewer);
 		ImGui::EndTabItem();
 	}
 
 	if (ImGui::BeginTabItem("Sprites"))
 	{
-		DrawSpriteListGUI(pUI, pStarquakeViewer->pGraphicsView);
+		DrawSpriteListGUI(pUI, pStarquakeViewer->pSpriteGraphicsView);
 		ImGui::EndTabItem();
 	}
 
 	ImGui::EndTabBar();
 }
 
+FGameConfig g_StarQuakeConfig =
+{
+	"Starquake",
+	"Starquake.z80",
+	DrawStarquakeViewer,
+{
+	{{"Starquake_Blobs"}, {0xe074,52,3,2}},	// starquake blobs sprites
+	}
+};
 
 void RegisterStarquakeViewer(FSpeccyUI *pUI)
 {
-	FGameViewer &viewer = AddGameViewer(pUI, "Starquake");
-	viewer.pDrawFunction = DrawStarquakeViewer;
-
+	FGameConfig *pGameConfig = &g_StarQuakeConfig;
 	FStarquakeViewerData* pData = new FStarquakeViewerData;
-
 	pData->pUI = pUI;
-	InitStarquakeViewer(pData);
-	viewer.pUserData = pData;
+
+	
+	InitStarquakeViewer(pData, pGameConfig);
+
+	g_StarQuakeConfig.pUserData = pData;
+
+	pUI->GameConfigs.push_back(pGameConfig);
 }
