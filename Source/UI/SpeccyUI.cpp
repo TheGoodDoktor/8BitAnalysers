@@ -5,6 +5,7 @@
 
 #include "imgui_impl_lucidextra.h"
 #include "GameViewers/StarquakeViewer.h"
+#include "GameViewers/MiscGameViewers.h"
 
 
 /* reboot callback */
@@ -119,6 +120,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 
 	// register Viewers
 	RegisterStarquakeViewer(pUI);
+	RegisterGames(pUI);
 	
 	return pUI;
 }

@@ -185,7 +185,6 @@ static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pSta
 			const uint8_t kPlatformNo = ReadySpeccyByte(*pUI->pSpeccy, kScreenData);
 			DrawBigPlatform(kPlatformNo, x * 64, y * 48, pStarquakeViewer);
 			kScreenData++;
-
 		}
 	}
 

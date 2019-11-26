@@ -102,6 +102,9 @@
     <ClCompile Include="..\..\Source\UI\GameViewers\GameViewer.cpp">
       <Filter>Source Files\UI\GameViewers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\UI\GameViewers\MiscGameViewers.cpp">
+      <Filter>Source Files\UI\GameViewers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h">
@@ -348,6 +351,9 @@
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\GameViewers\GameViewer.h">
+      <Filter>Source Files\UI\GameViewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\GameViewers\MiscGameViewers.h">
       <Filter>Source Files\UI\GameViewers</Filter>
     </ClInclude>
   </ItemGroup>
