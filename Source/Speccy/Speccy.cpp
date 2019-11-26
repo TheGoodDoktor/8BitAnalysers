@@ -91,7 +91,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 	zx_init(&pNewInstance->CurrentState, &desc);
 	//static int _ui_dbg_bp_eval(uint16_t pc, int ticks, uint64_t pins, void* user_data) {
-	z80_trap_cb(&pNewInstance->CurrentState.cpu, MyTrapCallback, pNewInstance);
+	//z80_trap_cb(&pNewInstance->CurrentState.cpu, MyTrapCallback, pNewInstance);
 
 	EnumerateGames();
 

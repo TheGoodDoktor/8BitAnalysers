@@ -4,12 +4,16 @@
 #include "imgui_impl_lucidextra.h"
 #include <algorithm>
 #include "UI/GraphicsView.h"
+#include "GameViewer.h"
 
 // Starquake addresses
 static const uint16_t kPlatformGfxAddr = 0xeb23;
+static const uint16_t kPlatformGfxSize = 0x00ff;
 static const uint16_t kPlatformTypeInfoAddr = 0x9740;
 static const uint16_t kBigPlatformDataAddr = 0x9840;
+static const int kNoBigPlatforms = 40;
 static const uint16_t kScreenDataAddr = 0x7530;
+static const int kNoScreens = 512;
 
 static const uint16_t kBlobSpritesAddr = 0xe074;
 static const int kNoBlobSprites = 52;
@@ -52,31 +56,6 @@ struct FSprite
 	int			YPos;
 };
 
-// Base class for game viewer data
-struct FGameViewerData
-{
-	FSpeccyUI*			pUI = nullptr;
-	FGraphicsView*		pSpriteGraphicsView = nullptr;
-	FGraphicsView*		pScreenGraphicsView = nullptr;
-};
-
-void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
-{
-	FSpeccyUI *pUI = pGameViewer->pUI;
-
-	pGameViewer->pSpriteGraphicsView = CreateGraphicsView(64, 64);
-	pGameViewer->pScreenGraphicsView = CreateGraphicsView(256, 256);
-
-	// Could be moved to a generic function
-	pUI->SpriteLists.clear();
-	for (const auto &sprConfIt : pGameConfig->SpriteConfigs)
-	{
-		const FSpriteDefConfig& config = sprConfIt.second;
-		FUISpriteList &sprites = pUI->SpriteLists[sprConfIt.first];
-		GenerateSpriteList(sprites.SpriteList, config.BaseAddress, config.Count, config.Width, config.Height);
-	}
-}
-
 // StarQuake Stuff
 struct FStarquakeViewerData : FGameViewerData
 {
@@ -84,16 +63,55 @@ struct FStarquakeViewerData : FGameViewerData
 };
 
 
-void InitStarquakeViewer(FStarquakeViewerData *pStarquakeViewer, FGameConfig *pGameConfig)
+FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 {
-	FSpeccyUI *pUI = pStarquakeViewer->pUI;
+	FStarquakeViewerData* pStarquakeViewerData = new FStarquakeViewerData;
+	pStarquakeViewerData->pUI = pUI;
 	
-	InitGameViewer(pStarquakeViewer, pGameConfig);
-	
-	
+	InitGameViewer(pStarquakeViewerData, pGameConfig);
+
+	// Add specific memory handlers
+
+	// Small platforms
+	{
+		FMemoryAccessHandler handler;
+
+		handler.Name = "Small platforms";
+		handler.MemStart = kPlatformGfxAddr;
+		handler.MemEnd = kPlatformGfxAddr + kPlatformGfxSize;	// 8 bytes per char
+		handler.Type = MemoryAccessType::Read;
+
+		AddMemoryHandler(pUI, handler);
+	}
+
+	// Big platforms
+	{
+		FMemoryAccessHandler handler;
+
+		handler.Name = "Big platforms";
+		handler.MemStart = kBigPlatformDataAddr;
+		handler.MemEnd = kBigPlatformDataAddr + (kNoBigPlatforms * 4);	// 4 bytes per big platform
+		handler.Type = MemoryAccessType::Read;
+
+		AddMemoryHandler(pUI, handler);
+	}
+
+	// Screens
+	{
+		FMemoryAccessHandler handler;
+
+		handler.Name = "Screens";
+		handler.MemStart = kScreenDataAddr;
+		handler.MemEnd = kScreenDataAddr + (kNoScreens * 12); // 12 bytes per screen
+		handler.Type = MemoryAccessType::Read;
+
+		AddMemoryHandler(pUI, handler);
+	}
+
+	return pStarquakeViewerData;
 }
 
-void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pStarquakeViewer, FGraphicsView *pGraphicsView)
+static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pStarquakeViewer, FGraphicsView *pGraphicsView)
 {
 	FSpeccyUI *pUI = pStarquakeViewer->pUI;
 	//FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
@@ -116,14 +134,15 @@ void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pSta
 			{
 				const uint8_t *pImage = GetSpeccyMemPtr(*pUI->pSpeccy, kPlatformCharPtr);
 				const uint8_t col = ReadySpeccyByte(*pUI->pSpeccy, kPlatformColPtr);
-				uint8_t colVal = col;
-				colVal &= 0x3f;
+				uint8_t colVal = col & 0x3f;	// just the colour values
 				if (colVal == 0x36) 
-					colVal = (colVal & 0xc0) | ReadySpeccyByte(*pUI->pSpeccy, 0xea63);
+					colVal = (col & 0xc0) | ReadySpeccyByte(*pUI->pSpeccy, 0xea63);
 				else if (colVal != 0)
-					colVal = colVal;
+					colVal = col;
 				else 
-					colVal = (colVal & 0xf8) | ReadySpeccyByte(*pUI->pSpeccy, 0xea62);
+					colVal = (col & 0xf8) | ReadySpeccyByte(*pUI->pSpeccy, 0xea62);
+
+				colVal &= ~0x40;
 				
 				PlotImageAt(pImage, xp + (x * 8), yp + (y * 8), 1, 1, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, colVal);
 
@@ -136,17 +155,16 @@ void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pSta
 
 }
 
-void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
+static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
 {
-	const uint16_t kBigPlatformBase = 0x9840;
-	uint16_t kBigPlatformData = kBigPlatformBase + (platformNum * 4);
+	uint16_t kBigPlatformData = kBigPlatformDataAddr + (platformNum * 4);
 
 	FSpeccyUI *pUI = pStarquakeViewer->pUI;
 	
 	const uint8_t kPlatformNo1 = ReadySpeccyByte(*pUI->pSpeccy, kBigPlatformData + 0);
-	DrawSmallPlatform(kPlatformNo1,xp + 32, yp + 32, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
+	DrawSmallPlatform(kPlatformNo1,xp + 32, yp + 24, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
 	const uint8_t kPlatformNo2 = ReadySpeccyByte(*pUI->pSpeccy, kBigPlatformData + 1);
-	DrawSmallPlatform(kPlatformNo2, xp, yp + 32, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
+	DrawSmallPlatform(kPlatformNo2, xp, yp + 24, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
 	const uint8_t kPlatformNo3 = ReadySpeccyByte(*pUI->pSpeccy, kBigPlatformData + 2);
 	DrawSmallPlatform(kPlatformNo3, xp + 32, yp, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
 	const uint8_t kPlatformNo4 = ReadySpeccyByte(*pUI->pSpeccy, kBigPlatformData + 3);
@@ -155,8 +173,22 @@ void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerData *pSta
 
 }
 
-void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
+static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
 {
+	FSpeccyUI *pUI = pStarquakeViewer->pUI;
+	uint16_t kScreenData = kScreenDataAddr + (screenNum * 12);
+
+	for(int y=0;y<3;y++)
+	{
+		for(int x=0;x<4;x++)
+		{
+			const uint8_t kPlatformNo = ReadySpeccyByte(*pUI->pSpeccy, kScreenData);
+			DrawBigPlatform(kPlatformNo, x * 64, y * 48, pStarquakeViewer);
+			kScreenData++;
+
+		}
+	}
+
 }
 
 void DrawStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
@@ -191,9 +223,13 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 	if (ImGui::BeginTabItem("Screens"))
 	{
 		static int screenNo = 0;
+		static bool getScreenFromGame = false;
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt("Screen No", &screenNo);
-		memset(pGraphicsView->PixelBuffer, 0xff000000, pGraphicsView->Width * pGraphicsView->Height * 4);
+		ImGui::Checkbox("Get from game", &getScreenFromGame);
+		ClearGraphicsView(*pGraphicsView, 0xff000000);
+		if(getScreenFromGame)
+			screenNo = ReadySpeccyByte(*pUI->pSpeccy, 0xd2c8);
 		DrawScreen(screenNo, 0, 0, pStarquakeViewer);
 		DrawGraphicsView(*pStarquakeViewer->pScreenGraphicsView);
 		DrawGraphicsView(*pGraphicsView);
@@ -213,6 +249,7 @@ FGameConfig g_StarQuakeConfig =
 {
 	"Starquake",
 	"Starquake.z80",
+	InitStarquakeViewer,
 	DrawStarquakeViewer,
 {
 	{{"Starquake_Blobs"}, {0xe074,52,3,2}},	// starquake blobs sprites
@@ -221,14 +258,5 @@ FGameConfig g_StarQuakeConfig =
 
 void RegisterStarquakeViewer(FSpeccyUI *pUI)
 {
-	FGameConfig *pGameConfig = &g_StarQuakeConfig;
-	FStarquakeViewerData* pData = new FStarquakeViewerData;
-	pData->pUI = pUI;
-
-	
-	InitStarquakeViewer(pData, pGameConfig);
-
-	g_StarQuakeConfig.pUserData = pData;
-
-	pUI->GameConfigs.push_back(pGameConfig);
+	pUI->GameConfigs.push_back(&g_StarQuakeConfig);
 }

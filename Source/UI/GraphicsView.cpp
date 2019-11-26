@@ -8,9 +8,8 @@ FGraphicsView *CreateGraphicsView(int width, int height)
 
 	pNewView->Width = width;
 	pNewView->Height = height;
-	const size_t pixelBufferSize = width * height * 4;
-	pNewView->PixelBuffer = new unsigned char[pixelBufferSize];
-	pNewView->Texture = ImGui_ImplDX11_CreateTextureRGBA(pNewView->PixelBuffer, width, height);
+	pNewView->PixelBuffer = new uint32_t[width * height];
+	pNewView->Texture = ImGui_ImplDX11_CreateTextureRGBA((uint8_t*)pNewView->PixelBuffer, width, height);
 
 	return pNewView;
 }
@@ -52,10 +51,14 @@ void DisplayTextureInspector(const float imgScale, const ImTextureID texture, fl
 		ImGui::EndTooltip();
 	}
 }
-
+void ClearGraphicsView(const FGraphicsView &graphicsView, const uint32_t col)
+{
+	for (int i = 0; i < graphicsView.Width * graphicsView.Height; i++)
+		graphicsView.PixelBuffer[i] = col;
+}
 void DrawGraphicsView(const FGraphicsView &graphicsView, const ImVec2 &size)
 {
-	ImGui_ImplDX11_UpdateTextureRGBA(graphicsView.Texture, graphicsView.PixelBuffer);
+	ImGui_ImplDX11_UpdateTextureRGBA(graphicsView.Texture, (uint8_t*)graphicsView.PixelBuffer);
 	//ImGui::Image(graphicsView.Texture, size);
 	DisplayTextureInspector(1.0f, graphicsView.Texture, size.x, size.y);
 }
