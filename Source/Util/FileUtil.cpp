@@ -85,3 +85,15 @@ void *LoadBinaryFile(const char *pFilename, size_t &byteCount)
 
 	return pFileData;
 }
+
+bool SaveBinaryFile(const char *pFilename, const void * pData,size_t byteCount)
+{
+	FILE *fp = fopen(pFilename, "wb");
+	if (fp == nullptr)
+		return false;
+	
+	fwrite(pData, byteCount, 1, fp);
+	fclose(fp);
+
+	return true;
+}

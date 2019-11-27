@@ -15,17 +15,25 @@ FGraphicsView *CreateGraphicsView(int width, int height)
 }
 
 
-void DisplayTextureInspector(const float imgScale, const ImTextureID texture, float width, float height)
+void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bScale = false, bool bMagnifier = true)
 {
-	const float size = ImGui::GetWindowContentRegionWidth() * imgScale;
+	const float imgScale = 1.0f;
 	ImVec2 pos = ImGui::GetCursorScreenPos();
+	ImVec2 size(width, width);
 
-	ImGui::Image(texture, ImVec2(size, size));
-	if (ImGui::IsItemHovered())
+	if (bScale)
+	{
+		const float scaledSize = ImGui::GetWindowContentRegionWidth() * imgScale;
+		size = ImVec2(scaledSize, scaledSize);
+	}
+	
+	ImGui::Image(texture, size);
+	
+	if (bMagnifier && ImGui::IsItemHovered())
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		const float my_tex_w = size;
-		const float my_tex_h = size;
+		const float my_tex_w = size.x;
+		const float my_tex_h = size.y;
 
 		ImGui::BeginTooltip();
 		const float region_sz = 64.0f;
@@ -51,16 +59,17 @@ void DisplayTextureInspector(const float imgScale, const ImTextureID texture, fl
 		ImGui::EndTooltip();
 	}
 }
-void ClearGraphicsView(const FGraphicsView &graphicsView, const uint32_t col)
+
+void ClearGraphicsView(FGraphicsView &graphicsView, const uint32_t col)
 {
 	for (int i = 0; i < graphicsView.Width * graphicsView.Height; i++)
 		graphicsView.PixelBuffer[i] = col;
 }
-void DrawGraphicsView(const FGraphicsView &graphicsView, const ImVec2 &size)
+
+void DrawGraphicsView(const FGraphicsView &graphicsView, const ImVec2 &size, bool bScale, bool bMagnifier)
 {
 	ImGui_ImplDX11_UpdateTextureRGBA(graphicsView.Texture, (uint8_t*)graphicsView.PixelBuffer);
-	//ImGui::Image(graphicsView.Texture, size);
-	DisplayTextureInspector(1.0f, graphicsView.Texture, size.x, size.y);
+	DisplayTextureInspector(graphicsView.Texture, size.x, size.y, bScale,bMagnifier);
 }
 
 void DrawGraphicsView(const FGraphicsView &graphicsView)

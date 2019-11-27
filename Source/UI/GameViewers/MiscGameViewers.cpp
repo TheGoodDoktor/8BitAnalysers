@@ -11,9 +11,9 @@ FGameViewerData *InitMiscGameViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 	return pGameViewerData;
 }
 
-void DrawMiscGameViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
+void DrawMiscGameViewer(FSpeccyUI *pUI, FGame *pGame)
 {
-	FGameViewerData* pGameViewer = (FGameViewerData*)pGameConfig->pUserData;
+	FGameViewerData* pGameViewer = pGame->pViewerData;
 
 	ImGui::BeginTabBar("GameViewer");
 	

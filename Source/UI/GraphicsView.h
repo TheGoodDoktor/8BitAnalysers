@@ -13,7 +13,7 @@ struct FGraphicsView
 };
 
 FGraphicsView *CreateGraphicsView(int width, int height);
-void ClearGraphicsView(const FGraphicsView &graphicsView, const uint32_t col);
-void DrawGraphicsView(const FGraphicsView &graphicsView, const ImVec2 &size);
+void ClearGraphicsView(FGraphicsView &graphicsView, const uint32_t col);
+void DrawGraphicsView(const FGraphicsView &graphicsView, const ImVec2 &size, bool bScale = false, bool bMagnifier = true);
 void DrawGraphicsView(const FGraphicsView &graphicsView);
 

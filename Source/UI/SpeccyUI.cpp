@@ -6,7 +6,10 @@
 #include "imgui_impl_lucidextra.h"
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
+#include "GraphicsView.h"
+#include "Util/FileUtil.h"
 
+#include "ui/ui_dbg.h"
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -30,10 +33,40 @@ void gfx_destroy_texture(void* h)
 	
 }
 
+static uint8_t DasmCB(void* user_data)
+{
+	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
+	uint8_t val = ReadySpeccyByte(*pUI->pSpeccy, pUI->dasmCurr++);
+	return val;
+}
+
+static inline uint16_t DisasmLen(FSpeccyUI *pUI, uint16_t pc)
+{
+	pUI->dasmCurr = pc;
+	uint16_t next_pc = z80dasm_op(pc, DasmCB, 0, pUI);
+	return next_pc - pc;
+}
+
 int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
 	const uint16_t addr = Z80_GET_ADDR(pins);
+	const bool bRead = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_RD);
+	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
+
+	// increment counters
+	pUI->MemStats.ExecCount[pc]++;
+	const int op_len = DisasmLen(pUI, pc);
+	for (int i = 1; i < op_len; i++) {
+		pUI->MemStats.ExecCount[(pc + i) & 0xFFFF]++;
+	}
+
+	if (bRead)
+		pUI->MemStats.ReadCount[addr]++;
+	if (bWrite)
+		pUI->MemStats.WriteCount[addr]++;
+
+	assert(!(bRead == true && bWrite == true));
 
 	// See if we can find a handler
 	for(auto& handler : pUI->MemoryAccessHandlers)
@@ -54,9 +87,9 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 			{
 				bool bExecute = false;
 				
-				if (handler.Type == MemoryAccessType::Read && (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_RD))
+				if (handler.Type == MemoryAccessType::Read && bRead)
 					bCallHandler = true;
-				else if (handler.Type == MemoryAccessType::Write && (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR))
+				else if (handler.Type == MemoryAccessType::Write && bWrite)
 					bCallHandler = true;
 			}
 		}
@@ -81,6 +114,72 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 void AddMemoryHandler(FSpeccyUI *pUI, const FMemoryAccessHandler &handler)
 {
 	pUI->MemoryAccessHandlers.push_back(handler);
+}
+
+// TODO: go through memory and identify which areas are code & data
+
+
+MemoryUse DetermineAddressMemoryUse(const FMemoryStats &memStats, uint16_t addr, bool &smc)
+{
+	const bool bCode = memStats.ExecCount[addr] > 0;
+	const bool bData = memStats.ReadCount[addr] > 0 || memStats.WriteCount[addr] > 0;
+
+	if (bCode && memStats.WriteCount[addr] > 0)
+	{
+		smc = true;
+	}
+	
+	if (bCode)
+		return MemoryUse::Code;
+	if(bData)
+		return MemoryUse::Data;
+
+	return MemoryUse::Unknown;
+}
+
+void AnalyseMemory(FMemoryStats &memStats)
+{
+	FMemoryBlock currentBlock;
+	bool bSelfModifiedCode = false;
+
+	memStats.MemoryBlockInfo.clear();	// Clear old list
+	memStats.CodeAndDataList.clear();
+	
+	currentBlock.StartAddress = 0;
+	currentBlock.Use = DetermineAddressMemoryUse(memStats, 0, bSelfModifiedCode);
+	if (bSelfModifiedCode)
+		memStats.CodeAndDataList.push_back(0);
+	
+	for(int addr = 1; addr < 65536;addr++)
+	{
+		bSelfModifiedCode = false;
+		const MemoryUse addrUse = DetermineAddressMemoryUse(memStats, addr, bSelfModifiedCode);
+		if (bSelfModifiedCode)
+			memStats.CodeAndDataList.push_back(addr);
+		if(addrUse != currentBlock.Use)
+		{
+			currentBlock.EndAddress = addr - 1;
+			memStats.MemoryBlockInfo.push_back(currentBlock);
+
+			// start new block
+			currentBlock.StartAddress = addr;
+			currentBlock.Use = addrUse;
+		}
+	}
+
+	// finish off last block
+	currentBlock.EndAddress = 0xffff;
+	memStats.MemoryBlockInfo.push_back(currentBlock);
+}
+
+void ResetMemoryStats(FMemoryStats &memStats)
+{
+	memStats.MemoryBlockInfo.clear();	// Clear list
+	// 
+	// reset counters
+	memset(memStats.ExecCount, 0, sizeof(memStats.ExecCount));
+	memset(memStats.ReadCount, 0, sizeof(memStats.ReadCount));
+	memset(memStats.WriteCount, 0, sizeof(memStats.WriteCount));
 }
 
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
@@ -112,12 +211,13 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	ui_zx_init(&pUI->UIZX, &desc);
 
 	// setup pixel buffer
-	const int graphicsViewSize = 64;
+	pUI->pGraphicsViewerView = CreateGraphicsView(64, 64);
+	/*const int graphicsViewSize = 64;
 	const size_t pixelBufferSize = graphicsViewSize * graphicsViewSize * 4;
 	pUI->GraphicsViewPixelBuffer = new unsigned char[pixelBufferSize];
 
 	pUI->GraphicsViewTexture = ImGui_ImplDX11_CreateTextureRGBA(pUI->GraphicsViewPixelBuffer, graphicsViewSize, graphicsViewSize);
-
+	*/
 	// register Viewers
 	RegisterStarquakeViewer(pUI);
 	RegisterGames(pUI);
@@ -128,6 +228,17 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 void ShutdownSpeccyUI(FSpeccyUI* pUI)
 {
 
+}
+
+void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
+{
+	pUI->MemoryAccessHandlers.clear();	// remove old memory handlers
+	pUI->pActiveGame = new FGame;
+	pUI->pActiveGame->pConfig = pGameConfig;
+	pUI->pActiveGame->pViewerData = pGameConfig->pInitFunction(pUI, pGameConfig);
+
+	ResetMemoryStats(pUI->MemStats);
+	
 }
 
 static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
@@ -149,9 +260,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 					{
 						if(LoadZ80File(*pSpeccy, pGameConfig->Z80file.c_str()))
 						{
-							pUI->MemoryAccessHandlers.clear();	// remove old memory handlers
-							pUI->pActiveGame = pGameConfig;
-							pGameConfig->pUserData = pGameConfig->pInitFunction(pUI, pGameConfig);
+							StartGame(pUI,pGameConfig);
 						}
 					}
 				}
@@ -173,6 +282,24 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				}
 
 				ImGui::EndMenu();
+			}
+
+			if (ImGui::MenuItem("Export Binary File"))
+			{
+				if (pUI->pActiveGame != nullptr)
+				{
+					EnsureDirectoryExists("OutputBin/");
+					std::string outBinFname = "OutputBin/" + pUI->pActiveGame->pConfig->Name + ".bin";
+					uint8_t *pSpecMem = new uint8_t[65536];
+					for (int i = 0; i < 65536; i++)
+						pSpecMem[i] = ReadySpeccyByte(*pSpeccy, i);
+					SaveBinaryFile(outBinFname.c_str(), pSpecMem, 65536);
+					delete pSpecMem;
+				}
+			}
+
+			if (ImGui::MenuItem("Export Region Info File"))
+			{
 			}
 			ImGui::EndMenu();
 		}
@@ -389,6 +516,7 @@ void PlotImageAt(const uint8_t *pSrc, int xp,int yp,int w,int h,uint32_t *pDest,
 
 void DrawGraphicsView(FSpeccyUI* pUI)
 {
+	FGraphicsView *pGraphicsView = pUI->pGraphicsViewerView;
 	static int memOffset = 0;
 	static int xs = 1;
 	static int ys = 1;
@@ -398,7 +526,7 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	
 	ImGui::Begin("Graphics View");
 	ImGui::Text("Memory Map Address: 0x%x", memOffset);
-	ImGui::Image(pUI->GraphicsViewTexture, ImVec2(256, 256));
+	DrawGraphicsView(*pGraphicsView);
 	ImGui::SameLine();
 	ImGui::VSliderInt("##int", ImVec2(64, 256), &memOffset, 0, offsetMax);//,"0x%x");
 	ImGui::InputInt("Address", &memOffset,1,8, ImGuiInputTextFlags_CharsHexadecimal);
@@ -408,9 +536,8 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	if (ImGui::Button(">>"))
 		memOffset += xs * ys * 8;
 
-	uint32_t *pPix = (uint32_t*)pUI->GraphicsViewPixelBuffer;
+	ClearGraphicsView(*pGraphicsView, 0xff000000);
 
-	memset(pPix, 0, 64 * 64 * 4);
 	// view 1 - straight character
 	// draw 64 * 8 bytes
 	ImGui::InputInt("XSize", &xs, 1, 4);
@@ -438,25 +565,21 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 		for (int x = 0; x < xcount; x++)
 		{
 			const uint8_t *pImage = GetSpeccyMemPtr(*pUI->pSpeccy, speccyAddr);
-			PlotImageAt(pImage, x * xs * 8, y * ys * 8, xs, ys, pPix, 64);
-			//PlotCharacterBlockAt(pUI->pSpeccy,speccyAddr, x * xs, y * ys,xs,ys, pPix, 64);
+			PlotImageAt(pImage, x * xs * 8, y * ys * 8, xs, ys, (uint32_t*)pGraphicsView->PixelBuffer, 64);
 			speccyAddr += xs * ys * 8;
 		}
 	}
 
 	ImGui::End();
-
-	ImGui_ImplDX11_UpdateTextureRGBA(pUI->GraphicsViewTexture, pUI->GraphicsViewPixelBuffer);
 }
 
 void DrawMemoryHandlers(FSpeccyUI* pUI)
 {
-	ImGui::Begin("Memory Handlers");
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawMemoryHandlersGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
 	FMemoryAccessHandler *pSelectedHandler = nullptr;
 
-	for(auto &handler : pUI->MemoryAccessHandlers)
+	for (auto &handler : pUI->MemoryAccessHandlers)
 	{
 		const bool bSelected = pUI->SelectedMemoryHandler == handler.Name;
 		if (bSelected)
@@ -471,11 +594,12 @@ void DrawMemoryHandlers(FSpeccyUI* pUI)
 
 	}
 	ImGui::EndChild();
+	
 	ImGui::SameLine();
 
 	// Handler details
 	ImGui::BeginChild("DrawMemoryHandlersGUIChild2", ImVec2(0, 0), false, window_flags);
-	if(pSelectedHandler!=nullptr)
+	if (pSelectedHandler != nullptr)
 	{
 		ImGui::Checkbox("Enabled", &pSelectedHandler->bEnabled);
 		ImGui::Checkbox("Break", &pSelectedHandler->bBreak);
@@ -484,13 +608,62 @@ void DrawMemoryHandlers(FSpeccyUI* pUI)
 		ImGui::Text("Total Accesses %d", pSelectedHandler->TotalCount);
 
 		ImGui::Text("Callers");
-		for(const auto &accessPC : pSelectedHandler->CallerCounts)
+		for (const auto &accessPC : pSelectedHandler->CallerCounts)
 		{
 			ImGui::Text("0x%x - %d accesses", accessPC.first, accessPC.second);
 		}
 	}
-		
+
 	ImGui::EndChild();
+}
+
+void DrawMemoryAnalysis(FSpeccyUI* pUI)
+{
+	
+	ImGui::Text("Memory Analysis");
+	if(ImGui::Button("Analyse"))
+	{
+		AnalyseMemory(pUI->MemStats);	// non-const on purpose
+	}
+	const FMemoryStats& memStats = pUI->MemStats;
+	ImGui::Text("%d self modified code points", (int)memStats.CodeAndDataList.size());
+	ImGui::Text("%d blocks", (int)memStats.MemoryBlockInfo.size());
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+	ImGui::BeginChild("DrawMemoryAnalysisChild1", ImVec2(0, 0), false, window_flags);
+	for(const auto &memblock : memStats.MemoryBlockInfo)
+	{
+		const char *pTypeStr = "Unknown";
+		if (memblock.Use == MemoryUse::Code)
+			pTypeStr = "Code";
+		else if (memblock.Use == MemoryUse::Data)
+			pTypeStr = "Data";
+		ImGui::Text("%s", pTypeStr);
+		ImGui::SameLine(100);
+		ImGui::Text("0x%x - 0x%x", memblock.StartAddress, memblock.EndAddress);
+	}
+	ImGui::EndChild();
+
+}
+
+void DrawMemoryTools(FSpeccyUI* pUI)
+{
+	ImGui::Begin("Memory Tools");
+	
+	ImGui::BeginTabBar("MemoryToolsTabBar");
+
+	if (ImGui::BeginTabItem("MemoryHandlers"))
+	{
+		DrawMemoryHandlers(pUI);
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("MemoryAnalysis"))
+	{
+		DrawMemoryAnalysis(pUI);
+		ImGui::EndTabItem();
+	}
+
+	ImGui::EndTabBar();
 
 	ImGui::End();
 }
@@ -567,28 +740,15 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	{
 		if (pUI->pActiveGame != nullptr)
 		{
-			ImGui::Text(pUI->pActiveGame->Name.c_str());
-			pUI->pActiveGame->pDrawFunction(pUI, pUI->pActiveGame);
+			ImGui::Text(pUI->pActiveGame->pConfig->Name.c_str());
+			pUI->pActiveGame->pConfig->pDrawFunction(pUI, pUI->pActiveGame);
 		}
 		
 		ImGui::End();
 	}
-
-	/*for(auto&viewerIt : pUI->GameViewers)
-	{
-		FGameViewer & viewer = viewerIt.second;
-		if (viewer.bOpen)
-		{
-			if (ImGui::Begin(viewer.Name.c_str(), &viewer.bOpen))
-			{
-				viewer.pDrawFunction(pUI, viewer);
-				ImGui::End();
-			}
-		}
-	}*/
-
+	
 	DrawGraphicsView(pUI);
-	DrawMemoryHandlers(pUI);
+	DrawMemoryTools(pUI);
 }
 
 bool DrawDockingView(FSpeccyUI *pUI)

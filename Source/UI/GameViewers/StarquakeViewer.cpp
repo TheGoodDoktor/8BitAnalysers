@@ -190,9 +190,9 @@ static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pSta
 
 }
 
-void DrawStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
+void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 {
-	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)pGameConfig->pUserData;
+	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)pGame->pViewerData;
 
 	ImGui::BeginTabBar("StarquakeTabBar");
 
@@ -201,7 +201,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 		static int platformNo = 0;
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
-		memset(pGraphicsView->PixelBuffer, 0xff000000, pGraphicsView->Width * pGraphicsView->Height * 4);
+		ClearGraphicsView(*pGraphicsView, 0xff000000);
 		DrawSmallPlatform(platformNo, 0,0, pStarquakeViewer, pGraphicsView);
 		DrawGraphicsView(*pGraphicsView);
 
@@ -213,7 +213,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 		static int platformNo = 0;
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
-		memset(pGraphicsView->PixelBuffer, 0xff000000, pGraphicsView->Width * pGraphicsView->Height * 4);
+		ClearGraphicsView(*pGraphicsView, 0xff000000);
 		DrawBigPlatform(platformNo, 0, 0, pStarquakeViewer);
 		DrawGraphicsView(*pGraphicsView);
 		ImGui::EndTabItem();
@@ -230,7 +230,6 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 		if(getScreenFromGame)
 			screenNo = ReadySpeccyByte(*pUI->pSpeccy, 0xd2c8);
 		DrawScreen(screenNo, 0, 0, pStarquakeViewer);
-		DrawGraphicsView(*pStarquakeViewer->pScreenGraphicsView);
 		DrawGraphicsView(*pGraphicsView);
 		ImGui::EndTabItem();
 	}

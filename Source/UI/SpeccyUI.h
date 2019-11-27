@@ -5,6 +5,7 @@
 #include "SpriteViewer.h"
 
 struct FSpeccyUI;
+struct FGame;
 struct FGameViewer;
 struct FGameViewerData;
 
@@ -14,10 +15,15 @@ struct FGameConfig
 	std::string		Z80file;
 	
 	FGameViewerData *(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
-	void(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGameConfig* pGameConfig);
+	void(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);
 
 	std::map<std::string, FSpriteDefConfig> SpriteConfigs;
-	void *			pUserData;
+};
+
+struct FGame
+{
+	FGameConfig *		pConfig;
+	FGameViewerData *	pViewerData;
 };
 
 /*struct FGameViewer
@@ -45,7 +51,7 @@ struct FMemoryAccessHandler
 	uint16_t			MemStart;
 	uint16_t			MemEnd;
 	
-	void(*pHandlerFunction)(FMemoryAccessHandler &handler, FGameConfig* pGameConfig, uint16_t pc, uint64_t pins) = nullptr;
+	void(*pHandlerFunction)(FMemoryAccessHandler &handler, FGame* pGame, uint16_t pc, uint64_t pins) = nullptr;
 
 	// stats
 	int						TotalCount = 0;
@@ -53,24 +59,63 @@ struct FMemoryAccessHandler
 	std::map<uint16_t, int>	AddressCounts;
 };
 
+enum class MemoryUse
+{
+	Code,
+	Data,
+	Unknown	// unknown/unused - never read from or written to
+};
+
+struct FMemoryBlock
+{
+	MemoryUse	Use;
+	uint16_t	StartAddress;
+	uint16_t	EndAddress;
+	bool		ContainsSelfModifyingCode = false;
+};
+
+struct FMemoryStats
+{
+	// counters for each memory address
+	int		ExecCount[0xffff];
+	int		ReadCount[0xffff];
+	int		WriteCount[0xffff];
+
+	std::vector< FMemoryBlock>	MemoryBlockInfo;
+
+	std::vector<uint16_t>	CodeAndDataList;
+};
+
 struct FSpeccyUI
 {
-	FSpeccy*		pSpeccy;
+	FSpeccyUI(){}
+	
+	// disable copy & assign because this class is big!
+	FSpeccyUI(const FSpeccyUI&) = delete;
+	FSpeccyUI& operator= (const FSpeccyUI&) = delete;
+	
+	FSpeccy*		pSpeccy = nullptr;
 	ui_zx_t			UIZX;
 
-	unsigned char*	GraphicsViewPixelBuffer;
-	ImTextureID		GraphicsViewTexture;
+	FGraphicsView*	pGraphicsViewerView = nullptr;
+	//unsigned char*	GraphicsViewPixelBuffer = nullptr;
+	//ImTextureID		GraphicsViewTexture;
 
 	//std::map<std::string, FGameViewer>	GameViewers;
 
 	std::vector<FGameConfig *>	GameConfigs;
-	FGameConfig *				pActiveGame = nullptr;
+	FGame *				pActiveGame = nullptr;
 
 	std::string				SelectedSpriteList;
 	std::map<std::string, FUISpriteList>	SpriteLists;
 
+	// Memory handling
 	std::string				SelectedMemoryHandler;
 	std::vector< FMemoryAccessHandler>	MemoryAccessHandlers;
+
+	FMemoryStats	MemStats;
+
+	uint16_t dasmCurr = 0;
 };
 
 
