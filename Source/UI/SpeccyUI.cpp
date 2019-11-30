@@ -617,7 +617,14 @@ void DrawMemoryHandlers(FSpeccyUI* pUI)
 		ImGui::Text("Callers");
 		for (const auto &accessPC : pSelectedHandler->CallerCounts)
 		{
+			ImGui::PushID(accessPC.first);
 			ImGui::Text("0x%x - %d accesses", accessPC.first, accessPC.second);
+			ImGui::SameLine();
+			if (ImGui::ArrowButton("GotoAddr", ImGuiDir_Right))
+			{
+				pUI->UIZX.dasm[0].start_addr = accessPC.first;
+			}
+			ImGui::PopID();
 		}
 	}
 

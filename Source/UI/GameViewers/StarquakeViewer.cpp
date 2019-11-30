@@ -251,6 +251,7 @@ FGameConfig g_StarQuakeConfig =
 	DrawStarquakeViewer,
 {
 	{{"Starquake_Blobs"}, {0xe074,52,3,2}},	// starquake blobs sprites
+	{{"Enemies"}, {0xafc8,84,3,2}},	// starquake blobs sprites
 	}
 };
 
