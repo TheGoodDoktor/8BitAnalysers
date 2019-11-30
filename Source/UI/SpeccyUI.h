@@ -116,6 +116,10 @@ struct FSpeccyUI
 	FMemoryStats	MemStats;
 
 	uint16_t dasmCurr = 0;
+
+	static const int kPCHistorySize = 32;
+	uint16_t PCHistory[kPCHistorySize];
+	int PCHistoryPos = 0;
 };
 
 

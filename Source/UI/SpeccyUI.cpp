@@ -54,6 +54,13 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	const bool bRead = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_RD);
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
 
+	// store program count in history
+	const uint16_t prevPC = pUI->PCHistory[pUI->PCHistoryPos];
+	pUI->PCHistoryPos = (pUI->PCHistoryPos + 1) % FSpeccyUI::kPCHistorySize;
+	pUI->PCHistory[pUI->PCHistoryPos] = pc;
+
+	pc = prevPC;
+	
 	// increment counters
 	pUI->MemStats.ExecCount[pc]++;
 	const int op_len = DisasmLen(pUI, pc);
