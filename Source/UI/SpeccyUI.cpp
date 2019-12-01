@@ -2,7 +2,7 @@
 #include "SpeccyUI.h"
 #include <windows.h>
 
-
+#include "GameConfig.h"
 #include "imgui_impl_lucidextra.h"
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
@@ -10,6 +10,7 @@
 #include "Util/FileUtil.h"
 
 #include "ui/ui_dbg.h"
+
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -248,6 +249,15 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	
 }
 
+void SaveCurrentGameConfig(FSpeccyUI *pUI)
+{
+	const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
+	std::string configFName = "/Configs/" + pGameConfig->Name + ".json";
+	EnsureDirectoryExists(configFName.c_str());
+	// Test - do better filename
+	SaveGameConfigToFile(*pGameConfig, configFName.c_str());
+}
+
 static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 {
 	ui_zx_t* pZXUI = &pUI->UIZX;
@@ -268,6 +278,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 						if(LoadZ80File(*pSpeccy, pGameConfig->Z80file.c_str()))
 						{
 							StartGame(pUI,pGameConfig);
+							SaveCurrentGameConfig(pUI);
 						}
 					}
 				}

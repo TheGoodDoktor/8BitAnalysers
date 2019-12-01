@@ -2,6 +2,7 @@
 
 #include "UI/SpeccyUI.h"
 #include "UI/GraphicsView.h"
+#include "UI/GameConfig.h"
 
 void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 {

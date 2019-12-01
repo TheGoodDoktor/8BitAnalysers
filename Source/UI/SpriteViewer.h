@@ -25,13 +25,7 @@ struct FSpriteDefList
 	std::vector< FSpriteDef>	Sprites;
 };
 
-struct FSpriteDefConfig
-{
-	uint16_t	BaseAddress;
-	int			Count;
-	int			Width;
-	int			Height;
-};
+
 
 struct FUISpriteList
 {

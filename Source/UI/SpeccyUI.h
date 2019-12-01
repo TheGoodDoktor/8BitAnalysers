@@ -8,17 +8,8 @@ struct FSpeccyUI;
 struct FGame;
 struct FGameViewer;
 struct FGameViewerData;
+struct FGameConfig;
 
-struct FGameConfig
-{
-	std::string		Name;
-	std::string		Z80file;
-	
-	FGameViewerData *(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
-	void(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);
-
-	std::map<std::string, FSpriteDefConfig> SpriteConfigs;
-};
 
 struct FGame
 {

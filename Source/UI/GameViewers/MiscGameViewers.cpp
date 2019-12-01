@@ -1,5 +1,6 @@
 #include "MiscGameViewers.h"
 #include "UI/SpeccyUI.h"
+#include "UI/GameConfig.h"
 #include "GameViewer.h"
 
 FGameViewerData *InitMiscGameViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)

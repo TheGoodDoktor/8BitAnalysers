@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "UI/GraphicsView.h"
 #include "GameViewer.h"
+#include "UI/GameConfig.h"
 
 // Starquake addresses
 static const uint16_t kPlatformGfxAddr = 0xeb23;
