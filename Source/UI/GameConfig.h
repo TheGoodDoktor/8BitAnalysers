@@ -27,4 +27,5 @@ struct FGameConfig
 
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);
 bool LoadGameConfigFromFile(FGameConfig &config, const char *fname);
+bool LoadGameConfigs(FSpeccyUI *pUI);
 

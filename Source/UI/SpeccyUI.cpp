@@ -229,6 +229,8 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	// register Viewers
 	RegisterStarquakeViewer(pUI);
 	RegisterGames(pUI);
+
+	LoadGameConfigs(pUI);
 	
 	return pUI;
 }
@@ -252,8 +254,8 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 void SaveCurrentGameConfig(FSpeccyUI *pUI)
 {
 	const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
-	std::string configFName = "/Configs/" + pGameConfig->Name + ".json";
-	EnsureDirectoryExists(configFName.c_str());
+	std::string configFName = "Configs/" + pGameConfig->Name + ".json";
+	EnsureDirectoryExists("Configs");
 	// Test - do better filename
 	SaveGameConfigToFile(*pGameConfig, configFName.c_str());
 }
