@@ -68,8 +68,47 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 
 	// parse json
 	rapidjson::Document jsonConfig;
-	jsonConfig.Parse(pText);
-
+	jsonConfig.Parse<rapidjson::kParseStopWhenDoneFlag>(pText);
+	if (jsonConfig.HasParseError())
+	{
+		switch (jsonConfig.GetParseError())
+		{
+		case rapidjson::kParseErrorDocumentEmpty:                   //!< The document is empty.
+			break;
+		case rapidjson::kParseErrorDocumentRootNotSingular:         //!< The document root must not follow by other values.
+			break;
+		case rapidjson::kParseErrorValueInvalid:                    //!< Invalid value.
+			break;
+		case rapidjson::kParseErrorObjectMissName:                  //!< Missing a name for object member.
+			break;
+		case rapidjson::kParseErrorObjectMissColon:                 //!< Missing a colon after a name of object member.
+			break;
+		case rapidjson::kParseErrorObjectMissCommaOrCurlyBracket:   //!< Missing a comma or '}' after an object member.
+			break;
+		case rapidjson::kParseErrorArrayMissCommaOrSquareBracket:   //!< Missing a comma or ']' after an array element.
+			break;
+		case rapidjson::kParseErrorStringUnicodeEscapeInvalidHex:   //!< Incorrect hex digit after \\u escape in string.
+			break;
+		case rapidjson::kParseErrorStringUnicodeSurrogateInvalid:   //!< The surrogate pair in string is invalid.
+			break;
+		case rapidjson::kParseErrorStringEscapeInvalid:             //!< Invalid escape character in string.
+			break;
+		case rapidjson::kParseErrorStringMissQuotationMark:         //!< Missing a closing quotation mark in string.
+			break;
+		case rapidjson::kParseErrorStringInvalidEncoding:           //!< Invalid encoding in string.
+			break;
+		case rapidjson::kParseErrorNumberTooBig:                    //!< Number too big to be stored in double.
+			break;
+		case rapidjson::kParseErrorNumberMissFraction:              //!< Miss fraction part in number.
+			break;
+		case rapidjson::kParseErrorNumberMissExponent:              //!< Miss exponent in number.
+			break;
+		case rapidjson::kParseErrorTermination:                     //!< Parsing was terminated.
+			break;
+		case rapidjson::kParseErrorUnspecificSyntaxError:            //!< Unspecific syntax error.
+			break;
+		}
+	}
 	config.Name = jsonConfig["Name"].GetString();
 	config.Z80file = jsonConfig["Z80File"].GetString();
 

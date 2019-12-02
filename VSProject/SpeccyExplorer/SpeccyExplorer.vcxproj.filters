@@ -111,6 +111,12 @@
     <ClCompile Include="..\..\Source\UI\MemoryHandlers.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp">
+      <Filter>Source Files\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\FunctionHandlers.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h">
@@ -366,6 +372,9 @@
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\MemoryHandlers.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\FunctionHandlers.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
   </ItemGroup>

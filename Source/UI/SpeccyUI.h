@@ -3,6 +3,7 @@
 #include "Speccy/Speccy.h"
 #include <map>
 #include "SpriteViewer.h"
+#include "MemoryHandlers.h"
 
 struct FSpeccyUI;
 struct FGame;
@@ -50,31 +51,17 @@ struct FMemoryAccessHandler
 	std::map<uint16_t, int>	AddressCounts;
 };
 
-enum class MemoryUse
+struct FFunctionInfo
 {
-	Code,
-	Data,
-	Unknown	// unknown/unused - never read from or written to
-};
+	std::string		FunctionName;
+	uint16_t		StartAddress;
+	uint16_t		EndAddress;
 
-struct FMemoryBlock
-{
-	MemoryUse	Use;
-	uint16_t	StartAddress;
-	uint16_t	EndAddress;
-	bool		ContainsSelfModifyingCode = false;
-};
+	std::map<uint16_t, int>	Callers;
+	std::map<uint16_t, int>	ExitPoints;
 
-struct FMemoryStats
-{
-	// counters for each memory address
-	int		ExecCount[0xffff];
-	int		ReadCount[0xffff];
-	int		WriteCount[0xffff];
-
-	std::vector< FMemoryBlock>	MemoryBlockInfo;
-
-	std::vector<uint16_t>	CodeAndDataList;
+	// Stats
+	int				NoCalls = 0;
 };
 
 struct FSpeccyUI
@@ -89,10 +76,6 @@ struct FSpeccyUI
 	ui_zx_t			UIZX;
 
 	FGraphicsView*	pGraphicsViewerView = nullptr;
-	//unsigned char*	GraphicsViewPixelBuffer = nullptr;
-	//ImTextureID		GraphicsViewTexture;
-
-	//std::map<std::string, FGameViewer>	GameViewers;
 
 	std::vector<FGameConfig *>	GameConfigs;
 	FGame *				pActiveGame = nullptr;
@@ -105,6 +88,12 @@ struct FSpeccyUI
 	std::vector< FMemoryAccessHandler>	MemoryAccessHandlers;
 
 	FMemoryStats	MemStats;
+
+	// Function info
+	uint16_t							SelectedFunction;
+	std::map<uint16_t, FFunctionInfo>	Functions;
+	std::vector<uint16_t>				FunctionStack;
+	ui_dasm_t							FunctionDasm;
 
 	uint16_t dasmCurr = 0;
 
