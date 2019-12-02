@@ -8,17 +8,8 @@ struct FSpeccyUI;
 struct FGame;
 struct FGameViewer;
 struct FGameViewerData;
+struct FGameConfig;
 
-struct FGameConfig
-{
-	std::string		Name;
-	std::string		Z80file;
-	
-	FGameViewerData *(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
-	void(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);
-
-	std::map<std::string, FSpriteDefConfig> SpriteConfigs;
-};
 
 struct FGame
 {
@@ -116,6 +107,10 @@ struct FSpeccyUI
 	FMemoryStats	MemStats;
 
 	uint16_t dasmCurr = 0;
+
+	static const int kPCHistorySize = 32;
+	uint16_t PCHistory[kPCHistorySize];
+	int PCHistoryPos = 0;
 };
 
 

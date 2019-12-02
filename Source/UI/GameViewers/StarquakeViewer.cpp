@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "UI/GraphicsView.h"
 #include "GameViewer.h"
+#include "UI/GameConfig.h"
 
 // Starquake addresses
 static const uint16_t kPlatformGfxAddr = 0xeb23;
@@ -251,6 +252,7 @@ FGameConfig g_StarQuakeConfig =
 	DrawStarquakeViewer,
 {
 	{{"Starquake_Blobs"}, {0xe074,52,3,2}},	// starquake blobs sprites
+	{{"Enemies"}, {0xafc8,84,3,2}},	// starquake blobs sprites
 	}
 };
 

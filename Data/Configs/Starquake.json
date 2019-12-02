@@ -1,0 +1,20 @@
+{
+    "Name": "Starquake",
+    "Z80File": "Starquake.z80",
+    "SpriteConfigs": [
+        {
+            "Name": "Enemies",
+            "BaseAddress": "0xafc8",
+            "Count": 84,
+            "Width": 3,
+            "Height": 2
+        },
+        {
+            "Name": "Starquake_Blobs",
+            "BaseAddress": "0xe074",
+            "Count": 52,
+            "Width": 3,
+            "Height": 2
+        }
+    ]
+}

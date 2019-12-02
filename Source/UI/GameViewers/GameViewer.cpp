@@ -2,6 +2,7 @@
 
 #include "UI/SpeccyUI.h"
 #include "UI/GraphicsView.h"
+#include "UI/GameConfig.h"
 
 void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 {
@@ -10,13 +11,33 @@ void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 	pGameViewer->pSpriteGraphicsView = CreateGraphicsView(64, 64);
 	pGameViewer->pScreenGraphicsView = CreateGraphicsView(256, 256);
 
-	// Could be moved to a generic function
+	// Generate sprite lists from configs
 	pUI->SpriteLists.clear();
 	for (const auto &sprConfIt : pGameConfig->SpriteConfigs)
 	{
 		const FSpriteDefConfig& config = sprConfIt.second;
 		FUISpriteList &sprites = pUI->SpriteLists[sprConfIt.first];
 		GenerateSpriteList(sprites.SpriteList, config.BaseAddress, config.Count, config.Width, config.Height);
+	}
+
+	// add memory handlers for screen memory
+	{
+		FMemoryAccessHandler handler;
+		handler.Name = "ScreenPixMemWrite";
+		handler.MemStart = 0x4000;
+		handler.MemEnd = 0x57ff;	
+		handler.Type = MemoryAccessType::Write;
+
+		AddMemoryHandler(pUI, handler);
+	}
+	{
+		FMemoryAccessHandler handler;
+		handler.Name = "ScreenAttrMemWrite";
+		handler.MemStart = 0x5800;
+		handler.MemEnd = 0x5Aff;	
+		handler.Type = MemoryAccessType::Write;
+
+		AddMemoryHandler(pUI, handler);
 	}
 
 	// add memory handlers for sprite configs
