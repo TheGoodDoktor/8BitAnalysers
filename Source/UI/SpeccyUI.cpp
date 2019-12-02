@@ -2,7 +2,7 @@
 #include "SpeccyUI.h"
 #include <windows.h>
 
-
+#include "GameConfig.h"
 #include "imgui_impl_lucidextra.h"
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
@@ -10,6 +10,7 @@
 #include "Util/FileUtil.h"
 
 #include "ui/ui_dbg.h"
+
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -54,6 +55,13 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	const bool bRead = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_RD);
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
 
+	// store program count in history
+	const uint16_t prevPC = pUI->PCHistory[pUI->PCHistoryPos];
+	pUI->PCHistoryPos = (pUI->PCHistoryPos + 1) % FSpeccyUI::kPCHistorySize;
+	pUI->PCHistory[pUI->PCHistoryPos] = pc;
+
+	pc = prevPC;
+	
 	// increment counters
 	pUI->MemStats.ExecCount[pc]++;
 	const int op_len = DisasmLen(pUI, pc);
@@ -221,6 +229,8 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	// register Viewers
 	RegisterStarquakeViewer(pUI);
 	RegisterGames(pUI);
+
+	LoadGameConfigs(pUI);
 	
 	return pUI;
 }
@@ -239,6 +249,15 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 
 	ResetMemoryStats(pUI->MemStats);
 	
+}
+
+void SaveCurrentGameConfig(FSpeccyUI *pUI)
+{
+	const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
+	std::string configFName = "Configs/" + pGameConfig->Name + ".json";
+	EnsureDirectoryExists("Configs");
+	// Test - do better filename
+	SaveGameConfigToFile(*pGameConfig, configFName.c_str());
 }
 
 static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
@@ -261,6 +280,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 						if(LoadZ80File(*pSpeccy, pGameConfig->Z80file.c_str()))
 						{
 							StartGame(pUI,pGameConfig);
+							SaveCurrentGameConfig(pUI);
 						}
 					}
 				}
@@ -610,7 +630,14 @@ void DrawMemoryHandlers(FSpeccyUI* pUI)
 		ImGui::Text("Callers");
 		for (const auto &accessPC : pSelectedHandler->CallerCounts)
 		{
+			ImGui::PushID(accessPC.first);
 			ImGui::Text("0x%x - %d accesses", accessPC.first, accessPC.second);
+			ImGui::SameLine();
+			if (ImGui::ArrowButton("GotoAddr", ImGuiDir_Right))
+			{
+				pUI->UIZX.dasm[0].start_addr = accessPC.first;
+			}
+			ImGui::PopID();
 		}
 	}
 
