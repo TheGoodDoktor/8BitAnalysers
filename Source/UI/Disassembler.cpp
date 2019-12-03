@@ -1,7 +1,6 @@
 #include "Disassembler.h"
 #include "imgui.h"
-#include "util/z80dasm.h"
-#include "util/m6502dasm.h"
+
 #include "ui/ui_util.h"
 
 #ifndef DASM_ASSERT
@@ -12,7 +11,13 @@
 #define DASM_USE_Z80
 //#define DASM_USE_M6502
 
+#ifdef DASM_USE_Z80
+#include "util/z80dasm.h"
+#endif
 
+#ifdef DASM_USE_M6502
+#include "util/m6502dasm.h"
+#endif
 
 // initialise an instance of the disassembler
 void DasmInit(FDasmState* pDasmState, const FDasmDesc* pDasmDesc)
