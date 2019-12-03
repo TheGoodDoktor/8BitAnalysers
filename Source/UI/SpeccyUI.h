@@ -5,6 +5,7 @@
 #include "SpriteViewer.h"
 #include "MemoryHandlers.h"
 #include "Disassembler.h"
+#include "FunctionHandlers.h"
 
 struct FSpeccyUI;
 struct FGame;
@@ -27,43 +28,12 @@ struct FGame
 	void *		pUserData = nullptr;
 };*/
 
-enum class MemoryAccessType
+struct FLabelInfo
 {
-	Read,
-	Write,
-	Execute
+	std::string				Name;
+	std::map<uint16_t,int>	References;
 };
 
-struct FMemoryAccessHandler
-{
-	// configuration
-	std::string			Name;
-	bool				bEnabled = true;
-	bool				bBreak = false;
-	MemoryAccessType	Type;
-	uint16_t			MemStart;
-	uint16_t			MemEnd;
-	
-	void(*pHandlerFunction)(FMemoryAccessHandler &handler, FGame* pGame, uint16_t pc, uint64_t pins) = nullptr;
-
-	// stats
-	int						TotalCount = 0;
-	std::map<uint16_t, int>	CallerCounts;
-	std::map<uint16_t, int>	AddressCounts;
-};
-
-struct FFunctionInfo
-{
-	std::string		FunctionName;
-	uint16_t		StartAddress;
-	uint16_t		EndAddress;
-
-	std::map<uint16_t, int>	Callers;
-	std::map<uint16_t, int>	ExitPoints;
-
-	// Stats
-	int				NoCalls = 0;
-};
 
 struct FSpeccyUI
 {
@@ -83,6 +53,9 @@ struct FSpeccyUI
 
 	std::string				SelectedSpriteList;
 	std::map<std::string, FUISpriteList>	SpriteLists;
+
+	// labels
+	FLabelInfo*				Labels[0xffff];
 
 	// Memory handling
 	std::string				SelectedMemoryHandler;

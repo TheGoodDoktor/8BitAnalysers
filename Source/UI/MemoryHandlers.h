@@ -1,8 +1,10 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <map>
 
 struct FSpeccyUI;
+struct FGame;
 
 enum class MemoryUse
 {
@@ -30,6 +32,32 @@ struct FMemoryStats
 
 	std::vector<uint16_t>	CodeAndDataList;
 };
+
+enum class MemoryAccessType
+{
+	Read,
+	Write,
+	Execute
+};
+
+struct FMemoryAccessHandler
+{
+	// configuration
+	std::string			Name;
+	bool				bEnabled = true;
+	bool				bBreak = false;
+	MemoryAccessType	Type;
+	uint16_t			MemStart;
+	uint16_t			MemEnd;
+
+	void(*pHandlerFunction)(FMemoryAccessHandler &handler, FGame* pGame, uint16_t pc, uint64_t pins) = nullptr;
+
+	// stats
+	int						TotalCount = 0;
+	std::map<uint16_t, int>	CallerCounts;
+	std::map<uint16_t, int>	AddressCounts;
+};
+
 
 
 int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpeccyUI *pUI);

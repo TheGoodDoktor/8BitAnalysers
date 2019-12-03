@@ -108,93 +108,102 @@ static void DasmDissassemble(FDasmState* pDasmState)
 }
 
 /* check if the current Z80 or m6502 instruction contains a jump target */
+static bool DasmEvaluateJumpTarget_Z80(FDasmState* pDasmState, uint16_t pc, uint16_t* out_addr)
+{
+	if (pDasmState->bin_pos == 3)	// 3 byte instructions
+	{
+		switch (pDasmState->bin_buf[0])
+		{
+			/* CALL nnnn */
+		case 0xCD:
+			/* CALL cc,nnnn */
+		case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+		case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+			/* JP nnnn */
+		case 0xC3:
+			/* JP cc,nnnn */
+		case 0xDA: case 0xFA: case 0xD2: case 0xC2:
+		case 0xF2: case 0xEA: case 0xE2: case 0xCA:
+			*out_addr = (pDasmState->bin_buf[2] << 8) | pDasmState->bin_buf[1];
+			return true;
+		}
+	}
+	else if (pDasmState->bin_pos == 2)
+	{
+		switch (pDasmState->bin_buf[0])
+		{
+			/* DJNZ d */
+		case 0x10:
+			/* JR d */
+		case 0x18:
+			/* JR cc,d */
+		case 0x38: case 0x30: case 0x20: case 0x28:
+			*out_addr = pc + (int8_t)pDasmState->bin_buf[1];
+			return true;
+		}
+	}
+	else if (pDasmState->bin_pos == 1)
+	{
+		switch (pDasmState->bin_buf[0])
+		{
+			/* RST */
+		case 0xC7:  *out_addr = 0x00; return true;
+		case 0xCF:  *out_addr = 0x08; return true;
+		case 0xD7:  *out_addr = 0x10; return true;
+		case 0xDF:  *out_addr = 0x18; return true;
+		case 0xE7:  *out_addr = 0x20; return true;
+		case 0xEF:  *out_addr = 0x28; return true;
+		case 0xF7:  *out_addr = 0x30; return true;
+		case 0xFF:  *out_addr = 0x38; return true;
+		}
+	}
+
+	return false;
+}
+
+static bool DasmEvaluateJumpTarget_6502(FDasmState* pDasmState, uint16_t pc, uint16_t* out_addr)
+{
+	/* M6502 CPU */
+	if (pDasmState->bin_pos == 3)
+	{
+		uint8_t l, h;
+		uint16_t addr;
+		switch (pDasmState->bin_buf[0])
+		{
+			/* JSR/JMP abs */
+		case 0x20: case 0x4C:
+			*out_addr = (pDasmState->bin_buf[2] << 8) | pDasmState->bin_buf[1];
+			return true;
+			/* JMP ind */
+		case 0x6C:
+			addr = (pDasmState->bin_buf[2] << 8) | pDasmState->bin_buf[1];
+			l = pDasmState->ReadCB(pDasmState->CurLayer, addr++, pDasmState->pUserData);
+			h = pDasmState->ReadCB(pDasmState->CurLayer, addr++, pDasmState->pUserData);
+			*out_addr = (h << 8) | l;
+			return true;
+		}
+	}
+	else if (pDasmState->bin_pos == 2)
+	{
+		switch (pDasmState->bin_buf[0])
+		{
+			/* relative branch */
+		case 0x10: case 0x30: case 0x50: case 0x70:
+		case 0x90: case 0xB0: case 0xD0: case 0xF0:
+			*out_addr = pc + (int8_t)pDasmState->bin_buf[1];
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool DasmEvaluateJumpTarget(FDasmState* pDasmState, uint16_t pc, uint16_t* out_addr)
 {
 	if (pDasmState->CPUType == DasmCPUType::Z80)
-	{
-		if (pDasmState->bin_pos == 3)	// 3 byte instructions
-		{
-			switch (pDasmState->bin_buf[0])
-			{
-				/* CALL nnnn */
-			case 0xCD:
-				/* CALL cc,nnnn */
-			case 0xDC: case 0xFC: case 0xD4: case 0xC4:
-			case 0xF4: case 0xEC: case 0xE4: case 0xCC:
-				/* JP nnnn */
-			case 0xC3:
-				/* JP cc,nnnn */
-			case 0xDA: case 0xFA: case 0xD2: case 0xC2:
-			case 0xF2: case 0xEA: case 0xE2: case 0xCA:
-				*out_addr = (pDasmState->bin_buf[2] << 8) | pDasmState->bin_buf[1];
-				return true;
-			}
-		}
-		else if (pDasmState->bin_pos == 2)
-		{
-			switch (pDasmState->bin_buf[0])
-			{
-				/* DJNZ d */
-			case 0x10:
-				/* JR d */
-			case 0x18:
-				/* JR cc,d */
-			case 0x38: case 0x30: case 0x20: case 0x28:
-				*out_addr = pc + (int8_t)pDasmState->bin_buf[1];
-				return true;
-			}
-		}
-		else if (pDasmState->bin_pos == 1) 
-		{
-			switch (pDasmState->bin_buf[0])
-			{
-				/* RST */
-			case 0xC7:  *out_addr = 0x00; return true;
-			case 0xCF:  *out_addr = 0x08; return true;
-			case 0xD7:  *out_addr = 0x10; return true;
-			case 0xDF:  *out_addr = 0x18; return true;
-			case 0xE7:  *out_addr = 0x20; return true;
-			case 0xEF:  *out_addr = 0x28; return true;
-			case 0xF7:  *out_addr = 0x30; return true;
-			case 0xFF:  *out_addr = 0x38; return true;
-			}
-		}
-	}
+		return DasmEvaluateJumpTarget_Z80(pDasmState, pc, out_addr);
 	else 
-	{
-		/* M6502 CPU */
-		if (pDasmState->bin_pos == 3) 
-		{
-			uint8_t l, h;
-			uint16_t addr;
-			switch (pDasmState->bin_buf[0])
-			{
-				/* JSR/JMP abs */
-			case 0x20: case 0x4C:
-				*out_addr = (pDasmState->bin_buf[2] << 8) | pDasmState->bin_buf[1];
-				return true;
-				/* JMP ind */
-			case 0x6C:
-				addr = (pDasmState->bin_buf[2] << 8) | pDasmState->bin_buf[1];
-				l = pDasmState->ReadCB(pDasmState->CurLayer, addr++, pDasmState->pUserData);
-				h = pDasmState->ReadCB(pDasmState->CurLayer, addr++, pDasmState->pUserData);
-				*out_addr = (h << 8) | l;
-				return true;
-			}
-		}
-		else if (pDasmState->bin_pos == 2)
-		{
-			switch (pDasmState->bin_buf[0])
-			{
-				/* relative branch */
-			case 0x10: case 0x30: case 0x50: case 0x70:
-			case 0x90: case 0xB0: case 0xD0: case 0xF0:
-				*out_addr = pc + (int8_t)pDasmState->bin_buf[1];
-				return true;
-			}
-		}
-	}
-	return false;
+		return DasmEvaluateJumpTarget_6502(pDasmState, pc, out_addr);
 }
 
 /* push an address on the bookmark stack */
