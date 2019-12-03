@@ -28,9 +28,9 @@ void GenerateSpriteList(FSpriteDefList &spriteList, uint16_t startAddress, int c
 }
 
 
-void DrawSpriteOnGraphicsView(const FSpriteDef &spriteDef, int x, int y, FGraphicsView *pGraphicsView, const FSpeccy* pSpeccy)
+void DrawSpriteOnGraphicsView(const FSpriteDef &spriteDef, int x, int y, FGraphicsView *pGraphicsView, FSpeccy* pSpeccy)
 {
-	const uint8_t *pImage = GetSpeccyMemPtr(*pSpeccy, spriteDef.Address);
+	const uint8_t *pImage = GetSpeccyMemPtr(pSpeccy, spriteDef.Address);
 	PlotImageAt(pImage, 0, 0, spriteDef.Width, spriteDef.Height, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width);
 }
 

@@ -135,3 +135,72 @@ bool LoadZ80File(FSpeccy &speccyInstance, const char *fName)
 	return bSuccess;
 }
 
+
+// Memory access functions
+
+uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr)
+{
+	if (layer == 0)
+	{
+		/* ZX128 ROM, RAM 5, RAM 2, RAM 0 */
+		if (addr < 0x4000)
+			return &zx->rom[0][addr];
+		else if (addr < 0x8000)
+			return &zx->ram[5][addr - 0x4000];
+		else if (addr < 0xC000)
+			return &zx->ram[2][addr - 0x8000];
+		else
+			return &zx->ram[0][addr - 0xC000];
+	}
+	else if (layer == 1)
+	{
+		/* 48K ROM, RAM 1 */
+		if (addr < 0x4000)
+			return &zx->rom[1][addr];
+		else if (addr >= 0xC000)
+			return &zx->ram[1][addr - 0xC000];
+	}
+	else if (layer < 8)
+	{
+		if (addr >= 0xC000)
+			return &zx->ram[layer][addr - 0xC000];
+	}
+	/* fallthrough: unmapped memory */
+	return 0;
+}
+
+uint8_t MemReadFunc(int layer, uint16_t addr, void* user_data)
+{
+	assert(user_data);
+	zx_t* zx = (zx_t*)user_data;
+	if ((layer == 0) || (ZX_TYPE_48K == zx->type))
+	{
+		/* CPU visible layer */
+		return mem_rd(&zx->mem, addr);
+	}
+	else
+	{
+		uint8_t* ptr = MemGetPtr(zx, layer - 1, addr);
+		if (ptr)
+			return *ptr;
+		else
+			return 0xFF;
+	}
+}
+
+void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data)
+{
+	assert(user_data);
+	zx_t* zx = (zx_t*)user_data;
+	if ((layer == 0) || (ZX_TYPE_48K == zx->type)) {
+		mem_wr(&zx->mem, addr, data);
+	}
+	else {
+		uint8_t* ptr = MemGetPtr(zx, layer - 1, addr);
+		if (ptr) {
+			*ptr = data;
+		}
+	}
+}
+
+

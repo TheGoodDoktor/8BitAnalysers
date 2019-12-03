@@ -6,7 +6,7 @@
 static uint8_t DasmCB(void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
-	return ReadySpeccyByte(*pUI->pSpeccy, pUI->dasmCurr++);
+	return ReadySpeccyByte(pUI->pSpeccy, pUI->dasmCurr++);
 }
 
 static uint16_t DisasmLen(FSpeccyUI *pUI, uint16_t pc)

@@ -42,6 +42,7 @@ struct FSpeccyConfig
 struct FSpeccy
 {
 	zx_t		CurrentState;	// Current Spectrum State
+	int			CurrentLayer = 0;	// layer ??
 
 	unsigned char* FrameBuffer;	// pixel buffer to store emu output
 	ImTextureID	Texture;		// texture 
@@ -60,34 +61,48 @@ void ShutdownSpeccy(FSpeccy*&pSpeccy);
 const std::vector<std::string>& GetGameList();
 bool LoadZ80File(FSpeccy &speccyInstance, const char *fName);
 
+uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr);
+uint8_t MemReadFunc(int layer, uint16_t addr, void* user_data);
+void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data);
+
 // TODO: Replace these
-inline uint8_t	ReadySpeccyByte(const FSpeccy &speccy, uint16_t address)
+inline uint8_t	ReadySpeccyByte(FSpeccy *pSpeccy, uint16_t address)
 {
+	return MemReadFunc(pSpeccy->CurrentLayer, address, &pSpeccy->CurrentState);
+	/*
 	const int bank = address >> 14;
 	const int bankAddr = address & 0x3fff;
 
 	if(bank == 0)
 		return speccy.CurrentState.rom[0][bankAddr];
 	else
-		return speccy.CurrentState.ram[bank-1][bankAddr];
+		return speccy.CurrentState.ram[bank-1][bankAddr];*/
 }
 
-inline const uint8_t*	GetSpeccyMemPtr(const FSpeccy &speccy, uint16_t address)
+inline const uint8_t*	GetSpeccyMemPtr(FSpeccy *pSpeccy, uint16_t address)
 {
+	//return MemGetPtr(&pSpeccy->CurrentState, pSpeccy->CurrentLayer, address);
+
 	const int bank = address >> 14;
 	const int bankAddr = address & 0x3fff;
 
 	if (bank == 0)
-		return &speccy.CurrentState.rom[0][bankAddr];
+		return &pSpeccy->CurrentState.rom[0][bankAddr];
 	else
-		return &speccy.CurrentState.ram[bank - 1][bankAddr];
+		return &pSpeccy->CurrentState.ram[bank - 1][bankAddr];
+	
 }
 
-inline void	WriteSpeccyByte(FSpeccy &speccy, uint16_t address, uint8_t value)
+inline void	WriteSpeccyByte(FSpeccy *pSpeccy, uint16_t address, uint8_t value)
 {
+	MemWriteFunc(pSpeccy->CurrentLayer, address, value, &pSpeccy->CurrentState);
+	/*
 	const int bank = address >> 14;
 	const int bankAddr = address & 0x3fff;
 
 	if(bank > 0)
-		speccy.CurrentState.ram[bank-1][bankAddr] = value;
+		speccy.CurrentState.ram[bank-1][bankAddr] = value;*/
 }
+
+
+

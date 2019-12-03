@@ -33,6 +33,7 @@ std::map<uint16_t,const char *> g_RomFunctions =
 
 std::string GetROMFunctionName(uint16_t callAddr)
 {
+	// Try to find a ROM function from the list
 	const auto &romFunctionIt = g_RomFunctions.find(callAddr);
 	if (romFunctionIt != g_RomFunctions.end())
 		return "ROM_" + std::string(romFunctionIt->second);
@@ -46,7 +47,7 @@ std::string GetROMFunctionName(uint16_t callAddr)
 int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpeccyUI *pUI)
 {
 	// TODO: find functions
-	uint8_t instrByte = ReadySpeccyByte(*pUI->pSpeccy, pc);
+	uint8_t instrByte = ReadySpeccyByte(pUI->pSpeccy, pc);
 	bool bCall = false;
 	bool bRet = false;
 	uint16_t callAddr = 0;
@@ -94,8 +95,8 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 	case 0xec:	// call pe
 	case 0xfc:	// call m
 	{
-		callAddr = ReadySpeccyByte(*pUI->pSpeccy, pc + 1);
-		callAddr |= ReadySpeccyByte(*pUI->pSpeccy, pc + 2) << 8;
+		callAddr = ReadySpeccyByte(pUI->pSpeccy, pc + 1);
+		callAddr |= ReadySpeccyByte(pUI->pSpeccy, pc + 2) << 8;
 		bCall = true;
 	}
 	break;

@@ -122,26 +122,26 @@ static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerDat
 
 	//memset(pGraphicsView->PixelBuffer, 0, pGraphicsView->Width * pGraphicsView->Height * 4);
 
-	uint16_t kPlatformAddr = ReadySpeccyByte(*pUI->pSpeccy, kPlatformPtr);
-	kPlatformAddr = kPlatformAddr | (ReadySpeccyByte(*pUI->pSpeccy, kPlatformPtr+1) << 8);
+	uint16_t kPlatformAddr = ReadySpeccyByte(pUI->pSpeccy, kPlatformPtr);
+	kPlatformAddr = kPlatformAddr | (ReadySpeccyByte(pUI->pSpeccy, kPlatformPtr+1) << 8);
 	uint16_t kPlatformCharPtr = kPlatformAddr + 6;	// pointer to char data
 	uint16_t kPlatformColPtr = kPlatformAddr - 1;	// pointer to char data
 	for(int y=0;y<6;y++)
 	{
-		const uint8_t bits = ReadySpeccyByte(*pUI->pSpeccy, kPlatformAddr + y);
+		const uint8_t bits = ReadySpeccyByte(pUI->pSpeccy, kPlatformAddr + y);
 		for(int x=0;x<8;x++)
 		{
 			if((bits & (1<<(7-x))) !=0 )
 			{
-				const uint8_t *pImage = GetSpeccyMemPtr(*pUI->pSpeccy, kPlatformCharPtr);
-				const uint8_t col = ReadySpeccyByte(*pUI->pSpeccy, kPlatformColPtr);
+				const uint8_t *pImage = GetSpeccyMemPtr(pUI->pSpeccy, kPlatformCharPtr);
+				const uint8_t col = ReadySpeccyByte(pUI->pSpeccy, kPlatformColPtr);
 				uint8_t colVal = col & 0x3f;	// just the colour values
 				if (colVal == 0x36) 
-					colVal = (col & 0xc0) | ReadySpeccyByte(*pUI->pSpeccy, 0xea63);
+					colVal = (col & 0xc0) | ReadySpeccyByte(pUI->pSpeccy, 0xea63);
 				else if (colVal != 0)
 					colVal = col;
 				else 
-					colVal = (col & 0xf8) | ReadySpeccyByte(*pUI->pSpeccy, 0xea62);
+					colVal = (col & 0xf8) | ReadySpeccyByte(pUI->pSpeccy, 0xea62);
 
 				colVal &= ~0x40;
 				
@@ -162,13 +162,13 @@ static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerDat
 
 	FSpeccyUI *pUI = pStarquakeViewer->pUI;
 	
-	const uint8_t kPlatformNo1 = ReadySpeccyByte(*pUI->pSpeccy, kBigPlatformData + 0);
+	const uint8_t kPlatformNo1 = ReadySpeccyByte(pUI->pSpeccy, kBigPlatformData + 0);
 	DrawSmallPlatform(kPlatformNo1,xp + 32, yp + 24, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
-	const uint8_t kPlatformNo2 = ReadySpeccyByte(*pUI->pSpeccy, kBigPlatformData + 1);
+	const uint8_t kPlatformNo2 = ReadySpeccyByte(pUI->pSpeccy, kBigPlatformData + 1);
 	DrawSmallPlatform(kPlatformNo2, xp, yp + 24, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
-	const uint8_t kPlatformNo3 = ReadySpeccyByte(*pUI->pSpeccy, kBigPlatformData + 2);
+	const uint8_t kPlatformNo3 = ReadySpeccyByte(pUI->pSpeccy, kBigPlatformData + 2);
 	DrawSmallPlatform(kPlatformNo3, xp + 32, yp, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
-	const uint8_t kPlatformNo4 = ReadySpeccyByte(*pUI->pSpeccy, kBigPlatformData + 3);
+	const uint8_t kPlatformNo4 = ReadySpeccyByte(pUI->pSpeccy, kBigPlatformData + 3);
 	DrawSmallPlatform(kPlatformNo4, xp, yp, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
 
 
@@ -183,7 +183,7 @@ static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pSta
 	{
 		for(int x=0;x<4;x++)
 		{
-			const uint8_t kPlatformNo = ReadySpeccyByte(*pUI->pSpeccy, kScreenData);
+			const uint8_t kPlatformNo = ReadySpeccyByte(pUI->pSpeccy, kScreenData);
 			DrawBigPlatform(kPlatformNo, x * 64, y * 48, pStarquakeViewer);
 			kScreenData++;
 		}
@@ -229,7 +229,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		ImGui::Checkbox("Get from game", &getScreenFromGame);
 		ClearGraphicsView(*pGraphicsView, 0xff000000);
 		if(getScreenFromGame)
-			screenNo = ReadySpeccyByte(*pUI->pSpeccy, 0xd2c8);
+			screenNo = ReadySpeccyByte(pUI->pSpeccy, 0xd2c8);
 		DrawScreen(screenNo, 0, 0, pStarquakeViewer);
 		DrawGraphicsView(*pGraphicsView);
 		ImGui::EndTabItem();

@@ -117,6 +117,9 @@
     <ClCompile Include="..\..\Source\UI\FunctionHandlers.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Disassembler.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h">
@@ -375,6 +378,9 @@
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\FunctionHandlers.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Disassembler.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
