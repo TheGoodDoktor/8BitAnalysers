@@ -63,12 +63,13 @@ void DasmDiscard(FDasmState* pDasmState)
 
 
 /* disassembler callback to fetch the next instruction byte */
-static uint8_t _ui_dasm_in_cb(void* pUserData)
+static uint8_t DasmInputCB(void* pUserData)
 {
 	FDasmState* pDasm = (FDasmState*)pUserData;
 
 	const uint8_t val = pDasm->ReadCB(pDasm->CurLayer, pDasm->CurrentAddress++, pDasm->pUserData);
-	
+
+	// push into binary buffer
 	if (pDasm->bin_pos < DASM_MAX_BINLEN) 
 		pDasm->bin_buf[pDasm->bin_pos++] = val;
 	
@@ -76,10 +77,14 @@ static uint8_t _ui_dasm_in_cb(void* pUserData)
 }
 
 /* disassembler callback to output a character */
-static void _ui_dasm_out_cb(char c, void* user_data)
+static void DasmOutputCB(char c, void* user_data)
 {
 	FDasmState* win = (FDasmState*)user_data;
-	if ((win->str_pos + 1) < DASM_MAX_STRLEN) {
+
+	// add character to string
+	// use std::string?
+	if ((win->str_pos + 1) < DASM_MAX_STRLEN)
+	{
 		win->str_buf[win->str_pos++] = c;
 		win->str_buf[win->str_pos] = 0;
 	}
@@ -91,25 +96,23 @@ static void DasmDissassemble(FDasmState* pDasmState)
 	pDasmState->str_pos = 0;
 	pDasmState->bin_pos = 0;
 #if defined(DASM_USE_Z80) && defined(DASM_USE_M6502)
-	if (pDasmState->CPUType == DasmCPUType::Z80) {
+	if (pDasmState->CPUType == DasmCPUType::Z80) 
 		z80dasm_op(pDasmState->CurrentAddress, _ui_dasm_in_cb, _ui_dasm_out_cb, pDasmState);
-	}
-	else {
+	else 
 		m6502dasm_op(pDasmState->CurrentAddress, _ui_dasm_in_cb, _ui_dasm_out_cb, pDasmState);
-	}
 #elif defined(DASM_USE_Z80)
-	z80dasm_op(pDasmState->CurrentAddress, _ui_dasm_in_cb, _ui_dasm_out_cb, pDasmState);
+	z80dasm_op(pDasmState->CurrentAddress, DasmInputCB, DasmOutputCB, pDasmState);
 #else
 	m6502dasm_op(win->cur_addr, _ui_dasm_in_cb, _ui_dasm_out_cb, win);
 #endif
 }
 
 /* check if the current Z80 or m6502 instruction contains a jump target */
-static bool _ui_dasm_jumptarget(FDasmState* pDasmState, uint16_t pc, uint16_t* out_addr)
+static bool DasmEvaluateJumpTarget(FDasmState* pDasmState, uint16_t pc, uint16_t* out_addr)
 {
 	if (pDasmState->CPUType == DasmCPUType::Z80)
 	{
-		if (pDasmState->bin_pos == 3)
+		if (pDasmState->bin_pos == 3)	// 3 byte instructions
 		{
 			switch (pDasmState->bin_buf[0])
 			{
@@ -195,7 +198,7 @@ static bool _ui_dasm_jumptarget(FDasmState* pDasmState, uint16_t pc, uint16_t* o
 }
 
 /* push an address on the bookmark stack */
-static void _ui_dasm_stack_push(FDasmState* pDasmState, uint16_t addr)
+static void DasmStackPush(FDasmState* pDasmState, uint16_t addr)
 {
 	if (pDasmState->StackNum < DASM_MAX_STACK)
 	{
@@ -210,7 +213,7 @@ static void _ui_dasm_stack_push(FDasmState* pDasmState, uint16_t addr)
 }
 
 /* return current address on stack, and set pos to previous */
-static bool _ui_dasm_stack_back(FDasmState* pDasmState, uint16_t* addr)
+static bool DasmStackBack(FDasmState* pDasmState, uint16_t* addr)
 {
 	if (pDasmState->StackNum > 0) 
 	{
@@ -224,7 +227,7 @@ static bool _ui_dasm_stack_back(FDasmState* pDasmState, uint16_t* addr)
 }
 
 /* goto to address, op address on stack */
-static void _ui_dasm_goto(FDasmState* pDasmState, uint16_t addr)
+static void DasmGoto(FDasmState* pDasmState, uint16_t addr)
 {
 	pDasmState->StartAddress = addr;
 }
@@ -238,8 +241,9 @@ static void _ui_dasm_draw_controls(FDasmState* pDasmState)
 
 	if (ImGui::ArrowButton("##back", ImGuiDir_Left)) 
 	{
-		if (_ui_dasm_stack_back(pDasmState, &addr)) {
-			_ui_dasm_goto(pDasmState, addr);
+		if (DasmStackBack(pDasmState, &addr)) 
+		{
+			DasmGoto(pDasmState, addr);
 		}
 	}
 
@@ -289,7 +293,7 @@ static void DasmDrawDisassembly(FDasmState* pDasmState)
 		bool highlight = false;
 		if (pDasmState->HighlightAddr == op_addr) 
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, pDasmState->HighlightAddr);
+			ImGui::PushStyleColor(ImGuiCol_Text, pDasmState->HighlightColour);
 			highlight = true;
 		}
 
@@ -314,15 +318,16 @@ static void DasmDrawDisassembly(FDasmState* pDasmState)
 
 		/* check for jump instruction and draw an arrow  */
 		uint16_t jump_addr = 0;
-		if (_ui_dasm_jumptarget(pDasmState, pDasmState->CurrentAddress, &jump_addr)) 
+		if (DasmEvaluateJumpTarget(pDasmState, pDasmState->CurrentAddress, &jump_addr))
 		{
 			ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2 + glyph_width * 20);
 			ImGui::PushID(line_i);
 
-			if (ImGui::ArrowButton("##btn", ImGuiDir_Right)) {
+			if (ImGui::ArrowButton("##btn", ImGuiDir_Right)) 
+			{
 				ImGui::SetScrollY(0);
-				_ui_dasm_goto(pDasmState, jump_addr);
-				_ui_dasm_stack_push(pDasmState, op_addr);
+				DasmGoto(pDasmState, jump_addr);
+				DasmStackPush(pDasmState, op_addr);
 			}
 
 			if (ImGui::IsItemHovered()) 
@@ -351,7 +356,6 @@ static void DasmDrawStack(FDasmState* pDasmState)
 
 	if (ImGui::ListBoxHeader("##stack", ImVec2(-1, -1))) 
 	{
-
 		for (int i = 0; i < pDasmState->StackNum; i++)
 		{
 			snprintf(buf, sizeof(buf), "%04X", pDasmState->Stack[i]);
@@ -360,7 +364,7 @@ static void DasmDrawStack(FDasmState* pDasmState)
 			if (ImGui::Selectable(buf, i == pDasmState->StackPos)) 
 			{
 				pDasmState->StackPos = i;
-				_ui_dasm_goto(pDasmState, pDasmState->Stack[i]);
+				DasmGoto(pDasmState, pDasmState->Stack[i]);
 			}
 			
 			if (ImGui::IsItemHovered()) 

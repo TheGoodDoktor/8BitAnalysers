@@ -4,6 +4,7 @@
 #include <map>
 #include "SpriteViewer.h"
 #include "MemoryHandlers.h"
+#include "Disassembler.h"
 
 struct FSpeccyUI;
 struct FGame;
@@ -93,7 +94,7 @@ struct FSpeccyUI
 	uint16_t							SelectedFunction;
 	std::map<uint16_t, FFunctionInfo>	Functions;
 	std::vector<uint16_t>				FunctionStack;
-	ui_dasm_t							FunctionDasm;
+	FDasmState							FunctionDasm;
 
 	uint16_t dasmCurr = 0;
 

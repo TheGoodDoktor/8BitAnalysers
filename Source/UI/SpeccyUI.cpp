@@ -12,7 +12,7 @@
 #include "ui/ui_dbg.h"
 #include "MemoryHandlers.h"
 #include "FunctionHandlers.h"
-
+#include "Disassembler.h"
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -89,21 +89,21 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	}
 
 	// Setup Disassembler for function view
-	ui_dasm_desc_t desc = { 0 };
-	desc.layers[0] = "CPU Mapped";
-	desc.layers[1] = "Layer 0";
-	desc.layers[2] = "Layer 1";
-	desc.layers[3] = "Layer 2";
-	desc.layers[4] = "Layer 3";
-	desc.layers[5] = "Layer 4";
-	desc.layers[6] = "Layer 5";
-	desc.layers[7] = "Layer 6";
-	desc.cpu_type = UI_DASM_CPUTYPE_Z80;
-	desc.start_addr = 0x0000;
-	desc.read_cb = MemReadFunc;
-	desc.user_data = &pSpeccy->CurrentState;
-	desc.title = "FunctionDasm";
-	ui_dasm_init(&pUI->FunctionDasm, &desc);
+	FDasmDesc desc;
+	desc.LayerNames[0] = "CPU Mapped";
+	desc.LayerNames[1] = "Layer 0";
+	desc.LayerNames[2] = "Layer 1";
+	desc.LayerNames[3] = "Layer 2";
+	desc.LayerNames[4] = "Layer 3";
+	desc.LayerNames[5] = "Layer 4";
+	desc.LayerNames[6] = "Layer 5";
+	desc.LayerNames[7] = "Layer 6";
+	desc.CPUType = DasmCPUType::Z80;
+	desc.StartAddress = 0x0000;
+	desc.ReadCB = MemReadFunc;
+	desc.pUserData = &pSpeccy->CurrentState;
+	desc.Title = "FunctionDasm";
+	DasmInit(&pUI->FunctionDasm, &desc);
 
 	// setup pixel buffer
 	pUI->pGraphicsViewerView = CreateGraphicsView(64, 64);
@@ -574,7 +574,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 
 	DrawDebuggerUI(&pZXUI->dbg);
 
-	ui_dasm_draw(&pUI->FunctionDasm);
+	DasmDraw(&pUI->FunctionDasm);
 
 
 	// show spectrum window

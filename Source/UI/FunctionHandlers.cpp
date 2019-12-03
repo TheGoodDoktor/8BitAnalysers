@@ -181,7 +181,7 @@ void DrawFunctionInfo(FSpeccyUI* pUI)
 		if (ImGui::Selectable(function.FunctionName.c_str(), bSelected))
 		{
 			pUI->SelectedFunction = functionIt.first;
-			pUI->FunctionDasm.start_addr = function.StartAddress;
+			pUI->FunctionDasm.StartAddress = function.StartAddress;
 		}
 
 	}
@@ -211,7 +211,7 @@ void DrawFunctionInfo(FSpeccyUI* pUI)
 			ImGui::SameLine();
 			if (ImGui::ArrowButton("GotoAddr", ImGuiDir_Right))
 			{
-				pUI->FunctionDasm.start_addr = accessPC.first;
+				pUI->FunctionDasm.StartAddress = accessPC.first;
 			}
 			ImGui::PopID();
 		}
@@ -224,7 +224,7 @@ void DrawFunctionInfo(FSpeccyUI* pUI)
 			ImGui::SameLine();
 			if (ImGui::ArrowButton("GotoAddr", ImGuiDir_Right))
 			{
-				pUI->FunctionDasm.start_addr = accessPC.first;
+				pUI->FunctionDasm.StartAddress = accessPC.first;
 			}
 			ImGui::PopID();
 		}
