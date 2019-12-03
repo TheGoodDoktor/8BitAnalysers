@@ -60,6 +60,7 @@ void ShutdownSpeccy(FSpeccy*&pSpeccy);
 const std::vector<std::string>& GetGameList();
 bool LoadZ80File(FSpeccy &speccyInstance, const char *fName);
 
+// TODO: Replace these
 inline uint8_t	ReadySpeccyByte(const FSpeccy &speccy, uint16_t address)
 {
 	const int bank = address >> 14;
