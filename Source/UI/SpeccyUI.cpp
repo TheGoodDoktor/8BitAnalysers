@@ -161,6 +161,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	desc.StartAddress = 0x0000;
 	desc.ReadCB = MemReadFunc;
 	desc.pUserData = &pSpeccy->CurrentState;
+	desc.pUI = pUI;
 	desc.Title = "FunctionDasm";
 	DasmInit(&pUI->FunctionDasm, &desc);
 

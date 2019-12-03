@@ -1,6 +1,6 @@
 #include "Disassembler.h"
 #include "imgui.h"
-
+#include "SpeccyUI.h"
 #include "ui/ui_util.h"
 
 #ifndef DASM_ASSERT
@@ -28,6 +28,7 @@ void DasmInit(FDasmState* pDasmState, const FDasmDesc* pDasmDesc)
 	pDasmState->CPUType = pDasmDesc->CPUType;
 	pDasmState->ReadCB = pDasmDesc->ReadCB;
 	pDasmState->StartAddress = pDasmDesc->StartAddress;
+	pDasmState->pUI = pDasmDesc->pUI;
 	pDasmState->pUserData = pDasmDesc->pUserData;
 
 	// window related - remove
