@@ -128,7 +128,9 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	LoadGameConfigs(pUI);
 
 	memset(pUI->Labels, 0, sizeof(pUI->Labels));
-	
+
+	RunStaticCodeAnalysis(pUI, 0);
+
 	return pUI;
 }
 

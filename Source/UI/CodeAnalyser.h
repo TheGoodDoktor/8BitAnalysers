@@ -9,7 +9,7 @@ struct FCodeInfo
 	uint16_t	Address;
 	std::string	Text;
 	int			ByteSize;
-	bool		EndPoint = false;
+	//bool		EndPoint = false;
 };
 
 struct FCodeAnalysisState
@@ -21,6 +21,8 @@ struct FCodeAnalysisState
 	//std::string	InstructionStr;
 
 	FCodeInfo*	CodeInfo[0x10000];
+
+	bool		bDirty = false;
 };
 
 bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc);

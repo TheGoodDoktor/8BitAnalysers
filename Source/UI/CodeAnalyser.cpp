@@ -54,12 +54,27 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 
 	switch(instrByte)
 	{
+		/* CALL nnnn */
+	case 0xCD:
+		/* CALL cc,nnnn */
+	case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+	case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+		/* RST */
+	case 0xC7:
+	case 0xCF:
+	case 0xD7:
+	case 0xDF:
+	case 0xE7:
+	case 0xEF:
+	case 0xF7:
+	case 0xFF:
 		// ret
 	case 0xC8:
 	case 0xC9:
 	case 0xD8:
 	case 0xE8:
 	case 0xF8:
+	
 		
 	case 0xc3:// jp
 	case 0xe9:// jp(hl)
@@ -154,6 +169,8 @@ void AnalyseFromPC(FCodeAnalysisState* pState, uint16_t pc)
 		assert(0);
 	}*/
 
+	pState->bDirty = true;
+
 	if(pc == 0x7e38)
 	{
 		assert(0);
@@ -179,15 +196,17 @@ void AnalyseFromPC(FCodeAnalysisState* pState, uint16_t pc)
 		// does this function branch?
 		if (CheckJumpInstruction(pState->pUI->pSpeccy, pc, &jumpAddr))
 		{
-			fprintf(stderr,"Jump 0x%04X - > 0x%04X\n", pc, jumpAddr);
+			//fprintf(stderr,"Jump 0x%04X - > 0x%04X\n", pc, jumpAddr);
+			GenerateLabelsForAddress(pState->pUI, jumpAddr);
 			AnalyseFromPC(pState, jumpAddr);
+			bStop = false;	// should just be call & rst really
 		}
 		
 		// do we need to stop tracing ??
 		if (CheckStopInstruction(pState->pUI->pSpeccy, pc) || newPC < pc)
 		{
 			bStop = true;
-			pNewCodeInfo->EndPoint = true;
+			//pNewCodeInfo->EndPoint = true;
 		}
 		else
 			pc = newPC;
@@ -236,32 +255,49 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 		// build item list - not every frame please!
 		static std::vector< const FCodeInfo *> itemList;
 
-		itemList.clear();
-		
-		for (int addr = 0; addr < 0x10000; addr++)
+		if (pState->bDirty)
 		{
-			const FCodeInfo *pNewCodeInfo = pState->CodeInfo[addr];
-			if (pNewCodeInfo != nullptr)
+			itemList.clear();
+
+			for (int addr = 0; addr < 0x10000; addr++)
 			{
-				itemList.push_back(pNewCodeInfo);
+				const FCodeInfo *pNewCodeInfo = pState->CodeInfo[addr];
+				if (pNewCodeInfo != nullptr)
+				{
+					itemList.push_back(pNewCodeInfo);
+				}
 			}
+
+			pState->bDirty = false;
 		}
 
 		// draw clipped list
 		ImGuiListClipper clipper((int)itemList.size());
-		
+		const FCodeInfo *pPrevCodeInfo = nullptr;
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
 				const FCodeInfo *pCodeInfo = itemList[i];
 
-				ImGui::Text("0x%04X", pCodeInfo->Address);
+				if(pPrevCodeInfo!=nullptr && pCodeInfo->Address > pPrevCodeInfo->Address + pPrevCodeInfo->ByteSize)
+					ImGui::Separator();
+
+				// label
+				/*if (pUI->Labels[pCodeInfo->Address] != nullptr)
+				{
+					ImGui::Text("%s: ", pUI->Labels[pCodeInfo->Address]->Name.c_str());
+					//ImGui::SameLine();
+				}*/
+				ImGui::Text("\t0x%04X", pCodeInfo->Address);
 				const float line_start_x = ImGui::GetCursorPosX();
 				ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 				ImGui::Text("%s", pCodeInfo->Text.c_str());
-				if (pCodeInfo->EndPoint == true)
-					ImGui::Separator();
+
+				//if (pCodeInfo->EndPoint == true)
+				//	ImGui::Separator();
+
+				pPrevCodeInfo = pCodeInfo;
 			}
 		}
 	}
