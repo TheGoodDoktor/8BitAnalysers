@@ -76,7 +76,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\rapidjson\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -89,7 +89,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\rapidjson\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -104,7 +104,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\rapidjson\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -121,7 +121,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\rapidjson\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\rapidjson\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -137,6 +137,7 @@
     <ClCompile Include="..\..\Source\main.cpp" />
     <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp" />
     <ClCompile Include="..\..\Source\Speccy\Speccy.cpp" />
+    <ClCompile Include="..\..\Source\UI\CodeAnalyser.cpp" />
     <ClCompile Include="..\..\Source\UI\Disassembler.cpp" />
     <ClCompile Include="..\..\Source\UI\FunctionHandlers.cpp" />
     <ClCompile Include="..\..\Source\UI\GameConfig.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h" />
     <ClInclude Include="..\..\Source\imgui_impl_win32.h" />
     <ClInclude Include="..\..\Source\Speccy\Speccy.h" />
+    <ClInclude Include="..\..\Source\UI\CodeAnalyser.h" />
     <ClInclude Include="..\..\Source\UI\Disassembler.h" />
     <ClInclude Include="..\..\Source\UI\FunctionHandlers.h" />
     <ClInclude Include="..\..\Source\UI\GameConfig.h" />

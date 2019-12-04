@@ -17,7 +17,7 @@ struct FSpriteDefConfig
 struct FGameConfig
 {
 	std::string		Name;
-	std::string		Z80file;
+	std::string		Z80File;
 
 	FGameViewerData *(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
 	void(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);

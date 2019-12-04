@@ -4,6 +4,7 @@
 
 #include "GameConfig.h"
 #include "imgui_impl_lucidextra.h"
+#include "GameViewers/GameViewer.h"
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
 #include "GraphicsView.h"
@@ -13,6 +14,7 @@
 #include "MemoryHandlers.h"
 #include "FunctionHandlers.h"
 #include "Disassembler.h"
+#include "CodeAnalyser.h"
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -36,52 +38,12 @@ void gfx_destroy_texture(void* h)
 	
 }
 
-bool CheckJumpInstruction(FSpeccyUI* pUI, uint16_t pc, uint16_t* out_addr)
-{
-	const uint8_t instrByte = ReadySpeccyByte(pUI->pSpeccy, pc);
-
-	switch (instrByte)
-	{
-		/* CALL nnnn */
-	case 0xCD:
-		/* CALL cc,nnnn */
-	case 0xDC: case 0xFC: case 0xD4: case 0xC4:
-	case 0xF4: case 0xEC: case 0xE4: case 0xCC:
-		/* JP nnnn */
-	case 0xC3:
-		/* JP cc,nnnn */
-	case 0xDA: case 0xFA: case 0xD2: case 0xC2:
-	case 0xF2: case 0xEA: case 0xE2: case 0xCA:
-		*out_addr = (ReadySpeccyByte(pUI->pSpeccy, pc+2) << 8) | ReadySpeccyByte(pUI->pSpeccy, pc + 1);
-		return true;
-		
-		/* DJNZ d */
-	case 0x10:
-		/* JR d */
-	case 0x18:
-		/* JR cc,d */
-	case 0x38: case 0x30: case 0x20: case 0x28:
-		*out_addr = pc + (int8_t)ReadySpeccyByte(pUI->pSpeccy, pc + 1);
-		return true;
-		/* RST */
-	case 0xC7:  *out_addr = 0x00; return true;
-	case 0xCF:  *out_addr = 0x08; return true;
-	case 0xD7:  *out_addr = 0x10; return true;
-	case 0xDF:  *out_addr = 0x18; return true;
-	case 0xE7:  *out_addr = 0x20; return true;
-	case 0xEF:  *out_addr = 0x28; return true;
-	case 0xF7:  *out_addr = 0x30; return true;
-	case 0xFF:  *out_addr = 0x38; return true;
-	}
-
-	return false;
-}
-
-
-
 int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
+	RunStaticCodeAnalysis(pUI, pc);
+
+	return 0;
 	const uint16_t nextpc = pc;
 	// store program count in history
 	const uint16_t prevPC = pUI->PCHistory[pUI->PCHistoryPos];
@@ -91,21 +53,7 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	pc = prevPC;	// set PC to pc of instruction just executed
 
 	// labels
-	uint16_t outAddr;
-	if (CheckJumpInstruction(pUI, pc, &outAddr))
-	{
-		FLabelInfo* pLabel = pUI->Labels[outAddr];
-		if(pLabel == nullptr)
-		{ 
-			pLabel = new FLabelInfo;
-			char label[32];
-			sprintf(label, "label_0x%x", outAddr);
-			pLabel->Name = label;
-			pUI->Labels[outAddr] = pLabel;
-		}
-
-		//pLabel->References[pc]++;	// add/increment reference
-	}
+	GenerateLabelsForAddress(pUI, pc);
 
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pUI);
 
@@ -200,9 +148,20 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	pUI->Functions.clear();
 
 	// start up game
+	if(pUI->pActiveGame!=nullptr)
+		delete pUI->pActiveGame->pViewerData;
+	delete pUI->pActiveGame;
+
+	delete pUI->pCodeAnalysis;
+	pUI->pCodeAnalysis = nullptr;
+
 	pUI->pActiveGame = new FGame;
 	pUI->pActiveGame->pConfig = pGameConfig;
 	pUI->pActiveGame->pViewerData = pGameConfig->pInitFunction(pUI, pGameConfig);
+
+	// run initial analysis
+	uint16_t initialPC = z80_pc(&pUI->pSpeccy->CurrentState.cpu);
+	RunStaticCodeAnalysis(pUI, initialPC);
 }
 
 void SaveCurrentGameConfig(FSpeccyUI *pUI)
@@ -231,7 +190,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
-						if(LoadZ80File(*pSpeccy, pGameConfig->Z80file.c_str()))
+						if(LoadZ80File(*pSpeccy, pGameConfig->Z80File.c_str()))
 						{
 							StartGame(pUI,pGameConfig);
 							SaveCurrentGameConfig(pUI);
@@ -566,6 +525,12 @@ void DrawMemoryTools(FSpeccyUI* pUI)
 		if (ImGui::BeginTabItem("Memory Analysis"))
 		{
 			DrawMemoryAnalysis(pUI);
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Code Analysis"))
+		{
+			DrawCodeAnalysisData(pUI);
 			ImGui::EndTabItem();
 		}
 

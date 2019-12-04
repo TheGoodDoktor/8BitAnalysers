@@ -32,10 +32,10 @@ void DasmInit(FDasmState* pDasmState, const FDasmDesc* pDasmDesc)
 	pDasmState->pUserData = pDasmDesc->pUserData;
 
 	// window related - remove
-	pDasmState->init_x = (float)pDasmDesc->x;
-	pDasmState->init_y = (float)pDasmDesc->y;
-	pDasmState->init_w = (float)((pDasmDesc->w == 0) ? 400 : pDasmDesc->w);
-	pDasmState->init_h = (float)((pDasmDesc->h == 0) ? 256 : pDasmDesc->h);
+	//pDasmState->init_x = (float)pDasmDesc->x;
+	//pDasmState->init_y = (float)pDasmDesc->y;
+	//pDasmState->init_w = (float)((pDasmDesc->w == 0) ? 400 : pDasmDesc->w);
+	//pDasmState->init_h = (float)((pDasmDesc->h == 0) ? 256 : pDasmDesc->h);
 	pDasmState->open = pDasmDesc->open;
 
 
@@ -272,8 +272,10 @@ static void _ui_dasm_draw_controls(FDasmState* pDasmState)
 }
 
 /* draw the disassembly column */
-static void DasmDrawDisassembly(FDasmState* pDasmState)
+void DasmDrawDisassembly(FDasmState* pDasmState)
 {
+	auto &labels = pDasmState->pUI->Labels;
+	
 	ImGui::BeginChild("##dasmbox", ImVec2(0, 0), true);
 	_ui_dasm_draw_controls(pDasmState);
 
@@ -306,25 +308,32 @@ static void DasmDrawDisassembly(FDasmState* pDasmState)
 			ImGui::PushStyleColor(ImGuiCol_Text, pDasmState->HighlightColour);
 			highlight = true;
 		}
-
+		// label
+		if(labels[op_addr]!=nullptr)
+		{
+			ImGui::Text("%s: ", labels[op_addr]->Name.c_str());
+			//ImGui::SameLine();
+		}
+		
 		/* address */
-		ImGui::Text("%04X: ", op_addr);
-		ImGui::SameLine();
-
+		ImGui::Text("\t%04X: ", op_addr);
+		//ImGui::SameLine();
+		
 		/* instruction bytes */
 		const float line_start_x = ImGui::GetCursorPosX();
-		for (int n = 0; n < num_bytes; n++) {
+		/*for (int n = 0; n < num_bytes; n++) 
+		{
 			ImGui::SameLine(line_start_x + cell_width * n);
 			ImGui::Text("%02X ", pDasmState->bin_buf[n]);
-		}
+		}*/
 
 		/* disassembled instruction */
 		ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 		ImGui::Text("%s", pDasmState->str_buf);
 
-		if (highlight) {
+		if (highlight) 
 			ImGui::PopStyleColor();
-		}
+		
 
 		/* check for jump instruction and draw an arrow  */
 		uint16_t jump_addr = 0;
@@ -398,8 +407,8 @@ void DasmDraw(FDasmState* pDasmState)
 	if (!pDasmState->open) {
 		return;
 	}
-	ImGui::SetNextWindowPos(ImVec2(pDasmState->init_x, pDasmState->init_y), ImGuiCond_Once);
-	ImGui::SetNextWindowSize(ImVec2(pDasmState->init_w, pDasmState->init_h), ImGuiCond_Once);
+	//ImGui::SetNextWindowPos(ImVec2(pDasmState->init_x, pDasmState->init_y), ImGuiCond_Once);
+	//ImGui::SetNextWindowSize(ImVec2(pDasmState->init_w, pDasmState->init_h), ImGuiCond_Once);
 	if (ImGui::Begin(pDasmState->Title.c_str(), &pDasmState->open)) 
 	{
 		DasmDrawStack(pDasmState);

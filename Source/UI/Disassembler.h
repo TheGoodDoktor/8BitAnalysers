@@ -52,21 +52,21 @@ struct FDasmState
 	FSpeccyUI *			pUI;
 	void*				pUserData;
 
-	float init_x, init_y;
-	float init_w, init_h;
+	/*float init_x, init_y;
+	float init_w, init_h;*/
 	bool open;
 	bool valid;
 	
-	uint16_t			StartAddress;
-	uint16_t			CurrentAddress;
+	uint16_t			StartAddress = 0;
+	uint16_t			CurrentAddress = 0;
 	
-	int					str_pos;
+	int					str_pos = 0;
 	char				str_buf[DASM_MAX_STRLEN];
-	int					bin_pos;
+	int					bin_pos = 0;
 	uint8_t				bin_buf[DASM_MAX_BINLEN];
 	
-	int					StackNum;
-	int					StackPos;
+	int					StackNum = 0;
+	int					StackPos = 0;
 	uint16_t			Stack[DASM_MAX_STACK];
 	uint16_t			HighlightAddr;
 	uint32_t			HighlightColour;

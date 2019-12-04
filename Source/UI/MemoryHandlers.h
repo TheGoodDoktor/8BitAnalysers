@@ -24,9 +24,9 @@ struct FMemoryBlock
 struct FMemoryStats
 {
 	// counters for each memory address
-	int		ExecCount[0xffff];
-	int		ReadCount[0xffff];
-	int		WriteCount[0xffff];
+	int		ExecCount[0x10000];
+	int		ReadCount[0x10000];
+	int		WriteCount[0x10000];
 
 	std::vector< FMemoryBlock>	MemoryBlockInfo;
 

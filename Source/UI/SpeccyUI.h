@@ -12,7 +12,7 @@ struct FGame;
 struct FGameViewer;
 struct FGameViewerData;
 struct FGameConfig;
-
+struct FCodeAnalysisState;
 
 struct FGame
 {
@@ -55,7 +55,7 @@ struct FSpeccyUI
 	std::map<std::string, FUISpriteList>	SpriteLists;
 
 	// labels
-	FLabelInfo*				Labels[0xffff];
+	FLabelInfo*				Labels[0x10000];
 
 	// Memory handling
 	std::string				SelectedMemoryHandler;
@@ -68,6 +68,8 @@ struct FSpeccyUI
 	std::map<uint16_t, FFunctionInfo>	Functions;
 	std::vector<uint16_t>				FunctionStack;
 	FDasmState							FunctionDasm;
+
+	FCodeAnalysisState *				pCodeAnalysis = nullptr;
 
 	uint16_t dasmCurr = 0;
 
