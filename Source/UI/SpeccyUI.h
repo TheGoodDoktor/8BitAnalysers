@@ -35,10 +35,26 @@ enum class LabelType
 	Code,
 };
 
-struct FLabelInfo
+enum class ItemType
 {
+	Label,
+	Code,
+	Data,
+};
+
+struct FItem
+{
+	ItemType	Type;
+	uint16_t	Address;
+	uint16_t	ByteSize;
+};
+
+struct FLabelInfo : FItem
+{
+	FLabelInfo() { Type = ItemType::Label; }
+
 	std::string				Name;
-	LabelType				Type;
+	LabelType				LabelType;
 	std::map<uint16_t,int>	References;
 };
 

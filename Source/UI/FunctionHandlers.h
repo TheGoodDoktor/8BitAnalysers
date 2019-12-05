@@ -22,4 +22,4 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 
 void DrawFunctionInfo(FSpeccyUI* pUI);
 
-std::string GetROMLabelName(uint16_t callAddr);
+bool GetROMLabelName(uint16_t callAddr, std::string &labelName);

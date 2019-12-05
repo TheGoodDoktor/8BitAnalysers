@@ -139,41 +139,39 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 
 bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType labelType)
 {
-	uint16_t outAddr;
-	if (CheckJumpInstruction(pUI->pSpeccy, pc, &outAddr))
+	//uint16_t outAddr;
+	//if (CheckJumpInstruction(pUI->pSpeccy, pc, &outAddr))
 	{
-		FLabelInfo* pLabel = pUI->Labels[outAddr];
+		FLabelInfo* pLabel = pUI->Labels[pc];
 		if (pLabel == nullptr)
 		{
 			pLabel = new FLabelInfo;
-			pLabel->Type = labelType;
+			pLabel->LabelType = labelType;
+			pLabel->Address = pc;
+			pLabel->ByteSize = 0;
 			
-			if(pc < 0x4000)
-				pLabel->Name = GetROMLabelName(pc);	// maybe this should return a bool 
-			
-			if(pLabel->Name.empty())
+			if(GetROMLabelName(pc, pLabel->Name) == false)
 			{
 				char label[32];
 				switch (labelType)
 				{
 				case LabelType::Function:
-					sprintf(label, "function_0x%x", outAddr);
+					sprintf(label, "function_0x%04X", pc);
 					break;
 				case LabelType::Code:
-					sprintf(label, "label_0x%x", outAddr);
+					sprintf(label, "label_0x%04X", pc);
 					break;
 				case LabelType::Data:
-					sprintf(label, "label_0x%x", outAddr);
+					sprintf(label, "label_0x%04X", pc);
 					break;
 				}
 
 				pLabel->Name = label;
 			}
-			pUI->Labels[outAddr] = pLabel;
+			pUI->Labels[pc] = pLabel;
+			return true;
 		}
 
-		//pLabel->References[pc]++;	// add/increment reference
-		return true;
 	}
 	return false;
 }
@@ -233,10 +231,10 @@ void AnalyseFromPC(FCodeAnalysisState* pState, uint16_t pc)
 		const uint16_t newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, pState);
 		pNewCodeInfo->Address = pc;
 		pNewCodeInfo->ByteSize = newPC - pc;
+		pState->CodeInfo[pc] = pNewCodeInfo;	// just set to first instruction?
 
 		//for (uint16_t i = pc; i < newPC; i++)
 		//	state.CodeInfo[i] = pNewCodeInfo;
-		pState->CodeInfo[pc] = pNewCodeInfo;	// just set to first instruction?
 
 		// does this function branch?
 		if (CheckJumpInstruction(pState->pUI->pSpeccy, pc, &jumpAddr))
@@ -244,9 +242,18 @@ void AnalyseFromPC(FCodeAnalysisState* pState, uint16_t pc)
 			//fprintf(stderr,"Jump 0x%04X - > 0x%04X\n", pc, jumpAddr);
 			const bool isCall = CheckCallInstruction(pState->pUI->pSpeccy, pc);
 			GenerateLabelsForAddress(pState->pUI, jumpAddr, isCall ? LabelType::Function : LabelType::Code);
+
+			FLabelInfo* pLabel = pState->pUI->Labels[jumpAddr];
+			if (pLabel != nullptr)
+				pLabel->References[pc]++;	// add/increment reference
+
+
+			pNewCodeInfo->JumpAddress = jumpAddr;
 			AnalyseFromPC(pState, jumpAddr);
 			bStop = false;	// should just be call & rst really
 		}
+
+
 		
 		// do we need to stop tracing ??
 		if (CheckStopInstruction(pState->pUI->pSpeccy, pc) || newPC < pc)
@@ -299,7 +306,7 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 	ImGui::BeginChild("##analysis", ImVec2(0, 0), true);
 	{
 		// build item list - not every frame please!
-		static std::vector< const FCodeInfo *> itemList;
+		static std::vector< const FItem *> itemList;
 
 		if (pState->bDirty)
 		{
@@ -307,6 +314,12 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 
 			for (int addr = 0; addr < 0x10000; addr++)
 			{
+				const FLabelInfo *pLabelInfo = pUI->Labels[addr];
+				if (pLabelInfo != nullptr)
+				{
+					itemList.push_back(pLabelInfo);
+
+				}
 				const FCodeInfo *pNewCodeInfo = pState->CodeInfo[addr];
 				if (pNewCodeInfo != nullptr)
 				{
@@ -319,31 +332,53 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 
 		// draw clipped list
 		ImGuiListClipper clipper((int)itemList.size());
-		const FCodeInfo *pPrevCodeInfo = nullptr;
+		const FItem *pPrevItem = nullptr;
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
-				const FCodeInfo *pCodeInfo = itemList[i];
+				const FItem* pItem = itemList[i];
 
-				if(pPrevCodeInfo!=nullptr && pCodeInfo->Address > pPrevCodeInfo->Address + pPrevCodeInfo->ByteSize)
+				if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
 					ImGui::Separator();
 
-				// label
-				/*if (pUI->Labels[pCodeInfo->Address] != nullptr)
+				if (pItem->Type == ItemType::Label)
 				{
-					ImGui::Text("%s: ", pUI->Labels[pCodeInfo->Address]->Name.c_str());
-					//ImGui::SameLine();
-				}*/
-				ImGui::Text("\t0x%04X", pCodeInfo->Address);
-				const float line_start_x = ImGui::GetCursorPosX();
-				ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
-				ImGui::Text("%s", pCodeInfo->Text.c_str());
+					const FLabelInfo *pLabelInfo = static_cast<const FLabelInfo *>(pItem);
+					ImGui::Text("%s: ", pLabelInfo->Name.c_str());
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::BeginTooltip();
+						ImGui::Text("Callers:");
+						for (const auto & caller : pLabelInfo->References)
+						{
+							ImGui::Text("0x%04X", caller.first);
+						}
+						ImGui::EndTooltip();
+					}
+				}
+				else if (pItem->Type == ItemType::Code)
+				{
+					const FCodeInfo *pCodeInfo = static_cast<const FCodeInfo *>(pItem);
 
-				//if (pCodeInfo->EndPoint == true)
-				//	ImGui::Separator();
+					ImGui::Text("\t0x%04X", pCodeInfo->Address);
+					const float line_start_x = ImGui::GetCursorPosX();
+					ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
+					ImGui::Text("%s", pCodeInfo->Text.c_str());
+					if (pCodeInfo->JumpAddress != 0)
+					{
+						const FLabelInfo *pLabelInfo = pUI->Labels[pCodeInfo->JumpAddress];
+						if (pLabelInfo != nullptr)
+						{
+							ImGui::SameLine();
+							ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+							ImGui::Text("[%s]", pLabelInfo->Name.c_str());
+							ImGui::PopStyleColor();
+						}
+					}
+				}
 
-				pPrevCodeInfo = pCodeInfo;
+				pPrevItem = pItem;
 			}
 		}
 	}

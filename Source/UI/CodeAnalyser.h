@@ -1,15 +1,19 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include "SpeccyUI.h"
 
 enum class LabelType;
 struct FSpeccyUI;
 
-struct FCodeInfo
+struct FCodeInfo : FItem
 {
-	uint16_t	Address;
+	FCodeInfo() { Type = ItemType::Code; }
+
+	//uint16_t	Address;
 	std::string	Text;
-	int			ByteSize;
+	uint16_t	JumpAddress = 0;
+	//int			ByteSize;
 	//bool		EndPoint = false;
 };
 

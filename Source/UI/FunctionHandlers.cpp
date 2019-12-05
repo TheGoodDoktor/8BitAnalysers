@@ -7,7 +7,7 @@
 // obtained from:
 // http://www.primrosebank.net/computers/zxspectrum/docs/CompleteSpectrumROMDisassemblyThe.pdf
 
-std::map<uint16_t,const char *> g_RomFunctions =
+std::map<uint16_t,const char *> g_RomLabels =
 {
 	// Restarts
 	{0x0000, "RST_Start"},
@@ -31,17 +31,27 @@ std::map<uint16_t,const char *> g_RomFunctions =
 	{0x15f2, "Print-A2"},
 };
 
-std::string GetROMLabelName(uint16_t callAddr)
+void InsertROMLabels(FSpeccyUI *pUI)
+{
+	for (const auto &label : g_RomLabels)
+	{
+		FLabelInfo *pLabel = new FLabelInfo;
+		//pLabel->LabelType = 
+		pUI->Labels[label.first] = pLabel;
+	}
+}
+
+bool GetROMLabelName(uint16_t callAddr, std::string &labelName)
 {
 	// Try to find a ROM function from the list
-	const auto &romFunctionIt = g_RomFunctions.find(callAddr);
-	if (romFunctionIt != g_RomFunctions.end())
-		return "ROM_" + std::string(romFunctionIt->second);
+	const auto &romFunctionIt = g_RomLabels.find(callAddr);
+	if (romFunctionIt != g_RomLabels.end())
+	{
+		labelName = romFunctionIt->second;
+		return true;
+	}
 
-	char functionName[64];
-	sprintf(functionName, "ROM_0x%x", callAddr);
-
-	return std::string(functionName);
+	return false;
 }
 
 int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpeccyUI *pUI)
@@ -127,7 +137,7 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 			{
 				if (callAddr < 0x4000)
 				{
-					functionInfo.FunctionName = GetROMLabelName(callAddr);
+					GetROMLabelName(callAddr, functionInfo.FunctionName);
 				}
 				else
 				{
