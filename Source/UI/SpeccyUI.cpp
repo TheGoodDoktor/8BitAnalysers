@@ -53,7 +53,7 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	pc = prevPC;	// set PC to pc of instruction just executed
 
 	// labels
-	GenerateLabelsForAddress(pUI, pc);
+	GenerateLabelsForAddress(pUI, pc,LabelType::Code);
 
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pUI);
 

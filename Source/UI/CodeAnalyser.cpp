@@ -46,6 +46,31 @@ bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 	return false;
 }
 
+bool CheckCallInstruction(FSpeccy* pSpeccy, uint16_t pc)
+{
+	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
+
+	switch (instrByte)
+	{
+		/* CALL nnnn */
+	case 0xCD:
+		/* CALL cc,nnnn */
+	case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+	case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+		/* RST */
+	case 0xC7:
+	case 0xCF:
+	case 0xD7:
+	case 0xDF:
+	case 0xE7:
+	case 0xEF:
+	case 0xF7:
+	case 0xFF:
+		return true;
+	}
+	return false;
+}
+
 // check if function should stop static analysis
 // this would be a function that unconditionally affects the PC
 bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
@@ -112,7 +137,7 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 	}
 }
 
-bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc)
+bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType labelType)
 {
 	uint16_t outAddr;
 	if (CheckJumpInstruction(pUI->pSpeccy, pc, &outAddr))
@@ -121,9 +146,29 @@ bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc)
 		if (pLabel == nullptr)
 		{
 			pLabel = new FLabelInfo;
-			char label[32];
-			sprintf(label, "label_0x%x", outAddr);
-			pLabel->Name = label;
+			pLabel->Type = labelType;
+			
+			if(pc < 0x4000)
+				pLabel->Name = GetROMLabelName(pc);	// maybe this should return a bool 
+			
+			if(pLabel->Name.empty())
+			{
+				char label[32];
+				switch (labelType)
+				{
+				case LabelType::Function:
+					sprintf(label, "function_0x%x", outAddr);
+					break;
+				case LabelType::Code:
+					sprintf(label, "label_0x%x", outAddr);
+					break;
+				case LabelType::Data:
+					sprintf(label, "label_0x%x", outAddr);
+					break;
+				}
+
+				pLabel->Name = label;
+			}
 			pUI->Labels[outAddr] = pLabel;
 		}
 
@@ -197,7 +242,8 @@ void AnalyseFromPC(FCodeAnalysisState* pState, uint16_t pc)
 		if (CheckJumpInstruction(pState->pUI->pSpeccy, pc, &jumpAddr))
 		{
 			//fprintf(stderr,"Jump 0x%04X - > 0x%04X\n", pc, jumpAddr);
-			GenerateLabelsForAddress(pState->pUI, jumpAddr);
+			const bool isCall = CheckCallInstruction(pState->pUI->pSpeccy, pc);
+			GenerateLabelsForAddress(pState->pUI, jumpAddr, isCall ? LabelType::Function : LabelType::Code);
 			AnalyseFromPC(pState, jumpAddr);
 			bStop = false;	// should just be call & rst really
 		}

@@ -28,9 +28,17 @@ struct FGame
 	void *		pUserData = nullptr;
 };*/
 
+enum class LabelType
+{
+	Data,
+	Function,
+	Code,
+};
+
 struct FLabelInfo
 {
 	std::string				Name;
+	LabelType				Type;
 	std::map<uint16_t,int>	References;
 };
 

@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 
+enum class LabelType;
 struct FSpeccyUI;
 
 struct FCodeInfo
@@ -25,7 +26,9 @@ struct FCodeAnalysisState
 	bool		bDirty = false;
 };
 
-bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc);
+
+
+bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType label);
 
 void RunStaticCodeAnalysis(FSpeccyUI *pUI, uint16_t pc);
 

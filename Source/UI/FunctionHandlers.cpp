@@ -31,7 +31,7 @@ std::map<uint16_t,const char *> g_RomFunctions =
 	{0x15f2, "Print-A2"},
 };
 
-std::string GetROMFunctionName(uint16_t callAddr)
+std::string GetROMLabelName(uint16_t callAddr)
 {
 	// Try to find a ROM function from the list
 	const auto &romFunctionIt = g_RomFunctions.find(callAddr);
@@ -127,7 +127,7 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 			{
 				if (callAddr < 0x4000)
 				{
-					functionInfo.FunctionName = GetROMFunctionName(callAddr);
+					functionInfo.FunctionName = GetROMLabelName(callAddr);
 				}
 				else
 				{
