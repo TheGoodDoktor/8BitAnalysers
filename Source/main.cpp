@@ -102,7 +102,6 @@ int main(int, char**)
     //IM_ASSERT(font != NULL);
 
     // Our state
-    bool show_demo_window = true;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	// Speccy 
@@ -141,8 +140,8 @@ int main(int, char**)
 		UpdatePostTickSpeccyUI(pSpeccyUI);
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
+        if (pSpeccyUI->bShowImGuiDemo)
+            ImGui::ShowDemoWindow(&pSpeccyUI->bShowImGuiDemo);
 
         // Rendering
         ImGui::Render();

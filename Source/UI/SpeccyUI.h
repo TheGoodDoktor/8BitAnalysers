@@ -47,6 +47,7 @@ struct FItem
 	ItemType	Type;
 	uint16_t	Address;
 	uint16_t	ByteSize;
+	int			FrameLastAccessed = -1;
 };
 
 struct FLabelInfo : FItem
@@ -55,7 +56,22 @@ struct FLabelInfo : FItem
 
 	std::string				Name;
 	LabelType				LabelType;
-	std::map<uint16_t,int>	References;
+	std::map<uint16_t,int>	References;	
+};
+
+struct FCodeInfo : FItem
+{
+	FCodeInfo() :FItem() { Type = ItemType::Code; }
+
+	std::string		Text;				// Disassembly text
+	uint16_t		JumpAddress = 0;	// optional jump address
+};
+
+struct FDataInfo : FItem
+{
+	FDataInfo() :FItem() { Type = ItemType::Data; }
+	
+	std::map<uint16_t, int>	References;	// address and counts of data access instructions
 };
 
 
@@ -78,8 +94,12 @@ struct FSpeccyUI
 	std::string				SelectedSpriteList;
 	std::map<std::string, FUISpriteList>	SpriteLists;
 
-	// labels
-	FLabelInfo*				Labels[0x10000];
+	// code analysis information
+	static const int kAddressSize = 1 << 16;
+	FLabelInfo*				Labels[kAddressSize];
+	FCodeInfo*				CodeInfo[kAddressSize];
+	FDataInfo*				DataInfo[kAddressSize];
+	bool					bCodeAnalysisDataDirty = false;
 
 	// Memory handling
 	std::string				SelectedMemoryHandler;
@@ -93,13 +113,15 @@ struct FSpeccyUI
 	std::vector<uint16_t>				FunctionStack;
 	FDasmState							FunctionDasm;
 
-	FCodeAnalysisState *				pCodeAnalysis = nullptr;
-
 	uint16_t dasmCurr = 0;
 
 	static const int kPCHistorySize = 32;
 	uint16_t PCHistory[kPCHistorySize];
 	int PCHistoryPos = 0;
+
+	int	CurrentFrameNo = 0;
+
+	bool bShowImGuiDemo = false;
 };
 
 

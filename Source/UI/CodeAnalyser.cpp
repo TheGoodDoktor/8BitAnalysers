@@ -2,6 +2,9 @@
 #include <cstdint>
 #include "SpeccyUI.h"
 
+#include "ROMLabels.h"
+#include <algorithm>
+
 bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 {
 	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
@@ -150,7 +153,7 @@ bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType labelType)
 			pLabel->Address = pc;
 			pLabel->ByteSize = 0;
 			
-			if(GetROMLabelName(pc, pLabel->Name) == false)
+			//if(GetROMLabelName(pc, pLabel->Name) == false)
 			{
 				char label[32];
 				switch (labelType)
@@ -177,13 +180,20 @@ bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType labelType)
 }
 
 
+struct FAnalysisDasmState
+{
+	FSpeccy*		pSpeccy;
+	uint16_t		CurrentAddress;
+	std::string		Text;
+};
+
 
 /* disassembler callback to fetch the next instruction byte */
 static uint8_t AnalysisDasmInputCB(void* pUserData)
 {
-	FCodeAnalysisState* pAnalysis = (FCodeAnalysisState*)pUserData;
+	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
 
-	const uint8_t val = ReadySpeccyByte(pAnalysis->pUI->pSpeccy, pAnalysis->CurrentAddress++);
+	const uint8_t val = ReadySpeccyByte(pDasmState->pSpeccy, pDasmState->CurrentAddress++);
 
 	// push into binary buffer
 	//if (pDasm->bin_pos < DASM_MAX_BINLEN)
@@ -193,18 +203,17 @@ static uint8_t AnalysisDasmInputCB(void* pUserData)
 }
 
 /* disassembler callback to output a character */
-static void AnalysisOutputCB(char c, void* user_data)
+static void AnalysisOutputCB(char c, void* pUserData)
 {
-	FCodeAnalysisState* pAnalysis = (FCodeAnalysisState*)user_data;
+	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
 
 	// add character to string
-	assert(pAnalysis->pInstructionInfo);
-	pAnalysis->pInstructionInfo->Text += c;
+	pDasmState->Text += c;
 }
 
-void AnalyseFromPC(FCodeAnalysisState* pState, uint16_t pc)
+void AnalyseFromPC(FSpeccyUI *pUI, uint16_t pc)
 {
-	if (pState->CodeInfo[pc] != nullptr)	// already been analysed
+	if (pUI->CodeInfo[pc] != nullptr)	// already been analysed
 		return;
 
 	/*if(pc >= 0x4000 && pc <= 0x5AFF)	// screen memory
@@ -212,51 +221,53 @@ void AnalyseFromPC(FCodeAnalysisState* pState, uint16_t pc)
 		assert(0);
 	}*/
 
-	pState->bDirty = true;
+	pUI->bCodeAnalysisDataDirty = true;
 
-	if(pc == 0x7e38)
+	/*if(pc == 0x7e38)
 	{
 		assert(0);
 
-	}
+	}*/
 	bool bStop = false;
 
 	while (bStop == false)
 	{
 		uint16_t jumpAddr;
 		
+		FAnalysisDasmState dasmState;
+		dasmState.pSpeccy = pUI->pSpeccy;
+		dasmState.CurrentAddress = pc;
+		const uint16_t newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 		FCodeInfo *pNewCodeInfo = new FCodeInfo;
-		pState->CurrentAddress = pc;
-		pState->pInstructionInfo = pNewCodeInfo;
-		const uint16_t newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, pState);
+		pNewCodeInfo->Text = dasmState.Text;
 		pNewCodeInfo->Address = pc;
 		pNewCodeInfo->ByteSize = newPC - pc;
-		pState->CodeInfo[pc] = pNewCodeInfo;	// just set to first instruction?
+		pUI->CodeInfo[pc] = pNewCodeInfo;	// just set to first instruction?
 
 		//for (uint16_t i = pc; i < newPC; i++)
 		//	state.CodeInfo[i] = pNewCodeInfo;
 
 		// does this function branch?
-		if (CheckJumpInstruction(pState->pUI->pSpeccy, pc, &jumpAddr))
+		if (CheckJumpInstruction(pUI->pSpeccy, pc, &jumpAddr))
 		{
 			//fprintf(stderr,"Jump 0x%04X - > 0x%04X\n", pc, jumpAddr);
-			const bool isCall = CheckCallInstruction(pState->pUI->pSpeccy, pc);
-			GenerateLabelsForAddress(pState->pUI, jumpAddr, isCall ? LabelType::Function : LabelType::Code);
+			const bool isCall = CheckCallInstruction(pUI->pSpeccy, pc);
+			GenerateLabelsForAddress(pUI, jumpAddr, isCall ? LabelType::Function : LabelType::Code);
 
-			FLabelInfo* pLabel = pState->pUI->Labels[jumpAddr];
+			FLabelInfo* pLabel = pUI->Labels[jumpAddr];
 			if (pLabel != nullptr)
 				pLabel->References[pc]++;	// add/increment reference
 
 
 			pNewCodeInfo->JumpAddress = jumpAddr;
-			AnalyseFromPC(pState, jumpAddr);
+			AnalyseFromPC(pUI, jumpAddr);
 			bStop = false;	// should just be call & rst really
 		}
 
 
 		
 		// do we need to stop tracing ??
-		if (CheckStopInstruction(pState->pUI->pSpeccy, pc) || newPC < pc)
+		if (CheckStopInstruction(pUI->pSpeccy, pc) || newPC < pc)
 		{
 			bStop = true;
 			//pNewCodeInfo->EndPoint = true;
@@ -270,17 +281,8 @@ void AnalyseFromPC(FCodeAnalysisState* pState, uint16_t pc)
 void RunStaticCodeAnalysis(FSpeccyUI *pUI, uint16_t pc)
 {
 	//const uint8_t instrByte = ReadySpeccyByte(pUI->pSpeccy, pc);
-
-	if (pUI->pCodeAnalysis == nullptr)
-	{
-		FCodeAnalysisState* pState = new FCodeAnalysisState;
-		pState->pUI = pUI;
-		memset(pState->CodeInfo, 0, sizeof(pState->CodeInfo));
-
-		pUI->pCodeAnalysis = pState;
-	}
-
-	AnalyseFromPC(pUI->pCodeAnalysis, pc);
+	
+	AnalyseFromPC(pUI, pc);
 	
 	//if (bRead)
 	//	pUI->MemStats.ReadCount[addr]++;
@@ -289,16 +291,56 @@ void RunStaticCodeAnalysis(FSpeccyUI *pUI, uint16_t pc)
 	//
 }
 
+FLabelInfo* AddLabel(FSpeccyUI *pUI, uint16_t address,const char *name,LabelType type)
+{
+	FLabelInfo *pLabel = new FLabelInfo;
+	pLabel->Name = name;
+	pLabel->LabelType = type;
+	pUI->Labels[address] = pLabel;
+	return pLabel;
+}
+
+void InsertROMLabels(FSpeccyUI *pUI)
+{
+	for (const auto &label : g_RomLabels)
+	{
+		AddLabel(pUI, label.Address, label.pLabelName, label.LabelType);
+
+		// run static analysis on all code labels
+		if(label.LabelType == LabelType::Code || label.LabelType == LabelType::Function)
+			RunStaticCodeAnalysis(pUI, label.Address);
+	}
+}
+
+void InsertSystemLabels(FSpeccyUI *pUI)
+{
+	// screen memory start
+	AddLabel(pUI, 0x4000, "ScreenPixels", LabelType::Data);
+	
+	FDataInfo *pScreenPixData = new FDataInfo;
+	pScreenPixData->Address = 0x4000;
+	pScreenPixData->ByteSize = 0x1800;
+	pUI->DataInfo[pScreenPixData->Address] = pScreenPixData;
+
+	AddLabel(pUI, 0x5800, "ScreenAttributes", LabelType::Data);
+	FDataInfo *pScreenAttrData = new FDataInfo;
+	pScreenAttrData->Address = 0x5800;
+	pScreenAttrData->ByteSize = 0x400;
+	pUI->DataInfo[pScreenAttrData->Address] = pScreenAttrData;
+
+	// system variables?
+}
+
+void InitialiseCodeAnalysis(FSpeccyUI *pUI)
+{
+	uint16_t initialPC = z80_pc(&pUI->pSpeccy->CurrentState.cpu);
+	InsertROMLabels(pUI);
+	InsertSystemLabels(pUI);
+	RunStaticCodeAnalysis(pUI, initialPC);
+}
 
 void DrawCodeAnalysisData(FSpeccyUI *pUI)
 {
-	FCodeAnalysisState* pState = pUI->pCodeAnalysis;
-	if(pState == nullptr)
-	{
-		ImGui::Text("Code Analysis not run");
-		return;
-	}
-	
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
@@ -308,11 +350,12 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 		// build item list - not every frame please!
 		static std::vector< const FItem *> itemList;
 
-		if (pState->bDirty)
+		if (pUI->bCodeAnalysisDataDirty)
 		{
 			itemList.clear();
 
-			for (int addr = 0; addr < 0x10000; addr++)
+			// loop across address range
+			for (int addr = 0; addr < (1<<16); addr++)
 			{
 				const FLabelInfo *pLabelInfo = pUI->Labels[addr];
 				if (pLabelInfo != nullptr)
@@ -320,27 +363,43 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 					itemList.push_back(pLabelInfo);
 
 				}
-				const FCodeInfo *pNewCodeInfo = pState->CodeInfo[addr];
-				if (pNewCodeInfo != nullptr)
+				const FCodeInfo *pCodeInfo = pUI->CodeInfo[addr];
+				if (pCodeInfo != nullptr)
 				{
-					itemList.push_back(pNewCodeInfo);
+					itemList.push_back(pCodeInfo);
+				}
+				const FDataInfo *pDataInfo = pUI->DataInfo[addr];
+				if (pDataInfo != nullptr)
+				{
+					itemList.push_back(pDataInfo);
 				}
 			}
 
-			pState->bDirty = false;
+			pUI->bCodeAnalysisDataDirty = false;
 		}
 
 		// draw clipped list
 		ImGuiListClipper clipper((int)itemList.size());
 		const FItem *pPrevItem = nullptr;
+		static const FItem *pSelectedItem = nullptr;
+
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
 				const FItem* pItem = itemList[i];
 
+				ImGui::PushID(i);
+
 				if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
 					ImGui::Separator();
+
+				// selectable
+				if(ImGui::Selectable("##codeanalysisline",pItem == pSelectedItem))
+				{
+					pSelectedItem = pItem;
+				}
+				ImGui::SameLine();
 
 				if (pItem->Type == ItemType::Label)
 				{
@@ -361,7 +420,16 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 				{
 					const FCodeInfo *pCodeInfo = static_cast<const FCodeInfo *>(pItem);
 
-					ImGui::Text("\t0x%04X", pCodeInfo->Address);
+					const int frameSinceAccessed = pUI->CurrentFrameNo - pCodeInfo->FrameLastAccessed;
+					const int brightVal = (255 - std::min(frameSinceAccessed, 255)) & 0xff;
+
+					const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
+					ImGui::PushStyleColor(ImGuiCol_Text, col);
+					ImGui::Text(">> ");
+					ImGui::SameLine();
+					ImGui::PopStyleColor();
+
+					ImGui::Text("0x%04X", pCodeInfo->Address);
 					const float line_start_x = ImGui::GetCursorPosX();
 					ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 					ImGui::Text("%s", pCodeInfo->Text.c_str());
@@ -377,8 +445,19 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 						}
 					}
 				}
+				else if (pItem->Type == ItemType::Data)
+				{
+					const FDataInfo *pDataInfo = static_cast<const FDataInfo *>(pItem);
+
+					ImGui::Text("\t0x%04X", pDataInfo->Address);
+					const float line_start_x = ImGui::GetCursorPosX();
+					ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
+					ImGui::Text("%d Bytes", pDataInfo->ByteSize);
+				}
 
 				pPrevItem = pItem;
+
+				ImGui::PopID();
 			}
 		}
 	}

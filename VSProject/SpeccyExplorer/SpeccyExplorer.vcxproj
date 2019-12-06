@@ -170,6 +170,7 @@
     <ClInclude Include="..\..\Source\UI\GameViewers\StarquakeViewer.h" />
     <ClInclude Include="..\..\Source\UI\GraphicsView.h" />
     <ClInclude Include="..\..\Source\UI\MemoryHandlers.h" />
+    <ClInclude Include="..\..\Source\UI\ROMLabels.h" />
     <ClInclude Include="..\..\Source\UI\SpeccyUI.h" />
     <ClInclude Include="..\..\Source\UI\SpriteViewer.h" />
     <ClInclude Include="..\..\Source\Util\FileUtil.h" />

@@ -41,9 +41,7 @@ void gfx_destroy_texture(void* h)
 int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
-	RunStaticCodeAnalysis(pUI, pc);
 
-	return 0;
 	const uint16_t nextpc = pc;
 	// store program count in history
 	const uint16_t prevPC = pUI->PCHistory[pUI->PCHistoryPos];
@@ -52,13 +50,16 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 
 	pc = prevPC;	// set PC to pc of instruction just executed
 
+	RunStaticCodeAnalysis(pUI, pc);
+	pUI->CodeInfo[pc]->FrameLastAccessed = pUI->CurrentFrameNo;
+
 	// labels
-	GenerateLabelsForAddress(pUI, pc,LabelType::Code);
+	//GenerateLabelsForAddress(pUI, pc,LabelType::Code);
 
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pUI);
 
-	if(trapId == 0)
-		trapId = FunctionTrapFunction(pc,nextpc, ticks, pins, pUI);
+	//if(trapId == 0)
+		//trapId = FunctionTrapFunction(pc,nextpc, ticks, pins, pUI);
 	
 	
 	return trapId;
@@ -95,6 +96,8 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 		ui_zx_init(&pUI->UIZX, &desc);
 	}
 
+	pUI->UIZX.dbg.ui.open = true;
+
 	// Setup Disassembler for function view
 	FDasmDesc desc;
 	desc.LayerNames[0] = "CPU Mapped";
@@ -128,8 +131,12 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	LoadGameConfigs(pUI);
 
 	memset(pUI->Labels, 0, sizeof(pUI->Labels));
+	memset(pUI->CodeInfo, 0, sizeof(pUI->CodeInfo));
+	memset(pUI->DataInfo, 0, sizeof(pUI->DataInfo));
 
-	RunStaticCodeAnalysis(pUI, 0);
+	// run initial analysis
+	InitialiseCodeAnalysis(pUI);
+	
 
 	return pUI;
 }
@@ -145,6 +152,18 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 
 	ResetMemoryStats(pUI->MemStats);
 
+	for(int i=0;i<(1<<16);i++)	// loop across address range
+	{
+		delete pUI->Labels[i];
+		pUI->Labels[i] = nullptr;
+		
+		delete pUI->CodeInfo[i];
+		pUI->CodeInfo[i] = nullptr;
+
+		delete pUI->DataInfo[i];
+		pUI->DataInfo[i] = nullptr;
+	}
+	
 	// Reset Functions
 	pUI->FunctionStack.clear();
 	pUI->Functions.clear();
@@ -153,17 +172,14 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	if(pUI->pActiveGame!=nullptr)
 		delete pUI->pActiveGame->pViewerData;
 	delete pUI->pActiveGame;
-
-	delete pUI->pCodeAnalysis;
-	pUI->pCodeAnalysis = nullptr;
-
+	
 	pUI->pActiveGame = new FGame;
 	pUI->pActiveGame->pConfig = pGameConfig;
 	pUI->pActiveGame->pViewerData = pGameConfig->pInitFunction(pUI, pGameConfig);
 
 	// run initial analysis
-	uint16_t initialPC = z80_pc(&pUI->pSpeccy->CurrentState.cpu);
-	RunStaticCodeAnalysis(pUI, initialPC);
+	InitialiseCodeAnalysis(pUI);
+
 }
 
 void SaveCurrentGameConfig(FSpeccyUI *pUI)
@@ -317,6 +333,11 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("ImGui"))
+		{
+			ImGui::MenuItem("Show Demo", 0, &pUI->bShowImGuiDemo);
+		}
+		
 
 		/*if (ImGui::BeginMenu("Game Viewers"))
 		{
@@ -701,6 +722,8 @@ bool DrawDockingView(FSpeccyUI *pUI)
 void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 {
 	DrawDockingView(pUI);
+	if(pUI->pSpeccy->ExecThisFrame)
+		pUI->CurrentFrameNo++;
 }
 /*
 FGameViewer &AddGameViewer(FSpeccyUI *pUI,const char *pName)

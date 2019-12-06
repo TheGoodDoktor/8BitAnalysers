@@ -3,45 +3,9 @@
 #include <algorithm>
 #include "misc/cpp/imgui_stdlib.h"
 
-// Rom routines
-// obtained from:
-// http://www.primrosebank.net/computers/zxspectrum/docs/CompleteSpectrumROMDisassemblyThe.pdf
 
-std::map<uint16_t,const char *> g_RomLabels =
-{
-	// Restarts
-	{0x0000, "RST_Start"},
-	{0x0008, "RST_Error"},
-	{0x0010, "RST_PrintChar"},
-	{0x0018, "RST_CollectChar"},
-	{0x0020, "RST_CollectNextChar"},
-	{0x0028, "RST_FPCalc"},
-	{0x0030, "RST_MakeBCSpaces"},
-	{0x0038, "RST_MaskInt"},
 
-	// Rom Routines
-	{0x028e, "Key-Scan"},
-	{0x02bf, "Keyboard"},
-	{0x031e, "Key-Test"},
-	{0x0a80, "PO-Change"},
-	{0x0b03, "PO-Fetch"},
-	{0x0b24, "PO-Any"},
-	{0x0bdb, "PO-Attr"},
-	{0x0e9b, "CL-Addr"},
-	{0x15f2, "Print-A2"},
-};
-
-void InsertROMLabels(FSpeccyUI *pUI)
-{
-	for (const auto &label : g_RomLabels)
-	{
-		FLabelInfo *pLabel = new FLabelInfo;
-		//pLabel->LabelType = 
-		pUI->Labels[label.first] = pLabel;
-	}
-}
-
-bool GetROMLabelName(uint16_t callAddr, std::string &labelName)
+/*bool GetROMLabelName(uint16_t callAddr, std::string &labelName)
 {
 	// Try to find a ROM function from the list
 	const auto &romFunctionIt = g_RomLabels.find(callAddr);
@@ -52,7 +16,7 @@ bool GetROMLabelName(uint16_t callAddr, std::string &labelName)
 	}
 
 	return false;
-}
+}*/
 
 int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpeccyUI *pUI)
 {
@@ -135,16 +99,9 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 			FFunctionInfo &functionInfo = pUI->Functions[callAddr];
 			if (functionInfo.NoCalls == 0)	// newly created
 			{
-				if (callAddr < 0x4000)
-				{
-					GetROMLabelName(callAddr, functionInfo.FunctionName);
-				}
-				else
-				{
-					char functionName[64];
-					sprintf(functionName, "Function_0x%x", callAddr);
-					functionInfo.FunctionName = functionName;
-				}
+				FLabelInfo *pLabelInfo = pUI->Labels[callAddr];
+				if (pLabelInfo!=nullptr)
+					functionInfo.FunctionName = pLabelInfo->Name;
 				
 				functionInfo.StartAddress = callAddr;
 				functionInfo.EndAddress = callAddr;

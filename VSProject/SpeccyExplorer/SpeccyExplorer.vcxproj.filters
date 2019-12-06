@@ -389,6 +389,9 @@
     <ClInclude Include="..\..\Source\UI\CodeAnalyser.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\UI\ROMLabels.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\Source\Vendor\imgui-docking\misc\natvis\imgui.natvis">
