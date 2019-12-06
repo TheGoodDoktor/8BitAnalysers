@@ -393,6 +393,10 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 			{
 				if (itemList[item]->Address == z80_pc(&pUI->pSpeccy->CurrentState.cpu))
 				{
+					float maxY = ImGui::GetScrollMaxY();
+					float fraction = (float)item / (float)itemList.size();
+					
+					//ImGui::SetScrollY(maxY * fraction);
 					ImGui::SetScrollY(item * line_height);
 					break;
 				}
@@ -400,7 +404,7 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 		}
 
 		// draw clipped list
-		ImGuiListClipper clipper((int)itemList.size());
+		ImGuiListClipper clipper((int)itemList.size(), line_height);
 		const FItem *pPrevItem = nullptr;
 		static const FItem *pSelectedItem = nullptr;
 
@@ -464,7 +468,7 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 
 						if (bPCLine)
 						{
-							dl->AddTriangleFilled(a, b, c, col);
+							dl->AddTriangleFilled(a, b, c, pc_color);
 							dl->AddTriangle(a, b, c, brd_color);
 						}
 						else
