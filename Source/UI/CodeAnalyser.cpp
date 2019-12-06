@@ -345,12 +345,14 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
+	const bool bJumpToPC = ImGui::Button("Jump To PC");
+
 	ImGui::BeginChild("##analysis", ImVec2(0, 0), true);
 	{
 		// build item list - not every frame please!
 		static std::vector< const FItem *> itemList;
 
-		int scroll_to_line = 0;
+		//int scroll_to_line = 0;
 
 		if (pUI->bCodeAnalysisDataDirty)
 		{
@@ -359,10 +361,10 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 			// loop across address range
 			for (int addr = 0; addr < (1<<16); addr++)
 			{
-				if(addr == z80_pc(&pUI->pSpeccy->CurrentState.cpu))	// is this where the PC is at?
+				/*if(addr == z80_pc(&pUI->pSpeccy->CurrentState.cpu))	// is this where the PC is at?
 				{
-					scroll_to_line = itemList.size();
-				}
+					scroll_to_line = (int)itemList.size();
+				}*/
 				
 				const FLabelInfo *pLabelInfo = pUI->Labels[addr];
 				if (pLabelInfo != nullptr)
@@ -384,8 +386,18 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 
 			pUI->bCodeAnalysisDataDirty = false;
 		}
-
-		//ImGui::SetScrollY(scroll_to_line * line_height);
+		
+		if (bJumpToPC)
+		{
+			for (int item = 0; item < itemList.size(); item++)
+			{
+				if (itemList[item]->Address == z80_pc(&pUI->pSpeccy->CurrentState.cpu))
+				{
+					ImGui::SetScrollY(item * line_height);
+					break;
+				}
+			}
+		}
 
 		// draw clipped list
 		ImGuiListClipper clipper((int)itemList.size());
@@ -429,8 +441,8 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 				{
 					const FCodeInfo *pCodeInfo = static_cast<const FCodeInfo *>(pItem);
 
-					const int frameSinceAccessed = pUI->CurrentFrameNo - pCodeInfo->FrameLastAccessed;
-					const int brightVal = (255 - std::min(frameSinceAccessed, 255)) & 0xff;
+					const int framesSinceAccessed = pUI->CurrentFrameNo - pCodeInfo->FrameLastAccessed;
+					const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
 
 					const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
 
@@ -444,7 +456,8 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 						ImVec2 pos = ImGui::GetCursorScreenPos();
 						ImDrawList* dl = ImGui::GetWindowDrawList();
 						const float lh2 = (float)(int)(line_height / 2);
-						
+
+						pos.x += 10;
 						const ImVec2 a(pos.x + 2, pos.y);
 						const ImVec2 b(pos.x + 12, pos.y + lh2);
 						const ImVec2 c(pos.x + 2, pos.y + line_height);
