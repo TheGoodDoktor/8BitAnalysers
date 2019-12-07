@@ -17,19 +17,66 @@ struct FROMLabelInfo
 FROMLabelInfo g_RomLabels[] =
 {
 	// Restarts
-	{0x0000, "RST_Start"},
-	{0x0008, "RST_Error"},
-	{0x0010, "RST_PrintChar"},
-	{0x0018, "RST_CollectChar"},
-	{0x0020, "RST_CollectNextChar"},
-	{0x0028, "RST_FPCalc"},
-	{0x0030, "RST_MakeBCSpaces"},
-	{0x0038, "RST_MaskInt"},
+	{0x0000, "START"},
+	{0x0008, "ERROR-1"},
+	{0x0010, "PRINT-A-1"},
+	{0x0018, "GET-CHAR"},
+	{0x001C, "TEST-CHAR"},
+	// collect character restart
+	{0x0020, "NEXT-CHAR"},
+	// calculator restart
+	{0x0028, "FP-CALC"},
+	// make bc spaces restart
+	{0x0030, "BC-SPACES"},
+	// maskable interrupt routine
+	{0x0038, "MASK-INT"},
+	{0x0048, "KEY-INT"},
 
 	// Rom Routines
-	{0x028e, "Key-Scan"},
-	{0x02bf, "Keyboard"},
-	{0x031e, "Key-Test"},
+
+	// 'Error-2' routine
+	{0x0053, "ERROR-2"},
+	{0x0055, "ERROR-3"},
+	// NMI routine
+	{0x0066, "RESET"},
+	{0x0070, "NO-RESET"},
+	// 'ch-add+1' subroutine
+	{0x0074, "CH-ADD+1"},
+	{0x0077, "TEMP-PTR1"},
+	{0x0078, "TEMP-PTR2"},
+	// 'skip over' subroutine
+	{0x007D, "SKIP-OVER"},
+	{0x0090, "SKIPS"},
+	// keyboard scanning subroutine
+	{0x028e, "KEY-SCAN"},
+	{0x0296, "KEY-LINE"},
+	{0x029F, "KEY-3KEYS"},
+	{0x02A1, "KEY-BITS"},
+	{0x02AB, "KEY-DONE"},
+	// keyboard subroutine
+	{0x02bf, "KEYBOARD"},
+	{0x02C6, "K-ST-LOOP"},
+	{0x02D1, "K-CH-SET"},
+	{0x02F1, "K-NEW"},
+	{0x0308, "K-END"},
+	// the 'repeating key' subroutine
+	{0x0310, "K-REPEAT"},
+	//k-test subroutine
+	{0x031e, "KEY-TEST"},
+	{0x032C, "KEY-MAIN"},
+	// keyboard decoding Subroutine
+	{0x0333, "K-DECODE"},
+	{0x0341, "K-E-LET"},
+	{0x034A, "K-LOOK-UP"},
+	{0x034F, "K-KLC-LET"},
+	{0x0364, "K-TOKENS"},
+	{0x0367, "K-DIGIT"},
+	{0x0382, "K-8-&-9"},
+	{0x0389, "K-GRA-DGT"},
+	{0x039D, "K-KLC-DGT"},
+	{0x03B2, "K-@-CHAR"},
+	// Loudspeaker Routines
+
 	{0x0a80, "PO-Change"},
 	{0x0b03, "PO-Fetch"},
 	{0x0b24, "PO-Any"},

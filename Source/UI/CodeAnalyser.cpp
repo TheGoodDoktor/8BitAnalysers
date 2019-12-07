@@ -140,7 +140,7 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 	}
 }
 
-bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType labelType)
+bool GenerateLabelForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType labelType)
 {
 	//uint16_t outAddr;
 	//if (CheckJumpInstruction(pUI->pSpeccy, pc, &outAddr))
@@ -159,13 +159,13 @@ bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType labelType)
 				switch (labelType)
 				{
 				case LabelType::Function:
-					sprintf(label, "function_0x%04X", pc);
+					sprintf(label, "function_%04X", pc);
 					break;
 				case LabelType::Code:
-					sprintf(label, "label_0x%04X", pc);
+					sprintf(label, "label_%04X", pc);
 					break;
 				case LabelType::Data:
-					sprintf(label, "label_0x%04X", pc);
+					sprintf(label, "label_%04X", pc);
 					break;
 				}
 
@@ -252,7 +252,7 @@ void AnalyseFromPC(FSpeccyUI *pUI, uint16_t pc)
 		{
 			//fprintf(stderr,"Jump 0x%04X - > 0x%04X\n", pc, jumpAddr);
 			const bool isCall = CheckCallInstruction(pUI->pSpeccy, pc);
-			GenerateLabelsForAddress(pUI, jumpAddr, isCall ? LabelType::Function : LabelType::Code);
+			GenerateLabelForAddress(pUI, jumpAddr, isCall ? LabelType::Function : LabelType::Code);
 
 			FLabelInfo* pLabel = pUI->Labels[jumpAddr];
 			if (pLabel != nullptr)
@@ -318,12 +318,14 @@ void InsertSystemLabels(FSpeccyUI *pUI)
 	AddLabel(pUI, 0x4000, "ScreenPixels", LabelType::Data);
 	
 	FDataInfo *pScreenPixData = new FDataInfo;
+	pScreenPixData->DataType = DataType::Graphics;
 	pScreenPixData->Address = 0x4000;
 	pScreenPixData->ByteSize = 0x1800;
 	pUI->DataInfo[pScreenPixData->Address] = pScreenPixData;
 
 	AddLabel(pUI, 0x5800, "ScreenAttributes", LabelType::Data);
 	FDataInfo *pScreenAttrData = new FDataInfo;
+	pScreenAttrData->DataType = DataType::Blob;
 	pScreenAttrData->Address = 0x5800;
 	pScreenAttrData->ByteSize = 0x400;
 	pUI->DataInfo[pScreenAttrData->Address] = pScreenAttrData;
@@ -339,6 +341,131 @@ void InitialiseCodeAnalysis(FSpeccyUI *pUI)
 	RunStaticCodeAnalysis(pUI, initialPC);
 }
 
+// UI
+void DrawLabelInfo(FSpeccyUI *pUI, const FLabelInfo *pLabelInfo)
+{
+	ImGui::Text("%s: ", pLabelInfo->Name.c_str());
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("Callers:");
+		for (const auto & caller : pLabelInfo->References)
+		{
+			ImGui::Text("%04Xh", caller.first);
+		}
+		ImGui::EndTooltip();
+	}
+}
+
+void DrawCodeInfo(FSpeccyUI *pUI, const FCodeInfo *pCodeInfo)
+{
+	const float line_height = ImGui::GetTextLineHeight();
+	const float glyph_width = ImGui::CalcTextSize("F").x;
+	const float cell_width = 3 * glyph_width;
+
+	const int framesSinceAccessed = pUI->CurrentFrameNo - pCodeInfo->FrameLastAccessed;
+	const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
+
+	const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
+
+	const bool bPCLine = pCodeInfo->Address == z80_pc(&pUI->pSpeccy->CurrentState.cpu);
+
+	if (bPCLine || brightVal > 0)
+	{
+		const ImU32 pc_color = 0xFF00FFFF;
+		const ImU32 brd_color = 0xFF000000;
+
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const float lh2 = (float)(int)(line_height / 2);
+
+		pos.x += 10;
+		const ImVec2 a(pos.x + 2, pos.y);
+		const ImVec2 b(pos.x + 12, pos.y + lh2);
+		const ImVec2 c(pos.x + 2, pos.y + line_height);
+
+		if (bPCLine)
+		{
+			dl->AddTriangleFilled(a, b, c, pc_color);
+			dl->AddTriangle(a, b, c, brd_color);
+		}
+		else
+		{
+			dl->AddTriangleFilled(a, b, c, col);
+			dl->AddTriangle(a, b, c, brd_color);
+		}
+	}
+
+	//ImGui::PushStyleColor(ImGuiCol_Text, col);
+	//ImGui::Text(">> ");
+	//ImGui::SameLine();
+	//ImGui::PopStyleColor();
+
+	ImGui::Text("\t%04Xh", pCodeInfo->Address);
+	const float line_start_x = ImGui::GetCursorPosX();
+	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
+	ImGui::Text("%s", pCodeInfo->Text.c_str());
+	if (pCodeInfo->JumpAddress != 0)
+	{
+		const FLabelInfo *pLabelInfo = pUI->Labels[pCodeInfo->JumpAddress];
+		if (pLabelInfo != nullptr)
+		{
+			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+			ImGui::Text("[%s]", pLabelInfo->Name.c_str());
+			ImGui::PopStyleColor();
+		}
+	}
+}
+
+void DrawDataInfo(FSpeccyUI *pUI, const FDataInfo *pDataInfo)
+{
+	const float glyph_width = ImGui::CalcTextSize("F").x;
+	const float cell_width = 3 * glyph_width;
+
+	ImGui::Text("\t%04Xh", pDataInfo->Address);
+	const float line_start_x = ImGui::GetCursorPosX();
+	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
+
+	switch (pDataInfo->DataType)
+	{
+		case DataType::Byte:
+		{
+		const uint8_t val = ReadySpeccyByte(pUI->pSpeccy, pDataInfo->Address);
+		ImGui::Text("db %02Xh '%c'", val, val);
+		}
+		break;
+
+		case DataType::Word:
+		{
+			const uint16_t val = ReadySpeccyByte(pUI->pSpeccy, pDataInfo->Address) | (ReadySpeccyByte(pUI->pSpeccy, pDataInfo->Address+1) <<8);
+			ImGui::Text("dw %04Xh", val);
+		}		
+		break;
+
+		case DataType::Text:
+		{
+			std::string textString;
+			for (int i = 0; i < pDataInfo->ByteSize; i++)
+			{
+				const char ch = ReadySpeccyByte(pUI->pSpeccy, pDataInfo->Address + i);
+				if (ch == '\n')
+					textString += "<cr>";
+				else
+					textString += ch;
+			}
+			ImGui::Text("ascii '%s'", textString.c_str());
+		}
+		break;
+
+		case DataType::Graphics:
+		case DataType::Blob:
+		default:
+			ImGui::Text("%d Bytes", pDataInfo->ByteSize);
+			break;
+	}
+}
+
 void DrawCodeAnalysisData(FSpeccyUI *pUI)
 {
 	const float line_height = ImGui::GetTextLineHeight();
@@ -350,13 +477,15 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 	ImGui::BeginChild("##analysis", ImVec2(0, 0), true);
 	{
 		// build item list - not every frame please!
-		static std::vector< const FItem *> itemList;
+		static std::vector< FItem *> itemList;
 
 		//int scroll_to_line = 0;
 
 		if (pUI->bCodeAnalysisDataDirty)
 		{
 			itemList.clear();
+
+			int nextDataAddress = 0;
 
 			// loop across address range
 			for (int addr = 0; addr < (1<<16); addr++)
@@ -366,21 +495,26 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 					scroll_to_line = (int)itemList.size();
 				}*/
 				
-				const FLabelInfo *pLabelInfo = pUI->Labels[addr];
+				FLabelInfo *pLabelInfo = pUI->Labels[addr];
 				if (pLabelInfo != nullptr)
 				{
 					itemList.push_back(pLabelInfo);
 
 				}
-				const FCodeInfo *pCodeInfo = pUI->CodeInfo[addr];
+				FCodeInfo *pCodeInfo = pUI->CodeInfo[addr];
 				if (pCodeInfo != nullptr)
 				{
+					nextDataAddress = addr + pCodeInfo->ByteSize;
 					itemList.push_back(pCodeInfo);
 				}
-				const FDataInfo *pDataInfo = pUI->DataInfo[addr];
-				if (pDataInfo != nullptr)
+				else if(addr >= nextDataAddress)// code and data are mutually exclusive
 				{
-					itemList.push_back(pDataInfo);
+					FDataInfo *pDataInfo = pUI->DataInfo[addr];
+					if (pDataInfo != nullptr)
+					{
+						nextDataAddress = addr + pDataInfo->ByteSize;
+						itemList.push_back(pDataInfo);
+					}
 				}
 			}
 
@@ -406,7 +540,7 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 		// draw clipped list
 		ImGuiListClipper clipper((int)itemList.size(), line_height);
 		const FItem *pPrevItem = nullptr;
-		static const FItem *pSelectedItem = nullptr;
+		static FItem *pSelectedItem = nullptr;
 
 		while (clipper.Step())
 		{
@@ -422,98 +556,100 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 				// selectable
 				if(ImGui::Selectable("##codeanalysisline",pItem == pSelectedItem))
 				{
-					pSelectedItem = pItem;
+					pSelectedItem = itemList[i];
 				}
 				ImGui::SameLine();
 
-				if (pItem->Type == ItemType::Label)
+				switch (pItem->Type)
 				{
-					const FLabelInfo *pLabelInfo = static_cast<const FLabelInfo *>(pItem);
-					ImGui::Text("%s: ", pLabelInfo->Name.c_str());
-					if (ImGui::IsItemHovered())
-					{
-						ImGui::BeginTooltip();
-						ImGui::Text("Callers:");
-						for (const auto & caller : pLabelInfo->References)
-						{
-							ImGui::Text("0x%04X", caller.first);
-						}
-						ImGui::EndTooltip();
-					}
-				}
-				else if (pItem->Type == ItemType::Code)
-				{
-					const FCodeInfo *pCodeInfo = static_cast<const FCodeInfo *>(pItem);
-
-					const int framesSinceAccessed = pUI->CurrentFrameNo - pCodeInfo->FrameLastAccessed;
-					const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
-
-					const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
-
-					const bool bPCLine = pItem->Address == z80_pc(&pUI->pSpeccy->CurrentState.cpu);
-
-					if (bPCLine || brightVal > 0)
-					{
-						const ImU32 pc_color = 0xFF00FFFF;
-						const ImU32 brd_color = 0xFF000000;
-
-						ImVec2 pos = ImGui::GetCursorScreenPos();
-						ImDrawList* dl = ImGui::GetWindowDrawList();
-						const float lh2 = (float)(int)(line_height / 2);
-
-						pos.x += 10;
-						const ImVec2 a(pos.x + 2, pos.y);
-						const ImVec2 b(pos.x + 12, pos.y + lh2);
-						const ImVec2 c(pos.x + 2, pos.y + line_height);
-
-						if (bPCLine)
-						{
-							dl->AddTriangleFilled(a, b, c, pc_color);
-							dl->AddTriangle(a, b, c, brd_color);
-						}
-						else
-						{
-							dl->AddTriangleFilled(a, b, c, col);
-							dl->AddTriangle(a, b, c, brd_color);
-						}
-					}
-					
-					//ImGui::PushStyleColor(ImGuiCol_Text, col);
-					//ImGui::Text(">> ");
-					//ImGui::SameLine();
-					//ImGui::PopStyleColor();
-
-					ImGui::Text("\t0x%04X", pCodeInfo->Address);
-					const float line_start_x = ImGui::GetCursorPosX();
-					ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
-					ImGui::Text("%s", pCodeInfo->Text.c_str());
-					if (pCodeInfo->JumpAddress != 0)
-					{
-						const FLabelInfo *pLabelInfo = pUI->Labels[pCodeInfo->JumpAddress];
-						if (pLabelInfo != nullptr)
-						{
-							ImGui::SameLine();
-							ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
-							ImGui::Text("[%s]", pLabelInfo->Name.c_str());
-							ImGui::PopStyleColor();
-						}
-					}
-				}
-				else if (pItem->Type == ItemType::Data)
-				{
-					const FDataInfo *pDataInfo = static_cast<const FDataInfo *>(pItem);
-
-					ImGui::Text("\t0x%04X", pDataInfo->Address);
-					const float line_start_x = ImGui::GetCursorPosX();
-					ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
-					ImGui::Text("%d Bytes", pDataInfo->ByteSize);
+				case ItemType::Label:
+					DrawLabelInfo(pUI, static_cast<const FLabelInfo *>(pItem));
+					break;
+				case ItemType::Code:
+					DrawCodeInfo(pUI, static_cast<const FCodeInfo *>(pItem));
+					break;
+				case ItemType::Data:
+					DrawDataInfo(pUI, static_cast<const FDataInfo *>(pItem));
+					break;
 				}
 
+				
 				pPrevItem = pItem;
 
 				ImGui::PopID();
 			}
 		}
+
+		// key controls
+		if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::SetItemData]))
+		{
+			if (pSelectedItem->Type == ItemType::Data)
+			{
+				FDataInfo *pDataItem = static_cast<FDataInfo *>(pSelectedItem);
+				if (pDataItem->DataType == DataType::Byte)
+				{
+					pDataItem->DataType = DataType::Word;
+					pDataItem->ByteSize = 2;
+					pUI->bCodeAnalysisDataDirty = true;
+				}
+				else if (pDataItem->DataType == DataType::Word)
+				{
+					pDataItem->DataType = DataType::Byte;
+					pDataItem->ByteSize = 1;
+					pUI->bCodeAnalysisDataDirty = true;
+
+				}
+			}
+		}
+
+		if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::SetItemText]))
+		{
+			if (pSelectedItem->Type == ItemType::Data)
+			{
+				FDataInfo *pDataItem = static_cast<FDataInfo *>(pSelectedItem);
+				if (pDataItem->DataType == DataType::Byte)
+				{
+					// set to ascii
+					pDataItem->ByteSize = 0;	// reset byte counter
+
+					uint16_t charAddr = pDataItem->Address;
+					while (pUI->DataInfo[charAddr] != nullptr && pUI->DataInfo[charAddr]->DataType == DataType::Byte)
+					{
+						const uint8_t val = ReadySpeccyByte(pUI->pSpeccy, charAddr);
+						if (val == 0 || val > 0x80)
+							break;
+						pDataItem->ByteSize++;
+						charAddr++;
+					}
+
+					// did the operation fail? -revert to byte
+					if (pDataItem->ByteSize == 0)
+					{
+						pDataItem->DataType = DataType::Byte;
+						pDataItem->ByteSize = 1;
+					}
+					else
+					{
+						pDataItem->DataType = DataType::Text;
+						pUI->bCodeAnalysisDataDirty = true;
+					}
+				}
+			}
+		}
+
+		if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::AddLabel]))
+		{
+			if (pSelectedItem!=nullptr && pUI->Labels[pSelectedItem->Address] == nullptr)
+			{
+				LabelType labelType = LabelType::Data;
+				if(pUI->CodeInfo[pSelectedItem->Address]!= nullptr)
+					labelType = LabelType::Code;
+
+				GenerateLabelForAddress(pUI, pSelectedItem->Address, labelType);
+				pUI->bCodeAnalysisDataDirty = true;
+			}
+		}
+
 	}
 	ImGui::EndChild();
 }

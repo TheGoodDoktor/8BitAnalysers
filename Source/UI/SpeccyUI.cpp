@@ -134,6 +134,24 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	memset(pUI->CodeInfo, 0, sizeof(pUI->CodeInfo));
 	memset(pUI->DataInfo, 0, sizeof(pUI->DataInfo));
 
+	for (int addr = 0; addr < (1 << 16); addr++)
+	{
+		// set up data entry for address
+		FDataInfo *pDataInfo = new FDataInfo;
+		pDataInfo->Address = (uint16_t)addr;
+		pDataInfo->ByteSize = 1;
+		pDataInfo->DataType = DataType::Byte;
+		pUI->DataInfo[addr] = pDataInfo;
+	}
+
+	// Key Config
+	pUI->KeyConfig[(int)Key::SetItemData] = 'D';
+	pUI->KeyConfig[(int)Key::SetItemText] = 'T';
+	pUI->KeyConfig[(int)Key::SetItemCode] = 'C';
+	pUI->KeyConfig[(int)Key::AddLabel] = 'L';
+	pUI->KeyConfig[(int)Key::Rename] = 'R';
+	
+
 	// run initial analysis
 	InitialiseCodeAnalysis(pUI);
 	
@@ -161,7 +179,13 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 		pUI->CodeInfo[i] = nullptr;
 
 		delete pUI->DataInfo[i];
-		pUI->DataInfo[i] = nullptr;
+
+		// set up data entry for address
+		FDataInfo *pDataInfo = new FDataInfo;
+		pDataInfo->Address = (uint16_t)i;
+		pDataInfo->ByteSize = 1;
+		pDataInfo->DataType = DataType::Byte;
+		pUI->DataInfo[i] = pDataInfo;
 	}
 	
 	// Reset Functions
@@ -336,6 +360,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 		if (ImGui::BeginMenu("ImGui"))
 		{
 			ImGui::MenuItem("Show Demo", 0, &pUI->bShowImGuiDemo);
+			ImGui::EndMenu();
 		}
 		
 

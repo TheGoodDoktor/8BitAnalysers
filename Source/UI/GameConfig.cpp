@@ -9,6 +9,8 @@
 #include <iomanip>
 #include <fstream>
 
+#include "SpeccyUI.h"
+
 using json = nlohmann::json;
 
 std::string MakeHexString(uint16_t val)
@@ -89,6 +91,74 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	}
 
 	return true;
+}
+
+void SaveLabels(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddress, uint16_t endAddress)
+{
+	json labelListJson;
+
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		FLabelInfo *pLabel = pUI->Labels[i];
+		if (pLabel != nullptr)
+		{
+			json labelJson;
+			labelJson["Address"] = pLabel->Address;
+			labelJson["Size"] = pLabel->ByteSize;
+			labelJson["Name"] = pLabel->Name;
+			labelJson["Comment"] = pLabel->Comment;
+			// TODO: label type - need magic enum
+			// References?
+
+			labelListJson.push_back(labelJson);
+		}
+
+	}
+
+	parentObject["Labels"] = labelListJson;
+}
+
+void SaveCodeInfo(const FSpeccyUI *pUI, json &parentObject,uint16_t startAddress,uint16_t endAddress)
+{
+	json codeInfoListJson;
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		FCodeInfo *pCodeInfo = pUI->CodeInfo[i];
+		if (pCodeInfo != nullptr)
+		{
+			json codeInfoJson;
+			codeInfoJson["Address"] = pCodeInfo->Address;
+			codeInfoJson["Size"] = pCodeInfo->ByteSize;
+			codeInfoJson["JumpAddress"] = pCodeInfo->JumpAddress;
+			codeInfoJson["Text"] = pCodeInfo->Text;
+			codeInfoJson["Comment"] = pCodeInfo->Comment;
+			codeInfoListJson.push_back(codeInfoJson);
+		}
+	}
+	parentObject["CodeInfo"] = codeInfoListJson;
+}
+
+bool SaveGameData(FSpeccyUI *pUI, const char *fname)
+{
+	json gameDataJson;
+
+	SaveLabels(pUI, gameDataJson,0x4000,0xFFFF);
+	SaveCodeInfo(pUI, gameDataJson,0x4000,0xFFFF);
+	//SaveDataInfo(pUI, gameDataJson);
+
+	std::ofstream outFileStream(fname);
+	if (outFileStream.is_open())
+	{
+		outFileStream << std::setw(4) << gameDataJson << std::endl;
+		return true;
+	}
+
+	return false;// not implemented
+}
+
+bool LoadGameData(FSpeccyUI *pUI, const char *fname)
+{
+	return false;
 }
 
 bool LoadGameConfigs(FSpeccyUI *pUI)

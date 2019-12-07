@@ -1,0 +1,20 @@
+{
+    "Name": "Firelord",
+    "SpriteConfigs": [
+        {
+            "BaseAddress": "0xb240",
+            "Count": 32,
+            "Height": 1,
+            "Name": "Firelord_Font",
+            "Width": 1
+        },
+        {
+            "BaseAddress": "0xb3b0",
+            "Count": 52,
+            "Height": 2,
+            "Name": "Firelord_Sprites",
+            "Width": 3
+        }
+    ],
+    "Z80File": "Firelord.z80"
+}

@@ -8,7 +8,7 @@ struct FSpeccyUI;
 
 // Analysis
 void InitialiseCodeAnalysis(FSpeccyUI *pUI);
-bool GenerateLabelsForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType label);
+bool GenerateLabelForAddress(FSpeccyUI *pUI, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FSpeccyUI *pUI, uint16_t pc);
 
 // UI
