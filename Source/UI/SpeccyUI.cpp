@@ -210,9 +210,12 @@ void SaveCurrentGameConfig(FSpeccyUI *pUI)
 {
 	const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
 	std::string configFName = "Configs/" + pGameConfig->Name + ".json";
+	std::string dataFName = "GameData/" + pGameConfig->Name + ".json";
 	EnsureDirectoryExists("Configs");
+	EnsureDirectoryExists("GameData");
 	// Test - do better filename
 	SaveGameConfigToFile(*pGameConfig, configFName.c_str());
+	//slow atm SaveGameData(pUI, dataFName.c_str());
 }
 
 static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)

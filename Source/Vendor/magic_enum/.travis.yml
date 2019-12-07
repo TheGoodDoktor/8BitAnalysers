@@ -1,0 +1,100 @@
+os: linux # Use linux unless specified otherwise.
+dist: xenial
+sudo: required
+
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      compiler: g++
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+      env:
+        - CXX_COMPILER=g++-9 CC_COMPILER=gcc-9
+
+    - os: linux
+      compiler: clang++
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-xenial-5.0
+          packages:
+            - clang-5.0
+            - g++-7
+      env:
+        - CXX_COMPILER=clang++-5.0 CC_COMPILER=clang-5.0
+
+    - os: linux
+      compiler: clang++
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-xenial-6.0
+          packages:
+            - clang-6.0
+            - g++-7
+      env:
+        - CXX_COMPILER=clang++-6.0 CC_COMPILER=clang-6.0
+
+    - os: linux
+      compiler: clang++
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-xenial-7
+          packages:
+            - clang-7
+            - g++-7
+      env:
+        - CXX_COMPILER=clang++-7 CC_COMPILER=clang-7
+
+    - os: linux
+      compiler: clang++
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-xenial-8
+          packages:
+            - clang-8
+            - g++-7
+      env:
+        - CXX_COMPILER=clang++-8 CC_COMPILER=clang-8
+
+    - os: osx
+      compiler: clang++
+      osx_image: xcode10.3
+      env:
+        - CXX_COMPILER=clang++ CC_COMPILER=clang
+
+    - os: osx
+      compiler: clang++
+      osx_image: xcode11
+      env:
+        - CXX_COMPILER=clang++ CC_COMPILER=clang
+
+install:
+  - export CC=${CC_COMPILER}
+  - export CXX=${CXX_COMPILER}
+  - JOBS=2 # Travis machines have 2 cores.
+
+before_script:
+  - rm -rf build
+  - mkdir -p build
+  - cd build
+  - cmake -G "Unix Makefiles" ..
+
+script:
+  - cmake --build . -- -j${JOBS}
+  - ctest --output-on-failure -j${JOBS}
+
+notifications:
+  email: false

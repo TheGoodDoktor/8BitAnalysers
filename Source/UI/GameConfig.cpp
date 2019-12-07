@@ -1,11 +1,8 @@
 #include "GameConfig.h"
 
-#include "rapidjson/rapidjson.h"
-#include "rapidjson/document.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/stringbuffer.h"
 #include "Util/FileUtil.h"
 #include "json.hpp"
+#include "magic_enum.hpp"
 #include <iomanip>
 #include <fstream>
 
@@ -103,11 +100,12 @@ void SaveLabels(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddress,
 		if (pLabel != nullptr)
 		{
 			json labelJson;
+			labelJson["Type"] = magic_enum::enum_name(pLabel->LabelType);
 			labelJson["Address"] = pLabel->Address;
 			labelJson["Size"] = pLabel->ByteSize;
 			labelJson["Name"] = pLabel->Name;
 			labelJson["Comment"] = pLabel->Comment;
-			// TODO: label type - need magic enum
+			
 			// References?
 
 			labelListJson.push_back(labelJson);
@@ -138,13 +136,33 @@ void SaveCodeInfo(const FSpeccyUI *pUI, json &parentObject,uint16_t startAddress
 	parentObject["CodeInfo"] = codeInfoListJson;
 }
 
+void SaveDataInfo(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddress, uint16_t endAddress)
+{
+	json dataInfoListJson;
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		FDataInfo *pDataInfo = pUI->DataInfo[i];
+		if (pDataInfo != nullptr)
+		{
+			json dataInfoJson;
+			dataInfoJson["Type"] = magic_enum::enum_name(pDataInfo->DataType);
+			dataInfoJson["Address"] = pDataInfo->Address;
+			dataInfoJson["Size"] = pDataInfo->ByteSize;
+			dataInfoJson["Comment"] = pDataInfo->Comment;
+			
+			dataInfoListJson.push_back(dataInfoJson);
+		}
+	}
+	parentObject["DataInfo"] = dataInfoListJson;
+}
+
 bool SaveGameData(FSpeccyUI *pUI, const char *fname)
 {
 	json gameDataJson;
 
 	SaveLabels(pUI, gameDataJson,0x4000,0xFFFF);
 	SaveCodeInfo(pUI, gameDataJson,0x4000,0xFFFF);
-	//SaveDataInfo(pUI, gameDataJson);
+	SaveDataInfo(pUI, gameDataJson, 0x4000, 0xFFFF);
 
 	std::ofstream outFileStream(fname);
 	if (outFileStream.is_open())
