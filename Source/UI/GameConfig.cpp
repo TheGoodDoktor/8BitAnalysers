@@ -138,6 +138,64 @@ void SaveCodeInfo(const FSpeccyUI *pUI, json &parentObject,uint16_t startAddress
 	parentObject["CodeInfo"] = codeInfoListJson;
 }
 
+void WriteStringToFile(const std::string &str, FILE *fp)
+{
+	const int stringLength = str.size;
+	fwrite(&stringLength, sizeof(int), 1, fp);
+	fwrite(str.c_str(), 1, stringLength, fp);
+}
+
+void ReadStringFromFile(std::string &str, FILE *fp)
+{
+	int stringLength = 0;
+	fread(&stringLength, sizeof(int), 1, fp);
+	str.resize(stringLength);
+	fread(&str[0], 1, stringLength, fp);
+}
+
+void SaveCodeInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16_t endAddress)
+{
+	int recordCount = 0;
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		if (pUI->CodeInfo[i] != nullptr)
+			recordCount++;
+	}
+
+	fwrite(&recordCount, sizeof(int), 1, fp);
+	
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		FCodeInfo *pCodeInfo = pUI->CodeInfo[i];
+		if (pCodeInfo != nullptr)
+		{
+			fwrite(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
+			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
+			fwrite(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
+			WriteStringToFile(pCodeInfo->Text, fp);
+			WriteStringToFile(pCodeInfo->Comment, fp);
+		}
+	}
+}
+
+void LoadCodeInfoBin(FSpeccyUI *pUI, FILE *fp)
+{
+	int recordCount;
+	fread(&recordCount, sizeof(int), 1, fp);
+
+	for (int i = 0; i < recordCount; i++)
+	{
+		FCodeInfo *pCodeInfo = new FCodeInfo;
+		
+		fread(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
+		fread(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
+		fread(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
+		ReadStringFromFile(pCodeInfo->Text, fp);
+		ReadStringFromFile(pCodeInfo->Comment, fp);
+		pUI->CodeInfo[pCodeInfo->Address] = pCodeInfo;
+	}
+}
+
 bool SaveGameData(FSpeccyUI *pUI, const char *fname)
 {
 	json gameDataJson;
