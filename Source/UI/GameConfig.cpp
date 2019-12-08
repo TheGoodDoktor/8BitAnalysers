@@ -10,6 +10,21 @@
 
 using json = nlohmann::json;
 
+void WriteStringToFile(const std::string &str, FILE *fp)
+{
+	const int stringLength = (int)str.size();
+	fwrite(&stringLength, sizeof(int), 1, fp);
+	fwrite(str.c_str(), 1, stringLength, fp);
+}
+
+void ReadStringFromFile(std::string &str, FILE *fp)
+{
+	int stringLength = 0;
+	fread(&stringLength, sizeof(int), 1, fp);
+	str.resize(stringLength);
+	fread(&str[0], 1, stringLength, fp);
+}
+
 std::string MakeHexString(uint16_t val)
 {
 	char hexStr[16];
@@ -90,6 +105,8 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	return true;
 }
 
+// Labels
+
 void SaveLabels(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddress, uint16_t endAddress)
 {
 	json labelListJson;
@@ -116,6 +133,60 @@ void SaveLabels(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddress,
 	parentObject["Labels"] = labelListJson;
 }
 
+void SaveLabelsBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16_t endAddress)
+{
+	int recordCount = 0;
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		if (pUI->Labels[i] != nullptr)
+			recordCount++;
+	}
+
+	fwrite(&recordCount, sizeof(int), 1, fp);
+
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		FLabelInfo *pLabel = pUI->Labels[i];
+		if (pLabel != nullptr)
+		{
+			WriteStringToFile(std::string(magic_enum::enum_name(pLabel->LabelType)), fp);
+			fwrite(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
+			fwrite(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
+			WriteStringToFile(pLabel->Name, fp);
+			WriteStringToFile(pLabel->Comment, fp);
+
+			// References?
+
+		}
+	}
+}
+
+void LoadLabelsBin(const FSpeccyUI *pUI, FILE *fp,int versionNo)
+{
+	int recordCount = 0;
+
+	fread(&recordCount, sizeof(int), 1, fp);
+
+	for (int i = 0; i < recordCount; i++)
+	{
+		FLabelInfo *pLabel = new FLabelInfo;
+		
+		std::string enumVal;
+		ReadStringFromFile(enumVal, fp);
+		pLabel->LabelType = magic_enum::enum_cast<LabelType>(enumVal).value();
+		fread(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
+		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
+		ReadStringFromFile(pLabel->Name, fp);
+		ReadStringFromFile(pLabel->Comment, fp);
+
+		// References?
+
+		
+	}
+}
+
+// Code Info
+
 void SaveCodeInfo(const FSpeccyUI *pUI, json &parentObject,uint16_t startAddress,uint16_t endAddress)
 {
 	json codeInfoListJson;
@@ -134,21 +205,6 @@ void SaveCodeInfo(const FSpeccyUI *pUI, json &parentObject,uint16_t startAddress
 		}
 	}
 	parentObject["CodeInfo"] = codeInfoListJson;
-}
-
-void WriteStringToFile(const std::string &str, FILE *fp)
-{
-	const int stringLength = str.size;
-	fwrite(&stringLength, sizeof(int), 1, fp);
-	fwrite(str.c_str(), 1, stringLength, fp);
-}
-
-void ReadStringFromFile(std::string &str, FILE *fp)
-{
-	int stringLength = 0;
-	fread(&stringLength, sizeof(int), 1, fp);
-	str.resize(stringLength);
-	fread(&str[0], 1, stringLength, fp);
 }
 
 void SaveCodeInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16_t endAddress)
@@ -176,7 +232,7 @@ void SaveCodeInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint
 	}
 }
 
-void LoadCodeInfoBin(FSpeccyUI *pUI, FILE *fp)
+void LoadCodeInfoBin(FSpeccyUI *pUI, FILE *fp, int versionNo)
 {
 	int recordCount;
 	fread(&recordCount, sizeof(int), 1, fp);
@@ -193,6 +249,8 @@ void LoadCodeInfoBin(FSpeccyUI *pUI, FILE *fp)
 		pUI->CodeInfo[pCodeInfo->Address] = pCodeInfo;
 	}
 }
+
+// Data Info
 
 void SaveDataInfo(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddress, uint16_t endAddress)
 {
@@ -214,7 +272,53 @@ void SaveDataInfo(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddres
 	parentObject["DataInfo"] = dataInfoListJson;
 }
 
-bool SaveGameData(FSpeccyUI *pUI, const char *fname)
+void SaveDataInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16_t endAddress)
+{
+	int recordCount = 0;
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		if (pUI->DataInfo[i] != nullptr)
+			recordCount++;
+	}
+
+	fwrite(&recordCount, sizeof(int), 1, fp);
+
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		FDataInfo *pDataInfo = pUI->DataInfo[i];
+		if (pDataInfo != nullptr)
+		{
+			WriteStringToFile(std::string(magic_enum::enum_name(pDataInfo->DataType)), fp);
+			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
+			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
+			WriteStringToFile(pDataInfo->Comment, fp);
+		}
+	}
+	
+	fwrite(&recordCount, sizeof(int), 1, fp);
+}
+
+void LoadDataInfoBin(FSpeccyUI *pUI, FILE *fp, int versionNo)
+{
+	int recordCount;
+	fread(&recordCount, sizeof(int), 1, fp);
+
+	for (int i = 0; i < recordCount; i++)
+	{
+		FDataInfo *pDataInfo = new FDataInfo;
+
+		std::string enumVal;
+		ReadStringFromFile(enumVal, fp);
+		pDataInfo->DataType = magic_enum::enum_cast<DataType>(enumVal).value();
+		fread(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
+		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
+		ReadStringFromFile(pDataInfo->Comment, fp);
+
+		pUI->DataInfo[pDataInfo->Address] = pDataInfo;
+	}
+}
+
+bool SaveGameDataJson(FSpeccyUI *pUI, const char *fname)
 {
 	json gameDataJson;
 
@@ -232,9 +336,75 @@ bool SaveGameData(FSpeccyUI *pUI, const char *fname)
 	return false;// not implemented
 }
 
+static const int g_kBinaryFileVersionNo = 1;
+static const int g_kBinaryFileMagic = 0xdeadface;
+
+// Binary save
+bool SaveGameDataBin(FSpeccyUI *pUI, const char *fname)
+{
+	FILE *fp = fopen(fname, "wb");
+	if (fp == NULL)
+		return false;
+
+	fwrite(&g_kBinaryFileMagic, sizeof(int), 1, fp);
+	fwrite(&g_kBinaryFileVersionNo, sizeof(int), 1, fp);
+	SaveLabelsBin(pUI, fp, 0x4000, 0xFFFF);
+	SaveCodeInfoBin(pUI, fp, 0x4000, 0xFFFF);
+	SaveDataInfoBin(pUI, fp, 0x4000, 0xFFFF);
+
+	fclose(fp);
+	return true;
+}
+
+// Binary load
+bool LoadGameDataBin(FSpeccyUI *pUI, const char *fname)
+{
+	FILE *fp = fopen(fname, "rb");
+	if (fp == NULL)
+		return false;
+	int magic, versionNo;
+	fread(&magic, sizeof(int), 1, fp);
+	if (magic != g_kBinaryFileMagic)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	fread(&versionNo, sizeof(int), 1, fp);
+
+	uint16_t addrStart = 0x4000;
+	uint16_t addrEnd = 0x4000;
+
+	// loop across address range
+	// clear what we're replacing
+	for (int i = addrStart; i <= addrEnd; i++)	
+	{
+		delete pUI->Labels[i];
+		pUI->Labels[i] = nullptr;
+
+		delete pUI->CodeInfo[i];
+		pUI->CodeInfo[i] = nullptr;
+
+		delete pUI->DataInfo[i];
+		pUI->DataInfo[i] = nullptr;
+	}
+
+	LoadLabelsBin(pUI, fp, versionNo);
+	LoadCodeInfoBin(pUI, fp, versionNo);
+	LoadDataInfoBin(pUI, fp, versionNo);
+
+	fclose(fp);
+	return true;
+}
+
+bool SaveGameData(FSpeccyUI *pUI, const char *fname)
+{
+	return SaveGameDataBin(pUI, fname);
+}
+
 bool LoadGameData(FSpeccyUI *pUI, const char *fname)
 {
-	return false;
+	return LoadGameDataBin(pUI,fname);
 }
 
 bool LoadGameConfigs(FSpeccyUI *pUI)

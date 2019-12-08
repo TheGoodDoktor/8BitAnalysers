@@ -204,18 +204,24 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	// run initial analysis
 	InitialiseCodeAnalysis(pUI);
 
+	// load game data if we can
+	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
+	LoadGameData(pUI, dataFName.c_str());
+
 }
 
-void SaveCurrentGameConfig(FSpeccyUI *pUI)
+// save config & data
+void SaveCurrentGameData(FSpeccyUI *pUI)
 {
 	const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
 	std::string configFName = "Configs/" + pGameConfig->Name + ".json";
-	std::string dataFName = "GameData/" + pGameConfig->Name + ".json";
+	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
 	EnsureDirectoryExists("Configs");
 	EnsureDirectoryExists("GameData");
 	// Test - do better filename
 	SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-	//slow atm SaveGameData(pUI, dataFName.c_str());
+	SaveGameData(pUI, dataFName.c_str());
+	//assert(LoadGameData(pUI, dataFName.c_str()));
 }
 
 static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
@@ -238,7 +244,6 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 						if(LoadZ80File(*pSpeccy, pGameConfig->Z80File.c_str()))
 						{
 							StartGame(pUI,pGameConfig);
-							SaveCurrentGameConfig(pUI);
 						}
 					}
 				}
@@ -261,7 +266,10 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 
 				ImGui::EndMenu();
 			}
-
+			if (ImGui::MenuItem("Save Game Data"))
+			{
+				SaveCurrentGameData(pUI);
+			}
 			if (ImGui::MenuItem("Export Binary File"))
 			{
 				if (pUI->pActiveGame != nullptr)
