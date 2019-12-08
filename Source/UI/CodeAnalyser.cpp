@@ -472,7 +472,13 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
-	const bool bJumpToPC = ImGui::Button("Jump To PC");
+	int jumpAddr = -1;
+	if(ImGui::Button("Jump To PC"))
+		jumpAddr = z80_pc(&pUI->pSpeccy->CurrentState.cpu);
+	ImGui::SameLine();
+	static int addrInput = 0;
+	if(ImGui::InputInt("Jump To", &addrInput,1,100, ImGuiInputTextFlags_CharsHexadecimal))
+		jumpAddr = addrInput;
 
 	ImGui::BeginChild("##analysis", ImVec2(0, 0), true);
 	{
@@ -521,11 +527,11 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 			pUI->bCodeAnalysisDataDirty = false;
 		}
 		
-		if (bJumpToPC)
+		if (jumpAddr!=-1)
 		{
 			for (int item = 0; item < itemList.size(); item++)
 			{
-				if (itemList[item]->Address == z80_pc(&pUI->pSpeccy->CurrentState.cpu))
+				if (itemList[item]->Address == jumpAddr)
 				{
 					float maxY = ImGui::GetScrollMaxY();
 					float fraction = (float)item / (float)itemList.size();
@@ -580,73 +586,76 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 			}
 		}
 
-		// key controls
-		if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::SetItemData]))
+		// key controls - move to functions - command system
+		if (ImGui::IsWindowFocused())
 		{
-			if (pSelectedItem->Type == ItemType::Data)
+			if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::SetItemData]) && pSelectedItem != nullptr)
 			{
-				FDataInfo *pDataItem = static_cast<FDataInfo *>(pSelectedItem);
-				if (pDataItem->DataType == DataType::Byte)
+				if (pSelectedItem->Type == ItemType::Data)
 				{
-					pDataItem->DataType = DataType::Word;
-					pDataItem->ByteSize = 2;
-					pUI->bCodeAnalysisDataDirty = true;
-				}
-				else if (pDataItem->DataType == DataType::Word)
-				{
-					pDataItem->DataType = DataType::Byte;
-					pDataItem->ByteSize = 1;
-					pUI->bCodeAnalysisDataDirty = true;
-
-				}
-			}
-		}
-
-		if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::SetItemText]))
-		{
-			if (pSelectedItem->Type == ItemType::Data)
-			{
-				FDataInfo *pDataItem = static_cast<FDataInfo *>(pSelectedItem);
-				if (pDataItem->DataType == DataType::Byte)
-				{
-					// set to ascii
-					pDataItem->ByteSize = 0;	// reset byte counter
-
-					uint16_t charAddr = pDataItem->Address;
-					while (pUI->DataInfo[charAddr] != nullptr && pUI->DataInfo[charAddr]->DataType == DataType::Byte)
+					FDataInfo *pDataItem = static_cast<FDataInfo *>(pSelectedItem);
+					if (pDataItem->DataType == DataType::Byte)
 					{
-						const uint8_t val = ReadySpeccyByte(pUI->pSpeccy, charAddr);
-						if (val == 0 || val > 0x80)
-							break;
-						pDataItem->ByteSize++;
-						charAddr++;
+						pDataItem->DataType = DataType::Word;
+						pDataItem->ByteSize = 2;
+						pUI->bCodeAnalysisDataDirty = true;
 					}
-
-					// did the operation fail? -revert to byte
-					if (pDataItem->ByteSize == 0)
+					else if (pDataItem->DataType == DataType::Word)
 					{
 						pDataItem->DataType = DataType::Byte;
 						pDataItem->ByteSize = 1;
-					}
-					else
-					{
-						pDataItem->DataType = DataType::Text;
 						pUI->bCodeAnalysisDataDirty = true;
+
 					}
 				}
 			}
-		}
 
-		if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::AddLabel]))
-		{
-			if (pSelectedItem!=nullptr && pUI->Labels[pSelectedItem->Address] == nullptr)
+			if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::SetItemText]) && pSelectedItem != nullptr)
 			{
-				LabelType labelType = LabelType::Data;
-				if(pUI->CodeInfo[pSelectedItem->Address]!= nullptr)
-					labelType = LabelType::Code;
+				if (pSelectedItem->Type == ItemType::Data)
+				{
+					FDataInfo *pDataItem = static_cast<FDataInfo *>(pSelectedItem);
+					if (pDataItem->DataType == DataType::Byte)
+					{
+						// set to ascii
+						pDataItem->ByteSize = 0;	// reset byte counter
 
-				GenerateLabelForAddress(pUI, pSelectedItem->Address, labelType);
-				pUI->bCodeAnalysisDataDirty = true;
+						uint16_t charAddr = pDataItem->Address;
+						while (pUI->DataInfo[charAddr] != nullptr && pUI->DataInfo[charAddr]->DataType == DataType::Byte)
+						{
+							const uint8_t val = ReadySpeccyByte(pUI->pSpeccy, charAddr);
+							if (val == 0 || val > 0x80)
+								break;
+							pDataItem->ByteSize++;
+							charAddr++;
+						}
+
+						// did the operation fail? -revert to byte
+						if (pDataItem->ByteSize == 0)
+						{
+							pDataItem->DataType = DataType::Byte;
+							pDataItem->ByteSize = 1;
+						}
+						else
+						{
+							pDataItem->DataType = DataType::Text;
+							pUI->bCodeAnalysisDataDirty = true;
+						}
+					}
+				}
+			}
+
+			if (ImGui::IsKeyPressed(pUI->KeyConfig[(int)Key::AddLabel]) && pSelectedItem != nullptr)
+			{
+				if (pUI->Labels[pSelectedItem->Address] == nullptr)
+				{
+					LabelType labelType = LabelType::Data;
+					if (pUI->CodeInfo[pSelectedItem->Address] != nullptr)
+						labelType = LabelType::Code;
+
+					GenerateLabelForAddress(pUI, pSelectedItem->Address, labelType);
+					pUI->bCodeAnalysisDataDirty = true;
+				}
 			}
 		}
 
