@@ -2,6 +2,7 @@
 #include <string>
 #include <map>
 
+struct FCodeAnalysisState;
 struct FGameViewerData;
 struct FSpeccyUI;
 struct FGame;
@@ -29,5 +30,7 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);
 bool LoadGameConfigFromFile(FGameConfig &config, const char *fname);
 bool LoadGameConfigs(FSpeccyUI *pUI);
 
-bool SaveGameData(FSpeccyUI *pUI, const char *fname);
-bool LoadGameData(FSpeccyUI *pUI, const char *fname);
+bool SaveGameData(const FCodeAnalysisState& state, const char *fname);
+bool LoadGameData(FCodeAnalysisState& state, const char *fname);
+bool SaveROMData(const FCodeAnalysisState& state, const char *fname);
+bool LoadROMData(FCodeAnalysisState& state, const char *fname);

@@ -99,7 +99,7 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 			FFunctionInfo &functionInfo = pUI->Functions[callAddr];
 			if (functionInfo.NoCalls == 0)	// newly created
 			{
-				FLabelInfo *pLabelInfo = pUI->Labels[callAddr];
+				FLabelInfo *pLabelInfo = pUI->CodeAnalysis.Labels[callAddr];
 				if (pLabelInfo!=nullptr)
 					functionInfo.FunctionName = pLabelInfo->Name;
 				

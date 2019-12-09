@@ -274,7 +274,7 @@ static void _ui_dasm_draw_controls(FDasmState* pDasmState)
 /* draw the disassembly column */
 void DasmDrawDisassembly(FDasmState* pDasmState)
 {
-	auto &labels = pDasmState->pUI->Labels;
+	auto &labels = pDasmState->pUI->CodeAnalysis.Labels;
 	
 	ImGui::BeginChild("##dasmbox", ImVec2(0, 0), true);
 	_ui_dasm_draw_controls(pDasmState);

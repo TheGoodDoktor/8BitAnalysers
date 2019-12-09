@@ -14,7 +14,8 @@
 #include "MemoryHandlers.h"
 #include "FunctionHandlers.h"
 #include "Disassembler.h"
-#include "CodeAnalyser.h"
+#include "CodeAnalyser/CodeAnalyser.h"
+#include "CodeAnalyser/CodeAnalyserUI.h"
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -41,6 +42,7 @@ void gfx_destroy_texture(void* h)
 int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
+	FCodeAnalysisState &state = pUI->CodeAnalysis;
 
 	const uint16_t nextpc = pc;
 	// store program count in history
@@ -50,8 +52,8 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 
 	pc = prevPC;	// set PC to pc of instruction just executed
 
-	RunStaticCodeAnalysis(pUI, pc);
-	pUI->CodeInfo[pc]->FrameLastAccessed = pUI->CurrentFrameNo;
+	RunStaticCodeAnalysis(state, pc);
+	state.CodeInfo[pc]->FrameLastAccessed = pUI->CurrentFrameNo;
 
 	// labels
 	//GenerateLabelsForAddress(pUI, pc,LabelType::Code);
@@ -130,9 +132,10 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 
 	LoadGameConfigs(pUI);
 
-	memset(pUI->Labels, 0, sizeof(pUI->Labels));
-	memset(pUI->CodeInfo, 0, sizeof(pUI->CodeInfo));
-	memset(pUI->DataInfo, 0, sizeof(pUI->DataInfo));
+	FCodeAnalysisState &state = pUI->CodeAnalysis;
+	memset(state.Labels, 0, sizeof(state.Labels));
+	memset(state.CodeInfo, 0, sizeof(state.CodeInfo));
+	memset(state.DataInfo, 0, sizeof(state.DataInfo));
 
 	for (int addr = 0; addr < (1 << 16); addr++)
 	{
@@ -141,21 +144,13 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 		pDataInfo->Address = (uint16_t)addr;
 		pDataInfo->ByteSize = 1;
 		pDataInfo->DataType = DataType::Byte;
-		pUI->DataInfo[addr] = pDataInfo;
+		state.DataInfo[addr] = pDataInfo;
 	}
 
-	// Key Config
-	pUI->KeyConfig[(int)Key::SetItemData] = 'D';
-	pUI->KeyConfig[(int)Key::SetItemText] = 'T';
-	pUI->KeyConfig[(int)Key::SetItemCode] = 'C';
-	pUI->KeyConfig[(int)Key::AddLabel] = 'L';
-	pUI->KeyConfig[(int)Key::Rename] = 'R';
-	
-
 	// run initial analysis
-	InitialiseCodeAnalysis(pUI);
+	InitialiseCodeAnalysis(pUI->CodeAnalysis,pUI->pSpeccy);
+	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
 	
-
 	return pUI;
 }
 
@@ -169,24 +164,6 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	pUI->MemoryAccessHandlers.clear();	// remove old memory handlers
 
 	ResetMemoryStats(pUI->MemStats);
-
-	for(int i=0;i<(1<<16);i++)	// loop across address range
-	{
-		delete pUI->Labels[i];
-		pUI->Labels[i] = nullptr;
-		
-		delete pUI->CodeInfo[i];
-		pUI->CodeInfo[i] = nullptr;
-
-		delete pUI->DataInfo[i];
-
-		// set up data entry for address
-		FDataInfo *pDataInfo = new FDataInfo;
-		pDataInfo->Address = (uint16_t)i;
-		pDataInfo->ByteSize = 1;
-		pDataInfo->DataType = DataType::Byte;
-		pUI->DataInfo[i] = pDataInfo;
-	}
 	
 	// Reset Functions
 	pUI->FunctionStack.clear();
@@ -201,27 +178,31 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	pUI->pActiveGame->pConfig = pGameConfig;
 	pUI->pActiveGame->pViewerData = pGameConfig->pInitFunction(pUI, pGameConfig);
 
-	// run initial analysis
-	InitialiseCodeAnalysis(pUI);
+	// Initialise code analysis
+	InitialiseCodeAnalysis(pUI->CodeAnalysis, pUI->pSpeccy);
 
 	// load game data if we can
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
-	LoadGameData(pUI, dataFName.c_str());
+	LoadGameData(pUI->CodeAnalysis, dataFName.c_str());
+	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
 
 }
 
 // save config & data
 void SaveCurrentGameData(FSpeccyUI *pUI)
 {
-	const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
-	std::string configFName = "Configs/" + pGameConfig->Name + ".json";
-	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
-	EnsureDirectoryExists("Configs");
-	EnsureDirectoryExists("GameData");
-	// Test - do better filename
-	SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-	SaveGameData(pUI, dataFName.c_str());
-	//assert(LoadGameData(pUI, dataFName.c_str()));
+	if (pUI->pActiveGame != nullptr)
+	{
+		const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
+		const std::string configFName = "Configs/" + pGameConfig->Name + ".json";
+		const std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
+		EnsureDirectoryExists("Configs");
+		EnsureDirectoryExists("GameData");
+
+		SaveGameConfigToFile(*pGameConfig, configFName.c_str());
+		SaveGameData(pUI->CodeAnalysis, dataFName.c_str());
+	}
+	SaveROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
 }
 
 static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
@@ -516,7 +497,9 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 	int byteOff = 0;
 	int offsetMax = 0xffff - (64 * 8);
 	
-	ImGui::Begin("Graphics View");
+	if (ImGui::Begin("Graphics View") == false)
+		return;
+	
 	ImGui::Text("Memory Map Address: 0x%x", memOffset);
 	DrawGraphicsView(*pGraphicsView);
 	ImGui::SameLine();
@@ -570,7 +553,8 @@ void DrawGraphicsView(FSpeccyUI* pUI)
 
 void DrawMemoryTools(FSpeccyUI* pUI)
 {
-	ImGui::Begin("Tools");
+	if (ImGui::Begin("Tools") == false)
+		return;
 
 	if (ImGui::BeginTabBar("MemoryToolsTabBar"))
 	{
@@ -586,13 +570,7 @@ void DrawMemoryTools(FSpeccyUI* pUI)
 			DrawMemoryAnalysis(pUI);
 			ImGui::EndTabItem();
 		}
-
-		if (ImGui::BeginTabItem("Code Analysis"))
-		{
-			DrawCodeAnalysisData(pUI);
-			ImGui::EndTabItem();
-		}
-
+		
 		if (ImGui::BeginTabItem("Functions"))
 		{
 			DrawFunctionInfo(pUI);
@@ -660,7 +638,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 
 	DrawDebuggerUI(&pZXUI->dbg);
 
-	DasmDraw(&pUI->FunctionDasm);
+	//DasmDraw(&pUI->FunctionDasm);
 
 
 	// show spectrum window
@@ -688,6 +666,12 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	
 	DrawGraphicsView(pUI);
 	DrawMemoryTools(pUI);
+
+	if (ImGui::Begin("Code Analysis"))
+	{
+		DrawCodeAnalysisData(pUI);
+		ImGui::End();
+	}
 }
 
 bool DrawDockingView(FSpeccyUI *pUI)

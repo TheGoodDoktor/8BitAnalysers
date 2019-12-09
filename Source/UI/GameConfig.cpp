@@ -107,38 +107,12 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 
 // Labels
 
-void SaveLabels(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddress, uint16_t endAddress)
-{
-	json labelListJson;
-
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		FLabelInfo *pLabel = pUI->Labels[i];
-		if (pLabel != nullptr)
-		{
-			json labelJson;
-			labelJson["Type"] = magic_enum::enum_name(pLabel->LabelType);
-			labelJson["Address"] = pLabel->Address;
-			labelJson["Size"] = pLabel->ByteSize;
-			labelJson["Name"] = pLabel->Name;
-			labelJson["Comment"] = pLabel->Comment;
-			
-			// References?
-
-			labelListJson.push_back(labelJson);
-		}
-
-	}
-
-	parentObject["Labels"] = labelListJson;
-}
-
-void SaveLabelsBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16_t endAddress)
+void SaveLabelsBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount = 0;
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		if (pUI->Labels[i] != nullptr)
+		if (state.Labels[i] != nullptr)
 			recordCount++;
 	}
 
@@ -146,7 +120,7 @@ void SaveLabelsBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16
 
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		FLabelInfo *pLabel = pUI->Labels[i];
+		FLabelInfo *pLabel = state.Labels[i];
 		if (pLabel != nullptr)
 		{
 			WriteStringToFile(std::string(magic_enum::enum_name(pLabel->LabelType)), fp);
@@ -161,7 +135,7 @@ void SaveLabelsBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16
 	}
 }
 
-void LoadLabelsBin(const FSpeccyUI *pUI, FILE *fp,int versionNo)
+void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo)
 {
 	int recordCount = 0;
 
@@ -178,41 +152,20 @@ void LoadLabelsBin(const FSpeccyUI *pUI, FILE *fp,int versionNo)
 		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 		ReadStringFromFile(pLabel->Name, fp);
 		ReadStringFromFile(pLabel->Comment, fp);
-
 		// References?
 
-		
+		state.Labels[pLabel->Address] = pLabel;
 	}
 }
 
 // Code Info
 
-void SaveCodeInfo(const FSpeccyUI *pUI, json &parentObject,uint16_t startAddress,uint16_t endAddress)
-{
-	json codeInfoListJson;
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		FCodeInfo *pCodeInfo = pUI->CodeInfo[i];
-		if (pCodeInfo != nullptr)
-		{
-			json codeInfoJson;
-			codeInfoJson["Address"] = pCodeInfo->Address;
-			codeInfoJson["Size"] = pCodeInfo->ByteSize;
-			codeInfoJson["JumpAddress"] = pCodeInfo->JumpAddress;
-			codeInfoJson["Text"] = pCodeInfo->Text;
-			codeInfoJson["Comment"] = pCodeInfo->Comment;
-			codeInfoListJson.push_back(codeInfoJson);
-		}
-	}
-	parentObject["CodeInfo"] = codeInfoListJson;
-}
-
-void SaveCodeInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16_t endAddress)
+void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount = 0;
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		if (pUI->CodeInfo[i] != nullptr)
+		if (state.CodeInfo[i] != nullptr)
 			recordCount++;
 	}
 
@@ -220,7 +173,7 @@ void SaveCodeInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint
 	
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		FCodeInfo *pCodeInfo = pUI->CodeInfo[i];
+		FCodeInfo *pCodeInfo = state.CodeInfo[i];
 		if (pCodeInfo != nullptr)
 		{
 			fwrite(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
@@ -232,7 +185,7 @@ void SaveCodeInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint
 	}
 }
 
-void LoadCodeInfoBin(FSpeccyUI *pUI, FILE *fp, int versionNo)
+void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo)
 {
 	int recordCount;
 	fread(&recordCount, sizeof(int), 1, fp);
@@ -246,38 +199,18 @@ void LoadCodeInfoBin(FSpeccyUI *pUI, FILE *fp, int versionNo)
 		fread(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
 		ReadStringFromFile(pCodeInfo->Text, fp);
 		ReadStringFromFile(pCodeInfo->Comment, fp);
-		pUI->CodeInfo[pCodeInfo->Address] = pCodeInfo;
+		state.CodeInfo[pCodeInfo->Address] = pCodeInfo;
 	}
 }
 
 // Data Info
 
-void SaveDataInfo(const FSpeccyUI *pUI, json &parentObject, uint16_t startAddress, uint16_t endAddress)
-{
-	json dataInfoListJson;
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		FDataInfo *pDataInfo = pUI->DataInfo[i];
-		if (pDataInfo != nullptr)
-		{
-			json dataInfoJson;
-			dataInfoJson["Type"] = magic_enum::enum_name(pDataInfo->DataType);
-			dataInfoJson["Address"] = pDataInfo->Address;
-			dataInfoJson["Size"] = pDataInfo->ByteSize;
-			dataInfoJson["Comment"] = pDataInfo->Comment;
-			
-			dataInfoListJson.push_back(dataInfoJson);
-		}
-	}
-	parentObject["DataInfo"] = dataInfoListJson;
-}
-
-void SaveDataInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint16_t endAddress)
+void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount = 0;
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		if (pUI->DataInfo[i] != nullptr)
+		if (state.DataInfo[i] != nullptr)
 			recordCount++;
 	}
 
@@ -285,7 +218,7 @@ void SaveDataInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint
 
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		FDataInfo *pDataInfo = pUI->DataInfo[i];
+		FDataInfo *pDataInfo = state.DataInfo[i];
 		if (pDataInfo != nullptr)
 		{
 			WriteStringToFile(std::string(magic_enum::enum_name(pDataInfo->DataType)), fp);
@@ -298,7 +231,7 @@ void SaveDataInfoBin(const FSpeccyUI *pUI, FILE *fp, uint16_t startAddress, uint
 	fwrite(&recordCount, sizeof(int), 1, fp);
 }
 
-void LoadDataInfoBin(FSpeccyUI *pUI, FILE *fp, int versionNo)
+void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 {
 	int recordCount;
 	fread(&recordCount, sizeof(int), 1, fp);
@@ -314,33 +247,15 @@ void LoadDataInfoBin(FSpeccyUI *pUI, FILE *fp, int versionNo)
 		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 		ReadStringFromFile(pDataInfo->Comment, fp);
 
-		pUI->DataInfo[pDataInfo->Address] = pDataInfo;
+		state.DataInfo[pDataInfo->Address] = pDataInfo;
 	}
-}
-
-bool SaveGameDataJson(FSpeccyUI *pUI, const char *fname)
-{
-	json gameDataJson;
-
-	SaveLabels(pUI, gameDataJson,0x4000,0xFFFF);
-	SaveCodeInfo(pUI, gameDataJson,0x4000,0xFFFF);
-	SaveDataInfo(pUI, gameDataJson, 0x4000, 0xFFFF);
-
-	std::ofstream outFileStream(fname);
-	if (outFileStream.is_open())
-	{
-		outFileStream << std::setw(4) << gameDataJson << std::endl;
-		return true;
-	}
-
-	return false;// not implemented
 }
 
 static const int g_kBinaryFileVersionNo = 1;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Binary save
-bool SaveGameDataBin(FSpeccyUI *pUI, const char *fname)
+bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_t addrStart, uint16_t addrEnd)
 {
 	FILE *fp = fopen(fname, "wb");
 	if (fp == NULL)
@@ -348,16 +263,16 @@ bool SaveGameDataBin(FSpeccyUI *pUI, const char *fname)
 
 	fwrite(&g_kBinaryFileMagic, sizeof(int), 1, fp);
 	fwrite(&g_kBinaryFileVersionNo, sizeof(int), 1, fp);
-	SaveLabelsBin(pUI, fp, 0x4000, 0xFFFF);
-	SaveCodeInfoBin(pUI, fp, 0x4000, 0xFFFF);
-	SaveDataInfoBin(pUI, fp, 0x4000, 0xFFFF);
+	SaveLabelsBin(state, fp, addrStart, addrEnd);
+	SaveCodeInfoBin(state, fp, addrStart, addrEnd);
+	SaveDataInfoBin(state, fp, addrStart, addrEnd);
 
 	fclose(fp);
 	return true;
 }
 
 // Binary load
-bool LoadGameDataBin(FSpeccyUI *pUI, const char *fname)
+bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addrStart, uint16_t addrEnd)
 {
 	FILE *fp = fopen(fname, "rb");
 	if (fp == NULL)
@@ -372,39 +287,46 @@ bool LoadGameDataBin(FSpeccyUI *pUI, const char *fname)
 
 	fread(&versionNo, sizeof(int), 1, fp);
 
-	uint16_t addrStart = 0x4000;
-	uint16_t addrEnd = 0x4000;
-
 	// loop across address range
 	// clear what we're replacing
 	for (int i = addrStart; i <= addrEnd; i++)	
 	{
-		delete pUI->Labels[i];
-		pUI->Labels[i] = nullptr;
+		delete state.Labels[i];
+		state.Labels[i] = nullptr;
 
-		delete pUI->CodeInfo[i];
-		pUI->CodeInfo[i] = nullptr;
+		delete state.CodeInfo[i];
+		state.CodeInfo[i] = nullptr;
 
-		delete pUI->DataInfo[i];
-		pUI->DataInfo[i] = nullptr;
+		delete state.DataInfo[i];
+		state.DataInfo[i] = nullptr;
 	}
 
-	LoadLabelsBin(pUI, fp, versionNo);
-	LoadCodeInfoBin(pUI, fp, versionNo);
-	LoadDataInfoBin(pUI, fp, versionNo);
+	LoadLabelsBin(state, fp, versionNo);
+	LoadCodeInfoBin(state, fp, versionNo);
+	LoadDataInfoBin(state, fp, versionNo);
 
 	fclose(fp);
 	return true;
 }
 
-bool SaveGameData(FSpeccyUI *pUI, const char *fname)
+bool SaveGameData(const FCodeAnalysisState& state, const char *fname)
 {
-	return SaveGameDataBin(pUI, fname);
+	return SaveGameDataBin(state, fname,0x4000, 0xffff);
 }
 
-bool LoadGameData(FSpeccyUI *pUI, const char *fname)
+bool SaveROMData(const FCodeAnalysisState& state, const char *fname)
 {
-	return LoadGameDataBin(pUI,fname);
+	return SaveGameDataBin(state, fname, 0x0000, 0x3fff);
+}
+
+bool LoadGameData(FCodeAnalysisState& state, const char *fname)
+{
+	return LoadGameDataBin(state,fname,0x4000,0xffff);
+}
+
+bool LoadROMData(FCodeAnalysisState& state, const char *fname)
+{
+	return LoadGameDataBin(state, fname,0x0000,0x3fff);
 }
 
 bool LoadGameConfigs(FSpeccyUI *pUI)

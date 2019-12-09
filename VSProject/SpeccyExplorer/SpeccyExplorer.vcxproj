@@ -135,13 +135,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyser.cpp" />
+    <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.cpp" />
     <ClCompile Include="..\..\Source\imgui_impl_dx11.cpp" />
     <ClCompile Include="..\..\Source\imgui_impl_lucidextra.cpp" />
     <ClCompile Include="..\..\Source\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\Source\main.cpp" />
     <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp" />
     <ClCompile Include="..\..\Source\Speccy\Speccy.cpp" />
-    <ClCompile Include="..\..\Source\UI\CodeAnalyser.cpp" />
     <ClCompile Include="..\..\Source\UI\Disassembler.cpp" />
     <ClCompile Include="..\..\Source\UI\FunctionHandlers.cpp" />
     <ClCompile Include="..\..\Source\UI\GameConfig.cpp" />
@@ -161,11 +162,12 @@
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyser.h" />
+    <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.h" />
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h" />
     <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h" />
     <ClInclude Include="..\..\Source\imgui_impl_win32.h" />
     <ClInclude Include="..\..\Source\Speccy\Speccy.h" />
-    <ClInclude Include="..\..\Source\UI\CodeAnalyser.h" />
     <ClInclude Include="..\..\Source\UI\Disassembler.h" />
     <ClInclude Include="..\..\Source\UI\FunctionHandlers.h" />
     <ClInclude Include="..\..\Source\UI\GameConfig.h" />

@@ -6,13 +6,13 @@
 #include "MemoryHandlers.h"
 #include "Disassembler.h"
 #include "FunctionHandlers.h"
+#include "CodeAnalyser/CodeAnalyser.h"
 
 struct FSpeccyUI;
 struct FGame;
 struct FGameViewer;
 struct FGameViewerData;
 struct FGameConfig;
-struct FCodeAnalysisState;
 
 struct FGame
 {
@@ -28,75 +28,8 @@ struct FGame
 	void *		pUserData = nullptr;
 };*/
 
-enum class LabelType
-{
-	Data,
-	Function,
-	Code,
-};
 
-enum class ItemType
-{
-	Label,
-	Code,
-	Data,
-};
 
-struct FItem
-{
-	ItemType		Type;
-	std::string		Comment;
-	uint16_t		Address;
-	uint16_t		ByteSize;
-	int				FrameLastAccessed = -1;
-};
-
-struct FLabelInfo : FItem
-{
-	FLabelInfo() { Type = ItemType::Label; }
-
-	std::string				Name;
-	LabelType				LabelType;
-	std::map<uint16_t,int>	References;	
-};
-
-struct FCodeInfo : FItem
-{
-	FCodeInfo() :FItem() { Type = ItemType::Code; }
-
-	std::string		Text;				// Disassembly text
-	uint16_t		JumpAddress = 0;	// optional jump address
-};
-
-enum class DataType
-{
-	Byte,
-	Word,
-	Text,		// ascii text
-	Graphics,	// pixel data
-	Blob,		// opaque data blob
-};
-
-struct FDataInfo : FItem
-{
-	FDataInfo() :FItem() { Type = ItemType::Data; }
-	
-	DataType	DataType = DataType::Byte;
-
-	std::map<uint16_t, int>	References;	// address and counts of data access instructions
-};
-
-enum class Key
-{
-	SetItemData,
-	SetItemText,
-	SetItemCode,
-
-	AddLabel,
-	Rename,
-
-	Count
-};
 
 
 struct FSpeccyUI
@@ -110,7 +43,6 @@ struct FSpeccyUI
 	FSpeccy*		pSpeccy = nullptr;
 	ui_zx_t			UIZX;
 
-	int				KeyConfig[(int)Key::Count];
 
 	FGraphicsView*	pGraphicsViewerView = nullptr;
 
@@ -120,12 +52,7 @@ struct FSpeccyUI
 	std::string				SelectedSpriteList;
 	std::map<std::string, FUISpriteList>	SpriteLists;
 
-	// code analysis information
-	static const int kAddressSize = 1 << 16;
-	FLabelInfo*				Labels[kAddressSize];
-	FCodeInfo*				CodeInfo[kAddressSize];
-	FDataInfo*				DataInfo[kAddressSize];
-	bool					bCodeAnalysisDataDirty = false;
+	FCodeAnalysisState		CodeAnalysis;
 
 	// Memory handling
 	std::string				SelectedMemoryHandler;
