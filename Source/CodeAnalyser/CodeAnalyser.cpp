@@ -207,6 +207,16 @@ static void AnalysisOutputCB(char c, void* pUserData)
 void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 {
 	FSpeccy *pSpeccy = state.pSpeccy;
+
+	// update branch reference counters
+	uint16_t jumpAddr;
+	if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
+	{
+		FLabelInfo* pLabel = state.Labels[jumpAddr];
+		if (pLabel != nullptr)
+			pLabel->References[pc]++;	// add/increment reference
+	}
+	
 	if (state.CodeInfo[pc] != nullptr)	// already been analysed
 		return;
 
@@ -246,11 +256,12 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 		{
 			//fprintf(stderr,"Jump 0x%04X - > 0x%04X\n", pc, jumpAddr);
 			const bool isCall = CheckCallInstruction(pSpeccy, pc);
-			GenerateLabelForAddress(state, jumpAddr, isCall ? LabelType::Function : LabelType::Code);
+			if (GenerateLabelForAddress(state, jumpAddr, isCall ? LabelType::Function : LabelType::Code))
+				state.Labels[jumpAddr]->References[pc]++;
 
-			FLabelInfo* pLabel = state.Labels[jumpAddr];
-			if (pLabel != nullptr)
-				pLabel->References[pc]++;	// add/increment reference
+			//FLabelInfo* pLabel = state.Labels[jumpAddr];
+			//if (pLabel != nullptr)
+			//	pLabel->References[pc]++;	// add/increment reference
 
 
 			pNewCodeInfo->JumpAddress = jumpAddr;
