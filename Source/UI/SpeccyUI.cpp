@@ -53,7 +53,7 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	pc = prevPC;	// set PC to pc of instruction just executed
 
 	RunStaticCodeAnalysis(state, pc);
-	state.CodeInfo[pc]->FrameLastAccessed = pUI->CurrentFrameNo;
+	state.CodeInfo[pc]->FrameLastAccessed = state.CurrentFrameNo;
 
 	// labels
 	//GenerateLabelsForAddress(pUI, pc,LabelType::Code);
@@ -742,8 +742,7 @@ bool DrawDockingView(FSpeccyUI *pUI)
 void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 {
 	DrawDockingView(pUI);
-	if(pUI->pSpeccy->ExecThisFrame)
-		pUI->CurrentFrameNo++;
+	
 }
 /*
 FGameViewer &AddGameViewer(FSpeccyUI *pUI,const char *pName)

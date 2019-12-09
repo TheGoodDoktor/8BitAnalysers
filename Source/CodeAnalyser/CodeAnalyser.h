@@ -67,6 +67,7 @@ struct FDataInfo : FItem
 	std::map<uint16_t, int>	References;	// address and counts of data access instructions
 };
 
+
 enum class Key
 {
 	SetItemData,
@@ -83,6 +84,8 @@ enum class Key
 struct FCodeAnalysisState
 {
 	FSpeccy *				pSpeccy = nullptr;
+	int						CurrentFrameNo = 0;
+
 	static const int kAddressSize = 1 << 16;
 	FLabelInfo*				Labels[kAddressSize];
 	FCodeInfo*				CodeInfo[kAddressSize];
@@ -97,12 +100,29 @@ struct FCodeAnalysisState
 
 	int						KeyConfig[(int)Key::Count];
 
-	
+	std::vector< class FCommand *>	CommandStack;
 
 };
+
+// Commands
+class FCommand
+{
+public:
+	virtual void Do(FCodeAnalysisState &state) = 0;
+	virtual void Undo(FCodeAnalysisState &state) = 0;
+};
+
 
 // Analysis
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, FSpeccy* pSpeccy);
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 
+// Commands
+void Undo(FCodeAnalysisState &state);
+
+void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address); 
+void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
+void SetItemData(FCodeAnalysisState &state, FItem *pItem);
+void SetItemText(FCodeAnalysisState &state, FItem *pItem);
+void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText);

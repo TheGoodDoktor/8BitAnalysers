@@ -72,8 +72,6 @@ struct FSpeccyUI
 	uint16_t PCHistory[kPCHistorySize];
 	int PCHistoryPos = 0;
 
-	int	CurrentFrameNo = 0;
-
 	bool bShowImGuiDemo = false;
 };
 

@@ -27,6 +27,13 @@ bool GoToPreviousAddress(FCodeAnalysisState &state)
 	return true;
 }
 
+void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr)
+{
+	ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
+	ImGui::Text("%04Xh", addr);
+	ImGui::PopStyleColor();
+}
+
 void DrawComment(const FItem *pItem)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
@@ -38,7 +45,7 @@ void DrawComment(const FItem *pItem)
 	}
 }
 
-void DrawLabelInfo(FSpeccyUI *pUI, const FLabelInfo *pLabelInfo)
+void DrawLabelInfo(FCodeAnalysisState &state, const FLabelInfo *pLabelInfo)
 {
 	ImGui::Text("%s: ", pLabelInfo->Name.c_str());
 	if (ImGui::IsItemHovered())
@@ -47,7 +54,7 @@ void DrawLabelInfo(FSpeccyUI *pUI, const FLabelInfo *pLabelInfo)
 		ImGui::Text("Callers:");
 		for (const auto & caller : pLabelInfo->References)
 		{
-			ImGui::Text("%04Xh", caller.first);
+			DrawCodeAddress(state, caller.first);
 		}
 		ImGui::EndTooltip();
 	}
@@ -55,29 +62,41 @@ void DrawLabelInfo(FSpeccyUI *pUI, const FLabelInfo *pLabelInfo)
 	DrawComment(pLabelInfo);	
 }
 
-void DrawLabelDetails(FSpeccyUI *pUI, FLabelInfo *pLabelInfo)
+void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 {
+	static std::string labelString;
+	static FItem *pCurrItem = nullptr;
+	if (pCurrItem != pLabelInfo)
+	{
+		labelString = pLabelInfo->Name;
+		pCurrItem = pLabelInfo;
+	}
+
+	//ImGui::Text("Comments");
+	if (ImGui::InputText("Name", &labelString))
+	{
+		SetLabelName(state, pLabelInfo, labelString.c_str());
+	}
+
 	ImGui::Text("Callers:");
 	for (const auto & caller : pLabelInfo->References)
 	{
-		ImGui::Text("%04Xh", caller.first);
+		DrawCodeAddress(state, caller.first);
 	}
 }
 
-void DrawCodeInfo(FSpeccyUI *pUI, const FCodeInfo *pCodeInfo)
+void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 {
-	FCodeAnalysisState &state = pUI->CodeAnalysis;
-	
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
-	const int framesSinceAccessed = pUI->CurrentFrameNo - pCodeInfo->FrameLastAccessed;
+	const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
 	const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
 
 	const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
 
-	const bool bPCLine = pCodeInfo->Address == z80_pc(&pUI->pSpeccy->CurrentState.cpu);
+	const bool bPCLine = pCodeInfo->Address == z80_pc(&state.pSpeccy->CurrentState.cpu);
 
 	if (bPCLine || brightVal > 0)
 	{
@@ -147,11 +166,11 @@ void DrawCodeInfo(FSpeccyUI *pUI, const FCodeInfo *pCodeInfo)
 
 }
 
-void DrawCodeDetails(FSpeccyUI *pUI, FCodeInfo *pCodeInfo)
+void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 {
 }
 
-void DrawDataInfo(FSpeccyUI *pUI, const FDataInfo *pDataInfo)
+void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 {
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
@@ -164,14 +183,14 @@ void DrawDataInfo(FSpeccyUI *pUI, const FDataInfo *pDataInfo)
 	{
 	case DataType::Byte:
 	{
-		const uint8_t val = ReadySpeccyByte(pUI->pSpeccy, pDataInfo->Address);
+		const uint8_t val = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address);
 		ImGui::Text("db %02Xh '%c'", val, val);
 	}
 	break;
 
 	case DataType::Word:
 	{
-		const uint16_t val = ReadySpeccyByte(pUI->pSpeccy, pDataInfo->Address) | (ReadySpeccyByte(pUI->pSpeccy, pDataInfo->Address + 1) << 8);
+		const uint16_t val = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address) | (ReadySpeccyByte(state.pSpeccy, pDataInfo->Address + 1) << 8);
 		ImGui::Text("dw %04Xh", val);
 	}
 	break;
@@ -181,7 +200,7 @@ void DrawDataInfo(FSpeccyUI *pUI, const FDataInfo *pDataInfo)
 		std::string textString;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
-			const char ch = ReadySpeccyByte(pUI->pSpeccy, pDataInfo->Address + i);
+			const char ch = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address + i);
 			if (ch == '\n')
 				textString += "<cr>";
 			else
@@ -201,77 +220,12 @@ void DrawDataInfo(FSpeccyUI *pUI, const FDataInfo *pDataInfo)
 	DrawComment(pDataInfo);
 }
 
-void DrawDataDetails(FSpeccyUI *pUI, FDataInfo *pDataInfo)
+void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 {
 }
 
-void SetItemData(FCodeAnalysisState &state, FItem *pItem)
-{
-	if (pItem->Type == ItemType::Data)
-	{
-		FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
-		if (pDataItem->DataType == DataType::Byte)
-		{
-			pDataItem->DataType = DataType::Word;
-			pDataItem->ByteSize = 2;
-			state.bCodeAnalysisDataDirty = true;
-		}
-		else if (pDataItem->DataType == DataType::Word)
-		{
-			pDataItem->DataType = DataType::Byte;
-			pDataItem->ByteSize = 1;
-			state.bCodeAnalysisDataDirty = true;
 
-		}
-	}
-}
 
-void SetItemText(FCodeAnalysisState &state, FItem *pItem)
-{
-	if (pItem->Type == ItemType::Data)
-	{
-		FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
-		if (pDataItem->DataType == DataType::Byte)
-		{
-			// set to ascii
-			pDataItem->ByteSize = 0;	// reset byte counter
-
-			uint16_t charAddr = pDataItem->Address;
-			while (state.DataInfo[charAddr] != nullptr && state.DataInfo[charAddr]->DataType == DataType::Byte)
-			{
-				const uint8_t val = ReadySpeccyByte(state.pSpeccy, charAddr);
-				if (val == 0 || val > 0x80)
-					break;
-				pDataItem->ByteSize++;
-				charAddr++;
-			}
-
-			// did the operation fail? -revert to byte
-			if (pDataItem->ByteSize == 0)
-			{
-				pDataItem->DataType = DataType::Byte;
-				pDataItem->ByteSize = 1;
-			}
-			else
-			{
-				pDataItem->DataType = DataType::Text;
-				state.bCodeAnalysisDataDirty = true;
-			}
-		}
-	}
-}
-void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
-{
-	if (state.Labels[address] == nullptr)
-	{
-		LabelType labelType = LabelType::Data;
-		if (state.CodeInfo[address] != nullptr)
-			labelType = LabelType::Code;
-
-		GenerateLabelForAddress(state, address, labelType);
-		state.bCodeAnalysisDataDirty = true;
-	}
-}
 
 
 void ProcessKeyCommands(FCodeAnalysisState &state)
@@ -347,6 +301,9 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
+	if (state.pSpeccy->ExecThisFrame)
+		state.CurrentFrameNo++;
+
 	UpdateItemList(state);
 
 	if (ImGui::ArrowButton("##btn", ImGuiDir_Left))
@@ -408,13 +365,13 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 				switch (pItem->Type)
 				{
 				case ItemType::Label:
-					DrawLabelInfo(pUI, static_cast<const FLabelInfo *>(pItem));
+					DrawLabelInfo(state, static_cast<const FLabelInfo *>(pItem));
 					break;
 				case ItemType::Code:
-					DrawCodeInfo(pUI, static_cast<const FCodeInfo *>(pItem));
+					DrawCodeInfo(state, static_cast<const FCodeInfo *>(pItem));
 					break;
 				case ItemType::Data:
-					DrawDataInfo(pUI, static_cast<const FDataInfo *>(pItem));
+					DrawDataInfo(state, static_cast<const FDataInfo *>(pItem));
 					break;
 				}
 
@@ -435,17 +392,31 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 		switch (pItem->Type)
 		{
 		case ItemType::Label:
-			DrawLabelDetails(pUI, static_cast<FLabelInfo *>(pItem));
+			DrawLabelDetails(state, static_cast<FLabelInfo *>(pItem));
 			break;
 		case ItemType::Code:
-			DrawCodeDetails(pUI, static_cast<FCodeInfo *>(pItem));
+			DrawCodeDetails(state, static_cast<FCodeInfo *>(pItem));
 			break;
 		case ItemType::Data:
-			DrawDataDetails(pUI, static_cast<FDataInfo *>(pItem));
+			DrawDataDetails(state, static_cast<FDataInfo *>(pItem));
 			break;
 		}
-		ImGui::Text("Comments");
-		ImGui::InputTextWithHint("##source", "Comments", &pItem->Comment);
+
+		{
+			static std::string commentString;
+			static FItem *pCurrItem = nullptr;
+			if (pCurrItem != pItem)
+			{
+				commentString = pItem->Comment;
+				pCurrItem = pItem;
+			}
+
+			//ImGui::Text("Comments");
+			if (ImGui::InputTextWithHint("Comments", "Comments", &commentString))
+			{
+				SetItemCommentText(state, pItem, commentString.c_str());
+			}
+		}
 
 	}
 	ImGui::EndChild();

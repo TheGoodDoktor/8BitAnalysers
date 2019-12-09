@@ -377,3 +377,123 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state,FSpeccy* pSpeccy)
 	state.KeyConfig[(int)Key::Rename] = 'R';
 }
 
+// Command Processing
+void DoCommand(FCodeAnalysisState &state, FCommand *pCommand)
+{
+	state.CommandStack.push_back(pCommand);
+	pCommand->Do(state);
+}
+
+void Undo(FCodeAnalysisState &state)
+{
+	if (state.CommandStack.empty() == false)
+	{
+		state.CommandStack.back()->Undo(state);
+		state.CommandStack.pop_back();
+	}
+}
+
+class FSetItemDataCommand : public FCommand
+{
+public:
+	FSetItemDataCommand(FItem *_pItem) :pItem(_pItem) {}
+
+	virtual void Do(FCodeAnalysisState &state) override
+	{
+
+		if (pItem->Type == ItemType::Data)
+		{
+			FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
+
+			oldDataType = pDataItem->DataType;
+			oldDataSize = pDataItem->ByteSize;
+
+			if (pDataItem->DataType == DataType::Byte)
+			{
+				pDataItem->DataType = DataType::Word;
+				pDataItem->ByteSize = 2;
+				state.bCodeAnalysisDataDirty = true;
+			}
+			else if (pDataItem->DataType == DataType::Word)
+			{
+				pDataItem->DataType = DataType::Byte;
+				pDataItem->ByteSize = 1;
+				state.bCodeAnalysisDataDirty = true;
+
+			}
+		}
+	}
+	virtual void Undo(FCodeAnalysisState &state) override
+	{
+		FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
+		pDataItem->DataType = oldDataType;
+		pDataItem->ByteSize = oldDataSize;
+	}
+
+	FItem *	pItem;
+
+	DataType	oldDataType;
+	uint16_t	oldDataSize;
+};
+
+void SetItemData(FCodeAnalysisState &state, FItem *pItem)
+{
+	DoCommand(state, new FSetItemDataCommand(pItem));
+}
+
+void SetItemText(FCodeAnalysisState &state, FItem *pItem)
+{
+	if (pItem->Type == ItemType::Data)
+	{
+		FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
+		if (pDataItem->DataType == DataType::Byte)
+		{
+			// set to ascii
+			pDataItem->ByteSize = 0;	// reset byte counter
+
+			uint16_t charAddr = pDataItem->Address;
+			while (state.DataInfo[charAddr] != nullptr && state.DataInfo[charAddr]->DataType == DataType::Byte)
+			{
+				const uint8_t val = ReadySpeccyByte(state.pSpeccy, charAddr);
+				if (val == 0 || val > 0x80)
+					break;
+				pDataItem->ByteSize++;
+				charAddr++;
+			}
+
+			// did the operation fail? -revert to byte
+			if (pDataItem->ByteSize == 0)
+			{
+				pDataItem->DataType = DataType::Byte;
+				pDataItem->ByteSize = 1;
+			}
+			else
+			{
+				pDataItem->DataType = DataType::Text;
+				state.bCodeAnalysisDataDirty = true;
+			}
+		}
+	}
+}
+void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
+{
+	if (state.Labels[address] == nullptr)
+	{
+		LabelType labelType = LabelType::Data;
+		if (state.CodeInfo[address] != nullptr)
+			labelType = LabelType::Code;
+
+		GenerateLabelForAddress(state, address, labelType);
+		state.bCodeAnalysisDataDirty = true;
+	}
+}
+
+void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText)
+{
+	pLabel->Name = pText;
+}
+
+void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText)
+{
+	pItem->Comment = pText;
+}
