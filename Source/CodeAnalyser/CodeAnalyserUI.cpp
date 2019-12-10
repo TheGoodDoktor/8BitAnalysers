@@ -27,11 +27,51 @@ bool GoToPreviousAddress(FCodeAnalysisState &state)
 	return true;
 }
 
+void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
+{
+	int labelOffset = 0;
+	const char *pLabelString = nullptr;
+	
+	for(int addrVal = addr; addrVal >= 0; addrVal--)
+	{
+		if(state.Labels[addrVal] != nullptr)
+		{
+			pLabelString = state.Labels[addrVal]->Name.c_str();
+			break;
+		}
+
+		labelOffset++;
+	}
+	
+	if (pLabelString != nullptr)
+	{
+		ImGui::SameLine();
+		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+		if(labelOffset == 0)
+			ImGui::Text("[%s]", pLabelString);
+		else
+			ImGui::Text("[%s + %d]", pLabelString, labelOffset);
+
+		if (ImGui::IsItemHovered())
+		{
+			//ImGui::SetTooltip("Goto %04Xh", addr);
+			// TODO: bring up snippet in tool tip
+			if (ImGui::IsMouseDoubleClicked(0))
+				GoToAddress(state, addr);
+
+		}
+
+		ImGui::PopStyleColor();
+	}
+}
+
 void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr)
 {
 	ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
 	ImGui::Text("%04Xh", addr);
 	ImGui::PopStyleColor();
+	ImGui::SameLine();
+	DrawAddressLabel(state, addr);
 }
 
 void DrawComment(const FItem *pItem)
@@ -137,29 +177,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	// draw jump address label name
 	if (pCodeInfo->JumpAddress != 0)
 	{
-		const FLabelInfo *pLabelInfo = state.Labels[pCodeInfo->JumpAddress];
-		if (pLabelInfo != nullptr)
-		{
-			ImGui::SameLine();
-			ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
-			ImGui::Text("[%s]", pLabelInfo->Name.c_str());
-			/*ImGui::SameLine();
-
-			if (ImGui::ArrowButton("##btn", ImGuiDir_Right))
-			{
-				GoToAddress(state,pCodeInfo->JumpAddress);
-			}*/
-
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::SetTooltip("Goto %04Xh", pCodeInfo->JumpAddress);
-				if(ImGui::IsMouseDoubleClicked(0))
-					GoToAddress(state, pCodeInfo->JumpAddress);
-
-			}
-				
-			ImGui::PopStyleColor();
-		}
+		DrawAddressLabel(state, pCodeInfo->JumpAddress);
 	}
 
 	DrawComment(pCodeInfo);
@@ -192,6 +210,9 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	{
 		const uint16_t val = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address) | (ReadySpeccyByte(state.pSpeccy, pDataInfo->Address + 1) << 8);
 		ImGui::Text("dw %04Xh", val);
+		// draw address as label - optional?
+		ImGui::SameLine();	
+		DrawAddressLabel(state, val);
 	}
 	break;
 

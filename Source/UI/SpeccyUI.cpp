@@ -67,6 +67,11 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	return trapId;
 }
 
+int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, void* user_data)
+{
+	return 0;
+}
+
 
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 {
@@ -98,7 +103,9 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 		ui_zx_init(&pUI->UIZX, &desc);
 	}
 
+	// additional debugger config
 	pUI->UIZX.dbg.ui.open = true;
+	pUI->UIZX.dbg.break_cb = UIEvalBreakpoint;
 
 	// Setup Disassembler for function view
 	FDasmDesc desc;
@@ -159,6 +166,8 @@ void ShutdownSpeccyUI(FSpeccyUI* pUI)
 
 }
 
+
+
 void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 {
 	pUI->MemoryAccessHandlers.clear();	// remove old memory handlers
@@ -186,6 +195,23 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	LoadGameData(pUI->CodeAnalysis, dataFName.c_str());
 	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
 
+}
+
+bool StartGame(FSpeccyUI* pUI, const char *pGameName)
+{
+	for (const auto& pGameConfig : pUI->GameConfigs)
+	{
+		if (pGameConfig->Name == pGameName)
+		{
+			if (LoadZ80File(*pUI->pSpeccy, pGameConfig->Z80File.c_str()))
+			{
+				StartGame(pUI, pGameConfig);
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 // save config & data

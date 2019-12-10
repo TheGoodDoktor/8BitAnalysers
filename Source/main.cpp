@@ -31,7 +31,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 FSpeccy *g_pSpeccy = nullptr;
 
 // Main code
-int main(int, char**)
+int main(int argc, char** argv)
 {
     ImGui_ImplWin32_EnableDpiAwareness();
 
@@ -110,6 +110,9 @@ int main(int, char**)
 	g_pSpeccy = InitSpeccy(config);
 	FSpeccy &speccy = *g_pSpeccy;
 	FSpeccyUI *pSpeccyUI = InitSpeccyUI(g_pSpeccy);
+
+	if (argc > 1)
+		StartGame(pSpeccyUI, argv[1]);
 
     // Main loop
     MSG msg;

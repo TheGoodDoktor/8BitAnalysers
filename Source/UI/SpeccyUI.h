@@ -79,6 +79,7 @@ struct FSpeccyUI
 
 
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy);
+bool StartGame(FSpeccyUI* pUI, const char *pGameName);
 void ShutdownSpeccyUI(FSpeccyUI*pSpeccyUI);
 void UpdatePreTickSpeccyUI(FSpeccyUI*pSpeccyUI);
 void UpdatePostTickSpeccyUI(FSpeccyUI*pSpeccyUI);
