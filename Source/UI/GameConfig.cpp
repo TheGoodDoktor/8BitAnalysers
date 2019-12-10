@@ -130,7 +130,13 @@ void SaveLabelsBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddr
 			WriteStringToFile(pLabel->Comment, fp);
 
 			// References?
-
+			int noRefences = (int)pLabel->References.size();
+			fwrite(&noRefences, sizeof(int), 1, fp);
+			for (const auto &ref : pLabel->References)
+			{
+				uint16_t refAddr = ref.first;
+				fwrite(&refAddr, sizeof(refAddr), 1, fp);
+			}
 		}
 	}
 }
@@ -152,7 +158,19 @@ void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo)
 		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 		ReadStringFromFile(pLabel->Name, fp);
 		ReadStringFromFile(pLabel->Comment, fp);
+		
 		// References?
+		if(versionNo > 1)
+		{
+			int noReferences;// = (int)pLabel->References.size();
+			fread(&noReferences, sizeof(int), 1, fp);
+			for (int i=0;i< noReferences;i++)
+			{
+				uint16_t refAddr;
+				fread(&refAddr, sizeof(refAddr), 1, fp);
+				pLabel->References[refAddr] = 1;
+			}
+		}
 
 		state.Labels[pLabel->Address] = pLabel;
 	}
@@ -225,10 +243,19 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAd
 			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 			WriteStringToFile(pDataInfo->Comment, fp);
+
+			// References?
+			int noRefences = (int)pDataInfo->References.size();
+			fwrite(&noRefences, sizeof(int), 1, fp);
+			for (const auto &ref : pDataInfo->References)
+			{
+				uint16_t refAddr = ref.first;
+				fwrite(&refAddr, sizeof(refAddr), 1, fp);
+			}
 		}
 	}
 	
-	fwrite(&recordCount, sizeof(int), 1, fp);
+	
 }
 
 void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
@@ -247,11 +274,24 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 		ReadStringFromFile(pDataInfo->Comment, fp);
 
+		// References?
+		if (versionNo > 1)
+		{
+			int noReferences;// = (int)pLabel->References.size();
+			fread(&noReferences, sizeof(int), 1, fp);
+			for (int i = 0; i < noReferences; i++)
+			{
+				uint16_t refAddr;
+				fread(&refAddr, sizeof(refAddr), 1, fp);
+				pDataInfo->References[refAddr] = 1;
+			}
+		}
+
 		state.DataInfo[pDataInfo->Address] = pDataInfo;
 	}
 }
 
-static const int g_kBinaryFileVersionNo = 1;
+static const int g_kBinaryFileVersionNo = 2;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Binary save
