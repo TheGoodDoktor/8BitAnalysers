@@ -47,6 +47,7 @@ struct FCodeInfo : FItem
 
 	std::string		Text;				// Disassembly text
 	uint16_t		JumpAddress = 0;	// optional jump address
+	uint16_t		PointerAddress = 0;	// optional pointer address
 };
 
 enum class DataType
@@ -117,6 +118,7 @@ public:
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, FSpeccy* pSpeccy);
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
+void ReAnalyseCode(FCodeAnalysisState &state);
 
 // Commands
 void Undo(FCodeAnalysisState &state);

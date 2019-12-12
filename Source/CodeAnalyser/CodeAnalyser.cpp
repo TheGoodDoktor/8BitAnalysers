@@ -5,6 +5,28 @@
 #include "ROMLabels.h"
 #include <algorithm>
 
+bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
+{
+	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
+
+	switch (instrByte)
+	{
+		// LD x,nnnn
+	case 0x01:
+	case 0x11:
+	case 0x21:
+		// LD (nnnn),x
+	case 0x22:
+	case 0x32:
+		// LD x,(nnnn)
+	case 0x2A:
+	case 0x3A:
+		*out_addr = (ReadySpeccyByte(pSpeccy, pc + 2) << 8) | ReadySpeccyByte(pSpeccy, pc + 1);
+		return true;
+	}
+	return false;
+}
+
 bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 {
 	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
@@ -160,7 +182,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType l
 			sprintf(label, "label_%04X", pc);
 			break;
 		case LabelType::Data:
-			sprintf(label, "label_%04X", pc);
+			sprintf(label, "data_%04X", pc);
 			break;
 		}
 
@@ -204,6 +226,45 @@ static void AnalysisOutputCB(char c, void* pUserData)
 	pDasmState->Text += c;
 }
 
+uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
+{
+	FSpeccy *pSpeccy = state.pSpeccy;
+
+	FAnalysisDasmState dasmState;
+	dasmState.pSpeccy = state.pSpeccy;
+	dasmState.CurrentAddress = pc;
+	const uint16_t newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+
+	FCodeInfo *pCodeInfo = state.CodeInfo[pc];
+	if (pCodeInfo == nullptr)
+	{
+		pCodeInfo = new FCodeInfo;
+		state.CodeInfo[pc] = pCodeInfo;
+	}
+
+	pCodeInfo->Text = dasmState.Text;
+	pCodeInfo->Address = pc;
+	pCodeInfo->ByteSize = newPC - pc;
+	state.CodeInfo[pc] = pCodeInfo;	// just set to first instruction?
+
+	// does this function branch?
+	uint16_t jumpAddr;
+	if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
+	{
+		const bool isCall = CheckCallInstruction(pSpeccy, pc);
+		if (GenerateLabelForAddress(state, jumpAddr, isCall ? LabelType::Function : LabelType::Code))
+			state.Labels[jumpAddr]->References[pc]++;
+
+		pCodeInfo->JumpAddress = jumpAddr;
+	}
+
+	uint16_t ptr;
+	if (CheckPointerRefInstruction(pSpeccy, pc, &ptr))
+		pCodeInfo->PointerAddress = ptr;
+
+	return newPC;
+}
+
 void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 {
 	FSpeccy *pSpeccy = state.pSpeccy;
@@ -216,7 +277,15 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 		if (pLabel != nullptr)
 			pLabel->References[pc]++;	// add/increment reference
 	}
-	
+
+	uint16_t ptr;
+	if (CheckPointerRefInstruction(pSpeccy, pc, &ptr))
+	{
+		FLabelInfo* pLabel = state.Labels[ptr];
+		if (pLabel != nullptr)
+			pLabel->References[pc]++;	// add/increment reference
+	}
+
 	if (state.CodeInfo[pc] != nullptr)	// already been analysed
 		return;
 
@@ -236,47 +305,17 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 
 	while (bStop == false)
 	{
-		uint16_t jumpAddr;
-		
-		FAnalysisDasmState dasmState;
-		dasmState.pSpeccy = pSpeccy;
-		dasmState.CurrentAddress = pc;
-		const uint16_t newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
-		FCodeInfo *pNewCodeInfo = new FCodeInfo;
-		pNewCodeInfo->Text = dasmState.Text;
-		pNewCodeInfo->Address = pc;
-		pNewCodeInfo->ByteSize = newPC - pc;
-		state.CodeInfo[pc] = pNewCodeInfo;	// just set to first instruction?
+		const uint16_t newPC = WriteCodeInfoForAddress(state, pc);
 
-		//for (uint16_t i = pc; i < newPC; i++)
-		//	state.CodeInfo[i] = pNewCodeInfo;
-
-		// does this function branch?
 		if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
 		{
-			//fprintf(stderr,"Jump 0x%04X - > 0x%04X\n", pc, jumpAddr);
-			const bool isCall = CheckCallInstruction(pSpeccy, pc);
-			if (GenerateLabelForAddress(state, jumpAddr, isCall ? LabelType::Function : LabelType::Code))
-				state.Labels[jumpAddr]->References[pc]++;
-
-			//FLabelInfo* pLabel = state.Labels[jumpAddr];
-			//if (pLabel != nullptr)
-			//	pLabel->References[pc]++;	// add/increment reference
-
-
-			pNewCodeInfo->JumpAddress = jumpAddr;
 			AnalyseFromPC(state, jumpAddr);
 			bStop = false;	// should just be call & rst really
 		}
 
-
-		
 		// do we need to stop tracing ??
 		if (CheckStopInstruction(pSpeccy, pc) || newPC < pc)
-		{
 			bStop = true;
-			//pNewCodeInfo->EndPoint = true;
-		}
 		else
 			pc = newPC;
 	}
@@ -295,6 +334,18 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 	//	pUI->MemStats.WriteCount[addr]++;
 	//
 }
+
+void ReAnalyseCode(FCodeAnalysisState &state)
+{
+	for (int i = 0; i < (1 << 16); i++)
+	{
+		if (state.CodeInfo[i] != nullptr)
+		{
+			WriteCodeInfoForAddress(state, (uint16_t)i);
+		}
+	}
+}
+
 
 FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *name,LabelType type)
 {

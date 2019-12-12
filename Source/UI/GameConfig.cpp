@@ -197,6 +197,7 @@ void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAd
 			fwrite(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
 			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 			fwrite(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
+			fwrite(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
 			WriteStringToFile(pCodeInfo->Text, fp);
 			WriteStringToFile(pCodeInfo->Comment, fp);
 		}
@@ -215,6 +216,7 @@ void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo)
 		fread(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
 		fread(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 		fread(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
+		fread(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
 		ReadStringFromFile(pCodeInfo->Text, fp);
 		ReadStringFromFile(pCodeInfo->Comment, fp);
 		state.CodeInfo[pCodeInfo->Address] = pCodeInfo;

@@ -202,6 +202,11 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 		DrawAddressLabel(state, pCodeInfo->JumpAddress);
 	}
 
+	if (pCodeInfo->PointerAddress != 0)
+	{
+		DrawAddressLabel(state, pCodeInfo->PointerAddress);
+	}
+
 	DrawComment(pCodeInfo);
 
 }

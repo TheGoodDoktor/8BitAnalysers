@@ -189,7 +189,7 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
 	LoadGameData(pUI->CodeAnalysis, dataFName.c_str());
 	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
-
+	ReAnalyseCode(pUI->CodeAnalysis);
 }
 
 bool StartGame(FSpeccyUI* pUI, const char *pGameName)
