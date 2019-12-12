@@ -161,11 +161,16 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 
 
 	int addrLine = addrInput / kHorizontalDispCharCount;
-	if(ImGui::VSliderInt("##int", ImVec2(64, kGraphicsViewerHeight), &addrLine, 0, offsetMax / kHorizontalDispCharCount))
-	{
-		addrInput = addrLine * kHorizontalDispCharCount;
-	}
+	int addrOffset = addrInput % kHorizontalDispCharCount;
 
+	if(ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrLine, 0, offsetMax / kHorizontalDispCharCount))
+	{
+		addrInput = (addrLine * kHorizontalDispCharCount) + addrOffset;
+	}
+	if (ImGui::SliderInt("##offset", &addrOffset, 0, kHorizontalDispCharCount-1))
+	{
+		addrInput = (addrLine * kHorizontalDispCharCount) + addrOffset;
+	}
 	
 	ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
 	const int graphicsUnitSize = state.XSize * state.YSize * 8;
