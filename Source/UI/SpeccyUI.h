@@ -7,6 +7,7 @@
 #include "Disassembler.h"
 #include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "GraphicsView.h"
 
 struct FSpeccyUI;
 struct FGame;
@@ -44,7 +45,6 @@ struct FSpeccyUI
 	ui_zx_t			UIZX;
 
 
-	FGraphicsView*	pGraphicsViewerView = nullptr;
 
 	std::vector<FGameConfig *>	GameConfigs;
 	FGame *				pActiveGame = nullptr;
@@ -52,6 +52,7 @@ struct FSpeccyUI
 	std::string				SelectedSpriteList;
 	std::map<std::string, FUISpriteList>	SpriteLists;
 
+	FGraphicsViewerState	GraphicsViewer;
 	FCodeAnalysisState		CodeAnalysis;
 
 	// Memory handling

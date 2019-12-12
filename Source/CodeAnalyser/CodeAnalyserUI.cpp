@@ -9,6 +9,7 @@
 #include "chips/z80.h"
 
 // UI
+void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i);
 
 void GoToAddress(FCodeAnalysisState &state, uint16_t newAddress)
 {
@@ -25,6 +26,16 @@ bool GoToPreviousAddress(FCodeAnalysisState &state)
 	state.GoToAddress = state.AddressStack.back();
 	state.AddressStack.pop_back();
 	return true;
+}
+
+int GetItemIndexForAddress(const FCodeAnalysisState &state, uint16_t addr)
+{
+	for(int i=0;i<state.ItemList.size();i++)
+	{
+		if (state.ItemList[i] != nullptr && state.ItemList[i]->Address == addr)
+			return i;
+	}
+	return -1;
 }
 
 void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
@@ -54,8 +65,19 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 
 		if (ImGui::IsItemHovered())
 		{
-			//ImGui::SetTooltip("Goto %04Xh", addr);
 			// TODO: bring up snippet in tool tip
+			const int index = GetItemIndexForAddress(state, addr);
+			if(index !=-1)
+			{
+				const int kToolTipNoLines = 10;
+				ImGui::BeginTooltip();
+				const int startIndex = index;// std::max(index - (kToolTipNoLines / 2), 0);
+				for(int line=0;line < kToolTipNoLines;line++)
+				{
+					DrawCodeAnalysisItemAtIndex(state,startIndex + line);
+				}
+				ImGui::EndTooltip();
+			}
 			if (ImGui::IsMouseDoubleClicked(0))
 				GoToAddress(state, addr);
 
@@ -202,7 +224,10 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	case DataType::Byte:
 	{
 		const uint8_t val = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address);
-		ImGui::Text("db %02Xh '%c'", val, val);
+		if (val == '\n')// carriage return messes up list
+			ImGui::Text("db %02Xh '<cr>'", val, val);
+		else
+			ImGui::Text("db %02Xh '%c'", val, val);
 	}
 	break;
 
@@ -243,6 +268,44 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 
 void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 {
+	switch (pDataInfo->DataType)
+	{
+	case DataType::Byte:
+	break;
+
+	case DataType::Word:
+	break;
+
+	case DataType::Text:
+	{
+		std::string textString;
+		for (int i = 0; i < pDataInfo->ByteSize; i++)
+		{
+			const char ch = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address + i);
+			if (ch == '\n')
+				textString += "<cr>";
+			else
+				textString += ch;
+		}
+		ImGui::Text("%s", textString.c_str());
+		int length = pDataInfo->ByteSize;
+		if(ImGui::InputInt("Length",&length))
+		{
+			pDataInfo->ByteSize = length;
+		}
+	}
+	break;
+
+	case DataType::Graphics:
+		// TODO: GFX as texture?
+		//point gfx viewer?
+		break;
+
+	case DataType::Blob:
+		// draw memory detail
+	default:
+		break;
+	}
 }
 
 
@@ -315,6 +378,42 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 }
 
+void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
+{
+	const FItem* pItem = state.ItemList[i];
+
+	ImGui::PushID(i);
+
+	const FItem *pPrevItem = i > 0 ? state.ItemList[i-1] : nullptr;
+	if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
+		ImGui::Separator();
+
+	// selectable
+	if (ImGui::Selectable("##codeanalysisline", pItem == state.pCursorItem, 0))
+	{
+		state.pCursorItem = state.ItemList[i];
+		state.CursorItemIndex = i;
+	}
+	ImGui::SetItemAllowOverlap();	// allow buttons
+	ImGui::SameLine();
+
+	switch (pItem->Type)
+	{
+	case ItemType::Label:
+		DrawLabelInfo(state, static_cast<const FLabelInfo *>(pItem));
+		break;
+	case ItemType::Code:
+		DrawCodeInfo(state, static_cast<const FCodeInfo *>(pItem));
+		break;
+	case ItemType::Data:
+		DrawDataInfo(state, static_cast<const FDataInfo *>(pItem));
+		break;
+	}
+
+
+	ImGui::PopID();
+}
+
 void DrawCodeAnalysisData(FSpeccyUI *pUI)
 {
 	FCodeAnalysisState &state = pUI->CodeAnalysis;
@@ -361,44 +460,12 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 
 		// draw clipped list
 		ImGuiListClipper clipper((int)state.ItemList.size(), line_height);
-		const FItem *pPrevItem = nullptr;
 
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
-				const FItem* pItem = state.ItemList[i];
-
-				ImGui::PushID(i);
-
-				if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
-					ImGui::Separator();
-
-				// selectable
-				if (ImGui::Selectable("##codeanalysisline", pItem == state.pCursorItem, 0))
-				{
-					state.pCursorItem = state.ItemList[i];
-					state.CursorItemIndex = i;
-				}
-				ImGui::SetItemAllowOverlap();	// allow buttons
-				ImGui::SameLine();
-
-				switch (pItem->Type)
-				{
-				case ItemType::Label:
-					DrawLabelInfo(state, static_cast<const FLabelInfo *>(pItem));
-					break;
-				case ItemType::Code:
-					DrawCodeInfo(state, static_cast<const FCodeInfo *>(pItem));
-					break;
-				case ItemType::Data:
-					DrawDataInfo(state, static_cast<const FDataInfo *>(pItem));
-					break;
-				}
-
-				pPrevItem = pItem;
-
-				ImGui::PopID();
+				DrawCodeAnalysisItemAtIndex(state, i);
 			}
 		}
 

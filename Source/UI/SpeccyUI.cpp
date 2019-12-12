@@ -125,14 +125,9 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	desc.Title = "FunctionDasm";
 	DasmInit(&pUI->FunctionDasm, &desc);
 
-	// setup pixel buffer
-	pUI->pGraphicsViewerView = CreateGraphicsView(64, 64);
-	/*const int graphicsViewSize = 64;
-	const size_t pixelBufferSize = graphicsViewSize * graphicsViewSize * 4;
-	pUI->GraphicsViewPixelBuffer = new unsigned char[pixelBufferSize];
-
-	pUI->GraphicsViewTexture = ImGui_ImplDX11_CreateTextureRGBA(pUI->GraphicsViewPixelBuffer, graphicsViewSize, graphicsViewSize);
-	*/
+	pUI->GraphicsViewer.pSpeccy = pSpeccy;
+	InitGraphicsViewer(pUI->GraphicsViewer);
+	
 	// register Viewers
 	RegisterStarquakeViewer(pUI);
 	RegisterGames(pUI);
@@ -452,134 +447,14 @@ void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 	pUI->pSpeccy->ExecThisFrame = ui_zx_before_exec(&pUI->UIZX);
 }
 
-static const uint32_t g_kColourLUT[8]=
-{
-	0xFF000000,     // black
-	0xFFFF0000,     // blue
-	0xFF0000FF,     // red
-	0xFFFF00FF,     // magenta
-	0xFF00FF00,     // green
-	0xFFFFFF00,     // cyan
-	0xFF00FFFF,     // yellow
-	0xFFFFFFFF,     // white
-};
 
-// coords are in pixel units
-// w & h in characters
-void PlotImageAt(const uint8_t *pSrc, int xp,int yp,int w,int h,uint32_t *pDest, int destWidth, uint8_t colAttr)
-{
-	uint32_t* pBase = pDest + (xp + (yp * destWidth));
-	uint32_t inkCol = g_kColourLUT[colAttr & 7];
-	uint32_t paperCol = g_kColourLUT[(colAttr>>3) & 7];
-
-	if (0 == (colAttr & (1 << 6))) 
-	{
-		// standard brightness
-		inkCol &= 0xFFD7D7D7;
-		paperCol &= 0xFFD7D7D7;
-	}
-	
-	*pBase = 0;
-	for(int y=0;y<h*8;y++)
-	{
-		for (int x = 0; x < w; x++)
-		{
-			const uint8_t charLine = *pSrc++;
-
-			for (int xpix = 0; xpix < 8; xpix++)
-			{
-				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
-				const uint32_t col = bSet ? inkCol : paperCol;
-				*(pBase + xpix + (x * 8)) = col;
-			}
-		}
-
-		pBase += destWidth;
-	}
-}
-
-/*void PlotCharacterBlockAt(const FSpeccy *pSpeccy,uint16_t addr, int xp, int yp,int w,int h, uint32_t *pDest, int destWidth)
-{
-	uint16_t currAddr = addr;
-
-	for (int y = yp; y < yp + h; y++)
-	{
-		for (int x = xp; x < xp + w; x++)
-		{
-			const uint8_t *pChar = GetSpeccyMemPtr(*pSpeccy, currAddr);
-			PlotImageAt(pChar, x, y,1,1 pDest, destWidth);
-			currAddr += 8;
-		}
-	}
-}*/
-
-void DrawGraphicsView(FSpeccyUI* pUI)
-{
-	FGraphicsView *pGraphicsView = pUI->pGraphicsViewerView;
-	static int memOffset = 0;
-	static int xs = 1;
-	static int ys = 1;
-
-	int byteOff = 0;
-	int offsetMax = 0xffff - (64 * 8);
-	
-	if (ImGui::Begin("Graphics View") == false)
-		return;
-	
-	ImGui::Text("Memory Map Address: 0x%x", memOffset);
-	DrawGraphicsView(*pGraphicsView);
-	ImGui::SameLine();
-	ImGui::VSliderInt("##int", ImVec2(64, 256), &memOffset, 0, offsetMax);//,"0x%x");
-	ImGui::InputInt("Address", &memOffset,1,8, ImGuiInputTextFlags_CharsHexadecimal);
-	if (ImGui::Button("<<"))
-		memOffset -= xs * ys * 8;
-	ImGui::SameLine();
-	if (ImGui::Button(">>"))
-		memOffset += xs * ys * 8;
-
-	ClearGraphicsView(*pGraphicsView, 0xff000000);
-
-	// view 1 - straight character
-	// draw 64 * 8 bytes
-	ImGui::InputInt("XSize", &xs, 1, 4);
-	ImGui::InputInt("YSize", &ys, 1, 4);
-
-	static char configName[64];
-	ImGui::Separator();
-	ImGui::InputText("Config Name", configName, 64);
-	ImGui::SameLine();
-	if (ImGui::Button("Store"))
-	{
-		// TODO: store this in the config map
-	}
-
-	xs = min(max(1, xs), 8);
-	ys = min(max(1, ys), 8);
-	
-	const int xcount = 8 / xs;
-	const int ycount = 8 / ys;
-
-	uint16_t speccyAddr = memOffset;
-	int y = 0;
-	for (int y = 0; y < ycount; y++)
-	{
-		for (int x = 0; x < xcount; x++)
-		{
-			const uint8_t *pImage = GetSpeccyMemPtr(pUI->pSpeccy, speccyAddr);
-			PlotImageAt(pImage, x * xs * 8, y * ys * 8, xs, ys, (uint32_t*)pGraphicsView->PixelBuffer, 64);
-			speccyAddr += xs * ys * 8;
-		}
-	}
-
-	ImGui::End();
-}
 
 
 
 
 void DrawMemoryTools(FSpeccyUI* pUI)
 {
-	if (ImGui::Begin("Tools") == false)
+	if (ImGui::Begin("Memory Tools") == false)
 		return;
 
 	if (ImGui::BeginTabBar("MemoryToolsTabBar"))
@@ -690,7 +565,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 		ImGui::End();
 	}
 	
-	DrawGraphicsView(pUI);
+	DrawGraphicsViewer(pUI->GraphicsViewer);
 	DrawMemoryTools(pUI);
 
 	if (ImGui::Begin("Code Analysis"))

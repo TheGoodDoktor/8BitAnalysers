@@ -3,6 +3,9 @@
 #include "imgui.h"
 #include <cstdint>
 
+struct FSpeccy;
+struct FSpeccyUI;
+
 // Graphics View Code - TODO: Move
 struct FGraphicsView
 {
@@ -17,3 +20,17 @@ void ClearGraphicsView(FGraphicsView &graphicsView, const uint32_t col);
 void DrawGraphicsView(const FGraphicsView &graphicsView, const ImVec2 &size, bool bScale = false, bool bMagnifier = true);
 void DrawGraphicsView(const FGraphicsView &graphicsView);
 
+// Graphics Viewer
+struct FGraphicsViewerState
+{
+	uint16_t		Address = 0;
+	int				XSize = 1;
+	int				YSize = 1;
+
+	FGraphicsView*	pGraphicsView = nullptr;
+	FSpeccy*		pSpeccy = nullptr;
+
+};
+
+bool InitGraphicsViewer(FGraphicsViewerState &state);
+void DrawGraphicsViewer(FGraphicsViewerState &state);
