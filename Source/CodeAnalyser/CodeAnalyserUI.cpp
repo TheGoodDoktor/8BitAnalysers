@@ -74,7 +74,8 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 				const int startIndex = index;// std::max(index - (kToolTipNoLines / 2), 0);
 				for(int line=0;line < kToolTipNoLines;line++)
 				{
-					DrawCodeAnalysisItemAtIndex(state,startIndex + line);
+					if(startIndex + line < state.ItemList.size())
+						DrawCodeAnalysisItemAtIndex(state,startIndex + line);
 				}
 				ImGui::EndTooltip();
 			}
@@ -385,6 +386,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 {
+	assert(i < state.ItemList.size());
 	const FItem* pItem = state.ItemList[i];
 
 	ImGui::PushID(i);
