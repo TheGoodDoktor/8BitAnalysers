@@ -39,6 +39,7 @@ void gfx_destroy_texture(void* h)
 	
 }
 
+
 int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
@@ -59,6 +60,8 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	//GenerateLabelsForAddress(pUI, pc,LabelType::Code);
 
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pUI);
+
+	IOAnalysisHanler(pUI->IOAnalysis,pc, pins);
 
 	//if(trapId == 0)
 		//trapId = FunctionTrapFunction(pc,nextpc, ticks, pins, pUI);
@@ -104,7 +107,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	}
 
 	// additional debugger config
-	pUI->UIZX.dbg.ui.open = true;
+	//pUI->UIZX.dbg.ui.open = true;
 	pUI->UIZX.dbg.break_cb = UIEvalBreakpoint;
 
 	// Setup Disassembler for function view
@@ -127,6 +130,8 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 
 	pUI->GraphicsViewer.pSpeccy = pSpeccy;
 	InitGraphicsViewer(pUI->GraphicsViewer);
+	pUI->IOAnalysis.pCodeAnalysis = &pUI->CodeAnalysis;
+	InitIOAnalysis(pUI->IOAnalysis);
 	
 	// register Viewers
 	RegisterStarquakeViewer(pUI);
@@ -158,7 +163,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 
 void ShutdownSpeccyUI(FSpeccyUI* pUI)
 {
-
+	SaveCurrentGameData(pUI);	// save on close
 }
 
 
@@ -451,7 +456,6 @@ void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 
 
 
-
 void DrawMemoryTools(FSpeccyUI* pUI)
 {
 	if (ImGui::Begin("Memory Tools") == false)
@@ -471,12 +475,18 @@ void DrawMemoryTools(FSpeccyUI* pUI)
 			DrawMemoryAnalysis(pUI);
 			ImGui::EndTabItem();
 		}
+
+		if (ImGui::BeginTabItem("IO Analysis"))
+		{
+			DrawIOAnalysis(pUI->IOAnalysis);
+			ImGui::EndTabItem();
+		}
 		
-		if (ImGui::BeginTabItem("Functions"))
+		/*if (ImGui::BeginTabItem("Functions"))
 		{
 			DrawFunctionInfo(pUI);
 			ImGui::EndTabItem();
-		}
+		}*/
 
 		ImGui::EndTabBar();
 	}

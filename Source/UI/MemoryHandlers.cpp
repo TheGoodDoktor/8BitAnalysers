@@ -1,6 +1,7 @@
 #include "MemoryHandlers.h"
 #include <cstdint>
 #include "SpeccyUI.h"
+#include "CodeAnalyser/CodeAnalyserUI.h"
 
 // Disassembly handlers
 static uint8_t DasmCB(void* user_data)
@@ -182,19 +183,24 @@ void DrawMemoryHandlers(FSpeccyUI* pUI)
 		ImGui::Checkbox("Enabled", &pSelectedHandler->bEnabled);
 		ImGui::Checkbox("Break", &pSelectedHandler->bBreak);
 		ImGui::Text(pSelectedHandler->Name.c_str());
-		ImGui::Text("0x%x - 0x%x", pSelectedHandler->MemStart, pSelectedHandler->MemEnd);
+
+		ImGui::Text("Start: %04Xh", pSelectedHandler->MemStart);
+		ImGui::SameLine();
+		DrawAddressLabel(pUI->CodeAnalysis, pSelectedHandler->MemStart);
+
+		ImGui::Text("End: %04Xh",pSelectedHandler->MemEnd);
+		ImGui::SameLine();
+		DrawAddressLabel(pUI->CodeAnalysis, pSelectedHandler->MemEnd);
+
 		ImGui::Text("Total Accesses %d", pSelectedHandler->TotalCount);
 
 		ImGui::Text("Callers");
 		for (const auto &accessPC : pSelectedHandler->CallerCounts)
 		{
 			ImGui::PushID(accessPC.first);
-			ImGui::Text("0x%x - %d accesses", accessPC.first, accessPC.second);
+			DrawCodeAddress(pUI->CodeAnalysis, accessPC.first);
 			ImGui::SameLine();
-			if (ImGui::ArrowButton("GotoAddr", ImGuiDir_Right))
-			{
-				pUI->UIZX.dasm[0].start_addr = accessPC.first;
-			}
+			ImGui::Text(" - %d accesses",accessPC.second);
 			ImGui::PopID();
 		}
 	}

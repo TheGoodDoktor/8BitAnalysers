@@ -129,6 +129,9 @@
     <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyser.cpp">
       <Filter>Source Files\CodeAnalyser</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\UI\IOAnalysis.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h">
@@ -400,6 +403,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyser.h">
       <Filter>Source Files\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\IOAnalysis.h">
+      <Filter>Source Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

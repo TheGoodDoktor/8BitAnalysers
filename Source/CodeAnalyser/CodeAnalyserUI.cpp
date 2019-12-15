@@ -90,9 +90,9 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 
 void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr)
 {
-	ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
+	//ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
 	ImGui::Text("%04Xh", addr);
-	ImGui::PopStyleColor();
+	//ImGui::PopStyleColor();
 	ImGui::SameLine();
 	DrawAddressLabel(state, addr);
 }

@@ -8,6 +8,7 @@
 #include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "GraphicsView.h"
+#include "IOAnalysis.h"
 
 struct FSpeccyUI;
 struct FGame;
@@ -28,7 +29,6 @@ struct FGame
 	void		(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGameViewer &viewer);
 	void *		pUserData = nullptr;
 };*/
-
 
 
 
@@ -54,6 +54,7 @@ struct FSpeccyUI
 
 	FGraphicsViewerState	GraphicsViewer;
 	FCodeAnalysisState		CodeAnalysis;
+	FIOAnalysisState		IOAnalysis;
 
 	// Memory handling
 	std::string				SelectedMemoryHandler;
@@ -81,6 +82,7 @@ struct FSpeccyUI
 
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy);
 bool StartGame(FSpeccyUI* pUI, const char *pGameName);
+void SaveCurrentGameData(FSpeccyUI *pUI);
 void ShutdownSpeccyUI(FSpeccyUI*pSpeccyUI);
 void UpdatePreTickSpeccyUI(FSpeccyUI*pSpeccyUI);
 void UpdatePostTickSpeccyUI(FSpeccyUI*pSpeccyUI);
