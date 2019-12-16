@@ -23,6 +23,21 @@ bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_add
 	case 0x3A:
 		*out_addr = (ReadySpeccyByte(pSpeccy, pc + 2) << 8) | ReadySpeccyByte(pSpeccy, pc + 1);
 		return true;
+	// extended instructions
+	case 0xED:
+		{
+			const uint8_t exInstrByte = ReadySpeccyByte(pSpeccy, pc+1);
+			switch (exInstrByte)
+			{
+			case 0x43:
+			case 0x4B:
+			case 0x53:
+			case 0x5B:
+				*out_addr = (ReadySpeccyByte(pSpeccy, pc + 3) << 8) | ReadySpeccyByte(pSpeccy, pc + 2);
+				return true;
+			}
+
+		}
 	}
 	return false;
 }

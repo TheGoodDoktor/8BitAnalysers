@@ -207,14 +207,22 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 
 	int y = 0;
 	uint16_t address = state.Address;
-	for (int y = 0; y < ycount; y++)
+
+	if (state.ViewMode == GraphicsViewMode::Charater)
 	{
-		for (int x = 0; x < xcount; x++)
+		for (int y = 0; y < ycount; y++)
 		{
-			const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
-			PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize * 8, state.XSize, state.YSize, (uint32_t*)pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
-			address += graphicsUnitSize;
+			for (int x = 0; x < xcount; x++)
+			{
+				const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
+				PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize * 8, state.XSize, state.YSize, (uint32_t*)pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+				address += graphicsUnitSize;
+			}
 		}
+	}
+	else if (state.ViewMode == GraphicsViewMode::Screen)
+	{
+		// TODO: plot pixels
 	}
 
 	

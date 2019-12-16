@@ -20,10 +20,18 @@ void ClearGraphicsView(FGraphicsView &graphicsView, const uint32_t col);
 void DrawGraphicsView(const FGraphicsView &graphicsView, const ImVec2 &size, bool bScale = false, bool bMagnifier = true);
 void DrawGraphicsView(const FGraphicsView &graphicsView);
 
+enum class GraphicsViewMode
+{
+	Charater,	// 8x8 bitmap graphics
+	Screen		// Native frame buffer format
+};
+
 // Graphics Viewer
 struct FGraphicsViewerState
 {
 	uint16_t		Address = 0;
+	GraphicsViewMode	ViewMode = GraphicsViewMode::Charater;
+
 	int				XSize = 1;
 	int				YSize = 1;
 
