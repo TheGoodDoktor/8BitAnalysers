@@ -22,7 +22,7 @@ void DrawGraphicsView(const FGraphicsView &graphicsView);
 
 enum class GraphicsViewMode
 {
-	Charater,	// 8x8 bitmap graphics
+	Character,	// 8x8 bitmap graphics
 	Screen		// Native frame buffer format
 };
 
@@ -30,7 +30,7 @@ enum class GraphicsViewMode
 struct FGraphicsViewerState
 {
 	uint16_t		Address = 0;
-	GraphicsViewMode	ViewMode = GraphicsViewMode::Charater;
+	GraphicsViewMode	ViewMode = GraphicsViewMode::Character;
 
 	int				XSize = 1;
 	int				YSize = 1;

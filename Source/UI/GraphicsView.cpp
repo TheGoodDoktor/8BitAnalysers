@@ -158,8 +158,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	ImGui::Text("Memory Map Address: %04Xh", addrInput);
 	DrawGraphicsView(*pGraphicsView);
 	ImGui::SameLine();
-
-
+	
 	int addrLine = addrInput / kHorizontalDispCharCount;
 	int addrOffset = addrInput % kHorizontalDispCharCount;
 
@@ -173,56 +172,85 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	}
 	
 	ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
-	const int graphicsUnitSize = state.XSize * state.YSize * 8;
-	
-	if (ImGui::Button("<<"))
-		addrInput -= graphicsUnitSize;
-	ImGui::SameLine();
-	if (ImGui::Button(">>"))
-		addrInput += graphicsUnitSize;
-	
-	state.Address = (int)addrInput;
-
-	ClearGraphicsView(*pGraphicsView, 0xff000000);
-
+		
 	// view 1 - straight character
-	// draw 64 * 8 bytes
-	ImGui::InputInt("XSize", &state.XSize, 1, 4);
-	ImGui::InputInt("YSize", &state.YSize, 1, 4);
-
-	static char configName[64];
-	ImGui::Separator();
-	ImGui::InputText("Config Name", configName, 64);
-	ImGui::SameLine();
-	if (ImGui::Button("Store"))
+	if (state.ViewMode == GraphicsViewMode::Character)
 	{
-		// TODO: store this in the config map
-	}
+		const int graphicsUnitSize = state.XSize * state.YSize * 8;
 
-	state.XSize = std::min(std::max(1, state.XSize), kHorizontalDispCharCount);
-	state.YSize = std::min(std::max(1, state.YSize), kHorizontalDispCharCount);
+		ClearGraphicsView(*pGraphicsView, 0xff000000);
 
-	const int xcount = kHorizontalDispCharCount / state.XSize;
-	const int ycount = kVerticalDispCharCount / state.YSize;
+		if (ImGui::Button("<<"))
+			addrInput -= graphicsUnitSize;
+		ImGui::SameLine();
+		if (ImGui::Button(">>"))
+			addrInput += graphicsUnitSize;
 
-	int y = 0;
-	uint16_t address = state.Address;
+		state.Address = (int)addrInput;
+		// draw 64 * 8 bytes
+		ImGui::InputInt("XSize", &state.XSize, 1, 4);
+		ImGui::InputInt("YSize", &state.YSize, 1, 4);
 
-	if (state.ViewMode == GraphicsViewMode::Charater)
-	{
+		static char configName[64];
+		ImGui::Separator();
+		ImGui::InputText("Config Name", configName, 64);
+		ImGui::SameLine();
+		if (ImGui::Button("Store"))
+		{
+			// TODO: store this in the config map
+		}
+
+		state.XSize = std::min(std::max(1, state.XSize), kHorizontalDispCharCount);
+		state.YSize = std::min(std::max(1, state.YSize), kHorizontalDispCharCount);
+
+		const int xcount = kHorizontalDispCharCount / state.XSize;
+		const int ycount = kVerticalDispCharCount / state.YSize;
+
+		int y = 0;
+		uint16_t address = state.Address;
+			
 		for (int y = 0; y < ycount; y++)
 		{
 			for (int x = 0; x < xcount; x++)
 			{
 				const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
-				PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize * 8, state.XSize, state.YSize, (uint32_t*)pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+				PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize * 8, state.XSize, state.YSize, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
 				address += graphicsUnitSize;
 			}
 		}
 	}
 	else if (state.ViewMode == GraphicsViewMode::Screen)
 	{
-		// TODO: plot pixels
+		// http://www.breakintoprogram.co.uk/computers/zx-spectrum/screen-memory-layout
+		state.Address = (int)addrInput;
+
+		uint16_t offset = 0;
+		for (int y = 0; y < 192; y++)
+		{
+			const uint8_t *pSrc = GetSpeccyMemPtr(state.pSpeccy, state.Address + offset);
+			const int y0to2 = ((offset >> 8) & 7);
+			const int y3to5 = ((offset >> 5) & 7) << 3;
+			const int y6to7 = ((offset >> 11) & 3) << 6;
+			const int yDestPos = y0to2 | y3to5 | y6to7;	// or offsets together
+
+			// determine dest pointer for scanline
+			uint32_t* pLineAddr = pGraphicsView->PixelBuffer + (yDestPos * kGraphicsViewerWidth);
+
+			// pixel line
+			for (int x = 0; x < 256 / 8; x++)
+			{
+				const uint8_t charLine = *pSrc++;
+
+				for (int xpix = 0; xpix < 8; xpix++)
+				{
+					const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
+					const uint32_t col = bSet ? 0xffffffff : 0xff000000;
+					*(pLineAddr + xpix + (x * 8)) = col;
+				}
+			}
+
+			offset += 256 / 8;	// advance to next line
+		}
 	}
 
 	
