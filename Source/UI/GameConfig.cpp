@@ -128,6 +128,7 @@ void SaveLabelsBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddr
 			fwrite(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 			WriteStringToFile(pLabel->Name, fp);
 			WriteStringToFile(pLabel->Comment, fp);
+			fwrite(&pLabel->Global, sizeof(bool), 1, fp);
 
 			// References?
 			int noRefences = (int)pLabel->References.size();
@@ -158,6 +159,9 @@ void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo)
 		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 		ReadStringFromFile(pLabel->Name, fp);
 		ReadStringFromFile(pLabel->Comment, fp);
+
+		if (versionNo > 2)
+			fread(&pLabel->Global, sizeof(bool), 1, fp);
 		
 		// References?
 		if(versionNo > 1)
@@ -246,10 +250,18 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAd
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 			WriteStringToFile(pDataInfo->Comment, fp);
 
-			// References?
-			int noRefences = (int)pDataInfo->References.size();
-			fwrite(&noRefences, sizeof(int), 1, fp);
-			for (const auto &ref : pDataInfo->References)
+			// Reads & Writes?
+			int noReads = (int)pDataInfo->Reads.size();
+			fwrite(&noReads, sizeof(int), 1, fp);
+			for (const auto &ref : pDataInfo->Reads)
+			{
+				uint16_t refAddr = ref.first;
+				fwrite(&refAddr, sizeof(refAddr), 1, fp);
+			}
+
+			int noWrites = (int)pDataInfo->Writes.size();
+			fwrite(&noWrites, sizeof(int), 1, fp);
+			for (const auto &ref : pDataInfo->Writes)
 			{
 				uint16_t refAddr = ref.first;
 				fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -279,13 +291,24 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 		// References?
 		if (versionNo > 1)
 		{
-			int noReferences;// = (int)pLabel->References.size();
-			fread(&noReferences, sizeof(int), 1, fp);
-			for (int i = 0; i < noReferences; i++)
+			int noReads;
+			fread(&noReads, sizeof(int), 1, fp);
+			for (int i = 0; i < noReads; i++)
 			{
-				uint16_t refAddr;
-				fread(&refAddr, sizeof(refAddr), 1, fp);
-				pDataInfo->References[refAddr] = 1;
+				uint16_t dataAddr;
+				fread(&dataAddr, sizeof(uint16_t), 1, fp);
+				pDataInfo->Reads[dataAddr] = 1;
+			}
+		}
+		if (versionNo > 2)
+		{
+			int noWrites;
+			fread(&noWrites, sizeof(int), 1, fp);
+			for (int i = 0; i < noWrites; i++)
+			{
+				uint16_t dataAddr;
+				fread(&dataAddr, sizeof(uint16_t), 1, fp);
+				pDataInfo->Reads[dataAddr] = 1;
 			}
 		}
 
@@ -293,7 +316,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 	}
 }
 
-static const int g_kBinaryFileVersionNo = 2;
+static const int g_kBinaryFileVersionNo = 3;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Binary save

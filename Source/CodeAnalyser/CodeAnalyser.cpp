@@ -350,6 +350,14 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 	//
 }
 
+void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr, bool bWrite)
+{
+	if(bWrite)
+		state.DataInfo[dataAddr]->Writes[pc]++;
+	else
+		state.DataInfo[dataAddr]->Reads[pc]++;
+}
+
 void ReAnalyseCode(FCodeAnalysisState &state)
 {
 	for (int i = 0; i < (1 << 16); i++)
@@ -369,9 +377,31 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	pLabel->LabelType = type;
 	pLabel->Address = address;
 	pLabel->ByteSize = 1;
+	pLabel->Global = type == LabelType::Function;
 	state.Labels[address] = pLabel;
 	return pLabel;
 }
+
+void GenerateGlobalInfo(FCodeAnalysisState &state)
+{
+	state.GlobalDataItems.clear();
+	state.GlobalFunctions.clear();
+
+	for (int i = 0; i < (1 << 16); i++)
+	{
+		FLabelInfo *pLabel = state.Labels[i];
+		
+		if (pLabel != nullptr)
+		{
+			if (pLabel->LabelType == LabelType::Data && pLabel->Global)
+				state.GlobalDataItems.push_back(pLabel);
+			if (pLabel->LabelType == LabelType::Function)
+				state.GlobalFunctions.push_back(pLabel);
+		}
+		
+	}
+}
+
 
 void InsertROMLabels(FCodeAnalysisState &state)
 {

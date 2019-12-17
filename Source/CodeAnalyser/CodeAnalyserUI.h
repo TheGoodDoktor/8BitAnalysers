@@ -8,4 +8,5 @@ struct FCodeAnalysisState;
 void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr);
 void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr);
 
-void DrawCodeAnalysisData(FSpeccyUI *pUI);
+void DrawCodeAnalysisData(FCodeAnalysisState &state);
+void DrawGlobals(FCodeAnalysisState &state);

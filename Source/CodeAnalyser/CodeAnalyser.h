@@ -37,6 +37,7 @@ struct FLabelInfo : FItem
 	FLabelInfo() { Type = ItemType::Label; }
 
 	std::string				Name;
+	bool					Global = false;
 	LabelType				LabelType;
 	std::map<uint16_t, int>	References;
 };
@@ -65,7 +66,8 @@ struct FDataInfo : FItem
 
 	DataType	DataType = DataType::Byte;
 
-	std::map<uint16_t, int>	References;	// address and counts of data access instructions
+	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions
+	std::map<uint16_t, int>	Writes;	// address and counts of data access instructions
 };
 
 
@@ -93,10 +95,15 @@ struct FCodeAnalysisState
 	FDataInfo*				DataInfo[kAddressSize];
 	bool					bCodeAnalysisDataDirty = false;
 
+	bool					bRegisterDataAccesses = false;
+
 	std::vector< FItem *>	ItemList;
+	std::vector< FLabelInfo *>	GlobalDataItems;
+	std::vector< FLabelInfo *>	GlobalFunctions;
 	FItem*					pCursorItem = nullptr;
 	int						CursorItemIndex = -1;
 	int						GoToAddress = -1;
+	bool					GoToLabel = false;
 	std::vector<uint16_t>	AddressStack;
 
 	int						KeyConfig[(int)Key::Count];
@@ -119,6 +126,8 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, FSpeccy* pSpeccy);
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 void ReAnalyseCode(FCodeAnalysisState &state);
+void GenerateGlobalInfo(FCodeAnalysisState &state);
+void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, bool bWrite);
 
 // Commands
 void Undo(FCodeAnalysisState &state);

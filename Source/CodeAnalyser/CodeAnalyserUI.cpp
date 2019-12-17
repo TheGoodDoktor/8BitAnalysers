@@ -11,11 +11,12 @@
 // UI
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i);
 
-void GoToAddress(FCodeAnalysisState &state, uint16_t newAddress)
+void GoToAddress(FCodeAnalysisState &state, uint16_t newAddress, bool bLabel = false)
 {
 	if(state.pCursorItem != nullptr)
 		state.AddressStack.push_back(state.pCursorItem->Address);
 	state.GoToAddress = newAddress;
+	state.GoToLabel = bLabel;
 }
 
 bool GoToPreviousAddress(FCodeAnalysisState &state)
@@ -24,6 +25,7 @@ bool GoToPreviousAddress(FCodeAnalysisState &state)
 		return false;
 
 	state.GoToAddress = state.AddressStack.back();
+	state.GoToLabel = false;
 	state.AddressStack.pop_back();
 	return true;
 }
@@ -139,6 +141,15 @@ void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 	if (ImGui::InputText("Name", &labelString))
 	{
 		SetLabelName(state, pLabelInfo, labelString.c_str());
+	}
+
+	if(ImGui::Checkbox("Global", &pLabelInfo->Global))
+	{
+		if (pLabelInfo->LabelType == LabelType::Code && pLabelInfo->Global == true)
+			pLabelInfo->LabelType = LabelType::Function;
+		if (pLabelInfo->LabelType == LabelType::Function && pLabelInfo->Global == false)
+			pLabelInfo->LabelType = LabelType::Code;
+		GenerateGlobalInfo(state);
 	}
 
 	ImGui::Text("Callers:");
@@ -270,6 +281,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	}
 
 	DrawComment(pDataInfo);
+
 }
 
 void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
@@ -311,6 +323,25 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		// draw memory detail
 	default:
 		break;
+	}
+
+	// List Data accesses
+	if (pDataInfo->Reads.empty() == false)
+	{
+		ImGui::Text("Reads:");
+		for (const auto & caller : pDataInfo->Reads)
+		{
+			DrawCodeAddress(state, caller.first);
+		}
+	}
+
+	if (pDataInfo->Writes.empty() == false)
+	{
+		ImGui::Text("Writes:");
+		for (const auto & caller : pDataInfo->Writes)
+		{
+			DrawCodeAddress(state, caller.first);
+		}
 	}
 }
 
@@ -421,67 +452,9 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 	ImGui::PopID();
 }
 
-void DrawCodeAnalysisData(FSpeccyUI *pUI)
+void DrawDetailsPanel(FCodeAnalysisState &state)
 {
-	FCodeAnalysisState &state = pUI->CodeAnalysis;
-	const float line_height = ImGui::GetTextLineHeight();
-	const float glyph_width = ImGui::CalcTextSize("F").x;
-	const float cell_width = 3 * glyph_width;
-
-	if (state.pSpeccy->ExecThisFrame)
-		state.CurrentFrameNo++;
-
-	UpdateItemList(state);
-
-	if (ImGui::ArrowButton("##btn", ImGuiDir_Left))
-		GoToPreviousAddress(state);
-	ImGui::SameLine();
-	if (ImGui::Button("Jump To PC"))
-		GoToAddress(state,z80_pc(&pUI->pSpeccy->CurrentState.cpu));
-	ImGui::SameLine();
-	static int addrInput = 0;
-	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, ImGuiInputTextFlags_CharsHexadecimal))
-		GoToAddress(state, addrInput);
-
-	ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true);
-	{
-		// jump to address
-		if (state.GoToAddress != -1)
-		{
-			for (int item = 0; item < state.ItemList.size(); item++)
-			{
-				if ((state.ItemList[item]->Address == state.GoToAddress) && (state.ItemList[item]->Type != ItemType::Label))
-				{
-					// set cursor
-					state.pCursorItem = state.ItemList[item];
-					state.CursorItemIndex = item;
-
-					//ImGui::SetScrollY(maxY * fraction);
-					ImGui::SetScrollY(item * line_height);
-					break;
-				}
-			}
-
-			state.GoToAddress = -1;
-		}
-
-		// draw clipped list
-		ImGuiListClipper clipper((int)state.ItemList.size(), line_height);
-
-		while (clipper.Step())
-		{
-			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-			{
-				DrawCodeAnalysisItemAtIndex(state, i);
-			}
-		}
-
-		ProcessKeyCommands(state);
-	}
-	ImGui::EndChild();
-	ImGui::SameLine();
-	ImGui::BeginChild("##detail", ImVec2(0, 0), true);
-	if(state.pCursorItem)
+	if (state.pCursorItem)
 	{
 		FItem *pItem = state.pCursorItem;
 		switch (pItem->Type)
@@ -514,8 +487,123 @@ void DrawCodeAnalysisData(FSpeccyUI *pUI)
 		}
 
 	}
-	ImGui::EndChild();
+}
 
+void DrawCodeAnalysisData(FCodeAnalysisState &state)
+{
+	FSpeccy *pSpeccy = state.pSpeccy;
+	const float line_height = ImGui::GetTextLineHeight();
+	const float glyph_width = ImGui::CalcTextSize("F").x;
+	const float cell_width = 3 * glyph_width;
+
+	if (state.pSpeccy->ExecThisFrame)
+		state.CurrentFrameNo++;
+
+	UpdateItemList(state);
+
+	if (ImGui::ArrowButton("##btn", ImGuiDir_Left))
+		GoToPreviousAddress(state);
+	ImGui::SameLine();
+	if (ImGui::Button("Jump To PC"))
+		GoToAddress(state,z80_pc(&pSpeccy->CurrentState.cpu));
+	ImGui::SameLine();
+	static int addrInput = 0;
+	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, ImGuiInputTextFlags_CharsHexadecimal))
+		GoToAddress(state, addrInput);
+	ImGui::Checkbox("Analyse data accesses (slow)", &state.bRegisterDataAccesses);
+
+	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
+	{
+		// jump to address
+		if (state.GoToAddress != -1)
+		{
+			for (int item = 0; item < state.ItemList.size(); item++)
+			{
+				if ((state.ItemList[item]->Address == state.GoToAddress) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
+				{
+					// set cursor
+					state.pCursorItem = state.ItemList[item];
+					state.CursorItemIndex = item;
+
+					//ImGui::SetScrollY(maxY * fraction);
+					ImGui::SetScrollY(item * line_height);
+					break;
+				}
+			}
+
+			state.GoToAddress = -1;
+			state.GoToLabel = false;
+		}
+
+		// draw clipped list
+		ImGuiListClipper clipper((int)state.ItemList.size(), line_height);
+
+		while (clipper.Step())
+		{
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+			{
+				DrawCodeAnalysisItemAtIndex(state, i);
+			}
+		}
+
+		ProcessKeyCommands(state);
+		ImGui::EndChild();
+	}
+	ImGui::SameLine();
+	if(ImGui::BeginChild("##rightpanel", ImVec2(0, 0), true))
+	{
+		// Details Panel
+		if (ImGui::BeginChild("##detail", ImVec2(0, 300), true))
+		{
+			DrawDetailsPanel(state);
+			ImGui::EndChild();
+		}
+
+		// Globals Panel
+		if (ImGui::BeginChild("##globallabelss", ImVec2(0, 0), true))
+		{
+			DrawGlobals(state);
+			ImGui::EndChild();
+		}
+
+		ImGui::EndChild(); // right panel
+	}
 
 	
+}
+
+void DrawLabelList(FCodeAnalysisState &state, std::vector<FLabelInfo *> labelList)
+{
+	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false))
+	{
+		for (FLabelInfo *pLabelInfo : labelList)
+		{
+			if (ImGui::Selectable(pLabelInfo->Name.c_str(), state.pCursorItem == pLabelInfo))
+			{
+				GoToAddress(state, pLabelInfo->Address, true);
+			}
+		}
+		ImGui::EndChild();
+	}
+		
+}
+
+void DrawGlobals(FCodeAnalysisState &state)
+{
+	if(ImGui::BeginTabBar("GlobalsTabBar"))
+	{
+		if(ImGui::BeginTabItem("Functions"))
+		{
+			DrawLabelList(state, state.GlobalFunctions);
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Data"))
+		{
+			DrawLabelList(state, state.GlobalDataItems);
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
 }

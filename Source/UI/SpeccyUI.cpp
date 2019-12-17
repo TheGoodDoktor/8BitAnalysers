@@ -56,6 +56,15 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	RunStaticCodeAnalysis(state, pc);
 	state.CodeInfo[pc]->FrameLastAccessed = state.CurrentFrameNo;
 
+	// this is probably slow so is optional
+	if (state.bRegisterDataAccesses)
+	{
+		const uint16_t addr = Z80_GET_ADDR(pins);
+		const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
+
+		RegisterDataAccess(state, pc,addr,bWrite);
+	}
+	
 	// labels
 	//GenerateLabelsForAddress(pUI, pc,LabelType::Code);
 
@@ -195,6 +204,7 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	LoadGameData(pUI->CodeAnalysis, dataFName.c_str());
 	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
 	ReAnalyseCode(pUI->CodeAnalysis);
+	GenerateGlobalInfo(pUI->CodeAnalysis);
 }
 
 bool StartGame(FSpeccyUI* pUI, const char *pGameName)
@@ -580,9 +590,15 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 
 	if (ImGui::Begin("Code Analysis"))
 	{
-		DrawCodeAnalysisData(pUI);
+		DrawCodeAnalysisData(pUI->CodeAnalysis);
 		ImGui::End();
 	}
+
+	/*if (ImGui::Begin("Globals"))
+	{
+		DrawGlobals(pUI->CodeAnalysis);
+		ImGui::End();
+	}*/
 }
 
 bool DrawDockingView(FSpeccyUI *pUI)
