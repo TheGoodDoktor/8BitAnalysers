@@ -15,7 +15,7 @@ FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName)
 {
 	FGameConfig *pNewConfig = new FGameConfig;
 
-	pNewConfig->Name = "Temp";
+	pNewConfig->Name = RemoveFileExtension(pZ80FileName);
 	pNewConfig->Z80File = pZ80FileName;
 
 	pNewConfig->pInitFunction = InitMiscGameViewer;

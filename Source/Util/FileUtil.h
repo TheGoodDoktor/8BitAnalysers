@@ -19,6 +19,8 @@ typedef std::vector<FDirEntry>	FDirFileList;
 bool DetermineDataDirectory(const char *pRouteIdentifier);
 const std::string &GetDataDirectory();
 
+std::string RemoveFileExtension(const char* fname);
+
 void NormaliseFilePath(char* filePath);
 void NormaliseFilePath(char* outFilePath, const char* inFilePath);
 

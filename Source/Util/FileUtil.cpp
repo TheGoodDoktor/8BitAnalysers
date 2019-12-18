@@ -9,6 +9,12 @@ const std::string &GetDataDirectory()
 	return g_DataDirectory;
 }
 
+std::string RemoveFileExtension(const char* fname)
+{
+	std::string fullname(fname);
+	size_t lastindex = fullname.find_last_of(".");
+	return fullname.substr(0, lastindex);
+}
 
 bool DetermineDataDirectory(const char *pRouteIdentifier)
 {
