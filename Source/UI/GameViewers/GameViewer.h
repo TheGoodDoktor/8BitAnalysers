@@ -4,6 +4,7 @@ struct FSpeccyUI;
 struct FGraphicsView;
 struct FGame;
 struct FGameConfig;
+struct FViewerConfig;
 
 // Base class for game viewer data
 struct FGameViewerData
@@ -17,3 +18,5 @@ void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig);
 
 FGameViewerData *InitMiscGameViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig);
 void DrawMiscGameViewer(FSpeccyUI *pUI, FGame *pGame);
+
+FViewerConfig*	GetViewConfigForGame(FSpeccyUI *pUI, const char *pGameName);

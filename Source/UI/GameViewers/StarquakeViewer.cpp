@@ -256,7 +256,16 @@ FGameConfig g_StarQuakeConfig =
 	}
 };
 
+FViewerConfig g_StarQuakeViewConfig =
+{
+	"Starquake",
+	InitStarquakeViewer,
+	DrawStarquakeViewer,
+};
+
 void RegisterStarquakeViewer(FSpeccyUI *pUI)
 {
+	pUI->ViewerConfigs[g_StarQuakeViewConfig.Name] = &g_StarQuakeViewConfig;
+
 	pUI->GameConfigs.push_back(&g_StarQuakeConfig);
 }

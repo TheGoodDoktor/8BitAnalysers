@@ -55,3 +55,16 @@ void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 	}
 }
 
+FViewerConfig*	GetViewConfigForGame(FSpeccyUI *pUI, const char *pGameName)
+{
+	auto configIt = pUI->ViewerConfigs.find(pGameName);
+	if (configIt == pUI->ViewerConfigs.end())
+	{
+		configIt = pUI->ViewerConfigs.find("Default");
+		if (configIt == pUI->ViewerConfigs.end())
+			return nullptr;
+	}
+
+	return configIt->second;		
+}
+

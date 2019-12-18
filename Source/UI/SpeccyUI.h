@@ -15,6 +15,7 @@ struct FGame;
 struct FGameViewer;
 struct FGameViewerData;
 struct FGameConfig;
+struct FViewerConfig;
 
 struct FGame
 {
@@ -47,6 +48,7 @@ struct FSpeccyUI
 
 
 	std::vector<FGameConfig *>	GameConfigs;
+	std::map<std::string, FViewerConfig *>	ViewerConfigs;
 	FGame *				pActiveGame = nullptr;
 
 	std::string				SelectedSpriteList;

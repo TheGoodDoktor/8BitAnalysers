@@ -73,8 +73,17 @@ FGameConfig g_FeudConfig =
 	}
 };
 
+FViewerConfig g_DefaultViewConfig = 
+{
+	"Default",
+	InitMiscGameViewer,
+	DrawMiscGameViewer,
+};
+
 void RegisterGames(FSpeccyUI *pUI)
 {
+	pUI->ViewerConfigs[g_DefaultViewConfig.Name] = &g_DefaultViewConfig;
+
 	pUI->GameConfigs.push_back(&g_FirelordConfig);
 	pUI->GameConfigs.push_back(&g_Cybernoid2Config);
 	pUI->GameConfigs.push_back(&g_FeudConfig);

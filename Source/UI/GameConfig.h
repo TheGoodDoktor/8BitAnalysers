@@ -6,6 +6,7 @@ struct FCodeAnalysisState;
 struct FGameViewerData;
 struct FSpeccyUI;
 struct FGame;
+struct FGameConfig;
 
 struct FSpriteDefConfig
 {
@@ -15,6 +16,13 @@ struct FSpriteDefConfig
 	int			Height;
 };
 
+struct FViewerConfig
+{
+	std::string			Name;
+	FGameViewerData *	(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
+	void				(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);
+};
+
 struct FGameConfig
 {
 	std::string		Name;
@@ -22,6 +30,8 @@ struct FGameConfig
 
 	FGameViewerData *(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
 	void(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);
+
+	//FViewerConfig *pViewerConfig = nullptr;
 
 	std::map<std::string, FSpriteDefConfig> SpriteConfigs;
 };
