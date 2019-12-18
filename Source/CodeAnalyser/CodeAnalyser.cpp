@@ -5,8 +5,63 @@
 #include "ROMLabels.h"
 #include <algorithm>
 
+bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
+{
+	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
+
+	switch (instrByte)
+	{
+		// LD (nnnn),x
+		case 0x22:
+		case 0x32:
+			// LD x,(nnnn)
+		case 0x2A:
+		case 0x3A:
+			*out_addr = (ReadySpeccyByte(pSpeccy, pc + 2) << 8) | ReadySpeccyByte(pSpeccy, pc + 1);
+			return true;
+			// extended instructions
+		case 0xED:
+		{
+			const uint8_t exInstrByte = ReadySpeccyByte(pSpeccy, pc + 1);
+			switch (exInstrByte)
+			{
+			case 0x43://ld (**),bc
+			case 0x4B://ld bc,(**)
+			case 0x53://ld (**),de
+			case 0x5B://ld de,(**)
+			case 0x63://ld (**),hl
+			case 0x6B://ld hl,(**)
+			case 0x73://ld (**),sp
+			case 0x7B://ld sp,(**)
+				*out_addr = (ReadySpeccyByte(pSpeccy, pc + 3) << 8) | ReadySpeccyByte(pSpeccy, pc + 2);
+				return true;
+			}
+
+		}
+
+		// IX/IY instructions
+		case 0xDD:
+		case 0xFD:
+		{
+			const uint8_t exInstrByte = ReadySpeccyByte(pSpeccy, pc + 1);
+			switch (exInstrByte)
+			{
+			case 0x22://ld (**),ix/iy
+			case 0x2A://ld ix/iy,(**)
+				*out_addr = (ReadySpeccyByte(pSpeccy, pc + 3) << 8) | ReadySpeccyByte(pSpeccy, pc + 2);
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 {
+	if (CheckPointerIndirectionInstruction(pSpeccy, pc, out_addr))
+		return true;
+	
 	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
 
 	switch (instrByte)
@@ -15,29 +70,8 @@ bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_add
 	case 0x01:
 	case 0x11:
 	case 0x21:
-		// LD (nnnn),x
-	case 0x22:
-	case 0x32:
-		// LD x,(nnnn)
-	case 0x2A:
-	case 0x3A:
 		*out_addr = (ReadySpeccyByte(pSpeccy, pc + 2) << 8) | ReadySpeccyByte(pSpeccy, pc + 1);
 		return true;
-	// extended instructions
-	case 0xED:
-		{
-			const uint8_t exInstrByte = ReadySpeccyByte(pSpeccy, pc+1);
-			switch (exInstrByte)
-			{
-			case 0x43:
-			case 0x4B:
-			case 0x53:
-			case 0x5B:
-				*out_addr = (ReadySpeccyByte(pSpeccy, pc + 3) << 8) | ReadySpeccyByte(pSpeccy, pc + 2);
-				return true;
-			}
-
-		}
 	}
 	return false;
 }
@@ -198,6 +232,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType l
 			break;
 		case LabelType::Data:
 			sprintf(label, "data_%04X", pc);
+			pLabel->Global = true;
 			break;
 		}
 
@@ -276,6 +311,12 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	uint16_t ptr;
 	if (CheckPointerRefInstruction(pSpeccy, pc, &ptr))
 		pCodeInfo->PointerAddress = ptr;
+
+	if (CheckPointerIndirectionInstruction(pSpeccy, pc, &ptr))
+	{
+		if (GenerateLabelForAddress(state, ptr, LabelType::Data))
+			state.Labels[ptr]->References[pc]++;
+	}
 
 	return newPC;
 }
@@ -412,6 +453,12 @@ void InsertROMLabels(FCodeAnalysisState &state)
 		// run static analysis on all code labels
 		if(label.LabelType == LabelType::Code || label.LabelType == LabelType::Function)
 			RunStaticCodeAnalysis(state, label.Address);
+	}
+
+	for (const auto &label : g_SysVariables)
+	{
+		AddLabel(state, label.Address, label.pLabelName, LabelType::Data);
+		// TODO: Set up data?
 	}
 }
 

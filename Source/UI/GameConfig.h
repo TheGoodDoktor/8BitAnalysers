@@ -26,6 +26,7 @@ struct FGameConfig
 	std::map<std::string, FSpriteDefConfig> SpriteConfigs;
 };
 
+FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName);
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);
 bool LoadGameConfigFromFile(FGameConfig &config, const char *fname);
 bool LoadGameConfigs(FSpeccyUI *pUI);

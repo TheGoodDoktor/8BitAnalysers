@@ -7,8 +7,22 @@
 #include <fstream>
 
 #include "SpeccyUI.h"
+#include "GameViewers/GameViewer.h"
 
 using json = nlohmann::json;
+
+FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName)
+{
+	FGameConfig *pNewConfig = new FGameConfig;
+
+	pNewConfig->Name = "Temp";
+	pNewConfig->Z80File = pZ80FileName;
+
+	pNewConfig->pInitFunction = InitMiscGameViewer;
+	pNewConfig->pDrawFunction = DrawMiscGameViewer;
+
+	return pNewConfig;
+}
 
 void WriteStringToFile(const std::string &str, FILE *fp)
 {
@@ -406,8 +420,15 @@ bool LoadGameConfigs(FSpeccyUI *pUI)
 		const std::string &fn = "configs/" + file.FileName;
 		if ((fn.substr(fn.find_last_of(".") + 1) == "json"))
 		{
-			FGameConfig newConfig;
-			LoadGameConfigFromFile(newConfig, fn.c_str());
+			FGameConfig *pNewConfig = new FGameConfig;
+			if (LoadGameConfigFromFile(*pNewConfig, fn.c_str()))
+			{
+				pUI->GameConfigs.push_back(pNewConfig);
+			}
+			else
+			{
+				delete pNewConfig;
+			}
 		}
 	}
 	return true;

@@ -85,3 +85,25 @@ FROMLabelInfo g_RomLabels[] =
 	{0x15f2, "Print-A2"},
 };
 
+// ROM System variables (in RAM!)
+// https://skoolkid.github.io/rom/buffers/sysvars.html
+//
+struct FROMSysVariable
+{
+	uint16_t		Address;
+	uint16_t		Length;
+	const char *	pLabelName;
+};
+
+
+FROMSysVariable g_SysVariables[] =
+{
+	{0x5C00, 8,"KSTATE"},
+	{0x5C08, 1,"LAST-K"},
+	{0x5C09, 1,"REPDEL"},
+	{0x5C0A, 1,"REPPER"},
+	{0x5C0B, 2,"DEFADD"},
+	{0x5C0D, 1,"KDATA"},
+	{0x5C0E, 2,"TVDATA"},
+	{0x5C10, 38,"STRMS"},
+};

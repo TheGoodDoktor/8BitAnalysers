@@ -230,13 +230,20 @@ void SaveCurrentGameData(FSpeccyUI *pUI)
 	if (pUI->pActiveGame != nullptr)
 	{
 		const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
-		const std::string configFName = "Configs/" + pGameConfig->Name + ".json";
-		const std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
-		EnsureDirectoryExists("Configs");
-		EnsureDirectoryExists("GameData");
+		if (pGameConfig->Name.empty())
+		{
+			
+		}
+		else
+		{
+			const std::string configFName = "Configs/" + pGameConfig->Name + ".json";
+			const std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
+			EnsureDirectoryExists("Configs");
+			EnsureDirectoryExists("GameData");
 
-		SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-		SaveGameData(pUI->CodeAnalysis, dataFName.c_str());
+			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
+			SaveGameData(pUI->CodeAnalysis, dataFName.c_str());
+		}
 	}
 	SaveROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
 }
@@ -246,12 +253,11 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 	ui_zx_t* pZXUI = &pUI->UIZX;
 	FSpeccy *pSpeccy = pUI->pSpeccy;
 	assert(pZXUI && pZXUI->zx && pZXUI->boot_cb);
-	
+		
 	if (ImGui::BeginMainMenuBar()) 
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			
 			if (ImGui::BeginMenu( "Open Game"))
 			{
 				for (const auto& pGameConfig : pUI->GameConfigs)
@@ -268,7 +274,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Open Z80 File"))
+			if (ImGui::BeginMenu("New Game from Z80 File"))
 			{
 				for (const auto& game : GetGameList())
 				{
@@ -276,7 +282,9 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 					{
 						if (LoadZ80File(*pSpeccy, game.c_str()))
 						{
-							pUI->pActiveGame = nullptr;
+							FGameConfig *pNewConfig = CreateNewGameConfigFromZ80File(game.c_str());
+							if(pNewConfig != nullptr)
+								StartGame(pUI, pNewConfig);
 						}
 					}
 				}

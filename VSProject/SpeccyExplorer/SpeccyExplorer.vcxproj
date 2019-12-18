@@ -165,6 +165,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyser.h" />
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.h" />
+    <ClInclude Include="..\..\Source\CodeAnalyser\romlabels.h" />
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h" />
     <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h" />
     <ClInclude Include="..\..\Source\imgui_impl_win32.h" />
@@ -178,7 +179,6 @@
     <ClInclude Include="..\..\Source\UI\GraphicsView.h" />
     <ClInclude Include="..\..\Source\UI\IOAnalysis.h" />
     <ClInclude Include="..\..\Source\UI\MemoryHandlers.h" />
-    <ClInclude Include="..\..\Source\UI\ROMLabels.h" />
     <ClInclude Include="..\..\Source\UI\SpeccyUI.h" />
     <ClInclude Include="..\..\Source\UI\SpriteViewer.h" />
     <ClInclude Include="..\..\Source\Util\FileUtil.h" />

@@ -395,9 +395,6 @@
     <ClInclude Include="..\..\Source\UI\Disassembler.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\ROMLabels.h">
-      <Filter>Source Files\UI</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.h">
       <Filter>Source Files\CodeAnalyser</Filter>
     </ClInclude>
@@ -406,6 +403,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\IOAnalysis.h">
       <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\CodeAnalyser\romlabels.h">
+      <Filter>Source Files\CodeAnalyser</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
