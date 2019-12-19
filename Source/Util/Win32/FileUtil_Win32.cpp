@@ -1,7 +1,7 @@
 #include  "../FileUtil.h"
 
 //#include "Debug/Debug.h"
-#include <assert.h>"
+#include <assert.h>
 #include <windows.h>
 #include <winhttp.h>
 #include <strsafe.h>
@@ -408,3 +408,4 @@ bool OpenFileDialog(std::string &outFile,const char *pInitialDir)
 	*/
 	return true;
 }
+

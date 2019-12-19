@@ -132,7 +132,8 @@ void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAdd
 // Commands
 void Undo(FCodeAnalysisState &state);
 
-void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address); 
+void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
+void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
 void SetItemData(FCodeAnalysisState &state, FItem *pItem);
 void SetItemText(FCodeAnalysisState &state, FItem *pItem);

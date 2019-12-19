@@ -19,6 +19,11 @@ void GoToAddress(FCodeAnalysisState &state, uint16_t newAddress, bool bLabel = f
 	state.GoToLabel = bLabel;
 }
 
+void CodeAnalyserGoToAddress(uint16_t newAddress, bool bLabel)
+{
+	GoToAddress(GetSpeccyUI()->CodeAnalysis, newAddress, bLabel);
+}
+
 bool GoToPreviousAddress(FCodeAnalysisState &state)
 {
 	if (state.AddressStack.empty())
@@ -82,7 +87,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 				ImGui::EndTooltip();
 			}
 			if (ImGui::IsMouseDoubleClicked(0))
-				GoToAddress(state, addr);
+				GoToAddress(state, addr, true);
 
 		}
 
@@ -236,6 +241,8 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 
+	
+	
 	switch (pDataInfo->DataType)
 	{
 	case DataType::Byte:
@@ -399,7 +406,11 @@ void UpdateItemList(FCodeAnalysisState &state)
 				FDataInfo *pDataInfo = state.DataInfo[addr];
 				if (pDataInfo != nullptr)
 				{
-					nextDataAddress = addr + pDataInfo->ByteSize;
+					if(pDataInfo->DataType != DataType::Blob && pDataInfo->DataType != DataType::Graphics)
+						nextDataAddress = addr + pDataInfo->ByteSize;
+					else
+						nextDataAddress = addr + 1;
+
 					state.ItemList.push_back(pDataInfo);
 				}
 			}
@@ -415,10 +426,50 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 }
 
+void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
+{
+	if (ImGui::BeginPopupContextItem("code item context menu"))
+	{
+		if (pItem->Type == ItemType::Data)
+		{
+			if (ImGui::Selectable("Toggle data type (D)"))
+			{
+				SetItemData(state, pItem);
+			}
+			if (ImGui::Selectable("Set as text (T)"))
+			{
+				SetItemText(state, state.pCursorItem);
+			}
+		}
+
+		if (pItem->Type == ItemType::Label)
+		{
+			if (ImGui::Selectable("Remove label"))
+			{
+				RemoveLabelAtAddress(state, pItem->Address);
+			}
+		}
+		else
+		{
+			if (ImGui::Selectable("Add label (L)"))
+			{
+				AddLabelAtAddress(state, pItem->Address);
+			}
+		}
+		
+		if (ImGui::Selectable("View in graphics viewer"))
+		{
+			GraphicsViewerGoToAddress(pItem->Address);			
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 {
 	assert(i < state.ItemList.size());
-	const FItem* pItem = state.ItemList[i];
+	FItem* pItem = state.ItemList[i];
 
 	ImGui::PushID(i);
 
@@ -432,6 +483,7 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 		state.pCursorItem = state.ItemList[i];
 		state.CursorItemIndex = i;
 	}
+	DoItemContextMenu(state, pItem);
 	ImGui::SetItemAllowOverlap();	// allow buttons
 	ImGui::SameLine();
 
@@ -489,6 +541,25 @@ void DrawDetailsPanel(FCodeAnalysisState &state)
 	}
 }
 
+void DrawDebuggerButtons(FCodeAnalysisState &state)
+{
+	FSpeccy *pSpeccy = state.pSpeccy;
+
+	if (ImGui::Button("Break"))
+	{
+		FSpeccyUI *pUI = GetSpeccyUI();
+		pUI->UIZX.dbg.dbg.stopped = true;
+		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+		GoToAddress(state,z80_pc(&pSpeccy->CurrentState.cpu));
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Continue"))
+	{
+		FSpeccyUI *pUI = GetSpeccyUI();
+		pUI->UIZX.dbg.dbg.stopped = false;
+		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+	}
+}
 void DrawCodeAnalysisData(FCodeAnalysisState &state)
 {
 	FSpeccy *pSpeccy = state.pSpeccy;
@@ -510,6 +581,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	static int addrInput = 0;
 	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, ImGuiInputTextFlags_CharsHexadecimal))
 		GoToAddress(state, addrInput);
+	DrawDebuggerButtons(state);
 	ImGui::Checkbox("Analyse data accesses (slow)", &state.bRegisterDataAccesses);
 
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
@@ -519,7 +591,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		{
 			for (int item = 0; item < state.ItemList.size(); item++)
 			{
-				if ((state.ItemList[item]->Address == state.GoToAddress) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
+				if ((state.ItemList[item]->Address >= state.GoToAddress) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
 				{
 					// set cursor
 					state.pCursorItem = state.ItemList[item];

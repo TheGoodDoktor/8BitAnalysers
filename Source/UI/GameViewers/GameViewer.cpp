@@ -4,21 +4,14 @@
 #include "UI/GraphicsView.h"
 #include "UI/GameConfig.h"
 
+static std::map<std::string, FViewerConfig *>	g_ViewerConfigs;
+
 void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 {
 	FSpeccyUI *pUI = pGameViewer->pUI;
 
 	pGameViewer->pSpriteGraphicsView = CreateGraphicsView(64, 64);
 	pGameViewer->pScreenGraphicsView = CreateGraphicsView(256, 256);
-
-	// Generate sprite lists from configs
-	pUI->SpriteLists.clear();
-	for (const auto &sprConfIt : pGameConfig->SpriteConfigs)
-	{
-		const FSpriteDefConfig& config = sprConfIt.second;
-		FUISpriteList &sprites = pUI->SpriteLists[sprConfIt.first];
-		GenerateSpriteList(sprites.SpriteList, config.BaseAddress, config.Count, config.Width, config.Height);
-	}
 
 	// add memory handlers for screen memory
 	{
@@ -55,13 +48,19 @@ void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 	}
 }
 
-FViewerConfig*	GetViewConfigForGame(FSpeccyUI *pUI, const char *pGameName)
+bool AddViewerConfig(FViewerConfig* pConfig)
 {
-	auto configIt = pUI->ViewerConfigs.find(pGameName);
-	if (configIt == pUI->ViewerConfigs.end())
+	g_ViewerConfigs[pConfig->Name] = pConfig;
+	return true;
+}
+
+FViewerConfig*	GetViewConfigForGame(const char *pGameName)
+{
+	auto configIt = g_ViewerConfigs.find(pGameName);
+	if (configIt == g_ViewerConfigs.end())
 	{
-		configIt = pUI->ViewerConfigs.find("Default");
-		if (configIt == pUI->ViewerConfigs.end())
+		configIt = g_ViewerConfigs.find("Default");
+		if (configIt == g_ViewerConfigs.end())
 			return nullptr;
 	}
 

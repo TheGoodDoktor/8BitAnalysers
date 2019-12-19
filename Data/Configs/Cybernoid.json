@@ -1,0 +1,13 @@
+{
+    "Name": "Cybernoid",
+    "SpriteConfigs": [
+        {
+            "BaseAddress": "0xec61",
+            "Count": 40,
+            "Height": 1,
+            "Name": "Particles",
+            "Width": 2
+        }
+    ],
+    "Z80File": "Cybernoid.Z80"
+}

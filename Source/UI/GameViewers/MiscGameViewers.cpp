@@ -20,7 +20,7 @@ void DrawMiscGameViewer(FSpeccyUI *pUI, FGame *pGame)
 	
 	if (ImGui::BeginTabItem("Sprites"))
 	{
-		DrawSpriteListGUI(pUI, pGameViewer->pSpriteGraphicsView);
+		DrawSpriteListGUI(pUI->GraphicsViewer, pGameViewer->pSpriteGraphicsView);
 		ImGui::EndTabItem();
 	}
 
@@ -29,6 +29,7 @@ void DrawMiscGameViewer(FSpeccyUI *pUI, FGame *pGame)
 
 
 // Firelord
+/*
 FGameConfig g_FirelordConfig =
 {
 	"Firelord",
@@ -39,8 +40,8 @@ FGameConfig g_FirelordConfig =
 	{{"Firelord_Font"}, {0xb240,32,1,1}},
 	{{"Firelord_Sprites"}, {0xb3b0,52,3,2}},
 	}
-};
-
+};*/
+/*
 // Cybernoid 2
 FGameConfig g_Cybernoid2Config =
 {
@@ -52,10 +53,10 @@ FGameConfig g_Cybernoid2Config =
 	{{"Sprites_2x2"}, {0xCE5F,52,2,2}},
 	{{"Sprites_3x2"}, {0xC19F,52,3,2}},
 	}
-};
+};*/
 
 // Feud
-
+/*
 FGameConfig g_FeudConfig =
 {
 	"Feud",
@@ -71,7 +72,7 @@ FGameConfig g_FeudConfig =
 	//{{"Wizard 2 Sprites"}, {0xdf2d,80,3,4}},
 	{{"Compass"}, {0xee96,1,6,6}},
 	}
-};
+};*/
 
 FViewerConfig g_DefaultViewConfig = 
 {
@@ -82,10 +83,10 @@ FViewerConfig g_DefaultViewConfig =
 
 void RegisterGames(FSpeccyUI *pUI)
 {
-	pUI->ViewerConfigs[g_DefaultViewConfig.Name] = &g_DefaultViewConfig;
+	AddViewerConfig(&g_DefaultViewConfig);
 
-	pUI->GameConfigs.push_back(&g_FirelordConfig);
-	pUI->GameConfigs.push_back(&g_Cybernoid2Config);
-	pUI->GameConfigs.push_back(&g_FeudConfig);
+	//pUI->GameConfigs.push_back(&g_FirelordConfig);
+	//pUI->GameConfigs.push_back(&g_Cybernoid2Config);
+	//pUI->GameConfigs.push_back(&g_FeudConfig);
 }
 

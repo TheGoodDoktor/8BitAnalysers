@@ -2,7 +2,9 @@
 #include "imgui_impl_lucidextra.h"
 #include "Speccy/Speccy.h"
 #include "SpeccyUI.h"
+#include "GameConfig.h"
 #include <algorithm>
+#include "CodeAnalyser/CodeAnalyserUI.h"
 
 FGraphicsView *CreateGraphicsView(int width, int height)
 {
@@ -58,6 +60,8 @@ void DisplayTextureInspector(const ImTextureID texture, float width, float heigh
 		ImVec2 uv0 = ImVec2((region_x) / my_tex_w, (region_y) / my_tex_h);
 		ImVec2 uv1 = ImVec2((region_x + region_sz) / my_tex_w, (region_y + region_sz) / my_tex_h);
 		ImGui::Image(texture, ImVec2(region_sz * zoom, region_sz * zoom), uv0, uv1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 0.5f));
+
+		
 		ImGui::EndTooltip();
 	}
 }
@@ -74,9 +78,9 @@ void DrawGraphicsView(const FGraphicsView &graphicsView, const ImVec2 &size, boo
 	DisplayTextureInspector(graphicsView.Texture, size.x, size.y, bScale,bMagnifier);
 }
 
-void DrawGraphicsView(const FGraphicsView &graphicsView)
+void DrawGraphicsView(const FGraphicsView &graphicsView,bool bMagnifier)
 {
-	DrawGraphicsView(graphicsView, ImVec2((float)graphicsView.Width, (float)graphicsView.Height));
+	DrawGraphicsView(graphicsView, ImVec2((float)graphicsView.Width, (float)graphicsView.Height), false,bMagnifier);
 }
 
 // Graphics Viewer
@@ -122,7 +126,7 @@ void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pD
 	}
 
 	*pBase = 0;
-	for (int y = 0; y < h * 8; y++)
+	for (int y = 0; y < h; y++)
 	{
 		for (int x = 0; x < w; x++)
 		{
@@ -151,12 +155,27 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	const int kVerticalDispCharCount = kGraphicsViewerHeight / 8;
 
 	if (ImGui::Begin("Graphics View") == false)
+	{
+		ImGui::End();
 		return;
-
+	}
 	// Address input
 	int addrInput = state.Address;
 	ImGui::Text("Memory Map Address: %04Xh", addrInput);
+	ImGuiIO& io = ImGui::GetIO();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
 	DrawGraphicsView(*pGraphicsView);
+	int ptrAddress = 0;
+	if (ImGui::IsItemHovered())
+	{
+		const int xp = (int)(io.MousePos.x - pos.x);
+		const int yp = (int)(io.MousePos.y - pos.y);
+		const int addressOffset = (xp / 8) + (yp * (256 / 8));
+		ptrAddress = addrInput + addressOffset;
+		if (ImGui::IsMouseDoubleClicked(0))
+			CodeAnalyserGoToAddress(ptrAddress);
+	}
+	
 	ImGui::SameLine();
 	
 	int addrLine = addrInput / kHorizontalDispCharCount;
@@ -172,9 +191,16 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	}
 	
 	ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
-		
+	ImGui::Text("Pointer Address: %04Xh", ptrAddress);
+	ImGui::SameLine();
+	DrawAddressLabel(GetSpeccyUI()->CodeAnalysis, ptrAddress);
+
+	int viewMode = (int)state.ViewMode;
+	if(ImGui::Combo("ViewMode", &viewMode, "Character\0CharacterWinding\0Screen", (int)GraphicsViewMode::Count))
+		state.ViewMode = (GraphicsViewMode)viewMode;
+	
 	// view 1 - straight character
-	if (state.ViewMode == GraphicsViewMode::Character)
+	if (state.ViewMode == GraphicsViewMode::Character || state.ViewMode == GraphicsViewMode::CharacterWinding)
 	{
 		const int graphicsUnitSize = state.XSize * state.YSize * 8;
 
@@ -190,6 +216,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		// draw 64 * 8 bytes
 		ImGui::InputInt("XSize", &state.XSize, 1, 4);
 		ImGui::InputInt("YSize", &state.YSize, 1, 4);
+		ImGui::InputInt("Count", &state.ImageCount, 1, 4);
 
 		static char configName[64];
 		ImGui::Separator();
@@ -197,7 +224,23 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		ImGui::SameLine();
 		if (ImGui::Button("Store"))
 		{
-			// TODO: store this in the config map
+			// Store this in the config map
+			auto& spriteConfigs = state.pGame->pConfig->SpriteConfigs;
+			if(spriteConfigs.find(configName) == spriteConfigs.end())	// not found - add
+			{
+				FSpriteDefConfig newConfig;
+				newConfig.BaseAddress = state.Address;
+				newConfig.Count = state.ImageCount;
+				newConfig.Width = state.XSize;
+				newConfig.Height = state.YSize;
+				spriteConfigs[configName] = newConfig;
+
+				// TODO: tell sprite view to refresh
+				GenerateSpriteListsFromConfig(state, state.pGame->pConfig);
+
+				// TODO: Save Config?
+			}
+			
 		}
 
 		state.XSize = std::min(std::max(1, state.XSize), kHorizontalDispCharCount);
@@ -208,15 +251,45 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 
 		int y = 0;
 		uint16_t address = state.Address;
-			
-		for (int y = 0; y < ycount; y++)
+
+		if (state.ViewMode == GraphicsViewMode::Character)
 		{
-			for (int x = 0; x < xcount; x++)
+			for (int y = 0; y < ycount; y++)
 			{
-				const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
-				PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize * 8, state.XSize, state.YSize, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
-				address += graphicsUnitSize;
+				for (int x = 0; x < xcount; x++)
+				{
+					const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
+					PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize * 8, state.XSize, state.YSize * 8, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+					address += graphicsUnitSize;
+				}
 			}
+		}
+		else if (state.ViewMode == GraphicsViewMode::CharacterWinding)
+		{
+			int offsetX = 0;
+			int offsetY = 0;
+			for (int y = 0; y < ycount; y++)
+			{
+				for (int x = 0; x < xcount; x++)
+				{
+					// draw single item
+					for (int yLine = 0; yLine < state.YSize * 8; yLine++)	// loop down scan lines
+					{
+						for (int xChar = 0; xChar < state.XSize; xChar++)
+						{
+							const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
+							const int xp = ((yLine & 1) == 0) ? xChar : (state.XSize - 1) - xChar;
+							PlotImageAt(pImage, offsetX + (xp * 8), offsetY + yLine, 1, 1, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+							address++;
+						}
+					}
+
+					offsetX += state.XSize * 8;
+				}
+				offsetX = 0;
+				offsetY += state.YSize * 8;
+			}
+			address += graphicsUnitSize;
 		}
 	}
 	else if (state.ViewMode == GraphicsViewMode::Screen)
@@ -255,4 +328,9 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 
 	
 	ImGui::End();
+}
+
+void GraphicsViewerGoToAddress(uint16_t address)
+{
+	GetSpeccyUI()->GraphicsViewer.Address = address;
 }

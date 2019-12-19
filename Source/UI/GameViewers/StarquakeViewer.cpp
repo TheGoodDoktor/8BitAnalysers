@@ -145,7 +145,7 @@ static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerDat
 
 				colVal &= ~0x40;
 				
-				PlotImageAt(pImage, xp + (x * 8), yp + (y * 8), 1, 1, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, colVal);
+				PlotImageAt(pImage, xp + (x * 8), yp + (y * 8), 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, colVal);
 
 				kPlatformCharPtr+=8;
 				kPlatformColPtr--;
@@ -237,14 +237,14 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 
 	if (ImGui::BeginTabItem("Sprites"))
 	{
-		DrawSpriteListGUI(pUI, pStarquakeViewer->pSpriteGraphicsView);
+		DrawSpriteListGUI(pUI->GraphicsViewer, pStarquakeViewer->pSpriteGraphicsView);
 		ImGui::EndTabItem();
 	}
 
 	ImGui::EndTabBar();
 }
 
-FGameConfig g_StarQuakeConfig =
+/*FGameConfig g_StarQuakeConfig =
 {
 	"Starquake",
 	"Starquake.z80",
@@ -254,7 +254,7 @@ FGameConfig g_StarQuakeConfig =
 	{{"Starquake_Blobs"}, {0xe074,52,3,2}},	// starquake blobs sprites
 	{{"Enemies"}, {0xafc8,84,3,2}},	// starquake blobs sprites
 	}
-};
+};*/
 
 FViewerConfig g_StarQuakeViewConfig =
 {
@@ -265,7 +265,7 @@ FViewerConfig g_StarQuakeViewConfig =
 
 void RegisterStarquakeViewer(FSpeccyUI *pUI)
 {
-	pUI->ViewerConfigs[g_StarQuakeViewConfig.Name] = &g_StarQuakeViewConfig;
+	AddViewerConfig(&g_StarQuakeViewConfig);
 
-	pUI->GameConfigs.push_back(&g_StarQuakeConfig);
+	//pUI->GameConfigs.push_back(&g_StarQuakeConfig);
 }

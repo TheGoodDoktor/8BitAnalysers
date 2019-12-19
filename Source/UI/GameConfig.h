@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <map>
+#include <vector>
 
 struct FCodeAnalysisState;
 struct FGameViewerData;
@@ -28,13 +29,16 @@ struct FGameConfig
 	std::string		Name;
 	std::string		Z80File;
 
-	FGameViewerData *(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
-	void(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);
+	//FGameViewerData *(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
+	//void(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);
 
-	//FViewerConfig *pViewerConfig = nullptr;
+	FViewerConfig *pViewerConfig = nullptr;
 
 	std::map<std::string, FSpriteDefConfig> SpriteConfigs;
 };
+
+bool AddGameConfig(FGameConfig *pConfig);
+const std::vector< FGameConfig *>& GetGameConfigs();
 
 FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName);
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);

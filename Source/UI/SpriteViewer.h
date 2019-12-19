@@ -4,7 +4,9 @@
 #include <vector>
 
 struct FGraphicsView;
+struct FGraphicsViewerState;
 struct FSpeccyUI;
+struct FGameConfig;
 
 // Sprite Stuff
 
@@ -33,5 +35,6 @@ struct FUISpriteList
 	FSpriteDefList	SpriteList;
 };
 
-void GenerateSpriteList(FSpriteDefList &spriteList, uint16_t startAddress, int count, int width, int height);
-void DrawSpriteListGUI(FSpeccyUI* pUI, FGraphicsView *pGraphicsView);
+void GenerateSpriteListsFromConfig(FGraphicsViewerState &state, FGameConfig *pGameConfig);
+//void GenerateSpriteList(FSpriteDefList &spriteList, uint16_t startAddress, int count, int width, int height);
+void DrawSpriteListGUI(FGraphicsViewerState &state, FGraphicsView *pGraphicsView);

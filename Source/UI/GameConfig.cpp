@@ -10,6 +10,18 @@
 #include "GameViewers/GameViewer.h"
 
 using json = nlohmann::json;
+static std::vector< FGameConfig *>	g_GameConfigs;
+
+bool AddGameConfig(FGameConfig *pConfig)
+{
+	g_GameConfigs.push_back(pConfig);
+	return true;
+}
+
+const std::vector< FGameConfig *>& GetGameConfigs()
+{
+	return g_GameConfigs;
+}
 
 FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName)
 {
@@ -17,9 +29,7 @@ FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName)
 
 	pNewConfig->Name = RemoveFileExtension(pZ80FileName);
 	pNewConfig->Z80File = pZ80FileName;
-
-	pNewConfig->pInitFunction = InitMiscGameViewer;
-	pNewConfig->pDrawFunction = DrawMiscGameViewer;
+	pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
 
 	return pNewConfig;
 }
@@ -104,6 +114,7 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 
 	config.Name = jsonConfigFile["Name"].get<std::string>();
 	config.Z80File = jsonConfigFile["Z80File"].get<std::string>();
+	config.pViewerConfig = GetViewConfigForGame(config.Name.c_str());
 
 	for(const auto & jsonSprConfig : jsonConfigFile["SpriteConfigs"])
 	{
@@ -423,7 +434,7 @@ bool LoadGameConfigs(FSpeccyUI *pUI)
 			FGameConfig *pNewConfig = new FGameConfig;
 			if (LoadGameConfigFromFile(*pNewConfig, fn.c_str()))
 			{
-				pUI->GameConfigs.push_back(pNewConfig);
+				AddGameConfig(pNewConfig);
 			}
 			else
 			{

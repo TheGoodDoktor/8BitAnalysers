@@ -407,6 +407,16 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 		{
 			WriteCodeInfoForAddress(state, (uint16_t)i);
 		}
+
+		if (state.CodeInfo[i] == nullptr && state.DataInfo[i] == nullptr)
+		{
+			// set up data entry for address
+			FDataInfo *pDataInfo = new FDataInfo;
+			pDataInfo->Address = (uint16_t)i;
+			pDataInfo->ByteSize = 1;
+			pDataInfo->DataType = DataType::Byte;
+			state.DataInfo[i] = pDataInfo;
+		}
 	}
 }
 
@@ -627,6 +637,16 @@ void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 			labelType = LabelType::Code;
 
 		GenerateLabelForAddress(state, address, labelType);
+		state.bCodeAnalysisDataDirty = true;
+	}
+}
+
+void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
+{
+	if (state.Labels[address] != nullptr)
+	{
+		delete state.Labels[address];
+		state.Labels[address] = nullptr;
 		state.bCodeAnalysisDataDirty = true;
 	}
 }

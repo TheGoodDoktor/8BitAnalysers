@@ -19,8 +19,9 @@ struct FViewerConfig;
 
 struct FGame
 {
-	FGameConfig *		pConfig;
-	FGameViewerData *	pViewerData;
+	FGameConfig *		pConfig	= nullptr;
+	FViewerConfig *		pViewerConfig = nullptr;
+	FGameViewerData *	pViewerData = nullptr;
 };
 
 /*struct FGameViewer
@@ -45,14 +46,7 @@ struct FSpeccyUI
 	FSpeccy*		pSpeccy = nullptr;
 	ui_zx_t			UIZX;
 
-
-
-	std::vector<FGameConfig *>	GameConfigs;
-	std::map<std::string, FViewerConfig *>	ViewerConfigs;
 	FGame *				pActiveGame = nullptr;
-
-	std::string				SelectedSpriteList;
-	std::map<std::string, FUISpriteList>	SpriteLists;
 
 	FGraphicsViewerState	GraphicsViewer;
 	FCodeAnalysisState		CodeAnalysis;
@@ -83,6 +77,7 @@ struct FSpeccyUI
 
 
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy);
+FSpeccyUI* GetSpeccyUI();
 bool StartGame(FSpeccyUI* pUI, const char *pGameName);
 void SaveCurrentGameData(FSpeccyUI *pUI);
 void ShutdownSpeccyUI(FSpeccyUI*pSpeccyUI);

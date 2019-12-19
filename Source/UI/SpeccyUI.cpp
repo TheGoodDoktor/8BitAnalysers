@@ -84,10 +84,12 @@ int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, v
 	return 0;
 }
 
+FSpeccyUI*g_pSpeccyUI = nullptr;
 
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 {
 	FSpeccyUI *pUI = new FSpeccyUI;
+	g_pSpeccyUI = pUI;
 	memset(&pUI->UIZX, 0, sizeof(ui_zx_t));
 
 	// Trap callback needs to be set before we create the UI
@@ -170,6 +172,11 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	return pUI;
 }
 
+FSpeccyUI* GetSpeccyUI()
+{
+	return g_pSpeccyUI;
+}
+
 void ShutdownSpeccyUI(FSpeccyUI* pUI)
 {
 	SaveCurrentGameData(pUI);	// save on close
@@ -192,10 +199,15 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 		delete pUI->pActiveGame->pViewerData;
 	delete pUI->pActiveGame;
 	
-	pUI->pActiveGame = new FGame;
-	pUI->pActiveGame->pConfig = pGameConfig;
-	pUI->pActiveGame->pViewerData = pGameConfig->pInitFunction(pUI, pGameConfig);
-
+	FGame *pNewGame = new FGame;
+	pNewGame->pConfig = pGameConfig;
+	pNewGame->pViewerConfig = pGameConfig->pViewerConfig;
+	assert(pGameConfig->pViewerConfig != nullptr);
+	pUI->GraphicsViewer.pGame = pNewGame;
+	pUI->pActiveGame = pNewGame;
+	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(pUI, pGameConfig);
+	GenerateSpriteListsFromConfig(pUI->GraphicsViewer, pGameConfig);
+	
 	// Initialise code analysis
 	InitialiseCodeAnalysis(pUI->CodeAnalysis, pUI->pSpeccy);
 
@@ -209,7 +221,7 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 
 bool StartGame(FSpeccyUI* pUI, const char *pGameName)
 {
-	for (const auto& pGameConfig : pUI->GameConfigs)
+	for (const auto& pGameConfig : GetGameConfigs())
 	{
 		if (pGameConfig->Name == pGameName)
 		{
@@ -260,7 +272,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 		{
 			if (ImGui::BeginMenu( "Open Game"))
 			{
-				for (const auto& pGameConfig : pUI->GameConfigs)
+				for (const auto& pGameConfig : GetGameConfigs())
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
@@ -477,8 +489,10 @@ void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
 void DrawMemoryTools(FSpeccyUI* pUI)
 {
 	if (ImGui::Begin("Memory Tools") == false)
+	{
+		ImGui::End();
 		return;
-
+	}
 	if (ImGui::BeginTabBar("MemoryToolsTabBar"))
 	{
 
@@ -546,7 +560,6 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 		ui_zx_after_exec(pZXUI);
 	
 	DrawMainMenu(pUI, timeMS);
-
 	if (pZXUI->memmap.open)
 	{
 		UpdateMemmap(pZXUI);
@@ -571,36 +584,39 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 
 
 	// show spectrum window
-	ImGui::Begin("Spectrum View");
-	ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-	// read keys
-	if (ImGui::IsWindowFocused())
+	if (ImGui::Begin("Spectrum View"))
 	{
-		ReadSpeccyKeys(pUI->pSpeccy);
+		ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+		// read keys
+		if (ImGui::IsWindowFocused())
+		{
+			ReadSpeccyKeys(pUI->pSpeccy);
+		}
 	}
 	ImGui::End();
-	
+
+	// game viewer
 	if (ImGui::Begin("Game Viewer"))
 	{
 		if (pUI->pActiveGame != nullptr)
 		{
 			ImGui::Text(pUI->pActiveGame->pConfig->Name.c_str());
-			pUI->pActiveGame->pConfig->pDrawFunction(pUI, pUI->pActiveGame);
+			pUI->pActiveGame->pViewerConfig->pDrawFunction(pUI, pUI->pActiveGame);
 		}
 		
-		ImGui::End();
 	}
-	
+	ImGui::End();
+
 	DrawGraphicsViewer(pUI->GraphicsViewer);
 	DrawMemoryTools(pUI);
 
 	if (ImGui::Begin("Code Analysis"))
 	{
 		DrawCodeAnalysisData(pUI->CodeAnalysis);
-		ImGui::End();
 	}
+	ImGui::End();
 
 	/*if (ImGui::Begin("Globals"))
 	{
