@@ -87,7 +87,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 				ImGui::EndTooltip();
 			}
 			if (ImGui::IsMouseDoubleClicked(0))
-				GoToAddress(state, addr, true);
+				GoToAddress(state, addr, false);
 
 		}
 
@@ -117,11 +117,15 @@ void DrawComment(const FItem *pItem)
 
 void DrawLabelInfo(FCodeAnalysisState &state, const FLabelInfo *pLabelInfo)
 {
-	ImGui::Text("%s: ", pLabelInfo->Name.c_str());
-	if (ImGui::IsItemHovered())
+	if(pLabelInfo->Global || pLabelInfo->LabelType == LabelType::Function)
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f),"%s: ", pLabelInfo->Name.c_str());
+	else
+		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "%s: ", pLabelInfo->Name.c_str());
+	
+	if (ImGui::IsItemHovered() && pLabelInfo->References.empty() == false)
 	{
 		ImGui::BeginTooltip();
-		ImGui::Text("Callers:");
+		ImGui::Text("References:");
 		for (const auto & caller : pLabelInfo->References)
 		{
 			DrawCodeAddress(state, caller.first);
@@ -162,6 +166,25 @@ void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 	{
 		DrawCodeAddress(state, caller.first);
 	}
+}
+
+std::map<uint8_t, const char *> g_InstructionInfo=
+{
+	{0x10, "Decrement B & Jump relative if it isn't 0"},
+};
+
+void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
+{
+	FSpeccy* pSpeccy = state.pSpeccy;
+	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pCodeInfo->Address);
+
+	const auto &infoIt = g_InstructionInfo.find(instrByte);
+	if (infoIt == g_InstructionInfo.end())
+		return;
+
+	ImGui::BeginTooltip();
+	ImGui::Text("%s",infoIt->second);
+	ImGui::EndTooltip();
 }
 
 void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
@@ -212,6 +235,10 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 	ImGui::Text("%s", pCodeInfo->Text.c_str());
+	if(ImGui::IsItemHovered())
+	{
+		ShowCodeToolTip(state, pCodeInfo);
+	}
 
 	// draw jump address label name
 	if (pCodeInfo->JumpAddress != 0)
@@ -353,7 +380,10 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 }
 
 
-
+int CommentInputCallback(ImGuiInputTextCallbackData *pData)
+{
+	return 1;
+}
 
 
 void ProcessKeyCommands(FCodeAnalysisState &state)
@@ -372,6 +402,38 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		{
 			AddLabelAtAddress(state, state.pCursorItem->Address);
 		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Comment]))
+		{
+			//AddLabelAtAddress(state, state.pCursorItem->Address);
+			ImGui::OpenPopup("Enter Comment Text");
+			ImGui::SetWindowFocus("Enter Comment Text");
+		}
+		else if (state.pCursorItem->Type == ItemType::Label && ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Rename]))
+		{
+			//AddLabelAtAddress(state, state.pCursorItem->Address);
+			ImGui::OpenPopup("Enter Label Text");
+			ImGui::SetWindowFocus("Enter Label Text");
+		}
+	}
+
+	if (ImGui::BeginPopup("Enter Comment Text", ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::SetKeyboardFocusHere();
+		if(ImGui::InputText("##comment", &state.pCursorItem->Comment, ImGuiInputTextFlags_EnterReturnsTrue))
+			ImGui::CloseCurrentPopup();
+		ImGui::SetItemDefaultFocus();
+		ImGui::EndPopup();
+	}
+
+	if (ImGui::BeginPopup("Enter Label Text", ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		FLabelInfo *pLabel = (FLabelInfo *)state.pCursorItem;
+		
+		ImGui::SetKeyboardFocusHere();
+		if (ImGui::InputText("##comment", &pLabel->Name, ImGuiInputTextFlags_EnterReturnsTrue))
+			ImGui::CloseCurrentPopup();
+		ImGui::SetItemDefaultFocus();
+		ImGui::EndPopup();
 	}
 }
 
@@ -544,13 +606,15 @@ void DrawDetailsPanel(FCodeAnalysisState &state)
 void DrawDebuggerButtons(FCodeAnalysisState &state)
 {
 	FSpeccy *pSpeccy = state.pSpeccy;
+	static bool bJumpToPCOnBreak = false;
 
 	if (ImGui::Button("Break"))
 	{
 		FSpeccyUI *pUI = GetSpeccyUI();
 		pUI->UIZX.dbg.dbg.stopped = true;
 		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
-		GoToAddress(state,z80_pc(&pSpeccy->CurrentState.cpu));
+		if(bJumpToPCOnBreak)
+			GoToAddress(state,z80_pc(&pSpeccy->CurrentState.cpu));
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Continue"))
@@ -559,6 +623,8 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 		pUI->UIZX.dbg.dbg.stopped = false;
 		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
 	}
+	ImGui::SameLine();
+	ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }
 void DrawCodeAnalysisData(FCodeAnalysisState &state)
 {
@@ -584,7 +650,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	DrawDebuggerButtons(state);
 	ImGui::Checkbox("Analyse data accesses (slow)", &state.bRegisterDataAccesses);
 
-	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
+	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{
 		// jump to address
 		if (state.GoToAddress != -1)

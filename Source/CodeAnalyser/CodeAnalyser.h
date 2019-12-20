@@ -79,6 +79,7 @@ enum class Key
 
 	AddLabel,
 	Rename,
+	Comment,
 
 	Count
 };

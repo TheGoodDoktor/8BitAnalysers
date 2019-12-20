@@ -528,6 +528,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state,FSpeccy* pSpeccy)
 	state.KeyConfig[(int)Key::SetItemCode] = 'C';
 	state.KeyConfig[(int)Key::AddLabel] = 'L';
 	state.KeyConfig[(int)Key::Rename] = 'R';
+	state.KeyConfig[(int)Key::Comment] = 0xBF;
 }
 
 // Command Processing
