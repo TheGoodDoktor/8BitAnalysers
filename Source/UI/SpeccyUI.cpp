@@ -717,6 +717,7 @@ void DrawCheatsUI(FSpeccyUI *pUI)
 
 	for (FCheat &cheat : config.Cheats)
 	{
+		ImGui::PushID(cheat.Description.c_str());
 		ImGui::Text(cheat.Description.c_str());
 		ImGui::SameLine();
 		if (ImGui::Checkbox("##cheatBox", &cheat.bEnabled))
@@ -735,5 +736,6 @@ void DrawCheatsUI(FSpeccyUI *pUI)
 				}
 			}
 		}
+		ImGui::PopID();
 	}
 }
