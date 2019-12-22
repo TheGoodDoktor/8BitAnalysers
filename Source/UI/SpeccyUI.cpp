@@ -509,7 +509,11 @@ void DrawMemoryTools(FSpeccyUI* pUI)
 			DrawMemoryAnalysis(pUI);
 			ImGui::EndTabItem();
 		}
-
+		if (ImGui::BeginTabItem("Memory Diff"))
+		{
+			DrawMemoryDiffUI(pUI);
+			ImGui::EndTabItem();
+		}
 		if (ImGui::BeginTabItem("IO Analysis"))
 		{
 			DrawIOAnalysis(pUI->IOAnalysis);
