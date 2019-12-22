@@ -7,7 +7,7 @@
 
 bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
+	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
 
 	switch (instrByte)
 	{
@@ -17,12 +17,12 @@ bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t*
 			// LD x,(nnnn)
 		case 0x2A:
 		case 0x3A:
-			*out_addr = (ReadySpeccyByte(pSpeccy, pc + 2) << 8) | ReadySpeccyByte(pSpeccy, pc + 1);
+			*out_addr = (ReadSpeccyByte(pSpeccy, pc + 2) << 8) | ReadSpeccyByte(pSpeccy, pc + 1);
 			return true;
 			// extended instructions
 		case 0xED:
 		{
-			const uint8_t exInstrByte = ReadySpeccyByte(pSpeccy, pc + 1);
+			const uint8_t exInstrByte = ReadSpeccyByte(pSpeccy, pc + 1);
 			switch (exInstrByte)
 			{
 			case 0x43://ld (**),bc
@@ -33,7 +33,7 @@ bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t*
 			case 0x6B://ld hl,(**)
 			case 0x73://ld (**),sp
 			case 0x7B://ld sp,(**)
-				*out_addr = (ReadySpeccyByte(pSpeccy, pc + 3) << 8) | ReadySpeccyByte(pSpeccy, pc + 2);
+				*out_addr = (ReadSpeccyByte(pSpeccy, pc + 3) << 8) | ReadSpeccyByte(pSpeccy, pc + 2);
 				return true;
 			}
 
@@ -43,12 +43,12 @@ bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t*
 		case 0xDD:
 		case 0xFD:
 		{
-			const uint8_t exInstrByte = ReadySpeccyByte(pSpeccy, pc + 1);
+			const uint8_t exInstrByte = ReadSpeccyByte(pSpeccy, pc + 1);
 			switch (exInstrByte)
 			{
 			case 0x22://ld (**),ix/iy
 			case 0x2A://ld ix/iy,(**)
-				*out_addr = (ReadySpeccyByte(pSpeccy, pc + 3) << 8) | ReadySpeccyByte(pSpeccy, pc + 2);
+				*out_addr = (ReadSpeccyByte(pSpeccy, pc + 3) << 8) | ReadSpeccyByte(pSpeccy, pc + 2);
 				return true;
 			}
 		}
@@ -62,7 +62,7 @@ bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_add
 	if (CheckPointerIndirectionInstruction(pSpeccy, pc, out_addr))
 		return true;
 	
-	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
+	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
 
 	switch (instrByte)
 	{
@@ -70,7 +70,7 @@ bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_add
 	case 0x01:
 	case 0x11:
 	case 0x21:
-		*out_addr = (ReadySpeccyByte(pSpeccy, pc + 2) << 8) | ReadySpeccyByte(pSpeccy, pc + 1);
+		*out_addr = (ReadSpeccyByte(pSpeccy, pc + 2) << 8) | ReadSpeccyByte(pSpeccy, pc + 1);
 		return true;
 	}
 	return false;
@@ -78,7 +78,7 @@ bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_add
 
 bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
+	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
 
 	switch (instrByte)
 	{
@@ -92,7 +92,7 @@ bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 		/* JP cc,nnnn */
 	case 0xDA: case 0xFA: case 0xD2: case 0xC2:
 	case 0xF2: case 0xEA: case 0xE2: case 0xCA:
-		*out_addr = (ReadySpeccyByte(pSpeccy, pc + 2) << 8) | ReadySpeccyByte(pSpeccy, pc + 1);
+		*out_addr = (ReadSpeccyByte(pSpeccy, pc + 2) << 8) | ReadSpeccyByte(pSpeccy, pc + 1);
 		return true;
 
 		/* DJNZ d */
@@ -102,7 +102,7 @@ bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 		/* JR cc,d */
 	case 0x38: case 0x30: case 0x20: case 0x28:
 	{
-		const int8_t relJump = (int8_t)ReadySpeccyByte(pSpeccy, pc + 1);
+		const int8_t relJump = (int8_t)ReadSpeccyByte(pSpeccy, pc + 1);
 		*out_addr = pc + 2 + relJump;	// +2 because it's relative to the next instruction
 	}
 		return true;
@@ -122,7 +122,7 @@ bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 
 bool CheckCallInstruction(FSpeccy* pSpeccy, uint16_t pc)
 {
-	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
+	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
 
 	switch (instrByte)
 	{
@@ -149,7 +149,7 @@ bool CheckCallInstruction(FSpeccy* pSpeccy, uint16_t pc)
 // this would be a function that unconditionally affects the PC
 bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 {
-	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pc);
+	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
 
 	switch(instrByte)
 	{
@@ -181,7 +181,7 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 		return true;
 	case 0xED:	// extended instructions
 	{
-		const uint8_t extInstrByte = ReadySpeccyByte(pSpeccy, pc+1);
+		const uint8_t extInstrByte = ReadSpeccyByte(pSpeccy, pc+1);
 		switch(extInstrByte)
 		{
 		case 0x4D:	// more RET functions
@@ -199,7 +199,7 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 	case 0xDD:	// IX
 	case 0xFD:	// IY
 	{
-		const uint8_t extInstrByte = ReadySpeccyByte(pSpeccy, pc + 1);
+		const uint8_t extInstrByte = ReadSpeccyByte(pSpeccy, pc + 1);
 		switch (extInstrByte)
 		{
 		case 0xE9:	// JP(IX)
@@ -258,7 +258,7 @@ static uint8_t AnalysisDasmInputCB(void* pUserData)
 {
 	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
 
-	const uint8_t val = ReadySpeccyByte(pDasmState->pSpeccy, pDasmState->CurrentAddress++);
+	const uint8_t val = ReadSpeccyByte(pDasmState->pSpeccy, pDasmState->CurrentAddress++);
 
 	// push into binary buffer
 	//if (pDasm->bin_pos < DASM_MAX_BINLEN)
@@ -380,7 +380,7 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 {
-	//const uint8_t instrByte = ReadySpeccyByte(pUI->pSpeccy, pc);
+	//const uint8_t instrByte = ReadSpeccyByte(pUI->pSpeccy, pc);
 	
 	AnalyseFromPC(state, pc);
 	
@@ -608,7 +608,7 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 			uint16_t charAddr = pDataItem->Address;
 			while (state.DataInfo[charAddr] != nullptr && state.DataInfo[charAddr]->DataType == DataType::Byte)
 			{
-				const uint8_t val = ReadySpeccyByte(state.pSpeccy, charAddr);
+				const uint8_t val = ReadSpeccyByte(state.pSpeccy, charAddr);
 				if (val == 0 || val > 0x80)
 					break;
 				pDataItem->ByteSize++;

@@ -90,6 +90,21 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 		jsonConfigFile["SpriteConfigs"].push_back(spriteConfig);
 	}
 
+	for (const FCheat& cheat : config.Cheats)
+	{
+		json cheatJson;
+		cheatJson["Description"] = cheat.Description;
+		for (const FCheatMemoryEntry& entry : cheat.Entries)
+		{
+			json cheatEntryJson;
+			cheatEntryJson["Address"] = entry.Address;
+			cheatEntryJson["Value"] = entry.Value;
+			cheatJson["Entries"].push_back(cheatEntryJson);
+		}
+
+		jsonConfigFile["Cheats"].push_back(cheatJson);
+	}
+
 	std::ofstream outFileStream(fname);
 	if (outFileStream.is_open())
 	{
@@ -127,6 +142,20 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 		sprConfig.Height = jsonSprConfig["Height"].get<int>();
 	}
 
+	for (const auto& cheatJson : jsonConfigFile["Cheats"])
+	{
+		FCheat cheat;
+		cheat.Description = cheatJson["Description"].get<std::string>();
+
+		for (const auto& cheatEntryJson : cheatJson["Entries"])
+		{
+			FCheatMemoryEntry entry;
+			entry.Address = cheatEntryJson["Address"].get<int>();
+			entry.Value = cheatEntryJson["Value"].get<int>();
+			cheat.Entries.push_back(entry);
+		}
+		config.Cheats.push_back(cheat);
+	}
 	return true;
 }
 

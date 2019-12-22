@@ -17,6 +17,8 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
+void DrawCheatsUI(FSpeccyUI *pUI);
+
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
 {
@@ -315,7 +317,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 					std::string outBinFname = "OutputBin/" + pUI->pActiveGame->pConfig->Name + ".bin";
 					uint8_t *pSpecMem = new uint8_t[65536];
 					for (int i = 0; i < 65536; i++)
-						pSpecMem[i] = ReadySpeccyByte(pSpeccy, i);
+						pSpecMem[i] = ReadSpeccyByte(pSpeccy, i);
 					SaveBinaryFile(outBinFname.c_str(), pSpecMem, 65536);
 					delete pSpecMem;
 				}
@@ -597,6 +599,13 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	}
 	ImGui::End();
 
+	// cheats 
+	if (ImGui::Begin("Cheats"))
+	{
+		DrawCheatsUI(pUI);
+	}
+	ImGui::End();
+
 	// game viewer
 	if (ImGui::Begin("Game Viewer"))
 	{
@@ -695,12 +704,32 @@ void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 	DrawDockingView(pUI);
 	
 }
-/*
-FGameViewer &AddGameViewer(FSpeccyUI *pUI,const char *pName)
+
+// Cheats
+
+void DrawCheatsUI(FSpeccyUI *pUI)
 {
-	FGameViewer &gameViewer = pUI->GameViewers[pName];
-	gameViewer.Name = pName;
-	return gameViewer;
-}*/
+	FGameConfig &config = *pUI->pActiveGame->pConfig;
 
-
+	for (FCheat &cheat : config.Cheats)
+	{
+		ImGui::Text(cheat.Description.c_str());
+		ImGui::SameLine();
+		if (ImGui::Checkbox("##cheatBox", &cheat.bEnabled))
+		{
+			for (auto &entry : cheat.Entries)
+			{
+				if (cheat.bEnabled)	// cheat activated
+				{
+					// store old value
+					entry.OldValue = ReadSpeccyByte(pUI->pSpeccy, entry.Address);
+					WriteSpeccyByte(pUI->pSpeccy, entry.Address, entry.Value);
+				}
+				else
+				{
+					WriteSpeccyByte(pUI->pSpeccy, entry.Address, entry.OldValue);
+				}
+			}
+		}
+	}
+}
