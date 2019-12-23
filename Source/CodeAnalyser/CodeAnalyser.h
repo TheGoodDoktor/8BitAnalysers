@@ -104,7 +104,8 @@ struct FCodeAnalysisState
 	FItem*					pCursorItem = nullptr;
 	int						CursorItemIndex = -1;
 	int						GoToAddress = -1;
-	int						HighlightAddress = -1;
+	int						HoverAddress = -1;		// address being hovered over
+	int						HighlightAddress = -1;	// address to highlight
 	bool					GoToLabel = false;
 	std::vector<uint16_t>	AddressStack;
 

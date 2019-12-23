@@ -89,7 +89,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 			if (ImGui::IsMouseDoubleClicked(0))
 				GoToAddress(state, addr, false);
 
-			state.HighlightAddress = addr;	// highlight
+			state.HoverAddress = addr;	
 		}
 
 		ImGui::PopStyleColor();
@@ -678,7 +678,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
-	state.HighlightAddress = -1;
+	state.HighlightAddress = state.HoverAddress;
+	state.HoverAddress = -1;
 
 	if (state.pSpeccy->ExecThisFrame)
 		state.CurrentFrameNo++;
@@ -703,17 +704,16 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		if (state.GoToAddress != -1)
 		{
 			const int kJumpViewOffset = 5;
-			const int viewAddr = std::max(0, state.GoToAddress - kJumpViewOffset);
 			for (int item = 0; item < state.ItemList.size(); item++)
 			{
-				if ((state.ItemList[item]->Address >= viewAddr) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
+				if ((state.ItemList[item]->Address >= state.GoToAddress) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
 				{
 					// set cursor
 					state.pCursorItem = state.ItemList[item];
 					state.CursorItemIndex = item;
 
-					//ImGui::SetScrollY(maxY * fraction);
-					ImGui::SetScrollY(item * line_height);
+					const int gotoItem = std::max(item - kJumpViewOffset, 0);
+					ImGui::SetScrollY(gotoItem * line_height);
 					break;
 				}
 			}
