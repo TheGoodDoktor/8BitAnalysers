@@ -104,6 +104,7 @@ struct FCodeAnalysisState
 	FItem*					pCursorItem = nullptr;
 	int						CursorItemIndex = -1;
 	int						GoToAddress = -1;
+	int						HighlightAddress = -1;
 	bool					GoToLabel = false;
 	std::vector<uint16_t>	AddressStack;
 

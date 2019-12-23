@@ -72,7 +72,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 
 		if (ImGui::IsItemHovered())
 		{
-			// TODO: bring up snippet in tool tip
+			// Bring up snippet in tool tip
 			const int index = GetItemIndexForAddress(state, addr);
 			if(index !=-1)
 			{
@@ -89,6 +89,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 			if (ImGui::IsMouseDoubleClicked(0))
 				GoToAddress(state, addr, false);
 
+			state.HighlightAddress = addr;	// highlight
 		}
 
 		ImGui::PopStyleColor();
@@ -567,7 +568,8 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 {
 	assert(i < state.ItemList.size());
 	FItem* pItem = state.ItemList[i];
-
+	const bool bHighlight = (pItem->Address == state.HighlightAddress);
+	const uint32_t kHighlightColour = 0xff00ff00;
 	ImGui::PushID(i);
 
 	const FItem *pPrevItem = i > 0 ? state.ItemList[i-1] : nullptr;
@@ -590,10 +592,18 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 		DrawLabelInfo(state, static_cast<const FLabelInfo *>(pItem));
 		break;
 	case ItemType::Code:
+		if (bHighlight)
+			ImGui::PushStyleColor(ImGuiCol_Text, kHighlightColour);
 		DrawCodeInfo(state, static_cast<const FCodeInfo *>(pItem));
+		if (bHighlight)
+			ImGui::PopStyleColor();
 		break;
 	case ItemType::Data:
+		if (bHighlight)
+			ImGui::PushStyleColor(ImGuiCol_Text, kHighlightColour);
 		DrawDataInfo(state, static_cast<const FDataInfo *>(pItem));
+		if (bHighlight)
+			ImGui::PopStyleColor();
 		break;
 	}
 
@@ -668,6 +678,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
+	state.HighlightAddress = -1;
+
 	if (state.pSpeccy->ExecThisFrame)
 		state.CurrentFrameNo++;
 
@@ -690,9 +702,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		// jump to address
 		if (state.GoToAddress != -1)
 		{
+			const int kJumpViewOffset = 5;
+			const int viewAddr = std::max(0, state.GoToAddress - kJumpViewOffset);
 			for (int item = 0; item < state.ItemList.size(); item++)
 			{
-				if ((state.ItemList[item]->Address >= state.GoToAddress) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
+				if ((state.ItemList[item]->Address >= viewAddr) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
 				{
 					// set cursor
 					state.pCursorItem = state.ItemList[item];
