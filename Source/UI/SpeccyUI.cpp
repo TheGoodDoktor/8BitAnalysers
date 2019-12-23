@@ -629,7 +629,6 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 
 	DrawGraphicsViewer(pUI->GraphicsViewer);
 	DrawMemoryTools(pUI);
-
 	if (ImGui::Begin("Code Analysis"))
 	{
 		DrawCodeAnalysisData(pUI->CodeAnalysis);
@@ -718,6 +717,9 @@ void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
 
 void DrawCheatsUI(FSpeccyUI *pUI)
 {
+	if (pUI->pActiveGame == nullptr)
+		return;
+	
 	FGameConfig &config = *pUI->pActiveGame->pConfig;
 
 	for (FCheat &cheat : config.Cheats)

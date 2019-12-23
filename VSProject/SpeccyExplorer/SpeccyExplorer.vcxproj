@@ -23,6 +23,7 @@
     <ProjectGuid>{1F10BDCC-DB06-4636-861C-13053F04FBDC}</ProjectGuid>
     <RootNamespace>SpeccyExplorer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <ProjectName>SpectrumAnalyser</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

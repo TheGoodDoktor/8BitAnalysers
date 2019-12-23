@@ -734,8 +734,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		}
 
 		ProcessKeyCommands(state);
-		ImGui::EndChild();
 	}
+	ImGui::EndChild();
 	ImGui::SameLine();
 	if(ImGui::BeginChild("##rightpanel", ImVec2(0, 0), true))
 	{
@@ -743,18 +743,18 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		if (ImGui::BeginChild("##detail", ImVec2(0, 300), true))
 		{
 			DrawDetailsPanel(state);
-			ImGui::EndChild();
 		}
+		ImGui::EndChild();
 
 		// Globals Panel
 		if (ImGui::BeginChild("##globallabelss", ImVec2(0, 0), true))
 		{
 			DrawGlobals(state);
-			ImGui::EndChild();
 		}
+		ImGui::EndChild();
 
-		ImGui::EndChild(); // right panel
 	}
+	ImGui::EndChild(); // right panel
 
 	
 }
@@ -770,9 +770,8 @@ void DrawLabelList(FCodeAnalysisState &state, std::vector<FLabelInfo *> labelLis
 				GoToAddress(state, pLabelInfo->Address, true);
 			}
 		}
-		ImGui::EndChild();
 	}
-		
+	ImGui::EndChild();
 }
 
 void DrawGlobals(FCodeAnalysisState &state)
