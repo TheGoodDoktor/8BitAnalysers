@@ -21,7 +21,7 @@
 int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpeccyUI *pUI)
 {
 	// TODO: find functions
-	uint8_t instrByte = ReadySpeccyByte(pUI->pSpeccy, pc);
+	uint8_t instrByte = ReadSpeccyByte(pUI->pSpeccy, pc);
 	bool bCall = false;
 	bool bRet = false;
 	uint16_t callAddr = 0;
@@ -69,8 +69,8 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 	case 0xec:	// call pe
 	case 0xfc:	// call m
 	{
-		callAddr = ReadySpeccyByte(pUI->pSpeccy, pc + 1);
-		callAddr |= ReadySpeccyByte(pUI->pSpeccy, pc + 2) << 8;
+		callAddr = ReadSpeccyByte(pUI->pSpeccy, pc + 1);
+		callAddr |= ReadSpeccyByte(pUI->pSpeccy, pc + 2) << 8;
 		bCall = true;
 	}
 	break;

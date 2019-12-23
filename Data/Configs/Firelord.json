@@ -1,4 +1,72 @@
 {
+    "Cheats": [
+        {
+            "Description": "Infinite Lives",
+            "Entries": [
+                {
+                    "Address": 34509,
+                    "Value": 0
+                }
+            ]
+        },
+        {
+            "Description": "Infinite Energy",
+            "Entries": [
+                {
+                    "Address": 34984,
+                    "Value": 58
+                }
+            ]
+        },
+        {
+            "Description": "Immunity",
+            "Entries": [
+                {
+                    "Address": 47110,
+                    "Value": 201
+                },
+                {
+                    "Address": 39169,
+                    "Value": 24
+                }
+            ]
+        },
+        {
+            "Description": "No Nasties",
+            "Entries": [
+                {
+                    "Address": 42900,
+                    "Value": 201
+                },
+                {
+                    "Address": 42916,
+                    "Value": 201
+                }
+            ]
+        },
+        {
+            "Description": "Immunity To Fire",
+            "Entries": [
+                {
+                    "Address": 39171,
+                    "Value": 58
+                }
+            ]
+        },
+        {
+            "Description": "Infinite Barter",
+            "Entries": [
+                {
+                    "Address": 39552,
+                    "Value": 205
+                },
+                {
+                    "Address": 39777,
+                    "Value": 24
+                }
+            ]
+        }
+    ],
     "Name": "Firelord",
     "SpriteConfigs": [
         {

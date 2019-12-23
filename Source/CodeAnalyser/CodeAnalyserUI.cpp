@@ -176,7 +176,7 @@ std::map<uint8_t, const char *> g_InstructionInfo=
 void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 {
 	FSpeccy* pSpeccy = state.pSpeccy;
-	const uint8_t instrByte = ReadySpeccyByte(pSpeccy, pCodeInfo->Address);
+	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address);
 
 	const auto &infoIt = g_InstructionInfo.find(instrByte);
 	if (infoIt == g_InstructionInfo.end())
@@ -274,7 +274,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	{
 	case DataType::Byte:
 	{
-		const uint8_t val = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address);
+		const uint8_t val = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address);
 		if (val == '\n')// carriage return messes up list
 			ImGui::Text("db %02Xh '<cr>'", val, val);
 		else
@@ -284,7 +284,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 
 	case DataType::Word:
 	{
-		const uint16_t val = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address) | (ReadySpeccyByte(state.pSpeccy, pDataInfo->Address + 1) << 8);
+		const uint16_t val = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address) | (ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + 1) << 8);
 		ImGui::Text("dw %04Xh", val);
 		// draw address as label - optional?
 		ImGui::SameLine();	
@@ -297,7 +297,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		std::string textString;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
-			const char ch = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address + i);
+			const char ch = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + i);
 			if (ch == '\n')
 				textString += "<cr>";
 			else
@@ -318,11 +318,46 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 
 }
 
+void DrawDataValueGraph(uint8_t val, bool bReset)
+{
+	// Create a dummy array of contiguous float values to plot
+		// Tip: If your float aren't contiguous but part of a structure, you can pass a pointer to your first float and the sizeof() of your structure in the Stride parameter.
+	static bool animate = true;
+	static float values[90] = { 0 };
+	static int values_offset = 0;
+	static double refresh_time = 0.0;
+	if (!animate || refresh_time == 0.0)
+		refresh_time = ImGui::GetTime();
+
+	while (refresh_time < ImGui::GetTime()) // Create dummy data at fixed 60 hz rate for the demo
+	{
+		static float phase = 0.0f;
+		values[values_offset] = (float)val;
+		values_offset = (values_offset + 1) % IM_ARRAYSIZE(values);
+		phase += 0.10f*values_offset;
+		refresh_time += 1.0f / 60.0f;
+	}
+
+	// Plots can display overlay texts
+	// (in this example, we will display an average value)
+	{
+		float average = 0.0f;
+		for (int n = 0; n < IM_ARRAYSIZE(values); n++)
+			average += values[n];
+		average /= (float)IM_ARRAYSIZE(values);
+		char overlay[32];
+		sprintf(overlay, "avg %f", average);
+		ImGui::PlotLines("Lines", values, IM_ARRAYSIZE(values), values_offset, overlay, 0.0f, 255.0f, ImVec2(0, 80));
+	}
+	//ImGui::PlotHistogram("Histogram", arr, IM_ARRAYSIZE(arr), 0, NULL, 0.0f, 1.0f, ImVec2(0, 80));
+}
+
 void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 {
 	switch (pDataInfo->DataType)
 	{
 	case DataType::Byte:
+		DrawDataValueGraph(ReadSpeccyByte(state.pSpeccy, pDataInfo->Address),false);
 	break;
 
 	case DataType::Word:
@@ -333,7 +368,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		std::string textString;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
-			const char ch = ReadySpeccyByte(state.pSpeccy, pDataInfo->Address + i);
+			const char ch = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + i);
 			if (ch == '\n')
 				textString += "<cr>";
 			else

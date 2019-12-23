@@ -7,7 +7,7 @@
 static uint8_t DasmCB(void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
-	return ReadySpeccyByte(pUI->pSpeccy, pUI->dasmCurr++);
+	return ReadSpeccyByte(pUI->pSpeccy, pUI->dasmCurr++);
 }
 
 static uint16_t DisasmLen(FSpeccyUI *pUI, uint16_t pc)
@@ -118,7 +118,7 @@ void AnalyseMemory(FMemoryStats &memStats)
 	if (bSelfModifiedCode)
 		memStats.CodeAndDataList.push_back(0);
 
-	for (int addr = 1; addr < 65536; addr++)
+	for (int addr = 1; addr < (1<<16); addr++)
 	{
 		bSelfModifiedCode = false;
 		const MemoryUse addrUse = DetermineAddressMemoryUse(memStats, addr, bSelfModifiedCode);
@@ -220,19 +220,79 @@ void DrawMemoryAnalysis(FSpeccyUI* pUI)
 	ImGui::Text("%d self modified code points", (int)memStats.CodeAndDataList.size());
 	ImGui::Text("%d blocks", (int)memStats.MemoryBlockInfo.size());
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
-	ImGui::BeginChild("DrawMemoryAnalysisChild1", ImVec2(0, 0), false, window_flags);
-	for (const auto &memblock : memStats.MemoryBlockInfo)
+	if (ImGui::BeginChild("DrawMemoryAnalysisChild1", ImVec2(0, 0), false, window_flags))
 	{
-		const char *pTypeStr = "Unknown";
-		if (memblock.Use == MemoryUse::Code)
-			pTypeStr = "Code";
-		else if (memblock.Use == MemoryUse::Data)
-			pTypeStr = "Data";
-		ImGui::Text("%s", pTypeStr);
-		ImGui::SameLine(100);
-		ImGui::Text("0x%x - 0x%x", memblock.StartAddress, memblock.EndAddress);
+		for (const auto &memblock : memStats.MemoryBlockInfo)
+		{
+			const char *pTypeStr = "Unknown";
+			if (memblock.Use == MemoryUse::Code)
+				pTypeStr = "Code";
+			else if (memblock.Use == MemoryUse::Data)
+				pTypeStr = "Data";
+			ImGui::Text("%s", pTypeStr);
+			ImGui::SameLine(100);
+			ImGui::Text("0x%x - 0x%x", memblock.StartAddress, memblock.EndAddress);
+		}
 	}
 	ImGui::EndChild();
 
+}
+
+bool g_bDiffVideoMem = false;
+bool g_bSnapshotAvailable = false;
+uint8_t g_DiffSnapShotMemory[1 << 16];	// 64 Kb
+std::vector<uint16_t> g_DiffChangedLocations;
+int g_DiffSelectedAddr = -1;
+
+void DrawMemoryDiffUI(FSpeccyUI *pUI)
+{
+	const int startAddr = g_bDiffVideoMem ? 0x4000 : 0x5C00;	// TODO: have a header with constants in
+	
+	if(ImGui::Button("SnapShot"))
+	{
+		for (int addr = startAddr; addr < (1 << 16); addr++)
+		{
+			g_DiffSnapShotMemory[addr] = ReadSpeccyByte(pUI->pSpeccy, addr);
+		}
+		g_bSnapshotAvailable = true;
+		g_DiffChangedLocations.clear();
+	}
+	
+	if (g_bSnapshotAvailable)
+	{
+		ImGui::SameLine();
+
+		if (ImGui::Button("Diff"))
+		{
+			g_DiffChangedLocations.clear();
+			for (int addr = startAddr; addr < (1 << 16); addr++)
+			{
+				if (ReadSpeccyByte(pUI->pSpeccy, addr) != g_DiffSnapShotMemory[addr])
+					g_DiffChangedLocations.push_back(addr);
+			}
+		}
+	}
+
+	ImGui::SameLine();
+	ImGui::Checkbox("Include video memory",&g_bDiffVideoMem);
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+	if(ImGui::BeginChild("DiffedMemory", ImVec2(0, 0), true, window_flags))
+	{
+		for(const uint16_t changedAddr : g_DiffChangedLocations)
+		{
+			ImGui::PushID(changedAddr);
+			if(ImGui::Selectable("##diffaddr",g_DiffSelectedAddr == changedAddr))
+			{
+				g_DiffSelectedAddr = changedAddr;
+			}
+			ImGui::SetItemAllowOverlap();	// allow buttons
+			ImGui::SameLine();
+			ImGui::Text("%04Xh\t%02Xh\t%02Xh", changedAddr, g_DiffSnapShotMemory[changedAddr], ReadSpeccyByte(pUI->pSpeccy, changedAddr));
+			ImGui::SameLine();
+			DrawAddressLabel(pUI->CodeAnalysis, changedAddr);
+			ImGui::PopID();
+		}
+	}
+	ImGui::EndChild();
 }
 

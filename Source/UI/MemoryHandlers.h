@@ -68,3 +68,4 @@ void ResetMemoryStats(FMemoryStats &memStats);
 // UI
 void DrawMemoryAnalysis(FSpeccyUI* pUI);
 void DrawMemoryHandlers(FSpeccyUI* pUI);
+void DrawMemoryDiffUI(FSpeccyUI *pUI);

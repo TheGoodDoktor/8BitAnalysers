@@ -9,6 +9,20 @@ struct FSpeccyUI;
 struct FGame;
 struct FGameConfig;
 
+struct FCheatMemoryEntry
+{
+	uint16_t	Address;
+	uint8_t		Value;
+	uint8_t		OldValue;
+};
+
+struct FCheat
+{
+	std::string						Description;
+	bool							bEnabled = false;
+	std::vector< FCheatMemoryEntry>	Entries;
+};
+
 struct FSpriteDefConfig
 {
 	uint16_t	BaseAddress;
@@ -35,6 +49,8 @@ struct FGameConfig
 	FViewerConfig *pViewerConfig = nullptr;
 
 	std::map<std::string, FSpriteDefConfig> SpriteConfigs;
+
+	std::vector< FCheat> Cheats;
 };
 
 bool AddGameConfig(FGameConfig *pConfig);
