@@ -286,6 +286,11 @@ void ui_dbg_reset(ui_dbg_t* win);
 /* call when rebooting the emulated machine (re-initializes some data structures) */
 void ui_dbg_reboot(ui_dbg_t* win);
 
+//+Mark
+void ui_dbg_dbgwin_draw(ui_dbg_t* win);
+//-Mark
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -1703,6 +1708,16 @@ static void _ui_dbg_dbgwin_draw(ui_dbg_t* win) {
     }
     ImGui::End();
 }
+
+//+MarkC
+void ui_dbg_dbgwin_draw(ui_dbg_t* win)
+{
+	_ui_dbg_draw_menu(win);
+	_ui_dbg_draw_regs(win);
+	_ui_dbg_draw_buttons(win);
+	_ui_dbg_draw_main(win);
+}
+//-MarkC
 
 /*== PUBLIC FUNCTIONS ========================================================*/
 void ui_dbg_init(ui_dbg_t* win, ui_dbg_desc_t* desc) {

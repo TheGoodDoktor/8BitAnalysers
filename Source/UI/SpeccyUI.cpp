@@ -467,7 +467,12 @@ static void UpdateMemmap(ui_zx_t* ui)
 
 void DrawDebuggerUI(ui_dbg_t *pDebugger)
 {
-	ui_dbg_draw(pDebugger);
+	if (ImGui::Begin("Debugger"))
+	{
+		ui_dbg_dbgwin_draw(pDebugger);
+	}
+	ImGui::End();
+	//ui_dbg_draw(pDebugger);
 	/*
 	if (!(pDebugger->ui.open || pDebugger->ui.show_heatmap || pDebugger->ui.show_breakpoints)) {
 		return;
