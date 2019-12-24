@@ -336,7 +336,7 @@ bool DownloadURLToString(const char*site, const char *url, bool bHttps, std::str
 }
 
 
-bool OpenFileDialog(std::string &outFile,const char *pInitialDir)
+bool OpenFileDialog(std::string &outFile,const char *pInitialDir, const char *pFilter)
 {
 	OPENFILENAMEA openFileName = {};
 	char szFile[128];
@@ -354,7 +354,7 @@ bool OpenFileDialog(std::string &outFile,const char *pInitialDir)
 	// use the contents of szFile to initialize itself.
 	openFileName.lpstrFile[0] = '\0';
 	openFileName.nMaxFile = sizeof(szFile);
-	openFileName.lpstrFilter = "KML\0*.kml\0KMZ\0*.kmz\0";
+	openFileName.lpstrFilter = pFilter;
 	openFileName.nFilterIndex = 1;
 	openFileName.lpstrFileTitle = NULL;
 	openFileName.nMaxFileTitle = 0;

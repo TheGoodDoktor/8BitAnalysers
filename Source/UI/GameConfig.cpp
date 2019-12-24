@@ -159,6 +159,15 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	return true;
 }
 
+bool LoadPOKFile(FGameConfig &config, const char *fname)
+{
+	std::ifstream inFileStream(fname);
+	if (inFileStream.is_open() == false)
+		return false;
+
+	return true;
+}
+
 // Labels
 
 void SaveLabelsBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddress, uint16_t endAddress)

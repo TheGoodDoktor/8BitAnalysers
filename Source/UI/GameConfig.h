@@ -61,6 +61,9 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);
 bool LoadGameConfigFromFile(FGameConfig &config, const char *fname);
 bool LoadGameConfigs(FSpeccyUI *pUI);
 
+bool LoadPOKFile(FGameConfig &config, const char *fname);
+
+
 bool SaveGameData(const FCodeAnalysisState& state, const char *fname);
 bool LoadGameData(FCodeAnalysisState& state, const char *fname);
 bool SaveROMData(const FCodeAnalysisState& state, const char *fname);

@@ -272,22 +272,6 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::BeginMenu( "Open Game"))
-			{
-				for (const auto& pGameConfig : GetGameConfigs())
-				{
-					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
-					{
-						if(LoadZ80File(*pSpeccy, pGameConfig->Z80File.c_str()))
-						{
-							StartGame(pUI,pGameConfig);
-						}
-					}
-				}
-
-				ImGui::EndMenu();
-			}
-
 			if (ImGui::BeginMenu("New Game from Z80 File"))
 			{
 				for (const auto& game : GetGameList())
@@ -305,6 +289,29 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 
 				ImGui::EndMenu();
 			}
+
+			if (ImGui::BeginMenu( "Open Game"))
+			{
+				for (const auto& pGameConfig : GetGameConfigs())
+				{
+					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
+					{
+						if(LoadZ80File(*pSpeccy, pGameConfig->Z80File.c_str()))
+						{
+							StartGame(pUI,pGameConfig);
+						}
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::MenuItem("Open POK File..."))
+			{
+				std::string pokFile;
+				OpenFileDialog(pokFile, ".\\POKFiles", "POK\0*.pok\0");
+			}
+			
 			if (ImGui::MenuItem("Save Game Data"))
 			{
 				SaveCurrentGameData(pUI);
@@ -323,6 +330,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				}
 			}
 
+			// TODO: export data for skookit
 			if (ImGui::MenuItem("Export Region Info File"))
 			{
 			}

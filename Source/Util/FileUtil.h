@@ -38,4 +38,4 @@ bool DownloadURLToTextFile(const char*site, const char *url, bool bHttps, const 
 bool DownloadURLToBinaryFile(const char*site, const char *url, bool bHttps, const char *fname);
 bool DownloadURLToString(const char*site, const char *url, bool bHttps, std::string &outputString);
 
-bool OpenFileDialog(std::string &outFile, const char *pInitialDir);
+bool OpenFileDialog(std::string &outFile, const char *pInitialDir, const char *pFilter);
