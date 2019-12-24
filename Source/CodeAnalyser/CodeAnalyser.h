@@ -94,6 +94,7 @@ struct FCodeAnalysisState
 	FLabelInfo*				Labels[kAddressSize];
 	FCodeInfo*				CodeInfo[kAddressSize];
 	FDataInfo*				DataInfo[kAddressSize];
+	uint16_t				LastWriter[kAddressSize];
 	bool					bCodeAnalysisDataDirty = false;
 
 	bool					bRegisterDataAccesses = false;
@@ -128,6 +129,7 @@ public:
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, FSpeccy* pSpeccy);
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
+void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc);
 void ReAnalyseCode(FCodeAnalysisState &state);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, bool bWrite);

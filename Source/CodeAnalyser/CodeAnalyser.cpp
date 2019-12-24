@@ -375,7 +375,11 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 		else
 			pc = newPC;
 	}
-	
+}
+
+void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc)
+{
+	AnalyseFromPC(state, pc);
 }
 
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
