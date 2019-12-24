@@ -46,6 +46,8 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
 	FCodeAnalysisState &state = pUI->CodeAnalysis;
+	const uint16_t addr = Z80_GET_ADDR(pins);
+	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
 
 	const uint16_t nextpc = pc;
 	// store program count in history
@@ -55,14 +57,13 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 
 	pc = prevPC;	// set PC to pc of instruction just executed
 
-	RunStaticCodeAnalysis(state, pc);
+	RegisterCodeExecuted(state, pc);
 	state.CodeInfo[pc]->FrameLastAccessed = state.CurrentFrameNo;
-
+	if (bWrite)
+		state.LastWriter[addr] = pc;
 	// this is probably slow so is optional
 	if (state.bRegisterDataAccesses)
 	{
-		const uint16_t addr = Z80_GET_ADDR(pins);
-		const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
 
 		RegisterDataAccess(state, pc,addr,bWrite);
 	}

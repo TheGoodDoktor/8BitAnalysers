@@ -204,3 +204,24 @@ void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data)
 }
 
 
+uint16_t GetScreenPixMemoryAddress(int x, int y)
+{
+	if (x < 0 || x>255 || y < 0 || y> 191)
+		return 0;
+
+	const int char_x = x / 8;
+	const uint16_t addr = 0x4000 | ((y & 7) << 8) | (((y >> 3) & 7) << 5) | (((y >> 6) & 3) << 11) | (char_x & 31);
+
+	return addr;
+}
+
+uint16_t GetScreenAttrMemoryAddress(int x, int y)
+{
+	if (x < 0 || x>255 || y < 0 || y> 191)
+		return 0;
+
+	const int char_x = x / 8;
+	const int char_y = y / 8;
+
+	return 0x5800 + (char_y * 32) + char_x;
+}
