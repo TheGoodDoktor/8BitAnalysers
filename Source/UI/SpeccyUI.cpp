@@ -606,9 +606,46 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	// show spectrum window
 	if (ImGui::Begin("Spectrum View"))
 	{
+		ImGuiIO& io = ImGui::GetIO();
+		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		if (ImGui::IsItemHovered())
+		{
+			const int borderOffsetX = (320 - 256) / 2;
+			const int borderOffsetY = (256 - 192) / 2;
+			const int xp = min(max((int)(io.MousePos.x - pos.x - borderOffsetX),0),255);
+			const int yp = min(max((int)(io.MousePos.y - pos.y - borderOffsetY), 0), 191);
+			
+			const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
+			const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
 
+			if(scrPixAddress!=0)
+			{
+				ImDrawList* dl = ImGui::GetWindowDrawList();
+				const int rx = pos.x + borderOffsetX + (xp & ~0x7);
+				const int ry = pos.y + borderOffsetY + (yp & ~0x7);
+				dl->AddRect(ImVec2(rx,ry),ImVec2(rx+8,ry+8),0xffffffff);
+				ImGui::Text("Screen Pos (%d,%d)", xp, yp);
+				//ImGui::Text("Pixel Address: %04X, Attrib Address: %04X", scrPixAddress, scrAttrAddress);
+
+				const uint16_t lastPixWriter = pUI->CodeAnalysis.LastWriter[scrPixAddress];
+				const uint16_t lastAttrWriter = pUI->CodeAnalysis.LastWriter[scrAttrAddress];
+				ImGui::Text("Pixel Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(pUI->CodeAnalysis, lastPixWriter);
+				ImGui::Text("Attribute Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(pUI->CodeAnalysis, lastAttrWriter);
+				//ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
+
+				if (ImGui::IsMouseDoubleClicked(0))
+					CodeAnalyserGoToAddress(lastPixWriter);
+				if (ImGui::IsMouseDoubleClicked(1))
+					CodeAnalyserGoToAddress(lastAttrWriter);
+			}
+			
+		}
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		// read keys
 		if (ImGui::IsWindowFocused())
 		{

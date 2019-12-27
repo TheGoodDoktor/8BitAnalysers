@@ -90,5 +90,6 @@ inline void	WriteSpeccyByte(FSpeccy *pSpeccy, uint16_t address, uint8_t value)
 	MemWriteFunc(pSpeccy->CurrentLayer, address, value, &pSpeccy->CurrentState);
 }
 
-uint16_t GetScrennMemoryAddress(int x, int y);
+uint16_t GetScreenPixMemoryAddress(int x, int y);
+uint16_t GetScreenAttrMemoryAddress(int x, int y);
 
