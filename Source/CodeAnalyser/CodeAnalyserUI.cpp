@@ -169,22 +169,68 @@ void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 	}
 }
 
-std::map<uint8_t, const char *> g_InstructionInfo=
+// TODO: Eventually fill this up
+typedef std::map<uint8_t, const char *> InstructionInfoMap;
+InstructionInfoMap g_InstructionInfo =
 {
-	{0x10, "Decrement B & Jump relative if it isn't 0"},
+	{0x10, "DJNZ: Decrement B & Jump relative if it isn't 0"},	//DJNZ
+	{0x2F, "CPL: Complement(inverted) bits of A"},	//CPL
+};
+
+// extended instructions
+InstructionInfoMap g_InstructionInfo_ED =
+{
+	{0xB0,"LDIR: Transfer BC bytes from address pointed to by HL to address pointed to by DE.\nHL & DE get incremented, BC gets decremented."},//LDIR
+};
+
+// bit instructions
+InstructionInfoMap g_InstructionInfo_CB =
+{
+	{0x07,"Rotate A Left with Carry. Bit 7 goes to Carry & bit 0."},	//RLC A
+};
+
+// IX/IY instruction
+InstructionInfoMap g_InstructionInfo_Index =
+{
+	{0x09, "Add BC to index register"},	// Add IX/IY,BC
 };
 
 void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 {
 	FSpeccy* pSpeccy = state.pSpeccy;
-	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address);
+	uint8_t instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address);
+	InstructionInfoMap::const_iterator it = g_InstructionInfo.end();
+	
+	switch(instrByte)
+	{
+	case 0xED:
+		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address+1);
+		it = g_InstructionInfo_ED.find(instrByte);
+		break;
 
-	const auto &infoIt = g_InstructionInfo.find(instrByte);
-	if (infoIt == g_InstructionInfo.end())
+	case 0xCB:
+		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address + 1);
+		it = g_InstructionInfo_CB.find(instrByte);
+		break;
+
+	case 0xDD:
+	case 0xFD:
+		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address + 1);
+		it = g_InstructionInfo_CB.find(instrByte);
+		break;
+
+	default:
+		it = g_InstructionInfo.find(instrByte);
+		
+		break;
+	}
+
+	if (it == g_InstructionInfo.end())
 		return;
 
+
 	ImGui::BeginTooltip();
-	ImGui::Text("%s",infoIt->second);
+	ImGui::Text("%s",it->second);
 	ImGui::EndTooltip();
 }
 
@@ -231,6 +277,10 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	//ImGui::Text(">> ");
 	//ImGui::SameLine();
 	//ImGui::PopStyleColor();
+	if(pCodeInfo->bSelfModifyingCode == true)
+	{
+		UpdateCodeInfoForAddress(state, pCodeInfo->Address);
+	}
 
 	ImGui::Text("\t%04Xh", pCodeInfo->Address);
 	const float line_start_x = ImGui::GetCursorPosX();
@@ -258,6 +308,8 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 
 void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 {
+	if (pCodeInfo->bSelfModifyingCode == true)
+		ImGui::Text("Self modifying code");
 }
 
 void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
@@ -426,7 +478,11 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 {
 	if (ImGui::IsWindowFocused() && state.pCursorItem != nullptr)
 	{
-		if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemData]))
+		if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemCode]))
+		{
+			SetItemCode(state, state.pCursorItem);
+		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemData]))
 		{
 			SetItemData(state, state.pCursorItem);
 		}
@@ -482,7 +538,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 		
 		state.ItemList.clear();
 
-		int nextDataAddress = 0;
+		int nextItemAddress = 0;
 
 		// loop across address range
 		for (int addr = 0; addr < (1 << 16); addr++)
@@ -493,23 +549,26 @@ void UpdateItemList(FCodeAnalysisState &state)
 				state.ItemList.push_back(pLabelInfo);
 
 			}
-			FCodeInfo *pCodeInfo = state.CodeInfo[addr];
-			if (pCodeInfo != nullptr)
+			if (addr >= nextItemAddress)
 			{
-				nextDataAddress = addr + pCodeInfo->ByteSize;
-				state.ItemList.push_back(pCodeInfo);
-			}
-			else if (addr >= nextDataAddress)// code and data are mutually exclusive
-			{
-				FDataInfo *pDataInfo = state.DataInfo[addr];
-				if (pDataInfo != nullptr)
+				FCodeInfo *pCodeInfo = state.CodeInfo[addr];
+				if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 				{
-					if(pDataInfo->DataType != DataType::Blob && pDataInfo->DataType != DataType::Graphics)
-						nextDataAddress = addr + pDataInfo->ByteSize;
-					else
-						nextDataAddress = addr + 1;
+					nextItemAddress = addr + pCodeInfo->ByteSize;
+					state.ItemList.push_back(pCodeInfo);
+				}
+				else // code and data are mutually exclusive
+				{
+					FDataInfo *pDataInfo = state.DataInfo[addr];
+					if (pDataInfo != nullptr)
+					{
+						if (pDataInfo->DataType != DataType::Blob && pDataInfo->DataType != DataType::Graphics)
+							nextItemAddress = addr + pDataInfo->ByteSize;
+						else
+							nextItemAddress = addr + 1;
 
-					state.ItemList.push_back(pDataInfo);
+						state.ItemList.push_back(pDataInfo);
+					}
 				}
 			}
 
@@ -536,7 +595,11 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 			}
 			if (ImGui::Selectable("Set as text (T)"))
 			{
-				SetItemText(state, state.pCursorItem);
+				SetItemText(state, pItem);
+			}
+			if (ImGui::Selectable("Set as Code (C)"))
+			{
+				SetItemCode(state, pItem);
 			}
 		}
 

@@ -422,8 +422,14 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 		delete state.Labels[i];
 		state.Labels[i] = nullptr;
 
-		delete state.CodeInfo[i];
-		state.CodeInfo[i] = nullptr;
+		if (state.CodeInfo[i] != nullptr)
+		{
+			FCodeInfo *pCodeInfo = state.CodeInfo[i];
+			const int codeSize = pCodeInfo->ByteSize;
+			for(int off=0;off< codeSize;off++)
+				state.CodeInfo[i+off] = nullptr;
+			delete pCodeInfo;
+		}
 
 		delete state.DataInfo[i];
 		state.DataInfo[i] = nullptr;

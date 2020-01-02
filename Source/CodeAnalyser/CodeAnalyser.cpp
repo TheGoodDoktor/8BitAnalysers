@@ -289,6 +289,19 @@ static void AnalysisOutputCB(char c, void* pUserData)
 	pDasmState->Text += c;
 }
 
+void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
+{
+	FSpeccy *pSpeccy = state.pSpeccy;
+	FAnalysisDasmState dasmState;
+	dasmState.pSpeccy = state.pSpeccy;
+	dasmState.CurrentAddress = pc;
+	const uint16_t newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+
+	FCodeInfo *pCodeInfo = state.CodeInfo[pc];
+	assert(pCodeInfo != nullptr);
+	pCodeInfo->Text = dasmState.Text;
+}
+
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
 	FSpeccy *pSpeccy = state.pSpeccy;
@@ -308,7 +321,8 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	pCodeInfo->Text = dasmState.Text;
 	pCodeInfo->Address = pc;
 	pCodeInfo->ByteSize = newPC - pc;
-	state.CodeInfo[pc] = pCodeInfo;	// just set to first instruction?
+	for(uint16_t codeAddr=pc;codeAddr<newPC;codeAddr++)
+		state.CodeInfo[codeAddr] = pCodeInfo;	// just set to first instruction?
 
 	// does this function branch?
 	uint16_t jumpAddr;
@@ -334,7 +348,8 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	return newPC;
 }
 
-void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
+// return if we should continue
+bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 {
 	FSpeccy *pSpeccy = state.pSpeccy;
 
@@ -356,24 +371,50 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 	}
 
 	if (state.CodeInfo[pc] != nullptr)	// already been analysed
-		return;
+		return false;
 
-	/*if(pc >= 0x4000 && pc <= 0x5AFF)	// screen memory
+	uint16_t newPC = WriteCodeInfoForAddress(state, pc);
+	if (CheckStopInstruction(pSpeccy, pc) || newPC < pc)
+		return false;
+	
+	pc = newPC;
+	state.bCodeAnalysisDataDirty = true;
+	return true;
+}
+
+// TODO: make this use above function
+void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
+{
+	FSpeccy *pSpeccy = state.pSpeccy;
+
+	// update branch reference counters
+	/*uint16_t jumpAddr;
+	if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
 	{
-		assert(0);
+		FLabelInfo* pLabel = state.Labels[jumpAddr];
+		if (pLabel != nullptr)
+			pLabel->References[pc]++;	// add/increment reference
+	}
+
+	uint16_t ptr;
+	if (CheckPointerRefInstruction(pSpeccy, pc, &ptr))
+	{
+		FLabelInfo* pLabel = state.Labels[ptr];
+		if (pLabel != nullptr)
+			pLabel->References[pc]++;	// add/increment reference
 	}*/
+
+	if (state.CodeInfo[pc] != nullptr)	// already been analysed
+		return;
 
 	state.bCodeAnalysisDataDirty = true;
 
-	/*if(pc == 0x7e38)
-	{
-		assert(0);
-
-	}*/
+	
 	bool bStop = false;
 
 	while (bStop == false)
 	{
+		uint16_t jumpAddr = 0;
 		const uint16_t newPC = WriteCodeInfoForAddress(state, pc);
 
 		if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
@@ -392,7 +433,7 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 
 void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc)
 {
-	AnalyseFromPC(state, pc);
+	AnalyseAtPC(state, pc);
 }
 
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
@@ -410,7 +451,7 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 
 void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr, bool bWrite)
 {
-	if(bWrite)
+	if (bWrite)
 		state.DataInfo[dataAddr]->Writes[pc]++;
 	else
 		state.DataInfo[dataAddr]->Reads[pc]++;
@@ -418,21 +459,30 @@ void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr
 
 void ReAnalyseCode(FCodeAnalysisState &state)
 {
+	int nextItemAddress = 0;
 	for (int i = 0; i < (1 << 16); i++)
 	{
-		if (state.CodeInfo[i] != nullptr)
+		if (i == nextItemAddress)
 		{
-			WriteCodeInfoForAddress(state, (uint16_t)i);
+			if (state.CodeInfo[i] != nullptr)
+			{
+				nextItemAddress = WriteCodeInfoForAddress(state, (uint16_t)i);
+			}
+
+			if (state.CodeInfo[i] == nullptr && state.DataInfo[i] == nullptr)
+			{
+				// set up data entry for address
+				FDataInfo *pDataInfo = new FDataInfo;
+				pDataInfo->Address = (uint16_t)i;
+				pDataInfo->ByteSize = 1;
+				pDataInfo->DataType = DataType::Byte;
+				state.DataInfo[i] = pDataInfo;
+			}
 		}
 
-		if (state.CodeInfo[i] == nullptr && state.DataInfo[i] == nullptr)
+		if ((state.CodeInfo[i] != nullptr) && (state.Labels[i] != nullptr) && (state.Labels[i]->LabelType == LabelType::Data))
 		{
-			// set up data entry for address
-			FDataInfo *pDataInfo = new FDataInfo;
-			pDataInfo->Address = (uint16_t)i;
-			pDataInfo->ByteSize = 1;
-			pDataInfo->DataType = DataType::Byte;
-			state.DataInfo[i] = pDataInfo;
+			state.CodeInfo[i]->bSelfModifyingCode = true;
 		}
 	}
 }
@@ -517,8 +567,14 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state,FSpeccy* pSpeccy)
 		delete state.Labels[i];
 		state.Labels[i] = nullptr;
 
-		delete state.CodeInfo[i];
-		state.CodeInfo[i] = nullptr;
+		if (state.CodeInfo[i] != nullptr)
+		{
+			FCodeInfo *pCodeInfo = state.CodeInfo[i];
+			const int codeSize = pCodeInfo->ByteSize;
+			for (int off = 0; off < codeSize; off++)
+				state.CodeInfo[i + off] = nullptr;
+			delete pCodeInfo;
+		}
 
 		delete state.DataInfo[i];
 
@@ -590,7 +646,18 @@ public:
 				pDataItem->DataType = DataType::Byte;
 				pDataItem->ByteSize = 1;
 				state.bCodeAnalysisDataDirty = true;
+			}
+		}
+		else if (pItem->Type == ItemType::Code)
+		{
+			FCodeInfo *pCodeItem = static_cast<FCodeInfo *>(pItem);
+			if (pCodeItem->bDisabled == false)
+			{
+				pCodeItem->bDisabled = true;
+				state.bCodeAnalysisDataDirty = true;
 
+				if (state.Labels[pItem->Address] != nullptr)
+					state.Labels[pItem->Address]->LabelType = LabelType::Data;
 			}
 		}
 	}
@@ -606,6 +673,20 @@ public:
 	DataType	oldDataType;
 	uint16_t	oldDataSize;
 };
+
+void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
+{
+	if(state.CodeInfo[pItem->Address] !=nullptr && state.CodeInfo[pItem->Address]->bDisabled == true)
+	{
+		state.CodeInfo[pItem->Address]->bDisabled = false;
+	}
+	else
+	{
+		RunStaticCodeAnalysis(state, pItem->Address);
+		UpdateCodeInfoForAddress(state, pItem->Address);
+	}
+	state.bCodeAnalysisDataDirty = true;
+}
 
 void SetItemData(FCodeAnalysisState &state, FItem *pItem)
 {
@@ -651,7 +732,7 @@ void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 	if (state.Labels[address] == nullptr)
 	{
 		LabelType labelType = LabelType::Data;
-		if (state.CodeInfo[address] != nullptr)
+		if (state.CodeInfo[address] != nullptr && state.CodeInfo[address]->bDisabled == false)
 			labelType = LabelType::Code;
 
 		GenerateLabelForAddress(state, address, labelType);

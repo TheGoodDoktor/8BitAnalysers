@@ -44,11 +44,24 @@ struct FLabelInfo : FItem
 
 struct FCodeInfo : FItem
 {
-	FCodeInfo() :FItem() { Type = ItemType::Code; }
+	FCodeInfo() :FItem()
+	{
+		Type = ItemType::Code;
+	}
 
 	std::string		Text;				// Disassembly text
 	uint16_t		JumpAddress = 0;	// optional jump address
 	uint16_t		PointerAddress = 0;	// optional pointer address
+
+	union
+	{
+		struct
+		{
+			bool			bDisabled : 1;
+			bool			bSelfModifyingCode : 1;
+		};
+		uint32_t	Flags = 0;
+	};
 };
 
 enum class DataType
@@ -97,7 +110,7 @@ struct FCodeAnalysisState
 	uint16_t				LastWriter[kAddressSize];
 	bool					bCodeAnalysisDataDirty = false;
 
-	bool					bRegisterDataAccesses = false;
+	bool					bRegisterDataAccesses = true;
 
 	std::vector< FItem *>	ItemList;
 	std::vector< FLabelInfo *>	GlobalDataItems;
@@ -133,6 +146,7 @@ void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc);
 void ReAnalyseCode(FCodeAnalysisState &state);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, bool bWrite);
+void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
 
 // Commands
 void Undo(FCodeAnalysisState &state);
@@ -140,6 +154,7 @@ void Undo(FCodeAnalysisState &state);
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
+void SetItemCode(FCodeAnalysisState &state, FItem *pItem);
 void SetItemData(FCodeAnalysisState &state, FItem *pItem);
 void SetItemText(FCodeAnalysisState &state, FItem *pItem);
 void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText);

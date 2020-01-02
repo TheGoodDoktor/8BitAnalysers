@@ -47,6 +47,7 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
 	FCodeAnalysisState &state = pUI->CodeAnalysis;
 	const uint16_t addr = Z80_GET_ADDR(pins);
+	const bool bMemAccess = !!((pins & Z80_CTRL_MASK) & Z80_MREQ);
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
 
 	const uint16_t nextpc = pc;
@@ -61,10 +62,18 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	state.CodeInfo[pc]->FrameLastAccessed = state.CurrentFrameNo;
 	if (bWrite)
 		state.LastWriter[addr] = pc;
-	// this is probably slow so is optional
-	if (state.bRegisterDataAccesses)
-	{
 
+	// Mark self modifying code
+	if (bWrite)
+	{
+		FCodeInfo *pCodeWrittenTo = state.CodeInfo[addr];
+		if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
+			pCodeWrittenTo->bSelfModifyingCode = true;
+	}
+
+	// this is probably slow so is optional
+	if (bMemAccess && state.bRegisterDataAccesses)
+	{
 		RegisterDataAccess(state, pc,addr,bWrite);
 	}
 	
@@ -345,7 +354,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				zx_reset(pZXUI->zx);
 				ui_dbg_reset(&pZXUI->dbg);
 			}
-			if (ImGui::MenuItem("ZX Spectrum 48K", 0, (pZXUI->zx->type == ZX_TYPE_48K)))
+			/*if (ImGui::MenuItem("ZX Spectrum 48K", 0, (pZXUI->zx->type == ZX_TYPE_48K)))
 			{
 				pZXUI->boot_cb(pZXUI->zx, ZX_TYPE_48K);
 				ui_dbg_reboot(&pZXUI->dbg);
@@ -354,7 +363,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 			{
 				pZXUI->boot_cb(pZXUI->zx, ZX_TYPE_128);
 				ui_dbg_reboot(&pZXUI->dbg);
-			}
+			}*/
 			if (ImGui::BeginMenu("Joystick")) 
 			{
 				if (ImGui::MenuItem("None", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_NONE)))
@@ -395,7 +404,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 		}
 		if (ImGui::BeginMenu("Debug")) 
 		{
-			ImGui::MenuItem("CPU Debugger", 0, &pZXUI->dbg.ui.open);
+			//ImGui::MenuItem("CPU Debugger", 0, &pZXUI->dbg.ui.open);
 			ImGui::MenuItem("Breakpoints", 0, &pZXUI->dbg.ui.show_breakpoints);
 			ImGui::MenuItem("Memory Heatmap", 0, &pZXUI->dbg.ui.show_heatmap);
 			if (ImGui::BeginMenu("Memory Editor")) 
@@ -406,21 +415,21 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				ImGui::MenuItem("Window #4", 0, &pZXUI->memedit[3].open);
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Disassembler")) 
+			/*if (ImGui::BeginMenu("Disassembler")) 
 			{
 				ImGui::MenuItem("Window #1", 0, &pZXUI->dasm[0].open);
 				ImGui::MenuItem("Window #2", 0, &pZXUI->dasm[1].open);
 				ImGui::MenuItem("Window #3", 0, &pZXUI->dasm[2].open);
 				ImGui::MenuItem("Window #4", 0, &pZXUI->dasm[3].open);
 				ImGui::EndMenu();
-			}
+			}*/
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("ImGui"))
+		/*if (ImGui::BeginMenu("ImGui"))
 		{
 			ImGui::MenuItem("Show Demo", 0, &pUI->bShowImGuiDemo);
 			ImGui::EndMenu();
-		}
+		}*/
 		
 
 		/*if (ImGui::BeginMenu("Game Viewers"))
@@ -433,7 +442,14 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 			ImGui::EndMenu();
 		}*/
 		
-		ui_util_options_menu(timeMS, pZXUI->dbg.dbg.stopped);
+		//ui_util_options_menu(timeMS, pZXUI->dbg.dbg.stopped);
+
+		// draw emu timings
+		ImGui::SameLine(ImGui::GetWindowWidth() - 120);
+		if (pZXUI->dbg.dbg.stopped) 
+			ImGui::Text("emu: stopped");
+		else 
+			ImGui::Text("emu: %.2fms", timeMS);
 
 		ImGui::EndMainMenuBar();
 	}
@@ -478,12 +494,12 @@ static void UpdateMemmap(ui_zx_t* ui)
 
 void DrawDebuggerUI(ui_dbg_t *pDebugger)
 {
-	if (ImGui::Begin("Debugger"))
+	if (ImGui::Begin("CPU Debugger"))
 	{
 		ui_dbg_dbgwin_draw(pDebugger);
 	}
 	ImGui::End();
-	//ui_dbg_draw(pDebugger);
+	ui_dbg_draw(pDebugger);
 	/*
 	if (!(pDebugger->ui.open || pDebugger->ui.show_heatmap || pDebugger->ui.show_breakpoints)) {
 		return;

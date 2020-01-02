@@ -1712,6 +1712,10 @@ static void _ui_dbg_dbgwin_draw(ui_dbg_t* win) {
 //+MarkC
 void ui_dbg_dbgwin_draw(ui_dbg_t* win)
 {
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) {
+		ImGui::CaptureKeyboardFromApp();
+		_ui_dbg_handle_input(win);
+	}
 	_ui_dbg_draw_menu(win);
 	_ui_dbg_draw_regs(win);
 	_ui_dbg_draw_buttons(win);
