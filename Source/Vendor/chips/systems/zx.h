@@ -904,7 +904,9 @@ bool zx_quickload(zx_t* sys, const uint8_t* ptr, int num_bytes) {
         }
         if (0xFFFF == src_len) {
             /* FIXME: uncompressed not supported yet */
-            return false;
+			for (int i = 0; i < 0x4000; i++)
+				*dst_ptr++ = ptr[i];
+            //return false;
         }
         else {
             /* compressed */
