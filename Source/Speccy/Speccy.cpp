@@ -6,6 +6,7 @@
 #include "../imgui_impl_lucidextra.h"
 
 #include "Util/FileUtil.h"
+#include <algorithm>
 
 std::vector<std::string> g_GamesList;
 
@@ -109,7 +110,8 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 void TickSpeccy(FSpeccy &speccyInstance)
 {
-	zx_exec(&speccyInstance.CurrentState, static_cast<uint32_t>(1000000.0f / ImGui::GetIO().Framerate));
+	const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate,32000.0f);
+	zx_exec(&speccyInstance.CurrentState, static_cast<uint32_t>(frameTime));
 	ImGui_ImplDX11_UpdateTextureRGBA(speccyInstance.Texture, speccyInstance.FrameBuffer);
 
 	// Copy state buffer over - could be more efficient if needed

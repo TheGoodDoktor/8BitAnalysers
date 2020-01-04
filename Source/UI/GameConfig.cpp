@@ -261,6 +261,7 @@ void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAd
 		FCodeInfo *pCodeInfo = state.CodeInfo[i];
 		if (pCodeInfo != nullptr)
 		{
+			fwrite(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
 			fwrite(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
 			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 			fwrite(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
@@ -279,7 +280,10 @@ void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo)
 	for (int i = 0; i < recordCount; i++)
 	{
 		FCodeInfo *pCodeInfo = new FCodeInfo;
-		
+
+		if(versionNo >= 4)
+			fread(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
+
 		fread(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
 		fread(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 		fread(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
@@ -379,7 +383,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 	}
 }
 
-static const int g_kBinaryFileVersionNo = 3;
+static const int g_kBinaryFileVersionNo = 4;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Binary save
@@ -391,6 +395,7 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_
 
 	fwrite(&g_kBinaryFileMagic, sizeof(int), 1, fp);
 	fwrite(&g_kBinaryFileVersionNo, sizeof(int), 1, fp);
+	fwrite(&state.LastWriter, sizeof(uint16_t), 1 << 16, fp);
 	SaveLabelsBin(state, fp, addrStart, addrEnd);
 	SaveCodeInfoBin(state, fp, addrStart, addrEnd);
 	SaveDataInfoBin(state, fp, addrStart, addrEnd);
@@ -434,6 +439,9 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 		delete state.DataInfo[i];
 		state.DataInfo[i] = nullptr;
 	}
+
+	if(versionNo >= 4)
+		fread(&state.LastWriter, sizeof(uint16_t), 1 << 16, fp);
 
 	LoadLabelsBin(state, fp, versionNo);
 	LoadCodeInfoBin(state, fp, versionNo);
