@@ -39,7 +39,7 @@ struct FGraphicsViewerState
 	GraphicsViewMode	ViewMode = GraphicsViewMode::Character;
 
 	int				XSize = 1;			// Image X Size in characters
-	int				YSize = 1;			// Image Y Size in characters
+	int				YSize = 8;			// Image Y Size in pixels
 	int				ImageCount = 10;	// how many images?
 
 	std::string				SelectedSpriteList;

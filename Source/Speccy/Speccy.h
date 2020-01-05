@@ -59,7 +59,7 @@ void TickSpeccy(FSpeccy &speccyInstance);
 void ShutdownSpeccy(FSpeccy*&pSpeccy);
 
 const std::vector<std::string>& GetGameList();
-bool LoadZ80File(FSpeccy &speccyInstance, const char *fName);
+bool LoadGameSnapshot(FSpeccy &speccyInstance, const char *fName);
 
 uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr);
 uint8_t MemReadFunc(int layer, uint16_t addr, void* user_data);

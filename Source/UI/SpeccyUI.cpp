@@ -237,7 +237,8 @@ bool StartGame(FSpeccyUI* pUI, const char *pGameName)
 	{
 		if (pGameConfig->Name == pGameName)
 		{
-			if (LoadZ80File(*pUI->pSpeccy, pGameConfig->Z80File.c_str()))
+			std::string gameFile = "Games/" + pGameConfig->Z80File;
+			if (LoadGameSnapshot(*pUI->pSpeccy, gameFile.c_str()))
 			{
 				StartGame(pUI, pGameConfig);
 				return true;
@@ -282,13 +283,14 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::BeginMenu("New Game from Z80 File"))
+			if (ImGui::BeginMenu("New Game from Snapshot File"))
 			{
 				for (const auto& game : GetGameList())
 				{
 					if (ImGui::MenuItem(game.c_str()))
 					{
-						if (LoadZ80File(*pSpeccy, game.c_str()))
+						const std::string gameFile = "Games/" + game;
+						if (LoadGameSnapshot(*pSpeccy, gameFile.c_str()))
 						{
 							FGameConfig *pNewConfig = CreateNewGameConfigFromZ80File(game.c_str());
 							if(pNewConfig != nullptr)
@@ -306,7 +308,9 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
-						if(LoadZ80File(*pSpeccy, pGameConfig->Z80File.c_str()))
+						const std::string gameFile = "Games/" + pGameConfig->Z80File;
+
+						if(LoadGameSnapshot(*pSpeccy, gameFile.c_str()))
 						{
 							StartGame(pUI,pGameConfig);
 						}

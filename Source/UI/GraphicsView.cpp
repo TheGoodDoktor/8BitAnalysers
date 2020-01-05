@@ -150,9 +150,9 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	FGraphicsView *pGraphicsView = state.pGraphicsView;	
 
 	int byteOff = 0;
-	const int offsetMax = 0xffff - ((kGraphicsViewerWidth / 8) * kGraphicsViewerHeight);
+	//const int offsetMax = 0xffff - ((kGraphicsViewerWidth / 8) * kGraphicsViewerHeight);
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
-	const int kVerticalDispCharCount = kGraphicsViewerHeight / 8;
+	const int kVerticalDispPixCount = kGraphicsViewerHeight;
 
 	if (ImGui::Begin("Graphics View") == false)
 	{
@@ -177,17 +177,18 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	}
 	
 	ImGui::SameLine();
-	
-	int addrLine = addrInput / kHorizontalDispCharCount;
-	int addrOffset = addrInput % kHorizontalDispCharCount;
 
-	if(ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrLine, 0, offsetMax / kHorizontalDispCharCount))
+	static int kRowSize = kHorizontalDispCharCount * state.YSize;
+	int addrLine = addrInput / kRowSize;
+	int addrOffset = addrInput % kRowSize;
+
+	if(ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrLine,0, 0xffff / kRowSize))
 	{
-		addrInput = (addrLine * kHorizontalDispCharCount) + addrOffset;
+		addrInput = (addrLine * kRowSize) + addrOffset;
 	}
-	if (ImGui::SliderInt("##offset", &addrOffset, 0, kHorizontalDispCharCount-1))
+	if (ImGui::SliderInt("##offset", &addrOffset, 0, kRowSize -1))
 	{
-		addrInput = (addrLine * kHorizontalDispCharCount) + addrOffset;
+		addrInput = (addrLine * kRowSize) + addrOffset;
 	}
 	
 	ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
@@ -198,13 +199,14 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	int viewMode = (int)state.ViewMode;
 	if(ImGui::Combo("ViewMode", &viewMode, "Character\0CharacterWinding\0Screen", (int)GraphicsViewMode::Count))
 		state.ViewMode = (GraphicsViewMode)viewMode;
+
+	ClearGraphicsView(*pGraphicsView, 0xff000000);
 	
 	// view 1 - straight character
 	if (state.ViewMode == GraphicsViewMode::Character || state.ViewMode == GraphicsViewMode::CharacterWinding)
 	{
-		const int graphicsUnitSize = state.XSize * state.YSize * 8;
+		const int graphicsUnitSize = state.XSize * state.YSize;
 
-		ClearGraphicsView(*pGraphicsView, 0xff000000);
 
 		if (ImGui::Button("<<"))
 			addrInput -= graphicsUnitSize;
@@ -215,7 +217,8 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		state.Address = (int)addrInput;
 		// draw 64 * 8 bytes
 		ImGui::InputInt("XSize", &state.XSize, 1, 4);
-		ImGui::InputInt("YSize", &state.YSize, 1, 4);
+		ImGui::InputInt("YSize", &state.YSize, 8, 8);
+		ImGui::InputInt("YSize Fine", &state.YSize, 1, 8);
 		ImGui::InputInt("Count", &state.ImageCount, 1, 4);
 
 		static char configName[64];
@@ -244,13 +247,13 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		}
 
 		state.XSize = std::min(std::max(1, state.XSize), kHorizontalDispCharCount);
-		state.YSize = std::min(std::max(1, state.YSize), kHorizontalDispCharCount);
+		state.YSize = std::min(std::max(1, state.YSize), kVerticalDispPixCount);
 
 		const int xcount = kHorizontalDispCharCount / state.XSize;
-		const int ycount = kVerticalDispCharCount / state.YSize;
+		const int ycount = kVerticalDispPixCount / state.YSize;
 
 		int y = 0;
-		uint16_t address = state.Address;
+		int address = state.Address;
 
 		if (state.ViewMode == GraphicsViewMode::Character)
 		{
@@ -259,7 +262,8 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 				for (int x = 0; x < xcount; x++)
 				{
 					const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
-					PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize * 8, state.XSize, state.YSize * 8, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+					if(address + graphicsUnitSize < 0xffff)
+						PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize, state.XSize, state.YSize, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
 					address += graphicsUnitSize;
 				}
 			}
@@ -273,13 +277,14 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 				for (int x = 0; x < xcount; x++)
 				{
 					// draw single item
-					for (int yLine = 0; yLine < state.YSize * 8; yLine++)	// loop down scan lines
+					for (int yLine = 0; yLine < state.YSize; yLine++)	// loop down scan lines
 					{
 						for (int xChar = 0; xChar < state.XSize; xChar++)
 						{
 							const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
 							const int xp = ((yLine & 1) == 0) ? xChar : (state.XSize - 1) - xChar;
-							PlotImageAt(pImage, offsetX + (xp * 8), offsetY + yLine, 1, 1, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+							if (address + graphicsUnitSize < 0xffff)
+								PlotImageAt(pImage, offsetX + (xp * 8), offsetY + yLine, 1, 1, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
 							address++;
 						}
 					}
@@ -287,7 +292,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 					offsetX += state.XSize * 8;
 				}
 				offsetX = 0;
-				offsetY += state.YSize * 8;
+				offsetY += state.YSize;
 			}
 			address += graphicsUnitSize;
 		}
@@ -297,9 +302,12 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		// http://www.breakintoprogram.co.uk/computers/zx-spectrum/screen-memory-layout
 		state.Address = (int)addrInput;
 
-		uint16_t offset = 0;
+		int offset = 0;
 		for (int y = 0; y < 192; y++)
 		{
+			if ((int)state.Address + offset > 0xffff)
+				break;
+			
 			const uint8_t *pSrc = GetSpeccyMemPtr(state.pSpeccy, state.Address + offset);
 			const int y0to2 = ((offset >> 8) & 7);
 			const int y3to5 = ((offset >> 5) & 7) << 3;
