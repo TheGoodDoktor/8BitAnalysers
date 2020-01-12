@@ -691,8 +691,9 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 				const int rx = static_cast<int>(pos.x) + borderOffsetX + (xp & ~0x7);
 				const int ry = static_cast<int>(pos.y) + borderOffsetY + (yp & ~0x7);
 				dl->AddRect(ImVec2(rx,ry),ImVec2(rx+8,ry+8),0xffffffff);
+				ImGui::BeginTooltip();
 				ImGui::Text("Screen Pos (%d,%d)", xp, yp);
-				//ImGui::Text("Pixel Address: %04X, Attrib Address: %04X", scrPixAddress, scrAttrAddress);
+				ImGui::Text("Pixel: %04Xh, Attr: %04Xh", scrPixAddress, scrAttrAddress);
 
 				const uint16_t lastPixWriter = pUI->CodeAnalysis.LastWriter[scrPixAddress];
 				const uint16_t lastAttrWriter = pUI->CodeAnalysis.LastWriter[scrAttrAddress];
@@ -702,6 +703,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 				ImGui::Text("Attribute Writer: ");
 				ImGui::SameLine();
 				DrawCodeAddress(pUI->CodeAnalysis, lastAttrWriter);
+				ImGui::EndTooltip();
 				//ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
 
 				if (ImGui::IsMouseDoubleClicked(0))

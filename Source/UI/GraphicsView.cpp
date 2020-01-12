@@ -174,6 +174,12 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		ptrAddress = addrInput + addressOffset;
 		if (ImGui::IsMouseDoubleClicked(0))
 			CodeAnalyserGoToAddress(ptrAddress);
+
+		ImGui::BeginTooltip();
+		ImGui::Text("%04Xh", ptrAddress);
+		ImGui::SameLine();
+		DrawAddressLabel(GetSpeccyUI()->CodeAnalysis, ptrAddress);
+		ImGui::EndTooltip();
 	}
 	
 	ImGui::SameLine();
@@ -192,9 +198,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	}
 	
 	ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
-	ImGui::Text("Pointer Address: %04Xh", ptrAddress);
-	ImGui::SameLine();
-	DrawAddressLabel(GetSpeccyUI()->CodeAnalysis, ptrAddress);
+	
 
 	int viewMode = (int)state.ViewMode;
 	if(ImGui::Combo("ViewMode", &viewMode, "Character\0CharacterWinding\0Screen", (int)GraphicsViewMode::Count))
