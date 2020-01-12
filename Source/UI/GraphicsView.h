@@ -37,6 +37,7 @@ struct FGraphicsViewerState
 {
 	uint16_t		Address = 0;
 	GraphicsViewMode	ViewMode = GraphicsViewMode::Character;
+	bool			bColumnMode = true;
 
 	int				XSize = 1;			// Image X Size in characters
 	int				YSize = 8;			// Image Y Size in pixels

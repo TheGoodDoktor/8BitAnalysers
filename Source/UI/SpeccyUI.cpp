@@ -688,8 +688,8 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 			if(scrPixAddress!=0)
 			{
 				ImDrawList* dl = ImGui::GetWindowDrawList();
-				const int rx = pos.x + borderOffsetX + (xp & ~0x7);
-				const int ry = pos.y + borderOffsetY + (yp & ~0x7);
+				const int rx = static_cast<int>(pos.x) + borderOffsetX + (xp & ~0x7);
+				const int ry = static_cast<int>(pos.y) + borderOffsetY + (yp & ~0x7);
 				dl->AddRect(ImVec2(rx,ry),ImVec2(rx+8,ry+8),0xffffffff);
 				ImGui::Text("Screen Pos (%d,%d)", xp, yp);
 				//ImGui::Text("Pixel Address: %04X, Attrib Address: %04X", scrPixAddress, scrAttrAddress);

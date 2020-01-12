@@ -178,7 +178,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	
 	ImGui::SameLine();
 
-	static int kRowSize = kHorizontalDispCharCount * state.YSize;
+	static int kRowSize = kHorizontalDispCharCount * state.bColumnMode ? 8 : state.YSize;
 	int addrLine = addrInput / kRowSize;
 	int addrOffset = addrInput % kRowSize;
 
@@ -207,7 +207,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	{
 		const int graphicsUnitSize = state.XSize * state.YSize;
 
-
+		ImGui::Checkbox("Column Mode", &state.bColumnMode);
 		if (ImGui::Button("<<"))
 			addrInput -= graphicsUnitSize;
 		ImGui::SameLine();
@@ -257,14 +257,27 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 
 		if (state.ViewMode == GraphicsViewMode::Character)
 		{
-			for (int y = 0; y < ycount; y++)
+			if(state.bColumnMode)
 			{
 				for (int x = 0; x < xcount; x++)
 				{
 					const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
-					if(address + graphicsUnitSize < 0xffff)
-						PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize, state.XSize, state.YSize, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
-					address += graphicsUnitSize;
+					if (address + graphicsUnitSize < 0xffff)
+						PlotImageAt(pImage, x * state.XSize * 8, 0, state.XSize, kVerticalDispPixCount, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+					address += state.XSize * kVerticalDispPixCount;
+				}
+			}
+			else
+			{
+				for (int y = 0; y < ycount; y++)
+				{
+					for (int x = 0; x < xcount; x++)
+					{
+						const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
+						if (address + graphicsUnitSize < 0xffff)
+							PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize, state.XSize, state.YSize, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+						address += graphicsUnitSize;
+					}
 				}
 			}
 		}
