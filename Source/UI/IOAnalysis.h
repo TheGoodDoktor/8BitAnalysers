@@ -37,5 +37,5 @@ struct FIOAnalysisState
 };
 
 void InitIOAnalysis(FIOAnalysisState &state);
-void IOAnalysisHanler(FIOAnalysisState &state, uint16_t pc, uint64_t pins);
+void IOAnalysisHandler(FIOAnalysisState &state, uint16_t pc, uint64_t pins);
 void DrawIOAnalysis(FIOAnalysisState &state);

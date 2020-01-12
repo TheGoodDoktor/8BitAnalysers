@@ -57,6 +57,10 @@ int MyTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	return 0;
 }
 
+
+
+
+
 FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 {
 	FSpeccy *pNewInstance = new FSpeccy();
@@ -94,6 +98,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	//static int _ui_dbg_bp_eval(uint16_t pc, int ticks, uint64_t pins, void* user_data) {
 	//z80_trap_cb(&pNewInstance->CurrentState.cpu, MyTrapCallback, pNewInstance);
 
+	
 	EnumerateGames();
 
 	// create state buffer

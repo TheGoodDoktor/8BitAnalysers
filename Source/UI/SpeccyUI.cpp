@@ -42,6 +42,8 @@ void gfx_destroy_texture(void* h)
 }
 
 
+
+
 int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
@@ -60,11 +62,11 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 
 	RegisterCodeExecuted(state, pc);
 	state.CodeInfo[pc]->FrameLastAccessed = state.CurrentFrameNo;
-	if (bWrite)
-		state.LastWriter[addr] = pc;
+	//if (bWrite)
+	//	state.LastWriter[addr] = pc;
 
 	// Mark self modifying code
-	if (bWrite)
+	/*if (bWrite)
 	{
 		FCodeInfo *pCodeWrittenTo = state.CodeInfo[addr];
 		if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
@@ -75,14 +77,13 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	if (bMemAccess && state.bRegisterDataAccesses)
 	{
 		RegisterDataAccess(state, pc,addr,bWrite);
-	}
+	}*/
 	
 	// labels
 	//GenerateLabelsForAddress(pUI, pc,LabelType::Code);
 
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pUI);
 
-	IOAnalysisHanler(pUI->IOAnalysis,pc, pins);
 
 	//if(trapId == 0)
 		//trapId = FunctionTrapFunction(pc,nextpc, ticks, pins, pUI);
@@ -96,6 +97,46 @@ int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, v
 	return 0;
 }
 
+z80_tick_t g_OldTickCB = nullptr;
+
+extern uint16_t g_PC;
+uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
+{
+	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
+	FCodeAnalysisState &state = pUI->CodeAnalysis;
+	const uint16_t pc = g_PC;// z80_pc(&pUI->pSpeccy->CurrentState.cpu);
+	/* memory and IO requests */
+	if (pins & Z80_MREQ) 
+	{
+		/* a memory request machine cycle
+			FIXME: 'contended memory' accesses should inject wait states
+		*/
+		const uint16_t addr = Z80_GET_ADDR(pins);
+		if (pins & Z80_RD)
+		{
+			if (state.bRegisterDataAccesses)
+				RegisterDataAccess(state, pc, addr, false);
+		}
+		else if (pins & Z80_WR) 
+		{
+			if (state.bRegisterDataAccesses)
+				RegisterDataAccess(state, pc, addr, true);
+
+			state.LastWriter[addr] = pc;
+
+			FCodeInfo *pCodeWrittenTo = state.CodeInfo[addr];
+			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
+				pCodeWrittenTo->bSelfModifyingCode = true;
+		}
+	}
+	else if (pins & Z80_IORQ)
+	{
+		IOAnalysisHandler(pUI->IOAnalysis, pc, pins);
+	}
+
+	return g_OldTickCB(num, pins, &pUI->pSpeccy->CurrentState);
+}
+
 FSpeccyUI*g_pSpeccyUI = nullptr;
 
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
@@ -106,6 +147,10 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 
 	// Trap callback needs to be set before we create the UI
 	z80_trap_cb(&pSpeccy->CurrentState.cpu, UITrapCallback, pUI);
+
+	g_OldTickCB = pSpeccy->CurrentState.cpu.tick_cb;
+	pSpeccy->CurrentState.cpu.user_data = pUI;
+	pSpeccy->CurrentState.cpu.tick_cb = Z80Tick;
 
 	pUI->pSpeccy = pSpeccy;
 	//ui_init(zxui_draw);
@@ -132,6 +177,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	// additional debugger config
 	//pUI->UIZX.dbg.ui.open = true;
 	pUI->UIZX.dbg.break_cb = UIEvalBreakpoint;
+	
 
 	// Setup Disassembler for function view
 	FDasmDesc desc;

@@ -820,6 +820,7 @@ static inline uint64_t _z80_flush_r1(uint64_t ws, uint64_t r1, uint64_t map_bits
     return r1;
 }
 
+uint16_t g_PC = 0;
 /* instruction decoder */
 uint32_t z80_exec(z80_t* cpu, uint32_t num_ticks) {
     cpu->trap_id = 0;
@@ -839,6 +840,7 @@ uint32_t z80_exec(z80_t* cpu, uint32_t num_ticks) {
     uint16_t pc = _G_PC();
     uint64_t pre_pins = pins;
     do {
+		g_PC = pc;
         /* fetch next opcode byte */
         _FETCH(op)
         /* special case ED-prefixed instruction: cancel effect of DD/FD prefix */
