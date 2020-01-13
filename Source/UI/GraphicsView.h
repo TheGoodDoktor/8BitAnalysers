@@ -36,6 +36,7 @@ enum class GraphicsViewMode
 struct FGraphicsViewerState
 {
 	uint16_t		Address = 0;
+	uint16_t		ClickedAddress = 0;
 	GraphicsViewMode	ViewMode = GraphicsViewMode::Character;
 	bool			bColumnMode = true;
 

@@ -403,6 +403,10 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 			DrawCodeAddress(state, caller.first);
 		}
 	}
+
+	ImGui::Text("Last Writer: ");
+	ImGui::SameLine();
+	DrawCodeAddress(state,state.LastWriter[pDataInfo->Address]);
 }
 
 

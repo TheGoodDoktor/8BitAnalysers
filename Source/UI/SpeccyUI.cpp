@@ -198,6 +198,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	DasmInit(&pUI->FunctionDasm, &desc);
 
 	pUI->GraphicsViewer.pSpeccy = pSpeccy;
+	pUI->GraphicsViewer.pUI = pUI;
 	InitGraphicsViewer(pUI->GraphicsViewer);
 	pUI->IOAnalysis.pCodeAnalysis = &pUI->CodeAnalysis;
 	InitIOAnalysis(pUI->IOAnalysis);

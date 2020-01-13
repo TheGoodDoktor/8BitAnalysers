@@ -174,6 +174,8 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		ptrAddress = addrInput + addressOffset;
 		if (ImGui::IsMouseDoubleClicked(0))
 			CodeAnalyserGoToAddress(ptrAddress);
+		if (ImGui::IsMouseClicked(0))
+			state.ClickedAddress = ptrAddress;
 
 		ImGui::BeginTooltip();
 		ImGui::Text("%04Xh", ptrAddress);
@@ -205,6 +207,14 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		state.ViewMode = (GraphicsViewMode)viewMode;
 
 	ClearGraphicsView(*pGraphicsView, 0xff000000);
+
+	ImGui::Text("Clicked Address: %04Xh", state.ClickedAddress);
+	ImGui::SameLine();
+	DrawAddressLabel(state.pUI->CodeAnalysis, state.ClickedAddress);
+	if(ImGui::CollapsingHeader("Details"))
+	{
+		DrawDataDetails(state.pUI->CodeAnalysis, state.pUI->CodeAnalysis.DataInfo[state.ClickedAddress]);
+	}
 	
 	// view 1 - straight character
 	if (state.ViewMode == GraphicsViewMode::Character || state.ViewMode == GraphicsViewMode::CharacterWinding)
