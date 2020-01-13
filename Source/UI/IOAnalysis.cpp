@@ -5,21 +5,20 @@
 
 #include "imgui.h"
 
+std::map< SpeccyIODevice, const char*> g_DeviceNames = 
+{
+	{SpeccyIODevice::Keyboard, "Keyboard"},
+	{SpeccyIODevice::Ear, "Keyboard"},
+	{SpeccyIODevice::Mic, "Keyboard"},
+	{SpeccyIODevice::Beeper, "Beeper"},
+	{SpeccyIODevice::BorderColour, "BorderColour"},
+	{SpeccyIODevice::KempstonJoystick, "KempstonJoystick"},
+	{SpeccyIODevice::Unknown, "Unknown"},
+};
+
 void InitIOAnalysis(FIOAnalysisState &state)
 {
-	// setup
-	{
-		FIOAccess &keyboard = state.IODeviceAcceses[(int)SpeccyIODevice::Keyboard];
-		keyboard.Name = "keyboard";
-	}
-	{
-		FIOAccess &beeper = state.IODeviceAcceses[(int)SpeccyIODevice::Beeper];
-		beeper.Name = "Beeper";
-	}
-	{
-		FIOAccess &unknown = state.IODeviceAcceses[(int)SpeccyIODevice::Unknown];
-		unknown.Name = "Unknown";
-	}
+	
 }
 
 SpeccyIODevice GetIODeviceFromIOAddress(uint16_t ioAddr, bool bWrite)
@@ -144,49 +143,62 @@ void IOAnalysisHandler(FIOAnalysisState &state,uint16_t pc, uint64_t pins)
 	if (pins & Z80_IORQ)
 	{
 		// WIP based on above
-		/*if (pins & Z80_RD)
+		if (pins & Z80_RD)
 		{
 			if ((pins & Z80_A0) == 0)
 			{
 				// Spectrum ULA (...............0)
 				//	Bits 5 and 7 as read by INning from Port 0xfe are always one
-				
-				uint8_t data = (1 << 7) | (1 << 5);
-				// MIC/EAR flags -> bit 6 
-				if (sys->last_fe_out & (1 << 3 | 1 << 4)) 
-				{
-					data |= (1 << 6);
-				}
-
-				sys->border_color = _zx_palette[data & 7] & 0xFFD7D7D7;
-				sys->last_fe_out = data;
-				beeper_set(&sys->beeper, 0 != (data & (1 << 4)));
+							
+				const uint16_t column_mask = (~(Z80_GET_ADDR(pins) >> 8)) & 0x00FF;
+				FIOAccess &ioDevice = state.IODeviceAcceses[(int)SpeccyIODevice::Keyboard];
+				ioDevice.Callers[pc]++;
+				ioDevice.ReadCount++;
 			}
 			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) 
 			{
 				// Kempston Joystick (........000.....) 
-				//Z80_SET_DATA(pins, sys->kbd_joymask | sys->joy_joymask);
+				FIOAccess &ioDevice = state.IODeviceAcceses[(int)SpeccyIODevice::KempstonJoystick];
+				ioDevice.Callers[pc]++;
+				ioDevice.ReadCount++;
 			}
-		}*/
-		uint16_t ioAddr = Z80_GET_ADDR(pins);
-		const SpeccyIODevice device = GetIODeviceFromIOAddress(ioAddr, !!(pins & Z80_WR));
-		FIOAccess &ioDevice = state.IODeviceAcceses[(int)device];
-		FIOAccess &ioAccessMapItem = state.IOAccessMap[ioAddr];
-		ioAccessMapItem.Callers[pc]++;
-		ioDevice.Callers[pc]++;
-
-		if (pins & Z80_RD)
-		{
-			// log IO read
-			ioAccessMapItem.ReadCount++;
-			ioDevice.ReadCount++;
 		}
-
-		if (pins & Z80_WR)
+		else if (pins & Z80_WR)
 		{
-			// log IO write
-			ioAccessMapItem.WriteCount++;
-			ioDevice.WriteCount++;
+			// an IO write
+			const uint8_t data = Z80_GET_DATA(pins);
+			if ((pins & Z80_A0) == 0)
+			{
+				// Spectrum ULA (...............0)
+				
+				// has border colour changed?
+				if((data & 7) != (state.LastFE & 7))
+				{
+					FIOAccess &ioDevice = state.IODeviceAcceses[(int)SpeccyIODevice::BorderColour];
+					ioDevice.Callers[pc]++;
+					ioDevice.WriteCount++;
+				}
+
+				// has beeper changed
+				if((data & (1 << 4)) != (state.LastFE & (1 << 4)))
+				{
+					FIOAccess &ioDevice = state.IODeviceAcceses[(int)SpeccyIODevice::Beeper];
+					ioDevice.Callers[pc]++;
+					ioDevice.WriteCount++;
+				}
+
+
+				// has mic output changed
+				if ((data & (1 << 3)) != (state.LastFE & (1 << 3)))
+				{
+					FIOAccess &ioDevice = state.IODeviceAcceses[(int)SpeccyIODevice::Mic];
+					ioDevice.Callers[pc]++;
+					ioDevice.WriteCount++;
+				}
+				
+				state.LastFE = data;
+			}
+
 		}
 	}
 }
@@ -202,13 +214,13 @@ void DrawIOAnalysis(FIOAnalysisState &state)
 	for (int i = 0; i < (int)SpeccyIODevice::Count; i++)
 	{
 		FIOAccess &ioAccess = state.IODeviceAcceses[i];
+		const SpeccyIODevice device = (SpeccyIODevice)i;
 
-		//ImGui::Text("%04Xh - %d reads, %d writes", ioAccess.Address, ioAccess.ReadCount, ioAccess.WriteCount);
 		const bool bSelected = (int)selectedDevice == i;
 
-		if (ImGui::Selectable(ioAccess.Name.c_str(), bSelected))
+		if (ImGui::Selectable(g_DeviceNames[device], bSelected))
 		{
-			selectedDevice = (SpeccyIODevice)i;
+			selectedDevice = device;
 		}
 
 		if(bSelected)

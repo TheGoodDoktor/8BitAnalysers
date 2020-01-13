@@ -8,8 +8,12 @@ struct FCodeAnalysisState;
 enum class SpeccyIODevice
 {
 	None = -1,
-	Keyboard,	//TODO: rows
+	Keyboard,	
+	Ear,	// for loading
+	Mic,	// for saving
 	Beeper,
+	BorderColour,
+	KempstonJoystick,
 
 	Unknown,
 	Count
@@ -17,8 +21,8 @@ enum class SpeccyIODevice
 
 struct FIOAccess
 {
-	std::string		Name;
-	uint16_t		Address;
+	//std::string		Name;
+	uint16_t		Address = 0;
 	int				ReadCount = 0;
 	int				WriteCount = 0;
 
@@ -29,9 +33,10 @@ struct FIOAccess
 struct FIOAnalysisState
 {
 	// io info
-	std::map<uint16_t, FIOAccess>		IOAccessMap;
-	FIOAccess							IODeviceAcceses[(int)SpeccyIODevice::Count];
-
+	//std::map<uint16_t, FIOAccess>		IOAccessMap;
+	FIOAccess			IODeviceAcceses[(int)SpeccyIODevice::Count];
+	uint8_t				LastFE = 0;
+	SpeccyIODevice		SelectedDevice = SpeccyIODevice::None;
 	FCodeAnalysisState*	pCodeAnalysis = nullptr;
 
 };

@@ -7,6 +7,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
 #include "chips/z80.h"
+#include "CodeToolTips.h"
 
 // UI
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i);
@@ -169,70 +170,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 	}
 }
 
-// TODO: Eventually fill this up
-typedef std::map<uint8_t, const char *> InstructionInfoMap;
-InstructionInfoMap g_InstructionInfo =
-{
-	{0x10, "DJNZ: Decrement B & Jump relative if it isn't 0"},	//DJNZ
-	{0x2F, "CPL: Complement(inverted) bits of A"},	//CPL
-};
 
-// extended instructions
-InstructionInfoMap g_InstructionInfo_ED =
-{
-	{0xB0,"LDIR: Transfer BC bytes from address pointed to by HL to address pointed to by DE.\nHL & DE get incremented, BC gets decremented."},//LDIR
-};
-
-// bit instructions
-InstructionInfoMap g_InstructionInfo_CB =
-{
-	{0x07,"Rotate A Left with Carry. Bit 7 goes to Carry & bit 0."},	//RLC A
-};
-
-// IX/IY instruction
-InstructionInfoMap g_InstructionInfo_Index =
-{
-	{0x09, "Add BC to index register"},	// Add IX/IY,BC
-};
-
-void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
-{
-	FSpeccy* pSpeccy = state.pSpeccy;
-	uint8_t instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address);
-	InstructionInfoMap::const_iterator it = g_InstructionInfo.end();
-	
-	switch(instrByte)
-	{
-	case 0xED:
-		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address+1);
-		it = g_InstructionInfo_ED.find(instrByte);
-		break;
-
-	case 0xCB:
-		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address + 1);
-		it = g_InstructionInfo_CB.find(instrByte);
-		break;
-
-	case 0xDD:
-	case 0xFD:
-		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address + 1);
-		it = g_InstructionInfo_CB.find(instrByte);
-		break;
-
-	default:
-		it = g_InstructionInfo.find(instrByte);
-		
-		break;
-	}
-
-	if (it == g_InstructionInfo.end())
-		return;
-
-
-	ImGui::BeginTooltip();
-	ImGui::Text("%s",it->second);
-	ImGui::EndTooltip();
-}
 
 void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 {

@@ -132,6 +132,9 @@
     <ClCompile Include="..\..\Source\UI\IOAnalysis.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\CodeAnalyser\CodeToolTips.cpp">
+      <Filter>Source Files\CodeAnalyser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h">
@@ -405,6 +408,9 @@
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\CodeAnalyser\romlabels.h">
+      <Filter>Source Files\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\CodeAnalyser\CodeToolTips.h">
       <Filter>Source Files\CodeAnalyser</Filter>
     </ClInclude>
   </ItemGroup>

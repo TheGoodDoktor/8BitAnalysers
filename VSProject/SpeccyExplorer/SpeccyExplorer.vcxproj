@@ -138,6 +138,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyser.cpp" />
     <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.cpp" />
+    <ClCompile Include="..\..\Source\CodeAnalyser\CodeToolTips.cpp" />
     <ClCompile Include="..\..\Source\imgui_impl_dx11.cpp" />
     <ClCompile Include="..\..\Source\imgui_impl_lucidextra.cpp" />
     <ClCompile Include="..\..\Source\imgui_impl_win32.cpp" />
@@ -166,6 +167,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyser.h" />
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.h" />
+    <ClInclude Include="..\..\Source\CodeAnalyser\CodeToolTips.h" />
     <ClInclude Include="..\..\Source\CodeAnalyser\romlabels.h" />
     <ClInclude Include="..\..\Source\imgui_impl_dx11.h" />
     <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h" />
