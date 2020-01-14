@@ -115,8 +115,8 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 void TickSpeccy(FSpeccy &speccyInstance)
 {
-	const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate,32000.0f);
-	zx_exec(&speccyInstance.CurrentState, static_cast<uint32_t>(frameTime));
+	const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate,32000.0f) * speccyInstance.ExecSpeedScale;
+	zx_exec(&speccyInstance.CurrentState, std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 	ImGui_ImplDX11_UpdateTextureRGBA(speccyInstance.Texture, speccyInstance.FrameBuffer);
 
 	// Copy state buffer over - could be more efficient if needed

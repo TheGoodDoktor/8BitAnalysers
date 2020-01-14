@@ -48,7 +48,8 @@ struct FSpeccy
 	ImTextureID	Texture;		// texture 
 
 	bool		ExecThisFrame = true; // Whether the emulator should execute this frame (controlled by UI)
-
+	float		ExecSpeedScale = 1.0f;
+	
 	zx_t *		pStateBuffers;
 	int			NoStateBuffers;
 	int			CurrentStateBuffer = 0;
