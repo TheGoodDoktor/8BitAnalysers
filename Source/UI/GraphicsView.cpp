@@ -6,6 +6,8 @@
 #include <algorithm>
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
+#include "misc/cpp/imgui_stdlib.h"
+
 FGraphicsView *CreateGraphicsView(int width, int height)
 {
 	FGraphicsView *pNewView = new FGraphicsView;
@@ -235,22 +237,21 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		ImGui::InputInt("YSize Fine", &state.YSize, 1, 8);
 		ImGui::InputInt("Count", &state.ImageCount, 1, 4);
 
-		static char configName[64];
 		ImGui::Separator();
-		ImGui::InputText("Config Name", configName, 64);
+		ImGui::InputText("Config Name", &state.NewConfigName);
 		ImGui::SameLine();
 		if (ImGui::Button("Store"))
 		{
 			// Store this in the config map
 			auto& spriteConfigs = state.pGame->pConfig->SpriteConfigs;
-			if(spriteConfigs.find(configName) == spriteConfigs.end())	// not found - add
+			if(spriteConfigs.find(state.NewConfigName) == spriteConfigs.end())	// not found - add
 			{
 				FSpriteDefConfig newConfig;
 				newConfig.BaseAddress = state.Address;
 				newConfig.Count = state.ImageCount;
 				newConfig.Width = state.XSize;
-				newConfig.Height = state.YSize;
-				spriteConfigs[configName] = newConfig;
+				newConfig.Height = state.YSize / 8;	// sprite height in chars atm - TODO: move to line count
+				spriteConfigs[state.NewConfigName] = newConfig;
 
 				// TODO: tell sprite view to refresh
 				GenerateSpriteListsFromConfig(state, state.pGame->pConfig);
