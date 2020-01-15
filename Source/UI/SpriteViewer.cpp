@@ -17,14 +17,14 @@ void GenerateSpriteList(FSpriteDefList &spriteList, uint16_t startAddress, int c
 	uint16_t spriteAddress = startAddress;
 	for (int i = 0; i < count; i++)
 	{
-		FSpriteDef blobDef;
+		FSpriteDef spriteDef;
 
-		blobDef.Address = spriteAddress;
-		blobDef.Width = width;
-		blobDef.Height = height;
+		spriteDef.Address = spriteAddress;
+		spriteDef.Width = width;
+		spriteDef.Height = height;
 
 		spriteAddress += width * height * 8;	// 8 bytes per char
-		spriteList.Sprites.push_back(blobDef);
+		spriteList.Sprites.push_back(spriteDef);
 	}
 }
 

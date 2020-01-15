@@ -44,6 +44,8 @@ struct FGraphicsViewerState
 	int				YSize = 8;			// Image Y Size in pixels
 	int				ImageCount = 10;	// how many images?
 
+	std::string		NewConfigName;
+
 	std::string				SelectedSpriteList;
 	std::map<std::string, FUISpriteList>	SpriteLists;
 
