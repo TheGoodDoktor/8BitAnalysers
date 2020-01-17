@@ -158,3 +158,6 @@ void SetItemCode(FCodeAnalysisState &state, FItem *pItem);
 void SetItemData(FCodeAnalysisState &state, FItem *pItem);
 void SetItemText(FCodeAnalysisState &state, FItem *pItem);
 void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText);
+
+
+bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFileName, uint16_t startAddr, uint16_t endAddr);

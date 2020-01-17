@@ -391,6 +391,17 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				}
 			}
 
+			if (ImGui::MenuItem("Export ASM File"))
+			{
+				if (pUI->pActiveGame != nullptr)
+				{
+					EnsureDirectoryExists("OutputASM/");
+					std::string outBinFname = "OutputASM/" + pUI->pActiveGame->pConfig->Name + ".asm";
+
+					OutputCodeAnalysisToTextFile(pUI->CodeAnalysis, outBinFname.c_str(),0x4000,0xffff);
+				}
+			}
+
 			// TODO: export data for skookit
 			if (ImGui::MenuItem("Export Region Info File"))
 			{

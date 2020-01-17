@@ -759,3 +759,135 @@ void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pTe
 {
 	pItem->Comment = pText;
 }
+
+// text generation
+
+std::string GenerateAddressLabelString(FCodeAnalysisState &state, uint16_t addr)
+{
+	int labelOffset = 0;
+	const char *pLabelString = nullptr;
+	std::string labelStr;
+	
+	for (int addrVal = addr; addrVal >= 0; addrVal--)
+	{
+		if (state.Labels[addrVal] != nullptr)
+		{
+			labelStr = "[" + state.Labels[addrVal]->Name;
+			break;
+		}
+
+		labelOffset++;
+	}
+
+	if (labelStr.empty() == false)
+	{
+		if (labelOffset > 0)	// add offset string
+		{
+			char offsetString[16];
+			sprintf(offsetString, " + %d]", labelOffset);
+			labelStr += offsetString;
+		}
+		else
+		{
+			labelStr += "]";
+		}
+	}
+
+	return labelStr;
+}
+
+bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFileName,uint16_t startAddr,uint16_t endAddr)
+{
+	FILE *fp = fopen(pTextFileName, "wt");
+	if (fp == NULL)
+		return false;
+	
+	for(FItem* pItem : state.ItemList)
+	{
+		if (pItem->Address < startAddr || pItem->Address > endAddr)
+			continue;
+		
+		switch (pItem->Type)
+		{
+		case ItemType::Label:
+			{
+				const FLabelInfo *pLabelInfo = static_cast<FLabelInfo *>(pItem);
+				fprintf(fp, "%s:", pLabelInfo->Name.c_str());
+			}
+			break;
+		case ItemType::Code:
+			{
+				const FCodeInfo *pCodeInfo = static_cast<FCodeInfo *>(pItem);
+				fprintf(fp, "\t%s", pCodeInfo->Text.c_str());
+
+				if (pCodeInfo->JumpAddress != 0)
+				{
+					const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->JumpAddress);
+					if(labelStr.empty() == false)
+						fprintf(fp,"\t;%s", labelStr.c_str());
+					
+				}
+				else if (pCodeInfo->PointerAddress != 0)
+				{
+					const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->PointerAddress);
+					if (labelStr.empty() == false)
+						fprintf(fp, "\t;%s", labelStr.c_str());
+				}
+			}
+			
+			break;
+		case ItemType::Data:
+			{
+				const FDataInfo *pDataInfo = static_cast<FDataInfo *>(pItem);
+
+				fprintf(fp, "\t");
+				switch (pDataInfo->DataType)
+				{
+				case DataType::Byte:
+				{
+					const uint8_t val = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address);
+					fprintf(fp,"db %02Xh", val);
+				}
+				break;
+
+				case DataType::Word:
+				{
+					const uint16_t val = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address) | (ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + 1) << 8);
+					fprintf(fp, "dw %04Xh", val);
+				}
+				break;
+
+				case DataType::Text:
+				{
+					std::string textString;
+					for (int i = 0; i < pDataInfo->ByteSize; i++)
+					{
+						const char ch = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + i);
+						if (ch == '\n')
+							textString += "<cr>";
+						else
+							textString += ch;
+					}
+					fprintf(fp, "ascii '%s'", textString.c_str());
+				}
+				break;
+
+				case DataType::Graphics:
+				case DataType::Blob:
+				default:
+					fprintf(fp, "%d Bytes", pDataInfo->ByteSize);
+					break;
+				}
+			}
+			break;
+		}
+
+		// put comment on the end
+		if(pItem->Comment.empty() == false)
+		fprintf(fp, "\t;%s", pItem->Comment.c_str());
+		fprintf(fp, "\n");
+	}
+
+	fclose(fp);
+	return true;
+}
