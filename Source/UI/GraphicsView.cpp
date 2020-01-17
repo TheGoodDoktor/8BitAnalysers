@@ -146,6 +146,22 @@ void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pD
 	}
 }
 
+uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
+{
+	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
+
+	const int addrInput = state.Address;
+	const int xCount = kHorizontalDispCharCount / state.XSize;
+	const int xSize = xCount * state.XSize;
+	const int xp = std::max(std::min(xSize, x / 8), 0);
+	const int yp = std::max(std::min(kGraphicsViewerHeight, y), 0);
+	const int column = xp / state.XSize;
+	const int columnSize = kGraphicsViewerHeight * state.XSize;
+
+	ImGui::Text("xp: %d, yp: %d, column: %d", xp, yp, column);
+	return (addrInput + xp) + (column * columnSize) + (y * state.XSize);
+}
+
 // Viewer to view spectrum graphics
 void DrawGraphicsViewer(FGraphicsViewerState &state)
 {
@@ -172,14 +188,20 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	{
 		const int xp = (int)(io.MousePos.x - pos.x);
 		const int yp = (int)(io.MousePos.y - pos.y);
-		const int addressOffset = (xp / 8) + (yp * (256 / 8));
-		ptrAddress = addrInput + addressOffset;
+
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const int xPix = state.XSize * 8;
+		const int rx = static_cast<int>(pos.x) + ((xp / xPix) * xPix);
+		const int ry = static_cast<int>(pos.y) + ((yp / state.YSize) * state.YSize);
+		dl->AddRect(ImVec2(rx, ry), ImVec2(rx + xPix, ry + state.YSize), 0xff00ffff);
+		//const int addressOffset = (xp / 8) + (yp * (256 / 8));
+		ImGui::BeginTooltip();
+		ptrAddress = GetAddressFromPositionInView(state,xp, yp);
 		if (ImGui::IsMouseDoubleClicked(0))
 			CodeAnalyserGoToAddress(ptrAddress);
 		if (ImGui::IsMouseClicked(0))
 			state.ClickedAddress = ptrAddress;
 
-		ImGui::BeginTooltip();
 		ImGui::Text("%04Xh", ptrAddress);
 		ImGui::SameLine();
 		DrawAddressLabel(GetSpeccyUI()->CodeAnalysis, ptrAddress);
@@ -188,7 +210,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	
 	ImGui::SameLine();
 
-	static int kRowSize = kHorizontalDispCharCount * state.bColumnMode ? 8 : state.YSize;
+	static int kRowSize = kHorizontalDispCharCount * 8;
 	int addrLine = addrInput / kRowSize;
 	int addrOffset = addrInput % kRowSize;
 
@@ -223,7 +245,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	{
 		const int graphicsUnitSize = state.XSize * state.YSize;
 
-		ImGui::Checkbox("Column Mode", &state.bColumnMode);
+		//ImGui::Checkbox("Column Mode", &state.bColumnMode);
 		if (ImGui::Button("<<"))
 			addrInput -= graphicsUnitSize;
 		ImGui::SameLine();
@@ -272,28 +294,12 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 
 		if (state.ViewMode == GraphicsViewMode::Character)
 		{
-			if(state.bColumnMode)
+			for (int x = 0; x < xcount; x++)
 			{
-				for (int x = 0; x < xcount; x++)
-				{
-					const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
-					if (address + graphicsUnitSize < 0xffff)
-						PlotImageAt(pImage, x * state.XSize * 8, 0, state.XSize, kVerticalDispPixCount, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
-					address += state.XSize * kVerticalDispPixCount;
-				}
-			}
-			else
-			{
-				for (int y = 0; y < ycount; y++)
-				{
-					for (int x = 0; x < xcount; x++)
-					{
-						const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
-						if (address + graphicsUnitSize < 0xffff)
-							PlotImageAt(pImage, x * state.XSize * 8, y * state.YSize, state.XSize, state.YSize, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
-						address += graphicsUnitSize;
-					}
-				}
+				const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
+				if (address + graphicsUnitSize < 0xffff)
+					PlotImageAt(pImage, x * state.XSize * 8, 0, state.XSize, kVerticalDispPixCount, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+				address += state.XSize * kVerticalDispPixCount;
 			}
 		}
 		else if (state.ViewMode == GraphicsViewMode::CharacterWinding)
