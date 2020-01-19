@@ -99,14 +99,14 @@ bool InitGraphicsViewer(FGraphicsViewerState &state)
 // speccy colour CLUT
 static const uint32_t g_kColourLUT[8] =
 {
-	0xFF000000,     // black
-	0xFFFF0000,     // blue
-	0xFF0000FF,     // red
-	0xFFFF00FF,     // magenta
-	0xFF00FF00,     // green
-	0xFFFFFF00,     // cyan
-	0xFF00FFFF,     // yellow
-	0xFFFFFFFF,     // white
+	0xFF000000,     // 0 - black
+	0xFFFF0000,     // 1 - blue
+	0xFF0000FF,     // 2 - red
+	0xFFFF00FF,     // 3 - magenta
+	0xFF00FF00,     // 4 - green
+	0xFFFFFF00,     // 5 - cyan
+	0xFF00FFFF,     // 6 - yellow
+	0xFFFFFFFF,     // 7 - white
 };
 
 
@@ -160,6 +160,42 @@ uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
 
 	ImGui::Text("xp: %d, yp: %d, column: %d", xp, yp, column);
 	return (addrInput + xp) + (column * columnSize) + (y * state.XSize);
+}
+
+void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, int xPos, int columnWidth)
+{
+	uint16_t memAddr = startAddr;
+	FGraphicsView *pGraphicsView = state.pGraphicsView;
+	
+	for (int y = 0; y < kGraphicsViewerHeight; y++)
+	{
+		for(int xChar =0;xChar<columnWidth;xChar++)
+		{
+			const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, memAddr);
+			FDataInfo *pDataInfo = state.pUI->CodeAnalysis.DataInfo[memAddr];
+			FCodeInfo *pCodeInfo = state.pUI->CodeAnalysis.CodeInfo[memAddr];
+			uint8_t col = 7;	// white
+			if (pCodeInfo)
+			{
+				const int framesSinceAccessed = state.pUI->CodeAnalysis.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
+				if (pCodeInfo->FrameLastAccessed != -1 && (framesSinceAccessed < state.HeatmapThreshold))
+					col = 6;	// yellow code
+			}
+			else if (pDataInfo)
+			{
+				const int framesSinceWritten = state.pUI->CodeAnalysis.CurrentFrameNo - pDataInfo->LastFrameWritten;
+				const int framesSinceRead = state.pUI->CodeAnalysis.CurrentFrameNo - pDataInfo->LastFrameRead;
+				if (pDataInfo->LastFrameWritten != -1 && (framesSinceWritten < state.HeatmapThreshold))
+					col = 2;
+				if (pDataInfo->LastFrameRead != -1 && (framesSinceRead < state.HeatmapThreshold))
+					col = 4;
+			}
+
+			PlotImageAt(pImage, xPos + (xChar * 8), y, 1, 1, pGraphicsView->PixelBuffer, kGraphicsViewerWidth,col);
+
+			memAddr++;
+		}
+	}
 }
 
 // Viewer to view spectrum graphics
@@ -229,7 +265,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	int viewMode = (int)state.ViewMode;
 	if(ImGui::Combo("ViewMode", &viewMode, "Character\0CharacterWinding\0Screen", (int)GraphicsViewMode::Count))
 		state.ViewMode = (GraphicsViewMode)viewMode;
-
+	ImGui::SliderInt("Heatmap frame threshold", &state.HeatmapThreshold, 0, 60);
 	ClearGraphicsView(*pGraphicsView, 0xff000000);
 
 	ImGui::Text("Clicked Address: %04Xh", state.ClickedAddress);
@@ -296,9 +332,13 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		{
 			for (int x = 0; x < xcount; x++)
 			{
-				const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
-				if (address + graphicsUnitSize < 0xffff)
-					PlotImageAt(pImage, x * state.XSize * 8, 0, state.XSize, kVerticalDispPixCount, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+				
+
+				DrawMemoryAsGraphicsColumn(state, address, x * state.XSize * 8, state.XSize);
+
+				
+				//if (address + graphicsUnitSize < 0xffff)
+				//	PlotImageAt(pImage, x * state.XSize * 8, 0, state.XSize, kVerticalDispPixCount, pGraphicsView->PixelBuffer, kGraphicsViewerWidth,col);
 				address += state.XSize * kVerticalDispPixCount;
 			}
 		}

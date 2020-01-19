@@ -79,7 +79,9 @@ struct FDataInfo : FItem
 
 	DataType	DataType = DataType::Byte;
 
+	int						LastFrameRead = -1;
 	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions
+	int						LastFrameWritten = -1;
 	std::map<uint16_t, int>	Writes;	// address and counts of data access instructions
 };
 
@@ -147,6 +149,7 @@ void ReAnalyseCode(FCodeAnalysisState &state);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, bool bWrite);
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
+void ResetMemoryLogs(FCodeAnalysisState &state);
 
 // Commands
 void Undo(FCodeAnalysisState &state);

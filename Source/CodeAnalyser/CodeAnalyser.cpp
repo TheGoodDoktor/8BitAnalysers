@@ -302,6 +302,7 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	pCodeInfo->Text = dasmState.Text;
 }
 
+
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
 	FSpeccy *pSpeccy = state.pSpeccy;
@@ -452,9 +453,15 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr, bool bWrite)
 {
 	if (bWrite)
+	{
+		state.DataInfo[dataAddr]->LastFrameWritten = state.CurrentFrameNo;
 		state.DataInfo[dataAddr]->Writes[pc]++;
+	}
 	else
+	{
+		state.DataInfo[dataAddr]->LastFrameRead = state.CurrentFrameNo;
 		state.DataInfo[dataAddr]->Reads[pc]++;
+	}
 }
 
 void ReAnalyseCode(FCodeAnalysisState &state)
@@ -486,6 +493,24 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 		}
 	}
 }
+
+void ResetMemoryLogs(FCodeAnalysisState &state)
+{
+	for (int i = 0; i < (1 << 16); i++)
+	{
+		if (state.DataInfo[i] != nullptr)
+		{
+			FDataInfo & dataInfo = *state.DataInfo[i];
+			dataInfo.LastFrameRead = 0;
+			dataInfo.Reads.clear();
+			dataInfo.LastFrameWritten = 0;
+			dataInfo.Writes.clear();
+		}
+
+		state.LastWriter[i] = 0;
+	}
+}
+
 
 
 FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *name,LabelType type)

@@ -375,7 +375,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 			{
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
-				pDataInfo->Reads[dataAddr] = 1;
+				pDataInfo->Writes[dataAddr] = 1;
 			}
 		}
 

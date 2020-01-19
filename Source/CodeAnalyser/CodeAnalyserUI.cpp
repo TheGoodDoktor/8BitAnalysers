@@ -252,9 +252,49 @@ void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 
 void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 {
+	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
+	const int framesSinceWritten = state.CurrentFrameNo - pDataInfo->LastFrameWritten;
+	const int framesSinceRead = state.CurrentFrameNo - pDataInfo->LastFrameRead;
+	const int wBrightVal = (255 - std::min(framesSinceWritten << 2, 255)) & 0xff;
+	const int rBrightVal = (255 - std::min(framesSinceRead << 2, 255)) & 0xff;
 
+	if (rBrightVal > 0 || wBrightVal > 0)
+	{
+		const ImU32 pc_color = 0xFF00FFFF;
+		const ImU32 brd_color = 0xFF000000;
+
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const float lh2 = (float)(int)(line_height / 2);
+
+		if (wBrightVal > 0)
+		{
+			const ImVec2 a(pos.x + 2, pos.y);
+			const ImVec2 b(pos.x + 12, pos.y + lh2);
+			const ImVec2 c(pos.x + 2, pos.y + line_height);
+
+			const ImU32 col = 0xff000000 | (wBrightVal << 0);
+			dl->AddTriangleFilled(a, b, c, col);
+			dl->AddTriangle(a, b, c, brd_color);
+		}
+
+		pos.x += 10;
+
+	
+		if(rBrightVal>0)
+		{
+			const ImVec2 a(pos.x + 2, pos.y);
+			const ImVec2 b(pos.x + 12, pos.y + lh2);
+			const ImVec2 c(pos.x + 2, pos.y + line_height);
+			
+			const ImU32 col = 0xff000000 |  (rBrightVal << 8);
+			dl->AddTriangleFilled(a, b, c, col);
+			dl->AddTriangle(a, b, c, brd_color);
+		}
+	}
+	
 	ImGui::Text("\t%04Xh", pDataInfo->Address);
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
@@ -701,7 +741,12 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, ImGuiInputTextFlags_CharsHexadecimal))
 		GoToAddress(state, addrInput);
 	DrawDebuggerButtons(state);
-	ImGui::Checkbox("Analyse data accesses (slow)", &state.bRegisterDataAccesses);
+	//ImGui::Checkbox("Analyse data accesses (slow)", &state.bRegisterDataAccesses);
+
+	if (ImGui::Button("Reset Memory Logs"))
+	{
+		ResetMemoryLogs(state);
+	}
 
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{
