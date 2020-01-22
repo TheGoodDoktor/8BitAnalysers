@@ -162,6 +162,30 @@ uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
 	return (addrInput + xp) + (column * columnSize) + (y * state.XSize);
 }
 
+uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t addr, int frameThreshold)
+{
+	FDataInfo *pDataInfo = state.DataInfo[addr];
+	FCodeInfo *pCodeInfo = state.CodeInfo[addr];
+	uint8_t col = 7;	// white
+	if (pCodeInfo)
+	{
+		const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
+		if (pCodeInfo->FrameLastAccessed != -1 && (framesSinceAccessed < frameThreshold))
+			col = 6;	// yellow code
+	}
+	else if (pDataInfo)
+	{
+		const int framesSinceWritten = state.CurrentFrameNo - pDataInfo->LastFrameWritten;
+		const int framesSinceRead = state.CurrentFrameNo - pDataInfo->LastFrameRead;
+		if (pDataInfo->LastFrameWritten != -1 && (framesSinceWritten < frameThreshold))
+			col = 2;
+		if (pDataInfo->LastFrameRead != -1 && (framesSinceRead < frameThreshold))
+			col = 4;
+	}
+
+	return col;
+}
+
 void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, int xPos, int columnWidth)
 {
 	uint16_t memAddr = startAddr;
@@ -172,6 +196,8 @@ void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, 
 		for(int xChar =0;xChar<columnWidth;xChar++)
 		{
 			const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, memAddr);
+			const uint8_t col = GetHeatmapColourForMemoryAddress(state.pUI->CodeAnalysis, memAddr, state.HeatmapThreshold);
+			/*
 			FDataInfo *pDataInfo = state.pUI->CodeAnalysis.DataInfo[memAddr];
 			FCodeInfo *pCodeInfo = state.pUI->CodeAnalysis.CodeInfo[memAddr];
 			uint8_t col = 7;	// white
@@ -189,7 +215,7 @@ void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, 
 					col = 2;
 				if (pDataInfo->LastFrameRead != -1 && (framesSinceRead < state.HeatmapThreshold))
 					col = 4;
-			}
+			}*/
 
 			PlotImageAt(pImage, xPos + (xChar * 8), y, 1, 1, pGraphicsView->PixelBuffer, kGraphicsViewerWidth,col);
 
@@ -332,13 +358,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		{
 			for (int x = 0; x < xcount; x++)
 			{
-				
-
 				DrawMemoryAsGraphicsColumn(state, address, x * state.XSize * 8, state.XSize);
-
-				
-				//if (address + graphicsUnitSize < 0xffff)
-				//	PlotImageAt(pImage, x * state.XSize * 8, 0, state.XSize, kVerticalDispPixCount, pGraphicsView->PixelBuffer, kGraphicsViewerWidth,col);
 				address += state.XSize * kVerticalDispPixCount;
 			}
 		}
@@ -381,8 +401,9 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		{
 			if ((int)state.Address + offset > 0xffff)
 				break;
-			
-			const uint8_t *pSrc = GetSpeccyMemPtr(state.pSpeccy, state.Address + offset);
+
+			uint16_t addr = state.Address + offset;
+			const uint8_t *pSrc = GetSpeccyMemPtr(state.pSpeccy, addr);
 			const int y0to2 = ((offset >> 8) & 7);
 			const int y3to5 = ((offset >> 5) & 7) << 3;
 			const int y6to7 = ((offset >> 11) & 3) << 6;
@@ -395,13 +416,16 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 			for (int x = 0; x < 256 / 8; x++)
 			{
 				const uint8_t charLine = *pSrc++;
-
+				const uint8_t col = GetHeatmapColourForMemoryAddress(state.pUI->CodeAnalysis, addr, state.HeatmapThreshold);
+				
 				for (int xpix = 0; xpix < 8; xpix++)
 				{
 					const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
-					const uint32_t col = bSet ? 0xffffffff : 0xff000000;
-					*(pLineAddr + xpix + (x * 8)) = col;
+					const uint32_t colRGBA = bSet ? g_kColourLUT[col] : 0xff000000;
+					*(pLineAddr + xpix + (x * 8)) = colRGBA;
 				}
+
+				addr++;
 			}
 
 			offset += 256 / 8;	// advance to next line
