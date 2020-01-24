@@ -8,6 +8,9 @@
 #include "Util/FileUtil.h"
 #include <algorithm>
 
+#define SOKOL_IMPL
+#include "sokol_audio.h"
+
 std::vector<std::string> g_GamesList;
 
 bool EnumerateGames(void)
@@ -36,7 +39,7 @@ const std::vector<std::string>& GetGameList()
 /* audio-streaming callback */
 static void PushAudio(const float* samples, int num_samples, void* user_data) 
 {
-	//saudio_push(samples, num_samples);
+	saudio_push(samples, num_samples);
 }
 
 int MyTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
@@ -66,7 +69,9 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	FSpeccy *pNewInstance = new FSpeccy();
 	//keybuf_init(6);
 	//clock_init();
-	//saudio_setup(&(saudio_desc) { 0 });
+	saudio_desc audioDesc = {};
+	saudio_setup(&audioDesc);
+	assert(saudio_isvalid() == true);
 	//fs_init();
 
 	// setup pixel buffer
@@ -85,8 +90,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	desc.pixel_buffer = pNewInstance->FrameBuffer;
 	desc.pixel_buffer_size = pixelBufferSize;
 	desc.audio_cb = PushAudio;	// our audio callback
-	desc.audio_num_samples = ZX_DEFAULT_AUDIO_SAMPLES;
-	desc.audio_sample_rate = 44100;// saudio_sample_rate();
+	desc.audio_sample_rate = saudio_sample_rate();
 	desc.rom_zx48k = dump_amstrad_zx48k_bin;
 	desc.rom_zx48k_size = sizeof(dump_amstrad_zx48k_bin);
 	desc.rom_zx128_0 = dump_amstrad_zx128k_0_bin;
@@ -115,8 +119,8 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 
 void TickSpeccy(FSpeccy &speccyInstance)
 {
-	const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate,32000.0f) * speccyInstance.ExecSpeedScale;
-	zx_exec(&speccyInstance.CurrentState, std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
+	const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate,32000.0f) * speccyInstance.ExecSpeedScale;
+	zx_exec(&speccyInstance.CurrentState, max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 	ImGui_ImplDX11_UpdateTextureRGBA(speccyInstance.Texture, speccyInstance.FrameBuffer);
 
 	// Copy state buffer over - could be more efficient if needed
@@ -127,6 +131,7 @@ void TickSpeccy(FSpeccy &speccyInstance)
 
 void ShutdownSpeccy(FSpeccy*&pSpeccy)
 {
+	saudio_shutdown();
 	delete pSpeccy;
 	pSpeccy = nullptr;
 }
