@@ -40,6 +40,7 @@ const std::vector<std::string>& GetGameList()
 static void PushAudio(const float* samples, int num_samples, void* user_data) 
 {
 	saudio_push(samples, num_samples);
+	
 }
 
 int MyTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
@@ -70,6 +71,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	//keybuf_init(6);
 	//clock_init();
 	saudio_desc audioDesc = {};
+	memset(&audioDesc, 0, sizeof(saudio_desc));
 	saudio_setup(&audioDesc);
 	assert(saudio_isvalid() == true);
 	//fs_init();
@@ -85,6 +87,7 @@ FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 	zx_joystick_type_t joy_type = ZX_JOYSTICKTYPE_NONE;
 	
 	zx_desc_t desc;
+	memset(&desc, 0, sizeof(zx_desc_t));
 	desc.type = type;
 	desc.joystick_type = joy_type;
 	desc.pixel_buffer = pNewInstance->FrameBuffer;
