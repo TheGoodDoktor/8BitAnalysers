@@ -718,6 +718,18 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 				ImGui::EndTooltip();
 				//ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
 
+				if(ImGui::IsMouseClicked(0))
+				{
+					pUI->bScreenCharSelected = true;
+					pUI->SelectedCharX = rx;
+					pUI->SelectedCharY = ry;
+					pUI->SelectPixAddr = scrPixAddress;
+					pUI->SelectAttrAddr = scrAttrAddress;
+				}
+
+				if (ImGui::IsMouseClicked(1))
+					pUI->bScreenCharSelected = false;
+
 				if (ImGui::IsMouseDoubleClicked(0))
 					CodeAnalyserGoToAddress(lastPixWriter);
 				if (ImGui::IsMouseDoubleClicked(1))
@@ -725,6 +737,21 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 			}
 			
 		}
+
+		if(pUI->bScreenCharSelected == true)
+		{
+			ImDrawList* dl = ImGui::GetWindowDrawList();
+			const ImU32 col = 0xffffffff;	// TODO: pulse
+			dl->AddRect(ImVec2(pUI->SelectedCharX, pUI->SelectedCharY), ImVec2(pUI->SelectedCharX + 8, pUI->SelectedCharY + 8), col);
+
+			ImGui::Text("Pixel Char Address:");
+			ImGui::SameLine();
+			DrawAddressLabel(pUI->CodeAnalysis, pUI->SelectPixAddr);
+			ImGui::Text("Attribute Address:");
+			ImGui::SameLine();
+			DrawAddressLabel(pUI->CodeAnalysis, pUI->SelectAttrAddr);
+		}
+		
 		ImGui::SliderFloat("Speed Scale", &pSpeccy->ExecSpeedScale, 0.0f, 1.0f);
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		// read keys

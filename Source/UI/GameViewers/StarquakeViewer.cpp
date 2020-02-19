@@ -138,10 +138,10 @@ static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerDat
 				uint8_t colVal = col & 0x3f;	// just the colour values
 				if (colVal == 0x36) 
 					colVal = (col & 0xc0) | ReadSpeccyByte(pUI->pSpeccy, 0xea63);
-				else if (colVal != 0)
-					colVal = col;
-				else 
+				else if (colVal == 0)
 					colVal = (col & 0xf8) | ReadSpeccyByte(pUI->pSpeccy, 0xea62);
+				else
+					colVal = col;
 
 				colVal &= ~0x40;
 				

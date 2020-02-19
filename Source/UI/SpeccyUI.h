@@ -64,6 +64,13 @@ struct FSpeccyUI
 	std::vector<uint16_t>				FunctionStack;
 	FDasmState							FunctionDasm;
 
+	// screen inspector
+	bool		bScreenCharSelected = false;
+	uint16_t	SelectPixAddr = 0;
+	uint16_t	SelectAttrAddr = 0;
+	int			SelectedCharX = 0;
+	int			SelectedCharY = 0;
+
 	uint16_t dasmCurr = 0;
 
 	static const int kPCHistorySize = 32;
