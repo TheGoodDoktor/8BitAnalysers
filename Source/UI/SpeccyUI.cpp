@@ -62,26 +62,11 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 
 	RegisterCodeExecuted(state, pc);
 	state.CodeInfo[pc]->FrameLastAccessed = state.CurrentFrameNo;
-	//if (bWrite)
-	//	state.LastWriter[addr] = pc;
 
-	// Mark self modifying code
-	/*if (bWrite)
-	{
-		FCodeInfo *pCodeWrittenTo = state.CodeInfo[addr];
-		if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
-			pCodeWrittenTo->bSelfModifyingCode = true;
-	}
-
-	// this is probably slow so is optional
-	if (bMemAccess && state.bRegisterDataAccesses)
-	{
-		RegisterDataAccess(state, pc,addr,bWrite);
-	}*/
+	// check for breakpointed code line
+	if (state.CodeInfo[pc]->bBreakpointed)
+		return UI_DBG_BP_BASE_TRAPID;
 	
-	// labels
-	//GenerateLabelsForAddress(pUI, pc,LabelType::Code);
-
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pUI);
 
 

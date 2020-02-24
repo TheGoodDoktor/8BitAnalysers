@@ -30,6 +30,7 @@ struct FItem
 	uint16_t		Address;
 	uint16_t		ByteSize;
 	int				FrameLastAccessed = -1;
+	bool			bBreakpointed = false;
 };
 
 struct FLabelInfo : FItem

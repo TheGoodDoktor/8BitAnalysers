@@ -215,6 +215,21 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 		}
 	}
 
+	// show if breakpointed
+	if (pCodeInfo->bBreakpointed)
+	{
+		const ImU32 bp_enabled_color = 0xFF0000FF;
+		const ImU32 bp_disabled_color = 0xFF000088;
+		const ImU32 brd_color = 0xFF000000;
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const ImVec2 pos = ImGui::GetCursorScreenPos();
+		const float lh2 = (float)(int)(line_height / 2);
+		const ImVec2 mid(pos.x + 7, pos.y + lh2);
+		
+		dl->AddCircleFilled(mid, 7, bp_enabled_color);
+		dl->AddCircle(mid, 7, brd_color);
+	}
+
 	//ImGui::PushStyleColor(ImGuiCol_Text, col);
 	//ImGui::Text(">> ");
 	//ImGui::SameLine();
@@ -602,6 +617,18 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 			{
 				AddLabelAtAddress(state, pItem->Address);
 			}
+		}
+
+		// breakpoints
+		
+		if (pItem->bBreakpointed == false && ImGui::Selectable("Add Breakpoint"))
+		{
+			pItem->bBreakpointed = true;
+		}
+
+		if (pItem->bBreakpointed == true && ImGui::Selectable("Remove Breakpoint"))
+		{
+			pItem->bBreakpointed = false;
 		}
 		
 		if (ImGui::Selectable("View in graphics viewer"))
