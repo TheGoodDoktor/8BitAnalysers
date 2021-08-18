@@ -41,3 +41,8 @@
 /VSProject/.vs/config/applicationhost.config
 /VSProject/SpeccyExplorer/x64/Release
 /VSProject/x64/Release
+/Source/Vendor/chips-test/out/build/x64-Debug
+/Source/Vendor/imgui-docking/examples/example_glfw_vulkan/out/build/x64-Debug/.cmake/api/v1/query/client-MicrosoftVS
+/Source/Vendor/imgui-docking/examples/example_glfw_vulkan/out/build/x64-Debug
+/Source/Vendor/rapidjson/out/build/x64-Debug
+/VSProject/.vs/SpeccyExplorer/v16

@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <map>
+#include <string>
 
 struct FSpeccyUI;
 struct FGame;
