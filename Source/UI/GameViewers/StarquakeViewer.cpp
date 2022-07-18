@@ -19,6 +19,29 @@ static const int kNoScreens = 512;
 static const uint16_t kBlobSpritesAddr = 0xe074;
 static const int kNoBlobSprites = 52;
 
+// game state addresses
+static const uint16_t kCurrentScreen = 0xd2c8;
+static const uint16_t kNoLives = 0xd2cc;
+static const uint16_t kPlayerX = 0xdd1d;
+static const uint16_t kPlayerY = 0xdd1e;
+
+// Current Game State
+struct FSQGameState
+{
+	int	CurrentScreen = 0;
+	int NoLives = 0;
+	int PlayerXPos = 0;
+	int PlayerYPos = 0;
+};
+
+void UpdateSQGameState(FSpeccy* pSpeccyState, FSQGameState& SQState)
+{
+	SQState.CurrentScreen = ReadSpeccyByte( pSpeccyState, kCurrentScreen );
+	SQState.NoLives = ReadSpeccyByte( pSpeccyState, kNoLives );
+	SQState.PlayerXPos = ReadSpeccyByte( pSpeccyState, kPlayerX );
+	SQState.PlayerYPos = ReadSpeccyByte( pSpeccyState, kPlayerY );
+}
+
 // Firelord
 namespace Firelord
 {
@@ -60,7 +83,7 @@ struct FSprite
 // StarQuake Stuff
 struct FStarquakeViewerData : FGameViewerData
 {
-	
+	FSQGameState	State;	// global game state
 };
 
 
@@ -70,6 +93,9 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 	pStarquakeViewerData->pUI = pUI;
 	
 	InitGameViewer(pStarquakeViewerData, pGameConfig);
+
+	// cheats
+	WriteSpeccyByte( pUI->pSpeccy, 0x9ffc, 201 );
 
 	// Add specific memory handlers
 
@@ -174,6 +200,10 @@ static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerDat
 
 }
 
+static void DrawItem( int itemNum, int xp, int yp, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
+{
+}
+
 static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
 {
 	FSpeccyUI *pUI = pStarquakeViewer->pUI;
@@ -194,6 +224,8 @@ static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pSta
 void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 {
 	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)pGame->pViewerData;
+
+	UpdateSQGameState( pUI->pSpeccy, pStarquakeViewer->State );
 
 	ImGui::BeginTabBar("StarquakeTabBar");
 
@@ -229,7 +261,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		ImGui::Checkbox("Get from game", &getScreenFromGame);
 		ClearGraphicsView(*pGraphicsView, 0xff000000);
 		if(getScreenFromGame)
-			screenNo = ReadSpeccyByte(pUI->pSpeccy, 0xd2c8);
+			screenNo = pStarquakeViewer->State.CurrentScreen;
 		DrawScreen(screenNo, 0, 0, pStarquakeViewer);
 		DrawGraphicsView(*pGraphicsView);
 		ImGui::EndTabItem();
@@ -238,6 +270,17 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 	if (ImGui::BeginTabItem("Sprites"))
 	{
 		DrawSpriteListGUI(pUI->GraphicsViewer, pStarquakeViewer->pSpriteGraphicsView);
+		ImGui::EndTabItem();
+	}
+
+	if ( ImGui::BeginTabItem( "Game View" ) )
+	{
+		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
+
+		ClearGraphicsView( *pGraphicsView, 0xff000000 );
+		DrawScreen( pStarquakeViewer->State.CurrentScreen, 0, 0, pStarquakeViewer );
+
+		DrawGraphicsView( *pGraphicsView );
 		ImGui::EndTabItem();
 	}
 
