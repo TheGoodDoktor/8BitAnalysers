@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "SpriteViewer.h"
 #include <map>
+#include <string>
 
 struct FSpeccy;
 struct FSpeccyUI;
