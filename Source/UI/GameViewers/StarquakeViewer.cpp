@@ -15,6 +15,8 @@ static const uint16_t kBigPlatformDataAddr = 0x9840;
 static const int kNoBigPlatforms = 40;
 static const uint16_t kScreenDataAddr = 0x7530;
 static const int kNoScreens = 512;
+static const uint16_t kItemDataAddr = 0x9088;
+static const int kNoItems = 35;
 
 static const uint16_t kBlobSpritesAddr = 0xe074;
 static const int kNoBlobSprites = 52;
@@ -143,15 +145,15 @@ static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerDat
 	FSpeccyUI *pUI = pStarquakeViewer->pUI;
 	//FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 	
-	const uint16_t kSmallPlatformLUT = 0xeb23;
-	const uint16_t kPlatformPtr = kSmallPlatformLUT + (platformNum * 2);
+	//const uint16_t kSmallPlatformLUT = 0xeb23;
+	const uint16_t kPlatformPtr = kPlatformGfxAddr + (platformNum * 2);
 
 	//memset(pGraphicsView->PixelBuffer, 0, pGraphicsView->Width * pGraphicsView->Height * 4);
 
 	uint16_t kPlatformAddr = ReadSpeccyByte(pUI->pSpeccy, kPlatformPtr);
 	kPlatformAddr = kPlatformAddr | (ReadSpeccyByte(pUI->pSpeccy, kPlatformPtr+1) << 8);
 	uint16_t kPlatformCharPtr = kPlatformAddr + 6;	// pointer to char data
-	uint16_t kPlatformColPtr = kPlatformAddr - 1;	// pointer to char data
+	uint16_t kPlatformColPtr = kPlatformAddr - 1;	// pointer to colour data
 	for(int y=0;y<6;y++)
 	{
 		const uint8_t bits = ReadSpeccyByte(pUI->pSpeccy, kPlatformAddr + y);
@@ -161,15 +163,15 @@ static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerDat
 			{
 				const uint8_t *pImage = GetSpeccyMemPtr(pUI->pSpeccy, kPlatformCharPtr);
 				const uint8_t col = ReadSpeccyByte(pUI->pSpeccy, kPlatformColPtr);
-				uint8_t colVal = col & 0x3f;	// just the colour values
-				if (colVal == 0x36) 
-					colVal = (col & 0xc0) | ReadSpeccyByte(pUI->pSpeccy, 0xea63);
+				uint8_t colVal = col & 0x3f;	// just the colour values - ink & paper
+				if (colVal == 0x36)		// yellow paper, yellow ink
+					colVal = (col & 0xc0) | ReadSpeccyByte(pUI->pSpeccy, 0xea63);	// use flash & bright from colour & read colour from 0xea63
 				else if (colVal == 0)
-					colVal = (col & 0xf8) | ReadSpeccyByte(pUI->pSpeccy, 0xea62);
+					colVal = (col & 0xf8) | ReadSpeccyByte(pUI->pSpeccy, 0xea62);	// use flash, bright & paper
 				else
 					colVal = col;
 
-				colVal &= ~0x40;
+				colVal &= ~0x40;	// clear bright bit
 				
 				PlotImageAt(pImage, xp + (x * 8), yp + (y * 8), 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, colVal);
 
@@ -202,6 +204,13 @@ static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerDat
 
 static void DrawItem( int itemNum, int xp, int yp, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
 {
+	FSpeccyUI* pUI = pStarquakeViewer->pUI;
+	const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, kItemDataAddr + (itemNum * 32) );
+
+	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+	PlotImageAt( pImage + 16, xp, yp + 8, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+	PlotImageAt( pImage + 24, xp + 8, yp + 8, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
 }
 
 static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
@@ -249,6 +258,17 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		ClearGraphicsView(*pGraphicsView, 0xff000000);
 		DrawBigPlatform(platformNo, 0, 0, pStarquakeViewer);
 		DrawGraphicsView(*pGraphicsView);
+		ImGui::EndTabItem();
+	}
+
+	if ( ImGui::BeginTabItem( "Items" ) )
+	{
+		static int itemNo = 0;
+		FGraphicsView* pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
+		ImGui::InputInt( "Item No", &itemNo );
+		ClearGraphicsView( *pGraphicsView, 0xff000000 );
+		DrawItem( itemNo, 0, 0, pStarquakeViewer, pGraphicsView );
+		DrawGraphicsView( *pGraphicsView );
 		ImGui::EndTabItem();
 	}
 

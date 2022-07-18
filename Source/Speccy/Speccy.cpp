@@ -39,7 +39,7 @@ const std::vector<std::string>& GetGameList()
 /* audio-streaming callback */
 static void PushAudio(const float* samples, int num_samples, void* user_data) 
 {
-	saudio_push(samples, num_samples);
+	//saudio_push(samples, num_samples);
 	
 }
 

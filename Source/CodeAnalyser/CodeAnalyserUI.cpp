@@ -166,11 +166,16 @@ void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 	ImGui::Text("Callers:");
 	for (const auto & caller : pLabelInfo->References)
 	{
-		const int index = GetItemIndexForAddress(state, caller.first);
-		if (index != -1)
-			DrawCodeAnalysisItemAtIndex(state, index);
-		
-		//DrawCodeAddress(state, caller.first);
+		//DrawAddressLabel( state, caller.first );
+		//ImGui::Text( "%xh", caller.first );
+		//DrawAddressLabel( state, caller.first );
+
+		/*const int index = GetItemIndexForAddress(state, caller.first);
+		if ( index != -1 )
+		{
+			DrawCodeAnalysisItemAtIndex( state, index );
+		}*/
+		DrawCodeAddress(state, caller.first);
 	}
 }
 

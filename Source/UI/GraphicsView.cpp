@@ -114,6 +114,11 @@ static const uint32_t g_kColourLUT[8] =
 
 // coords are in pixel units
 // w & h in characters
+// 00000111 - ink
+// 00111000 - paper
+// 01000000 - bright
+// 10000000 - flash
+
 void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth, uint8_t colAttr)
 {
 	uint32_t* pBase = pDest + (xp + (yp * destWidth));
