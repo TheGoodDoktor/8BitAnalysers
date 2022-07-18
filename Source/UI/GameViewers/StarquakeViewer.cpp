@@ -243,6 +243,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		static int platformNo = 0;
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
+		ImGui::Text( "%xh", platformNo );
 		ClearGraphicsView(*pGraphicsView, 0xff000000);
 		DrawSmallPlatform(platformNo, 0,0, pStarquakeViewer, pGraphicsView);
 		DrawGraphicsView(*pGraphicsView);
@@ -255,6 +256,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		static int platformNo = 0;
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
+		ImGui::Text( "%xh", platformNo );
 		ClearGraphicsView(*pGraphicsView, 0xff000000);
 		DrawBigPlatform(platformNo, 0, 0, pStarquakeViewer);
 		DrawGraphicsView(*pGraphicsView);
@@ -266,6 +268,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		static int itemNo = 0;
 		FGraphicsView* pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt( "Item No", &itemNo );
+		ImGui::Text( "%xh", itemNo );
 		ClearGraphicsView( *pGraphicsView, 0xff000000 );
 		DrawItem( itemNo, 0, 0, pStarquakeViewer, pGraphicsView );
 		DrawGraphicsView( *pGraphicsView );
