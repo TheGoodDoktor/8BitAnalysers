@@ -31,6 +31,7 @@ static const uint16_t kNoLives = 0xd2cc;
 
 static const uint16_t kPlayerX = 0xdd1d;
 static const uint16_t kPlayerY = 0xdd1e;
+static const uint16_t kPlayerXOffset = 0xdd1c;
 
 // Current Game State
 struct FSQGameState
@@ -313,6 +314,8 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 	if ( ImGui::BeginTabItem( "Game View" ) )
 	{
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
+		ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+		ImVec2 pos = ImGui::GetCursorScreenPos();
 
 		ClearGraphicsView( *pGraphicsView, 0xff000000 );
 
@@ -321,7 +324,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		// Draw Game screen
 		DrawScreen( pStarquakeViewer->State.CurrentScreen, 0, 48, pStarquakeViewer );
 
-		// TODO: Draw player
+		// Draw player
 		uint16_t spriteAddr = ReadSpeccyByte( pUI->pSpeccy, 0xdd1a );
 		spriteAddr = spriteAddr | ( ReadSpeccyByte( pUI->pSpeccy, 0xdd1a + 1 ) << 8 );
 
@@ -329,14 +332,19 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 
 		int x = ReadSpeccyByte( pUI->pSpeccy, kPlayerX );
 		int y = ReadSpeccyByte( pUI->pSpeccy, kPlayerY );
+		int xOff = ReadSpeccyByte( pUI->pSpeccy, kPlayerXOffset );
 
-		PlotImageAt( pImage, x, 192 - y, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+		PlotImageAt( pImage, x , 192 - y, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
 
 		// TODO: draw enemies
 		
 		// TODO: draw items
 
 		DrawGraphicsView( *pGraphicsView );
+
+		ImVec2 windowsPos( pos.x + x, pos.y + 192 - y );
+		pDrawList->AddRect( windowsPos, ImVec2( windowsPos.x + 16, windowsPos.y + 16 ), 0xffffffff );
+
 		ImGui::EndTabItem();
 	}
 
