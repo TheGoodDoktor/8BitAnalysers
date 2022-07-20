@@ -143,7 +143,7 @@ void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pD
 			{
 				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
 				const uint32_t col = bSet ? inkCol : paperCol;
-				if(col!=0)
+				if((colAttr & 0x3f) != 0)
 					*(pBase + xpix + (x * 8)) = col;
 			}
 		}

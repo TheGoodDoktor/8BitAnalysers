@@ -29,9 +29,14 @@ static const int kNoBlobSprites = 52;
 static const uint16_t kCurrentScreen = 0xd2c8;
 static const uint16_t kNoLives = 0xd2cc;
 
+static const uint16_t kPlayerSpriteImagePtr = 0xdd1a;
+static const uint16_t kPlayerXCharPos = 0xdd1c;	// X pos in character coords
 static const uint16_t kPlayerX = 0xdd1d;
 static const uint16_t kPlayerY = 0xdd1e;
-static const uint16_t kPlayerXCharPos = 0xdd1c;	// X pos in character coords
+static const uint16_t kPlayerPrevSpriteAddr = 0xdd1f;
+static const uint16_t kPlayerCurrentCtrl = 0xdd23;
+static const uint16_t kPlayerLastCtrl = 0xdd24;
+static const uint16_t kPlayerAnimFrame = 0xdd25;
 
 // Current Game State
 struct FSQGameState
@@ -103,7 +108,7 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 	InitGameViewer(pStarquakeViewerData, pGameConfig);
 
 	// cheats
-	WriteSpeccyByte( pUI->pSpeccy, 0x9ffc, 201 );
+	//WriteSpeccyByte( pUI->pSpeccy, 0x9ffc, 201 );
 
 	// Add specific memory handlers
 
@@ -325,17 +330,18 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		DrawScreen( pStarquakeViewer->State.CurrentScreen, 0, 48, pStarquakeViewer );
 
 		// Draw player
-		uint16_t spriteAddr = ReadSpeccyByte( pUI->pSpeccy, 0xdd1a );
-		spriteAddr = spriteAddr | ( ReadSpeccyByte( pUI->pSpeccy, 0xdd1a + 1 ) << 8 );
+		for ( int sprNo = 0; sprNo < 6; sprNo++ )
+		{
+			uint16_t spriteAddr = ReadSpeccyWord( pUI->pSpeccy, kPlayerSpriteImagePtr + (sprNo *32));
 
-		const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, spriteAddr );
+			const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, spriteAddr );
 
-		int x = ReadSpeccyByte( pUI->pSpeccy, kPlayerX );
-		int y = ReadSpeccyByte( pUI->pSpeccy, kPlayerY );
-		int xChar = ReadSpeccyByte( pUI->pSpeccy, kPlayerXCharPos );
+			int x = ReadSpeccyByte( pUI->pSpeccy, kPlayerX + ( sprNo * 32 ) );
+			int y = ReadSpeccyByte( pUI->pSpeccy, kPlayerY + ( sprNo * 32 ) );
+			int xChar = ReadSpeccyByte( pUI->pSpeccy, kPlayerXCharPos + ( sprNo * 32 ) );
 
-		PlotImageAt( pImage, xChar * 8 , 192 - y, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
-
+			PlotImageAt( pImage, xChar * 8, 192 - y, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+		}
 		// TODO: draw enemies
 		
 		// TODO: draw items
@@ -348,8 +354,13 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 
 		if ( bDrawDebug )
 		{
-			ImVec2 windowsPos( pos.x + x, pos.y + 192 - y );
-			pDrawList->AddRect( windowsPos, ImVec2( windowsPos.x + 16, windowsPos.y + 16 ), 0xffffffff );
+			for ( int sprNo = 0; sprNo < 6; sprNo++ )
+			{
+				int x = ReadSpeccyByte( pUI->pSpeccy, kPlayerX + ( sprNo * 32 ) );
+				int y = ReadSpeccyByte( pUI->pSpeccy, kPlayerY + ( sprNo * 32 ) );
+				ImVec2 windowsPos( pos.x + x, pos.y + 192 - y );
+				pDrawList->AddRect( windowsPos, ImVec2( windowsPos.x + 16, windowsPos.y + 16 ), 0xffffffff );
+			}
 		}
 		ImGui::EndTabItem();
 	}

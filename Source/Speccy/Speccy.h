@@ -72,6 +72,11 @@ inline uint8_t	ReadSpeccyByte(FSpeccy *pSpeccy, uint16_t address)
 	return MemReadFunc(pSpeccy->CurrentLayer, address, &pSpeccy->CurrentState);
 }
 
+inline uint16_t ReadSpeccyWord( FSpeccy* pSpeccy, uint16_t address )
+{
+	return ReadSpeccyByte( pSpeccy, address ) | ( ReadSpeccyByte( pSpeccy, address + 1 ) << 8 );
+}
+
 inline const uint8_t*	GetSpeccyMemPtr(FSpeccy *pSpeccy, uint16_t address)
 {
 	//return MemGetPtr(&pSpeccy->CurrentState, pSpeccy->CurrentLayer, address);
