@@ -31,7 +31,7 @@ static const uint16_t kNoLives = 0xd2cc;
 
 static const uint16_t kPlayerX = 0xdd1d;
 static const uint16_t kPlayerY = 0xdd1e;
-static const uint16_t kPlayerXOffset = 0xdd1c;
+static const uint16_t kPlayerXCharPos = 0xdd1c;	// X pos in character coords
 
 // Current Game State
 struct FSQGameState
@@ -332,9 +332,9 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 
 		int x = ReadSpeccyByte( pUI->pSpeccy, kPlayerX );
 		int y = ReadSpeccyByte( pUI->pSpeccy, kPlayerY );
-		int xOff = ReadSpeccyByte( pUI->pSpeccy, kPlayerXOffset );
+		int xChar = ReadSpeccyByte( pUI->pSpeccy, kPlayerXCharPos );
 
-		PlotImageAt( pImage, x , 192 - y, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+		PlotImageAt( pImage, xChar * 8 , 192 - y, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
 
 		// TODO: draw enemies
 		
@@ -342,9 +342,15 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 
 		DrawGraphicsView( *pGraphicsView );
 
-		ImVec2 windowsPos( pos.x + x, pos.y + 192 - y );
-		pDrawList->AddRect( windowsPos, ImVec2( windowsPos.x + 16, windowsPos.y + 16 ), 0xffffffff );
+		static bool bDrawDebug = false;
 
+		ImGui::Checkbox( "Draw Debug", &bDrawDebug );
+
+		if ( bDrawDebug )
+		{
+			ImVec2 windowsPos( pos.x + x, pos.y + 192 - y );
+			pDrawList->AddRect( windowsPos, ImVec2( windowsPos.x + 16, windowsPos.y + 16 ), 0xffffffff );
+		}
 		ImGui::EndTabItem();
 	}
 
