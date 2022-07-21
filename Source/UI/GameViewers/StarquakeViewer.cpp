@@ -22,6 +22,9 @@ static const int kNoScreens = 512;
 static const uint16_t kItemDataAddr = 0x9088;
 static const int kNoItems = 35;
 
+static const uint16_t kPlatformSpritesAddr = 0xdc55;
+static const int kNoPlatformSprites = 35;
+
 static const uint16_t kBlobSpritesAddr = 0xe074;
 static const int kNoBlobSprites = 52;
 
@@ -37,6 +40,31 @@ static const uint16_t kPlayerPrevSpriteAddr = 0xdd1f;
 static const uint16_t kPlayerCurrentCtrl = 0xdd23;
 static const uint16_t kPlayerLastCtrl = 0xdd24;
 static const uint16_t kPlayerAnimFrame = 0xdd25;
+
+static const uint16_t kSpriteList = 0xdd18;
+
+// struct for sprite in ZX memory
+#pragma pack(1)
+struct FStarquakeSprite
+{
+	uint16_t	ScanlinePtr;
+	uint16_t	SpriteImagePtr;
+	uint8_t		XCharacterPos;
+	uint8_t		XPixelPos;
+	uint8_t		YPixelPos;
+	uint16_t	SpriteImagePtr2;
+	uint8_t		InkCol;
+	uint8_t		Unknown1;
+	uint8_t		CurrentControl;
+	uint8_t		LastControl;
+	uint8_t		AnimFrame;
+	uint8_t		Unknown2;
+	uint8_t		Unknown4;
+
+	uint8_t		Pad[16];
+};
+
+static_assert( sizeof( FStarquakeSprite ) == 32 );
 
 // Current Game State
 struct FSQGameState
@@ -109,6 +137,7 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 
 	// cheats
 	//WriteSpeccyByte( pUI->pSpeccy, 0x9ffc, 201 );
+	WriteSpeccyByte( pUI->pSpeccy, 54505, 201 );
 
 	// Add specific memory handlers
 
@@ -233,6 +262,15 @@ static void DrawItem( int itemNum, int xp, int yp, FStarquakeViewerData* pStarqu
 	PlotImageAt( pImage + 24, xp + 8, yp + 8, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
 }
 
+static void DrawPlatform( int platformNo, int xp, int yp, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
+{
+	FSpeccyUI* pUI = pStarquakeViewer->pUI;
+	const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, kPlatformSpritesAddr + ( platformNo * 16 ) );
+
+	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+}
+
 static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
 {
 	FSpeccyUI *pUI = pStarquakeViewer->pUI;
@@ -294,7 +332,17 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		DrawGraphicsView( *pGraphicsView );
 		ImGui::EndTabItem();
 	}
-
+	if ( ImGui::BeginTabItem( "Platforms" ) )
+	{
+		static int platformNo = 0;
+		FGraphicsView* pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
+		ImGui::InputInt( "Platform No", &platformNo );
+		ImGui::Text( "%xh", platformNo );
+		ClearGraphicsView( *pGraphicsView, 0xff000000 );
+		DrawPlatform( platformNo, 0, 0, pStarquakeViewer, pGraphicsView );
+		DrawGraphicsView( *pGraphicsView );
+		ImGui::EndTabItem();
+	}
 	if (ImGui::BeginTabItem("Screens"))
 	{
 		static int screenNo = 0;
@@ -329,18 +377,21 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		// Draw Game screen
 		DrawScreen( pStarquakeViewer->State.CurrentScreen, 0, 48, pStarquakeViewer );
 
-		// Draw player
+		// Draw sprites
 		for ( int sprNo = 0; sprNo < 6; sprNo++ )
 		{
-			uint16_t spriteAddr = ReadSpeccyWord( pUI->pSpeccy, kPlayerSpriteImagePtr + (sprNo *32));
+			FStarquakeSprite* pSprite = ( FStarquakeSprite * )GetSpeccyMemPtr( pUI->pSpeccy, kSpriteList + (sprNo * 32));
 
-			const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, spriteAddr );
+			//uint16_t spriteAddr = ReadSpeccyWord( pUI->pSpeccy, kPlayerSpriteImagePtr + (sprNo *32));
 
-			int x = ReadSpeccyByte( pUI->pSpeccy, kPlayerX + ( sprNo * 32 ) );
-			int y = ReadSpeccyByte( pUI->pSpeccy, kPlayerY + ( sprNo * 32 ) );
-			int xChar = ReadSpeccyByte( pUI->pSpeccy, kPlayerXCharPos + ( sprNo * 32 ) );
+			const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, pSprite->SpriteImagePtr );
 
-			PlotImageAt( pImage, xChar * 8, 192 - y, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+			//int x = ReadSpeccyByte( pUI->pSpeccy, kPlayerX + ( sprNo * 32 ) );
+			//int y = ReadSpeccyByte( pUI->pSpeccy, kPlayerY + ( sprNo * 32 ) );
+			//int xChar = ReadSpeccyByte( pUI->pSpeccy, kPlayerXCharPos + ( sprNo * 32 ) );
+
+			if( pSprite->XPixelPos > 16 || pSprite->YPixelPos > 16)
+				PlotImageAt( pImage, pSprite->XCharacterPos * 8, 192 - pSprite->YPixelPos, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, pSprite->InkCol );
 		}
 		// TODO: draw enemies
 		
