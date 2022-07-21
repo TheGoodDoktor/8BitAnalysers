@@ -24,6 +24,7 @@ static const int kNoItems = 35;
 
 static const uint16_t kPlatformSpritesAddr = 0xdc55;
 static const int kNoPlatformSprites = 35;
+static const uint16_t kPlatformStates = 0xdbbb;
 
 static const uint16_t kBlobSpritesAddr = 0xe074;
 static const int kNoBlobSprites = 52;
@@ -62,6 +63,15 @@ struct FStarquakeSprite
 	uint8_t		Unknown4;
 
 	uint8_t		Pad[16];
+};
+
+#pragma pack(1)
+struct FPlatformState
+{
+	uint8_t		XCharPosAndPlatNo;
+	uint8_t		YCharPos;
+	uint8_t		Unknown;
+	uint8_t		Timer;
 };
 
 static_assert( sizeof( FStarquakeSprite ) == 32 );
@@ -137,6 +147,7 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 
 	// cheats
 	//WriteSpeccyByte( pUI->pSpeccy, 0x9ffc, 201 );
+	//WriteSpeccyByte( pUI->pSpeccy, 0xdb50, 0 );
 	WriteSpeccyByte( pUI->pSpeccy, 54505, 201 );
 
 	// Add specific memory handlers
@@ -392,6 +403,19 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 
 			if( pSprite->XPixelPos > 16 || pSprite->YPixelPos > 16)
 				PlotImageAt( pImage, pSprite->XCharacterPos * 8, 192 - pSprite->YPixelPos, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, pSprite->InkCol );
+		}
+
+		// Draw Platforms
+		for ( int platNo = 0; platNo < 6; platNo++ )
+		{
+			FPlatformState* pPlatform = (FPlatformState*)GetSpeccyMemPtr( pUI->pSpeccy, kPlatformStates + ( platNo * 4 ) );
+
+			int x = pPlatform->XCharPosAndPlatNo & 31;
+			int y = pPlatform->YCharPos;
+			if(y!=0)
+			{
+				DrawPlatform( pPlatform->XCharPosAndPlatNo >> 5, x * 8, y * 8, pStarquakeViewer, pGraphicsView );
+			}
 		}
 		// TODO: draw enemies
 		
