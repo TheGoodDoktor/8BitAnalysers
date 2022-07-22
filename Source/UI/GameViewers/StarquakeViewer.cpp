@@ -324,7 +324,24 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
 		ImGui::Text( "%xh", platformNo );
-		ClearGraphicsView(*pGraphicsView, 0xff000000);
+		uint8_t SmallPlatformInfo = ReadSpeccyByte( pUI->pSpeccy, kPlatformTypeInfoAddr + platformNo );
+		ImGui::Text( "Additional Info %xh", SmallPlatformInfo );
+		if ( SmallPlatformInfo < 0x50 )
+			ImGui::Text( "Colour Attib: %d", SmallPlatformInfo & 7 );
+		else if ( ( SmallPlatformInfo >> 4 ) == 0x5 )
+			ImGui::Text( "upward transport tube" );
+		else if ( ( SmallPlatformInfo >> 4 ) == 0x6 )
+			ImGui::Text( "contains killzone" );
+		else if ( ( SmallPlatformInfo >> 4 ) == 0x7 )
+			ImGui::Text( "Ray effect" );
+		else if ( ( SmallPlatformInfo >> 4 ) == 0xc )
+			ImGui::Text( "Flying transport" );
+		else if ( ( SmallPlatformInfo >> 4 ) == 0xd )
+			ImGui::Text( "Teleport" );
+		else
+			ImGui::Text( "Unknown" );
+
+		ClearGraphicsView( *pGraphicsView, 0xff000000 );
 		DrawSmallPlatform(platformNo, 0,0, pStarquakeViewer, pGraphicsView);
 		DrawGraphicsView(*pGraphicsView);
 
@@ -350,7 +367,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		ImGui::InputInt( "Item No", &itemNo );
 		ImGui::Text( "%xh", itemNo );
 		ClearGraphicsView( *pGraphicsView, 0xff000000 );
-		DrawItem( itemNo, 0, 0, pStarquakeViewer, pGraphicsView, 0x7 );
+		DrawItem( itemNo, 0, 0, 0x7, pStarquakeViewer, pGraphicsView );
 		DrawGraphicsView( *pGraphicsView );
 		ImGui::EndTabItem();
 	}
