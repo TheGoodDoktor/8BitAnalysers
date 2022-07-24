@@ -8,28 +8,18 @@
 #include "UI/GameConfig.h"
 
 // Starquake addresses
-static const uint16_t kPlatformGfxAddr = 0xeb23;
-static const uint16_t kPlatformGfxSize = 0x00ff;
-static const uint16_t kPlatformTypeInfoAddr = 0x9740;
-static const uint16_t kPlatformColourLUT = 0xA7F7;
+
+// Screen composition data
+static const uint16_t kSmallPlatformGfxAddr = 0xeb23;
+static const uint16_t kSmallPlatformGfxSize = 0x00ff;
+static const uint16_t kSmallPlatformTypeInfoAddr = 0x9740;
+static const uint16_t kSmallPlatformColourLUT = 0xA7F7;
 
 static const uint16_t kBigPlatformDataAddr = 0x9840;
 static const int kNoBigPlatforms = 40;
 
 static const uint16_t kScreenDataAddr = 0x7530;
 static const int kNoScreens = 512;
-
-static const uint16_t kItemDataAddr = 0x9088;
-static const int kNoItems = 35;
-
-static const uint16_t kCollectableItemStates = 0x94E8;
-
-static const uint16_t kPlatformSpritesAddr = 0xdc55;
-static const int kNoPlatformSprites = 35;
-static const uint16_t kPlatformStates = 0xdbbb;
-
-static const uint16_t kBlobSpritesAddr = 0xe074;
-static const int kNoBlobSprites = 52;
 
 // game state addresses
 static const uint16_t kCurrentScreen = 0xd2c8;
@@ -66,7 +56,14 @@ struct FStarquakeSprite
 
 	uint8_t		Pad[16];
 };
+static_assert( sizeof( FStarquakeSprite ) == 32 );
 
+// Sprite Data
+static const uint16_t kBlobSpritesAddr = 0xe074;
+static const int kNoBlobSprites = 52;
+
+// Platforms
+// The thing the player drops with the down button
 #pragma pack(1)
 struct FPlatformState
 {
@@ -75,17 +72,51 @@ struct FPlatformState
 	uint8_t		Unknown;
 	uint8_t		Timer;
 };
+static_assert( sizeof( FPlatformState ) == 4 );
 
+static const uint16_t kPlatformStates = 0xdbbb;	// address
+
+// platform sprite data
+static const uint16_t kPlatformSpritesAddr = 0xdc55;
+static const int kNoPlatformSprites = 35;
+
+// Items
+// They can be picked up and dropped
 #pragma pack(1)
 struct FItemState
 {
-	uint8_t	XCoordAndColour;	// top 3 bits col, bottom 5 - xchar
+	uint8_t	XCoordAndColour;	// top 3 bits col, bottom 5 - xchar - TODO: try bitfield
 	uint8_t YPosAndRoomMSB;
 	uint8_t	RoomNo;
 	uint8_t ItemNo;
 };
+static_assert( sizeof( FItemState ) == 4 );
 
-static_assert( sizeof( FStarquakeSprite ) == 32 );
+static const uint16_t kCollectableItemStates = 0x94E8;	// address of states in ZX memory
+
+// item sprite data
+static const uint16_t kItemSpriteDataAddr = 0x9088;
+static const int kNoItems = 35;
+
+// Electric Hazards
+// Timed hazards
+#pragma pack(1)
+struct FElectricHazardState
+{
+	uint8_t	XPos;
+	uint8_t YPos;
+	uint8_t Unknown1;
+	uint8_t Timer;
+	uint8_t Unknown3;
+	uint8_t Active;
+	uint8_t Unknown5;
+	uint8_t Unknown6;
+};
+static_assert( sizeof( FElectricHazardState ) == 8 );
+
+static const uint16_t kElectricHazardStates = 0x9635;	// address of states in ZX memory
+static const int kNoElectricHazards = 4;
+
 
 // Current Game State
 struct FSQGameState
@@ -168,8 +199,8 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 		FMemoryAccessHandler handler;
 
 		handler.Name = "Small platforms";
-		handler.MemStart = kPlatformGfxAddr;
-		handler.MemEnd = kPlatformGfxAddr + kPlatformGfxSize;	// 8 bytes per char
+		handler.MemStart = kSmallPlatformGfxAddr;
+		handler.MemEnd = kSmallPlatformGfxAddr + kSmallPlatformGfxSize;	// 8 bytes per char
 		handler.Type = MemoryAccessType::Read;
 
 		AddMemoryHandler(pUI, handler);
@@ -208,17 +239,17 @@ static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerDat
 	//FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 	
 	//const uint16_t kSmallPlatformLUT = 0xeb23;
-	const uint16_t kPlatformPtr = kPlatformGfxAddr + (platformNum * 2);
+	const uint16_t kPlatformPtr = kSmallPlatformGfxAddr + (platformNum * 2);
 
 	//memset(pGraphicsView->PixelBuffer, 0, pGraphicsView->Width * pGraphicsView->Height * 4);
 	uint8_t lutCol = ReadSpeccyByte( pUI->pSpeccy, 0xea63 );
 	
 	// check the platform info of this platform
-	const uint8_t typeInfo = ReadSpeccyByte( pUI->pSpeccy, kPlatformTypeInfoAddr + platformNum );
+	const uint8_t typeInfo = ReadSpeccyByte( pUI->pSpeccy, kSmallPlatformTypeInfoAddr + platformNum );
 	if( (typeInfo & 0xf0) < 0x50 && (typeInfo & 0xf0) != 0)
 	{
 		const uint8_t lutIndex = typeInfo >> 4;
-		lutCol = ReadSpeccyByte( pUI->pSpeccy, kPlatformColourLUT + lutIndex );
+		lutCol = ReadSpeccyByte( pUI->pSpeccy, kSmallPlatformColourLUT + lutIndex );
 	}
 
 	uint16_t kPlatformAddr = ReadSpeccyByte(pUI->pSpeccy, kPlatformPtr);
@@ -276,7 +307,7 @@ static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerDat
 static void DrawItem( int itemNum, int xp, int yp, uint8_t col, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
 {
 	FSpeccyUI* pUI = pStarquakeViewer->pUI;
-	const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, kItemDataAddr + (itemNum * 32) );
+	const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, kItemSpriteDataAddr + (itemNum * 32) );
 
 	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
 	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
@@ -284,13 +315,13 @@ static void DrawItem( int itemNum, int xp, int yp, uint8_t col, FStarquakeViewer
 	PlotImageAt( pImage + 24, xp + 8, yp + 8, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
 }
 
-static void DrawPlatform( int platformNo, int xp, int yp, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
+static void DrawPlatform( int platformNo, int xp, int yp, uint8_t col, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
 {
 	FSpeccyUI* pUI = pStarquakeViewer->pUI;
 	const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, kPlatformSpritesAddr + ( platformNo * 16 ) );
 
-	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
-	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width );
+	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
+	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
 }
 
 static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
@@ -324,7 +355,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
 		ImGui::Text( "%xh", platformNo );
-		uint8_t SmallPlatformInfo = ReadSpeccyByte( pUI->pSpeccy, kPlatformTypeInfoAddr + platformNo );
+		uint8_t SmallPlatformInfo = ReadSpeccyByte( pUI->pSpeccy, kSmallPlatformTypeInfoAddr + platformNo );
 		ImGui::Text( "Additional Info %xh", SmallPlatformInfo );
 		if ( SmallPlatformInfo < 0x50 )
 			ImGui::Text( "Colour Attib: %d", SmallPlatformInfo & 7 );
@@ -378,7 +409,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		ImGui::InputInt( "Platform No", &platformNo );
 		ImGui::Text( "%xh", platformNo );
 		ClearGraphicsView( *pGraphicsView, 0xff000000 );
-		DrawPlatform( platformNo, 0, 0, pStarquakeViewer, pGraphicsView );
+		DrawPlatform( platformNo, 0, 0, 0x7, pStarquakeViewer, pGraphicsView);
 		DrawGraphicsView( *pGraphicsView );
 		ImGui::EndTabItem();
 	}
@@ -419,7 +450,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		// Draw Moving Sprites
 		for ( int sprNo = 0; sprNo < 6; sprNo++ )
 		{
-			FStarquakeSprite* pSprite = ( FStarquakeSprite * )GetSpeccyMemPtr( pUI->pSpeccy, kSpriteList + (sprNo * 32));
+			FStarquakeSprite* pSprite = (FStarquakeSprite*)GetSpeccyMemPtr( pUI->pSpeccy, kSpriteList + ( sprNo * sizeof( FStarquakeSprite ) ) );
 
 			const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, pSprite->SpriteImagePtr );
 
@@ -430,13 +461,24 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		// draw platforms
 		for ( int platNo = 0; platNo < 6; platNo++ )
 		{
-			FPlatformState* pPlatform = (FPlatformState*)GetSpeccyMemPtr( pUI->pSpeccy, kPlatformStates + ( platNo * 4 ) );
+			FPlatformState* pPlatform = (FPlatformState*)GetSpeccyMemPtr( pUI->pSpeccy, kPlatformStates + ( platNo * sizeof( FPlatformState ) ) );
 
 			int x = pPlatform->XCharPosAndPlatNo & 31;
 			int y = pPlatform->YCharPos;
-			if(y!=0)
+			if ( y != 0 )
 			{
-				DrawPlatform( pPlatform->XCharPosAndPlatNo >> 5, x * 8, y * 8, pStarquakeViewer, pGraphicsView );
+				DrawPlatform( pPlatform->XCharPosAndPlatNo >> 5, x * 8, y * 8, 0x7, pStarquakeViewer, pGraphicsView );
+			}
+		}
+
+		// draw electric hazards
+		for(int elecHaz = 0;elecHaz < kNoElectricHazards; elecHaz++)
+		{
+			FElectricHazardState* pElecHazardState = (FElectricHazardState *)GetSpeccyMemPtr( pUI->pSpeccy, kElectricHazardStates + ( elecHaz * sizeof( FElectricHazardState) ) );
+		
+			if ( pElecHazardState->XPos != 0 && pElecHazardState->Active != 0 )
+			{
+				DrawPlatform( 0x5, pElecHazardState->XPos * 8, pElecHazardState->YPos * 8, 0x7, pStarquakeViewer, pGraphicsView );
 			}
 		}
 		
@@ -453,6 +495,17 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 				const uint8_t col = pCollectable->XCoordAndColour >> 5;
 				DrawItem( pCollectable->ItemNo, xPos, yPos, col, pStarquakeViewer, pGraphicsView);
 			}
+		}
+
+		// screen item
+		uint8_t itemX = ReadSpeccyByte( pUI->pSpeccy, 0xd2c0 );
+		uint8_t itemY = ReadSpeccyByte( pUI->pSpeccy, 0xd2c1 );
+		uint8_t itemType = ReadSpeccyByte( pUI->pSpeccy, 0xd2c2 );
+		uint8_t itemCol = 0x7;
+
+		if(itemX!=0)
+		{
+			DrawItem( itemType, itemX * 8, itemY * 8, itemCol, pStarquakeViewer, pGraphicsView );
 		}
 
 		DrawGraphicsView( *pGraphicsView );
