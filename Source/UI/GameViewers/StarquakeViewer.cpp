@@ -67,10 +67,11 @@ static const int kNoBlobSprites = 52;
 #pragma pack(1)
 struct FPlatformState
 {
-	uint8_t		XCharPosAndPlatNo;
-	uint8_t		YCharPos;
-	uint8_t		Unknown;
-	uint8_t		Timer;
+	unsigned		XCharPos : 5;
+	unsigned		PlatNo : 3;
+	unsigned		YCharPos : 8;
+	unsigned		Unknown : 8;
+	unsigned		Timer : 8;
 };
 static_assert( sizeof( FPlatformState ) == 4 );
 
@@ -85,10 +86,12 @@ static const int kNoPlatformSprites = 35;
 #pragma pack(1)
 struct FItemState
 {
-	uint8_t	XCoordAndColour;	// top 3 bits col, bottom 5 - xchar - TODO: try bitfield
-	uint8_t YPosAndRoomMSB;
-	uint8_t	RoomNo;
-	uint8_t ItemNo;
+	unsigned	XPos : 5;	
+	unsigned	Colour : 3;
+	unsigned	YPos : 7;
+	unsigned	RoomMSB : 1;
+	unsigned	RoomNo : 8;
+	unsigned	ItemNo : 8;
 };
 static_assert( sizeof( FItemState ) == 4 );
 
@@ -355,22 +358,47 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
 		ImGui::Text( "%xh", platformNo );
-		uint8_t SmallPlatformInfo = ReadSpeccyByte( pUI->pSpeccy, kSmallPlatformTypeInfoAddr + platformNo );
+		const uint8_t SmallPlatformInfo = ReadSpeccyByte( pUI->pSpeccy, kSmallPlatformTypeInfoAddr + platformNo );
 		ImGui::Text( "Additional Info %xh", SmallPlatformInfo );
 		if ( SmallPlatformInfo < 0x50 )
-			ImGui::Text( "Colour Attib: %d", SmallPlatformInfo & 7 );
-		else if ( ( SmallPlatformInfo >> 4 ) == 0x5 )
-			ImGui::Text( "upward transport tube" );
-		else if ( ( SmallPlatformInfo >> 4 ) == 0x6 )
-			ImGui::Text( "contains killzone" );
-		else if ( ( SmallPlatformInfo >> 4 ) == 0x7 )
-			ImGui::Text( "Ray effect" );
-		else if ( ( SmallPlatformInfo >> 4 ) == 0xc )
-			ImGui::Text( "Flying transport" );
-		else if ( ( SmallPlatformInfo >> 4 ) == 0xd )
-			ImGui::Text( "Teleport" );
+		{
+			ImGui::Text( "Colour Attrib: %d", SmallPlatformInfo & 7 );
+		}
 		else
-			ImGui::Text( "Unknown" );
+		{
+			const uint8_t type = SmallPlatformInfo >> 4;
+
+			switch(type)
+			{
+			case 0x5:
+				ImGui::Text( "Upward transport tube" );
+				break;
+			case 0x6:
+				ImGui::Text( "Contains kill zone" );
+				break;
+			case 0x7:
+				ImGui::Text( "Electric hazard" );
+				break;
+			case 0x8:
+				ImGui::Text( "Patrolling enemy placement" );
+				break;
+			case 0x9:
+				ImGui::Text( "Item placement" );
+				break;
+			case 0xb:
+				ImGui::Text( "Locked door" );
+				break;
+			case 0xc:
+				ImGui::Text( "Flying transport" );
+				break;
+			case 0xd:
+				ImGui::Text( "Teleporter" );
+				break;
+			default:
+				ImGui::Text( "Unknown" );
+				break;
+			}
+		}
 
 		ClearGraphicsView( *pGraphicsView, 0xff000000 );
 		DrawSmallPlatform(platformNo, 0,0, pStarquakeViewer, pGraphicsView);
@@ -463,11 +491,11 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		{
 			FPlatformState* pPlatform = (FPlatformState*)GetSpeccyMemPtr( pUI->pSpeccy, kPlatformStates + ( platNo * sizeof( FPlatformState ) ) );
 
-			int x = pPlatform->XCharPosAndPlatNo & 31;
+			int x = pPlatform->XCharPos;// AndPlatNo & 31;
 			int y = pPlatform->YCharPos;
 			if ( y != 0 )
 			{
-				DrawPlatform( pPlatform->XCharPosAndPlatNo >> 5, x * 8, y * 8, 0x7, pStarquakeViewer, pGraphicsView );
+				DrawPlatform( pPlatform->PlatNo, x * 8, y * 8, 0x7, pStarquakeViewer, pGraphicsView );
 			}
 		}
 
@@ -487,12 +515,12 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		{
 			FItemState* pCollectable = (FItemState*)GetSpeccyMemPtr( pUI->pSpeccy, kCollectableItemStates + ( collectableNo * 4 ) );
 		
-			const int roomNo = pCollectable->RoomNo + ( ( pCollectable->YPosAndRoomMSB & 0x80 ) << 1 );
+			const int roomNo = pCollectable->RoomNo | ( ( pCollectable->RoomMSB ) << 8 );
 			if(roomNo == pStarquakeViewer->State.CurrentScreen )
 			{
-				const int xPos = ( pCollectable->XCoordAndColour & 0x1f ) * 8;
-				const int yPos = ( pCollectable->YPosAndRoomMSB & 0x7f ) * 8;
-				const uint8_t col = pCollectable->XCoordAndColour >> 5;
+				const int xPos = pCollectable->XPos * 8;
+				const int yPos = pCollectable->YPos * 8;
+				const uint8_t col = pCollectable->Colour;
 				DrawItem( pCollectable->ItemNo, xPos, yPos, col, pStarquakeViewer, pGraphicsView);
 			}
 		}
@@ -501,7 +529,7 @@ void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
 		uint8_t itemX = ReadSpeccyByte( pUI->pSpeccy, 0xd2c0 );
 		uint8_t itemY = ReadSpeccyByte( pUI->pSpeccy, 0xd2c1 );
 		uint8_t itemType = ReadSpeccyByte( pUI->pSpeccy, 0xd2c2 );
-		uint8_t itemCol = 0x7;
+		uint8_t itemCol = 0x7;	// TODO:
 
 		if(itemX!=0)
 		{

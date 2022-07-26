@@ -672,6 +672,12 @@ public:
 				pDataItem->ByteSize = 1;
 				state.bCodeAnalysisDataDirty = true;
 			}
+			else if ( pDataItem->DataType == DataType::Text )
+			{
+				pDataItem->DataType = DataType::Byte;
+				pDataItem->ByteSize = 1;
+				state.bCodeAnalysisDataDirty = true;
+			}
 		}
 		else if (pItem->Type == ItemType::Code)
 		{
