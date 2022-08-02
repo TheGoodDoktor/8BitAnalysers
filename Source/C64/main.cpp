@@ -10,6 +10,7 @@
 #include <tchar.h>
 
 #include "C64.h"
+#include "C64Chips.h"
 #include "UI/C64UI.h"
 
 // Data
@@ -102,6 +103,7 @@ int main(int argc, char** argv)
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    C64ChipsInit();
 	// Speccy 
 	/*FSpeccyConfig config;
 	config.NoStateBuffers = 10;
@@ -134,6 +136,7 @@ int main(int argc, char** argv)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
+        C64ChipsTick();
 		// speccy update & render
 		/*UpdatePreTickSpeccyUI(pSpeccyUI);
 		if(speccy.ExecThisFrame)
@@ -161,6 +164,7 @@ int main(int argc, char** argv)
         //g_pSwapChain->Present(0, 0); // Present without vsync
     }
 
+    C64ChipsShutdown();
 	// shutdown the speccy stuff
 	//ShutdownSpeccyUI(pSpeccyUI);
 	//ShutdownSpeccy(g_pSpeccy);

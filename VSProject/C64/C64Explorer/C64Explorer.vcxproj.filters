@@ -28,6 +28,18 @@
     <Filter Include="Source Files\Shared\ImGuiSupport">
       <UniqueIdentifier>{48694f47-e423-465e-b57c-86517292a197}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Vendor\Chips">
+      <UniqueIdentifier>{c7999b99-b258-4d82-8d3f-a7daa560a4c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor\Chips\Chips">
+      <UniqueIdentifier>{f4678212-79ce-4647-970b-08969322ef5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor\Chips\Systems">
+      <UniqueIdentifier>{d605117d-883f-46a7-9b9d-0f00baa7aa42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor\Chips\UI">
+      <UniqueIdentifier>{e5c1b991-e45c-4ee4-a68d-13d62d92da98}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\main.cpp">
@@ -59,6 +71,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp">
       <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\C64Chips.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -94,6 +109,201 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h">
       <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\am40010.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\ay38910.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\beeper.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\clk.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\fdd.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\fdd_cpc.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\i8255.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\kbd.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\m6502.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\m6522.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\m6526.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\m6569.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\m6581.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\mc6845.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\mc6847.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\mem.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\upd765.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\z80.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\z80ctc.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\chips\z80pio.h">
+      <Filter>Source Files\Vendor\Chips\Chips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_am40010.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_atom.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_audio.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_ay38910.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_bombjack.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_c64.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_chip.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_cpc.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_dasm.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_dbg.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_fdd.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_i8255.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_kbd.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_kc85.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_kc85sys.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_lc80.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_m6502.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_m6522.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_m6526.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_m6569.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_m6581.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_mc6845.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_mc6847.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_memedit.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_memmap.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_namco.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_upd765.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_util.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_z1013.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_z80.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_z80ctc.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_z80pio.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_z9001.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\ui\ui_zx.h">
+      <Filter>Source Files\Vendor\Chips\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\atom.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\bombjack.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\c64.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\cpc.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\kc85.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\lc80.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\namco.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\z1013.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\z9001.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\chips\systems\zx.h">
+      <Filter>Source Files\Vendor\Chips\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\C64Chips.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
