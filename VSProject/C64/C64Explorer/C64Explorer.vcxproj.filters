@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\UI">
+      <UniqueIdentifier>{d451375b-5e4a-4499-8c17-5c258a787434}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared">
+      <UniqueIdentifier>{61d6b56e-ca8c-4a28-8029-f5a908fb0f47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor">
+      <UniqueIdentifier>{0c30e4e6-1eb9-4432-ae10-75b10195aaec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor\ImGui">
+      <UniqueIdentifier>{3e0a02a9-6b06-4719-8502-9bfdb00e1490}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\ImGuiSupport">
+      <UniqueIdentifier>{48694f47-e423-465e-b57c-86517292a197}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Source\C64\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\UI\C64UI.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\C64.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui_draw.cpp">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui_widgets.cpp">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui.cpp">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui_demo.cpp">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\Source\C64\UI\C64UI.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\C64.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imgui_internal.h">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imstb_rectpack.h">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imstb_textedit.h">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imconfig.h">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imgui.h">
+      <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

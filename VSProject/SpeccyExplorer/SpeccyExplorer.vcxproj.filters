@@ -52,14 +52,14 @@
     <Filter Include="Source Files\CodeAnalyser">
       <UniqueIdentifier>{96b94b2e-f0a1-40fb-a990-5c1a9f7133c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shared">
+      <UniqueIdentifier>{746d0738-bb42-4549-8d40-22d3c29cbf2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\ImGuiSupport">
+      <UniqueIdentifier>{ce59fc4b-a266-4cd4-9e16-32c5ce48c284}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Source\imgui_impl_dx11.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\imgui_impl_win32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -80,9 +80,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp">
       <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\imgui_impl_lucidextra.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Util\FileUtil.cpp">
       <Filter>Source Files\Util</Filter>
@@ -135,14 +132,17 @@
     <ClCompile Include="..\..\Source\CodeAnalyser\CodeToolTips.cpp">
       <Filter>Source Files\CodeAnalyser</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Source\imgui_impl_dx11.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\imgui_impl_win32.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
       <Filter>Source Files\ImGui</Filter>
     </ClInclude>
@@ -365,9 +365,6 @@
     <ClInclude Include="..\..\Source\UI\SpeccyUI.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Util\FileUtil.h">
       <Filter>Source Files\Util</Filter>
     </ClInclude>
@@ -412,6 +409,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeToolTips.h">
       <Filter>Source Files\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

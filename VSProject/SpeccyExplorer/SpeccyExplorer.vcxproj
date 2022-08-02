@@ -77,7 +77,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -107,7 +107,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -125,7 +125,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -139,10 +139,10 @@
     <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyser.cpp" />
     <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.cpp" />
     <ClCompile Include="..\..\Source\CodeAnalyser\CodeToolTips.cpp" />
-    <ClCompile Include="..\..\Source\imgui_impl_dx11.cpp" />
-    <ClCompile Include="..\..\Source\imgui_impl_lucidextra.cpp" />
-    <ClCompile Include="..\..\Source\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\Source\main.cpp" />
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp" />
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp" />
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp" />
     <ClCompile Include="..\..\Source\Speccy\Speccy.cpp" />
     <ClCompile Include="..\..\Source\UI\Disassembler.cpp" />
@@ -169,9 +169,9 @@
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.h" />
     <ClInclude Include="..\..\Source\CodeAnalyser\CodeToolTips.h" />
     <ClInclude Include="..\..\Source\CodeAnalyser\romlabels.h" />
-    <ClInclude Include="..\..\Source\imgui_impl_dx11.h" />
-    <ClInclude Include="..\..\Source\imgui_impl_lucidextra.h" />
-    <ClInclude Include="..\..\Source\imgui_impl_win32.h" />
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h" />
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h" />
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h" />
     <ClInclude Include="..\..\Source\Speccy\Speccy.h" />
     <ClInclude Include="..\..\Source\UI\Disassembler.h" />
     <ClInclude Include="..\..\Source\UI\FunctionHandlers.h" />

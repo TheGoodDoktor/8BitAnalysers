@@ -9,8 +9,8 @@
 #include <dinput.h>
 #include <tchar.h>
 
-#include "Speccy/Speccy.h"
-#include "UI/SpeccyUI.h"
+#include "C64.h"
+#include "UI/C64UI.h"
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
@@ -28,17 +28,15 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-FSpeccy *g_pSpeccy = nullptr;
-
 // Main code
 int main(int argc, char** argv)
 {
     ImGui_ImplWin32_EnableDpiAwareness();
 
     // Create application window
-    WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Spectrum Analyser"), NULL };
+    WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("C64 Explorer"), NULL };
     ::RegisterClassEx(&wc);
-    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Spectrum Analyser"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("C64 Explorer"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -105,7 +103,7 @@ int main(int argc, char** argv)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	// Speccy 
-	FSpeccyConfig config;
+	/*FSpeccyConfig config;
 	config.NoStateBuffers = 10;
 	g_pSpeccy = InitSpeccy(config);
 	FSpeccy &speccy = *g_pSpeccy;
@@ -113,7 +111,7 @@ int main(int argc, char** argv)
 
 	if (argc > 1)
 		StartGame(pSpeccyUI, argv[1]);
-
+        */
     // Main loop
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
@@ -137,14 +135,14 @@ int main(int argc, char** argv)
         ImGui::NewFrame();
 
 		// speccy update & render
-		UpdatePreTickSpeccyUI(pSpeccyUI);
+		/*UpdatePreTickSpeccyUI(pSpeccyUI);
 		if(speccy.ExecThisFrame)
 			TickSpeccy(*g_pSpeccy);
-		UpdatePostTickSpeccyUI(pSpeccyUI);
+		UpdatePostTickSpeccyUI(pSpeccyUI);*/
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (pSpeccyUI->bShowImGuiDemo)
-            ImGui::ShowDemoWindow(&pSpeccyUI->bShowImGuiDemo);
+       // if (pSpeccyUI->bShowImGuiDemo)
+            ImGui::ShowDemoWindow();
 
         // Rendering
         ImGui::Render();
@@ -164,8 +162,8 @@ int main(int argc, char** argv)
     }
 
 	// shutdown the speccy stuff
-	ShutdownSpeccyUI(pSpeccyUI);
-	ShutdownSpeccy(g_pSpeccy);
+	//ShutdownSpeccyUI(pSpeccyUI);
+	//ShutdownSpeccy(g_pSpeccy);
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
@@ -255,7 +253,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
-		if (g_pSpeccy != nullptr && wParam < 256)
+		//if (g_pSpeccy != nullptr && wParam < 256)
 		{
 			//zx_key_down(&g_pSpeccy->CurrentState, '1');
 		}
@@ -263,7 +261,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
-		if (g_pSpeccy != nullptr && wParam < 256)
+		//if (g_pSpeccy != nullptr && wParam < 256)
 		{
 			//zx_key_up(&g_pSpeccy->CurrentState, '1');
 		}

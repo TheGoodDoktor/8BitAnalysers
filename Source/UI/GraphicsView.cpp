@@ -1,5 +1,5 @@
 #include "GraphicsView.h"
-#include "imgui_impl_lucidextra.h"
+#include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include "Speccy/Speccy.h"
 #include "SpeccyUI.h"
 #include "GameConfig.h"

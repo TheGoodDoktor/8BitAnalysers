@@ -1,7 +1,7 @@
 #include "StarquakeViewer.h"
 #include "UI/SpriteViewer.h"
 #include "UI/SpeccyUI.h"
-#include "imgui_impl_lucidextra.h"
+#include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <algorithm>
 #include "UI/GraphicsView.h"
 #include "GameViewer.h"
