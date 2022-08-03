@@ -46,6 +46,32 @@
 
 c64_desc_t c64_desc(c64_joystick_type_t joy_type);
 
+class FC64Emulator : public IInputEventHandler
+{
+public:
+
+    bool    Init();
+    void    Shutdown();
+    void    Tick();
+
+    // Begin IInputEventHandler interface implementation
+    void	OnKeyUp(int keyCode) override;
+    void	OnKeyDown(int keyCode) override;
+    void	OnChar(int charCode) override;
+    // End IInputEventHandler interface implementation
+
+private:
+    c64_t       C64Emu;
+    ui_c64_t    C64UI;
+    double      ExecTime;
+
+    size_t          FramePixelBufferSize = 0;
+    unsigned char*  FramePixelBuffer = nullptr;
+    ImTextureID     FrameBufferTexture = nullptr;
+};
+
+FC64Emulator g_C64Emu;
+
 // globals : TODO - encapsulate
 static c64_t c64;
 static ui_c64_t ui_c64;
@@ -154,6 +180,8 @@ c64_desc_t c64_desc(c64_joystick_type_t joy_type)
 /* one-time application init */
 void C64ChipsInit(void) 
 {
+    SetInputEventHandler(&g_C64Emu);
+    g_C64Emu.Init();
 #if 0
     gfx_init(&(gfx_desc_t) 
     {
@@ -207,6 +235,8 @@ void C64ChipsInit(void)
             keybuf_put(sargs_value("input"));
         }
     }*/
+
+    
 }
 
 static void ReadKeys(void)
@@ -225,18 +255,88 @@ static void ReadKeys(void)
     {
         if (io.KeysDown[0x41 + i] == 1)
         {
-            c64_key_down(&c64, 'a' + i);
-            c64_key_up(&c64, 'a' + i);
+            c64_key_down(&c64, 'A' + i);
+            c64_key_up(&c64, 'A' + i);
         }
     }
 }
 
+bool FC64Emulator::Init()
+{
+    return true;
+}
+
+void FC64Emulator::Shutdown()
+{
+
+}
+
+void FC64Emulator::Tick()
+{
+}
+
+
+int GetC64KeyFromKeyCode(int keyCode)
+{
+    int c = 0;
+    bool bShift = false;
+    switch (keyCode) 
+    {
+        case VK_SPACE:        c = 0x20; break;
+        case VK_LEFT:         c = 0x08; break;
+        case VK_RIGHT:        c = 0x09; break;
+        case VK_DOWN:         c = 0x0A; break;
+        case VK_UP:           c = 0x0B; break;
+        case VK_RETURN:        c = 0x0D; break;
+        case VK_BACK:           c = bShift ? 0x0C : 0x01; break;
+        case VK_ESCAPE:       c = bShift ? 0x13 : 0x03; break;
+        case VK_F1:           c = 0xF1; break;
+        case VK_F2:           c = 0xF2; break;
+        case VK_F3:           c = 0xF3; break;
+        case VK_F4:           c = 0xF4; break;
+        case VK_F5:           c = 0xF5; break;
+        case VK_F6:           c = 0xF6; break;
+        case VK_F7:           c = 0xF7; break;
+        case VK_F8:           c = 0xF8; break;
+        default:                        c = 0; break;
+    }
+    return c;
+}
+
+void FC64Emulator::OnKeyUp(int keyCode)
+{
+    c64_key_up(&c64, GetC64KeyFromKeyCode(keyCode));
+}
+
+void FC64Emulator::OnKeyDown(int keyCode)
+{
+    c64_key_down(&c64, GetC64KeyFromKeyCode(keyCode));
+}
+
+void FC64Emulator::OnChar(int charCode)
+{
+    int c = charCode;
+
+    if ((c > 0x20) && (c < 0x7F)) 
+    {
+        /* need to invert case (unshifted is upper caps, shifted is lower caps */
+        if (isupper(c)) 
+            c = tolower(c);
+        
+        else if (islower(c)) 
+            c = toupper(c);
+     
+        c64_key_down(&c64, c);
+        c64_key_up(&c64, c);
+    }
+}
 
 
 /* per frame stuff, tick the emulator, handle input, decode and draw emulator display */
 void C64ChipsTick(void) 
 {
-    ReadKeys();
+    g_C64Emu.Tick();
+    //ReadKeys();
 
     c64ui_exec(&c64);
     ui_c64_draw(&ui_c64, exec_time);
@@ -247,6 +347,25 @@ void C64ChipsTick(void)
     if (ImGui::Begin("C64 Screen"))
     {
         ImGui::Text("Frame buffer size = %d x %d", _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
+        if (ImGui::Button("Load"))
+        {
+            // TODO: load game data
+            FILE* fp = nullptr;
+            fopen_s(&fp, "Games/Paradroid.prg", "rb");
+            if (fp != nullptr)
+            {
+                uint8_t* gameData = nullptr;
+                size_t gameDataSize = 0;
+                fseek(fp, 0, SEEK_END);
+                gameDataSize = ftell(fp);
+                fseek(fp, 0, SEEK_SET);
+                gameData = (uint8_t*)malloc(gameDataSize);
+                fread(gameData, 1, gameDataSize, fp);
+                c64_quickload(&c64, gameData, gameDataSize);
+                free(gameData);
+                fclose(fp);
+            }
+        }
         ImGui::Image(g_FrameBufferTexture, ImVec2(_C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT));
     }
     ImGui::End();

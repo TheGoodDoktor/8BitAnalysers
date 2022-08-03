@@ -40,6 +40,9 @@
     <Filter Include="Source Files\Vendor\Chips\UI">
       <UniqueIdentifier>{e5c1b991-e45c-4ee4-a68d-13d62d92da98}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shared\Misc">
+      <UniqueIdentifier>{d17edfaa-d59f-4351-83f8-a0a060464401}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\main.cpp">
@@ -304,6 +307,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\C64\C64Chips.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\Misc\InputEventHandler.h">
+      <Filter>Source Files\Shared\Misc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -17,6 +17,7 @@
 #include <XInput.h>
 #include <tchar.h>
 
+
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
 //  2018-XX-XX: Platform: Added support for multiple windows via the ImGuiPlatformIO interface.
@@ -49,10 +50,17 @@ static bool                 g_HasGamepad = false;
 static bool                 g_WantUpdateHasGamepad = true;
 static bool                 g_WantUpdateMonitors = true;
 
+static IInputEventHandler*  g_InputEventHandler = nullptr;
+
 // Forward Declarations
 static void ImGui_ImplWin32_InitPlatformInterface();
 static void ImGui_ImplWin32_ShutdownPlatformInterface();
 static void ImGui_ImplWin32_UpdateMonitors();
+
+void SetInputEventHandler(IInputEventHandler* pHandler)
+{
+    g_InputEventHandler = pHandler;
+}
 
 // Functions
 bool    ImGui_ImplWin32_Init(void* hwnd)
@@ -312,6 +320,8 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     if (ImGui::GetCurrentContext() == NULL)
         return 0;
 
+    IInputEventHandler *pInputHandler = g_InputEventHandler;
+
     ImGuiIO& io = ImGui::GetIO();
     switch (msg)
     {
@@ -355,15 +365,21 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     case WM_SYSKEYDOWN:
         if (wParam < 256)
             io.KeysDown[wParam] = 1;
+        if (pInputHandler)
+            pInputHandler->OnKeyDown(wParam);
         return 0;
     case WM_KEYUP:
     case WM_SYSKEYUP:
         if (wParam < 256)
             io.KeysDown[wParam] = 0;
+        if (pInputHandler)
+            pInputHandler->OnKeyUp(wParam);
         return 0;
     case WM_CHAR:
         // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
         io.AddInputCharacter((unsigned int)wParam);
+        if (pInputHandler)
+            pInputHandler->OnChar(wParam);
         return 0;
     case WM_SETCURSOR:
         if (LOWORD(lParam) == HTCLIENT && ImGui_ImplWin32_UpdateMouseCursor())

@@ -166,6 +166,7 @@
     <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h" />
     <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h" />
     <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h" />
+    <ClInclude Include="..\..\..\Source\Shared\Misc\InputEventHandler.h" />
     <ClInclude Include="..\..\..\Source\Vendor\chips\chips\am40010.h" />
     <ClInclude Include="..\..\..\Source\Vendor\chips\chips\ay38910.h" />
     <ClInclude Include="..\..\..\Source\Vendor\chips\chips\beeper.h" />
