@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include <d3d11.h>
+#include <cstdint>
 
 extern ID3D11Device*		GetDx11Device();
 extern ID3D11DeviceContext*	GetDx11DeviceContext();
@@ -72,6 +73,36 @@ void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels)
 	if (hr == S_OK)
 	{
 		memcpy(mappedResource.pData, pixels, desc.Width * desc.Height * 4);	// assume 32bpp
+		pDeviceCtx->Unmap(pTexture, 0);
+	}
+}
+
+void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture, unsigned char* pixels, int srcWidth, int srcHeight)
+{
+	ID3D11ShaderResourceView* pTextureView = (ID3D11ShaderResourceView*)texture;
+	ID3D11DeviceContext* pDeviceCtx = GetDx11DeviceContext();
+
+
+	ID3D11Texture2D* pTexture = nullptr;
+	pTextureView->GetResource(reinterpret_cast<ID3D11Resource**>(&pTexture));
+
+	D3D11_TEXTURE2D_DESC desc;
+	pTexture->GetDesc(&desc);
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	HRESULT hr = pDeviceCtx->Map(pTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (hr == S_OK)
+	{
+		const uint8_t* srcPtr = pixels;
+		uint8_t* destPtr = (uint8_t*)mappedResource.pData;
+		for (int line = 0; line < srcHeight; line++)
+		{
+			const size_t srcStride = srcWidth * 4;// assume 32bpp
+			memcpy(destPtr, srcPtr, srcStride);	// copy one line
+
+			srcPtr += srcStride;
+			destPtr += mappedResource.RowPitch;
+		}
 		pDeviceCtx->Unmap(pTexture, 0);
 	}
 }

@@ -191,11 +191,11 @@ void C64ChipsInit(void)
     saudio_setup(&audiodesc);
 
     // setup pixel buffer
-    g_FramePixelBufferSize = _C64_DBG_DISPLAY_WIDTH * _C64_DBG_DISPLAY_HEIGHT * 4;
+    g_FramePixelBufferSize = _C64_DISPLAY_SIZE;
     g_FramePixelBuffer = new unsigned char[g_FramePixelBufferSize * 2];
 
     // setup texture
-    g_FrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(g_FramePixelBuffer), _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
+    g_FrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(g_FramePixelBuffer), _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
 
     c64_joystick_type_t joy_type = C64_JOYSTICKTYPE_NONE;
     c64_desc_t desc = c64_desc(joy_type);
@@ -209,17 +209,45 @@ void C64ChipsInit(void)
     }*/
 }
 
+static void ReadKeys(void)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    for (int i = 0; i < 10; i++)
+    {
+        if (io.KeysDown[0x30 + i] == 1)
+        {
+            c64_key_down(&c64, '0' + i);
+            c64_key_up(&c64, '0' + i);
+        }
+    }
+
+    for (int i = 0; i < 26; i++)
+    {
+        if (io.KeysDown[0x41 + i] == 1)
+        {
+            c64_key_down(&c64, 'a' + i);
+            c64_key_up(&c64, 'a' + i);
+        }
+    }
+}
+
+
+
 /* per frame stuff, tick the emulator, handle input, decode and draw emulator display */
 void C64ChipsTick(void) 
 {
+    ReadKeys();
+
     c64ui_exec(&c64);
     ui_c64_draw(&ui_c64, exec_time);
 
-    ImGui_ImplDX11_UpdateTextureRGBA(g_FrameBufferTexture, g_FramePixelBuffer);
+    c64_display_width(&c64);
+    ImGui_ImplDX11_UpdateTextureRGBA(g_FrameBufferTexture, g_FramePixelBuffer, _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
 
     if (ImGui::Begin("C64 Screen"))
     {
-        ImGui::Image(g_FrameBufferTexture, ImVec2(_C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT));
+        ImGui::Text("Frame buffer size = %d x %d", _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
+        ImGui::Image(g_FrameBufferTexture, ImVec2(_C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT));
     }
     ImGui::End();
 #if 0
