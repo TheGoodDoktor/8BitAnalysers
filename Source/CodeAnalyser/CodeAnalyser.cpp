@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <algorithm>
 #include <cassert>
+#include <util/z80dasm.h>
+#include <util/m6502dasm.h>
 
 bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {
@@ -334,7 +336,10 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	FAnalysisDasmState dasmState;
 	dasmState.CPUInterface = state.CPUInterface;
 	dasmState.CurrentAddress = pc;
-	const uint16_t newPC = state.CPUInterface->DasmOp(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+	if(state.CPUInterface->CPUType == ECPUType::Z80)
+		z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+	else if(state.CPUInterface->CPUType == ECPUType::M6502)
+		m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
 	FCodeInfo *pCodeInfo = state.CodeInfo[pc];
 	assert(pCodeInfo != nullptr);
@@ -347,7 +352,12 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	FAnalysisDasmState dasmState;
 	dasmState.CPUInterface = state.CPUInterface;
 	dasmState.CurrentAddress = pc;
-	const uint16_t newPC = state.CPUInterface->DasmOp(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+	uint16_t newPC = pc;
+
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+	else if(state.CPUInterface->CPUType == ECPUType::M6502)
+		newPC = m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
 	FCodeInfo *pCodeInfo = state.CodeInfo[pc];
 	if (pCodeInfo == nullptr)

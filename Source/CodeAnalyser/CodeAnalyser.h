@@ -27,7 +27,7 @@ public:
 	virtual uint16_t	ReadWord(uint16_t address) = 0;
 	virtual uint16_t	GetPC(void) = 0;
 
-	virtual uint16_t DasmOp(uint16_t pc, FDasmInput in_cb, FDasmOutput out_cb, void* user_data) = 0;
+	//virtual uint16_t DasmOp(uint16_t pc, FDasmInput in_cb, FDasmOutput out_cb, void* user_data) = 0;
 
 
 	virtual bool	ExecThisFrame(void) = 0;

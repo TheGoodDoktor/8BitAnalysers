@@ -42,11 +42,6 @@ public:
 		return z80_pc(&pSpeccy->CurrentState.cpu);
 	}
 
-	uint16_t DasmOp(uint16_t pc, FDasmInput in_cb, FDasmOutput out_cb, void* user_data)
-	{
-		return z80dasm_op(pc, in_cb, out_cb, user_data);
-	}
-
 	bool	ExecThisFrame(void) override
 	{
 		return pSpeccy->ExecThisFrame;
