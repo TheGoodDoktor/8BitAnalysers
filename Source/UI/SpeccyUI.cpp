@@ -42,6 +42,25 @@ public:
 		return z80_pc(&pSpeccy->CurrentState.cpu);
 	}
 
+	void	Break(void) override
+	{
+		FSpeccyUI* pUI = GetSpeccyUI();
+		pUI->UIZX.dbg.dbg.stopped = true;
+		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+	}
+
+	void	Continue(void) override
+	{
+		FSpeccyUI* pUI = GetSpeccyUI();
+		pUI->UIZX.dbg.dbg.stopped = false;
+		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+	}
+
+	void GraphicsViewerSetAddress(uint16_t address) override
+	{
+		GraphicsViewerGoToAddress(address);
+	}
+
 	bool	ExecThisFrame(void) override
 	{
 		return pSpeccy->ExecThisFrame;
@@ -790,9 +809,9 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 					pUI->bScreenCharSelected = false;
 
 				if (ImGui::IsMouseDoubleClicked(0))
-					CodeAnalyserGoToAddress(lastPixWriter);
+					CodeAnalyserGoToAddress(pUI->CodeAnalysis, lastPixWriter);
 				if (ImGui::IsMouseDoubleClicked(1))
-					CodeAnalyserGoToAddress(lastAttrWriter);
+					CodeAnalyserGoToAddress(pUI->CodeAnalysis, lastAttrWriter);
 			}
 			
 		}

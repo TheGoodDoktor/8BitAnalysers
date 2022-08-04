@@ -1,12 +1,10 @@
 #include "CodeAnalyserUI.h"
 #include "CodeAnalyser.h"
 
-#include "UI/SpeccyUI.h"
-
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
-#include "chips/z80.h"
+//#include "chips/z80.h"
 #include "CodeToolTips.h"
 
 // UI
@@ -20,9 +18,9 @@ void GoToAddress(FCodeAnalysisState &state, uint16_t newAddress, bool bLabel = f
 	state.GoToLabel = bLabel;
 }
 
-void CodeAnalyserGoToAddress(uint16_t newAddress, bool bLabel)
+void CodeAnalyserGoToAddress(FCodeAnalysisState& state, uint16_t newAddress, bool bLabel)
 {
-	GoToAddress(GetSpeccyUI()->CodeAnalysis, newAddress, bLabel);
+	GoToAddress(state, newAddress, bLabel);
 }
 
 bool GoToPreviousAddress(FCodeAnalysisState &state)
@@ -638,7 +636,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 		
 		if (ImGui::Selectable("View in graphics viewer"))
 		{
-			GraphicsViewerGoToAddress(pItem->Address);			
+			state.CPUInterface->GraphicsViewerSetAddress(pItem->Address);
 		}
 
 		ImGui::EndPopup();
@@ -736,18 +734,16 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 
 	if (ImGui::Button("Break"))
 	{
-		FSpeccyUI *pUI = GetSpeccyUI();
-		pUI->UIZX.dbg.dbg.stopped = true;
-		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+		state.CPUInterface->Break();
+		
 		if(bJumpToPCOnBreak)
 			GoToAddress(state,state.CPUInterface->GetPC());
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Continue"))
 	{
-		FSpeccyUI *pUI = GetSpeccyUI();
-		pUI->UIZX.dbg.dbg.stopped = false;
-		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+		state.CPUInterface->Continue();
+		
 	}
 	ImGui::SameLine();
 	ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);

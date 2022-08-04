@@ -266,7 +266,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		ImGui::BeginTooltip();
 		ptrAddress = GetAddressFromPositionInView(state,xp, yp);
 		if (ImGui::IsMouseDoubleClicked(0))
-			CodeAnalyserGoToAddress(ptrAddress);
+			CodeAnalyserGoToAddress(GetSpeccyUI()->CodeAnalysis, ptrAddress);
 		if (ImGui::IsMouseClicked(0))
 			state.ClickedAddress = ptrAddress;
 

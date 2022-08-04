@@ -14,4 +14,4 @@ void DrawGlobals(FCodeAnalysisState &state);
 
 void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo);
 
-void CodeAnalyserGoToAddress(uint16_t newAddress, bool bLabel = false);
+void CodeAnalyserGoToAddress(FCodeAnalysisState& state, uint16_t newAddress, bool bLabel = false);
