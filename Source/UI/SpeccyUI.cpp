@@ -17,7 +17,84 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
+#include "CodeAnalyser/ROMLabels.h"
+
 void DrawCheatsUI(FSpeccyUI *pUI);
+
+class FSpectrumCPUInterface : public ICPUInterface
+{
+public:
+	FSpectrumCPUInterface()
+	{
+		CPUType = ECPUType::Z80;
+	}
+
+	uint8_t		ReadByte(uint16_t address) override
+	{
+		return ReadSpeccyByte(pSpeccy, address);
+	}
+	uint16_t		ReadWord(uint16_t address) override
+	{
+		return ReadSpeccyByte(pSpeccy, address) | (ReadSpeccyByte(pSpeccy, address + 1) << 8);
+	}
+	uint16_t	GetPC(void) override
+	{
+		return z80_pc(&pSpeccy->CurrentState.cpu);
+	}
+
+	uint16_t DasmOp(uint16_t pc, FDasmInput in_cb, FDasmOutput out_cb, void* user_data)
+	{
+		return z80dasm_op(pc, in_cb, out_cb, user_data);
+	}
+
+	bool	ExecThisFrame(void) override
+	{
+		return pSpeccy->ExecThisFrame;
+	}
+
+	void InsertROMLabels(FCodeAnalysisState& state) override
+	{
+		for (const auto& label : g_RomLabels)
+		{
+			AddLabel(state, label.Address, label.pLabelName, label.LabelType);
+
+			// run static analysis on all code labels
+			if (label.LabelType == LabelType::Code || label.LabelType == LabelType::Function)
+				RunStaticCodeAnalysis(state, label.Address);
+		}
+
+		for (const auto& label : g_SysVariables)
+		{
+			AddLabel(state, label.Address, label.pLabelName, LabelType::Data);
+			// TODO: Set up data?
+		}
+	}
+
+	void InsertSystemLabels(FCodeAnalysisState& state) override
+	{
+		// screen memory start
+		AddLabel(state, 0x4000, "ScreenPixels", LabelType::Data);
+
+		FDataInfo* pScreenPixData = new FDataInfo;
+		pScreenPixData->DataType = DataType::Graphics;
+		pScreenPixData->Address = 0x4000;
+		pScreenPixData->ByteSize = 0x1800;
+		state.DataInfo[pScreenPixData->Address] = pScreenPixData;
+
+		AddLabel(state, 0x5800, "ScreenAttributes", LabelType::Data);
+		FDataInfo* pScreenAttrData = new FDataInfo;
+		pScreenAttrData->DataType = DataType::Blob;
+		pScreenAttrData->Address = 0x5800;
+		pScreenAttrData->ByteSize = 0x400;
+		state.DataInfo[pScreenAttrData->Address] = pScreenAttrData;
+
+		// system variables?
+	}
+
+	FSpeccy* pSpeccy = nullptr;
+};
+
+FSpectrumCPUInterface	SpeccyCPUIF;
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -210,7 +287,8 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	}
 
 	// run initial analysis
-	InitialiseCodeAnalysis(pUI->CodeAnalysis,pUI->pSpeccy);
+	SpeccyCPUIF.pSpeccy = pUI->pSpeccy;
+	InitialiseCodeAnalysis(pUI->CodeAnalysis,&SpeccyCPUIF);
 	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
 	
 	return pUI;
@@ -253,7 +331,8 @@ void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
 	GenerateSpriteListsFromConfig(pUI->GraphicsViewer, pGameConfig);
 	
 	// Initialise code analysis
-	InitialiseCodeAnalysis(pUI->CodeAnalysis, pUI->pSpeccy);
+	SpeccyCPUIF.pSpeccy = pUI->pSpeccy;
+	InitialiseCodeAnalysis(pUI->CodeAnalysis, &SpeccyCPUIF);
 
 	// load game data if we can
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";

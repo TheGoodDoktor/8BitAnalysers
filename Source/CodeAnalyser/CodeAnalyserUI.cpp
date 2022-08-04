@@ -192,7 +192,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 
 	const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
 
-	const bool bPCLine = pCodeInfo->Address == z80_pc(&state.pSpeccy->CurrentState.cpu);
+	const bool bPCLine = pCodeInfo->Address == state.CPUInterface->GetPC();// z80_pc(&state.pSpeccy->CurrentState.cpu);
 
 	if (bPCLine || brightVal > 0)
 	{
@@ -329,7 +329,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	{
 	case DataType::Byte:
 	{
-		const uint8_t val = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address);
+		const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
 		if (val == '\n')// carriage return messes up list
 			ImGui::Text("db %02Xh '<cr>'", val, val);
 		else
@@ -339,7 +339,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 
 	case DataType::Word:
 	{
-		const uint16_t val = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address) | (ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + 1) << 8);
+		const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
 		ImGui::Text("dw %04Xh", val);
 		// draw address as label - optional?
 		ImGui::SameLine();	
@@ -352,7 +352,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		std::string textString;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
-			const char ch = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + i);
+			const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 			if (ch == '\n')
 				textString += "<cr>";
 			else
@@ -412,7 +412,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 	switch (pDataInfo->DataType)
 	{
 	case DataType::Byte:
-		DrawDataValueGraph(ReadSpeccyByte(state.pSpeccy, pDataInfo->Address),false);
+		DrawDataValueGraph(state.CPUInterface->ReadByte(pDataInfo->Address),false);
 	break;
 
 	case DataType::Word:
@@ -423,7 +423,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		std::string textString;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
-			const char ch = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + i);
+			const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 			if (ch == '\n')
 				textString += "<cr>";
 			else
@@ -731,7 +731,7 @@ void DrawDetailsPanel(FCodeAnalysisState &state)
 
 void DrawDebuggerButtons(FCodeAnalysisState &state)
 {
-	FSpeccy *pSpeccy = state.pSpeccy;
+	//FSpeccy *pSpeccy = state.pSpeccy;
 	static bool bJumpToPCOnBreak = false;
 
 	if (ImGui::Button("Break"))
@@ -740,7 +740,7 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 		pUI->UIZX.dbg.dbg.stopped = true;
 		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
 		if(bJumpToPCOnBreak)
-			GoToAddress(state,z80_pc(&pSpeccy->CurrentState.cpu));
+			GoToAddress(state,state.CPUInterface->GetPC());
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Continue"))
@@ -752,9 +752,10 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 	ImGui::SameLine();
 	ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }
+
 void DrawCodeAnalysisData(FCodeAnalysisState &state)
 {
-	FSpeccy *pSpeccy = state.pSpeccy;
+	//FSpeccy *pSpeccy = state.pSpeccy;
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
@@ -762,7 +763,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	state.HighlightAddress = state.HoverAddress;
 	state.HoverAddress = -1;
 
-	if (state.pSpeccy->ExecThisFrame)
+	if (state.CPUInterface->ExecThisFrame())
 		state.CurrentFrameNo++;
 
 	UpdateItemList(state);
@@ -771,7 +772,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		GoToPreviousAddress(state);
 	ImGui::SameLine();
 	if (ImGui::Button("Jump To PC"))
-		GoToAddress(state,z80_pc(&pSpeccy->CurrentState.cpu));
+		GoToAddress(state,state.CPUInterface->GetPC());
 	ImGui::SameLine();
 	static int addrInput = 0;
 	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, ImGuiInputTextFlags_CharsHexadecimal))

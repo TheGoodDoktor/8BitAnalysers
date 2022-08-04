@@ -43,24 +43,23 @@ InstructionInfoMap g_InstructionInfo_IndexBit =
 	{0x00, "Rotate (%s + *) left with carry B bits"},	// rlc (ix+*),b
 };
 
-void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
+void ShowCodeToolTipZ80(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 {
-	FSpeccy* pSpeccy = state.pSpeccy;
-	uint8_t instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address);
+	uint8_t instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address);
 	InstructionInfoMap::const_iterator it = g_InstructionInfo.end();
 	const char *pRegName = nullptr;
 
 	switch (instrByte)
 	{
 	case 0xED:
-		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address + 1);
+		instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address + 1);
 		it = g_InstructionInfo_ED.find(instrByte);
 		if (it == g_InstructionInfo_ED.end())
 			return;
 		break;
 
 	case 0xCB:
-		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address + 1);
+		instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address + 1);
 		it = g_InstructionInfo_CB.find(instrByte);
 		if (it == g_InstructionInfo_CB.end())
 			return;
@@ -69,10 +68,10 @@ void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	case 0xDD:
 	case 0xFD:
 		pRegName = instrByte == 0xDD ? "IX" : "IY";
-		instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address + 1);
+		instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address + 1);
 		if (instrByte == 0xCB)	// bit instructions
 		{
-			instrByte = ReadSpeccyByte(pSpeccy, pCodeInfo->Address + 2);
+			instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address + 2);
 			it = g_InstructionInfo_IndexBit.find(instrByte);
 			if (it == g_InstructionInfo_IndexBit.end())
 				return;
@@ -95,4 +94,10 @@ void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	ImGui::BeginTooltip();
 	ImGui::Text(it->second, pRegName);
 	ImGui::EndTooltip();
+}
+
+void ShowCodeToolTip(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
+{
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		ShowCodeToolTipZ80(state, pCodeInfo);
 }

@@ -6,8 +6,37 @@
 
 
 enum class LabelType;
-struct FSpeccyUI;
-struct FSpeccy;
+
+// CPU abstraction
+enum class ECPUType
+{
+	Unknown,
+	Z80,
+	M6502
+};
+
+/* the input callback type */
+typedef uint8_t(*FDasmInput)(void* user_data);
+/* the output callback type */
+typedef void (*FDasmOutput)(char c, void* user_data);
+
+class ICPUInterface
+{
+public:
+	virtual uint8_t		ReadByte(uint16_t address) = 0;
+	virtual uint16_t	ReadWord(uint16_t address) = 0;
+	virtual uint16_t	GetPC(void) = 0;
+
+	virtual uint16_t DasmOp(uint16_t pc, FDasmInput in_cb, FDasmOutput out_cb, void* user_data) = 0;
+
+
+	virtual bool	ExecThisFrame(void) = 0;
+
+	virtual void InsertROMLabels(struct FCodeAnalysisState& state) = 0;
+	virtual void InsertSystemLabels(struct FCodeAnalysisState& state) = 0;
+
+	ECPUType	CPUType = ECPUType::Unknown;
+};
 
 enum class LabelType
 {
@@ -103,7 +132,7 @@ enum class Key
 // code analysis information
 struct FCodeAnalysisState
 {
-	FSpeccy *				pSpeccy = nullptr;
+	ICPUInterface*			CPUInterface = nullptr;
 	int						CurrentFrameNo = 0;
 
 	static const int kAddressSize = 1 << 16;
@@ -142,7 +171,7 @@ public:
 
 
 // Analysis
-void InitialiseCodeAnalysis(FCodeAnalysisState &state, FSpeccy* pSpeccy);
+void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc);
@@ -155,6 +184,7 @@ void ResetMemoryLogs(FCodeAnalysisState &state);
 // Commands
 void Undo(FCodeAnalysisState &state);
 
+FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, LabelType type);
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);

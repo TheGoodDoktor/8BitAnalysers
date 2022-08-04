@@ -1,13 +1,12 @@
 #include "CodeAnalyser.h"
+
 #include <cstdint>
-#include "UI/SpeccyUI.h"
-
-#include "ROMLabels.h"
 #include <algorithm>
+#include <cassert>
 
-bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
+	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -17,12 +16,12 @@ bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t*
 			// LD x,(nnnn)
 		case 0x2A:
 		case 0x3A:
-			*out_addr = (ReadSpeccyByte(pSpeccy, pc + 2) << 8) | ReadSpeccyByte(pSpeccy, pc + 1);
+			*out_addr = (pCPUInterface->ReadByte(pc + 2) << 8) | pCPUInterface->ReadByte(pc + 1);
 			return true;
 			// extended instructions
 		case 0xED:
 		{
-			const uint8_t exInstrByte = ReadSpeccyByte(pSpeccy, pc + 1);
+			const uint8_t exInstrByte = pCPUInterface->ReadByte(pc + 1);
 			switch (exInstrByte)
 			{
 			case 0x43://ld (**),bc
@@ -33,7 +32,7 @@ bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t*
 			case 0x6B://ld hl,(**)
 			case 0x73://ld (**),sp
 			case 0x7B://ld sp,(**)
-				*out_addr = (ReadSpeccyByte(pSpeccy, pc + 3) << 8) | ReadSpeccyByte(pSpeccy, pc + 2);
+				*out_addr = (pCPUInterface->ReadByte(pc + 3) << 8) | pCPUInterface->ReadByte(pc + 2);
 				return true;
 			}
 
@@ -43,12 +42,12 @@ bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t*
 		case 0xDD:
 		case 0xFD:
 		{
-			const uint8_t exInstrByte = ReadSpeccyByte(pSpeccy, pc + 1);
+			const uint8_t exInstrByte = pCPUInterface->ReadByte(pc + 1);
 			switch (exInstrByte)
 			{
 			case 0x22://ld (**),ix/iy
 			case 0x2A://ld ix/iy,(**)
-				*out_addr = (ReadSpeccyByte(pSpeccy, pc + 3) << 8) | ReadSpeccyByte(pSpeccy, pc + 2);
+				*out_addr = (pCPUInterface->ReadByte(pc + 3) << 8) | pCPUInterface->ReadByte(pc + 2);
 				return true;
 			}
 		}
@@ -57,12 +56,20 @@ bool CheckPointerIndirectionInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t*
 	return false;
 }
 
-bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerIndirectionInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {
-	if (CheckPointerIndirectionInstruction(pSpeccy, pc, out_addr))
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return CheckPointerIndirectionInstructionZ80(pCPUInterface, pc, out_addr);
+	else
+		return false;
+}
+
+bool CheckPointerRefInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+{
+	if (CheckPointerIndirectionInstructionZ80(pCPUInterface, pc, out_addr))
 		return true;
 	
-	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
+	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -70,18 +77,18 @@ bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_add
 		case 0x01:
 		case 0x11:
 		case 0x21:
-			*out_addr = (ReadSpeccyByte(pSpeccy, pc + 2) << 8) | ReadSpeccyByte(pSpeccy, pc + 1);
+			*out_addr = (pCPUInterface->ReadByte(pc + 2) << 8) | pCPUInterface->ReadByte(pc + 1);
 			return true;
 
 		// IX/IY instructions
 		case 0xDD:
 		case 0xFD:
 		{
-			const uint8_t exInstrByte = ReadSpeccyByte(pSpeccy, pc + 1);
+			const uint8_t exInstrByte = pCPUInterface->ReadByte(pc + 1);
 			switch (exInstrByte)
 			{
 			case 0x21://ld ix/iy,**
-				*out_addr = (ReadSpeccyByte(pSpeccy, pc + 3) << 8) | ReadSpeccyByte(pSpeccy, pc + 2);
+				*out_addr = (pCPUInterface->ReadByte(pc + 3) << 8) | pCPUInterface->ReadByte(pc + 2);
 				return true;
 			}
 		}
@@ -89,9 +96,17 @@ bool CheckPointerRefInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_add
 	return false;
 }
 
-bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerRefInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return CheckPointerRefInstructionZ80(pCPUInterface, pc, out_addr);
+	else
+		return false;
+}
+
+bool CheckJumpInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+{
+	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -105,7 +120,7 @@ bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 		/* JP cc,nnnn */
 	case 0xDA: case 0xFA: case 0xD2: case 0xC2:
 	case 0xF2: case 0xEA: case 0xE2: case 0xCA:
-		*out_addr = (ReadSpeccyByte(pSpeccy, pc + 2) << 8) | ReadSpeccyByte(pSpeccy, pc + 1);
+		*out_addr = (pCPUInterface->ReadByte(pc + 2) << 8) | pCPUInterface->ReadByte( pc + 1);
 		return true;
 
 		/* DJNZ d */
@@ -115,7 +130,7 @@ bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 		/* JR cc,d */
 	case 0x38: case 0x30: case 0x20: case 0x28:
 	{
-		const int8_t relJump = (int8_t)ReadSpeccyByte(pSpeccy, pc + 1);
+		const int8_t relJump = (int8_t)pCPUInterface->ReadByte(pc + 1);
 		*out_addr = pc + 2 + relJump;	// +2 because it's relative to the next instruction
 	}
 		return true;
@@ -133,9 +148,18 @@ bool CheckJumpInstruction(FSpeccy* pSpeccy, uint16_t pc, uint16_t* out_addr)
 	return false;
 }
 
-bool CheckCallInstruction(FSpeccy* pSpeccy, uint16_t pc)
+bool CheckJumpInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return CheckJumpInstructionZ80(pCPUInterface, pc, out_addr);
+	else
+		return false;
+}
+
+
+bool CheckCallInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
+{
+	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -158,11 +182,19 @@ bool CheckCallInstruction(FSpeccy* pSpeccy, uint16_t pc)
 	return false;
 }
 
+bool CheckCallInstruction(ICPUInterface* pCPUInterface, uint16_t pc)
+{
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return CheckCallInstructionZ80(pCPUInterface, pc);
+	else
+		return false;
+}
+
 // check if function should stop static analysis
 // this would be a function that unconditionally affects the PC
-bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
+bool CheckStopInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
 {
-	const uint8_t instrByte = ReadSpeccyByte(pSpeccy, pc);
+	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
 
 	switch(instrByte)
 	{
@@ -194,7 +226,7 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 		return true;
 	case 0xED:	// extended instructions
 	{
-		const uint8_t extInstrByte = ReadSpeccyByte(pSpeccy, pc+1);
+		const uint8_t extInstrByte = pCPUInterface->ReadByte(pc+1);
 		switch(extInstrByte)
 		{
 		case 0x4D:	// more RET functions
@@ -212,7 +244,7 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 	case 0xDD:	// IX
 	case 0xFD:	// IY
 	{
-		const uint8_t extInstrByte = ReadSpeccyByte(pSpeccy, pc + 1);
+		const uint8_t extInstrByte = pCPUInterface->ReadByte(pc + 1);
 		switch (extInstrByte)
 		{
 		case 0xE9:	// JP(IX)
@@ -222,6 +254,14 @@ bool CheckStopInstruction(FSpeccy* pSpeccy, uint16_t pc)
 	default:
 		return false;
 	}
+}
+
+bool CheckStopInstruction(ICPUInterface* pCPUInterface, uint16_t pc)
+{
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return CheckStopInstructionZ80(pCPUInterface, pc);
+	else
+		return false;
 }
 
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType labelType)
@@ -260,7 +300,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType l
 
 struct FAnalysisDasmState
 {
-	FSpeccy*		pSpeccy;
+	ICPUInterface*	CPUInterface;
 	uint16_t		CurrentAddress;
 	std::string		Text;
 };
@@ -271,7 +311,7 @@ static uint8_t AnalysisDasmInputCB(void* pUserData)
 {
 	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
 
-	const uint8_t val = ReadSpeccyByte(pDasmState->pSpeccy, pDasmState->CurrentAddress++);
+	const uint8_t val = pDasmState->CPUInterface->ReadByte( pDasmState->CurrentAddress++);
 
 	// push into binary buffer
 	//if (pDasm->bin_pos < DASM_MAX_BINLEN)
@@ -291,11 +331,10 @@ static void AnalysisOutputCB(char c, void* pUserData)
 
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
-	FSpeccy *pSpeccy = state.pSpeccy;
 	FAnalysisDasmState dasmState;
-	dasmState.pSpeccy = state.pSpeccy;
+	dasmState.CPUInterface = state.CPUInterface;
 	dasmState.CurrentAddress = pc;
-	const uint16_t newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+	const uint16_t newPC = state.CPUInterface->DasmOp(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
 	FCodeInfo *pCodeInfo = state.CodeInfo[pc];
 	assert(pCodeInfo != nullptr);
@@ -305,12 +344,10 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
-	FSpeccy *pSpeccy = state.pSpeccy;
-
 	FAnalysisDasmState dasmState;
-	dasmState.pSpeccy = state.pSpeccy;
+	dasmState.CPUInterface = state.CPUInterface;
 	dasmState.CurrentAddress = pc;
-	const uint16_t newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+	const uint16_t newPC = state.CPUInterface->DasmOp(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
 	FCodeInfo *pCodeInfo = state.CodeInfo[pc];
 	if (pCodeInfo == nullptr)
@@ -327,9 +364,9 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	// does this function branch?
 	uint16_t jumpAddr;
-	if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
+	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
 	{
-		const bool isCall = CheckCallInstruction(pSpeccy, pc);
+		const bool isCall = CheckCallInstruction(state.CPUInterface, pc);
 		if (GenerateLabelForAddress(state, jumpAddr, isCall ? LabelType::Function : LabelType::Code))
 			state.Labels[jumpAddr]->References[pc]++;
 
@@ -337,10 +374,10 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	}
 
 	uint16_t ptr;
-	if (CheckPointerRefInstruction(pSpeccy, pc, &ptr))
+	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
 		pCodeInfo->PointerAddress = ptr;
 
-	if (CheckPointerIndirectionInstruction(pSpeccy, pc, &ptr))
+	if (CheckPointerIndirectionInstruction(state.CPUInterface, pc, &ptr))
 	{
 		if (GenerateLabelForAddress(state, ptr, LabelType::Data))
 			state.Labels[ptr]->References[pc]++;
@@ -352,11 +389,9 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 // return if we should continue
 bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 {
-	FSpeccy *pSpeccy = state.pSpeccy;
-
 	// update branch reference counters
 	uint16_t jumpAddr;
-	if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
+	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
 	{
 		FLabelInfo* pLabel = state.Labels[jumpAddr];
 		if (pLabel != nullptr)
@@ -364,7 +399,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	}
 
 	uint16_t ptr;
-	if (CheckPointerRefInstruction(pSpeccy, pc, &ptr))
+	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
 	{
 		FLabelInfo* pLabel = state.Labels[ptr];
 		if (pLabel != nullptr)
@@ -375,7 +410,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		return false;
 
 	uint16_t newPC = WriteCodeInfoForAddress(state, pc);
-	if (CheckStopInstruction(pSpeccy, pc) || newPC < pc)
+	if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
 		return false;
 	
 	pc = newPC;
@@ -386,7 +421,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 // TODO: make this use above function
 void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 {
-	FSpeccy *pSpeccy = state.pSpeccy;
+	//FSpeccy *pSpeccy = state.pSpeccy;
 
 	// update branch reference counters
 	/*uint16_t jumpAddr;
@@ -418,14 +453,14 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 		uint16_t jumpAddr = 0;
 		const uint16_t newPC = WriteCodeInfoForAddress(state, pc);
 
-		if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
+		if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
 		{
 			AnalyseFromPC(state, jumpAddr);
 			bStop = false;	// should just be call & rst really
 		}
 
 		// do we need to stop tracing ??
-		if (CheckStopInstruction(pSpeccy, pc) || newPC < pc)
+		if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
 			bStop = true;
 		else
 			pc = newPC;
@@ -546,46 +581,9 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 }
 
 
-void InsertROMLabels(FCodeAnalysisState &state)
-{
-	for (const auto &label : g_RomLabels)
-	{
-		AddLabel(state, label.Address, label.pLabelName, label.LabelType);
 
-		// run static analysis on all code labels
-		if(label.LabelType == LabelType::Code || label.LabelType == LabelType::Function)
-			RunStaticCodeAnalysis(state, label.Address);
-	}
 
-	for (const auto &label : g_SysVariables)
-	{
-		AddLabel(state, label.Address, label.pLabelName, LabelType::Data);
-		// TODO: Set up data?
-	}
-}
-
-void InsertSystemLabels(FCodeAnalysisState &state)
-{
-	// screen memory start
-	AddLabel(state, 0x4000, "ScreenPixels", LabelType::Data);
-	
-	FDataInfo *pScreenPixData = new FDataInfo;
-	pScreenPixData->DataType = DataType::Graphics;
-	pScreenPixData->Address = 0x4000;
-	pScreenPixData->ByteSize = 0x1800;
-	state.DataInfo[pScreenPixData->Address] = pScreenPixData;
-
-	AddLabel(state, 0x5800, "ScreenAttributes", LabelType::Data);
-	FDataInfo *pScreenAttrData = new FDataInfo;
-	pScreenAttrData->DataType = DataType::Blob;
-	pScreenAttrData->Address = 0x5800;
-	pScreenAttrData->ByteSize = 0x400;
-	state.DataInfo[pScreenAttrData->Address] = pScreenAttrData;
-
-	// system variables?
-}
-
-void InitialiseCodeAnalysis(FCodeAnalysisState &state,FSpeccy* pSpeccy)
+void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface)
 {
 	for (int i = 0; i < (1 << 16); i++)	// loop across address range
 	{
@@ -614,10 +612,10 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state,FSpeccy* pSpeccy)
 	state.CursorItemIndex = -1;
 	state.pCursorItem = nullptr;
 	
-	state.pSpeccy = pSpeccy;
-	uint16_t initialPC = z80_pc(&state.pSpeccy->CurrentState.cpu);
-	InsertROMLabels(state);
-	InsertSystemLabels(state);
+	state.CPUInterface = pCPUInterface;
+	uint16_t initialPC = pCPUInterface->GetPC();// z80_pc(&state.pSpeccy->CurrentState.cpu);
+	pCPUInterface->InsertROMLabels(state);
+	pCPUInterface->InsertSystemLabels(state);
 	RunStaticCodeAnalysis(state, initialPC);
 
 	// Key Config
@@ -737,7 +735,7 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 			uint16_t charAddr = pDataItem->Address;
 			while (state.DataInfo[charAddr] != nullptr && state.DataInfo[charAddr]->DataType == DataType::Byte)
 			{
-				const uint8_t val = ReadSpeccyByte(state.pSpeccy, charAddr);
+				const uint8_t val = state.CPUInterface->ReadByte(charAddr);
 				if (val == 0 || val > 0x80)
 					break;
 				pDataItem->ByteSize++;
@@ -876,14 +874,14 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 				{
 				case DataType::Byte:
 				{
-					const uint8_t val = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address);
+					const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
 					fprintf(fp,"db %02Xh", val);
 				}
 				break;
 
 				case DataType::Word:
 				{
-					const uint16_t val = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address) | (ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + 1) << 8);
+					const uint16_t val = state.CPUInterface->ReadByte(pDataInfo->Address) | (state.CPUInterface->ReadByte(pDataInfo->Address + 1) << 8);
 					fprintf(fp, "dw %04Xh", val);
 				}
 				break;
@@ -893,7 +891,7 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 					std::string textString;
 					for (int i = 0; i < pDataInfo->ByteSize; i++)
 					{
-						const char ch = ReadSpeccyByte(state.pSpeccy, pDataInfo->Address + i);
+						const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 						if (ch == '\n')
 							textString += "<cr>";
 						else
