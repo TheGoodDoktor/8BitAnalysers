@@ -17,7 +17,7 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
-#include "CodeAnalyser/ROMLabels.h"
+#include "Speccy/ROMLabels.h"
 
 void DrawCheatsUI(FSpeccyUI *pUI);
 

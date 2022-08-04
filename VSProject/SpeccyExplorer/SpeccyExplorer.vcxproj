@@ -136,10 +136,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyser.cpp" />
-    <ClCompile Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.cpp" />
-    <ClCompile Include="..\..\Source\CodeAnalyser\CodeToolTips.cpp" />
     <ClCompile Include="..\..\Source\main.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeToolTips.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.cpp" />
     <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp" />
     <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp" />
     <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp" />
@@ -165,13 +169,17 @@
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyser.h" />
-    <ClInclude Include="..\..\Source\CodeAnalyser\CodeAnalyserUI.h" />
-    <ClInclude Include="..\..\Source\CodeAnalyser\CodeToolTips.h" />
-    <ClInclude Include="..\..\Source\CodeAnalyser\romlabels.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeToolTips.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.h" />
     <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h" />
     <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h" />
     <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h" />
+    <ClInclude Include="..\..\Source\Speccy\romlabels.h" />
     <ClInclude Include="..\..\Source\Speccy\Speccy.h" />
     <ClInclude Include="..\..\Source\UI\Disassembler.h" />
     <ClInclude Include="..\..\Source\UI\FunctionHandlers.h" />
