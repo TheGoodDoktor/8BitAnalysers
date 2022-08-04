@@ -43,6 +43,15 @@
     <Filter Include="Source Files\Shared\Misc">
       <UniqueIdentifier>{d17edfaa-d59f-4351-83f8-a0a060464401}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shared\CodeAnalyser">
+      <UniqueIdentifier>{030ee247-4046-4c1a-b630-d97636e0df61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\CodeAnalyser\6502">
+      <UniqueIdentifier>{51848b59-d336-4be7-8ae3-bd7b7a868905}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\CodeAnalyser\Z80">
+      <UniqueIdentifier>{b73a1659-9e6a-4d3b-8969-d57cc3a411ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\main.cpp">
@@ -77,6 +86,30 @@
     </ClCompile>
     <ClCompile Include="..\..\..\Source\C64\C64Chips.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeToolTips.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\6502</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\6502</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp">
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -310,6 +343,30 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Shared\Misc\InputEventHandler.h">
       <Filter>Source Files\Shared\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.h">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeToolTips.h">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.h">
+      <Filter>Source Files\Shared\CodeAnalyser\6502</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.h">
+      <Filter>Source Files\Shared\CodeAnalyser\6502</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.h">
+      <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.h">
+      <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.h">
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

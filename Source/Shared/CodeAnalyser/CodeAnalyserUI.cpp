@@ -399,7 +399,7 @@ void DrawDataValueGraph(uint8_t val, bool bReset)
 			average += values[n];
 		average /= (float)IM_ARRAYSIZE(values);
 		char overlay[32];
-		sprintf(overlay, "avg %f", average);
+		sprintf_s(overlay, "avg %f", average);
 		ImGui::PlotLines("Lines", values, IM_ARRAYSIZE(values), values_offset, overlay, 0.0f, 255.0f, ImVec2(0, 80));
 	}
 	//ImGui::PlotHistogram("Histogram", arr, IM_ARRAYSIZE(arr), 0, NULL, 0.0f, 1.0f, ImVec2(0, 80));

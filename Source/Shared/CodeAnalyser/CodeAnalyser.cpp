@@ -78,13 +78,13 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType l
 		switch (labelType)
 		{
 		case LabelType::Function:
-			sprintf(label, "function_%04X", pc);
+			sprintf_s(label, "function_%04X", pc);
 			break;
 		case LabelType::Code:
-			sprintf(label, "label_%04X", pc);
+			sprintf_s(label, "label_%04X", pc);
 			break;
 		case LabelType::Data:
-			sprintf(label, "data_%04X", pc);
+			sprintf_s(label, "data_%04X", pc);
 			pLabel->Global = true;
 			break;
 		}
@@ -621,7 +621,7 @@ std::string GenerateAddressLabelString(FCodeAnalysisState &state, uint16_t addr)
 		if (labelOffset > 0)	// add offset string
 		{
 			char offsetString[16];
-			sprintf(offsetString, " + %d]", labelOffset);
+			sprintf_s(offsetString, " + %d]", labelOffset);
 			labelStr += offsetString;
 		}
 		else
@@ -635,8 +635,10 @@ std::string GenerateAddressLabelString(FCodeAnalysisState &state, uint16_t addr)
 
 bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFileName,uint16_t startAddr,uint16_t endAddr)
 {
-	FILE *fp = fopen(pTextFileName, "wt");
-	if (fp == NULL)
+	FILE* fp = nullptr;
+	fopen_s(&fp, pTextFileName, "wt");
+	
+	if (fp == nullptr)
 		return false;
 	
 	for(FItem* pItem : state.ItemList)
