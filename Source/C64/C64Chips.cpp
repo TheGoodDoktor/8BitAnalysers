@@ -102,6 +102,11 @@ public:
 
     c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
 
+    // Emulator Event Handlers
+    void    OnBoot(void);
+    int     OnCPUTrap(uint16_t pc, int ticks, uint64_t pins);
+    uint64_t    OnCPUTick(uint64_t pins);
+
 
 private:
     c64_t       C64Emu;
@@ -111,18 +116,11 @@ private:
     size_t          FramePixelBufferSize = 0;
     unsigned char*  FramePixelBuffer = nullptr;
     ImTextureID     FrameBufferTexture = nullptr;
+
+    m6502_tick_t    OldTickCB = nullptr;
 };
 
 FC64Emulator g_C64Emu;
-
-// globals : TODO - encapsulate
-//static c64_t c64;
-//static ui_c64_t ui_c64;
-//static double exec_time;
-
-//static size_t g_FramePixelBufferSize = 0;
-//static unsigned char* g_FramePixelBuffer = nullptr;
-//ImTextureID g_FrameBufferTexture = nullptr;
 
 void* gfx_create_texture(int w, int h)
 {
@@ -144,8 +142,21 @@ void gfx_destroy_texture(void* h)
 static void C64BootCallback(c64_t* sys) 
 {
     FC64Emulator* pC64Emu = (FC64Emulator*)sys->user_data;
-    c64_desc_t desc = pC64Emu->GenerateC64Desc(sys->joystick_type);
-    c64_init(sys, &desc);
+    pC64Emu->OnBoot();
+    
+}
+
+static int CPUTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
+{
+    FC64Emulator* pC64Emu = (FC64Emulator*)user_data;
+    return pC64Emu->OnCPUTrap(pc, ticks, pins);
+}
+
+uint64_t CPUTickCallback(uint64_t pins, void* user_data)
+{
+    c64_t* sys = (c64_t*)user_data;
+    FC64Emulator* pC64Emu = (FC64Emulator*)sys->user_data;
+    return pC64Emu->OnCPUTick(pins);
 }
 
 /* audio-streaming callback */
@@ -226,6 +237,13 @@ bool FC64Emulator::Init()
     c64_desc_t desc = GenerateC64Desc(joy_type);
     c64_init(&C64Emu, &desc);
     C64Emu.user_data = this;
+
+    // trap callback
+    m6502_trap_cb(&C64Emu.cpu, CPUTrapCallback, this);
+
+    // Tick callback - why isn't this working?
+    OldTickCB = C64Emu.cpu.tick_cb;
+    C64Emu.cpu.tick_cb = CPUTickCallback;
 
     // Setup C64 UI
     ui_c64_desc_t uiDesc;
@@ -397,6 +415,27 @@ void FC64Emulator::OnChar(int charCode)
         c64_key_up(&C64Emu, c);
     }
 }
+
+// Emulator Event Handers
+void    FC64Emulator::OnBoot(void)
+{
+    c64_desc_t desc = GenerateC64Desc(C64Emu.joystick_type);
+    c64_init(&C64Emu, &desc);
+}
+
+int    FC64Emulator::OnCPUTrap(uint16_t pc, int ticks, uint64_t pins)
+{
+    // TODO: Implement - use Speccy one as guide
+    return 0;
+}
+
+uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
+{
+    // TODO: Implement - use Speccy one as guide
+
+    return OldTickCB(pins, &C64Emu);
+}
+
 
 void C64ChipsInit()
 {
