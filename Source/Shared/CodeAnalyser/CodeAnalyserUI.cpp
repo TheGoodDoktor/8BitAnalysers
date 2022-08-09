@@ -51,9 +51,9 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 	
 	for(int addrVal = addr; addrVal >= 0; addrVal--)
 	{
-		if(state.Labels[addrVal] != nullptr)
+		if(state.GetLabelForAddress(addrVal) != nullptr)
 		{
-			pLabelString = state.Labels[addrVal]->Name.c_str();
+			pLabelString = state.GetLabelForAddress(addrVal)->Name.c_str();
 			break;
 		}
 
@@ -468,7 +468,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 
 	ImGui::Text("Last Writer: ");
 	ImGui::SameLine();
-	DrawCodeAddress(state,state.LastWriter[pDataInfo->Address]);
+	DrawCodeAddress(state,state.GetLastWriterForAddress(pDataInfo->Address));
 }
 
 
@@ -547,7 +547,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 		// loop across address range
 		for (int addr = 0; addr < (1 << 16); addr++)
 		{
-			FLabelInfo *pLabelInfo = state.Labels[addr];
+			FLabelInfo *pLabelInfo = state.GetLabelForAddress(addr);
 			if (pLabelInfo != nullptr)
 			{
 				state.ItemList.push_back(pLabelInfo);
@@ -555,7 +555,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 			}
 			if (addr >= nextItemAddress)
 			{
-				FCodeInfo *pCodeInfo = state.CodeInfo[addr];
+				FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(addr);
 				if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 				{
 					nextItemAddress = addr + pCodeInfo->ByteSize;
@@ -563,7 +563,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 				}
 				else // code and data are mutually exclusive
 				{
-					FDataInfo *pDataInfo = state.DataInfo[addr];
+					FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(addr);
 					if (pDataInfo != nullptr)
 					{
 						if (pDataInfo->DataType != DataType::Blob && pDataInfo->DataType != DataType::Graphics)

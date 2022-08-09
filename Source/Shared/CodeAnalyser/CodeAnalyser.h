@@ -4,6 +4,9 @@
 #include <map>
 #include <vector>
 
+#include "CodeAnaysisPage.h"
+
+#define USE_PAGING 1
 
 enum class LabelType;
 
@@ -58,7 +61,7 @@ struct FItem
 {
 	ItemType		Type;
 	std::string		Comment;
-	uint16_t		Address;
+	uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
 	uint16_t		ByteSize;
 	int				FrameLastAccessed = -1;
 	bool			bBreakpointed = false;
@@ -131,6 +134,8 @@ enum class Key
 	Count
 };
 
+
+
 // code analysis information
 struct FCodeAnalysisState
 {
@@ -138,10 +143,26 @@ struct FCodeAnalysisState
 	int						CurrentFrameNo = 0;
 
 	static const int kAddressSize = 1 << 16;
+
+	// TODO: use page table
+	FCodeAnalysisPage*		ReadPageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
+	FCodeAnalysisPage*		WritePageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
+	void					SetCodeAnalysisReadPage(int pageNo, FCodeAnalysisPage* pPage) { ReadPageTable[pageNo] = pPage; }
+	void					SetCodeAnalysisWritePage(int pageNo, FCodeAnalysisPage* pPage) { WritePageTable[pageNo] = pPage; }
+	void					SetCodeAnalysisRWPage(int pageNo, FCodeAnalysisPage* pReadPage, FCodeAnalysisPage *pWritePage)
+	{
+		SetCodeAnalysisReadPage(pageNo, pReadPage);
+		SetCodeAnalysisWritePage(pageNo, pWritePage);
+	}
+
+
+	// TODO: replace below with above
+private:
 	FLabelInfo*				Labels[kAddressSize];
 	FCodeInfo*				CodeInfo[kAddressSize];
 	FDataInfo*				DataInfo[kAddressSize];
 	uint16_t				LastWriter[kAddressSize];
+public:
 	bool					bCodeAnalysisDataDirty = false;
 
 	bool					bRegisterDataAccesses = true;
@@ -161,6 +182,74 @@ struct FCodeAnalysisState
 
 	std::vector< class FCommand *>	CommandStack;
 
+	// Access functions for code analysis
+#if USE_PAGING
+	static const int kPageShift = 10;
+	static const int kPageMask = 1023;
+
+	FCodeAnalysisPage* GetReadPage(uint16_t addr)  
+	{
+		const int pageNo = addr >> kPageShift;
+		FCodeAnalysisPage* pPage = ReadPageTable[pageNo];
+		if (pPage == nullptr)
+		{
+			printf("Read page %d NOT mapped", pageNo);
+		}
+
+		return pPage;
+	}
+	const FCodeAnalysisPage* GetReadPage(uint16_t addr) const { return ((FCodeAnalysisState *)this)->GetReadPage(addr); }
+	FCodeAnalysisPage* GetWritePage(uint16_t addr) 
+	{
+		const int pageNo = addr >> kPageShift;
+		FCodeAnalysisPage* pPage = WritePageTable[pageNo];
+		if (pPage == nullptr)
+		{
+			printf("Write page %d NOT mapped", pageNo);
+		}
+
+		return pPage;
+	}
+	const FCodeAnalysisPage* GetWritePage(uint16_t addr) const { return ((FCodeAnalysisState*)this)->GetWritePage(addr); }
+
+	const FLabelInfo* GetLabelForAddress(uint16_t addr) const { return GetReadPage(addr)->Labels[addr & kPageMask]; }
+	FLabelInfo* GetLabelForAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
+	void SetLabelForAddress(uint16_t addr, FLabelInfo* pLabel) { GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; }
+
+	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
+	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
+	void SetCodeInfoForAddress(uint16_t addr, FCodeInfo* pCodeInfo) { GetReadPage(addr)->CodeInfo[addr & kPageMask] = pCodeInfo; }
+
+	const FDataInfo* GetReadDataInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->DataInfo[addr & kPageMask]; }
+	FDataInfo* GetReadDataInfoForAddress(uint16_t addr) { return GetReadPage(addr)->DataInfo[addr & kPageMask]; }
+	void SetReadDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { GetReadPage(addr)->DataInfo[addr & kPageMask] = pDataInfo; }
+
+	const FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) const { return  GetWritePage(addr)->DataInfo[addr & kPageMask]; }
+	FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) { return GetWritePage(addr)->DataInfo[addr & kPageMask]; }
+	void SetWriteDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { GetWritePage(addr)->DataInfo[addr & kPageMask] = pDataInfo; }
+
+	uint16_t GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->LastWriter[addr & kPageMask]; }
+	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { GetWritePage(addr)->LastWriter[addr & kPageMask] = lastWriter; }
+#else
+	const FLabelInfo* GetLabelForAddress(uint16_t addr) const { return Labels[addr]; }
+	FLabelInfo* GetLabelForAddress(uint16_t addr) { return Labels[addr]; }
+	void SetLabelForAddress(uint16_t addr, FLabelInfo* pLabel) { Labels[addr] = pLabel; }
+	
+	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return CodeInfo[addr]; }
+	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return CodeInfo[addr]; }
+	void SetCodeInfoForAddress(uint16_t addr, FCodeInfo* pCodeInfo) { CodeInfo[addr] = pCodeInfo; }
+	
+	const FDataInfo* GetReadDataInfoForAddress(uint16_t addr) const { return DataInfo[addr]; }
+	FDataInfo* GetReadDataInfoForAddress(uint16_t addr) { return DataInfo[addr]; }
+	void SetReadDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { DataInfo[addr] = pDataInfo; }
+
+	const FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) const { return DataInfo[addr]; }
+	FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) { return DataInfo[addr]; }
+	void SetWriteDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { DataInfo[addr] = pDataInfo; }
+
+	uint16_t GetLastWriterForAddress(uint16_t addr) const { return LastWriter[addr]; }
+	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { LastWriter[addr] = lastWriter; }
+#endif
 };
 
 // Commands
@@ -171,6 +260,7 @@ public:
 	virtual void Undo(FCodeAnalysisState &state) = 0;
 };
 
+void InitialiseCodeAnalysisPage(FCodeAnalysisPage* pPage, uint16_t address);
 
 // Analysis
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);

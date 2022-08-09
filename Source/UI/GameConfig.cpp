@@ -34,41 +34,7 @@ FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName)
 	return pNewConfig;
 }
 
-void WriteStringToFile(const std::string &str, FILE *fp)
-{
-	const int stringLength = (int)str.size();
-	fwrite(&stringLength, sizeof(int), 1, fp);
-	fwrite(str.c_str(), 1, stringLength, fp);
-}
 
-void ReadStringFromFile(std::string &str, FILE *fp)
-{
-	int stringLength = 0;
-	fread(&stringLength, sizeof(int), 1, fp);
-	str.resize(stringLength);
-	fread(&str[0], 1, stringLength, fp);
-}
-
-std::string MakeHexString(uint16_t val)
-{
-	char hexStr[16];
-	sprintf(hexStr, "0x%x", val);
-	return std::string(hexStr);
-}
-
-uint8_t ParseHexString8bit(const std::string &string)
-{
-	unsigned int val;
-	sscanf(string.c_str(), "0x%x", &val);
-	return static_cast<uint8_t>(val);
-}
-
-uint16_t ParseHexString16bit(const std::string &string)
-{
-	unsigned int val;
-	sscanf(string.c_str(), "0x%x", &val);
-	return static_cast<uint16_t>(val);
-}
 
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 {
@@ -175,7 +141,7 @@ void SaveLabelsBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddr
 	int recordCount = 0;
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		if (state.Labels[i] != nullptr)
+		if (state.GetLabelForAddress(i) != nullptr)
 			recordCount++;
 	}
 
@@ -183,7 +149,7 @@ void SaveLabelsBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddr
 
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		FLabelInfo *pLabel = state.Labels[i];
+		const FLabelInfo *pLabel = state.GetLabelForAddress(i);
 		if (pLabel != nullptr)
 		{
 			WriteStringToFile(std::string(magic_enum::enum_name(pLabel->LabelType)), fp);
@@ -239,7 +205,7 @@ void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo)
 			}
 		}
 
-		state.Labels[pLabel->Address] = pLabel;
+		state.SetLabelForAddress(pLabel->Address,pLabel);
 	}
 }
 
@@ -250,7 +216,7 @@ void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAd
 	int recordCount = 0;
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		if (state.CodeInfo[i] != nullptr)
+		if (state.GetCodeInfoForAddress(i) != nullptr)
 			recordCount++;
 	}
 
@@ -258,7 +224,7 @@ void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAd
 	
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		FCodeInfo *pCodeInfo = state.CodeInfo[i];
+		const FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(i);
 		if (pCodeInfo != nullptr)
 		{
 			fwrite(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
@@ -290,7 +256,7 @@ void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo)
 		fread(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
 		ReadStringFromFile(pCodeInfo->Text, fp);
 		ReadStringFromFile(pCodeInfo->Comment, fp);
-		state.CodeInfo[pCodeInfo->Address] = pCodeInfo;
+		state.SetCodeInfoForAddress(pCodeInfo->Address, pCodeInfo);
 	}
 }
 
@@ -301,7 +267,7 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAd
 	int recordCount = 0;
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		if (state.DataInfo[i] != nullptr)
+		if (state.GetReadDataInfoForAddress(i) != nullptr)
 			recordCount++;
 	}
 
@@ -309,7 +275,7 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAd
 
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		FDataInfo *pDataInfo = state.DataInfo[i];
+		const FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(i);
 		if (pDataInfo != nullptr)
 		{
 			WriteStringToFile(std::string(magic_enum::enum_name(pDataInfo->DataType)), fp);
@@ -379,7 +345,8 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 			}
 		}
 
-		state.DataInfo[pDataInfo->Address] = pDataInfo;
+		state.SetReadDataInfoForAddress(pDataInfo->Address, pDataInfo);
+		state.SetWriteDataInfoForAddress(pDataInfo->Address, pDataInfo);
 	}
 }
 
@@ -395,7 +362,12 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_
 
 	fwrite(&g_kBinaryFileMagic, sizeof(int), 1, fp);
 	fwrite(&g_kBinaryFileVersionNo, sizeof(int), 1, fp);
-	fwrite(&state.LastWriter, sizeof(uint16_t), 1 << 16, fp);
+	for (int i = 0; i < 1 << 16; i++)
+	{
+		uint16_t addr = state.GetLastWriterForAddress(i);
+		fwrite(&addr, sizeof(uint16_t), 1, fp);
+	}
+	//fwrite(&state.LastWriter, sizeof(uint16_t), 1 << 16, fp);	// write whole address range
 	SaveLabelsBin(state, fp, addrStart, addrEnd);
 	SaveCodeInfoBin(state, fp, addrStart, addrEnd);
 	SaveDataInfoBin(state, fp, addrStart, addrEnd);
@@ -424,24 +396,33 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 	// clear what we're replacing
 	for (int i = addrStart; i <= addrEnd; i++)	
 	{
-		delete state.Labels[i];
-		state.Labels[i] = nullptr;
+		FLabelInfo* pLabel = state.GetLabelForAddress(i);
+		delete pLabel;
+		state.SetLabelForAddress(i, nullptr);
 
-		if (state.CodeInfo[i] != nullptr)
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
+		if (pCodeInfo != nullptr)
 		{
-			FCodeInfo *pCodeInfo = state.CodeInfo[i];
 			const int codeSize = pCodeInfo->ByteSize;
 			for(int off=0;off< codeSize;off++)
-				state.CodeInfo[i+off] = nullptr;
+				state.SetCodeInfoForAddress(i+off, nullptr);
 			delete pCodeInfo;
 		}
 
-		delete state.DataInfo[i];
-		state.DataInfo[i] = nullptr;
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
+		delete pDataInfo;
+		state.SetReadDataInfoForAddress(i, nullptr);
 	}
 
-	if(versionNo >= 4)
-		fread(&state.LastWriter, sizeof(uint16_t), 1 << 16, fp);
+	if (versionNo >= 4)
+	{
+		for (int i = 0; i < (1 << 16); i++)
+		{
+			uint16_t lastWriter;
+			fread(&lastWriter, sizeof(uint16_t), 1, fp);
+			state.SetLastWriterForAddress(i, lastWriter);
+		}
+	}
 
 	LoadLabelsBin(state, fp, versionNo);
 	LoadCodeInfoBin(state, fp, versionNo);

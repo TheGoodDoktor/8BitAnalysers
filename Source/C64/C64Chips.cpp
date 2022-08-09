@@ -48,6 +48,9 @@
 
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
+#include "Util/MemoryBuffer.h"
+#include "util/FileUtil.h"
+#include "C64IOAnalysis.h"
 
 class FC64Emulator : public IInputEventHandler , public ICPUInterface
 {
@@ -101,6 +104,9 @@ public:
     // End ICPUInterface interface implementation
 
     c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
+    void UpdateCodeAnalysisPages(uint8_t cpuPort);
+    bool SaveCodeAnalysis(const char* pFileName);
+    bool LoadCodeAnalysis(const char* pFileName);
 
     // Emulator Event Handlers
     void    OnBoot(void);
@@ -116,6 +122,26 @@ private:
     size_t          FramePixelBufferSize = 0;
     unsigned char*  FramePixelBuffer = nullptr;
     ImTextureID     FrameBufferTexture = nullptr;
+    ImTextureID     DebugFrameBufferTexture = nullptr;
+
+    FCodeAnalysisState  CodeAnalysis;
+
+    // Analysis pages
+    FCodeAnalysisPage   KernelROM[8];       // 8K Kernel ROM
+    FCodeAnalysisPage   BasicROM[8];        // 8K Basic ROM
+    FCodeAnalysisPage   CharacterROM[4];    // 4K Character ROM
+    FCodeAnalysisPage   IOSystem[4];        // 4K IO System
+    FCodeAnalysisPage   RAM[64];            // 64K RAM
+
+    uint8_t             LastMemPort = 0x7;  // Default startup
+
+    FC64IOAnalysis      IOAnalysis;
+
+    // Mapping status
+    bool                bBasicROMMapped = true;
+    bool                bKernelROMMapped = true;
+    bool                bCharacterROMMapped = false;
+    bool                bIOMapped = true;
 
     m6502_tick_t    OldTickCB = nullptr;
 };
@@ -231,6 +257,7 @@ bool FC64Emulator::Init()
 
     // setup texture
     FrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
+    DebugFrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
 
     // Setup C64 Emulator
     c64_joystick_type_t joy_type = C64_JOYSTICKTYPE_NONE;
@@ -264,11 +291,181 @@ bool FC64Emulator::Init()
     uiDesc.dbg_keys.toggle_breakpoint_keycode = VK_F9;
     uiDesc.dbg_keys.toggle_breakpoint_name = "F9";
     ui_c64_init(&C64UI, &uiDesc);
+
+    CPUType = ECPUType::M6502;
+
+    // setup default memory configuration
+    // RAM - $0000 - $9FFF - pages 0-39 - 40K
+    // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
+    // RAM - $C000 - $CFFF - pages 48-51 - 4k
+    // IO System - %D000 - $DFFF - page 52-55 - 4k
+    // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
+
+    for (int pageNo = 0; pageNo < 64; pageNo++)
+    {
+        // Initialise RAM Pages
+        RAM[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+        
+        // Initialise Basic ROM
+        if(pageNo >= 40 && pageNo < 48 )
+            BasicROM[pageNo - 40].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+
+        // Initialise IO System & character RAM
+        if (pageNo >= 52 && pageNo < 56)
+        {
+            IOSystem[pageNo - 52].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
+            CharacterROM[pageNo - 52].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
+        }
+        // Initialise Kernel ROM
+        if (pageNo >= 56)
+            KernelROM[pageNo - 56].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+    }
+    
+    // Map permanent regions
+    for (int pageNo = 0; pageNo < 64; pageNo++)
+    {
+        // Map bottom 40K to RAM as it's always RAM
+        if (pageNo < 40)
+            CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+        else if(pageNo > 47 && pageNo < 52)    // 0xc000 4k region
+            CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+        else
+        {
+            if (pageNo < 52 || pageNo > 55)
+                CodeAnalysis.SetCodeAnalysisWritePage(pageNo, &RAM[pageNo]);
+        }
+    }
+    UpdateCodeAnalysisPages(0x7);
+    IOAnalysis.Init(&CodeAnalysis);
+    InitialiseCodeAnalysis(CodeAnalysis, this);
+
     return true;
 }
 
+void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
+{
+    bBasicROMMapped = false;
+    bKernelROMMapped = false;
+    bCharacterROMMapped = false;
+    bIOMapped = false;
+
+    /* shortcut if HIRAM and LORAM is 0, everything is RAM */
+    if ((cpuPort & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == 0)
+    {
+        //mem_map_ram(&sys->mem_cpu, 0, 0xA000, 0x6000, sys->ram + 0xA000);
+        for (int pageNo = 41; pageNo < 64; pageNo++)
+        {
+            CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+        }
+    }
+    else
+    {
+        /* A000..BFFF is either RAM-behind-BASIC-ROM or RAM */
+        if ((cpuPort & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM))
+        {
+            bBasicROMMapped = true;
+
+            // Map Basic ROM Code Analysis pages to  
+            for (int pageNo = 40; pageNo < 48; pageNo++)
+                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &BasicROM[pageNo - 40], &RAM[pageNo]);
+
+        }
+        else
+        {
+            for (int pageNo = 40; pageNo < 48; pageNo++)
+                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+        }
+        //mem_map_rw(&sys->mem_cpu, 0, 0xA000, 0x2000, read_ptr, sys->ram + 0xA000);
+
+        /* E000..FFFF is either RAM-behind-KERNAL-ROM or RAM */
+        if (cpuPort & C64_CPUPORT_HIRAM)
+        {
+            bKernelROMMapped = true;
+            //read_ptr = sys->rom_kernal;
+            for (int pageNo = 56; pageNo < 64; pageNo++)
+                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &KernelROM[pageNo - 56], &RAM[pageNo]);
+        }
+        else
+        {
+            //read_ptr = sys->ram + 0xE000;
+            for (int pageNo = 56; pageNo < 64; pageNo++)
+                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+        }
+        //mem_map_rw(&sys->mem_cpu, 0, 0xE000, 0x2000, read_ptr, sys->ram + 0xE000);
+
+        /* D000..DFFF can be Char-ROM or I/O */
+        if (cpuPort & C64_CPUPORT_CHAREN)
+        {
+            bIOMapped = true;
+            //sys->io_mapped = true;
+            for (int pageNo = 52; pageNo < 56; pageNo++)
+                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &IOSystem[pageNo - 52], &IOSystem[pageNo - 52]);
+        }
+        else
+        {
+            bCharacterROMMapped = true;
+
+            //mem_map_rw(&sys->mem_cpu, 0, 0xD000, 0x1000, sys->rom_char, sys->ram + 0xD000);
+            for (int pageNo = 52; pageNo < 56; pageNo++)
+                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &CharacterROM[pageNo - 52], &RAM[pageNo]);
+        }
+    }
+}
+
+bool FC64Emulator::SaveCodeAnalysis(const char* pFileName)
+{
+    FMemoryBuffer saveBuffer;
+
+    // Save RAM pages
+    for (int pageNo = 0; pageNo < 64; pageNo++)
+        RAM[pageNo].WriteToBuffer(saveBuffer);
+
+    // Save IO
+    for (int pageNo = 0; pageNo < 4; pageNo++)
+        IOSystem[pageNo].WriteToBuffer(saveBuffer);
+
+    // Save Basic ROM
+    for (int pageNo = 0; pageNo < 8; pageNo++)
+        BasicROM[pageNo].WriteToBuffer(saveBuffer);
+
+    // Save Kernel ROM
+    for (int pageNo = 0; pageNo < 8; pageNo++)
+        KernelROM[pageNo].WriteToBuffer(saveBuffer);
+
+    // Write to file
+    return saveBuffer.SaveToFile(pFileName);
+}
+
+bool FC64Emulator::LoadCodeAnalysis(const char* pFileName)
+{
+    FMemoryBuffer loadBuffer;
+
+    if (loadBuffer.LoadFromFile(pFileName) == false)
+        return false;
+
+    // Save RAM pages
+    for (int pageNo = 0; pageNo < 64; pageNo++)
+        RAM[pageNo].ReadFromBuffer(loadBuffer);
+
+    // Save IO
+    for (int pageNo = 0; pageNo < 4; pageNo++)
+        IOSystem[pageNo].ReadFromBuffer(loadBuffer);
+
+    // Save Basic ROM
+    for (int pageNo = 0; pageNo < 8; pageNo++)
+        BasicROM[pageNo].ReadFromBuffer(loadBuffer);
+
+    // Save Kernel ROM
+    for (int pageNo = 0; pageNo < 8; pageNo++)
+        KernelROM[pageNo].ReadFromBuffer(loadBuffer);
+
+    return true;
+}
+
+
 void FC64Emulator::Shutdown()
 {
+    SaveCodeAnalysis("AnalysisData/TestData.bin");
     ui_c64_discard(&C64UI);
     c64_discard(&C64Emu);
 }
@@ -276,6 +473,7 @@ void FC64Emulator::Shutdown()
 void FC64Emulator::Tick()
 {
     const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
+    const bool bDebugFrame = C64Emu.vic.debug_vis;
 
     if (ui_c64_before_exec(&C64UI))
     {
@@ -286,11 +484,41 @@ void FC64Emulator::Tick()
     ui_c64_draw(&C64UI, ExecTime);
 
     c64_display_width(&C64Emu);
-    ImGui_ImplDX11_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer, _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
+    if(bDebugFrame)
+        ImGui_ImplDX11_UpdateTextureRGBA(DebugFrameBufferTexture, FramePixelBuffer, _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
+    else
+        ImGui_ImplDX11_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer, _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
 
     if (ImGui::Begin("C64 Screen"))
     {
-        ImGui::Text("Frame buffer size = %d x %d", _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
+        if (bDebugFrame)
+            ImGui::Text("Frame buffer size = %d x %d", _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
+        else
+            ImGui::Text("Frame buffer size = %d x %d", _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
+        
+        // Show Mapping
+        ImGui::Text("Mapped: ");
+        if (bBasicROMMapped)
+        {
+            ImGui::SameLine();
+            ImGui::Text("Basic ");
+        }
+        if (bKernelROMMapped)
+        {
+            ImGui::SameLine();
+            ImGui::Text("Kernel ");
+        }
+        if (bIOMapped)
+        {
+            ImGui::SameLine();
+            ImGui::Text("IO ");
+        }
+        if (bCharacterROMMapped)
+        {
+            ImGui::SameLine();
+            ImGui::Text("CharROM ");
+        }
+
         if (ImGui::Button("Load"))
         {
             // TODO: load game data
@@ -310,9 +538,25 @@ void FC64Emulator::Tick()
                 fclose(fp);
             }
         }
-        ImGui::Image(FrameBufferTexture, ImVec2(_C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT));
+        if (bDebugFrame)
+            ImGui::Image(FrameBufferTexture, ImVec2(_C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT));
+        else
+            ImGui::Image(FrameBufferTexture, ImVec2(_C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT));
     }
     ImGui::End();
+
+    if (ImGui::Begin("Code Analysis"))
+    {
+        DrawCodeAnalysisData(CodeAnalysis);
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("IO Analysis"))
+    {
+        IOAnalysis.DrawIOAnalysisUI();
+    }
+    ImGui::End();
+
 #if 0
     gfx_draw(c64_display_width(&c64), c64_display_height(&c64));
     const uint32_t load_delay_frames = 180;
@@ -425,14 +669,66 @@ void    FC64Emulator::OnBoot(void)
 
 int    FC64Emulator::OnCPUTrap(uint16_t pc, int ticks, uint64_t pins)
 {
+    const uint16_t addr = M6502_GET_ADDR(pins);
+    const bool bMemAccess = !!(pins & M6502_RDY);
+    const bool bWrite = !!(pins & M6502_RW);
+
     // TODO: Implement - use Speccy one as guide
+    RegisterCodeExecuted(CodeAnalysis, pc);
+    FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(pc);
+    pCodeInfo->FrameLastAccessed = CodeAnalysis.CurrentFrameNo;
+
+    // check for breakpointed code line
+    if (pCodeInfo->bBreakpointed)
+        return UI_DBG_BP_BASE_TRAPID;
+
     return 0;
 }
 
+extern uint16_t g_M6502PC;
+
 uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 {
-    // TODO: Implement - use Speccy one as guide
+    static uint16_t lastPC = m6502_pc(&C64Emu.cpu);
+    const uint16_t pc = g_M6502PC;// m6502_pc(&C64Emu.cpu);// pc after execution?
+    const uint16_t addr = M6502_GET_ADDR(pins);
+    const uint8_t val = M6502_GET_DATA(pins);
+    if (pins & M6502_RW)
+    {
+        if (CodeAnalysis.bRegisterDataAccesses)
+            RegisterDataAccess(CodeAnalysis, pc, addr, false);
 
+        if (bIOMapped && (addr >> 8) == 0xd0)
+        {
+            IOAnalysis.RegisterIORead(addr, pc);
+        }
+    }
+    else
+    {
+        if (CodeAnalysis.bRegisterDataAccesses)
+            RegisterDataAccess(CodeAnalysis, pc, addr, true);
+
+        CodeAnalysis.SetLastWriterForAddress(addr, pc);
+
+        if (bIOMapped && (addr >> 8) == 0xd0)
+        {
+            IOAnalysis.RegisterIOWrite(addr,val, pc);
+        }
+
+        FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addr);
+        if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
+            pCodeWrittenTo->bSelfModifyingCode = true;
+    }
+
+    lastPC = m6502_pc(&C64Emu.cpu);
+
+    bool bNeedMemUpdate = ((C64Emu.cpu_port ^ LastMemPort) & 7) != 0;
+    if (bNeedMemUpdate)
+    {
+        UpdateCodeAnalysisPages(C64Emu.cpu_port);
+
+        LastMemPort = C64Emu.cpu_port & 7;
+    }
     return OldTickCB(pins, &C64Emu);
 }
 

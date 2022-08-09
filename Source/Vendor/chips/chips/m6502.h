@@ -573,6 +573,7 @@ uint64_t m6510_iorq(m6502_t* c, uint64_t pins) {
 /* set N and Z flags depending on value */
 #define _NZ(v) c.P=((c.P&~(M6502_NF|M6502_ZF))|((v&0xFF)?(v&M6502_NF):M6502_ZF))
 
+uint16_t g_M6502PC = 0;
 uint32_t m6502_exec(m6502_t* cpu, uint32_t num_ticks) {
     cpu->trap_id = 0;
     m6502_state_t c = cpu->state;
@@ -584,6 +585,7 @@ uint32_t m6502_exec(m6502_t* cpu, uint32_t num_ticks) {
     const m6502_trap_t trap = cpu->trap_cb;
     void* ud = cpu->user_data;
     do {
+        g_M6502PC = c.PC;
         uint64_t pre_pins = pins;
         _OFF(M6502_IRQ|M6502_NMI);
         /* fetch opcode */

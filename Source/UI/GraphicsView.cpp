@@ -170,23 +170,31 @@ uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
 
 uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t addr, int frameThreshold)
 {
-	FDataInfo *pDataInfo = state.DataInfo[addr];
-	FCodeInfo *pCodeInfo = state.CodeInfo[addr];
+	FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
+	FDataInfo *pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
+	FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(addr);
 	uint8_t col = 7;	// white
+
 	if (pCodeInfo)
 	{
 		const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
 		if (pCodeInfo->FrameLastAccessed != -1 && (framesSinceAccessed < frameThreshold))
 			col = 6;	// yellow code
 	}
-	else if (pDataInfo)
+	
+	if (pReadDataInfo)
 	{
-		const int framesSinceWritten = state.CurrentFrameNo - pDataInfo->LastFrameWritten;
-		const int framesSinceRead = state.CurrentFrameNo - pDataInfo->LastFrameRead;
-		if (pDataInfo->LastFrameWritten != -1 && (framesSinceWritten < frameThreshold))
+		const int framesSinceRead = state.CurrentFrameNo - pReadDataInfo->LastFrameRead;
+		
+		if (pReadDataInfo->LastFrameRead != -1 && (framesSinceRead < frameThreshold))
+			col = 4;	
+	}
+
+	if (pWriteDataInfo)
+	{
+		const int framesSinceWritten = state.CurrentFrameNo - pWriteDataInfo->LastFrameWritten;
+		if (pWriteDataInfo->LastFrameWritten != -1 && (framesSinceWritten < frameThreshold))
 			col = 2;
-		if (pDataInfo->LastFrameRead != -1 && (framesSinceRead < frameThreshold))
-			col = 4;
 	}
 
 	return col;
@@ -305,7 +313,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	DrawAddressLabel(state.pUI->CodeAnalysis, state.ClickedAddress);
 	if(ImGui::CollapsingHeader("Details"))
 	{
-		DrawDataDetails(state.pUI->CodeAnalysis, state.pUI->CodeAnalysis.DataInfo[state.ClickedAddress]);
+		DrawDataDetails(state.pUI->CodeAnalysis, state.pUI->CodeAnalysis.GetReadDataInfoForAddress(state.ClickedAddress));
 	}
 	
 	// view 1 - straight character

@@ -52,6 +52,12 @@
     <Filter Include="Source Files\Shared\CodeAnalyser\Z80">
       <UniqueIdentifier>{b73a1659-9e6a-4d3b-8969-d57cc3a411ca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shared\Util">
+      <UniqueIdentifier>{e8be10b6-b886-49f9-8a92-06b4ebd56cd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\Util\Win32">
+      <UniqueIdentifier>{f334668a-7d79-4e6d-a107-8fe40fc78e74}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\main.cpp">
@@ -59,9 +65,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\Source\C64\UI\C64UI.cpp">
       <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\C64\C64.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui_draw.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
@@ -111,13 +114,25 @@
     <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\Util\FileUtil.cpp">
+      <Filter>Source Files\Shared\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\Util\MemoryBuffer.cpp">
+      <Filter>Source Files\Shared\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\Util\Win32\FileUtil_Win32.cpp">
+      <Filter>Source Files\Shared\Util\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\C64IOAnalysis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\C64\UI\C64UI.h">
       <Filter>Source Files\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\C64\C64.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imgui_internal.h">
       <Filter>Source Files\Vendor\ImGui</Filter>
@@ -367,6 +382,18 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.h">
       <Filter>Source Files\Vendor\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\Util\FileUtil.h">
+      <Filter>Source Files\Shared\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\Util\MemoryBuffer.h">
+      <Filter>Source Files\Shared\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\C64IOAnalysis.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

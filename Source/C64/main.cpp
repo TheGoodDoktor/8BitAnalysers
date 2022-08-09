@@ -9,7 +9,6 @@
 #include <dinput.h>
 #include <tchar.h>
 
-#include "C64.h"
 #include "C64Chips.h"
 #include "UI/C64UI.h"
 

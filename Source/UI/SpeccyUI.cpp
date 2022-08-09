@@ -93,14 +93,16 @@ public:
 		pScreenPixData->DataType = DataType::Graphics;
 		pScreenPixData->Address = 0x4000;
 		pScreenPixData->ByteSize = 0x1800;
-		state.DataInfo[pScreenPixData->Address] = pScreenPixData;
+		state.SetReadDataInfoForAddress(pScreenPixData->Address, pScreenPixData);
+		state.SetWriteDataInfoForAddress(pScreenPixData->Address, pScreenPixData);
 
 		AddLabel(state, 0x5800, "ScreenAttributes", LabelType::Data);
 		FDataInfo* pScreenAttrData = new FDataInfo;
 		pScreenAttrData->DataType = DataType::Blob;
 		pScreenAttrData->Address = 0x5800;
 		pScreenAttrData->ByteSize = 0x400;
-		state.DataInfo[pScreenAttrData->Address] = pScreenAttrData;
+		state.SetReadDataInfoForAddress(pScreenAttrData->Address,pScreenAttrData);
+		state.SetWriteDataInfoForAddress(pScreenAttrData->Address,pScreenAttrData);
 
 		// system variables?
 	}
@@ -152,10 +154,11 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	pc = prevPC;	// set PC to pc of instruction just executed
 
 	RegisterCodeExecuted(state, pc);
-	state.CodeInfo[pc]->FrameLastAccessed = state.CurrentFrameNo;
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
 
 	// check for breakpointed code line
-	if (state.CodeInfo[pc]->bBreakpointed)
+	if (pCodeInfo->bBreakpointed)
 		return UI_DBG_BP_BASE_TRAPID;
 	
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pUI);
@@ -198,9 +201,9 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 			if (state.bRegisterDataAccesses)
 				RegisterDataAccess(state, pc, addr, true);
 
-			state.LastWriter[addr] = pc;
+			state.SetLastWriterForAddress(addr,pc);
 
-			FCodeInfo *pCodeWrittenTo = state.CodeInfo[addr];
+			FCodeInfo *pCodeWrittenTo = state.GetCodeInfoForAddress(addr);
 			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
 				pCodeWrittenTo->bSelfModifyingCode = true;
 		}
@@ -285,20 +288,38 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 
 	LoadGameConfigs(pUI);
 
+	// Set up code analysis
 	FCodeAnalysisState &state = pUI->CodeAnalysis;
-	memset(state.Labels, 0, sizeof(state.Labels));
-	memset(state.CodeInfo, 0, sizeof(state.CodeInfo));
-	memset(state.DataInfo, 0, sizeof(state.DataInfo));
+
+	// initialise code analysis pages
+	
+	// ROM
+	for (int pageNo = 0; pageNo < FSpeccyUI::kNoROMPages; pageNo++)
+	{
+		pUI->ROMPages[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+		pUI->CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &pUI->ROMPages[pageNo], &pUI->ROMPages[pageNo]);	// Read Only
+	}
+	// RAM
+	const uint16_t RAMStartAddr = FSpeccyUI::kNoROMPages * FCodeAnalysisPage::kPageSize;
+	for (int pageNo = 0; pageNo < FSpeccyUI::kNoRAMPages; pageNo++)
+	{
+		pUI->RAMPages[pageNo].Initialise(RAMStartAddr + (pageNo * FCodeAnalysisPage::kPageSize));
+		pUI->CodeAnalysis.SetCodeAnalysisRWPage(pageNo + FSpeccyUI::kNoROMPages, &pUI->RAMPages[pageNo], &pUI->RAMPages[pageNo]);	// Read/Write
+	}
 
 	for (int addr = 0; addr < (1 << 16); addr++)
 	{
+		state.SetLabelForAddress(addr, nullptr);
+		state.SetCodeInfoForAddress(addr, nullptr);
+
 		// set up data entry for address
 		FDataInfo *pDataInfo = new FDataInfo;
 		pDataInfo->Address = (uint16_t)addr;
 		pDataInfo->ByteSize = 1;
 		pDataInfo->DataType = DataType::Byte;
-		state.DataInfo[addr] = pDataInfo;
+		state.SetReadDataInfoForAddress(addr, pDataInfo);
 	}
+	//....
 
 	// run initial analysis
 	SpeccyCPUIF.pSpeccy = pUI->pSpeccy;
@@ -785,8 +806,8 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 				ImGui::Text("Screen Pos (%d,%d)", xp, yp);
 				ImGui::Text("Pixel: %04Xh, Attr: %04Xh", scrPixAddress, scrAttrAddress);
 
-				const uint16_t lastPixWriter = pUI->CodeAnalysis.LastWriter[scrPixAddress];
-				const uint16_t lastAttrWriter = pUI->CodeAnalysis.LastWriter[scrAttrAddress];
+				const uint16_t lastPixWriter = pUI->CodeAnalysis.GetLastWriterForAddress(scrPixAddress);
+				const uint16_t lastAttrWriter = pUI->CodeAnalysis.GetLastWriterForAddress(scrAttrAddress);
 				ImGui::Text("Pixel Writer: ");
 				ImGui::SameLine();
 				DrawCodeAddress(pUI->CodeAnalysis, lastPixWriter);

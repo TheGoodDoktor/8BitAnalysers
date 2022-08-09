@@ -110,7 +110,7 @@ bool EnsureDirectoryExists(const char *pDirectory)
 
 void NormaliseFilePath(char* outFilePath, const char* inFilePath)
 {
-	strcpy(outFilePath, inFilePath);
+	strcpy_s(outFilePath,256, inFilePath);	// TODO: fix this
 	NormaliseFilePath(outFilePath);
 }
 
@@ -169,8 +169,9 @@ bool DownloadURLToFile(const char*site, const char *url, bool bHttps, std::funct
 
 	wchar_t siteStr[32];
 	wchar_t urlStr[128];
-	size_t size1 = mbstowcs(siteStr, site, 32);
-	size_t size2 = mbstowcs(urlStr, url, 128);
+	size_t noCharsConverted;
+	size_t size1 = mbstowcs_s(&noCharsConverted,siteStr, site, 32);
+	size_t size2 = mbstowcs_s(&noCharsConverted,urlStr, url, 128);
 	
 	// Use WinHttpOpen to obtain a session handle.
 	HINTERNET hSession = WinHttpOpen(L"MapDataTool/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
@@ -288,7 +289,8 @@ bool DownloadURLToFile(const char*site, const char *url, bool bHttps, std::funct
 
 bool DownloadURLToTextFile(const char*site, const char *url,bool bHttps, const char *fname)
 {
-	FILE *fp = fopen(fname, "wt");
+	FILE* fp; 
+	fopen_s(&fp,fname, "wt");
 	if (fp == NULL)
 	{
 		//LOGERROR("Couldn't open file %s for writing", fname);
@@ -306,7 +308,8 @@ bool DownloadURLToTextFile(const char*site, const char *url,bool bHttps, const c
 
 bool DownloadURLToBinaryFile(const char*site, const char *url, bool bHttps, const char *fname)
 {
-	FILE *fp = fopen(fname, "wb");
+	FILE* fp;
+	fopen_s(&fp, fname, "wb");
 	if (fp == NULL)
 	{
 		//LOGERROR("Couldn't open file %s for writing", fname);

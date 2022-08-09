@@ -52,6 +52,12 @@ struct FSpeccyUI
 	FCodeAnalysisState		CodeAnalysis;
 	FIOAnalysisState		IOAnalysis;
 
+	// Code analysis pages - 48K spectrum for now...
+	static const int kNoROMPages = 16;
+	static const int kNoRAMPages = 48;
+	FCodeAnalysisPage		ROMPages[kNoROMPages];
+	FCodeAnalysisPage		RAMPages[kNoRAMPages];
+
 	// Memory handling
 	std::string				SelectedMemoryHandler;
 	std::vector< FMemoryAccessHandler>	MemoryAccessHandlers;

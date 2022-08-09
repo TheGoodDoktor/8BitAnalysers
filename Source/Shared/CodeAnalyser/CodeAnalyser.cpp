@@ -9,6 +9,9 @@
 #include "Z80/CodeAnalyserZ80.h"
 #include "6502/CodeAnalyser6502.h"
 
+
+
+
 bool CheckPointerIndirectionInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {
 	if (pCPUInterface->CPUType == ECPUType::Z80)
@@ -66,7 +69,7 @@ bool CheckStopInstruction(ICPUInterface* pCPUInterface, uint16_t pc)
 
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType labelType)
 {
-	FLabelInfo* pLabel = state.Labels[pc];
+	FLabelInfo* pLabel = state.GetLabelForAddress(pc);
 	if (pLabel == nullptr)
 	{
 		pLabel = new FLabelInfo;
@@ -90,7 +93,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType l
 		}
 
 		pLabel->Name = label;
-		state.Labels[pc] = pLabel;
+		state.SetLabelForAddress(pc, pLabel);
 		return true;
 	}
 
@@ -139,7 +142,7 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	else if(state.CPUInterface->CPUType == ECPUType::M6502)
 		m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
-	FCodeInfo *pCodeInfo = state.CodeInfo[pc];
+	FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(pc);
 	assert(pCodeInfo != nullptr);
 	pCodeInfo->Text = dasmState.Text;
 }
@@ -157,18 +160,18 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	else if(state.CPUInterface->CPUType == ECPUType::M6502)
 		newPC = m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
-	FCodeInfo *pCodeInfo = state.CodeInfo[pc];
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo == nullptr)
 	{
 		pCodeInfo = new FCodeInfo;
-		state.CodeInfo[pc] = pCodeInfo;
+		state.SetCodeInfoForAddress(pc,pCodeInfo);
 	}
 
 	pCodeInfo->Text = dasmState.Text;
 	pCodeInfo->Address = pc;
 	pCodeInfo->ByteSize = newPC - pc;
 	for(uint16_t codeAddr=pc;codeAddr<newPC;codeAddr++)
-		state.CodeInfo[codeAddr] = pCodeInfo;	// just set to first instruction?
+		state.SetCodeInfoForAddress(codeAddr, pCodeInfo);	// just set to first instruction?
 
 	// does this function branch?
 	uint16_t jumpAddr;
@@ -176,7 +179,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	{
 		const bool isCall = CheckCallInstruction(state.CPUInterface, pc);
 		if (GenerateLabelForAddress(state, jumpAddr, isCall ? LabelType::Function : LabelType::Code))
-			state.Labels[jumpAddr]->References[pc]++;
+			state.GetLabelForAddress(jumpAddr)->References[pc]++;
 
 		pCodeInfo->JumpAddress = jumpAddr;
 	}
@@ -188,7 +191,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	if (CheckPointerIndirectionInstruction(state.CPUInterface, pc, &ptr))
 	{
 		if (GenerateLabelForAddress(state, ptr, LabelType::Data))
-			state.Labels[ptr]->References[pc]++;
+			state.GetLabelForAddress(ptr)->References[pc]++;
 	}
 
 	return newPC;
@@ -201,7 +204,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	uint16_t jumpAddr;
 	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
 	{
-		FLabelInfo* pLabel = state.Labels[jumpAddr];
+		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
 		if (pLabel != nullptr)
 			pLabel->References[pc]++;	// add/increment reference
 	}
@@ -209,12 +212,12 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	uint16_t ptr;
 	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
 	{
-		FLabelInfo* pLabel = state.Labels[ptr];
+		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
 		if (pLabel != nullptr)
 			pLabel->References[pc]++;	// add/increment reference
 	}
 
-	if (state.CodeInfo[pc] != nullptr)	// already been analysed
+	if (state.GetCodeInfoForAddress(pc) != nullptr)	// already been analysed
 		return false;
 
 	uint16_t newPC = WriteCodeInfoForAddress(state, pc);
@@ -248,7 +251,7 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 			pLabel->References[pc]++;	// add/increment reference
 	}*/
 
-	if (state.CodeInfo[pc] != nullptr)	// already been analysed
+	if (state.GetCodeInfoForAddress(pc) != nullptr)	// already been analysed
 		return;
 
 	state.bCodeAnalysisDataDirty = true;
@@ -297,13 +300,15 @@ void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr
 {
 	if (bWrite)
 	{
-		state.DataInfo[dataAddr]->LastFrameWritten = state.CurrentFrameNo;
-		state.DataInfo[dataAddr]->Writes[pc]++;
+		FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
+		pDataInfo->LastFrameWritten = state.CurrentFrameNo;
+		pDataInfo->Writes[pc]++;
 	}
 	else
 	{
-		state.DataInfo[dataAddr]->LastFrameRead = state.CurrentFrameNo;
-		state.DataInfo[dataAddr]->Reads[pc]++;
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
+		pDataInfo->LastFrameRead = state.CurrentFrameNo;
+		pDataInfo->Reads[pc]++;
 	}
 }
 
@@ -312,27 +317,29 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 	int nextItemAddress = 0;
 	for (int i = 0; i < (1 << 16); i++)
 	{
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
 		if (i == nextItemAddress)
 		{
-			if (state.CodeInfo[i] != nullptr)
+			if (pCodeInfo != nullptr)
 			{
 				nextItemAddress = WriteCodeInfoForAddress(state, (uint16_t)i);
 			}
 
-			if (state.CodeInfo[i] == nullptr && state.DataInfo[i] == nullptr)
+			if (pCodeInfo == nullptr && state.GetReadDataInfoForAddress(i) == nullptr)
 			{
 				// set up data entry for address
 				FDataInfo *pDataInfo = new FDataInfo;
 				pDataInfo->Address = (uint16_t)i;
 				pDataInfo->ByteSize = 1;
 				pDataInfo->DataType = DataType::Byte;
-				state.DataInfo[i] = pDataInfo;
+				state.SetReadDataInfoForAddress(i,pDataInfo);
 			}
 		}
 
-		if ((state.CodeInfo[i] != nullptr) && (state.Labels[i] != nullptr) && (state.Labels[i]->LabelType == LabelType::Data))
+		const FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
+		if ((pCodeInfo != nullptr) && (pLabelInfo != nullptr) && (pLabelInfo->LabelType == LabelType::Data))
 		{
-			state.CodeInfo[i]->bSelfModifyingCode = true;
+			pCodeInfo->bSelfModifyingCode = true;
 		}
 	}
 }
@@ -341,16 +348,16 @@ void ResetMemoryLogs(FCodeAnalysisState &state)
 {
 	for (int i = 0; i < (1 << 16); i++)
 	{
-		if (state.DataInfo[i] != nullptr)
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
+		if (pDataInfo != nullptr)
 		{
-			FDataInfo & dataInfo = *state.DataInfo[i];
-			dataInfo.LastFrameRead = 0;
-			dataInfo.Reads.clear();
-			dataInfo.LastFrameWritten = 0;
-			dataInfo.Writes.clear();
+			pDataInfo->LastFrameRead = 0;
+			pDataInfo->Reads.clear();
+			pDataInfo->LastFrameWritten = 0;
+			pDataInfo->Writes.clear();
 		}
 
-		state.LastWriter[i] = 0;
+		state.SetLastWriterForAddress(i,  0);
 	}
 }
 
@@ -364,7 +371,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	pLabel->Address = address;
 	pLabel->ByteSize = 1;
 	pLabel->Global = type == LabelType::Function;
-	state.Labels[address] = pLabel;
+	state.SetLabelForAddress(address, pLabel);
 	return pLabel;
 }
 
@@ -375,7 +382,7 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 
 	for (int i = 0; i < (1 << 16); i++)
 	{
-		FLabelInfo *pLabel = state.Labels[i];
+		FLabelInfo *pLabel = state.GetLabelForAddress(i);
 		
 		if (pLabel != nullptr)
 		{
@@ -395,26 +402,27 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 {
 	for (int i = 0; i < (1 << 16); i++)	// loop across address range
 	{
-		delete state.Labels[i];
-		state.Labels[i] = nullptr;
+		FLabelInfo* pLabel = state.GetLabelForAddress(i);
+		delete pLabel;
+		state.SetLabelForAddress(i, nullptr);
 
-		if (state.CodeInfo[i] != nullptr)
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
+		if (pCodeInfo != nullptr)
 		{
-			FCodeInfo *pCodeInfo = state.CodeInfo[i];
 			const int codeSize = pCodeInfo->ByteSize;
 			for (int off = 0; off < codeSize; off++)
-				state.CodeInfo[i + off] = nullptr;
+				state.SetCodeInfoForAddress(i + off, nullptr);
 			delete pCodeInfo;
 		}
 
-		delete state.DataInfo[i];
+		delete state.GetReadDataInfoForAddress(i);
 
 		// set up data entry for address
 		FDataInfo *pDataInfo = new FDataInfo;
 		pDataInfo->Address = (uint16_t)i;
 		pDataInfo->ByteSize = 1;
 		pDataInfo->DataType = DataType::Byte;
-		state.DataInfo[i] = pDataInfo;
+		state.SetReadDataInfoForAddress(i, pDataInfo);
 	}
 
 	state.CursorItemIndex = -1;
@@ -493,8 +501,9 @@ public:
 				pCodeItem->bDisabled = true;
 				state.bCodeAnalysisDataDirty = true;
 
-				if (state.Labels[pItem->Address] != nullptr)
-					state.Labels[pItem->Address]->LabelType = LabelType::Data;
+				FLabelInfo* pLabelInfo = state.GetLabelForAddress(pItem->Address);
+				if (pLabelInfo != nullptr)
+					pLabelInfo->LabelType = LabelType::Data;
 			}
 		}
 	}
@@ -513,9 +522,10 @@ public:
 
 void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
 {
-	if(state.CodeInfo[pItem->Address] !=nullptr && state.CodeInfo[pItem->Address]->bDisabled == true)
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pItem->Address);
+	if(pCodeInfo !=nullptr && pCodeInfo->bDisabled == true)
 	{
-		state.CodeInfo[pItem->Address]->bDisabled = false;
+		pCodeInfo->bDisabled = false;
 	}
 	else
 	{
@@ -541,7 +551,8 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 			pDataItem->ByteSize = 0;	// reset byte counter
 
 			uint16_t charAddr = pDataItem->Address;
-			while (state.DataInfo[charAddr] != nullptr && state.DataInfo[charAddr]->DataType == DataType::Byte)
+			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(charAddr);
+			while (pDataInfo != nullptr && pDataInfo->DataType == DataType::Byte)
 			{
 				const uint8_t val = state.CPUInterface->ReadByte(charAddr);
 				if (val == 0 || val > 0x80)
@@ -566,10 +577,11 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 }
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 {
-	if (state.Labels[address] == nullptr)
+	if (state.GetLabelForAddress(address) == nullptr)
 	{
 		LabelType labelType = LabelType::Data;
-		if (state.CodeInfo[address] != nullptr && state.CodeInfo[address]->bDisabled == false)
+		const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(address);
+		if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 			labelType = LabelType::Code;
 
 		GenerateLabelForAddress(state, address, labelType);
@@ -579,10 +591,12 @@ void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 {
-	if (state.Labels[address] != nullptr)
+	FLabelInfo* pLabelInfo = state.GetLabelForAddress(address);
+
+	if (pLabelInfo != nullptr)
 	{
-		delete state.Labels[address];
-		state.Labels[address] = nullptr;
+		delete pLabelInfo;
+		state.SetLabelForAddress(address, nullptr);
 		state.bCodeAnalysisDataDirty = true;
 	}
 }
@@ -607,9 +621,10 @@ std::string GenerateAddressLabelString(FCodeAnalysisState &state, uint16_t addr)
 	
 	for (int addrVal = addr; addrVal >= 0; addrVal--)
 	{
-		if (state.Labels[addrVal] != nullptr)
+		FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrVal);
+		if (pLabelInfo != nullptr)
 		{
-			labelStr = "[" + state.Labels[addrVal]->Name;
+			labelStr = "[" + pLabelInfo->Name;
 			break;
 		}
 

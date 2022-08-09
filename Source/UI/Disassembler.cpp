@@ -274,7 +274,7 @@ static void _ui_dasm_draw_controls(FDasmState* pDasmState)
 /* draw the disassembly column */
 void DasmDrawDisassembly(FDasmState* pDasmState)
 {
-	auto &labels = pDasmState->pUI->CodeAnalysis.Labels;
+	//auto &labels = pDasmState->pUI->CodeAnalysis.Labels;
 	
 	ImGui::BeginChild("##dasmbox", ImVec2(0, 0), true);
 	_ui_dasm_draw_controls(pDasmState);
@@ -309,9 +309,10 @@ void DasmDrawDisassembly(FDasmState* pDasmState)
 			highlight = true;
 		}
 		// label
-		if(labels[op_addr]!=nullptr)
+		const FLabelInfo* pLabel = pDasmState->pUI->CodeAnalysis.GetLabelForAddress(op_addr);
+		if(pLabel !=nullptr)
 		{
-			ImGui::Text("%s: ", labels[op_addr]->Name.c_str());
+			ImGui::Text("%s: ", pLabel->Name.c_str());
 			//ImGui::SameLine();
 		}
 		

@@ -39,3 +39,9 @@ bool DownloadURLToBinaryFile(const char*site, const char *url, bool bHttps, cons
 bool DownloadURLToString(const char*site, const char *url, bool bHttps, std::string &outputString);
 
 bool OpenFileDialog(std::string &outFile, const char *pInitialDir, const char *pFilter);
+
+void WriteStringToFile(const std::string& str, FILE* fp);
+void ReadStringFromFile(std::string& str, FILE* fp);
+std::string MakeHexString(uint16_t val);
+uint8_t ParseHexString8bit(const std::string& string);
+uint16_t ParseHexString16bit(const std::string& string);
