@@ -50,7 +50,8 @@
 #include "CodeAnalyser/CodeAnalyserUI.h"
 #include "Util/MemoryBuffer.h"
 #include "util/FileUtil.h"
-#include "C64IOAnalysis.h"
+#include "IOAnalysis/C64IOAnalysis.h"
+#include "GraphicsViewer/C64GraphicsViewer.h"
 
 class FC64Emulator : public IInputEventHandler , public ICPUInterface
 {
@@ -136,6 +137,7 @@ private:
     uint8_t             LastMemPort = 0x7;  // Default startup
 
     FC64IOAnalysis      IOAnalysis;
+    FC64GraphicsViewer  GraphicsViewer;
 
     // Mapping status
     bool                bBasicROMMapped = true;
@@ -337,6 +339,7 @@ bool FC64Emulator::Init()
     }
     UpdateCodeAnalysisPages(0x7);
     IOAnalysis.Init(&CodeAnalysis);
+    GraphicsViewer.Init(&CodeAnalysis);
     InitialiseCodeAnalysis(CodeAnalysis, this);
 
     return true;
@@ -554,6 +557,12 @@ void FC64Emulator::Tick()
     if (ImGui::Begin("IO Analysis"))
     {
         IOAnalysis.DrawIOAnalysisUI();
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Graphics Viewer"))
+    {
+        GraphicsViewer.DrawUI();
     }
     ImGui::End();
 

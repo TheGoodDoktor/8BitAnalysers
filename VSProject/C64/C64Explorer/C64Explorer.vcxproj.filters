@@ -58,6 +58,12 @@
     <Filter Include="Source Files\Shared\Util\Win32">
       <UniqueIdentifier>{f334668a-7d79-4e6d-a107-8fe40fc78e74}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\IOAnalysis">
+      <UniqueIdentifier>{3e7e6704-0c7d-44ed-a4a6-f798334fa0ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GraphicsViewer">
+      <UniqueIdentifier>{993b12c0-d3e2-46bf-ab77-3acc2e27050d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\main.cpp">
@@ -126,8 +132,23 @@
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp">
       <Filter>Source Files\Shared\CodeAnalyser</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\Source\C64\C64IOAnalysis.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.cpp">
+      <Filter>Source Files\IOAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\CIAAnalysis.cpp">
+      <Filter>Source Files\IOAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\SIDAnalysis.cpp">
+      <Filter>Source Files\IOAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\VICAnalysis.cpp">
+      <Filter>Source Files\IOAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\GraphicsViewer\C64GraphicsViewer.cpp">
+      <Filter>Source Files\GraphicsViewer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\IORegisterAnalysis.cpp">
+      <Filter>Source Files\IOAnalysis</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -392,8 +413,23 @@
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h">
       <Filter>Source Files\Shared\CodeAnalyser</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Source\C64\C64IOAnalysis.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.h">
+      <Filter>Source Files\IOAnalysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\CIAAnalysis.h">
+      <Filter>Source Files\IOAnalysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\SIDAnalysis.h">
+      <Filter>Source Files\IOAnalysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\VICAnalysis.h">
+      <Filter>Source Files\IOAnalysis</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\GraphicsViewer\C64GraphicsViewer.h">
+      <Filter>Source Files\GraphicsViewer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\IORegisterAnalysis.h">
+      <Filter>Source Files\IOAnalysis</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

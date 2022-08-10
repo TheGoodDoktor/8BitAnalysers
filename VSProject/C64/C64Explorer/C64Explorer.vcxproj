@@ -148,7 +148,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\C64Chips.cpp" />
-    <ClCompile Include="..\..\..\Source\C64\C64IOAnalysis.cpp" />
+    <ClCompile Include="..\..\..\Source\C64\GraphicsViewer\C64GraphicsViewer.cpp" />
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.cpp" />
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\CIAAnalysis.cpp" />
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\IORegisterAnalysis.cpp" />
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\SIDAnalysis.cpp" />
+    <ClCompile Include="..\..\..\Source\C64\IOAnalysis\VICAnalysis.cpp" />
     <ClCompile Include="..\..\..\Source\C64\main.cpp" />
     <ClCompile Include="..\..\..\Source\C64\UI\C64UI.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.cpp" />
@@ -173,7 +178,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\C64\C64Chips.h" />
-    <ClInclude Include="..\..\..\Source\C64\C64IOAnalysis.h" />
+    <ClInclude Include="..\..\..\Source\C64\GraphicsViewer\C64GraphicsViewer.h" />
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.h" />
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\CIAAnalysis.h" />
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\IORegisterAnalysis.h" />
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\SIDAnalysis.h" />
+    <ClInclude Include="..\..\..\Source\C64\IOAnalysis\VICAnalysis.h" />
     <ClInclude Include="..\..\..\Source\C64\UI\C64UI.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.h" />
