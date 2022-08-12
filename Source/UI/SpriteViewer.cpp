@@ -1,9 +1,10 @@
 #include "SpriteViewer.h"
-#include "GraphicsView.h"
+#include "GraphicsViewer.h"
 #include "Speccy/Speccy.h"
 #include "SpeccyUI.h"
 #include <algorithm>
 #include "GameConfig.h"
+#include <Util/GraphicsView.h>
 
 // Sprites
 

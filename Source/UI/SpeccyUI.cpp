@@ -7,7 +7,7 @@
 #include "GameViewers/GameViewer.h"
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
-#include "GraphicsView.h"
+#include "GraphicsViewer.h"
 #include "Util/FileUtil.h"
 
 #include "ui/ui_dbg.h"

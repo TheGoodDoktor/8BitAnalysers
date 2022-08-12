@@ -16,7 +16,7 @@ public:
 private:
 	FC64IORegisterInfo	VICRegisters[64];
 
-	int		UIVICRegister = -1;
+	int		SelectedRegister = -1;
 
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
 };

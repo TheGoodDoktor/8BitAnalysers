@@ -96,9 +96,6 @@
     <ClCompile Include="..\..\Source\UI\SpriteViewer.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\GraphicsView.cpp">
-      <Filter>Source Files\UI</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\UI\GameViewers\GameViewer.cpp">
       <Filter>Source Files\UI\GameViewers</Filter>
     </ClCompile>
@@ -164,6 +161,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Shared\Util\MemoryBuffer.cpp">
       <Filter>Source Files\Shared\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\Util\GraphicsView.cpp">
+      <Filter>Source Files\Shared\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\GraphicsViewer.cpp">
+      <Filter>Source Files\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -395,9 +398,6 @@
     <ClInclude Include="..\..\Source\UI\SpriteViewer.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\GraphicsView.h">
-      <Filter>Source Files\UI</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\UI\GameViewers\GameViewer.h">
       <Filter>Source Files\UI\GameViewers</Filter>
     </ClInclude>
@@ -460,6 +460,12 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\Util\MemoryBuffer.h">
       <Filter>Source Files\Shared\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\Util\GraphicsView.h">
+      <Filter>Source Files\Shared\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\GraphicsViewer.h">
+      <Filter>Source Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

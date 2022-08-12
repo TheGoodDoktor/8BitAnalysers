@@ -7,7 +7,7 @@
 #include "Disassembler.h"
 #include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
-#include "GraphicsView.h"
+#include "GraphicsViewer.h"
 #include "IOAnalysis.h"
 
 struct FSpeccyUI;

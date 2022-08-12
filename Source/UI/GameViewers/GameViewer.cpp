@@ -1,8 +1,8 @@
 #include "GameViewer.h"
 
 #include "UI/SpeccyUI.h"
-#include "UI/GraphicsView.h"
 #include "UI/GameConfig.h"
+#include <Util/GraphicsView.h>
 
 static std::map<std::string, FViewerConfig *>	g_ViewerConfigs;
 

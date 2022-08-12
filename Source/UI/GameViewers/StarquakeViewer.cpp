@@ -3,7 +3,7 @@
 #include "UI/SpeccyUI.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <algorithm>
-#include "UI/GraphicsView.h"
+#include <Util/GraphicsView.h>
 #include "GameViewer.h"
 #include "UI/GameConfig.h"
 

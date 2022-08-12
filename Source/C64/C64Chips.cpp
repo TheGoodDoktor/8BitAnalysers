@@ -52,6 +52,7 @@
 #include "util/FileUtil.h"
 #include "IOAnalysis/C64IOAnalysis.h"
 #include "GraphicsViewer/C64GraphicsViewer.h"
+#include "C64Display.h"
 
 class FC64Emulator : public IInputEventHandler , public ICPUInterface
 {
@@ -120,11 +121,8 @@ private:
     ui_c64_t    C64UI;
     double      ExecTime;
 
-    size_t          FramePixelBufferSize = 0;
-    unsigned char*  FramePixelBuffer = nullptr;
-    ImTextureID     FrameBufferTexture = nullptr;
-    ImTextureID     DebugFrameBufferTexture = nullptr;
-
+    FC64Display         Display;
+ 
     FCodeAnalysisState  CodeAnalysis;
 
     // Analysis pages
@@ -199,8 +197,8 @@ c64_desc_t FC64Emulator::GenerateC64Desc(c64_joystick_type_t joy_type)
     c64_desc_t desc;
     memset(&desc, 0, sizeof(c64_desc_t));
     desc.joystick_type = joy_type;
-    desc.pixel_buffer = FramePixelBuffer;
-    desc.pixel_buffer_size = FramePixelBufferSize;
+    desc.pixel_buffer = Display.GetPixelBuffer();
+    desc.pixel_buffer_size = Display.GetPixelBufferSize();
     desc.audio_cb = push_audio;
     desc.audio_sample_rate = saudio_sample_rate();
     desc.audio_tape_sound = false;// sargs_boolean("tape_sound"),
@@ -253,13 +251,7 @@ bool FC64Emulator::Init()
     memset(&audiodesc, 0, sizeof(saudio_desc));
     saudio_setup(&audiodesc);
 
-    // setup pixel buffer
-    FramePixelBufferSize = _C64_DISPLAY_SIZE;
-    FramePixelBuffer = new unsigned char[FramePixelBufferSize * 2];
-
-    // setup texture
-    FrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
-    DebugFrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
+    Display.Init(&CodeAnalysis, &C64Emu);
 
     // Setup C64 Emulator
     c64_joystick_type_t joy_type = C64_JOYSTICKTYPE_NONE;
@@ -339,7 +331,7 @@ bool FC64Emulator::Init()
     }
     UpdateCodeAnalysisPages(0x7);
     IOAnalysis.Init(&CodeAnalysis);
-    GraphicsViewer.Init(&CodeAnalysis);
+    GraphicsViewer.Init(&CodeAnalysis,&C64Emu);
     InitialiseCodeAnalysis(CodeAnalysis, this);
 
     return true;
@@ -476,7 +468,6 @@ void FC64Emulator::Shutdown()
 void FC64Emulator::Tick()
 {
     const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
-    const bool bDebugFrame = C64Emu.vic.debug_vis;
 
     if (ui_c64_before_exec(&C64UI))
     {
@@ -485,21 +476,8 @@ void FC64Emulator::Tick()
     }
 
     ui_c64_draw(&C64UI, ExecTime);
-
-    c64_display_width(&C64Emu);
-    if(bDebugFrame)
-        ImGui_ImplDX11_UpdateTextureRGBA(DebugFrameBufferTexture, FramePixelBuffer, _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
-    else
-        ImGui_ImplDX11_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer, _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
-
     if (ImGui::Begin("C64 Screen"))
     {
-        if (bDebugFrame)
-            ImGui::Text("Frame buffer size = %d x %d", _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
-        else
-            ImGui::Text("Frame buffer size = %d x %d", _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
-        
-        // Show Mapping
         ImGui::Text("Mapped: ");
         if (bBasicROMMapped)
         {
@@ -526,7 +504,8 @@ void FC64Emulator::Tick()
         {
             // TODO: load game data
             FILE* fp = nullptr;
-            fopen_s(&fp, "Games/Paradroid.prg", "rb");
+            //fopen_s(&fp, "Games/Paradroid.prg", "rb");
+            fopen_s(&fp, "Games/Cybernoid II.prg", "rb");
             if (fp != nullptr)
             {
                 uint8_t* gameData = nullptr;
@@ -541,10 +520,8 @@ void FC64Emulator::Tick()
                 fclose(fp);
             }
         }
-        if (bDebugFrame)
-            ImGui::Image(FrameBufferTexture, ImVec2(_C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT));
-        else
-            ImGui::Image(FrameBufferTexture, ImVec2(_C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT));
+
+        Display.DrawUI();
     }
     ImGui::End();
 

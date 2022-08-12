@@ -938,8 +938,8 @@ bool c64_quickload(c64_t* sys, const uint8_t* ptr, int num_bytes) {
     }
     const uint16_t start_addr = ptr[1]<<8 | ptr[0];
     ptr += 2;
-    const uint16_t end_addr = start_addr + (num_bytes - 2);
-    uint16_t addr = start_addr;
+    const uint32_t end_addr = start_addr + (num_bytes - 2);
+    uint32_t addr = start_addr;
     while (addr < end_addr) {
         mem_wr(&sys->mem_cpu, addr++, *ptr++);
     }

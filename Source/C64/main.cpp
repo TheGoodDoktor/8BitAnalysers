@@ -10,7 +10,6 @@
 #include <tchar.h>
 
 #include "C64Chips.h"
-#include "UI/C64UI.h"
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;

@@ -37,7 +37,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\C64Chips.cpp" />
+    <ClCompile Include="..\..\..\Source\C64\C64Display.cpp" />
     <ClCompile Include="..\..\..\Source\C64\GraphicsViewer\C64GraphicsViewer.cpp" />
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.cpp" />
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\CIAAnalysis.cpp" />
@@ -155,7 +156,6 @@
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\SIDAnalysis.cpp" />
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\VICAnalysis.cpp" />
     <ClCompile Include="..\..\..\Source\C64\main.cpp" />
-    <ClCompile Include="..\..\..\Source\C64\UI\C64UI.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp" />
@@ -168,6 +168,7 @@
     <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\Util\FileUtil.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\Util\GraphicsView.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\Util\MemoryBuffer.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\Util\Win32\FileUtil_Win32.cpp" />
     <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui.cpp" />
@@ -178,13 +179,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\C64\C64Chips.h" />
+    <ClInclude Include="..\..\..\Source\C64\C64Display.h" />
     <ClInclude Include="..\..\..\Source\C64\GraphicsViewer\C64GraphicsViewer.h" />
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.h" />
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\CIAAnalysis.h" />
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\IORegisterAnalysis.h" />
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\SIDAnalysis.h" />
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\VICAnalysis.h" />
-    <ClInclude Include="..\..\..\Source\C64\UI\C64UI.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h" />
@@ -198,6 +199,7 @@
     <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h" />
     <ClInclude Include="..\..\..\Source\Shared\Misc\InputEventHandler.h" />
     <ClInclude Include="..\..\..\Source\Shared\Util\FileUtil.h" />
+    <ClInclude Include="..\..\..\Source\Shared\Util\GraphicsView.h" />
     <ClInclude Include="..\..\..\Source\Shared\Util\MemoryBuffer.h" />
     <ClInclude Include="..\..\..\Source\Vendor\chips\chips\am40010.h" />
     <ClInclude Include="..\..\..\Source\Vendor\chips\chips\ay38910.h" />

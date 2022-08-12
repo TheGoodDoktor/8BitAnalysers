@@ -63,7 +63,8 @@ Write: Raster line to generate interrupt at (bit #8).
 
 void DrawRegValueScreenControlReg1(uint8_t val)
 {
-	ImGui::Text("VScroll:%d, Height:%d, Scr:%s, %s, ExtBG:%s, RastMSB:%d",
+	ImGui::Text("($%X) VScroll:%d, Height:%d, Scr:%s, %s, ExtBG:%s, RastMSB:%d",
+		val,
 		val & 7,
 		val & (1 << 3) ? 25 : 24,
 		val & (1 << 4) ? "ON" : "OFF",
@@ -84,7 +85,8 @@ Bit #4: 1 = Multicolor mode on.
 
 void DrawRegValueScreenControlReg2(uint8_t val)
 {
-	ImGui::Text("HScroll:%d, Width:%d, MultiColour:%s",
+	ImGui::Text("($%X) HScroll:%d, Width:%d, MultiColour:%s",
+		val,
 		val & 7,
 		val & (1 << 3) ? 40 : 38,
 		val & (1 << 4) ? "ON" : "OFF");
@@ -93,12 +95,18 @@ void DrawRegValueScreenControlReg2(uint8_t val)
 
 void DrawRegValueMemorySetup(uint8_t val)
 {
+	ImGui::Text("($%X) Char Addr: $%04X, Bitmap Address: $%04X, Screen Address: $%04X",
+		val,
+		((val >> 1) & 7) << 11,
+		((val >> 2) & 1) << 13,
+		(val >> 4) << 10
+	);
 	ImGui::Text("\t$%X", val);
 
 }
 
-static std::vector<FRegDisplayConfig>	g_VICRegDrawInfo = {
-
+static std::vector<FRegDisplayConfig>	g_VICRegDrawInfo = 
+{
 	{"Sprite 0 X",	DrawRegValueDecimal},	// 0x00
 	{"Sprite 0 Y",	DrawRegValueDecimal}, 	// 0x01
 	{"Sprite 1 X",	DrawRegValueDecimal}, 	// 0x02
@@ -146,7 +154,6 @@ static std::vector<FRegDisplayConfig>	g_VICRegDrawInfo = {
 	{"Sprite 5 Colour",		DrawRegValueColour},// 0x2c
 	{"Sprite 6 Colour",		DrawRegValueColour},// 0x2d
 	{"Sprite 7 Colour",		DrawRegValueColour}// 0x2e
-
 };
 
 void FVICAnalysis::DrawUI(void)
@@ -157,9 +164,9 @@ void FVICAnalysis::DrawUI(void)
 		{
 			char selectableTXT[32];
 			sprintf_s(selectableTXT, "$%X %s", i, g_VICRegDrawInfo[i].Name);
-			if (ImGui::Selectable(selectableTXT, UIVICRegister == i))
+			if (ImGui::Selectable(selectableTXT, SelectedRegister == i))
 			{
-				UIVICRegister = i;
+				SelectedRegister = i;
 			}
 		}
 	}
@@ -167,11 +174,16 @@ void FVICAnalysis::DrawUI(void)
 	ImGui::SameLine();
 	if (ImGui::BeginChild("VIC Reg Details"))
 	{
-		if (UIVICRegister != -1)
+		if (SelectedRegister != -1)
 		{
-			const FC64IORegisterInfo& vicRegister = VICRegisters[UIVICRegister];
-			const FRegDisplayConfig& regConfig = g_VICRegDrawInfo[UIVICRegister];
+			const FC64IORegisterInfo& vicRegister = VICRegisters[SelectedRegister];
+			const FRegDisplayConfig& regConfig = g_VICRegDrawInfo[SelectedRegister];
 
+			if (ImGui::Button("Clear"))
+			{
+				VICRegisters[SelectedRegister].LastVal = 0;
+				VICRegisters[SelectedRegister].Accesses.clear();
+			}
 			// move out into function?
 			ImGui::Text("Last Val:");
 			regConfig.UIDrawFunction(vicRegister.LastVal);
