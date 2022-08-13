@@ -416,6 +416,8 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
                 CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &CharacterROM[pageNo - 52], &RAM[pageNo]);
         }
     }
+
+    CodeAnalysis.bCodeAnalysisDataDirty = true;
 }
 
 bool FC64Emulator::LoadGame(FGameInfo* pGameInfo)
@@ -769,7 +771,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 
     lastPC = m6502_pc(&C64Emu.cpu);
 
-    bool bNeedMemUpdate = ((C64Emu.cpu_port ^ LastMemPort) & 7) != 0;
+    const bool bNeedMemUpdate = ((C64Emu.cpu_port ^ LastMemPort) & 7) != 0;
     if (bNeedMemUpdate)
     {
         UpdateCodeAnalysisPages(C64Emu.cpu_port);

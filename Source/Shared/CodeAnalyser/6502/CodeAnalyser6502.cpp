@@ -15,6 +15,7 @@ bool CheckPointerIndirectionInstruction6502(ICPUInterface* pCPUInterface, uint16
 	case 0x81:	// STA (zp addr,X)
 	case 0x91:	// STA (zp addr),Y
 		*out_addr = pCPUInterface->ReadByte(pc + 1);
+		return true;
 	}
 	return false;
 }

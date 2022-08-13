@@ -190,6 +190,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	if (CheckPointerIndirectionInstruction(state.CPUInterface, pc, &ptr))
 	{
+		pCodeInfo->PointerAddress = ptr;
 		if (GenerateLabelForAddress(state, ptr, LabelType::Data))
 			state.GetLabelForAddress(ptr)->References[pc]++;
 	}
@@ -415,8 +416,6 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 			delete pCodeInfo;
 		}
 
-		//delete state.GetReadDataInfoForAddress(i);
-
 		// set up data entry for address
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
 		pDataInfo->Address = (uint16_t)i;
@@ -525,6 +524,7 @@ void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
 	if(pCodeInfo !=nullptr && pCodeInfo->bDisabled == true)
 	{
 		pCodeInfo->bDisabled = false;
+		WriteCodeInfoForAddress(state, pItem->Address);
 	}
 	else
 	{
