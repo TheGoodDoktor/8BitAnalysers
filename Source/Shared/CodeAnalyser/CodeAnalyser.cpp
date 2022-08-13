@@ -328,11 +328,11 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 			if (pCodeInfo == nullptr && state.GetReadDataInfoForAddress(i) == nullptr)
 			{
 				// set up data entry for address
-				FDataInfo *pDataInfo = new FDataInfo;
+				FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(i);
 				pDataInfo->Address = (uint16_t)i;
 				pDataInfo->ByteSize = 1;
 				pDataInfo->DataType = DataType::Byte;
-				state.SetReadDataInfoForAddress(i,pDataInfo);
+				//state.SetReadDataInfoForAddress(i,pDataInfo);
 			}
 		}
 
@@ -415,14 +415,13 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 			delete pCodeInfo;
 		}
 
-		delete state.GetReadDataInfoForAddress(i);
+		//delete state.GetReadDataInfoForAddress(i);
 
 		// set up data entry for address
-		FDataInfo *pDataInfo = new FDataInfo;
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
 		pDataInfo->Address = (uint16_t)i;
 		pDataInfo->ByteSize = 1;
 		pDataInfo->DataType = DataType::Byte;
-		state.SetReadDataInfoForAddress(i, pDataInfo);
 	}
 
 	state.CursorItemIndex = -1;

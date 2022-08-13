@@ -36,7 +36,7 @@ bool GoToPreviousAddress(FCodeAnalysisState &state)
 
 int GetItemIndexForAddress(const FCodeAnalysisState &state, uint16_t addr)
 {
-	for(int i=0;i<state.ItemList.size();i++)
+	for(int i=0;i<(int)state.ItemList.size();i++)
 	{
 		if (state.ItemList[i] != nullptr && state.ItemList[i]->Address == addr)
 			return i;
@@ -80,7 +80,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 				const int startIndex = index;// std::max(index - (kToolTipNoLines / 2), 0);
 				for(int line=0;line < kToolTipNoLines;line++)
 				{
-					if(startIndex + line < state.ItemList.size())
+					if(startIndex + line < (int)state.ItemList.size())
 						DrawCodeAnalysisItemAtIndex(state,startIndex + line);
 				}
 				ImGui::EndTooltip();
@@ -645,7 +645,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 {
-	assert(i < state.ItemList.size());
+	assert(i < (int)state.ItemList.size());
 	FItem* pItem = state.ItemList[i];
 	const bool bHighlight = (pItem->Address == state.HighlightAddress);
 	const uint32_t kHighlightColour = 0xff00ff00;
@@ -787,7 +787,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		if (state.GoToAddress != -1)
 		{
 			const int kJumpViewOffset = 5;
-			for (int item = 0; item < state.ItemList.size(); item++)
+			for (int item = 0; item < (int)state.ItemList.size(); item++)
 			{
 				if ((state.ItemList[item]->Address >= state.GoToAddress) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
 				{

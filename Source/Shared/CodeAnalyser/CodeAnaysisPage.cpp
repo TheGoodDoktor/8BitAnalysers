@@ -8,21 +8,20 @@
 
 void FCodeAnalysisPage::Initialise(uint16_t address)
 {
+	BaseAddress = address;
+	
 	memset(Labels, 0, sizeof(Labels));
 	memset(CodeInfo, 0, sizeof(CodeInfo));
-	memset(DataInfo, 0, sizeof(DataInfo));
+	//memset(DataInfo, 0, sizeof(DataInfo));
 	memset(LastWriter, 0, sizeof(LastWriter));
-
-	BaseAddress = address;
 
 	for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 	{
 		// set up data entry for address
-		FDataInfo* pDataInfo = new FDataInfo;
-		pDataInfo->Address = address + (uint16_t)addr;
-		pDataInfo->ByteSize = 1;
-		pDataInfo->DataType = DataType::Byte;
-		DataInfo[addr] = pDataInfo;
+		FDataInfo& dataInfo = DataInfo[addr];
+		dataInfo.Address = BaseAddress + (uint16_t)addr;
+		dataInfo.ByteSize = 1;
+		dataInfo.DataType = DataType::Byte;
 	}
 }
 
@@ -44,11 +43,11 @@ void FCodeAnalysisPage::Reset(void)
 			delete pCodeInfo;
 		}
 		
-		if (DataInfo[addr] != nullptr)
+		/*if (DataInfo[addr] != nullptr)
 		{
 			delete DataInfo[addr];
 			DataInfo[addr] = nullptr;
-		}
+		}*/
 	}
 
 	Initialise(BaseAddress);
@@ -142,9 +141,9 @@ void FCodeAnalysisPage::WriteToBuffer(FMemoryBuffer& buffer)
 	buffer.Write(kDataMagic);
 	for (int i = 0; i < kPageSize; i++)
 	{
-		if (DataInfo[i] != nullptr)
+		//if (DataInfo[i] != nullptr)
 		{
-			const FDataInfo& dataInfo = *DataInfo[i];
+			const FDataInfo& dataInfo = DataInfo[i];
 			buffer.Write<uint16_t>(i);	// address in page
 			WriteItemToBuffer(dataInfo, buffer);
 
@@ -217,14 +216,12 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 		if (pageAddr == 0xffff)
 			break;
 
-		FDataInfo* pNewDataInfo = new FDataInfo;
-		ReadItemFromBuffer(*pNewDataInfo, buffer);
-		pNewDataInfo->Address = BaseAddress + pageAddr;
-		pNewDataInfo->DataType = (DataType)buffer.Read<uint8_t>();
-		ReadReferencesFromBuffer(pNewDataInfo->Reads, buffer);
-		ReadReferencesFromBuffer(pNewDataInfo->Writes, buffer);
-
-		DataInfo[pageAddr] = pNewDataInfo;
+		FDataInfo& dataInfo = DataInfo[pageAddr];
+		ReadItemFromBuffer(dataInfo, buffer);
+		dataInfo.Address = BaseAddress + pageAddr;
+		dataInfo.DataType = (DataType)buffer.Read<uint8_t>();
+		ReadReferencesFromBuffer(dataInfo.Reads, buffer);
+		ReadReferencesFromBuffer(dataInfo.Writes, buffer);
 	}
 
 	return true;

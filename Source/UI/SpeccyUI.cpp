@@ -89,20 +89,16 @@ public:
 		// screen memory start
 		AddLabel(state, 0x4000, "ScreenPixels", LabelType::Data);
 
-		FDataInfo* pScreenPixData = new FDataInfo;
+		FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(0x4000);
 		pScreenPixData->DataType = DataType::Graphics;
 		pScreenPixData->Address = 0x4000;
 		pScreenPixData->ByteSize = 0x1800;
-		state.SetReadDataInfoForAddress(pScreenPixData->Address, pScreenPixData);
-		state.SetWriteDataInfoForAddress(pScreenPixData->Address, pScreenPixData);
 
 		AddLabel(state, 0x5800, "ScreenAttributes", LabelType::Data);
-		FDataInfo* pScreenAttrData = new FDataInfo;
+		FDataInfo* pScreenAttrData = state.GetReadDataInfoForAddress(0x5800);
 		pScreenAttrData->DataType = DataType::Blob;
 		pScreenAttrData->Address = 0x5800;
 		pScreenAttrData->ByteSize = 0x400;
-		state.SetReadDataInfoForAddress(pScreenAttrData->Address,pScreenAttrData);
-		state.SetWriteDataInfoForAddress(pScreenAttrData->Address,pScreenAttrData);
 
 		// system variables?
 	}
@@ -307,7 +303,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 		pUI->CodeAnalysis.SetCodeAnalysisRWPage(pageNo + FSpeccyUI::kNoROMPages, &pUI->RAMPages[pageNo], &pUI->RAMPages[pageNo]);	// Read/Write
 	}
 
-	for (int addr = 0; addr < (1 << 16); addr++)
+	/*for (int addr = 0; addr < (1 << 16); addr++)
 	{
 		state.SetLabelForAddress(addr, nullptr);
 		state.SetCodeInfoForAddress(addr, nullptr);
@@ -318,7 +314,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 		pDataInfo->ByteSize = 1;
 		pDataInfo->DataType = DataType::Byte;
 		state.SetReadDataInfoForAddress(addr, pDataInfo);
-	}
+	}*/
 	//....
 
 	// run initial analysis

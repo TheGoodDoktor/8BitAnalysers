@@ -312,12 +312,14 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 
 	for (int i = 0; i < recordCount; i++)
 	{
-		FDataInfo *pDataInfo = new FDataInfo;
-
 		std::string enumVal;
 		ReadStringFromFile(enumVal, fp);
+		uint16_t address = 0;
+		fread(&address, sizeof(address), 1, fp);
+
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
+		pDataInfo->Address = address;
 		pDataInfo->DataType = magic_enum::enum_cast<DataType>(enumVal).value();
-		fread(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
 		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 		ReadStringFromFile(pDataInfo->Comment, fp);
 
@@ -345,8 +347,8 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 			}
 		}
 
-		state.SetReadDataInfoForAddress(pDataInfo->Address, pDataInfo);
-		state.SetWriteDataInfoForAddress(pDataInfo->Address, pDataInfo);
+		//state.SetReadDataInfoForAddress(pDataInfo->Address, pDataInfo);
+		//state.SetWriteDataInfoForAddress(pDataInfo->Address, pDataInfo);
 	}
 }
 
@@ -409,9 +411,9 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 			delete pCodeInfo;
 		}
 
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
-		delete pDataInfo;
-		state.SetReadDataInfoForAddress(i, nullptr);
+		//FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
+		//delete pDataInfo;
+		//state.SetReadDataInfoForAddress(i, nullptr);
 	}
 
 	if (versionNo >= 4)

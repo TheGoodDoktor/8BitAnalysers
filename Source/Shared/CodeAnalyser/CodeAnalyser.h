@@ -43,82 +43,7 @@ public:
 	ECPUType	CPUType = ECPUType::Unknown;
 };
 
-enum class LabelType
-{
-	Data,
-	Function,
-	Code,
-};
 
-enum class ItemType
-{
-	Label,
-	Code,
-	Data,
-};
-
-struct FItem
-{
-	ItemType		Type;
-	std::string		Comment;
-	uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
-	uint16_t		ByteSize;
-	int				FrameLastAccessed = -1;
-	bool			bBreakpointed = false;
-};
-
-struct FLabelInfo : FItem
-{
-	FLabelInfo() { Type = ItemType::Label; }
-
-	std::string				Name;
-	bool					Global = false;
-	LabelType				LabelType;
-	std::map<uint16_t, int>	References;
-};
-
-struct FCodeInfo : FItem
-{
-	FCodeInfo() :FItem()
-	{
-		Type = ItemType::Code;
-	}
-
-	std::string		Text;				// Disassembly text
-	uint16_t		JumpAddress = 0;	// optional jump address
-	uint16_t		PointerAddress = 0;	// optional pointer address
-
-	union
-	{
-		struct
-		{
-			bool			bDisabled : 1;
-			bool			bSelfModifyingCode : 1;
-		};
-		uint32_t	Flags = 0;
-	};
-};
-
-enum class DataType
-{
-	Byte,
-	Word,
-	Text,		// ascii text
-	Graphics,	// pixel data
-	Blob,		// opaque data blob
-};
-
-struct FDataInfo : FItem
-{
-	FDataInfo() :FItem() { Type = ItemType::Data; }
-
-	DataType	DataType = DataType::Byte;
-
-	int						LastFrameRead = -1;
-	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions
-	int						LastFrameWritten = -1;
-	std::map<uint16_t, int>	Writes;	// address and counts of data access instructions
-};
 
 
 enum class Key
@@ -220,13 +145,13 @@ public:
 	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
 	void SetCodeInfoForAddress(uint16_t addr, FCodeInfo* pCodeInfo) { GetReadPage(addr)->CodeInfo[addr & kPageMask] = pCodeInfo; }
 
-	const FDataInfo* GetReadDataInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->DataInfo[addr & kPageMask]; }
-	FDataInfo* GetReadDataInfoForAddress(uint16_t addr) { return GetReadPage(addr)->DataInfo[addr & kPageMask]; }
-	void SetReadDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { GetReadPage(addr)->DataInfo[addr & kPageMask] = pDataInfo; }
+	const FDataInfo* GetReadDataInfoForAddress(uint16_t addr) const { return &GetReadPage(addr)->DataInfo[addr & kPageMask]; }
+	FDataInfo* GetReadDataInfoForAddress(uint16_t addr) { return &GetReadPage(addr)->DataInfo[addr & kPageMask]; }
+	//void SetReadDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { GetReadPage(addr)->DataInfo[addr & kPageMask] = pDataInfo; }
 
-	const FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) const { return  GetWritePage(addr)->DataInfo[addr & kPageMask]; }
-	FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) { return GetWritePage(addr)->DataInfo[addr & kPageMask]; }
-	void SetWriteDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { GetWritePage(addr)->DataInfo[addr & kPageMask] = pDataInfo; }
+	const FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) const { return  &GetWritePage(addr)->DataInfo[addr & kPageMask]; }
+	FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) { return &GetWritePage(addr)->DataInfo[addr & kPageMask]; }
+	//void SetWriteDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { GetWritePage(addr)->DataInfo[addr & kPageMask] = pDataInfo; }
 
 	uint16_t GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->LastWriter[addr & kPageMask]; }
 	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { GetWritePage(addr)->LastWriter[addr & kPageMask] = lastWriter; }
