@@ -39,7 +39,7 @@ void	FMemoryBuffer::WriteBytes(const void* pData, size_t noBytes)
 
 void FMemoryBuffer::ReadBytes(void* Dest, size_t noBytes)
 {
-	assert(ReadPosition + noBytes < CurrentSize);
+	assert(ReadPosition + noBytes <= CurrentSize);
 	memcpy(Dest, (uint8_t*)BasePtr + ReadPosition, noBytes);
 	ReadPosition += noBytes;
 }

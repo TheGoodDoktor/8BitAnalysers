@@ -2,6 +2,7 @@
 #include "CodeAnalyser.h"
 
 #include "Util/MemoryBuffer.h"
+#include <cassert>
 
 //#include "json.hpp"
 
@@ -11,6 +12,8 @@ void FCodeAnalysisPage::Initialise(uint16_t address)
 	memset(CodeInfo, 0, sizeof(CodeInfo));
 	memset(DataInfo, 0, sizeof(DataInfo));
 	memset(LastWriter, 0, sizeof(LastWriter));
+
+	BaseAddress = address;
 
 	for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 	{
@@ -23,23 +26,81 @@ void FCodeAnalysisPage::Initialise(uint16_t address)
 	}
 }
 
+void FCodeAnalysisPage::Reset(void)
+{
+	for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
+	{
+		if (Labels[addr] != nullptr)
+		{
+			delete Labels[addr];
+			Labels[addr] = nullptr;
+		}
+
+		if (CodeInfo[addr] != nullptr)
+		{
+			FCodeInfo* pCodeInfo = CodeInfo[addr];
+			for(int i=0;i<pCodeInfo->ByteSize;i++)
+				CodeInfo[addr + i] = nullptr;
+			delete pCodeInfo;
+		}
+		
+		if (DataInfo[addr] != nullptr)
+		{
+			delete DataInfo[addr];
+			DataInfo[addr] = nullptr;
+		}
+	}
+
+	Initialise(BaseAddress);
+}
+
 static const uint32_t kMagic = 0xc0de;
-static const uint32_t kVersionNo = 1;
+static const uint32_t kVersionNo = 2;
 
 uint32_t kLabelMagic = 'LABL';
 uint32_t kCodeMagic = 'CODE';
 uint32_t kDataMagic = 'DATA';
 
+void WriteItemToBuffer(const FItem& item, FMemoryBuffer& buffer)
+{
+	buffer.WriteString(item.Comment);
+	//buffer.Write(item.Address);
+	buffer.Write(item.ByteSize);
+}
 
+void ReadItemFromBuffer( FItem& item, FMemoryBuffer& buffer)
+{
+	item.Comment = buffer.ReadString();
+	//buffer.Read(item.Address);
+	buffer.Read(item.ByteSize);
+}
+
+void WriteReferencesToBuffer(const std::map<uint16_t, int>& references, FMemoryBuffer& buffer)
+{
+	buffer.Write((uint16_t)references.size());
+	for (const auto& ref : references)
+	{
+		buffer.Write(ref.first);
+	}
+}
+
+void ReadReferencesFromBuffer(std::map<uint16_t, int>& references, FMemoryBuffer& buffer)
+{
+	const uint16_t count = buffer.Read<uint16_t>();
+	for (int i = 0; i < count; i++)
+	{
+		const uint16_t addr = buffer.Read<uint16_t>();
+		references[addr] = 1;
+	}
+}
 
 void FCodeAnalysisPage::WriteToBuffer(FMemoryBuffer& buffer)
 {
-	buffer.Init();
-
 	buffer.Write(kMagic);
 	buffer.Write(kVersionNo);
 
-	uint32_t noItems = 0;
+	buffer.Write(BaseAddress);
+
 	buffer.Write(kLabelMagic);
 	for (int i = 0; i < kPageSize; i++)
 	{
@@ -47,18 +108,12 @@ void FCodeAnalysisPage::WriteToBuffer(FMemoryBuffer& buffer)
 		{
 			const FLabelInfo& label = *Labels[i];
 			buffer.Write<uint16_t>(i);	// address in page
-			buffer.Write(label.LabelType);
-			buffer.Write(label.Address);
-			buffer.Write(label.ByteSize);
+			WriteItemToBuffer(label, buffer);
+			buffer.Write((uint8_t)label.LabelType);
 			buffer.WriteString(label.Name);
-			buffer.WriteString(label.Comment);
 			buffer.Write(label.Global);
 			// References?
-			buffer.Write((uint16_t)label.References.size());
-			for (const auto& ref : label.References)
-			{
-				buffer.Write(ref.first);
-			}
+			WriteReferencesToBuffer(label.References, buffer);
 		}
 	}
 	buffer.Write<uint16_t>(0xffff);	// terminator
@@ -70,8 +125,15 @@ void FCodeAnalysisPage::WriteToBuffer(FMemoryBuffer& buffer)
 		if (CodeInfo[i] != nullptr)
 		{
 			const FCodeInfo& codeInfo = *CodeInfo[i];
-			buffer.Write<uint16_t>(i);	// address in page
-			// TODO:
+			if (codeInfo.Address == BaseAddress + i)	// only first item
+			{
+				buffer.Write<uint16_t>(i);	// address in page
+				WriteItemToBuffer(codeInfo, buffer);
+
+				buffer.Write<uint16_t>(codeInfo.JumpAddress);
+				buffer.Write<uint16_t>(codeInfo.PointerAddress);
+				buffer.Write<uint32_t>(codeInfo.Flags);
+			}
 		}
 	}
 	buffer.Write<uint16_t>(0xffff);	// terminator
@@ -84,7 +146,11 @@ void FCodeAnalysisPage::WriteToBuffer(FMemoryBuffer& buffer)
 		{
 			const FDataInfo& dataInfo = *DataInfo[i];
 			buffer.Write<uint16_t>(i);	// address in page
-			// TODO:
+			WriteItemToBuffer(dataInfo, buffer);
+
+			buffer.Write<uint8_t>((uint8_t)dataInfo.DataType);
+			WriteReferencesToBuffer(dataInfo.Reads, buffer);
+			WriteReferencesToBuffer(dataInfo.Writes, buffer);
 		}
 	}
 	buffer.Write<uint16_t>(0xffff);	// terminator
@@ -93,42 +159,72 @@ void FCodeAnalysisPage::WriteToBuffer(FMemoryBuffer& buffer)
 
 bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 {
-	if (buffer.Read<uint16_t>() != kMagic)
+	if (buffer.Read<uint32_t>() != kMagic)
 		return false;
 
-	const uint16_t fileVersion = buffer.Read<uint16_t>();
+	const uint32_t fileVersion = buffer.Read<uint32_t>();
+	if (fileVersion != kVersionNo)
+		return false;
+
+	buffer.Read(BaseAddress);
 
 	// Read Labels
-	if (buffer.Read<uint16_t>() != kLabelMagic)
-		return false;
+	assert(buffer.Read<uint32_t>() == kLabelMagic);
 
 	while (true)
 	{
 		const uint16_t pageAddr = buffer.Read<uint16_t>();
 		if (pageAddr == 0xffff)
 			break;
+
+		FLabelInfo* pNewLabel = new FLabelInfo;
+		ReadItemFromBuffer(*pNewLabel, buffer);
+		pNewLabel->Address = BaseAddress + pageAddr;
+		pNewLabel->LabelType = (LabelType)buffer.Read<uint8_t>();
+		pNewLabel->Name = buffer.ReadString();
+		buffer.Read(pNewLabel->Global);
+		ReadReferencesFromBuffer(pNewLabel->References, buffer);
+
+		Labels[pageAddr] = pNewLabel;
 	}
 
 	// Read Code
-	if (buffer.Read<uint16_t>() != kCodeMagic)
-		return false;
+	assert(buffer.Read<uint32_t>() == kCodeMagic);
 
 	while (true)
 	{
 		const uint16_t pageAddr = buffer.Read<uint16_t>();
 		if (pageAddr == 0xffff)
 			break;
+
+		FCodeInfo* pNewCodeInfo = new FCodeInfo;
+		ReadItemFromBuffer(*pNewCodeInfo, buffer);
+		pNewCodeInfo->Address = BaseAddress + pageAddr;
+		buffer.Read(pNewCodeInfo->JumpAddress);
+		buffer.Read(pNewCodeInfo->PointerAddress);
+		buffer.Read(pNewCodeInfo->Flags);
+
+		for(int i=0;i<pNewCodeInfo->ByteSize;i++)
+			CodeInfo[pageAddr + i] = pNewCodeInfo;
 	}
 
 	// Read Data
-	if (buffer.Read<uint16_t>() != kDataMagic)
-		return false;
+	assert(buffer.Read<uint32_t>() == kDataMagic);
 
 	while (true)
 	{
 		const uint16_t pageAddr = buffer.Read<uint16_t>();
 		if (pageAddr == 0xffff)
 			break;
+
+		FDataInfo* pNewDataInfo = new FDataInfo;
+		ReadItemFromBuffer(*pNewDataInfo, buffer);
+		pNewDataInfo->Address = BaseAddress + pageAddr;
+		pNewDataInfo->DataType = (DataType)buffer.Read<uint8_t>();
+		ReadReferencesFromBuffer(pNewDataInfo->Reads, buffer);
+		ReadReferencesFromBuffer(pNewDataInfo->Writes, buffer);
+
+		DataInfo[pageAddr] = pNewDataInfo;
 	}
 
 	return true;

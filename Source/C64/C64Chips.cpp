@@ -49,10 +49,18 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 #include "Util/MemoryBuffer.h"
-#include "util/FileUtil.h"
+#include "Util/FileUtil.h"
 #include "IOAnalysis/C64IOAnalysis.h"
 #include "GraphicsViewer/C64GraphicsViewer.h"
 #include "C64Display.h"
+
+struct FGameInfo
+{
+    std::string Name;
+    std::string PRGFile;
+};
+
+FGameInfo g_TestGame = { "Cybernoid II", "Games/Cybernoid II.prg" };
 
 class FC64Emulator : public IInputEventHandler , public ICPUInterface
 {
@@ -107,8 +115,10 @@ public:
 
     c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
     void UpdateCodeAnalysisPages(uint8_t cpuPort);
-    bool SaveCodeAnalysis(const char* pFileName);
-    bool LoadCodeAnalysis(const char* pFileName);
+    bool LoadGame(FGameInfo* pGameInfo);
+    void ResetCodeAnalysis(void);
+    bool SaveCodeAnalysis(FGameInfo* pGameInfo);
+    bool LoadCodeAnalysis(FGameInfo* pGameInfo);
 
     // Emulator Event Handlers
     void    OnBoot(void);
@@ -121,6 +131,7 @@ private:
     ui_c64_t    C64UI;
     double      ExecTime;
 
+    FGameInfo*          CurrentGame = nullptr;
     FC64Display         Display;
  
     FCodeAnalysisState  CodeAnalysis;
@@ -407,9 +418,46 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     }
 }
 
-bool FC64Emulator::SaveCodeAnalysis(const char* pFileName)
+bool FC64Emulator::LoadGame(FGameInfo* pGameInfo)
+{
+    size_t fileSize;
+    void* pGameData = LoadBinaryFile(pGameInfo->PRGFile.c_str(), fileSize);
+    if (pGameData)
+    {
+        c64_quickload(&C64Emu, (uint8_t*)pGameData, fileSize);
+        free(pGameData);
+        ResetCodeAnalysis();
+        LoadCodeAnalysis(pGameInfo);
+        CurrentGame = pGameInfo;
+        return true;
+    }
+
+    return false;
+}
+
+void FC64Emulator::ResetCodeAnalysis(void)
+{
+    // Reset RAM pages
+    for (int pageNo = 0; pageNo < 64; pageNo++)
+        RAM[pageNo].Reset();
+
+    // Save IO
+    for (int pageNo = 0; pageNo < 4; pageNo++)
+        IOSystem[pageNo].Reset();
+
+    // Save Basic ROM
+    for (int pageNo = 0; pageNo < 8; pageNo++)
+        BasicROM[pageNo].Reset();
+
+    // Save Kernel ROM
+    for (int pageNo = 0; pageNo < 8; pageNo++)
+        KernelROM[pageNo].Reset();
+}
+
+bool FC64Emulator::SaveCodeAnalysis(FGameInfo* pGameInfo)
 {
     FMemoryBuffer saveBuffer;
+    saveBuffer.Init();
 
     // Save RAM pages
     for (int pageNo = 0; pageNo < 64; pageNo++)
@@ -428,39 +476,46 @@ bool FC64Emulator::SaveCodeAnalysis(const char* pFileName)
         KernelROM[pageNo].WriteToBuffer(saveBuffer);
 
     // Write to file
-    return saveBuffer.SaveToFile(pFileName);
+    char fileName[128];
+    sprintf_s(fileName, "AnalysisData/%s.bin", pGameInfo->Name.c_str());
+    return saveBuffer.SaveToFile(fileName);
 }
 
-bool FC64Emulator::LoadCodeAnalysis(const char* pFileName)
+bool FC64Emulator::LoadCodeAnalysis(FGameInfo *pGameInfo)
 {
+    char fileName[128];
+    sprintf_s(fileName, "AnalysisData/%s.bin",pGameInfo->Name.c_str());
     FMemoryBuffer loadBuffer;
 
-    if (loadBuffer.LoadFromFile(pFileName) == false)
+    if (loadBuffer.LoadFromFile(fileName) == false)
         return false;
 
-    // Save RAM pages
+    // Load RAM pages
     for (int pageNo = 0; pageNo < 64; pageNo++)
         RAM[pageNo].ReadFromBuffer(loadBuffer);
 
-    // Save IO
+    // Load IO
     for (int pageNo = 0; pageNo < 4; pageNo++)
         IOSystem[pageNo].ReadFromBuffer(loadBuffer);
 
-    // Save Basic ROM
+    // Load Basic ROM
     for (int pageNo = 0; pageNo < 8; pageNo++)
         BasicROM[pageNo].ReadFromBuffer(loadBuffer);
 
-    // Save Kernel ROM
+    // Load Kernel ROM
     for (int pageNo = 0; pageNo < 8; pageNo++)
         KernelROM[pageNo].ReadFromBuffer(loadBuffer);
 
+    CodeAnalysis.bCodeAnalysisDataDirty = true;
     return true;
 }
 
 
 void FC64Emulator::Shutdown()
 {
-    SaveCodeAnalysis("AnalysisData/TestData.bin");
+    if(CurrentGame != nullptr)
+        SaveCodeAnalysis(CurrentGame);
+
     ui_c64_discard(&C64UI);
     c64_discard(&C64Emu);
 }
@@ -502,9 +557,12 @@ void FC64Emulator::Tick()
 
         if (ImGui::Button("Load"))
         {
-            // TODO: load game data
+            LoadGame(&g_TestGame);
+            
+            /*
             FILE* fp = nullptr;
             //fopen_s(&fp, "Games/Paradroid.prg", "rb");
+
             fopen_s(&fp, "Games/Cybernoid II.prg", "rb");
             if (fp != nullptr)
             {
@@ -518,7 +576,10 @@ void FC64Emulator::Tick()
                 c64_quickload(&C64Emu, gameData, gameDataSize);
                 free(gameData);
                 fclose(fp);
-            }
+
+                LoadCodeAnalysis("AnalysisData/TestData.bin");
+
+            }*/
         }
 
         Display.DrawUI();
