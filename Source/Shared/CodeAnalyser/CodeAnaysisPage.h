@@ -93,8 +93,10 @@ struct FCodeAnalysisPage
 	bool ReadFromBuffer(FMemoryBuffer& buffer);
 	//void WriteToJSon(nlohmann::json& jsonOutput);
 
+	void SetLabelAtAddress(const char* pLabelName, LabelType type, uint16_t addr);
 	static const int kPageSize = 1024;	// 1Kb page
 
+	int16_t			PageId = -1;
 	uint16_t		BaseAddress; // physical base address
 	FLabelInfo*		Labels[kPageSize];
 	FCodeInfo*		CodeInfo[kPageSize];

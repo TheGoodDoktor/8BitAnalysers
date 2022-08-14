@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <map>
 #include <set>
+#include <vector>
 
 struct FC64IORegisterAccessInfo
 {
@@ -11,8 +12,9 @@ struct FC64IORegisterAccessInfo
 
 struct FC64IORegisterInfo
 {
-	std::map<uint16_t, FC64IORegisterAccessInfo>	Accesses;
-	uint8_t			LastVal;
+	void Reset() { Accesses.clear(); LastVal = 0; }
+	std::map<uint32_t, FC64IORegisterAccessInfo>	Accesses;
+	uint8_t			LastVal = 0;
 };
 
 struct FRegDisplayConfig
@@ -21,5 +23,8 @@ struct FRegDisplayConfig
 	void		(*UIDrawFunction)(uint8_t val);
 };
 
-void DrawRegValueDefault(uint8_t val);
+void DrawRegValueHex(uint8_t val);
 void DrawRegValueDecimal(uint8_t val);
+
+int DrawRegSelectList(std::vector<FRegDisplayConfig>& regList, int selection);
+void DrawRegDetails(FC64IORegisterInfo& reg, const FRegDisplayConfig& regConfig, struct FCodeAnalysisState* pCodeAnalysis);

@@ -14,6 +14,7 @@ class FC64IOAnalysis
 {
 public:
 	void	Init(FCodeAnalysisState *pAnalysis);
+	void	Reset();
 	void	RegisterIORead(uint16_t addr, uint16_t pc);
 	void	RegisterIOWrite(uint16_t addr, uint8_t val, uint16_t pc);
 

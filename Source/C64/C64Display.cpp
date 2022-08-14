@@ -39,7 +39,7 @@ uint16_t FC64Display::GetScreenBitmapAddress(int pixelX, int pixelY)
 
     uint16_t vicMemBase = pC64->vic_bank_select;
     //uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
-    uint16_t bitmapMem = ((pC64->vic.reg.mem_ptrs >> 2) & 1) << 13;
+    uint16_t bitmapMem = ((pC64->vic.reg.mem_ptrs >> 3) & 1) << 13;
 
     const uint16_t pixLocation = (charY * 320) + (charX * 8) + (pixelY & 7);
     return vicMemBase + bitmapMem + pixLocation;
@@ -52,7 +52,7 @@ uint16_t FC64Display::GetScreenCharAddress(int pixelX, int pixelY)
     const int charY = pixelY >> 3;
 
     uint16_t vicMemBase = pC64->vic_bank_select;
-    uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
+    uint16_t screenMem = ((pC64->vic.reg.mem_ptrs >> 4) & 7) << 10;
 
     const uint16_t charLocation = (charY * 40) + charX;
     return vicMemBase + screenMem + charLocation;

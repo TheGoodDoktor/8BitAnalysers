@@ -69,7 +69,20 @@ struct FCodeAnalysisState
 
 	static const int kAddressSize = 1 << 16;
 
-	// TODO: use page table
+	bool					RegisterPage(FCodeAnalysisPage* pPage, const char* pName) 
+	{
+		if (pPage->PageId != -1)
+			return false;
+		pPage->PageId = (int16_t)RegisteredPages.size();
+		RegisteredPages.push_back(pPage);
+		PageNames.push_back(pName);
+		return true;
+	}
+	FCodeAnalysisPage*		GetPage(int16_t id) { return RegisteredPages[id]; }
+	const char*				GetPageName(int16_t id) { return PageNames[id].c_str(); }
+	int16_t					GetAddressReadPageId(uint16_t addr) { return GetReadPage(addr)->PageId; }
+	int16_t					GetAddressWritePageId(uint16_t addr) { return GetWritePage(addr)->PageId; }
+
 	FCodeAnalysisPage*		ReadPageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
 	FCodeAnalysisPage*		WritePageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
 	void					SetCodeAnalysisReadPage(int pageNo, FCodeAnalysisPage* pPage) { ReadPageTable[pageNo] = pPage; }
@@ -83,10 +96,13 @@ struct FCodeAnalysisState
 
 	// TODO: replace below with above
 private:
-	FLabelInfo*				Labels[kAddressSize];
-	FCodeInfo*				CodeInfo[kAddressSize];
-	FDataInfo*				DataInfo[kAddressSize];
-	uint16_t				LastWriter[kAddressSize];
+	std::vector<FCodeAnalysisPage*>	RegisteredPages;
+	std::vector<std::string>	PageNames;
+	int32_t		NextPageId = 0;
+	//FLabelInfo*				Labels[kAddressSize];
+	//FCodeInfo*				CodeInfo[kAddressSize];
+	//FDataInfo*				DataInfo[kAddressSize];
+	//uint16_t				LastWriter[kAddressSize];
 public:
 	bool					bCodeAnalysisDataDirty = false;
 
@@ -185,7 +201,6 @@ public:
 	virtual void Undo(FCodeAnalysisState &state) = 0;
 };
 
-void InitialiseCodeAnalysisPage(FCodeAnalysisPage* pPage, uint16_t address);
 
 // Analysis
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);

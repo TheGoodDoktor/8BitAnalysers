@@ -6,6 +6,9 @@ void	FC64IOAnalysis::Init(FCodeAnalysisState* pAnalysis)
 {
 	pCodeAnalysis = pAnalysis;
 	VICAnalysis.Init(pAnalysis);
+	SIDAnalysis.Init(pAnalysis);
+	CIA1Analysis.Init(pAnalysis);
+	CIA2Analysis.Init(pAnalysis);
 
 	// TODO: set initial VIC register values
 	for (int i = 0; i < 64; i++)
@@ -13,6 +16,15 @@ void	FC64IOAnalysis::Init(FCodeAnalysisState* pAnalysis)
 		
 	}
 }
+
+void	FC64IOAnalysis::Reset()
+{
+	VICAnalysis.Reset();
+	SIDAnalysis.Reset();
+	CIA1Analysis.Reset();
+	CIA2Analysis.Reset();
+}
+
 
 void	FC64IOAnalysis::RegisterIORead(uint16_t addr, uint16_t pc)
 {

@@ -227,6 +227,20 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 	return true;
 }
 
+void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, LabelType type, uint16_t addr)
+{
+	FLabelInfo* pLabel = Labels[addr];
+	if (pLabel == nullptr)
+	{
+		pLabel = new FLabelInfo;
+		Labels[addr] = pLabel;
+	}
+
+	pLabel->Name = pLabelName;
+	pLabel->LabelType = type;
+}
+
+
 #if 0
 void FCodeAnalysisPage::WriteToJSon(nlohmann::json& jsonOutput)
 {

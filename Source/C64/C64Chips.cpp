@@ -147,6 +147,7 @@ private:
 
     FC64IOAnalysis      IOAnalysis;
     FC64GraphicsViewer  GraphicsViewer;
+    std::set<uint16_t>  InterruptHandlers;
 
     // Mapping status
     bool                bBasicROMMapped = true;
@@ -308,22 +309,42 @@ bool FC64Emulator::Init()
 
     for (int pageNo = 0; pageNo < 64; pageNo++)
     {
+        char pageName[16];
         // Initialise RAM Pages
         RAM[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+        sprintf_s(pageName, "RAM[%02X]", pageNo);
+        CodeAnalysis.RegisterPage(&RAM[pageNo], pageName);
         
         // Initialise Basic ROM
-        if(pageNo >= 40 && pageNo < 48 )
-            BasicROM[pageNo - 40].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+        if (pageNo >= 40 && pageNo < 48)
+        {
+            const int pageIndex = pageNo - 40;
+            BasicROM[pageIndex].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+            sprintf_s(pageName, "BasicROM[%02X]", pageIndex);
+            CodeAnalysis.RegisterPage(&BasicROM[pageIndex], pageName);
+        }
 
         // Initialise IO System & character RAM
         if (pageNo >= 52 && pageNo < 56)
         {
-            IOSystem[pageNo - 52].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
-            CharacterROM[pageNo - 52].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
+            const int pageIndex = pageNo - 52;
+            sprintf_s(pageName, "IO[%02X]", pageIndex);
+            IOSystem[pageIndex].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
+            CodeAnalysis.RegisterPage(&IOSystem[pageIndex], pageName);
+
+            sprintf_s(pageName, "CharROM[%02X]", pageIndex);
+            CharacterROM[pageIndex].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
+            CodeAnalysis.RegisterPage(&CharacterROM[pageIndex], pageName);
         }
+
         // Initialise Kernel ROM
         if (pageNo >= 56)
-            KernelROM[pageNo - 56].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+        {
+            const int pageIndex = pageNo - 56;
+            sprintf_s(pageName, "Kernel[%02X]", pageIndex);
+            KernelROM[pageIndex].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+            CodeAnalysis.RegisterPage(&KernelROM[pageIndex], pageName);
+        }
     }
     
     // Map permanent regions
@@ -340,6 +361,13 @@ bool FC64Emulator::Init()
                 CodeAnalysis.SetCodeAnalysisWritePage(pageNo, &RAM[pageNo]);
         }
     }
+
+    // Add IO Labels to code analysis
+    AddVICRegisterLabels(IOSystem[0]);  // Page $D000-$D3ff
+    AddSIDRegisterLabels(IOSystem[1]);  // Page $D400-$D7ff
+    IOSystem[2].SetLabelAtAddress("ColourRAM", LabelType::Data, 0x0000);    // Colour RAM $D800
+    AddCIARegisterLabels(IOSystem[3]);  // Page $DC00-$Dfff
+
     UpdateCodeAnalysisPages(0x7);
     IOAnalysis.Init(&CodeAnalysis);
     GraphicsViewer.Init(&CodeAnalysis,&C64Emu);
@@ -428,8 +456,18 @@ bool FC64Emulator::LoadGame(FGameInfo* pGameInfo)
     {
         c64_quickload(&C64Emu, (uint8_t*)pGameData, fileSize);
         free(pGameData);
+        
         ResetCodeAnalysis();
-        LoadCodeAnalysis(pGameInfo);
+        if (LoadCodeAnalysis(pGameInfo) == false)
+        {
+            // Add IO Labels to code analysis
+            AddVICRegisterLabels(IOSystem[0]);  // Page $D000-$D3ff
+            AddSIDRegisterLabels(IOSystem[1]);  // Page $D400-$D7ff
+            IOSystem[2].SetLabelAtAddress("ColourRAM", LabelType::Data, 0x0000);    // Colour RAM $D800
+            AddCIARegisterLabels(IOSystem[3]);  // Page $DC00-$Dfff
+        }
+        GenerateGlobalInfo(CodeAnalysis);// Note this might not work because pages might not have been set up
+
         CurrentGame = pGameInfo;
         return true;
     }
@@ -443,17 +481,22 @@ void FC64Emulator::ResetCodeAnalysis(void)
     for (int pageNo = 0; pageNo < 64; pageNo++)
         RAM[pageNo].Reset();
 
-    // Save IO
+    // Reset IO
     for (int pageNo = 0; pageNo < 4; pageNo++)
         IOSystem[pageNo].Reset();
 
-    // Save Basic ROM
+    // Reset Basic ROM
     for (int pageNo = 0; pageNo < 8; pageNo++)
         BasicROM[pageNo].Reset();
 
-    // Save Kernel ROM
+    // Reset Kernel ROM
     for (int pageNo = 0; pageNo < 8; pageNo++)
         KernelROM[pageNo].Reset();
+
+    // Reset other analysers
+    InterruptHandlers.clear();
+    IOAnalysis.Reset();
+
 }
 
 bool FC64Emulator::SaveCodeAnalysis(FGameInfo* pGameInfo)
@@ -585,6 +628,14 @@ void FC64Emulator::Tick()
         }
 
         Display.DrawUI();
+
+        // Temp
+        ImGui::Text("Interrupt Handlers");
+        for (auto& intHandler : InterruptHandlers)
+        {
+            ImGui::Text("$%04X:", intHandler);
+            DrawAddressLabel(CodeAnalysis, intHandler);
+        }
     }
     ImGui::End();
 
@@ -742,31 +793,49 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
     const uint16_t pc = g_M6502PC;// m6502_pc(&C64Emu.cpu);// pc after execution?
     const uint16_t addr = M6502_GET_ADDR(pins);
     const uint8_t val = M6502_GET_DATA(pins);
-    if (pins & M6502_RW)
+    bool irq = pins & M6502_IRQ;
+    bool nmi = pins & M6502_NMI;
+    bool rdy = pins & M6502_RDY;
+    bool aec = pins & M6510_AEC;
+    bool hitIrq = false;
+    if ((addr == 0xfffe || addr == 0xffff) && irq)
     {
-        if (CodeAnalysis.bRegisterDataAccesses)
-            RegisterDataAccess(CodeAnalysis, pc, addr, false);
-
-        if (bIOMapped && (addr >> 8) == 0xd0)
-        {
-            IOAnalysis.RegisterIORead(addr, pc);
-        }
+        hitIrq = true;
+        const uint16_t interruptHandler = ReadWord(0xfffe);
+        InterruptHandlers.insert(interruptHandler);
     }
-    else
+
+    bool bReadingInstruction = addr == m6502_pc(&C64Emu.cpu) - 1;
+
+    if ((pins & M6502_SYNC) == 0) // not for instruction fetch
     {
-        if (CodeAnalysis.bRegisterDataAccesses)
-            RegisterDataAccess(CodeAnalysis, pc, addr, true);
-
-        CodeAnalysis.SetLastWriterForAddress(addr, pc);
-
-        if (bIOMapped && (addr >> 8) == 0xd0)
+        if (pins & M6502_RW)
         {
-            IOAnalysis.RegisterIOWrite(addr,val, pc);
-        }
 
-        FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addr);
-        if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
-            pCodeWrittenTo->bSelfModifyingCode = true;
+            if (CodeAnalysis.bRegisterDataAccesses)
+                RegisterDataAccess(CodeAnalysis, pc, addr, false);
+
+            if (bIOMapped && (addr >> 12) == 0xd)
+            {
+                IOAnalysis.RegisterIORead(addr, pc);
+            }
+        }
+        else
+        {
+            if (CodeAnalysis.bRegisterDataAccesses)
+                RegisterDataAccess(CodeAnalysis, pc, addr, true);
+
+            CodeAnalysis.SetLastWriterForAddress(addr, pc);
+
+            if (bIOMapped && (addr >> 12) == 0xd)
+            {
+                IOAnalysis.RegisterIOWrite(addr, val, pc);
+            }
+
+            FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addr);
+            if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
+                pCodeWrittenTo->bSelfModifyingCode = true;
+        }
     }
 
     lastPC = m6502_pc(&C64Emu.cpu);

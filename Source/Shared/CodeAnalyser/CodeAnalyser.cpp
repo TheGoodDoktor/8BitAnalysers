@@ -307,9 +307,12 @@ void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr
 	}
 	else
 	{
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
-		pDataInfo->LastFrameRead = state.CurrentFrameNo;
-		pDataInfo->Reads[pc]++;
+		if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
+		{
+			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
+			pDataInfo->LastFrameRead = state.CurrentFrameNo;
+			pDataInfo->Reads[pc]++;
+		}
 	}
 }
 
@@ -333,7 +336,6 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 				pDataInfo->Address = (uint16_t)i;
 				pDataInfo->ByteSize = 1;
 				pDataInfo->DataType = DataType::Byte;
-				//state.SetReadDataInfoForAddress(i,pDataInfo);
 			}
 		}
 
@@ -396,7 +398,10 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	}
 }
 
+void RegisterCodeAnalysisPage(FCodeAnalysisState& state, FCodeAnalysisPage& page, const char* pName)
+{
 
+}
 
 
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface)
