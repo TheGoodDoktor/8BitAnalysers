@@ -269,7 +269,22 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 {
 	if (pCodeInfo->bSelfModifyingCode == true)
+	{
 		ImGui::Text("Self modifying code");
+
+		for (int i = 1; i < pCodeInfo->ByteSize; i++)
+		{
+			FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(pCodeInfo->Address + i);
+			if (pOperandData->Writes.empty() == false)
+			{
+				ImGui::Text("Operand %d Writes:",i);
+				for (const auto& caller : pOperandData->Writes)
+				{
+					DrawCodeAddress(state, caller.first);
+				}
+			}
+		}
+	}
 }
 
 void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)

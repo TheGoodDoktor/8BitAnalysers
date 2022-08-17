@@ -1,6 +1,7 @@
 #include "CIAAnalysis.h"
 #include <vector>
 #include <imgui.h>
+#include <CodeAnalyser/CodeAnaysisPage.h>
 
 static std::vector<FRegDisplayConfig>	g_CIA1RegDrawInfo =
 {
@@ -98,5 +99,16 @@ void	FCIAAnalysis::DrawUI(void)
 
 void AddCIARegisterLabels(FCodeAnalysisPage& IOPage)
 {
+	// CIA 1 -$DC00 - $DC0F
+	std::vector<FRegDisplayConfig>& CIA1RegList = g_CIA1RegDrawInfo;
+
+	for (int reg = 0; reg < (int)CIA1RegList.size(); reg++)
+		IOPage.SetLabelAtAddress(CIA1RegList[reg].Name, LabelType::Data, reg);
+
+	// CIA 2 -$DD00 - $DD0F
+	std::vector<FRegDisplayConfig>& CIA2RegList = g_CIA1RegDrawInfo;
+
+	for (int reg = 0; reg < (int)CIA2RegList.size(); reg++)
+		IOPage.SetLabelAtAddress(CIA2RegList[reg].Name, LabelType::Data, reg + 0x100);	// offset by 256 bytes
 
 }

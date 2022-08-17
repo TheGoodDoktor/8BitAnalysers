@@ -53,14 +53,7 @@
 #include "IOAnalysis/C64IOAnalysis.h"
 #include "GraphicsViewer/C64GraphicsViewer.h"
 #include "C64Display.h"
-
-struct FGameInfo
-{
-    std::string Name;
-    std::string PRGFile;
-};
-
-FGameInfo g_TestGame = { "Cybernoid II", "Games/Cybernoid II.prg" };
+#include "C64GamesList.h"
 
 class FC64Emulator : public IInputEventHandler , public ICPUInterface
 {
@@ -114,7 +107,9 @@ public:
     // End ICPUInterface interface implementation
 
     c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
+    void SetupCodeAnalysisLabels(void);
     void UpdateCodeAnalysisPages(uint8_t cpuPort);
+    bool EnumerateGames();
     bool LoadGame(FGameInfo* pGameInfo);
     void ResetCodeAnalysis(void);
     bool SaveCodeAnalysis(FGameInfo* pGameInfo);
@@ -131,7 +126,8 @@ private:
     ui_c64_t    C64UI;
     double      ExecTime;
 
-    FGameInfo*          CurrentGame = nullptr;
+    FGameInfo*                  CurrentGame = nullptr;
+
     FC64Display         Display;
  
     FCodeAnalysisState  CodeAnalysis;
@@ -361,19 +357,25 @@ bool FC64Emulator::Init()
                 CodeAnalysis.SetCodeAnalysisWritePage(pageNo, &RAM[pageNo]);
         }
     }
-
-    // Add IO Labels to code analysis
-    AddVICRegisterLabels(IOSystem[0]);  // Page $D000-$D3ff
-    AddSIDRegisterLabels(IOSystem[1]);  // Page $D400-$D7ff
-    IOSystem[2].SetLabelAtAddress("ColourRAM", LabelType::Data, 0x0000);    // Colour RAM $D800
-    AddCIARegisterLabels(IOSystem[3]);  // Page $DC00-$Dfff
-
+    
+    SetupCodeAnalysisLabels();
     UpdateCodeAnalysisPages(0x7);
     IOAnalysis.Init(&CodeAnalysis);
     GraphicsViewer.Init(&CodeAnalysis,&C64Emu);
     InitialiseCodeAnalysis(CodeAnalysis, this);
 
+    EnumerateGames();
+
     return true;
+}
+
+void FC64Emulator::SetupCodeAnalysisLabels()
+{
+    // Add IO Labels to code analysis
+    AddVICRegisterLabels(IOSystem[0]);  // Page $D000-$D3ff
+    AddSIDRegisterLabels(IOSystem[1]);  // Page $D400-$D7ff
+    IOSystem[2].SetLabelAtAddress("ColourRAM", LabelType::Data, 0x0000);    // Colour RAM $D800
+    AddCIARegisterLabels(IOSystem[3]);  // Page $DC00-$Dfff
 }
 
 void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
@@ -448,6 +450,26 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     CodeAnalysis.bCodeAnalysisDataDirty = true;
 }
 
+
+bool FC64Emulator::EnumerateGames(void)
+{
+    FDirFileList listing;
+
+    GamesList.clear();
+    if (EnumerateDirectory("./Games", listing) == false)
+        return false;
+
+    for (const auto& file : listing)
+    {
+        const std::string& fn = file.FileName;
+        if ((fn.substr(fn.find_last_of(".") + 1) == "prg") || (fn.substr(fn.find_last_of(".") + 1) == "PRG"))
+        {
+            GamesList.push_back(fn);
+        }
+    }
+    return true;
+}
+
 bool FC64Emulator::LoadGame(FGameInfo* pGameInfo)
 {
     size_t fileSize;
@@ -460,11 +482,7 @@ bool FC64Emulator::LoadGame(FGameInfo* pGameInfo)
         ResetCodeAnalysis();
         if (LoadCodeAnalysis(pGameInfo) == false)
         {
-            // Add IO Labels to code analysis
-            AddVICRegisterLabels(IOSystem[0]);  // Page $D000-$D3ff
-            AddSIDRegisterLabels(IOSystem[1]);  // Page $D400-$D7ff
-            IOSystem[2].SetLabelAtAddress("ColourRAM", LabelType::Data, 0x0000);    // Colour RAM $D800
-            AddCIARegisterLabels(IOSystem[3]);  // Page $DC00-$Dfff
+            SetupCodeAnalysisLabels();
         }
         GenerateGlobalInfo(CodeAnalysis);// Note this might not work because pages might not have been set up
 

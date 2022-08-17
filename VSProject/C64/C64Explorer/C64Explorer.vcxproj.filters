@@ -150,6 +150,9 @@
     <ClCompile Include="..\..\..\Source\C64\C64Display.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\C64GamesList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imgui_internal.h">
@@ -432,6 +435,9 @@
       <Filter>Source Files\Shared\Util</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\C64\C64Display.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\C64\C64GamesList.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

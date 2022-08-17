@@ -1,10 +1,97 @@
 #include "CodeAnalyser6502.h"
 #include "../CodeAnalyser.h"
 
+enum class EAddressMode : uint8_t
+{
+	ZPIndirect_X,
+	ZP,
+	Immediate,
+	Absolute,
+	ZPIndirect_Y,
+	ZP_X,
+	Absolute_Y,
+	Absolute_X,
+	Accumulator,
+	NA
+};
+
+static EAddressMode g_Group00_AddressModes[8] =
+{
+	EAddressMode::Immediate,	// 000
+	EAddressMode::ZP,			// 001
+	EAddressMode::NA,			// 010 - missing
+	EAddressMode::Absolute,		// 011
+	EAddressMode::NA,			// 100 - missing
+	EAddressMode::ZP_X,			// 101
+	EAddressMode::NA,			// 110 - missing
+	EAddressMode::Absolute_X,	// 111
+};
+
+static EAddressMode g_Group01_AddressModes[8] =
+{
+	EAddressMode::ZPIndirect_X,
+	EAddressMode::ZP,
+	EAddressMode::Immediate,
+	EAddressMode::Absolute,
+	EAddressMode::ZPIndirect_Y,
+	EAddressMode::ZP_X,
+	EAddressMode::Absolute_Y,
+	EAddressMode::Absolute_X,
+};
+
+static EAddressMode g_Group10_AddressModes[8] =
+{
+	EAddressMode::Immediate,
+	EAddressMode::ZP,
+	EAddressMode::Accumulator,
+	EAddressMode::Absolute,
+	EAddressMode::NA,	// 100 - missing
+	EAddressMode::ZP_X,
+	EAddressMode::NA,	// 110 - missing
+	EAddressMode::Absolute_X,
+};
+
+EAddressMode GetInstructionAddressMode(uint8_t opcode)
+{
+	const uint8_t instrGroup = opcode & 3;
+	const uint8_t addrMode = (opcode >> 2) & 7;
+
+	switch (instrGroup)
+	{
+		case 0x00:
+			return g_Group00_AddressModes[addrMode];
+		case 0x01:
+			return g_Group01_AddressModes[addrMode];
+		case 0x02:
+			return g_Group10_AddressModes[addrMode];
+	}
+
+	return EAddressMode::NA;
+}
+
 bool CheckPointerIndirectionInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {
 	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
 
+	// use switch to catch specifics
+	/*switch (instrByte)
+	{
+	case 0x6C:	// JMP (addr)
+		*out_addr = pCPUInterface->ReadWord(pc + 1);
+		return true;
+	}*/
+
+	// otherwise decode addressing mode
+	const EAddressMode addrMode = GetInstructionAddressMode(instrByte);
+
+	switch (addrMode)
+	{
+	case EAddressMode::ZPIndirect_X:
+	case EAddressMode::ZPIndirect_Y:
+		*out_addr = pCPUInterface->ReadByte(pc + 1);
+		return true;
+	}
+/*
 	switch (instrByte)
 	{
 	case 0x61:	// ADC (zp addr,X)
@@ -16,7 +103,7 @@ bool CheckPointerIndirectionInstruction6502(ICPUInterface* pCPUInterface, uint16
 	case 0x91:	// STA (zp addr),Y
 		*out_addr = pCPUInterface->ReadByte(pc + 1);
 		return true;
-	}
+	}*/
 	return false;
 }
 
@@ -26,7 +113,29 @@ bool CheckPointerRefInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, u
 {
 	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
 
-	switch (instrByte)
+	// use switch to catch specifics
+	/*switch (instrByte)
+	{
+	}*/
+
+	// otherwise decode addressing mode
+	const EAddressMode addrMode = GetInstructionAddressMode(instrByte);
+
+	switch (addrMode)
+	{
+	case EAddressMode::Absolute:
+	case EAddressMode::Absolute_X:
+	case EAddressMode::Absolute_Y:
+		*out_addr = pCPUInterface->ReadWord(pc + 1);
+		return true;
+
+	case EAddressMode::ZP:
+	case EAddressMode::ZP_X:
+		*out_addr = pCPUInterface->ReadByte(pc + 1);
+		return true;
+	}
+
+	/*switch (instrByte)
 	{
 		// full address
 	case 0x6d:	// ADC <addr>
@@ -73,7 +182,8 @@ bool CheckPointerRefInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, u
 	case 0x94:	// STY <zp addr>,X
 		*out_addr = pCPUInterface->ReadByte(pc + 1);
 		return true;
-	}
+	}*/
+
 	return false;
 }
 
@@ -89,7 +199,7 @@ bool CheckJumpInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_
 		case 0x50:	// BVC
 		case 0x70:	// BVS
 		case 0x90:	// BCC
-		case 0x80:	// BCS
+		case 0xB0:	// BCS
 		case 0xD0:	// BNE
 		case 0xF0:	// BEQ
 		{
@@ -101,12 +211,12 @@ bool CheckJumpInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_
 		// to absolute 16 address
 		case 0x20:	// JSR
 		case 0x4C:	// JMP abs
-		case 0x6C:	// JMP indirect
+		//case 0x6C:	// JMP indirect
 			*out_addr = pCPUInterface->ReadWord(pc + 1);
 			return true;
-		//case 0x6C:	// JMP indirect
-		//	*out_addr = pCPUInterface->ReadWord(pCPUInterface->ReadWord(pc + 1));
-	//	return true;
+		case 0x6C:	// JMP indirect
+			*out_addr = pCPUInterface->ReadWord(pCPUInterface->ReadWord(pc + 1));
+		return true;
 	}
 	return false;
 }

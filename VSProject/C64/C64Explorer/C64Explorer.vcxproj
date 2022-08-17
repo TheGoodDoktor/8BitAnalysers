@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\C64Chips.cpp" />
     <ClCompile Include="..\..\..\Source\C64\C64Display.cpp" />
+    <ClCompile Include="..\..\..\Source\C64\C64GamesList.cpp" />
     <ClCompile Include="..\..\..\Source\C64\GraphicsViewer\C64GraphicsViewer.cpp" />
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.cpp" />
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\CIAAnalysis.cpp" />
@@ -183,6 +184,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\C64\C64Chips.h" />
     <ClInclude Include="..\..\..\Source\C64\C64Display.h" />
+    <ClInclude Include="..\..\..\Source\C64\C64GamesList.h" />
     <ClInclude Include="..\..\..\Source\C64\GraphicsViewer\C64GraphicsViewer.h" />
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.h" />
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\CIAAnalysis.h" />
