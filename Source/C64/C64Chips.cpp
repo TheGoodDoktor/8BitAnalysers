@@ -109,11 +109,10 @@ public:
     c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
     void SetupCodeAnalysisLabels(void);
     void UpdateCodeAnalysisPages(uint8_t cpuPort);
-    bool EnumerateGames();
-    bool LoadGame(FGameInfo* pGameInfo);
+    bool LoadGame(const FGameInfo* pGameInfo);
     void ResetCodeAnalysis(void);
-    bool SaveCodeAnalysis(FGameInfo* pGameInfo);
-    bool LoadCodeAnalysis(FGameInfo* pGameInfo);
+    bool SaveCodeAnalysis(const FGameInfo* pGameInfo);
+    bool LoadCodeAnalysis(const FGameInfo* pGameInfo);
 
     // Emulator Event Handlers
     void    OnBoot(void);
@@ -126,7 +125,8 @@ private:
     ui_c64_t    C64UI;
     double      ExecTime;
 
-    FGameInfo*                  CurrentGame = nullptr;
+    FC64GamesList       GamesList;
+    const FGameInfo*    CurrentGame = nullptr;
 
     FC64Display         Display;
  
@@ -364,7 +364,7 @@ bool FC64Emulator::Init()
     GraphicsViewer.Init(&CodeAnalysis,&C64Emu);
     InitialiseCodeAnalysis(CodeAnalysis, this);
 
-    EnumerateGames();
+    GamesList.EnumerateGames();
 
     return true;
 }
@@ -450,30 +450,11 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     CodeAnalysis.bCodeAnalysisDataDirty = true;
 }
 
-
-bool FC64Emulator::EnumerateGames(void)
-{
-    FDirFileList listing;
-
-    GamesList.clear();
-    if (EnumerateDirectory("./Games", listing) == false)
-        return false;
-
-    for (const auto& file : listing)
-    {
-        const std::string& fn = file.FileName;
-        if ((fn.substr(fn.find_last_of(".") + 1) == "prg") || (fn.substr(fn.find_last_of(".") + 1) == "PRG"))
-        {
-            GamesList.push_back(fn);
-        }
-    }
-    return true;
-}
-
-bool FC64Emulator::LoadGame(FGameInfo* pGameInfo)
+bool FC64Emulator::LoadGame(const FGameInfo* pGameInfo)
 {
     size_t fileSize;
-    void* pGameData = LoadBinaryFile(pGameInfo->PRGFile.c_str(), fileSize);
+    const std::string fileName = std::string("Games/") + pGameInfo->PRGFile;
+    void* pGameData = LoadBinaryFile(fileName.c_str(), fileSize);
     if (pGameData)
     {
         c64_quickload(&C64Emu, (uint8_t*)pGameData, fileSize);
@@ -517,7 +498,7 @@ void FC64Emulator::ResetCodeAnalysis(void)
 
 }
 
-bool FC64Emulator::SaveCodeAnalysis(FGameInfo* pGameInfo)
+bool FC64Emulator::SaveCodeAnalysis(const FGameInfo* pGameInfo)
 {
     FMemoryBuffer saveBuffer;
     saveBuffer.Init();
@@ -544,7 +525,7 @@ bool FC64Emulator::SaveCodeAnalysis(FGameInfo* pGameInfo)
     return saveBuffer.SaveToFile(fileName);
 }
 
-bool FC64Emulator::LoadCodeAnalysis(FGameInfo *pGameInfo)
+bool FC64Emulator::LoadCodeAnalysis(const FGameInfo *pGameInfo)
 {
     char fileName[128];
     sprintf_s(fileName, "AnalysisData/%s.bin",pGameInfo->Name.c_str());
@@ -618,32 +599,7 @@ void FC64Emulator::Tick()
             ImGui::Text("CharROM ");
         }
 
-        if (ImGui::Button("Load"))
-        {
-            LoadGame(&g_TestGame);
-            
-            /*
-            FILE* fp = nullptr;
-            //fopen_s(&fp, "Games/Paradroid.prg", "rb");
-
-            fopen_s(&fp, "Games/Cybernoid II.prg", "rb");
-            if (fp != nullptr)
-            {
-                uint8_t* gameData = nullptr;
-                size_t gameDataSize = 0;
-                fseek(fp, 0, SEEK_END);
-                gameDataSize = ftell(fp);
-                fseek(fp, 0, SEEK_SET);
-                gameData = (uint8_t*)malloc(gameDataSize);
-                fread(gameData, 1, gameDataSize, fp);
-                c64_quickload(&C64Emu, gameData, gameDataSize);
-                free(gameData);
-                fclose(fp);
-
-                LoadCodeAnalysis("AnalysisData/TestData.bin");
-
-            }*/
-        }
+        
 
         Display.DrawUI();
 
@@ -672,6 +628,17 @@ void FC64Emulator::Tick()
     if (ImGui::Begin("Graphics Viewer"))
     {
         GraphicsViewer.DrawUI();
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Games List"))
+    {
+        GamesList.DrawGameSelect();
+        if (GamesList.GetSelectedGame() != -1 && ImGui::Button("Load"))
+        {
+            LoadGame(&GamesList.GetGameInfo(GamesList.GetSelectedGame()));
+
+        }
     }
     ImGui::End();
 

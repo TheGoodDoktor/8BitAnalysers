@@ -1,11 +1,13 @@
 #include "C64GamesList.h"
 
 #include <Util/FileUtil.h>
+#include <imgui.h>
 
 bool FC64GamesList::EnumerateGames()
 {
     FDirFileList listing;
-
+    
+    SelectedGame = -1;
     GamesList.clear();
     if (EnumerateDirectory("./Games", listing) == false)
         return false;
@@ -28,6 +30,13 @@ bool FC64GamesList::EnumerateGames()
 
 int		FC64GamesList::DrawGameSelect()
 {
-
+    for (int gameNo = 0; gameNo < GamesList.size(); gameNo++)
+    {
+        if (ImGui::Selectable(GamesList[gameNo].Name.c_str(),SelectedGame == gameNo))
+        {
+            SelectedGame = gameNo;
+            return SelectedGame;
+        }
+    }
     return -1;
 }

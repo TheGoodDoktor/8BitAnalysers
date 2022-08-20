@@ -206,7 +206,7 @@ void FC64Display::DrawUI()
         DrawAddressLabel(*CodeAnalysis, lastCharWriter);
 
         const uint16_t lastColourRamWriter = CodeAnalysis->GetLastWriterForAddress(SelectColourRamAddr);
-        ImGui::Text("Colour RAM Address: $X, Last Writer:", SelectColourRamAddr);
+        ImGui::Text("Colour RAM Address: $%X, Last Writer:", SelectColourRamAddr);
         DrawAddressLabel(*CodeAnalysis, lastColourRamWriter);
     }
 }
