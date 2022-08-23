@@ -9,7 +9,35 @@
 #include "Z80/CodeAnalyserZ80.h"
 #include "6502/CodeAnalyser6502.h"
 
+bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
+{
+	auto labelIt = LabelUsage.find(labelName);
+	if (labelIt == LabelUsage.end())
+	{
+		LabelUsage[labelName] = 0;
+		return false;
+	}
 
+	char postFix[32];
+	sprintf_s(postFix, "_%d", ++LabelUsage[labelName]);
+	labelName += std::string(postFix);
+
+	return true;
+}
+
+bool FCodeAnalysisState::RemoveLabelName(const std::string& labelName)
+{
+	auto labelIt = LabelUsage.find(labelName);
+	assert(labelIt != LabelUsage.end());	// shouldn't happen
+
+	if (labelIt->second == 0)	// only a single use so we can remove from the map
+	{
+		LabelUsage.erase(labelIt);
+		return true;
+	}
+
+	return false;
+}
 
 
 bool CheckPointerIndirectionInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
@@ -406,6 +434,8 @@ void RegisterCodeAnalysisPage(FCodeAnalysisState& state, FCodeAnalysisPage& page
 
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface)
 {
+	state.ResetLabelNames();
+
 	for (int i = 0; i < (1 << 16); i++)	// loop across address range
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(i);
@@ -607,7 +637,9 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText)
 {
+	state.RemoveLabelName(pLabel->Name);
 	pLabel->Name = pText;
+	state.EnsureUniqueLabelName(pLabel->Name);
 }
 
 void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText)

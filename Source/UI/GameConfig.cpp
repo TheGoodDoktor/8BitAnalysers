@@ -175,6 +175,8 @@ void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo)
 {
 	int recordCount = 0;
 
+	state.ResetLabelNames();
+
 	fread(&recordCount, sizeof(int), 1, fp);
 
 	for (int i = 0; i < recordCount; i++)

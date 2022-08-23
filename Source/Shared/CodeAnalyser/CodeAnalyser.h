@@ -62,6 +62,7 @@ enum class Key
 
 
 // code analysis information
+// TODO: make this a class
 struct FCodeAnalysisState
 {
 	ICPUInterface*			CPUInterface = nullptr;
@@ -93,16 +94,14 @@ struct FCodeAnalysisState
 		SetCodeAnalysisWritePage(pageNo, pWritePage);
 	}
 
-
-	// TODO: replace below with above
+	void	ResetLabelNames() { LabelUsage.clear(); }
+	bool	EnsureUniqueLabelName(std::string& lableName);
+	bool	RemoveLabelName(const std::string& labelName);	// for changing label names
 private:
 	std::vector<FCodeAnalysisPage*>	RegisteredPages;
 	std::vector<std::string>	PageNames;
 	int32_t		NextPageId = 0;
-	//FLabelInfo*				Labels[kAddressSize];
-	//FCodeInfo*				CodeInfo[kAddressSize];
-	//FDataInfo*				DataInfo[kAddressSize];
-	//uint16_t				LastWriter[kAddressSize];
+	std::map<std::string, int>	LabelUsage;
 public:
 	bool					bCodeAnalysisDataDirty = false;
 
@@ -155,7 +154,12 @@ public:
 
 	const FLabelInfo* GetLabelForAddress(uint16_t addr) const { return GetReadPage(addr)->Labels[addr & kPageMask]; }
 	FLabelInfo* GetLabelForAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
-	void SetLabelForAddress(uint16_t addr, FLabelInfo* pLabel) { GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; }
+	void SetLabelForAddress(uint16_t addr, FLabelInfo* pLabel) 
+	{
+		if(pLabel != nullptr)	// ensure no name clashes
+			EnsureUniqueLabelName(pLabel->Name);
+		GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; 
+	}
 
 	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
 	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
