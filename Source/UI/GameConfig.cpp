@@ -247,7 +247,7 @@ void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo)
 
 	for (int i = 0; i < recordCount; i++)
 	{
-		FCodeInfo *pCodeInfo = new FCodeInfo;
+		FCodeInfo *pCodeInfo = FCodeInfo::Allocate();
 
 		if(versionNo >= 4)
 			fread(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
@@ -258,7 +258,8 @@ void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo)
 		fread(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
 		ReadStringFromFile(pCodeInfo->Text, fp);
 		ReadStringFromFile(pCodeInfo->Comment, fp);
-		state.SetCodeInfoForAddress(pCodeInfo->Address, pCodeInfo);
+		for(int codeByte = 0;codeByte < pCodeInfo->ByteSize;codeByte++)	// set for whole instruction address range
+			state.SetCodeInfoForAddress(pCodeInfo->Address + codeByte, pCodeInfo);
 	}
 }
 
@@ -398,25 +399,12 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 
 	// loop across address range
 	// clear what we're replacing
-	for (int i = addrStart; i <= addrEnd; i++)	
+	/*/for (int i = addrStart; i <= addrEnd; i++)
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(i);
 		delete pLabel;
 		state.SetLabelForAddress(i, nullptr);
-
-		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
-		if (pCodeInfo != nullptr)
-		{
-			const int codeSize = pCodeInfo->ByteSize;
-			for(int off=0;off< codeSize;off++)
-				state.SetCodeInfoForAddress(i+off, nullptr);
-			delete pCodeInfo;
-		}
-
-		//FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
-		//delete pDataInfo;
-		//state.SetReadDataInfoForAddress(i, nullptr);
-	}
+	}*/
 
 	if (versionNo >= 4)
 	{

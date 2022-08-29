@@ -5,6 +5,23 @@
 #include <cassert>
 
 //#include "json.hpp"
+std::vector<FCodeInfo*>	FCodeInfo::AllocatedList;
+
+FCodeInfo* FCodeInfo::Allocate()
+{
+	FCodeInfo* pCodeInfo = new FCodeInfo;
+	AllocatedList.push_back(pCodeInfo);
+	return pCodeInfo;
+}
+
+void FCodeInfo::FreeAll()
+{
+	for (auto it : AllocatedList)
+		delete it;
+
+	AllocatedList.clear();
+}
+
 
 void FCodeAnalysisPage::Initialise(uint16_t address)
 {
@@ -40,7 +57,7 @@ void FCodeAnalysisPage::Reset(void)
 			FCodeInfo* pCodeInfo = CodeInfo[addr];
 			for(int i=0;i<pCodeInfo->ByteSize;i++)
 				CodeInfo[addr + i] = nullptr;
-			delete pCodeInfo;
+			//delete pCodeInfo;
 		}
 		
 		/*if (DataInfo[addr] != nullptr)
@@ -196,7 +213,7 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 		if (pageAddr == 0xffff)
 			break;
 
-		FCodeInfo* pNewCodeInfo = new FCodeInfo;
+		FCodeInfo* pNewCodeInfo = FCodeInfo::Allocate();
 		ReadItemFromBuffer(*pNewCodeInfo, buffer);
 		pNewCodeInfo->Address = BaseAddress + pageAddr;
 		buffer.Read(pNewCodeInfo->JumpAddress);

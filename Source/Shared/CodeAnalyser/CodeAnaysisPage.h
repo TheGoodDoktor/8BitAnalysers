@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <vector>
 
 class FMemoryBuffer;
 
@@ -43,10 +44,8 @@ struct FLabelInfo : FItem
 
 struct FCodeInfo : FItem
 {
-	FCodeInfo() :FItem()
-	{
-		Type = ItemType::Code;
-	}
+	static FCodeInfo* Allocate();
+	static void FreeAll();
 
 	std::string		Text;				// Disassembly text
 	uint16_t		JumpAddress = 0;	// optional jump address
@@ -61,6 +60,15 @@ struct FCodeInfo : FItem
 		};
 		uint32_t	Flags = 0;
 	};
+private:
+	FCodeInfo() :FItem()
+	{
+		Type = ItemType::Code;
+	}
+
+	~FCodeInfo() = default;
+
+	static std::vector<FCodeInfo*>	AllocatedList;
 };
 
 enum class DataType

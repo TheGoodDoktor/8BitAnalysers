@@ -191,7 +191,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo == nullptr)
 	{
-		pCodeInfo = new FCodeInfo;
+		pCodeInfo = FCodeInfo::Allocate();
 		state.SetCodeInfoForAddress(pc,pCodeInfo);
 	}
 
@@ -442,14 +442,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 		delete pLabel;
 		state.SetLabelForAddress(i, nullptr);
 
-		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
-		if (pCodeInfo != nullptr)
-		{
-			const int codeSize = pCodeInfo->ByteSize;
-			for (int off = 0; off < codeSize; off++)
-				state.SetCodeInfoForAddress(i + off, nullptr);
-			delete pCodeInfo;
-		}
+		state.SetCodeInfoForAddress(i, nullptr);
 
 		// set up data entry for address
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
@@ -457,6 +450,8 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 		pDataInfo->ByteSize = 1;
 		pDataInfo->DataType = DataType::Byte;
 	}
+
+	FCodeInfo::FreeAll();
 
 	state.CursorItemIndex = -1;
 	state.pCursorItem = nullptr;
