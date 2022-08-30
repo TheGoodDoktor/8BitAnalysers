@@ -307,9 +307,14 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 	}
 }
 
-void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc)
+void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc)
 {
 	AnalyseAtPC(state, pc);
+
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		RegisterCodeExecutedZ80(state, pc, nextpc);
+	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+		RegisterCodeExecuted6502(state, pc, nextpc);
 }
 
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)

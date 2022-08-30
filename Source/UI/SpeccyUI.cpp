@@ -29,11 +29,11 @@ public:
 		CPUType = ECPUType::Z80;
 	}
 
-	uint8_t		ReadByte(uint16_t address) override
+	uint8_t		ReadByte(uint16_t address) const override
 	{
 		return ReadSpeccyByte(pSpeccy, address);
 	}
-	uint16_t		ReadWord(uint16_t address) override
+	uint16_t		ReadWord(uint16_t address) const override
 	{
 		return ReadSpeccyByte(pSpeccy, address) | (ReadSpeccyByte(pSpeccy, address + 1) << 8);
 	}
@@ -149,7 +149,7 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 
 	pc = prevPC;	// set PC to pc of instruction just executed
 
-	RegisterCodeExecuted(state, pc);
+	RegisterCodeExecuted(state, pc, nextpc);
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
 

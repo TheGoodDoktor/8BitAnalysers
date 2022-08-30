@@ -26,8 +26,8 @@ typedef void (*FDasmOutput)(char c, void* user_data);
 class ICPUInterface
 {
 public:
-	virtual uint8_t		ReadByte(uint16_t address) = 0;
-	virtual uint16_t	ReadWord(uint16_t address) = 0;
+	virtual uint8_t		ReadByte(uint16_t address) const = 0;
+	virtual uint16_t	ReadWord(uint16_t address) const = 0;
 	virtual uint16_t	GetPC(void) = 0;
 
 	// commands
@@ -102,6 +102,7 @@ private:
 	std::vector<std::string>	PageNames;
 	int32_t		NextPageId = 0;
 	std::map<std::string, int>	LabelUsage;
+
 public:
 	bool					bCodeAnalysisDataDirty = false;
 
@@ -117,13 +118,13 @@ public:
 	int						HighlightAddress = -1;	// address to highlight
 	bool					GoToLabel = false;
 	std::vector<uint16_t>	AddressStack;
+	std::vector<FCPUFunctionCall>	CallStack;
 
 	int						KeyConfig[(int)Key::Count];
 
 	std::vector< class FCommand *>	CommandStack;
 
 	// Access functions for code analysis
-#if USE_PAGING
 	static const int kPageShift = 10;
 	static const int kPageMask = 1023;
 
@@ -167,34 +168,13 @@ public:
 
 	const FDataInfo* GetReadDataInfoForAddress(uint16_t addr) const { return &GetReadPage(addr)->DataInfo[addr & kPageMask]; }
 	FDataInfo* GetReadDataInfoForAddress(uint16_t addr) { return &GetReadPage(addr)->DataInfo[addr & kPageMask]; }
-	//void SetReadDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { GetReadPage(addr)->DataInfo[addr & kPageMask] = pDataInfo; }
 
 	const FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) const { return  &GetWritePage(addr)->DataInfo[addr & kPageMask]; }
 	FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) { return &GetWritePage(addr)->DataInfo[addr & kPageMask]; }
-	//void SetWriteDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { GetWritePage(addr)->DataInfo[addr & kPageMask] = pDataInfo; }
 
 	uint16_t GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->LastWriter[addr & kPageMask]; }
 	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { GetWritePage(addr)->LastWriter[addr & kPageMask] = lastWriter; }
-#else
-	const FLabelInfo* GetLabelForAddress(uint16_t addr) const { return Labels[addr]; }
-	FLabelInfo* GetLabelForAddress(uint16_t addr) { return Labels[addr]; }
-	void SetLabelForAddress(uint16_t addr, FLabelInfo* pLabel) { Labels[addr] = pLabel; }
-	
-	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return CodeInfo[addr]; }
-	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return CodeInfo[addr]; }
-	void SetCodeInfoForAddress(uint16_t addr, FCodeInfo* pCodeInfo) { CodeInfo[addr] = pCodeInfo; }
-	
-	const FDataInfo* GetReadDataInfoForAddress(uint16_t addr) const { return DataInfo[addr]; }
-	FDataInfo* GetReadDataInfoForAddress(uint16_t addr) { return DataInfo[addr]; }
-	void SetReadDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { DataInfo[addr] = pDataInfo; }
 
-	const FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) const { return DataInfo[addr]; }
-	FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) { return DataInfo[addr]; }
-	void SetWriteDataInfoForAddress(uint16_t addr, FDataInfo* pDataInfo) { DataInfo[addr] = pDataInfo; }
-
-	uint16_t GetLastWriterForAddress(uint16_t addr) const { return LastWriter[addr]; }
-	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { LastWriter[addr] = lastWriter; }
-#endif
 };
 
 // Commands
@@ -210,7 +190,7 @@ public:
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
-void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc);
+void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
 void ReAnalyseCode(FCodeAnalysisState &state);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, bool bWrite);

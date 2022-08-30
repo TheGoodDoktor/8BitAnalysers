@@ -22,6 +22,12 @@ enum class ItemType
 	Data,
 };
 
+struct FCPUFunctionCall
+{
+	uint16_t	FunctionAddr = 0;
+	uint16_t	ReturnAddr = 0;
+};
+
 struct FItem
 {
 	ItemType		Type;

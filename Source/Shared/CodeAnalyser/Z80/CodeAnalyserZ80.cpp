@@ -1,5 +1,6 @@
 #include "CodeAnalyserZ80.h"
 #include "../CodeAnalyser.h"
+#include <cassert>
 
 
 bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
@@ -220,5 +221,50 @@ bool CheckStopInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
 	}
 }
 
+void RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t nextpc)
+{
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+	const uint8_t opcode = pCPUInterface->ReadByte(pc);
 
+	switch (opcode)
+	{
+		// Call functions
+		/* CALL nnnn */
+		case 0xCD:
+			/* CALL cc,nnnn */
+		case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+		case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+			if (nextpc != pc + 3)	// call instructions are 3 bytes
+			{
+				FCPUFunctionCall callInfo;
+				callInfo.FunctionAddr = nextpc;
+				callInfo.ReturnAddr = pc + 3;
+				state.CallStack.push_back(callInfo);
+			}
+			break;
+
+
+			// ret
+		case 0xC8:
+		case 0xC9:
+		case 0xD8:
+		case 0xE8:
+		case 0xF8:
+			if (nextpc != pc + 1)	// ret instructions are 1 byte
+			{
+				if (state.CallStack.empty() == false)
+				{
+					FCPUFunctionCall& callInfo = state.CallStack.back();
+					//assert(callInfo.ReturnAddr == nextpc);
+					if (callInfo.ReturnAddr != nextpc)
+					{
+						//fprintf(stderr, "PC: $%04x, NextPC $%04x, Return Address $%04x\n", pc, nextpc, callInfo.ReturnAddr);
+					}
+					state.CallStack.pop_back();
+
+				}
+			}
+			break;
+	}
+}
 
