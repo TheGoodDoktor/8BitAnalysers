@@ -93,7 +93,7 @@ struct FSpeccyUI
 	// trace
 	int					ShowFrame = 0;
 	int					CurrentTraceFrame = 0;
-	static const int	kNoFramesInTrace = 30;
+	static const int	kNoFramesInTrace = 300;
 	FSpeccyFrameTrace	FrameTrace[kNoFramesInTrace];
 };
 

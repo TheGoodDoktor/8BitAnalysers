@@ -880,8 +880,39 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 
 	if (ImGui::Begin("Frame Trace"))
 	{
-		ImGui::SliderInt("Frame", &pUI->ShowFrame,0,FSpeccyUI::kNoFramesInTrace - 1);
-		ImGui::Image(pUI->FrameTrace[pUI->ShowFrame].Texture, ImVec2(320, 256));
+		ImGui::SliderInt("Backwards Offset", &pUI->ShowFrame,0,FSpeccyUI::kNoFramesInTrace - 1);
+		int frameNo = pUI->CurrentTraceFrame - pUI->ShowFrame - 1;
+		if(frameNo < 0) 
+			frameNo += FSpeccyUI::kNoFramesInTrace;
+		const FSpeccyFrameTrace& frame = pUI->FrameTrace[frameNo];
+		ImGui::Image(frame.Texture, ImVec2(320, 256));
+
+		// draw clipped list
+		const float line_height = ImGui::GetTextLineHeight();
+		ImGuiListClipper clipper((int)frame.InstructionTrace.size(), line_height);
+
+		while (clipper.Step())
+		{
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+			{
+				const uint16_t instAddr = frame.InstructionTrace[i];
+
+				/*const int index = GetItemIndexForAddress(pUI->CodeAnalysis, instAddr);
+				if (index != -1)
+				{
+					DrawCodeAnalysisItemAtIndex(pUI->CodeAnalysis, index);
+				}*/
+				//DrawCodeAddress(pUI->CodeAnalysis, instAddr);
+
+				FCodeInfo* pCodeInfo = pUI->CodeAnalysis.GetCodeInfoForAddress(instAddr);
+				if (pCodeInfo)
+				{
+					ImGui::Text("%04Xh %s", instAddr, pCodeInfo->Text.c_str());
+					ImGui::SameLine();
+					DrawAddressLabel(pUI->CodeAnalysis, instAddr);
+				}
+			}
+		}
 	}
 	ImGui::End();
 

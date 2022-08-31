@@ -8,6 +8,9 @@ struct FDataInfo;
 // UI
 void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr);
 void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr);
+int GetItemIndexForAddress(const FCodeAnalysisState& state, uint16_t addr);
+void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i);
+
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state);
 void DrawGlobals(FCodeAnalysisState &state);
