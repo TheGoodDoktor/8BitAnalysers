@@ -119,6 +119,7 @@ public:
 	bool					GoToLabel = false;
 	std::vector<uint16_t>	AddressStack;
 	std::vector<FCPUFunctionCall>	CallStack;
+	std::vector<uint16_t>	FrameTrace;
 
 	int						KeyConfig[(int)Key::Count];
 

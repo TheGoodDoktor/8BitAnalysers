@@ -311,6 +311,8 @@ void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextp
 {
 	AnalyseAtPC(state, pc);
 
+	state.FrameTrace.push_back(pc);
+
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		RegisterCodeExecutedZ80(state, pc, nextpc);
 	else if (state.CPUInterface->CPUType == ECPUType::M6502)

@@ -33,6 +33,11 @@ struct FGame
 };*/
 
 
+struct FSpeccyFrameTrace
+{
+	ImTextureID				Texture;
+	std::vector<uint16_t>	InstructionTrace;
+};
 
 
 struct FSpeccyUI
@@ -84,6 +89,12 @@ struct FSpeccyUI
 	int PCHistoryPos = 0;
 
 	bool bShowImGuiDemo = false;
+
+	// trace
+	int					ShowFrame = 0;
+	int					CurrentTraceFrame = 0;
+	static const int	kNoFramesInTrace = 30;
+	FSpeccyFrameTrace	FrameTrace[kNoFramesInTrace];
 };
 
 

@@ -18,6 +18,7 @@
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
 #include "Speccy/ROMLabels.h"
+#include <algorithm>
 
 void DrawCheatsUI(FSpeccyUI *pUI);
 
@@ -321,6 +322,12 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	SpeccyCPUIF.pSpeccy = pUI->pSpeccy;
 	InitialiseCodeAnalysis(pUI->CodeAnalysis,&SpeccyCPUIF);
 	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
+
+	// Init Frame Trace
+	for (int i = 0; i < FSpeccyUI::kNoFramesInTrace; i++)
+	{
+		pUI->FrameTrace[i].Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(pUI->pSpeccy->FrameBuffer), 320, 256);
+	}
 	
 	return pUI;
 }
@@ -751,7 +758,20 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	
 	if(pSpeccy->ExecThisFrame)
 		ui_zx_after_exec(pZXUI);
-	
+
+	const int instructionsThisFrame = (int)pUI->CodeAnalysis.FrameTrace.size();
+	static int maxInst = 0;
+	maxInst = max(maxInst, instructionsThisFrame);
+
+	// Store trace and frame image
+	if (pSpeccy->ExecThisFrame)
+	{
+		ImGui_ImplDX11_UpdateTextureRGBA(pUI->FrameTrace[pUI->CurrentTraceFrame].Texture, pSpeccy->FrameBuffer);
+		pUI->FrameTrace[pUI->CurrentTraceFrame].InstructionTrace = pUI->CodeAnalysis.FrameTrace;
+		if (++pUI->CurrentTraceFrame == FSpeccyUI::kNoFramesInTrace)
+			pUI->CurrentTraceFrame = 0;
+		pUI->CodeAnalysis.FrameTrace.clear();
+	}
 	DrawMainMenu(pUI, timeMS);
 	if (pZXUI->memmap.open)
 	{
@@ -776,11 +796,12 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	//DasmDraw(&pUI->FunctionDasm);
 
 
-	// show spectrum window
+	// show spectrum window - TODO: Make function
 	if (ImGui::Begin("Spectrum View"))
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
 		ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
 		if (ImGui::IsItemHovered())
 		{
@@ -854,6 +875,13 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 		{
 			ReadSpeccyKeys(pUI->pSpeccy);
 		}
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Frame Trace"))
+	{
+		ImGui::SliderInt("Frame", &pUI->ShowFrame,0,FSpeccyUI::kNoFramesInTrace - 1);
+		ImGui::Image(pUI->FrameTrace[pUI->ShowFrame].Texture, ImVec2(320, 256));
 	}
 	ImGui::End();
 
