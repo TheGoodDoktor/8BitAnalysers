@@ -504,6 +504,18 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 				}
 			}
 
+			if (ImGui::MenuItem("Export SkoolKit Control File"))
+			{
+				if (pUI->pActiveGame != nullptr)
+				{
+					EnsureDirectoryExists("OutputASM/");
+					std::string gameName = pUI->pActiveGame->pConfig->Name;
+					std::string outCtlFname = "OutputASM/" + gameName + ".ctl";
+
+					OutputSkoolKitControlFile(pUI->CodeAnalysis, outCtlFname.c_str(), gameName.c_str(), 0x4000, 0xffff);
+				}
+			}
+
 			// TODO: export data for skookit
 			if (ImGui::MenuItem("Export Region Info File"))
 			{
