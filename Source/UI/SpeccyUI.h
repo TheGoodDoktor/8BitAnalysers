@@ -2,12 +2,14 @@
 
 #include "Speccy/Speccy.h"
 #include <map>
-#include "SpriteViewer.h"
+#include "Viewers/SpriteViewer.h"
 #include "MemoryHandlers.h"
 #include "Disassembler.h"
 #include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
-#include "GraphicsViewer.h"
+#include "Viewers/GraphicsViewer.h"
+#include "Viewers/SpectrumViewer.h"
+#include "Viewers/FrameTraceViewer.h"
 #include "IOAnalysis.h"
 
 struct FSpeccyUI;
@@ -33,13 +35,9 @@ struct FGame
 };*/
 
 
-struct FSpeccyFrameTrace
-{
-	ImTextureID				Texture;
-	std::vector<uint16_t>	InstructionTrace;
-};
 
 
+// TODO: Mae this a speccy emulator class
 struct FSpeccyUI
 {
 	FSpeccyUI(){}
@@ -53,6 +51,8 @@ struct FSpeccyUI
 
 	FGame *				pActiveGame = nullptr;
 
+	FSpectrumViewer			SpectrumViewer;
+	FFrameTraceViewer		FrameTraceViewer;
 	FGraphicsViewerState	GraphicsViewer;
 	FCodeAnalysisState		CodeAnalysis;
 	FIOAnalysisState		IOAnalysis;
@@ -93,10 +93,10 @@ struct FSpeccyUI
 	bool bShowImGuiDemo = false;
 
 	// trace
-	int					ShowFrame = 0;
-	int					CurrentTraceFrame = 0;
-	static const int	kNoFramesInTrace = 300;
-	FSpeccyFrameTrace	FrameTrace[kNoFramesInTrace];
+	//int					ShowFrame = 0;
+	//int					CurrentTraceFrame = 0;
+	//static const int	kNoFramesInTrace = 300;
+	//FSpeccyFrameTrace	FrameTrace[kNoFramesInTrace];
 };
 
 

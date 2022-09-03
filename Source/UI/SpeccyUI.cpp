@@ -7,7 +7,8 @@
 #include "GameViewers/GameViewer.h"
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
-#include "GraphicsViewer.h"
+#include "Viewers/SpectrumViewer.h"
+#include "Viewers/GraphicsViewer.h"
 #include "Util/FileUtil.h"
 
 #include "ui/ui_dbg.h"
@@ -215,6 +216,7 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 
 FSpeccyUI*g_pSpeccyUI = nullptr;
 
+// TODO: Member function
 FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 {
 	FSpeccyUI *pUI = new FSpeccyUI;
@@ -279,6 +281,9 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	pUI->IOAnalysis.pCodeAnalysis = &pUI->CodeAnalysis;
 	InitIOAnalysis(pUI->IOAnalysis);
 	
+	pUI->SpectrumViewer.Init(pUI);
+	pUI->FrameTraceViewer.Init(pUI);
+
 	// register Viewers
 	RegisterStarquakeViewer(pUI);
 	RegisterGames(pUI);
@@ -323,11 +328,7 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	InitialiseCodeAnalysis(pUI->CodeAnalysis,&SpeccyCPUIF);
 	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
 
-	// Init Frame Trace
-	for (int i = 0; i < FSpeccyUI::kNoFramesInTrace; i++)
-	{
-		pUI->FrameTrace[i].Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(pUI->pSpeccy->FrameBuffer), 320, 256);
-	}
+	
 	
 	return pUI;
 }
@@ -739,28 +740,6 @@ void DrawMemoryTools(FSpeccyUI* pUI)
 }
 
 
-void ReadSpeccyKeys(FSpeccy *pSpeccy)
-{
-	ImGuiIO &io = ImGui::GetIO();
-	for(int i=0;i<10;i++)
-	{
-		if (io.KeysDown[0x30+i] == 1)
-		{
-			zx_key_down(&pSpeccy->CurrentState, '0' + i);
-			zx_key_up(&pSpeccy->CurrentState, '0' + i);
-		}
-	}
-
-	for (int i = 0; i < 26; i++)
-	{
-		if (io.KeysDown[0x41 + i] == 1)
-		{
-			zx_key_down(&pSpeccy->CurrentState, 'a' + i);
-			zx_key_up(&pSpeccy->CurrentState, 'a' + i);
-		}
-	}
-}
-
 
 void DrawSpeccyUI(FSpeccyUI* pUI)
 {
@@ -778,10 +757,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	// Store trace and frame image
 	if (pSpeccy->ExecThisFrame)
 	{
-		ImGui_ImplDX11_UpdateTextureRGBA(pUI->FrameTrace[pUI->CurrentTraceFrame].Texture, pSpeccy->FrameBuffer);
-		pUI->FrameTrace[pUI->CurrentTraceFrame].InstructionTrace = pUI->CodeAnalysis.FrameTrace;
-		if (++pUI->CurrentTraceFrame == FSpeccyUI::kNoFramesInTrace)
-			pUI->CurrentTraceFrame = 0;
+		pUI->FrameTraceViewer.CaptureFrame();
 		pUI->CodeAnalysis.FrameTrace.clear();
 	}
 	DrawMainMenu(pUI, timeMS);
@@ -811,143 +787,14 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	// show spectrum window - TODO: Make function
 	if (ImGui::Begin("Spectrum View"))
 	{
-		ImGuiIO& io = ImGui::GetIO();
-		ImVec2 pos = ImGui::GetCursorScreenPos();
-		//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
-		ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
-		if (ImGui::IsItemHovered())
-		{
-			const int borderOffsetX = (320 - 256) / 2;
-			const int borderOffsetY = (256 - 192) / 2;
-			const int xp = min(max((int)(io.MousePos.x - pos.x - borderOffsetX),0),255);
-			const int yp = min(max((int)(io.MousePos.y - pos.y - borderOffsetY), 0), 191);
-			
-			const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
-			const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
-
-			if(scrPixAddress!=0)
-			{
-				ImDrawList* dl = ImGui::GetWindowDrawList();
-				const int rx = static_cast<int>(pos.x) + borderOffsetX + (xp & ~0x7);
-				const int ry = static_cast<int>(pos.y) + borderOffsetY + (yp & ~0x7);
-				dl->AddRect(ImVec2(rx,ry),ImVec2(rx+8,ry+8),0xffffffff);
-				ImGui::BeginTooltip();
-				ImGui::Text("Screen Pos (%d,%d)", xp, yp);
-				ImGui::Text("Pixel: %04Xh, Attr: %04Xh", scrPixAddress, scrAttrAddress);
-
-				const uint16_t lastPixWriter = pUI->CodeAnalysis.GetLastWriterForAddress(scrPixAddress);
-				const uint16_t lastAttrWriter = pUI->CodeAnalysis.GetLastWriterForAddress(scrAttrAddress);
-				ImGui::Text("Pixel Writer: ");
-				ImGui::SameLine();
-				DrawCodeAddress(pUI->CodeAnalysis, lastPixWriter);
-				ImGui::Text("Attribute Writer: ");
-				ImGui::SameLine();
-				DrawCodeAddress(pUI->CodeAnalysis, lastAttrWriter);
-				ImGui::EndTooltip();
-				//ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
-
-				if(ImGui::IsMouseClicked(0))
-				{
-					pUI->bScreenCharSelected = true;
-					pUI->SelectedCharX = rx;
-					pUI->SelectedCharY = ry;
-					pUI->SelectPixAddr = scrPixAddress;
-					pUI->SelectAttrAddr = scrAttrAddress;
-
-					// store pixel data for selected character
-					uint8_t charData[8];
-					for (int charLine = 0; charLine < 8; charLine++)
-						charData[charLine] = ReadSpeccyByte(pSpeccy,GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
-					pUI->CharDataFound = pUI->CodeAnalysis.FindMemoryPattern(charData, 8, pUI->FoundCharDataAddress);
-				}
-
-				if (ImGui::IsMouseClicked(1))
-					pUI->bScreenCharSelected = false;
-
-				if (ImGui::IsMouseDoubleClicked(0))
-					CodeAnalyserGoToAddress(pUI->CodeAnalysis, lastPixWriter);
-				if (ImGui::IsMouseDoubleClicked(1))
-					CodeAnalyserGoToAddress(pUI->CodeAnalysis, lastAttrWriter);
-			}
-			
-		}
-
-		if(pUI->bScreenCharSelected == true)
-		{
-			ImDrawList* dl = ImGui::GetWindowDrawList();
-			const ImU32 col = 0xffffffff;	// TODO: pulse
-			dl->AddRect(ImVec2(pUI->SelectedCharX, pUI->SelectedCharY), ImVec2(pUI->SelectedCharX + 8, pUI->SelectedCharY + 8), col);
-
-			ImGui::Text("Pixel Char Address:");
-			ImGui::SameLine();
-			DrawAddressLabel(pUI->CodeAnalysis, pUI->SelectPixAddr);
-			ImGui::Text("Attribute Address:");
-			ImGui::SameLine();
-			DrawAddressLabel(pUI->CodeAnalysis, pUI->SelectAttrAddr);
-
-			if (pUI->CharDataFound)
-			{
-				ImGui::Text("Found at: ");
-				DrawAddressLabel(pUI->CodeAnalysis, pUI->FoundCharDataAddress);
-				ImGui::SameLine();
-				if(ImGui::Button("Show in GFX View"))
-					GraphicsViewerGoToAddress(pUI->FoundCharDataAddress);
-			}
-		}
-		
-		ImGui::SliderFloat("Speed Scale", &pSpeccy->ExecSpeedScale, 0.0f, 1.0f);
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		// read keys
-		if (ImGui::IsWindowFocused())
-		{
-			ReadSpeccyKeys(pUI->pSpeccy);
-		}
+		pUI->SpectrumViewer.Draw();
 	}
 	ImGui::End();
 
 	// TODO: move to separate file
 	if (ImGui::Begin("Frame Trace"))
 	{
-		if (ImGui::SliderInt("Backwards Offset", &pUI->ShowFrame, 0, FSpeccyUI::kNoFramesInTrace - 1))
-		{
-			if(pUI->ShowFrame == 0)
-				pUI->CodeAnalysis.CPUInterface->Continue();
-			else
-				pUI->CodeAnalysis.CPUInterface->Break();
-		}
-		
-		int frameNo = pUI->CurrentTraceFrame - pUI->ShowFrame - 1;
-		if(frameNo < 0) 
-			frameNo += FSpeccyUI::kNoFramesInTrace;
-		const FSpeccyFrameTrace& frame = pUI->FrameTrace[frameNo];
-		ImGui::Image(frame.Texture, ImVec2(320, 256));
-
-		// draw clipped list
-		const float line_height = ImGui::GetTextLineHeight();
-		ImGuiListClipper clipper((int)frame.InstructionTrace.size(), line_height);
-
-		while (clipper.Step())
-		{
-			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-			{
-				const uint16_t instAddr = frame.InstructionTrace[i];
-
-				/*const int index = GetItemIndexForAddress(pUI->CodeAnalysis, instAddr);
-				if (index != -1)
-				{
-					DrawCodeAnalysisItemAtIndex(pUI->CodeAnalysis, index);
-				}*/
-				//DrawCodeAddress(pUI->CodeAnalysis, instAddr);
-
-				FCodeInfo* pCodeInfo = pUI->CodeAnalysis.GetCodeInfoForAddress(instAddr);
-				if (pCodeInfo)
-				{
-					ImGui::Text("%04Xh %s", instAddr, pCodeInfo->Text.c_str());
-					ImGui::SameLine();
-					DrawAddressLabel(pUI->CodeAnalysis, instAddr);
-				}
-			}
-		}
+		pUI->FrameTraceViewer.Draw();
 	}
 	ImGui::End();
 

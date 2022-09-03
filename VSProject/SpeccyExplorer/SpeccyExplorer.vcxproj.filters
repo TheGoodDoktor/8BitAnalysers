@@ -64,6 +64,9 @@
     <Filter Include="Source Files\Shared\Util\Win32">
       <UniqueIdentifier>{862f25a7-13bd-4241-ad1d-5ce10ecff67f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\UI\Viewers">
+      <UniqueIdentifier>{c9ababe9-8915-42a6-98a4-02b0a749a660}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\main.cpp">
@@ -92,9 +95,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\GameViewers\StarquakeViewer.cpp">
       <Filter>Source Files\UI\GameViewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\SpriteViewer.cpp">
-      <Filter>Source Files\UI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\GameViewers\GameViewer.cpp">
       <Filter>Source Files\UI\GameViewers</Filter>
@@ -165,8 +165,17 @@
     <ClCompile Include="..\..\Source\Shared\Util\GraphicsView.cpp">
       <Filter>Source Files\Shared\Util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\GraphicsViewer.cpp">
-      <Filter>Source Files\UI</Filter>
+    <ClCompile Include="..\..\Source\UI\Viewers\SpectrumViewer.cpp">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Viewers\SpriteViewer.cpp">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Viewers\FrameTraceViewer.cpp">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Viewers\GraphicsViewer.cpp">
+      <Filter>Source Files\UI\Viewers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -395,9 +404,6 @@
     <ClInclude Include="..\..\Source\UI\GameViewers\StarquakeViewer.h">
       <Filter>Source Files\UI\GameViewers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\SpriteViewer.h">
-      <Filter>Source Files\UI</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\UI\GameViewers\GameViewer.h">
       <Filter>Source Files\UI\GameViewers</Filter>
     </ClInclude>
@@ -464,8 +470,17 @@
     <ClInclude Include="..\..\Source\Shared\Util\GraphicsView.h">
       <Filter>Source Files\Shared\Util</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\GraphicsViewer.h">
-      <Filter>Source Files\UI</Filter>
+    <ClInclude Include="..\..\Source\UI\Viewers\GraphicsViewer.h">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Viewers\SpectrumViewer.h">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Viewers\SpriteViewer.h">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Viewers\FrameTraceViewer.h">
+      <Filter>Source Files\UI\Viewers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
