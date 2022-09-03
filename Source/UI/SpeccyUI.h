@@ -81,6 +81,8 @@ struct FSpeccyUI
 	uint16_t	SelectAttrAddr = 0;
 	int			SelectedCharX = 0;
 	int			SelectedCharY = 0;
+	bool		CharDataFound = false;
+	uint16_t	FoundCharDataAddress = 0;
 
 	uint16_t dasmCurr = 0;
 

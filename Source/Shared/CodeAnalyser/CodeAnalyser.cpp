@@ -39,6 +39,40 @@ bool FCodeAnalysisState::RemoveLabelName(const std::string& labelName)
 	return false;
 }
 
+// Search memory space for a block of data
+bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t& outAddr)
+{
+	uint16_t address = 0;
+	ICPUInterface* pCPUInterface = CPUInterface;
+	size_t dataOffset = 0;
+
+	do
+	{
+		const uint8_t byte = pCPUInterface->ReadByte(address);
+		if (byte == pData[dataOffset])
+		{
+			if (dataOffset == dataSize - 1)	// found the whole run?
+			{
+				outAddr = static_cast<uint16_t>(address - dataOffset);
+				return true;
+			}
+			else
+			{
+				dataOffset++;	// look for next byte
+			}
+		}
+		else
+		{
+			dataOffset = 0;	// reset offset and look for start of data
+		}
+
+		address++;
+	} while (address != 0);	// 16 bit address overflow
+
+	return false;
+}
+
+
 
 bool CheckPointerIndirectionInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {

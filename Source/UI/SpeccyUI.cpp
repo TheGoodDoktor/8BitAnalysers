@@ -813,7 +813,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		ImVec2 pos = ImGui::GetCursorScreenPos();
-		ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
+		//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
 		ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
 		if (ImGui::IsItemHovered())
 		{
@@ -853,6 +853,12 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 					pUI->SelectedCharY = ry;
 					pUI->SelectPixAddr = scrPixAddress;
 					pUI->SelectAttrAddr = scrAttrAddress;
+
+					// store pixel data for selected character
+					uint8_t charData[8];
+					for (int charLine = 0; charLine < 8; charLine++)
+						charData[charLine] = ReadSpeccyByte(pSpeccy,GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
+					pUI->CharDataFound = pUI->CodeAnalysis.FindMemoryPattern(charData, 8, pUI->FoundCharDataAddress);
 				}
 
 				if (ImGui::IsMouseClicked(1))
@@ -878,6 +884,15 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 			ImGui::Text("Attribute Address:");
 			ImGui::SameLine();
 			DrawAddressLabel(pUI->CodeAnalysis, pUI->SelectAttrAddr);
+
+			if (pUI->CharDataFound)
+			{
+				ImGui::Text("Found at: ");
+				DrawAddressLabel(pUI->CodeAnalysis, pUI->FoundCharDataAddress);
+				ImGui::SameLine();
+				if(ImGui::Button("Show in GFX View"))
+					GraphicsViewerGoToAddress(pUI->FoundCharDataAddress);
+			}
 		}
 		
 		ImGui::SliderFloat("Speed Scale", &pSpeccy->ExecSpeedScale, 0.0f, 1.0f);
@@ -890,6 +905,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	}
 	ImGui::End();
 
+	// TODO: move to separate file
 	if (ImGui::Begin("Frame Trace"))
 	{
 		ImGui::SliderInt("Backwards Offset", &pUI->ShowFrame,0,FSpeccyUI::kNoFramesInTrace - 1);
