@@ -908,7 +908,14 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	// TODO: move to separate file
 	if (ImGui::Begin("Frame Trace"))
 	{
-		ImGui::SliderInt("Backwards Offset", &pUI->ShowFrame,0,FSpeccyUI::kNoFramesInTrace - 1);
+		if (ImGui::SliderInt("Backwards Offset", &pUI->ShowFrame, 0, FSpeccyUI::kNoFramesInTrace - 1))
+		{
+			if(pUI->ShowFrame == 0)
+				pUI->CodeAnalysis.CPUInterface->Continue();
+			else
+				pUI->CodeAnalysis.CPUInterface->Break();
+		}
+		
 		int frameNo = pUI->CurrentTraceFrame - pUI->ShowFrame - 1;
 		if(frameNo < 0) 
 			frameNo += FSpeccyUI::kNoFramesInTrace;
