@@ -7,7 +7,7 @@
 #include <string>
 
 struct FSpeccy;
-struct FSpeccyUI;
+class FSpectrumEmu;
 struct FGame;
 
 
@@ -22,6 +22,7 @@ enum class GraphicsViewMode
 };
 
 // Graphics Viewer
+// TODO: Make class
 struct FGraphicsViewerState
 {
 	uint16_t		Address = 0;
@@ -42,12 +43,10 @@ struct FGraphicsViewerState
 	// housekeeping
 	FGraphicsView*	pGraphicsView = nullptr;
 	FSpeccy*		pSpeccy = nullptr;
-	FSpeccyUI*		pUI = nullptr;
+	FSpectrumEmu*	pEmu = nullptr;
 	FGame*			pGame = nullptr;
 
 };
 
 bool InitGraphicsViewer(FGraphicsViewerState &state);
 void DrawGraphicsViewer(FGraphicsViewerState &state);
-
-void GraphicsViewerGoToAddress(uint16_t address);

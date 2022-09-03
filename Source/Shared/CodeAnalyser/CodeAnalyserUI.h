@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 
-struct FSpeccyUI;
 struct FCodeAnalysisState;
 struct FDataInfo;
 

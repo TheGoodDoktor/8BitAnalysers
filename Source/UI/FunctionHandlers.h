@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-struct FSpeccyUI;
+class FSpectrumEmu;
 
 struct FFunctionInfo
 {
@@ -19,8 +19,8 @@ struct FFunctionInfo
 };
 
 
-int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpeccyUI *pUI);
+int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpectrumEmu* pEmu);
 
-void DrawFunctionInfo(FSpeccyUI* pUI);
+void DrawFunctionInfo(FSpectrumEmu* pEmu);
 
 //bool GetROMLabelName(uint16_t callAddr, std::string &labelName);

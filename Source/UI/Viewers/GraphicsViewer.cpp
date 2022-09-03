@@ -135,7 +135,7 @@ void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, 
 		for(int xChar =0;xChar<columnWidth;xChar++)
 		{
 			const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, memAddr);
-			const uint8_t col = GetHeatmapColourForMemoryAddress(state.pUI->CodeAnalysis, memAddr, state.HeatmapThreshold);
+			const uint8_t col = GetHeatmapColourForMemoryAddress(state.pEmu->CodeAnalysis, memAddr, state.HeatmapThreshold);
 			/*
 			FDataInfo *pDataInfo = state.pUI->CodeAnalysis.DataInfo[memAddr];
 			FCodeInfo *pCodeInfo = state.pUI->CodeAnalysis.CodeInfo[memAddr];
@@ -199,13 +199,13 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		ImGui::BeginTooltip();
 		ptrAddress = GetAddressFromPositionInView(state,xp, yp);
 		if (ImGui::IsMouseDoubleClicked(0))
-			CodeAnalyserGoToAddress(GetSpeccyUI()->CodeAnalysis, ptrAddress);
+			CodeAnalyserGoToAddress(state.pEmu->CodeAnalysis, ptrAddress);
 		if (ImGui::IsMouseClicked(0))
 			state.ClickedAddress = ptrAddress;
 
 		ImGui::Text("%04Xh", ptrAddress);
 		ImGui::SameLine();
-		DrawAddressLabel(GetSpeccyUI()->CodeAnalysis, ptrAddress);
+		DrawAddressLabel(state.pEmu->CodeAnalysis, ptrAddress);
 		ImGui::EndTooltip();
 	}
 	
@@ -235,10 +235,10 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 
 	ImGui::Text("Clicked Address: %04Xh", state.ClickedAddress);
 	ImGui::SameLine();
-	DrawAddressLabel(state.pUI->CodeAnalysis, state.ClickedAddress);
+	DrawAddressLabel(state.pEmu->CodeAnalysis, state.ClickedAddress);
 	if(ImGui::CollapsingHeader("Details"))
 	{
-		DrawDataDetails(state.pUI->CodeAnalysis, state.pUI->CodeAnalysis.GetReadDataInfoForAddress(state.ClickedAddress));
+		DrawDataDetails(state.pEmu->CodeAnalysis, state.pEmu->CodeAnalysis.GetReadDataInfoForAddress(state.ClickedAddress));
 	}
 	
 	// view 1 - straight character
@@ -355,7 +355,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 			for (int x = 0; x < 256 / 8; x++)
 			{
 				const uint8_t charLine = *pSrc++;
-				const uint8_t col = GetHeatmapColourForMemoryAddress(state.pUI->CodeAnalysis, addr, state.HeatmapThreshold);
+				const uint8_t col = GetHeatmapColourForMemoryAddress(state.pEmu->CodeAnalysis, addr, state.HeatmapThreshold);
 				
 				for (int xpix = 0; xpix < 8; xpix++)
 				{
@@ -375,7 +375,3 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	ImGui::End();
 }
 
-void GraphicsViewerGoToAddress(uint16_t address)
-{
-	GetSpeccyUI()->GraphicsViewer.Address = address;
-}

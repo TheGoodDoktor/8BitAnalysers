@@ -21,94 +21,80 @@
 #include "Speccy/ROMLabels.h"
 #include <algorithm>
 
-void DrawCheatsUI(FSpeccyUI *pUI);
 
-class FSpectrumCPUInterface : public ICPUInterface
+uint8_t		FSpectrumEmu::ReadByte(uint16_t address) const
 {
-public:
-	FSpectrumCPUInterface()
+	return ReadSpeccyByte(pSpeccy, address);
+}
+uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const 
+{
+	return ReadSpeccyByte(pSpeccy, address) | (ReadSpeccyByte(pSpeccy, address + 1) << 8);
+}
+uint16_t	FSpectrumEmu::GetPC(void) 
+{
+	return z80_pc(&pSpeccy->CurrentState.cpu);
+}
+
+void	FSpectrumEmu::Break(void)
+{
+	UIZX.dbg.dbg.stopped = true;
+	UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+}
+
+void	FSpectrumEmu::Continue(void) 
+{
+	UIZX.dbg.dbg.stopped = false;
+	UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+}
+
+void FSpectrumEmu::GraphicsViewerSetAddress(uint16_t address) 
+{
+	GraphicsViewerGoToAddress(address);
+}
+
+bool	FSpectrumEmu::ExecThisFrame(void) 
+{
+	return pSpeccy->ExecThisFrame;
+}
+
+void FSpectrumEmu::InsertROMLabels(FCodeAnalysisState& state) 
+{
+	for (const auto& label : g_RomLabels)
 	{
-		CPUType = ECPUType::Z80;
+		AddLabel(state, label.Address, label.pLabelName, label.LabelType);
+
+		// run static analysis on all code labels
+		if (label.LabelType == LabelType::Code || label.LabelType == LabelType::Function)
+			RunStaticCodeAnalysis(state, label.Address);
 	}
 
-	uint8_t		ReadByte(uint16_t address) const override
+	for (const auto& label : g_SysVariables)
 	{
-		return ReadSpeccyByte(pSpeccy, address);
+		AddLabel(state, label.Address, label.pLabelName, LabelType::Data);
+		// TODO: Set up data?
 	}
-	uint16_t		ReadWord(uint16_t address) const override
-	{
-		return ReadSpeccyByte(pSpeccy, address) | (ReadSpeccyByte(pSpeccy, address + 1) << 8);
-	}
-	uint16_t	GetPC(void) override
-	{
-		return z80_pc(&pSpeccy->CurrentState.cpu);
-	}
+}
 
-	void	Break(void) override
-	{
-		FSpeccyUI* pUI = GetSpeccyUI();
-		pUI->UIZX.dbg.dbg.stopped = true;
-		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
-	}
+void FSpectrumEmu::InsertSystemLabels(FCodeAnalysisState& state) 
+{
+	// screen memory start
+	AddLabel(state, 0x4000, "ScreenPixels", LabelType::Data);
 
-	void	Continue(void) override
-	{
-		FSpeccyUI* pUI = GetSpeccyUI();
-		pUI->UIZX.dbg.dbg.stopped = false;
-		pUI->UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
-	}
+	FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(0x4000);
+	pScreenPixData->DataType = DataType::Graphics;
+	pScreenPixData->Address = 0x4000;
+	pScreenPixData->ByteSize = 0x1800;
 
-	void GraphicsViewerSetAddress(uint16_t address) override
-	{
-		GraphicsViewerGoToAddress(address);
-	}
+	AddLabel(state, 0x5800, "ScreenAttributes", LabelType::Data);
+	FDataInfo* pScreenAttrData = state.GetReadDataInfoForAddress(0x5800);
+	pScreenAttrData->DataType = DataType::Blob;
+	pScreenAttrData->Address = 0x5800;
+	pScreenAttrData->ByteSize = 0x400;
 
-	bool	ExecThisFrame(void) override
-	{
-		return pSpeccy->ExecThisFrame;
-	}
+	// system variables?
+}
 
-	void InsertROMLabels(FCodeAnalysisState& state) override
-	{
-		for (const auto& label : g_RomLabels)
-		{
-			AddLabel(state, label.Address, label.pLabelName, label.LabelType);
-
-			// run static analysis on all code labels
-			if (label.LabelType == LabelType::Code || label.LabelType == LabelType::Function)
-				RunStaticCodeAnalysis(state, label.Address);
-		}
-
-		for (const auto& label : g_SysVariables)
-		{
-			AddLabel(state, label.Address, label.pLabelName, LabelType::Data);
-			// TODO: Set up data?
-		}
-	}
-
-	void InsertSystemLabels(FCodeAnalysisState& state) override
-	{
-		// screen memory start
-		AddLabel(state, 0x4000, "ScreenPixels", LabelType::Data);
-
-		FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(0x4000);
-		pScreenPixData->DataType = DataType::Graphics;
-		pScreenPixData->Address = 0x4000;
-		pScreenPixData->ByteSize = 0x1800;
-
-		AddLabel(state, 0x5800, "ScreenAttributes", LabelType::Data);
-		FDataInfo* pScreenAttrData = state.GetReadDataInfoForAddress(0x5800);
-		pScreenAttrData->DataType = DataType::Blob;
-		pScreenAttrData->Address = 0x5800;
-		pScreenAttrData->ByteSize = 0x400;
-
-		// system variables?
-	}
-
-	FSpeccy* pSpeccy = nullptr;
-};
-
-FSpectrumCPUInterface	SpeccyCPUIF;
+//FSpectrumCPUInterface	SpeccyCPUIF;
 
 /* reboot callback */
 static void boot_cb(zx_t* sys, zx_type_t type)
@@ -132,22 +118,19 @@ void gfx_destroy_texture(void* h)
 	
 }
 
-
-
-
-int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
+int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
-	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
-	FCodeAnalysisState &state = pUI->CodeAnalysis;
+	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
+	FCodeAnalysisState &state = pEmu->CodeAnalysis;
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bMemAccess = !!((pins & Z80_CTRL_MASK) & Z80_MREQ);
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
 
 	const uint16_t nextpc = pc;
 	// store program count in history
-	const uint16_t prevPC = pUI->PCHistory[pUI->PCHistoryPos];
-	pUI->PCHistoryPos = (pUI->PCHistoryPos + 1) % FSpeccyUI::kPCHistorySize;
-	pUI->PCHistory[pUI->PCHistoryPos] = pc;
+	const uint16_t prevPC = pEmu->PCHistory[pEmu->PCHistoryPos];
+	pEmu->PCHistoryPos = (pEmu->PCHistoryPos + 1) % FSpectrumEmu::kPCHistorySize;
+	pEmu->PCHistory[pEmu->PCHistoryPos] = pc;
 
 	pc = prevPC;	// set PC to pc of instruction just executed
 
@@ -159,7 +142,7 @@ int UITrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 	if (pCodeInfo->bBreakpointed)
 		return UI_DBG_BP_BASE_TRAPID;
 	
-	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pUI);
+	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pEmu);
 
 
 	//if(trapId == 0)
@@ -179,8 +162,8 @@ z80_tick_t g_OldTickCB = nullptr;
 extern uint16_t g_PC;
 uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 {
-	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
-	FCodeAnalysisState &state = pUI->CodeAnalysis;
+	FSpectrumEmu*pEmu = (FSpectrumEmu*)user_data;
+	FCodeAnalysisState &state = pEmu->CodeAnalysis;
 	const uint16_t pc = g_PC;// z80_pc(&pUI->pSpeccy->CurrentState.cpu);
 	/* memory and IO requests */
 	if (pins & Z80_MREQ) 
@@ -208,29 +191,25 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 	}
 	else if (pins & Z80_IORQ)
 	{
-		IOAnalysisHandler(pUI->IOAnalysis, pc, pins);
+		IOAnalysisHandler(pEmu->IOAnalysis, pc, pins);
 	}
 
-	return g_OldTickCB(num, pins, &pUI->pSpeccy->CurrentState);
+	return g_OldTickCB(num, pins, &pEmu->pSpeccy->CurrentState);
 }
 
-FSpeccyUI*g_pSpeccyUI = nullptr;
-
-// TODO: Member function
-FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
+bool FSpectrumEmu::Init(FSpeccy *pSpec)
 {
-	FSpeccyUI *pUI = new FSpeccyUI;
-	g_pSpeccyUI = pUI;
-	memset(&pUI->UIZX, 0, sizeof(ui_zx_t));
+	pSpeccy = pSpec;
+	memset(&UIZX, 0, sizeof(ui_zx_t));
 
 	// Trap callback needs to be set before we create the UI
-	z80_trap_cb(&pSpeccy->CurrentState.cpu, UITrapCallback, pUI);
+	z80_trap_cb(&pSpeccy->CurrentState.cpu, ZXSpectrumTrapCallback, this);
 
 	g_OldTickCB = pSpeccy->CurrentState.cpu.tick_cb;
-	pSpeccy->CurrentState.cpu.user_data = pUI;
+	pSpeccy->CurrentState.cpu.user_data = this;
 	pSpeccy->CurrentState.cpu.tick_cb = Z80Tick;
 
-	pUI->pSpeccy = pSpeccy;
+	pSpeccy = pSpeccy;
 	//ui_init(zxui_draw);
 	{
 		ui_zx_desc_t desc = { 0 };
@@ -249,12 +228,12 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 		desc.dbg_keys.step_into_name = "F7";
 		desc.dbg_keys.toggle_breakpoint_keycode = VK_F9;
 		desc.dbg_keys.toggle_breakpoint_name = "F9";
-		ui_zx_init(&pUI->UIZX, &desc);
+		ui_zx_init(&UIZX, &desc);
 	}
 
 	// additional debugger config
 	//pUI->UIZX.dbg.ui.open = true;
-	pUI->UIZX.dbg.break_cb = UIEvalBreakpoint;
+	UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
 
 	// Setup Disassembler for function view
@@ -271,42 +250,40 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	desc.StartAddress = 0x0000;
 	desc.ReadCB = MemReadFunc;
 	desc.pUserData = &pSpeccy->CurrentState;
-	desc.pUI = pUI;
+	desc.pEmulator = this;
 	desc.Title = "FunctionDasm";
-	DasmInit(&pUI->FunctionDasm, &desc);
+	DasmInit(&FunctionDasm, &desc);
 
-	pUI->GraphicsViewer.pSpeccy = pSpeccy;
-	pUI->GraphicsViewer.pUI = pUI;
-	InitGraphicsViewer(pUI->GraphicsViewer);
-	pUI->IOAnalysis.pCodeAnalysis = &pUI->CodeAnalysis;
-	InitIOAnalysis(pUI->IOAnalysis);
+	GraphicsViewer.pSpeccy = pSpeccy;
+	GraphicsViewer.pEmu = this;
+	InitGraphicsViewer(GraphicsViewer);
+	IOAnalysis.pCodeAnalysis = &CodeAnalysis;
+	InitIOAnalysis(IOAnalysis);
 	
-	pUI->SpectrumViewer.Init(pUI);
-	pUI->FrameTraceViewer.Init(pUI);
+	SpectrumViewer.Init(this);
+	FrameTraceViewer.Init(this);
 
 	// register Viewers
-	RegisterStarquakeViewer(pUI);
-	RegisterGames(pUI);
+	RegisterStarquakeViewer(this);
+	RegisterGames(this);
 
-	LoadGameConfigs(pUI);
+	LoadGameConfigs(this);
 
 	// Set up code analysis
-	FCodeAnalysisState &state = pUI->CodeAnalysis;
-
 	// initialise code analysis pages
 	
 	// ROM
-	for (int pageNo = 0; pageNo < FSpeccyUI::kNoROMPages; pageNo++)
+	for (int pageNo = 0; pageNo < kNoROMPages; pageNo++)
 	{
-		pUI->ROMPages[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
-		pUI->CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &pUI->ROMPages[pageNo], &pUI->ROMPages[pageNo]);	// Read Only
+		ROMPages[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+		CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &ROMPages[pageNo], &ROMPages[pageNo]);	// Read Only
 	}
 	// RAM
-	const uint16_t RAMStartAddr = FSpeccyUI::kNoROMPages * FCodeAnalysisPage::kPageSize;
-	for (int pageNo = 0; pageNo < FSpeccyUI::kNoRAMPages; pageNo++)
+	const uint16_t RAMStartAddr = kNoROMPages * FCodeAnalysisPage::kPageSize;
+	for (int pageNo = 0; pageNo < kNoRAMPages; pageNo++)
 	{
-		pUI->RAMPages[pageNo].Initialise(RAMStartAddr + (pageNo * FCodeAnalysisPage::kPageSize));
-		pUI->CodeAnalysis.SetCodeAnalysisRWPage(pageNo + FSpeccyUI::kNoROMPages, &pUI->RAMPages[pageNo], &pUI->RAMPages[pageNo]);	// Read/Write
+		RAMPages[pageNo].Initialise(RAMStartAddr + (pageNo * FCodeAnalysisPage::kPageSize));
+		CodeAnalysis.SetCodeAnalysisRWPage(pageNo + kNoROMPages, &RAMPages[pageNo], &RAMPages[pageNo]);	// Read/Write
 	}
 
 	/*for (int addr = 0; addr < (1 << 16); addr++)
@@ -324,73 +301,64 @@ FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy)
 	//....
 
 	// run initial analysis
-	SpeccyCPUIF.pSpeccy = pUI->pSpeccy;
-	InitialiseCodeAnalysis(pUI->CodeAnalysis,&SpeccyCPUIF);
-	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
-
+	InitialiseCodeAnalysis(CodeAnalysis,this);
+	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
 	
-	
-	return pUI;
+	return true;
 }
 
-FSpeccyUI* GetSpeccyUI()
+void FSpectrumEmu::Shutdown()
 {
-	return g_pSpeccyUI;
-}
-
-void ShutdownSpeccyUI(FSpeccyUI* pUI)
-{
-	SaveCurrentGameData(pUI);	// save on close
+	SaveCurrentGameData();	// save on close
 }
 
 
 
-void StartGame(FSpeccyUI* pUI, FGameConfig *pGameConfig)
+void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 {
-	pUI->MemoryAccessHandlers.clear();	// remove old memory handlers
+	MemoryAccessHandlers.clear();	// remove old memory handlers
 
-	ResetMemoryStats(pUI->MemStats);
+	ResetMemoryStats(MemStats);
 	
 	// Reset Functions
-	pUI->FunctionStack.clear();
-	pUI->Functions.clear();
+	FunctionStack.clear();
+	Functions.clear();
 
 	// start up game
-	if(pUI->pActiveGame!=nullptr)
-		delete pUI->pActiveGame->pViewerData;
-	delete pUI->pActiveGame;
+	if(pActiveGame!=nullptr)
+		delete pActiveGame->pViewerData;
+	delete pActiveGame;
 	
 	FGame *pNewGame = new FGame;
 	pNewGame->pConfig = pGameConfig;
 	pNewGame->pViewerConfig = pGameConfig->pViewerConfig;
 	assert(pGameConfig->pViewerConfig != nullptr);
-	pUI->GraphicsViewer.pGame = pNewGame;
-	pUI->pActiveGame = pNewGame;
-	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(pUI, pGameConfig);
-	GenerateSpriteListsFromConfig(pUI->GraphicsViewer, pGameConfig);
+	GraphicsViewer.pGame = pNewGame;
+	pActiveGame = pNewGame;
+	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pGameConfig);
+	GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
 	
 	// Initialise code analysis
-	SpeccyCPUIF.pSpeccy = pUI->pSpeccy;
-	InitialiseCodeAnalysis(pUI->CodeAnalysis, &SpeccyCPUIF);
+	InitialiseCodeAnalysis(CodeAnalysis, this);
 
 	// load game data if we can
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
-	LoadGameData(pUI->CodeAnalysis, dataFName.c_str());
-	LoadROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
-	ReAnalyseCode(pUI->CodeAnalysis);
-	GenerateGlobalInfo(pUI->CodeAnalysis);
+	LoadGameData(CodeAnalysis, dataFName.c_str());
+	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
+	ReAnalyseCode(CodeAnalysis);
+	GenerateGlobalInfo(CodeAnalysis);
 }
 
-bool StartGame(FSpeccyUI* pUI, const char *pGameName)
+bool FSpectrumEmu::StartGame(const char *pGameName)
 {
 	for (const auto& pGameConfig : GetGameConfigs())
 	{
 		if (pGameConfig->Name == pGameName)
 		{
 			std::string gameFile = "Games/" + pGameConfig->Z80File;
-			if (LoadGameSnapshot(*pUI->pSpeccy, gameFile.c_str()))
+			if (LoadGameSnapshot(*pSpeccy, gameFile.c_str()))
 			{
-				StartGame(pUI, pGameConfig);
+				StartGame(pGameConfig);
 				return true;
 			}
 		}
@@ -400,11 +368,11 @@ bool StartGame(FSpeccyUI* pUI, const char *pGameName)
 }
 
 // save config & data
-void SaveCurrentGameData(FSpeccyUI *pUI)
+void FSpectrumEmu::SaveCurrentGameData()
 {
-	if (pUI->pActiveGame != nullptr)
+	if (pActiveGame != nullptr)
 	{
-		const FGameConfig *pGameConfig = pUI->pActiveGame->pConfig;
+		const FGameConfig *pGameConfig = pActiveGame->pConfig;
 		if (pGameConfig->Name.empty())
 		{
 			
@@ -417,16 +385,15 @@ void SaveCurrentGameData(FSpeccyUI *pUI)
 			EnsureDirectoryExists("GameData");
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-			SaveGameData(pUI->CodeAnalysis, dataFName.c_str());
+			SaveGameData(CodeAnalysis, dataFName.c_str());
 		}
 	}
-	SaveROMData(pUI->CodeAnalysis, "GameData/RomInfo.bin");
+	SaveROMData(CodeAnalysis, "GameData/RomInfo.bin");
 }
 
-static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
+void FSpectrumEmu::DrawMainMenu(double timeMS)
 {
-	ui_zx_t* pZXUI = &pUI->UIZX;
-	FSpeccy *pSpeccy = pUI->pSpeccy;
+	ui_zx_t* pZXUI = &UIZX;
 	assert(pZXUI && pZXUI->zx && pZXUI->boot_cb);
 		
 	if (ImGui::BeginMainMenuBar()) 
@@ -444,7 +411,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 						{
 							FGameConfig *pNewConfig = CreateNewGameConfigFromZ80File(game.c_str());
 							if(pNewConfig != nullptr)
-								StartGame(pUI, pNewConfig);
+								StartGame(pNewConfig);
 						}
 					}
 				}
@@ -462,7 +429,7 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 
 						if(LoadGameSnapshot(*pSpeccy, gameFile.c_str()))
 						{
-							StartGame(pUI,pGameConfig);
+							StartGame(pGameConfig);
 						}
 					}
 				}
@@ -478,14 +445,14 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 			
 			if (ImGui::MenuItem("Save Game Data"))
 			{
-				SaveCurrentGameData(pUI);
+				SaveCurrentGameData();
 			}
 			if (ImGui::MenuItem("Export Binary File"))
 			{
-				if (pUI->pActiveGame != nullptr)
+				if (pActiveGame != nullptr)
 				{
 					EnsureDirectoryExists("OutputBin/");
-					std::string outBinFname = "OutputBin/" + pUI->pActiveGame->pConfig->Name + ".bin";
+					std::string outBinFname = "OutputBin/" + pActiveGame->pConfig->Name + ".bin";
 					uint8_t *pSpecMem = new uint8_t[65536];
 					for (int i = 0; i < 65536; i++)
 						pSpecMem[i] = ReadSpeccyByte(pSpeccy, i);
@@ -496,24 +463,24 @@ static void DrawMainMenu(FSpeccyUI* pUI, double timeMS)
 
 			if (ImGui::MenuItem("Export ASM File"))
 			{
-				if (pUI->pActiveGame != nullptr)
+				if (pActiveGame != nullptr)
 				{
 					EnsureDirectoryExists("OutputASM/");
-					std::string outBinFname = "OutputASM/" + pUI->pActiveGame->pConfig->Name + ".asm";
+					std::string outBinFname = "OutputASM/" + pActiveGame->pConfig->Name + ".asm";
 
-					OutputCodeAnalysisToTextFile(pUI->CodeAnalysis, outBinFname.c_str(),0x4000,0xffff);
+					OutputCodeAnalysisToTextFile(CodeAnalysis, outBinFname.c_str(),0x4000,0xffff);
 				}
 			}
 
 			if (ImGui::MenuItem("Export SkoolKit Control File"))
 			{
-				if (pUI->pActiveGame != nullptr)
+				if (pActiveGame != nullptr)
 				{
 					EnsureDirectoryExists("OutputASM/");
-					std::string gameName = pUI->pActiveGame->pConfig->Name;
+					std::string gameName = pActiveGame->pConfig->Name;
 					std::string outCtlFname = "OutputASM/" + gameName + ".ctl";
 
-					OutputSkoolKitControlFile(pUI->CodeAnalysis, outCtlFname.c_str(), gameName.c_str(), 0x4000, 0xffff);
+					OutputSkoolKitControlFile(CodeAnalysis, outCtlFname.c_str(), gameName.c_str(), 0x4000, 0xffff);
 				}
 			}
 
@@ -686,16 +653,16 @@ void DrawDebuggerUI(ui_dbg_t *pDebugger)
 	_ui_dbg_bp_draw(pDebugger);*/
 }
 
-void UpdatePreTickSpeccyUI(FSpeccyUI* pUI)
+void FSpectrumEmu::UpdatePreTick()
 {
-	pUI->pSpeccy->ExecThisFrame = ui_zx_before_exec(&pUI->UIZX);
+	pSpeccy->ExecThisFrame = ui_zx_before_exec(&UIZX);
 }
 
 
 
 
 
-void DrawMemoryTools(FSpeccyUI* pUI)
+void FSpectrumEmu::DrawMemoryTools()
 {
 	if (ImGui::Begin("Memory Tools") == false)
 	{
@@ -707,23 +674,23 @@ void DrawMemoryTools(FSpeccyUI* pUI)
 
 		if (ImGui::BeginTabItem("Memory Handlers"))
 		{
-			DrawMemoryHandlers(pUI);
+			DrawMemoryHandlers(this);
 			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("Memory Analysis"))
 		{
-			DrawMemoryAnalysis(pUI);
+			DrawMemoryAnalysis(this);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Memory Diff"))
 		{
-			DrawMemoryDiffUI(pUI);
+			DrawMemoryDiffUI(this);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("IO Analysis"))
 		{
-			DrawIOAnalysis(pUI->IOAnalysis);
+			DrawIOAnalysis(IOAnalysis);
 			ImGui::EndTabItem();
 		}
 		
@@ -741,26 +708,25 @@ void DrawMemoryTools(FSpeccyUI* pUI)
 
 
 
-void DrawSpeccyUI(FSpeccyUI* pUI)
+void FSpectrumEmu::DrawUI()
 {
-	ui_zx_t* pZXUI = &pUI->UIZX;
-	FSpeccy *pSpeccy = pUI->pSpeccy;
+	ui_zx_t* pZXUI = &UIZX;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 	
 	if(pSpeccy->ExecThisFrame)
 		ui_zx_after_exec(pZXUI);
 
-	const int instructionsThisFrame = (int)pUI->CodeAnalysis.FrameTrace.size();
+	const int instructionsThisFrame = (int)CodeAnalysis.FrameTrace.size();
 	static int maxInst = 0;
 	maxInst = max(maxInst, instructionsThisFrame);
 
 	// Store trace and frame image
 	if (pSpeccy->ExecThisFrame)
 	{
-		pUI->FrameTraceViewer.CaptureFrame();
-		pUI->CodeAnalysis.FrameTrace.clear();
+		FrameTraceViewer.CaptureFrame();
+		CodeAnalysis.FrameTrace.clear();
 	}
-	DrawMainMenu(pUI, timeMS);
+	DrawMainMenu(timeMS);
 	if (pZXUI->memmap.open)
 	{
 		UpdateMemmap(pZXUI);
@@ -782,46 +748,43 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	DrawDebuggerUI(&pZXUI->dbg);
 
 	//DasmDraw(&pUI->FunctionDasm);
-
-
-	// show spectrum window - TODO: Make function
+	// show spectrum window
 	if (ImGui::Begin("Spectrum View"))
 	{
-		pUI->SpectrumViewer.Draw();
+		SpectrumViewer.Draw();
 	}
 	ImGui::End();
 
-	// TODO: move to separate file
 	if (ImGui::Begin("Frame Trace"))
 	{
-		pUI->FrameTraceViewer.Draw();
+		FrameTraceViewer.Draw();
 	}
 	ImGui::End();
 
 	// cheats 
 	if (ImGui::Begin("Cheats"))
 	{
-		DrawCheatsUI(pUI);
+		DrawCheatsUI();
 	}
 	ImGui::End();
 
 	// game viewer
 	if (ImGui::Begin("Game Viewer"))
 	{
-		if (pUI->pActiveGame != nullptr)
+		if (pActiveGame != nullptr)
 		{
-			ImGui::Text(pUI->pActiveGame->pConfig->Name.c_str());
-			pUI->pActiveGame->pViewerConfig->pDrawFunction(pUI, pUI->pActiveGame);
+			ImGui::Text(pActiveGame->pConfig->Name.c_str());
+			pActiveGame->pViewerConfig->pDrawFunction(this, pActiveGame);
 		}
 		
 	}
 	ImGui::End();
 
-	DrawGraphicsViewer(pUI->GraphicsViewer);
-	DrawMemoryTools(pUI);
+	DrawGraphicsViewer(GraphicsViewer);
+	DrawMemoryTools();
 	if (ImGui::Begin("Code Analysis"))
 	{
-		DrawCodeAnalysisData(pUI->CodeAnalysis);
+		DrawCodeAnalysisData(CodeAnalysis);
 	}
 	ImGui::End();
 
@@ -832,7 +795,7 @@ void DrawSpeccyUI(FSpeccyUI* pUI)
 	}*/
 }
 
-bool DrawDockingView(FSpeccyUI *pUI)
+bool FSpectrumEmu::DrawDockingView()
 {
 	//SCOPE_PROFILE_CPU("UI", "DrawUI", ProfCols::UI);
 
@@ -885,7 +848,7 @@ bool DrawDockingView(FSpeccyUI *pUI)
 
 		//bQuit = MainMenu();
 		//DrawDebugWindows(uiState);
-		DrawSpeccyUI(pUI);
+		DrawUI();
 		ImGui::End();
 	}
 	else
@@ -897,20 +860,20 @@ bool DrawDockingView(FSpeccyUI *pUI)
 	return bQuit;
 }
 
-void UpdatePostTickSpeccyUI(FSpeccyUI* pUI)
+void FSpectrumEmu::UpdatePostTick()
 {
-	DrawDockingView(pUI);
+	DrawDockingView();
 	
 }
 
 // Cheats
 
-void DrawCheatsUI(FSpeccyUI *pUI)
+void FSpectrumEmu::DrawCheatsUI()
 {
-	if (pUI->pActiveGame == nullptr)
+	if (pActiveGame == nullptr)
 		return;
 	
-	FGameConfig &config = *pUI->pActiveGame->pConfig;
+	FGameConfig &config = *pActiveGame->pConfig;
 
 	for (FCheat &cheat : config.Cheats)
 	{
@@ -924,12 +887,12 @@ void DrawCheatsUI(FSpeccyUI *pUI)
 				if (cheat.bEnabled)	// cheat activated
 				{
 					// store old value
-					entry.OldValue = ReadSpeccyByte(pUI->pSpeccy, entry.Address);
-					WriteSpeccyByte(pUI->pSpeccy, entry.Address, entry.Value);
+					entry.OldValue = ReadSpeccyByte(pSpeccy, entry.Address);
+					WriteSpeccyByte(pSpeccy, entry.Address, entry.Value);
 				}
 				else
 				{
-					WriteSpeccyByte(pUI->pSpeccy, entry.Address, entry.OldValue);
+					WriteSpeccyByte(pSpeccy, entry.Address, entry.OldValue);
 				}
 			}
 		}

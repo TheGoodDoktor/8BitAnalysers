@@ -6,18 +6,18 @@
 // Disassembly handlers
 static uint8_t DasmCB(void* user_data)
 {
-	FSpeccyUI *pUI = (FSpeccyUI *)user_data;
+	FSpectrumEmu*pUI = (FSpectrumEmu*)user_data;
 	return ReadSpeccyByte(pUI->pSpeccy, pUI->dasmCurr++);
 }
 
-static uint16_t DisasmLen(FSpeccyUI *pUI, uint16_t pc)
+static uint16_t DisasmLen(FSpectrumEmu*pUI, uint16_t pc)
 {
 	pUI->dasmCurr = pc;
 	uint16_t next_pc = z80dasm_op(pc, DasmCB, 0, pUI);
 	return next_pc - pc;
 }
 
-int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpeccyUI *pUI)
+int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEmu*pEmu)
 {
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bRead = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_RD);
@@ -25,19 +25,19 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpeccyUI *
 
 
 	// increment counters
-	pUI->MemStats.ExecCount[pc]++;
-	const int op_len = DisasmLen(pUI, pc);
+	pEmu->MemStats.ExecCount[pc]++;
+	const int op_len = DisasmLen(pEmu, pc);
 	for (int i = 1; i < op_len; i++) {
-		pUI->MemStats.ExecCount[(pc + i) & 0xFFFF]++;
+		pEmu->MemStats.ExecCount[(pc + i) & 0xFFFF]++;
 	}
 
 	if (bRead)
-		pUI->MemStats.ReadCount[addr]++;
+		pEmu->MemStats.ReadCount[addr]++;
 	if (bWrite)
-		pUI->MemStats.WriteCount[addr]++;
+		pEmu->MemStats.WriteCount[addr]++;
 
 	// See if we can find a handler
-	for (auto& handler : pUI->MemoryAccessHandlers)
+	for (auto& handler : pEmu->MemoryAccessHandlers)
 	{
 		if (handler.bEnabled == false)
 			continue;
@@ -69,7 +69,7 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpeccyUI *
 			handler.CallerCounts[pc]++;
 			handler.AddressCounts[addr]++;
 			if (handler.pHandlerFunction != nullptr)
-				handler.pHandlerFunction(handler, pUI->pActiveGame, pc, pins);
+				handler.pHandlerFunction(handler, pEmu->pActiveGame, pc, pins);
 
 			if (handler.bBreak)
 				return UI_DBG_STEP_TRAPID;
@@ -82,10 +82,7 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpeccyUI *
 }
 
 
-void AddMemoryHandler(FSpeccyUI *pUI, const FMemoryAccessHandler &handler)
-{
-	pUI->MemoryAccessHandlers.push_back(handler);
-}
+
 
 MemoryUse DetermineAddressMemoryUse(const FMemoryStats &memStats, uint16_t addr, bool &smc)
 {
@@ -152,7 +149,7 @@ void ResetMemoryStats(FMemoryStats &memStats)
 
 
 // UI
-void DrawMemoryHandlers(FSpeccyUI* pUI)
+void DrawMemoryHandlers(FSpectrumEmu* pUI)
 {
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawMemoryHandlersGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
@@ -208,7 +205,7 @@ void DrawMemoryHandlers(FSpeccyUI* pUI)
 	ImGui::EndChild();
 }
 
-void DrawMemoryAnalysis(FSpeccyUI* pUI)
+void DrawMemoryAnalysis(FSpectrumEmu* pUI)
 {
 
 	ImGui::Text("Memory Analysis");
@@ -244,7 +241,7 @@ uint8_t g_DiffSnapShotMemory[1 << 16];	// 64 Kb
 std::vector<uint16_t> g_DiffChangedLocations;
 int g_DiffSelectedAddr = -1;
 
-void DrawMemoryDiffUI(FSpeccyUI *pUI)
+void DrawMemoryDiffUI(FSpectrumEmu*pUI)
 {
 	const int startAddr = g_bDiffVideoMem ? 0x4000 : 0x5C00;	// TODO: have a header with constants in
 	

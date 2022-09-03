@@ -5,7 +5,7 @@
 
 struct FGraphicsView;
 struct FGraphicsViewerState;
-struct FSpeccyUI;
+class FSpectrumEmu;
 struct FGameConfig;
 
 // Sprite Stuff

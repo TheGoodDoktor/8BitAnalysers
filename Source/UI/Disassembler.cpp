@@ -28,7 +28,7 @@ void DasmInit(FDasmState* pDasmState, const FDasmDesc* pDasmDesc)
 	pDasmState->CPUType = pDasmDesc->CPUType;
 	pDasmState->ReadCB = pDasmDesc->ReadCB;
 	pDasmState->StartAddress = pDasmDesc->StartAddress;
-	pDasmState->pUI = pDasmDesc->pUI;
+	pDasmState->pEmu = pDasmDesc->pEmulator;
 	pDasmState->pUserData = pDasmDesc->pUserData;
 
 	// window related - remove
@@ -309,7 +309,7 @@ void DasmDrawDisassembly(FDasmState* pDasmState)
 			highlight = true;
 		}
 		// label
-		const FLabelInfo* pLabel = pDasmState->pUI->CodeAnalysis.GetLabelForAddress(op_addr);
+		const FLabelInfo* pLabel = pDasmState->pEmu->CodeAnalysis.GetLabelForAddress(op_addr);
 		if(pLabel !=nullptr)
 		{
 			ImGui::Text("%s: ", pLabel->Name.c_str());

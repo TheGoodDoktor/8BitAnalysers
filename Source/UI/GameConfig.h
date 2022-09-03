@@ -5,7 +5,7 @@
 
 struct FCodeAnalysisState;
 struct FGameViewerData;
-struct FSpeccyUI;
+class FSpectrumEmu;
 struct FGame;
 struct FGameConfig;
 
@@ -34,8 +34,8 @@ struct FSpriteDefConfig
 struct FViewerConfig
 {
 	std::string			Name;
-	FGameViewerData *	(*pInitFunction)(FSpeccyUI *pUI, FGameConfig *pGameConfig);
-	void				(*pDrawFunction)(FSpeccyUI *pSpeccyUI, FGame* pGame);
+	FGameViewerData *	(*pInitFunction)(FSpectrumEmu*pEmu, FGameConfig *pGameConfig);
+	void				(*pDrawFunction)(FSpectrumEmu* pEmu, FGame* pGame);
 };
 
 struct FGameConfig
@@ -59,7 +59,7 @@ const std::vector< FGameConfig *>& GetGameConfigs();
 FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName);
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);
 bool LoadGameConfigFromFile(FGameConfig &config, const char *fname);
-bool LoadGameConfigs(FSpeccyUI *pUI);
+bool LoadGameConfigs(FSpectrumEmu*pUI);
 
 bool LoadPOKFile(FGameConfig &config, const char *fname);
 

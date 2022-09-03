@@ -1,6 +1,6 @@
 #pragma once
 
-struct FSpeccyUI;
+class FSpectrumEmu;
 struct FGraphicsView;
 struct FGame;
 struct FGameConfig;
@@ -9,7 +9,7 @@ struct FViewerConfig;
 // Base class for game viewer data
 struct FGameViewerData
 {
-	FSpeccyUI*			pUI = nullptr;
+	FSpectrumEmu*		pEmu = nullptr;
 	FGraphicsView*		pSpriteGraphicsView = nullptr;
 	FGraphicsView*		pScreenGraphicsView = nullptr;
 };

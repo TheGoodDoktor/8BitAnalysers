@@ -8,7 +8,7 @@ static std::map<std::string, FViewerConfig *>	g_ViewerConfigs;
 
 void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 {
-	FSpeccyUI *pUI = pGameViewer->pUI;
+	FSpectrumEmu *pEmu = pGameViewer->pEmu;
 
 	pGameViewer->pSpriteGraphicsView = CreateGraphicsView(64, 64);
 	pGameViewer->pScreenGraphicsView = CreateGraphicsView(256, 256);
@@ -21,7 +21,7 @@ void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 		handler.MemEnd = 0x57ff;	
 		handler.Type = MemoryAccessType::Write;
 
-		AddMemoryHandler(pUI, handler);
+		pEmu->AddMemoryHandler(handler);
 	}
 	{
 		FMemoryAccessHandler handler;
@@ -30,7 +30,7 @@ void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 		handler.MemEnd = 0x5Aff;	
 		handler.Type = MemoryAccessType::Write;
 
-		AddMemoryHandler(pUI, handler);
+		pEmu->AddMemoryHandler(handler);
 	}
 
 	// add memory handlers for sprite configs
@@ -44,7 +44,7 @@ void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 		handler.MemEnd = sprConf.BaseAddress + (sprConf.Count * sprConf.Width * sprConf.Height * 8);	// 8 bytes per char
 		handler.Type = MemoryAccessType::Read;
 
-		AddMemoryHandler(pUI, handler);
+		pEmu->AddMemoryHandler(handler);
 	}
 }
 

@@ -183,17 +183,17 @@ struct FStarquakeViewerData : FGameViewerData
 };
 
 
-FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
+FGameViewerData *InitStarquakeViewer(FSpectrumEmu *pEmu, FGameConfig *pGameConfig)
 {
 	FStarquakeViewerData* pStarquakeViewerData = new FStarquakeViewerData;
-	pStarquakeViewerData->pUI = pUI;
+	pStarquakeViewerData->pEmu = pEmu;
 	
 	InitGameViewer(pStarquakeViewerData, pGameConfig);
 
 	// cheats
 	//WriteSpeccyByte( pUI->pSpeccy, 0x9ffc, 201 );
 	//WriteSpeccyByte( pUI->pSpeccy, 0xdb50, 0 );
-	WriteSpeccyByte( pUI->pSpeccy, 54505, 201 );
+	WriteSpeccyByte(pEmu->pSpeccy, 54505, 201 );
 
 	// Add specific memory handlers
 
@@ -206,7 +206,7 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 		handler.MemEnd = kSmallPlatformGfxAddr + kSmallPlatformGfxSize;	// 8 bytes per char
 		handler.Type = MemoryAccessType::Read;
 
-		AddMemoryHandler(pUI, handler);
+		pEmu->AddMemoryHandler(handler);
 	}
 
 	// Big platforms
@@ -218,7 +218,7 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 		handler.MemEnd = kBigPlatformDataAddr + (kNoBigPlatforms * 4);	// 4 bytes per big platform
 		handler.Type = MemoryAccessType::Read;
 
-		AddMemoryHandler(pUI, handler);
+		pEmu->AddMemoryHandler(handler);
 	}
 
 	// Screens
@@ -230,7 +230,7 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 		handler.MemEnd = kScreenDataAddr + (kNoScreens * 12); // 12 bytes per screen
 		handler.Type = MemoryAccessType::Read;
 
-		AddMemoryHandler(pUI, handler);
+		pEmu->AddMemoryHandler(handler);
 	}
 
 	return pStarquakeViewerData;
@@ -238,41 +238,41 @@ FGameViewerData *InitStarquakeViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
 
 static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pStarquakeViewer, FGraphicsView *pGraphicsView)
 {
-	FSpeccyUI *pUI = pStarquakeViewer->pUI;
+	FSpectrumEmu *pEmu = pStarquakeViewer->pEmu;
 	//FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 	
 	//const uint16_t kSmallPlatformLUT = 0xeb23;
 	const uint16_t kPlatformPtr = kSmallPlatformGfxAddr + (platformNum * 2);
 
 	//memset(pGraphicsView->PixelBuffer, 0, pGraphicsView->Width * pGraphicsView->Height * 4);
-	uint8_t lutCol = ReadSpeccyByte( pUI->pSpeccy, 0xea63 );
+	uint8_t lutCol = ReadSpeccyByte( pEmu->pSpeccy, 0xea63 );
 	
 	// check the platform info of this platform
-	const uint8_t typeInfo = ReadSpeccyByte( pUI->pSpeccy, kSmallPlatformTypeInfoAddr + platformNum );
+	const uint8_t typeInfo = ReadSpeccyByte(pEmu->pSpeccy, kSmallPlatformTypeInfoAddr + platformNum );
 	if( (typeInfo & 0xf0) < 0x50 && (typeInfo & 0xf0) != 0)
 	{
 		const uint8_t lutIndex = typeInfo >> 4;
-		lutCol = ReadSpeccyByte( pUI->pSpeccy, kSmallPlatformColourLUT + lutIndex );
+		lutCol = ReadSpeccyByte(pEmu->pSpeccy, kSmallPlatformColourLUT + lutIndex );
 	}
 
-	uint16_t kPlatformAddr = ReadSpeccyByte(pUI->pSpeccy, kPlatformPtr);
-	kPlatformAddr = kPlatformAddr | (ReadSpeccyByte(pUI->pSpeccy, kPlatformPtr+1) << 8);
+	uint16_t kPlatformAddr = ReadSpeccyByte(pEmu->pSpeccy, kPlatformPtr);
+	kPlatformAddr = kPlatformAddr | (ReadSpeccyByte(pEmu->pSpeccy, kPlatformPtr+1) << 8);
 	uint16_t kPlatformCharPtr = kPlatformAddr + 6;	// pointer to char data
 	uint16_t kPlatformColPtr = kPlatformAddr - 1;	// pointer to colour data
 	for(int y=0;y<6;y++)
 	{
-		const uint8_t bits = ReadSpeccyByte(pUI->pSpeccy, kPlatformAddr + y);
+		const uint8_t bits = ReadSpeccyByte(pEmu->pSpeccy, kPlatformAddr + y);
 		for(int x=0;x<8;x++)
 		{
 			if((bits & (1<<(7-x))) !=0 )
 			{
-				const uint8_t *pImage = GetSpeccyMemPtr(pUI->pSpeccy, kPlatformCharPtr);
-				const uint8_t col = ReadSpeccyByte(pUI->pSpeccy, kPlatformColPtr);
+				const uint8_t *pImage = GetSpeccyMemPtr(pEmu->pSpeccy, kPlatformCharPtr);
+				const uint8_t col = ReadSpeccyByte(pEmu->pSpeccy, kPlatformColPtr);
 				uint8_t colVal = col & 0x3f;	// just the colour values - ink & paper
 				if ( colVal == 0x36 )		// yellow paper, yellow ink
 					colVal = ( col & 0xc0 ) | lutCol;// ReadSpeccyByte( pUI->pSpeccy, 0xea63 );	// use flash & bright from colour & read colour from 0xea63
 				else if (colVal == 0)
-					colVal = (col & 0xf8) | ReadSpeccyByte(pUI->pSpeccy, 0xea62);	// use flash, bright & paper
+					colVal = (col & 0xf8) | ReadSpeccyByte(pEmu->pSpeccy, 0xea62);	// use flash, bright & paper
 				else
 					colVal = col;
 
@@ -293,15 +293,15 @@ static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerDat
 {
 	uint16_t kBigPlatformData = kBigPlatformDataAddr + (platformNum * 4);
 
-	FSpeccyUI *pUI = pStarquakeViewer->pUI;
+	FSpectrumEmu*pEmu = pStarquakeViewer->pEmu;
 	
-	const uint8_t kPlatformNo1 = ReadSpeccyByte(pUI->pSpeccy, kBigPlatformData + 0);
+	const uint8_t kPlatformNo1 = ReadSpeccyByte(pEmu->pSpeccy, kBigPlatformData + 0);
 	DrawSmallPlatform(kPlatformNo1,xp + 32, yp + 24, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
-	const uint8_t kPlatformNo2 = ReadSpeccyByte(pUI->pSpeccy, kBigPlatformData + 1);
+	const uint8_t kPlatformNo2 = ReadSpeccyByte(pEmu->pSpeccy, kBigPlatformData + 1);
 	DrawSmallPlatform(kPlatformNo2, xp, yp + 24, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
-	const uint8_t kPlatformNo3 = ReadSpeccyByte(pUI->pSpeccy, kBigPlatformData + 2);
+	const uint8_t kPlatformNo3 = ReadSpeccyByte(pEmu->pSpeccy, kBigPlatformData + 2);
 	DrawSmallPlatform(kPlatformNo3, xp + 32, yp, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
-	const uint8_t kPlatformNo4 = ReadSpeccyByte(pUI->pSpeccy, kBigPlatformData + 3);
+	const uint8_t kPlatformNo4 = ReadSpeccyByte(pEmu->pSpeccy, kBigPlatformData + 3);
 	DrawSmallPlatform(kPlatformNo4, xp, yp, pStarquakeViewer, pStarquakeViewer->pScreenGraphicsView);
 
 
@@ -309,8 +309,8 @@ static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerDat
 
 static void DrawItem( int itemNum, int xp, int yp, uint8_t col, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
 {
-	FSpeccyUI* pUI = pStarquakeViewer->pUI;
-	const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, kItemSpriteDataAddr + (itemNum * 32) );
+	FSpectrumEmu* pEmu = pStarquakeViewer->pEmu;
+	const uint8_t* pImage = GetSpeccyMemPtr(pEmu->pSpeccy, kItemSpriteDataAddr + (itemNum * 32) );
 
 	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
 	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
@@ -320,8 +320,8 @@ static void DrawItem( int itemNum, int xp, int yp, uint8_t col, FStarquakeViewer
 
 static void DrawPlatform( int platformNo, int xp, int yp, uint8_t col, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
 {
-	FSpeccyUI* pUI = pStarquakeViewer->pUI;
-	const uint8_t* pImage = GetSpeccyMemPtr( pUI->pSpeccy, kPlatformSpritesAddr + ( platformNo * 16 ) );
+	FSpectrumEmu* pEmu = pStarquakeViewer->pEmu;
+	const uint8_t* pImage = GetSpeccyMemPtr(pEmu->pSpeccy, kPlatformSpritesAddr + ( platformNo * 16 ) );
 
 	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
 	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
@@ -329,14 +329,14 @@ static void DrawPlatform( int platformNo, int xp, int yp, uint8_t col, FStarquak
 
 static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
 {
-	FSpeccyUI *pUI = pStarquakeViewer->pUI;
+	FSpectrumEmu* pEmu = pStarquakeViewer->pEmu;
 	uint16_t kScreenData = kScreenDataAddr + (screenNum * 12);
 
 	for(int y=0;y<3;y++)
 	{
 		for(int x=0;x<4;x++)
 		{
-			const uint8_t kPlatformNo = ReadSpeccyByte(pUI->pSpeccy, kScreenData);
+			const uint8_t kPlatformNo = ReadSpeccyByte(pEmu->pSpeccy, kScreenData);
 			DrawBigPlatform(kPlatformNo, xp + (x * 64), yp + (y * 48), pStarquakeViewer);
 			kScreenData++;
 		}
@@ -344,7 +344,7 @@ static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pSta
 
 }
 
-void DrawStarquakeViewer(FSpeccyUI *pUI, FGame *pGame)
+void DrawStarquakeViewer(FSpectrumEmu*pUI, FGame *pGame)
 {
 	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)pGame->pViewerData;
 
@@ -577,7 +577,7 @@ FViewerConfig g_StarQuakeViewConfig =
 	DrawStarquakeViewer,
 };
 
-void RegisterStarquakeViewer(FSpeccyUI *pUI)
+void RegisterStarquakeViewer(FSpectrumEmu* pEmu)
 {
 	AddViewerConfig(&g_StarQuakeViewConfig);
 

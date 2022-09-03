@@ -12,7 +12,6 @@
 #include "Viewers/FrameTraceViewer.h"
 #include "IOAnalysis.h"
 
-struct FSpeccyUI;
 struct FGame;
 struct FGameViewer;
 struct FGameViewerData;
@@ -35,17 +34,54 @@ struct FGame
 };*/
 
 
-
-
-// TODO: Mae this a speccy emulator class
-struct FSpeccyUI
+class FSpectrumEmu : public ICPUInterface
 {
-	FSpeccyUI(){}
-	
+public:
+	FSpectrumEmu()
+	{
+		CPUType = ECPUType::Z80;
+	}
+
+	bool	Init(FSpeccy* pSpeccy);
+	void	Shutdown();
+	void	StartGame(FGameConfig* pGameConfig);
+	bool	StartGame(const char* pGameName);
+	void	SaveCurrentGameData();
+	void	DrawMainMenu(double timeMS);
+	void	DrawCheatsUI();
+	void	UpdatePreTick();
+	void	UpdatePostTick();
+	void	DrawMemoryTools();
+	void	DrawUI();
+	bool	DrawDockingView();
+
+
 	// disable copy & assign because this class is big!
-	FSpeccyUI(const FSpeccyUI&) = delete;
-	FSpeccyUI& operator= (const FSpeccyUI&) = delete;
-	
+	FSpectrumEmu(const FSpectrumEmu&) = delete;
+	FSpectrumEmu& operator= (const FSpectrumEmu&) = delete;
+
+	//ICPUInterface Begin
+	uint8_t		ReadByte(uint16_t address) const override;
+	uint16_t	ReadWord(uint16_t address) const override;
+	uint16_t	GetPC(void) override;
+	void		Break(void) override;
+	void		Continue(void) override;
+	void		GraphicsViewerSetAddress(uint16_t address) override;
+	bool		ExecThisFrame(void) override;
+	void		InsertROMLabels(FCodeAnalysisState& state) override;
+	void		InsertSystemLabels(FCodeAnalysisState& state) override;
+	//ICPUInterface End
+
+	void AddMemoryHandler(const FMemoryAccessHandler& handler)
+	{
+		MemoryAccessHandlers.push_back(handler);
+	}
+
+	void GraphicsViewerGoToAddress(uint16_t address)
+	{
+		GraphicsViewer.Address = address;
+	}
+
 	FSpeccy*		pSpeccy = nullptr;
 	ui_zx_t			UIZX;
 
@@ -75,15 +111,6 @@ struct FSpeccyUI
 	std::vector<uint16_t>				FunctionStack;
 	FDasmState							FunctionDasm;
 
-	// screen inspector
-	bool		bScreenCharSelected = false;
-	uint16_t	SelectPixAddr = 0;
-	uint16_t	SelectAttrAddr = 0;
-	int			SelectedCharX = 0;
-	int			SelectedCharY = 0;
-	bool		CharDataFound = false;
-	uint16_t	FoundCharDataAddress = 0;
-
 	uint16_t dasmCurr = 0;
 
 	static const int kPCHistorySize = 32;
@@ -91,26 +118,19 @@ struct FSpeccyUI
 	int PCHistoryPos = 0;
 
 	bool bShowImGuiDemo = false;
-
-	// trace
-	//int					ShowFrame = 0;
-	//int					CurrentTraceFrame = 0;
-	//static const int	kNoFramesInTrace = 300;
-	//FSpeccyFrameTrace	FrameTrace[kNoFramesInTrace];
 };
 
 
 
+//FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy);
+//SpeccyUI* GetSpeccyEmulator();
+//bool StartGame(FSpectrumEmu* pUI, const char *pGameName);
+//void SaveCurrentGameData(FSpeccyUI *pUI);
+//void ShutdownSpeccyUI(FSpeccyUI*pSpeccyUI);
+//void UpdatePreTickSpeccyUI(FSpeccyUI*pSpeccyUI);
+//void UpdatePostTickSpeccyUI(FSpeccyUI*pSpeccyUI);
 
-FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy);
-FSpeccyUI* GetSpeccyUI();
-bool StartGame(FSpeccyUI* pUI, const char *pGameName);
-void SaveCurrentGameData(FSpeccyUI *pUI);
-void ShutdownSpeccyUI(FSpeccyUI*pSpeccyUI);
-void UpdatePreTickSpeccyUI(FSpeccyUI*pSpeccyUI);
-void UpdatePostTickSpeccyUI(FSpeccyUI*pSpeccyUI);
-
-void AddMemoryHandler(FSpeccyUI *pUI, const FMemoryAccessHandler &handler);
+//void AddMemoryHandler(FSpeccyUI *pUI, const FMemoryAccessHandler &handler);
 
 //FGameViewer &AddGameViewer(FSpeccyUI *pUI, const char *pName);
 void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth, uint8_t colAttr = 0x7);

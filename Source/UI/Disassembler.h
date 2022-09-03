@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <string>
 
-struct FSpeccyUI;
+class FSpectrumEmu;
 
 // Disassembler - based on Andre Weissflog's # ui_dasm.h
 
@@ -31,7 +31,7 @@ struct FDasmDesc
 	DasmCPUType			CPUType;     /* only needed when defining both UI_DASM_CPUTYPE_Z80 and _M6502 */
 	uint16_t			StartAddress;
 	DasmReadCallback	ReadCB;
-	FSpeccyUI *			pUI;
+	FSpectrumEmu*		pEmulator;
 	void*				pUserData;
 
 	// items below might get removed
@@ -49,7 +49,7 @@ struct FDasmState
 	int					CurLayer;
 	int					NumLayers;
 	std::string			LayerNames[DASM_MAX_LAYERS];
-	FSpeccyUI *			pUI;
+	FSpectrumEmu*		pEmu;
 	void*				pUserData;
 
 	/*float init_x, init_y;

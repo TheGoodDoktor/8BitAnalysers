@@ -95,7 +95,7 @@ void FSpectrumViewer::Draw()
 			DrawAddressLabel(codeAnalysis, FoundCharDataAddress);
 			ImGui::SameLine();
 			if (ImGui::Button("Show in GFX View"))
-				GraphicsViewerGoToAddress(FoundCharDataAddress);
+				pSpectrumEmu->GraphicsViewerGoToAddress(FoundCharDataAddress);
 		}
 	}
 

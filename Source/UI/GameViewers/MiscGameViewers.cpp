@@ -3,16 +3,16 @@
 #include "UI/GameConfig.h"
 #include "GameViewer.h"
 
-FGameViewerData *InitMiscGameViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig)
+FGameViewerData *InitMiscGameViewer(FSpectrumEmu*pEmu, FGameConfig *pGameConfig)
 {
 	FGameViewerData* pGameViewerData = new FGameViewerData;
-	pGameViewerData->pUI = pUI;
+	pGameViewerData->pEmu = pEmu;
 
 	InitGameViewer(pGameViewerData, pGameConfig);
 	return pGameViewerData;
 }
 
-void DrawMiscGameViewer(FSpeccyUI *pUI, FGame *pGame)
+void DrawMiscGameViewer(FSpectrumEmu*pUI, FGame *pGame)
 {
 	FGameViewerData* pGameViewer = pGame->pViewerData;
 
@@ -81,7 +81,7 @@ FViewerConfig g_DefaultViewConfig =
 	DrawMiscGameViewer,
 };
 
-void RegisterGames(FSpeccyUI *pUI)
+void RegisterGames(FSpectrumEmu *pEmu)
 {
 	AddViewerConfig(&g_DefaultViewConfig);
 

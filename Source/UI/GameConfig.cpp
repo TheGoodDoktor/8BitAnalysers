@@ -444,7 +444,7 @@ bool LoadROMData(FCodeAnalysisState& state, const char *fname)
 	return LoadGameDataBin(state, fname,0x0000,0x3fff);
 }
 
-bool LoadGameConfigs(FSpeccyUI *pUI)
+bool LoadGameConfigs(FSpectrumEmu *pEmu)
 {
 	FDirFileList listing;
 

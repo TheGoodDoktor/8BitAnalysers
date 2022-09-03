@@ -2,18 +2,18 @@
 
 #include <cstdint>
 
-struct FSpeccyUI;
+class FSpectrumEmu;
 
 class FSpectrumViewer
 {
 public:
 	FSpectrumViewer() {}
 
-	void	Init(FSpeccyUI* pEmu) { pSpectrumEmu = pEmu; }
+	void	Init(FSpectrumEmu* pEmu) { pSpectrumEmu = pEmu; }
 
 	void	Draw();
 private:
-	FSpeccyUI* pSpectrumEmu = nullptr;
+	FSpectrumEmu* pSpectrumEmu = nullptr;
 
 	// screen inspector
 	bool		bScreenCharSelected = false;

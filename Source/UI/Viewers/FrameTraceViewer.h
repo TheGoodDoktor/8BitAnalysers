@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-struct FSpeccyUI;
+class FSpectrumEmu;
 
 struct FSpeccyFrameTrace
 {
@@ -14,12 +14,12 @@ struct FSpeccyFrameTrace
 class FFrameTraceViewer
 {
 public:
-	void	Init(FSpeccyUI* pEmu);
+	void	Init(FSpectrumEmu* pEmu);
 	void	CaptureFrame();
 	void	Draw();
 private:
 
-	FSpeccyUI* pSpectrumEmu = nullptr;
+	FSpectrumEmu* pSpectrumEmu = nullptr;
 
 	int					ShowFrame = 0;
 	int					CurrentTraceFrame = 0;

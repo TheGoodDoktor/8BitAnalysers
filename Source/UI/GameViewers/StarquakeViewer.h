@@ -1,5 +1,5 @@
 #pragma once
 
-struct FSpeccyUI;
+class FSpectrumEmu;
 
-void RegisterStarquakeViewer(FSpeccyUI *pUI);
+void RegisterStarquakeViewer(FSpectrumEmu*pEmu);

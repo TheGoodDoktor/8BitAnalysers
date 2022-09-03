@@ -109,10 +109,11 @@ int main(int argc, char** argv)
 	config.NoStateBuffers = 10;
 	g_pSpeccy = InitSpeccy(config);
 	FSpeccy &speccy = *g_pSpeccy;
-	FSpeccyUI *pSpeccyUI = InitSpeccyUI(g_pSpeccy);
+    FSpectrumEmu* pSpectrumEmulator = new FSpectrumEmu;
+    pSpectrumEmulator->Init(g_pSpeccy);
 
 	if (argc > 1)
-		StartGame(pSpeccyUI, argv[1]);
+        pSpectrumEmulator->StartGame(argv[1]);
 
     // Main loop
     MSG msg;
@@ -137,14 +138,14 @@ int main(int argc, char** argv)
         ImGui::NewFrame();
 
 		// speccy update & render
-		UpdatePreTickSpeccyUI(pSpeccyUI);
+        pSpectrumEmulator->UpdatePreTick();
 		if(speccy.ExecThisFrame)
 			TickSpeccy(*g_pSpeccy);
-		UpdatePostTickSpeccyUI(pSpeccyUI);
+        pSpectrumEmulator->UpdatePostTick();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (pSpeccyUI->bShowImGuiDemo)
-            ImGui::ShowDemoWindow(&pSpeccyUI->bShowImGuiDemo);
+        if (pSpectrumEmulator->bShowImGuiDemo)
+            ImGui::ShowDemoWindow(&pSpectrumEmulator->bShowImGuiDemo);
 
         // Rendering
         ImGui::Render();
@@ -164,7 +165,7 @@ int main(int argc, char** argv)
     }
 
 	// shutdown the speccy stuff
-	ShutdownSpeccyUI(pSpeccyUI);
+    pSpectrumEmulator->Shutdown();
 	ShutdownSpeccy(g_pSpeccy);
 
     // Cleanup

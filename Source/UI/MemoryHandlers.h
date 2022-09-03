@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-struct FSpeccyUI;
+class FSpectrumEmu;
 struct FGame;
 
 enum class MemoryUse
@@ -61,12 +61,12 @@ struct FMemoryAccessHandler
 
 
 
-int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpeccyUI *pUI);
+int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEmu* pEmu);
 
 void AnalyseMemory(FMemoryStats &memStats);
 void ResetMemoryStats(FMemoryStats &memStats);
 
 // UI
-void DrawMemoryAnalysis(FSpeccyUI* pUI);
-void DrawMemoryHandlers(FSpeccyUI* pUI);
-void DrawMemoryDiffUI(FSpeccyUI *pUI);
+void DrawMemoryAnalysis(FSpectrumEmu* pEmu);
+void DrawMemoryHandlers(FSpectrumEmu* pEmu);
+void DrawMemoryDiffUI(FSpectrumEmu* pEmu);

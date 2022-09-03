@@ -1,8 +1,8 @@
 #pragma once
 
-struct FSpeccyUI;
+class FSpectrumEmu;
 
-void RegisterGames(FSpeccyUI *pUI);
+void RegisterGames(FSpectrumEmu*pEmu);
 
 
 

@@ -6,7 +6,7 @@
 #include <Shared/ImGuiSupport/imgui_impl_lucidextra.h>
 
 
-void FFrameTraceViewer::Init(FSpeccyUI* pEmu)
+void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 {
 	pSpectrumEmu = pEmu;
 

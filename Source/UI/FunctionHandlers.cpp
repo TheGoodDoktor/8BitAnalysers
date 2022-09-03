@@ -18,7 +18,7 @@
 	return false;
 }*/
 
-int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpeccyUI *pUI)
+int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpectrumEmu*pUI)
 {
 	// TODO: find functions
 	uint8_t instrByte = ReadSpeccyByte(pUI->pSpeccy, pc);
@@ -130,7 +130,7 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 	return 0;
 }
 
-void DrawFunctionInfo(FSpeccyUI* pUI)
+void DrawFunctionInfo(FSpectrumEmu* pUI)
 {
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawFunctionInfoGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
