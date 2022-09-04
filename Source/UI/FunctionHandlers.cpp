@@ -18,10 +18,10 @@
 	return false;
 }*/
 
-int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpectrumEmu*pUI)
+int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins, FSpectrumEmu*pEmu)
 {
 	// TODO: find functions
-	uint8_t instrByte = ReadSpeccyByte(pUI->pSpeccy, pc);
+	const uint8_t instrByte = pEmu->ReadByte(pc);
 	bool bCall = false;
 	bool bRet = false;
 	uint16_t callAddr = 0;
@@ -69,8 +69,8 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 	case 0xec:	// call pe
 	case 0xfc:	// call m
 	{
-		callAddr = ReadSpeccyByte(pUI->pSpeccy, pc + 1);
-		callAddr |= ReadSpeccyByte(pUI->pSpeccy, pc + 2) << 8;
+		callAddr = pEmu->ReadByte( pc + 1);
+		callAddr |= pEmu->ReadByte( pc + 2) << 8;
 		bCall = true;
 	}
 	break;
@@ -96,10 +96,10 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 	{
 		if (nextpc == callAddr)	// did call succeed?
 		{
-			FFunctionInfo &functionInfo = pUI->Functions[callAddr];
+			FFunctionInfo &functionInfo = pEmu->Functions[callAddr];
 			if (functionInfo.NoCalls == 0)	// newly created
 			{
-				FLabelInfo *pLabelInfo = pUI->CodeAnalysis.GetLabelForAddress(callAddr);
+				FLabelInfo *pLabelInfo = pEmu->CodeAnalysis.GetLabelForAddress(callAddr);
 				if (pLabelInfo!=nullptr)
 					functionInfo.FunctionName = pLabelInfo->Name;
 				
@@ -109,20 +109,20 @@ int FunctionTrapFunction(uint16_t pc, uint16_t nextpc, int ticks, uint64_t pins,
 
 			functionInfo.Callers[pc]++;
 			functionInfo.NoCalls++;
-			pUI->FunctionStack.push_back(callAddr);
+			pEmu->FunctionStack.push_back(callAddr);
 			//return UI_DBG_STEP_TRAPID;
 		}
 	}
 
 	if(bRet)
 	{
-		if (pUI->FunctionStack.size() > 0)
+		if (pEmu->FunctionStack.size() > 0)
 		{
-			const uint16_t callAddr = pUI->FunctionStack.back();
-			FFunctionInfo &functionInfo = pUI->Functions[callAddr];
+			const uint16_t callAddr = pEmu->FunctionStack.back();
+			FFunctionInfo &functionInfo = pEmu->Functions[callAddr];
 			functionInfo.ExitPoints[pc]++;
 			functionInfo.EndAddress = std::max(functionInfo.EndAddress, pc);
-			pUI->FunctionStack.pop_back();
+			pEmu->FunctionStack.pop_back();
 		}
 		//return UI_DBG_STEP_TRAPID;
 	}

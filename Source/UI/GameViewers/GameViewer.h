@@ -16,9 +16,6 @@ struct FGameViewerData
 
 void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig);
 
-//FGameViewerData *InitMiscGameViewer(FSpeccyUI *pUI, FGameConfig *pGameConfig);
-//void DrawMiscGameViewer(FSpeccyUI *pUI, FGame *pGame);
-
 // View Config Management
 bool AddViewerConfig(FViewerConfig* pConfig);
 FViewerConfig*	GetViewConfigForGame(const char *pGameName);

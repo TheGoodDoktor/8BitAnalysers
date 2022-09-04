@@ -27,18 +27,8 @@
 #include "ui/ui_memmap.h"
 #include "ui/ui_zx.h"
 
-enum class SpeccyModel
-{
-	Spectrum48K,
-	Spectrum128K
-};
 
-struct FSpeccyConfig
-{
-	SpeccyModel	Model;
-	int		NoStateBuffers = 0;
-};
-
+/*
 struct FSpeccy
 {
 	zx_t		CurrentState;	// Current Spectrum State
@@ -53,21 +43,21 @@ struct FSpeccy
 	zx_t *		pStateBuffers;
 	int			NoStateBuffers;
 	int			CurrentStateBuffer = 0;
-};
+};*/
 
-FSpeccy* InitSpeccy(const FSpeccyConfig& config);
-void TickSpeccy(FSpeccy &speccyInstance);
-void ShutdownSpeccy(FSpeccy*&pSpeccy);
+//FSpeccy* InitSpeccy(const FSpeccyConfig& config);
+//void TickSpeccy(FSpeccy &speccyInstance);
+//void ShutdownSpeccy(FSpeccy*&pSpeccy);
 
-const std::vector<std::string>& GetGameList();
-bool LoadGameSnapshot(FSpeccy &speccyInstance, const char *fName);
+//const std::vector<std::string>& GetGameList();
+//bool LoadGameSnapshot(FSpeccy &speccyInstance, const char *fName);
 
-uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr);
-uint8_t MemReadFunc(int layer, uint16_t addr, void* user_data);
-void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data);
+//uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr);
+//uint8_t MemReadFunc(int layer, uint16_t addr, void* user_data);
+//void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data);
 
 // TODO: Replace these
-inline uint8_t	ReadSpeccyByte(FSpeccy *pSpeccy, uint16_t address)
+/*inline uint8_t	ReadSpeccyByte(FSpeccy* pSpeccy, uint16_t address)
 {
 	return MemReadFunc(pSpeccy->CurrentLayer, address, &pSpeccy->CurrentState);
 }
@@ -75,8 +65,8 @@ inline uint8_t	ReadSpeccyByte(FSpeccy *pSpeccy, uint16_t address)
 inline uint16_t ReadSpeccyWord( FSpeccy* pSpeccy, uint16_t address )
 {
 	return ReadSpeccyByte( pSpeccy, address ) | ( ReadSpeccyByte( pSpeccy, address + 1 ) << 8 );
-}
-
+}*/
+/*
 inline const uint8_t*	GetSpeccyMemPtr(FSpeccy *pSpeccy, uint16_t address)
 {
 	//return MemGetPtr(&pSpeccy->CurrentState, pSpeccy->CurrentLayer, address);
@@ -94,8 +84,6 @@ inline const uint8_t*	GetSpeccyMemPtr(FSpeccy *pSpeccy, uint16_t address)
 inline void	WriteSpeccyByte(FSpeccy *pSpeccy, uint16_t address, uint8_t value)
 {
 	MemWriteFunc(pSpeccy->CurrentLayer, address, value, &pSpeccy->CurrentState);
-}
+}*/
 
-uint16_t GetScreenPixMemoryAddress(int x, int y);
-uint16_t GetScreenAttrMemoryAddress(int x, int y);
 

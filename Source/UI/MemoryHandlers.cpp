@@ -6,14 +6,14 @@
 // Disassembly handlers
 static uint8_t DasmCB(void* user_data)
 {
-	FSpectrumEmu*pUI = (FSpectrumEmu*)user_data;
-	return ReadSpeccyByte(pUI->pSpeccy, pUI->dasmCurr++);
+	FSpectrumEmu*pEmu = (FSpectrumEmu*)user_data;
+	return pEmu->ReadByte(pEmu->dasmCurr++);
 }
 
-static uint16_t DisasmLen(FSpectrumEmu*pUI, uint16_t pc)
+static uint16_t DisasmLen(FSpectrumEmu* pEmu, uint16_t pc)
 {
-	pUI->dasmCurr = pc;
-	uint16_t next_pc = z80dasm_op(pc, DasmCB, 0, pUI);
+	pEmu->dasmCurr = pc;
+	uint16_t next_pc = z80dasm_op(pc, DasmCB, 0, pEmu);
 	return next_pc - pc;
 }
 
@@ -241,7 +241,7 @@ uint8_t g_DiffSnapShotMemory[1 << 16];	// 64 Kb
 std::vector<uint16_t> g_DiffChangedLocations;
 int g_DiffSelectedAddr = -1;
 
-void DrawMemoryDiffUI(FSpectrumEmu*pUI)
+void DrawMemoryDiffUI(FSpectrumEmu* pEmu)
 {
 	const int startAddr = g_bDiffVideoMem ? 0x4000 : 0x5C00;	// TODO: have a header with constants in
 	
@@ -249,7 +249,7 @@ void DrawMemoryDiffUI(FSpectrumEmu*pUI)
 	{
 		for (int addr = startAddr; addr < (1 << 16); addr++)
 		{
-			g_DiffSnapShotMemory[addr] = ReadSpeccyByte(pUI->pSpeccy, addr);
+			g_DiffSnapShotMemory[addr] = pEmu->ReadByte( addr);
 		}
 		g_bSnapshotAvailable = true;
 		g_DiffChangedLocations.clear();
@@ -264,7 +264,7 @@ void DrawMemoryDiffUI(FSpectrumEmu*pUI)
 			g_DiffChangedLocations.clear();
 			for (int addr = startAddr; addr < (1 << 16); addr++)
 			{
-				if (ReadSpeccyByte(pUI->pSpeccy, addr) != g_DiffSnapShotMemory[addr])
+				if (pEmu->ReadByte( addr) != g_DiffSnapShotMemory[addr])
 					g_DiffChangedLocations.push_back(addr);
 			}
 		}
@@ -284,9 +284,9 @@ void DrawMemoryDiffUI(FSpectrumEmu*pUI)
 			}
 			ImGui::SetItemAllowOverlap();	// allow buttons
 			ImGui::SameLine();
-			ImGui::Text("%04Xh\t%02Xh\t%02Xh", changedAddr, g_DiffSnapShotMemory[changedAddr], ReadSpeccyByte(pUI->pSpeccy, changedAddr));
+			ImGui::Text("%04Xh\t%02Xh\t%02Xh", changedAddr, g_DiffSnapShotMemory[changedAddr], pEmu->ReadByte( changedAddr));
 			ImGui::SameLine();
-			DrawAddressLabel(pUI->CodeAnalysis, changedAddr);
+			DrawAddressLabel(pEmu->CodeAnalysis, changedAddr);
 			ImGui::PopID();
 		}
 	}

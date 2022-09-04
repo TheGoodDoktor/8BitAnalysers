@@ -41,13 +41,13 @@ void GenerateSpriteListsFromConfig(FGraphicsViewerState &state, FGameConfig *pGa
 	}
 }
 
-void DrawSpriteOnGraphicsView(const FSpriteDef &spriteDef, int x, int y, FGraphicsView *pGraphicsView, FSpeccy* pSpeccy)
+void DrawSpriteOnGraphicsView(const FSpriteDef &spriteDef, int x, int y, FGraphicsView *pGraphicsView, FSpectrumEmu* pSpeccy)
 {
-	const uint8_t *pImage = GetSpeccyMemPtr(pSpeccy, spriteDef.Address);
+	const uint8_t *pImage = pSpeccy->GetMemPtr(spriteDef.Address);
 	PlotImageAt(pImage, 0, 0, spriteDef.Width, spriteDef.Height * 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width);
 }
 
-void DrawSpriteList(const FSpriteDefList &spriteList, int &selection, FGraphicsView *pGraphicsView, FSpeccy *pSpeccy)
+void DrawSpriteList(const FSpriteDefList &spriteList, int &selection, FGraphicsView *pGraphicsView, FSpectrumEmu*pSpeccy)
 {
 	ImGui::InputInt("SpriteNo", &selection, 1, 1);
 	selection = std::min(std::max(selection, 0), (int)spriteList.Sprites.size() - 1);
@@ -109,7 +109,7 @@ void DrawSpriteListGUI(FGraphicsViewerState &state, FGraphicsView *pGraphicsView
 				GenerateSpriteList(spriteDefList, baseAddress, count, w, h);
 			}
 		}
-		DrawSpriteList(pSpriteList->SpriteList, pSpriteList->Selection, pGraphicsView, state.pSpeccy);
+		DrawSpriteList(pSpriteList->SpriteList, pSpriteList->Selection, pGraphicsView, state.pEmu);
 	}
 	DrawGraphicsView(*pGraphicsView);
 

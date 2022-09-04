@@ -18,21 +18,114 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
+#include "Speccy/zx-roms.h"
 #include "Speccy/ROMLabels.h"
 #include <algorithm>
+#include <Vendor/sokol/sokol_audio.h>
 
+// Memory access functions
+
+uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr)
+{
+	if (layer == 0)
+	{
+		/* ZX128 ROM, RAM 5, RAM 2, RAM 0 */
+		if (addr < 0x4000)
+			return &zx->rom[0][addr];
+		else if (addr < 0x8000)
+			return &zx->ram[5][addr - 0x4000];
+		else if (addr < 0xC000)
+			return &zx->ram[2][addr - 0x8000];
+		else
+			return &zx->ram[0][addr - 0xC000];
+	}
+	else if (layer == 1)
+	{
+		/* 48K ROM, RAM 1 */
+		if (addr < 0x4000)
+			return &zx->rom[1][addr];
+		else if (addr >= 0xC000)
+			return &zx->ram[1][addr - 0xC000];
+	}
+	else if (layer < 8)
+	{
+		if (addr >= 0xC000)
+			return &zx->ram[layer][addr - 0xC000];
+	}
+	/* fallthrough: unmapped memory */
+	return 0;
+}
+
+uint8_t MemReadFunc(int layer, uint16_t addr, void* user_data)
+{
+	assert(user_data);
+	zx_t* zx = (zx_t*)user_data;
+	if ((layer == 0) || (ZX_TYPE_48K == zx->type))
+	{
+		/* CPU visible layer */
+		return mem_rd(&zx->mem, addr);
+	}
+	else
+	{
+		uint8_t* ptr = MemGetPtr(zx, layer - 1, addr);
+		if (ptr)
+			return *ptr;
+		else
+			return 0xFF;
+	}
+}
+
+void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data)
+{
+	assert(user_data);
+	zx_t* zx = (zx_t*)user_data;
+	if ((layer == 0) || (ZX_TYPE_48K == zx->type)) 
+	{
+		mem_wr(&zx->mem, addr, data);
+	}
+	else 
+	{
+		uint8_t* ptr = MemGetPtr(zx, layer - 1, addr);
+		if (ptr) 
+		{
+			*ptr = data;
+		}
+	}
+}
 
 uint8_t		FSpectrumEmu::ReadByte(uint16_t address) const
 {
-	return ReadSpeccyByte(pSpeccy, address);
+	return MemReadFunc(CurrentLayer, address, const_cast<zx_t *>(&ZXEmuState));
+
 }
 uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const 
 {
-	return ReadSpeccyByte(pSpeccy, address) | (ReadSpeccyByte(pSpeccy, address + 1) << 8);
+	return ReadByte(address) | (ReadByte(address + 1) << 8);
 }
+
+const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const 
+{
+	const int bank = address >> 14;
+	const int bankAddr = address & 0x3fff;
+
+	if (bank == 0)
+		return &ZXEmuState.rom[0][bankAddr];
+	else
+		return &ZXEmuState.ram[bank - 1][bankAddr];
+
+	//return MemGetPtr(const_cast<zx_t*>(&ZXEmuState), CurrentLayer, address);
+}
+
+
+void FSpectrumEmu::WriteByte(uint16_t address, uint8_t value)
+{
+	MemWriteFunc(CurrentLayer, address, value, &ZXEmuState);
+}
+
+
 uint16_t	FSpectrumEmu::GetPC(void) 
 {
-	return z80_pc(&pSpeccy->CurrentState.cpu);
+	return z80_pc(&ZXEmuState.cpu);
 }
 
 void	FSpectrumEmu::Break(void)
@@ -52,9 +145,9 @@ void FSpectrumEmu::GraphicsViewerSetAddress(uint16_t address)
 	GraphicsViewerGoToAddress(address);
 }
 
-bool	FSpectrumEmu::ExecThisFrame(void) 
+bool	FSpectrumEmu::ShouldExecThisFrame(void) const
 {
-	return pSpeccy->ExecThisFrame;
+	return ExecThisFrame;
 }
 
 void FSpectrumEmu::InsertROMLabels(FCodeAnalysisState& state) 
@@ -118,6 +211,13 @@ void gfx_destroy_texture(void* h)
 	
 }
 
+/* audio-streaming callback */
+static void PushAudio(const float* samples, int num_samples, void* user_data)
+{
+	//saudio_push(samples, num_samples);
+
+}
+
 int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
@@ -160,6 +260,7 @@ int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, v
 z80_tick_t g_OldTickCB = nullptr;
 
 extern uint16_t g_PC;
+// TODO: thunk to member function
 uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 {
 	FSpectrumEmu*pEmu = (FSpectrumEmu*)user_data;
@@ -194,26 +295,57 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 		IOAnalysisHandler(pEmu->IOAnalysis, pc, pins);
 	}
 
-	return g_OldTickCB(num, pins, &pEmu->pSpeccy->CurrentState);
+	return g_OldTickCB(num, pins, &pEmu->ZXEmuState);
 }
 
-bool FSpectrumEmu::Init(FSpeccy *pSpec)
+bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 {
-	pSpeccy = pSpec;
+	// Initialise Emulator
+		
+	// setup pixel buffer
+	const size_t pixelBufferSize = 320 * 256 * 4;
+	FrameBuffer = new unsigned char[pixelBufferSize * 2];
+
+	// setup texture
+	Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FrameBuffer), 320, 256);
+	// setup emu
+	zx_type_t type = config.Model == ESpectrumModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
+	zx_joystick_type_t joy_type = ZX_JOYSTICKTYPE_NONE;
+
+	zx_desc_t desc;
+	memset(&desc, 0, sizeof(zx_desc_t));
+	desc.type = type;
+	desc.joystick_type = joy_type;
+	desc.pixel_buffer = FrameBuffer;
+	desc.pixel_buffer_size = pixelBufferSize;
+	desc.audio_cb = PushAudio;	// our audio callback
+	desc.audio_sample_rate = saudio_sample_rate();
+	desc.rom_zx48k = dump_amstrad_zx48k_bin;
+	desc.rom_zx48k_size = sizeof(dump_amstrad_zx48k_bin);
+	desc.rom_zx128_0 = dump_amstrad_zx128k_0_bin;
+	desc.rom_zx128_0_size = sizeof(dump_amstrad_zx128k_0_bin);
+	desc.rom_zx128_1 = dump_amstrad_zx128k_1_bin;
+	desc.rom_zx128_1_size = sizeof(dump_amstrad_zx128k_1_bin);
+
+	zx_init(&ZXEmuState, &desc);
+
+	GamesList.Init(this);
+	GamesList.EnumerateGames();
+
+	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
 
 	// Trap callback needs to be set before we create the UI
-	z80_trap_cb(&pSpeccy->CurrentState.cpu, ZXSpectrumTrapCallback, this);
+	z80_trap_cb(&ZXEmuState.cpu, ZXSpectrumTrapCallback, this);
 
-	g_OldTickCB = pSpeccy->CurrentState.cpu.tick_cb;
-	pSpeccy->CurrentState.cpu.user_data = this;
-	pSpeccy->CurrentState.cpu.tick_cb = Z80Tick;
+	g_OldTickCB = ZXEmuState.cpu.tick_cb;
+	ZXEmuState.cpu.user_data = this;
+	ZXEmuState.cpu.tick_cb = Z80Tick;
 
-	pSpeccy = pSpeccy;
 	//ui_init(zxui_draw);
 	{
 		ui_zx_desc_t desc = { 0 };
-		desc.zx = &pSpeccy->CurrentState;
+		desc.zx = &ZXEmuState;
 		desc.boot_cb = boot_cb;
 		desc.create_texture_cb = gfx_create_texture;
 		desc.update_texture_cb = gfx_update_texture;
@@ -237,24 +369,25 @@ bool FSpectrumEmu::Init(FSpeccy *pSpec)
 	
 
 	// Setup Disassembler for function view
-	FDasmDesc desc;
-	desc.LayerNames[0] = "CPU Mapped";
-	desc.LayerNames[1] = "Layer 0";
-	desc.LayerNames[2] = "Layer 1";
-	desc.LayerNames[3] = "Layer 2";
-	desc.LayerNames[4] = "Layer 3";
-	desc.LayerNames[5] = "Layer 4";
-	desc.LayerNames[6] = "Layer 5";
-	desc.LayerNames[7] = "Layer 6";
-	desc.CPUType = DasmCPUType::Z80;
-	desc.StartAddress = 0x0000;
-	desc.ReadCB = MemReadFunc;
-	desc.pUserData = &pSpeccy->CurrentState;
-	desc.pEmulator = this;
-	desc.Title = "FunctionDasm";
-	DasmInit(&FunctionDasm, &desc);
+	{
+		FDasmDesc desc;
+		desc.LayerNames[0] = "CPU Mapped";
+		desc.LayerNames[1] = "Layer 0";
+		desc.LayerNames[2] = "Layer 1";
+		desc.LayerNames[3] = "Layer 2";
+		desc.LayerNames[4] = "Layer 3";
+		desc.LayerNames[5] = "Layer 4";
+		desc.LayerNames[6] = "Layer 5";
+		desc.LayerNames[7] = "Layer 6";
+		desc.CPUType = DasmCPUType::Z80;
+		desc.StartAddress = 0x0000;
+		desc.ReadCB = MemReadFunc;
+		desc.pUserData = &ZXEmuState;
+		desc.pEmulator = this;
+		desc.Title = "FunctionDasm";
+		DasmInit(&FunctionDasm, &desc);
+	}
 
-	GraphicsViewer.pSpeccy = pSpeccy;
 	GraphicsViewer.pEmu = this;
 	InitGraphicsViewer(GraphicsViewer);
 	IOAnalysis.pCodeAnalysis = &CodeAnalysis;
@@ -356,7 +489,7 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 		if (pGameConfig->Name == pGameName)
 		{
 			std::string gameFile = "Games/" + pGameConfig->Z80File;
-			if (LoadGameSnapshot(*pSpeccy, gameFile.c_str()))
+			if (GamesList.LoadGame(gameFile.c_str()))
 			{
 				StartGame(pGameConfig);
 				return true;
@@ -402,14 +535,13 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		{
 			if (ImGui::BeginMenu("New Game from Snapshot File"))
 			{
-				for (const auto& game : GetGameList())
+				for(int gameNo=0;gameNo<GamesList.GetNoGames();gameNo++)
 				{
-					if (ImGui::MenuItem(game.c_str()))
+					if (ImGui::MenuItem(GamesList.GetGameName(gameNo).c_str()))
 					{
-						const std::string gameFile = "Games/" + game;
-						if (LoadGameSnapshot(*pSpeccy, gameFile.c_str()))
+						if (GamesList.LoadGame(gameNo))
 						{
-							FGameConfig *pNewConfig = CreateNewGameConfigFromZ80File(game.c_str());
+							FGameConfig *pNewConfig = CreateNewGameConfigFromZ80File(GamesList.GetGame(gameNo).FileName.c_str());
 							if(pNewConfig != nullptr)
 								StartGame(pNewConfig);
 						}
@@ -427,7 +559,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 					{
 						const std::string gameFile = "Games/" + pGameConfig->Z80File;
 
-						if(LoadGameSnapshot(*pSpeccy, gameFile.c_str()))
+						if(GamesList.LoadGame(gameFile.c_str()))
 						{
 							StartGame(pGameConfig);
 						}
@@ -455,7 +587,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 					std::string outBinFname = "OutputBin/" + pActiveGame->pConfig->Name + ".bin";
 					uint8_t *pSpecMem = new uint8_t[65536];
 					for (int i = 0; i < 65536; i++)
-						pSpecMem[i] = ReadSpeccyByte(pSpeccy, i);
+						pSpecMem[i] = ReadByte(i);
 					SaveBinaryFile(outBinFname.c_str(), pSpecMem, 65536);
 					delete pSpecMem;
 				}
@@ -653,9 +785,25 @@ void DrawDebuggerUI(ui_dbg_t *pDebugger)
 	_ui_dbg_bp_draw(pDebugger);*/
 }
 
-void FSpectrumEmu::UpdatePreTick()
+void FSpectrumEmu::Tick()
 {
-	pSpeccy->ExecThisFrame = ui_zx_before_exec(&UIZX);
+	ExecThisFrame = ui_zx_before_exec(&UIZX);
+
+	if (ExecThisFrame)
+	{
+		const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
+		zx_exec(&ZXEmuState, max(static_cast<uint32_t>(frameTime), uint32_t(1)));
+		ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
+
+		// Copy state buffer over - could be more efficient if needed
+		//memcpy(&speccyInstance.pStateBuffers[speccyInstance.CurrentStateBuffer], &speccyInstance.CurrentState, sizeof(zx_t));
+
+		//speccyInstance.CurrentStateBuffer = (speccyInstance.CurrentStateBuffer + 1) % speccyInstance.NoStateBuffers;
+
+	}
+
+	// Draw UI
+	DrawDockingView();
 }
 
 
@@ -713,7 +861,7 @@ void FSpectrumEmu::DrawUI()
 	ui_zx_t* pZXUI = &UIZX;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 	
-	if(pSpeccy->ExecThisFrame)
+	if(ExecThisFrame)
 		ui_zx_after_exec(pZXUI);
 
 	const int instructionsThisFrame = (int)CodeAnalysis.FrameTrace.size();
@@ -721,7 +869,7 @@ void FSpectrumEmu::DrawUI()
 	maxInst = max(maxInst, instructionsThisFrame);
 
 	// Store trace and frame image
-	if (pSpeccy->ExecThisFrame)
+	if (ExecThisFrame)
 	{
 		FrameTraceViewer.CaptureFrame();
 		CodeAnalysis.FrameTrace.clear();
@@ -860,11 +1008,6 @@ bool FSpectrumEmu::DrawDockingView()
 	return bQuit;
 }
 
-void FSpectrumEmu::UpdatePostTick()
-{
-	DrawDockingView();
-	
-}
 
 // Cheats
 
@@ -887,15 +1030,38 @@ void FSpectrumEmu::DrawCheatsUI()
 				if (cheat.bEnabled)	// cheat activated
 				{
 					// store old value
-					entry.OldValue = ReadSpeccyByte(pSpeccy, entry.Address);
-					WriteSpeccyByte(pSpeccy, entry.Address, entry.Value);
+					entry.OldValue = ReadByte( entry.Address);
+					WriteByte( entry.Address, entry.Value);
 				}
 				else
 				{
-					WriteSpeccyByte(pSpeccy, entry.Address, entry.OldValue);
+					WriteByte( entry.Address, entry.OldValue);
 				}
 			}
 		}
 		ImGui::PopID();
 	}
+}
+
+
+uint16_t GetScreenPixMemoryAddress(int x, int y)
+{
+	if (x < 0 || x>255 || y < 0 || y> 191)
+		return 0;
+
+	const int char_x = x / 8;
+	const uint16_t addr = 0x4000 | ((y & 7) << 8) | (((y >> 3) & 7) << 5) | (((y >> 6) & 3) << 11) | (char_x & 31);
+
+	return addr;
+}
+
+uint16_t GetScreenAttrMemoryAddress(int x, int y)
+{
+	if (x < 0 || x>255 || y < 0 || y> 191)
+		return 0;
+
+	const int char_x = x / 8;
+	const int char_y = y / 8;
+
+	return 0x5800 + (char_y * 32) + char_x;
 }

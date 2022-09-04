@@ -162,6 +162,9 @@
     <ClCompile Include="..\..\Source\UI\GameViewers\StarquakeViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\IOAnalysis.cpp" />
     <ClCompile Include="..\..\Source\UI\MemoryHandlers.cpp" />
+    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\GamesList.cpp" />
+    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\SNALoader.cpp" />
+    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.cpp" />
     <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\FrameTraceViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\GraphicsViewer.cpp" />
@@ -198,6 +201,9 @@
     <ClInclude Include="..\..\Source\UI\GameViewers\StarquakeViewer.h" />
     <ClInclude Include="..\..\Source\UI\IOAnalysis.h" />
     <ClInclude Include="..\..\Source\UI\MemoryHandlers.h" />
+    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\GamesList.h" />
+    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\SNALoader.h" />
+    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.h" />
     <ClInclude Include="..\..\Source\UI\SpeccyUI.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\FrameTraceViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\GraphicsViewer.h" />

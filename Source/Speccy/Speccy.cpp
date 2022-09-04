@@ -1,3 +1,4 @@
+#if 0
 #include "Speccy.h"
 
 #include "zx-roms.h"
@@ -8,8 +9,6 @@
 #include "Util/FileUtil.h"
 #include <algorithm>
 
-#define SOKOL_IMPL
-#include "sokol_audio.h"
 
 std::vector<std::string> g_GamesList;
 
@@ -43,38 +42,12 @@ static void PushAudio(const float* samples, int num_samples, void* user_data)
 	
 }
 
-int MyTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
-{
-	FSpeccy *pSpeccy = (FSpeccy *)user_data;
-
-	const uint16_t addr = Z80_GET_ADDR(pins);
-	if ((pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_RD)) 
-	{
-		const uint16_t addr = Z80_GET_ADDR(pins);
-		//win->heatmap.items[addr].read_count++;
-	}
-	else if ((pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR)) 
-	{
-		const uint16_t addr = Z80_GET_ADDR(pins);
-		//win->heatmap.items[addr].write_count++;
-	}
-	return 0;
-}
-
-
 
 
 
 FSpeccy* InitSpeccy(const FSpeccyConfig& config)
 {
 	FSpeccy *pNewInstance = new FSpeccy();
-	//keybuf_init(6);
-	//clock_init();
-	saudio_desc audioDesc = {};
-	memset(&audioDesc, 0, sizeof(saudio_desc));
-	saudio_setup(&audioDesc);
-	assert(saudio_isvalid() == true);
-	//fs_init();
 
 	// setup pixel buffer
 	const size_t pixelBufferSize = 320 * 256 * 4;
@@ -134,7 +107,6 @@ void TickSpeccy(FSpeccy &speccyInstance)
 
 void ShutdownSpeccy(FSpeccy*&pSpeccy)
 {
-	saudio_shutdown();
 	delete pSpeccy;
 	pSpeccy = nullptr;
 }
@@ -254,92 +226,6 @@ bool LoadGameSnapshot(FSpeccy &speccyInstance, const char *fName)
 	else
 		return false;
 }
-// Memory access functions
-
-uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr)
-{
-	if (layer == 0)
-	{
-		/* ZX128 ROM, RAM 5, RAM 2, RAM 0 */
-		if (addr < 0x4000)
-			return &zx->rom[0][addr];
-		else if (addr < 0x8000)
-			return &zx->ram[5][addr - 0x4000];
-		else if (addr < 0xC000)
-			return &zx->ram[2][addr - 0x8000];
-		else
-			return &zx->ram[0][addr - 0xC000];
-	}
-	else if (layer == 1)
-	{
-		/* 48K ROM, RAM 1 */
-		if (addr < 0x4000)
-			return &zx->rom[1][addr];
-		else if (addr >= 0xC000)
-			return &zx->ram[1][addr - 0xC000];
-	}
-	else if (layer < 8)
-	{
-		if (addr >= 0xC000)
-			return &zx->ram[layer][addr - 0xC000];
-	}
-	/* fallthrough: unmapped memory */
-	return 0;
-}
-
-uint8_t MemReadFunc(int layer, uint16_t addr, void* user_data)
-{
-	assert(user_data);
-	zx_t* zx = (zx_t*)user_data;
-	if ((layer == 0) || (ZX_TYPE_48K == zx->type))
-	{
-		/* CPU visible layer */
-		return mem_rd(&zx->mem, addr);
-	}
-	else
-	{
-		uint8_t* ptr = MemGetPtr(zx, layer - 1, addr);
-		if (ptr)
-			return *ptr;
-		else
-			return 0xFF;
-	}
-}
-
-void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data)
-{
-	assert(user_data);
-	zx_t* zx = (zx_t*)user_data;
-	if ((layer == 0) || (ZX_TYPE_48K == zx->type)) {
-		mem_wr(&zx->mem, addr, data);
-	}
-	else {
-		uint8_t* ptr = MemGetPtr(zx, layer - 1, addr);
-		if (ptr) {
-			*ptr = data;
-		}
-	}
-}
+#endif
 
 
-uint16_t GetScreenPixMemoryAddress(int x, int y)
-{
-	if (x < 0 || x>255 || y < 0 || y> 191)
-		return 0;
-
-	const int char_x = x / 8;
-	const uint16_t addr = 0x4000 | ((y & 7) << 8) | (((y >> 3) & 7) << 5) | (((y >> 6) & 3) << 11) | (char_x & 31);
-
-	return addr;
-}
-
-uint16_t GetScreenAttrMemoryAddress(int x, int y)
-{
-	if (x < 0 || x>255 || y < 0 || y> 191)
-		return 0;
-
-	const int char_x = x / 8;
-	const int char_y = y / 8;
-
-	return 0x5800 + (char_y * 32) + char_x;
-}

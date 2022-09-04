@@ -6,7 +6,6 @@
 #include <map>
 #include <string>
 
-struct FSpeccy;
 class FSpectrumEmu;
 struct FGame;
 
@@ -42,7 +41,6 @@ struct FGraphicsViewerState
 
 	// housekeeping
 	FGraphicsView*	pGraphicsView = nullptr;
-	FSpeccy*		pSpeccy = nullptr;
 	FSpectrumEmu*	pEmu = nullptr;
 	FGame*			pGame = nullptr;
 

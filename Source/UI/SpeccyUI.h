@@ -10,6 +10,7 @@
 #include "Viewers/GraphicsViewer.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/FrameTraceViewer.h"
+#include "SnapshotLoaders/GamesList.h"
 #include "IOAnalysis.h"
 
 struct FGame;
@@ -17,6 +18,18 @@ struct FGameViewer;
 struct FGameViewerData;
 struct FGameConfig;
 struct FViewerConfig;
+
+enum class ESpectrumModel
+{
+	Spectrum48K,
+	Spectrum128K
+};
+
+struct FSpectrumConfig
+{
+	ESpectrumModel	Model;
+	int				NoStateBuffers = 0;
+};
 
 struct FGame
 {
@@ -42,15 +55,14 @@ public:
 		CPUType = ECPUType::Z80;
 	}
 
-	bool	Init(FSpeccy* pSpeccy);
+	bool	Init(const FSpectrumConfig& config);
 	void	Shutdown();
 	void	StartGame(FGameConfig* pGameConfig);
 	bool	StartGame(const char* pGameName);
 	void	SaveCurrentGameData();
 	void	DrawMainMenu(double timeMS);
 	void	DrawCheatsUI();
-	void	UpdatePreTick();
-	void	UpdatePostTick();
+	void	Tick();
 	void	DrawMemoryTools();
 	void	DrawUI();
 	bool	DrawDockingView();
@@ -63,11 +75,13 @@ public:
 	//ICPUInterface Begin
 	uint8_t		ReadByte(uint16_t address) const override;
 	uint16_t	ReadWord(uint16_t address) const override;
+	const uint8_t*	GetMemPtr(uint16_t address) const override;
+	void		WriteByte(uint16_t address, uint8_t value) override;
 	uint16_t	GetPC(void) override;
 	void		Break(void) override;
 	void		Continue(void) override;
 	void		GraphicsViewerSetAddress(uint16_t address) override;
-	bool		ExecThisFrame(void) override;
+	bool		ShouldExecThisFrame(void) const override;
 	void		InsertROMLabels(FCodeAnalysisState& state) override;
 	void		InsertSystemLabels(FCodeAnalysisState& state) override;
 	//ICPUInterface End
@@ -82,11 +96,28 @@ public:
 		GraphicsViewer.Address = address;
 	}
 
-	FSpeccy*		pSpeccy = nullptr;
+	// TODO: Make private
+	// 
+	//FSpeccy*		pSpeccy = nullptr;
+
+	// Emulator 
+	zx_t			ZXEmuState;	// Chips Spectrum State
+	int				CurrentLayer = 0;	// layer ??
+
+	unsigned char*	FrameBuffer;	// pixel buffer to store emu output
+	ImTextureID		Texture;		// texture 
+	
+	bool			ExecThisFrame = true; // Whether the emulator should execute this frame (controlled by UI)
+	float			ExecSpeedScale = 1.0f;
+
+	// Chips UI
 	ui_zx_t			UIZX;
 
-	FGame *				pActiveGame = nullptr;
+	FGame *			pActiveGame = nullptr;
 
+	FGamesList		GamesList;
+
+	//Viewers
 	FSpectrumViewer			SpectrumViewer;
 	FFrameTraceViewer		FrameTraceViewer;
 	FGraphicsViewerState	GraphicsViewer;
@@ -121,21 +152,7 @@ public:
 };
 
 
-
-//FSpeccyUI* InitSpeccyUI(FSpeccy *pSpeccy);
-//SpeccyUI* GetSpeccyEmulator();
-//bool StartGame(FSpectrumEmu* pUI, const char *pGameName);
-//void SaveCurrentGameData(FSpeccyUI *pUI);
-//void ShutdownSpeccyUI(FSpeccyUI*pSpeccyUI);
-//void UpdatePreTickSpeccyUI(FSpeccyUI*pSpeccyUI);
-//void UpdatePostTickSpeccyUI(FSpeccyUI*pSpeccyUI);
-
-//void AddMemoryHandler(FSpeccyUI *pUI, const FMemoryAccessHandler &handler);
-
-//FGameViewer &AddGameViewer(FSpeccyUI *pUI, const char *pName);
 void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth, uint8_t colAttr = 0x7);
-
-//void PlotCharacterBlockAt(const FSpeccy *pSpeccy, uint16_t addr, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth);
-//void PlotCharacterAt(const uint8_t *pSrc, int xp, int yp, uint32_t *pDest, int destWidth);
-
+uint16_t GetScreenPixMemoryAddress(int x, int y);
+uint16_t GetScreenAttrMemoryAddress(int x, int y);
 

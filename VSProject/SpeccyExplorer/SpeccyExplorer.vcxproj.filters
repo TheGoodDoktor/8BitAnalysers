@@ -67,6 +67,9 @@
     <Filter Include="Source Files\UI\Viewers">
       <UniqueIdentifier>{c9ababe9-8915-42a6-98a4-02b0a749a660}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\UI\SnapshotLoaders">
+      <UniqueIdentifier>{82368abc-dbbe-455f-a808-2da24cbff7ce}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\main.cpp">
@@ -176,6 +179,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\Viewers\GraphicsViewer.cpp">
       <Filter>Source Files\UI\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\GamesList.cpp">
+      <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.cpp">
+      <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\SNALoader.cpp">
+      <Filter>Source Files\UI\SnapshotLoaders</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -481,6 +493,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\Viewers\FrameTraceViewer.h">
       <Filter>Source Files\UI\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\GamesList.h">
+      <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.h">
+      <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\SNALoader.h">
+      <Filter>Source Files\UI\SnapshotLoaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

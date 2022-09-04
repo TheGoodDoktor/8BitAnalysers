@@ -774,7 +774,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	state.HighlightAddress = state.HoverAddress;
 	state.HoverAddress = -1;
 
-	if (state.CPUInterface->ExecThisFrame())
+	if (state.CPUInterface->ShouldExecThisFrame())
 		state.CurrentFrameNo++;
 
 	UpdateItemList(state);

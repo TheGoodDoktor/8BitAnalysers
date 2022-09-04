@@ -9,8 +9,10 @@
 #include <dinput.h>
 #include <tchar.h>
 
-#include "Speccy/Speccy.h"
 #include "UI/SpeccyUI.h"
+
+#define SOKOL_IMPL
+#include "sokol_audio.h"
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
@@ -27,8 +29,6 @@ void CleanupDeviceD3D();
 void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-FSpeccy *g_pSpeccy = nullptr;
 
 // Main code
 int main(int argc, char** argv)
@@ -51,6 +51,12 @@ int main(int argc, char** argv)
     // Show the window
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
+
+    // Setup audio
+    saudio_desc audioDesc = {};
+    memset(&audioDesc, 0, sizeof(saudio_desc));
+    saudio_setup(&audioDesc);
+    assert(saudio_isvalid() == true);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -105,12 +111,12 @@ int main(int argc, char** argv)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	// Speccy 
-	FSpeccyConfig config;
+	FSpectrumConfig config;
 	config.NoStateBuffers = 10;
-	g_pSpeccy = InitSpeccy(config);
-	FSpeccy &speccy = *g_pSpeccy;
+	//g_pSpeccy = InitSpeccy(config);
+	//FSpeccy &speccy = *g_pSpeccy;
     FSpectrumEmu* pSpectrumEmulator = new FSpectrumEmu;
-    pSpectrumEmulator->Init(g_pSpeccy);
+    pSpectrumEmulator->Init(config);
 
 	if (argc > 1)
         pSpectrumEmulator->StartGame(argv[1]);
@@ -138,12 +144,9 @@ int main(int argc, char** argv)
         ImGui::NewFrame();
 
 		// speccy update & render
-        pSpectrumEmulator->UpdatePreTick();
-		if(speccy.ExecThisFrame)
-			TickSpeccy(*g_pSpeccy);
-        pSpectrumEmulator->UpdatePostTick();
-
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        pSpectrumEmulator->Tick();
+        
+		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (pSpectrumEmulator->bShowImGuiDemo)
             ImGui::ShowDemoWindow(&pSpectrumEmulator->bShowImGuiDemo);
 
@@ -166,7 +169,9 @@ int main(int argc, char** argv)
 
 	// shutdown the speccy stuff
     pSpectrumEmulator->Shutdown();
-	ShutdownSpeccy(g_pSpeccy);
+	//ShutdownSpeccy(g_pSpeccy);
+
+    saudio_shutdown();
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
@@ -256,18 +261,18 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
-		if (g_pSpeccy != nullptr && wParam < 256)
-		{
+		//if (g_pSpeccy != nullptr && wParam < 256)
+		//{
 			//zx_key_down(&g_pSpeccy->CurrentState, '1');
-		}
+		//}
 			//io.KeysDown[wParam] = 1;
 		return 0;
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
-		if (g_pSpeccy != nullptr && wParam < 256)
-		{
+		//if (g_pSpeccy != nullptr && wParam < 256)
+		//{
 			//zx_key_up(&g_pSpeccy->CurrentState, '1');
-		}
+		//}
 		return 0;
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu

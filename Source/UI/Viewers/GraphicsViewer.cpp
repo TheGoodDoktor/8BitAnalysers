@@ -134,7 +134,7 @@ void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, 
 	{
 		for(int xChar =0;xChar<columnWidth;xChar++)
 		{
-			const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, memAddr);
+			const uint8_t *pImage = state.pEmu->GetMemPtr(memAddr);
 			const uint8_t col = GetHeatmapColourForMemoryAddress(state.pEmu->CodeAnalysis, memAddr, state.HeatmapThreshold);
 			/*
 			FDataInfo *pDataInfo = state.pUI->CodeAnalysis.DataInfo[memAddr];
@@ -314,7 +314,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 					{
 						for (int xChar = 0; xChar < state.XSize; xChar++)
 						{
-							const uint8_t *pImage = GetSpeccyMemPtr(state.pSpeccy, address);
+							const uint8_t *pImage = state.pEmu->GetMemPtr( address);
 							const int xp = ((yLine & 1) == 0) ? xChar : (state.XSize - 1) - xChar;
 							if (address + graphicsUnitSize < 0xffff)
 								PlotImageAt(pImage, offsetX + (xp * 8), offsetY + yLine, 1, 1, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
@@ -342,7 +342,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 				break;
 
 			uint16_t addr = state.Address + offset;
-			const uint8_t *pSrc = GetSpeccyMemPtr(state.pSpeccy, addr);
+			const uint8_t *pSrc = state.pEmu->GetMemPtr(addr);
 			const int y0to2 = ((offset >> 8) & 7);
 			const int y3to5 = ((offset >> 5) & 7) << 3;
 			const int y6to7 = ((offset >> 11) & 3) << 6;

@@ -13,13 +13,13 @@ void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 	// Init Frame Trace
 	for (int i = 0; i < kNoFramesInTrace; i++)
 	{
-		FrameTrace[i].Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->pSpeccy->FrameBuffer), 320, 256);
+		FrameTrace[i].Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->FrameBuffer), 320, 256);
 	}
 }
 
 void FFrameTraceViewer::CaptureFrame()
 {
-	ImGui_ImplDX11_UpdateTextureRGBA(FrameTrace[CurrentTraceFrame].Texture, pSpectrumEmu->pSpeccy->FrameBuffer);
+	ImGui_ImplDX11_UpdateTextureRGBA(FrameTrace[CurrentTraceFrame].Texture, pSpectrumEmu->FrameBuffer);
 	FrameTrace[CurrentTraceFrame].InstructionTrace = pSpectrumEmu->CodeAnalysis.FrameTrace;
 	if (++CurrentTraceFrame == kNoFramesInTrace)
 		CurrentTraceFrame = 0;

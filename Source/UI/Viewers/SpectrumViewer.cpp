@@ -8,17 +8,16 @@
 #include <Shared/CodeAnalyser/CodeAnalyserUI.h>
 #include <UI/Viewers/GraphicsViewer.h>
 
-void ReadSpeccyKeys(FSpeccy* pSpeccy);
+void ReadSpeccyKeys(FSpectrumEmu* pSpeccy);
 
 void FSpectrumViewer::Draw()
 {
 	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->CodeAnalysis;
-	FSpeccy* pSpeccy = pSpectrumEmu->pSpeccy;
 
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
-	ImGui::Image(pSpeccy->Texture, ImVec2(320, 256));
+	ImGui::Image(pSpectrumEmu->Texture, ImVec2(320, 256));
 	if (ImGui::IsItemHovered())
 	{
 		const int borderOffsetX = (320 - 256) / 2;
@@ -61,7 +60,7 @@ void FSpectrumViewer::Draw()
 				// store pixel data for selected character
 				uint8_t charData[8];
 				for (int charLine = 0; charLine < 8; charLine++)
-					charData[charLine] = ReadSpeccyByte(pSpeccy, GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
+					charData[charLine] = pSpectrumEmu->ReadByte( GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
 				CharDataFound = codeAnalysis.FindMemoryPattern(charData, 8, FoundCharDataAddress);
 			}
 
@@ -82,43 +81,43 @@ void FSpectrumViewer::Draw()
 		const ImU32 col = 0xffffffff;	// TODO: pulse
 		dl->AddRect(ImVec2(SelectedCharX, SelectedCharY), ImVec2(SelectedCharX + 8, SelectedCharY + 8), col);
 
-		ImGui::Text("Pixel Char Address:");
-		ImGui::SameLine();
+		ImGui::Text("Pixel Char Address: $%04X", SelectPixAddr);
+		//ImGui::SameLine();
 		DrawAddressLabel(codeAnalysis, SelectPixAddr);
-		ImGui::Text("Attribute Address:");
-		ImGui::SameLine();
+		ImGui::Text("Attribute Address: $%04X", SelectAttrAddr);
+		//ImGui::SameLine();
 		DrawAddressLabel(codeAnalysis, SelectAttrAddr);
 
 		if (CharDataFound)
 		{
-			ImGui::Text("Found at: ");
+			ImGui::Text("Found at: $%04X", FoundCharDataAddress);
 			DrawAddressLabel(codeAnalysis, FoundCharDataAddress);
-			ImGui::SameLine();
+			//ImGui::SameLine();
 			if (ImGui::Button("Show in GFX View"))
 				pSpectrumEmu->GraphicsViewerGoToAddress(FoundCharDataAddress);
 		}
 	}
 
-	ImGui::SliderFloat("Speed Scale", &pSpeccy->ExecSpeedScale, 0.0f, 1.0f);
+	ImGui::SliderFloat("Speed Scale", &pSpectrumEmu->ExecSpeedScale, 0.0f, 1.0f);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	// read keys
 	if (ImGui::IsWindowFocused())
 	{
-		ReadSpeccyKeys(pSpeccy);
+		ReadSpeccyKeys(pSpectrumEmu);
 	}
 }
 
 
 
-void ReadSpeccyKeys(FSpeccy* pSpeccy)
+void ReadSpeccyKeys(FSpectrumEmu* pSpeccy)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	for (int i = 0; i < 10; i++)
 	{
 		if (io.KeysDown[0x30 + i] == 1)
 		{
-			zx_key_down(&pSpeccy->CurrentState, '0' + i);
-			zx_key_up(&pSpeccy->CurrentState, '0' + i);
+			zx_key_down(&pSpeccy->ZXEmuState, '0' + i);
+			zx_key_up(&pSpeccy->ZXEmuState, '0' + i);
 		}
 	}
 
@@ -126,8 +125,8 @@ void ReadSpeccyKeys(FSpeccy* pSpeccy)
 	{
 		if (io.KeysDown[0x41 + i] == 1)
 		{
-			zx_key_down(&pSpeccy->CurrentState, 'a' + i);
-			zx_key_up(&pSpeccy->CurrentState, 'a' + i);
+			zx_key_down(&pSpeccy->ZXEmuState, 'a' + i);
+			zx_key_up(&pSpeccy->ZXEmuState, 'a' + i);
 		}
 	}
 }

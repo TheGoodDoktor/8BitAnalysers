@@ -28,6 +28,8 @@ class ICPUInterface
 public:
 	virtual uint8_t		ReadByte(uint16_t address) const = 0;
 	virtual uint16_t	ReadWord(uint16_t address) const = 0;
+	virtual const uint8_t*	GetMemPtr(uint16_t address) const = 0;
+	virtual void		WriteByte(uint16_t address, uint8_t value) = 0;
 	virtual uint16_t	GetPC(void) = 0;
 
 	// commands
@@ -35,7 +37,7 @@ public:
 	virtual void	Continue() = 0;
 	virtual void	GraphicsViewerSetAddress(uint16_t address) = 0;
 
-	virtual bool	ExecThisFrame(void) = 0;
+	virtual bool	ShouldExecThisFrame(void) const = 0;
 
 	virtual void InsertROMLabels(struct FCodeAnalysisState& state) = 0;
 	virtual void InsertSystemLabels(struct FCodeAnalysisState& state) = 0;
