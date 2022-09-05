@@ -22,6 +22,7 @@
 #include "Speccy/ROMLabels.h"
 #include <algorithm>
 #include <Vendor/sokol/sokol_audio.h>
+#include "Exporters/SkoolkitExporter.h"
 
 // Memory access functions
 
@@ -612,7 +613,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 					std::string gameName = pActiveGame->pConfig->Name;
 					std::string outCtlFname = "OutputASM/" + gameName + ".ctl";
 
-					OutputSkoolKitControlFile(CodeAnalysis, outCtlFname.c_str(), gameName.c_str(), 0x4000, 0xffff);
+					ExportSkoolKitControlFile(CodeAnalysis, outCtlFname.c_str(), gameName.c_str(), 0x4000, 0xffff);
 				}
 			}
 

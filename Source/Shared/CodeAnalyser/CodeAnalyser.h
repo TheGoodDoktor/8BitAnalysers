@@ -216,4 +216,3 @@ void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pTe
 
 
 bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFileName, uint16_t startAddr, uint16_t endAddr);
-bool OutputSkoolKitControlFile(FCodeAnalysisState& state, const char* pTextFileName, const char* pGameName, uint16_t startAddr, uint16_t endAddr);

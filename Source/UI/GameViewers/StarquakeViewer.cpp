@@ -478,7 +478,7 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		// Draw Moving Sprites
 		for ( int sprNo = 0; sprNo < 6; sprNo++ )
 		{
-			FStarquakeSprite* pSprite = (FStarquakeSprite*)pEmu->GetMemPtr(kSpriteList + ( sprNo * sizeof( FStarquakeSprite ) ) );
+			const FStarquakeSprite* pSprite = (FStarquakeSprite*)pEmu->GetMemPtr(kSpriteList + ( sprNo * (uint16_t)sizeof( FStarquakeSprite ) ) );
 
 			const uint8_t* pImage = pEmu->GetMemPtr(pSprite->SpriteImagePtr );
 
@@ -489,7 +489,7 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		// draw platforms
 		for ( int platNo = 0; platNo < 6; platNo++ )
 		{
-			FPlatformState* pPlatform = (FPlatformState*)pEmu->GetMemPtr(kPlatformStates + ( platNo * sizeof( FPlatformState ) ) );
+			const FPlatformState* pPlatform = (FPlatformState*)pEmu->GetMemPtr(kPlatformStates + ( platNo * (uint16_t)sizeof( FPlatformState ) ) );
 
 			int x = pPlatform->XCharPos;// AndPlatNo & 31;
 			int y = pPlatform->YCharPos;
@@ -502,7 +502,7 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		// draw electric hazards
 		for(int elecHaz = 0;elecHaz < kNoElectricHazards; elecHaz++)
 		{
-			FElectricHazardState* pElecHazardState = (FElectricHazardState *)pEmu->GetMemPtr( kElectricHazardStates + ( elecHaz * sizeof( FElectricHazardState) ) );
+			const FElectricHazardState* pElecHazardState = (FElectricHazardState *)pEmu->GetMemPtr( kElectricHazardStates + ( elecHaz * (uint16_t)sizeof( FElectricHazardState) ) );
 		
 			if ( pElecHazardState->XPos != 0 && pElecHazardState->Active != 0 )
 			{

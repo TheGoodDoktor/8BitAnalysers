@@ -155,6 +155,7 @@
     <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp" />
     <ClCompile Include="..\..\Source\Speccy\Speccy.cpp" />
     <ClCompile Include="..\..\Source\UI\Disassembler.cpp" />
+    <ClCompile Include="..\..\Source\UI\Exporters\SkoolkitExporter.cpp" />
     <ClCompile Include="..\..\Source\UI\FunctionHandlers.cpp" />
     <ClCompile Include="..\..\Source\UI\GameConfig.cpp" />
     <ClCompile Include="..\..\Source\UI\GameViewers\GameViewer.cpp" />
@@ -194,6 +195,7 @@
     <ClInclude Include="..\..\Source\Speccy\romlabels.h" />
     <ClInclude Include="..\..\Source\Speccy\Speccy.h" />
     <ClInclude Include="..\..\Source\UI\Disassembler.h" />
+    <ClInclude Include="..\..\Source\UI\Exporters\SkoolkitExporter.h" />
     <ClInclude Include="..\..\Source\UI\FunctionHandlers.h" />
     <ClInclude Include="..\..\Source\UI\GameConfig.h" />
     <ClInclude Include="..\..\Source\UI\GameViewers\GameViewer.h" />

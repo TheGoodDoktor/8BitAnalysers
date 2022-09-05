@@ -70,6 +70,9 @@
     <Filter Include="Source Files\UI\SnapshotLoaders">
       <UniqueIdentifier>{82368abc-dbbe-455f-a808-2da24cbff7ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\UI\Exporters">
+      <UniqueIdentifier>{0d891ad6-6da1-4022-ad42-915cd5c9f904}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\main.cpp">
@@ -188,6 +191,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\SNALoader.cpp">
       <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Exporters\SkoolkitExporter.cpp">
+      <Filter>Source Files\UI\Exporters</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -502,6 +508,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\SNALoader.h">
       <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Exporters\SkoolkitExporter.h">
+      <Filter>Source Files\UI\Exporters</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
