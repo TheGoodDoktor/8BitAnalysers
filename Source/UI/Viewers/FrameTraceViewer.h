@@ -2,13 +2,21 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
 
 class FSpectrumEmu;
 
+struct FFrameOverviewItem
+{
+	std::string		Label;
+	uint16_t		FunctionAddress;
+	uint16_t		LabelAddress;
+};
 struct FSpeccyFrameTrace
 {
 	void*					Texture;
 	std::vector<uint16_t>	InstructionTrace;
+	std::vector< FFrameOverviewItem>	FrameOverview;
 };
 
 class FFrameTraceViewer
@@ -18,6 +26,9 @@ public:
 	void	CaptureFrame();
 	void	Draw();
 private:
+	void	DrawInstructionTrace(const FSpeccyFrameTrace& frame);
+	void	GenerateTraceOverview(FSpeccyFrameTrace& frame);
+	void	DrawTraceOverview(const FSpeccyFrameTrace& frame);
 
 	FSpectrumEmu* pSpectrumEmu = nullptr;
 
