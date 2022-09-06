@@ -51,9 +51,10 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 	
 	for(int addrVal = addr; addrVal >= 0; addrVal--)
 	{
-		if(state.GetLabelForAddress(addrVal) != nullptr)
+		const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
+		if(pLabel != nullptr)
 		{
-			pLabelString = state.GetLabelForAddress(addrVal)->Name.c_str();
+			pLabelString = pLabel->Name.c_str();
 			break;
 		}
 
