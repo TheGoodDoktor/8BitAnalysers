@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\ImGui">
-      <UniqueIdentifier>{f92d6599-d068-479f-9eaf-34f39500814d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\chips">
       <UniqueIdentifier>{c4eee8a6-b42d-4970-ba6c-e6a603e2a802}</UniqueIdentifier>
     </Filter>
@@ -73,22 +70,34 @@
     <Filter Include="Source Files\UI\Exporters">
       <UniqueIdentifier>{0d891ad6-6da1-4022-ad42-915cd5c9f904}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Vendor">
+      <UniqueIdentifier>{067f2d09-8f3e-4ec2-8d6f-783e568a49dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor\rzx-sdk">
+      <UniqueIdentifier>{a38761a6-46fc-4135-9ca9-6ccc263579dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor\zlib">
+      <UniqueIdentifier>{a06e29c8-e1db-431f-9b72-6a34ffb9f4a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor\ImGui">
+      <UniqueIdentifier>{f92d6599-d068-479f-9eaf-34f39500814d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_demo.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_draw.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_widgets.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Speccy\Speccy.cpp">
       <Filter>Source Files\Speccy</Filter>
@@ -115,7 +124,7 @@
       <Filter>Source Files\UI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\FunctionHandlers.cpp">
       <Filter>Source Files\UI</Filter>
@@ -195,25 +204,61 @@
     <ClCompile Include="..\..\Source\UI\Exporters\SkoolkitExporter.cpp">
       <Filter>Source Files\UI\Exporters</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\rzx-sdk\rzx.c">
+      <Filter>Source Files\Vendor\rzx-sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\adler32.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\compress.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\crc32.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\deflate.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\infback.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\inffast.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\inflate.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\inftrees.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\trees.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\uncompr.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\zlib\zutil.c">
+      <Filter>Source Files\Vendor\zlib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imconfig.h">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imgui.h">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imgui_internal.h">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_rectpack.h">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_textedit.h">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\chips\util\m6502dasm.h">
       <Filter>Source Files\chips\util</Filter>
@@ -512,10 +557,13 @@
     <ClInclude Include="..\..\Source\UI\Exporters\SkoolkitExporter.h">
       <Filter>Source Files\UI\Exporters</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Vendor\rzx-sdk\rzx.h">
+      <Filter>Source Files\Vendor\rzx-sdk</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\Source\Vendor\imgui-docking\misc\natvis\imgui.natvis">
-      <Filter>Source Files\ImGui</Filter>
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </Natvis>
   </ItemGroup>
   <ItemGroup>
