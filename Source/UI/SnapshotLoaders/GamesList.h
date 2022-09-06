@@ -9,7 +9,9 @@ enum class ESnapshotType
 {
 	Z80,
 	SNA,
-	RZX
+	RZX,
+
+	Unknown
 };
 
 struct FGameSnapshot

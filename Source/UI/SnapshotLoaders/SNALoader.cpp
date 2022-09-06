@@ -44,7 +44,14 @@ bool LoadSNAFile(FSpectrumEmu* pEmu, const char* fName)
 {
 	size_t byteCount = 0;
 	uint8_t* pData = (uint8_t*)LoadBinaryFile(fName, byteCount);
+	const bool bSuccess = LoadSNAFromMemory(pEmu, pData, byteCount);
+	free(pData);
 
+	return bSuccess;
+}
+
+bool LoadSNAFromMemory(FSpectrumEmu * pEmu, const uint8_t * pData, size_t dataSize)
+{
 	const FSNAHeader* pHdr = (const FSNAHeader*)pData;
 	const uint8_t* pRAMData = pData + sizeof(FSNAHeader);
 
@@ -97,7 +104,6 @@ bool LoadSNAFile(FSpectrumEmu* pEmu, const char* fName)
 		pRAMData++;
 	}
 
-	free(pData);
 
 	return false;	// NOT implemented
 }

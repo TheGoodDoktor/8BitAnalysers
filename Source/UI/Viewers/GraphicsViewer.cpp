@@ -194,7 +194,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		const int xPix = state.XSize * 8;
 		const int rx = static_cast<int>(pos.x) + ((xp / xPix) * xPix);
 		const int ry = static_cast<int>(pos.y) + ((yp / state.YSize) * state.YSize);
-		dl->AddRect(ImVec2(rx, ry), ImVec2(rx + xPix, ry + state.YSize), 0xff00ffff);
+		dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)(rx + xPix), (float)(ry + state.YSize)), 0xff00ffff);
 		//const int addressOffset = (xp / 8) + (yp * (256 / 8));
 		ImGui::BeginTooltip();
 		ptrAddress = GetAddressFromPositionInView(state,xp, yp);

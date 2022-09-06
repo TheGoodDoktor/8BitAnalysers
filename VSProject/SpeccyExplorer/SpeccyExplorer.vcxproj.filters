@@ -240,6 +240,9 @@
     <ClCompile Include="..\..\Source\Vendor\zlib\zutil.c">
       <Filter>Source Files\Vendor\zlib</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.cpp">
+      <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
@@ -559,6 +562,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\rzx-sdk\rzx.h">
       <Filter>Source Files\Vendor\rzx-sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.h">
+      <Filter>Source Files\UI\SnapshotLoaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

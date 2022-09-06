@@ -2,6 +2,19 @@
 #include "Util/FileUtil.h"
 #include "Z80Loader.h"
 #include "SNALoader.h"
+#include "RZXLoader.h"
+
+ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn)
+{
+	if ((fn.substr(fn.find_last_of(".") + 1) == "z80") || (fn.substr(fn.find_last_of(".") + 1) == "Z80"))
+		return ESnapshotType::Z80;
+	else if ((fn.substr(fn.find_last_of(".") + 1) == "sna") || (fn.substr(fn.find_last_of(".") + 1) == "SNA"))
+		return ESnapshotType::SNA;
+	else if ((fn.substr(fn.find_last_of(".") + 1) == "rzx") || (fn.substr(fn.find_last_of(".") + 1) == "RZX"))
+		return ESnapshotType::RZX;
+	else
+		return ESnapshotType::Unknown;
+}
 
 bool FGamesList::EnumerateGames(void)
 {
@@ -12,21 +25,14 @@ bool FGamesList::EnumerateGames(void)
 
 	for (const auto& file : listing)
 	{
-		const std::string& fn = file.FileName;
-		if ((fn.substr(fn.find_last_of(".") + 1) == "z80") || (fn.substr(fn.find_last_of(".") + 1) == "Z80"))
+		const ESnapshotType type = GetSnapshotTypeFromFileName(file.FileName);
+
+		if (type != ESnapshotType::Unknown)
 		{
 			FGameSnapshot newGame;
-			newGame.FileName = fn;
-			newGame.DisplayName = fn;
-			newGame.Type = ESnapshotType::Z80;
-			GamesList.push_back(newGame);
-		}
-		else if ((fn.substr(fn.find_last_of(".") + 1) == "sna") || (fn.substr(fn.find_last_of(".") + 1) == "SNA"))
-		{
-			FGameSnapshot newGame;
-			newGame.FileName = fn;
-			newGame.DisplayName = fn;
-			newGame.Type = ESnapshotType::SNA;
+			newGame.FileName = file.FileName;
+			newGame.DisplayName = file.FileName;
+			newGame.Type = type;
 			GamesList.push_back(newGame);
 		}
 	}
@@ -45,10 +51,15 @@ bool FGamesList::LoadGame(int index)
 bool FGamesList::LoadGame(const char* pFileName)
 {
 	const std::string fn(pFileName);
-	if ((fn.substr(fn.find_last_of(".") + 1) == "z80") || (fn.substr(fn.find_last_of(".") + 1) == "Z80"))
+
+	switch (GetSnapshotTypeFromFileName(pFileName))
+	{
+	case ESnapshotType::Z80:
 		return LoadZ80File(pSpectrumEmu, pFileName);
-	else if ((fn.substr(fn.find_last_of(".") + 1) == "sna") || (fn.substr(fn.find_last_of(".") + 1) == "SNA"))
+	case ESnapshotType::SNA:
 		return LoadSNAFile(pSpectrumEmu, pFileName);
-	else
-		return false;
+	case ESnapshotType::RZX:
+		return LoadRZXFile(pSpectrumEmu, pFileName);
+	default: return false;
+	}
 }
