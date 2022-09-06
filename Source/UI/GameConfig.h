@@ -8,6 +8,7 @@ struct FGameViewerData;
 class FSpectrumEmu;
 struct FGame;
 struct FGameConfig;
+struct FGameSnapshot;
 
 struct FCheatMemoryEntry
 {
@@ -41,7 +42,7 @@ struct FViewerConfig
 struct FGameConfig
 {
 	std::string		Name;
-	std::string		Z80File;
+	std::string		SnapshotFile;
 
 	FViewerConfig *pViewerConfig = nullptr;
 
@@ -53,7 +54,7 @@ struct FGameConfig
 bool AddGameConfig(FGameConfig *pConfig);
 const std::vector< FGameConfig *>& GetGameConfigs();
 
-FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName);
+FGameConfig *CreateNewGameConfigFromSnapshot(const FGameSnapshot& snapshot);
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);
 bool LoadGameConfigFromFile(FGameConfig &config, const char *fname);
 bool LoadGameConfigs(FSpectrumEmu*pUI);

@@ -116,6 +116,7 @@ public:
 	FGame *			pActiveGame = nullptr;
 
 	FGamesList		GamesList;
+	FGamesList		RZXGamesList;
 
 	//Viewers
 	FSpectrumViewer			SpectrumViewer;

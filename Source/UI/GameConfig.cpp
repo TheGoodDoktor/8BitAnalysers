@@ -8,6 +8,7 @@
 
 #include "SpeccyUI.h"
 #include "GameViewers/GameViewer.h"
+#include "SnapshotLoaders/GamesList.h"
 
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;
@@ -23,12 +24,12 @@ const std::vector< FGameConfig *>& GetGameConfigs()
 	return g_GameConfigs;
 }
 
-FGameConfig *CreateNewGameConfigFromZ80File(const char *pZ80FileName)
+FGameConfig * CreateNewGameConfigFromSnapshot(const FGameSnapshot& snapshot)
 {
 	FGameConfig *pNewConfig = new FGameConfig;
 
-	pNewConfig->Name = RemoveFileExtension(pZ80FileName);
-	pNewConfig->Z80File = pZ80FileName;
+	pNewConfig->Name = snapshot.DisplayName;
+	pNewConfig->SnapshotFile = snapshot.FileName;
 	pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
 
 	return pNewConfig;
@@ -40,7 +41,7 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 {
 	json jsonConfigFile;
 	jsonConfigFile["Name"] = config.Name;
-	jsonConfigFile["Z80File"] = config.Z80File;
+	jsonConfigFile["Z80File"] = config.SnapshotFile;
 
 	for (const auto&sprConfigIt : config.SpriteConfigs)
 	{
@@ -94,7 +95,7 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	inFileStream.close();
 
 	config.Name = jsonConfigFile["Name"].get<std::string>();
-	config.Z80File = jsonConfigFile["Z80File"].get<std::string>();
+	config.SnapshotFile = jsonConfigFile["Z80File"].get<std::string>();
 	config.pViewerConfig = GetViewConfigForGame(config.Name.c_str());
 
 	for(const auto & jsonSprConfig : jsonConfigFile["SpriteConfigs"])

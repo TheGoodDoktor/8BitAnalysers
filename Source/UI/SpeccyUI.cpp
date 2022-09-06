@@ -332,7 +332,9 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	zx_init(&ZXEmuState, &desc);
 
 	GamesList.Init(this);
-	GamesList.EnumerateGames();
+	GamesList.EnumerateGames("./Games");
+	RZXGamesList.Init(this);
+	RZXGamesList.EnumerateGames("./RZX");
 
 	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
@@ -490,7 +492,7 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 	{
 		if (pGameConfig->Name == pGameName)
 		{
-			std::string gameFile = "Games/" + pGameConfig->Z80File;
+			std::string gameFile = "Games/" + pGameConfig->SnapshotFile;	// TODO: remove this hard-coded dir
 			if (GamesList.LoadGame(gameFile.c_str()))
 			{
 				StartGame(pGameConfig);
@@ -539,11 +541,13 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			{
 				for(int gameNo=0;gameNo<GamesList.GetNoGames();gameNo++)
 				{
-					if (ImGui::MenuItem(GamesList.GetGameName(gameNo).c_str()))
+					const FGameSnapshot& game = GamesList.GetGame(gameNo);
+					
+					if (ImGui::MenuItem(game.DisplayName.c_str()))
 					{
 						if (GamesList.LoadGame(gameNo))
 						{
-							FGameConfig *pNewConfig = CreateNewGameConfigFromZ80File(GamesList.GetGame(gameNo).FileName.c_str());
+							FGameConfig *pNewConfig = CreateNewGameConfigFromSnapshot(game);
 							if(pNewConfig != nullptr)
 								StartGame(pNewConfig);
 						}
@@ -553,13 +557,32 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("New Game from RZX File"))
+			{
+				for (int gameNo = 0; gameNo < RZXGamesList.GetNoGames(); gameNo++)
+				{
+					const FGameSnapshot& game = RZXGamesList.GetGame(gameNo);
+
+					if (ImGui::MenuItem(game.DisplayName.c_str()))
+					{
+						if (RZXGamesList.LoadGame(gameNo))
+						{
+							FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
+							if (pNewConfig != nullptr)
+								StartGame(pNewConfig);
+						}
+					}
+				}
+				ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu( "Open Game"))
 			{
 				for (const auto& pGameConfig : GetGameConfigs())
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
-						const std::string gameFile = "Games/" + pGameConfig->Z80File;
+						const std::string gameFile = "Games/" + pGameConfig->SnapshotFile;
 
 						if(GamesList.LoadGame(gameFile.c_str()))
 						{

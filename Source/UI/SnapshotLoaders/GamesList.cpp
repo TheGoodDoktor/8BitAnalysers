@@ -16,11 +16,11 @@ ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn)
 		return ESnapshotType::Unknown;
 }
 
-bool FGamesList::EnumerateGames(void)
+bool FGamesList::EnumerateGames(const char* pDir)
 {
 	FDirFileList listing;
 
-	if (EnumerateDirectory("./Games", listing) == false)
+	if (EnumerateDirectory(pDir, listing) == false)
 		return false;
 
 	for (const auto& file : listing)
