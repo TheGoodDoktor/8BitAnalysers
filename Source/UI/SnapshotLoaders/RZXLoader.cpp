@@ -126,8 +126,11 @@ void FRZXManager::Update(void)
 
     rzx_u16 icount;
     int ret = rzx_update(&icount);
+}
 
-    rzx_get_input();
+uint8_t	FRZXManager::GetInput()
+{
+    return rzx_get_input();
 }
 
 

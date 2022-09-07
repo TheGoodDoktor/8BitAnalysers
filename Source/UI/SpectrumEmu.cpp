@@ -297,7 +297,18 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 		IOAnalysisHandler(pEmu->IOAnalysis, pc, pins);
 	}
 
-	return g_OldTickCB(num, pins, &pEmu->ZXEmuState);
+	pins =  g_OldTickCB(num, pins, &pEmu->ZXEmuState);
+	if (pEmu->RZXManager.GetReplayMode() == EReplayMode::Playback)
+	{
+		if (pins & Z80_IORQ && pins & Z80_RD)
+		{
+			if ((pins & Z80_A0) == 0)
+			{
+				Z80_SET_DATA(pins, pEmu->RZXManager.GetInput());
+			}
+		}
+	}
+	return pins;
 }
 
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)

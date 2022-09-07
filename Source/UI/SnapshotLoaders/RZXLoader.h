@@ -23,6 +23,7 @@ public:
 	bool			Init(FSpectrumEmu* pEmu);
 	bool			Load(const char* fName);
 	void			Update();
+	uint8_t			GetInput();
 	EReplayMode		GetReplayMode() const { return ReplayMode; }
 	bool			RZXCallbackHandler(int msg, void* param);
 private:
