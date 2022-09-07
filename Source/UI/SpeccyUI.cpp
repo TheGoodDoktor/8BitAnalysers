@@ -333,6 +333,8 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	GamesList.Init(this);
 	GamesList.EnumerateGames("./Games");
+
+	RZXManager.Init(this);
 	RZXGamesList.Init(this);
 	RZXGamesList.EnumerateGames("./RZX");
 
@@ -492,7 +494,7 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 	{
 		if (pGameConfig->Name == pGameName)
 		{
-			std::string gameFile = "Games/" + pGameConfig->SnapshotFile;	// TODO: remove this hard-coded dir
+			std::string gameFile = pGameConfig->SnapshotFile;	
 			if (GamesList.LoadGame(gameFile.c_str()))
 			{
 				StartGame(pGameConfig);
@@ -565,7 +567,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 					if (ImGui::MenuItem(game.DisplayName.c_str()))
 					{
-						if (RZXGamesList.LoadGame(gameNo))
+						if (RZXManager.Load(game.FileName.c_str()))
 						{
 							FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
 							if (pNewConfig != nullptr)
@@ -582,7 +584,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
-						const std::string gameFile = "Games/" + pGameConfig->SnapshotFile;
+						const std::string gameFile = pGameConfig->SnapshotFile;
 
 						if(GamesList.LoadGame(gameFile.c_str()))
 						{

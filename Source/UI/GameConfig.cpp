@@ -41,7 +41,7 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 {
 	json jsonConfigFile;
 	jsonConfigFile["Name"] = config.Name;
-	jsonConfigFile["Z80File"] = config.SnapshotFile;
+	jsonConfigFile["SnapshotFile"] = config.SnapshotFile;
 
 	for (const auto&sprConfigIt : config.SpriteConfigs)
 	{
@@ -95,7 +95,16 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	inFileStream.close();
 
 	config.Name = jsonConfigFile["Name"].get<std::string>();
-	config.SnapshotFile = jsonConfigFile["Z80File"].get<std::string>();
+
+	// Patch up old field that assumed everything was in the 'Games' dir
+	if (jsonConfigFile["Z80File"].is_null() == false)
+	{
+		config.SnapshotFile = std::string("./Games/") + jsonConfigFile["Z80File"].get<std::string>();
+	}
+	if (jsonConfigFile["SnapshotFile"].is_null() == false)
+	{
+		config.SnapshotFile = jsonConfigFile["SnapshotFile"].get<std::string>();
+	}
 	config.pViewerConfig = GetViewConfigForGame(config.Name.c_str());
 
 	for(const auto & jsonSprConfig : jsonConfigFile["SpriteConfigs"])

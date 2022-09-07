@@ -1,5 +1,6 @@
 {
     "Name": "Starquake",
+    "SnapshotFile": "./Games/Starquake.z80",
     "SpriteConfigs": [
         {
             "BaseAddress": "0xafc8",
@@ -22,6 +23,5 @@
             "Name": "Starquake_Blobs",
             "Width": 3
         }
-    ],
-    "Z80File": "Starquake.z80"
+    ]
 }

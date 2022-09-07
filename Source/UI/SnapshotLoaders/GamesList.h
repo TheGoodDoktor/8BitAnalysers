@@ -25,7 +25,7 @@ class FGamesList
 {
 public:
 	void	Init(FSpectrumEmu* pEmu) { pSpectrumEmu = pEmu; }
-	bool	EnumerateGames(const char* pDir);
+	bool	EnumerateGames(const char* pRootDir);
 	bool	LoadGame(int index);
 	bool	LoadGame(const char* pFileName);
 
@@ -36,4 +36,5 @@ public:
 private:
 	FSpectrumEmu* pSpectrumEmu = nullptr;
 	std::vector< FGameSnapshot>	GamesList;
+	std::string RootDir;
 };

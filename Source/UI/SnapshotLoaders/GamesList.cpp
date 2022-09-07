@@ -20,6 +20,10 @@ bool FGamesList::EnumerateGames(const char* pDir)
 {
 	FDirFileList listing;
 
+	RootDir = std::string(pDir) + "/";
+
+	GamesList.clear();
+
 	if (EnumerateDirectory(pDir, listing) == false)
 		return false;
 
@@ -30,7 +34,7 @@ bool FGamesList::EnumerateGames(const char* pDir)
 		if (type != ESnapshotType::Unknown)
 		{
 			FGameSnapshot newGame;
-			newGame.FileName = file.FileName;
+			newGame.FileName = RootDir + file.FileName;
 			newGame.DisplayName = file.FileName;
 			newGame.Type = type;
 			GamesList.push_back(newGame);
@@ -44,8 +48,7 @@ bool FGamesList::LoadGame(int index)
 	if (index < 0 || index >= GamesList.size())
 		return false;
 
-	const std::string gameFile = "Games/" + GamesList[index].FileName;
-	return LoadGame(gameFile.c_str());
+	return LoadGame(GamesList[index].FileName.c_str());
 }
 
 bool FGamesList::LoadGame(const char* pFileName)
@@ -58,8 +61,6 @@ bool FGamesList::LoadGame(const char* pFileName)
 		return LoadZ80File(pSpectrumEmu, pFileName);
 	case ESnapshotType::SNA:
 		return LoadSNAFile(pSpectrumEmu, pFileName);
-	case ESnapshotType::RZX:
-		return LoadRZXFile(pSpectrumEmu, pFileName);
 	default: return false;
 	}
 }

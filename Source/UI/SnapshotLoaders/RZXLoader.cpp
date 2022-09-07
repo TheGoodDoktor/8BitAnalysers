@@ -4,6 +4,12 @@
 
 #include "rzx.h"
 
+
+bool FRZXManager::Load(const char* fName)
+{
+    return false;
+}
+
 static RZX_EMULINFO gEmulInfo;
 
 const size_t kInBufferSize = 8192;

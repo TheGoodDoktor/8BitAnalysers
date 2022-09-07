@@ -12,6 +12,7 @@
 #include "Viewers/FrameTraceViewer.h"
 #include "SnapshotLoaders/GamesList.h"
 #include "IOAnalysis.h"
+#include "SnapshotLoaders/RZXLoader.h"
 
 struct FGame;
 struct FGameViewer;
@@ -24,6 +25,8 @@ enum class ESpectrumModel
 	Spectrum48K,
 	Spectrum128K
 };
+
+
 
 struct FSpectrumConfig
 {
@@ -97,8 +100,6 @@ public:
 	}
 
 	// TODO: Make private
-	// 
-	//FSpeccy*		pSpeccy = nullptr;
 
 	// Emulator 
 	zx_t			ZXEmuState;	// Chips Spectrum State
@@ -148,6 +149,8 @@ public:
 	static const int kPCHistorySize = 32;
 	uint16_t PCHistory[kPCHistorySize];
 	int PCHistoryPos = 0;
+
+	FRZXManager		RZXManager;
 
 	bool bShowImGuiDemo = false;
 };
