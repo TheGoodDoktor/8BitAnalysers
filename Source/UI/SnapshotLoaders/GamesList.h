@@ -38,3 +38,5 @@ private:
 	std::vector< FGameSnapshot>	GamesList;
 	std::string RootDir;
 };
+
+ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn);

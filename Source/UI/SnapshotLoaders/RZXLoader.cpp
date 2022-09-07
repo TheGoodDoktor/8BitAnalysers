@@ -1,47 +1,78 @@
 #include "RZXLoader.h"
 #include <malloc.h>
 #include "Util/FileUtil.h"
+#include "GamesList.h"
+#include "Z80Loader.h"
+#include "SNALoader.h"
 
 #include "rzx.h"
 
+static FRZXManager* g_pManager = nullptr;
 
-bool FRZXManager::Load(const char* fName)
+rzx_u32 RZXCallback(int msg, void* param)
 {
-    return false;
+    return g_pManager->RZXCallbackHandler(msg,param) ? RZX_OK : RZX_INVALID;
 }
 
-static RZX_EMULINFO gEmulInfo;
 
-const size_t kInBufferSize = 8192;
-rzx_u8 g_InBuffer[kInBufferSize];
+bool	FRZXManager::Init(FSpectrumEmu* pEmu) 
+{ 
+    pZXEmulator = pEmu; 
 
-static bool g_RZXInitialised = false;
+    RZX_EMULINFO emulInfo;
+    strcpy(emulInfo.name, "RZX Loader");
+    emulInfo.ver_major = 1;
+    emulInfo.ver_minor = 0;
+    emulInfo.data = 0;
+    emulInfo.length = 0;
+    emulInfo.options = 0;
 
-rzx_u32 RZXCallback(int msg, void* par)
+    if (rzx_init(&emulInfo, RZXCallback) != RZX_OK)
+        return false;
+
+    Initialised = true;
+    g_pManager = this;  // crap
+    return true;
+}
+
+bool FRZXManager::RZXCallbackHandler(int msg, void* param)
 {
     switch (msg)
     {
     case RZXMSG_LOADSNAP:
     {
-        RZX_SNAPINFO* pSnapInfo = (RZX_SNAPINFO*)par;
+        // This is proper shit, it loads the snapshot into memory and then saves it out to a temp file 
+        // So we just load it right back in again
+        RZX_SNAPINFO* pSnapInfo = (RZX_SNAPINFO*)param;
 
         printf("> LOADSNAP: '%s' (%i bytes), %s %s\n",
             pSnapInfo->filename,
             (int)pSnapInfo->length,
             (pSnapInfo->options & RZX_EXTERNAL) ? "external" : "embedded",
             (pSnapInfo->options & RZX_COMPRESSED) ? "compressed" : "uncompressed");
+
+        switch (GetSnapshotTypeFromFileName(pSnapInfo->filename))
+        {
+        case ESnapshotType::Z80:
+            return LoadZ80File(pZXEmulator, pSnapInfo->filename);
+        case ESnapshotType::SNA:
+            return LoadSNAFile(pZXEmulator, pSnapInfo->filename);
+        default: 
+            return false;
+        }
     }
     break;
-    
+
     case RZXMSG_CREATOR:
     {
-        RZX_EMULINFO* pInfo = (RZX_EMULINFO*)par;
+        RZX_EMULINFO* pInfo = (RZX_EMULINFO*)param;
+        CurrentRZXInfo.Name = pInfo->name;
     }
     break;
 
     case RZXMSG_IRBNOTIFY:
     {
-        RZX_IRBINFO* pIRBInfo = (RZX_IRBINFO*)par;
+        RZX_IRBINFO* pIRBInfo = (RZX_IRBINFO*)param;
         if (rzx.mode == RZX_PLAYBACK)
         {
             /* fetch the IRB info if needed */
@@ -63,29 +94,53 @@ rzx_u32 RZXCallback(int msg, void* par)
         }
     }
     break;
-    
+
     default:
         printf("> MSG #%02X\n", msg);
-        return RZX_INVALID;
-        break;
+        return false;
     }
-    return RZX_OK;
+    return true;
 }
+
+
+bool FRZXManager::Load(const char* fName)
+{
+    if (Initialised == false)
+        return false;
+
+    if (rzx_playback(fName) != RZX_OK)
+    {
+        printf("Error starting playback\n");
+        return false;
+    }
+
+    ReplayMode = EReplayMode::Playback;
+
+    return true;
+}
+
+void FRZXManager::Update(void)
+{
+    if (ReplayMode == EReplayMode::Off)
+        return;
+
+    rzx_u16 icount;
+    int ret = rzx_update(&icount);
+
+    rzx_get_input();
+}
+
+
+static RZX_EMULINFO gEmulInfo;
+
+const size_t kInBufferSize = 8192;
+rzx_u8 g_InBuffer[kInBufferSize];
+
+static bool g_RZXInitialised = false;
+
 
 bool LoadRZXFile(FSpectrumEmu* pEmu, const char* fName)
 {
-	if (g_RZXInitialised == false)
-	{
-        strcpy(gEmulInfo.name, "RZX Loader");
-        gEmulInfo.ver_major = 1;
-        gEmulInfo.ver_minor = 0;
-        gEmulInfo.data = 0; 
-        gEmulInfo.length = 0;
-        gEmulInfo.options = 0;
-
-        if (rzx_init(&gEmulInfo, RZXCallback) != RZX_OK)
-            return false;
-	}
 	
     if (rzx_playback(fName) != RZX_OK)
     {

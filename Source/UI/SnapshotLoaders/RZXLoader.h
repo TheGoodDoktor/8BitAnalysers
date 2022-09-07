@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 class FSpectrumEmu;
 
 enum class EReplayMode
@@ -9,16 +11,25 @@ enum class EReplayMode
 	Record
 };
 
+struct FRZXInfo
+{
+	std::string		Name;
+
+};
+
 class FRZXManager
 {
 public:
-	void	Init(FSpectrumEmu* pEmu) { pZXEmulator = pEmu; }
-	bool	Load(const char* fName);
+	bool			Init(FSpectrumEmu* pEmu);
+	bool			Load(const char* fName);
+	void			Update();
 	EReplayMode		GetReplayMode() const { return ReplayMode; }
-
+	bool			RZXCallbackHandler(int msg, void* param);
 private:
 	FSpectrumEmu*	pZXEmulator = nullptr;
+	bool			Initialised = false;
 	EReplayMode		ReplayMode = EReplayMode::Off;
+	FRZXInfo		CurrentRZXInfo;
 
 };
 

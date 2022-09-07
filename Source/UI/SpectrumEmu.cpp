@@ -821,6 +821,7 @@ void FSpectrumEmu::Tick()
 		const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
 		const uint32_t microSeconds = max(static_cast<uint32_t>(frameTime), uint32_t(1));
 		//zx_exec(&ZXEmuState, microSeconds);
+		RZXManager.Update();
 		{
 			assert(ZXEmuState.valid);
 			uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
