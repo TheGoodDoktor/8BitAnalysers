@@ -18,8 +18,8 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
-#include "Speccy/zx-roms.h"
-#include "Speccy/ROMLabels.h"
+#include "zx-roms.h"
+#include "ROMLabels.h"
 #include <algorithm>
 #include <Vendor/sokol/sokol_audio.h>
 #include "Exporters/SkoolkitExporter.h"

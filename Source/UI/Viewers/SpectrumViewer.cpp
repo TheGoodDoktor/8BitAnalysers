@@ -3,7 +3,6 @@
 #include <Shared/CodeAnalyser/CodeAnalyser.h>
 
 #include <imgui.h>
-#include <Speccy/Speccy.h>
 #include "../SpeccyUI.h"
 #include <Shared/CodeAnalyser/CodeAnalyserUI.h>
 #include <UI/Viewers/GraphicsViewer.h>

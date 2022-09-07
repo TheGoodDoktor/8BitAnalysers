@@ -1,6 +1,5 @@
 #include "SpriteViewer.h"
 #include "GraphicsViewer.h"
-#include "Speccy/Speccy.h"
 #include "../SpeccyUI.h"
 #include <algorithm>
 #include "../GameConfig.h"

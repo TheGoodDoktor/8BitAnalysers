@@ -1,8 +1,8 @@
 #include "IOAnalysis.h"
 
-#include "Speccy/Speccy.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
+#include <chips/z80.h>
 #include "imgui.h"
 
 std::map< SpeccyIODevice, const char*> g_DeviceNames = 

@@ -1,7 +1,6 @@
 #include "GraphicsViewer.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <Util/GraphicsView.h>
-#include "Speccy/Speccy.h"
 #include "../SpeccyUI.h"
 #include "../GameConfig.h"
 #include <algorithm>

@@ -34,9 +34,6 @@
     <Filter Include="Source Files\UI">
       <UniqueIdentifier>{c6960d9f-138c-49b0-8273-a2b84bdd3a92}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Speccy">
-      <UniqueIdentifier>{c6110ae3-aea2-496c-b2da-1ee7c7a04ec9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\UI\GameViewers">
       <UniqueIdentifier>{971a47f7-a713-4a08-a416-4fdcd6812e97}</UniqueIdentifier>
     </Filter>
@@ -99,14 +96,8 @@
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_widgets.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\Speccy\Speccy.cpp">
-      <Filter>Source Files\Speccy</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp">
       <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\Speccy\ChipsImpl.cpp">
-      <Filter>Source Files\Speccy</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\GameViewers\StarquakeViewer.cpp">
       <Filter>Source Files\UI\GameViewers</Filter>
@@ -242,6 +233,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.cpp">
       <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\ChipsImpl.cpp">
+      <Filter>Source Files\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -461,9 +455,6 @@
     <ClInclude Include="..\..\Source\Vendor\chips\chips\i8255.h">
       <Filter>Source Files\chips\chips</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\Speccy\Speccy.h">
-      <Filter>Source Files\Speccy</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\UI\SpeccyUI.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
@@ -521,9 +512,6 @@
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.h">
       <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\Speccy\romlabels.h">
-      <Filter>Source Files\Speccy</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h">
       <Filter>Source Files\Shared\CodeAnalyser</Filter>
     </ClInclude>
@@ -565,6 +553,12 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.h">
       <Filter>Source Files\UI\SnapshotLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\romlabels.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\zx-roms.h">
+      <Filter>Source Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
