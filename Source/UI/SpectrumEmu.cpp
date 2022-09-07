@@ -302,7 +302,7 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 	{
 		if (pins & Z80_IORQ && pins & Z80_RD)
 		{
-			if ((pins & Z80_A0) == 0)
+			//if ((pins & Z80_A0) == 0)
 			{
 				Z80_SET_DATA(pins, pEmu->RZXManager.GetInput());
 			}
