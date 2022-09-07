@@ -3,7 +3,7 @@
 #include <Shared/CodeAnalyser/CodeAnalyser.h>
 
 #include <imgui.h>
-#include "../SpeccyUI.h"
+#include "../SpectrumEmu.h"
 #include <Shared/CodeAnalyser/CodeAnalyserUI.h>
 #include <UI/Viewers/GraphicsViewer.h>
 

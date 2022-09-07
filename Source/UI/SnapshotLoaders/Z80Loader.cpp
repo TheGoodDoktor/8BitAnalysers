@@ -1,5 +1,5 @@
 #include "Z80Loader.h"
-#include "../SpeccyUI.h"
+#include "../SpectrumEmu.h"
 #include <Shared/Util/FileUtil.h>
 
 bool LoadZ80File(FSpectrumEmu* pEmu, const char* fName)

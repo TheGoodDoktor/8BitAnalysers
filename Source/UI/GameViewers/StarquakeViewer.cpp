@@ -1,6 +1,6 @@
 #include "StarquakeViewer.h"
 #include "UI/Viewers/SpriteViewer.h"
-#include "UI/SpeccyUI.h"
+#include "UI/SpectrumEmu.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <algorithm>
 #include <Util/GraphicsView.h>

@@ -1,6 +1,6 @@
 #include "Disassembler.h"
 #include "imgui.h"
-#include "SpeccyUI.h"
+#include "SpectrumEmu.h"
 #include "ui/ui_util.h"
 
 #ifndef DASM_ASSERT

@@ -1,6 +1,6 @@
 #include "SpriteViewer.h"
 #include "GraphicsViewer.h"
-#include "../SpeccyUI.h"
+#include "../SpectrumEmu.h"
 #include <algorithm>
 #include "../GameConfig.h"
 #include <Util/GraphicsView.h>

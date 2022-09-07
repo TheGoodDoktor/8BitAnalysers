@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "UI/SpeccyUI.h"
+#include "UI/SpectrumEmu.h"
 
 // Rom routines
 // obtained from:

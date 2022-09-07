@@ -1,6 +1,6 @@
 #include "MemoryHandlers.h"
 #include <cstdint>
-#include "SpeccyUI.h"
+#include "SpectrumEmu.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
 // Disassembly handlers

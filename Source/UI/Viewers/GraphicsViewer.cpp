@@ -1,7 +1,7 @@
 #include "GraphicsViewer.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <Util/GraphicsView.h>
-#include "../SpeccyUI.h"
+#include "../SpectrumEmu.h"
 #include "../GameConfig.h"
 #include <algorithm>
 #include "CodeAnalyser/CodeAnalyserUI.h"

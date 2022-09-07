@@ -166,7 +166,7 @@
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.cpp" />
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\SNALoader.cpp" />
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.cpp" />
-    <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp" />
+    <ClCompile Include="..\..\Source\UI\SpectrumEmu.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\FrameTraceViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\GraphicsViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\SpectrumViewer.cpp" />
@@ -218,7 +218,7 @@
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.h" />
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\SNALoader.h" />
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.h" />
-    <ClInclude Include="..\..\Source\UI\SpeccyUI.h" />
+    <ClInclude Include="..\..\Source\UI\SpectrumEmu.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\FrameTraceViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\GraphicsViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\SpectrumViewer.h" />

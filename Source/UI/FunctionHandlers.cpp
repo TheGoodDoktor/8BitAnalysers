@@ -1,5 +1,5 @@
 #include "FunctionHandlers.h"
-#include "SpeccyUI.h"
+#include "SpectrumEmu.h"
 #include <algorithm>
 #include "misc/cpp/imgui_stdlib.h"
 

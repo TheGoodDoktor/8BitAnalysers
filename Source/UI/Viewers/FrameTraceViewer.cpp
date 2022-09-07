@@ -1,5 +1,5 @@
 #include "FrameTraceViewer.h"
-#include "../SpeccyUI.h"
+#include "../SpectrumEmu.h"
 
 #include <imgui.h>
 #include <Shared/CodeAnalyser/CodeAnalyserUI.h>

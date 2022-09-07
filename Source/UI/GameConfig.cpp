@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <fstream>
 
-#include "SpeccyUI.h"
+#include "SpectrumEmu.h"
 #include "GameViewers/GameViewer.h"
 #include "SnapshotLoaders/GamesList.h"
 

@@ -1,6 +1,6 @@
 #include "GameViewer.h"
 
-#include "UI/SpeccyUI.h"
+#include "UI/SpectrumEmu.h"
 #include "UI/GameConfig.h"
 #include <Util/GraphicsView.h>
 

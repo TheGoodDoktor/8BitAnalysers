@@ -1,5 +1,5 @@
 #include "SNALoader.h"
-#include "../SpeccyUI.h"
+#include "../SpectrumEmu.h"
 
 #include <cstdint>
 #include <Shared/Util/FileUtil.h>

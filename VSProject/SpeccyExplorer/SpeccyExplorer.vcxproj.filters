@@ -96,7 +96,7 @@
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_widgets.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\SpeccyUI.cpp">
+    <ClCompile Include="..\..\Source\UI\SpectrumEmu.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\GameViewers\StarquakeViewer.cpp">
@@ -455,7 +455,7 @@
     <ClInclude Include="..\..\Source\Vendor\chips\chips\i8255.h">
       <Filter>Source Files\chips\chips</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\SpeccyUI.h">
+    <ClInclude Include="..\..\Source\UI\SpectrumEmu.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\GameViewers\StarquakeViewer.h">

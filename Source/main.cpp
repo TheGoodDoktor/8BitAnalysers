@@ -9,7 +9,7 @@
 #include <dinput.h>
 #include <tchar.h>
 
-#include "UI/SpeccyUI.h"
+#include "UI/SpectrumEmu.h"
 
 #define SOKOL_IMPL
 #include "sokol_audio.h"
