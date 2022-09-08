@@ -831,14 +831,19 @@ void FSpectrumEmu::Tick()
 	{
 		const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
 		const uint32_t microSeconds = max(static_cast<uint32_t>(frameTime), uint32_t(1));
-		//zx_exec(&ZXEmuState, microSeconds);
-		RZXManager.Update();
+		if(RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
 			assert(ZXEmuState.valid);
-			uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
+			uint32_t ticks_to_run = RZXManager.Update();
+
+			//uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
 			uint32_t ticks_executed = z80_exec(&ZXEmuState.cpu, ticks_to_run);
 			clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
 			kbd_update(&ZXEmuState.kbd);
+		}
+		else
+		{
+			zx_exec(&ZXEmuState, microSeconds);
 		}
 		ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
 

@@ -119,13 +119,14 @@ bool FRZXManager::Load(const char* fName)
     return true;
 }
 
-void FRZXManager::Update(void)
+uint16_t FRZXManager::Update(void)
 {
     if (ReplayMode == EReplayMode::Off)
-        return;
+        return 0;
 
-    rzx_u16 icount;
+    uint16_t icount;
     int ret = rzx_update(&icount);
+    return icount;
 }
 
 uint8_t	FRZXManager::GetInput()
