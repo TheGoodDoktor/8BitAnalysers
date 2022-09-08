@@ -5,6 +5,8 @@
 #include "Z80Loader.h"
 #include "SNALoader.h"
 
+#include <imgui.h>
+
 #include "rzx.h"
 
 static FRZXManager* g_pManager = nullptr;
@@ -66,7 +68,7 @@ bool FRZXManager::RZXCallbackHandler(int msg, void* param)
     case RZXMSG_CREATOR:
     {
         RZX_EMULINFO* pInfo = (RZX_EMULINFO*)param;
-        CurrentRZXInfo.Name = pInfo->name;
+        CurrentRZXInfo.Creator = pInfo->name;
     }
     break;
 
@@ -76,8 +78,8 @@ bool FRZXManager::RZXCallbackHandler(int msg, void* param)
         if (rzx.mode == RZX_PLAYBACK)
         {
             /* fetch the IRB info if needed */
-            int tstates = pIRBInfo->tstates;
-            printf("> IRB notify: tstates=%i, %s\n", (int)tstates,
+            IRBTStates = pIRBInfo->tstates;
+            printf("> IRB notify: tstates=%i, %s\n", (int)IRBTStates,
                 pIRBInfo->options & RZX_COMPRESSED ? "compressed" : "uncompressed");
         }
         else if (rzx.mode == RZX_RECORD)
@@ -119,19 +121,48 @@ bool FRZXManager::Load(const char* fName)
     return true;
 }
 
+void FRZXManager::DrawUI(void)
+{
+    ImGui::Text("IRB Tstates: %d", IRBTStates);
+    ImGui::Text("ICount: %d", ICount);
+    ImGui::Text("Frame Inputs: %d", INmax);
+    ImGui::Text("Inputs this frame: %d", InputsThisFrame);
+    ImGui::Text("Last Input: %d", LastInput);
+    ImGui::Text("Last Frame Input Vals: %d", LastFrameInputVals);
+    ImGui::Text("Last Frame Input Calls: %d", LastFrameInputCalls);
+}
+
+
 uint16_t FRZXManager::Update(void)
 {
     if (ReplayMode == EReplayMode::Off)
         return 0;
 
-    uint16_t icount;
-    int ret = rzx_update(&icount);
-    return icount;
+    LastFrameInputVals = INmax;
+    LastFrameInputCalls = InputsThisFrame;
+
+    const int ret = rzx_update(&ICount);
+    if (ret != RZX_OK)
+    {
+        printf("rzx_update error, ret val %d", ret);
+    }
+    
+    InputsThisFrame = 0;
+    return ICount;
 }
 
 uint8_t	FRZXManager::GetInput()
 {
-    return rzx_get_input();
+    uint8_t input = rzx_get_input();
+    const uint8_t synclost = RZX_SYNCLOST;
+    input = rzx_get_input();
+    if (input == synclost)
+    {
+        //printf("Sync Lost");
+    }
+    LastInput = input;
+    InputsThisFrame++;
+    return input;
 }
 
 

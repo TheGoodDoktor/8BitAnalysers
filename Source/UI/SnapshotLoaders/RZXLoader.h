@@ -13,7 +13,7 @@ enum class EReplayMode
 
 struct FRZXInfo
 {
-	std::string		Name;
+	std::string		Creator;
 
 };
 
@@ -22,6 +22,7 @@ class FRZXManager
 public:
 	bool			Init(FSpectrumEmu* pEmu);
 	bool			Load(const char* fName);
+	void			DrawUI(void);
 	uint16_t		Update();
 	uint8_t			GetInput();
 	EReplayMode		GetReplayMode() const { return ReplayMode; }
@@ -31,6 +32,14 @@ private:
 	bool			Initialised = false;
 	EReplayMode		ReplayMode = EReplayMode::Off;
 	FRZXInfo		CurrentRZXInfo;
+
+	int				IRBTStates = 0;
+	uint16_t		ICount = 0;
+	uint8_t			LastInput = 0;
+	int				InputsThisFrame = 0;
+	int				LastFrameInputVals = 0;
+	int				LastFrameInputCalls = 0;
+
 
 };
 

@@ -300,7 +300,7 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 	pins =  g_OldTickCB(num, pins, &pEmu->ZXEmuState);
 	if (pEmu->RZXManager.GetReplayMode() == EReplayMode::Playback)
 	{
-		if (pins & Z80_IORQ && pins & Z80_RD)
+		if ((pins & Z80_IORQ) && (pins & Z80_RD))
 		{
 			//if ((pins & Z80_A0) == 0)
 			{
@@ -834,9 +834,9 @@ void FSpectrumEmu::Tick()
 		if(RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
 			assert(ZXEmuState.valid);
-			uint32_t ticks_to_run = RZXManager.Update();
+			uint32_t icount = RZXManager.Update();
 
-			//uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
+			uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
 			uint32_t ticks_executed = z80_exec(&ZXEmuState.cpu, ticks_to_run);
 			clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
 			kbd_update(&ZXEmuState.kbd);
@@ -846,21 +846,11 @@ void FSpectrumEmu::Tick()
 			zx_exec(&ZXEmuState, microSeconds);
 		}
 		ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
-
-		// Copy state buffer over - could be more efficient if needed
-		//memcpy(&speccyInstance.pStateBuffers[speccyInstance.CurrentStateBuffer], &speccyInstance.CurrentState, sizeof(zx_t));
-
-		//speccyInstance.CurrentStateBuffer = (speccyInstance.CurrentStateBuffer + 1) % speccyInstance.NoStateBuffers;
-
 	}
 
 	// Draw UI
 	DrawDockingView();
 }
-
-
-
-
 
 void FSpectrumEmu::DrawMemoryTools()
 {
@@ -960,6 +950,15 @@ void FSpectrumEmu::DrawUI()
 		FrameTraceViewer.Draw();
 	}
 	ImGui::End();
+
+	if (RZXManager.GetReplayMode() == EReplayMode::Playback)
+	{
+		if (ImGui::Begin("RZX Info"))
+		{
+			RZXManager.DrawUI();
+		}
+		ImGui::End();
+	}
 
 	// cheats 
 	if (ImGui::Begin("Cheats"))
