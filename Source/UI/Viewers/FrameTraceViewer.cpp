@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <Shared/CodeAnalyser/CodeAnalyserUI.h>
 #include <Shared/ImGuiSupport/imgui_impl_lucidextra.h>
+#include <Shared/Util/GraphicsView.h>
 
 
 void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
@@ -15,7 +16,22 @@ void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 	{
 		FrameTrace[i].Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->FrameBuffer), 320, 256);
 	}
+
+	ShowWritesView = CreateGraphicsView(320, 256);
 }
+
+void	FFrameTraceViewer::Shutdown()
+{
+	for (int i = 0; i < kNoFramesInTrace; i++)
+	{
+		ImGui_ImplDX11_FreeTexture(FrameTrace[i].Texture);
+		FrameTrace[i].Texture = nullptr;
+	}
+
+	FreeGraphicsView(ShowWritesView);
+	ShowWritesView = nullptr;
+}
+
 
 void FFrameTraceViewer::CaptureFrame()
 {
@@ -23,6 +39,8 @@ void FFrameTraceViewer::CaptureFrame()
 	FSpeccyFrameTrace& frame = FrameTrace[CurrentTraceFrame];
 	ImGui_ImplDX11_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->FrameBuffer);
 	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.FrameTrace;
+	frame.ScreenPixWrites = pSpectrumEmu->FrameScreenPixWrites;
+	frame.ScreenAttrWrites = pSpectrumEmu->FrameScreenAttrWrites;
 	frame.FrameOverview.clear();
 
 	if (++CurrentTraceFrame == kNoFramesInTrace)
@@ -38,6 +56,12 @@ void FFrameTraceViewer::Draw()
 			pSpectrumEmu->CodeAnalysis.CPUInterface->Continue();
 		else
 			pSpectrumEmu->CodeAnalysis.CPUInterface->Break();
+
+		PixelWriteline = -1;
+		int frameNo = CurrentTraceFrame - ShowFrame - 1;
+		if (frameNo < 0)
+			frameNo += kNoFramesInTrace;
+		DrawFrameScreenWritePixels(FrameTrace[frameNo]);
 	}
 
 	int frameNo = CurrentTraceFrame - ShowFrame - 1;
@@ -45,6 +69,8 @@ void FFrameTraceViewer::Draw()
 		frameNo += kNoFramesInTrace;
 	const FSpeccyFrameTrace& frame = FrameTrace[frameNo];
 	ImGui::Image(frame.Texture, ImVec2(320, 256));
+	ImGui::SameLine();
+	DrawGraphicsView(*ShowWritesView);
 
 	// draw clipped list
 	if (ImGui::BeginTabBar("FrameTraceTabs"))
@@ -60,6 +86,12 @@ void FFrameTraceViewer::Draw()
 			if (frame.FrameOverview.size() == 0)
 				GenerateTraceOverview(FrameTrace[frameNo]);
 			DrawTraceOverview(frame);
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Screen Writes"))
+		{
+			DrawScreenWrites(frame);
 			ImGui::EndTabItem();
 		}
 
@@ -178,4 +210,61 @@ void	FFrameTraceViewer::DrawTraceOverview(const FSpeccyFrameTrace& frame)
 			}
 		}
 	}
+}
+
+void FFrameTraceViewer::DrawFrameScreenWritePixels(const FSpeccyFrameTrace& frame, int lastIndex)
+{
+	if (lastIndex == -1 || lastIndex >= frame.ScreenPixWrites.size())
+		lastIndex = frame.ScreenPixWrites.size() - 1;
+	ClearGraphicsView(*ShowWritesView, 0);
+	for (int i = 0; i < lastIndex; i++)
+	{
+		const FMemoryAccess& access = frame.ScreenPixWrites[i];
+		int xp, yp;
+		GetScreenAddressCoords(access.Address, xp, yp);
+		const uint16_t attrAddress = GetScreenAttrMemoryAddress(xp, yp);
+		const uint8_t attr = pSpectrumEmu->ReadByte(attrAddress);
+		PlotImageAt(&access.Value, xp, yp, 1, 1, (uint32_t*)ShowWritesView->PixelBuffer, ShowWritesView->Width, attr);
+
+	}
+}
+
+void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
+{
+	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+
+	if (ImGui::BeginChild("ScreenPxWrites", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
+	{
+		const float line_height = ImGui::GetTextLineHeight();
+		ImGuiListClipper clipper((int)frame.ScreenPixWrites.size(), line_height);
+
+		while (clipper.Step())
+		{
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+			{
+				const FMemoryAccess& access = frame.ScreenPixWrites[i];
+				ImGui::PushID(i);
+				// selectable
+				if (ImGui::Selectable("##screenwriteline", i == PixelWriteline, 0))
+				{
+					PixelWriteline = i;
+					DrawFrameScreenWritePixels(frame, i);
+				}
+				ImGui::SetItemAllowOverlap();	// allow buttons
+				ImGui::SameLine();
+
+				ImGui::Text("$%04X ($%02X) : ", access.Address, access.Value);
+				ImGui::SameLine();
+				DrawCodeAddress(state, access.PC);
+				ImGui::PopID();
+			}
+		}
+
+	}
+	ImGui::EndChild();
+	ImGui::SameLine();
+	if (ImGui::BeginChild("ScreenAttrWrites", ImVec2(0, 0), true))
+	{
+	}
+	ImGui::EndChild();
 }

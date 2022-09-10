@@ -220,6 +220,7 @@ static void PushAudio(const float* samples, int num_samples, void* user_data)
 
 }
 
+// TODO: Thunk to member function
 int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
@@ -259,7 +260,7 @@ int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, v
 	return 0;
 }
 
-z80_tick_t g_OldTickCB = nullptr;
+z80_tick_t g_OldTickCB = nullptr;	// TODO: Make member
 
 extern uint16_t g_PC;
 // TODO: thunk to member function
@@ -275,18 +276,29 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 			FIXME: 'contended memory' accesses should inject wait states
 		*/
 		const uint16_t addr = Z80_GET_ADDR(pins);
+		const uint8_t value = Z80_GET_DATA(pins);
 		if (pins & Z80_RD)
 		{
 			if (state.bRegisterDataAccesses)
-				RegisterDataAccess(state, pc, addr, false);
+				RegisterDataRead(state, pc, addr);
 		}
 		else if (pins & Z80_WR) 
 		{
 			if (state.bRegisterDataAccesses)
-				RegisterDataAccess(state, pc, addr, true);
+				RegisterDataWrite(state, pc, addr);
 
 			state.SetLastWriterForAddress(addr,pc);
 
+			// Log screen pixel writes
+			if (addr >= 0x4000 && addr < 0x5800)
+			{
+				pEmu->FrameScreenPixWrites.push_back({ addr,value, pc });
+			}
+			// Log screen attribute writes
+			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
+			{
+				pEmu->FrameScreenAttrWrites.push_back({ addr,value, pc });
+			}
 			FCodeInfo *pCodeWrittenTo = state.GetCodeInfoForAddress(addr);
 			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
 				pCodeWrittenTo->bSelfModifyingCode = true;
@@ -300,11 +312,12 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 	pins =  g_OldTickCB(num, pins, &pEmu->ZXEmuState);
 	if (pEmu->RZXManager.GetReplayMode() == EReplayMode::Playback)
 	{
+		pEmu->RZXManager.RegisterTicks(num);
 		if ((pins & Z80_IORQ) && (pins & Z80_RD))
 		{
 			//if ((pins & Z80_A0) == 0)
 			{
-				Z80_SET_DATA(pins, pEmu->RZXManager.GetInput());
+				Z80_SET_DATA(pins, (uint64_t)pEmu->RZXManager.GetInput());
 			}
 		}
 	}
@@ -435,20 +448,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		RAMPages[pageNo].Initialise(RAMStartAddr + (pageNo * FCodeAnalysisPage::kPageSize));
 		CodeAnalysis.SetCodeAnalysisRWPage(pageNo + kNoROMPages, &RAMPages[pageNo], &RAMPages[pageNo]);	// Read/Write
 	}
-
-	/*for (int addr = 0; addr < (1 << 16); addr++)
-	{
-		state.SetLabelForAddress(addr, nullptr);
-		state.SetCodeInfoForAddress(addr, nullptr);
-
-		// set up data entry for address
-		FDataInfo *pDataInfo = new FDataInfo;
-		pDataInfo->Address = (uint16_t)addr;
-		pDataInfo->ByteSize = 1;
-		pDataInfo->DataType = DataType::Byte;
-		state.SetReadDataInfoForAddress(addr, pDataInfo);
-	}*/
-	//....
 
 	// run initial analysis
 	InitialiseCodeAnalysis(CodeAnalysis,this);
@@ -846,6 +845,11 @@ void FSpectrumEmu::Tick()
 			zx_exec(&ZXEmuState, microSeconds);
 		}
 		ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
+
+		FrameTraceViewer.CaptureFrame();
+		CodeAnalysis.FrameTrace.clear();
+		FrameScreenPixWrites.clear();
+		FrameScreenAttrWrites.clear();
 	}
 
 	// Draw UI
@@ -910,12 +914,12 @@ void FSpectrumEmu::DrawUI()
 	static int maxInst = 0;
 	maxInst = max(maxInst, instructionsThisFrame);
 
-	// Store trace and frame image
+	/*// Store trace and frame image
 	if (ExecThisFrame)
 	{
 		FrameTraceViewer.CaptureFrame();
 		CodeAnalysis.FrameTrace.clear();
-	}
+	}*/
 	DrawMainMenu(timeMS);
 	if (pZXUI->memmap.open)
 	{
@@ -1115,4 +1119,13 @@ uint16_t GetScreenAttrMemoryAddress(int x, int y)
 	const int char_y = y / 8;
 
 	return 0x5800 + (char_y * 32) + char_x;
+}
+
+void GetScreenAddressCoords(uint16_t addr, int& x, int &y)
+{
+	const int y02 = (addr >> 8) & 7;	// bits 0-2
+	const int y35 = (addr >> 5) & 7;	// bits 3-5
+	const int y67 = (addr >> 11) & 3;	// bits 6 & 7
+	x = (addr & 31) * 8;
+	y = y02 | (y35 << 3) | (y67 << 6);
 }

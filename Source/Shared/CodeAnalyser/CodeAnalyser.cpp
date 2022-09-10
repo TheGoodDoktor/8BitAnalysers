@@ -355,34 +355,24 @@ void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextp
 
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 {
-	//const uint8_t instrByte = ReadSpeccyByte(pUI->pSpeccy, pc);
-	
 	AnalyseFromPC(state, pc);
-	
-	//if (bRead)
-	//	pUI->MemStats.ReadCount[addr]++;
-	//if (bWrite)
-	//	pUI->MemStats.WriteCount[addr]++;
-	//
 }
 
-void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr, bool bWrite)
+void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 {
-	if (bWrite)
+	if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
 	{
-		FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
-		pDataInfo->LastFrameWritten = state.CurrentFrameNo;
-		pDataInfo->Writes[pc]++;
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
+		pDataInfo->LastFrameRead = state.CurrentFrameNo;
+		pDataInfo->Reads[pc]++;
 	}
-	else
-	{
-		if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
-		{
-			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
-			pDataInfo->LastFrameRead = state.CurrentFrameNo;
-			pDataInfo->Reads[pc]++;
-		}
-	}
+}
+
+void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr)
+{
+	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
+	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
+	pDataInfo->Writes[pc]++;
 }
 
 void ReAnalyseCode(FCodeAnalysisState &state)

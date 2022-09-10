@@ -118,6 +118,15 @@ bool FRZXManager::Load(const char* fName)
 
     ReplayMode = EReplayMode::Playback;
 
+    // get first frame
+    const int ret = rzx_update(&ICount);
+    if (ret != RZX_OK)
+    {
+        printf("rzx_update error, ret val %d", ret);
+    }
+
+    TickCounter = ICount;
+
     return true;
 }
 
@@ -130,6 +139,15 @@ void FRZXManager::DrawUI(void)
     ImGui::Text("Last Input: %d", LastInput);
     ImGui::Text("Last Frame Input Vals: %d", LastFrameInputVals);
     ImGui::Text("Last Frame Input Calls: %d", LastFrameInputCalls);
+}
+
+void FRZXManager::RegisterTicks(int num)
+{
+    TickCounter -= num;
+    if (TickCounter <= 0)
+    {
+        //printf("FRZXManager::RegisterTicks - Underflow");
+    }
 }
 
 
@@ -147,18 +165,18 @@ uint16_t FRZXManager::Update(void)
         printf("rzx_update error, ret val %d", ret);
     }
     
+    TickCounter = ICount;
     InputsThisFrame = 0;
     return ICount;
 }
 
 uint8_t	FRZXManager::GetInput()
 {
-    uint8_t input = rzx_get_input();
     const uint8_t synclost = RZX_SYNCLOST;
-    input = rzx_get_input();
+    uint8_t input = rzx_get_input();
     if (input == synclost)
     {
-        //printf("Sync Lost");
+        printf("Sync Lost");
     }
     LastInput = input;
     InputsThisFrame++;

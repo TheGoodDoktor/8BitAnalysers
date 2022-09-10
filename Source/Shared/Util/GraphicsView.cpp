@@ -15,6 +15,12 @@ FGraphicsView* CreateGraphicsView(int width, int height)
 	return pNewView;
 }
 
+void FreeGraphicsView(FGraphicsView* pView)
+{
+	delete pView->PixelBuffer;
+	ImGui_ImplDX11_FreeTexture(pView->Texture);
+	delete pView;
+}
 
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bScale = false, bool bMagnifier = true)
 {

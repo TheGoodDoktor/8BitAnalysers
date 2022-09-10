@@ -56,6 +56,13 @@ ImTextureID ImGui_ImplDX11_CreateTextureRGBA(unsigned char* pixels, int width, i
 	return newTex;
 }
 
+void ImGui_ImplDX11_FreeTexture(ImTextureID texture)
+{
+	// Free texture
+	ID3D11ShaderResourceView* pTextureView = (ID3D11ShaderResourceView*)texture;
+	pTextureView->Release();
+}
+
 void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels)
 {
 	ID3D11ShaderResourceView*	pTextureView = (ID3D11ShaderResourceView*)texture;

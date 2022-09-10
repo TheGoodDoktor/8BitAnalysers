@@ -23,6 +23,7 @@ public:
 	bool			Init(FSpectrumEmu* pEmu);
 	bool			Load(const char* fName);
 	void			DrawUI(void);
+	void			RegisterTicks(int num);
 	uint16_t		Update();
 	uint8_t			GetInput();
 	EReplayMode		GetReplayMode() const { return ReplayMode; }
@@ -35,6 +36,7 @@ private:
 
 	int				IRBTStates = 0;
 	uint16_t		ICount = 0;
+	int				TickCounter = 0;
 	uint8_t			LastInput = 0;
 	int				InputsThisFrame = 0;
 	int				LastFrameInputVals = 0;

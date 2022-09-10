@@ -45,7 +45,12 @@ public:
 	ECPUType	CPUType = ECPUType::Unknown;
 };
 
-
+struct FMemoryAccess
+{
+	uint16_t	Address;
+	uint8_t		Value;
+	uint16_t	PC;
+};
 
 
 enum class Key
@@ -121,6 +126,7 @@ public:
 	bool					GoToLabel = false;
 	std::vector<uint16_t>	AddressStack;
 	std::vector<FCPUFunctionCall>	CallStack;
+
 	std::vector<uint16_t>	FrameTrace;
 
 	int						KeyConfig[(int)Key::Count];
@@ -198,7 +204,8 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
 void ReAnalyseCode(FCodeAnalysisState &state);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
-void RegisterDataAccess(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, bool bWrite);
+void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
+void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr);
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
 void ResetMemoryLogs(FCodeAnalysisState &state);
 
