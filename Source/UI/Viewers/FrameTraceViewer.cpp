@@ -43,6 +43,16 @@ void FFrameTraceViewer::CaptureFrame()
 	frame.ScreenAttrWrites = pSpectrumEmu->FrameScreenAttrWrites;
 	frame.FrameOverview.clear();
 
+	// copy memory
+	for (int i = 0; i < 1 << 16; i++)
+		frame.MemoryDump[i] = pSpectrumEmu->ReadByte(i);
+
+	// TODO: generate diffs
+	const int prevFrameIndex = CurrentTraceFrame == 0 ? kNoFramesInTrace - 1 : CurrentTraceFrame - 1;
+	const FSpeccyFrameTrace& prevFrame = FrameTrace[prevFrameIndex];
+
+	GenerateMemoryDiff(frame, prevFrame, frame.MemoryDiffs);
+
 	if (++CurrentTraceFrame == kNoFramesInTrace)
 		CurrentTraceFrame = 0;
 }
@@ -58,6 +68,7 @@ void FFrameTraceViewer::Draw()
 			pSpectrumEmu->CodeAnalysis.CPUInterface->Break();
 
 		PixelWriteline = -1;
+		SelectedTraceLine = -1;
 		int frameNo = CurrentTraceFrame - ShowFrame - 1;
 		if (frameNo < 0)
 			frameNo += kNoFramesInTrace;
@@ -95,6 +106,12 @@ void FFrameTraceViewer::Draw()
 			ImGui::EndTabItem();
 		}
 
+		if (ImGui::BeginTabItem("Diff"))
+		{
+			DrawMemoryDiffs(frame);
+			ImGui::EndTabItem();
+		}
+
 		ImGui::EndTabBar();
 	}
 	
@@ -112,12 +129,15 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 		{
 			const uint16_t instAddr = frame.InstructionTrace[i];
 
-			/*const int index = GetItemIndexForAddress(pUI->CodeAnalysis, instAddr);
-			if (index != -1)
+			ImGui::PushID(i);
+
+			if (ImGui::Selectable("##traceline", i == SelectedTraceLine, 0))
 			{
-				DrawCodeAnalysisItemAtIndex(pUI->CodeAnalysis, index);
-			}*/
-			//DrawCodeAddress(pUI->CodeAnalysis, instAddr);
+				SelectedTraceLine = i;
+				DrawFrameScreenWritePixels(frame, i);
+			}
+			ImGui::SetItemAllowOverlap();	// allow buttons
+			ImGui::SameLine();
 
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instAddr);
 			if (pCodeInfo)
@@ -126,6 +146,8 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 				ImGui::SameLine();
 				DrawAddressLabel(state, instAddr);
 			}
+
+			ImGui::PopID();
 		}
 	}
 }
@@ -182,6 +204,26 @@ void	FFrameTraceViewer::GenerateTraceOverview(FSpeccyFrameTrace& frame)
 				newItem.FunctionAddress = functionAddress;
 				frame.FrameOverview.push_back(newItem);
 			}
+		}
+	}
+}
+
+void FFrameTraceViewer::GenerateMemoryDiff(const FSpeccyFrameTrace& frame, const FSpeccyFrameTrace& otherFrame, std::vector<FMemoryDiff>& outDiff)
+{
+	outDiff.clear();
+
+	// diff RAM with previous frame
+	// skip ROM & screen memory
+	// might want to exclude stack (once we determine where it is)
+	for (int i = 0x5C00; i < 1 << 16; i++)	
+	{
+		if (frame.MemoryDump[i] != otherFrame.MemoryDump[i])
+		{
+			FMemoryDiff diff;
+			diff.Address = i;
+			diff.NewVal = frame.MemoryDump[i];
+			diff.OldVal = otherFrame.MemoryDump[i];
+			outDiff.push_back(diff);
 		}
 	}
 }
@@ -267,4 +309,17 @@ void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 	{
 	}
 	ImGui::EndChild();
+}
+
+void FFrameTraceViewer::DrawMemoryDiffs(const FSpeccyFrameTrace& frame)
+{
+	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+
+	for (const auto& diff : frame.MemoryDiffs)
+	{
+		ImGui::Text("$%04X : ", diff.Address);
+		DrawAddressLabel(state,diff.Address);
+		ImGui::SameLine();
+		ImGui::Text("%d($%02X) -> %d($%02X)", diff.OldVal, diff.OldVal, diff.NewVal, diff.NewVal);
+	}
 }

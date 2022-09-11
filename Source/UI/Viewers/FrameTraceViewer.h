@@ -16,14 +16,24 @@ struct FFrameOverviewItem
 	uint16_t		FunctionAddress;
 	uint16_t		LabelAddress;
 };
+
+struct FMemoryDiff
+{
+	uint16_t	Address;
+	uint8_t		OldVal;
+	uint8_t		NewVal;
+};
+
 struct FSpeccyFrameTrace
 {
 	void*					Texture;
+	uint8_t					MemoryDump[1 << 16];	// 64K
 	std::vector<uint16_t>	InstructionTrace;
 	std::vector<FMemoryAccess>	ScreenPixWrites;
 	std::vector<FMemoryAccess>	ScreenAttrWrites;
 
-	std::vector< FFrameOverviewItem>	FrameOverview;
+	std::vector<FFrameOverviewItem>	FrameOverview;
+	std::vector<FMemoryDiff>	MemoryDiffs;
 };
 
 class FFrameTraceViewer
@@ -36,9 +46,11 @@ public:
 private:
 	void	DrawInstructionTrace(const FSpeccyFrameTrace& frame);
 	void	GenerateTraceOverview(FSpeccyFrameTrace& frame);
+	void	GenerateMemoryDiff(const FSpeccyFrameTrace& frameA, const FSpeccyFrameTrace& frameB, std::vector<FMemoryDiff>& outDiff);
 	void	DrawTraceOverview(const FSpeccyFrameTrace& frame);
 	void	DrawFrameScreenWritePixels(const FSpeccyFrameTrace& frame, int lastIndex = -1);
 	void	DrawScreenWrites(const FSpeccyFrameTrace& frame);
+	void	DrawMemoryDiffs(const FSpeccyFrameTrace& frame);
 
 	FSpectrumEmu* pSpectrumEmu = nullptr;
 
@@ -47,6 +59,7 @@ private:
 	static const int	kNoFramesInTrace = 300;
 	FSpeccyFrameTrace	FrameTrace[kNoFramesInTrace];
 
+	int		SelectedTraceLine = -1;
 	int		PixelWriteline = -1;
 	FGraphicsView*	ShowWritesView = nullptr;
 

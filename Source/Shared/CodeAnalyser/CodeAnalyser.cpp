@@ -500,6 +500,9 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	state.KeyConfig[(int)Key::AddLabel] = 'L';
 	state.KeyConfig[(int)Key::Rename] = 'R';
 	state.KeyConfig[(int)Key::Comment] = 0xBF;
+
+	state.StackMin = 0xffff;
+	state.StackMax = 0;
 }
 
 // Command Processing

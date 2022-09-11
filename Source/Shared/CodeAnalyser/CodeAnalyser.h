@@ -126,6 +126,8 @@ public:
 	bool					GoToLabel = false;
 	std::vector<uint16_t>	AddressStack;
 	std::vector<FCPUFunctionCall>	CallStack;
+	uint16_t				StackMin;
+	uint16_t				StackMax;
 
 	std::vector<uint16_t>	FrameTrace;
 

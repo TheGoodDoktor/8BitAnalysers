@@ -796,6 +796,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	{
 		ResetMemoryLogs(state);
 	}
+	ImGui::SameLine();
+	ImGui::Text("Stack range: ");
+	DrawAddressLabel(state, state.StackMin);
+	ImGui::SameLine();
+	DrawAddressLabel(state, state.StackMax);
 
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{

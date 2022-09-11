@@ -247,6 +247,11 @@ int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_dat
 	
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pEmu);
 
+	const uint16_t sp = z80_sp(&pEmu->ZXEmuState.cpu);
+	if (sp < state.StackMin)
+		state.StackMin = sp;
+	if (sp > state.StackMax)
+		state.StackMax = sp;
 
 	//if(trapId == 0)
 		//trapId = FunctionTrapFunction(pc,nextpc, ticks, pins, pUI);
