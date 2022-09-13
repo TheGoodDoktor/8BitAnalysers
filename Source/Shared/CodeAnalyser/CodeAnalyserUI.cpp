@@ -289,7 +289,10 @@ void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 				pCodeInfo->OpcodeBkp[i] = state.CPUInterface->ReadByte(pCodeInfo->Address + i);
 
 				// NOP it out
-				state.CPUInterface->WriteByte(pCodeInfo->Address + i,0);
+				if(state.CPUInterface->CPUType == ECPUType::Z80)
+					state.CPUInterface->WriteByte(pCodeInfo->Address + i,0);
+				else if(state.CPUInterface->CPUType == ECPUType::M6502)
+					state.CPUInterface->WriteByte(pCodeInfo->Address + i, 0xEA);
 			}
 		}
 		else
