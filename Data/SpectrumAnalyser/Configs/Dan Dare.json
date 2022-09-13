@@ -1,4 +1,4 @@
 {
     "Name": "Dan Dare",
-    "Z80File": "Dan Dare.z80"
+    "SnapshotFile": "./Games/Dan Dare.z80"
 }

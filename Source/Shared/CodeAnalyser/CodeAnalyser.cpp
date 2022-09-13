@@ -28,7 +28,9 @@ bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
 bool FCodeAnalysisState::RemoveLabelName(const std::string& labelName)
 {
 	auto labelIt = LabelUsage.find(labelName);
-	assert(labelIt != LabelUsage.end());	// shouldn't happen
+	//assert(labelIt != LabelUsage.end());	// shouldn't happen - it does though - investigate
+	if (labelIt == LabelUsage.end())
+		return false;
 
 	if (labelIt->second == 0)	// only a single use so we can remove from the map
 	{
