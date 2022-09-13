@@ -246,7 +246,16 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	ImGui::Text("\t%04Xh", pCodeInfo->Address);
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
+
+	// grey out NOPed code
+	if(pCodeInfo->bNOPped)
+		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+
 	ImGui::Text("%s", pCodeInfo->Text.c_str());
+
+	if (pCodeInfo->bNOPped)
+		ImGui::PopStyleColor();
+
 	if(ImGui::IsItemHovered())
 	{
 		ShowCodeToolTip(state, pCodeInfo);
@@ -269,6 +278,29 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 
 void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 {
+	if (ImGui::Checkbox("NOP out instruction", &pCodeInfo->bNOPped))
+	{
+		if (pCodeInfo->bNOPped == true)
+		{
+			assert(pCodeInfo->ByteSize <= sizeof(pCodeInfo->OpcodeBkp));
+			// backup code
+			for (int i = 0; i < pCodeInfo->ByteSize; i++)
+			{
+				pCodeInfo->OpcodeBkp[i] = state.CPUInterface->ReadByte(pCodeInfo->Address + i);
+
+				// NOP it out
+				state.CPUInterface->WriteByte(pCodeInfo->Address + i,0);
+			}
+		}
+		else
+		{
+			// Restore
+			for (int i = 0; i < pCodeInfo->ByteSize; i++)
+				state.CPUInterface->WriteByte(pCodeInfo->Address + i, pCodeInfo->OpcodeBkp[i]);
+
+		}
+	}
+
 	if (pCodeInfo->bSelfModifyingCode == true)
 	{
 		ImGui::Text("Self modifying code");

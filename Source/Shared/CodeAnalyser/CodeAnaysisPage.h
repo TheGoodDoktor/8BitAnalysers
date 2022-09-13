@@ -66,6 +66,9 @@ struct FCodeInfo : FItem
 		};
 		uint32_t	Flags = 0;
 	};
+
+	bool	bNOPped = false;
+	uint8_t	OpcodeBkp[4];
 private:
 	FCodeInfo() :FItem()
 	{
