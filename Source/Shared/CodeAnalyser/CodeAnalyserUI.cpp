@@ -105,6 +105,14 @@ void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr)
 	DrawAddressLabel(state, addr);
 }
 
+void DrawCallStack(FCodeAnalysisState& state)
+{
+	DrawCodeAddress(state, state.CPUInterface->GetPC());	// draw current PC
+
+	for(int i=(int)state.CallStack.size() - 1;i>=0;i--)
+		DrawCodeAddress(state, state.CallStack[i].CallAddr);
+}
+
 void DrawComment(const FItem *pItem)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
@@ -422,7 +430,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 
 }
 
-void DrawDataValueGraph(uint8_t val, bool bReset)
+void DrawDataValueGraph(float val, bool bReset)
 {
 	// Create a dummy array of contiguous float values to plot
 		// Tip: If your float aren't contiguous but part of a structure, you can pass a pointer to your first float and the sizeof() of your structure in the Stride parameter.
@@ -436,7 +444,7 @@ void DrawDataValueGraph(uint8_t val, bool bReset)
 	while (refresh_time < ImGui::GetTime()) // Create dummy data at fixed 60 hz rate for the demo
 	{
 		static float phase = 0.0f;
-		values[values_offset] = (float)val;
+		values[values_offset] = val;
 		values_offset = (values_offset + 1) % IM_ARRAYSIZE(values);
 		phase += 0.10f*values_offset;
 		refresh_time += 1.0f / 60.0f;
@@ -456,6 +464,16 @@ void DrawDataValueGraph(uint8_t val, bool bReset)
 	//ImGui::PlotHistogram("Histogram", arr, IM_ARRAYSIZE(arr), 0, NULL, 0.0f, 1.0f, ImVec2(0, 80));
 }
 
+void DrawDataValueGraph(uint8_t val, bool bReset)
+{
+	DrawDataValueGraph(static_cast<float>(val), bReset);
+}
+
+void DrawDataValueGraph(uint16_t val, bool bReset)
+{
+	DrawDataValueGraph(static_cast<float>(val), bReset);
+}
+
 void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 {
 	switch (pDataInfo->DataType)
@@ -465,7 +483,8 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 	break;
 
 	case DataType::Word:
-	break;
+		DrawDataValueGraph(state.CPUInterface->ReadWord(pDataInfo->Address), false);
+		break;
 
 	case DataType::Text:
 	{
@@ -878,19 +897,29 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	ImGui::SameLine();
 	if(ImGui::BeginChild("##rightpanel", ImVec2(0, 0), true))
 	{
-		// Details Panel
-		if (ImGui::BeginChild("##detail", ImVec2(0, 300), true))
+		if (ImGui::BeginTabBar("CARightPanelTabBar"))
 		{
-			DrawDetailsPanel(state);
-		}
-		ImGui::EndChild();
+			if (ImGui::BeginTabItem("Details"))
+			{
+				DrawDetailsPanel(state);
+				ImGui::EndTabItem();
+			}
 
-		// Globals Panel
-		if (ImGui::BeginChild("##globallabelss", ImVec2(0, 0), true))
-		{
-			DrawGlobals(state);
+			if (ImGui::BeginTabItem("CallStack"))
+			{
+				DrawCallStack(state);
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("Globals"))
+			{
+				DrawGlobals(state);
+				ImGui::EndTabItem();
+			}
+
+			ImGui::EndTabBar();
 		}
-		ImGui::EndChild();
+
 
 	}
 	ImGui::EndChild(); // right panel

@@ -25,6 +25,7 @@ enum class ItemType
 struct FCPUFunctionCall
 {
 	uint16_t	FunctionAddr = 0;
+	uint16_t	CallAddr = 0;
 	uint16_t	ReturnAddr = 0;
 };
 

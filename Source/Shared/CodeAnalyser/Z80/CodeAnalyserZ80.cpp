@@ -237,18 +237,29 @@ void RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 			if (nextpc != pc + 3)	// call instructions are 3 bytes
 			{
 				FCPUFunctionCall callInfo;
+				callInfo.CallAddr = pc;
 				callInfo.FunctionAddr = nextpc;
 				callInfo.ReturnAddr = pc + 3;
 				state.CallStack.push_back(callInfo);
+			}
+			else
+			{
+				if(opcode == 0xCD)
+					fprintf(stderr, "PC: $%04x, NextPC $%04x\n", pc, nextpc);
+
 			}
 			break;
 
 
 			// ret
+		case 0xC0:
 		case 0xC8:
 		case 0xC9:
+		case 0xD0:
 		case 0xD8:
+		case 0xE0:
 		case 0xE8:
+		case 0xF0:
 		case 0xF8:
 			if (nextpc != pc + 1)	// ret instructions are 1 byte
 			{
