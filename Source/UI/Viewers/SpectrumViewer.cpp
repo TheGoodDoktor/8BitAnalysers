@@ -7,7 +7,14 @@
 #include <Shared/CodeAnalyser/CodeAnalyserUI.h>
 #include <UI/Viewers/GraphicsViewer.h>
 
-void ReadSpeccyKeys(FSpectrumEmu* pSpeccy);
+#define NOMINMAX // without this std::min and std::max fail to compile
+#include <windows.h> // for VK_* key defines
+
+void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
+{
+	pSpectrumEmu = pEmu;
+	SetInputEventHandler(this);
+}
 
 void FSpectrumViewer::Draw()
 {
@@ -99,33 +106,66 @@ void FSpectrumViewer::Draw()
 
 	ImGui::SliderFloat("Speed Scale", &pSpectrumEmu->ExecSpeedScale, 0.0f, 1.0f);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	// read keys
-	if (ImGui::IsWindowFocused())
+	
+	bWindowFocused = ImGui::IsWindowFocused();
+}
+
+int GetSpectrumKeyFromKeyCode(int keyCode)
+{
+	int speccyKey = 0;
+
+	if (keyCode >= '0' && keyCode <= '9')
 	{
-		ReadSpeccyKeys(pSpectrumEmu);
+		// pressed 0-9
+		speccyKey = keyCode;
 	}
+	else if (keyCode >= 'A' && keyCode <= 'Z')
+	{
+		// pressed a-z
+		speccyKey = keyCode + 0x20;
+	}
+	else if (keyCode == VK_SPACE)
+	{
+		speccyKey = ' '; 
+	}
+	else if (keyCode == VK_RETURN)
+	{
+		speccyKey = 0xd;
+	}
+	else if (keyCode == VK_CONTROL)
+	{
+		// symbol-shift
+		speccyKey = 0xf;
+	}
+	else if (keyCode == VK_SHIFT)
+	{
+		// caps-shift
+		speccyKey = 0xe;
+	}
+	else if (keyCode == VK_BACK)
+	{
+		// delete (shift and 0)
+		speccyKey = 0xc;
+	}
+	return speccyKey;
+	
+	return 0;
+}
+
+void FSpectrumViewer::OnKeyUp(int keyCode) 
+{
+	zx_key_up(&pSpectrumEmu->ZXEmuState, GetSpectrumKeyFromKeyCode(keyCode));
 }
 
 
-
-void ReadSpeccyKeys(FSpectrumEmu* pSpeccy)
+void FSpectrumViewer::OnKeyDown(int keyCode) 
 {
-	ImGuiIO& io = ImGui::GetIO();
-	for (int i = 0; i < 10; i++)
+	if (bWindowFocused)
 	{
-		if (io.KeysDown[0x30 + i] == 1)
-		{
-			zx_key_down(&pSpeccy->ZXEmuState, '0' + i);
-			zx_key_up(&pSpeccy->ZXEmuState, '0' + i);
-		}
+		zx_key_down(&pSpectrumEmu->ZXEmuState, GetSpectrumKeyFromKeyCode(keyCode));
 	}
+}
 
-	for (int i = 0; i < 26; i++)
-	{
-		if (io.KeysDown[0x41 + i] == 1)
-		{
-			zx_key_down(&pSpeccy->ZXEmuState, 'a' + i);
-			zx_key_up(&pSpeccy->ZXEmuState, 'a' + i);
-		}
-	}
+void FSpectrumViewer::OnChar(int charCode) 
+{
 }

@@ -773,6 +773,7 @@ static void _zx_init_keyboard_matrix(zx_t* sys) {
     /* special keys */
     kbd_register_key(&sys->kbd, ' ', 7, 0, 0);  /* Space */
     kbd_register_key(&sys->kbd, 0x0F, 7, 1, 0); /* SymShift */
+    kbd_register_key(&sys->kbd, 0x0E, 0, 0, 0); /* CapsShift */
     kbd_register_key(&sys->kbd, 0x08, 3, 4, 1); /* Cursor Left (Shift+5) */
     kbd_register_key(&sys->kbd, 0x0A, 4, 4, 1); /* Cursor Down (Shift+6) */
     kbd_register_key(&sys->kbd, 0x0B, 4, 3, 1); /* Cursor Up (Shift+7) */
