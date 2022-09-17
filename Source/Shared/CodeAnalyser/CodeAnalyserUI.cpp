@@ -44,7 +44,7 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, uint16_t addr)
 	return -1;
 }
 
-void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
+void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr, bool bFunctionRel)
 {
 	int labelOffset = 0;
 	const char *pLabelString = nullptr;
@@ -54,8 +54,11 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 		const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
 		if(pLabel != nullptr)
 		{
-			pLabelString = pLabel->Name.c_str();
-			break;
+			if (bFunctionRel == false || pLabel->LabelType == LabelType::Function)
+			{
+				pLabelString = pLabel->Name.c_str();
+				break;
+			}
 		}
 
 		labelOffset++;
@@ -96,21 +99,56 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr)
 	}
 }
 
-void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr)
+void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr, bool bFunctionRel)
 {
 	//ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
 	ImGui::Text("%04Xh", addr);
 	//ImGui::PopStyleColor();
 	ImGui::SameLine();
-	DrawAddressLabel(state, addr);
+	DrawAddressLabel(state, addr, bFunctionRel);
 }
 
 void DrawCallStack(FCodeAnalysisState& state)
 {
-	DrawCodeAddress(state, state.CPUInterface->GetPC());	// draw current PC
+	if (state.CallStack.empty() == false)
+	{
+		const FLabelInfo* pLabel = state.GetLabelForAddress(state.CallStack.back().FunctionAddr);
+		if (pLabel != nullptr)
+		{
+			ImGui::Text("%s :", pLabel->Name.c_str());
+			ImGui::SameLine();
+		}
+	}
+	DrawCodeAddress(state, state.CPUInterface->GetPC(), false);	// draw current PC
 
-	for(int i=(int)state.CallStack.size() - 1;i>=0;i--)
-		DrawCodeAddress(state, state.CallStack[i].CallAddr);
+	for (int i = (int)state.CallStack.size() - 1; i >= 0; i--)
+	{
+		if (i > 0)
+		{
+			const FLabelInfo* pLabel = state.GetLabelForAddress(state.CallStack[i-1].FunctionAddr);
+			if (pLabel != nullptr)
+			{
+				ImGui::Text("%s :", pLabel->Name.c_str());
+				ImGui::SameLine();
+			}
+		}
+		DrawCodeAddress(state, state.CallStack[i].CallAddr, false);
+	}
+}
+
+void DrawTrace(FCodeAnalysisState& state)
+{
+	const float line_height = ImGui::GetTextLineHeight();
+	ImGuiListClipper clipper((int)state.FrameTrace.size(), line_height);
+
+	while (clipper.Step())
+	{
+		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+		{
+			DrawCodeAddress(state, state.FrameTrace[state.FrameTrace.size() - i - 1], false);	// draw current PC
+		}
+	}
+	
 }
 
 void DrawComment(const FItem *pItem)
@@ -911,6 +949,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 				ImGui::EndTabItem();
 			}
 
+			if (ImGui::BeginTabItem("Trace"))
+			{
+				DrawTrace(state);
+				ImGui::EndTabItem();
+			}
 			if (ImGui::BeginTabItem("Globals"))
 			{
 				DrawGlobals(state);
