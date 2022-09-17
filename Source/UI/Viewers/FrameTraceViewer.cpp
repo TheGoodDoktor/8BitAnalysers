@@ -47,7 +47,7 @@ void FFrameTraceViewer::CaptureFrame()
 	for (int i = 0; i < 1 << 16; i++)
 		frame.MemoryDump[i] = pSpectrumEmu->ReadByte(i);
 
-	// TODO: generate diffs
+	// Generate diffs
 	const int prevFrameIndex = CurrentTraceFrame == 0 ? kNoFramesInTrace - 1 : CurrentTraceFrame - 1;
 	const FSpeccyFrameTrace& prevFrame = FrameTrace[prevFrameIndex];
 

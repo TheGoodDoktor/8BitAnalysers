@@ -248,8 +248,8 @@ bool CheckStopInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc)
 	return false;
 }
 
-void RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t nextpc)
+bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t nextpc)
 {
-
+	return false;
 }
 

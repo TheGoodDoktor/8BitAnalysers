@@ -838,7 +838,7 @@ void DrawDetailsPanel(FCodeAnalysisState &state)
 void DrawDebuggerButtons(FCodeAnalysisState &state)
 {
 	//FSpeccy *pSpeccy = state.pSpeccy;
-	static bool bJumpToPCOnBreak = false;
+	static bool bJumpToPCOnBreak = true;
 
 	if (ImGui::Button("Break"))
 	{

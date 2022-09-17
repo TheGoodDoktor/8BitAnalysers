@@ -228,6 +228,9 @@ int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_dat
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bMemAccess = !!((pins & Z80_CTRL_MASK) & Z80_MREQ);
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
+	const bool irq = (pins & Z80_INT) && z80_iff1(&pEmu->ZXEmuState.cpu);
+
+	
 
 	const uint16_t nextpc = pc;
 	// store program count in history
@@ -237,12 +240,20 @@ int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_dat
 
 	pc = prevPC;	// set PC to pc of instruction just executed
 
-	RegisterCodeExecuted(state, pc, nextpc);
+	if (irq)
+	{
+		FCPUFunctionCall callInfo;
+		callInfo.CallAddr = prevPC;
+		callInfo.FunctionAddr = pc;
+		callInfo.ReturnAddr = prevPC;
+		state.CallStack.push_back(callInfo);
+	}
+
+	bool bBreak = RegisterCodeExecuted(state, pc, nextpc);
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
-
 	// check for breakpointed code line
-	if (pCodeInfo->bBreakpointed)
+	if (bBreak || pCodeInfo->bBreakpointed)
 		return UI_DBG_BP_BASE_TRAPID;
 	
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pEmu);
@@ -835,6 +846,10 @@ void FSpectrumEmu::Tick()
 	{
 		const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
 		const uint32_t microSeconds = max(static_cast<uint32_t>(frameTime), uint32_t(1));
+		
+		// TODO: Start frame method in analyser
+		CodeAnalysis.FrameTrace.clear();
+		
 		if(RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
 			assert(ZXEmuState.valid);
@@ -852,7 +867,6 @@ void FSpectrumEmu::Tick()
 		ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
 
 		FrameTraceViewer.CaptureFrame();
-		CodeAnalysis.FrameTrace.clear();
 		FrameScreenPixWrites.clear();
 		FrameScreenAttrWrites.clear();
 	}

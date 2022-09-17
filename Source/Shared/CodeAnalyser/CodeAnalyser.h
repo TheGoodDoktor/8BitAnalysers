@@ -203,7 +203,7 @@ public:
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
-void RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
+bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
 void ReAnalyseCode(FCodeAnalysisState &state);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
