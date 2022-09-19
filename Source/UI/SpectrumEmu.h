@@ -102,9 +102,12 @@ public:
 	void		WriteByte(uint16_t address, uint8_t value) override;
 	uint16_t	GetPC(void) override;
 	bool		IsAddressBreakpointed(uint16_t addr) override;
-	bool		ToggleBreakpointAtAddress(uint16_t addr) override;
+	bool		ToggleExecBreakpointAtAddress(uint16_t addr) override;
+	bool		ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize) override;
 	void		Break(void) override;
 	void		Continue(void) override;
+	void		StepOver(void) override;
+	void		StepInto(void) override;
 	void		GraphicsViewerSetAddress(uint16_t address) override;
 	bool		ShouldExecThisFrame(void) const override;
 	void		InsertROMLabels(FCodeAnalysisState& state) override;

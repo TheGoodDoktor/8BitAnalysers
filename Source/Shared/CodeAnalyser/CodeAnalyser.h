@@ -34,11 +34,14 @@ public:
 
 	// breakpoints
 	virtual bool	IsAddressBreakpointed(uint16_t addr) = 0;
-	virtual bool	ToggleBreakpointAtAddress(uint16_t addr) = 0;
+	virtual bool	ToggleExecBreakpointAtAddress(uint16_t addr) = 0;
+	virtual bool	ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize) = 0;
 
 	// commands
 	virtual void	Break() = 0;
 	virtual void	Continue() = 0;
+	virtual void	StepOver() = 0;
+	virtual void	StepInto() = 0;
 	virtual void	GraphicsViewerSetAddress(uint16_t address) = 0;
 
 	virtual bool	ShouldExecThisFrame(void) const = 0;
@@ -124,6 +127,7 @@ public:
 	std::vector< FLabelInfo *>	GlobalFunctions;
 	FItem*					pCursorItem = nullptr;
 	int						CursorItemIndex = -1;
+	bool					TrackPCFrame = false;
 	int						GoToAddress = -1;
 	int						HoverAddress = -1;		// address being hovered over
 	int						HighlightAddress = -1;	// address to highlight

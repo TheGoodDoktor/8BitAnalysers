@@ -413,6 +413,21 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 			dl->AddTriangle(a, b, c, brd_color);
 		}
 	}
+
+	// show if breakpointed
+	if (state.CPUInterface->IsAddressBreakpointed(pDataInfo->Address))
+	{
+		const ImU32 bp_enabled_color = 0xFF0000FF;
+		const ImU32 bp_disabled_color = 0xFF000088;
+		const ImU32 brd_color = 0xFF000000;
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const ImVec2 pos = ImGui::GetCursorScreenPos();
+		const float lh2 = (float)(int)(line_height / 2);
+		const ImVec2 mid(pos.x + 7, pos.y + lh2);
+
+		dl->AddCircleFilled(mid, 7, bp_enabled_color);
+		dl->AddCircle(mid, 7, brd_color);
+	}
 	
 	ImGui::Text("\t%04Xh", pDataInfo->Address);
 	const float line_start_x = ImGui::GetCursorPosX();
@@ -699,6 +714,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 {
 	if (ImGui::BeginPopupContextItem("code item context menu"))
 	{
+		
 		if (pItem->Type == ItemType::Data)
 		{
 			if (ImGui::Selectable("Toggle data type (D)"))
@@ -713,6 +729,8 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 			{
 				SetItemCode(state, pItem);
 			}
+			if (ImGui::Selectable("Toggle Data Breakpoint"))
+				state.CPUInterface->ToggleDataBreakpointAtAddress(pItem->Address, pItem->ByteSize);
 		}
 
 		if (pItem->Type == ItemType::Label)
@@ -731,8 +749,11 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 		}
 
 		// breakpoints
-		if (ImGui::Selectable("Toggle Breakpoint"))
-			state.CPUInterface->ToggleBreakpointAtAddress(pItem->Address);
+		if (pItem->Type == ItemType::Code)
+		{
+			if (ImGui::Selectable("Toggle Exec Breakpoint"))
+				state.CPUInterface->ToggleExecBreakpointAtAddress(pItem->Address);
+		}
 				
 		if (ImGui::Selectable("View in graphics viewer"))
 		{
@@ -829,24 +850,32 @@ void DrawDetailsPanel(FCodeAnalysisState &state)
 
 void DrawDebuggerButtons(FCodeAnalysisState &state)
 {
-	//FSpeccy *pSpeccy = state.pSpeccy;
-	static bool bJumpToPCOnBreak = true;
+	//static bool bJumpToPCOnBreak = true;
 
 	if (ImGui::Button("Break"))
 	{
 		state.CPUInterface->Break();
-		
-		if(bJumpToPCOnBreak)
-			GoToAddress(state,state.CPUInterface->GetPC());
+		state.TrackPCFrame = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Continue"))
 	{
 		state.CPUInterface->Continue();
-		
 	}
 	ImGui::SameLine();
-	ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
+	if (ImGui::Button("Step Over"))
+	{
+		state.CPUInterface->StepOver();
+		state.TrackPCFrame = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Step Into"))
+	{
+		state.CPUInterface->StepInto();
+		state.TrackPCFrame = true;
+	}
+	//ImGui::SameLine();
+	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state)
@@ -873,8 +902,14 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	static int addrInput = 0;
 	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, ImGuiInputTextFlags_CharsHexadecimal))
 		GoToAddress(state, addrInput);
+
+	if (state.TrackPCFrame == true)
+	{
+		state.GoToAddress = state.CPUInterface->GetPC();
+		state.TrackPCFrame = false;
+	}
+	
 	DrawDebuggerButtons(state);
-	//ImGui::Checkbox("Analyse data accesses (slow)", &state.bRegisterDataAccesses);
 
 	if (ImGui::Button("Reset Memory Logs"))
 	{
@@ -927,39 +962,34 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	ImGui::SameLine();
 	if(ImGui::BeginChild("##rightpanel", ImVec2(0, 0), true))
 	{
-		if (ImGui::BeginTabBar("CARightPanelTabBar"))
-		{
-			if (ImGui::BeginTabItem("Details"))
-			{
-				DrawDetailsPanel(state);
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("CallStack"))
-			{
-				DrawCallStack(state);
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("Trace"))
-			{
-				DrawTrace(state);
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Globals"))
-			{
-				DrawGlobals(state);
-				ImGui::EndTabItem();
-			}
-
-			ImGui::EndTabBar();
-		}
-
-
+		DrawDetailsPanel(state);
 	}
 	ImGui::EndChild(); // right panel
+}
 
-	
+void DrawExecutionInfo(FCodeAnalysisState& state)
+{
+	if (ImGui::BeginTabBar("ExeInfoTabs"))
+	{
+		if (ImGui::BeginTabItem("CallStack"))
+		{
+			DrawCallStack(state);
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Trace"))
+		{
+			DrawTrace(state);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Globals"))
+		{
+			DrawGlobals(state);
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
 }
 
 void DrawLabelList(FCodeAnalysisState &state, std::vector<FLabelInfo *> labelList)

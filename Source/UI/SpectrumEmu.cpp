@@ -134,11 +134,16 @@ uint16_t	FSpectrumEmu::GetPC(void)
 
 bool FSpectrumEmu::IsAddressBreakpointed(uint16_t addr)
 {
-	return _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr) >= 0;
+	for (int i = 0; i < UIZX.dbg.dbg.num_breakpoints; i++) 
+	{
+		if (UIZX.dbg.dbg.breakpoints[i].addr == addr)
+			return true;
+	}
+
+	return false;
 }
 
-
-bool FSpectrumEmu::ToggleBreakpointAtAddress(uint16_t addr)
+bool FSpectrumEmu::ToggleExecBreakpointAtAddress(uint16_t addr)
 {
 	int index = _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr);
 	if (index >= 0) 
@@ -154,17 +159,54 @@ bool FSpectrumEmu::ToggleBreakpointAtAddress(uint16_t addr)
 	}
 }
 
-
-void	FSpectrumEmu::Break(void)
+bool FSpectrumEmu::ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize)
 {
-	UIZX.dbg.dbg.stopped = true;
-	UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+	const int type = dataSize == 1 ? UI_DBG_BREAKTYPE_BYTE : UI_DBG_BREAKTYPE_WORD;
+	int index = _ui_dbg_bp_find(&UIZX.dbg, type, addr);
+	if (index >= 0)
+	{
+		// breakpoint already exists, remove 
+		_ui_dbg_bp_del(&UIZX.dbg, index);
+		return false;
+	}
+	else
+	{
+		// breakpoint doesn't exist, add a new one 
+		if (UIZX.dbg.dbg.num_breakpoints < UI_DBG_MAX_BREAKPOINTS)
+		{
+			ui_dbg_breakpoint_t* bp = &UIZX.dbg.dbg.breakpoints[UIZX.dbg.dbg.num_breakpoints++];
+			bp->type = type;
+			bp->cond = UI_DBG_BREAKCOND_NONEQUAL;
+			bp->addr = addr;
+			bp->val = ReadByte(addr);
+			bp->enabled = true;
+			return true;
+		}
+		else 
+		{
+			return false;
+		}
+	}
 }
 
-void	FSpectrumEmu::Continue(void) 
+void FSpectrumEmu::Break(void)
 {
-	UIZX.dbg.dbg.stopped = false;
-	UIZX.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
+	_ui_dbg_break(&UIZX.dbg);
+}
+
+void FSpectrumEmu::Continue(void) 
+{
+	_ui_dbg_continue(&UIZX.dbg);
+}
+
+void FSpectrumEmu::StepOver(void)
+{
+	_ui_dbg_step_over(&UIZX.dbg);
+}
+
+void FSpectrumEmu::StepInto(void)
+{
+	_ui_dbg_step_into(&UIZX.dbg);
 }
 
 void FSpectrumEmu::GraphicsViewerSetAddress(uint16_t address) 
@@ -1058,11 +1100,11 @@ void FSpectrumEmu::DrawUI()
 	}
 	ImGui::End();
 
-	/*if (ImGui::Begin("Globals"))
+	if (ImGui::Begin("Execution"))
 	{
-		DrawGlobals(pUI->CodeAnalysis);
-		ImGui::End();
-	}*/
+		DrawExecutionInfo(CodeAnalysis);
+	}
+	ImGui::End();
 }
 
 bool FSpectrumEmu::DrawDockingView()
