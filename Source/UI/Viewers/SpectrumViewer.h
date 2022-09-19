@@ -19,6 +19,7 @@ public:
 	void	OnKeyUp(int keyCode) override;
 	void	OnKeyDown(int keyCode) override;
 	void	OnChar(int charCode) override;
+	void	OnGamepadUpdated(int mask) override;
 	// IInputEventHandler End
 
 private:

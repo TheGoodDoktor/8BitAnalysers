@@ -350,7 +350,7 @@ void zx_key_down(zx_t* sys, int key_code) {
             }
             break;
         /* the Sinclair joystick ports work as normal keys */
-        case ZX_JOYSTICKTYPE_SINCLAIR_1:
+        case ZX_JOYSTICKTYPE_SINCLAIR_2:
             switch (key_code) {
                 case 0x20:  key_code = '5'; break;    /* fire */
                 case 0x08:  key_code = '1'; break;    /* left */
@@ -361,7 +361,7 @@ void zx_key_down(zx_t* sys, int key_code) {
             }
             kbd_key_down(&sys->kbd, key_code);
             break;
-        case ZX_JOYSTICKTYPE_SINCLAIR_2:
+        case ZX_JOYSTICKTYPE_SINCLAIR_1:
             switch (key_code) {
                 case 0x20:  key_code = '0'; break;    /* fire */
                 case 0x08:  key_code = '6'; break;    /* left */
@@ -392,7 +392,7 @@ void zx_key_up(zx_t* sys, int key_code) {
             }
             break;
         /* the Sinclair joystick ports work as normal keys */
-        case ZX_JOYSTICKTYPE_SINCLAIR_1:
+        case ZX_JOYSTICKTYPE_SINCLAIR_2:
             switch (key_code) {
                 case 0x20:  key_code = '5'; break;    /* fire */
                 case 0x08:  key_code = '1'; break;    /* left */
@@ -403,7 +403,7 @@ void zx_key_up(zx_t* sys, int key_code) {
             }
             kbd_key_up(&sys->kbd, key_code);
             break;
-        case ZX_JOYSTICKTYPE_SINCLAIR_2:
+        case ZX_JOYSTICKTYPE_SINCLAIR_1:
             switch (key_code) {
                 case 0x20:  key_code = '0'; break;    /* fire */
                 case 0x08:  key_code = '6'; break;    /* left */
@@ -429,8 +429,8 @@ zx_joystick_type_t zx_joystick_type(zx_t* sys) {
 
 void zx_joystick(zx_t* sys, uint8_t mask) {
     CHIPS_ASSERT(sys && sys->valid);
-    if (sys->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_1) {
-        if (mask & ZX_JOYSTICK_RIGHT) { kbd_key_down(&sys->kbd, '5'); }
+    if (sys->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_2) {
+        if (mask & ZX_JOYSTICK_BTN)   { kbd_key_down(&sys->kbd, '5'); }
         else                          { kbd_key_up(&sys->kbd, '5'); }
         if (mask & ZX_JOYSTICK_LEFT)  { kbd_key_down(&sys->kbd, '1'); }
         else                          { kbd_key_up(&sys->kbd, '1'); }
@@ -441,8 +441,8 @@ void zx_joystick(zx_t* sys, uint8_t mask) {
         if (mask & ZX_JOYSTICK_UP)    { kbd_key_down(&sys->kbd, '4'); }
         else                          { kbd_key_up(&sys->kbd, '4'); }
     }
-    else if (sys->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_2) {
-        if (mask & ZX_JOYSTICK_RIGHT) { kbd_key_down(&sys->kbd, '0'); }
+    else if (sys->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_1) {
+        if (mask & ZX_JOYSTICK_BTN)   { kbd_key_down(&sys->kbd, '0'); }
         else                          { kbd_key_up(&sys->kbd, '0'); }
         if (mask & ZX_JOYSTICK_LEFT)  { kbd_key_down(&sys->kbd, '6'); }
         else                          { kbd_key_up(&sys->kbd, '6'); }

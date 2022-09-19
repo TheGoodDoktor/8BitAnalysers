@@ -166,6 +166,14 @@ void FSpectrumViewer::OnKeyDown(int keyCode)
 	}
 }
 
+void FSpectrumViewer::OnGamepadUpdated(int mask)
+{
+	if (zx_joystick_type(&pSpectrumEmu->ZXEmuState) != ZX_JOYSTICKTYPE_NONE)
+	{
+		zx_joystick(&pSpectrumEmu->ZXEmuState, mask);
+	}
+}
+
 void FSpectrumViewer::OnChar(int charCode) 
 {
 }

@@ -218,9 +218,7 @@ static void ImGui_ImplWin32_UpdateGamepads()
 {
     ImGuiIO& io = ImGui::GetIO();
     memset(io.NavInputs, 0, sizeof(io.NavInputs));
-    if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
-        return;
-
+    
     // Calling XInputGetState() every frame on disconnected gamepads is unfortunately too slow.
     // Instead we refresh gamepad availability by calling XInputGetCapabilities() _only_ after receiving WM_DEVICECHANGE.
     if (g_WantUpdateHasGamepad)
@@ -231,6 +229,25 @@ static void ImGui_ImplWin32_UpdateGamepads()
     }
 
     XINPUT_STATE xinput_state;
+
+    if (IInputEventHandler* pInputHandler = g_InputEventHandler)
+    {
+        if (g_HasGamepad && XInputGetState(0, &xinput_state) == ERROR_SUCCESS)
+        {
+            const XINPUT_GAMEPAD& gamepad = xinput_state.Gamepad;
+            int mask = 0;
+            mask |= (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) ? (1 << 0) : 0;
+            mask |= (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) ? (1 << 1) : 0;
+            mask |= (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) ? (1 << 2) : 0;
+            mask |= (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) ? (1 << 3) : 0;
+            mask |= (gamepad.wButtons & XINPUT_GAMEPAD_A) ? (1 << 4) : 0;
+            pInputHandler->OnGamepadUpdated(mask);
+        }
+    }
+
+    if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+        return;
+
     io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
     if (g_HasGamepad && XInputGetState(0, &xinput_state) == ERROR_SUCCESS)
     {
