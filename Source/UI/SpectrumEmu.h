@@ -3,9 +3,11 @@
 #define UI_DBG_USE_Z80
 #define UI_DASM_USE_Z80
 #include "chips/z80.h"
+#include "chips/m6502.h"
 #include "chips/beeper.h"
 #include "chips/ay38910.h"
 #include "util/z80dasm.h"
+#include "util/m6502dasm.h"
 #include "chips/mem.h"
 #include "chips/kbd.h"
 #include "chips/clk.h"
@@ -79,6 +81,10 @@ public:
 	void	SaveCurrentGameData();
 	void	DrawMainMenu(double timeMS);
 	void	DrawCheatsUI();
+
+	int		TrapFunction(uint16_t pc, int ticks, uint64_t pins);
+	uint64_t Z80Tick(int num, uint64_t pins);
+
 	void	Tick();
 	void	DrawMemoryTools();
 	void	DrawUI();
@@ -95,6 +101,8 @@ public:
 	const uint8_t*	GetMemPtr(uint16_t address) const override;
 	void		WriteByte(uint16_t address, uint8_t value) override;
 	uint16_t	GetPC(void) override;
+	bool		IsAddressBreakpointed(uint16_t addr) override;
+	bool		ToggleBreakpointAtAddress(uint16_t addr) override;
 	void		Break(void) override;
 	void		Continue(void) override;
 	void		GraphicsViewerSetAddress(uint16_t address) override;
@@ -169,6 +177,9 @@ public:
 	FRZXManager		RZXManager;
 
 	bool bShowImGuiDemo = false;
+private:
+	z80_tick_t	OldTickCB = nullptr;
+	void*		OldTickUserData = nullptr;
 };
 
 

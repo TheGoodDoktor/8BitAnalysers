@@ -1,4 +1,6 @@
 
+#define CHIPS_IMPL
+#include <imgui.h>
 #include "SpectrumEmu.h"
 #include <windows.h>
 
@@ -128,7 +130,30 @@ void FSpectrumEmu::WriteByte(uint16_t address, uint8_t value)
 uint16_t	FSpectrumEmu::GetPC(void) 
 {
 	return z80_pc(&ZXEmuState.cpu);
+} 
+
+bool FSpectrumEmu::IsAddressBreakpointed(uint16_t addr)
+{
+	return _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr) >= 0;
 }
+
+
+bool FSpectrumEmu::ToggleBreakpointAtAddress(uint16_t addr)
+{
+	int index = _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr);
+	if (index >= 0) 
+	{
+		/* breakpoint already exists, remove */
+		_ui_dbg_bp_del(&UIZX.dbg, index);
+		return false;
+	}
+	else 
+	{
+		/* breakpoint doesn't exist, add a new one */
+		return _ui_dbg_bp_add_exec(&UIZX.dbg, true, addr);
+	}
+}
+
 
 void	FSpectrumEmu::Break(void)
 {
@@ -220,23 +245,28 @@ static void PushAudio(const float* samples, int num_samples, void* user_data)
 
 }
 
-// TODO: Thunk to member function
 int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
-	FCodeAnalysisState &state = pEmu->CodeAnalysis;
+	return pEmu->TrapFunction(pc, ticks, pins);
+}
+
+
+// Note - you can't read register values in Trap function
+// They are only written back at end of exec function
+int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
+{
+	FCodeAnalysisState &state = CodeAnalysis;
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bMemAccess = !!((pins & Z80_CTRL_MASK) & Z80_MREQ);
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
-	const bool irq = (pins & Z80_INT) && z80_iff1(&pEmu->ZXEmuState.cpu);
-
-	
+	const bool irq = (pins & Z80_INT) && z80_iff1(&ZXEmuState.cpu);	
 
 	const uint16_t nextpc = pc;
 	// store program count in history
-	const uint16_t prevPC = pEmu->PCHistory[pEmu->PCHistoryPos];
-	pEmu->PCHistoryPos = (pEmu->PCHistoryPos + 1) % FSpectrumEmu::kPCHistorySize;
-	pEmu->PCHistory[pEmu->PCHistoryPos] = pc;
+	const uint16_t prevPC = PCHistory[PCHistoryPos];
+	PCHistoryPos = (PCHistoryPos + 1) % FSpectrumEmu::kPCHistorySize;
+	PCHistory[PCHistoryPos] = pc;
 
 	pc = prevPC;	// set PC to pc of instruction just executed
 
@@ -253,21 +283,28 @@ int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_dat
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
 	// check for breakpointed code line
-	if (bBreak || pCodeInfo->bBreakpointed)
+	if (bBreak)
 		return UI_DBG_BP_BASE_TRAPID;
 	
-	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, pEmu);
+	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, this);
 
-	const uint16_t sp = z80_sp(&pEmu->ZXEmuState.cpu);
+	// work out stack size
+	const uint16_t sp = z80_sp(&ZXEmuState.cpu);	// this won't get the proper stack pos (see comment above function)
 	if (sp < state.StackMin)
 		state.StackMin = sp;
 	if (sp > state.StackMax)
 		state.StackMax = sp;
 
-	//if(trapId == 0)
-		//trapId = FunctionTrapFunction(pc,nextpc, ticks, pins, pUI);
+	// work out instruction count
+	int iCount = 1;
+	uint8_t opcode = ReadByte(pc);
+	if (opcode == 0xED || opcode == 0xCB)
+		iCount++;
+
+	RZXManager.RegisterInstructions(iCount);
+
 	
-	
+
 	return trapId;
 }
 
@@ -276,15 +313,15 @@ int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, v
 	return 0;
 }
 
-z80_tick_t g_OldTickCB = nullptr;	// TODO: Make member
-
 extern uint16_t g_PC;
-// TODO: thunk to member function
-uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
+
+// Note - you can't read the cpu vars during tick
+// They are only written back at end of exec function
+uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 {
-	FSpectrumEmu*pEmu = (FSpectrumEmu*)user_data;
-	FCodeAnalysisState &state = pEmu->CodeAnalysis;
-	const uint16_t pc = g_PC;// z80_pc(&pUI->pSpeccy->CurrentState.cpu);
+	FCodeAnalysisState &state = CodeAnalysis;
+	const uint16_t pc = g_PC;	// hack because we can't get it another way
+
 	/* memory and IO requests */
 	if (pins & Z80_MREQ) 
 	{
@@ -308,12 +345,12 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 			// Log screen pixel writes
 			if (addr >= 0x4000 && addr < 0x5800)
 			{
-				pEmu->FrameScreenPixWrites.push_back({ addr,value, pc });
+				FrameScreenPixWrites.push_back({ addr,value, pc });
 			}
 			// Log screen attribute writes
 			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
 			{
-				pEmu->FrameScreenAttrWrites.push_back({ addr,value, pc });
+				FrameScreenAttrWrites.push_back({ addr,value, pc });
 			}
 			FCodeInfo *pCodeWrittenTo = state.GetCodeInfoForAddress(addr);
 			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
@@ -322,22 +359,31 @@ uint64_t Z80Tick(int num, uint64_t pins, void* user_data)
 	}
 	else if (pins & Z80_IORQ)
 	{
-		IOAnalysisHandler(pEmu->IOAnalysis, pc, pins);
+		IOAnalysisHandler(IOAnalysis, pc, pins);
 	}
 
-	pins =  g_OldTickCB(num, pins, &pEmu->ZXEmuState);
-	if (pEmu->RZXManager.GetReplayMode() == EReplayMode::Playback)
+	pins =  OldTickCB(num, pins, OldTickUserData);
+
+	// RZX playback
+	if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 	{
-		pEmu->RZXManager.RegisterTicks(num);
 		if ((pins & Z80_IORQ) && (pins & Z80_RD))
 		{
-			//if ((pins & Z80_A0) == 0)
+			uint8_t inVal = 0;
+
+			if (RZXManager.GetInput(inVal))
 			{
-				Z80_SET_DATA(pins, (uint64_t)pEmu->RZXManager.GetInput());
+				Z80_SET_DATA(pins, (uint64_t)inVal);
 			}
 		}
 	}
 	return pins;
+}
+
+static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
+{
+	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
+	return pEmu->Z80Tick(num, pins);
 }
 
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
@@ -384,9 +430,11 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// Trap callback needs to be set before we create the UI
 	z80_trap_cb(&ZXEmuState.cpu, ZXSpectrumTrapCallback, this);
 
-	g_OldTickCB = ZXEmuState.cpu.tick_cb;
+	// Setup out tick callback
+	OldTickCB = ZXEmuState.cpu.tick_cb;
+	OldTickUserData = ZXEmuState.cpu.user_data;
+	ZXEmuState.cpu.tick_cb = Z80TickThunk;
 	ZXEmuState.cpu.user_data = this;
-	ZXEmuState.cpu.tick_cb = Z80Tick;
 
 	//ui_init(zxui_draw);
 	{
@@ -850,7 +898,7 @@ void FSpectrumEmu::Tick()
 		// TODO: Start frame method in analyser
 		CodeAnalysis.FrameTrace.clear();
 		
-		if(RZXManager.GetReplayMode() == EReplayMode::Playback)
+		/*if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
 			assert(ZXEmuState.valid);
 			uint32_t icount = RZXManager.Update();
@@ -860,7 +908,7 @@ void FSpectrumEmu::Tick()
 			clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
 			kbd_update(&ZXEmuState.kbd);
 		}
-		else
+		else*/
 		{
 			zx_exec(&ZXEmuState, microSeconds);
 		}
@@ -1117,7 +1165,7 @@ void FSpectrumEmu::DrawCheatsUI()
 	}
 }
 
-
+// Util functions - move
 uint16_t GetScreenPixMemoryAddress(int x, int y)
 {
 	if (x < 0 || x>255 || y < 0 || y> 191)

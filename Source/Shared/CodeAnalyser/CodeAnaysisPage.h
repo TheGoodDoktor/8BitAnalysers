@@ -36,7 +36,7 @@ struct FItem
 	uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
 	uint16_t		ByteSize;
 	int				FrameLastAccessed = -1;
-	bool			bBreakpointed = false;
+	//bool			bBreakpointed = false;
 };
 
 struct FLabelInfo : FItem

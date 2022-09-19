@@ -1,3 +1,4 @@
+#if 0
 #include "imgui.h"
 #define CHIPS_IMPL
 #define UI_DBG_USE_Z80
@@ -27,3 +28,4 @@
 #include "ui/ui_memedit.h"
 #include "ui/ui_memmap.h"
 #include "ui/ui_zx.h"
+#endif

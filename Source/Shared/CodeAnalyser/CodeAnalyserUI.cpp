@@ -266,7 +266,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	}
 
 	// show if breakpointed
-	if (pCodeInfo->bBreakpointed)
+	if (state.CPUInterface->IsAddressBreakpointed(pCodeInfo->Address))
 	{
 		const ImU32 bp_enabled_color = 0xFF0000FF;
 		const ImU32 bp_disabled_color = 0xFF000088;
@@ -731,17 +731,9 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 		}
 
 		// breakpoints
-		
-		if (pItem->bBreakpointed == false && ImGui::Selectable("Add Breakpoint"))
-		{
-			pItem->bBreakpointed = true;
-		}
-
-		if (pItem->bBreakpointed == true && ImGui::Selectable("Remove Breakpoint"))
-		{
-			pItem->bBreakpointed = false;
-		}
-		
+		if (ImGui::Selectable("Toggle Breakpoint"))
+			state.CPUInterface->ToggleBreakpointAtAddress(pItem->Address);
+				
 		if (ImGui::Selectable("View in graphics viewer"))
 		{
 			state.CPUInterface->GraphicsViewerSetAddress(pItem->Address);

@@ -32,6 +32,10 @@ public:
 	virtual void		WriteByte(uint16_t address, uint8_t value) = 0;
 	virtual uint16_t	GetPC(void) = 0;
 
+	// breakpoints
+	virtual bool	IsAddressBreakpointed(uint16_t addr) = 0;
+	virtual bool	ToggleBreakpointAtAddress(uint16_t addr) = 0;
+
 	// commands
 	virtual void	Break() = 0;
 	virtual void	Continue() = 0;

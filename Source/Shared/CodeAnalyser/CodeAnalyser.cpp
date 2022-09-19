@@ -353,6 +353,8 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextp
 		return RegisterCodeExecutedZ80(state, pc, nextpc);
 	else if (state.CPUInterface->CPUType == ECPUType::M6502)
 		return RegisterCodeExecuted6502(state, pc, nextpc);
+
+	return false;
 }
 
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)

@@ -134,6 +134,7 @@ void FRZXManager::DrawUI(void)
 {
     ImGui::Text("IRB Tstates: %d", IRBTStates);
     ImGui::Text("ICount: %d", ICount);
+    ImGui::Text("TickCounter: %d", TickCounter);
     ImGui::Text("Frame Inputs: %d", INmax);
     ImGui::Text("Inputs this frame: %d", InputsThisFrame);
     ImGui::Text("Last Input: %d", LastInput);
@@ -141,11 +142,21 @@ void FRZXManager::DrawUI(void)
     ImGui::Text("Last Frame Input Calls: %d", LastFrameInputCalls);
 }
 
-void FRZXManager::RegisterTicks(int num)
+void FRZXManager::RegisterInstructions(int num)
 {
+    if (ReplayMode == EReplayMode::Off)
+        return;
+    
     TickCounter -= num;
     if (TickCounter <= 0)
     {
+        const int ret = rzx_update(&ICount);
+        if (ret != RZX_OK)
+        {
+            printf("rzx_update error, ret val %d", ret);
+        }
+        TickCounter += ICount;
+
         //printf("FRZXManager::RegisterTicks - Underflow");
     }
 }
@@ -155,7 +166,8 @@ uint16_t FRZXManager::Update(void)
 {
     if (ReplayMode == EReplayMode::Off)
         return 0;
-
+    InputsThisFrame = 0;
+    return 0;
     LastFrameInputVals = INmax;
     LastFrameInputCalls = InputsThisFrame;
 
@@ -170,17 +182,23 @@ uint16_t FRZXManager::Update(void)
     return ICount;
 }
 
-uint8_t	FRZXManager::GetInput()
+bool	FRZXManager::GetInput(uint8_t& outVal)
 {
+    if (LastCounter == TickCounter) // to stop multiple reads
+        return false;
+
+    LastCounter = TickCounter;
+
     const uint8_t synclost = RZX_SYNCLOST;
-    uint8_t input = rzx_get_input();
-    if (input == synclost)
+    outVal = rzx_get_input();
+    if (outVal == synclost)
     {
-        printf("Sync Lost");
+        //printf("Sync Lost");
+        return false;
     }
-    LastInput = input;
+    LastInput = outVal;
     InputsThisFrame++;
-    return input;
+    return true;
 }
 
 

@@ -23,9 +23,9 @@ public:
 	bool			Init(FSpectrumEmu* pEmu);
 	bool			Load(const char* fName);
 	void			DrawUI(void);
-	void			RegisterTicks(int num);
+	void			RegisterInstructions(int num);
 	uint16_t		Update();
-	uint8_t			GetInput();
+	bool			GetInput(uint8_t& outVal);
 	EReplayMode		GetReplayMode() const { return ReplayMode; }
 	bool			RZXCallbackHandler(int msg, void* param);
 private:
@@ -37,6 +37,7 @@ private:
 	int				IRBTStates = 0;
 	uint16_t		ICount = 0;
 	int				TickCounter = 0;
+	int				LastCounter = -1;
 	uint8_t			LastInput = 0;
 	int				InputsThisFrame = 0;
 	int				LastFrameInputVals = 0;
