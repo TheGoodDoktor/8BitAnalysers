@@ -503,6 +503,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	//pUI->UIZX.dbg.ui.open = true;
 	UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
+	UIZX.dbg.ui.show_breakpoints = true;
 
 	// Setup Disassembler for function view
 	{
