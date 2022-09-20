@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-struct FCodeAnalysisState;
+class FSpectrumEmu;
 
 enum class SpeccyIODevice
 {
@@ -21,26 +21,25 @@ enum class SpeccyIODevice
 
 struct FIOAccess
 {
-	//std::string		Name;
 	uint16_t		Address = 0;
 	int				ReadCount = 0;
+	int				FrameReadCount = 0;
 	int				WriteCount = 0;
+	int				FrameWriteCount = 0;
 
 	std::map<uint16_t, int>	Callers;
-
 };
 
-struct FIOAnalysisState
+class FIOAnalysis
 {
-	// io info
-	//std::map<uint16_t, FIOAccess>		IOAccessMap;
+public:
+	void	Init(FSpectrumEmu* pEmu);
+	void	IOHandler(uint16_t pc, uint64_t pins);
+	void	DrawUI();
+
+private:
+	FSpectrumEmu*		pSpectrumEmu = nullptr;
 	FIOAccess			IODeviceAcceses[(int)SpeccyIODevice::Count];
 	uint8_t				LastFE = 0;
 	SpeccyIODevice		SelectedDevice = SpeccyIODevice::None;
-	FCodeAnalysisState*	pCodeAnalysis = nullptr;
-
 };
-
-void InitIOAnalysis(FIOAnalysisState &state);
-void IOAnalysisHandler(FIOAnalysisState &state, uint16_t pc, uint64_t pins);
-void DrawIOAnalysis(FIOAnalysisState &state);
