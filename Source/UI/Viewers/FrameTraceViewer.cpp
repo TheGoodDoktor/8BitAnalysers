@@ -257,7 +257,7 @@ void	FFrameTraceViewer::DrawTraceOverview(const FSpeccyFrameTrace& frame)
 void FFrameTraceViewer::DrawFrameScreenWritePixels(const FSpeccyFrameTrace& frame, int lastIndex)
 {
 	if (lastIndex == -1 || lastIndex >= frame.ScreenPixWrites.size())
-		lastIndex = frame.ScreenPixWrites.size() - 1;
+		lastIndex = (int)frame.ScreenPixWrites.size() - 1;
 	ClearGraphicsView(*ShowWritesView, 0);
 	for (int i = 0; i < lastIndex; i++)
 	{
