@@ -69,6 +69,7 @@ enum class Key
 	AddLabel,
 	Rename,
 	Comment,
+	AddCommentBlock,
 
 	Count
 };
@@ -181,6 +182,7 @@ public:
 		GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; 
 	}
 
+	FCommentBlock* GetCommentBlockForAddress(uint16_t addr) const { return GetReadPage(addr)->CommentBlocks[addr & kPageMask]; }
 	void SetCommentBlockForAddress(uint16_t addr, FCommentBlock* pCommentBlock)
 	{
 		GetReadPage(addr)->CommentBlocks[addr & kPageMask] = pCommentBlock;

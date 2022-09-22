@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
+#include <sstream>
 //#include "chips/z80.h"
 #include "CodeToolTips.h"
 
@@ -208,7 +209,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 		GenerateGlobalInfo(state);
 	}
 
-	ImGui::Text("Callers:");
+	ImGui::Text("References:");
 	for (const auto & caller : pLabelInfo->References)
 	{
 		//DrawAddressLabel( state, caller.first );
@@ -595,6 +596,23 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 }
 
 
+void DrawCommentLine(FCodeAnalysisState& state, const FCommentLine* pCommentLine)
+{
+	ImGui::SameLine();
+	ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
+	ImGui::Text("; %s", pCommentLine->Comment.c_str());
+	ImGui::PopStyleColor();
+}
+
+void DrawCommentBlockDetails(FCodeAnalysisState& state, FCommentBlock* pCommentBlock)
+{
+	if (ImGui::InputTextMultiline("Comment Text", &pCommentBlock->Comment))
+	{
+		state.bCodeAnalysisDataDirty = true;
+	}
+
+}
+
 int CommentInputCallback(ImGuiInputTextCallbackData *pData)
 {
 	return 1;
@@ -633,6 +651,10 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 			ImGui::OpenPopup("Enter Label Text");
 			ImGui::SetWindowFocus("Enter Label Text");
 		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddCommentBlock]))
+		{
+			AddCommentBlock(state, state.pCursorItem->Address);
+		}
 	}
 
 	if (ImGui::BeginPopup("Enter Comment Text", ImGuiWindowFlags_AlwaysAutoResize))
@@ -664,18 +686,36 @@ void UpdateItemList(FCodeAnalysisState &state)
 		const float line_height = ImGui::GetTextLineHeight();
 		
 		state.ItemList.clear();
+		FCommentLine::FreeAll();	// recycle comment lines
 
 		int nextItemAddress = 0;
 
 		// loop across address range
 		for (int addr = 0; addr < (1 << 16); addr++)
 		{
-			FLabelInfo *pLabelInfo = state.GetLabelForAddress(addr);
+			FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(addr);
+			if (pCommentBlock != nullptr)
+			{
+				// split comment into lines
+				std::stringstream stringStream(pCommentBlock->Comment);
+				std::string line;
+
+				while (std::getline(stringStream, line, '\n'))
+				{
+					FCommentLine* pLine = FCommentLine::Allocate();
+					pLine->Comment = line;
+					pLine->Address = addr;
+					state.ItemList.push_back(pLine);	// TODO: sort out this memory leak!
+				}
+			}
+			
+			FLabelInfo* pLabelInfo = state.GetLabelForAddress(addr);
 			if (pLabelInfo != nullptr)
 			{
 				state.ItemList.push_back(pLabelInfo);
 
 			}
+
 			if (addr >= nextItemAddress)
 			{
 				FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(addr);
@@ -805,6 +845,10 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 		if (bHighlight)
 			ImGui::PopStyleColor();
 		break;
+	case ItemType::CommentLine:
+		DrawCommentLine(state, static_cast<const FCommentLine*>(pItem));
+		break;
+
 	}
 
 
@@ -827,8 +871,16 @@ void DrawDetailsPanel(FCodeAnalysisState &state)
 		case ItemType::Data:
 			DrawDataDetails(state, static_cast<FDataInfo *>(pItem));
 			break;
+		case ItemType::CommentLine:
+			{
+				FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(pItem->Address);
+				if (pCommentBlock != nullptr)
+					DrawCommentBlockDetails(state, pCommentBlock);
+			}
+			break;
 		}
 
+		if(pItem->Type != ItemType::CommentLine)
 		{
 			static std::string commentString;
 			static FItem *pCurrItem = nullptr;

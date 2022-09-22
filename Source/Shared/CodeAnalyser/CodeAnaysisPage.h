@@ -109,13 +109,19 @@ struct FDataInfo : FItem
 struct FCommentBlock : FItem
 {
 	FCommentBlock() : FItem() { Type = ItemType::CommentBlock; }
-	int NoLines;	// calculated when text is entered
 };
 
 struct FCommentLine : FItem
 {
-	FCommentLine() : FItem() { Type = ItemType::CommentLine; }
 
+	static FCommentLine* Allocate();
+	static void FreeAll();
+private:
+	FCommentLine() : FItem() { Type = ItemType::CommentLine; }
+	~FCommentLine() = default;
+
+	static std::vector<FCommentLine*>	AllocatedList;
+	static std::vector<FCommentLine*>	FreeList;
 };
 
 struct FCodeAnalysisPage

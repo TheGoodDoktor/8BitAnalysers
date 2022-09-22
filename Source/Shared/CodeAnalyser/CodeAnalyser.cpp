@@ -443,11 +443,18 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 {
-	FCommentBlock* pCommentBlock = new FCommentBlock;
-	pCommentBlock->Address = address;
-	pCommentBlock->ByteSize = 1;
-	state.SetCommentBlockForAddress(address, pCommentBlock);
-	return pCommentBlock;
+	if (state.GetCommentBlockForAddress(address) == 0)
+	{
+		FCommentBlock* pCommentBlock = new FCommentBlock;
+		pCommentBlock->Comment = "<add comment here>";
+		pCommentBlock->Address = address;
+		pCommentBlock->ByteSize = 1;
+		state.SetCommentBlockForAddress(address, pCommentBlock);
+		state.bCodeAnalysisDataDirty = true;
+		return pCommentBlock;
+	}
+
+	return nullptr;
 }
 
 void GenerateGlobalInfo(FCodeAnalysisState &state)
@@ -513,6 +520,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	state.KeyConfig[(int)Key::AddLabel] = 'L';
 	state.KeyConfig[(int)Key::Rename] = 'R';
 	state.KeyConfig[(int)Key::Comment] = 0xBF;
+	state.KeyConfig[(int)Key::AddCommentBlock] = 0xBA;
 
 	state.StackMin = 0xffff;
 	state.StackMax = 0;
