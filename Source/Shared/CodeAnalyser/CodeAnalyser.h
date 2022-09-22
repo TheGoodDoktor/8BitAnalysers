@@ -181,6 +181,11 @@ public:
 		GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; 
 	}
 
+	void SetCommentBlockForAddress(uint16_t addr, FCommentBlock* pCommentBlock)
+	{
+		GetReadPage(addr)->CommentBlocks[addr & kPageMask] = pCommentBlock;
+	}
+
 	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
 	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
 	void SetCodeInfoForAddress(uint16_t addr, FCodeInfo* pCodeInfo) { GetReadPage(addr)->CodeInfo[addr & kPageMask] = pCodeInfo; }
@@ -223,6 +228,7 @@ void ResetMemoryLogs(FCodeAnalysisState &state);
 void Undo(FCodeAnalysisState &state);
 
 FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, LabelType type);
+FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);

@@ -441,6 +441,15 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	return pLabel;
 }
 
+FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
+{
+	FCommentBlock* pCommentBlock = new FCommentBlock;
+	pCommentBlock->Address = address;
+	pCommentBlock->ByteSize = 1;
+	state.SetCommentBlockForAddress(address, pCommentBlock);
+	return pCommentBlock;
+}
+
 void GenerateGlobalInfo(FCodeAnalysisState &state)
 {
 	state.GlobalDataItems.clear();
