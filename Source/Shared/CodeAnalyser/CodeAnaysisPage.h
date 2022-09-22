@@ -20,6 +20,7 @@ enum class ItemType
 	Label,
 	Code,
 	Data,
+	CommentBlock,
 };
 
 struct FCPUFunctionCall
@@ -81,6 +82,8 @@ private:
 	static std::vector<FCodeInfo*>	AllocatedList;
 };
 
+
+
 enum class DataType
 {
 	Byte,
@@ -102,6 +105,10 @@ struct FDataInfo : FItem
 	std::map<uint16_t, int>	Writes;	// address and counts of data access instructions
 };
 
+struct FCommentBlock : FItem
+{
+
+};
 
 struct FCodeAnalysisPage
 {
@@ -119,5 +126,6 @@ struct FCodeAnalysisPage
 	FLabelInfo*		Labels[kPageSize];
 	FCodeInfo*		CodeInfo[kPageSize];
 	FDataInfo		DataInfo[kPageSize];
+	FCommentBlock*	CommentBlocks[kPageSize];
 	uint16_t		LastWriter[kPageSize];
 };
