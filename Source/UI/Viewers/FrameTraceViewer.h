@@ -28,6 +28,7 @@ struct FSpeccyFrameTrace
 {
 	void*					Texture;
 	uint8_t					MemoryDump[1 << 16];	// 64K
+	void*					CPUState = nullptr;
 	std::vector<uint16_t>	InstructionTrace;
 	std::vector<FMemoryAccess>	ScreenPixWrites;
 	std::vector<FMemoryAccess>	ScreenAttrWrites;

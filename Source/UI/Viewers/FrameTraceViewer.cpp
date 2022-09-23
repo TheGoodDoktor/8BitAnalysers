@@ -15,6 +15,7 @@ void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 	for (int i = 0; i < kNoFramesInTrace; i++)
 	{
 		FrameTrace[i].Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->FrameBuffer), 320, 256);
+		FrameTrace[i].CPUState = malloc(sizeof(z80_t));
 	}
 
 	ShowWritesView = CreateGraphicsView(320, 256);
@@ -26,6 +27,7 @@ void	FFrameTraceViewer::Shutdown()
 	{
 		ImGui_ImplDX11_FreeTexture(FrameTrace[i].Texture);
 		FrameTrace[i].Texture = nullptr;
+		free(FrameTrace[i].CPUState);
 	}
 
 	FreeGraphicsView(ShowWritesView);
@@ -46,6 +48,14 @@ void FFrameTraceViewer::CaptureFrame()
 	// copy memory
 	for (int i = 0; i < 1 << 16; i++)
 		frame.MemoryDump[i] = pSpectrumEmu->ReadByte(i);
+
+	// get CPU state
+	z80_t* pCPUState = (z80_t*)frame.CPUState;
+	pCPUState->bc_de_hl_fa = pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa;
+	pCPUState->bc_de_hl_fa_ = pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_;
+	pCPUState->wz_ix_iy_sp = pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp;
+	pCPUState->im_ir_pc_bits = pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits;
+	pCPUState->pins = pSpectrumEmu->ZXEmuState.cpu.pins;
 
 	// Generate diffs
 	const int prevFrameIndex = CurrentTraceFrame == 0 ? kNoFramesInTrace - 1 : CurrentTraceFrame - 1;
@@ -89,6 +99,28 @@ void FFrameTraceViewer::Draw()
 	if (frameNo < 0)
 		frameNo += kNoFramesInTrace;
 	const FSpeccyFrameTrace& frame = FrameTrace[frameNo];
+	
+	if (ImGui::Button("Restore"))
+	{
+		// restore CPU regs
+		const z80_t* pCPUState = (const z80_t*)frame.CPUState;
+		pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa = pCPUState->bc_de_hl_fa;
+		pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_ = pCPUState->bc_de_hl_fa_;
+		pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp = pCPUState->wz_ix_iy_sp;
+		pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits = pCPUState->im_ir_pc_bits;
+		pSpectrumEmu->ZXEmuState.cpu.pins = pCPUState->pins;
+
+		// restore memory
+		for (int i = 0; i < 1 << 16; i++)
+			pSpectrumEmu->WriteByte(i,frame.MemoryDump[i]);
+
+		// continue running
+		pSpectrumEmu->CodeAnalysis.CPUInterface->Continue();
+
+		ShowFrame = 0;
+	}
+
+	
 	ImGui::Image(frame.Texture, ImVec2(320, 256));
 	ImGui::SameLine();
 	DrawGraphicsView(*ShowWritesView);
