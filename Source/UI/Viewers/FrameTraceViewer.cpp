@@ -60,6 +60,16 @@ void FFrameTraceViewer::CaptureFrame()
 
 void FFrameTraceViewer::Draw()
 {
+	if (ImGui::ArrowButton("##left", ImGuiDir_Left))
+		ShowFrame = std::max(--ShowFrame, 0);
+
+	ImGui::SameLine();
+
+	if (ImGui::ArrowButton("##right", ImGuiDir_Right))
+		ShowFrame = std::min(++ShowFrame, kNoFramesInTrace - 1);
+
+	ImGui::SameLine();
+
 	if (ImGui::SliderInt("Backwards Offset", &ShowFrame, 0, kNoFramesInTrace - 1))
 	{
 		if (ShowFrame == 0)
