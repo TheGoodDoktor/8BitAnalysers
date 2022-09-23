@@ -149,7 +149,7 @@ public:
 	FFrameTraceViewer		FrameTraceViewer;
 	FGraphicsViewerState	GraphicsViewer;
 	FCodeAnalysisState		CodeAnalysis;
-	FIOAnalysisState		IOAnalysis;
+	FIOAnalysis				IOAnalysis;
 
 	// Code analysis pages - 48K spectrum for now...
 	static const int kNoROMPages = 16;

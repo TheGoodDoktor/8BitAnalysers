@@ -6,6 +6,8 @@
 
 //#include "json.hpp"
 std::vector<FCodeInfo*>	FCodeInfo::AllocatedList;
+std::vector<FCommentLine*>	FCommentLine::AllocatedList;
+std::vector<FCommentLine*>	FCommentLine::FreeList;
 
 FCodeInfo* FCodeInfo::Allocate()
 {
@@ -23,12 +25,34 @@ void FCodeInfo::FreeAll()
 }
 
 
+FCommentLine* FCommentLine::Allocate()
+{
+	if (FreeList.size() == 0)
+		FreeList.push_back(new FCommentLine);
+	
+	FCommentLine* pLine = FreeList.back();
+	AllocatedList.push_back(pLine);
+	FreeList.pop_back();
+
+	return pLine;
+}
+
+void FCommentLine::FreeAll()
+{
+	for (auto it : AllocatedList)
+		FreeList.push_back(it);
+
+	FreeList.clear();
+}
+
+
 void FCodeAnalysisPage::Initialise(uint16_t address)
 {
 	BaseAddress = address;
 	
 	memset(Labels, 0, sizeof(Labels));
 	memset(CodeInfo, 0, sizeof(CodeInfo));
+	memset(CommentBlocks, 0, sizeof(CommentBlocks));
 	//memset(DataInfo, 0, sizeof(DataInfo));
 	memset(LastWriter, 0, sizeof(LastWriter));
 

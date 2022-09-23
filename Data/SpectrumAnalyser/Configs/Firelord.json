@@ -68,6 +68,7 @@
         }
     ],
     "Name": "Firelord",
+    "SnapshotFile": "./Games/Firelord.z80",
     "SpriteConfigs": [
         {
             "BaseAddress": "0xb240",
@@ -83,6 +84,5 @@
             "Name": "Firelord_Sprites",
             "Width": 3
         }
-    ],
-    "Z80File": "Firelord.z80"
+    ]
 }

@@ -365,7 +365,43 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 	}
 }
 
-static const int g_kBinaryFileVersionNo = 4;
+void SaveCommentBlocksBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddress, uint16_t endAddress)
+{
+	int recordCount = 0;
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		if (state.GetCommentBlockForAddress(i) != nullptr)
+			recordCount++;
+	}
+
+	fwrite(&recordCount, sizeof(int), 1, fp);
+
+	for (int i = startAddress; i <= endAddress; i++)
+	{
+		const FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(i);
+		if (pCommentBlock != nullptr)
+		{
+			fwrite(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
+			WriteStringToFile(pCommentBlock->Comment, fp);
+		}
+	}
+}
+
+void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo)
+{
+	int recordCount;
+	fread(&recordCount, sizeof(int), 1, fp);
+
+	for (int i = 0; i < recordCount; i++)
+	{
+		FCommentBlock* pCommentBlock = new FCommentBlock;
+		fread(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
+		ReadStringFromFile(pCommentBlock->Comment, fp);
+		state.SetCommentBlockForAddress(pCommentBlock->Address, pCommentBlock);
+	}
+}
+
+static const int g_kBinaryFileVersionNo = 5;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Binary save
@@ -386,6 +422,7 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_
 	SaveLabelsBin(state, fp, addrStart, addrEnd);
 	SaveCodeInfoBin(state, fp, addrStart, addrEnd);
 	SaveDataInfoBin(state, fp, addrStart, addrEnd);
+	SaveCommentBlocksBin(state, fp, addrStart, addrEnd);
 
 	fclose(fp);
 	return true;
@@ -429,6 +466,8 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 	LoadLabelsBin(state, fp, versionNo);
 	LoadCodeInfoBin(state, fp, versionNo);
 	LoadDataInfoBin(state, fp, versionNo);
+	if (versionNo >= 5)
+		LoadCommentBlocksBin(state, fp, versionNo);
 
 	fclose(fp);
 	return true;

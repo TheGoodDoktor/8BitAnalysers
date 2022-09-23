@@ -383,20 +383,20 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
         if (wParam < 256)
             io.KeysDown[wParam] = 1;
         if (pInputHandler)
-            pInputHandler->OnKeyDown(wParam);
+            pInputHandler->OnKeyDown((int)wParam);
         return 0;
     case WM_KEYUP:
     case WM_SYSKEYUP:
         if (wParam < 256)
             io.KeysDown[wParam] = 0;
         if (pInputHandler)
-            pInputHandler->OnKeyUp(wParam);
+            pInputHandler->OnKeyUp((int)wParam);
         return 0;
     case WM_CHAR:
         // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
         io.AddInputCharacter((unsigned int)wParam);
         if (pInputHandler)
-            pInputHandler->OnChar(wParam);
+            pInputHandler->OnChar((int)wParam);
         return 0;
     case WM_SETCURSOR:
         if (LOWORD(lParam) == HTCLIENT && ImGui_ImplWin32_UpdateMouseCursor())

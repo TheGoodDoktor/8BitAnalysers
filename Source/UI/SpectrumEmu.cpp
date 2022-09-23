@@ -401,7 +401,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	}
 	else if (pins & Z80_IORQ)
 	{
-		IOAnalysisHandler(IOAnalysis, pc, pins);
+		IOAnalysis.IOHandler(pc, pins);
 	}
 
 	pins =  OldTickCB(num, pins, OldTickUserData);
@@ -503,6 +503,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	//pUI->UIZX.dbg.ui.open = true;
 	UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
+	UIZX.dbg.ui.show_breakpoints = true;
 
 	// Setup Disassembler for function view
 	{
@@ -526,9 +527,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	GraphicsViewer.pEmu = this;
 	InitGraphicsViewer(GraphicsViewer);
-	IOAnalysis.pCodeAnalysis = &CodeAnalysis;
-	InitIOAnalysis(IOAnalysis);
-	
+	IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
 
@@ -993,7 +992,7 @@ void FSpectrumEmu::DrawMemoryTools()
 		}
 		if (ImGui::BeginTabItem("IO Analysis"))
 		{
-			DrawIOAnalysis(IOAnalysis);
+			IOAnalysis.DrawUI();
 			ImGui::EndTabItem();
 		}
 		

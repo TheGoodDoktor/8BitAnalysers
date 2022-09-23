@@ -39,7 +39,7 @@ void FSpectrumViewer::Draw()
 			ImDrawList* dl = ImGui::GetWindowDrawList();
 			const int rx = static_cast<int>(pos.x) + borderOffsetX + (xp & ~0x7);
 			const int ry = static_cast<int>(pos.y) + borderOffsetY + (yp & ~0x7);
-			dl->AddRect(ImVec2(rx, ry), ImVec2(rx + 8, ry + 8), 0xffffffff);
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);
 			ImGui::BeginTooltip();
 			ImGui::Text("Screen Pos (%d,%d)", xp, yp);
 			ImGui::Text("Pixel: %04Xh, Attr: %04Xh", scrPixAddress, scrAttrAddress);
@@ -85,7 +85,7 @@ void FSpectrumViewer::Draw()
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const ImU32 col = 0xffffffff;	// TODO: pulse
-		dl->AddRect(ImVec2(SelectedCharX, SelectedCharY), ImVec2(SelectedCharX + 8, SelectedCharY + 8), col);
+		dl->AddRect(ImVec2((float)SelectedCharX, (float)SelectedCharY), ImVec2((float)SelectedCharX + 8, (float)SelectedCharY + 8), col);
 
 		ImGui::Text("Pixel Char Address: $%04X", SelectPixAddr);
 		//ImGui::SameLine();
