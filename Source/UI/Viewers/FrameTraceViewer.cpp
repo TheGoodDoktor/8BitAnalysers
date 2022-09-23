@@ -117,6 +117,7 @@ void FFrameTraceViewer::Draw()
 		// continue running
 		pSpectrumEmu->CodeAnalysis.CPUInterface->Continue();
 
+		CurrentTraceFrame = frameNo;
 		ShowFrame = 0;
 	}
 
