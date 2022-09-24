@@ -11,6 +11,8 @@
 #include "GameViewers/MiscGameViewers.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/GraphicsViewer.h"
+#include "Viewers/BreakpointViewer.h"
+#include "Viewers/OverviewViewer.h"
 #include "Util/FileUtil.h"
 
 #include "ui/ui_dbg.h"
@@ -503,7 +505,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	//pUI->UIZX.dbg.ui.open = true;
 	UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
-	UIZX.dbg.ui.show_breakpoints = true;
+	//UIZX.dbg.ui.show_breakpoints = true;
 
 	// Setup Disassembler for function view
 	{
@@ -525,11 +527,25 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		DasmInit(&FunctionDasm, &desc);
 	}
 
+	// This is where we add the viewers we want
+	Viewers.push_back(new FBreakpointViewer(this));
+	Viewers.push_back(new FOverviewViewer(this));
+
+	// Initialise Viewers
+	for (auto Viewer : Viewers)
+	{
+		if (Viewer->Init() == false)
+		{
+			// TODO: report error
+		}
+	}
+
 	GraphicsViewer.pEmu = this;
 	InitGraphicsViewer(GraphicsViewer);
 	IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
+	
 
 	// register Viewers
 	RegisterStarquakeViewer(this);
@@ -820,10 +836,19 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Windows"))
+		{
+			for (auto Viewer : Viewers)
+			{
+				ImGui::MenuItem(Viewer->GetName(), 0, &Viewer->bOpen);
+
+			}
+			ImGui::EndMenu();
+		}
 		if (ImGui::BeginMenu("Debug")) 
 		{
 			//ImGui::MenuItem("CPU Debugger", 0, &pZXUI->dbg.ui.open);
-			ImGui::MenuItem("Breakpoints", 0, &pZXUI->dbg.ui.show_breakpoints);
+			//ImGui::MenuItem("Breakpoints", 0, &pZXUI->dbg.ui.show_breakpoints);
 			ImGui::MenuItem("Memory Heatmap", 0, &pZXUI->dbg.ui.show_heatmap);
 			if (ImGui::BeginMenu("Memory Editor")) 
 			{
@@ -1048,6 +1073,17 @@ void FSpectrumEmu::DrawUI()
 	}
 
 	DrawDebuggerUI(&pZXUI->dbg);
+
+	// Draw registered viewers
+	for (auto Viewer : Viewers)
+	{
+		if (Viewer->bOpen)
+		{
+			if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen))
+				Viewer->DrawUI();
+			ImGui::End();
+		}
+	}
 
 	//DasmDraw(&pUI->FunctionDasm);
 	// show spectrum window

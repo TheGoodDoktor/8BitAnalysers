@@ -31,6 +31,7 @@
 #include "Disassembler.h"
 #include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "Viewers/ViewerBase.h"
 #include "Viewers/GraphicsViewer.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/FrameTraceViewer.h"
@@ -183,6 +184,8 @@ public:
 private:
 	z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;
+
+	std::vector<FViewerBase*>	Viewers;
 };
 
 
