@@ -1,30 +1,26 @@
-// dear imgui: standalone example application for OSX + OpenGL2, using legacy fixed pipeline
-// If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
+// Dear ImGui: standalone example application for OSX + OpenGL2, using legacy fixed pipeline
+// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
+// Read online: https://github.com/ocornut/imgui/tree/master/docs
 
-#include "imgui.h"
-#include "../imgui_impl_osx.h"
-#include "../imgui_impl_opengl2.h"
-#include <stdio.h>
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/gl.h>
 #import <OpenGL/glu.h>
 
+#include "imgui.h"
+#include "imgui_impl_opengl2.h"
+#include "imgui_impl_osx.h"
+
 //-----------------------------------------------------------------------------------
-// ImGuiExampleView
+// AppView
 //-----------------------------------------------------------------------------------
 
-@interface ImGuiExampleView : NSOpenGLView
+@interface AppView : NSOpenGLView
 {
     NSTimer*    animationTimer;
 }
 @end
 
-@implementation ImGuiExampleView
-
--(void)animationTimerFired:(NSTimer*)timer
-{
-    [self setNeedsDisplay:YES];
-}
+@implementation AppView
 
 -(void)prepareOpenGL
 {
@@ -38,14 +34,59 @@
 #endif
 }
 
+-(void)initialize
+{
+    // Setup Dear ImGui context
+    // FIXME: This example doesn't have proper cleanup...
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsLight();
+
+    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplOSX_Init(self);
+    ImGui_ImplOpenGL2_Init();
+
+    // Load Fonts
+    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
+    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
+    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
+    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
+    // - Read 'docs/FONTS.txt' for more instructions and details.
+    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
+    //io.Fonts->AddFontDefault();
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
+    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    //IM_ASSERT(font != NULL);
+}
+
 -(void)updateAndDrawDemoView
 {
     // Start the Dear ImGui frame
-	ImGui_ImplOpenGL2_NewFrame();
-	ImGui_ImplOSX_NewFrame(self);
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui_ImplOpenGL2_NewFrame();
+    ImGui_ImplOSX_NewFrame(self);
     ImGui::NewFrame();
 
-    // Global data for the demo
+    // Our state (make them static = more or less global) as a convenience to keep the example terse.
     static bool show_demo_window = true;
     static bool show_another_window = false;
     static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -54,7 +95,7 @@
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
     {
         static float f = 0.0f;
         static int counter = 0;
@@ -87,18 +128,25 @@
         ImGui::End();
     }
 
-	// Rendering
-	ImGui::Render();
-	[[self openGLContext] makeCurrentContext];
-
+    // Rendering
+    ImGui::Render();
     ImDrawData* draw_data = ImGui::GetDrawData();
+
+    [[self openGLContext] makeCurrentContext];
     GLsizei width  = (GLsizei)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
     GLsizei height = (GLsizei)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
     glViewport(0, 0, width, height);
+    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-	glClear(GL_COLOR_BUFFER_BIT);
-	ImGui_ImplOpenGL2_RenderDrawData(draw_data);
+    ImGui_ImplOpenGL2_RenderDrawData(draw_data);
+
+    // Update and Render additional Platform Windows
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 
     // Present
     [[self openGLContext] flushBuffer];
@@ -107,62 +155,22 @@
         animationTimer = [NSTimer scheduledTimerWithTimeInterval:0.017 target:self selector:@selector(animationTimerFired:) userInfo:nil repeats:YES];
 }
 
--(void)reshape
-{
-    [[self openGLContext] update];
-    [self updateAndDrawDemoView];
-}
-
--(void)drawRect:(NSRect)bounds
-{
-    [self updateAndDrawDemoView];
-}
-
--(BOOL)acceptsFirstResponder
-{
-    return (YES);
-}
-
--(BOOL)becomeFirstResponder
-{
-    return (YES);
-}
-
--(BOOL)resignFirstResponder
-{
-    return (YES);
-}
-
-// Flip coordinate system upside down on Y
--(BOOL)isFlipped
-{
-    return (YES);
-}
-
--(void)dealloc
-{
-    animationTimer = nil;
-}
-
-// Forward Mouse/Keyboard events to dear imgui OSX back-end. It returns true when imgui is expecting to use the event.
--(void)keyUp:(NSEvent *)event           { ImGui_ImplOSX_HandleEvent(event, self); }
--(void)keyDown:(NSEvent *)event         { ImGui_ImplOSX_HandleEvent(event, self); }
--(void)flagsChanged:(NSEvent *)event    { ImGui_ImplOSX_HandleEvent(event, self); }
--(void)mouseDown:(NSEvent *)event       { ImGui_ImplOSX_HandleEvent(event, self); }
--(void)mouseUp:(NSEvent *)event         { ImGui_ImplOSX_HandleEvent(event, self); }
--(void)scrollWheel:(NSEvent *)event     { ImGui_ImplOSX_HandleEvent(event, self); }
+-(void)reshape                              { [super reshape]; [[self openGLContext] update]; [self updateAndDrawDemoView]; }
+-(void)drawRect:(NSRect)bounds              { [self updateAndDrawDemoView]; }
+-(void)animationTimerFired:(NSTimer*)timer  { [self setNeedsDisplay:YES]; }
+-(void)dealloc                              { animationTimer = nil; }
 
 @end
 
 //-----------------------------------------------------------------------------------
-// ImGuiExampleAppDelegate
+// AppDelegate
 //-----------------------------------------------------------------------------------
 
-@interface ImGuiExampleAppDelegate : NSObject <NSApplicationDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate>
 @property (nonatomic, readonly) NSWindow* window;
 @end
 
-@implementation ImGuiExampleAppDelegate
+@implementation AppDelegate
 @synthesize window = _window;
 
 -(BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication
@@ -179,6 +187,7 @@
 
     _window = [[NSWindow alloc] initWithContentRect:viewRect styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable|NSWindowStyleMaskClosable backing:NSBackingStoreBuffered defer:YES];
     [_window setTitle:@"Dear ImGui OSX+OpenGL2 Example"];
+    [_window setAcceptsMouseMovedEvents:YES];
     [_window setOpaque:YES];
     [_window makeKeyAndOrderFront:NSApp];
 
@@ -187,7 +196,7 @@
 
 -(void)setupMenu
 {
-	NSMenu* mainMenuBar = [[NSMenu alloc] init];
+    NSMenu* mainMenuBar = [[NSMenu alloc] init];
     NSMenu* appMenu;
     NSMenuItem* menuItem;
 
@@ -211,11 +220,11 @@
 
 -(void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-	// Make the application a foreground application (else it won't receive keyboard events)
-	ProcessSerialNumber psn = {0, kCurrentProcess};
-	TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+    // Make the application a foreground application (else it won't receive keyboard events)
+    ProcessSerialNumber psn = {0, kCurrentProcess};
+    TransformProcessType(&psn, kProcessTransformToForegroundApplication);
 
-	// Menu
+    // Menu
     [self setupMenu];
 
     NSOpenGLPixelFormatAttribute attrs[] =
@@ -226,7 +235,7 @@
     };
 
     NSOpenGLPixelFormat* format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
-    ImGuiExampleView* view = [[ImGuiExampleView alloc] initWithFrame:self.window.frame pixelFormat:format];
+    AppView* view = [[AppView alloc] initWithFrame:self.window.frame pixelFormat:format];
     format = nil;
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
     if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6)
@@ -237,47 +246,23 @@
     if ([view openGLContext] == nil)
         NSLog(@"No OpenGL Context!");
 
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-
-    // Setup Platform/Renderer bindings
-    ImGui_ImplOSX_Init();
-    ImGui_ImplOpenGL2_Init();
-
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'misc/fonts/README.txt' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
+    [view initialize];
 }
 
 @end
 
+//-----------------------------------------------------------------------------------
+// Application main() function
+//-----------------------------------------------------------------------------------
+
 int main(int argc, const char* argv[])
 {
-	@autoreleasepool
-	{
-		NSApp = [NSApplication sharedApplication];
-		ImGuiExampleAppDelegate* delegate = [[ImGuiExampleAppDelegate alloc] init];
-		[[NSApplication sharedApplication] setDelegate:delegate];
-		[NSApp run];
-	}
-	return NSApplicationMain(argc, argv);
+    @autoreleasepool
+    {
+        NSApp = [NSApplication sharedApplication];
+        AppDelegate* delegate = [[AppDelegate alloc] init];
+        [[NSApplication sharedApplication] setDelegate:delegate];
+        [NSApp run];
+    }
+    return NSApplicationMain(argc, argv);
 }

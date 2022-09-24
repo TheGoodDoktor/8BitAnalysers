@@ -1,7 +1,8 @@
 // dear imgui - standalone example application for DirectX 11
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 
-#include "imgui.h"
+#include <imgui.h>
+#include <implot.h>
 #include <ImGuiSupport/imgui_impl_win32.h>
 #include <ImGuiSupport/imgui_impl_dx11.h>
 #include <d3d11.h>
@@ -61,6 +62,7 @@ int main(int argc, char** argv)
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -150,6 +152,8 @@ int main(int argc, char** argv)
         if (pSpectrumEmulator->bShowImGuiDemo)
             ImGui::ShowDemoWindow(&pSpectrumEmulator->bShowImGuiDemo);
 
+        //ImPlot::ShowDemoWindow();
+
         // Rendering
         ImGui::Render();
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
@@ -169,13 +173,13 @@ int main(int argc, char** argv)
 
 	// shutdown the speccy stuff
     pSpectrumEmulator->Shutdown();
-	//ShutdownSpeccy(g_pSpeccy);
 
     saudio_shutdown();
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
+    ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
     CleanupDeviceD3D();

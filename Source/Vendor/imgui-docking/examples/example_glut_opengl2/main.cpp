@@ -1,13 +1,22 @@
-// dear imgui: standalone example application for GLUT/FreeGLUT + OpenGL2, using legacy fixed pipeline
-// If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
+// Dear ImGui: standalone example application for GLUT/FreeGLUT + OpenGL2, using legacy fixed pipeline
+// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
+// Read online: https://github.com/ocornut/imgui/tree/master/docs
 
-// !!! GLUT/FreeGLUT IS OBSOLETE SOFTWARE. Using GLUT is not recommended unless you really miss the 90's. !!!
-// !!! If someone or something is teaching you GLUT in 2019, you are being abused. Please show some resistance. !!!
+// !!! GLUT/FreeGLUT IS OBSOLETE PREHISTORIC SOFTWARE. Using GLUT is not recommended unless you really miss the 90's. !!!
+// !!! If someone or something is teaching you GLUT today, you are being abused. Please show some resistance. !!!
 // !!! Nowadays, prefer using GLFW or SDL instead!
 
+// On Windows, you can install Freeglut using vcpkg:
+//   git clone https://github.com/Microsoft/vcpkg
+//   cd vcpkg
+//   bootstrap - vcpkg.bat
+//   vcpkg install freeglut --triplet=x86-windows   ; for win32
+//   vcpkg install freeglut --triplet=x64-windows   ; for win64
+//   vcpkg integrate install                        ; register include and libs in Visual Studio
+
 #include "imgui.h"
-#include "../imgui_impl_glut.h"
-#include "../imgui_impl_opengl2.h"
+#include "imgui_impl_glut.h"
+#include "imgui_impl_opengl2.h"
 #ifdef __APPLE__
     #include <GLUT/glut.h>
 #else
@@ -29,7 +38,7 @@ void my_display_code()
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
     {
         static float f = 0.0f;
         static int counter = 0;
@@ -75,7 +84,7 @@ void glut_display_func()
     ImGui::Render();
     ImGuiIO& io = ImGui::GetIO();
     glViewport(0, 0, (GLsizei)io.DisplaySize.x, (GLsizei)io.DisplaySize.y);
-    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
     //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound, but prefer using the GL3+ code.
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
@@ -85,8 +94,8 @@ void glut_display_func()
 }
 
 // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
-// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
+// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
+// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
 // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 
 int main(int argc, char** argv)
@@ -114,9 +123,10 @@ int main(int argc, char** argv)
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
+    //ImGui::StyleColorsLight();
 
-    // Setup Platform/Renderer bindings
+    // Setup Platform/Renderer backends
+    // FIXME: Consider reworking this example to install our own GLUT funcs + forward calls ImGui_ImplGLUT_XXX ones, instead of using ImGui_ImplGLUT_InstallFuncs().
     ImGui_ImplGLUT_Init();
     ImGui_ImplGLUT_InstallFuncs();
     ImGui_ImplOpenGL2_Init();
@@ -126,7 +136,7 @@ int main(int argc, char** argv)
     // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
     // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
     // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'misc/fonts/README.txt' for more instructions and details.
+    // - Read 'docs/FONTS.md' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
     //io.Fonts->AddFontDefault();
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);

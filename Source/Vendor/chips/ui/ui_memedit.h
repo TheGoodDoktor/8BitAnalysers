@@ -396,7 +396,7 @@ struct MemoryEditor
                     struct UserData
                     {
                         // FIXME: We should have a way to retrieve the text edit cursor position more easily in the API, this is rather tedious. This is such a ugly mess we may be better off not using InputText() at all here.
-                        static int Callback(ImGuiTextEditCallbackData* data)
+                        static int Callback(ImGuiInputTextCallbackData* data)
                         {
                             UserData* user_data = (UserData*)data->UserData;
                             if (!data->HasSelection())
@@ -541,7 +541,7 @@ struct MemoryEditor
 
         /*--- BEGIN ui_memedit.h changes */
         ImGui::SameLine();
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth());
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
         ImGui::Combo("##layer", &CurLayer, Layers, NumLayers);
         ImGui::PopItemWidth();
         /*--- END ui_memedit.h changes */
