@@ -79,6 +79,9 @@
     <Filter Include="Source Files\Vendor\ImGui">
       <UniqueIdentifier>{f92d6599-d068-479f-9eaf-34f39500814d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\UI\Importers">
+      <UniqueIdentifier>{7cb41d56-adf5-45c5-b77f-45200fe5bd7c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\main.cpp">
@@ -236,6 +239,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\ChipsImpl.cpp">
       <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Importers\SkoolkitImporter.cpp">
+      <Filter>Source Files\UI\Importers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -559,6 +565,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\zx-roms.h">
       <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Importers\SkoolkitImporter.h">
+      <Filter>Source Files\UI\Importers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
