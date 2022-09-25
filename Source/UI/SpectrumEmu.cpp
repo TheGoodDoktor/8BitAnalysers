@@ -1011,13 +1011,15 @@ void FSpectrumEmu::Tick()
 			CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
 			bStepToNextFrame = false;
 		}
+
+		// on debug break send code analyser to address
+		if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
+		{
+			CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
+		}
 	}
 
-	// on debug break send code analyser to address
-	if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
-	{
-		CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
-	}
+	
 
 	// Draw UI
 	DrawDockingView();
