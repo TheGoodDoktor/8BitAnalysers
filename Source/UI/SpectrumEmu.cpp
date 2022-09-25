@@ -11,6 +11,8 @@
 #include "GameViewers/MiscGameViewers.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/GraphicsViewer.h"
+#include "Viewers/BreakpointViewer.h"
+#include "Viewers/OverviewViewer.h"
 #include "Util/FileUtil.h"
 
 #include "ui/ui_dbg.h"
@@ -210,6 +212,18 @@ void FSpectrumEmu::StepInto(void)
 	_ui_dbg_step_into(&UIZX.dbg);
 }
 
+void FSpectrumEmu::StepFrame()
+{
+	_ui_dbg_continue(&UIZX.dbg);
+	bStepToNextFrame = true;
+}
+
+void FSpectrumEmu::StepScreenWrite()
+{
+	_ui_dbg_continue(&UIZX.dbg);
+	bStepToNextScreenWrite = true;
+}
+
 void FSpectrumEmu::GraphicsViewerSetAddress(uint16_t address) 
 {
 	GraphicsViewerGoToAddress(address);
@@ -331,6 +345,16 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 	
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, this);
 
+	// break on screen memory write
+	if (bWrite && addr >= 0x4000 && addr < 0x5800)
+	{
+		if (bStepToNextScreenWrite)
+		{
+			bStepToNextScreenWrite = false;
+			return UI_DBG_BP_BASE_TRAPID;
+		}
+	}
+
 	// work out stack size
 	const uint16_t sp = z80_sp(&ZXEmuState.cpu);	// this won't get the proper stack pos (see comment above function)
 	if (sp < state.StackMin)
@@ -345,8 +369,6 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 		iCount++;
 
 	RZXManager.RegisterInstructions(iCount);
-
-	
 
 	return trapId;
 }
@@ -389,6 +411,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			if (addr >= 0x4000 && addr < 0x5800)
 			{
 				FrameScreenPixWrites.push_back({ addr,value, pc });
+				
 			}
 			// Log screen attribute writes
 			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
@@ -504,7 +527,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	//pUI->UIZX.dbg.ui.open = true;
 	UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
-	UIZX.dbg.ui.show_breakpoints = true;
+	//UIZX.dbg.ui.show_breakpoints = true;
 
 	// Setup Disassembler for function view
 	{
@@ -526,11 +549,25 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		DasmInit(&FunctionDasm, &desc);
 	}
 
+	// This is where we add the viewers we want
+	Viewers.push_back(new FBreakpointViewer(this));
+	Viewers.push_back(new FOverviewViewer(this));
+
+	// Initialise Viewers
+	for (auto Viewer : Viewers)
+	{
+		if (Viewer->Init() == false)
+		{
+			// TODO: report error
+		}
+	}
+
 	GraphicsViewer.pEmu = this;
 	InitGraphicsViewer(GraphicsViewer);
 	IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
+	
 
 	// register Viewers
 	RegisterStarquakeViewer(this);
@@ -828,10 +865,19 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Windows"))
+		{
+			for (auto Viewer : Viewers)
+			{
+				ImGui::MenuItem(Viewer->GetName(), 0, &Viewer->bOpen);
+
+			}
+			ImGui::EndMenu();
+		}
 		if (ImGui::BeginMenu("Debug")) 
 		{
 			//ImGui::MenuItem("CPU Debugger", 0, &pZXUI->dbg.ui.open);
-			ImGui::MenuItem("Breakpoints", 0, &pZXUI->dbg.ui.show_breakpoints);
+			//ImGui::MenuItem("Breakpoints", 0, &pZXUI->dbg.ui.show_breakpoints);
 			ImGui::MenuItem("Memory Heatmap", 0, &pZXUI->dbg.ui.show_heatmap);
 			if (ImGui::BeginMenu("Memory Editor")) 
 			{
@@ -966,7 +1012,22 @@ void FSpectrumEmu::Tick()
 		FrameTraceViewer.CaptureFrame();
 		FrameScreenPixWrites.clear();
 		FrameScreenAttrWrites.clear();
+
+		if (bStepToNextFrame)
+		{
+			_ui_dbg_break(&UIZX.dbg);
+			CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
+			bStepToNextFrame = false;
+		}
+
+		// on debug break send code analyser to address
+		if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
+		{
+			CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
+		}
 	}
+
+	
 
 	// Draw UI
 	DrawDockingView();
@@ -1056,6 +1117,17 @@ void FSpectrumEmu::DrawUI()
 	}
 
 	DrawDebuggerUI(&pZXUI->dbg);
+
+	// Draw registered viewers
+	for (auto Viewer : Viewers)
+	{
+		if (Viewer->bOpen)
+		{
+			if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen))
+				Viewer->DrawUI();
+			ImGui::End();
+		}
+	}
 
 	//DasmDraw(&pUI->FunctionDasm);
 	// show spectrum window

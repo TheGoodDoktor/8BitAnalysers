@@ -77,7 +77,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\ImPlot;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\ImPlot;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -107,7 +107,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\ImPlot;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -125,7 +125,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\ImPlot;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -168,15 +168,22 @@
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\SNALoader.cpp" />
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.cpp" />
     <ClCompile Include="..\..\Source\UI\SpectrumEmu.cpp" />
+    <ClCompile Include="..\..\Source\UI\Viewers\BreakpointViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\FrameTraceViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\GraphicsViewer.cpp" />
+    <ClCompile Include="..\..\Source\UI\Viewers\OverviewViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\SpectrumViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\SpriteViewer.cpp" />
+    <ClCompile Include="..\..\Source\UI\Viewers\ViewerBase.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_draw.cpp" />
+    <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_tables.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_widgets.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="..\..\Source\Vendor\implot\implot.cpp" />
+    <ClCompile Include="..\..\Source\Vendor\implot\implot_demo.cpp" />
+    <ClCompile Include="..\..\Source\Vendor\implot\implot_items.cpp" />
     <ClCompile Include="..\..\Source\Vendor\rzx-sdk\rzx.c" />
     <ClCompile Include="..\..\Source\Vendor\zlib\adler32.c" />
     <ClCompile Include="..\..\Source\Vendor\zlib\compress.c" />
@@ -221,10 +228,13 @@
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\SNALoader.h" />
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.h" />
     <ClInclude Include="..\..\Source\UI\SpectrumEmu.h" />
+    <ClInclude Include="..\..\Source\UI\Viewers\BreakpointViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\FrameTraceViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\GraphicsViewer.h" />
+    <ClInclude Include="..\..\Source\UI\Viewers\OverviewViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\SpectrumViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\SpriteViewer.h" />
+    <ClInclude Include="..\..\Source\UI\Viewers\ViewerBase.h" />
     <ClInclude Include="..\..\Source\UI\zx-roms.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\chips\am40010.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\chips\ay38910.h" />
@@ -298,10 +308,9 @@
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_rectpack.h" />
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_textedit.h" />
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h" />
+    <ClInclude Include="..\..\Source\Vendor\implot\implot.h" />
+    <ClInclude Include="..\..\Source\Vendor\implot\implot_internal.h" />
     <ClInclude Include="..\..\Source\Vendor\rzx-sdk\rzx.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Natvis Include="..\..\Source\Vendor\imgui-docking\misc\natvis\imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Source\Vendor\chips\systems\README.md" />

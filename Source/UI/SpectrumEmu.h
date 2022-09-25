@@ -31,6 +31,7 @@
 #include "Disassembler.h"
 #include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "Viewers/ViewerBase.h"
 #include "Viewers/GraphicsViewer.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/FrameTraceViewer.h"
@@ -108,6 +109,8 @@ public:
 	void		Continue(void) override;
 	void		StepOver(void) override;
 	void		StepInto(void) override;
+	void		StepFrame(void) override;
+	void		StepScreenWrite(void) override;
 	void		GraphicsViewerSetAddress(uint16_t address) override;
 	bool		ShouldExecThisFrame(void) const override;
 	void		InsertROMLabels(FCodeAnalysisState& state) override;
@@ -183,6 +186,11 @@ public:
 private:
 	z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;
+
+	std::vector<FViewerBase*>	Viewers;
+
+	bool	bStepToNextFrame = false;
+	bool	bStepToNextScreenWrite = false;
 };
 
 

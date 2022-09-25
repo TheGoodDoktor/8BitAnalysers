@@ -849,7 +849,7 @@ static void ImGui_ImplWin32_InitPlatformInterface()
     platform_io.Platform_GetWindowDpiScale = ImGui_ImplWin32_GetWindowDpiScale; // FIXME-DPI
     platform_io.Platform_OnChangedViewport = ImGui_ImplWin32_OnChangedViewport; // FIXME-DPI
 #if HAS_WIN32_IME
-    platform_io.Platform_SetImeInputPos = ImGui_ImplWin32_SetImeInputPos;
+    //platform_io.Platform_SetImeInputPos = ImGui_ImplWin32_SetImeInputPos;
 #endif
 
     // Register main window handle (which is owned by the main application, not by us)

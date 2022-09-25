@@ -42,6 +42,8 @@ public:
 	virtual void	Continue() = 0;
 	virtual void	StepOver() = 0;
 	virtual void	StepInto() = 0;
+	virtual void	StepFrame() = 0;
+	virtual void	StepScreenWrite() = 0;
 	virtual void	GraphicsViewerSetAddress(uint16_t address) = 0;
 
 	virtual bool	ShouldExecThisFrame(void) const = 0;

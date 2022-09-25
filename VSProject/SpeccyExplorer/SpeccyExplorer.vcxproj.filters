@@ -82,6 +82,9 @@
     <Filter Include="Source Files\UI\Importers">
       <UniqueIdentifier>{7cb41d56-adf5-45c5-b77f-45200fe5bd7c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Vendor\ImPlot">
+      <UniqueIdentifier>{8068c212-81ec-4f8a-999c-5044d736ef34}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\main.cpp">
@@ -239,6 +242,27 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\ChipsImpl.cpp">
       <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Viewers\BreakpointViewer.cpp">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Viewers\OverviewViewer.cpp">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Viewers\ViewerBase.cpp">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\implot\implot.cpp">
+      <Filter>Source Files\Vendor\ImPlot</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\implot\implot_demo.cpp">
+      <Filter>Source Files\Vendor\ImPlot</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\implot\implot_items.cpp">
+      <Filter>Source Files\Vendor\ImPlot</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_tables.cpp">
+      <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\Importers\SkoolkitImporter.cpp">
       <Filter>Source Files\UI\Importers</Filter>
@@ -565,6 +589,21 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\zx-roms.h">
       <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Viewers\BreakpointViewer.h">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Viewers\OverviewViewer.h">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Viewers\ViewerBase.h">
+      <Filter>Source Files\UI\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Vendor\implot\implot.h">
+      <Filter>Source Files\Vendor\ImPlot</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Vendor\implot\implot_internal.h">
+      <Filter>Source Files\Vendor\ImPlot</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\Importers\SkoolkitImporter.h">
       <Filter>Source Files\UI\Importers</Filter>
