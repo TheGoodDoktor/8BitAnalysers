@@ -160,6 +160,7 @@
     <ClCompile Include="..\..\Source\UI\GameViewers\GameViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\GameViewers\MiscGameViewers.cpp" />
     <ClCompile Include="..\..\Source\UI\GameViewers\StarquakeViewer.cpp" />
+    <ClCompile Include="..\..\Source\UI\Importers\SkoolkitImporter.cpp" />
     <ClCompile Include="..\..\Source\UI\IOAnalysis.cpp" />
     <ClCompile Include="..\..\Source\UI\MemoryHandlers.cpp" />
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\GamesList.cpp" />
@@ -211,6 +212,7 @@
     <ClInclude Include="..\..\Source\UI\GameViewers\GameViewer.h" />
     <ClInclude Include="..\..\Source\UI\GameViewers\MiscGameViewers.h" />
     <ClInclude Include="..\..\Source\UI\GameViewers\StarquakeViewer.h" />
+    <ClInclude Include="..\..\Source\UI\Importers\SkoolkitImporter.h" />
     <ClInclude Include="..\..\Source\UI\IOAnalysis.h" />
     <ClInclude Include="..\..\Source\UI\MemoryHandlers.h" />
     <ClInclude Include="..\..\Source\UI\romlabels.h" />

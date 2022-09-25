@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <Vendor/sokol/sokol_audio.h>
 #include "Exporters/SkoolkitExporter.h"
+#include "Importers/SkoolkitImporter.h"
 #include <cassert>
 
 // Memory access functions
@@ -715,6 +716,13 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			{
 				std::string pokFile;
 				OpenFileDialog(pokFile, ".\\POKFiles", "POK\0*.pok\0");
+			}
+
+			if (ImGui::MenuItem("Import SkoolKit Skool File"))
+			{
+				std::string skoolFile;
+				OpenFileDialog(skoolFile, ".\\SkoolFiles", "*.skool\0");
+				ImportSkoolKitFile(CodeAnalysis, skoolFile.c_str());
 			}
 			
 			if (ImGui::MenuItem("Save Game Data"))
