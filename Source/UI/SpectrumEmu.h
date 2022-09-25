@@ -109,6 +109,8 @@ public:
 	void		Continue(void) override;
 	void		StepOver(void) override;
 	void		StepInto(void) override;
+	void		StepFrame(void) override;
+	void		StepScreenWrite(void) override;
 	void		GraphicsViewerSetAddress(uint16_t address) override;
 	bool		ShouldExecThisFrame(void) const override;
 	void		InsertROMLabels(FCodeAnalysisState& state) override;
@@ -186,6 +188,9 @@ private:
 	void*		OldTickUserData = nullptr;
 
 	std::vector<FViewerBase*>	Viewers;
+
+	bool	bStepToNextFrame = false;
+	bool	bStepToNextScreenWrite = false;
 };
 
 

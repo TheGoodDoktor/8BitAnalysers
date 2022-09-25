@@ -2,6 +2,7 @@
 #include "../SpectrumEmu.h"
 #include <imgui.h>
 #include <Vendor/chips/ui/ui_dbg.h>
+#include <Shared/CodeAnalyser/CodeAnalyserUI.h>
 
 /* add an execution breakpoint */
 static bool _ui_dbg_bp_add_exec(ui_dbg_t* win, bool enabled, uint16_t addr) {
@@ -157,11 +158,14 @@ void FBreakpointViewer::DrawUI(void)
         ui_dbg_breaktype_t* bt = &win->ui.breaktypes[bp->type];
         assert(bt->label);
         ImGui::PopItemWidth();
-        if (bt->show_addr) {
+        if (bt->show_addr) 
+        {
             ImGui::SameLine();
             uint16_t old_addr = bp->addr;
             bp->addr = ui_util_input_u16("##addr", old_addr);
-            if (upd_val || (old_addr != bp->addr)) {
+            DrawAddressLabel(pSpectrumEmu->CodeAnalysis, bp->addr);
+            if (upd_val || (old_addr != bp->addr)) 
+            {
                 /* if breakpoint type or address has changed, update the breakpoint's value from memory */
                 switch (bp->type) {
                 case UI_DBG_BREAKTYPE_BYTE:

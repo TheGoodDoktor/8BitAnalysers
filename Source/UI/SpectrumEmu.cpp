@@ -211,6 +211,18 @@ void FSpectrumEmu::StepInto(void)
 	_ui_dbg_step_into(&UIZX.dbg);
 }
 
+void FSpectrumEmu::StepFrame()
+{
+	_ui_dbg_continue(&UIZX.dbg);
+	bStepToNextFrame = true;
+}
+
+void FSpectrumEmu::StepScreenWrite()
+{
+	_ui_dbg_continue(&UIZX.dbg);
+	bStepToNextScreenWrite = true;
+}
+
 void FSpectrumEmu::GraphicsViewerSetAddress(uint16_t address) 
 {
 	GraphicsViewerGoToAddress(address);
@@ -332,6 +344,16 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 	
 	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, this);
 
+	// break on screen memory write
+	if (bWrite && addr >= 0x4000 && addr < 0x5800)
+	{
+		if (bStepToNextScreenWrite)
+		{
+			bStepToNextScreenWrite = false;
+			return UI_DBG_BP_BASE_TRAPID;
+		}
+	}
+
 	// work out stack size
 	const uint16_t sp = z80_sp(&ZXEmuState.cpu);	// this won't get the proper stack pos (see comment above function)
 	if (sp < state.StackMin)
@@ -346,8 +368,6 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 		iCount++;
 
 	RZXManager.RegisterInstructions(iCount);
-
-	
 
 	return trapId;
 }
@@ -390,6 +410,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			if (addr >= 0x4000 && addr < 0x5800)
 			{
 				FrameScreenPixWrites.push_back({ addr,value, pc });
+				
 			}
 			// Log screen attribute writes
 			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
@@ -983,6 +1004,19 @@ void FSpectrumEmu::Tick()
 		FrameTraceViewer.CaptureFrame();
 		FrameScreenPixWrites.clear();
 		FrameScreenAttrWrites.clear();
+
+		if (bStepToNextFrame)
+		{
+			_ui_dbg_break(&UIZX.dbg);
+			CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
+			bStepToNextFrame = false;
+		}
+	}
+
+	// on debug break send code analyser to address
+	if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
+	{
+		CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
 	}
 
 	// Draw UI

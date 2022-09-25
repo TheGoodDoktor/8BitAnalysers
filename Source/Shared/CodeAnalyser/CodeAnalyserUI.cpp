@@ -926,6 +926,16 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 		state.CPUInterface->StepInto();
 		state.TrackPCFrame = true;
 	}
+	ImGui::SameLine();
+	if (ImGui::Button("Step Frame"))
+	{
+		state.CPUInterface->StepFrame();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Step Screen Write"))
+	{
+		state.CPUInterface->StepScreenWrite();
+	}
 	//ImGui::SameLine();
 	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }
