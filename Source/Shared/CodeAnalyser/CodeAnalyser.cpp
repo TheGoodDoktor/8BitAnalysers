@@ -603,20 +603,25 @@ public:
 	uint16_t	oldDataSize;
 };
 
-void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
+void SetItemCode(FCodeAnalysisState& state, uint16_t addr)
 {
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pItem->Address);
-	if(pCodeInfo !=nullptr && pCodeInfo->bDisabled == true)
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
+	if (pCodeInfo != nullptr && pCodeInfo->bDisabled == true)
 	{
 		pCodeInfo->bDisabled = false;
-		WriteCodeInfoForAddress(state, pItem->Address);
+		WriteCodeInfoForAddress(state, addr);
 	}
 	else
 	{
-		RunStaticCodeAnalysis(state, pItem->Address);
-		UpdateCodeInfoForAddress(state, pItem->Address);
+		RunStaticCodeAnalysis(state, addr);
+		UpdateCodeInfoForAddress(state, addr);
 	}
 	state.bCodeAnalysisDataDirty = true;
+}
+
+void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
+{
+	SetItemCode(state, pItem->Address);
 }
 
 void SetItemData(FCodeAnalysisState &state, FItem *pItem)
