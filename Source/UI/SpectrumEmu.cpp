@@ -17,8 +17,6 @@
 
 #include "ui/ui_dbg.h"
 #include "MemoryHandlers.h"
-//#include "FunctionHandlers.h"
-#include "Disassembler.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
 

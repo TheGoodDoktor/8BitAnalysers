@@ -123,12 +123,6 @@
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\FunctionHandlers.cpp">
-      <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Disassembler.cpp">
-      <Filter>Source Files\UI</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\UI\IOAnalysis.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
@@ -239,9 +233,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.cpp">
       <Filter>Source Files\UI\SnapshotLoaders</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\ChipsImpl.cpp">
-      <Filter>Source Files\UI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\Viewers\BreakpointViewer.cpp">
       <Filter>Source Files\UI\Viewers</Filter>
@@ -501,12 +492,6 @@
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\MemoryHandlers.h">
-      <Filter>Source Files\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\FunctionHandlers.h">
-      <Filter>Source Files\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Disassembler.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\IOAnalysis.h">
