@@ -610,11 +610,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="..\..\Source\Vendor\imgui-docking\misc\natvis\imgui.natvis">
-      <Filter>Source Files\Vendor\ImGui</Filter>
-    </Natvis>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\..\Source\Vendor\chips\ui\README.md">
       <Filter>Source Files\chips\ui</Filter>
     </None>
