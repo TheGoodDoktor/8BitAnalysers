@@ -1024,7 +1024,13 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	ImGui::SameLine();
 	if(ImGui::BeginChild("##rightpanel", ImVec2(0, 0), true))
 	{
-		DrawDetailsPanel(state);
+		float height = ImGui::GetWindowContentRegionMax().y - ImGui::GetWindowContentRegionMin().y;
+		if (ImGui::BeginChild("##cadetails", ImVec2(0, height / 2), true))
+			DrawDetailsPanel(state);
+		ImGui::EndChild();
+		if (ImGui::BeginChild("##caglobals", ImVec2(0, 0), true))
+			DrawGlobals(state);
+		ImGui::EndChild();
 	}
 	ImGui::EndChild(); // right panel
 }
@@ -1042,11 +1048,6 @@ void DrawExecutionInfo(FCodeAnalysisState& state)
 		if (ImGui::BeginTabItem("Trace"))
 		{
 			DrawTrace(state);
-			ImGui::EndTabItem();
-		}
-		if (ImGui::BeginTabItem("Globals"))
-		{
-			DrawGlobals(state);
 			ImGui::EndTabItem();
 		}
 

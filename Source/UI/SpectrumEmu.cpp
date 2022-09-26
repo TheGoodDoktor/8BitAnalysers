@@ -1155,9 +1155,15 @@ void FSpectrumEmu::DrawUI()
 	}
 	ImGui::End();
 
-	if (ImGui::Begin("Execution"))
+	if (ImGui::Begin("Call Stack"))
 	{
-		DrawExecutionInfo(CodeAnalysis);
+		DrawCallStack(CodeAnalysis);
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Trace"))
+	{
+		DrawTrace(CodeAnalysis);
 	}
 	ImGui::End();
 }

@@ -13,7 +13,8 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i);
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state);
 void DrawGlobals(FCodeAnalysisState &state);
-void DrawExecutionInfo(FCodeAnalysisState& state);
+void DrawCallStack(FCodeAnalysisState& state);
+void DrawTrace(FCodeAnalysisState& state);
 
 void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo);
 
