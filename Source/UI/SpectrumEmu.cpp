@@ -17,7 +17,7 @@
 
 #include "ui/ui_dbg.h"
 #include "MemoryHandlers.h"
-#include "FunctionHandlers.h"
+//#include "FunctionHandlers.h"
 #include "Disassembler.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
@@ -527,28 +527,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	//pUI->UIZX.dbg.ui.open = true;
 	UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
-	//UIZX.dbg.ui.show_breakpoints = true;
-
-	// Setup Disassembler for function view
-	{
-		FDasmDesc desc;
-		desc.LayerNames[0] = "CPU Mapped";
-		desc.LayerNames[1] = "Layer 0";
-		desc.LayerNames[2] = "Layer 1";
-		desc.LayerNames[3] = "Layer 2";
-		desc.LayerNames[4] = "Layer 3";
-		desc.LayerNames[5] = "Layer 4";
-		desc.LayerNames[6] = "Layer 5";
-		desc.LayerNames[7] = "Layer 6";
-		desc.CPUType = DasmCPUType::Z80;
-		desc.StartAddress = 0x0000;
-		desc.ReadCB = MemReadFunc;
-		desc.pUserData = &ZXEmuState;
-		desc.pEmulator = this;
-		desc.Title = "FunctionDasm";
-		DasmInit(&FunctionDasm, &desc);
-	}
-
 	// This is where we add the viewers we want
 	Viewers.push_back(new FBreakpointViewer(this));
 	Viewers.push_back(new FOverviewViewer(this));
@@ -613,8 +591,8 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	ResetMemoryStats(MemStats);
 	
 	// Reset Functions
-	FunctionStack.clear();
-	Functions.clear();
+	//FunctionStack.clear();
+	//Functions.clear();
 
 	// start up game
 	if(pActiveGame!=nullptr)

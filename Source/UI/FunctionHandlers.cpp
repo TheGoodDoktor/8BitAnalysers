@@ -1,8 +1,8 @@
+#if 0
 #include "FunctionHandlers.h"
 #include "SpectrumEmu.h"
 #include <algorithm>
 #include "misc/cpp/imgui_stdlib.h"
-
 
 
 /*bool GetROMLabelName(uint16_t callAddr, std::string &labelName)
@@ -200,3 +200,5 @@ void DrawFunctionInfo(FSpectrumEmu* pUI)
 	}
 	ImGui::EndChild();
 }
+
+#endif

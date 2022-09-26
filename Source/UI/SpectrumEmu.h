@@ -28,8 +28,8 @@
 #include <map>
 #include "Viewers/SpriteViewer.h"
 #include "MemoryHandlers.h"
-#include "Disassembler.h"
-#include "FunctionHandlers.h"
+//#include "Disassembler.h"
+//#include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "Viewers/ViewerBase.h"
 #include "Viewers/GraphicsViewer.h"
@@ -169,10 +169,10 @@ public:
 	FMemoryStats	MemStats;
 
 	// Function info
-	uint16_t							SelectedFunction;
-	std::map<uint16_t, FFunctionInfo>	Functions;
-	std::vector<uint16_t>				FunctionStack;
-	FDasmState							FunctionDasm;
+	//uint16_t							SelectedFunction;
+	//std::map<uint16_t, FFunctionInfo>	Functions;
+	//std::vector<uint16_t>				FunctionStack;
+	//FDasmState							FunctionDasm;
 
 	uint16_t dasmCurr = 0;
 
