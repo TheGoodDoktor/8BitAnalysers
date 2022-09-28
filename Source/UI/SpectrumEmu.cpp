@@ -234,6 +234,8 @@ bool	FSpectrumEmu::ShouldExecThisFrame(void) const
 
 void FSpectrumEmu::InsertROMLabels(FCodeAnalysisState& state) 
 {
+	// Sam. Temp
+	return;
 	for (const auto& label : g_RomLabels)
 	{
 		AddLabel(state, label.Address, label.pLabelName, label.LabelType);
