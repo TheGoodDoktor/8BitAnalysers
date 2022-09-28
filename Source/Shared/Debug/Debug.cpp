@@ -49,7 +49,7 @@ void LogFatal(const char* str)
 #ifdef WIN32
 	OutputDebugStringA(str);
 #endif
-	g_ImGuiLog.AddLog("[Fatal]%s", str);
+	g_ImGuiLog.AddLog("[Fatal] %s", str);
 }
 
 void LogError(const char* str)
@@ -57,7 +57,7 @@ void LogError(const char* str)
 #ifdef WIN32
 	OutputDebugStringA(str);
 #endif
-	g_ImGuiLog.AddLog("[Error]%s", str);
+	g_ImGuiLog.AddLog("[Error] %s", str);
 }
 
 void LogWarning(const char* str)
@@ -65,7 +65,7 @@ void LogWarning(const char* str)
 #ifdef WIN32
 	OutputDebugStringA(str);
 #endif
-	g_ImGuiLog.AddLog("[Warning]%s", str);
+	g_ImGuiLog.AddLog("[Warning] %s", str);
 }
 
 void LogInfo(const char* str)
@@ -73,7 +73,7 @@ void LogInfo(const char* str)
 #ifdef WIN32
 	OutputDebugStringA(str);
 #endif
-	g_ImGuiLog.AddLog("[Info]%s", str);
+	g_ImGuiLog.AddLog("[Info] %s", str);
 }
 
 void LogDebug(const char* str)
@@ -81,7 +81,7 @@ void LogDebug(const char* str)
 #ifdef WIN32
 	OutputDebugStringA(str);
 #endif
-	g_ImGuiLog.AddLog("[Debug]%s", str);
+	g_ImGuiLog.AddLog("[Debug] %s", str);
 }
 
 void _LogFatalfLF(const char* fmt, ...)
