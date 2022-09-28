@@ -1,6 +1,7 @@
 
 #include "SkoolkitImporter.h"
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "Debug/Debug.h"
 
 const std::string kWhiteSpace = " \n\r\t\f\v";
 const std::string kSkoolKitDirectives = "bcgistuw";
@@ -12,7 +13,7 @@ struct FSkoolkitInstruction
 	{
 		return kSkoolKitDirectives.find(Directive) != std::string::npos;
 	}
-	char Directive = kSkoolkitDirectiveNone;
+	char Directive = kSkoolkitDirectiveNone;	// Sam: Why don't you use an enum?
 	uint16_t Address = 0;
 	std::string Comment;
 };
@@ -124,8 +125,6 @@ void ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 	}
 }
 
-// temp. for OutputDebugString
-//#include <Windows.h>
 
 // todo: backup existing game data
 
@@ -141,7 +140,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 	char curDirective = kSkoolkitDirectiveNone;
 	std::string comments;
 	std::string label;
-	while (fgets(pchLine, 1024, fp))
+	while (fgets(pchLine, 1024, fp))	// Sam: this could cause a problem if the line is greate than 1024 bytes 
 	{
 		std::string strLine = pchLine;
 
@@ -176,7 +175,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 		// we've got an instruction.
 		// get directive, address and comment 
 		FItem* pItem = nullptr;
-		FSkoolkitInstruction instruction;
+		FSkoolkitInstruction instruction;	// Sam: it's called instruction even when it can be data - is that right?
 		ParseInstruction(strLine, instruction);
 
 		if (instruction.HasValidDirective() && curDirective != instruction.Directive)
@@ -211,12 +210,20 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 			// Also, not sure if we need to deal with the scenario that this address is set to code?
 			// Oh, but didn't you say all memory locations will have data info, even if set to code?
 			// If so, then I presume this is ok?
+
+			// Sam - This will always return a valid pointer as every address always has a data item
+			// Code items take priority
+			// if Skoolkit thinks it's data but there is a code item there then it need to be looked at
+			// sometimes it can be selfmodifying code
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(instruction.Address);
-			/*FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
 			if (pCodeInfo)
 			{
-				OutputDebugString("item is set to code\n");
-			}*/
+				LOGWARNING("Item at $%02X was set to code: %s",instruction.Address, pCodeInfo->Text.c_str());
+				LOGWARNING("Code item removed and replace as data");
+				// remove the code item
+				state.SetCodeInfoForAddress(instruction.Address, nullptr);	// memory will get cleared up 
+			}
 			if (pDataInfo)
 			{
 				pItem = pDataInfo;
@@ -232,8 +239,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 
 					pDataInfo->DataType = DataType::Word;
 					pDataInfo->ByteSize = 2;
-					SetItemData(state, pDataInfo);
-					state.bCodeAnalysisDataDirty = true;
+					//SetItemData(state, pDataInfo); //this sets the item to code!
 				}
 			}
 		}
@@ -265,7 +271,13 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 
 		if (!comments.empty())
 		{
-			FCommentBlock* pBlock = AddCommentBlock(state, instruction.Address);
+			FCommentBlock* pBlock = state.GetCommentBlockForAddress(instruction.Address);
+			
+			if (pBlock == nullptr)
+				pBlock = AddCommentBlock(state, instruction.Address);
+			else
+				LOGWARNING("SkoolkitImporter: Replacing existing comment block: %s", pBlock->Comment.c_str());
+
 			pBlock->Comment = comments;
 			comments.clear();
 		}
@@ -295,5 +307,6 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 		}
 	}
 
+	state.bCodeAnalysisDataDirty = true;
 	return true;
 }

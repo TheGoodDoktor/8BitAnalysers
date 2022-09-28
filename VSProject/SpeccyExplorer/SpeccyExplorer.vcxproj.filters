@@ -85,6 +85,9 @@
     <Filter Include="Source Files\Vendor\ImPlot">
       <UniqueIdentifier>{8068c212-81ec-4f8a-999c-5044d736ef34}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shared\Debug">
+      <UniqueIdentifier>{38b3dc60-84e9-4be9-a2a5-a675edba4346}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\main.cpp">
@@ -257,6 +260,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\UI\Importers\SkoolkitImporter.cpp">
       <Filter>Source Files\UI\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\Debug\Debug.cpp">
+      <Filter>Source Files\Shared\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\Debug\ImGuiLog.cpp">
+      <Filter>Source Files\Shared\Debug</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -592,6 +601,12 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\Importers\SkoolkitImporter.h">
       <Filter>Source Files\UI\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\Debug\Debug.h">
+      <Filter>Source Files\Shared\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\Debug\ImGuiLog.h">
+      <Filter>Source Files\Shared\Debug</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

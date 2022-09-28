@@ -26,6 +26,8 @@
 #include <Vendor/sokol/sokol_audio.h>
 #include "Exporters/SkoolkitExporter.h"
 #include "Importers/SkoolkitImporter.h"
+#include "Debug/Debug.h"
+#include "Debug/ImGuiLog.h"
 #include <cassert>
 
 // Memory access functions
@@ -845,6 +847,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		}
 		if (ImGui::BeginMenu("Windows"))
 		{
+			ImGui::MenuItem("DebugLog", 0, &bShowDebugLog);
 			for (auto Viewer : Viewers)
 			{
 				ImGui::MenuItem(Viewer->GetName(), 0, &Viewer->bOpen);
@@ -1168,6 +1171,9 @@ void FSpectrumEmu::DrawUI()
 		DrawTrace(CodeAnalysis);
 	}
 	ImGui::End();
+
+	if (bShowDebugLog)
+		g_ImGuiLog.Draw("Debug Log", &bShowDebugLog);
 }
 
 bool FSpectrumEmu::DrawDockingView()
