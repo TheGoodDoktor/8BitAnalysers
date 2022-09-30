@@ -218,6 +218,8 @@ public:
 
 // Analysis
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
+// creates a new FLabelInfo if no label exists at address, 
+// auto generates the name based on the type, eg function_XXX, label_XXX, data_XXX
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
@@ -231,8 +233,14 @@ void ResetMemoryLogs(FCodeAnalysisState &state);
 // Commands
 void Undo(FCodeAnalysisState &state);
 
+// allocates a new FLabelInfo and calls FCodeAnalysisState::SetLabelForAddress().
+// use if you know the label type.
+// only use if you know there is no label at the address
 FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, LabelType type);
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
+// if no label exists at the address will call GenerateLabelForAddress(). 
+// will work out the type based on if there is code or data at the address.
+// won't add label if one already exists at the address.
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);

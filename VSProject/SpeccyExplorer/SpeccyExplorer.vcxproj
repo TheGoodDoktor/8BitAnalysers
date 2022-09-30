@@ -145,6 +145,8 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeToolTips.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.cpp" />
+    <ClCompile Include="..\..\Source\Shared\Debug\Debug.cpp" />
+    <ClCompile Include="..\..\Source\Shared\Debug\ImGuiLog.cpp" />
     <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp" />
     <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp" />
     <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp" />
@@ -203,6 +205,8 @@
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeToolTips.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.h" />
+    <ClInclude Include="..\..\Source\Shared\Debug\Debug.h" />
+    <ClInclude Include="..\..\Source\Shared\Debug\ImGuiLog.h" />
     <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h" />
     <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h" />
     <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h" />

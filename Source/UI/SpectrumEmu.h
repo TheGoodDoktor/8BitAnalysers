@@ -191,6 +191,8 @@ private:
 
 	bool	bStepToNextFrame = false;
 	bool	bStepToNextScreenWrite = false;
+
+	bool	bShowDebugLog = false;
 };
 
 

@@ -940,6 +940,10 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }
 
+bool bImportSkoolFile = true;
+
+extern bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName);
+
 void DrawCodeAnalysisData(FCodeAnalysisState &state)
 {
 	//FSpeccy *pSpeccy = state.pSpeccy;
@@ -954,6 +958,15 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		state.CurrentFrameNo++;
 
 	UpdateItemList(state);
+
+	if (bImportSkoolFile)
+	{
+		//state.CPUInterface->Break();
+
+		ImportSkoolKitFile(state, "D:\\dev\\spectrum\\disassemblies\\others\\sinclair_rom\\rom-disassembly-20200807\\sources\\rom.skool");
+		//ImportSkoolKitFile(state, "D:\\dev\\spectrum\\disassemblies\\others\\hh-disassembly-20200729\\sources\\hh.skool");
+		bImportSkoolFile = false;
+	}
 
 	if (ImGui::ArrowButton("##btn", ImGuiDir_Left))
 		GoToPreviousAddress(state);
