@@ -265,8 +265,12 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 
 		if (!comments.empty())
 		{
+			// if a comment already exists this will fail to set the comment
 			FCommentBlock* pBlock = AddCommentBlock(state, instruction.Address);
-			pBlock->Comment = comments;
+			if (pBlock)
+			{
+				pBlock->Comment = comments;
+			}
 			comments.clear();
 		}
 
