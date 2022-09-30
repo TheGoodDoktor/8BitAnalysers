@@ -490,8 +490,6 @@ bool LoadGameData(FCodeAnalysisState& state, const char *fname)
 
 bool LoadROMData(FCodeAnalysisState& state, const char *fname)
 {
-	// Temp
-	return true;
 	return LoadGameDataBin(state, fname,0x0000,0x3fff);
 }
 
