@@ -801,10 +801,10 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 					{
 						const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 						char valTxt[16];
-						sprintf(valTxt, "%02Xh%c", val, i < pDataInfo->ByteSize ? ',':' ');
+						sprintf(valTxt, "%02Xh%c", val, i < pDataInfo->ByteSize - 1 ? ',':' ');
+						textString += valTxt;
 					}
 					fprintf(fp, "db %s", textString.c_str());
-
 				}
 				break;
 				case DataType::Word:
@@ -814,9 +814,19 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 				}
 				break;
 				case DataType::WordArray:
-					// TODO: Implement
-					assert(0);
-					break;
+				{
+					const int wordSize = pDataInfo->ByteSize / 2;
+					std::string textString;
+					for (int i = 0; i < wordSize; i++)
+					{
+						const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
+						char valTxt[16];
+						sprintf(valTxt, "%04Xh%c", val, i < wordSize - 1 ? ',' : ' ');
+						textString += valTxt;
+					}
+					fprintf(fp, "dw %s", textString.c_str());
+				}
+				break;
 				case DataType::Text:
 				{
 					std::string textString;

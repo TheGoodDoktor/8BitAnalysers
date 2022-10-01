@@ -454,6 +454,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		for (int i = 1; i < pDataInfo->ByteSize; i++)	// first word already written
 		{
 			val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+			ImGui::SameLine();
 			ImGui::Text(",%02Xh", val);
 		}
 	}
@@ -478,6 +479,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		for (int i = 1; i < wordCount; i++)	// first word already written
 		{
 			val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
+			ImGui::SameLine();
 			ImGui::Text(",%04Xh", val);
 		}
 	}
