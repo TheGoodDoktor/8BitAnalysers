@@ -88,7 +88,9 @@ private:
 enum class DataType
 {
 	Byte,
+	ByteArray,
 	Word,
+	WordArray,
 	Text,		// ascii text
 	Graphics,	// pixel data
 	Blob,		// opaque data blob

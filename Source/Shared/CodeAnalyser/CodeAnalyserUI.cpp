@@ -433,9 +433,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	ImGui::Text("\t%04Xh", pDataInfo->Address);
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
-
-	
-	
+		
 	switch (pDataInfo->DataType)
 	{
 	case DataType::Byte:
@@ -448,6 +446,19 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	}
 	break;
 
+	case DataType::ByteArray:
+	{
+		uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
+		
+		ImGui::Text("db %02Xh", val);
+		for (int i = 1; i < pDataInfo->ByteSize; i++)	// first word already written
+		{
+			val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+			ImGui::Text(",%02Xh", val);
+		}
+	}
+	break;
+
 	case DataType::Word:
 	{
 		const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
@@ -455,6 +466,20 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		// draw address as label - optional?
 		ImGui::SameLine();	
 		DrawAddressLabel(state, val);
+	}
+	break;
+
+	case DataType::WordArray:
+	{
+		uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
+		const int wordCount = pDataInfo->ByteSize / 2;
+
+		ImGui::Text("dw %04Xh", val);
+		for (int i = 1; i < wordCount; i++)	// first word already written
+		{
+			val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
+			ImGui::Text(",%04Xh", val);
+		}
 	}
 	break;
 
@@ -702,10 +727,13 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 				while (std::getline(stringStream, line, '\n'))
 				{
+					if (line.empty() || line[0] == '@')	// skip lines starting with @ - we might want to create items from them in future
+						continue;
+
 					FCommentLine* pLine = FCommentLine::Allocate();
 					pLine->Comment = line;
 					pLine->Address = addr;
-					state.ItemList.push_back(pLine);	// TODO: sort out this memory leak!
+					state.ItemList.push_back(pLine);	
 				}
 			}
 			

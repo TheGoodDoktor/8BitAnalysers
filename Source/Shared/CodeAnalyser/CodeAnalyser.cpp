@@ -794,14 +794,29 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 					fprintf(fp,"db %02Xh", val);
 				}
 				break;
+				case DataType::ByteArray:
+				{
+					std::string textString;
+					for (int i = 0; i < pDataInfo->ByteSize; i++)
+					{
+						const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+						char valTxt[16];
+						sprintf(valTxt, "%02Xh%c", val, i < pDataInfo->ByteSize ? ',':' ');
+					}
+					fprintf(fp, "db %s", textString.c_str());
 
+				}
+				break;
 				case DataType::Word:
 				{
 					const uint16_t val = state.CPUInterface->ReadByte(pDataInfo->Address) | (state.CPUInterface->ReadByte(pDataInfo->Address + 1) << 8);
 					fprintf(fp, "dw %04Xh", val);
 				}
 				break;
-
+				case DataType::WordArray:
+					// TODO: Implement
+					assert(0);
+					break;
 				case DataType::Text:
 				{
 					std::string textString;
