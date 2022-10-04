@@ -2,6 +2,7 @@
 #include <cstdint>
 #include "SpectrumEmu.h"
 #include "CodeAnalyser/CodeAnalyserUI.h"
+#include <Shared/Util/Misc.h>
 
 // Disassembly handlers
 static uint8_t DasmCB(void* user_data)
@@ -181,11 +182,11 @@ void DrawMemoryHandlers(FSpectrumEmu* pUI)
 		ImGui::Checkbox("Break", &pSelectedHandler->bBreak);
 		ImGui::Text(pSelectedHandler->Name.c_str());
 
-		ImGui::Text("Start: %04Xh", pSelectedHandler->MemStart);
+		ImGui::Text("Start: %s", NumStr(pSelectedHandler->MemStart));
 		ImGui::SameLine();
 		DrawAddressLabel(pUI->CodeAnalysis, pSelectedHandler->MemStart);
 
-		ImGui::Text("End: %04Xh",pSelectedHandler->MemEnd);
+		ImGui::Text("End: %s",NumStr(pSelectedHandler->MemEnd));
 		ImGui::SameLine();
 		DrawAddressLabel(pUI->CodeAnalysis, pSelectedHandler->MemEnd);
 
@@ -284,7 +285,7 @@ void DrawMemoryDiffUI(FSpectrumEmu* pEmu)
 			}
 			ImGui::SetItemAllowOverlap();	// allow buttons
 			ImGui::SameLine();
-			ImGui::Text("%04Xh\t%02Xh\t%02Xh", changedAddr, g_DiffSnapShotMemory[changedAddr], pEmu->ReadByte( changedAddr));
+			ImGui::Text("%s\t%s\t%s", NumStr(changedAddr), NumStr(g_DiffSnapShotMemory[changedAddr]), NumStr(pEmu->ReadByte( changedAddr)));
 			ImGui::SameLine();
 			DrawAddressLabel(pEmu->CodeAnalysis, changedAddr);
 			ImGui::PopID();

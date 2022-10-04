@@ -1,6 +1,8 @@
 #include "CodeAnalyserUI.h"
 #include "CodeAnalyser.h"
 
+#include "Util/Misc.h"
+
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
@@ -103,7 +105,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr, bool bFunctionRe
 void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr, bool bFunctionRel)
 {
 	//ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
-	ImGui::Text("%04Xh", addr);
+	ImGui::Text("%s", NumStr(addr));
 	//ImGui::PopStyleColor();
 	ImGui::SameLine();
 	DrawAddressLabel(state, addr, bFunctionRel);
@@ -213,7 +215,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 	for (const auto & caller : pLabelInfo->References)
 	{
 		//DrawAddressLabel( state, caller.first );
-		//ImGui::Text( "%xh", caller.first );
+		//ImGui::Text( "%s", NumStr(caller.first) );
 		//DrawAddressLabel( state, caller.first );
 
 		/*const int index = GetItemIndexForAddress(state, caller.first);
@@ -290,7 +292,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 		UpdateCodeInfoForAddress(state, pCodeInfo->Address);
 	}
 
-	ImGui::Text("\t%04Xh", pCodeInfo->Address);
+	ImGui::Text("\t%s", NumStr(pCodeInfo->Address));
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 
@@ -430,7 +432,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		dl->AddCircle(mid, 7, brd_color);
 	}
 	
-	ImGui::Text("\t%04Xh", pDataInfo->Address);
+	ImGui::Text("\t%s", NumStr(pDataInfo->Address));
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 		
@@ -440,9 +442,9 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	{
 		const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
 		if (val == '\n')// carriage return messes up list
-			ImGui::Text("db %02Xh '<cr>'", val, val);
+			ImGui::Text("db %s '<cr>'", NumStr(val), val);
 		else
-			ImGui::Text("db %02Xh '%c'", val, val);
+			ImGui::Text("db %s '%c'", NumStr(val), val);
 	}
 	break;
 
@@ -450,12 +452,12 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	{
 		uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
 		
-		ImGui::Text("db %02Xh", val);
+		ImGui::Text("db %s", NumStr(val));
 		for (int i = 1; i < pDataInfo->ByteSize; i++)	// first word already written
 		{
 			val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 			ImGui::SameLine();
-			ImGui::Text(",%02Xh", val);
+			ImGui::Text(",%s", NumStr(val));
 		}
 	}
 	break;
@@ -463,7 +465,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	case DataType::Word:
 	{
 		const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
-		ImGui::Text("dw %04Xh", val);
+		ImGui::Text("dw %s", NumStr(val));
 		// draw address as label - optional?
 		ImGui::SameLine();	
 		DrawAddressLabel(state, val);
@@ -475,12 +477,12 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
 		const int wordCount = pDataInfo->ByteSize / 2;
 
-		ImGui::Text("dw %04Xh", val);
+		ImGui::Text("dw %s", NumStr(val));
 		for (int i = 1; i < wordCount; i++)	// first word already written
 		{
 			val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
 			ImGui::SameLine();
-			ImGui::Text(",%04Xh", val);
+			ImGui::Text(",%s", NumStr(val));
 		}
 	}
 	break;
@@ -992,7 +994,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		GoToAddress(state,state.CPUInterface->GetPC());
 	ImGui::SameLine();
 	static int addrInput = 0;
-	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, ImGuiInputTextFlags_CharsHexadecimal))
+	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, inputFlags))
 		GoToAddress(state, addrInput);
 
 	if (state.TrackPCFrame == true)

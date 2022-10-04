@@ -5,6 +5,7 @@
 #include <Shared/CodeAnalyser/CodeAnalyserUI.h>
 #include <Shared/ImGuiSupport/imgui_impl_lucidextra.h>
 #include <Shared/Util/GraphicsView.h>
+#include <Shared/Util/Misc.h>
 
 
 void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
@@ -185,7 +186,7 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instAddr);
 			if (pCodeInfo)
 			{
-				ImGui::Text("%04Xh %s", instAddr, pCodeInfo->Text.c_str());
+				ImGui::Text("%s %s", NumStr(instAddr), pCodeInfo->Text.c_str());
 				ImGui::SameLine();
 				DrawAddressLabel(state, instAddr);
 			}
@@ -338,7 +339,7 @@ void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 				ImGui::SetItemAllowOverlap();	// allow buttons
 				ImGui::SameLine();
 
-				ImGui::Text("$%04X ($%02X) : ", access.Address, access.Value);
+				ImGui::Text("%s (%s) : ", NumStr(access.Address), NumStr(access.Value));
 				ImGui::SameLine();
 				DrawCodeAddress(state, access.PC);
 				ImGui::PopID();
@@ -360,9 +361,9 @@ void FFrameTraceViewer::DrawMemoryDiffs(const FSpeccyFrameTrace& frame)
 
 	for (const auto& diff : frame.MemoryDiffs)
 	{
-		ImGui::Text("$%04X : ", diff.Address);
+		ImGui::Text("%s : ", NumStr(diff.Address));
 		DrawAddressLabel(state,diff.Address);
 		ImGui::SameLine();
-		ImGui::Text("%d($%02X) -> %d($%02X)", diff.OldVal, diff.OldVal, diff.NewVal, diff.NewVal);
+		ImGui::Text("%d(%s) -> %d(%s)", diff.OldVal, NumStr(diff.OldVal), diff.NewVal, NumStr(diff.NewVal));
 	}
 }

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "../GameConfig.h"
 #include <Util/GraphicsView.h>
+#include <Shared/Util/Misc.h>
 
 // Sprites
 
@@ -99,7 +100,11 @@ void DrawSpriteListGUI(FGraphicsViewerState &state, FGraphicsView *pGraphicsView
 
 		if (ImGui::CollapsingHeader("Generation"))
 		{
-			ImGui::InputInt("BaseAddress", &baseAddress, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
+			if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
+				ImGui::InputInt("BaseAddress", &baseAddress, 1, 8, ImGuiInputTextFlags_CharsDecimal);
+			else
+				ImGui::InputInt("BaseAddress", &baseAddress, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
+
 			ImGui::InputInt("Width", &w);
 			ImGui::InputInt("Height", &h);
 			ImGui::InputInt("Count", &count);

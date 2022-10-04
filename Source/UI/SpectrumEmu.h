@@ -183,6 +183,7 @@ public:
 	FRZXManager		RZXManager;
 
 	bool bShowImGuiDemo = false;
+	bool bShowImPlotDemo = false;
 private:
 	z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;

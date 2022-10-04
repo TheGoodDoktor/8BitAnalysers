@@ -153,6 +153,7 @@
     <ClCompile Include="..\..\Source\Shared\Util\FileUtil.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\GraphicsView.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\MemoryBuffer.cpp" />
+    <ClCompile Include="..\..\Source\Shared\Util\Misc.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\Win32\FileUtil_Win32.cpp" />
     <ClCompile Include="..\..\Source\UI\Exporters\SkoolkitExporter.cpp" />
     <ClCompile Include="..\..\Source\UI\GameConfig.cpp" />
@@ -213,6 +214,7 @@
     <ClInclude Include="..\..\Source\Shared\Util\FileUtil.h" />
     <ClInclude Include="..\..\Source\Shared\Util\GraphicsView.h" />
     <ClInclude Include="..\..\Source\Shared\Util\MemoryBuffer.h" />
+    <ClInclude Include="..\..\Source\Shared\Util\Misc.h" />
     <ClInclude Include="..\..\Source\UI\Exporters\SkoolkitExporter.h" />
     <ClInclude Include="..\..\Source\UI\GameConfig.h" />
     <ClInclude Include="..\..\Source\UI\GameViewers\GameViewer.h" />

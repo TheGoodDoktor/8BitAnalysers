@@ -29,6 +29,7 @@
 #include "Debug/Debug.h"
 #include "Debug/ImGuiLog.h"
 #include <cassert>
+#include <Shared/Util/Misc.h>
 
 // Memory access functions
 
@@ -843,6 +844,23 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			{
 				pZXUI->ay.open = false;
 			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Options"))
+		{
+			if (ImGui::BeginMenu("Number Mode"))
+			{
+				if (ImGui::MenuItem("Decimal", 0, GetNumberDisplayMode() == ENumberDisplayMode::Decimal))
+					SetNumberDisplayMode(ENumberDisplayMode::Decimal);
+				if (ImGui::MenuItem("Hex - FEh", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAitch))
+					SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
+				if (ImGui::MenuItem("Hex - $FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexDollar))
+					SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
+
+				ImGui::EndMenu();
+			}
+			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
+			ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Windows"))

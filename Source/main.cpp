@@ -152,7 +152,8 @@ int main(int argc, char** argv)
         if (pSpectrumEmulator->bShowImGuiDemo)
             ImGui::ShowDemoWindow(&pSpectrumEmulator->bShowImGuiDemo);
 
-        //ImPlot::ShowDemoWindow();
+        if (pSpectrumEmulator->bShowImPlotDemo)
+            ImPlot::ShowDemoWindow(&pSpectrumEmulator->bShowImPlotDemo);
 
         // Rendering
         ImGui::Render();

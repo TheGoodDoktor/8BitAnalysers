@@ -267,6 +267,9 @@
     <ClCompile Include="..\..\Source\Shared\Debug\ImGuiLog.cpp">
       <Filter>Source Files\Shared\Debug</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\Util\Misc.cpp">
+      <Filter>Source Files\Shared\Util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
@@ -607,6 +610,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\Debug\ImGuiLog.h">
       <Filter>Source Files\Shared\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\Util\Misc.h">
+      <Filter>Source Files\Shared\Util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

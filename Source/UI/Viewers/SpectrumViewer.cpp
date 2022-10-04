@@ -9,6 +9,7 @@
 
 #define NOMINMAX // without this std::min and std::max fail to compile
 #include <windows.h> // for VK_* key defines
+#include <Shared/Util/Misc.h>
 
 void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 {
@@ -42,7 +43,7 @@ void FSpectrumViewer::Draw()
 			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);
 			ImGui::BeginTooltip();
 			ImGui::Text("Screen Pos (%d,%d)", xp, yp);
-			ImGui::Text("Pixel: %04Xh, Attr: %04Xh", scrPixAddress, scrAttrAddress);
+			ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
 
 			const uint16_t lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
 			const uint16_t lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
@@ -87,16 +88,16 @@ void FSpectrumViewer::Draw()
 		const ImU32 col = 0xffffffff;	// TODO: pulse
 		dl->AddRect(ImVec2((float)SelectedCharX, (float)SelectedCharY), ImVec2((float)SelectedCharX + 8, (float)SelectedCharY + 8), col);
 
-		ImGui::Text("Pixel Char Address: $%04X", SelectPixAddr);
+		ImGui::Text("Pixel Char Address: %s", NumStr(SelectPixAddr));
 		//ImGui::SameLine();
 		DrawAddressLabel(codeAnalysis, SelectPixAddr);
-		ImGui::Text("Attribute Address: $%04X", SelectAttrAddr);
+		ImGui::Text("Attribute Address: %s", NumStr(SelectAttrAddr));
 		//ImGui::SameLine();
 		DrawAddressLabel(codeAnalysis, SelectAttrAddr);
 
 		if (CharDataFound)
 		{
-			ImGui::Text("Found at: $%04X", FoundCharDataAddress);
+			ImGui::Text("Found at: %s", NumStr(FoundCharDataAddress));
 			DrawAddressLabel(codeAnalysis, FoundCharDataAddress);
 			//ImGui::SameLine();
 			if (ImGui::Button("Show in GFX View"))

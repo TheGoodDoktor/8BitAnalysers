@@ -6,6 +6,8 @@
 #include <util/z80dasm.h>
 #include <util/m6502dasm.h>
 
+#include "Util/Misc.h"
+
 #include "Z80/CodeAnalyserZ80.h"
 #include "6502/CodeAnalyser6502.h"
 
@@ -791,7 +793,7 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 				case DataType::Byte:
 				{
 					const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
-					fprintf(fp,"db %02Xh", val);
+					fprintf(fp,"db %s", NumStr(val));
 				}
 				break;
 				case DataType::ByteArray:
@@ -801,7 +803,7 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 					{
 						const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 						char valTxt[16];
-						sprintf(valTxt, "%02Xh%c", val, i < pDataInfo->ByteSize - 1 ? ',':' ');
+						sprintf(valTxt, "%s%c", NumStr(val), i < pDataInfo->ByteSize - 1 ? ',':' ');
 						textString += valTxt;
 					}
 					fprintf(fp, "db %s", textString.c_str());
@@ -810,7 +812,7 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 				case DataType::Word:
 				{
 					const uint16_t val = state.CPUInterface->ReadByte(pDataInfo->Address) | (state.CPUInterface->ReadByte(pDataInfo->Address + 1) << 8);
-					fprintf(fp, "dw %04Xh", val);
+					fprintf(fp, "dw %s", NumStr(val));
 				}
 				break;
 				case DataType::WordArray:
@@ -821,7 +823,7 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 					{
 						const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
 						char valTxt[16];
-						sprintf(valTxt, "%04Xh%c", val, i < wordSize - 1 ? ',' : ' ');
+						sprintf(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
 						textString += valTxt;
 					}
 					fprintf(fp, "dw %s", textString.c_str());

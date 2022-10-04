@@ -1,0 +1,27 @@
+{
+    "Name": "Starquake",
+    "SnapshotFile": "./Games/Starquake.z80",
+    "SpriteConfigs": [
+        {
+            "BaseAddress": "0xafc8",
+            "Count": 84,
+            "Height": 2,
+            "Name": "Enemies",
+            "Width": 3
+        },
+        {
+            "BaseAddress": "0x9088",
+            "Count": 35,
+            "Height": 2,
+            "Name": "Items",
+            "Width": 2
+        },
+        {
+            "BaseAddress": "0xe074",
+            "Count": 52,
+            "Height": 2,
+            "Name": "Starquake_Blobs",
+            "Width": 3
+        }
+    ]
+}

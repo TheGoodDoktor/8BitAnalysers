@@ -7,6 +7,7 @@
 #include "CodeAnalyser/CodeAnalyserUI.h"
 
 #include "misc/cpp/imgui_stdlib.h"
+#include <Shared/Util/Misc.h>
 
 
 // Graphics Viewer
@@ -179,11 +180,11 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	}
 	// Address input
 	int addrInput = state.Address;
-	ImGui::Text("Memory Map Address: %04Xh", addrInput);
+	ImGui::Text("Memory Map Address: %s", NumStr((uint16_t)addrInput));
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	DrawGraphicsView(*pGraphicsView);
-	int ptrAddress = 0;
+	uint16_t ptrAddress = 0;
 	if (ImGui::IsItemHovered())
 	{
 		const int xp = (int)(io.MousePos.x - pos.x);
@@ -202,7 +203,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		if (ImGui::IsMouseClicked(0))
 			state.ClickedAddress = ptrAddress;
 
-		ImGui::Text("%04Xh", ptrAddress);
+		ImGui::Text("%s", NumStr(ptrAddress));
 		ImGui::SameLine();
 		DrawAddressLabel(state.pEmu->CodeAnalysis, ptrAddress);
 		ImGui::EndTooltip();
@@ -223,7 +224,10 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		addrInput = (addrLine * kRowSize) + addrOffset;
 	}
 	
-	ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
+	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
+		ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsDecimal);
+	else
+		ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
 	
 
 	int viewMode = (int)state.ViewMode;
@@ -232,7 +236,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	ImGui::SliderInt("Heatmap frame threshold", &state.HeatmapThreshold, 0, 60);
 	ClearGraphicsView(*pGraphicsView, 0xff000000);
 
-	ImGui::Text("Clicked Address: %04Xh", state.ClickedAddress);
+	ImGui::Text("Clicked Address: %s", NumStr(state.ClickedAddress));
 	ImGui::SameLine();
 	DrawAddressLabel(state.pEmu->CodeAnalysis, state.ClickedAddress);
 	if(ImGui::CollapsingHeader("Details"))
