@@ -124,15 +124,15 @@ uint16_t z80dasm_op(uint16_t pc, z80dasm_input_t in_cb, z80dasm_output_t out_cb,
 #endif
 #define _STR_D8(d8) _z80dasm_d8((int8_t)(d8),out_cb,user_data);
 /* output number as unsigned 8-bit string (hex) */
-#ifdef _STR_U8
-#undef _STR_U8
-#endif
+/* MarkC - changed macros so we can define our own*/
+#ifndef _STR_U8
 #define _STR_U8(u8) _z80dasm_u8((uint8_t)(u8),out_cb,user_data);
-/* output number number as unsigned 16-bit string (hex) */
-#ifdef _STR_U16
-#undef _STR_U16
 #endif
+/* output number number as unsigned 16-bit string (hex) */
+/* MarkC - changed macros so we can define our own*/
+#ifndef _STR_U16
 #define _STR_U16(u16) _z80dasm_u16((uint16_t)(u16),out_cb,user_data);
+#endif
 /* (HL)/(IX+d)/(IX+d) */
 #ifdef _M
 #undef _M

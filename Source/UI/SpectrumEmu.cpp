@@ -1,6 +1,16 @@
+#include <cstdint>
 
 #define CHIPS_IMPL
 #include <imgui.h>
+
+typedef void (*z80dasm_output_t)(char c, void* user_data);
+
+void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data);
+void DasmOutputU16(uint16_t val, z80dasm_output_t out_cb, void* user_data);
+
+#define _STR_U8(u8) DasmOutputU8((uint8_t)(u8),out_cb,user_data);
+#define _STR_U16(u16) DasmOutputU16((uint16_t)(u16),out_cb,user_data);
+
 #include "SpectrumEmu.h"
 #include <windows.h>
 
@@ -30,6 +40,29 @@
 #include "Debug/ImGuiLog.h"
 #include <cassert>
 #include <Shared/Util/Misc.h>
+
+
+/* output an unsigned 8-bit value as hex string */
+void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data) 
+{
+	if (out_cb)
+	{
+		const char* outStr = NumStr(val);
+		for (int i = 0; i < strlen(outStr); i++)
+			out_cb(outStr[i], user_data);
+	}
+}
+
+/* output an unsigned 16-bit value as hex string */
+void DasmOutputU16(uint16_t val, z80dasm_output_t out_cb, void* user_data) 
+{
+	if (out_cb) 
+	{
+		const char* outStr = NumStr(val);
+		for (int i = 0; i < strlen(outStr); i++)
+			out_cb(outStr[i], user_data);
+	}
+}
 
 // Memory access functions
 
