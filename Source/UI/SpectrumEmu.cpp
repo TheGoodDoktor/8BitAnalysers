@@ -884,11 +884,32 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			if (ImGui::BeginMenu("Number Mode"))
 			{
 				if (ImGui::MenuItem("Decimal", 0, GetNumberDisplayMode() == ENumberDisplayMode::Decimal))
+				{
 					SetNumberDisplayMode(ENumberDisplayMode::Decimal);
+					CodeAnalysis.bCodeAnalysisDataDirty = true;
+				}
 				if (ImGui::MenuItem("Hex - FEh", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAitch))
+				{
 					SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
+					CodeAnalysis.bCodeAnalysisDataDirty = true;
+				}
 				if (ImGui::MenuItem("Hex - $FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexDollar))
+				{
 					SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
+					CodeAnalysis.bCodeAnalysisDataDirty = true;
+				}
+
+				// clear code text so it can be written again
+				if (CodeAnalysis.bCodeAnalysisDataDirty)
+				{
+					for (int i = 0; i < 1 << 16; i++)
+					{
+						FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(i);
+						if (pCodeInfo && pCodeInfo->Text.empty() == false)
+							pCodeInfo->Text.clear();
+
+					}
+				}
 
 				ImGui::EndMenu();
 			}
