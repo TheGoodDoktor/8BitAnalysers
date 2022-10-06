@@ -101,6 +101,16 @@ struct FDataInfo : FItem
 	FDataInfo() :FItem() { Type = ItemType::Data; }
 
 	DataType	DataType = DataType::Byte;
+	
+	union
+	{
+		struct
+		{
+			bool			bGameState : 1;
+			bool			bCodeOperand : 1;	// for self modifying code
+		};
+		uint32_t	Flags = 0;
+	};
 
 	int						LastFrameRead = -1;
 	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions

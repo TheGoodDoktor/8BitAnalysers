@@ -294,6 +294,7 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAd
 			WriteStringToFile(std::string(magic_enum::enum_name(pDataInfo->DataType)), fp);
 			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
+			fwrite(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
 			WriteStringToFile(pDataInfo->Comment, fp);
 
 			// Reads & Writes?
@@ -334,6 +335,8 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 		pDataInfo->Address = address;
 		pDataInfo->DataType = magic_enum::enum_cast<DataType>(enumVal).value();
 		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
+		if(versionNo > 5)
+			fread(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
 		ReadStringFromFile(pDataInfo->Comment, fp);
 
 		// References?
@@ -401,7 +404,7 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo)
 	}
 }
 
-static const int g_kBinaryFileVersionNo = 5;
+static const int g_kBinaryFileVersionNo = 6;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Binary save
