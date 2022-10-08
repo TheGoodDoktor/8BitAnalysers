@@ -3,7 +3,7 @@
 #include "imgui.h"
 #include <vector>
 
-struct FGraphicsView;
+class FZXGraphicsView;
 struct FGraphicsViewerState;
 class FSpectrumEmu;
 struct FGameConfig;
@@ -36,5 +36,4 @@ struct FUISpriteList
 };
 
 void GenerateSpriteListsFromConfig(FGraphicsViewerState &state, FGameConfig *pGameConfig);
-//void GenerateSpriteList(FSpriteDefList &spriteList, uint16_t startAddress, int count, int width, int height);
-void DrawSpriteListGUI(FGraphicsViewerState &state, FGraphicsView *pGraphicsView);
+void DrawSpriteListGUI(FGraphicsViewerState &state, FZXGraphicsView *pGraphicsView);

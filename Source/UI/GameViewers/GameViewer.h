@@ -1,7 +1,7 @@
 #pragma once
 
 class FSpectrumEmu;
-struct FGraphicsView;
+class FZXGraphicsView;
 struct FGame;
 struct FGameConfig;
 struct FViewerConfig;
@@ -10,8 +10,8 @@ struct FViewerConfig;
 struct FGameViewerData
 {
 	FSpectrumEmu*		pEmu = nullptr;
-	FGraphicsView*		pSpriteGraphicsView = nullptr;
-	FGraphicsView*		pScreenGraphicsView = nullptr;
+	FZXGraphicsView*	pSpriteGraphicsView = nullptr;
+	FZXGraphicsView*	pScreenGraphicsView = nullptr;
 };
 
 void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig);

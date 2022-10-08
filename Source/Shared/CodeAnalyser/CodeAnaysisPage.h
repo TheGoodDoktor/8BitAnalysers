@@ -93,6 +93,7 @@ enum class DataType
 	WordArray,
 	Text,		// ascii text
 	Graphics,	// pixel data
+	Image,		// character/sprite image
 	Blob,		// opaque data blob
 };
 
@@ -111,6 +112,13 @@ struct FDataInfo : FItem
 		};
 		uint32_t	Flags = 0;
 	};
+
+	// attributes for image type data
+	struct
+	{
+		uint8_t			XSizeChars;	// x size in chars for images
+		uint8_t			YSizeChars;	// y size in chars for images
+	}ImgData;
 
 	int						LastFrameRead = -1;
 	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions

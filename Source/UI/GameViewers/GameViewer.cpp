@@ -2,7 +2,7 @@
 
 #include "UI/SpectrumEmu.h"
 #include "UI/GameConfig.h"
-#include <Util/GraphicsView.h>
+#include "../Viewers/ZXGraphicsView.h"
 
 static std::map<std::string, FViewerConfig *>	g_ViewerConfigs;
 
@@ -10,8 +10,8 @@ void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 {
 	FSpectrumEmu *pEmu = pGameViewer->pEmu;
 
-	pGameViewer->pSpriteGraphicsView = CreateGraphicsView(64, 64);
-	pGameViewer->pScreenGraphicsView = CreateGraphicsView(256, 256);
+	pGameViewer->pSpriteGraphicsView = new FZXGraphicsView(64, 64);
+	pGameViewer->pScreenGraphicsView = new FZXGraphicsView(256, 256);
 
 	// add memory handlers for screen memory
 	{

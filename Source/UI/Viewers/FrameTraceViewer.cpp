@@ -1,10 +1,10 @@
 #include "FrameTraceViewer.h"
+#include "ZXGraphicsView.h"
 #include "../SpectrumEmu.h"
 
 #include <imgui.h>
 #include <Shared/CodeAnalyser/CodeAnalyserUI.h>
 #include <Shared/ImGuiSupport/imgui_impl_lucidextra.h>
-#include <Shared/Util/GraphicsView.h>
 #include <Shared/Util/Misc.h>
 
 
@@ -19,7 +19,7 @@ void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 		FrameTrace[i].CPUState = malloc(sizeof(z80_t));
 	}
 
-	ShowWritesView = CreateGraphicsView(320, 256);
+	ShowWritesView = new FZXGraphicsView(320, 256);
 }
 
 void	FFrameTraceViewer::Shutdown()
@@ -31,7 +31,7 @@ void	FFrameTraceViewer::Shutdown()
 		free(FrameTrace[i].CPUState);
 	}
 
-	FreeGraphicsView(ShowWritesView);
+	delete ShowWritesView;
 	ShowWritesView = nullptr;
 }
 
@@ -125,7 +125,7 @@ void FFrameTraceViewer::Draw()
 	
 	ImGui::Image(frame.Texture, ImVec2(320, 256));
 	ImGui::SameLine();
-	DrawGraphicsView(*ShowWritesView);
+	ShowWritesView->Draw();
 
 	// draw clipped list
 	if (ImGui::BeginTabBar("FrameTraceTabs"))
@@ -302,7 +302,7 @@ void FFrameTraceViewer::DrawFrameScreenWritePixels(const FSpeccyFrameTrace& fram
 {
 	if (lastIndex == -1 || lastIndex >= frame.ScreenPixWrites.size())
 		lastIndex = (int)frame.ScreenPixWrites.size() - 1;
-	ClearGraphicsView(*ShowWritesView, 0);
+	ShowWritesView->Clear(0);
 	for (int i = 0; i < lastIndex; i++)
 	{
 		const FMemoryAccess& access = frame.ScreenPixWrites[i];
@@ -310,8 +310,7 @@ void FFrameTraceViewer::DrawFrameScreenWritePixels(const FSpeccyFrameTrace& fram
 		GetScreenAddressCoords(access.Address, xp, yp);
 		const uint16_t attrAddress = GetScreenAttrMemoryAddress(xp, yp);
 		const uint8_t attr = pSpectrumEmu->ReadByte(attrAddress);
-		PlotImageAt(&access.Value, xp, yp, 1, 1, (uint32_t*)ShowWritesView->PixelBuffer, ShowWritesView->Width, attr);
-
+		ShowWritesView->DrawCharLine(access.Value, xp, yp, attr);
 	}
 }
 

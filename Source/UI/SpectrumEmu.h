@@ -197,7 +197,6 @@ private:
 };
 
 
-void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth, uint8_t colAttr = 0x7);
 uint16_t GetScreenPixMemoryAddress(int x, int y);
 uint16_t GetScreenAttrMemoryAddress(int x, int y);
 void GetScreenAddressCoords(uint16_t addr, int& x, int& y);

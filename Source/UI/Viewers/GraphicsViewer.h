@@ -8,7 +8,7 @@
 
 class FSpectrumEmu;
 struct FGame;
-
+class FZXGraphicsView;
 
 
 enum class GraphicsViewMode
@@ -40,7 +40,7 @@ struct FGraphicsViewerState
 	std::map<std::string, FUISpriteList>	SpriteLists;
 
 	// housekeeping
-	FGraphicsView*	pGraphicsView = nullptr;
+	FZXGraphicsView*	pGraphicsView = nullptr;
 	FSpectrumEmu*	pEmu = nullptr;
 	FGame*			pGame = nullptr;
 

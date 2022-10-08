@@ -3,9 +3,9 @@
 #include "UI/SpectrumEmu.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <algorithm>
-#include <Util/GraphicsView.h>
 #include "GameViewer.h"
 #include "UI/GameConfig.h"
+#include "../Viewers/ZXGraphicsView.h"
 
 // Starquake addresses
 
@@ -236,7 +236,7 @@ FGameViewerData *InitStarquakeViewer(FSpectrumEmu *pEmu, FGameConfig *pGameConfi
 	return pStarquakeViewerData;
 }
 
-static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pStarquakeViewer, FGraphicsView *pGraphicsView)
+static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerData *pStarquakeViewer, FZXGraphicsView *pGraphicsView)
 {
 	FSpectrumEmu *pEmu = pStarquakeViewer->pEmu;
 	//FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
@@ -278,15 +278,13 @@ static void DrawSmallPlatform(int platformNum, int xp,int yp,FStarquakeViewerDat
 
 				colVal &= ~0x40;	// clear bright bit
 				
-				PlotImageAt(pImage, xp + (x * 8), yp + (y * 8), 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, colVal);
+				pGraphicsView->DrawBitImage(pImage, xp + (x * 8), yp + (y * 8), 1, 1, colVal);
 
 				kPlatformCharPtr+=8;
 				kPlatformColPtr--;
 			}
 		}
 	}
-
-
 }
 
 static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
@@ -307,24 +305,20 @@ static void DrawBigPlatform(int platformNum, int xp, int yp, FStarquakeViewerDat
 
 }
 
-static void DrawItem( int itemNum, int xp, int yp, uint8_t col, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
+static void DrawItem( int itemNum, int xp, int yp, uint8_t col, FStarquakeViewerData* pStarquakeViewer, FZXGraphicsView* pGraphicsView )
 {
 	FSpectrumEmu* pEmu = pStarquakeViewer->pEmu;
 	const uint8_t* pImage = pEmu->GetMemPtr(kItemSpriteDataAddr + (itemNum * 32) );
 
-	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
-	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
-	PlotImageAt( pImage + 16, xp, yp + 8, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
-	PlotImageAt( pImage + 24, xp + 8, yp + 8, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
+	pGraphicsView->DrawBitImageChars(pImage, xp, yp, 2, 2, col);
 }
 
-static void DrawPlatform( int platformNo, int xp, int yp, uint8_t col, FStarquakeViewerData* pStarquakeViewer, FGraphicsView* pGraphicsView )
+static void DrawPlatform( int platformNo, int xp, int yp, uint8_t col, FStarquakeViewerData* pStarquakeViewer, FZXGraphicsView* pGraphicsView )
 {
 	FSpectrumEmu* pEmu = pStarquakeViewer->pEmu;
 	const uint8_t* pImage = pEmu->GetMemPtr(kPlatformSpritesAddr + ( platformNo * 16 ) );
 
-	PlotImageAt( pImage, xp, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
-	PlotImageAt( pImage + 8, xp + 8, yp, 1, 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, col );
+	pGraphicsView->DrawBitImageChars(pImage, xp, yp, 2, 1, col);
 }
 
 static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pStarquakeViewer)
@@ -355,7 +349,7 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 	if (ImGui::BeginTabItem("Small Platforms"))
 	{
 		static int platformNo = 0;
-		FGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
+		FZXGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
 		ImGui::Text( "%xh", platformNo );
 		const uint8_t SmallPlatformInfo = pEmu->ReadByte(kSmallPlatformTypeInfoAddr + platformNo );
@@ -400,9 +394,9 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 			}
 		}
 
-		ClearGraphicsView( *pGraphicsView, 0xff000000 );
+		pGraphicsView->Clear(0xff000000);
 		DrawSmallPlatform(platformNo, 0,0, pStarquakeViewer, pGraphicsView);
-		DrawGraphicsView(*pGraphicsView);
+		pGraphicsView->Draw();
 
 		ImGui::EndTabItem();
 	}
@@ -410,35 +404,35 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 	if (ImGui::BeginTabItem("Big Platforms"))
 	{
 		static int platformNo = 0;
-		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
+		FZXGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
 		ImGui::Text( "%xh", platformNo );
-		ClearGraphicsView(*pGraphicsView, 0xff000000);
+		pGraphicsView->Clear(0xff000000);
 		DrawBigPlatform(platformNo, 0, 0, pStarquakeViewer);
-		DrawGraphicsView(*pGraphicsView);
+		pGraphicsView->Draw();
 		ImGui::EndTabItem();
 	}
 
 	if ( ImGui::BeginTabItem( "Items" ) )
 	{
 		static int itemNo = 0;
-		FGraphicsView* pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
+		FZXGraphicsView* pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt( "Item No", &itemNo );
 		ImGui::Text( "%xh", itemNo );
-		ClearGraphicsView( *pGraphicsView, 0xff000000 );
+		pGraphicsView->Clear(0xff000000);
 		DrawItem( itemNo, 0, 0, 0x7, pStarquakeViewer, pGraphicsView );
-		DrawGraphicsView( *pGraphicsView );
+		pGraphicsView->Draw();
 		ImGui::EndTabItem();
 	}
 	if ( ImGui::BeginTabItem( "Platforms" ) )
 	{
 		static int platformNo = 0;
-		FGraphicsView* pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
+		FZXGraphicsView* pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt( "Platform No", &platformNo );
 		ImGui::Text( "%xh", platformNo );
-		ClearGraphicsView( *pGraphicsView, 0xff000000 );
+		pGraphicsView->Clear(0xff000000);
 		DrawPlatform( platformNo, 0, 0, 0x7, pStarquakeViewer, pGraphicsView);
-		DrawGraphicsView( *pGraphicsView );
+		pGraphicsView->Draw();
 		ImGui::EndTabItem();
 	}
 	if (ImGui::BeginTabItem("Screens"))
@@ -448,11 +442,11 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt("Screen No", &screenNo);
 		ImGui::Checkbox("Get from game", &getScreenFromGame);
-		ClearGraphicsView(*pGraphicsView, 0xff000000);
+		pGraphicsView->Clear(0xff000000);
 		if(getScreenFromGame)
 			screenNo = pStarquakeViewer->State.CurrentScreen;
 		DrawScreen(screenNo, 0, 0, pStarquakeViewer);
-		DrawGraphicsView(*pGraphicsView);
+		pGraphicsView->Draw();
 		ImGui::EndTabItem();
 	}
 
@@ -464,11 +458,10 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 
 	if ( ImGui::BeginTabItem( "Game View" ) )
 	{
-		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
+		FZXGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImDrawList* pDrawList = ImGui::GetWindowDrawList();
 		ImVec2 pos = ImGui::GetCursorScreenPos();
-
-		ClearGraphicsView( *pGraphicsView, 0xff000000 );
+		pGraphicsView->Clear(0xff000000);
 
 		// TODO: draw UI panel
 		// 
@@ -482,8 +475,8 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 
 			const uint8_t* pImage = pEmu->GetMemPtr(pSprite->SpriteImagePtr );
 
-			if( pSprite->XPixelPos > 16 || pSprite->YPixelPos > 16)
-				PlotImageAt( pImage, pSprite->XCharacterPos * 8, 192 - pSprite->YPixelPos, 3, 16, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width, pSprite->InkCol );
+			if (pSprite->XPixelPos > 16 || pSprite->YPixelPos > 16)
+				pGraphicsView->DrawBitImage(pImage, pSprite->XCharacterPos * 8, 192 - pSprite->YPixelPos, 3, 2, pSprite->InkCol);
 		}
 
 		// draw platforms
@@ -536,7 +529,7 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 			DrawItem( itemType, itemX * 8, itemY * 8, itemCol, pStarquakeViewer, pGraphicsView );
 		}
 
-		DrawGraphicsView( *pGraphicsView );
+		pGraphicsView->Draw();
 
 		static bool bDrawDebug = false;
 
