@@ -119,10 +119,9 @@ uint16_t z80dasm_op(uint16_t pc, z80dasm_input_t in_cb, z80dasm_output_t out_cb,
 #endif
 #define _STR(s) _z80dasm_str(s,out_cb,user_data);
 /* output offset as signed 8-bit string (decimal) */
-#ifdef _STR_D8
-#undef _STR_D8
-#endif
+#ifndef _STR_D8
 #define _STR_D8(d8) _z80dasm_d8((int8_t)(d8),out_cb,user_data);
+#endif
 /* output number as unsigned 8-bit string (hex) */
 /* MarkC - changed macros so we can define our own*/
 #ifndef _STR_U8

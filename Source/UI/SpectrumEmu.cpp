@@ -7,9 +7,11 @@ typedef void (*z80dasm_output_t)(char c, void* user_data);
 
 void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data);
 void DasmOutputU16(uint16_t val, z80dasm_output_t out_cb, void* user_data);
+void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 
 #define _STR_U8(u8) DasmOutputU8((uint8_t)(u8),out_cb,user_data);
 #define _STR_U16(u16) DasmOutputU16((uint16_t)(u16),out_cb,user_data);
+#define _STR_D8(d8) DasmOutputD8((int8_t)(d8),out_cb,user_data);
 
 #include "SpectrumEmu.h"
 #include <windows.h>
@@ -62,6 +64,26 @@ void DasmOutputU16(uint16_t val, z80dasm_output_t out_cb, void* user_data)
 		for (int i = 0; i < strlen(outStr); i++)
 			out_cb(outStr[i], user_data);
 	}
+}
+
+/* output a signed 8-bit offset as hex string */
+void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data) 
+{
+	if (out_cb) 
+	{
+        if (val < 0) 
+		{
+            out_cb('-', user_data);
+            val = -val;
+        }
+        else 
+		{
+            out_cb('+', user_data);
+        }
+		const char* outStr = NumStr((uint8_t)val);
+		for (int i = 0; i < strlen(outStr); i++)
+			out_cb(outStr[i], user_data);
+    }
 }
 
 // Memory access functions
