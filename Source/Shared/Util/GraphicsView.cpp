@@ -3,26 +3,91 @@
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <cstdint>
 
-FGraphicsView* CreateGraphicsView(int width, int height)
+void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bScale = false, bool bMagnifier = true);
+
+FGraphicsView::FGraphicsView(int width, int height)
+	: Width(width)
+	, Height(height)
 {
-	FGraphicsView* pNewView = new FGraphicsView;
-
-	pNewView->Width = width;
-	pNewView->Height = height;
-	pNewView->PixelBuffer = new uint32_t[width * height];
-	pNewView->Texture = ImGui_ImplDX11_CreateTextureRGBA((uint8_t*)pNewView->PixelBuffer, width, height);
-
-	return pNewView;
+	Width = width;
+	Height = height;
+	PixelBuffer = new uint32_t[width * height];
+	Texture = ImGui_ImplDX11_CreateTextureRGBA((uint8_t*)PixelBuffer, width, height);
 }
 
-void FreeGraphicsView(FGraphicsView* pView)
+FGraphicsView::~FGraphicsView()
 {
-	delete pView->PixelBuffer;
-	ImGui_ImplDX11_FreeTexture(pView->Texture);
-	delete pView;
+	delete PixelBuffer;
+	ImGui_ImplDX11_FreeTexture(Texture);
 }
 
-void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bScale = false, bool bMagnifier = true)
+void FGraphicsView::Clear(const uint32_t col)
+{
+	for (int i = 0; i < Width * Height; i++)
+		PixelBuffer[i] = col;
+}
+
+void FGraphicsView::Draw(float xSize, float ySize, bool bScale, bool bMagnifier)
+{
+	ImGui_ImplDX11_UpdateTextureRGBA(Texture, (uint8_t*)PixelBuffer);
+	DisplayTextureInspector(Texture, xSize, ySize, bScale, bMagnifier);
+}
+
+void FGraphicsView::Draw(bool bMagnifier)
+{
+	Draw((float)Width, (float)Height, false, bMagnifier);
+}
+
+void FGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint32_t inkCol, uint32_t paperCol)
+{
+	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
+
+	for (int xpix = 0; xpix < 8; xpix++)
+	{
+		const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
+		const uint32_t col = bSet ? inkCol : paperCol;
+		if (col != 0xFF000000)
+			*(pBase + xpix) = col;
+	}
+}
+
+void FGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars,  uint32_t inkCol, uint32_t paperCol)
+{
+	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
+
+	for (int y = 0; y < heightChars * 8; y++)
+	{
+		for (int x = 0; x < widthChars; x++)
+		{
+			const uint8_t charLine = *pSrc++;
+
+			for (int xpix = 0; xpix < 8; xpix++)
+			{
+				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
+				const uint32_t col = bSet ? inkCol : paperCol;
+				if (col != 0xFF000000)
+					*(pBase + xpix + (x * 8)) = col;
+			}
+		}
+
+		pBase += Width;
+	}
+}
+
+void FGraphicsView::DrawBitImageChars(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint32_t inkCol, uint32_t paperCol)
+{
+	for (int y = 0; y < heightChars; y++)
+	{
+		for (int x = 0; x < widthChars; x++)
+		{
+			DrawBitImage(pSrc, xp + (x * 8), yp + (y * 8), 1, 1, inkCol, paperCol);
+			pSrc+=8;
+		}
+	}
+}
+
+
+void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bScale, bool bMagnifier)
 {
 	const float imgScale = 1.0f;
 	ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -68,7 +133,7 @@ void DisplayTextureInspector(const ImTextureID texture, float width, float heigh
 		ImGui::EndTooltip();
 	}
 }
-
+/*
 void ClearGraphicsView(FGraphicsView& graphicsView, const uint32_t col)
 {
 	for (int i = 0; i < graphicsView.Width * graphicsView.Height; i++)
@@ -84,4 +149,4 @@ void DrawGraphicsView(const FGraphicsView& graphicsView, float xSize, float ySiz
 void DrawGraphicsView(const FGraphicsView& graphicsView, bool bMagnifier)
 {
 	DrawGraphicsView(graphicsView, (float)graphicsView.Width, (float)graphicsView.Height, false, bMagnifier);
-}
+}*/

@@ -175,6 +175,7 @@
     <ClCompile Include="..\..\Source\UI\Viewers\SpectrumViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\SpriteViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\ViewerBase.cpp" />
+    <ClCompile Include="..\..\Source\UI\Viewers\ZXGraphicsView.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_draw.cpp" />
@@ -236,6 +237,7 @@
     <ClInclude Include="..\..\Source\UI\Viewers\SpectrumViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\SpriteViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\ViewerBase.h" />
+    <ClInclude Include="..\..\Source\UI\Viewers\ZXGraphicsView.h" />
     <ClInclude Include="..\..\Source\UI\zx-roms.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\chips\am40010.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\chips\ay38910.h" />

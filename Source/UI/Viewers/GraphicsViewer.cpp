@@ -1,6 +1,6 @@
 #include "GraphicsViewer.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
-#include <Util/GraphicsView.h>
+#include "ZXGraphicsView.h"
 #include "../SpectrumEmu.h"
 #include "../GameConfig.h"
 #include <algorithm>
@@ -16,7 +16,7 @@ static int kGraphicsViewerHeight = 512;
 
 bool InitGraphicsViewer(FGraphicsViewerState &state)
 {
-	state.pGraphicsView = CreateGraphicsView(kGraphicsViewerWidth, kGraphicsViewerHeight);
+	state.pGraphicsView = new FZXGraphicsView(kGraphicsViewerWidth, kGraphicsViewerHeight);
 
 	return true;
 }
@@ -43,7 +43,7 @@ static const uint32_t g_kColourLUT[8] =
 // 00111000 - paper
 // 01000000 - bright
 // 10000000 - flash
-
+#if 0
 void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth, uint8_t colAttr)
 {
 	uint32_t* pBase = pDest + (xp + (yp * destWidth));
@@ -76,6 +76,7 @@ void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pD
 		pBase += destWidth;
 	}
 }
+#endif
 
 uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
 {
@@ -128,7 +129,7 @@ uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t add
 void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, int xPos, int columnWidth)
 {
 	uint16_t memAddr = startAddr;
-	FGraphicsView *pGraphicsView = state.pGraphicsView;
+	FZXGraphicsView *pGraphicsView = state.pGraphicsView;
 	
 	for (int y = 0; y < kGraphicsViewerHeight; y++)
 	{
@@ -156,7 +157,7 @@ void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, 
 					col = 4;
 			}*/
 
-			PlotImageAt(pImage, xPos + (xChar * 8), y, 1, 1, pGraphicsView->PixelBuffer, kGraphicsViewerWidth,col);
+			pGraphicsView->DrawCharLine(*pImage, xPos + (xChar * 8), y,col);
 
 			memAddr++;
 		}
@@ -166,7 +167,7 @@ void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, 
 // Viewer to view spectrum graphics
 void DrawGraphicsViewer(FGraphicsViewerState &state)
 {
-	FGraphicsView *pGraphicsView = state.pGraphicsView;	
+	FZXGraphicsView *pGraphicsView = state.pGraphicsView;	
 
 	int byteOff = 0;
 	//const int offsetMax = 0xffff - ((kGraphicsViewerWidth / 8) * kGraphicsViewerHeight);
@@ -183,7 +184,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	ImGui::Text("Memory Map Address: %s", NumStr((uint16_t)addrInput));
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	DrawGraphicsView(*pGraphicsView);
+	pGraphicsView->Draw();
 	uint16_t ptrAddress = 0;
 	if (ImGui::IsItemHovered())
 	{
@@ -234,7 +235,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	if(ImGui::Combo("ViewMode", &viewMode, "Character\0CharacterWinding\0Screen", (int)GraphicsViewMode::Count))
 		state.ViewMode = (GraphicsViewMode)viewMode;
 	ImGui::SliderInt("Heatmap frame threshold", &state.HeatmapThreshold, 0, 60);
-	ClearGraphicsView(*pGraphicsView, 0xff000000);
+	pGraphicsView->Clear(0xff000000);
 
 	ImGui::Text("Clicked Address: %s", NumStr(state.ClickedAddress));
 	ImGui::SameLine();
@@ -320,7 +321,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 							const uint8_t *pImage = state.pEmu->GetMemPtr( address);
 							const int xp = ((yLine & 1) == 0) ? xChar : (state.XSize - 1) - xChar;
 							if (address + graphicsUnitSize < 0xffff)
-								PlotImageAt(pImage, offsetX + (xp * 8), offsetY + yLine, 1, 1, pGraphicsView->PixelBuffer, kGraphicsViewerWidth);
+								pGraphicsView->DrawCharLine(*pImage, offsetX + (xp * 8), offsetY + yLine );
 							address++;
 						}
 					}
@@ -352,7 +353,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 			const int yDestPos = y0to2 | y3to5 | y6to7;	// or offsets together
 
 			// determine dest pointer for scanline
-			uint32_t* pLineAddr = pGraphicsView->PixelBuffer + (yDestPos * kGraphicsViewerWidth);
+			uint32_t* pLineAddr = pGraphicsView->GetPixelBuffer() + (yDestPos * kGraphicsViewerWidth);
 
 			// pixel line
 			for (int x = 0; x < 256 / 8; x++)

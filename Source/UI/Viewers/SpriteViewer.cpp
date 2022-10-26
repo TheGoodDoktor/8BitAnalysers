@@ -3,7 +3,7 @@
 #include "../SpectrumEmu.h"
 #include <algorithm>
 #include "../GameConfig.h"
-#include <Util/GraphicsView.h>
+#include "ZXGraphicsView.h"
 #include <Shared/Util/Misc.h>
 
 // Sprites
@@ -41,23 +41,22 @@ void GenerateSpriteListsFromConfig(FGraphicsViewerState &state, FGameConfig *pGa
 	}
 }
 
-void DrawSpriteOnGraphicsView(const FSpriteDef &spriteDef, int x, int y, FGraphicsView *pGraphicsView, FSpectrumEmu* pSpeccy)
+void DrawSpriteOnGraphicsView(const FSpriteDef &spriteDef, int x, int y, FZXGraphicsView *pGraphicsView, FSpectrumEmu* pSpeccy)
 {
 	const uint8_t *pImage = pSpeccy->GetMemPtr(spriteDef.Address);
-	PlotImageAt(pImage, 0, 0, spriteDef.Width, spriteDef.Height * 8, (uint32_t*)pGraphicsView->PixelBuffer, pGraphicsView->Width);
+	pGraphicsView->DrawBitImage(pImage, 0, 0, spriteDef.Width, spriteDef.Height);
 }
 
-void DrawSpriteList(const FSpriteDefList &spriteList, int &selection, FGraphicsView *pGraphicsView, FSpectrumEmu*pSpeccy)
+void DrawSpriteList(const FSpriteDefList &spriteList, int &selection, FZXGraphicsView *pGraphicsView, FSpectrumEmu*pSpeccy)
 {
 	ImGui::InputInt("SpriteNo", &selection, 1, 1);
 	selection = std::min(std::max(selection, 0), (int)spriteList.Sprites.size() - 1);
 
-	memset(pGraphicsView->PixelBuffer, 0, pGraphicsView->Width * pGraphicsView->Height * 4);
-
+	pGraphicsView->Clear(0);
 	DrawSpriteOnGraphicsView(spriteList.Sprites[selection], 0, 0, pGraphicsView, pSpeccy);
 }
 
-void DrawSpriteListGUI(FGraphicsViewerState &state, FGraphicsView *pGraphicsView)
+void DrawSpriteListGUI(FGraphicsViewerState &state, FZXGraphicsView *pGraphicsView)
 {
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawSpriteListGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
@@ -115,7 +114,7 @@ void DrawSpriteListGUI(FGraphicsViewerState &state, FGraphicsView *pGraphicsView
 		}
 		DrawSpriteList(pSpriteList->SpriteList, pSpriteList->Selection, pGraphicsView, state.pEmu);
 	}
-	DrawGraphicsView(*pGraphicsView);
+	pGraphicsView->Draw();
 
 	ImGui::EndChild();
 }

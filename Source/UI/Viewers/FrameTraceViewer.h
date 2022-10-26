@@ -8,7 +8,7 @@
 #include <string>
 
 class FSpectrumEmu;
-struct FGraphicsView;
+class FZXGraphicsView;
 
 struct FFrameOverviewItem
 {
@@ -62,6 +62,6 @@ private:
 
 	int		SelectedTraceLine = -1;
 	int		PixelWriteline = -1;
-	FGraphicsView*	ShowWritesView = nullptr;
+	FZXGraphicsView*	ShowWritesView = nullptr;
 
 };
