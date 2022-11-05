@@ -119,6 +119,7 @@ uint16_t z80dasm_op(uint16_t pc, z80dasm_input_t in_cb, z80dasm_output_t out_cb,
 #endif
 #define _STR(s) _z80dasm_str(s,out_cb,user_data);
 /* output offset as signed 8-bit string (decimal) */
+/* SamH - changed macros so we can define our own*/
 #ifndef _STR_D8
 #define _STR_D8(d8) _z80dasm_d8((int8_t)(d8),out_cb,user_data);
 #endif
@@ -371,7 +372,8 @@ uint16_t z80dasm_op(uint16_t pc, z80dasm_input_t in_cb, z80dasm_output_t out_cb,
                     switch (p) {
                         case 0: _STR("RET"); break;
                         case 1: _STR("EXX"); break;
-                        case 2: _STR("JP "); _STR(rp[2]); break;
+                        /* SamH. Added brackets. JP IX -> JP (IX). SkoolKit failed to assemble without brackets */
+                        case 2: _STR("JP ("); _STR(rp[2]); _CHR(')') break; 
                         case 3: _STR("LD SP,"); _STR(rp[2]); break;
                     }
                 }
