@@ -43,6 +43,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include <cassert>
 #include <Shared/Util/Misc.h>
 
+#include "Exporters/SkoolFileInfo.h"
 
 /* output an unsigned 8-bit value as hex string */
 void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data) 
@@ -675,6 +676,10 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
+
+	// Start in break mode so the memory will be in it's initial state. 
+	// Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
+	Break();
 }
 
 bool FSpectrumEmu::StartGame(const char *pGameName)
@@ -790,13 +795,6 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				std::string pokFile;
 				OpenFileDialog(pokFile, ".\\POKFiles", "POK\0*.pok\0");
 			}
-
-			if (ImGui::MenuItem("Import SkoolKit Skool File"))
-			{
-				std::string skoolFile;
-				OpenFileDialog(skoolFile, ".\\SkoolFiles", "*.skool\0");
-				ImportSkoolKitFile(CodeAnalysis, skoolFile.c_str());
-			}
 			
 			if (ImGui::MenuItem("Save Game Data"))
 			{
@@ -827,19 +825,29 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				}
 			}
 
-			if (ImGui::MenuItem("Export SkoolKit Control File"))
+			if (ImGui::BeginMenu("Export Skool File"))
 			{
-				if (pActiveGame != nullptr)
+				if (ImGui::MenuItem("Export as Hexadecimal"))
 				{
-					EnsureDirectoryExists("OutputASM/");
-					std::string gameName = pActiveGame->pConfig->Name;
-					std::string outCtlFname = "OutputASM/" + gameName + ".ctl";
-
-					ExportSkoolKitControlFile(CodeAnalysis, outCtlFname.c_str(), gameName.c_str(), 0x4000, 0xffff);
+					ExportSkoolFile(true /* bHexadecimal*/);
 				}
+				if (ImGui::MenuItem("Export as Decimal"))
+				{
+					ExportSkoolFile(false /* bHexadecimal*/);
+				}
+
+				if (ImGui::BeginMenu("DEBUG"))
+				{
+					// todo #ifndef RELEASE
+					if (ImGui::MenuItem("Export ROM"))
+					{
+						ExportSkoolFile(true /* bHexadecimal */, "rom");
+					}
+					ImGui::EndMenu();
+				}
+				ImGui::EndMenu();
 			}
 
-			// TODO: export data for skookit
 			if (ImGui::MenuItem("Export Region Info File"))
 			{
 			}
@@ -1368,6 +1376,99 @@ void FSpectrumEmu::DrawCheatsUI()
 		}
 		ImGui::PopID();
 	}
+}
+
+// Import a skool file to use in the disassembly.
+// If a game is active the gamedata will be backed up.
+// A skoolinfo file will be saved, which saves info that cannot be stored in the code analysis data.
+// This skoolinfo file will be used when exporting to help replicate the original skool file.
+// The name of the output skoolinfo file will be taken from the active game.
+// If no game is active the filename of the output skoolinfo file must be passed in pOutSkoolInfoName.
+// pSkoolInfo is optional. The skoolinfo data will be saved in pSkoolInfo if a pointer is passed in. 
+bool FSpectrumEmu::ImportSkoolFile(const char* pFilename, const char* pOutSkoolInfoName /* = nullptr*/, FSkoolFileInfo* pSkoolInfo /* = nullptr*/)
+{
+	// one of these must be set
+	if (!pActiveGame && !pOutSkoolInfoName)
+		return false;
+
+	LOGINFO("Importing skool file '%s'", pFilename);
+
+	if (pActiveGame)
+	{
+		// backup their gamedata
+		const std::string dataFName = "GameData/" + pActiveGame->pConfig->Name + ".bin.bak";
+		EnsureDirectoryExists("GameData");
+		if (!SaveGameData(CodeAnalysis, dataFName.c_str()))
+		{
+			LOGERROR("Failed to import skool file. Could not save backup of game data to '%s'", dataFName.c_str());
+			return false;
+		}
+	}
+	FSkoolFileInfo skoolInfo;
+	// use FSkoolFileInfo pointer if it's passed in. Otherwise use a temporary local struct.
+	FSkoolFileInfo* pInfo = pSkoolInfo ? pSkoolInfo : &skoolInfo;
+	if (!ImportSkoolKitFile(CodeAnalysis, pFilename, pSkoolInfo ? pSkoolInfo : pInfo))
+	{
+		LOGINFO("Failed to import '%s'", pFilename);
+		return false;
+	}
+
+
+	std::string gameName = pActiveGame ? pActiveGame->pConfig->Name.c_str() : pOutSkoolInfoName;
+	std::string skoolInfoFname("OutputSkoolKit/" + gameName + std::string(".skoolinfo"));
+	EnsureDirectoryExists("OutputSkoolKit");
+	LOGINFO("Saving skoolinfo file '%s'", skoolInfoFname.c_str());
+	if (!SaveSkoolFileInfo(*pInfo, skoolInfoFname.c_str()))
+	{
+		LOGINFO("Failed to save skoolinfo file '%s'", skoolInfoFname.c_str());
+		return false;
+	}
+
+	LOGINFO("Imported skool file '%s' successfully for '%s'.", pFilename, gameName.c_str());
+	LOGDEBUG("Disassembly range $%x-$%x. %d locations saved to skoolinfo file", pInfo->StartAddr, pInfo->EndAddr, pInfo->Locations.size());
+
+	return true;
+}
+
+bool FSpectrumEmu::ExportSkoolFile(bool bHexadecimal, const char* pName /* = nullptr*/)
+{
+	std::string outputDir = "OutputSkoolKit/";
+	EnsureDirectoryExists(outputDir.c_str());
+
+	std::string name = pName ? std::string(pName) : pActiveGame->pConfig->Name;
+	FSkoolFileInfo skoolInfo;
+	std::string skoolInfoFname = outputDir + name + ".skoolinfo";
+	bool bLoadedSkoolFileInfo = LoadSkoolFileInfo(skoolInfo, skoolInfoFname.c_str());
+	
+	std::string outFname = outputDir + name + ".skool";
+	::ExportSkoolFile(CodeAnalysis, outFname.c_str(), bHexadecimal ? FSkoolFile::Base::Hexadecimal : FSkoolFile::Base::Decimal, bLoadedSkoolFileInfo ? &skoolInfo : nullptr);
+	return true;
+}
+
+// Start a game, import a skool file and then export it, to test the SkoolKit importer and exporter are working properly.
+// You can optionally pass a game to start in pGameName. The output skool file will have the same name as the game.
+// If no game name is passed, then no game will be started and you must pass the name of the output skool file in pOutSkoolName.
+// This can be used to import and export skool files for the spectrum rom. 
+void FSpectrumEmu::DoSkoolKitTest(const char* pGameName, const char* pInSkoolFileName, bool bHexadecimal, const char* pOutSkoolName /* = nullptr*/)
+{
+	if (!pGameName && !pOutSkoolName)
+		return;
+
+	if (pGameName)
+	{
+		if (!StartGame(pGameName))
+			return;
+	}
+
+	FSkoolFileInfo skoolInfo;
+	std::string inSkoolPath = std::string("InputSkoolKit/") + pInSkoolFileName;
+    if (!ImportSkoolFile(inSkoolPath.c_str(), pOutSkoolName, &skoolInfo))
+		return;
+
+	EnsureDirectoryExists("OutputSkoolKit/");
+	std::string outFname = "OutputSkoolKit/" + std::string(pGameName ? pGameName : pOutSkoolName) + ".skool";
+	FSkoolFile::Base base = bHexadecimal ? FSkoolFile::Base::Hexadecimal : FSkoolFile::Base::Decimal;
+	::ExportSkoolFile(CodeAnalysis, outFname.c_str(), base, &skoolInfo);
 }
 
 // Util functions - move

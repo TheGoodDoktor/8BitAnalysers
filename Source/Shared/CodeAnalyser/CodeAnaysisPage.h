@@ -66,6 +66,7 @@ struct FCodeInfo : FItem
 		{
 			bool			bDisabled : 1;
 			bool			bSelfModifyingCode : 1;
+			bool			bUnused : 1;
 		};
 		uint32_t	Flags = 0;
 	};
@@ -109,6 +110,7 @@ struct FDataInfo : FItem
 		{
 			bool			bGameState : 1;
 			bool			bCodeOperand : 1;	// for self modifying code
+			bool			bUnused : 1;
 		};
 		uint32_t	Flags = 0;
 	};

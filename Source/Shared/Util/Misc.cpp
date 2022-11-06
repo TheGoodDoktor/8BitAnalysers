@@ -1,6 +1,8 @@
 #include "Misc.h"
 #include <stdio.h>
 #include <cassert>
+#include <sstream>
+#include <vector>
 
 static ENumberDisplayMode g_NumDispMode = ENumberDisplayMode::HexAitch;
 static const int kTextLength = 8;
@@ -35,7 +37,7 @@ const char* NumStr(uint8_t num)
 	switch (g_NumDispMode)
 	{
 	case ENumberDisplayMode::Decimal:
-		sprintf_s(pStrAddress, kTextLength, "%02d", num);
+		sprintf_s(pStrAddress, kTextLength, "%d", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexAitch:
@@ -59,7 +61,7 @@ const char* NumStr(uint16_t num)
 	switch (g_NumDispMode)
 	{
 	case ENumberDisplayMode::Decimal:
-		sprintf_s(pStrAddress, kTextLength, "%04d", num);
+		sprintf_s(pStrAddress, kTextLength, "%d", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexAitch:
@@ -72,5 +74,24 @@ const char* NumStr(uint16_t num)
 	default:
 		assert(0);
 		return nullptr;
+	}
+}
+
+void Tokenize(const std::string& stringToSplit, const char token, std::vector<std::string>& splitStrings)
+{
+	std::stringstream stringStream(stringToSplit);
+	std::string line;
+	splitStrings.clear();
+
+	if (stringToSplit.empty())
+	{
+		// special case: empty string
+		splitStrings.push_back("");
+		return;
+	}
+
+	while (std::getline(stringStream, line, token))
+	{
+		splitStrings.push_back(line);
 	}
 }
