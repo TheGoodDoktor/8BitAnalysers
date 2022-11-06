@@ -679,6 +679,17 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 
 	// Start in break mode so the memory will be in it's initial state. 
 	// Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
+	// 
+	// TODO: decode whole screen
+	const int oldScanlineVal = ZXEmuState.scanline_y;
+	ZXEmuState.scanline_y = 0;
+	for (int i = 0; i < ZXEmuState.frame_scan_lines; i++)
+	{
+		_zx_decode_scanline(&ZXEmuState);
+	}
+	ZXEmuState.scanline_y = oldScanlineVal;
+	ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
+
 	Break();
 }
 
@@ -1109,8 +1120,6 @@ void FSpectrumEmu::Tick()
 			CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
 		}
 	}
-
-	
 
 	// Draw UI
 	DrawDockingView();

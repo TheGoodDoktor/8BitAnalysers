@@ -11,26 +11,26 @@ static uint8_t DasmCB(void* user_data)
 	return pEmu->ReadByte(pEmu->dasmCurr++);
 }
 
-static uint16_t DisasmLen(FSpectrumEmu* pEmu, uint16_t pc)
+/*static uint16_t DisasmLen(FSpectrumEmu* pEmu, uint16_t pc)
 {
 	pEmu->dasmCurr = pc;
 	uint16_t next_pc = z80dasm_op(pc, DasmCB, 0, pEmu);
 	return next_pc - pc;
-}
+}*/
 
 int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEmu*pEmu)
 {
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bRead = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_RD);
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
-
+	
+	FCodeInfo* pCodeInfo = pEmu->CodeAnalysis.GetCodeInfoForAddress(pc);
 
 	// increment counters
-	pEmu->MemStats.ExecCount[pc]++;
-	const int op_len = DisasmLen(pEmu, pc);
-	for (int i = 1; i < op_len; i++) {
+	//pEmu->MemStats.ExecCount[pc]++;
+	//const int op_len = DisasmLen(pEmu, pc);
+	for (int i = 0; i < pCodeInfo->ByteSize; i++) 
 		pEmu->MemStats.ExecCount[(pc + i) & 0xFFFF]++;
-	}
 
 	if (bRead)
 		pEmu->MemStats.ReadCount[addr]++;
