@@ -2,12 +2,18 @@
 #include "CodeAnalyser.h"
 
 #include "Util/MemoryBuffer.h"
+#include "Util/GraphicsView.h"
 #include <cassert>
 
 //#include "json.hpp"
 std::vector<FCodeInfo*>	FCodeInfo::AllocatedList;
 std::vector<FCommentLine*>	FCommentLine::AllocatedList;
 std::vector<FCommentLine*>	FCommentLine::FreeList;
+
+FImageData::~FImageData() 
+{ 
+	delete GraphicsView; 
+}
 
 FCodeInfo* FCodeInfo::Allocate()
 {
@@ -82,6 +88,12 @@ void FCodeAnalysisPage::Reset(void)
 			for(int i=0;i<pCodeInfo->ByteSize;i++)
 				CodeInfo[addr + i] = nullptr;
 			//delete pCodeInfo;
+		}
+
+		if (DataInfo[addr].ImageData != nullptr)
+		{
+			delete DataInfo[addr].ImageData;
+			DataInfo[addr].ImageData = nullptr;
 		}
 		
 		/*if (DataInfo[addr] != nullptr)

@@ -143,6 +143,7 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeToolTips.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\ImageViewer.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.cpp" />
     <ClCompile Include="..\..\Source\Shared\Debug\Debug.cpp" />
@@ -205,6 +206,7 @@
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeToolTips.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\ImageViewer.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.h" />
     <ClInclude Include="..\..\Source\Shared\Debug\Debug.h" />

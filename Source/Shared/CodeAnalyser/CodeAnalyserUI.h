@@ -3,6 +3,9 @@
 
 struct FCodeAnalysisState;
 struct FDataInfo;
+class FGraphicsView;
+
+
 
 // UI
 void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr, bool bFunctionRel = false);
@@ -19,3 +22,4 @@ void DrawTrace(FCodeAnalysisState& state);
 void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo);
 
 void CodeAnalyserGoToAddress(FCodeAnalysisState& state, uint16_t newAddress, bool bLabel = false);
+

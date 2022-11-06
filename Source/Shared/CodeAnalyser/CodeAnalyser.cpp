@@ -8,6 +8,8 @@
 #include <util/m6502dasm.h>
 
 #include "Util/Misc.h"
+#include "Util/GraphicsView.h"
+#include "ImageViewer.h"
 
 #include "Z80/CodeAnalyserZ80.h"
 #include "6502/CodeAnalyser6502.h"
@@ -488,6 +490,8 @@ void RegisterCodeAnalysisPage(FCodeAnalysisState& state, FCodeAnalysisPage& page
 
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface)
 {
+	InitImageViewers();
+	
 	state.ResetLabelNames();
 
 	for (int i = 0; i < (1 << 16); i++)	// loop across address range
@@ -520,6 +524,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	state.KeyConfig[(int)Key::SetItemData] = 'D';
 	state.KeyConfig[(int)Key::SetItemText] = 'T';
 	state.KeyConfig[(int)Key::SetItemCode] = 'C';
+	state.KeyConfig[(int)Key::SetItemImage] = 'I';
 	state.KeyConfig[(int)Key::AddLabel] = 'L';
 	state.KeyConfig[(int)Key::Rename] = 'R';
 	state.KeyConfig[(int)Key::Comment] = 0xBF;
@@ -667,6 +672,22 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 		}
 	}
 }
+
+void SetItemImage(FCodeAnalysisState& state, FItem* pItem)
+{
+	FDataInfo* pDataItem = static_cast<FDataInfo*>(pItem);
+	if (pDataItem->DataType != DataType::Image)
+	{
+		pDataItem->DataType = DataType::Image;
+
+		if (pDataItem->ImageData == nullptr)
+			pDataItem->ImageData = new FImageData;
+
+		pDataItem->ImageData->ViewerId = 0;	// default to None
+		pDataItem->ByteSize = pDataItem->ImageData->SetSizeChars(1,1);
+	}
+}
+
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 {
 	if (state.GetLabelForAddress(address) == nullptr)

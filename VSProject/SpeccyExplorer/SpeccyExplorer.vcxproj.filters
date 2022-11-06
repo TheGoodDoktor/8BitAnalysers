@@ -273,6 +273,9 @@
     <ClCompile Include="..\..\Source\UI\Viewers\ZXGraphicsView.cpp">
       <Filter>Source Files\UI\Viewers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\ImageViewer.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
@@ -619,6 +622,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\UI\Viewers\ZXGraphicsView.h">
       <Filter>Source Files\UI\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\ImageViewer.h">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

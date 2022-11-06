@@ -8,6 +8,8 @@
 
 #define USE_PAGING 1
 
+class FGraphicsView;
+
 enum class LabelType;
 
 // CPU abstraction
@@ -67,6 +69,7 @@ enum class Key
 	SetItemData,
 	SetItemText,
 	SetItemCode,
+	SetItemImage,
 
 	AddLabel,
 	Rename,
@@ -146,6 +149,7 @@ public:
 
 	std::vector< class FCommand *>	CommandStack;
 
+public:
 	// Access functions for code analysis
 	static const int kPageShift = 10;
 	static const int kPageMask = 1023;
@@ -240,6 +244,7 @@ void SetItemCode(FCodeAnalysisState& state, uint16_t addr);
 void SetItemCode(FCodeAnalysisState &state, FItem *pItem);
 void SetItemData(FCodeAnalysisState &state, FItem *pItem);
 void SetItemText(FCodeAnalysisState &state, FItem *pItem);
+void SetItemImage(FCodeAnalysisState& state, FItem* pItem);
 void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText);
 
 

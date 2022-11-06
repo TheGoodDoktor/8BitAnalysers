@@ -97,6 +97,23 @@ enum class DataType
 	Blob,		// opaque data blob
 };
 
+// struct for additional image data
+struct FImageData
+{
+	~FImageData();
+
+	int			SetSizeChars(int w, int h)	// return byte size
+	{
+		XSizeChars = (uint8_t)w;
+		YSizeChars = (uint8_t)h;
+		return w * h * 8;
+	}
+	uint8_t			XSizeChars = 1;	// x size in chars for images
+	uint8_t			YSizeChars = 1;	// y size in chars for images
+	uint8_t			ViewerId = 0;	// Id of image viewer
+	class FGraphicsView* GraphicsView = nullptr;
+};
+
 struct FDataInfo : FItem
 {
 	FDataInfo() :FItem() { Type = ItemType::Data; }
@@ -113,12 +130,7 @@ struct FDataInfo : FItem
 		uint32_t	Flags = 0;
 	};
 
-	// attributes for image type data
-	struct
-	{
-		uint8_t			XSizeChars;	// x size in chars for images
-		uint8_t			YSizeChars;	// y size in chars for images
-	}ImgData;
+	FImageData*		ImageData = nullptr;	// additional data for images
 
 	int						LastFrameRead = -1;
 	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions

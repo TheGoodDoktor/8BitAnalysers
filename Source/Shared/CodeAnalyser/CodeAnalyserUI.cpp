@@ -2,6 +2,9 @@
 #include "CodeAnalyser.h"
 
 #include "Util/Misc.h"
+#include "Util/GraphicsView.h"
+#include "ImageViewer.h"
+
 
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
@@ -502,6 +505,11 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	}
 	break;
 
+	case DataType::Image:
+		if(pDataInfo->ImageData != nullptr)
+			ImGui::Text("Image %dx%d pixels", pDataInfo->ImageData->XSizeChars * 8, pDataInfo->ImageData->YSizeChars * 8);
+		break;
+
 	case DataType::Graphics:
 	case DataType::Blob:
 	default:
@@ -596,6 +604,63 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 
 	case DataType::Blob:
 		// draw memory detail
+		break;
+
+	case DataType::Image:
+	{
+		FImageData* pImageData = pDataInfo->ImageData;
+		bool bRebuildImage = false;
+		int sz[] = { pImageData->XSizeChars,pImageData->YSizeChars };
+		
+		if (ImGui::InputInt2("Image Size (chars)", sz))
+		{
+			pDataInfo->ByteSize = pImageData->SetSizeChars(sz[0], sz[1]);	
+			state.bCodeAnalysisDataDirty = true;	// force redraw of items
+			bRebuildImage = true;
+		}
+
+		// viewer drop down
+		const auto& viewerList = GetImageViewerList();
+		if (viewerList.empty() == false)
+		{
+			if (ImGui::BeginCombo("Viewer", viewerList[pImageData->ViewerId]->GetName()))
+			{
+				for (int i = 0; i < viewerList.size(); i++)
+				{
+					const bool bSelected = i == pImageData->ViewerId;
+					if (ImGui::Selectable(viewerList[i]->GetName(), bSelected))
+					{
+						pImageData->ViewerId = i;
+						bRebuildImage = true;
+					}
+
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+		}
+		
+		// Draw image
+		if (pDataInfo->ImageData->GraphicsView == nullptr)
+			bRebuildImage = true;
+
+		if(bRebuildImage)
+		{ 
+			delete pImageData->GraphicsView;
+
+			pImageData->GraphicsView = new FGraphicsView(64, 64);// pDataInfo->ImgData.XSizeChars * 8, pDataInfo->ImgData.YSizeChars * 8);
+			pImageData->GraphicsView->Clear();
+
+			viewerList[pImageData->ViewerId]->DrawImageToView(
+				pDataInfo->Address,
+				pImageData->XSizeChars, pImageData->YSizeChars,
+				pImageData->GraphicsView,
+				state.CPUInterface);
+		}
+		pImageData->GraphicsView->Draw();
+	}
+	break;
 	default:
 		break;
 	}
@@ -663,6 +728,10 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemText]))
 		{
 			SetItemText(state, state.pCursorItem);
+		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemImage]))
+		{
+			SetItemImage(state, state.pCursorItem);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddLabel]))
 		{
@@ -761,7 +830,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 					FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(addr);
 					if (pDataInfo != nullptr)
 					{
-						if (pDataInfo->DataType != DataType::Blob && pDataInfo->DataType != DataType::Graphics)
+						if (pDataInfo->DataType != DataType::Blob && pDataInfo->DataType != DataType::Graphics)	// not sure why we want this
 							nextItemAddress = addr + pDataInfo->ByteSize;
 						else
 							nextItemAddress = addr + 1;
@@ -785,8 +854,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 {
 	if (ImGui::BeginPopupContextItem("code item context menu"))
-	{
-		
+	{		
 		if (pItem->Type == ItemType::Data)
 		{
 			if (ImGui::Selectable("Toggle data type (D)"))
@@ -800,6 +868,10 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 			if (ImGui::Selectable("Set as Code (C)"))
 			{
 				SetItemCode(state, pItem);
+			}
+			if (ImGui::Selectable("Set as Image (I)"))
+			{
+				SetItemImage(state, pItem);
 			}
 			if (ImGui::Selectable("Toggle Data Breakpoint"))
 				state.CPUInterface->ToggleDataBreakpointAtAddress(pItem->Address, pItem->ByteSize);
@@ -1122,3 +1194,5 @@ void DrawGlobals(FCodeAnalysisState &state)
 		ImGui::EndTabBar();
 	}
 }
+
+
