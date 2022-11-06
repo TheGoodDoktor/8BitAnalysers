@@ -1,21 +1,23 @@
 
 #include "SkoolkitImporter.h"
+#include "UI/Exporters/SkoolFileInfo.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "Debug/Debug.h"
+#include "Shared/Util/Misc.h"
+
+#include <algorithm> // for std::count
 
 const std::string kWhiteSpace = " \n\r\t\f\v";
-const std::string kSkoolKitDirectives = "bcgistuw";
 const char kSkoolkitDirectiveNone = '-';
 
 struct FSkoolkitInstruction
 {
-	bool HasValidDirective()
-	{
-		return kSkoolKitDirectives.find(Directive) != std::string::npos;
-	}
-	char Directive = kSkoolkitDirectiveNone;	// Sam: Why don't you use an enum?
+	char BlockDirective = kSkoolkitDirectiveNone;
+	char SubBlockDirective = kSkoolkitDirectiveNone;
+	bool bBranchDestination = false; // is this address a branch destination (i.e. a line starting with an asterisk '*')
 	uint16_t Address = 0;
 	std::string Comment;
+	std::string Operation; // the disassembly text
 };
 
 std::string TrimLeadingChars(const std::string& str, const std::string& charsToTrim)
@@ -29,47 +31,135 @@ std::string TrimLeadingWhitespace(const std::string& str)
 	return TrimLeadingChars(str, kWhiteSpace);
 }
 
+void RemoveCarriageReturn(std::string& str)
+{
+	if (str.empty())
+		return;
+	if (str.back() == '\n' || str.back() == '\r')
+		str.pop_back();
+}
+
 bool StringStartsWith(const std::string& str, const std::string& substring)
 {
 	return (str.rfind(substring, 0) == 0);
 }
 
-void ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
+char GetDirectiveFromAsm(const std::string& str)
+{
+	if (StringStartsWith(str, "DEF") || StringStartsWith(str, "def"))
+	{
+		if (str[3] == 'B' || str[3] == 'b')
+			return 'b';
+		if (str[3] == 'W' || str[3] == 'w')
+			return 'w';
+		if (str[3] == 'M' || str[3] == 'm')
+			return 't';
+		if (str[3] == 'S' || str[3] == 's')
+			return 'b'; // todo
+	}
+	// if it's not a DEF* statement then we presume it's code
+	return 'c';
+}
+
+bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 {
 	if (strLine.length() < 6)
-		return;
+		return false;
 
-	instruction.Directive = strLine[0];
-
+	if (strLine[0] == '*')
+		instruction.bBranchDestination = true;
+	else if (strLine[0] != ' ')
+		instruction.BlockDirective = strLine[0];
+	
 	if (strLine[1] == '$')
 	{
 		// hexadecimal address
-		instruction.Address = static_cast<uint16_t>(strtol(strLine.substr(2, 4).c_str(), NULL, 16));
+		std::string numStr = strLine.substr(2, 4);
+		instruction.Address = static_cast<uint16_t>(strtol(numStr.c_str(), nullptr, 16));
+		if (instruction.Address == 0)
+		{
+			if (numStr == "0000")
+			{
+				// Deal with the special case of the address being 0.
+				// We do this because strtol will return 0 if it fails.
+				// We want to differentiate between a valid address of 0 and a failure.
+			}
+			else
+			{
+				return false;
+			}
+		}
 	}
 	else
 	{
 		// decimal address
-		instruction.Address = static_cast<uint16_t>(strtol(strLine.substr(1, 5).c_str(), NULL, 10));
+		std::string numStr = strLine.substr(1, 5);
+		instruction.Address = static_cast<uint16_t>(strtol(numStr.c_str(), nullptr, 10));
+		if (instruction.Address == 0)
+		{
+			if (numStr == "00000")
+			{
+				// do nothing
+			}
+			else
+			{
+				return false;
+			}
+		}
 	}
 
-	size_t commentStart = strLine.find_first_of(';');
-	if (commentStart != std::string::npos)
-	{
-		// skip leading space and ';'
-		commentStart += 2;
+	const size_t opStart = 7;
+	size_t opLen = std::string::npos;
 
-		if (commentStart < strLine.length())
+	// get the comment string
+	// todo deal with semicolons in strings
+	const size_t semicolonPos = strLine.find_first_of(';');
+	if (semicolonPos != std::string::npos)
+	{
+		// calculate where the operation text begins
+		opLen = semicolonPos - opStart;
+
+		size_t strLen = strLine.length();
+
+		// skip ';' and leading space of comment
+		size_t commentStart = semicolonPos + 2;
+
+		if (commentStart == strLen)
+		{
+			// Special case. We have an empty comment.
+			// Empty comments occur in the skool file on data lines when we're between lines that contain 
+			// a comment with an open and close brace. i.e. { and }
+			// To preserve these we set the comment to be a carriage return. This forces an empty comment 
+			// to be written out when exporting.
+			instruction.Comment = "\n";
+		}
+		else if (commentStart < strLen)
 		{
 			instruction.Comment = strLine.substr(commentStart);
 
-			// remove carriage return
-			if (instruction.Comment.back() == '\n' || instruction.Comment.back() == '\r')
-				instruction.Comment.pop_back();
+			RemoveCarriageReturn(instruction.Comment); // do I need to do this?
 		}
 	}
+	
+	// skip trailing spaces of disassembly text
+	if (semicolonPos != std::string::npos)
+	{
+		size_t opEnd = strLine.find_last_not_of(' ', semicolonPos-1);
+		if (opEnd != std::string::npos)
+			opLen = opEnd+1 - opStart;
+	}
+
+	// get the disassembly text inbetween the address and the comment
+	instruction.Operation = strLine.substr(opStart, opLen);
+
+	RemoveCarriageReturn(instruction.Operation);
+
+	instruction.SubBlockDirective = GetDirectiveFromAsm(instruction.Operation);
+
+	return true;
 }
 
-void ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, std::string& label)
+bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, std::string& label)
 {
 	if (StringStartsWith(strLine, "@label="))
 	{
@@ -84,6 +174,7 @@ void ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 			if (label.back() == '\n' || label.back() == '\r')
 				label.pop_back();
 		}
+		return true;
 	}
 	else if (StringStartsWith(strLine, "@equ="))
 	{
@@ -107,52 +198,142 @@ void ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 					addressStr = addressStr.substr(1, 4);
 					uint16_t address = static_cast<uint16_t>(std::stoul(addressStr, nullptr, 16));
 
-					// Mark, not sure this is right?
-					// I don't know if the address is code or data, or if it already contains a label.
-					// Hence, me doing AddLabelAtAddress() first because that will only create a label if one doesn't exist.
-					// AddLabelAtAddress() also seems to work out the label type so it feels right? 
-					
 					AddLabelAtAddress(state, address);
 					if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(address))
 					{
 						SetLabelName(state, pLabelInfo, labelStr.c_str());
 					}
 				}
-
 				// todo: decimal and 0x notation
+
+				return false;
 			}
 		}
 	}
+
+	return false;
 }
 
+// Split a string containing comma delimited items into individual strings.
+// Items can be text in quotes or numeric values.
+void SplitCommaDelimitedItems(const std::string& str, std::vector<std::string>& items)
+{
+	items.clear();
+	
+	if (str.empty())
+		return;
 
-// todo: backup existing game data
+	bool bInString = false;
+	size_t start = 0;
+	char c;
+	bool bEscapeChar = false;
+	for (size_t i=0; i<str.size(); i++)
+	{
+		c = str[i];
+		
+		if (c == '"')
+		{
+			if (!bEscapeChar)
+			{
+				// ignore this quote if it's part of an escape sequence
+				bInString = !bInString;
+			}
+		}
 
-bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
+		bEscapeChar = c == '\\';
+
+		if (!bInString)
+		{
+			if (c == ',')
+			{
+				std::string subStr = str.substr(start, i-start);
+				items.push_back(subStr);
+				start = i+1; 
+			}
+		}
+	}
+	// add the remainder of the string 
+	items.push_back(str.substr(start));
+}
+
+// Given a string will count the number of bytes that string represents.
+// The string can contain either text in quotes or numeric values
+// eg "RND" = 3 bytes
+//    255 = 1 byte
+//    "\"" = 1 byte
+uint16_t CountDataBytes(std::string str)
+{
+	uint16_t size = 0;
+	size_t first = str.find('"');
+	size_t last = str.find_last_of('"');
+	if (first != std::string::npos && last != std::string::npos)
+	{
+		for (size_t i=first+1; i<last; i++)
+		{
+			char c = str[i];
+			if (c != '\\') // don't count escape characters
+				size++;
+		}
+	}
+	else
+	{
+		// if we didn't find a string we presume it's a byte value
+		// todo word values
+		size += 1; 
+	}
+	return size;
+}
+
+bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FSkoolFileInfo* pSkoolInfo /*=nullptr*/)
 {
 	FILE* fp = nullptr;
-	char pchLine[1024];
-	fopen_s(&fp, pTextFileName, "rt");
+	char pchLine[65536];
+	// note: "rt" = text mode, which means Windows line endings \r\n will be converted into \n
+	fopen_s(&fp, pTextFileName, "rt");  
 
 	if (fp == nullptr)
 		return false;
 
-	char curDirective = kSkoolkitDirectiveNone;
+	char blockDirective = kSkoolkitDirectiveNone;
+	char subBlockDirective = kSkoolkitDirectiveNone;
+
 	std::string comments;
 	std::string label;
-	while (fgets(pchLine, 1024, fp))	// Sam: this could cause a problem if the line is greate than 1024 bytes 
+	FItem* pLastItem = nullptr;
+
+	uint16_t minAddr=0xffff;
+	uint16_t maxAddr=0;
+
+	// only used if pSkoolInfo is set
+	FSkoolFileLocation skoolLocation;
+	const FSkoolFileLocation kSkoolLocationDefault;
+	bool bInRsubSection = false;
+
+	unsigned int lineNum = 0;
+	while (fgets(pchLine, 65536, fp))
 	{
 		std::string strLine = pchLine;
+		lineNum++;
 
-		if (strLine[0] == '\n' || strLine[0] == '\r')
+		if (bInRsubSection)
 		{
-			// skip blank lines
+			if (StringStartsWith(strLine, "@rsub+end"))
+				bInRsubSection = false;
+			else
+				LOGINFO("Skipping @rsub text '%s' on line %d", pchLine, lineNum);
 			continue;
 		}
 
 		if (strLine[0] == '@')
 		{
-			ParseAsmDirective(state, strLine, label);
+			if (!ParseAsmDirective(state, strLine, label))
+				comments += strLine;
+
+			if (StringStartsWith(strLine, "@rsub+begin"))
+			{
+				bInRsubSection = true;
+			}
+			
 			continue;
 		}
 
@@ -165,40 +346,84 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 		std::string trimmed = TrimLeadingWhitespace(strLine);
 		if (trimmed[0] == ';')
 		{
-			// todo: deal with instruction comment continuation
-			// eg the second line here:
-			// c$028E LD L, $2F		; The initial key value for each line will be & 2F,
-			//						; &2E, ..., & 28. (Eight lines.)
+			// instruction comment continuation
+			if (pLastItem)
+			{
+				if (pLastItem->Comment.back() != '\n')
+					pLastItem->Comment += "\n";
+				pLastItem->Comment += trimmed.substr(2);
+				RemoveCarriageReturn(pLastItem->Comment);
+			}
 			continue;
 		}
 
+		if (trimmed.empty())
+		{
+			// skip blank lines
+			continue;
+		}
+		
 		// we've got an instruction.
 		// get directive, address and comment 
 		FItem* pItem = nullptr;
-		FSkoolkitInstruction instruction;	// Sam: it's called instruction even when it can be data - is that right?
-		ParseInstruction(strLine, instruction);
-
-		if (instruction.HasValidDirective() && curDirective != instruction.Directive)
+		FSkoolkitInstruction instruction;
+		if (!ParseInstruction(strLine, instruction))
 		{
-			curDirective = instruction.Directive;
+			RemoveCarriageReturn(strLine);
+			LOGWARNING("Parse error on line %d. Could not parse instruction: '%s'", lineNum, strLine.c_str());
+			return false;
 		}
-		
-		switch (curDirective)
+
+		if (pLastItem && instruction.Address < pLastItem->Address)
+		{
+			// if this address is lower than the last one we saw then something has gone wrong, so abort
+			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", lineNum, instruction.Address, instruction.Address, pLastItem->Address, pLastItem->Address);
+			return false;
+		}
+
+		if (pSkoolInfo)
+		{
+			skoolLocation = FSkoolFileLocation();
+			skoolLocation.bBranchDestination = instruction.bBranchDestination;
+			skoolLocation.BlockDirective = GetDirectiveFromChar(instruction.BlockDirective);
+		}
+
+		if (instruction.BlockDirective != kSkoolkitDirectiveNone && blockDirective != instruction.BlockDirective)
+		{
+			// we've encountered a new block
+			blockDirective = instruction.BlockDirective;
+			subBlockDirective = instruction.SubBlockDirective; 
+			if (pSkoolInfo)
+				skoolLocation.BlockDirective = GetDirectiveFromChar(blockDirective);// is this needed? we're doing it above
+		}
+
+		if (instruction.SubBlockDirective != subBlockDirective)
+		{
+			// we've encountered a new sub-block
+			subBlockDirective = instruction.SubBlockDirective;
+
+			if (pSkoolInfo)
+				skoolLocation.SubBlockDirective = GetDirectiveFromChar(subBlockDirective);
+		}
+
+		switch (instruction.SubBlockDirective)
 		{
 		case 'c':
 		{
 			// Address is code
 
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
-
 			if (!pCodeInfo)
 			{
-				// Mark, I presume this is ok to set as code?
 				SetItemCode(state, instruction.Address);
 				pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
 
 			}
 			pItem = pCodeInfo;
+
+			
+			if (blockDirective == 'u')
+				pCodeInfo->bUnused = true;
 		}
 		break;
 		case 'b':
@@ -206,15 +431,6 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 		{
 			// Address is data
 			
-			// Mark, is this right? How do I know if I need to get ReadData or WriteData?
-			// Also, not sure if we need to deal with the scenario that this address is set to code?
-			// Oh, but didn't you say all memory locations will have data info, even if set to code?
-			// If so, then I presume this is ok?
-
-			// Sam - This will always return a valid pointer as every address always has a data item
-			// Code items take priority
-			// if Skoolkit thinks it's data but there is a code item there then it need to be looked at
-			// sometimes it can be selfmodifying code
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(instruction.Address);
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
 			if (pCodeInfo)
@@ -228,33 +444,65 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 			{
 				pItem = pDataInfo;
 
-				if (instruction.Directive == 'w')
+				// count how many entries we have
+				const uint16_t numItems = static_cast<uint16_t>(std::count(instruction.Operation.begin(), instruction.Operation.end(), ',') + 1);
+				std::string defStatement = instruction.Operation.substr(0, 4);
+				
+				if (defStatement == "DEFB" || defStatement == "defb")
 				{
-					// data is 16 bits wide
-					
-					// Mark, couldn't get this to work.
-					// Is what I'm doing here right?
-					// Edit: I think it's because the location is set to code.
-					// For an example of where it is used see STRMDATA table at $15c6
-
-					pDataInfo->DataType = DataType::Word;
-					pDataInfo->ByteSize = 2;
-					//SetItemData(state, pDataInfo); //this sets the item to code!
+					if (numItems == 1)
+						pDataInfo->DataType = DataType::Byte;
+					else
+						pDataInfo->DataType = DataType::ByteArray;
+					pDataInfo->ByteSize = numItems;
 				}
+				else if (defStatement == "DEFW" || defStatement == "defw")
+				{
+					if (numItems == 1)
+						pDataInfo->DataType = DataType::Word;
+					else
+						pDataInfo->DataType = DataType::WordArray;
+					pDataInfo->ByteSize = numItems * 2;
+				}
+
+				if (blockDirective == 'g')
+					pDataInfo->bGameState = true;
+				else if (blockDirective == 'u')
+					pDataInfo->bUnused = true;
 			}
 		}
 		break;
 		case 't':
 		{
 			// Address is text
-
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(instruction.Address);
 			if (pDataInfo)
 			{
-				// Mark, I presume this is all I need to do to mark this location as text?
-				// Sorry, I'm repeating myself.
-				SetItemText(state, pDataInfo);
+				std::string defStatement = instruction.Operation.substr(0, 4);
 
+				std::vector<std::string> elements;
+				SplitCommaDelimitedItems(instruction.Operation.substr(5), elements);
+
+				// This loop counts the number of bytes declared in the DEFM instruction.
+				// It can deal with byte values in addition to text strings.
+				// eg DEFM "One",2,"Three"
+				uint16_t byteSize = 0;
+				for (std::string& str : elements)
+				{
+					byteSize += CountDataBytes(str);
+				}
+
+				if (byteSize > 0)
+				{
+					pDataInfo->DataType = DataType::Text;
+
+					// SetItemText doesnt set the number of bytes correctly (compared to how skoolkit does it),
+					// so we set the byte size afterwards based on how many bytes we counted in the statement.
+					// (also SetItemText() doesn't deal with bit 7 terminated strings)
+					pDataInfo->ByteSize = byteSize;
+
+					// todo check we're not overlapping items.
+				}
 				pItem = pDataInfo;
 			}
 		}
@@ -276,7 +524,11 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 			if (pBlock == nullptr)
 				pBlock = AddCommentBlock(state, instruction.Address);
 			else
-				LOGWARNING("SkoolkitImporter: Replacing existing comment block: %s", pBlock->Comment.c_str());
+			{
+				std::string commentExcerpt = pBlock->Comment.substr(0, 1024);
+				RemoveCarriageReturn(commentExcerpt);
+				LOGWARNING("SkoolkitImporter: Replacing existing comment block: '%s'", commentExcerpt.c_str());
+			}
 
 			pBlock->Comment = comments;
 			comments.clear();
@@ -285,17 +537,6 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 		if (!label.empty())
 		{
 			LabelType labelType = LabelType::Data;
-
-			/*
-			if (instruction.Directive == 'c')
-				labelType = LabelType::Function;
-			else if (curDirective == 'c')
-				labelType = LabelType::Code;
-			// This this will create a memory leak if a label already exists
-			AddLabel(state, instruction.Address, label.c_str(), labelType);*/
-			 
-			// Mark, I wasn't sure if I should infer the label type from the current directive (as above) or to be passive
-			// and let AddLabelAtAddress() figure it out?
 			
 			AddLabelAtAddress(state, instruction.Address);
 			if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(instruction.Address))
@@ -305,8 +546,28 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName)
 			
 			label.clear();
 		}
+
+		if (pSkoolInfo)
+		{
+			if (instruction.BlockDirective != 's') // todo: repeated data
+			{
+				if (!(skoolLocation == kSkoolLocationDefault))
+					pSkoolInfo->Locations[instruction.Address] = skoolLocation;
+			}
+		}
+
+		minAddr = std::min(instruction.Address, minAddr);
+		maxAddr = std::max(instruction.Address, maxAddr);
+
+		pLastItem = pItem;
 	}
 
+	if (pSkoolInfo)
+	{
+		pSkoolInfo->StartAddr = minAddr;
+		pSkoolInfo->EndAddr = maxAddr;
+	}
+	
 	state.bCodeAnalysisDataDirty = true;
 	return true;
 }

@@ -123,6 +123,10 @@ int main(int argc, char** argv)
 	if (argc > 1)
         pSpectrumEmulator->StartGame(argv[1]);
 
+    // The skool file to import can be passed as the second argument, following the name of the game to start.
+    if (argc > 2)
+        pSpectrumEmulator->ImportSkoolFile(argv[2]);
+
     // Main loop
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
