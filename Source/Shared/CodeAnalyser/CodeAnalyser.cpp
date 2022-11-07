@@ -825,7 +825,7 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 					{
 						const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 						char valTxt[16];
-						sprintf(valTxt, "%s%c", NumStr(val), i < pDataInfo->ByteSize - 1 ? ',':' ');
+						sprintf_s(valTxt, "%s%c", NumStr(val), i < pDataInfo->ByteSize - 1 ? ',':' ');
 						textString += valTxt;
 					}
 					fprintf(fp, "db %s", textString.c_str());
@@ -845,7 +845,7 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 					{
 						const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
 						char valTxt[16];
-						sprintf(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
+						sprintf_s(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
 						textString += valTxt;
 					}
 					fprintf(fp, "dw %s", textString.c_str());

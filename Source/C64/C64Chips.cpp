@@ -54,6 +54,7 @@
 #include "GraphicsViewer/C64GraphicsViewer.h"
 #include "C64Display.h"
 #include "C64GamesList.h"
+#include <Util/Misc.h>
 
 class FC64Emulator : public IInputEventHandler , public ICPUInterface
 {
@@ -67,16 +68,26 @@ public:
     void	OnKeyUp(int keyCode) override;
     void	OnKeyDown(int keyCode) override;
     void	OnChar(int charCode) override;
+    void    OnGamepadUpdated(int mask) override;
     // End IInputEventHandler interface implementation
 
     // Begin ICPUInterface interface implementation
-    uint8_t		ReadByte(uint16_t address) override
+    uint8_t		ReadByte(uint16_t address) const override
     {
-        return mem_rd(&C64Emu.mem_cpu, address);
+        return mem_rd(const_cast<mem_t*>(&C64Emu.mem_cpu), address);
     }
-    uint16_t	ReadWord(uint16_t address) override
+    uint16_t	ReadWord(uint16_t address) const override
     {
-        return mem_rd16(&C64Emu.mem_cpu, address);
+        return mem_rd16(const_cast<mem_t*>(&C64Emu.mem_cpu), address);
+    }
+    const uint8_t* GetMemPtr(uint16_t address) const override
+    {
+        return mem_readptr(const_cast<mem_t*>(&C64Emu.mem_cpu), address);
+    }
+
+    void WriteByte(uint16_t address, uint8_t value) override
+    {
+        mem_wr(&C64Emu.mem_cpu, address, value);
     }
 
     uint16_t	GetPC(void) override
@@ -96,14 +107,47 @@ public:
         C64UI.dbg.dbg.step_mode = UI_DBG_STEPMODE_NONE;
     }
 
+    void    StepOver(void) override
+    {
+    }
+
+    void	StepInto(void) override
+    {
+    }
+
+    void	StepFrame(void) override
+    {
+    }
+
+    void	StepScreenWrite(void) override
+    {
+    }
+
     void	GraphicsViewerSetAddress(uint16_t address) override
     {
     }
 
-    bool	ExecThisFrame(void) override { return true; }
+    bool	IsAddressBreakpointed(uint16_t addr) override
+    {
+        return false;
+    }
+
+    bool	ToggleExecBreakpointAtAddress(uint16_t addr) override
+    {
+        return false;
+    }
+
+    bool	ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize) override
+    {
+        return false;
+    }
+
+    bool	ShouldExecThisFrame(void) const override { return true; }
 
     void InsertROMLabels(struct FCodeAnalysisState& state) override {}
     void InsertSystemLabels(struct FCodeAnalysisState& state) override {}
+
+
     // End ICPUInterface interface implementation
 
     c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
@@ -140,6 +184,7 @@ private:
     FCodeAnalysisPage   RAM[64];            // 64K RAM
 
     uint8_t             LastMemPort = 0x7;  // Default startup
+    uint16_t            LastPC = 0;
 
     FC64IOAnalysis      IOAnalysis;
     FC64GraphicsViewer  GraphicsViewer;
@@ -295,6 +340,7 @@ bool FC64Emulator::Init()
     ui_c64_init(&C64UI, &uiDesc);
 
     CPUType = ECPUType::M6502;
+    SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 
     // setup default memory configuration
     // RAM - $0000 - $9FFF - pages 0-39 - 40K
@@ -727,6 +773,15 @@ void FC64Emulator::OnKeyDown(int keyCode)
     c64_key_down(&C64Emu, GetC64KeyFromKeyCode(keyCode));
 }
 
+void FC64Emulator::OnGamepadUpdated(int mask)
+{
+    if (c64_joystick_type(&C64Emu) != C64_JOYSTICKTYPE_NONE)
+    {
+        c64_joystick(&C64Emu, mask, 0);
+    }
+}
+
+
 void FC64Emulator::OnChar(int charCode)
 {
     int c = charCode;
@@ -752,21 +807,22 @@ void    FC64Emulator::OnBoot(void)
     c64_init(&C64Emu, &desc);
 }
 
+// pc points to instruction after the one just executed so we use the previous pc
 int    FC64Emulator::OnCPUTrap(uint16_t pc, int ticks, uint64_t pins)
 {
     const uint16_t addr = M6502_GET_ADDR(pins);
     const bool bMemAccess = !!(pins & M6502_RDY);
     const bool bWrite = !!(pins & M6502_RW);
 
-    // TODO: Implement - use Speccy one as guide
-    RegisterCodeExecuted(CodeAnalysis, pc);
-    FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(pc);
+    bool bBreak = RegisterCodeExecuted(CodeAnalysis, LastPC, pc);
+    FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(LastPC);
     pCodeInfo->FrameLastAccessed = CodeAnalysis.CurrentFrameNo;
 
     // check for breakpointed code line
-    if (pCodeInfo->bBreakpointed)
+    if (bBreak)
         return UI_DBG_BP_BASE_TRAPID;
 
+    LastPC = pc;
     return 0;
 }
 
@@ -798,7 +854,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
         {
 
             if (CodeAnalysis.bRegisterDataAccesses)
-                RegisterDataAccess(CodeAnalysis, pc, addr, false);
+                RegisterDataRead(CodeAnalysis, pc, addr);
 
             if (bIOMapped && (addr >> 12) == 0xd)
             {
@@ -808,7 +864,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
         else
         {
             if (CodeAnalysis.bRegisterDataAccesses)
-                RegisterDataAccess(CodeAnalysis, pc, addr, true);
+                RegisterDataWrite(CodeAnalysis, pc, addr);
 
             CodeAnalysis.SetLastWriterForAddress(addr, pc);
 

@@ -26,6 +26,9 @@ public:
 
 	uint32_t* GetPixelBuffer() { return PixelBuffer; }
 	const uint32_t* GetPixelBuffer() const { return PixelBuffer; }
+
+	int GetWidth() const { return Width; }
+	int GetHeight() const { return Height; }
 private:
 	int				Width = 0;
 	int				Height = 0;

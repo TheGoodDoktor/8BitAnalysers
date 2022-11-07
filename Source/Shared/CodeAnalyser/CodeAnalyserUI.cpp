@@ -625,7 +625,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		{
 			if (ImGui::BeginCombo("Viewer", viewerList[pImageData->ViewerId]->GetName()))
 			{
-				for (int i = 0; i < viewerList.size(); i++)
+				for (int i = 0; i < (int)viewerList.size(); i++)
 				{
 					const bool bSelected = i == pImageData->ViewerId;
 					if (ImGui::Selectable(viewerList[i]->GetName(), bSelected))

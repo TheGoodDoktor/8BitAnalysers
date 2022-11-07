@@ -30,7 +30,7 @@ bool FC64GamesList::EnumerateGames()
 
 int		FC64GamesList::DrawGameSelect()
 {
-    for (int gameNo = 0; gameNo < GamesList.size(); gameNo++)
+    for (int gameNo = 0; gameNo < (int)GamesList.size(); gameNo++)
     {
         if (ImGui::Selectable(GamesList[gameNo].Name.c_str(),SelectedGame == gameNo))
         {

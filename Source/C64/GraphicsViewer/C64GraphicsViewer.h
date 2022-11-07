@@ -5,7 +5,7 @@
 struct FCodeAnalysisState;
 #pragma once
 
-struct FGraphicsView;
+class FGraphicsView;
 
 class FC64GraphicsViewer
 {

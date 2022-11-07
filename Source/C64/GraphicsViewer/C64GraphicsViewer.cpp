@@ -17,8 +17,8 @@ void FC64GraphicsViewer::Init(FCodeAnalysisState* pAnalysis, void* pEmu)
 {
 	C64Emu = pEmu;
 	CodeAnalysis = pAnalysis;
-	CharacterView = CreateGraphicsView(320, 408);	// 40 * 51 enough for a 16K Vic bank
-	SpriteView = CreateGraphicsView(384, 16 * 21); // 16x16 sprites for a VIC bank
+	CharacterView = new FGraphicsView(320, 408);	// 40 * 51 enough for a 16K Vic bank
+	SpriteView = new FGraphicsView(384, 16 * 21); // 16x16 sprites for a VIC bank
 	SpriteCols[0] = 0x00000000;
 	SpriteCols[1] = 0xffffffff;
 	SpriteCols[2] = 0xff888888;
@@ -37,7 +37,7 @@ void FC64GraphicsViewer::Shutdown()
 
 void DrawHiresImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, uint32_t* cols)
 {
-	uint32_t* pBase = pGraphicsView->PixelBuffer + (xp + (yp * pGraphicsView->Width));
+	uint32_t* pBase = pGraphicsView->GetPixelBuffer() + (xp + (yp * pGraphicsView->GetWidth()));
 
 	*pBase = 0;
 	for (int y = 0; y < heightPix; y++)
@@ -55,13 +55,13 @@ void DrawHiresImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int h
 			}
 		}
 
-		pBase += pGraphicsView->Width;
+		pBase += pGraphicsView->GetWidth();
 	}
 }
 
 void DrawMultiColourImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, uint32_t* cols)
 {
-	uint32_t* pBase = pGraphicsView->PixelBuffer + (xp + (yp * pGraphicsView->Width));
+	uint32_t* pBase = pGraphicsView->GetPixelBuffer() + (xp + (yp * pGraphicsView->GetWidth()));
 
 	*pBase = 0;
 	for (int y = 0; y < heightPix; y++)
@@ -80,7 +80,7 @@ void DrawMultiColourImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars,
 			}
 		}
 
-		pBase += pGraphicsView->Width;
+		pBase += pGraphicsView->GetWidth();
 	}
 }
 
@@ -110,7 +110,7 @@ void FC64GraphicsViewer::DrawUI()
 			// Sprite Viewer
 			ImGui::Checkbox("Multi-Colour", &SpriteMultiColour);
 			const uint16_t vicBankAddr = VicBankNo * 16384;
-			ClearGraphicsView(*SpriteView, 0);
+			SpriteView->Clear(0);
 
 			for (int y = 0; y < 16; y++)
 			{
@@ -125,7 +125,7 @@ void FC64GraphicsViewer::DrawUI()
 				}
 			}
 
-			DrawGraphicsView(*SpriteView);
+			SpriteView->Draw();
 
 			// Colour selection
 			ImGui::Text("Sprite Colours");
@@ -170,7 +170,7 @@ void FC64GraphicsViewer::DrawUI()
 			ImGui::Checkbox("Multi-Colour", &CharacterMultiColour);
 			const uint16_t vicBankAddr = VicBankNo * 16384;
 			uint16_t charAddr = vicBankAddr;
-			ClearGraphicsView(*CharacterView, 0);
+			CharacterView->Clear(0);
 			for (int y = 0; y < 40; y++)
 			{
 				for (int x = 0; x < 51; x++)
@@ -186,7 +186,7 @@ void FC64GraphicsViewer::DrawUI()
 					charAddr += 8;
 				}
 			}
-			DrawGraphicsView(*CharacterView);
+			CharacterView->Draw();
 			ImGui::EndTabItem();
 		}
 
