@@ -141,7 +141,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType l
 	FLabelInfo* pLabel = state.GetLabelForAddress(pc);
 	if (pLabel == nullptr)
 	{
-		pLabel = new FLabelInfo;
+		pLabel = FLabelInfo::Allocate();
 		pLabel->LabelType = labelType;
 		pLabel->Address = pc;
 		pLabel->ByteSize = 0;
@@ -436,7 +436,7 @@ void ResetMemoryLogs(FCodeAnalysisState &state)
 
 FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *name,LabelType type)
 {
-	FLabelInfo *pLabel = new FLabelInfo;
+	FLabelInfo *pLabel = FLabelInfo::Allocate();
 	pLabel->Name = name;
 	pLabel->LabelType = type;
 	pLabel->Address = address;
@@ -450,7 +450,7 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 {
 	if (state.GetCommentBlockForAddress(address) == 0)
 	{
-		FCommentBlock* pCommentBlock = new FCommentBlock;
+		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
 		pCommentBlock->Comment = "<add comment here>";
 		pCommentBlock->Address = address;
 		pCommentBlock->ByteSize = 1;
@@ -496,10 +496,9 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 
 	for (int i = 0; i < (1 << 16); i++)	// loop across address range
 	{
-		FLabelInfo* pLabel = state.GetLabelForAddress(i);
-		delete pLabel;
+		// clear item pointers
 		state.SetLabelForAddress(i, nullptr);
-
+		state.SetCommentBlockForAddress(i, nullptr);
 		state.SetCodeInfoForAddress(i, nullptr);
 
 		// set up data entry for address
@@ -509,7 +508,9 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 		pDataInfo->DataType = DataType::Byte;
 	}
 
+	FLabelInfo::FreeAll();
 	FCodeInfo::FreeAll();
+	FCommentBlock::FreeAll();
 
 	state.CursorItemIndex = -1;
 	state.pCursorItem = nullptr;
@@ -708,7 +709,6 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 
 	if (pLabelInfo != nullptr)
 	{
-		delete pLabelInfo;
 		state.SetLabelForAddress(address, nullptr);
 		state.bCodeAnalysisDataDirty = true;
 	}

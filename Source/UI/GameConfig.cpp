@@ -191,7 +191,7 @@ void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo)
 
 	for (int i = 0; i < recordCount; i++)
 	{
-		FLabelInfo *pLabel = new FLabelInfo;
+		FLabelInfo *pLabel = FLabelInfo::Allocate();
 		
 		std::string enumVal;
 		ReadStringFromFile(enumVal, fp);
@@ -397,7 +397,7 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo)
 
 	for (int i = 0; i < recordCount; i++)
 	{
-		FCommentBlock* pCommentBlock = new FCommentBlock;
+		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
 		fread(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
 		ReadStringFromFile(pCommentBlock->Comment, fp);
 		state.SetCommentBlockForAddress(pCommentBlock->Address, pCommentBlock);

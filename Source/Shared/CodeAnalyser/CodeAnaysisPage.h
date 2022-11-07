@@ -43,12 +43,18 @@ struct FItem
 
 struct FLabelInfo : FItem
 {
-	FLabelInfo() { Type = ItemType::Label; }
+	static FLabelInfo* Allocate();
+	static void FreeAll();
 
 	std::string				Name;
 	bool					Global = false;
 	LabelType				LabelType;
 	std::map<uint16_t, int>	References;
+private:
+	FLabelInfo() { Type = ItemType::Label; }
+	~FLabelInfo() = default;
+
+	static std::vector<FLabelInfo*>	AllocatedList;
 };
 
 struct FCodeInfo : FItem
@@ -74,11 +80,7 @@ struct FCodeInfo : FItem
 	bool	bNOPped = false;
 	uint8_t	OpcodeBkp[4];
 private:
-	FCodeInfo() :FItem()
-	{
-		Type = ItemType::Code;
-	}
-
+	FCodeInfo() :FItem(){Type = ItemType::Code;	}
 	~FCodeInfo() = default;
 
 	static std::vector<FCodeInfo*>	AllocatedList;
@@ -142,7 +144,13 @@ struct FDataInfo : FItem
 
 struct FCommentBlock : FItem
 {
+	static FCommentBlock* Allocate();
+	static void FreeAll();
+
+private:
 	FCommentBlock() : FItem() { Type = ItemType::CommentBlock; }
+	~FCommentBlock() = default;
+	static std::vector<FCommentBlock*>	AllocatedList;
 };
 
 struct FCommentLine : FItem

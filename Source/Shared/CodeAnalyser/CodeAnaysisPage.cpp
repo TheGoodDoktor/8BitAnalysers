@@ -6,7 +6,10 @@
 #include <cassert>
 
 //#include "json.hpp"
-std::vector<FCodeInfo*>	FCodeInfo::AllocatedList;
+std::vector<FCodeInfo*>		FCodeInfo::AllocatedList;
+std::vector<FLabelInfo*>	FLabelInfo::AllocatedList;
+std::vector<FCommentBlock*>	FCommentBlock::AllocatedList;
+
 std::vector<FCommentLine*>	FCommentLine::AllocatedList;
 std::vector<FCommentLine*>	FCommentLine::FreeList;
 
@@ -30,6 +33,35 @@ void FCodeInfo::FreeAll()
 	AllocatedList.clear();
 }
 
+FLabelInfo* FLabelInfo::Allocate()
+{
+	FLabelInfo* pLabelInfo = new FLabelInfo;
+	AllocatedList.push_back(pLabelInfo);
+	return pLabelInfo;
+}
+
+void FLabelInfo::FreeAll()
+{
+	for (auto it : AllocatedList)
+		delete it;
+
+	AllocatedList.clear();
+}
+
+FCommentBlock* FCommentBlock::Allocate()
+{
+	FCommentBlock* pCommentBlock = new FCommentBlock;
+	AllocatedList.push_back(pCommentBlock);
+	return pCommentBlock;
+}
+
+void FCommentBlock::FreeAll()
+{
+	for (auto it : AllocatedList)
+		delete it;
+
+	AllocatedList.clear();
+}
 
 FCommentLine* FCommentLine::Allocate()
 {
@@ -78,7 +110,6 @@ void FCodeAnalysisPage::Reset(void)
 	{
 		if (Labels[addr] != nullptr)
 		{
-			delete Labels[addr];
 			Labels[addr] = nullptr;
 		}
 
@@ -229,7 +260,7 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 		if (pageAddr == 0xffff)
 			break;
 
-		FLabelInfo* pNewLabel = new FLabelInfo;
+		FLabelInfo* pNewLabel = FLabelInfo::Allocate();
 		ReadItemFromBuffer(*pNewLabel, buffer);
 		pNewLabel->Address = BaseAddress + pageAddr;
 		pNewLabel->LabelType = (LabelType)buffer.Read<uint8_t>();
@@ -285,7 +316,7 @@ void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, LabelType type
 	FLabelInfo* pLabel = Labels[addr];
 	if (pLabel == nullptr)
 	{
-		pLabel = new FLabelInfo;
+		pLabel = FLabelInfo::Allocate();
 		Labels[addr] = pLabel;
 	}
 
