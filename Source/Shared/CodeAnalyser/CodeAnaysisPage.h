@@ -130,6 +130,7 @@ struct FDataInfo : FItem
 			bool			bGameState : 1;
 			bool			bCodeOperand : 1;	// for self modifying code
 			bool			bUnused : 1;
+			bool			bBit7Terminator : 1;	// for bit 7 terminated strings
 		};
 		uint32_t	Flags = 0;
 	};

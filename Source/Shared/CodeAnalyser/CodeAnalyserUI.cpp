@@ -498,6 +498,8 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 			const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 			if (ch == '\n')
 				textString += "<cr>";
+			if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
+				textString += ch & ~(1 << 7);	// remove bit 7
 			else
 				textString += ch;
 		}
@@ -585,6 +587,8 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 			const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 			if (ch == '\n')
 				textString += "<cr>";
+			if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
+				textString += ch & ~(1 << 7);	// remove bit 7
 			else
 				textString += ch;
 		}

@@ -653,9 +653,16 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 			while (pDataInfo != nullptr && pDataInfo->DataType == DataType::Byte)
 			{
 				const uint8_t val = state.CPUInterface->ReadByte(charAddr);
-				if (val == 0 || val > 0x80)
+				if (val == 0 || val == 0xff)	// some strings are terminated by 0xff
 					break;
 				pDataItem->ByteSize++;
+
+				// bit 7 terminated character
+				if (val & (1 << 7))
+				{
+					pDataItem->bBit7Terminator = true;
+					break;
+				}
 				charAddr++;
 			}
 
@@ -859,6 +866,8 @@ bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFi
 						const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 						if (ch == '\n')
 							textString += "<cr>";
+						if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
+							textString += ch & ~(1 << 7);	// remove bit 7
 						else
 							textString += ch;
 					}
