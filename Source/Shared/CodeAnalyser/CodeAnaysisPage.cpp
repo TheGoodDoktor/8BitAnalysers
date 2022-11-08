@@ -80,7 +80,7 @@ void FCommentLine::FreeAll()
 	for (auto it : AllocatedList)
 		FreeList.push_back(it);
 
-	FreeList.clear();
+	AllocatedList.clear();
 }
 
 
