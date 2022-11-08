@@ -9,7 +9,10 @@ struct FViewerConfig;
 // Base class for game viewer data
 struct FGameViewerData
 {
+	~FGameViewerData();
+
 	FSpectrumEmu*		pEmu = nullptr;
+
 	FZXGraphicsView*	pSpriteGraphicsView = nullptr;
 	FZXGraphicsView*	pScreenGraphicsView = nullptr;
 };

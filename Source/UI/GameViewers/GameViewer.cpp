@@ -6,6 +6,13 @@
 
 static std::map<std::string, FViewerConfig *>	g_ViewerConfigs;
 
+FGameViewerData::~FGameViewerData()
+{
+	delete pSpriteGraphicsView;
+	delete pScreenGraphicsView;
+}
+
+
 void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
 {
 	FSpectrumEmu *pEmu = pGameViewer->pEmu;
