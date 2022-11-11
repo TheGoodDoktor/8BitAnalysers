@@ -261,8 +261,7 @@ public:
 
 		//SkoolFile.Dump();
 		
-		SkoolFile.Export(pFilename, base);
-		return true;
+		return SkoolFile.Export(pFilename, base);
 	}
 
 	std::string MakeDataAsmText(const FDataInfo* pDataInfo)

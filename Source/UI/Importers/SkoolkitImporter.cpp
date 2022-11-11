@@ -371,6 +371,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		{
 			RemoveCarriageReturn(strLine);
 			LOGWARNING("Parse error on line %d. Could not parse instruction: '%s'", lineNum, strLine.c_str());
+			fclose(fp);
 			return false;
 		}
 
@@ -378,6 +379,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		{
 			// if this address is lower than the last one we saw then something has gone wrong, so abort
 			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", lineNum, instruction.Address, instruction.Address, pLastItem->Address, pLastItem->Address);
+			fclose(fp);
 			return false;
 		}
 
@@ -569,5 +571,6 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 	}
 	
 	state.bCodeAnalysisDataDirty = true;
+	fclose(fp);
 	return true;
 }
