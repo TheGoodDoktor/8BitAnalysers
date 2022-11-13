@@ -191,17 +191,21 @@ void DrawLabelInfo(FCodeAnalysisState &state, const FLabelInfo *pLabelInfo)
 
 void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 {
+	static std::string oldLabelString;
 	static std::string labelString;
 	static FItem *pCurrItem = nullptr;
 	if (pCurrItem != pLabelInfo)
 	{
-		labelString = pLabelInfo->Name;
+		oldLabelString = labelString = pLabelInfo->Name;
 		pCurrItem = pLabelInfo;
 	}
 
 	//ImGui::Text("Comments");
 	if (ImGui::InputText("Name", &labelString))
 	{
+		if (labelString.empty())
+			labelString = oldLabelString;
+
 		SetLabelName(state, pLabelInfo, labelString.c_str());
 	}
 

@@ -743,6 +743,9 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText)
 {
+	if (strlen(pText) == 0)	// don't let a label be empty
+		return;
+
 	state.RemoveLabelName(pLabel->Name);
 	pLabel->Name = pText;
 	state.EnsureUniqueLabelName(pLabel->Name);
