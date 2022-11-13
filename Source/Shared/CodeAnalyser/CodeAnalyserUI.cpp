@@ -796,8 +796,10 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 	if (ImGui::BeginPopup("Enter Comment Text", ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::SetKeyboardFocusHere();
-		if(ImGui::InputText("##comment", &state.pCursorItem->Comment, ImGuiInputTextFlags_EnterReturnsTrue))
+		if (ImGui::InputText("##comment", &state.pCursorItem->Comment, ImGuiInputTextFlags_EnterReturnsTrue))
+		{
 			ImGui::CloseCurrentPopup();
+		}
 		ImGui::SetItemDefaultFocus();
 		ImGui::EndPopup();
 	}
@@ -807,8 +809,13 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		FLabelInfo *pLabel = (FLabelInfo *)state.pCursorItem;
 		
 		ImGui::SetKeyboardFocusHere();
-		if (ImGui::InputText("##comment", &pLabel->Name, ImGuiInputTextFlags_EnterReturnsTrue))
+		std::string LabelText = pLabel->Name;
+		if (ImGui::InputText("##comment", &LabelText, ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			if (LabelText.empty() == false)
+				pLabel->Name = LabelText;
 			ImGui::CloseCurrentPopup();
+		}
 		ImGui::SetItemDefaultFocus();
 		ImGui::EndPopup();
 	}
