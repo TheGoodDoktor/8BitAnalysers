@@ -530,7 +530,27 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	state.KeyConfig[(int)Key::Rename] = 'R';
 	state.KeyConfig[(int)Key::Comment] = 0xBF;
 	state.KeyConfig[(int)Key::AddCommentBlock] = 0xBA;
+	state.KeyConfig[(int)Key::BreakContinue] = 0x74;
+	state.KeyConfig[(int)Key::StepInto] = 0x79;
+	state.KeyConfig[(int)Key::StepOver] = 0x7A;
+	state.KeyConfig[(int)Key::StepFrame] = 0x75;
+	state.KeyConfig[(int)Key::StepScreenWrite] = 0x76;
+	state.KeyConfig[(int)Key::Breakpoint] = 0x78;
 
+	/*
+	#define VK_F1             0x70
+#define VK_F2             0x71
+#define VK_F3             0x72
+#define VK_F4             0x73
+#define VK_F5             0x74
+#define VK_F6             0x75
+#define VK_F7             0x76
+#define VK_F8             0x77
+#define VK_F9             0x78
+#define VK_F10            0x79
+#define VK_F11            0x7A
+#define VK_F12            0x7B
+*/
 	state.StackMin = 0xffff;
 	state.StackMax = 0;
 }

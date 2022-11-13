@@ -5,6 +5,12 @@ struct FCodeInfo;
 
 #include <map>
 
-typedef std::map<uint8_t, const char*> InstructionInfoMap;
+struct FInstructionInfo
+{
+	const char* Description = nullptr;
+	uint32_t	Registers = 0;
+};
+
+typedef std::map<uint8_t, FInstructionInfo> InstructionInfoMap;
 
 void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo);

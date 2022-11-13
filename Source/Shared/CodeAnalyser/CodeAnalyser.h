@@ -53,6 +53,8 @@ public:
 	virtual void InsertROMLabels(struct FCodeAnalysisState& state) = 0;
 	virtual void InsertSystemLabels(struct FCodeAnalysisState& state) = 0;
 
+	virtual void* GetCPUEmulator(void) { return nullptr; }	// get pointer to emulator - a bit of a hack
+
 	ECPUType	CPUType = ECPUType::Unknown;
 };
 
@@ -75,6 +77,14 @@ enum class Key
 	Rename,
 	Comment,
 	AddCommentBlock,
+
+	// Debugger
+	BreakContinue,
+	StepOver,
+	StepInto,
+	StepFrame,
+	StepScreenWrite,
+	Breakpoint,
 
 	Count
 };

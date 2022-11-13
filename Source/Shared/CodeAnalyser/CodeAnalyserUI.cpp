@@ -757,7 +757,41 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		{
 			AddCommentBlock(state, state.pCursorItem->Address);
 		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Breakpoint]))
+		{
+			state.CPUInterface->ToggleDataBreakpointAtAddress(state.pCursorItem->Address, state.pCursorItem->ByteSize);
+		}
 	}
+	 
+	if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::BreakContinue]))
+	{
+		if (state.CPUInterface->ShouldExecThisFrame())
+		{
+			state.CPUInterface->Break();
+			state.TrackPCFrame = true;
+		}
+		else
+		{
+			state.CPUInterface->Continue();
+		}
+	}
+	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::StepOver]))
+	{
+		state.CPUInterface->StepOver();
+	}
+	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::StepInto]))
+	{
+		state.CPUInterface->StepInto();
+	}
+	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::StepFrame]))
+	{
+		state.CPUInterface->StepFrame();
+	}
+	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::StepScreenWrite]))
+	{
+		state.CPUInterface->StepScreenWrite();
+	}
+
 
 	if (ImGui::BeginPopup("Enter Comment Text", ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -1010,37 +1044,40 @@ void DrawDetailsPanel(FCodeAnalysisState &state)
 
 void DrawDebuggerButtons(FCodeAnalysisState &state)
 {
-	//static bool bJumpToPCOnBreak = true;
-
-	if (ImGui::Button("Break"))
+	if (state.CPUInterface->ShouldExecThisFrame())
 	{
-		state.CPUInterface->Break();
-		state.TrackPCFrame = true;
+		if (ImGui::Button("Break (F5)"))
+		{
+			state.CPUInterface->Break();
+			state.TrackPCFrame = true;
+		}
+	}
+	else
+	{
+		if (ImGui::Button("Continue (F5)"))
+		{
+			state.CPUInterface->Continue();
+		}
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Continue"))
-	{
-		state.CPUInterface->Continue();
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Step Over"))
+	if (ImGui::Button("Step Over (F10)"))
 	{
 		state.CPUInterface->StepOver();
 		state.TrackPCFrame = true;
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Step Into"))
+	if (ImGui::Button("Step Into (F11)"))
 	{
 		state.CPUInterface->StepInto();
 		state.TrackPCFrame = true;
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Step Frame"))
+	if (ImGui::Button("Step Frame (F6)"))
 	{
 		state.CPUInterface->StepFrame();
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Step Screen Write"))
+	if (ImGui::Button("Step Screen Write (F7)"))
 	{
 		state.CPUInterface->StepScreenWrite();
 	}

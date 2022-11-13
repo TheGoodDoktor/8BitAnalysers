@@ -119,6 +119,7 @@ public:
 	bool		ShouldExecThisFrame(void) const override;
 	void		InsertROMLabels(FCodeAnalysisState& state) override;
 	void		InsertSystemLabels(FCodeAnalysisState& state) override;
+	void*		GetCPUEmulator(void) override;
 	//ICPUInterface End
 
 	void AddMemoryHandler(const FMemoryAccessHandler& handler)

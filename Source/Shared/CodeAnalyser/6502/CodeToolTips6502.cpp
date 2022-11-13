@@ -15,7 +15,9 @@ void ShowCodeToolTip6502(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
 	if (it == g_InstructionInfo.end())
 		return;
 
+	const FInstructionInfo& info = it->second;
+
 	ImGui::BeginTooltip();
-	ImGui::Text(it->second);
+	ImGui::Text(info.Description);
 	ImGui::EndTooltip();
 }

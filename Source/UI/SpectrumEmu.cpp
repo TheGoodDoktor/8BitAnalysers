@@ -192,6 +192,12 @@ uint16_t	FSpectrumEmu::GetPC(void)
 	return z80_pc(&ZXEmuState.cpu);
 } 
 
+void* FSpectrumEmu::GetCPUEmulator(void)
+{
+	return &ZXEmuState.cpu;
+}
+
+
 bool FSpectrumEmu::IsAddressBreakpointed(uint16_t addr)
 {
 	for (int i = 0; i < UIZX.dbg.dbg.num_breakpoints; i++) 
@@ -291,6 +297,7 @@ bool	FSpectrumEmu::ShouldExecThisFrame(void) const
 	return ExecThisFrame;
 }
 
+// TODO: Remove - we don't need it anymore thanks to Sam' Skoolkit importer
 void FSpectrumEmu::InsertROMLabels(FCodeAnalysisState& state) 
 {
 	// Sam. Temp
