@@ -1,4 +1,4 @@
 {
     "Name": "Saboteur",
-    "Z80File": "Saboteur.z80"
+    "SnapshotFile": "./Games/Saboteur.z80"
 }
