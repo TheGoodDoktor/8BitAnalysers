@@ -153,12 +153,13 @@ InstructionInfoMap g_InstructionInfo_IndexBit =
 	{0x00, {"Rotate (%s + *) left with carry B bits",Z80Reg::B}},	// rlc (ix+*),b
 };
 
-void ShowCodeToolTipZ80(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
+// Get a description for the function from the tables
+const FInstructionInfo* GetInstructionInfo(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
 {
 	uint8_t instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address);
 	InstructionInfoMap::const_iterator it = g_InstructionInfo.end();
-	const char* pRegName = nullptr;
-	uint32_t regs = 0;
+	//const char* pRegName = nullptr;
+	//uint32_t regs = 0;
 
 	switch (instrByte)
 	{
@@ -166,55 +167,75 @@ void ShowCodeToolTipZ80(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
 		instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address + 1);
 		it = g_InstructionInfo_ED.find(instrByte);
 		if (it == g_InstructionInfo_ED.end())
-			return;
+			return nullptr;
 
-		regs = it->second.Registers;
+		//regs = it->second.Registers;
 		break;
 
 	case 0xCB:
 		instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address + 1);
 		it = g_InstructionInfo_CB.find(instrByte);
 		if (it == g_InstructionInfo_CB.end())
-			return;
-		regs = it->second.Registers;
+			return nullptr;
+		//regs = it->second.Registers;
 		break;
 
 	case 0xDD:
 	case 0xFD:
-		pRegName = instrByte == 0xDD ? "IX" : "IY";
-		regs = instrByte == 0xDD ? Z80Reg::IX : Z80Reg::IY;
+		//pRegName = instrByte == 0xDD ? "IX" : "IY";
+		//regs = instrByte == 0xDD ? Z80Reg::IX : Z80Reg::IY;
 		instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address + 1);
 		if (instrByte == 0xCB)	// bit instructions
 		{
 			instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address + 2);
 			it = g_InstructionInfo_IndexBit.find(instrByte);
 			if (it == g_InstructionInfo_IndexBit.end())
-				return;
-			regs |= it->second.Registers;
+				return nullptr;
+			//regs |= it->second.Registers;
 		}
 		else
 		{
 			it = g_InstructionInfo_Index.find(instrByte);
 			if (it == g_InstructionInfo_Index.end())
-				return;
-			regs |= it->second.Registers;
+				return nullptr;
+			//regs |= it->second.Registers;
 		}
 		break;
 
 	default:
 		it = g_InstructionInfo.find(instrByte);
 		if (it == g_InstructionInfo.end())
-			return;
-		regs = it->second.Registers;
+			return nullptr;
+		//regs = it->second.Registers;
 		break;
 	}
 
-	const FInstructionInfo& info = it->second;
+	return &it->second;
+}
 
-	std::string regStr = GenerateRegisterValueString(regs, state.CPUInterface);
+// Sam : you can write this one, return an empty string if you can't generate the string
+std::string GenerateInstructionDescription(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
+{
+	std::string desc;
+
+	return desc;
+}
+
+void ShowCodeToolTipZ80(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
+{
+	std::string desc = GenerateInstructionDescription(state, pCodeInfo);
+	if (desc.empty())	// fall back to LUT is there's no desc generated
+	{
+		const FInstructionInfo* pInstructionInfo = GetInstructionInfo(state, pCodeInfo);
+
+		if (pInstructionInfo != nullptr)
+			desc = std::string(pInstructionInfo->Description);
+	}
+
+	//std::string regStr = GenerateRegisterValueString(regs, state.CPUInterface);
 
 	ImGui::BeginTooltip();
-	ImGui::Text(info.Description, pRegName);
-	ImGui::Text(regStr.c_str(), pRegName);
+	ImGui::Text(desc.c_str());	// Instruction description
+	//ImGui::Text(regStr.c_str(), pRegName);	// TODO: Sam put your reg stuff here..
 	ImGui::EndTooltip();
 }
