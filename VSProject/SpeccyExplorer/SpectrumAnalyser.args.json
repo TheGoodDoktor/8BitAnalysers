@@ -3,6 +3,10 @@
   "Id": "1f10bdcc-db06-4636-861c-13053f04fbdc",
   "Items": [
     {
+      "Id": "156142e1-3e08-472b-8883-b5027b95c6b4",
+      "Command": "Saboteur"
+    },
+    {
       "Id": "4cfe21b6-f0cb-44f0-9461-88d69018b3f0",
       "Command": "Starquake"
     }
