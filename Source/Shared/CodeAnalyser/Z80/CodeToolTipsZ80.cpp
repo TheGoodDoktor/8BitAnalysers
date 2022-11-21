@@ -565,36 +565,37 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
 
 InstructionInfoMap g_InstructionInfo =
 {
-	{0x10, {"DJNZ: Decrement B & Jump relative if it isn't 0", Z80Reg::B}},	//DJNZ
-	{0x2F, {"CPL: Complement(inverted) bits of A" , Z80Reg::A} },	//CPL
-	{0x96, {"Subtract (HL) from A", Z80Reg::HL | Z80Reg::A}}	// SUB (HL)
+	{0x10, {"DJNZ: Decrement B & Jump relative if it isn't 0"}},	//DJNZ
+	{0x2F, {"CPL: Complement(inverted) bits of A"} },	//CPL
+	{0x96, {"Subtract (HL) from A"}},	// SUB (HL)
+	{0xD9, {"EXX: Exchange BC, DE & HL with shadow registers" }},	// EXX
 };
 
 // extended instructions
 InstructionInfoMap g_InstructionInfo_ED =
 {
-	{0xB0, {"LDIR: Transfer BC bytes from address pointed to by HL to address pointed to by DE.\nHL & DE get incremented, BC gets decremented.",Z80Reg::BC | Z80Reg::HL | Z80Reg::DE}},//LDIR
-	{0xB8, {"LDDR: Transfer BC bytes from address pointed to by HL to address pointed to by DE.\nHL, DE & BC get decremented.",Z80Reg::BC | Z80Reg::HL | Z80Reg::DE}},//LDDR
-	{0x67, {"Rotate (HL) right 4 bits through lower nybble of A",Z80Reg::A}},	// rrd
-	{0x6F, {"Rotate (HL) left 4 bits through lower nybble of A",Z80Reg::A}}, // rld
+	{0xB0, {"LDIR: Transfer BC bytes from address pointed to by HL to address pointed to by DE.\nHL & DE get incremented, BC gets decremented."}},//LDIR
+	{0xB8, {"LDDR: Transfer BC bytes from address pointed to by HL to address pointed to by DE.\nHL, DE & BC get decremented."}},//LDDR
+	{0x67, {"Rotate (HL) right 4 bits through lower nybble of A"}},	// rrd
+	{0x6F, {"Rotate (HL) left 4 bits through lower nybble of A"}}, // rld
 };
 
 // bit instructions
 InstructionInfoMap g_InstructionInfo_CB =
 {
-	{0x07,{"Rotate A Left with Carry. Bit 7 goes to Carry & bit 0.", Z80Reg::A}},	//RLC A
+	{0x07,{"Rotate A Left with Carry. Bit 7 goes to Carry & bit 0."}},	//RLC A
 };
 
 // IX/IY instructions
 InstructionInfoMap g_InstructionInfo_Index =
 {
-	{0x09, {"Add BC to %s",Z80Reg::BC}},	// Add IX/IY,BC
+	{0x09, {"Add BC to %s"}},	// Add IX/IY,BC
 };
 
 // IX/IY bit instructions
 InstructionInfoMap g_InstructionInfo_IndexBit =
 {
-	{0x00, {"Rotate (%s + *) left with carry B bits",Z80Reg::B}},	// rlc (ix+*),b
+	{0x00, {"Rotate (%s + *) left with carry B bits"}},	// rlc (ix+*),b
 };
 
 // Get a description for the function from the tables

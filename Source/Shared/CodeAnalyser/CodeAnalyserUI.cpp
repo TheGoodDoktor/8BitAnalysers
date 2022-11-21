@@ -739,7 +739,7 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemImage]))
 		{
-			SetItemImage(state, state.pCursorItem);
+			//SetItemImage(state, state.pCursorItem);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddLabel]))
 		{

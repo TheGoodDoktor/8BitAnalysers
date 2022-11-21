@@ -8,7 +8,6 @@ struct FCodeInfo;
 struct FInstructionInfo
 {
 	const char* Description = nullptr;
-	uint32_t	Registers = 0;
 };
 
 typedef std::map<uint8_t, FInstructionInfo> InstructionInfoMap;
