@@ -157,11 +157,11 @@ void DrawTrace(FCodeAnalysisState& state)
 	
 }
 
-void DrawComment(const FItem *pItem)
+void DrawComment(const FItem *pItem, float offset = 0.0f)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
 	{
-		ImGui::SameLine();
+		ImGui::SameLine(offset);
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
 		ImGui::Text("\t// %s", pItem->Comment.c_str());
 		ImGui::PopStyleColor();
@@ -379,6 +379,39 @@ void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 	}
 }
 
+
+// returns how much space it took
+float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
+{
+	const float line_height = ImGui::GetTextLineHeight();
+	const float rectSize = line_height + 4;
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	pos.x += 200.0f;
+	const float startPos = pos.x;
+	pos.y -= rectSize + 2;
+
+	for (int byte = pDataInfo->ByteSize - 1; byte >= 0; byte--)
+	{
+		const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + byte);
+
+		for (int bit = 7; bit >= 0; bit--)
+		{
+			const ImVec2 rectMin(pos.x, pos.y);
+			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+			if (val & (1 << bit))
+				dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
+			else
+				dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+			pos.x += rectSize;
+		}
+	}
+
+	//return pos.x - startPos;
+	return pos.x;
+}
+
 void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
@@ -523,8 +556,13 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		break;
 	}
 
-	DrawComment(pDataInfo);
+	float offset = 0;
+	if (pDataInfo->bShowBinary)
+	{
+		offset = DrawDataBinary(state, pDataInfo);
+	}
 
+	DrawComment(pDataInfo, offset);
 }
 
 void DrawDataValueGraph(float val, bool bReset)
@@ -741,6 +779,14 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		{
 			//SetItemImage(state, state.pCursorItem);
 		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::ToggleItemBinary]))
+		{
+			if (state.pCursorItem->Type == ItemType::Data)
+			{
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(state.pCursorItem);
+				pDataItem->bShowBinary = !pDataItem->bShowBinary;
+			}
+		}		
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddLabel]))
 		{
 			AddLabelAtAddress(state, state.pCursorItem->Address);

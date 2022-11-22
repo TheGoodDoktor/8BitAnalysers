@@ -131,6 +131,7 @@ struct FDataInfo : FItem
 			bool			bCodeOperand : 1;	// for self modifying code
 			bool			bUnused : 1;
 			bool			bBit7Terminator : 1;	// for bit 7 terminated strings
+			bool			bShowBinary : 1;	// display the value(s) as binary
 		};
 		uint32_t	Flags = 0;
 	};

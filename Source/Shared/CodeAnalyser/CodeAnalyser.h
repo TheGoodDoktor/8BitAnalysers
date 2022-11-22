@@ -72,6 +72,7 @@ enum class Key
 	SetItemText,
 	SetItemCode,
 	SetItemImage,
+	ToggleItemBinary,
 
 	AddLabel,
 	Rename,

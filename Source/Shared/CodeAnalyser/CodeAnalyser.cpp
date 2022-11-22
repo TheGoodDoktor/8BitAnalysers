@@ -526,6 +526,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	state.KeyConfig[(int)Key::SetItemText] = 'T';
 	state.KeyConfig[(int)Key::SetItemCode] = 'C';
 	state.KeyConfig[(int)Key::SetItemImage] = 'I';
+	state.KeyConfig[(int)Key::ToggleItemBinary] = 'B';	
 	state.KeyConfig[(int)Key::AddLabel] = 'L';
 	state.KeyConfig[(int)Key::Rename] = 'R';
 	state.KeyConfig[(int)Key::Comment] = 0xBF;
