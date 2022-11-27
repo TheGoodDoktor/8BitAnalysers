@@ -52,28 +52,24 @@ bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint
 	uint16_t address = offset;
 	ICPUInterface* pCPUInterface = CPUInterface;
 	size_t dataOffset = 0;
-	bool DBG = false;
 
 	do
 	{
-		const uint8_t byte = pCPUInterface->ReadByte(address);
-		if (byte == pData[dataOffset])
+		bool bFound = true;
+		for (int byteNo = 0; byteNo < 8; byteNo++)
 		{
-			if (dataOffset == dataSize - 1)	// found the whole run?
+			const uint8_t byte = pCPUInterface->ReadByte(address + byteNo);
+			if (byte != pData[byteNo])
 			{
-				outAddr = static_cast<uint16_t>(address - dataOffset);
-				return true;
-			}
-			else
-			{
-				if (dataOffset > 0)
-					DBG = true;
-				dataOffset++;	// look for next byte
+				bFound = false;
+				break;
 			}
 		}
-		else
+
+		if (bFound)
 		{
-			dataOffset = 0;	// reset offset and look for start of data
+			outAddr = static_cast<uint16_t>(address);
+			return true;
 		}
 
 		address++;
