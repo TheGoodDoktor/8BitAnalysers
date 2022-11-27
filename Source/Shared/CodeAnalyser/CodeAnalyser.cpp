@@ -757,6 +757,29 @@ void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pTe
 	pItem->Comment = pText;
 }
 
+void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options)
+{
+	uint16_t dataAddress = options.StartAddress;
+	const uint16_t endAddress = options.EndAddress;
+
+	DataType dataType = DataType::Byte;
+	if (options.ItemSize == 2)
+		dataType = DataType::Word;
+	else if(options.ItemSize > 2)
+		dataType = DataType::ByteArray;
+
+	while(dataAddress <= endAddress)
+	{
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddress);
+
+		pDataInfo->ByteSize = options.ItemSize;
+		pDataInfo->DataType = dataType;
+		dataAddress += options.ItemSize;
+
+		pDataInfo->bShowBinary = options.BinaryVisualisation;
+	}
+}
+
 // text generation
 
 std::string GenerateAddressLabelString(FCodeAnalysisState &state, uint16_t addr)

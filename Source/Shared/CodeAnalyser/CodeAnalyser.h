@@ -91,6 +91,17 @@ enum class Key
 };
 
 
+struct FDataFormattingOptions
+{
+	int		StartAddress = 0;
+	int		EndAddress = 0;
+	int		ItemSize = 1;
+	//int		NoItems = 1;
+	bool	BinaryVisualisation = false;
+
+	bool IsValid() const {	return EndAddress > StartAddress;	}
+};
+
 
 // code analysis information
 // TODO: make this a class
@@ -220,6 +231,8 @@ public:
 
 	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t& outAddr);
 
+	bool					DataFormattingTabOpen = false;
+	FDataFormattingOptions	DataFormattingOptions;
 };
 
 // Commands
@@ -258,5 +271,6 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem);
 void SetItemImage(FCodeAnalysisState& state, FItem* pItem);
 void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText);
 
+void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options);
 
 bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFileName, uint16_t startAddr, uint16_t endAddr);

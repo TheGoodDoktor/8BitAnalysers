@@ -391,7 +391,7 @@ float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 	const float startPos = pos.x;
 	pos.y -= rectSize + 2;
 
-	for (int byte = pDataInfo->ByteSize - 1; byte >= 0; byte--)
+	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
 		const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + byte);
 
@@ -775,10 +775,12 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		{
 			SetItemText(state, state.pCursorItem);
 		}
+#ifdef ENABLE_IMAGE_TYPE
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemImage]))
 		{
-			//SetItemImage(state, state.pCursorItem);
+			SetItemImage(state, state.pCursorItem);
 		}
+#endif
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::ToggleItemBinary]))
 		{
 			if (state.pCursorItem->Type == ItemType::Data)
@@ -964,10 +966,12 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 			{
 				SetItemCode(state, pItem);
 			}
+#ifdef ENABLE_IMAGE_TYPE
 			if (ImGui::Selectable("Set as Image (I)"))
 			{
 				SetItemImage(state, pItem);
 			}
+#endif
 			if (ImGui::Selectable("Toggle Data Breakpoint"))
 				state.CPUInterface->ToggleDataBreakpointAtAddress(pItem->Address, pItem->ByteSize);
 		}
@@ -1007,9 +1011,18 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 {
 	assert(i < (int)state.ItemList.size());
 	FItem* pItem = state.ItemList[i];
-	const bool bHighlight = (pItem->Address == state.HighlightAddress);
-	const uint32_t kHighlightColour = 0xff00ff00;
+	bool bHighlight = (pItem->Address == state.HighlightAddress);
+	uint32_t kHighlightColour = 0xff00ff00;
 	ImGui::PushID(i);
+
+	// Highlight formatting selection
+	if (state.DataFormattingOptions.IsValid() &&
+		pItem->Address >= state.DataFormattingOptions.StartAddress &&
+		pItem->Address <= state.DataFormattingOptions.EndAddress)
+	{
+		bHighlight = true;
+		kHighlightColour = 0xffffff00;
+	}
 
 	const FItem *pPrevItem = i > 0 ? state.ItemList[i-1] : nullptr;
 	if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
@@ -1020,6 +1033,16 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 	{
 		state.pCursorItem = state.ItemList[i];
 		state.CursorItemIndex = i;
+
+		// Select Data Formatting Range
+		if (state.DataFormattingTabOpen && pItem->Type == ItemType::Data)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			if(io.KeyShift)
+				state.DataFormattingOptions.EndAddress = state.pCursorItem->Address;
+			else
+				state.DataFormattingOptions.StartAddress = state.pCursorItem->Address;
+		}
 	}
 	DoItemContextMenu(state, pItem);
 	ImGui::SetItemAllowOverlap();	// allow buttons
@@ -1287,6 +1310,56 @@ void DrawGlobals(FCodeAnalysisState &state)
 		{
 			DrawLabelList(state, state.GlobalDataItems);
 			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Format"))
+		{
+			FDataFormattingOptions& formattingOptions = state.DataFormattingOptions;
+			const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+			
+			if (state.DataFormattingTabOpen == false)
+			{
+				formattingOptions.StartAddress = state.pCursorItem->Address;
+				formattingOptions.EndAddress = state.pCursorItem->Address;
+				state.DataFormattingTabOpen = true;
+			}
+
+			// Set Start address of region to format
+			ImGui::PushID("Start");
+			ImGui::InputInt("Start Address", &formattingOptions.StartAddress, 1, 100, inputFlags);
+			ImGui::SameLine();
+			if (ImGui::Button("Cursor Addr"))
+				formattingOptions.StartAddress = state.pCursorItem->Address;
+			ImGui::PopID();
+
+			// Set End address of region to format
+			ImGui::PushID("End");
+			ImGui::InputInt("End Address", &formattingOptions.EndAddress, 1, 100, inputFlags);
+			ImGui::SameLine();
+			if (ImGui::Button("Cursor Addr"))
+				formattingOptions.EndAddress = state.pCursorItem->Address;
+			ImGui::PopID();
+			if (ImGui::Button("Clear Selection"))
+			{
+				formattingOptions = FDataFormattingOptions();
+			}
+
+			ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+			ImGui::Checkbox("Binary Visualisation", &formattingOptions.BinaryVisualisation);
+			if (formattingOptions.IsValid())
+			{
+				if (ImGui::Button("Format"))
+				{
+					FormatData(state, formattingOptions);
+					state.bCodeAnalysisDataDirty = true;
+					//formattingOptions = FDataFormattingOptions();	// clear selection
+				}
+			}
+			ImGui::EndTabItem();
+		}
+		else
+		{
+			state.DataFormattingTabOpen = false;
 		}
 
 		ImGui::EndTabBar();
