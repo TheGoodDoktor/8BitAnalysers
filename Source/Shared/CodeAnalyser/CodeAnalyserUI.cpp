@@ -1319,8 +1319,12 @@ void DrawGlobals(FCodeAnalysisState &state)
 			
 			if (state.DataFormattingTabOpen == false)
 			{
-				formattingOptions.StartAddress = state.pCursorItem->Address;
-				formattingOptions.EndAddress = state.pCursorItem->Address;
+				if (state.pCursorItem)
+				{
+					formattingOptions.StartAddress = state.pCursorItem->Address;
+					formattingOptions.EndAddress = state.pCursorItem->Address;
+				}
+		
 				state.DataFormattingTabOpen = true;
 			}
 

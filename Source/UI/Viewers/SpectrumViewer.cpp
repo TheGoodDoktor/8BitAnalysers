@@ -54,9 +54,45 @@ void FSpectrumViewer::Draw()
 			ImGui::Text("Attribute Writer: ");
 			ImGui::SameLine();
 			DrawCodeAddress(codeAnalysis, lastAttrWriter);
+			{
+				//ImGui::Text("Image: ");
+				//const float line_height = ImGui::GetTextLineHeight();
+				const float rectSize = 10;
+				ImDrawList* dl = ImGui::GetWindowDrawList();
+				ImVec2 pos = ImGui::GetCursorScreenPos();
+				const float startPos = pos.x;
+				//pos.y -= rectSize + 2;
+
+				for (int byte = 0; byte < 8; byte++)
+				{
+					const uint8_t val = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + byte));
+
+					for (int bit = 7; bit >= 0; bit--)
+					{
+						const ImVec2 rectMin(pos.x, pos.y);
+						const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+						if (val & (1 << bit))
+							dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
+						else
+							dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+						pos.x += rectSize;
+					}
+
+					pos.x = startPos;
+					pos.y += rectSize;
+				}
+
+				ImGui::Text("");
+				ImGui::Text("");
+				ImGui::Text("");
+				ImGui::Text("");
+				ImGui::Text("");
+			}
 			ImGui::EndTooltip();
 			//ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
 
+			
 			if (ImGui::IsMouseClicked(0))
 			{
 				bScreenCharSelected = true;

@@ -52,6 +52,7 @@ bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint
 	uint16_t address = offset;
 	ICPUInterface* pCPUInterface = CPUInterface;
 	size_t dataOffset = 0;
+	bool DBG = false;
 
 	do
 	{
@@ -65,6 +66,8 @@ bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint
 			}
 			else
 			{
+				if (dataOffset > 0)
+					DBG = true;
 				dataOffset++;	// look for next byte
 			}
 		}
