@@ -24,6 +24,7 @@ void FSpectrumViewer::Draw()
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
+	bool bJustSelectedChar = false;
 	ImGui::Image(pSpectrumEmu->Texture, ImVec2(320, 256));
 	if (ImGui::IsItemHovered())
 	{
@@ -65,14 +66,17 @@ void FSpectrumViewer::Draw()
 				SelectAttrAddr = scrAttrAddress;
 
 				// store pixel data for selected character
-				uint8_t charData[8];
 				for (int charLine = 0; charLine < 8; charLine++)
-					charData[charLine] = pSpectrumEmu->ReadByte( GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
-				CharDataFound = codeAnalysis.FindMemoryPattern(charData, 8, FoundCharDataAddress);
+					CharData[charLine] = pSpectrumEmu->ReadByte( GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
+				CharDataFound = codeAnalysis.FindMemoryPattern(CharData, 8, 0, FoundCharDataAddress);
+				bJustSelectedChar = true;
 			}
 
 			if (ImGui::IsMouseClicked(1))
+			{
 				bScreenCharSelected = false;
+				bJustSelectedChar = false;
+			}
 
 			if (ImGui::IsMouseDoubleClicked(0))
 				CodeAnalyserGoToAddress(codeAnalysis, lastPixWriter);
@@ -100,8 +104,24 @@ void FSpectrumViewer::Draw()
 			ImGui::Text("Found at: %s", NumStr(FoundCharDataAddress));
 			DrawAddressLabel(codeAnalysis, FoundCharDataAddress);
 			//ImGui::SameLine();
-			if (ImGui::Button("Show in GFX View"))
+			bool bShowInGfxView = ImGui::Button("Show in GFX View");
+			ImGui::SameLine();
+			ImGui::Checkbox("Wrap", &bCharSearchWrap);
+			
+
+			if (bShowInGfxView)
+			{
+				if (!bJustSelectedChar)
+				{
+					bool bFound = codeAnalysis.FindMemoryPattern(CharData, 8, FoundCharDataAddress+8, FoundCharDataAddress);
+					
+					// If we didn't find anything, then wraparound and look from the start of ram.
+					if (!bFound && bCharSearchWrap)
+						CharDataFound = codeAnalysis.FindMemoryPattern(CharData, 8, 0, FoundCharDataAddress);
+				}
+
 				pSpectrumEmu->GraphicsViewerGoToAddress(FoundCharDataAddress);
+			}
 		}
 	}
 

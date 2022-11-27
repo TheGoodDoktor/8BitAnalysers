@@ -47,9 +47,9 @@ bool FCodeAnalysisState::RemoveLabelName(const std::string& labelName)
 }
 
 // Search memory space for a block of data
-bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t& outAddr)
+bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr)
 {
-	uint16_t address = 0;
+	uint16_t address = offset;
 	ICPUInterface* pCPUInterface = CPUInterface;
 	size_t dataOffset = 0;
 
