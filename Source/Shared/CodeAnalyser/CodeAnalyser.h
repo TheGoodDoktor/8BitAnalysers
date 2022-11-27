@@ -96,7 +96,6 @@ struct FDataFormattingOptions
 	int		StartAddress = 0;
 	int		EndAddress = 0;
 	int		ItemSize = 1;
-	//int		NoItems = 1;
 	bool	BinaryVisualisation = false;
 
 	bool IsValid() const {	return EndAddress > StartAddress;	}

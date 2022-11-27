@@ -107,7 +107,18 @@ void FSpectrumViewer::Draw()
 			bool bShowInGfxView = ImGui::Button("Show in GFX View");
 			ImGui::SameLine();
 			ImGui::Checkbox("Wrap", &bCharSearchWrap);
-			
+			ImGui::SameLine();
+			if (ImGui::Button("Format as Image"))
+			{
+				FDataFormattingOptions formattingOptions;
+				formattingOptions.StartAddress = FoundCharDataAddress;
+				formattingOptions.EndAddress = FoundCharDataAddress + 7;
+				formattingOptions.ItemSize = 1;
+				formattingOptions.BinaryVisualisation = true;
+
+				FormatData(codeAnalysis, formattingOptions);
+				CodeAnalyserGoToAddress(codeAnalysis, FoundCharDataAddress, false);
+			}
 
 			if (bShowInGfxView)
 			{
