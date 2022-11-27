@@ -229,7 +229,7 @@ public:
 	uint16_t GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->LastWriter[addr & kPageMask]; }
 	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { GetWritePage(addr)->LastWriter[addr & kPageMask] = lastWriter; }
 
-	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t& outAddr);
+	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 
 	bool					DataFormattingTabOpen = false;
 	FDataFormattingOptions	DataFormattingOptions;
