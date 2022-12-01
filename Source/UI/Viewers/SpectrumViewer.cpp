@@ -144,13 +144,13 @@ void FSpectrumViewer::Draw()
 			ImGui::SameLine();
 			ImGui::Checkbox("Wrap", &bCharSearchWrap);
 			ImGui::SameLine();
-			if (ImGui::Button("Format as Image"))
+			if (ImGui::Button("Format as Bitmap"))
 			{
 				FDataFormattingOptions formattingOptions;
 				formattingOptions.StartAddress = FoundCharDataAddress;
 				formattingOptions.EndAddress = FoundCharDataAddress + 7;
 				formattingOptions.ItemSize = 1;
-				formattingOptions.BinaryVisualisation = true;
+				formattingOptions.DataType = DataType::Bitmap;
 
 				FormatData(codeAnalysis, formattingOptions);
 				CodeAnalyserGoToAddress(codeAnalysis, FoundCharDataAddress, false);

@@ -335,8 +335,22 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 		pDataInfo->Address = address;
 		pDataInfo->DataType = magic_enum::enum_cast<DataType>(enumVal).value();
 		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
-		if(versionNo > 5)
+		if (versionNo > 5)
+		{
 			fread(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
+			if (pDataInfo->bShowCharMap)
+			{
+				pDataInfo->DataType = DataType::CharacterMap;
+				pDataInfo->bShowCharMap = false;
+			}
+
+			if (pDataInfo->bShowBinary)
+			{
+				pDataInfo->DataType = DataType::Bitmap;
+				pDataInfo->bShowBinary = false;
+			}
+		}
+
 		ReadStringFromFile(pDataInfo->Comment, fp);
 
 		// References?

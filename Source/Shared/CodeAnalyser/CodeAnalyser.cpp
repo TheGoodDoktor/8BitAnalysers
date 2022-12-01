@@ -211,6 +211,9 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
 	FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(pc);
+	if (pCodeInfo == nullptr)	// code info could have been cleared
+		return;
+
 	assert(pCodeInfo != nullptr);
 	pCodeInfo->Text = dasmState.Text;
 }
@@ -761,21 +764,24 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 	uint16_t dataAddress = options.StartAddress;
 	const uint16_t endAddress = options.EndAddress;
 
-	DataType dataType = DataType::Byte;
-	if (options.ItemSize == 2)
-		dataType = DataType::Word;
-	else if(options.ItemSize > 2)
-		dataType = DataType::ByteArray;
-
-	while(dataAddress <= endAddress)
+	while(dataAddress < endAddress)
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddress);
 
 		pDataInfo->ByteSize = options.ItemSize;
-		pDataInfo->DataType = dataType;
-		dataAddress += options.ItemSize;
+		pDataInfo->DataType = options.DataType;
 
-		pDataInfo->bShowBinary = options.BinaryVisualisation;
+		// iterate through each memory location
+		for (int i = 0; i < options.ItemSize;i++)
+		{
+			if (options.ClearCodeInfo)
+				state.SetCodeInfoForAddress(dataAddress, nullptr);
+			
+			if (options.ClearLabels && dataAddress != options.StartAddress)	// don't remove first label
+				RemoveLabelAtAddress(state, dataAddress);
+
+			dataAddress++;
+		}
 	}
 }
 

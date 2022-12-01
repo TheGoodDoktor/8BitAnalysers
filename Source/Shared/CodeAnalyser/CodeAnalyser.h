@@ -96,7 +96,11 @@ struct FDataFormattingOptions
 	int		StartAddress = 0;
 	int		EndAddress = 0;
 	int		ItemSize = 1;
-	bool	BinaryVisualisation = false;
+	DataType	DataType = DataType::Byte;
+	//bool	BinaryVisualisation = false;
+	//bool	CharMapVisualisation = false;
+	bool	ClearCodeInfo = false;
+	bool	ClearLabels = false;
 
 	bool IsValid() const {	return EndAddress > StartAddress;	}
 };

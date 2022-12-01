@@ -95,6 +95,8 @@ enum class DataType
 	Word,
 	WordArray,
 	Text,		// ascii text
+	Bitmap,
+	CharacterMap,
 	Graphics,	// pixel data
 	Image,		// character/sprite image
 	Blob,		// opaque data blob
@@ -132,6 +134,7 @@ struct FDataInfo : FItem
 			bool			bUnused : 1;
 			bool			bBit7Terminator : 1;	// for bit 7 terminated strings
 			bool			bShowBinary : 1;	// display the value(s) as binary
+			bool			bShowCharMap : 1;	// display memory as character map
 		};
 		uint32_t	Flags = 0;
 	};

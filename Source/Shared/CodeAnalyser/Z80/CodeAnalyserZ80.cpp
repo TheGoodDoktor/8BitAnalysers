@@ -17,6 +17,7 @@ bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_
 	case 0x3A:
 		*out_addr = (pCPUInterface->ReadByte(pc + 2) << 8) | pCPUInterface->ReadByte(pc + 1);
 		return true;
+	
 		// extended instructions
 	case 0xED:
 	{
@@ -36,6 +37,7 @@ bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_
 		}
 
 	}
+	return false;
 
 	// IX/IY instructions
 	case 0xDD:
@@ -69,6 +71,7 @@ bool CheckPointerRefInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, ui
 	case 0x01:
 	case 0x11:
 	case 0x21:
+	case 0x31:
 		*out_addr = (pCPUInterface->ReadByte(pc + 2) << 8) | pCPUInterface->ReadByte(pc + 1);
 		return true;
 
@@ -205,6 +208,7 @@ bool CheckStopInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
 			return true;
 		}
 	}
+	return false;
 	// index register instructions
 	case 0xDD:	// IX
 	case 0xFD:	// IY
@@ -215,6 +219,7 @@ bool CheckStopInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
 		case 0xE9:	// JP(IX)
 			return true;
 		}
+		return false;
 	}
 	default:
 		return false;

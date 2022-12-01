@@ -379,9 +379,33 @@ void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 	}
 }
 
+float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
+{
+	const float line_height = ImGui::GetTextLineHeight();
+	const float rectSize = line_height + 4;
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	pos.x += 150.0f;
+	const float startPos = pos.x;
+	pos.y -= rectSize + 2;
+
+	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
+	{
+		const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + byte);
+		const ImVec2 rectMin(pos.x, pos.y);
+		const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+		char valTxt[8];
+		sprintf_s(valTxt, "%02x", val);
+		dl->AddRect(rectMin, rectMax, 0xffffffff);
+		dl->AddText(ImVec2(pos.x + 1,pos.y + 1), 0xffffffff, valTxt);
+		pos.x += rectSize;
+	}
+	return pos.x;
+
+}
 
 // returns how much space it took
-float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
+float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
 	const float rectSize = line_height + 4;
@@ -421,6 +445,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	const int framesSinceRead = state.CurrentFrameNo - pDataInfo->LastFrameRead;
 	const int wBrightVal = (255 - std::min(framesSinceWritten << 2, 255)) & 0xff;
 	const int rBrightVal = (255 - std::min(framesSinceRead << 2, 255)) & 0xff;
+	float offset = 0;
 
 	if (rBrightVal > 0 || wBrightVal > 0)
 	{
@@ -476,6 +501,13 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 		
+	if (pDataInfo->bShowCharMap)
+	{
+		ImGui::Text("CM:");
+		DrawDataCharMapLine(state, pDataInfo);
+		return;
+	}
+
 	switch (pDataInfo->DataType)
 	{
 	case DataType::Byte:
@@ -544,11 +576,14 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 	}
 	break;
 
-	case DataType::Image:
-		if(pDataInfo->ImageData != nullptr)
-			ImGui::Text("Image %dx%d pixels", pDataInfo->ImageData->XSizeChars * 8, pDataInfo->ImageData->YSizeChars * 8);
+	case DataType::Bitmap:
+		ImGui::Text("Bitmap");
+		offset = DrawDataBitmapLine(state, pDataInfo);
 		break;
-
+	case DataType::CharacterMap:
+		ImGui::Text("Charmap");
+		offset = DrawDataCharMapLine(state, pDataInfo);
+		break;
 	case DataType::Graphics:
 	case DataType::Blob:
 	default:
@@ -556,11 +591,10 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo)
 		break;
 	}
 
-	float offset = 0;
-	if (pDataInfo->bShowBinary)
+	/*if (pDataInfo->bShowBinary)
 	{
-		offset = DrawDataBinary(state, pDataInfo);
-	}
+		offset = DrawDataBitmapLine(state, pDataInfo);
+	}*/
 
 	DrawComment(pDataInfo, offset);
 }
@@ -653,6 +687,8 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		break;
 
 	case DataType::Image:
+	// This is currently disabled
+	if(0)
 	{
 		FImageData* pImageData = pDataInfo->ImageData;
 		bool bRebuildImage = false;
@@ -786,7 +822,11 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 			if (state.pCursorItem->Type == ItemType::Data)
 			{
 				FDataInfo* pDataItem = static_cast<FDataInfo*>(state.pCursorItem);
-				pDataItem->bShowBinary = !pDataItem->bShowBinary;
+				if(pDataItem->DataType != DataType::Bitmap)
+					pDataItem->DataType = DataType::Bitmap;
+				else
+					pDataItem->DataType = DataType::Byte;
+				//pDataItem->bShowBinary = !pDataItem->bShowBinary;
 			}
 		}		
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddLabel]))
@@ -1016,20 +1056,21 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 	ImGui::PushID(i);
 
 	// Highlight formatting selection
-	if (state.DataFormattingOptions.IsValid() &&
+	/*if (state.DataFormattingOptions.IsValid() &&
 		pItem->Address >= state.DataFormattingOptions.StartAddress &&
 		pItem->Address <= state.DataFormattingOptions.EndAddress)
 	{
 		bHighlight = true;
 		kHighlightColour = 0xffffff00;
-	}
+	}*/
 
 	const FItem *pPrevItem = i > 0 ? state.ItemList[i-1] : nullptr;
 	if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
 		ImGui::Separator();
 
 	// selectable
-	if (ImGui::Selectable("##codeanalysisline", pItem == state.pCursorItem, 0))
+	bool bSelected = (pItem == state.pCursorItem) || (pItem->Address >= state.DataFormattingOptions.StartAddress && pItem->Address <= state.DataFormattingOptions.EndAddress);
+	if (ImGui::Selectable("##codeanalysisline", bSelected, 0))
 	{
 		state.pCursorItem = state.ItemList[i];
 		state.CursorItemIndex = i;
@@ -1038,10 +1079,15 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 		if (state.DataFormattingTabOpen && pItem->Type == ItemType::Data)
 		{
 			ImGuiIO& io = ImGui::GetIO();
-			if(io.KeyShift)
+			if (io.KeyShift)
+			{
 				state.DataFormattingOptions.EndAddress = state.pCursorItem->Address;
+			}
 			else
+			{
+				state.DataFormattingOptions.EndAddress = state.pCursorItem->Address;
 				state.DataFormattingOptions.StartAddress = state.pCursorItem->Address;
+			}
 		}
 	}
 	DoItemContextMenu(state, pItem);
@@ -1296,6 +1342,98 @@ void DrawLabelList(FCodeAnalysisState &state, std::vector<FLabelInfo *> labelLis
 	ImGui::EndChild();
 }
 
+void DrawFormatTab(FCodeAnalysisState& state)
+{
+	FDataFormattingOptions& formattingOptions = state.DataFormattingOptions;
+	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+
+	if (state.DataFormattingTabOpen == false)
+	{
+		if (state.pCursorItem)
+		{
+			formattingOptions.StartAddress = state.pCursorItem->Address;
+			formattingOptions.EndAddress = state.pCursorItem->Address;
+		}
+
+		state.DataFormattingTabOpen = true;
+	}
+
+	// Set Start address of region to format
+	ImGui::PushID("Start");
+	ImGui::InputInt("Start Address", &formattingOptions.StartAddress, 1, 100, inputFlags);
+	ImGui::PopID();
+
+	// Set End address of region to format
+	ImGui::PushID("End");
+	ImGui::InputInt("End Address", &formattingOptions.EndAddress, 1, 100, inputFlags);
+	ImGui::PopID();
+
+	if (ImGui::Button("Clear Selection"))
+	{
+		formattingOptions = FDataFormattingOptions();
+	}
+
+
+	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map" };
+	static int dataTypeIndex = 0; // Here we store our selection data as an index.
+	const char* combo_preview_value = dataTypes[dataTypeIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
+	if (ImGui::BeginCombo("Data Type", combo_preview_value, 0))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(dataTypes); n++)
+		{
+			const bool isSelected = (dataTypeIndex == n);
+			if (ImGui::Selectable(dataTypes[n], isSelected))
+				dataTypeIndex = n;
+
+			// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	switch (dataTypeIndex)
+	{
+	case 0:
+		formattingOptions.DataType = DataType::Byte;
+		formattingOptions.ItemSize = 1;
+		break;
+	case 1:
+		formattingOptions.DataType = DataType::Word;
+		formattingOptions.ItemSize = 2;
+		break;
+	case 2:
+		formattingOptions.DataType = DataType::Bitmap;
+		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		break;
+	case 3:
+		formattingOptions.DataType = DataType::CharacterMap;
+		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		break;
+	}
+
+	static int itemCount = 1;
+	ImGui::InputInt("Item Count", &itemCount);
+	ImGui::SameLine();
+	if (ImGui::Button("Set"))
+		formattingOptions.EndAddress = formattingOptions.StartAddress + (itemCount * formattingOptions.ItemSize);
+
+	//ImGui::Checkbox("Binary Visualisation", &formattingOptions.BinaryVisualisation);
+	//ImGui::Checkbox("Char Map Visualisation", &formattingOptions.CharMapVisualisation);
+	ImGui::Checkbox("Clear Code Info", &formattingOptions.ClearCodeInfo);
+	ImGui::Checkbox("Clear Labels", &formattingOptions.ClearLabels);
+
+	if (formattingOptions.IsValid())
+	{
+		if (ImGui::Button("Format"))
+		{
+			FormatData(state, formattingOptions);
+			state.bCodeAnalysisDataDirty = true;
+			//formattingOptions = FDataFormattingOptions();	// clear selection
+		}
+	}
+}
+
 void DrawGlobals(FCodeAnalysisState &state)
 {
 	if(ImGui::BeginTabBar("GlobalsTabBar"))
@@ -1312,53 +1450,9 @@ void DrawGlobals(FCodeAnalysisState &state)
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Format"))
+		if (ImGui::BeginTabItem("Format"))	
 		{
-			FDataFormattingOptions& formattingOptions = state.DataFormattingOptions;
-			const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
-			
-			if (state.DataFormattingTabOpen == false)
-			{
-				if (state.pCursorItem)
-				{
-					formattingOptions.StartAddress = state.pCursorItem->Address;
-					formattingOptions.EndAddress = state.pCursorItem->Address;
-				}
-		
-				state.DataFormattingTabOpen = true;
-			}
-
-			// Set Start address of region to format
-			ImGui::PushID("Start");
-			ImGui::InputInt("Start Address", &formattingOptions.StartAddress, 1, 100, inputFlags);
-			ImGui::SameLine();
-			if (ImGui::Button("Cursor Addr"))
-				formattingOptions.StartAddress = state.pCursorItem->Address;
-			ImGui::PopID();
-
-			// Set End address of region to format
-			ImGui::PushID("End");
-			ImGui::InputInt("End Address", &formattingOptions.EndAddress, 1, 100, inputFlags);
-			ImGui::SameLine();
-			if (ImGui::Button("Cursor Addr"))
-				formattingOptions.EndAddress = state.pCursorItem->Address;
-			ImGui::PopID();
-			if (ImGui::Button("Clear Selection"))
-			{
-				formattingOptions = FDataFormattingOptions();
-			}
-
-			ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
-			ImGui::Checkbox("Binary Visualisation", &formattingOptions.BinaryVisualisation);
-			if (formattingOptions.IsValid())
-			{
-				if (ImGui::Button("Format"))
-				{
-					FormatData(state, formattingOptions);
-					state.bCodeAnalysisDataDirty = true;
-					//formattingOptions = FDataFormattingOptions();	// clear selection
-				}
-			}
+			DrawFormatTab(state);
 			ImGui::EndTabItem();
 		}
 		else
