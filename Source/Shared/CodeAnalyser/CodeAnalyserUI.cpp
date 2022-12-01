@@ -296,7 +296,8 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	//ImGui::PopStyleColor();
 	if(pCodeInfo->bSelfModifyingCode == true || pCodeInfo->Text.empty())
 	{
-		UpdateCodeInfoForAddress(state, pCodeInfo->Address);
+		//UpdateCodeInfoForAddress(state, pCodeInfo->Address);
+		WriteCodeInfoForAddress(state, pCodeInfo->Address);
 	}
 
 	ImGui::Text("\t%s", NumStr(pCodeInfo->Address));

@@ -107,7 +107,7 @@ bool CheckJumpInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t
 		/* JP cc,nnnn */
 	case 0xDA: case 0xFA: case 0xD2: case 0xC2:
 	case 0xF2: case 0xEA: case 0xE2: case 0xCA:
-		*out_addr = (pCPUInterface->ReadByte(pc + 2) << 8) | pCPUInterface->ReadByte(pc + 1);
+		*out_addr = pCPUInterface->ReadWord(pc + 1);
 		return true;
 
 		/* DJNZ d */
