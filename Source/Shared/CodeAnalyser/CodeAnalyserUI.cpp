@@ -673,6 +673,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		if(ImGui::InputInt("Length",&length))
 		{
 			pDataInfo->ByteSize = length;
+			state.bCodeAnalysisDataDirty = true;
 		}
 	}
 	break;
