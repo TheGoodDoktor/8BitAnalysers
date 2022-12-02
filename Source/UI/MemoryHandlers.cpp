@@ -4,20 +4,6 @@
 #include "CodeAnalyser/CodeAnalyserUI.h"
 #include <Shared/Util/Misc.h>
 
-// Disassembly handlers
-static uint8_t DasmCB(void* user_data)
-{
-	FSpectrumEmu*pEmu = (FSpectrumEmu*)user_data;
-	return pEmu->ReadByte(pEmu->dasmCurr++);
-}
-
-/*static uint16_t DisasmLen(FSpectrumEmu* pEmu, uint16_t pc)
-{
-	pEmu->dasmCurr = pc;
-	uint16_t next_pc = z80dasm_op(pc, DasmCB, 0, pEmu);
-	return next_pc - pc;
-}*/
-
 int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEmu*pEmu)
 {
 	const uint16_t addr = Z80_GET_ADDR(pins);

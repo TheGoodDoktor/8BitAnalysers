@@ -172,19 +172,23 @@ void DrawLabelInfo(FCodeAnalysisState &state, const FLabelInfo *pLabelInfo)
 {
 	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pLabelInfo->Address);	// for self-modifying code
 
+	ImVec4 labelColour = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+	if (state.HighlightAddress == pLabelInfo->Address)
+		labelColour = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+	else if (pLabelInfo->Global || pLabelInfo->LabelType == LabelType::Function)
+		labelColour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	
+
 	// draw SMC fixups differently
-	if (pCodeInfo!=nullptr && pCodeInfo->bSelfModifyingCode)
+	if (pCodeInfo!=nullptr && pCodeInfo->Address != pLabelInfo->Address)	// label doesn't point to first byte of instruction
 	{
-		ImGui::Text("\t\tOperand Fixup(%s):",NumStr(pLabelInfo->Address));
+		ImGui::TextColored(labelColour, "\t\tOperand Fixup(% s) :",NumStr(pLabelInfo->Address));
 		ImGui::SameLine();
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s", pLabelInfo->Name.c_str());
+		ImGui::TextColored(labelColour, "%s", pLabelInfo->Name.c_str());
 	}
 	else
 	{
-		if (pLabelInfo->Global || pLabelInfo->LabelType == LabelType::Function)
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s: ", pLabelInfo->Name.c_str());
-		else
-			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "%s: ", pLabelInfo->Name.c_str());
+		ImGui::TextColored(labelColour, "%s: ", pLabelInfo->Name.c_str());
 	}
 
 	// hover tool tip
