@@ -170,11 +170,24 @@ void DrawComment(const FItem *pItem, float offset = 0.0f)
 
 void DrawLabelInfo(FCodeAnalysisState &state, const FLabelInfo *pLabelInfo)
 {
-	if(pLabelInfo->Global || pLabelInfo->LabelType == LabelType::Function)
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f),"%s: ", pLabelInfo->Name.c_str());
+	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pLabelInfo->Address);	// for self-modifying code
+
+	// draw SMC fixups differently
+	if (pCodeInfo!=nullptr && pCodeInfo->bSelfModifyingCode)
+	{
+		ImGui::Text("\t\tOperand Fixup(%s):",NumStr(pLabelInfo->Address));
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s", pLabelInfo->Name.c_str());
+	}
 	else
-		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "%s: ", pLabelInfo->Name.c_str());
-	
+	{
+		if (pLabelInfo->Global || pLabelInfo->LabelType == LabelType::Function)
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s: ", pLabelInfo->Name.c_str());
+		else
+			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "%s: ", pLabelInfo->Name.c_str());
+	}
+
+	// hover tool tip
 	if (ImGui::IsItemHovered() && pLabelInfo->References.empty() == false)
 	{
 		ImGui::BeginTooltip();
@@ -370,11 +383,12 @@ void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 			FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(pCodeInfo->Address + i);
 			if (pOperandData->Writes.empty() == false)
 			{
-				ImGui::Text("Operand %d Writes:",i);
+				ImGui::Text("Operand Writes:");
 				for (const auto& caller : pOperandData->Writes)
 				{
 					DrawCodeAddress(state, caller.first);
 				}
+				break;
 			}
 		}
 	}
@@ -1066,9 +1080,9 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 		kHighlightColour = 0xffffff00;
 	}*/
 
-	const FItem *pPrevItem = i > 0 ? state.ItemList[i-1] : nullptr;
-	if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
-		ImGui::Separator();
+	//const FItem *pPrevItem = i > 0 ? state.ItemList[i-1] : nullptr;
+	//if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
+	//	ImGui::Separator();
 
 	// selectable
 	bool bSelected = (pItem == state.pCursorItem) || (pItem->Address >= state.DataFormattingOptions.StartAddress && pItem->Address <= state.DataFormattingOptions.EndAddress);
@@ -1331,13 +1345,18 @@ void DrawExecutionInfo(FCodeAnalysisState& state)
 
 void DrawLabelList(FCodeAnalysisState &state, std::vector<FLabelInfo *> labelList)
 {
+	static std::string filterText;
+	ImGui::InputText("Filter", &filterText);
 	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false))
 	{
 		for (FLabelInfo *pLabelInfo : labelList)
 		{
-			if (ImGui::Selectable(pLabelInfo->Name.c_str(), state.pCursorItem == pLabelInfo))
+			if (filterText.empty() || pLabelInfo->Name.find(filterText) != std::string::npos)
 			{
-				GoToAddress(state, pLabelInfo->Address, true);
+				if (ImGui::Selectable(pLabelInfo->Name.c_str(), state.pCursorItem == pLabelInfo))
+				{
+					GoToAddress(state, pLabelInfo->Address, true);
+				}
 			}
 		}
 	}

@@ -486,7 +486,10 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			}
 			FCodeInfo *pCodeWrittenTo = state.GetCodeInfoForAddress(addr);
 			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
+			{
+				// TODO: record some info such as what byte was written
 				pCodeWrittenTo->bSelfModifyingCode = true;
+			}
 		}
 	}
 	else if (pins & Z80_IORQ)
