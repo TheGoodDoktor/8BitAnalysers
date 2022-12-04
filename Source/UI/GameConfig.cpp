@@ -418,7 +418,7 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo)
 	}
 }
 
-static const int g_kBinaryFileVersionNo = 6;
+static const int g_kBinaryFileVersionNo = 7;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Binary save
@@ -440,6 +440,15 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_
 	SaveCodeInfoBin(state, fp, addrStart, addrEnd);
 	SaveDataInfoBin(state, fp, addrStart, addrEnd);
 	SaveCommentBlocksBin(state, fp, addrStart, addrEnd);
+
+	// Save Watches
+	const int noWatches = (int)state.GetWatches().size();
+	fwrite(&noWatches, sizeof(noWatches), 1, fp);
+
+	for (const auto& watch : state.GetWatches())
+	{
+		fwrite(&watch, sizeof(uint16_t), 1, fp);
+	}
 
 	fclose(fp);
 	return true;
@@ -486,6 +495,20 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 	if (versionNo >= 5)
 		LoadCommentBlocksBin(state, fp, versionNo);
 
+	// watches
+	if (versionNo >= 7)
+	{
+		int noWatches;
+		state.InitWatches();
+		fread(&noWatches, sizeof(noWatches), 1, fp);
+
+		for (int i=0;i<noWatches;i++)
+		{
+			uint16_t watch;
+			fread(&watch, sizeof(uint16_t), 1, fp);
+			state.AddWatch(watch);
+		}
+	}
 	fclose(fp);
 	return true;
 }

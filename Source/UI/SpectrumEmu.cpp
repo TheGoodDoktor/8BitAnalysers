@@ -1299,6 +1299,12 @@ void FSpectrumEmu::DrawUI()
 	}
 	ImGui::End();
 
+	if (ImGui::Begin("Watches"))
+	{
+		DrawWatchWindow(CodeAnalysis);
+	}
+	ImGui::End();
+
 	if (bShowDebugLog)
 		g_ImGuiLog.Draw("Debug Log", &bShowDebugLog);
 }

@@ -494,6 +494,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 {
 	InitImageViewers();
 	
+	state.InitWatches();
 	state.ResetLabelNames();
 
 	for (int i = 0; i < (1 << 16); i++)	// loop across address range

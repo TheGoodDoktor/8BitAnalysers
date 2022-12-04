@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <set>
 #include <vector>
 
 #include "CodeAnaysisPage.h"
@@ -142,6 +143,20 @@ struct FCodeAnalysisState
 	void	ResetLabelNames() { LabelUsage.clear(); }
 	bool	EnsureUniqueLabelName(std::string& lableName);
 	bool	RemoveLabelName(const std::string& labelName);	// for changing label names
+
+	// Watches
+	void InitWatches() { Watches.clear(); }
+	bool	AddWatch(uint16_t address)
+	{
+		return Watches.insert(address).second;
+	}
+
+	bool	RemoveWatch(uint16_t address)
+	{
+		Watches.erase(address);
+	}
+
+	const std::set<uint16_t>& GetWatches() const { return Watches; }
 private:
 	std::vector<FCodeAnalysisPage*>	RegisteredPages;
 	std::vector<std::string>	PageNames;
@@ -163,6 +178,7 @@ public:
 	int						HoverAddress = -1;		// address being hovered over
 	int						HighlightAddress = -1;	// address to highlight
 	bool					GoToLabel = false;
+	std::set<uint16_t>		Watches;	// addresses to use as watches
 	std::vector<uint16_t>	AddressStack;
 	std::vector<FCPUFunctionCall>	CallStack;
 	uint16_t				StackMin;

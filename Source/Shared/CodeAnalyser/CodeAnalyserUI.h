@@ -19,8 +19,10 @@ void DrawGlobals(FCodeAnalysisState &state);
 void DrawCallStack(FCodeAnalysisState& state);
 void DrawTrace(FCodeAnalysisState& state);
 void DrawRegisters(FCodeAnalysisState& state);
+void DrawWatchWindow(FCodeAnalysisState& state);
 
 float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo);
+void DrawDataInfo(FCodeAnalysisState& state, const FDataInfo* pDataInfo, bool bDrawLabel = false);
 void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo);
 
 void CodeAnalyserGoToAddress(FCodeAnalysisState& state, uint16_t newAddress, bool bLabel = false);
