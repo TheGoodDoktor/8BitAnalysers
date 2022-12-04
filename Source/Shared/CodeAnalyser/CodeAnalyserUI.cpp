@@ -205,7 +205,28 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 		//ImGui::SameLine();
 		//DrawAddressLabel(state, pDataInfo->Address);
 		//ImGui::SameLine();
+		ImGui::PushID(watch);
+		if (ImGui::Selectable("##watchselect", watch == selectedWatch, 0))
+		{
+			selectedWatch = watch;
+		}
+		ImGui::SetItemAllowOverlap();	// allow buttons
+		ImGui::SameLine();
 		DrawDataInfo(state, pDataInfo, true);
+		ImGui::PopID();		
+	}
+
+	if (selectedWatch != -1)
+	{
+		if (ImGui::BeginPopupContextItem("code item context menu"))
+		{
+			if (ImGui::Selectable("Delete Breakpoint"))
+			{
+				state.RemoveWatch(selectedWatch);
+			}
+
+			ImGui::EndPopup();
+		}
 	}
 #else
 	if (ImGui::BeginChild("##watchlist", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0)))
@@ -607,7 +628,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo, bool bD
 	if (bDrawLabel)
 	{
 		DrawAddressLabel(state, pDataInfo->Address);
-		ImGui::SameLine(line_start_x + cell_width * 8 + glyph_width * 2);
+		ImGui::SameLine(line_start_x + cell_width * 10 + glyph_width * 2);
 		ImGui::Text(":");
 		ImGui::SameLine();
 	}

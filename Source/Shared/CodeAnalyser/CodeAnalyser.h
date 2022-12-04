@@ -154,6 +154,7 @@ struct FCodeAnalysisState
 	bool	RemoveWatch(uint16_t address)
 	{
 		Watches.erase(address);
+		return true;
 	}
 
 	const std::set<uint16_t>& GetWatches() const { return Watches; }
