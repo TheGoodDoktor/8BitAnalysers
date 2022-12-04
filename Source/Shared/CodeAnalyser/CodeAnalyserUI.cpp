@@ -906,7 +906,10 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Breakpoint]))
 		{
-			state.CPUInterface->ToggleDataBreakpointAtAddress(state.pCursorItem->Address, state.pCursorItem->ByteSize);
+			if (state.pCursorItem->Type == ItemType::Data)
+				state.CPUInterface->ToggleDataBreakpointAtAddress(state.pCursorItem->Address, state.pCursorItem->ByteSize);
+			else if (state.pCursorItem->Type == ItemType::Code)
+				state.CPUInterface->ToggleExecBreakpointAtAddress(state.pCursorItem->Address);
 		}
 	}
 	 
