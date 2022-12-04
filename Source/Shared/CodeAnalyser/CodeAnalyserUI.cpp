@@ -10,7 +10,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
 #include <sstream>
-//#include "chips/z80.h"
+#include "chips/z80.h"
 #include "CodeToolTips.h"
 
 // UI
@@ -155,6 +155,41 @@ void DrawTrace(FCodeAnalysisState& state)
 		}
 	}
 	
+}
+
+void DrawRegisters(FCodeAnalysisState& state)
+{
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+	{
+		z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
+
+		ImGui::Text("A: %s", NumStr(z80_a(pCPU)));
+		ImGui::Text("B: %s", NumStr(z80_b(pCPU)));
+		ImGui::Text("C: %s", NumStr(z80_c(pCPU)));
+		ImGui::Text("D: %s", NumStr(z80_d(pCPU)));
+		ImGui::Text("E: %s", NumStr(z80_e(pCPU)));
+		ImGui::Text("H: %s", NumStr(z80_h(pCPU)));
+		ImGui::Text("L: %s",NumStr(z80_l(pCPU)));
+
+		// BC
+		ImGui::Text("BC: %s", NumStr(z80_bc(pCPU)));
+		DrawAddressLabel(state, z80_bc(pCPU));
+		// DE
+		ImGui::Text("DE: %s", NumStr(z80_de(pCPU)));
+		DrawAddressLabel(state, z80_de(pCPU));
+		// HL
+		ImGui::Text("HL: %s",NumStr(z80_hl(pCPU))); 
+		DrawAddressLabel(state, z80_hl(pCPU));
+		// IX
+		ImGui::Text("IX: %s", NumStr(z80_ix(pCPU)));
+		DrawAddressLabel(state, z80_ix(pCPU));
+		// IY
+		ImGui::Text("IY: %s", NumStr(z80_iy(pCPU)));
+		DrawAddressLabel(state, z80_iy(pCPU));
+		// SP
+		ImGui::Text("SP: %s", NumStr(z80_sp(pCPU)));
+		DrawAddressLabel(state, z80_sp(pCPU));
+	}
 }
 
 void DrawComment(const FItem *pItem, float offset = 0.0f)
@@ -1342,6 +1377,12 @@ void DrawExecutionInfo(FCodeAnalysisState& state)
 			DrawTrace(state);
 			ImGui::EndTabItem();
 		}
+
+		if (ImGui::BeginTabItem("Registers"))
+		{
+			DrawRegisters(state);
+			ImGui::EndTabItem();
+		}		
 
 		ImGui::EndTabBar();
 	}

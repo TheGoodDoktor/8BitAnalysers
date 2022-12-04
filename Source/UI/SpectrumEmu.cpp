@@ -1218,7 +1218,7 @@ void FSpectrumEmu::DrawUI()
 		ui_dasm_draw(&pZXUI->dasm[i]);
 	}
 
-	DrawDebuggerUI(&pZXUI->dbg);
+	//DrawDebuggerUI(&pZXUI->dbg);
 
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
@@ -1290,6 +1290,12 @@ void FSpectrumEmu::DrawUI()
 	if (ImGui::Begin("Trace"))
 	{
 		DrawTrace(CodeAnalysis);
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Registers"))
+	{
+		DrawRegisters(CodeAnalysis);
 	}
 	ImGui::End();
 
