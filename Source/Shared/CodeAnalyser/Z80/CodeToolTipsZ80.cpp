@@ -45,6 +45,65 @@ namespace Z80Reg
 	// todo: add PC and AF'?
 }
 
+std::string GetRegName(uint32_t flag)
+{
+	if (flag & Z80Reg::A)
+		return "A";
+	if (flag & Z80Reg::F)
+		return "F";
+	if (flag & Z80Reg::B)
+		return "B";
+	if (flag & Z80Reg::C)
+		return "C";
+	if (flag & Z80Reg::D)
+		return "D";
+	if (flag & Z80Reg::E)
+		return "E";
+	if (flag & Z80Reg::H)
+		return "H";
+	if (flag & Z80Reg::L)
+		return "L";
+	if (flag & Z80Reg::I)
+		return "I";
+	if (flag & Z80Reg::R)
+		return "R";
+	if (flag & Z80Reg::SP)
+		return "SP";
+	if (flag & Z80Reg::AF)
+		return "AF";
+	if (flag & Z80Reg::BC)
+		return "BC";
+	if (flag & Z80Reg::DE)
+		return "DE";
+	if (flag & Z80Reg::HL)
+		return "HL";
+	if (flag & Z80Reg::IX)
+		return "IX";
+	if (flag & Z80Reg::IY)
+		return "IY";
+	if (flag & Z80Reg::IXL)
+		return "IXL";
+	if (flag & Z80Reg::IYH)
+		return "IXH";
+	if (flag & Z80Reg::IXL)
+		return "IYL";
+	if (flag & Z80Reg::IYH)
+		return "IYH";
+	if (flag & Z80Reg::BC_Indirect)
+		return "(BC)";
+	if (flag & Z80Reg::DE_Indirect)
+		return "(DE)";
+	if (flag & Z80Reg::HL_Indirect)
+		return "(HL)";
+	if (flag & Z80Reg::IX_Indirect)
+		return "(IX)";
+	if (flag & Z80Reg::IY_Indirect)
+		return "(IY)";
+	if (flag & Z80Reg::SP_Indirect)
+		return "(SP)";
+	return "";
+}
+
 std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 {
 	std::string outString;
@@ -61,8 +120,23 @@ std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 
 	if (Regs & Z80Reg::F)
 	{
-		sprintf_s(tempStr, "F = %s ", NumStr(z80_f(pCPU)));
-		outString += std::string(tempStr);
+		//sprintf_s(tempStr, "F = %s ", NumStr(z80_f(pCPU)));
+		//outString += std::string(tempStr);
+
+		const uint8_t f = z80_f(pCPU);
+		char f_str[] = {
+			'[',
+			(f & Z80_SF) ? 'S':'-',
+			(f & Z80_ZF) ? 'Z':'-',
+			(f & Z80_YF) ? 'X':'-',
+			(f & Z80_HF) ? 'H':'-',
+			(f & Z80_XF) ? 'Y':'-',
+			(f & Z80_VF) ? 'V':'-',
+			(f & Z80_NF) ? 'N':'-',
+			(f & Z80_CF) ? 'C':'-',
+			']',
+			0, };
+		outString += std::string(f_str);
 	}
 
 	if (Regs & Z80Reg::B)
@@ -228,6 +302,12 @@ std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 	return outString;
 }
 
+struct FAutoGenInstructionInfo
+{
+	uint32_t RegFlags = 0;
+	std::string Description;
+};
+
 static uint32_t gReg[8] =   { Z80Reg::B, Z80Reg::C, Z80Reg::D, Z80Reg::E, Z80Reg::H,   Z80Reg::L,   Z80Reg::HL_Indirect, Z80Reg::A };
 static uint32_t gRegIX[8] = { Z80Reg::B, Z80Reg::C, Z80Reg::D, Z80Reg::E, Z80Reg::IXH, Z80Reg::IXL, Z80Reg::IX_Indirect, Z80Reg::A };
 static uint32_t gRegIY[8] = { Z80Reg::B, Z80Reg::C, Z80Reg::D, Z80Reg::E, Z80Reg::IYH, Z80Reg::IYL, Z80Reg::IY_Indirect, Z80Reg::A };
@@ -240,16 +320,16 @@ static uint32_t gRegPairs2[4] =	  { Z80Reg::BC, Z80Reg::DE, Z80Reg::HL, Z80Reg::
 static uint32_t gRegPairs2IX[4] = { Z80Reg::BC, Z80Reg::DE, Z80Reg::IX, Z80Reg::AF};
 static uint32_t gRegPairs2IY[4] = { Z80Reg::BC, Z80Reg::DE, Z80Reg::IY, Z80Reg::AF};
 
-uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF) 
+void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FAutoGenInstructionInfo& inst) 
 {
-	uint16_t flags = 0;
-
     uint8_t op = 0, pre = 0, u8 = 0;
     int8_t d = 0;
     uint16_t u16 = 0;
 	uint32_t *r = gReg;
     uint32_t *rp = gRegPairs;
     uint32_t *rp2 = gRegPairs2;
+
+	char tempStr[256] = {0};
 
     /* fetch the first instruction byte */
 
@@ -281,9 +361,9 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
     }
     
     /* parse the opcode */
-    uint8_t x = (op >> 6) & 3;
-    uint8_t y = (op >> 3) & 7;
-    uint8_t z = op & 7;
+    uint8_t x = (op >> 6) & 3;	// top 2 bits: 6&7
+    uint8_t y = (op >> 3) & 7;	// middle bits: 3,4 & 5
+    uint8_t z = op & 7;			// lower 3 bits: 0,1 & 2
     uint8_t p = y >> 1;
     uint8_t q = y & 1;
     if (x == 1) 
@@ -301,11 +381,11 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
                 if (pre && ((z == 4) || (z == 5))) 
 				{
                     /* special case LD (IX+d),L/H (don't use IXL/IXH) */
-					return gReg[z] | r[6];
+					inst.RegFlags = gReg[z] | r[6];
                 }
                 else 
 				{
-					return r[z] | r[6];
+					inst.RegFlags = r[z] | r[6];
                 }
             }
         }
@@ -315,24 +395,54 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
             if (pre && ((y == 4) || (y == 5))) 
 			{
                 /* special case LD H/L,(IX+d) (don't use IXL/IXH) */
-				return gReg[y] | r[6];
+				inst.RegFlags = gReg[y] | r[6];
             }
             else 
 			{
-				return r[y] | r[6];
+				sprintf_s(tempStr, "Load %s from memory location (HL)", GetRegName(r[y]).c_str()/*, NumStr(CPUIF->ReadByte(pc))*/);
+				inst.RegFlags = r[y] | r[6];
             }
 		}
         else 
 		{
             /* regular LD r,s */
-			return gReg[y] | gReg[z];
+			inst.RegFlags = gReg[y] | gReg[z];
         }
     }
     else if (x == 2) 
 	{
 		/* ADD A,s, ADC A,s, SUB s, SBC A,s, AND s, XOR s, OR s, CP s */
 		/* Where s is (HL)/(IX+d)/(IX+d) or r */
-		return r[z] | Z80Reg::A;
+		switch (y)
+		{
+			case 0: // ADD A, r 
+				sprintf_s(tempStr, "Add %s to A. Result stored in A.", GetRegName(r[z]).c_str());
+				break;
+			case 1: // ADC A, s 
+				sprintf_s(tempStr, "Add with Carry. %s and Carry flag added to A. Result stored in A.", GetRegName(r[z]).c_str());
+				inst.RegFlags |= Z80Reg::F;
+				break;
+			case 2: // SUB s
+				sprintf_s(tempStr, "Subtract %s from A. Result stored in A.", GetRegName(r[z]).c_str());
+				break;
+			case 3: // SBC A, s
+				sprintf_s(tempStr, "Subtract with Carry. %s and C flag are subtracted from A. Result stored in A.", GetRegName(r[z]).c_str());
+				inst.RegFlags |= Z80Reg::F;
+				break;
+			case 4: // AND s
+				sprintf_s(tempStr, "Logical AND A with %s. Result stored in A.", GetRegName(r[z]).c_str());
+				break;
+			case 5: // XOR s
+				sprintf_s(tempStr, "Exclusive OR A with %s. Result stored in A.", GetRegName(r[z]).c_str());
+				break;
+			case 6: // OR s
+				sprintf_s(tempStr, "Logical OR A with %s. Result stored in A.", GetRegName(r[z]).c_str());
+				break;
+			case 7: // CP s
+				sprintf_s(tempStr, "Compare A with %s. Set Z flag if they match.", GetRegName(r[z]).c_str());
+				break;
+		}
+		inst.RegFlags |= r[z] | Z80Reg::A;
     }
     else if (x == 0) 
 	{
@@ -344,57 +454,128 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
                     case 0: /* NOP */
 						break;
                     case 1: /* EX AF,AF'*/
-						return Z80Reg::AF; // todo return AF'?
+						inst.RegFlags = Z80Reg::AF; // todo inst.RegFlags = AF'?
+						break;
                     case 2: /* DJNZ*/
-						return Z80Reg::B;
+						inst.RegFlags = Z80Reg::B;
+						break;
                     case 3: /* JR e*/
 						break;
                     default: /* JR C/NC/Z/NZ, e*/
+						inst.RegFlags = Z80Reg::F;
 						break;
                 }
                 break;
             case 1:
                 if (q == 0) /* LD dd,nn*/
-					return rp[p];
+				{
+					sprintf_s(tempStr, "Load %s with %s", GetRegName(rp[p]).c_str(), NumStr(CPUIF->ReadWord(pc)));
+					inst.RegFlags = rp[p];
+				}
                 else /* ADD HL, ss. ADD IX, pp. ADD IY, rr. */
-					return rp[2] | rp[p];
-                break;
+					inst.RegFlags = rp[2] | rp[p];
+				break;
             case 2: 
                 {
                     switch (y) 
 					{
                         case 0: /* LD (BC),A */
-							return Z80Reg::A | Z80Reg::BC_Indirect;
+							inst.RegFlags = Z80Reg::A | Z80Reg::BC_Indirect;
+							break;
                         case 1: /* LD A,(BC) */
-							return Z80Reg::A | Z80Reg::BC_Indirect;
+							inst.RegFlags = Z80Reg::A | Z80Reg::BC_Indirect;
+							break;
                         case 2: /* LD (DE),A*/
-							return Z80Reg::A | Z80Reg::DE_Indirect;
+							inst.RegFlags = Z80Reg::A | Z80Reg::DE_Indirect;
+							break;
                         case 3: /* LD A,(DE)*/
-							return Z80Reg::A | Z80Reg::DE_Indirect;
+							inst.RegFlags = Z80Reg::A | Z80Reg::DE_Indirect;
+							break;
                         case 4: /* LD (nn), HL*/
-							return rp[2];
+						{
+							const uint16_t nn = CPUIF->ReadWord(pc);
+							sprintf_s(tempStr, "Load the memory locations %s and %s from HL", NumStr(nn), NumStr(uint16_t(nn+1)));
+							inst.RegFlags = rp[p];
+							break;
+						}
                         case 5: /* LD HL,(nn)*/
-							return rp[2];
+						{
+							const uint16_t nn = CPUIF->ReadWord(pc);
+							sprintf_s(tempStr, "Load HL from memory locations %s and %s", NumStr(nn), NumStr(uint16_t(nn+1)));
+							inst.RegFlags = rp[p];
+							break;
+						}
                         case 6: /* LD (nn), A*/
-							return Z80Reg::A;
+							inst.RegFlags = Z80Reg::A;
+							break;
                         case 7: /* LD A, (n)*/
-							return Z80Reg::A;
+							inst.RegFlags = Z80Reg::A;
+							break;
                     }
                 }
                 break;
             case 3: /* INC ss (register pair)*/
-				return rp[p];
-            case 4: /* INC (HL)/(IX+d)/(IX+d) or r */
-				return r[y];
-            case 5: /* DEC (HL)/(IX+d)/(IX+d) or r */
-				return r[y];
+				inst.RegFlags = rp[p];
+				break;
+            case 4: /* INC (HL)/(IX+d)/(IY+d) or r */
+			{
+				z80_t* pCPU = (z80_t *)CPUIF->GetCPUEmulator();
+				if (y == 6) /* (HL)/(IX+d)/(IY+d) */
+				{
+					if (pre)
+					{
+						const uint16_t addr = (pre == 0xdd ? z80_ix(pCPU) : z80_iy(pCPU)) + CPUIF->ReadByte(pc);
+						sprintf_s(tempStr, "Increment indexed memory location %s", NumStr(addr));
+					}
+					else
+					{
+						sprintf_s(tempStr, "Increment byte at memory location %s", GetRegName(r[y]).c_str());
+					}
+				}
+				else
+				{
+					sprintf_s(tempStr, "Increment %s", GetRegName(r[y]).c_str());
+				}
+				inst.RegFlags = r[y];
+				break;
+			}
+            case 5: /* DEC (HL)/(IX+d)/(IY+d) or r */
+			{
+				z80_t* pCPU = (z80_t *)CPUIF->GetCPUEmulator();
+				if (y == 6) /* (HL)/(IX+d)/(IY+d) */
+				{
+					if (pre)
+					{
+						const int8_t byteVal = CPUIF->ReadByte(pc);
+						const uint16_t addr = (pre == 0xdd ? z80_ix(pCPU) : z80_iy(pCPU)) + byteVal;
+						sprintf_s(tempStr, "Decrement byte at indexed memory location %s", NumStr(addr));
+					}
+					else
+					{
+						sprintf_s(tempStr, "Decrement byte at memory location %s", GetRegName(r[y]).c_str());
+					}
+				}
+				else
+				{
+					sprintf_s(tempStr, "Decrement %s", GetRegName(r[y]).c_str());
+				}
+				inst.RegFlags = r[y];
+				break;
+			}
             case 6: /* LD s, n. Where s is (HL)/(IX+d)/(IY+d) or r*/
-				return r[y];
+				if (y == 6)
+					sprintf_s(tempStr, "Load %s into the memory location %s", NumStr(CPUIF->ReadByte(pc)), GetRegName(r[y]).c_str());
+				else
+					sprintf_s(tempStr, "Load register %s with %s", GetRegName(r[y]).c_str(), NumStr(CPUIF->ReadByte(pc)));
+
+				inst.RegFlags = r[y];
+				break;
             case 7: 
 				if (y < 6) /* RLCA, RRCA, RLA, RRA, DAA, CPL, */
-					return Z80Reg::A;
+					inst.RegFlags = Z80Reg::A;
 				else /* SCF, CCF*/
-					return Z80Reg::F;
+					inst.RegFlags = Z80Reg::F;
+				break;
         }
     }
     else 
@@ -402,11 +583,13 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
         switch (z) 
 		{
             case 0: /* RET NZ/Z/NC/C/PO/PE/P/M*/
+				inst.RegFlags = Z80Reg::F;
 				break;
             case 1:
                 if (q == 0) /* POP qq (register pair)*/
 				{
-					return rp2[p];
+					sprintf_s(tempStr, "Pop %s from stack", GetRegName(rp2[p]).c_str());
+					inst.RegFlags = rp2[p];
 				}
                 else 
 				{
@@ -417,13 +600,16 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
                         case 1: /* EXX */
 							break;
                         case 2: /* JP (HL)/(IX)/(IY)*/
-							return rp[2];
+							inst.RegFlags = rp[2];
+							break;
                         case 3: /* LD SP HL/IX/IY*/
-							return rp[p];
+							inst.RegFlags = rp[p];
+							break;
                     }
                 }
                 break;
             case 2: /* JP cc, nn. Where cc is NZ/Z/NC/C/PO/PE/P/M*/
+				inst.RegFlags = Z80Reg::F;
 				break;
             case 3:
                 switch (y) 
@@ -431,13 +617,17 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
                     case 0: /* JP nn*/
 						break;
                     case 2: /* OUT (n), A*/
-						return Z80Reg::A;
+						inst.RegFlags = Z80Reg::A;
+						break;
                     case 3: /* IN A, (n)*/
-						return Z80Reg::A;
+						inst.RegFlags = Z80Reg::A;
+						break;
                     case 4: /* EX (SP), HL/IX/IY*/
-						return rp[2] | Z80Reg::SP_Indirect;
+						inst.RegFlags = rp[2] | Z80Reg::SP_Indirect;
+						break;
                     case 5: /* EX DE,HL*/
-						return Z80Reg::DE | Z80Reg::HL;
+						inst.RegFlags = Z80Reg::DE | Z80Reg::HL;
+						break;
                     case 6: /* DI*/
 						break;
                     case 7: /* EI*/
@@ -454,24 +644,26 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
 						{
                             /* rot and shift instructions */
 							/* RLC, RRC, RL, RR, SLA, SRA, SLL, SRL */
-							return r[z];
+							inst.RegFlags = r[z];
                         }
                         else 
 						{
                             /* bit instructions */
 							/* 1 BIT, 2 RES, 3 SET */
-							return r[z];
+							inst.RegFlags = r[z];
                         }
                         break;
                 }
                 break;
             case 4: /* CALL cc, nn. Where cc is NZ/Z/NC/C/PO/PE/P/M*/
+				inst.RegFlags = Z80Reg::F;
 				break;
             case 5: 
                 if (q == 0) 
 				{
                     /* PUSH qq (register pair)*/
-					return rp2[p];
+					sprintf_s(tempStr, "Push %s onto stack", GetRegName(rp2[p]).c_str());
+					inst.RegFlags = rp2[p];
                 }
                 else 
 				{
@@ -505,11 +697,11 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
 									/* LDDR, CPDR, INDR, OTDR */
 									 
 									if (z == 0) /* First column. LDI, LDD, LDIR, LDDR*/
-										return Z80Reg::BC | Z80Reg::HL | Z80Reg::DE |Z80Reg::DE_Indirect | Z80Reg::HL_Indirect;
+										inst.RegFlags = Z80Reg::BC | Z80Reg::HL | Z80Reg::DE |Z80Reg::DE_Indirect | Z80Reg::HL_Indirect;
 									if (z == 1) /* Second column. CPI, CPDR, CPD, CPIR*/
-										return Z80Reg::A | Z80Reg::BC | Z80Reg::HL | Z80Reg::HL_Indirect;
+										inst.RegFlags = Z80Reg::A | Z80Reg::BC | Z80Reg::HL | Z80Reg::HL_Indirect;
 									/* Last 2 columns. OUTI, INI, OUTD, IND, INIR, OTIR, INDR, OTDR*/
-									return Z80Reg::B | Z80Reg::C | Z80Reg::HL | Z80Reg::HL_Indirect;
+									inst.RegFlags = Z80Reg::B | Z80Reg::C | Z80Reg::HL | Z80Reg::HL_Indirect;
                                 }
                                 else 
 								{
@@ -522,28 +714,49 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
 								{
                                     case 0: /* IN r, (C)*/
 										if(y!=6)
-											return r[y] | Z80Reg::C; 
-										return Z80Reg::C;
+											inst.RegFlags = r[y] | Z80Reg::C; 
+										else
+											inst.RegFlags = Z80Reg::C;
+										break;
                                     case 1: /* OUT (C), r*/
 										if(y!=6)
-											return r[y] | Z80Reg::C; 
-										return Z80Reg::C;
+											inst.RegFlags = r[y] | Z80Reg::C;
+										else
+											inst.RegFlags = Z80Reg::C;
+										break;
                                     case 2: /* SBC HL, ss. ADC HL, ss. Where ss is BC/DE/HL/SP*/
-										return Z80Reg::HL | rp[p];
+										if (q == 0)
+											sprintf_s(tempStr, "Subtract with Carry. %s and C flag are subtracted from HL. Result stored in HL.", GetRegName(rp[p]).c_str());
+										else
+											sprintf_s(tempStr, "Add with Carry. %s and C flag are added to HL. Result stored in HL.", GetRegName(rp[p]).c_str());
+										inst.RegFlags = Z80Reg::HL | rp[p];
+										break;
                                     case 3: /* LD (nn), dd. LD dd, (nn). */
-										return rp[p];
+									{
+										const uint16_t nn = CPUIF->ReadWord(pc);
+										if (q==0)
+											sprintf_s(tempStr, "Load memory locations (%s) and (%s) from %s", NumStr(nn), NumStr(uint16_t(nn+1)), GetRegName(rp[p]).c_str());
+										else
+											sprintf_s(tempStr, "Load %s from memory locations (%s) and (%s)", GetRegName(rp[p]).c_str(), NumStr(nn), NumStr(uint16_t(nn+1)));
+										inst.RegFlags =  rp[p];
+										break;
+									}
                                     case 4: /* NEG */
-										return Z80Reg::A;
+										inst.RegFlags =  Z80Reg::A;
+										break;
                                     case 5: /* RETI/RETN*/
 										break;
                                     case 6: /* IM 0/1/2*/
 										break;
                                     case 7: /* LD I,A, LD R,A, LD A,I, LD A,R, RRD, RLD, NOP (ED), NOP (ED)*/
 										if (y == 0 || y == 2)
-											return Z80Reg::A | Z80Reg::I;
+											inst.RegFlags =  Z80Reg::A | Z80Reg::I;
+										else
 										if (y == 1 || y == 3)
-											return Z80Reg::A | Z80Reg::R;
-										return Z80Reg::A | Z80Reg::HL_Indirect;
+											inst.RegFlags =  Z80Reg::A | Z80Reg::R;
+										else
+											inst.RegFlags = Z80Reg::A | Z80Reg::HL_Indirect;
+										break;
                                 }
                             }
                             break;
@@ -551,13 +764,14 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
                 }
                 break;
             case 6: /* ADD A,n, ADC A,n, SUB n, SBC A,n, AND n, XOR n, OR n, CP n*/
-				return Z80Reg::A;
+				inst.RegFlags =  Z80Reg::A;
+				break;
             case 7: /* RST */ 
 				// todo
 				break;
         }
     }
-    return flags;
+	inst.Description = tempStr;
 }
 
 // TODO: Eventually fill this up
@@ -565,8 +779,11 @@ uint32_t GetRegisterUsageFromOpcode(uint16_t pc, ICPUInterface* CPUIF)
 
 InstructionInfoMap g_InstructionInfo =
 {
+	{0x07, {"RLCA: A is rotated left 1 bit. The sign bit (bit 7) is copied to the Carry flag and also to bit 0."}},	//RLCA
+	{0x0F, {"RRCA: A is rotated right 1 bit. Bit 0 is copied to the Carry flag and also to bit 7"}},	//RRCA
 	{0x10, {"DJNZ: Decrement B & Jump relative if it isn't 0"}},	//DJNZ
 	{0x2F, {"CPL: Complement(inverted) bits of A"} },	//CPL
+	{0x76, {"HALT: Suspend CPU until interrupt or reset occurs."} },	//HALT
 	{0x96, {"Subtract (HL) from A"}},	// SUB (HL)
 	{0xD9, {"EXX: Exchange BC, DE & HL with shadow registers" }},	// EXX
 };
@@ -658,33 +875,34 @@ const FInstructionInfo* GetInstructionInfo(FCodeAnalysisState& state, const FCod
 	return &it->second;
 }
 
-// Sam : you can write this one, return an empty string if you can't generate the string
-std::string GenerateInstructionDescription(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
+void ShowCodeToolTipZ80(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
 {
 	std::string desc;
 
-	return desc;
-}
+	// Get flags for register usage and try to auto generate a description for the instruction.
+	FAutoGenInstructionInfo genInstrInfo;
+	GetFlagsAndGenerateDescriptionFromOpcode(pCodeInfo->Address, state.CPUInterface, genInstrInfo);
 
-void ShowCodeToolTipZ80(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
-{
-	std::string desc = GenerateInstructionDescription(state, pCodeInfo);
-	if (desc.empty())	// fall back to LUT is there's no desc generated
+	if (genInstrInfo.Description.empty()) // fall back to LUT if there's no desc generated
 	{
 		const FInstructionInfo* pInstructionInfo = GetInstructionInfo(state, pCodeInfo);
 
 		if (pInstructionInfo != nullptr)
 			desc = std::string(pInstructionInfo->Description);
 	}
+	else
+	{
+		desc = genInstrInfo.Description;
+	}
+	
+	std::string regStr = GenerateRegisterValueString(genInstrInfo.RegFlags, state.CPUInterface);
 
-	uint32_t regs = GetRegisterUsageFromOpcode(pCodeInfo->Address, state.CPUInterface);
-	std::string regStr = GenerateRegisterValueString(regs, state.CPUInterface);
-
-	if (!regs && desc.empty())
+	if (!genInstrInfo.RegFlags && desc.empty())
 		return;
 
 	ImGui::BeginTooltip();
-	ImGui::Text(desc.c_str());	// Instruction description
-	ImGui::Text(regStr.c_str()/*, pRegName*/);	// TODO: Sam put your reg stuff here..
+	if (!desc.empty())
+		ImGui::Text(desc.c_str());	// Instruction description
+	ImGui::Text(regStr.c_str());
 	ImGui::EndTooltip();
 }
