@@ -3,7 +3,7 @@
 #include "../SpectrumEmu.h"
 
 #include <imgui.h>
-#include <Shared/CodeAnalyser/CodeAnalyserUI.h>
+#include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <Shared/ImGuiSupport/imgui_impl_lucidextra.h>
 #include <Shared/Util/Misc.h>
 

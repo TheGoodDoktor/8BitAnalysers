@@ -1,6 +1,6 @@
 #include "IOAnalysis.h"
 
-#include "CodeAnalyser/CodeAnalyserUI.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "SpectrumEmu.h"
 
 #include <chips/z80.h>

@@ -1,5 +1,5 @@
 #include "CodeAnalyserUI.h"
-#include "CodeAnalyser.h"
+#include "../CodeAnalyser.h"
 
 #include "Util/Misc.h"
 #include "Util/GraphicsView.h"

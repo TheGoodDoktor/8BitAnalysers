@@ -30,7 +30,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "ui/ui_dbg.h"
 #include "MemoryHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
-#include "CodeAnalyser/CodeAnalyserUI.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
 #include "zx-roms.h"
 #include "ROMLabels.h"

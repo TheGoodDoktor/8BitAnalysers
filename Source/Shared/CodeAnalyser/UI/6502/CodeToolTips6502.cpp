@@ -1,5 +1,5 @@
 #include "CodeToolTips6502.h"
-#include "../CodeAnalyser.h"
+#include "../../CodeAnalyser.h"
 #include "../CodeToolTips.h"
 
 #include <imgui.h>

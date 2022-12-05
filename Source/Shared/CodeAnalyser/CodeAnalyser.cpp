@@ -9,7 +9,7 @@
 
 #include "Util/Misc.h"
 #include "Util/GraphicsView.h"
-#include "ImageViewer.h"
+#include "UI/ImageViewer.h"
 
 #include "Z80/CodeAnalyserZ80.h"
 #include "6502/CodeAnalyser6502.h"

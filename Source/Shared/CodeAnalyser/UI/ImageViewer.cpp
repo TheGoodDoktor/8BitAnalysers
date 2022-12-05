@@ -1,6 +1,6 @@
 #include "ImageViewer.h"
-#include "CodeAnalyser.h"
-#include "../Util/GraphicsView.h"
+#include "../CodeAnalyser.h"
+#include "Util/GraphicsView.h"
 
 #include <map>
 #include <string>

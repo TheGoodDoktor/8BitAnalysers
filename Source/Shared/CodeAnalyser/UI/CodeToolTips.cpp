@@ -1,5 +1,5 @@
 #include "CodeToolTips.h"
-#include "CodeAnalyser.h"
+#include "../CodeAnalyser.h"
 #include "Z80/CodeToolTipsZ80.h"
 #include "6502/CodeToolTips6502.h"
 

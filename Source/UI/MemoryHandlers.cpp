@@ -1,7 +1,7 @@
 #include "MemoryHandlers.h"
 #include <cstdint>
 #include "SpectrumEmu.h"
-#include "CodeAnalyser/CodeAnalyserUI.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include <Shared/Util/Misc.h>
 
 int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEmu*pEmu)

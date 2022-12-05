@@ -4,7 +4,7 @@
 
 #include <imgui.h>
 #include "../SpectrumEmu.h"
-#include <Shared/CodeAnalyser/CodeAnalyserUI.h>
+#include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <UI/Viewers/GraphicsViewer.h>
 
 #define NOMINMAX // without this std::min and std::max fail to compile

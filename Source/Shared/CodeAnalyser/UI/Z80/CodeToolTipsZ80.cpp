@@ -1,6 +1,6 @@
 #include "CodeToolTipsZ80.h"
 #include "../CodeToolTips.h"
-#include "../CodeAnalyser.h"
+#include "../../CodeAnalyser.h"
 
 #include <Util/Misc.h>
 #include <chips/z80.h>

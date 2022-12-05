@@ -4,7 +4,7 @@
 #include "../SpectrumEmu.h"
 #include "../GameConfig.h"
 #include <algorithm>
-#include "CodeAnalyser/CodeAnalyserUI.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
 #include "misc/cpp/imgui_stdlib.h"
 #include <Shared/Util/Misc.h>
