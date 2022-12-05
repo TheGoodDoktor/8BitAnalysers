@@ -9,6 +9,7 @@
 #include "SpectrumEmu.h"
 #include "GameViewers/GameViewer.h"
 #include "SnapshotLoaders/GamesList.h"
+#include "Debug/Debug.h"
 
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;
@@ -170,18 +171,29 @@ void SaveLabelsBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddr
 			fwrite(&pLabel->Global, sizeof(bool), 1, fp);
 
 			// References?
-			int noRefences = (int)pLabel->References.size();
-			fwrite(&noRefences, sizeof(int), 1, fp);
+			long refCountPos = ftell(fp);
+			int noReferences = (int)pLabel->References.size();
+			fwrite(&noReferences, sizeof(int), 1, fp);
+			noReferences = 0;
 			for (const auto &ref : pLabel->References)
 			{
-				uint16_t refAddr = ref.first;
-				fwrite(&refAddr, sizeof(refAddr), 1, fp);
+				const uint16_t refAddr = ref.first;
+				if (refAddr >= startAddress && refAddr <= endAddress)	// only add references from region we are saving
+				{
+					fwrite(&refAddr, sizeof(refAddr), 1, fp);
+					noReferences++;
+				}
 			}
+
+			// fix up reference count
+			fseek(fp, refCountPos, SEEK_SET);
+			fwrite(&noReferences, sizeof(int), 1, fp);	// new reference count
+			fseek(fp, 0, SEEK_END);	// point back to end of file
 		}
 	}
 }
 
-void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo)
+void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount = 0;
 
@@ -207,13 +219,20 @@ void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo)
 		// References?
 		if(versionNo > 1)
 		{
-			int noReferences;// = (int)pLabel->References.size();
+			int noReferences = 0;
 			fread(&noReferences, sizeof(int), 1, fp);
 			for (int i=0;i< noReferences;i++)
 			{
 				uint16_t refAddr;
 				fread(&refAddr, sizeof(refAddr), 1, fp);
-				pLabel->References[refAddr] = 1;
+				if (refAddr >= startAddress && refAddr <= endAddress)
+				{
+					pLabel->References[refAddr] = 1;
+				}
+				else
+				{
+					LOGWARNING("Label reference address %x outside of range",refAddr);
+				}
 			}
 		}
 
@@ -244,13 +263,13 @@ void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAd
 			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 			fwrite(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
 			fwrite(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
-			WriteStringToFile(pCodeInfo->Text, fp);
+			WriteStringToFile(pCodeInfo->Text, fp);	// we can remove this - making sure backwards compatibility works of course!
 			WriteStringToFile(pCodeInfo->Comment, fp);
 		}
 	}
 }
 
-void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo)
+void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount;
 	fread(&recordCount, sizeof(int), 1, fp);
@@ -298,28 +317,49 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAd
 			WriteStringToFile(pDataInfo->Comment, fp);
 
 			// Reads & Writes?
-			int noReads = (int)pDataInfo->Reads.size();
+			int noReads = 0;
+			const long noReadsFilePos = ftell(fp);
 			fwrite(&noReads, sizeof(int), 1, fp);
 			for (const auto &ref : pDataInfo->Reads)
 			{
-				uint16_t refAddr = ref.first;
-				fwrite(&refAddr, sizeof(refAddr), 1, fp);
+				const uint16_t refAddr = ref.first;
+				if (refAddr >= startAddress && refAddr <= endAddress)
+				{
+					fwrite(&refAddr, sizeof(refAddr), 1, fp);
+					noReads++;
+				}
 			}
 
-			int noWrites = (int)pDataInfo->Writes.size();
+			// patch number of reads
+			fseek(fp, noReadsFilePos, SEEK_SET);
+			fwrite(&noReads, sizeof(int), 1, fp);
+			fseek(fp, 0, SEEK_END);
+
+
+			int noWrites = 0;
+			const long noWritesFilePos = ftell(fp);
 			fwrite(&noWrites, sizeof(int), 1, fp);
 			for (const auto &ref : pDataInfo->Writes)
 			{
-				uint16_t refAddr = ref.first;
-				fwrite(&refAddr, sizeof(refAddr), 1, fp);
+				const uint16_t refAddr = ref.first;
+				if (refAddr >= startAddress && refAddr <= endAddress)
+				{
+					fwrite(&refAddr, sizeof(refAddr), 1, fp);
+					noWrites++;
+				}
 			}
+
+			// patch number of writes
+			fseek(fp, noWritesFilePos, SEEK_SET);
+			fwrite(&noWrites, sizeof(int), 1, fp);
+			fseek(fp, 0, SEEK_END);
 		}
 	}
 	
 	
 }
 
-void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
+void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount;
 	fread(&recordCount, sizeof(int), 1, fp);
@@ -362,7 +402,10 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 			{
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
-				pDataInfo->Reads[dataAddr] = 1;
+				if (dataAddr >= startAddress && dataAddr <= endAddress)
+					pDataInfo->Reads[dataAddr] = 1;
+				else
+					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
 			}
 		}
 		if (versionNo > 2)
@@ -373,7 +416,10 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo)
 			{
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
-				pDataInfo->Writes[dataAddr] = 1;
+				if (dataAddr >= startAddress && dataAddr <= endAddress)
+					pDataInfo->Writes[dataAddr] = 1;
+				else
+					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
 			}
 		}
 
@@ -404,7 +450,7 @@ void SaveCommentBlocksBin(const FCodeAnalysisState& state, FILE* fp, uint16_t st
 	}
 }
 
-void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo)
+void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount;
 	fread(&recordCount, sizeof(int), 1, fp);
@@ -418,7 +464,7 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo)
 	}
 }
 
-static const int g_kBinaryFileVersionNo = 7;
+static const int g_kBinaryFileVersionNo = 8;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Binary save
@@ -430,12 +476,20 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_
 
 	fwrite(&g_kBinaryFileMagic, sizeof(int), 1, fp);
 	fwrite(&g_kBinaryFileVersionNo, sizeof(int), 1, fp);
-	for (int i = 0; i < 1 << 16; i++)
+
+	fwrite(&addrStart, sizeof(uint16_t), 1, fp);	// write memory range of this block
+	fwrite(&addrEnd, sizeof(uint16_t), 1, fp);
+
+	for (int i = addrStart; i <= addrEnd; i++)
 	{
-		uint16_t addr = state.GetLastWriterForAddress(i);
-		fwrite(&addr, sizeof(uint16_t), 1, fp);
+		const uint16_t invalid = 0;
+		const uint16_t addr = state.GetLastWriterForAddress(i);
+		if (addr >= addrStart && addr <= addrEnd)
+			fwrite(&addr, sizeof(uint16_t), 1, fp);
+		else
+			fwrite(&invalid, sizeof(uint16_t), 1, fp);
 	}
-	//fwrite(&state.LastWriter, sizeof(uint16_t), 1 << 16, fp);	// write whole address range
+	
 	SaveLabelsBin(state, fp, addrStart, addrEnd);
 	SaveCodeInfoBin(state, fp, addrStart, addrEnd);
 	SaveDataInfoBin(state, fp, addrStart, addrEnd);
@@ -470,16 +524,19 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 
 	fread(&versionNo, sizeof(int), 1, fp);
 
-	// loop across address range
-	// clear what we're replacing
-	/*/for (int i = addrStart; i <= addrEnd; i++)
+	if (versionNo >= 8)
 	{
-		FLabelInfo* pLabel = state.GetLabelForAddress(i);
-		delete pLabel;
-		state.SetLabelForAddress(i, nullptr);
-	}*/
+		fread(&addrStart, sizeof(uint16_t), 1, fp);
+		fread(&addrEnd, sizeof(uint16_t), 1, fp);
 
-	if (versionNo >= 4)
+		for (int i = addrStart; i <= addrEnd; i++)
+		{
+			uint16_t lastWriter;
+			fread(&lastWriter, sizeof(uint16_t), 1, fp);
+			state.SetLastWriterForAddress(i, lastWriter);
+		}
+	}
+	else if (versionNo >= 4)
 	{
 		for (int i = 0; i < (1 << 16); i++)
 		{
@@ -489,11 +546,11 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 		}
 	}
 
-	LoadLabelsBin(state, fp, versionNo);
-	LoadCodeInfoBin(state, fp, versionNo);
-	LoadDataInfoBin(state, fp, versionNo);
+	LoadLabelsBin(state, fp, versionNo, addrStart, addrEnd);
+	LoadCodeInfoBin(state, fp, versionNo, addrStart, addrEnd);
+	LoadDataInfoBin(state, fp, versionNo, addrStart, addrEnd);
 	if (versionNo >= 5)
-		LoadCommentBlocksBin(state, fp, versionNo);
+		LoadCommentBlocksBin(state, fp, versionNo, addrStart, addrEnd);
 
 	// watches
 	if (versionNo >= 7)
