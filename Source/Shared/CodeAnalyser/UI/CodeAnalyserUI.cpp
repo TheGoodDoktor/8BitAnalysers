@@ -220,9 +220,13 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 	{
 		if (ImGui::BeginPopupContextItem("code item context menu"))
 		{
-			if (ImGui::Selectable("Delete Breakpoint"))
+			if (ImGui::Selectable("Delete Watch"))
 			{
 				state.RemoveWatch(selectedWatch);
+			}
+			if (ImGui::Selectable("Toggle Breakpoint"))
+			{
+				state.CPUInterface->ToggleDataBreakpointAtAddress(selectedWatch);
 			}
 
 			ImGui::EndPopup();
