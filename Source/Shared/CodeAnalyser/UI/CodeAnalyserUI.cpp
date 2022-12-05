@@ -210,15 +210,7 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 		{
 			selectedWatch = watch;
 		}
-		ImGui::SetItemAllowOverlap();	// allow buttons
-		ImGui::SameLine();
-		DrawDataInfo(state, pDataInfo, true);
-		ImGui::PopID();		
-	}
-
-	if (selectedWatch != -1)
-	{
-		if (ImGui::BeginPopupContextItem("code item context menu"))
+		if (selectedWatch != -1 && ImGui::BeginPopupContextItem("watch context menu"))
 		{
 			if (ImGui::Selectable("Delete Watch"))
 			{
@@ -226,12 +218,18 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 			}
 			if (ImGui::Selectable("Toggle Breakpoint"))
 			{
-				state.CPUInterface->ToggleDataBreakpointAtAddress(selectedWatch);
+				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(selectedWatch);
+				state.CPUInterface->ToggleDataBreakpointAtAddress(pInfo->Address, pInfo->ByteSize);
 			}
 
 			ImGui::EndPopup();
 		}
+		ImGui::SetItemAllowOverlap();	// allow buttons
+		ImGui::SameLine();
+		DrawDataInfo(state, pDataInfo, true);
+		ImGui::PopID();		
 	}
+
 #else
 	if (ImGui::BeginChild("##watchlist", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0)))
 	{
