@@ -496,13 +496,23 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_
 	SaveCommentBlocksBin(state, fp, addrStart, addrEnd);
 
 	// Save Watches
-	const int noWatches = (int)state.GetWatches().size();
+	int noWatches = 0;// (int)state.GetWatches().size();
+	const long noWatchPos = ftell(fp);
 	fwrite(&noWatches, sizeof(noWatches), 1, fp);
 
 	for (const auto& watch : state.GetWatches())
 	{
-		fwrite(&watch, sizeof(uint16_t), 1, fp);
+		if (watch >= addrStart && watch <= addrEnd)
+		{
+			fwrite(&watch, sizeof(uint16_t), 1, fp);
+			noWatches++;
+		}
 	}
+
+	// patch up watch count
+	fseek(fp, noWatchPos, SEEK_SET);
+	fwrite(&noWatches, sizeof(noWatches), 1, fp);
+	fseek(fp, 0, SEEK_END);
 
 	fclose(fp);
 	return true;
@@ -556,14 +566,15 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 	if (versionNo >= 7)
 	{
 		int noWatches;
-		state.InitWatches();
+		//state.InitWatches();
 		fread(&noWatches, sizeof(noWatches), 1, fp);
 
 		for (int i=0;i<noWatches;i++)
 		{
 			uint16_t watch;
 			fread(&watch, sizeof(uint16_t), 1, fp);
-			state.AddWatch(watch);
+			if (watch >= addrStart && watch <= addrEnd)
+				state.AddWatch(watch);
 		}
 	}
 	fclose(fp);
