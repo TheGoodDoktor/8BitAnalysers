@@ -417,17 +417,23 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 	}
 }
 
-void ResetMemoryLogs(FCodeAnalysisState &state)
+void ResetReferenceInfo(FCodeAnalysisState &state)
 {
 	for (int i = 0; i < (1 << 16); i++)
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
 		if (pDataInfo != nullptr)
 		{
-			pDataInfo->LastFrameRead = 0;
+			pDataInfo->LastFrameRead = -1;
 			pDataInfo->Reads.clear();
-			pDataInfo->LastFrameWritten = 0;
+			pDataInfo->LastFrameWritten = -1;
 			pDataInfo->Writes.clear();
+		}
+
+		FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
+		if (pLabelInfo != nullptr)
+		{
+			pLabelInfo->References.clear();
 		}
 
 		state.SetLastWriterForAddress(i,  0);

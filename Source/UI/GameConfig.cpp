@@ -285,7 +285,9 @@ void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo, uint16_
 		fread(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 		fread(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
 		fread(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
-		ReadStringFromFile(pCodeInfo->Text, fp);
+		std::string tmp;
+		ReadStringFromFile(tmp, fp);
+		//ReadStringFromFile(pCodeInfo->Text, fp);
 		ReadStringFromFile(pCodeInfo->Comment, fp);
 		for(int codeByte = 0;codeByte < pCodeInfo->ByteSize;codeByte++)	// set for whole instruction address range
 			state.SetCodeInfoForAddress(pCodeInfo->Address + codeByte, pCodeInfo);

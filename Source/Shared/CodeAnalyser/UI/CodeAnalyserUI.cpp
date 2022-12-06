@@ -569,8 +569,8 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo, bool bD
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
-	const int framesSinceWritten = state.CurrentFrameNo - pDataInfo->LastFrameWritten;
-	const int framesSinceRead = state.CurrentFrameNo - pDataInfo->LastFrameRead;
+	const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
+	const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
 	const int wBrightVal = (255 - std::min(framesSinceWritten << 2, 255)) & 0xff;
 	const int rBrightVal = (255 - std::min(framesSinceRead << 2, 255)) & 0xff;
 	float offset = 0;
@@ -905,9 +905,14 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		}
 	}
 
-	ImGui::Text("Last Writer: ");
-	ImGui::SameLine();
-	DrawCodeAddress(state,state.GetLastWriterForAddress(pDataInfo->Address));
+	// last writer to address
+	const uint16_t lastWriter = state.GetLastWriterForAddress(pDataInfo->Address);
+	if (lastWriter != 0)
+	{
+		ImGui::Text("Last Writer: ");
+		ImGui::SameLine();
+		DrawCodeAddress(state, lastWriter);
+	}
 }
 
 
@@ -1358,7 +1363,6 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state)
 {
-	//FSpeccy *pSpeccy = state.pSpeccy;
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
@@ -1390,10 +1394,19 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	
 	DrawDebuggerButtons(state);
 
-	if (ImGui::Button("Reset Memory Logs"))
+	// Reset Reference Info
+	if (ImGui::Button("Reset Reference Info"))
 	{
-		ResetMemoryLogs(state);
+		ResetReferenceInfo(state);
 	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("This will reset all recorded references");
+		ImGui::EndTooltip();
+	}
+
+	// StackInfo
 	ImGui::SameLine();
 	ImGui::Text("Stack range: ");
 	DrawAddressLabel(state, state.StackMin);

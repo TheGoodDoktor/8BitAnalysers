@@ -275,7 +275,7 @@ void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr);
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
-void ResetMemoryLogs(FCodeAnalysisState &state);
+void ResetReferenceInfo(FCodeAnalysisState &state);
 
 // Commands
 void Undo(FCodeAnalysisState &state);

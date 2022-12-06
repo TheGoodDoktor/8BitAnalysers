@@ -108,7 +108,7 @@ uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t add
 			col = 6;	// yellow code
 	}
 	
-	if (pReadDataInfo)
+	if (pReadDataInfo && pReadDataInfo->LastFrameRead != -1)
 	{
 		const int framesSinceRead = state.CurrentFrameNo - pReadDataInfo->LastFrameRead;
 		
@@ -116,7 +116,7 @@ uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t add
 			col = 4;	
 	}
 
-	if (pWriteDataInfo)
+	if (pWriteDataInfo && pWriteDataInfo->LastFrameWritten != -1)
 	{
 		const int framesSinceWritten = state.CurrentFrameNo - pWriteDataInfo->LastFrameWritten;
 		if (pWriteDataInfo->LastFrameWritten != -1 && (framesSinceWritten < frameThreshold))
