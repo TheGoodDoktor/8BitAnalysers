@@ -566,7 +566,6 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 	if (versionNo >= 7)
 	{
 		int noWatches;
-		//state.InitWatches();
 		fread(&noWatches, sizeof(noWatches), 1, fp);
 
 		for (int i=0;i<noWatches;i++)
