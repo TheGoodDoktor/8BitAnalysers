@@ -1226,24 +1226,24 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 	//	ImGui::Separator();
 
 	// selectable
-	bool bSelected = (pItem == viewState.pCursorItem) || (pItem->Address >= state.DataFormattingOptions.StartAddress && pItem->Address <= state.DataFormattingOptions.EndAddress);
+	bool bSelected = (pItem == viewState.pCursorItem) || (pItem->Address >= viewState.DataFormattingOptions.StartAddress && pItem->Address <= viewState.DataFormattingOptions.EndAddress);
 	if (ImGui::Selectable("##codeanalysisline", bSelected, 0))
 	{
 		viewState.pCursorItem = state.ItemList[i];
 		viewState.CursorItemIndex = i;
 
 		// Select Data Formatting Range
-		if (state.DataFormattingTabOpen && pItem->Type == ItemType::Data)
+		if (viewState.DataFormattingTabOpen && pItem->Type == ItemType::Data)
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			if (io.KeyShift)
 			{
-				state.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
+				viewState.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
 			}
 			else
 			{
-				state.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
-				state.DataFormattingOptions.StartAddress = viewState.pCursorItem->Address;
+				viewState.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
+				viewState.DataFormattingOptions.StartAddress = viewState.pCursorItem->Address;
 			}
 		}
 	}
@@ -1526,10 +1526,10 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 
 void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
-	FDataFormattingOptions& formattingOptions = state.DataFormattingOptions;
+	FDataFormattingOptions& formattingOptions = viewState.DataFormattingOptions;
 	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 
-	if (state.DataFormattingTabOpen == false)
+	if (viewState.DataFormattingTabOpen == false)
 	{
 		if (viewState.pCursorItem)
 		{
@@ -1537,7 +1537,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			formattingOptions.EndAddress = viewState.pCursorItem->Address;
 		}
 
-		state.DataFormattingTabOpen = true;
+		viewState.DataFormattingTabOpen = true;
 	}
 
 	// Set Start address of region to format
@@ -1639,7 +1639,7 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 		}
 		else
 		{
-			state.DataFormattingTabOpen = false;
+			viewState.DataFormattingTabOpen = false;
 		}
 
 		ImGui::EndTabBar();

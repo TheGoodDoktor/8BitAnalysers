@@ -118,6 +118,9 @@ struct FCodeAnalysisViewState
 	int		HighlightAddress = -1;	// address to highlight
 	bool	GoToLabel = false;
 	std::vector<uint16_t>	AddressStack;
+
+	bool					DataFormattingTabOpen = false;
+	FDataFormattingOptions	DataFormattingOptions;
 };
 
 // code analysis information
@@ -262,8 +265,7 @@ public:
 
 	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 
-	bool					DataFormattingTabOpen = false;
-	FDataFormattingOptions	DataFormattingOptions;
+	
 };
 
 // Commands
