@@ -20,6 +20,7 @@ void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 void FSpectrumViewer::Draw()
 {
 	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -50,10 +51,10 @@ void FSpectrumViewer::Draw()
 			const uint16_t lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
 			ImGui::Text("Pixel Writer: ");
 			ImGui::SameLine();
-			DrawCodeAddress(codeAnalysis, lastPixWriter);
+			DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
 			ImGui::Text("Attribute Writer: ");
 			ImGui::SameLine();
-			DrawCodeAddress(codeAnalysis, lastAttrWriter);
+			DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
 			{
 				//ImGui::Text("Image: ");
 				//const float line_height = ImGui::GetTextLineHeight();
@@ -115,9 +116,9 @@ void FSpectrumViewer::Draw()
 			}
 
 			if (ImGui::IsMouseDoubleClicked(0))
-				CodeAnalyserGoToAddress(codeAnalysis, lastPixWriter);
+				CodeAnalyserGoToAddress(viewState, lastPixWriter);
 			if (ImGui::IsMouseDoubleClicked(1))
-				CodeAnalyserGoToAddress(codeAnalysis, lastAttrWriter);
+				CodeAnalyserGoToAddress(viewState, lastAttrWriter);
 		}
 
 	}
@@ -130,15 +131,15 @@ void FSpectrumViewer::Draw()
 
 		ImGui::Text("Pixel Char Address: %s", NumStr(SelectPixAddr));
 		//ImGui::SameLine();
-		DrawAddressLabel(codeAnalysis, SelectPixAddr);
+		DrawAddressLabel(codeAnalysis, viewState, SelectPixAddr);
 		ImGui::Text("Attribute Address: %s", NumStr(SelectAttrAddr));
 		//ImGui::SameLine();
-		DrawAddressLabel(codeAnalysis, SelectAttrAddr);
+		DrawAddressLabel(codeAnalysis, viewState, SelectAttrAddr);
 
 		if (CharDataFound)
 		{
 			ImGui::Text("Found at: %s", NumStr(FoundCharDataAddress));
-			DrawAddressLabel(codeAnalysis, FoundCharDataAddress);
+			DrawAddressLabel(codeAnalysis, viewState, FoundCharDataAddress);
 			//ImGui::SameLine();
 			bool bShowInGfxView = ImGui::Button("Show in GFX View");
 			ImGui::SameLine();
@@ -153,7 +154,7 @@ void FSpectrumViewer::Draw()
 				formattingOptions.DataType = DataType::Bitmap;
 
 				FormatData(codeAnalysis, formattingOptions);
-				CodeAnalyserGoToAddress(codeAnalysis, FoundCharDataAddress, false);
+				CodeAnalyserGoToAddress(viewState, FoundCharDataAddress, false);
 			}
 
 			if (bShowInGfxView)

@@ -14,9 +14,9 @@
 #include "CodeToolTips.h"
 
 // UI
-void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i);
+void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i);
 
-void GoToAddress(FCodeAnalysisState &state, uint16_t newAddress, bool bLabel = false)
+void GoToAddress(FCodeAnalysisViewState&state, uint16_t newAddress, bool bLabel = false)
 {
 	if(state.pCursorItem != nullptr)
 		state.AddressStack.push_back(state.pCursorItem->Address);
@@ -24,12 +24,12 @@ void GoToAddress(FCodeAnalysisState &state, uint16_t newAddress, bool bLabel = f
 	state.GoToLabel = bLabel;
 }
 
-void CodeAnalyserGoToAddress(FCodeAnalysisState& state, uint16_t newAddress, bool bLabel)
+void CodeAnalyserGoToAddress(FCodeAnalysisViewState& state, uint16_t newAddress, bool bLabel)
 {
 	GoToAddress(state, newAddress, bLabel);
 }
 
-bool GoToPreviousAddress(FCodeAnalysisState &state)
+bool GoToPreviousAddress(FCodeAnalysisViewState&state)
 {
 	if (state.AddressStack.empty())
 		return false;
@@ -50,7 +50,7 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, uint16_t addr)
 	return -1;
 }
 
-void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr, bool bFunctionRel)
+void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel)
 {
 	int labelOffset = 0;
 	const char *pLabelString = nullptr;
@@ -91,31 +91,32 @@ void DrawAddressLabel(FCodeAnalysisState &state, uint16_t addr, bool bFunctionRe
 				for(int line=0;line < kToolTipNoLines;line++)
 				{
 					if(startIndex + line < (int)state.ItemList.size())
-						DrawCodeAnalysisItemAtIndex(state,startIndex + line);
+						DrawCodeAnalysisItemAtIndex(state,viewState,startIndex + line);
 				}
 				ImGui::EndTooltip();
 			}
 			if (ImGui::IsMouseDoubleClicked(0))
-				GoToAddress(state, addr, false);
+				GoToAddress(viewState, addr, false);
 
-			state.HoverAddress = addr;	
+			viewState.HoverAddress = addr;
 		}
 
 		ImGui::PopStyleColor();
 	}
 }
 
-void DrawCodeAddress(FCodeAnalysisState &state, uint16_t addr, bool bFunctionRel)
+void DrawCodeAddress(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel)
 {
 	//ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
 	ImGui::Text("%s", NumStr(addr));
 	//ImGui::PopStyleColor();
 	ImGui::SameLine();
-	DrawAddressLabel(state, addr, bFunctionRel);
+	DrawAddressLabel(state, viewState, addr, bFunctionRel);
 }
 
 void DrawCallStack(FCodeAnalysisState& state)
 {
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	if (state.CallStack.empty() == false)
 	{
 		const FLabelInfo* pLabel = state.GetLabelForAddress(state.CallStack.back().FunctionAddr);
@@ -125,7 +126,7 @@ void DrawCallStack(FCodeAnalysisState& state)
 			ImGui::SameLine();
 		}
 	}
-	DrawCodeAddress(state, state.CPUInterface->GetPC(), false);	// draw current PC
+	DrawCodeAddress(state, viewState, state.CPUInterface->GetPC(), false);	// draw current PC
 
 	for (int i = (int)state.CallStack.size() - 1; i >= 0; i--)
 	{
@@ -138,12 +139,13 @@ void DrawCallStack(FCodeAnalysisState& state)
 				ImGui::SameLine();
 			}
 		}
-		DrawCodeAddress(state, state.CallStack[i].CallAddr, false);
+		DrawCodeAddress(state, viewState, state.CallStack[i].CallAddr, false);
 	}
 }
 
 void DrawTrace(FCodeAnalysisState& state)
 {
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)state.FrameTrace.size(), line_height);
 
@@ -151,7 +153,7 @@ void DrawTrace(FCodeAnalysisState& state)
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			DrawCodeAddress(state, state.FrameTrace[state.FrameTrace.size() - i - 1], false);	// draw current PC
+			DrawCodeAddress(state, viewState, state.FrameTrace[state.FrameTrace.size() - i - 1], false);	// draw current PC
 		}
 	}
 	
@@ -159,6 +161,7 @@ void DrawTrace(FCodeAnalysisState& state)
 
 void DrawRegisters(FCodeAnalysisState& state)
 {
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 	{
 		z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
@@ -173,28 +176,29 @@ void DrawRegisters(FCodeAnalysisState& state)
 
 		// BC
 		ImGui::Text("BC: %s", NumStr(z80_bc(pCPU)));
-		DrawAddressLabel(state, z80_bc(pCPU));
+		DrawAddressLabel(state, viewState, z80_bc(pCPU));
 		// DE
 		ImGui::Text("DE: %s", NumStr(z80_de(pCPU)));
-		DrawAddressLabel(state, z80_de(pCPU));
+		DrawAddressLabel(state, viewState, z80_de(pCPU));
 		// HL
 		ImGui::Text("HL: %s",NumStr(z80_hl(pCPU))); 
-		DrawAddressLabel(state, z80_hl(pCPU));
+		DrawAddressLabel(state, viewState, z80_hl(pCPU));
 		// IX
 		ImGui::Text("IX: %s", NumStr(z80_ix(pCPU)));
-		DrawAddressLabel(state, z80_ix(pCPU));
+		DrawAddressLabel(state, viewState, z80_ix(pCPU));
 		// IY
 		ImGui::Text("IY: %s", NumStr(z80_iy(pCPU)));
-		DrawAddressLabel(state, z80_iy(pCPU));
+		DrawAddressLabel(state, viewState, z80_iy(pCPU));
 		// SP
 		ImGui::Text("SP: %s", NumStr(z80_sp(pCPU)));
-		DrawAddressLabel(state, z80_sp(pCPU));
+		DrawAddressLabel(state, viewState, z80_sp(pCPU));
 	}
 }
 
 #define ALT_WATCHVIEW 1
 void DrawWatchWindow(FCodeAnalysisState& state)
 {
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	static int selectedWatch = -1;
 
 #if ALT_WATCHVIEW
@@ -226,7 +230,7 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 		}
 		ImGui::SetItemAllowOverlap();	// allow buttons
 		ImGui::SameLine();
-		DrawDataInfo(state, pDataInfo, true);
+		DrawDataInfo(state, viewState, pDataInfo, true);
 		ImGui::PopID();		
 	}
 
@@ -277,12 +281,12 @@ void DrawComment(const FItem *pItem, float offset = 0.0f)
 	}
 }
 
-void DrawLabelInfo(FCodeAnalysisState &state, const FLabelInfo *pLabelInfo)
+void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FLabelInfo *pLabelInfo)
 {
 	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pLabelInfo->Address);	// for self-modifying code
 
 	ImVec4 labelColour = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-	if (state.HighlightAddress == pLabelInfo->Address)
+	if (viewState.HighlightAddress == pLabelInfo->Address)
 		labelColour = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
 	else if (pLabelInfo->Global || pLabelInfo->LabelType == LabelType::Function)
 		labelColour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -307,7 +311,7 @@ void DrawLabelInfo(FCodeAnalysisState &state, const FLabelInfo *pLabelInfo)
 		ImGui::Text("References:");
 		for (const auto & caller : pLabelInfo->References)
 		{
-			DrawCodeAddress(state, caller.first);
+			DrawCodeAddress(state, viewState, caller.first);
 		}
 		ImGui::EndTooltip();
 	}
@@ -315,7 +319,7 @@ void DrawLabelInfo(FCodeAnalysisState &state, const FLabelInfo *pLabelInfo)
 	DrawComment(pLabelInfo);	
 }
 
-void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
+void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FLabelInfo *pLabelInfo)
 {
 	static std::string oldLabelString;
 	static std::string labelString;
@@ -356,13 +360,13 @@ void DrawLabelDetails(FCodeAnalysisState &state, FLabelInfo *pLabelInfo)
 		{
 			DrawCodeAnalysisItemAtIndex( state, index );
 		}*/
-		DrawCodeAddress(state, caller.first);
+		DrawCodeAddress(state, viewState, caller.first);
 	}
 }
 
 
 
-void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
+void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeInfo *pCodeInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
@@ -447,19 +451,19 @@ void DrawCodeInfo(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo)
 	// draw jump address label name
 	if (pCodeInfo->JumpAddress != 0)
 	{
-		DrawAddressLabel(state, pCodeInfo->JumpAddress);
+		DrawAddressLabel(state, viewState, pCodeInfo->JumpAddress);
 	}
 
 	if (pCodeInfo->PointerAddress != 0)
 	{
-		DrawAddressLabel(state, pCodeInfo->PointerAddress);
+		DrawAddressLabel(state, viewState, pCodeInfo->PointerAddress);
 	}
 
 	DrawComment(pCodeInfo);
 
 }
 
-void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
+void DrawCodeDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FCodeInfo *pCodeInfo)
 {
 	if (ImGui::Checkbox("NOP out instruction", &pCodeInfo->bNOPped))
 	{
@@ -499,7 +503,7 @@ void DrawCodeDetails(FCodeAnalysisState &state, FCodeInfo *pCodeInfo)
 				ImGui::Text("Operand Writes:");
 				for (const auto& caller : pOperandData->Writes)
 				{
-					DrawCodeAddress(state, caller.first);
+					DrawCodeAddress(state, viewState, caller.first);
 				}
 				break;
 			}
@@ -564,7 +568,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 	return pos.x;
 }
 
-void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo, bool bDrawLabel)
+void DrawDataInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FDataInfo *pDataInfo, bool bDrawLabel)
 {
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
@@ -629,7 +633,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo, bool bD
 	const float line_start_x = ImGui::GetCursorPosX();
 	if (bDrawLabel)
 	{
-		DrawAddressLabel(state, pDataInfo->Address);
+		DrawAddressLabel(state, viewState, pDataInfo->Address);
 		ImGui::SameLine(line_start_x + cell_width * 10 + glyph_width * 2);
 		ImGui::Text(":");
 		ImGui::SameLine();
@@ -678,7 +682,7 @@ void DrawDataInfo(FCodeAnalysisState &state, const FDataInfo *pDataInfo, bool bD
 		ImGui::Text("dw %s", NumStr(val));
 		// draw address as label - optional?
 		ImGui::SameLine();	
-		DrawAddressLabel(state, val);
+		DrawAddressLabel(state, viewState, val);
 	}
 	break;
 
@@ -781,7 +785,7 @@ void DrawDataValueGraph(uint16_t val, bool bReset)
 	DrawDataValueGraph(static_cast<float>(val), bReset);
 }
 
-void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
+void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FDataInfo *pDataInfo)
 {
 	switch (pDataInfo->DataType)
 	{
@@ -892,7 +896,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		ImGui::Text("Reads:");
 		for (const auto & caller : pDataInfo->Reads)
 		{
-			DrawCodeAddress(state, caller.first);
+			DrawCodeAddress(state, viewState, caller.first);
 		}
 	}
 
@@ -901,7 +905,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 		ImGui::Text("Writes:");
 		for (const auto & caller : pDataInfo->Writes)
 		{
-			DrawCodeAddress(state, caller.first);
+			DrawCodeAddress(state, viewState, caller.first);
 		}
 	}
 
@@ -911,7 +915,7 @@ void DrawDataDetails(FCodeAnalysisState &state, FDataInfo *pDataInfo)
 	{
 		ImGui::Text("Last Writer: ");
 		ImGui::SameLine();
-		DrawCodeAddress(state, lastWriter);
+		DrawCodeAddress(state, viewState, lastWriter);
 	}
 }
 
@@ -939,21 +943,21 @@ int CommentInputCallback(ImGuiInputTextCallbackData *pData)
 }
 
 
-void ProcessKeyCommands(FCodeAnalysisState &state)
+void ProcessKeyCommands(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
-	if (ImGui::IsWindowFocused() && state.pCursorItem != nullptr)
+	if (ImGui::IsWindowFocused() && viewState.pCursorItem != nullptr)
 	{
 		if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemCode]))
 		{
-			SetItemCode(state, state.pCursorItem);
+			SetItemCode(state, viewState.pCursorItem);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemData]))
 		{
-			SetItemData(state, state.pCursorItem);
+			SetItemData(state, viewState.pCursorItem);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemText]))
 		{
-			SetItemText(state, state.pCursorItem);
+			SetItemText(state, viewState.pCursorItem);
 		}
 #ifdef ENABLE_IMAGE_TYPE
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemImage]))
@@ -963,9 +967,9 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 #endif
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::ToggleItemBinary]))
 		{
-			if (state.pCursorItem->Type == ItemType::Data)
+			if (viewState.pCursorItem->Type == ItemType::Data)
 			{
-				FDataInfo* pDataItem = static_cast<FDataInfo*>(state.pCursorItem);
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(viewState.pCursorItem);
 				if(pDataItem->DataType != DataType::Bitmap)
 					pDataItem->DataType = DataType::Bitmap;
 				else
@@ -975,7 +979,7 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		}		
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddLabel]))
 		{
-			AddLabelAtAddress(state, state.pCursorItem->Address);
+			AddLabelAtAddress(state, viewState.pCursorItem->Address);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Comment]))
 		{
@@ -983,7 +987,7 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 			ImGui::OpenPopup("Enter Comment Text");
 			ImGui::SetWindowFocus("Enter Comment Text");
 		}
-		else if (state.pCursorItem->Type == ItemType::Label && ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Rename]))
+		else if (viewState.pCursorItem->Type == ItemType::Label && ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Rename]))
 		{
 			//AddLabelAtAddress(state, state.pCursorItem->Address);
 			ImGui::OpenPopup("Enter Label Text");
@@ -991,14 +995,14 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddCommentBlock]))
 		{
-			AddCommentBlock(state, state.pCursorItem->Address);
+			AddCommentBlock(state, viewState.pCursorItem->Address);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Breakpoint]))
 		{
-			if (state.pCursorItem->Type == ItemType::Data)
-				state.CPUInterface->ToggleDataBreakpointAtAddress(state.pCursorItem->Address, state.pCursorItem->ByteSize);
-			else if (state.pCursorItem->Type == ItemType::Code)
-				state.CPUInterface->ToggleExecBreakpointAtAddress(state.pCursorItem->Address);
+			if (viewState.pCursorItem->Type == ItemType::Data)
+				state.CPUInterface->ToggleDataBreakpointAtAddress(viewState.pCursorItem->Address, viewState.pCursorItem->ByteSize);
+			else if (viewState.pCursorItem->Type == ItemType::Code)
+				state.CPUInterface->ToggleExecBreakpointAtAddress(viewState.pCursorItem->Address);
 		}
 	}
 	 
@@ -1007,7 +1011,7 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 		if (state.CPUInterface->ShouldExecThisFrame())
 		{
 			state.CPUInterface->Break();
-			state.TrackPCFrame = true;
+			viewState.TrackPCFrame = true;
 		}
 		else
 		{
@@ -1035,7 +1039,7 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 	if (ImGui::BeginPopup("Enter Comment Text", ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::SetKeyboardFocusHere();
-		if (ImGui::InputText("##comment", &state.pCursorItem->Comment, ImGuiInputTextFlags_EnterReturnsTrue))
+		if (ImGui::InputText("##comment", &viewState.pCursorItem->Comment, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			ImGui::CloseCurrentPopup();
 		}
@@ -1045,7 +1049,7 @@ void ProcessKeyCommands(FCodeAnalysisState &state)
 
 	if (ImGui::BeginPopup("Enter Label Text", ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		FLabelInfo *pLabel = (FLabelInfo *)state.pCursorItem;
+		FLabelInfo *pLabel = (FLabelInfo *)viewState.pCursorItem;
 		
 		ImGui::SetKeyboardFocusHere();
 		std::string LabelText = pLabel->Name;
@@ -1125,11 +1129,14 @@ void UpdateItemList(FCodeAnalysisState &state)
 			}
 
 			// update cursor item index
-			if (state.pCursorItem == state.ItemList.back())
-				state.CursorItemIndex = (int)state.ItemList.size() - 1;
+			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+			{
+				if (state.ViewState[i].pCursorItem == state.ItemList.back())
+					state.ViewState[i].CursorItemIndex = (int)state.ItemList.size() - 1;
+			}
 		}
 
-		ImGui::SetScrollY(state.CursorItemIndex * line_height);
+		ImGui::SetScrollY(state.GetFocussedViewState().CursorItemIndex * line_height);
 		state.bCodeAnalysisDataDirty = false;
 	}
 
@@ -1197,11 +1204,11 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 	}
 }
 
-void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
+void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i)
 {
 	assert(i < (int)state.ItemList.size());
 	FItem* pItem = state.ItemList[i];
-	bool bHighlight = (pItem->Address == state.HighlightAddress);
+	bool bHighlight = (pItem->Address == viewState.HighlightAddress);
 	uint32_t kHighlightColour = 0xff00ff00;
 	ImGui::PushID(i);
 
@@ -1219,11 +1226,11 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 	//	ImGui::Separator();
 
 	// selectable
-	bool bSelected = (pItem == state.pCursorItem) || (pItem->Address >= state.DataFormattingOptions.StartAddress && pItem->Address <= state.DataFormattingOptions.EndAddress);
+	bool bSelected = (pItem == viewState.pCursorItem) || (pItem->Address >= state.DataFormattingOptions.StartAddress && pItem->Address <= state.DataFormattingOptions.EndAddress);
 	if (ImGui::Selectable("##codeanalysisline", bSelected, 0))
 	{
-		state.pCursorItem = state.ItemList[i];
-		state.CursorItemIndex = i;
+		viewState.pCursorItem = state.ItemList[i];
+		viewState.CursorItemIndex = i;
 
 		// Select Data Formatting Range
 		if (state.DataFormattingTabOpen && pItem->Type == ItemType::Data)
@@ -1231,12 +1238,12 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 			ImGuiIO& io = ImGui::GetIO();
 			if (io.KeyShift)
 			{
-				state.DataFormattingOptions.EndAddress = state.pCursorItem->Address;
+				state.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
 			}
 			else
 			{
-				state.DataFormattingOptions.EndAddress = state.pCursorItem->Address;
-				state.DataFormattingOptions.StartAddress = state.pCursorItem->Address;
+				state.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
+				state.DataFormattingOptions.StartAddress = viewState.pCursorItem->Address;
 			}
 		}
 	}
@@ -1247,19 +1254,19 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 	switch (pItem->Type)
 	{
 	case ItemType::Label:
-		DrawLabelInfo(state, static_cast<const FLabelInfo *>(pItem));
+		DrawLabelInfo(state, viewState,static_cast<const FLabelInfo *>(pItem));
 		break;
 	case ItemType::Code:
 		if (bHighlight)
 			ImGui::PushStyleColor(ImGuiCol_Text, kHighlightColour);
-		DrawCodeInfo(state, static_cast<const FCodeInfo *>(pItem));
+		DrawCodeInfo(state, viewState, static_cast<const FCodeInfo *>(pItem));
 		if (bHighlight)
 			ImGui::PopStyleColor();
 		break;
 	case ItemType::Data:
 		if (bHighlight)
 			ImGui::PushStyleColor(ImGuiCol_Text, kHighlightColour);
-		DrawDataInfo(state, static_cast<const FDataInfo *>(pItem));
+		DrawDataInfo(state, viewState, static_cast<const FDataInfo *>(pItem));
 		if (bHighlight)
 			ImGui::PopStyleColor();
 		break;
@@ -1273,21 +1280,21 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, int i)
 	ImGui::PopID();
 }
 
-void DrawDetailsPanel(FCodeAnalysisState &state)
+void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
-	if (state.pCursorItem)
+	if (viewState.pCursorItem)
 	{
-		FItem *pItem = state.pCursorItem;
+		FItem *pItem = viewState.pCursorItem;
 		switch (pItem->Type)
 		{
 		case ItemType::Label:
-			DrawLabelDetails(state, static_cast<FLabelInfo *>(pItem));
+			DrawLabelDetails(state, viewState, static_cast<FLabelInfo *>(pItem));
 			break;
 		case ItemType::Code:
-			DrawCodeDetails(state, static_cast<FCodeInfo *>(pItem));
+			DrawCodeDetails(state, viewState, static_cast<FCodeInfo *>(pItem));
 			break;
 		case ItemType::Data:
-			DrawDataDetails(state, static_cast<FDataInfo *>(pItem));
+			DrawDataDetails(state, viewState, static_cast<FDataInfo *>(pItem));
 			break;
 		case ItemType::CommentLine:
 			{
@@ -1318,14 +1325,14 @@ void DrawDetailsPanel(FCodeAnalysisState &state)
 	}
 }
 
-void DrawDebuggerButtons(FCodeAnalysisState &state)
+void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
 	if (state.CPUInterface->ShouldExecThisFrame())
 	{
 		if (ImGui::Button("Break (F5)"))
 		{
 			state.CPUInterface->Break();
-			state.TrackPCFrame = true;
+			viewState.TrackPCFrame = true;
 		}
 	}
 	else
@@ -1339,13 +1346,13 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 	if (ImGui::Button("Step Over (F10)"))
 	{
 		state.CPUInterface->StepOver();
-		state.TrackPCFrame = true;
+		viewState.TrackPCFrame = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Step Into (F11)"))
 	{
 		state.CPUInterface->StepInto();
-		state.TrackPCFrame = true;
+		viewState.TrackPCFrame = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Step Frame (F6)"))
@@ -1361,14 +1368,18 @@ void DrawDebuggerButtons(FCodeAnalysisState &state)
 	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }
 
-void DrawCodeAnalysisData(FCodeAnalysisState &state)
+void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 {
+	FCodeAnalysisViewState& viewState = state.ViewState[windowId];
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
-	state.HighlightAddress = state.HoverAddress;
-	state.HoverAddress = -1;
+	if (ImGui::IsWindowFocused())
+		state.FocussedWindowId = windowId;
+
+	viewState.HighlightAddress = viewState.HoverAddress;
+	viewState.HoverAddress = -1;
 
 	if (state.CPUInterface->ShouldExecThisFrame())
 		state.CurrentFrameNo++;
@@ -1376,23 +1387,23 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	UpdateItemList(state);
 
 	if (ImGui::ArrowButton("##btn", ImGuiDir_Left))
-		GoToPreviousAddress(state);
+		GoToPreviousAddress(viewState);
 	ImGui::SameLine();
 	if (ImGui::Button("Jump To PC"))
-		GoToAddress(state,state.CPUInterface->GetPC());
+		GoToAddress(viewState,state.CPUInterface->GetPC());
 	ImGui::SameLine();
 	static int addrInput = 0;
 	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, inputFlags))
-		GoToAddress(state, addrInput);
+		GoToAddress(viewState, addrInput);
 
-	if (state.TrackPCFrame == true)
+	if (viewState.TrackPCFrame == true)
 	{
-		state.GoToAddress = state.CPUInterface->GetPC();
-		state.TrackPCFrame = false;
+		viewState.GoToAddress = state.CPUInterface->GetPC();
+		viewState.TrackPCFrame = false;
 	}
 	
-	DrawDebuggerButtons(state);
+	DrawDebuggerButtons(state, viewState);
 
 	// Reset Reference Info
 	if (ImGui::Button("Reset Reference Info"))
@@ -1409,23 +1420,23 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	// StackInfo
 	ImGui::SameLine();
 	ImGui::Text("Stack range: ");
-	DrawAddressLabel(state, state.StackMin);
+	DrawAddressLabel(state, viewState, state.StackMin);
 	ImGui::SameLine();
-	DrawAddressLabel(state, state.StackMax);
+	DrawAddressLabel(state, viewState, state.StackMax);
 
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{
 		// jump to address
-		if (state.GoToAddress != -1)
+		if (viewState.GoToAddress != -1)
 		{
 			const int kJumpViewOffset = 5;
 			for (int item = 0; item < (int)state.ItemList.size(); item++)
 			{
-				if ((state.ItemList[item]->Address >= state.GoToAddress) && (state.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
+				if ((state.ItemList[item]->Address >= viewState.GoToAddress) && (viewState.GoToLabel || state.ItemList[item]->Type != ItemType::Label))
 				{
 					// set cursor
-					state.pCursorItem = state.ItemList[item];
-					state.CursorItemIndex = item;
+					viewState.pCursorItem = state.ItemList[item];
+					viewState.CursorItemIndex = item;
 
 					const int gotoItem = std::max(item - kJumpViewOffset, 0);
 					ImGui::SetScrollY(gotoItem * line_height);
@@ -1433,8 +1444,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 				}
 			}
 
-			state.GoToAddress = -1;
-			state.GoToLabel = false;
+			viewState.GoToAddress = -1;
+			viewState.GoToLabel = false;
 		}
 
 		// draw clipped list
@@ -1444,11 +1455,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
-				DrawCodeAnalysisItemAtIndex(state, i);
+				DrawCodeAnalysisItemAtIndex(state, viewState, i);
 			}
 		}
 
-		ProcessKeyCommands(state);
+		ProcessKeyCommands(state, viewState);
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();
@@ -1456,10 +1467,10 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state)
 	{
 		float height = ImGui::GetWindowContentRegionMax().y - ImGui::GetWindowContentRegionMin().y;
 		if (ImGui::BeginChild("##cadetails", ImVec2(0, height / 2), true))
-			DrawDetailsPanel(state);
+			DrawDetailsPanel(state, viewState);
 		ImGui::EndChild();
 		if (ImGui::BeginChild("##caglobals", ImVec2(0, 0), true))
-			DrawGlobals(state);
+			DrawGlobals(state, viewState);
 		ImGui::EndChild();
 	}
 	ImGui::EndChild(); // right panel
@@ -1491,7 +1502,7 @@ void DrawExecutionInfo(FCodeAnalysisState& state)
 	}
 }
 
-void DrawLabelList(FCodeAnalysisState &state, std::vector<FLabelInfo *> labelList)
+void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FLabelInfo *> labelList)
 {
 	static std::string filterText;
 	ImGui::InputText("Filter", &filterText);
@@ -1501,9 +1512,9 @@ void DrawLabelList(FCodeAnalysisState &state, std::vector<FLabelInfo *> labelLis
 		{
 			if (filterText.empty() || pLabelInfo->Name.find(filterText) != std::string::npos)
 			{
-				if (ImGui::Selectable(pLabelInfo->Name.c_str(), state.pCursorItem == pLabelInfo))
+				if (ImGui::Selectable(pLabelInfo->Name.c_str(), viewState.pCursorItem == pLabelInfo))
 				{
-					GoToAddress(state, pLabelInfo->Address, true);
+					GoToAddress(viewState, pLabelInfo->Address, true);
 				}
 			}
 		}
@@ -1511,17 +1522,17 @@ void DrawLabelList(FCodeAnalysisState &state, std::vector<FLabelInfo *> labelLis
 	ImGui::EndChild();
 }
 
-void DrawFormatTab(FCodeAnalysisState& state)
+void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
 	FDataFormattingOptions& formattingOptions = state.DataFormattingOptions;
 	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 
 	if (state.DataFormattingTabOpen == false)
 	{
-		if (state.pCursorItem)
+		if (viewState.pCursorItem)
 		{
-			formattingOptions.StartAddress = state.pCursorItem->Address;
-			formattingOptions.EndAddress = state.pCursorItem->Address;
+			formattingOptions.StartAddress = viewState.pCursorItem->Address;
+			formattingOptions.EndAddress = viewState.pCursorItem->Address;
 		}
 
 		state.DataFormattingTabOpen = true;
@@ -1603,25 +1614,25 @@ void DrawFormatTab(FCodeAnalysisState& state)
 	}
 }
 
-void DrawGlobals(FCodeAnalysisState &state)
+void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
 	if(ImGui::BeginTabBar("GlobalsTabBar"))
 	{
 		if(ImGui::BeginTabItem("Functions"))
 		{
-			DrawLabelList(state, state.GlobalFunctions);
+			DrawLabelList(state, viewState, state.GlobalFunctions);
 			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("Data"))
 		{
-			DrawLabelList(state, state.GlobalDataItems);
+			DrawLabelList(state, viewState, state.GlobalDataItems);
 			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("Format"))	
 		{
-			DrawFormatTab(state);
+			DrawFormatTab(state, viewState);
 			ImGui::EndTabItem();
 		}
 		else

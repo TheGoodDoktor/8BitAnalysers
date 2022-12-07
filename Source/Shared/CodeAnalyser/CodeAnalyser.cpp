@@ -521,9 +521,12 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	FCodeInfo::FreeAll();
 	FCommentBlock::FreeAll();
 
-	state.CursorItemIndex = -1;
-	state.pCursorItem = nullptr;
-	
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		state.ViewState[i].CursorItemIndex = -1;
+		state.ViewState[i].pCursorItem = nullptr;
+	}
+
 	state.CPUInterface = pCPUInterface;
 	uint16_t initialPC = pCPUInterface->GetPC();// z80_pc(&state.pSpeccy->CurrentState.cpu);
 	pCPUInterface->InsertROMLabels(state);

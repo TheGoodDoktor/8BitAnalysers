@@ -614,7 +614,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
-	
+	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
 	// register Viewers
 	RegisterStarquakeViewer(this);
@@ -971,6 +971,18 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		if (ImGui::BeginMenu("Windows"))
 		{
 			ImGui::MenuItem("DebugLog", 0, &bShowDebugLog);
+			if (ImGui::BeginMenu("Code Analysis"))
+			{
+				for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
+				{
+					char menuName[32];
+					sprintf_s(menuName, "Code Analysis %d", codeAnalysisNo + 1);
+					ImGui::MenuItem(menuName, 0, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled);
+				}
+
+				ImGui::EndMenu();
+			}
+
 			for (auto Viewer : Viewers)
 			{
 				ImGui::MenuItem(Viewer->GetName(), 0, &Viewer->bOpen);
@@ -1120,14 +1132,14 @@ void FSpectrumEmu::Tick()
 		if (bStepToNextFrame)
 		{
 			_ui_dbg_break(&UIZX.dbg);
-			CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
+			CodeAnalyserGoToAddress(CodeAnalysis.GetFocussedViewState(), GetPC());
 			bStepToNextFrame = false;
 		}
 
 		// on debug break send code analyser to address
 		if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
 		{
-			CodeAnalyserGoToAddress(CodeAnalysis, GetPC());
+			CodeAnalyserGoToAddress(CodeAnalysis.GetFocussedViewState(), GetPC());
 		}
 	}
 
@@ -1275,11 +1287,22 @@ void FSpectrumEmu::DrawUI()
 
 	DrawGraphicsViewer(GraphicsViewer);
 	DrawMemoryTools();
-	if (ImGui::Begin("Code Analysis"))
+
+	// COde analysis views
+	for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
 	{
-		DrawCodeAnalysisData(CodeAnalysis);
+		char name[32];
+		sprintf_s(name, "Code Analysis %d", codeAnalysisNo + 1);
+		if (CodeAnalysis.ViewState[codeAnalysisNo].Enabled)
+		{
+			if (ImGui::Begin(name,&CodeAnalysis.ViewState[codeAnalysisNo].Enabled))
+			{
+				DrawCodeAnalysisData(CodeAnalysis, codeAnalysisNo);
+			}
+			ImGui::End();
+		}
+
 	}
-	ImGui::End();
 
 	if (ImGui::Begin("Call Stack"))
 	{

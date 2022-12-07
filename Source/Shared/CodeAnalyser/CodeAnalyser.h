@@ -106,6 +106,19 @@ struct FDataFormattingOptions
 	bool IsValid() const {	return EndAddress > StartAddress;	}
 };
 
+// view state for code analysis window
+struct FCodeAnalysisViewState
+{
+	bool	Enabled = false;
+	FItem*	pCursorItem	= nullptr;
+	int		CursorItemIndex = -1;
+	bool	TrackPCFrame = false;
+	int		GoToAddress = -1;
+	int		HoverAddress = -1;		// address being hovered over
+	int		HighlightAddress = -1;	// address to highlight
+	bool	GoToLabel = false;
+	std::vector<uint16_t>	AddressStack;
+};
 
 // code analysis information
 // TODO: make this a class
@@ -172,15 +185,13 @@ public:
 	std::vector< FItem *>	ItemList;
 	std::vector< FLabelInfo *>	GlobalDataItems;
 	std::vector< FLabelInfo *>	GlobalFunctions;
-	FItem*					pCursorItem = nullptr;
-	int						CursorItemIndex = -1;
-	bool					TrackPCFrame = false;
-	int						GoToAddress = -1;
-	int						HoverAddress = -1;		// address being hovered over
-	int						HighlightAddress = -1;	// address to highlight
-	bool					GoToLabel = false;
+
+	static const int kNoViewStates = 4;
+	FCodeAnalysisViewState	ViewState[kNoViewStates];	// new multiple view states
+	int						FocussedWindowId = 0;
+	FCodeAnalysisViewState& GetFocussedViewState() { return ViewState[FocussedWindowId]; }
+	
 	std::set<uint16_t>		Watches;	// addresses to use as watches
-	std::vector<uint16_t>	AddressStack;
 	std::vector<FCPUFunctionCall>	CallStack;
 	uint16_t				StackMin;
 	uint16_t				StackMax;

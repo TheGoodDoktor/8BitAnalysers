@@ -200,13 +200,13 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 		ImGui::BeginTooltip();
 		ptrAddress = GetAddressFromPositionInView(state,xp, yp);
 		if (ImGui::IsMouseDoubleClicked(0))
-			CodeAnalyserGoToAddress(state.pEmu->CodeAnalysis, ptrAddress);
+			CodeAnalyserGoToAddress(state.pEmu->CodeAnalysis.GetFocussedViewState(), ptrAddress);
 		if (ImGui::IsMouseClicked(0))
 			state.ClickedAddress = ptrAddress;
 
 		ImGui::Text("%s", NumStr(ptrAddress));
 		ImGui::SameLine();
-		DrawAddressLabel(state.pEmu->CodeAnalysis, ptrAddress);
+		DrawAddressLabel(state.pEmu->CodeAnalysis, state.pEmu->CodeAnalysis.GetFocussedViewState(), ptrAddress);
 		ImGui::EndTooltip();
 	}
 	
@@ -239,10 +239,10 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 
 	ImGui::Text("Clicked Address: %s", NumStr(state.ClickedAddress));
 	ImGui::SameLine();
-	DrawAddressLabel(state.pEmu->CodeAnalysis, state.ClickedAddress);
+	DrawAddressLabel(state.pEmu->CodeAnalysis, state.pEmu->CodeAnalysis.GetFocussedViewState(), state.ClickedAddress);
 	if(ImGui::CollapsingHeader("Details"))
 	{
-		DrawDataDetails(state.pEmu->CodeAnalysis, state.pEmu->CodeAnalysis.GetReadDataInfoForAddress(state.ClickedAddress));
+		DrawDataDetails(state.pEmu->CodeAnalysis, state.pEmu->CodeAnalysis.GetFocussedViewState(), state.pEmu->CodeAnalysis.GetReadDataInfoForAddress(state.ClickedAddress));
 	}
 	
 	// view 1 - straight character

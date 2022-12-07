@@ -164,6 +164,7 @@ void FFrameTraceViewer::Draw()
 void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)frame.InstructionTrace.size(), line_height);
 
@@ -188,7 +189,7 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 			{
 				ImGui::Text("%s %s", NumStr(instAddr), pCodeInfo->Text.c_str());
 				ImGui::SameLine();
-				DrawAddressLabel(state, instAddr);
+				DrawAddressLabel(state, viewState, instAddr);
 			}
 
 			ImGui::PopID();
@@ -275,6 +276,7 @@ void FFrameTraceViewer::GenerateMemoryDiff(const FSpeccyFrameTrace& frame, const
 void	FFrameTraceViewer::DrawTraceOverview(const FSpeccyFrameTrace& frame)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)frame.FrameOverview.size(), line_height);
 
@@ -287,12 +289,12 @@ void	FFrameTraceViewer::DrawTraceOverview(const FSpeccyFrameTrace& frame)
 			ImGui::Text("%s", overview.Label.c_str());
 			if (overview.FunctionAddress != 0)
 			{
-				DrawAddressLabel(state, overview.FunctionAddress);
+				DrawAddressLabel(state, viewState, overview.FunctionAddress);
 			}
 			if (overview.LabelAddress != overview.FunctionAddress)
 			{
 				ImGui::SameLine();
-				DrawAddressLabel(state, overview.LabelAddress);
+				DrawAddressLabel(state, viewState, overview.LabelAddress);
 			}
 		}
 	}
@@ -317,6 +319,7 @@ void FFrameTraceViewer::DrawFrameScreenWritePixels(const FSpeccyFrameTrace& fram
 void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	if (ImGui::BeginChild("ScreenPxWrites", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
 	{
@@ -340,7 +343,7 @@ void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 
 				ImGui::Text("%s (%s) : ", NumStr(access.Address), NumStr(access.Value));
 				ImGui::SameLine();
-				DrawCodeAddress(state, access.PC);
+				DrawCodeAddress(state, viewState, access.PC);
 				ImGui::PopID();
 			}
 		}
@@ -357,11 +360,12 @@ void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 void FFrameTraceViewer::DrawMemoryDiffs(const FSpeccyFrameTrace& frame)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	for (const auto& diff : frame.MemoryDiffs)
 	{
 		ImGui::Text("%s : ", NumStr(diff.Address));
-		DrawAddressLabel(state,diff.Address);
+		DrawAddressLabel(state, viewState, diff.Address);
 		ImGui::SameLine();
 		ImGui::Text("%d(%s) -> %d(%s)", diff.OldVal, NumStr(diff.OldVal), diff.NewVal, NumStr(diff.NewVal));
 	}

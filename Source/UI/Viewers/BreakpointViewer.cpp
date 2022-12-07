@@ -99,6 +99,7 @@ static void _ui_dbg_bp_draw_delete_all_modal(ui_dbg_t* win, const char* title) {
 void FBreakpointViewer::DrawUI(void)
 {
     ui_dbg_t* win = &pSpectrumEmu->UIZX.dbg;
+    FCodeAnalysisViewState& viewState = pSpectrumEmu->CodeAnalysis.GetFocussedViewState();
 
     bool scroll_down = false;
     if (ImGui::Button("Add..")) 
@@ -163,7 +164,7 @@ void FBreakpointViewer::DrawUI(void)
             ImGui::SameLine();
             uint16_t old_addr = bp->addr;
             bp->addr = ui_util_input_u16("##addr", old_addr);
-            DrawAddressLabel(pSpectrumEmu->CodeAnalysis, bp->addr);
+            DrawAddressLabel(pSpectrumEmu->CodeAnalysis, viewState, bp->addr);
             if (upd_val || (old_addr != bp->addr)) 
             {
                 /* if breakpoint type or address has changed, update the breakpoint's value from memory */

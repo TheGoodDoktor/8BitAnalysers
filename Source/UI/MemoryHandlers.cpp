@@ -136,15 +136,16 @@ void ResetMemoryStats(FMemoryStats &memStats)
 
 
 // UI
-void DrawMemoryHandlers(FSpectrumEmu* pUI)
+void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 {
+	FCodeAnalysisViewState& viewState = pSpectrumEmu->CodeAnalysis.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawMemoryHandlersGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
 	FMemoryAccessHandler *pSelectedHandler = nullptr;
 
-	for (auto &handler : pUI->MemoryAccessHandlers)
+	for (auto &handler : pSpectrumEmu->MemoryAccessHandlers)
 	{
-		const bool bSelected = pUI->SelectedMemoryHandler == handler.Name;
+		const bool bSelected = pSpectrumEmu->SelectedMemoryHandler == handler.Name;
 		if (bSelected)
 		{
 			pSelectedHandler = &handler;
@@ -152,7 +153,7 @@ void DrawMemoryHandlers(FSpectrumEmu* pUI)
 
 		if (ImGui::Selectable(handler.Name.c_str(), bSelected))
 		{
-			pUI->SelectedMemoryHandler = handler.Name;
+			pSpectrumEmu->SelectedMemoryHandler = handler.Name;
 		}
 
 	}
@@ -170,11 +171,11 @@ void DrawMemoryHandlers(FSpectrumEmu* pUI)
 
 		ImGui::Text("Start: %s", NumStr(pSelectedHandler->MemStart));
 		ImGui::SameLine();
-		DrawAddressLabel(pUI->CodeAnalysis, pSelectedHandler->MemStart);
+		DrawAddressLabel(pSpectrumEmu->CodeAnalysis, viewState, pSelectedHandler->MemStart);
 
 		ImGui::Text("End: %s",NumStr(pSelectedHandler->MemEnd));
 		ImGui::SameLine();
-		DrawAddressLabel(pUI->CodeAnalysis, pSelectedHandler->MemEnd);
+		DrawAddressLabel(pSpectrumEmu->CodeAnalysis, viewState, pSelectedHandler->MemEnd);
 
 		ImGui::Text("Total Accesses %d", pSelectedHandler->TotalCount);
 
@@ -182,7 +183,7 @@ void DrawMemoryHandlers(FSpectrumEmu* pUI)
 		for (const auto &accessPC : pSelectedHandler->CallerCounts)
 		{
 			ImGui::PushID(accessPC.first);
-			DrawCodeAddress(pUI->CodeAnalysis, accessPC.first);
+			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC.first);
 			ImGui::SameLine();
 			ImGui::Text(" - %d accesses",accessPC.second);
 			ImGui::PopID();
@@ -228,15 +229,16 @@ uint8_t g_DiffSnapShotMemory[1 << 16];	// 64 Kb
 std::vector<uint16_t> g_DiffChangedLocations;
 int g_DiffSelectedAddr = -1;
 
-void DrawMemoryDiffUI(FSpectrumEmu* pEmu)
+void DrawMemoryDiffUI(FSpectrumEmu* pSpectrumEmu)
 {
+	FCodeAnalysisViewState& viewState = pSpectrumEmu->CodeAnalysis.GetFocussedViewState();
 	const int startAddr = g_bDiffVideoMem ? 0x4000 : 0x5C00;	// TODO: have a header with constants in
 	
 	if(ImGui::Button("SnapShot"))
 	{
 		for (int addr = startAddr; addr < (1 << 16); addr++)
 		{
-			g_DiffSnapShotMemory[addr] = pEmu->ReadByte( addr);
+			g_DiffSnapShotMemory[addr] = pSpectrumEmu->ReadByte( addr);
 		}
 		g_bSnapshotAvailable = true;
 		g_DiffChangedLocations.clear();
@@ -251,7 +253,7 @@ void DrawMemoryDiffUI(FSpectrumEmu* pEmu)
 			g_DiffChangedLocations.clear();
 			for (int addr = startAddr; addr < (1 << 16); addr++)
 			{
-				if (pEmu->ReadByte( addr) != g_DiffSnapShotMemory[addr])
+				if (pSpectrumEmu->ReadByte( addr) != g_DiffSnapShotMemory[addr])
 					g_DiffChangedLocations.push_back(addr);
 			}
 		}
@@ -271,9 +273,9 @@ void DrawMemoryDiffUI(FSpectrumEmu* pEmu)
 			}
 			ImGui::SetItemAllowOverlap();	// allow buttons
 			ImGui::SameLine();
-			ImGui::Text("%s\t%s\t%s", NumStr(changedAddr), NumStr(g_DiffSnapShotMemory[changedAddr]), NumStr(pEmu->ReadByte( changedAddr)));
+			ImGui::Text("%s\t%s\t%s", NumStr(changedAddr), NumStr(g_DiffSnapShotMemory[changedAddr]), NumStr(pSpectrumEmu->ReadByte( changedAddr)));
 			ImGui::SameLine();
-			DrawAddressLabel(pEmu->CodeAnalysis, changedAddr);
+			DrawAddressLabel(pSpectrumEmu->CodeAnalysis, viewState, changedAddr);
 			ImGui::PopID();
 		}
 	}
