@@ -1375,7 +1375,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
-	if (ImGui::IsWindowFocused())
+	if (ImGui::IsWindowFocused(ImGuiHoveredFlags_ChildWindows))
 		state.FocussedWindowId = windowId;
 
 	viewState.HighlightAddress = viewState.HoverAddress;
