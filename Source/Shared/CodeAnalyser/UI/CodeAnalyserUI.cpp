@@ -1459,7 +1459,9 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 			}
 		}
 
-		ProcessKeyCommands(state, viewState);
+		// only handle keypresses for focussed window
+		if(state.FocussedWindowId == windowId)
+			ProcessKeyCommands(state, viewState);
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();
