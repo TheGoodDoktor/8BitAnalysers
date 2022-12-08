@@ -95,9 +95,14 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 				}
 				ImGui::EndTooltip();
 			}
-			if (ImGui::IsMouseDoubleClicked(0))
-				GoToAddress(viewState, addr, false);
+			
 
+			ImGuiIO& io = ImGui::GetIO();
+			if (io.KeyShift && ImGui::IsMouseDoubleClicked(0))
+				GoToAddress(state.GetAltViewState(), addr, false);
+			else if (ImGui::IsMouseDoubleClicked(0))
+				GoToAddress(viewState, addr, false);
+		
 			viewState.HoverAddress = addr;
 		}
 

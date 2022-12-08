@@ -1548,11 +1548,27 @@ uint16_t GetScreenAttrMemoryAddress(int x, int y)
 	return 0x5800 + (char_y * 32) + char_x;
 }
 
-void GetScreenAddressCoords(uint16_t addr, int& x, int &y)
+bool GetScreenAddressCoords(uint16_t addr, int& x, int &y)
 {
+	if (addr < 0x4000 || addr >= 0x5800)
+		return false;
+
 	const int y02 = (addr >> 8) & 7;	// bits 0-2
 	const int y35 = (addr >> 5) & 7;	// bits 3-5
 	const int y67 = (addr >> 11) & 3;	// bits 6 & 7
 	x = (addr & 31) * 8;
 	y = y02 | (y35 << 3) | (y67 << 6);
+	return true;
+}
+
+bool GetAttribAddressCoords(uint16_t addr, int& x, int& y)
+{
+	if (addr < 0x5800 || addr >= 0x5B00)
+		return false;
+	int offset = addr - 0x5800;
+
+	x = (offset & 31) << 3;
+	y = (offset >> 5) << 3;
+
+	return true;
 }

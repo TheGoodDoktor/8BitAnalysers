@@ -24,13 +24,41 @@ void FSpectrumViewer::Draw()
 
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const int borderOffsetX = (320 - 256) / 2;
+	const int borderOffsetY = (256 - 192) / 2;
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
 	bool bJustSelectedChar = false;
 	ImGui::Image(pSpectrumEmu->Texture, ImVec2(320, 256));
+
+	// TODO: draw scanline
+	
+	// draw hovered address
+	if (viewState.HighlightAddress != -1)
+	{
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		if (viewState.HighlightAddress >= 0x4000 && viewState.HighlightAddress < 0x5800)	// pixel
+		{
+			int xp, yp;
+			GetScreenAddressCoords(viewState.HighlightAddress, xp, yp);
+
+			const int rx = static_cast<int>(pos.x) + borderOffsetX + xp;
+			const int ry = static_cast<int>(pos.y) + borderOffsetY + yp;
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 1), 0xffffffff);
+		}
+
+		if (viewState.HighlightAddress >= 0x5800 && viewState.HighlightAddress < 0x5B00)	// attributes
+		{
+			int xp, yp;
+			GetAttribAddressCoords(viewState.HighlightAddress, xp, yp);
+
+			const int rx = static_cast<int>(pos.x) + borderOffsetX + xp;
+			const int ry = static_cast<int>(pos.y) + borderOffsetY + yp;
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);
+		}
+	}
+
 	if (ImGui::IsItemHovered())
 	{
-		const int borderOffsetX = (320 - 256) / 2;
-		const int borderOffsetY = (256 - 192) / 2;
 		const int xp = std::min(std::max((int)(io.MousePos.x - pos.x - borderOffsetX), 0), 255);
 		const int yp = std::min(std::max((int)(io.MousePos.y - pos.y - borderOffsetY), 0), 191);
 

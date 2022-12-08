@@ -204,4 +204,5 @@ private:
 
 uint16_t GetScreenPixMemoryAddress(int x, int y);
 uint16_t GetScreenAttrMemoryAddress(int x, int y);
-void GetScreenAddressCoords(uint16_t addr, int& x, int& y);
+bool GetScreenAddressCoords(uint16_t addr, int& x, int& y);
+bool GetAttribAddressCoords(uint16_t addr, int& x, int& y);

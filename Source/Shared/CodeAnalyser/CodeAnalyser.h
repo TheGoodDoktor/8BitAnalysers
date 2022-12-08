@@ -193,6 +193,7 @@ public:
 	FCodeAnalysisViewState	ViewState[kNoViewStates];	// new multiple view states
 	int						FocussedWindowId = 0;
 	FCodeAnalysisViewState& GetFocussedViewState() { return ViewState[FocussedWindowId]; }
+	FCodeAnalysisViewState& GetAltViewState() { return ViewState[FocussedWindowId ^ 1]; }
 	
 	std::set<uint16_t>		Watches;	// addresses to use as watches
 	std::vector<FCPUFunctionCall>	CallStack;
