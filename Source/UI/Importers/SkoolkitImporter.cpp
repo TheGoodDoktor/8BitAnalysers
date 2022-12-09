@@ -480,30 +480,48 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(instruction.Address);
 			if (pDataInfo)
 			{
-				std::string defStatement = instruction.Operation.substr(0, 4);
+				// If this is set to true it will parse the DEFM statement and calculate
+				// how many bytes the text needs to be. This DEFM statement could contain
+				// non-ascii byte values mixed in with the text.
+				// This means when the DEFM statement is exported it will match exactly 
+				// the DEFM statement that was imported.
+				// This will bypass SetItemText() so may not display correctly in the tool.
+				const bool bSkoolKitCompatibleText = false;
 
-				std::vector<std::string> elements;
-				SplitCommaDelimitedItems(instruction.Operation.substr(5), elements);
-
-				// This loop counts the number of bytes declared in the DEFM instruction.
-				// It can deal with byte values in addition to text strings.
-				// eg DEFM "One",2,"Three"
-				uint16_t byteSize = 0;
-				for (std::string& str : elements)
+				if (bSkoolKitCompatibleText)
 				{
-					byteSize += CountDataBytes(str);
+					std::string defStatement = instruction.Operation.substr(0, 4);
+
+					std::vector<std::string> elements;
+					SplitCommaDelimitedItems(instruction.Operation.substr(5), elements);
+
+					// This loop counts the number of bytes declared in the DEFM instruction.
+					// It can deal with byte values in addition to text strings.
+					// eg DEFM "One",2,"Three"
+					uint16_t byteSize = 0;
+					for (std::string& str : elements)
+					{
+						byteSize += CountDataBytes(str);
+					}
+
+					if (byteSize > 0)
+					{
+						pDataInfo->DataType = DataType::Text;
+
+						// SetItemText doesnt set the number of bytes correctly (compared to how skoolkit does it),
+						// so we set the byte size manually based on how many bytes we counted in the statement.
+						pDataInfo->ByteSize = byteSize;
+
+						// todo set bBit7Terminator flag on the FDataItem
+						// todo check we're not overlapping items.
+					}
 				}
-
-				if (byteSize > 0)
+				else
 				{
-					pDataInfo->DataType = DataType::Text;
+					// force to byte type otherwise SetItemText() does nothing
+					pDataInfo->DataType = DataType::Byte;
 
-					// SetItemText doesnt set the number of bytes correctly (compared to how skoolkit does it),
-					// so we set the byte size afterwards based on how many bytes we counted in the statement.
-					// (also SetItemText() doesn't deal with bit 7 terminated strings)
-					pDataInfo->ByteSize = byteSize;
-
-					// todo check we're not overlapping items.
+					SetItemText(state, pDataInfo);
 				}
 				pItem = pDataInfo;
 			}
