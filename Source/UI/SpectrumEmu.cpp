@@ -444,14 +444,16 @@ int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, v
 	return 0;
 }
 
-extern uint16_t g_PC;
-
 // Note - you can't read the cpu vars during tick
 // They are only written back at end of exec function
 uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 {
 	FCodeAnalysisState &state = CodeAnalysis;
-	const uint16_t pc = g_PC;	// hack because we can't get it another way
+
+	// we have to pass data to the tick through an internal state struct because the z80_t struct only gets updated after an emulation exec period
+	z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
+	const FZ80InternalState& cpuState = pCPU->internal_state;
+	const uint16_t pc = cpuState.PC;	
 
 	/* memory and IO requests */
 	if (pins & Z80_MREQ) 
@@ -463,8 +465,26 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		const uint8_t value = Z80_GET_DATA(pins);
 		if (pins & Z80_RD)
 		{
-			if (state.bRegisterDataAccesses)
-				RegisterDataRead(state, pc, addr);
+			if (cpuState.IRQ)
+			{
+				// TODO: read is to fetch interrupt handler address
+				//LOGINFO("Interrupt Handler at: %x", value);
+				uint8_t im = z80_im(pCPU);
+
+				if (im == 2)
+				{
+					const uint8_t i = z80_i(pCPU);	// I register has high byte of interrupt vector
+					const uint16_t interruptVector = (i << 8) | value;
+					const uint16_t interruptHandler = state.CPUInterface->ReadWord(interruptVector);
+					LOGINFO("Interrupt Handler IM: %d I:%x D:%x", im, i, value);
+				}
+
+			}
+			else
+			{
+				if (state.bRegisterDataAccesses)
+					RegisterDataRead(state, pc, addr);
+			}
 		}
 		else if (pins & Z80_WR) 
 		{

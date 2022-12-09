@@ -512,9 +512,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 
 		// set up data entry for address
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
-		pDataInfo->Address = (uint16_t)i;
-		pDataInfo->ByteSize = 1;
-		pDataInfo->DataType = DataType::Byte;
+		pDataInfo->Reset((uint16_t)i);
 	}
 
 	FLabelInfo::FreeAll();

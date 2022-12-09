@@ -123,6 +123,19 @@ struct FDataInfo : FItem
 {
 	FDataInfo() :FItem() { Type = ItemType::Data; }
 
+	void Reset(uint16_t addr)
+	{
+		Flags = 0;
+		Address = addr;
+		ByteSize = 1;
+		DataType = DataType::Byte;
+		Comment.clear();
+		LastFrameRead = -1;
+		Reads.clear();
+		LastFrameWritten = -1;
+		Writes.clear();
+	}
+
 	DataType	DataType = DataType::Byte;
 	
 	union

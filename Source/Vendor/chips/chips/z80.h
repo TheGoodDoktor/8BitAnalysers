@@ -304,6 +304,14 @@
 extern "C" {
 #endif
 
+//MARKC - Begin
+struct FZ80InternalState
+{
+    uint16_t    PC;
+    bool        IRQ = false;
+};
+//MARKC - End
+
 /*--- callback function typedefs ---*/
 typedef uint64_t (*z80_tick_t)(int num_ticks, uint64_t pins, void* user_data);
 typedef int (*z80_trap_t)(uint16_t pc, int ticks, uint64_t pins, void* trap_user_data);
@@ -394,6 +402,8 @@ typedef struct {
     z80_trap_t trap_cb;
     void* trap_user_data;
     int trap_id;                /* != 0 if a trap has been hit */
+
+    FZ80InternalState   internal_state;  // MarkC - to provide info for the tick function
 } z80_t;
 
 /* initialize a new z80 instance */
@@ -820,7 +830,6 @@ static inline uint64_t _z80_flush_r1(uint64_t ws, uint64_t r1, uint64_t map_bits
     return r1;
 }
 
-uint16_t g_PC = 0;
 /* instruction decoder */
 uint32_t z80_exec(z80_t* cpu, uint32_t num_ticks) {
     cpu->trap_id = 0;
@@ -840,7 +849,7 @@ uint32_t z80_exec(z80_t* cpu, uint32_t num_ticks) {
     uint16_t pc = _G_PC();
     uint64_t pre_pins = pins;
     do {
-		g_PC = pc;
+		cpu->internal_state.PC = pc; //MarkC
         /* fetch next opcode byte */
         _FETCH(op)
         /* special case ED-prefixed instruction: cancel effect of DD/FD prefix */
@@ -1291,6 +1300,7 @@ uint32_t z80_exec(z80_t* cpu, uint32_t num_ticks) {
         /* check for interrupt request */
         bool nmi = 0 != ((pins & (pre_pins ^ pins)) & Z80_NMI);
         bool irq = (pins & Z80_INT) && (r2 & _BIT_IFF1);
+        cpu->internal_state.IRQ = irq;  //MarkC
         if (nmi || irq) {
             /* clear IFF flags (disables interrupt) */
             r2 &= ~_BIT_IFF1;
