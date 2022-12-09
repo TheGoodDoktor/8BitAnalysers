@@ -274,7 +274,11 @@ public:
 			snprintf(tmp, sizeof(tmp), bHex ? "DEFB $%02X" : "DEFB %u", State.CPUInterface->ReadByte(pDataInfo->Address));
 			asmText = tmp;
 		}
-		else if (pDataInfo->DataType == DataType::ByteArray || pDataInfo->DataType == DataType::Graphics || pDataInfo->DataType == DataType::Blob)
+		else if (pDataInfo->DataType == DataType::ByteArray 
+			|| pDataInfo->DataType == DataType::Graphics 
+			|| pDataInfo->DataType == DataType::Blob
+			|| pDataInfo->DataType == DataType::Bitmap
+			|| pDataInfo->DataType == DataType::CharacterMap)
 		{
 			asmText = "DEFB ";
 			const uint16_t numItems = pDataInfo->ByteSize;
