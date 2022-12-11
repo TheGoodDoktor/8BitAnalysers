@@ -118,27 +118,6 @@ std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 		outString += std::string(tempStr);
 	}
 
-	if (Regs & Z80Reg::F)
-	{
-		//sprintf_s(tempStr, "F = %s ", NumStr(z80_f(pCPU)));
-		//outString += std::string(tempStr);
-
-		const uint8_t f = z80_f(pCPU);
-		char f_str[] = {
-			'[',
-			(f & Z80_SF) ? 'S':'-',
-			(f & Z80_ZF) ? 'Z':'-',
-			(f & Z80_YF) ? 'X':'-',
-			(f & Z80_HF) ? 'H':'-',
-			(f & Z80_XF) ? 'Y':'-',
-			(f & Z80_VF) ? 'V':'-',
-			(f & Z80_NF) ? 'N':'-',
-			(f & Z80_CF) ? 'C':'-',
-			']',
-			0, };
-		outString += std::string(f_str);
-	}
-
 	if (Regs & Z80Reg::B)
 	{
 		sprintf_s(tempStr, "B = %s ", NumStr(z80_b(pCPU)));
@@ -299,6 +278,28 @@ std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 		outString += std::string(tempStr);
 	}
 
+	if (Regs & Z80Reg::F)
+	{
+		//sprintf_s(tempStr, "F = %s ", NumStr(z80_f(pCPU)));
+		//outString += std::string(tempStr);
+
+		const uint8_t f = z80_f(pCPU);
+		char f_str[] = {
+			'[',
+			(f & Z80_SF) ? 'S':'-',
+			(f & Z80_ZF) ? 'Z':'-',
+			(f & Z80_YF) ? 'X':'-',
+			(f & Z80_HF) ? 'H':'-',
+			(f & Z80_XF) ? 'Y':'-',
+			(f & Z80_VF) ? 'V':'-',
+			(f & Z80_NF) ? 'N':'-',
+			(f & Z80_CF) ? 'C':'-',
+			']',
+			0, };
+		outString += "Flags = ";
+		outString += std::string(f_str);
+	}
+
 	return outString;
 }
 
@@ -329,7 +330,7 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
     uint32_t *rp = gRegPairs;
     uint32_t *rp2 = gRegPairs2;
 
-	char tempStr[256] = {0};
+	static char tempStr[512] = {0};
 
     /* fetch the first instruction byte */
 
@@ -439,7 +440,14 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 				sprintf_s(tempStr, "Logical OR A with %s. Result stored in A.", GetRegName(r[z]).c_str());
 				break;
 			case 7: // CP s
-				sprintf_s(tempStr, "Compare A with %s. Set Z flag if they match.", GetRegName(r[z]).c_str());
+				std::string regName = GetRegName(r[z]);
+				sprintf_s(tempStr, "Compare A with %s. Subtract %s from A but discard result.\n\n"
+					"Unsigned\nA == %s: Z flag is set.\nA != %s: Z flag is reset.\n"
+					"A < %s:  C flag is set.\nA >= %s: C flag is reset.\n\n"
+					"Signed\nA == %s: Z flag is set.\nA != %s: Z flag is reset.\n"
+					"A < %s:  S and P/V are different.\nA >= %s: S and P/V are the same.\n", 
+					regName.c_str(), regName.c_str(), regName.c_str(), regName.c_str(), regName.c_str(), regName.c_str(), regName.c_str(), regName.c_str(), regName.c_str(), regName.c_str());
+				inst.RegFlags |= Z80Reg::F;
 				break;
 		}
 		inst.RegFlags |= r[z] | Z80Reg::A;
@@ -637,21 +645,64 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 							d = CPUIF->ReadByte(pc++);
 						op = CPUIF->ReadByte(pc++);
 
+						//const char* oct = "01234567";
+
                         x = (op >> 6) & 3;
                         y = (op >> 3) & 7;
                         z = op & 7;
                         if (x == 0) 
 						{
-                            /* rot and shift instructions */
+							/* rot and shift instructions */
 							/* RLC, RRC, RL, RR, SLA, SRA, SLL, SRL */
+							switch (y)
+							{
+								case 0: // RLC 
+									if (z==6) // (HL)
+										sprintf_s(tempStr, "Rotate (HL) left 1 bit. Bit 7 is copied to C flag and to bit 0.");
+									break;
+								case 1: // RRC
+									if (z==6) // (HL)
+										sprintf_s(tempStr, "Rotate (HL) right 1 bit. Bit 0 is copied to C flag and to bit 7.");
+									break;
+								case 2: // RL 
+									break;
+								case 3: // RR
+									break;
+								case 4: // SLA
+									break;
+								case 5: // SRA
+									break;
+								case 6: // SLL
+									break;
+								case 7: // SRL
+									break;
+							}
+                            
 							inst.RegFlags = r[z];
                         }
-                        else 
+                        else if (x == 1)
 						{
-                            /* bit instructions */
-							/* 1 BIT, 2 RES, 3 SET */
-							inst.RegFlags = r[z];
-                        }
+							/*if (pre) {
+                                _CHR(','); _Md(d);
+                            }
+                            if (!pre || (z != 6)) {
+                                _CHR(','); _STR(r[z]);
+                            }*/
+
+							// BIT
+							// todo: finish this
+							sprintf_s(tempStr, "Test bit %d of %s", y, GetRegName(r[z]).c_str());
+
+						}
+                        else if (x == 2)
+						{
+							// RES
+						}
+						else if (x == 3)
+						{
+							// SET
+						}
+						inst.RegFlags = r[z];
                         break;
                 }
                 break;
@@ -697,11 +748,33 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 									/* LDDR, CPDR, INDR, OTDR */
 									 
 									if (z == 0) /* First column. LDI, LDD, LDIR, LDDR*/
+									{
+										switch (y-4)
+										{
+											case 0:
+												sprintf_s(tempStr, "LDI");
+												break;
+											case 1:
+												sprintf_s(tempStr, "LDD");
+												break;
+											case 2:
+												sprintf_s(tempStr, "LDIR");
+												break;
+											case 3:
+												sprintf_s(tempStr, "LDDR");
+												break;
+										}
 										inst.RegFlags = Z80Reg::BC | Z80Reg::HL | Z80Reg::DE |Z80Reg::DE_Indirect | Z80Reg::HL_Indirect;
-									if (z == 1) /* Second column. CPI, CPDR, CPD, CPIR*/
+									}
+									else if (z == 1) /* Second column. CPI, CPDR, CPD, CPIR*/
+									{
 										inst.RegFlags = Z80Reg::A | Z80Reg::BC | Z80Reg::HL | Z80Reg::HL_Indirect;
-									/* Last 2 columns. OUTI, INI, OUTD, IND, INIR, OTIR, INDR, OTDR*/
-									inst.RegFlags = Z80Reg::B | Z80Reg::C | Z80Reg::HL | Z80Reg::HL_Indirect;
+									}
+									else
+									{
+										/* Last 2 columns. OUTI, INI, OUTD, IND, INIR, OTIR, INDR, OTDR*/
+										inst.RegFlags = Z80Reg::B | Z80Reg::C | Z80Reg::HL | Z80Reg::HL_Indirect;
+									}
                                 }
                                 else 
 								{
@@ -903,6 +976,7 @@ void ShowCodeToolTipZ80(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
 	ImGui::BeginTooltip();
 	if (!desc.empty())
 		ImGui::Text(desc.c_str());	// Instruction description
+	ImGui::Separator();
 	ImGui::Text(regStr.c_str());
 	ImGui::EndTooltip();
 }
