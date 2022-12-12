@@ -189,8 +189,8 @@ void FSpectrumViewer::Draw()
 			{
 				FDataFormattingOptions formattingOptions;
 				formattingOptions.StartAddress = FoundCharDataAddress;
-				formattingOptions.EndAddress = FoundCharDataAddress + 7;
 				formattingOptions.ItemSize = 1;
+				formattingOptions.NoItems = 8;
 				formattingOptions.DataType = DataType::Bitmap;
 
 				FormatData(codeAnalysis, formattingOptions);

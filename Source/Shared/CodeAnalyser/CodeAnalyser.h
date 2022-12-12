@@ -34,6 +34,7 @@ public:
 	virtual const uint8_t*	GetMemPtr(uint16_t address) const = 0;
 	virtual void		WriteByte(uint16_t address, uint8_t value) = 0;
 	virtual uint16_t	GetPC(void) = 0;
+	virtual uint16_t	GetSP(void) = 0;
 
 	// breakpoints
 	virtual bool	IsAddressBreakpointed(uint16_t addr) = 0;
@@ -95,15 +96,16 @@ enum class Key
 struct FDataFormattingOptions
 {
 	int		StartAddress = 0;
-	int		EndAddress = 0;
-	int		ItemSize = 1;
+	int			ItemSize = 1;
+	int			NoItems = 1;
 	DataType	DataType = DataType::Byte;
 	//bool	BinaryVisualisation = false;
 	//bool	CharMapVisualisation = false;
 	bool	ClearCodeInfo = false;
 	bool	ClearLabels = false;
 
-	bool IsValid() const {	return EndAddress > StartAddress;	}
+	bool IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
+	uint16_t	CalcEndAddress() const { return StartAddress + (NoItems * ItemSize) - 1; }
 };
 
 // view state for code analysis window

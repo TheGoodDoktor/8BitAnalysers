@@ -192,6 +192,11 @@ uint16_t	FSpectrumEmu::GetPC(void)
 	return z80_pc(&ZXEmuState.cpu);
 } 
 
+uint16_t	FSpectrumEmu::GetSP(void)
+{
+	return z80_sp(&ZXEmuState.cpu);
+}
+
 void* FSpectrumEmu::GetCPUEmulator(void)
 {
 	return &ZXEmuState.cpu;
@@ -1118,6 +1123,8 @@ void DrawDebuggerUI(ui_dbg_t *pDebugger)
 	_ui_dbg_bp_draw(pDebugger);*/
 }
 
+void StoreRegisters_Z80(FCodeAnalysisState& state);
+
 void FSpectrumEmu::Tick()
 {
 	ExecThisFrame = ui_zx_before_exec(&UIZX);
@@ -1129,7 +1136,8 @@ void FSpectrumEmu::Tick()
 		
 		// TODO: Start frame method in analyser
 		CodeAnalysis.FrameTrace.clear();
-		
+		StoreRegisters_Z80(CodeAnalysis);
+
 		/*if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
 			assert(ZXEmuState.valid);

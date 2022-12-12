@@ -770,9 +770,8 @@ void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pTe
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options)
 {
 	uint16_t dataAddress = options.StartAddress;
-	const uint16_t endAddress = options.EndAddress;
 
-	while(dataAddress < endAddress)
+	for (int itemNo = 0; itemNo < options.NoItems; itemNo++)
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddress);
 

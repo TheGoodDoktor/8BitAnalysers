@@ -106,6 +106,7 @@ public:
 	const uint8_t*	GetMemPtr(uint16_t address) const override;
 	void		WriteByte(uint16_t address, uint8_t value) override;
 	uint16_t	GetPC(void) override;
+	uint16_t	GetSP(void) override;
 	bool		IsAddressBreakpointed(uint16_t addr) override;
 	bool		ToggleExecBreakpointAtAddress(uint16_t addr) override;
 	bool		ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize) override;

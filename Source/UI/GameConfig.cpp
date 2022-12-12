@@ -263,7 +263,8 @@ void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAd
 			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 			fwrite(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
 			fwrite(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
-			WriteStringToFile(pCodeInfo->Text, fp);	// we can remove this - making sure backwards compatibility works of course!
+			WriteStringToFile(std::string(), fp);	// we can remove this - making sure backwards compatibility works of course!
+			//WriteStringToFile(pCodeInfo->Text, fp);	// we can remove this - making sure backwards compatibility works of course!
 			WriteStringToFile(pCodeInfo->Comment, fp);
 		}
 	}

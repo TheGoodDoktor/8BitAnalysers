@@ -164,40 +164,13 @@ void DrawTrace(FCodeAnalysisState& state)
 	
 }
 
+
+void DrawRegisters_Z80(FCodeAnalysisState& state);
+
 void DrawRegisters(FCodeAnalysisState& state)
 {
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
-	{
-		z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
-
-		ImGui::Text("A: %s", NumStr(z80_a(pCPU)));
-		ImGui::Text("B: %s", NumStr(z80_b(pCPU)));
-		ImGui::Text("C: %s", NumStr(z80_c(pCPU)));
-		ImGui::Text("D: %s", NumStr(z80_d(pCPU)));
-		ImGui::Text("E: %s", NumStr(z80_e(pCPU)));
-		ImGui::Text("H: %s", NumStr(z80_h(pCPU)));
-		ImGui::Text("L: %s",NumStr(z80_l(pCPU)));
-
-		// BC
-		ImGui::Text("BC: %s", NumStr(z80_bc(pCPU)));
-		DrawAddressLabel(state, viewState, z80_bc(pCPU));
-		// DE
-		ImGui::Text("DE: %s", NumStr(z80_de(pCPU)));
-		DrawAddressLabel(state, viewState, z80_de(pCPU));
-		// HL
-		ImGui::Text("HL: %s",NumStr(z80_hl(pCPU))); 
-		DrawAddressLabel(state, viewState, z80_hl(pCPU));
-		// IX
-		ImGui::Text("IX: %s", NumStr(z80_ix(pCPU)));
-		DrawAddressLabel(state, viewState, z80_ix(pCPU));
-		// IY
-		ImGui::Text("IY: %s", NumStr(z80_iy(pCPU)));
-		DrawAddressLabel(state, viewState, z80_iy(pCPU));
-		// SP
-		ImGui::Text("SP: %s", NumStr(z80_sp(pCPU)));
-		DrawAddressLabel(state, viewState, z80_sp(pCPU));
-	}
+		DrawRegisters_Z80(state);
 }
 
 #define ALT_WATCHVIEW 1
@@ -743,6 +716,12 @@ void DrawDataInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		offset = DrawDataBitmapLine(state, pDataInfo);
 	}*/
 
+	if (state.CPUInterface->GetSP() == pDataInfo->Address)
+	{
+		ImGui::SameLine();
+		ImGui::Text("<- SP");
+	}
+
 	DrawComment(pDataInfo, offset);
 }
 
@@ -1231,7 +1210,9 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 	//	ImGui::Separator();
 
 	// selectable
-	bool bSelected = (pItem == viewState.pCursorItem) || (pItem->Address >= viewState.DataFormattingOptions.StartAddress && pItem->Address <= viewState.DataFormattingOptions.EndAddress);
+	const uint16_t endAddress = viewState.DataFormattingOptions.CalcEndAddress();
+	const bool bSelected = (pItem == viewState.pCursorItem) || 
+		(viewState.DataFormattingTabOpen && pItem->Address >= viewState.DataFormattingOptions.StartAddress && pItem->Address <= endAddress);
 	if (ImGui::Selectable("##codeanalysisline", bSelected, 0))
 	{
 		viewState.pCursorItem = state.ItemList[i];
@@ -1243,11 +1224,13 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 			ImGuiIO& io = ImGui::GetIO();
 			if (io.KeyShift)
 			{
-				viewState.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
+				//viewState.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
+				if (viewState.DataFormattingOptions.ItemSize > 0)
+					viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress - viewState.pCursorItem->Address) / viewState.DataFormattingOptions.ItemSize;
 			}
 			else
 			{
-				viewState.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
+				//viewState.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
 				viewState.DataFormattingOptions.StartAddress = viewState.pCursorItem->Address;
 			}
 		}
@@ -1539,7 +1522,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		if (viewState.pCursorItem)
 		{
 			formattingOptions.StartAddress = viewState.pCursorItem->Address;
-			formattingOptions.EndAddress = viewState.pCursorItem->Address;
+			//formattingOptions.EndAddress = viewState.pCursorItem->Address;
 		}
 
 		viewState.DataFormattingTabOpen = true;
@@ -1552,15 +1535,11 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 
 	// Set End address of region to format
 	ImGui::PushID("End");
-	ImGui::InputInt("End Address", &formattingOptions.EndAddress, 1, 100, inputFlags);
+	ImGui::Text("End Address: %s", NumStr(formattingOptions.CalcEndAddress()));
+	//ImGui::InputInt("End Address", &formattingOptions.EndAddress, 1, 100, inputFlags);
 	ImGui::PopID();
 
-	if (ImGui::Button("Clear Selection"))
-	{
-		formattingOptions = FDataFormattingOptions();
-	}
-
-
+	
 	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map" };
 	static int dataTypeIndex = 0; // Here we store our selection data as an index.
 	const char* combo_preview_value = dataTypes[dataTypeIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
@@ -1599,11 +1578,10 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		break;
 	}
 
-	static int itemCount = 1;
-	ImGui::InputInt("Item Count", &itemCount);
-	ImGui::SameLine();
-	if (ImGui::Button("Set"))
-		formattingOptions.EndAddress = formattingOptions.StartAddress + (itemCount * formattingOptions.ItemSize);
+	ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+	//ImGui::SameLine();
+	//if (ImGui::Button("Set"))
+	//	formattingOptions.EndAddress = formattingOptions.StartAddress + (itemCount * formattingOptions.ItemSize);
 
 	//ImGui::Checkbox("Binary Visualisation", &formattingOptions.BinaryVisualisation);
 	//ImGui::Checkbox("Char Map Visualisation", &formattingOptions.CharMapVisualisation);
@@ -1618,6 +1596,19 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			state.bCodeAnalysisDataDirty = true;
 			//formattingOptions = FDataFormattingOptions();	// clear selection
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Format & Advance"))
+		{
+			FormatData(state, formattingOptions);
+			formattingOptions.StartAddress += formattingOptions.ItemSize * formattingOptions.NoItems;
+			state.bCodeAnalysisDataDirty = true;
+			//formattingOptions = FDataFormattingOptions();	// clear selection
+		}
+	}
+
+	if (ImGui::Button("Clear Selection"))
+	{
+		formattingOptions = FDataFormattingOptions();
 	}
 }
 
