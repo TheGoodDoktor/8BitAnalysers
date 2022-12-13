@@ -3,6 +3,8 @@
 #include <map>
 #include <vector>
 
+#include <Util/Misc.h>
+
 struct FCodeAnalysisState;
 struct FGameViewerData;
 class FSpectrumEmu;
@@ -49,6 +51,10 @@ struct FGameConfig
 	std::map<std::string, FSpriteDefConfig> SpriteConfigs;
 
 	std::vector< FCheat> Cheats;
+
+	bool	bEnableViews[4] = { true,false,false,false };
+	bool	bShowScanLineIndicator = false;
+	ENumberDisplayMode		NumberDisplayMode = ENumberDisplayMode::HexAitch;
 };
 
 bool AddGameConfig(FGameConfig *pConfig);

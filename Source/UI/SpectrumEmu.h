@@ -38,6 +38,7 @@
 #include "SnapshotLoaders/GamesList.h"
 #include "IOAnalysis.h"
 #include "SnapshotLoaders/RZXLoader.h"
+#include "Util/Misc.h"
 
 struct FGame;
 struct FGameViewer;
@@ -95,6 +96,7 @@ public:
 	void	DrawUI();
 	bool	DrawDockingView();
 
+	void	SetNumberDisplayMode(ENumberDisplayMode mode);
 
 	// disable copy & assign because this class is big!
 	FSpectrumEmu(const FSpectrumEmu&) = delete;

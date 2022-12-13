@@ -640,7 +640,8 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
-	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
+
+	//CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
 	// register Viewers
 	RegisterStarquakeViewer(this);
@@ -1004,7 +1005,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				{
 					char menuName[32];
 					sprintf_s(menuName, "Code Analysis %d", codeAnalysisNo + 1);
-					ImGui::MenuItem(menuName, 0, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled);
+					ImGui::MenuItem(menuName, 0, &pActiveGame->pConfig->bEnableViews[codeAnalysisNo]);
 				}
 
 				ImGui::EndMenu();
@@ -1323,9 +1324,9 @@ void FSpectrumEmu::DrawUI()
 	{
 		char name[32];
 		sprintf_s(name, "Code Analysis %d", codeAnalysisNo + 1);
-		if (CodeAnalysis.ViewState[codeAnalysisNo].Enabled)
+		if (pActiveGame->pConfig->bEnableViews[codeAnalysisNo])
 		{
-			if (ImGui::Begin(name,&CodeAnalysis.ViewState[codeAnalysisNo].Enabled))
+			if (ImGui::Begin(name,&pActiveGame->pConfig->bEnableViews[codeAnalysisNo]))
 			{
 				DrawCodeAnalysisData(CodeAnalysis, codeAnalysisNo);
 			}
@@ -1425,6 +1426,14 @@ bool FSpectrumEmu::DrawDockingView()
 	}
 
 	return bQuit;
+}
+
+// this is a function so we can intercept and put in config
+void FSpectrumEmu::SetNumberDisplayMode(ENumberDisplayMode mode)
+{
+	::SetNumberDisplayMode(mode);
+	if (pActiveGame)
+		pActiveGame->pConfig->NumberDisplayMode = mode;
 }
 
 

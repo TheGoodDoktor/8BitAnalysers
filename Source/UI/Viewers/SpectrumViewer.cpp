@@ -213,6 +213,52 @@ void FSpectrumViewer::Draw()
 		}
 	}
 
+	// This is experimental
+	if (ImGui::Button("Find and format all on-screen chars"))
+	{
+		uint8_t charData[8];
+
+		for (int yChar = 0; yChar < 24; yChar++)
+		{
+			for (int xChar = 0; xChar < 32; xChar++)
+			{
+				const int xp = xChar * 8;
+				const int yp = yChar * 8;
+				bool bContainsBits = false;
+
+				// store pixel data for selected character
+				for (int charLine = 0; charLine < 8; charLine++)
+				{
+					charData[charLine] = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp, yp + charLine));
+					if (charData[charLine] != 0)
+						bContainsBits = true;
+				}
+
+				if (bContainsBits)
+				{
+					uint16_t foundCharDataAddress;
+
+					if (codeAnalysis.FindMemoryPattern(charData, 8, 0, foundCharDataAddress))
+					{
+						if (codeAnalysis.GetCodeInfoForAddress(foundCharDataAddress) != nullptr)
+						{
+							FDataFormattingOptions formattingOptions;
+							formattingOptions.StartAddress = foundCharDataAddress;
+							formattingOptions.ItemSize = 1;
+							formattingOptions.NoItems = 8;
+							formattingOptions.DataType = DataType::Bitmap;
+
+							FormatData(codeAnalysis, formattingOptions);
+						}
+					}
+				}
+
+			}
+		}
+
+		
+	}
+
 	ImGui::SliderFloat("Speed Scale", &pSpectrumEmu->ExecSpeedScale, 0.0f, 1.0f);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
