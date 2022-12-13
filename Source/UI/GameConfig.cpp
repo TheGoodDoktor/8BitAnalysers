@@ -29,7 +29,7 @@ FGameConfig * CreateNewGameConfigFromSnapshot(const FGameSnapshot& snapshot)
 {
 	FGameConfig *pNewConfig = new FGameConfig;
 
-	pNewConfig->Name = snapshot.DisplayName;
+	pNewConfig->Name = RemoveFileExtension(snapshot.DisplayName.c_str());
 	pNewConfig->SnapshotFile = snapshot.FileName;
 	pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
 

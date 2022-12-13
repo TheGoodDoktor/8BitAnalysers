@@ -215,6 +215,12 @@ void FSpectrumViewer::Draw()
 
 	ImGui::SliderFloat("Speed Scale", &pSpectrumEmu->ExecSpeedScale, 0.0f, 1.0f);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+	if (pSpectrumEmu->bHasInterruptHandler)
+	{
+		ImGui::Text("IM2 Interrupt Handler at: %s", NumStr(pSpectrumEmu->InterruptHandlerAddress));
+		DrawAddressLabel(codeAnalysis, viewState, pSpectrumEmu->InterruptHandlerAddress);
+	}
 	
 	bWindowFocused = ImGui::IsWindowFocused();
 }

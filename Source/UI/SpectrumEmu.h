@@ -174,6 +174,10 @@ public:
 
 	FMemoryStats	MemStats;
 
+	// interrupt handling info
+	bool		bHasInterruptHandler = false;
+	uint16_t	InterruptHandlerAddress = 0;
+
 	// Function info
 	//uint16_t							SelectedFunction;
 	//std::map<uint16_t, FFunctionInfo>	Functions;
@@ -201,6 +205,8 @@ private:
 	bool	bStepToNextScreenWrite = false;
 
 	bool	bShowDebugLog = false;
+
+
 };
 
 
