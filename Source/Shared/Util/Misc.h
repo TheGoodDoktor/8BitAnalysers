@@ -3,9 +3,10 @@
 #include <string>
 #include <vector>
 
+// note - config relies on these being a consistent numerical value
 enum class ENumberDisplayMode
 {
-	Decimal,
+	Decimal = 0,
 	HexDollar,
 	HexAitch
 };

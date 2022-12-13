@@ -240,7 +240,8 @@ void FSpectrumViewer::Draw()
 
 					if (codeAnalysis.FindMemoryPattern(charData, 8, 0, foundCharDataAddress))
 					{
-						if (codeAnalysis.GetCodeInfoForAddress(foundCharDataAddress) != nullptr)
+						const FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(foundCharDataAddress);
+						if (pCodeInfo == nullptr || pCodeInfo->bDisabled)
 						{
 							FDataFormattingOptions formattingOptions;
 							formattingOptions.StartAddress = foundCharDataAddress;

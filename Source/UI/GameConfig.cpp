@@ -73,6 +73,14 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 		jsonConfigFile["Cheats"].push_back(cheatJson);
 	}
 
+	// save options
+	json optionsJson;
+	optionsJson["NumberMode"] = (int)config.NumberDisplayMode;
+	optionsJson["ShowScanlineIndicator"] = config.bShowScanLineIndicator;
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+		optionsJson["EnableCodeAnalysisView"].push_back(config.bCodeAnalysisViewEnabled[i]);
+	jsonConfigFile["Options"] = optionsJson;
+
 	std::ofstream outFileStream(fname);
 	if (outFileStream.is_open())
 	{
@@ -133,6 +141,17 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 		}
 		config.Cheats.push_back(cheat);
 	}
+
+	// load options
+	if (jsonConfigFile["Options"].is_null() == false)
+	{
+		const json& optionsJson = jsonConfigFile["Options"];
+		config.NumberDisplayMode = (ENumberDisplayMode)optionsJson["NumberMode"];
+		config.bShowScanLineIndicator = optionsJson["ShowScanlineIndicator"];
+		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+			config.bCodeAnalysisViewEnabled[i] = optionsJson["EnableCodeAnalysisView"][i];
+	}
+
 	return true;
 }
 

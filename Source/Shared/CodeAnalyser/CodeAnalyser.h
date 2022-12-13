@@ -111,7 +111,7 @@ struct FDataFormattingOptions
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
-	//bool	Enabled = false;
+	bool	Enabled = false;
 	FItem*	pCursorItem	= nullptr;
 	int		CursorItemIndex = -1;
 	bool	TrackPCFrame = false;

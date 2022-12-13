@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <Util/Misc.h>
+#include <CodeAnalyser/CodeAnalyser.h>
 
 struct FCodeAnalysisState;
 struct FGameViewerData;
@@ -52,7 +53,7 @@ struct FGameConfig
 
 	std::vector< FCheat> Cheats;
 
-	bool	bEnableViews[4] = { true,false,false,false };
+	bool	bCodeAnalysisViewEnabled[FCodeAnalysisState::kNoViewStates] = { true,false,false,false };
 	bool	bShowScanLineIndicator = false;
 	ENumberDisplayMode		NumberDisplayMode = ENumberDisplayMode::HexAitch;
 };

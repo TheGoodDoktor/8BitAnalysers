@@ -641,7 +641,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
 
-	//CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
+	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
 	// register Viewers
 	RegisterStarquakeViewer(this);
@@ -703,9 +703,15 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	pActiveGame = pNewGame;
 	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pGameConfig);
 	GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
-	
+
 	// Initialise code analysis
 	InitialiseCodeAnalysis(CodeAnalysis, this);
+
+	// Set options from config
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+		CodeAnalysis.ViewState[i].Enabled = pGameConfig->bCodeAnalysisViewEnabled[i];
+	bShowScanLineIndicator = pGameConfig->bShowScanLineIndicator;
+	SetNumberDisplayMode(pGameConfig->NumberDisplayMode);
 
 	// load game data if we can
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
@@ -753,7 +759,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 {
 	if (pActiveGame != nullptr)
 	{
-		const FGameConfig *pGameConfig = pActiveGame->pConfig;
+		FGameConfig *pGameConfig = pActiveGame->pConfig;
 		if (pGameConfig->Name.empty())
 		{
 			
@@ -764,6 +770,14 @@ void FSpectrumEmu::SaveCurrentGameData()
 			const std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
 			EnsureDirectoryExists("Configs");
 			EnsureDirectoryExists("GameData");
+
+			// set config values
+			pGameConfig->NumberDisplayMode = GetNumberDisplayMode();
+			pGameConfig->bShowScanLineIndicator = bShowScanLineIndicator;
+			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+			{
+				pGameConfig->bCodeAnalysisViewEnabled[i] = CodeAnalysis.ViewState[i].Enabled;
+			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
 			SaveGameData(CodeAnalysis, dataFName.c_str());
@@ -1005,7 +1019,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				{
 					char menuName[32];
 					sprintf_s(menuName, "Code Analysis %d", codeAnalysisNo + 1);
-					ImGui::MenuItem(menuName, 0, &pActiveGame->pConfig->bEnableViews[codeAnalysisNo]);
+					ImGui::MenuItem(menuName, 0, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled);
 				}
 
 				ImGui::EndMenu();
@@ -1324,9 +1338,9 @@ void FSpectrumEmu::DrawUI()
 	{
 		char name[32];
 		sprintf_s(name, "Code Analysis %d", codeAnalysisNo + 1);
-		if (pActiveGame->pConfig->bEnableViews[codeAnalysisNo])
+		if(CodeAnalysis.ViewState[codeAnalysisNo].Enabled)
 		{
-			if (ImGui::Begin(name,&pActiveGame->pConfig->bEnableViews[codeAnalysisNo]))
+			if (ImGui::Begin(name,&CodeAnalysis.ViewState[codeAnalysisNo].Enabled))
 			{
 				DrawCodeAnalysisData(CodeAnalysis, codeAnalysisNo);
 			}
