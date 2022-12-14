@@ -1,4 +1,14 @@
 {
     "Name": "Ranarama",
+    "Options": {
+        "EnableCodeAnalysisView": [
+            true,
+            true,
+            false,
+            false
+        ],
+        "NumberMode": 2,
+        "ShowScanlineIndicator": true
+    },
     "SnapshotFile": "./Games/Ranarama.Z80"
 }
