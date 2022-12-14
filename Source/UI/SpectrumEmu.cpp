@@ -717,6 +717,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
 	LoadGameData(CodeAnalysis, dataFName.c_str());
 	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
+	LoadPOKFile(*pGameConfig, std::string("Pokes/" + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 
@@ -1463,9 +1464,46 @@ void FSpectrumEmu::DrawCheatsUI()
 	for (FCheat &cheat : config.Cheats)
 	{
 		ImGui::PushID(cheat.Description.c_str());
-		ImGui::Text(cheat.Description.c_str());
-		ImGui::SameLine();
-		if (ImGui::Checkbox("##cheatBox", &cheat.bEnabled))
+		int userDefinedCount = 0;
+		bool bToggleCheat = false;
+		
+		if (ImGui::Checkbox(cheat.Description.c_str(), &cheat.bEnabled))
+		{
+			bToggleCheat = true;
+		}
+		
+		for (auto &entry : cheat.Entries)
+		{
+			if (entry.bUserDefined)
+			{
+				char tempStr[16] = {0};
+				sprintf_s(tempStr, "Value %d", ++userDefinedCount);
+				
+				if (ImGui::InputInt(tempStr, &entry.Value, 1, 10, ImGuiInputTextFlags_CharsDecimal))
+					entry.Value = min(max(entry.Value, 0), 255); 
+			}
+		}
+
+		// Show the Apply button if we have any user defined values.
+		if (userDefinedCount > 0)
+		{
+			// If we've enabled the tickbox for a cheat with user defined values don't activate cheat yet...
+			// We activate it when they've pressed the Apply button.
+			if (bToggleCheat && cheat.bEnabled)
+				bToggleCheat = false;
+
+			if (!cheat.bEnabled)
+				ImGui::BeginDisabled();
+			if (ImGui::Button("Apply"))
+			{
+				cheat.bEnabled = true;
+				bToggleCheat = true;
+			}
+			if (!cheat.bEnabled)
+				ImGui::EndDisabled();
+		}
+
+		if (bToggleCheat)
 		{
 			for (auto &entry : cheat.Entries)
 			{
@@ -1473,14 +1511,17 @@ void FSpectrumEmu::DrawCheatsUI()
 				{
 					// store old value
 					entry.OldValue = ReadByte( entry.Address);
-					WriteByte( entry.Address, entry.Value);
+					WriteByte( entry.Address, static_cast<uint8_t>(entry.Value));
 				}
 				else
 				{
 					WriteByte( entry.Address, entry.OldValue);
 				}
 			}
+			LOGINFO("Poke %s: '%s' [%d byte(s)]", cheat.bEnabled ? "activated" : "deactivated", cheat.Description.c_str(), cheat.Entries.size());
+
 		}
+		ImGui::Separator();
 		ImGui::PopID();
 	}
 }
