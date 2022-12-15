@@ -96,8 +96,6 @@ public:
 	void	DrawUI();
 	bool	DrawDockingView();
 
-	void	SetNumberDisplayMode(ENumberDisplayMode mode);
-
 	// disable copy & assign because this class is big!
 	FSpectrumEmu(const FSpectrumEmu&) = delete;
 	FSpectrumEmu& operator= (const FSpectrumEmu&) = delete;

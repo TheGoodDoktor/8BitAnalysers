@@ -5,6 +5,49 @@
 #include <chips/z80.h>
 #include <imgui.h>
 
+// took these out of the chips debugger
+uint16_t InputU16(const char* label, uint16_t val) 
+{
+	char buf[5];
+	for (int i = 0; i < 4; i++) {
+		buf[i] = "0123456789ABCDEF"[val >> ((3 - i) * 4) & 0xF];
+	}
+	buf[4] = 0;
+	const int flags = ImGuiInputTextFlags_CharsHexadecimal |
+		ImGuiInputTextFlags_CharsUppercase |
+		ImGuiInputTextFlags_EnterReturnsTrue;
+	ImGui::PushItemWidth(38);
+	if (ImGui::InputText(label, buf, sizeof(buf), flags)) {
+		int res;
+		if (sscanf(buf, "%X", &res) == 1) {
+			val = (uint16_t)res;
+		}
+	}
+	ImGui::PopItemWidth();
+	return val;
+}
+
+uint8_t InputU8(const char* label, uint8_t val)
+{
+	char buf[3];
+	for (int i = 0; i < 2; i++) {
+		buf[i] = "0123456789ABCDEF"[val >> ((1 - i) * 4) & 0xF];
+	}
+	buf[2] = 0;
+	const int flags = ImGuiInputTextFlags_CharsHexadecimal |
+		ImGuiInputTextFlags_CharsUppercase |
+		ImGuiInputTextFlags_EnterReturnsTrue;
+	ImGui::PushItemWidth(22);
+	if (ImGui::InputText(label, buf, sizeof(buf), flags)) {
+		int res;
+		if (sscanf(buf, "%X", &res) == 1) {
+			val = (uint8_t)res;
+		}
+	}
+	ImGui::PopItemWidth();
+	return val;
+}
+
 // structure to hold registers for display purposes
 struct FZ80DisplayRegisters
 {

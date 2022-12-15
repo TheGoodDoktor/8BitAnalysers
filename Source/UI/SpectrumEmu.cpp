@@ -1443,15 +1443,6 @@ bool FSpectrumEmu::DrawDockingView()
 	return bQuit;
 }
 
-// this is a function so we can intercept and put in config
-void FSpectrumEmu::SetNumberDisplayMode(ENumberDisplayMode mode)
-{
-	::SetNumberDisplayMode(mode);
-	if (pActiveGame)
-		pActiveGame->pConfig->NumberDisplayMode = mode;
-}
-
-
 // Cheats
 
 void FSpectrumEmu::DrawCheatsUI()

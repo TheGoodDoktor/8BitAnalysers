@@ -173,20 +173,14 @@ void DrawRegisters(FCodeAnalysisState& state)
 		DrawRegisters_Z80(state);
 }
 
-#define ALT_WATCHVIEW 1
 void DrawWatchWindow(FCodeAnalysisState& state)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	static int selectedWatch = -1;
 
-#if ALT_WATCHVIEW
 	for (const auto& watch : state.GetWatches())
 	{
 		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch);
-		//ImGui::Text("\t");
-		//ImGui::SameLine();
-		//DrawAddressLabel(state, pDataInfo->Address);
-		//ImGui::SameLine();
 		ImGui::PushID(watch);
 		if (ImGui::Selectable("##watchselect", watch == selectedWatch, 0))
 		{
@@ -209,43 +203,10 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 		ImGui::SetItemAllowOverlap();	// allow buttons
 		ImGui::SameLine();
 		DrawDataInfo(state, viewState, pDataInfo, true);
+
+		// TODO: Edit Watch
 		ImGui::PopID();		
 	}
-
-#else
-	if (ImGui::BeginChild("##watchlist", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0)))
-	{
-		for (const auto& watch : state.GetWatches())
-		{
-			const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch);
-			if (ImGui::Selectable("##watchselect", watch == selectedWatch, 0))
-			{
-				selectedWatch = watch;
-			}
-			ImGui::SetItemAllowOverlap();	// allow buttons
-			ImGui::SameLine();
-			ImGui::Text("%s", NumStr(pDataInfo->Address));
-			DrawAddressLabel(state, pDataInfo->Address);
-			//ImGui::SameLine();
-			//DrawDataInfo(state, pDataInfo);
-		}
-	}
-	ImGui::EndChild();
-	ImGui::SameLine();
-	if (ImGui::BeginChild("##watchdetails", ImVec2(0, 0)))
-	{
-		if (selectedWatch != -1)
-		{
-			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress((uint16_t)selectedWatch);
-			if (pDataInfo)
-			{
-				DrawDataInfo(state, pDataInfo);
-				DrawDataDetails(state, pDataInfo);
-			}
-		}
-	}
-	ImGui::EndChild();
-#endif
 }
 
 void DrawComment(const FItem *pItem, float offset = 0.0f)
