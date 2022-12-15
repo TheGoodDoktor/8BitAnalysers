@@ -1,4 +1,57 @@
 {
+    "Cheats": [
+        {
+            "Description": "Infinite Lives",
+            "Entries": [
+                {
+                    "Address": 57421,
+                    "Value": 0
+                },
+                {
+                    "Address": 57436,
+                    "Value": 205
+                },
+                {
+                    "Address": 57572,
+                    "Value": 201
+                },
+                {
+                    "Address": 59821,
+                    "Value": 0
+                },
+                {
+                    "Address": 59836,
+                    "Value": 205
+                }
+            ]
+        },
+        {
+            "Description": "Immunity",
+            "Entries": [
+                {
+                    "Address": 57633,
+                    "Value": 33
+                }
+            ]
+        },
+        {
+            "Description": "Cast Runes",
+            "Entries": [
+                {
+                    "Address": 51631,
+                    "Value": 201
+                },
+                {
+                    "Address": 53532,
+                    "Value": 132
+                },
+                {
+                    "Address": 53533,
+                    "Value": 201
+                }
+            ]
+        }
+    ],
     "Name": "Ranarama",
     "Options": {
         "EnableCodeAnalysisView": [
