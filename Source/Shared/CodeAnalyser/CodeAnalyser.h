@@ -208,6 +208,8 @@ public:
 
 	std::vector< class FCommand *>	CommandStack;
 
+	bool					bAllowEditing = false;
+
 public:
 	// Access functions for code analysis
 	static const int kPageShift = 10;

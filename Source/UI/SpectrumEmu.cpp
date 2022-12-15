@@ -1007,6 +1007,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				ImGui::EndMenu();
 			}
 			ImGui::MenuItem("Scan Line Indicator", 0, &bShowScanLineIndicator);
+			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
 			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
 			ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
 			ImGui::EndMenu();

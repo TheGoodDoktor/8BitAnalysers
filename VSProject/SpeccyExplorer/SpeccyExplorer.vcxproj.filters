@@ -294,6 +294,9 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\Z80\RegisterViewZ80.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\UI\Z80</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\DataItemUI.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">

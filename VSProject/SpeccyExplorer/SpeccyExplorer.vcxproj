@@ -143,6 +143,7 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CodeToolTips.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\DataItemUI.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\ImageViewer.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\Z80\CodeToolTipsZ80.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\Z80\RegisterViewZ80.cpp" />
