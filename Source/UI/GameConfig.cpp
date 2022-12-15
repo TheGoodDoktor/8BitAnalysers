@@ -5,11 +5,13 @@
 #include "magic_enum.hpp"
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 
 #include "SpectrumEmu.h"
 #include "GameViewers/GameViewer.h"
 #include "SnapshotLoaders/GamesList.h"
 #include "Debug/Debug.h"
+#include "Shared/Util/Misc.h"
 
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;
@@ -155,13 +157,92 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	return true;
 }
 
+enum PokeFileToken
+{
+  Description = 'N',
+  MorePoke = 'M',
+  LastPoke = 'Z',
+  EndOfFile = 'Y'
+};
+
+enum class PokeReaderState
+{
+	ProcessDescription,
+	ProcessPokeEntries,
+};
+
 bool LoadPOKFile(FGameConfig &config, const char *fname)
 {
 	std::ifstream inFileStream(fname);
 	if (inFileStream.is_open() == false)
 		return false;
 
-	return true;
+	// Read entire file 
+	std::ostringstream buffer;
+    buffer << inFileStream.rdbuf();
+
+	PokeReaderState state = PokeReaderState::ProcessDescription;
+
+	std::istringstream iss(buffer.str());
+	for (std::string line; std::getline(iss, line); )
+	{
+		if (!line.empty())
+		{
+			const char token = line[0];
+			switch (token)
+			{
+			case PokeFileToken::Description:
+			{
+				// todo deal with state != PokeReaderState::ProcessDescription
+
+				FCheat cheat;
+				cheat.Description = line.substr(1);
+				config.Cheats.push_back(cheat);
+				state = PokeReaderState::ProcessPokeEntries;
+				break;
+			}
+			case PokeFileToken::MorePoke:
+				// Intentional drop through
+			case PokeFileToken::LastPoke:
+			{	
+				// todo check state is PokeReaderState::ProcessPokeEntries
+
+				std::vector<std::string> tokens;
+				Tokenize(line, ' ', tokens);				
+
+				// todo deal with incorrect number of entries
+
+				FCheatMemoryEntry pokeEntry;
+				pokeEntry.Address = std::stoi(tokens[2]);
+				uint16_t value = std::stoi(tokens[3]);
+
+				// todo deal with invalid values (<0 and >256)
+
+				if (value < 256)
+				{
+					pokeEntry.Value = static_cast<uint8_t>(value);
+				}
+				else if (value == 256)
+				{
+					pokeEntry.Value = 0;
+					pokeEntry.bUserDefined = true;
+				}
+				config.Cheats.back().Entries.push_back(pokeEntry);
+
+				if (token == PokeFileToken::LastPoke)
+					state = PokeReaderState::ProcessDescription;
+				break;
+			}
+			case PokeFileToken::EndOfFile:
+				return true;
+			default:
+				// todo handle this
+				break;
+			}
+		}
+	}
+
+	return false;
 }
 
 // Labels

@@ -238,7 +238,7 @@ void FSpectrumViewer::Draw()
 				{
 					uint16_t foundCharDataAddress;
 
-					if (codeAnalysis.FindMemoryPattern(charData, 8, 0, foundCharDataAddress))
+					if (codeAnalysis.FindMemoryPattern(charData, 8, 0x5800, foundCharDataAddress))
 					{
 						const FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(foundCharDataAddress);
 						if (pCodeInfo == nullptr || pCodeInfo->bDisabled)
