@@ -226,6 +226,8 @@ bool LoadPOKFile(FGameConfig &config, const char *fname)
 				{
 					pokeEntry.Value = 0;
 					pokeEntry.bUserDefined = true;
+					config.Cheats.back().bHasUserDefinedEntries = true;
+
 				}
 				config.Cheats.back().Entries.push_back(pokeEntry);
 

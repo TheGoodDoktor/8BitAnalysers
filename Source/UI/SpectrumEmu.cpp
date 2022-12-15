@@ -1313,7 +1313,7 @@ void FSpectrumEmu::DrawUI()
 	}
 
 	// cheats 
-	if (ImGui::Begin("Cheats"))
+	if (ImGui::Begin("Pokes"))
 	{
 		DrawCheatsUI();
 	}
@@ -1450,17 +1450,39 @@ void FSpectrumEmu::DrawCheatsUI()
 	if (pActiveGame == nullptr)
 		return;
 	
+	if (pActiveGame->pConfig->Cheats.size() == 0)
+	{
+		ImGui::Text("No pokes loaded");
+		return;
+	}
+
+	static int displayMode = 0;
+    ImGui::RadioButton("Standard", &displayMode, 0);
+	ImGui::SameLine();
+    ImGui::RadioButton("Advanced", &displayMode, 1);
+	ImGui::Separator();
+    
 	FGameConfig &config = *pActiveGame->pConfig;
 
 	for (FCheat &cheat : config.Cheats)
 	{
 		ImGui::PushID(cheat.Description.c_str());
-		int userDefinedCount = 0;
 		bool bToggleCheat = false;
+		bool bWasEnabled = cheat.bEnabled;
+		int userDefinedCount = 0;
 		
-		if (ImGui::Checkbox(cheat.Description.c_str(), &cheat.bEnabled))
+		if (cheat.bHasUserDefinedEntries)
 		{
-			bToggleCheat = true;
+			ImGui::Text(cheat.Description.c_str());
+			ImGui::SameLine();
+			ImGui::Text(cheat.bEnabled ? "[ON]" : "[OFF]");
+		}
+		else
+		{
+			if (ImGui::Checkbox(cheat.Description.c_str(), &cheat.bEnabled))
+			{
+				bToggleCheat = true;
+			}
 		}
 		
 		for (auto &entry : cheat.Entries)
@@ -1473,24 +1495,34 @@ void FSpectrumEmu::DrawCheatsUI()
 				if (ImGui::InputInt(tempStr, &entry.Value, 1, 10, ImGuiInputTextFlags_CharsDecimal))
 					entry.Value = min(max(entry.Value, 0), 255); 
 			}
+			
+			// Display memory locations in advanced mode
+			if (displayMode == 1)
+			{
+				ImGui::Text("Poke Value: %-3d", entry.Value);
+				DrawAddressLabel(CodeAnalysis, CodeAnalysis.GetFocussedViewState(), entry.Address);
+			}
 		}
 
-		// Show the Apply button if we have any user defined values.
-		if (userDefinedCount > 0)
+		// Show the Apply and Revert buttons if we have any user defined values.
+		if (cheat.bHasUserDefinedEntries)
 		{
-			// If we've enabled the tickbox for a cheat with user defined values don't activate cheat yet...
-			// We activate it when they've pressed the Apply button.
-			if (bToggleCheat && cheat.bEnabled)
-				bToggleCheat = false;
-
-			if (!cheat.bEnabled)
-				ImGui::BeginDisabled();
 			if (ImGui::Button("Apply"))
 			{
 				cheat.bEnabled = true;
 				bToggleCheat = true;
 			}
-			if (!cheat.bEnabled)
+
+			ImGui::SameLine();
+			bool bDisabledRevert = !cheat.bEnabled; 
+			if (bDisabledRevert)
+				ImGui::BeginDisabled();
+			if (ImGui::Button("Revert"))
+			{
+				cheat.bEnabled = false;
+				bToggleCheat = true;
+			}
+			if (bDisabledRevert)
 				ImGui::EndDisabled();
 		}
 
@@ -1501,7 +1533,8 @@ void FSpectrumEmu::DrawCheatsUI()
 				if (cheat.bEnabled)	// cheat activated
 				{
 					// store old value
-					entry.OldValue = ReadByte( entry.Address);
+					if (!bWasEnabled)
+						entry.OldValue = ReadByte( entry.Address);
 					WriteByte( entry.Address, static_cast<uint8_t>(entry.Value));
 				}
 				else
