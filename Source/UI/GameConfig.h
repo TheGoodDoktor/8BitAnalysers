@@ -25,6 +25,7 @@ struct FCheat
 {
 	std::string						Description;
 	bool							bEnabled = false;
+	bool							bHasUserDefinedEntries = false;
 	std::vector< FCheatMemoryEntry>	Entries;
 };
 
