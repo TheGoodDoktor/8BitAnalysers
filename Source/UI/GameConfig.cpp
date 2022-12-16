@@ -60,7 +60,7 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 		jsonConfigFile["SpriteConfigs"].push_back(spriteConfig);
 	}
 
-	for (const FCheat& cheat : config.Cheats)
+	/*for (const FCheat& cheat : config.Cheats)
 	{
 		json cheatJson;
 		cheatJson["Description"] = cheat.Description;
@@ -73,7 +73,7 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 		}
 
 		jsonConfigFile["Cheats"].push_back(cheatJson);
-	}
+	}*/
 
 	// save options
 	json optionsJson;
@@ -129,7 +129,7 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 		sprConfig.Height = jsonSprConfig["Height"].get<int>();
 	}
 
-	for (const auto& cheatJson : jsonConfigFile["Cheats"])
+	/*for (const auto& cheatJson : jsonConfigFile["Cheats"])
 	{
 		FCheat cheat;
 		cheat.Description = cheatJson["Description"].get<std::string>();
@@ -142,7 +142,7 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 			cheat.Entries.push_back(entry);
 		}
 		config.Cheats.push_back(cheat);
-	}
+	}*/
 
 	// load options
 	if (jsonConfigFile["Options"].is_null() == false)
@@ -176,6 +176,8 @@ bool LoadPOKFile(FGameConfig &config, const char *fname)
 	std::ifstream inFileStream(fname);
 	if (inFileStream.is_open() == false)
 		return false;
+
+	config.Cheats.clear();
 
 	// Read entire file 
 	std::ostringstream buffer;
