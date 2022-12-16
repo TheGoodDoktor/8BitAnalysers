@@ -1542,7 +1542,13 @@ void FSpectrumEmu::DrawCheatsUI()
 				{
 					WriteByte( entry.Address, entry.OldValue);
 				}
+
+				// if code has been modified then clear the code text so it gets regenerated
+				FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(entry.Address);
+				if (pCodeInfo)
+					pCodeInfo->Text.clear();
 			}
+			CodeAnalysis.bCodeAnalysisDataDirty = true;
 			LOGINFO("Poke %s: '%s' [%d byte(s)]", cheat.bEnabled ? "activated" : "deactivated", cheat.Description.c_str(), cheat.Entries.size());
 
 		}
