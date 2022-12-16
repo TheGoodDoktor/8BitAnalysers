@@ -33,15 +33,15 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 }
 
 // returns how much space it took
-float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
+float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo, bool bEditMode)
 {
 	const float line_height = ImGui::GetTextLineHeight();
 	const float rectSize = line_height + 4;
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	pos.x += 200.0f;
-	const float startPos = pos.x;
 	pos.y -= rectSize + 2;
+	const ImVec2 startPos = pos;
 
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
@@ -60,6 +60,28 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 		}
 	}
 
+	// Edit bits
+	if (bEditMode && ImGui::IsMouseClicked(0))
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		const int xp = (int)(io.MousePos.x - startPos.x);
+		const int yp = (int)(io.MousePos.y - startPos.y);
+		const int itemWidth = pDataInfo->ByteSize * 8 * rectSize;
+	
+		if (xp >= 0 && yp >= 0 && xp < itemWidth && yp < rectSize)
+		{
+			const int squareNo = xp / rectSize;
+			const int byteNo = squareNo / 8;
+			const int bitNo = squareNo & 7;
+			const ImVec2 rectMin(startPos.x + (squareNo * rectSize), startPos.y);
+			const ImVec2 rectMax(startPos.x + rectSize, startPos.y + rectSize);
+			dl->AddRect(rectMin, rectMax, 0xffff00ff);
+
+			uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + byteNo);
+			val = val ^ (1 << (7-bitNo));
+			state.CPUInterface->WriteByte(pDataInfo->Address + byteNo,val);
+		}
+	}
 	//return pos.x - startPos;
 	return pos.x;
 }
@@ -324,7 +346,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case DataType::Bitmap:
 		ImGui::Text("Bitmap");
-		offset = DrawDataBitmapLine(state, pDataInfo);
+		offset = DrawDataBitmapLine(state, pDataInfo, state.bAllowEditing);
 		break;
 	case DataType::CharacterMap:
 		ImGui::Text("Charmap");
