@@ -330,7 +330,8 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
     uint32_t *rp = gRegPairs;
     uint32_t *rp2 = gRegPairs2;
 
-	static char tempStr[512] = {0};
+	static char tempStr[512];
+	tempStr[0] = 0;
 
     /* fetch the first instruction byte */
 
