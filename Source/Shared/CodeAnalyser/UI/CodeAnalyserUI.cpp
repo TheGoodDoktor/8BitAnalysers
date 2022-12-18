@@ -7,7 +7,6 @@
 
 
 #include "imgui.h"
-#include "Vendor/imgui-docking/imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
 #include <sstream>
@@ -768,7 +767,7 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 	const uint16_t endAddress = viewState.DataFormattingOptions.CalcEndAddress();
 	const bool bSelected = (pItem == viewState.pCursorItem) || 
 		(viewState.DataFormattingTabOpen && pItem->Address >= viewState.DataFormattingOptions.StartAddress && pItem->Address <= endAddress);
-	if (ImGui::Selectable("##codeanalysisline", bSelected, ImGuiSelectableFlags_SelectOnNav))
+	if (ImGui::Selectable("##codeanalysisline", bSelected, 0))
 	{
 		viewState.pCursorItem = state.ItemList[i];
 		viewState.CursorItemIndex = i;
