@@ -42,10 +42,13 @@ bool GoToPreviousAddress(FCodeAnalysisViewState&state)
 
 int GetItemIndexForAddress(const FCodeAnalysisState &state, uint16_t addr)
 {
+	int index = -1;
 	for(int i=0;i<(int)state.ItemList.size();i++)
 	{
-		if (state.ItemList[i] != nullptr && state.ItemList[i]->Address == addr)
-			return i;
+		if (state.ItemList[i] != nullptr && state.ItemList[i]->Address > addr)
+			return index;
+
+		index = i;
 	}
 	return -1;
 }
@@ -743,7 +746,7 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 {
 	assert(i < (int)state.ItemList.size());
 	FItem* pItem = state.ItemList[i];
-	bool bHighlight = (pItem->Address == viewState.HighlightAddress);
+	bool bHighlight = (viewState.HighlightAddress >= pItem->Address && viewState.HighlightAddress < pItem->Address + pItem->ByteSize);
 	uint32_t kHighlightColour = 0xff00ff00;
 	ImGui::PushID(i);
 
