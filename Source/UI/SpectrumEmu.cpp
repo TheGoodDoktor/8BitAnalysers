@@ -1500,7 +1500,7 @@ void FSpectrumEmu::DrawCheatsUI()
 			// Display memory locations in advanced mode
 			if (displayMode == 1)
 			{
-				ImGui::Text("Poke Value: %-3d", entry.Value);
+				ImGui::Text("%s:%s", NumStr(entry.Address), NumStr((uint8_t)entry.Value));
 				DrawAddressLabel(CodeAnalysis, CodeAnalysis.GetFocussedViewState(), entry.Address);
 			}
 		}
