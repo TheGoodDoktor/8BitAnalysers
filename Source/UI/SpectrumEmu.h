@@ -195,6 +195,7 @@ public:
 	bool bShowImGuiDemo = false;
 	bool bShowImPlotDemo = false;
 	bool bShowScanLineIndicator = false;
+	bool bEnableAudio = false;
 private:
 	z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;

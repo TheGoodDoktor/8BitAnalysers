@@ -371,8 +371,9 @@ void gfx_destroy_texture(void* h)
 /* audio-streaming callback */
 static void PushAudio(const float* samples, int num_samples, void* user_data)
 {
-	//saudio_push(samples, num_samples);
-
+	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
+	if(pEmu->bEnableAudio)
+		saudio_push(samples, num_samples);
 }
 
 int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
@@ -566,6 +567,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	zx_desc_t desc;
 	memset(&desc, 0, sizeof(zx_desc_t));
 	desc.type = type;
+	desc.user_data = this;
 	desc.joystick_type = joy_type;
 	desc.pixel_buffer = FrameBuffer;
 	desc.pixel_buffer_size = pixelBufferSize;
@@ -1010,6 +1012,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				ImGui::EndMenu();
 			}
 			ImGui::MenuItem("Scan Line Indicator", 0, &bShowScanLineIndicator);
+			ImGui::MenuItem("Enable Audio", 0, &bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
 			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
 			ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
