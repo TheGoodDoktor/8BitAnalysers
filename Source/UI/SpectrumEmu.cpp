@@ -45,6 +45,8 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 
 #include "Exporters/SkoolFileInfo.h"
 
+#define ENABLE_RZX 0
+
 /* output an unsigned 8-bit value as hex string */
 void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data) 
 {
@@ -816,6 +818,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				ImGui::EndMenu();
 			}
 
+#if ENABLE_RZX
 			if (ImGui::BeginMenu("New Game from RZX File"))
 			{
 				for (int gameNo = 0; gameNo < RZXGamesList.GetNoGames(); gameNo++)
@@ -834,7 +837,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				}
 				ImGui::EndMenu();
 			}
-
+#endif
 			if (ImGui::BeginMenu( "Open Game"))
 			{
 				for (const auto& pGameConfig : GetGameConfigs())
@@ -853,11 +856,11 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::MenuItem("Open POK File..."))
+			/*if (ImGui::MenuItem("Open POK File..."))
 			{
 				std::string pokFile;
 				OpenFileDialog(pokFile, ".\\POKFiles", "POK\0*.pok\0");
-			}
+			}*/
 			
 			if (ImGui::MenuItem("Save Game Data"))
 			{
