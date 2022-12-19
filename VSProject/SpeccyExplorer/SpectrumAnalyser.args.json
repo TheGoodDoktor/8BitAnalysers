@@ -3,6 +3,10 @@
   "Id": "1f10bdcc-db06-4636-861c-13053f04fbdc",
   "Items": [
     {
+      "Id": "6df57823-6c9d-4825-9edc-f068db50397b",
+      "Command": "Ranarama"
+    },
+    {
       "Id": "156142e1-3e08-472b-8883-b5027b95c6b4",
       "Command": "Saboteur"
     },

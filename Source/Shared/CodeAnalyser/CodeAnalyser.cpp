@@ -169,11 +169,63 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType l
 }
 
 
-struct FAnalysisDasmState
+class FAnalysisDasmState : public FDasmStateBase
 {
-	ICPUInterface*	CPUInterface;
-	uint16_t		CurrentAddress;
-	std::string		Text;
+public:
+	void OutputU8(uint8_t val, z80dasm_output_t outputCallback) override
+	{
+		if (outputCallback != nullptr)
+		{
+			ENumberDisplayMode dispMode = GetNumberDisplayMode();
+
+			if (pCodeInfoItem->OperandType == EOperandType::Decimal)
+				dispMode = ENumberDisplayMode::Decimal;
+			if (pCodeInfoItem->OperandType == EOperandType::Hex)
+				dispMode = ENumberDisplayMode::HexAitch;
+
+			const char* outStr = NumStr(val, dispMode);
+			for (int i = 0; i < strlen(outStr); i++)
+				outputCallback(outStr[i], this);
+		}
+	}
+
+	void OutputU16(uint16_t val, z80dasm_output_t outputCallback) override
+	{
+		if (outputCallback)
+		{
+			ENumberDisplayMode dispMode = GetNumberDisplayMode();
+
+			if (pCodeInfoItem->OperandType == EOperandType::Decimal)
+				dispMode = ENumberDisplayMode::Decimal;
+			if (pCodeInfoItem->OperandType == EOperandType::Hex)
+				dispMode = ENumberDisplayMode::HexAitch;
+
+			const char* outStr = NumStr(val, dispMode);
+			for (int i = 0; i < strlen(outStr); i++)
+				outputCallback(outStr[i], this);
+		}
+	}
+
+	void OutputD8(int8_t val, z80dasm_output_t outputCallback) override
+	{
+		if (outputCallback)
+		{
+			if (val < 0)
+			{
+				outputCallback('-', this);
+				val = -val;
+			}
+			else
+			{
+				outputCallback('+', this);
+			}
+			const char* outStr = NumStr((uint8_t)val);
+			for (int i = 0; i < strlen(outStr); i++)
+				outputCallback(outStr[i], this);
+		}
+	}
+
+	FCodeInfo* pCodeInfoItem = nullptr;
 };
 
 
@@ -182,13 +234,7 @@ static uint8_t AnalysisDasmInputCB(void* pUserData)
 {
 	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
 
-	const uint8_t val = pDasmState->CPUInterface->ReadByte( pDasmState->CurrentAddress++);
-
-	// push into binary buffer
-	//if (pDasm->bin_pos < DASM_MAX_BINLEN)
-	//	pDasm->bin_buf[pDasm->bin_pos++] = val;
-
-	return val;
+	return pDasmState->CodeAnalysisState->CPUInterface->ReadByte( pDasmState->CurrentAddress++);
 }
 
 /* disassembler callback to output a character */
@@ -202,47 +248,39 @@ static void AnalysisOutputCB(char c, void* pUserData)
 
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	if (pCodeInfo == nullptr)	// code info could have been cleared
+		return;
+
 	FAnalysisDasmState dasmState;
-	dasmState.CPUInterface = state.CPUInterface;
+	dasmState.pCodeInfoItem = pCodeInfo;
+	dasmState.CodeAnalysisState = &state;
 	dasmState.CurrentAddress = pc;
+	SetNumberOutput(&dasmState);
 	if(state.CPUInterface->CPUType == ECPUType::Z80)
 		z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 	else if(state.CPUInterface->CPUType == ECPUType::M6502)
 		m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
-	FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(pc);
-	if (pCodeInfo == nullptr)	// code info could have been cleared
-		return;
-
 	assert(pCodeInfo != nullptr);
 	pCodeInfo->Text = dasmState.Text;
+	SetNumberOutput(nullptr);
 }
 
 
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
-	FAnalysisDasmState dasmState;
-	dasmState.CPUInterface = state.CPUInterface;
-	dasmState.CurrentAddress = pc;
-	uint16_t newPC = pc;
-
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
-	else if(state.CPUInterface->CPUType == ECPUType::M6502)
-		newPC = m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
-
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo == nullptr)
 	{
 		pCodeInfo = FCodeInfo::Allocate();
-		state.SetCodeInfoForAddress(pc,pCodeInfo);
+		state.SetCodeInfoForAddress(pc, pCodeInfo);
 	}
 
-	pCodeInfo->Text = dasmState.Text;
-	pCodeInfo->Address = pc;
-	pCodeInfo->ByteSize = newPC - pc;
-	for(uint16_t codeAddr=pc;codeAddr<newPC;codeAddr++)
-		state.SetCodeInfoForAddress(codeAddr, pCodeInfo);	// just set to first instruction?
+	FAnalysisDasmState dasmState;
+	dasmState.pCodeInfoItem = pCodeInfo;
+	dasmState.CodeAnalysisState = &state;
+	dasmState.CurrentAddress = pc;	
 
 	// does this function branch?
 	uint16_t jumpAddr;
@@ -253,18 +291,45 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 			state.GetLabelForAddress(jumpAddr)->References[pc]++;
 
 		pCodeInfo->JumpAddress = jumpAddr;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::JumpAddress;
 	}
-
-	uint16_t ptr;
-	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
-		pCodeInfo->PointerAddress = ptr;
-
-	if (CheckPointerIndirectionInstruction(state.CPUInterface, pc, &ptr))
+	else
 	{
-		pCodeInfo->PointerAddress = ptr;
-		if (GenerateLabelForAddress(state, ptr, LabelType::Data))
-			state.GetLabelForAddress(ptr)->References[pc]++;
+		uint16_t ptr;
+		if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
+		{
+			if(pCodeInfo->OperandType == EOperandType::Unknown)
+				pCodeInfo->OperandType = EOperandType::Pointer;
+			pCodeInfo->PointerAddress = ptr;
+		}
+
+		if (CheckPointerIndirectionInstruction(state.CPUInterface, pc, &ptr))
+		{
+			pCodeInfo->PointerAddress = ptr;
+			if (pCodeInfo->OperandType == EOperandType::Unknown)
+				pCodeInfo->OperandType = EOperandType::Pointer;
+			if (GenerateLabelForAddress(state, ptr, LabelType::Data))
+				state.GetLabelForAddress(ptr)->References[pc]++;
+		}
 	}
+
+	// generate disassembly
+	SetNumberOutput(&dasmState);	// not particularly happy with this - pointer to stack held globally
+	uint16_t newPC = pc;
+
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+		newPC = m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+
+	SetNumberOutput(nullptr);
+
+	pCodeInfo->Address = pc;
+	for (uint16_t codeAddr = pc; codeAddr < newPC; codeAddr++)
+		state.SetCodeInfoForAddress(codeAddr, pCodeInfo);	// make sure all addresses spanned by instruction are set
+	pCodeInfo->Text = dasmState.Text;
+	pCodeInfo->ByteSize = newPC - pc;
 
 	return newPC;
 }
@@ -792,164 +857,16 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 	}
 }
 
-// text generation
 
-std::string GenerateAddressLabelString(FCodeAnalysisState &state, uint16_t addr)
+
+// number output abstraction
+IDasmNumberOutput* g_pNumberOutputObj = nullptr;
+IDasmNumberOutput* GetNumberOutput()
 {
-	int labelOffset = 0;
-	const char *pLabelString = nullptr;
-	std::string labelStr;
-	
-	for (int addrVal = addr; addrVal >= 0; addrVal--)
-	{
-		FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrVal);
-		if (pLabelInfo != nullptr)
-		{
-			labelStr = "[" + pLabelInfo->Name;
-			break;
-		}
-
-		labelOffset++;
-	}
-
-	if (labelStr.empty() == false)
-	{
-		if (labelOffset > 0)	// add offset string
-		{
-			char offsetString[16];
-			sprintf_s(offsetString, " + %d]", labelOffset);
-			labelStr += offsetString;
-		}
-		else
-		{
-			labelStr += "]";
-		}
-	}
-
-	return labelStr;
+	return g_pNumberOutputObj;
 }
 
-bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFileName,uint16_t startAddr,uint16_t endAddr)
+void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj)
 {
-	FILE* fp = nullptr;
-	fopen_s(&fp, pTextFileName, "wt");
-	
-	if (fp == nullptr)
-		return false;
-	
-	for(FItem* pItem : state.ItemList)
-	{
-		if (pItem->Address < startAddr || pItem->Address > endAddr)
-			continue;
-		
-		switch (pItem->Type)
-		{
-		case ItemType::Label:
-			{
-				const FLabelInfo *pLabelInfo = static_cast<FLabelInfo *>(pItem);
-				fprintf(fp, "%s:", pLabelInfo->Name.c_str());
-			}
-			break;
-		case ItemType::Code:
-			{
-				const FCodeInfo *pCodeInfo = static_cast<FCodeInfo *>(pItem);
-				fprintf(fp, "\t%s", pCodeInfo->Text.c_str());
-
-				if (pCodeInfo->JumpAddress != 0)
-				{
-					const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->JumpAddress);
-					if(labelStr.empty() == false)
-						fprintf(fp,"\t;%s", labelStr.c_str());
-					
-				}
-				else if (pCodeInfo->PointerAddress != 0)
-				{
-					const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->PointerAddress);
-					if (labelStr.empty() == false)
-						fprintf(fp, "\t;%s", labelStr.c_str());
-				}
-			}
-			
-			break;
-		case ItemType::Data:
-			{
-				const FDataInfo *pDataInfo = static_cast<FDataInfo *>(pItem);
-
-				fprintf(fp, "\t");
-				switch (pDataInfo->DataType)
-				{
-				case DataType::Byte:
-				{
-					const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
-					fprintf(fp,"db %s", NumStr(val));
-				}
-				break;
-				case DataType::ByteArray:
-				{
-					std::string textString;
-					for (int i = 0; i < pDataInfo->ByteSize; i++)
-					{
-						const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
-						char valTxt[16];
-						sprintf_s(valTxt, "%s%c", NumStr(val), i < pDataInfo->ByteSize - 1 ? ',':' ');
-						textString += valTxt;
-					}
-					fprintf(fp, "db %s", textString.c_str());
-				}
-				break;
-				case DataType::Word:
-				{
-					const uint16_t val = state.CPUInterface->ReadByte(pDataInfo->Address) | (state.CPUInterface->ReadByte(pDataInfo->Address + 1) << 8);
-					fprintf(fp, "dw %s", NumStr(val));
-				}
-				break;
-				case DataType::WordArray:
-				{
-					const int wordSize = pDataInfo->ByteSize / 2;
-					std::string textString;
-					for (int i = 0; i < wordSize; i++)
-					{
-						const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
-						char valTxt[16];
-						sprintf_s(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
-						textString += valTxt;
-					}
-					fprintf(fp, "dw %s", textString.c_str());
-				}
-				break;
-				case DataType::Text:
-				{
-					std::string textString;
-					for (int i = 0; i < pDataInfo->ByteSize; i++)
-					{
-						const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
-						if (ch == '\n')
-							textString += "<cr>";
-						if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
-							textString += ch & ~(1 << 7);	// remove bit 7
-						else
-							textString += ch;
-					}
-					fprintf(fp, "ascii '%s'", textString.c_str());
-				}
-				break;
-
-				case DataType::Graphics:
-				case DataType::Blob:
-				default:
-					fprintf(fp, "%d Bytes", pDataInfo->ByteSize);
-					break;
-				}
-			}
-			break;
-		}
-
-		// put comment on the end
-		if(pItem->Comment.empty() == false)
-		fprintf(fp, "\t;%s", pItem->Comment.c_str());
-		fprintf(fp, "\n");
-	}
-
-	fclose(fp);
-	return true;
+	g_pNumberOutputObj = pNumberOutputObj;
 }

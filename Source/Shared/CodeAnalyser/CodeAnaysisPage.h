@@ -26,6 +26,15 @@ enum class ItemType
 	CommentLine,
 };
 
+enum class EOperandType
+{
+	Unknown = 0,
+	Pointer,
+	JumpAddress,
+	Decimal,
+	Hex
+};
+
 struct FCPUFunctionCall
 {
 	uint16_t	FunctionAddr = 0;
@@ -64,7 +73,7 @@ struct FCodeInfo : FItem
 	static FCodeInfo* Allocate();
 	static void FreeAll();
 
-	ENumberDisplayMode	NumDispMode = ENumberDisplayMode::None;
+	EOperandType	OperandType = EOperandType::Unknown;
 	std::string		Text;				// Disassembly text
 	uint16_t		JumpAddress = 0;	// optional jump address
 	uint16_t		PointerAddress = 0;	// optional pointer address
@@ -132,7 +141,7 @@ struct FDataInfo : FItem
 		Address = addr;
 		ByteSize = 1;
 		DataType = DataType::Byte;
-		NumDispOverride = ENumberDisplayMode::None;
+		OperandType = EOperandType::Unknown;
 		Comment.clear();
 		LastFrameRead = -1;
 		Reads.clear();
@@ -141,7 +150,7 @@ struct FDataInfo : FItem
 	}
 
 	DataType	DataType = DataType::Byte;
-	ENumberDisplayMode	NumDispOverride = ENumberDisplayMode::None;
+	EOperandType	OperandType = EOperandType::Unknown;
 
 	union
 	{

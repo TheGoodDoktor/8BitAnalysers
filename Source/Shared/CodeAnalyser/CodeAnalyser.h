@@ -60,6 +60,26 @@ public:
 	ECPUType	CPUType = ECPUType::Unknown;
 };
 
+typedef void (*z80dasm_output_t)(char c, void* user_data);
+
+class IDasmNumberOutput
+{
+public:
+
+	virtual void OutputU8(uint8_t val, z80dasm_output_t out_cb) = 0;
+	virtual void OutputU16(uint16_t val, z80dasm_output_t out_cb) = 0;
+	virtual void OutputD8(int8_t val, z80dasm_output_t out_cb) = 0;
+};
+
+class FDasmStateBase : public IDasmNumberOutput
+{
+public:
+	FCodeAnalysisState*		CodeAnalysisState;
+	uint16_t				CurrentAddress;
+	std::string				Text;
+};
+
+
 struct FMemoryAccess
 {
 	uint16_t	Address;
@@ -312,4 +332,6 @@ void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pTe
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options);
 
-bool OutputCodeAnalysisToTextFile(FCodeAnalysisState &state, const char *pTextFileName, uint16_t startAddr, uint16_t endAddr);
+// number output abstraction
+IDasmNumberOutput* GetNumberOutput();
+void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj);

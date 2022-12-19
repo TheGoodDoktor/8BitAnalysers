@@ -297,6 +297,12 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\DataItemUI.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Exporters\AssemblerExport.cpp">
+      <Filter>Source Files\UI\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\UI\Exporters\JsonExport.cpp">
+      <Filter>Source Files\UI\Exporters</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
@@ -652,6 +658,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\Z80\CodeToolTipsZ80.h">
       <Filter>Source Files\Shared\CodeAnalyser\UI\Z80</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Exporters\AssemblerExport.h">
+      <Filter>Source Files\UI\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\SpectrumConstants.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\Exporters\JsonExport.h">
+      <Filter>Source Files\UI\Exporters</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

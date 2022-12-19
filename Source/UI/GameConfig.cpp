@@ -16,6 +16,9 @@
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;
 
+static const int g_kBinaryFileVersionNo = 10;
+static const int g_kBinaryFileMagic = 0xdeadface;
+
 bool AddGameConfig(FGameConfig *pConfig)
 {
 	g_GameConfigs.push_back(pConfig);
@@ -362,13 +365,10 @@ void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAd
 		const FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(i);
 		if (pCodeInfo != nullptr)
 		{
+			fwrite(&pCodeInfo->OperandType, sizeof(pCodeInfo->OperandType), 1, fp);
 			fwrite(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
 			fwrite(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
 			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
-			fwrite(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
-			fwrite(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
-			WriteStringToFile(std::string(), fp);	// we can remove this - making sure backwards compatibility works of course!
-			//WriteStringToFile(pCodeInfo->Text, fp);	// we can remove this - making sure backwards compatibility works of course!
 			WriteStringToFile(pCodeInfo->Comment, fp);
 		}
 	}
@@ -383,15 +383,21 @@ void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo, uint16_
 	{
 		FCodeInfo *pCodeInfo = FCodeInfo::Allocate();
 
+		if(versionNo > 8)
+			fread(&pCodeInfo->OperandType, sizeof(pCodeInfo->OperandType), 1, fp);
+
 		if(versionNo >= 4)
 			fread(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
 
 		fread(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
 		fread(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
-		fread(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
-		fread(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
-		std::string tmp;
-		ReadStringFromFile(tmp, fp);
+		if (versionNo < 10)
+		{
+			fread(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
+			fread(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
+			std::string tmp;
+			ReadStringFromFile(tmp, fp);
+		}
 		//ReadStringFromFile(pCodeInfo->Text, fp);
 		ReadStringFromFile(pCodeInfo->Comment, fp);
 		for(int codeByte = 0;codeByte < pCodeInfo->ByteSize;codeByte++)	// set for whole instruction address range
@@ -571,8 +577,7 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, ui
 	}
 }
 
-static const int g_kBinaryFileVersionNo = 8;
-static const int g_kBinaryFileMagic = 0xdeadface;
+
 
 // Binary save
 bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_t addrStart, uint16_t addrEnd)

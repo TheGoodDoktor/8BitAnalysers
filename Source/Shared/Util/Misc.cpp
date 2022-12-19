@@ -30,11 +30,11 @@ ENumberDisplayMode GetNumberDisplayMode()
 }
 
 
-const char* NumStr(uint8_t num)
+const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode)
 {
 	char* pStrAddress = GetStrPtr();	
 
-	switch (g_NumDispMode)
+	switch (numDispMode)
 	{
 	case ENumberDisplayMode::Decimal:
 		sprintf_s(pStrAddress, kTextLength, "%d", num);
@@ -54,11 +54,16 @@ const char* NumStr(uint8_t num)
 
 }
 
-const char* NumStr(uint16_t num)
+const char* NumStr(uint8_t num)
+{
+	return NumStr(num, g_NumDispMode);
+}
+
+const char* NumStr(uint16_t num, ENumberDisplayMode numDispMode)
 {
 	char* pStrAddress = GetStrPtr();	
 
-	switch (g_NumDispMode)
+	switch (numDispMode)
 	{
 	case ENumberDisplayMode::Decimal:
 		sprintf_s(pStrAddress, kTextLength, "%d", num);
@@ -76,6 +81,12 @@ const char* NumStr(uint16_t num)
 		return nullptr;
 	}
 }
+
+const char* NumStr(uint16_t num)
+{
+	return NumStr(num, g_NumDispMode);
+}
+
 
 void Tokenize(const std::string& stringToSplit, const char token, std::vector<std::string>& splitStrings)
 {

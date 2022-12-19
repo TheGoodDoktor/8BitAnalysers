@@ -6,39 +6,32 @@
 #include <cassert>
 #include <Vendor/chips/systems/zx.h>
 
-
+#pragma pack(1)
 struct FSNAHeader
 {
-	uint8_t		I;
-	uint8_t		H_;
-	uint8_t		L_;
-	uint8_t		D_;
-	uint8_t		E_;
-	uint8_t		B_;
-	uint8_t		C_;
-	uint8_t		A_;
-	uint8_t		F_;
-	uint8_t		H;
-	uint8_t		L;
-	uint8_t		D;
-	uint8_t		E;
-	uint8_t		B;
-	uint8_t		C;
-	uint8_t		IY_h;
-	uint8_t		IY_l;
-	uint8_t		IX_h;
-	uint8_t		IX_l;
-	uint8_t		IFF2;
-	uint8_t		R;
-	uint8_t		IX;
-	uint8_t		A;
-	uint8_t		F;
-	uint8_t		SP_h;
-	uint8_t		SP_l;
-	uint8_t		IM;
+	uint8_t		I;		// 0
+	
+	uint16_t	HL_;	// 1
+	uint16_t	DE_;
+	uint16_t	BC_;
+	uint16_t	AF_;
+
+	uint16_t	HL;		//9
+	uint16_t	DE;
+	uint16_t	BC;
+	uint16_t	IX;
+	uint16_t	IY;
+
+	uint8_t		Interrupt;	// 19
+	uint8_t		R;			// 20
+	
+	uint16_t	AF;			// 21
+	uint16_t	SP;
+
+	uint8_t		IM;			// 25
 	uint8_t		Border;
 };
-
+#pragma pack()
 
 bool LoadSNAFile(FSpectrumEmu* pEmu, const char* fName)
 {
@@ -80,21 +73,20 @@ bool LoadSNAFromMemory(FSpectrumEmu * pEmu, const uint8_t * pData, size_t dataSi
 	zx_t* pSys = &pEmu->ZXEmuState;
 
 	z80_reset(&pSys->cpu);
-	z80_set_a(&pSys->cpu, pHdr->A); z80_set_f(&pSys->cpu, pHdr->F);
-	z80_set_b(&pSys->cpu, pHdr->B); z80_set_c(&pSys->cpu, pHdr->C);
-	z80_set_d(&pSys->cpu, pHdr->D); z80_set_e(&pSys->cpu, pHdr->E);
-	z80_set_h(&pSys->cpu, pHdr->H); z80_set_l(&pSys->cpu, pHdr->L);
-	z80_set_ix(&pSys->cpu, pHdr->IX_h << 8 | pHdr->IX_l);
-	z80_set_iy(&pSys->cpu, pHdr->IY_h << 8 | pHdr->IY_l);
-	z80_set_af_(&pSys->cpu, pHdr->A_ << 8 | pHdr->F_);
-	z80_set_bc_(&pSys->cpu, pHdr->B_ << 8 | pHdr->C_);
-	z80_set_de_(&pSys->cpu, pHdr->D_ << 8 | pHdr->E_);
-	z80_set_hl_(&pSys->cpu, pHdr->H_ << 8 | pHdr->L_);
-	z80_set_sp(&pSys->cpu, pHdr->SP_h << 8 | pHdr->SP_l);
+	z80_set_af(&pSys->cpu, pHdr->AF);
+	z80_set_b(&pSys->cpu, pHdr->BC); 
+	z80_set_d(&pSys->cpu, pHdr->DE); 
+	z80_set_h(&pSys->cpu, pHdr->HL); 
+	z80_set_ix(&pSys->cpu, pHdr->IX);
+	z80_set_iy(&pSys->cpu, pHdr->IY);
+	z80_set_af_(&pSys->cpu, pHdr->AF_);
+	z80_set_bc_(&pSys->cpu, pHdr->BC_);
+	z80_set_de_(&pSys->cpu, pHdr->DE_);
+	z80_set_hl_(&pSys->cpu, pHdr->HL_);
 	z80_set_i(&pSys->cpu, pHdr->I);
 	z80_set_r(&pSys->cpu, pHdr->R);
-	z80_set_iff2(&pSys->cpu, pHdr->IFF2);
-	//z80_set_ei_pending(&sys->cpu, hdr->EI != 0);
+	z80_set_iff2(&pSys->cpu, pHdr->Interrupt & (1 << 2));
+	//z80_set_ei_pending(&pSys->cpu, pHdr->Interrupt != 0);
 	z80_set_im(&pSys->cpu, pHdr->IM & 3);
 
 #	// copy RAM across
@@ -104,7 +96,11 @@ bool LoadSNAFromMemory(FSpectrumEmu * pEmu, const uint8_t * pData, size_t dataSi
 		pRAMData++;
 	}
 
+	// pop PC off stack
+	z80_set_pc(&pSys->cpu, pEmu->ReadWord(pHdr->SP));
+	z80_set_sp(&pSys->cpu, pHdr->SP + 2);
 
-	return false;	// NOT implemented
+
+	return true;	// NOT implemented
 }
 

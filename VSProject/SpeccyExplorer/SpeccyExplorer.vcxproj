@@ -158,6 +158,8 @@
     <ClCompile Include="..\..\Source\Shared\Util\MemoryBuffer.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\Misc.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\Win32\FileUtil_Win32.cpp" />
+    <ClCompile Include="..\..\Source\UI\Exporters\AssemblerExport.cpp" />
+    <ClCompile Include="..\..\Source\UI\Exporters\JsonExport.cpp" />
     <ClCompile Include="..\..\Source\UI\Exporters\SkoolFile.cpp" />
     <ClCompile Include="..\..\Source\UI\Exporters\SkoolKitExporter.cpp" />
     <ClCompile Include="..\..\Source\UI\Exporters\SkoolFileInfo.cpp" />
@@ -222,6 +224,8 @@
     <ClInclude Include="..\..\Source\Shared\Util\GraphicsView.h" />
     <ClInclude Include="..\..\Source\Shared\Util\MemoryBuffer.h" />
     <ClInclude Include="..\..\Source\Shared\Util\Misc.h" />
+    <ClInclude Include="..\..\Source\UI\Exporters\AssemblerExport.h" />
+    <ClInclude Include="..\..\Source\UI\Exporters\JsonExport.h" />
     <ClInclude Include="..\..\Source\UI\Exporters\SkoolFile.h" />
     <ClInclude Include="..\..\Source\UI\Exporters\SkoolKitExporter.h" />
     <ClInclude Include="..\..\Source\UI\Exporters\SkoolFileInfo.h" />
@@ -237,6 +241,7 @@
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.h" />
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\SNALoader.h" />
     <ClInclude Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.h" />
+    <ClInclude Include="..\..\Source\UI\SpectrumConstants.h" />
     <ClInclude Include="..\..\Source\UI\SpectrumEmu.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\BreakpointViewer.h" />
     <ClInclude Include="..\..\Source\UI\Viewers\FrameTraceViewer.h" />

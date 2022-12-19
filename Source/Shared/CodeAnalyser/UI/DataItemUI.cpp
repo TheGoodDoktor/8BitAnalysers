@@ -245,8 +245,10 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ImGui::Text("\t%s", NumStr(pDataInfo->Address));
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
-	if (pDataInfo->NumDispOverride != ENumberDisplayMode::None)
-		SetNumberDisplayMode(pDataInfo->NumDispOverride);
+	if (pDataInfo->OperandType != EOperandType::Unknown)
+	{
+		//SetNumberDisplayMode(pDataInfo->NumDispOverride);
+	}
 
 	const float line_start_x = ImGui::GetCursorPosX();
 	if (bDrawLabel)
@@ -431,7 +433,7 @@ void DrawDataValueGraph(uint16_t val, bool bReset)
 void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FDataInfo* pDataInfo)
 {
 	ImGui::Text("Number Mode Override");
-	DrawNumberTypeCombo("##nummodeoverride",pDataInfo->NumDispOverride);
+	DrawOperandTypeCombo("##dataOperand",pDataInfo->OperandType);
 	switch (pDataInfo->DataType)
 	{
 	case DataType::Byte:

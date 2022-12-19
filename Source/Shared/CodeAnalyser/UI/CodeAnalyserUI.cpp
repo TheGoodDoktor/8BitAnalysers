@@ -391,12 +391,11 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	}
 
 	// draw jump address label name
-	if (pCodeInfo->JumpAddress != 0)
+	if (pCodeInfo->OperandType == EOperandType::JumpAddress)
 	{
 		DrawAddressLabel(state, viewState, pCodeInfo->JumpAddress);
 	}
-
-	if (pCodeInfo->PointerAddress != 0)
+	else if (pCodeInfo->OperandType == EOperandType::Pointer)
 	{
 		DrawAddressLabel(state, viewState, pCodeInfo->PointerAddress);
 	}
@@ -407,6 +406,9 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 
 void DrawCodeDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FCodeInfo *pCodeInfo)
 {
+	if (DrawOperandTypeCombo("Operand Type", pCodeInfo->OperandType))
+		pCodeInfo->Text.clear();	// clear for a rewrite
+
 	if (ImGui::Checkbox("NOP out instruction", &pCodeInfo->bNOPped))
 	{
 		if (pCodeInfo->bNOPped == true)
@@ -825,10 +827,11 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 	ImGui::PopID();
 }
 
-void DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
+bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
 {
 	const int index = (int)numberMode + 1;
 	const char* numberTypes[] = { "None", "Decimal", "$ Hex", "Hex h" };
+	bool bChanged = false;
 
 	if (ImGui::BeginCombo(pLabel, numberTypes[index]))
 	{
@@ -836,10 +839,38 @@ void DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
 		{
 			const bool isSelected = (index == n);
 			if (ImGui::Selectable(numberTypes[n], isSelected))
+			{
 				numberMode = (ENumberDisplayMode)(n - 1);
+				bChanged = true;
+			}
 		}
 		ImGui::EndCombo();
 	}
+
+	return bChanged;
+}
+
+bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
+{
+	const int index = (int)operandType;
+	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex"};
+	bool bChanged = false;
+
+	if (ImGui::BeginCombo(pLabel, operandTypes[index]))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(operandTypes); n++)
+		{
+			const bool isSelected = (index == n);
+			if (ImGui::Selectable(operandTypes[n], isSelected))
+			{
+				operandType = (EOperandType)n;
+				bChanged = true;
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	return bChanged;
 }
 
 void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
