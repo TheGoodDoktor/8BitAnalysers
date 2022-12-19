@@ -7,6 +7,7 @@ struct FDataInfo;
 struct FItem;
 class FGraphicsView;
 
+enum class ENumberDisplayMode;
 
 
 // UI
@@ -14,7 +15,7 @@ void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
 int GetItemIndexForAddress(const FCodeAnalysisState& state, uint16_t addr);
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i);
-
+void DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId);
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);

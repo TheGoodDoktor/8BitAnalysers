@@ -6,6 +6,7 @@
 // note - config relies on these being a consistent numerical value
 enum class ENumberDisplayMode
 {
+	None = -1,
 	Decimal = 0,
 	HexDollar,
 	HexAitch

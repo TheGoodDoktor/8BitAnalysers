@@ -66,11 +66,11 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo, 
 		ImGuiIO& io = ImGui::GetIO();
 		const int xp = (int)(io.MousePos.x - startPos.x);
 		const int yp = (int)(io.MousePos.y - startPos.y);
-		const int itemWidth = pDataInfo->ByteSize * 8 * rectSize;
+		const int itemWidth = pDataInfo->ByteSize * 8 * (int)rectSize;
 	
 		if (xp >= 0 && yp >= 0 && xp < itemWidth && yp < rectSize)
 		{
-			const int squareNo = xp / rectSize;
+			const int squareNo = xp / (int)rectSize;
 			const int byteNo = squareNo / 8;
 			const int bitNo = squareNo & 7;
 			const ImVec2 rectMin(startPos.x + (squareNo * rectSize), startPos.y);
@@ -117,7 +117,7 @@ void EditByteDataItem(FCodeAnalysisState& state, uint16_t address)
 		ImGui::Text("$");
 		ImGui::SameLine(0,0);
 	}
-	ImGui::SetNextItemWidth(width);
+	ImGui::SetNextItemWidth((float)width);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 	ImGui::SetItemAllowOverlap();	// allow controls
 	
@@ -162,7 +162,7 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 		ImGui::Text("$");
 		ImGui::SameLine(0, 0);
 	}
-	ImGui::SetNextItemWidth(width);
+	ImGui::SetNextItemWidth((float)width);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 	ImGui::SetItemAllowOverlap();	// allow controls
 	if (ImGui::InputScalar("##dwinput", ImGuiDataType_U16, &val, NULL, NULL, format, flags))
@@ -243,6 +243,11 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 
 	ImGui::Text("\t%s", NumStr(pDataInfo->Address));
+
+	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
+	if (pDataInfo->NumDispOverride != ENumberDisplayMode::None)
+		SetNumberDisplayMode(pDataInfo->NumDispOverride);
+
 	const float line_start_x = ImGui::GetCursorPosX();
 	if (bDrawLabel)
 	{
@@ -288,6 +293,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	{
 		uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
 
+		// TODO: add edit support
+
 		ImGui::Text("db %s", NumStr(val));
 		for (int i = 1; i < pDataInfo->ByteSize; i++)	// first word already written
 		{
@@ -316,6 +323,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	{
 		uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
 		const int wordCount = pDataInfo->ByteSize / 2;
+
+		// TODO: add edit support
 
 		ImGui::Text("dw %s", NumStr(val));
 		for (int i = 1; i < wordCount; i++)	// first word already written
@@ -370,6 +379,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::Text("<- SP");
 	}
 
+	SetNumberDisplayMode(trueNumberDisplayMode);
+
 	DrawComment(pDataInfo, offset);
 }
 
@@ -419,6 +430,8 @@ void DrawDataValueGraph(uint16_t val, bool bReset)
 
 void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FDataInfo* pDataInfo)
 {
+	ImGui::Text("Number Mode Override");
+	DrawNumberTypeCombo("##nummodeoverride",pDataInfo->NumDispOverride);
 	switch (pDataInfo->DataType)
 	{
 	case DataType::Byte:

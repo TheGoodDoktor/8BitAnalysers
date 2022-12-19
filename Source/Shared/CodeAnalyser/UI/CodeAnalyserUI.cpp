@@ -822,6 +822,23 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 	ImGui::PopID();
 }
 
+void DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
+{
+	const int index = (int)numberMode + 1;
+	const char* numberTypes[] = { "None", "Decimal", "$ Hex", "Hex h" };
+
+	if (ImGui::BeginCombo(pLabel, numberTypes[index]))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(numberTypes); n++)
+		{
+			const bool isSelected = (index == n);
+			if (ImGui::Selectable(numberTypes[n], isSelected))
+				numberMode = (ENumberDisplayMode)(n - 1);
+		}
+		ImGui::EndCombo();
+	}
+}
+
 void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
 	if (viewState.pCursorItem)
@@ -846,6 +863,8 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			}
 			break;
 		}
+
+
 
 		if(pItem->Type != ItemType::CommentLine)
 		{

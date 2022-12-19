@@ -5,6 +5,8 @@
 #include <map>
 #include <vector>
 
+#include <Util/Misc.h>
+
 class FMemoryBuffer;
 
 
@@ -62,6 +64,7 @@ struct FCodeInfo : FItem
 	static FCodeInfo* Allocate();
 	static void FreeAll();
 
+	ENumberDisplayMode	NumDispMode = ENumberDisplayMode::None;
 	std::string		Text;				// Disassembly text
 	uint16_t		JumpAddress = 0;	// optional jump address
 	uint16_t		PointerAddress = 0;	// optional pointer address
@@ -129,6 +132,7 @@ struct FDataInfo : FItem
 		Address = addr;
 		ByteSize = 1;
 		DataType = DataType::Byte;
+		NumDispOverride = ENumberDisplayMode::None;
 		Comment.clear();
 		LastFrameRead = -1;
 		Reads.clear();
@@ -137,7 +141,8 @@ struct FDataInfo : FItem
 	}
 
 	DataType	DataType = DataType::Byte;
-	
+	ENumberDisplayMode	NumDispOverride = ENumberDisplayMode::None;
+
 	union
 	{
 		struct
