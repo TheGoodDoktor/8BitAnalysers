@@ -477,7 +477,7 @@ int CommentInputCallback(ImGuiInputTextCallbackData *pData)
 }
 
 
-void ProcessKeyCommands(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
+void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	if (io.WantTextInput)
@@ -485,6 +485,7 @@ void ProcessKeyCommands(FCodeAnalysisState &state, FCodeAnalysisViewState& viewS
 
 	if (ImGui::IsWindowFocused() && viewState.pCursorItem != nullptr)
 	{
+
 		if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::SetItemCode]))
 		{
 			SetItemCode(state, viewState.pCursorItem);
@@ -508,13 +509,13 @@ void ProcessKeyCommands(FCodeAnalysisState &state, FCodeAnalysisViewState& viewS
 			if (viewState.pCursorItem->Type == ItemType::Data)
 			{
 				FDataInfo* pDataItem = static_cast<FDataInfo*>(viewState.pCursorItem);
-				if(pDataItem->DataType != DataType::Bitmap)
+				if (pDataItem->DataType != DataType::Bitmap)
 					pDataItem->DataType = DataType::Bitmap;
 				else
 					pDataItem->DataType = DataType::Byte;
 				//pDataItem->bShowBinary = !pDataItem->bShowBinary;
 			}
-		}		
+		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddLabel]))
 		{
 			AddLabelAtAddress(state, viewState.pCursorItem->Address);
@@ -543,7 +544,7 @@ void ProcessKeyCommands(FCodeAnalysisState &state, FCodeAnalysisViewState& viewS
 				state.CPUInterface->ToggleExecBreakpointAtAddress(viewState.pCursorItem->Address);
 		}
 	}
-	 
+
 	if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::BreakContinue]))
 	{
 		if (state.CPUInterface->ShouldExecThisFrame())
@@ -572,8 +573,10 @@ void ProcessKeyCommands(FCodeAnalysisState &state, FCodeAnalysisViewState& viewS
 	{
 		state.CPUInterface->StepScreenWrite();
 	}
+}
 
-
+void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+{
 	if (ImGui::BeginPopup("Enter Comment Text", ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::SetKeyboardFocusHere();
@@ -1004,6 +1007,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		// only handle keypresses for focussed window
 		if(state.FocussedWindowId == windowId)
 			ProcessKeyCommands(state, viewState);
+
+		UpdatePopups(state, viewState);
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();
