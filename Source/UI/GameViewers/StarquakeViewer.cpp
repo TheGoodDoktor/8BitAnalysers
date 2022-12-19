@@ -6,6 +6,7 @@
 #include "GameViewer.h"
 #include "UI/GameConfig.h"
 #include "../Viewers/ZXGraphicsView.h"
+#include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
 
 // Starquake addresses
 
@@ -341,6 +342,7 @@ static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pSta
 void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 {
 	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)pGame->pViewerData;
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
 
 	UpdateSQGameState( pEmu, pStarquakeViewer->State );
 
@@ -351,7 +353,18 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		static int platformNo = 0;
 		FZXGraphicsView *pGraphicsView = pStarquakeViewer->pSpriteGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
-		ImGui::Text( "%xh", platformNo );
+		ImGui::Text( "%xh, Address:", platformNo );
+		const uint16_t kPlatformPtr = kSmallPlatformGfxAddr + (platformNo * 2);
+		const uint16_t kPlatformAddr = state.CPUInterface->ReadWord(kPlatformPtr);
+		DrawAddressLabel(state, state.GetFocussedViewState(), kPlatformAddr);
+		ImGui::SameLine();
+		if (ImGui::Button("Format Memory"))
+		{
+			// TODO: Format the memory for this platform
+			// TODO: Create Label
+			// TODO: Format Mask - 3 bytes bitmap
+			// TODO: Format chars - use mask as guide
+		}
 		const uint8_t SmallPlatformInfo = pEmu->ReadByte(kSmallPlatformTypeInfoAddr + platformNo );
 		ImGui::Text( "Additional Info %xh", SmallPlatformInfo );
 		if ( SmallPlatformInfo < 0x50 )
@@ -407,6 +420,17 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		FZXGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt("Platform No", &platformNo);
 		ImGui::Text( "%xh", platformNo );
+		// show address label
+		const uint16_t kBigPlatformData = kBigPlatformDataAddr + (platformNo * 4);
+		DrawAddressLabel(state, state.GetFocussedViewState(), kBigPlatformData);
+
+		// TODO: memory formatter - 2x2 char map
+		ImGui::SameLine();
+		if (ImGui::Button("Format"))
+		{
+			// TODO: Label
+			// TODO: Format Charmap 2x2
+		}
 		pGraphicsView->Clear(0xff000000);
 		DrawBigPlatform(platformNo, 0, 0, pStarquakeViewer);
 		pGraphicsView->Draw();
