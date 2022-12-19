@@ -836,6 +836,21 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 {
 	uint16_t dataAddress = options.StartAddress;
 
+	if (options.AddLabelAtStart && state.GetLabelForAddress(dataAddress) == nullptr)	// only add label if one doesn't already exist
+	{
+		char labelName[16];
+		const char* pPrefix = "data";
+
+		if (options.DataType == DataType::Bitmap)
+			pPrefix = "bitmap";
+		else if (options.DataType == DataType::CharacterMap)
+			pPrefix = "charmap";
+
+		sprintf_s(labelName, "%s_%s",pPrefix,NumStr(dataAddress));
+		FLabelInfo* pLabel = AddLabel(state, dataAddress, labelName, LabelType::Data);
+		pLabel->Global = true;
+	}
+
 	for (int itemNo = 0; itemNo < options.NoItems; itemNo++)
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddress);

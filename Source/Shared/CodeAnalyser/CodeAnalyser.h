@@ -123,6 +123,7 @@ struct FDataFormattingOptions
 	//bool	CharMapVisualisation = false;
 	bool	ClearCodeInfo = false;
 	bool	ClearLabels = false;
+	bool	AddLabelAtStart = false;
 
 	bool IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
 	uint16_t	CalcEndAddress() const { return StartAddress + (NoItems * ItemSize) - 1; }

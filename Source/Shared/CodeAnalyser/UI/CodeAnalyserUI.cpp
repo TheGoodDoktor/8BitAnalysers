@@ -1172,22 +1172,41 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	case 0:
 		formattingOptions.DataType = DataType::Byte;
 		formattingOptions.ItemSize = 1;
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	case 1:
 		formattingOptions.DataType = DataType::Word;
 		formattingOptions.ItemSize = 2;
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+
 		break;
 	case 2:
 		formattingOptions.DataType = DataType::Bitmap;
-		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		{
+			static int size[2];
+			if (ImGui::InputInt2("Bitmap Size(X,Y)", size))
+			{
+				formattingOptions.ItemSize = std::max(1,size[0] / 8);
+				formattingOptions.NoItems = size[1];
+			}
+			//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		}
 		break;
 	case 3:
 		formattingOptions.DataType = DataType::CharacterMap;
-		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		{
+			static int size[2];
+			if (ImGui::InputInt2("CharMap Size(X,Y)", size))
+			{
+				formattingOptions.ItemSize = std::max(1, size[0]);
+				formattingOptions.NoItems = size[1];
+			}
+			//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		}
+		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		break;
 	}
 
-	ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 	//ImGui::SameLine();
 	//if (ImGui::Button("Set"))
 	//	formattingOptions.EndAddress = formattingOptions.StartAddress + (itemCount * formattingOptions.ItemSize);
@@ -1195,7 +1214,9 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	//ImGui::Checkbox("Binary Visualisation", &formattingOptions.BinaryVisualisation);
 	//ImGui::Checkbox("Char Map Visualisation", &formattingOptions.CharMapVisualisation);
 	ImGui::Checkbox("Clear Code Info", &formattingOptions.ClearCodeInfo);
+	ImGui::SameLine();
 	ImGui::Checkbox("Clear Labels", &formattingOptions.ClearLabels);
+	ImGui::Checkbox("Add Label at Start", &formattingOptions.AddLabelAtStart);
 
 	if (formattingOptions.IsValid())
 	{
@@ -1203,7 +1224,6 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		{
 			FormatData(state, formattingOptions);
 			state.bCodeAnalysisDataDirty = true;
-			//formattingOptions = FDataFormattingOptions();	// clear selection
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Format & Advance"))
@@ -1211,7 +1231,6 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			FormatData(state, formattingOptions);
 			formattingOptions.StartAddress += formattingOptions.ItemSize * formattingOptions.NoItems;
 			state.bCodeAnalysisDataDirty = true;
-			//formattingOptions = FDataFormattingOptions();	// clear selection
 		}
 	}
 
