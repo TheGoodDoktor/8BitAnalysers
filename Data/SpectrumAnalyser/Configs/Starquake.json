@@ -1,5 +1,15 @@
 {
     "Name": "Starquake",
+    "Options": {
+        "EnableCodeAnalysisView": [
+            true,
+            false,
+            false,
+            false
+        ],
+        "NumberMode": 2,
+        "ShowScanlineIndicator": false
+    },
     "SnapshotFile": "./Games/Starquake.z80",
     "SpriteConfigs": [
         {
