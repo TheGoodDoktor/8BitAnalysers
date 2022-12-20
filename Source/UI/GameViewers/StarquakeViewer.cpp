@@ -339,6 +339,136 @@ static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pSta
 
 }
 
+void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
+{
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	const uint16_t kPlatformPtr = kSmallPlatformGfxAddr + (platformNo * 2);
+	const uint16_t kPlatformAddr = state.CPUInterface->ReadWord(kPlatformPtr);
+
+	char labelName[32];
+
+	// TODO: Format the memory for this platform
+	// Create Label
+	//if (state.GetLabelForAddress(kPlatformAddr) == nullptr)
+	{
+		sprintf_s(labelName, "SmallPlatform_%d", platformNo);
+		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr, labelName, LabelType::Data);
+		pLabel->Global = true;
+	}
+	// Format Mask - 6 bytes bitmap
+	FDataFormattingOptions format;
+	format.SetupForBitmap(kPlatformAddr, 8, 6);
+	FormatData(state, format);
+
+	// find number of chars using mask
+	int noPlatformChars = 0;
+	int charCount[6] = { 0,0,0,0,0,0 };
+	for (int maskNo = 0; maskNo < 6; maskNo++)
+	{
+		const uint8_t maskByte = pEmu->ReadByte(kPlatformAddr + maskNo);
+		for (int bit = 0; bit < 8; bit++)
+		{
+			if (maskByte & (1 << bit))
+			{
+				noPlatformChars++;
+				charCount[maskNo]++;
+			}
+		}
+	}
+
+	// Add attribute label
+	if(noPlatformChars > 0)
+	{
+		sprintf_s(labelName, "SmallPlatform_%d_Attributes", platformNo);
+		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr - noPlatformChars, labelName, LabelType::Data);
+		pLabel->Global = true;
+
+		format.StartAddress = kPlatformAddr - noPlatformChars;
+
+		for (int i = 0; i < 6; i++)
+		{
+			if (charCount[i] > 0)
+			{
+				format.DataType = DataType::ColAttr;
+				format.ItemSize = charCount[i];
+				format.NoItems = 1;
+				FormatData(state, format);
+				format.StartAddress += charCount[i];
+			}
+		}
+	}
+
+	// Format chars 
+	uint16_t platCharAddr = kPlatformAddr + 6;
+	for (int platChar = 0; platChar < noPlatformChars; platChar++)
+	{
+		sprintf_s(labelName, "SmallPlatform_%d_Char_%d", platformNo, platChar);
+		FLabelInfo* pLabel = AddLabel(state, platCharAddr, labelName, LabelType::Data);
+		pLabel->Global = true;
+
+		format.SetupForBitmap(platCharAddr, 8, 8);
+		FormatData(state, format);
+
+		platCharAddr += 8;
+	}
+
+	state.bCodeAnalysisDataDirty = true;
+}
+
+void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
+{
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	const uint16_t kBigPlatformData = kBigPlatformDataAddr + (platformNo * 4);
+	char labelName[32];
+
+	// Label
+	sprintf_s(labelName, "BigPlatform_%d", platformNo);
+	FLabelInfo* pLabel = AddLabel(state, kBigPlatformData, labelName, LabelType::Data);
+	pLabel->Global = true;
+
+	// Format Charmap 2x2
+	FDataFormattingOptions format;
+	format.SetupForCharmap(kBigPlatformData, 2, 2);
+	FormatData(state, format);
+	state.bCodeAnalysisDataDirty = true;
+}
+
+void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
+{
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	const uint16_t kScreenData = kScreenDataAddr + (screenNo * 12);
+	char labelName[32];
+
+	// Label
+	sprintf_s(labelName, "Screen_%d", screenNo);
+	FLabelInfo* pLabel = AddLabel(state, kScreenData, labelName, LabelType::Data);
+	pLabel->Global = true;
+
+	// Format Charmap 4x3
+	FDataFormattingOptions format;
+	format.SetupForCharmap(kScreenData, 4, 3);
+	FormatData(state, format);
+	state.bCodeAnalysisDataDirty = true;
+}
+
+void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
+{
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	const uint16_t platformAddr = kPlatformSpritesAddr + (platformNo * 16);
+	char labelName[32];
+
+	// Label
+	sprintf_s(labelName, "Platform_%d", platformNo);
+	FLabelInfo* pLabel = AddLabel(state, platformAddr, labelName, LabelType::Data);
+	pLabel->Global = true;
+
+	// Format Bitmap 16x8
+	FDataFormattingOptions format;
+	format.SetupForBitmap(platformAddr, 16, 8);
+	FormatData(state, format);
+	state.bCodeAnalysisDataDirty = true;
+}
+
 void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 {
 	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)pGame->pViewerData;
@@ -360,10 +490,7 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		ImGui::SameLine();
 		if (ImGui::Button("Format Memory"))
 		{
-			// TODO: Format the memory for this platform
-			// TODO: Create Label
-			// TODO: Format Mask - 3 bytes bitmap
-			// TODO: Format chars - use mask as guide
+			FormatSmallPlatformMemory(pEmu, platformNo);
 		}
 		const uint8_t SmallPlatformInfo = pEmu->ReadByte(kSmallPlatformTypeInfoAddr + platformNo );
 		ImGui::Text( "Additional Info %xh", SmallPlatformInfo );
@@ -428,8 +555,7 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		ImGui::SameLine();
 		if (ImGui::Button("Format"))
 		{
-			// TODO: Label
-			// TODO: Format Charmap 2x2
+			FormatBigPlatformMemory(pEmu, platformNo);
 		}
 		pGraphicsView->Clear(0xff000000);
 		DrawBigPlatform(platformNo, 0, 0, pStarquakeViewer);
@@ -454,6 +580,15 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		FZXGraphicsView* pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt( "Platform No", &platformNo );
 		ImGui::Text( "%xh", platformNo );
+
+		const uint16_t platformAddr = kPlatformSpritesAddr + (platformNo * 16);
+		DrawAddressLabel(state, state.GetFocussedViewState(), platformAddr);
+		ImGui::SameLine();
+		if (ImGui::Button("Format"))
+		{
+			FormatPlatformMemory(pEmu, platformNo);
+		}
+
 		pGraphicsView->Clear(0xff000000);
 		DrawPlatform( platformNo, 0, 0, 0x7, pStarquakeViewer, pGraphicsView);
 		pGraphicsView->Draw();
@@ -465,10 +600,19 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 		static bool getScreenFromGame = false;
 		FGraphicsView *pGraphicsView = pStarquakeViewer->pScreenGraphicsView;
 		ImGui::InputInt("Screen No", &screenNo);
+		const uint16_t kScreenData = kScreenDataAddr + (screenNo * 12);
+		DrawAddressLabel(state, state.GetFocussedViewState(), kScreenData);
+		ImGui::SameLine();
+		if (ImGui::Button("Format"))
+		{
+			FormatScreenMemory(pEmu, screenNo);
+		}
+
 		ImGui::Checkbox("Get from game", &getScreenFromGame);
-		pGraphicsView->Clear(0xff000000);
-		if(getScreenFromGame)
+		if (getScreenFromGame)
 			screenNo = pStarquakeViewer->State.CurrentScreen;
+		
+		pGraphicsView->Clear(0xff000000);
 		DrawScreen(screenNo, 0, 0, pStarquakeViewer);
 		pGraphicsView->Draw();
 		ImGui::EndTabItem();

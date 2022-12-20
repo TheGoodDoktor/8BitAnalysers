@@ -112,6 +112,7 @@ enum class DataType
 	Graphics,	// pixel data
 	Image,		// character/sprite image
 	Blob,		// opaque data blob
+	ColAttr,	// colour attribute
 };
 
 // struct for additional image data

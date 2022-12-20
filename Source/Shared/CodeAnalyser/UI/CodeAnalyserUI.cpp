@@ -54,24 +54,51 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, uint16_t addr)
 	return -1;
 }
 
+
+
+std::vector<FMemoryRegionDescGenerator*>	g_RegionDescHandlers;
+
+const char* GetRegionDesc(uint16_t addr)
+{
+	for (FMemoryRegionDescGenerator* pDescGen : g_RegionDescHandlers)
+	{
+		if (pDescGen)
+		{
+			if (pDescGen->InRegion(addr))
+				return pDescGen->GenerateAddressString(addr);
+		}
+	}
+	return nullptr;
+}
+
+bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen)
+{
+	g_RegionDescHandlers.push_back(pGen);
+	return true;
+}
+
 void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel)
 {
 	int labelOffset = 0;
-	const char *pLabelString = nullptr;
-	
-	for(int addrVal = addr; addrVal >= 0; addrVal--)
-	{
-		const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
-		if(pLabel != nullptr)
-		{
-			if (bFunctionRel == false || pLabel->LabelType == LabelType::Function)
-			{
-				pLabelString = pLabel->Name.c_str();
-				break;
-			}
-		}
+	const char *pLabelString = GetRegionDesc(addr);
 
-		labelOffset++;
+	if (pLabelString == nullptr)	// get a label
+	{
+		// find a label for this address
+		for (int addrVal = addr; addrVal >= 0; addrVal--)
+		{
+			const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
+			if (pLabel != nullptr)
+			{
+				if (bFunctionRel == false || pLabel->LabelType == LabelType::Function)
+				{
+					pLabelString = pLabel->Name.c_str();
+					break;
+				}
+			}
+
+			labelOffset++;
+		}
 	}
 	
 	if (pLabelString != nullptr)
@@ -1150,7 +1177,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	ImGui::PopID();
 
 	
-	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map" };
+	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr" };
 	static int dataTypeIndex = 0; // Here we store our selection data as an index.
 	const char* combo_preview_value = dataTypes[dataTypeIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
 	if (ImGui::BeginCombo("Data Type", combo_preview_value, 0))
@@ -1205,6 +1232,11 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		}
 		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		break;
+	case 4:
+		formattingOptions.DataType = DataType::ColAttr;
+		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	}
 

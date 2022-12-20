@@ -74,9 +74,9 @@ bool LoadSNAFromMemory(FSpectrumEmu * pEmu, const uint8_t * pData, size_t dataSi
 
 	z80_reset(&pSys->cpu);
 	z80_set_af(&pSys->cpu, pHdr->AF);
-	z80_set_b(&pSys->cpu, pHdr->BC); 
-	z80_set_d(&pSys->cpu, pHdr->DE); 
-	z80_set_h(&pSys->cpu, pHdr->HL); 
+	z80_set_bc(&pSys->cpu, pHdr->BC); 
+	z80_set_de(&pSys->cpu, pHdr->DE); 
+	z80_set_hl(&pSys->cpu, pHdr->HL); 
 	z80_set_ix(&pSys->cpu, pHdr->IX);
 	z80_set_iy(&pSys->cpu, pHdr->IY);
 	z80_set_af_(&pSys->cpu, pHdr->AF_);
