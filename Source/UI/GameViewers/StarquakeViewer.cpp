@@ -191,11 +191,6 @@ FGameViewerData *InitStarquakeViewer(FSpectrumEmu *pEmu, FGameConfig *pGameConfi
 	
 	InitGameViewer(pStarquakeViewerData, pGameConfig);
 
-	// cheats
-	//WriteSpeccyByte( pUI->pSpeccy, 0x9ffc, 201 );
-	//WriteSpeccyByte( pUI->pSpeccy, 0xdb50, 0 );
-	pEmu->WriteByte( 54505, 201 );
-
 	// Add specific memory handlers
 
 	// Small platforms
@@ -709,7 +704,7 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 			{
 				FStarquakeSprite* pSprite = (FStarquakeSprite*)pEmu->GetMemPtr(kSpriteList + ( sprNo * 32 ) );
 
-				const ImVec2 windowsPos( pos.x + pSprite->XPixelPos, pos.y + 192 - pSprite->XPixelPos );
+				const ImVec2 windowsPos( pos.x + pSprite->XPixelPos, pos.y + 192 - pSprite->YPixelPos );
 				pDrawList->AddRect( windowsPos, ImVec2( windowsPos.x + 16, windowsPos.y + 16 ), 0xffffffff );
 			}
 		}
