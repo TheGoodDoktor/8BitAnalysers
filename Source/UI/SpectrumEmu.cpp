@@ -44,6 +44,8 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include <cassert>
 #include <Shared/Util/Misc.h>
 
+#include "SpectrumConstants.h"
+
 #include "Exporters/SkoolFileInfo.h"
 #include "Exporters/AssemblerExport.h"
 #include "Exporters/JsonExport.h"
@@ -290,28 +292,7 @@ bool	FSpectrumEmu::ShouldExecThisFrame(void) const
 	return ExecThisFrame;
 }
 
-// TODO: Remove - we don't need it anymore thanks to Sam' Skoolkit importer
-void FSpectrumEmu::InsertROMLabels(FCodeAnalysisState& state) 
-{
-	// Sam. Temp
-	return;
-	for (const auto& label : g_RomLabels)
-	{
-		AddLabel(state, label.Address, label.pLabelName, label.LabelType);
-
-		// run static analysis on all code labels
-		if (label.LabelType == LabelType::Code || label.LabelType == LabelType::Function)
-			RunStaticCodeAnalysis(state, label.Address);
-	}
-
-	for (const auto& label : g_SysVariables)
-	{
-		AddLabel(state, label.Address, label.pLabelName, LabelType::Data);
-		// TODO: Set up data?
-	}
-}
-
-void FSpectrumEmu::InsertSystemLabels(FCodeAnalysisState& state) 
+void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
 {
 	// screen memory start
 	AddLabel(state, 0x4000, "ScreenPixels", LabelType::Data);
@@ -321,14 +302,65 @@ void FSpectrumEmu::InsertSystemLabels(FCodeAnalysisState& state)
 	pScreenPixData->Address = 0x4000;
 	pScreenPixData->ByteSize = 0x1800;
 
+	// Format screen memory
 	AddLabel(state, 0x5800, "ScreenAttributes", LabelType::Data);
-	FDataInfo* pScreenAttrData = state.GetReadDataInfoForAddress(0x5800);
-	pScreenAttrData->DataType = DataType::Blob;
-	pScreenAttrData->Address = 0x5800;
-	pScreenAttrData->ByteSize = 0x400;
+
+	FDataFormattingOptions format;
+	format.StartAddress = 0x5800;
+	format.DataType = DataType::ColAttr;
+	format.ItemSize = 32;
+	format.NoItems = 24;
+	FormatData(state, format);
+
+
+	//FDataInfo* pScreenAttrData = state.GetReadDataInfoForAddress(0x5800);
+	//pScreenAttrData->DataType = DataType::Blob;
+	//pScreenAttrData->Address = 0x5800;
+	//pScreenAttrData->ByteSize = 0x400;
 
 	// system variables?
 }
+
+class FScreenPixMemDescGenerator : public FMemoryRegionDescGenerator
+{
+public:
+	FScreenPixMemDescGenerator()
+	{
+		RegionMin = kScreenPixMemStart;
+		RegionMax = kScreenPixMemEnd;
+	}
+
+	const char* GenerateAddressString(uint16_t addr) override
+	{
+		int xp = 0, yp = 0;
+		GetScreenAddressCoords(addr, xp, yp);
+		sprintf_s(DescStr, "Screen Pix: %d,%d", xp, yp);
+		return DescStr;
+	}
+private:
+	char DescStr[32] = { 0 };
+};
+
+
+class FScreenAttrMemDescGenerator : public FMemoryRegionDescGenerator
+{
+public:
+	FScreenAttrMemDescGenerator()
+	{
+		RegionMin = kScreenAttrMemStart;
+		RegionMax = kScreenAttrMemEnd;
+	}
+
+	const char* GenerateAddressString(uint16_t addr) override
+	{
+		int xp = 0, yp = 0;
+		GetAttribAddressCoords(addr, xp, yp);
+		sprintf_s(DescStr, "Screen Attr: %d,%d", xp/8, yp/8);
+		return DescStr;
+	}
+private:
+	char DescStr[32] = { 0 };
+};
 
 //FSpectrumCPUInterface	SpeccyCPUIF;
 
@@ -633,6 +665,10 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
+	// Setup memory description handlers
+	AddMemoryRegionDescGenerator(new FScreenPixMemDescGenerator());
+	AddMemoryRegionDescGenerator(new FScreenAttrMemDescGenerator());	
+
 	// register Viewers
 	RegisterStarquakeViewer(this);
 	RegisterGames(this);
@@ -710,11 +746,12 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	LoadPOKFile(*pGameConfig, std::string("Pokes/" + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
+	FormatSpectrumMemory(CodeAnalysis);
 
 	// Start in break mode so the memory will be in it's initial state. 
 	// Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
 	// 
-	// TODO: decode whole screen
+	// decode whole screen
 	const int oldScanlineVal = ZXEmuState.scanline_y;
 	ZXEmuState.scanline_y = 0;
 	for (int i = 0; i < ZXEmuState.frame_scan_lines; i++)

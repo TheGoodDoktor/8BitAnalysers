@@ -54,24 +54,51 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, uint16_t addr)
 	return -1;
 }
 
+
+
+std::vector<FMemoryRegionDescGenerator*>	g_RegionDescHandlers;
+
+const char* GetRegionDesc(uint16_t addr)
+{
+	for (FMemoryRegionDescGenerator* pDescGen : g_RegionDescHandlers)
+	{
+		if (pDescGen)
+		{
+			if (pDescGen->InRegion(addr))
+				return pDescGen->GenerateAddressString(addr);
+		}
+	}
+	return nullptr;
+}
+
+bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen)
+{
+	g_RegionDescHandlers.push_back(pGen);
+	return true;
+}
+
 void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel)
 {
 	int labelOffset = 0;
-	const char *pLabelString = nullptr;
-	
-	for(int addrVal = addr; addrVal >= 0; addrVal--)
-	{
-		const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
-		if(pLabel != nullptr)
-		{
-			if (bFunctionRel == false || pLabel->LabelType == LabelType::Function)
-			{
-				pLabelString = pLabel->Name.c_str();
-				break;
-			}
-		}
+	const char *pLabelString = GetRegionDesc(addr);
 
-		labelOffset++;
+	if (pLabelString == nullptr)	// get a label
+	{
+		// find a label for this address
+		for (int addrVal = addr; addrVal >= 0; addrVal--)
+		{
+			const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
+			if (pLabel != nullptr)
+			{
+				if (bFunctionRel == false || pLabel->LabelType == LabelType::Function)
+				{
+					pLabelString = pLabel->Name.c_str();
+					break;
+				}
+			}
+
+			labelOffset++;
+		}
 	}
 	
 	if (pLabelString != nullptr)
@@ -254,7 +281,12 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 		ImGui::Text("References:");
 		for (const auto & caller : pLabelInfo->References)
 		{
-			DrawCodeAddress(state, viewState, caller.first);
+			const uint16_t accessorCodeAddr = caller.first;
+			ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, accessorCodeAddr);
 		}
 		ImGui::EndTooltip();
 	}
@@ -294,20 +326,46 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	ImGui::Text("References:");
 	for (const auto & caller : pLabelInfo->References)
 	{
-		//DrawAddressLabel( state, caller.first );
-		//ImGui::Text( "%s", NumStr(caller.first) );
-		//DrawAddressLabel( state, caller.first );
+		const uint16_t accessorCodeAddr = caller.first;
+		ShowCodeAccessorActivity(state, accessorCodeAddr);
 
-		/*const int index = GetItemIndexForAddress(state, caller.first);
-		if ( index != -1 )
-		{
-			DrawCodeAnalysisItemAtIndex( state, index );
-		}*/
-		DrawCodeAddress(state, viewState, caller.first);
+		ImGui::Text("   ");
+		ImGui::SameLine();
+		DrawCodeAddress(state, viewState, accessorCodeAddr);
 	}
 }
 
+void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr)
+{
+	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
+	if (pCodeInfo != nullptr)
+	{
 
+		const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
+		const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
+
+		if (brightVal > 0)
+		{
+			const float line_height = ImGui::GetTextLineHeight();
+			const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
+
+			const ImU32 pc_color = 0xFF00FFFF;
+			const ImU32 brd_color = 0xFF000000;
+
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			ImDrawList* dl = ImGui::GetWindowDrawList();
+			const float lh2 = (float)(int)(line_height / 2);
+
+			pos.x += 10;
+			const ImVec2 a(pos.x + 2, pos.y);
+			const ImVec2 b(pos.x + 12, pos.y + lh2);
+			const ImVec2 c(pos.x + 2, pos.y + line_height);
+
+			dl->AddTriangleFilled(a, b, c, col);
+			dl->AddTriangle(a, b, c, brd_color);
+		}
+	}
+}
 
 void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeInfo *pCodeInfo)
 {
@@ -1150,7 +1208,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	ImGui::PopID();
 
 	
-	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map" };
+	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr" };
 	static int dataTypeIndex = 0; // Here we store our selection data as an index.
 	const char* combo_preview_value = dataTypes[dataTypeIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
 	if (ImGui::BeginCombo("Data Type", combo_preview_value, 0))
@@ -1205,6 +1263,11 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		}
 		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		break;
+	case 4:
+		formattingOptions.DataType = DataType::ColAttr;
+		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	}
 

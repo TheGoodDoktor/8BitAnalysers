@@ -118,8 +118,7 @@ public:
 	void		StepScreenWrite(void) override;
 	void		GraphicsViewerSetAddress(uint16_t address) override;
 	bool		ShouldExecThisFrame(void) const override;
-	void		InsertROMLabels(FCodeAnalysisState& state) override;
-	void		InsertSystemLabels(FCodeAnalysisState& state) override;
+	void		FormatSpectrumMemory(FCodeAnalysisState& state);
 	void*		GetCPUEmulator(void) override;
 	//ICPUInterface End
 

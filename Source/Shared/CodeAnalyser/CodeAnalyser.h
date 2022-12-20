@@ -4,12 +4,14 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <algorithm>
 
 #include "CodeAnaysisPage.h"
 
 #define USE_PAGING 1
 
 class FGraphicsView;
+struct FCodeAnalysisState;
 
 enum class LabelType;
 
@@ -51,9 +53,6 @@ public:
 	virtual void	GraphicsViewerSetAddress(uint16_t address) = 0;
 
 	virtual bool	ShouldExecThisFrame(void) const = 0;
-
-	virtual void InsertROMLabels(struct FCodeAnalysisState& state) = 0;
-	virtual void InsertSystemLabels(struct FCodeAnalysisState& state) = 0;
 
 	virtual void* GetCPUEmulator(void) { return nullptr; }	// get pointer to emulator - a bit of a hack
 
@@ -115,18 +114,31 @@ enum class Key
 
 struct FDataFormattingOptions
 {
-	int		StartAddress = 0;
+	DataType	DataType = DataType::Byte;
+	int			StartAddress = 0;
 	int			ItemSize = 1;
 	int			NoItems = 1;
-	DataType	DataType = DataType::Byte;
-	//bool	BinaryVisualisation = false;
-	//bool	CharMapVisualisation = false;
-	bool	ClearCodeInfo = false;
-	bool	ClearLabels = false;
-	bool	AddLabelAtStart = false;
+	bool		ClearCodeInfo = false;
+	bool		ClearLabels = false;
+	bool		AddLabelAtStart = false;
 
-	bool IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
+	bool		IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
 	uint16_t	CalcEndAddress() const { return StartAddress + (NoItems * ItemSize) - 1; }
+	void		SetupForBitmap(uint16_t address, int xSize, int ySize)
+	{
+		DataType = DataType::Bitmap;
+		StartAddress = address;
+		ItemSize = xSize / 8;
+		NoItems = ySize;
+	}
+
+	void		SetupForCharmap(uint16_t address, int xSize, int ySize)
+	{
+		DataType = DataType::CharacterMap;
+		StartAddress = address;
+		ItemSize = xSize;
+		NoItems = ySize;
+	}
 };
 
 // view state for code analysis window

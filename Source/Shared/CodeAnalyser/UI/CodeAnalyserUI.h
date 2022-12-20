@@ -11,7 +11,26 @@ enum class ENumberDisplayMode;
 enum class EOperandType;
 
 
+class FMemoryRegionDescGenerator
+{
+public:
+	bool	InRegion(uint16_t addr) const
+	{
+		return addr >= RegionMin && addr <= RegionMax;
+	}
+
+	virtual const char* GenerateAddressString(uint16_t addr) = 0;
+protected:
+	uint16_t	RegionMin;
+	uint16_t	RegionMax;
+};
+
+
 // UI
+
+bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen);
+
+void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr);
 void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
 void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
 int GetItemIndexForAddress(const FCodeAnalysisState& state, uint16_t addr);

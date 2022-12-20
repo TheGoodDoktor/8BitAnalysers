@@ -7,6 +7,9 @@
 
 #include "imgui.h"
 
+
+
+
 float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
@@ -83,6 +86,70 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo, 
 		}
 	}
 	//return pos.x - startPos;
+	return pos.x;
+}
+
+// Display a colour attribute
+// This is written for ZX Spectrum colour attributes which goes against the platform independent nature of this file
+// Some kind of abstraction is needed
+
+// speccy colour CLUT
+static const uint32_t g_ColourLUT[8] =
+{
+	0xFF000000,     // 0 - black
+	0xFFFF0000,     // 1 - blue
+	0xFF0000FF,     // 2 - red
+	0xFFFF00FF,     // 3 - magenta
+	0xFF00FF00,     // 4 - green
+	0xFFFFFF00,     // 5 - cyan
+	0xFF00FFFF,     // 6 - yellow
+	0xFFFFFFFF,     // 7 - white
+};
+
+static uint32_t GetColFromAttr(uint8_t colBits, bool bBright)
+{
+	const uint32_t outCol = g_ColourLUT[colBits & 7];
+	if (bBright == false)
+		return outCol & 0xFFD7D7D7;
+	else
+		return outCol;
+}
+
+// returns how much space it took
+float DrawColAttr(FCodeAnalysisState& state, const FDataInfo* pDataInfo, bool bEditMode)
+{
+	const float line_height = ImGui::GetTextLineHeight();
+	const float rectSize = line_height + 4;
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	pos.x += 200.0f;
+	pos.y -= rectSize + 2;
+	const ImVec2 startPos = pos;
+	
+	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
+	{
+		uint8_t colAttr = state.CPUInterface->ReadByte(pDataInfo->Address + byte);
+		const bool bBright = !!(colAttr & (1 << 6));
+		const uint32_t inkCol = GetColFromAttr(colAttr & 7, bBright);
+		const uint32_t paperCol = GetColFromAttr(colAttr >> 3, bBright);
+
+		// Ink
+		{
+			const ImVec2 rectMin(pos.x, pos.y);
+			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize / 2);
+			dl->AddRectFilled(rectMin, rectMax, inkCol);
+		}
+
+		// Paper
+		{
+			const ImVec2 rectMin(pos.x, pos.y + rectSize / 2);
+			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+			dl->AddRectFilled(rectMin, rectMax, paperCol);
+		}
+
+		
+		pos.x += rectSize;
+	}
 	return pos.x;
 }
 
@@ -363,6 +430,10 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::Text("Charmap");
 		offset = DrawDataCharMapLine(state, pDataInfo);
 		break;
+	case DataType::ColAttr:
+		ImGui::Text("ColAttr");
+		offset = DrawColAttr(state, pDataInfo, state.bAllowEditing);
+		break;
 	case DataType::Graphics:
 	case DataType::Blob:
 	default:
@@ -429,6 +500,8 @@ void DrawDataValueGraph(uint16_t val, bool bReset)
 {
 	DrawDataValueGraph(static_cast<float>(val), bReset);
 }
+
+
 
 void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FDataInfo* pDataInfo)
 {
@@ -543,7 +616,12 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		ImGui::Text("Reads:");
 		for (const auto& caller : pDataInfo->Reads)
 		{
-			DrawCodeAddress(state, viewState, caller.first);
+			const uint16_t accessorCodeAddr = caller.first;
+			ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, accessorCodeAddr);
 		}
 	}
 
@@ -552,6 +630,11 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		ImGui::Text("Writes:");
 		for (const auto& caller : pDataInfo->Writes)
 		{
+			const uint16_t accessorCodeAddr = caller.first;
+			ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
 			DrawCodeAddress(state, viewState, caller.first);
 		}
 	}

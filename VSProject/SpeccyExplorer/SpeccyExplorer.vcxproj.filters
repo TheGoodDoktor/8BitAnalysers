@@ -668,6 +668,9 @@
     <ClInclude Include="..\..\Source\UI\Exporters\JsonExport.h">
       <Filter>Source Files\UI\Exporters</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Source\Vendor\chips\ui\README.md">
@@ -676,5 +679,15 @@
     <None Include="..\..\Source\Vendor\chips\systems\README.md">
       <Filter>Source Files\chips\systems</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SpectrumAnalyser.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

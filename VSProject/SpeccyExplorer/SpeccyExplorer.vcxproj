@@ -327,10 +327,17 @@
     <ClInclude Include="..\..\Source\Vendor\implot\implot.h" />
     <ClInclude Include="..\..\Source\Vendor\implot\implot_internal.h" />
     <ClInclude Include="..\..\Source\Vendor\rzx-sdk\rzx.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Source\Vendor\chips\systems\README.md" />
     <None Include="..\..\Source\Vendor\chips\ui\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SpectrumAnalyser.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

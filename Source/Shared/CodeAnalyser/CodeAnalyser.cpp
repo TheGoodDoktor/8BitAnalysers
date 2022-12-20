@@ -591,9 +591,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	}
 
 	state.CPUInterface = pCPUInterface;
-	uint16_t initialPC = pCPUInterface->GetPC();// z80_pc(&state.pSpeccy->CurrentState.cpu);
-	pCPUInterface->InsertROMLabels(state);
-	pCPUInterface->InsertSystemLabels(state);
+	uint16_t initialPC = pCPUInterface->GetPC();
 	RunStaticCodeAnalysis(state, initialPC);
 
 	// Key Config
