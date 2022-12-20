@@ -14,6 +14,7 @@
 
 #define SOKOL_IMPL
 #include "sokol_audio.h"
+#include "../VSProject/SpeccyExplorer/resource.h"
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
@@ -38,6 +39,7 @@ int main(int argc, char** argv)
 
     // Create application window
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Spectrum Analyser"), NULL };
+    wc.hIcon = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_ICON1));
     ::RegisterClassEx(&wc);
     HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Spectrum Analyser"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
