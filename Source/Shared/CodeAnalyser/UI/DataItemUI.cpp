@@ -7,6 +7,9 @@
 
 #include "imgui.h"
 
+
+
+
 float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
@@ -498,6 +501,8 @@ void DrawDataValueGraph(uint16_t val, bool bReset)
 	DrawDataValueGraph(static_cast<float>(val), bReset);
 }
 
+
+
 void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FDataInfo* pDataInfo)
 {
 	ImGui::Text("Number Mode Override");
@@ -611,7 +616,12 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		ImGui::Text("Reads:");
 		for (const auto& caller : pDataInfo->Reads)
 		{
-			DrawCodeAddress(state, viewState, caller.first);
+			const uint16_t accessorCodeAddr = caller.first;
+			ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, accessorCodeAddr);
 		}
 	}
 
@@ -620,6 +630,11 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		ImGui::Text("Writes:");
 		for (const auto& caller : pDataInfo->Writes)
 		{
+			const uint16_t accessorCodeAddr = caller.first;
+			ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
 			DrawCodeAddress(state, viewState, caller.first);
 		}
 	}

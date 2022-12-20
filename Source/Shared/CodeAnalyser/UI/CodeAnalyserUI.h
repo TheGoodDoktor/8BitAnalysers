@@ -29,6 +29,8 @@ protected:
 // UI
 
 bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen);
+
+void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr);
 void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
 void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
 int GetItemIndexForAddress(const FCodeAnalysisState& state, uint16_t addr);

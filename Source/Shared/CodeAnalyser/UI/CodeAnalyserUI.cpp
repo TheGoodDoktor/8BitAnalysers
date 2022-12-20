@@ -281,7 +281,12 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 		ImGui::Text("References:");
 		for (const auto & caller : pLabelInfo->References)
 		{
-			DrawCodeAddress(state, viewState, caller.first);
+			const uint16_t accessorCodeAddr = caller.first;
+			ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, accessorCodeAddr);
 		}
 		ImGui::EndTooltip();
 	}
@@ -321,20 +326,46 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	ImGui::Text("References:");
 	for (const auto & caller : pLabelInfo->References)
 	{
-		//DrawAddressLabel( state, caller.first );
-		//ImGui::Text( "%s", NumStr(caller.first) );
-		//DrawAddressLabel( state, caller.first );
+		const uint16_t accessorCodeAddr = caller.first;
+		ShowCodeAccessorActivity(state, accessorCodeAddr);
 
-		/*const int index = GetItemIndexForAddress(state, caller.first);
-		if ( index != -1 )
-		{
-			DrawCodeAnalysisItemAtIndex( state, index );
-		}*/
-		DrawCodeAddress(state, viewState, caller.first);
+		ImGui::Text("   ");
+		ImGui::SameLine();
+		DrawCodeAddress(state, viewState, accessorCodeAddr);
 	}
 }
 
+void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr)
+{
+	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
+	if (pCodeInfo != nullptr)
+	{
 
+		const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
+		const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
+
+		if (brightVal > 0)
+		{
+			const float line_height = ImGui::GetTextLineHeight();
+			const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
+
+			const ImU32 pc_color = 0xFF00FFFF;
+			const ImU32 brd_color = 0xFF000000;
+
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			ImDrawList* dl = ImGui::GetWindowDrawList();
+			const float lh2 = (float)(int)(line_height / 2);
+
+			pos.x += 10;
+			const ImVec2 a(pos.x + 2, pos.y);
+			const ImVec2 b(pos.x + 12, pos.y + lh2);
+			const ImVec2 c(pos.x + 2, pos.y + line_height);
+
+			dl->AddTriangleFilled(a, b, c, col);
+			dl->AddTriangle(a, b, c, brd_color);
+		}
+	}
+}
 
 void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeInfo *pCodeInfo)
 {
