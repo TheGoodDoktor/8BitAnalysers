@@ -937,16 +937,16 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				{
 					ExportSkoolFile(false /* bHexadecimal*/);
 				}
-
+#ifndef RELEASE
 				if (ImGui::BeginMenu("DEBUG"))
 				{
-					// todo #ifndef RELEASE
 					if (ImGui::MenuItem("Export ROM"))
 					{
 						ExportSkoolFile(true /* bHexadecimal */, "rom");
 					}
 					ImGui::EndMenu();
 				}
+#endif // !RELEASE
 				ImGui::EndMenu();
 			}
 
@@ -1669,6 +1669,9 @@ bool FSpectrumEmu::ImportSkoolFile(const char* pFilename, const char* pOutSkoolI
 
 bool FSpectrumEmu::ExportSkoolFile(bool bHexadecimal, const char* pName /* = nullptr*/)
 {
+	if (!pActiveGame)
+		return false;
+	
 	std::string outputDir = "OutputSkoolKit/";
 	EnsureDirectoryExists(outputDir.c_str());
 
@@ -1679,6 +1682,7 @@ bool FSpectrumEmu::ExportSkoolFile(bool bHexadecimal, const char* pName /* = nul
 	
 	std::string outFname = outputDir + name + ".skool";
 	::ExportSkoolFile(CodeAnalysis, outFname.c_str(), bHexadecimal ? FSkoolFile::Base::Hexadecimal : FSkoolFile::Base::Decimal, bLoadedSkoolFileInfo ? &skoolInfo : nullptr);
+	
 	return true;
 }
 
