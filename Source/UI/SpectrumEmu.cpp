@@ -1497,10 +1497,10 @@ void FSpectrumEmu::DrawCheatsUI()
 		return;
 	}
 
-	static int displayMode = 0;
-    ImGui::RadioButton("Standard", &displayMode, 0);
+	static int bAdvancedMode = 0;
+    ImGui::RadioButton("Standard", &bAdvancedMode, 0);
 	ImGui::SameLine();
-    ImGui::RadioButton("Advanced", &displayMode, 1);
+    ImGui::RadioButton("Advanced", &bAdvancedMode, 1);
 	ImGui::Separator();
     
 	FGameConfig &config = *pActiveGame->pConfig;
@@ -1515,8 +1515,6 @@ void FSpectrumEmu::DrawCheatsUI()
 		if (cheat.bHasUserDefinedEntries)
 		{
 			ImGui::Text(cheat.Description.c_str());
-			ImGui::SameLine();
-			ImGui::Text(cheat.bEnabled ? "[ON]" : "[OFF]");
 		}
 		else
 		{
@@ -1528,19 +1526,37 @@ void FSpectrumEmu::DrawCheatsUI()
 		
 		for (auto &entry : cheat.Entries)
 		{
+			// Display memory locations in advanced mode
+			if (bAdvancedMode)
+			{
+				ImGui::Text("%s:%s", NumStr(entry.Address), entry.bUserDefined ? "" : NumStr((uint8_t)entry.Value)); 
+			}
+
 			if (entry.bUserDefined)
 			{
 				char tempStr[16] = {0};
-				sprintf_s(tempStr, "Value %d", ++userDefinedCount);
+				sprintf_s(tempStr, "##Value %d", ++userDefinedCount);
 				
-				if (ImGui::InputInt(tempStr, &entry.Value, 1, 10, ImGuiInputTextFlags_CharsDecimal))
-					entry.Value = min(max(entry.Value, 0), 255); 
+				// Display the value of the memory location in the input field.
+				// If the user has modified the value then display that instead.
+				uint8_t value = entry.bUserDefinedValueDirty ? entry.Value : CodeAnalysis.CPUInterface->ReadByte(entry.Address);
+				
+				if (bAdvancedMode)
+					ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(45);
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+
+				if (ImGui::InputScalar(tempStr, ImGuiDataType_U8, &value, NULL, NULL, "%d", 0))
+				{
+					entry.Value = value;
+					entry.bUserDefinedValueDirty = true;
+				}
+				ImGui::PopStyleVar();
 			}
-			
-			// Display memory locations in advanced mode
-			if (displayMode == 1)
+
+			if (bAdvancedMode)
 			{
-				ImGui::Text("%s:%s", NumStr(entry.Address), NumStr((uint8_t)entry.Value));
 				DrawAddressLabel(CodeAnalysis, CodeAnalysis.GetFocussedViewState(), entry.Address);
 			}
 		}
@@ -1577,6 +1593,7 @@ void FSpectrumEmu::DrawCheatsUI()
 					if (!bWasEnabled)
 						entry.OldValue = ReadByte( entry.Address);
 					WriteByte( entry.Address, static_cast<uint8_t>(entry.Value));
+					entry.bUserDefinedValueDirty = false;
 				}
 				else
 				{
@@ -1589,7 +1606,8 @@ void FSpectrumEmu::DrawCheatsUI()
 					pCodeInfo->Text.clear();
 			}
 			CodeAnalysis.bCodeAnalysisDataDirty = true;
-			LOGINFO("Poke %s: '%s' [%d byte(s)]", cheat.bEnabled ? "activated" : "deactivated", cheat.Description.c_str(), cheat.Entries.size());
+
+			LOGINFO("Poke %s: '%s' [%d byte(s)]", cheat.bEnabled ? "applied" : "reverted", cheat.Description.c_str(), cheat.Entries.size());
 
 		}
 		ImGui::Separator();
