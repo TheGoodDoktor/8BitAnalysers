@@ -19,6 +19,7 @@ struct FCheatMemoryEntry
 	int			Value;
 	uint8_t		OldValue;
 	bool		bUserDefined = false;
+	bool		bUserDefinedValueDirty = false;
 };
 
 struct FCheat
