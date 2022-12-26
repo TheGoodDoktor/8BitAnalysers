@@ -1,0 +1,14 @@
+{
+    "Name": "Jack the Nipper II",
+    "Options": {
+        "EnableCodeAnalysisView": [
+            true,
+            false,
+            false,
+            false
+        ],
+        "NumberMode": 2,
+        "ShowScanlineIndicator": false
+    },
+    "SnapshotFile": "./Games/Jack the Nipper II.z80"
+}
