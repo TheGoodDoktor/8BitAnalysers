@@ -23,12 +23,15 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
 		const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + byte);
-		const ImVec2 rectMin(pos.x, pos.y);
-		const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
-		char valTxt[8];
-		sprintf_s(valTxt, "%02x", val);
-		dl->AddRect(rectMin, rectMax, 0xffffffff);
-		dl->AddText(ImVec2(pos.x + 1, pos.y + 1), 0xffffffff, valTxt);
+		if (val != 0)	// skip char of value 0 - should probably be an option
+		{
+			const ImVec2 rectMin(pos.x, pos.y);
+			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+			char valTxt[8];
+			sprintf_s(valTxt, "%02x", val);
+			dl->AddRect(rectMin, rectMax, 0xffffffff);
+			dl->AddText(ImVec2(pos.x + 1, pos.y + 1), 0xffffffff, valTxt);
+		}
 		pos.x += rectSize;
 	}
 	return pos.x;

@@ -16,5 +16,5 @@ const uint16_t	kScreenPixMemEnd = kScreenPixMemStart + kScreenPixMemSize - 1;
 
 // attribute memory
 const uint16_t	kScreenAttrMemStart = 0x5800;
-const uint16_t	kScreenAttrMemSize = 0x400;
-const uint16_t	kScreenAttrMemEnd = kScreenAttrMemStart + kScreenAttrMemSize;
+const uint16_t	kScreenAttrMemSize = 32 * 24;
+const uint16_t	kScreenAttrMemEnd = kScreenAttrMemStart + kScreenAttrMemSize - 1;
