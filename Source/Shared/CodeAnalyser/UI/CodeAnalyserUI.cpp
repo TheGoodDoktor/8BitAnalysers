@@ -611,7 +611,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		if (state.CPUInterface->ShouldExecThisFrame())
 		{
 			state.CPUInterface->Break();
-			viewState.TrackPCFrame = true;
+			//viewState.TrackPCFrame = true;
 		}
 		else
 		{
@@ -986,7 +986,7 @@ void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& view
 		if (ImGui::Button("Break (F5)"))
 		{
 			state.CPUInterface->Break();
-			viewState.TrackPCFrame = true;
+			//viewState.TrackPCFrame = true;
 		}
 	}
 	else
@@ -1080,9 +1080,12 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{
+		int scrollToItem = -1;
 		// jump to address
 		if (viewState.GoToAddress != -1)
 		{
+			const float currScrollY = ImGui::GetScrollY();
+			const float currWindowHeight = ImGui::GetWindowHeight();
 			const int kJumpViewOffset = 5;
 			for (int item = 0; item < (int)state.ItemList.size(); item++)
 			{
@@ -1091,9 +1094,24 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 					// set cursor
 					viewState.pCursorItem = state.ItemList[item];
 					viewState.CursorItemIndex = item;
+					//scrollToItem = item;
 
-					const int gotoItem = std::max(item - kJumpViewOffset, 0);
-					ImGui::SetScrollY(gotoItem * line_height);
+					const float itemY = item * line_height;
+					const float margin = kJumpViewOffset * line_height;
+
+					if(itemY < currScrollY + margin)
+						ImGui::SetScrollY(itemY - margin);
+					if (itemY > currScrollY + currWindowHeight - margin * 2)
+						ImGui::SetScrollY((itemY - currWindowHeight) + margin * 2);
+
+					ImGuiContext& g = *GImGui;
+
+					ImRect rect;
+					rect.Min = ImVec2(0, itemY);
+					rect.Max = ImVec2(100, itemY + line_height);
+					//ImGui::ScrollToRect(g.CurrentWindow, rect, ImGuiScrollFlags_KeepVisibleEdgeY);
+					//const int gotoItem = std::max(item - kJumpViewOffset, 0);
+					//ImGui::SetScrollY(gotoItem * line_height);
 					break;
 				}
 			}
@@ -1105,6 +1123,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		// draw clipped list
 		ImGuiListClipper clipper((int)state.ItemList.size(), line_height);
 
+		//clipper.ForceDisplayRangeByIndices(viewState.CursorItemIndex, viewState.CursorItemIndex+1);
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
@@ -1112,6 +1131,19 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				DrawCodeAnalysisItemAtIndex(state, viewState, i);
 			}
 		}
+
+		if (scrollToItem!=-1)
+		{
+			ImGuiContext& g = *GImGui;
+
+			float itemPosY = clipper.StartPosY + (clipper.ItemsHeight * (scrollToItem + 10));
+			ImRect rect;
+			rect.Min = ImVec2(0, itemPosY - line_height);
+			rect.Max = ImVec2(100, itemPosY + line_height);
+			ImGui::ScrollToRect(g.CurrentWindow, rect, ImGuiScrollFlags_KeepVisibleEdgeY);
+		}
+		//float item_pos_y = clipper.StartPosY + (clipper.ItemsHeight * viewState.CursorItemIndex);
+		//ImGui::SetScrollFromPosY(item_pos_y - ImGui::GetWindowPos().y);
 
 		// only handle keypresses for focussed window
 		if(state.FocussedWindowId == windowId)

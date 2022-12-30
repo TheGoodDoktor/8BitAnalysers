@@ -426,6 +426,7 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 		callInfo.FunctionAddr = pc;
 		callInfo.ReturnAddr = prevPC;
 		state.CallStack.push_back(callInfo);
+		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
 	}
 
 	bool bBreak = RegisterCodeExecuted(state, pc, nextpc);
@@ -495,7 +496,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			{
 				// TODO: read is to fetch interrupt handler address
 				//LOGINFO("Interrupt Handler at: %x", value);
-				uint8_t im = z80_im(pCPU);
+				const uint8_t im = z80_im(pCPU);
 
 				if (im == 2)
 				{
@@ -505,7 +506,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 					bHasInterruptHandler = true;
 					InterruptHandlerAddress = interruptHandler;
 				}
-
 			}
 			else
 			{
@@ -524,7 +524,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			if (addr >= 0x4000 && addr < 0x5800)
 			{
 				FrameScreenPixWrites.push_back({ addr,value, pc });
-				
 			}
 			// Log screen attribute writes
 			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
@@ -545,6 +544,10 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	}
 
 	pins =  OldTickCB(num, pins, OldTickUserData);
+
+	if (pins & Z80_INT)	// have we had a vblank interrupt?
+	{
+	}
 
 	// RZX playback
 	if (RZXManager.GetReplayMode() == EReplayMode::Playback)
@@ -1189,7 +1192,8 @@ void FSpectrumEmu::Tick()
 
 	if (ExecThisFrame)
 	{
-		const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
+		//const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
+		const float frameTime = min(1000000.0f / 50, 32000.0f) * ExecSpeedScale;
 		const uint32_t microSeconds = max(static_cast<uint32_t>(frameTime), uint32_t(1));
 		
 		// TODO: Start frame method in analyser
@@ -1208,7 +1212,15 @@ void FSpectrumEmu::Tick()
 		}
 		else*/
 		{
-			zx_exec(&ZXEmuState, microSeconds);
+			uint32_t frameTicks = ZXEmuState.frame_scan_lines* ZXEmuState.scanline_period;
+			//zx_exec(&ZXEmuState, microSeconds);
+
+			//uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
+			//frameTicks = ticks_to_run;
+			ZXEmuState.clk.ticks_to_run = frameTicks;
+			const uint32_t ticksExecuted = z80_exec(&ZXEmuState.cpu, frameTicks);
+			clk_ticks_executed(&ZXEmuState.clk, ticksExecuted);
+			kbd_update(&ZXEmuState.kbd);
 		}
 		ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
 
