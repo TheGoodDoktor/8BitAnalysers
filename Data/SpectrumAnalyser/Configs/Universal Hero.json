@@ -1,0 +1,14 @@
+{
+    "Name": "Universal Hero",
+    "Options": {
+        "EnableCodeAnalysisView": [
+            true,
+            false,
+            false,
+            false
+        ],
+        "NumberMode": 2,
+        "ShowScanlineIndicator": true
+    },
+    "SnapshotFile": "./Games/Universal Hero.z80"
+}
