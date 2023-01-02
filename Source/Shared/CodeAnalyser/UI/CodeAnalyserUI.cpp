@@ -208,6 +208,7 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	static int selectedWatch = -1;
+	bool bDeleteSelectedWatch = false;
 
 	for (const auto& watch : state.GetWatches())
 	{
@@ -221,7 +222,7 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 		{
 			if (ImGui::Selectable("Delete Watch"))
 			{
-				state.RemoveWatch(selectedWatch);
+				bDeleteSelectedWatch = true;
 			}
 			if (ImGui::Selectable("Toggle Breakpoint"))
 			{
@@ -238,6 +239,9 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 		// TODO: Edit Watch
 		ImGui::PopID();		
 	}
+
+	if(bDeleteSelectedWatch)
+		state.RemoveWatch(selectedWatch);
 }
 
 void DrawComment(const FItem *pItem, float offset)
