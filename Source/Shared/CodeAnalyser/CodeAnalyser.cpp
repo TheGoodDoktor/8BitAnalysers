@@ -135,33 +135,73 @@ bool CheckStopInstruction(ICPUInterface* pCPUInterface, uint16_t pc)
 		return false;
 }
 
-bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType labelType)
+std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 {
-	FLabelInfo* pLabel = state.GetLabelForAddress(pc);
+	FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
+	std::string textString;
+
+	if (pDataInfo->DataType != DataType::Text)
+		return textString;	// error text?
+
+	for (int i = 0; i < pDataInfo->ByteSize; i++)
+	{
+		const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+		if (ch == '\n')
+			textString += "<cr>";
+		if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
+			textString += ch & ~(1 << 7);	// remove bit 7
+		else
+			textString += ch;
+	}
+
+	return textString;
+}
+
+bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, LabelType labelType)
+{
+	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel == nullptr)
 	{
 		pLabel = FLabelInfo::Allocate();
 		pLabel->LabelType = labelType;
-		pLabel->Address = pc;
+		pLabel->Address = address;
 		pLabel->ByteSize = 0;
 		
-		char label[32];
+		const int kLabelSize = 32;
+		char label[kLabelSize];
 		switch (labelType)
 		{
-		case LabelType::Function:
-			sprintf_s(label, "function_%04X", pc);
-			break;
-		case LabelType::Code:
-			sprintf_s(label, "label_%04X", pc);
-			break;
-		case LabelType::Data:
-			sprintf_s(label, "data_%04X", pc);
-			pLabel->Global = true;
+			case LabelType::Function:
+				sprintf_s(label, "function_%04X", address);
+				break;
+			case LabelType::Code:
+				sprintf_s(label, "label_%04X", address);
+				break;
+			case LabelType::Data:
+				sprintf_s(label, "data_%04X", address);
+				pLabel->Global = true;
+				break;
+			case LabelType::Text:
+			{
+				const char* pPrefix = "txt_";
+				const std::string textString = GetItemText(state, address);
+				std::string labelString;
+				const int len = std::min(textString.size(), (size_t)kLabelSize - strlen(pPrefix));
+				for (int i = 0; i < len; i++)
+				{
+					if (textString[i] == ' ')
+						labelString += '_';
+					else
+						labelString += textString[i];
+				}
+
+				sprintf_s(label, "%s%s", pPrefix, labelString.c_str());
+			}
 			break;
 		}
 
 		pLabel->Name = label;
-		state.SetLabelForAddress(pc, pLabel);
+		state.SetLabelForAddress(address, pLabel);
 		return true;
 	}
 
@@ -795,6 +835,9 @@ void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 	if (state.GetLabelForAddress(address) == nullptr)
 	{
 		LabelType labelType = LabelType::Data;
+		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
+		if (pDataInfo && pDataInfo->DataType == DataType::Text)
+			labelType = LabelType::Text;
 		const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(address);
 		if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 			labelType = LabelType::Code;

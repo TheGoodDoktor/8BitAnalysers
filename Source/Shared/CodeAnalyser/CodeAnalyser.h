@@ -328,6 +328,8 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
 void ResetReferenceInfo(FCodeAnalysisState &state);
 
+std::string GetItemText(FCodeAnalysisState& state, uint16_t address);
+
 // Commands
 void Undo(FCodeAnalysisState &state);
 

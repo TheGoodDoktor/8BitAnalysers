@@ -410,8 +410,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case DataType::Text:
 	{
-		std::string textString;
-		for (int i = 0; i < pDataInfo->ByteSize; i++)
+		const std::string textString = GetItemText(state, pDataInfo->Address);
+		/*for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
 			const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 			if (ch == '\n')
@@ -420,7 +420,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 				textString += ch & ~(1 << 7);	// remove bit 7
 			else
 				textString += ch;
-		}
+		}*/
 		ImGui::Text("ascii '%s'", textString.c_str());
 	}
 	break;

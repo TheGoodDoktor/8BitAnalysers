@@ -15,6 +15,7 @@ enum class LabelType
 	Data,
 	Function,
 	Code,
+	Text
 };
 
 enum class ItemType
