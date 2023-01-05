@@ -411,16 +411,6 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	case DataType::Text:
 	{
 		const std::string textString = GetItemText(state, pDataInfo->Address);
-		/*for (int i = 0; i < pDataInfo->ByteSize; i++)
-		{
-			const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
-			if (ch == '\n')
-				textString += "<cr>";
-			if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
-				textString += ch & ~(1 << 7);	// remove bit 7
-			else
-				textString += ch;
-		}*/
 		ImGui::Text("ascii '%s'", textString.c_str());
 	}
 	break;
@@ -443,11 +433,6 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::Text("%d Bytes", pDataInfo->ByteSize);
 		break;
 	}
-
-	/*if (pDataInfo->bShowBinary)
-	{
-		offset = DrawDataBitmapLine(state, pDataInfo);
-	}*/
 
 	if (state.CPUInterface->GetSP() == pDataInfo->Address)
 	{
