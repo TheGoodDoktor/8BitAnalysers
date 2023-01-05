@@ -1029,7 +1029,7 @@ void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& view
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 {
 	FCodeAnalysisViewState& viewState = state.ViewState[windowId];
-	const float line_height = ImGui::GetTextLineHeight();
+	const float lineHeight = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
@@ -1084,7 +1084,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{
-		int scrollToItem = -1;
+		//int scrollToItem = -1;
 		// jump to address
 		if (viewState.GoToAddress != -1)
 		{
@@ -1100,22 +1100,30 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 					viewState.CursorItemIndex = item;
 					//scrollToItem = item;
 
-					const float itemY = item * line_height;
-					const float margin = kJumpViewOffset * line_height;
+					const float itemY = item * lineHeight;
+					const float margin = kJumpViewOffset * lineHeight;
 
-					if(itemY < currScrollY + margin)
-						ImGui::SetScrollY(itemY - margin);
-					if (itemY > currScrollY + currWindowHeight - margin * 2)
-						ImGui::SetScrollY((itemY - currWindowHeight) + margin * 2);
+					const float moveDist = itemY - currScrollY;
 
+					if (moveDist > currWindowHeight)
+					{
+						const int gotoItem = std::max(item - kJumpViewOffset, 0);
+						ImGui::SetScrollY(gotoItem * lineHeight);
+					}
+					else
+					{
+						if (itemY < currScrollY + margin)
+							ImGui::SetScrollY(itemY - margin);
+						if (itemY > currScrollY + currWindowHeight - margin * 2)
+							ImGui::SetScrollY((itemY - currWindowHeight) + margin * 2);
+					}
 					ImGuiContext& g = *GImGui;
 
 					ImRect rect;
 					rect.Min = ImVec2(0, itemY);
-					rect.Max = ImVec2(100, itemY + line_height);
+					rect.Max = ImVec2(100, itemY + lineHeight);
 					//ImGui::ScrollToRect(g.CurrentWindow, rect, ImGuiScrollFlags_KeepVisibleEdgeY);
-					//const int gotoItem = std::max(item - kJumpViewOffset, 0);
-					//ImGui::SetScrollY(gotoItem * line_height);
+					
 					break;
 				}
 			}
@@ -1125,7 +1133,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		}
 
 		// draw clipped list
-		ImGuiListClipper clipper((int)state.ItemList.size(), line_height);
+		ImGuiListClipper clipper((int)state.ItemList.size(), lineHeight);
 
 		//clipper.ForceDisplayRangeByIndices(viewState.CursorItemIndex, viewState.CursorItemIndex+1);
 		while (clipper.Step())
@@ -1136,16 +1144,16 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 			}
 		}
 
-		if (scrollToItem!=-1)
+		/*if (scrollToItem != -1)
 		{
 			ImGuiContext& g = *GImGui;
 
 			float itemPosY = clipper.StartPosY + (clipper.ItemsHeight * (scrollToItem + 10));
 			ImRect rect;
-			rect.Min = ImVec2(0, itemPosY - line_height);
-			rect.Max = ImVec2(100, itemPosY + line_height);
+			rect.Min = ImVec2(0, itemPosY - lineHeight);
+			rect.Max = ImVec2(100, itemPosY + lineHeight);
 			ImGui::ScrollToRect(g.CurrentWindow, rect, ImGuiScrollFlags_KeepVisibleEdgeY);
-		}
+		}*/
 		//float item_pos_y = clipper.StartPosY + (clipper.ItemsHeight * viewState.CursorItemIndex);
 		//ImGui::SetScrollFromPosY(item_pos_y - ImGui::GetWindowPos().y);
 
