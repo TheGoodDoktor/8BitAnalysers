@@ -8,7 +8,7 @@
             false
         ],
         "NumberMode": 2,
-        "ShowScanlineIndicator": false
+        "ShowScanlineIndicator": true
     },
     "SnapshotFile": "./Games/Jack the Nipper II.z80"
 }
