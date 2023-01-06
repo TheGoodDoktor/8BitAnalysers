@@ -44,4 +44,4 @@ jobs:
     - name: Deploy
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        folder: build # The folder the action should deploy.
+        folder: Data/SpectrumAnalyser # The folder the action should deploy.
