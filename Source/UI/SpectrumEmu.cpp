@@ -1051,8 +1051,10 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			ImGui::MenuItem("Scan Line Indicator", 0, &bShowScanLineIndicator);
 			ImGui::MenuItem("Enable Audio", 0, &bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
+#ifndef RELEASE
 			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
 			ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
+#endif // !RELEASE
 			ImGui::EndMenu();
 		}
 		// Note: this is a WIP menu, it'll be added in when it works properly!

@@ -278,7 +278,8 @@ public:
 			|| pDataInfo->DataType == DataType::Graphics 
 			|| pDataInfo->DataType == DataType::Blob
 			|| pDataInfo->DataType == DataType::Bitmap
-			|| pDataInfo->DataType == DataType::CharacterMap)
+			|| pDataInfo->DataType == DataType::CharacterMap
+			|| pDataInfo->DataType == DataType::ColAttr)
 		{
 			asmText = "DEFB ";
 			const uint16_t numItems = pDataInfo->ByteSize;
@@ -367,7 +368,9 @@ public:
 		else
 		{
 			asmText = "TODO";
+#ifndef RELEASE
 			assert(0);
+#endif // !RELEASE
 		}
 		return asmText;
 	}
