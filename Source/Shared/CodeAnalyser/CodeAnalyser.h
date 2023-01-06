@@ -303,7 +303,7 @@ public:
 
 	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 
-	
+	void FindAsciiStrings(uint16_t startAddress);
 };
 
 // Commands

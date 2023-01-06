@@ -1055,6 +1055,17 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
 			ImGui::EndMenu();
 		}
+		// Note: this is a WIP menu, it'll be added in when it works properly!
+#ifndef RELEASE
+		if (ImGui::BeginMenu("Tools"))
+		{
+			if (ImGui::MenuItem("Find Ascii Strings"))
+			{
+				CodeAnalysis.FindAsciiStrings(0x4000);
+			}
+			ImGui::EndMenu();
+		}
+#endif
 		if (ImGui::BeginMenu("Windows"))
 		{
 			ImGui::MenuItem("DebugLog", 0, &bShowDebugLog);

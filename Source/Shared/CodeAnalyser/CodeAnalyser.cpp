@@ -13,6 +13,7 @@
 
 #include "Z80/CodeAnalyserZ80.h"
 #include "6502/CodeAnalyser6502.h"
+#include <Shared/Debug/Debug.h>
 
 bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
 {
@@ -76,6 +77,52 @@ bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint
 	} while (address != 0);	// 16 bit address overflow
 
 	return false;
+}
+
+bool IsAscii(uint8_t byte)
+{
+	return byte >= 32 && byte <= 126;
+}
+
+void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
+{
+	uint16_t address = startAddress;
+	ICPUInterface* pCPUInterface = CPUInterface;
+	const int kStringMinLength = 4;
+	int stringLength = 0;
+	uint16_t stringStart = 0;
+	std::string dbgString;
+
+	do
+	{
+		FCodeInfo* pCodeInfo = GetCodeInfoForAddress(address);
+		FDataInfo* pDataInfo = GetReadDataInfoForAddress(address);
+		const uint8_t byte = pCPUInterface->ReadByte(address++);
+
+		// determine if char is ascii
+		const bool bIsAscii = IsAscii(byte);
+		const bool bCode = pCodeInfo != nullptr && pCodeInfo->bDisabled;
+
+		if (bIsAscii && bCode == false)
+		{
+			if (stringLength == 0)
+				stringStart = address;
+
+			dbgString += byte;
+			stringLength++;
+		}
+		else
+		{
+			if (stringLength >= kStringMinLength) // end of valid string
+			{
+				LOGINFO("Found string at:0x%04X \"%s\"", stringStart, dbgString.c_str());
+			}
+			stringLength = 0;
+			dbgString.clear();
+		}
+
+	} while (address != 0);	// 16 bit address overflow
+
 }
 
 
