@@ -16,7 +16,7 @@ struct FGameSnapshot;
 struct FCheatMemoryEntry
 {
 	uint16_t	Address;
-	int			Value;
+	uint8_t		Value;
 	uint8_t		OldValue;
 	bool		bUserDefined = false;
 	bool		bUserDefinedValueDirty = false;
