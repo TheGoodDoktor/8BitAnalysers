@@ -1205,10 +1205,11 @@ void FSpectrumEmu::Tick()
 
 	if (ExecThisFrame)
 	{
-		//const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
-		const float frameTime = min(1000000.0f / 50, 32000.0f) * ExecSpeedScale;
+		const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
+		//const float frameTime = min(1000000.0f / 50, 32000.0f) * ExecSpeedScale;
 		const uint32_t microSeconds = max(static_cast<uint32_t>(frameTime), uint32_t(1));
-		
+		zx_exec(&ZXEmuState, microSeconds);
+
 		// TODO: Start frame method in analyser
 		CodeAnalysis.FrameTrace.clear();
 		StoreRegisters_Z80(CodeAnalysis);
@@ -1223,7 +1224,7 @@ void FSpectrumEmu::Tick()
 			clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
 			kbd_update(&ZXEmuState.kbd);
 		}
-		else*/
+		else
 		{
 			uint32_t frameTicks = ZXEmuState.frame_scan_lines* ZXEmuState.scanline_period;
 			//zx_exec(&ZXEmuState, microSeconds);
@@ -1234,7 +1235,7 @@ void FSpectrumEmu::Tick()
 			const uint32_t ticksExecuted = z80_exec(&ZXEmuState.cpu, frameTicks);
 			clk_ticks_executed(&ZXEmuState.clk, ticksExecuted);
 			kbd_update(&ZXEmuState.kbd);
-		}
+		}*/
 		ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
 
 		FrameTraceViewer.CaptureFrame();
