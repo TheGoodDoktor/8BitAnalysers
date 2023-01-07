@@ -547,6 +547,25 @@ static uint64_t _zx_tick(int num_ticks, uint64_t pins, void* user_data) {
                 /* Kempston Joystick (........000.....) */
                 Z80_SET_DATA(pins, sys->kbd_joymask | sys->joy_joymask);
             }
+            else if (pins & 0xff)   // floating bus
+            {
+                const int top_decode_line = sys->top_border_scanlines - 32;
+                const uint16_t y = sys->scanline_y - top_decode_line;
+                const uint8_t* vidmem_bank = sys->ram[sys->display_ram_bank];
+
+                if ((y < 32) || (y >= 224))
+                {
+                    Z80_SET_DATA(pins, sys->border_color);
+                }
+                else
+                {
+                    const uint16_t yy = y - 32;
+                    const uint16_t clr_offset = 0x1800 + (((yy & ~0x7) << 2) );
+                    const uint8_t clr = vidmem_bank[clr_offset];
+                    Z80_SET_DATA(pins, clr);
+                }
+
+            }
             else if (sys->type == ZX_TYPE_128){
                 /* read from AY-3-8912 (11............0.) */
                 if ((pins & (Z80_A15|Z80_A14|Z80_A1)) == (Z80_A15|Z80_A14)) {
