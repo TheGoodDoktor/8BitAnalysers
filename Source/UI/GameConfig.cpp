@@ -12,11 +12,12 @@
 #include "SnapshotLoaders/GamesList.h"
 #include "Debug/Debug.h"
 #include "Shared/Util/Misc.h"
+#include <Shared/Util/GraphicsView.h>
 
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;
 
-static const int g_kBinaryFileVersionNo = 10;
+static const int g_kBinaryFileVersionNo = 13;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 bool AddGameConfig(FGameConfig *pConfig)
@@ -78,10 +79,13 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 		jsonConfigFile["Cheats"].push_back(cheatJson);
 	}*/
 
+	// save character sets
+
 	// save options
 	json optionsJson;
 	optionsJson["NumberMode"] = (int)config.NumberDisplayMode;
 	optionsJson["ShowScanlineIndicator"] = config.bShowScanLineIndicator;
+	//optionsJson["Audio"] = config.Sou
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 		optionsJson["EnableCodeAnalysisView"].push_back(config.bCodeAnalysisViewEnabled[i]);
 	jsonConfigFile["Options"] = optionsJson;
@@ -427,6 +431,9 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAd
 			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 			fwrite(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
+			fwrite(&pDataInfo->CharSetAddress, sizeof(pDataInfo->CharSetAddress), 1, fp);
+			fwrite(&pDataInfo->OperandType, sizeof(pDataInfo->OperandType), 1, fp);
+			fwrite(&pDataInfo->EmptyCharNo, sizeof(pDataInfo->EmptyCharNo), 1, fp);
 			WriteStringToFile(pDataInfo->Comment, fp);
 
 			// Reads & Writes?
@@ -502,6 +509,17 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 				pDataInfo->DataType = DataType::Bitmap;
 				pDataInfo->bShowBinary = false;
 			}
+		}
+
+		if (versionNo > 10)
+		{
+			fread(&pDataInfo->CharSetAddress, sizeof(pDataInfo->CharSetAddress), 1, fp);
+			fread(&pDataInfo->OperandType, sizeof(pDataInfo->OperandType), 1, fp);
+		}
+
+		if (versionNo > 12)
+		{
+			fread(&pDataInfo->EmptyCharNo, sizeof(pDataInfo->EmptyCharNo), 1, fp);
 		}
 
 		ReadStringFromFile(pDataInfo->Comment, fp);
@@ -626,6 +644,31 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_
 	fwrite(&noWatches, sizeof(noWatches), 1, fp);
 	fseek(fp, 0, SEEK_END);
 
+	// Save char sets
+	const auto& charSets = GetCharacterSets();
+	int noCharSets = 0;
+	const long noCharSetsPos = ftell(fp);
+	fwrite(&noCharSets, sizeof(noCharSets), 1, fp);
+
+	for (int i = 0; i < (int)charSets.size(); i++)
+	{
+		FCharacterSet& charSet = *charSets[i];
+		const uint16_t addr = charSet.Address;
+		if (addr >= addrStart && addr <= addrEnd)
+		{
+			fwrite(&charSet.Address, sizeof(charSet.Address), 1, fp);
+			fwrite(&charSet.AttribAddress, sizeof(charSet.AttribAddress), 1, fp);
+			fwrite(&charSet.MaskInfo, sizeof(charSet.MaskInfo), 1, fp);
+			fwrite(&charSet.ColourInfo, sizeof(charSet.ColourInfo), 1, fp);
+			noCharSets++;
+		}
+	}
+	
+	// patch up char set count
+	fseek(fp, noCharSetsPos, SEEK_SET);
+	fwrite(&noCharSets, sizeof(noCharSets), 1, fp);
+	fseek(fp, 0, SEEK_END);
+
 	fclose(fp);
 	return true;
 }
@@ -686,6 +729,27 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 			fread(&watch, sizeof(uint16_t), 1, fp);
 			if (watch >= addrStart && watch <= addrEnd)
 				state.AddWatch(watch);
+		}
+	}
+
+	// char sets
+	if (versionNo > 10)
+	{
+		int noCharSets;
+		fread(&noCharSets, sizeof(noCharSets), 1, fp);
+
+		for (int i = 0; i < noCharSets; i++)
+		{
+			FCharSetCreateParams params;
+			fread(&params.Address, sizeof(params.Address), 1, fp);
+			if (versionNo > 11)
+			{
+				fread(&params.AttribsAddress, sizeof(params.AttribsAddress), 1, fp);
+				fread(&params.MaskInfo, sizeof(params.MaskInfo), 1, fp);
+				fread(&params.ColourInfo, sizeof(params.ColourInfo), 1, fp);
+
+			}
+			CreateCharacterSetAt(state, params);
 		}
 	}
 	fclose(fp);

@@ -50,7 +50,7 @@ public:
 	virtual void	StepInto() = 0;
 	virtual void	StepFrame() = 0;
 	virtual void	StepScreenWrite() = 0;
-	virtual void	GraphicsViewerSetAddress(uint16_t address) = 0;
+	virtual void	GraphicsViewerSetView(uint16_t address, int charWidth) = 0;
 
 	virtual bool	ShouldExecThisFrame(void) const = 0;
 
@@ -118,6 +118,8 @@ struct FDataFormattingOptions
 	int			StartAddress = 0;
 	int			ItemSize = 1;
 	int			NoItems = 1;
+	uint16_t	CharacterSet = 0;
+	uint8_t		EmptyCharNo = 0;
 	bool		ClearCodeInfo = false;
 	bool		ClearLabels = false;
 	bool		AddLabelAtStart = false;

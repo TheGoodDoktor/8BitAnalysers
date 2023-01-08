@@ -7,9 +7,6 @@
 
 #include "imgui.h"
 
-
-
-
 float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
@@ -20,17 +17,30 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 	const float startPos = pos.x;
 	pos.y -= rectSize + 2;
 
+	const FCharacterSet* pCharSet = GetCharacterSet(pDataInfo->CharSetAddress);
+
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
 		const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + byte);
-		if (val != 0)	// skip char of value 0 - should probably be an option
+		if (val != pDataInfo->EmptyCharNo)	// skip empty chars
 		{
 			const ImVec2 rectMin(pos.x, pos.y);
 			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
-			char valTxt[8];
-			sprintf_s(valTxt, "%02x", val);
-			dl->AddRect(rectMin, rectMax, 0xffffffff);
-			dl->AddText(ImVec2(pos.x + 1, pos.y + 1), 0xffffffff, valTxt);
+
+			if(pCharSet)
+			{ 
+				// charmap rendering
+				const FCharUVS UVS = pCharSet->GetCharacterUVS(val);
+				dl->AddImage((ImTextureID)pCharSet->Image->GetTexture(), rectMin, rectMax, ImVec2(UVS.U0, UVS.V0), ImVec2(UVS.U1, UVS.V1));
+			}
+			else
+			{
+				char valTxt[8];
+				sprintf_s(valTxt, "%02x", val);
+				dl->AddRect(rectMin, rectMax, 0xffffffff);
+				dl->AddText(ImVec2(pos.x + 1, pos.y + 1), 0xffffffff, valTxt);
+			}
+			
 		}
 		pos.x += rectSize;
 	}
@@ -42,12 +52,20 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo, bool bEditMode)
 {
 	const float line_height = ImGui::GetTextLineHeight();
-	const float rectSize = line_height + 4;
+	float rectSize = line_height + 4;
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	pos.x += 200.0f;
 	pos.y -= rectSize + 2;
 	const ImVec2 startPos = pos;
+
+	const float areaWidth = ImGui::GetWindowWidth() - startPos.x;
+	const float itemWidth = pDataInfo->ByteSize * 8 * rectSize;
+
+	/*if (itemWidth > areaWidth)
+	{
+		rectSize *= areaWidth / itemWidth;
+	}*/
 
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
@@ -59,7 +77,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo, 
 			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
 			if (val & (1 << bit))
 				dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
-			else
+			else if(rectSize > 4)
 				dl->AddRect(rectMin, rectMax, 0xffffffff);
 
 			pos.x += rectSize;
@@ -96,27 +114,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo, 
 // This is written for ZX Spectrum colour attributes which goes against the platform independent nature of this file
 // Some kind of abstraction is needed
 
-// speccy colour CLUT
-static const uint32_t g_ColourLUT[8] =
-{
-	0xFF000000,     // 0 - black
-	0xFFFF0000,     // 1 - blue
-	0xFF0000FF,     // 2 - red
-	0xFFFF00FF,     // 3 - magenta
-	0xFF00FF00,     // 4 - green
-	0xFFFFFF00,     // 5 - cyan
-	0xFF00FFFF,     // 6 - yellow
-	0xFFFFFFFF,     // 7 - white
-};
 
-static uint32_t GetColFromAttr(uint8_t colBits, bool bBright)
-{
-	const uint32_t outCol = g_ColourLUT[colBits & 7];
-	if (bBright == false)
-		return outCol & 0xFFD7D7D7;
-	else
-		return outCol;
-}
 
 // returns how much space it took
 float DrawColAttr(FCodeAnalysisState& state, const FDataInfo* pDataInfo, bool bEditMode)
@@ -536,6 +534,53 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	case DataType::Blob:
 		// draw memory detail
 		break;
+
+	case DataType::Bitmap:
+	{
+		static FCharSetCreateParams params;
+		params.Address = pDataInfo->Address;
+		DrawMaskInfoComboBox(&params.MaskInfo);
+		DrawColourInfoComboBox(&params.ColourInfo);
+		if (params.ColourInfo == EColourInfo::MemoryLUT)
+		{
+			const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+			const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
+			ImGui::InputScalar("Attribs Address", ImGuiDataType_U16, &params.AttribsAddress, 0, 0,format, inputFlags);
+		}
+
+		FCharacterSet *pCharSet = GetCharacterSet(pDataInfo->Address);
+		if (pCharSet != nullptr)
+		{
+			if (ImGui::Button("Update Character Set"))
+			{
+				UpdateCharacterSet(state, *pCharSet, params);
+			}
+			pCharSet->Image->Draw();
+		}
+		else
+		{
+			if (ImGui::Button("Create Character Set"))
+			{
+				FLabelInfo* pLabel = state.GetLabelForAddress(pDataInfo->Address);
+				if (pLabel == nullptr)
+					AddLabelAtAddress(state, pDataInfo->Address);
+				params.Address = pDataInfo->Address;
+				
+
+				CreateCharacterSetAt(state, params);
+			}
+		}
+	}
+	break;
+
+	case DataType::CharacterMap:
+	{
+		DrawCharacterSetComboBox(state, &pDataInfo->CharSetAddress);
+		const char* format = "%02X";
+		int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal;
+		ImGui::InputScalar("Null Character", ImGuiDataType_U8, &pDataInfo->EmptyCharNo,0,0,format,flags);
+	}
+	break;
 
 	case DataType::Image:
 		// This is currently disabled

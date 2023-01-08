@@ -116,7 +116,7 @@ public:
 	void		StepInto(void) override;
 	void		StepFrame(void) override;
 	void		StepScreenWrite(void) override;
-	void		GraphicsViewerSetAddress(uint16_t address) override;
+	void		GraphicsViewerSetView(uint16_t address, int charWidth) override;
 	bool		ShouldExecThisFrame(void) const override;
 	void		FormatSpectrumMemory(FCodeAnalysisState& state);
 	void*		GetCPUEmulator(void) override;
@@ -132,6 +132,10 @@ public:
 		GraphicsViewer.Address = address;
 	}
 
+	void GraphicsViewerSetCharWidth(uint16_t width)
+	{
+		GraphicsViewer.XSize = width;
+	}
 	// TODO: Make private
 
 	// Emulator 

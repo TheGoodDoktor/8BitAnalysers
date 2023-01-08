@@ -1,9 +1,33 @@
 #include "GraphicsView.h"
+#include "../CodeAnalyser/CodeAnalyser.h"
 #include <imgui.h>
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <cstdint>
+#include <vector>
 
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bScale = false, bool bMagnifier = true);
+
+// speccy colour CLUT
+static const uint32_t g_ColourLUT[8] =
+{
+	0xFF000000,     // 0 - black
+	0xFFFF0000,     // 1 - blue
+	0xFF0000FF,     // 2 - red
+	0xFFFF00FF,     // 3 - magenta
+	0xFF00FF00,     // 4 - green
+	0xFFFFFF00,     // 5 - cyan
+	0xFF00FFFF,     // 6 - yellow
+	0xFFFFFFFF,     // 7 - white
+};
+
+uint32_t GetColFromAttr(uint8_t colBits, bool bBright)
+{
+	const uint32_t outCol = g_ColourLUT[colBits & 7];
+	if (bBright == false)
+		return outCol & 0xFFD7D7D7;
+	else
+		return outCol;
+}
 
 FGraphicsView::FGraphicsView(int width, int height)
 	: Width(width)
@@ -18,7 +42,8 @@ FGraphicsView::FGraphicsView(int width, int height)
 FGraphicsView::~FGraphicsView()
 {
 	delete PixelBuffer;
-	ImGui_ImplDX11_FreeTexture(Texture);
+	if(Texture != nullptr)
+		ImGui_ImplDX11_FreeTexture(Texture);
 }
 
 void FGraphicsView::Clear(const uint32_t col)
@@ -29,8 +54,13 @@ void FGraphicsView::Clear(const uint32_t col)
 
 void FGraphicsView::Draw(float xSize, float ySize, bool bScale, bool bMagnifier)
 {
-	ImGui_ImplDX11_UpdateTextureRGBA(Texture, (uint8_t*)PixelBuffer);
+	UpdateTexture();
 	DisplayTextureInspector(Texture, xSize, ySize, bScale, bMagnifier);
+}
+
+void FGraphicsView::UpdateTexture(void)
+{
+	ImGui_ImplDX11_UpdateTextureRGBA(Texture, (uint8_t*)PixelBuffer);
 }
 
 void FGraphicsView::Draw(bool bMagnifier)
@@ -150,3 +180,172 @@ void DrawGraphicsView(const FGraphicsView& graphicsView, bool bMagnifier)
 {
 	DrawGraphicsView(graphicsView, (float)graphicsView.Width, (float)graphicsView.Height, false, bMagnifier);
 }*/
+
+// Character sets
+
+std::vector<FCharacterSet*>	g_CharacterSets;
+
+void InitCharacterSets()
+{
+	for (auto& it : g_CharacterSets)
+		delete it;
+
+	g_CharacterSets.clear();
+}
+
+const std::vector<FCharacterSet*>& GetCharacterSets()
+{
+	return g_CharacterSets;
+}
+
+FCharacterSet* GetCharacterSet(uint16_t address)
+{
+	for (auto& it : g_CharacterSets)
+	{
+		if (it->Address == address)
+			return it;
+	}
+
+	return nullptr;
+}
+
+void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params)
+{
+	characterSet.Address = params.Address;
+	characterSet.AttribAddress = params.AttribsAddress;
+	characterSet.MaskInfo = params.MaskInfo;
+	characterSet.ColourInfo = params.ColourInfo;
+
+	uint16_t addr = params.Address;
+
+	characterSet.Image->Clear(0);	// clear first
+
+	for (int charNo = 0; charNo < 256; charNo++)
+	{
+		const uint8_t* pCharData = state.CPUInterface->GetMemPtr(addr);
+		const int xp = (charNo & 15) * 8;
+		const int yp = (charNo >> 4) * 8;
+		uint32_t inkCol = 0xffffffff;
+		uint32_t paperCol = 0;
+		uint8_t colAttr = 0xff;
+		uint8_t charPix[8];
+		uint8_t charMask[8];
+
+		for (int i = 0; i < 8; i++)
+		{
+			if (characterSet.MaskInfo == EMaskInfo::InterleavedBytesMP)
+				charMask[i] = state.CPUInterface->ReadByte(addr++);
+			charPix[i] = state.CPUInterface->ReadByte(addr++);
+			if (characterSet.MaskInfo == EMaskInfo::InterleavedBytesPM)
+				charMask[i] = state.CPUInterface->ReadByte(addr++);
+		}
+
+		// Get colour from colour info
+		switch (characterSet.ColourInfo)
+		{
+		case EColourInfo::MemoryLUT:
+			colAttr = state.CPUInterface->ReadByte(characterSet.AttribAddress + charNo);
+			break;
+		case EColourInfo::Interleaved:
+			colAttr = state.CPUInterface->ReadByte(addr++);
+			break;
+		}
+
+		if (colAttr != 0xff)
+		{
+			// get ink & paper
+			const bool bBright = !!(colAttr & (1 << 6));
+			inkCol = GetColFromAttr(colAttr & 7, bBright);
+			paperCol = GetColFromAttr((colAttr >> 3) & 7, bBright);
+		}
+
+		characterSet.Image->DrawBitImage(charPix, xp, yp, 1, 1, inkCol, paperCol);
+	}
+
+	characterSet.Image->UpdateTexture();
+}
+
+void CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params)
+{
+	if (params.Address == 0 || GetCharacterSet(params.Address) != nullptr)
+		return;
+
+	FCharacterSet* pNewCharSet = new FCharacterSet;
+	pNewCharSet->Image = new FGraphicsView(128, 128);
+	UpdateCharacterSet(state, *pNewCharSet, params);
+
+	g_CharacterSets.push_back(pNewCharSet);
+}
+
+static const char* g_MaskInfoTxt[]=
+{
+	"None",
+	"InterleavedBytesPM",
+	"InterleavedBytesMP",
+};
+
+static const char* g_ColourInfoTxt[]=
+{
+	"None",
+	"Interleaved",
+	"MemoryLUT"
+};
+
+void DrawMaskInfoComboBox(EMaskInfo* pValue)
+{
+	if (ImGui::BeginCombo("Mask Info", g_MaskInfoTxt[(int)*pValue]))
+	{
+		for (int i = 0; i < IM_ARRAYSIZE(g_MaskInfoTxt); i++)
+		{
+			if (ImGui::Selectable(g_MaskInfoTxt[i], (int)*pValue == i))
+			{
+				*pValue = (EMaskInfo)i;
+			}
+		}
+		ImGui::EndCombo();
+	}
+}
+
+void DrawColourInfoComboBox(EColourInfo* pValue)
+{
+	if (ImGui::BeginCombo("Colour Info", g_ColourInfoTxt[(int)*pValue]))
+	{
+		for (int i = 0; i < IM_ARRAYSIZE(g_ColourInfoTxt); i++)
+		{
+			if (ImGui::Selectable(g_ColourInfoTxt[i], (int)*pValue == i))
+			{
+				*pValue = (EColourInfo)i;
+			}
+		}
+		ImGui::EndCombo();
+	}
+}
+
+void DrawCharacterSetComboBox(FCodeAnalysisState& state, uint16_t* pAddr)
+{
+	const FCharacterSet* pCharSet = *pAddr != 0 ? GetCharacterSet(*pAddr) : nullptr;
+	const FLabelInfo* pLabel = pCharSet != nullptr ? state.GetLabelForAddress(*pAddr) : nullptr;
+
+	const char* pCharSetName = pLabel != nullptr ? pLabel->Name.c_str() : "None";
+
+	if (ImGui::BeginCombo("CharacterSet", pCharSetName))
+	{
+		if (ImGui::Selectable("None", *pAddr == 0))
+		{
+			*pAddr = 0;
+		}
+
+		for (const auto& charSet : GetCharacterSets())
+		{
+			const FLabelInfo* pSetLabel = state.GetLabelForAddress(charSet->Address);
+			if (pSetLabel == nullptr)
+				continue;
+			if (ImGui::Selectable(pSetLabel->Name.c_str(), *pAddr == charSet->Address))
+			{
+				*pAddr = charSet->Address;
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+}

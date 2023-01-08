@@ -803,7 +803,13 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 				
 		if (ImGui::Selectable("View in graphics viewer"))
 		{
-			state.CPUInterface->GraphicsViewerSetAddress(pItem->Address);
+			FDataInfo* pDataItem = state.GetReadDataInfoForAddress(pItem->Address);
+			int byteSize = 1;
+			if (pDataItem->DataType == DataType::Bitmap)
+			{
+				byteSize = pDataItem->ByteSize;
+			}
+			state.CPUInterface->GraphicsViewerSetView(pItem->Address, byteSize);
 		}
 
 		ImGui::EndPopup();
@@ -1304,6 +1310,11 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 				formattingOptions.ItemSize = std::max(1, size[0]);
 				formattingOptions.NoItems = size[1];
 			}
+
+			DrawCharacterSetComboBox(state, &formattingOptions.CharacterSet);
+			const char* format = "%02X";
+			int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal;
+			ImGui::InputScalar("Null Character", ImGuiDataType_U8, &formattingOptions.EmptyCharNo, 0, 0, format, flags);
 			//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		}
 		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);

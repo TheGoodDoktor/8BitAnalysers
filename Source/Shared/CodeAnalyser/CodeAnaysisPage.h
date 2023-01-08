@@ -168,7 +168,15 @@ struct FDataInfo : FItem
 		uint32_t	Flags = 0;
 	};
 
-	FImageData*		ImageData = nullptr;	// additional data for images
+	union
+	{
+		FImageData* ImageData = nullptr;	// additional data for images
+		struct
+		{
+			uint16_t	CharSetAddress;	// address of character set
+			uint8_t		EmptyCharNo;
+		};
+	};
 
 	int						LastFrameRead = -1;
 	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions

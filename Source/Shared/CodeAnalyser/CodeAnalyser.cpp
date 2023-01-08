@@ -233,7 +233,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, LabelT
 				const char* pPrefix = "txt_";
 				const std::string textString = GetItemText(state, address);
 				std::string labelString;
-				const int len = std::min(textString.size(), (size_t)kLabelSize - strlen(pPrefix));
+				const int len = (int)std::min(textString.size(), (size_t)kLabelSize - strlen(pPrefix));
 				for (int i = 0; i < len; i++)
 				{
 					if (textString[i] == ' ')
@@ -651,6 +651,7 @@ void RegisterCodeAnalysisPage(FCodeAnalysisState& state, FCodeAnalysisPage& page
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface)
 {
 	InitImageViewers();
+	InitCharacterSets();
 	
 	state.InitWatches();
 	state.ResetLabelNames();
@@ -945,6 +946,12 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 
 		pDataInfo->ByteSize = options.ItemSize;
 		pDataInfo->DataType = options.DataType;
+
+		if (options.DataType == DataType::CharacterMap)
+		{
+			pDataInfo->CharSetAddress = options.CharacterSet;
+			pDataInfo->EmptyCharNo = options.EmptyCharNo;
+		}
 
 		// iterate through each memory location
 		for (int i = 0; i < options.ItemSize;i++)

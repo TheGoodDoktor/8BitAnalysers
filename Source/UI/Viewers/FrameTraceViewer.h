@@ -45,6 +45,7 @@ public:
 	void	CaptureFrame();
 	void	Draw();
 private:
+	void	RestoreFrame(const FSpeccyFrameTrace& frame);
 	void	DrawInstructionTrace(const FSpeccyFrameTrace& frame);
 	void	GenerateTraceOverview(FSpeccyFrameTrace& frame);
 	void	GenerateMemoryDiff(const FSpeccyFrameTrace& frameA, const FSpeccyFrameTrace& frameB, std::vector<FMemoryDiff>& outDiff);
@@ -57,6 +58,7 @@ private:
 
 	int					ShowFrame = 0;
 	int					CurrentTraceFrame = 0;
+	bool				RestoreOnScrub = false;
 	static const int	kNoFramesInTrace = 300;
 	FSpeccyFrameTrace	FrameTrace[kNoFramesInTrace];
 

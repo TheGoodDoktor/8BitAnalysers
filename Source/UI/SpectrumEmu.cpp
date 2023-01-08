@@ -282,9 +282,10 @@ void FSpectrumEmu::StepScreenWrite()
 	bStepToNextScreenWrite = true;
 }
 
-void FSpectrumEmu::GraphicsViewerSetAddress(uint16_t address) 
+void FSpectrumEmu::GraphicsViewerSetView(uint16_t address, int charWidth)
 {
 	GraphicsViewerGoToAddress(address);
+	GraphicsViewerSetCharWidth(charWidth);
 }
 
 bool	FSpectrumEmu::ShouldExecThisFrame(void) const
@@ -1318,12 +1319,6 @@ void FSpectrumEmu::DrawUI()
 	static int maxInst = 0;
 	maxInst = max(maxInst, instructionsThisFrame);
 
-	/*// Store trace and frame image
-	if (ExecThisFrame)
-	{
-		FrameTraceViewer.CaptureFrame();
-		CodeAnalysis.FrameTrace.clear();
-	}*/
 	DrawMainMenu(timeMS);
 	if (pZXUI->memmap.open)
 	{

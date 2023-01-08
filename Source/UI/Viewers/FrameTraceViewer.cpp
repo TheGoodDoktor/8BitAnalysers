@@ -69,6 +69,21 @@ void FFrameTraceViewer::CaptureFrame()
 }
 
 
+void FFrameTraceViewer::RestoreFrame(const FSpeccyFrameTrace& frame)
+{
+	// restore CPU regs
+	const z80_t* pCPUState = (const z80_t*)frame.CPUState;
+	pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa = pCPUState->bc_de_hl_fa;
+	pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_ = pCPUState->bc_de_hl_fa_;
+	pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp = pCPUState->wz_ix_iy_sp;
+	pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits = pCPUState->im_ir_pc_bits;
+	pSpectrumEmu->ZXEmuState.cpu.pins = pCPUState->pins;
+
+	// restore memory
+	for (int i = 0; i < 1 << 16; i++)
+		pSpectrumEmu->WriteByte(i, frame.MemoryDump[i]);
+}
+
 void FFrameTraceViewer::Draw()
 {
 	if (ImGui::ArrowButton("##left", ImGuiDir_Left))
@@ -80,6 +95,7 @@ void FFrameTraceViewer::Draw()
 		ShowFrame = std::min(++ShowFrame, kNoFramesInTrace - 1);
 
 	ImGui::SameLine();
+	int frameNo = 0;
 
 	if (ImGui::SliderInt("Backwards Offset", &ShowFrame, 0, kNoFramesInTrace - 1))
 	{
@@ -90,30 +106,26 @@ void FFrameTraceViewer::Draw()
 
 		PixelWriteline = -1;
 		SelectedTraceLine = -1;
-		int frameNo = CurrentTraceFrame - ShowFrame - 1;
+		frameNo = CurrentTraceFrame - ShowFrame - 1;
 		if (frameNo < 0)
 			frameNo += kNoFramesInTrace;
 		DrawFrameScreenWritePixels(FrameTrace[frameNo]);
-	}
 
-	int frameNo = CurrentTraceFrame - ShowFrame - 1;
-	if (frameNo < 0)
-		frameNo += kNoFramesInTrace;
+		if (RestoreOnScrub)
+			RestoreFrame(FrameTrace[frameNo]);
+	}
+	else
+	{
+		frameNo = CurrentTraceFrame - ShowFrame - 1;
+		if (frameNo < 0)
+			frameNo += kNoFramesInTrace;
+	}
 	const FSpeccyFrameTrace& frame = FrameTrace[frameNo];
 	
+
 	if (ImGui::Button("Restore"))
 	{
-		// restore CPU regs
-		const z80_t* pCPUState = (const z80_t*)frame.CPUState;
-		pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa = pCPUState->bc_de_hl_fa;
-		pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_ = pCPUState->bc_de_hl_fa_;
-		pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp = pCPUState->wz_ix_iy_sp;
-		pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits = pCPUState->im_ir_pc_bits;
-		pSpectrumEmu->ZXEmuState.cpu.pins = pCPUState->pins;
-
-		// restore memory
-		for (int i = 0; i < 1 << 16; i++)
-			pSpectrumEmu->WriteByte(i,frame.MemoryDump[i]);
+		RestoreFrame(frame);
 
 		// continue running
 		pSpectrumEmu->CodeAnalysis.CPUInterface->Continue();
@@ -121,7 +133,8 @@ void FFrameTraceViewer::Draw()
 		CurrentTraceFrame = frameNo;
 		ShowFrame = 0;
 	}
-
+	ImGui::SameLine();
+	ImGui::Checkbox("Restore On Scrub", &RestoreOnScrub);
 	
 	ImGui::Image(frame.Texture, ImVec2(320, 256));
 	ImGui::SameLine();
