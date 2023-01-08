@@ -1,0 +1,14 @@
+{
+    "Name": "Cobra",
+    "Options": {
+        "EnableCodeAnalysisView": [
+            true,
+            false,
+            false,
+            false
+        ],
+        "NumberMode": 2,
+        "ShowScanlineIndicator": true
+    },
+    "SnapshotFile": "./Games/Cobra.z80"
+}
