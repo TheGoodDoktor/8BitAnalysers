@@ -1,5 +1,6 @@
 #include "CodeAnalyserUI.h"
 #include "../CodeAnalyser.h"
+#include "CharacterMapViewer.h"
 
 #include "Util/Misc.h"
 #include "Util/GraphicsView.h"
@@ -17,7 +18,7 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 	const float startPos = pos.x;
 	pos.y -= rectSize + 2;
 
-	const FCharacterSet* pCharSet = GetCharacterSet(pDataInfo->CharSetAddress);
+	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(pDataInfo->CharSetAddress);
 
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
@@ -548,7 +549,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			ImGui::InputScalar("Attribs Address", ImGuiDataType_U16, &params.AttribsAddress, 0, 0,format, inputFlags);
 		}
 
-		FCharacterSet *pCharSet = GetCharacterSet(pDataInfo->Address);
+		FCharacterSet *pCharSet = GetCharacterSetFromAddress(pDataInfo->Address);
 		if (pCharSet != nullptr)
 		{
 			if (ImGui::Button("Update Character Set"))

@@ -49,6 +49,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "Exporters/SkoolFileInfo.h"
 #include "Exporters/AssemblerExport.h"
 #include "Exporters/JsonExport.h"
+#include "CodeAnalyser/UI/CharacterMapViewer.h"
 
 #define ENABLE_RZX 0
 
@@ -1365,6 +1366,10 @@ void FSpectrumEmu::DrawUI()
 	}
 	ImGui::End();
 
+
+	
+	
+
 	if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 	{
 		if (ImGui::Begin("RZX Info"))
@@ -1433,6 +1438,13 @@ void FSpectrumEmu::DrawUI()
 	if (ImGui::Begin("Watches"))
 	{
 		DrawWatchWindow(CodeAnalysis);
+	}
+	ImGui::End();
+
+	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Character Maps"))
+	{
+		DrawCharacterMapViewer(CodeAnalysis, CodeAnalysis.GetFocussedViewState());
 	}
 	ImGui::End();
 

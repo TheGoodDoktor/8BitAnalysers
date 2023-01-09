@@ -184,21 +184,37 @@ void DrawGraphicsView(const FGraphicsView& graphicsView, bool bMagnifier)
 // Character sets
 
 std::vector<FCharacterSet*>	g_CharacterSets;
+std::vector<FCharacterMap*>	g_CharacterMaps;
 
 void InitCharacterSets()
 {
+	// char sets
 	for (auto& it : g_CharacterSets)
 		delete it;
 
 	g_CharacterSets.clear();
+
+	// char maps
+	for (auto& it : g_CharacterMaps)
+		delete it;
+
+	g_CharacterMaps.clear();
 }
 
-const std::vector<FCharacterSet*>& GetCharacterSets()
+int GetNoCharacterSets()
 {
-	return g_CharacterSets;
+	return (int)g_CharacterSets.size();
 }
 
-FCharacterSet* GetCharacterSet(uint16_t address)
+FCharacterSet* GetCharacterSetFromIndex(int index)
+{
+	if (index >= 0 && index < GetNoCharacterSets())
+		return g_CharacterSets[index];
+	else
+		return nullptr;
+}
+
+FCharacterSet* GetCharacterSetFromAddress(uint16_t address)
 {
 	for (auto& it : g_CharacterSets)
 	{
@@ -265,87 +281,60 @@ void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, 
 	characterSet.Image->UpdateTexture();
 }
 
-void CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params)
+bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params)
 {
-	if (params.Address == 0 || GetCharacterSet(params.Address) != nullptr)
-		return;
+	if (params.Address == 0 || GetCharacterSetFromAddress(params.Address) != nullptr)
+		return false;
 
 	FCharacterSet* pNewCharSet = new FCharacterSet;
 	pNewCharSet->Image = new FGraphicsView(128, 128);
 	UpdateCharacterSet(state, *pNewCharSet, params);
 
 	g_CharacterSets.push_back(pNewCharSet);
+	return true;
 }
 
-static const char* g_MaskInfoTxt[]=
-{
-	"None",
-	"InterleavedBytesPM",
-	"InterleavedBytesMP",
-};
 
-static const char* g_ColourInfoTxt[]=
-{
-	"None",
-	"Interleaved",
-	"MemoryLUT"
-};
+// Character Maps
 
-void DrawMaskInfoComboBox(EMaskInfo* pValue)
+
+
+int GetNoCharacterMaps()
 {
-	if (ImGui::BeginCombo("Mask Info", g_MaskInfoTxt[(int)*pValue]))
-	{
-		for (int i = 0; i < IM_ARRAYSIZE(g_MaskInfoTxt); i++)
-		{
-			if (ImGui::Selectable(g_MaskInfoTxt[i], (int)*pValue == i))
-			{
-				*pValue = (EMaskInfo)i;
-			}
-		}
-		ImGui::EndCombo();
-	}
+	return (int)g_CharacterMaps.size();
 }
 
-void DrawColourInfoComboBox(EColourInfo* pValue)
+FCharacterMap* GetCharacterMapFromIndex(int index)
 {
-	if (ImGui::BeginCombo("Colour Info", g_ColourInfoTxt[(int)*pValue]))
-	{
-		for (int i = 0; i < IM_ARRAYSIZE(g_ColourInfoTxt); i++)
-		{
-			if (ImGui::Selectable(g_ColourInfoTxt[i], (int)*pValue == i))
-			{
-				*pValue = (EColourInfo)i;
-			}
-		}
-		ImGui::EndCombo();
-	}
+	if (index >= 0 && index < GetNoCharacterMaps())
+		return g_CharacterMaps[index];
+	else
+		return nullptr;
 }
 
-void DrawCharacterSetComboBox(FCodeAnalysisState& state, uint16_t* pAddr)
+FCharacterMap* GetCharacterMapFromAddress(uint16_t address)
 {
-	const FCharacterSet* pCharSet = *pAddr != 0 ? GetCharacterSet(*pAddr) : nullptr;
-	const FLabelInfo* pLabel = pCharSet != nullptr ? state.GetLabelForAddress(*pAddr) : nullptr;
-
-	const char* pCharSetName = pLabel != nullptr ? pLabel->Name.c_str() : "None";
-
-	if (ImGui::BeginCombo("CharacterSet", pCharSetName))
+	for (auto& it : g_CharacterMaps)
 	{
-		if (ImGui::Selectable("None", *pAddr == 0))
-		{
-			*pAddr = 0;
-		}
-
-		for (const auto& charSet : GetCharacterSets())
-		{
-			const FLabelInfo* pSetLabel = state.GetLabelForAddress(charSet->Address);
-			if (pSetLabel == nullptr)
-				continue;
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), *pAddr == charSet->Address))
-			{
-				*pAddr = charSet->Address;
-			}
-		}
-
-		ImGui::EndCombo();
+		if (it->Params.Address == address)
+			return it;
 	}
+
+	return nullptr;
+}
+
+bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& params)
+{
+	if (params.Address == 0 || GetCharacterMapFromAddress(params.Address) != nullptr)
+		return false;
+
+	FLabelInfo* pLabel = state.GetLabelForAddress(params.Address);
+	if (pLabel == nullptr)
+		AddLabelAtAddress(state, params.Address);
+
+	FCharacterMap* pNewCharMap = new FCharacterMap;
+	pNewCharMap->Params = params;
+
+	g_CharacterMaps.push_back(pNewCharMap);
+	return true;
 }

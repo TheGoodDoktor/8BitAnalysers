@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 
 struct FCodeAnalysisState;
 
@@ -62,6 +61,14 @@ struct FCharUVS
 	float U0, V0, U1, V1;
 };
 
+struct FCharSetCreateParams
+{
+	uint16_t	Address = 0;
+	uint16_t	AttribsAddress = 0;
+	EMaskInfo	MaskInfo = EMaskInfo::None;
+	EColourInfo	ColourInfo = EColourInfo::None;
+};
+
 struct FCharacterSet
 {
 	~FCharacterSet() { delete Image; }
@@ -80,12 +87,19 @@ struct FCharacterSet
 	FGraphicsView*	Image = nullptr;
 };
 
-struct FCharSetCreateParams
+// Character Maps
+struct FCharMapCreateParams
 {
 	uint16_t	Address = 0;
-	uint16_t	AttribsAddress = 0;
-	EMaskInfo	MaskInfo = EMaskInfo::None;
-	EColourInfo	ColourInfo = EColourInfo::None;
+	int			Width = 0;
+	int			Height = 0;
+	uint16_t	CharacterSet = 0;
+	uint8_t		IgnoreCharacter = 0;
+};
+
+struct FCharacterMap
+{
+	FCharMapCreateParams	Params;
 };
 
 // utils
@@ -93,10 +107,15 @@ uint32_t GetColFromAttr(uint8_t colBits, bool bBright);
 
 // Character sets
 void InitCharacterSets();
-const std::vector<FCharacterSet *>& GetCharacterSets();
-FCharacterSet* GetCharacterSet(uint16_t address);
+int GetNoCharacterSets();
+FCharacterSet* GetCharacterSetFromIndex(int index);
+FCharacterSet* GetCharacterSetFromAddress(uint16_t address);
 void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params);
-void CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params);
-void DrawMaskInfoComboBox(EMaskInfo* pValue);
-void DrawColourInfoComboBox(EColourInfo* pValue);
-void DrawCharacterSetComboBox(FCodeAnalysisState& state, uint16_t* pAddr);
+bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params);
+
+// Character Maps
+int GetNoCharacterMaps();
+FCharacterMap* GetCharacterMapFromIndex(int index);
+FCharacterMap* GetCharacterMapFromAddress(uint16_t address);
+bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& params);
+

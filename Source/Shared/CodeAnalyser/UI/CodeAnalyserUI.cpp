@@ -1,4 +1,5 @@
 #include "CodeAnalyserUI.h"
+#include "CharacterMapViewer.h"
 #include "../CodeAnalyser.h"
 
 #include "Util/Misc.h"

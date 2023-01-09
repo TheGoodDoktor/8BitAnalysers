@@ -925,6 +925,18 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 {
 	uint16_t dataAddress = options.StartAddress;
 
+	// TODO: Register Character Maps here?
+	if (options.DataType == DataType::CharacterMap)
+	{
+		FCharMapCreateParams charMapParams;
+		charMapParams.Address = dataAddress;
+		charMapParams.CharacterSet = options.CharacterSet;
+		charMapParams.Width = options.ItemSize;
+		charMapParams.Height = options.NoItems;
+		charMapParams.IgnoreCharacter = options.EmptyCharNo;
+		CreateCharacterMap(state, charMapParams);
+	}
+
 	if (options.AddLabelAtStart && state.GetLabelForAddress(dataAddress) == nullptr)	// only add label if one doesn't already exist
 	{
 		char labelName[16];

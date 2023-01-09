@@ -17,7 +17,7 @@
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;
 
-static const int g_kBinaryFileVersionNo = 13;
+static const int g_kBinaryFileVersionNo = 14;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 bool AddGameConfig(FGameConfig *pConfig)
@@ -645,30 +645,57 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_
 	fseek(fp, 0, SEEK_END);
 
 	// Save char sets
-	const auto& charSets = GetCharacterSets();
-	int noCharSets = 0;
-	const long noCharSetsPos = ftell(fp);
-	fwrite(&noCharSets, sizeof(noCharSets), 1, fp);
-
-	for (int i = 0; i < (int)charSets.size(); i++)
 	{
-		FCharacterSet& charSet = *charSets[i];
-		const uint16_t addr = charSet.Address;
-		if (addr >= addrStart && addr <= addrEnd)
-		{
-			fwrite(&charSet.Address, sizeof(charSet.Address), 1, fp);
-			fwrite(&charSet.AttribAddress, sizeof(charSet.AttribAddress), 1, fp);
-			fwrite(&charSet.MaskInfo, sizeof(charSet.MaskInfo), 1, fp);
-			fwrite(&charSet.ColourInfo, sizeof(charSet.ColourInfo), 1, fp);
-			noCharSets++;
-		}
-	}
-	
-	// patch up char set count
-	fseek(fp, noCharSetsPos, SEEK_SET);
-	fwrite(&noCharSets, sizeof(noCharSets), 1, fp);
-	fseek(fp, 0, SEEK_END);
+		int noCharSets = 0;
+		const long noCharSetsPos = ftell(fp);
+		fwrite(&noCharSets, sizeof(noCharSets), 1, fp);
 
+		for (int i = 0; i < GetNoCharacterSets(); i++)
+		{
+			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
+			const uint16_t addr = pCharSet->Address;
+			if (addr >= addrStart && addr <= addrEnd)
+			{
+				fwrite(&pCharSet->Address, sizeof(pCharSet->Address), 1, fp);
+				fwrite(&pCharSet->AttribAddress, sizeof(pCharSet->AttribAddress), 1, fp);
+				fwrite(&pCharSet->MaskInfo, sizeof(pCharSet->MaskInfo), 1, fp);
+				fwrite(&pCharSet->ColourInfo, sizeof(pCharSet->ColourInfo), 1, fp);
+				noCharSets++;
+			}
+		}
+
+		// patch up char set count
+		fseek(fp, noCharSetsPos, SEEK_SET);
+		fwrite(&noCharSets, sizeof(noCharSets), 1, fp);
+		fseek(fp, 0, SEEK_END);
+	}
+
+	// Save char maps
+	{
+		int noCharMaps = 0;
+		const long noCharMapsPos = ftell(fp);
+		fwrite(&noCharMaps, sizeof(noCharMaps), 1, fp);
+
+		for (int i = 0; i < GetNoCharacterMaps(); i++)
+		{
+			const FCharacterMap* pCharMap = GetCharacterMapFromIndex(i);
+			const uint16_t addr = pCharMap->Params.Address;
+			if (addr >= addrStart && addr <= addrEnd)
+			{
+				fwrite(&pCharMap->Params.Address, sizeof(pCharMap->Params.Address), 1, fp);
+				fwrite(&pCharMap->Params.Width, sizeof(pCharMap->Params.Width), 1, fp);
+				fwrite(&pCharMap->Params.Height, sizeof(pCharMap->Params.Height), 1, fp);
+				fwrite(&pCharMap->Params.CharacterSet, sizeof(pCharMap->Params.CharacterSet), 1, fp);
+				fwrite(&pCharMap->Params.IgnoreCharacter, sizeof(pCharMap->Params.IgnoreCharacter), 1, fp);
+				noCharMaps++;
+			}
+		}
+
+		// patch up char set count
+		fseek(fp, noCharMapsPos, SEEK_SET);
+		fwrite(&noCharMaps, sizeof(noCharMaps), 1, fp);
+		fseek(fp, 0, SEEK_END);
+	}
 	fclose(fp);
 	return true;
 }
@@ -750,6 +777,24 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addr
 
 			}
 			CreateCharacterSetAt(state, params);
+		}
+	}
+
+	// char maps
+	if(versionNo > 13)
+	{
+		int noCharMaps;
+		fread(&noCharMaps, sizeof(noCharMaps), 1, fp);
+
+		for (int i = 0; i < noCharMaps; i++)
+		{
+			FCharMapCreateParams params;
+			fread(&params.Address, sizeof(params.Address), 1, fp);
+			fread(&params.Width, sizeof(params.Width), 1, fp);
+			fread(&params.Height, sizeof(params.Height), 1, fp);
+			fread(&params.CharacterSet, sizeof(params.CharacterSet), 1, fp);
+			fread(&params.IgnoreCharacter, sizeof(params.IgnoreCharacter), 1, fp);
+			CreateCharacterMap(state, params);
 		}
 	}
 	fclose(fp);
