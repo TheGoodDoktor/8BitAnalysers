@@ -141,6 +141,7 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CodeToolTips.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\DataItemUI.cpp" />
@@ -210,6 +211,7 @@
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CodeToolTips.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\ImageViewer.h" />

@@ -303,6 +303,9 @@
     <ClCompile Include="..\..\Source\UI\Exporters\JsonExport.cpp">
       <Filter>Source Files\UI\Exporters</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
@@ -670,6 +673,9 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.h">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
