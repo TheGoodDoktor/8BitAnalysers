@@ -132,6 +132,10 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 	static uint16_t selectedCharMapAddr = 0;
 	static FCharMapCreateParams params;
 
+	static uint16_t selectedCharAddress = 0;
+	static int selectedCharX = -1;
+	static int selectedCharY = -1;
+
 	if (ImGui::BeginChild("##charmapselect", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), true))
 	{
 		// List character maps
@@ -145,8 +149,13 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 			if (ImGui::Selectable(pSetLabel->Name.c_str(), selectedCharMapAddr == pCharMap->Params.Address))
 			{
 				selectedCharMapAddr = pCharMap->Params.Address;
-				if(selectedCharMapAddr != params.Address)
+				if (selectedCharMapAddr != params.Address)
+				{
 					params = pCharMap->Params;	// copy params
+					selectedCharAddress = 0;
+					selectedCharX = -1;
+					selectedCharY = -1;
+				}
 			}
 		}
 	}
@@ -189,9 +198,10 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 			}
 
 			// Display Character Map
+			ImGuiIO& io = ImGui::GetIO();
 			ImDrawList* dl = ImGui::GetWindowDrawList();
 			ImVec2 pos = ImGui::GetCursorScreenPos();
-			const float rectSize = 10.0f;
+			const float rectSize = 12.0f;
 			uint16_t byte = 0;
 			const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
 
@@ -218,11 +228,80 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 							char valTxt[8];
 							sprintf_s(valTxt, "%02x", val);
 							dl->AddRect(rectMin, rectMax, 0xffffffff);
-							dl->AddText(ImVec2(pos.x + 1, pos.y + 1), 0xffffffff, valTxt);
+							dl->AddText(ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt);
+							//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);
 						}
 					}
 
 					byte++;	// go to next byte
+				}
+			}
+
+			// draw highlight rect
+			const float mousePosX = io.MousePos.x - pos.x;
+			const float mousePosY = io.MousePos.y - pos.y;
+			if (mousePosX >= 0 && mousePosY >= 0 && mousePosX < (params.Width * rectSize) && mousePosY < (params.Height * rectSize))
+			{
+				const int xChar = (int)floor(mousePosX / rectSize);
+				const int yChar = (int)floor(mousePosY / rectSize);
+				const float xp = pos.x + (xChar * rectSize);
+				const float yp = pos.y + (yChar * rectSize);
+				const ImVec2 rectMin(xp, yp);
+				const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+				dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+				if (ImGui::IsMouseClicked(0))
+				{
+					selectedCharAddress = pCharMap->Params.Address + (xChar + (yChar * pCharMap->Params.Width));
+					selectedCharX = xChar;
+					selectedCharY = yChar;
+				}
+			}
+
+			if (selectedCharX != -1 && selectedCharY != -1)
+			{
+				const float xp = pos.x + (selectedCharX * rectSize);
+				const float yp = pos.y + (selectedCharY * rectSize);
+				const ImVec2 rectMin(xp, yp);
+				const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+				dl->AddRect(rectMin, rectMax, 0xffffffff);
+			}
+
+			pos.y += params.Height * rectSize;
+			ImGui::SetCursorScreenPos(pos);
+
+			if (selectedCharAddress != 0)
+			{
+				// TODO: show data reads & writes
+				// 
+				FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(selectedCharAddress);
+				// List Data accesses
+				if (pDataInfo->Reads.empty() == false)
+				{
+					ImGui::Text("Reads:");
+					for (const auto& caller : pDataInfo->Reads)
+					{
+						const uint16_t accessorCodeAddr = caller.first;
+						ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+						ImGui::Text("   ");
+						ImGui::SameLine();
+						DrawCodeAddress(state, viewState, accessorCodeAddr);
+					}
+				}
+
+				if (pDataInfo->Writes.empty() == false)
+				{
+					ImGui::Text("Writes:");
+					for (const auto& caller : pDataInfo->Writes)
+					{
+						const uint16_t accessorCodeAddr = caller.first;
+						ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+						ImGui::Text("   ");
+						ImGui::SameLine();
+						DrawCodeAddress(state, viewState, caller.first);
+					}
 				}
 			}
 		}
