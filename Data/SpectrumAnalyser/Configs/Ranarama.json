@@ -3,7 +3,7 @@
     "Options": {
         "EnableCodeAnalysisView": [
             true,
-            true,
+            false,
             false,
             false
         ],
