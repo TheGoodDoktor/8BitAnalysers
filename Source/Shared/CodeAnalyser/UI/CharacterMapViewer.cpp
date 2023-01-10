@@ -127,14 +127,187 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 	ImGui::EndChild();
 }
 
+struct FCharacterMapViewerUIState
+{
+	uint16_t				SelectedCharMapAddr = 0;
+	FCharMapCreateParams	Params;
+
+	uint16_t				SelectedCharAddress = 0;
+	int						SelectedCharX = -1;
+	int						SelectedCharY = -1;
+};
+
+void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+{
+	FCharacterMap* pCharMap = GetCharacterMapFromAddress(uiState.SelectedCharMapAddr);
+
+	if (pCharMap == nullptr)
+		return;
+	
+	FCharMapCreateParams& params = uiState.Params;
+	DrawAddressLabel(state, viewState, uiState.SelectedCharMapAddr);
+
+	// Display and edit params
+	DrawCharacterSetComboBox(state, &params.CharacterSet);
+	int sz[2] = { params.Width, params.Height };
+	if (ImGui::InputInt2("Size (X,Y)", sz))
+	{
+		params.Width = sz[0];
+		params.Height = sz[1];
+	}
+	const char* format = "%02X";
+	int flags = ImGuiInputTextFlags_CharsHexadecimal;
+	ImGui::InputScalar("Null Character", ImGuiDataType_U8, &params.IgnoreCharacter, 0, 0, format, flags);
+
+	if (ImGui::Button("Apply"))
+	{
+		pCharMap->Params = params;
+
+		// Reformat Memory
+		FDataFormattingOptions formattingOptions;
+		formattingOptions.DataType = DataType::CharacterMap;
+		formattingOptions.StartAddress = params.Address;
+		formattingOptions.ItemSize = params.Width;
+		formattingOptions.NoItems = params.Height;
+		formattingOptions.CharacterSet = params.CharacterSet;
+		formattingOptions.EmptyCharNo = params.IgnoreCharacter;
+		FormatData(state, formattingOptions);
+		state.bCodeAnalysisDataDirty = true;
+	}
+
+	// Display Character Map
+	ImGuiIO& io = ImGui::GetIO();
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float rectSize = 12.0f;
+	uint16_t byte = 0;
+	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
+
+	for (int y = 0; y < params.Height; y++)
+	{
+		for (int x = 0; x < params.Width; x++)
+		{
+			const uint8_t val = state.CPUInterface->ReadByte(params.Address + byte);
+
+			if (val != params.IgnoreCharacter)	// skip empty chars
+			{
+				const float xp = pos.x + (x * rectSize);
+				const float yp = pos.y + (y * rectSize);
+				const ImVec2 rectMin(xp, yp);
+				const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+
+				if (pCharSet)
+				{
+					const FCharUVS UVS = pCharSet->GetCharacterUVS(val);
+					dl->AddImage((ImTextureID)pCharSet->Image->GetTexture(), rectMin, rectMax, ImVec2(UVS.U0, UVS.V0), ImVec2(UVS.U1, UVS.V1));
+				}
+				else
+				{
+					char valTxt[8];
+					sprintf_s(valTxt, "%02x", val);
+					dl->AddRect(rectMin, rectMax, 0xffffffff);
+					dl->AddText(ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt);
+					//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);
+				}
+			}
+
+			byte++;	// go to next byte
+		}
+	}
+
+	// draw highlight rect
+	const float mousePosX = io.MousePos.x - pos.x;
+	const float mousePosY = io.MousePos.y - pos.y;
+	if (mousePosX >= 0 && mousePosY >= 0 && mousePosX < (params.Width * rectSize) && mousePosY < (params.Height * rectSize))
+	{
+		const int xChar = (int)floor(mousePosX / rectSize);
+		const int yChar = (int)floor(mousePosY / rectSize);
+		const float xp = pos.x + (xChar * rectSize);
+		const float yp = pos.y + (yChar * rectSize);
+		const ImVec2 rectMin(xp, yp);
+		const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+		dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+		if (ImGui::IsMouseClicked(0))
+		{
+			uiState.SelectedCharAddress = pCharMap->Params.Address + (xChar + (yChar * pCharMap->Params.Width));
+			uiState.SelectedCharX = xChar;
+			uiState.SelectedCharY = yChar;
+		}
+	}
+
+	if (uiState.SelectedCharX != -1 && uiState.SelectedCharY != -1)
+	{
+		const float xp = pos.x + (uiState.SelectedCharX * rectSize);
+		const float yp = pos.y + (uiState.SelectedCharY * rectSize);
+		const ImVec2 rectMin(xp, yp);
+		const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+		dl->AddRect(rectMin, rectMax, 0xffffffff);
+	}
+
+	// draw hovered address
+	if (viewState.HighlightAddress != -1)
+	{
+		const uint16_t charMapStartAddr = params.Address;
+		const uint16_t charMapEndAddr = params.Address + (params.Width * params.Height) - 1;
+		if (viewState.HighlightAddress >= params.Address && viewState.HighlightAddress <= charMapEndAddr)	// pixel
+		{
+			const uint16_t addrOffset = viewState.HighlightAddress - params.Address;
+			const int charX = addrOffset % params.Width;
+			const int charY = addrOffset / params.Width;
+			const float xp = pos.x + (charX * rectSize);
+			const float yp = pos.y + (charY * rectSize);
+			const ImVec2 rectMin(xp, yp);
+			const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+			dl->AddRect(rectMin, rectMax, 0xffff00ff);
+		}
+	}
+
+	pos.y += params.Height * rectSize;
+	ImGui::SetCursorScreenPos(pos);
+
+	if (uiState.SelectedCharAddress != 0)
+	{
+		// TODO: show data reads & writes
+		// 
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(uiState.SelectedCharAddress);
+		// List Data accesses
+		if (pDataInfo->Reads.empty() == false)
+		{
+			ImGui::Text("Reads:");
+			for (const auto& caller : pDataInfo->Reads)
+			{
+				const uint16_t accessorCodeAddr = caller.first;
+				ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+				ImGui::Text("   ");
+				ImGui::SameLine();
+				DrawCodeAddress(state, viewState, accessorCodeAddr);
+			}
+		}
+
+		if (pDataInfo->Writes.empty() == false)
+		{
+			ImGui::Text("Writes:");
+			for (const auto& caller : pDataInfo->Writes)
+			{
+				const uint16_t accessorCodeAddr = caller.first;
+				ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+				ImGui::Text("   ");
+				ImGui::SameLine();
+				DrawCodeAddress(state, viewState, caller.first);
+			}
+		}
+	}
+
+	
+	
+}
+
 void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
-	static uint16_t selectedCharMapAddr = 0;
-	static FCharMapCreateParams params;
-
-	static uint16_t selectedCharAddress = 0;
-	static int selectedCharX = -1;
-	static int selectedCharY = -1;
+	static FCharacterMapViewerUIState uiState;
 
 	if (ImGui::BeginChild("##charmapselect", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), true))
 	{
@@ -146,15 +319,15 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 			if (pSetLabel == nullptr)
 				continue;
 
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), selectedCharMapAddr == pCharMap->Params.Address))
+			if (ImGui::Selectable(pSetLabel->Name.c_str(), uiState.SelectedCharMapAddr == pCharMap->Params.Address))
 			{
-				selectedCharMapAddr = pCharMap->Params.Address;
-				if (selectedCharMapAddr != params.Address)
+				uiState.SelectedCharMapAddr = pCharMap->Params.Address;
+				if (uiState.SelectedCharMapAddr != uiState.Params.Address)
 				{
-					params = pCharMap->Params;	// copy params
-					selectedCharAddress = 0;
-					selectedCharX = -1;
-					selectedCharY = -1;
+					uiState.Params = pCharMap->Params;	// copy params
+					uiState.SelectedCharAddress = 0;
+					uiState.SelectedCharX = -1;
+					uiState.SelectedCharY = -1;
 				}
 			}
 		}
@@ -163,148 +336,7 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 	ImGui::SameLine();
 	if (ImGui::BeginChild("##charmapdetails", ImVec2(0, 0), true))
 	{
-		FCharacterMap* pCharMap = GetCharacterMapFromAddress(selectedCharMapAddr);
-
-		if (pCharMap)
-		{
-			DrawAddressLabel(state, viewState, selectedCharMapAddr);
-
-			// Display and edit params
-			DrawCharacterSetComboBox(state, &params.CharacterSet);
-			int sz[2] = { params.Width, params.Height };
-			if (ImGui::InputInt2("Size (X,Y)", sz))
-			{
-				params.Width = sz[0];
-				params.Height = sz[1];
-			}
-			const char* format = "%02X";
-			int flags = ImGuiInputTextFlags_CharsHexadecimal;
-			ImGui::InputScalar("Null Character", ImGuiDataType_U8, &params.IgnoreCharacter, 0, 0, format, flags);
-
-			if (ImGui::Button("Apply"))
-			{
-				pCharMap->Params = params;
-
-				// Reformat Memory
-				FDataFormattingOptions formattingOptions;
-				formattingOptions.DataType = DataType::CharacterMap;
-				formattingOptions.StartAddress = params.Address;
-				formattingOptions.ItemSize = params.Width;
-				formattingOptions.NoItems = params.Height;
-				formattingOptions.CharacterSet = params.CharacterSet;
-				formattingOptions.EmptyCharNo = params.IgnoreCharacter;
-				FormatData(state, formattingOptions);
-				state.bCodeAnalysisDataDirty = true;
-			}
-
-			// Display Character Map
-			ImGuiIO& io = ImGui::GetIO();
-			ImDrawList* dl = ImGui::GetWindowDrawList();
-			ImVec2 pos = ImGui::GetCursorScreenPos();
-			const float rectSize = 12.0f;
-			uint16_t byte = 0;
-			const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
-
-			for (int y = 0; y < params.Height; y++)
-			{
-				for (int x = 0; x < params.Width;x++)
-				{
-					const uint8_t val = state.CPUInterface->ReadByte(params.Address + byte);
-
-					if (val != params.IgnoreCharacter)	// skip empty chars
-					{
-						const float xp = pos.x + (x * rectSize);
-						const float yp = pos.y + (y * rectSize);
-						const ImVec2 rectMin(xp, yp);
-						const ImVec2 rectMax(xp + rectSize, yp + rectSize);
-
-						if (pCharSet)
-						{
-							const FCharUVS UVS = pCharSet->GetCharacterUVS(val);
-							dl->AddImage((ImTextureID)pCharSet->Image->GetTexture(), rectMin, rectMax, ImVec2(UVS.U0, UVS.V0), ImVec2(UVS.U1, UVS.V1));
-						}
-						else
-						{
-							char valTxt[8];
-							sprintf_s(valTxt, "%02x", val);
-							dl->AddRect(rectMin, rectMax, 0xffffffff);
-							dl->AddText(ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt);
-							//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);
-						}
-					}
-
-					byte++;	// go to next byte
-				}
-			}
-
-			// draw highlight rect
-			const float mousePosX = io.MousePos.x - pos.x;
-			const float mousePosY = io.MousePos.y - pos.y;
-			if (mousePosX >= 0 && mousePosY >= 0 && mousePosX < (params.Width * rectSize) && mousePosY < (params.Height * rectSize))
-			{
-				const int xChar = (int)floor(mousePosX / rectSize);
-				const int yChar = (int)floor(mousePosY / rectSize);
-				const float xp = pos.x + (xChar * rectSize);
-				const float yp = pos.y + (yChar * rectSize);
-				const ImVec2 rectMin(xp, yp);
-				const ImVec2 rectMax(xp + rectSize, yp + rectSize);
-				dl->AddRect(rectMin, rectMax, 0xffffffff);
-
-				if (ImGui::IsMouseClicked(0))
-				{
-					selectedCharAddress = pCharMap->Params.Address + (xChar + (yChar * pCharMap->Params.Width));
-					selectedCharX = xChar;
-					selectedCharY = yChar;
-				}
-			}
-
-			if (selectedCharX != -1 && selectedCharY != -1)
-			{
-				const float xp = pos.x + (selectedCharX * rectSize);
-				const float yp = pos.y + (selectedCharY * rectSize);
-				const ImVec2 rectMin(xp, yp);
-				const ImVec2 rectMax(xp + rectSize, yp + rectSize);
-				dl->AddRect(rectMin, rectMax, 0xffffffff);
-			}
-
-			pos.y += params.Height * rectSize;
-			ImGui::SetCursorScreenPos(pos);
-
-			if (selectedCharAddress != 0)
-			{
-				// TODO: show data reads & writes
-				// 
-				FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(selectedCharAddress);
-				// List Data accesses
-				if (pDataInfo->Reads.empty() == false)
-				{
-					ImGui::Text("Reads:");
-					for (const auto& caller : pDataInfo->Reads)
-					{
-						const uint16_t accessorCodeAddr = caller.first;
-						ShowCodeAccessorActivity(state, accessorCodeAddr);
-
-						ImGui::Text("   ");
-						ImGui::SameLine();
-						DrawCodeAddress(state, viewState, accessorCodeAddr);
-					}
-				}
-
-				if (pDataInfo->Writes.empty() == false)
-				{
-					ImGui::Text("Writes:");
-					for (const auto& caller : pDataInfo->Writes)
-					{
-						const uint16_t accessorCodeAddr = caller.first;
-						ShowCodeAccessorActivity(state, accessorCodeAddr);
-
-						ImGui::Text("   ");
-						ImGui::SameLine();
-						DrawCodeAddress(state, viewState, caller.first);
-					}
-				}
-			}
-		}
+		DrawCharacterMap(uiState, state, viewState);
 	}
 	ImGui::EndChild();
 }
