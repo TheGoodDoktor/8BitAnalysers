@@ -260,7 +260,10 @@ void FSpectrumViewer::Draw()
 		
 	}
 
-	ImGui::SliderFloat("Speed Scale", &pSpectrumEmu->ExecSpeedScale, 0.0f, 1.0f);
+	ImGui::SliderFloat("Speed Scale", &pSpectrumEmu->ExecSpeedScale, 0.0f, 2.0f);
+	//ImGui::SameLine();
+	if (ImGui::Button("Reset"))
+		pSpectrumEmu->ExecSpeedScale = 1.0f;
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
 	if (pSpectrumEmu->bHasInterruptHandler)
