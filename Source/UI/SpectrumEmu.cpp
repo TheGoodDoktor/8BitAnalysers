@@ -1210,11 +1210,12 @@ void FSpectrumEmu::Tick()
 		const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
 		//const float frameTime = min(1000000.0f / 50, 32000.0f) * ExecSpeedScale;
 		const uint32_t microSeconds = max(static_cast<uint32_t>(frameTime), uint32_t(1));
-		zx_exec(&ZXEmuState, microSeconds);
 
 		// TODO: Start frame method in analyser
 		CodeAnalysis.FrameTrace.clear();
 		StoreRegisters_Z80(CodeAnalysis);
+
+		zx_exec(&ZXEmuState, microSeconds);
 
 		/*if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
