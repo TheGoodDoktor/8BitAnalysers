@@ -1,0 +1,14 @@
+{
+    "Name": "Batman",
+    "Options": {
+        "EnableCodeAnalysisView": [
+            true,
+            false,
+            false,
+            false
+        ],
+        "NumberMode": 2,
+        "ShowScanlineIndicator": false
+    },
+    "SnapshotFile": "./Games/Batman.z80"
+}
