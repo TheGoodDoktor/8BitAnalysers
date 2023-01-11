@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 #include "../SpectrumEmu.h"
+#include "../SpectrumConstants.h"
 #include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <UI/Viewers/GraphicsViewer.h>
 
@@ -48,7 +49,7 @@ void FSpectrumViewer::Draw()
 	if (viewState.HighlightAddress != -1)
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		if (viewState.HighlightAddress >= 0x4000 && viewState.HighlightAddress < 0x5800)	// pixel
+		if (viewState.HighlightAddress >= kScreenPixMemStart && viewState.HighlightAddress <= kScreenPixMemEnd)	// pixel
 		{
 			int xp, yp;
 			GetScreenAddressCoords(viewState.HighlightAddress, xp, yp);
@@ -58,7 +59,7 @@ void FSpectrumViewer::Draw()
 			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 1), 0xffffffff);
 		}
 
-		if (viewState.HighlightAddress >= 0x5800 && viewState.HighlightAddress < 0x5B00)	// attributes
+		if (viewState.HighlightAddress >= kScreenAttrMemStart && viewState.HighlightAddress <= kScreenAttrMemEnd)	// attributes
 		{
 			int xp, yp;
 			GetAttribAddressCoords(viewState.HighlightAddress, xp, yp);

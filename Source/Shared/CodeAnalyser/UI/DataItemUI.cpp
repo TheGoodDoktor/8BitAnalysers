@@ -314,9 +314,22 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ImGui::Text("\t%s", NumStr(pDataInfo->Address));
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
+	bool bShowItemLabel = true;
 	if (pDataInfo->OperandType != EOperandType::Unknown)
 	{
-		//SetNumberDisplayMode(pDataInfo->NumDispOverride);
+		switch (pDataInfo->OperandType)
+		{
+		case EOperandType::Pointer:
+		case EOperandType::JumpAddress:
+			break;
+		case EOperandType::Decimal:
+			SetNumberDisplayMode(ENumberDisplayMode::Decimal);
+			bShowItemLabel = false;
+			break;
+		case EOperandType::Hex:
+			bShowItemLabel = false;
+			break;
+		}
 	}
 
 	const float line_start_x = ImGui::GetCursorPosX();
@@ -330,13 +343,6 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	else
 	{
 		ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
-	}
-
-	if (pDataInfo->bShowCharMap)
-	{
-		ImGui::Text("CM:");
-		DrawDataCharMapLine(state, pDataInfo);
-		return;
 	}
 
 	switch (pDataInfo->DataType)
@@ -385,8 +391,12 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 			EditWordDataItem(state, pDataInfo->Address);
 		else
 			ImGui::Text("%s", NumStr(val));
-		ImGui::SameLine();
-		DrawAddressLabel(state, viewState, val);
+
+		if (bShowItemLabel)
+		{
+			ImGui::SameLine();
+			DrawAddressLabel(state, viewState, val);
+		}
 	}
 	break;
 

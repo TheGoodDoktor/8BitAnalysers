@@ -34,50 +34,6 @@ static const uint32_t g_kColourLUT[8] =
 	0xFFFFFFFF,     // 7 - white
 };
 
-
-
-
-// coords are in pixel units
-// w & h in characters
-// 00000111 - ink
-// 00111000 - paper
-// 01000000 - bright
-// 10000000 - flash
-#if 0
-void PlotImageAt(const uint8_t *pSrc, int xp, int yp, int w, int h, uint32_t *pDest, int destWidth, uint8_t colAttr)
-{
-	uint32_t* pBase = pDest + (xp + (yp * destWidth));
-	uint32_t inkCol = g_kColourLUT[colAttr & 7];
-	uint32_t paperCol = g_kColourLUT[(colAttr >> 3) & 7];
-
-	if (0 == (colAttr & (1 << 6)))
-	{
-		// standard brightness
-		inkCol &= 0xFFD7D7D7;
-		paperCol &= 0xFFD7D7D7;
-	}
-
-	*pBase = 0;
-	for (int y = 0; y < h; y++)
-	{
-		for (int x = 0; x < w; x++)
-		{
-			const uint8_t charLine = *pSrc++;
-
-			for (int xpix = 0; xpix < 8; xpix++)
-			{
-				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
-				const uint32_t col = bSet ? inkCol : paperCol;
-				if(col != 0xFF000000 )
-					*(pBase + xpix + (x * 8)) = col;
-			}
-		}
-
-		pBase += destWidth;
-	}
-}
-#endif
-
 uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
 {
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
@@ -337,7 +293,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	else if (state.ViewMode == GraphicsViewMode::Screen)
 	{
 		// http://www.breakintoprogram.co.uk/computers/zx-spectrum/screen-memory-layout
-		state.Address = (int)addrInput;
+		state.Address = 0x4000;// (int)addrInput;
 
 		int offset = 0;
 		for (int y = 0; y < 192; y++)

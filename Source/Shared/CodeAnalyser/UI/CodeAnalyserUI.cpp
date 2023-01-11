@@ -532,6 +532,8 @@ void DrawCommentBlockDetails(FCodeAnalysisState& state, FCommentBlock* pCommentB
 {
 	if (ImGui::InputTextMultiline("Comment Text", &pCommentBlock->Comment))
 	{
+		if (pCommentBlock->Comment.empty() == true)
+			state.SetCommentBlockForAddress(pCommentBlock->Address, nullptr);
 		state.bCodeAnalysisDataDirty = true;
 	}
 
@@ -683,15 +685,29 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 		int nextItemAddress = 0;
 
+		// special case for expanded lines
+		// TODO: there should be a more general case
+		FCommentBlock* viewStateCommentBlocks[FCodeAnalysisState::kNoViewStates] = { nullptr };
+		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+		{
+			if (state.ViewState[i].pCursorItem != nullptr && state.ViewState[i].pCursorItem->Type == ItemType::CommentLine)
+			{
+				FCommentBlock* pBlock = state.GetCommentBlockForAddress(state.ViewState[i].pCursorItem->Address);
+				viewStateCommentBlocks[i] = pBlock;
+			}
+		}
+
 		// loop across address range
 		for (int addr = 0; addr < (1 << 16); addr++)
 		{
+			// convert comment block into multiple comment lines
 			FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(addr);
 			if (pCommentBlock != nullptr)
 			{
 				// split comment into lines
 				std::stringstream stringStream(pCommentBlock->Comment);
 				std::string line;
+				FCommentLine* pFirstLine = nullptr;
 
 				while (std::getline(stringStream, line, '\n'))
 				{
@@ -702,6 +718,15 @@ void UpdateItemList(FCodeAnalysisState &state)
 					pLine->Comment = line;
 					pLine->Address = addr;
 					state.ItemList.push_back(pLine);	
+					if (pFirstLine == nullptr)
+						pFirstLine = pLine;
+				}
+
+				// fix up having comment blocks as cursor items
+				for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+				{
+					if (viewStateCommentBlocks[i] == pCommentBlock)
+						state.ViewState[i].pCursorItem = pFirstLine;
 				}
 			}
 			
@@ -709,9 +734,9 @@ void UpdateItemList(FCodeAnalysisState &state)
 			if (pLabelInfo != nullptr)
 			{
 				state.ItemList.push_back(pLabelInfo);
-
 			}
 
+			// check if we have gone past this item
 			if (addr >= nextItemAddress)
 			{
 				FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(addr);
@@ -743,6 +768,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 			}
 		}
 
+		// Maybe this needs to follow the same algorithm as the main view?
 		ImGui::SetScrollY(state.GetFocussedViewState().CursorItemIndex * line_height);
 		state.bCodeAnalysisDataDirty = false;
 	}
