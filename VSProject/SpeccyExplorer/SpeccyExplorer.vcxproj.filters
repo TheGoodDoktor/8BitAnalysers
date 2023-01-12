@@ -306,6 +306,9 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\UI\GameData.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imstb_truetype.h">
@@ -676,6 +679,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.h">
       <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UI\GameData.h">
+      <Filter>Source Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
