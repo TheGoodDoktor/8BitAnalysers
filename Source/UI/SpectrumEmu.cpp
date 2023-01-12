@@ -18,6 +18,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include <windows.h>
 
 #include "GameConfig.h"
+#include "GameData.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include "GameViewers/GameViewer.h"
 #include "GameViewers/StarquakeViewer.h"
@@ -740,7 +741,11 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-		CodeAnalysis.ViewState[i].Enabled = pGameConfig->bCodeAnalysisViewEnabled[i];
+	{
+		CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
+		CodeAnalysis.ViewState[i].GoToAddress = pGameConfig->ViewConfigs[i].ViewAddress;
+	}
+
 	bShowScanLineIndicator = pGameConfig->bShowScanLineIndicator;
 	SetNumberDisplayMode(pGameConfig->NumberDisplayMode);
 
@@ -765,6 +770,8 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	}
 	ZXEmuState.scanline_y = oldScanlineVal;
 	ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
+
+
 
 	Break();
 }
@@ -809,7 +816,11 @@ void FSpectrumEmu::SaveCurrentGameData()
 			pGameConfig->bShowScanLineIndicator = bShowScanLineIndicator;
 			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 			{
-				pGameConfig->bCodeAnalysisViewEnabled[i] = CodeAnalysis.ViewState[i].Enabled;
+				const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
+				FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
+
+				viewConfig.bEnabled = viewState.Enabled;
+				viewConfig.ViewAddress = viewState.pCursorItem ? viewState.pCursorItem->Address : 0;
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());

@@ -119,7 +119,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			{
 				const int kToolTipNoLines = 10;
 				ImGui::BeginTooltip();
-				const int startIndex = index;// std::max(index - (kToolTipNoLines / 2), 0);
+				const int startIndex = std::max(index - (kToolTipNoLines / 2), 0);
 				for(int line=0;line < kToolTipNoLines;line++)
 				{
 					if(startIndex + line < (int)state.ItemList.size())
