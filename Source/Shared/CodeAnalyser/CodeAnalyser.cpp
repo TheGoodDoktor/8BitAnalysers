@@ -608,10 +608,11 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 {
-	if (state.GetCommentBlockForAddress(address) == 0)
+	FCommentBlock* pExistingBlock = state.GetCommentBlockForAddress(address);
+	if(pExistingBlock == nullptr)
 	{
 		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
-		pCommentBlock->Comment = "<add comment here>";
+		pCommentBlock->Comment = "";
 		pCommentBlock->Address = address;
 		pCommentBlock->ByteSize = 1;
 		state.SetCommentBlockForAddress(address, pCommentBlock);
@@ -619,7 +620,7 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 		return pCommentBlock;
 	}
 
-	return nullptr;
+	return pExistingBlock;
 }
 
 void GenerateGlobalInfo(FCodeAnalysisState &state)
