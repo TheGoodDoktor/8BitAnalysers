@@ -298,6 +298,12 @@ bool	FSpectrumEmu::ShouldExecThisFrame(void) const
 	return ExecThisFrame;
 }
 
+bool FSpectrumEmu::IsStopped(void) const
+{
+	return UIZX.dbg.dbg.stopped;
+}
+
+
 void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
 {
 	// screen memory start
@@ -1085,6 +1091,8 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			ImGui::MenuItem("Scan Line Indicator", 0, &config.bShowScanLineIndicator);
 			ImGui::MenuItem("Enable Audio", 0, &config.bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
+			ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.Config.bShowOpcodeValues);
+
 #ifndef RELEASE
 			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
 			ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);

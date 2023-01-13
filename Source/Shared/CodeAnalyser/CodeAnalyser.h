@@ -53,6 +53,7 @@ public:
 	virtual void	GraphicsViewerSetView(uint16_t address, int charWidth) = 0;
 
 	virtual bool	ShouldExecThisFrame(void) const = 0;
+	virtual bool	IsStopped(void) const = 0;
 
 	virtual void* GetCPUEmulator(void) { return nullptr; }	// get pointer to emulator - a bit of a hack
 
@@ -160,6 +161,11 @@ struct FCodeAnalysisViewState
 	FDataFormattingOptions	DataFormattingOptions;
 };
 
+struct FCodeAnalysisConfig
+{
+	bool bShowOpcodeValues = false;
+};
+
 // code analysis information
 // TODO: make this a class
 struct FCodeAnalysisState
@@ -244,7 +250,8 @@ public:
 	std::vector< class FCommand *>	CommandStack;
 
 	bool					bAllowEditing = false;
-
+	
+	FCodeAnalysisConfig		Config;
 public:
 	// Access functions for code analysis
 	static const int kPageShift = 10;

@@ -120,6 +120,7 @@ public:
 	void		StepScreenWrite(void) override;
 	void		GraphicsViewerSetView(uint16_t address, int charWidth) override;
 	bool		ShouldExecThisFrame(void) const override;
+	bool		IsStopped(void) const override;
 	void		FormatSpectrumMemory(FCodeAnalysisState& state);
 	void*		GetCPUEmulator(void) override;
 	//ICPUInterface End
@@ -199,6 +200,8 @@ public:
 
 	bool bShowImGuiDemo = false;
 	bool bShowImPlotDemo = false;
+
+	bool bShowOpcodeValues = false;
 private:
 	z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;
