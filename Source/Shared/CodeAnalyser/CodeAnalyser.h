@@ -161,7 +161,7 @@ struct FCodeAnalysisViewState
 	FDataFormattingOptions	DataFormattingOptions;
 };
 
-struct FConfig
+struct FCodeAnalysisConfig
 {
 	bool bShowOpcodeValues = false;
 };
@@ -251,7 +251,7 @@ public:
 
 	bool					bAllowEditing = false;
 	
-	FConfig					Config;
+	FCodeAnalysisConfig		Config;
 public:
 	// Access functions for code analysis
 	static const int kPageShift = 10;
