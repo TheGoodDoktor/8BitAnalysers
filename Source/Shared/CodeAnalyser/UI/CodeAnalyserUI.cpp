@@ -1421,6 +1421,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			FormatData(state, formattingOptions);
 			formattingOptions.StartAddress += formattingOptions.ItemSize * formattingOptions.NoItems;
 			state.bCodeAnalysisDataDirty = true;
+			GoToAddress(viewState, formattingOptions.StartAddress);
 		}
 	}
 
