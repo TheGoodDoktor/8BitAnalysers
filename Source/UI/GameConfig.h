@@ -45,8 +45,19 @@ struct FViewerConfig
 	void				(*pDrawFunction)(FSpectrumEmu* pEmu, FGame* pGame);
 };
 
+struct FCodeAnalysisViewConfig
+{
+	bool		bEnabled = false;
+	uint16_t	ViewAddress = 0;
+};
+
 struct FGameConfig
 {
+	FGameConfig()
+	{
+		ViewConfigs[0].bEnabled = true;
+	}
+
 	std::string		Name;
 	std::string		SnapshotFile;
 
@@ -56,7 +67,9 @@ struct FGameConfig
 
 	std::vector< FCheat> Cheats;
 
-	bool	bCodeAnalysisViewEnabled[FCodeAnalysisState::kNoViewStates] = { true,false,false,false };
+	FCodeAnalysisViewConfig	ViewConfigs[FCodeAnalysisState::kNoViewStates];
+
+	//bool	bCodeAnalysisViewEnabled[FCodeAnalysisState::kNoViewStates] = { true,false,false,false };
 	bool	bShowScanLineIndicator = false;
 	ENumberDisplayMode		NumberDisplayMode = ENumberDisplayMode::HexAitch;
 };
@@ -72,7 +85,3 @@ bool LoadGameConfigs(FSpectrumEmu*pUI);
 bool LoadPOKFile(FGameConfig &config, const char *fname);
 
 
-bool SaveGameData(const FCodeAnalysisState& state, const char *fname);
-bool LoadGameData(FCodeAnalysisState& state, const char *fname);
-bool SaveROMData(const FCodeAnalysisState& state, const char *fname);
-bool LoadROMData(FCodeAnalysisState& state, const char *fname);

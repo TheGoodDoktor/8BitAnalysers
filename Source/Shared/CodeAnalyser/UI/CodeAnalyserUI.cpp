@@ -119,7 +119,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			{
 				const int kToolTipNoLines = 10;
 				ImGui::BeginTooltip();
-				const int startIndex = index;// std::max(index - (kToolTipNoLines / 2), 0);
+				const int startIndex = std::max(index - (kToolTipNoLines / 2), 0);
 				for(int line=0;line < kToolTipNoLines;line++)
 				{
 					if(startIndex + line < (int)state.ItemList.size())
@@ -618,7 +618,6 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Comment]))
 		{
-			//AddLabelAtAddress(state, state.pCursorItem->Address);
 			ImGui::OpenPopup("Enter Comment Text");
 			ImGui::SetWindowFocus("Enter Comment Text");
 		}
@@ -630,7 +629,10 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::AddCommentBlock]))
 		{
-			AddCommentBlock(state, viewState.pCursorItem->Address);
+			FCommentBlock* pCommentBlock = AddCommentBlock(state, viewState.pCursorItem->Address);
+			viewState.pCursorItem = pCommentBlock;
+			ImGui::OpenPopup("Enter Comment Text Multi");
+			ImGui::SetWindowFocus("Enter Comment Text Multi");
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)Key::Breakpoint]))
 		{
@@ -678,6 +680,18 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::SetKeyboardFocusHere();
 		if (ImGui::InputText("##comment", &viewState.pCursorItem->Comment, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::EndPopup();
+	}
+
+	if (ImGui::BeginPopup("Enter Comment Text Multi", ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::SetKeyboardFocusHere();
+		if(ImGui::InputTextMultiline("##comment", &viewState.pCursorItem->Comment,ImVec2(), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine))
+		{
+			state.bCodeAnalysisDataDirty = true;
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();

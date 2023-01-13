@@ -17,9 +17,6 @@
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;
 
-static const int g_kBinaryFileVersionNo = 14;
-static const int g_kBinaryFileMagic = 0xdeadface;
-
 bool AddGameConfig(FGameConfig *pConfig)
 {
 	g_GameConfigs.push_back(pConfig);
@@ -42,8 +39,6 @@ FGameConfig * CreateNewGameConfigFromSnapshot(const FGameSnapshot& snapshot)
 	return pNewConfig;
 }
 
-
-
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 {
 	json jsonConfigFile;
@@ -64,21 +59,6 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 		jsonConfigFile["SpriteConfigs"].push_back(spriteConfig);
 	}
 
-	/*for (const FCheat& cheat : config.Cheats)
-	{
-		json cheatJson;
-		cheatJson["Description"] = cheat.Description;
-		for (const FCheatMemoryEntry& entry : cheat.Entries)
-		{
-			json cheatEntryJson;
-			cheatEntryJson["Address"] = entry.Address;
-			cheatEntryJson["Value"] = entry.Value;
-			cheatJson["Entries"].push_back(cheatEntryJson);
-		}
-
-		jsonConfigFile["Cheats"].push_back(cheatJson);
-	}*/
-
 	// save character sets
 
 	// save options
@@ -86,8 +66,18 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 	optionsJson["NumberMode"] = (int)config.NumberDisplayMode;
 	optionsJson["ShowScanlineIndicator"] = config.bShowScanLineIndicator;
 	//optionsJson["Audio"] = config.Sou
+
+	// Output view options
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-		optionsJson["EnableCodeAnalysisView"].push_back(config.bCodeAnalysisViewEnabled[i]);
+	{
+		const FCodeAnalysisViewConfig& viewConfig = config.ViewConfigs[i];
+		json viewConfigJson;
+		viewConfigJson["Enabled"] = viewConfig.bEnabled;
+		viewConfigJson["ViewAddress"] = viewConfig.ViewAddress;
+
+		optionsJson["ViewConfigs"].push_back(viewConfigJson);
+	}
+
 	jsonConfigFile["Options"] = optionsJson;
 
 	std::ofstream outFileStream(fname);
@@ -136,29 +126,28 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 		sprConfig.Height = jsonSprConfig["Height"].get<int>();
 	}
 
-	/*for (const auto& cheatJson : jsonConfigFile["Cheats"])
-	{
-		FCheat cheat;
-		cheat.Description = cheatJson["Description"].get<std::string>();
-
-		for (const auto& cheatEntryJson : cheatJson["Entries"])
-		{
-			FCheatMemoryEntry entry;
-			entry.Address = cheatEntryJson["Address"].get<int>();
-			entry.Value = cheatEntryJson["Value"].get<int>();
-			cheat.Entries.push_back(entry);
-		}
-		config.Cheats.push_back(cheat);
-	}*/
-
 	// load options
 	if (jsonConfigFile["Options"].is_null() == false)
 	{
 		const json& optionsJson = jsonConfigFile["Options"];
 		config.NumberDisplayMode = (ENumberDisplayMode)optionsJson["NumberMode"];
 		config.bShowScanLineIndicator = optionsJson["ShowScanlineIndicator"];
-		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-			config.bCodeAnalysisViewEnabled[i] = optionsJson["EnableCodeAnalysisView"][i];
+
+		if (optionsJson.contains("EnableCodeAnalysisView"))
+		{
+			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+				config.ViewConfigs[i].bEnabled = optionsJson["EnableCodeAnalysisView"][i];
+		}
+		else if (optionsJson.contains("ViewConfigs"))
+		{
+			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+			{
+				FCodeAnalysisViewConfig& viewConfig = config.ViewConfigs[i];
+				const json& viewConfigJson = optionsJson["ViewConfigs"][i];
+				viewConfig.bEnabled = viewConfigJson["Enabled"];
+				viewConfig.ViewAddress = viewConfigJson["ViewAddress"];
+			}
+		}
 	}
 
 	return true;
@@ -256,570 +245,6 @@ bool LoadPOKFile(FGameConfig &config, const char *fname)
 	return false;
 }
 
-// Labels
-
-void SaveLabelsBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddress, uint16_t endAddress)
-{
-	int recordCount = 0;
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		if (state.GetLabelForAddress(i) != nullptr)
-			recordCount++;
-	}
-
-	fwrite(&recordCount, sizeof(int), 1, fp);
-
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		const FLabelInfo *pLabel = state.GetLabelForAddress(i);
-		if (pLabel != nullptr)
-		{
-			WriteStringToFile(std::string(magic_enum::enum_name(pLabel->LabelType)), fp);
-			fwrite(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
-			fwrite(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
-			WriteStringToFile(pLabel->Name, fp);
-			WriteStringToFile(pLabel->Comment, fp);
-			fwrite(&pLabel->Global, sizeof(bool), 1, fp);
-
-			// References?
-			long refCountPos = ftell(fp);
-			int noReferences = (int)pLabel->References.size();
-			fwrite(&noReferences, sizeof(int), 1, fp);
-			noReferences = 0;
-			for (const auto &ref : pLabel->References)
-			{
-				const uint16_t refAddr = ref.first;
-				if (refAddr >= startAddress && refAddr <= endAddress)	// only add references from region we are saving
-				{
-					fwrite(&refAddr, sizeof(refAddr), 1, fp);
-					noReferences++;
-				}
-			}
-
-			// fix up reference count
-			fseek(fp, refCountPos, SEEK_SET);
-			fwrite(&noReferences, sizeof(int), 1, fp);	// new reference count
-			fseek(fp, 0, SEEK_END);	// point back to end of file
-		}
-	}
-}
-
-void LoadLabelsBin(FCodeAnalysisState &state, FILE *fp,int versionNo, uint16_t startAddress, uint16_t endAddress)
-{
-	int recordCount = 0;
-
-	state.ResetLabelNames();
-
-	fread(&recordCount, sizeof(int), 1, fp);
-
-	for (int i = 0; i < recordCount; i++)
-	{
-		FLabelInfo *pLabel = FLabelInfo::Allocate();
-		
-		std::string enumVal;
-		ReadStringFromFile(enumVal, fp);
-		pLabel->LabelType = magic_enum::enum_cast<LabelType>(enumVal).value();
-		fread(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
-		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
-		ReadStringFromFile(pLabel->Name, fp);
-		ReadStringFromFile(pLabel->Comment, fp);
-
-		if (versionNo > 2)
-			fread(&pLabel->Global, sizeof(bool), 1, fp);
-		
-		// References?
-		if(versionNo > 1)
-		{
-			int noReferences = 0;
-			fread(&noReferences, sizeof(int), 1, fp);
-			for (int i=0;i< noReferences;i++)
-			{
-				uint16_t refAddr;
-				fread(&refAddr, sizeof(refAddr), 1, fp);
-				if (refAddr >= startAddress && refAddr <= endAddress)
-				{
-					pLabel->References[refAddr] = 1;
-				}
-				else
-				{
-					LOGWARNING("Label reference address %x outside of range",refAddr);
-				}
-			}
-		}
-
-		state.SetLabelForAddress(pLabel->Address,pLabel);
-	}
-}
-
-// Code Info
-
-void SaveCodeInfoBin(const FCodeAnalysisState &state, FILE *fp, uint16_t startAddress, uint16_t endAddress)
-{
-	int recordCount = 0;
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		if (state.GetCodeInfoForAddress(i) != nullptr)
-			recordCount++;
-	}
-
-	fwrite(&recordCount, sizeof(int), 1, fp);
-	
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		const FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(i);
-		if (pCodeInfo != nullptr)
-		{
-			fwrite(&pCodeInfo->OperandType, sizeof(pCodeInfo->OperandType), 1, fp);
-			fwrite(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
-			fwrite(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
-			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
-			WriteStringToFile(pCodeInfo->Comment, fp);
-		}
-	}
-}
-
-void LoadCodeInfoBin(FCodeAnalysisState &state, FILE *fp, int versionNo, uint16_t startAddress, uint16_t endAddress)
-{
-	int recordCount;
-	fread(&recordCount, sizeof(int), 1, fp);
-
-	for (int i = 0; i < recordCount; i++)
-	{
-		FCodeInfo *pCodeInfo = FCodeInfo::Allocate();
-
-		if(versionNo > 8)
-			fread(&pCodeInfo->OperandType, sizeof(pCodeInfo->OperandType), 1, fp);
-
-		if(versionNo >= 4)
-			fread(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
-
-		fread(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
-		fread(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
-		if (versionNo < 10)
-		{
-			fread(&pCodeInfo->JumpAddress, sizeof(pCodeInfo->JumpAddress), 1, fp);
-			fread(&pCodeInfo->PointerAddress, sizeof(pCodeInfo->PointerAddress), 1, fp);
-			std::string tmp;
-			ReadStringFromFile(tmp, fp);
-		}
-		//ReadStringFromFile(pCodeInfo->Text, fp);
-		ReadStringFromFile(pCodeInfo->Comment, fp);
-		for(int codeByte = 0;codeByte < pCodeInfo->ByteSize;codeByte++)	// set for whole instruction address range
-			state.SetCodeInfoForAddress(pCodeInfo->Address + codeByte, pCodeInfo);
-	}
-}
-
-// Data Info
-
-void SaveDataInfoBin(const FCodeAnalysisState& state, FILE *fp, uint16_t startAddress, uint16_t endAddress)
-{
-	int recordCount = 0;
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		if (state.GetReadDataInfoForAddress(i) != nullptr)
-			recordCount++;
-	}
-
-	fwrite(&recordCount, sizeof(int), 1, fp);
-
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		const FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(i);
-		if (pDataInfo != nullptr)
-		{
-			WriteStringToFile(std::string(magic_enum::enum_name(pDataInfo->DataType)), fp);
-			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
-			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
-			fwrite(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
-			fwrite(&pDataInfo->CharSetAddress, sizeof(pDataInfo->CharSetAddress), 1, fp);
-			fwrite(&pDataInfo->OperandType, sizeof(pDataInfo->OperandType), 1, fp);
-			fwrite(&pDataInfo->EmptyCharNo, sizeof(pDataInfo->EmptyCharNo), 1, fp);
-			WriteStringToFile(pDataInfo->Comment, fp);
-
-			// Reads & Writes?
-			int noReads = 0;
-			const long noReadsFilePos = ftell(fp);
-			fwrite(&noReads, sizeof(int), 1, fp);
-			for (const auto &ref : pDataInfo->Reads)
-			{
-				const uint16_t refAddr = ref.first;
-				if (refAddr >= startAddress && refAddr <= endAddress)
-				{
-					fwrite(&refAddr, sizeof(refAddr), 1, fp);
-					noReads++;
-				}
-			}
-
-			// patch number of reads
-			fseek(fp, noReadsFilePos, SEEK_SET);
-			fwrite(&noReads, sizeof(int), 1, fp);
-			fseek(fp, 0, SEEK_END);
-
-
-			int noWrites = 0;
-			const long noWritesFilePos = ftell(fp);
-			fwrite(&noWrites, sizeof(int), 1, fp);
-			for (const auto &ref : pDataInfo->Writes)
-			{
-				const uint16_t refAddr = ref.first;
-				if (refAddr >= startAddress && refAddr <= endAddress)
-				{
-					fwrite(&refAddr, sizeof(refAddr), 1, fp);
-					noWrites++;
-				}
-			}
-
-			// patch number of writes
-			fseek(fp, noWritesFilePos, SEEK_SET);
-			fwrite(&noWrites, sizeof(int), 1, fp);
-			fseek(fp, 0, SEEK_END);
-		}
-	}
-	
-	
-}
-
-void LoadDataInfoBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_t startAddress, uint16_t endAddress)
-{
-	int recordCount;
-	fread(&recordCount, sizeof(int), 1, fp);
-
-	for (int i = 0; i < recordCount; i++)
-	{
-		std::string enumVal;
-		ReadStringFromFile(enumVal, fp);
-		uint16_t address = 0;
-		fread(&address, sizeof(address), 1, fp);
-
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
-		pDataInfo->Address = address;
-		pDataInfo->DataType = magic_enum::enum_cast<DataType>(enumVal).value();
-		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
-		if (versionNo > 5)
-		{
-			fread(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
-			if (pDataInfo->bShowCharMap)
-			{
-				pDataInfo->DataType = DataType::CharacterMap;
-				pDataInfo->bShowCharMap = false;
-			}
-
-			if (pDataInfo->bShowBinary)
-			{
-				pDataInfo->DataType = DataType::Bitmap;
-				pDataInfo->bShowBinary = false;
-			}
-		}
-
-		if (versionNo > 10)
-		{
-			fread(&pDataInfo->CharSetAddress, sizeof(pDataInfo->CharSetAddress), 1, fp);
-			fread(&pDataInfo->OperandType, sizeof(pDataInfo->OperandType), 1, fp);
-		}
-
-		if (versionNo > 12)
-		{
-			fread(&pDataInfo->EmptyCharNo, sizeof(pDataInfo->EmptyCharNo), 1, fp);
-		}
-
-		ReadStringFromFile(pDataInfo->Comment, fp);
-
-		// References?
-		if (versionNo > 1)
-		{
-			int noReads;
-			fread(&noReads, sizeof(int), 1, fp);
-			for (int i = 0; i < noReads; i++)
-			{
-				uint16_t dataAddr;
-				fread(&dataAddr, sizeof(uint16_t), 1, fp);
-				if (dataAddr >= startAddress && dataAddr <= endAddress)
-					pDataInfo->Reads[dataAddr] = 1;
-				else
-					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
-			}
-		}
-		if (versionNo > 2)
-		{
-			int noWrites;
-			fread(&noWrites, sizeof(int), 1, fp);
-			for (int i = 0; i < noWrites; i++)
-			{
-				uint16_t dataAddr;
-				fread(&dataAddr, sizeof(uint16_t), 1, fp);
-				if (dataAddr >= startAddress && dataAddr <= endAddress)
-					pDataInfo->Writes[dataAddr] = 1;
-				else
-					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
-			}
-		}
-
-		//state.SetReadDataInfoForAddress(pDataInfo->Address, pDataInfo);
-		//state.SetWriteDataInfoForAddress(pDataInfo->Address, pDataInfo);
-	}
-}
-
-void SaveCommentBlocksBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddress, uint16_t endAddress)
-{
-	int recordCount = 0;
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		if (state.GetCommentBlockForAddress(i) != nullptr)
-			recordCount++;
-	}
-
-	fwrite(&recordCount, sizeof(int), 1, fp);
-
-	for (int i = startAddress; i <= endAddress; i++)
-	{
-		const FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(i);
-		if (pCommentBlock != nullptr)
-		{
-			fwrite(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
-			WriteStringToFile(pCommentBlock->Comment, fp);
-		}
-	}
-}
-
-void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t startAddress, uint16_t endAddress)
-{
-	int recordCount;
-	fread(&recordCount, sizeof(int), 1, fp);
-
-	for (int i = 0; i < recordCount; i++)
-	{
-		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
-		fread(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
-		ReadStringFromFile(pCommentBlock->Comment, fp);
-		state.SetCommentBlockForAddress(pCommentBlock->Address, pCommentBlock);
-	}
-}
-
-
-
-// Binary save
-bool SaveGameDataBin(const FCodeAnalysisState& state, const char *fname, uint16_t addrStart, uint16_t addrEnd)
-{
-	FILE *fp = fopen(fname, "wb");
-	if (fp == NULL)
-		return false;
-
-	fwrite(&g_kBinaryFileMagic, sizeof(int), 1, fp);
-	fwrite(&g_kBinaryFileVersionNo, sizeof(int), 1, fp);
-
-	fwrite(&addrStart, sizeof(uint16_t), 1, fp);	// write memory range of this block
-	fwrite(&addrEnd, sizeof(uint16_t), 1, fp);
-
-	for (int i = addrStart; i <= addrEnd; i++)
-	{
-		const uint16_t invalid = 0;
-		const uint16_t addr = state.GetLastWriterForAddress(i);
-		if (addr >= addrStart && addr <= addrEnd)
-			fwrite(&addr, sizeof(uint16_t), 1, fp);
-		else
-			fwrite(&invalid, sizeof(uint16_t), 1, fp);
-	}
-	
-	SaveLabelsBin(state, fp, addrStart, addrEnd);
-	SaveCodeInfoBin(state, fp, addrStart, addrEnd);
-	SaveDataInfoBin(state, fp, addrStart, addrEnd);
-	SaveCommentBlocksBin(state, fp, addrStart, addrEnd);
-
-	// Save Watches
-	int noWatches = 0;// (int)state.GetWatches().size();
-	const long noWatchPos = ftell(fp);
-	fwrite(&noWatches, sizeof(noWatches), 1, fp);
-
-	for (const auto& watch : state.GetWatches())
-	{
-		if (watch >= addrStart && watch <= addrEnd)
-		{
-			fwrite(&watch, sizeof(uint16_t), 1, fp);
-			noWatches++;
-		}
-	}
-
-	// patch up watch count
-	fseek(fp, noWatchPos, SEEK_SET);
-	fwrite(&noWatches, sizeof(noWatches), 1, fp);
-	fseek(fp, 0, SEEK_END);
-
-	// Save char sets
-	{
-		int noCharSets = 0;
-		const long noCharSetsPos = ftell(fp);
-		fwrite(&noCharSets, sizeof(noCharSets), 1, fp);
-
-		for (int i = 0; i < GetNoCharacterSets(); i++)
-		{
-			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
-			const uint16_t addr = pCharSet->Address;
-			if (addr >= addrStart && addr <= addrEnd)
-			{
-				fwrite(&pCharSet->Address, sizeof(pCharSet->Address), 1, fp);
-				fwrite(&pCharSet->AttribAddress, sizeof(pCharSet->AttribAddress), 1, fp);
-				fwrite(&pCharSet->MaskInfo, sizeof(pCharSet->MaskInfo), 1, fp);
-				fwrite(&pCharSet->ColourInfo, sizeof(pCharSet->ColourInfo), 1, fp);
-				noCharSets++;
-			}
-		}
-
-		// patch up char set count
-		fseek(fp, noCharSetsPos, SEEK_SET);
-		fwrite(&noCharSets, sizeof(noCharSets), 1, fp);
-		fseek(fp, 0, SEEK_END);
-	}
-
-	// Save char maps
-	{
-		int noCharMaps = 0;
-		const long noCharMapsPos = ftell(fp);
-		fwrite(&noCharMaps, sizeof(noCharMaps), 1, fp);
-
-		for (int i = 0; i < GetNoCharacterMaps(); i++)
-		{
-			const FCharacterMap* pCharMap = GetCharacterMapFromIndex(i);
-			const uint16_t addr = pCharMap->Params.Address;
-			if (addr >= addrStart && addr <= addrEnd)
-			{
-				fwrite(&pCharMap->Params.Address, sizeof(pCharMap->Params.Address), 1, fp);
-				fwrite(&pCharMap->Params.Width, sizeof(pCharMap->Params.Width), 1, fp);
-				fwrite(&pCharMap->Params.Height, sizeof(pCharMap->Params.Height), 1, fp);
-				fwrite(&pCharMap->Params.CharacterSet, sizeof(pCharMap->Params.CharacterSet), 1, fp);
-				fwrite(&pCharMap->Params.IgnoreCharacter, sizeof(pCharMap->Params.IgnoreCharacter), 1, fp);
-				noCharMaps++;
-			}
-		}
-
-		// patch up char set count
-		fseek(fp, noCharMapsPos, SEEK_SET);
-		fwrite(&noCharMaps, sizeof(noCharMaps), 1, fp);
-		fseek(fp, 0, SEEK_END);
-	}
-	fclose(fp);
-	return true;
-}
-
-// Binary load
-bool LoadGameDataBin(FCodeAnalysisState& state, const char *fname, uint16_t addrStart, uint16_t addrEnd)
-{
-	FILE *fp = fopen(fname, "rb");
-	if (fp == NULL)
-		return false;
-	int magic, versionNo;
-	fread(&magic, sizeof(int), 1, fp);
-	if (magic != g_kBinaryFileMagic)
-	{
-		fclose(fp);
-		return false;
-	}
-
-	fread(&versionNo, sizeof(int), 1, fp);
-
-	if (versionNo >= 8)
-	{
-		fread(&addrStart, sizeof(uint16_t), 1, fp);
-		fread(&addrEnd, sizeof(uint16_t), 1, fp);
-
-		for (int i = addrStart; i <= addrEnd; i++)
-		{
-			uint16_t lastWriter;
-			fread(&lastWriter, sizeof(uint16_t), 1, fp);
-			state.SetLastWriterForAddress(i, lastWriter);
-		}
-	}
-	else if (versionNo >= 4)
-	{
-		for (int i = 0; i < (1 << 16); i++)
-		{
-			uint16_t lastWriter;
-			fread(&lastWriter, sizeof(uint16_t), 1, fp);
-			state.SetLastWriterForAddress(i, lastWriter);
-		}
-	}
-
-	LoadLabelsBin(state, fp, versionNo, addrStart, addrEnd);
-	LoadCodeInfoBin(state, fp, versionNo, addrStart, addrEnd);
-	LoadDataInfoBin(state, fp, versionNo, addrStart, addrEnd);
-	if (versionNo >= 5)
-		LoadCommentBlocksBin(state, fp, versionNo, addrStart, addrEnd);
-
-	// watches
-	if (versionNo >= 7)
-	{
-		int noWatches;
-		fread(&noWatches, sizeof(noWatches), 1, fp);
-
-		for (int i=0;i<noWatches;i++)
-		{
-			uint16_t watch;
-			fread(&watch, sizeof(uint16_t), 1, fp);
-			if (watch >= addrStart && watch <= addrEnd)
-				state.AddWatch(watch);
-		}
-	}
-
-	// char sets
-	if (versionNo > 10)
-	{
-		int noCharSets;
-		fread(&noCharSets, sizeof(noCharSets), 1, fp);
-
-		for (int i = 0; i < noCharSets; i++)
-		{
-			FCharSetCreateParams params;
-			fread(&params.Address, sizeof(params.Address), 1, fp);
-			if (versionNo > 11)
-			{
-				fread(&params.AttribsAddress, sizeof(params.AttribsAddress), 1, fp);
-				fread(&params.MaskInfo, sizeof(params.MaskInfo), 1, fp);
-				fread(&params.ColourInfo, sizeof(params.ColourInfo), 1, fp);
-
-			}
-			CreateCharacterSetAt(state, params);
-		}
-	}
-
-	// char maps
-	if(versionNo > 13)
-	{
-		int noCharMaps;
-		fread(&noCharMaps, sizeof(noCharMaps), 1, fp);
-
-		for (int i = 0; i < noCharMaps; i++)
-		{
-			FCharMapCreateParams params;
-			fread(&params.Address, sizeof(params.Address), 1, fp);
-			fread(&params.Width, sizeof(params.Width), 1, fp);
-			fread(&params.Height, sizeof(params.Height), 1, fp);
-			fread(&params.CharacterSet, sizeof(params.CharacterSet), 1, fp);
-			fread(&params.IgnoreCharacter, sizeof(params.IgnoreCharacter), 1, fp);
-			CreateCharacterMap(state, params);
-		}
-	}
-	fclose(fp);
-	return true;
-}
-
-bool SaveGameData(const FCodeAnalysisState& state, const char *fname)
-{
-	return SaveGameDataBin(state, fname,0x4000, 0xffff);
-}
-
-bool SaveROMData(const FCodeAnalysisState& state, const char *fname)
-{
-	return SaveGameDataBin(state, fname, 0x0000, 0x3fff);
-}
-
-bool LoadGameData(FCodeAnalysisState& state, const char *fname)
-{
-	return LoadGameDataBin(state,fname,0x4000,0xffff);
-}
-
-bool LoadROMData(FCodeAnalysisState& state, const char *fname)
-{
-	return LoadGameDataBin(state, fname,0x0000,0x3fff);
-}
 
 bool LoadGameConfigs(FSpectrumEmu *pEmu)
 {
