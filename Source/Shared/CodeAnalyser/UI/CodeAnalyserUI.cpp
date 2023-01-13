@@ -403,6 +403,12 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		{
 			dl->AddTriangleFilled(a, b, c, pc_color);
 			dl->AddTriangle(a, b, c, brd_color);
+
+			if (state.CPUInterface->IsStopped())
+			{
+				const ImVec2 lineStart(pos.x + 18, ImGui::GetItemRectMax().y);
+				dl->AddLine(lineStart, ImGui::GetItemRectMax(), pc_color);
+			}
 		}
 		else
 		{
@@ -443,6 +449,28 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	// grey out NOPed code
 	if(pCodeInfo->bNOPped)
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+	
+
+	if (state.Config.bShowOpcodeValues)
+	{
+		// Draw hex values of the instruction's opcode
+		char tmp[16]= {0};
+		std::string strHexValues;
+		for (int i=0; i<4; i++)
+		{
+			if (i < pCodeInfo->ByteSize)
+				sprintf_s(tmp, "%02X", state.CPUInterface->ReadByte(pCodeInfo->Address + i));
+			else
+				sprintf_s(tmp, "   ");
+
+			strHexValues += tmp;
+			if (i < pCodeInfo->ByteSize)
+				strHexValues += " ";
+		}
+		strHexValues += " ";
+		ImGui::Text("%s", strHexValues.c_str());
+		ImGui::SameLine();
+	}
 
 	ImGui::Text("%s", pCodeInfo->Text.c_str());
 
