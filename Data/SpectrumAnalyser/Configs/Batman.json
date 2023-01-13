@@ -1,14 +1,24 @@
 {
     "Name": "Batman",
     "Options": {
-        "EnableCodeAnalysisView": [
-            true,
-            false,
-            false,
-            false
-        ],
-        "NumberMode": 2,
-        "ShowScanlineIndicator": false
+        "ViewConfigs": [
+            {
+                "Enabled": true,
+                "ViewAddress": 34458
+            },
+            {
+                "Enabled": true,
+                "ViewAddress": 38894
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            }
+        ]
     },
     "SnapshotFile": "./Games/Batman.z80"
 }
