@@ -26,6 +26,7 @@
 #include "ui/ui_zx.h"
 
 #include <map>
+#include <string>
 #include "Viewers/SpriteViewer.h"
 #include "MemoryHandlers.h"
 //#include "Disassembler.h"
@@ -59,6 +60,7 @@ struct FSpectrumConfig
 {
 	ESpectrumModel	Model;
 	int				NoStateBuffers = 0;
+	std::string		SpecificGame;
 };
 
 struct FGame
@@ -197,8 +199,6 @@ public:
 
 	bool bShowImGuiDemo = false;
 	bool bShowImPlotDemo = false;
-	bool bShowScanLineIndicator = false;
-	bool bEnableAudio = false;
 private:
 	z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;

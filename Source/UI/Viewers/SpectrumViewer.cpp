@@ -7,6 +7,7 @@
 #include "../SpectrumConstants.h"
 #include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <UI/Viewers/GraphicsViewer.h>
+#include "../GlobalConfig.h"
 
 #define NOMINMAX // without this std::min and std::max fail to compile
 #include <windows.h> // for VK_* key defines
@@ -22,6 +23,7 @@ void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 
 void FSpectrumViewer::Draw()
 {
+	const FGlobalConfig& config = GetGlobalConfig();
 	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->CodeAnalysis;
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 
@@ -34,7 +36,7 @@ void FSpectrumViewer::Draw()
 	ImGui::Image(pSpectrumEmu->Texture, ImVec2(320, 256));
 
 	// Draw an indicator to show which scanline is being drawn
-	if (pSpectrumEmu->bShowScanLineIndicator && pSpectrumEmu->UIZX.dbg.dbg.stopped)
+	if (config.bShowScanLineIndicator && pSpectrumEmu->UIZX.dbg.dbg.stopped)
 	{
 		// Compensate for the fact the border area on a real spectrum is bigger than the emulated spectrum.
 		const int topScreenScanLine = pSpectrumEmu->ZXEmuState.top_border_scanlines - 32;

@@ -70,8 +70,8 @@ struct FGameConfig
 	FCodeAnalysisViewConfig	ViewConfigs[FCodeAnalysisState::kNoViewStates];
 
 	//bool	bCodeAnalysisViewEnabled[FCodeAnalysisState::kNoViewStates] = { true,false,false,false };
-	bool	bShowScanLineIndicator = false;
-	ENumberDisplayMode		NumberDisplayMode = ENumberDisplayMode::HexAitch;
+	//bool	bShowScanLineIndicator = false;
+	//ENumberDisplayMode		NumberDisplayMode = ENumberDisplayMode::HexAitch;
 };
 
 bool AddGameConfig(FGameConfig *pConfig);

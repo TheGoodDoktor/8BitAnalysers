@@ -63,8 +63,8 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 
 	// save options
 	json optionsJson;
-	optionsJson["NumberMode"] = (int)config.NumberDisplayMode;
-	optionsJson["ShowScanlineIndicator"] = config.bShowScanLineIndicator;
+	//optionsJson["NumberMode"] = (int)config.NumberDisplayMode;
+	//optionsJson["ShowScanlineIndicator"] = config.bShowScanLineIndicator;
 	//optionsJson["Audio"] = config.Sou
 
 	// Output view options
@@ -130,8 +130,8 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	if (jsonConfigFile["Options"].is_null() == false)
 	{
 		const json& optionsJson = jsonConfigFile["Options"];
-		config.NumberDisplayMode = (ENumberDisplayMode)optionsJson["NumberMode"];
-		config.bShowScanLineIndicator = optionsJson["ShowScanlineIndicator"];
+		//config.NumberDisplayMode = (ENumberDisplayMode)optionsJson["NumberMode"];
+		//config.bShowScanLineIndicator = optionsJson["ShowScanlineIndicator"];
 
 		if (optionsJson.contains("EnableCodeAnalysisView"))
 		{

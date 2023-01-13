@@ -18,6 +18,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include <windows.h>
 
 #include "GameConfig.h"
+#include "GlobalConfig.h"
 #include "GameData.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include "GameViewers/GameViewer.h"
@@ -53,6 +54,8 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 
 #define ENABLE_RZX 0
+
+const char* kGlobalConfigFilename = "GlobalConfig.json";
 
 /* output an unsigned 8-bit value as hex string */
 void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data) 
@@ -393,7 +396,7 @@ void gfx_destroy_texture(void* h)
 static void PushAudio(const float* samples, int num_samples, void* user_data)
 {
 	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
-	if(pEmu->bEnableAudio)
+	if(GetGlobalConfig().bEnableAudio)
 		saudio_push(samples, num_samples);
 }
 
@@ -577,6 +580,9 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 {
 	// Initialise Emulator
+	LoadGlobalConfig(kGlobalConfigFilename);
+	FGlobalConfig& globalConfig = GetGlobalConfig();
+	SetNumberDisplayMode(globalConfig.NumberDisplayMode);
 		
 	// setup pixel buffer
 	const size_t pixelBufferSize = 320 * 256 * 4;
@@ -701,13 +707,29 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// run initial analysis
 	InitialiseCodeAnalysis(CodeAnalysis,this);
 	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
-	
+
+	// load the command line game if none specified then load the last game
+	if (config.SpecificGame.empty() == false)
+		StartGame(config.SpecificGame.c_str());
+	else if(globalConfig.LastGame.empty() == false)
+		StartGame(globalConfig.LastGame.c_str());
+
 	return true;
 }
 
 void FSpectrumEmu::Shutdown()
 {
 	SaveCurrentGameData();	// save on close
+
+	// Save Global Config - move to function?
+	FGlobalConfig& config = GetGlobalConfig();
+
+	if (pActiveGame != nullptr)
+		config.LastGame = pActiveGame->pConfig->Name;
+
+	config.NumberDisplayMode = GetNumberDisplayMode();
+
+	SaveGlobalConfig(kGlobalConfigFilename);
 }
 
 
@@ -746,8 +768,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 		CodeAnalysis.ViewState[i].GoToAddress = pGameConfig->ViewConfigs[i].ViewAddress;
 	}
 
-	bShowScanLineIndicator = pGameConfig->bShowScanLineIndicator;
-	SetNumberDisplayMode(pGameConfig->NumberDisplayMode);
+
 
 	// load game data if we can
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
@@ -812,8 +833,6 @@ void FSpectrumEmu::SaveCurrentGameData()
 			EnsureDirectoryExists("GameData");
 
 			// set config values
-			pGameConfig->NumberDisplayMode = GetNumberDisplayMode();
-			pGameConfig->bShowScanLineIndicator = bShowScanLineIndicator;
 			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 			{
 				const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
@@ -1029,6 +1048,8 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		}
 		if (ImGui::BeginMenu("Options"))
 		{
+			FGlobalConfig& config = GetGlobalConfig();
+
 			if (ImGui::BeginMenu("Number Mode"))
 			{
 				if (ImGui::MenuItem("Decimal", 0, GetNumberDisplayMode() == ENumberDisplayMode::Decimal))
@@ -1061,8 +1082,8 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 				ImGui::EndMenu();
 			}
-			ImGui::MenuItem("Scan Line Indicator", 0, &bShowScanLineIndicator);
-			ImGui::MenuItem("Enable Audio", 0, &bEnableAudio);
+			ImGui::MenuItem("Scan Line Indicator", 0, &config.bShowScanLineIndicator);
+			ImGui::MenuItem("Enable Audio", 0, &config.bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
 #ifndef RELEASE
 			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);

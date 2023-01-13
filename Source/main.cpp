@@ -117,13 +117,10 @@ int main(int argc, char** argv)
 	// Speccy 
 	FSpectrumConfig config;
 	config.NoStateBuffers = 10;
-	//g_pSpeccy = InitSpeccy(config);
-	//FSpeccy &speccy = *g_pSpeccy;
+    if (argc > 1)
+        config.SpecificGame = argv[1];
     FSpectrumEmu* pSpectrumEmulator = new FSpectrumEmu;
     pSpectrumEmulator->Init(config);
-
-	if (argc > 1)
-        pSpectrumEmulator->StartGame(argv[1]);
 
     // The skool file to import can be passed as the second argument, following the name of the game to start.
     if (argc > 2)
