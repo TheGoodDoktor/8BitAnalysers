@@ -54,8 +54,6 @@ enum class ESpectrumModel
 	Spectrum128K
 };
 
-
-
 struct FSpectrumConfig
 {
 	ESpectrumModel	Model;
@@ -200,8 +198,6 @@ public:
 
 	bool bShowImGuiDemo = false;
 	bool bShowImPlotDemo = false;
-
-	bool bShowOpcodeValues = false;
 private:
 	z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;

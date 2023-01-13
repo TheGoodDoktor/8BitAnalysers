@@ -432,10 +432,6 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		dl->AddCircle(mid, 7, brd_color);
 	}
 
-	//ImGui::PushStyleColor(ImGuiCol_Text, col);
-	//ImGui::Text(">> ");
-	//ImGui::SameLine();
-	//ImGui::PopStyleColor();
 	if(pCodeInfo->bSelfModifyingCode == true || pCodeInfo->Text.empty())
 	{
 		//UpdateCodeInfoForAddress(state, pCodeInfo->Address);
@@ -450,6 +446,12 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	if(pCodeInfo->bNOPped)
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
 	
+	// TODO: You could display SMC here
+	// Using something like:
+	// if(pCodeInfo->bSelfModifyingCode)
+	// FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(pCodeInfo->Address + i);
+	//if (pOperandData->Writes.empty() == false)
+	//{
 
 	if (state.Config.bShowOpcodeValues)
 	{
