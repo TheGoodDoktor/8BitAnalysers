@@ -1,14 +1,24 @@
 {
     "Name": "Jack the Nipper II",
     "Options": {
-        "EnableCodeAnalysisView": [
-            true,
-            false,
-            false,
-            false
-        ],
-        "NumberMode": 2,
-        "ShowScanlineIndicator": false
+        "ViewConfigs": [
+            {
+                "Enabled": true,
+                "ViewAddress": 48437
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            }
+        ]
     },
     "SnapshotFile": "./Games/Jack the Nipper II.z80"
 }
