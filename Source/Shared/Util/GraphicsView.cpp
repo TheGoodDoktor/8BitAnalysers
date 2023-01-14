@@ -218,6 +218,11 @@ int GetNoCharacterSets()
 	return (int)g_CharacterSets.size();
 }
 
+void DeleteCharacterSet(int index)
+{
+	g_CharacterSets.erase(g_CharacterSets.begin() + index);
+}
+
 FCharacterSet* GetCharacterSetFromIndex(int index)
 {
 	if (index >= 0 && index < GetNoCharacterSets())
@@ -320,6 +325,11 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 int GetNoCharacterMaps()
 {
 	return (int)g_CharacterMaps.size();
+}
+
+void DeleteCharacterMap(int index)
+{
+	g_CharacterMaps.erase(g_CharacterMaps.begin() + index);
 }
 
 FCharacterMap* GetCharacterMapFromIndex(int index)

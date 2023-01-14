@@ -554,9 +554,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		DrawColourInfoComboBox(&params.ColourInfo);
 		if (params.ColourInfo == EColourInfo::MemoryLUT)
 		{
-			const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
-			const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
-			ImGui::InputScalar("Attribs Address", ImGuiDataType_U16, &params.AttribsAddress, 0, 0,format, inputFlags);
+			DrawAddressInput("Attribs Address", &params.AttribsAddress);
 		}
 
 		FCharacterSet *pCharSet = GetCharacterSetFromAddress(pDataInfo->Address);

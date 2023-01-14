@@ -85,14 +85,19 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 
 	if (ImGui::BeginChild("##charsetselect", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), true))
 	{
+		int deleteIndex = -1;
 		for (int i = 0; i < GetNoCharacterSets(); i++)
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
 			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
+			const bool bSelected = selectedCharSetAddr == pCharSet->Params.Address;
+
 			if (pSetLabel == nullptr)
 				continue;
 
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), selectedCharSetAddr == pCharSet->Params.Address))
+			ImGui::PushID(i);
+
+			if (ImGui::Selectable(pSetLabel->Name.c_str(), bSelected))
 			{
 				selectedCharSetAddr = pCharSet->Params.Address;
 				if (params.Address != pCharSet->Params.Address)
@@ -100,8 +105,23 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 					params = pCharSet->Params;
 				}
 			}
+
+			if (ImGui::BeginPopupContextItem("char set context menu"))
+			{
+				if (ImGui::Selectable("Delete"))
+				{
+					deleteIndex = i;
+				}
+				ImGui::EndPopup();
+			}
+
+			ImGui::PopID();
 		}
+
+		if(deleteIndex != -1)
+			DeleteCharacterSet(deleteIndex);
 	}
+
 	ImGui::EndChild();
 	ImGui::SameLine();
 	if (ImGui::BeginChild("##charsetdetails", ImVec2(0, 0), true))
@@ -110,9 +130,14 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 		if (pCharSet)
 		{
 			params.Address = selectedCharSetAddr;
+			DrawAddressInput("Address",&params.Address);
 			DrawAddressLabel(state, viewState, selectedCharSetAddr);
 			DrawMaskInfoComboBox(&params.MaskInfo);
 			DrawColourInfoComboBox(&params.ColourInfo);
+			if (params.ColourInfo == EColourInfo::MemoryLUT)
+			{
+				DrawAddressInput("Attribs Address", &params.AttribsAddress);
+			}
 			ImGui::Checkbox("Dynamic", &params.bDynamic);
 			if (ImGui::Button("Update Character Set"))
 			{
@@ -318,15 +343,21 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 
 	if (ImGui::BeginChild("##charmapselect", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), true))
 	{
+		int deleteIndex = -1;
+
 		// List character maps
 		for (int i = 0; i < GetNoCharacterMaps(); i++)
 		{
 			const FCharacterMap* pCharMap = GetCharacterMapFromIndex(i);
 			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharMap->Params.Address);
+			const bool bSelected = uiState.SelectedCharMapAddr == pCharMap->Params.Address;
+
 			if (pSetLabel == nullptr)
 				continue;
 
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), uiState.SelectedCharMapAddr == pCharMap->Params.Address))
+			ImGui::PushID(i);
+
+			if (ImGui::Selectable(pSetLabel->Name.c_str(), bSelected))
 			{
 				uiState.SelectedCharMapAddr = pCharMap->Params.Address;
 				if (uiState.SelectedCharMapAddr != uiState.Params.Address)
@@ -336,8 +367,24 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 					uiState.SelectedCharX = -1;
 					uiState.SelectedCharY = -1;
 				}
+			}			
+
+			if (ImGui::BeginPopupContextItem("char map context menu"))
+			{
+				if (ImGui::Selectable("Delete"))
+				{
+					deleteIndex = i;
+				}
+				ImGui::EndPopup();
 			}
+
+			ImGui::PopID();
 		}
+
+		if(deleteIndex != -1)
+			DeleteCharacterMap(deleteIndex);
+
+		
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();

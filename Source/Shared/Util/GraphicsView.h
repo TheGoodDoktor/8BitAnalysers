@@ -108,6 +108,7 @@ uint32_t GetColFromAttr(uint8_t colBits, bool bBright);
 void InitCharacterSets();
 void UpdateCharacterSets(FCodeAnalysisState& state);
 int GetNoCharacterSets();
+void DeleteCharacterSet(int index);
 FCharacterSet* GetCharacterSetFromIndex(int index);
 FCharacterSet* GetCharacterSetFromAddress(uint16_t address);
 void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params);
@@ -115,6 +116,7 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 
 // Character Maps
 int GetNoCharacterMaps();
+void DeleteCharacterMap(int index);
 FCharacterMap* GetCharacterMapFromIndex(int index);
 FCharacterMap* GetCharacterMapFromAddress(uint16_t address);
 bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& params);
