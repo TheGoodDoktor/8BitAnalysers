@@ -53,4 +53,5 @@ void CodeAnalyserGoToAddress(FCodeAnalysisViewState& state, uint16_t newAddress,
 void DrawComment(const FItem* pItem, float offset = 0.0f);
 
 // util functions - move?
+void DrawU8Input(const char* label, uint8_t* value);
 void DrawAddressInput(const char* label, uint16_t* value);

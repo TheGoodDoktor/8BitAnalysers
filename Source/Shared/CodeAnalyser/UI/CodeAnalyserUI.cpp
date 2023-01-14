@@ -1472,10 +1472,18 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 }
 
 // Util functions - move?
+void DrawU8Input(const char* label, uint8_t* value)
+{
+	const char* format = "%02X";
+	int flags = ImGuiInputTextFlags_CharsHexadecimal;
+	ImGui::InputScalar(label, ImGuiDataType_U8, value, 0, 0, format, flags);
+}
+
 void DrawAddressInput(const char* label, uint16_t* value)
 {
 	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 	const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
 	ImGui::InputScalar(label, ImGuiDataType_U16, value, 0, 0, format, inputFlags);
 }
+
 

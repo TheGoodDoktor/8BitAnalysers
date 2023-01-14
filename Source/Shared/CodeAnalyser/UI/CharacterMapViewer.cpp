@@ -179,9 +179,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 		params.Width = sz[0];
 		params.Height = sz[1];
 	}
-	const char* format = "%02X";
-	int flags = ImGuiInputTextFlags_CharsHexadecimal;
-	ImGui::InputScalar("Null Character", ImGuiDataType_U8, &params.IgnoreCharacter, 0, 0, format, flags);
+	DrawU8Input("Null Character", &params.IgnoreCharacter);
 
 	if (ImGui::Button("Apply"))
 	{
