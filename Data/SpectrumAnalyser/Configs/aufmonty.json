@@ -1,4 +1,26 @@
 {
     "Name": "aufmonty",
+    "Options": {
+        "NumberMode": 0,
+        "ShowScanlineIndicator": false,
+        "ViewConfigs": [
+            {
+                "Enabled": true,
+                "ViewAddress": 41448
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            }
+        ]
+    },
     "SnapshotFile": "./Games/aufmonty.z80"
 }
