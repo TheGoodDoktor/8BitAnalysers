@@ -171,6 +171,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	DrawAddressLabel(state, viewState, uiState.SelectedCharMapAddr);
 
 	// Display and edit params
+	DrawAddressInput("Address", &params.Address);
 	DrawCharacterSetComboBox(state, &params.CharacterSet);
 	int sz[2] = { params.Width, params.Height };
 	if (ImGui::InputInt2("Size (X,Y)", sz))
