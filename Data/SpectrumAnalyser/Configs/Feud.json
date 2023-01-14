@@ -1,4 +1,24 @@
 {
     "Name": "Feud",
-    "Z80File": "Feud.z80"
+    "Options": {
+        "ViewConfigs": [
+            {
+                "Enabled": true,
+                "ViewAddress": 61104
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            }
+        ]
+    },
+    "SnapshotFile": "./Games/Feud.z80"
 }
