@@ -14,7 +14,7 @@
 #include "Shared/Util/Misc.h"
 #include <Shared/Util/GraphicsView.h>
 
-static const int g_kBinaryFileVersionNo = 14;
+static const int g_kBinaryFileVersionNo = 15;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Labels
@@ -414,13 +414,15 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char* fname, uint16_
 		for (int i = 0; i < GetNoCharacterSets(); i++)
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
-			const uint16_t addr = pCharSet->Address;
+			const uint16_t addr = pCharSet->Params.Address;
 			if (addr >= addrStart && addr <= addrEnd)
 			{
-				fwrite(&pCharSet->Address, sizeof(pCharSet->Address), 1, fp);
-				fwrite(&pCharSet->AttribAddress, sizeof(pCharSet->AttribAddress), 1, fp);
-				fwrite(&pCharSet->MaskInfo, sizeof(pCharSet->MaskInfo), 1, fp);
-				fwrite(&pCharSet->ColourInfo, sizeof(pCharSet->ColourInfo), 1, fp);
+				EColourInfo		ColourInfo = EColourInfo::None;
+				fwrite(&pCharSet->Params.Address, sizeof(pCharSet->Params.Address), 1, fp);
+				fwrite(&pCharSet->Params.AttribsAddress, sizeof(pCharSet->Params.AttribsAddress), 1, fp);
+				fwrite(&pCharSet->Params.MaskInfo, sizeof(pCharSet->Params.MaskInfo), 1, fp);
+				fwrite(&pCharSet->Params.ColourInfo, sizeof(pCharSet->Params.ColourInfo), 1, fp);
+				fwrite(&pCharSet->Params.bDynamic, sizeof(pCharSet->Params.bDynamic), 1, fp);
 				noCharSets++;
 			}
 		}
@@ -535,7 +537,10 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char* fname, uint16_t addr
 				fread(&params.AttribsAddress, sizeof(params.AttribsAddress), 1, fp);
 				fread(&params.MaskInfo, sizeof(params.MaskInfo), 1, fp);
 				fread(&params.ColourInfo, sizeof(params.ColourInfo), 1, fp);
-
+			}
+			if (versionNo > 14)
+			{
+				fread(&params.bDynamic, sizeof(params.bDynamic), 1, fp);
 			}
 			CreateCharacterSetAt(state, params);
 		}

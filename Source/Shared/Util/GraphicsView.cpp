@@ -186,6 +186,9 @@ void DrawGraphicsView(const FGraphicsView& graphicsView, bool bMagnifier)
 std::vector<FCharacterSet*>	g_CharacterSets;
 std::vector<FCharacterMap*>	g_CharacterMaps;
 
+void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& characterSet);
+
+
 void InitCharacterSets()
 {
 	// char sets
@@ -199,6 +202,15 @@ void InitCharacterSets()
 		delete it;
 
 	g_CharacterMaps.clear();
+}
+
+void UpdateCharacterSets(FCodeAnalysisState& state)
+{
+	for (auto& it : g_CharacterSets)
+	{
+		if(it->Params.bDynamic)
+			UpdateCharacterSetImage(state, *it);
+	}
 }
 
 int GetNoCharacterSets()
@@ -218,21 +230,16 @@ FCharacterSet* GetCharacterSetFromAddress(uint16_t address)
 {
 	for (auto& it : g_CharacterSets)
 	{
-		if (it->Address == address)
+		if (it->Params.Address == address)
 			return it;
 	}
 
 	return nullptr;
 }
 
-void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params)
+void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& characterSet)
 {
-	characterSet.Address = params.Address;
-	characterSet.AttribAddress = params.AttribsAddress;
-	characterSet.MaskInfo = params.MaskInfo;
-	characterSet.ColourInfo = params.ColourInfo;
-
-	uint16_t addr = params.Address;
+	uint16_t addr = characterSet.Params.Address;
 
 	characterSet.Image->Clear(0);	// clear first
 
@@ -249,18 +256,18 @@ void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, 
 
 		for (int i = 0; i < 8; i++)
 		{
-			if (characterSet.MaskInfo == EMaskInfo::InterleavedBytesMP)
+			if (characterSet.Params.MaskInfo == EMaskInfo::InterleavedBytesMP)
 				charMask[i] = state.CPUInterface->ReadByte(addr++);
 			charPix[i] = state.CPUInterface->ReadByte(addr++);
-			if (characterSet.MaskInfo == EMaskInfo::InterleavedBytesPM)
+			if (characterSet.Params.MaskInfo == EMaskInfo::InterleavedBytesPM)
 				charMask[i] = state.CPUInterface->ReadByte(addr++);
 		}
 
 		// Get colour from colour info
-		switch (characterSet.ColourInfo)
+		switch (characterSet.Params.ColourInfo)
 		{
 		case EColourInfo::MemoryLUT:
-			colAttr = state.CPUInterface->ReadByte(characterSet.AttribAddress + charNo);
+			colAttr = state.CPUInterface->ReadByte(characterSet.Params.AttribsAddress + charNo);
 			break;
 		case EColourInfo::Interleaved:
 			colAttr = state.CPUInterface->ReadByte(addr++);
@@ -279,6 +286,17 @@ void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, 
 	}
 
 	characterSet.Image->UpdateTexture();
+}
+
+void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params)
+{
+	characterSet.Params.Address = params.Address;
+	characterSet.Params.AttribsAddress = params.AttribsAddress;
+	characterSet.Params.MaskInfo = params.MaskInfo;
+	characterSet.Params.ColourInfo = params.ColourInfo;
+	characterSet.Params.bDynamic = params.bDynamic;
+
+	UpdateCharacterSetImage(state, characterSet);
 }
 
 bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params)

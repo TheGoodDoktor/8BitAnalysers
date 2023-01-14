@@ -426,7 +426,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const ImVec2 pos = ImGui::GetCursorScreenPos();
 		const float lh2 = (float)(int)(line_height / 2);
-		const ImVec2 mid(pos.x + 7, pos.y + lh2);
+		const ImVec2 mid(pos.x, pos.y + lh2);
 		
 		dl->AddCircleFilled(mid, 7, bp_enabled_color);
 		dl->AddCircle(mid, 7, brd_color);
@@ -935,6 +935,16 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 		}
 	}
 	DoItemContextMenu(state, pItem);
+
+	// double click to toggle breakpoints
+	if (ImGui::IsItemHovered() && viewState.HighlightAddress == -1 &&  ImGui::IsMouseDoubleClicked(0))
+	{
+		if (pItem->Type == ItemType::Code)
+			state.CPUInterface->ToggleExecBreakpointAtAddress(pItem->Address);
+		else if (pItem->Type == ItemType::Data)
+			state.CPUInterface->ToggleDataBreakpointAtAddress(pItem->Address, pItem->ByteSize);
+	}
+
 	ImGui::SetItemAllowOverlap();	// allow buttons
 	ImGui::SameLine();
 

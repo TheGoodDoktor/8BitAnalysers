@@ -1299,6 +1299,8 @@ void FSpectrumEmu::Tick()
 		}
 	}
 
+	UpdateCharacterSets(CodeAnalysis);
+
 	// Draw UI
 	DrawDockingView();
 }

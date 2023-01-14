@@ -65,12 +65,12 @@ void DrawCharacterSetComboBox(FCodeAnalysisState& state, uint16_t* pAddr)
 		for (int i=0;i< GetNoCharacterSets();i++)
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
-			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Address);
+			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
 			if (pSetLabel == nullptr)
 				continue;
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), *pAddr == pCharSet->Address))
+			if (ImGui::Selectable(pSetLabel->Name.c_str(), *pAddr == pCharSet->Params.Address))
 			{
-				*pAddr = pCharSet->Address;
+				*pAddr = pCharSet->Params.Address;
 			}
 		}
 
@@ -80,7 +80,7 @@ void DrawCharacterSetComboBox(FCodeAnalysisState& state, uint16_t* pAddr)
 
 void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
-	static uint16_t selectedCharSetAddr = 0;
+	static uint16_t selectedCharSetAddr = 0; 
 	static FCharSetCreateParams params;
 
 	if (ImGui::BeginChild("##charsetselect", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), true))
@@ -88,19 +88,16 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 		for (int i = 0; i < GetNoCharacterSets(); i++)
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
-			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Address);
+			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
 			if (pSetLabel == nullptr)
 				continue;
 
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), selectedCharSetAddr == pCharSet->Address))
+			if (ImGui::Selectable(pSetLabel->Name.c_str(), selectedCharSetAddr == pCharSet->Params.Address))
 			{
-				selectedCharSetAddr = pCharSet->Address;
-				if (params.Address != pCharSet->Address)
+				selectedCharSetAddr = pCharSet->Params.Address;
+				if (params.Address != pCharSet->Params.Address)
 				{
-					params.Address = pCharSet->Address;
-					params.AttribsAddress = pCharSet->AttribAddress;
-					params.ColourInfo = pCharSet->ColourInfo;
-					params.MaskInfo = pCharSet->MaskInfo;
+					params = pCharSet->Params;
 				}
 			}
 		}
@@ -116,6 +113,7 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 			DrawAddressLabel(state, viewState, selectedCharSetAddr);
 			DrawMaskInfoComboBox(&params.MaskInfo);
 			DrawColourInfoComboBox(&params.ColourInfo);
+			ImGui::Checkbox("Dynamic", &params.bDynamic);
 			if (ImGui::Button("Update Character Set"))
 			{
 				UpdateCharacterSet(state, *pCharSet, params);
@@ -222,6 +220,9 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	{
 		const int xChar = (int)floor(mousePosX / rectSize);
 		const int yChar = (int)floor(mousePosY / rectSize);
+		const uint16_t charAddress = pCharMap->Params.Address + (xChar + (yChar * pCharMap->Params.Width));
+		const uint8_t charVal = state.CPUInterface->ReadByte(charAddress);
+
 		const float xp = pos.x + (xChar * rectSize);
 		const float yp = pos.y + (yChar * rectSize);
 		const ImVec2 rectMin(xp, yp);
@@ -230,10 +231,16 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 
 		if (ImGui::IsMouseClicked(0))
 		{
-			uiState.SelectedCharAddress = pCharMap->Params.Address + (xChar + (yChar * pCharMap->Params.Width));
+			uiState.SelectedCharAddress = charAddress;
 			uiState.SelectedCharX = xChar;
 			uiState.SelectedCharY = yChar;
 		}
+
+		// Tool Tip
+		ImGui::BeginTooltip();
+		ImGui::Text("Char Pos (%d,%d)", xChar, yChar);
+		ImGui::Text("Value: %s", NumStr(charVal));
+		ImGui::EndTooltip();
 	}
 
 	if (uiState.SelectedCharX != -1 && uiState.SelectedCharY != -1)

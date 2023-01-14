@@ -67,6 +67,7 @@ struct FCharSetCreateParams
 	uint16_t	AttribsAddress = 0;
 	EMaskInfo	MaskInfo = EMaskInfo::None;
 	EColourInfo	ColourInfo = EColourInfo::None;
+	bool		bDynamic = false;
 };
 
 struct FCharacterSet
@@ -80,11 +81,9 @@ struct FCharacterSet
 		return FCharUVS((float)xp * (1.0f / 128.0f), (float)yp * (1.0f / 128.0f), 8.0f / 128.0f);
 	}
 
-	uint16_t		Address = 0;
-	uint16_t		AttribAddress = 0;
-	EMaskInfo		MaskInfo = EMaskInfo::None;
-	EColourInfo		ColourInfo = EColourInfo::None;
-	FGraphicsView*	Image = nullptr;
+	FCharSetCreateParams	Params;
+
+	FGraphicsView*	Image = nullptr;	
 };
 
 // Character Maps
@@ -107,6 +106,7 @@ uint32_t GetColFromAttr(uint8_t colBits, bool bBright);
 
 // Character sets
 void InitCharacterSets();
+void UpdateCharacterSets(FCodeAnalysisState& state);
 int GetNoCharacterSets();
 FCharacterSet* GetCharacterSetFromIndex(int index);
 FCharacterSet* GetCharacterSetFromAddress(uint16_t address);
