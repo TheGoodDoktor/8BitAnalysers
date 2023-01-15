@@ -1,14 +1,25 @@
 {
     "Name": "Exolon",
     "Options": {
-        "EnableCodeAnalysisView": [
-            true,
-            false,
-            false,
-            false
+        "ViewConfigs": [
+            {
+                "Enabled": true,
+                "ViewAddress": 22528
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0
+            }
         ],
-        "NumberMode": 2,
-        "ShowScanlineIndicator": false
+        "WriteSnapshot": true
     },
     "SnapshotFile": "./Games/Exolon.z80"
 }
