@@ -60,6 +60,7 @@ struct FGameConfig
 
 	std::string		Name;
 	std::string		SnapshotFile;
+	bool			WriteSnapshot = false;
 
 	FViewerConfig *pViewerConfig = nullptr;
 

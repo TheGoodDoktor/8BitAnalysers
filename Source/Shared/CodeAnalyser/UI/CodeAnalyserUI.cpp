@@ -14,6 +14,7 @@
 #include <sstream>
 #include "chips/z80.h"
 #include "CodeToolTips.h"
+#include <Shared/Debug/Debug.h>
 
 // UI
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i);

@@ -774,11 +774,9 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 		CodeAnalysis.ViewState[i].GoToAddress = pGameConfig->ViewConfigs[i].ViewAddress;
 	}
 
-
-
 	// load game data if we can
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
-	LoadGameData(CodeAnalysis, dataFName.c_str());
+	LoadGameData(this, dataFName.c_str());
 	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
 	LoadPOKFile(*pGameConfig, std::string("Pokes/" + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
@@ -809,6 +807,7 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 	{
 		if (pGameConfig->Name == pGameName)
 		{
+
 			std::string gameFile = pGameConfig->SnapshotFile;	
 			if (GamesList.LoadGame(gameFile.c_str()))
 			{
@@ -849,7 +848,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-			SaveGameData(CodeAnalysis, dataFName.c_str());
+			SaveGameData(this, dataFName.c_str());
 		}
 	}
 	SaveROMData(CodeAnalysis, "GameData/RomInfo.bin");
@@ -1092,6 +1091,8 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			ImGui::MenuItem("Enable Audio", 0, &config.bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
 			ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.Config.bShowOpcodeValues);
+			if(pActiveGame!=nullptr)
+				ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 
 #ifndef RELEASE
 			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
@@ -1711,7 +1712,7 @@ bool FSpectrumEmu::ImportSkoolFile(const char* pFilename, const char* pOutSkoolI
 		// backup their gamedata
 		const std::string dataFName = "GameData/" + pActiveGame->pConfig->Name + ".bin.bak";
 		EnsureDirectoryExists("GameData");
-		if (!SaveGameData(CodeAnalysis, dataFName.c_str()))
+		if (!SaveGameData(this, dataFName.c_str()))
 		{
 			LOGERROR("Failed to import skool file. Could not save backup of game data to '%s'", dataFName.c_str());
 			return false;

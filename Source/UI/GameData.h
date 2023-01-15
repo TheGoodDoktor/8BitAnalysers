@@ -1,8 +1,10 @@
 #pragma once
 
 struct FCodeAnalysisState;
+class FSpectrumEmu;
 
-bool SaveGameData(const FCodeAnalysisState& state, const char* fname);
-bool LoadGameData(FCodeAnalysisState& state, const char* fname);
+bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname);
+bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname);
+
 bool SaveROMData(const FCodeAnalysisState& state, const char* fname);
 bool LoadROMData(FCodeAnalysisState& state, const char* fname);

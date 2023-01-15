@@ -441,10 +441,29 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 			pLabel->References[pc]++;	// add/increment reference
 	}
 
-	if (state.GetCodeInfoForAddress(pc) != nullptr)	// already been analysed
-		return false;
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	std::string oldComment;
+	if (pCodeInfo != nullptr)
+	{
+		if (pCodeInfo->Address != pc) // check code integrity 
+		{
+			oldComment = pCodeInfo->Comment;	// backup old comment
+			state.SetCodeInfoForAddress(pc, nullptr);
+		}
+		else
+		{
+			return false;
+		}
+	}
+	//if (state.GetCodeInfoForAddress(pc) != nullptr)	// already been analysed
+	//	return false;
 
 	uint16_t newPC = WriteCodeInfoForAddress(state, pc);
+	// get new code info
+	pCodeInfo = state.GetCodeInfoForAddress(pc);
+	if (oldComment.empty() == false)
+		pCodeInfo->Comment = oldComment;
+
 	if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
 		return false;
 	
@@ -504,6 +523,7 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc)
 {
+	
 	AnalyseAtPC(state, pc);
 
 	state.FrameTrace.push_back(pc);

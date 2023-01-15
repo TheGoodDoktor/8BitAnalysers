@@ -10,11 +10,12 @@
 #include "SpectrumEmu.h"
 #include "GameViewers/GameViewer.h"
 #include "SnapshotLoaders/GamesList.h"
+#include "GameConfig.h"
 #include "Debug/Debug.h"
 #include "Shared/Util/Misc.h"
 #include <Shared/Util/GraphicsView.h>
 
-static const int g_kBinaryFileVersionNo = 15;
+static const int g_kBinaryFileVersionNo = 16;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Labels
@@ -359,12 +360,8 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, ui
 
 
 // Binary save
-bool SaveGameDataBin(const FCodeAnalysisState& state, const char* fname, uint16_t addrStart, uint16_t addrEnd)
+void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrStart, uint16_t addrEnd)
 {
-	FILE* fp = fopen(fname, "wb");
-	if (fp == NULL)
-		return false;
-
 	fwrite(&g_kBinaryFileMagic, sizeof(int), 1, fp);
 	fwrite(&g_kBinaryFileVersionNo, sizeof(int), 1, fp);
 
@@ -459,26 +456,11 @@ bool SaveGameDataBin(const FCodeAnalysisState& state, const char* fname, uint16_
 		fwrite(&noCharMaps, sizeof(noCharMaps), 1, fp);
 		fseek(fp, 0, SEEK_END);
 	}
-	fclose(fp);
-	return true;
 }
 
 // Binary load
-bool LoadGameDataBin(FCodeAnalysisState& state, const char* fname, uint16_t addrStart, uint16_t addrEnd)
+void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_t addrStart, uint16_t addrEnd)
 {
-	FILE* fp = fopen(fname, "rb");
-	if (fp == NULL)
-		return false;
-	int magic, versionNo;
-	fread(&magic, sizeof(int), 1, fp);
-	if (magic != g_kBinaryFileMagic)
-	{
-		fclose(fp);
-		return false;
-	}
-
-	fread(&versionNo, sizeof(int), 1, fp);
-
 	if (versionNo >= 8)
 	{
 		fread(&addrStart, sizeof(uint16_t), 1, fp);
@@ -563,26 +545,123 @@ bool LoadGameDataBin(FCodeAnalysisState& state, const char* fname, uint16_t addr
 			CreateCharacterMap(state, params);
 		}
 	}
-	fclose(fp);
-	return true;
 }
 
-bool SaveGameData(const FCodeAnalysisState& state, const char* fname)
+bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
-	return SaveGameDataBin(state, fname, 0x4000, 0xffff);
+	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+
+	FILE* fp = fopen(fname, "wb");
+	if (fp == NULL)
+		return false;
+
+	SaveGameDataBin(state, fp, 0x4000, 0xffff);
+
+	uint8_t hasSnapshot = pSpectrumEmu->pActiveGame->pConfig->WriteSnapshot ? 1 : 0;
+
+	fwrite(&hasSnapshot, sizeof(uint8_t), 1, fp);
+
+	if (hasSnapshot == 1)
+	{
+		// copy memory
+		for (int i = 0; i < 1 << 16; i++)
+		{
+			const uint8_t memByte = pSpectrumEmu->ReadByte(i);
+			fwrite(&memByte, sizeof(memByte), 1, fp);
+		}
+
+		// get CPU state
+		//z80_t* pCPUState = (z80_t*)frame.CPUState;
+		fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa,sizeof(uint64_t),1,fp);
+		fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
+		fwrite(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
+		fwrite(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
+		fwrite(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+	}
+
+	fclose(fp);
+
+	return true;
 }
 
 bool SaveROMData(const FCodeAnalysisState& state, const char* fname)
 {
-	return SaveGameDataBin(state, fname, 0x0000, 0x3fff);
+	FILE* fp = fopen(fname, "wb");
+	if (fp == NULL)
+		return false;
+
+	SaveGameDataBin(state, fp, 0x0000, 0x3fff);
+
+	return true;
+
 }
 
-bool LoadGameData(FCodeAnalysisState& state, const char* fname)
+bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
-	return LoadGameDataBin(state, fname, 0x4000, 0xffff);
+	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+
+	FILE* fp = fopen(fname, "rb");
+	if (fp == NULL)
+		return false;
+
+	int magic, versionNo;
+	fread(&magic, sizeof(int), 1, fp);
+	if (magic != g_kBinaryFileMagic)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	fread(&versionNo, sizeof(int), 1, fp);
+
+	LoadGameDataBin(state, fp, versionNo, 0x4000, 0xffff);
+
+	if (versionNo > 15)
+	{
+		uint8_t hasSnapshot = 0;
+
+		fread(&hasSnapshot, sizeof(uint8_t), 1, fp);
+
+		if (hasSnapshot == 1)
+		{
+			// read memory
+			for (int i = 0; i < 1 << 16; i++)
+			{
+				uint8_t memByte = 0;
+				fread(&memByte, sizeof(memByte), 1, fp);
+				pSpectrumEmu->WriteByte(i, memByte);
+			}
+
+			// get CPU state
+			//z80_t* pCPUState = (z80_t*)frame.CPUState;
+			fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa, sizeof(uint64_t), 1, fp);
+			fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
+			fread(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
+			fread(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
+			fread(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+		}
+	}
+	fclose(fp);
+	return true;
 }
 
 bool LoadROMData(FCodeAnalysisState& state, const char* fname)
 {
-	return LoadGameDataBin(state, fname, 0x0000, 0x3fff);
+	FILE* fp = fopen(fname, "rb");
+	if (fp == NULL)
+		return false;
+
+	int magic, versionNo;
+	fread(&magic, sizeof(int), 1, fp);
+	if (magic != g_kBinaryFileMagic)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	fread(&versionNo, sizeof(int), 1, fp);
+	LoadGameDataBin(state, fp, versionNo, 0x0000, 0x3fff);
+
+	fclose(fp);
+	return true;
 }
