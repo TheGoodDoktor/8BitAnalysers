@@ -557,12 +557,41 @@ bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 	SaveGameDataBin(state, fp, 0x4000, 0xffff);
 
-	uint8_t hasSnapshot = pSpectrumEmu->pActiveGame->pConfig->WriteSnapshot ? 1 : 0;
+	FGameConfig& config = *pSpectrumEmu->pActiveGame->pConfig;
+
+	uint8_t hasSnapshot = config.WriteSnapshot ? 1 : 0;
 
 	fwrite(&hasSnapshot, sizeof(uint8_t), 1, fp);
 
 	if (hasSnapshot == 1)
 	{
+		// revert cheats
+		for (FCheat& cheat : config.Cheats)
+		{
+			for (auto& entry : cheat.Entries)
+			{
+				if (cheat.bEnabled)	// cheat activated so revert
+				{
+					pSpectrumEmu->WriteByte(entry.Address, entry.OldValue);
+					cheat.bEnabled = false;
+				}
+			}
+		}
+
+		// revert NOPs
+		for (int addr = 0x4000; addr <= 0xffff; addr++)
+		{
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
+			if (pCodeInfo && pCodeInfo->bNOPped)
+			{
+				// Restore
+				for (int i = 0; i < pCodeInfo->ByteSize; i++)
+					state.CPUInterface->WriteByte(pCodeInfo->Address + i, pCodeInfo->OpcodeBkp[i]);
+
+				pCodeInfo->bNOPped = false;
+			}
+		}
+
 		// copy memory
 		for (int i = 0; i < 1 << 16; i++)
 		{
