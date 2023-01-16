@@ -40,7 +40,7 @@ bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId);
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
-void DrawCallStack(FCodeAnalysisState& state);
+void DrawStackInfo(FCodeAnalysisState& state);
 void DrawTrace(FCodeAnalysisState& state);
 void DrawRegisters(FCodeAnalysisState& state);
 void DrawWatchWindow(FCodeAnalysisState& state);

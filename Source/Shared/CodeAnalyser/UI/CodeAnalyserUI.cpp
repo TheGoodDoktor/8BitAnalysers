@@ -179,6 +179,67 @@ void DrawCallStack(FCodeAnalysisState& state)
 	}
 }
 
+void DrawStack(FCodeAnalysisState& state)
+{
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
+	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+
+	if (ImGui::BeginTable("stackinfo", 4, flags))
+	{
+		ImGui::TableSetupColumn("Address");
+		ImGui::TableSetupColumn("Value");
+		ImGui::TableSetupColumn("Comment");
+		ImGui::TableSetupColumn("Set by");
+		ImGui::TableHeadersRow();
+
+		for(uint16_t stackAddr = state.CPUInterface->GetSP(); stackAddr <= state.StackMax;stackAddr+=2)
+		{
+			ImGui::TableNextRow();
+
+			uint16_t stackVal = state.CPUInterface->ReadWord(stackAddr);
+			FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(stackAddr);
+			const uint16_t writerAddr = state.GetLastWriterForAddress(stackAddr);
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text("%s",NumStr(stackAddr));
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text("%s :",NumStr(stackVal));
+			DrawAddressLabel(state,viewState,stackVal);
+
+			ImGui::TableSetColumnIndex(2);
+			ImGui::Text("%s", pDataInfo->Comment.c_str());
+
+			ImGui::TableSetColumnIndex(3);
+			ImGui::Text("%s :",NumStr(writerAddr));
+			DrawAddressLabel(state,viewState,writerAddr);
+		}
+
+		ImGui::EndTable();
+	}
+}
+
+void DrawStackInfo(FCodeAnalysisState& state)
+{
+	if(ImGui::BeginTabBar("StackTabs"))
+	{
+		if (ImGui::BeginTabItem("Stack"))
+		{
+			DrawStack(state);
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Call Stack"))
+		{
+			DrawCallStack(state);
+			ImGui::EndTabItem();
+		}
+		
+		ImGui::EndTabBar();
+	}
+}
+
 void DrawTrace(FCodeAnalysisState& state)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
@@ -1262,32 +1323,6 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		ImGui::EndChild();
 	}
 	ImGui::EndChild(); // right panel
-}
-
-void DrawExecutionInfo(FCodeAnalysisState& state)
-{
-	if (ImGui::BeginTabBar("ExeInfoTabs"))
-	{
-		if (ImGui::BeginTabItem("CallStack"))
-		{
-			DrawCallStack(state);
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("Trace"))
-		{
-			DrawTrace(state);
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("Registers"))
-		{
-			DrawRegisters(state);
-			ImGui::EndTabItem();
-		}		
-
-		ImGui::EndTabBar();
-	}
 }
 
 void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FLabelInfo *> labelList)

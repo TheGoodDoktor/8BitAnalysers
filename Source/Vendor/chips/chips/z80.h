@@ -308,6 +308,7 @@ extern "C" {
 struct FZ80InternalState
 {
     uint16_t    PC;
+    uint16_t    SP;
     bool        IRQ = false;
 };
 //MARKC - End
@@ -850,6 +851,7 @@ uint32_t z80_exec(z80_t* cpu, uint32_t num_ticks) {
     uint64_t pre_pins = pins;
     do {
 		cpu->internal_state.PC = pc; //MarkC
+        cpu->internal_state.SP = _G_SP(); //MarkC
         /* fetch next opcode byte */
         _FETCH(op)
         /* special case ED-prefixed instruction: cancel effect of DD/FD prefix */

@@ -2,6 +2,8 @@
 #include "../CodeAnalyser.h"
 #include <cassert>
 
+#include "chips/z80.h"
+
 
 bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
 {
@@ -230,15 +232,45 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
+	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator());
+	const FZ80InternalState& cpuState = pCPU->internal_state;
 
+	bool bPushInstruction = false;
+	
 	switch (opcode)
 	{
+		// Stack
+		case 0xc5:	// PUSH BC
+		case 0xd5:	// PUSH DE
+		case 0xe5:	// PUSH HL
+		case 0xf5:	// PUSH AF
+			bPushInstruction = true;
+		break;
+
+		// index register opcodes
+		case 0xdd:
+		case 0xfd:
+			{
+				const uint8_t indexOpcode = pCPUInterface->ReadByte(pc + 1);
+				switch(indexOpcode)
+				{
+				case 0xe5:
+					bPushInstruction = true;
+					break;
+				default:
+					break;
+				}
+			}
+		break;
+		
 		// Call functions
 		/* CALL nnnn */
 		case 0xCD:
 			/* CALL cc,nnnn */
 		case 0xDC: case 0xFC: case 0xD4: case 0xC4:
 		case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+
+			bPushInstruction = true;
 
 			//if(nextpc == 0xc544)
 				//fprintf(stderr, "PC: $%04x, NextPC $%04x\n", pc, nextpc);
@@ -283,6 +315,27 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 				}
 			}
 			break;
+	default:
+		break;
+	}
+
+	// Handle push instruction
+	// store the comment from the code line that did the push at the location in the stack as a comment
+	if(bPushInstruction)
+	{
+		FDataInfo* pStackItem = state.GetWriteDataInfoForAddress(cpuState.SP-2);	// -2 because SP was recorded before instruction was 	
+		const FCodeInfo* pCodeItem = state.GetCodeInfoForAddress(pc);
+
+		//if(pCodeItem != nullptr && pCodeItem->Comment.empty() == false)
+		pStackItem->Comment = pCodeItem->Comment;
+
+		// Format stack data item
+		if(pStackItem->DataType != DataType::Word)
+		{
+			pStackItem->DataType = DataType::Word;
+			pStackItem->ByteSize = 2;
+			state.bCodeAnalysisDataDirty = true;
+		}
 	}
 
 	return false;

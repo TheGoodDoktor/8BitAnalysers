@@ -462,9 +462,9 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 
 	// work out stack size
 	const uint16_t sp = z80_sp(&ZXEmuState.cpu);	// this won't get the proper stack pos (see comment above function)
-	if (sp < state.StackMin)
+	if (sp == state.StackMin - 2 || state.StackMin == 0xffff)
 		state.StackMin = sp;
-	if (sp > state.StackMax)
+	if (sp == state.StackMax + 2 || state.StackMax == 0 )
 		state.StackMax = sp;
 
 	// work out instruction count
@@ -1463,7 +1463,7 @@ void FSpectrumEmu::DrawUI()
 
 	if (ImGui::Begin("Call Stack"))
 	{
-		DrawCallStack(CodeAnalysis);
+		DrawStackInfo(CodeAnalysis);
 	}
 	ImGui::End();
 
