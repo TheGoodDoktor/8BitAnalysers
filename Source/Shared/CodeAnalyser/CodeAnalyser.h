@@ -161,11 +161,6 @@ struct FCodeAnalysisViewState
 	FDataFormattingOptions	DataFormattingOptions;
 };
 
-struct FCodeAnalysisConfig
-{
-	bool bShowOpcodeValues = false;
-};
-
 // code analysis information
 // TODO: make this a class
 struct FCodeAnalysisState
@@ -250,8 +245,6 @@ public:
 	std::vector< class FCommand *>	CommandStack;
 
 	bool					bAllowEditing = false;
-	
-	FCodeAnalysisConfig		Config;
 public:
 	// Access functions for code analysis
 	static const int kPageShift = 10;

@@ -1,6 +1,8 @@
 #include "CodeAnalyserUI.h"
 #include "CharacterMapViewer.h"
 #include "../CodeAnalyser.h"
+#include "../UI/GlobalConfig.h"
+
 
 #include "Util/Misc.h"
 #include "ImageViewer.h"
@@ -514,14 +516,8 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	if(pCodeInfo->bNOPped)
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
 	
-	// TODO: You could display SMC here
-	// Using something like:
-	// if(pCodeInfo->bSelfModifyingCode)
-	// FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(pCodeInfo->Address + i);
-	//if (pOperandData->Writes.empty() == false)
-	//{
-
-	if (state.Config.bShowOpcodeValues)
+	const FGlobalConfig& config = GetGlobalConfig();
+	if (config.bShowOpcodeValues)
 	{
 		// Draw hex values of the instruction's opcode
 		char tmp[16]= {0};

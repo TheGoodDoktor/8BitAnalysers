@@ -1090,7 +1090,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			ImGui::MenuItem("Scan Line Indicator", 0, &config.bShowScanLineIndicator);
 			ImGui::MenuItem("Enable Audio", 0, &config.bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
-			ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.Config.bShowOpcodeValues);
+			ImGui::MenuItem("Show Opcode Values", 0, &config.bShowOpcodeValues);
 			if(pActiveGame!=nullptr)
 				ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 

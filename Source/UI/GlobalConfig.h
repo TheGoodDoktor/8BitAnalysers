@@ -7,6 +7,7 @@ struct FGlobalConfig
 {
 	bool				bEnableAudio;
 	bool				bShowScanLineIndicator = false;
+	bool				bShowOpcodeValues = false;
 	ENumberDisplayMode	NumberDisplayMode = ENumberDisplayMode::HexAitch;
 	std::string			LastGame;
 };

@@ -31,6 +31,8 @@ bool LoadGlobalConfig(const char* fileName)
 
 	config.bEnableAudio = jsonConfigFile["EnableAudio"];
 	config.bShowScanLineIndicator = jsonConfigFile["ShowScanlineIndicator"];
+	if(jsonConfigFile.contains("ShowOpcodeValues"))
+		config.bShowOpcodeValues = jsonConfigFile["ShowOpcodeValues"];
 	config.LastGame = jsonConfigFile["LastGame"];
 	config.NumberDisplayMode = (ENumberDisplayMode)jsonConfigFile["NumberMode"];
 	return true;
@@ -43,6 +45,7 @@ bool SaveGlobalConfig(const char* fileName)
 
 	jsonConfigFile["EnableAudio"] = config.bEnableAudio;
 	jsonConfigFile["ShowScanlineIndicator"] = config.bShowScanLineIndicator;
+	jsonConfigFile["ShowOpcodeValues"] = config.bShowOpcodeValues;
 	jsonConfigFile["LastGame"] = config.LastGame;
 	jsonConfigFile["NumberMode"] = (int)config.NumberDisplayMode;
 
