@@ -210,26 +210,48 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 		for (int x = 0; x < params.Width; x++)
 		{
 			const uint8_t val = state.CPUInterface->ReadByte(params.Address + byte);
+			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(params.Address + byte);
+			const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
+			const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
+			const int wBrightVal = (255 - std::min(framesSinceWritten << 3, 255)) & 0xff;
+			const int rBrightVal = (255 - std::min(framesSinceRead << 3, 255)) & 0xff;
 
-			if (val != params.IgnoreCharacter)	// skip empty chars
+			if (val != params.IgnoreCharacter || wBrightVal > 0 || rBrightVal > 0)	// skip empty chars
 			{
 				const float xp = pos.x + (x * rectSize);
 				const float yp = pos.y + (y * rectSize);
-				const ImVec2 rectMin(xp, yp);
-				const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+				ImVec2 rectMin(xp, yp);
+				ImVec2 rectMax(xp + rectSize, yp + rectSize);
 
-				if (pCharSet)
+				if (val != params.IgnoreCharacter)
 				{
-					const FCharUVS UVS = pCharSet->GetCharacterUVS(val);
-					dl->AddImage((ImTextureID)pCharSet->Image->GetTexture(), rectMin, rectMax, ImVec2(UVS.U0, UVS.V0), ImVec2(UVS.U1, UVS.V1));
+					if (pCharSet)
+					{
+						const FCharUVS UVS = pCharSet->GetCharacterUVS(val);
+						dl->AddImage((ImTextureID)pCharSet->Image->GetTexture(), rectMin, rectMax, ImVec2(UVS.U0, UVS.V0), ImVec2(UVS.U1, UVS.V1));
+					}
+					else
+					{
+						char valTxt[8];
+						sprintf_s(valTxt, "%02x", val);
+						dl->AddRect(rectMin, rectMax, 0xffffffff);
+						dl->AddText(ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt);
+						//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);
+					}
 				}
-				else
+
+				if (rBrightVal > 0)
 				{
-					char valTxt[8];
-					sprintf_s(valTxt, "%02x", val);
-					dl->AddRect(rectMin, rectMax, 0xffffffff);
-					dl->AddText(ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt);
-					//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);
+					const ImU32 col = 0xff000000 | (rBrightVal << 8);
+					dl->AddRect(rectMin, rectMax, col);
+
+					rectMin = ImVec2(rectMin.x + 1, rectMin.y + 1);
+					rectMax = ImVec2(rectMax.x - 1, rectMax.y - 1);
+				}
+				if (wBrightVal > 0)
+				{
+					const ImU32 col = 0xff000000 | (wBrightVal << 0);
+					dl->AddRect(rectMin, rectMax, col);
 				}
 			}
 
