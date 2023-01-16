@@ -15,7 +15,7 @@
 #include "Shared/Util/Misc.h"
 #include <Shared/Util/GraphicsView.h>
 
-static const int g_kBinaryFileVersionNo = 16;
+static const int g_kBinaryFileVersionNo = 17;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
 // Labels
@@ -550,6 +550,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FGameConfig& config = *pSpectrumEmu->pActiveGame->pConfig;
 
 	FILE* fp = fopen(fname, "wb");
 	if (fp == NULL)
@@ -557,9 +558,10 @@ bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 	SaveGameDataBin(state, fp, 0x4000, 0xffff);
 
-	FGameConfig& config = *pSpectrumEmu->pActiveGame->pConfig;
+	fwrite(&state.StackMin, sizeof(uint16_t), 1, fp);
+	fwrite(&state.StackMax, sizeof(uint16_t), 1, fp);
 
-	uint8_t hasSnapshot = config.WriteSnapshot ? 1 : 0;
+	const uint8_t hasSnapshot = config.WriteSnapshot ? 1 : 0;
 
 	fwrite(&hasSnapshot, sizeof(uint8_t), 1, fp);
 
@@ -644,6 +646,12 @@ bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 	fread(&versionNo, sizeof(int), 1, fp);
 
 	LoadGameDataBin(state, fp, versionNo, 0x4000, 0xffff);
+
+	if (versionNo > 16)
+	{
+		fread(&state.StackMin, sizeof(uint16_t), 1, fp);
+		fread(&state.StackMax, sizeof(uint16_t), 1, fp);
+	}
 
 	if (versionNo > 15)
 	{

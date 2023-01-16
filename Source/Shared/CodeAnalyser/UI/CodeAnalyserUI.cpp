@@ -181,9 +181,17 @@ void DrawCallStack(FCodeAnalysisState& state)
 
 void DrawStack(FCodeAnalysisState& state)
 {
+	const uint16_t sp = state.CPUInterface->GetSP();
+	if (state.StackMin > state.StackMax)	// stack is invalid
+		return;
+
+	if (sp < state.StackMin || sp > state.StackMax)	// sp is not in range
+		return;
+
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
-	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+	//static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+	static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
 
 	if (ImGui::BeginTable("stackinfo", 4, flags))
 	{
@@ -193,7 +201,7 @@ void DrawStack(FCodeAnalysisState& state)
 		ImGui::TableSetupColumn("Set by");
 		ImGui::TableHeadersRow();
 
-		for(uint16_t stackAddr = state.CPUInterface->GetSP(); stackAddr <= state.StackMax;stackAddr+=2)
+		for(int stackAddr = sp; stackAddr <= state.StackMax;stackAddr+=2)
 		{
 			ImGui::TableNextRow();
 
@@ -202,7 +210,7 @@ void DrawStack(FCodeAnalysisState& state)
 			const uint16_t writerAddr = state.GetLastWriterForAddress(stackAddr);
 
 			ImGui::TableSetColumnIndex(0);
-			ImGui::Text("%s",NumStr(stackAddr));
+			ImGui::Text("%s",NumStr((uint16_t)stackAddr));
 
 			ImGui::TableSetColumnIndex(1);
 			ImGui::Text("%s :",NumStr(stackVal));
