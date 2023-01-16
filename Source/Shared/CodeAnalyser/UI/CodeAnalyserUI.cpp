@@ -1333,15 +1333,21 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 {
 	static std::string filterText;
 	ImGui::InputText("Filter", &filterText);
+	ImGui::SameLine();
+	ImGui::Checkbox("ROM", &viewState.ShowROMLabels);
+
 	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false))
 	{
 		for (FLabelInfo *pLabelInfo : labelList)
 		{
-			if (filterText.empty() || pLabelInfo->Name.find(filterText) != std::string::npos)
+			if (viewState.ShowROMLabels || (!viewState.ShowROMLabels && pLabelInfo->Address >= 0x4000))
 			{
-				if (ImGui::Selectable(pLabelInfo->Name.c_str(), viewState.pCursorItem == pLabelInfo))
+				if (filterText.empty() || pLabelInfo->Name.find(filterText) != std::string::npos)
 				{
-					GoToAddress(viewState, pLabelInfo->Address, true);
+					if (ImGui::Selectable(pLabelInfo->Name.c_str(), viewState.pCursorItem == pLabelInfo))
+					{
+						GoToAddress(viewState, pLabelInfo->Address, true);
+					}
 				}
 			}
 		}
