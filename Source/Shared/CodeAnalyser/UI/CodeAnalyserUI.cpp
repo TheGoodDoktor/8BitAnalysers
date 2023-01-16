@@ -3,7 +3,6 @@
 #include "../CodeAnalyser.h"
 
 #include "Util/Misc.h"
-#include "Util/GraphicsView.h"
 #include "ImageViewer.h"
 
 
@@ -14,7 +13,6 @@
 #include <sstream>
 #include "chips/z80.h"
 #include "CodeToolTips.h"
-#include <Shared/Debug/Debug.h>
 
 // UI
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i);
