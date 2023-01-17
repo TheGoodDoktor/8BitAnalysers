@@ -4,7 +4,7 @@
         "ViewConfigs": [
             {
                 "Enabled": true,
-                "ViewAddress": 63488
+                "ViewAddress": 0
             },
             {
                 "Enabled": false,
@@ -18,7 +18,8 @@
                 "Enabled": false,
                 "ViewAddress": 0
             }
-        ]
+        ],
+        "WriteSnapshot": false
     },
     "SnapshotFile": "./Games/Jack the Nipper II.z80"
 }
