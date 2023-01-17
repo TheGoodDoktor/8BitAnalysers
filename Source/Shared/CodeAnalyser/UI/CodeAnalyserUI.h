@@ -48,6 +48,7 @@ void DrawWatchWindow(FCodeAnalysisState& state);
 float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo);
 void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FDataInfo* pDataInfo, bool bDrawLabel = false, bool bEdit = true);
 void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FDataInfo *pDataInfo);
+void ShowDataItemActivity(FCodeAnalysisState& state, uint16_t addr);
 
 void CodeAnalyserGoToAddress(FCodeAnalysisViewState& state, uint16_t newAddress, bool bLabel = false);
 void DrawComment(const FItem* pItem, float offset = 0.0f);

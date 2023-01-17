@@ -207,52 +207,53 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, LabelType labelType)
 {
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
-	if (pLabel == nullptr)
-	{
-		pLabel = FLabelInfo::Allocate();
-		pLabel->LabelType = labelType;
-		pLabel->Address = address;
-		pLabel->ByteSize = 0;
+	if (pLabel != nullptr)
+		return false;
 		
-		const int kLabelSize = 32;
-		char label[kLabelSize];
-		switch (labelType)
-		{
-			case LabelType::Function:
-				sprintf_s(label, "function_%04X", address);
-				break;
-			case LabelType::Code:
-				sprintf_s(label, "label_%04X", address);
-				break;
-			case LabelType::Data:
-				sprintf_s(label, "data_%04X", address);
-				pLabel->Global = true;
-				break;
-			case LabelType::Text:
-			{
-				const char* pPrefix = "txt_";
-				const std::string textString = GetItemText(state, address);
-				std::string labelString;
-				const int len = (int)std::min(textString.size(), (size_t)kLabelSize - strlen(pPrefix));
-				for (int i = 0; i < len; i++)
-				{
-					if (textString[i] == ' ')
-						labelString += '_';
-					else
-						labelString += textString[i];
-				}
+	pLabel = FLabelInfo::Allocate();
+	pLabel->LabelType = labelType;
+	pLabel->Address = address;
+	pLabel->ByteSize = 0;
 
-				sprintf_s(label, "%s%s", pPrefix, labelString.c_str());
-			}
-			break;
+	const int kLabelSize = 32;
+	char label[kLabelSize] = { 0 };
+	switch (labelType)
+	{
+	case LabelType::Function:
+		sprintf_s(label, "function_%04X", address);
+		break;
+	case LabelType::Code:
+		sprintf_s(label, "label_%04X", address);
+		break;
+	case LabelType::Data:
+		sprintf_s(label, "data_%04X", address);
+		pLabel->Global = true;
+		break;
+	case LabelType::Text:
+	{
+		const char* pPrefix = "txt_";
+		const std::string textString = GetItemText(state, address);
+		std::string labelString;
+		const int len = (int)std::min(textString.size(), (size_t)kLabelSize - strlen(pPrefix));
+		for (int i = 0; i < len; i++)
+		{
+			if (textString[i] == ' ')
+				labelString += '_';
+			else
+				labelString += textString[i];
 		}
 
-		pLabel->Name = label;
-		state.SetLabelForAddress(address, pLabel);
-		return true;
+		sprintf_s(label, "%s%s", pPrefix, labelString.c_str());
+	}
+	break;
 	}
 
-	return false;
+	pLabel->Name = label;
+	if (pLabel->Global)
+		GenerateGlobalInfo(state);
+	state.SetLabelForAddress(address, pLabel);
+	return true;
+	
 }
 
 
@@ -442,39 +443,56 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	}
 
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
-	std::string oldComment;
+	const char* pOldComment = nullptr;
 	if (pCodeInfo != nullptr)
 	{
 		if (pCodeInfo->Address != pc) // check code integrity 
 		{
-			oldComment = pCodeInfo->Comment;	// backup old comment
+			if(pCodeInfo->Comment.empty() == false)
+				pOldComment = pCodeInfo->Comment.c_str();	// get pointer to old comment
 			state.SetCodeInfoForAddress(pc, nullptr);
+		}
+		else if(pCodeInfo->bSelfModifyingCode)	// check SMC
+		{
+			pCodeInfo->bSelfModifyingCode = false;
+			for(uint16_t operandAddr = 0;operandAddr<pCodeInfo->ByteSize;operandAddr++)
+			{
+				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pCodeInfo->Address + operandAddr);
+				if(pOpDataInfo->Writes.empty() == false)
+				{
+					pCodeInfo->bSelfModifyingCode = true;
+				}					
+			}
+
+			return false;	// return
 		}
 		else
 		{
 			return false;
 		}
 	}
-	//if (state.GetCodeInfoForAddress(pc) != nullptr)	// already been analysed
-	//	return false;
 
 	uint16_t newPC = WriteCodeInfoForAddress(state, pc);
 	// get new code info
 	pCodeInfo = state.GetCodeInfoForAddress(pc);
-	if (oldComment.empty() == false)
-		pCodeInfo->Comment = oldComment;
+	if (pOldComment != nullptr)	// restore old comment
+		pCodeInfo->Comment = std::string(pOldComment);
 
 	if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
 		return false;
 	
 	pc = newPC;
-	state.bCodeAnalysisDataDirty = true;
+	state.SetCodeAnalysisDirty();
 	return true;
 }
 
-// TODO: make this use above function
+// Step through and analyse code from a location
 void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 {
+	while(AnalyseAtPC(state,pc))
+		state.SetCodeAnalysisDirty();
+
+	return;
 	//FSpeccy *pSpeccy = state.pSpeccy;
 
 	// update branch reference counters
@@ -497,7 +515,7 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 	if (state.GetCodeInfoForAddress(pc) != nullptr)	// already been analysed
 		return;
 
-	state.bCodeAnalysisDataDirty = true;
+	state.SetCodeAnalysisDirty();
 
 	
 	bool bStop = false;
@@ -523,7 +541,6 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc)
 {
-	
 	AnalyseAtPC(state, pc);
 
 	state.FrameTrace.push_back(pc);
@@ -581,11 +598,24 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 			}
 		}
 
-		const FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
+		// ensure self modifying code is flagged properly
+		if (pCodeInfo != nullptr && pCodeInfo->bSelfModifyingCode == true)
+		{
+			pCodeInfo->bSelfModifyingCode = false;
+			for (uint16_t operandAddr = 0; operandAddr < pCodeInfo->ByteSize; operandAddr++)
+			{
+				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pCodeInfo->Address + operandAddr);
+				if (pOpDataInfo->Writes.empty() == false)
+				{
+					pCodeInfo->bSelfModifyingCode = true;
+				}
+			}
+		}
+		/*const FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
 		if ((pCodeInfo != nullptr) && (pLabelInfo != nullptr) && (pLabelInfo->LabelType == LabelType::Data))
 		{
 			pCodeInfo->bSelfModifyingCode = true;
-		}
+		}*/
 	}
 }
 
@@ -623,6 +653,10 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	pLabel->ByteSize = 1;
 	pLabel->Global = type == LabelType::Function;
 	state.SetLabelForAddress(address, pLabel);
+
+	if (pLabel->Global)
+		GenerateGlobalInfo(state);
+
 	return pLabel;
 }
 
@@ -636,7 +670,7 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 		pCommentBlock->Address = address;
 		pCommentBlock->ByteSize = 1;
 		state.SetCommentBlockForAddress(address, pCommentBlock);
-		state.bCodeAnalysisDataDirty = true;
+		state.SetCodeAnalysisDirty();
 		return pCommentBlock;
 	}
 
@@ -661,6 +695,9 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 		}
 		
 	}
+
+	state.bRebuildFilteredGlobalDataItems = true;
+	state.bRebuildFilteredGlobalFunctions = true;
 }
 
 void RegisterCodeAnalysisPage(FCodeAnalysisState& state, FCodeAnalysisPage& page, const char* pName)
@@ -773,19 +810,19 @@ public:
 			{
 				pDataItem->DataType = DataType::Word;
 				pDataItem->ByteSize = 2;
-				state.bCodeAnalysisDataDirty = true;
+				state.SetCodeAnalysisDirty();
 			}
 			else if (pDataItem->DataType == DataType::Word)
 			{
 				pDataItem->DataType = DataType::Byte;
 				pDataItem->ByteSize = 1;
-				state.bCodeAnalysisDataDirty = true;
+				state.SetCodeAnalysisDirty();
 			}
 			else if ( pDataItem->DataType == DataType::Text )
 			{
 				pDataItem->DataType = DataType::Byte;
 				pDataItem->ByteSize = 1;
-				state.bCodeAnalysisDataDirty = true;
+				state.SetCodeAnalysisDirty();
 			}
 		}
 		else if (pItem->Type == ItemType::Code)
@@ -794,7 +831,7 @@ public:
 			if (pCodeItem->bDisabled == false)
 			{
 				pCodeItem->bDisabled = true;
-				state.bCodeAnalysisDataDirty = true;
+				state.SetCodeAnalysisDirty();
 
 				FLabelInfo* pLabelInfo = state.GetLabelForAddress(pItem->Address);
 				if (pLabelInfo != nullptr)
@@ -828,7 +865,7 @@ void SetItemCode(FCodeAnalysisState& state, uint16_t addr)
 		RunStaticCodeAnalysis(state, addr);
 		UpdateCodeInfoForAddress(state, addr);
 	}
-	state.bCodeAnalysisDataDirty = true;
+	state.SetCodeAnalysisDirty();
 }
 
 void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
@@ -878,7 +915,7 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 			else
 			{
 				pDataItem->DataType = DataType::Text;
-				state.bCodeAnalysisDataDirty = true;
+				state.SetCodeAnalysisDirty();
 			}
 		}
 	}
@@ -912,7 +949,8 @@ void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 			labelType = LabelType::Code;
 
 		GenerateLabelForAddress(state, address, labelType);
-		state.bCodeAnalysisDataDirty = true;
+		
+		state.SetCodeAnalysisDirty();
 	}
 }
 
@@ -923,7 +961,11 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 	if (pLabelInfo != nullptr)
 	{
 		state.SetLabelForAddress(address, nullptr);
-		state.bCodeAnalysisDataDirty = true;
+		// Remove from globals
+		if (pLabelInfo->Global || pLabelInfo->LabelType == LabelType::Function)
+			GenerateGlobalInfo(state);
+
+		state.SetCodeAnalysisDirty();
 	}
 }
 

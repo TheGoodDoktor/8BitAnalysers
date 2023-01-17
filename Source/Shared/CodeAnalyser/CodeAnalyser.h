@@ -144,6 +144,13 @@ struct FDataFormattingOptions
 	}
 };
 
+struct FLabelListFilter
+{
+	std::string		FilterText;
+	uint16_t		MinAddress = 0;
+	uint16_t		MaxAddress = 0xffff;
+};
+
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
@@ -155,7 +162,14 @@ struct FCodeAnalysisViewState
 	int		HoverAddress = -1;		// address being hovered over
 	int		HighlightAddress = -1;	// address to highlight
 	bool	GoToLabel = false;
-	bool	ShowROMLabels = true;
+
+	// for global Filters
+	bool						ShowROMLabels = true;
+	FLabelListFilter			GlobalDataItemsFilter;
+	std::vector< FLabelInfo*>	FilteredGlobalDataItems;
+	FLabelListFilter			GlobalFunctionsFilter;
+	std::vector< FLabelInfo*>	FilteredGlobalFunctions;
+
 	std::vector<uint16_t>	AddressStack;
 
 	bool					DataFormattingTabOpen = false;
@@ -195,6 +209,13 @@ struct FCodeAnalysisState
 		SetCodeAnalysisWritePage(pageNo, pWritePage);
 	}
 
+	void	SetCodeAnalysisDirty(bool val = true) 
+	{ 
+		bCodeAnalysisDataDirty = val; 
+	}
+
+	bool IsCodeAnalysisDataDirty() const { return bCodeAnalysisDataDirty; }
+
 	void	ResetLabelNames() { LabelUsage.clear(); }
 	bool	EnsureUniqueLabelName(std::string& lableName);
 	bool	RemoveLabelName(const std::string& labelName);	// for changing label names
@@ -216,17 +237,22 @@ struct FCodeAnalysisState
 private:
 	std::vector<FCodeAnalysisPage*>	RegisteredPages;
 	std::vector<std::string>	PageNames;
-	int32_t		NextPageId = 0;
+	int32_t						NextPageId = 0;
 	std::map<std::string, int>	LabelUsage;
 
+	bool						bCodeAnalysisDataDirty = false;
+
 public:
-	bool					bCodeAnalysisDataDirty = false;
 
 	bool					bRegisterDataAccesses = true;
 
 	std::vector< FItem *>	ItemList;
-	std::vector< FLabelInfo *>	GlobalDataItems;
-	std::vector< FLabelInfo *>	GlobalFunctions;
+
+	std::vector< FLabelInfo*>	GlobalDataItems;
+	bool						bRebuildFilteredGlobalDataItems = true;
+	
+	std::vector< FLabelInfo*>	GlobalFunctions;
+	bool						bRebuildFilteredGlobalFunctions = true;
 
 	static const int kNoViewStates = 4;
 	FCodeAnalysisViewState	ViewState[kNoViewStates];	// new multiple view states

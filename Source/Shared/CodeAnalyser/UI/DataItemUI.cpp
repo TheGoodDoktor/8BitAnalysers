@@ -250,16 +250,65 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 	ImGui::PopID();
 }
 
+void ShowDataItemActivity(FCodeAnalysisState& state, uint16_t addr)
+{
+	const FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
+	const FDataInfo* pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
+	const int framesSinceWritten = pWriteDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pWriteDataInfo->LastFrameWritten;
+	const int framesSinceRead = pReadDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pReadDataInfo->LastFrameRead;
+	const int wBrightVal = (255 - std::min(framesSinceWritten << 2, 255)) & 0xff;
+	const int rBrightVal = (255 - std::min(framesSinceRead << 2, 255)) & 0xff;
+	float offset = 0;
+
+	if (rBrightVal > 0 || wBrightVal > 0)
+	{
+		const float lineHeight = ImGui::GetTextLineHeight();
+		const ImU32 pc_color = 0xFF00FFFF;
+		const ImU32 brd_color = 0xFF000000;
+
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const float lh2 = (float)(int)(lineHeight / 2);
+
+		if (wBrightVal > 0)
+		{
+			const ImVec2 a(pos.x + 2, pos.y);
+			const ImVec2 b(pos.x + 12, pos.y + lh2);
+			const ImVec2 c(pos.x + 2, pos.y + lineHeight);
+
+			const ImU32 col = 0xff000000 | (wBrightVal << 0);
+			dl->AddTriangleFilled(a, b, c, col);
+			dl->AddTriangle(a, b, c, brd_color);
+		}
+
+		pos.x += 10;
+
+
+		if (rBrightVal > 0)
+		{
+			const ImVec2 a(pos.x + 2, pos.y);
+			const ImVec2 b(pos.x + 12, pos.y + lh2);
+			const ImVec2 c(pos.x + 2, pos.y + lineHeight);
+
+			const ImU32 col = 0xff000000 | (rBrightVal << 8);
+			dl->AddTriangleFilled(a, b, c, col);
+			dl->AddTriangle(a, b, c, brd_color);
+		}
+	}
+}
+
 void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FDataInfo* pDataInfo, bool bDrawLabel, bool bEdit)
 {
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
+
+	ShowDataItemActivity(state, pDataInfo->Address);
+#if 0
 	const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
 	const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
 	const int wBrightVal = (255 - std::min(framesSinceWritten << 2, 255)) & 0xff;
 	const int rBrightVal = (255 - std::min(framesSinceRead << 2, 255)) & 0xff;
-	float offset = 0;
 
 	if (rBrightVal > 0 || wBrightVal > 0)
 	{
@@ -295,7 +344,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 			dl->AddTriangle(a, b, c, brd_color);
 		}
 	}
-
+#endif
 	// show if breakpointed
 	if (state.CPUInterface->IsAddressBreakpointed(pDataInfo->Address))
 	{
@@ -315,6 +364,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
 	bool bShowItemLabel = true;
+
 	if (pDataInfo->OperandType != EOperandType::Unknown)
 	{
 		switch (pDataInfo->OperandType)
@@ -333,6 +383,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 
 	const float line_start_x = ImGui::GetCursorPosX();
+	float offset = 0;
+
 	if (bDrawLabel)
 	{
 		DrawAddressLabel(state, viewState, pDataInfo->Address);
@@ -532,7 +584,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		if (ImGui::InputInt("Length", &length))
 		{
 			pDataInfo->ByteSize = length;
-			state.bCodeAnalysisDataDirty = true;
+			state.SetCodeAnalysisDirty();
 		}
 	}
 	break;
@@ -602,7 +654,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			if (ImGui::InputInt2("Image Size (chars)", sz))
 			{
 				pDataInfo->ByteSize = pImageData->SetSizeChars(sz[0], sz[1]);
-				state.bCodeAnalysisDataDirty = true;	// force redraw of items
+				state.SetCodeAnalysisDirty();	// force redraw of items
 				bRebuildImage = true;
 			}
 

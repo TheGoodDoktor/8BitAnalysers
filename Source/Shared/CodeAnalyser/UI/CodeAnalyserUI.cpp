@@ -185,10 +185,19 @@ void DrawStack(FCodeAnalysisState& state)
 {
 	const uint16_t sp = state.CPUInterface->GetSP();
 	if (state.StackMin > state.StackMax)	// stack is invalid
+	{
+		ImGui::Text("No valid stack discovered");
 		return;
-
+	}
+	
 	if (sp < state.StackMin || sp > state.StackMax)	// sp is not in range
+	{
+		ImGui::Text("Stack pointer: %s",NumStr(sp));
+		DrawAddressLabel(state,state.GetFocussedViewState(),sp);
+		ImGui::SameLine();
+		ImGui::Text("not in stack range(%s - %s)",NumStr(state.StackMin),NumStr(state.StackMax));
 		return;
+	}
 
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
@@ -413,13 +422,13 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr)
 {
 	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
-	if (pCodeInfo != nullptr)
+	if (pCodeInfo != nullptr && pCodeInfo->FrameLastAccessed != -1)
 	{
-
 		const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
 		const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
+		const bool bPCLine = pCodeInfo->Address == state.CPUInterface->GetPC();
 
-		if (brightVal > 0)
+		if (bPCLine || brightVal > 0)
 		{
 			const float line_height = ImGui::GetTextLineHeight();
 			const ImU32 col = 0xff000000 | (brightVal << 16) | (brightVal << 8) | (brightVal << 0);
@@ -436,8 +445,22 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessor
 			const ImVec2 b(pos.x + 12, pos.y + lh2);
 			const ImVec2 c(pos.x + 2, pos.y + line_height);
 
-			dl->AddTriangleFilled(a, b, c, col);
-			dl->AddTriangle(a, b, c, brd_color);
+			if (bPCLine)
+			{
+				dl->AddTriangleFilled(a, b, c, pc_color);
+				dl->AddTriangle(a, b, c, brd_color);
+
+				if (state.CPUInterface->IsStopped())
+				{
+					const ImVec2 lineStart(pos.x + 18, ImGui::GetItemRectMax().y);
+					dl->AddLine(lineStart, ImGui::GetItemRectMax(), pc_color);
+				}
+			}
+			else
+			{
+				dl->AddTriangleFilled(a, b, c, col);
+				dl->AddTriangle(a, b, c, brd_color);
+			}
 		}
 	}
 }
@@ -448,6 +471,8 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
+	ShowCodeAccessorActivity(state, pCodeInfo->Address);
+#if 0
 	const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
 	const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
 
@@ -486,7 +511,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 			dl->AddTriangle(a, b, c, brd_color);
 		}
 	}
-
+#endif
 	// show if breakpointed
 	if (state.CPUInterface->IsAddressBreakpointed(pCodeInfo->Address))
 	{
@@ -644,7 +669,7 @@ void DrawCommentBlockDetails(FCodeAnalysisState& state, FCommentBlock* pCommentB
 	{
 		if (pCommentBlock->Comment.empty() == true)
 			state.SetCommentBlockForAddress(pCommentBlock->Address, nullptr);
-		state.bCodeAnalysisDataDirty = true;
+		state.SetCodeAnalysisDirty();
 	}
 
 }
@@ -773,7 +798,7 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::SetKeyboardFocusHere();
 		if(ImGui::InputTextMultiline("##comment", &viewState.pCursorItem->Comment,ImVec2(), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine))
 		{
-			state.bCodeAnalysisDataDirty = true;
+			state.SetCodeAnalysisDirty();
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
@@ -800,7 +825,7 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 void UpdateItemList(FCodeAnalysisState &state)
 {
 	// build item list - not every frame please!
-	if (state.bCodeAnalysisDataDirty)
+	if (state.IsCodeAnalysisDataDirty())
 	{
 		const float line_height = ImGui::GetTextLineHeight();
 		
@@ -894,7 +919,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 		// Maybe this needs to follow the same algorithm as the main view?
 		ImGui::SetScrollY(state.GetFocussedViewState().CursorItemIndex * line_height);
-		state.bCodeAnalysisDataDirty = false;
+		state.SetCodeAnalysisDirty(false);
 	}
 
 }
@@ -1345,26 +1370,34 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	ImGui::EndChild(); // right panel
 }
 
-void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FLabelInfo *> labelList)
+void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const std::vector<FLabelInfo *>& labelList)
 {
-	static std::string filterText;
-	ImGui::InputText("Filter", &filterText);
-	ImGui::SameLine();
-	ImGui::Checkbox("ROM", &viewState.ShowROMLabels);
-
 	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false))
-	{
-		for (FLabelInfo *pLabelInfo : labelList)
+	{		
+		const float lineHeight = ImGui::GetTextLineHeight();
+		ImGuiListClipper clipper((int)labelList.size(), lineHeight);
+
+		while (clipper.Step())
 		{
-			if (viewState.ShowROMLabels || (!viewState.ShowROMLabels && pLabelInfo->Address >= 0x4000))
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
-				if (filterText.empty() || pLabelInfo->Name.find(filterText) != std::string::npos)
+				const FLabelInfo* pLabelInfo = labelList[i];
+
+				const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pLabelInfo->Address);
+
+				ImGui::PushID(pLabelInfo->Address);
+				if (pCodeInfo && pCodeInfo->bDisabled == false)
+					ShowCodeAccessorActivity(state, pLabelInfo->Address);
+				else
+					ShowDataItemActivity(state, pLabelInfo->Address);
+								
+				if (ImGui::Selectable("##labellistitem", viewState.pCursorItem == pLabelInfo))
 				{
-					if (ImGui::Selectable(pLabelInfo->Name.c_str(), viewState.pCursorItem == pLabelInfo))
-					{
-						GoToAddress(viewState, pLabelInfo->Address, true);
-					}
+					GoToAddress(viewState, pLabelInfo->Address, true);
 				}
+				ImGui::SameLine(30);
+				ImGui::Text("%s", pLabelInfo->Name.c_str());
+				ImGui::PopID();
 			}
 		}
 	}
@@ -1483,14 +1516,14 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		if (ImGui::Button("Format"))
 		{
 			FormatData(state, formattingOptions);
-			state.bCodeAnalysisDataDirty = true;
+			state.SetCodeAnalysisDirty();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Format & Advance"))
 		{
 			FormatData(state, formattingOptions);
 			formattingOptions.StartAddress += formattingOptions.ItemSize * formattingOptions.NoItems;
-			state.bCodeAnalysisDataDirty = true;
+			state.SetCodeAnalysisDirty();
 			GoToAddress(viewState, formattingOptions.StartAddress);
 		}
 	}
@@ -1501,22 +1534,71 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	}
 }
 
+
+
+void GenerateFilteredLabelList(const FLabelListFilter&filter,const std::vector<FLabelInfo*>& sourceLabelList, std::vector<FLabelInfo*>& filteredList)
+{
+	filteredList.clear();
+
+	for (FLabelInfo* pLabelInfo : sourceLabelList)
+	{
+		if (pLabelInfo->Address < filter.MinAddress || pLabelInfo->Address > filter.MaxAddress)	// skip min address
+			continue;
+
+		if (filter.FilterText.empty() || pLabelInfo->Name.find(filter.FilterText) != std::string::npos)
+			filteredList.push_back(pLabelInfo);
+	}
+}
+
 void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
 	if(ImGui::BeginTabBar("GlobalsTabBar"))
 	{
 		if(ImGui::BeginTabItem("Functions"))
 		{
-			DrawLabelList(state, viewState, state.GlobalFunctions);
+			state.bRebuildFilteredGlobalFunctions |= ImGui::InputText("Filter", &viewState.GlobalFunctionsFilter.FilterText);
+			ImGui::SameLine();
+			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
+			{
+				viewState.GlobalFunctionsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
+				viewState.GlobalDataItemsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
+				state.bRebuildFilteredGlobalFunctions = true;
+				state.bRebuildFilteredGlobalDataItems = true;
+			}
+
+			if (state.bRebuildFilteredGlobalFunctions)
+			{
+				GenerateFilteredLabelList(viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
+				state.bRebuildFilteredGlobalFunctions = false;
+			}
+
+			DrawLabelList(state, viewState, viewState.FilteredGlobalFunctions);
 			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("Data"))
 		{
-			DrawLabelList(state, viewState, state.GlobalDataItems);
+			state.bRebuildFilteredGlobalDataItems |= ImGui::InputText("Filter", &viewState.GlobalDataItemsFilter.FilterText);
+			ImGui::SameLine();
+			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
+			{
+				viewState.GlobalFunctionsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
+				viewState.GlobalDataItemsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
+				state.bRebuildFilteredGlobalFunctions = true;
+				state.bRebuildFilteredGlobalDataItems = true;
+			}
+
+			if (state.bRebuildFilteredGlobalDataItems)
+			{
+				GenerateFilteredLabelList(viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
+				state.bRebuildFilteredGlobalDataItems = false;
+			}
+
+			DrawLabelList(state, viewState, viewState.FilteredGlobalDataItems);
 			ImGui::EndTabItem();
 		}
 
+		// TODO: This should be somewhere else
 		if (ImGui::BeginTabItem("Format"))	
 		{
 			DrawFormatTab(state, viewState);

@@ -1057,24 +1057,28 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 			if (ImGui::BeginMenu("Number Mode"))
 			{
+				bool bClearCode = false;
 				if (ImGui::MenuItem("Decimal", 0, GetNumberDisplayMode() == ENumberDisplayMode::Decimal))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::Decimal);
-					CodeAnalysis.bCodeAnalysisDataDirty = true;
+					CodeAnalysis.SetCodeAnalysisDirty();
+					bClearCode = true;
 				}
 				if (ImGui::MenuItem("Hex - FEh", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAitch))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
-					CodeAnalysis.bCodeAnalysisDataDirty = true;
+					CodeAnalysis.SetCodeAnalysisDirty();
+					bClearCode = true;
 				}
 				if (ImGui::MenuItem("Hex - $FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexDollar))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
-					CodeAnalysis.bCodeAnalysisDataDirty = true;
+					CodeAnalysis.SetCodeAnalysisDirty();
+					bClearCode = true;
 				}
 
 				// clear code text so it can be written again
-				if (CodeAnalysis.bCodeAnalysisDataDirty)
+				if (bClearCode)
 				{
 					for (int i = 0; i < 1 << 16; i++)
 					{
@@ -1682,7 +1686,7 @@ void FSpectrumEmu::DrawCheatsUI()
 				if (pCodeInfo)
 					pCodeInfo->Text.clear();
 			}
-			CodeAnalysis.bCodeAnalysisDataDirty = true;
+			CodeAnalysis.SetCodeAnalysisDirty();
 
 			LOGINFO("Poke %s: '%s' [%d byte(s)]", cheat.bEnabled ? "applied" : "reverted", cheat.Description.c_str(), cheat.Entries.size());
 

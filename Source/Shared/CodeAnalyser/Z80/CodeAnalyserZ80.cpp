@@ -326,15 +326,17 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 		FDataInfo* pStackItem = state.GetWriteDataInfoForAddress(cpuState.SP-2);	// -2 because SP was recorded before instruction was 	
 		const FCodeInfo* pCodeItem = state.GetCodeInfoForAddress(pc);
 
-		//if(pCodeItem != nullptr && pCodeItem->Comment.empty() == false)
-		pStackItem->Comment = pCodeItem->Comment;
+		if (pCodeItem != nullptr)// && pCodeItem->Comment.empty() == false)
+			pStackItem->Comment = pCodeItem->Comment;
+		else
+			pStackItem->Comment = "";
 
 		// Format stack data item
 		if(pStackItem->DataType != DataType::Word)
 		{
 			pStackItem->DataType = DataType::Word;
 			pStackItem->ByteSize = 2;
-			state.bCodeAnalysisDataDirty = true;
+			state.SetCodeAnalysisDirty();
 		}
 	}
 
