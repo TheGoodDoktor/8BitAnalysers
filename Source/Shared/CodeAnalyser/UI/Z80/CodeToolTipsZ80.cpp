@@ -107,7 +107,7 @@ std::string GetRegName(uint32_t flag)
 std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 {
 	std::string outString;
-	char tempStr[12];
+	char tempStr[16];
 
 	z80_t* pCPU = (z80_t *)CPUIF->GetCPUEmulator();
 
@@ -273,8 +273,8 @@ std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 
 	if (Regs & Z80Reg::SP_Indirect)
 	{
-		const uint8_t val = CPUIF->ReadByte(z80_sp(pCPU));
-		sprintf_s(tempStr, "(SP) = %s ", NumStr(val));
+		uint16_t stackVal = CPUIF->ReadWord(z80_sp(pCPU));
+		sprintf_s(tempStr, "(SP) = %s ", NumStr(stackVal));
 		outString += std::string(tempStr);
 	}
 
@@ -598,7 +598,7 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
                 if (q == 0) /* POP qq (register pair)*/
 				{
 					sprintf_s(tempStr, "Pop %s from stack", GetRegName(rp2[p]).c_str());
-					inst.RegFlags = rp2[p];
+					inst.RegFlags = rp2[p] | Z80Reg::SP_Indirect;
 				}
                 else 
 				{
@@ -638,15 +638,15 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 						inst.RegFlags = Z80Reg::DE | Z80Reg::HL;
 						break;
                     case 6: /* DI*/
+						sprintf_s(tempStr, "Disable maskable interrupts");
 						break;
                     case 7: /* EI*/
+						sprintf_s(tempStr, "Enable maskable interrupts");
 						break;
                     case 1: /* CB prefix */
                         if (pre) 
 							d = CPUIF->ReadByte(pc++);
 						op = CPUIF->ReadByte(pc++);
-
-						//const char* oct = "01234567";
 
                         x = (op >> 6) & 3;
                         y = (op >> 3) & 7;
@@ -658,24 +658,28 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 							switch (y)
 							{
 								case 0: // RLC 
-									if (z==6) // (HL)
-										sprintf_s(tempStr, "Rotate (HL) left 1 bit. Bit 7 is copied to C flag and to bit 0.");
+									sprintf_s(tempStr, "Rotate %s left 1 bit. Bit 7 is copied to C flag and to bit 0.", GetRegName(r[z]).c_str());
 									break;
 								case 1: // RRC
-									if (z==6) // (HL)
-										sprintf_s(tempStr, "Rotate (HL) right 1 bit. Bit 0 is copied to C flag and to bit 7.");
+									sprintf_s(tempStr, "Rotate %s right 1 bit. Bit 7 is copied to C flag and to bit 0.", GetRegName(r[z]).c_str());
 									break;
 								case 2: // RL 
+									sprintf_s(tempStr, "Rotate %s left one bit. Bit 7 is copied to C flag and previous C flag copied to bit 0.", GetRegName(r[z]).c_str());
 									break;
 								case 3: // RR
+									sprintf_s(tempStr, "Rotate %s right one bit. Bit 0 is copied to C flag and previous C flag copied to bit 7.", GetRegName(r[z]).c_str());
 									break;
 								case 4: // SLA
+									sprintf_s(tempStr, "Arithmetic shift left %s one bit. Bit 7 copied to C flag and 0 copied to bit 0.", GetRegName(r[z]).c_str());
 									break;
 								case 5: // SRA
+									sprintf_s(tempStr, "Arithmetic shift right %s one bit. Bit 0 copied to C flag and previous contents of bit 7 remain unchanged.", GetRegName(r[z]).c_str());
 									break;
 								case 6: // SLL
+									sprintf_s(tempStr, "SLL %s", GetRegName(r[z]).c_str());
 									break;
 								case 7: // SRL
+									sprintf_s(tempStr, "SRL %s", GetRegName(r[z]).c_str());
 									break;
 							}
                             
@@ -759,7 +763,7 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 												sprintf_s(tempStr, "LDD");
 												break;
 											case 2:
-												sprintf_s(tempStr, "LDIR");
+												sprintf_s(tempStr, "Copies (HL) to (DE) repeatedly while BC is not 0. After each copy BC is decremented. HL and DE are incremented.");
 												break;
 											case 3:
 												sprintf_s(tempStr, "LDDR");
