@@ -155,6 +155,7 @@ struct FCodeAnalysisViewState
 	int		HoverAddress = -1;		// address being hovered over
 	int		HighlightAddress = -1;	// address to highlight
 	bool	GoToLabel = false;
+	bool	ShowROMLabels = true;
 	std::vector<uint16_t>	AddressStack;
 
 	bool					DataFormattingTabOpen = false;
