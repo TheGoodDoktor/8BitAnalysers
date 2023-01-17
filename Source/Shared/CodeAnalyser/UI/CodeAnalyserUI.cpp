@@ -521,21 +521,37 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	{
 		// Draw hex values of the instruction's opcode
 		char tmp[16]= {0};
-		std::string strHexValues;
+		const ImVec4 byteChangedCol(1.0f, 1.0f, 0.0f, 1.0f);
+		const ImVec4 byteNormalCol(1.0f, 1.0f, 1.0f, 1.0f);
+		bool bByteModified = false;
 		for (int i=0; i<4; i++)
 		{
+			std::string strHexValue;
+
 			if (i < pCodeInfo->ByteSize)
 				sprintf_s(tmp, "%02X", state.CPUInterface->ReadByte(pCodeInfo->Address + i));
 			else
-				sprintf_s(tmp, "   ");
+				sprintf_s(tmp, "  ");
 
-			strHexValues += tmp;
-			if (i < pCodeInfo->ByteSize)
-				strHexValues += " ";
+			strHexValue += tmp;
+
+			if(pCodeInfo->bSelfModifyingCode)
+			{
+				FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(pCodeInfo->Address + i);
+				if (pOperandData->Writes.empty() == false)
+				{
+					// Change the colour if this is self modifying code and the byte has been modified.
+					bByteModified = true;
+				}
+			}
+			else
+			{
+				bByteModified = false;
+			}
+			
+			ImGui::TextColored(bByteModified ? byteChangedCol : byteNormalCol, "%s%s", strHexValue.c_str(), i==3?"  ":"");
+			ImGui::SameLine();
 		}
-		strHexValues += " ";
-		ImGui::Text("%s", strHexValues.c_str());
-		ImGui::SameLine();
 	}
 
 	ImGui::Text("%s", pCodeInfo->Text.c_str());
