@@ -86,11 +86,18 @@ source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program
 set_target_properties( SpectrumAnalyser PROPERTIES
 	CXX_STANDARD 17 )
 
-#libraries
+#windows specific
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
+	# libraries
 	target_link_libraries(${PROJECT_NAME} PRIVATE
 		d3d11.lib dxgi.lib dxguid.lib uuid.lib
 		kernel32.lib user32.lib
 		comdlg32.lib advapi32.lib shell32.lib
 		ole32.lib oleaut32.lib)
+
+	# debugger working dir
+	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
+
+	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 endif()
