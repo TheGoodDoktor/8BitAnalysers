@@ -20,7 +20,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "GameConfig.h"
 #include "GlobalConfig.h"
 #include "GameData.h"
-#include <ImGuiSupport/imgui_impl_lucidextra.h>
+#include <ImGuiSupport/ImGuiTexture.h>
 #include "GameViewers/GameViewer.h"
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
@@ -385,12 +385,12 @@ static void boot_cb(zx_t* sys, zx_type_t type)
 
 void* gfx_create_texture(int w, int h)
 {
-	return ImGui_ImplDX11_CreateTextureRGBA(nullptr, w, h);
+	return ImGui_CreateTextureRGBA(nullptr, w, h);
 }
 
 void gfx_update_texture(void* h, void* data, int data_byte_size)
 {
-	ImGui_ImplDX11_UpdateTextureRGBA(h, (unsigned char *)data);
+	ImGui_UpdateTextureRGBA(h, (unsigned char *)data);
 }
 
 void gfx_destroy_texture(void* h)
@@ -589,13 +589,14 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	LoadGlobalConfig(kGlobalConfigFilename);
 	FGlobalConfig& globalConfig = GetGlobalConfig();
 	SetNumberDisplayMode(globalConfig.NumberDisplayMode);
-		
+	CodeAnalysis.Config.bShowOpcodeValues = globalConfig.bShowOpcodeValues;
+
 	// setup pixel buffer
 	const size_t pixelBufferSize = 320 * 256 * 4;
 	FrameBuffer = new unsigned char[pixelBufferSize * 2];
 
 	// setup texture
-	Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FrameBuffer), 320, 256);
+	Texture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(FrameBuffer), 320, 256);
 	// setup emu
 	zx_type_t type = config.Model == ESpectrumModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
 	zx_joystick_type_t joy_type = ZX_JOYSTICKTYPE_NONE;
@@ -734,6 +735,7 @@ void FSpectrumEmu::Shutdown()
 		config.LastGame = pActiveGame->pConfig->Name;
 
 	config.NumberDisplayMode = GetNumberDisplayMode();
+	config.bShowOpcodeValues = CodeAnalysis.Config.bShowOpcodeValues;
 
 	SaveGlobalConfig(kGlobalConfigFilename);
 }
@@ -794,7 +796,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 		_zx_decode_scanline(&ZXEmuState);
 	}
 	ZXEmuState.scanline_y = oldScanlineVal;
-	ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
+	ImGui_UpdateTextureRGBA(Texture, FrameBuffer);
 
 
 
@@ -1094,7 +1096,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			ImGui::MenuItem("Scan Line Indicator", 0, &config.bShowScanLineIndicator);
 			ImGui::MenuItem("Enable Audio", 0, &config.bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
-			ImGui::MenuItem("Show Opcode Values", 0, &config.bShowOpcodeValues);
+			ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.Config.bShowOpcodeValues);
 			if(pActiveGame!=nullptr)
 				ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 
@@ -1284,7 +1286,7 @@ void FSpectrumEmu::Tick()
 			clk_ticks_executed(&ZXEmuState.clk, ticksExecuted);
 			kbd_update(&ZXEmuState.kbd);
 		}*/
-		ImGui_ImplDX11_UpdateTextureRGBA(Texture, FrameBuffer);
+		ImGui_UpdateTextureRGBA(Texture, FrameBuffer);
 
 		FrameTraceViewer.CaptureFrame();
 		FrameScreenPixWrites.clear();

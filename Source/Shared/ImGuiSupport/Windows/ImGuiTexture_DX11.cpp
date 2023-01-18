@@ -1,5 +1,3 @@
-#include "imgui_impl_lucidextra.h"
-
 #include "imgui.h"
 #include <d3d11.h>
 #include <cstdint>
@@ -9,7 +7,7 @@ extern ID3D11DeviceContext*	GetDx11DeviceContext();
 
 
 // assume it's 8bpp
-ImTextureID ImGui_ImplDX11_CreateTextureRGBA(unsigned char* pixels, int width, int height)
+ImTextureID ImGui_CreateTextureRGBA(unsigned char* pixels, int width, int height)
 {
 	ImTextureID newTex;
 	ID3D11ShaderResourceView*	pTextureView = NULL;
@@ -56,14 +54,14 @@ ImTextureID ImGui_ImplDX11_CreateTextureRGBA(unsigned char* pixels, int width, i
 	return newTex;
 }
 
-void ImGui_ImplDX11_FreeTexture(ImTextureID texture)
+void ImGui_FreeTexture(ImTextureID texture)
 {
 	// Free texture
 	ID3D11ShaderResourceView* pTextureView = (ID3D11ShaderResourceView*)texture;
 	pTextureView->Release();
 }
 
-void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels)
+void ImGui_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels)
 {
 	ID3D11ShaderResourceView*	pTextureView = (ID3D11ShaderResourceView*)texture;
 	ID3D11DeviceContext* pDeviceCtx = GetDx11DeviceContext();
@@ -84,7 +82,7 @@ void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels)
 	}
 }
 
-void ImGui_ImplDX11_UpdateTextureRGBA(ImTextureID texture, unsigned char* pixels, int srcWidth, int srcHeight)
+void ImGui_UpdateTextureRGBA(ImTextureID texture, unsigned char* pixels, int srcWidth, int srcHeight)
 {
 	ID3D11ShaderResourceView* pTextureView = (ID3D11ShaderResourceView*)texture;
 	ID3D11DeviceContext* pDeviceCtx = GetDx11DeviceContext();

@@ -1,5 +1,6 @@
 #include "GraphicsViewer.h"
-#include <ImGuiSupport/imgui_impl_lucidextra.h>
+#include <ImGuiSupport/ImGuiTexture.h>
+
 #include "ZXGraphicsView.h"
 #include "../SpectrumEmu.h"
 #include "../GameConfig.h"

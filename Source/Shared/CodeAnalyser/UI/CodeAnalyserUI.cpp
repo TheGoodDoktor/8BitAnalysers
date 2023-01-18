@@ -541,8 +541,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	if(pCodeInfo->bNOPped)
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
 	
-	const FGlobalConfig& config = GetGlobalConfig();
-	if (config.bShowOpcodeValues)
+	if (state.Config.bShowOpcodeValues)
 	{
 		// Draw hex values of the instruction's opcode
 		char tmp[16]= {0};

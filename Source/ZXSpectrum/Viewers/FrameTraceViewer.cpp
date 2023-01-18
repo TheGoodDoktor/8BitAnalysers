@@ -4,7 +4,8 @@
 
 #include <imgui.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
-#include <ImGuiSupport/imgui_impl_lucidextra.h>
+#include <ImGuiSupport/ImGuiTexture.h>
+
 #include <Util/Misc.h>
 
 
@@ -15,7 +16,7 @@ void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 	// Init Frame Trace
 	for (int i = 0; i < kNoFramesInTrace; i++)
 	{
-		FrameTrace[i].Texture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->FrameBuffer), 320, 256);
+		FrameTrace[i].Texture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->FrameBuffer), 320, 256);
 		FrameTrace[i].CPUState = malloc(sizeof(z80_t));
 	}
 
@@ -26,7 +27,7 @@ void	FFrameTraceViewer::Shutdown()
 {
 	for (int i = 0; i < kNoFramesInTrace; i++)
 	{
-		ImGui_ImplDX11_FreeTexture(FrameTrace[i].Texture);
+		ImGui_FreeTexture(FrameTrace[i].Texture);
 		FrameTrace[i].Texture = nullptr;
 		free(FrameTrace[i].CPUState);
 	}
@@ -40,7 +41,7 @@ void FFrameTraceViewer::CaptureFrame()
 {
 	// set up new trace frame
 	FSpeccyFrameTrace& frame = FrameTrace[CurrentTraceFrame];
-	ImGui_ImplDX11_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->FrameBuffer);
+	ImGui_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->FrameBuffer);
 	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.FrameTrace;
 	frame.ScreenPixWrites = pSpectrumEmu->FrameScreenPixWrites;
 	frame.ScreenAttrWrites = pSpectrumEmu->FrameScreenAttrWrites;
