@@ -10,7 +10,7 @@
 #include <dinput.h>
 #include <tchar.h>
 
-#include "UI/SpectrumEmu.h"
+#include "../SpectrumEmu.h"
 
 #define SOKOL_IMPL
 #include "sokol_audio.h"

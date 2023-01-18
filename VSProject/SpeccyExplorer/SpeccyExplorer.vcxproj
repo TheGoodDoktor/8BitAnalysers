@@ -136,7 +136,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Source\main.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp" />
@@ -186,6 +185,7 @@
     <ClCompile Include="..\..\Source\UI\Viewers\SpriteViewer.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\ViewerBase.cpp" />
     <ClCompile Include="..\..\Source\UI\Viewers\ZXGraphicsView.cpp" />
+    <ClCompile Include="..\..\Source\UI\Windows\WinMain.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_draw.cpp" />
