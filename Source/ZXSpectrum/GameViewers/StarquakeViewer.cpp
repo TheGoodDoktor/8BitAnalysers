@@ -1,7 +1,7 @@
 #include "StarquakeViewer.h"
 #include "../Viewers/SpriteViewer.h"
 #include "../SpectrumEmu.h"
-#include <ImGuiSupport/imgui_impl_lucidextra.h>
+#include <ImGuiSupport/ImGuiTexture.h>
 #include <algorithm>
 #include "GameViewer.h"
 #include "../GameConfig.h"

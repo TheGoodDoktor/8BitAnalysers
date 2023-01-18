@@ -1,7 +1,7 @@
 #include "GraphicsView.h"
 #include "../CodeAnalyser/CodeAnalyser.h"
 #include <imgui.h>
-#include <ImGuiSupport/imgui_impl_lucidextra.h>
+#include <ImGuiSupport/ImGuiTexture.h>
 #include <cstdint>
 #include <vector>
 
@@ -36,14 +36,14 @@ FGraphicsView::FGraphicsView(int width, int height)
 	Width = width;
 	Height = height;
 	PixelBuffer = new uint32_t[width * height];
-	Texture = ImGui_ImplDX11_CreateTextureRGBA((uint8_t*)PixelBuffer, width, height);
+	Texture = ImGui_CreateTextureRGBA((uint8_t*)PixelBuffer, width, height);
 }
 
 FGraphicsView::~FGraphicsView()
 {
 	delete PixelBuffer;
 	if(Texture != nullptr)
-		ImGui_ImplDX11_FreeTexture(Texture);
+		ImGui_FreeTexture(Texture);
 }
 
 void FGraphicsView::Clear(const uint32_t col)
@@ -60,7 +60,7 @@ void FGraphicsView::Draw(float xSize, float ySize, bool bScale, bool bMagnifier)
 
 void FGraphicsView::UpdateTexture(void)
 {
-	ImGui_ImplDX11_UpdateTextureRGBA(Texture, (uint8_t*)PixelBuffer);
+	ImGui_UpdateTextureRGBA(Texture, (uint8_t*)PixelBuffer);
 }
 
 void FGraphicsView::Draw(bool bMagnifier)
