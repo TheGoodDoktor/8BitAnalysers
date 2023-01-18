@@ -552,7 +552,8 @@ bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
 	FGameConfig& config = *pSpectrumEmu->pActiveGame->pConfig;
 
-	FILE* fp = fopen(fname, "wb");
+	FILE* fp = nullptr;
+	fopen_s(&fp, fname, "wb");
 	if (fp == NULL)
 		return false;
 
@@ -617,7 +618,8 @@ bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 bool SaveROMData(const FCodeAnalysisState& state, const char* fname)
 {
-	FILE* fp = fopen(fname, "wb");
+	FILE* fp = nullptr;
+	fopen_s(&fp,fname, "wb");
 	if (fp == NULL)
 		return false;
 
@@ -631,7 +633,8 @@ bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
 
-	FILE* fp = fopen(fname, "rb");
+	FILE* fp = nullptr;
+	fopen_s(&fp,fname, "rb");
 	if (fp == NULL)
 		return false;
 
@@ -684,7 +687,8 @@ bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 bool LoadROMData(FCodeAnalysisState& state, const char* fname)
 {
-	FILE* fp = fopen(fname, "rb");
+	FILE* fp = nullptr;
+	fopen_s(&fp,fname, "rb");
 	if (fp == NULL)
 		return false;
 

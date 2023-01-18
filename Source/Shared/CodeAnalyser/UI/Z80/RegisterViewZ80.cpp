@@ -19,7 +19,7 @@ uint16_t InputU16(const char* label, uint16_t val)
 	ImGui::PushItemWidth(38);
 	if (ImGui::InputText(label, buf, sizeof(buf), flags)) {
 		int res;
-		if (sscanf(buf, "%X", &res) == 1) {
+		if (sscanf_s(buf, "%X", &res) == 1) {
 			val = (uint16_t)res;
 		}
 	}
@@ -40,7 +40,7 @@ uint8_t InputU8(const char* label, uint8_t val)
 	ImGui::PushItemWidth(22);
 	if (ImGui::InputText(label, buf, sizeof(buf), flags)) {
 		int res;
-		if (sscanf(buf, "%X", &res) == 1) {
+		if (sscanf_s(buf, "%X", &res) == 1) {
 			val = (uint8_t)res;
 		}
 	}
