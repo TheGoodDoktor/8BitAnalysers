@@ -100,6 +100,9 @@
     <Filter Include="Source Files\ZXSpectrum\Windows">
       <UniqueIdentifier>{cee2c504-52bd-4f3e-a76b-a5da3c149358}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shared\ImGuiSupport\Windows">
+      <UniqueIdentifier>{6db792ba-c3c7-4a62-a63b-f9c910ac7a33}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp">
@@ -116,15 +119,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp">
       <Filter>Source Files\Shared\CodeAnalyser</Filter>
@@ -314,6 +308,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\ZXSpectrum\Windows\WinMain.cpp">
       <Filter>Source Files\ZXSpectrum\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\Windows\imgui_impl_dx11.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\Windows\imgui_impl_win32.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\Windows\ImGuiTexture_DX11.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -533,15 +536,6 @@
     <ClInclude Include="..\..\Source\Vendor\chips\chips\i8255.h">
       <Filter>Source Files\chips\chips</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h">
       <Filter>Source Files\Shared\CodeAnalyser</Filter>
     </ClInclude>
@@ -691,6 +685,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\FrameTraceViewer.h">
       <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\Windows\imgui_impl_dx11.h">
+      <Filter>Source Files\Shared\ImGuiSupport\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\Windows\imgui_impl_win32.h">
+      <Filter>Source Files\Shared\ImGuiSupport\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\ImGuiTexture.h">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
