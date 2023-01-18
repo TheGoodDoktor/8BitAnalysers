@@ -1,0 +1,4 @@
+
+# shared source
+file ( GLOB_RECURSE shared_src 
+	../Shared/*.cpp ../Shared/*.h)
