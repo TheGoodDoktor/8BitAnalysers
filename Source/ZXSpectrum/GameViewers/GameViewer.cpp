@@ -1,7 +1,7 @@
 #include "GameViewer.h"
 
-#include "UI/SpectrumEmu.h"
-#include "UI/GameConfig.h"
+#include "../SpectrumEmu.h"
+#include "../GameConfig.h"
 #include "../Viewers/ZXGraphicsView.h"
 
 static std::map<std::string, FViewerConfig *>	g_ViewerConfigs;

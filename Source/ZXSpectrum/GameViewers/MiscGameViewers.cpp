@@ -1,6 +1,6 @@
 #include "MiscGameViewers.h"
-#include "UI/SpectrumEmu.h"
-#include "UI/GameConfig.h"
+#include "../SpectrumEmu.h"
+#include "../GameConfig.h"
 #include "GameViewer.h"
 
 FGameViewerData *InitMiscGameViewer(FSpectrumEmu*pEmu, FGameConfig *pGameConfig)

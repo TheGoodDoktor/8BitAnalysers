@@ -6,7 +6,7 @@
 #include "../SpectrumEmu.h"
 #include "../SpectrumConstants.h"
 #include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
-#include <UI/Viewers/GraphicsViewer.h>
+#include "GraphicsViewer.h"
 #include "../GlobalConfig.h"
 
 #define NOMINMAX // without this std::min and std::max fail to compile

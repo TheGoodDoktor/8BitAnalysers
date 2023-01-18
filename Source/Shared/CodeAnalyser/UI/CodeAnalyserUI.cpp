@@ -1,7 +1,7 @@
 #include "CodeAnalyserUI.h"
 #include "CharacterMapViewer.h"
 #include "../CodeAnalyser.h"
-#include "../UI/GlobalConfig.h"
+#include "../ZXSpectrum/GlobalConfig.h"	// Bad! - this is supposed to be a machine independent file
 
 
 #include "Util/Misc.h"

@@ -1,10 +1,10 @@
 #include "StarquakeViewer.h"
-#include "UI/Viewers/SpriteViewer.h"
-#include "UI/SpectrumEmu.h"
+#include "../Viewers/SpriteViewer.h"
+#include "../SpectrumEmu.h"
 #include <ImGuiSupport/imgui_impl_lucidextra.h>
 #include <algorithm>
 #include "GameViewer.h"
-#include "UI/GameConfig.h"
+#include "../GameConfig.h"
 #include "../Viewers/ZXGraphicsView.h"
 #include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
 

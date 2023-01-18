@@ -1,6 +1,6 @@
 
 #include "SkoolkitImporter.h"
-#include "UI/Exporters/SkoolFileInfo.h"
+#include "../Exporters/SkoolFileInfo.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "Debug/Debug.h"
 #include "Shared/Util/Misc.h"

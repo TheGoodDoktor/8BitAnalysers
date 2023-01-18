@@ -114,29 +114,8 @@
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_widgets.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\SpectrumEmu.cpp">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\GameViewers\StarquakeViewer.cpp">
-      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\GameViewers\GameViewer.cpp">
-      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\GameViewers\MiscGameViewers.cpp">
-      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\GameConfig.cpp">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\MemoryHandlers.cpp">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\IOAnalysis.cpp">
-      <Filter>Source Files\ZXSpectrum</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp">
       <Filter>Source Files\Shared\ImGuiSupport</Filter>
@@ -170,30 +149,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Shared\Util\GraphicsView.cpp">
       <Filter>Source Files\Shared\Util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Viewers\SpectrumViewer.cpp">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Viewers\SpriteViewer.cpp">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Viewers\FrameTraceViewer.cpp">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Viewers\GraphicsViewer.cpp">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\GamesList.cpp">
-      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.cpp">
-      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\SNALoader.cpp">
-      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Exporters\SkoolkitExporter.cpp">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\rzx-sdk\rzx.c">
       <Filter>Source Files\Vendor\rzx-sdk</Filter>
@@ -231,18 +186,6 @@
     <ClCompile Include="..\..\Source\Vendor\zlib\zutil.c">
       <Filter>Source Files\Vendor\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.cpp">
-      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Viewers\BreakpointViewer.cpp">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Viewers\OverviewViewer.cpp">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Viewers\ViewerBase.cpp">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\implot\implot.cpp">
       <Filter>Source Files\Vendor\ImPlot</Filter>
     </ClCompile>
@@ -255,9 +198,6 @@
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_tables.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Importers\SkoolkitImporter.cpp">
-      <Filter>Source Files\ZXSpectrum\Importers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\Shared\Debug\Debug.cpp">
       <Filter>Source Files\Shared\Debug</Filter>
     </ClCompile>
@@ -266,15 +206,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Shared\Util\Misc.cpp">
       <Filter>Source Files\Shared\Util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Viewers\ZXGraphicsView.cpp">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Exporters\SkoolFile.cpp">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Exporters\SkoolFileInfo.cpp">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
@@ -297,22 +228,91 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\DataItemUI.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Exporters\AssemblerExport.cpp">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Exporters\JsonExport.cpp">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\GameData.cpp">
+    <ClCompile Include="..\..\Source\ZXSpectrum\GameConfig.cpp">
       <Filter>Source Files\ZXSpectrum</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\GlobalConfig.cpp">
+    <ClCompile Include="..\..\Source\ZXSpectrum\GameData.cpp">
       <Filter>Source Files\ZXSpectrum</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\UI\Windows\WinMain.cpp">
+    <ClCompile Include="..\..\Source\ZXSpectrum\GlobalConfig.cpp">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\IOAnalysis.cpp">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\MemoryHandlers.cpp">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\SpectrumEmu.cpp">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Exporters\AssemblerExport.cpp">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Exporters\JsonExport.cpp">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Exporters\SkoolFile.cpp">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Exporters\SkoolFileInfo.cpp">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Exporters\SkoolkitExporter.cpp">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\GameViewers\GameViewer.cpp">
+      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\GameViewers\MiscGameViewers.cpp">
+      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\GameViewers\StarquakeViewer.cpp">
+      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Importers\SkoolkitImporter.cpp">
+      <Filter>Source Files\ZXSpectrum\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\SnapshotLoaders\GamesList.cpp">
+      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\SnapshotLoaders\RZXLoader.cpp">
+      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\SnapshotLoaders\SNALoader.cpp">
+      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\SnapshotLoaders\Z80Loader.cpp">
+      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Viewers\OverviewViewer.cpp">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Viewers\SpectrumViewer.cpp">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Viewers\SpriteViewer.cpp">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Viewers\ViewerBase.cpp">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Viewers\ZXGraphicsView.cpp">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Viewers\BreakpointViewer.cpp">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Viewers\FrameTraceViewer.cpp">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Viewers\GraphicsViewer.cpp">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\ZXSpectrum\Windows\WinMain.cpp">
       <Filter>Source Files\ZXSpectrum\Windows</Filter>
     </ClCompile>
   </ItemGroup>
@@ -533,27 +533,6 @@
     <ClInclude Include="..\..\Source\Vendor\chips\chips\i8255.h">
       <Filter>Source Files\chips\chips</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\SpectrumEmu.h">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\GameViewers\StarquakeViewer.h">
-      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\GameViewers\GameViewer.h">
-      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\GameViewers\MiscGameViewers.h">
-      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\GameConfig.h">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\MemoryHandlers.h">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\IOAnalysis.h">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h">
       <Filter>Source Files\Shared\ImGuiSupport</Filter>
     </ClInclude>
@@ -584,59 +563,14 @@
     <ClInclude Include="..\..\Source\Shared\Util\GraphicsView.h">
       <Filter>Source Files\Shared\Util</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Viewers\GraphicsViewer.h">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Viewers\SpectrumViewer.h">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Viewers\SpriteViewer.h">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Viewers\FrameTraceViewer.h">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\GamesList.h">
-      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\Z80Loader.h">
-      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\SNALoader.h">
-      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Exporters\SkoolkitExporter.h">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\rzx-sdk\rzx.h">
       <Filter>Source Files\Vendor\rzx-sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\SnapshotLoaders\RZXLoader.h">
-      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\romlabels.h">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\zx-roms.h">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Viewers\BreakpointViewer.h">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Viewers\OverviewViewer.h">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Viewers\ViewerBase.h">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\implot\implot.h">
       <Filter>Source Files\Vendor\ImPlot</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\implot\implot_internal.h">
       <Filter>Source Files\Vendor\ImPlot</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Importers\SkoolkitImporter.h">
-      <Filter>Source Files\ZXSpectrum\Importers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\Debug\Debug.h">
       <Filter>Source Files\Shared\Debug</Filter>
@@ -646,15 +580,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\Util\Misc.h">
       <Filter>Source Files\Shared\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Viewers\ZXGraphicsView.h">
-      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Exporters\SkoolFileInfo.h">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Exporters\SkoolFile.h">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.h">
       <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
@@ -671,26 +596,101 @@
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\Z80\CodeToolTipsZ80.h">
       <Filter>Source Files\Shared\CodeAnalyser\UI\Z80</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Exporters\AssemblerExport.h">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\SpectrumConstants.h">
-      <Filter>Source Files\ZXSpectrum</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\UI\Exporters\JsonExport.h">
-      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.h">
       <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\GameData.h">
+    <ClInclude Include="..\..\Source\ZXSpectrum\GameConfig.h">
       <Filter>Source Files\ZXSpectrum</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\UI\GlobalConfig.h">
+    <ClInclude Include="..\..\Source\ZXSpectrum\GameData.h">
       <Filter>Source Files\ZXSpectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\GlobalConfig.h">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\IOAnalysis.h">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\MemoryHandlers.h">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\romlabels.h">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\SpectrumConstants.h">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\SpectrumEmu.h">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\zx-roms.h">
+      <Filter>Source Files\ZXSpectrum</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Exporters\AssemblerExport.h">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Exporters\JsonExport.h">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Exporters\SkoolFile.h">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Exporters\SkoolFileInfo.h">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Exporters\SkoolkitExporter.h">
+      <Filter>Source Files\ZXSpectrum\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\GameViewers\GameViewer.h">
+      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\GameViewers\MiscGameViewers.h">
+      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\GameViewers\StarquakeViewer.h">
+      <Filter>Source Files\ZXSpectrum\GameViewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Importers\SkoolkitImporter.h">
+      <Filter>Source Files\ZXSpectrum\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\SnapshotLoaders\GamesList.h">
+      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\SnapshotLoaders\RZXLoader.h">
+      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\SnapshotLoaders\SNALoader.h">
+      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\SnapshotLoaders\Z80Loader.h">
+      <Filter>Source Files\ZXSpectrum\SnapshotLoaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\GraphicsViewer.h">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\OverviewViewer.h">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\SpectrumViewer.h">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\SpriteViewer.h">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\ViewerBase.h">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\ZXGraphicsView.h">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\BreakpointViewer.h">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ZXSpectrum\Viewers\FrameTraceViewer.h">
+      <Filter>Source Files\ZXSpectrum\Viewers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
