@@ -12,3 +12,6 @@ public:
 	// gamepad handling
 	virtual void	OnGamepadUpdated(int mask) = 0;
 };
+
+// this will be implemented in platform specific files
+void SetInputEventHandler(IInputEventHandler* pHandler);

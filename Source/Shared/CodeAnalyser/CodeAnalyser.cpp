@@ -13,7 +13,7 @@
 
 #include "Z80/CodeAnalyserZ80.h"
 #include "6502/CodeAnalyser6502.h"
-#include <Shared/Debug/Debug.h>
+#include <Debug/Debug.h>
 
 bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
 {

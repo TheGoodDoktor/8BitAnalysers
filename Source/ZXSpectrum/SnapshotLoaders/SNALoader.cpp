@@ -2,9 +2,9 @@
 #include "../SpectrumEmu.h"
 
 #include <cstdint>
-#include <Shared/Util/FileUtil.h>
+#include <Util/FileUtil.h>
 #include <cassert>
-#include <Vendor/chips/systems/zx.h>
+#include <systems/zx.h>
 
 #pragma pack(1)
 struct FSNAHeader

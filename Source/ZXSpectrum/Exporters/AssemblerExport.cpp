@@ -1,7 +1,7 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "../SpectrumConstants.h"
 #include "Util/Misc.h"
-#include <Vendor/chips/util/z80dasm.h>
+#include <util/z80dasm.h>
 #include "Debug/Debug.h"
 
 

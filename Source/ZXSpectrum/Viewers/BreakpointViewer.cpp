@@ -1,8 +1,8 @@
 #include "BreakpointViewer.h"
 #include "../SpectrumEmu.h"
 #include <imgui.h>
-#include <Vendor/chips/ui/ui_dbg.h>
-#include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
+#include <ui/ui_dbg.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 
 /* add an execution breakpoint */
 static bool _ui_dbg_bp_add_exec(ui_dbg_t* win, bool enabled, uint16_t addr) {

@@ -3,7 +3,7 @@
 #include "../Exporters/SkoolFileInfo.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "Debug/Debug.h"
-#include "Shared/Util/Misc.h"
+#include "Util/Misc.h"
 
 #include <algorithm> // for std::count
 

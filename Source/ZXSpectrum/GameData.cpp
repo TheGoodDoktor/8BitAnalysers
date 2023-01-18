@@ -12,8 +12,8 @@
 #include "SnapshotLoaders/GamesList.h"
 #include "GameConfig.h"
 #include "Debug/Debug.h"
-#include "Shared/Util/Misc.h"
-#include <Shared/Util/GraphicsView.h>
+#include "Util/Misc.h"
+#include <Util/GraphicsView.h>
 
 static const int g_kBinaryFileVersionNo = 17;
 static const int g_kBinaryFileMagic = 0xdeadface;

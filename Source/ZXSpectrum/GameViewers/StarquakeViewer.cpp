@@ -6,7 +6,7 @@
 #include "GameViewer.h"
 #include "../GameConfig.h"
 #include "../Viewers/ZXGraphicsView.h"
-#include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 
 // Starquake addresses
 

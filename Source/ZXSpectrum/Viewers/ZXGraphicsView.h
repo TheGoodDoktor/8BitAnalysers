@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Shared/Util/GraphicsView.h"
+#include "Util/GraphicsView.h"
 
 class FZXGraphicsView : public FGraphicsView
 {

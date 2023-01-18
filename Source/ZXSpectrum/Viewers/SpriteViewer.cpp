@@ -4,7 +4,7 @@
 #include <algorithm>
 #include "../GameConfig.h"
 #include "ZXGraphicsView.h"
-#include <Shared/Util/Misc.h>
+#include <Util/Misc.h>
 
 // Sprites
 

@@ -14,7 +14,7 @@
 
 #define SOKOL_IMPL
 #include "sokol_audio.h"
-#include "../VSProject/SpeccyExplorer/resource.h"
+#include "../../VSProject/SpeccyExplorer/resource.h"
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;

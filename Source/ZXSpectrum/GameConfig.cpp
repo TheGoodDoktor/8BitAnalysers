@@ -11,8 +11,8 @@
 #include "GameViewers/GameViewer.h"
 #include "SnapshotLoaders/GamesList.h"
 #include "Debug/Debug.h"
-#include "Shared/Util/Misc.h"
-#include <Shared/Util/GraphicsView.h>
+#include "Util/Misc.h"
+#include <Util/GraphicsView.h>
 
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;

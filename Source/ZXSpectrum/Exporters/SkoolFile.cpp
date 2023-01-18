@@ -1,6 +1,6 @@
 #include "SkoolFile.h"
 
-#include "Shared/Util/Misc.h"
+#include "Util/Misc.h"
 
 #include <cassert>
 #include <sstream>

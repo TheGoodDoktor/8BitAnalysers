@@ -38,13 +38,13 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "zx-roms.h"
 #include "ROMLabels.h"
 #include <algorithm>
-#include <Vendor/sokol/sokol_audio.h>
+#include <sokol_audio.h>
 #include "Exporters/SkoolkitExporter.h"
 #include "Importers/SkoolkitImporter.h"
 #include "Debug/Debug.h"
 #include "Debug/ImGuiLog.h"
 #include <cassert>
-#include <Shared/Util/Misc.h>
+#include <Util/Misc.h>
 
 #include "SpectrumConstants.h"
 

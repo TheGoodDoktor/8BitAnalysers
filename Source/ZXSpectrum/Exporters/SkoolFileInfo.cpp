@@ -1,6 +1,6 @@
 
 #include "SkoolFileInfo.h"
-#include "Shared/Util/Misc.h"
+#include "Util/Misc.h"
 #include "Debug/Debug.h"
 #include "Util/FileUtil.h"
 

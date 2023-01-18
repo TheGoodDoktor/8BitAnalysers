@@ -1,17 +1,17 @@
 #include "SpectrumViewer.h"
 
-#include <Shared/CodeAnalyser/CodeAnalyser.h>
+#include <CodeAnalyser/CodeAnalyser.h>
 
 #include <imgui.h>
 #include "../SpectrumEmu.h"
 #include "../SpectrumConstants.h"
-#include <Shared/CodeAnalyser/UI/CodeAnalyserUI.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include "GraphicsViewer.h"
 #include "../GlobalConfig.h"
 
 #define NOMINMAX // without this std::min and std::max fail to compile
 #include <windows.h> // for VK_* key defines
-#include <Shared/Util/Misc.h>
+#include <Util/Misc.h>
 
 void DrawArrow(ImDrawList* dl, ImVec2 pos, bool bLeftDirection);
 

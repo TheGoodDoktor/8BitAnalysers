@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "imgui.h"
-#include "Shared/ImGuiSupport/imgui_impl_win32.h"
+#include "Misc/InputEventHandler.h"
 
 class FSpectrumEmu;
 

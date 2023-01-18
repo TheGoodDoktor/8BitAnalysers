@@ -9,7 +9,7 @@
 
 
 #include "imgui.h"
-#include "Vendor/imgui-docking/imgui_internal.h"
+#include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
 #include <sstream>

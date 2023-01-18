@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\ImPlot;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\ImPlot;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -125,7 +125,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\ImPlot;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source\Shared;..\..\Source\Vendor\sokol;..\..\Source\Vendor\imgui-docking;..\..\Source\Vendor\chips;..\..\Source\Vendor\magic_enum\include;..\..\Source\Vendor\rzx-sdk;..\..\Source\Vendor\zlib;..\..\Source\Vendor\ImPlot;..\..\Source\Vendor\json</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
