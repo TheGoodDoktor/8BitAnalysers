@@ -589,7 +589,8 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	LoadGlobalConfig(kGlobalConfigFilename);
 	FGlobalConfig& globalConfig = GetGlobalConfig();
 	SetNumberDisplayMode(globalConfig.NumberDisplayMode);
-		
+	CodeAnalysis.Config.bShowOpcodeValues = globalConfig.bShowOpcodeValues;
+
 	// setup pixel buffer
 	const size_t pixelBufferSize = 320 * 256 * 4;
 	FrameBuffer = new unsigned char[pixelBufferSize * 2];
@@ -734,6 +735,7 @@ void FSpectrumEmu::Shutdown()
 		config.LastGame = pActiveGame->pConfig->Name;
 
 	config.NumberDisplayMode = GetNumberDisplayMode();
+	config.bShowOpcodeValues = CodeAnalysis.Config.bShowOpcodeValues;
 
 	SaveGlobalConfig(kGlobalConfigFilename);
 }
@@ -1094,7 +1096,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			ImGui::MenuItem("Scan Line Indicator", 0, &config.bShowScanLineIndicator);
 			ImGui::MenuItem("Enable Audio", 0, &config.bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
-			ImGui::MenuItem("Show Opcode Values", 0, &config.bShowOpcodeValues);
+			ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.Config.bShowOpcodeValues);
 			if(pActiveGame!=nullptr)
 				ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 
