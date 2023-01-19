@@ -8,7 +8,8 @@
 // took these out of the chips debugger
 uint16_t InputU16(const char* label, uint16_t val) 
 {
-	char buf[5];
+	const int bufSize = 5;
+	char buf[bufSize];
 	for (int i = 0; i < 4; i++) {
 		buf[i] = "0123456789ABCDEF"[val >> ((3 - i) * 4) & 0xF];
 	}
@@ -19,7 +20,7 @@ uint16_t InputU16(const char* label, uint16_t val)
 	ImGui::PushItemWidth(38);
 	if (ImGui::InputText(label, buf, sizeof(buf), flags)) {
 		int res;
-		if (sscanf_s(buf, "%X", &res) == 1) {
+		if (sscanf(buf, "%X", &res) == 1) {
 			val = (uint16_t)res;
 		}
 	}
@@ -29,7 +30,8 @@ uint16_t InputU16(const char* label, uint16_t val)
 
 uint8_t InputU8(const char* label, uint8_t val)
 {
-	char buf[3];
+	const int bufSize = 3;
+	char buf[bufSize];
 	for (int i = 0; i < 2; i++) {
 		buf[i] = "0123456789ABCDEF"[val >> ((1 - i) * 4) & 0xF];
 	}
@@ -40,7 +42,7 @@ uint8_t InputU8(const char* label, uint8_t val)
 	ImGui::PushItemWidth(22);
 	if (ImGui::InputText(label, buf, sizeof(buf), flags)) {
 		int res;
-		if (sscanf_s(buf, "%X", &res) == 1) {
+		if (sscanf(buf, "%X", &res) == 1) {
 			val = (uint8_t)res;
 		}
 	}

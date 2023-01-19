@@ -1,4 +1,32 @@
 
 # shared source
-file ( GLOB_RECURSE shared_src 
-	../Shared/*.cpp ../Shared/*.h)
+file ( GLOB shared_base_src 
+	../Shared/CodeAnalyser/*.cpp ../Shared/CodeAnalyser/*.h
+	../Shared/CodeAnalyser/6502/*.cpp ../Shared/CodeAnalyser/6502/*.h
+	../Shared/CodeAnalyser/Z80/*.cpp ../Shared/CodeAnalyser/Z80/*.h
+	../Shared/CodeAnalyser/UI/*.cpp ../Shared/CodeAnalyser/UI/*.h
+	../Shared/CodeAnalyser/UI/6502/*.cpp ../Shared/CodeAnalyser/UI/6502/*.h
+	../Shared/CodeAnalyser/UI/Z80/*.cpp ../Shared/CodeAnalyser/UI/Z80/*.h
+	../Shared/Debug/*.cpp ../Shared/Debug/*.h
+	../Shared/ImGuiSupport/*.cpp ../Shared/ImGuiSupport/*.h
+	../Shared/Misc/*.cpp ../Shared/Misc/*.h
+	../Shared/Util/*.cpp ../Shared/Util/*.h
+	)
+	
+# Windows files
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	file ( GLOB shared_platform_src 
+		../Shared/Util/Windows/*.cpp ../Shared/Util/Windows/*.h
+		../Shared/ImGuiSupport/Windows/*.cpp ../Shared/ImGuiSupport/Windows/*.h
+		)
+endif()
+
+# Linux files
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	file ( GLOB shared_platform_src
+		../Shared/Util/Linux/*.cpp ../Shared/Util/Linux/*.h
+		../Shared/ImGuiSupport/Linux/*.cpp ../Shared/ImGuiSupport/Linux/*.h
+		)
+endif()
+
+set( shared_src ${shared_base_src} ${shared_platform_src} )

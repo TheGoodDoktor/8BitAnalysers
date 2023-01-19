@@ -133,13 +133,13 @@ std::string MakeHexString(uint16_t val)
 uint8_t ParseHexString8bit(const std::string& string)
 {
 	unsigned int val;
-	sscanf_s(string.c_str(), "0x%x", &val);
+	sscanf(string.c_str(), "0x%x", &val);
 	return static_cast<uint8_t>(val);
 }
 
 uint16_t ParseHexString16bit(const std::string& string)
 {
 	unsigned int val;
-	sscanf_s(string.c_str(), "0x%x", &val);
+	sscanf(string.c_str(), "0x%x", &val);
 	return static_cast<uint16_t>(val);
 }

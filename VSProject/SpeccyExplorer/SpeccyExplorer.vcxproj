@@ -157,7 +157,7 @@
     <ClCompile Include="..\..\Source\Shared\Util\GraphicsView.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\MemoryBuffer.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\Misc.cpp" />
-    <ClCompile Include="..\..\Source\Shared\Util\Win32\FileUtil_Win32.cpp" />
+    <ClCompile Include="..\..\Source\Shared\Util\Windows\FileUtil_Win32.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_draw.cpp" />
