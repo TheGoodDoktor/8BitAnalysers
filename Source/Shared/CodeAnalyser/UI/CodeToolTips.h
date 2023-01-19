@@ -4,6 +4,7 @@ struct FCodeAnalysisState;
 struct FCodeInfo;
 
 #include <map>
+#include <cinttypes>
 
 struct FInstructionInfo
 {

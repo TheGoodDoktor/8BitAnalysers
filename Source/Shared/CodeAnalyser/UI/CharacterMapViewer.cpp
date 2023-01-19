@@ -4,6 +4,8 @@
 #include <imgui.h>
 #include "CodeAnalyserUI.h"
 
+#include <cmath>
+
 static const char* g_MaskInfoTxt[] =
 {
 	"None",
