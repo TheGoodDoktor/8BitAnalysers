@@ -100,7 +100,7 @@ void FCodeAnalysisPage::Initialise(uint16_t address)
 		FDataInfo& dataInfo = DataInfo[addr];
 		dataInfo.Address = BaseAddress + (uint16_t)addr;
 		dataInfo.ByteSize = 1;
-		dataInfo.DataType = DataType::Byte;
+		dataInfo.DataType = EDataType::Byte;
 	}
 }
 
@@ -263,7 +263,7 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 		FLabelInfo* pNewLabel = FLabelInfo::Allocate();
 		ReadItemFromBuffer(*pNewLabel, buffer);
 		pNewLabel->Address = BaseAddress + pageAddr;
-		pNewLabel->LabelType = (LabelType)buffer.Read<uint8_t>();
+		pNewLabel->LabelType = (ELabelType)buffer.Read<uint8_t>();
 		pNewLabel->Name = buffer.ReadString();
 		buffer.Read(pNewLabel->Global);
 		ReadReferencesFromBuffer(pNewLabel->References, buffer);
@@ -303,7 +303,7 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 		FDataInfo& dataInfo = DataInfo[pageAddr];
 		ReadItemFromBuffer(dataInfo, buffer);
 		dataInfo.Address = BaseAddress + pageAddr;
-		dataInfo.DataType = (DataType)buffer.Read<uint8_t>();
+		dataInfo.DataType = (EDataType)buffer.Read<uint8_t>();
 		ReadReferencesFromBuffer(dataInfo.Reads, buffer);
 		ReadReferencesFromBuffer(dataInfo.Writes, buffer);
 	}
@@ -311,7 +311,7 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 	return true;
 }
 
-void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, LabelType type, uint16_t addr)
+void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr)
 {
 	FLabelInfo* pLabel = Labels[addr];
 	if (pLabel == nullptr)

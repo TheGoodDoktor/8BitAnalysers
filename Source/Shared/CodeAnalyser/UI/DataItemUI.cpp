@@ -399,7 +399,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	switch (pDataInfo->DataType)
 	{
-	case DataType::Byte:
+	case EDataType::Byte:
 	{
 		const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
 		ImGui::Text("db");
@@ -418,7 +418,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 	break;
 
-	case DataType::ByteArray:
+	case EDataType::ByteArray:
 	{
 		uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
 
@@ -434,7 +434,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 	break;
 
-	case DataType::Word:
+	case EDataType::Word:
 	{
 		const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
 		ImGui::Text("dw");
@@ -452,7 +452,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 	break;
 
-	case DataType::WordArray:
+	case EDataType::WordArray:
 	{
 		uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
 		const int wordCount = pDataInfo->ByteSize / 2;
@@ -469,27 +469,27 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 	break;
 
-	case DataType::Text:
+	case EDataType::Text:
 	{
 		const std::string textString = GetItemText(state, pDataInfo->Address);
 		ImGui::Text("ascii '%s'", textString.c_str());
 	}
 	break;
 
-	case DataType::Bitmap:
+	case EDataType::Bitmap:
 		ImGui::Text("Bitmap");
 		offset = DrawDataBitmapLine(state, pDataInfo, state.bAllowEditing);
 		break;
-	case DataType::CharacterMap:
+	case EDataType::CharacterMap:
 		ImGui::Text("Charmap");
 		offset = DrawDataCharMapLine(state, pDataInfo);
 		break;
-	case DataType::ColAttr:
+	case EDataType::ColAttr:
 		ImGui::Text("ColAttr");
 		offset = DrawColAttr(state, pDataInfo, state.bAllowEditing);
 		break;
-	case DataType::Graphics:
-	case DataType::Blob:
+	case EDataType::Graphics:
+	case EDataType::Blob:
 	default:
 		ImGui::Text("%d Bytes", pDataInfo->ByteSize);
 		break;
@@ -558,15 +558,15 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	DrawOperandTypeCombo("##dataOperand",pDataInfo->OperandType);
 	switch (pDataInfo->DataType)
 	{
-	case DataType::Byte:
+	case EDataType::Byte:
 		DrawDataValueGraph(state.CPUInterface->ReadByte(pDataInfo->Address), false);
 		break;
 
-	case DataType::Word:
+	case EDataType::Word:
 		DrawDataValueGraph(state.CPUInterface->ReadWord(pDataInfo->Address), false);
 		break;
 
-	case DataType::Text:
+	case EDataType::Text:
 	{
 		std::string textString;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
@@ -589,16 +589,16 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	}
 	break;
 
-	case DataType::Graphics:
+	case EDataType::Graphics:
 		// TODO: GFX as texture?
 		//point gfx viewer?
 		break;
 
-	case DataType::Blob:
+	case EDataType::Blob:
 		// draw memory detail
 		break;
 
-	case DataType::Bitmap:
+	case EDataType::Bitmap:
 	{
 		static FCharSetCreateParams params;
 		params.Address = pDataInfo->Address;
@@ -634,7 +634,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	}
 	break;
 
-	case DataType::CharacterMap:
+	case EDataType::CharacterMap:
 	{
 		DrawCharacterSetComboBox(state, &pDataInfo->CharSetAddress);
 		const char* format = "%02X";
@@ -643,7 +643,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	}
 	break;
 
-	case DataType::Image:
+	case EDataType::Image:
 		// This is currently disabled
 		if (0)
 		{

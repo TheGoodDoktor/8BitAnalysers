@@ -13,7 +13,7 @@
 class FGraphicsView;
 struct FCodeAnalysisState;
 
-enum class LabelType;
+enum class ELabelType;
 
 // CPU abstraction
 enum class ECPUType
@@ -88,7 +88,7 @@ struct FMemoryAccess
 };
 
 
-enum class Key
+enum class EKey
 {
 	SetItemData,
 	SetItemText,
@@ -115,7 +115,7 @@ enum class Key
 
 struct FDataFormattingOptions
 {
-	DataType	DataType = DataType::Byte;
+	EDataType	DataType = EDataType::Byte;
 	int			StartAddress = 0;
 	int			ItemSize = 1;
 	int			NoItems = 1;
@@ -129,7 +129,7 @@ struct FDataFormattingOptions
 	uint16_t	CalcEndAddress() const { return StartAddress + (NoItems * ItemSize) - 1; }
 	void		SetupForBitmap(uint16_t address, int xSize, int ySize)
 	{
-		DataType = DataType::Bitmap;
+		DataType = EDataType::Bitmap;
 		StartAddress = address;
 		ItemSize = xSize / 8;
 		NoItems = ySize;
@@ -137,7 +137,7 @@ struct FDataFormattingOptions
 
 	void		SetupForCharmap(uint16_t address, int xSize, int ySize)
 	{
-		DataType = DataType::CharacterMap;
+		DataType = EDataType::CharacterMap;
 		StartAddress = address;
 		ItemSize = xSize;
 		NoItems = ySize;
@@ -272,7 +272,7 @@ public:
 
 	std::vector<uint16_t>	FrameTrace;
 
-	int						KeyConfig[(int)Key::Count];
+	int						KeyConfig[(int)EKey::Count];
 
 	std::vector< class FCommand *>	CommandStack;
 
@@ -353,7 +353,7 @@ public:
 
 // Analysis
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
-bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, LabelType label);
+bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
 void ReAnalyseCode(FCodeAnalysisState &state);
@@ -369,7 +369,7 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address);
 // Commands
 void Undo(FCodeAnalysisState &state);
 
-FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, LabelType type);
+FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type);
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);

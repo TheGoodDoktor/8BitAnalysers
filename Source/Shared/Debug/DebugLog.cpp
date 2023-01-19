@@ -1,4 +1,4 @@
-#include "Debug.h"
+#include "DebugLog.h"
 #include "ImGuiLog.h"
 
 #include <stdio.h>

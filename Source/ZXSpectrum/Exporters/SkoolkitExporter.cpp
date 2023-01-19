@@ -1,6 +1,6 @@
 #include "SkoolkitExporter.h"
 #include "CodeAnalyser/CodeAnalyser.h"
-#include "Debug/Debug.h"
+#include "Debug/DebugLog.h"
 #include "Util/Misc.h"
 
 #include "SkoolFile.h"
@@ -106,15 +106,15 @@ public:
 		
 		if (pLabelInfo != nullptr)
 		{
-			if (pLabelInfo->LabelType == LabelType::Function)
+			if (pLabelInfo->LabelType == ELabelType::Function)
 				return SkoolDirective::Code;
 		}
 
 		if (pDataInfo != nullptr)
 		{
-			if (pDataInfo->DataType == DataType::Word || pDataInfo->DataType == DataType::WordArray)
+			if (pDataInfo->DataType == EDataType::Word || pDataInfo->DataType == EDataType::WordArray)
 				return SkoolDirective::WordData;
-			if (pDataInfo->DataType == DataType::Text)
+			if (pDataInfo->DataType == EDataType::Text)
 				return SkoolDirective::Text;
 			return SkoolDirective::Data;
 		}
@@ -140,7 +140,7 @@ public:
 
 		if (pLabelInfo != nullptr)
 		{
-			if (pLabelInfo->LabelType == LabelType::Function)
+			if (pLabelInfo->LabelType == ELabelType::Function)
 			{
 				// Always add an entry for each function
 				return true;
@@ -269,17 +269,17 @@ public:
 		std::string asmText;
 		char tmp[16] = { 0 };
 		const bool bHex = Base == FSkoolFile::Base::Hexadecimal;
-		if (pDataInfo->DataType == DataType::Byte)
+		if (pDataInfo->DataType == EDataType::Byte)
 		{
 			snprintf(tmp, sizeof(tmp), bHex ? "DEFB $%02X" : "DEFB %u", State.CPUInterface->ReadByte(pDataInfo->Address));
 			asmText = tmp;
 		}
-		else if (pDataInfo->DataType == DataType::ByteArray 
-			|| pDataInfo->DataType == DataType::Graphics 
-			|| pDataInfo->DataType == DataType::Blob
-			|| pDataInfo->DataType == DataType::Bitmap
-			|| pDataInfo->DataType == DataType::CharacterMap
-			|| pDataInfo->DataType == DataType::ColAttr)
+		else if (pDataInfo->DataType == EDataType::ByteArray 
+			|| pDataInfo->DataType == EDataType::Graphics 
+			|| pDataInfo->DataType == EDataType::Blob
+			|| pDataInfo->DataType == EDataType::Bitmap
+			|| pDataInfo->DataType == EDataType::CharacterMap
+			|| pDataInfo->DataType == EDataType::ColAttr)
 		{
 			asmText = "DEFB ";
 			const uint16_t numItems = pDataInfo->ByteSize;
@@ -291,12 +291,12 @@ public:
 			// remove last comma
 			asmText.pop_back();
 		}
-		else if (pDataInfo->DataType == DataType::Word)
+		else if (pDataInfo->DataType == EDataType::Word)
 		{
 			snprintf(tmp, sizeof(tmp), bHex ? "DEFW $%04X" : "DEFW %u", State.CPUInterface->ReadWord(pDataInfo->Address));
 			asmText = tmp;
 		}
-		else if (pDataInfo->DataType == DataType::WordArray)
+		else if (pDataInfo->DataType == EDataType::WordArray)
 		{
 			const uint16_t numItems = pDataInfo->ByteSize / 2;
 			asmText = "DEFW ";
@@ -308,7 +308,7 @@ public:
 			// remove last comma
 			asmText.pop_back();
 		}
-		else if (pDataInfo->DataType == DataType::Text)
+		else if (pDataInfo->DataType == EDataType::Text)
 		{
 			asmText = "DEFM ";
 

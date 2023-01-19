@@ -1,7 +1,7 @@
 
 #include "SkoolFileInfo.h"
 #include "Util/Misc.h"
-#include "Debug/Debug.h"
+#include "Debug/DebugLog.h"
 #include "Util/FileUtil.h"
 
 #include "json.hpp"

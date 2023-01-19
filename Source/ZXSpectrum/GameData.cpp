@@ -11,7 +11,7 @@
 #include "GameViewers/GameViewer.h"
 #include "SnapshotLoaders/GamesList.h"
 #include "GameConfig.h"
-#include "Debug/Debug.h"
+#include "Debug/DebugLog.h"
 #include "Util/Misc.h"
 #include <Util/GraphicsView.h>
 
@@ -80,7 +80,7 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 
 		std::string enumVal;
 		ReadStringFromFile(enumVal, fp);
-		pLabel->LabelType = magic_enum::enum_cast<LabelType>(enumVal).value();
+		pLabel->LabelType = magic_enum::enum_cast<ELabelType>(enumVal).value();
 		fread(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
 		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 		ReadStringFromFile(pLabel->Name, fp);
@@ -255,20 +255,20 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
 		pDataInfo->Address = address;
-		pDataInfo->DataType = magic_enum::enum_cast<DataType>(enumVal).value();
+		pDataInfo->DataType = magic_enum::enum_cast<EDataType>(enumVal).value();
 		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 		if (versionNo > 5)
 		{
 			fread(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
 			if (pDataInfo->bShowCharMap)
 			{
-				pDataInfo->DataType = DataType::CharacterMap;
+				pDataInfo->DataType = EDataType::CharacterMap;
 				pDataInfo->bShowCharMap = false;
 			}
 
 			if (pDataInfo->bShowBinary)
 			{
-				pDataInfo->DataType = DataType::Bitmap;
+				pDataInfo->DataType = EDataType::Bitmap;
 				pDataInfo->bShowBinary = false;
 			}
 		}

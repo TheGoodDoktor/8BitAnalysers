@@ -58,7 +58,7 @@ bool ExportJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			assert(pDataInfo != nullptr);
 			json dataInfoJson;
 
-			if (pDataInfo->DataType != DataType::Byte)
+			if (pDataInfo->DataType != EDataType::Byte)
 				dataInfoJson["Type"] = (int)pDataInfo->Type;
 			if (pDataInfo->ByteSize != 1)
 				dataInfoJson["ByteSize"] = pDataInfo->ByteSize;

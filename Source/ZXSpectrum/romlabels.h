@@ -11,7 +11,7 @@ struct FROMLabelInfo
 {
 	uint16_t		Address;
 	const char *	pLabelName;
-	LabelType		LabelType = LabelType::Function;
+	ELabelType		LabelType = ELabelType::Function;
 };
 
 FROMLabelInfo g_RomLabels[] =

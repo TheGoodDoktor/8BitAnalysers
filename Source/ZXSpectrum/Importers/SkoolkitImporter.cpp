@@ -2,7 +2,7 @@
 #include "SkoolkitImporter.h"
 #include "../Exporters/SkoolFileInfo.h"
 #include "CodeAnalyser/CodeAnalyser.h"
-#include "Debug/Debug.h"
+#include "Debug/DebugLog.h"
 #include "Util/Misc.h"
 
 #include <algorithm> // for std::count
@@ -453,17 +453,17 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 				if (defStatement == "DEFB" || defStatement == "defb")
 				{
 					if (numItems == 1)
-						pDataInfo->DataType = DataType::Byte;
+						pDataInfo->DataType = EDataType::Byte;
 					else
-						pDataInfo->DataType = DataType::ByteArray;
+						pDataInfo->DataType = EDataType::ByteArray;
 					pDataInfo->ByteSize = numItems;
 				}
 				else if (defStatement == "DEFW" || defStatement == "defw")
 				{
 					if (numItems == 1)
-						pDataInfo->DataType = DataType::Word;
+						pDataInfo->DataType = EDataType::Word;
 					else
-						pDataInfo->DataType = DataType::WordArray;
+						pDataInfo->DataType = EDataType::WordArray;
 					pDataInfo->ByteSize = numItems * 2;
 				}
 
@@ -506,7 +506,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 
 					if (byteSize > 0)
 					{
-						pDataInfo->DataType = DataType::Text;
+						pDataInfo->DataType = EDataType::Text;
 
 						// SetItemText doesnt set the number of bytes correctly (compared to how skoolkit does it),
 						// so we set the byte size manually based on how many bytes we counted in the statement.
@@ -519,7 +519,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 				else
 				{
 					// force to byte type otherwise SetItemText() does nothing
-					pDataInfo->DataType = DataType::Byte;
+					pDataInfo->DataType = EDataType::Byte;
 
 					SetItemText(state, pDataInfo);
 				}
@@ -556,7 +556,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 
 		if (!label.empty())
 		{
-			LabelType labelType = LabelType::Data;
+			ELabelType labelType = ELabelType::Data;
 			
 			AddLabelAtAddress(state, instruction.Address);
 			if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(instruction.Address))

@@ -187,7 +187,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 
 		// Reformat Memory
 		FDataFormattingOptions formattingOptions;
-		formattingOptions.DataType = DataType::CharacterMap;
+		formattingOptions.DataType = EDataType::CharacterMap;
 		formattingOptions.StartAddress = params.Address;
 		formattingOptions.ItemSize = params.Width;
 		formattingOptions.NoItems = params.Height;

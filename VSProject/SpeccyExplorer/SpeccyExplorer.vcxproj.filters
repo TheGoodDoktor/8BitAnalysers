@@ -192,7 +192,7 @@
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_tables.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\Shared\Debug\Debug.cpp">
+    <ClCompile Include="..\..\Source\Shared\Debug\DebugLog.cpp">
       <Filter>Source Files\Shared\Debug</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Shared\Debug\ImGuiLog.cpp">
@@ -566,7 +566,7 @@
     <ClInclude Include="..\..\Source\Vendor\implot\implot_internal.h">
       <Filter>Source Files\Vendor\ImPlot</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\Shared\Debug\Debug.h">
+    <ClInclude Include="..\..\Source\Shared\Debug\DebugLog.h">
       <Filter>Source Files\Shared\Debug</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Shared\Debug\ImGuiLog.h">

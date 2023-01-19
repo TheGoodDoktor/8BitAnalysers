@@ -2,7 +2,7 @@
 #include "../SpectrumConstants.h"
 #include "Util/Misc.h"
 #include <util/z80dasm.h>
-#include "Debug/Debug.h"
+#include "Debug/DebugLog.h"
 
 
 class FExportDasmState : public FDasmStateBase
@@ -171,13 +171,13 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 
 		switch (pItem->Type)
 		{
-		case ItemType::Label:
+		case EItemType::Label:
 		{
 			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(pItem);
 			fprintf(fp, "%s:", pLabelInfo->Name.c_str());
 		}
 		break;
-		case ItemType::Code:
+		case EItemType::Code:
 		{
 			const FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(pItem);
 
@@ -204,7 +204,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 		}
 
 		break;
-		case ItemType::Data:
+		case EItemType::Data:
 		{
 			const FDataInfo* pDataInfo = static_cast<FDataInfo*>(pItem);
 			ENumberDisplayMode dispMode = GetNumberDisplayMode();
@@ -220,13 +220,13 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 			fprintf(fp, "\t");
 			switch (pDataInfo->DataType)
 			{
-			case DataType::Byte:
+			case EDataType::Byte:
 			{
 				const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
 				fprintf(fp, "db %s", NumStr(val, dispMode));
 			}
 			break;
-			case DataType::ByteArray:
+			case EDataType::ByteArray:
 			{
 				std::string textString;
 				for (int i = 0; i < pDataInfo->ByteSize; i++)
@@ -239,7 +239,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				fprintf(fp, "db %s", textString.c_str());
 			}
 			break;
-			case DataType::Word:
+			case EDataType::Word:
 			{
 				const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
 
@@ -254,7 +254,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				}
 			}
 			break;
-			case DataType::WordArray:
+			case EDataType::WordArray:
 			{
 				const int wordSize = pDataInfo->ByteSize / 2;
 				std::string textString;
@@ -268,7 +268,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				fprintf(fp, "dw %s", textString.c_str());
 			}
 			break;
-			case DataType::Text:
+			case EDataType::Text:
 			{
 				std::string textString;
 				for (int i = 0; i < pDataInfo->ByteSize; i++)
@@ -285,8 +285,8 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 			}
 			break;
 
-			case DataType::Graphics:
-			case DataType::Blob:
+			case EDataType::Graphics:
+			case EDataType::Blob:
 			default:
 				fprintf(fp, "%d Bytes", pDataInfo->ByteSize);
 				break;

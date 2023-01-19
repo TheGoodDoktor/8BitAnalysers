@@ -231,9 +231,9 @@ void	FFrameTraceViewer::GenerateTraceOverview(FSpeccyFrameTrace& frame)
 		{
 			//uint16_t addrVal = frame.InstructionTrace[traceIndex];
 			const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
-			if (pLabel != nullptr && (pLabel->LabelType == LabelType::Code || pLabel->LabelType == LabelType::Function))
+			if (pLabel != nullptr && (pLabel->LabelType == ELabelType::Code || pLabel->LabelType == ELabelType::Function))
 			{
-				if (pLabel->LabelType == LabelType::Function)
+				if (pLabel->LabelType == ELabelType::Function)
 				{
 					functionAddress = addrVal;
 					pLabelString = pLabel->Name.c_str();
@@ -244,7 +244,7 @@ void	FFrameTraceViewer::GenerateTraceOverview(FSpeccyFrameTrace& frame)
 					}
 					break;
 				}
-				if (pLabel->LabelType == LabelType::Code)
+				if (pLabel->LabelType == ELabelType::Code)
 				{
 					labelAddress = addrVal;
 				}

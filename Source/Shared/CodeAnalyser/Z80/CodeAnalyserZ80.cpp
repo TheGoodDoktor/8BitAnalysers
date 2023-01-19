@@ -332,9 +332,9 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 			pStackItem->Comment = "";
 
 		// Format stack data item
-		if(pStackItem->DataType != DataType::Word)
+		if(pStackItem->DataType != EDataType::Word)
 		{
-			pStackItem->DataType = DataType::Word;
+			pStackItem->DataType = EDataType::Word;
 			pStackItem->ByteSize = 2;
 			state.SetCodeAnalysisDirty();
 		}

@@ -41,7 +41,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include <sokol_audio.h>
 #include "Exporters/SkoolkitExporter.h"
 #include "Importers/SkoolkitImporter.h"
-#include "Debug/Debug.h"
+#include "Debug/DebugLog.h"
 #include "Debug/ImGuiLog.h"
 #include <cassert>
 #include <Util/Misc.h>
@@ -307,19 +307,19 @@ bool FSpectrumEmu::IsStopped(void) const
 void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
 {
 	// screen memory start
-	AddLabel(state, 0x4000, "ScreenPixels", LabelType::Data);
+	AddLabel(state, 0x4000, "ScreenPixels", ELabelType::Data);
 
 	FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(0x4000);
-	pScreenPixData->DataType = DataType::Graphics;
+	pScreenPixData->DataType = EDataType::Graphics;
 	pScreenPixData->Address = 0x4000;
 	pScreenPixData->ByteSize = 0x1800;
 
 	// Format screen memory
-	AddLabel(state, 0x5800, "ScreenAttributes", LabelType::Data);
+	AddLabel(state, 0x5800, "ScreenAttributes", ELabelType::Data);
 
 	FDataFormattingOptions format;
 	format.StartAddress = 0x5800;
-	format.DataType = DataType::ColAttr;
+	format.DataType = EDataType::ColAttr;
 	format.ItemSize = 32;
 	format.NoItems = 24;
 	FormatData(state, format);

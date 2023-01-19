@@ -347,7 +347,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	//if (state.GetLabelForAddress(kPlatformAddr) == nullptr)
 	{
 		sprintf_s(labelName, "SmallPlatform_%d", platformNo);
-		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr, labelName, LabelType::Data);
+		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr, labelName, ELabelType::Data);
 		pLabel->Global = true;
 	}
 	// Format Mask - 6 bytes bitmap
@@ -375,7 +375,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	if(noPlatformChars > 0)
 	{
 		sprintf_s(labelName, "SmallPlatform_%d_Attributes", platformNo);
-		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr - noPlatformChars, labelName, LabelType::Data);
+		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr - noPlatformChars, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
 		format.StartAddress = kPlatformAddr - noPlatformChars;
@@ -384,7 +384,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 		{
 			if (charCount[i] > 0)
 			{
-				format.DataType = DataType::ColAttr;
+				format.DataType = EDataType::ColAttr;
 				format.ItemSize = charCount[i];
 				format.NoItems = 1;
 				FormatData(state, format);
@@ -398,7 +398,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	for (int platChar = 0; platChar < noPlatformChars; platChar++)
 	{
 		sprintf_s(labelName, "SmallPlatform_%d_Char_%d", platformNo, platChar);
-		FLabelInfo* pLabel = AddLabel(state, platCharAddr, labelName, LabelType::Data);
+		FLabelInfo* pLabel = AddLabel(state, platCharAddr, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
 		format.SetupForBitmap(platCharAddr, 8, 8);
@@ -418,7 +418,7 @@ void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 
 	// Label
 	sprintf_s(labelName, "BigPlatform_%d", platformNo);
-	FLabelInfo* pLabel = AddLabel(state, kBigPlatformData, labelName, LabelType::Data);
+	FLabelInfo* pLabel = AddLabel(state, kBigPlatformData, labelName, ELabelType::Data);
 	pLabel->Global = true;
 
 	// Format Charmap 2x2
@@ -436,7 +436,7 @@ void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
 
 	// Label
 	sprintf_s(labelName, "Screen_%d", screenNo);
-	FLabelInfo* pLabel = AddLabel(state, kScreenData, labelName, LabelType::Data);
+	FLabelInfo* pLabel = AddLabel(state, kScreenData, labelName, ELabelType::Data);
 	pLabel->Global = true;
 
 	// Format Charmap 4x3
@@ -454,7 +454,7 @@ void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 
 	// Label
 	sprintf_s(labelName, "Platform_%d", platformNo);
-	FLabelInfo* pLabel = AddLabel(state, platformAddr, labelName, LabelType::Data);
+	FLabelInfo* pLabel = AddLabel(state, platformAddr, labelName, ELabelType::Data);
 	pLabel->Global = true;
 
 	// Format Bitmap 16x8

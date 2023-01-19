@@ -194,7 +194,7 @@ void FSpectrumViewer::Draw()
 				formattingOptions.StartAddress = FoundCharDataAddress;
 				formattingOptions.ItemSize = 1;
 				formattingOptions.NoItems = 8;
-				formattingOptions.DataType = DataType::Bitmap;
+				formattingOptions.DataType = EDataType::Bitmap;
 
 				FormatData(codeAnalysis, formattingOptions);
 				CodeAnalyserGoToAddress(viewState, FoundCharDataAddress, false);
@@ -250,7 +250,7 @@ void FSpectrumViewer::Draw()
 							formattingOptions.StartAddress = foundCharDataAddress;
 							formattingOptions.ItemSize = 1;
 							formattingOptions.NoItems = 8;
-							formattingOptions.DataType = DataType::Bitmap;
+							formattingOptions.DataType = EDataType::Bitmap;
 
 							FormatData(codeAnalysis, formattingOptions);
 						}

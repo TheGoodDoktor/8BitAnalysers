@@ -10,7 +10,7 @@
 class FMemoryBuffer;
 
 
-enum class LabelType
+enum class ELabelType
 {
 	Data,
 	Function,
@@ -18,7 +18,7 @@ enum class LabelType
 	Text
 };
 
-enum class ItemType
+enum class EItemType
 {
 	Label,
 	Code,
@@ -45,7 +45,7 @@ struct FCPUFunctionCall
 
 struct FItem
 {
-	ItemType		Type;
+	EItemType		Type;
 	std::string		Comment;
 	uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
 	uint16_t		ByteSize;
@@ -60,10 +60,10 @@ struct FLabelInfo : FItem
 
 	std::string				Name;
 	bool					Global = false;
-	LabelType				LabelType;
+	ELabelType				LabelType;
 	std::map<uint16_t, int>	References;
 private:
-	FLabelInfo() { Type = ItemType::Label; }
+	FLabelInfo() { Type = EItemType::Label; }
 	~FLabelInfo() = default;
 
 	static std::vector<FLabelInfo*>	AllocatedList;
@@ -93,7 +93,7 @@ struct FCodeInfo : FItem
 	bool	bNOPped = false;
 	uint8_t	OpcodeBkp[4];
 private:
-	FCodeInfo() :FItem(){Type = ItemType::Code;	}
+	FCodeInfo() :FItem(){Type = EItemType::Code;	}
 	~FCodeInfo() = default;
 
 	static std::vector<FCodeInfo*>	AllocatedList;
@@ -101,7 +101,7 @@ private:
 
 
 
-enum class DataType
+enum class EDataType
 {
 	Byte,
 	ByteArray,
@@ -135,14 +135,14 @@ struct FImageData
 
 struct FDataInfo : FItem
 {
-	FDataInfo() :FItem() { Type = ItemType::Data; }
+	FDataInfo() :FItem() { Type = EItemType::Data; }
 
 	void Reset(uint16_t addr)
 	{
 		Flags = 0;
 		Address = addr;
 		ByteSize = 1;
-		DataType = DataType::Byte;
+		DataType = EDataType::Byte;
 		OperandType = EOperandType::Unknown;
 		Comment.clear();
 		LastFrameRead = -1;
@@ -151,7 +151,7 @@ struct FDataInfo : FItem
 		Writes.clear();
 	}
 
-	DataType	DataType = DataType::Byte;
+	EDataType	DataType = EDataType::Byte;
 	EOperandType	OperandType = EOperandType::Unknown;
 
 	union
@@ -190,7 +190,7 @@ struct FCommentBlock : FItem
 	static void FreeAll();
 
 private:
-	FCommentBlock() : FItem() { Type = ItemType::CommentBlock; }
+	FCommentBlock() : FItem() { Type = EItemType::CommentBlock; }
 	~FCommentBlock() = default;
 	static std::vector<FCommentBlock*>	AllocatedList;
 };
@@ -201,7 +201,7 @@ struct FCommentLine : FItem
 	static FCommentLine* Allocate();
 	static void FreeAll();
 private:
-	FCommentLine() : FItem() { Type = ItemType::CommentLine; }
+	FCommentLine() : FItem() { Type = EItemType::CommentLine; }
 	~FCommentLine() = default;
 
 	static std::vector<FCommentLine*>	AllocatedList;
@@ -216,7 +216,7 @@ struct FCodeAnalysisPage
 	bool ReadFromBuffer(FMemoryBuffer& buffer);
 	//void WriteToJSon(nlohmann::json& jsonOutput);
 
-	void SetLabelAtAddress(const char* pLabelName, LabelType type, uint16_t addr);
+	void SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr);
 	static const int kPageSize = 1024;	// 1Kb page
 
 	int16_t			PageId = -1;

@@ -1,4 +1,9 @@
-cmake_minimum_required (VERSION 3.10)
+#if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	cmake_minimum_required (VERSION 3.10)
+#else()
+#	cmake_minimum_required (VERSION 3.0)
+#endif()
+
 project (SpectrumAnalyser)
 
 # vendor includes
@@ -79,12 +84,14 @@ endif()
 
 add_executable (SpectrumAnalyser ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} )
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main})
+# this is to make the filter folders in Visual Studio
+#if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
+	source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} )
+	source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main})
+#endif()
 
-set_target_properties( SpectrumAnalyser PROPERTIES
-	CXX_STANDARD 17 )
+set_target_properties( SpectrumAnalyser PROPERTIES CXX_STANDARD 17 )
 
 #windows specific
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
