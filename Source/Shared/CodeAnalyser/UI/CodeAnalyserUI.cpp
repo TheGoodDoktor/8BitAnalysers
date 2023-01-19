@@ -553,9 +553,9 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 			std::string strHexValue;
 
 			if (i < pCodeInfo->ByteSize)
-				sprintf_s(tmp, "%02X", state.CPUInterface->ReadByte(pCodeInfo->Address + i));
+				snprintf(tmp,16, "%02X", state.CPUInterface->ReadByte(pCodeInfo->Address + i));
 			else
-				sprintf_s(tmp, "  ");
+				snprintf(tmp, 16, "  ");
 
 			strHexValue += tmp;
 

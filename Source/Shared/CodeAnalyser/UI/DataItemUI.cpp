@@ -37,7 +37,7 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 			else
 			{
 				char valTxt[8];
-				sprintf_s(valTxt, "%02x", val);
+				snprintf(valTxt,8, "%02x", val);
 				dl->AddRect(rectMin, rectMax, 0xffffffff);
 				dl->AddText(ImVec2(pos.x + 1, pos.y + 1), 0xffffffff, valTxt);
 			}
@@ -534,7 +534,7 @@ void DrawDataValueGraph(float val, bool bReset)
 			average += values[n];
 		average /= (float)IM_ARRAYSIZE(values);
 		char overlay[32];
-		sprintf_s(overlay, "avg %f", average);
+		snprintf(overlay,32, "avg %f", average);
 		ImGui::PlotLines("Lines", values, IM_ARRAYSIZE(values), values_offset, overlay, 0.0f, 255.0f, ImVec2(0, 80));
 	}
 	//ImGui::PlotHistogram("Histogram", arr, IM_ARRAYSIZE(arr), 0, NULL, 0.0f, 1.0f, ImVec2(0, 80));

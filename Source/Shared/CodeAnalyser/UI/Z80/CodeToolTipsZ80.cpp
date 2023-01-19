@@ -107,174 +107,175 @@ std::string GetRegName(uint32_t flag)
 std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 {
 	std::string outString;
-	char tempStr[16];
+	const int kTempStrLength = 16;
+	char tempStr[kTempStrLength];
 
 	z80_t* pCPU = (z80_t *)CPUIF->GetCPUEmulator();
 
 	// I was hoping there'd be a better way
 	if (Regs & Z80Reg::A)
 	{
-		sprintf_s(tempStr, "A = %s ", NumStr(z80_a(pCPU)));
+		snprintf(tempStr, kTempStrLength, "A = %s ", NumStr(z80_a(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::B)
 	{
-		sprintf_s(tempStr, "B = %s ", NumStr(z80_b(pCPU)));
+		snprintf(tempStr, kTempStrLength, "B = %s ", NumStr(z80_b(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::C)
 	{
-		sprintf_s(tempStr, "C = %s ", NumStr(z80_c(pCPU)));
+		snprintf(tempStr, kTempStrLength, "C = %s ", NumStr(z80_c(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::D)
 	{
-		sprintf_s(tempStr, "D = %s ", NumStr(z80_d(pCPU)));
+		snprintf(tempStr, kTempStrLength, "D = %s ", NumStr(z80_d(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::E)
 	{
-		sprintf_s(tempStr, "E = %s ", NumStr(z80_e(pCPU)));
+		snprintf(tempStr, kTempStrLength, "E = %s ", NumStr(z80_e(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::H)
 	{
-		sprintf_s(tempStr, "H = %s ", NumStr(z80_h(pCPU)));
+		snprintf(tempStr, kTempStrLength, "H = %s ", NumStr(z80_h(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::L)
 	{
-		sprintf_s(tempStr, "L = %s ", NumStr(z80_l(pCPU)));
+		snprintf(tempStr, kTempStrLength, "L = %s ", NumStr(z80_l(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::I)
 	{
-		sprintf_s(tempStr, "I = %s ", NumStr(z80_i(pCPU)));
+		snprintf(tempStr, kTempStrLength, "I = %s ", NumStr(z80_i(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::R)
 	{
-		sprintf_s(tempStr, "R = %s ", NumStr(z80_r(pCPU)));
+		snprintf(tempStr, kTempStrLength, "R = %s ", NumStr(z80_r(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IXL)
 	{
 		const uint8_t ixl = static_cast<uint8_t>(z80_ix(pCPU) & 0xff);
-		sprintf_s(tempStr, "IXL = %s ", NumStr(ixl));
+		snprintf(tempStr, kTempStrLength, "IXL = %s ", NumStr(ixl));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IXH)
 	{
 		const uint8_t ixh = static_cast<uint8_t>(z80_ix(pCPU) >> 8);
-		sprintf_s(tempStr, "IXH = %s ", NumStr(ixh));
+		snprintf(tempStr, kTempStrLength, "IXH = %s ", NumStr(ixh));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IYL)
 	{
 		const uint8_t iyl = static_cast<uint8_t>(z80_iy(pCPU) & 0xff);
-		sprintf_s(tempStr, "IYL = %s ", NumStr(iyl));
+		snprintf(tempStr, kTempStrLength, "IYL = %s ", NumStr(iyl));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IYH)
 	{
 		const uint8_t iyh = static_cast<uint8_t>(z80_iy(pCPU) >> 8);
-		sprintf_s(tempStr, "IYH = %s ", NumStr(iyh));
+		snprintf(tempStr, kTempStrLength, "IYH = %s ", NumStr(iyh));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::SP || Regs & Z80Reg::SP_Indirect)
 	{
-		sprintf_s(tempStr, "SP = %s ", NumStr(z80_sp(pCPU)));
+		snprintf(tempStr, kTempStrLength, "SP = %s ", NumStr(z80_sp(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::AF)
 	{
-		sprintf_s(tempStr, "AF = %s ", NumStr(z80_af(pCPU)));
+		snprintf(tempStr, kTempStrLength, "AF = %s ", NumStr(z80_af(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::BC || Regs & Z80Reg::BC_Indirect)
 	{
-		sprintf_s(tempStr, "BC = %s ", NumStr(z80_bc(pCPU)));
+		snprintf(tempStr, kTempStrLength, "BC = %s ", NumStr(z80_bc(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::DE || Regs & Z80Reg::DE_Indirect)
 	{
-		sprintf_s(tempStr, "DE = %s ", NumStr(z80_de(pCPU)));
+		snprintf(tempStr, kTempStrLength, "DE = %s ", NumStr(z80_de(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::HL || Regs & Z80Reg::HL_Indirect)
 	{
-		sprintf_s(tempStr, "HL = %s ", NumStr(z80_hl(pCPU)));
+		snprintf(tempStr, kTempStrLength, "HL = %s ", NumStr(z80_hl(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IX || Regs & Z80Reg::IX_Indirect)
 	{
-		sprintf_s(tempStr, "IX = %s ", NumStr(z80_ix(pCPU)));
+		snprintf(tempStr, kTempStrLength, "IX = %s ", NumStr(z80_ix(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IY || Regs & Z80Reg::IY_Indirect)
 	{
-		sprintf_s(tempStr, "IY = %s ", NumStr(z80_iy(pCPU)));
+		snprintf(tempStr, kTempStrLength, "IY = %s ", NumStr(z80_iy(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::BC_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_bc(pCPU));
-		sprintf_s(tempStr, "(BC) = %s ", NumStr(val));
+		snprintf(tempStr, kTempStrLength, "(BC) = %s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::DE_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_de(pCPU));
-		sprintf_s(tempStr, "(DE) = %s ", NumStr(val));
+		snprintf(tempStr, kTempStrLength, "(DE) = %s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::HL_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_hl(pCPU));
-		sprintf_s(tempStr, "(HL) = %s ", NumStr(val));
+		snprintf(tempStr, kTempStrLength, "(HL) = %s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IX_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_ix(pCPU));
-		sprintf_s(tempStr, "(IX) = %s ", NumStr(val));
+		snprintf(tempStr, kTempStrLength, "(IX) = %s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IY_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_iy(pCPU));
-		sprintf_s(tempStr, "(IY) = %s ", NumStr(val));
+		snprintf(tempStr, kTempStrLength, "(IY) = %s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::SP_Indirect)
 	{
 		uint16_t stackVal = CPUIF->ReadWord(z80_sp(pCPU));
-		sprintf_s(tempStr, "(SP) = %s ", NumStr(stackVal));
+		snprintf(tempStr, kTempStrLength, "(SP) = %s ", NumStr(stackVal));
 		outString += std::string(tempStr);
 	}
 
@@ -330,7 +331,8 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
     uint32_t *rp = gRegPairs;
     uint32_t *rp2 = gRegPairs2;
 
-	static char tempStr[512];
+	const int kTempStrLength = 512;
+	static char tempStr[kTempStrLength];
 	tempStr[0] = 0;
 
     /* fetch the first instruction byte */
@@ -401,7 +403,7 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
             }
             else 
 			{
-				sprintf_s(tempStr, "Load %s from memory location (HL)", GetRegName(r[y]).c_str()/*, NumStr(CPUIF->ReadByte(pc))*/);
+				snprintf(tempStr, kTempStrLength, "Load %s from memory location (HL)", GetRegName(r[y]).c_str()/*, NumStr(CPUIF->ReadByte(pc))*/);
 				inst.RegFlags = r[y] | r[6];
             }
 		}
@@ -418,31 +420,31 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 		switch (y)
 		{
 			case 0: // ADD A, r 
-				sprintf_s(tempStr, "Add %s to A. Result stored in A.", GetRegName(r[z]).c_str());
+				snprintf(tempStr, kTempStrLength, "Add %s to A. Result stored in A.", GetRegName(r[z]).c_str());
 				break;
 			case 1: // ADC A, s 
-				sprintf_s(tempStr, "Add with Carry. %s and Carry flag added to A. Result stored in A.", GetRegName(r[z]).c_str());
+				snprintf(tempStr, kTempStrLength, "Add with Carry. %s and Carry flag added to A. Result stored in A.", GetRegName(r[z]).c_str());
 				inst.RegFlags |= Z80Reg::F;
 				break;
 			case 2: // SUB s
-				sprintf_s(tempStr, "Subtract %s from A. Result stored in A.", GetRegName(r[z]).c_str());
+				snprintf(tempStr, kTempStrLength, "Subtract %s from A. Result stored in A.", GetRegName(r[z]).c_str());
 				break;
 			case 3: // SBC A, s
-				sprintf_s(tempStr, "Subtract with Carry. %s and C flag are subtracted from A. Result stored in A.", GetRegName(r[z]).c_str());
+				snprintf(tempStr, kTempStrLength, "Subtract with Carry. %s and C flag are subtracted from A. Result stored in A.", GetRegName(r[z]).c_str());
 				inst.RegFlags |= Z80Reg::F;
 				break;
 			case 4: // AND s
-				sprintf_s(tempStr, "Logical AND A with %s. Result stored in A.", GetRegName(r[z]).c_str());
+				snprintf(tempStr, kTempStrLength, "Logical AND A with %s. Result stored in A.", GetRegName(r[z]).c_str());
 				break;
 			case 5: // XOR s
-				sprintf_s(tempStr, "Exclusive OR A with %s. Result stored in A.", GetRegName(r[z]).c_str());
+				snprintf(tempStr, kTempStrLength, "Exclusive OR A with %s. Result stored in A.", GetRegName(r[z]).c_str());
 				break;
 			case 6: // OR s
-				sprintf_s(tempStr, "Logical OR A with %s. Result stored in A.", GetRegName(r[z]).c_str());
+				snprintf(tempStr, kTempStrLength, "Logical OR A with %s. Result stored in A.", GetRegName(r[z]).c_str());
 				break;
 			case 7: // CP s
 				std::string regName = GetRegName(r[z]);
-				sprintf_s(tempStr, "Compare A with %s. Subtract %s from A but discard result.\n\n"
+				snprintf(tempStr, kTempStrLength, "Compare A with %s. Subtract %s from A but discard result.\n\n"
 					"Unsigned\nA == %s: Z flag is set.\nA != %s: Z flag is reset.\n"
 					"A < %s:  C flag is set.\nA >= %s: C flag is reset.\n\n"
 					"Signed\nA == %s: Z flag is set.\nA != %s: Z flag is reset.\n"
@@ -478,7 +480,7 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
             case 1:
                 if (q == 0) /* LD dd,nn*/
 				{
-					sprintf_s(tempStr, "Load %s with %s", GetRegName(rp[p]).c_str(), NumStr(CPUIF->ReadWord(pc)));
+					snprintf(tempStr, kTempStrLength, "Load %s with %s", GetRegName(rp[p]).c_str(), NumStr(CPUIF->ReadWord(pc)));
 					inst.RegFlags = rp[p];
 				}
                 else /* ADD HL, ss. ADD IX, pp. ADD IY, rr. */
@@ -503,14 +505,14 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
                         case 4: /* LD (nn), HL*/
 						{
 							const uint16_t nn = CPUIF->ReadWord(pc);
-							sprintf_s(tempStr, "Load the memory locations %s and %s from HL", NumStr(nn), NumStr(uint16_t(nn+1)));
+							snprintf(tempStr, kTempStrLength, "Load the memory locations %s and %s from HL", NumStr(nn), NumStr(uint16_t(nn+1)));
 							inst.RegFlags = rp[p];
 							break;
 						}
                         case 5: /* LD HL,(nn)*/
 						{
 							const uint16_t nn = CPUIF->ReadWord(pc);
-							sprintf_s(tempStr, "Load HL from memory locations %s and %s", NumStr(nn), NumStr(uint16_t(nn+1)));
+							snprintf(tempStr, kTempStrLength, "Load HL from memory locations %s and %s", NumStr(nn), NumStr(uint16_t(nn+1)));
 							inst.RegFlags = rp[p];
 							break;
 						}
@@ -534,16 +536,16 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 					if (pre)
 					{
 						const uint16_t addr = (pre == 0xdd ? z80_ix(pCPU) : z80_iy(pCPU)) + CPUIF->ReadByte(pc);
-						sprintf_s(tempStr, "Increment indexed memory location %s", NumStr(addr));
+						snprintf(tempStr, kTempStrLength, "Increment indexed memory location %s", NumStr(addr));
 					}
 					else
 					{
-						sprintf_s(tempStr, "Increment byte at memory location %s", GetRegName(r[y]).c_str());
+						snprintf(tempStr, kTempStrLength, "Increment byte at memory location %s", GetRegName(r[y]).c_str());
 					}
 				}
 				else
 				{
-					sprintf_s(tempStr, "Increment %s", GetRegName(r[y]).c_str());
+					snprintf(tempStr, kTempStrLength, "Increment %s", GetRegName(r[y]).c_str());
 				}
 				inst.RegFlags = r[y];
 				break;
@@ -557,25 +559,25 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 					{
 						const int8_t byteVal = CPUIF->ReadByte(pc);
 						const uint16_t addr = (pre == 0xdd ? z80_ix(pCPU) : z80_iy(pCPU)) + byteVal;
-						sprintf_s(tempStr, "Decrement byte at indexed memory location %s", NumStr(addr));
+						snprintf(tempStr, kTempStrLength, "Decrement byte at indexed memory location %s", NumStr(addr));
 					}
 					else
 					{
-						sprintf_s(tempStr, "Decrement byte at memory location %s", GetRegName(r[y]).c_str());
+						snprintf(tempStr, kTempStrLength, "Decrement byte at memory location %s", GetRegName(r[y]).c_str());
 					}
 				}
 				else
 				{
-					sprintf_s(tempStr, "Decrement %s", GetRegName(r[y]).c_str());
+					snprintf(tempStr, kTempStrLength, "Decrement %s", GetRegName(r[y]).c_str());
 				}
 				inst.RegFlags = r[y];
 				break;
 			}
             case 6: /* LD s, n. Where s is (HL)/(IX+d)/(IY+d) or r*/
 				if (y == 6)
-					sprintf_s(tempStr, "Load %s into the memory location %s", NumStr(CPUIF->ReadByte(pc)), GetRegName(r[y]).c_str());
+					snprintf(tempStr, kTempStrLength, "Load %s into the memory location %s", NumStr(CPUIF->ReadByte(pc)), GetRegName(r[y]).c_str());
 				else
-					sprintf_s(tempStr, "Load register %s with %s", GetRegName(r[y]).c_str(), NumStr(CPUIF->ReadByte(pc)));
+					snprintf(tempStr, kTempStrLength, "Load register %s with %s", GetRegName(r[y]).c_str(), NumStr(CPUIF->ReadByte(pc)));
 
 				inst.RegFlags = r[y];
 				break;
@@ -597,7 +599,7 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
             case 1:
                 if (q == 0) /* POP qq (register pair)*/
 				{
-					sprintf_s(tempStr, "Pop %s from stack", GetRegName(rp2[p]).c_str());
+					snprintf(tempStr, kTempStrLength, "Pop %s from stack", GetRegName(rp2[p]).c_str());
 					inst.RegFlags = rp2[p] | Z80Reg::SP_Indirect;
 				}
                 else 
@@ -638,10 +640,10 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 						inst.RegFlags = Z80Reg::DE | Z80Reg::HL;
 						break;
                     case 6: /* DI*/
-						sprintf_s(tempStr, "Disable maskable interrupts");
+						snprintf(tempStr, kTempStrLength, "Disable maskable interrupts");
 						break;
                     case 7: /* EI*/
-						sprintf_s(tempStr, "Enable maskable interrupts");
+						snprintf(tempStr, kTempStrLength, "Enable maskable interrupts");
 						break;
                     case 1: /* CB prefix */
                         if (pre) 
@@ -658,28 +660,28 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 							switch (y)
 							{
 								case 0: // RLC 
-									sprintf_s(tempStr, "Rotate %s left 1 bit. Bit 7 is copied to C flag and to bit 0.", GetRegName(r[z]).c_str());
+									snprintf(tempStr, kTempStrLength, "Rotate %s left 1 bit. Bit 7 is copied to C flag and to bit 0.", GetRegName(r[z]).c_str());
 									break;
 								case 1: // RRC
-									sprintf_s(tempStr, "Rotate %s right 1 bit. Bit 7 is copied to C flag and to bit 0.", GetRegName(r[z]).c_str());
+									snprintf(tempStr, kTempStrLength, "Rotate %s right 1 bit. Bit 7 is copied to C flag and to bit 0.", GetRegName(r[z]).c_str());
 									break;
 								case 2: // RL 
-									sprintf_s(tempStr, "Rotate %s left one bit. Bit 7 is copied to C flag and previous C flag copied to bit 0.", GetRegName(r[z]).c_str());
+									snprintf(tempStr, kTempStrLength, "Rotate %s left one bit. Bit 7 is copied to C flag and previous C flag copied to bit 0.", GetRegName(r[z]).c_str());
 									break;
 								case 3: // RR
-									sprintf_s(tempStr, "Rotate %s right one bit. Bit 0 is copied to C flag and previous C flag copied to bit 7.", GetRegName(r[z]).c_str());
+									snprintf(tempStr, kTempStrLength, "Rotate %s right one bit. Bit 0 is copied to C flag and previous C flag copied to bit 7.", GetRegName(r[z]).c_str());
 									break;
 								case 4: // SLA
-									sprintf_s(tempStr, "Arithmetic shift left %s one bit. Bit 7 copied to C flag and 0 copied to bit 0.", GetRegName(r[z]).c_str());
+									snprintf(tempStr, kTempStrLength, "Arithmetic shift left %s one bit. Bit 7 copied to C flag and 0 copied to bit 0.", GetRegName(r[z]).c_str());
 									break;
 								case 5: // SRA
-									sprintf_s(tempStr, "Arithmetic shift right %s one bit. Bit 0 copied to C flag and previous contents of bit 7 remain unchanged.", GetRegName(r[z]).c_str());
+									snprintf(tempStr, kTempStrLength, "Arithmetic shift right %s one bit. Bit 0 copied to C flag and previous contents of bit 7 remain unchanged.", GetRegName(r[z]).c_str());
 									break;
 								case 6: // SLL
-									sprintf_s(tempStr, "SLL %s", GetRegName(r[z]).c_str());
+									snprintf(tempStr, kTempStrLength, "SLL %s", GetRegName(r[z]).c_str());
 									break;
 								case 7: // SRL
-									sprintf_s(tempStr, "SRL %s", GetRegName(r[z]).c_str());
+									snprintf(tempStr, kTempStrLength, "SRL %s", GetRegName(r[z]).c_str());
 									break;
 							}
                             
@@ -696,7 +698,7 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 
 							// BIT
 							// todo: finish this
-							sprintf_s(tempStr, "Test bit %d of %s", y, GetRegName(r[z]).c_str());
+							snprintf(tempStr, kTempStrLength, "Test bit %d of %s", y, GetRegName(r[z]).c_str());
 
 						}
                         else if (x == 2)
@@ -718,7 +720,7 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
                 if (q == 0) 
 				{
                     /* PUSH qq (register pair)*/
-					sprintf_s(tempStr, "Push %s onto stack", GetRegName(rp2[p]).c_str());
+					snprintf(tempStr, kTempStrLength, "Push %s onto stack", GetRegName(rp2[p]).c_str());
 					inst.RegFlags = rp2[p];
                 }
                 else 
@@ -757,16 +759,16 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 										switch (y-4)
 										{
 											case 0:
-												sprintf_s(tempStr, "LDI");
+												snprintf(tempStr, kTempStrLength, "LDI");
 												break;
 											case 1:
-												sprintf_s(tempStr, "LDD");
+												snprintf(tempStr, kTempStrLength, "LDD");
 												break;
 											case 2:
-												sprintf_s(tempStr, "Copies (HL) to (DE) repeatedly while BC is not 0. After each copy BC is decremented. HL and DE are incremented.");
+												snprintf(tempStr, kTempStrLength, "Copies (HL) to (DE) repeatedly while BC is not 0. After each copy BC is decremented. HL and DE are incremented.");
 												break;
 											case 3:
-												sprintf_s(tempStr, "LDDR");
+												snprintf(tempStr, kTempStrLength, "LDDR");
 												break;
 										}
 										inst.RegFlags = Z80Reg::BC | Z80Reg::HL | Z80Reg::DE |Z80Reg::DE_Indirect | Z80Reg::HL_Indirect;
@@ -804,18 +806,18 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
 										break;
                                     case 2: /* SBC HL, ss. ADC HL, ss. Where ss is BC/DE/HL/SP*/
 										if (q == 0)
-											sprintf_s(tempStr, "Subtract with Carry. %s and C flag are subtracted from HL. Result stored in HL.", GetRegName(rp[p]).c_str());
+											snprintf(tempStr, kTempStrLength, "Subtract with Carry. %s and C flag are subtracted from HL. Result stored in HL.", GetRegName(rp[p]).c_str());
 										else
-											sprintf_s(tempStr, "Add with Carry. %s and C flag are added to HL. Result stored in HL.", GetRegName(rp[p]).c_str());
+											snprintf(tempStr, kTempStrLength, "Add with Carry. %s and C flag are added to HL. Result stored in HL.", GetRegName(rp[p]).c_str());
 										inst.RegFlags = Z80Reg::HL | rp[p];
 										break;
                                     case 3: /* LD (nn), dd. LD dd, (nn). */
 									{
 										const uint16_t nn = CPUIF->ReadWord(pc);
 										if (q==0)
-											sprintf_s(tempStr, "Load memory locations (%s) and (%s) from %s", NumStr(nn), NumStr(uint16_t(nn+1)), GetRegName(rp[p]).c_str());
+											snprintf(tempStr, kTempStrLength, "Load memory locations (%s) and (%s) from %s", NumStr(nn), NumStr(uint16_t(nn+1)), GetRegName(rp[p]).c_str());
 										else
-											sprintf_s(tempStr, "Load %s from memory locations (%s) and (%s)", GetRegName(rp[p]).c_str(), NumStr(nn), NumStr(uint16_t(nn+1)));
+											snprintf(tempStr, kTempStrLength, "Load %s from memory locations (%s) and (%s)", GetRegName(rp[p]).c_str(), NumStr(nn), NumStr(uint16_t(nn+1)));
 										inst.RegFlags =  rp[p];
 										break;
 									}

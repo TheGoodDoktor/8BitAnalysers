@@ -233,7 +233,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 					else
 					{
 						char valTxt[8];
-						sprintf_s(valTxt, "%02x", val);
+						snprintf(valTxt,8, "%02x", val);
 						dl->AddRect(rectMin, rectMax, 0xffffffff);
 						dl->AddText(ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt);
 						//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);

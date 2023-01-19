@@ -4,6 +4,7 @@
 #include "Util/MemoryBuffer.h"
 #include "Util/GraphicsView.h"
 #include <cassert>
+#include <string.h>
 
 //#include "json.hpp"
 std::vector<FCodeInfo*>		FCodeInfo::AllocatedList;

@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <algorithm>
 #include <cassert>
+#include <stdio.h>
+#include <string.h>
 
 #include <util/z80dasm.h>
 #include <util/m6502dasm.h>
@@ -25,7 +27,7 @@ bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
 	}
 
 	char postFix[32];
-	sprintf_s(postFix, "_%d", ++LabelUsage[labelName]);
+	snprintf(postFix,32, "_%d", ++LabelUsage[labelName]);
 	labelName += std::string(postFix);
 
 	return true;
@@ -220,13 +222,13 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabel
 	switch (labelType)
 	{
 	case ELabelType::Function:
-		sprintf_s(label, "function_%04X", address);
+		snprintf(label, kLabelSize,"function_%04X", address);
 		break;
 	case ELabelType::Code:
-		sprintf_s(label, "label_%04X", address);
+		snprintf(label, kLabelSize, "label_%04X", address);
 		break;
 	case ELabelType::Data:
-		sprintf_s(label, "data_%04X", address);
+		snprintf(label, kLabelSize, "data_%04X", address);
 		pLabel->Global = true;
 		break;
 	case ELabelType::Text:
@@ -243,7 +245,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabel
 				labelString += textString[i];
 		}
 
-		sprintf_s(label, "%s%s", pPrefix, labelString.c_str());
+		snprintf(label, kLabelSize, "%s%s", pPrefix, labelString.c_str());
 	}
 	break;
 	}
@@ -1010,7 +1012,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 		else if (options.DataType == EDataType::CharacterMap)
 			pPrefix = "charmap";
 
-		sprintf_s(labelName, "%s_%s",pPrefix,NumStr(dataAddress));
+		snprintf(labelName,16, "%s_%s",pPrefix,NumStr(dataAddress));
 		FLabelInfo* pLabel = AddLabel(state, dataAddress, labelName, ELabelType::Data);
 		pLabel->Global = true;
 	}
