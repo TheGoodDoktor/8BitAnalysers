@@ -1,5 +1,5 @@
 #include "FileUtil.h"
-
+#include <string.h>
 
 static std::string g_DataDirFromRoot("Tools/MapDataTool/Data/");
 static std::string g_DataDirectory;
@@ -48,8 +48,7 @@ bool DetermineDataDirectory(const char *pRouteIdentifier)
 
 bool FileExists(const char *pFilename)
 {
-	FILE* fp;
-	fopen_s(&fp, pFilename, "rt");
+	FILE* fp = fopen(pFilename, "rt");
 	if (fp == nullptr)
 		return false;
 	fclose(fp);
@@ -59,8 +58,7 @@ bool FileExists(const char *pFilename)
 
 char *LoadTextFile(const char *pFilename)
 {
-	FILE* fp;
-	fopen_s(&fp, pFilename, "rt");
+	FILE* fp = fopen(pFilename, "rt");
 	if (fp == nullptr)
 		return nullptr;
 
@@ -78,8 +76,7 @@ char *LoadTextFile(const char *pFilename)
 
 void *LoadBinaryFile(const char *pFilename, size_t &byteCount)
 {
-	FILE* fp;
-	fopen_s(&fp, pFilename, "rb");
+	FILE* fp = fopen(pFilename, "rb");
 	if (fp == nullptr)
 		return nullptr;
 
@@ -97,8 +94,7 @@ void *LoadBinaryFile(const char *pFilename, size_t &byteCount)
 
 bool SaveBinaryFile(const char *pFilename, const void * pData,size_t byteCount)
 {
-	FILE* fp;
-	fopen_s(&fp, pFilename, "wb");
+	FILE* fp = fopen(pFilename, "wb");
 	if (fp == nullptr)
 		return false;
 	
@@ -126,7 +122,7 @@ void ReadStringFromFile(std::string& str, FILE* fp)
 std::string MakeHexString(uint16_t val)
 {
 	char hexStr[16];
-	sprintf_s(hexStr, "0x%x", val);
+	sprintf(hexStr, "0x%x", val);
 	return std::string(hexStr);
 }
 

@@ -23,6 +23,7 @@ include_directories( ../Shared )
 include( ../Shared/CMakeShared.txt )
 
 # compiler defines
+add_compile_definitions( _CRT_SECURE_NO_WARNINGS )
 
 # compiler options
 set(CMAKE_BUILD_TYPE Debug)

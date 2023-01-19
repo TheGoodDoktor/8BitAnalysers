@@ -2,7 +2,7 @@
 
 #include "Util/FileUtil.h"
 #include "json.hpp"
-#include "magic_enum.hpp"
+//#include "magic_enum.hpp"
 #include <iomanip>
 #include <fstream>
 #include <sstream>

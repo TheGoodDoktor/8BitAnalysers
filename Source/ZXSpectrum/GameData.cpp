@@ -18,6 +18,75 @@
 static const int g_kBinaryFileVersionNo = 17;
 static const int g_kBinaryFileMagic = 0xdeadface;
 
+const char *GetLabelEnumString(ELabelType labelType)
+{
+	switch (labelType)
+	{
+	case ELabelType::Data:
+		return "Data";
+	case ELabelType::Function:
+		return "Function";
+	case ELabelType::Code:
+		return "Code";
+	case ELabelType::Text:
+		return "Text";
+	}
+
+	return "Unknown";
+};
+
+ELabelType GetLabelEnumValue(const char* pString)
+{
+	for (int i = 0; i < (int)ELabelType::Max; i++)
+	{
+		if (strcmp(pString, GetLabelEnumString((ELabelType)i)) == 0)
+			return (ELabelType)i;
+	}
+
+	return ELabelType::None;
+}
+
+const char* GetDataEnumString(EDataType dataType)
+{
+	switch (dataType)
+	{
+	case EDataType::Byte:
+		return "Byte";
+	case EDataType::ByteArray:
+		return "ByteArray";
+	case EDataType::Word:
+		return "Word";
+	case EDataType::WordArray:
+		return "WordArray";
+	case EDataType::Text:
+		return "Text";
+	case EDataType::Bitmap:
+		return "Bitmap";
+	case EDataType::CharacterMap:
+		return "CharacterMap";
+	case EDataType::Graphics:
+		return "Graphics";
+	case EDataType::Image:
+		return "Image";
+	case EDataType::Blob:
+		return "Blob";
+	case EDataType::ColAttr:
+		return "ColAttr";
+	}
+	return "Unknown";
+};
+
+EDataType GetDataEnumValue(const char* pString)
+{
+	for (int i = 0; i < (int)EDataType::Max; i++)
+	{
+		if (strcmp(pString, GetDataEnumString((EDataType)i)) == 0)
+			return (EDataType)i;
+	}
+
+	return EDataType::None;
+}
+
 // Labels
 
 void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddress, uint16_t endAddress)
@@ -36,7 +105,10 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 		const FLabelInfo* pLabel = state.GetLabelForAddress(i);
 		if (pLabel != nullptr)
 		{
-			WriteStringToFile(std::string(magic_enum::enum_name(pLabel->LabelType)), fp);
+			const std::string meName = std::string(magic_enum::enum_name(pLabel->LabelType));
+			const std::string funcName = GetLabelEnumString(pLabel->LabelType);
+			assert(meName == funcName);
+			WriteStringToFile(meName, fp);
 			fwrite(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
 			fwrite(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 			WriteStringToFile(pLabel->Name, fp);
@@ -80,7 +152,10 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 
 		std::string enumVal;
 		ReadStringFromFile(enumVal, fp);
-		pLabel->LabelType = magic_enum::enum_cast<ELabelType>(enumVal).value();
+		const ELabelType meType = magic_enum::enum_cast<ELabelType>(enumVal).value();
+		const ELabelType funcType = GetLabelEnumValue(enumVal.c_str());
+		assert(meType == funcType);
+		pLabel->LabelType = meType;
 		fread(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
 		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 		ReadStringFromFile(pLabel->Name, fp);
@@ -189,7 +264,10 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
 		if (pDataInfo != nullptr)
 		{
-			WriteStringToFile(std::string(magic_enum::enum_name(pDataInfo->DataType)), fp);
+			const std::string meName = std::string(magic_enum::enum_name(pDataInfo->DataType));
+			const std::string funcName = GetDataEnumString(pDataInfo->DataType);
+			assert(meName == funcName);
+			WriteStringToFile(meName, fp);
 			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 			fwrite(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
@@ -255,7 +333,9 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
 		pDataInfo->Address = address;
-		pDataInfo->DataType = magic_enum::enum_cast<EDataType>(enumVal).value();
+		const EDataType meType = magic_enum::enum_cast<EDataType>(enumVal).value();
+		const EDataType funcType = GetDataEnumValue(enumVal.c_str());
+		pDataInfo->DataType = meType;
 		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 		if (versionNo > 5)
 		{

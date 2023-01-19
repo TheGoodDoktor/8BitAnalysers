@@ -15,7 +15,10 @@ enum class ELabelType
 	Data,
 	Function,
 	Code,
-	Text
+	Text,
+
+	Max,
+	None = Max
 };
 
 enum class EItemType
@@ -114,6 +117,9 @@ enum class EDataType
 	Image,		// character/sprite image
 	Blob,		// opaque data blob
 	ColAttr,	// colour attribute
+
+	Max,
+	None = Max
 };
 
 // struct for additional image data

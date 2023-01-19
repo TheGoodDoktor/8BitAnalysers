@@ -37,15 +37,15 @@ const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode)
 	switch (numDispMode)
 	{
 	case ENumberDisplayMode::Decimal:
-		sprintf_s(pStrAddress, kTextLength, "%d", num);
+		sprintf(pStrAddress, "%d", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexAitch:
-		sprintf_s(pStrAddress, kTextLength, "%02Xh", num);
+		sprintf(pStrAddress, "%02Xh", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexDollar:
-		sprintf_s(pStrAddress, kTextLength, "$%02X", num);
+		sprintf(pStrAddress, "$%02X", num);
 		return pStrAddress;
 	default:
 		assert(0);
@@ -66,15 +66,15 @@ const char* NumStr(uint16_t num, ENumberDisplayMode numDispMode)
 	switch (numDispMode)
 	{
 	case ENumberDisplayMode::Decimal:
-		sprintf_s(pStrAddress, kTextLength, "%d", num);
+		sprintf(pStrAddress, "%d", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexAitch:
-		sprintf_s(pStrAddress, kTextLength, "%04Xh", num);
+		sprintf(pStrAddress, "%04Xh", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexDollar:
-		sprintf_s(pStrAddress, kTextLength, "$%04X", num);
+		sprintf(pStrAddress, "$%04X", num);
 		return pStrAddress;
 	default:
 		assert(0);
