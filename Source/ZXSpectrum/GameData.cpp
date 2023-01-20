@@ -2,7 +2,7 @@
 
 #include "Util/FileUtil.h"
 #include "json.hpp"
-#include "magic_enum.hpp"
+//#include "magic_enum.hpp"
 #include <iomanip>
 #include <fstream>
 #include <sstream>
@@ -105,10 +105,10 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 		const FLabelInfo* pLabel = state.GetLabelForAddress(i);
 		if (pLabel != nullptr)
 		{
-			const std::string meName = std::string(magic_enum::enum_name(pLabel->LabelType));
 			const std::string funcName = GetLabelEnumString(pLabel->LabelType);
-			assert(meName == funcName);
-			WriteStringToFile(meName, fp);
+			//const std::string meName = std::string(magic_enum::enum_name(pLabel->LabelType));
+			//assert(meName == funcName);
+			WriteStringToFile(funcName, fp);
 			fwrite(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
 			fwrite(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 			WriteStringToFile(pLabel->Name, fp);
@@ -152,10 +152,10 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 
 		std::string enumVal;
 		ReadStringFromFile(enumVal, fp);
-		const ELabelType meType = magic_enum::enum_cast<ELabelType>(enumVal).value();
 		const ELabelType funcType = GetLabelEnumValue(enumVal.c_str());
-		assert(meType == funcType);
-		pLabel->LabelType = meType;
+		//const ELabelType meType = magic_enum::enum_cast<ELabelType>(enumVal).value();
+		//assert(meType == funcType);
+		pLabel->LabelType = funcType;
 		fread(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
 		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 		ReadStringFromFile(pLabel->Name, fp);
@@ -264,10 +264,10 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
 		if (pDataInfo != nullptr)
 		{
-			const std::string meName = std::string(magic_enum::enum_name(pDataInfo->DataType));
 			const std::string funcName = GetDataEnumString(pDataInfo->DataType);
-			assert(meName == funcName);
-			WriteStringToFile(meName, fp);
+			//const std::string meName = std::string(magic_enum::enum_name(pDataInfo->DataType));
+			//assert(meName == funcName);
+			WriteStringToFile(funcName, fp);
 			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 			fwrite(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
@@ -333,9 +333,10 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
 		pDataInfo->Address = address;
-		const EDataType meType = magic_enum::enum_cast<EDataType>(enumVal).value();
 		const EDataType funcType = GetDataEnumValue(enumVal.c_str());
-		pDataInfo->DataType = meType;
+		//const EDataType meType = magic_enum::enum_cast<EDataType>(enumVal).value();
+		//assert(funcType == meType);
+		pDataInfo->DataType = funcType;
 		fread(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 		if (versionNo > 5)
 		{
@@ -632,8 +633,7 @@ bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
 	FGameConfig& config = *pSpectrumEmu->pActiveGame->pConfig;
 
-	FILE* fp = nullptr;
-	fopen_s(&fp, fname, "wb");
+	FILE* fp = fopen(fname, "wb");
 	if (fp == NULL)
 		return false;
 
@@ -698,8 +698,7 @@ bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 bool SaveROMData(const FCodeAnalysisState& state, const char* fname)
 {
-	FILE* fp = nullptr;
-	fopen_s(&fp,fname, "wb");
+	FILE* fp = fopen(fname, "wb");
 	if (fp == NULL)
 		return false;
 
@@ -713,8 +712,7 @@ bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
 
-	FILE* fp = nullptr;
-	fopen_s(&fp,fname, "rb");
+	FILE* fp = fopen(fname, "rb");
 	if (fp == NULL)
 		return false;
 
@@ -767,8 +765,7 @@ bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 bool LoadROMData(FCodeAnalysisState& state, const char* fname)
 {
-	FILE* fp = nullptr;
-	fopen_s(&fp,fname, "rb");
+	FILE* fp = fopen(fname, "rb");
 	if (fp == NULL)
 		return false;
 

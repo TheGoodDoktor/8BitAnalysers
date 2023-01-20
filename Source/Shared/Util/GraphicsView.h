@@ -42,18 +42,26 @@ private:
 
 // Character set stuff
 
+// order is important as it gets saved as an integer
 enum class EMaskInfo
 {
 	None,
 	InterleavedBytesPM,
 	InterleavedBytesMP,
+
+	Max
 };
 
+// order is important as it gets saved as an integer
+// if this enum changes then you need to change g_ColourInfoTxt in CharacterMapViewer.cpp
 enum class EColourInfo
 {
 	None,
-	Interleaved,
-	MemoryLUT
+	InterleavedPost,
+	MemoryLUT,
+	InterleavedPre,
+
+	Max
 };
 struct FCharUVS
 {

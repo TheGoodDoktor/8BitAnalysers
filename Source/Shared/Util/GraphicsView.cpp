@@ -259,6 +259,9 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		uint8_t charPix[8];
 		uint8_t charMask[8];
 
+		if (characterSet.Params.ColourInfo == EColourInfo::InterleavedPre)
+			colAttr = state.CPUInterface->ReadByte(addr++);
+
 		for (int i = 0; i < 8; i++)
 		{
 			if (characterSet.Params.MaskInfo == EMaskInfo::InterleavedBytesMP)
@@ -274,7 +277,7 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		case EColourInfo::MemoryLUT:
 			colAttr = state.CPUInterface->ReadByte(characterSet.Params.AttribsAddress + charNo);
 			break;
-		case EColourInfo::Interleaved:
+		case EColourInfo::InterleavedPost:
 			colAttr = state.CPUInterface->ReadByte(addr++);
 			break;
 		}

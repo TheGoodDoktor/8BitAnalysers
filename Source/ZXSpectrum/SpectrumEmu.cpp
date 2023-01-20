@@ -15,7 +15,9 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #define _STR_D8(d8) DasmOutputD8((int8_t)(d8),out_cb,user_data);
 
 #include "SpectrumEmu.h"
-#include <windows.h>
+#ifdef _WIN32
+	#include <windows.h>
+#endif
 
 #include "GameConfig.h"
 #include "GlobalConfig.h"

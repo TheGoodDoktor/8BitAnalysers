@@ -16,9 +16,16 @@ static const char* g_MaskInfoTxt[] =
 static const char* g_ColourInfoTxt[] =
 {
 	"None",
-	"Interleaved",
-	"MemoryLUT"
+	"InterleavedPost",
+	"MemoryLUT",
+	"InterleavedPre",
 };
+
+void RunEnumTests()
+{
+	assert(IM_ARRAYSIZE(g_MaskInfoTxt) == (int)EMaskInfo::Max);	// if this asserts then you need to look at how EColourInfo maps to g_ColourInfoTxt
+	assert(IM_ARRAYSIZE(g_ColourInfoTxt) == (int)EColourInfo::Max);	// if this asserts then you need to look at how EColourInfo maps to g_ColourInfoTxt
+}
 
 void DrawMaskInfoComboBox(EMaskInfo* pValue)
 {
@@ -92,7 +99,7 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
 			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
-			const bool bSelected = selectedCharSetAddr == pCharSet->Params.Address;
+			const bool bSelected = params.Address == pCharSet->Params.Address;
 
 			if (pSetLabel == nullptr)
 				continue;
@@ -131,9 +138,11 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 		FCharacterSet* pCharSet = GetCharacterSetFromAddress(selectedCharSetAddr);
 		if (pCharSet)
 		{
-			params.Address = selectedCharSetAddr;
-			DrawAddressInput("Address",&params.Address);
-			DrawAddressLabel(state, viewState, selectedCharSetAddr);
+			if (DrawAddressInput("Address", &params.Address))
+			{
+				//UpdateCharacterSet(state, *pCharSet, params);
+			}
+			DrawAddressLabel(state, viewState, params.Address);
 			DrawMaskInfoComboBox(&params.MaskInfo);
 			DrawColourInfoComboBox(&params.ColourInfo);
 			if (params.ColourInfo == EColourInfo::MemoryLUT)
@@ -143,6 +152,7 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 			ImGui::Checkbox("Dynamic", &params.bDynamic);
 			if (ImGui::Button("Update Character Set"))
 			{
+				selectedCharSetAddr = params.Address;
 				UpdateCharacterSet(state, *pCharSet, params);
 			}
 			pCharSet->Image->Draw();
@@ -206,6 +216,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	const float rectSize = 12.0f;
 	uint16_t byte = 0;
 	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
+	static bool bShowReadWrites = true;
 
 	for (int y = 0; y < params.Height; y++)
 	{
@@ -242,18 +253,21 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 					}
 				}
 
-				if (rBrightVal > 0)
+				if (bShowReadWrites)
 				{
-					const ImU32 col = 0xff000000 | (rBrightVal << 8);
-					dl->AddRect(rectMin, rectMax, col);
+					if (rBrightVal > 0)
+					{
+						const ImU32 col = 0xff000000 | (rBrightVal << 8);
+						dl->AddRect(rectMin, rectMax, col);
 
-					rectMin = ImVec2(rectMin.x + 1, rectMin.y + 1);
-					rectMax = ImVec2(rectMax.x - 1, rectMax.y - 1);
-				}
-				if (wBrightVal > 0)
-				{
-					const ImU32 col = 0xff000000 | (wBrightVal << 0);
-					dl->AddRect(rectMin, rectMax, col);
+						rectMin = ImVec2(rectMin.x + 1, rectMin.y + 1);
+						rectMax = ImVec2(rectMax.x - 1, rectMax.y - 1);
+					}
+					if (wBrightVal > 0)
+					{
+						const ImU32 col = 0xff000000 | (wBrightVal << 0);
+						dl->AddRect(rectMin, rectMax, col);
+					}
 				}
 			}
 
@@ -321,6 +335,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	pos.y += params.Height * rectSize;
 	ImGui::SetCursorScreenPos(pos);
 
+	ImGui::Checkbox("Show Reads & Writes", &bShowReadWrites);
 	if (uiState.SelectedCharAddress != 0)
 	{
 		// TODO: show data reads & writes
