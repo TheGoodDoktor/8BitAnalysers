@@ -1,10 +1,12 @@
-#if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	cmake_minimum_required (VERSION 3.10)
-#else()
-#	cmake_minimum_required (VERSION 3.0)
-#endif()
+cmake_minimum_required (VERSION 3.10)
 
 project (SpectrumAnalyser)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+find_package(OpenGL REQUIRED)
+find_package(Threads REQUIRED)
+find_package(X11 REQUIRED)
+endif()
 
 # vendor includes
 set( vendor_dir ../Vendor )
@@ -83,6 +85,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	set ( platform_main Windows/WinMain.cpp )
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	set ( platform_main GLFW/GLFWMain.cpp )
+endif()
+
 add_executable (SpectrumAnalyser ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
 # this is to make the filter folders in Visual Studio
@@ -108,4 +114,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
 
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	target_link_libraries(${PROJECT_NAME}
+		glfw
+		asound
+		${OPENGL_gl_LIBRARY}
+		${CMAKE_THREAD_LIBS_INIT}
+		${X11_LIBRARIES}
+		${CMAKE_DL_LIBS}
+		)
 endif()
