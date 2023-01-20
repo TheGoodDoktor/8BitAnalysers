@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include <vector>
+#include <cinttypes>
 
 class FZXGraphicsView;
 struct FGraphicsViewerState;

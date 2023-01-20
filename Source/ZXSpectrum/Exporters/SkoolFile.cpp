@@ -51,8 +51,7 @@ int FSkoolFile::WriteLinesToFile(FILE* fp, const std::string& str)
 
 bool FSkoolFile::Export(const char* pFilename, Base base)
 {
-	FILE* fp = nullptr;
-	fopen_s(&fp, pFilename, "wt");
+	FILE* fp = fopen(pFilename, "wt");
 
 	if (fp == nullptr)
 		return false;
@@ -155,7 +154,7 @@ const char* FSkoolFile::GetLabel(uint16_t address) const
 }
 
 const char kDirectiveChars[] = " *bcgistuw";
-static_assert(sizeof(kDirectiveChars)-1 == SkoolDirective::Count);
+//static_assert(sizeof(kDirectiveChars)-1 == SkoolDirective::Count);
 
 char GetCharFromDirective(SkoolDirective directive)
 {

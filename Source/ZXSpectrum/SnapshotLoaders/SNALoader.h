@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstddef>
+#include <cinttypes>
 
 class FSpectrumEmu;
 

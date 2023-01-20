@@ -15,11 +15,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #define _STR_D8(d8) DasmOutputD8((int8_t)(d8),out_cb,user_data);
 
 #include "SpectrumEmu.h"
-#ifdef _WIN32
-	#include <windows.h>
-#endif
 
-#include "GameConfig.h"
 #include "GlobalConfig.h"
 #include "GameData.h"
 #include <ImGuiSupport/ImGuiTexture.h>
@@ -54,8 +50,24 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "Exporters/AssemblerExport.h"
 #include "Exporters/JsonExport.h"
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
+#include "GameConfig.h"
 
 #define ENABLE_RZX 0
+
+// TODO: need a better multi-platform solution
+#define VK_F1             0x70
+#define VK_F2             0x71
+#define VK_F3             0x72
+#define VK_F4             0x73
+#define VK_F5             0x74
+#define VK_F6             0x75
+#define VK_F7             0x76
+#define VK_F8             0x77
+#define VK_F9             0x78
+#define VK_F10            0x79
+#define VK_F11            0x7A
+#define VK_F12            0x7B
+
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 
@@ -348,7 +360,7 @@ public:
 	{
 		int xp = 0, yp = 0;
 		GetScreenAddressCoords(addr, xp, yp);
-		sprintf_s(DescStr, "Screen Pix: %d,%d", xp, yp);
+		sprintf(DescStr, "Screen Pix: %d,%d", xp, yp);
 		return DescStr;
 	}
 private:
@@ -369,7 +381,7 @@ public:
 	{
 		int xp = 0, yp = 0;
 		GetAttribAddressCoords(addr, xp, yp);
-		sprintf_s(DescStr, "Screen Attr: %d,%d", xp/8, yp/8);
+		sprintf(DescStr, "Screen Attr: %d,%d", xp/8, yp/8);
 		return DescStr;
 	}
 private:
@@ -1127,7 +1139,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
 				{
 					char menuName[32];
-					sprintf_s(menuName, "Code Analysis %d", codeAnalysisNo + 1);
+					sprintf(menuName, "Code Analysis %d", codeAnalysisNo + 1);
 					ImGui::MenuItem(menuName, 0, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled);
 				}
 
@@ -1256,9 +1268,9 @@ void FSpectrumEmu::Tick()
 
 	if (ExecThisFrame)
 	{
-		const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
+		const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
 		//const float frameTime = min(1000000.0f / 50, 32000.0f) * ExecSpeedScale;
-		const uint32_t microSeconds = max(static_cast<uint32_t>(frameTime), uint32_t(1));
+		const uint32_t microSeconds = std::max(static_cast<uint32_t>(frameTime), uint32_t(1));
 
 		// TODO: Start frame method in analyser
 		CodeAnalysis.FrameTrace.clear();
@@ -1370,7 +1382,7 @@ void FSpectrumEmu::DrawUI()
 
 	const int instructionsThisFrame = (int)CodeAnalysis.FrameTrace.size();
 	static int maxInst = 0;
-	maxInst = max(maxInst, instructionsThisFrame);
+	maxInst = std::max(maxInst, instructionsThisFrame);
 
 	DrawMainMenu(timeMS);
 	if (pZXUI->memmap.open)
@@ -1457,7 +1469,7 @@ void FSpectrumEmu::DrawUI()
 	for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
 	{
 		char name[32];
-		sprintf_s(name, "Code Analysis %d", codeAnalysisNo + 1);
+		sprintf(name, "Code Analysis %d", codeAnalysisNo + 1);
 		if(CodeAnalysis.ViewState[codeAnalysisNo].Enabled)
 		{
 			if (ImGui::Begin(name,&CodeAnalysis.ViewState[codeAnalysisNo].Enabled))
@@ -1620,7 +1632,7 @@ void FSpectrumEmu::DrawCheatsUI()
 			if (entry.bUserDefined)
 			{
 				char tempStr[16] = {0};
-				sprintf_s(tempStr, "##Value %d", ++userDefinedCount);
+				sprintf(tempStr, "##Value %d", ++userDefinedCount);
 				
 				// Display the value of the memory location in the input field.
 				// If the user has modified the value then display that instead.

@@ -4,6 +4,8 @@
 #include <util/z80dasm.h>
 #include "Debug/DebugLog.h"
 
+#include <string.h>
+
 
 class FExportDasmState : public FDasmStateBase
 {
@@ -133,7 +135,7 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, uint16_t addr)
 		if (labelOffset > 0)	// add offset string
 		{
 			char offsetString[16];
-			sprintf_s(offsetString, " + %d]", labelOffset);
+			sprintf(offsetString, " + %d]", labelOffset);
 			labelStr += offsetString;
 		}
 		else
@@ -149,8 +151,7 @@ uint16_t g_DbgAddress = 0xEA71;
 
 bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 {
-	FILE* fp = nullptr;
-	fopen_s(&fp, pTextFileName, "wt");
+	FILE* fp =fopen(pTextFileName, "wt");
 
 	if (fp == nullptr)
 		return false;
@@ -233,7 +234,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				{
 					const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
 					char valTxt[16];
-					sprintf_s(valTxt, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
+					sprintf(valTxt, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
 					textString += valTxt;
 				}
 				fprintf(fp, "db %s", textString.c_str());
@@ -262,7 +263,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				{
 					const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
 					char valTxt[16];
-					sprintf_s(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
+					sprintf(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
 					textString += valTxt;
 				}
 				fprintf(fp, "dw %s", textString.c_str());

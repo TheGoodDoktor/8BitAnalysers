@@ -286,10 +286,10 @@ uint16_t CountDataBytes(std::string str)
 
 bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FSkoolFileInfo* pSkoolInfo /*=nullptr*/)
 {
-	FILE* fp = nullptr;
+	FILE* fp = fopen(pTextFileName, "rt");
 	char pchLine[65536];
 	// note: "rt" = text mode, which means Windows line endings \r\n will be converted into \n
-	fopen_s(&fp, pTextFileName, "rt");  
+	
 
 	if (fp == nullptr)
 		return false;

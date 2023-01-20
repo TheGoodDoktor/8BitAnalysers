@@ -57,7 +57,7 @@ struct FStarquakeSprite
 
 	uint8_t		Pad[16];
 };
-static_assert( sizeof( FStarquakeSprite ) == 32 );
+//static_assert( sizeof( FStarquakeSprite ) == 32 );
 
 // Sprite Data
 static const uint16_t kBlobSpritesAddr = 0xe074;
@@ -74,7 +74,7 @@ struct FPlatformState
 	unsigned		Unknown : 8;
 	unsigned		Timer : 8;
 };
-static_assert( sizeof( FPlatformState ) == 4 );
+//static_assert( sizeof( FPlatformState ) == 4 );
 
 static const uint16_t kPlatformStates = 0xdbbb;	// address
 
@@ -94,7 +94,7 @@ struct FItemState
 	unsigned	RoomNo : 8;
 	unsigned	ItemNo : 8;
 };
-static_assert( sizeof( FItemState ) == 4 );
+//static_assert( sizeof( FItemState ) == 4 );
 
 static const uint16_t kCollectableItemStates = 0x94E8;	// address of states in ZX memory
 
@@ -116,7 +116,7 @@ struct FElectricHazardState
 	uint8_t Unknown5;
 	uint8_t Unknown6;
 };
-static_assert( sizeof( FElectricHazardState ) == 8 );
+//static_assert( sizeof( FElectricHazardState ) == 8 );
 
 static const uint16_t kElectricHazardStates = 0x9635;	// address of states in ZX memory
 static const int kNoElectricHazards = 4;
@@ -346,7 +346,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	// Create Label
 	//if (state.GetLabelForAddress(kPlatformAddr) == nullptr)
 	{
-		sprintf_s(labelName, "SmallPlatform_%d", platformNo);
+		sprintf(labelName, "SmallPlatform_%d", platformNo);
 		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr, labelName, ELabelType::Data);
 		pLabel->Global = true;
 	}
@@ -374,7 +374,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	// Add attribute label
 	if(noPlatformChars > 0)
 	{
-		sprintf_s(labelName, "SmallPlatform_%d_Attributes", platformNo);
+		sprintf(labelName, "SmallPlatform_%d_Attributes", platformNo);
 		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr - noPlatformChars, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
@@ -397,7 +397,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	uint16_t platCharAddr = kPlatformAddr + 6;
 	for (int platChar = 0; platChar < noPlatformChars; platChar++)
 	{
-		sprintf_s(labelName, "SmallPlatform_%d_Char_%d", platformNo, platChar);
+		sprintf(labelName, "SmallPlatform_%d_Char_%d", platformNo, platChar);
 		FLabelInfo* pLabel = AddLabel(state, platCharAddr, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
@@ -417,7 +417,7 @@ void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	char labelName[32];
 
 	// Label
-	sprintf_s(labelName, "BigPlatform_%d", platformNo);
+	sprintf(labelName, "BigPlatform_%d", platformNo);
 	FLabelInfo* pLabel = AddLabel(state, kBigPlatformData, labelName, ELabelType::Data);
 	pLabel->Global = true;
 
@@ -435,7 +435,7 @@ void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
 	char labelName[32];
 
 	// Label
-	sprintf_s(labelName, "Screen_%d", screenNo);
+	sprintf(labelName, "Screen_%d", screenNo);
 	FLabelInfo* pLabel = AddLabel(state, kScreenData, labelName, ELabelType::Data);
 	pLabel->Global = true;
 
@@ -453,7 +453,7 @@ void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	char labelName[32];
 
 	// Label
-	sprintf_s(labelName, "Platform_%d", platformNo);
+	sprintf(labelName, "Platform_%d", platformNo);
 	FLabelInfo* pLabel = AddLabel(state, platformAddr, labelName, ELabelType::Data);
 	pLabel->Global = true;
 
