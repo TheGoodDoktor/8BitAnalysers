@@ -60,8 +60,8 @@ uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t add
 
 	if (pCodeInfo)
 	{
-		const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
-		if (pCodeInfo->FrameLastAccessed != -1 && (framesSinceAccessed < frameThreshold))
+		const int framesSinceExecuted = state.CurrentFrameNo - pCodeInfo->FrameLastExecuted;
+		if (pCodeInfo->FrameLastExecuted != -1 && (framesSinceExecuted < frameThreshold))
 			col = 6;	// yellow code
 	}
 	

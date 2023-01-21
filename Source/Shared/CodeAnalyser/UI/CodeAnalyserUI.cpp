@@ -422,10 +422,10 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr)
 {
 	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
-	if (pCodeInfo != nullptr && pCodeInfo->FrameLastAccessed != -1)
+	if (pCodeInfo != nullptr)
 	{
-		const int framesSinceAccessed = state.CurrentFrameNo - pCodeInfo->FrameLastAccessed;
-		const int brightVal = (255 - std::min(framesSinceAccessed << 2, 255)) & 0xff;
+		const int framesSinceExecuted = pCodeInfo->FrameLastExecuted != -1 ? state.CurrentFrameNo - pCodeInfo->FrameLastExecuted : INT_MAX;
+		const int brightVal = (255 - std::min(framesSinceExecuted << 2, 255)) & 0xff;
 		const bool bPCLine = pCodeInfo->Address == state.CPUInterface->GetPC();
 
 		if (bPCLine || brightVal > 0)

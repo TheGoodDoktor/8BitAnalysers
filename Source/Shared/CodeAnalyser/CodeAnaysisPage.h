@@ -52,7 +52,6 @@ struct FItem
 	std::string		Comment;
 	uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
 	uint16_t		ByteSize;
-	int				FrameLastAccessed = -1;
 	//bool			bBreakpointed = false;
 };
 
@@ -81,6 +80,7 @@ struct FCodeInfo : FItem
 	std::string		Text;				// Disassembly text
 	uint16_t		JumpAddress = 0;	// optional jump address
 	uint16_t		PointerAddress = 0;	// optional pointer address
+	int				FrameLastExecuted = -1;
 
 	union
 	{

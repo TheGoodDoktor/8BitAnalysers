@@ -454,8 +454,8 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 	}
 
 	bool bBreak = RegisterCodeExecuted(state, pc, nextpc);
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
-	pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
+	//FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	//pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
 	// check for breakpointed code line
 	if (bBreak)
 		return UI_DBG_BP_BASE_TRAPID;
