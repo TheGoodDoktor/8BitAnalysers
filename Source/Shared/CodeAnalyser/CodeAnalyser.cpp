@@ -547,15 +547,14 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextp
 
 	state.FrameTrace.push_back(pc);
 	
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		return RegisterCodeExecutedZ80(state, pc, nextpc);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		return RegisterCodeExecuted6502(state, pc, nextpc);
-
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo != nullptr)
 		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
 
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		return RegisterCodeExecutedZ80(state, pc, nextpc);
+	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+		return RegisterCodeExecuted6502(state, pc, nextpc);
 
 	return false;
 }
