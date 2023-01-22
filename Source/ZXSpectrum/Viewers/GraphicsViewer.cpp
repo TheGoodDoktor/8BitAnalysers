@@ -53,31 +53,31 @@ uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
 
 uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t addr, int frameThreshold)
 {
-	FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
-	FDataInfo *pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
-	FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(addr);
+	const FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(addr);
 	uint8_t col = 7;	// white
 
 	if (pCodeInfo)
 	{
 		const int framesSinceExecuted = state.CurrentFrameNo - pCodeInfo->FrameLastExecuted;
 		if (pCodeInfo->FrameLastExecuted != -1 && (framesSinceExecuted < frameThreshold))
-			col = 6;	// yellow code
+			return 6;	// yellow code
 	}
 	
+	const FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
 	if (pReadDataInfo && pReadDataInfo->LastFrameRead != -1)
 	{
 		const int framesSinceRead = state.CurrentFrameNo - pReadDataInfo->LastFrameRead;
 		
 		if (pReadDataInfo->LastFrameRead != -1 && (framesSinceRead < frameThreshold))
-			col = 4;	
+			return 4;	// green
 	}
 
+	const FDataInfo* pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
 	if (pWriteDataInfo && pWriteDataInfo->LastFrameWritten != -1)
 	{
 		const int framesSinceWritten = state.CurrentFrameNo - pWriteDataInfo->LastFrameWritten;
 		if (pWriteDataInfo->LastFrameWritten != -1 && (framesSinceWritten < frameThreshold))
-			col = 2;
+			return 2; // red
 	}
 
 	return col;

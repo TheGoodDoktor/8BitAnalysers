@@ -1,5 +1,5 @@
 #include "RZXLoader.h"
-#include <malloc.h>
+#include <stdlib.h>
 #include "Util/FileUtil.h"
 #include "GamesList.h"
 #include "Z80Loader.h"

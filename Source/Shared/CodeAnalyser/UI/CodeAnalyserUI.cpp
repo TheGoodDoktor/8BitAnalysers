@@ -424,7 +424,7 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessor
 	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
 	if (pCodeInfo != nullptr)
 	{
-		const int framesSinceExecuted = pCodeInfo->FrameLastExecuted != -1 ? state.CurrentFrameNo - pCodeInfo->FrameLastExecuted : INT_MAX;
+		const int framesSinceExecuted = pCodeInfo->FrameLastExecuted != -1 ? state.CurrentFrameNo - pCodeInfo->FrameLastExecuted : 255;
 		const int brightVal = (255 - std::min(framesSinceExecuted << 2, 255)) & 0xff;
 		const bool bPCLine = pCodeInfo->Address == state.CPUInterface->GetPC();
 

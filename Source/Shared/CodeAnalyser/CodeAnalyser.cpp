@@ -543,9 +543,6 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc)
 {
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
-	pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
-
 	AnalyseAtPC(state, pc);
 
 	state.FrameTrace.push_back(pc);
@@ -554,6 +551,11 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextp
 		return RegisterCodeExecutedZ80(state, pc, nextpc);
 	else if (state.CPUInterface->CPUType == ECPUType::M6502)
 		return RegisterCodeExecuted6502(state, pc, nextpc);
+
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	if (pCodeInfo != nullptr)
+		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
+
 
 	return false;
 }

@@ -7,6 +7,7 @@
 #include "ImageViewer.h"
 
 #include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 float DrawDataCharMapLine(FCodeAnalysisState& state, const FDataInfo* pDataInfo)
 {
@@ -551,6 +552,99 @@ void DrawDataValueGraph(uint16_t val, bool bReset)
 }
 
 
+void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FDataInfo* pDataInfo)
+{
+	// List Data accesses
+	if (pDataInfo->Reads.empty() == false)
+	{
+		static std::string commentTxt;
+		static bool bOverride = false;
+		bool bWriteComment = false;
+
+		ImGui::Separator();
+
+		// comment all reads
+		ImGui::InputText("Read Comment", &commentTxt);
+		ImGui::Checkbox("Override Existing", &bOverride);
+		ImGui::SameLine();
+		if (ImGui::Button("Set all"))
+		{
+			bWriteComment = true;
+		}
+
+		ImGui::Text("Reads:");
+		for (const auto& caller : pDataInfo->Reads)
+		{
+			const uint16_t accessorCodeAddr = caller.first;
+			ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, accessorCodeAddr);
+
+			if (bWriteComment)
+			{
+				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
+				if (pCodeInfo)
+				{
+					if (pCodeInfo->Comment.empty() || bOverride)
+						pCodeInfo->Comment = commentTxt;
+				}
+			}
+		}
+
+
+	}
+
+	if (pDataInfo->Writes.empty() == false)
+	{
+		static std::string commentTxt;
+		static bool bOverride = false;
+		bool bWriteComment = false;
+
+		ImGui::Separator();
+
+		// comment all reads
+		ImGui::InputText("Write Comment", &commentTxt);
+		ImGui::Checkbox("Override Existing", &bOverride);
+		ImGui::SameLine();
+		if (ImGui::Button("Set all"))
+		{
+			bWriteComment = true;
+		}
+
+		ImGui::Text("Writes:");
+		for (const auto& caller : pDataInfo->Writes)
+		{
+			const uint16_t accessorCodeAddr = caller.first;
+			ShowCodeAccessorActivity(state, accessorCodeAddr);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, caller.first);
+
+			if (bWriteComment)
+			{
+				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
+				if (pCodeInfo)
+				{
+					if (pCodeInfo->Comment.empty() || bOverride)
+						pCodeInfo->Comment = commentTxt;
+				}
+			}
+		}
+	}
+
+	// last writer to address
+	const uint16_t lastWriter = state.GetLastWriterForAddress(pDataInfo->Address);
+	if (lastWriter != 0)
+	{
+		ImGui::Text("Last Writer: ");
+		ImGui::SameLine();
+		DrawCodeAddress(state, viewState, lastWriter);
+	}
+}
+
 
 void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FDataInfo* pDataInfo)
 {
@@ -704,42 +798,6 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		break;
 	}
 
-	// List Data accesses
-	if (pDataInfo->Reads.empty() == false)
-	{
-		ImGui::Text("Reads:");
-		for (const auto& caller : pDataInfo->Reads)
-		{
-			const uint16_t accessorCodeAddr = caller.first;
-			ShowCodeAccessorActivity(state, accessorCodeAddr);
-
-			ImGui::Text("   ");
-			ImGui::SameLine();
-			DrawCodeAddress(state, viewState, accessorCodeAddr);
-		}
-	}
-
-	if (pDataInfo->Writes.empty() == false)
-	{
-		ImGui::Text("Writes:");
-		for (const auto& caller : pDataInfo->Writes)
-		{
-			const uint16_t accessorCodeAddr = caller.first;
-			ShowCodeAccessorActivity(state, accessorCodeAddr);
-
-			ImGui::Text("   ");
-			ImGui::SameLine();
-			DrawCodeAddress(state, viewState, caller.first);
-		}
-	}
-
-	// last writer to address
-	const uint16_t lastWriter = state.GetLastWriterForAddress(pDataInfo->Address);
-	if (lastWriter != 0)
-	{
-		ImGui::Text("Last Writer: ");
-		ImGui::SameLine();
-		DrawCodeAddress(state, viewState, lastWriter);
-	}
+	DrawDataAccesses(state, viewState, pDataInfo);
 }
 

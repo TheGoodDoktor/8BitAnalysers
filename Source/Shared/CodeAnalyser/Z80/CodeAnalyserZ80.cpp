@@ -323,20 +323,25 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 	// store the comment from the code line that did the push at the location in the stack as a comment
 	if(bPushInstruction)
 	{
-		FDataInfo* pStackItem = state.GetWriteDataInfoForAddress(cpuState.SP-2);	// -2 because SP was recorded before instruction was 	
-		const FCodeInfo* pCodeItem = state.GetCodeInfoForAddress(pc);
+		const uint16_t stackPointer = cpuState.SP - 2;
 
-		if (pCodeItem != nullptr)// && pCodeItem->Comment.empty() == false)
-			pStackItem->Comment = pCodeItem->Comment;
-		else
-			pStackItem->Comment = "";
-
-		// Format stack data item
-		if(pStackItem->DataType != EDataType::Word)
+		if (stackPointer >= state.StackMin && stackPointer <= state.StackMax)
 		{
-			pStackItem->DataType = EDataType::Word;
-			pStackItem->ByteSize = 2;
-			state.SetCodeAnalysisDirty();
+			FDataInfo* pStackItem = state.GetWriteDataInfoForAddress(stackPointer);	// -2 because SP was recorded before instruction was 	
+			const FCodeInfo* pCodeItem = state.GetCodeInfoForAddress(pc);
+
+			if (pCodeItem != nullptr)// && pCodeItem->Comment.empty() == false)
+				pStackItem->Comment = pCodeItem->Comment;
+			else
+				pStackItem->Comment = "";
+
+			// Format stack data item
+			if (pStackItem->DataType != EDataType::Word)
+			{
+				pStackItem->DataType = EDataType::Word;
+				pStackItem->ByteSize = 2;
+				state.SetCodeAnalysisDirty();
+			}
 		}
 	}
 
