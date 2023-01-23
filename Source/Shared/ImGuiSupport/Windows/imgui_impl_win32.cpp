@@ -86,6 +86,8 @@ bool    ImGui_ImplWin32_Init(void* hwnd)
         ImGui_ImplWin32_InitPlatformInterface();
 
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
+    io.KeyMap[ImGuiKey_Semicolon] = VK_OEM_1;
+    io.KeyMap[ImGuiKey_Slash] = VK_OEM_2;
     io.KeyMap[ImGuiKey_Tab] = VK_TAB;
     io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
     io.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
@@ -102,8 +104,39 @@ bool    ImGui_ImplWin32_Init(void* hwnd)
     io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
     io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
     io.KeyMap[ImGuiKey_KeyPadEnter] = VK_RETURN;
+    io.KeyMap[ImGuiKey_F1] = VK_F1;
+    io.KeyMap[ImGuiKey_F2] = VK_F2;
+    io.KeyMap[ImGuiKey_F3] = VK_F3;
+    io.KeyMap[ImGuiKey_F4] = VK_F4;
+    io.KeyMap[ImGuiKey_F5] = VK_F5;
+    io.KeyMap[ImGuiKey_F6] = VK_F6;
+    io.KeyMap[ImGuiKey_F7] = VK_F7;
+    io.KeyMap[ImGuiKey_F8] = VK_F8;
+    io.KeyMap[ImGuiKey_F9] = VK_F9;
+    io.KeyMap[ImGuiKey_F10] = VK_F10;
+    io.KeyMap[ImGuiKey_F11] = VK_F11;
+    io.KeyMap[ImGuiKey_F12] = VK_F12;
     io.KeyMap[ImGuiKey_A] = 'A';
+    io.KeyMap[ImGuiKey_B] = 'B';
     io.KeyMap[ImGuiKey_C] = 'C';
+    io.KeyMap[ImGuiKey_D] = 'D';
+    io.KeyMap[ImGuiKey_E] = 'E';
+    io.KeyMap[ImGuiKey_F] = 'F';
+    io.KeyMap[ImGuiKey_G] = 'G';
+    io.KeyMap[ImGuiKey_H] = 'H';
+    io.KeyMap[ImGuiKey_I] = 'I';
+    io.KeyMap[ImGuiKey_J] = 'J';
+    io.KeyMap[ImGuiKey_K] = 'K';
+    io.KeyMap[ImGuiKey_L] = 'L';
+    io.KeyMap[ImGuiKey_M] = 'M';
+    io.KeyMap[ImGuiKey_N] = 'N';
+    io.KeyMap[ImGuiKey_O] = 'O';
+    io.KeyMap[ImGuiKey_P] = 'P';
+    io.KeyMap[ImGuiKey_Q] = 'Q';
+    io.KeyMap[ImGuiKey_R] = 'R';
+    io.KeyMap[ImGuiKey_S] = 'S';
+    io.KeyMap[ImGuiKey_T] = 'T';
+    io.KeyMap[ImGuiKey_U] = 'U';
     io.KeyMap[ImGuiKey_V] = 'V';
     io.KeyMap[ImGuiKey_X] = 'X';
     io.KeyMap[ImGuiKey_Y] = 'Y';

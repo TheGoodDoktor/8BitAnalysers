@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <imgui.h>
+
 #include <util/z80dasm.h>
 #include <util/m6502dasm.h>
 
@@ -747,21 +749,21 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	RunStaticCodeAnalysis(state, initialPC);
 
 	// Key Config
-	state.KeyConfig[(int)EKey::SetItemData] = 'D';
-	state.KeyConfig[(int)EKey::SetItemText] = 'T';
-	state.KeyConfig[(int)EKey::SetItemCode] = 'C';
-	state.KeyConfig[(int)EKey::SetItemImage] = 'I';
-	state.KeyConfig[(int)EKey::ToggleItemBinary] = 'B';	
-	state.KeyConfig[(int)EKey::AddLabel] = 'L';
-	state.KeyConfig[(int)EKey::Rename] = 'R';
-	state.KeyConfig[(int)EKey::Comment] = 0xBF;
-	state.KeyConfig[(int)EKey::AddCommentBlock] = 0xBA;
-	state.KeyConfig[(int)EKey::BreakContinue] = 0x74;
-	state.KeyConfig[(int)EKey::StepInto] = 0x79;
-	state.KeyConfig[(int)EKey::StepOver] = 0x7A;
-	state.KeyConfig[(int)EKey::StepFrame] = 0x75;
-	state.KeyConfig[(int)EKey::StepScreenWrite] = 0x76;
-	state.KeyConfig[(int)EKey::Breakpoint] = 0x78;
+	state.KeyConfig[(int)EKey::SetItemData] = ImGuiKey_D;
+	state.KeyConfig[(int)EKey::SetItemText] = ImGuiKey_T;
+	state.KeyConfig[(int)EKey::SetItemCode] = ImGuiKey_C;
+	state.KeyConfig[(int)EKey::SetItemImage] = ImGuiKey_I;
+	state.KeyConfig[(int)EKey::ToggleItemBinary] = ImGuiKey_B;
+	state.KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
+	state.KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
+	state.KeyConfig[(int)EKey::Comment] = ImGuiKey_Slash; // '/'
+	state.KeyConfig[(int)EKey::AddCommentBlock] = ImGuiKey_Semicolon;	// ';'
+	state.KeyConfig[(int)EKey::BreakContinue] = ImGuiKey_F5;
+	state.KeyConfig[(int)EKey::StepInto] = ImGuiKey_F11;
+	state.KeyConfig[(int)EKey::StepOver] = ImGuiKey_F10;
+	state.KeyConfig[(int)EKey::StepFrame] = ImGuiKey_F6;
+	state.KeyConfig[(int)EKey::StepScreenWrite] = ImGuiKey_F7;
+	state.KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
 
 	state.StackMin = 0xffff;
 	state.StackMax = 0;
