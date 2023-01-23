@@ -13,11 +13,24 @@ file ( GLOB shared_base_src
 	../Shared/Util/*.cpp ../Shared/Util/*.h
 	)
 	
+# DX11 files
+if(${gfxapi} STREQUAL "DX11")
+	file ( GLOB shared_gfxapi_src
+		../Shared/ImGuiSupport/Windows/*.cpp ../Shared/ImGuiSupport/Windows/*.h
+		)
+endif()
+
+# GLFW files
+if(${gfxapi} STREQUAL "GLFWApi")
+	file ( GLOB shared_gfxapi_src
+	../Shared/ImGuiSupport/GLFW/*.cpp ../Shared/ImGuiSupport/GLFW/*.h
+		)
+endif()
+
 # Windows files
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	file ( GLOB shared_platform_src 
 		../Shared/Util/Windows/*.cpp ../Shared/Util/Windows/*.h
-		../Shared/ImGuiSupport/Windows/*.cpp ../Shared/ImGuiSupport/Windows/*.h
 		)
 endif()
 
@@ -25,8 +38,7 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	file ( GLOB shared_platform_src
 		../Shared/Util/Linux/*.cpp ../Shared/Util/Linux/*.h
-		../Shared/ImGuiSupport/GLFW/*.cpp ../Shared/ImGuiSupport/GLFW/*.h
 		)
 endif()
 
-set( shared_src ${shared_base_src} ${shared_platform_src} )
+set( shared_src ${shared_base_src} ${shared_platform_src} ${shared_gfxapi_src} )

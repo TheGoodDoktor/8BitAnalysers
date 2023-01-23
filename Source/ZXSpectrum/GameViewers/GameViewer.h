@@ -9,7 +9,7 @@ struct FViewerConfig;
 // Base class for game viewer data
 struct FGameViewerData
 {
-	~FGameViewerData();
+	virtual ~FGameViewerData();
 
 	FSpectrumEmu*		pEmu = nullptr;
 

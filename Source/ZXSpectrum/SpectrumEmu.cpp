@@ -19,6 +19,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "GlobalConfig.h"
 #include "GameData.h"
 #include <ImGuiSupport/ImGuiTexture.h>
+#include "GameViewers/GameViewer.h"
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
 #include "Viewers/SpectrumViewer.h"
@@ -51,21 +52,6 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "GameConfig.h"
 
 #define ENABLE_RZX 0
-
-// TODO: need a better multi-platform solution
-#define VK_F1             0x70
-#define VK_F2             0x71
-#define VK_F3             0x72
-#define VK_F4             0x73
-#define VK_F5             0x74
-#define VK_F6             0x75
-#define VK_F7             0x76
-#define VK_F8             0x77
-#define VK_F9             0x78
-#define VK_F10            0x79
-#define VK_F11            0x7A
-#define VK_F12            0x7B
-
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 
@@ -660,13 +646,13 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		desc.destroy_texture_cb = gfx_destroy_texture;
 		desc.dbg_keys.break_keycode = ImGui::GetKeyIndex(ImGuiKey_Space);
 		desc.dbg_keys.break_name = "F5";
-		desc.dbg_keys.continue_keycode = VK_F5;
+		desc.dbg_keys.continue_keycode = ImGui::GetKeyIndex(ImGuiKey_F5);
 		desc.dbg_keys.continue_name = "F5";
-		desc.dbg_keys.step_over_keycode = VK_F6;
+		desc.dbg_keys.step_over_keycode = ImGui::GetKeyIndex(ImGuiKey_F6);
 		desc.dbg_keys.step_over_name = "F6";
-		desc.dbg_keys.step_into_keycode = VK_F7;
+		desc.dbg_keys.step_into_keycode = ImGui::GetKeyIndex(ImGuiKey_F7);
 		desc.dbg_keys.step_into_name = "F7";
-		desc.dbg_keys.toggle_breakpoint_keycode = VK_F9;
+		desc.dbg_keys.toggle_breakpoint_keycode = ImGui::GetKeyIndex(ImGuiKey_F9);
 		desc.dbg_keys.toggle_breakpoint_name = "F9";
 		ui_zx_init(&UIZX, &desc);
 	}

@@ -4,6 +4,7 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 #include "imgui.h"
+#include <implot.h>
 #include "ImGuiSupport/GLFW/imgui_impl_glfw.h"
 #include "ImGuiSupport/GLFW/imgui_impl_opengl3.h"
 #include <stdio.h>
@@ -19,6 +20,8 @@
 #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 
+#include "../SpectrumEmu.h"
+
 #define SOKOL_IMPL
 #include "sokol_audio.h"
 
@@ -27,7 +30,7 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-int main(int, char**)
+int main(int argc, char** argv)
 {
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -64,9 +67,16 @@ int main(int, char**)
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
+	// Setup audio
+	saudio_desc audioDesc = {};
+	memset(&audioDesc, 0, sizeof(saudio_desc));
+	saudio_setup(&audioDesc);
+	assert(saudio_isvalid() == true);
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -111,6 +121,18 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+	// Speccy 
+	FSpectrumConfig config;
+	config.NoStateBuffers = 10;
+	if (argc > 1)
+		config.SpecificGame = argv[1];
+	FSpectrumEmu* pSpectrumEmulator = new FSpectrumEmu;
+	pSpectrumEmulator->Init(config);
+
+	// The skool file to import can be passed as the second argument, following the name of the game to start.
+	if (argc > 2)
+		pSpectrumEmulator->ImportSkoolFile(argv[2]);
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -126,42 +148,15 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
+		// speccy update & render
+		pSpectrumEmulator->Tick();
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-        {
-            static float f = 0.0f;
-            static int counter = 0;
+		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+		if (pSpectrumEmulator->bShowImGuiDemo)
+			ImGui::ShowDemoWindow(&pSpectrumEmulator->bShowImGuiDemo);
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
+		if (pSpectrumEmulator->bShowImPlotDemo)
+			ImPlot::ShowDemoWindow(&pSpectrumEmulator->bShowImPlotDemo);
 
         // Rendering
         ImGui::Render();
@@ -186,9 +181,15 @@ int main(int, char**)
         glfwSwapBuffers(window);
     }
 
+	// shutdown the speccy stuff
+	pSpectrumEmulator->Shutdown();
+
+	saudio_shutdown();
+
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+    ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
     glfwDestroyWindow(window);

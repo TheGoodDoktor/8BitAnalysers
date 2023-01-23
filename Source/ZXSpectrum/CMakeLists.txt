@@ -1,3 +1,4 @@
+# This is for the features that allow the creating of filter folders in Visual Studio (source_group)
 cmake_minimum_required (VERSION 3.10)
 
 project (SpectrumAnalyser)
@@ -6,7 +7,23 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(X11 REQUIRED)
+set( gfxapi "GLFW")
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+#set( gfxapi "DX11")
+set( gfxapi "GLFWApi")
+
+set(glfwloc "E:/dev/Research/GLFW/glfw-3.3.8.bin.WIN64")
+
+find_package(OpenGL REQUIRED)
+find_library(libGLFW glfw3 PATHS ${glfwloc}/lib-vc2019/)
+include_directories(
+    ${glfwloc}/include
+    )
+	
+endif()
+
 
 # vendor includes
 set( vendor_dir ../Vendor )
@@ -81,27 +98,23 @@ file ( GLOB program_src
 	SnapshotLoaders/*.cpp SnapshotLoaders/*.h
 	Viewers/*.cpp Viewers/*.h)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	set ( platform_main Windows/WinMain.cpp )
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(${gfxapi} STREQUAL "GLFWApi")
 	set ( platform_main GLFW/GLFWMain.cpp )
+else()
+	set ( platform_main Windows/WinMain.cpp )
 endif()
 
 add_executable (SpectrumAnalyser ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
-# this is to make the filter folders in Visual Studio
-#if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
-	source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} )
-	source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main})
-#endif()
+# This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
+source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
+source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} )
+source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main})
 
 set_target_properties( SpectrumAnalyser PROPERTIES CXX_STANDARD 17 )
 
 #windows specific
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(${gfxapi} STREQUAL "DX11")
 
 	# libraries
 	target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -109,11 +122,23 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 		kernel32.lib user32.lib
 		comdlg32.lib advapi32.lib shell32.lib
 		ole32.lib oleaut32.lib)
+endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	# debugger working dir
 	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
 
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+	
+	if(${gfxapi} STREQUAL "GLFWApi")
+		target_link_libraries(${PROJECT_NAME}
+			${GLFW}
+			${OPENGL_gl_LIBRARY}
+			${CMAKE_THREAD_LIBS_INIT}
+			${X11_LIBRARIES}
+			${CMAKE_DL_LIBS}
+			)
+	endif()
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
