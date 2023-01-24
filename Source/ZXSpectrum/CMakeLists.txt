@@ -7,7 +7,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(X11 REQUIRED)
-set( gfxapi "GLFW")
+set( gfxapi "GLFWApi")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
