@@ -27,6 +27,7 @@ endif()
 
 # vendor includes
 set( vendor_dir ../Vendor )
+include_directories( ${vendor_dir} )
 include_directories( ${vendor_dir}/sokol )
 include_directories( ${vendor_dir}/imgui-docking )
 include_directories( ${vendor_dir}/chips )

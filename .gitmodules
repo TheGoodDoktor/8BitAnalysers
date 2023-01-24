@@ -1,0 +1,3 @@
+[submodule "Source/Vendor/tinydir"]
+	path = Source/Vendor/tinydir
+	url = https://github.com/cxong/tinydir

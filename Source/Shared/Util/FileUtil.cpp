@@ -1,6 +1,10 @@
 #include "FileUtil.h"
 #include <string.h>
 
+#undef UNICODE 
+#undef _UNICODE 
+#include <tinydir/tinydir.h>
+
 static std::string g_DataDirFromRoot("Tools/MapDataTool/Data/");
 static std::string g_DataDirectory;
 
@@ -14,6 +18,30 @@ std::string RemoveFileExtension(const char* fname)
 	std::string fullname(fname);
 	size_t lastindex = fullname.find_last_of(".");
 	return fullname.substr(0, lastindex);
+}
+
+bool EnumerateDirectory(const char* dirName, FDirFileList& outDirListing)
+{
+	tinydir_dir dir;
+	tinydir_open(&dir, dirName);
+
+	while (dir.has_next)
+	{
+		tinydir_file file;
+		tinydir_readfile(&dir, &file);
+
+		FDirEntry entry;
+
+		entry.FileName = file.name;
+		if (file.is_dir)
+			entry.FileType = FDirEntry::Directory;
+
+		outDirListing.push_back(entry);
+		tinydir_next(&dir);
+	}
+
+	tinydir_close(&dir);
+	return true;
 }
 
 bool DetermineDataDirectory(const char *pRouteIdentifier)
@@ -138,4 +166,72 @@ uint16_t ParseHexString16bit(const std::string& string)
 	unsigned int val;
 	sscanf(string.c_str(), "0x%x", &val);
 	return static_cast<uint16_t>(val);
+}
+
+// directory related helpers
+void NormaliseFilePath(char* outFilePath, const char* inFilePath);
+
+
+bool EnsureDirectoryExists(const char* pDirectory)
+{
+	const char sep = GetDirSep();
+
+	//    Debug::Error("Creating dir chain %s", osDir_);
+
+	char osDir[FILENAME_MAX] = { 0 };
+	NormaliseFilePath(osDir, pDirectory);
+
+	if (osDir[0] == 0)
+		return false;
+
+	const char* left = osDir;
+	for (const char* right = osDir + 1; *right; ++right)
+	{
+		if (*right == sep)
+		{
+			*(char*)right = 0;
+			const char* partialPath = left;
+
+			if (!CreateDir(partialPath))
+				return false;
+
+			*(char*)right = sep;
+		}
+	}
+
+	return CreateDir(osDir);
+}
+
+
+void NormaliseFilePath(char* filePath)
+{
+	bool preceedingSlash = false;
+
+	for (char* cursor = filePath; *cursor; ++cursor)
+	{
+		char c = *cursor;
+		//Normalise slashes
+		if (c == '\\' || c == '/')
+			c = GetDirSep();
+
+		//Ignore duplicate slashes
+		if (c == GetDirSep())
+		{
+			if (preceedingSlash)
+				continue;
+			preceedingSlash = true;
+		}
+		else
+		{
+			preceedingSlash = false;
+		}
+
+		*cursor = c;
+	}
+}
+
+void NormaliseFilePath(char* outFilePath, const char* inFilePath)
+{
+	strncpy(outFilePath, inFilePath, 256);	// TODO: fix this
+	NormaliseFilePath(outFilePath);
 }

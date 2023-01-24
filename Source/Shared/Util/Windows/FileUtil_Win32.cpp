@@ -7,10 +7,12 @@
 #include <strsafe.h>
 #include <shobjidl.h> 
 #include <functional>
-#pragma comment(lib, "User32.lib")
-#pragma comment(lib, "WinHttp.lib")
+//#pragma comment(lib, "User32.lib")
+//#pragma comment(lib, "WinHttp.lib")
 
-bool EnumerateDirectory(const char *dir, FDirFileList &outDirListing)
+
+#if 0
+bool EnumerateDirectory_Win32(const char *dir, FDirFileList &outDirListing)
 {
 	WIN32_FIND_DATA ffd;
 	TCHAR szDir[MAX_PATH];
@@ -51,6 +53,7 @@ bool EnumerateDirectory(const char *dir, FDirFileList &outDirListing)
 
 	return true;
 }
+#endif
 
 bool CreateDir(const char* osDir)
 {
@@ -78,69 +81,8 @@ char GetDirSep()
 	return '\\';
 }
 
-bool EnsureDirectoryExists(const char *pDirectory)
-{
-	const char sep = '\\';
 
-	//    Debug::Error("Creating dir chain %s", osDir_);
-
-	char osDir[FILENAME_MAX] = { 0 };
-	NormaliseFilePath(osDir, pDirectory);
-
-	if (osDir[0] == 0)
-		return false;
-
-	const char* left = osDir;
-	for (const char* right = osDir + 1; *right; ++right)
-	{
-		if (*right == sep)
-		{
-			*(char*)right = 0;
-			const char* partialPath = left;
-
-			if (!CreateDir(partialPath))
-				return false;
-
-			*(char*)right = sep;
-		}
-	}
-
-	return CreateDir(osDir);
-}
-
-void NormaliseFilePath(char* outFilePath, const char* inFilePath)
-{
-	strcpy_s(outFilePath,256, inFilePath);	// TODO: fix this
-	NormaliseFilePath(outFilePath);
-}
-
-void NormaliseFilePath(char* filePath)
-{
-	bool preceedingSlash = false;
-
-	for (char* cursor = filePath; *cursor; ++cursor)
-	{
-		char c = *cursor;
-		//Normalise slashes
-		if (c == '\\' || c == '/')
-			c = GetDirSep();
-
-		//Ignore duplicate slashes
-		if (c == GetDirSep())
-		{
-			if (preceedingSlash)
-				continue;
-			preceedingSlash = true;
-		}
-		else
-		{
-			preceedingSlash = false;
-		}
-
-		*cursor = c;
-	}
-}
-
+#if 0
 std::string g_BrowserURL;
 
 bool OpenURLInBrowser(const char *pURL)
@@ -412,3 +354,4 @@ bool OpenFileDialog(std::string &outFile,const char *pInitialDir, const char *pF
 	return true;
 }
 
+#endif
