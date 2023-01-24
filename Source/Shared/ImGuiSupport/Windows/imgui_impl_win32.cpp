@@ -50,17 +50,10 @@ static bool                 g_HasGamepad = false;
 static bool                 g_WantUpdateHasGamepad = true;
 static bool                 g_WantUpdateMonitors = true;
 
-static IInputEventHandler*  g_InputEventHandler = nullptr;
-
 // Forward Declarations
 static void ImGui_ImplWin32_InitPlatformInterface();
 static void ImGui_ImplWin32_ShutdownPlatformInterface();
 static void ImGui_ImplWin32_UpdateMonitors();
-
-void SetInputEventHandler(IInputEventHandler* pHandler)
-{
-    g_InputEventHandler = pHandler;
-}
 
 // Functions
 bool    ImGui_ImplWin32_Init(void* hwnd)
@@ -116,7 +109,17 @@ bool    ImGui_ImplWin32_Init(void* hwnd)
     io.KeyMap[ImGuiKey_F10] = VK_F10;
     io.KeyMap[ImGuiKey_F11] = VK_F11;
     io.KeyMap[ImGuiKey_F12] = VK_F12;
-    io.KeyMap[ImGuiKey_A] = 'A';
+	io.KeyMap[ImGuiKey_0] = '0';
+	io.KeyMap[ImGuiKey_1] = '1';
+	io.KeyMap[ImGuiKey_2] = '2';
+	io.KeyMap[ImGuiKey_3] = '3';
+	io.KeyMap[ImGuiKey_4] = '4';
+	io.KeyMap[ImGuiKey_5] = '5';
+	io.KeyMap[ImGuiKey_6] = '6';
+	io.KeyMap[ImGuiKey_7] = '7';
+	io.KeyMap[ImGuiKey_8] = '8';
+	io.KeyMap[ImGuiKey_9] = '9';
+	io.KeyMap[ImGuiKey_A] = 'A';
     io.KeyMap[ImGuiKey_B] = 'B';
     io.KeyMap[ImGuiKey_C] = 'C';
     io.KeyMap[ImGuiKey_D] = 'D';
@@ -263,7 +266,7 @@ static void ImGui_ImplWin32_UpdateGamepads()
 
     XINPUT_STATE xinput_state;
 
-    if (IInputEventHandler* pInputHandler = g_InputEventHandler)
+/*    if (IInputEventHandler* pInputHandler = g_InputEventHandler)
     {
         if (g_HasGamepad && XInputGetState(0, &xinput_state) == ERROR_SUCCESS)
         {
@@ -277,7 +280,7 @@ static void ImGui_ImplWin32_UpdateGamepads()
             pInputHandler->OnGamepadUpdated(mask);
         }
     }
-
+    */
     if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
         return;
 
@@ -370,7 +373,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     if (ImGui::GetCurrentContext() == NULL)
         return 0;
 
-    IInputEventHandler *pInputHandler = g_InputEventHandler;
+    //IInputEventHandler *pInputHandler = g_InputEventHandler;
 
     ImGuiIO& io = ImGui::GetIO();
     switch (msg)
@@ -415,21 +418,21 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     case WM_SYSKEYDOWN:
         if (wParam < 256)
             io.KeysDown[wParam] = 1;
-        if (pInputHandler)
-            pInputHandler->OnKeyDown((int)wParam);
+        //if (pInputHandler)
+         //   pInputHandler->OnKeyDown((int)wParam);
         return 0;
     case WM_KEYUP:
     case WM_SYSKEYUP:
         if (wParam < 256)
             io.KeysDown[wParam] = 0;
-        if (pInputHandler)
-            pInputHandler->OnKeyUp((int)wParam);
+       // if (pInputHandler)
+         //   pInputHandler->OnKeyUp((int)wParam);
         return 0;
     case WM_CHAR:
         // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
         io.AddInputCharacter((unsigned int)wParam);
-        if (pInputHandler)
-            pInputHandler->OnChar((int)wParam);
+        //if (pInputHandler)
+          //  pInputHandler->OnChar((int)wParam);
         return 0;
     case WM_SETCURSOR:
         if (LOWORD(lParam) == HTCLIENT && ImGui_ImplWin32_UpdateMouseCursor())

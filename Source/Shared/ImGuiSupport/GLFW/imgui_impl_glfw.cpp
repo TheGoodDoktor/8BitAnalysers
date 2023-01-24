@@ -108,8 +108,6 @@
 #define GLFW_HAS_GET_KEY_NAME         (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3200) // 3.2+ glfwGetKeyName()
 
 
-IInputEventHandler* g_InputEventHandler = nullptr;  // MarkC
-
 // GLFW data
 enum GlfwClientApi
 {
@@ -369,8 +367,6 @@ void ImGui_ImplGlfw_KeyCallback(GLFWwindow* window, int keycode, int scancode, i
     if (action != GLFW_PRESS && action != GLFW_RELEASE)
         return;
 
-    IInputEventHandler* pInputHandler = g_InputEventHandler;
-
     // Workaround: X11 does not include current pressed/released modifier key in 'mods' flags. https://github.com/glfw/glfw/issues/1630
     if (int keycode_to_mod = ImGui_ImplGlfw_KeyToModifier(keycode))
         mods = (action == GLFW_PRESS) ? (mods | keycode_to_mod) : (mods & ~keycode_to_mod);
@@ -385,14 +381,6 @@ void ImGui_ImplGlfw_KeyCallback(GLFWwindow* window, int keycode, int scancode, i
     ImGuiKey imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(keycode);
     io.AddKeyEvent(imgui_key, (action == GLFW_PRESS));
     io.SetKeyEventNativeData(imgui_key, keycode, scancode); // To support legacy indexing (<1.87 user code)
-
-    if (pInputHandler)
-    {
-        if (action == GLFW_PRESS)
-			pInputHandler->OnKeyDown(imgui_key);
-        else
-		    pInputHandler->OnKeyUp(imgui_key);
-    }
 }
 
 void ImGui_ImplGlfw_WindowFocusCallback(GLFWwindow* window, int focused)
@@ -1188,13 +1176,6 @@ static void ImGui_ImplGlfw_ShutdownPlatformInterface()
 {
     ImGui::DestroyPlatformWindows();
 }
-
-// MarkC - Begin
-void SetInputEventHandler(IInputEventHandler* pHandler)
-{
-	g_InputEventHandler = pHandler;
-}
-// MarkC - End
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

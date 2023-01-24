@@ -7,21 +7,22 @@
 
 class FSpectrumEmu;
 
-class FSpectrumViewer : public IInputEventHandler
+class FSpectrumViewer //: public IInputEventHandler
 {
 public:
 	FSpectrumViewer() {}
 
 	void	Init(FSpectrumEmu* pEmu);
 	void	Draw();
-
+	void	Tick(void);
+#if 0
 	// IInputEventHandler Begin
 	void	OnKeyUp(int keyCode) override;
 	void	OnKeyDown(int keyCode) override;
 	void	OnChar(int charCode) override;
 	void	OnGamepadUpdated(int mask) override;
 	// IInputEventHandler End
-
+#endif
 private:
 	FSpectrumEmu* pSpectrumEmu = nullptr;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 // interface class
 class IInputEventHandler
 {
@@ -15,3 +16,4 @@ public:
 
 // this will be implemented in platform specific files
 void SetInputEventHandler(IInputEventHandler* pHandler);
+#endif

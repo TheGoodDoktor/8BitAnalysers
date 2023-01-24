@@ -1248,6 +1248,8 @@ void StoreRegisters_Z80(FCodeAnalysisState& state);
 
 void FSpectrumEmu::Tick()
 {
+	SpectrumViewer.Tick();
+
 	ExecThisFrame = ui_zx_before_exec(&UIZX);
 
 	if (ExecThisFrame)

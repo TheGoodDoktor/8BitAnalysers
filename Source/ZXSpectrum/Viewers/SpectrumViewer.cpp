@@ -9,10 +9,9 @@
 #include "GraphicsViewer.h"
 #include "../GlobalConfig.h"
 
-//#define NOMINMAX // without this std::min and std::max fail to compile
-//#include <windows.h> // for VK_* key defines
 #include <Util/Misc.h>
 
+#if 0
 // TODO: need a better multi-platform solution
 #define VK_F1             0x70
 #define VK_F2             0x71
@@ -31,15 +30,18 @@
 #define VK_CONTROL        0x11
 #define VK_SHIFT          0x10
 #define VK_BACK           0x08
-
+#endif
 
 void DrawArrow(ImDrawList* dl, ImVec2 pos, bool bLeftDirection);
 
 void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 {
 	pSpectrumEmu = pEmu;
-	SetInputEventHandler(this);
+	//SetInputEventHandler(this);
 }
+
+
+
 
 void FSpectrumViewer::Draw()
 {
@@ -298,6 +300,7 @@ void FSpectrumViewer::Draw()
 	bWindowFocused = ImGui::IsWindowFocused();
 }
 
+#if 0
 int GetSpectrumKeyFromKeyCode(int keyCode)
 {
 	int speccyKey = 0;
@@ -339,7 +342,85 @@ int GetSpectrumKeyFromKeyCode(int keyCode)
 	
 	return 0;
 }
+#endif
 
+int SpectrumKeyFromImGuiKey(ImGuiKey key)
+{
+	int speccyKey = 0;
+
+	if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
+	{
+		speccyKey = '0' + (key - ImGuiKey_0);
+	}
+	else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
+	{
+		speccyKey = 'A' + (key - ImGuiKey_A) + 0x20;
+	}
+	else if (key == ImGuiKey_Space)
+	{
+		speccyKey = ' ';
+	}
+	else if (key == ImGuiKey_Enter)
+	{
+		speccyKey = 0xd;
+	}
+	else if (key == ImGuiKey_LeftCtrl)
+	{
+		// symbol-shift
+		speccyKey = 0xf;
+	}
+	else if (key == ImGuiKey_LeftShift)
+	{
+		// caps-shift
+		speccyKey = 0xe;
+	}
+	else if (key == ImGuiKey_Backspace)
+	{
+		// delete (shift and 0)
+		speccyKey = 0xc;
+	}
+	return speccyKey;
+}
+
+void FSpectrumViewer::Tick(void)
+{
+	// Check keys - not event driven, hopefully perf isn't too bad
+	for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
+	{
+		if (ImGui::IsKeyPressed(key,false))
+		{ 
+			const int speccyKey = SpectrumKeyFromImGuiKey(key);
+			if (speccyKey != 0)
+				zx_key_down(&pSpectrumEmu->ZXEmuState, speccyKey);
+		}
+		else if (ImGui::IsKeyReleased(key))
+		{
+			const int speccyKey = SpectrumKeyFromImGuiKey(key);
+			if (speccyKey != 0)
+				zx_key_up(&pSpectrumEmu->ZXEmuState, speccyKey);
+		}
+	}
+
+	// Gamepad support, can use ImGuiKey values here
+	if (zx_joystick_type(&pSpectrumEmu->ZXEmuState) != ZX_JOYSTICKTYPE_NONE)
+	{
+		int mask = 0;
+		if (ImGui::IsKeyDown(ImGuiNavInput_DpadRight))
+			mask |= 1 << 0;
+		if (ImGui::IsKeyDown(ImGuiNavInput_DpadLeft))
+			mask |= 1 << 1;
+		if (ImGui::IsKeyDown(ImGuiNavInput_DpadDown))
+			mask |= 1 << 2;
+		if (ImGui::IsKeyDown(ImGuiNavInput_DpadUp))
+			mask |= 1 << 3;
+		if (ImGui::IsKeyDown(ImGuiNavInput_Activate))
+			mask |= 1 << 4;
+
+		zx_joystick(&pSpectrumEmu->ZXEmuState, mask);
+	}
+}
+
+#if 0
 void FSpectrumViewer::OnKeyUp(int keyCode) 
 {
 	zx_key_up(&pSpectrumEmu->ZXEmuState, GetSpectrumKeyFromKeyCode(keyCode));
@@ -365,6 +446,8 @@ void FSpectrumViewer::OnGamepadUpdated(int mask)
 void FSpectrumViewer::OnChar(int charCode) 
 {
 }
+
+#endif
 
 void DrawArrow(ImDrawList* dl, ImVec2 pos, bool bLeftDirection)
 {
