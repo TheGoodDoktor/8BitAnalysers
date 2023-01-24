@@ -10,11 +10,17 @@ find_package(X11 REQUIRED)
 set( gfxapi "GLFWApi")
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+find_package(OpenGL REQUIRED)
+find_package(Threads REQUIRED)
+set( gfxapi "GLFWApi")
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 #set( gfxapi "DX11")
 set( gfxapi "GLFWApi")
 
-set(glfwloc "E:/dev/Research/GLFW/glfw-3.3.8.bin.WIN64")
+set(glfwloc "../../glfw")
 
 find_package(OpenGL REQUIRED)
 find_library(libGLFW glfw3 PATHS ${glfwloc}/lib-vc2019/)
@@ -141,7 +147,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	
 	if(${gfxapi} STREQUAL "GLFWApi")
 		target_link_libraries(${PROJECT_NAME}
-			${GLFW}
+			${libGLFW}
 			${OPENGL_gl_LIBRARY}
 			${CMAKE_THREAD_LIBS_INIT}
 			${X11_LIBRARIES}
@@ -157,6 +163,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		${OPENGL_gl_LIBRARY}
 		${CMAKE_THREAD_LIBS_INIT}
 		${X11_LIBRARIES}
+		${CMAKE_DL_LIBS}
+		)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	target_link_libraries(${PROJECT_NAME}
+		glfw
+		${OPENGL_gl_LIBRARY}
+		${CMAKE_THREAD_LIBS_INIT}
 		${CMAKE_DL_LIBS}
 		)
 endif()

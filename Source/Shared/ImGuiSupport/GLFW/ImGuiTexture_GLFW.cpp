@@ -12,8 +12,8 @@ ImTextureID ImGui_CreateTextureRGBA(unsigned char* pixels, int width, int height
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTexture);
 	glGenTextures(1, &newTexture);
 	glBindTexture(GL_TEXTURE_2D, newTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 #ifdef GL_UNPACK_ROW_LENGTH // Not on WebGL/ES
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif

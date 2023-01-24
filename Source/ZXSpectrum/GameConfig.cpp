@@ -259,7 +259,7 @@ bool LoadGameConfigs(FSpectrumEmu *pEmu)
 
 	for (const auto &file : listing)
 	{
-		const std::string &fn = "configs/" + file.FileName;
+		const std::string &fn = "Configs/" + file.FileName;
 		if ((fn.substr(fn.find_last_of(".") + 1) == "json"))
 		{
 			FGameConfig *pNewConfig = new FGameConfig;

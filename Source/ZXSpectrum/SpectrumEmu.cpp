@@ -618,11 +618,11 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	zx_init(&ZXEmuState, &desc);
 
 	GamesList.Init(this);
-	GamesList.EnumerateGames("./Games");
+	GamesList.EnumerateGames("Games");
 
 	RZXManager.Init(this);
 	RZXGamesList.Init(this);
-	RZXGamesList.EnumerateGames("./RZX");
+	RZXGamesList.EnumerateGames("RZX");
 
 	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
