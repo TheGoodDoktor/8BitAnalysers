@@ -61,7 +61,9 @@ jobs:
         cmake ..
         
     - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}/build}
-      run: make
+      run: |
+        cd ${{ github.workspace }}
+        cd build
+        make
     
         
