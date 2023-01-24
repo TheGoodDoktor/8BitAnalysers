@@ -55,14 +55,14 @@ jobs:
 
     - name: Running cmake 
       run: |
-        cd ${{ github.workspace }}
+        cd ${{ github.workspace }}/Source/ZXSpectrum
         mkdir build
         cd build
         cmake ..
         
     - name: Build
       run: |
-        cd ${{ github.workspace }}
+        cd ${{ github.workspace }}/Source/ZXSpectrum
         cd build
         make
     
