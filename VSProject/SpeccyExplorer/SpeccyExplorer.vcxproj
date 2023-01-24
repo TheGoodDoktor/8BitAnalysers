@@ -151,13 +151,13 @@
     <ClCompile Include="..\..\Source\Shared\Debug\DebugLog.cpp" />
     <ClCompile Include="..\..\Source\Shared\Debug\ImGuiLog.cpp" />
     <ClCompile Include="..\..\Source\Shared\ImGuiSupport\Windows\ImGuiTexture_DX11.cpp" />
-    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\Windows\imgui_impl_dx11.cpp" />
-    <ClCompile Include="..\..\Source\Shared\ImGuiSupport\Windows\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\FileUtil.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\GraphicsView.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\MemoryBuffer.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\Misc.cpp" />
     <ClCompile Include="..\..\Source\Shared\Util\Windows\FileUtil_Win32.cpp" />
+    <ClCompile Include="..\..\Source\Vendor\imgui-docking\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="..\..\Source\Vendor\imgui-docking\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui_draw.cpp" />
@@ -222,8 +222,6 @@
     <ClInclude Include="..\..\Source\Shared\Debug\DebugLog.h" />
     <ClInclude Include="..\..\Source\Shared\Debug\ImGuiLog.h" />
     <ClInclude Include="..\..\Source\Shared\ImGuiSupport\ImGuiTexture.h" />
-    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\Windows\imgui_impl_dx11.h" />
-    <ClInclude Include="..\..\Source\Shared\ImGuiSupport\Windows\imgui_impl_win32.h" />
     <ClInclude Include="..\..\Source\Shared\Util\FileUtil.h" />
     <ClInclude Include="..\..\Source\Shared\Util\GraphicsView.h" />
     <ClInclude Include="..\..\Source\Shared\Util\MemoryBuffer.h" />
@@ -294,6 +292,8 @@
     <ClInclude Include="..\..\Source\Vendor\chips\ui\ui_zx.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\util\m6502dasm.h" />
     <ClInclude Include="..\..\Source\Vendor\chips\util\z80dasm.h" />
+    <ClInclude Include="..\..\Source\Vendor\imgui-docking\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="..\..\Source\Vendor\imgui-docking\backends\imgui_impl_win32.h" />
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imconfig.h" />
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imgui.h" />
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\imgui_internal.h" />

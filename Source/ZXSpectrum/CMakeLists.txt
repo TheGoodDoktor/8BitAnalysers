@@ -62,6 +62,14 @@ set ( imgui_src ${imgui_src_dir}/imgui.cpp
 	${imgui_src_dir}/misc/cpp/imgui_stdlib.cpp 
 	${imgui_src_dir}/imgui_tables.cpp
 	${imgui_src_dir}/imgui_widgets.cpp )
+	
+if(${gfxapi} STREQUAL "GLFWApi")
+	set( imgui_backend_src ${imgui_src_dir}/backends/imgui_impl_glfw.cpp
+	${imgui_src_dir}/backends/imgui_impl_opengl3.cpp )
+elseif(${gfxapi} STREQUAL "DX11")
+	set( imgui_backend_src ${imgui_src_dir}/backends/imgui_impl_win32.cpp
+	${imgui_src_dir}/backends/imgui_impl_dx11.cpp )
+endif()
 
 # implot
 set ( implot_src ${vendor_dir}/implot/implot.h
@@ -87,7 +95,7 @@ set ( zlib_src ${vendor_dir}/zlib/adler32.c
 	${vendor_dir}/zlib/uncompr.c
 	${vendor_dir}/zlib/zutil.c )
 
-set ( vendor_src ${imgui_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} )
+set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} )
 
 # program source
 file ( GLOB program_src 

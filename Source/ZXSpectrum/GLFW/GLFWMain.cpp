@@ -5,8 +5,8 @@
 
 #include "imgui.h"
 #include <implot.h>
-#include "ImGuiSupport/GLFW/imgui_impl_glfw.h"
-#include "ImGuiSupport/GLFW/imgui_impl_opengl3.h"
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
 #include <stdio.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
