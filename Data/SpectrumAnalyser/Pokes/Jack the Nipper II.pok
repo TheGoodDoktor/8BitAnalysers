@@ -1,0 +1,26 @@
+NInfinite Lives
+Z 8 43251 0 0
+NInfinite Ammo
+Z 8 38306 0 0
+NLives
+Z 8 34631 256 0
+NImmunity 1
+Z 8 34426 0 0
+NImmunity 2
+M 8 43203 201 0
+M 8 41222 205 0
+M 8 41229 205 0
+M 8 41330 205 0
+M 8 41444 205 0
+M 8 41576 205 0
+M 8 41696 205 0
+M 8 41763 205 0
+M 8 41797 205 0
+Z 8 42314 205 0
+NGame is faster (bad sound)
+M 8 44719 0 0
+Z 8 44720 0 0
+NGame is faster (no sound)
+M 8 44723 0 0
+Z 8 44724 0 0
+Y
