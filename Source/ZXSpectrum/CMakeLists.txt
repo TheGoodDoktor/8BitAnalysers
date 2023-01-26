@@ -20,13 +20,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 #set( gfxapi "DX11")
 set( gfxapi "GLFWApi")
 
-set(glfwloc "../../glfw")
+#set(glfwloc "../../glfw")
 
-find_package(OpenGL REQUIRED)
-find_library(libGLFW glfw3 PATHS ${glfwloc}/lib-vc2019/)
-include_directories(
-    ${glfwloc}/include
-    )
+#find_package(OpenGL REQUIRED)
+#find_library(libGLFW glfw3 PATHS ${glfwloc}/lib-vc2019/)
+#include_directories(
+#    ${glfwloc}/include
+#    )
 	
 endif()
 
@@ -73,6 +73,15 @@ set ( imgui_src ${imgui_src_dir}/imgui.cpp
 if(${gfxapi} STREQUAL "GLFWApi")
 	set( imgui_backend_src ${imgui_src_dir}/backends/imgui_impl_glfw.cpp
 	${imgui_src_dir}/backends/imgui_impl_opengl3.cpp )
+
+	find_package(OpenGL REQUIRED)
+	include_directories( ${OPENGL_INCLUDE_DIRS} )
+	
+	set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
+	set( GLFW_INSTALL OFF CACHE BOOL  "GLFW lib only" )
+
+	add_subdirectory( ${vendor_dir}/glfw ./glfw )
+
 elseif(${gfxapi} STREQUAL "DX11")
 	set( imgui_backend_src ${imgui_src_dir}/backends/imgui_impl_win32.cpp
 	${imgui_src_dir}/backends/imgui_impl_dx11.cpp )
@@ -147,8 +156,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	
 	if(${gfxapi} STREQUAL "GLFWApi")
 		target_link_libraries(${PROJECT_NAME}
-			${libGLFW}
-			${OPENGL_gl_LIBRARY}
+			glfw 
+			${OPENGL_LIBRARIES} 
 			${CMAKE_THREAD_LIBS_INIT}
 			${X11_LIBRARIES}
 			${CMAKE_DL_LIBS}
@@ -160,7 +169,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	target_link_libraries(${PROJECT_NAME}
 		glfw
 		asound
-		${OPENGL_gl_LIBRARY}
+		${OPENGL_LIBRARIES} 
 		${CMAKE_THREAD_LIBS_INIT}
 		${X11_LIBRARIES}
 		${CMAKE_DL_LIBS}
@@ -170,7 +179,7 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	target_link_libraries(${PROJECT_NAME}
 		glfw
-		${OPENGL_gl_LIBRARY}
+		${OPENGL_LIBRARIES} 
 		${CMAKE_THREAD_LIBS_INIT}
 		${CMAKE_DL_LIBS}
 		)
