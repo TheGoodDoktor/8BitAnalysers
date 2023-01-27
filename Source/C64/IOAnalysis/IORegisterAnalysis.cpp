@@ -45,7 +45,7 @@ void DrawRegDetails(FC64IORegisterInfo& reg, const FRegDisplayConfig& regConfig,
 	{
 		ImGui::Separator();
 		ImGui::Text("Code at: $%X", access.first);
-		DrawAddressLabel(*pCodeAnalysis, access.first);
+		DrawAddressLabel(*pCodeAnalysis, pCodeAnalysis->GetFocussedViewState(), access.first);
 
 		ImGui::Text("Values:");
 

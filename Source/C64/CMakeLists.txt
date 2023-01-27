@@ -1,7 +1,7 @@
 # This is for the features that allow the creating of filter folders in Visual Studio (source_group)
 cmake_minimum_required (VERSION 3.10)
 
-project (SpectrumAnalyser)
+project (C64Analyser)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	find_package(OpenGL REQUIRED)
@@ -28,7 +28,7 @@ include_directories( ${vendor_dir} )
 include_directories( ${vendor_dir}/sokol )
 include_directories( ${vendor_dir}/imgui-docking )
 include_directories( ${vendor_dir}/chips )
-include_directories( ${vendor_dir}/magic_enum/include )
+#include_directories( ${vendor_dir}/magic_enum/include )
 include_directories( ${vendor_dir}/rzx-sdk )
 include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
@@ -107,11 +107,8 @@ set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${
 # program source
 file ( GLOB program_src 
 	./*.cpp ./*.h
-	Exporters/*.cpp Exporters/*.h
-	GameViewers/*.cpp GameViewers/*.h
-	Importers/*.cpp Importers/*.h
-	SnapshotLoaders/*.cpp SnapshotLoaders/*.h
-	Viewers/*.cpp Viewers/*.h)
+	GraphicsViewer/*.cpp GraphicsViewer/*.h
+	IOAnalysis/*.cpp IOAnalysis/*.h
 
 if(${gfxapi} STREQUAL "GLFWApi")
 	set ( platform_main GLFW/GLFWMain.cpp )
@@ -119,14 +116,14 @@ else()
 	set ( platform_main Windows/WinMain.cpp )
 endif()
 
-add_executable (SpectrumAnalyser ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
+add_executable ( ${PROJECT_NAME} ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
 # This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} )
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main})
+source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX C64 FILES ${program_src} ${platform_main})
 
-set_target_properties( SpectrumAnalyser PROPERTIES CXX_STANDARD 17 )
+set_target_properties( ${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 )
 
 #windows specific
 if(${gfxapi} STREQUAL "DX11")
@@ -141,7 +138,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	# debugger working dir
-	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
+	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/C64Analyser")
 
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 	

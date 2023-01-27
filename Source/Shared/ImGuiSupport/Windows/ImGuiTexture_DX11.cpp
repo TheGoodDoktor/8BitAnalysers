@@ -82,7 +82,7 @@ void ImGui_UpdateTextureRGBA(ImTextureID texture,unsigned char* pixels)
 	}
 }
 
-#if 0
+
 void ImGui_UpdateTextureRGBA(ImTextureID texture, unsigned char* pixels, int srcWidth, int srcHeight)
 {
 	ID3D11ShaderResourceView* pTextureView = (ID3D11ShaderResourceView*)texture;
@@ -112,4 +112,3 @@ void ImGui_UpdateTextureRGBA(ImTextureID texture, unsigned char* pixels, int src
 		pDeviceCtx->Unmap(pTexture, 0);
 	}
 }
-#endif

@@ -68,6 +68,7 @@ uint16_t FC64Display::GetColourRAMAddress(int pixelX, int pixelY)
 void FC64Display::DrawUI()
 {
     c64_t* pC64 = (c64_t*)C64Emu;
+    FCodeAnalysisViewState& viewState = CodeAnalysis->GetFocussedViewState();
 
     const bool bDebugFrame = pC64->vic.debug_vis;
     //if (bDebugFrame)
@@ -82,7 +83,7 @@ void FC64Display::DrawUI()
     const int dispFrameWidth = c64_display_width(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_WIDTH : _C64_STD_DISPLAY_WIDTH;
     const int dispFrameHeight = c64_display_height(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_HEIGHT : _C64_STD_DISPLAY_HEIGHT;
 
-    ImGui_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer);
+    ImGui_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer, dispFrameWidth, dispFrameHeight);
 
     ImGui::Text("Frame buffer size = %d x %d", dispFrameWidth, dispFrameHeight);
 
@@ -152,14 +153,14 @@ void FC64Display::DrawUI()
             {
                 ImGui::Text("Bitmap Writer: ");
                 ImGui::SameLine();
-                DrawCodeAddress(*CodeAnalysis, lastBitmapWriter);
+                DrawCodeAddress(*CodeAnalysis, viewState, lastBitmapWriter);
             }
             ImGui::Text("Char Writer: ");
             ImGui::SameLine();
-            DrawCodeAddress(*CodeAnalysis, lastCharWriter);
+            DrawCodeAddress(*CodeAnalysis, viewState, lastCharWriter);
             ImGui::Text("Colour RAM Writer: ");
             ImGui::SameLine();
-            DrawCodeAddress(*CodeAnalysis, lastColourRamWriter);
+            DrawCodeAddress(*CodeAnalysis, viewState, lastColourRamWriter);
             ImGui::EndTooltip();
             //ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
 
@@ -179,12 +180,12 @@ void FC64Display::DrawUI()
             if (ImGui::IsMouseDoubleClicked(0))
             {
                 if(bBitmapMode)
-                    CodeAnalyserGoToAddress(*CodeAnalysis, lastBitmapWriter);
+                    CodeAnalyserGoToAddress(viewState, lastBitmapWriter);
                 else
-                    CodeAnalyserGoToAddress(*CodeAnalysis, lastCharWriter);
+                    CodeAnalyserGoToAddress(viewState, lastCharWriter);
             }
             if (ImGui::IsMouseDoubleClicked(1))
-                CodeAnalyserGoToAddress(*CodeAnalysis, lastColourRamWriter);
+                CodeAnalyserGoToAddress(viewState, lastColourRamWriter);
         }
 
     }
@@ -199,15 +200,15 @@ void FC64Display::DrawUI()
         {
             const uint16_t lastBitmapWriter = CodeAnalysis->GetLastWriterForAddress(SelectBitmapAddr);
             ImGui::Text("Bitmap Address: $%X, Last Writer:", SelectBitmapAddr);
-            DrawAddressLabel(*CodeAnalysis, lastBitmapWriter);
+            DrawAddressLabel(*CodeAnalysis, viewState, lastBitmapWriter);
         }
         const uint16_t lastCharWriter = CodeAnalysis->GetLastWriterForAddress(SelectCharAddr);
         ImGui::Text("Char Address: $%X, Last Writer:", SelectCharAddr);
-        DrawAddressLabel(*CodeAnalysis, lastCharWriter);
+        DrawAddressLabel(*CodeAnalysis, viewState, lastCharWriter);
 
         const uint16_t lastColourRamWriter = CodeAnalysis->GetLastWriterForAddress(SelectColourRamAddr);
         ImGui::Text("Colour RAM Address: $%X, Last Writer:", SelectColourRamAddr);
-        DrawAddressLabel(*CodeAnalysis, lastColourRamWriter);
+        DrawAddressLabel(*CodeAnalysis, viewState, lastColourRamWriter);
     }
 }
 

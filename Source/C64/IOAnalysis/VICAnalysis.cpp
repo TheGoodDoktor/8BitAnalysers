@@ -202,7 +202,7 @@ void FVICAnalysis::DrawUI(void)
 				ImGui::Separator();
 				const char* pPageName = pCodeAnalysis->GetPageName(access.first >> 16);
 				ImGui::Text("Code at: %s:$%X", pPageName, access.first & 0xffff);
-				DrawAddressLabel(*pCodeAnalysis, access.first & 0xffff);
+				DrawAddressLabel(*pCodeAnalysis, pCodeAnalysis->GetFocussedViewState(), access.first & 0xffff);
 
 				ImGui::Text("Values:");
 

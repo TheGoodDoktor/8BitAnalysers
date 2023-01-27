@@ -76,11 +76,17 @@
     <Filter Include="Source Files\Shared\CodeAnalyser\UI\Z80">
       <UniqueIdentifier>{1c5284b8-7550-4744-bf43-226f0db03051}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Windows">
+      <UniqueIdentifier>{8510faab-d544-46bc-bd4b-c763dcb8f5d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vendor\ImGui\backends">
+      <UniqueIdentifier>{f7953e06-14b8-4382-838a-77ef5aedfe5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\Debug">
+      <UniqueIdentifier>{caf29afb-fb0a-4c9c-b547-bf9d79ef02c4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Source\C64\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui_draw.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
@@ -110,9 +116,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\Source\Shared\Util\MemoryBuffer.cpp">
       <Filter>Source Files\Shared\Util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\Util\Win32\FileUtil_Win32.cpp">
-      <Filter>Source Files\Shared\Util\Win32</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.cpp">
       <Filter>Source Files\IOAnalysis</Filter>
@@ -188,6 +191,24 @@
     </ClCompile>
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\Z80\RegisterViewZ80.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\UI\Z80</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\Util\Windows\FileUtil_Win32.cpp">
+      <Filter>Source Files\Shared\Util\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\C64\Windows\WinMain.cpp">
+      <Filter>Source Files\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\backends\imgui_impl_win32.cpp">
+      <Filter>Source Files\Vendor\ImGui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\backends\imgui_impl_dx11.cpp">
+      <Filter>Source Files\Vendor\ImGui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\Debug\DebugLog.cpp">
+      <Filter>Source Files\Shared\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\Debug\ImGuiLog.cpp">
+      <Filter>Source Files\Shared\Debug</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -484,6 +505,18 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\Z80\CodeToolTipsZ80.h">
       <Filter>Source Files\Shared\CodeAnalyser\UI\Z80</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\backends\imgui_impl_win32.h">
+      <Filter>Source Files\Vendor\ImGui\backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\backends\imgui_impl_dx11.h">
+      <Filter>Source Files\Vendor\ImGui\backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\Debug\DebugLog.h">
+      <Filter>Source Files\Shared\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\Debug\ImGuiLog.h">
+      <Filter>Source Files\Shared\Debug</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

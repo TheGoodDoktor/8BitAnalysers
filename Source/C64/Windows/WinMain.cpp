@@ -9,7 +9,7 @@
 #include <dinput.h>
 #include <tchar.h>
 
-#include "C64Chips.h"
+#include "../C64Chips.h"
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
@@ -33,9 +33,9 @@ int main(int argc, char** argv)
     ImGui_ImplWin32_EnableDpiAwareness();
 
     // Create application window
-    WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("C64 Explorer"), NULL };
+    WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("C64 Analyser"), NULL };
     ::RegisterClassEx(&wc);
-    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("C64 Explorer"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("C64 Analyser"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))

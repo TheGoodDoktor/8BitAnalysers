@@ -95,6 +95,11 @@ public:
         return m6502_pc(&C64Emu.cpu);
     }
 
+    uint16_t	GetSP(void) override
+    {
+        return m6502_s(&C64Emu.cpu) + 0x100;    // stack begins at 0x100
+    }
+
     void	Break(void) override
     {
         C64UI.dbg.dbg.stopped = true;
@@ -140,7 +145,14 @@ public:
 
     bool	ShouldExecThisFrame(void) const override { return true; }
 
+    bool		IsStopped(void) const override
+    {
+        return false;
+    }
 
+    void		GraphicsViewerSetView(uint16_t address, int charWidth) override
+    {
+    }
     // End ICPUInterface interface implementation
 
     c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
@@ -413,7 +425,7 @@ void FC64Emulator::SetupCodeAnalysisLabels()
     // Add IO Labels to code analysis
     AddVICRegisterLabels(IOSystem[0]);  // Page $D000-$D3ff
     AddSIDRegisterLabels(IOSystem[1]);  // Page $D400-$D7ff
-    IOSystem[2].SetLabelAtAddress("ColourRAM", LabelType::Data, 0x0000);    // Colour RAM $D800
+    IOSystem[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000);    // Colour RAM $D800
     AddCIARegisterLabels(IOSystem[3]);  // Page $DC00-$Dfff
 }
 
@@ -606,6 +618,7 @@ void FC64Emulator::Shutdown()
 void FC64Emulator::Tick()
 {
     const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
+    FCodeAnalysisViewState& viewState =  CodeAnalysis.GetFocussedViewState();
 
     if (ui_c64_before_exec(&C64UI))
     {
@@ -647,14 +660,14 @@ void FC64Emulator::Tick()
         for (auto& intHandler : InterruptHandlers)
         {
             ImGui::Text("$%04X:", intHandler);
-            DrawAddressLabel(CodeAnalysis, intHandler);
+            DrawAddressLabel(CodeAnalysis, viewState, intHandler);
         }
     }
     ImGui::End();
 
     if (ImGui::Begin("Code Analysis"))
     {
-        DrawCodeAnalysisData(CodeAnalysis);
+        DrawCodeAnalysisData(CodeAnalysis, 0);
     }
     ImGui::End();
 
