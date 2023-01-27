@@ -53,6 +53,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: echo "MacOS Latest" > release_mac
 
+      # Windows
       - name: Setup Windows Build
         if: matrix.os == 'windows-latest'
         uses: microsoft/setup-msbuild@v1.0.2
@@ -62,7 +63,23 @@ jobs:
         # Add additional options to the MSBuild command line here (like platform or verbosity level).
         # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
         run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
-
+      - name: Package Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+            mkdir release_windows\Configs
+            mkdir release_windows\GameData
+            mkdir release_windows\Games
+            mkdir release_windows\Pokes
+            mkdir release_windows\Docs
+            copy VSProject\x64\Release\SpectrumAnalyser.exe release_windows\
+            copy Data\SpectrumAnalyser\imgui.ini release_windows\
+            copy Data\SpectrumAnalyser\Configs\Starquake.json release_windows\Configs\
+            copy Data\SpectrumAnalyser\GameData\RomInfo.bin release_windows\GameData\
+            copy Data\SpectrumAnalyser\GameData\Starquake.bin release_windows\GameData\
+            copy Data\SpectrumAnalyser\Pokes\Starquake.pok	release_windows\Pokes\
+            copy Data\SpectrumAnalyser\Games\Starquake.z80	release_windows\Games\
+            copy Docs\*.* release_windows\Docs\
+            
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
