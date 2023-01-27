@@ -26,7 +26,7 @@ void	FSIDAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
 }
 
 #include <imgui.h>
-#include <CodeAnalyser/CodeAnalyserUI.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <chips/m6569.h>
 #include <vector>
 #include <CodeAnalyser/CodeAnaysisPage.h>
@@ -91,6 +91,6 @@ void AddSIDRegisterLabels(FCodeAnalysisPage& IOPage)
 	std::vector<FRegDisplayConfig>& regList = g_SIDRegDrawInfo;
 
 	for (int reg = 0; reg < (int)regList.size(); reg++)
-		IOPage.SetLabelAtAddress(regList[reg].Name, LabelType::Data, reg);
+		IOPage.SetLabelAtAddress(regList[reg].Name, ELabelType::Data, reg);
 
 }

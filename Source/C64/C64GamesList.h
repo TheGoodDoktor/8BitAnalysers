@@ -13,7 +13,7 @@ class FC64GamesList
 {
 public:
 	bool	EnumerateGames();
-	int		GetNoGames() const { return GamesList.size(); }
+	int		GetNoGames() const { return (int)GamesList.size(); }
 	const FGameInfo& GetGameInfo(int index) { return GamesList[index]; }
 	int		GetSelectedGame() const { return SelectedGame; }
 	int		DrawGameSelect();

@@ -57,3 +57,5 @@
 /Source/ZXSpectrum/build
 /Source/ZXSpectrum/linuxbuild
 /glfw
+/VSProject/C64/C64Explorer/x64/Debug
+/VSProject/C64/C64Explorer/.vs/C64Explorer/config

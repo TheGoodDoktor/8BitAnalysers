@@ -40,14 +40,14 @@
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wmissing-field-initializers"
 #endif
-#include <ImGuiSupport/imgui_impl_lucidextra.h>
-#include <ImGuiSupport/imgui_impl_win32.h>
+#include <ImGuiSupport/ImGuiTexture.h>
+#include <backends/imgui_impl_win32.h>
 
 #define SOKOL_IMPL
 #include "sokol_audio.h"
 
 #include "CodeAnalyser/CodeAnalyser.h"
-#include "CodeAnalyser/CodeAnalyserUI.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "Util/MemoryBuffer.h"
 #include "Util/FileUtil.h"
 #include "IOAnalysis/C64IOAnalysis.h"
@@ -56,7 +56,7 @@
 #include "C64GamesList.h"
 #include <Util/Misc.h>
 
-class FC64Emulator : public IInputEventHandler , public ICPUInterface
+class FC64Emulator : public ICPUInterface
 {
 public:
 
@@ -65,10 +65,10 @@ public:
     void    Tick();
 
     // Begin IInputEventHandler interface implementation
-    void	OnKeyUp(int keyCode) override;
-    void	OnKeyDown(int keyCode) override;
-    void	OnChar(int charCode) override;
-    void    OnGamepadUpdated(int mask) override;
+    void	OnKeyUp(int keyCode);
+    void	OnKeyDown(int keyCode);
+    void	OnChar(int charCode);
+    void    OnGamepadUpdated(int mask);
     // End IInputEventHandler interface implementation
 
     // Begin ICPUInterface interface implementation
@@ -123,11 +123,7 @@ public:
     {
     }
 
-    void	GraphicsViewerSetAddress(uint16_t address) override
-    {
-    }
-
-    bool	IsAddressBreakpointed(uint16_t addr) override
+     bool	IsAddressBreakpointed(uint16_t addr) override
     {
         return false;
     }
@@ -143,9 +139,6 @@ public:
     }
 
     bool	ShouldExecThisFrame(void) const override { return true; }
-
-    void InsertROMLabels(struct FCodeAnalysisState& state) override {}
-    void InsertSystemLabels(struct FCodeAnalysisState& state) override {}
 
 
     // End ICPUInterface interface implementation
@@ -203,12 +196,12 @@ FC64Emulator g_C64Emu;
 
 void* gfx_create_texture(int w, int h)
 {
-    return ImGui_ImplDX11_CreateTextureRGBA(nullptr, w, h);
+    return ImGui_CreateTextureRGBA(nullptr, w, h);
 }
 
 void gfx_update_texture(void* h, void* data, int data_byte_size)
 {
-    ImGui_ImplDX11_UpdateTextureRGBA(h, (unsigned char*)data);
+    ImGui_UpdateTextureRGBA(h, (unsigned char*)data);
 }
 
 void gfx_destroy_texture(void* h)
@@ -267,7 +260,7 @@ c64_desc_t FC64Emulator::GenerateC64Desc(c64_joystick_type_t joy_type)
 
 bool FC64Emulator::Init()
 {
-    SetInputEventHandler(this);
+    //SetInputEventHandler(this);
 #if 0
     gfx_init(&(gfx_desc_t)
     {
@@ -493,7 +486,7 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
         }
     }
 
-    CodeAnalysis.bCodeAnalysisDataDirty = true;
+    CodeAnalysis.SetCodeAnalysisDirty();
 }
 
 bool FC64Emulator::LoadGame(const FGameInfo* pGameInfo)
@@ -596,7 +589,7 @@ bool FC64Emulator::LoadCodeAnalysis(const FGameInfo *pGameInfo)
     for (int pageNo = 0; pageNo < 8; pageNo++)
         KernelROM[pageNo].ReadFromBuffer(loadBuffer);
 
-    CodeAnalysis.bCodeAnalysisDataDirty = true;
+	CodeAnalysis.SetCodeAnalysisDirty();
     return true;
 }
 
@@ -816,7 +809,7 @@ int    FC64Emulator::OnCPUTrap(uint16_t pc, int ticks, uint64_t pins)
 
     bool bBreak = RegisterCodeExecuted(CodeAnalysis, LastPC, pc);
     FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(LastPC);
-    pCodeInfo->FrameLastAccessed = CodeAnalysis.CurrentFrameNo;
+    pCodeInfo->FrameLastExecuted = CodeAnalysis.CurrentFrameNo;
 
     // check for breakpointed code line
     if (bBreak)

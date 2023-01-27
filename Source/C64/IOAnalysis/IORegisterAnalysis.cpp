@@ -3,7 +3,7 @@
 #include <imgui.h>
 #include <vector>
 #include <CodeAnalyser/CodeAnalyser.h>
-#include <CodeAnalyser/CodeAnalyserUI.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 
 void DrawRegValueHex(uint8_t val)
 {

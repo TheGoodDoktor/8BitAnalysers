@@ -86,9 +86,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../Source/Vendor/imgui-docking;../../../Source/Vendor/chips;../../../Source/Vendor/sokol;../../../Source/Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../Source/Vendor;../../../Source/Vendor/imgui-docking;../../../Source/Vendor/chips;../../../Source/Vendor/sokol;../../../Source/Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
@@ -104,9 +104,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../Source/Vendor/imgui-docking;../../../Source/Vendor/chips;../../../Source/Vendor/sokol;../../../Source/Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../Source/Vendor;../../../Source/Vendor/imgui-docking;../../../Source/Vendor/chips;../../../Source/Vendor/sokol;../../../Source/Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -121,9 +121,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../Source/Vendor/imgui-docking;../../../Source/Vendor/chips;../../../Source/Vendor/sokol;../../../Source/Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../Source/Vendor;../../../Source/Vendor/imgui-docking;../../../Source/Vendor/chips;../../../Source/Vendor/sokol;../../../Source/Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -137,9 +137,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../Source/Vendor/imgui-docking;../../../Source/Vendor/chips;../../../Source/Vendor/sokol;../../../Source/Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../Source/Vendor;../../../Source/Vendor/imgui-docking;../../../Source/Vendor/chips;../../../Source/Vendor/sokol;../../../Source/Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -161,17 +161,18 @@
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\VICAnalysis.cpp" />
     <ClCompile Include="..\..\..\Source\C64\main.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.cpp" />
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp" />
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp" />
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeToolTips.cpp" />
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\ImageViewer.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\CodeToolTips.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\DataItemUI.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\ImageViewer.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\Z80\CodeToolTipsZ80.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\Z80\RegisterViewZ80.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.cpp" />
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.cpp" />
-    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp" />
-    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp" />
-    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\Windows\ImGuiTexture_DX11.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\Util\FileUtil.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\Util\GraphicsView.cpp" />
     <ClCompile Include="..\..\..\Source\Shared\Util\MemoryBuffer.cpp" />
@@ -198,17 +199,16 @@
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\SIDAnalysis.h" />
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\VICAnalysis.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.h" />
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h" />
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h" />
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeToolTips.h" />
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\ImageViewer.h" />
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.h" />
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.h" />
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.h" />
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\CodeToolTips.h" />
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\ImageViewer.h" />
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\Z80\CodeToolTipsZ80.h" />
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.h" />
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.h" />
-    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h" />
-    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h" />
-    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h" />
+    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\ImGuiTexture.h" />
     <ClInclude Include="..\..\..\Source\Shared\Misc\InputEventHandler.h" />
     <ClInclude Include="..\..\..\Source\Shared\Util\FileUtil.h" />
     <ClInclude Include="..\..\..\Source\Shared\Util\GraphicsView.h" />

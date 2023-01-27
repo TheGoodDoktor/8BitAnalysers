@@ -30,7 +30,7 @@ void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
 }
 
 #include <imgui.h>
-#include <CodeAnalyser/CodeAnalyserUI.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <chips/m6569.h>
 #include <vector>
 #include <CodeAnalyser/CodeAnaysisPage.h>
@@ -219,5 +219,5 @@ void FVICAnalysis::DrawUI(void)
 void AddVICRegisterLabels(FCodeAnalysisPage& IOPage)
 {
 	for(int reg=0;reg< (int)g_VICRegDrawInfo.size();reg++)
-		IOPage.SetLabelAtAddress(g_VICRegDrawInfo[reg].Name, LabelType::Data, reg);
+		IOPage.SetLabelAtAddress(g_VICRegDrawInfo[reg].Name, ELabelType::Data, reg);
 }

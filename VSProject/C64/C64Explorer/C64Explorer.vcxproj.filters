@@ -64,6 +64,18 @@
     <Filter Include="Source Files\Vendor\ImPlot">
       <UniqueIdentifier>{a7db9802-3c68-48f3-8709-1eb609c4c50a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shared\ImGuiSupport\Windows">
+      <UniqueIdentifier>{14eea840-cb42-4485-b499-e0da85493d39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\CodeAnalyser\UI">
+      <UniqueIdentifier>{7269957f-61b1-452e-89ed-b1ba3acda750}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\CodeAnalyser\UI\6502">
+      <UniqueIdentifier>{43ff4633-f8e3-4fbb-b296-3dda1ae4bc2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared\CodeAnalyser\UI\Z80">
+      <UniqueIdentifier>{1c5284b8-7550-4744-bf43-226f0db03051}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\C64\main.cpp">
@@ -81,35 +93,11 @@
     <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui_demo.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.cpp">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.cpp">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.cpp">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\Source\C64\C64Chips.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.cpp">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeToolTips.cpp">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.cpp">
-      <Filter>Source Files\Shared\CodeAnalyser\6502</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\6502</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.cpp">
-      <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.cpp">
       <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
@@ -125,9 +113,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\Source\Shared\Util\Win32\FileUtil_Win32.cpp">
       <Filter>Source Files\Shared\Util\Win32</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.cpp">
       <Filter>Source Files\IOAnalysis</Filter>
@@ -168,11 +153,41 @@
     <ClCompile Include="..\..\..\Source\Vendor\imgui-docking\imgui_tables.cpp">
       <Filter>Source Files\Vendor\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\ImageViewer.cpp">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\Source\Shared\Util\Misc.cpp">
       <Filter>Source Files\Shared\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\ImGuiSupport\Windows\ImGuiTexture_DX11.cpp">
+      <Filter>Source Files\Shared\ImGuiSupport\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\CodeToolTips.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\DataItemUI.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\ImageViewer.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI\6502</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\Z80\CodeToolTipsZ80.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI\Z80</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Shared\CodeAnalyser\UI\Z80\RegisterViewZ80.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\UI\Z80</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -193,15 +208,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\imgui.h">
       <Filter>Source Files\Vendor\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_lucidextra.h">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_win32.h">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\imgui_impl_dx11.h">
-      <Filter>Source Files\Shared\ImGuiSupport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Vendor\chips\chips\am40010.h">
       <Filter>Source Files\Vendor\Chips\Chips</Filter>
@@ -401,25 +407,10 @@
     <ClInclude Include="..\..\..\Source\Shared\Misc\InputEventHandler.h">
       <Filter>Source Files\Shared\Misc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyserUI.h">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeToolTips.h">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeToolTips6502.h">
-      <Filter>Source Files\Shared\CodeAnalyser\6502</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.h">
       <Filter>Source Files\Shared\CodeAnalyser\6502</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeAnalyserZ80.h">
-      <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\Z80\CodeToolTipsZ80.h">
       <Filter>Source Files\Shared\CodeAnalyser\Z80</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Vendor\imgui-docking\misc\cpp\imgui_stdlib.h">
@@ -430,9 +421,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\Shared\Util\MemoryBuffer.h">
       <Filter>Source Files\Shared\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Source\C64\IOAnalysis\C64IOAnalysis.h">
       <Filter>Source Files\IOAnalysis</Filter>
@@ -467,11 +455,35 @@
     <ClInclude Include="..\..\..\Source\Vendor\implot\implot.h">
       <Filter>Source Files\Vendor\ImPlot</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\ImageViewer.h">
-      <Filter>Source Files\Shared\CodeAnalyser</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\Source\Shared\Util\Misc.h">
       <Filter>Source Files\Shared\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\ImGuiSupport\ImGuiTexture.h">
+      <Filter>Source Files\Shared\ImGuiSupport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h">
+      <Filter>Source Files\Shared\CodeAnalyser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.h">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.h">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\CodeToolTips.h">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\ImageViewer.h">
+      <Filter>Source Files\Shared\CodeAnalyser\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.h">
+      <Filter>Source Files\Shared\CodeAnalyser\UI\6502</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Shared\CodeAnalyser\UI\Z80\CodeToolTipsZ80.h">
+      <Filter>Source Files\Shared\CodeAnalyser\UI\Z80</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

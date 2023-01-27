@@ -103,12 +103,12 @@ void AddCIARegisterLabels(FCodeAnalysisPage& IOPage)
 	std::vector<FRegDisplayConfig>& CIA1RegList = g_CIA1RegDrawInfo;
 
 	for (int reg = 0; reg < (int)CIA1RegList.size(); reg++)
-		IOPage.SetLabelAtAddress(CIA1RegList[reg].Name, LabelType::Data, reg);
+		IOPage.SetLabelAtAddress(CIA1RegList[reg].Name, ELabelType::Data, reg);
 
 	// CIA 2 -$DD00 - $DD0F
 	std::vector<FRegDisplayConfig>& CIA2RegList = g_CIA1RegDrawInfo;
 
 	for (int reg = 0; reg < (int)CIA2RegList.size(); reg++)
-		IOPage.SetLabelAtAddress(CIA2RegList[reg].Name, LabelType::Data, reg + 0x100);	// offset by 256 bytes
+		IOPage.SetLabelAtAddress(CIA2RegList[reg].Name, ELabelType::Data, reg + 0x100);	// offset by 256 bytes
 
 }

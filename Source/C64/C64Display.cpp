@@ -11,9 +11,9 @@
 #include <systems/c64.h>
 
 #include <imgui.h>
-#include <ImGuiSupport/imgui_impl_lucidextra.h>
+#include <ImGuiSupport/ImGuiTexture.h>
 #include <CodeAnalyser/CodeAnalyser.h>
-#include <CodeAnalyser/CodeAnalyserUI.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <algorithm>
 
 void FC64Display::Init(FCodeAnalysisState* pAnalysis, void* pC64Emu)
@@ -26,7 +26,7 @@ void FC64Display::Init(FCodeAnalysisState* pAnalysis, void* pC64Emu)
     FramePixelBuffer = new unsigned char[FramePixelBufferSize * 2];
 
     // setup texture
-    FrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), c64_std_display_width(), c64_std_display_height());
+    FrameBufferTexture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), c64_std_display_width(), c64_std_display_height());
     //DebugFrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
 
 }
@@ -82,7 +82,7 @@ void FC64Display::DrawUI()
     const int dispFrameWidth = c64_display_width(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_WIDTH : _C64_STD_DISPLAY_WIDTH;
     const int dispFrameHeight = c64_display_height(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_HEIGHT : _C64_STD_DISPLAY_HEIGHT;
 
-    ImGui_ImplDX11_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer, dispFrameWidth, dispFrameHeight);
+    ImGui_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer);
 
     ImGui::Text("Frame buffer size = %d x %d", dispFrameWidth, dispFrameHeight);
 
