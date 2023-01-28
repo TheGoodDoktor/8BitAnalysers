@@ -1,0 +1,73 @@
+name: Continuous Integration C64
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .\VSProject\C64\C64Explorer\C64Explorer.sln
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+  SPECAN_VERSION: ${{ github.ref_name }}
+
+permissions:
+  contents: read
+
+jobs:
+
+    build_latest:
+        name: Build Release
+        strategy:
+          matrix:
+            os: [ubuntu-latest, macos-latest, windows-latest]
+            include:
+              - os: ubuntu-latest
+                release_suffix: ubuntu
+              - os: macos-latest
+                release_suffix: mac
+              - os: windows-latest
+                release_suffix: windows
+        runs-on: ${{ matrix.os }}
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v3
+            with:
+                submodules: recursive
+          # Linux
+          - name: Run Linux Build
+            if: matrix.os == 'ubuntu-latest'
+            run: |
+                    sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libasound2-dev
+                    cd ${{ github.workspace }}/Source/C64
+                    mkdir build
+                    cd build
+                    cmake ..
+                    make
+          # Mac
+          - name: Run Mac Build
+            if: matrix.os == 'macos-latest'
+            run: |
+                    cd ${{ github.workspace }}/Source/C64
+                    mkdir build
+                    cd build
+                    cmake ..
+                    make
+          # Windows
+          - name: Setup Windows Build
+            if: matrix.os == 'windows-latest'
+            uses: microsoft/setup-msbuild@v1.0.2
+          - name: Do Windows Build
+            if: matrix.os == 'windows-latest'
+            working-directory: ${{env.GITHUB_WORKSPACE}}
+            # Add additional options to the MSBuild command line here (like platform or verbosity level).
+            # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+            run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+            
+
+ 

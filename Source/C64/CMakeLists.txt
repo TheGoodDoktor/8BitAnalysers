@@ -108,7 +108,7 @@ set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${
 file ( GLOB program_src 
 	./*.cpp ./*.h
 	GraphicsViewer/*.cpp GraphicsViewer/*.h
-	IOAnalysis/*.cpp IOAnalysis/*.h
+	IOAnalysis/*.cpp IOAnalysis/*.h )
 
 if(${gfxapi} STREQUAL "GLFWApi")
 	set ( platform_main GLFW/GLFWMain.cpp )
