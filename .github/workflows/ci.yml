@@ -38,9 +38,9 @@ jobs:
         steps:
             # Get code
             - name: Checkout code
-                uses: actions/checkout@v3
-                with:
-                    submodules: recursive
+            uses: actions/checkout@v3
+            with:
+                submodules: recursive
             # Linux
             - name: Run Linux Build
                 if: matrix.os == 'ubuntu-latest'
