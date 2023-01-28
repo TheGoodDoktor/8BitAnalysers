@@ -13,6 +13,7 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	find_package(OpenGL REQUIRED)
 	find_package(Threads REQUIRED)
+	find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
 	set( gfxapi "GLFWApi")
 endif()
 
@@ -173,5 +174,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		${OPENGL_LIBRARIES} 
 		${CMAKE_THREAD_LIBS_INIT}
 		${CMAKE_DL_LIBS}
+		${AUDIOTOOLBOX_LIBRARY}
 		)
 endif()
