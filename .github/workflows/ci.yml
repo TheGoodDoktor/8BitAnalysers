@@ -53,7 +53,6 @@ jobs:
           - name: Run Mac Build
             if: matrix.os == 'macos-latest'
             run: |
-                    sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libasound2-dev
                     cd ${{ github.workspace }}/Source/ZXSpectrum
                     mkdir build
                     cd build
