@@ -36,12 +36,10 @@ jobs:
                 release_suffix: windows
         runs-on: ${{ matrix.os }}
         steps:
-            # Get code
             - name: Checkout code
-            uses: actions/checkout@v3
-            with:
-                submodules: recursive
-            # Linux
+                uses: actions/checkout@v3
+                with:
+                    submodules: recursive
             - name: Run Linux Build
                 if: matrix.os == 'ubuntu-latest'
                 run: |
@@ -51,12 +49,8 @@ jobs:
                     cd build
                     cmake ..
                     make
-      
-            # Mac
             - name: Run Mac Build
                 if: matrix.os == 'macos-latest'
-                
-            # Windows
             - name: Setup Windows Build
                 if: matrix.os == 'windows-latest'
                 uses: microsoft/setup-msbuild@v1.0.2
