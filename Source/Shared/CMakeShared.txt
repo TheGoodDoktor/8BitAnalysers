@@ -41,4 +41,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		)
 endif()
 
+# Linux files
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	file ( GLOB shared_platform_src
+		../Shared/Util/Mac/*.cpp ../Shared/Util/Mac/*.h
+		)
+endif()
+
 set( shared_src ${shared_base_src} ${shared_platform_src} ${shared_gfxapi_src} )
