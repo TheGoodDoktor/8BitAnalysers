@@ -36,11 +36,11 @@ jobs:
                 release_suffix: windows
         runs-on: ${{ matrix.os }}
         steps:
-            - name: Checkout code
-                uses: actions/checkout@v3
-                with:
-                    submodules: recursive
-            - name: Run Linux Build
+          - name: Checkout code
+            uses: actions/checkout@v3
+            with:
+                submodules: recursive
+          - name: Run Linux Build
                 if: matrix.os == 'ubuntu-latest'
                 run: |
                     sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libasound2-dev
