@@ -368,9 +368,9 @@ public:
 		else
 		{
 			asmText = "TODO";
-#ifndef RELEASE
+#ifndef NDEBUG
 			assert(0);
-#endif // !RELEASE
+#endif // !NDEBUG
 		}
 		return asmText;
 	}

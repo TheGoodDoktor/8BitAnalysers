@@ -977,7 +977,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				{
 					ExportSkoolFile(false /* bHexadecimal*/);
 				}
-#ifndef RELEASE
+#ifndef NDEBUG
 				if (ImGui::BeginMenu("DEBUG"))
 				{
 					if (ImGui::MenuItem("Export ROM"))
@@ -986,7 +986,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 					}
 					ImGui::EndMenu();
 				}
-#endif // !RELEASE
+#endif // NDEBUG
 				ImGui::EndMenu();
 			}
 
@@ -1098,14 +1098,14 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			if(pActiveGame!=nullptr)
 				ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 
-#ifndef RELEASE
+#ifndef NDEBUG
 			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
 			ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
-#endif // !RELEASE
+#endif // NDEBUG
 			ImGui::EndMenu();
 		}
 		// Note: this is a WIP menu, it'll be added in when it works properly!
-#ifndef RELEASE
+#ifndef NDEBUG
 		if (ImGui::BeginMenu("Tools"))
 		{
 			if (ImGui::MenuItem("Find Ascii Strings"))
