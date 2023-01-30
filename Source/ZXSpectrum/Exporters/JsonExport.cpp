@@ -121,7 +121,7 @@ void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress,int end
 		}
 
 		FCodeInfo* pCodeInfoItem = state.GetCodeInfoForAddress(address);
-		if (pCodeInfoItem)
+		if (pCodeInfoItem && pCodeInfoItem->Address == address)	// only write code items for first byte of the instruction
 		{
 			json codeInfoJson;
 			codeInfoJson["Address"] = pCodeInfoItem->Address;
