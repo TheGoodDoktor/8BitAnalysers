@@ -137,9 +137,11 @@ void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress,int end
 
 			jsonDoc["CodeInfo"].push_back(codeInfoJson);
 
-			address += pCodeInfoItem->ByteSize;
+			if (pCodeInfoItem->bSelfModifyingCode == false)	// this is so that we can write info on SMC accesses
+				address += pCodeInfoItem->ByteSize;
 		}
-		else 
+		
+		if(pCodeInfoItem == nullptr || pCodeInfoItem->bSelfModifyingCode)
 		{
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
 			assert(pDataInfo != nullptr);
@@ -213,6 +215,9 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			FCodeInfo* pCodeInfo = FCodeInfo::Allocate();
 			pCodeInfo->Address = codeInfoJson["Address"];
 			pCodeInfo->ByteSize = codeInfoJson["ByteSize"];
+
+			if (codeInfoJson.contains("SMC"))
+				pCodeInfo->bSelfModifyingCode = codeInfoJson["SMC"];
 
 			if (codeInfoJson.contains("OperandType"))
 				pCodeInfo->OperandType = codeInfoJson["OperandType"];

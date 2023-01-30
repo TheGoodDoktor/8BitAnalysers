@@ -712,7 +712,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	}
 
 	// run initial analysis
-	InitialiseCodeAnalysis(CodeAnalysis,this);
+	/*InitialiseCodeAnalysis(CodeAnalysis, this);
 	const std::string root = GetGlobalConfig().WorkspaceRoot;
 	const std::string romBinData = root + "GameData/RomInfo.bin";
 #if READ_ANALYSIS_JSON
@@ -723,13 +723,29 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		LoadROMData(CodeAnalysis, romBinData.c_str());
 #else
 	LoadROMData(CodeAnalysis, romBinData.c_str());
-#endif
+#endif*/
 
 	// load the command line game if none specified then load the last game
 	if (config.SpecificGame.empty() == false)
+	{
 		StartGame(config.SpecificGame.c_str());
-	else if(globalConfig.LastGame.empty() == false)
+	}
+	else if (globalConfig.LastGame.empty() == false)
+	{
 		StartGame(globalConfig.LastGame.c_str());
+	}
+	else
+	{
+		// Start ROM
+		const std::string root = GetGlobalConfig().WorkspaceRoot;
+		const std::string romBinData = root + "GameData/RomInfo.bin";
+
+		const std::string romJsonFName = root + kRomInfoJsonFile;
+		if (FileExists(romJsonFName.c_str()))
+			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+		else
+			LoadROMData(CodeAnalysis, romBinData.c_str());
+	}
 
 	return true;
 }
