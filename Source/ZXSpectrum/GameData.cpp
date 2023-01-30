@@ -628,6 +628,97 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 	}
 }
 
+void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
+{
+	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FGameConfig& config = *pSpectrumEmu->pActiveGame->pConfig;
+
+	// revert cheats
+	for (FCheat& cheat : config.Cheats)
+	{
+		for (auto& entry : cheat.Entries)
+		{
+			if (cheat.bEnabled)	// cheat activated so revert
+			{
+				pSpectrumEmu->WriteByte(entry.Address, entry.OldValue);
+				cheat.bEnabled = false;
+			}
+		}
+	}
+
+	// revert NOPs
+	for (int addr = 0x4000; addr <= 0xffff; addr++)
+	{
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
+		if (pCodeInfo && pCodeInfo->bNOPped)
+		{
+			// Restore
+			for (int i = 0; i < pCodeInfo->ByteSize; i++)
+				state.CPUInterface->WriteByte(pCodeInfo->Address + i, pCodeInfo->OpcodeBkp[i]);
+
+			pCodeInfo->bNOPped = false;
+		}
+	}
+
+	// copy memory
+	for (int i = 0; i < 1 << 16; i++)
+	{
+		const uint8_t memByte = pSpectrumEmu->ReadByte(i);
+		fwrite(&memByte, sizeof(memByte), 1, fp);
+	}
+
+	// get CPU state
+	//z80_t* pCPUState = (z80_t*)frame.CPUState;
+	fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa, sizeof(uint64_t), 1, fp);
+	fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
+	fwrite(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
+	fwrite(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
+	fwrite(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+}
+
+void LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
+{
+	// read memory
+	for (int i = 0; i < 1 << 16; i++)
+	{
+		uint8_t memByte = 0;
+		fread(&memByte, sizeof(memByte), 1, fp);
+		pSpectrumEmu->WriteByte(i, memByte);
+	}
+
+	// get CPU state
+	//z80_t* pCPUState = (z80_t*)frame.CPUState;
+	fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa, sizeof(uint64_t), 1, fp);
+	fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
+	fread(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
+	fread(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
+	fread(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+
+}
+
+bool SaveGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)
+{
+	FILE* fp = fopen(fname, "wb");
+	if (fp == NULL)
+		return false;
+	SaveMachineState(pSpectrumEmu, fp);
+	fclose(fp);
+
+	return true;
+}
+
+bool LoadGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)
+{
+	FILE* fp = fopen(fname, "rb");
+	if (fp == NULL)
+		return false;
+
+	LoadMachineState(pSpectrumEmu, fp);
+	fclose(fp);
+
+	return true;
+}
+
 bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
@@ -648,47 +739,7 @@ bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 	if (hasSnapshot == 1)
 	{
-		// revert cheats
-		for (FCheat& cheat : config.Cheats)
-		{
-			for (auto& entry : cheat.Entries)
-			{
-				if (cheat.bEnabled)	// cheat activated so revert
-				{
-					pSpectrumEmu->WriteByte(entry.Address, entry.OldValue);
-					cheat.bEnabled = false;
-				}
-			}
-		}
-
-		// revert NOPs
-		for (int addr = 0x4000; addr <= 0xffff; addr++)
-		{
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
-			if (pCodeInfo && pCodeInfo->bNOPped)
-			{
-				// Restore
-				for (int i = 0; i < pCodeInfo->ByteSize; i++)
-					state.CPUInterface->WriteByte(pCodeInfo->Address + i, pCodeInfo->OpcodeBkp[i]);
-
-				pCodeInfo->bNOPped = false;
-			}
-		}
-
-		// copy memory
-		for (int i = 0; i < 1 << 16; i++)
-		{
-			const uint8_t memByte = pSpectrumEmu->ReadByte(i);
-			fwrite(&memByte, sizeof(memByte), 1, fp);
-		}
-
-		// get CPU state
-		//z80_t* pCPUState = (z80_t*)frame.CPUState;
-		fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa,sizeof(uint64_t),1,fp);
-		fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
-		fwrite(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
-		fwrite(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
-		fwrite(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+		SaveMachineState(pSpectrumEmu, fp);
 	}
 
 	fclose(fp);
@@ -742,21 +793,7 @@ bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 		if (hasSnapshot == 1)
 		{
-			// read memory
-			for (int i = 0; i < 1 << 16; i++)
-			{
-				uint8_t memByte = 0;
-				fread(&memByte, sizeof(memByte), 1, fp);
-				pSpectrumEmu->WriteByte(i, memByte);
-			}
-
-			// get CPU state
-			//z80_t* pCPUState = (z80_t*)frame.CPUState;
-			fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa, sizeof(uint64_t), 1, fp);
-			fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
-			fread(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
-			fread(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
-			fread(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+			LoadMachineState(pSpectrumEmu, fp);
 		}
 	}
 	fclose(fp);

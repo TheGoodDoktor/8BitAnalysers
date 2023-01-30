@@ -52,8 +52,10 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "GameConfig.h"
 
 #define ENABLE_RZX 0
+#define READ_ANALYSIS_JSON 0
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
+const char* kRomInfoJsonFile = "AnalysisJson/RomInfo.json";
 
 /* output an unsigned 8-bit value as hex string */
 void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data) 
@@ -618,11 +620,11 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	zx_init(&ZXEmuState, &desc);
 
 	GamesList.Init(this);
-	GamesList.EnumerateGames("Games");
+	GamesList.EnumerateGames(globalConfig.SnapshotFolder.c_str());
 
 	RZXManager.Init(this);
 	RZXGamesList.Init(this);
-	RZXGamesList.EnumerateGames("RZX");
+	RZXGamesList.EnumerateGames("RZX/");
 
 	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
@@ -711,7 +713,11 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	// run initial analysis
 	InitialiseCodeAnalysis(CodeAnalysis,this);
+#if READ_ANALYSIS_JSON
+	ImportAnalysisJson(CodeAnalysis, kRomInfoJsonFile);
+#else
 	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
+#endif
 
 	// load the command line game if none specified then load the last game
 	if (config.SpecificGame.empty() == false)
@@ -774,10 +780,16 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 		CodeAnalysis.ViewState[i].GoToAddress = pGameConfig->ViewConfigs[i].ViewAddress;
 	}
 
+#if READ_ANALYSIS_JSON
+	std::string analysisJsonFName = "AnalysisJson/" + pGameConfig->Name + ".json";
+	ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+	ImportAnalysisJson(CodeAnalysis, kRomInfoJsonFile);
+#else
 	// load game data if we can
 	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
 	LoadGameData(this, dataFName.c_str());
 	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
+#endif
 	LoadPOKFile(*pGameConfig, std::string("Pokes/" + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
@@ -832,10 +844,15 @@ void FSpectrumEmu::SaveCurrentGameData()
 		}
 		else
 		{
-			const std::string configFName = "Configs/" + pGameConfig->Name + ".json";
-			const std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
-			EnsureDirectoryExists("Configs");
-			EnsureDirectoryExists("GameData");
+			const std::string root = GetGlobalConfig().WorkspaceRoot;
+			const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
+			const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
+			const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+			const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+			EnsureDirectoryExists(std::string(root + "Configs").c_str());
+			EnsureDirectoryExists(std::string(root + "GameData").c_str());
+			EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
+			EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
 
 			// set config values
 			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -848,10 +865,21 @@ void FSpectrumEmu::SaveCurrentGameData()
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-			SaveGameData(this, dataFName.c_str());
+			SaveGameData(this, dataFName.c_str());		// The Past
+
+			// The Future
+			SaveGameState(this, saveStateFName.c_str());
+			ExportGameJson(CodeAnalysis, analysisJsonFName.c_str()); 
 		}
 	}
-	SaveROMData(CodeAnalysis, "GameData/RomInfo.bin");
+
+	// Disabled saving as binary, maybe have as an option? 
+	// SaveROMData(CodeAnalysis, "GameData/RomInfo.bin");
+	
+	// Only save ROM json if we've preivously read the binary
+#if	!READ_ANALYSIS_JSON
+	ExportROMJson(CodeAnalysis, kRomInfoJsonFile);
+#endif
 }
 
 void FSpectrumEmu::DrawMainMenu(double timeMS)
@@ -956,7 +984,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				}
 			}
 
-			if (ImGui::MenuItem("Export Json File"))
+			/*if (ImGui::MenuItem("Export Json File"))
 			{
 				if (pActiveGame != nullptr)
 				{
@@ -965,7 +993,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 					ExportJson(CodeAnalysis, outJsonFname.c_str());
 				}
-			}
+			}*/
 
 			if (ImGui::BeginMenu("Export Skool File"))
 			{

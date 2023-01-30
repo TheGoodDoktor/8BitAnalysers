@@ -2,4 +2,6 @@
 
 struct FCodeAnalysisState;
 
-bool ExportJson(FCodeAnalysisState& state, const char* pTextFileName);
+bool ExportROMJson(FCodeAnalysisState& state, const char* pJsonFileName);
+bool ExportGameJson(FCodeAnalysisState& state, const char* pTextFileName);
+bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName);

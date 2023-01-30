@@ -334,13 +334,13 @@ bool FC64Emulator::Init()
     uiDesc.destroy_texture_cb = gfx_destroy_texture;
     uiDesc.dbg_keys.break_keycode = ImGui::GetKeyIndex(ImGuiKey_Space);
     uiDesc.dbg_keys.break_name = "F5";
-    uiDesc.dbg_keys.continue_keycode = VK_F5;
+    uiDesc.dbg_keys.continue_keycode = ImGuiKey_F5;
     uiDesc.dbg_keys.continue_name = "F5";
-    uiDesc.dbg_keys.step_over_keycode = VK_F6;
+    uiDesc.dbg_keys.step_over_keycode = ImGuiKey_F6;
     uiDesc.dbg_keys.step_over_name = "F6";
-    uiDesc.dbg_keys.step_into_keycode = VK_F7;
+    uiDesc.dbg_keys.step_into_keycode = ImGuiKey_F7;
     uiDesc.dbg_keys.step_into_name = "F7";
-    uiDesc.dbg_keys.toggle_breakpoint_keycode = VK_F9;
+    uiDesc.dbg_keys.toggle_breakpoint_keycode = ImGuiKey_F9;
     uiDesc.dbg_keys.toggle_breakpoint_name = "F9";
     ui_c64_init(&C64UI, &uiDesc);
 
@@ -748,22 +748,22 @@ int GetC64KeyFromKeyCode(int keyCode)
     bool bShift = false;
     switch (keyCode) 
     {
-        case VK_SPACE:        c = 0x20; break;
-        case VK_LEFT:         c = 0x08; break;
-        case VK_RIGHT:        c = 0x09; break;
-        case VK_DOWN:         c = 0x0A; break;
-        case VK_UP:           c = 0x0B; break;
-        case VK_RETURN:        c = 0x0D; break;
-        case VK_BACK:           c = bShift ? 0x0C : 0x01; break;
-        case VK_ESCAPE:       c = bShift ? 0x13 : 0x03; break;
-        case VK_F1:           c = 0xF1; break;
-        case VK_F2:           c = 0xF2; break;
-        case VK_F3:           c = 0xF3; break;
-        case VK_F4:           c = 0xF4; break;
-        case VK_F5:           c = 0xF5; break;
-        case VK_F6:           c = 0xF6; break;
-        case VK_F7:           c = 0xF7; break;
-        case VK_F8:           c = 0xF8; break;
+        case ImGuiKey_Space:        c = 0x20; break;
+        case ImGuiKey_LeftArrow:         c = 0x08; break;
+        case ImGuiKey_RightArrow:        c = 0x09; break;
+        case ImGuiKey_DownArrow:         c = 0x0A; break;
+        case ImGuiKey_UpArrow:           c = 0x0B; break;
+        case ImGuiKey_Enter:        c = 0x0D; break;
+        case ImGuiKey_Backspace:           c = bShift ? 0x0C : 0x01; break;
+        case ImGuiKey_Escape:       c = bShift ? 0x13 : 0x03; break;
+        case ImGuiKey_F1:           c = 0xF1; break;
+        case ImGuiKey_F2:           c = 0xF2; break;
+        case ImGuiKey_F3:           c = 0xF3; break;
+        case ImGuiKey_F4:           c = 0xF4; break;
+        case ImGuiKey_F5:           c = 0xF5; break;
+        case ImGuiKey_F6:           c = 0xF6; break;
+        case ImGuiKey_F7:           c = 0xF7; break;
+        case ImGuiKey_F8:           c = 0xF8; break;
         default:                        c = 0; break;
     }
     return c;

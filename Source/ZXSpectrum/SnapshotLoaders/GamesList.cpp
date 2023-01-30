@@ -20,7 +20,7 @@ bool FGamesList::EnumerateGames(const char* pDir)
 {
 	FDirFileList listing;
 
-	RootDir = std::string(pDir) + "/";
+	RootDir = std::string(pDir);
 
 	GamesList.clear();
 

@@ -52,7 +52,6 @@ struct FItem
 	std::string		Comment;
 	uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
 	uint16_t		ByteSize;
-	//bool			bBreakpointed = false;
 };
 
 struct FLabelInfo : FItem
@@ -62,7 +61,7 @@ struct FLabelInfo : FItem
 
 	std::string				Name;
 	bool					Global = false;
-	ELabelType				LabelType;
+	ELabelType				LabelType = ELabelType::Data;
 	std::map<uint16_t, int>	References;
 private:
 	FLabelInfo() { Type = EItemType::Label; }
@@ -94,7 +93,7 @@ struct FCodeInfo : FItem
 	};
 
 	bool	bNOPped = false;
-	uint8_t	OpcodeBkp[4];
+	uint8_t	OpcodeBkp[4] = { 0 };
 private:
 	FCodeInfo() :FItem(){Type = EItemType::Code;	}
 	~FCodeInfo() = default;

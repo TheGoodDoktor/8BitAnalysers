@@ -10,6 +10,9 @@ struct FGlobalConfig
 	bool				bShowOpcodeValues = false;
 	ENumberDisplayMode	NumberDisplayMode = ENumberDisplayMode::HexAitch;
 	std::string			LastGame;
+
+	std::string			WorkspaceRoot = "./";
+	std::string			SnapshotFolder = "./Games/";
 };
 
 FGlobalConfig& GetGlobalConfig();

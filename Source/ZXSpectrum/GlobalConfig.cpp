@@ -35,6 +35,12 @@ bool LoadGlobalConfig(const char* fileName)
 		config.bShowOpcodeValues = jsonConfigFile["ShowOpcodeValues"];
 	config.LastGame = jsonConfigFile["LastGame"];
 	config.NumberDisplayMode = (ENumberDisplayMode)jsonConfigFile["NumberMode"];
+
+	if(jsonConfigFile.contains("WorkspaceRoot"))
+		config.WorkspaceRoot = jsonConfigFile["WorkspaceRoot"];
+	if (jsonConfigFile.contains("SnapshotFolder"))
+		config.SnapshotFolder = jsonConfigFile["SnapshotFolder"];
+
 	return true;
 }
 
@@ -48,6 +54,8 @@ bool SaveGlobalConfig(const char* fileName)
 	jsonConfigFile["ShowOpcodeValues"] = config.bShowOpcodeValues;
 	jsonConfigFile["LastGame"] = config.LastGame;
 	jsonConfigFile["NumberMode"] = (int)config.NumberDisplayMode;
+	jsonConfigFile["WorkspaceRoot"] = config.WorkspaceRoot;
+	jsonConfigFile["SnapshotFolder"] = config.SnapshotFolder;
 
 	std::ofstream outFileStream(fileName);
 	if (outFileStream.is_open())
