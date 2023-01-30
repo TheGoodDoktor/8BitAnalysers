@@ -52,7 +52,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "GameConfig.h"
 
 #define ENABLE_RZX 0
-#define READ_ANALYSIS_JSON 0
+#define READ_ANALYSIS_JSON 1
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const char* kRomInfoJsonFile = "AnalysisJson/RomInfo.json";
@@ -713,10 +713,16 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	// run initial analysis
 	InitialiseCodeAnalysis(CodeAnalysis,this);
+	const std::string root = GetGlobalConfig().WorkspaceRoot;
+	const std::string romBinData = root + "GameData/RomInfo.bin";
 #if READ_ANALYSIS_JSON
-	ImportAnalysisJson(CodeAnalysis, kRomInfoJsonFile);
+	const std::string romJsonFName = root + kRomInfoJsonFile;
+	if(FileExists(romJsonFName.c_str()))
+		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+	else
+		LoadROMData(CodeAnalysis, romBinData.c_str());
 #else
-	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
+	LoadROMData(CodeAnalysis, romBinData.c_str());
 #endif
 
 	// load the command line game if none specified then load the last game
@@ -780,16 +786,30 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 		CodeAnalysis.ViewState[i].GoToAddress = pGameConfig->ViewConfigs[i].ViewAddress;
 	}
 
+	const std::string root = GetGlobalConfig().WorkspaceRoot;
+	const std::string romBinData = root + "GameData/RomInfo.bin";
+	const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 #if READ_ANALYSIS_JSON
-	std::string analysisJsonFName = "AnalysisJson/" + pGameConfig->Name + ".json";
-	ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-	ImportAnalysisJson(CodeAnalysis, kRomInfoJsonFile);
+	const std::string romJsonFName = root + kRomInfoJsonFile;
+	const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+	if (FileExists(analysisJsonFName.c_str()))
+		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+	else
+		LoadGameData(this, dataFName.c_str());
+
+	LoadGameState(this, saveStateFName.c_str());
+
+	if (FileExists(romJsonFName.c_str()))
+		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+	else
+		LoadROMData(CodeAnalysis, romBinData.c_str());
 #else
 	// load game data if we can
-	std::string dataFName = "GameData/" + pGameConfig->Name + ".bin";
 	LoadGameData(this, dataFName.c_str());
-	LoadROMData(CodeAnalysis, "GameData/RomInfo.bin");
+	LoadROMData(CodeAnalysis, romJsonFName.c_str());
 #endif
+	// where do we want pokes to live?
 	LoadPOKFile(*pGameConfig, std::string("Pokes/" + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
@@ -878,7 +898,8 @@ void FSpectrumEmu::SaveCurrentGameData()
 	
 	// Only save ROM json if we've preivously read the binary
 #if	!READ_ANALYSIS_JSON
-	ExportROMJson(CodeAnalysis, kRomInfoJsonFile);
+	const std::string romJsonFName = root + kRomInfoJsonFile;
+	ExportROMJson(CodeAnalysis, romJsonFName.c_str());
 #endif
 }
 

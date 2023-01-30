@@ -13,6 +13,7 @@
 #include "Debug/DebugLog.h"
 #include "Util/Misc.h"
 #include <Util/GraphicsView.h>
+#include "GlobalConfig.h"
 
 using json = nlohmann::json;
 static std::vector< FGameConfig *>	g_GameConfigs;
@@ -254,12 +255,15 @@ bool LoadGameConfigs(FSpectrumEmu *pEmu)
 {
 	FDirFileList listing;
 
-	if (EnumerateDirectory("Configs", listing) == false)
+	const std::string root = GetGlobalConfig().WorkspaceRoot;
+	const std::string configDir = root + "Configs/";
+
+	if (EnumerateDirectory(configDir.c_str(), listing) == false)
 		return false;
 
 	for (const auto &file : listing)
 	{
-		const std::string &fn = "Configs/" + file.FileName;
+		const std::string &fn = configDir + file.FileName;
 		if ((fn.substr(fn.find_last_of(".") + 1) == "json"))
 		{
 			FGameConfig *pNewConfig = new FGameConfig;
