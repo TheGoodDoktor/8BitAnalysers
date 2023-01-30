@@ -20,6 +20,7 @@ bool DetermineDataDirectory(const char *pRouteIdentifier);
 const std::string &GetDataDirectory();
 
 std::string RemoveFileExtension(const char* fname);
+std::string GetFileFromPath(const char* fname);
 
 bool EnumerateDirectory(const char *dir, FDirFileList &outDirListing);
 bool EnsureDirectoryExists(const char *pDirectory);	// Ensure a directory exists creating it if it doesn't, returns if it was created

@@ -115,7 +115,7 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	}
 	if (jsonConfigFile["SnapshotFile"].is_null() == false)
 	{
-		config.SnapshotFile = jsonConfigFile["SnapshotFile"].get<std::string>();
+		config.SnapshotFile = GetFileFromPath(jsonConfigFile["SnapshotFile"].get<std::string>().c_str());
 	}
 	config.pViewerConfig = GetViewConfigForGame(config.Name.c_str());
 

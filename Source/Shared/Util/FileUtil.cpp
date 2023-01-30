@@ -20,6 +20,11 @@ std::string RemoveFileExtension(const char* fname)
 	return fullname.substr(0, lastindex);
 }
 
+std::string GetFileFromPath(const char* fname)
+{
+	std::string fullname(fname);
+	return fullname.substr(fullname.find_last_of("/\\") + 1);
+}
 bool EnumerateDirectory(const char* dirName, FDirFileList& outDirListing)
 {
 	tinydir_dir dir;

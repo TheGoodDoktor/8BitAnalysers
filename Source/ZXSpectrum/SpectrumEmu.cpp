@@ -855,8 +855,8 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 	{
 		if (pGameConfig->Name == pGameName)
 		{
-
-			std::string gameFile = pGameConfig->SnapshotFile;	
+			const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+			const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 			if (GamesList.LoadGame(gameFile.c_str()))
 			{
 				StartGame(pGameConfig);
@@ -974,7 +974,8 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
-						const std::string gameFile = pGameConfig->SnapshotFile;
+						const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+						const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 
 						if(GamesList.LoadGame(gameFile.c_str()))
 						{
