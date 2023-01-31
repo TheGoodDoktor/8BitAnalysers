@@ -726,21 +726,26 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 #endif*/
 
 	// load the command line game if none specified then load the last game
+	bool bLoadedGame = false;
+
 	if (config.SpecificGame.empty() == false)
 	{
-		StartGame(config.SpecificGame.c_str());
+		bLoadedGame = StartGame(config.SpecificGame.c_str());
 	}
 	else if (globalConfig.LastGame.empty() == false)
 	{
-		StartGame(globalConfig.LastGame.c_str());
+		bLoadedGame = StartGame(globalConfig.LastGame.c_str());
 	}
-	else
+	
+	// Start ROM if no game has been loaded
+	if(bLoadedGame == false)
 	{
-		// Start ROM
 		const std::string root = GetGlobalConfig().WorkspaceRoot;
 		const std::string romBinData = root + "GameData/RomInfo.bin";
-
 		const std::string romJsonFName = root + kRomInfoJsonFile;
+		
+		InitialiseCodeAnalysis(CodeAnalysis, this);
+
 		if (FileExists(romJsonFName.c_str()))
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 		else

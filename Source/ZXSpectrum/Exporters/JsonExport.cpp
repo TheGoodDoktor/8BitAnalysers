@@ -33,11 +33,11 @@ bool ExportGameJson(FCodeAnalysisState& state, const char* pJsonFileName)
 {
 	json jsonGameData;
 
-	// we qwant to write all the RAM after the screen memory
-	const int startAddress = kScreenAttrMemEnd + 1;
+	// write out RAM
+	const int startAddress = 0x4000;
 	const int endAddress = 0xffff;
 
-	WriteAddressRangeToJson(state, kScreenAttrMemEnd + 1, 0xffff, jsonGameData);
+	WriteAddressRangeToJson(state, startAddress, endAddress, jsonGameData);
 
 	// Write watches
 	for (const auto& watch : state.GetWatches())
