@@ -89,6 +89,11 @@ bool ExportGameJson(FCodeAnalysisState& state, const char* pJsonFileName)
 void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress,int endAddress, json& jsonDoc)
 {
 	int address = startAddress;
+
+	// info on last writer
+	jsonDoc["LastWriterStart"] = startAddress;
+	for (int addr = startAddress; addr <= endAddress; addr++)
+		jsonDoc["LastWriter"].push_back(state.GetLastWriterForAddress(addr));
 	
 	while(address <= endAddress)
 	{
@@ -196,6 +201,17 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 
 	inFileStream >> jsonGameData;
 	inFileStream.close();
+
+	// info on last writer
+	if (jsonGameData.contains("LastWriterStart"))
+	{
+		const int lwStart = jsonGameData["LastWriterStart"];
+
+		const json& lastWriterArray = jsonGameData["LastWriter"];
+		const int noWriters = lastWriterArray.size();
+		for (int i = 0;i<noWriters;i++)
+			state.SetLastWriterForAddress(lwStart + i, lastWriterArray[i]);
+	}
 
 	if (jsonGameData.contains("CommentBlocks"))
 	{
