@@ -835,6 +835,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	FormatSpectrumMemory(CodeAnalysis);
+	CodeAnalysis.SetCodeAnalysisDirty();
 
 	// Start in break mode so the memory will be in it's initial state. 
 	// Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
@@ -848,8 +849,6 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	}
 	ZXEmuState.scanline_y = oldScanlineVal;
 	ImGui_UpdateTextureRGBA(Texture, FrameBuffer);
-
-
 
 	Break();
 }
