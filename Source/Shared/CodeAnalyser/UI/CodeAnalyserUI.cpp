@@ -1431,7 +1431,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	ImGui::PopID();
 
 	
-	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr" };
+	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr", "Text"};
 	static int dataTypeIndex = 0; // Here we store our selection data as an index.
 	const char* combo_preview_value = dataTypes[dataTypeIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
 	if (ImGui::BeginCombo("Data Type", combo_preview_value, 0))
@@ -1496,6 +1496,10 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		formattingOptions.DataType = EDataType::ColAttr;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		break;
+	case 5:
+		formattingOptions.DataType = EDataType::Text;
+		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		break;
 	}
 

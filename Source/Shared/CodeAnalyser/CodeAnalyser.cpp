@@ -18,6 +18,8 @@
 #include "Z80/CodeAnalyserZ80.h"
 #include "6502/CodeAnalyser6502.h"
 #include <Debug/DebugLog.h>
+#include "Commands/CommandProcessor.h"
+#include "Commands/SetItemDataCommand.h"
 
 bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
 {
@@ -725,102 +727,10 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	state.StackMax = 0;
 }
 
-// Command Processing
-void DoCommand(FCodeAnalysisState &state, FCommand *pCommand)
-{
-	state.CommandStack.push_back(pCommand);
-	pCommand->Do(state);
-}
-
-void Undo(FCodeAnalysisState &state)
-{
-	if (state.CommandStack.empty() == false)
-	{
-		state.CommandStack.back()->Undo(state);
-		state.CommandStack.pop_back();
-	}
-}
-
-class FSetItemDataCommand : public FCommand
-{
-public:
-	FSetItemDataCommand(FItem *_pItem) :pItem(_pItem) {}
-
-	virtual void Do(FCodeAnalysisState &state) override
-	{
-
-		if (pItem->Type == EItemType::Data)
-		{
-			FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
-
-			oldDataType = pDataItem->DataType;
-			oldDataSize = pDataItem->ByteSize;
-
-			if (pDataItem->DataType == EDataType::Byte)
-			{
-				pDataItem->DataType = EDataType::Word;
-				pDataItem->ByteSize = 2;
-				state.SetCodeAnalysisDirty();
-			}
-			else if (pDataItem->DataType == EDataType::Word)
-			{
-				pDataItem->DataType = EDataType::Byte;
-				pDataItem->ByteSize = 1;
-				state.SetCodeAnalysisDirty();
-			}
-			else if ( pDataItem->DataType == EDataType::Text )
-			{
-				pDataItem->DataType = EDataType::Byte;
-				pDataItem->ByteSize = 1;
-				state.SetCodeAnalysisDirty();
-			}
-		}
-		else if (pItem->Type == EItemType::Code)
-		{
-			FCodeInfo *pCodeItem = static_cast<FCodeInfo *>(pItem);
-			if (pCodeItem->bDisabled == false)
-			{
-				pCodeItem->bDisabled = true;
-				state.SetCodeAnalysisDirty();
-
-				FLabelInfo* pLabelInfo = state.GetLabelForAddress(pItem->Address);
-				if (pLabelInfo != nullptr)
-					pLabelInfo->LabelType = ELabelType::Data;
-			}
-		}
-	}
-	virtual void Undo(FCodeAnalysisState &state) override
-	{
-		FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
-		pDataItem->DataType = oldDataType;
-		pDataItem->ByteSize = oldDataSize;
-	}
-
-	FItem *	pItem;
-
-	EDataType	oldDataType;
-	uint16_t	oldDataSize;
-};
-
-void SetItemCode(FCodeAnalysisState& state, uint16_t addr)
-{
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
-	if (pCodeInfo != nullptr && pCodeInfo->bDisabled == true)
-	{
-		pCodeInfo->bDisabled = false;
-		WriteCodeInfoForAddress(state, addr);
-	}
-	else
-	{
-		RunStaticCodeAnalysis(state, addr);
-		UpdateCodeInfoForAddress(state, addr);
-	}
-	state.SetCodeAnalysisDirty();
-}
 
 void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
 {
-	SetItemCode(state, pItem->Address);
+	DoCommand(state, new FSetItemCodeCommand(pItem->Address));
 }
 
 void SetItemData(FCodeAnalysisState &state, FItem *pItem)
@@ -959,6 +869,8 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 			pPrefix = "bitmap";
 		else if (options.DataType == EDataType::CharacterMap)
 			pPrefix = "charmap";
+		else if (options.DataType == EDataType::Text)
+			pPrefix = "text";
 
 		snprintf(labelName,16, "%s_%s",pPrefix,NumStr(dataAddress));
 		FLabelInfo* pLabel = AddLabel(state, dataAddress, labelName, ELabelType::Data);

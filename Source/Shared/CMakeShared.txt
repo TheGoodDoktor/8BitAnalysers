@@ -2,6 +2,7 @@
 # shared source
 file ( GLOB shared_base_src 
 	../Shared/CodeAnalyser/*.cpp ../Shared/CodeAnalyser/*.h
+	../Shared/CodeAnalyser/Commands/*.cpp ../Shared/CodeAnalyser/Commands/*.h
 	../Shared/CodeAnalyser/6502/*.cpp ../Shared/CodeAnalyser/6502/*.h
 	../Shared/CodeAnalyser/Z80/*.cpp ../Shared/CodeAnalyser/Z80/*.h
 	../Shared/CodeAnalyser/UI/*.cpp ../Shared/CodeAnalyser/UI/*.h

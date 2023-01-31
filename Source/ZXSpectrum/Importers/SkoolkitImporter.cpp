@@ -417,7 +417,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
 			if (!pCodeInfo)
 			{
-				SetItemCode(state, instruction.Address);
+				WriteCodeInfoForAddress(state, instruction.Address);
 				pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
 
 			}

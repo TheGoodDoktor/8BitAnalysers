@@ -342,15 +342,6 @@ public:
 	void FindAsciiStrings(uint16_t startAddress);
 };
 
-// Commands
-class FCommand
-{
-public:
-	virtual void Do(FCodeAnalysisState &state) = 0;
-	virtual void Undo(FCodeAnalysisState &state) = 0;
-};
-
-
 // Analysis
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
 bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
@@ -374,7 +365,7 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
-void SetItemCode(FCodeAnalysisState& state, uint16_t addr);
+//void SetItemCode(FCodeAnalysisState& state, uint16_t addr);
 void SetItemCode(FCodeAnalysisState &state, FItem *pItem);
 void SetItemData(FCodeAnalysisState &state, FItem *pItem);
 void SetItemText(FCodeAnalysisState &state, FItem *pItem);

@@ -208,7 +208,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		const int lwStart = jsonGameData["LastWriterStart"];
 
 		const json& lastWriterArray = jsonGameData["LastWriter"];
-		const int noWriters = lastWriterArray.size();
+		const int noWriters = (int)lastWriterArray.size();
 		for (int i = 0;i<noWriters;i++)
 			state.SetLastWriterForAddress(lwStart + i, lastWriterArray[i]);
 	}
