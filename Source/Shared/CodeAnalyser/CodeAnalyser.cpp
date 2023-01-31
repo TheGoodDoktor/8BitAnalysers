@@ -497,50 +497,6 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 		state.SetCodeAnalysisDirty();
 
 	return;
-	//FSpeccy *pSpeccy = state.pSpeccy;
-
-	// update branch reference counters
-	/*uint16_t jumpAddr;
-	if (CheckJumpInstruction(pSpeccy, pc, &jumpAddr))
-	{
-		FLabelInfo* pLabel = state.Labels[jumpAddr];
-		if (pLabel != nullptr)
-			pLabel->References[pc]++;	// add/increment reference
-	}
-
-	uint16_t ptr;
-	if (CheckPointerRefInstruction(pSpeccy, pc, &ptr))
-	{
-		FLabelInfo* pLabel = state.Labels[ptr];
-		if (pLabel != nullptr)
-			pLabel->References[pc]++;	// add/increment reference
-	}*/
-
-	if (state.GetCodeInfoForAddress(pc) != nullptr)	// already been analysed
-		return;
-
-	state.SetCodeAnalysisDirty();
-
-	
-	bool bStop = false;
-
-	while (bStop == false)
-	{
-		uint16_t jumpAddr = 0;
-		const uint16_t newPC = WriteCodeInfoForAddress(state, pc);
-
-		if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
-		{
-			AnalyseFromPC(state, jumpAddr);
-			bStop = false;	// should just be call & rst really
-		}
-
-		// do we need to stop tracing ??
-		if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
-			bStop = true;
-		else
-			pc = newPC;
-	}
 }
 
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc)
