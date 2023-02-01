@@ -5,7 +5,7 @@
 
 ## Getting Started
 ### Clone project:
-git clone --recursive https://github.com/TheGoodDoktor/SpeccyExplorer 
+git clone --recursive https://github.com/TheGoodDoktor/8BitAnalysers
 ### Building
 cd Source/ZXSpectrum\
 mkdir build\
