@@ -139,6 +139,9 @@
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Commands\CommandProcessor.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Commands\FormatDataCommand.cpp" />
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Commands\SetItemDataCommand.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.cpp" />
     <ClCompile Include="..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.cpp" />
@@ -212,6 +215,9 @@
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\6502\CodeAnalyser6502.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnalyser.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\CodeAnaysisPage.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Commands\CommandProcessor.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Commands\FormatDataCommand.h" />
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Commands\SetItemDataCommand.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\6502\CodeToolTips6502.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CharacterMapViewer.h" />
     <ClInclude Include="..\..\Source\Shared\CodeAnalyser\UI\CodeAnalyserUI.h" />

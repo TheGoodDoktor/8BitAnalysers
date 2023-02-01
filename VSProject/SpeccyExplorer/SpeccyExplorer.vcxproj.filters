@@ -106,6 +106,9 @@
     <Filter Include="Source Files\Vendor\chips\util">
       <UniqueIdentifier>{3210435f-80c3-4901-bbf4-0b753d5a2afa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shared\CodeAnalyser\Commands">
+      <UniqueIdentifier>{fe2b31cf-b30b-4251-a373-515970a96989}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\imgui.cpp">
@@ -320,6 +323,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Vendor\imgui-docking\backends\imgui_impl_win32.cpp">
       <Filter>Source Files\Vendor\ImGui\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Commands\CommandProcessor.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Commands\FormatDataCommand.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Shared\CodeAnalyser\Commands\SetItemDataCommand.cpp">
+      <Filter>Source Files\Shared\CodeAnalyser\Commands</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -697,6 +709,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Vendor\imgui-docking\backends\imgui_impl_win32.h">
       <Filter>Source Files\Vendor\ImGui\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Commands\CommandProcessor.h">
+      <Filter>Source Files\Shared\CodeAnalyser\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Commands\FormatDataCommand.h">
+      <Filter>Source Files\Shared\CodeAnalyser\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Shared\CodeAnalyser\Commands\SetItemDataCommand.h">
+      <Filter>Source Files\Shared\CodeAnalyser\Commands</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
