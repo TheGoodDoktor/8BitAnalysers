@@ -624,7 +624,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	RZXManager.Init(this);
 	RZXGamesList.Init(this);
-	RZXGamesList.EnumerateGames("RZX/");
+	RZXGamesList.EnumerateGames(globalConfig.RZXFolder.c_str());
 
 	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
@@ -831,7 +831,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	LoadROMData(CodeAnalysis, romJsonFName.c_str());
 #endif
 	// where do we want pokes to live?
-	LoadPOKFile(*pGameConfig, std::string("Pokes/" + pGameConfig->Name + ".pok").c_str());
+	LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	FormatSpectrumMemory(CodeAnalysis);
