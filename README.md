@@ -6,3 +6,8 @@
 ## Getting Started
 ### Clone project:
 git clone --recursive https://github.com/TheGoodDoktor/SpeccyExplorer 
+### Building
+cd Source/ZXSpectrum
+mkdir build
+cd build
+cmake ..
