@@ -8,6 +8,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	find_package(Threads REQUIRED)
 	find_package(X11 REQUIRED)
 	set( gfxapi "GLFWApi")
+	# uncomment line below to support Raspberry Pi
+	#add_compile_definitions( IMGUI_IMPL_OPENGL_ES2 )
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
