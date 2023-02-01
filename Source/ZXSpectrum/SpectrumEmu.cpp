@@ -1006,7 +1006,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				if (pActiveGame != nullptr)
 				{
 					EnsureDirectoryExists("OutputBin/");
-					std::string outBinFname = "OutputBin/" + pActiveGame->pConfig->Name + ".bin";
+					std::string outBinFname = GetGlobalConfig().WorkspaceRoot + "OutputBin/" + pActiveGame->pConfig->Name + ".bin";
 					uint8_t *pSpecMem = new uint8_t[65536];
 					for (int i = 0; i < 65536; i++)
 						pSpecMem[i] = ReadByte(i);
@@ -1020,7 +1020,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				if (pActiveGame != nullptr)
 				{
 					EnsureDirectoryExists("OutputASM/");
-					std::string outBinFname = "OutputASM/" + pActiveGame->pConfig->Name + ".asm";
+					std::string outBinFname = GetGlobalConfig().WorkspaceRoot + "OutputASM/" + pActiveGame->pConfig->Name + ".asm";
 
 					ExportAssembler(CodeAnalysis, outBinFname.c_str());
 				}
