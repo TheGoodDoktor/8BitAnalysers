@@ -45,10 +45,14 @@ bool LoadGlobalConfig(const char* fileName)
 	if (jsonConfigFile.contains("RZXFolder"))
 		config.RZXFolder = jsonConfigFile["RZXFolder"];
 
-	config.WorkspaceRoot += "/";
-	config.SnapshotFolder += "/";
-	config.PokesFolder += "/";
-	config.RZXFolder += "/";
+	if(config.WorkspaceRoot.back() != '/')
+		config.WorkspaceRoot += "/";
+	if (config.SnapshotFolder.back() != '/')
+		config.SnapshotFolder += "/";
+	if (config.PokesFolder.back() != '/')
+		config.PokesFolder += "/";
+	if (config.RZXFolder.back() != '/')
+		config.RZXFolder += "/";
 
 	return true;
 }
@@ -65,6 +69,8 @@ bool SaveGlobalConfig(const char* fileName)
 	jsonConfigFile["NumberMode"] = (int)config.NumberDisplayMode;
 	jsonConfigFile["WorkspaceRoot"] = config.WorkspaceRoot;
 	jsonConfigFile["SnapshotFolder"] = config.SnapshotFolder;
+	jsonConfigFile["PokesFolder"] = config.PokesFolder;
+	jsonConfigFile["RZXFolder"] = config.RZXFolder;
 
 	std::ofstream outFileStream(fileName);
 	if (outFileStream.is_open())
