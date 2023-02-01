@@ -37,6 +37,8 @@ bool LoadSNAFile(FSpectrumEmu* pEmu, const char* fName)
 {
 	size_t byteCount = 0;
 	uint8_t* pData = (uint8_t*)LoadBinaryFile(fName, byteCount);
+	if (!pData)
+		return false;
 	const bool bSuccess = LoadSNAFromMemory(pEmu, pData, byteCount);
 	free(pData);
 

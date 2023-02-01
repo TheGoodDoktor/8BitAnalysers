@@ -624,7 +624,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	RZXManager.Init(this);
 	RZXGamesList.Init(this);
-	RZXGamesList.EnumerateGames("RZX/");
+	RZXGamesList.EnumerateGames(globalConfig.RZXFolder.c_str());
 
 	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
@@ -831,10 +831,11 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	LoadROMData(CodeAnalysis, romJsonFName.c_str());
 #endif
 	// where do we want pokes to live?
-	LoadPOKFile(*pGameConfig, std::string("Pokes/" + pGameConfig->Name + ".pok").c_str());
+	LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	FormatSpectrumMemory(CodeAnalysis);
+	CodeAnalysis.SetCodeAnalysisDirty();
 
 	// Start in break mode so the memory will be in it's initial state. 
 	// Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
@@ -848,8 +849,6 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	}
 	ZXEmuState.scanline_y = oldScanlineVal;
 	ImGui_UpdateTextureRGBA(Texture, FrameBuffer);
-
-
 
 	Break();
 }
@@ -1007,7 +1006,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				if (pActiveGame != nullptr)
 				{
 					EnsureDirectoryExists("OutputBin/");
-					std::string outBinFname = "OutputBin/" + pActiveGame->pConfig->Name + ".bin";
+					std::string outBinFname = GetGlobalConfig().WorkspaceRoot + "OutputBin/" + pActiveGame->pConfig->Name + ".bin";
 					uint8_t *pSpecMem = new uint8_t[65536];
 					for (int i = 0; i < 65536; i++)
 						pSpecMem[i] = ReadByte(i);
@@ -1021,7 +1020,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				if (pActiveGame != nullptr)
 				{
 					EnsureDirectoryExists("OutputASM/");
-					std::string outBinFname = "OutputASM/" + pActiveGame->pConfig->Name + ".asm";
+					std::string outBinFname = GetGlobalConfig().WorkspaceRoot + "OutputASM/" + pActiveGame->pConfig->Name + ".asm";
 
 					ExportAssembler(CodeAnalysis, outBinFname.c_str());
 				}

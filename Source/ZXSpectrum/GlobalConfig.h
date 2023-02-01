@@ -13,6 +13,8 @@ struct FGlobalConfig
 
 	std::string			WorkspaceRoot = "./";
 	std::string			SnapshotFolder = "./Games/";
+	std::string			PokesFolder = "./Pokes/";
+	std::string			RZXFolder = "./RZX/";
 };
 
 FGlobalConfig& GetGlobalConfig();

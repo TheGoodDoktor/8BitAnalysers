@@ -40,6 +40,15 @@ bool LoadGlobalConfig(const char* fileName)
 		config.WorkspaceRoot = jsonConfigFile["WorkspaceRoot"];
 	if (jsonConfigFile.contains("SnapshotFolder"))
 		config.SnapshotFolder = jsonConfigFile["SnapshotFolder"];
+	if (jsonConfigFile.contains("PokesFolder"))
+		config.PokesFolder = jsonConfigFile["PokesFolder"];
+	if (jsonConfigFile.contains("RZXFolder"))
+		config.RZXFolder = jsonConfigFile["RZXFolder"];
+
+	config.WorkspaceRoot += "/";
+	config.SnapshotFolder += "/";
+	config.PokesFolder += "/";
+	config.RZXFolder += "/";
 
 	return true;
 }
