@@ -43,6 +43,7 @@ jobs:
       - name: Run Linux Build
         if: matrix.os == 'ubuntu-latest'
         run: |
+            sudo apt-get update
             sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libasound2-dev
             cd ${{ github.workspace }}/Source/ZXSpectrum
             mkdir build
@@ -67,18 +68,10 @@ jobs:
       - name: Package Windows
         if: matrix.os == 'windows-latest'
         run: |
-            mkdir release_windows\Configs
-            mkdir release_windows\GameData
-            mkdir release_windows\Games
-            mkdir release_windows\Pokes
+            mkdir release_windows
             mkdir release_windows\Docs
             copy VSProject\x64\Release\SpectrumAnalyser.exe release_windows\
             copy Data\SpectrumAnalyser\imgui.ini release_windows\
-            copy Data\SpectrumAnalyser\Configs\Starquake.json release_windows\Configs\
-            copy Data\SpectrumAnalyser\GameData\RomInfo.bin release_windows\GameData\
-            copy Data\SpectrumAnalyser\GameData\Starquake.bin release_windows\GameData\
-            copy Data\SpectrumAnalyser\Pokes\Starquake.pok	release_windows\Pokes\
-            copy Data\SpectrumAnalyser\Games\Starquake.z80	release_windows\Games\
             copy Docs\*.* release_windows\Docs\
             
       - name: Release
