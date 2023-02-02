@@ -275,7 +275,7 @@ public:
 			asmText = tmp;
 		}
 		else if (pDataInfo->DataType == EDataType::ByteArray 
-			|| pDataInfo->DataType == EDataType::Graphics 
+			|| pDataInfo->DataType == EDataType::ScreenPixels
 			|| pDataInfo->DataType == EDataType::Blob
 			|| pDataInfo->DataType == EDataType::Bitmap
 			|| pDataInfo->DataType == EDataType::CharacterMap

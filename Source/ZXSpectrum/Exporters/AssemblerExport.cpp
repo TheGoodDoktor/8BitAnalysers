@@ -286,7 +286,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 			}
 			break;
 
-			case EDataType::Graphics:
+			case EDataType::ScreenPixels:
 			case EDataType::Blob:
 			default:
 				fprintf(fp, "%d Bytes", pDataInfo->ByteSize);

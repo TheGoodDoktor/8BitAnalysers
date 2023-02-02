@@ -112,7 +112,7 @@ enum class EDataType
 	Text,		// ascii text
 	Bitmap,
 	CharacterMap,
-	Graphics,	// pixel data
+	ScreenPixels,	// screen pixel data
 	Image,		// character/sprite image
 	Blob,		// opaque data blob
 	ColAttr,	// colour attribute

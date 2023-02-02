@@ -64,8 +64,8 @@ const char* GetDataEnumString(EDataType dataType)
 		return "Bitmap";
 	case EDataType::CharacterMap:
 		return "CharacterMap";
-	case EDataType::Graphics:
-		return "Graphics";
+	case EDataType::ScreenPixels:
+		return "ScreenPixels";
 	case EDataType::Image:
 		return "Image";
 	case EDataType::Blob:

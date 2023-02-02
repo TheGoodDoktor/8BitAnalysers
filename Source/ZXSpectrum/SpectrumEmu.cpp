@@ -306,31 +306,29 @@ bool FSpectrumEmu::IsStopped(void) const
 
 void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
 {
-	// screen memory start
-	AddLabel(state, 0x4000, "ScreenPixels", ELabelType::Data);
+	// Format screen pixel memory if it hasn't already been
+	if (state.GetLabelForAddress(kScreenPixMemStart) == nullptr)
+	{
+		AddLabel(state, 0x4000, "ScreenPixels", ELabelType::Data);
 
-	FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(0x4000);
-	pScreenPixData->DataType = EDataType::Graphics;
-	pScreenPixData->Address = 0x4000;
-	pScreenPixData->ByteSize = 0x1800;
+		FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(kScreenPixMemStart);
+		pScreenPixData->DataType = EDataType::ScreenPixels;
+		pScreenPixData->Address = kScreenPixMemStart;
+		pScreenPixData->ByteSize = kScreenPixMemSize;
+	}
 
-	// Format screen memory
-	AddLabel(state, 0x5800, "ScreenAttributes", ELabelType::Data);
+	// Format attribute memory if it hasn't already
+	if (state.GetLabelForAddress(kScreenAttrMemStart) == nullptr)
+	{
+		AddLabel(state, 0x5800, "ScreenAttributes", ELabelType::Data);
 
-	FDataFormattingOptions format;
-	format.StartAddress = 0x5800;
-	format.DataType = EDataType::ColAttr;
-	format.ItemSize = 32;
-	format.NoItems = 24;
-	FormatData(state, format);
-
-
-	//FDataInfo* pScreenAttrData = state.GetReadDataInfoForAddress(0x5800);
-	//pScreenAttrData->DataType = DataType::Blob;
-	//pScreenAttrData->Address = 0x5800;
-	//pScreenAttrData->ByteSize = 0x400;
-
-	// system variables?
+		FDataFormattingOptions format;
+		format.StartAddress = kScreenAttrMemStart;
+		format.DataType = EDataType::ColAttr;
+		format.ItemSize = 32;
+		format.NoItems = 24;
+		FormatData(state, format);
+	}
 }
 
 class FScreenPixMemDescGenerator : public FMemoryRegionDescGenerator

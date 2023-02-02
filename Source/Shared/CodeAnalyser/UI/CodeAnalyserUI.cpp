@@ -898,7 +898,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 					FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(addr);
 					if (pDataInfo != nullptr)
 					{
-						if (pDataInfo->DataType != EDataType::Blob && pDataInfo->DataType != EDataType::Graphics)	// not sure why we want this
+						if (pDataInfo->DataType != EDataType::Blob && pDataInfo->DataType != EDataType::ScreenPixels)	// not sure why we want this
 							nextItemAddress = addr + pDataInfo->ByteSize;
 						else
 							nextItemAddress = addr + 1;

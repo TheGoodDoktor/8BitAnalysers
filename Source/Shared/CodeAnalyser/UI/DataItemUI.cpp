@@ -489,7 +489,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::Text("ColAttr");
 		offset = DrawColAttr(state, pDataInfo, state.bAllowEditing);
 		break;
-	case EDataType::Graphics:
+	case EDataType::ScreenPixels:
 	case EDataType::Blob:
 	default:
 		ImGui::Text("%d Bytes", pDataInfo->ByteSize);
@@ -683,7 +683,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	}
 	break;
 
-	case EDataType::Graphics:
+	case EDataType::ScreenPixels:
 		// TODO: GFX as texture?
 		//point gfx viewer?
 		break;
