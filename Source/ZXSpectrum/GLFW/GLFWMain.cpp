@@ -23,7 +23,18 @@
 #include "../SpectrumEmu.h"
 
 #define SOKOL_IMPL
-#include "sokol_audio.h"
+#include <sokol_audio.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
+struct FAppState
+{
+    GLFWwindow* MainWindow = nullptr;
+};
+
+// Globals
+FAppState   g_AppState;
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -32,6 +43,8 @@ static void glfw_error_callback(int error, const char* description)
 
 int main(int argc, char** argv)
 {
+    FAppState& appState = g_AppState;
+
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -61,10 +74,10 @@ int main(int argc, char** argv)
 #endif
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Spectrum Analyser", NULL, NULL);
-    if (window == NULL)
+    appState.MainWindow = glfwCreateWindow(1280, 720, "Spectrum Analyser", NULL, NULL);
+    if (appState.MainWindow == NULL)
         return 1;
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(appState.MainWindow);
     glfwSwapInterval(1); // Enable vsync
 
 	// Setup audio
@@ -98,7 +111,7 @@ int main(int argc, char** argv)
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(appState.MainWindow, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Load Fonts
@@ -134,7 +147,7 @@ int main(int argc, char** argv)
 		pSpectrumEmulator->ImportSkoolFile(argv[2]);
 
     // Main loop
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(appState.MainWindow))
     {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -161,7 +174,7 @@ int main(int argc, char** argv)
         // Rendering
         ImGui::Render();
         int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glfwGetFramebufferSize(appState.MainWindow, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -178,7 +191,7 @@ int main(int argc, char** argv)
             glfwMakeContextCurrent(backup_current_context);
         }
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(appState.MainWindow);
     }
 
 	// shutdown the speccy stuff
@@ -192,8 +205,22 @@ int main(int argc, char** argv)
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(appState.MainWindow);
     glfwTerminate();
 
     return 0;
+}
+
+
+void SetWindowTitle(const char* pTitle)
+{
+    glfwSetWindowTitle(g_AppState.MainWindow, pTitle);
+}
+
+void SetWindowIcon(const char* pIconFile)
+{
+	GLFWimage images[1];
+	images[0].pixels = stbi_load(pIconFile, &images[0].width, &images[0].height, 0, 4); //rgba channels 
+	glfwSetWindowIcon(g_AppState.MainWindow, 1, images);
+	stbi_image_free(images[0].pixels);
 }

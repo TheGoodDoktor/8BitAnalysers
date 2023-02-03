@@ -154,8 +154,14 @@ struct FLabelListFilter
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
+	// accessor functions
+	FItem* GetCursorItem() const { return pCursorItem; }
+	void SetCursorItem(FItem* pItem)
+	{
+		pCursorItem = pItem;
+	}
+
 	bool	Enabled = false;
-	FItem*	pCursorItem	= nullptr;
 	int		CursorItemIndex = -1;
 	bool	TrackPCFrame = false;
 	int		GoToAddress = -1;
@@ -174,6 +180,8 @@ struct FCodeAnalysisViewState
 
 	bool					DataFormattingTabOpen = false;
 	FDataFormattingOptions	DataFormattingOptions;
+private:
+	FItem* pCursorItem = nullptr;
 };
 
 struct FCodeAnalysisConfig

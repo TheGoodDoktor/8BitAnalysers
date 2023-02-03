@@ -50,12 +50,14 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "Exporters/JsonExport.h"
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "GameConfig.h"
+#include "App.h"
 
 #define ENABLE_RZX 0
 #define READ_ANALYSIS_JSON 1
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const char* kRomInfoJsonFile = "AnalysisJson/RomInfo.json";
+const std::string kAppTitle = "Spectrum Analyser";
 
 /* output an unsigned 8-bit value as hex string */
 void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data) 
@@ -583,6 +585,9 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 {
+	SetWindowTitle(kAppTitle.c_str());
+	SetWindowIcon("SALOGO.png");
+
 	// Initialise Emulator
 	LoadGlobalConfig(kGlobalConfigFilename);
 	FGlobalConfig& globalConfig = GetGlobalConfig();
@@ -776,6 +781,9 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	MemoryAccessHandlers.clear();	// remove old memory handlers
 
 	ResetMemoryStats(MemStats);
+
+	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
+	SetWindowTitle(windowTitle.c_str());
 	
 	// Reset Functions
 	//FunctionStack.clear();
@@ -899,7 +907,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 				FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
 
 				viewConfig.bEnabled = viewState.Enabled;
-				viewConfig.ViewAddress = viewState.pCursorItem ? viewState.pCursorItem->Address : 0;
+				viewConfig.ViewAddress = viewState.GetCursorItem() ? viewState.GetCursorItem()->Address : 0;
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());

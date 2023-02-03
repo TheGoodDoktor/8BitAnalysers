@@ -700,7 +700,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		state.ViewState[i].CursorItemIndex = -1;
-		state.ViewState[i].pCursorItem = nullptr;
+		state.ViewState[i].SetCursorItem(nullptr);
 	}
 
 	state.CPUInterface = pCPUInterface;

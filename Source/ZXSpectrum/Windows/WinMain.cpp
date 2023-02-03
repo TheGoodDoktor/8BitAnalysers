@@ -16,6 +16,9 @@
 #include "sokol_audio.h"
 #include "../../VSProject/SpeccyExplorer/resource.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
 static ID3D11DeviceContext*     g_pd3dDeviceContext = NULL;
@@ -32,6 +35,8 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+HWND g_HWnd;
+
 // Main code
 int main(int argc, char** argv)
 {
@@ -41,10 +46,10 @@ int main(int argc, char** argv)
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Spectrum Analyser"), NULL };
     wc.hIcon = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_ICON1));
     ::RegisterClassEx(&wc);
-    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Spectrum Analyser"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+    g_HWnd = ::CreateWindow(wc.lpszClassName, _T("Spectrum Analyser"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
     // Initialize Direct3D
-    if (!CreateDeviceD3D(hwnd))
+    if (!CreateDeviceD3D(g_HWnd))
     {
         CleanupDeviceD3D();
         ::UnregisterClass(wc.lpszClassName, wc.hInstance);
@@ -52,8 +57,8 @@ int main(int argc, char** argv)
     }
 
     // Show the window
-    ::ShowWindow(hwnd, SW_SHOWDEFAULT);
-    ::UpdateWindow(hwnd);
+    ::ShowWindow(g_HWnd, SW_SHOWDEFAULT);
+    ::UpdateWindow(g_HWnd);
 
     // Setup audio
     saudio_desc audioDesc = {};
@@ -93,7 +98,7 @@ int main(int argc, char** argv)
     }
 
     // Setup Platform/Renderer bindings
-    ImGui_ImplWin32_Init(hwnd);
+    ImGui_ImplWin32_Init(g_HWnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
     // Load Fonts
@@ -187,7 +192,7 @@ int main(int argc, char** argv)
     ImGui::DestroyContext();
 
     CleanupDeviceD3D();
-    ::DestroyWindow(hwnd);
+    ::DestroyWindow(g_HWnd);
     ::UnregisterClass(wc.lpszClassName, wc.hInstance);
 
     return 0;
@@ -300,4 +305,15 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
     }
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+
+void SetWindowTitle(const char* pTitle)
+{
+    ::SetWindowText(g_HWnd, pTitle);
+}
+
+void SetWindowIcon(const char* pIconFile)
+{
+	// Not implemented, icon is set as a resource
 }
