@@ -1074,6 +1074,13 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		
 		if (ImGui::BeginMenu("System")) 
 		{
+			
+			if (pActiveGame && ImGui::MenuItem("Reload Snapshot"))
+			{
+				const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+				const std::string gameFile = snapFolder + pActiveGame->pConfig->SnapshotFile;
+				GamesList.LoadGame(gameFile.c_str());
+			}
 			if (ImGui::MenuItem("Reset")) 
 			{
 				zx_reset(pZXUI->zx);
