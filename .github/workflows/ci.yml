@@ -63,12 +63,21 @@ jobs:
           - name: Setup Windows Build
             if: matrix.os == 'windows-latest'
             uses: microsoft/setup-msbuild@v1.0.2
-          - name: Do Windows Build
-            if: matrix.os == 'windows-latest'
-            working-directory: ${{env.GITHUB_WORKSPACE}}
+          #- name: Do VS Solution Build
+          #  if: matrix.os == 'windows-latest'
+          #  working-directory: ${{env.GITHUB_WORKSPACE}}
             # Add additional options to the MSBuild command line here (like platform or verbosity level).
             # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-            run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+          #  run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+          - name: Run Windows GLFW Build
+            if: matrix.os == 'windows-latest'
+            run: |
+                    cd ${{ github.workspace }}/Source/ZXSpectrum
+                    mkdir build
+                    cd build
+                    cmake ..
+                    msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} SpectrumAnalyser.sln
+                    
             
 
  
