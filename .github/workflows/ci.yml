@@ -76,7 +76,7 @@ jobs:
                     mkdir build
                     cd build
                     cmake ..
-                    run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} SpectrumAnalyser.sln
+                    msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} SpectrumAnalyser.sln
                     
             
 
