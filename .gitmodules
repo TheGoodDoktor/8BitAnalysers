@@ -4,3 +4,6 @@
 [submodule "Source/Vendor/glfw"]
 	path = Source/Vendor/glfw
 	url = https://github.com/glfw/glfw
+[submodule "Source/Vendor/stb"]
+	path = Source/Vendor/stb
+	url = https://github.com/nothings/stb
