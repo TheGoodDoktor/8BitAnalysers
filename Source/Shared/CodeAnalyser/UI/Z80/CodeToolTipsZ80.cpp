@@ -844,7 +844,19 @@ void GetFlagsAndGenerateDescriptionFromOpcode(uint16_t pc, ICPUInterface* CPUIF,
                 }
                 break;
             case 6: /* ADD A,n, ADC A,n, SUB n, SBC A,n, AND n, XOR n, OR n, CP n*/
-				inst.RegFlags =  Z80Reg::A;
+				if (y == 7)
+				{
+					const uint8_t n = CPUIF->ReadByte(pc);
+					const char* pchn = NumStr(n);
+					snprintf(tempStr, kTempStrLength, "Subtract %s from A but discard result.\n\n"
+						"Unsigned\nA == %s: Z flag is set.\nA != %s: Z flag is reset.\n"
+						"A < %s:  C flag is set.\nA >= %s: C flag is reset.\n\n"
+						"Signed\nA == %s: Z flag is set.\nA != %s: Z flag is reset.\n"
+						"A < %s:  S and P/V are different.\nA >= %s: S and P/V are the same.\n", 
+						pchn, pchn, pchn, pchn, pchn, pchn, pchn, pchn, pchn);
+					inst.RegFlags |= Z80Reg::F;
+				}
+				inst.RegFlags |= Z80Reg::A;
 				break;
             case 7: /* RST */ 
 				// todo
