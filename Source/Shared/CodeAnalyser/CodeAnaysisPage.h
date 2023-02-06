@@ -220,7 +220,6 @@ struct FCodeAnalysisPage
 	void Reset(void);
 	void WriteToBuffer(FMemoryBuffer& buffer);
 	bool ReadFromBuffer(FMemoryBuffer& buffer);
-	//void WriteToJSon(nlohmann::json& jsonOutput);
 
 	void SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr);
 	static const int kPageSize = 1024;	// 1Kb page

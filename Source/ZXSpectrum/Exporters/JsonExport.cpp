@@ -86,6 +86,91 @@ bool ExportGameJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	return false;
 }
 
+bool WriteDataInfoToJson(const FDataInfo* pDataInfo, json& jsonDoc)
+{
+	json dataInfoJson;
+
+	assert(pDataInfo != nullptr);
+	if (pDataInfo->DataType != EDataType::Byte)
+		dataInfoJson["DataType"] = (int)pDataInfo->DataType;
+	if (pDataInfo->OperandType != EOperandType::Unknown)
+		dataInfoJson["OperandType"] = pDataInfo->OperandType;
+	if (pDataInfo->ByteSize != 1)
+		dataInfoJson["ByteSize"] = pDataInfo->ByteSize;
+	if (pDataInfo->Flags != 0)
+		dataInfoJson["Flags"] = pDataInfo->Flags;
+	if (pDataInfo->Comment.empty() == false)
+		dataInfoJson["Comment"] = pDataInfo->Comment;
+
+	for (const auto& read : pDataInfo->Reads)
+		dataInfoJson["Reads"].push_back(read.first);
+
+	for (const auto& write : pDataInfo->Writes)
+		dataInfoJson["Writes"].push_back(write.first);
+
+	// Charmap specific
+	if (pDataInfo->DataType == EDataType::CharacterMap)
+	{
+		dataInfoJson["CharSetAddress"] = pDataInfo->CharSetAddress;
+		dataInfoJson["EmptyCharNo"] = pDataInfo->EmptyCharNo;
+	}
+
+	if (dataInfoJson.size() != 0)	// only write it if it deviates from the normal
+	{
+		dataInfoJson["Address"] = pDataInfo->Address;
+		jsonDoc["DataInfo"].push_back(dataInfoJson);
+		return true;
+	}
+
+	return false;
+}
+
+void WriteCodeInfoToJson(const FCodeInfo* pCodeInfoItem, json& jsonDoc)
+{
+	json codeInfoJson;
+	codeInfoJson["Address"] = pCodeInfoItem->Address;
+	codeInfoJson["ByteSize"] = pCodeInfoItem->ByteSize;
+	if (pCodeInfoItem->bSelfModifyingCode)
+		codeInfoJson["SMC"] = true;
+	if (pCodeInfoItem->OperandType != EOperandType::Unknown)
+		codeInfoJson["OperandType"] = (int)pCodeInfoItem->OperandType;
+	if (pCodeInfoItem->Flags != 0)
+		codeInfoJson["Flags"] = pCodeInfoItem->Flags;
+	if (pCodeInfoItem->Comment.empty() == false)
+		codeInfoJson["Comment"] = pCodeInfoItem->Comment;
+
+	jsonDoc["CodeInfo"].push_back(codeInfoJson);
+}
+
+void WriteLabelInfoToJson(const FLabelInfo* pLabelInfo, json& jsonDoc)
+{
+	json labelInfoJson;
+	labelInfoJson["Address"] = pLabelInfo->Address;
+	labelInfoJson["Name"] = pLabelInfo->Name;
+	if (pLabelInfo->Global)
+		labelInfoJson["Global"] = pLabelInfo->Global;
+	labelInfoJson["LabelType"] = pLabelInfo->LabelType;
+	if (pLabelInfo->Comment.empty() == false)
+		labelInfoJson["Comment"] = pLabelInfo->Comment;
+
+	for (const auto& reference : pLabelInfo->References)
+		labelInfoJson["References"].push_back(reference.first);
+
+	jsonDoc["LabelInfo"].push_back(labelInfoJson);
+}
+
+void WriteCommentBlockToJson(const FCommentBlock* pCommentBlock, json& jsonDoc)
+{
+	if (pCommentBlock->Comment.empty())
+		return;
+
+	json commentBlockJson;
+	commentBlockJson["Address"] = pCommentBlock->Address;
+	commentBlockJson["Comment"] = pCommentBlock->Comment;
+
+	jsonDoc["CommentBlocks"].push_back(commentBlockJson);
+}
+
 void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress,int endAddress, json& jsonDoc)
 {
 	int address = startAddress;
@@ -98,50 +183,18 @@ void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress,int end
 	while(address <= endAddress)
 	{
 		FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(address);
-		if (pCommentBlock && pCommentBlock->Comment.empty() == false)
-		{
-			json commentBlockJson;
-			commentBlockJson["Address"] = pCommentBlock->Address;
-			commentBlockJson["Comment"] = pCommentBlock->Comment;
-
-			jsonDoc["CommentBlocks"].push_back(commentBlockJson);
-		}
+		if (pCommentBlock != nullptr)
+			WriteCommentBlockToJson(pCommentBlock, jsonDoc);
 
 		FLabelInfo* pLabelInfo = state.GetLabelForAddress(address);
 		if (pLabelInfo)
-		{
-			json labelInfoJson;
-			labelInfoJson["Address"] = pLabelInfo->Address;
-			labelInfoJson["Name"] = pLabelInfo->Name;
-			if(pLabelInfo->Global)
-				labelInfoJson["Global"] = pLabelInfo->Global;
-			labelInfoJson["LabelType"] = pLabelInfo->LabelType;
-			if (pLabelInfo->Comment.empty() == false)
-				labelInfoJson["Comment"] = pLabelInfo->Comment;
-
-			for (const auto& reference : pLabelInfo->References)
-				labelInfoJson["References"].push_back(reference.first);
-
-			jsonDoc["LabelInfo"].push_back(labelInfoJson);
-		}
+			WriteLabelInfoToJson(pLabelInfo, jsonDoc);
 
 		FCodeInfo* pCodeInfoItem = state.GetCodeInfoForAddress(address);
 		if (pCodeInfoItem && pCodeInfoItem->Address == address)	// only write code items for first byte of the instruction
 		{
-			json codeInfoJson;
-			codeInfoJson["Address"] = pCodeInfoItem->Address;
-			codeInfoJson["ByteSize"] = pCodeInfoItem->ByteSize;
-			if (pCodeInfoItem->bSelfModifyingCode)
-				codeInfoJson["SMC"] = true;
-			if(pCodeInfoItem->OperandType != EOperandType::Unknown)
-				codeInfoJson["OperandType"] = (int)pCodeInfoItem->OperandType;
-			if(pCodeInfoItem->Flags != 0)
-				codeInfoJson["Flags"] = pCodeInfoItem->Flags;
-			if(pCodeInfoItem->Comment.empty() == false)
-				codeInfoJson["Comment"] = pCodeInfoItem->Comment;
-
-			jsonDoc["CodeInfo"].push_back(codeInfoJson);
-
+			WriteCodeInfoToJson(pCodeInfoItem, jsonDoc);
+			
 			if (pCodeInfoItem->bSelfModifyingCode == false)	// this is so that we can write info on SMC accesses
 				address += pCodeInfoItem->ByteSize;
 		}
@@ -149,45 +202,15 @@ void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress,int end
 		if(pCodeInfoItem == nullptr || pCodeInfoItem->bSelfModifyingCode)
 		{
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
-			assert(pDataInfo != nullptr);
-			json dataInfoJson;
-
-			if (pDataInfo->DataType != EDataType::Byte)
-				dataInfoJson["DataType"] = (int)pDataInfo->DataType;
-			if (pDataInfo->OperandType != EOperandType::Unknown)
-				dataInfoJson["OperandType"] = pDataInfo->OperandType;
-			if (pDataInfo->ByteSize != 1)
-				dataInfoJson["ByteSize"] = pDataInfo->ByteSize;
-			if (pDataInfo->Flags != 0)
-				dataInfoJson["Flags"] = pDataInfo->Flags;
-			if (pDataInfo->Comment.empty() == false)
-				dataInfoJson["Comment"] = pDataInfo->Comment;
-			
-			for (const auto& read : pDataInfo->Reads)
-				dataInfoJson["Reads"].push_back(read.first);
-			
-			for (const auto& write : pDataInfo->Writes)
-				dataInfoJson["Writes"].push_back(write.first);
-			
-			// Charmap specific
-			if (pDataInfo->DataType == EDataType::CharacterMap)
-			{
-				dataInfoJson["CharSetAddress"] = pDataInfo->CharSetAddress;
-				dataInfoJson["EmptyCharNo"] = pDataInfo->EmptyCharNo;
-			}
-	
-			if (dataInfoJson.size() != 0)	// only write it if it deviates from the normal
-			{
-				dataInfoJson["Address"] = pDataInfo->Address;
-				jsonDoc["DataInfo"].push_back(dataInfoJson);
-			}
-
+			WriteDataInfoToJson(pDataInfo, jsonDoc);
 			address += pDataInfo->ByteSize;
 		}
-
 	}
+}
 
-
+void WriteCodeAnalysisPageToJson(const FCodeAnalysisPage& page, json& jsonDoc)
+{
+	// TODO:
 }
 
 
