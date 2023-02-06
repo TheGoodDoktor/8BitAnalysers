@@ -88,6 +88,8 @@ void FCommentLine::FreeAll()
 void FCodeAnalysisPage::Initialise(uint16_t address)
 {
 	BaseAddress = address;
+
+	bUsed = false;
 	
 	memset(Labels, 0, sizeof(Labels));
 	memset(CodeInfo, 0, sizeof(CodeInfo));
@@ -122,7 +124,7 @@ void FCodeAnalysisPage::ChangeAddress(uint16_t newAddress)
 		if(CodeInfo[addr])
 			CodeInfo[addr]->Address = (CodeInfo[addr]->Address - BaseAddress) + newAddress;
 
-		if(CommentBlocks[kPageSize])
+		if(CommentBlocks[addr])
 			CommentBlocks[addr]->Address = (CommentBlocks[addr]->Address - BaseAddress) + newAddress;
 	}
 
