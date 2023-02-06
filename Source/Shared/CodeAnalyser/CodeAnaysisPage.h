@@ -216,6 +216,7 @@ private:
 struct FCodeAnalysisPage
 {
 	void Initialise(uint16_t address);
+	void ChangeAddress(uint16_t address);
 	void Reset(void);
 	void WriteToBuffer(FMemoryBuffer& buffer);
 	bool ReadFromBuffer(FMemoryBuffer& buffer);

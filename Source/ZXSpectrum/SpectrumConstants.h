@@ -9,6 +9,8 @@ const uint16_t	kROMStart = 0x0000;
 const uint16_t	kROMSize = 0x4000;
 const uint16_t	kROMEnd = kROMStart + kROMSize - 1;
 
+const uint16_t	kRAMStart = kROMStart + kROMSize;
+
 // pixel memory
 const uint16_t	kScreenPixMemStart = 0x4000; 
 const uint16_t	kScreenPixMemSize = 0x1800; 

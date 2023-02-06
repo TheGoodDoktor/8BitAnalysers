@@ -123,6 +123,9 @@ public:
 	void*		GetCPUEmulator(void) override;
 	//ICPUInterface End
 
+	void SetROMBank(int bankNo);
+	void SetRAMBank(int slot, int bankNo);
+
 	void AddMemoryHandler(const FMemoryAccessHandler& handler)
 	{
 		MemoryAccessHandlers.push_back(handler);
@@ -164,9 +167,10 @@ public:
 	FCodeAnalysisState		CodeAnalysis;
 	FIOAnalysis				IOAnalysis;
 
-	// Code analysis pages - 48K spectrum for now...
-	static const int kNoROMPages = 16;
-	static const int kNoRAMPages = 48;
+	// Code analysis pages - to cover 48K & 128K Spectrums
+	static const int kNoSlotPages = 16;	// no of pages per physical address slot (16k)
+	static const int kNoROMPages = 16 + 16;	// 48K ROM & 128K ROM
+	static const int kNoRAMPages = 128;
 	FCodeAnalysisPage		ROMPages[kNoROMPages];
 	FCodeAnalysisPage		RAMPages[kNoRAMPages];
 

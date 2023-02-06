@@ -583,6 +583,34 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 	return pEmu->Z80Tick(num, pins);
 }
 
+// Bank is ROM bank 0 or 1
+// this is always slot 2
+void FSpectrumEmu::SetROMBank(int bankNo)
+{
+	const uint16_t firstBankPage = bankNo * kNoSlotPages;
+
+	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
+	{
+		ROMPages[pageNo].ChangeAddress((pageNo * FCodeAnalysisPage::kPageSize));
+		CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAMPages[firstBankPage + pageNo], &RAMPages[firstBankPage + pageNo]);	// Read/Write
+	}
+}
+
+// Slot is physical 16K memory region (0-3) 
+// Bank is a 16K Spectrum RAM bank (0-7)
+void FSpectrumEmu::SetRAMBank(int slot, int bankNo)
+{
+	const uint16_t firstSlotPage = slot * kNoSlotPages;
+	const uint16_t firstBankPage = bankNo * kNoSlotPages;
+	const uint16_t slotAddress = firstSlotPage * FCodeAnalysisPage::kPageSize;
+
+	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
+	{
+		RAMPages[pageNo].ChangeAddress(slotAddress + (pageNo * FCodeAnalysisPage::kPageSize));
+		CodeAnalysis.SetCodeAnalysisRWPage(firstSlotPage + pageNo, &RAMPages[firstBankPage + pageNo], &RAMPages[firstBankPage + pageNo]);	// Read/Write
+	}
+}
+
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 {
 	SetWindowTitle(kAppTitle.c_str());
@@ -703,16 +731,21 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// ROM
 	for (int pageNo = 0; pageNo < kNoROMPages; pageNo++)
 	{
-		ROMPages[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
-		CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &ROMPages[pageNo], &ROMPages[pageNo]);	// Read Only
+		ROMPages[pageNo].Initialise(0);
+		//CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &ROMPages[pageNo], &ROMPages[pageNo]);	// Read Only
 	}
 	// RAM
-	const uint16_t RAMStartAddr = kNoROMPages * FCodeAnalysisPage::kPageSize;
 	for (int pageNo = 0; pageNo < kNoRAMPages; pageNo++)
 	{
-		RAMPages[pageNo].Initialise(RAMStartAddr + (pageNo * FCodeAnalysisPage::kPageSize));
-		CodeAnalysis.SetCodeAnalysisRWPage(pageNo + kNoROMPages, &RAMPages[pageNo], &RAMPages[pageNo]);	// Read/Write
+		RAMPages[pageNo].Initialise(0);
+		//CodeAnalysis.SetCodeAnalysisRWPage(pageNo + kNoSlotPages, &RAMPages[pageNo], &RAMPages[pageNo]);	// Read/Write
 	}
+
+	// Setup initial machine memory config
+	SetROMBank(config.Model == ESpectrumModel::Spectrum48K ? 0 : 1);
+	SetRAMBank(1, 5);	// 0x4000 - 0x7fff
+	SetRAMBank(2, 2);	// 0x8000 - 0xBfff
+	SetRAMBank(3, 0);	// 0xc000 - 0xffff
 
 	// run initial analysis
 	/*InitialiseCodeAnalysis(CodeAnalysis, this);
@@ -922,7 +955,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 	// Disabled saving as binary, maybe have as an option? 
 	// SaveROMData(CodeAnalysis, "GameData/RomInfo.bin");
 	
-	// Only save ROM json if we've preivously read the binary
+	// Only save ROM json if we've previously read the binary
 #if	!READ_ANALYSIS_JSON
 	const std::string romJsonFName = root + kRomInfoJsonFile;
 	ExportROMJson(CodeAnalysis, romJsonFName.c_str());
@@ -1031,17 +1064,6 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 					ExportAssembler(CodeAnalysis, outBinFname.c_str());
 				}
 			}
-
-			/*if (ImGui::MenuItem("Export Json File"))
-			{
-				if (pActiveGame != nullptr)
-				{
-					EnsureDirectoryExists("OutputJson/");
-					std::string outJsonFname = "OutputJson/" + pActiveGame->pConfig->Name + ".json";
-
-					ExportJson(CodeAnalysis, outJsonFname.c_str());
-				}
-			}*/
 
 			if (ImGui::BeginMenu("Export Skool File"))
 			{
