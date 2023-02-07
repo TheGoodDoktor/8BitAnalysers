@@ -46,7 +46,7 @@ include( ../Shared/CMakeShared.txt )
 add_compile_definitions( _CRT_SECURE_NO_WARNINGS )
 
 # compiler options
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 # vendor source
 
