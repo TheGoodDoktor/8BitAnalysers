@@ -168,6 +168,7 @@ public:
 	FIOAnalysis				IOAnalysis;
 
 	// Code analysis pages - to cover 48K & 128K Spectrums
+	static const int kNoBankPages = 16;	// no of pages per physical address slot (16k)
 	static const int kNoSlotPages = 16;	// no of pages per physical address slot (16k)
 	static const int kNoROMPages = 16 + 16;	// 48K ROM & 128K ROM
 	static const int kNoRAMPages = 128;

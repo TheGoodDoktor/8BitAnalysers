@@ -1,17 +1,21 @@
 #include "JsonExport.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "../SpectrumConstants.h"
+#include "../SpectrumEmu.h"
 
 #include <json.hpp>
 #include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <Util/GraphicsView.h>
+#include <Debug/DebugLog.h>
 
 using json = nlohmann::json;
 
 // We want to eventually move to using Json as it will allow merging 
 void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress, int endAddress, json& jsonDoc);
+void WriteBankToJson(const FSpectrumEmu* pSpectrumEmu, int bankNo, json& jsonDoc);
+void ReadBankFromJson(FSpectrumEmu* pSpectrumEmu, int bankNo, const json& jsonDoc);
 
 bool ExportROMJson(FCodeAnalysisState& state, const char* pJsonFileName)
 {
@@ -29,8 +33,11 @@ bool ExportROMJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	return false;
 }
 
-bool ExportGameJson(FCodeAnalysisState& state, const char* pJsonFileName)
+#define WRITE_BANKS 0
+
+bool ExportGameJson(FSpectrumEmu* pSpectrumEmu, const char* pJsonFileName)
 {
+	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
 	json jsonGameData;
 
 	// write out RAM
@@ -75,6 +82,20 @@ bool ExportGameJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		jsonGameData["CharacterMaps"].push_back(jsonCharacterMap);
 	}
 
+	// Write banks
+#if WRITE_BANKS
+	for (int bankNo = 0; bankNo < 8; bankNo++)
+	{
+		json bankData;
+		if (pSpectrumEmu->RAMPages[bankNo * FSpectrumEmu::kNoBankPages].bUsed)
+		{
+			LOGINFO("Bank %d has been used", bankNo);
+		}
+
+		jsonGameData["Banks"].push_back(bankData);
+	}
+#endif
+
 	// Write file out
 	std::ofstream outFileStream(pJsonFileName);
 	if (outFileStream.is_open())
@@ -86,7 +107,7 @@ bool ExportGameJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	return false;
 }
 
-bool WriteDataInfoToJson(const FDataInfo* pDataInfo, json& jsonDoc)
+bool WriteDataInfoToJson(const FDataInfo* pDataInfo, json& jsonDoc, int addressOverride = -1)
 {
 	json dataInfoJson;
 
@@ -117,7 +138,7 @@ bool WriteDataInfoToJson(const FDataInfo* pDataInfo, json& jsonDoc)
 
 	if (dataInfoJson.size() != 0)	// only write it if it deviates from the normal
 	{
-		dataInfoJson["Address"] = pDataInfo->Address;
+		dataInfoJson["Address"] = addressOverride == -1 ? pDataInfo->Address : addressOverride;
 		jsonDoc["DataInfo"].push_back(dataInfoJson);
 		return true;
 	}
@@ -125,10 +146,10 @@ bool WriteDataInfoToJson(const FDataInfo* pDataInfo, json& jsonDoc)
 	return false;
 }
 
-void WriteCodeInfoToJson(const FCodeInfo* pCodeInfoItem, json& jsonDoc)
+void WriteCodeInfoToJson(const FCodeInfo* pCodeInfoItem, json& jsonDoc, int addressOverride = -1)
 {
 	json codeInfoJson;
-	codeInfoJson["Address"] = pCodeInfoItem->Address;
+	codeInfoJson["Address"] = addressOverride == -1 ? pCodeInfoItem->Address : addressOverride;
 	codeInfoJson["ByteSize"] = pCodeInfoItem->ByteSize;
 	if (pCodeInfoItem->bSelfModifyingCode)
 		codeInfoJson["SMC"] = true;
@@ -142,10 +163,10 @@ void WriteCodeInfoToJson(const FCodeInfo* pCodeInfoItem, json& jsonDoc)
 	jsonDoc["CodeInfo"].push_back(codeInfoJson);
 }
 
-void WriteLabelInfoToJson(const FLabelInfo* pLabelInfo, json& jsonDoc)
+void WriteLabelInfoToJson(const FLabelInfo* pLabelInfo, json& jsonDoc, int addressOverride = -1)
 {
 	json labelInfoJson;
-	labelInfoJson["Address"] = pLabelInfo->Address;
+	labelInfoJson["Address"] = addressOverride == -1 ? pLabelInfo->Address : addressOverride;
 	labelInfoJson["Name"] = pLabelInfo->Name;
 	if (pLabelInfo->Global)
 		labelInfoJson["Global"] = pLabelInfo->Global;
@@ -159,13 +180,13 @@ void WriteLabelInfoToJson(const FLabelInfo* pLabelInfo, json& jsonDoc)
 	jsonDoc["LabelInfo"].push_back(labelInfoJson);
 }
 
-void WriteCommentBlockToJson(const FCommentBlock* pCommentBlock, json& jsonDoc)
+void WriteCommentBlockToJson(const FCommentBlock* pCommentBlock, json& jsonDoc, int addressOverride = -1)
 {
 	if (pCommentBlock->Comment.empty())
 		return;
 
 	json commentBlockJson;
-	commentBlockJson["Address"] = pCommentBlock->Address;
+	commentBlockJson["Address"] = addressOverride == -1 ? pCommentBlock->Address : addressOverride;
 	commentBlockJson["Comment"] = pCommentBlock->Comment;
 
 	jsonDoc["CommentBlocks"].push_back(commentBlockJson);
@@ -208,9 +229,96 @@ void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress,int end
 	}
 }
 
-void WriteCodeAnalysisPageToJson(const FCodeAnalysisPage& page, json& jsonDoc)
+
+FCommentBlock* CreateCommentBlockFromJson(const json& commentBlockJson)
 {
-	// TODO:
+	FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
+	pCommentBlock->Address = commentBlockJson["Address"];
+	pCommentBlock->Comment = commentBlockJson["Comment"];
+	return pCommentBlock;
+}
+
+FCodeInfo* CreateCodeInfoFromJson(const json& codeInfoJson)
+{
+	FCodeInfo* pCodeInfo = FCodeInfo::Allocate();
+	pCodeInfo->Address = codeInfoJson["Address"];
+	pCodeInfo->ByteSize = codeInfoJson["ByteSize"];
+
+	if (codeInfoJson.contains("SMC"))
+		pCodeInfo->bSelfModifyingCode = codeInfoJson["SMC"];
+
+	if (codeInfoJson.contains("OperandType"))
+		pCodeInfo->OperandType = codeInfoJson["OperandType"];
+
+	if (codeInfoJson.contains("Flags"))
+		pCodeInfo->Flags = codeInfoJson["Flags"];
+
+	if (codeInfoJson.contains("Comment"))
+		pCodeInfo->Comment = codeInfoJson["Comment"];
+
+	return pCodeInfo;
+}
+
+FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson)
+{
+	FLabelInfo* pLabelInfo = FLabelInfo::Allocate();
+
+	pLabelInfo->Address = labelInfoJson["Address"];
+	pLabelInfo->Name = labelInfoJson["Name"];
+	if (labelInfoJson.contains("Global"))
+		pLabelInfo->Global = true;
+
+	if (labelInfoJson.contains("LabelType"))
+		pLabelInfo->LabelType = (ELabelType)(int)labelInfoJson["LabelType"];
+	if (labelInfoJson.contains("Comment"))
+		pLabelInfo->Comment = labelInfoJson["Comment"];
+
+	if (labelInfoJson.contains("References"))
+	{
+		for (const auto& reference : labelInfoJson["References"])
+		{
+			pLabelInfo->References[reference] = 1;
+		}
+	}
+
+	return pLabelInfo;
+}
+
+void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json & dataInfoJson)
+{
+	pDataInfo->Address = dataInfoJson["Address"];
+
+	if (dataInfoJson.contains("DataType"))
+		pDataInfo->DataType = (EDataType)(int)dataInfoJson["DataType"];
+	if (dataInfoJson.contains("OperandType"))
+		pDataInfo->OperandType = (EOperandType)(int)dataInfoJson["OperandType"];
+	if (dataInfoJson.contains("ByteSize"))
+		pDataInfo->ByteSize = dataInfoJson["ByteSize"];
+	if (dataInfoJson.contains("Flags"))
+		pDataInfo->Flags = dataInfoJson["Flags"];
+	if (dataInfoJson.contains("Comment"))
+		pDataInfo->Comment = dataInfoJson["Comment"];
+	if (dataInfoJson.contains("Reads"))
+	{
+		for (const auto& read : dataInfoJson["Reads"])
+		{
+			pDataInfo->Reads[read] = 1;
+		}
+	}
+	if (dataInfoJson.contains("Writes"))
+	{
+		for (const auto& read : dataInfoJson["Writes"])
+		{
+			pDataInfo->Writes[read] = 1;
+		}
+	}
+
+	// Charmap specific
+	if (pDataInfo->DataType == EDataType::CharacterMap)
+	{
+		pDataInfo->CharSetAddress = dataInfoJson["CharSetAddress"];
+		pDataInfo->EmptyCharNo = dataInfoJson["EmptyCharNo"];
+	}
 }
 
 
@@ -240,9 +348,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	{
 		for (const auto commentBlockJson : jsonGameData["CommentBlocks"])
 		{
-			FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
-			pCommentBlock->Address = commentBlockJson["Address"];
-			pCommentBlock->Comment = commentBlockJson["Comment"];
+			FCommentBlock* pCommentBlock = CreateCommentBlockFromJson(commentBlockJson);
 			state.SetCommentBlockForAddress(pCommentBlock->Address, pCommentBlock);
 		}
 	}
@@ -251,21 +357,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	{
 		for (const auto codeInfoJson : jsonGameData["CodeInfo"])
 		{
-			FCodeInfo* pCodeInfo = FCodeInfo::Allocate();
-			pCodeInfo->Address = codeInfoJson["Address"];
-			pCodeInfo->ByteSize = codeInfoJson["ByteSize"];
-
-			if (codeInfoJson.contains("SMC"))
-				pCodeInfo->bSelfModifyingCode = codeInfoJson["SMC"];
-
-			if (codeInfoJson.contains("OperandType"))
-				pCodeInfo->OperandType = codeInfoJson["OperandType"];
-
-			if (codeInfoJson.contains("Flags"))
-				pCodeInfo->Flags = codeInfoJson["Flags"];
-
-			if (codeInfoJson.contains("Comment"))
-				pCodeInfo->Comment = codeInfoJson["Comment"];
+			FCodeInfo* pCodeInfo = CreateCodeInfoFromJson(codeInfoJson);
 
 			for (int codeByte = 0; codeByte < pCodeInfo->ByteSize; codeByte++)	// set for whole instruction address range
 				state.SetCodeInfoForAddress(pCodeInfo->Address + codeByte, pCodeInfo);
@@ -276,28 +368,9 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	{
 		for (const auto labelInfoJson : jsonGameData["LabelInfo"])
 		{
-			const int address = labelInfoJson["Address"];
-			FLabelInfo* pLabelInfo = FLabelInfo::Allocate();
+			FLabelInfo* pLabelInfo = CreateLabelInfoFromJson(labelInfoJson);
 
-			pLabelInfo->Address = address;
-			pLabelInfo->Name = labelInfoJson["Name"];
-			if (labelInfoJson.contains("Global"))
-				pLabelInfo->Global = true;
-
-			if(labelInfoJson.contains("LabelType"))
-				pLabelInfo->LabelType = (ELabelType)(int)labelInfoJson["LabelType"];
-			if (labelInfoJson.contains("Comment"))
-				pLabelInfo->Comment = labelInfoJson["Comment"];
-
-			if (labelInfoJson.contains("References"))
-			{
-				for (const auto& reference : labelInfoJson["References"])
-				{
-					pLabelInfo->References[reference] = 1;
-				}
-			}
-
-			state.SetLabelForAddress(address,pLabelInfo);
+			state.SetLabelForAddress(pLabelInfo->Address,pLabelInfo);
 		}
 	}
 
@@ -307,38 +380,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		{
 			const int address = dataInfoJson["Address"];
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
-
-			if (dataInfoJson.contains("DataType"))
-				pDataInfo->DataType = (EDataType)(int)dataInfoJson["DataType"];
-			if (dataInfoJson.contains("OperandType"))
-				pDataInfo->OperandType = (EOperandType)(int)dataInfoJson["OperandType"];
-			if (dataInfoJson.contains("ByteSize"))
-				pDataInfo->ByteSize = dataInfoJson["ByteSize"];
-			if (dataInfoJson.contains("Flags"))
-				pDataInfo->Flags = dataInfoJson["Flags"];
-			if (dataInfoJson.contains("Comment"))
-				pDataInfo->Comment = dataInfoJson["Comment"];
-			if (dataInfoJson.contains("Reads"))
-			{
-				for (const auto& read : dataInfoJson["Reads"])
-				{
-					pDataInfo->Reads[read] = 1;
-				}
-			}
-			if (dataInfoJson.contains("Writes"))
-			{
-				for (const auto& read : dataInfoJson["Writes"])
-				{
-					pDataInfo->Writes[read] = 1;
-				}
-			}
-
-			// Charmap specific
-			if (pDataInfo->DataType == EDataType::CharacterMap)
-			{
-				pDataInfo->CharSetAddress = dataInfoJson["CharSetAddress"];
-				pDataInfo->EmptyCharNo = dataInfoJson["EmptyCharNo"];
-			}
+			LoadDataInfoFromJson(pDataInfo, dataInfoJson);
 		}
 	}
 
@@ -379,4 +421,107 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	}
 
 	return true;
+}
+
+// write a 16K bank to Json
+// the plan is to move to this so we can support 128K games
+void WriteBankToJson(const FSpectrumEmu* pSpectrumEmu, int bankNo, json& jsonDoc)
+{
+	const int bankPage = bankNo * 16;
+	uint16_t bankAddr = 0;
+
+	while (bankAddr <= 0x4000)
+	{
+		const uint16_t curPageNo = bankPage + (bankAddr / 1024);
+		const FCodeAnalysisPage& curPage = pSpectrumEmu->RAMPages[curPageNo];
+		const uint16_t pageAddr = bankAddr & 1023;
+
+		const FCommentBlock* pCommentBlock = curPage.CommentBlocks[pageAddr];
+		if (pCommentBlock != nullptr)
+			WriteCommentBlockToJson(pCommentBlock, jsonDoc, bankAddr);
+
+		const FLabelInfo* pLabelInfo = curPage.Labels[pageAddr];
+		if (pLabelInfo)
+			WriteLabelInfoToJson(pLabelInfo, jsonDoc, bankAddr);
+
+		const FCodeInfo* pCodeInfoItem = curPage.CodeInfo[pageAddr];
+		if (pCodeInfoItem && pCodeInfoItem->Address == curPage.BaseAddress + pageAddr)	// only write code items for first byte of the instruction
+		{
+			WriteCodeInfoToJson(pCodeInfoItem, jsonDoc, bankAddr);
+
+			if (pCodeInfoItem->bSelfModifyingCode == false)	// this is so that we can write info on SMC accesses
+				bankAddr += pCodeInfoItem->ByteSize;
+		}
+
+		if (pCodeInfoItem == nullptr || pCodeInfoItem->bSelfModifyingCode)
+		{
+			const FDataInfo* pDataInfo = &curPage.DataInfo[pageAddr];
+			WriteDataInfoToJson(pDataInfo, jsonDoc, bankAddr);
+			bankAddr += pDataInfo->ByteSize;
+		}
+
+		// one entry for each address in bank
+		jsonDoc["LastWriter"].push_back(curPage.LastWriter[pageAddr]);
+
+	}
+}
+
+
+void ReadBankFromJson(FSpectrumEmu* pSpectrumEmu, int bankNo, const json& jsonDoc)
+{
+	const int bankPage = bankNo * 16;
+
+	if (jsonDoc.contains("LastWriter"))
+	{
+		const json& lastWriterArray = jsonDoc["LastWriter"];
+		const int noWriters = (int)lastWriterArray.size();
+		for (int i = 0; i < noWriters; i++)
+		{
+			const uint16_t bankAddr = i;
+			const uint16_t pageNo = bankPage + (bankAddr / 1024);
+			const uint16_t pageAddr = bankAddr & 1023;
+
+			pSpectrumEmu->RAMPages[pageNo].LastWriter[pageAddr] = lastWriterArray[i];
+		}
+	}
+
+	if (jsonDoc.contains("CommentBlocks"))
+	{
+		for (const auto commentBlockJson : jsonDoc["CommentBlocks"])
+		{
+			FCommentBlock* pCommentBlock = CreateCommentBlockFromJson(commentBlockJson);
+
+			const uint16_t bankAddr = pCommentBlock->Address;
+			const uint16_t pageNo = bankPage + (bankAddr / 1024);
+			const uint16_t pageAddr = bankAddr & 1023;
+
+			pSpectrumEmu->RAMPages[pageNo].CommentBlocks[pageAddr] = pCommentBlock;
+		}
+	}
+
+	if (jsonDoc.contains("LabelInfo"))
+	{
+		for (const auto labelInfoJson : jsonDoc["LabelInfo"])
+		{
+			FLabelInfo* pLabelInfo = CreateLabelInfoFromJson(labelInfoJson);
+			const uint16_t bankAddr = pLabelInfo->Address;
+			const uint16_t pageNo = bankPage + (bankAddr / 1024);
+			const uint16_t pageAddr = bankAddr & 1023;
+
+			pSpectrumEmu->RAMPages[pageNo].Labels[pageAddr] = pLabelInfo;
+		}
+	}
+
+	if (jsonDoc.contains("DataInfo"))
+	{
+		for (const auto dataInfoJson : jsonDoc["DataInfo"])
+		{
+			const uint16_t bankAddr = dataInfoJson["Address"];
+			const uint16_t pageNo = bankPage + (bankAddr / 1024);
+			const uint16_t pageAddr = bankAddr & 1023;
+
+			FDataInfo* pDataInfo = &pSpectrumEmu->RAMPages[pageNo].DataInfo[pageAddr];
+			LoadDataInfoFromJson(pDataInfo, dataInfoJson);
+		}
+	}
 }

@@ -584,7 +584,7 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 }
 
 // Bank is ROM bank 0 or 1
-// this is always slot 2
+// this is always slot 0
 void FSpectrumEmu::SetROMBank(int bankNo)
 {
 	const uint16_t firstBankPage = bankNo * kNoSlotPages;
@@ -601,7 +601,7 @@ void FSpectrumEmu::SetROMBank(int bankNo)
 void FSpectrumEmu::SetRAMBank(int slot, int bankNo)
 {
 	const uint16_t firstSlotPage = slot * kNoSlotPages;
-	const uint16_t firstBankPage = bankNo * kNoSlotPages;
+	const uint16_t firstBankPage = bankNo * kNoBankPages;
 	const uint16_t slotAddress = firstSlotPage * FCodeAnalysisPage::kPageSize;
 
 	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
@@ -948,7 +948,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 
 			// The Future
 			SaveGameState(this, saveStateFName.c_str());
-			ExportGameJson(CodeAnalysis, analysisJsonFName.c_str()); 
+			ExportGameJson(this, analysisJsonFName.c_str());
 		}
 	}
 
