@@ -3,6 +3,12 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
+#if __APPLE__
+#include <mach-o/dyld.h>
+#include <limits.h>
+#include <string>
+#endif
+
 #include "imgui.h"
 #include <implot.h>
 #include <backends/imgui_impl_glfw.h>
@@ -91,6 +97,25 @@ int main(int argc, char** argv)
     ImGui::CreateContext();
     ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+#if __APPLE__
+    char buf [PATH_MAX];
+    uint32_t bufsize = PATH_MAX;
+    if(!_NSGetExecutablePath(buf, &bufsize))
+    {
+	    std::string ini_location(buf);
+	    int last_dir = ini_location.find_last_of('/');
+	    if(last_dir != std::string::npos)
+	    {
+        ini_location.resize(last_dir);
+        ini_location.append("/imgui.ini");
+        strcpy(buf, ini_location.c_str());
+        io.IniFilename = buf;
+      }
+    }
+#endif
+
+
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking

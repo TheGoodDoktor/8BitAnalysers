@@ -3,6 +3,8 @@ cmake_minimum_required (VERSION 3.10)
 
 project (SpectrumAnalyser)
 
+set(APP_NAME SpectrumAnalyser)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	find_package(OpenGL REQUIRED)
 	find_package(Threads REQUIRED)
@@ -13,6 +15,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
+	set(MACOSX_BUNDLE_BUNDLE_NAME SpectrumAnalyser)
 	find_package(OpenGL REQUIRED)
 	find_package(Threads REQUIRED)
 	find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
@@ -122,7 +126,7 @@ else()
 	set ( platform_main Windows/WinMain.cpp )
 endif()
 
-add_executable (SpectrumAnalyser ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
+add_executable (SpectrumAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
 # This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
@@ -178,4 +182,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		${CMAKE_DL_LIBS}
 		${AUDIOTOOLBOX_LIBRARY}
 		)
+	install(TARGETS ${APP_NAME}
+		BUNDLE DESTINATION . COMPONENT RunTime
+		RUNTIME DESTINATION bin COMPONENT RunTime
+		)
+	add_custom_command(TARGET ${APP_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/imgui.ini
+		$<TARGET_FILE_DIR:${APP_NAME}>
+		)
+	set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
+	set(LIBS )
+	set(DIRS ${CMAKE_BINARY_DIR})
+	install(CODE "include(BundleUtilities)
+	fixup_bundle(\"${APPS}\" \"${LIBS}\" \"${DIRS}\")")
+	set(CPACK_GENERATOR "DRAGNDROP")
+	include(CPack)
 endif()
