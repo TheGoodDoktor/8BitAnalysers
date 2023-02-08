@@ -136,6 +136,8 @@ int main(int argc, char** argv)
 
 	// Speccy 
 	FSpectrumConfig config;
+    //config.Model = ESpectrumModel::Spectrum128K;
+    config.Model = ESpectrumModel::Spectrum48K;
 	config.NoStateBuffers = 10;
 	if (argc > 1)
 		config.SpecificGame = argv[1];

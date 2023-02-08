@@ -228,6 +228,8 @@ struct FCodeAnalysisState
 	}
 
 	bool IsCodeAnalysisDataDirty() const { return bCodeAnalysisDataDirty; }
+	void SetMemoryRemapped(bool bRemapped = true) { bMemoryRemapped = bRemapped; }
+	bool HasMemoryBeenRemapped() const { return bMemoryRemapped; }
 
 	void	ResetLabelNames() { LabelUsage.clear(); }
 	bool	EnsureUniqueLabelName(std::string& lableName);
@@ -254,6 +256,7 @@ private:
 	std::map<std::string, int>	LabelUsage;
 
 	bool						bCodeAnalysisDataDirty = false;
+	bool						bMemoryRemapped = false;
 
 public:
 

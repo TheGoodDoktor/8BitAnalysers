@@ -56,7 +56,8 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #define READ_ANALYSIS_JSON 1
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
-const char* kRomInfoJsonFile = "AnalysisJson/RomInfo.json";
+const char* kRomInfo48JsonFile = "AnalysisJson/RomInfo.json";
+const char* kRomInfo128JsonFile = "AnalysisJson/RomInfo128.json";
 const std::string kAppTitle = "Spectrum Analyser";
 
 /* output an unsigned 8-bit value as hex string */
@@ -553,6 +554,28 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	else if (pins & Z80_IORQ)
 	{
 		IOAnalysis.IOHandler(pc, pins);
+
+		if (ZXEmuState.type == ZX_TYPE_128)
+		{
+			if (pins & Z80_WR)
+			{
+				// an IO write
+				const uint8_t data = Z80_GET_DATA(pins);
+
+				if ((pins & (Z80_A15 | Z80_A1)) == 0)
+				{
+					if (!ZXEmuState.memory_paging_disabled)
+					{
+						const int ramBank = data & 0x7;
+						const int romBank = (data & (1 << 4)) ? 1 : 0;
+						const int displayRamBank = (data & (1 << 3)) ? 7 : 5;
+
+						SetROMBank(romBank);
+						SetRAMBank(3, ramBank);
+					}
+				}
+			}
+		}
 	}
 
 	pins =  OldTickCB(num, pins, OldTickUserData);
@@ -587,28 +610,42 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 // this is always slot 0
 void FSpectrumEmu::SetROMBank(int bankNo)
 {
+	if (ROMBank == bankNo)
+		return;
+
 	const uint16_t firstBankPage = bankNo * kNoSlotPages;
 
 	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
 	{
-		ROMPages[pageNo].ChangeAddress((pageNo * FCodeAnalysisPage::kPageSize));
-		CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAMPages[firstBankPage + pageNo], &RAMPages[firstBankPage + pageNo]);	// Read/Write
+		ROMPages[firstBankPage + pageNo].ChangeAddress((pageNo * FCodeAnalysisPage::kPageSize));
+		CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &ROMPages[firstBankPage + pageNo], &ROMPages[firstBankPage + pageNo]);	// Read/Write
 	}
+
+	CodeAnalysis.SetMemoryRemapped();
 }
 
 // Slot is physical 16K memory region (0-3) 
 // Bank is a 16K Spectrum RAM bank (0-7)
 void FSpectrumEmu::SetRAMBank(int slot, int bankNo)
 {
+	if (RAMBanks[slot] == bankNo)
+		return;
+	RAMBanks[slot] = bankNo;
+
 	const uint16_t firstSlotPage = slot * kNoSlotPages;
 	const uint16_t firstBankPage = bankNo * kNoBankPages;
-	const uint16_t slotAddress = firstSlotPage * FCodeAnalysisPage::kPageSize;
+	uint16_t slotAddress = firstSlotPage * FCodeAnalysisPage::kPageSize;
 
 	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
 	{
-		RAMPages[pageNo].ChangeAddress(slotAddress + (pageNo * FCodeAnalysisPage::kPageSize));
-		CodeAnalysis.SetCodeAnalysisRWPage(firstSlotPage + pageNo, &RAMPages[firstBankPage + pageNo], &RAMPages[firstBankPage + pageNo]);	// Read/Write
+		const int slotPageNo = firstSlotPage + pageNo;
+		FCodeAnalysisPage& bankPage = RAMPages[firstBankPage + pageNo];
+		bankPage.ChangeAddress(slotAddress);
+		CodeAnalysis.SetCodeAnalysisRWPage(slotPageNo, &bankPage, &bankPage);	// Read/Write
+		slotAddress += FCodeAnalysisPage::kPageSize;
 	}
+
+	CodeAnalysis.SetMemoryRemapped();
 }
 
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
@@ -742,11 +779,20 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	}
 
 	// Setup initial machine memory config
-	SetROMBank(config.Model == ESpectrumModel::Spectrum48K ? 0 : 1);
-	SetRAMBank(1, 5);	// 0x4000 - 0x7fff
-	SetRAMBank(2, 2);	// 0x8000 - 0xBfff
-	SetRAMBank(3, 0);	// 0xc000 - 0xffff
-
+	if (config.Model == ESpectrumModel::Spectrum48K)
+	{
+		SetROMBank(0);
+		SetRAMBank(1, 0);	// 0x4000 - 0x7fff
+		SetRAMBank(2, 1);	// 0x8000 - 0xBfff
+		SetRAMBank(3, 2);	// 0xc000 - 0xffff
+	}
+	else
+	{
+		SetROMBank(0);
+		SetRAMBank(1, 5);	// 0x4000 - 0x7fff
+		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
+		SetRAMBank(3, 0);	// 0xc000 - 0xffff
+	}
 	// run initial analysis
 	/*InitialiseCodeAnalysis(CodeAnalysis, this);
 	const std::string root = GetGlobalConfig().WorkspaceRoot;
@@ -777,15 +823,19 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	if(bLoadedGame == false)
 	{
 		const std::string root = GetGlobalConfig().WorkspaceRoot;
-		const std::string romBinData = root + "GameData/RomInfo.bin";
-		const std::string romJsonFName = root + kRomInfoJsonFile;
+		std::string romJsonFName = root + kRomInfo48JsonFile;
+
+		if (config.Model == ESpectrumModel::Spectrum128K)
+			romJsonFName = root + kRomInfo128JsonFile;
+
+		//const std::string romBinData = root + "GameData/RomInfo.bin";
 		
 		InitialiseCodeAnalysis(CodeAnalysis, this);
 
 		if (FileExists(romJsonFName.c_str()))
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
-		else
-			LoadROMData(CodeAnalysis, romBinData.c_str());
+		//else
+		//	LoadROMData(CodeAnalysis, romBinData.c_str());
 	}
 
 	return true;
@@ -850,13 +900,17 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	const std::string romBinData = root + "GameData/RomInfo.bin";
 	const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 #if READ_ANALYSIS_JSON
-	const std::string romJsonFName = root + kRomInfoJsonFile;
+	std::string romJsonFName = root + kRomInfo48JsonFile;
+
+	if (ZXEmuState.type == ZX_TYPE_128)
+		romJsonFName = root + kRomInfo128JsonFile;
+
 	const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
 	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 	if (FileExists(analysisJsonFName.c_str()))
 		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-	else
-		LoadGameData(this, dataFName.c_str());
+	//else
+	//	LoadGameData(this, dataFName.c_str());
 
 	LoadGameState(this, saveStateFName.c_str());
 

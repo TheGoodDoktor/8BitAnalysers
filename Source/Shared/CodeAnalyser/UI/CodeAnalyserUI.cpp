@@ -828,7 +828,7 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 void UpdateItemList(FCodeAnalysisState &state)
 {
 	// build item list - not every frame please!
-	if (state.IsCodeAnalysisDataDirty())
+	if (state.IsCodeAnalysisDataDirty() || state.HasMemoryBeenRemapped())
 	{
 		const float line_height = ImGui::GetTextLineHeight();
 		
@@ -924,6 +924,12 @@ void UpdateItemList(FCodeAnalysisState &state)
 		// Maybe this needs to follow the same algorithm as the main view?
 		ImGui::SetScrollY(state.GetFocussedViewState().CursorItemIndex * line_height);
 		state.SetCodeAnalysisDirty(false);
+
+		if (state.HasMemoryBeenRemapped())
+		{
+			GenerateGlobalInfo(state);
+			state.SetMemoryRemapped(false);
+		}
 	}
 
 }

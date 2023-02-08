@@ -172,8 +172,10 @@ public:
 	static const int kNoSlotPages = 16;	// no of pages per physical address slot (16k)
 	static const int kNoROMPages = 16 + 16;	// 48K ROM & 128K ROM
 	static const int kNoRAMPages = 128;
-	FCodeAnalysisPage		ROMPages[kNoROMPages];
-	FCodeAnalysisPage		RAMPages[kNoRAMPages];
+	FCodeAnalysisPage	ROMPages[kNoROMPages];
+	FCodeAnalysisPage	RAMPages[kNoRAMPages];
+	int					ROMBank = -1;
+	int					RAMBanks[4] = { -1,-1,-1,-1 };
 
 	// Memory handling
 	std::string				SelectedMemoryHandler;

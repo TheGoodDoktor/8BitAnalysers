@@ -643,6 +643,7 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 	return pExistingBlock;
 }
 
+// Generate Global Info for items in address space
 void GenerateGlobalInfo(FCodeAnalysisState &state)
 {
 	state.GlobalDataItems.clear();
@@ -681,6 +682,9 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	state.ResetLabelNames();
 	state.ItemList.clear();
 
+	// This won't work with banked memory
+	// we need to reset all the banks
+	// the code analyser needs to know about them
 	for (int i = 0; i < (1 << 16); i++)	// loop across address range
 	{
 		// clear item pointers
