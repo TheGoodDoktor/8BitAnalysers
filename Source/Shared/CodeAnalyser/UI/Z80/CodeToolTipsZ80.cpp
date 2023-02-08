@@ -146,202 +146,203 @@ std::string GetRegName(uint32_t flag)
 std::string GenerateRegisterValueString(uint32_t Regs, ICPUInterface* CPUIF)
 {
 	std::string outString;
-	char tempStr[16];
+	const int kTempStrLen = 16;
+	char tempStr[kTempStrLen];
 
 	z80_t* pCPU = (z80_t *)CPUIF->GetCPUEmulator();
 
 	// I was hoping there'd be a better way
 	if (Regs & Z80Reg::A)
 	{
-		sprintf_s(tempStr, "A:%s ", NumStr(z80_a(pCPU)));
+		snprintf(tempStr, kTempStrLen, "A:%s ", NumStr(z80_a(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::B)
 	{
-		sprintf_s(tempStr, "B:%s ", NumStr(z80_b(pCPU)));
+		snprintf(tempStr, kTempStrLen, "B:%s ", NumStr(z80_b(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::C)
 	{
-		sprintf_s(tempStr, "C:%s ", NumStr(z80_c(pCPU)));
+		snprintf(tempStr, kTempStrLen, "C:%s ", NumStr(z80_c(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::D)
 	{
-		sprintf_s(tempStr, "D:%s ", NumStr(z80_d(pCPU)));
+		snprintf(tempStr, kTempStrLen, "D:%s ", NumStr(z80_d(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::E)
 	{
-		sprintf_s(tempStr, "E:%s ", NumStr(z80_e(pCPU)));
+		snprintf(tempStr, kTempStrLen, "E:%s ", NumStr(z80_e(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::H)
 	{
-		sprintf_s(tempStr, "H:%s ", NumStr(z80_h(pCPU)));
+		snprintf(tempStr, kTempStrLen, "H:%s ", NumStr(z80_h(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::L)
 	{
-		sprintf_s(tempStr, "L:%s ", NumStr(z80_l(pCPU)));
+		snprintf(tempStr, kTempStrLen, "L:%s ", NumStr(z80_l(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::I)
 	{
-		sprintf_s(tempStr, "I:%s ", NumStr(z80_i(pCPU)));
+		snprintf(tempStr, kTempStrLen, "I:%s ", NumStr(z80_i(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::R)
 	{
-		sprintf_s(tempStr, "R:%s ", NumStr(z80_r(pCPU)));
+		snprintf(tempStr, kTempStrLen, "R:%s ", NumStr(z80_r(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IXL)
 	{
 		const uint8_t ixl = static_cast<uint8_t>(z80_ix(pCPU) & 0xff);
-		sprintf_s(tempStr, "IXL:%s ", NumStr(ixl));
+		snprintf(tempStr, kTempStrLen, "IXL:%s ", NumStr(ixl));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IXH)
 	{
 		const uint8_t ixh = static_cast<uint8_t>(z80_ix(pCPU) >> 8);
-		sprintf_s(tempStr, "IXH:%s ", NumStr(ixh));
+		snprintf(tempStr, kTempStrLen, "IXH:%s ", NumStr(ixh));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IYL)
 	{
 		const uint8_t iyl = static_cast<uint8_t>(z80_iy(pCPU) & 0xff);
-		sprintf_s(tempStr, "IYL:%s ", NumStr(iyl));
+		snprintf(tempStr, kTempStrLen, "IYL:%s ", NumStr(iyl));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IYH)
 	{
 		const uint8_t iyh = static_cast<uint8_t>(z80_iy(pCPU) >> 8);
-		sprintf_s(tempStr, "IYH:%s ", NumStr(iyh));
+		snprintf(tempStr, kTempStrLen, "IYH:%s ", NumStr(iyh));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::SP || Regs & Z80Reg::SP_Indirect)
 	{
-		sprintf_s(tempStr, "SP:%s ", NumStr(z80_sp(pCPU)));
+		snprintf(tempStr, kTempStrLen, "SP:%s ", NumStr(z80_sp(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::AF)
 	{
-		sprintf_s(tempStr, "AF:%s ", NumStr(z80_af(pCPU)));
+		snprintf(tempStr, kTempStrLen, "AF:%s ", NumStr(z80_af(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::AF_ALT)
 	{
-		sprintf_s(tempStr, "AF':%s ", NumStr(z80_af_(pCPU)));
+		snprintf(tempStr, kTempStrLen, "AF':%s ", NumStr(z80_af_(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::BC || Regs & Z80Reg::BC_Indirect)
 	{
-		sprintf_s(tempStr, "BC:%s ", NumStr(z80_bc(pCPU)));
+		snprintf(tempStr, kTempStrLen, "BC:%s ", NumStr(z80_bc(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::DE || Regs & Z80Reg::DE_Indirect)
 	{
-		sprintf_s(tempStr, "DE:%s ", NumStr(z80_de(pCPU)));
+		snprintf(tempStr, kTempStrLen, "DE:%s ", NumStr(z80_de(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::HL || Regs & Z80Reg::HL_Indirect)
 	{
-		sprintf_s(tempStr, "HL:%s ", NumStr(z80_hl(pCPU)));
+		snprintf(tempStr, kTempStrLen, "HL:%s ", NumStr(z80_hl(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IX || Regs & Z80Reg::IX_Indirect)
 	{
-		sprintf_s(tempStr, "IX:%s ", NumStr(z80_ix(pCPU)));
+		snprintf(tempStr, kTempStrLen, "IX:%s ", NumStr(z80_ix(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IY || Regs & Z80Reg::IY_Indirect)
 	{
-		sprintf_s(tempStr, "IY:%s ", NumStr(z80_iy(pCPU)));
+		snprintf(tempStr, kTempStrLen, "IY:%s ", NumStr(z80_iy(pCPU)));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::BC_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_bc(pCPU));
-		sprintf_s(tempStr, "(BC):%s ", NumStr(val));
+		snprintf(tempStr, kTempStrLen, "(BC):%s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::DE_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_de(pCPU));
-		sprintf_s(tempStr, "(DE):%s ", NumStr(val));
+		snprintf(tempStr, kTempStrLen, "(DE):%s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::HL_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_hl(pCPU));
-		sprintf_s(tempStr, "(HL):%s ", NumStr(val));
+		snprintf(tempStr, kTempStrLen, "(HL):%s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IX_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_ix(pCPU));
-		sprintf_s(tempStr, "(IX):%s ", NumStr(val));
+		snprintf(tempStr, kTempStrLen, "(IX):%s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IX_Indirect_D)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_ix(pCPU));
-		//sprintf_s(tempStr, "(IX+d): %s ", NumStr(val));
-		sprintf_s(tempStr, "(IX+d):? ");
+		//snprintf(tempStr, kTempStrLen, "(IX+d): %s ", NumStr(val));
+		snprintf(tempStr, kTempStrLen, "(IX+d):? ");
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IY_Indirect)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_iy(pCPU));
-		sprintf_s(tempStr, "(IY):%s ", NumStr(val));
+		snprintf(tempStr, kTempStrLen, "(IY):%s ", NumStr(val));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::IY_Indirect_D)
 	{
 		const uint8_t val = CPUIF->ReadByte(z80_iy(pCPU));
-		//sprintf_s(tempStr, "(IX+d): %s ", NumStr(val));
-		sprintf_s(tempStr, "(IY+d):? ");
+		//snprintf(tempStr, kTempStrLen, "(IX+d): %s ", NumStr(val));
+		snprintf(tempStr, kTempStrLen, "(IY+d):? ");
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::SP_Indirect)
 	{
 		uint16_t stackVal = CPUIF->ReadWord(z80_sp(pCPU));
-		sprintf_s(tempStr, "(SP):%s ", NumStr(stackVal));
+		snprintf(tempStr, kTempStrLen, "(SP):%s ", NumStr(stackVal));
 		outString += std::string(tempStr);
 	}
 
 	if (Regs & Z80Reg::F)
 	{
-		//sprintf_s(tempStr, "F: %s ", NumStr(z80_f(pCPU)));
+		//snprintf(tempStr, kTempStrLen, "F: %s ", NumStr(z80_f(pCPU)));
 		//outString += std::string(tempStr);
 
 		const uint8_t f = z80_f(pCPU);
@@ -502,7 +503,7 @@ void DoCBPrefix(uint8_t prefix, uint32_t *r, uint16_t pc, ICPUInterface* CPUIF, 
 				snprintf(g_TTZ80TitleBuf, kTTZ80TitleLen, "Aithmetic shift right %s", regName.c_str());
 				break;
 			case 6: // SLL - Undocumented
-				//sprintf_s(tempStr, "SLL %s", regName.c_str());
+				//snprintf(tempStr, kTempStrLen, "SLL %s", regName.c_str());
 				break;
 			case 7: // SRL s
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Rotate %s right one bit. Bit 0 is copied to the C flag and bit 7 is reset.", regName.c_str());
