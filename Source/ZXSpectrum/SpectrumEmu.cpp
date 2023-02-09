@@ -1127,13 +1127,14 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			{
 				if (pActiveGame != nullptr)
 				{
-					EnsureDirectoryExists("OutputBin/");
-					std::string outBinFname = GetGlobalConfig().WorkspaceRoot + "OutputBin/" + pActiveGame->pConfig->Name + ".bin";
+					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputBin/";
+					EnsureDirectoryExists(dir.c_str());
+					std::string outBinFname = dir + pActiveGame->pConfig->Name + ".bin";
 					uint8_t *pSpecMem = new uint8_t[65536];
 					for (int i = 0; i < 65536; i++)
 						pSpecMem[i] = ReadByte(i);
 					SaveBinaryFile(outBinFname.c_str(), pSpecMem, 65536);
-					delete pSpecMem;
+					delete [] pSpecMem;
 				}
 			}
 
@@ -1141,8 +1142,9 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			{
 				if (pActiveGame != nullptr)
 				{
-					EnsureDirectoryExists("OutputASM/");
-					std::string outBinFname = GetGlobalConfig().WorkspaceRoot + "OutputASM/" + pActiveGame->pConfig->Name + ".asm";
+					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputASM/";
+					EnsureDirectoryExists(dir.c_str());
+					std::string outBinFname = dir + pActiveGame->pConfig->Name + ".asm";
 
 					ExportAssembler(CodeAnalysis, outBinFname.c_str());
 				}
@@ -1901,19 +1903,22 @@ bool FSpectrumEmu::ImportSkoolFile(const char* pFilename, const char* pOutSkoolI
 
 	LOGINFO("Importing skool file '%s'", pFilename);
 
+	const std::string root = GetGlobalConfig().WorkspaceRoot;
+
 	if (pActiveGame)
 	{
 		// backup their gamedata
-		const std::string dataFName = "GameData/" + pActiveGame->pConfig->Name + ".bin.bak";
-		EnsureDirectoryExists("GameData");
+		std::string dir = root + "AnalysisJson/";
+		const std::string dataFName = dir + pActiveGame->pConfig->Name + ".json.bak";
+		EnsureDirectoryExists(dir.c_str());
 		if (!SaveGameData(this, dataFName.c_str()))
 		{
-			LOGERROR("Failed to import skool file. Could not save backup of game data to '%s'", dataFName.c_str());
+			LOGERROR("Failed to import skool file. Could not save backup of analysis data to '%s'", dataFName.c_str());
 			return false;
 		}
 	}
-	FSkoolFileInfo skoolInfo;
 	// use FSkoolFileInfo pointer if it's passed in. Otherwise use a temporary local struct.
+	FSkoolFileInfo skoolInfo;
 	FSkoolFileInfo* pInfo = pSkoolInfo ? pSkoolInfo : &skoolInfo;
 	if (!ImportSkoolKitFile(CodeAnalysis, pFilename, pSkoolInfo ? pSkoolInfo : pInfo))
 	{
@@ -1921,10 +1926,10 @@ bool FSpectrumEmu::ImportSkoolFile(const char* pFilename, const char* pOutSkoolI
 		return false;
 	}
 
-
-	std::string gameName = pActiveGame ? pActiveGame->pConfig->Name.c_str() : pOutSkoolInfoName;
-	std::string skoolInfoFname("OutputSkoolKit/" + gameName + std::string(".skoolinfo"));
-	EnsureDirectoryExists("OutputSkoolKit");
+	const std::string gameName = pActiveGame ? pActiveGame->pConfig->Name.c_str() : pOutSkoolInfoName;
+	const std::string dir = root + "OutputSkoolKit/";
+	const std::string skoolInfoFname(dir + gameName + std::string(".skoolinfo"));
+	EnsureDirectoryExists(dir.c_str());
 	LOGINFO("Saving skoolinfo file '%s'", skoolInfoFname.c_str());
 	if (!SaveSkoolFileInfo(*pInfo, skoolInfoFname.c_str()))
 	{
@@ -1943,15 +1948,15 @@ bool FSpectrumEmu::ExportSkoolFile(bool bHexadecimal, const char* pName /* = nul
 	if (!pActiveGame)
 		return false;
 	
-	std::string outputDir = "OutputSkoolKit/";
+	const std::string outputDir = "OutputSkoolKit/";
 	EnsureDirectoryExists(outputDir.c_str());
 
-	std::string name = pName ? std::string(pName) : pActiveGame->pConfig->Name;
+	const std::string name = pName ? std::string(pName) : pActiveGame->pConfig->Name;
 	FSkoolFileInfo skoolInfo;
 	std::string skoolInfoFname = outputDir + name + ".skoolinfo";
 	bool bLoadedSkoolFileInfo = LoadSkoolFileInfo(skoolInfo, skoolInfoFname.c_str());
 	
-	std::string outFname = outputDir + name + ".skool";
+	const std::string outFname = outputDir + name + ".skool";
 	::ExportSkoolFile(CodeAnalysis, outFname.c_str(), bHexadecimal ? FSkoolFile::Base::Hexadecimal : FSkoolFile::Base::Decimal, bLoadedSkoolFileInfo ? &skoolInfo : nullptr);
 	
 	return true;
