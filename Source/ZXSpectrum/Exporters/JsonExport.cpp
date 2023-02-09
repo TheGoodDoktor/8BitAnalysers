@@ -316,8 +316,10 @@ void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json & dataInfoJson)
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
 	{
-		pDataInfo->CharSetAddress = dataInfoJson["CharSetAddress"];
-		pDataInfo->EmptyCharNo = dataInfoJson["EmptyCharNo"];
+		if(dataInfoJson.contains("CharSetAddress"))
+			pDataInfo->CharSetAddress = dataInfoJson["CharSetAddress"];
+		if (dataInfoJson.contains("EmptyCharNo"))
+			pDataInfo->EmptyCharNo = dataInfoJson["EmptyCharNo"];
 	}
 }
 

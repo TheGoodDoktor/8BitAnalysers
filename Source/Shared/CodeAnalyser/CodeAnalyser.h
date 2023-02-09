@@ -211,6 +211,7 @@ struct FCodeAnalysisState
 	const char*				GetPageName(int16_t id) { return PageNames[id].c_str(); }
 	int16_t					GetAddressReadPageId(uint16_t addr) { return GetReadPage(addr)->PageId; }
 	int16_t					GetAddressWritePageId(uint16_t addr) { return GetWritePage(addr)->PageId; }
+	const std::vector< FCodeAnalysisPage*>& GetRegisteredPages() const { return RegisteredPages; }
 
 	FCodeAnalysisPage*		ReadPageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
 	FCodeAnalysisPage*		WritePageTable[kAddressSize / FCodeAnalysisPage::kPageSize];

@@ -585,6 +585,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 	}
 }
 
+// Do we want to do this with every page?
 void ResetReferenceInfo(FCodeAnalysisState &state)
 {
 	for (int i = 0; i < (1 << 16); i++)
@@ -667,12 +668,6 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	state.bRebuildFilteredGlobalFunctions = true;
 }
 
-void RegisterCodeAnalysisPage(FCodeAnalysisState& state, FCodeAnalysisPage& page, const char* pName)
-{
-
-}
-
-
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface)
 {
 	InitImageViewers();
@@ -685,7 +680,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	// This won't work with banked memory
 	// we need to reset all the banks
 	// the code analyser needs to know about them
-	for (int i = 0; i < (1 << 16); i++)	// loop across address range
+	/*for (int i = 0; i < (1 << 16); i++)	// loop across address range
 	{
 		// clear item pointers
 		state.SetLabelForAddress(i, nullptr);
@@ -695,6 +690,22 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 		// set up data entry for address
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
 		pDataInfo->Reset((uint16_t)i);
+
+		FCodeAnalysisPage* pPage = state.GetReadPage(i);
+		assert(i >= pPage->BaseAddress && i < pPage->BaseAddress + FCodeAnalysisPage::kPageSize);
+	}*/
+
+	// reset registered pages
+	for (FCodeAnalysisPage* pPage : state.GetRegisteredPages())
+	{
+		for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
+		{
+			pPage->Labels[addr] = nullptr;
+			pPage->CommentBlocks[addr] = nullptr;
+			pPage->CodeInfo[addr] = nullptr;
+			assert(pPage->DataInfo[addr].Address == pPage->BaseAddress + addr);
+			pPage->DataInfo[addr].Reset(pPage->BaseAddress + addr);
+		}
 	}
 
 	FLabelInfo::FreeAll();

@@ -768,14 +768,18 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// ROM
 	for (int pageNo = 0; pageNo < kNoROMPages; pageNo++)
 	{
+		char pageName[32];
+		sprintf(pageName, "ROM:%d", pageNo);
 		ROMPages[pageNo].Initialise(0);
-		//CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &ROMPages[pageNo], &ROMPages[pageNo]);	// Read Only
+		CodeAnalysis.RegisterPage(&ROMPages[pageNo], pageName);
 	}
 	// RAM
 	for (int pageNo = 0; pageNo < kNoRAMPages; pageNo++)
 	{
+		char pageName[32];
+		sprintf(pageName, "RAM:%d", pageNo);
 		RAMPages[pageNo].Initialise(0);
-		//CodeAnalysis.SetCodeAnalysisRWPage(pageNo + kNoSlotPages, &RAMPages[pageNo], &RAMPages[pageNo]);	// Read/Write
+		CodeAnalysis.RegisterPage(&RAMPages[pageNo], pageName);
 	}
 
 	// Setup initial machine memory config
@@ -909,15 +913,15 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 	if (FileExists(analysisJsonFName.c_str()))
 		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-	//else
-	//	LoadGameData(this, dataFName.c_str());
+	else
+		LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
 
 	LoadGameState(this, saveStateFName.c_str());
 
 	if (FileExists(romJsonFName.c_str()))
 		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
-	else
-		LoadROMData(CodeAnalysis, romBinData.c_str());
+	//else
+	//	LoadROMData(CodeAnalysis, romBinData.c_str());
 #else
 	// load game data if we can
 	LoadGameData(this, dataFName.c_str());
