@@ -1118,7 +1118,7 @@ bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
 bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
 {
 	const int index = (int)operandType;
-	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex"};
+	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex", "Binary"};
 	bool bChanged = false;
 
 	if (ImGui::BeginCombo(pLabel, operandTypes[index]))

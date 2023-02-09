@@ -276,6 +276,8 @@ public:
 				dispMode = ENumberDisplayMode::Decimal;
 			if (pCodeInfoItem->OperandType == EOperandType::Hex)
 				dispMode = ENumberDisplayMode::HexAitch;
+			if (pCodeInfoItem->OperandType == EOperandType::Binary)
+				dispMode = ENumberDisplayMode::Binary;
 
 			const char* outStr = NumStr(val, dispMode);
 			for (int i = 0; i < strlen(outStr); i++)
@@ -293,6 +295,8 @@ public:
 				dispMode = ENumberDisplayMode::Decimal;
 			if (pCodeInfoItem->OperandType == EOperandType::Hex)
 				dispMode = ENumberDisplayMode::HexAitch;
+			if (pCodeInfoItem->OperandType == EOperandType::Binary)
+				dispMode = ENumberDisplayMode::Binary;
 
 			const char* outStr = NumStr(val, dispMode);
 			for (int i = 0; i < strlen(outStr); i++)

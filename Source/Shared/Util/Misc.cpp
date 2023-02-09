@@ -5,7 +5,7 @@
 #include <vector>
 
 static ENumberDisplayMode g_NumDispMode = ENumberDisplayMode::HexAitch;
-static const int kTextLength = 8;
+static const int kTextLength = 24;
 static const int kNoStrings = 8;
 int g_StringIndex = 0;
 static char g_TextWorkspace[kNoStrings][kTextLength];
@@ -29,6 +29,15 @@ ENumberDisplayMode GetNumberDisplayMode()
 	return g_NumDispMode;
 }
 
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x80 ? '1' : '0'), \
+  (byte & 0x40 ? '1' : '0'), \
+  (byte & 0x20 ? '1' : '0'), \
+  (byte & 0x10 ? '1' : '0'), \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0') 
 
 const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode)
 {
@@ -47,6 +56,11 @@ const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode)
 	case ENumberDisplayMode::HexDollar:
 		sprintf(pStrAddress, "$%02X", num);
 		return pStrAddress;
+
+	case ENumberDisplayMode::Binary:
+		sprintf(pStrAddress, "%%%c%c%c%c%c%c%c%c", BYTE_TO_BINARY(num));
+		return pStrAddress;
+
 	default:
 		assert(0);
 		return nullptr;
@@ -76,6 +90,11 @@ const char* NumStr(uint16_t num, ENumberDisplayMode numDispMode)
 	case ENumberDisplayMode::HexDollar:
 		sprintf(pStrAddress, "$%04X", num);
 		return pStrAddress;
+
+	case ENumberDisplayMode::Binary:
+		sprintf(pStrAddress, "%%%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", BYTE_TO_BINARY(num>>8), BYTE_TO_BINARY(num));
+		return pStrAddress;
+
 	default:
 		assert(0);
 		return nullptr;

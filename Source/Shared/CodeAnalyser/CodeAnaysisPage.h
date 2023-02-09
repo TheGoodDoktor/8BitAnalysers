@@ -36,7 +36,8 @@ enum class EOperandType
 	Pointer,
 	JumpAddress,
 	Decimal,
-	Hex
+	Hex,
+	Binary
 };
 
 struct FCPUFunctionCall
