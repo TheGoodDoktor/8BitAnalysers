@@ -215,7 +215,7 @@ private:
 	bool	bStepToNextScreenWrite = false;
 
 	bool	bShowDebugLog = false;
-
+	bool	bInitialised = false;
 
 };
 

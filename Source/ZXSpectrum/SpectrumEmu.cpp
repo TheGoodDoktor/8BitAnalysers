@@ -167,6 +167,7 @@ uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const
 
 const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const 
 {
+	#if 0
 	const int bank = address >> 14;
 	const int bankAddr = address & 0x3fff;
 
@@ -174,8 +175,8 @@ const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const
 		return &ZXEmuState.rom[0][bankAddr];
 	else
 		return &ZXEmuState.ram[bank - 1][bankAddr];
-
-	//return MemGetPtr(const_cast<zx_t*>(&ZXEmuState), CurrentLayer, address);
+#endif
+	return MemGetPtr(const_cast<zx_t*>(&ZXEmuState), CurrentLayer, address);
 }
 
 
@@ -606,6 +607,15 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 	return pEmu->Z80Tick(num, pins);
 }
 
+void CheckAddressSpaceItems(const FCodeAnalysisState& state)
+{
+	for (int addr = 0; addr < 1 << 16; addr++)
+	{
+		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addr);
+		assert(pDataInfo->Address == addr);
+	}
+}
+
 // Bank is ROM bank 0 or 1
 // this is always slot 0
 void FSpectrumEmu::SetROMBank(int bankNo)
@@ -622,6 +632,10 @@ void FSpectrumEmu::SetROMBank(int bankNo)
 	}
 
 	CodeAnalysis.SetMemoryRemapped();
+#ifdef _DEBUG
+	if (bInitialised)
+		CheckAddressSpaceItems(CodeAnalysis);
+#endif
 }
 
 // Slot is physical 16K memory region (0-3) 
@@ -646,6 +660,12 @@ void FSpectrumEmu::SetRAMBank(int slot, int bankNo)
 	}
 
 	CodeAnalysis.SetMemoryRemapped();
+
+#ifdef _DEBUG
+	if(bInitialised)
+		CheckAddressSpaceItems(CodeAnalysis);
+#endif
+
 }
 
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
@@ -797,6 +817,10 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
 		SetRAMBank(3, 0);	// 0xc000 - 0xffff
 	}
+
+#ifdef _DEBUG
+	CheckAddressSpaceItems(CodeAnalysis);
+#endif
 	// run initial analysis
 	/*InitialiseCodeAnalysis(CodeAnalysis, this);
 	const std::string root = GetGlobalConfig().WorkspaceRoot;
@@ -842,6 +866,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		//	LoadROMData(CodeAnalysis, romBinData.c_str());
 	}
 
+	bInitialised = true;
 	return true;
 }
 
