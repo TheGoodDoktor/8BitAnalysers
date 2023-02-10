@@ -56,8 +56,8 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #define READ_ANALYSIS_JSON 1
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
-const char* kRomInfo48JsonFile = "AnalysisJson/RomInfo.json";
-const char* kRomInfo128JsonFile = "AnalysisJson/RomInfo128.json";
+const char* kRomInfo48JsonFile = "RomInfo.json";
+const char* kRomInfo128JsonFile = "RomInfo128.json";
 const std::string kAppTitle = "Spectrum Analyser";
 
 /* output an unsigned 8-bit value as hex string */
@@ -850,12 +850,12 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// Start ROM if no game has been loaded
 	if(bLoadedGame == false)
 	{
-		const std::string root = GetGlobalConfig().WorkspaceRoot;
-		std::string romJsonFName = root + kRomInfo48JsonFile;
+		std::string romJsonFName = kRomInfo48JsonFile;
 
 		if (config.Model == ESpectrumModel::Spectrum128K)
-			romJsonFName = root + kRomInfo128JsonFile;
+			romJsonFName = kRomInfo128JsonFile;
 
+		//const std::string root = GetGlobalConfig().WorkspaceRoot;
 		//const std::string romBinData = root + "GameData/RomInfo.bin";
 		
 		InitialiseCodeAnalysis(CodeAnalysis, this);
