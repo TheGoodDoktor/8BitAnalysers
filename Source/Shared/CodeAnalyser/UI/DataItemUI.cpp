@@ -377,6 +377,10 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 			SetNumberDisplayMode(ENumberDisplayMode::Decimal);
 			bShowItemLabel = false;
 			break;
+		case EOperandType::Binary:
+			SetNumberDisplayMode(ENumberDisplayMode::Binary);
+			bShowItemLabel = false;
+			break;
 		case EOperandType::Hex:
 			bShowItemLabel = false;
 			break;

@@ -268,10 +268,27 @@ public:
 	{
 		std::string asmText;
 		char tmp[16] = { 0 };
-		const bool bHex = Base == FSkoolFile::Base::Hexadecimal;
+		
+		ENumberDisplayMode numMode = Base == FSkoolFile::Base::Hexadecimal ? ENumberDisplayMode::HexDollar : ENumberDisplayMode::Decimal;
+		if (pDataInfo->OperandType != EOperandType::Unknown)
+		{
+			switch (pDataInfo->OperandType)
+			{
+			case EOperandType::Decimal:
+				numMode = ENumberDisplayMode::Decimal;
+				break;
+			case EOperandType::Binary:
+				numMode = ENumberDisplayMode::Binary;
+				break;
+			case EOperandType::Hex:
+				numMode = ENumberDisplayMode::HexDollar;
+				break;
+			}
+		}
+
 		if (pDataInfo->DataType == EDataType::Byte)
 		{
-			snprintf(tmp, sizeof(tmp), bHex ? "DEFB $%02X" : "DEFB %u", State.CPUInterface->ReadByte(pDataInfo->Address));
+			snprintf(tmp, sizeof(tmp),  "DEFB %s", NumStr(State.CPUInterface->ReadByte(pDataInfo->Address), numMode));
 			asmText = tmp;
 		}
 		else if (pDataInfo->DataType == EDataType::ByteArray 
@@ -285,7 +302,7 @@ public:
 			const uint16_t numItems = pDataInfo->ByteSize;
 			for (int i=0; i<numItems; i++)
 			{
-				snprintf(tmp, sizeof(tmp), bHex ? "$%02X," : "%u,", State.CPUInterface->ReadByte(pDataInfo->Address + i));
+				snprintf(tmp, sizeof(tmp),  "%s,", NumStr(State.CPUInterface->ReadByte(pDataInfo->Address + i), numMode));
 				asmText += tmp;
 			}
 			// remove last comma
@@ -293,7 +310,7 @@ public:
 		}
 		else if (pDataInfo->DataType == EDataType::Word)
 		{
-			snprintf(tmp, sizeof(tmp), bHex ? "DEFW $%04X" : "DEFW %u", State.CPUInterface->ReadWord(pDataInfo->Address));
+			snprintf(tmp, sizeof(tmp), "DEFW %s", NumStr(State.CPUInterface->ReadByte(pDataInfo->Address), numMode));
 			asmText = tmp;
 		}
 		else if (pDataInfo->DataType == EDataType::WordArray)
@@ -302,7 +319,7 @@ public:
 			asmText = "DEFW ";
 			for (int i = 0; i < numItems; i++)
 			{
-				snprintf(tmp, sizeof(tmp), bHex ? "$%04X," : "%d,", State.CPUInterface->ReadWord(pDataInfo->Address + i));
+				snprintf(tmp, sizeof(tmp), "%s,", NumStr(State.CPUInterface->ReadWord(pDataInfo->Address + i), numMode));
 				asmText += tmp;
 			}
 			// remove last comma
@@ -324,7 +341,7 @@ public:
 						if (bInString)
 							asmText += "\","; // close quote
 
-						snprintf(tmp, sizeof(tmp), bHex ? "\"%c\"+$80" : "\"%c\"+128", ch & 0x7f);
+						snprintf(tmp, sizeof(tmp), Base == FSkoolFile::Base::Hexadecimal ? "\"%c\"+$80" : "\"%c\"+128", ch & 0x7f);
 						asmText += tmp;
 						bInString = false;
 					}
@@ -348,7 +365,7 @@ public:
 						bInString = false;
 					}
 
-					snprintf(tmp, sizeof(tmp), bHex ? "$%02X" : "%d", ch);
+					snprintf(tmp, sizeof(tmp), Base == FSkoolFile::Base::Hexadecimal ? "$%02X" : "%d", ch);
 						
 					asmText += tmp;
 
@@ -367,7 +384,7 @@ public:
 		}
 		else
 		{
-			asmText = "TODO";
+			asmText = "UNKNOWN DATA TYPE";
 #ifndef NDEBUG
 			assert(0);
 #endif // !NDEBUG

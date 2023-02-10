@@ -20,6 +20,8 @@ public:
 				dispMode = ENumberDisplayMode::Decimal;
 			if (pCodeInfoItem->OperandType == EOperandType::Hex)
 				dispMode = HexDisplayMode;
+			if (pCodeInfoItem->OperandType == EOperandType::Binary)
+				dispMode = ENumberDisplayMode::Binary;
 
 			const char* outStr = NumStr(val, dispMode);
 			for (int i = 0; i < strlen(outStr); i++)
@@ -48,6 +50,8 @@ public:
 					dispMode = ENumberDisplayMode::Decimal;
 				if (pCodeInfoItem->OperandType == EOperandType::Hex)
 					dispMode = HexDisplayMode;
+				if (pCodeInfoItem->OperandType == EOperandType::Binary)
+					dispMode = ENumberDisplayMode::Binary;
 
 				const char* outStr = NumStr(val, dispMode);
 				for (int i = 0; i < strlen(outStr); i++)
@@ -214,6 +218,8 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				dispMode = ENumberDisplayMode::Decimal;
 			if (pDataInfo->OperandType == EOperandType::Hex)
 				dispMode = hexMode;
+			if (pDataInfo->OperandType == EOperandType::Binary)
+				dispMode = ENumberDisplayMode::Binary;
 
 			const bool bOperandIsAddress = (pDataInfo->OperandType == EOperandType::JumpAddress || pDataInfo->OperandType == EOperandType::Pointer);
 
