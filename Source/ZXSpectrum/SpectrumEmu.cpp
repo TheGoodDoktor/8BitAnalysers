@@ -929,7 +929,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	const std::string romBinData = root + "GameData/RomInfo.bin";
 	const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 #if READ_ANALYSIS_JSON
-	std::string romJsonFName = root + kRomInfo48JsonFile;
+	std::string romJsonFName = kRomInfo48JsonFile;
 
 	if (ZXEmuState.type == ZX_TYPE_128)
 		romJsonFName = root + kRomInfo128JsonFile;
