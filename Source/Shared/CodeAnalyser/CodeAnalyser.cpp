@@ -210,11 +210,11 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 	return textString;
 }
 
-bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabelType labelType)
+FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabelType labelType)
 {
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel != nullptr)
-		return false;
+		return nullptr;
 		
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
@@ -258,8 +258,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabel
 	if (pLabel->Global)
 		GenerateGlobalInfo(state);
 	state.SetLabelForAddress(address, pLabel);
-	return true;
-	
+	return pLabel;	
 }
 
 
@@ -816,8 +815,10 @@ void SetItemImage(FCodeAnalysisState& state, FItem* pItem)
 	}
 }
 
-void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
+FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 {
+	FLabelInfo* pNewLabel = nullptr;
+
 	if (state.GetLabelForAddress(address) == nullptr)
 	{
 		ELabelType labelType = ELabelType::Data;
@@ -828,10 +829,12 @@ void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 		if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 			labelType = ELabelType::Code;
 
-		GenerateLabelForAddress(state, address, labelType);
+		pNewLabel = GenerateLabelForAddress(state, address, labelType);
 		
 		state.SetCodeAnalysisDirty();
 	}
+
+	return pNewLabel;
 }
 
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)

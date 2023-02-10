@@ -356,7 +356,7 @@ public:
 
 // Analysis
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
-bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
+FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
 void ReAnalyseCode(FCodeAnalysisState &state);
@@ -374,7 +374,7 @@ void Undo(FCodeAnalysisState &state);
 
 FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type);
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
-void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
+FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
 //void SetItemCode(FCodeAnalysisState& state, uint16_t addr);

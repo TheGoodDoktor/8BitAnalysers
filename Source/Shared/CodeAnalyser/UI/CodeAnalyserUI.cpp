@@ -678,6 +678,16 @@ int CommentInputCallback(ImGuiInputTextCallbackData *pData)
 	return 1;
 }
 
+void AddLabelAtAddressUI(FCodeAnalysisState& state,uint16_t address)
+{
+	FLabelInfo* pLabel = AddLabelAtAddress(state, address);
+	if (pLabel != nullptr)
+	{
+		state.GetFocussedViewState().SetCursorItem(pLabel);
+		ImGui::OpenPopup("Enter Label Text");
+		ImGui::SetWindowFocus("Enter Label Text");
+	}
+}
 
 void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
@@ -722,7 +732,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddLabel]))
 		{
-			AddLabelAtAddress(state, pCursorItem->Address);
+			AddLabelAtAddressUI(state, pCursorItem->Address);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]))
 		{
@@ -976,7 +986,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, FItem *pItem)
 		{
 			if (ImGui::Selectable("Add label (L)"))
 			{
-				AddLabelAtAddress(state, pItem->Address);
+				AddLabelAtAddressUI(state, pItem->Address);
 			}
 		}
 
