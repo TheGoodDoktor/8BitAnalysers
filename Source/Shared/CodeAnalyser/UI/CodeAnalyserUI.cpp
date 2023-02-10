@@ -1549,18 +1549,22 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	}
 }
 
-
-
 void GenerateFilteredLabelList(const FLabelListFilter&filter,const std::vector<FLabelInfo*>& sourceLabelList, std::vector<FLabelInfo*>& filteredList)
 {
 	filteredList.clear();
+
+	std::string filterTextLower = filter.FilterText;
+	std::transform(filterTextLower.begin(), filterTextLower.end(), filterTextLower.begin(), [](unsigned char c){ return std::tolower(c); });
 
 	for (FLabelInfo* pLabelInfo : sourceLabelList)
 	{
 		if (pLabelInfo->Address < filter.MinAddress || pLabelInfo->Address > filter.MaxAddress)	// skip min address
 			continue;
+		
+		std::string labelTextLower = pLabelInfo->Name;
+		std::transform(labelTextLower.begin(), labelTextLower.end(), labelTextLower.begin(), [](unsigned char c){ return std::tolower(c); });
 
-		if (filter.FilterText.empty() || pLabelInfo->Name.find(filter.FilterText) != std::string::npos)
+		if (filter.FilterText.empty() || labelTextLower.find(filterTextLower) != std::string::npos)
 			filteredList.push_back(pLabelInfo);
 	}
 }
