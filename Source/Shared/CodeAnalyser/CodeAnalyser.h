@@ -170,7 +170,7 @@ struct FCodeAnalysisViewState
 	bool	GoToLabel = false;
 
 	// for global Filters
-	bool						ShowROMLabels = true;
+	bool						ShowROMLabels = false;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector< FLabelInfo*>	FilteredGlobalDataItems;
 	FLabelListFilter			GlobalFunctionsFilter;
