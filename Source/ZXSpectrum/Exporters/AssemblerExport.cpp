@@ -153,7 +153,7 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, uint16_t addr)
 
 uint16_t g_DbgAddress = 0xEA71;
 
-bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
+bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint16_t startAddr /* = kScreenAttrMemEnd + 1*/, uint16_t endAddr /* = 0xffff */)
 {
 	FILE* fp =fopen(pTextFileName, "wt");
 
@@ -167,12 +167,13 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 
 	// TODO: write screen memory regions
 
-	const uint16_t startAddr = kScreenAttrMemEnd + 1;	// start at the end of attrib memory
-
 	for (FItem* pItem : state.ItemList)
 	{
 		if (pItem->Address < startAddr)
 			continue;
+
+		if (pItem->Address > endAddr)
+			break;
 
 		switch (pItem->Type)
 		{

@@ -147,7 +147,7 @@ struct FDataFormattingOptions
 struct FLabelListFilter
 {
 	std::string		FilterText;
-	uint16_t		MinAddress = 0;
+	uint16_t		MinAddress = 0x4000;
 	uint16_t		MaxAddress = 0xffff;
 };
 
@@ -170,7 +170,7 @@ struct FCodeAnalysisViewState
 	bool	GoToLabel = false;
 
 	// for global Filters
-	bool						ShowROMLabels = true;
+	bool						ShowROMLabels = false;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector< FLabelInfo*>	FilteredGlobalDataItems;
 	FLabelListFilter			GlobalFunctionsFilter;

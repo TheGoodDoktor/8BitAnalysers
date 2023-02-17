@@ -1034,6 +1034,8 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 	ui_zx_t* pZXUI = &UIZX;
 	assert(pZXUI && pZXUI->zx && pZXUI->boot_cb);
 		
+	bool bExportAsm = false;
+
 	if (ImGui::BeginMainMenuBar()) 
 	{
 		if (ImGui::BeginMenu("File"))
@@ -1124,16 +1126,10 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 			if (ImGui::MenuItem("Export ASM File"))
 			{
-				if (pActiveGame != nullptr)
-				{
-					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputASM/";
-					EnsureDirectoryExists(dir.c_str());
-					std::string outBinFname = dir + pActiveGame->pConfig->Name + ".asm";
-
-					ExportAssembler(CodeAnalysis, outBinFname.c_str());
-				}
+				// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
+				bExportAsm = true;
 			}
-
+			
 			if (ImGui::BeginMenu("Export Skool File"))
 			{
 				if (ImGui::MenuItem("Export as Hexadecimal"))
@@ -1363,6 +1359,54 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		ImGui::EndMainMenuBar();
 	}
 
+	if (bExportAsm)
+	{
+		ImGui::OpenPopup("Export ASM File");
+	}
+	if (ImGui::BeginPopupModal("Export ASM File", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		static ImU16 addrStart = kScreenAttrMemEnd + 1;
+		static ImU16 addrEnd = 0xffff;
+
+		ImGui::Text("Address range to export");
+		bool bHex = GetNumberDisplayMode() != ENumberDisplayMode::Decimal;
+		const char* formatStr = bHex ? "%x" : "%u";
+		ImGuiInputTextFlags flags = bHex ? ImGuiInputTextFlags_CharsHexadecimal : ImGuiInputTextFlags_CharsDecimal;
+
+		ImGui::InputScalar("Start", ImGuiDataType_U16, &addrStart, NULL, NULL, formatStr, flags);
+		ImGui::SameLine();
+		ImGui::InputScalar("End", ImGuiDataType_U16, &addrEnd, NULL, NULL, formatStr, flags);
+
+		if (ImGui::Button("Export", ImVec2(120, 0))) 
+		{ 
+			if (addrEnd > addrStart)
+			{
+				if (pActiveGame != nullptr)
+				{
+					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputASM/";
+					EnsureDirectoryExists(dir.c_str());
+				
+					char addrRangeStr[16];
+					if (bHex)
+						snprintf(addrRangeStr, 16, "_%x_%x", addrStart, addrEnd);
+					else
+						snprintf(addrRangeStr, 16, "_%u_%u", addrStart, addrEnd);
+
+					std::string outBinFname = dir + pActiveGame->pConfig->Name + addrRangeStr + ".asm";
+
+					ExportAssembler(CodeAnalysis, outBinFname.c_str(), addrStart, addrEnd);
+				}
+				ImGui::CloseCurrentPopup(); 
+			}
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) 
+		{ 
+			ImGui::CloseCurrentPopup(); 
+		}
+		ImGui::EndPopup();
+	}
 }
 
 static void UpdateMemmap(ui_zx_t* ui)
