@@ -55,6 +55,9 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #define ENABLE_RZX 0
 #define SAVE_ROM_JSON 0
 
+#define ENABLE_CAPTURES 0
+const int kCaptureTrapId = 0xffff;
+
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const char* kRomInfo48JsonFile = "RomInfo.json";
 const char* kRomInfo128JsonFile = "RomInfo128.json";
@@ -465,7 +468,14 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 			return UI_DBG_BP_BASE_TRAPID;
 		}
 	}
-
+#if ENABLE_CAPTURES
+	FLabelInfo* pLabel = state.GetLabelForAddress(pc);
+	if (pLabel != nullptr)
+	{
+		if(pLabel->LabelType == ELabelType::Function)
+			trapId = kCaptureTrapId;
+	}
+#endif
 	// work out stack size
 	const uint16_t sp = z80_sp(&ZXEmuState.cpu);	// this won't get the proper stack pos (see comment above function)
 	if (sp == state.StackMin - 2 || state.StackMin == 0xffff)
@@ -753,7 +763,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	// additional debugger config
 	//pUI->UIZX.dbg.ui.open = true;
-	UIZX.dbg.break_cb = UIEvalBreakpoint;
+	//UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
 	// This is where we add the viewers we want
 	Viewers.push_back(new FBreakpointViewer(this));
@@ -1425,9 +1435,33 @@ void FSpectrumEmu::Tick()
 		// TODO: Start frame method in analyser
 		CodeAnalysis.FrameTrace.clear();
 		StoreRegisters_Z80(CodeAnalysis);
+#if ENABLE_CAPTURES
+		const uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
+		uint32_t ticks_executed = 0;
+		while (UIZX.dbg.dbg.z80->trap_id != kCaptureTrapId && ticks_executed < ticks_to_run)
+		{
+			ticks_executed += z80_exec(&ZXEmuState.cpu, ticks_to_run - ticks_executed);
 
+			if (UIZX.dbg.dbg.z80->trap_id == kCaptureTrapId)
+			{
+				const uint16_t PC = GetPC();
+				FMachineState* pMachineState = CodeAnalysis.GetMachineState(PC);
+				if (pMachineState == nullptr)
+				{
+					pMachineState = AllocateMachineState(CodeAnalysis);
+					CodeAnalysis.SetMachineStateForAddress(PC, pMachineState);
+				}
+
+				CaptureMachineState(pMachineState, this);
+				UIZX.dbg.dbg.z80->trap_id = 0;
+				_ui_dbg_continue(&UIZX.dbg);
+			}
+		}
+		clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
+		kbd_update(&ZXEmuState.kbd);
+#else
 		zx_exec(&ZXEmuState, microSeconds);
-
+#endif
 		/*if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
 			assert(ZXEmuState.valid);
@@ -1463,8 +1497,9 @@ void FSpectrumEmu::Tick()
 			bStepToNextFrame = false;
 		}
 
+		
 		// on debug break send code analyser to address
-		if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
+		else if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
 		{
 			CodeAnalyserGoToAddress(CodeAnalysis.GetFocussedViewState(), GetPC());
 		}

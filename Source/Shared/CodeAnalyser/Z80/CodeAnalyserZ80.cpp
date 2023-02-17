@@ -348,3 +348,58 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 	return false;
 }
 
+std::vector<FMachineStateZ80*> g_FreeMachineStates;
+std::vector<FMachineStateZ80*> g_AllocatedMachineStates;
+
+// Machine state & capture
+FMachineStateZ80* AllocateMachineStateZ80()
+{
+	FMachineStateZ80* pNewState = nullptr;
+	
+	if (g_FreeMachineStates.empty())
+	{
+		pNewState = new FMachineStateZ80;
+	}
+	else
+	{
+		pNewState = g_FreeMachineStates.back();
+		g_FreeMachineStates.pop_back();
+	}
+
+	g_AllocatedMachineStates.push_back(pNewState);
+	return pNewState;
+}
+
+void FreeMachineStatesZ80()
+{
+	for (FMachineStateZ80* pState : g_AllocatedMachineStates)
+	{
+		g_FreeMachineStates.push_back(pState);
+	}
+	g_AllocatedMachineStates.clear();
+}
+
+void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInterface)
+{
+	z80_t* pCPU = (z80_t*)pCPUInterface->GetCPUEmulator();
+	FMachineStateZ80* pMachineStateZ80 = static_cast<FMachineStateZ80 *>(pMachineState);
+
+	pMachineStateZ80->AF = z80_af(pCPU);
+	pMachineStateZ80->BC = z80_bc(pCPU);
+	pMachineStateZ80->DE = z80_de(pCPU);
+	pMachineStateZ80->HL = z80_hl(pCPU);
+	pMachineStateZ80->AF_ = z80_af_(pCPU);
+	pMachineStateZ80->BC_ = z80_bc_(pCPU);
+	pMachineStateZ80->DE_ = z80_de_(pCPU);
+	pMachineStateZ80->HL_ = z80_hl_(pCPU);
+	pMachineStateZ80->IX = z80_ix(pCPU);
+	pMachineStateZ80->IY = z80_iy(pCPU);
+	pMachineStateZ80->SP = z80_sp(pCPU);
+	pMachineStateZ80->PC = z80_pc(pCPU);
+	pMachineStateZ80->I = z80_i(pCPU);
+	pMachineStateZ80->R = z80_r(pCPU);
+	pMachineStateZ80->IM = z80_im(pCPU);
+
+	for (int stackVal = 0; stackVal < FMachineStateZ80::kNoStackEntries; stackVal++)
+		pMachineStateZ80->Stack[stackVal] = pCPUInterface->ReadWord(pMachineStateZ80->SP - (stackVal * 2));
+}

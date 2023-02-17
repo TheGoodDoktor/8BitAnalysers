@@ -18,6 +18,8 @@
 
 // UI
 void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i);
+void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
+void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
 
 void GoToAddress(FCodeAnalysisViewState&state, uint16_t newAddress, bool bLabel = false)
 {
@@ -525,6 +527,14 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		
 		dl->AddCircleFilled(mid, 7, bp_enabled_color);
 		dl->AddCircle(mid, 7, brd_color);
+	}
+
+	if (state.GetMachineState(pCodeInfo->Address))
+	{
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const ImVec2 pos = ImGui::GetCursorScreenPos();
+
+		dl->AddRectFilled(ImVec2(pos.x-12, pos.y), ImVec2(pos.x - 8, pos.y + line_height), 0xFFFF0000);
 	}
 
 	if(pCodeInfo->bSelfModifyingCode == true || pCodeInfo->Text.empty())
@@ -1382,7 +1392,32 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	{
 		float height = ImGui::GetWindowContentRegionMax().y - ImGui::GetWindowContentRegionMin().y;
 		if (ImGui::BeginChild("##cadetails", ImVec2(0, height / 2), true))
-			DrawDetailsPanel(state, viewState);
+		{
+			if (ImGui::BeginTabBar("details_tab_bar"))
+			{
+				if (ImGui::BeginTabItem("Details"))
+				{
+					DrawDetailsPanel(state, viewState);
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Capture"))
+				{
+					DrawCaptureTab(state, viewState);
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Format"))
+				{
+					DrawFormatTab(state, viewState);
+					ImGui::EndTabItem();
+				}
+				else
+				{
+					viewState.DataFormattingTabOpen = false;
+				}
+
+				ImGui::EndTabBar();
+			}
+		}
 		ImGui::EndChild();
 		if (ImGui::BeginChild("##caglobals", ImVec2(0, 0), true))
 			DrawGlobals(state, viewState);
@@ -1627,19 +1662,30 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 			ImGui::EndTabItem();
 		}
 
-		// TODO: This should be somewhere else
-		if (ImGui::BeginTabItem("Format"))	
-		{
-			DrawFormatTab(state, viewState);
-			ImGui::EndTabItem();
-		}
-		else
-		{
-			viewState.DataFormattingTabOpen = false;
-		}
+		
 
 		ImGui::EndTabBar();
 	}
+}
+
+
+void DrawMachineStateZ80(const FMachineState* pMachineState, FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
+
+void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+{
+	const FItem* pItem = viewState.GetCursorItem();
+	if (pItem == nullptr)
+		return;
+
+	const uint16_t address = pItem->Address;
+	const FMachineState* pMachineState = state.GetMachineState(address);
+	if (pMachineState == nullptr)
+		return;
+
+	// TODO: display machine state
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		DrawMachineStateZ80(pMachineState, state,viewState);
+
 }
 
 // Util functions - move?
