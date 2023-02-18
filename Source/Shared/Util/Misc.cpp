@@ -58,7 +58,7 @@ const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode)
 		return pStrAddress;
 
 	case ENumberDisplayMode::Binary:
-		sprintf(pStrAddress, "%%%c%c%c%c%c%c%c%c", BYTE_TO_BINARY(num));
+		sprintf(pStrAddress, "%c%c%c%c%c%c%c%c%c", '%', BYTE_TO_BINARY(num));
 		return pStrAddress;
 
 	default:
@@ -92,7 +92,7 @@ const char* NumStr(uint16_t num, ENumberDisplayMode numDispMode)
 		return pStrAddress;
 
 	case ENumberDisplayMode::Binary:
-		sprintf(pStrAddress, "%%%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", BYTE_TO_BINARY(num>>8), BYTE_TO_BINARY(num));
+		sprintf(pStrAddress, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", '%', BYTE_TO_BINARY(num>>8), BYTE_TO_BINARY(num));
 		return pStrAddress;
 
 	default:
