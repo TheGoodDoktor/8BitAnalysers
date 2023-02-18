@@ -172,10 +172,10 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 		if (item.Address < startAddr)
 			continue;
 
-		if (pItem->Address > endAddr)
+		if (item.Address > endAddr)
 			break;
 
-		switch (pItem->Type)
+		switch (item.Item->Type)
 		{
 		case EItemType::Label:
 		{

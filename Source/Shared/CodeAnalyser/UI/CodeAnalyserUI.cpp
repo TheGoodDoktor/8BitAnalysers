@@ -494,7 +494,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		dl->AddCircle(mid, 7, brd_color);
 	}
 
-	if (state.GetMachineState(pCodeInfo->Address))
+	if (state.GetMachineState(item.Address))
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -663,7 +663,7 @@ void AddLabelAtAddressUI(FCodeAnalysisState& state,uint16_t address)
 	FLabelInfo* pLabel = AddLabelAtAddress(state, address);
 	if (pLabel != nullptr)
 	{
-		state.GetFocussedViewState().SetCursorItem(pLabel);
+		state.GetFocussedViewState().SetCursorItem(FCodeAnalysisItem(pLabel,address));
 		ImGui::OpenPopup("Enter Label Text");
 		ImGui::SetWindowFocus("Enter Label Text");
 	}
@@ -711,7 +711,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddLabel]))
 		{
-			AddLabelAtAddressUI(state, pCursorItem->Address);
+			AddLabelAtAddressUI(state, cursorItem.Address);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]))
 		{
@@ -971,9 +971,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 		{
 			if (ImGui::Selectable("Add label (L)"))
 			{
-				AddLabelAtAddress(state, pItem->Address);
-				AddLabelAtAddress(state, item.Address);
-				AddLabelAtAddressUI(state, pItem->Address);
+				AddLabelAtAddressUI(state, item.Address);
 			}
 		}
 
@@ -1581,16 +1579,17 @@ void GenerateFilteredLabelList(const FLabelListFilter&filter,const std::vector<F
 	std::string filterTextLower = filter.FilterText;
 	std::transform(filterTextLower.begin(), filterTextLower.end(), filterTextLower.begin(), [](unsigned char c){ return std::tolower(c); });
 
-	for (FLabelInfo* pLabelInfo : sourceLabelList)
+	for (const FCodeAnalysisItem& labelItem : sourceLabelList)
 	{
-		if (item.Address < filter.MinAddress || item.Address > filter.MaxAddress)	// skip min address
+		if (labelItem.Address < filter.MinAddress || labelItem.Address > filter.MaxAddress)	// skip min address
 			continue;
 		
+		const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(labelItem.Item);
 		std::string labelTextLower = pLabelInfo->Name;
 		std::transform(labelTextLower.begin(), labelTextLower.end(), labelTextLower.begin(), [](unsigned char c){ return std::tolower(c); });
 
 		if (filter.FilterText.empty() || labelTextLower.find(filterTextLower) != std::string::npos)
-			filteredList.push_back(item);
+			filteredList.push_back(labelItem);
 	}
 }
 
@@ -1653,11 +1652,11 @@ void DrawMachineStateZ80(const FMachineState* pMachineState, FCodeAnalysisState&
 
 void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
-	const FItem* pItem = viewState.GetCursorItem();
-	if (pItem == nullptr)
+	const FCodeAnalysisItem& item = viewState.GetCursorItem();
+	if (item.IsValid() == false)
 		return;
 
-	const uint16_t address = pItem->Address;
+	const uint16_t address = item.Address;
 	const FMachineState* pMachineState = state.GetMachineState(address);
 	if (pMachineState == nullptr)
 		return;
