@@ -216,6 +216,12 @@ private:
 	static std::vector<FCommentLine*>	FreeList;
 };
 
+// abstract machine state class - device specific
+struct FMachineState
+{
+
+};
+
 struct FCodeAnalysisPage
 {
 	void Initialise(uint16_t address);
@@ -235,4 +241,6 @@ struct FCodeAnalysisPage
 	FDataInfo		DataInfo[kPageSize];
 	FCommentBlock*	CommentBlocks[kPageSize];
 	uint16_t		LastWriter[kPageSize];
+
+	FMachineState*	MachineState[kPageSize];
 };

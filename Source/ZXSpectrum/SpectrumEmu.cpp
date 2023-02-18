@@ -53,11 +53,14 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "App.h"
 
 #define ENABLE_RZX 0
-#define READ_ANALYSIS_JSON 1
+#define SAVE_ROM_JSON 0
+
+#define ENABLE_CAPTURES 0
+const int kCaptureTrapId = 0xffff;
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
-const char* kRomInfo48JsonFile = "AnalysisJson/RomInfo.json";
-const char* kRomInfo128JsonFile = "AnalysisJson/RomInfo128.json";
+const char* kRomInfo48JsonFile = "RomInfo.json";
+const char* kRomInfo128JsonFile = "RomInfo128.json";
 const std::string kAppTitle = "Spectrum Analyser";
 
 /* output an unsigned 8-bit value as hex string */
@@ -167,16 +170,20 @@ uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const
 
 const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const 
 {
-#if 0
-	const int bank = address >> 14;
-	const int bankAddr = address & 0x3fff;
+	if (ZXEmuState.type == ZX_TYPE_48K)
+	{
+		const int bank = address >> 14;
+		const int bankAddr = address & 0x3fff;
 
-	if (bank == 0)
-		return &ZXEmuState.rom[0][bankAddr];
+		if (bank == 0)
+			return &ZXEmuState.rom[0][bankAddr];
+		else
+			return &ZXEmuState.ram[bank - 1][bankAddr];
+	}
 	else
-		return &ZXEmuState.ram[bank - 1][bankAddr];
-#endif
-	return MemGetPtr(const_cast<zx_t*>(&ZXEmuState), CurrentLayer, address);
+	{
+		return MemGetPtr(const_cast<zx_t*>(&ZXEmuState), CurrentLayer, address);
+	}
 }
 
 
@@ -461,7 +468,14 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 			return UI_DBG_BP_BASE_TRAPID;
 		}
 	}
-
+#if ENABLE_CAPTURES
+	FLabelInfo* pLabel = state.GetLabelForAddress(pc);
+	if (pLabel != nullptr)
+	{
+		if(pLabel->LabelType == ELabelType::Function)
+			trapId = kCaptureTrapId;
+	}
+#endif
 	// work out stack size
 	const uint16_t sp = z80_sp(&ZXEmuState.cpu);	// this won't get the proper stack pos (see comment above function)
 	if (sp == state.StackMin - 2 || state.StackMin == 0xffff)
@@ -750,7 +764,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	// additional debugger config
 	//pUI->UIZX.dbg.ui.open = true;
-	UIZX.dbg.break_cb = UIEvalBreakpoint;
+	//UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
 	// This is where we add the viewers we want
 	Viewers.push_back(new FBreakpointViewer(this));
@@ -822,20 +836,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 #ifdef _DEBUG
 	CheckAddressSpaceItems(CodeAnalysis);
 #endif
-	// run initial analysis
-	/*InitialiseCodeAnalysis(CodeAnalysis, this);
-	const std::string root = GetGlobalConfig().WorkspaceRoot;
-	const std::string romBinData = root + "GameData/RomInfo.bin";
-#if READ_ANALYSIS_JSON
-	const std::string romJsonFName = root + kRomInfoJsonFile;
-	if(FileExists(romJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
-	else
-		LoadROMData(CodeAnalysis, romBinData.c_str());
-#else
-	LoadROMData(CodeAnalysis, romBinData.c_str());
-#endif*/
-
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
 
@@ -851,20 +851,15 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// Start ROM if no game has been loaded
 	if(bLoadedGame == false)
 	{
-		const std::string root = GetGlobalConfig().WorkspaceRoot;
-		std::string romJsonFName = root + kRomInfo48JsonFile;
+		std::string romJsonFName = kRomInfo48JsonFile;
 
 		if (config.Model == ESpectrumModel::Spectrum128K)
-			romJsonFName = root + kRomInfo128JsonFile;
+			romJsonFName = kRomInfo128JsonFile;
 
-		//const std::string romBinData = root + "GameData/RomInfo.bin";
-		
 		InitialiseCodeAnalysis(CodeAnalysis, this);
 
 		if (FileExists(romJsonFName.c_str()))
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
-		//else
-		//	LoadROMData(CodeAnalysis, romBinData.c_str());
 	}
 
 	bInitialised = true;
@@ -927,10 +922,8 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	}
 
 	const std::string root = GetGlobalConfig().WorkspaceRoot;
-	const std::string romBinData = root + "GameData/RomInfo.bin";
 	const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
-#if READ_ANALYSIS_JSON
-	std::string romJsonFName = root + kRomInfo48JsonFile;
+	std::string romJsonFName = kRomInfo48JsonFile;
 
 	if (ZXEmuState.type == ZX_TYPE_128)
 		romJsonFName = root + kRomInfo128JsonFile;
@@ -946,13 +939,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 
 	if (FileExists(romJsonFName.c_str()))
 		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
-	//else
-	//	LoadROMData(CodeAnalysis, romBinData.c_str());
-#else
-	// load game data if we can
-	LoadGameData(this, dataFName.c_str());
-	LoadROMData(CodeAnalysis, romJsonFName.c_str());
-#endif
+
 	// where do we want pokes to live?
 	LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
@@ -1036,11 +1023,8 @@ void FSpectrumEmu::SaveCurrentGameData()
 		}
 	}
 
-	// Disabled saving as binary, maybe have as an option? 
-	// SaveROMData(CodeAnalysis, "GameData/RomInfo.bin");
-	
-	// Only save ROM json if we've previously read the binary
-#if	!READ_ANALYSIS_JSON
+	// TODO: this could use
+#if	SAVE_ROM_JSON
 	const std::string romJsonFName = root + kRomInfoJsonFile;
 	ExportROMJson(CodeAnalysis, romJsonFName.c_str());
 #endif
@@ -1051,6 +1035,8 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 	ui_zx_t* pZXUI = &UIZX;
 	assert(pZXUI && pZXUI->zx && pZXUI->boot_cb);
 		
+	bool bExportAsm = false;
+
 	if (ImGui::BeginMainMenuBar()) 
 	{
 		if (ImGui::BeginMenu("File"))
@@ -1141,16 +1127,10 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 			if (ImGui::MenuItem("Export ASM File"))
 			{
-				if (pActiveGame != nullptr)
-				{
-					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputASM/";
-					EnsureDirectoryExists(dir.c_str());
-					std::string outBinFname = dir + pActiveGame->pConfig->Name + ".asm";
-
-					ExportAssembler(CodeAnalysis, outBinFname.c_str());
-				}
+				// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
+				bExportAsm = true;
 			}
-
+			
 			if (ImGui::BeginMenu("Export Skool File"))
 			{
 				if (ImGui::MenuItem("Export as Hexadecimal"))
@@ -1380,6 +1360,54 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		ImGui::EndMainMenuBar();
 	}
 
+	if (bExportAsm)
+	{
+		ImGui::OpenPopup("Export ASM File");
+	}
+	if (ImGui::BeginPopupModal("Export ASM File", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		static ImU16 addrStart = kScreenAttrMemEnd + 1;
+		static ImU16 addrEnd = 0xffff;
+
+		ImGui::Text("Address range to export");
+		bool bHex = GetNumberDisplayMode() != ENumberDisplayMode::Decimal;
+		const char* formatStr = bHex ? "%x" : "%u";
+		ImGuiInputTextFlags flags = bHex ? ImGuiInputTextFlags_CharsHexadecimal : ImGuiInputTextFlags_CharsDecimal;
+
+		ImGui::InputScalar("Start", ImGuiDataType_U16, &addrStart, NULL, NULL, formatStr, flags);
+		ImGui::SameLine();
+		ImGui::InputScalar("End", ImGuiDataType_U16, &addrEnd, NULL, NULL, formatStr, flags);
+
+		if (ImGui::Button("Export", ImVec2(120, 0))) 
+		{ 
+			if (addrEnd > addrStart)
+			{
+				if (pActiveGame != nullptr)
+				{
+					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputASM/";
+					EnsureDirectoryExists(dir.c_str());
+				
+					char addrRangeStr[16];
+					if (bHex)
+						snprintf(addrRangeStr, 16, "_%x_%x", addrStart, addrEnd);
+					else
+						snprintf(addrRangeStr, 16, "_%u_%u", addrStart, addrEnd);
+
+					std::string outBinFname = dir + pActiveGame->pConfig->Name + addrRangeStr + ".asm";
+
+					ExportAssembler(CodeAnalysis, outBinFname.c_str(), addrStart, addrEnd);
+				}
+				ImGui::CloseCurrentPopup(); 
+			}
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) 
+		{ 
+			ImGui::CloseCurrentPopup(); 
+		}
+		ImGui::EndPopup();
+	}
 }
 
 static void UpdateMemmap(ui_zx_t* ui)
@@ -1452,9 +1480,33 @@ void FSpectrumEmu::Tick()
 		// TODO: Start frame method in analyser
 		CodeAnalysis.FrameTrace.clear();
 		StoreRegisters_Z80(CodeAnalysis);
+#if ENABLE_CAPTURES
+		const uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
+		uint32_t ticks_executed = 0;
+		while (UIZX.dbg.dbg.z80->trap_id != kCaptureTrapId && ticks_executed < ticks_to_run)
+		{
+			ticks_executed += z80_exec(&ZXEmuState.cpu, ticks_to_run - ticks_executed);
 
+			if (UIZX.dbg.dbg.z80->trap_id == kCaptureTrapId)
+			{
+				const uint16_t PC = GetPC();
+				FMachineState* pMachineState = CodeAnalysis.GetMachineState(PC);
+				if (pMachineState == nullptr)
+				{
+					pMachineState = AllocateMachineState(CodeAnalysis);
+					CodeAnalysis.SetMachineStateForAddress(PC, pMachineState);
+				}
+
+				CaptureMachineState(pMachineState, this);
+				UIZX.dbg.dbg.z80->trap_id = 0;
+				_ui_dbg_continue(&UIZX.dbg);
+			}
+		}
+		clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
+		kbd_update(&ZXEmuState.kbd);
+#else
 		zx_exec(&ZXEmuState, microSeconds);
-
+#endif
 		/*if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
 			assert(ZXEmuState.valid);
@@ -1490,8 +1542,9 @@ void FSpectrumEmu::Tick()
 			bStepToNextFrame = false;
 		}
 
+		
 		// on debug break send code analyser to address
-		if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
+		else if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
 		{
 			CodeAnalyserGoToAddress(CodeAnalysis.GetFocussedViewState(), GetPC());
 		}

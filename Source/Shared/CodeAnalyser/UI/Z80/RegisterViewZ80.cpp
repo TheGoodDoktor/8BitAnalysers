@@ -4,6 +4,7 @@
 #include <Util/Misc.h>
 #include <chips/z80.h>
 #include <imgui.h>
+#include <CodeAnalyser/Z80/CodeAnalyserZ80.h>
 
 // took these out of the chips debugger
 uint16_t InputU16(const char* label, uint16_t val) 
@@ -227,4 +228,67 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 	ImGui::TextColored(curRegs.IFF2 != oldRegs.IFF2 ? regChangedCol : regNormalCol, "IFF2:%s", curRegs.IFF2 ? "Y" : "N");
 
 	
+}
+
+void DrawMachineStateZ80(const FMachineState* pMachineStateBase, FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+{
+	const FMachineStateZ80* pMachineState = static_cast<const FMachineStateZ80*>(pMachineStateBase);
+	assert(state.CPUInterface->CPUType == ECPUType::Z80);
+
+	// A
+	ImGui::Text("A:%s", NumStr(pMachineState->A));
+
+	ImGui::Separator();
+
+	// CPU flags
+	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+	if (ImGui::BeginTable("z80flags", 6, flags))
+	{
+		ImGui::TableSetupColumn("Carry");
+		ImGui::TableSetupColumn("Add/Sub");
+		ImGui::TableSetupColumn("Par/Ovr");
+		ImGui::TableSetupColumn("H-Carry");
+		ImGui::TableSetupColumn("Zero");
+		ImGui::TableSetupColumn("Sign");
+		ImGui::TableHeadersRow();
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::Text("%s", (pMachineState->F & Z80_CF) ? "Y" : "N");
+		ImGui::TableSetColumnIndex(1);
+		ImGui::Text("%s", (pMachineState->F & Z80_NF) ? "Y" : "N");
+		ImGui::TableSetColumnIndex(2);
+		ImGui::Text("%s", (pMachineState->F & Z80_VF) ? "Y" : "N");
+		ImGui::TableSetColumnIndex(3);
+		ImGui::Text("%s", (pMachineState->F & Z80_HF) ? "Y" : "N");
+		ImGui::TableSetColumnIndex(4);
+		ImGui::Text("%s", (pMachineState->F & Z80_ZF) ? "Y" : "N");
+		ImGui::TableSetColumnIndex(5);
+		ImGui::Text("%s", (pMachineState->F & Z80_SF) ? "Y" : "N");
+
+		ImGui::EndTable();
+	}
+
+	ImGui::Separator();
+
+	// B & C
+	ImGui::Text("B:%s", NumStr(pMachineState->B));
+	ImGui::SameLine();
+	ImGui::Text("C:%s", NumStr(pMachineState->C));
+	ImGui::SameLine();
+	ImGui::Text("BC:%s", NumStr(pMachineState->BC));
+	DrawAddressLabel(state, viewState, pMachineState->BC);
+
+	ImGui::Separator();
+
+	/*// D & E
+	ImGui::TextColored(curRegs.D != oldRegs.D ? regChangedCol : regNormalCol, "D:%s", NumStr(curRegs.D));
+	ImGui::SameLine();
+	ImGui::TextColored(curRegs.E != oldRegs.E ? regChangedCol : regNormalCol, "E:%s", NumStr(curRegs.E));
+	ImGui::SameLine();
+	ImGui::TextColored(curRegs.DE != oldRegs.DE ? regChangedCol : regNormalCol, "DE:%s", NumStr(curRegs.DE));
+	DrawAddressLabel(state, viewState, curRegs.DE);
+
+	ImGui::Separator();
+*/
 }

@@ -269,9 +269,12 @@ public:
 		std::string asmText;
 		char tmp[16] = { 0 };
 		
-		const FDataInfo* pDataInfo = static_cast<const FDataInfo*>(item.Item);
-		ENumberDisplayMode numMode = Base == FSkoolFile::Base::Hexadecimal ? ENumberDisplayMode::HexDollar : ENumberDisplayMode::Decimal;
-		if (pDataInfo->OperandType != EOperandType::Unknown)
+		ENumberDisplayMode numMode = ENumberDisplayMode::None;
+		if (pDataInfo->OperandType == EOperandType::Unknown)
+		{
+			 numMode = Base == FSkoolFile::Base::Hexadecimal ? ENumberDisplayMode::HexDollar : ENumberDisplayMode::Decimal;
+		}
+		else
 		{
 			switch (pDataInfo->OperandType)
 			{
@@ -282,6 +285,7 @@ public:
 				numMode = ENumberDisplayMode::Binary;
 				break;
 			case EOperandType::Hex:
+			default:
 				numMode = ENumberDisplayMode::HexDollar;
 				break;
 			}

@@ -147,7 +147,7 @@ struct FDataFormattingOptions
 struct FLabelListFilter
 {
 	std::string		FilterText;
-	uint16_t		MinAddress = 0;
+	uint16_t		MinAddress = 0x4000;
 	uint16_t		MaxAddress = 0xffff;
 };
 
@@ -181,7 +181,7 @@ struct FCodeAnalysisViewState
 	bool	GoToLabel = false;
 
 	// for global Filters
-	bool						ShowROMLabels = true;
+	bool						ShowROMLabels = false;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
 	FLabelListFilter				GlobalFunctionsFilter;
@@ -361,6 +361,9 @@ public:
 	uint16_t GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->LastWriter[addr & kPageMask]; }
 	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { GetWritePage(addr)->LastWriter[addr & kPageMask] = lastWriter; }
 
+	FMachineState* GetMachineState(uint16_t addr) { return GetReadPage(addr)->MachineState[addr & kPageMask];}
+	void SetMachineStateForAddress(uint16_t addr, FMachineState* pMachineState) { GetReadPage(addr)->MachineState[addr & kPageMask] = pMachineState; }
+
 	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 
 	void FindAsciiStrings(uint16_t startAddress);
@@ -368,7 +371,7 @@ public:
 
 // Analysis
 void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
-bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
+FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
 void ReAnalyseCode(FCodeAnalysisState &state);
@@ -386,7 +389,7 @@ void Undo(FCodeAnalysisState &state);
 
 FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type);
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
-void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
+FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
 void SetItemCode(FCodeAnalysisState& state, uint16_t addr);
@@ -401,3 +404,8 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 // number output abstraction
 IDasmNumberOutput* GetNumberOutput();
 void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj);
+
+// machine state
+FMachineState* AllocateMachineState(FCodeAnalysisState& state);
+void FreeMachineStates(FCodeAnalysisState& state);
+void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterface);

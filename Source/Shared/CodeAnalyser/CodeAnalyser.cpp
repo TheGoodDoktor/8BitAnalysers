@@ -210,11 +210,11 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 	return textString;
 }
 
-bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabelType labelType)
+FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabelType labelType)
 {
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel != nullptr)
-		return false;
+		return nullptr;
 		
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
@@ -258,8 +258,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabel
 	if (pLabel->Global)
 		GenerateGlobalInfo(state);
 	state.SetLabelForAddress(address, pLabel);
-	return true;
-	
+	return pLabel;	
 }
 
 
@@ -709,9 +708,11 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 			pPage->CodeInfo[addr] = nullptr;
 			//assert(pPage->DataInfo[addr].Address == pPage->BaseAddress + addr);
 			pPage->DataInfo[addr].Reset(pPage->BaseAddress + addr);
+			pPage->MachineState[addr] = nullptr;
 		}
 	}
 
+	FreeMachineStates(state);
 	FLabelInfo::FreeAll();
 	FCodeInfo::FreeAll();
 	FCommentBlock::FreeAll();
@@ -819,8 +820,10 @@ void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 	}
 }
 
-void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
+FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 {
+	FLabelInfo* pNewLabel = nullptr;
+
 	if (state.GetLabelForAddress(address) == nullptr)
 	{
 		ELabelType labelType = ELabelType::Data;
@@ -831,10 +834,12 @@ void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 		if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 			labelType = ELabelType::Code;
 
-		GenerateLabelForAddress(state, address, labelType);
+		pNewLabel = GenerateLabelForAddress(state, address, labelType);
 		
 		state.SetCodeAnalysisDirty();
 	}
+
+	return pNewLabel;
 }
 
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
@@ -939,4 +944,45 @@ IDasmNumberOutput* GetNumberOutput()
 void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj)
 {
 	g_pNumberOutputObj = pNumberOutputObj;
+}
+
+// machine state
+FMachineState* AllocateMachineState(FCodeAnalysisState& state)
+{
+	switch (state.CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
+		return AllocateMachineStateZ80();
+	case ECPUType::M6502:
+		return nullptr;// TODO: this needs to be implemented
+	default:
+		return nullptr;
+	}
+}
+
+void FreeMachineStates(FCodeAnalysisState& state)
+{
+	if (state.CPUInterface == nullptr)
+		return;
+
+	switch (state.CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
+		return FreeMachineStatesZ80();
+	case ECPUType::M6502:
+		return;// TODO: this needs to be implemented
+	}
+}
+
+void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterface)
+{
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
+		CaptureMachineStateZ80(pMachineState,pCPUInterface);
+		return;
+	case ECPUType::M6502:
+		// TODO: this needs to be implemented
+		return;
+	}
 }
