@@ -742,18 +742,20 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddLabel]))
 		{
-			AddLabelAtAddressUI(state, pCursorItem->Address);
+			if (pCursorItem->Type != EItemType::Label)
+			{
+				AddLabelAtAddressUI(state, pCursorItem->Address);
+			}
+			else
+			{
+				ImGui::OpenPopup("Enter Label Text");
+				ImGui::SetWindowFocus("Enter Label Text");
+			}
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]))
 		{
 			ImGui::OpenPopup("Enter Comment Text");
 			ImGui::SetWindowFocus("Enter Comment Text");
-		}
-		else if (pCursorItem->Type == EItemType::Label && ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Rename]))
-		{
-			//AddLabelAtAddress(state, state.pCursorItem->Address);
-			ImGui::OpenPopup("Enter Label Text");
-			ImGui::SetWindowFocus("Enter Label Text");
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddCommentBlock]))
 		{
