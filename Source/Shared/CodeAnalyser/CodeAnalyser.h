@@ -349,6 +349,9 @@ public:
 	uint16_t GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->LastWriter[addr & kPageMask]; }
 	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { GetWritePage(addr)->LastWriter[addr & kPageMask] = lastWriter; }
 
+	FMachineState* GetMachineState(uint16_t addr) { return GetReadPage(addr)->MachineState[addr & kPageMask];}
+	void SetMachineStateForAddress(uint16_t addr, FMachineState* pMachineState) { GetReadPage(addr)->MachineState[addr & kPageMask] = pMachineState; }
+
 	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 
 	void FindAsciiStrings(uint16_t startAddress);
@@ -389,3 +392,8 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 // number output abstraction
 IDasmNumberOutput* GetNumberOutput();
 void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj);
+
+// machine state
+FMachineState* AllocateMachineState(FCodeAnalysisState& state);
+void FreeMachineStates(FCodeAnalysisState& state);
+void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterface);

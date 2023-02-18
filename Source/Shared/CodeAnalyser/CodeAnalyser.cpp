@@ -708,9 +708,11 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 			pPage->CodeInfo[addr] = nullptr;
 			assert(pPage->DataInfo[addr].Address == pPage->BaseAddress + addr);
 			pPage->DataInfo[addr].Reset(pPage->BaseAddress + addr);
+			pPage->MachineState[addr] = nullptr;
 		}
 	}
 
+	FreeMachineStates(state);
 	FLabelInfo::FreeAll();
 	FCodeInfo::FreeAll();
 	FCommentBlock::FreeAll();
@@ -939,4 +941,45 @@ IDasmNumberOutput* GetNumberOutput()
 void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj)
 {
 	g_pNumberOutputObj = pNumberOutputObj;
+}
+
+// machine state
+FMachineState* AllocateMachineState(FCodeAnalysisState& state)
+{
+	switch (state.CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
+		return AllocateMachineStateZ80();
+	case ECPUType::M6502:
+		return nullptr;// TODO: this needs to be implemented
+	default:
+		return nullptr;
+	}
+}
+
+void FreeMachineStates(FCodeAnalysisState& state)
+{
+	if (state.CPUInterface == nullptr)
+		return;
+
+	switch (state.CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
+		return FreeMachineStatesZ80();
+	case ECPUType::M6502:
+		return;// TODO: this needs to be implemented
+	}
+}
+
+void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterface)
+{
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
+		CaptureMachineStateZ80(pMachineState,pCPUInterface);
+		return;
+	case ECPUType::M6502:
+		// TODO: this needs to be implemented
+		return;
+	}
 }
