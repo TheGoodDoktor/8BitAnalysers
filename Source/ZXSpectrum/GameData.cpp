@@ -102,14 +102,16 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 
 	for (int i = startAddress; i <= endAddress; i++)
 	{
+
 		const FLabelInfo* pLabel = state.GetLabelForAddress(i);
 		if (pLabel != nullptr)
 		{
+			const uint16_t addr = (uint16_t)i;
 			const std::string funcName = GetLabelEnumString(pLabel->LabelType);
 			//const std::string meName = std::string(magic_enum::enum_name(pLabel->LabelType));
 			//assert(meName == funcName);
 			WriteStringToFile(funcName, fp);
-			fwrite(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
+			fwrite(&addr, sizeof(addr), 1, fp);
 			fwrite(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 			WriteStringToFile(pLabel->Name, fp);
 			WriteStringToFile(pLabel->Comment, fp);
@@ -156,7 +158,8 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 		//const ELabelType meType = magic_enum::enum_cast<ELabelType>(enumVal).value();
 		//assert(meType == funcType);
 		pLabel->LabelType = funcType;
-		fread(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
+		uint16_t addr;
+		fread(&addr, sizeof(addr), 1, fp);
 		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 		ReadStringFromFile(pLabel->Name, fp);
 		ReadStringFromFile(pLabel->Comment, fp);
@@ -184,7 +187,7 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 			}
 		}
 
-		state.SetLabelForAddress(pLabel->Address, pLabel);
+		state.SetLabelForAddress(addr, pLabel);
 	}
 }
 
@@ -206,9 +209,10 @@ void SaveCodeInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 		const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
 		if (pCodeInfo != nullptr)
 		{
+			const uint16_t addr = (uint16_t)i;
 			fwrite(&pCodeInfo->OperandType, sizeof(pCodeInfo->OperandType), 1, fp);
 			fwrite(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
-			fwrite(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
+			fwrite(&addr, sizeof(addr), 1, fp);
 			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 			WriteStringToFile(pCodeInfo->Comment, fp);
 		}
@@ -230,7 +234,8 @@ void LoadCodeInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 		if (versionNo >= 4)
 			fread(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
 
-		fread(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
+		uint16_t addr;
+		fread(&addr, sizeof(addr), 1, fp);
 		fread(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 		if (versionNo < 10)
 		{
@@ -241,8 +246,14 @@ void LoadCodeInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 		}
 		//ReadStringFromFile(pCodeInfo->Text, fp);
 		ReadStringFromFile(pCodeInfo->Comment, fp);
-		for (int codeByte = 0; codeByte < pCodeInfo->ByteSize; codeByte++)	// set for whole instruction address range
-			state.SetCodeInfoForAddress(pCodeInfo->Address + codeByte, pCodeInfo);
+		state.SetCodeInfoForAddress(addr, pCodeInfo);
+		for (int codeByte = 1; codeByte < pCodeInfo->ByteSize; codeByte++)	
+		{
+			FDataInfo* pOperandData = state.GetReadDataInfoForAddress(addr + codeByte);
+			pOperandData->DataType = EDataType::InstructionOperand;
+			pOperandData->ByteSize = 1;
+			pOperandData->InstructionAddress = addr;
+		}
 	}
 }
 
@@ -268,7 +279,8 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			//const std::string meName = std::string(magic_enum::enum_name(pDataInfo->DataType));
 			//assert(meName == funcName);
 			WriteStringToFile(funcName, fp);
-			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
+			uint16_t addr = (uint16_t)i;
+			fwrite(&addr, sizeof(addr), 1, fp);
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 			fwrite(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
 			fwrite(&pDataInfo->CharSetAddress, sizeof(pDataInfo->CharSetAddress), 1, fp);
@@ -332,7 +344,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 		fread(&address, sizeof(address), 1, fp);
 
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
-		pDataInfo->Address = address;
+		//pDataInfo->Address = address;
 		const EDataType funcType = GetDataEnumValue(enumVal.c_str());
 		//const EDataType meType = magic_enum::enum_cast<EDataType>(enumVal).value();
 		//assert(funcType == meType);
@@ -418,7 +430,8 @@ void SaveCommentBlocksBin(const FCodeAnalysisState& state, FILE* fp, uint16_t st
 		const FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(i);
 		if (pCommentBlock != nullptr)
 		{
-			fwrite(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
+			uint16_t addr = (uint16_t)i;
+			fwrite(&addr, sizeof(addr), 1, fp);
 			WriteStringToFile(pCommentBlock->Comment, fp);
 		}
 	}
@@ -432,9 +445,10 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, ui
 	for (int i = 0; i < recordCount; i++)
 	{
 		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
-		fread(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
+		uint16_t address;
+		fread(&address, sizeof(address), 1, fp);
 		ReadStringFromFile(pCommentBlock->Comment, fp);
-		state.SetCommentBlockForAddress(pCommentBlock->Address, pCommentBlock);
+		state.SetCommentBlockForAddress(address, pCommentBlock);
 	}
 }
 
@@ -654,7 +668,7 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 		{
 			// Restore
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
-				state.CPUInterface->WriteByte(pCodeInfo->Address + i, pCodeInfo->OpcodeBkp[i]);
+				state.CPUInterface->WriteByte(addr + i, pCodeInfo->OpcodeBkp[i]);
 
 			pCodeInfo->bNOPped = false;
 		}

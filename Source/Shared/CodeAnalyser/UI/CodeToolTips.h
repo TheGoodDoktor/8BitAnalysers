@@ -13,4 +13,4 @@ struct FInstructionInfo
 
 typedef std::map<uint8_t, FInstructionInfo> InstructionInfoMap;
 
-void ShowCodeToolTip(FCodeAnalysisState &state, const FCodeInfo *pCodeInfo);
+void ShowCodeToolTip(FCodeAnalysisState& state, uint16_t addr);

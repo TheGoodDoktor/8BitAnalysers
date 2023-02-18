@@ -199,7 +199,8 @@ void DrawGraphicsViewer(FGraphicsViewerState &state)
 	DrawAddressLabel(state.pEmu->CodeAnalysis, state.pEmu->CodeAnalysis.GetFocussedViewState(), state.ClickedAddress);
 	if(ImGui::CollapsingHeader("Details"))
 	{
-		DrawDataDetails(state.pEmu->CodeAnalysis, state.pEmu->CodeAnalysis.GetFocussedViewState(), state.pEmu->CodeAnalysis.GetReadDataInfoForAddress(state.ClickedAddress));
+		const FCodeAnalysisItem item(state.pEmu->CodeAnalysis.GetReadDataInfoForAddress(state.ClickedAddress), state.ClickedAddress);
+		DrawDataDetails(state.pEmu->CodeAnalysis, state.pEmu->CodeAnalysis.GetFocussedViewState(), item);
 	}
 	
 	// view 1 - straight character

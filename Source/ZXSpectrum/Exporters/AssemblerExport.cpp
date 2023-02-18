@@ -169,28 +169,28 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 
 	const uint16_t startAddr = kScreenAttrMemEnd + 1;	// start at the end of attrib memory
 
-	for (FItem* pItem : state.ItemList)
+	for (const FCodeAnalysisItem &item : state.ItemList)
 	{
-		if (pItem->Address < startAddr)
+		if (item.Address < startAddr)
 			continue;
 
-		switch (pItem->Type)
+		switch (item.Item->Type)
 		{
 		case EItemType::Label:
 		{
-			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(pItem);
+			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
 			fprintf(fp, "%s:", pLabelInfo->Name.c_str());
 		}
 		break;
 		case EItemType::Code:
 		{
-			const FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(pItem);
+			const FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(item.Item);
 
-			WriteCodeInfoForAddress(state, pCodeInfo->Address);	// needed to refresh code info
-			if (pCodeInfo->Address == g_DbgAddress)
+			WriteCodeInfoForAddress(state, item.Address);	// needed to refresh code info
+			if (item.Address == g_DbgAddress)
 				LOGINFO("DebugAddress");
 
-			const std::string dasmString = GenerateDasmStringForAddress(state, pCodeInfo->Address, hexMode);
+			const std::string dasmString = GenerateDasmStringForAddress(state, item.Address, hexMode);
 			fprintf(fp, "\t%s", dasmString.c_str());
 
 			if (pCodeInfo->JumpAddress != 0)
@@ -211,7 +211,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 		break;
 		case EItemType::Data:
 		{
-			const FDataInfo* pDataInfo = static_cast<FDataInfo*>(pItem);
+			const FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
 			ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
 			if (pDataInfo->OperandType == EOperandType::Decimal)
@@ -229,7 +229,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 			{
 			case EDataType::Byte:
 			{
-				const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
+				const uint8_t val = state.CPUInterface->ReadByte(item.Address);
 				fprintf(fp, "db %s", NumStr(val, dispMode));
 			}
 			break;
@@ -238,7 +238,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				std::string textString;
 				for (int i = 0; i < pDataInfo->ByteSize; i++)
 				{
-					const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+					const uint8_t val = state.CPUInterface->ReadByte(item.Address + i);
 					char valTxt[16];
 					sprintf(valTxt, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
 					textString += valTxt;
@@ -248,7 +248,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 			break;
 			case EDataType::Word:
 			{
-				const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
+				const uint16_t val = state.CPUInterface->ReadWord(item.Address);
 
 				const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForAddress(val) : nullptr;
 				if (pLabel != nullptr)
@@ -267,7 +267,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				std::string textString;
 				for (int i = 0; i < wordSize; i++)
 				{
-					const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
+					const uint16_t val = state.CPUInterface->ReadWord(item.Address + (i * 2));
 					char valTxt[16];
 					sprintf(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
 					textString += valTxt;
@@ -280,7 +280,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 				std::string textString;
 				for (int i = 0; i < pDataInfo->ByteSize; i++)
 				{
-					const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+					const char ch = state.CPUInterface->ReadByte(item.Address + i);
 					if (ch == '\n')
 						textString += "<cr>";
 					if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
@@ -303,8 +303,8 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName)
 		}
 
 		// put comment on the end
-		if (pItem->Comment.empty() == false)
-			fprintf(fp, "\t;%s", pItem->Comment.c_str());
+		if (item.Item->Comment.empty() == false)
+			fprintf(fp, "\t;%s", item.Item->Comment.c_str());
 		fprintf(fp, "\n");
 	}
 

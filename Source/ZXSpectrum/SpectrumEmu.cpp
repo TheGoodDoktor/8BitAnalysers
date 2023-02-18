@@ -167,7 +167,7 @@ uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const
 
 const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const 
 {
-	#if 0
+#if 0
 	const int bank = address >> 14;
 	const int bankAddr = address & 0x3fff;
 
@@ -317,7 +317,7 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 
 		FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(kScreenPixMemStart);
 		pScreenPixData->DataType = EDataType::ScreenPixels;
-		pScreenPixData->Address = kScreenPixMemStart;
+		//pScreenPixData->Address = kScreenPixMemStart;
 		pScreenPixData->ByteSize = kScreenPixMemSize;
 	}
 
@@ -609,11 +609,12 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 
 void CheckAddressSpaceItems(const FCodeAnalysisState& state)
 {
+	/*
 	for (int addr = 0; addr < 1 << 16; addr++)
 	{
 		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addr);
 		assert(pDataInfo->Address == addr);
-	}
+	}*/
 }
 
 // Bank is ROM bank 0 or 1
@@ -1023,7 +1024,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 				FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
 
 				viewConfig.bEnabled = viewState.Enabled;
-				viewConfig.ViewAddress = viewState.GetCursorItem() ? viewState.GetCursorItem()->Address : 0;
+				viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().Address : 0;
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());

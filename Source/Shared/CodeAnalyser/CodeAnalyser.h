@@ -151,14 +151,25 @@ struct FLabelListFilter
 	uint16_t		MaxAddress = 0xffff;
 };
 
+struct FCodeAnalysisItem
+{
+	FCodeAnalysisItem() = default;
+	FCodeAnalysisItem(FItem* pItem, uint16_t addr) :Item(pItem), Address(addr) {}
+
+	bool IsValid() const { return Item != nullptr; }
+	
+	FItem* Item = nullptr;
+	uint16_t	Address = 0;	// address in address space
+};
+
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
 	// accessor functions
-	FItem* GetCursorItem() const { return pCursorItem; }
-	void SetCursorItem(FItem* pItem)
+	const FCodeAnalysisItem& GetCursorItem() const { return CursorItem; }
+	void SetCursorItem(const FCodeAnalysisItem& item)
 	{
-		pCursorItem = pItem;
+		CursorItem = item;
 	}
 
 	bool	Enabled = false;
@@ -172,22 +183,23 @@ struct FCodeAnalysisViewState
 	// for global Filters
 	bool						ShowROMLabels = true;
 	FLabelListFilter			GlobalDataItemsFilter;
-	std::vector< FLabelInfo*>	FilteredGlobalDataItems;
-	FLabelListFilter			GlobalFunctionsFilter;
-	std::vector< FLabelInfo*>	FilteredGlobalFunctions;
+	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
+	FLabelListFilter				GlobalFunctionsFilter;
+	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
 
 	std::vector<uint16_t>	AddressStack;
 
 	bool					DataFormattingTabOpen = false;
 	FDataFormattingOptions	DataFormattingOptions;
 private:
-	FItem* pCursorItem = nullptr;
+	FCodeAnalysisItem	CursorItem;
 };
 
 struct FCodeAnalysisConfig
 {
 	bool bShowOpcodeValues = false;
 };
+
 
 // code analysis information
 // TODO: make this a class
@@ -263,12 +275,12 @@ public:
 
 	bool					bRegisterDataAccesses = true;
 
-	std::vector< FItem *>	ItemList;
+	std::vector<FCodeAnalysisItem>	ItemList;
 
-	std::vector< FLabelInfo*>	GlobalDataItems;
+	std::vector<FCodeAnalysisItem>	GlobalDataItems;
 	bool						bRebuildFilteredGlobalDataItems = true;
 	
-	std::vector< FLabelInfo*>	GlobalFunctions;
+	std::vector<FCodeAnalysisItem>	GlobalFunctions;
 	bool						bRebuildFilteredGlobalFunctions = true;
 
 	static const int kNoViewStates = 4;
@@ -377,12 +389,12 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
 void AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
-//void SetItemCode(FCodeAnalysisState& state, uint16_t addr);
-void SetItemCode(FCodeAnalysisState &state, FItem *pItem);
-void SetItemData(FCodeAnalysisState &state, FItem *pItem);
-void SetItemText(FCodeAnalysisState &state, FItem *pItem);
-void SetItemImage(FCodeAnalysisState& state, FItem* pItem);
-void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText);
+void SetItemCode(FCodeAnalysisState& state, uint16_t addr);
+//void SetItemCode(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
+void SetItemData(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
+void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
+void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item);
+void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText);
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options);
 

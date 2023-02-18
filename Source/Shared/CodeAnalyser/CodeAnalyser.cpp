@@ -198,7 +198,7 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 
 	for (int i = 0; i < pDataInfo->ByteSize; i++)
 	{
-		const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+		const char ch = state.CPUInterface->ReadByte(address + i);
 		if (ch == '\n')
 			textString += "<cr>";
 		if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
@@ -218,7 +218,7 @@ bool GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabel
 		
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
-	pLabel->Address = address;
+	//pLabel->Address = address;
 	pLabel->ByteSize = 0;
 
 	const int kLabelSize = 32;
@@ -423,7 +423,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	SetNumberOutput(nullptr);
 
-	pCodeInfo->Address = pc;
+	//pCodeInfo->Address = pc;
 	for (uint16_t codeAddr = pc; codeAddr < newPC; codeAddr++)
 		state.SetCodeInfoForAddress(codeAddr, pCodeInfo);	// make sure all addresses spanned by instruction are set
 	pCodeInfo->Text = dasmState.Text;
@@ -456,18 +456,18 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	const char* pOldComment = nullptr;
 	if (pCodeInfo != nullptr)
 	{
-		if (pCodeInfo->Address != pc) // check code integrity 
+		/*if (pCodeInfo->Address != pc) // check code integrity 
 		{
 			if(pCodeInfo->Comment.empty() == false)
 				pOldComment = pCodeInfo->Comment.c_str();	// get pointer to old comment
 			state.SetCodeInfoForAddress(pc, nullptr);
 		}
-		else if(pCodeInfo->bSelfModifyingCode)	// check SMC
+		else*/ if(pCodeInfo->bSelfModifyingCode)	// check SMC
 		{
 			pCodeInfo->bSelfModifyingCode = false;
 			for(uint16_t operandAddr = 0;operandAddr<pCodeInfo->ByteSize;operandAddr++)
 			{
-				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pCodeInfo->Address + operandAddr);
+				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pc + operandAddr);
 				if(pOpDataInfo->Writes.empty() == false)
 				{
 					pCodeInfo->bSelfModifyingCode = true;
@@ -562,7 +562,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 			{
 				// set up data entry for address
 				FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(i);
-				pDataInfo->Address = (uint16_t)i;
+				//pDataInfo->Address = (uint16_t)i;
 				pDataInfo->ByteSize = 1;
 				pDataInfo->DataType = EDataType::Byte;
 			}
@@ -574,7 +574,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 			pCodeInfo->bSelfModifyingCode = false;
 			for (uint16_t operandAddr = 0; operandAddr < pCodeInfo->ByteSize; operandAddr++)
 			{
-				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pCodeInfo->Address + operandAddr);
+				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(i + operandAddr);
 				if (pOpDataInfo->Writes.empty() == false)
 				{
 					pCodeInfo->bSelfModifyingCode = true;
@@ -620,7 +620,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	FLabelInfo *pLabel = FLabelInfo::Allocate();
 	pLabel->Name = name;
 	pLabel->LabelType = type;
-	pLabel->Address = address;
+	//pLabel->Address = address;
 	pLabel->ByteSize = 1;
 	pLabel->Global = type == ELabelType::Function;
 	state.SetLabelForAddress(address, pLabel);
@@ -638,7 +638,7 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 	{
 		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
 		pCommentBlock->Comment = "";
-		pCommentBlock->Address = address;
+		//pCommentBlock->Address = address;
 		pCommentBlock->ByteSize = 1;
 		state.SetCommentBlockForAddress(address, pCommentBlock);
 		state.SetCodeAnalysisDirty();
@@ -661,9 +661,9 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 		if (pLabel != nullptr)
 		{
 			if (pLabel->LabelType == ELabelType::Data && pLabel->Global)
-				state.GlobalDataItems.push_back(pLabel);
+				state.GlobalDataItems.emplace_back(pLabel,i);
 			if (pLabel->LabelType == ELabelType::Function)
-				state.GlobalFunctions.push_back(pLabel);
+				state.GlobalFunctions.emplace_back(pLabel,i);
 		}
 		
 	}
@@ -707,7 +707,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 			pPage->Labels[addr] = nullptr;
 			pPage->CommentBlocks[addr] = nullptr;
 			pPage->CodeInfo[addr] = nullptr;
-			assert(pPage->DataInfo[addr].Address == pPage->BaseAddress + addr);
+			//assert(pPage->DataInfo[addr].Address == pPage->BaseAddress + addr);
 			pPage->DataInfo[addr].Reset(pPage->BaseAddress + addr);
 		}
 	}
@@ -719,7 +719,7 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		state.ViewState[i].CursorItemIndex = -1;
-		state.ViewState[i].SetCursorItem(nullptr);
+		state.ViewState[i].SetCursorItem(FCodeAnalysisItem());
 	}
 
 	state.CPUInterface = pCPUInterface;
@@ -748,27 +748,30 @@ void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterf
 }
 
 
-void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
+void SetItemCode(FCodeAnalysisState &state, uint16_t address)
 {
-	DoCommand(state, new FSetItemCodeCommand(pItem->Address));
+	DoCommand(state, new FSetItemCodeCommand(address));
 }
 
-void SetItemData(FCodeAnalysisState &state, FItem *pItem)
+void SetItemData(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 {
-	DoCommand(state, new FSetItemDataCommand(pItem));
+	DoCommand(state, new FSetItemDataCommand(item));
 }
 
-void SetItemText(FCodeAnalysisState &state, FItem *pItem)
+void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 {
-	if (pItem->Type == EItemType::Data)
+	if (item.IsValid() == false)
+		return;
+
+	if (item.Item->Type == EItemType::Data)
 	{
-		FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
+		FDataInfo *pDataItem = static_cast<FDataInfo *>(item.Item);
 		if (pDataItem->DataType == EDataType::Byte)
 		{
 			// set to ascii
 			pDataItem->ByteSize = 0;	// reset byte counter
 
-			uint16_t charAddr = pDataItem->Address;
+			uint16_t charAddr = item.Address;
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(charAddr);
 			while (pDataInfo != nullptr && pDataInfo->DataType == EDataType::Byte)
 			{
@@ -801,9 +804,9 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 	}
 }
 
-void SetItemImage(FCodeAnalysisState& state, FItem* pItem)
+void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 {
-	FDataInfo* pDataItem = static_cast<FDataInfo*>(pItem);
+	FDataInfo* pDataItem = static_cast<FDataInfo*>(item.Item);
 	if (pDataItem->DataType != EDataType::Image)
 	{
 		pDataItem->DataType = EDataType::Image;
@@ -859,9 +862,9 @@ void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pTe
 	state.EnsureUniqueLabelName(pLabel->Name);
 }
 
-void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText)
+void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText)
 {
-	pItem->Comment = pText;
+	item.Item->Comment = pText;
 }
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options)

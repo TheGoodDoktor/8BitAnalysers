@@ -299,7 +299,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 
 	std::string comments;
 	std::string label;
-	FItem* pLastItem = nullptr;
+	FCodeAnalysisItem LastItem;
 
 	uint16_t minAddr=0xffff;
 	uint16_t maxAddr=0;
@@ -347,12 +347,12 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		if (trimmed[0] == ';')
 		{
 			// instruction comment continuation
-			if (pLastItem)
+			if (LastItem.IsValid())
 			{
-				if (pLastItem->Comment.back() != '\n')
-					pLastItem->Comment += "\n";
-				pLastItem->Comment += trimmed.substr(2);
-				RemoveCarriageReturn(pLastItem->Comment);
+				if (LastItem.Item->Comment.back() != '\n')
+					LastItem.Item->Comment += "\n";
+				LastItem.Item->Comment += trimmed.substr(2);
+				RemoveCarriageReturn(LastItem.Item->Comment);
 			}
 			continue;
 		}
@@ -375,10 +375,10 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			return false;
 		}
 
-		if (pLastItem && instruction.Address < pLastItem->Address)
+		if (LastItem.IsValid() && instruction.Address < LastItem.Address)
 		{
 			// if this address is lower than the last one we saw then something has gone wrong, so abort
-			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", lineNum, instruction.Address, instruction.Address, pLastItem->Address, pLastItem->Address);
+			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", lineNum, instruction.Address, instruction.Address, LastItem.Address, LastItem.Address);
 			fclose(fp);
 			return false;
 		}
@@ -521,7 +521,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 					// force to byte type otherwise SetItemText() does nothing
 					pDataInfo->DataType = EDataType::Byte;
 
-					SetItemText(state, pDataInfo);
+					SetItemText(state, FCodeAnalysisItem(pDataInfo, instruction.Address));
 				}
 				pItem = pDataInfo;
 			}
@@ -579,7 +579,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		minAddr = std::min(instruction.Address, minAddr);
 		maxAddr = std::max(instruction.Address, maxAddr);
 
-		pLastItem = pItem;
+		LastItem = FCodeAnalysisItem(pItem, instruction.Address);
 	}
 
 	if (pSkoolInfo)

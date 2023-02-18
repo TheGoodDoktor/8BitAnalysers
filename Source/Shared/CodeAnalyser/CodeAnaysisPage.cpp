@@ -100,7 +100,7 @@ void FCodeAnalysisPage::Initialise(uint16_t address)
 	{
 		// set up data entry for address
 		FDataInfo& dataInfo = DataInfo[addr];
-		dataInfo.Address = BaseAddress + (uint16_t)addr;
+		//dataInfo.Address = BaseAddress + (uint16_t)addr;
 		dataInfo.ByteSize = 1;
 		dataInfo.DataType = EDataType::Byte;
 	}
@@ -113,7 +113,7 @@ void FCodeAnalysisPage::ChangeAddress(uint16_t newAddress)
 		return;
 
 	// rebase memory items
-	for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
+	/*for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 	{
 		FDataInfo& dataInfo = DataInfo[addr];
 		dataInfo.Address = (dataInfo.Address - BaseAddress) + newAddress;
@@ -126,7 +126,7 @@ void FCodeAnalysisPage::ChangeAddress(uint16_t newAddress)
 
 		if(CommentBlocks[addr])
 			CommentBlocks[addr]->Address = (CommentBlocks[addr]->Address - BaseAddress) + newAddress;
-	}
+	}*/
 
 	BaseAddress = newAddress;
 }
@@ -205,6 +205,7 @@ void ReadReferencesFromBuffer(std::map<uint16_t, int>& references, FMemoryBuffer
 	}
 }
 
+#if 0
 void FCodeAnalysisPage::WriteToBuffer(FMemoryBuffer& buffer)
 {
 	buffer.Write(kMagic);
@@ -236,7 +237,7 @@ void FCodeAnalysisPage::WriteToBuffer(FMemoryBuffer& buffer)
 		if (CodeInfo[i] != nullptr)
 		{
 			const FCodeInfo& codeInfo = *CodeInfo[i];
-			if (codeInfo.Address == BaseAddress + i)	// only first item
+			//if (codeInfo.Address == BaseAddress + i)	// only first item
 			{
 				buffer.Write<uint16_t>(i);	// address in page
 				WriteItemToBuffer(codeInfo, buffer);
@@ -338,6 +339,7 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 
 	return true;
 }
+#endif
 
 void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr)
 {

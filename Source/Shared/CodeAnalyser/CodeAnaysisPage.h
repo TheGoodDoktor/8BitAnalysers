@@ -51,7 +51,7 @@ struct FItem
 {
 	EItemType		Type;
 	std::string		Comment;
-	uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
+	//uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
 	uint16_t		ByteSize;
 };
 
@@ -117,6 +117,7 @@ enum class EDataType
 	Image,		// character/sprite image
 	Blob,		// opaque data blob
 	ColAttr,	// colour attribute
+	InstructionOperand,	// an operand for an instruction
 
 	Max,
 	None = Max
@@ -146,7 +147,7 @@ struct FDataInfo : FItem
 	void Reset(uint16_t addr)
 	{
 		Flags = 0;
-		Address = addr;
+		//Address = addr;
 		ByteSize = 1;
 		DataType = EDataType::Byte;
 		OperandType = EOperandType::Unknown;
@@ -182,6 +183,7 @@ struct FDataInfo : FItem
 			uint16_t	CharSetAddress;	// address of character set
 			uint8_t		EmptyCharNo;
 		};
+		uint16_t	InstructionAddress;	// for operand data types
 	};
 
 	int						LastFrameRead = -1;

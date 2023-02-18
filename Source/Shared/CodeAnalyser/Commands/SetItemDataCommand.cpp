@@ -4,10 +4,12 @@
 
 void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 {
+	if (Item.IsValid() == false)
+		return;
 
-	if (pItem->Type == EItemType::Data)
+	if (Item.Item->Type == EItemType::Data)
 	{
-		FDataInfo* pDataItem = static_cast<FDataInfo*>(pItem);
+		FDataInfo* pDataItem = static_cast<FDataInfo*>(Item.Item);
 
 		oldDataType = pDataItem->DataType;
 		oldDataSize = pDataItem->ByteSize;
@@ -31,15 +33,15 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 			state.SetCodeAnalysisDirty();
 		}
 	}
-	else if (pItem->Type == EItemType::Code)
+	else if (Item.Item->Type == EItemType::Code)
 	{
-		FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(pItem);
+		FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(Item.Item);
 		if (pCodeItem->bDisabled == false)
 		{
 			pCodeItem->bDisabled = true;
 			state.SetCodeAnalysisDirty();
 
-			FLabelInfo* pLabelInfo = state.GetLabelForAddress(pItem->Address);
+			FLabelInfo* pLabelInfo = state.GetLabelForAddress(Item.Address);
 			if (pLabelInfo != nullptr)
 				pLabelInfo->LabelType = ELabelType::Data;
 		}
@@ -48,7 +50,7 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 
 void FSetItemDataCommand::Undo(FCodeAnalysisState& state)
 {
-	FDataInfo* pDataItem = static_cast<FDataInfo*>(pItem);
+	FDataInfo* pDataItem = static_cast<FDataInfo*>(Item.Item);
 	pDataItem->DataType = oldDataType;
 	pDataItem->ByteSize = oldDataSize;
 }

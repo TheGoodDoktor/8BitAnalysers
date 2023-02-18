@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 
+struct FCodeAnalysisItem;
 struct FCodeAnalysisState;
 struct FCodeAnalysisViewState;
 struct FDataInfo;
@@ -46,8 +47,8 @@ void DrawRegisters(FCodeAnalysisState& state);
 void DrawWatchWindow(FCodeAnalysisState& state);
 
 float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo);
-void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FDataInfo* pDataInfo, bool bDrawLabel = false, bool bEdit = true);
-void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FDataInfo *pDataInfo);
+void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem &item, bool bDrawLabel = false, bool bEdit = true);
+void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void ShowDataItemActivity(FCodeAnalysisState& state, uint16_t addr);
 
 void CodeAnalyserGoToAddress(FCodeAnalysisViewState& state, uint16_t newAddress, bool bLabel = false);
