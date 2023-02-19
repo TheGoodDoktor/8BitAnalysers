@@ -341,16 +341,15 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 {
 	const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
 	const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(item.Address);	// for self-modifying code
-
+	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.Address);
 	ImVec4 labelColour = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
 	if (viewState.HighlightAddress == item.Address)
 		labelColour = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
 	else if (pLabelInfo->Global || pLabelInfo->LabelType == ELabelType::Function)
 		labelColour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 	
-
 	// draw SMC fixups differently
-	if (pDataInfo->DataType == EDataType::InstructionOperand)	
+	if (pCodeInfo == nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 	{
 		ImGui::TextColored(labelColour, "\t\tOperand Fixup(% s) :",NumStr(item.Address));
 		ImGui::SameLine();

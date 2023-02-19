@@ -166,8 +166,8 @@ struct FDataInfo : FItem
 		struct
 		{
 			bool			bGameState : 1;
-			bool			bCodeOperand : 1;	// for self modifying code
-			bool			bUnused : 1;
+			bool			bUnused1 : 1;	
+			bool			bUnused2 : 1;
 			bool			bBit7Terminator : 1;	// for bit 7 terminated strings
 			bool			bShowBinary : 1;	// display the value(s) as binary
 			bool			bShowCharMap : 1;	// display memory as character map

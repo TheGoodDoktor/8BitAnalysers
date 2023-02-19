@@ -470,7 +470,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 				if (blockDirective == 'g')
 					pDataInfo->bGameState = true;
 				else if (blockDirective == 'u')
-					pDataInfo->bUnused = true;
+					pDataInfo->bUnused2 = true;	// What is this?
 			}
 		}
 		break;

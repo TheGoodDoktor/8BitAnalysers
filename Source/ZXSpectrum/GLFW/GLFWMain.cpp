@@ -161,19 +161,11 @@ int main(int argc, char** argv)
 
 	// Speccy 
 	FSpectrumConfig config;
-    //config.Model = ESpectrumModel::Spectrum128K;
-    config.Model = ESpectrumModel::Spectrum48K;
-	config.NoStateBuffers = 10;
-	if (argc > 1)
-		config.SpecificGame = argv[1];
+    config.ParseCommandline(argc, argv);
 	FSpectrumEmu* pSpectrumEmulator = new FSpectrumEmu;
 	pSpectrumEmulator->Init(config);
 
-	// The skool file to import can be passed as the second argument, following the name of the game to start.
-	if (argc > 2)
-		pSpectrumEmulator->ImportSkoolFile(argv[2]);
-
-    // Main loop
+	// Main loop
     while (!glfwWindowShouldClose(appState.MainWindow))
     {
         // Poll and handle events (inputs, window resize, etc.)

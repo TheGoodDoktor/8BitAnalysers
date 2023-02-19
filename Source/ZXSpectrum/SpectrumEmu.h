@@ -56,9 +56,10 @@ enum class ESpectrumModel
 
 struct FSpectrumConfig
 {
-	ESpectrumModel	Model;
-	int				NoStateBuffers = 0;
+	void ParseCommandline(int argc, char** argv);
+	ESpectrumModel	Model = ESpectrumModel::Spectrum48K;
 	std::string		SpecificGame;
+	std::string		SkoolkitImport;
 };
 
 struct FGame

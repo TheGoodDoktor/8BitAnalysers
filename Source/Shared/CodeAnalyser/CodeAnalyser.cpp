@@ -422,9 +422,16 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	SetNumberOutput(nullptr);
 
-	//pCodeInfo->Address = pc;
-	for (uint16_t codeAddr = pc; codeAddr < newPC; codeAddr++)
-		state.SetCodeInfoForAddress(codeAddr, pCodeInfo);	// make sure all addresses spanned by instruction are set
+	state.SetCodeInfoForAddress(pc, pCodeInfo);	
+
+	// set operands as data item
+	for (uint16_t codeAddr = pc + 1; codeAddr < newPC; codeAddr++)
+	{
+		FDataInfo* pOperandData = state.GetReadDataInfoForAddress(codeAddr);
+		pOperandData->DataType = EDataType::InstructionOperand;
+		pOperandData->ByteSize = 1;
+		pOperandData->InstructionAddress = pc;
+	}
 	pCodeInfo->Text = dasmState.Text;
 	pCodeInfo->ByteSize = newPC - pc;
 
@@ -546,45 +553,33 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr)
 
 void ReAnalyseCode(FCodeAnalysisState &state)
 {
-	int nextItemAddress = 0;
-	for (int i = 0; i < (1 << 16); i++)
+	int addr = 0;
+	while ( addr < (1 << 16))
 	{
-		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
-		if (i == nextItemAddress)
-		{
-			if (pCodeInfo != nullptr)
-			{
-				nextItemAddress = WriteCodeInfoForAddress(state, (uint16_t)i);
-			}
-
-			if (pCodeInfo == nullptr && state.GetReadDataInfoForAddress(i) == nullptr)
-			{
-				// set up data entry for address
-				FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(i);
-				//pDataInfo->Address = (uint16_t)i;
-				pDataInfo->ByteSize = 1;
-				pDataInfo->DataType = EDataType::Byte;
-			}
-		}
-
-		// ensure self modifying code is flagged properly
-		if (pCodeInfo != nullptr && pCodeInfo->bSelfModifyingCode == true)
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
+		if (pCodeInfo != nullptr)
 		{
 			pCodeInfo->bSelfModifyingCode = false;
-			for (uint16_t operandAddr = 0; operandAddr < pCodeInfo->ByteSize; operandAddr++)
+
+			for (int i = 0; i < pCodeInfo->ByteSize; i++)
 			{
-				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(i + operandAddr);
-				if (pOpDataInfo->Writes.empty() == false)
-				{
+				FDataInfo* pOperandData = state.GetReadDataInfoForAddress(addr + i);
+				pOperandData->ByteSize = 1;
+				pOperandData->DataType = EDataType::InstructionOperand;
+				pOperandData->InstructionAddress = addr;
+				if (pOperandData->Writes.empty() == false)
 					pCodeInfo->bSelfModifyingCode = true;
-				}
+				if (i > 0)	// make sure other entries after are null
+					state.SetCodeInfoForAddress(addr + i, nullptr);
 			}
+
+			addr += pCodeInfo->ByteSize;
 		}
-		/*const FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
-		if ((pCodeInfo != nullptr) && (pLabelInfo != nullptr) && (pLabelInfo->LabelType == LabelType::Data))
+		else
 		{
-			pCodeInfo->bSelfModifyingCode = true;
-		}*/
+			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addr);
+			addr++;
+		}
 	}
 }
 

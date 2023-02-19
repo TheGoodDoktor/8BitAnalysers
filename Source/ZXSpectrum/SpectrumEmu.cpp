@@ -862,6 +862,9 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 	}
 
+	if(config.SkoolkitImport.empty() == false)
+		ImportSkoolFile(config.SkoolkitImport.c_str());
+
 	bInitialised = true;
 	return true;
 }
@@ -2042,6 +2045,44 @@ void FSpectrumEmu::DoSkoolKitTest(const char* pGameName, const char* pInSkoolFil
 	::ExportSkoolFile(CodeAnalysis, outFname.c_str(), base, &skoolInfo);
 }
 
+void FSpectrumConfig::ParseCommandline(int argc, char** argv)
+{
+	std::vector<std::string> argList;
+	for (int arg = 0; arg < argc; arg++)
+	{
+		argList.emplace_back(argv[arg]);
+	}
+
+	auto argIt = argList.begin();
+	argIt++;	// skip exe name
+	while (argIt != argList.end())
+	{
+		if (*argIt == std::string("-128"))
+		{
+			Model = ESpectrumModel::Spectrum128K;
+		}
+		else if (*argIt == std::string("-game"))
+		{
+			if (++argIt == argList.end())
+			{
+				LOGERROR("-game : No game specified");
+				break;
+			}
+			SpecificGame = *++argIt;
+		}
+		else if (*argIt == std::string("-skoolfile"))
+		{
+			if (++argIt == argList.end())
+			{
+				LOGERROR("-skoolfile : No skoolkit file specified");
+				break;
+			}
+			SkoolkitImport = *++argIt;
+		}
+
+		++argIt;
+	}
+}
 // Util functions - move
 uint16_t GetScreenPixMemoryAddress(int x, int y)
 {
