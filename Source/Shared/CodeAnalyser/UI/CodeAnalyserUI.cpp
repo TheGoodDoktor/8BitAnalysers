@@ -361,13 +361,13 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	}
 
 	// hover tool tip
-	if (ImGui::IsItemHovered() && pLabelInfo->References.empty() == false)
+	if (ImGui::IsItemHovered() && pLabelInfo->References.IsEmpty() == false)
 	{
 		ImGui::BeginTooltip();
 		ImGui::Text("References:");
-		for (const auto & caller : pLabelInfo->References)
+		for (const auto & caller : pLabelInfo->References.GetReferences())
 		{
-			const uint16_t accessorCodeAddr = caller.first;
+			const uint16_t accessorCodeAddr = caller.InstructionAddress;
 			ShowCodeAccessorActivity(state, accessorCodeAddr);
 
 			ImGui::Text("   ");
@@ -411,9 +411,9 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	}
 
 	ImGui::Text("References:");
-	for (const auto & caller : pLabelInfo->References)
+	for (const auto & caller : pLabelInfo->References.GetReferences())
 	{
-		const uint16_t accessorCodeAddr = caller.first;
+		const uint16_t accessorCodeAddr = caller.InstructionAddress;
 		ShowCodeAccessorActivity(state, accessorCodeAddr);
 
 		ImGui::Text("   ");
@@ -536,7 +536,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 			if(pCodeInfo->bSelfModifyingCode)
 			{
 				FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(item.Address + i);
-				if (pOperandData->Writes.empty() == false)
+				if (pOperandData->Writes.IsEmpty() == false)
 				{
 					// Change the colour if this is self modifying code and the byte has been modified.
 					bByteModified = true;
@@ -615,12 +615,12 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		for (int i = 1; i < pCodeInfo->ByteSize; i++)
 		{
 			FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(item.Address + i);
-			if (pOperandData->Writes.empty() == false)
+			if (pOperandData->Writes.IsEmpty() == false)
 			{
 				ImGui::Text("Operand Writes:");
-				for (const auto& caller : pOperandData->Writes)
+				for (const auto& caller : pOperandData->Writes.GetReferences())
 				{
-					DrawCodeAddress(state, viewState, caller.first);
+					DrawCodeAddress(state, viewState, caller.InstructionAddress);
 				}
 				break;
 			}

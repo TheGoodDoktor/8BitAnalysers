@@ -119,12 +119,13 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 
 			// References?
 			long refCountPos = ftell(fp);
-			int noReferences = (int)pLabel->References.size();
+			const auto& referenceList = pLabel->References.GetReferences();
+			int noReferences = (int)referenceList.size();
 			fwrite(&noReferences, sizeof(int), 1, fp);
 			noReferences = 0;
-			for (const auto& ref : pLabel->References)
+			for (const auto& ref : referenceList)
 			{
-				const uint16_t refAddr = ref.first;
+				const uint16_t refAddr = ref.InstructionAddress;
 				if (refAddr >= startAddress && refAddr <= endAddress)	// only add references from region we are saving
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -178,7 +179,7 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 				fread(&refAddr, sizeof(refAddr), 1, fp);
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
-					pLabel->References[refAddr] = 1;
+					pLabel->References.RegisterAccess(refAddr);
 				}
 				else
 				{
@@ -292,9 +293,9 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			int noReads = 0;
 			const long noReadsFilePos = ftell(fp);
 			fwrite(&noReads, sizeof(int), 1, fp);
-			for (const auto& ref : pDataInfo->Reads)
+			for (const auto& ref : pDataInfo->Reads.GetReferences())
 			{
-				const uint16_t refAddr = ref.first;
+				const uint16_t refAddr = ref.InstructionAddress;
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -311,9 +312,9 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			int noWrites = 0;
 			const long noWritesFilePos = ftell(fp);
 			fwrite(&noWrites, sizeof(int), 1, fp);
-			for (const auto& ref : pDataInfo->Writes)
+			for (const auto& ref : pDataInfo->Writes.GetReferences())
 			{
-				const uint16_t refAddr = ref.first;
+				const uint16_t refAddr = ref.InstructionAddress;
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -389,7 +390,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
 				if (dataAddr >= startAddress && dataAddr <= endAddress)
-					pDataInfo->Reads[dataAddr] = 1;
+					pDataInfo->Reads.RegisterAccess(dataAddr);
 				else
 					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
 			}
@@ -403,7 +404,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
 				if (dataAddr >= startAddress && dataAddr <= endAddress)
-					pDataInfo->Writes[dataAddr] = 1;
+					pDataInfo->Writes.RegisterAccess(dataAddr);
 				else
 					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
 			}

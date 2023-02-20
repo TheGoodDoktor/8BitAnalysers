@@ -53,8 +53,8 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEm
 		{
 			// update handler stats
 			handler.TotalCount++;
-			handler.CallerCounts[pc]++;
-			handler.AddressCounts[addr]++;
+			handler.Callers.RegisterAccess(pc, pEmu->CodeAnalysis.GetReadPage(pc)->PageId);
+			//handler.AddressCounts.RegisterAccess(addr);
 			if (handler.pHandlerFunction != nullptr)
 				handler.pHandlerFunction(handler, pEmu->pActiveGame, pc, pins);
 
@@ -180,12 +180,12 @@ void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 		ImGui::Text("Total Accesses %d", pSelectedHandler->TotalCount);
 
 		ImGui::Text("Callers");
-		for (const auto &accessPC : pSelectedHandler->CallerCounts)
+		for (const auto &accessPC : pSelectedHandler->Callers.GetReferences())
 		{
-			ImGui::PushID(accessPC.first);
-			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC.first);
-			ImGui::SameLine();
-			ImGui::Text(" - %d accesses",accessPC.second);
+			ImGui::PushID(accessPC.InstructionAddress);
+			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC.InstructionAddress);
+			//ImGui::SameLine();
+			//ImGui::Text(" - %d accesses",accessPC.second);
 			ImGui::PopID();
 		}
 	}

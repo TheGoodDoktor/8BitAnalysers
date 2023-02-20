@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <map>
+#include <CodeAnalyser/CodeAnaysisPage.h> 
 
 class FSpectrumEmu;
 
@@ -14,6 +14,8 @@ enum class SpeccyIODevice
 	Beeper,
 	BorderColour,
 	KempstonJoystick,
+	MemoryBank,		// Switching in/out RAM banks
+	SoundChip,		// AY
 
 	Unknown,
 	Count
@@ -27,7 +29,7 @@ struct FIOAccess
 	int				WriteCount = 0;
 	int				FrameWriteCount = 0;
 
-	std::map<uint16_t, int>	Callers;
+	FItemReferenceTracker	Callers;
 };
 
 class FIOAnalysis

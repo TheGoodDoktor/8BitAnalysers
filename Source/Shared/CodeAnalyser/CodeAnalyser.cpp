@@ -384,8 +384,9 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
 	{
 		const bool isCall = CheckCallInstruction(state.CPUInterface, pc);
-		if (GenerateLabelForAddress(state, jumpAddr, isCall ? ELabelType::Function : ELabelType::Code))
-			state.GetLabelForAddress(jumpAddr)->References[pc]++;
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddr, isCall ? ELabelType::Function : ELabelType::Code);
+		if(pLabel)
+			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
 
 		pCodeInfo->JumpAddress = jumpAddr;
 		if (pCodeInfo->OperandType == EOperandType::Unknown)
@@ -406,8 +407,10 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 			pCodeInfo->PointerAddress = ptr;
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
-			if (GenerateLabelForAddress(state, ptr, ELabelType::Data))
-				state.GetLabelForAddress(ptr)->References[pc]++;
+			
+			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptr, ELabelType::Data);
+			if (pLabel)
+				pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
 		}
 	}
 
@@ -447,7 +450,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
 		if (pLabel != nullptr)
-			pLabel->References[pc]++;	// add/increment reference
+			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
 	}
 
 	uint16_t ptr;
@@ -455,7 +458,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
 		if (pLabel != nullptr)
-			pLabel->References[pc]++;	// add/increment reference
+			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
 	}
 
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
@@ -474,7 +477,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 			for(uint16_t operandAddr = 0;operandAddr<pCodeInfo->ByteSize;operandAddr++)
 			{
 				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pc + operandAddr);
-				if(pOpDataInfo->Writes.empty() == false)
+				if(pOpDataInfo->Writes.IsEmpty() == false)
 				{
 					pCodeInfo->bSelfModifyingCode = true;
 				}					
@@ -540,15 +543,15 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
 		pDataInfo->LastFrameRead = state.CurrentFrameNo;
-		pDataInfo->Reads[pc]++;
+		pDataInfo->Reads.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
 	}
 }
 
-void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr)
+void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,uint8_t value)
 {
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
-	pDataInfo->Writes[pc]++;
+	pDataInfo->Writes.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
 }
 
 void ReAnalyseCode(FCodeAnalysisState &state)
@@ -567,7 +570,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 				pOperandData->ByteSize = 1;
 				pOperandData->DataType = EDataType::InstructionOperand;
 				pOperandData->InstructionAddress = addr;
-				if (pOperandData->Writes.empty() == false)
+				if (pOperandData->Writes.IsEmpty() == false)
 					pCodeInfo->bSelfModifyingCode = true;
 				if (i > 0)	// make sure other entries after are null
 					state.SetCodeInfoForAddress(addr + i, nullptr);
@@ -592,15 +595,15 @@ void ResetReferenceInfo(FCodeAnalysisState &state)
 		if (pDataInfo != nullptr)
 		{
 			pDataInfo->LastFrameRead = -1;
-			pDataInfo->Reads.clear();
+			pDataInfo->Reads.Reset();
 			pDataInfo->LastFrameWritten = -1;
-			pDataInfo->Writes.clear();
+			pDataInfo->Writes.Reset();
 		}
 
 		FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
 		if (pLabelInfo != nullptr)
 		{
-			pLabelInfo->References.clear();
+			pLabelInfo->References.Reset();
 		}
 
 		state.SetLastWriterForAddress(i,  0);

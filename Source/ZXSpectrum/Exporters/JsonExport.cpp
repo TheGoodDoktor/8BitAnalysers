@@ -123,11 +123,11 @@ bool WriteDataInfoToJson(uint16_t addr,const FDataInfo* pDataInfo, json& jsonDoc
 	if (pDataInfo->Comment.empty() == false)
 		dataInfoJson["Comment"] = pDataInfo->Comment;
 
-	for (const auto& read : pDataInfo->Reads)
-		dataInfoJson["Reads"].push_back(read.first);
+	for (const auto& read : pDataInfo->Reads.GetReferences())
+		dataInfoJson["Reads"].push_back(read.InstructionAddress);
 
-	for (const auto& write : pDataInfo->Writes)
-		dataInfoJson["Writes"].push_back(write.first);
+	for (const auto& write : pDataInfo->Writes.GetReferences())
+		dataInfoJson["Writes"].push_back(write.InstructionAddress);
 
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
@@ -174,8 +174,8 @@ void WriteLabelInfoToJson(uint16_t addr, const FLabelInfo* pLabelInfo, json& jso
 	if (pLabelInfo->Comment.empty() == false)
 		labelInfoJson["Comment"] = pLabelInfo->Comment;
 
-	for (const auto& reference : pLabelInfo->References)
-		labelInfoJson["References"].push_back(reference.first);
+	for (const auto& reference : pLabelInfo->References.GetReferences())
+		labelInfoJson["References"].push_back(reference.InstructionAddress);
 
 	jsonDoc["LabelInfo"].push_back(labelInfoJson);
 }
@@ -275,7 +275,7 @@ FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson)
 	{
 		for (const auto& reference : labelInfoJson["References"])
 		{
-			pLabelInfo->References[reference] = 1;
+			pLabelInfo->References.RegisterAccess(reference);
 		}
 	}
 
@@ -298,14 +298,14 @@ void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json & dataInfoJson)
 	{
 		for (const auto& read : dataInfoJson["Reads"])
 		{
-			pDataInfo->Reads[read] = 1;
+			pDataInfo->Reads.RegisterAccess(read);
 		}
 	}
 	if (dataInfoJson.contains("Writes"))
 	{
-		for (const auto& read : dataInfoJson["Writes"])
+		for (const auto& write : dataInfoJson["Writes"])
 		{
-			pDataInfo->Writes[read] = 1;
+			pDataInfo->Writes.RegisterAccess(write);
 		}
 	}
 

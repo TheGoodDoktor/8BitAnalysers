@@ -342,12 +342,12 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 		// 
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(uiState.SelectedCharAddress);
 		// List Data accesses
-		if (pDataInfo->Reads.empty() == false)
+		if (pDataInfo->Reads.IsEmpty() == false)
 		{
 			ImGui::Text("Reads:");
-			for (const auto& caller : pDataInfo->Reads)
+			for (const auto& caller : pDataInfo->Reads.GetReferences())
 			{
-				const uint16_t accessorCodeAddr = caller.first;
+				const uint16_t accessorCodeAddr = caller.InstructionAddress;
 				ShowCodeAccessorActivity(state, accessorCodeAddr);
 
 				ImGui::Text("   ");
@@ -356,17 +356,17 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 			}
 		}
 
-		if (pDataInfo->Writes.empty() == false)
+		if (pDataInfo->Writes.IsEmpty() == false)
 		{
 			ImGui::Text("Writes:");
-			for (const auto& caller : pDataInfo->Writes)
+			for (const auto& caller : pDataInfo->Writes.GetReferences())
 			{
-				const uint16_t accessorCodeAddr = caller.first;
+				const uint16_t accessorCodeAddr = caller.InstructionAddress;
 				ShowCodeAccessorActivity(state, accessorCodeAddr);
 
 				ImGui::Text("   ");
 				ImGui::SameLine();
-				DrawCodeAddress(state, viewState, caller.first);
+				DrawCodeAddress(state, viewState, accessorCodeAddr);
 			}
 		}
 	}

@@ -378,7 +378,7 @@ void ReAnalyseCode(FCodeAnalysisState &state);
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState& state, uint16_t pc);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
-void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr);
+void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, uint8_t value);
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
 void ResetReferenceInfo(FCodeAnalysisState &state);
 

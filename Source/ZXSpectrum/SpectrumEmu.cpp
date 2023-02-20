@@ -544,7 +544,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		else if (pins & Z80_WR) 
 		{
 			if (state.bRegisterDataAccesses)
-				RegisterDataWrite(state, pc, addr);
+				RegisterDataWrite(state, pc, addr, value);
 
 			state.SetLastWriterForAddress(addr,pc);
 

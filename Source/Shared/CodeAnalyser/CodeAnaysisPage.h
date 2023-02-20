@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <cstdint>
 #include <string>
-#include <map>
+//#include <map>
 #include <vector>
 
 #include <Util/Misc.h>
@@ -55,6 +55,39 @@ struct FItem
 	uint16_t		ByteSize;
 };
 
+struct FItemReference
+{
+	FItemReference() = default;
+	FItemReference(uint16_t pc) : InstructionAddress(pc) {}
+	FItemReference(uint16_t pc, int16_t pageId) : InstructionAddress(pc), InstructionPageId(pageId) {}
+
+	uint16_t	InstructionAddress = 0;
+	int16_t		InstructionPageId = 0;
+};
+
+class FItemReferenceTracker
+{
+public:
+	void Reset() { References.clear(); }
+	
+	void	RegisterAccess(uint16_t pc, int16_t pageId = 0)
+	{
+		const auto size = References.size();
+		for (int i = 0; i < size; i++)
+		{
+			if (References[i].InstructionAddress == pc && References[i].InstructionPageId == pageId)
+				return;
+		}
+
+		References.emplace_back(pc, pageId);
+	}
+
+	bool IsEmpty() const { return References.empty(); }
+	const std::vector<FItemReference>& GetReferences() const { return References; }
+private:
+	std::vector<FItemReference>	References;
+};
+
 struct FLabelInfo : FItem
 {
 	static FLabelInfo* Allocate();
@@ -63,7 +96,8 @@ struct FLabelInfo : FItem
 	std::string				Name;
 	bool					Global = false;
 	ELabelType				LabelType = ELabelType::Data;
-	std::map<uint16_t, int>	References;
+	FItemReferenceTracker	References;
+	//std::map<uint16_t, int>	References;
 private:
 	FLabelInfo() { Type = EItemType::Label; }
 	~FLabelInfo() = default;
@@ -153,9 +187,9 @@ struct FDataInfo : FItem
 		OperandType = EOperandType::Unknown;
 		Comment.clear();
 		LastFrameRead = -1;
-		Reads.clear();
+		Reads.Reset();
 		LastFrameWritten = -1;
-		Writes.clear();
+		Writes.Reset();
 	}
 
 	EDataType	DataType = EDataType::Byte;
@@ -187,9 +221,9 @@ struct FDataInfo : FItem
 	};
 
 	int						LastFrameRead = -1;
-	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions
+	FItemReferenceTracker	Reads;	// address and counts of data access instructions
 	int						LastFrameWritten = -1;
-	std::map<uint16_t, int>	Writes;	// address and counts of data access instructions
+	FItemReferenceTracker	Writes;	// address and counts of data access instructions
 };
 
 struct FCommentBlock : FItem

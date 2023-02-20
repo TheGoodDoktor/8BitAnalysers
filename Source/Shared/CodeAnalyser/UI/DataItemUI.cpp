@@ -520,7 +520,7 @@ void DrawDataValueGraph(uint16_t val, bool bReset)
 void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, FDataInfo* pDataInfo)
 {
 	// List Data accesses
-	if (pDataInfo->Reads.empty() == false)
+	if (pDataInfo->Reads.IsEmpty() == false)
 	{
 		static std::string commentTxt;
 		static bool bOverride = false;
@@ -538,9 +538,9 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		}
 
 		ImGui::Text("Reads:");
-		for (const auto& caller : pDataInfo->Reads)
+		for (const auto& caller : pDataInfo->Reads.GetReferences())
 		{
-			const uint16_t accessorCodeAddr = caller.first;
+			const uint16_t accessorCodeAddr = caller.InstructionAddress;
 			ShowCodeAccessorActivity(state, accessorCodeAddr);
 
 			ImGui::Text("   ");
@@ -561,7 +561,7 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 
 	}
 
-	if (pDataInfo->Writes.empty() == false)
+	if (pDataInfo->Writes.IsEmpty() == false)
 	{
 		static std::string commentTxt;
 		static bool bOverride = false;
@@ -579,14 +579,14 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		}
 
 		ImGui::Text("Writes:");
-		for (const auto& caller : pDataInfo->Writes)
+		for (const auto& caller : pDataInfo->Writes.GetReferences())
 		{
-			const uint16_t accessorCodeAddr = caller.first;
+			const uint16_t accessorCodeAddr = caller.InstructionAddress;
 			ShowCodeAccessorActivity(state, accessorCodeAddr);
 
 			ImGui::Text("   ");
 			ImGui::SameLine();
-			DrawCodeAddress(state, viewState, caller.first);
+			DrawCodeAddress(state, viewState, accessorCodeAddr);
 
 			if (bWriteComment)
 			{
