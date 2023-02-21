@@ -94,7 +94,7 @@ void FCodeAnalysisPage::Initialise(uint16_t address)
 	memset(Labels, 0, sizeof(Labels));
 	memset(CodeInfo, 0, sizeof(CodeInfo));
 	memset(CommentBlocks, 0, sizeof(CommentBlocks));
-	memset(LastWriter, 0, sizeof(LastWriter));
+	//memset(LastWriter, 0, sizeof(LastWriter));
 
 	for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 	{

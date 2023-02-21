@@ -859,7 +859,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		InitialiseCodeAnalysis(CodeAnalysis, this);
 
 		if (FileExists(romJsonFName.c_str()))
-			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+			ImportAnalysisJson(this, romJsonFName.c_str());
 	}
 
 	if(config.SkoolkitImport.empty() == false)
@@ -934,14 +934,14 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
 	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 	if (FileExists(analysisJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+		ImportAnalysisJson(this, analysisJsonFName.c_str());
 	else
 		LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
 
 	LoadGameState(this, saveStateFName.c_str());
 
 	if (FileExists(romJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+		ImportAnalysisJson(this, romJsonFName.c_str());
 
 	// where do we want pokes to live?
 	LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
