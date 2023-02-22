@@ -145,7 +145,7 @@ public:
 
 	// Emulator 
 	zx_t			ZXEmuState;	// Chips Spectrum State
-	int				CurrentLayer = 0;	// layer ??
+	//int				CurrentLayer = 0;	// layer ??
 
 	unsigned char*	FrameBuffer;	// pixel buffer to store emu output
 	ImTextureID		Texture;		// texture 
