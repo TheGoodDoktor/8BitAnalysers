@@ -89,7 +89,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data)
 }
 
 // Memory access functions
-
+#if 0
 uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr)
 {
 	if (layer == 0)
@@ -157,10 +157,12 @@ void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data)
 		}
 	}
 }
-
+#endif
 uint8_t		FSpectrumEmu::ReadByte(uint16_t address) const
 {
-	return MemReadFunc(CurrentLayer, address, const_cast<zx_t *>(&ZXEmuState));
+	return mem_rd(const_cast<mem_t*>(&ZXEmuState.mem), address);
+
+	//return MemReadFunc(CurrentLayer, address, const_cast<zx_t *>(&ZXEmuState));
 
 }
 uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const 
@@ -182,14 +184,25 @@ const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const
 	}
 	else
 	{
-		return MemGetPtr(const_cast<zx_t*>(&ZXEmuState), CurrentLayer, address);
+		const uint8_t memConfig = ZXEmuState.last_mem_config;
+
+		if (address < 0x4000)
+			return &ZXEmuState.rom[(memConfig & (1 << 4)) ? 1 : 0][address];
+		else if (address < 0x8000)
+			return &ZXEmuState.ram[5][address - 0x4000];
+		else if (address < 0xC000)
+			return &ZXEmuState.ram[2][address - 0x8000];
+		else
+			return &ZXEmuState.ram[memConfig & 7][address - 0xC000];
 	}
 }
 
 
 void FSpectrumEmu::WriteByte(uint16_t address, uint8_t value)
 {
-	MemWriteFunc(CurrentLayer, address, value, &ZXEmuState);
+	mem_wr(&ZXEmuState.mem, address, value);
+
+	//MemWriteFunc(CurrentLayer, address, value, &ZXEmuState);
 }
 
 
@@ -862,7 +875,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		InitialiseCodeAnalysis(CodeAnalysis, this);
 
 		if (FileExists(romJsonFName.c_str()))
-			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+			ImportAnalysisJson(this, romJsonFName.c_str());
 	}
 
 	if(config.SkoolkitImport.empty() == false)
@@ -938,14 +951,14 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
 	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 	if (FileExists(analysisJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+		ImportAnalysisJson(this, analysisJsonFName.c_str());
 	else
 		LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
 
 	LoadGameState(this, saveStateFName.c_str());
 
 	if (FileExists(romJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+		ImportAnalysisJson(this, romJsonFName.c_str());
 
 	// where do we want pokes to live?
 	LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
