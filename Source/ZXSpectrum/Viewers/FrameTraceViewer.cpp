@@ -48,8 +48,11 @@ void FFrameTraceViewer::CaptureFrame()
 	frame.FrameOverview.clear();
 
 	// copy memory
-	for (int i = 0; i < 1 << 16; i++)
-		frame.MemoryDump[i] = pSpectrumEmu->ReadByte(i);
+	const int noBanks = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_48K ? 3:8;
+	for (int i = 0; i < noBanks; i++)
+		memcpy(frame.MemoryBanks[i], pSpectrumEmu->ZXEmuState.ram[i], 16 * 1024);
+
+	frame.MemoryBankRegister = pSpectrumEmu->ZXEmuState.last_mem_config;
 
 	// get CPU state
 	z80_t* pCPUState = (z80_t*)frame.CPUState;
@@ -63,7 +66,8 @@ void FFrameTraceViewer::CaptureFrame()
 	const int prevFrameIndex = CurrentTraceFrame == 0 ? kNoFramesInTrace - 1 : CurrentTraceFrame - 1;
 	const FSpeccyFrameTrace& prevFrame = FrameTrace[prevFrameIndex];
 
-	GenerateMemoryDiff(frame, prevFrame, frame.MemoryDiffs);
+	// Not used atm
+	//GenerateMemoryDiff(frame, prevFrame, frame.MemoryDiffs);
 
 	if (++CurrentTraceFrame == kNoFramesInTrace)
 		CurrentTraceFrame = 0;
@@ -81,8 +85,31 @@ void FFrameTraceViewer::RestoreFrame(const FSpeccyFrameTrace& frame)
 	pSpectrumEmu->ZXEmuState.cpu.pins = pCPUState->pins;
 
 	// restore memory
-	for (int i = 0; i < 1 << 16; i++)
-		pSpectrumEmu->WriteByte(i, frame.MemoryDump[i]);
+	const int noBanks = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_48K ? 3 : 8;
+	for (int i = 0; i < noBanks; i++)
+		memcpy(pSpectrumEmu->ZXEmuState.ram[i],frame.MemoryBanks[i],  16 * 1024);
+
+	// restore bank setup
+	if (pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128)
+	{
+		pSpectrumEmu->ZXEmuState.last_mem_config = frame.MemoryBankRegister;
+
+		// bit 3 defines the video scanout memory bank (5 or 7) 
+		pSpectrumEmu->ZXEmuState.display_ram_bank = (frame.MemoryBankRegister & (1 << 3)) ? 7 : 5;
+
+		// map last bank
+		mem_map_ram(&pSpectrumEmu->ZXEmuState.mem, 0, 0xC000, 0x4000, pSpectrumEmu->ZXEmuState.ram[frame.MemoryBankRegister & 0x7]);
+
+		// map ROM
+		if (frame.MemoryBankRegister & (1 << 4)) // bit 4 set: ROM1 
+			mem_map_rom(&pSpectrumEmu->ZXEmuState.mem, 0, 0x0000, 0x4000, pSpectrumEmu->ZXEmuState.rom[1]);
+		else // bit 4 clear: ROM0 
+			mem_map_rom(&pSpectrumEmu->ZXEmuState.mem, 0, 0x0000, 0x4000, pSpectrumEmu->ZXEmuState.rom[0]);
+
+		// Set code analysis banks
+		pSpectrumEmu->SetROMBank(frame.MemoryBankRegister & (1 << 4) ? 1 : 0);
+		pSpectrumEmu->SetRAMBank(3, frame.MemoryBankRegister & 0x7);
+	}
 }
 
 void FFrameTraceViewer::Draw()
@@ -274,15 +301,19 @@ void FFrameTraceViewer::GenerateMemoryDiff(const FSpeccyFrameTrace& frame, const
 	// diff RAM with previous frame
 	// skip ROM & screen memory
 	// might want to exclude stack (once we determine where it is)
-	for (int i = 0x5C00; i < 1 << 16; i++)	
+	const int noBanks = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_48K ? 3 : 8;
+	for (int bankNo = 0; bankNo < noBanks; bankNo++)
 	{
-		if (frame.MemoryDump[i] != otherFrame.MemoryDump[i])
+		for (int addr = 0; addr < 16 * 1024; addr++)
 		{
-			FMemoryDiff diff;
-			diff.Address = i;
-			diff.NewVal = frame.MemoryDump[i];
-			diff.OldVal = otherFrame.MemoryDump[i];
-			outDiff.push_back(diff);
+			if (frame.MemoryBanks[bankNo][addr] != otherFrame.MemoryBanks[bankNo][addr])
+			{
+				FMemoryDiff diff;
+				diff.Address = addr;
+				diff.NewVal = frame.MemoryBanks[bankNo][addr];
+				diff.OldVal = otherFrame.MemoryBanks[bankNo][addr];
+				outDiff.push_back(diff);
+			}
 		}
 	}
 }
