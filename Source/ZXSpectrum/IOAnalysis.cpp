@@ -154,32 +154,17 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 		{
 			SpeccyIODevice readDevice = SpeccyIODevice::None;
 
+			// Spectrum ULA (...............0)
+			//	Bits 5 and 7 as read by INning from Port 0xfe are always one
 			if ((pins & Z80_A0) == 0)
-			{
-				// Spectrum ULA (...............0)
-				//	Bits 5 and 7 as read by INning from Port 0xfe are always one
-							
-				const uint16_t column_mask = (~(Z80_GET_ADDR(pins) >> 8)) & 0x00FF;
 				readDevice = SpeccyIODevice::Keyboard;
-				FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::Keyboard];
-				ioDevice.Callers.RegisterAccess(pc);
-				ioDevice.ReadCount++;
-				ioDevice.FrameReadCount++;
-			}
-			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) 
-			{
-				// Kempston Joystick (........000.....) 
+			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) // Kempston Joystick (........000.....)
 				readDevice = SpeccyIODevice::KempstonJoystick;
-				FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::KempstonJoystick];
-				ioDevice.Callers.RegisterAccess(pc);
-				ioDevice.ReadCount++;
-				ioDevice.FrameReadCount++;
-			}
-			// 128K specific - check?
-			else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14)) 
+			// 128K specific
+			else if(pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128)
 			{
-				readDevice = SpeccyIODevice::SoundChip;
-				
+				if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14))
+					readDevice = SpeccyIODevice::SoundChip;
 			}
 
 			if (readDevice != SpeccyIODevice::None)
@@ -196,56 +181,34 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 			SpeccyIODevice writeDevice = SpeccyIODevice::None;
 			const uint8_t data = Z80_GET_DATA(pins);
 
-			
-
 			if ((pins & Z80_A0) == 0)
 			{
 				// Spectrum ULA (...............0)
 				
 				// has border colour changed?
 				if((data & 7) != (LastFE & 7))
-				{
-					FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::BorderColour];
-					ioDevice.Callers.RegisterAccess(pc);
-					ioDevice.WriteCount++;
-					ioDevice.FrameWriteCount++;
-				}
+					writeDevice = SpeccyIODevice::BorderColour;
 
 				// has beeper changed
 				if((data & (1 << 4)) != (LastFE & (1 << 4)))
-				{
-					FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::Beeper];
-					ioDevice.Callers.RegisterAccess(pc);
-					ioDevice.WriteCount++;
-					ioDevice.FrameWriteCount++;
-				}
+					writeDevice = SpeccyIODevice::Beeper;
 
 
 				// has mic output changed
 				if ((data & (1 << 3)) != (LastFE & (1 << 3)))
-				{
-					FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::Mic];
-					ioDevice.Callers.RegisterAccess(pc);
-					ioDevice.WriteCount++;
-					ioDevice.FrameWriteCount++;
-				}
+					writeDevice = SpeccyIODevice::Mic;
 				
 				LastFE = data;
 			}
 			// 128K specific
-			else if ((pins & (Z80_A15 | Z80_A1)) == 0)
+			else if (pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128)
 			{
-				writeDevice = SpeccyIODevice::MemoryBank;
-			}
-			else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14)) 
-			{
-				/* select AY-3-8912 register (11............0.) */
-				writeDevice = SpeccyIODevice::SoundChip;
-			}
-			else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == Z80_A15) 
-			{
-				/* write to AY-3-8912 (10............0.) */
-				writeDevice = SpeccyIODevice::SoundChip;
+				if ((pins & (Z80_A15 | Z80_A1)) == 0)
+					writeDevice = SpeccyIODevice::MemoryBank;
+				else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14))	// select AY-3-8912 register (11............0.)
+					writeDevice = SpeccyIODevice::SoundChip;
+				else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == Z80_A15)	// write to AY-3-8912 (10............0.) 
+					writeDevice = SpeccyIODevice::SoundChip;
 			}
 
 			if (writeDevice != SpeccyIODevice::None)

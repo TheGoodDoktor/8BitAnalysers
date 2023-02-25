@@ -736,7 +736,10 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	zx_init(&ZXEmuState, &desc);
 
 	GamesList.Init(this);
-	GamesList.EnumerateGames(globalConfig.SnapshotFolder.c_str());
+	if(config.Model == ESpectrumModel::Spectrum128K)
+		GamesList.EnumerateGames(globalConfig.SnapshotFolder128.c_str());
+	else
+		GamesList.EnumerateGames(globalConfig.SnapshotFolder.c_str());
 
 	RZXManager.Init(this);
 	RZXGamesList.Init(this);
@@ -919,6 +922,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	delete pActiveGame;
 	
 	FGame *pNewGame = new FGame;
+	pGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
 	pNewGame->pConfig = pGameConfig;
 	pNewGame->pViewerConfig = pGameConfig->pViewerConfig;
 	assert(pGameConfig->pViewerConfig != nullptr);

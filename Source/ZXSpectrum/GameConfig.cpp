@@ -45,6 +45,7 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 	json jsonConfigFile;
 	jsonConfigFile["Name"] = config.Name;
 	jsonConfigFile["SnapshotFile"] = config.SnapshotFile;
+	jsonConfigFile["128KGame"] = config.Spectrum128KGame;
 
 	for (const auto&sprConfigIt : config.SpriteConfigs)
 	{
@@ -109,14 +110,19 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	config.Name = jsonConfigFile["Name"].get<std::string>();
 
 	// Patch up old field that assumed everything was in the 'Games' dir
-	if (jsonConfigFile["Z80File"].is_null() == false)
+	if (jsonConfigFile.contains("Z80File"))
 	{
 		config.SnapshotFile = std::string("./Games/") + jsonConfigFile["Z80File"].get<std::string>();
 	}
-	if (jsonConfigFile["SnapshotFile"].is_null() == false)
+	if (jsonConfigFile.contains("SnapshotFile"))
 	{
 		config.SnapshotFile = GetFileFromPath(jsonConfigFile["SnapshotFile"].get<std::string>().c_str());
 	}
+	if (jsonConfigFile.contains("128KGame"))
+	{
+		config.Spectrum128KGame = jsonConfigFile["128KGame"];
+	}
+
 	config.pViewerConfig = GetViewConfigForGame(config.Name.c_str());
 
 	for(const auto & jsonSprConfig : jsonConfigFile["SpriteConfigs"])
@@ -269,7 +275,8 @@ bool LoadGameConfigs(FSpectrumEmu *pEmu)
 			FGameConfig *pNewConfig = new FGameConfig;
 			if (LoadGameConfigFromFile(*pNewConfig, fn.c_str()))
 			{
-				AddGameConfig(pNewConfig);
+				if(pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
+					AddGameConfig(pNewConfig);
 			}
 			else
 			{

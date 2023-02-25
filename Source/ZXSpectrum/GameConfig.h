@@ -60,6 +60,7 @@ struct FGameConfig
 
 	std::string		Name;
 	std::string		SnapshotFile;
+	bool			Spectrum128KGame = false;
 	bool			WriteSnapshot = false;
 
 	FViewerConfig *pViewerConfig = nullptr;
@@ -69,10 +70,6 @@ struct FGameConfig
 	std::vector< FCheat> Cheats;
 
 	FCodeAnalysisViewConfig	ViewConfigs[FCodeAnalysisState::kNoViewStates];
-
-	//bool	bCodeAnalysisViewEnabled[FCodeAnalysisState::kNoViewStates] = { true,false,false,false };
-	//bool	bShowScanLineIndicator = false;
-	//ENumberDisplayMode		NumberDisplayMode = ENumberDisplayMode::HexAitch;
 };
 
 bool AddGameConfig(FGameConfig *pConfig);
