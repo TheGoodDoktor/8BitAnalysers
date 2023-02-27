@@ -21,6 +21,30 @@
 #include "Commands/CommandProcessor.h"
 #include "Commands/SetItemDataCommand.h"
 
+// memory bank code
+
+// create a bank
+// a bank is a list of memory pages
+int16_t	FCodeAnalysisState::CreateBank(const char* name, int noKb, bool bReadOnly)
+{
+	const int16_t bankId = (int16_t)Banks.size();
+	const int noPages = noKb;
+
+	FCodeAnalysisBank& newBank = Banks.emplace_back();
+	newBank.NoPages = noPages;
+	newBank.Pages = new FCodeAnalysisPage[noPages];
+	newBank.Name = name;
+
+	return bankId;
+}
+
+// Set bank to memory pages starting at pageNo
+bool FCodeAnalysisState::SetBankPages(int16_t bankId, int pageNo)
+{
+	return true;
+}
+
+
 bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
 {
 	auto labelIt = LabelUsage.find(labelName);

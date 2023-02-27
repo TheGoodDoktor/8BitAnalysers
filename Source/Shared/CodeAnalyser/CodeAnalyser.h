@@ -200,6 +200,13 @@ struct FCodeAnalysisConfig
 	bool bShowOpcodeValues = false;
 };
 
+struct FCodeAnalysisBank
+{
+	int					NoPages = 0;
+	FCodeAnalysisPage*	Pages;
+	std::string			Name;
+};
+
 
 // code analysis information
 // TODO: make this a class
@@ -209,6 +216,9 @@ struct FCodeAnalysisState
 	int						CurrentFrameNo = 0;
 
 	static const int kAddressSize = 1 << 16;
+
+	int16_t		CreateBank(const char* name, int noKb, bool bReadOnly);
+	bool		SetBankPages(int16_t bankId, int pageNo);
 
 	bool					RegisterPage(FCodeAnalysisPage* pPage, const char* pName) 
 	{
@@ -263,6 +273,7 @@ struct FCodeAnalysisState
 
 	const std::set<uint16_t>& GetWatches() const { return Watches; }
 private:
+	std::vector<FCodeAnalysisBank>	Banks;
 	std::vector<FCodeAnalysisPage*>	RegisteredPages;
 	std::vector<std::string>	PageNames;
 	int32_t						NextPageId = 0;

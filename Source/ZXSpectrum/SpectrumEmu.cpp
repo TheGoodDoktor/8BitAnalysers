@@ -833,6 +833,10 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		CodeAnalysis.RegisterPage(&RAMPages[pageNo], pageName);
 	}
 
+	// TODO: register banks
+	// CreateBank(name,size in kb,r/w)
+	// return bank id
+
 	// Setup initial machine memory config
 	if (config.Model == ESpectrumModel::Spectrum48K)
 	{
