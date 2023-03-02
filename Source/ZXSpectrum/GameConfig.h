@@ -6,7 +6,7 @@
 #include <Util/Misc.h>
 #include <CodeAnalyser/CodeAnalyser.h>
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 struct FGameViewerData;
 class FSpectrumEmu;
 struct FGame;

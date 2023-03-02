@@ -2,4 +2,4 @@
 
 #include <cstdint>
 
-void ShowCodeToolTip6502(struct FCodeAnalysisState& state, uint16_t addr);
+void ShowCodeToolTip6502(class FCodeAnalysisState& state, uint16_t addr);

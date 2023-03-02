@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 // this is a surface on which to draw game graphics
 class FGraphicsView

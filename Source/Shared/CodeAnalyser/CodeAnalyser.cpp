@@ -25,7 +25,7 @@
 
 // create a bank
 // a bank is a list of memory pages
-int16_t	FCodeAnalysisState::CreateBank(const char* name, int noKb, bool bReadOnly)
+int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb, bool bReadOnly)
 {
 	const int16_t bankId = (int16_t)Banks.size();
 	const int noPages = noKb;
@@ -33,14 +33,29 @@ int16_t	FCodeAnalysisState::CreateBank(const char* name, int noKb, bool bReadOnl
 	FCodeAnalysisBank& newBank = Banks.emplace_back();
 	newBank.NoPages = noPages;
 	newBank.Pages = new FCodeAnalysisPage[noPages];
-	newBank.Name = name;
-
+	newBank.Name = bankName;
+	newBank.bReadOnly = bReadOnly;
+	for (int pageNo = 0; pageNo < noPages; pageNo++)
+	{
+		char pageName[32];
+		sprintf(pageName, "%s:%d", bankName, pageNo);
+		RegisterPage(&newBank.Pages[pageNo], pageName);
+	}
 	return bankId;
 }
 
 // Set bank to memory pages starting at pageNo
-bool FCodeAnalysisState::SetBankPages(int16_t bankId, int pageNo)
+bool FCodeAnalysisState::SetBankPages(int16_t bankId, int startPageNo)
 {
+	const FCodeAnalysisBank& bank = Banks[bankId];
+	int pageNo = startPageNo;
+	for (int bankPageNo = 0; bankPageNo < bank.NoPages; bankPageNo++)
+	{
+		SetCodeAnalysisRWPage(pageNo, &bank.Pages[bankPageNo], &bank.Pages[bankPageNo]);	// Read/Write
+		pageNo++;
+	}
+
+	SetMemoryRemapped();
 	return true;
 }
 
@@ -693,81 +708,62 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	state.bRebuildFilteredGlobalFunctions = true;
 }
 
-void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface)
+void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 {
 	InitImageViewers();
 	InitCharacterSets();
 	
-	state.InitWatches();
-	state.ResetLabelNames();
-	state.ItemList.clear();
-
-	// This won't work with banked memory
-	// we need to reset all the banks
-	// the code analyser needs to know about them
-	/*for (int i = 0; i < (1 << 16); i++)	// loop across address range
-	{
-		// clear item pointers
-		state.SetLabelForAddress(i, nullptr);
-		state.SetCommentBlockForAddress(i, nullptr);
-		state.SetCodeInfoForAddress(i, nullptr);
-
-		// set up data entry for address
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
-		pDataInfo->Reset((uint16_t)i);
-
-		FCodeAnalysisPage* pPage = state.GetReadPage(i);
-		assert(i >= pPage->BaseAddress && i < pPage->BaseAddress + FCodeAnalysisPage::kPageSize);
-	}*/
+	InitWatches();
+	ResetLabelNames();
+	ItemList.clear();
 
 	// reset registered pages
-	for (FCodeAnalysisPage* pPage : state.GetRegisteredPages())
+	for (FCodeAnalysisPage* pPage : GetRegisteredPages())
 	{
 		for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 		{
 			pPage->Labels[addr] = nullptr;
 			pPage->CommentBlocks[addr] = nullptr;
 			pPage->CodeInfo[addr] = nullptr;
-			//assert(pPage->DataInfo[addr].Address == pPage->BaseAddress + addr);
-			pPage->DataInfo[addr].Reset(pPage->BaseAddress + addr);
+			pPage->DataInfo[addr].Reset();
 			pPage->MachineState[addr] = nullptr;
 		}
 	}
 
-	FreeMachineStates(state);
+	FreeMachineStates(*this);
 	FLabelInfo::FreeAll();
 	FCodeInfo::FreeAll();
 	FCommentBlock::FreeAll();
 
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
-		state.ViewState[i].CursorItemIndex = -1;
-		state.ViewState[i].SetCursorItem(FCodeAnalysisItem());
+		ViewState[i].CursorItemIndex = -1;
+		ViewState[i].SetCursorItem(FCodeAnalysisItem());
 	}
 
-	state.CPUInterface = pCPUInterface;
+	CPUInterface = pCPUInterface;
 	uint16_t initialPC = pCPUInterface->GetPC();
-	RunStaticCodeAnalysis(state, initialPC);
+	RunStaticCodeAnalysis(*this, initialPC);
 
 	// Key Config
-	state.KeyConfig[(int)EKey::SetItemData] = ImGuiKey_D;
-	state.KeyConfig[(int)EKey::SetItemText] = ImGuiKey_T;
-	state.KeyConfig[(int)EKey::SetItemCode] = ImGuiKey_C;
-	state.KeyConfig[(int)EKey::SetItemImage] = ImGuiKey_I;
-	state.KeyConfig[(int)EKey::ToggleItemBinary] = ImGuiKey_B;
-	state.KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
-	state.KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
-	state.KeyConfig[(int)EKey::Comment] = ImGuiKey_Slash; // '/'
-	state.KeyConfig[(int)EKey::AddCommentBlock] = ImGuiKey_Semicolon;	// ';'
-	state.KeyConfig[(int)EKey::BreakContinue] = ImGuiKey_F5;
-	state.KeyConfig[(int)EKey::StepInto] = ImGuiKey_F11;
-	state.KeyConfig[(int)EKey::StepOver] = ImGuiKey_F10;
-	state.KeyConfig[(int)EKey::StepFrame] = ImGuiKey_F6;
-	state.KeyConfig[(int)EKey::StepScreenWrite] = ImGuiKey_F7;
-	state.KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
+	KeyConfig[(int)EKey::SetItemData] = ImGuiKey_D;
+	KeyConfig[(int)EKey::SetItemText] = ImGuiKey_T;
+	KeyConfig[(int)EKey::SetItemCode] = ImGuiKey_C;
+	KeyConfig[(int)EKey::SetItemImage] = ImGuiKey_I;
+	KeyConfig[(int)EKey::ToggleItemBinary] = ImGuiKey_B;
+	KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
+	KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
+	KeyConfig[(int)EKey::Comment] = ImGuiKey_Slash; // '/'
+	KeyConfig[(int)EKey::AddCommentBlock] = ImGuiKey_Semicolon;	// ';'
+	KeyConfig[(int)EKey::BreakContinue] = ImGuiKey_F5;
+	KeyConfig[(int)EKey::StepInto] = ImGuiKey_F11;
+	KeyConfig[(int)EKey::StepOver] = ImGuiKey_F10;
+	KeyConfig[(int)EKey::StepFrame] = ImGuiKey_F6;
+	KeyConfig[(int)EKey::StepScreenWrite] = ImGuiKey_F7;
+	KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
 
-	state.StackMin = 0xffff;
-	state.StackMax = 0;
+	StackMin = 0xffff;
+	StackMax = 0;
 }
 
 

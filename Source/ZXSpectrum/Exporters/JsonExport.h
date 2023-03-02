@@ -1,6 +1,6 @@
 #pragma once
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 class FSpectrumEmu;
 
 bool ExportROMJson(FCodeAnalysisState& state, const char* pJsonFileName);

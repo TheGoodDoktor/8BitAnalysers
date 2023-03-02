@@ -170,13 +170,17 @@ public:
 
 	// Code analysis pages - to cover 48K & 128K Spectrums
 	static const int kNoBankPages = 16;	// no of pages per physical address slot (16k)
-	static const int kNoSlotPages = 16;	// no of pages per physical address slot (16k)
-	static const int kNoROMPages = 16 + 16;	// 48K ROM & 128K ROM
+	//static const int kNoSlotPages = 16;	// no of pages per physical address slot (16k)
+	//static const int kNoROMPages = 16 + 16;	// 48K ROM & 128K ROM
 	static const int kNoRAMPages = 128;
-	FCodeAnalysisPage	ROMPages[kNoROMPages];
-	FCodeAnalysisPage	RAMPages[kNoRAMPages];
-	int					ROMBank = -1;
-	int					RAMBanks[4] = { -1,-1,-1,-1 };
+	static const int kNoROMBanks = 2;
+	static const int kNoRAMBanks = 8;
+	int16_t				ROMBanks[kNoROMBanks];
+	int16_t				RAMBanks[kNoRAMBanks];
+	//FCodeAnalysisPage	ROMPages[kNoROMPages];
+	//FCodeAnalysisPage	RAMPages[kNoRAMPages];
+	int					CurROMBank = -1;
+	int					CurRAMBank[4] = { -1,-1,-1,-1 };
 
 	// Memory handling
 	std::string				SelectedMemoryHandler;

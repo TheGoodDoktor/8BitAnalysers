@@ -4,7 +4,7 @@
 #include "../CodeAnalyser.h"
 
 struct FItem;
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 class FSetItemDataCommand : public FCommand
 {

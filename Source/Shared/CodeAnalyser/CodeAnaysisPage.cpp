@@ -85,50 +85,21 @@ void FCommentLine::FreeAll()
 }
 
 
-void FCodeAnalysisPage::Initialise(uint16_t address)
+void FCodeAnalysisPage::Initialise()
 {
-	BaseAddress = address;
-
 	bUsed = false;
 	
 	memset(Labels, 0, sizeof(Labels));
 	memset(CodeInfo, 0, sizeof(CodeInfo));
 	memset(CommentBlocks, 0, sizeof(CommentBlocks));
-	//memset(LastWriter, 0, sizeof(LastWriter));
 
 	for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 	{
 		// set up data entry for address
 		FDataInfo& dataInfo = DataInfo[addr];
-		//dataInfo.Address = BaseAddress + (uint16_t)addr;
 		dataInfo.ByteSize = 1;
 		dataInfo.DataType = EDataType::Byte;
 	}
-}
-
-// This is used to rebase pages if they move in system memory
-void FCodeAnalysisPage::ChangeAddress(uint16_t newAddress)
-{
-	if (newAddress == BaseAddress)
-		return;
-
-	// rebase memory items
-	/*for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
-	{
-		FDataInfo& dataInfo = DataInfo[addr];
-		dataInfo.Address = (dataInfo.Address - BaseAddress) + newAddress;
-
-		if (Labels[addr])
-			Labels[addr]->Address = (Labels[addr]->Address - BaseAddress) + newAddress;
-
-		if(CodeInfo[addr])
-			CodeInfo[addr]->Address = (CodeInfo[addr]->Address - BaseAddress) + newAddress;
-
-		if(CommentBlocks[addr])
-			CommentBlocks[addr]->Address = (CommentBlocks[addr]->Address - BaseAddress) + newAddress;
-	}*/
-
-	BaseAddress = newAddress;
 }
 
 
@@ -162,7 +133,7 @@ void FCodeAnalysisPage::Reset(void)
 		}*/
 	}
 
-	Initialise(BaseAddress);
+	Initialise();
 }
 
 static const uint32_t kMagic = 0xc0de;

@@ -2,7 +2,7 @@
 #include <cstdint>
 
 class ICPUInterface;
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 bool CheckPointerIndirectionInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr);
 bool CheckPointerRefInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr);

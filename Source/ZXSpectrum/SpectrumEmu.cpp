@@ -647,20 +647,12 @@ void CheckAddressSpaceItems(const FCodeAnalysisState& state)
 
 // Bank is ROM bank 0 or 1
 // this is always slot 0
-void FSpectrumEmu::SetROMBank(int bankNo)
+void FSpectrumEmu::SetROMBank(int bankId)
 {
-	if (ROMBank == bankNo)
+	if (CurROMBank == bankId)
 		return;
 
-	const uint16_t firstBankPage = bankNo * kNoSlotPages;
-
-	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
-	{
-		ROMPages[firstBankPage + pageNo].ChangeAddress((pageNo * FCodeAnalysisPage::kPageSize));
-		CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &ROMPages[firstBankPage + pageNo], &ROMPages[firstBankPage + pageNo]);	// Read/Write
-	}
-
-	CodeAnalysis.SetMemoryRemapped();
+	CodeAnalysis.SetBankPages(bankId, 0);
 #ifdef _DEBUG
 	if (bInitialised)
 		CheckAddressSpaceItems(CodeAnalysis);
@@ -669,26 +661,13 @@ void FSpectrumEmu::SetROMBank(int bankNo)
 
 // Slot is physical 16K memory region (0-3) 
 // Bank is a 16K Spectrum RAM bank (0-7)
-void FSpectrumEmu::SetRAMBank(int slot, int bankNo)
+void FSpectrumEmu::SetRAMBank(int slot, int bankId)
 {
-	if (RAMBanks[slot] == bankNo)
+	if (CurRAMBank[slot] == bankId)
 		return;
-	RAMBanks[slot] = bankNo;
+	CurRAMBank[slot] = bankId;
 
-	const uint16_t firstSlotPage = slot * kNoSlotPages;
-	const uint16_t firstBankPage = bankNo * kNoBankPages;
-	uint16_t slotAddress = firstSlotPage * FCodeAnalysisPage::kPageSize;
-
-	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
-	{
-		const int slotPageNo = firstSlotPage + pageNo;
-		FCodeAnalysisPage& bankPage = RAMPages[firstBankPage + pageNo];
-		bankPage.ChangeAddress(slotAddress);
-		CodeAnalysis.SetCodeAnalysisRWPage(slotPageNo, &bankPage, &bankPage);	// Read/Write
-		slotAddress += FCodeAnalysisPage::kPageSize;
-	}
-
-	CodeAnalysis.SetMemoryRemapped();
+	CodeAnalysis.SetBankPages(bankId, slot * kNoBankPages);
 
 #ifdef _DEBUG
 	if(bInitialised)
@@ -816,6 +795,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	LoadGameConfigs(this);
 
 	// Set up code analysis
+/*
 	// initialise code analysis pages
 	
 	// ROM
@@ -834,25 +814,40 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		RAMPages[pageNo].Initialise(0);
 		CodeAnalysis.RegisterPage(&RAMPages[pageNo], pageName);
 	}
+*/
+	// create & register ROM banks
+	for (int bankNo = 0; bankNo < kNoROMBanks; bankNo++)
+	{
+		char bankName[32];
+		sprintf(bankName, "ROM:%d", bankNo);
+		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, true);
+	}
 
-	// TODO: register banks
+	// create & register RAM banks
+	for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
+	{
+		char bankName[32];
+		sprintf(bankName, "RAM:%d", bankNo);
+		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, false);
+	}
+
 	// CreateBank(name,size in kb,r/w)
 	// return bank id
 
 	// Setup initial machine memory config
 	if (config.Model == ESpectrumModel::Spectrum48K)
 	{
-		SetROMBank(0);
-		SetRAMBank(1, 0);	// 0x4000 - 0x7fff
-		SetRAMBank(2, 1);	// 0x8000 - 0xBfff
-		SetRAMBank(3, 2);	// 0xc000 - 0xffff
+		SetROMBank(ROMBanks[0]);
+		SetRAMBank(1, RAMBanks[0]);	// 0x4000 - 0x7fff
+		SetRAMBank(2, RAMBanks[1]);	// 0x8000 - 0xBfff
+		SetRAMBank(3, RAMBanks[2]);	// 0xc000 - 0xffff
 	}
 	else
 	{
 		SetROMBank(0);
-		SetRAMBank(1, 5);	// 0x4000 - 0x7fff
-		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
-		SetRAMBank(3, 0);	// 0xc000 - 0xffff
+		SetRAMBank(1, RAMBanks[5]);	// 0x4000 - 0x7fff
+		SetRAMBank(2, RAMBanks[2]);	// 0x8000 - 0xBfff
+		SetRAMBank(3, RAMBanks[0]);	// 0xc000 - 0xffff
 	}
 
 #ifdef _DEBUG
@@ -878,7 +873,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		if (config.Model == ESpectrumModel::Spectrum128K)
 			romJsonFName = kRomInfo128JsonFile;
 
-		InitialiseCodeAnalysis(CodeAnalysis, this);
+		CodeAnalysis.Init(this);
 
 		if (FileExists(romJsonFName.c_str()))
 			ImportAnalysisJson(this, romJsonFName.c_str());
@@ -938,7 +933,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
 
 	// Initialise code analysis
-	InitialiseCodeAnalysis(CodeAnalysis, this);
+	CodeAnalysis.Init(this);
 
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)

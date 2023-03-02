@@ -42,19 +42,28 @@ bool ExportGameJson(FSpectrumEmu* pSpectrumEmu, const char* pJsonFileName)
 
 #if WRITE_PAGES
 	int pagesWritten = 0;
-	for (int pageNo = 0; pageNo < FSpectrumEmu::kNoRAMPages; pageNo++)
-	{
-		FCodeAnalysisPage& page = pSpectrumEmu->RAMPages[pageNo];
-		if (page.bUsed)
-		{
-			json pageData;
+	const auto& banks = state.GetBanks();
 
-			WritePageToJson(pSpectrumEmu, page, pageData);
-			jsonGameData["Pages"].push_back(pageData);
-			pagesWritten++;
+	// iterate through all registered banks
+	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
+	{
+		const FCodeAnalysisBank& bank = banks[bankNo];
+		if (bank.bReadOnly)	// skip read only banks - ROM
+			continue;
+
+		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
+		{
+			const FCodeAnalysisPage& page = bank.Pages[pageNo];
+			if (page.bUsed)
+			{
+				json pageData;
+
+				WritePageToJson(pSpectrumEmu, page, pageData);
+				jsonGameData["Pages"].push_back(pageData);
+				pagesWritten++;
+			}
 		}
 	}
-
 	LOGINFO("%d pages written", pagesWritten);
 #else
 	// write out RAM
@@ -455,7 +464,7 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 	return true;
 }
 
-// write a 16K bank to Json
+// write a 1K page to Json
 // the plan is to move to this so we can support 128K games
 void WritePageToJson(const FSpectrumEmu* pSpectrumEmu, const FCodeAnalysisPage& page, json& jsonDoc)
 {

@@ -2,7 +2,7 @@
 #include <cstdint>
 
 struct FCodeAnalysisItem;
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 struct FCodeAnalysisViewState;
 struct FDataInfo;
 struct FItem;

@@ -8,10 +8,8 @@
 
 #include "CodeAnaysisPage.h"
 
-#define USE_PAGING 1
-
 class FGraphicsView;
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 enum class ELabelType;
 
@@ -201,52 +199,37 @@ struct FCodeAnalysisConfig
 	const uint32_t*		CharacterColourLUT = nullptr;
 };
 
+// Analysis memory bank
 struct FCodeAnalysisBank
 {
 	int					NoPages = 0;
 	FCodeAnalysisPage*	Pages;
 	std::string			Name;
+	bool				bReadOnly = false;
 };
 
 
 // code analysis information
-// TODO: make this a class
-struct FCodeAnalysisState
+class FCodeAnalysisState
 {
+public:
+	// constants
+	static const int kAddressSize = 1 << 16;
+
+	void	Init(ICPUInterface* pCPUInterface);
+
 	ICPUInterface*			CPUInterface = nullptr;
 	int						CurrentFrameNo = 0;
 
-	static const int kAddressSize = 1 << 16;
-
+	// Memory Banks & Pages
 	int16_t		CreateBank(const char* name, int noKb, bool bReadOnly);
-	bool		SetBankPages(int16_t bankId, int pageNo);
+	bool		SetBankPages(int16_t bankId, int startPageNo);
 
-	bool					RegisterPage(FCodeAnalysisPage* pPage, const char* pName) 
-	{
-		if (pPage->PageId != -1)
-			return false;
-		pPage->PageId = (int16_t)RegisteredPages.size();
-		RegisteredPages.push_back(pPage);
-		PageNames.push_back(pName);
-		return true;
-	}
-	FCodeAnalysisPage*		GetPage(int16_t id) { return RegisteredPages[id]; }
-	const char*				GetPageName(int16_t id) { return PageNames[id].c_str(); }
-	int16_t					GetAddressReadPageId(uint16_t addr) { return GetReadPage(addr)->PageId; }
-	int16_t					GetAddressWritePageId(uint16_t addr) { return GetWritePage(addr)->PageId; }
-	const std::vector< FCodeAnalysisPage*>& GetRegisteredPages() const { return RegisteredPages; }
+	const std::vector<FCodeAnalysisBank>& GetBanks() const { return Banks; }
+	
+	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
 
-	FCodeAnalysisPage*		ReadPageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
-	FCodeAnalysisPage*		WritePageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
-	void					SetCodeAnalysisReadPage(int pageNo, FCodeAnalysisPage* pPage) { ReadPageTable[pageNo] = pPage; pPage->bUsed = true; }
-	void					SetCodeAnalysisWritePage(int pageNo, FCodeAnalysisPage* pPage) { WritePageTable[pageNo] = pPage; pPage->bUsed = true;}
-	void					SetCodeAnalysisRWPage(int pageNo, FCodeAnalysisPage* pReadPage, FCodeAnalysisPage *pWritePage)
-	{
-		SetCodeAnalysisReadPage(pageNo, pReadPage);
-		SetCodeAnalysisWritePage(pageNo, pWritePage);
-	}
-
-	void	SetCodeAnalysisDirty(bool val = true) 
+	void	SetCodeAnalysisDirty(bool val = true)	
 	{ 
 		bCodeAnalysisDataDirty = val; 
 	}
@@ -273,15 +256,6 @@ struct FCodeAnalysisState
 	}
 
 	const std::set<uint16_t>& GetWatches() const { return Watches; }
-private:
-	std::vector<FCodeAnalysisBank>	Banks;
-	std::vector<FCodeAnalysisPage*>	RegisteredPages;
-	std::vector<std::string>	PageNames;
-	int32_t						NextPageId = 0;
-	std::map<std::string, int>	LabelUsage;
-
-	bool						bCodeAnalysisDataDirty = false;
-	bool						bMemoryRemapped = false;
 
 public:
 
@@ -379,10 +353,48 @@ public:
 	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 
 	void FindAsciiStrings(uint16_t startAddress);
+
+
+private:
+	// private methods
+	bool					RegisterPage(FCodeAnalysisPage* pPage, const char* pName)
+	{
+		if (pPage->PageId != -1)
+			return false;
+		pPage->PageId = (int16_t)RegisteredPages.size();
+		RegisteredPages.push_back(pPage);
+		PageNames.push_back(pName);
+		return true;
+	}
+	const char* GetPageName(int16_t id) { return PageNames[id].c_str(); }
+	int16_t					GetAddressReadPageId(uint16_t addr) { return GetReadPage(addr)->PageId; }
+	int16_t					GetAddressWritePageId(uint16_t addr) { return GetWritePage(addr)->PageId; }
+	const std::vector< FCodeAnalysisPage*>& GetRegisteredPages() const { return RegisteredPages; }
+
+	FCodeAnalysisPage* ReadPageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
+	FCodeAnalysisPage* WritePageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
+	void					SetCodeAnalysisReadPage(int pageNo, FCodeAnalysisPage* pPage) { ReadPageTable[pageNo] = pPage; pPage->bUsed = true; }
+	void					SetCodeAnalysisWritePage(int pageNo, FCodeAnalysisPage* pPage) { WritePageTable[pageNo] = pPage; pPage->bUsed = true; }
+	void					SetCodeAnalysisRWPage(int pageNo, FCodeAnalysisPage* pReadPage, FCodeAnalysisPage* pWritePage)
+	{
+		SetCodeAnalysisReadPage(pageNo, pReadPage);
+		SetCodeAnalysisWritePage(pageNo, pWritePage);
+	}
+
+	// private data members
+	std::vector<FCodeAnalysisBank>	Banks;
+	std::vector<FCodeAnalysisPage*>	RegisteredPages;
+	std::vector<std::string>	PageNames;
+	int32_t						NextPageId = 0;
+	std::map<std::string, int>	LabelUsage;
+
+	bool						bCodeAnalysisDataDirty = false;
+	bool						bMemoryRemapped = false;
+
+
 };
 
 // Analysis
-void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);

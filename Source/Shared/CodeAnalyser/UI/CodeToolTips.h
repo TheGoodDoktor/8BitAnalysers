@@ -1,6 +1,6 @@
 #pragma once
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 struct FCodeInfo;
 
 #include <map>

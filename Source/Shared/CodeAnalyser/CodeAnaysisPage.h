@@ -178,10 +178,9 @@ struct FDataInfo : FItem
 {
 	FDataInfo() :FItem() { Type = EItemType::Data; }
 
-	void Reset(uint16_t addr)
+	void Reset()
 	{
 		Flags = 0;
-		//Address = addr;
 		ByteSize = 1;
 		DataType = EDataType::Byte;
 		OperandType = EOperandType::Unknown;
@@ -224,7 +223,7 @@ struct FDataInfo : FItem
 	FItemReferenceTracker	Reads;	// address and counts of data access instructions
 	int						LastFrameWritten = -1;
 	FItemReferenceTracker	Writes;	// address and counts of data access instructions
-	uint16_t				LastWriter;
+	uint16_t				LastWriter = 0;
 };
 
 struct FCommentBlock : FItem
@@ -259,8 +258,7 @@ struct FMachineState
 
 struct FCodeAnalysisPage
 {
-	void Initialise(uint16_t address);
-	void ChangeAddress(uint16_t address);
+	void Initialise();
 	void Reset(void);
 	void WriteToBuffer(FMemoryBuffer& buffer);
 	bool ReadFromBuffer(FMemoryBuffer& buffer);
@@ -270,7 +268,6 @@ struct FCodeAnalysisPage
 
 	bool			bUsed = false;	// has this page been used?
 	int16_t			PageId = -1;
-	uint16_t		BaseAddress; // physical base address
 	FLabelInfo*		Labels[kPageSize];
 	FCodeInfo*		CodeInfo[kPageSize];
 	FDataInfo		DataInfo[kPageSize];

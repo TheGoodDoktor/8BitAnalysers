@@ -3,7 +3,7 @@
 #include "../CodeAnaysisPage.h"
 
 class ICPUInterface;
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 struct FMachineStateZ80 : FMachineState
 {
