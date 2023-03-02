@@ -24,6 +24,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "GameViewers/MiscGameViewers.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/GraphicsViewer.h"
+#include "Viewers/ZXGraphicsView.h"
 #include "Viewers/BreakpointViewer.h"
 #include "Viewers/OverviewViewer.h"
 #include "Util/FileUtil.h"
@@ -706,6 +707,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	FGlobalConfig& globalConfig = GetGlobalConfig();
 	SetNumberDisplayMode(globalConfig.NumberDisplayMode);
 	CodeAnalysis.Config.bShowOpcodeValues = globalConfig.bShowOpcodeValues;
+	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 
 	// setup pixel buffer
 	const size_t pixelBufferSize = 320 * 256 * 4;

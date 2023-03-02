@@ -433,6 +433,7 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 			params.MaskInfo = charSet["MaskInfo"];
 			params.ColourInfo = charSet["ColourInfo"];
 			params.bDynamic = charSet["Dynamic"];
+			params.ColourLUT = state.Config.CharacterColourLUT;
 			CreateCharacterSetAt(state, params);
 		}
 	}

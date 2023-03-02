@@ -128,13 +128,14 @@ float DrawColAttr(FCodeAnalysisState& state, uint16_t addr,const FDataInfo* pDat
 	pos.x += 200.0f;
 	pos.y -= rectSize + 2;
 	const ImVec2 startPos = pos;
+	const uint32_t* colourLUT = state.Config.CharacterColourLUT;
 	
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
 		uint8_t colAttr = state.CPUInterface->ReadByte(addr + byte);
 		const bool bBright = !!(colAttr & (1 << 6));
-		const uint32_t inkCol = GetColFromAttr(colAttr & 7, bBright);
-		const uint32_t paperCol = GetColFromAttr(colAttr >> 3, bBright);
+		const uint32_t inkCol = GetColFromAttr(colAttr & 7, colourLUT,bBright);
+		const uint32_t paperCol = GetColFromAttr(colAttr >> 3, colourLUT, bBright);
 
 		// Ink
 		{
@@ -686,6 +687,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 				if (pLabel == nullptr)
 					AddLabelAtAddress(state, item.Address);
 				params.Address = item.Address;
+				params.ColourLUT = state.Config.CharacterColourLUT;
 
 				CreateCharacterSetAt(state, params);
 			}

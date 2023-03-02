@@ -197,7 +197,8 @@ private:
 
 struct FCodeAnalysisConfig
 {
-	bool bShowOpcodeValues = false;
+	bool				bShowOpcodeValues = false;
+	const uint32_t*		CharacterColourLUT = nullptr;
 };
 
 struct FCodeAnalysisBank

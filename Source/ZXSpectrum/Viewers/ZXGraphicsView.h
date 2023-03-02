@@ -13,6 +13,8 @@ public:
 
 	uint32_t GetColFromAttr(uint8_t colBits, bool bBright);
 
+	static const uint32_t* GetColourLUT() { return ColourLUT; }
+
 private:
 
 	static const uint32_t ColourLUT[8];

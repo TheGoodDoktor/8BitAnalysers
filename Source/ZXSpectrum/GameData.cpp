@@ -620,6 +620,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 			{
 				fread(&params.bDynamic, sizeof(params.bDynamic), 1, fp);
 			}
+			params.ColourLUT = state.Config.CharacterColourLUT;
 			CreateCharacterSetAt(state, params);
 		}
 	}
