@@ -25,13 +25,15 @@
 
 // create a bank
 // a bank is a list of memory pages
-int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb, bool bReadOnly)
+int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly)
 {
 	const int16_t bankId = (int16_t)Banks.size();
 	const int noPages = noKb;
 
 	FCodeAnalysisBank& newBank = Banks.emplace_back();
+	newBank.Id = bankId;
 	newBank.NoPages = noPages;
+	newBank.Memory = pBankMem;
 	newBank.Pages = new FCodeAnalysisPage[noPages];
 	newBank.Name = bankName;
 	newBank.bReadOnly = bReadOnly;
@@ -44,18 +46,39 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb, bool bRea
 	return bankId;
 }
 
-// Set bank to memory pages starting at pageNo
-bool FCodeAnalysisState::SetBankPages(int16_t bankId, int startPageNo)
+FCodeAnalysisBank* FCodeAnalysisState::GetBank(int16_t bankId)
 {
-	const FCodeAnalysisBank& bank = Banks[bankId];
-	int pageNo = startPageNo;
-	for (int bankPageNo = 0; bankPageNo < bank.NoPages; bankPageNo++)
+	if (bankId < 0 || bankId >= Banks.size())
+		return nullptr;
+
+	return &Banks[bankId];
+}
+
+
+// Set bank to memory pages starting at pageNo
+bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
+{
+	FCodeAnalysisBank* pBank = GetBank(bankId);
+	if (pBank == nullptr)
+		return false;
+
+	pBank->MappedPage = startPageNo;
+	for (int bankPageNo = 0; bankPageNo < pBank->NoPages; bankPageNo++)
 	{
-		SetCodeAnalysisRWPage(pageNo, &bank.Pages[bankPageNo], &bank.Pages[bankPageNo]);	// Read/Write
-		pageNo++;
+		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], &pBank->Pages[bankPageNo]);	// Read/Write
 	}
 
 	SetMemoryRemapped();
+	return true;
+}
+
+bool FCodeAnalysisState::UnMapBank(int16_t bankId)
+{
+	FCodeAnalysisBank* pBank = GetBank(bankId);
+	if (pBank == nullptr || pBank->MappedPage == -1)
+		return false;
+
+	pBank->MappedPage = -1;
 	return true;
 }
 

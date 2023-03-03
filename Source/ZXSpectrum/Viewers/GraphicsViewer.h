@@ -24,6 +24,7 @@ enum class GraphicsViewMode
 // TODO: Make class
 struct FGraphicsViewerState
 {
+	int32_t			Bank = -1;
 	uint16_t		Address = 0;
 	uint16_t		ClickedAddress = 0;
 	GraphicsViewMode	ViewMode = GraphicsViewMode::Character;

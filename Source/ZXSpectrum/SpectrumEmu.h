@@ -179,8 +179,8 @@ public:
 	int16_t				RAMBanks[kNoRAMBanks];
 	//FCodeAnalysisPage	ROMPages[kNoROMPages];
 	//FCodeAnalysisPage	RAMPages[kNoRAMPages];
-	int					CurROMBank = -1;
-	int					CurRAMBank[4] = { -1,-1,-1,-1 };
+	int16_t				CurROMBank = -1;
+	int16_t				CurRAMBank[4] = { -1,-1,-1,-1 };
 
 	// Memory handling
 	std::string				SelectedMemoryHandler;

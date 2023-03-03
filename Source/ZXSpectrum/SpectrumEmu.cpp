@@ -635,28 +635,16 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 	return pEmu->Z80Tick(num, pins);
 }
 
-void CheckAddressSpaceItems(const FCodeAnalysisState& state)
-{
-	/*
-	for (int addr = 0; addr < 1 << 16; addr++)
-	{
-		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addr);
-		assert(pDataInfo->Address == addr);
-	}*/
-}
-
 // Bank is ROM bank 0 or 1
 // this is always slot 0
 void FSpectrumEmu::SetROMBank(int bankId)
 {
 	if (CurROMBank == bankId)
 		return;
-
-	CodeAnalysis.SetBankPages(bankId, 0);
-#ifdef _DEBUG
-	if (bInitialised)
-		CheckAddressSpaceItems(CodeAnalysis);
-#endif
+	// Unmap old bank
+	CodeAnalysis.UnMapBank(CurROMBank);
+	CodeAnalysis.MapBank(bankId, 0);
+	CurROMBank = bankId;
 }
 
 // Slot is physical 16K memory region (0-3) 
@@ -665,15 +653,12 @@ void FSpectrumEmu::SetRAMBank(int slot, int bankId)
 {
 	if (CurRAMBank[slot] == bankId)
 		return;
+
+	// Unmap old bank
+	CodeAnalysis.UnMapBank(CurRAMBank[slot]);
+	CodeAnalysis.MapBank(bankId, slot * kNoBankPages);
+
 	CurRAMBank[slot] = bankId;
-
-	CodeAnalysis.SetBankPages(bankId, slot * kNoBankPages);
-
-#ifdef _DEBUG
-	if(bInitialised)
-		CheckAddressSpaceItems(CodeAnalysis);
-#endif
-
 }
 
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
@@ -820,7 +805,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	{
 		char bankName[32];
 		sprintf(bankName, "ROM:%d", bankNo);
-		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, true);
+		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16,ZXEmuState.rom[bankNo], true);
 	}
 
 	// create & register RAM banks
@@ -828,7 +813,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	{
 		char bankName[32];
 		sprintf(bankName, "RAM:%d", bankNo);
-		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, false);
+		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false);
 	}
 
 	// CreateBank(name,size in kb,r/w)
@@ -850,9 +835,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		SetRAMBank(3, RAMBanks[0]);	// 0xc000 - 0xffff
 	}
 
-#ifdef _DEBUG
-	CheckAddressSpaceItems(CodeAnalysis);
-#endif
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
 
@@ -913,10 +895,6 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
 	SetWindowTitle(windowTitle.c_str());
 	
-	// Reset Functions
-	//FunctionStack.clear();
-	//Functions.clear();
-
 	// start up game
 	if(pActiveGame!=nullptr)
 		delete pActiveGame->pViewerData;

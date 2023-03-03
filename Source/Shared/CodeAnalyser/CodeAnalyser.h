@@ -202,7 +202,10 @@ struct FCodeAnalysisConfig
 // Analysis memory bank
 struct FCodeAnalysisBank
 {
+	int16_t				Id = -1;
 	int					NoPages = 0;
+	int					MappedPage = -1;
+	uint8_t*			Memory = nullptr;	// pointer to memory bank occupies
 	FCodeAnalysisPage*	Pages;
 	std::string			Name;
 	bool				bReadOnly = false;
@@ -222,9 +225,10 @@ public:
 	int						CurrentFrameNo = 0;
 
 	// Memory Banks & Pages
-	int16_t		CreateBank(const char* name, int noKb, bool bReadOnly);
-	bool		SetBankPages(int16_t bankId, int startPageNo);
-
+	int16_t		CreateBank(const char* name, int noKb,uint8_t* pMemory, bool bReadOnly);
+	bool		UnMapBank(int16_t bankId);
+	bool		MapBank(int16_t bankId, int startPageNo);
+	FCodeAnalysisBank* GetBank(int16_t bankId);
 	const std::vector<FCodeAnalysisBank>& GetBanks() const { return Banks; }
 	
 	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
