@@ -1094,7 +1094,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 
 	bool bHighlight = (viewState.HighlightAddress >= item.Address && viewState.HighlightAddress < item.Address + item.Item->ByteSize);
 	uint32_t kHighlightColour = 0xff00ff00;
-	ImGui::PushID(item.Address);
+	ImGui::PushID(item.Item);
 
 	// Highlight formatting selection
 	/*if (state.DataFormattingOptions.IsValid() &&
@@ -1429,6 +1429,9 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 			{
 				if (ImGui::BeginChild("##itemlist"))
 					DrawItemList(state, viewState, state.ItemList);
+				// only handle keypresses for focussed window
+				if (state.FocussedWindowId == windowId)
+					ProcessKeyCommands(state, viewState);
 				ImGui::EndChild();
 				ImGui::EndTabItem();
 			}
@@ -1443,6 +1446,9 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				{
 					if (ImGui::BeginChild("##itemlist"))
 						DrawItemList(state, viewState, bank.ItemList);	
+					// only handle keypresses for focussed window
+					if (state.FocussedWindowId == windowId)
+						ProcessKeyCommands(state, viewState);
 					ImGui::EndChild();
 					ImGui::EndTabItem();
 				}
@@ -1450,9 +1456,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 			ImGui::EndTabBar();
 		}
-		// only handle keypresses for focussed window
-		if(state.FocussedWindowId == windowId)
-			ProcessKeyCommands(state, viewState);
+		
 
 		UpdatePopups(state, viewState);
 	}
