@@ -521,7 +521,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 					// force to byte type otherwise SetItemText() does nothing
 					pDataInfo->DataType = EDataType::Byte;
 
-					SetItemText(state, FCodeAnalysisItem(pDataInfo, instruction.Address));
+					SetItemText(state, FCodeAnalysisItem(pDataInfo,state.GetBankFromAddress(instruction.Address), instruction.Address));
 				}
 				pItem = pDataInfo;
 			}
@@ -579,7 +579,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		minAddr = std::min(instruction.Address, minAddr);
 		maxAddr = std::max(instruction.Address, maxAddr);
 
-		LastItem = FCodeAnalysisItem(pItem, instruction.Address);
+		LastItem = FCodeAnalysisItem(pItem, state.GetBankFromAddress(instruction.Address), instruction.Address);
 	}
 
 	if (pSkoolInfo)

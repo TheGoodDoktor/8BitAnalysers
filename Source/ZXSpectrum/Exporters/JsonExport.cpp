@@ -75,7 +75,7 @@ bool ExportGameJson(FSpectrumEmu* pSpectrumEmu, const char* pJsonFileName)
 	// Write watches
 	for (const auto& watch : state.GetWatches())
 	{
-		jsonGameData["Watches"].push_back(watch);
+		jsonGameData["Watches"].push_back(watch.Address);
 	}
 
 	// Write character sets
@@ -426,9 +426,9 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 
 	if (jsonGameData.contains("Watches"))
 	{
-		for (const auto& watch : jsonGameData["Watches"])
+		for (const auto& watchAddress : jsonGameData["Watches"])
 		{
-			state.AddWatch(watch);
+			state.AddWatch(-1, watchAddress);	// todo: Fix
 		}
 	}
 

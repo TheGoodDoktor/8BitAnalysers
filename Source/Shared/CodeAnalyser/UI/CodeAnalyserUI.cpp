@@ -17,7 +17,7 @@
 #include "CodeToolTips.h"
 
 // UI
-void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i);
+void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
 void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
 
@@ -126,7 +126,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 				for(int line=0;line < kToolTipNoLines;line++)
 				{
 					if(startIndex + line < (int)state.ItemList.size())
-						DrawCodeAnalysisItemAtIndex(state,viewState,startIndex + line);
+						DrawCodeAnalysisItem(state,viewState,state.ItemList[startIndex + line]);
 				}
 				ImGui::EndTooltip();
 			}
@@ -289,18 +289,18 @@ void DrawRegisters(FCodeAnalysisState& state)
 void DrawWatchWindow(FCodeAnalysisState& state)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-	static int selectedWatch = -1;
+	static FWatch selectedWatch;
 	bool bDeleteSelectedWatch = false;
 
 	for (const auto& watch : state.GetWatches())
 	{
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch);
-		ImGui::PushID(watch);
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch.Address);
+		ImGui::PushID(watch.Address);
 		if (ImGui::Selectable("##watchselect", watch == selectedWatch, 0))
 		{
 			selectedWatch = watch;
 		}
-		if (selectedWatch != -1 && ImGui::BeginPopupContextItem("watch context menu"))
+		if (selectedWatch.IsValid() && ImGui::BeginPopupContextItem("watch context menu"))
 		{
 			if (ImGui::Selectable("Delete Watch"))
 			{
@@ -308,15 +308,15 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 			}
 			if (ImGui::Selectable("Toggle Breakpoint"))
 			{
-				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(selectedWatch);
-				state.CPUInterface->ToggleDataBreakpointAtAddress(selectedWatch, pInfo->ByteSize);
+				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(selectedWatch.Address);
+				state.CPUInterface->ToggleDataBreakpointAtAddress(selectedWatch.Address, pInfo->ByteSize);
 			}
 
 			ImGui::EndPopup();
 		}
 		ImGui::SetItemAllowOverlap();	// allow buttons
 		ImGui::SameLine();
-		DrawDataInfo(state, viewState, FCodeAnalysisItem(pDataInfo, watch), true,true);
+		DrawDataInfo(state, viewState, FCodeAnalysisItem(pDataInfo, watch.Address), true,true);
 
 		// TODO: Edit Watch
 		ImGui::PopID();		
@@ -816,10 +816,98 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	}
 }
 
+struct FItemListBuilder
+{
+	FItemListBuilder(std::vector<FCodeAnalysisItem>& itemList) :ItemList(itemList) {}
+
+	std::vector<FCodeAnalysisItem>&	ItemList;
+	int16_t				BankId = -1;
+	int					CurrAddr = 0;
+	FCommentBlock*		ViewStateCommentBlocks[FCodeAnalysisState::kNoViewStates] = { nullptr };
+
+};
+
+void ExpandCommentBlock(FCodeAnalysisState& state, FItemListBuilder& builder, FCommentBlock* pCommentBlock)
+{
+	// split comment into lines
+	std::stringstream stringStream(pCommentBlock->Comment);
+	std::string line;
+	FCommentLine* pFirstLine = nullptr;
+
+	while (std::getline(stringStream, line, '\n'))
+	{
+		if (line.empty() || line[0] == '@')	// skip lines starting with @ - we might want to create items from them in future
+			continue;
+
+		FCommentLine* pLine = FCommentLine::Allocate();
+		pLine->Comment = line;
+		//pLine->Address = addr;
+		builder.ItemList.emplace_back(pLine, builder.CurrAddr);
+		if (pFirstLine == nullptr)
+			pFirstLine = pLine;
+	}
+
+	// fix up having comment blocks as cursor items
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		if (builder.ViewStateCommentBlocks[i] == pCommentBlock)
+			state.ViewState[i].SetCursorItem(FCodeAnalysisItem(pFirstLine, builder.BankId, builder.CurrAddr));
+	}
+}
+
+void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
+{
+	bank.ItemList.clear();
+	FItemListBuilder listBuilder(bank.ItemList);
+	listBuilder.BankId = bank.Id;
+
+	const uint16_t bankPhysAddr = bank.LastMappedPage * FCodeAnalysisPage::kPageSize;
+	int nextItemAddress = 0;
+
+	for (int bankAddr = 0; bankAddr < bank.NoPages * FCodeAnalysisPage::kPageSize; bankAddr++)
+	{
+		FCodeAnalysisPage& page = bank.Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
+		const uint16_t pageAddr = bankAddr & FCodeAnalysisPage::kPageMask;
+		listBuilder.CurrAddr = bankPhysAddr + bankAddr;
+
+		FCommentBlock* pCommentBlock = page.CommentBlocks[pageAddr];
+		if (pCommentBlock != nullptr)
+			ExpandCommentBlock(state, listBuilder, pCommentBlock);
+
+		FLabelInfo* pLabelInfo = page.Labels[pageAddr];
+		if (pLabelInfo != nullptr)
+			listBuilder.ItemList.emplace_back(pLabelInfo, listBuilder.CurrAddr);
+
+		// check if we have gone past this item
+		if (listBuilder.CurrAddr >= nextItemAddress)
+		{
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(listBuilder.CurrAddr);
+			if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
+			{
+				nextItemAddress = listBuilder.CurrAddr + pCodeInfo->ByteSize;
+				listBuilder.ItemList.emplace_back(pCodeInfo, listBuilder.CurrAddr);
+			}
+			else // code and data are mutually exclusive
+			{
+				FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(listBuilder.CurrAddr);
+				if (pDataInfo != nullptr)
+				{
+					if (pDataInfo->DataType != EDataType::Blob && pDataInfo->DataType != EDataType::ScreenPixels)	// not sure why we want this
+						nextItemAddress = listBuilder.CurrAddr + pDataInfo->ByteSize;
+					else
+						nextItemAddress = listBuilder.CurrAddr + 1;
+
+					listBuilder.ItemList.emplace_back(pDataInfo, listBuilder.CurrAddr);
+				}
+			}
+		}
+	}
+}
+
 void UpdateItemList(FCodeAnalysisState &state)
 {
 	// build item list - not every frame please!
-	if (state.IsCodeAnalysisDataDirty() || state.HasMemoryBeenRemapped())
+	if (state.IsCodeAnalysisDataDirty() )
 	{
 		const float line_height = ImGui::GetTextLineHeight();
 		
@@ -828,98 +916,84 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 		int nextItemAddress = 0;
 
+		auto& banks = state.GetBanks();
+		for (auto& bank : banks)
+		{
+			if (bank.bIsDirty)
+			{
+				UpdateItemListForBank(state, bank);
+				bank.bIsDirty = false;
+			}
+		}
+
 		// special case for expanded lines
 		// TODO: there should be a more general case
-		FCommentBlock* viewStateCommentBlocks[FCodeAnalysisState::kNoViewStates] = { nullptr };
+		FItemListBuilder listBuilder(state.ItemList);
+		//FCommentBlock* viewStateCommentBlocks[FCodeAnalysisState::kNoViewStates] = { nullptr };
 		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 		{
 			const FCodeAnalysisItem& cursorItem = state.ViewState[i].GetCursorItem();
 			if (cursorItem.IsValid() && cursorItem.Item->Type == EItemType::CommentLine)
 			{
 				FCommentBlock* pBlock = state.GetCommentBlockForAddress(cursorItem.Address);
-				viewStateCommentBlocks[i] = pBlock;
+				listBuilder.ViewStateCommentBlocks[i] = pBlock;
 			}
 		}
 
 		// loop across address range
-		for (int addr = 0; addr < (1 << 16); addr++)
+		for (listBuilder.CurrAddr = 0; listBuilder.CurrAddr < (1 << 16); listBuilder.CurrAddr++)
 		{
 			// convert comment block into multiple comment lines
-			FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(addr);
+			FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(listBuilder.CurrAddr);
 			if (pCommentBlock != nullptr)
-			{
-				// split comment into lines
-				std::stringstream stringStream(pCommentBlock->Comment);
-				std::string line;
-				FCommentLine* pFirstLine = nullptr;
-
-				while (std::getline(stringStream, line, '\n'))
-				{
-					if (line.empty() || line[0] == '@')	// skip lines starting with @ - we might want to create items from them in future
-						continue;
-
-					FCommentLine* pLine = FCommentLine::Allocate();
-					pLine->Comment = line;
-					//pLine->Address = addr;
-					state.ItemList.emplace_back(pLine, addr);	
-					if (pFirstLine == nullptr)
-						pFirstLine = pLine;
-				}
-
-				// fix up having comment blocks as cursor items
-				for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-				{
-					if (viewStateCommentBlocks[i] == pCommentBlock)
-						state.ViewState[i].SetCursorItem(FCodeAnalysisItem(pFirstLine,addr));
-				}
-			}
+				ExpandCommentBlock(state, listBuilder, pCommentBlock);
 			
-			FLabelInfo* pLabelInfo = state.GetLabelForAddress(addr);
+			FLabelInfo* pLabelInfo = state.GetLabelForAddress(listBuilder.CurrAddr);
 			if (pLabelInfo != nullptr)
 			{
-				state.ItemList.emplace_back(pLabelInfo,addr);
+				listBuilder.ItemList.emplace_back(pLabelInfo, listBuilder.CurrAddr);
 			}
 
 			// check if we have gone past this item
-			if (addr >= nextItemAddress)
+			if (listBuilder.CurrAddr >= nextItemAddress)
 			{
-				FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(addr);
+				FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(listBuilder.CurrAddr);
 				if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 				{
-					nextItemAddress = addr + pCodeInfo->ByteSize;
-					state.ItemList.emplace_back(pCodeInfo,addr);
+					nextItemAddress = listBuilder.CurrAddr + pCodeInfo->ByteSize;
+					listBuilder.ItemList.emplace_back(pCodeInfo, listBuilder.CurrAddr);
 				}
 				else // code and data are mutually exclusive
 				{
-					FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(addr);
+					FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(listBuilder.CurrAddr);
 					if (pDataInfo != nullptr)
 					{
 						if (pDataInfo->DataType != EDataType::Blob && pDataInfo->DataType != EDataType::ScreenPixels)	// not sure why we want this
-							nextItemAddress = addr + pDataInfo->ByteSize;
+							nextItemAddress = listBuilder.CurrAddr + pDataInfo->ByteSize;
 						else
-							nextItemAddress = addr + 1;
+							nextItemAddress = listBuilder.CurrAddr + 1;
 
-						state.ItemList.emplace_back(pDataInfo,addr);
+						listBuilder.ItemList.emplace_back(pDataInfo, listBuilder.CurrAddr);
 					}
 				}
 			}
 
 			// update cursor item index
-			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+			/*for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 			{
 				if (state.ViewState[i].GetCursorItem().Item == state.ItemList.back().Item)
 					state.ViewState[i].CursorItemIndex = (int)state.ItemList.size() - 1;
-			}
+			}*/
 		}
 
 		// Maybe this needs to follow the same algorithm as the main view?
-		ImGui::SetScrollY(state.GetFocussedViewState().CursorItemIndex * line_height);
+		//ImGui::SetScrollY(state.GetFocussedViewState().CursorItemIndex * line_height);
 		state.SetCodeAnalysisDirty(false);
 
 		if (state.HasMemoryBeenRemapped())
 		{
 			GenerateGlobalInfo(state);
-			state.SetMemoryRemapped(false);
+			state.ClearRemappings();
 		}
 	}
 
@@ -955,7 +1029,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			if (ImGui::Selectable("Toggle Data Breakpoint"))
 				state.CPUInterface->ToggleDataBreakpointAtAddress(item.Address, item.Item->ByteSize);
 			if (ImGui::Selectable("Add Watch"))
-				state.AddWatch(item.Address);
+				state.AddWatch(-1,item.Address);
 
 		}
 
@@ -996,17 +1070,17 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 	}
 }
 
-void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i)
+void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
-	assert(i < (int)state.ItemList.size());
-	const FCodeAnalysisItem& item = state.ItemList[i];
+	//assert(i < (int)state.ItemList.size());
+	//const FCodeAnalysisItem& item = state.ItemList[i];
 
 	if (item.IsValid() == false)
 		return;
 
 	bool bHighlight = (viewState.HighlightAddress >= item.Address && viewState.HighlightAddress < item.Address + item.Item->ByteSize);
 	uint32_t kHighlightColour = 0xff00ff00;
-	ImGui::PushID(i);
+	ImGui::PushID(item.Address);
 
 	// Highlight formatting selection
 	/*if (state.DataFormattingOptions.IsValid() &&
@@ -1028,7 +1102,7 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 	if (ImGui::Selectable("##codeanalysisline", bSelected, ImGuiSelectableFlags_SelectOnNav))
 	{
 		viewState.SetCursorItem(item);
-		viewState.CursorItemIndex = i;
+		//viewState.CursorItemIndex = i;
 
 		// Select Data Formatting Range
 		if (viewState.DataFormattingTabOpen && item.Item->Type == EItemType::Data)
@@ -1083,9 +1157,7 @@ void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewSta
 	case EItemType::CommentLine:
 		DrawCommentLine(state, static_cast<const FCommentLine*>(item.Item));
 		break;
-
 	}
-
 
 	ImGui::PopID();
 }
@@ -1225,6 +1297,60 @@ void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& view
 	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }
 
+void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, std::vector<FCodeAnalysisItem>&	itemList)
+{
+	const float lineHeight = ImGui::GetTextLineHeight();
+
+	// jump to address
+	if (viewState.GoToAddress != -1)
+	{
+		const float currScrollY = ImGui::GetScrollY();
+		const float currWindowHeight = ImGui::GetWindowHeight();
+		const int kJumpViewOffset = 5;
+		for (int item = 0; item < (int)itemList.size(); item++)
+		{
+			if ((itemList[item].Address >= viewState.GoToAddress) && (viewState.GoToLabel || itemList[item].Item->Type != EItemType::Label))
+			{
+				// set cursor
+				viewState.SetCursorItem(itemList[item]);
+
+				const float itemY = item * lineHeight;
+				const float margin = kJumpViewOffset * lineHeight;
+
+				const float moveDist = itemY - currScrollY;
+
+				if (moveDist > currWindowHeight)
+				{
+					const int gotoItem = std::max(item - kJumpViewOffset, 0);
+					ImGui::SetScrollY(gotoItem * lineHeight);
+				}
+				else
+				{
+					if (itemY < currScrollY + margin)
+						ImGui::SetScrollY(itemY - margin);
+					if (itemY > currScrollY + currWindowHeight - margin * 2)
+						ImGui::SetScrollY((itemY - currWindowHeight) + margin * 2);
+				}
+				break;
+			}
+		}
+
+		viewState.GoToAddress = -1;
+		viewState.GoToLabel = false;
+	}
+
+	// draw clipped list
+	ImGuiListClipper clipper((int)itemList.size(), lineHeight);
+
+	while (clipper.Step())
+	{
+		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+		{
+			DrawCodeAnalysisItem(state, viewState, itemList[i]);
+		}
+	}
+}
+
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 {
 	FCodeAnalysisViewState& viewState = state.ViewState[windowId];
@@ -1283,79 +1409,33 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{
-		//int scrollToItem = -1;
-		// jump to address
-		if (viewState.GoToAddress != -1)
+		if (ImGui::BeginTabBar("itemlist_tabbar"))
 		{
-			const float currScrollY = ImGui::GetScrollY();
-			const float currWindowHeight = ImGui::GetWindowHeight();
-			const int kJumpViewOffset = 5;
-			for (int item = 0; item < (int)state.ItemList.size(); item++)
+			if (ImGui::BeginTabItem("Address Space"))
 			{
-				if ((state.ItemList[item].Address >= viewState.GoToAddress) && (viewState.GoToLabel || state.ItemList[item].Item->Type != EItemType::Label))
+				if (ImGui::BeginChild("##itemlist"))
+					DrawItemList(state, viewState, state.ItemList);
+				ImGui::EndChild();
+				ImGui::EndTabItem();
+			}
+
+			auto& banks = state.GetBanks();
+			for (auto& bank : banks)
+			{
+				if (bank.Pages[0].bUsed == false)
+					continue;
+
+				if (ImGui::BeginTabItem(bank.Name.c_str()))
 				{
-					// set cursor
-					viewState.SetCursorItem(state.ItemList[item]);
-					viewState.CursorItemIndex = item;
-					//scrollToItem = item;
-
-					const float itemY = item * lineHeight;
-					const float margin = kJumpViewOffset * lineHeight;
-
-					const float moveDist = itemY - currScrollY;
-
-					if (moveDist > currWindowHeight)
-					{
-						const int gotoItem = std::max(item - kJumpViewOffset, 0);
-						ImGui::SetScrollY(gotoItem * lineHeight);
-					}
-					else
-					{
-						if (itemY < currScrollY + margin)
-							ImGui::SetScrollY(itemY - margin);
-						if (itemY > currScrollY + currWindowHeight - margin * 2)
-							ImGui::SetScrollY((itemY - currWindowHeight) + margin * 2);
-					}
-					ImGuiContext& g = *GImGui;
-
-					ImRect rect;
-					rect.Min = ImVec2(0, itemY);
-					rect.Max = ImVec2(100, itemY + lineHeight);
-					//ImGui::ScrollToRect(g.CurrentWindow, rect, ImGuiScrollFlags_KeepVisibleEdgeY);
-					
-					break;
+					if (ImGui::BeginChild("##itemlist"))
+						DrawItemList(state, viewState, bank.ItemList);	
+					ImGui::EndChild();
+					ImGui::EndTabItem();
 				}
 			}
 
-			viewState.GoToAddress = -1;
-			viewState.GoToLabel = false;
+			ImGui::EndTabBar();
 		}
-
-		// draw clipped list
-		ImGuiListClipper clipper((int)state.ItemList.size(), lineHeight);
-
-		//clipper.ForceDisplayRangeByIndices(viewState.CursorItemIndex, viewState.CursorItemIndex+1);
-		while (clipper.Step())
-		{
-			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-			{
-				DrawCodeAnalysisItemAtIndex(state, viewState, i);
-			}
-		}
-
-		/*if (scrollToItem != -1)
-		{
-			ImGuiContext& g = *GImGui;
-
-			float itemPosY = clipper.StartPosY + (clipper.ItemsHeight * (scrollToItem + 10));
-			ImRect rect;
-			rect.Min = ImVec2(0, itemPosY - lineHeight);
-			rect.Max = ImVec2(100, itemPosY + lineHeight);
-			ImGui::ScrollToRect(g.CurrentWindow, rect, ImGuiScrollFlags_KeepVisibleEdgeY);
-		}*/
-		//float item_pos_y = clipper.StartPosY + (clipper.ItemsHeight * viewState.CursorItemIndex);
-		//ImGui::SetScrollFromPosY(item_pos_y - ImGui::GetWindowPos().y);
-
 		// only handle keypresses for focussed window
 		if(state.FocussedWindowId == windowId)
 			ProcessKeyCommands(state, viewState);

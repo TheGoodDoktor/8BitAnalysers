@@ -63,12 +63,18 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 		return false;
 
 	pBank->MappedPage = startPageNo;
+	pBank->LastMappedPage = startPageNo;
 	for (int bankPageNo = 0; bankPageNo < pBank->NoPages; bankPageNo++)
 	{
+		//if(pBank->bReadOnly)
+		//	SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], nullptr);	// Read only
+		//else
 		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], &pBank->Pages[bankPageNo]);	// Read/Write
-	}
 
-	SetMemoryRemapped();
+		MappedBanks[startPageNo + bankPageNo] = bankId;
+	}
+	bMemoryRemapped = true;
+	//RemappedBanks.push_back(bankId);
 	return true;
 }
 
@@ -77,6 +83,9 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId)
 	FCodeAnalysisBank* pBank = GetBank(bankId);
 	if (pBank == nullptr || pBank->MappedPage == -1)
 		return false;
+	
+	for (int bankPage = 0; bankPage < pBank->NoPages; bankPage++)
+		MappedBanks[pBank->MappedPage + bankPage] = -1;
 
 	pBank->MappedPage = -1;
 	return true;
@@ -506,34 +515,11 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 // return if we should continue
 bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 {
-	// update branch reference counters
-	uint16_t jumpAddr;
-	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
-	{
-		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
-		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
-	}
-
-	uint16_t ptr;
-	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
-	{
-		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
-		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
-	}
-
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	const char* pOldComment = nullptr;
 	if (pCodeInfo != nullptr)
 	{
-		/*if (pCodeInfo->Address != pc) // check code integrity 
-		{
-			if(pCodeInfo->Comment.empty() == false)
-				pOldComment = pCodeInfo->Comment.c_str();	// get pointer to old comment
-			state.SetCodeInfoForAddress(pc, nullptr);
-		}
-		else*/ if(pCodeInfo->bSelfModifyingCode)	// check SMC
+		if(pCodeInfo->bSelfModifyingCode)	// check SMC
 		{
 			pCodeInfo->bSelfModifyingCode = false;
 			for(uint16_t operandAddr = 0;operandAddr<pCodeInfo->ByteSize;operandAddr++)
@@ -544,20 +530,33 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 					pCodeInfo->bSelfModifyingCode = true;
 				}					
 			}
-
-			return false;	// return
 		}
-		else
-		{
-			return false;
-		}
+		return false;
 	}
 
-	uint16_t newPC = WriteCodeInfoForAddress(state, pc);
+	const uint16_t newPC = WriteCodeInfoForAddress(state, pc);
 	// get new code info
 	pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pOldComment != nullptr)	// restore old comment
 		pCodeInfo->Comment = std::string(pOldComment);
+
+	// set jump reference
+	uint16_t jumpAddr;
+	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
+	{
+		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
+		if (pLabel != nullptr)
+			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+	}
+
+	// set pointer reference
+	uint16_t ptr;
+	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
+	{
+		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
+		if (pLabel != nullptr)
+			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+	}
 
 	if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
 		return false;
@@ -713,16 +712,18 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	state.GlobalDataItems.clear();
 	state.GlobalFunctions.clear();
 
-	for (int i = 0; i < (1 << 16); i++)
+	for (int addr = 0; addr < (1 << 16); addr++)
 	{
-		FLabelInfo *pLabel = state.GetLabelForAddress(i);
+		FLabelInfo *pLabel = state.GetLabelForAddress(addr);
 		
 		if (pLabel != nullptr)
 		{
+			const int16_t bankId = state.GetBankFromAddress(addr);
+		
 			if (pLabel->LabelType == ELabelType::Data && pLabel->Global)
-				state.GlobalDataItems.emplace_back(pLabel,i);
+				state.GlobalDataItems.emplace_back(pLabel,bankId, addr);
 			if (pLabel->LabelType == ELabelType::Function)
-				state.GlobalFunctions.emplace_back(pLabel,i);
+				state.GlobalFunctions.emplace_back(pLabel, bankId, addr);
 		}
 		
 	}
@@ -760,7 +761,7 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
-		ViewState[i].CursorItemIndex = -1;
+		//ViewState[i].CursorItemIndex = -1;
 		ViewState[i].SetCursorItem(FCodeAnalysisItem());
 	}
 

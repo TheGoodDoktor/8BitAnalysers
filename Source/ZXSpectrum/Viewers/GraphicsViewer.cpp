@@ -51,6 +51,7 @@ uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
 	return (addrInput + xp) + (column * columnSize) + (y * state.XSize);
 }
 
+#if 0
 uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t addr, int frameThreshold)
 {
 	const FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(addr);
@@ -82,7 +83,41 @@ uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t add
 
 	return col;
 }
+#endif
 
+uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
+{
+	const uint16_t pageAddress = addr & 1023;
+	const FCodeInfo* pCodeInfo = page.CodeInfo[pageAddress];
+
+	if (pCodeInfo)
+	{
+		const int framesSinceExecuted = currentFrameNo - pCodeInfo->FrameLastExecuted;
+		if (pCodeInfo->FrameLastExecuted != -1 && (framesSinceExecuted < frameThreshold))
+			return 6;	// yellow code
+	}
+
+	FDataInfo& dataInfo = page.DataInfo[pageAddress];
+	
+	if (dataInfo.LastFrameWritten != -1)
+	{
+		const int framesSinceWritten = currentFrameNo - dataInfo.LastFrameWritten;
+		if (framesSinceWritten < frameThreshold)
+			return 2; // red
+	}
+
+	if (dataInfo.LastFrameRead != -1)
+	{
+		const int framesSinceRead = currentFrameNo - dataInfo.LastFrameRead;
+		if (framesSinceRead < frameThreshold)
+			return 4;	// green
+	}	
+
+	return 7;
+}
+
+
+#if 0
 void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, int xPos, int columnWidth)
 {
 	uint16_t memAddr = startAddr;
@@ -96,6 +131,28 @@ void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, 
 			const uint8_t col = GetHeatmapColourForMemoryAddress(state.pEmu->CodeAnalysis, memAddr, state.HeatmapThreshold);
 
 			pGraphicsView->DrawCharLine(*pImage, xPos + (xChar * 8), y,col);
+
+			memAddr++;
+		}
+	}
+}
+#endif
+
+void DrawMemoryBankAsGraphicsColumn(FGraphicsViewerState& viewerState, int16_t bankId, uint16_t memAddr, int xPos, int columnWidth)
+{
+	FZXGraphicsView* pGraphicsView = viewerState.pGraphicsView;
+	FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;
+	FCodeAnalysisBank* pBank = state.GetBank(bankId);
+
+	for (int y = 0; y < kGraphicsViewerHeight; y++)
+	{
+		for (int xChar = 0; xChar < columnWidth; xChar++)
+		{
+			uint16_t bankAddr = memAddr & 0x3fff;
+			const uint8_t charLine = pBank->Memory[bankAddr];
+			FCodeAnalysisPage& page = pBank->Pages[bankAddr >> 10];
+			const uint8_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo,viewerState.HeatmapThreshold);
+			pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col);
 
 			memAddr++;
 		}
@@ -131,7 +188,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 
 	if (ImGui::BeginCombo("Bank", GetBankText(state, viewerState.Bank)))
 	{
-		for (int i = 1; i < 4; i++)
+		/*for (int i = 1; i < 4; i++)
 		{
 			const int16_t bankId = viewerState.pEmu->CurRAMBank[i];
 			const int bankSize = 16 * 1024;
@@ -140,14 +197,17 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 			sprintf(mappedBankTxt, "0x%04X-0x%04X : %s", bankStartAddr, bankStartAddr + bankSize - 1, GetBankText(state, bankId));
 			if (ImGui::Selectable(mappedBankTxt, viewerState.Bank == bankId))
 				viewerState.Bank = bankId;
-		}
+		}*/
 		
-		/*const auto& banks = state.GetBanks();
+		if (ImGui::Selectable(GetBankText(state, -1), viewerState.Bank == -1))
+			viewerState.Bank = -1;
+
+		const auto& banks = state.GetBanks();
 		for (const auto& bank : banks)
 		{
 			if (ImGui::Selectable(GetBankText(state, bank.Id), viewerState.Bank == bank.Id))
 				viewerState.Bank = bank.Id;
-		}*/	
+		}	
 
 		ImGui::EndCombo();
 	}
@@ -215,7 +275,8 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 	DrawAddressLabel(state, state.GetFocussedViewState(), viewerState.ClickedAddress);
 	if(ImGui::CollapsingHeader("Details"))
 	{
-		const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(viewerState.ClickedAddress), viewerState.ClickedAddress);
+		const int16_t bankId = viewerState.Bank != -1 ? viewerState.Bank : state.GetBankFromAddress(viewerState.ClickedAddress);
+		const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(viewerState.ClickedAddress),bankId, viewerState.ClickedAddress);
 		DrawDataDetails(state, state.GetFocussedViewState(), item);
 	}
 	
@@ -275,7 +336,18 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 		{
 			for (int x = 0; x < xcount; x++)
 			{
-				DrawMemoryAsGraphicsColumn(viewerState, address, x * viewerState.XSize * 8, viewerState.XSize);
+				int16_t bankId = viewerState.Bank;
+				uint16_t bankAddress = address;
+				if (bankId == -1)
+				{
+					bankId = state.GetBankFromAddress(address);
+					if (bankId != -1)
+						bankAddress = address - state.GetBank(bankId)->MappedPage * FCodeAnalysisPage::kPageSize;
+				}
+					
+				DrawMemoryBankAsGraphicsColumn(viewerState, bankId, bankAddress, x* viewerState.XSize * 8, viewerState.XSize);
+				//	DrawMemoryAsGraphicsColumn(viewerState, address, x * viewerState.XSize * 8, viewerState.XSize);
+
 				address += viewerState.XSize * kVerticalDispPixCount;
 			}
 		}
@@ -311,19 +383,21 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 	else if (viewerState.ViewMode == GraphicsViewMode::Screen)
 	{
 		// http://www.breakintoprogram.co.uk/computers/zx-spectrum/screen-memory-layout
-		viewerState.Address = 0x4000;// (int)addrInput;
+		//viewerState.Address = 0x4000;// (int)addrInput;
+		const int16_t bankId = state.GetBankFromAddress(0x4000);
+		FCodeAnalysisBank* pBank = state.GetBank(bankId);
 
-		int offset = 0;
+		uint16_t bankAddr = 0;
 		for (int y = 0; y < 192; y++)
 		{
-			if ((int)viewerState.Address + offset > 0xffff)
-				break;
+			//if ((int)viewerState.Address + offset > 0xffff)
+			//	break;
 
-			uint16_t addr = viewerState.Address + offset;
-			const uint8_t *pSrc = viewerState.pEmu->GetMemPtr(addr);
-			const int y0to2 = ((offset >> 8) & 7);
-			const int y3to5 = ((offset >> 5) & 7) << 3;
-			const int y6to7 = ((offset >> 11) & 3) << 6;
+			//uint16_t addr = viewerState.Address + offset;
+			//const uint8_t pixelLine = pBank->Memory[bankAddr];
+			const int y0to2 = ((bankAddr >> 8) & 7);
+			const int y3to5 = ((bankAddr >> 5) & 7) << 3;
+			const int y6to7 = ((bankAddr >> 11) & 3) << 6;
 			const int yDestPos = y0to2 | y3to5 | y6to7;	// or offsets together
 
 			// determine dest pointer for scanline
@@ -332,8 +406,11 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 			// pixel line
 			for (int x = 0; x < 256 / 8; x++)
 			{
-				const uint8_t charLine = *pSrc++;
-				const uint8_t col = GetHeatmapColourForMemoryAddress(viewerState.pEmu->CodeAnalysis, addr, viewerState.HeatmapThreshold);
+				const uint8_t charLine = pBank->Memory[bankAddr];
+				FCodeAnalysisPage& page = pBank->Pages[bankAddr >> 10];
+				const uint8_t col = GetHeatmapColourForMemoryAddress(page, bankAddr, state.CurrentFrameNo, viewerState.HeatmapThreshold);
+
+				//const uint8_t col = GetHeatmapColourForMemoryAddress(viewerState.pEmu->CodeAnalysis, addr, viewerState.HeatmapThreshold);
 				
 				for (int xpix = 0; xpix < 8; xpix++)
 				{
@@ -342,10 +419,10 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 					*(pLineAddr + xpix + (x * 8)) = colRGBA;
 				}
 
-				addr++;
+				bankAddr++;
 			}
 
-			offset += 256 / 8;	// advance to next line
+			//offset += 256 / 8;	// advance to next line
 		}
 	}
 

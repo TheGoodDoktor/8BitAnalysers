@@ -486,7 +486,7 @@ void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrSta
 
 	for (const auto& watch : state.GetWatches())
 	{
-		if (watch >= addrStart && watch <= addrEnd)
+		if (watch.Address >= addrStart && watch.Address <= addrEnd)
 		{
 			fwrite(&watch, sizeof(uint16_t), 1, fp);
 			noWatches++;
@@ -593,10 +593,10 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 
 		for (int i = 0; i < noWatches; i++)
 		{
-			uint16_t watch;
-			fread(&watch, sizeof(uint16_t), 1, fp);
-			if (watch >= addrStart && watch <= addrEnd)
-				state.AddWatch(watch);
+			uint16_t watchAddress;
+			fread(&watchAddress, sizeof(uint16_t), 1, fp);
+			if (watchAddress >= addrStart && watchAddress <= addrEnd)
+				state.AddWatch( -1,watchAddress );
 		}
 	}
 

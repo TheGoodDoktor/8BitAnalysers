@@ -265,6 +265,8 @@ struct FCodeAnalysisPage
 
 	void SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr);
 	static const int kPageSize = 1024;	// 1Kb page
+	static const int kPageShift = 10;	// 1Kb page
+	static const int kPageMask = kPageSize - 1;
 
 	bool			bUsed = false;	// has this page been used?
 	int16_t			PageId = -1;
