@@ -77,6 +77,13 @@ public:
 	std::string				Text;
 };
 
+struct FAddressRef
+{
+	bool IsValid() const { return BankId != -1; }
+	bool operator==(const FAddressRef& other) const { return Address == other.Address && BankId == other.BankId; }
+	int16_t		BankId = -1;
+	uint16_t	Address = 0;
+};
 
 struct FMemoryAccess
 {
@@ -151,15 +158,22 @@ struct FLabelListFilter
 
 struct FCodeAnalysisItem
 {
-	FCodeAnalysisItem() = default;
+	FCodeAnalysisItem() {}
 	FCodeAnalysisItem(FItem* pItem, uint16_t addr) :Item(pItem), BankId(-1), Address(addr) {}	// temp until we get refs working properly
 	FCodeAnalysisItem(FItem* pItem, int16_t bankId, uint16_t addr) :Item(pItem), BankId(bankId), Address(addr) {}
 
 	bool IsValid() const { return Item != nullptr; }
 	
 	FItem* Item = nullptr;
-	int16_t		BankId = -1;
-	uint16_t	Address = 0;	// address in address space
+	union
+	{
+		struct
+		{
+			int16_t		BankId;
+			uint16_t	Address;	// address in address space
+		};
+		FAddressRef		AddressRef;
+	};
 };
 
 // view state for code analysis window
@@ -216,13 +230,7 @@ struct FCodeAnalysisBank
 	std::vector<FCodeAnalysisItem>	ItemList;
 };
 
-struct FAddressRef
-{
-	bool IsValid() const { return BankId != -1; }
-	bool operator==(const FAddressRef& other) const { return Address == other.Address && BankId == other.BankId; }
-	int16_t		BankId = -1;
-	uint16_t	Address = 0;
-};
+
 
 struct FWatch : public FAddressRef
 {
@@ -238,6 +246,7 @@ public:
 	static const int kAddressSize = 1 << 16;
 	static const int kPageShift = 10;
 	static const int kPageMask = 1023;
+	static const int kNoPagesInAddressSpace = kAddressSize / FCodeAnalysisPage::kPageSize;
 
 	void	Init(ICPUInterface* pCPUInterface);
 
@@ -255,11 +264,42 @@ public:
 	
 	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
 
-	void	SetCodeAnalysisDirty(bool val = true)	
-	{ 
-		bCodeAnalysisDataDirty = val; 
+	void	SetCodeAnalysisDirty(FAddressRef addrRef)
+	{
+		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+			pBank->bIsDirty = true;
+		bCodeAnalysisDataDirty = true;
 	}
 
+	void	SetCodeAnalysisDirty(uint16_t address)	
+	{ 
+		SetCodeAnalysisDirty({ GetBankFromAddress(address),address });
+	}
+
+	void	SetAddressRangeDirty()
+	{
+		for (int i = 0; i < kNoPagesInAddressSpace; i++)
+		{
+			FCodeAnalysisBank* pBank = GetBank(MappedBanks[i]);
+			if (pBank != nullptr)
+				pBank->bIsDirty = true;
+			bCodeAnalysisDataDirty = true;
+		}
+	}
+
+	void	SetAllBanksDirty()
+	{
+		for (auto& bank : Banks)
+			bank.bIsDirty = true;
+		bCodeAnalysisDataDirty = true;
+	}
+
+	void	ClearDirtyStatus(void)
+	{
+		bCodeAnalysisDataDirty = false;
+	}
+	
 	bool IsCodeAnalysisDataDirty() const { return bCodeAnalysisDataDirty; }
 	void ClearRemappings() { bMemoryRemapped = false; }
 	bool HasMemoryBeenRemapped() const { return bMemoryRemapped; }
@@ -412,12 +452,11 @@ private:
 	}
 
 	// private data members
-	FCodeAnalysisPage*				ReadPageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
-	FCodeAnalysisPage*				WritePageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
+	FCodeAnalysisPage*				ReadPageTable[kNoPagesInAddressSpace];
+	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];
 
 	std::vector<FCodeAnalysisBank>	Banks;
-	int16_t							MappedBanks[kAddressSize / FCodeAnalysisPage::kPageSize];
-	//std::vector<int16_t>			RemappedBanks;
+	int16_t							MappedBanks[kNoPagesInAddressSpace];	// banks mapped into address space
 
 	std::vector<FCodeAnalysisPage*>	RegisteredPages;
 	std::vector<std::string>	PageNames;

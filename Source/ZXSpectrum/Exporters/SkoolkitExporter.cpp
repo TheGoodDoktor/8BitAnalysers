@@ -436,7 +436,7 @@ bool ExportSkoolFile(FCodeAnalysisState& state, const char* pTextFileName, FSkoo
 		LOGINFO("Failed to export '%s'", pTextFileName);
 
 	SetNumberDisplayMode(previousDisplayMode);
-	state.SetCodeAnalysisDirty();
+	state.SetAddressRangeDirty();	
 
 	std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
 	LOGDEBUG("Exporting %s took %.2f ms", pTextFileName, ms_double);

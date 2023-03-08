@@ -562,7 +562,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		return false;
 	
 	pc = newPC;
-	state.SetCodeAnalysisDirty();
+	state.SetCodeAnalysisDirty(pc);
 	return true;
 }
 
@@ -570,7 +570,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 {
 	while(AnalyseAtPC(state,pc))
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(pc);
 
 	return;
 }
@@ -699,7 +699,7 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 		//pCommentBlock->Address = address;
 		pCommentBlock->ByteSize = 1;
 		state.SetCommentBlockForAddress(address, pCommentBlock);
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(address);
 		return pCommentBlock;
 	}
 
@@ -841,7 +841,7 @@ void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 			else
 			{
 				pDataItem->DataType = EDataType::Text;
-				state.SetCodeAnalysisDirty();
+				state.SetCodeAnalysisDirty(item.Address);
 			}
 		}
 	}
@@ -878,7 +878,7 @@ FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 
 		pNewLabel = GenerateLabelForAddress(state, address, labelType);
 		
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(address);
 	}
 
 	return pNewLabel;
@@ -895,7 +895,7 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 		if (pLabelInfo->Global || pLabelInfo->LabelType == ELabelType::Function)
 			GenerateGlobalInfo(state);
 
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(address);
 	}
 }
 

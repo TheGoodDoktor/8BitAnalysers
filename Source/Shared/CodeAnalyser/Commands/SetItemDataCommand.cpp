@@ -18,19 +18,19 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 		{
 			pDataItem->DataType = EDataType::Word;
 			pDataItem->ByteSize = 2;
-			state.SetCodeAnalysisDirty();
+			state.SetCodeAnalysisDirty(Item.Address);
 		}
 		else if (pDataItem->DataType == EDataType::Word)
 		{
 			pDataItem->DataType = EDataType::Byte;
 			pDataItem->ByteSize = 1;
-			state.SetCodeAnalysisDirty();
+			state.SetCodeAnalysisDirty(Item.Address);
 		}
 		else if (pDataItem->DataType == EDataType::Text)
 		{
 			pDataItem->DataType = EDataType::Byte;
 			pDataItem->ByteSize = 1;
-			state.SetCodeAnalysisDirty();
+			state.SetCodeAnalysisDirty(Item.Address);
 		}
 	}
 	else if (Item.Item->Type == EItemType::Code)
@@ -39,7 +39,7 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 		if (pCodeItem->bDisabled == false)
 		{
 			pCodeItem->bDisabled = true;
-			state.SetCodeAnalysisDirty();
+			state.SetCodeAnalysisDirty(Item.Address);
 
 			FLabelInfo* pLabelInfo = state.GetLabelForAddress(Item.Address);
 			if (pLabelInfo != nullptr)
@@ -70,7 +70,7 @@ void FSetItemCodeCommand::Do(FCodeAnalysisState& state)
 		RunStaticCodeAnalysis(state, Addr);
 		UpdateCodeInfoForAddress(state, Addr);
 	}
-	state.SetCodeAnalysisDirty();
+	state.SetCodeAnalysisDirty(Addr);
 }
 
 void FSetItemCodeCommand::Undo(FCodeAnalysisState& state)

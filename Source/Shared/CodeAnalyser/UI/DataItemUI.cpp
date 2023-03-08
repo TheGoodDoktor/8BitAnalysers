@@ -645,7 +645,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		if (ImGui::InputInt("Length", &length))
 		{
 			pDataInfo->ByteSize = length;
-			state.SetCodeAnalysisDirty();
+			state.SetCodeAnalysisDirty(item.Address);
 		}
 	}
 	break;
@@ -715,7 +715,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			if (ImGui::InputInt2("Image Size (chars)", sz))
 			{
 				pDataInfo->ByteSize = pImageData->SetSizeChars(sz[0], sz[1]);
-				state.SetCodeAnalysisDirty();	// force redraw of items
+				state.SetCodeAnalysisDirty(item.Address);	// force redraw of items
 				bRebuildImage = true;
 			}
 

@@ -206,7 +206,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 		formattingOptions.CharacterSet = params.CharacterSet;
 		formattingOptions.EmptyCharNo = params.IgnoreCharacter;
 		FormatData(state, formattingOptions);
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(params.Address);
 	}
 
 	// Display Character Map

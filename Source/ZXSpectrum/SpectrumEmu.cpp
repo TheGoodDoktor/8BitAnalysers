@@ -944,7 +944,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	FormatSpectrumMemory(CodeAnalysis);
-	CodeAnalysis.SetCodeAnalysisDirty();
+	CodeAnalysis.SetAddressRangeDirty();
 
 	// Start in break mode so the memory will be in it's initial state. 
 	// Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
@@ -1231,19 +1231,19 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				if (ImGui::MenuItem("Decimal", 0, GetNumberDisplayMode() == ENumberDisplayMode::Decimal))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::Decimal);
-					CodeAnalysis.SetCodeAnalysisDirty();
+					CodeAnalysis.SetAllBanksDirty();
 					bClearCode = true;
 				}
 				if (ImGui::MenuItem("Hex - FEh", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAitch))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
-					CodeAnalysis.SetCodeAnalysisDirty();
+					CodeAnalysis.SetAllBanksDirty();
 					bClearCode = true;
 				}
 				if (ImGui::MenuItem("Hex - $FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexDollar))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
-					CodeAnalysis.SetCodeAnalysisDirty();
+					CodeAnalysis.SetAllBanksDirty();
 					bClearCode = true;
 				}
 
@@ -1930,8 +1930,9 @@ void FSpectrumEmu::DrawCheatsUI()
 				FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(entry.Address);
 				if (pCodeInfo)
 					pCodeInfo->Text.clear();
+			
+				CodeAnalysis.SetCodeAnalysisDirty(entry.Address);
 			}
-			CodeAnalysis.SetCodeAnalysisDirty();
 
 			LOGINFO("Poke %s: '%s' [%d byte(s)]", cheat.bEnabled ? "applied" : "reverted", cheat.Description.c_str(), cheat.Entries.size());
 

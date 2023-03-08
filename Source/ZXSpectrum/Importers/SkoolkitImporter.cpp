@@ -588,7 +588,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		pSkoolInfo->EndAddr = maxAddr;
 	}
 
-	state.SetCodeAnalysisDirty();
+	state.SetAddressRangeDirty();	
 	fclose(fp);
 	return true;
 }

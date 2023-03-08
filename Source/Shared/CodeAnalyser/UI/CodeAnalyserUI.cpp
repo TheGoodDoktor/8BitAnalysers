@@ -647,7 +647,7 @@ void DrawCommentBlockDetails(FCodeAnalysisState& state, const FCodeAnalysisItem&
 	{
 		if (pCommentBlock->Comment.empty() == true)
 			state.SetCommentBlockForAddress(item.Address, nullptr);
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(item.Address);
 	}
 
 }
@@ -792,7 +792,7 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::SetKeyboardFocusHere();
 		if(ImGui::InputTextMultiline("##comment", &cursorItem.Item->Comment,ImVec2(), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine))
 		{
-			state.SetCodeAnalysisDirty();
+			state.SetCodeAnalysisDirty(cursorItem.Address);
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
@@ -925,7 +925,21 @@ void UpdateItemList(FCodeAnalysisState &state)
 				bank.bIsDirty = false;
 			}
 		}
+		int pageNo = 0;
 
+		while (pageNo < FCodeAnalysisState::kNoPagesInAddressSpace)
+		{
+			int16_t bankId = state.GetBankFromAddress(pageNo * FCodeAnalysisPage::kPageSize);
+			FCodeAnalysisBank* pBank = state.GetBank(bankId);
+			if (pBank != nullptr)
+			{
+				state.ItemList.insert(state.ItemList.end(),pBank->ItemList.begin(), pBank->ItemList.end());
+				pageNo += pBank->NoPages;
+			}
+			else
+				pageNo++;
+		}
+#if 0
 		// special case for expanded lines
 		// TODO: there should be a more general case
 		FItemListBuilder listBuilder(state.ItemList);
@@ -985,10 +999,10 @@ void UpdateItemList(FCodeAnalysisState &state)
 					state.ViewState[i].CursorItemIndex = (int)state.ItemList.size() - 1;
 			}*/
 		}
-
+#endif
 		// Maybe this needs to follow the same algorithm as the main view?
 		//ImGui::SetScrollY(state.GetFocussedViewState().CursorItemIndex * line_height);
-		state.SetCodeAnalysisDirty(false);
+		state.ClearDirtyStatus();
 
 		if (state.HasMemoryBeenRemapped())
 		{
@@ -1633,14 +1647,14 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		if (ImGui::Button("Format"))
 		{
 			FormatData(state, formattingOptions);
-			state.SetCodeAnalysisDirty();
+			state.SetCodeAnalysisDirty(formattingOptions.StartAddress);
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Format & Advance"))
 		{
 			FormatData(state, formattingOptions);
 			formattingOptions.StartAddress += formattingOptions.ItemSize * formattingOptions.NoItems;
-			state.SetCodeAnalysisDirty();
+			state.SetCodeAnalysisDirty(formattingOptions.StartAddress);
 			GoToAddress(viewState, formattingOptions.StartAddress);
 		}
 	}
