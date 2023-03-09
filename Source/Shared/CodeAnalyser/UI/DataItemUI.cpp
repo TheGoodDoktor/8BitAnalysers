@@ -23,7 +23,7 @@ float DrawDataCharMapLine(FCodeAnalysisState& state,uint16_t addr, const FDataIn
 
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
-		const uint8_t val = state.CPUInterface->ReadByte(addr + byte);
+		const uint8_t val = state.ReadByte(addr + byte);
 		if (val != pDataInfo->EmptyCharNo)	// skip empty chars
 		{
 			const ImVec2 rectMin(pos.x, pos.y);
@@ -71,7 +71,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
-		const uint8_t val = state.CPUInterface->ReadByte(addr + byte);
+		const uint8_t val = state.ReadByte(addr + byte);
 
 		for (int bit = 7; bit >= 0; bit--)
 		{
@@ -103,9 +103,9 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 			const ImVec2 rectMax(startPos.x + rectSize, startPos.y + rectSize);
 			dl->AddRect(rectMin, rectMax, 0xffff00ff);
 
-			uint8_t val = state.CPUInterface->ReadByte(addr + byteNo);
+			uint8_t val = state.ReadByte(addr + byteNo);
 			val = val ^ (1 << (7-bitNo));
-			state.CPUInterface->WriteByte(addr + byteNo,val);
+			state.WriteByte(addr + byteNo,val);
 		}
 	}
 	//return pos.x - startPos;
@@ -132,7 +132,7 @@ float DrawColAttr(FCodeAnalysisState& state, uint16_t addr,const FDataInfo* pDat
 	
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
-		uint8_t colAttr = state.CPUInterface->ReadByte(addr + byte);
+		uint8_t colAttr = state.ReadByte(addr + byte);
 		const bool bBright = !!(colAttr & (1 << 6));
 		const uint32_t inkCol = GetColFromAttr(colAttr & 7, colourLUT,bBright);
 		const uint32_t paperCol = GetColFromAttr(colAttr >> 3, colourLUT, bBright);
@@ -165,7 +165,7 @@ int DataItemEditCallback(ImGuiInputTextCallbackData* pData)
 void EditByteDataItem(FCodeAnalysisState& state, uint16_t address)
 {
 	const ENumberDisplayMode numMode = GetNumberDisplayMode();
-	uint8_t val = state.CPUInterface->ReadByte(address);
+	uint8_t val = state.ReadByte(address);
 	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
 	int width = 18;
 	const char* format = "%02X";
@@ -368,7 +368,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	{
 	case EDataType::Byte:
 	{
-		const uint8_t val = state.CPUInterface->ReadByte(item.Address);
+		const uint8_t val = state.ReadByte(item.Address);
 		ImGui::Text("db");
 		ImGui::SameLine();
 
@@ -387,14 +387,14 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case EDataType::ByteArray:
 	{
-		uint8_t val = state.CPUInterface->ReadByte(item.Address);
+		uint8_t val = state.ReadByte(item.Address);
 
 		// TODO: add edit support
 
 		ImGui::Text("db %s", NumStr(val));
 		for (int i = 1; i < pDataInfo->ByteSize; i++)	// first word already written
 		{
-			val = state.CPUInterface->ReadByte(item.Address + i);
+			val = state.ReadByte(item.Address + i);
 			ImGui::SameLine();
 			ImGui::Text(",%s", NumStr(val));
 		}
@@ -403,7 +403,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case EDataType::Word:
 	{
-		const uint16_t val = state.CPUInterface->ReadWord(item.Address);
+		const uint16_t val = state.ReadWord(item.Address);
 		ImGui::Text("dw");
 		ImGui::SameLine();
 		if (bEdit)
@@ -421,7 +421,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case EDataType::WordArray:
 	{
-		uint16_t val = state.CPUInterface->ReadWord(item.Address);
+		uint16_t val = state.ReadWord(item.Address);
 		const int wordCount = pDataInfo->ByteSize / 2;
 
 		// TODO: add edit support
@@ -429,7 +429,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::Text("dw %s", NumStr(val));
 		for (int i = 1; i < wordCount; i++)	// first word already written
 		{
-			val = state.CPUInterface->ReadWord(item.Address + (i * 2));
+			val = state.ReadWord(item.Address + (i * 2));
 			ImGui::SameLine();
 			ImGui::Text(",%s", NumStr(val));
 		}
@@ -620,11 +620,11 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	switch (pDataInfo->DataType)
 	{
 	case EDataType::Byte:
-		DrawDataValueGraph(state.CPUInterface->ReadByte(item.Address), false);
+		DrawDataValueGraph(state.ReadByte(item.Address), false);
 		break;
 
 	case EDataType::Word:
-		DrawDataValueGraph(state.CPUInterface->ReadWord(item.Address), false);
+		DrawDataValueGraph(state.ReadWord(item.Address), false);
 		break;
 
 	case EDataType::Text:
@@ -632,7 +632,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		std::string textString;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
-			const char ch = state.CPUInterface->ReadByte(item.Address + i);
+			const char ch = state.ReadByte(item.Address + i);
 			if (ch == '\n')
 				textString += "<cr>";
 			if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag

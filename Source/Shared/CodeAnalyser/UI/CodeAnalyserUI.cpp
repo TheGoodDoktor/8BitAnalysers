@@ -218,7 +218,7 @@ void DrawStack(FCodeAnalysisState& state)
 		{
 			ImGui::TableNextRow();
 
-			uint16_t stackVal = state.CPUInterface->ReadWord(stackAddr);
+			uint16_t stackVal = state.ReadWord(stackAddr);
 			FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(stackAddr);
 			const uint16_t writerAddr = state.GetLastWriterForAddress(stackAddr);
 
@@ -527,7 +527,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 			std::string strHexValue;
 
 			if (i < pCodeInfo->ByteSize)
-				snprintf(tmp,16, "%02X", state.CPUInterface->ReadByte(item.Address + i));
+				snprintf(tmp,16, "%02X", state.ReadByte(item.Address + i));
 			else
 				snprintf(tmp, 16, "  ");
 
@@ -590,20 +590,20 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			// backup code
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
 			{
-				pCodeInfo->OpcodeBkp[i] = state.CPUInterface->ReadByte(item.Address + i);
+				pCodeInfo->OpcodeBkp[i] = state.ReadByte(item.Address + i);
 
 				// NOP it out
 				if(state.CPUInterface->CPUType == ECPUType::Z80)
-					state.CPUInterface->WriteByte(item.Address + i,0);
+					state.WriteByte(item.Address + i,0);
 				else if(state.CPUInterface->CPUType == ECPUType::M6502)
-					state.CPUInterface->WriteByte(item.Address + i, 0xEA);
+					state.WriteByte(item.Address + i, 0xEA);
 			}
 		}
 		else
 		{
 			// Restore
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
-				state.CPUInterface->WriteByte(item.Address + i, pCodeInfo->OpcodeBkp[i]);
+				state.WriteByte(item.Address + i, pCodeInfo->OpcodeBkp[i]);
 
 		}
 	}
@@ -862,14 +862,14 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
 	listBuilder.BankId = bank.Id;
 
 	const int16_t page = bank.MappedPage != -1 ? bank.MappedPage : bank.LastMappedPage;
-	//const uint16_t bankPhysAddr = page * FCodeAnalysisPage::kPageSize;
+	const uint16_t bankPhysAddr = page * FCodeAnalysisPage::kPageSize;
 	int nextItemAddress = 0;
 
 	for (int bankAddr = 0; bankAddr < bank.NoPages * FCodeAnalysisPage::kPageSize; bankAddr++)
 	{
 		FCodeAnalysisPage& page = bank.Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
 		const uint16_t pageAddr = bankAddr & FCodeAnalysisPage::kPageMask;
-		listBuilder.CurrAddr = bankAddr;
+		listBuilder.CurrAddr = bankPhysAddr + bankAddr;
 
 		FCommentBlock* pCommentBlock = page.CommentBlocks[pageAddr];
 		if (pCommentBlock != nullptr)
@@ -936,12 +936,13 @@ void UpdateItemList(FCodeAnalysisState &state)
 			FCodeAnalysisBank* pBank = state.GetBank(bankId);
 			if (pBank != nullptr)
 			{
-				const uint16_t bankAddrStart = pageNo * FCodeAnalysisPage::kPageSize;
+				state.ItemList.insert(state.ItemList.end(), pBank->ItemList.begin(), pBank->ItemList.end());
+				/*const uint16_t bankAddrStart = pageNo * FCodeAnalysisPage::kPageSize;
 				for (const auto& bankItem : pBank->ItemList)
 				{
 					FCodeAnalysisItem& item = state.ItemList.emplace_back(bankItem);
 					item.AddressRef.Address += bankAddrStart;
-				}
+				}*/
 				pageNo += pBank->NoPages;
 			}
 			else
@@ -1442,6 +1443,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				// only handle keypresses for focussed window
 				if (state.FocussedWindowId == windowId)
 					ProcessKeyCommands(state, viewState);
+				UpdatePopups(state, viewState);
+
 				ImGui::EndChild();
 				ImGui::EndTabItem();
 			}
@@ -1454,13 +1457,19 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 				if (ImGui::BeginTabItem(bank.Name.c_str()))
 				{
+					// map bank in
+					state.MapBankForAnalysis(bank);
 					if (ImGui::BeginChild("##itemlist"))
 						DrawItemList(state, viewState, bank.ItemList);	
 					// only handle keypresses for focussed window
 					if (state.FocussedWindowId == windowId)
 						ProcessKeyCommands(state, viewState);
+					UpdatePopups(state, viewState);
+
 					ImGui::EndChild();
 					ImGui::EndTabItem();
+					// map bank out
+					state.UnMapAnalysisBanks();
 				}
 			}
 
@@ -1468,7 +1477,6 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		}
 		
 
-		UpdatePopups(state, viewState);
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();

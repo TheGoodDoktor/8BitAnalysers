@@ -252,17 +252,45 @@ public:
 
 	void	Init(ICPUInterface* pCPUInterface);
 
-	ICPUInterface*			CPUInterface = nullptr;
+	ICPUInterface* CPUInterface = nullptr;
 	int						CurrentFrameNo = 0;
 
 	// Memory Banks & Pages
-	int16_t		CreateBank(const char* name, int noKb,uint8_t* pMemory, bool bReadOnly);
+	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly);
 	bool		UnMapBank(int16_t bankId);
 	bool		MapBank(int16_t bankId, int startPageNo);
+
+	bool		MapBankForAnalysis(FCodeAnalysisBank& bank);
+	void		UnMapAnalysisBanks();
+	
 	FCodeAnalysisBank* GetBank(int16_t bankId);
 	int16_t		GetBankFromAddress(uint16_t address) { return MappedBanks[address >> kPageShift]; }
 	const std::vector<FCodeAnalysisBank>& GetBanks() const { return Banks; }
 	std::vector<FCodeAnalysisBank>& GetBanks() { return Banks; }
+
+	uint8_t		ReadByte(uint16_t address) const
+	{
+		if (MappedMem[address >> kPageShift] == nullptr)
+			return CPUInterface->ReadByte(address);
+		else
+			return *(MappedMem[(address >> kPageShift)] + (address & kPageMask));
+	}
+
+	uint16_t	ReadWord(uint16_t address) const
+	{
+		if (MappedMem[address >> kPageShift] == nullptr)
+			return CPUInterface->ReadWord(address);
+		else
+			return *(uint16_t*)(MappedMem[address >> kPageShift] + (address & kPageMask));
+	}
+
+	void		WriteByte(uint16_t address, uint8_t value) 
+	{ 
+		if (MappedMem[address >> kPageShift] == nullptr)
+			CPUInterface->WriteByte(address, value);
+		else
+			*(MappedMem[(address >> kPageShift)] + (address & kPageMask)) = value;
+	}
 	
 	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
 
@@ -454,11 +482,14 @@ private:
 	}
 
 	// private data members
+
 	FCodeAnalysisPage*				ReadPageTable[kNoPagesInAddressSpace];
 	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];
 
 	std::vector<FCodeAnalysisBank>	Banks;
 	int16_t							MappedBanks[kNoPagesInAddressSpace];	// banks mapped into address space
+
+	uint8_t*						MappedMem[kNoPagesInAddressSpace];	// mapped analysis memory
 
 	std::vector<FCodeAnalysisPage*>	RegisteredPages;
 	std::vector<std::string>	PageNames;

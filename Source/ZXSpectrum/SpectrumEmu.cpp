@@ -464,7 +464,7 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
 	}
 
-	bool bBreak = RegisterCodeExecuted(state, pc, nextpc);
+	const bool bBreak = RegisterCodeExecuted(state, pc, nextpc);
 	//FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	//pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
 	// check for breakpointed code line
@@ -1865,7 +1865,7 @@ void FSpectrumEmu::DrawCheatsUI()
 				
 				// Display the value of the memory location in the input field.
 				// If the user has modified the value then display that instead.
-				uint8_t value = entry.bUserDefinedValueDirty ? entry.Value : CodeAnalysis.CPUInterface->ReadByte(entry.Address);
+				uint8_t value = entry.bUserDefinedValueDirty ? entry.Value : CodeAnalysis.ReadByte(entry.Address);
 				
 				if (bAdvancedMode)
 					ImGui::SameLine();

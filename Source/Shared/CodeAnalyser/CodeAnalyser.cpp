@@ -93,6 +93,17 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId)
 }
 
 
+bool FCodeAnalysisState::MapBankForAnalysis(FCodeAnalysisBank& bank)
+{
+
+}
+
+void FCodeAnalysisState::UnMapAnalysisBanks()
+{
+	for(int i=0;i< kNoPagesInAddressSpace;i++)
+		MappedMem[i] = nullptr;
+}
+
 bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
 {
 	auto labelIt = LabelUsage.find(labelName);
@@ -137,7 +148,7 @@ bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint
 		bool bFound = true;
 		for (int byteNo = 0; byteNo < 8; byteNo++)
 		{
-			const uint8_t byte = pCPUInterface->ReadByte(address + byteNo);
+			const uint8_t byte = ReadByte(address + byteNo);
 			if (byte != pData[byteNo])
 			{
 				bFound = false;
@@ -175,7 +186,7 @@ void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 	{
 		FCodeInfo* pCodeInfo = GetCodeInfoForAddress(address);
 		FDataInfo* pDataInfo = GetReadDataInfoForAddress(address);
-		const uint8_t byte = pCPUInterface->ReadByte(address++);
+		const uint8_t byte = ReadByte(address++);
 
 		// determine if char is ascii
 		const bool bIsAscii = IsAscii(byte);
@@ -270,7 +281,7 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 
 	for (int i = 0; i < pDataInfo->ByteSize; i++)
 	{
-		const char ch = state.CPUInterface->ReadByte(address + i);
+		const char ch = state.ReadByte(address + i);
 		if (ch == '\n')
 			textString += "<cr>";
 		if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
@@ -403,7 +414,7 @@ static uint8_t AnalysisDasmInputCB(void* pUserData)
 {
 	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
 
-	return pDasmState->CodeAnalysisState->CPUInterface->ReadByte( pDasmState->CurrentAddress++);
+	return pDasmState->CodeAnalysisState->ReadByte( pDasmState->CurrentAddress++);
 }
 
 /* disassembler callback to output a character */
@@ -516,6 +527,26 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 // return if we should continue
 bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 {
+	// Register Code accesses
+	// 
+	// set jump reference
+	uint16_t jumpAddr;
+	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
+	{
+		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
+		if (pLabel != nullptr)
+			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+	}
+
+	// set pointer reference
+	uint16_t ptr;
+	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
+	{
+		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
+		if (pLabel != nullptr)
+			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+	}
+
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	const char* pOldComment = nullptr;
 	if (pCodeInfo != nullptr)
@@ -536,28 +567,13 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	}
 
 	const uint16_t newPC = WriteCodeInfoForAddress(state, pc);
+
 	// get new code info
 	pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pOldComment != nullptr)	// restore old comment
 		pCodeInfo->Comment = std::string(pOldComment);
 
-	// set jump reference
-	uint16_t jumpAddr;
-	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
-	{
-		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
-		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
-	}
-
-	// set pointer reference
-	uint16_t ptr;
-	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
-	{
-		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
-		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
-	}
+	
 
 	if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
 		return false;
@@ -754,6 +770,10 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 			pPage->MachineState[addr] = nullptr;
 		}
 	}
+	
+	// clear mapped mem
+	for(int i=0;i< kNoPagesInAddressSpace;i++)
+		MappedMem[i] = nullptr;
 
 	FreeMachineStates(*this);
 	FLabelInfo::FreeAll();
@@ -819,7 +839,7 @@ void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(charAddr);
 			while (pDataInfo != nullptr && pDataInfo->DataType == EDataType::Byte)
 			{
-				const uint8_t val = state.CPUInterface->ReadByte(charAddr);
+				const uint8_t val = state.ReadByte(charAddr);
 				if (val == 0 || val == 0xff)	// some strings are terminated by 0xff
 					break;
 				pDataItem->ByteSize++;

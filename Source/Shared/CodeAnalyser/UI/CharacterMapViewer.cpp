@@ -222,7 +222,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	{
 		for (int x = 0; x < params.Width; x++)
 		{
-			const uint8_t val = state.CPUInterface->ReadByte(params.Address + byte);
+			const uint8_t val = state.ReadByte(params.Address + byte);
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(params.Address + byte);
 			const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
 			const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
@@ -283,7 +283,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 		const int xChar = (int)floor(mousePosX / rectSize);
 		const int yChar = (int)floor(mousePosY / rectSize);
 		const uint16_t charAddress = pCharMap->Params.Address + (xChar + (yChar * pCharMap->Params.Width));
-		const uint8_t charVal = state.CPUInterface->ReadByte(charAddress);
+		const uint8_t charVal = state.ReadByte(charAddress);
 
 		const float xp = pos.x + (xChar * rectSize);
 		const float yp = pos.y + (yChar * rectSize);
