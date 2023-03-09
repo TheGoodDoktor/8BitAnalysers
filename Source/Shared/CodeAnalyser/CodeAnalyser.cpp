@@ -73,6 +73,7 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 
 		MappedBanks[startPageNo + bankPageNo] = bankId;
 	}
+	pBank->bIsDirty = true;
 	bMemoryRemapped = true;
 	//RemappedBanks.push_back(bankId);
 	return true;

@@ -106,6 +106,7 @@ public:
 	uint16_t	ReadWord(uint16_t address) const override;
 	const uint8_t*	GetMemPtr(uint16_t address) const override;
 	void		WriteByte(uint16_t address, uint8_t value) override;
+
 	uint16_t	GetPC(void) override;
 	uint16_t	GetSP(void) override;
 	bool		IsAddressBreakpointed(uint16_t addr) override;
@@ -145,6 +146,7 @@ public:
 
 	// Emulator 
 	zx_t			ZXEmuState;	// Chips Spectrum State
+	uint8_t*		MappedInMemory = nullptr;
 	//int				CurrentLayer = 0;	// layer ??
 
 	unsigned char*	FrameBuffer;	// pixel buffer to store emu output

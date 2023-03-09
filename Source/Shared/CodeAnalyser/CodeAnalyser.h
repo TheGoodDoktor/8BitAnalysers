@@ -29,10 +29,12 @@ typedef void (*FDasmOutput)(char c, void* user_data);
 class ICPUInterface
 {
 public:
+	// Memory Access
 	virtual uint8_t		ReadByte(uint16_t address) const = 0;
 	virtual uint16_t	ReadWord(uint16_t address) const = 0;
 	virtual const uint8_t*	GetMemPtr(uint16_t address) const = 0;
 	virtual void		WriteByte(uint16_t address, uint8_t value) = 0;
+
 	virtual uint16_t	GetPC(void) = 0;
 	virtual uint16_t	GetSP(void) = 0;
 
@@ -226,7 +228,7 @@ struct FCodeAnalysisBank
 	FCodeAnalysisPage*	Pages;
 	std::string			Name;
 	bool				bReadOnly = false;
-	bool				bIsDirty = true;
+	bool				bIsDirty = false;
 	std::vector<FCodeAnalysisItem>	ItemList;
 };
 

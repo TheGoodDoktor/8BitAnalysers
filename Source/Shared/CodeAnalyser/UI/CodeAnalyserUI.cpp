@@ -861,14 +861,15 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
 	FItemListBuilder listBuilder(bank.ItemList);
 	listBuilder.BankId = bank.Id;
 
-	const uint16_t bankPhysAddr = bank.LastMappedPage * FCodeAnalysisPage::kPageSize;
+	const int16_t page = bank.MappedPage != -1 ? bank.MappedPage : bank.LastMappedPage;
+	//const uint16_t bankPhysAddr = page * FCodeAnalysisPage::kPageSize;
 	int nextItemAddress = 0;
 
 	for (int bankAddr = 0; bankAddr < bank.NoPages * FCodeAnalysisPage::kPageSize; bankAddr++)
 	{
 		FCodeAnalysisPage& page = bank.Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
 		const uint16_t pageAddr = bankAddr & FCodeAnalysisPage::kPageMask;
-		listBuilder.CurrAddr = bankPhysAddr + bankAddr;
+		listBuilder.CurrAddr = bankAddr;
 
 		FCommentBlock* pCommentBlock = page.CommentBlocks[pageAddr];
 		if (pCommentBlock != nullptr)
@@ -879,23 +880,25 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
 			listBuilder.ItemList.emplace_back(pLabelInfo, listBuilder.CurrAddr);
 
 		// check if we have gone past this item
-		if (listBuilder.CurrAddr >= nextItemAddress)
+		if (bankAddr >= nextItemAddress)
 		{
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(listBuilder.CurrAddr);
+			//FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(listBuilder.CurrAddr);
+			FCodeInfo* pCodeInfo = page.CodeInfo[pageAddr];
 			if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 			{
-				nextItemAddress = listBuilder.CurrAddr + pCodeInfo->ByteSize;
+				nextItemAddress = bankAddr + pCodeInfo->ByteSize;
 				listBuilder.ItemList.emplace_back(pCodeInfo, listBuilder.CurrAddr);
 			}
 			else // code and data are mutually exclusive
 			{
-				FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(listBuilder.CurrAddr);
+				//FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(listBuilder.CurrAddr);
+				FDataInfo* pDataInfo = &page.DataInfo[pageAddr]; 
 				if (pDataInfo != nullptr)
 				{
 					if (pDataInfo->DataType != EDataType::Blob && pDataInfo->DataType != EDataType::ScreenPixels)	// not sure why we want this
-						nextItemAddress = listBuilder.CurrAddr + pDataInfo->ByteSize;
+						nextItemAddress = bankAddr + pDataInfo->ByteSize;
 					else
-						nextItemAddress = listBuilder.CurrAddr + 1;
+						nextItemAddress = bankAddr + 1;
 
 					listBuilder.ItemList.emplace_back(pDataInfo, listBuilder.CurrAddr);
 				}
@@ -933,11 +936,18 @@ void UpdateItemList(FCodeAnalysisState &state)
 			FCodeAnalysisBank* pBank = state.GetBank(bankId);
 			if (pBank != nullptr)
 			{
-				state.ItemList.insert(state.ItemList.end(),pBank->ItemList.begin(), pBank->ItemList.end());
+				const uint16_t bankAddrStart = pageNo * FCodeAnalysisPage::kPageSize;
+				for (const auto& bankItem : pBank->ItemList)
+				{
+					FCodeAnalysisItem& item = state.ItemList.emplace_back(bankItem);
+					item.AddressRef.Address += bankAddrStart;
+				}
 				pageNo += pBank->NoPages;
 			}
 			else
+			{
 				pageNo++;
+			}
 		}
 #if 0
 		// special case for expanded lines
