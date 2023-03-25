@@ -233,7 +233,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 		ImGui::BeginTooltip();
 		ptrAddress = GetAddressFromPositionInView(viewerState,xp, yp);
 		if (ImGui::IsMouseDoubleClicked(0))
-			CodeAnalyserGoToAddress(state.GetFocussedViewState(), ptrAddress);
+			state.GetFocussedViewState().GoToAddress({ state.GetBankFromAddress(ptrAddress), ptrAddress });	// TODO: fix for banks
 		if (ImGui::IsMouseClicked(0))
 			viewerState.ClickedAddress = ptrAddress;
 
@@ -337,15 +337,16 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 			for (int x = 0; x < xcount; x++)
 			{
 				int16_t bankId = viewerState.Bank;
-				uint16_t bankAddress = address;
+				//uint16_t bankAddress = address;
 				if (bankId == -1)
 				{
 					bankId = state.GetBankFromAddress(address);
-					if (bankId != -1)
-						bankAddress = address - state.GetBank(bankId)->MappedPage * FCodeAnalysisPage::kPageSize;
+					//if (bankId != -1)
+					//	bankAddress = address - state.GetBank(bankId)->MappedPage * FCodeAnalysisPage::kPageSize;
 				}
 					
-				DrawMemoryBankAsGraphicsColumn(viewerState, bankId, bankAddress, x* viewerState.XSize * 8, viewerState.XSize);
+				assert(bankId != -1);
+				DrawMemoryBankAsGraphicsColumn(viewerState, bankId, address & 0x3fff, x * viewerState.XSize * 8, viewerState.XSize);
 				//	DrawMemoryAsGraphicsColumn(viewerState, address, x * viewerState.XSize * 8, viewerState.XSize);
 
 				address += viewerState.XSize * kVerticalDispPixCount;

@@ -315,13 +315,14 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	}
 
 	// draw hovered address
-	if (viewState.HighlightAddress != -1)
+	if (viewState.HighlightAddress.IsValid())
 	{
 		const uint16_t charMapStartAddr = params.Address;
 		const uint16_t charMapEndAddr = params.Address + (params.Width * params.Height) - 1;
-		if (viewState.HighlightAddress >= params.Address && viewState.HighlightAddress <= charMapEndAddr)	// pixel
+		// TODO: this needs to use banks
+		if (viewState.HighlightAddress.Address >= params.Address && viewState.HighlightAddress.Address <= charMapEndAddr)	// pixel
 		{
-			const uint16_t addrOffset = viewState.HighlightAddress - params.Address;
+			const uint16_t addrOffset = viewState.HighlightAddress.Address - params.Address;
 			const int charX = addrOffset % params.Width;
 			const int charY = addrOffset / params.Width;
 			const float xp = pos.x + (charX * rectSize);

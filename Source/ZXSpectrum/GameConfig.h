@@ -48,7 +48,7 @@ struct FViewerConfig
 struct FCodeAnalysisViewConfig
 {
 	bool		bEnabled = false;
-	uint16_t	ViewAddress = 0;
+	FAddressRef	ViewAddress;
 };
 
 struct FGameConfig
@@ -77,7 +77,7 @@ const std::vector< FGameConfig *>& GetGameConfigs();
 
 FGameConfig *CreateNewGameConfigFromSnapshot(const FGameSnapshot& snapshot);
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);
-bool LoadGameConfigFromFile(FGameConfig &config, const char *fname);
+bool LoadGameConfigFromFile(const FCodeAnalysisState& state, FGameConfig &config, const char *fname);
 bool LoadGameConfigs(FSpectrumEmu*pUI);
 
 bool LoadPOKFile(FGameConfig &config, const char *fname);

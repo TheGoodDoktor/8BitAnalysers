@@ -637,26 +637,29 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 
 // Bank is ROM bank 0 or 1
 // this is always slot 0
-void FSpectrumEmu::SetROMBank(int bankId)
+void FSpectrumEmu::SetROMBank(int bankNo)
 {
+	const int16_t bankId = ROMBanks[bankNo];
 	if (CurROMBank == bankId)
 		return;
 	// Unmap old bank
-	CodeAnalysis.UnMapBank(CurROMBank);
+	CodeAnalysis.UnMapBank(CurROMBank, 0);
 	CodeAnalysis.MapBank(bankId, 0);
 	CurROMBank = bankId;
 }
 
 // Slot is physical 16K memory region (0-3) 
 // Bank is a 16K Spectrum RAM bank (0-7)
-void FSpectrumEmu::SetRAMBank(int slot, int bankId)
+void FSpectrumEmu::SetRAMBank(int slot, int bankNo)
 {
+	const int16_t bankId = RAMBanks[bankNo];
 	if (CurRAMBank[slot] == bankId)
 		return;
 
 	// Unmap old bank
-	CodeAnalysis.UnMapBank(CurRAMBank[slot]);
-	CodeAnalysis.MapBank(bankId, slot * kNoBankPages);
+	const int startPage = slot * kNoBankPages;
+	CodeAnalysis.UnMapBank(CurRAMBank[slot], startPage);
+	CodeAnalysis.MapBank(bankId, startPage);
 
 	CurRAMBank[slot] = bankId;
 }
@@ -822,17 +825,17 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// Setup initial machine memory config
 	if (config.Model == ESpectrumModel::Spectrum48K)
 	{
-		SetROMBank(ROMBanks[0]);
-		SetRAMBank(1, RAMBanks[0]);	// 0x4000 - 0x7fff
-		SetRAMBank(2, RAMBanks[1]);	// 0x8000 - 0xBfff
-		SetRAMBank(3, RAMBanks[2]);	// 0xc000 - 0xffff
+		SetROMBank(0);
+		SetRAMBank(1, 0);	// 0x4000 - 0x7fff
+		SetRAMBank(2, 1);	// 0x8000 - 0xBfff
+		SetRAMBank(3, 2);	// 0xc000 - 0xffff
 	}
 	else
 	{
 		SetROMBank(0);
-		SetRAMBank(1, RAMBanks[5]);	// 0x4000 - 0x7fff
-		SetRAMBank(2, RAMBanks[2]);	// 0x8000 - 0xBfff
-		SetRAMBank(3, RAMBanks[0]);	// 0xc000 - 0xffff
+		SetRAMBank(1, 5);	// 0x4000 - 0x7fff
+		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
+		SetRAMBank(3, 0);	// 0xc000 - 0xffff
 	}
 
 	// load the command line game if none specified then load the last game
@@ -917,7 +920,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
-		CodeAnalysis.ViewState[i].GoToAddress = pGameConfig->ViewConfigs[i].ViewAddress;
+		CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
 	}
 
 	const std::string root = GetGlobalConfig().WorkspaceRoot;
@@ -968,7 +971,7 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 	{
 		if (pGameConfig->Name == pGameName)
 		{
-			const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+			const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
 			const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 			if (GamesList.LoadGame(gameFile.c_str()))
 			{
@@ -1010,7 +1013,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 				FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
 
 				viewConfig.bEnabled = viewState.Enabled;
-				viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().Address : 0;
+				viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
@@ -1086,7 +1089,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
-						const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+						const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
 						const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 
 						if(GamesList.LoadGame(gameFile.c_str()))
@@ -1164,7 +1167,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			
 			if (pActiveGame && ImGui::MenuItem("Reload Snapshot"))
 			{
-				const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+				const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
 				const std::string gameFile = snapFolder + pActiveGame->pConfig->SnapshotFile;
 				GamesList.LoadGame(gameFile.c_str());
 			}
@@ -1537,15 +1540,14 @@ void FSpectrumEmu::Tick()
 		if (bStepToNextFrame)
 		{
 			_ui_dbg_break(&UIZX.dbg);
-			CodeAnalyserGoToAddress(CodeAnalysis.GetFocussedViewState(), GetPC());
+			CodeAnalysis.GetFocussedViewState().GoToAddress({ CodeAnalysis.GetBankFromAddress(GetPC()), GetPC() });
 			bStepToNextFrame = false;
 		}
-
 		
 		// on debug break send code analyser to address
 		else if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
 		{
-			CodeAnalyserGoToAddress(CodeAnalysis.GetFocussedViewState(), GetPC());
+			CodeAnalysis.GetFocussedViewState().GoToAddress({ CodeAnalysis.GetBankFromAddress(GetPC()), GetPC() });
 		}
 	}
 

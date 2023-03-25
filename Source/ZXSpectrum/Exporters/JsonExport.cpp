@@ -428,7 +428,10 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 	{
 		for (const auto& watchAddress : jsonGameData["Watches"])
 		{
-			state.AddWatch(-1, watchAddress);	// todo: Fix
+			if(watchAddress.is_number_integer())
+				state.AddWatch({ state.GetBankFromAddress(watchAddress), watchAddress });	
+			else if(watchAddress.is_object())
+				state.AddWatch({ watchAddress["Bank"], watchAddress["Address"]});	
 		}
 	}
 

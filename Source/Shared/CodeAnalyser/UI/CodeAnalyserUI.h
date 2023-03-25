@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 
+#include "../CodeAnalyserTypes.h"
+
 struct FCodeAnalysisItem;
 class FCodeAnalysisState;
 struct FCodeAnalysisViewState;
@@ -33,8 +35,10 @@ bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen);
 
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr);
 void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
+void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel = false);
 void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
-int GetItemIndexForAddress(const FCodeAnalysisState& state, uint16_t addr);
+void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel = false);
+int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
 bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
@@ -51,7 +55,6 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void ShowDataItemActivity(FCodeAnalysisState& state, uint16_t addr);
 
-void CodeAnalyserGoToAddress(FCodeAnalysisViewState& state, uint16_t newAddress, bool bLabel = false);
 void DrawComment(const FItem* pItem, float offset = 0.0f);
 
 // util functions - move?

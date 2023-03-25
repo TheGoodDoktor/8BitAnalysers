@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "CodeAnalyserTypes.h"
 #include "CodeAnaysisPage.h"
 
 class FGraphicsView;
@@ -77,14 +78,6 @@ public:
 	FCodeAnalysisState*		CodeAnalysisState;
 	uint16_t				CurrentAddress;
 	std::string				Text;
-};
-
-struct FAddressRef
-{
-	bool IsValid() const { return BankId != -1; }
-	bool operator==(const FAddressRef& other) const { return Address == other.Address && BankId == other.BankId; }
-	int16_t		BankId = -1;
-	uint16_t	Address = 0;
 };
 
 struct FMemoryAccess
@@ -160,9 +153,10 @@ struct FLabelListFilter
 
 struct FCodeAnalysisItem
 {
-	FCodeAnalysisItem() {}
-	FCodeAnalysisItem(FItem* pItem, uint16_t addr) :Item(pItem), BankId(-1), Address(addr) {}	// temp until we get refs working properly
+	FCodeAnalysisItem() : BankId(-1), Address(0) {}
+	//FCodeAnalysisItem(FItem* pItem, uint16_t addr) :Item(pItem), BankId(-1), Address(addr) {}	// temp until we get refs working properly
 	FCodeAnalysisItem(FItem* pItem, int16_t bankId, uint16_t addr) :Item(pItem), BankId(bankId), Address(addr) {}
+	FCodeAnalysisItem(FItem* pItem, FAddressRef addr) :Item(pItem), AddressRef(addr) {}
 
 	bool IsValid() const { return Item != nullptr; }
 	
@@ -187,13 +181,16 @@ struct FCodeAnalysisViewState
 	{
 		CursorItem = item;
 	}
+		
+	FAddressRef& GetGotoAddress() { return GoToAddressRef; }
+	const FAddressRef& GetGotoAddress() const { return GoToAddressRef; }
+	void GoToAddress(FAddressRef address, bool bLabel = false);
+	bool GoToPreviousAddress();
 
 	bool	Enabled = false;
-	//int		CursorItemIndex = -1;
 	bool	TrackPCFrame = false;
-	int		GoToAddress = -1;
-	int		HoverAddress = -1;		// address being hovered over
-	int		HighlightAddress = -1;	// address to highlight
+	FAddressRef		HoverAddress;		// address being hovered over
+	FAddressRef		HighlightAddress;	// address to highlight
 	bool	GoToLabel = false;
 
 	// for global Filters
@@ -203,12 +200,14 @@ struct FCodeAnalysisViewState
 	FLabelListFilter				GlobalFunctionsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
 
-	std::vector<uint16_t>	AddressStack;
 
 	bool					DataFormattingTabOpen = false;
 	FDataFormattingOptions	DataFormattingOptions;
 private:
-	FCodeAnalysisItem	CursorItem;
+	FCodeAnalysisItem			CursorItem;
+	bool						bGoToAddress = false;
+	FAddressRef					GoToAddressRef;
+	std::vector<FAddressRef>	AddressStack;
 };
 
 struct FCodeAnalysisConfig
@@ -222,8 +221,8 @@ struct FCodeAnalysisBank
 {
 	int16_t				Id = -1;
 	int					NoPages = 0;
-	int					MappedPage = -1;
-	int					LastMappedPage = -1;
+	std::vector<int>	MappedPages;	// banks can be mapped to multiple pages
+	int					PrimaryMappedPage = -1;
 	uint8_t*			Memory = nullptr;	// pointer to memory bank occupies
 	FCodeAnalysisPage*	Pages;
 	std::string			Name;
@@ -236,7 +235,9 @@ struct FCodeAnalysisBank
 
 struct FWatch : public FAddressRef
 {
-
+	FWatch() = default;
+	FWatch(const FAddressRef addressRef) : FAddressRef(addressRef) {}
+	FWatch(int16_t bankId, uint16_t address) : FAddressRef(bankId, address) {}
 };
 
 
@@ -257,14 +258,14 @@ public:
 
 	// Memory Banks & Pages
 	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly);
-	bool		UnMapBank(int16_t bankId);
 	bool		MapBank(int16_t bankId, int startPageNo);
+	bool		UnMapBank(int16_t bankId, int startPageNo);
 
 	bool		MapBankForAnalysis(FCodeAnalysisBank& bank);
 	void		UnMapAnalysisBanks();
 	
 	FCodeAnalysisBank* GetBank(int16_t bankId);
-	int16_t		GetBankFromAddress(uint16_t address) { return MappedBanks[address >> kPageShift]; }
+	int16_t		GetBankFromAddress(uint16_t address) const { return MappedBanks[address >> kPageShift]; }
 	const std::vector<FCodeAnalysisBank>& GetBanks() const { return Banks; }
 	std::vector<FCodeAnalysisBank>& GetBanks() { return Banks; }
 
@@ -341,9 +342,9 @@ public:
 
 	// Watches
 	void InitWatches() { Watches.clear(); }
-	void	AddWatch(int16_t bankId, uint16_t address)
+	void	AddWatch(FWatch watch)
 	{
-		Watches.push_back({ bankId, address });
+		Watches.push_back(watch);
 	}
 
 	bool	RemoveWatch(FWatch watch)
@@ -490,7 +491,7 @@ private:
 	int16_t							MappedBanks[kNoPagesInAddressSpace];	// banks mapped into address space
 
 	uint8_t*						MappedMem[kNoPagesInAddressSpace];	// mapped analysis memory
-
+				
 	std::vector<FCodeAnalysisPage*>	RegisteredPages;
 	std::vector<std::string>	PageNames;
 	int32_t						NextPageId = 0;

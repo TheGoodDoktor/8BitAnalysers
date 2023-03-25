@@ -354,7 +354,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	if (bDrawLabel)
 	{
-		DrawAddressLabel(state, viewState, item.Address);
+		DrawAddressLabel(state, viewState, item.AddressRef);
 		ImGui::SameLine(line_start_x + cell_width * 10 + glyph_width * 2);
 		ImGui::Text(":");
 		ImGui::SameLine();

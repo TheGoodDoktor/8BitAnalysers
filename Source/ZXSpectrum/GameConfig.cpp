@@ -78,7 +78,8 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 		const FCodeAnalysisViewConfig& viewConfig = config.ViewConfigs[i];
 		json viewConfigJson;
 		viewConfigJson["Enabled"] = viewConfig.bEnabled;
-		viewConfigJson["ViewAddress"] = viewConfig.ViewAddress;
+		viewConfigJson["ViewAddress"] = viewConfig.ViewAddress.Address;
+		viewConfigJson["ViewAddressBank"] = viewConfig.ViewAddress.BankId;
 
 		optionsJson["ViewConfigs"].push_back(viewConfigJson);
 	}
@@ -96,7 +97,7 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 }
 
 
-bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
+bool LoadGameConfigFromFile(const FCodeAnalysisState& state, FGameConfig &config, const char *fname)
 {
 	std::ifstream inFileStream(fname);
 	if (inFileStream.is_open() == false)
@@ -156,7 +157,11 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 				FCodeAnalysisViewConfig& viewConfig = config.ViewConfigs[i];
 				const json& viewConfigJson = optionsJson["ViewConfigs"][i];
 				viewConfig.bEnabled = viewConfigJson["Enabled"];
-				viewConfig.ViewAddress = viewConfigJson["ViewAddress"];
+				viewConfig.ViewAddress.Address = viewConfigJson["ViewAddress"];
+				if (viewConfigJson.contains("ViewAddressBank"))
+					viewConfig.ViewAddress.BankId = viewConfigJson["ViewAddressBank"];
+				else
+					viewConfig.ViewAddress.BankId = state.GetBankFromAddress(viewConfig.ViewAddress.Address);
 			}
 		}
 	}
@@ -273,7 +278,7 @@ bool LoadGameConfigs(FSpectrumEmu *pEmu)
 		if ((fn.substr(fn.find_last_of(".") + 1) == "json"))
 		{
 			FGameConfig *pNewConfig = new FGameConfig;
-			if (LoadGameConfigFromFile(*pNewConfig, fn.c_str()))
+			if (LoadGameConfigFromFile(pEmu->CodeAnalysis, *pNewConfig, fn.c_str()))
 			{
 				if(pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
 					AddGameConfig(pNewConfig);

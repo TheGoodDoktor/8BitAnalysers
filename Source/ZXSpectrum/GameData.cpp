@@ -596,7 +596,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 			uint16_t watchAddress;
 			fread(&watchAddress, sizeof(uint16_t), 1, fp);
 			if (watchAddress >= addrStart && watchAddress <= addrEnd)
-				state.AddWatch( -1,watchAddress );
+				state.AddWatch({ state.GetBankFromAddress(watchAddress), watchAddress });
 		}
 	}
 

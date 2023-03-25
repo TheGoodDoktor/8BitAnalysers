@@ -59,11 +59,18 @@ FCodeAnalysisBank* FCodeAnalysisState::GetBank(int16_t bankId)
 bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 {
 	FCodeAnalysisBank* pBank = GetBank(bankId);
-	if (pBank == nullptr)
+	if (pBank == nullptr || MappedBanks[startPageNo] == bankId)	// not found or already mapped to this locatiom
 		return false;
 
-	pBank->MappedPage = startPageNo;
-	pBank->LastMappedPage = startPageNo;
+	if (pBank->bReadOnly == true && startPageNo > 0)
+		assert(0);
+
+	if (pBank->MappedPages.empty())	// Newly mapped?
+	{
+		pBank->PrimaryMappedPage = startPageNo;
+	}
+
+	pBank->MappedPages.push_back(startPageNo);
 	for (int bankPageNo = 0; bankPageNo < pBank->NoPages; bankPageNo++)
 	{
 		//if(pBank->bReadOnly)
@@ -79,29 +86,53 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 	return true;
 }
 
-bool FCodeAnalysisState::UnMapBank(int16_t bankId)
+bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo)
 {
 	FCodeAnalysisBank* pBank = GetBank(bankId);
-	if (pBank == nullptr || pBank->MappedPage == -1)
+	if (pBank == nullptr || MappedBanks[startPageNo] != bankId)
 		return false;
 	
 	for (int bankPage = 0; bankPage < pBank->NoPages; bankPage++)
-		MappedBanks[pBank->MappedPage + bankPage] = -1;
+		MappedBanks[startPageNo + bankPage] = -1;
 
-	pBank->MappedPage = -1;
+	// erase from mapped pages - better way?
+	auto& it = pBank->MappedPages.begin();
+
+	while (it != pBank->MappedPages.end())
+	{
+		if (*it == startPageNo)
+			it = pBank->MappedPages.erase(it);
+		else
+			++it;
+	}
 	return true;
 }
 
 
 bool FCodeAnalysisState::MapBankForAnalysis(FCodeAnalysisBank& bank)
 {
+	int startPageNo = bank.PrimaryMappedPage;
+	for (int bankPageNo = 0; bankPageNo < bank.NoPages; bankPageNo++)
+	{
+		MappedMem[startPageNo + bankPageNo] = &bank.Memory[bankPageNo * FCodeAnalysisPage::kPageSize];
+		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &bank.Pages[bankPageNo], &bank.Pages[bankPageNo]);	// Read/Write
+	}
 
+	return true;
 }
 
 void FCodeAnalysisState::UnMapAnalysisBanks()
 {
-	for(int i=0;i< kNoPagesInAddressSpace;i++)
-		MappedMem[i] = nullptr;
+	for (int i = 0; i < kNoPagesInAddressSpace; i++)
+	{
+		const FCodeAnalysisBank* pMappedBank = GetBank(MappedBanks[i]);
+		if (MappedMem[i] != nullptr)
+		{
+			const int mappedPage = i - pMappedBank->PrimaryMappedPage;
+			SetCodeAnalysisRWPage(i, &pMappedBank->Pages[mappedPage], &pMappedBank->Pages[mappedPage]);	// Read/Write
+			MappedMem[i] = nullptr;
+		}
+	}
 }
 
 bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
@@ -176,7 +207,7 @@ bool IsAscii(uint8_t byte)
 void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 {
 	uint16_t address = startAddress;
-	ICPUInterface* pCPUInterface = CPUInterface;
+	const ICPUInterface* pCPUInterface = CPUInterface;
 	const int kStringMinLength = 4;
 	int stringLength = 0;
 	uint16_t stringStart = 0;
@@ -216,57 +247,67 @@ void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 
 
 
-bool CheckPointerIndirectionInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerIndirectionInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
 	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckPointerIndirectionInstructionZ80(pCPUInterface, pc, out_addr);
+		return CheckPointerIndirectionInstructionZ80(state, pc, out_addr);
 	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckPointerIndirectionInstruction6502(pCPUInterface, pc, out_addr);
+		return CheckPointerIndirectionInstruction6502(state, pc, out_addr);
 	else
 		return false;
 }
 
-bool CheckPointerRefInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerRefInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckPointerRefInstructionZ80(pCPUInterface, pc, out_addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckPointerRefInstruction6502(pCPUInterface, pc, out_addr);
-	else
-		return false;
-}
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
 
-
-bool CheckJumpInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
-{
 	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckJumpInstructionZ80(pCPUInterface, pc, out_addr);
+		return CheckPointerRefInstructionZ80(state, pc, out_addr);
 	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckJumpInstruction6502(pCPUInterface, pc, out_addr);
+		return CheckPointerRefInstruction6502(state, pc, out_addr);
 	else
 		return false;
 }
 
 
-
-bool CheckCallInstruction(ICPUInterface* pCPUInterface, uint16_t pc)
+bool CheckJumpInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
 	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckCallInstructionZ80(pCPUInterface, pc);
+		return CheckJumpInstructionZ80(state, pc, out_addr);
+	else if (pCPUInterface->CPUType == ECPUType::M6502)
+		return CheckJumpInstruction6502(state, pc, out_addr);
+	else
+		return false;
+}
+
+
+
+bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
+{
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return CheckCallInstructionZ80(state, pc);
 	else if(pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckCallInstruction6502(pCPUInterface, pc);
+		return CheckCallInstruction6502(state, pc);
 	else
 		return false;
 }
 
 // check if function should stop static analysis
 // this would be a function that unconditionally affects the PC
-bool CheckStopInstruction(ICPUInterface* pCPUInterface, uint16_t pc)
+bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
 {
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
 	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckStopInstructionZ80(pCPUInterface, pc);
+		return CheckStopInstructionZ80(state, pc);
 	else if(pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckStopInstruction6502(pCPUInterface, pc);
+		return CheckStopInstruction6502(state, pc);
 	else
 		return false;
 }
@@ -464,9 +505,9 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	// does this function branch?
 	uint16_t jumpAddr;
-	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
+	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
-		const bool isCall = CheckCallInstruction(state.CPUInterface, pc);
+		const bool isCall = CheckCallInstruction(state, pc);
 		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddr, isCall ? ELabelType::Function : ELabelType::Code);
 		if(pLabel)
 			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
@@ -478,14 +519,14 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	else
 	{
 		uint16_t ptr;
-		if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
+		if (CheckPointerRefInstruction(state, pc, &ptr))
 		{
 			if(pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
 			pCodeInfo->PointerAddress = ptr;
 		}
 
-		if (CheckPointerIndirectionInstruction(state.CPUInterface, pc, &ptr))
+		if (CheckPointerIndirectionInstruction(state, pc, &ptr))
 		{
 			pCodeInfo->PointerAddress = ptr;
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
@@ -531,7 +572,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	// 
 	// set jump reference
 	uint16_t jumpAddr;
-	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
+	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
 		if (pLabel != nullptr)
@@ -540,7 +581,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 
 	// set pointer reference
 	uint16_t ptr;
-	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
+	if (CheckPointerRefInstruction(state, pc, &ptr))
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
 		if (pLabel != nullptr)
@@ -575,7 +616,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 
 	
 
-	if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
+	if (CheckStopInstruction(state, pc) || newPC < pc)
 		return false;
 	
 	pc = newPC;

@@ -43,7 +43,7 @@ public:
 				CurBlockDirective = addrBlockDirective;
 			}
 
-			AddInstruction(pCurEntry, addr);
+			AddInstruction(pCurEntry, {State.GetBankFromAddress(addr), (uint16_t)addr	});
 
 			CurSubBlockDirective = addrSubBlockDirective;
 	
@@ -186,7 +186,7 @@ public:
 
 	// Try to add a code/data instruction to the entry from the FItem.
 	// Returns true if we added one sucessfully.
-	bool AddInstruction(FSkoolEntry* pEntry, uint16_t addr)
+	bool AddInstruction(FSkoolEntry* pEntry, FAddressRef addr)
 	{
 		if (pEntry)
 		{
@@ -195,7 +195,7 @@ public:
 			
 			if (pCodeInfo != nullptr)
 			{
-				UpdateCodeInfoForAddress(State, addr); // what does this do again?
+				UpdateCodeInfoForAddress(State, addr.Address); // what does this do again?
 				operationText = pCodeInfo->Text;
 				pItem = pCodeInfo;
 			}
@@ -212,7 +212,7 @@ public:
 			}
 
 			std::string commentLines;
-			if (FCommentBlock* pCommentBlock = State.GetCommentBlockForAddress(addr))
+			if (FCommentBlock* pCommentBlock = State.GetCommentBlockForAddress(addr.Address))
 			{
 				commentLines = pCommentBlock->Comment;
 			}
@@ -227,7 +227,7 @@ public:
 			{
 				if (pSkoolInfo)
 				{
-					if (const FSkoolFileLocation* pLocation = pSkoolInfo->GetLocation(addr))
+					if (const FSkoolFileLocation* pLocation = pSkoolInfo->GetLocation(addr.Address))
 					{
 						if (pLocation->bBranchDestination)
 							bIsBranchDestination = true;
@@ -241,7 +241,7 @@ public:
 			}
 
 			assert(pItem);
-			pEntry->AddInstruction(addr, pItem->Comment, operationText, prefix, commentLines);
+			pEntry->AddInstruction(addr.Address, pItem->Comment, operationText, prefix, commentLines);
 			return true;
 		}
 		return false;
