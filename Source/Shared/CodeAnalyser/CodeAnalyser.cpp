@@ -68,7 +68,10 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 	if (pBank->MappedPages.empty())	// Newly mapped?
 	{
 		pBank->PrimaryMappedPage = startPageNo;
+		pBank->bIsDirty = true;
+		bCodeAnalysisDataDirty = true;
 	}
+	assert(pBank->PrimaryMappedPage != -1);
 
 	pBank->MappedPages.push_back(startPageNo);
 	for (int bankPageNo = 0; bankPageNo < pBank->NoPages; bankPageNo++)
@@ -80,7 +83,6 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 
 		MappedBanks[startPageNo + bankPageNo] = bankId;
 	}
-	pBank->bIsDirty = true;
 	bMemoryRemapped = true;
 	//RemappedBanks.push_back(bankId);
 	return true;
@@ -107,6 +109,19 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo)
 	}
 	return true;
 }
+
+bool FCodeAnalysisState::IsBankIdMapped(int16_t bankId) const
+{
+	for (int bankIdx = 0; bankIdx < kNoPagesInAddressSpace; bankIdx++)
+	{
+		if (MappedBanks[bankIdx] == bankId)
+			return true;
+	}
+
+	return false;
+}
+
+
 
 
 bool FCodeAnalysisState::MapBankForAnalysis(FCodeAnalysisBank& bank)

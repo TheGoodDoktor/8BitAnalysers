@@ -762,6 +762,8 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 	fread(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
 	fread(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
 	fread(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+
+	pSpectrumEmu->CodeAnalysis.SetAllBanksDirty();
 	return true;
 }
 

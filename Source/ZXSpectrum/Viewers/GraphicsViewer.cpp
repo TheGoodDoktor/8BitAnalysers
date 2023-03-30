@@ -35,7 +35,7 @@ static const uint32_t g_kColourLUT[8] =
 	0xFFFFFFFF,     // 7 - white
 };
 
-uint16_t GetAddressFromPositionInView(FGraphicsViewerState &state, int x,int y)
+uint16_t GetAddressFromPositionInView(const FGraphicsViewerState &state, int x,int y)
 {
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
 
@@ -85,7 +85,7 @@ uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t add
 }
 #endif
 
-uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
+uint8_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
 {
 	const uint16_t pageAddress = addr & 1023;
 	const FCodeInfo* pCodeInfo = page.CodeInfo[pageAddress];
@@ -97,7 +97,7 @@ uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisPage& page, uint16_t addr,
 			return 6;	// yellow code
 	}
 
-	FDataInfo& dataInfo = page.DataInfo[pageAddress];
+	const FDataInfo& dataInfo = page.DataInfo[pageAddress];
 	
 	if (dataInfo.LastFrameWritten != -1)
 	{

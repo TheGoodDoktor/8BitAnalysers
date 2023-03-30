@@ -187,12 +187,12 @@ struct FCodeAnalysisViewState
 	void GoToAddress(FAddressRef address, bool bLabel = false);
 	bool GoToPreviousAddress();
 
-	bool	Enabled = false;
-	bool	TrackPCFrame = false;
+	bool			Enabled = false;
+	bool			TrackPCFrame = false;
 	FAddressRef		HoverAddress;		// address being hovered over
 	FAddressRef		HighlightAddress;	// address to highlight
-	bool	GoToLabel = false;
-
+	bool			GoToLabel = false;
+	int16_t			ViewingBankId = -1;
 	// for global Filters
 	bool						ShowROMLabels = false;
 	FLabelListFilter			GlobalDataItemsFilter;
@@ -260,6 +260,7 @@ public:
 	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly);
 	bool		MapBank(int16_t bankId, int startPageNo);
 	bool		UnMapBank(int16_t bankId, int startPageNo);
+	bool		IsBankIdMapped(int16_t bankId) const;
 
 	bool		MapBankForAnalysis(FCodeAnalysisBank& bank);
 	void		UnMapAnalysisBanks();

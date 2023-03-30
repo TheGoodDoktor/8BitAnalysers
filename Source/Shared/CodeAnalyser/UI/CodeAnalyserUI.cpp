@@ -1332,7 +1332,7 @@ void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& view
 	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }
 
-void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, std::vector<FCodeAnalysisItem>&	itemList)
+void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const std::vector<FCodeAnalysisItem>&	itemList)
 {
 	const float lineHeight = ImGui::GetTextLineHeight();
 	FAddressRef& gotoAddress = viewState.GetGotoAddress();
@@ -1457,16 +1457,37 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	{
 		if (ImGui::BeginTabBar("itemlist_tabbar"))
 		{
-			if (ImGui::BeginTabItem("Address Space"))
+			// Determine if we want to switch tabs
+			const FAddressRef& goToAddress = viewState.GetGotoAddress();
+			int16_t showBank = -1;
+			bool bSwitchTabs = false;
+			if (goToAddress.IsValid())
 			{
-				if (ImGui::BeginChild("##itemlist"))
-					DrawItemList(state, viewState, state.ItemList);
-				// only handle keypresses for focussed window
-				if (state.FocussedWindowId == windowId)
-					ProcessKeyCommands(state, viewState);
-				UpdatePopups(state, viewState);
+				// check if we can just jump in the address view
+				if (viewState.ViewingBankId != goToAddress.BankId && state.IsBankIdMapped(goToAddress.BankId))
+					showBank = -1;
+				else
+					showBank = goToAddress.BankId;
 
-				ImGui::EndChild();
+				bSwitchTabs = showBank != viewState.ViewingBankId;
+			}
+
+			ImGuiTabItemFlags tabFlags = (bSwitchTabs && showBank == -1) ? ImGuiTabItemFlags_SetSelected : 0;
+
+			if (ImGui::BeginTabItem("Address Space",nullptr,tabFlags))
+			{
+				if (bSwitchTabs == false || showBank == -1)
+				{
+					viewState.ViewingBankId = -1;
+					if (ImGui::BeginChild("##itemlist"))
+						DrawItemList(state, viewState, state.ItemList);
+					// only handle keypresses for focussed window
+					if (state.FocussedWindowId == windowId)
+						ProcessKeyCommands(state, viewState);
+					UpdatePopups(state, viewState);
+
+					ImGui::EndChild();
+				}
 				ImGui::EndTabItem();
 			}
 
@@ -1476,18 +1497,25 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				if (bank.Pages[0].bUsed == false)
 					continue;
 
-				if (ImGui::BeginTabItem(bank.Name.c_str()))
-				{
-					// map bank in
-					state.MapBankForAnalysis(bank);
-					if (ImGui::BeginChild("##itemlist"))
-						DrawItemList(state, viewState, bank.ItemList);	
-					// only handle keypresses for focussed window
-					if (state.FocussedWindowId == windowId)
-						ProcessKeyCommands(state, viewState);
-					UpdatePopups(state, viewState);
+				tabFlags = (bSwitchTabs && showBank == bank.Id) ? ImGuiTabItemFlags_SetSelected : 0;
 
-					ImGui::EndChild();
+				if (ImGui::BeginTabItem(bank.Name.c_str(),nullptr,tabFlags))
+				{
+					if (bSwitchTabs == false || showBank == bank.Id)
+					{
+						// map bank in
+						viewState.ViewingBankId = bank.Id;
+
+						state.MapBankForAnalysis(bank);
+						if (ImGui::BeginChild("##itemlist"))
+							DrawItemList(state, viewState, bank.ItemList);
+						// only handle keypresses for focussed window
+						if (state.FocussedWindowId == windowId)
+							ProcessKeyCommands(state, viewState);
+						UpdatePopups(state, viewState);
+
+						ImGui::EndChild();
+					}
 					ImGui::EndTabItem();
 					// map bank out
 					state.UnMapAnalysisBanks();
