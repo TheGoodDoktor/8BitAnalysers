@@ -65,7 +65,7 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 	if (pBank->bReadOnly == true && startPageNo > 0)
 		assert(0);
 
-	if (pBank->MappedPages.empty())	// Newly mapped?
+	if (pBank->PrimaryMappedPage == -1 )	// Newly mapped?
 	{
 		pBank->PrimaryMappedPage = startPageNo;
 		pBank->bIsDirty = true;

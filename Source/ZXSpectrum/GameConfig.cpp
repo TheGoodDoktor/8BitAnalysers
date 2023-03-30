@@ -161,7 +161,7 @@ bool LoadGameConfigFromFile(const FCodeAnalysisState& state, FGameConfig &config
 				if (viewConfigJson.contains("ViewAddressBank"))
 					viewConfig.ViewAddress.BankId = viewConfigJson["ViewAddressBank"];
 				else
-					viewConfig.ViewAddress.BankId = state.GetBankFromAddress(viewConfig.ViewAddress.Address);
+					viewConfig.ViewAddress.BankId = -1;
 			}
 		}
 	}

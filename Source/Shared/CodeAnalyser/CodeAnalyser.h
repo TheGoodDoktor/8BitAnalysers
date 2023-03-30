@@ -205,7 +205,6 @@ struct FCodeAnalysisViewState
 	FDataFormattingOptions	DataFormattingOptions;
 private:
 	FCodeAnalysisItem			CursorItem;
-	bool						bGoToAddress = false;
 	FAddressRef					GoToAddressRef;
 	std::vector<FAddressRef>	AddressStack;
 };

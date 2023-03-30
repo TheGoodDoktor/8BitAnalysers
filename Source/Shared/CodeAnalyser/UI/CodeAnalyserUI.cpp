@@ -1136,23 +1136,24 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		(viewState.DataFormattingTabOpen && item.Address >= viewState.DataFormattingOptions.StartAddress && item.Address <= endAddress);
 	if (ImGui::Selectable("##codeanalysisline", bSelected, ImGuiSelectableFlags_SelectOnNav))
 	{
-		viewState.SetCursorItem(item);
-		//viewState.CursorItemIndex = i;
-
-		// Select Data Formatting Range
-		if (viewState.DataFormattingTabOpen && item.Item->Type == EItemType::Data)
+		if (bSelected == false)
 		{
-			ImGuiIO& io = ImGui::GetIO();
-			if (io.KeyShift)
+			viewState.SetCursorItem(item);
+			//viewState.CursorItemIndex = i;
+
+			// Select Data Formatting Range
+			if (viewState.DataFormattingTabOpen && item.Item->Type == EItemType::Data)
 			{
-				//viewState.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
-				if (viewState.DataFormattingOptions.ItemSize > 0)
-					viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress - viewState.GetCursorItem().Address) / viewState.DataFormattingOptions.ItemSize;
-			}
-			else
-			{
-				//viewState.DataFormattingOptions.EndAddress = viewState.pCursorItem->Address;
-				viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().Address;
+				ImGuiIO& io = ImGui::GetIO();
+				if (io.KeyShift)
+				{
+					if (viewState.DataFormattingOptions.ItemSize > 0)
+						viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress - viewState.GetCursorItem().Address) / viewState.DataFormattingOptions.ItemSize;
+				}
+				else
+				{
+					viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().Address;
+				}
 			}
 		}
 	}
@@ -1367,7 +1368,7 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 					if (itemY > currScrollY + currWindowHeight - margin * 2)
 						ImGui::SetScrollY((itemY - currWindowHeight) + margin * 2);
 				}
-				break;
+				break;	// exit loop as we've found the address
 			}
 		}
 
@@ -1491,15 +1492,35 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				ImGui::EndTabItem();
 			}
 
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text("Current physically mapped address range");
+				ImGui::EndTooltip();
+			}
+
 			auto& banks = state.GetBanks();
 			for (auto& bank : banks)
 			{
 				if (bank.Pages[0].bUsed == false)
 					continue;
 
+				const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
+				const uint16_t kBankEnd = kBankStart + (bank.NoPages * FCodeAnalysisPage::kPageSize) - 1;
+
 				tabFlags = (bSwitchTabs && showBank == bank.Id) ? ImGuiTabItemFlags_SetSelected : 0;
 
-				if (ImGui::BeginTabItem(bank.Name.c_str(),nullptr,tabFlags))
+				const bool bMapped = bank.MappedPages.empty() == false;
+				const bool bTabOpen = ImGui::BeginTabItem(bank.Name.c_str(), nullptr, tabFlags);
+				
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::BeginTooltip();
+					ImGui::Text("0x%04X - 0x%X %s", kBankStart, kBankEnd, bMapped ? "Mapped" : "");
+					ImGui::EndTooltip();
+				}
+
+				if(bTabOpen)
 				{
 					if (bSwitchTabs == false || showBank == bank.Id)
 					{
@@ -1507,6 +1528,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 						viewState.ViewingBankId = bank.Id;
 
 						state.MapBankForAnalysis(bank);
+						ImGui::Text("%s: 0x%04X - 0x%X %s", bank.Name.c_str(), kBankStart, kBankEnd, bMapped ? "Mapped":"");
 						if (ImGui::BeginChild("##itemlist"))
 							DrawItemList(state, viewState, bank.ItemList);
 						// only handle keypresses for focussed window
@@ -1520,6 +1542,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 					// map bank out
 					state.UnMapAnalysisBanks();
 				}
+
+				
 			}
 
 			ImGui::EndTabBar();
