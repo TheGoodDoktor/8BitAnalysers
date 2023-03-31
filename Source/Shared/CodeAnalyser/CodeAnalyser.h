@@ -212,6 +212,7 @@ private:
 struct FCodeAnalysisConfig
 {
 	bool				bShowOpcodeValues = false;
+	bool				bShowBanks = false;
 	const uint32_t*		CharacterColourLUT = nullptr;
 };
 
@@ -225,6 +226,7 @@ struct FCodeAnalysisBank
 	uint8_t*			Memory = nullptr;	// pointer to memory bank occupies
 	FCodeAnalysisPage*	Pages;
 	std::string			Name;
+	std::string			Description;	// where we can describe what the bank is used for
 	bool				bReadOnly = false;
 	bool				bIsDirty = false;
 	std::vector<FCodeAnalysisItem>	ItemList;

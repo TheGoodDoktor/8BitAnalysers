@@ -126,10 +126,18 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	{
 		ImGui::SameLine();
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+		const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+
+		if (state.Config.bShowBanks)
+		{
+			ImGui::Text("[%s]", pBank->Name.c_str());
+			ImGui::SameLine(0,0);
+		}
+
 		if(labelOffset == 0)
-			ImGui::Text("[%d][%s]", addr.BankId, pLabelString);
+			ImGui::Text("[%s]", pLabelString);
 		else
-			ImGui::Text("[%d][%s + %d]", addr.BankId, pLabelString, labelOffset);
+			ImGui::Text("[%s + %d]", pLabelString, labelOffset);
 
 		if (ImGui::IsItemHovered())
 		{
@@ -1509,58 +1517,58 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				ImGui::EndTabItem();
 			}
 
-			if (ImGui::IsItemHovered())
+			if (state.Config.bShowBanks)
 			{
-				ImGui::BeginTooltip();
-				ImGui::Text("Current physically mapped address range");
-				ImGui::EndTooltip();
-			}
-
-			auto& banks = state.GetBanks();
-			for (auto& bank : banks)
-			{
-				if (bank.Pages[0].bUsed == false)
-					continue;
-
-				const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
-				const uint16_t kBankEnd = kBankStart + (bank.NoPages * FCodeAnalysisPage::kPageSize) - 1;
-
-				tabFlags = (bSwitchTabs && showBank == bank.Id) ? ImGuiTabItemFlags_SetSelected : 0;
-
-				const bool bMapped = bank.MappedPages.empty() == false;
-				const bool bTabOpen = ImGui::BeginTabItem(bank.Name.c_str(), nullptr, tabFlags);
-				
-				if (ImGui::IsItemHovered())
+				auto& banks = state.GetBanks();
+				for (auto& bank : banks)
 				{
-					ImGui::BeginTooltip();
-					ImGui::Text("[%d]0x%04X - 0x%X %s",bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped" : "");
-					ImGui::EndTooltip();
-				}
+					if (bank.Pages[0].bUsed == false)
+						continue;
 
-				if(bTabOpen)
-				{
-					if (bSwitchTabs == false || showBank == bank.Id)
+					const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
+					const uint16_t kBankEnd = kBankStart + (bank.NoPages * FCodeAnalysisPage::kPageSize) - 1;
+
+					tabFlags = (bSwitchTabs && showBank == bank.Id) ? ImGuiTabItemFlags_SetSelected : 0;
+
+					const bool bMapped = bank.MappedPages.empty() == false;
+					const bool bTabOpen = ImGui::BeginTabItem(bank.Name.c_str(), nullptr, tabFlags);
+
+					if (ImGui::IsItemHovered())
 					{
-						// map bank in
-						viewState.ViewingBankId = bank.Id;
-
-						state.MapBankForAnalysis(bank);
-						ImGui::Text("%s[%d]: 0x%04X - 0x%X %s", bank.Name.c_str(), bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped":"");
-						if (ImGui::BeginChild("##itemlist"))
-							DrawItemList(state, viewState, bank.ItemList);
-						// only handle keypresses for focussed window
-						if (state.FocussedWindowId == windowId)
-							ProcessKeyCommands(state, viewState);
-						UpdatePopups(state, viewState);
-
-						ImGui::EndChild();
+						ImGui::BeginTooltip();
+						ImGui::Text("[%d]0x%04X - 0x%X %s", bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped" : "");
+						ImGui::EndTooltip();
 					}
-					ImGui::EndTabItem();
-					// map bank out
-					state.UnMapAnalysisBanks();
-				}
 
-				
+					if (bTabOpen)
+					{
+						if (bSwitchTabs == false || showBank == bank.Id)
+						{
+							// map bank in
+							viewState.ViewingBankId = bank.Id;
+
+							state.MapBankForAnalysis(bank);
+
+							// Bank header
+							ImGui::Text("%s[%d]: 0x%04X - 0x%X %s", bank.Name.c_str(), bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped" : "");
+							ImGui::InputText("Description", &bank.Description);
+
+							if (ImGui::BeginChild("##itemlist"))
+								DrawItemList(state, viewState, bank.ItemList);
+							// only handle keypresses for focussed window
+							if (state.FocussedWindowId == windowId)
+								ProcessKeyCommands(state, viewState);
+							UpdatePopups(state, viewState);
+
+							ImGui::EndChild();
+						}
+						ImGui::EndTabItem();
+						// map bank out
+						state.UnMapAnalysisBanks();
+					}
+
+
+				}
 			}
 
 			ImGui::EndTabBar();

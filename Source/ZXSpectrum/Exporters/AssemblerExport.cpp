@@ -115,14 +115,14 @@ std::string GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc,
 	return dasmState.Text;
 }
 
-
-std::string GenerateAddressLabelString(FCodeAnalysisState& state, uint16_t addr)
+// this might be a bit broken
+std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef addr)
 {
 	int labelOffset = 0;
 	const char* pLabelString = nullptr;
 	std::string labelStr;
 
-	for (int addrVal = addr; addrVal >= 0; addrVal--)
+	for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
 	{
 		FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrVal);
 		if (pLabelInfo != nullptr)
@@ -194,14 +194,14 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			const std::string dasmString = GenerateDasmStringForAddress(state, item.Address, hexMode);
 			fprintf(fp, "\t%s", dasmString.c_str());
 
-			if (pCodeInfo->JumpAddress != 0)
+			if (pCodeInfo->JumpAddress.IsValid())
 			{
 				const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->JumpAddress);
 				if (labelStr.empty() == false)
 					fprintf(fp, "\t;%s", labelStr.c_str());
 
 			}
-			else if (pCodeInfo->PointerAddress != 0)
+			else if (pCodeInfo->PointerAddress.IsValid())
 			{
 				const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->PointerAddress);
 				if (labelStr.empty() == false)

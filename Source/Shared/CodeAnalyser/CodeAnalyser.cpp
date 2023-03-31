@@ -526,7 +526,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		if(pLabel)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
-		pCodeInfo->JumpAddress = jumpAddr;
+		pCodeInfo->JumpAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
 		if (pCodeInfo->OperandType == EOperandType::Unknown)
 			pCodeInfo->OperandType = EOperandType::JumpAddress;
 	}
@@ -537,12 +537,12 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		{
 			if(pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
-			pCodeInfo->PointerAddress = ptr;
+			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
 		}
 
 		if (CheckPointerIndirectionInstruction(state, pc, &ptr))
 		{
-			pCodeInfo->PointerAddress = ptr;
+			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
 			

@@ -674,6 +674,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	FGlobalConfig& globalConfig = GetGlobalConfig();
 	SetNumberDisplayMode(globalConfig.NumberDisplayMode);
 	CodeAnalysis.Config.bShowOpcodeValues = globalConfig.bShowOpcodeValues;
+	CodeAnalysis.Config.bShowBanks = config.Model == ESpectrumModel::Spectrum128K;
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 
 	// setup pixel buffer
@@ -807,7 +808,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	for (int bankNo = 0; bankNo < kNoROMBanks; bankNo++)
 	{
 		char bankName[32];
-		sprintf(bankName, "ROM:%d", bankNo);
+		sprintf(bankName, "ROM %d", bankNo);
 		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16,ZXEmuState.rom[bankNo], true);
 	}
 
@@ -815,7 +816,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
 	{
 		char bankName[32];
-		sprintf(bankName, "RAM:%d", bankNo);
+		sprintf(bankName, "RAM %d", bankNo);
 		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false);
 	}
 
