@@ -339,35 +339,33 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadWrites);
 	if (uiState.SelectedCharAddress != 0)
 	{
-		// TODO: show data reads & writes
+		// Show data reads & writes
 		// 
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(uiState.SelectedCharAddress);
 		// List Data accesses
 		if (pDataInfo->Reads.IsEmpty() == false)
 		{
 			ImGui::Text("Reads:");
-			for (const auto& caller : pDataInfo->Reads.GetReferences())
+			for (const auto& reader : pDataInfo->Reads.GetReferences())
 			{
-				const uint16_t accessorCodeAddr = caller.InstructionAddress;
-				ShowCodeAccessorActivity(state, accessorCodeAddr);
+				ShowCodeAccessorActivity(state, reader);
 
 				ImGui::Text("   ");
 				ImGui::SameLine();
-				DrawCodeAddress(state, viewState, accessorCodeAddr);
+				DrawCodeAddress(state, viewState, reader);
 			}
 		}
 
 		if (pDataInfo->Writes.IsEmpty() == false)
 		{
 			ImGui::Text("Writes:");
-			for (const auto& caller : pDataInfo->Writes.GetReferences())
+			for (const auto& writer : pDataInfo->Writes.GetReferences())
 			{
-				const uint16_t accessorCodeAddr = caller.InstructionAddress;
-				ShowCodeAccessorActivity(state, accessorCodeAddr);
+				ShowCodeAccessorActivity(state, writer);
 
 				ImGui::Text("   ");
 				ImGui::SameLine();
-				DrawCodeAddress(state, viewState, accessorCodeAddr);
+				DrawCodeAddress(state, viewState, writer);
 			}
 		}
 	}

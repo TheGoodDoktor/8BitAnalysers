@@ -7,6 +7,8 @@
 
 #include <Util/Misc.h>
 
+#include "CodeAnalyserTypes.h"
+
 class FMemoryBuffer;
 
 
@@ -51,41 +53,42 @@ struct FItem
 {
 	EItemType		Type;
 	std::string		Comment;
-	//uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
 	uint16_t		ByteSize;
 };
 
-struct FItemReference
+/*struct FItemReference
 {
 	FItemReference() = default;
-	FItemReference(uint16_t pc) : InstructionAddress(pc) {}
-	FItemReference(uint16_t pc, int16_t pageId) : InstructionAddress(pc), InstructionPageId(pageId) {}
+	//FItemReference(uint16_t pc) : InstructionAddress(pc) {}
+	FItemReference(uint16_t pc, int16_t bankId) : InstructionRef(pc, bankId) {}
+	FItemReference(const FAddressRef& addrRef) : InstructionRef(addrRef) {}
 
-	uint16_t	InstructionAddress = 0;
-	int16_t		InstructionPageId = 0;
-};
+	FAddressRef	InstructionRef;
+	//uint16_t	InstructionAddress = 0;
+	//int16_t		InstructionPageId = 0;
+};*/
 
 class FItemReferenceTracker
 {
 public:
 	void Reset() { References.clear(); }
 	
-	void	RegisterAccess(uint16_t pc, int16_t pageId = 0)
+	void	RegisterAccess(const FAddressRef& addrRef)
 	{
 		const auto size = References.size();
 		for (int i = 0; i < size; i++)
 		{
-			if (References[i].InstructionAddress == pc && References[i].InstructionPageId == pageId)
+			if (References[i] == addrRef)
 				return;
 		}
 
-		References.emplace_back(pc, pageId);
+		References.emplace_back(addrRef);
 	}
 
 	bool IsEmpty() const { return References.empty(); }
-	const std::vector<FItemReference>& GetReferences() const { return References; }
+	const std::vector<FAddressRef>& GetReferences() const { return References; }
 private:
-	std::vector<FItemReference>	References;
+	std::vector<FAddressRef>	References;
 };
 
 struct FLabelInfo : FItem
@@ -112,8 +115,8 @@ struct FCodeInfo : FItem
 
 	EOperandType	OperandType = EOperandType::Unknown;
 	std::string		Text;				// Disassembly text
-	uint16_t		JumpAddress = 0;	// optional jump address
-	uint16_t		PointerAddress = 0;	// optional pointer address
+	FAddressRef		JumpAddress;	// optional jump address
+	FAddressRef		PointerAddress;	// optional pointer address
 	int				FrameLastExecuted = -1;
 
 	union

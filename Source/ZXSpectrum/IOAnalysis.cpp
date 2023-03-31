@@ -145,6 +145,8 @@ else if (sys->type == ZX_TYPE_128) {
 
 void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 {
+	 const FAddressRef PCaddrRef = pSpectrumEmu->CodeAnalysis.AddressRefFromPhysicalAddress(pc);
+
 	// handle IO
 	//todo generalise to specific devices
 	if (pins & Z80_IORQ)
@@ -170,7 +172,7 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 			if (readDevice != SpeccyIODevice::None)
 			{
 				FIOAccess& ioDevice = IODeviceAcceses[(int)readDevice];
-				ioDevice.Callers.RegisterAccess(pc);
+				ioDevice.Callers.RegisterAccess(PCaddrRef);
 				ioDevice.ReadCount++;
 				ioDevice.FrameReadCount++;
 			}
@@ -214,7 +216,7 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 			if (writeDevice != SpeccyIODevice::None)
 			{
 				FIOAccess& ioDevice = IODeviceAcceses[(int)writeDevice];
-				ioDevice.Callers.RegisterAccess(pc);
+				ioDevice.Callers.RegisterAccess(PCaddrRef);
 				ioDevice.WriteCount++;
 				ioDevice.FrameReadCount++;
 			}
@@ -263,8 +265,8 @@ void FIOAnalysis::DrawUI()
 		ImGui::Text("Callers");
 		for (const auto &accessPC : ioAccess.Callers.GetReferences())
 		{
-			ImGui::PushID(accessPC.InstructionAddress);
-			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC.InstructionAddress);
+			ImGui::PushID(accessPC.Val);
+			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC);
 			ImGui::PopID();
 		}
 	}

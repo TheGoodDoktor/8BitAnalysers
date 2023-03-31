@@ -264,10 +264,13 @@ public:
 	bool		MapBankForAnalysis(FCodeAnalysisBank& bank);
 	void		UnMapAnalysisBanks();
 	
-	FCodeAnalysisBank* GetBank(int16_t bankId);
+	FCodeAnalysisBank* GetBank(int16_t bankId) { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr; }
+	const FCodeAnalysisBank* GetBank(int16_t bankId) const { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr;	}
 	int16_t		GetBankFromAddress(uint16_t address) const { return MappedBanks[address >> kPageShift]; }
 	const std::vector<FCodeAnalysisBank>& GetBanks() const { return Banks; }
 	std::vector<FCodeAnalysisBank>& GetBanks() { return Banks; }
+
+	FAddressRef	AddressRefFromPhysicalAddress(uint16_t physAddr) { return FAddressRef(GetBankFromAddress(physAddr), physAddr); }
 
 	uint8_t		ReadByte(uint16_t address) const
 	{
@@ -438,6 +441,20 @@ public:
 
 	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
 	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
+	FCodeInfo* GetCodeInfoForAddress(FAddressRef addrRef)
+	{
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			return pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].CodeInfo[bankAddr & FCodeAnalysisPage::kPageMask];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
 	void SetCodeInfoForAddress(uint16_t addr, FCodeInfo* pCodeInfo) { GetReadPage(addr)->CodeInfo[addr & kPageMask] = pCodeInfo; }
 
 	const FDataInfo* GetReadDataInfoForAddress(uint16_t addr) const { return &GetReadPage(addr)->DataInfo[addr & kPageMask]; }

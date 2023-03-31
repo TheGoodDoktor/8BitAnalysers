@@ -40,16 +40,31 @@ bool FCodeAnalysisViewState::GoToPreviousAddress()
 	return true;
 }
 
-// TODO: This doesn't handle banks yet
 int GetItemIndexForAddress(const FCodeAnalysisState &state, FAddressRef addr)
 {
-	int index = -1;
-	for(int i=0;i<(int)state.ItemList.size();i++)
-	{
-		if (state.ItemList[i].IsValid() && state.ItemList[i].Address > addr.Address)
-			return index;
+	const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
 
-		index = i;
+	int index = -1;
+
+	assert(pBank != nullptr);
+	if (pBank == nullptr)	// remove this?
+	{
+		for (int i = 0; i < (int)state.ItemList.size(); i++)
+		{
+			if (state.ItemList[i].IsValid() && state.ItemList[i].Address > addr.Address)
+				return index;
+
+			index = i;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < (int)pBank->ItemList.size(); i++)
+		{
+			if (pBank->ItemList[i].IsValid() && pBank->ItemList[i].Address > addr.Address)
+				return index;
+			index = i;
+		}
 	}
 	return -1;
 }
@@ -112,25 +127,29 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		ImGui::SameLine();
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
 		if(labelOffset == 0)
-			ImGui::Text("[%s]", pLabelString);
+			ImGui::Text("[%d][%s]", addr.BankId, pLabelString);
 		else
-			ImGui::Text("[%s + %d]", pLabelString, labelOffset);
+			ImGui::Text("[%d][%s + %d]", addr.BankId, pLabelString, labelOffset);
 
 		if (ImGui::IsItemHovered())
 		{
 			// Bring up snippet in tool tip
-			const int index = GetItemIndexForAddress(state, addr);
-			if(index !=-1)
+			const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+			if (pBank != nullptr)
 			{
-				const int kToolTipNoLines = 10;
-				ImGui::BeginTooltip();
-				const int startIndex = std::max(index - (kToolTipNoLines / 2), 0);
-				for(int line=0;line < kToolTipNoLines;line++)
+				const int index = GetItemIndexForAddress(state, addr);
+				if (index != -1)
 				{
-					if(startIndex + line < (int)state.ItemList.size())
-						DrawCodeAnalysisItem(state,viewState,state.ItemList[startIndex + line]);
+					const int kToolTipNoLines = 10;
+					ImGui::BeginTooltip();
+					const int startIndex = std::max(index - (kToolTipNoLines / 2), 0);
+					for (int line = 0; line < kToolTipNoLines; line++)
+					{
+						if (startIndex + line < (int)pBank->ItemList.size())
+							DrawCodeAnalysisItem(state, viewState, pBank->ItemList[startIndex + line]);
+					}
+					ImGui::EndTooltip();
 				}
-				ImGui::EndTooltip();
 			}
 			
 
@@ -376,12 +395,11 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 		ImGui::Text("References:");
 		for (const auto & caller : pLabelInfo->References.GetReferences())
 		{
-			const uint16_t accessorCodeAddr = caller.InstructionAddress;
-			ShowCodeAccessorActivity(state, accessorCodeAddr);
+			ShowCodeAccessorActivity(state, caller);
 
 			ImGui::Text("   ");
 			ImGui::SameLine();
-			DrawCodeAddress(state, viewState, accessorCodeAddr);
+			DrawCodeAddress(state, viewState, caller);
 		}
 		ImGui::EndTooltip();
 	}
@@ -422,23 +440,22 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	ImGui::Text("References:");
 	for (const auto & caller : pLabelInfo->References.GetReferences())
 	{
-		const uint16_t accessorCodeAddr = caller.InstructionAddress;
-		ShowCodeAccessorActivity(state, accessorCodeAddr);
+		ShowCodeAccessorActivity(state, caller);
 
 		ImGui::Text("   ");
 		ImGui::SameLine();
-		DrawCodeAddress(state, viewState, accessorCodeAddr);
+		DrawCodeAddress(state, viewState, caller);
 	}
 }
 
-void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr)
+void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr)
 {
 	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
 	if (pCodeInfo != nullptr)
 	{
 		const int framesSinceExecuted = pCodeInfo->FrameLastExecuted != -1 ? state.CurrentFrameNo - pCodeInfo->FrameLastExecuted : 255;
 		const int brightVal = (255 - std::min(framesSinceExecuted << 2, 255)) & 0xff;
-		const bool bPCLine = accessorCodeAddr == state.CPUInterface->GetPC();
+		const bool bPCLine = accessorCodeAddr == state.AddressRefFromPhysicalAddress(state.CPUInterface->GetPC());
 
 		if (bPCLine || brightVal > 0)
 		{
@@ -485,7 +502,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 
-	ShowCodeAccessorActivity(state, item.Address);
+	ShowCodeAccessorActivity(state, item.AddressRef);
 
 	// show if breakpointed
 	if (state.CPUInterface->IsAddressBreakpointed(item.Address))
@@ -627,9 +644,9 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			if (pOperandData->Writes.IsEmpty() == false)
 			{
 				ImGui::Text("Operand Writes:");
-				for (const auto& caller : pOperandData->Writes.GetReferences())
+				for (const auto& writer : pOperandData->Writes.GetReferences())
 				{
-					DrawCodeAddress(state, viewState, caller.InstructionAddress);
+					DrawCodeAddress(state, viewState, writer);
 				}
 				break;
 			}
@@ -1516,7 +1533,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				if (ImGui::IsItemHovered())
 				{
 					ImGui::BeginTooltip();
-					ImGui::Text("0x%04X - 0x%X %s", kBankStart, kBankEnd, bMapped ? "Mapped" : "");
+					ImGui::Text("[%d]0x%04X - 0x%X %s",bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped" : "");
 					ImGui::EndTooltip();
 				}
 
@@ -1528,7 +1545,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 						viewState.ViewingBankId = bank.Id;
 
 						state.MapBankForAnalysis(bank);
-						ImGui::Text("%s: 0x%04X - 0x%X %s", bank.Name.c_str(), kBankStart, kBankEnd, bMapped ? "Mapped":"");
+						ImGui::Text("%s[%d]: 0x%04X - 0x%X %s", bank.Name.c_str(), bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped":"");
 						if (ImGui::BeginChild("##itemlist"))
 							DrawItemList(state, viewState, bank.ItemList);
 						// only handle keypresses for focussed window
@@ -1609,7 +1626,7 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 
 				ImGui::PushID(item.Address);
 				if (pCodeInfo && pCodeInfo->bDisabled == false)
-					ShowCodeAccessorActivity(state, item.Address);
+					ShowCodeAccessorActivity(state, item.AddressRef);
 				else
 					ShowDataItemActivity(state, item.Address);
 								

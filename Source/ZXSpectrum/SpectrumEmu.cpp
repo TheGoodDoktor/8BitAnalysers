@@ -1000,10 +1000,12 @@ void FSpectrumEmu::SaveCurrentGameData()
 			const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
 			const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 			const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+			const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 			const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 			EnsureDirectoryExists(std::string(root + "Configs").c_str());
 			EnsureDirectoryExists(std::string(root + "GameData").c_str());
 			EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
+			EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
 			EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
 
 			// set config values
@@ -1021,7 +1023,8 @@ void FSpectrumEmu::SaveCurrentGameData()
 
 			// The Future
 			SaveGameState(this, saveStateFName.c_str());
-			ExportGameJson(this, analysisJsonFName.c_str());
+			ExportGameAnalysisJson(this, analysisJsonFName.c_str());
+			ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		}
 	}
 

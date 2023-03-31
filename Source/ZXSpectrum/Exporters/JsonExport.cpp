@@ -14,10 +14,59 @@ using json = nlohmann::json;
 
 // We want to eventually move to using Json as it will allow merging 
 void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress, int endAddress, json& jsonDoc);
-void WritePageToJson(const FSpectrumEmu* pSpectrumEmu, const FCodeAnalysisPage& page, json& jsonDoc);
-void ReadPageFromJson(FSpectrumEmu* pSpectrumEmu, FCodeAnalysisPage& page, const json& jsonDoc);
+void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc);
+void ReadPageFromJson(FCodeAnalysisPage& page, const json& jsonDoc);
 
-bool ExportROMJson(FCodeAnalysisState& state, const char* pJsonFileName)
+
+// Analysis State Load/Save 
+// TODO: move to shared area
+
+void WritePageState(const FCodeAnalysisPage& page, FILE *fp)
+{
+}
+
+bool ExportAnalysisState(FCodeAnalysisState& state, const char* pAnalysisBinFile)
+{
+	FILE* fp = fopen(pAnalysisBinFile, "wb");
+	if (fp == nullptr)
+		return false;
+
+	const auto& banks = state.GetBanks();
+	int pagesWritten = 0;
+
+	// iterate through all registered banks
+	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
+	{
+		const FCodeAnalysisBank& bank = banks[bankNo];
+		if (bank.bReadOnly)	// skip read only banks - ROM
+			continue;
+
+		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
+		{
+			const FCodeAnalysisPage& page = bank.Pages[pageNo];
+			if (page.bUsed)
+			{
+				WritePageState(page, fp);
+				pagesWritten++;
+			}
+		}
+	}
+
+	fclose(fp);
+	return true;
+}
+
+bool ImportAnalysisState(FCodeAnalysisState& state, const char* pAnalysisBinFile)
+{
+	FILE* fp = fopen(pAnalysisBinFile, "rb");
+	if (fp == nullptr)
+		return false;
+
+	fclose(fp);
+	return true;
+}
+
+bool ExportROMAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 {
 	json jsonROMData;
 
@@ -33,14 +82,11 @@ bool ExportROMJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	return false;
 }
 
-#define WRITE_PAGES 1
-
-bool ExportGameJson(FSpectrumEmu* pSpectrumEmu, const char* pJsonFileName)
+bool ExportGameAnalysisJson(FSpectrumEmu* pSpectrumEmu, const char* pJsonFileName)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
 	json jsonGameData;
 
-#if WRITE_PAGES
 	int pagesWritten = 0;
 	const auto& banks = state.GetBanks();
 
@@ -58,25 +104,21 @@ bool ExportGameJson(FSpectrumEmu* pSpectrumEmu, const char* pJsonFileName)
 			{
 				json pageData;
 
-				WritePageToJson(pSpectrumEmu, page, pageData);
+				WritePageToJson(page, pageData);
 				jsonGameData["Pages"].push_back(pageData);
 				pagesWritten++;
 			}
 		}
 	}
 	LOGINFO("%d pages written", pagesWritten);
-#else
-	// write out RAM
-	const int startAddress = 0x4000;
-	const int endAddress = 0xffff;
-	WriteAddressRangeToJson(state, startAddress, endAddress, jsonGameData);
-#endif
 
 	// Write watches
 	for (const auto& watch : state.GetWatches())
 	{
 		jsonGameData["Watches"].push_back(watch.Address);
 	}
+
+	// Spectrum Specific
 
 	// Write character sets
 	for (int i = 0; i < GetNoCharacterSets(); i++)
@@ -135,14 +177,15 @@ bool WriteDataInfoToJson(uint16_t addr,const FDataInfo* pDataInfo, json& jsonDoc
 	if (pDataInfo->Comment.empty() == false)
 		dataInfoJson["Comment"] = pDataInfo->Comment;
 
-	for (const auto& read : pDataInfo->Reads.GetReferences())
-		dataInfoJson["Reads"].push_back(read.InstructionAddress);
+	// These have moved to a binary file
+	//for (const auto& read : pDataInfo->Reads.GetReferences())
+	//	dataInfoJson["Reads"].push_back(read.InstructionAddress);
 
-	for (const auto& write : pDataInfo->Writes.GetReferences())
-		dataInfoJson["Writes"].push_back(write.InstructionAddress);
+	//for (const auto& write : pDataInfo->Writes.GetReferences())
+	//	dataInfoJson["Writes"].push_back(write.InstructionAddress);
 
-	if (pDataInfo->LastWriter != 0)
-		dataInfoJson["LastWriter"] = pDataInfo->LastWriter;
+	//if (pDataInfo->LastWriter != 0)
+	//	dataInfoJson["LastWriter"] = pDataInfo->LastWriter;
 
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
@@ -189,8 +232,9 @@ void WriteLabelInfoToJson(uint16_t addr, const FLabelInfo* pLabelInfo, json& jso
 	if (pLabelInfo->Comment.empty() == false)
 		labelInfoJson["Comment"] = pLabelInfo->Comment;
 
-	for (const auto& reference : pLabelInfo->References.GetReferences())
-		labelInfoJson["References"].push_back(reference.InstructionAddress);
+	// These have moved to a binary file
+	//for (const auto& reference : pLabelInfo->References.GetReferences())
+	//	labelInfoJson["References"].push_back(reference.InstructionAddress);
 
 	jsonDoc["LabelInfo"].push_back(labelInfoJson);
 }
@@ -286,13 +330,14 @@ FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson)
 	if (labelInfoJson.contains("Comment"))
 		pLabelInfo->Comment = labelInfoJson["Comment"];
 
-	if (labelInfoJson.contains("References"))
+	// Moved to binary file
+	/*if (labelInfoJson.contains("References"))
 	{
 		for (const auto& reference : labelInfoJson["References"])
 		{
 			pLabelInfo->References.RegisterAccess(reference);
 		}
-	}
+	}*/
 
 	return pLabelInfo;
 }
@@ -309,6 +354,9 @@ void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json & dataInfoJson)
 		pDataInfo->Flags = dataInfoJson["Flags"];
 	if (dataInfoJson.contains("Comment"))
 		pDataInfo->Comment = dataInfoJson["Comment"];
+
+	// Moved to binary file
+	/*
 	if (dataInfoJson.contains("Reads"))
 	{
 		for (const auto& read : dataInfoJson["Reads"])
@@ -326,7 +374,7 @@ void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json & dataInfoJson)
 
 	if (dataInfoJson.contains("LastWriter"))
 		pDataInfo->LastWriter = dataInfoJson["LastWriter"];
-
+*/
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
 	{
@@ -359,7 +407,7 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 			FCodeAnalysisPage* pPage = state.GetPage(pageId);
 			if (pPage != nullptr)
 			{
-				ReadPageFromJson(pSpectrumEmu, *pPage, pageJson);
+				ReadPageFromJson(*pPage, pageJson);
 			}
 		}
 	}
@@ -435,6 +483,8 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 		}
 	}
 
+	// Spectrum specific
+
 	if (jsonGameData.contains("CharacterSets"))
 	{
 		for (const auto& charSet : jsonGameData["CharacterSets"])
@@ -469,7 +519,7 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 
 // write a 1K page to Json
 // the plan is to move to this so we can support 128K games
-void WritePageToJson(const FSpectrumEmu* pSpectrumEmu, const FCodeAnalysisPage& page, json& jsonDoc)
+void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc)
 {
 	jsonDoc["PageId"] = page.PageId;
 
@@ -507,7 +557,7 @@ void WritePageToJson(const FSpectrumEmu* pSpectrumEmu, const FCodeAnalysisPage& 
 }
 
 
-void ReadPageFromJson(FSpectrumEmu* pSpectrumEmu, FCodeAnalysisPage& page, const json& jsonDoc)
+void ReadPageFromJson(FCodeAnalysisPage& page, const json& jsonDoc)
 {
 	if (jsonDoc.contains("CommentBlocks"))
 	{

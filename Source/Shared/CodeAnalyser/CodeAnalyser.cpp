@@ -46,14 +46,13 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	return bankId;
 }
 
-FCodeAnalysisBank* FCodeAnalysisState::GetBank(int16_t bankId)
+/*FCodeAnalysisBank* FCodeAnalysisState::GetBank(int16_t bankId)
 {
 	if (bankId < 0 || bankId >= Banks.size())
 		return nullptr;
 
 	return &Banks[bankId];
-}
-
+}*/
 
 // Set bank to memory pages starting at pageNo
 bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
@@ -503,7 +502,7 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	SetNumberOutput(nullptr);
 }
 
-
+// This assumes that the address passed in is mapped to physical memory
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
@@ -525,7 +524,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		const bool isCall = CheckCallInstruction(state, pc);
 		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddr, isCall ? ELabelType::Function : ELabelType::Code);
 		if(pLabel)
-			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
 		pCodeInfo->JumpAddress = jumpAddr;
 		if (pCodeInfo->OperandType == EOperandType::Unknown)
@@ -549,7 +548,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 			
 			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptr, ELabelType::Data);
 			if (pLabel)
-				pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+				pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		}
 	}
 
@@ -591,7 +590,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
 		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 	}
 
 	// set pointer reference
@@ -600,7 +599,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
 		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 	}
 
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
@@ -628,8 +627,6 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pOldComment != nullptr)	// restore old comment
 		pCodeInfo->Comment = std::string(pOldComment);
-
-	
 
 	if (CheckStopInstruction(state, pc) || newPC < pc)
 		return false;
@@ -677,7 +674,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
 		pDataInfo->LastFrameRead = state.CurrentFrameNo;
-		pDataInfo->Reads.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+		pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 	}
 }
 
@@ -685,7 +682,7 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,
 {
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
-	pDataInfo->Writes.RegisterAccess(pc, state.GetReadPage(pc)->PageId);
+	pDataInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 }
 
 void ReAnalyseCode(FCodeAnalysisState &state)

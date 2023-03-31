@@ -125,7 +125,7 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 			noReferences = 0;
 			for (const auto& ref : referenceList)
 			{
-				const uint16_t refAddr = ref.InstructionAddress;
+				const uint16_t refAddr = ref.Address;
 				if (refAddr >= startAddress && refAddr <= endAddress)	// only add references from region we are saving
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -179,7 +179,7 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 				fread(&refAddr, sizeof(refAddr), 1, fp);
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
-					pLabel->References.RegisterAccess(refAddr);
+					pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(refAddr));
 				}
 				else
 				{
@@ -295,7 +295,7 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			fwrite(&noReads, sizeof(int), 1, fp);
 			for (const auto& ref : pDataInfo->Reads.GetReferences())
 			{
-				const uint16_t refAddr = ref.InstructionAddress;
+				const uint16_t refAddr = ref.Address;
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -314,7 +314,7 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			fwrite(&noWrites, sizeof(int), 1, fp);
 			for (const auto& ref : pDataInfo->Writes.GetReferences())
 			{
-				const uint16_t refAddr = ref.InstructionAddress;
+				const uint16_t refAddr = ref.Address;
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -390,7 +390,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
 				if (dataAddr >= startAddress && dataAddr <= endAddress)
-					pDataInfo->Reads.RegisterAccess(dataAddr);
+					pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(dataAddr));
 				else
 					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
 			}
@@ -404,7 +404,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
 				if (dataAddr >= startAddress && dataAddr <= endAddress)
-					pDataInfo->Writes.RegisterAccess(dataAddr);
+					pDataInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalAddress(dataAddr));
 				else
 					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
 			}

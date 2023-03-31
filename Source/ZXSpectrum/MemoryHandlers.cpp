@@ -11,6 +11,7 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEm
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
 	
 	FCodeInfo* pCodeInfo = pEmu->CodeAnalysis.GetCodeInfoForAddress(pc);
+	const FAddressRef PCaddrRef = pEmu->CodeAnalysis.AddressRefFromPhysicalAddress(pc);
 
 	// increment counters
 	//pEmu->MemStats.ExecCount[pc]++;
@@ -53,7 +54,7 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEm
 		{
 			// update handler stats
 			handler.TotalCount++;
-			handler.Callers.RegisterAccess(pc, pEmu->CodeAnalysis.GetReadPage(pc)->PageId);
+			handler.Callers.RegisterAccess(PCaddrRef);
 			//handler.AddressCounts.RegisterAccess(addr);
 			if (handler.pHandlerFunction != nullptr)
 				handler.pHandlerFunction(handler, pEmu->pActiveGame, pc, pins);
@@ -182,8 +183,8 @@ void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 		ImGui::Text("Callers");
 		for (const auto &accessPC : pSelectedHandler->Callers.GetReferences())
 		{
-			ImGui::PushID(accessPC.InstructionAddress);
-			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC.InstructionAddress);
+			ImGui::PushID(accessPC.Val);
+			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC);
 			//ImGui::SameLine();
 			//ImGui::Text(" - %d accesses",accessPC.second);
 			ImGui::PopID();

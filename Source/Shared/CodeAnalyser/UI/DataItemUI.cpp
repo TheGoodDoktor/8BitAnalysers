@@ -539,18 +539,17 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		}
 
 		ImGui::Text("Reads:");
-		for (const auto& caller : pDataInfo->Reads.GetReferences())
+		for (const auto& reader : pDataInfo->Reads.GetReferences())
 		{
-			const uint16_t accessorCodeAddr = caller.InstructionAddress;
-			ShowCodeAccessorActivity(state, accessorCodeAddr);
+			ShowCodeAccessorActivity(state, reader);
 
 			ImGui::Text("   ");
 			ImGui::SameLine();
-			DrawCodeAddress(state, viewState, accessorCodeAddr);
+			DrawCodeAddress(state, viewState, reader);
 
 			if (bWriteComment)
 			{
-				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
+				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(reader);
 				if (pCodeInfo)
 				{
 					if (pCodeInfo->Comment.empty() || bOverride)
@@ -558,8 +557,6 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 				}
 			}
 		}
-
-
 	}
 
 	if (pDataInfo->Writes.IsEmpty() == false)
@@ -580,18 +577,17 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		}
 
 		ImGui::Text("Writes:");
-		for (const auto& caller : pDataInfo->Writes.GetReferences())
+		for (const auto& writer : pDataInfo->Writes.GetReferences())
 		{
-			const uint16_t accessorCodeAddr = caller.InstructionAddress;
-			ShowCodeAccessorActivity(state, accessorCodeAddr);
+			ShowCodeAccessorActivity(state, writer);
 
 			ImGui::Text("   ");
 			ImGui::SameLine();
-			DrawCodeAddress(state, viewState, accessorCodeAddr);
+			DrawCodeAddress(state, viewState, writer);
 
 			if (bWriteComment)
 			{
-				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
+				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(writer);
 				if (pCodeInfo)
 				{
 					if (pCodeInfo->Comment.empty() || bOverride)
