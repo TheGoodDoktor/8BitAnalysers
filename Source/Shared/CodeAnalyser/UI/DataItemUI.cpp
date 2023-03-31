@@ -598,8 +598,8 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 	}
 
 	// last writer to address
-	const uint16_t lastWriter = state.GetLastWriterForAddress(addr);
-	if (lastWriter != 0)
+	const FAddressRef lastWriter = state.GetLastWriterForAddress(addr);
+	if (lastWriter.IsValid())
 	{
 		ImGui::Text("Last Writer: ");
 		ImGui::SameLine();

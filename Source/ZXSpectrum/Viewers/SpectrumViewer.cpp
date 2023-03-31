@@ -112,8 +112,8 @@ void FSpectrumViewer::Draw()
 			ImGui::Text("Screen Pos (%d,%d)", xp, yp);
 			ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
 
-			const uint16_t lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
-			const uint16_t lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
+			const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
+			const FAddressRef lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
 			ImGui::Text("Pixel Writer: ");
 			ImGui::SameLine();
 			DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
@@ -181,9 +181,9 @@ void FSpectrumViewer::Draw()
 			}
 
 			if (ImGui::IsMouseDoubleClicked(0))
-				viewState.GoToAddress({ codeAnalysis.GetBankFromAddress(lastPixWriter), lastPixWriter });
+				viewState.GoToAddress(lastPixWriter);
 			if (ImGui::IsMouseDoubleClicked(1))
-				viewState.GoToAddress({ codeAnalysis.GetBankFromAddress(lastAttrWriter), lastAttrWriter });
+				viewState.GoToAddress(lastAttrWriter);
 		}
 
 	}

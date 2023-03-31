@@ -256,7 +256,7 @@ void DrawStack(FCodeAnalysisState& state)
 
 			uint16_t stackVal = state.ReadWord(stackAddr);
 			FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(stackAddr);
-			const uint16_t writerAddr = state.GetLastWriterForAddress(stackAddr);
+			const FAddressRef writerAddr = state.GetLastWriterForAddress(stackAddr);
 
 			ImGui::TableSetColumnIndex(0);
 			ImGui::Text("%s",NumStr((uint16_t)stackAddr));
@@ -269,7 +269,7 @@ void DrawStack(FCodeAnalysisState& state)
 			ImGui::Text("%s", pDataInfo->Comment.c_str());
 
 			ImGui::TableSetColumnIndex(3);
-			ImGui::Text("%s :",NumStr(writerAddr));
+			ImGui::Text("%s :",NumStr(writerAddr.Address));
 			DrawAddressLabel(state,viewState,writerAddr);
 		}
 

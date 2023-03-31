@@ -467,7 +467,7 @@ void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrSta
 	for (int i = addrStart; i <= addrEnd; i++)
 	{
 		const uint16_t invalid = 0;
-		const uint16_t addr = state.GetLastWriterForAddress(i);
+		const uint16_t addr = state.GetLastWriterForAddress(i).Address;
 		if (addr >= addrStart && addr <= addrEnd)
 			fwrite(&addr, sizeof(uint16_t), 1, fp);
 		else
@@ -566,7 +566,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 		{
 			uint16_t lastWriter;
 			fread(&lastWriter, sizeof(uint16_t), 1, fp);
-			state.SetLastWriterForAddress(i, lastWriter);
+			state.SetLastWriterForAddress(i, state.AddressRefFromPhysicalAddress(lastWriter));
 		}
 	}
 	else if (versionNo >= 4)
@@ -575,7 +575,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 		{
 			uint16_t lastWriter;
 			fread(&lastWriter, sizeof(uint16_t), 1, fp);
-			state.SetLastWriterForAddress(i, lastWriter);
+			state.SetLastWriterForAddress(i, state.AddressRefFromPhysicalAddress(lastWriter));
 		}
 	}
 

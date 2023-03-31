@@ -559,18 +559,19 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		{
 			if (state.bRegisterDataAccesses)
 				RegisterDataWrite(state, pc, addr, value);
-
-			state.SetLastWriterForAddress(addr,pc);
+			const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
+			const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+			state.SetLastWriterForAddress(addr, pcAddrRef);
 
 			// Log screen pixel writes
 			if (addr >= 0x4000 && addr < 0x5800)
 			{
-				FrameScreenPixWrites.push_back({ addr,value, pc });
+				FrameScreenPixWrites.push_back({ addrRef,value, pcAddrRef });
 			}
 			// Log screen attribute writes
 			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
 			{
-				FrameScreenAttrWrites.push_back({ addr,value, pc });
+				FrameScreenAttrWrites.push_back({ addrRef,value, pcAddrRef });
 			}
 			FCodeInfo *pCodeWrittenTo = state.GetCodeInfoForAddress(addr);
 			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)

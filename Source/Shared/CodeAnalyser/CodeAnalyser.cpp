@@ -737,7 +737,7 @@ void ResetReferenceInfo(FCodeAnalysisState &state)
 			pLabelInfo->References.Reset();
 		}
 
-		state.SetLastWriterForAddress(i,  0);
+		state.SetLastWriterForAddress(i,  FAddressRef());
 	}
 }
 

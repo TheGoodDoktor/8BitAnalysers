@@ -226,7 +226,7 @@ struct FDataInfo : FItem
 	FItemReferenceTracker	Reads;	// address and counts of data access instructions
 	int						LastFrameWritten = -1;
 	FItemReferenceTracker	Writes;	// address and counts of data access instructions
-	uint16_t				LastWriter = 0;
+	FAddressRef				LastWriter;
 };
 
 struct FCommentBlock : FItem

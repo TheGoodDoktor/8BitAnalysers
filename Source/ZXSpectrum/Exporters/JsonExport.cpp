@@ -256,9 +256,10 @@ void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress,int end
 	int address = startAddress;
 
 	// info on last writer
-	jsonDoc["LastWriterStart"] = startAddress;
-	for (int addr = startAddress; addr <= endAddress; addr++)
-		jsonDoc["LastWriter"].push_back(state.GetLastWriterForAddress(addr));
+	// TODO: move to binary
+	//jsonDoc["LastWriterStart"] = startAddress;
+	//for (int addr = startAddress; addr <= endAddress; addr++)
+	//	jsonDoc["LastWriter"].push_back(state.GetLastWriterForAddress(addr));
 	
 	while(address <= endAddress)
 	{
@@ -420,7 +421,7 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 		const json& lastWriterArray = jsonGameData["LastWriter"];
 		const int noWriters = (int)lastWriterArray.size();
 		for (int i = 0;i<noWriters;i++)
-			state.SetLastWriterForAddress(lwStart + i, lastWriterArray[i]);
+			state.SetLastWriterForAddress(lwStart + i, state.AddressRefFromPhysicalAddress(lastWriterArray[i]));
 	}
 
 	if (jsonGameData.contains("CommentBlocks"))

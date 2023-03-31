@@ -354,7 +354,7 @@ void FFrameTraceViewer::DrawFrameScreenWritePixels(const FSpeccyFrameTrace& fram
 	{
 		const FMemoryAccess& access = frame.ScreenPixWrites[i];
 		int xp, yp;
-		GetScreenAddressCoords(access.Address, xp, yp);
+		GetScreenAddressCoords(access.Address.Address, xp, yp);
 		const uint16_t attrAddress = GetScreenAttrMemoryAddress(xp, yp);
 		const uint8_t attr = pSpectrumEmu->ReadByte(attrAddress);
 		ShowWritesView->DrawCharLine(access.Value, xp, yp, attr);
@@ -386,7 +386,7 @@ void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 				ImGui::SetItemAllowOverlap();	// allow buttons
 				ImGui::SameLine();
 
-				ImGui::Text("%s (%s) : ", NumStr(access.Address), NumStr(access.Value));
+				ImGui::Text("%s (%s) : ", NumStr(access.Address.Address), NumStr(access.Value));
 				ImGui::SameLine();
 				DrawCodeAddress(state, viewState, access.PC);
 				ImGui::PopID();
