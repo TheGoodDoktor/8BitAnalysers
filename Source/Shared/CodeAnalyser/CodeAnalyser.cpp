@@ -113,7 +113,6 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 	{
 		pBank->PrimaryMappedPage = startPageNo;
 		pBank->bIsDirty = true;
-		bCodeAnalysisDataDirty = true;
 	}
 	assert(pBank->PrimaryMappedPage != -1);
 
@@ -149,6 +148,8 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 	}
 
 	//RemappedBanks.push_back(bankId);
+	bCodeAnalysisDataDirty = true;
+
 	return true;
 }
 
@@ -702,6 +703,8 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 // return if we should continue
 bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 {
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+
 	// Register Code accesses
 	// 
 	// set jump reference
@@ -711,6 +714,9 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+		if (pCodeInfo != nullptr)
+			pCodeInfo->JumpAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
+
 	}
 
 	// set pointer reference
@@ -720,9 +726,10 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+		if (pCodeInfo != nullptr)
+			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
 	}
 
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	const char* pOldComment = nullptr;
 	if (pCodeInfo != nullptr)
 	{

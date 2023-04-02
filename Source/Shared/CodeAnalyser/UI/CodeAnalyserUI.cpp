@@ -127,11 +127,10 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			}
 
 			labelOffset++;
+
+			if (pLabelString == nullptr && addrVal == 0)
+				pLabelString = "0000";
 		}
-
-		if (pLabelString == nullptr && addr.Address == 0)
-			pLabelString = "0000";
-
 	}
 	
 	if (pLabelString != nullptr)
