@@ -309,7 +309,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ShowDataItemActivity(state, item.Address);
 
 	// show if breakpointed
-	if (state.CPUInterface->IsAddressBreakpointed(item.Address))
+	if (state.IsAddressBreakpointed(item.AddressRef))
 	{
 		const ImU32 bp_enabled_color = 0xFF0000FF;
 		const ImU32 bp_disabled_color = 0xFF000088;

@@ -114,12 +114,18 @@ void FSpectrumViewer::Draw()
 
 			const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
 			const FAddressRef lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
-			ImGui::Text("Pixel Writer: ");
-			ImGui::SameLine();
-			DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
-			ImGui::Text("Attribute Writer: ");
-			ImGui::SameLine();
-			DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
+			if (lastPixWriter.IsValid())
+			{
+				ImGui::Text("Pixel Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
+			}
+			if (lastAttrWriter.IsValid())
+			{
+				ImGui::Text("Attribute Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
+			}
 			{
 				//ImGui::Text("Image: ");
 				//const float line_height = ImGui::GetTextLineHeight();
@@ -233,7 +239,7 @@ void FSpectrumViewer::Draw()
 						CharDataFound = codeAnalysis.FindMemoryPattern(CharData, 8, 0, FoundCharDataAddress);
 				}
 
-				pSpectrumEmu->GraphicsViewerGoToAddress(FoundCharDataAddress);
+				pSpectrumEmu->GraphicsViewerGoToAddress(codeAnalysis.AddressRefFromPhysicalAddress(FoundCharDataAddress));
 			}
 		}
 	}

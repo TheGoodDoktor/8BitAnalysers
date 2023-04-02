@@ -234,33 +234,35 @@ bool FSpectrumEmu::IsAddressBreakpointed(uint16_t addr)
 	return false;
 }
 
-bool FSpectrumEmu::ToggleExecBreakpointAtAddress(uint16_t addr)
+bool FSpectrumEmu::SetExecBreakpointAtAddress(uint16_t addr,bool bSet)
 {
-	int index = _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr);
-	if (index >= 0) 
-	{
-		/* breakpoint already exists, remove */
-		_ui_dbg_bp_del(&UIZX.dbg, index);
+	const bool bAlreadySet = IsAddressBreakpointed(addr);
+	if (bAlreadySet == bSet)
 		return false;
-	}
-	else 
-	{
-		/* breakpoint doesn't exist, add a new one */
-		return _ui_dbg_bp_add_exec(&UIZX.dbg, true, addr);
-	}
-}
 
-bool FSpectrumEmu::ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize)
-{
-	const int type = dataSize == 1 ? UI_DBG_BREAKTYPE_BYTE : UI_DBG_BREAKTYPE_WORD;
-	int index = _ui_dbg_bp_find(&UIZX.dbg, type, addr);
-	if (index >= 0)
+	if (bSet)
 	{
-		// breakpoint already exists, remove 
-		_ui_dbg_bp_del(&UIZX.dbg, index);
-		return false;
+		_ui_dbg_bp_add_exec(&UIZX.dbg, true, addr);
 	}
 	else
+	{
+		const int index = _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr);
+		/* breakpoint already exists, remove */
+		assert(index >= 0);
+		_ui_dbg_bp_del(&UIZX.dbg, index);
+	}
+
+	return true;
+}
+
+bool FSpectrumEmu::SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize, bool bSet)
+{
+	const bool bAlreadySet = IsAddressBreakpointed(addr);
+	if (bAlreadySet == bSet)
+		return false;
+	const int type = dataSize == 1 ? UI_DBG_BREAKTYPE_BYTE : UI_DBG_BREAKTYPE_WORD;
+
+	if (bSet)
 	{
 		// breakpoint doesn't exist, add a new one 
 		if (UIZX.dbg.dbg.num_breakpoints < UI_DBG_MAX_BREAKPOINTS)
@@ -271,13 +273,20 @@ bool FSpectrumEmu::ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSiz
 			bp->addr = addr;
 			bp->val = ReadByte(addr);
 			bp->enabled = true;
-			return true;
 		}
-		else 
+		else
 		{
 			return false;
 		}
 	}
+	else
+	{
+		int index = _ui_dbg_bp_find(&UIZX.dbg, type, addr);
+		assert(index >= 0);
+		_ui_dbg_bp_del(&UIZX.dbg, index);
+	}
+	
+	return true;
 }
 
 void FSpectrumEmu::Break(void)
@@ -312,7 +321,7 @@ void FSpectrumEmu::StepScreenWrite()
 	bStepToNextScreenWrite = true;
 }
 
-void FSpectrumEmu::GraphicsViewerSetView(uint16_t address, int charWidth)
+void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address, int charWidth)
 {
 	GraphicsViewerGoToAddress(address);
 	GraphicsViewerSetCharWidth(charWidth);

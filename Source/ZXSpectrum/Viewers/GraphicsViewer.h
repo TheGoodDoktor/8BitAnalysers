@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 
+#include <CodeAnalyser/CodeAnalyserTypes.h>
+
 class FSpectrumEmu;
 struct FGame;
 class FZXGraphicsView;
@@ -25,8 +27,9 @@ enum class GraphicsViewMode
 struct FGraphicsViewerState
 {
 	int32_t			Bank = -1;
-	uint16_t		Address = 0;
-	uint16_t		ClickedAddress = 0;
+	uint16_t		AddressOffset = 0;	// ofset to view from the start of the region (bank or physical address space)
+	uint32_t		MemorySize = 0x10000;	// size of area being viewed
+	FAddressRef		ClickedAddress;
 	GraphicsViewMode	ViewMode = GraphicsViewMode::Character;
 	//bool			bColumnMode = true;
 	int				HeatmapThreshold = 4;

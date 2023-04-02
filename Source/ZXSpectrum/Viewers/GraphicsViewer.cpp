@@ -35,20 +35,21 @@ static const uint32_t g_kColourLUT[8] =
 	0xFFFFFFFF,     // 7 - white
 };
 
-uint16_t GetAddressFromPositionInView(const FGraphicsViewerState &state, int x,int y)
+uint16_t GetAddressOffsetFromPositionInView(const FGraphicsViewerState &viewerState, int x,int y)
 {
+	const FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
-
-	const int addrInput = state.Address;
-	const int xCount = kHorizontalDispCharCount / state.XSize;
-	const int xSize = xCount * state.XSize;
+	const FCodeAnalysisBank* pBank = state.GetBank(viewerState.Bank);
+	const uint16_t addrInput = viewerState.AddressOffset;
+	const int xCount = kHorizontalDispCharCount / viewerState.XSize;
+	const int xSize = xCount * viewerState.XSize;
 	const int xp = std::max(std::min(xSize, x / 8), 0);
 	const int yp = std::max(std::min(kGraphicsViewerHeight, y), 0);
-	const int column = xp / state.XSize;
-	const int columnSize = kGraphicsViewerHeight * state.XSize;
+	const int column = xp / viewerState.XSize;
+	const int columnSize = kGraphicsViewerHeight * viewerState.XSize;
 
 	ImGui::Text("xp: %d, yp: %d, column: %d", xp, yp, column);
-	return (addrInput + xp) + (column * columnSize) + (y * state.XSize);
+	return ((addrInput + xp) + (column * columnSize) + (y * viewerState.XSize)) % viewerState.MemorySize;
 }
 
 #if 0
@@ -174,6 +175,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 {
 	FZXGraphicsView *pGraphicsView = viewerState.pGraphicsView;
 	FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;
+	FCodeAnalysisBank* pBank = state.GetBank(viewerState.Bank);
 
 	int byteOff = 0;
 	//const int offsetMax = 0xffff - ((kGraphicsViewerWidth / 8) * kGraphicsViewerHeight);
@@ -200,25 +202,32 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 		}*/
 		
 		if (ImGui::Selectable(GetBankText(state, -1), viewerState.Bank == -1))
+		{
 			viewerState.Bank = -1;
-
+			viewerState.MemorySize = 0x10000;	// 64K
+		}
 		const auto& banks = state.GetBanks();
 		for (const auto& bank : banks)
 		{
 			if (ImGui::Selectable(GetBankText(state, bank.Id), viewerState.Bank == bank.Id))
+			{
+				FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
 				viewerState.Bank = bank.Id;
+				viewerState.AddressOffset = 0;
+				viewerState.MemorySize = pNewBank->NoPages * FCodeAnalysisPage::kPageSize;
+
+			}
 		}	
 
 		ImGui::EndCombo();
 	}
 
 	// Address input
-	int addrInput = viewerState.Address;
+	int addrInput = pBank ? pBank->GetMappedAddress() + viewerState.AddressOffset : viewerState.AddressOffset;
 	ImGui::Text("viewerState Map Address: %s", NumStr((uint16_t)addrInput));
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	pGraphicsView->Draw();
-	uint16_t ptrAddress = 0;
 	if (ImGui::IsItemHovered())
 	{
 		const int xp = (int)(io.MousePos.x - pos.x);
@@ -231,13 +240,19 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 		dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)(rx + xPix), (float)(ry + viewerState.YSize)), 0xff00ffff);
 		//const int addressOffset = (xp / 8) + (yp * (256 / 8));
 		ImGui::BeginTooltip();
-		ptrAddress = GetAddressFromPositionInView(viewerState,xp, yp);
+		const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInView(viewerState,xp, yp);
+		FAddressRef ptrAddress;
+		if (pBank != nullptr)
+			ptrAddress = FAddressRef(pBank->Id, gfxAddressOffset + pBank->GetMappedAddress());
+		else
+			ptrAddress = state.AddressRefFromPhysicalAddress(gfxAddressOffset);
+		
 		if (ImGui::IsMouseDoubleClicked(0))
-			state.GetFocussedViewState().GoToAddress({ state.GetBankFromAddress(ptrAddress), ptrAddress });	// TODO: fix for banks
+			state.GetFocussedViewState().GoToAddress( ptrAddress );	
 		if (ImGui::IsMouseClicked(0))
 			viewerState.ClickedAddress = ptrAddress;
 
-		ImGui::Text("%s", NumStr(ptrAddress));
+		ImGui::Text("%s", NumStr(ptrAddress.Address));
 		ImGui::SameLine();
 		DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
 		ImGui::EndTooltip();
@@ -270,13 +285,18 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 	ImGui::SliderInt("Heatmap frame threshold", &viewerState.HeatmapThreshold, 0, 60);
 	pGraphicsView->Clear(0xff000000);
 
-	ImGui::Text("Clicked Address: %s", NumStr(viewerState.ClickedAddress));
+	FCodeAnalysisBank* pClickedBank = state.GetBank(viewerState.ClickedAddress.BankId);
+	if(pClickedBank !=nullptr && state.Config.bShowBanks)
+		ImGui::Text("Clicked Address: [%s]%s", pClickedBank->Name.c_str(), NumStr(viewerState.ClickedAddress.Address));
+	else
+		ImGui::Text("Clicked Address: %s", NumStr(viewerState.ClickedAddress.Address));
 	ImGui::SameLine();
-	DrawAddressLabel(state, state.GetFocussedViewState(), viewerState.ClickedAddress);
+	if(viewerState.ClickedAddress.IsValid())
+		DrawAddressLabel(state, state.GetFocussedViewState(), viewerState.ClickedAddress);
 	if(ImGui::CollapsingHeader("Details"))
 	{
-		const int16_t bankId = viewerState.Bank != -1 ? viewerState.Bank : state.GetBankFromAddress(viewerState.ClickedAddress);
-		const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(viewerState.ClickedAddress),bankId, viewerState.ClickedAddress);
+		const int16_t bankId = viewerState.Bank != -1 ? viewerState.Bank : state.GetBankFromAddress(viewerState.ClickedAddress.Address);
+		const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(viewerState.ClickedAddress), viewerState.ClickedAddress);
 		DrawDataDetails(state, state.GetFocussedViewState(), item);
 	}
 	
@@ -292,7 +312,8 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 		if (ImGui::Button(">>"))
 			addrInput += graphicsUnitSize;
 
-		viewerState.Address = (int)addrInput;
+		viewerState.AddressOffset = pBank != nullptr ? (int)addrInput - pBank->GetMappedAddress() : addrInput;
+
 		// draw 64 * 8 bytes
 		ImGui::InputInt("XSize", &viewerState.XSize, 1, 4);
 		ImGui::InputInt("YSize", &viewerState.YSize, 8, 8);
@@ -309,7 +330,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 			if(spriteConfigs.find(viewerState.NewConfigName) == spriteConfigs.end())	// not found - add
 			{
 				FSpriteDefConfig newConfig;
-				newConfig.BaseAddress = viewerState.Address;
+				newConfig.BaseAddress = viewerState.AddressOffset;	// TODO: fix for banks
 				newConfig.Count = viewerState.ImageCount;
 				newConfig.Width = viewerState.XSize;
 				newConfig.Height = viewerState.YSize / 8;	// sprite height in chars atm - TODO: move to line count
@@ -330,7 +351,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 		const int ycount = kVerticalDispPixCount / viewerState.YSize;
 
 		int y = 0;
-		int address = viewerState.Address;
+		int address = viewerState.AddressOffset;
 
 		if (viewerState.ViewMode == GraphicsViewMode::Character)
 		{

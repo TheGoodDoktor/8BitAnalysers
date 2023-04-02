@@ -110,15 +110,15 @@ public:
 	uint16_t	GetPC(void) override;
 	uint16_t	GetSP(void) override;
 	bool		IsAddressBreakpointed(uint16_t addr) override;
-	bool		ToggleExecBreakpointAtAddress(uint16_t addr) override;
-	bool		ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize) override;
+	bool		SetExecBreakpointAtAddress(uint16_t addr, bool bSet) override;
+	bool		SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize,bool bSet) override;
 	void		Break(void) override;
 	void		Continue(void) override;
 	void		StepOver(void) override;
 	void		StepInto(void) override;
 	void		StepFrame(void) override;
 	void		StepScreenWrite(void) override;
-	void		GraphicsViewerSetView(uint16_t address, int charWidth) override;
+	void		GraphicsViewerSetView(FAddressRef address, int charWidth) override;
 	bool		ShouldExecThisFrame(void) const override;
 	bool		IsStopped(void) const override;
 	void		FormatSpectrumMemory(FCodeAnalysisState& state);
@@ -133,9 +133,20 @@ public:
 		MemoryAccessHandlers.push_back(handler);
 	}
 
-	void GraphicsViewerGoToAddress(uint16_t address)
+	void GraphicsViewerGoToAddress(FAddressRef address)
 	{
-		GraphicsViewer.Address = address;
+		const FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(address.BankId);
+		
+		if (pBank == nullptr || pBank->IsMapped())	// default to physical memory view
+		{
+			GraphicsViewer.AddressOffset = address.Address;
+			GraphicsViewer.Bank = -1;
+		}
+		else
+		{
+			GraphicsViewer.AddressOffset = address.Address - pBank->GetMappedAddress();
+			GraphicsViewer.Bank = address.BankId;
+		}
 	}
 
 	void GraphicsViewerSetCharWidth(uint16_t width)

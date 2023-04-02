@@ -97,6 +97,13 @@ bool ExportGameAnalysisJson(FSpectrumEmu* pSpectrumEmu, const char* pJsonFileNam
 		if (bank.bReadOnly)	// skip read only banks - ROM
 			continue;
 
+		json bankJson;
+		bankJson["Id"] = bank.Id;
+		bankJson["Description"] = bank.Description;
+
+		bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
+		jsonGameData["Banks"].push_back(bankJson);
+
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
 			const FCodeAnalysisPage& page = bank.Pages[pageNo];
@@ -400,6 +407,19 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 	inFileStream >> jsonGameData;
 	inFileStream.close();
 
+	if (jsonGameData.contains("Banks"))
+	{
+		for (const auto& bankJson : jsonGameData["Banks"])
+		{
+			FCodeAnalysisBank* pBank = state.GetBank(bankJson["Id"]);
+			if (pBank != nullptr)
+			{
+				if (bankJson.contains("Description"))
+					pBank->Description = bankJson["Description"];
+				pBank->PrimaryMappedPage = bankJson["PrimaryMappedPage"];
+			}
+		}
+	}
 	if (jsonGameData.contains("Pages"))
 	{
 		for (const auto& pageJson : jsonGameData["Pages"])
@@ -409,6 +429,7 @@ bool ImportAnalysisJson(FSpectrumEmu* pSpectrumEmu,  const char* pJsonFileName)
 			if (pPage != nullptr)
 			{
 				ReadPageFromJson(*pPage, pageJson);
+				pPage->bUsed = true;
 			}
 		}
 	}

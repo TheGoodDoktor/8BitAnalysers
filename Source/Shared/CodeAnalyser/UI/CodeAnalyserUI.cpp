@@ -102,13 +102,21 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 {
 	int labelOffset = 0;
 	const char *pLabelString = GetRegionDesc(addr.Address);
+	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	assert(pBank != nullptr);
 
 	if (pLabelString == nullptr)	// get a label
 	{
 		// find a label for this address
 		for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
 		{
-			const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
+			if (pBank->AddressValid(addrVal) == false)
+			{
+				pBank = state.GetBank(state.GetBankFromAddress(addrVal));
+				assert(pBank != nullptr);
+			}
+
+			const FLabelInfo* pLabel = state.GetLabelForAddress(FAddressRef(pBank->Id,addrVal));
 			if (pLabel != nullptr)
 			{
 				if (bFunctionRel == false || pLabel->LabelType == ELabelType::Function)
@@ -120,6 +128,10 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 
 			labelOffset++;
 		}
+
+		if (pLabelString == nullptr && addr.Address == 0)
+			pLabelString = "0000";
+
 	}
 	
 	if (pLabelString != nullptr)
@@ -345,7 +357,7 @@ void DrawWatchWindow(FCodeAnalysisState& state)
 			if (ImGui::Selectable("Toggle Breakpoint"))
 			{
 				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(selectedWatch.Address);
-				state.CPUInterface->ToggleDataBreakpointAtAddress(selectedWatch.Address, pInfo->ByteSize);
+				state.ToggleDataBreakpointAtAddress(selectedWatch, pInfo->ByteSize);
 			}
 
 			ImGui::EndPopup();
@@ -513,7 +525,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	ShowCodeAccessorActivity(state, item.AddressRef);
 
 	// show if breakpointed
-	if (state.CPUInterface->IsAddressBreakpointed(item.Address))
+	if (state.IsAddressBreakpointed(item.AddressRef))
 	{
 		const ImU32 bp_enabled_color = 0xFF0000FF;
 		const ImU32 bp_disabled_color = 0xFF000088;
@@ -767,9 +779,9 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Breakpoint]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
-				state.CPUInterface->ToggleDataBreakpointAtAddress(cursorItem.Address, cursorItem.Item->ByteSize);
+				state.ToggleDataBreakpointAtAddress(cursorItem.AddressRef, cursorItem.Item->ByteSize);
 			else if (cursorItem.Item->Type == EItemType::Code)
-				state.CPUInterface->ToggleExecBreakpointAtAddress(cursorItem.Address);
+				state.ToggleExecBreakpointAtAddress(cursorItem.AddressRef);
 		}
 	}
 
@@ -1086,7 +1098,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			}
 #endif
 			if (ImGui::Selectable("Toggle Data Breakpoint"))
-				state.CPUInterface->ToggleDataBreakpointAtAddress(item.Address, item.Item->ByteSize);
+				state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize);
 			if (ImGui::Selectable("Add Watch"))
 				state.AddWatch(item.AddressRef);
 
@@ -1111,7 +1123,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 		if (item.Item->Type == EItemType::Code)
 		{
 			if (ImGui::Selectable("Toggle Exec Breakpoint"))
-				state.CPUInterface->ToggleExecBreakpointAtAddress(item.Address);
+				state.ToggleExecBreakpointAtAddress(item.AddressRef);
 		}
 				
 		if (ImGui::Selectable("View in graphics viewer"))
@@ -1122,7 +1134,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			{
 				byteSize = pDataItem->ByteSize;
 			}
-			state.CPUInterface->GraphicsViewerSetView(item.Address, byteSize);
+			state.CPUInterface->GraphicsViewerSetView(item.AddressRef, byteSize);
 		}
 
 		ImGui::EndPopup();
@@ -1188,9 +1200,9 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 	if (ImGui::IsItemHovered() && viewState.HighlightAddress.IsValid() == false &&  ImGui::IsMouseDoubleClicked(0))
 	{
 		if (item.Item->Type == EItemType::Code)
-			state.CPUInterface->ToggleExecBreakpointAtAddress(item.Address);
+			state.ToggleExecBreakpointAtAddress(item.AddressRef);
 		else if (item.Item->Type == EItemType::Data)
-			state.CPUInterface->ToggleDataBreakpointAtAddress(item.Address, item.Item->ByteSize);
+			state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize);
 	}
 
 	ImGui::SetItemAllowOverlap();	// allow buttons
@@ -1522,7 +1534,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				auto& banks = state.GetBanks();
 				for (auto& bank : banks)
 				{
-					if (bank.Pages[0].bUsed == false)
+					if (bank.IsUsed() == false)
 						continue;
 
 					const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
