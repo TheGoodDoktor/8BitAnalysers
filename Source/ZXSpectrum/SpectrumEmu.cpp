@@ -942,9 +942,13 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 		romJsonFName = root + kRomInfo128JsonFile;
 
 	const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+	const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 	if (FileExists(analysisJsonFName.c_str()))
+	{
 		ImportAnalysisJson(this, analysisJsonFName.c_str());
+		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+	}
 	else
 		LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
 
