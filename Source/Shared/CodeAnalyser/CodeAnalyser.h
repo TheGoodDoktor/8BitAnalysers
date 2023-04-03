@@ -257,6 +257,7 @@ struct FCodeAnalysisBank
 	bool		IsUsed() const { return Pages[0].bUsed; }
 	bool		IsMapped() const { return MappedPages.empty() == false; }
 	uint16_t	GetMappedAddress() const { return PrimaryMappedPage * FCodeAnalysisPage::kPageSize; }
+	uint16_t	GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
 };
 
 
@@ -279,6 +280,7 @@ public:
 	static const int kPageMask = 1023;
 	static const int kNoPagesInAddressSpace = kAddressSize / FCodeAnalysisPage::kPageSize;
 
+	FCodeAnalysisState();
 	void	Init(ICPUInterface* pCPUInterface);
 
 	ICPUInterface* CPUInterface = nullptr;
@@ -289,6 +291,7 @@ public:
 	bool		MapBank(int16_t bankId, int startPageNo);
 	bool		UnMapBank(int16_t bankId, int startPageNo);
 	bool		IsBankIdMapped(int16_t bankId) const;
+	bool		IsAddressValid(FAddressRef addr) const;
 
 	bool		MapBankForAnalysis(FCodeAnalysisBank& bank);
 	void		UnMapAnalysisBanks();

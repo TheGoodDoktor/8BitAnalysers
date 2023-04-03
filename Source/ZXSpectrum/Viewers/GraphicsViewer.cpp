@@ -149,7 +149,7 @@ void DrawMemoryBankAsGraphicsColumn(FGraphicsViewerState& viewerState, int16_t b
 	{
 		for (int xChar = 0; xChar < columnWidth; xChar++)
 		{
-			uint16_t bankAddr = memAddr & 0x3fff;
+			const uint16_t bankAddr = memAddr & 0x3fff;
 			const uint8_t charLine = pBank->Memory[bankAddr];
 			FCodeAnalysisPage& page = pBank->Pages[bankAddr >> 10];
 			const uint8_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo,viewerState.HeatmapThreshold);

@@ -206,8 +206,17 @@ bool FCodeAnalysisState::IsBankIdMapped(int16_t bankId) const
 	return false;
 }
 
+bool FCodeAnalysisState::IsAddressValid(FAddressRef addr) const
+{
+	const FCodeAnalysisBank* pBank = GetBank(addr.BankId);
+	if (pBank == nullptr)
+		return false;
 
+	if(addr.Address < pBank->GetMappedAddress() || addr.Address > (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
+		return false;
 
+	return true;
+}
 
 bool FCodeAnalysisState::MapBankForAnalysis(FCodeAnalysisBank& bank)
 {
@@ -648,6 +657,8 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
 		pCodeInfo->JumpAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
+		assert(state.IsAddressValid(pCodeInfo->JumpAddress));
+
 		if (pCodeInfo->OperandType == EOperandType::Unknown)
 			pCodeInfo->OperandType = EOperandType::JumpAddress;
 	}
@@ -715,7 +726,10 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		if (pCodeInfo != nullptr)
+		{
 			pCodeInfo->JumpAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
+			assert(state.IsAddressValid(pCodeInfo->JumpAddress));
+		}
 
 	}
 
@@ -909,6 +923,16 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	state.GlobalDataItems.clear();
 	state.GlobalFunctions.clear();
 
+	// TODO: make global list from what's in all banks
+	for (auto& bank : state.GetBanks())
+	{
+		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
+		{
+			bank.Pages[pageNo];
+
+		}
+	}
+
 	for (int addr = 0; addr < (1 << 16); addr++)
 	{
 		FLabelInfo *pLabel = state.GetLabelForAddress(addr);
@@ -929,6 +953,20 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	state.bRebuildFilteredGlobalFunctions = true;
 }
 
+FCodeAnalysisState::FCodeAnalysisState()
+{
+	for (int i = 0; i < kNoPagesInAddressSpace; i++)
+	{
+		MappedMem[i] = nullptr;
+		MappedBanks[i] = -1;
+		MappedBanksBackup[i] = -1;
+		ReadPageTable[i] = nullptr;
+		WritePageTable[i] = nullptr;
+	}
+
+}
+
+// Called each time a new game is loaded up
 void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 {
 	InitImageViewers();
@@ -949,12 +987,14 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 			pPage->DataInfo[addr].Reset();
 			pPage->MachineState[addr] = nullptr;
 		}
+	}	
+
+	// clear mapped mem
+	for (int i = 0; i < kNoPagesInAddressSpace; i++)
+	{
+		MappedMem[i] = nullptr;
 	}
 	
-	// clear mapped mem
-	for(int i=0;i< kNoPagesInAddressSpace;i++)
-		MappedMem[i] = nullptr;
-
 	FreeMachineStates(*this);
 	FLabelInfo::FreeAll();
 	FCodeInfo::FreeAll();
@@ -966,9 +1006,15 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 		ViewState[i].SetCursorItem(FCodeAnalysisItem());
 	}
 
+	// reset banks
+	for (auto& bank : Banks)
+	{
+		bank.ItemList.clear();
+	}
+
 	CPUInterface = pCPUInterface;
-	uint16_t initialPC = pCPUInterface->GetPC();
-	RunStaticCodeAnalysis(*this, initialPC);
+	//uint16_t initialPC = pCPUInterface->GetPC();
+	//RunStaticCodeAnalysis(*this, initialPC);
 
 	// Key Config
 	KeyConfig[(int)EKey::SetItemData] = ImGuiKey_D;

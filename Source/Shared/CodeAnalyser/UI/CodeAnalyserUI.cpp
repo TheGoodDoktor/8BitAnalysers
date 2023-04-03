@@ -608,11 +608,11 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	}
 
 	// draw jump address label name
-	if (pCodeInfo->OperandType == EOperandType::JumpAddress)
+	if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid())
 	{
 		DrawAddressLabel(state, viewState, pCodeInfo->JumpAddress);
 	}
-	else if (pCodeInfo->OperandType == EOperandType::Pointer)
+	else if (pCodeInfo->OperandType == EOperandType::Pointer && pCodeInfo->PointerAddress.IsValid())
 	{
 		DrawAddressLabel(state, viewState, pCodeInfo->PointerAddress);
 	}
@@ -1533,7 +1533,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				auto& banks = state.GetBanks();
 				for (auto& bank : banks)
 				{
-					if (bank.IsUsed() == false)
+					if (bank.IsUsed() == false || bank.PrimaryMappedPage == -1)
 						continue;
 
 					const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
@@ -1572,10 +1572,12 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 							UpdatePopups(state, viewState);
 
 							ImGui::EndChild();
+
+							// map bank out
+							state.UnMapAnalysisBanks();
 						}
 						ImGui::EndTabItem();
-						// map bank out
-						state.UnMapAnalysisBanks();
+						
 					}
 
 

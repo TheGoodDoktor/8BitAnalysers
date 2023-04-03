@@ -39,6 +39,15 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 		if (pCodeItem->bDisabled == false)
 		{
 			pCodeItem->bDisabled = true;
+
+			// set all bytes to be data
+			for (int i = 0; i < pCodeItem->ByteSize; i++)
+			{
+				FDataInfo* pOperandData = state.GetReadDataInfoForAddress(Item.Address + i);
+				pOperandData->DataType = EDataType::Byte;
+				pOperandData->ByteSize = 1;
+			}
+
 			state.SetCodeAnalysisDirty(Item.Address);
 
 			FLabelInfo* pLabelInfo = state.GetLabelForAddress(Item.Address);

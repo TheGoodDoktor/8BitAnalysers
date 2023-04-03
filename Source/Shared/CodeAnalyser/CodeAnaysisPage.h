@@ -277,7 +277,6 @@ struct FCodeAnalysisPage
 	FCodeInfo*		CodeInfo[kPageSize];
 	FDataInfo		DataInfo[kPageSize];
 	FCommentBlock*	CommentBlocks[kPageSize];
-	//uint16_t		LastWriter[kPageSize];
 
 	FMachineState*	MachineState[kPageSize];
 };
