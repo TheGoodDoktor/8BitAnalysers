@@ -1656,7 +1656,10 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 					viewState.GoToAddress(item.AddressRef, true);
 				}
 				ImGui::SameLine(30);
-				ImGui::Text("%s", pLabelInfo->Name.c_str());
+				//if(state.Config.bShowBanks)
+				//	ImGui::Text("[%s]%s", item.AddressRef.BankId,pLabelInfo->Name.c_str());
+				//else
+					ImGui::Text("%s", pLabelInfo->Name.c_str());
 				ImGui::PopID();
 			}
 		}

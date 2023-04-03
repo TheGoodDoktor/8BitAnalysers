@@ -923,17 +923,33 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	state.GlobalDataItems.clear();
 	state.GlobalFunctions.clear();
 
-	// TODO: make global list from what's in all banks
+	// Make global list from what's in all banks
 	for (auto& bank : state.GetBanks())
 	{
+		if (bank.PrimaryMappedPage == -1)
+			continue;
+
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
-			bank.Pages[pageNo];
+			const FCodeAnalysisPage& page = bank.Pages[pageNo];
+			const uint16_t pageBaseAddr = bank.GetMappedAddress() + (pageNo * FCodeAnalysisPage::kPageSize);
+
+			for (int pageAddr = 0; pageAddr < FCodeAnalysisPage::kPageSize; pageAddr++)
+			{
+				FLabelInfo* pLabel = page.Labels[pageAddr];
+				if (pLabel != nullptr)
+				{
+					if (pLabel->LabelType == ELabelType::Data && pLabel->Global)
+						state.GlobalDataItems.emplace_back(pLabel, FAddressRef(bank.Id, pageBaseAddr + pageAddr));
+					if (pLabel->LabelType == ELabelType::Function)
+						state.GlobalFunctions.emplace_back(pLabel, FAddressRef(bank.Id, pageBaseAddr + pageAddr));
+				}
+			}
 
 		}
 	}
 
-	for (int addr = 0; addr < (1 << 16); addr++)
+	/*for (int addr = 0; addr < (1 << 16); addr++)
 	{
 		FLabelInfo *pLabel = state.GetLabelForAddress(addr);
 		
@@ -947,7 +963,7 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 				state.GlobalFunctions.emplace_back(pLabel, bankId, addr);
 		}
 		
-	}
+	}*/
 
 	state.bRebuildFilteredGlobalDataItems = true;
 	state.bRebuildFilteredGlobalFunctions = true;
