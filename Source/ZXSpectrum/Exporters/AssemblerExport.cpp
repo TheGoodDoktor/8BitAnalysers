@@ -169,10 +169,12 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 
 	for (const FCodeAnalysisItem &item : state.ItemList)
 	{
-		if (item.Address < startAddr)
+		const uint16_t addr = item.AddressRef.Address;
+
+		if (addr < startAddr)
 			continue;
 
-		if (item.Address > endAddr)
+		if (addr > endAddr)
 			break;
 
 		switch (item.Item->Type)
@@ -187,11 +189,11 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 		{
 			const FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(item.Item);
 
-			WriteCodeInfoForAddress(state, item.Address);	// needed to refresh code info
-			if (item.Address == g_DbgAddress)
+			WriteCodeInfoForAddress(state, addr);	// needed to refresh code info
+			if (addr == g_DbgAddress)
 				LOGINFO("DebugAddress");
 
-			const std::string dasmString = GenerateDasmStringForAddress(state, item.Address, hexMode);
+			const std::string dasmString = GenerateDasmStringForAddress(state, addr, hexMode);
 			fprintf(fp, "\t%s", dasmString.c_str());
 
 			if (pCodeInfo->JumpAddress.IsValid())
@@ -230,7 +232,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			{
 			case EDataType::Byte:
 			{
-				const uint8_t val = state.CPUInterface->ReadByte(item.Address);
+				const uint8_t val = state.CPUInterface->ReadByte(addr);
 				fprintf(fp, "db %s", NumStr(val, dispMode));
 			}
 			break;
@@ -239,7 +241,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				std::string textString;
 				for (int i = 0; i < pDataInfo->ByteSize; i++)
 				{
-					const uint8_t val = state.CPUInterface->ReadByte(item.Address + i);
+					const uint8_t val = state.CPUInterface->ReadByte(addr + i);
 					char valTxt[16];
 					sprintf(valTxt, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
 					textString += valTxt;
@@ -249,7 +251,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			break;
 			case EDataType::Word:
 			{
-				const uint16_t val = state.CPUInterface->ReadWord(item.Address);
+				const uint16_t val = state.CPUInterface->ReadWord(addr);
 
 				const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForAddress(val) : nullptr;
 				if (pLabel != nullptr)
@@ -268,7 +270,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				std::string textString;
 				for (int i = 0; i < wordSize; i++)
 				{
-					const uint16_t val = state.CPUInterface->ReadWord(item.Address + (i * 2));
+					const uint16_t val = state.CPUInterface->ReadWord(addr + (i * 2));
 					char valTxt[16];
 					sprintf(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
 					textString += valTxt;
@@ -281,7 +283,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				std::string textString;
 				for (int i = 0; i < pDataInfo->ByteSize; i++)
 				{
-					const char ch = state.CPUInterface->ReadByte(item.Address + i);
+					const char ch = state.CPUInterface->ReadByte(addr + i);
 					if (ch == '\n')
 						textString += "<cr>";
 					if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag

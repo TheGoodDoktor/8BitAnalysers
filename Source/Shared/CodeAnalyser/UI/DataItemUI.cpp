@@ -252,7 +252,7 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 	ImGui::PopID();
 }
 
-void ShowDataItemActivity(FCodeAnalysisState& state, uint16_t addr)
+void ShowDataItemActivity(FCodeAnalysisState& state, FAddressRef addr)
 {
 	const FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
 	const FDataInfo* pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
@@ -305,8 +305,9 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
+	const uint16_t physAddr = item.AddressRef.Address;
 
-	ShowDataItemActivity(state, item.Address);
+	ShowDataItemActivity(state, item.AddressRef);
 
 	// show if breakpointed
 	if (state.IsAddressBreakpointed(item.AddressRef))
@@ -323,7 +324,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		dl->AddCircle(mid, 7, brd_color);
 	}
 
-	ImGui::Text("\t%s", NumStr(item.Address));
+	ImGui::Text("\t%s", NumStr(item.AddressRef.Address));
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
 	bool bShowItemLabel = true;
@@ -368,12 +369,12 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	{
 	case EDataType::Byte:
 	{
-		const uint8_t val = state.ReadByte(item.Address);
+		const uint8_t val = state.ReadByte(item.AddressRef);
 		ImGui::Text("db");
 		ImGui::SameLine();
 
 		if (bEdit)
-			EditByteDataItem(state, item.Address);
+			EditByteDataItem(state, physAddr);
 		else
 			ImGui::Text("%s", NumStr(val));
 
@@ -387,14 +388,14 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case EDataType::ByteArray:
 	{
-		uint8_t val = state.ReadByte(item.Address);
+		uint8_t val = state.ReadByte(item.AddressRef);
 
 		// TODO: add edit support
 
 		ImGui::Text("db %s", NumStr(val));
 		for (int i = 1; i < pDataInfo->ByteSize; i++)	// first word already written
 		{
-			val = state.ReadByte(item.Address + i);
+			val = state.ReadByte(physAddr + i);
 			ImGui::SameLine();
 			ImGui::Text(",%s", NumStr(val));
 		}
@@ -403,11 +404,11 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case EDataType::Word:
 	{
-		const uint16_t val = state.ReadWord(item.Address);
+		const uint16_t val = state.ReadWord(physAddr);
 		ImGui::Text("dw");
 		ImGui::SameLine();
 		if (bEdit)
-			EditWordDataItem(state, item.Address);
+			EditWordDataItem(state, physAddr);
 		else
 			ImGui::Text("%s", NumStr(val));
 
@@ -421,7 +422,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case EDataType::WordArray:
 	{
-		uint16_t val = state.ReadWord(item.Address);
+		uint16_t val = state.ReadWord(physAddr);
 		const int wordCount = pDataInfo->ByteSize / 2;
 
 		// TODO: add edit support
@@ -429,7 +430,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::Text("dw %s", NumStr(val));
 		for (int i = 1; i < wordCount; i++)	// first word already written
 		{
-			val = state.ReadWord(item.Address + (i * 2));
+			val = state.ReadWord(physAddr + (i * 2));
 			ImGui::SameLine();
 			ImGui::Text(",%s", NumStr(val));
 		}
@@ -438,22 +439,22 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case EDataType::Text:
 	{
-		const std::string textString = GetItemText(state, item.Address);
+		const std::string textString = GetItemText(state, physAddr);
 		ImGui::Text("ascii '%s'", textString.c_str());
 	}
 	break;
 
 	case EDataType::Bitmap:
 		ImGui::Text("Bitmap");
-		offset = DrawDataBitmapLine(state, item.Address, pDataInfo, state.bAllowEditing);
+		offset = DrawDataBitmapLine(state, physAddr, pDataInfo, state.bAllowEditing);
 		break;
 	case EDataType::CharacterMap:
 		ImGui::Text("Charmap");
-		offset = DrawDataCharMapLine(state, item.Address, pDataInfo);
+		offset = DrawDataCharMapLine(state, physAddr, pDataInfo);
 		break;
 	case EDataType::ColAttr:
 		ImGui::Text("ColAttr");
-		offset = DrawColAttr(state, item.Address, pDataInfo, state.bAllowEditing);
+		offset = DrawColAttr(state, physAddr, pDataInfo, state.bAllowEditing);
 		break;
 	case EDataType::ScreenPixels:
 	case EDataType::Blob:
@@ -462,7 +463,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		break;
 	}
 
-	if (state.CPUInterface->GetSP() == item.Address)
+	if (state.CPUInterface->GetSP() == physAddr)
 	{
 		ImGui::SameLine();
 		ImGui::Text("<- SP");
@@ -518,7 +519,7 @@ void DrawDataValueGraph(uint16_t val, bool bReset)
 }
 
 
-void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, FDataInfo* pDataInfo)
+void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FDataInfo* pDataInfo)
 {
 	// List Data accesses
 	if (pDataInfo->Reads.IsEmpty() == false)
@@ -598,7 +599,7 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 	}
 
 	// last writer to address
-	const FAddressRef lastWriter = state.GetLastWriterForAddress(addr);
+	const FAddressRef lastWriter = pDataInfo->LastWriter;
 	if (lastWriter.IsValid())
 	{
 		ImGui::Text("Last Writer: ");
@@ -611,16 +612,17 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
+	const uint16_t physAddr = item.AddressRef.Address;
 	ImGui::Text("Number Mode Override");
 	DrawOperandTypeCombo("##dataOperand",pDataInfo->OperandType);
 	switch (pDataInfo->DataType)
 	{
 	case EDataType::Byte:
-		DrawDataValueGraph(state.ReadByte(item.Address), false);
+		DrawDataValueGraph(state.ReadByte(physAddr), false);
 		break;
 
 	case EDataType::Word:
-		DrawDataValueGraph(state.ReadWord(item.Address), false);
+		DrawDataValueGraph(state.ReadWord(physAddr), false);
 		break;
 
 	case EDataType::Text:
@@ -628,7 +630,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		std::string textString;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
-			const char ch = state.ReadByte(item.Address + i);
+			const char ch = state.ReadByte(physAddr + i);
 			if (ch == '\n')
 				textString += "<cr>";
 			if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
@@ -641,7 +643,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		if (ImGui::InputInt("Length", &length))
 		{
 			pDataInfo->ByteSize = length;
-			state.SetCodeAnalysisDirty(item.Address);
+			state.SetCodeAnalysisDirty(item.AddressRef);
 		}
 	}
 	break;
@@ -658,7 +660,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	case EDataType::Bitmap:
 	{
 		static FCharSetCreateParams params;
-		params.Address = item.Address;
+		params.Address = physAddr;
 		DrawMaskInfoComboBox(&params.MaskInfo);
 		DrawColourInfoComboBox(&params.ColourInfo);
 		if (params.ColourInfo == EColourInfo::MemoryLUT)
@@ -666,7 +668,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			DrawAddressInput("Attribs Address", &params.AttribsAddress);
 		}
 
-		FCharacterSet *pCharSet = GetCharacterSetFromAddress(item.Address);
+		FCharacterSet *pCharSet = GetCharacterSetFromAddress(physAddr);
 		if (pCharSet != nullptr)
 		{
 			if (ImGui::Button("Update Character Set"))
@@ -679,10 +681,10 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		{
 			if (ImGui::Button("Create Character Set"))
 			{
-				FLabelInfo* pLabel = state.GetLabelForAddress(item.Address);
+				FLabelInfo* pLabel = state.GetLabelForAddress(physAddr);
 				if (pLabel == nullptr)
-					AddLabelAtAddress(state, item.Address);
-				params.Address = item.Address;
+					AddLabelAtAddress(state, physAddr);
+				params.Address = physAddr;
 				params.ColourLUT = state.Config.CharacterColourLUT;
 
 				CreateCharacterSetAt(state, params);
@@ -711,7 +713,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			if (ImGui::InputInt2("Image Size (chars)", sz))
 			{
 				pDataInfo->ByteSize = pImageData->SetSizeChars(sz[0], sz[1]);
-				state.SetCodeAnalysisDirty(item.Address);	// force redraw of items
+				state.SetCodeAnalysisDirty(physAddr);	// force redraw of items
 				bRebuildImage = true;
 			}
 
@@ -749,7 +751,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 				pImageData->GraphicsView->Clear();
 
 				viewerList[pImageData->ViewerId]->DrawImageToView(
-					item.Address,
+					physAddr,
 					pImageData->XSizeChars, pImageData->YSizeChars,
 					pImageData->GraphicsView,
 					state.CPUInterface);
@@ -761,6 +763,6 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		break;
 	}
 
-	DrawDataAccesses(state, viewState, item.Address, pDataInfo);
+	DrawDataAccesses(state, viewState, pDataInfo);
 }
 

@@ -47,24 +47,12 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, FAddressRef addr)
 	int index = -1;
 
 	assert(pBank != nullptr);
-	if (pBank == nullptr)	// remove this?
+	
+	for (int i = 0; i < (int)pBank->ItemList.size(); i++)
 	{
-		for (int i = 0; i < (int)state.ItemList.size(); i++)
-		{
-			if (state.ItemList[i].IsValid() && state.ItemList[i].Address > addr.Address)
-				return index;
-
-			index = i;
-		}
-	}
-	else
-	{
-		for (int i = 0; i < (int)pBank->ItemList.size(); i++)
-		{
-			if (pBank->ItemList[i].IsValid() && pBank->ItemList[i].Address > addr.Address)
-				return index;
-			index = i;
-		}
+		if (pBank->ItemList[i].IsValid() && pBank->ItemList[i].AddressRef.Address > addr.Address)
+			return index;
+		index = i;
 	}
 	return -1;
 }
@@ -387,8 +375,8 @@ void DrawComment(const FItem *pItem, float offset)
 void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
-	const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(item.Address);	// for self-modifying code
-	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.Address);
+	const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(item.AddressRef);	// for self-modifying code
+	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.AddressRef);
 	ImVec4 labelColour = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
 	if (viewState.HighlightAddress == item.AddressRef)
 		labelColour = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -398,7 +386,7 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	// draw SMC fixups differently
 	if (pCodeInfo == nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 	{
-		ImGui::TextColored(labelColour, "\t\tOperand Fixup(% s) :",NumStr(item.Address));
+		ImGui::TextColored(labelColour, "\t\tOperand Fixup(% s) :",NumStr(item.AddressRef.Address));
 		ImGui::SameLine();
 		ImGui::TextColored(labelColour, "%s", pLabelInfo->Name.c_str());
 	}
@@ -513,6 +501,7 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef acces
 	}
 }
 
+// this assumes that the code item is mapped into physical memory
 void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	const FCodeInfo* pCodeInfo = static_cast<const FCodeInfo*>(item.Item);
@@ -520,6 +509,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
+	const uint16_t physAddress = item.AddressRef.Address;
 
 	ShowCodeAccessorActivity(state, item.AddressRef);
 
@@ -538,7 +528,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		dl->AddCircle(mid, 7, brd_color);
 	}
 
-	if (state.GetMachineState(item.Address))
+	if (state.GetMachineState(physAddress))
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -549,10 +539,10 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	if(pCodeInfo->bSelfModifyingCode == true || pCodeInfo->Text.empty())
 	{
 		//UpdateCodeInfoForAddress(state, pCodeInfo->Address);
-		WriteCodeInfoForAddress(state, item.Address);
+		WriteCodeInfoForAddress(state, physAddress);
 	}
 
-	ImGui::Text("\t%s", NumStr(item.Address));
+	ImGui::Text("\t%s", NumStr(physAddress));
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
 
@@ -572,7 +562,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 			std::string strHexValue;
 
 			if (i < pCodeInfo->ByteSize)
-				snprintf(tmp,16, "%02X", state.ReadByte(item.Address + i));
+				snprintf(tmp,16, "%02X", state.ReadByte(item.AddressRef.Address + i));
 			else
 				snprintf(tmp, 16, "  ");
 
@@ -580,7 +570,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 
 			if(pCodeInfo->bSelfModifyingCode)
 			{
-				FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(item.Address + i);
+				FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(physAddress + i);
 				if (pOperandData->Writes.IsEmpty() == false)
 				{
 					// Change the colour if this is self modifying code and the byte has been modified.
@@ -604,7 +594,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 
 	if(ImGui::IsItemHovered())
 	{
-		ShowCodeToolTip(state, item.Address);
+		ShowCodeToolTip(state, physAddress);
 	}
 
 	// draw jump address label name
@@ -621,9 +611,12 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 
 }
 
+// this code assumes the item is in physical address space
 void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(item.Item);
+	const uint16_t physAddress = item.AddressRef.Address;
+
 	if (DrawOperandTypeCombo("Operand Type", pCodeInfo->OperandType))
 		pCodeInfo->Text.clear();	// clear for a rewrite
 
@@ -635,20 +628,20 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			// backup code
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
 			{
-				pCodeInfo->OpcodeBkp[i] = state.ReadByte(item.Address + i);
+				pCodeInfo->OpcodeBkp[i] = state.ReadByte(physAddress + i);
 
 				// NOP it out
 				if(state.CPUInterface->CPUType == ECPUType::Z80)
-					state.WriteByte(item.Address + i,0);
+					state.WriteByte(physAddress + i,0);
 				else if(state.CPUInterface->CPUType == ECPUType::M6502)
-					state.WriteByte(item.Address + i, 0xEA);
+					state.WriteByte(physAddress + i, 0xEA);
 			}
 		}
 		else
 		{
 			// Restore
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
-				state.WriteByte(item.Address + i, pCodeInfo->OpcodeBkp[i]);
+				state.WriteByte(physAddress + i, pCodeInfo->OpcodeBkp[i]);
 
 		}
 	}
@@ -659,7 +652,7 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 
 		for (int i = 1; i < pCodeInfo->ByteSize; i++)
 		{
-			FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(item.Address + i);
+			FDataInfo* pOperandData = state.GetWriteDataInfoForAddress(physAddress + i);
 			if (pOperandData->Writes.IsEmpty() == false)
 			{
 				ImGui::Text("Operand Writes:");
@@ -684,15 +677,16 @@ void DrawCommentLine(FCodeAnalysisState& state, const FCommentLine* pCommentLine
 
 void DrawCommentBlockDetails(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 {
-	FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(item.Address);
+	const uint16_t physAddress = item.AddressRef.Address;
+	FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(physAddress);
 	if (pCommentBlock == nullptr)
 		return;
 
 	if (ImGui::InputTextMultiline("Comment Text", &pCommentBlock->Comment))
 	{
 		if (pCommentBlock->Comment.empty() == true)
-			state.SetCommentBlockForAddress(item.Address, nullptr);
-		state.SetCodeAnalysisDirty(item.Address);
+			state.SetCommentBlockForAddress(physAddress, nullptr);
+		state.SetCodeAnalysisDirty(physAddress);
 	}
 
 }
@@ -725,7 +719,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 	{
 		if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemCode]))
 		{
-			SetItemCode(state, cursorItem.Address);
+			SetItemCode(state, cursorItem.AddressRef);
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemData]))
 		{
@@ -770,7 +764,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddCommentBlock]))
 		{
-			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.Address);
+			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef.Address);
 			viewState.SetCursorItem(FCodeAnalysisItem(pCommentBlock, cursorItem.AddressRef));
 			ImGui::OpenPopup("Enter Comment Text Multi");
 			ImGui::SetWindowFocus("Enter Comment Text Multi");
@@ -837,7 +831,7 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::SetKeyboardFocusHere();
 		if(ImGui::InputTextMultiline("##comment", &cursorItem.Item->Comment,ImVec2(), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine))
 		{
-			state.SetCodeAnalysisDirty(cursorItem.Address);
+			state.SetCodeAnalysisDirty(cursorItem.AddressRef);
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
@@ -1088,7 +1082,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			}
 			if (ImGui::Selectable("Set as Code (C)"))
 			{
-				SetItemCode(state, item.Address);
+				SetItemCode(state, item.AddressRef);
 			}
 #ifdef ENABLE_IMAGE_TYPE
 			if (ImGui::Selectable("Set as Image (I)"))
@@ -1107,7 +1101,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 		{
 			if (ImGui::Selectable("Remove label"))
 			{
-				RemoveLabelAtAddress(state, item.Address);
+				RemoveLabelAtAddress(state, item.AddressRef.Address);
 			}
 		}
 		else
@@ -1127,7 +1121,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 				
 		if (ImGui::Selectable("View in graphics viewer"))
 		{
-			FDataInfo* pDataItem = state.GetReadDataInfoForAddress(item.Address);
+			FDataInfo* pDataItem = state.GetReadDataInfoForAddress(item.AddressRef);
 			int byteSize = 1;
 			if (pDataItem->DataType == EDataType::Bitmap)
 			{
@@ -1144,12 +1138,13 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 {
 	//assert(i < (int)state.ItemList.size());
 	//const FCodeAnalysisItem& item = state.ItemList[i];
+	const uint16_t physAddr = item.AddressRef.Address;
 
 	if (item.IsValid() == false)
 		return;
 
 	// TODO: item below might need bank check
-	bool bHighlight = (viewState.HighlightAddress.Address >= item.Address && viewState.HighlightAddress.Address < item.Address + item.Item->ByteSize);
+	bool bHighlight = (viewState.HighlightAddress.Address >= physAddr && viewState.HighlightAddress.Address < physAddr + item.Item->ByteSize);
 	uint32_t kHighlightColour = 0xff00ff00;
 	ImGui::PushID(item.Item);
 
@@ -1169,7 +1164,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 	// selectable
 	const uint16_t endAddress = viewState.DataFormattingOptions.CalcEndAddress();
 	const bool bSelected = (item.Item == viewState.GetCursorItem().Item) || 
-		(viewState.DataFormattingTabOpen && item.Address >= viewState.DataFormattingOptions.StartAddress && item.Address <= endAddress);
+		(viewState.DataFormattingTabOpen && physAddr >= viewState.DataFormattingOptions.StartAddress && physAddr <= endAddress);
 	if (ImGui::Selectable("##codeanalysisline", bSelected, ImGuiSelectableFlags_SelectOnNav))
 	{
 		if (bSelected == false)
@@ -1184,11 +1179,11 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 				if (io.KeyShift)
 				{
 					if (viewState.DataFormattingOptions.ItemSize > 0)
-						viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress - viewState.GetCursorItem().Address) / viewState.DataFormattingOptions.ItemSize;
+						viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress - viewState.GetCursorItem().AddressRef.Address) / viewState.DataFormattingOptions.ItemSize;
 				}
 				else
 				{
-					viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().Address;
+					viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().AddressRef.Address;
 				}
 			}
 		}
@@ -1299,7 +1294,7 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			break;
 		case EItemType::CommentLine:
 			{
-				FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(item.Address);
+				FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(item.AddressRef.Address);
 				if (pCommentBlock != nullptr)
 					DrawCommentBlockDetails(state, item);
 			}
@@ -1382,7 +1377,7 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		const int kJumpViewOffset = 5;
 		for (int item = 0; item < (int)itemList.size(); item++)
 		{
-			if ((itemList[item].Address >= gotoAddress.Address) && (viewState.GoToLabel || itemList[item].Item->Type != EItemType::Label))
+			if ((itemList[item].AddressRef.Address >= gotoAddress.Address) && (viewState.GoToLabel || itemList[item].Item->Type != EItemType::Label))
 			{
 				// set cursor
 				viewState.SetCursorItem(itemList[item]);
@@ -1643,13 +1638,13 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 				const FCodeAnalysisItem& item = labelList[i];
 				const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
 
-				const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.Address);
+				const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.AddressRef);
 
-				ImGui::PushID(item.Address);
+				ImGui::PushID(item.AddressRef.Val);
 				if (pCodeInfo && pCodeInfo->bDisabled == false)
 					ShowCodeAccessorActivity(state, item.AddressRef);
 				else
-					ShowDataItemActivity(state, item.Address);
+					ShowDataItemActivity(state, item.AddressRef);
 								
 				if (ImGui::Selectable("##labellistitem", viewState.GetCursorItem().Item == pLabelInfo))
 				{
@@ -1676,7 +1671,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	{
 		if (viewState.GetCursorItem().IsValid())
 		{
-			formattingOptions.StartAddress = viewState.GetCursorItem().Address;
+			formattingOptions.StartAddress = viewState.GetCursorItem().AddressRef.Address;
 			//formattingOptions.EndAddress = viewState.pCursorItem->Address;
 		}
 
@@ -1810,7 +1805,7 @@ void GenerateFilteredLabelList(const FLabelListFilter&filter,const std::vector<F
 
 	for (const FCodeAnalysisItem& labelItem : sourceLabelList)
 	{
-		if (labelItem.Address < filter.MinAddress || labelItem.Address > filter.MaxAddress)	// skip min address
+		if (labelItem.AddressRef.Address < filter.MinAddress || labelItem.AddressRef.Address > filter.MaxAddress)	// skip min address
 			continue;
 		
 		const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(labelItem.Item);
@@ -1885,8 +1880,8 @@ void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState
 	if (item.IsValid() == false)
 		return;
 
-	const uint16_t address = item.Address;
-	const FMachineState* pMachineState = state.GetMachineState(address);
+	const uint16_t physAddress = item.AddressRef.Address;
+	const FMachineState* pMachineState = state.GetMachineState(physAddress);
 	if (pMachineState == nullptr)
 		return;
 

@@ -375,10 +375,10 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			return false;
 		}
 
-		if (LastItem.IsValid() && instruction.Address < LastItem.Address)
+		if (LastItem.IsValid() && instruction.Address < LastItem.AddressRef.Address)
 		{
 			// if this address is lower than the last one we saw then something has gone wrong, so abort
-			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", lineNum, instruction.Address, instruction.Address, LastItem.Address, LastItem.Address);
+			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", lineNum, instruction.Address, instruction.Address, LastItem.AddressRef.Address, LastItem.AddressRef.Address);
 			fclose(fp);
 			return false;
 		}

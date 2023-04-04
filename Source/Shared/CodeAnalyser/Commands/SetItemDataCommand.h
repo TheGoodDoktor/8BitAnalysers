@@ -23,11 +23,11 @@ public:
 class FSetItemCodeCommand : public FCommand
 {
 public:
-	FSetItemCodeCommand(uint16_t addr) :Addr(addr) {}
+	FSetItemCodeCommand(FAddressRef addr) :Addr(addr) {}
 
 	virtual void Do(FCodeAnalysisState& state) override;
 	virtual void Undo(FCodeAnalysisState& state) override;
 
-	uint16_t	Addr;
+	FAddressRef	Addr;
 };
 

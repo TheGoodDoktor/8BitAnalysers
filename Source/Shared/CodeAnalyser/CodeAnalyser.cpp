@@ -640,12 +640,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	{
 		pCodeInfo = FCodeInfo::Allocate();
 		state.SetCodeInfoForAddress(pc, pCodeInfo);
-	}
-
-	FAnalysisDasmState dasmState;
-	dasmState.pCodeInfoItem = pCodeInfo;
-	dasmState.CodeAnalysisState = &state;
-	dasmState.CurrentAddress = pc;	
+	}	
 
 	// does this function branch?
 	uint16_t jumpAddr;
@@ -685,6 +680,10 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	}
 
 	// generate disassembly
+	FAnalysisDasmState dasmState;
+	dasmState.pCodeInfoItem = pCodeInfo;
+	dasmState.CodeAnalysisState = &state;
+	dasmState.CurrentAddress = pc;
 	SetNumberOutput(&dasmState);	// not particularly happy with this - pointer to stack held globally
 	uint16_t newPC = pc;
 
@@ -1054,7 +1053,7 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 }
 
 
-void SetItemCode(FCodeAnalysisState &state, uint16_t address)
+void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
 {
 	DoCommand(state, new FSetItemCodeCommand(address));
 }
@@ -1077,7 +1076,7 @@ void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 			// set to ascii
 			pDataItem->ByteSize = 0;	// reset byte counter
 
-			uint16_t charAddr = item.Address;
+			FAddressRef charAddr = item.AddressRef;
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(charAddr);
 			while (pDataInfo != nullptr && pDataInfo->DataType == EDataType::Byte)
 			{
@@ -1092,7 +1091,7 @@ void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 					pDataItem->bBit7Terminator = true;
 					break;
 				}
-				charAddr++;
+				charAddr.Address++;
 			}
 
 			// did the operation fail? -revert to byte
@@ -1104,7 +1103,7 @@ void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 			else
 			{
 				pDataItem->DataType = EDataType::Text;
-				state.SetCodeAnalysisDirty(item.Address);
+				state.SetCodeAnalysisDirty(item.AddressRef);
 			}
 		}
 	}

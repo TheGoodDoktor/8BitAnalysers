@@ -268,6 +268,7 @@ public:
 	{
 		std::string asmText;
 		char tmp[16] = { 0 };
+		const uint16_t addr = item.AddressRef.Address;
 		
 		ENumberDisplayMode numMode = ENumberDisplayMode::None;
 		if (pDataInfo->OperandType == EOperandType::Unknown)
@@ -293,7 +294,7 @@ public:
 
 		if (pDataInfo->DataType == EDataType::Byte)
 		{
-			snprintf(tmp, sizeof(tmp),  "DEFB %s", NumStr(State.CPUInterface->ReadByte(item.Address), numMode));
+			snprintf(tmp, sizeof(tmp),  "DEFB %s", NumStr(State.ReadByte(addr), numMode));
 			asmText = tmp;
 		}
 		else if (pDataInfo->DataType == EDataType::ByteArray 
@@ -307,7 +308,7 @@ public:
 			const uint16_t numItems = pDataInfo->ByteSize;
 			for (int i=0; i<numItems; i++)
 			{
-				snprintf(tmp, sizeof(tmp),  "%s,", NumStr(State.CPUInterface->ReadByte(item.Address + i), numMode));
+				snprintf(tmp, sizeof(tmp),  "%s,", NumStr(State.ReadByte(addr + i), numMode));
 				asmText += tmp;
 			}
 			// remove last comma
@@ -315,7 +316,7 @@ public:
 		}
 		else if (pDataInfo->DataType == EDataType::Word)
 		{
-			snprintf(tmp, sizeof(tmp), "DEFW %s", NumStr(State.CPUInterface->ReadByte(item.Address), numMode));
+			snprintf(tmp, sizeof(tmp), "DEFW %s", NumStr(State.ReadByte(addr), numMode));
 			asmText = tmp;
 		}
 		else if (pDataInfo->DataType == EDataType::WordArray)
@@ -324,7 +325,7 @@ public:
 			asmText = "DEFW ";
 			for (int i = 0; i < numItems; i++)
 			{
-				snprintf(tmp, sizeof(tmp), "%s,", NumStr(State.CPUInterface->ReadWord(item.Address + i), numMode));
+				snprintf(tmp, sizeof(tmp), "%s,", NumStr(State.ReadWord(addr + i), numMode));
 				asmText += tmp;
 			}
 			// remove last comma
@@ -338,7 +339,7 @@ public:
 			bool bContainsText = false;
 			for (int i = 0; i < pDataInfo->ByteSize; i++)
 			{
-				const uint8_t ch = State.CPUInterface->ReadByte(item.Address + i);
+				const uint8_t ch = State.CPUInterface->ReadByte(addr + i);
 				if (IsSpectrumChar(ch & 0x7f))
 				{
 					if (ch & 0x80)
