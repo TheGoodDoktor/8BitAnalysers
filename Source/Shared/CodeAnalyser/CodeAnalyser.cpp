@@ -994,6 +994,8 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	// reset registered pages
 	for (FCodeAnalysisPage* pPage : GetRegisteredPages())
 	{
+		//pPage->bUsed = false;
+
 		for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 		{
 			pPage->Labels[addr] = nullptr;
@@ -1024,6 +1026,7 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	// reset banks
 	for (auto& bank : Banks)
 	{
+		bank.Description.clear();
 		bank.ItemList.clear();
 	}
 
