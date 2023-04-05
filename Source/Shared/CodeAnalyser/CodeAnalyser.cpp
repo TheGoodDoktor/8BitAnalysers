@@ -808,8 +808,15 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 	AnalyseFromPC(state, pc);
 }
 
+uint16_t g_DbgReadAddress = 0xddf8;
+
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 {
+	if (dataAddr == g_DbgReadAddress)
+	{
+		LOGINFO("Access 0x%04X at PC:", g_DbgReadAddress, pc);
+	}
+
 	if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);

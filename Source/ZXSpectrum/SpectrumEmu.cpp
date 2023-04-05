@@ -271,7 +271,7 @@ bool FSpectrumEmu::SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize, 
 			bp->type = type;
 			bp->cond = UI_DBG_BREAKCOND_NONEQUAL;
 			bp->addr = addr;
-			bp->val = ReadByte(addr);
+			bp->val = type == UI_DBG_BREAKTYPE_BYTE ? ReadByte(addr) : ReadWord(addr);
 			bp->enabled = true;
 		}
 		else
@@ -590,7 +590,12 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			}
 		}
 	}
-	else if (pins & Z80_IORQ)
+
+	// Memory gets remapped here
+	pins = OldTickCB(num, pins, OldTickUserData);
+	
+	// Handle remapping
+	if (pins & Z80_IORQ)
 	{
 		IOAnalysis.IOHandler(pc, pins);
 
@@ -617,7 +622,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		}
 	}
 
-	pins =  OldTickCB(num, pins, OldTickUserData);
 
 	if (pins & Z80_INT)	// have we had a vblank interrupt?
 	{

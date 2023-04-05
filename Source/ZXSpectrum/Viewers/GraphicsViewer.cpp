@@ -88,7 +88,7 @@ uint8_t GetHeatmapColourForMemoryAddress(FCodeAnalysisState &state, uint16_t add
 
 uint8_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
 {
-	const uint16_t pageAddress = addr & 1023;
+	const uint16_t pageAddress = addr & FCodeAnalysisPage::kPageMask;
 	const FCodeInfo* pCodeInfo = page.CodeInfo[pageAddress];
 
 	if (pCodeInfo)
@@ -117,41 +117,20 @@ uint8_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t
 	return 7;
 }
 
-
-#if 0
-void DrawMemoryAsGraphicsColumn(FGraphicsViewerState &state,uint16_t startAddr, int xPos, int columnWidth)
-{
-	uint16_t memAddr = startAddr;
-	FZXGraphicsView *pGraphicsView = state.pGraphicsView;
-	
-	for (int y = 0; y < kGraphicsViewerHeight; y++)
-	{
-		for(int xChar =0;xChar<columnWidth;xChar++)
-		{
-			const uint8_t *pImage = state.pEmu->GetMemPtr(memAddr);
-			const uint8_t col = GetHeatmapColourForMemoryAddress(state.pEmu->CodeAnalysis, memAddr, state.HeatmapThreshold);
-
-			pGraphicsView->DrawCharLine(*pImage, xPos + (xChar * 8), y,col);
-
-			memAddr++;
-		}
-	}
-}
-#endif
-
 void DrawMemoryBankAsGraphicsColumn(FGraphicsViewerState& viewerState, int16_t bankId, uint16_t memAddr, int xPos, int columnWidth)
 {
 	FZXGraphicsView* pGraphicsView = viewerState.pGraphicsView;
 	FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;
 	FCodeAnalysisBank* pBank = state.GetBank(bankId);
+	const uint16_t bankSizeMask = pBank->SizeMask;
 
 	for (int y = 0; y < kGraphicsViewerHeight; y++)
 	{
 		for (int xChar = 0; xChar < columnWidth; xChar++)
 		{
-			const uint16_t bankAddr = memAddr & 0x3fff;
+			const uint16_t bankAddr = memAddr & bankSizeMask;
 			const uint8_t charLine = pBank->Memory[bankAddr];
-			FCodeAnalysisPage& page = pBank->Pages[bankAddr >> 10];
+			FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
 			const uint8_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo,viewerState.HeatmapThreshold);
 			pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col);
 
@@ -214,7 +193,7 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 				FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
 				viewerState.Bank = bank.Id;
 				viewerState.AddressOffset = 0;
-				viewerState.MemorySize = pNewBank->NoPages * FCodeAnalysisPage::kPageSize;
+				viewerState.MemorySize = pNewBank->GetSizeBytes();
 
 			}
 		}	
@@ -405,18 +384,12 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 	else if (viewerState.ViewMode == GraphicsViewMode::Screen)
 	{
 		// http://www.breakintoprogram.co.uk/computers/zx-spectrum/screen-memory-layout
-		//viewerState.Address = 0x4000;// (int)addrInput;
-		const int16_t bankId = state.GetBankFromAddress(0x4000);
+		const int16_t bankId = viewerState.Bank == -1 ? state.GetBankFromAddress(0x4000) : viewerState.Bank;
 		FCodeAnalysisBank* pBank = state.GetBank(bankId);
 
 		uint16_t bankAddr = 0;
 		for (int y = 0; y < 192; y++)
 		{
-			//if ((int)viewerState.Address + offset > 0xffff)
-			//	break;
-
-			//uint16_t addr = viewerState.Address + offset;
-			//const uint8_t pixelLine = pBank->Memory[bankAddr];
 			const int y0to2 = ((bankAddr >> 8) & 7);
 			const int y3to5 = ((bankAddr >> 5) & 7) << 3;
 			const int y6to7 = ((bankAddr >> 11) & 3) << 6;
