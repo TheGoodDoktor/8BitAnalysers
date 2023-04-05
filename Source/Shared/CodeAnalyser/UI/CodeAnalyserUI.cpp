@@ -956,12 +956,12 @@ void UpdateItemList(FCodeAnalysisState &state)
 		state.ItemList.clear();
 		FCommentLine::FreeAll();	// recycle comment lines
 
-		int nextItemAddress = 0;
+		//int nextItemAddress = 0;
 
 		auto& banks = state.GetBanks();
 		for (auto& bank : banks)
 		{
-			if (bank.bIsDirty)
+			if (bank.bIsDirty || bank.ItemList.empty())
 			{
 				UpdateItemListForBank(state, bank);
 				bank.bIsDirty = false;
