@@ -104,17 +104,19 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 		if (itemId & kLabelId)
 		{
 			FLabelInfo* pLabelInfo = page.Labels[pageAddr];
-			assert(pLabelInfo != nullptr);
+			//assert(pLabelInfo != nullptr);
 
 			uint16_t count;
 			fread(&count, sizeof(count), 1, fp);
 
-			pLabelInfo->References.Reset();
+			if(pLabelInfo != nullptr)
+				pLabelInfo->References.Reset();
 			for (int i = 0; i < count; i++)
 			{
 				FAddressRef ref;
 				fread(&ref.Val, sizeof(ref.Val), 1, fp);
-				pLabelInfo->References.RegisterAccess(ref);
+				if (pLabelInfo != nullptr)
+					pLabelInfo->References.RegisterAccess(ref);
 			}
 		}
 		else if (itemId & kDataId)
