@@ -227,7 +227,8 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 
 void FIOAnalysis::DrawUI()
 {
-	FCodeAnalysisViewState& viewState = pSpectrumEmu->CodeAnalysis.GetFocussedViewState();
+	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawIOAnalysisGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
 	FIOAccess *pSelectedIOAccess = nullptr;
@@ -266,7 +267,10 @@ void FIOAnalysis::DrawUI()
 		for (const auto &accessPC : ioAccess.Callers.GetReferences())
 		{
 			ImGui::PushID(accessPC.Val);
-			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC);
+			ShowCodeAccessorActivity(state, accessPC);
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, accessPC);
 			ImGui::PopID();
 		}
 	}

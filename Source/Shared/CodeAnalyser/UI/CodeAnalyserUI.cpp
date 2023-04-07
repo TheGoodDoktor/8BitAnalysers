@@ -306,7 +306,10 @@ void DrawTrace(FCodeAnalysisState& state)
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			DrawCodeAddress(state, viewState, state.FrameTrace[state.FrameTrace.size() - i - 1], false);	// draw current PC
+			const FAddressRef codeAddress = state.FrameTrace[state.FrameTrace.size() - i - 1];
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(codeAddress);
+			DrawCodeAddress(state, viewState, codeAddress, false);	// draw current PC
+			//DrawCodeInfo(state, viewState, FCodeAnalysisItem(pCodeInfo, codeAddress));
 		}
 	}
 	

@@ -213,7 +213,7 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			const uint16_t instAddr = frame.InstructionTrace[i];
+			const FAddressRef instAddr = frame.InstructionTrace[i];
 
 			ImGui::PushID(i);
 
@@ -228,7 +228,7 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instAddr);
 			if (pCodeInfo)
 			{
-				ImGui::Text("%s %s", NumStr(instAddr), pCodeInfo->Text.c_str());
+				ImGui::Text("%s %s", NumStr(instAddr.Address), pCodeInfo->Text.c_str());
 				ImGui::SameLine();
 				DrawAddressLabel(state, viewState, instAddr);
 			}
@@ -244,7 +244,7 @@ void	FFrameTraceViewer::GenerateTraceOverview(FSpeccyFrameTrace& frame)
 	frame.FrameOverview.clear();
 	for (int i = 0; i < frame.InstructionTrace.size(); i++)
 	{
-		const uint16_t instAddr = frame.InstructionTrace[i];
+		const FAddressRef instAddr = frame.InstructionTrace[i];
 
 		// TODO: find closest global label
 		int labelOffset = 0;
@@ -254,7 +254,7 @@ void	FFrameTraceViewer::GenerateTraceOverview(FSpeccyFrameTrace& frame)
 		bool bFound = false;
 
 		//for (int traceIndex = i; traceIndex >= 0; traceIndex--)
-		for (int addrVal = instAddr; addrVal >= 0; addrVal--)
+		for (int addrVal = instAddr.Address; addrVal >= 0; addrVal--)
 		{
 			//uint16_t addrVal = frame.InstructionTrace[traceIndex];
 			const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);

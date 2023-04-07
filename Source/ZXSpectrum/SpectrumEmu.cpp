@@ -466,9 +466,9 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 	if (irq)
 	{
 		FCPUFunctionCall callInfo;
-		callInfo.CallAddr = prevPC;
-		callInfo.FunctionAddr = pc;
-		callInfo.ReturnAddr = prevPC;
+		callInfo.CallAddr = state.AddressRefFromPhysicalAddress(prevPC);
+		callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(pc);
+		callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(prevPC);
 		state.CallStack.push_back(callInfo);
 		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
 	}

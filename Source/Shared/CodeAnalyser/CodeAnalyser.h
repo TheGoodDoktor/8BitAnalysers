@@ -433,7 +433,7 @@ public:
 	uint16_t				StackMin;
 	uint16_t				StackMax;
 
-	std::vector<uint16_t>	FrameTrace;
+	std::vector<FAddressRef>	FrameTrace;
 
 	int						KeyConfig[(int)EKey::Count];
 

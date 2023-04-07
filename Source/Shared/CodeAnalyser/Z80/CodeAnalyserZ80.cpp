@@ -278,9 +278,9 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 			if (nextpc != pc + 3)	// call instructions are 3 bytes
 			{
 				FCPUFunctionCall callInfo;
-				callInfo.CallAddr = pc;
-				callInfo.FunctionAddr = nextpc;
-				callInfo.ReturnAddr = pc + 3;
+				callInfo.CallAddr = state.AddressRefFromPhysicalAddress(pc);
+				callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(nextpc);
+				callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(pc + 3);
 				state.CallStack.push_back(callInfo);
 			}
 			

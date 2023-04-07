@@ -789,7 +789,7 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextp
 {
 	AnalyseAtPC(state, pc);
 
-	state.FrameTrace.push_back(pc);
+	state.FrameTrace.push_back(state.AddressRefFromPhysicalAddress(pc));
 	
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo != nullptr)

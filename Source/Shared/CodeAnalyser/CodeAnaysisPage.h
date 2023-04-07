@@ -44,9 +44,9 @@ enum class EOperandType
 
 struct FCPUFunctionCall
 {
-	uint16_t	FunctionAddr = 0;
-	uint16_t	CallAddr = 0;
-	uint16_t	ReturnAddr = 0;
+	FAddressRef		FunctionAddr;
+	FAddressRef		CallAddr;
+	FAddressRef		ReturnAddr;
 };
 
 struct FItem
