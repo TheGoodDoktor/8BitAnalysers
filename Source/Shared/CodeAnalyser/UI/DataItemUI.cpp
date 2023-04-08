@@ -474,12 +474,24 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	DrawComment(pDataInfo, offset);
 }
 
-void DrawDataValueGraph(float val, bool bReset)
+struct FDataValueGraphState
 {
+	float	Min = FLT_MAX;
+	float	Max = 0;
+	float	Values[90] = { 0 };
+};
+
+std::map<uint32_t, FDataValueGraphState>	g_DataValueGraphs;
+
+void DrawDataValueGraph(FCodeAnalysisState& state, FAddressRef addressRef, float val)
+{
+	FDataValueGraphState& graphState = g_DataValueGraphs[addressRef.Val];
+	graphState.Min = std::min(graphState.Min, val);
+	graphState.Max = std::max(graphState.Max, val);
 	// Create a dummy array of contiguous float values to plot
 		// Tip: If your float aren't contiguous but part of a structure, you can pass a pointer to your first float and the sizeof() of your structure in the Stride parameter.
 	static bool animate = true;
-	static float values[90] = { 0 };
+	//static float values[90] = { 0 };
 	static int values_offset = 0;
 	static double refresh_time = 0.0;
 	if (!animate || refresh_time == 0.0)
@@ -488,8 +500,8 @@ void DrawDataValueGraph(float val, bool bReset)
 	while (refresh_time < ImGui::GetTime()) // Create dummy data at fixed 60 hz rate for the demo
 	{
 		static float phase = 0.0f;
-		values[values_offset] = val;
-		values_offset = (values_offset + 1) % IM_ARRAYSIZE(values);
+		graphState.Values[values_offset] = val;
+		values_offset = (values_offset + 1) % IM_ARRAYSIZE(graphState.Values);
 		phase += 0.10f * values_offset;
 		refresh_time += 1.0f / 60.0f;
 	}
@@ -498,24 +510,27 @@ void DrawDataValueGraph(float val, bool bReset)
 	// (in this example, we will display an average value)
 	{
 		float average = 0.0f;
-		for (int n = 0; n < IM_ARRAYSIZE(values); n++)
-			average += values[n];
-		average /= (float)IM_ARRAYSIZE(values);
+		for (int n = 0; n < IM_ARRAYSIZE(graphState.Values); n++)
+			average += graphState.Values[n];
+		average /= (float)IM_ARRAYSIZE(graphState.Values);
 		char overlay[32];
 		snprintf(overlay,32, "avg %f", average);
-		ImGui::PlotLines("Lines", values, IM_ARRAYSIZE(values), values_offset, overlay, 0.0f, 255.0f, ImVec2(0, 80));
+		ImGui::PlotLines("Lines", graphState.Values, IM_ARRAYSIZE(graphState.Values), values_offset, overlay, graphState.Min, graphState.Max, ImVec2(0, 80));
 	}
-	//ImGui::PlotHistogram("Histogram", arr, IM_ARRAYSIZE(arr), 0, NULL, 0.0f, 1.0f, ImVec2(0, 80));
+	//ImGui::PlotHistogram("Histogram", graphState.Values, IM_ARRAYSIZE(graphState.Values), 0, NULL, graphState.Min, graphState.Max, ImVec2(0, 80));
 }
 
-void DrawDataValueGraph(uint8_t val, bool bReset)
+void DrawDataValueGraphByte(FCodeAnalysisState& state, FAddressRef addressRef)
 {
-	DrawDataValueGraph(static_cast<float>(val), bReset);
+	const uint8_t val = state.ReadByte(addressRef);
+
+	DrawDataValueGraph(state,addressRef,static_cast<float>(val));
 }
 
-void DrawDataValueGraph(uint16_t val, bool bReset)
+void DrawDataValueGraphWord(FCodeAnalysisState& state, FAddressRef addressRef)
 {
-	DrawDataValueGraph(static_cast<float>(val), bReset);
+	const uint16_t val = state.ReadWord(addressRef);
+	DrawDataValueGraph(state, addressRef, static_cast<float>(val));
 }
 
 
@@ -618,11 +633,11 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	switch (pDataInfo->DataType)
 	{
 	case EDataType::Byte:
-		DrawDataValueGraph(state.ReadByte(physAddr), false);
+		DrawDataValueGraphByte(state, item.AddressRef);
 		break;
 
 	case EDataType::Word:
-		DrawDataValueGraph(state.ReadWord(physAddr), false);
+		DrawDataValueGraphWord(state, item.AddressRef);
 		break;
 
 	case EDataType::Text:

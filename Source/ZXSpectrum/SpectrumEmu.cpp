@@ -824,7 +824,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		char bankName[32];
 		sprintf(bankName, "ROM %d", bankNo);
 		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16,ZXEmuState.rom[bankNo], true);
-		CodeAnalysis.GetBank(ROMBanks[bankNo])->PrimaryMappedPage = 0x0000;
+		CodeAnalysis.GetBank(ROMBanks[bankNo])->PrimaryMappedPage = 0;
 	}
 
 	// create & register RAM banks
@@ -833,7 +833,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		char bankName[32];
 		sprintf(bankName, "RAM %d", bankNo);
 		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false);
-		CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 0xC000;
+		CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
 	}
 
 	// CreateBank(name,size in kb,r/w)
@@ -842,9 +842,9 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// Setup initial machine memory config
 	if (config.Model == ESpectrumModel::Spectrum48K)
 	{
-		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0x4000;
-		CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 0x8000;
-		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 0xC000;
+		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 16;
+		CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 32;
+		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 48;
 
 		SetROMBank(0);
 		SetRAMBank(1, 0);	// 0x4000 - 0x7fff
@@ -853,9 +853,9 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	}
 	else
 	{
-		CodeAnalysis.GetBank(RAMBanks[5])->PrimaryMappedPage = 0x4000;
-		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 0x8000;
-		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0xC000;
+		CodeAnalysis.GetBank(RAMBanks[5])->PrimaryMappedPage = 16;
+		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
+		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 48;
 
 		SetROMBank(0);
 		SetRAMBank(1, 5);	// 0x4000 - 0x7fff
@@ -916,9 +916,10 @@ void FSpectrumEmu::Shutdown()
 
 void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 {
+	// reset systems
 	MemoryAccessHandlers.clear();	// remove old memory handlers
-
 	ResetMemoryStats(MemStats);
+	FrameTraceViewer.Reset();
 
 	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
 	SetWindowTitle(windowTitle.c_str());

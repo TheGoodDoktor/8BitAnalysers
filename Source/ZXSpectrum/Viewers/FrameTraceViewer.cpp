@@ -23,6 +23,19 @@ void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 	ShowWritesView = new FZXGraphicsView(320, 256);
 }
 
+void FFrameTraceViewer::Reset()
+{
+	for (int i = 0; i < kNoFramesInTrace; i++)
+	{
+		auto& frame = FrameTrace[i];
+		frame.InstructionTrace.clear();
+		frame.ScreenPixWrites.clear();
+		frame.ScreenAttrWrites.clear();
+		frame.FrameOverview.clear();
+		frame.MemoryDiffs.clear();
+	}
+}
+
 void	FFrameTraceViewer::Shutdown()
 {
 	for (int i = 0; i < kNoFramesInTrace; i++)

@@ -43,6 +43,7 @@ class FFrameTraceViewer
 {
 public:
 	void	Init(FSpectrumEmu* pEmu);
+	void	Reset();
 	void	Shutdown();
 	void	CaptureFrame();
 	void	Draw();

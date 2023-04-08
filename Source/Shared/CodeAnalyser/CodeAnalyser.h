@@ -335,6 +335,13 @@ public:
 			return *(uint16_t*)(MappedMem[address >> kPageShift] + (address & kPageMask));
 	}
 
+	uint16_t		ReadWord(FAddressRef address) const
+	{
+		const FCodeAnalysisBank* pBank = GetBank(address.BankId);
+		assert(pBank != nullptr);
+		return *(uint16_t*)(&pBank->Memory[address.Address - pBank->GetMappedAddress()]);
+	}
+
 	void		WriteByte(uint16_t address, uint8_t value) 
 	{ 
 		if (MappedMem[address >> kPageShift] == nullptr)
