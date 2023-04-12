@@ -19,6 +19,7 @@ struct FFrameOverviewItem
 
 struct FMemoryDiff
 {
+	int			Bank;
 	uint16_t	Address;
 	uint8_t		OldVal;
 	uint8_t		NewVal;
@@ -26,10 +27,11 @@ struct FMemoryDiff
 
 struct FSpeccyFrameTrace
 {
-	void*					Texture;
-	uint8_t					MemoryDump[1 << 16];	// 64K
+	void*					Texture = nullptr;
+	uint8_t					MemoryBanks[8][16 * 1024];	// 8 x 16K banks
+	uint8_t					MemoryBankRegister = 0;
 	void*					CPUState = nullptr;
-	std::vector<uint16_t>	InstructionTrace;
+	std::vector<FAddressRef>	InstructionTrace;
 	std::vector<FMemoryAccess>	ScreenPixWrites;
 	std::vector<FMemoryAccess>	ScreenAttrWrites;
 
@@ -41,6 +43,7 @@ class FFrameTraceViewer
 {
 public:
 	void	Init(FSpectrumEmu* pEmu);
+	void	Reset();
 	void	Shutdown();
 	void	CaptureFrame();
 	void	Draw();

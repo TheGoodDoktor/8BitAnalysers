@@ -1,3 +1,4 @@
 #pragma once
+#include <cstdint>
 
-void ShowCodeToolTipZ80(struct FCodeAnalysisState& state, const struct FCodeInfo* pCodeInfo);
+void ShowCodeToolTipZ80(class FCodeAnalysisState& state, uint16_t addr);

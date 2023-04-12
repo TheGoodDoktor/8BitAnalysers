@@ -24,6 +24,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "GameViewers/MiscGameViewers.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/GraphicsViewer.h"
+#include "Viewers/ZXGraphicsView.h"
 #include "Viewers/BreakpointViewer.h"
 #include "Viewers/OverviewViewer.h"
 #include "Util/FileUtil.h"
@@ -89,7 +90,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data)
 }
 
 // Memory access functions
-
+#if 0
 uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr)
 {
 	if (layer == 0)
@@ -157,10 +158,12 @@ void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data)
 		}
 	}
 }
-
+#endif
 uint8_t		FSpectrumEmu::ReadByte(uint16_t address) const
 {
-	return MemReadFunc(CurrentLayer, address, const_cast<zx_t *>(&ZXEmuState));
+	return mem_rd(const_cast<mem_t*>(&ZXEmuState.mem), address);
+
+	//return MemReadFunc(CurrentLayer, address, const_cast<zx_t *>(&ZXEmuState));
 
 }
 uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const 
@@ -182,14 +185,25 @@ const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const
 	}
 	else
 	{
-		return MemGetPtr(const_cast<zx_t*>(&ZXEmuState), CurrentLayer, address);
+		const uint8_t memConfig = ZXEmuState.last_mem_config;
+
+		if (address < 0x4000)
+			return &ZXEmuState.rom[(memConfig & (1 << 4)) ? 1 : 0][address];
+		else if (address < 0x8000)
+			return &ZXEmuState.ram[5][address - 0x4000];
+		else if (address < 0xC000)
+			return &ZXEmuState.ram[2][address - 0x8000];
+		else
+			return &ZXEmuState.ram[memConfig & 7][address - 0xC000];
 	}
 }
 
 
 void FSpectrumEmu::WriteByte(uint16_t address, uint8_t value)
 {
-	MemWriteFunc(CurrentLayer, address, value, &ZXEmuState);
+	mem_wr(&ZXEmuState.mem, address, value);
+
+	//MemWriteFunc(CurrentLayer, address, value, &ZXEmuState);
 }
 
 
@@ -220,33 +234,35 @@ bool FSpectrumEmu::IsAddressBreakpointed(uint16_t addr)
 	return false;
 }
 
-bool FSpectrumEmu::ToggleExecBreakpointAtAddress(uint16_t addr)
+bool FSpectrumEmu::SetExecBreakpointAtAddress(uint16_t addr,bool bSet)
 {
-	int index = _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr);
-	if (index >= 0) 
-	{
-		/* breakpoint already exists, remove */
-		_ui_dbg_bp_del(&UIZX.dbg, index);
+	const bool bAlreadySet = IsAddressBreakpointed(addr);
+	if (bAlreadySet == bSet)
 		return false;
-	}
-	else 
-	{
-		/* breakpoint doesn't exist, add a new one */
-		return _ui_dbg_bp_add_exec(&UIZX.dbg, true, addr);
-	}
-}
 
-bool FSpectrumEmu::ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize)
-{
-	const int type = dataSize == 1 ? UI_DBG_BREAKTYPE_BYTE : UI_DBG_BREAKTYPE_WORD;
-	int index = _ui_dbg_bp_find(&UIZX.dbg, type, addr);
-	if (index >= 0)
+	if (bSet)
 	{
-		// breakpoint already exists, remove 
-		_ui_dbg_bp_del(&UIZX.dbg, index);
-		return false;
+		_ui_dbg_bp_add_exec(&UIZX.dbg, true, addr);
 	}
 	else
+	{
+		const int index = _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr);
+		/* breakpoint already exists, remove */
+		assert(index >= 0);
+		_ui_dbg_bp_del(&UIZX.dbg, index);
+	}
+
+	return true;
+}
+
+bool FSpectrumEmu::SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize, bool bSet)
+{
+	const bool bAlreadySet = IsAddressBreakpointed(addr);
+	if (bAlreadySet == bSet)
+		return false;
+	const int type = dataSize == 1 ? UI_DBG_BREAKTYPE_BYTE : UI_DBG_BREAKTYPE_WORD;
+
+	if (bSet)
 	{
 		// breakpoint doesn't exist, add a new one 
 		if (UIZX.dbg.dbg.num_breakpoints < UI_DBG_MAX_BREAKPOINTS)
@@ -255,15 +271,22 @@ bool FSpectrumEmu::ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSiz
 			bp->type = type;
 			bp->cond = UI_DBG_BREAKCOND_NONEQUAL;
 			bp->addr = addr;
-			bp->val = ReadByte(addr);
+			bp->val = type == UI_DBG_BREAKTYPE_BYTE ? ReadByte(addr) : ReadWord(addr);
 			bp->enabled = true;
-			return true;
 		}
-		else 
+		else
 		{
 			return false;
 		}
 	}
+	else
+	{
+		int index = _ui_dbg_bp_find(&UIZX.dbg, type, addr);
+		assert(index >= 0);
+		_ui_dbg_bp_del(&UIZX.dbg, index);
+	}
+	
+	return true;
 }
 
 void FSpectrumEmu::Break(void)
@@ -298,7 +321,7 @@ void FSpectrumEmu::StepScreenWrite()
 	bStepToNextScreenWrite = true;
 }
 
-void FSpectrumEmu::GraphicsViewerSetView(uint16_t address, int charWidth)
+void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address, int charWidth)
 {
 	GraphicsViewerGoToAddress(address);
 	GraphicsViewerSetCharWidth(charWidth);
@@ -324,7 +347,7 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 
 		FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(kScreenPixMemStart);
 		pScreenPixData->DataType = EDataType::ScreenPixels;
-		pScreenPixData->Address = kScreenPixMemStart;
+		//pScreenPixData->Address = kScreenPixMemStart;
 		pScreenPixData->ByteSize = kScreenPixMemSize;
 	}
 
@@ -443,14 +466,14 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 	if (irq)
 	{
 		FCPUFunctionCall callInfo;
-		callInfo.CallAddr = prevPC;
-		callInfo.FunctionAddr = pc;
-		callInfo.ReturnAddr = prevPC;
+		callInfo.CallAddr = state.AddressRefFromPhysicalAddress(prevPC);
+		callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(pc);
+		callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(prevPC);
 		state.CallStack.push_back(callInfo);
 		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
 	}
 
-	bool bBreak = RegisterCodeExecuted(state, pc, nextpc);
+	const bool bBreak = RegisterCodeExecuted(state, pc, nextpc);
 	//FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	//pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
 	// check for breakpointed code line
@@ -544,19 +567,20 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		else if (pins & Z80_WR) 
 		{
 			if (state.bRegisterDataAccesses)
-				RegisterDataWrite(state, pc, addr);
-
-			state.SetLastWriterForAddress(addr,pc);
+				RegisterDataWrite(state, pc, addr, value);
+			const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
+			const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+			state.SetLastWriterForAddress(addr, pcAddrRef);
 
 			// Log screen pixel writes
 			if (addr >= 0x4000 && addr < 0x5800)
 			{
-				FrameScreenPixWrites.push_back({ addr,value, pc });
+				FrameScreenPixWrites.push_back({ addrRef,value, pcAddrRef });
 			}
 			// Log screen attribute writes
 			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
 			{
-				FrameScreenAttrWrites.push_back({ addr,value, pc });
+				FrameScreenAttrWrites.push_back({ addrRef,value, pcAddrRef });
 			}
 			FCodeInfo *pCodeWrittenTo = state.GetCodeInfoForAddress(addr);
 			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
@@ -566,7 +590,12 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			}
 		}
 	}
-	else if (pins & Z80_IORQ)
+
+	// Memory gets remapped here
+	pins = OldTickCB(num, pins, OldTickUserData);
+	
+	// Handle remapping
+	if (pins & Z80_IORQ)
 	{
 		IOAnalysis.IOHandler(pc, pins);
 
@@ -593,7 +622,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		}
 	}
 
-	pins =  OldTickCB(num, pins, OldTickUserData);
 
 	if (pins & Z80_INT)	// have we had a vblank interrupt?
 	{
@@ -621,65 +649,33 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 	return pEmu->Z80Tick(num, pins);
 }
 
-void CheckAddressSpaceItems(const FCodeAnalysisState& state)
-{
-	for (int addr = 0; addr < 1 << 16; addr++)
-	{
-		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addr);
-		assert(pDataInfo->Address == addr);
-	}
-}
-
 // Bank is ROM bank 0 or 1
 // this is always slot 0
 void FSpectrumEmu::SetROMBank(int bankNo)
 {
-	if (ROMBank == bankNo)
+	const int16_t bankId = ROMBanks[bankNo];
+	if (CurROMBank == bankId)
 		return;
-
-	const uint16_t firstBankPage = bankNo * kNoSlotPages;
-
-	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
-	{
-		ROMPages[firstBankPage + pageNo].ChangeAddress((pageNo * FCodeAnalysisPage::kPageSize));
-		CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &ROMPages[firstBankPage + pageNo], &ROMPages[firstBankPage + pageNo]);	// Read/Write
-	}
-
-	CodeAnalysis.SetMemoryRemapped();
-#ifdef _DEBUG
-	if (bInitialised)
-		CheckAddressSpaceItems(CodeAnalysis);
-#endif
+	// Unmap old bank
+	CodeAnalysis.UnMapBank(CurROMBank, 0);
+	CodeAnalysis.MapBank(bankId, 0);
+	CurROMBank = bankId;
 }
 
 // Slot is physical 16K memory region (0-3) 
 // Bank is a 16K Spectrum RAM bank (0-7)
 void FSpectrumEmu::SetRAMBank(int slot, int bankNo)
 {
-	if (RAMBanks[slot] == bankNo)
+	const int16_t bankId = RAMBanks[bankNo];
+	if (CurRAMBank[slot] == bankId)
 		return;
-	RAMBanks[slot] = bankNo;
 
-	const uint16_t firstSlotPage = slot * kNoSlotPages;
-	const uint16_t firstBankPage = bankNo * kNoBankPages;
-	uint16_t slotAddress = firstSlotPage * FCodeAnalysisPage::kPageSize;
+	// Unmap old bank
+	const int startPage = slot * kNoBankPages;
+	CodeAnalysis.UnMapBank(CurRAMBank[slot], startPage);
+	CodeAnalysis.MapBank(bankId, startPage);
 
-	for (int pageNo = 0; pageNo < kNoSlotPages; pageNo++)
-	{
-		const int slotPageNo = firstSlotPage + pageNo;
-		FCodeAnalysisPage& bankPage = RAMPages[firstBankPage + pageNo];
-		bankPage.ChangeAddress(slotAddress);
-		CodeAnalysis.SetCodeAnalysisRWPage(slotPageNo, &bankPage, &bankPage);	// Read/Write
-		slotAddress += FCodeAnalysisPage::kPageSize;
-	}
-
-	CodeAnalysis.SetMemoryRemapped();
-
-#ifdef _DEBUG
-	if(bInitialised)
-		CheckAddressSpaceItems(CodeAnalysis);
-#endif
-
+	CurRAMBank[slot] = bankId;
 }
 
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
@@ -692,6 +688,8 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	FGlobalConfig& globalConfig = GetGlobalConfig();
 	SetNumberDisplayMode(globalConfig.NumberDisplayMode);
 	CodeAnalysis.Config.bShowOpcodeValues = globalConfig.bShowOpcodeValues;
+	CodeAnalysis.Config.bShowBanks = config.Model == ESpectrumModel::Spectrum128K;
+	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 
 	// setup pixel buffer
 	const size_t pixelBufferSize = 320 * 256 * 4;
@@ -722,7 +720,10 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	zx_init(&ZXEmuState, &desc);
 
 	GamesList.Init(this);
-	GamesList.EnumerateGames(globalConfig.SnapshotFolder.c_str());
+	if(config.Model == ESpectrumModel::Spectrum128K)
+		GamesList.EnumerateGames(globalConfig.SnapshotFolder128.c_str());
+	else
+		GamesList.EnumerateGames(globalConfig.SnapshotFolder.c_str());
 
 	RZXManager.Init(this);
 	RZXGamesList.Init(this);
@@ -797,6 +798,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	LoadGameConfigs(this);
 
 	// Set up code analysis
+/*
 	// initialise code analysis pages
 	
 	// ROM
@@ -815,10 +817,35 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		RAMPages[pageNo].Initialise(0);
 		CodeAnalysis.RegisterPage(&RAMPages[pageNo], pageName);
 	}
+*/
+	// create & register ROM banks
+	for (int bankNo = 0; bankNo < kNoROMBanks; bankNo++)
+	{
+		char bankName[32];
+		sprintf(bankName, "ROM %d", bankNo);
+		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16,ZXEmuState.rom[bankNo], true);
+		CodeAnalysis.GetBank(ROMBanks[bankNo])->PrimaryMappedPage = 0;
+	}
+
+	// create & register RAM banks
+	for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
+	{
+		char bankName[32];
+		sprintf(bankName, "RAM %d", bankNo);
+		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false);
+		CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
+	}
+
+	// CreateBank(name,size in kb,r/w)
+	// return bank id
 
 	// Setup initial machine memory config
 	if (config.Model == ESpectrumModel::Spectrum48K)
 	{
+		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 16;
+		CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 32;
+		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 48;
+
 		SetROMBank(0);
 		SetRAMBank(1, 0);	// 0x4000 - 0x7fff
 		SetRAMBank(2, 1);	// 0x8000 - 0xBfff
@@ -826,15 +853,16 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	}
 	else
 	{
+		CodeAnalysis.GetBank(RAMBanks[5])->PrimaryMappedPage = 16;
+		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
+		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 48;
+
 		SetROMBank(0);
 		SetRAMBank(1, 5);	// 0x4000 - 0x7fff
 		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
 		SetRAMBank(3, 0);	// 0xc000 - 0xffff
 	}
 
-#ifdef _DEBUG
-	CheckAddressSpaceItems(CodeAnalysis);
-#endif
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
 
@@ -855,11 +883,14 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		if (config.Model == ESpectrumModel::Spectrum128K)
 			romJsonFName = kRomInfo128JsonFile;
 
-		InitialiseCodeAnalysis(CodeAnalysis, this);
+		CodeAnalysis.Init(this);
 
 		if (FileExists(romJsonFName.c_str()))
-			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+			ImportAnalysisJson(this, romJsonFName.c_str());
 	}
+
+	if(config.SkoolkitImport.empty() == false)
+		ImportSkoolFile(config.SkoolkitImport.c_str());
 
 	bInitialised = true;
 	return true;
@@ -885,23 +916,21 @@ void FSpectrumEmu::Shutdown()
 
 void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 {
+	// reset systems
 	MemoryAccessHandlers.clear();	// remove old memory handlers
-
 	ResetMemoryStats(MemStats);
+	FrameTraceViewer.Reset();
 
 	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
 	SetWindowTitle(windowTitle.c_str());
 	
-	// Reset Functions
-	//FunctionStack.clear();
-	//Functions.clear();
-
 	// start up game
 	if(pActiveGame!=nullptr)
 		delete pActiveGame->pViewerData;
 	delete pActiveGame;
 	
 	FGame *pNewGame = new FGame;
+	pGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
 	pNewGame->pConfig = pGameConfig;
 	pNewGame->pViewerConfig = pGameConfig->pViewerConfig;
 	assert(pGameConfig->pViewerConfig != nullptr);
@@ -911,13 +940,13 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
 
 	// Initialise code analysis
-	InitialiseCodeAnalysis(CodeAnalysis, this);
+	CodeAnalysis.Init(this);
 
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
-		CodeAnalysis.ViewState[i].GoToAddress = pGameConfig->ViewConfigs[i].ViewAddress;
+		CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
 	}
 
 	const std::string root = GetGlobalConfig().WorkspaceRoot;
@@ -928,23 +957,27 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 		romJsonFName = root + kRomInfo128JsonFile;
 
 	const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+	const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 	if (FileExists(analysisJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+	{
+		ImportAnalysisJson(this, analysisJsonFName.c_str());
+		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+	}
 	else
 		LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
 
 	LoadGameState(this, saveStateFName.c_str());
 
 	if (FileExists(romJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+		ImportAnalysisJson(this, romJsonFName.c_str());
 
 	// where do we want pokes to live?
 	LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	FormatSpectrumMemory(CodeAnalysis);
-	CodeAnalysis.SetCodeAnalysisDirty();
+	CodeAnalysis.SetAddressRangeDirty();
 
 	// Start in break mode so the memory will be in it's initial state. 
 	// Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
@@ -968,7 +1001,7 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 	{
 		if (pGameConfig->Name == pGameName)
 		{
-			const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+			const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
 			const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 			if (GamesList.LoadGame(gameFile.c_str()))
 			{
@@ -997,10 +1030,12 @@ void FSpectrumEmu::SaveCurrentGameData()
 			const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
 			const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 			const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+			const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 			const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 			EnsureDirectoryExists(std::string(root + "Configs").c_str());
 			EnsureDirectoryExists(std::string(root + "GameData").c_str());
 			EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
+			EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
 			EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
 
 			// set config values
@@ -1010,7 +1045,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 				FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
 
 				viewConfig.bEnabled = viewState.Enabled;
-				viewConfig.ViewAddress = viewState.GetCursorItem() ? viewState.GetCursorItem()->Address : 0;
+				viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
@@ -1018,7 +1053,8 @@ void FSpectrumEmu::SaveCurrentGameData()
 
 			// The Future
 			SaveGameState(this, saveStateFName.c_str());
-			ExportGameJson(this, analysisJsonFName.c_str());
+			ExportGameAnalysisJson(this, analysisJsonFName.c_str());
+			ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		}
 	}
 
@@ -1086,7 +1122,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
-						const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+						const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
 						const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 
 						if(GamesList.LoadGame(gameFile.c_str()))
@@ -1164,7 +1200,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			
 			if (pActiveGame && ImGui::MenuItem("Reload Snapshot"))
 			{
-				const std::string snapFolder = GetGlobalConfig().SnapshotFolder;
+				const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
 				const std::string gameFile = snapFolder + pActiveGame->pConfig->SnapshotFile;
 				GamesList.LoadGame(gameFile.c_str());
 			}
@@ -1231,19 +1267,19 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				if (ImGui::MenuItem("Decimal", 0, GetNumberDisplayMode() == ENumberDisplayMode::Decimal))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::Decimal);
-					CodeAnalysis.SetCodeAnalysisDirty();
+					CodeAnalysis.SetAllBanksDirty();
 					bClearCode = true;
 				}
 				if (ImGui::MenuItem("Hex - FEh", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAitch))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
-					CodeAnalysis.SetCodeAnalysisDirty();
+					CodeAnalysis.SetAllBanksDirty();
 					bClearCode = true;
 				}
 				if (ImGui::MenuItem("Hex - $FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexDollar))
 				{
 					SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
-					CodeAnalysis.SetCodeAnalysisDirty();
+					CodeAnalysis.SetAllBanksDirty();
 					bClearCode = true;
 				}
 
@@ -1537,15 +1573,14 @@ void FSpectrumEmu::Tick()
 		if (bStepToNextFrame)
 		{
 			_ui_dbg_break(&UIZX.dbg);
-			CodeAnalyserGoToAddress(CodeAnalysis.GetFocussedViewState(), GetPC());
+			CodeAnalysis.GetFocussedViewState().GoToAddress({ CodeAnalysis.GetBankFromAddress(GetPC()), GetPC() });
 			bStepToNextFrame = false;
 		}
-
 		
 		// on debug break send code analyser to address
 		else if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
 		{
-			CodeAnalyserGoToAddress(CodeAnalysis.GetFocussedViewState(), GetPC());
+			CodeAnalysis.GetFocussedViewState().GoToAddress({ CodeAnalysis.GetBankFromAddress(GetPC()), GetPC() });
 		}
 	}
 
@@ -1865,7 +1900,7 @@ void FSpectrumEmu::DrawCheatsUI()
 				
 				// Display the value of the memory location in the input field.
 				// If the user has modified the value then display that instead.
-				uint8_t value = entry.bUserDefinedValueDirty ? entry.Value : CodeAnalysis.CPUInterface->ReadByte(entry.Address);
+				uint8_t value = entry.bUserDefinedValueDirty ? entry.Value : CodeAnalysis.ReadByte(entry.Address);
 				
 				if (bAdvancedMode)
 					ImGui::SameLine();
@@ -1930,8 +1965,9 @@ void FSpectrumEmu::DrawCheatsUI()
 				FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(entry.Address);
 				if (pCodeInfo)
 					pCodeInfo->Text.clear();
+			
+				CodeAnalysis.SetCodeAnalysisDirty(entry.Address);
 			}
-			CodeAnalysis.SetCodeAnalysisDirty();
 
 			LOGINFO("Poke %s: '%s' [%d byte(s)]", cheat.bEnabled ? "applied" : "reverted", cheat.Description.c_str(), cheat.Entries.size());
 
@@ -2041,6 +2077,44 @@ void FSpectrumEmu::DoSkoolKitTest(const char* pGameName, const char* pInSkoolFil
 	::ExportSkoolFile(CodeAnalysis, outFname.c_str(), base, &skoolInfo);
 }
 
+void FSpectrumConfig::ParseCommandline(int argc, char** argv)
+{
+	std::vector<std::string> argList;
+	for (int arg = 0; arg < argc; arg++)
+	{
+		argList.emplace_back(argv[arg]);
+	}
+
+	auto argIt = argList.begin();
+	argIt++;	// skip exe name
+	while (argIt != argList.end())
+	{
+		if (*argIt == std::string("-128"))
+		{
+			Model = ESpectrumModel::Spectrum128K;
+		}
+		else if (*argIt == std::string("-game"))
+		{
+			if (++argIt == argList.end())
+			{
+				LOGERROR("-game : No game specified");
+				break;
+			}
+			SpecificGame = *++argIt;
+		}
+		else if (*argIt == std::string("-skoolfile"))
+		{
+			if (++argIt == argList.end())
+			{
+				LOGERROR("-skoolfile : No skoolkit file specified");
+				break;
+			}
+			SkoolkitImport = *++argIt;
+		}
+
+		++argIt;
+	}
+}
 // Util functions - move
 uint16_t GetScreenPixMemoryAddress(int x, int y)
 {

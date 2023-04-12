@@ -5,9 +5,9 @@
 #include "chips/z80.h"
 
 
-bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerIndirectionInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -17,13 +17,13 @@ bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_
 		// LD x,(nnnn)
 	case 0x2A:
 	case 0x3A:
-		*out_addr = (pCPUInterface->ReadByte(pc + 2) << 8) | pCPUInterface->ReadByte(pc + 1);
+		*out_addr = state.ReadWord(pc + 1);
 		return true;
 	
 		// extended instructions
 	case 0xED:
 	{
-		const uint8_t exInstrByte = pCPUInterface->ReadByte(pc + 1);
+		const uint8_t exInstrByte = state.ReadByte(pc + 1);
 		switch (exInstrByte)
 		{
 		case 0x43://ld (**),bc
@@ -34,7 +34,7 @@ bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_
 		case 0x6B://ld hl,(**)
 		case 0x73://ld (**),sp
 		case 0x7B://ld sp,(**)
-			*out_addr = (pCPUInterface->ReadByte(pc + 3) << 8) | pCPUInterface->ReadByte(pc + 2);
+			*out_addr = state.ReadWord(pc + 2);
 			return true;
 		}
 
@@ -45,12 +45,12 @@ bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_
 	case 0xDD:
 	case 0xFD:
 	{
-		const uint8_t exInstrByte = pCPUInterface->ReadByte(pc + 1);
+		const uint8_t exInstrByte = state.ReadByte(pc + 1);
 		switch (exInstrByte)
 		{
 		case 0x22://ld (**),ix/iy
 		case 0x2A://ld ix/iy,(**)
-			*out_addr = (pCPUInterface->ReadByte(pc + 3) << 8) | pCPUInterface->ReadByte(pc + 2);
+			*out_addr = state.ReadWord(pc + 2);
 			return true;
 		}
 	}
@@ -60,12 +60,12 @@ bool CheckPointerIndirectionInstructionZ80(ICPUInterface* pCPUInterface, uint16_
 }
 
 
-bool CheckPointerRefInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerRefInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	if (CheckPointerIndirectionInstructionZ80(pCPUInterface, pc, out_addr))
+	if (CheckPointerIndirectionInstructionZ80(state, pc, out_addr))
 		return true;
 
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -74,28 +74,28 @@ bool CheckPointerRefInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, ui
 	case 0x11:
 	case 0x21:
 	case 0x31:
-		*out_addr = (pCPUInterface->ReadByte(pc + 2) << 8) | pCPUInterface->ReadByte(pc + 1);
+		*out_addr = state.ReadWord(pc + 1);
 		return true;
 
 		// IX/IY instructions
 	case 0xDD:
 	case 0xFD:
-	{
-		const uint8_t exInstrByte = pCPUInterface->ReadByte(pc + 1);
-		switch (exInstrByte)
 		{
-		case 0x21://ld ix/iy,**
-			*out_addr = (pCPUInterface->ReadByte(pc + 3) << 8) | pCPUInterface->ReadByte(pc + 2);
-			return true;
+			const uint8_t exInstrByte = state.ReadByte(pc + 1);
+			switch (exInstrByte)
+			{
+			case 0x21://ld ix/iy,**
+				*out_addr = state.ReadWord(pc + 2);
+				return true;
+			}
 		}
-	}
 	}
 	return false;
 }
 
-bool CheckJumpInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckJumpInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -109,7 +109,7 @@ bool CheckJumpInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t
 		/* JP cc,nnnn */
 	case 0xDA: case 0xFA: case 0xD2: case 0xC2:
 	case 0xF2: case 0xEA: case 0xE2: case 0xCA:
-		*out_addr = pCPUInterface->ReadWord(pc + 1);
+		*out_addr = state.ReadWord(pc + 1);
 		return true;
 
 		/* DJNZ d */
@@ -119,7 +119,7 @@ bool CheckJumpInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t
 		/* JR cc,d */
 	case 0x38: case 0x30: case 0x20: case 0x28:
 	{
-		const int8_t relJump = (int8_t)pCPUInterface->ReadByte(pc + 1);
+		const int8_t relJump = (int8_t)state.ReadByte(pc + 1);
 		*out_addr = pc + 2 + relJump;	// +2 because it's relative to the next instruction
 	}
 	return true;
@@ -137,9 +137,9 @@ bool CheckJumpInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t
 	return false;
 }
 
-bool CheckCallInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
+bool CheckCallInstructionZ80(FCodeAnalysisState& state, uint16_t pc)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -162,9 +162,9 @@ bool CheckCallInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
 	return false;
 }
 
-bool CheckStopInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
+bool CheckStopInstructionZ80(FCodeAnalysisState& state, uint16_t pc)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -196,7 +196,7 @@ bool CheckStopInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
 		return true;
 	case 0xED:	// extended instructions
 	{
-		const uint8_t extInstrByte = pCPUInterface->ReadByte(pc + 1);
+		const uint8_t extInstrByte = state.ReadByte(pc + 1);
 		switch (extInstrByte)
 		{
 		case 0x4D:	// more RET functions
@@ -215,7 +215,7 @@ bool CheckStopInstructionZ80(ICPUInterface* pCPUInterface, uint16_t pc)
 	case 0xDD:	// IX
 	case 0xFD:	// IY
 	{
-		const uint8_t extInstrByte = pCPUInterface->ReadByte(pc + 1);
+		const uint8_t extInstrByte = state.ReadByte(pc + 1);
 		switch (extInstrByte)
 		{
 		case 0xE9:	// JP(IX)
@@ -278,9 +278,9 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 			if (nextpc != pc + 3)	// call instructions are 3 bytes
 			{
 				FCPUFunctionCall callInfo;
-				callInfo.CallAddr = pc;
-				callInfo.FunctionAddr = nextpc;
-				callInfo.ReturnAddr = pc + 3;
+				callInfo.CallAddr = state.AddressRefFromPhysicalAddress(pc);
+				callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(nextpc);
+				callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(pc + 3);
 				state.CallStack.push_back(callInfo);
 			}
 			
@@ -340,7 +340,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 			{
 				pStackItem->DataType = EDataType::Word;
 				pStackItem->ByteSize = 2;
-				state.SetCodeAnalysisDirty();
+				state.SetCodeAnalysisDirty(stackPointer);
 			}
 		}
 	}

@@ -206,7 +206,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 		formattingOptions.CharacterSet = params.CharacterSet;
 		formattingOptions.EmptyCharNo = params.IgnoreCharacter;
 		FormatData(state, formattingOptions);
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(params.Address);
 	}
 
 	// Display Character Map
@@ -222,7 +222,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	{
 		for (int x = 0; x < params.Width; x++)
 		{
-			const uint8_t val = state.CPUInterface->ReadByte(params.Address + byte);
+			const uint8_t val = state.ReadByte(params.Address + byte);
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(params.Address + byte);
 			const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
 			const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
@@ -283,7 +283,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 		const int xChar = (int)floor(mousePosX / rectSize);
 		const int yChar = (int)floor(mousePosY / rectSize);
 		const uint16_t charAddress = pCharMap->Params.Address + (xChar + (yChar * pCharMap->Params.Width));
-		const uint8_t charVal = state.CPUInterface->ReadByte(charAddress);
+		const uint8_t charVal = state.ReadByte(charAddress);
 
 		const float xp = pos.x + (xChar * rectSize);
 		const float yp = pos.y + (yChar * rectSize);
@@ -315,13 +315,14 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	}
 
 	// draw hovered address
-	if (viewState.HighlightAddress != -1)
+	if (viewState.HighlightAddress.IsValid())
 	{
 		const uint16_t charMapStartAddr = params.Address;
 		const uint16_t charMapEndAddr = params.Address + (params.Width * params.Height) - 1;
-		if (viewState.HighlightAddress >= params.Address && viewState.HighlightAddress <= charMapEndAddr)	// pixel
+		// TODO: this needs to use banks
+		if (viewState.HighlightAddress.Address >= params.Address && viewState.HighlightAddress.Address <= charMapEndAddr)	// pixel
 		{
-			const uint16_t addrOffset = viewState.HighlightAddress - params.Address;
+			const uint16_t addrOffset = viewState.HighlightAddress.Address - params.Address;
 			const int charX = addrOffset % params.Width;
 			const int charY = addrOffset / params.Width;
 			const float xp = pos.x + (charX * rectSize);
@@ -338,35 +339,33 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadWrites);
 	if (uiState.SelectedCharAddress != 0)
 	{
-		// TODO: show data reads & writes
+		// Show data reads & writes
 		// 
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(uiState.SelectedCharAddress);
 		// List Data accesses
-		if (pDataInfo->Reads.empty() == false)
+		if (pDataInfo->Reads.IsEmpty() == false)
 		{
 			ImGui::Text("Reads:");
-			for (const auto& caller : pDataInfo->Reads)
+			for (const auto& reader : pDataInfo->Reads.GetReferences())
 			{
-				const uint16_t accessorCodeAddr = caller.first;
-				ShowCodeAccessorActivity(state, accessorCodeAddr);
+				ShowCodeAccessorActivity(state, reader);
 
 				ImGui::Text("   ");
 				ImGui::SameLine();
-				DrawCodeAddress(state, viewState, accessorCodeAddr);
+				DrawCodeAddress(state, viewState, reader);
 			}
 		}
 
-		if (pDataInfo->Writes.empty() == false)
+		if (pDataInfo->Writes.IsEmpty() == false)
 		{
 			ImGui::Text("Writes:");
-			for (const auto& caller : pDataInfo->Writes)
+			for (const auto& writer : pDataInfo->Writes.GetReferences())
 			{
-				const uint16_t accessorCodeAddr = caller.first;
-				ShowCodeAccessorActivity(state, accessorCodeAddr);
+				ShowCodeAccessorActivity(state, writer);
 
 				ImGui::Text("   ");
 				ImGui::SameLine();
-				DrawCodeAddress(state, viewState, caller.first);
+				DrawCodeAddress(state, viewState, writer);
 			}
 		}
 	}

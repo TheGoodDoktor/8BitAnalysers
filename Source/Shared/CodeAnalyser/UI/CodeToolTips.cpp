@@ -4,10 +4,10 @@
 #include "6502/CodeToolTips6502.h"
 
 
-void ShowCodeToolTip(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
+void ShowCodeToolTip(FCodeAnalysisState& state, uint16_t addr)
 {
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		ShowCodeToolTipZ80(state, pCodeInfo);
+		ShowCodeToolTipZ80(state, addr);
 	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		ShowCodeToolTip6502(state, pCodeInfo);
+		ShowCodeToolTip6502(state, addr);
 }

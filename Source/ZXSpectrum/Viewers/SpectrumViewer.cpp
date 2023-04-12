@@ -70,23 +70,23 @@ void FSpectrumViewer::Draw()
 	}
 	
 	// draw hovered address
-	if (viewState.HighlightAddress != -1)
+	if (viewState.HighlightAddress.IsValid())
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		if (viewState.HighlightAddress >= kScreenPixMemStart && viewState.HighlightAddress <= kScreenPixMemEnd)	// pixel
+		if (viewState.HighlightAddress.Address >= kScreenPixMemStart && viewState.HighlightAddress.Address <= kScreenPixMemEnd)	// pixel
 		{
 			int xp, yp;
-			GetScreenAddressCoords(viewState.HighlightAddress, xp, yp);
+			GetScreenAddressCoords(viewState.HighlightAddress.Address, xp, yp);
 
 			const int rx = static_cast<int>(pos.x) + borderOffsetX + xp;
 			const int ry = static_cast<int>(pos.y) + borderOffsetY + yp;
 			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 1), 0xffffffff);
 		}
 
-		if (viewState.HighlightAddress >= kScreenAttrMemStart && viewState.HighlightAddress <= kScreenAttrMemEnd)	// attributes
+		if (viewState.HighlightAddress.Address >= kScreenAttrMemStart && viewState.HighlightAddress.Address <= kScreenAttrMemEnd)	// attributes
 		{
 			int xp, yp;
-			GetAttribAddressCoords(viewState.HighlightAddress, xp, yp);
+			GetAttribAddressCoords(viewState.HighlightAddress.Address, xp, yp);
 
 			const int rx = static_cast<int>(pos.x) + borderOffsetX + xp;
 			const int ry = static_cast<int>(pos.y) + borderOffsetY + yp;
@@ -112,14 +112,20 @@ void FSpectrumViewer::Draw()
 			ImGui::Text("Screen Pos (%d,%d)", xp, yp);
 			ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
 
-			const uint16_t lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
-			const uint16_t lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
-			ImGui::Text("Pixel Writer: ");
-			ImGui::SameLine();
-			DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
-			ImGui::Text("Attribute Writer: ");
-			ImGui::SameLine();
-			DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
+			const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
+			const FAddressRef lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
+			if (lastPixWriter.IsValid())
+			{
+				ImGui::Text("Pixel Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
+			}
+			if (lastAttrWriter.IsValid())
+			{
+				ImGui::Text("Attribute Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
+			}
 			{
 				//ImGui::Text("Image: ");
 				//const float line_height = ImGui::GetTextLineHeight();
@@ -181,9 +187,9 @@ void FSpectrumViewer::Draw()
 			}
 
 			if (ImGui::IsMouseDoubleClicked(0))
-				CodeAnalyserGoToAddress(viewState, lastPixWriter);
+				viewState.GoToAddress(lastPixWriter);
 			if (ImGui::IsMouseDoubleClicked(1))
-				CodeAnalyserGoToAddress(viewState, lastAttrWriter);
+				viewState.GoToAddress(lastAttrWriter);
 		}
 
 	}
@@ -219,7 +225,7 @@ void FSpectrumViewer::Draw()
 				formattingOptions.DataType = EDataType::Bitmap;
 
 				FormatData(codeAnalysis, formattingOptions);
-				CodeAnalyserGoToAddress(viewState, FoundCharDataAddress, false);
+				viewState.GoToAddress({ codeAnalysis.GetBankFromAddress(FoundCharDataAddress), FoundCharDataAddress }, false);
 			}
 
 			if (bShowInGfxView)
@@ -233,7 +239,7 @@ void FSpectrumViewer::Draw()
 						CharDataFound = codeAnalysis.FindMemoryPattern(CharData, 8, 0, FoundCharDataAddress);
 				}
 
-				pSpectrumEmu->GraphicsViewerGoToAddress(FoundCharDataAddress);
+				pSpectrumEmu->GraphicsViewerGoToAddress(codeAnalysis.AddressRefFromPhysicalAddress(FoundCharDataAddress));
 			}
 		}
 	}

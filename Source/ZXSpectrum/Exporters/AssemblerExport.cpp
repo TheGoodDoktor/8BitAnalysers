@@ -115,14 +115,14 @@ std::string GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc,
 	return dasmState.Text;
 }
 
-
-std::string GenerateAddressLabelString(FCodeAnalysisState& state, uint16_t addr)
+// this might be a bit broken
+std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef addr)
 {
 	int labelOffset = 0;
 	const char* pLabelString = nullptr;
 	std::string labelStr;
 
-	for (int addrVal = addr; addrVal >= 0; addrVal--)
+	for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
 	{
 		FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrVal);
 		if (pLabelInfo != nullptr)
@@ -167,41 +167,43 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 
 	// TODO: write screen memory regions
 
-	for (FItem* pItem : state.ItemList)
+	for (const FCodeAnalysisItem &item : state.ItemList)
 	{
-		if (pItem->Address < startAddr)
+		const uint16_t addr = item.AddressRef.Address;
+
+		if (addr < startAddr)
 			continue;
 
-		if (pItem->Address > endAddr)
+		if (addr > endAddr)
 			break;
 
-		switch (pItem->Type)
+		switch (item.Item->Type)
 		{
 		case EItemType::Label:
 		{
-			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(pItem);
+			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
 			fprintf(fp, "%s:", pLabelInfo->Name.c_str());
 		}
 		break;
 		case EItemType::Code:
 		{
-			const FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(pItem);
+			const FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(item.Item);
 
-			WriteCodeInfoForAddress(state, pCodeInfo->Address);	// needed to refresh code info
-			if (pCodeInfo->Address == g_DbgAddress)
+			WriteCodeInfoForAddress(state, addr);	// needed to refresh code info
+			if (addr == g_DbgAddress)
 				LOGINFO("DebugAddress");
 
-			const std::string dasmString = GenerateDasmStringForAddress(state, pCodeInfo->Address, hexMode);
+			const std::string dasmString = GenerateDasmStringForAddress(state, addr, hexMode);
 			fprintf(fp, "\t%s", dasmString.c_str());
 
-			if (pCodeInfo->JumpAddress != 0)
+			if (pCodeInfo->JumpAddress.IsValid())
 			{
 				const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->JumpAddress);
 				if (labelStr.empty() == false)
 					fprintf(fp, "\t;%s", labelStr.c_str());
 
 			}
-			else if (pCodeInfo->PointerAddress != 0)
+			else if (pCodeInfo->PointerAddress.IsValid())
 			{
 				const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->PointerAddress);
 				if (labelStr.empty() == false)
@@ -212,7 +214,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 		break;
 		case EItemType::Data:
 		{
-			const FDataInfo* pDataInfo = static_cast<FDataInfo*>(pItem);
+			const FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
 			ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
 			if (pDataInfo->OperandType == EOperandType::Decimal)
@@ -230,7 +232,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			{
 			case EDataType::Byte:
 			{
-				const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address);
+				const uint8_t val = state.CPUInterface->ReadByte(addr);
 				fprintf(fp, "db %s", NumStr(val, dispMode));
 			}
 			break;
@@ -239,7 +241,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				std::string textString;
 				for (int i = 0; i < pDataInfo->ByteSize; i++)
 				{
-					const uint8_t val = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+					const uint8_t val = state.CPUInterface->ReadByte(addr + i);
 					char valTxt[16];
 					sprintf(valTxt, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
 					textString += valTxt;
@@ -249,7 +251,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			break;
 			case EDataType::Word:
 			{
-				const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address);
+				const uint16_t val = state.CPUInterface->ReadWord(addr);
 
 				const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForAddress(val) : nullptr;
 				if (pLabel != nullptr)
@@ -268,7 +270,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				std::string textString;
 				for (int i = 0; i < wordSize; i++)
 				{
-					const uint16_t val = state.CPUInterface->ReadWord(pDataInfo->Address + (i * 2));
+					const uint16_t val = state.CPUInterface->ReadWord(addr + (i * 2));
 					char valTxt[16];
 					sprintf(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
 					textString += valTxt;
@@ -281,7 +283,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				std::string textString;
 				for (int i = 0; i < pDataInfo->ByteSize; i++)
 				{
-					const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+					const char ch = state.CPUInterface->ReadByte(addr + i);
 					if (ch == '\n')
 						textString += "<cr>";
 					if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
@@ -304,8 +306,8 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 		}
 
 		// put comment on the end
-		if (pItem->Comment.empty() == false)
-			fprintf(fp, "\t;%s", pItem->Comment.c_str());
+		if (item.Item->Comment.empty() == false)
+			fprintf(fp, "\t;%s", item.Item->Comment.c_str());
 		fprintf(fp, "\n");
 	}
 

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 // this is a surface on which to draw game graphics
 class FGraphicsView
@@ -71,11 +71,13 @@ struct FCharUVS
 
 struct FCharSetCreateParams
 {
-	uint16_t	Address = 0;
-	uint16_t	AttribsAddress = 0;
-	EMaskInfo	MaskInfo = EMaskInfo::None;
-	EColourInfo	ColourInfo = EColourInfo::None;
-	bool		bDynamic = false;
+	uint16_t		Address = 0;
+	uint16_t		AttribsAddress = 0;
+	EMaskInfo		MaskInfo = EMaskInfo::None;
+	EColourInfo		ColourInfo = EColourInfo::None;
+	const uint32_t* ColourLUT = nullptr;
+
+	bool			bDynamic = false;
 };
 
 struct FCharacterSet
@@ -110,7 +112,7 @@ struct FCharacterMap
 };
 
 // utils
-uint32_t GetColFromAttr(uint8_t colBits, bool bBright);
+uint32_t GetColFromAttr(uint8_t colBits, const uint32_t* colourLUT, bool bBright = true);
 
 // Character sets
 void InitCharacterSets();

@@ -8,9 +8,9 @@ static InstructionInfoMap g_InstructionInfo =
 {
 };
 
-void ShowCodeToolTip6502(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
+void ShowCodeToolTip6502(FCodeAnalysisState& state, uint16_t addr)
 {
-	const uint8_t instrByte = state.CPUInterface->ReadByte(pCodeInfo->Address);
+	const uint8_t instrByte = state.ReadByte(addr);
 	InstructionInfoMap::const_iterator it = g_InstructionInfo.find(instrByte);
 	if (it == g_InstructionInfo.end())
 		return;

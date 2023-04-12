@@ -1,6 +1,6 @@
 #pragma once
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 class FSpectrumEmu;
 
 bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname);

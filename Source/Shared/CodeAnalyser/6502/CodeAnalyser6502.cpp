@@ -69,9 +69,9 @@ EAddressMode GetInstructionAddressMode(uint8_t opcode)
 	return EAddressMode::NA;
 }
 
-bool CheckPointerIndirectionInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerIndirectionInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	// use switch to catch specifics
 	/*switch (instrByte)
@@ -88,7 +88,7 @@ bool CheckPointerIndirectionInstruction6502(ICPUInterface* pCPUInterface, uint16
 	{
 	case EAddressMode::ZPIndirect_X:
 	case EAddressMode::ZPIndirect_Y:
-		*out_addr = pCPUInterface->ReadByte(pc + 1);
+		*out_addr = state.ReadByte(pc + 1);
 		return true;
 	}
 /*
@@ -109,9 +109,9 @@ bool CheckPointerIndirectionInstruction6502(ICPUInterface* pCPUInterface, uint16
 
 
 
-bool CheckPointerRefInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerRefInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	// use switch to catch specifics
 	/*switch (instrByte)
@@ -126,12 +126,12 @@ bool CheckPointerRefInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, u
 	case EAddressMode::Absolute:
 	case EAddressMode::Absolute_X:
 	case EAddressMode::Absolute_Y:
-		*out_addr = pCPUInterface->ReadWord(pc + 1);
+		*out_addr = state.ReadWord(pc + 1);
 		return true;
 
 	case EAddressMode::ZP:
 	case EAddressMode::ZP_X:
-		*out_addr = pCPUInterface->ReadByte(pc + 1);
+		*out_addr = state.ReadByte(pc + 1);
 		return true;
 	}
 
@@ -187,9 +187,9 @@ bool CheckPointerRefInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, u
 	return false;
 }
 
-bool CheckJumpInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckJumpInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -203,7 +203,7 @@ bool CheckJumpInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_
 		case 0xD0:	// BNE
 		case 0xF0:	// BEQ
 		{
-			const int8_t relJump = (int8_t)pCPUInterface->ReadByte(pc + 1);
+			const int8_t relJump = (int8_t)state.ReadByte(pc + 1);
 			*out_addr = pc + 2 + relJump;	// +2 because it's relative to the next instruction
 			return true;
 		}
@@ -212,18 +212,18 @@ bool CheckJumpInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc, uint16_
 		case 0x20:	// JSR
 		case 0x4C:	// JMP abs
 		//case 0x6C:	// JMP indirect
-			*out_addr = pCPUInterface->ReadWord(pc + 1);
+			*out_addr = state.ReadWord(pc + 1);
 			return true;
 		case 0x6C:	// JMP indirect
-			*out_addr = pCPUInterface->ReadWord(pCPUInterface->ReadWord(pc + 1));
+			*out_addr = state.ReadWord(state.ReadWord(pc + 1));
 		return true;
 	}
 	return false;
 }
 
-bool CheckCallInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc)
+bool CheckCallInstruction6502(const FCodeAnalysisState& state, uint16_t pc)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)
 	{
@@ -233,9 +233,9 @@ bool CheckCallInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc)
 	return false;
 }
 
-bool CheckStopInstruction6502(ICPUInterface* pCPUInterface, uint16_t pc)
+bool CheckStopInstruction6502(const FCodeAnalysisState& state, uint16_t pc)
 {
-	const uint8_t instrByte = pCPUInterface->ReadByte(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)
 	{

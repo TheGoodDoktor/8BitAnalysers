@@ -1,6 +1,6 @@
 #pragma once
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 // Export assembler to a file given an optional start address and end address.
 // If no start or end address are specified it will export from the the end of attrib memory to the top of RAM.

@@ -5,13 +5,13 @@
 #include <set>
 #include <vector>
 #include <algorithm>
+#include <assert.h>
 
+#include "CodeAnalyserTypes.h"
 #include "CodeAnaysisPage.h"
 
-#define USE_PAGING 1
-
 class FGraphicsView;
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 enum class ELabelType;
 
@@ -31,17 +31,19 @@ typedef void (*FDasmOutput)(char c, void* user_data);
 class ICPUInterface
 {
 public:
+	// Memory Access
 	virtual uint8_t		ReadByte(uint16_t address) const = 0;
 	virtual uint16_t	ReadWord(uint16_t address) const = 0;
 	virtual const uint8_t*	GetMemPtr(uint16_t address) const = 0;
 	virtual void		WriteByte(uint16_t address, uint8_t value) = 0;
+
 	virtual uint16_t	GetPC(void) = 0;
 	virtual uint16_t	GetSP(void) = 0;
 
 	// breakpoints
 	virtual bool	IsAddressBreakpointed(uint16_t addr) = 0;
-	virtual bool	ToggleExecBreakpointAtAddress(uint16_t addr) = 0;
-	virtual bool	ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize) = 0;
+	virtual bool	SetExecBreakpointAtAddress(uint16_t addr, bool bSet) = 0;
+	virtual bool	SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize, bool bSet) = 0;
 
 	// commands
 	virtual void	Break() = 0;
@@ -50,7 +52,7 @@ public:
 	virtual void	StepInto() = 0;
 	virtual void	StepFrame() = 0;
 	virtual void	StepScreenWrite() = 0;
-	virtual void	GraphicsViewerSetView(uint16_t address, int charWidth) = 0;
+	virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) = 0;
 
 	virtual bool	ShouldExecThisFrame(void) const = 0;
 	virtual bool	IsStopped(void) const = 0;
@@ -79,12 +81,11 @@ public:
 	std::string				Text;
 };
 
-
 struct FMemoryAccess
 {
-	uint16_t	Address;
+	FAddressRef	Address;
 	uint8_t		Value;
-	uint16_t	PC;
+	FAddressRef	PC;
 };
 
 
@@ -151,86 +152,246 @@ struct FLabelListFilter
 	uint16_t		MaxAddress = 0xffff;
 };
 
+struct FCodeAnalysisItem
+{
+	FCodeAnalysisItem() {}
+	//FCodeAnalysisItem(FItem* pItem, uint16_t addr) :Item(pItem), BankId(-1), Address(addr) {}	// temp until we get refs working properly
+	FCodeAnalysisItem(FItem* pItem, int16_t bankId, uint16_t addr) :Item(pItem), AddressRef(bankId,addr) {}
+	FCodeAnalysisItem(FItem* pItem, FAddressRef addr) :Item(pItem), AddressRef(addr) {}
+
+	bool IsValid() const { return Item != nullptr; }
+	
+	FItem* Item = nullptr;
+	/*union
+	{
+		struct
+		{
+			int16_t		BankId;
+			uint16_t	Address;	// address in address space
+		};
+		FAddressRef		AddressRef;
+	};*/
+	FAddressRef		AddressRef;
+
+};
+
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
 	// accessor functions
-	FItem* GetCursorItem() const { return pCursorItem; }
-	void SetCursorItem(FItem* pItem)
+	const FCodeAnalysisItem& GetCursorItem() const { return CursorItem; }
+	void SetCursorItem(const FCodeAnalysisItem& item)
 	{
-		pCursorItem = pItem;
+		CursorItem = item;
 	}
+		
+	FAddressRef& GetGotoAddress() { return GoToAddressRef; }
+	const FAddressRef& GetGotoAddress() const { return GoToAddressRef; }
+	void GoToAddress(FAddressRef address, bool bLabel = false);
+	bool GoToPreviousAddress();
 
-	bool	Enabled = false;
-	int		CursorItemIndex = -1;
-	bool	TrackPCFrame = false;
-	int		GoToAddress = -1;
-	int		HoverAddress = -1;		// address being hovered over
-	int		HighlightAddress = -1;	// address to highlight
-	bool	GoToLabel = false;
-
+	bool			Enabled = false;
+	bool			TrackPCFrame = false;
+	FAddressRef		HoverAddress;		// address being hovered over
+	FAddressRef		HighlightAddress;	// address to highlight
+	bool			GoToLabel = false;
+	int16_t			ViewingBankId = -1;
 	// for global Filters
 	bool						ShowROMLabels = false;
 	FLabelListFilter			GlobalDataItemsFilter;
-	std::vector< FLabelInfo*>	FilteredGlobalDataItems;
-	FLabelListFilter			GlobalFunctionsFilter;
-	std::vector< FLabelInfo*>	FilteredGlobalFunctions;
+	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
+	FLabelListFilter				GlobalFunctionsFilter;
+	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
 
-	std::vector<uint16_t>	AddressStack;
 
 	bool					DataFormattingTabOpen = false;
 	FDataFormattingOptions	DataFormattingOptions;
 private:
-	FItem* pCursorItem = nullptr;
+	FCodeAnalysisItem			CursorItem;
+	FAddressRef					GoToAddressRef;
+	std::vector<FAddressRef>	AddressStack;
 };
 
 struct FCodeAnalysisConfig
 {
-	bool bShowOpcodeValues = false;
+	bool				bShowOpcodeValues = false;
+	bool				bShowBanks = false;
+	const uint32_t*		CharacterColourLUT = nullptr;
 };
 
-// code analysis information
-// TODO: make this a class
-struct FCodeAnalysisState
+// Analysis memory bank
+struct FCodeAnalysisBankBP
 {
-	ICPUInterface*			CPUInterface = nullptr;
+	enum class EType
+	{
+		Exe,
+		Byte,
+		Word
+	};
+
+	FCodeAnalysisBankBP(uint16_t addr, EType type, uint16_t value) :Address(addr),Type(type),Value(value) {}
+
+	uint16_t	Address;
+	EType		Type;
+	uint16_t	Value;
+};
+
+struct FCodeAnalysisBank
+{
+	int16_t				Id = -1;
+	int					NoPages = 0;
+	uint32_t			SizeMask = 0;
+	std::vector<int>	MappedPages;	// banks can be mapped to multiple pages
+	int					PrimaryMappedPage = -1;
+	uint8_t*			Memory = nullptr;	// pointer to memory bank occupies
+	FCodeAnalysisPage*	Pages;
+	std::string			Name;
+	std::string			Description;	// where we can describe what the bank is used for
+	bool				bReadOnly = false;
+	bool				bIsDirty = false;
+	std::vector<FCodeAnalysisItem>		ItemList;
+	std::vector<FCodeAnalysisBankBP>	BreakPoints;
+
+	bool		IsAddressBreakpointed(uint16_t addr) const;
+	bool		ToggleExecBreakpointAtAddress(uint16_t addr);
+	bool		ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize);
+
+	bool		AddressValid(uint16_t addr) const { return addr >= GetMappedAddress() && addr < GetMappedAddress() + (NoPages * FCodeAnalysisPage::kPageSize);	}
+	bool		IsUsed() const { return Pages[0].bUsed; }
+	bool		IsMapped() const { return MappedPages.empty() == false; }
+	uint16_t	GetMappedAddress() const { return PrimaryMappedPage * FCodeAnalysisPage::kPageSize; }
+	uint16_t	GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
+};
+
+
+
+struct FWatch : public FAddressRef
+{
+	FWatch() = default;
+	FWatch(const FAddressRef addressRef) : FAddressRef(addressRef) {}
+	FWatch(int16_t bankId, uint16_t address) : FAddressRef(bankId, address) {}
+};
+
+
+// code analysis information
+class FCodeAnalysisState
+{
+public:
+	// constants
+	static const int kAddressSize = 1 << 16;
+	static const int kPageShift = 10;
+	static const int kPageMask = 1023;
+	static const int kNoPagesInAddressSpace = kAddressSize / FCodeAnalysisPage::kPageSize;
+
+	FCodeAnalysisState();
+	void	Init(ICPUInterface* pCPUInterface);
+
+	ICPUInterface* CPUInterface = nullptr;
 	int						CurrentFrameNo = 0;
 
-	static const int kAddressSize = 1 << 16;
+	// Memory Banks & Pages
+	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly);
+	bool		MapBank(int16_t bankId, int startPageNo);
+	bool		UnMapBank(int16_t bankId, int startPageNo);
+	bool		IsBankIdMapped(int16_t bankId) const;
+	bool		IsAddressValid(FAddressRef addr) const;
 
-	bool					RegisterPage(FCodeAnalysisPage* pPage, const char* pName) 
+	bool		MapBankForAnalysis(FCodeAnalysisBank& bank);
+	void		UnMapAnalysisBanks();
+
+	bool		IsAddressBreakpointed(FAddressRef addr) const;
+	bool		ToggleExecBreakpointAtAddress(FAddressRef addr);
+	bool		ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize);
+
+	
+	FCodeAnalysisBank* GetBank(int16_t bankId) { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr; }
+	const FCodeAnalysisBank* GetBank(int16_t bankId) const { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr;	}
+	int16_t		GetBankFromAddress(uint16_t address) const { return MappedBanks[address >> kPageShift]; }
+	const std::vector<FCodeAnalysisBank>& GetBanks() const { return Banks; }
+	std::vector<FCodeAnalysisBank>& GetBanks() { return Banks; }
+
+	FAddressRef	AddressRefFromPhysicalAddress(uint16_t physAddr) const { return FAddressRef(GetBankFromAddress(physAddr), physAddr); }
+
+	uint8_t		ReadByte(uint16_t address) const
 	{
-		if (pPage->PageId != -1)
-			return false;
-		pPage->PageId = (int16_t)RegisteredPages.size();
-		RegisteredPages.push_back(pPage);
-		PageNames.push_back(pName);
-		return true;
+		if (MappedMem[address >> kPageShift] == nullptr)
+			return CPUInterface->ReadByte(address);
+		else
+			return *(MappedMem[(address >> kPageShift)] + (address & kPageMask));
 	}
-	FCodeAnalysisPage*		GetPage(int16_t id) { return RegisteredPages[id]; }
-	const char*				GetPageName(int16_t id) { return PageNames[id].c_str(); }
-	int16_t					GetAddressReadPageId(uint16_t addr) { return GetReadPage(addr)->PageId; }
-	int16_t					GetAddressWritePageId(uint16_t addr) { return GetWritePage(addr)->PageId; }
-	const std::vector< FCodeAnalysisPage*>& GetRegisteredPages() const { return RegisteredPages; }
 
-	FCodeAnalysisPage*		ReadPageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
-	FCodeAnalysisPage*		WritePageTable[kAddressSize / FCodeAnalysisPage::kPageSize];
-	void					SetCodeAnalysisReadPage(int pageNo, FCodeAnalysisPage* pPage) { ReadPageTable[pageNo] = pPage; pPage->bUsed = true; }
-	void					SetCodeAnalysisWritePage(int pageNo, FCodeAnalysisPage* pPage) { WritePageTable[pageNo] = pPage; pPage->bUsed = true;}
-	void					SetCodeAnalysisRWPage(int pageNo, FCodeAnalysisPage* pReadPage, FCodeAnalysisPage *pWritePage)
+	uint8_t		ReadByte(FAddressRef address) const
 	{
-		SetCodeAnalysisReadPage(pageNo, pReadPage);
-		SetCodeAnalysisWritePage(pageNo, pWritePage);
+		const FCodeAnalysisBank* pBank = GetBank(address.BankId);
+		assert(pBank != nullptr);
+		return pBank->Memory[address.Address - pBank->GetMappedAddress()];
 	}
 
-	void	SetCodeAnalysisDirty(bool val = true) 
+	uint16_t	ReadWord(uint16_t address) const
+	{
+		if (MappedMem[address >> kPageShift] == nullptr)
+			return CPUInterface->ReadWord(address);
+		else
+			return *(uint16_t*)(MappedMem[address >> kPageShift] + (address & kPageMask));
+	}
+
+	uint16_t		ReadWord(FAddressRef address) const
+	{
+		const FCodeAnalysisBank* pBank = GetBank(address.BankId);
+		assert(pBank != nullptr);
+		return *(uint16_t*)(&pBank->Memory[address.Address - pBank->GetMappedAddress()]);
+	}
+
+	void		WriteByte(uint16_t address, uint8_t value) 
 	{ 
-		bCodeAnalysisDataDirty = val; 
+		if (MappedMem[address >> kPageShift] == nullptr)
+			CPUInterface->WriteByte(address, value);
+		else
+			*(MappedMem[(address >> kPageShift)] + (address & kPageMask)) = value;
+	}
+	
+	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
+
+	void	SetCodeAnalysisDirty(FAddressRef addrRef)
+	{
+		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+			pBank->bIsDirty = true;
+		bCodeAnalysisDataDirty = true;
 	}
 
+	void	SetCodeAnalysisDirty(uint16_t address)	
+	{ 
+		SetCodeAnalysisDirty({ GetBankFromAddress(address),address });
+	}
+
+	void	SetAddressRangeDirty()
+	{
+		for (int i = 0; i < kNoPagesInAddressSpace; i++)
+		{
+			FCodeAnalysisBank* pBank = GetBank(MappedBanks[i]);
+			if (pBank != nullptr)
+				pBank->bIsDirty = true;
+			bCodeAnalysisDataDirty = true;
+		}
+	}
+
+	void	SetAllBanksDirty()
+	{
+		for (auto& bank : Banks)
+			bank.bIsDirty = true;
+		bCodeAnalysisDataDirty = true;
+	}
+
+	void	ClearDirtyStatus(void)
+	{
+		bCodeAnalysisDataDirty = false;
+	}
+	
 	bool IsCodeAnalysisDataDirty() const { return bCodeAnalysisDataDirty; }
-	void SetMemoryRemapped(bool bRemapped = true) { bMemoryRemapped = bRemapped; }
+	void ClearRemappings() { bMemoryRemapped = false; }
 	bool HasMemoryBeenRemapped() const { return bMemoryRemapped; }
+	//const std::vector<int16_t>& GetDirtyBanks() const { return RemappedBanks; }
 
 	void	ResetLabelNames() { LabelUsage.clear(); }
 	bool	EnsureUniqueLabelName(std::string& lableName);
@@ -238,37 +399,34 @@ struct FCodeAnalysisState
 
 	// Watches
 	void InitWatches() { Watches.clear(); }
-	bool	AddWatch(uint16_t address)
+	void	AddWatch(FWatch watch)
 	{
-		return Watches.insert(address).second;
+		Watches.push_back(watch);
 	}
 
-	bool	RemoveWatch(uint16_t address)
+	bool	RemoveWatch(FWatch watch)
 	{
-		Watches.erase(address);
+		for (auto watchIt = Watches.begin(); watchIt != Watches.end(); ++watchIt)
+		{
+			if(*watchIt == watch)
+				Watches.erase(watchIt);
+		}
+
 		return true;
 	}
 
-	const std::set<uint16_t>& GetWatches() const { return Watches; }
-private:
-	std::vector<FCodeAnalysisPage*>	RegisteredPages;
-	std::vector<std::string>	PageNames;
-	int32_t						NextPageId = 0;
-	std::map<std::string, int>	LabelUsage;
-
-	bool						bCodeAnalysisDataDirty = false;
-	bool						bMemoryRemapped = false;
+	const std::vector<FWatch>& GetWatches() const { return Watches; }
 
 public:
 
 	bool					bRegisterDataAccesses = true;
 
-	std::vector< FItem *>	ItemList;
+	std::vector<FCodeAnalysisItem>	ItemList;
 
-	std::vector< FLabelInfo*>	GlobalDataItems;
+	std::vector<FCodeAnalysisItem>	GlobalDataItems;
 	bool						bRebuildFilteredGlobalDataItems = true;
 	
-	std::vector< FLabelInfo*>	GlobalFunctions;
+	std::vector<FCodeAnalysisItem>	GlobalFunctions;
 	bool						bRebuildFilteredGlobalFunctions = true;
 
 	static const int kNoViewStates = 4;
@@ -277,12 +435,12 @@ public:
 	FCodeAnalysisViewState& GetFocussedViewState() { return ViewState[FocussedWindowId]; }
 	FCodeAnalysisViewState& GetAltViewState() { return ViewState[FocussedWindowId ^ 1]; }
 	
-	std::set<uint16_t>		Watches;	// addresses to use as watches
+	std::vector<FWatch>		Watches;	
 	std::vector<FCPUFunctionCall>	CallStack;
 	uint16_t				StackMin;
 	uint16_t				StackMax;
 
-	std::vector<uint16_t>	FrameTrace;
+	std::vector<FAddressRef>	FrameTrace;
 
 	int						KeyConfig[(int)EKey::Count];
 
@@ -293,8 +451,6 @@ public:
 	FCodeAnalysisConfig Config;
 public:
 	// Access functions for code analysis
-	static const int kPageShift = 10;
-	static const int kPageMask = 1023;
 
 	FCodeAnalysisPage* GetReadPage(uint16_t addr)  
 	{
@@ -307,6 +463,7 @@ public:
 
 		return pPage;
 	}
+	
 	const FCodeAnalysisPage* GetReadPage(uint16_t addr) const { return ((FCodeAnalysisState *)this)->GetReadPage(addr); }
 	FCodeAnalysisPage* GetWritePage(uint16_t addr) 
 	{
@@ -323,6 +480,19 @@ public:
 
 	const FLabelInfo* GetLabelForAddress(uint16_t addr) const { return GetReadPage(addr)->Labels[addr & kPageMask]; }
 	FLabelInfo* GetLabelForAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
+	FLabelInfo* GetLabelForAddress(FAddressRef addrRef)
+	{
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			return pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].Labels[bankAddr & FCodeAnalysisPage::kPageMask];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 	void SetLabelForAddress(uint16_t addr, FLabelInfo* pLabel) 
 	{
 		if(pLabel != nullptr)	// ensure no name clashes
@@ -338,16 +508,54 @@ public:
 
 	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
 	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
+	FCodeInfo* GetCodeInfoForAddress(FAddressRef addrRef)
+	{
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			return pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].CodeInfo[bankAddr & FCodeAnalysisPage::kPageMask];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
 	void SetCodeInfoForAddress(uint16_t addr, FCodeInfo* pCodeInfo) { GetReadPage(addr)->CodeInfo[addr & kPageMask] = pCodeInfo; }
 
 	const FDataInfo* GetReadDataInfoForAddress(uint16_t addr) const { return &GetReadPage(addr)->DataInfo[addr & kPageMask]; }
 	FDataInfo* GetReadDataInfoForAddress(uint16_t addr) { return &GetReadPage(addr)->DataInfo[addr & kPageMask]; }
-
+	FDataInfo* GetReadDataInfoForAddress(FAddressRef addrRef)
+	{
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - pBank->GetMappedAddress();
+			return &pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].DataInfo[bankAddr & FCodeAnalysisPage::kPageMask];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 	const FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) const { return  &GetWritePage(addr)->DataInfo[addr & kPageMask]; }
 	FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) { return &GetWritePage(addr)->DataInfo[addr & kPageMask]; }
-
-	uint16_t GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->LastWriter[addr & kPageMask]; }
-	void SetLastWriterForAddress(uint16_t addr, uint16_t lastWriter) { GetWritePage(addr)->LastWriter[addr & kPageMask] = lastWriter; }
+	FDataInfo* GetWriteDataInfoForAddress(FAddressRef addrRef)
+	{
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - pBank->GetMappedAddress();
+			return &pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].DataInfo[bankAddr & FCodeAnalysisPage::kPageMask];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+	FAddressRef GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->DataInfo[addr & kPageMask].LastWriter; }
+	void SetLastWriterForAddress(uint16_t addr, FAddressRef lastWriter) { GetWritePage(addr)->DataInfo[addr & kPageMask].LastWriter = lastWriter; }
 
 	FMachineState* GetMachineState(uint16_t addr) { return GetReadPage(addr)->MachineState[addr & kPageMask];}
 	void SetMachineStateForAddress(uint16_t addr, FMachineState* pMachineState) { GetReadPage(addr)->MachineState[addr & kPageMask] = pMachineState; }
@@ -355,10 +563,55 @@ public:
 	bool FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 
 	void FindAsciiStrings(uint16_t startAddress);
+
+
+private:
+	// private methods
+	bool					RegisterPage(FCodeAnalysisPage* pPage, const char* pName)
+	{
+		if (pPage->PageId != -1)
+			return false;
+		pPage->PageId = (int16_t)RegisteredPages.size();
+		RegisteredPages.push_back(pPage);
+		PageNames.push_back(pName);
+		return true;
+	}
+	const char* GetPageName(int16_t id) { return PageNames[id].c_str(); }
+	int16_t					GetAddressReadPageId(uint16_t addr) { return GetReadPage(addr)->PageId; }
+	int16_t					GetAddressWritePageId(uint16_t addr) { return GetWritePage(addr)->PageId; }
+	const std::vector< FCodeAnalysisPage*>& GetRegisteredPages() const { return RegisteredPages; }
+
+
+	void					SetCodeAnalysisReadPage(int pageNo, FCodeAnalysisPage* pPage) { ReadPageTable[pageNo] = pPage; if (pPage != nullptr) pPage->bUsed = true; }
+	void					SetCodeAnalysisWritePage(int pageNo, FCodeAnalysisPage* pPage) { WritePageTable[pageNo] = pPage; if(pPage != nullptr) pPage->bUsed = true; }
+	void					SetCodeAnalysisRWPage(int pageNo, FCodeAnalysisPage* pReadPage, FCodeAnalysisPage* pWritePage)
+	{
+		SetCodeAnalysisReadPage(pageNo, pReadPage);
+		SetCodeAnalysisWritePage(pageNo, pWritePage);
+	}
+
+	// private data members
+
+	FCodeAnalysisPage*				ReadPageTable[kNoPagesInAddressSpace];
+	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];
+
+	std::vector<FCodeAnalysisBank>	Banks;
+	int16_t							MappedBanks[kNoPagesInAddressSpace];	// banks mapped into address space
+	int16_t							MappedBanksBackup[kNoPagesInAddressSpace];	// banks mapped into address space
+
+	uint8_t*						MappedMem[kNoPagesInAddressSpace];	// mapped analysis memory
+				
+	std::vector<FCodeAnalysisPage*>	RegisteredPages;
+	std::vector<std::string>	PageNames;
+	int32_t						NextPageId = 0;
+	std::map<std::string, int>	LabelUsage;
+
+	bool						bCodeAnalysisDataDirty = false;
+	bool						bMemoryRemapped = true;
+
 };
 
 // Analysis
-void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface);
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
@@ -366,7 +619,7 @@ void ReAnalyseCode(FCodeAnalysisState &state);
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState& state, uint16_t pc);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
-void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr);
+void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, uint8_t value);
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
 void ResetReferenceInfo(FCodeAnalysisState &state);
 
@@ -380,12 +633,12 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
 FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
-//void SetItemCode(FCodeAnalysisState& state, uint16_t addr);
-void SetItemCode(FCodeAnalysisState &state, FItem *pItem);
-void SetItemData(FCodeAnalysisState &state, FItem *pItem);
-void SetItemText(FCodeAnalysisState &state, FItem *pItem);
-void SetItemImage(FCodeAnalysisState& state, FItem* pItem);
-void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText);
+void SetItemCode(FCodeAnalysisState& state, FAddressRef addr);
+//void SetItemCode(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
+void SetItemData(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
+void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
+void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item);
+void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText);
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options);
 

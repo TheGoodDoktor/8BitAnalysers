@@ -407,7 +407,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 		platCharAddr += 8;
 	}
 
-	state.SetCodeAnalysisDirty();
+	state.SetCodeAnalysisDirty(platCharAddr);
 }
 
 void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
@@ -425,7 +425,7 @@ void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	FDataFormattingOptions format;
 	format.SetupForCharmap(kBigPlatformData, 2, 2);
 	FormatData(state, format);
-	state.SetCodeAnalysisDirty();
+	state.SetCodeAnalysisDirty(kBigPlatformData);
 }
 
 void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
@@ -443,7 +443,7 @@ void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
 	FDataFormattingOptions format;
 	format.SetupForCharmap(kScreenData, 4, 3);
 	FormatData(state, format);
-	state.SetCodeAnalysisDirty();
+	state.SetCodeAnalysisDirty(kScreenData);
 }
 
 void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
@@ -461,7 +461,7 @@ void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	FDataFormattingOptions format;
 	format.SetupForBitmap(platformAddr, 16, 8);
 	FormatData(state, format);
-	state.SetCodeAnalysisDirty();
+	state.SetCodeAnalysisDirty(platformAddr);
 }
 
 void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)

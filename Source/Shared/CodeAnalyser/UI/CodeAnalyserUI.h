@@ -1,7 +1,10 @@
 #pragma once
 #include <cstdint>
 
-struct FCodeAnalysisState;
+#include "../CodeAnalyserTypes.h"
+
+struct FCodeAnalysisItem;
+class FCodeAnalysisState;
 struct FCodeAnalysisViewState;
 struct FDataInfo;
 struct FItem;
@@ -30,11 +33,13 @@ protected:
 
 bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen);
 
-void ShowCodeAccessorActivity(FCodeAnalysisState& state, const uint16_t accessorCodeAddr);
-void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
+void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr);
+//void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
+void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel = false);
 void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
-int GetItemIndexForAddress(const FCodeAnalysisState& state, uint16_t addr);
-void DrawCodeAnalysisItemAtIndex(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int i);
+void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel = false);
+int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
+void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
 bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
 
@@ -46,11 +51,10 @@ void DrawRegisters(FCodeAnalysisState& state);
 void DrawWatchWindow(FCodeAnalysisState& state);
 
 float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo);
-void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FDataInfo* pDataInfo, bool bDrawLabel = false, bool bEdit = true);
-void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FDataInfo *pDataInfo);
-void ShowDataItemActivity(FCodeAnalysisState& state, uint16_t addr);
+void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem &item, bool bDrawLabel = false, bool bEdit = true);
+void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
+void ShowDataItemActivity(FCodeAnalysisState& state, FAddressRef addr);
 
-void CodeAnalyserGoToAddress(FCodeAnalysisViewState& state, uint16_t newAddress, bool bLabel = false);
 void DrawComment(const FItem* pItem, float offset = 0.0f);
 
 // util functions - move?

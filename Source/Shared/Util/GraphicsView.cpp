@@ -8,7 +8,7 @@
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bScale = false, bool bMagnifier = true);
 
 // speccy colour CLUT
-static const uint32_t g_ColourLUT[8] =
+static const uint32_t g_SpeccyColourLUT[8] =
 {
 	0xFF000000,     // 0 - black
 	0xFFFF0000,     // 1 - blue
@@ -20,9 +20,12 @@ static const uint32_t g_ColourLUT[8] =
 	0xFFFFFFFF,     // 7 - white
 };
 
-uint32_t GetColFromAttr(uint8_t colBits, bool bBright)
+static const uint32_t* g_ColourLUT = g_SpeccyColourLUT;
+
+
+uint32_t GetColFromAttr(uint8_t colBits, const uint32_t* colourLUT, bool bBright )
 {
-	const uint32_t outCol = g_ColourLUT[colBits & 7];
+	const uint32_t outCol = colourLUT[colBits];
 	if (bBright == false)
 		return outCol & 0xFFD7D7D7;
 	else
@@ -163,28 +166,11 @@ void DisplayTextureInspector(const ImTextureID texture, float width, float heigh
 		ImGui::EndTooltip();
 	}
 }
-/*
-void ClearGraphicsView(FGraphicsView& graphicsView, const uint32_t col)
-{
-	for (int i = 0; i < graphicsView.Width * graphicsView.Height; i++)
-		graphicsView.PixelBuffer[i] = col;
-}
-
-void DrawGraphicsView(const FGraphicsView& graphicsView, float xSize, float ySize, bool bScale, bool bMagnifier)
-{
-	ImGui_ImplDX11_UpdateTextureRGBA(graphicsView.Texture, (uint8_t*)graphicsView.PixelBuffer);
-	DisplayTextureInspector(graphicsView.Texture, xSize, ySize, bScale, bMagnifier);
-}
-
-void DrawGraphicsView(const FGraphicsView& graphicsView, bool bMagnifier)
-{
-	DrawGraphicsView(graphicsView, (float)graphicsView.Width, (float)graphicsView.Height, false, bMagnifier);
-}*/
 
 // Character sets
 
-std::vector<FCharacterSet*>	g_CharacterSets;
-std::vector<FCharacterMap*>	g_CharacterMaps;
+static std::vector<FCharacterSet*>	g_CharacterSets;
+static std::vector<FCharacterMap*>	g_CharacterMaps;
 
 void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& characterSet);
 
@@ -246,6 +232,13 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 {
 	uint16_t addr = characterSet.Params.Address;
 
+	// TODO: these are speccy specific, put in config
+	const uint8_t brightMask = 1 << 6;
+	const uint8_t inkMask = 7;
+	const uint8_t inkShift = 0;
+	const uint8_t paperMask = 7;
+	const uint8_t paperShift = 3;
+
 	characterSet.Image->Clear(0);	// clear first
 
 	for (int charNo = 0; charNo < 256; charNo++)
@@ -260,34 +253,34 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		uint8_t charMask[8];
 
 		if (characterSet.Params.ColourInfo == EColourInfo::InterleavedPre)
-			colAttr = state.CPUInterface->ReadByte(addr++);
+			colAttr = state.ReadByte(addr++);
 
 		for (int i = 0; i < 8; i++)
 		{
 			if (characterSet.Params.MaskInfo == EMaskInfo::InterleavedBytesMP)
-				charMask[i] = state.CPUInterface->ReadByte(addr++);
-			charPix[i] = state.CPUInterface->ReadByte(addr++);
+				charMask[i] = state.ReadByte(addr++);
+			charPix[i] = state.ReadByte(addr++);
 			if (characterSet.Params.MaskInfo == EMaskInfo::InterleavedBytesPM)
-				charMask[i] = state.CPUInterface->ReadByte(addr++);
+				charMask[i] = state.ReadByte(addr++);
 		}
 
 		// Get colour from colour info
 		switch (characterSet.Params.ColourInfo)
 		{
 		case EColourInfo::MemoryLUT:
-			colAttr = state.CPUInterface->ReadByte(characterSet.Params.AttribsAddress + charNo);
+			colAttr = state.ReadByte(characterSet.Params.AttribsAddress + charNo);
 			break;
 		case EColourInfo::InterleavedPost:
-			colAttr = state.CPUInterface->ReadByte(addr++);
+			colAttr = state.ReadByte(addr++);
 			break;
 		}
 
 		if (colAttr != 0xff)
 		{
 			// get ink & paper
-			const bool bBright = !!(colAttr & (1 << 6));
-			inkCol = GetColFromAttr(colAttr & 7, bBright);
-			paperCol = GetColFromAttr((colAttr >> 3) & 7, bBright);
+			const bool bBright = !!(colAttr & brightMask);
+			inkCol = GetColFromAttr((colAttr >> inkShift) & inkMask, characterSet.Params.ColourLUT, bBright);
+			paperCol = GetColFromAttr((colAttr >> paperShift) & paperMask, characterSet.Params.ColourLUT, bBright);
 		}
 
 		characterSet.Image->DrawBitImage(charPix, xp, yp, 1, 1, inkCol, paperCol);
@@ -298,11 +291,12 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 
 void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params)
 {
-	characterSet.Params.Address = params.Address;
-	characterSet.Params.AttribsAddress = params.AttribsAddress;
-	characterSet.Params.MaskInfo = params.MaskInfo;
-	characterSet.Params.ColourInfo = params.ColourInfo;
-	characterSet.Params.bDynamic = params.bDynamic;
+	characterSet.Params = params;
+	//characterSet.Params.Address = params.Address;
+	//characterSet.Params.AttribsAddress = params.AttribsAddress;
+	//characterSet.Params.MaskInfo = params.MaskInfo;
+	//characterSet.Params.ColourInfo = params.ColourInfo;
+	//characterSet.Params.bDynamic = params.bDynamic;
 
 	UpdateCharacterSetImage(state, characterSet);
 }

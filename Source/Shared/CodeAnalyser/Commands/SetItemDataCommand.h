@@ -1,32 +1,33 @@
 #pragma once
 #include "CommandProcessor.h"
 #include "../CodeAnaysisPage.h"
+#include "../CodeAnalyser.h"
 
 struct FItem;
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 class FSetItemDataCommand : public FCommand
 {
 public:
-	FSetItemDataCommand(FItem* _pItem) :pItem(_pItem) {}
+	FSetItemDataCommand(const FCodeAnalysisItem& item) :Item(item) {}
 
 	virtual void Do(FCodeAnalysisState& state) override;
 	virtual void Undo(FCodeAnalysisState& state) override;
 
-	FItem* pItem;
+	FCodeAnalysisItem Item;
 
-	EDataType	oldDataType;
-	uint16_t	oldDataSize;
+	EDataType	oldDataType = EDataType::None;
+	uint16_t	oldDataSize = 0;
 };
 
 class FSetItemCodeCommand : public FCommand
 {
 public:
-	FSetItemCodeCommand(uint16_t addr) :Addr(addr) {}
+	FSetItemCodeCommand(FAddressRef addr) :Addr(addr) {}
 
 	virtual void Do(FCodeAnalysisState& state) override;
 	virtual void Undo(FCodeAnalysisState& state) override;
 
-	uint16_t	Addr;
+	FAddressRef	Addr;
 };
 

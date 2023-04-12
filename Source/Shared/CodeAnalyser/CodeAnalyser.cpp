@@ -21,6 +21,264 @@
 #include "Commands/CommandProcessor.h"
 #include "Commands/SetItemDataCommand.h"
 
+// memory bank code
+
+bool FCodeAnalysisBank::IsAddressBreakpointed(uint16_t addr) const
+{
+	for (const auto& bpIt : BreakPoints)
+	{
+		if (bpIt.Address == addr)
+			return true;
+	}
+
+	return false;
+}
+bool FCodeAnalysisBank::ToggleExecBreakpointAtAddress(uint16_t addr)
+{
+	for (auto& bpIt = BreakPoints.begin();bpIt!=BreakPoints.end();++bpIt)
+	{
+		if (bpIt->Address == addr)
+		{
+			BreakPoints.erase(bpIt);
+			return false;
+		}
+	}
+
+	BreakPoints.emplace_back(addr, FCodeAnalysisBankBP::EType::Exe, 0);
+	return true;
+}
+
+bool FCodeAnalysisBank::ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize)
+{
+	for (auto& bpIt = BreakPoints.begin(); bpIt != BreakPoints.end(); ++bpIt)
+	{
+		if (bpIt->Address == addr)
+		{
+			BreakPoints.erase(bpIt);
+			return false;
+		}
+	}
+
+	if(dataSize == 1)
+		BreakPoints.emplace_back(addr, FCodeAnalysisBankBP::EType::Byte, Memory[addr]);
+	else
+		BreakPoints.emplace_back(addr, FCodeAnalysisBankBP::EType::Word, Memory[addr] | (Memory[addr+1] << 8));
+
+	return true;
+}
+
+// create a bank
+// a bank is a list of memory pages
+int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly)
+{
+	const int16_t bankId = (int16_t)Banks.size();
+	const int noPages = noKb;
+
+	FCodeAnalysisBank& newBank = Banks.emplace_back();
+	newBank.Id = bankId;
+	newBank.NoPages = noPages;
+	newBank.SizeMask = (noPages * FCodeAnalysisPage::kPageSize) - 1;
+	newBank.Memory = pBankMem;
+	newBank.Pages = new FCodeAnalysisPage[noPages];
+	newBank.Name = bankName;
+	newBank.bReadOnly = bReadOnly;
+	for (int pageNo = 0; pageNo < noPages; pageNo++)
+	{
+		char pageName[32];
+		sprintf(pageName, "%s:%d", bankName, pageNo);
+		RegisterPage(&newBank.Pages[pageNo], pageName);
+	}
+	return bankId;
+}
+
+/*FCodeAnalysisBank* FCodeAnalysisState::GetBank(int16_t bankId)
+{
+	if (bankId < 0 || bankId >= Banks.size())
+		return nullptr;
+
+	return &Banks[bankId];
+}*/
+
+// Set bank to memory pages starting at pageNo
+bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
+{
+	FCodeAnalysisBank* pBank = GetBank(bankId);
+	if (pBank == nullptr || MappedBanks[startPageNo] == bankId)	// not found or already mapped to this locatiom
+		return false;
+
+	if (pBank->bReadOnly == true && startPageNo > 0)
+		assert(0);
+
+	if (pBank->PrimaryMappedPage == -1 )	// Newly mapped?
+	{
+		pBank->PrimaryMappedPage = startPageNo;
+		pBank->bIsDirty = true;
+	}
+	assert(pBank->PrimaryMappedPage != -1);
+
+	pBank->MappedPages.push_back(startPageNo);
+	for (int bankPageNo = 0; bankPageNo < pBank->NoPages; bankPageNo++)
+	{
+		//if(pBank->bReadOnly)
+		//	SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], nullptr);	// Read only
+		//else
+		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], &pBank->Pages[bankPageNo]);	// Read/Write
+
+		MappedBanks[startPageNo + bankPageNo] = bankId;
+	}
+	bMemoryRemapped = true;
+
+	// enable breakpoints in the bank we're switching in
+	for (const auto& bp : pBank->BreakPoints)
+	{
+		const uint16_t addr = pBank->GetMappedAddress() + bp.Address;
+
+		switch (bp.Type)
+		{
+		case FCodeAnalysisBankBP::EType::Exe:
+			CPUInterface->SetExecBreakpointAtAddress(addr, true);
+			break;
+		case FCodeAnalysisBankBP::EType::Byte:
+			CPUInterface->SetDataBreakpointAtAddress(addr, 1, true);
+			break;
+		case FCodeAnalysisBankBP::EType::Word:
+			CPUInterface->SetDataBreakpointAtAddress(addr, 2, true);
+			break;
+		}
+	}
+
+	//RemappedBanks.push_back(bankId);
+	bCodeAnalysisDataDirty = true;
+
+	return true;
+}
+
+bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo)
+{
+	FCodeAnalysisBank* pBank = GetBank(bankId);
+	if (pBank == nullptr || MappedBanks[startPageNo] != bankId)
+		return false;
+
+	// disable breakpoints in the bank we're switching out
+	for (const auto& bp : pBank->BreakPoints)
+	{
+		const uint16_t addr = pBank->GetMappedAddress() + bp.Address;
+
+		switch (bp.Type)
+		{
+		case FCodeAnalysisBankBP::EType::Exe:
+			CPUInterface->SetExecBreakpointAtAddress(addr, false);
+			break;
+		case FCodeAnalysisBankBP::EType::Byte:
+			CPUInterface->SetDataBreakpointAtAddress(addr, 1, false);
+			break;
+		case FCodeAnalysisBankBP::EType::Word:
+			CPUInterface->SetDataBreakpointAtAddress(addr, 2, false);
+			break;
+		}
+	}
+	
+	for (int bankPage = 0; bankPage < pBank->NoPages; bankPage++)
+		MappedBanks[startPageNo + bankPage] = -1;
+
+	// erase from mapped pages - better way?
+	auto& it = pBank->MappedPages.begin();
+
+	while (it != pBank->MappedPages.end())
+	{
+		if (*it == startPageNo)
+			it = pBank->MappedPages.erase(it);
+		else
+			++it;
+	}
+
+	return true;
+}
+
+bool FCodeAnalysisState::IsBankIdMapped(int16_t bankId) const
+{
+	for (int bankIdx = 0; bankIdx < kNoPagesInAddressSpace; bankIdx++)
+	{
+		if (MappedBanks[bankIdx] == bankId)
+			return true;
+	}
+
+	return false;
+}
+
+bool FCodeAnalysisState::IsAddressValid(FAddressRef addr) const
+{
+	const FCodeAnalysisBank* pBank = GetBank(addr.BankId);
+	if (pBank == nullptr)
+		return false;
+
+	if(addr.Address < pBank->GetMappedAddress() || addr.Address > (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
+		return false;
+
+	return true;
+}
+
+bool FCodeAnalysisState::MapBankForAnalysis(FCodeAnalysisBank& bank)
+{
+	for(int i=0;i< kNoPagesInAddressSpace;i++)
+		MappedBanksBackup[i] = MappedBanks[i];
+
+	const int startPageNo = bank.PrimaryMappedPage;
+	for (int bankPageNo = 0; bankPageNo < bank.NoPages; bankPageNo++)
+	{
+		MappedBanks[startPageNo + bankPageNo] = bank.Id;
+		MappedMem[startPageNo + bankPageNo] = &bank.Memory[bankPageNo * FCodeAnalysisPage::kPageSize];
+		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &bank.Pages[bankPageNo], &bank.Pages[bankPageNo]);	// Read/Write
+	}
+
+	return true;
+}
+
+void FCodeAnalysisState::UnMapAnalysisBanks()
+{
+	for (int i = 0; i < kNoPagesInAddressSpace; i++)
+	{
+		MappedBanks[i] = MappedBanksBackup[i];
+		const FCodeAnalysisBank* pMappedBank = GetBank(MappedBanks[i]);
+		if (MappedMem[i] != nullptr)
+		{
+			const int mappedPage = i - pMappedBank->PrimaryMappedPage;
+			SetCodeAnalysisRWPage(i, &pMappedBank->Pages[mappedPage], &pMappedBank->Pages[mappedPage]);	// Read/Write
+			MappedMem[i] = nullptr;
+		}
+	}
+}
+
+bool FCodeAnalysisState::IsAddressBreakpointed(FAddressRef addr) const
+{
+	const FCodeAnalysisBank* pBank = GetBank(addr.BankId);
+	assert(pBank != nullptr);
+	return pBank->IsAddressBreakpointed(addr.Address & pBank->SizeMask);
+}
+
+bool FCodeAnalysisState::ToggleExecBreakpointAtAddress(FAddressRef addr)
+{
+	FCodeAnalysisBank* pBank = GetBank(addr.BankId);
+	assert(pBank != nullptr);
+	const bool bpSet = pBank->ToggleExecBreakpointAtAddress(addr.Address & pBank->SizeMask);
+	if (pBank->IsMapped())
+		CPUInterface->SetExecBreakpointAtAddress(addr.Address, bpSet);
+
+	return bpSet;
+}
+
+bool FCodeAnalysisState::ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize)
+{
+	FCodeAnalysisBank* pBank = GetBank(addr.BankId);
+	assert(pBank != nullptr);
+	const bool bpSet = pBank->ToggleDataBreakpointAtAddress(addr.Address & pBank->SizeMask,dataSize);
+	if (pBank->IsMapped())
+		CPUInterface->SetDataBreakpointAtAddress(addr.Address, dataSize, bpSet);
+
+	return bpSet;
+}
+
+
 bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
 {
 	auto labelIt = LabelUsage.find(labelName);
@@ -65,7 +323,7 @@ bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint
 		bool bFound = true;
 		for (int byteNo = 0; byteNo < 8; byteNo++)
 		{
-			const uint8_t byte = pCPUInterface->ReadByte(address + byteNo);
+			const uint8_t byte = ReadByte(address + byteNo);
 			if (byte != pData[byteNo])
 			{
 				bFound = false;
@@ -93,7 +351,7 @@ bool IsAscii(uint8_t byte)
 void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 {
 	uint16_t address = startAddress;
-	ICPUInterface* pCPUInterface = CPUInterface;
+	const ICPUInterface* pCPUInterface = CPUInterface;
 	const int kStringMinLength = 4;
 	int stringLength = 0;
 	uint16_t stringStart = 0;
@@ -103,7 +361,7 @@ void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 	{
 		FCodeInfo* pCodeInfo = GetCodeInfoForAddress(address);
 		FDataInfo* pDataInfo = GetReadDataInfoForAddress(address);
-		const uint8_t byte = pCPUInterface->ReadByte(address++);
+		const uint8_t byte = ReadByte(address++);
 
 		// determine if char is ascii
 		const bool bIsAscii = IsAscii(byte);
@@ -133,57 +391,67 @@ void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 
 
 
-bool CheckPointerIndirectionInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerIndirectionInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
 	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckPointerIndirectionInstructionZ80(pCPUInterface, pc, out_addr);
+		return CheckPointerIndirectionInstructionZ80(state, pc, out_addr);
 	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckPointerIndirectionInstruction6502(pCPUInterface, pc, out_addr);
+		return CheckPointerIndirectionInstruction6502(state, pc, out_addr);
 	else
 		return false;
 }
 
-bool CheckPointerRefInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerRefInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckPointerRefInstructionZ80(pCPUInterface, pc, out_addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckPointerRefInstruction6502(pCPUInterface, pc, out_addr);
-	else
-		return false;
-}
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
 
-
-bool CheckJumpInstruction(ICPUInterface* pCPUInterface, uint16_t pc, uint16_t* out_addr)
-{
 	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckJumpInstructionZ80(pCPUInterface, pc, out_addr);
+		return CheckPointerRefInstructionZ80(state, pc, out_addr);
 	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckJumpInstruction6502(pCPUInterface, pc, out_addr);
+		return CheckPointerRefInstruction6502(state, pc, out_addr);
 	else
 		return false;
 }
 
 
-
-bool CheckCallInstruction(ICPUInterface* pCPUInterface, uint16_t pc)
+bool CheckJumpInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
 	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckCallInstructionZ80(pCPUInterface, pc);
+		return CheckJumpInstructionZ80(state, pc, out_addr);
+	else if (pCPUInterface->CPUType == ECPUType::M6502)
+		return CheckJumpInstruction6502(state, pc, out_addr);
+	else
+		return false;
+}
+
+
+
+bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
+{
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return CheckCallInstructionZ80(state, pc);
 	else if(pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckCallInstruction6502(pCPUInterface, pc);
+		return CheckCallInstruction6502(state, pc);
 	else
 		return false;
 }
 
 // check if function should stop static analysis
 // this would be a function that unconditionally affects the PC
-bool CheckStopInstruction(ICPUInterface* pCPUInterface, uint16_t pc)
+bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
 {
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
 	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckStopInstructionZ80(pCPUInterface, pc);
+		return CheckStopInstructionZ80(state, pc);
 	else if(pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckStopInstruction6502(pCPUInterface, pc);
+		return CheckStopInstruction6502(state, pc);
 	else
 		return false;
 }
@@ -198,7 +466,7 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 
 	for (int i = 0; i < pDataInfo->ByteSize; i++)
 	{
-		const char ch = state.CPUInterface->ReadByte(pDataInfo->Address + i);
+		const char ch = state.ReadByte(address + i);
 		if (ch == '\n')
 			textString += "<cr>";
 		if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
@@ -218,7 +486,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address,
 		
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
-	pLabel->Address = address;
+	//pLabel->Address = address;
 	pLabel->ByteSize = 0;
 
 	const int kLabelSize = 32;
@@ -331,7 +599,7 @@ static uint8_t AnalysisDasmInputCB(void* pUserData)
 {
 	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
 
-	return pDasmState->CodeAnalysisState->CPUInterface->ReadByte( pDasmState->CurrentAddress++);
+	return pDasmState->CodeAnalysisState->ReadByte( pDasmState->CurrentAddress++);
 }
 
 /* disassembler callback to output a character */
@@ -364,7 +632,7 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	SetNumberOutput(nullptr);
 }
 
-
+// This assumes that the address passed in is mapped to physical memory
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
@@ -372,46 +640,50 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	{
 		pCodeInfo = FCodeInfo::Allocate();
 		state.SetCodeInfoForAddress(pc, pCodeInfo);
-	}
-
-	FAnalysisDasmState dasmState;
-	dasmState.pCodeInfoItem = pCodeInfo;
-	dasmState.CodeAnalysisState = &state;
-	dasmState.CurrentAddress = pc;	
+	}	
 
 	// does this function branch?
 	uint16_t jumpAddr;
-	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
+	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
-		const bool isCall = CheckCallInstruction(state.CPUInterface, pc);
-		if (GenerateLabelForAddress(state, jumpAddr, isCall ? ELabelType::Function : ELabelType::Code))
-			state.GetLabelForAddress(jumpAddr)->References[pc]++;
+		const bool isCall = CheckCallInstruction(state, pc);
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddr, isCall ? ELabelType::Function : ELabelType::Code);
+		if(pLabel)
+			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
-		pCodeInfo->JumpAddress = jumpAddr;
+		pCodeInfo->JumpAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
+		assert(state.IsAddressValid(pCodeInfo->JumpAddress));
+
 		if (pCodeInfo->OperandType == EOperandType::Unknown)
 			pCodeInfo->OperandType = EOperandType::JumpAddress;
 	}
 	else
 	{
 		uint16_t ptr;
-		if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
+		if (CheckPointerRefInstruction(state, pc, &ptr))
 		{
 			if(pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
-			pCodeInfo->PointerAddress = ptr;
+			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
 		}
 
-		if (CheckPointerIndirectionInstruction(state.CPUInterface, pc, &ptr))
+		if (CheckPointerIndirectionInstruction(state, pc, &ptr))
 		{
-			pCodeInfo->PointerAddress = ptr;
+			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
-			if (GenerateLabelForAddress(state, ptr, ELabelType::Data))
-				state.GetLabelForAddress(ptr)->References[pc]++;
+			
+			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptr, ELabelType::Data);
+			if (pLabel)
+				pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		}
 	}
 
 	// generate disassembly
+	FAnalysisDasmState dasmState;
+	dasmState.pCodeInfoItem = pCodeInfo;
+	dasmState.CodeAnalysisState = &state;
+	dasmState.CurrentAddress = pc;
 	SetNumberOutput(&dasmState);	// not particularly happy with this - pointer to stack held globally
 	uint16_t newPC = pc;
 
@@ -422,9 +694,16 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	SetNumberOutput(nullptr);
 
-	pCodeInfo->Address = pc;
-	for (uint16_t codeAddr = pc; codeAddr < newPC; codeAddr++)
-		state.SetCodeInfoForAddress(codeAddr, pCodeInfo);	// make sure all addresses spanned by instruction are set
+	state.SetCodeInfoForAddress(pc, pCodeInfo);	
+
+	// set operands as data item
+	for (uint16_t codeAddr = pc + 1; codeAddr < newPC; codeAddr++)
+	{
+		FDataInfo* pOperandData = state.GetReadDataInfoForAddress(codeAddr);
+		pOperandData->DataType = EDataType::InstructionOperand;
+		pOperandData->ByteSize = 1;
+		pOperandData->InstructionAddress = pc;
+	}
 	pCodeInfo->Text = dasmState.Text;
 	pCodeInfo->ByteSize = newPC - pc;
 
@@ -434,64 +713,66 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 // return if we should continue
 bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 {
-	// update branch reference counters
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+
+	// Register Code accesses
+	// 
+	// set jump reference
 	uint16_t jumpAddr;
-	if (CheckJumpInstruction(state.CPUInterface, pc, &jumpAddr))
+	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
 		if (pLabel != nullptr)
-			pLabel->References[pc]++;	// add/increment reference
+			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+		if (pCodeInfo != nullptr)
+		{
+			pCodeInfo->JumpAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
+			assert(state.IsAddressValid(pCodeInfo->JumpAddress));
+		}
+
 	}
 
+	// set pointer reference
 	uint16_t ptr;
-	if (CheckPointerRefInstruction(state.CPUInterface, pc, &ptr))
+	if (CheckPointerRefInstruction(state, pc, &ptr))
 	{
 		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
 		if (pLabel != nullptr)
-			pLabel->References[pc]++;	// add/increment reference
+			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+		if (pCodeInfo != nullptr)
+			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
 	}
 
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	const char* pOldComment = nullptr;
 	if (pCodeInfo != nullptr)
 	{
-		if (pCodeInfo->Address != pc) // check code integrity 
-		{
-			if(pCodeInfo->Comment.empty() == false)
-				pOldComment = pCodeInfo->Comment.c_str();	// get pointer to old comment
-			state.SetCodeInfoForAddress(pc, nullptr);
-		}
-		else if(pCodeInfo->bSelfModifyingCode)	// check SMC
+		if(pCodeInfo->bSelfModifyingCode)	// check SMC
 		{
 			pCodeInfo->bSelfModifyingCode = false;
 			for(uint16_t operandAddr = 0;operandAddr<pCodeInfo->ByteSize;operandAddr++)
 			{
-				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pCodeInfo->Address + operandAddr);
-				if(pOpDataInfo->Writes.empty() == false)
+				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pc + operandAddr);
+				if(pOpDataInfo->Writes.IsEmpty() == false)
 				{
 					pCodeInfo->bSelfModifyingCode = true;
 				}					
 			}
-
-			return false;	// return
 		}
-		else
-		{
-			return false;
-		}
+		return false;
 	}
 
-	uint16_t newPC = WriteCodeInfoForAddress(state, pc);
+	const uint16_t newPC = WriteCodeInfoForAddress(state, pc);
+
 	// get new code info
 	pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pOldComment != nullptr)	// restore old comment
 		pCodeInfo->Comment = std::string(pOldComment);
 
-	if (CheckStopInstruction(state.CPUInterface, pc) || newPC < pc)
+	if (CheckStopInstruction(state, pc) || newPC < pc)
 		return false;
 	
 	pc = newPC;
-	state.SetCodeAnalysisDirty();
+	state.SetCodeAnalysisDirty(pc);
 	return true;
 }
 
@@ -499,7 +780,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 {
 	while(AnalyseAtPC(state,pc))
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(pc);
 
 	return;
 }
@@ -508,7 +789,7 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextp
 {
 	AnalyseAtPC(state, pc);
 
-	state.FrameTrace.push_back(pc);
+	state.FrameTrace.push_back(state.AddressRefFromPhysicalAddress(pc));
 	
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo != nullptr)
@@ -527,64 +808,59 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 	AnalyseFromPC(state, pc);
 }
 
+uint16_t g_DbgReadAddress = 0xddf8;
+
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 {
+	if (dataAddr == g_DbgReadAddress)
+	{
+		LOGINFO("Access 0x%04X at PC:", g_DbgReadAddress, pc);
+	}
+
 	if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
 		pDataInfo->LastFrameRead = state.CurrentFrameNo;
-		pDataInfo->Reads[pc]++;
+		pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 	}
 }
 
-void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr)
+void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,uint8_t value)
 {
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
-	pDataInfo->Writes[pc]++;
+	pDataInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 }
 
 void ReAnalyseCode(FCodeAnalysisState &state)
 {
-	int nextItemAddress = 0;
-	for (int i = 0; i < (1 << 16); i++)
+	int addr = 0;
+	while ( addr < (1 << 16))
 	{
-		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
-		if (i == nextItemAddress)
-		{
-			if (pCodeInfo != nullptr)
-			{
-				nextItemAddress = WriteCodeInfoForAddress(state, (uint16_t)i);
-			}
-
-			if (pCodeInfo == nullptr && state.GetReadDataInfoForAddress(i) == nullptr)
-			{
-				// set up data entry for address
-				FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(i);
-				pDataInfo->Address = (uint16_t)i;
-				pDataInfo->ByteSize = 1;
-				pDataInfo->DataType = EDataType::Byte;
-			}
-		}
-
-		// ensure self modifying code is flagged properly
-		if (pCodeInfo != nullptr && pCodeInfo->bSelfModifyingCode == true)
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
+		if (pCodeInfo != nullptr)
 		{
 			pCodeInfo->bSelfModifyingCode = false;
-			for (uint16_t operandAddr = 0; operandAddr < pCodeInfo->ByteSize; operandAddr++)
+
+			for (int i = 0; i < pCodeInfo->ByteSize; i++)
 			{
-				FDataInfo* pOpDataInfo = state.GetReadDataInfoForAddress(pCodeInfo->Address + operandAddr);
-				if (pOpDataInfo->Writes.empty() == false)
-				{
+				FDataInfo* pOperandData = state.GetReadDataInfoForAddress(addr + i);
+				pOperandData->ByteSize = 1;
+				pOperandData->DataType = EDataType::InstructionOperand;
+				pOperandData->InstructionAddress = addr;
+				if (pOperandData->Writes.IsEmpty() == false)
 					pCodeInfo->bSelfModifyingCode = true;
-				}
+				if (i > 0)	// make sure other entries after are null
+					state.SetCodeInfoForAddress(addr + i, nullptr);
 			}
+
+			addr += pCodeInfo->ByteSize;
 		}
-		/*const FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
-		if ((pCodeInfo != nullptr) && (pLabelInfo != nullptr) && (pLabelInfo->LabelType == LabelType::Data))
+		else
 		{
-			pCodeInfo->bSelfModifyingCode = true;
-		}*/
+			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addr);
+			addr++;
+		}
 	}
 }
 
@@ -597,18 +873,18 @@ void ResetReferenceInfo(FCodeAnalysisState &state)
 		if (pDataInfo != nullptr)
 		{
 			pDataInfo->LastFrameRead = -1;
-			pDataInfo->Reads.clear();
+			pDataInfo->Reads.Reset();
 			pDataInfo->LastFrameWritten = -1;
-			pDataInfo->Writes.clear();
+			pDataInfo->Writes.Reset();
 		}
 
 		FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
 		if (pLabelInfo != nullptr)
 		{
-			pLabelInfo->References.clear();
+			pLabelInfo->References.Reset();
 		}
 
-		state.SetLastWriterForAddress(i,  0);
+		state.SetLastWriterForAddress(i,  FAddressRef());
 	}
 }
 
@@ -619,7 +895,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	FLabelInfo *pLabel = FLabelInfo::Allocate();
 	pLabel->Name = name;
 	pLabel->LabelType = type;
-	pLabel->Address = address;
+	//pLabel->Address = address;
 	pLabel->ByteSize = 1;
 	pLabel->Global = type == ELabelType::Function;
 	state.SetLabelForAddress(address, pLabel);
@@ -637,10 +913,10 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
 	{
 		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
 		pCommentBlock->Comment = "";
-		pCommentBlock->Address = address;
+		//pCommentBlock->Address = address;
 		pCommentBlock->ByteSize = 1;
 		state.SetCommentBlockForAddress(address, pCommentBlock);
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(address);
 		return pCommentBlock;
 	}
 
@@ -653,127 +929,168 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	state.GlobalDataItems.clear();
 	state.GlobalFunctions.clear();
 
-	for (int i = 0; i < (1 << 16); i++)
+	// Make global list from what's in all banks
+	for (auto& bank : state.GetBanks())
 	{
-		FLabelInfo *pLabel = state.GetLabelForAddress(i);
+		if (bank.PrimaryMappedPage == -1)
+			continue;
+
+		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
+		{
+			const FCodeAnalysisPage& page = bank.Pages[pageNo];
+			const uint16_t pageBaseAddr = bank.GetMappedAddress() + (pageNo * FCodeAnalysisPage::kPageSize);
+
+			for (int pageAddr = 0; pageAddr < FCodeAnalysisPage::kPageSize; pageAddr++)
+			{
+				FLabelInfo* pLabel = page.Labels[pageAddr];
+				if (pLabel != nullptr)
+				{
+					if (pLabel->LabelType == ELabelType::Data && pLabel->Global)
+						state.GlobalDataItems.emplace_back(pLabel, FAddressRef(bank.Id, pageBaseAddr + pageAddr));
+					if (pLabel->LabelType == ELabelType::Function)
+						state.GlobalFunctions.emplace_back(pLabel, FAddressRef(bank.Id, pageBaseAddr + pageAddr));
+				}
+			}
+
+		}
+	}
+
+	/*for (int addr = 0; addr < (1 << 16); addr++)
+	{
+		FLabelInfo *pLabel = state.GetLabelForAddress(addr);
 		
 		if (pLabel != nullptr)
 		{
+			const int16_t bankId = state.GetBankFromAddress(addr);
+		
 			if (pLabel->LabelType == ELabelType::Data && pLabel->Global)
-				state.GlobalDataItems.push_back(pLabel);
+				state.GlobalDataItems.emplace_back(pLabel,bankId, addr);
 			if (pLabel->LabelType == ELabelType::Function)
-				state.GlobalFunctions.push_back(pLabel);
+				state.GlobalFunctions.emplace_back(pLabel, bankId, addr);
 		}
 		
-	}
+	}*/
 
 	state.bRebuildFilteredGlobalDataItems = true;
 	state.bRebuildFilteredGlobalFunctions = true;
 }
 
-void InitialiseCodeAnalysis(FCodeAnalysisState &state, ICPUInterface* pCPUInterface)
+FCodeAnalysisState::FCodeAnalysisState()
+{
+	for (int i = 0; i < kNoPagesInAddressSpace; i++)
+	{
+		MappedMem[i] = nullptr;
+		MappedBanks[i] = -1;
+		MappedBanksBackup[i] = -1;
+		ReadPageTable[i] = nullptr;
+		WritePageTable[i] = nullptr;
+	}
+
+}
+
+// Called each time a new game is loaded up
+void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 {
 	InitImageViewers();
 	InitCharacterSets();
 	
-	state.InitWatches();
-	state.ResetLabelNames();
-	state.ItemList.clear();
-
-	// This won't work with banked memory
-	// we need to reset all the banks
-	// the code analyser needs to know about them
-	/*for (int i = 0; i < (1 << 16); i++)	// loop across address range
-	{
-		// clear item pointers
-		state.SetLabelForAddress(i, nullptr);
-		state.SetCommentBlockForAddress(i, nullptr);
-		state.SetCodeInfoForAddress(i, nullptr);
-
-		// set up data entry for address
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
-		pDataInfo->Reset((uint16_t)i);
-
-		FCodeAnalysisPage* pPage = state.GetReadPage(i);
-		assert(i >= pPage->BaseAddress && i < pPage->BaseAddress + FCodeAnalysisPage::kPageSize);
-	}*/
+	InitWatches();
+	ResetLabelNames();
+	ItemList.clear();
 
 	// reset registered pages
-	for (FCodeAnalysisPage* pPage : state.GetRegisteredPages())
+	for (FCodeAnalysisPage* pPage : GetRegisteredPages())
 	{
+		//pPage->bUsed = false;
+
 		for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 		{
 			pPage->Labels[addr] = nullptr;
 			pPage->CommentBlocks[addr] = nullptr;
 			pPage->CodeInfo[addr] = nullptr;
-			assert(pPage->DataInfo[addr].Address == pPage->BaseAddress + addr);
-			pPage->DataInfo[addr].Reset(pPage->BaseAddress + addr);
+			pPage->DataInfo[addr].Reset();
 			pPage->MachineState[addr] = nullptr;
 		}
-	}
+	}	
 
-	FreeMachineStates(state);
+	// clear mapped mem
+	for (int i = 0; i < kNoPagesInAddressSpace; i++)
+	{
+		MappedMem[i] = nullptr;
+	}
+	
+	FreeMachineStates(*this);
 	FLabelInfo::FreeAll();
 	FCodeInfo::FreeAll();
 	FCommentBlock::FreeAll();
 
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
-		state.ViewState[i].CursorItemIndex = -1;
-		state.ViewState[i].SetCursorItem(nullptr);
+		//ViewState[i].CursorItemIndex = -1;
+		ViewState[i].SetCursorItem(FCodeAnalysisItem());
 	}
 
-	state.CPUInterface = pCPUInterface;
-	uint16_t initialPC = pCPUInterface->GetPC();
-	RunStaticCodeAnalysis(state, initialPC);
+	// reset banks
+	for (auto& bank : Banks)
+	{
+		bank.Description.clear();
+		bank.ItemList.clear();
+	}
+
+	CPUInterface = pCPUInterface;
+	//uint16_t initialPC = pCPUInterface->GetPC();
+	//RunStaticCodeAnalysis(*this, initialPC);
 
 	// Key Config
-	state.KeyConfig[(int)EKey::SetItemData] = ImGuiKey_D;
-	state.KeyConfig[(int)EKey::SetItemText] = ImGuiKey_T;
-	state.KeyConfig[(int)EKey::SetItemCode] = ImGuiKey_C;
-	state.KeyConfig[(int)EKey::SetItemImage] = ImGuiKey_I;
-	state.KeyConfig[(int)EKey::ToggleItemBinary] = ImGuiKey_B;
-	state.KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
-	state.KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
-	state.KeyConfig[(int)EKey::Comment] = ImGuiKey_Slash; // '/'
-	state.KeyConfig[(int)EKey::AddCommentBlock] = ImGuiKey_Semicolon;	// ';'
-	state.KeyConfig[(int)EKey::BreakContinue] = ImGuiKey_F5;
-	state.KeyConfig[(int)EKey::StepInto] = ImGuiKey_F11;
-	state.KeyConfig[(int)EKey::StepOver] = ImGuiKey_F10;
-	state.KeyConfig[(int)EKey::StepFrame] = ImGuiKey_F6;
-	state.KeyConfig[(int)EKey::StepScreenWrite] = ImGuiKey_F7;
-	state.KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
+	KeyConfig[(int)EKey::SetItemData] = ImGuiKey_D;
+	KeyConfig[(int)EKey::SetItemText] = ImGuiKey_T;
+	KeyConfig[(int)EKey::SetItemCode] = ImGuiKey_C;
+	KeyConfig[(int)EKey::SetItemImage] = ImGuiKey_I;
+	KeyConfig[(int)EKey::ToggleItemBinary] = ImGuiKey_B;
+	KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
+	KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
+	KeyConfig[(int)EKey::Comment] = ImGuiKey_Slash; // '/'
+	KeyConfig[(int)EKey::AddCommentBlock] = ImGuiKey_Semicolon;	// ';'
+	KeyConfig[(int)EKey::BreakContinue] = ImGuiKey_F5;
+	KeyConfig[(int)EKey::StepInto] = ImGuiKey_F11;
+	KeyConfig[(int)EKey::StepOver] = ImGuiKey_F10;
+	KeyConfig[(int)EKey::StepFrame] = ImGuiKey_F6;
+	KeyConfig[(int)EKey::StepScreenWrite] = ImGuiKey_F7;
+	KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
 
-	state.StackMin = 0xffff;
-	state.StackMax = 0;
+	StackMin = 0xffff;
+	StackMax = 0;
 }
 
 
-void SetItemCode(FCodeAnalysisState &state, FItem *pItem)
+void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
 {
-	DoCommand(state, new FSetItemCodeCommand(pItem->Address));
+	DoCommand(state, new FSetItemCodeCommand(address));
 }
 
-void SetItemData(FCodeAnalysisState &state, FItem *pItem)
+void SetItemData(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 {
-	DoCommand(state, new FSetItemDataCommand(pItem));
+	DoCommand(state, new FSetItemDataCommand(item));
 }
 
-void SetItemText(FCodeAnalysisState &state, FItem *pItem)
+void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 {
-	if (pItem->Type == EItemType::Data)
+	if (item.IsValid() == false)
+		return;
+
+	if (item.Item->Type == EItemType::Data)
 	{
-		FDataInfo *pDataItem = static_cast<FDataInfo *>(pItem);
+		FDataInfo *pDataItem = static_cast<FDataInfo *>(item.Item);
 		if (pDataItem->DataType == EDataType::Byte)
 		{
 			// set to ascii
 			pDataItem->ByteSize = 0;	// reset byte counter
 
-			uint16_t charAddr = pDataItem->Address;
+			FAddressRef charAddr = item.AddressRef;
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(charAddr);
 			while (pDataInfo != nullptr && pDataInfo->DataType == EDataType::Byte)
 			{
-				const uint8_t val = state.CPUInterface->ReadByte(charAddr);
+				const uint8_t val = state.ReadByte(charAddr);
 				if (val == 0 || val == 0xff)	// some strings are terminated by 0xff
 					break;
 				pDataItem->ByteSize++;
@@ -784,7 +1101,7 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 					pDataItem->bBit7Terminator = true;
 					break;
 				}
-				charAddr++;
+				charAddr.Address++;
 			}
 
 			// did the operation fail? -revert to byte
@@ -796,15 +1113,15 @@ void SetItemText(FCodeAnalysisState &state, FItem *pItem)
 			else
 			{
 				pDataItem->DataType = EDataType::Text;
-				state.SetCodeAnalysisDirty();
+				state.SetCodeAnalysisDirty(item.AddressRef);
 			}
 		}
 	}
 }
 
-void SetItemImage(FCodeAnalysisState& state, FItem* pItem)
+void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 {
-	FDataInfo* pDataItem = static_cast<FDataInfo*>(pItem);
+	FDataInfo* pDataItem = static_cast<FDataInfo*>(item.Item);
 	if (pDataItem->DataType != EDataType::Image)
 	{
 		pDataItem->DataType = EDataType::Image;
@@ -833,7 +1150,7 @@ FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 
 		pNewLabel = GenerateLabelForAddress(state, address, labelType);
 		
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(address);
 	}
 
 	return pNewLabel;
@@ -850,7 +1167,7 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 		if (pLabelInfo->Global || pLabelInfo->LabelType == ELabelType::Function)
 			GenerateGlobalInfo(state);
 
-		state.SetCodeAnalysisDirty();
+		state.SetCodeAnalysisDirty(address);
 	}
 }
 
@@ -864,9 +1181,9 @@ void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pTe
 	state.EnsureUniqueLabelName(pLabel->Name);
 }
 
-void SetItemCommentText(FCodeAnalysisState &state, FItem *pItem, const char *pText)
+void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText)
 {
-	pItem->Comment = pText;
+	item.Item->Comment = pText;
 }
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options)

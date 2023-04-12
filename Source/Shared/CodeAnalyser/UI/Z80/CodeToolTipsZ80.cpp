@@ -1311,11 +1311,11 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 	inst.Title = g_TTZ80TitleBuf;
 }
 
-void ShowCodeToolTipZ80(FCodeAnalysisState& state, const FCodeInfo* pCodeInfo)
+void ShowCodeToolTipZ80(FCodeAnalysisState& state, uint16_t addr)
 {
 	// Get flags for register usage and try to auto generate a description for the instruction.
 	FToolTipInstructionInfo instrInfo;
-	GetToolTipInfoFromOpcode(pCodeInfo->Address, state.CPUInterface, instrInfo);
+	GetToolTipInfoFromOpcode(addr, state.CPUInterface, instrInfo);
 
 	std::vector<std::string> regStrs;
 	GenerateRegisterValueStrings(instrInfo, state.CPUInterface, regStrs);

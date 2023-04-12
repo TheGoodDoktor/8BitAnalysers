@@ -102,14 +102,16 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 
 	for (int i = startAddress; i <= endAddress; i++)
 	{
+
 		const FLabelInfo* pLabel = state.GetLabelForAddress(i);
 		if (pLabel != nullptr)
 		{
+			const uint16_t addr = (uint16_t)i;
 			const std::string funcName = GetLabelEnumString(pLabel->LabelType);
 			//const std::string meName = std::string(magic_enum::enum_name(pLabel->LabelType));
 			//assert(meName == funcName);
 			WriteStringToFile(funcName, fp);
-			fwrite(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
+			fwrite(&addr, sizeof(addr), 1, fp);
 			fwrite(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 			WriteStringToFile(pLabel->Name, fp);
 			WriteStringToFile(pLabel->Comment, fp);
@@ -117,12 +119,13 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 
 			// References?
 			long refCountPos = ftell(fp);
-			int noReferences = (int)pLabel->References.size();
+			const auto& referenceList = pLabel->References.GetReferences();
+			int noReferences = (int)referenceList.size();
 			fwrite(&noReferences, sizeof(int), 1, fp);
 			noReferences = 0;
-			for (const auto& ref : pLabel->References)
+			for (const auto& ref : referenceList)
 			{
-				const uint16_t refAddr = ref.first;
+				const uint16_t refAddr = ref.Address;
 				if (refAddr >= startAddress && refAddr <= endAddress)	// only add references from region we are saving
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -156,7 +159,8 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 		//const ELabelType meType = magic_enum::enum_cast<ELabelType>(enumVal).value();
 		//assert(meType == funcType);
 		pLabel->LabelType = funcType;
-		fread(&pLabel->Address, sizeof(pLabel->Address), 1, fp);
+		uint16_t addr;
+		fread(&addr, sizeof(addr), 1, fp);
 		fread(&pLabel->ByteSize, sizeof(pLabel->ByteSize), 1, fp);
 		ReadStringFromFile(pLabel->Name, fp);
 		ReadStringFromFile(pLabel->Comment, fp);
@@ -175,7 +179,7 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 				fread(&refAddr, sizeof(refAddr), 1, fp);
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
-					pLabel->References[refAddr] = 1;
+					pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(refAddr));
 				}
 				else
 				{
@@ -184,7 +188,7 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 			}
 		}
 
-		state.SetLabelForAddress(pLabel->Address, pLabel);
+		state.SetLabelForAddress(addr, pLabel);
 	}
 }
 
@@ -206,9 +210,10 @@ void SaveCodeInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 		const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
 		if (pCodeInfo != nullptr)
 		{
+			const uint16_t addr = (uint16_t)i;
 			fwrite(&pCodeInfo->OperandType, sizeof(pCodeInfo->OperandType), 1, fp);
 			fwrite(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
-			fwrite(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
+			fwrite(&addr, sizeof(addr), 1, fp);
 			fwrite(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 			WriteStringToFile(pCodeInfo->Comment, fp);
 		}
@@ -230,7 +235,8 @@ void LoadCodeInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 		if (versionNo >= 4)
 			fread(&pCodeInfo->Flags, sizeof(pCodeInfo->Flags), 1, fp);
 
-		fread(&pCodeInfo->Address, sizeof(pCodeInfo->Address), 1, fp);
+		uint16_t addr;
+		fread(&addr, sizeof(addr), 1, fp);
 		fread(&pCodeInfo->ByteSize, sizeof(pCodeInfo->ByteSize), 1, fp);
 		if (versionNo < 10)
 		{
@@ -241,8 +247,14 @@ void LoadCodeInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 		}
 		//ReadStringFromFile(pCodeInfo->Text, fp);
 		ReadStringFromFile(pCodeInfo->Comment, fp);
-		for (int codeByte = 0; codeByte < pCodeInfo->ByteSize; codeByte++)	// set for whole instruction address range
-			state.SetCodeInfoForAddress(pCodeInfo->Address + codeByte, pCodeInfo);
+		state.SetCodeInfoForAddress(addr, pCodeInfo);
+		for (int codeByte = 1; codeByte < pCodeInfo->ByteSize; codeByte++)	
+		{
+			FDataInfo* pOperandData = state.GetReadDataInfoForAddress(addr + codeByte);
+			pOperandData->DataType = EDataType::InstructionOperand;
+			pOperandData->ByteSize = 1;
+			pOperandData->InstructionAddress = addr;
+		}
 	}
 }
 
@@ -268,7 +280,8 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			//const std::string meName = std::string(magic_enum::enum_name(pDataInfo->DataType));
 			//assert(meName == funcName);
 			WriteStringToFile(funcName, fp);
-			fwrite(&pDataInfo->Address, sizeof(pDataInfo->Address), 1, fp);
+			uint16_t addr = (uint16_t)i;
+			fwrite(&addr, sizeof(addr), 1, fp);
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 			fwrite(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
 			fwrite(&pDataInfo->CharSetAddress, sizeof(pDataInfo->CharSetAddress), 1, fp);
@@ -280,9 +293,9 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			int noReads = 0;
 			const long noReadsFilePos = ftell(fp);
 			fwrite(&noReads, sizeof(int), 1, fp);
-			for (const auto& ref : pDataInfo->Reads)
+			for (const auto& ref : pDataInfo->Reads.GetReferences())
 			{
-				const uint16_t refAddr = ref.first;
+				const uint16_t refAddr = ref.Address;
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -299,9 +312,9 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			int noWrites = 0;
 			const long noWritesFilePos = ftell(fp);
 			fwrite(&noWrites, sizeof(int), 1, fp);
-			for (const auto& ref : pDataInfo->Writes)
+			for (const auto& ref : pDataInfo->Writes.GetReferences())
 			{
-				const uint16_t refAddr = ref.first;
+				const uint16_t refAddr = ref.Address;
 				if (refAddr >= startAddress && refAddr <= endAddress)
 				{
 					fwrite(&refAddr, sizeof(refAddr), 1, fp);
@@ -332,7 +345,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 		fread(&address, sizeof(address), 1, fp);
 
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
-		pDataInfo->Address = address;
+		//pDataInfo->Address = address;
 		const EDataType funcType = GetDataEnumValue(enumVal.c_str());
 		//const EDataType meType = magic_enum::enum_cast<EDataType>(enumVal).value();
 		//assert(funcType == meType);
@@ -377,7 +390,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
 				if (dataAddr >= startAddress && dataAddr <= endAddress)
-					pDataInfo->Reads[dataAddr] = 1;
+					pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(dataAddr));
 				else
 					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
 			}
@@ -391,7 +404,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 				uint16_t dataAddr;
 				fread(&dataAddr, sizeof(uint16_t), 1, fp);
 				if (dataAddr >= startAddress && dataAddr <= endAddress)
-					pDataInfo->Writes[dataAddr] = 1;
+					pDataInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalAddress(dataAddr));
 				else
 					LOGWARNING("LoadDataInfoBin: Address %x outside of range", dataAddr);
 			}
@@ -418,7 +431,8 @@ void SaveCommentBlocksBin(const FCodeAnalysisState& state, FILE* fp, uint16_t st
 		const FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(i);
 		if (pCommentBlock != nullptr)
 		{
-			fwrite(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
+			uint16_t addr = (uint16_t)i;
+			fwrite(&addr, sizeof(addr), 1, fp);
 			WriteStringToFile(pCommentBlock->Comment, fp);
 		}
 	}
@@ -432,9 +446,10 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, ui
 	for (int i = 0; i < recordCount; i++)
 	{
 		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
-		fread(&pCommentBlock->Address, sizeof(pCommentBlock->Address), 1, fp);
+		uint16_t address;
+		fread(&address, sizeof(address), 1, fp);
 		ReadStringFromFile(pCommentBlock->Comment, fp);
-		state.SetCommentBlockForAddress(pCommentBlock->Address, pCommentBlock);
+		state.SetCommentBlockForAddress(address, pCommentBlock);
 	}
 }
 
@@ -452,7 +467,7 @@ void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrSta
 	for (int i = addrStart; i <= addrEnd; i++)
 	{
 		const uint16_t invalid = 0;
-		const uint16_t addr = state.GetLastWriterForAddress(i);
+		const uint16_t addr = state.GetLastWriterForAddress(i).Address;
 		if (addr >= addrStart && addr <= addrEnd)
 			fwrite(&addr, sizeof(uint16_t), 1, fp);
 		else
@@ -471,7 +486,7 @@ void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrSta
 
 	for (const auto& watch : state.GetWatches())
 	{
-		if (watch >= addrStart && watch <= addrEnd)
+		if (watch.Address >= addrStart && watch.Address <= addrEnd)
 		{
 			fwrite(&watch, sizeof(uint16_t), 1, fp);
 			noWatches++;
@@ -551,7 +566,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 		{
 			uint16_t lastWriter;
 			fread(&lastWriter, sizeof(uint16_t), 1, fp);
-			state.SetLastWriterForAddress(i, lastWriter);
+			state.SetLastWriterForAddress(i, state.AddressRefFromPhysicalAddress(lastWriter));
 		}
 	}
 	else if (versionNo >= 4)
@@ -560,7 +575,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 		{
 			uint16_t lastWriter;
 			fread(&lastWriter, sizeof(uint16_t), 1, fp);
-			state.SetLastWriterForAddress(i, lastWriter);
+			state.SetLastWriterForAddress(i, state.AddressRefFromPhysicalAddress(lastWriter));
 		}
 	}
 
@@ -578,10 +593,10 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 
 		for (int i = 0; i < noWatches; i++)
 		{
-			uint16_t watch;
-			fread(&watch, sizeof(uint16_t), 1, fp);
-			if (watch >= addrStart && watch <= addrEnd)
-				state.AddWatch(watch);
+			uint16_t watchAddress;
+			fread(&watchAddress, sizeof(uint16_t), 1, fp);
+			if (watchAddress >= addrStart && watchAddress <= addrEnd)
+				state.AddWatch({ state.GetBankFromAddress(watchAddress), watchAddress });
 		}
 	}
 
@@ -605,6 +620,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 			{
 				fread(&params.bDynamic, sizeof(params.bDynamic), 1, fp);
 			}
+			params.ColourLUT = state.Config.CharacterColourLUT;
 			CreateCharacterSetAt(state, params);
 		}
 	}
@@ -627,6 +643,10 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 		}
 	}
 }
+
+const uint32_t kMachineStateMagic = 0xFaceCafe;
+const uint32_t kMachineStateVersion = 1;
+
 
 void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 {
@@ -654,21 +674,32 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 		{
 			// Restore
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
-				state.CPUInterface->WriteByte(pCodeInfo->Address + i, pCodeInfo->OpcodeBkp[i]);
+				state.CPUInterface->WriteByte(addr + i, pCodeInfo->OpcodeBkp[i]);
 
 			pCodeInfo->bNOPped = false;
 		}
 	}
 
-	// copy memory
-	for (int i = 0; i < 1 << 16; i++)
+	// write magic
+	fwrite(&kMachineStateMagic, sizeof(kMachineStateMagic), 1, fp);
+	fwrite(&kMachineStateVersion, sizeof(kMachineStateVersion), 1, fp);
+
+	const uint32_t type = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128 ? 128 : 48;
+	fwrite(&type, sizeof(type), 1, fp);
+	const int noBanks = type == 128 ? 8 : 3;
+
+	// write out the RAM banks
+	for (int ramBank = 0; ramBank < noBanks; ramBank++)
+		fwrite(pSpectrumEmu->ZXEmuState.ram[ramBank], 0x4000, 1, fp);
+
+	// write memory setup
+	if (type == 128)
 	{
-		const uint8_t memByte = pSpectrumEmu->ReadByte(i);
-		fwrite(&memByte, sizeof(memByte), 1, fp);
+		const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
+		fwrite(&memConfig, sizeof(memConfig), 1, fp);
 	}
 
 	// get CPU state
-	//z80_t* pCPUState = (z80_t*)frame.CPUState;
 	fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa, sizeof(uint64_t), 1, fp);
 	fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
 	fwrite(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
@@ -676,24 +707,64 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 	fwrite(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
 }
 
-void LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
+bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 {
+	uint32_t magicVal;
+	fread(&magicVal, sizeof(magicVal), 1, fp);
+	if (magicVal != kMachineStateMagic)
+		return false;
+
+	// version
+	uint32_t fileVersion = 0;
+	fread(&fileVersion, sizeof(fileVersion), 1, fp);
+	
+	// machine type
+	const uint32_t machineType = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128 ? 128 : 48;
+	uint32_t type = 0;
+	fread(&type, sizeof(type), 1, fp);
+	if (type != machineType)
+		return false;
+
 	// read memory
-	for (int i = 0; i < 1 << 16; i++)
+	const int noBanks = type == 128 ? 8 : 3;
+
+	// read in the RAM banks
+	for (int ramBank = 0; ramBank < noBanks; ramBank++)
+		fread(pSpectrumEmu->ZXEmuState.ram[ramBank], 0x4000, 1, fp);
+
+	// write memory setup
+	if (type == 128)
 	{
-		uint8_t memByte = 0;
-		fread(&memByte, sizeof(memByte), 1, fp);
-		pSpectrumEmu->WriteByte(i, memByte);
+		uint8_t memConfig = 0;
+		fread(&memConfig, sizeof(memConfig), 1, fp);
+		pSpectrumEmu->ZXEmuState.last_mem_config = memConfig;
+
+		// bit 3 defines the video scanout memory bank (5 or 7) 
+		pSpectrumEmu->ZXEmuState.display_ram_bank = (memConfig & (1 << 3)) ? 7 : 5;
+
+		// map last bank
+		mem_map_ram(&pSpectrumEmu->ZXEmuState.mem, 0, 0xC000, 0x4000, pSpectrumEmu->ZXEmuState.ram[memConfig & 0x7]);
+
+		// map ROM
+		if (memConfig & (1 << 4)) // bit 4 set: ROM1 
+			mem_map_rom(&pSpectrumEmu->ZXEmuState.mem, 0, 0x0000, 0x4000, pSpectrumEmu->ZXEmuState.rom[1]);
+		else // bit 4 clear: ROM0 
+			mem_map_rom(&pSpectrumEmu->ZXEmuState.mem, 0, 0x0000, 0x4000, pSpectrumEmu->ZXEmuState.rom[0]);
+
+		// Set code analysis banks
+		pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1:0);
+		pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
 	}
 
 	// get CPU state
-	//z80_t* pCPUState = (z80_t*)frame.CPUState;
 	fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa, sizeof(uint64_t), 1, fp);
 	fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
 	fread(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
 	fread(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
 	fread(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
 
+	pSpectrumEmu->CodeAnalysis.SetAllBanksDirty();
+	return true;
 }
 
 bool SaveGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)

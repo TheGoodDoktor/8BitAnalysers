@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <cstdint>
 #include <string>
-#include <map>
+//#include <map>
 #include <vector>
 
 #include <Util/Misc.h>
+
+#include "CodeAnalyserTypes.h"
 
 class FMemoryBuffer;
 
@@ -42,17 +44,51 @@ enum class EOperandType
 
 struct FCPUFunctionCall
 {
-	uint16_t	FunctionAddr = 0;
-	uint16_t	CallAddr = 0;
-	uint16_t	ReturnAddr = 0;
+	FAddressRef		FunctionAddr;
+	FAddressRef		CallAddr;
+	FAddressRef		ReturnAddr;
 };
 
 struct FItem
 {
 	EItemType		Type;
 	std::string		Comment;
-	uint16_t		Address;	// note: this might be a problem if pages are mapped to different physical addresses
 	uint16_t		ByteSize;
+};
+
+/*struct FItemReference
+{
+	FItemReference() = default;
+	//FItemReference(uint16_t pc) : InstructionAddress(pc) {}
+	FItemReference(uint16_t pc, int16_t bankId) : InstructionRef(pc, bankId) {}
+	FItemReference(const FAddressRef& addrRef) : InstructionRef(addrRef) {}
+
+	FAddressRef	InstructionRef;
+	//uint16_t	InstructionAddress = 0;
+	//int16_t		InstructionPageId = 0;
+};*/
+
+class FItemReferenceTracker
+{
+public:
+	void Reset() { References.clear(); }
+	
+	void	RegisterAccess(const FAddressRef& addrRef)
+	{
+		const auto size = References.size();
+		for (int i = 0; i < size; i++)
+		{
+			if (References[i] == addrRef)
+				return;
+		}
+
+		References.emplace_back(addrRef);
+	}
+
+	bool IsEmpty() const { return References.empty(); }
+	const std::vector<FAddressRef>& GetReferences() const { return References; }
+private:
+	std::vector<FAddressRef>	References;
 };
 
 struct FLabelInfo : FItem
@@ -63,7 +99,8 @@ struct FLabelInfo : FItem
 	std::string				Name;
 	bool					Global = false;
 	ELabelType				LabelType = ELabelType::Data;
-	std::map<uint16_t, int>	References;
+	FItemReferenceTracker	References;
+	//std::map<uint16_t, int>	References;
 private:
 	FLabelInfo() { Type = EItemType::Label; }
 	~FLabelInfo() = default;
@@ -78,8 +115,8 @@ struct FCodeInfo : FItem
 
 	EOperandType	OperandType = EOperandType::Unknown;
 	std::string		Text;				// Disassembly text
-	uint16_t		JumpAddress = 0;	// optional jump address
-	uint16_t		PointerAddress = 0;	// optional pointer address
+	FAddressRef		JumpAddress;	// optional jump address
+	FAddressRef		PointerAddress;	// optional pointer address
 	int				FrameLastExecuted = -1;
 
 	union
@@ -117,6 +154,7 @@ enum class EDataType
 	Image,		// character/sprite image
 	Blob,		// opaque data blob
 	ColAttr,	// colour attribute
+	InstructionOperand,	// an operand for an instruction
 
 	Max,
 	None = Max
@@ -143,18 +181,17 @@ struct FDataInfo : FItem
 {
 	FDataInfo() :FItem() { Type = EItemType::Data; }
 
-	void Reset(uint16_t addr)
+	void Reset()
 	{
 		Flags = 0;
-		Address = addr;
 		ByteSize = 1;
 		DataType = EDataType::Byte;
 		OperandType = EOperandType::Unknown;
 		Comment.clear();
 		LastFrameRead = -1;
-		Reads.clear();
+		Reads.Reset();
 		LastFrameWritten = -1;
-		Writes.clear();
+		Writes.Reset();
 	}
 
 	EDataType	DataType = EDataType::Byte;
@@ -165,8 +202,8 @@ struct FDataInfo : FItem
 		struct
 		{
 			bool			bGameState : 1;
-			bool			bCodeOperand : 1;	// for self modifying code
-			bool			bUnused : 1;
+			bool			bUnused1 : 1;	
+			bool			bUnused2 : 1;
 			bool			bBit7Terminator : 1;	// for bit 7 terminated strings
 			bool			bShowBinary : 1;	// display the value(s) as binary
 			bool			bShowCharMap : 1;	// display memory as character map
@@ -182,12 +219,14 @@ struct FDataInfo : FItem
 			uint16_t	CharSetAddress;	// address of character set
 			uint8_t		EmptyCharNo;
 		};
+		uint16_t	InstructionAddress;	// for operand data types
 	};
 
 	int						LastFrameRead = -1;
-	std::map<uint16_t, int>	Reads;	// address and counts of data access instructions
+	FItemReferenceTracker	Reads;	// address and counts of data access instructions
 	int						LastFrameWritten = -1;
-	std::map<uint16_t, int>	Writes;	// address and counts of data access instructions
+	FItemReferenceTracker	Writes;	// address and counts of data access instructions
+	FAddressRef				LastWriter;
 };
 
 struct FCommentBlock : FItem
@@ -222,23 +261,22 @@ struct FMachineState
 
 struct FCodeAnalysisPage
 {
-	void Initialise(uint16_t address);
-	void ChangeAddress(uint16_t address);
+	void Initialise();
 	void Reset(void);
 	void WriteToBuffer(FMemoryBuffer& buffer);
 	bool ReadFromBuffer(FMemoryBuffer& buffer);
 
 	void SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr);
 	static const int kPageSize = 1024;	// 1Kb page
+	static const int kPageShift = 10;	// 1Kb page
+	static const int kPageMask = kPageSize - 1;
 
 	bool			bUsed = false;	// has this page been used?
 	int16_t			PageId = -1;
-	uint16_t		BaseAddress; // physical base address
 	FLabelInfo*		Labels[kPageSize];
 	FCodeInfo*		CodeInfo[kPageSize];
 	FDataInfo		DataInfo[kPageSize];
 	FCommentBlock*	CommentBlocks[kPageSize];
-	uint16_t		LastWriter[kPageSize];
 
 	FMachineState*	MachineState[kPageSize];
 };

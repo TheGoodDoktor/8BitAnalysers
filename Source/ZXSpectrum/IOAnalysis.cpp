@@ -14,6 +14,8 @@ std::map< SpeccyIODevice, const char*> g_DeviceNames =
 	{SpeccyIODevice::Beeper, "Beeper"},
 	{SpeccyIODevice::BorderColour, "BorderColour"},
 	{SpeccyIODevice::KempstonJoystick, "KempstonJoystick"},
+	{SpeccyIODevice::MemoryBank, "Memory Bank Switch"},
+	{SpeccyIODevice::SoundChip, "Sound Chip (AY)"},
 	{SpeccyIODevice::Unknown, "Unknown"},
 };
 
@@ -143,6 +145,8 @@ else if (sys->type == ZX_TYPE_128) {
 
 void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 {
+	 const FAddressRef PCaddrRef = pSpectrumEmu->CodeAnalysis.AddressRefFromPhysicalAddress(pc);
+
 	// handle IO
 	//todo generalise to specific devices
 	if (pins & Z80_IORQ)
@@ -150,22 +154,25 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 		// WIP based on above
 		if (pins & Z80_RD)
 		{
+			SpeccyIODevice readDevice = SpeccyIODevice::None;
+
+			// Spectrum ULA (...............0)
+			//	Bits 5 and 7 as read by INning from Port 0xfe are always one
 			if ((pins & Z80_A0) == 0)
+				readDevice = SpeccyIODevice::Keyboard;
+			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) // Kempston Joystick (........000.....)
+				readDevice = SpeccyIODevice::KempstonJoystick;
+			// 128K specific
+			else if(pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128)
 			{
-				// Spectrum ULA (...............0)
-				//	Bits 5 and 7 as read by INning from Port 0xfe are always one
-							
-				const uint16_t column_mask = (~(Z80_GET_ADDR(pins) >> 8)) & 0x00FF;
-				FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::Keyboard];
-				ioDevice.Callers[pc]++;
-				ioDevice.ReadCount++;
-				ioDevice.FrameReadCount++;
+				if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14))
+					readDevice = SpeccyIODevice::SoundChip;
 			}
-			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) 
+
+			if (readDevice != SpeccyIODevice::None)
 			{
-				// Kempston Joystick (........000.....) 
-				FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::KempstonJoystick];
-				ioDevice.Callers[pc]++;
+				FIOAccess& ioDevice = IODeviceAcceses[(int)readDevice];
+				ioDevice.Callers.RegisterAccess(PCaddrRef);
 				ioDevice.ReadCount++;
 				ioDevice.FrameReadCount++;
 			}
@@ -173,40 +180,45 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 		else if (pins & Z80_WR)
 		{
 			// an IO write
+			SpeccyIODevice writeDevice = SpeccyIODevice::None;
 			const uint8_t data = Z80_GET_DATA(pins);
+
 			if ((pins & Z80_A0) == 0)
 			{
 				// Spectrum ULA (...............0)
 				
 				// has border colour changed?
 				if((data & 7) != (LastFE & 7))
-				{
-					FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::BorderColour];
-					ioDevice.Callers[pc]++;
-					ioDevice.WriteCount++;
-					ioDevice.FrameWriteCount++;
-				}
+					writeDevice = SpeccyIODevice::BorderColour;
 
 				// has beeper changed
 				if((data & (1 << 4)) != (LastFE & (1 << 4)))
-				{
-					FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::Beeper];
-					ioDevice.Callers[pc]++;
-					ioDevice.WriteCount++;
-					ioDevice.FrameWriteCount++;
-				}
+					writeDevice = SpeccyIODevice::Beeper;
 
 
 				// has mic output changed
 				if ((data & (1 << 3)) != (LastFE & (1 << 3)))
-				{
-					FIOAccess &ioDevice = IODeviceAcceses[(int)SpeccyIODevice::Mic];
-					ioDevice.Callers[pc]++;
-					ioDevice.WriteCount++;
-					ioDevice.FrameWriteCount++;
-				}
+					writeDevice = SpeccyIODevice::Mic;
 				
 				LastFE = data;
+			}
+			// 128K specific
+			else if (pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128)
+			{
+				if ((pins & (Z80_A15 | Z80_A1)) == 0)
+					writeDevice = SpeccyIODevice::MemoryBank;
+				else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14))	// select AY-3-8912 register (11............0.)
+					writeDevice = SpeccyIODevice::SoundChip;
+				else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == Z80_A15)	// write to AY-3-8912 (10............0.) 
+					writeDevice = SpeccyIODevice::SoundChip;
+			}
+
+			if (writeDevice != SpeccyIODevice::None)
+			{
+				FIOAccess& ioDevice = IODeviceAcceses[(int)writeDevice];
+				ioDevice.Callers.RegisterAccess(PCaddrRef);
+				ioDevice.WriteCount++;
+				ioDevice.FrameReadCount++;
 			}
 
 		}
@@ -215,7 +227,8 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 
 void FIOAnalysis::DrawUI()
 {
-	FCodeAnalysisViewState& viewState = pSpectrumEmu->CodeAnalysis.GetFocussedViewState();
+	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawIOAnalysisGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
 	FIOAccess *pSelectedIOAccess = nullptr;
@@ -251,12 +264,13 @@ void FIOAnalysis::DrawUI()
 		ImGui::Text("Writes %d (frame %d)", ioAccess.WriteCount, ioAccess.FrameWriteCount);
 
 		ImGui::Text("Callers");
-		for (const auto &accessPC : ioAccess.Callers)
+		for (const auto &accessPC : ioAccess.Callers.GetReferences())
 		{
-			ImGui::PushID(accessPC.first);
-			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC.first);
+			ImGui::PushID(accessPC.Val);
+			ShowCodeAccessorActivity(state, accessPC);
+			ImGui::Text("   ");
 			ImGui::SameLine();
-			ImGui::Text(" - %d accesses", accessPC.second);
+			DrawCodeAddress(state, viewState, accessPC);
 			ImGui::PopID();
 		}
 	}

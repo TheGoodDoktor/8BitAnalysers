@@ -43,7 +43,7 @@ public:
 				CurBlockDirective = addrBlockDirective;
 			}
 
-			AddInstruction(pCurEntry, addr);
+			AddInstruction(pCurEntry, {State.GetBankFromAddress(addr), (uint16_t)addr	});
 
 			CurSubBlockDirective = addrSubBlockDirective;
 	
@@ -179,14 +179,14 @@ public:
 			}
 			else
 			{
-				SkoolFile.AddLabel(pLabelInfo->Address, pLabelInfo->Name);
+				SkoolFile.AddLabel(addr, pLabelInfo->Name);
 			}
 		}
 	}
 
 	// Try to add a code/data instruction to the entry from the FItem.
 	// Returns true if we added one sucessfully.
-	bool AddInstruction(FSkoolEntry* pEntry, uint16_t addr)
+	bool AddInstruction(FSkoolEntry* pEntry, FAddressRef addr)
 	{
 		if (pEntry)
 		{
@@ -195,13 +195,13 @@ public:
 			
 			if (pCodeInfo != nullptr)
 			{
-				UpdateCodeInfoForAddress(State, addr); // what does this do again?
+				UpdateCodeInfoForAddress(State, addr.Address); // what does this do again?
 				operationText = pCodeInfo->Text;
 				pItem = pCodeInfo;
 			}
 			else if (pDataInfo != nullptr)
 			{
-				operationText = MakeDataAsmText(pDataInfo);
+				operationText = MakeDataAsmText(FCodeAnalysisItem(pDataInfo,addr));
 				pItem = pDataInfo;
 			}
 			else
@@ -212,7 +212,7 @@ public:
 			}
 
 			std::string commentLines;
-			if (FCommentBlock* pCommentBlock = State.GetCommentBlockForAddress(addr))
+			if (FCommentBlock* pCommentBlock = State.GetCommentBlockForAddress(addr.Address))
 			{
 				commentLines = pCommentBlock->Comment;
 			}
@@ -227,7 +227,7 @@ public:
 			{
 				if (pSkoolInfo)
 				{
-					if (const FSkoolFileLocation* pLocation = pSkoolInfo->GetLocation(addr))
+					if (const FSkoolFileLocation* pLocation = pSkoolInfo->GetLocation(addr.Address))
 					{
 						if (pLocation->bBranchDestination)
 							bIsBranchDestination = true;
@@ -241,7 +241,7 @@ public:
 			}
 
 			assert(pItem);
-			pEntry->AddInstruction(addr, pItem->Comment, operationText, prefix, commentLines);
+			pEntry->AddInstruction(addr.Address, pItem->Comment, operationText, prefix, commentLines);
 			return true;
 		}
 		return false;
@@ -264,10 +264,11 @@ public:
 		return SkoolFile.Export(pFilename, base);
 	}
 
-	std::string MakeDataAsmText(const FDataInfo* pDataInfo)
+	std::string MakeDataAsmText(const FCodeAnalysisItem& item)
 	{
 		std::string asmText;
 		char tmp[16] = { 0 };
+		const uint16_t addr = item.AddressRef.Address;
 		
 		ENumberDisplayMode numMode = ENumberDisplayMode::None;
 		if (pDataInfo->OperandType == EOperandType::Unknown)
@@ -293,7 +294,7 @@ public:
 
 		if (pDataInfo->DataType == EDataType::Byte)
 		{
-			snprintf(tmp, sizeof(tmp),  "DEFB %s", NumStr(State.CPUInterface->ReadByte(pDataInfo->Address), numMode));
+			snprintf(tmp, sizeof(tmp),  "DEFB %s", NumStr(State.ReadByte(addr), numMode));
 			asmText = tmp;
 		}
 		else if (pDataInfo->DataType == EDataType::ByteArray 
@@ -307,7 +308,7 @@ public:
 			const uint16_t numItems = pDataInfo->ByteSize;
 			for (int i=0; i<numItems; i++)
 			{
-				snprintf(tmp, sizeof(tmp),  "%s,", NumStr(State.CPUInterface->ReadByte(pDataInfo->Address + i), numMode));
+				snprintf(tmp, sizeof(tmp),  "%s,", NumStr(State.ReadByte(addr + i), numMode));
 				asmText += tmp;
 			}
 			// remove last comma
@@ -315,7 +316,7 @@ public:
 		}
 		else if (pDataInfo->DataType == EDataType::Word)
 		{
-			snprintf(tmp, sizeof(tmp), "DEFW %s", NumStr(State.CPUInterface->ReadByte(pDataInfo->Address), numMode));
+			snprintf(tmp, sizeof(tmp), "DEFW %s", NumStr(State.ReadByte(addr), numMode));
 			asmText = tmp;
 		}
 		else if (pDataInfo->DataType == EDataType::WordArray)
@@ -324,7 +325,7 @@ public:
 			asmText = "DEFW ";
 			for (int i = 0; i < numItems; i++)
 			{
-				snprintf(tmp, sizeof(tmp), "%s,", NumStr(State.CPUInterface->ReadWord(pDataInfo->Address + i), numMode));
+				snprintf(tmp, sizeof(tmp), "%s,", NumStr(State.ReadWord(addr + i), numMode));
 				asmText += tmp;
 			}
 			// remove last comma
@@ -338,7 +339,7 @@ public:
 			bool bContainsText = false;
 			for (int i = 0; i < pDataInfo->ByteSize; i++)
 			{
-				const uint8_t ch = State.CPUInterface->ReadByte(pDataInfo->Address + i);
+				const uint8_t ch = State.CPUInterface->ReadByte(addr + i);
 				if (IsSpectrumChar(ch & 0x7f))
 				{
 					if (ch & 0x80)
@@ -436,7 +437,7 @@ bool ExportSkoolFile(FCodeAnalysisState& state, const char* pTextFileName, FSkoo
 		LOGINFO("Failed to export '%s'", pTextFileName);
 
 	SetNumberDisplayMode(previousDisplayMode);
-	state.SetCodeAnalysisDirty();
+	state.SetAddressRangeDirty();	
 
 	std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
 	LOGDEBUG("Exporting %s took %.2f ms", pTextFileName, ms_double);
