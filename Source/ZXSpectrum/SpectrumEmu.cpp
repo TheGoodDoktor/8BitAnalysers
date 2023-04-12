@@ -582,10 +582,11 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			{
 				FrameScreenAttrWrites.push_back({ addrRef,value, pcAddrRef });
 			}
-			FCodeInfo *pCodeWrittenTo = state.GetCodeInfoForAddress(addr);
-			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
+			FDataInfo *pDataWrittenTo = state.GetReadDataInfoForAddress(addr);
+			if (pDataWrittenTo->DataType == EDataType::InstructionOperand) 
 			{
 				// TODO: record some info such as what byte was written
+				FCodeInfo* pCodeWrittenTo = state.GetCodeInfoForAddress(pDataWrittenTo->InstructionAddress);
 				pCodeWrittenTo->bSelfModifyingCode = true;
 			}
 		}

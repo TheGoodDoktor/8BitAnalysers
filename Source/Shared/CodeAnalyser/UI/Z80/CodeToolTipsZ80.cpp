@@ -1352,7 +1352,7 @@ void ShowCodeToolTipZ80(FCodeAnalysisState& state, uint16_t addr)
 		ImGui::Separator();
 
 		static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-		if (ImGui::BeginTable("ToolTipRegisters", regStrs.size(), flags))
+		if (ImGui::BeginTable("ToolTipRegisters", (int)regStrs.size(), flags))
 		{
 			for (const std::string& str : regStrs)
 			{

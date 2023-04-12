@@ -752,9 +752,9 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddLabel]))
 		{
-			if (pCursorItem->Type != EItemType::Label)
+			if (cursorItem.Item->Type != EItemType::Label)
 			{
-				AddLabelAtAddressUI(state, pCursorItem->AddressRef);
+				AddLabelAtAddressUI(state, cursorItem.AddressRef);
 			}
 			else
 			{
