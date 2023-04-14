@@ -338,6 +338,8 @@ bool WriteDataInfoToJson(uint16_t addr,const FDataInfo* pDataInfo, json& jsonDoc
 	assert(pDataInfo != nullptr);
 	if (pDataInfo->DataType != EDataType::Byte)
 		dataInfoJson["DataType"] = (int)pDataInfo->DataType;
+	if (pDataInfo->DataType == EDataType::InstructionOperand)
+		dataInfoJson["InstructionAddress"] = pDataInfo->InstructionAddress;
 	if (pDataInfo->OperandType != EOperandType::Unknown)
 		dataInfoJson["OperandType"] = pDataInfo->OperandType;
 	if (pDataInfo->ByteSize != 1)
@@ -478,7 +480,7 @@ FCodeInfo* CreateCodeInfoFromJson(const json& codeInfoJson)
 
 	if (codeInfoJson.contains("OperandType"))
 		pCodeInfo->OperandType = codeInfoJson["OperandType"];
-
+	
 	if (codeInfoJson.contains("Flags"))
 		pCodeInfo->Flags = codeInfoJson["Flags"];
 
@@ -519,6 +521,8 @@ void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json & dataInfoJson)
 		pDataInfo->DataType = (EDataType)(int)dataInfoJson["DataType"];
 	if (dataInfoJson.contains("OperandType"))
 		pDataInfo->OperandType = (EOperandType)(int)dataInfoJson["OperandType"];
+	if (dataInfoJson.contains("InstructionAddress"))
+		pDataInfo->InstructionAddress = dataInfoJson["InstructionAddress"];
 	if (dataInfoJson.contains("ByteSize"))
 		pDataInfo->ByteSize = dataInfoJson["ByteSize"];
 	if (dataInfoJson.contains("Flags"))

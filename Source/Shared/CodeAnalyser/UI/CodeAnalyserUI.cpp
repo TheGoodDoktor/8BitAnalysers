@@ -221,7 +221,7 @@ void DrawCallStack(FCodeAnalysisState& state)
 void DrawStack(FCodeAnalysisState& state)
 {
 	const uint16_t sp = state.CPUInterface->GetSP();
-	if (state.StackMin > state.StackMax)	// stack is invalid
+	if (state.StackMin >= state.StackMax)	// stack is invalid
 	{
 		ImGui::Text("No valid stack discovered");
 		return;

@@ -35,7 +35,7 @@ bool FCodeAnalysisBank::IsAddressBreakpointed(uint16_t addr) const
 }
 bool FCodeAnalysisBank::ToggleExecBreakpointAtAddress(uint16_t addr)
 {
-	for (auto& bpIt = BreakPoints.begin();bpIt!=BreakPoints.end();++bpIt)
+	for (auto bpIt = BreakPoints.begin();bpIt!=BreakPoints.end();++bpIt)
 	{
 		if (bpIt->Address == addr)
 		{
@@ -50,7 +50,7 @@ bool FCodeAnalysisBank::ToggleExecBreakpointAtAddress(uint16_t addr)
 
 bool FCodeAnalysisBank::ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize)
 {
-	for (auto& bpIt = BreakPoints.begin(); bpIt != BreakPoints.end(); ++bpIt)
+	for (auto bpIt = BreakPoints.begin(); bpIt != BreakPoints.end(); ++bpIt)
 	{
 		if (bpIt->Address == addr)
 		{
