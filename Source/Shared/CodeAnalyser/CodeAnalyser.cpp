@@ -182,7 +182,7 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo)
 		MappedBanks[startPageNo + bankPage] = -1;
 
 	// erase from mapped pages - better way?
-	auto& it = pBank->MappedPages.begin();
+	auto it = pBank->MappedPages.begin();
 
 	while (it != pBank->MappedPages.end())
 	{
