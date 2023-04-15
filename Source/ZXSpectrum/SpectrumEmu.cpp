@@ -48,7 +48,6 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 
 #include "Exporters/SkoolFileInfo.h"
 #include "Exporters/AssemblerExport.h"
-#include "Exporters/JsonExport.h"
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "GameConfig.h"
 #include "App.h"
@@ -1052,7 +1051,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-			SaveGameData(this, dataFName.c_str());		// The Past
+			//SaveGameData(this, dataFName.c_str());		// The Past
 
 			// The Future
 			SaveGameState(this, saveStateFName.c_str());
