@@ -53,6 +53,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "GameConfig.h"
 #include "App.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
+#include "CodeAnalyser/CodeAnalysisJson.h"
 
 #define ENABLE_RZX 0
 #define SAVE_ROM_JSON 0
@@ -888,7 +889,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		CodeAnalysis.Init(this);
 
 		if (FileExists(romJsonFName.c_str()))
-			ImportAnalysisJson(this, romJsonFName.c_str());
+			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 	}
 
 	if(config.SkoolkitImport.empty() == false)
@@ -963,7 +964,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 	if (FileExists(analysisJsonFName.c_str()))
 	{
-		ImportAnalysisJson(this, analysisJsonFName.c_str());
+		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 	}
 	else
@@ -972,7 +973,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	LoadGameState(this, saveStateFName.c_str());
 
 	if (FileExists(romJsonFName.c_str()))
-		ImportAnalysisJson(this, romJsonFName.c_str());
+		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 
 	// where do we want pokes to live?
 	LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
@@ -1055,7 +1056,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 
 			// The Future
 			SaveGameState(this, saveStateFName.c_str());
-			ExportGameAnalysisJson(this, analysisJsonFName.c_str());
+			ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 			ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		}
 	}
@@ -1063,7 +1064,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 	// TODO: this could use
 #if	SAVE_ROM_JSON
 	const std::string romJsonFName = root + kRomInfoJsonFile;
-	ExportROMJson(CodeAnalysis, romJsonFName.c_str());
+	ExportAnalysisJson(CodeAnalysis, romJsonFName.c_str(), true);	// export ROMS only
 #endif
 }
 
