@@ -52,6 +52,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "GameConfig.h"
 #include "App.h"
+#include <CodeAnalyser/CodeAnalysisState.h>
 
 #define ENABLE_RZX 0
 #define SAVE_ROM_JSON 0
