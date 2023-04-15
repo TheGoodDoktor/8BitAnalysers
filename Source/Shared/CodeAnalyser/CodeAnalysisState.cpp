@@ -4,8 +4,6 @@
 #include "CodeAnaysisPage.h"
 #include "CodeAnalyser.h"
 
-// Analysis State Load/Save 
-// TODO: move to shared area
 const uint32_t kAnalysisStateMagic = 0xBeefCafe;
 const uint32_t kAnalysisStatePageMagic = 0xDeadCafe;
 const uint32_t kAnalysisStateVersion = 1;
