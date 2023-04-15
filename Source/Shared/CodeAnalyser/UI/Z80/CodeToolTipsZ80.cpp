@@ -301,12 +301,12 @@ void GenerateRegisterValueStrings(FToolTipInstructionInfo& inst, ICPUInterface* 
 	}
 }
 
-void Do8BitLoadBlock(uint8_t y, uint8_t z, uint8_t prefix, uint32_t* r, uint16_t pc, ICPUInterface* CPUIF, FToolTipInstructionInfo& inst)
+void Do8BitLoadBlock(uint8_t y, uint8_t z, uint8_t prefix, uint32_t* r, uint16_t pc, const FCodeAnalysisState& state, FToolTipInstructionInfo& inst)
 {
 	int8_t d = 0;
 	if (prefix)
 	{
-		d = CPUIF->ReadByte(pc);
+		d = state.ReadByte(pc);
 		inst.RegInfoMap[r[6]] = FToolTipReg(d);
 	}
 
@@ -357,12 +357,12 @@ void Do8BitLoadBlock(uint8_t y, uint8_t z, uint8_t prefix, uint32_t* r, uint16_t
 	}
 }
 
-void Do8BitALUBlock(uint8_t y, uint8_t z, uint8_t prefix, uint32_t* r, uint16_t pc, ICPUInterface* CPUIF, FToolTipInstructionInfo& inst)
+void Do8BitALUBlock(uint8_t y, uint8_t z, uint8_t prefix, uint32_t* r, uint16_t pc, const FCodeAnalysisState& state, FToolTipInstructionInfo& inst)
 {
 	int8_t d = 0;
 	if (prefix)
 	{
-		d = CPUIF->ReadByte(pc);
+		d = state.ReadByte(pc);
 	}
 
 	const std::string regName = GetRegName(r[z], d);
@@ -418,14 +418,14 @@ void Do8BitALUBlock(uint8_t y, uint8_t z, uint8_t prefix, uint32_t* r, uint16_t 
 	}
 }
 
-void DoCBPrefix(uint8_t prefix, uint32_t* r, uint16_t pc, ICPUInterface* CPUIF, FToolTipInstructionInfo& inst)
+void DoCBPrefix(uint8_t prefix, uint32_t* r, uint16_t pc, const FCodeAnalysisState& state, FToolTipInstructionInfo& inst)
 {
 	int8_t d = 0;
 	uint8_t op = 0;
 
 	if (prefix)
-		d = CPUIF->ReadByte(pc++);
-	op = CPUIF->ReadByte(pc++);
+		d = state.ReadByte(pc++);
+	op = state.ReadByte(pc++);
 
 	const uint8_t x = (op >> 6) & 3;
 	const uint8_t y = (op >> 3) & 7;
@@ -492,10 +492,10 @@ void DoCBPrefix(uint8_t prefix, uint32_t* r, uint16_t pc, ICPUInterface* CPUIF, 
 	inst.RegInfoMap[r[z]] = FToolTipReg(d, ENumberDisplayMode::Binary);
 }
 
-void DoEDPrefix(uint8_t prefix, uint32_t* r, uint32_t* rp, uint16_t pc, ICPUInterface* CPUIF, FToolTipInstructionInfo& inst)
+void DoEDPrefix(uint8_t prefix, uint32_t* r, uint32_t* rp, uint16_t pc, const FCodeAnalysisState& state, FToolTipInstructionInfo& inst)
 {
-	z80_t* pCPU = (z80_t*)CPUIF->GetCPUEmulator();
-	const uint8_t op = CPUIF->ReadByte(pc++);
+	z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator();
+	const uint8_t op = state.ReadByte(pc++);
 	const uint8_t x = (op >> 6) & 3;
 	const uint8_t y = (op >> 3) & 7;
 	const uint8_t z = op & 7;
@@ -660,7 +660,7 @@ void DoEDPrefix(uint8_t prefix, uint32_t* r, uint32_t* rp, uint16_t pc, ICPUInte
 			break;
 		case 3: /* LD (nn), dd. LD dd, (nn). */
 		{
-			const uint16_t nn = CPUIF->ReadWord(pc);
+			const uint16_t nn = state.ReadWord(pc);
 			if (q == 0) // LD (nn), dd
 			{
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load memory locations (%s) and (%s) from %s.", NumStr(nn), NumStr(uint16_t(nn + 1)), GetRegName(rp[p]).c_str());
@@ -758,25 +758,25 @@ void DoEDPrefix(uint8_t prefix, uint32_t* r, uint32_t* rp, uint16_t pc, ICPUInte
 
 // Reference:
 // http://www.z80.info/decoding.htm
-void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstructionInfo& inst)
+void GetToolTipInfoFromOpcodeZ80(uint16_t pc, const FCodeAnalysisState& state, FToolTipInstructionInfo& inst)
 {
 	uint8_t op = 0, prefix = 0;
 	uint32_t* r = g_TTZ80Reg;
 	uint32_t* rp = g_TTZ80RegPairs;
 	uint32_t* rp2 = g_TTZ80RegPairs2;
-	z80_t* pCPU = (z80_t*)CPUIF->GetCPUEmulator();
+	z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator();
 
 	g_TTZ80DescBuf[0] = 0;
 	g_TTZ80TitleBuf[0] = 0;
 
 	/* fetch the first instruction byte */
-	op = CPUIF->ReadByte(pc++);
+	op = state.ReadByte(pc++);
 
 	/* prefixed op? */
 	if ((0xFD == op) || (0xDD == op))
 	{
 		prefix = op;
-		op = CPUIF->ReadByte(pc++);
+		op = state.ReadByte(pc++);
 
 		if (op == 0xED)
 		{
@@ -807,14 +807,14 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 	if (x == 1)
 	{
 		/* 8-bit load block */
-		Do8BitLoadBlock(y, z, prefix, r, pc, CPUIF, inst);
+		Do8BitLoadBlock(y, z, prefix, r, pc, state, inst);
 	}
 	else if (x == 2)
 	{
 		/* 8-bit ALU block */
 		/* ADD A,s, ADC A,s, SUB s, SBC A,s, AND s, XOR s, OR s, CP s */
 		/* Where s is (HL)/(IX+d)/(IX+d) or r */
-		Do8BitALUBlock(y, z, prefix, r, pc, CPUIF, inst);
+		Do8BitALUBlock(y, z, prefix, r, pc, state, inst);
 	}
 	else if (x == 0)
 	{
@@ -833,7 +833,7 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 				break;
 			case 2: /* DJNZ*/
 			{
-				const int8_t offset = CPUIF->ReadByte(pc);
+				const int8_t offset = state.ReadByte(pc);
 				const uint16_t addr = pc + offset + 1;
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Decrement B and jump %s to %s on no zero.", offset < 0 ? "back" : "forward", NumStr(addr));
 				inst.RegFlags = Z80Reg::B | Z80Reg::F;
@@ -841,14 +841,14 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 			}
 			case 3: /* JR e*/
 			{
-				const int8_t offset = CPUIF->ReadByte(pc);
+				const int8_t offset = state.ReadByte(pc);
 				const uint16_t addr = pc + offset + 1;
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Jump %s to %s.", offset < 0 ? "back" : "forward", NumStr(addr));
 				break;
 			}
 			default: /* JR cc, e*/
 			{
-				const int8_t offset = CPUIF->ReadByte(pc);
+				const int8_t offset = state.ReadByte(pc);
 				const uint16_t addr = pc + offset + 1;
 
 				switch (y - 4)
@@ -874,7 +874,7 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 		case 1:
 			if (q == 0) /* LD dd,nn*/
 			{
-				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load %s with immediate data %s.", GetRegName(rp[p]).c_str(), NumStr(CPUIF->ReadWord(pc)));
+				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load %s with immediate data %s.", GetRegName(rp[p]).c_str(), NumStr(state.ReadWord(pc)));
 				inst.RegFlags = rp[p];
 			}
 			else /* ADD HL, ss. ADD IX, pp. ADD IY, rr. */
@@ -905,28 +905,28 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 				break;
 			case 4: /* LD (nn), HL/IX/IY*/
 			{
-				const uint16_t nn = CPUIF->ReadWord(pc);
+				const uint16_t nn = state.ReadWord(pc);
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load the memory locations %s and %s from %s.", NumStr(nn), NumStr(uint16_t(nn + 1)), GetRegName(rp[p]).c_str());
 				inst.RegFlags = rp[p];
 				break;
 			}
 			case 5: /* LD HL/IX/IY,(nn)*/
 			{
-				const uint16_t nn = CPUIF->ReadWord(pc);
+				const uint16_t nn = state.ReadWord(pc);
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load %s from memory locations %s and %s.", GetRegName(rp[p]).c_str(), NumStr(nn), NumStr(uint16_t(nn + 1)));
 				inst.RegFlags = rp[p];
 				break;
 			}
 			case 6: /* LD (nn), A*/
 			{
-				const uint16_t nn = CPUIF->ReadWord(pc);
+				const uint16_t nn = state.ReadWord(pc);
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load (%s) from A", NumStr(nn));
 				inst.RegFlags = Z80Reg::A;
 				break;
 			}
 			case 7: /* LD A, (nn)*/
 			{
-				const uint16_t nn = CPUIF->ReadWord(pc);
+				const uint16_t nn = state.ReadWord(pc);
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load A from (%s)", NumStr(nn));
 				inst.RegFlags = Z80Reg::A;
 				break;
@@ -944,7 +944,7 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 			{
 				if (prefix) // INC (IX+d)/(IY+d)
 				{
-					int8_t d = CPUIF->ReadByte(pc++);
+					int8_t d = state.ReadByte(pc++);
 					inst.RegInfoMap[r[y]] = FToolTipReg(d);
 					snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Increment %s.", GetRegName(r[y], d).c_str());
 				}
@@ -966,7 +966,7 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 			{
 				if (prefix) // DEC (IX+d)/(IY+d)
 				{
-					int8_t d = CPUIF->ReadByte(pc++);
+					int8_t d = state.ReadByte(pc++);
 					inst.RegInfoMap[r[y]] = FToolTipReg(d);
 					snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Decrement %s.", GetRegName(r[y], d).c_str());
 				}
@@ -988,18 +988,18 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 			{
 				if (prefix) // LD (IX+d)/(IY+d), n
 				{
-					int8_t d = CPUIF->ReadByte(pc++);
+					int8_t d = state.ReadByte(pc++);
 					inst.RegInfoMap[r[y]] = FToolTipReg(d);
-					snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load %s with immediate data %s.", GetRegName(r[y], d).c_str(), NumStr(CPUIF->ReadByte(pc + 1)));
+					snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load %s with immediate data %s.", GetRegName(r[y], d).c_str(), NumStr(state.ReadByte(pc + 1)));
 				}
 				else // LD (HL), n
 				{
-					snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load (HL) with immediate data %s.", NumStr(CPUIF->ReadByte(pc)));
+					snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load (HL) with immediate data %s.", NumStr(state.ReadByte(pc)));
 				}
 			}
 			else // LD r, n
 			{
-				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load %s with immediate data %s.", GetRegName(r[y]).c_str(), NumStr(CPUIF->ReadByte(pc)));
+				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Load %s with immediate data %s.", GetRegName(r[y]).c_str(), NumStr(state.ReadByte(pc)));
 			}
 			inst.RegFlags |= r[y];
 			break;
@@ -1122,7 +1122,7 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 			break;
 		case 2: /* JP cc, nn. Where cc is NZ/Z/NC/C/PO/PE/P/M*/
 		{
-			const char* pchnn = NumStr(CPUIF->ReadWord(pc));
+			const char* pchnn = NumStr(state.ReadWord(pc));
 			switch (y)
 			{
 			case 0: /* NZ */
@@ -1158,15 +1158,15 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 			switch (y)
 			{
 			case 0: /* JP nn*/
-				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Jump to %s.", NumStr(CPUIF->ReadWord(pc)));
+				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Jump to %s.", NumStr(state.ReadWord(pc)));
 				break;
 			case 2: /* OUT (n), A*/
-				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Contents of A is written to port (%s).", NumStr(CPUIF->ReadByte(pc)));
+				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Contents of A is written to port (%s).", NumStr(state.ReadByte(pc)));
 				snprintf(g_TTZ80TitleBuf, kTTZ80TitleLen, "Output A to port number specified in immediate data");
 				inst.RegFlags = Z80Reg::A;
 				break;
 			case 3: /* IN A, (n)*/
-				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Port (%s) is read and the result is loaded into A.", NumStr(CPUIF->ReadByte(pc)));
+				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Port (%s) is read and the result is loaded into A.", NumStr(state.ReadByte(pc)));
 				snprintf(g_TTZ80TitleBuf, kTTZ80TitleLen, "Load A from port number specified in immediate data");
 				inst.RegFlags = Z80Reg::A;
 				break;
@@ -1185,13 +1185,13 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Enable maskable interrupts.");
 				break;
 			case 1: /* CB prefix */
-				DoCBPrefix(prefix, r, pc, CPUIF, inst);
+				DoCBPrefix(prefix, r, pc, state, inst);
 				break;
 			}
 			break;
 		case 4: /* CALL cc, nn. Where cc is NZ/Z/NC/C/PO/PE/P/M*/
 		{
-			const char* pchnn = NumStr(CPUIF->ReadWord(pc));
+			const char* pchnn = NumStr(state.ReadWord(pc));
 			switch (y)
 			{
 			case 0: /* NZ */
@@ -1238,7 +1238,7 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 				{
 				case 0: /* CALL nn*/
 					snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "PC is pushed onto the stack. Execution continues from the address specified in the immediate data.");
-					snprintf(g_TTZ80TitleBuf, kTTZ80TitleLen, "Call subroutine at location %s", NumStr(CPUIF->ReadWord(pc)));
+					snprintf(g_TTZ80TitleBuf, kTTZ80TitleLen, "Call subroutine at location %s", NumStr(state.ReadWord(pc)));
 					break;
 				case 1: /* DBL PREFIX*/
 					// not sure what opcode this is
@@ -1247,14 +1247,14 @@ void GetToolTipInfoFromOpcode(uint16_t pc, ICPUInterface* CPUIF, FToolTipInstruc
 					// not sure what opcode this is
 					break;
 				case 2: /* ED prefix */
-					DoEDPrefix(prefix, r, rp, pc, CPUIF, inst);
+					DoEDPrefix(prefix, r, rp, pc, state, inst);
 					break;
 				}
 			}
 			break;
 		case 6: /* ADD A,n, ADC A,n, SUB n, SBC A,n, AND n, XOR n, OR n, CP n*/
 		{
-			uint8_t n = CPUIF->ReadByte(pc);
+			uint8_t n = state.ReadByte(pc);
 			const char* pchn = NumStr(n);
 			switch (y)
 			{
@@ -1315,7 +1315,7 @@ void ShowCodeToolTipZ80(FCodeAnalysisState& state, uint16_t addr)
 {
 	// Get flags for register usage and try to auto generate a description for the instruction.
 	FToolTipInstructionInfo instrInfo;
-	GetToolTipInfoFromOpcode(addr, state.CPUInterface, instrInfo);
+	GetToolTipInfoFromOpcodeZ80(addr, state, instrInfo);
 
 	std::vector<std::string> regStrs;
 	GenerateRegisterValueStrings(instrInfo, state.CPUInterface, regStrs);

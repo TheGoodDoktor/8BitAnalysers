@@ -57,7 +57,7 @@ public:
 	virtual bool	ShouldExecThisFrame(void) const = 0;
 	virtual bool	IsStopped(void) const = 0;
 
-	virtual void* GetCPUEmulator(void) { return nullptr; }	// get pointer to emulator - a bit of a hack
+	virtual void* GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
 
 	ECPUType	CPUType = ECPUType::Unknown;
 };
@@ -286,7 +286,9 @@ public:
 	FCodeAnalysisState();
 	void	Init(ICPUInterface* pCPUInterface);
 
-	ICPUInterface* CPUInterface = nullptr;
+	const ICPUInterface* GetCPUInterface() const { return CPUInterface; }
+
+	ICPUInterface* CPUInterface = nullptr;	// Make private
 	int						CurrentFrameNo = 0;
 
 	// Memory Banks & Pages

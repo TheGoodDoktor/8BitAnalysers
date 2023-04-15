@@ -217,9 +217,9 @@ uint16_t	FSpectrumEmu::GetSP(void)
 	return z80_sp(&ZXEmuState.cpu);
 }
 
-void* FSpectrumEmu::GetCPUEmulator(void)
+void* FSpectrumEmu::GetCPUEmulator(void) const
 {
-	return &ZXEmuState.cpu;
+	return (void *)&ZXEmuState.cpu;
 }
 
 

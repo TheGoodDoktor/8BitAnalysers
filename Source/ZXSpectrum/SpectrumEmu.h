@@ -122,7 +122,7 @@ public:
 	bool		ShouldExecThisFrame(void) const override;
 	bool		IsStopped(void) const override;
 	void		FormatSpectrumMemory(FCodeAnalysisState& state);
-	void*		GetCPUEmulator(void) override;
+	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
 	void SetROMBank(int bankNo);
