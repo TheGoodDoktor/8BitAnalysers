@@ -701,7 +701,7 @@ int CommentInputCallback(ImGuiInputTextCallbackData *pData)
 
 void AddLabelAtAddressUI(FCodeAnalysisState& state,FAddressRef address)
 {
-	FLabelInfo* pLabel = AddLabelAtAddress(state, address.Address);	// need to add bank?
+	FLabelInfo* pLabel = AddLabelAtAddress(state, address);
 	if (pLabel != nullptr)
 	{
 		state.GetFocussedViewState().SetCursorItem(FCodeAnalysisItem(pLabel,address));
@@ -1112,7 +1112,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 		{
 			if (ImGui::Selectable("Remove label"))
 			{
-				RemoveLabelAtAddress(state, item.AddressRef.Address);
+				RemoveLabelAtAddress(state, item.AddressRef);
 			}
 		}
 		else

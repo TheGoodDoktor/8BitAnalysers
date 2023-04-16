@@ -198,7 +198,7 @@ bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 					addressStr = addressStr.substr(1, 4);
 					uint16_t address = static_cast<uint16_t>(std::stoul(addressStr, nullptr, 16));
 
-					AddLabelAtAddress(state, address);
+					AddLabelAtAddress(state, state.AddressRefFromPhysicalAddress(address));
 					if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(address))
 					{
 						SetLabelName(state, pLabelInfo, labelStr.c_str());
@@ -558,7 +558,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		{
 			ELabelType labelType = ELabelType::Data;
 			
-			AddLabelAtAddress(state, instruction.Address);
+			AddLabelAtAddress(state, state.AddressRefFromPhysicalAddress(instruction.Address));
 			if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(instruction.Address))
 			{
 				SetLabelName(state, pLabelInfo, label.c_str());

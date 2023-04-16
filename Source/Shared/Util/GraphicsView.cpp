@@ -356,7 +356,7 @@ bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& p
 
 	FLabelInfo* pLabel = state.GetLabelForAddress(params.Address);
 	if (pLabel == nullptr)
-		AddLabelAtAddress(state, params.Address.Address);	// temp hack
+		AddLabelAtAddress(state, params.Address);	
 
 	FCharacterMap* pNewCharMap = new FCharacterMap;
 	pNewCharMap->Params = params;

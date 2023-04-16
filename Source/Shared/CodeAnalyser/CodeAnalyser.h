@@ -501,6 +501,18 @@ public:
 			EnsureUniqueLabelName(pLabel->Name);
 		GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; 
 	}
+	void SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLabel)
+	{
+		if (pLabel != nullptr)	// ensure no name clashes
+			EnsureUniqueLabelName(pLabel->Name);
+
+		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].Labels[bankAddr & FCodeAnalysisPage::kPageMask] = pLabel;
+		}
+	}
 
 	FCommentBlock* GetCommentBlockForAddress(uint16_t addr) const { return GetReadPage(addr)->CommentBlocks[addr & kPageMask]; }
 	void SetCommentBlockForAddress(uint16_t addr, FCommentBlock* pCommentBlock)
@@ -614,7 +626,7 @@ private:
 };
 
 // Analysis
-FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t pc, ELabelType label);
+FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addrRef, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
 void ReAnalyseCode(FCodeAnalysisState &state);
@@ -625,15 +637,15 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
 void ResetReferenceInfo(FCodeAnalysisState &state);
 
-std::string GetItemText(FCodeAnalysisState& state, uint16_t address);
+std::string GetItemText(FCodeAnalysisState& state, FAddressRef address);
 
 // Commands
 void Undo(FCodeAnalysisState &state);
 
 FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type);
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
-FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
-void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address);
+FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
+void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
 void SetItemCode(FCodeAnalysisState& state, FAddressRef addr);
 //void SetItemCode(FCodeAnalysisState &state, const FCodeAnalysisItem& item);

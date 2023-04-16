@@ -439,7 +439,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	case EDataType::Text:
 	{
-		const std::string textString = GetItemText(state, physAddr);
+		const std::string textString = GetItemText(state, item.AddressRef);
 		ImGui::Text("ascii '%s'", textString.c_str());
 	}
 	break;
@@ -696,9 +696,9 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		{
 			if (ImGui::Button("Create Character Set"))
 			{
-				FLabelInfo* pLabel = state.GetLabelForAddress(physAddr);
+				FLabelInfo* pLabel = state.GetLabelForAddress(item.AddressRef);
 				if (pLabel == nullptr)
-					AddLabelAtAddress(state, physAddr);
+					AddLabelAtAddress(state, item.AddressRef);
 				params.Address = item.AddressRef;
 				params.ColourLUT = state.Config.CharacterColourLUT;
 

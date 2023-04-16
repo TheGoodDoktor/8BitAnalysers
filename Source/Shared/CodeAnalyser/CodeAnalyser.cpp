@@ -456,7 +456,8 @@ bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
 		return false;
 }
 
-std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
+// this function assumes the text is mapped in
+std::string GetItemText(FCodeAnalysisState& state, FAddressRef address)
 {
 	FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
 	std::string textString;
@@ -466,7 +467,7 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 
 	for (int i = 0; i < pDataInfo->ByteSize; i++)
 	{
-		const char ch = state.ReadByte(address + i);
+		const char ch = state.ReadByte(address.Address + i);
 		if (ch == '\n')
 			textString += "<cr>";
 		if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
@@ -478,7 +479,7 @@ std::string GetItemText(FCodeAnalysisState& state, uint16_t address)
 	return textString;
 }
 
-FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address, ELabelType labelType)
+FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef address, ELabelType labelType)
 {
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel != nullptr)
@@ -494,13 +495,13 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, uint16_t address,
 	switch (labelType)
 	{
 	case ELabelType::Function:
-		snprintf(label, kLabelSize,"function_%04X", address);
+		snprintf(label, kLabelSize,"function_%04X", address.Address);
 		break;
 	case ELabelType::Code:
-		snprintf(label, kLabelSize, "label_%04X", address);
+		snprintf(label, kLabelSize, "label_%04X", address.Address);
 		break;
 	case ELabelType::Data:
-		snprintf(label, kLabelSize, "data_%04X", address);
+		snprintf(label, kLabelSize, "data_%04X", address.Address);
 		pLabel->Global = true;
 		break;
 	case ELabelType::Text:
@@ -647,7 +648,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
 		const bool isCall = CheckCallInstruction(state, pc);
-		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddr, isCall ? ELabelType::Function : ELabelType::Code);
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(jumpAddr), isCall ? ELabelType::Function : ELabelType::Code);
 		if(pLabel)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
@@ -673,7 +674,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
 			
-			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptr, ELabelType::Data);
+			FLabelInfo* pLabel = GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(ptr), ELabelType::Data);
 			if (pLabel)
 				pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		}
@@ -1134,7 +1135,7 @@ void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 	}
 }
 
-FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
+FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address)
 {
 	FLabelInfo* pNewLabel = nullptr;
 
@@ -1156,7 +1157,7 @@ FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
 	return pNewLabel;
 }
 
-void RemoveLabelAtAddress(FCodeAnalysisState &state, uint16_t address)
+void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address)
 {
 	FLabelInfo* pLabelInfo = state.GetLabelForAddress(address);
 
@@ -1239,7 +1240,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 				state.SetCodeInfoForAddress(dataAddress, nullptr);
 			
 			if (options.ClearLabels && dataAddress != options.StartAddress)	// don't remove first label
-				RemoveLabelAtAddress(state, dataAddress);
+				RemoveLabelAtAddress(state, state.AddressRefFromPhysicalAddress(dataAddress));
 
 			dataAddress++;
 		}
