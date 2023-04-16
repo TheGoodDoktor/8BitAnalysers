@@ -1754,7 +1754,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 				formattingOptions.NoItems = size[1];
 			}
 
-			DrawCharacterSetComboBox(state, &formattingOptions.CharacterSet);
+			DrawCharacterSetComboBox(state, formattingOptions.CharacterSet);
 			const char* format = "%02X";
 			int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal;
 			ImGui::InputScalar("Null Character", ImGuiDataType_U8, &formattingOptions.EmptyCharNo, 0, 0, format, flags);
@@ -1915,6 +1915,13 @@ bool DrawAddressInput(const char* label, uint16_t* value)
 	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 	const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
 	return ImGui::InputScalar(label, ImGuiDataType_U16, value, 0, 0, format, inputFlags);
+}
+
+bool DrawAddressInput(const char* label, FAddressRef& address)
+{
+	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+	const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
+	return ImGui::InputScalar(label, ImGuiDataType_U16, &address.Address, 0, 0, format, inputFlags);
 }
 
 

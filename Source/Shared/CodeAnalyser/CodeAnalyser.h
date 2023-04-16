@@ -117,10 +117,10 @@ enum class EKey
 struct FDataFormattingOptions
 {
 	EDataType	DataType = EDataType::Byte;
-	int			StartAddress = 0;
+	int			StartAddress = 0;	// TODO: use Address Ref
 	int			ItemSize = 1;
 	int			NoItems = 1;
-	uint16_t	CharacterSet = 0;
+	FAddressRef	CharacterSet;
 	uint8_t		EmptyCharNo = 0;
 	bool		ClearCodeInfo = false;
 	bool		ClearLabels = false;

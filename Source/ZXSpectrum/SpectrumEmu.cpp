@@ -2002,11 +2002,11 @@ bool FSpectrumEmu::ImportSkoolFile(const char* pFilename, const char* pOutSkoolI
 		std::string dir = root + "AnalysisJson/";
 		const std::string dataFName = dir + pActiveGame->pConfig->Name + ".json.bak";
 		EnsureDirectoryExists(dir.c_str());
-		if (!SaveGameData(this, dataFName.c_str()))
+		/*if (!SaveGameData(this, dataFName.c_str()))
 		{
 			LOGERROR("Failed to import skool file. Could not save backup of analysis data to '%s'", dataFName.c_str());
 			return false;
-		}
+		}*/
 	}
 	// use FSkoolFileInfo pointer if it's passed in. Otherwise use a temporary local struct.
 	FSkoolFileInfo skoolInfo;

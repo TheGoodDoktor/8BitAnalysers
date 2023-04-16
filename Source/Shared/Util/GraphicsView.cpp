@@ -217,7 +217,7 @@ FCharacterSet* GetCharacterSetFromIndex(int index)
 		return nullptr;
 }
 
-FCharacterSet* GetCharacterSetFromAddress(uint16_t address)
+FCharacterSet* GetCharacterSetFromAddress(FAddressRef address)
 {
 	for (auto& it : g_CharacterSets)
 	{
@@ -228,9 +228,10 @@ FCharacterSet* GetCharacterSetFromAddress(uint16_t address)
 	return nullptr;
 }
 
+// This function assumes the data is mapped in memory
 void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& characterSet)
 {
-	uint16_t addr = characterSet.Params.Address;
+	uint16_t addr = characterSet.Params.Address.Address;
 
 	// TODO: these are speccy specific, put in config
 	const uint8_t brightMask = 1 << 6;
@@ -268,7 +269,7 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		switch (characterSet.Params.ColourInfo)
 		{
 		case EColourInfo::MemoryLUT:
-			colAttr = state.ReadByte(characterSet.Params.AttribsAddress + charNo);
+			colAttr = state.ReadByte(characterSet.Params.AttribsAddress.Address + charNo);
 			break;
 		case EColourInfo::InterleavedPost:
 			colAttr = state.ReadByte(addr++);
@@ -303,7 +304,7 @@ void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, 
 
 bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params)
 {
-	if (params.Address == 0 || GetCharacterSetFromAddress(params.Address) != nullptr)
+	if (params.Address.IsValid() == false || GetCharacterSetFromAddress(params.Address) != nullptr)
 		return false;
 
 	FCharacterSet* pNewCharSet = new FCharacterSet;
@@ -337,7 +338,7 @@ FCharacterMap* GetCharacterMapFromIndex(int index)
 		return nullptr;
 }
 
-FCharacterMap* GetCharacterMapFromAddress(uint16_t address)
+FCharacterMap* GetCharacterMapFromAddress(FAddressRef address)
 {
 	for (auto& it : g_CharacterMaps)
 	{
@@ -350,12 +351,12 @@ FCharacterMap* GetCharacterMapFromAddress(uint16_t address)
 
 bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& params)
 {
-	if (params.Address == 0 || GetCharacterMapFromAddress(params.Address) != nullptr)
+	if (params.Address.IsValid() == false || GetCharacterMapFromAddress(params.Address) != nullptr)
 		return false;
 
 	FLabelInfo* pLabel = state.GetLabelForAddress(params.Address);
 	if (pLabel == nullptr)
-		AddLabelAtAddress(state, params.Address);
+		AddLabelAtAddress(state, params.Address.Address);	// temp hack
 
 	FCharacterMap* pNewCharMap = new FCharacterMap;
 	pNewCharMap->Params = params;

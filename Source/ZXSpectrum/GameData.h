@@ -3,7 +3,7 @@
 class FCodeAnalysisState;
 class FSpectrumEmu;
 
-bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname);
+//bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname);
 bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname);
 
 bool SaveROMData(const FCodeAnalysisState& state, const char* fname);

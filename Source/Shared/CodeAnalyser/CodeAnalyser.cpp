@@ -1194,7 +1194,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 	if (options.DataType == EDataType::CharacterMap)
 	{
 		FCharMapCreateParams charMapParams;
-		charMapParams.Address = dataAddress;
+		charMapParams.Address = state.AddressRefFromPhysicalAddress(dataAddress);
 		charMapParams.CharacterSet = options.CharacterSet;
 		charMapParams.Width = options.ItemSize;
 		charMapParams.Height = options.NoItems;

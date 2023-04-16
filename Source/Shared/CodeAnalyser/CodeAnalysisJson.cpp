@@ -12,11 +12,11 @@
 using json = nlohmann::json;
 
 void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc);
-void ReadPageFromJson(FCodeAnalysisPage& page, const json& jsonDoc);
+void ReadPageFromJson(FCodeAnalysisState& state, FCodeAnalysisPage& page, const json& jsonDoc);
 FCommentBlock* CreateCommentBlockFromJson(const json& commentBlockJson);
 FCodeInfo* CreateCodeInfoFromJson(const json& codeInfoJson);
 FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson);
-void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json& dataInfoJson);
+void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const json& dataInfoJson);
 
 bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bool bROMS)
 {
@@ -68,8 +68,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
 		json jsonCharacterSet;
 
-		jsonCharacterSet["Address"] = pCharSet->Params.Address;
-		jsonCharacterSet["AttribsAddress"] = pCharSet->Params.AttribsAddress;
+		jsonCharacterSet["AddressRef"] = pCharSet->Params.Address.Val;
+		jsonCharacterSet["AttribsAddressRef"] = pCharSet->Params.AttribsAddress.Val;
 		jsonCharacterSet["MaskInfo"] = pCharSet->Params.MaskInfo;
 		jsonCharacterSet["ColourInfo"] = pCharSet->Params.ColourInfo;
 		jsonCharacterSet["Dynamic"] = pCharSet->Params.bDynamic;
@@ -83,10 +83,10 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		const FCharacterMap* pCharMap = GetCharacterMapFromIndex(i);
 		json jsonCharacterMap;
 
-		jsonCharacterMap["Address"] = pCharMap->Params.Address;
+		jsonCharacterMap["AddressRef"] = pCharMap->Params.Address.Val;
 		jsonCharacterMap["Width"] = pCharMap->Params.Width;
 		jsonCharacterMap["Height"] = pCharMap->Params.Height;
-		jsonCharacterMap["CharacterSet"] = pCharMap->Params.CharacterSet;
+		jsonCharacterMap["CharacterSetRef"] = pCharMap->Params.CharacterSet.Val;
 		jsonCharacterMap["IgnoreCharacter"] = pCharMap->Params.IgnoreCharacter;
 
 		jsonGameData["CharacterMaps"].push_back(jsonCharacterMap);
@@ -135,7 +135,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			FCodeAnalysisPage* pPage = state.GetPage(pageId);
 			if (pPage != nullptr)
 			{
-				ReadPageFromJson(*pPage, pageJson);
+				ReadPageFromJson(state,*pPage, pageJson);
 				pPage->bUsed = true;
 			}
 		}
@@ -197,7 +197,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		{
 			const int address = dataInfoJson["Address"];
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
-			LoadDataInfoFromJson(pDataInfo, dataInfoJson);
+			LoadDataInfoFromJson(state, pDataInfo, dataInfoJson);
 		}
 	}
 
@@ -218,8 +218,16 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		for (const auto& charSet : jsonGameData["CharacterSets"])
 		{
 			FCharSetCreateParams params;
-			params.Address = charSet["Address"];
-			params.AttribsAddress = charSet["AttribsAddress"];
+			if(charSet.contains("Address"))	// legacy
+				params.Address = state.AddressRefFromPhysicalAddress(charSet["Address"]);
+			if (charSet.contains("AddressRef"))
+				params.Address.Val = charSet["AddressRef"];
+
+			if (charSet.contains("AttribsAddress"))	// legacy
+				params.AttribsAddress = state.AddressRefFromPhysicalAddress(charSet["AttribsAddress"]);
+			if (charSet.contains("AttribsAddressRef"))
+				params.AttribsAddress.Val = charSet["AttribsAddressRef"];
+
 			params.MaskInfo = charSet["MaskInfo"];
 			params.ColourInfo = charSet["ColourInfo"];
 			params.bDynamic = charSet["Dynamic"];
@@ -233,10 +241,20 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		for (const auto& charMap : jsonGameData["CharacterMaps"])
 		{
 			FCharMapCreateParams params;
-			params.Address = charMap["Address"];
+			
+			if (charMap.contains("Address"))	// legacy
+				params.Address = state.AddressRefFromPhysicalAddress(charMap["Address"]);
+			if (charMap.contains("AddressRef"))
+				params.Address.Val = charMap["AddressRef"];
+
 			params.Width = charMap["Width"];
 			params.Height = charMap["Height"];
-			params.CharacterSet = charMap["CharacterSet"];
+			
+			if (charMap.contains("CharacterSet"))	// legacy
+				params.CharacterSet = state.AddressRefFromPhysicalAddress(charMap["CharacterSet"]);
+			if (charMap.contains("CharacterSetRef"))	
+				params.CharacterSet.Val = charMap["CharacterSetRef"];
+
 			params.IgnoreCharacter = charMap["IgnoreCharacter"];
 			CreateCharacterMap(state, params);
 		}
@@ -276,7 +294,7 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
 	{
-		dataInfoJson["CharSetAddress"] = pDataInfo->CharSetAddress;
+		dataInfoJson["CharSetAddressRef"] = pDataInfo->CharSetAddress.Val;
 		dataInfoJson["EmptyCharNo"] = pDataInfo->EmptyCharNo;
 	}
 
@@ -429,7 +447,7 @@ FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson)
 	return pLabelInfo;
 }
 
-void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json& dataInfoJson)
+void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const json& dataInfoJson)
 {
 	if (dataInfoJson.contains("DataType"))
 		pDataInfo->DataType = (EDataType)(int)dataInfoJson["DataType"];
@@ -468,7 +486,9 @@ void LoadDataInfoFromJson(FDataInfo* pDataInfo, const json& dataInfoJson)
 	if (pDataInfo->DataType == EDataType::CharacterMap)
 	{
 		if (dataInfoJson.contains("CharSetAddress"))
-			pDataInfo->CharSetAddress = dataInfoJson["CharSetAddress"];
+			pDataInfo->CharSetAddress = state.AddressRefFromPhysicalAddress(dataInfoJson["CharSetAddress"]);	// legacy
+		if (dataInfoJson.contains("CharSetAddressRef"))
+			pDataInfo->CharSetAddress.Val = dataInfoJson["CharSetAddressRef"];
 		if (dataInfoJson.contains("EmptyCharNo"))
 			pDataInfo->EmptyCharNo = dataInfoJson["EmptyCharNo"];
 	}
@@ -517,7 +537,7 @@ void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc)
 }
 
 
-void ReadPageFromJson(FCodeAnalysisPage& page, const json& jsonDoc)
+void ReadPageFromJson(FCodeAnalysisState &state, FCodeAnalysisPage& page, const json& jsonDoc)
 {
 	if (jsonDoc.contains("CommentBlocks"))
 	{
@@ -555,7 +575,7 @@ void ReadPageFromJson(FCodeAnalysisPage& page, const json& jsonDoc)
 		{
 			const uint16_t pageAddr = dataInfoJson["Address"];
 			FDataInfo* pDataInfo = &page.DataInfo[pageAddr];
-			LoadDataInfoFromJson(pDataInfo, dataInfoJson);
+			LoadDataInfoFromJson(state, pDataInfo, dataInfoJson);
 		}
 	}
 }

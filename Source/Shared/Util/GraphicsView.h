@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "CodeAnalyser/CodeAnalyserTypes.h"
 
 class FCodeAnalysisState;
 
@@ -71,8 +72,8 @@ struct FCharUVS
 
 struct FCharSetCreateParams
 {
-	uint16_t		Address = 0;
-	uint16_t		AttribsAddress = 0;
+	FAddressRef		Address;
+	FAddressRef		AttribsAddress;
 	EMaskInfo		MaskInfo = EMaskInfo::None;
 	EColourInfo		ColourInfo = EColourInfo::None;
 	const uint32_t* ColourLUT = nullptr;
@@ -99,10 +100,10 @@ struct FCharacterSet
 // Character Maps
 struct FCharMapCreateParams
 {
-	uint16_t	Address = 0;
+	FAddressRef	Address;
 	int			Width = 0;
 	int			Height = 0;
-	uint16_t	CharacterSet = 0;
+	FAddressRef	CharacterSet;
 	uint8_t		IgnoreCharacter = 0;
 };
 
@@ -120,7 +121,7 @@ void UpdateCharacterSets(FCodeAnalysisState& state);
 int GetNoCharacterSets();
 void DeleteCharacterSet(int index);
 FCharacterSet* GetCharacterSetFromIndex(int index);
-FCharacterSet* GetCharacterSetFromAddress(uint16_t address);
+FCharacterSet* GetCharacterSetFromAddress(FAddressRef address);
 void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params);
 bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params);
 
@@ -128,6 +129,6 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 int GetNoCharacterMaps();
 void DeleteCharacterMap(int index);
 FCharacterMap* GetCharacterMapFromIndex(int index);
-FCharacterMap* GetCharacterMapFromAddress(uint16_t address);
+FCharacterMap* GetCharacterMapFromAddress(FAddressRef address);
 bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& params);
 

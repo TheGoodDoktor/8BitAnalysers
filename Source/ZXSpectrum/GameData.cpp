@@ -454,7 +454,7 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, ui
 }
 
 
-
+#if 0
 // Binary save
 void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrStart, uint16_t addrEnd)
 {
@@ -507,7 +507,7 @@ void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrSta
 		for (int i = 0; i < GetNoCharacterSets(); i++)
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
-			const uint16_t addr = pCharSet->Params.Address;
+			const uint16_t addr = pCharSet->Params.Address.Address;
 			if (addr >= addrStart && addr <= addrEnd)
 			{
 				EColourInfo		ColourInfo = EColourInfo::None;
@@ -535,7 +535,7 @@ void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrSta
 		for (int i = 0; i < GetNoCharacterMaps(); i++)
 		{
 			const FCharacterMap* pCharMap = GetCharacterMapFromIndex(i);
-			const uint16_t addr = pCharMap->Params.Address;
+			const uint16_t addr = pCharMap->Params.Address.Address;
 			if (addr >= addrStart && addr <= addrEnd)
 			{
 				fwrite(&pCharMap->Params.Address, sizeof(pCharMap->Params.Address), 1, fp);
@@ -553,8 +553,10 @@ void SaveGameDataBin(const FCodeAnalysisState& state, FILE *fp, uint16_t addrSta
 		fseek(fp, 0, SEEK_END);
 	}
 }
+#endif
 
 // Binary load
+// TODO: retire
 void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_t addrStart, uint16_t addrEnd)
 {
 	if (versionNo >= 8)
@@ -789,7 +791,7 @@ bool LoadGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 	return true;
 }
-
+#if 0
 bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
@@ -829,7 +831,7 @@ bool SaveROMData(const FCodeAnalysisState& state, const char* fname)
 	return true;
 
 }
-
+#endif
 bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;

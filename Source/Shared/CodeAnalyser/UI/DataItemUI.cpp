@@ -675,15 +675,15 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	case EDataType::Bitmap:
 	{
 		static FCharSetCreateParams params;
-		params.Address = physAddr;
+		params.Address = item.AddressRef;
 		DrawMaskInfoComboBox(&params.MaskInfo);
 		DrawColourInfoComboBox(&params.ColourInfo);
 		if (params.ColourInfo == EColourInfo::MemoryLUT)
 		{
-			DrawAddressInput("Attribs Address", &params.AttribsAddress);
+			DrawAddressInput("Attribs Address", params.AttribsAddress);
 		}
 
-		FCharacterSet *pCharSet = GetCharacterSetFromAddress(physAddr);
+		FCharacterSet *pCharSet = GetCharacterSetFromAddress(item.AddressRef);
 		if (pCharSet != nullptr)
 		{
 			if (ImGui::Button("Update Character Set"))
@@ -699,7 +699,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 				FLabelInfo* pLabel = state.GetLabelForAddress(physAddr);
 				if (pLabel == nullptr)
 					AddLabelAtAddress(state, physAddr);
-				params.Address = physAddr;
+				params.Address = item.AddressRef;
 				params.ColourLUT = state.Config.CharacterColourLUT;
 
 				CreateCharacterSetAt(state, params);
@@ -710,7 +710,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 
 	case EDataType::CharacterMap:
 	{
-		DrawCharacterSetComboBox(state, &pDataInfo->CharSetAddress);
+		DrawCharacterSetComboBox(state, pDataInfo->CharSetAddress);
 		const char* format = "%02X";
 		int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal;
 		ImGui::InputScalar("Null Character", ImGuiDataType_U8, &pDataInfo->EmptyCharNo,0,0,format,flags);

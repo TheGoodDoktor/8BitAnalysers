@@ -10,7 +10,8 @@ struct FAddressRef
 	bool IsValid() const { return BankId != -1; }
 	void SetInvalid() { BankId = -1; }
 	bool operator==(const FAddressRef& other) const { return Address == other.Address && BankId == other.BankId; }
-
+	bool operator!=(const FAddressRef& other) const { return Address != other.Address || BankId != other.BankId; }
+	FAddressRef operator++(int) { Address++; return *this; }
 	union
 	{
 		struct

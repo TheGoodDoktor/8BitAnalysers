@@ -216,7 +216,7 @@ struct FDataInfo : FItem
 		FImageData* ImageData = nullptr;	// additional data for images
 		struct
 		{
-			uint16_t	CharSetAddress;	// address of character set
+			FAddressRef	CharSetAddress;	// address of character set
 			uint8_t		EmptyCharNo;
 		};
 		uint16_t	InstructionAddress;	// for operand data types
