@@ -141,6 +141,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		}
 	}
 
+	// Below is legacy and should be removed at some point
+
 	// info on last writer
 	if (jsonGameData.contains("LastWriterStart"))
 	{
@@ -176,7 +178,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 				FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addr + codeByte);
 				pDataInfo->DataType = EDataType::InstructionOperand;
 				pDataInfo->ByteSize = 1;
-				pDataInfo->InstructionAddress = addr;
+				pDataInfo->InstructionAddress = state.AddressRefFromPhysicalAddress(addr);
 			}
 		}
 	}
@@ -271,7 +273,7 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 	if (pDataInfo->DataType != EDataType::Byte)
 		dataInfoJson["DataType"] = (int)pDataInfo->DataType;
 	if (pDataInfo->DataType == EDataType::InstructionOperand)
-		dataInfoJson["InstructionAddress"] = pDataInfo->InstructionAddress;
+		dataInfoJson["InstructionAddressRef"] = pDataInfo->InstructionAddress.Val;
 	if (pDataInfo->OperandType != EOperandType::Unknown)
 		dataInfoJson["OperandType"] = pDataInfo->OperandType;
 	if (pDataInfo->ByteSize != 1)
@@ -454,7 +456,9 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 	if (dataInfoJson.contains("OperandType"))
 		pDataInfo->OperandType = (EOperandType)(int)dataInfoJson["OperandType"];
 	if (dataInfoJson.contains("InstructionAddress"))
-		pDataInfo->InstructionAddress = dataInfoJson["InstructionAddress"];
+		pDataInfo->InstructionAddress = state.AddressRefFromPhysicalAddress(dataInfoJson["InstructionAddress"]);
+	if (dataInfoJson.contains("InstructionAddressRef"))
+		pDataInfo->InstructionAddress.Val = dataInfoJson["InstructionAddressRef"];
 	if (dataInfoJson.contains("ByteSize"))
 		pDataInfo->ByteSize = dataInfoJson["ByteSize"];
 	if (dataInfoJson.contains("Flags"))

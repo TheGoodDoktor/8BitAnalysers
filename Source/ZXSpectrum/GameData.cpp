@@ -253,7 +253,7 @@ void LoadCodeInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 			FDataInfo* pOperandData = state.GetReadDataInfoForAddress(addr + codeByte);
 			pOperandData->DataType = EDataType::InstructionOperand;
 			pOperandData->ByteSize = 1;
-			pOperandData->InstructionAddress = addr;
+			pOperandData->InstructionAddress = state.AddressRefFromPhysicalAddress(addr);
 		}
 	}
 }

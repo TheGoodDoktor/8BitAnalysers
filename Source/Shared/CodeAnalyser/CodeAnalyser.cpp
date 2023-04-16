@@ -703,7 +703,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		FDataInfo* pOperandData = state.GetReadDataInfoForAddress(codeAddr);
 		pOperandData->DataType = EDataType::InstructionOperand;
 		pOperandData->ByteSize = 1;
-		pOperandData->InstructionAddress = pc;
+		pOperandData->InstructionAddress = state.AddressRefFromPhysicalAddress(pc);
 	}
 	pCodeInfo->Text = dasmState.Text;
 	pCodeInfo->ByteSize = newPC - pc;
@@ -848,7 +848,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 				FDataInfo* pOperandData = state.GetReadDataInfoForAddress(addr + i);
 				pOperandData->ByteSize = 1;
 				pOperandData->DataType = EDataType::InstructionOperand;
-				pOperandData->InstructionAddress = addr;
+				pOperandData->InstructionAddress = state.AddressRefFromPhysicalAddress(addr);
 				if (pOperandData->Writes.IsEmpty() == false)
 					pCodeInfo->bSelfModifyingCode = true;
 				if (i > 0)	// make sure other entries after are null

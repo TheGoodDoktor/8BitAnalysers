@@ -214,13 +214,13 @@ struct FDataInfo : FItem
 	union
 	{
 		FImageData* ImageData = nullptr;	// additional data for images
-		struct
+		FAddressRef	CharSetAddress;	// address of character set
+		/*struct
 		{
-			FAddressRef	CharSetAddress;	// address of character set
-			uint8_t		EmptyCharNo;
-		};
-		uint16_t	InstructionAddress;	// for operand data types
+		};*/
+		FAddressRef	InstructionAddress;	// for operand data types
 	};
+	uint8_t		EmptyCharNo;
 
 	int						LastFrameRead = -1;
 	FItemReferenceTracker	Reads;	// address and counts of data access instructions
