@@ -448,7 +448,7 @@ int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_dat
 
 // Note - you can't read register values in Trap function
 // They are only written back at end of exec function
-int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
+int	FSpectrumEmu::TrapFunction(uint16_t nextpc, int ticks, uint64_t pins)
 {
 	FCodeAnalysisState &state = CodeAnalysis;
 	const uint16_t addr = Z80_GET_ADDR(pins);
@@ -456,20 +456,20 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 	const bool bWrite = (pins & Z80_CTRL_MASK) == (Z80_MREQ | Z80_WR);
 	const bool irq = (pins & Z80_INT) && z80_iff1(&ZXEmuState.cpu);	
 
-	const uint16_t nextpc = pc;
+	//const uint16_t nextpc = pc;
 	// store program count in history
-	const uint16_t prevPC = PCHistory[PCHistoryPos];
-	PCHistoryPos = (PCHistoryPos + 1) % FSpectrumEmu::kPCHistorySize;
-	PCHistory[PCHistoryPos] = pc;
+	//const uint16_t prevPC = PCHistory[PCHistoryPos];
+	//PCHistoryPos = (PCHistoryPos + 1) % FSpectrumEmu::kPCHistorySize;
+	//PCHistory[PCHistoryPos] = pc;
 
-	pc = prevPC;	// set PC to pc of instruction just executed
+	const uint16_t pc = PreviousPC;	// set PC to pc of instruction just executed
 
 	if (irq)
 	{
 		FCPUFunctionCall callInfo;
-		callInfo.CallAddr = state.AddressRefFromPhysicalAddress(prevPC);
+		callInfo.CallAddr = state.AddressRefFromPhysicalAddress(pc);
 		callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(pc);
-		callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(prevPC);
+		callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(pc);
 		state.CallStack.push_back(callInfo);
 		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
 	}
@@ -515,6 +515,7 @@ int	FSpectrumEmu::TrapFunction(uint16_t pc, int ticks, uint64_t pins)
 
 	RZXManager.RegisterInstructions(iCount);
 
+	PreviousPC = nextpc;	// store for next trap
 	return trapId;
 }
 

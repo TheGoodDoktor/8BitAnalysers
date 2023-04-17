@@ -76,6 +76,10 @@ public:
 	FSpectrumEmu()
 	{
 		CPUType = ECPUType::Z80;
+		for (int i = 0; i < kNoROMBanks; i++)
+			ROMBanks[i] = -1;
+		for (int i = 0; i < kNoRAMBanks; i++)
+			RAMBanks[i] = -1;
 	}
 
 	bool	Init(const FSpectrumConfig& config);
@@ -154,11 +158,10 @@ public:
 		GraphicsViewer.XSize = width;
 	}
 	// TODO: Make private
-
+//private:
 	// Emulator 
 	zx_t			ZXEmuState;	// Chips Spectrum State
 	uint8_t*		MappedInMemory = nullptr;
-	//int				CurrentLayer = 0;	// layer ??
 
 	unsigned char*	FrameBuffer;	// pixel buffer to store emu output
 	ImTextureID		Texture;		// texture 
@@ -182,47 +185,33 @@ public:
 	FIOAnalysis				IOAnalysis;
 
 	// Code analysis pages - to cover 48K & 128K Spectrums
-	static const int kNoBankPages = 16;	// no of pages per physical address slot (16k)
-	//static const int kNoSlotPages = 16;	// no of pages per physical address slot (16k)
-	//static const int kNoROMPages = 16 + 16;	// 48K ROM & 128K ROM
-	static const int kNoRAMPages = 128;
-	static const int kNoROMBanks = 2;
-	static const int kNoRAMBanks = 8;
+	static const int	kNoBankPages = 16;	// no of pages per physical address slot (16k)
+	static const int	kNoRAMPages = 128;
+	static const int	kNoROMBanks = 2;
+	static const int	kNoRAMBanks = 8;
+
 	int16_t				ROMBanks[kNoROMBanks];
 	int16_t				RAMBanks[kNoRAMBanks];
-	//FCodeAnalysisPage	ROMPages[kNoROMPages];
-	//FCodeAnalysisPage	RAMPages[kNoRAMPages];
 	int16_t				CurROMBank = -1;
 	int16_t				CurRAMBank[4] = { -1,-1,-1,-1 };
 
 	// Memory handling
-	std::string				SelectedMemoryHandler;
+	std::string							SelectedMemoryHandler;
 	std::vector< FMemoryAccessHandler>	MemoryAccessHandlers;
-	std::vector< FMemoryAccess>	FrameScreenPixWrites;
-	std::vector< FMemoryAccess>	FrameScreenAttrWrites;
+	std::vector< FMemoryAccess>			FrameScreenPixWrites;
+	std::vector< FMemoryAccess>			FrameScreenAttrWrites;
 
 	FMemoryStats	MemStats;
 
 	// interrupt handling info
-	bool		bHasInterruptHandler = false;
-	uint16_t	InterruptHandlerAddress = 0;
-
-	// Function info
-	//uint16_t							SelectedFunction;
-	//std::map<uint16_t, FFunctionInfo>	Functions;
-	//std::vector<uint16_t>				FunctionStack;
-	//FDasmState							FunctionDasm;
-
-	uint16_t dasmCurr = 0;
-
-	static const int kPCHistorySize = 32;
-	uint16_t PCHistory[kPCHistorySize];
-	int PCHistoryPos = 0;
+	bool			bHasInterruptHandler = false;
+	uint16_t		InterruptHandlerAddress = 0;
+	uint16_t		PreviousPC = 0;		// store previous pc
 
 	FRZXManager		RZXManager;
 
-	bool bShowImGuiDemo = false;
-	bool bShowImPlotDemo = false;
+	bool		bShowImGuiDemo = false;
+	bool		bShowImPlotDemo = false;
 private:
 	z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;
