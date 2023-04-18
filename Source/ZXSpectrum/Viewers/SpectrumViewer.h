@@ -41,6 +41,7 @@ private:
 
 	FAddressRef	XCoordAddress;	// for debugging
 	FAddressRef	YCoordAddress;
+	bool		bInvertXCoord = false;
 	bool		bInvertYCoord = false;
 	bool		bShowCoordinates = false;
 };

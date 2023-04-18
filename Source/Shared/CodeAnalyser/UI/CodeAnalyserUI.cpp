@@ -1924,16 +1924,27 @@ bool DrawAddressInput(const char* label, uint16_t* value)
 
 bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef& address)
 {
+	/*
+	if (state.Config.bShowBanks)
+	{
+		ImGui::SetNextItemWidth(60.0f);
+		DrawBankInput(state, "Bank", address.BankId);
+		ImGui::SameLine();
+	}*/
+
+	ImGui::PushID(label);
+
 	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 	const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
+	ImGui::Text("%s", label);
+	ImGui::SameLine();
 	ImGui::SetNextItemWidth(40.0f);
-	if (ImGui::InputScalar(label, ImGuiDataType_U16, &address.Address, 0, 0, format, inputFlags))
+	if (ImGui::InputScalar("##addronput", ImGuiDataType_U16, &address.Address, 0, 0, format, inputFlags))
 	{
 		address = state.AddressRefFromPhysicalAddress(address.Address);
 		return true;
 	}
 
-	ImGui::PushID(label);
 	if (ImGui::BeginPopupContextItem("address input context menu"))
 	{
 		if (ImGui::Selectable("Paste Address"))
@@ -1943,6 +1954,16 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 		ImGui::EndPopup();
 	}
 	ImGui::PopID();
+
+	//if (state.Config.bShowBanks)
+	{
+		const FCodeAnalysisBank* pBank = state.GetBank(address.BankId);
+		ImGui::SameLine();
+		if (pBank != nullptr)
+			ImGui::Text("(%s)", pBank->Name.c_str());
+		else
+			ImGui::Text("(None)");
+	}
 
 	return false;
 }
@@ -1959,12 +1980,13 @@ const char* GetBankText(FCodeAnalysisState& state, int16_t bankId)
 
 bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId)
 {
+	bool bBankChanged = false;
 	if (ImGui::BeginCombo("Bank", GetBankText(state, bankId)))
 	{
 		if (ImGui::Selectable(GetBankText(state, -1), bankId == -1))
 		{
 			bankId = -1;
-			return true;
+			bBankChanged = true;
 		}
 
 		const auto& banks = state.GetBanks();
@@ -1974,12 +1996,12 @@ bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId
 			{
 				FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
 				bankId = bank.Id;
-				return true;
+				bBankChanged = true;
 			}
 		}
 
 		ImGui::EndCombo();
 	}
 
-	return false;
+	return bBankChanged;
 }

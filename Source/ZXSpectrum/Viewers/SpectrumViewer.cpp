@@ -192,9 +192,12 @@ void FSpectrumViewer::Draw()
 	{
 		DrawAddressInput(codeAnalysis, "X Coord", XCoordAddress);
 		ImGui::SameLine();
+		ImGui::Checkbox("Invert", &bInvertXCoord);
+
+		//ImGui::SameLine();
 		DrawAddressInput(codeAnalysis, "Y Coord", YCoordAddress);
 		ImGui::SameLine();
-		ImGui::Checkbox("Invert Y", &bInvertYCoord);
+		ImGui::Checkbox("Invert", &bInvertYCoord);
 		bShowCoordinates = true;
 	}
 	else
@@ -212,8 +215,9 @@ void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, 
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const uint8_t xVal = codeAnalysis.ReadByte(XCoordAddress);
-		const ImVec2 lineStart(pos.x + kBorderOffsetX + xVal, pos.y + kBorderOffsetY);
-		const ImVec2 lineEnd(pos.x + kBorderOffsetX + xVal, pos.y + kBorderOffsetY + 192.0f);
+		const float xLinePos = (float)(bInvertYCoord ? 255 - xVal : xVal);
+		const ImVec2 lineStart(pos.x + kBorderOffsetX + xLinePos, pos.y + kBorderOffsetY);
+		const ImVec2 lineEnd(pos.x + kBorderOffsetX + xLinePos, pos.y + kBorderOffsetY + 192.0f);
 
 		dl->AddLine(lineStart, lineEnd, 0xffffffff);
 	}
