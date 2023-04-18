@@ -198,6 +198,12 @@ void FSpectrumViewer::Draw()
 		DrawAddressInput(codeAnalysis, "Y Coord", YCoordAddress);
 		ImGui::SameLine();
 		ImGui::Checkbox("Invert", &bInvertYCoord);
+		ImGui::SameLine();
+		if (ImGui::Button("Set to X+1"))
+		{
+			YCoordAddress = XCoordAddress;
+			YCoordAddress.Address++;
+		}
 		bShowCoordinates = true;
 	}
 	else
