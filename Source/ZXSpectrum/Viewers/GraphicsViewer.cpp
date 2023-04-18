@@ -139,16 +139,6 @@ void DrawMemoryBankAsGraphicsColumn(FGraphicsViewerState& viewerState, int16_t b
 	}
 }
 
-const char* GetBankText(FCodeAnalysisState& state, int16_t bankId)
-{
-	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
-
-	if (pBank == nullptr)
-		return "None";
-
-	return pBank->Name.c_str();
-}
-
 // Viewer to view spectrum graphics
 void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 {

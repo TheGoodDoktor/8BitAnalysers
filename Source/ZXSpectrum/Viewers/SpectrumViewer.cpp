@@ -11,28 +11,11 @@
 
 #include <Util/Misc.h>
 
-#if 0
-// TODO: need a better multi-platform solution
-#define VK_F1             0x70
-#define VK_F2             0x71
-#define VK_F3             0x72
-#define VK_F4             0x73
-#define VK_F5             0x74
-#define VK_F6             0x75
-#define VK_F7             0x76
-#define VK_F8             0x77
-#define VK_F9             0x78
-#define VK_F10            0x79
-#define VK_F11            0x7A
-#define VK_F12            0x7B
-#define VK_SPACE          0x20
-#define VK_RETURN         0x0D
-#define VK_CONTROL        0x11
-#define VK_SHIFT          0x10
-#define VK_BACK           0x08
-#endif
-
 void DrawArrow(ImDrawList* dl, ImVec2 pos, bool bLeftDirection);
+
+static const int kBorderOffsetX = (320 - 256) / 2;
+static const int kBorderOffsetY = (256 - 192) / 2;
+
 
 void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 {
@@ -40,21 +23,14 @@ void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 	//SetInputEventHandler(this);
 }
 
-
-
-
 void FSpectrumViewer::Draw()
 {
 	const FGlobalConfig& config = GetGlobalConfig();
 	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->CodeAnalysis;
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 
-	ImGuiIO& io = ImGui::GetIO();
-	ImVec2 pos = ImGui::GetCursorScreenPos();
-	const int borderOffsetX = (320 - 256) / 2;
-	const int borderOffsetY = (256 - 192) / 2;
+	const ImVec2 pos = ImGui::GetCursorScreenPos();
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
-	bool bJustSelectedChar = false;
 	ImGui::Image(pSpectrumEmu->Texture, ImVec2(320, 256));
 
 	// Draw an indicator to show which scanline is being drawn
@@ -68,6 +44,10 @@ void FSpectrumViewer::Draw()
 		DrawArrow(dl, ImVec2(pos.x - 2, pos.y + scanlineY - 6), false);
 		DrawArrow(dl, ImVec2(pos.x + 320 - 11, pos.y + scanlineY - 6), true);
 	}
+
+	if (bShowCoordinates)
+		DrawCoordinatePositions(codeAnalysis, pos);
+
 	
 	// draw hovered address
 	if (viewState.HighlightAddress.IsValid())
@@ -78,9 +58,9 @@ void FSpectrumViewer::Draw()
 			int xp, yp;
 			GetScreenAddressCoords(viewState.HighlightAddress.Address, xp, yp);
 
-			const int rx = static_cast<int>(pos.x) + borderOffsetX + xp;
-			const int ry = static_cast<int>(pos.y) + borderOffsetY + yp;
-			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 1), 0xffffffff);
+			const int rx = static_cast<int>(pos.x) + kBorderOffsetX + xp;
+			const int ry = static_cast<int>(pos.y) + kBorderOffsetY + yp;
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 1), 0xffffffff);	// TODO: flash?
 		}
 
 		if (viewState.HighlightAddress.Address >= kScreenAttrMemStart && viewState.HighlightAddress.Address <= kScreenAttrMemEnd)	// attributes
@@ -88,110 +68,17 @@ void FSpectrumViewer::Draw()
 			int xp, yp;
 			GetAttribAddressCoords(viewState.HighlightAddress.Address, xp, yp);
 
-			const int rx = static_cast<int>(pos.x) + borderOffsetX + xp;
-			const int ry = static_cast<int>(pos.y) + borderOffsetY + yp;
-			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);
+			const int rx = static_cast<int>(pos.x) + kBorderOffsetX + xp;
+			const int ry = static_cast<int>(pos.y) + kBorderOffsetY + yp;
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);	// TODO: flash?
 		}
 	}
 
+	bool bJustSelectedChar = false;
+
 	if (ImGui::IsItemHovered())
 	{
-		const int xp = std::min(std::max((int)(io.MousePos.x - pos.x - borderOffsetX), 0), 255);
-		const int yp = std::min(std::max((int)(io.MousePos.y - pos.y - borderOffsetY), 0), 191);
-
-		const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
-		const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
-
-		if (scrPixAddress != 0)
-		{
-			ImDrawList* dl = ImGui::GetWindowDrawList();
-			const int rx = static_cast<int>(pos.x) + borderOffsetX + (xp & ~0x7);
-			const int ry = static_cast<int>(pos.y) + borderOffsetY + (yp & ~0x7);
-			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);
-			ImGui::BeginTooltip();
-			ImGui::Text("Screen Pos (%d,%d)", xp, yp);
-			ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
-
-			const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
-			const FAddressRef lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
-			if (lastPixWriter.IsValid())
-			{
-				ImGui::Text("Pixel Writer: ");
-				ImGui::SameLine();
-				DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
-			}
-			if (lastAttrWriter.IsValid())
-			{
-				ImGui::Text("Attribute Writer: ");
-				ImGui::SameLine();
-				DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
-			}
-			{
-				//ImGui::Text("Image: ");
-				//const float line_height = ImGui::GetTextLineHeight();
-				const float rectSize = 10;
-				ImDrawList* dl = ImGui::GetWindowDrawList();
-				ImVec2 pos = ImGui::GetCursorScreenPos();
-				const float startPos = pos.x;
-				//pos.y -= rectSize + 2;
-
-				for (int byte = 0; byte < 8; byte++)
-				{
-					const uint8_t val = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + byte));
-
-					for (int bit = 7; bit >= 0; bit--)
-					{
-						const ImVec2 rectMin(pos.x, pos.y);
-						const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
-						if (val & (1 << bit))
-							dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
-						else
-							dl->AddRect(rectMin, rectMax, 0xffffffff);
-
-						pos.x += rectSize;
-					}
-
-					pos.x = startPos;
-					pos.y += rectSize;
-				}
-
-				ImGui::Text("");
-				ImGui::Text("");
-				ImGui::Text("");
-				ImGui::Text("");
-				ImGui::Text("");
-			}
-			ImGui::EndTooltip();
-			//ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
-
-			
-			if (ImGui::IsMouseClicked(0))
-			{
-				bScreenCharSelected = true;
-				SelectedCharX = rx;
-				SelectedCharY = ry;
-				SelectPixAddr = scrPixAddress;
-				SelectAttrAddr = scrAttrAddress;
-
-				// store pixel data for selected character
-				for (int charLine = 0; charLine < 8; charLine++)
-					CharData[charLine] = pSpectrumEmu->ReadByte( GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
-				CharDataFound = codeAnalysis.FindMemoryPattern(CharData, 8, 0, FoundCharDataAddress);
-				bJustSelectedChar = true;
-			}
-
-			if (ImGui::IsMouseClicked(1))
-			{
-				bScreenCharSelected = false;
-				bJustSelectedChar = false;
-			}
-
-			if (ImGui::IsMouseDoubleClicked(0))
-				viewState.GoToAddress(lastPixWriter);
-			if (ImGui::IsMouseDoubleClicked(1))
-				viewState.GoToAddress(lastAttrWriter);
-		}
-
+		bJustSelectedChar = OnHovered(pos, codeAnalysis, viewState);
 	}
 
 	if (bScreenCharSelected == true)
@@ -286,13 +173,11 @@ void FSpectrumViewer::Draw()
 				}
 
 			}
-		}
-
-		
+		}		
 	}
 
 	ImGui::SliderFloat("Speed Scale", &pSpectrumEmu->ExecSpeedScale, 0.0f, 2.0f);
-	//ImGui::SameLine();
+	ImGui::SameLine();
 	if (ImGui::Button("Reset"))
 		pSpectrumEmu->ExecSpeedScale = 1.0f;
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -302,53 +187,151 @@ void FSpectrumViewer::Draw()
 		ImGui::Text("IM2 Interrupt Handler at: %s", NumStr(pSpectrumEmu->InterruptHandlerAddress));
 		DrawAddressLabel(codeAnalysis, viewState, pSpectrumEmu->InterruptHandlerAddress);
 	}
+
+	if (ImGui::CollapsingHeader("Screen Coordinates"))
+	{
+		DrawAddressInput(codeAnalysis, "X Coord", XCoordAddress);
+		ImGui::SameLine();
+		DrawAddressInput(codeAnalysis, "Y Coord", YCoordAddress);
+		ImGui::SameLine();
+		ImGui::Checkbox("Invert Y", &bInvertYCoord);
+		bShowCoordinates = true;
+	}
+	else
+	{
+		bShowCoordinates = false;
+	}
 	
 	bWindowFocused = ImGui::IsWindowFocused();
 }
 
-#if 0
-int GetSpectrumKeyFromKeyCode(int keyCode)
+void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos)
 {
-	int speccyKey = 0;
+	// draw coordinate position
+	if (XCoordAddress.IsValid())
+	{
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const uint8_t xVal = codeAnalysis.ReadByte(XCoordAddress);
+		const ImVec2 lineStart(pos.x + kBorderOffsetX + xVal, pos.y + kBorderOffsetY);
+		const ImVec2 lineEnd(pos.x + kBorderOffsetX + xVal, pos.y + kBorderOffsetY + 192.0f);
 
-	if (keyCode >= '0' && keyCode <= '9')
-	{
-		// pressed 0-9
-		speccyKey = keyCode;
+		dl->AddLine(lineStart, lineEnd, 0xffffffff);
 	}
-	else if (keyCode >= 'A' && keyCode <= 'Z')
+	if (YCoordAddress.IsValid())
 	{
-		// pressed a-z
-		speccyKey = keyCode + 0x20;
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const uint8_t yVal = codeAnalysis.ReadByte(YCoordAddress);
+		const float yLinePos = (float)(bInvertYCoord ? 192 - yVal : yVal);
+		const ImVec2 lineStart(pos.x + kBorderOffsetX, pos.y + kBorderOffsetY + yLinePos);
+		const ImVec2 lineEnd(pos.x + kBorderOffsetX + 256.0f, pos.y + kBorderOffsetY + yLinePos);
+
+		dl->AddLine(lineStart, lineEnd, 0xffffffff);
 	}
-	else if (keyCode == VK_SPACE)
-	{
-		speccyKey = ' '; 
-	}
-	else if (keyCode == VK_RETURN)
-	{
-		speccyKey = 0xd;
-	}
-	else if (keyCode == VK_CONTROL)
-	{
-		// symbol-shift
-		speccyKey = 0xf;
-	}
-	else if (keyCode == VK_SHIFT)
-	{
-		// caps-shift
-		speccyKey = 0xe;
-	}
-	else if (keyCode == VK_BACK)
-	{
-		// delete (shift and 0)
-		speccyKey = 0xc;
-	}
-	return speccyKey;
-	
-	return 0;
 }
-#endif
+
+bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnalysis, FCodeAnalysisViewState& viewState)
+{
+	bool bJustSelectedChar = false;
+	
+	ImGuiIO& io = ImGui::GetIO();
+	const int xp = std::min(std::max((int)(io.MousePos.x - pos.x - kBorderOffsetX), 0), 255);
+	const int yp = std::min(std::max((int)(io.MousePos.y - pos.y - kBorderOffsetY), 0), 191);
+
+	const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
+	const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
+
+	if (scrPixAddress != 0)
+	{
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const int rx = static_cast<int>(pos.x) + kBorderOffsetX + (xp & ~0x7);
+		const int ry = static_cast<int>(pos.y) + kBorderOffsetY + (yp & ~0x7);
+		dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);
+		ImGui::BeginTooltip();
+		ImGui::Text("Screen Pos (%d,%d)", xp, yp);
+		ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
+
+		const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
+		const FAddressRef lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
+		if (lastPixWriter.IsValid())
+		{
+			ImGui::Text("Pixel Writer: ");
+			ImGui::SameLine();
+			DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
+		}
+		if (lastAttrWriter.IsValid())
+		{
+			ImGui::Text("Attribute Writer: ");
+			ImGui::SameLine();
+			DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
+		}
+		{
+			//ImGui::Text("Image: ");
+			//const float line_height = ImGui::GetTextLineHeight();
+			const float rectSize = 10;
+			ImDrawList* dl = ImGui::GetWindowDrawList();
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			const float startPos = pos.x;
+			//pos.y -= rectSize + 2;
+
+			for (int byte = 0; byte < 8; byte++)
+			{
+				const uint8_t val = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + byte));
+
+				for (int bit = 7; bit >= 0; bit--)
+				{
+					const ImVec2 rectMin(pos.x, pos.y);
+					const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+					if (val & (1 << bit))
+						dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
+					else
+						dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+					pos.x += rectSize;
+				}
+
+				pos.x = startPos;
+				pos.y += rectSize;
+			}
+
+			ImGui::Text("");
+			ImGui::Text("");
+			ImGui::Text("");
+			ImGui::Text("");
+			ImGui::Text("");
+		}
+		ImGui::EndTooltip();
+		//ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
+
+
+		if (ImGui::IsMouseClicked(0))
+		{
+			bScreenCharSelected = true;
+			SelectedCharX = rx;
+			SelectedCharY = ry;
+			SelectPixAddr = scrPixAddress;
+			SelectAttrAddr = scrAttrAddress;
+
+			// store pixel data for selected character
+			for (int charLine = 0; charLine < 8; charLine++)
+				CharData[charLine] = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
+			CharDataFound = codeAnalysis.FindMemoryPattern(CharData, 8, 0, FoundCharDataAddress);
+			bJustSelectedChar = true;
+		}
+
+		if (ImGui::IsMouseClicked(1))
+		{
+			bScreenCharSelected = false;
+			bJustSelectedChar = false;
+		}
+
+		if (ImGui::IsMouseDoubleClicked(0))
+			viewState.GoToAddress(lastPixWriter);
+		if (ImGui::IsMouseDoubleClicked(1))
+			viewState.GoToAddress(lastAttrWriter);
+	}	
+
+	return bJustSelectedChar;
+}
 
 int SpectrumKeyFromImGuiKey(ImGuiKey key)
 {
@@ -396,7 +379,7 @@ void FSpectrumViewer::Tick(void)
 		if (ImGui::IsKeyPressed(key,false))
 		{ 
 			const int speccyKey = SpectrumKeyFromImGuiKey(key);
-			if (speccyKey != 0)
+			if (speccyKey != 0 && bWindowFocused)
 				zx_key_down(&pSpectrumEmu->ZXEmuState, speccyKey);
 		}
 		else if (ImGui::IsKeyReleased(key))
@@ -425,35 +408,6 @@ void FSpectrumViewer::Tick(void)
 		zx_joystick(&pSpectrumEmu->ZXEmuState, mask);
 	}
 }
-
-#if 0
-void FSpectrumViewer::OnKeyUp(int keyCode) 
-{
-	zx_key_up(&pSpectrumEmu->ZXEmuState, GetSpectrumKeyFromKeyCode(keyCode));
-}
-
-
-void FSpectrumViewer::OnKeyDown(int keyCode) 
-{
-	if (bWindowFocused)
-	{
-		zx_key_down(&pSpectrumEmu->ZXEmuState, GetSpectrumKeyFromKeyCode(keyCode));
-	}
-}
-
-void FSpectrumViewer::OnGamepadUpdated(int mask)
-{
-	if (zx_joystick_type(&pSpectrumEmu->ZXEmuState) != ZX_JOYSTICKTYPE_NONE)
-	{
-		zx_joystick(&pSpectrumEmu->ZXEmuState, mask);
-	}
-}
-
-void FSpectrumViewer::OnChar(int charCode) 
-{
-}
-
-#endif
 
 void DrawArrow(ImDrawList* dl, ImVec2 pos, bool bLeftDirection)
 {

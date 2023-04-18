@@ -442,6 +442,7 @@ public:
 	uint16_t				StackMin;
 	uint16_t				StackMax;
 
+	FAddressRef				CopiedAddress;
 	std::vector<FAddressRef>	FrameTrace;
 
 	int						KeyConfig[(int)EKey::Count];

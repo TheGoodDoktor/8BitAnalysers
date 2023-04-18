@@ -138,7 +138,7 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 		FCharacterSet* pCharSet = GetCharacterSetFromAddress(selectedCharSetAddr);
 		if (pCharSet)
 		{
-			if (DrawAddressInput("Address", params.Address))
+			if (DrawAddressInput(state, "Address", params.Address))
 			{
 				//UpdateCharacterSet(state, *pCharSet, params);
 			}
@@ -147,7 +147,7 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 			DrawColourInfoComboBox(&params.ColourInfo);
 			if (params.ColourInfo == EColourInfo::MemoryLUT)
 			{
-				DrawAddressInput("Attribs Address", params.AttribsAddress);
+				DrawAddressInput(state, "Attribs Address", params.AttribsAddress);
 			}
 			ImGui::Checkbox("Dynamic", &params.bDynamic);
 			if (ImGui::Button("Update Character Set"))
@@ -185,7 +185,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	DrawAddressLabel(state, viewState, uiState.SelectedCharMapAddr);
 
 	// Display and edit params
-	DrawAddressInput("Address", params.Address);
+	DrawAddressInput(state, "Address", params.Address);
 	DrawCharacterSetComboBox(state, params.CharacterSet);
 	int sz[2] = { params.Width, params.Height };
 	if (ImGui::InputInt2("Size (X,Y)", sz))

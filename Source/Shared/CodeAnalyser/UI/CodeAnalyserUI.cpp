@@ -1081,6 +1081,11 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 
 	if (ImGui::BeginPopupContextItem("code item context menu"))
 	{		
+		if (ImGui::Selectable("Copy Address"))
+		{
+			state.CopiedAddress = item.AddressRef;
+		}
+
 		if (item.Item->Type == EItemType::Data)
 		{
 			if (ImGui::Selectable("Toggle data type (D)"))
@@ -1917,11 +1922,64 @@ bool DrawAddressInput(const char* label, uint16_t* value)
 	return ImGui::InputScalar(label, ImGuiDataType_U16, value, 0, 0, format, inputFlags);
 }
 
-bool DrawAddressInput(const char* label, FAddressRef& address)
+bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef& address)
 {
 	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 	const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
-	return ImGui::InputScalar(label, ImGuiDataType_U16, &address.Address, 0, 0, format, inputFlags);
+	ImGui::SetNextItemWidth(40.0f);
+	if (ImGui::InputScalar(label, ImGuiDataType_U16, &address.Address, 0, 0, format, inputFlags))
+	{
+		address = state.AddressRefFromPhysicalAddress(address.Address);
+		return true;
+	}
+
+	ImGui::PushID(label);
+	if (ImGui::BeginPopupContextItem("address input context menu"))
+	{
+		if (ImGui::Selectable("Paste Address"))
+		{
+			address = state.CopiedAddress;
+		}
+		ImGui::EndPopup();
+	}
+	ImGui::PopID();
+
+	return false;
 }
 
+const char* GetBankText(FCodeAnalysisState& state, int16_t bankId)
+{
+	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
 
+	if (pBank == nullptr)
+		return "None";
+
+	return pBank->Name.c_str();
+}
+
+bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId)
+{
+	if (ImGui::BeginCombo("Bank", GetBankText(state, bankId)))
+	{
+		if (ImGui::Selectable(GetBankText(state, -1), bankId == -1))
+		{
+			bankId = -1;
+			return true;
+		}
+
+		const auto& banks = state.GetBanks();
+		for (const auto& bank : banks)
+		{
+			if (ImGui::Selectable(GetBankText(state, bank.Id), bankId == bank.Id))
+			{
+				FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
+				bankId = bank.Id;
+				return true;
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	return false;
+}

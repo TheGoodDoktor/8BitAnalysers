@@ -680,7 +680,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		DrawColourInfoComboBox(&params.ColourInfo);
 		if (params.ColourInfo == EColourInfo::MemoryLUT)
 		{
-			DrawAddressInput("Attribs Address", params.AttribsAddress);
+			DrawAddressInput(state, "Attribs Address", params.AttribsAddress);
 		}
 
 		FCharacterSet *pCharSet = GetCharacterSetFromAddress(item.AddressRef);
