@@ -57,26 +57,26 @@ struct FZ80DisplayRegisters
 	FZ80DisplayRegisters() {}
 	FZ80DisplayRegisters(z80_t* pCPU)
 	{
-		A = z80_a(pCPU);
-		B = z80_b(pCPU);
-		C = z80_c(pCPU);
-		D = z80_d(pCPU);
-		E = z80_e(pCPU);
-		H = z80_h(pCPU);
-		L = z80_l(pCPU);
-		BC = z80_bc(pCPU);
-		DE = z80_de(pCPU);
-		HL = z80_hl(pCPU);
-		IX = z80_ix(pCPU);
-		IY = z80_iy(pCPU);
-		SP = z80_sp(pCPU);
-		PC = z80_pc(pCPU);
-		I = z80_i(pCPU);
-		R = z80_r(pCPU);
-		IM = z80_im(pCPU);
+		A = pCPU->a;
+		B = pCPU->b;
+		C = pCPU->c;
+		D = pCPU->d;
+		E = pCPU->e;
+		H = pCPU->h;
+		L = pCPU->l;
+		BC = pCPU->bc;
+		DE = pCPU->de;
+		HL = pCPU->hl;
+		IX = pCPU->ix;
+		IY = pCPU->iy;
+		SP = pCPU->sp;
+		PC = pCPU->pc;
+		I = pCPU->i;
+		R = pCPU->r;
+		IM = pCPU->im;
 
 		// Flags
-		const uint8_t f = z80_f(pCPU);
+		const uint8_t f = pCPU->f;
 		CarryFlag = !!(f & Z80_CF);
 		AddSubtractFlag = !!(f & Z80_NF);
 		ParityOverflowFlag = !!(f & Z80_VF);
@@ -84,8 +84,8 @@ struct FZ80DisplayRegisters
 		ZeroFlag = !!(f & Z80_ZF);
 		SignFlag = !!(f & Z80_SF);
 
-		IFF1 = z80_iff1(pCPU);
-		IFF2 = z80_iff2(pCPU);
+		IFF1 = pCPU->iff1;
+		IFF2 = pCPU->iff2;
 	}
 
 	uint8_t	A = 0, B = 0, C = 0, D = 0, E = 0, H = 0, L = 0;

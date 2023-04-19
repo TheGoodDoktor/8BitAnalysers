@@ -247,44 +247,44 @@ void GenerateRegisterValueStrings(FToolTipInstructionInfo& inst, ICPUInterface* 
 {
 	z80_t* pCPU = (z80_t*)CPUIF->GetCPUEmulator();
 
-	GetTooltipRegStrByte(Z80Reg::A,		0, z80_a(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::B,		0, z80_b(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::C,		0, z80_c(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::D,		0, z80_d(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::E,		0, z80_e(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::H,		0, z80_h(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::L,		0, z80_l(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::I,		0, z80_i(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::R,		0, z80_r(pCPU),			inst, strings);
-	GetTooltipRegStrByte(Z80Reg::IXL,	0, z80_ix(pCPU) & 0xff, inst, strings);
-	GetTooltipRegStrByte(Z80Reg::IXH,	0, z80_ix(pCPU) >> 8,	inst, strings);
-	GetTooltipRegStrByte(Z80Reg::IYL,	0, z80_iy(pCPU) & 0xff, inst, strings);
-	GetTooltipRegStrByte(Z80Reg::IYH,	0, z80_iy(pCPU) >> 8,	inst, strings);
+	GetTooltipRegStrByte(Z80Reg::A,		0, pCPU->a,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::B,		0, pCPU->b,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::C,		0, pCPU->c,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::D,		0, pCPU->d,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::E,		0, pCPU->e,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::H,		0, pCPU->h,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::L,		0, pCPU->l,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::I,		0, pCPU->i,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::R,		0, pCPU->r,			inst, strings);
+	GetTooltipRegStrByte(Z80Reg::IXL,	0, pCPU->ix & 0xff, inst, strings);
+	GetTooltipRegStrByte(Z80Reg::IXH,	0, pCPU->ix >> 8,	inst, strings);
+	GetTooltipRegStrByte(Z80Reg::IYL,	0, pCPU->iy & 0xff, inst, strings);
+	GetTooltipRegStrByte(Z80Reg::IYH,	0, pCPU->iy >> 8,	inst, strings);
 
-	GetTooltipRegStrWord(Z80Reg::SP,		Z80Reg::SP_Indirect,	z80_sp(pCPU),  inst, strings);
-	GetTooltipRegStrWord(Z80Reg::AF,		0,						z80_af(pCPU),  inst, strings);
-	GetTooltipRegStrWord(Z80Reg::AF_ALT,	0,						z80_af_(pCPU), inst, strings);
-	GetTooltipRegStrWord(Z80Reg::BC,		Z80Reg::BC_Indirect,	z80_bc(pCPU),  inst, strings);
-	GetTooltipRegStrWord(Z80Reg::DE,		Z80Reg::DE_Indirect,	z80_de(pCPU),  inst, strings);
-	GetTooltipRegStrWord(Z80Reg::HL,		Z80Reg::HL_Indirect,	z80_hl(pCPU),  inst, strings);
-	GetTooltipRegStrWord(Z80Reg::IX,		Z80Reg::IX_Indirect,	z80_ix(pCPU),  inst, strings);
-	GetTooltipRegStrWord(Z80Reg::IY,		Z80Reg::IY_Indirect,	z80_iy(pCPU),  inst, strings);
+	GetTooltipRegStrWord(Z80Reg::SP,		Z80Reg::SP_Indirect,	pCPU->sp,  inst, strings);
+	GetTooltipRegStrWord(Z80Reg::AF,		0,						pCPU->af,  inst, strings);
+	GetTooltipRegStrWord(Z80Reg::AF_ALT,	0,						pCPU->af2, inst, strings);
+	GetTooltipRegStrWord(Z80Reg::BC,		Z80Reg::BC_Indirect,	pCPU->bc,  inst, strings);
+	GetTooltipRegStrWord(Z80Reg::DE,		Z80Reg::DE_Indirect,	pCPU->de,  inst, strings);
+	GetTooltipRegStrWord(Z80Reg::HL,		Z80Reg::HL_Indirect,	pCPU->hl,  inst, strings);
+	GetTooltipRegStrWord(Z80Reg::IX,		Z80Reg::IX_Indirect,	pCPU->ix,  inst, strings);
+	GetTooltipRegStrWord(Z80Reg::IY,		Z80Reg::IY_Indirect,	pCPU->iy,  inst, strings);
 
-	GetTooltipRegStrIndirectByte(Z80Reg::BC_Indirect,		z80_bc(pCPU), inst, CPUIF, strings);
-	GetTooltipRegStrIndirectByte(Z80Reg::DE_Indirect,		z80_de(pCPU), inst, CPUIF, strings);
-	GetTooltipRegStrIndirectByte(Z80Reg::HL_Indirect,		z80_hl(pCPU), inst, CPUIF, strings);
-	GetTooltipRegStrIndirectByte(Z80Reg::IX_Indirect,		z80_ix(pCPU), inst, CPUIF, strings);
-	GetTooltipRegStrIndirectByte(Z80Reg::IY_Indirect,		z80_iy(pCPU), inst, CPUIF, strings);
-	GetTooltipRegStrIndirectWord(Z80Reg::SP_Indirect,		z80_sp(pCPU), inst, CPUIF, strings);
-	GetTooltipRegStrIndirectByte(Z80Reg::IX_Indirect_D,		z80_ix(pCPU), inst, CPUIF, strings);
-	GetTooltipRegStrIndirectByte(Z80Reg::IY_Indirect_D,		z80_iy(pCPU), inst, CPUIF, strings);
+	GetTooltipRegStrIndirectByte(Z80Reg::BC_Indirect,		pCPU->bc, inst, CPUIF, strings);
+	GetTooltipRegStrIndirectByte(Z80Reg::DE_Indirect,		pCPU->de, inst, CPUIF, strings);
+	GetTooltipRegStrIndirectByte(Z80Reg::HL_Indirect,		pCPU->hl, inst, CPUIF, strings);
+	GetTooltipRegStrIndirectByte(Z80Reg::IX_Indirect,		pCPU->ix, inst, CPUIF, strings);
+	GetTooltipRegStrIndirectByte(Z80Reg::IY_Indirect,		pCPU->iy, inst, CPUIF, strings);
+	GetTooltipRegStrIndirectWord(Z80Reg::SP_Indirect,		pCPU->sp, inst, CPUIF, strings);
+	GetTooltipRegStrIndirectByte(Z80Reg::IX_Indirect_D,		pCPU->ix, inst, CPUIF, strings);
+	GetTooltipRegStrIndirectByte(Z80Reg::IY_Indirect_D,		pCPU->iy, inst, CPUIF, strings);
 
 	if (inst.RegFlags & Z80Reg::F)
 	{
 		//snprintf(tempStr, kTempStrLen, "F: %s ", NumStr(z80_f(pCPU)));
 		//outString += std::string(tempStr);
 
-		const uint8_t f = z80_f(pCPU);
+		const uint8_t f = pCPU->f;
 		char f_str[] = {
 			'[',
 			(f & Z80_SF) ? 'S' : '-',

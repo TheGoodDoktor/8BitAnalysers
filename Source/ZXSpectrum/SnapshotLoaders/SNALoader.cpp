@@ -75,21 +75,21 @@ bool LoadSNAFromMemory(FSpectrumEmu * pEmu, const uint8_t * pData, size_t dataSi
 	zx_t* pSys = &pEmu->ZXEmuState;
 
 	z80_reset(&pSys->cpu);
-	z80_set_af(&pSys->cpu, pHdr->AF);
-	z80_set_bc(&pSys->cpu, pHdr->BC); 
-	z80_set_de(&pSys->cpu, pHdr->DE); 
-	z80_set_hl(&pSys->cpu, pHdr->HL); 
-	z80_set_ix(&pSys->cpu, pHdr->IX);
-	z80_set_iy(&pSys->cpu, pHdr->IY);
-	z80_set_af_(&pSys->cpu, pHdr->AF_);
-	z80_set_bc_(&pSys->cpu, pHdr->BC_);
-	z80_set_de_(&pSys->cpu, pHdr->DE_);
-	z80_set_hl_(&pSys->cpu, pHdr->HL_);
-	z80_set_i(&pSys->cpu, pHdr->I);
-	z80_set_r(&pSys->cpu, pHdr->R);
-	z80_set_iff2(&pSys->cpu, pHdr->Interrupt & (1 << 2));
+	pSys->cpu.af = pHdr->AF;
+	pSys->cpu.bc = pHdr->BC; 
+	pSys->cpu.de = pHdr->DE; 
+	pSys->cpu.hl = pHdr->HL; 
+	pSys->cpu.ix = pHdr->IX;
+	pSys->cpu.iy = pHdr->IY;
+	pSys->cpu.af2 = pHdr->AF_;
+	pSys->cpu.bc2 = pHdr->BC_;
+	pSys->cpu.de2 = pHdr->DE_;
+	pSys->cpu.hl2 = pHdr->HL_;
+	pSys->cpu.i = pHdr->I;
+	pSys->cpu.r = pHdr->R;
+	pSys->cpu.iff2 = pHdr->Interrupt & (1 << 2);
 	//z80_set_ei_pending(&pSys->cpu, pHdr->Interrupt != 0);
-	z80_set_im(&pSys->cpu, pHdr->IM & 3);
+	pSys->cpu.im = pHdr->IM & 3;
 
 #	// copy RAM across
 	for (int address = 0x4000; address < (1 << 16); address++)
@@ -99,8 +99,8 @@ bool LoadSNAFromMemory(FSpectrumEmu * pEmu, const uint8_t * pData, size_t dataSi
 	}
 
 	// pop PC off stack
-	z80_set_pc(&pSys->cpu, pEmu->ReadWord(pHdr->SP));
-	z80_set_sp(&pSys->cpu, pHdr->SP + 2);
+	pSys->cpu.pc = pEmu->ReadWord(pHdr->SP);
+	pSys->cpu.sp = pHdr->SP + 2;
 
 
 	return true;	// NOT implemented

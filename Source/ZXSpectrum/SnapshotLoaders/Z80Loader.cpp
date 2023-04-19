@@ -14,5 +14,8 @@ bool LoadZ80File(FSpectrumEmu* pEmu, const char* fName)
 
 bool LoadZ80FromMemory(FSpectrumEmu* pEmu, const uint8_t* pData, size_t dataSize)
 {
-	return zx_quickload(&pEmu->ZXEmuState, (const uint8_t*)pData, (int)dataSize);
+	chips_range_t dataInfo;
+	dataInfo.ptr = (void*)pData;
+	dataInfo.size = dataSize;
+	return zx_quickload(&pEmu->ZXEmuState, dataInfo);
 }

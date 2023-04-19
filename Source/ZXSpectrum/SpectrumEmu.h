@@ -2,6 +2,7 @@
 
 #define UI_DBG_USE_Z80
 #define UI_DASM_USE_Z80
+#include "chips/chips_common.h"
 #include "chips/z80.h"
 #include "chips/m6502.h"
 #include "chips/beeper.h"
@@ -23,6 +24,7 @@
 #include "ui/ui_dbg.h"
 #include "ui/ui_memedit.h"
 #include "ui/ui_memmap.h"
+#include "ui/ui_snapshot.h"
 #include "ui/ui_zx.h"
 
 #include <map>
@@ -213,7 +215,7 @@ public:
 	bool		bShowImGuiDemo = false;
 	bool		bShowImPlotDemo = false;
 private:
-	z80_tick_t	OldTickCB = nullptr;
+	//z80_tick_t	OldTickCB = nullptr;
 	void*		OldTickUserData = nullptr;
 
 	std::vector<FViewerBase*>	Viewers;

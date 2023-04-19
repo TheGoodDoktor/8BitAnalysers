@@ -133,7 +133,7 @@ source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} )
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main})
 
-set_target_properties( SpectrumAnalyser PROPERTIES CXX_STANDARD 17 )
+set_target_properties( SpectrumAnalyser PROPERTIES CXX_STANDARD 20 )
 
 #windows specific
 if(${gfxapi} STREQUAL "DX11")

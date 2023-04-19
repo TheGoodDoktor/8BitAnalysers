@@ -233,7 +233,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
 	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator());
-	const FZ80InternalState& cpuState = pCPU->internal_state;
+	//const FZ80InternalState& cpuState = pCPU->internal_state;
 
 	bool bPushInstruction = false;
 	
@@ -323,7 +323,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 	// store the comment from the code line that did the push at the location in the stack as a comment
 	if(bPushInstruction)
 	{
-		const uint16_t stackPointer = cpuState.SP - 2;
+		const uint16_t stackPointer = pCPU->sp - 2;
 
 		if (stackPointer >= state.StackMin && stackPointer <= state.StackMax)
 		{
@@ -384,21 +384,21 @@ void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInt
 	z80_t* pCPU = (z80_t*)pCPUInterface->GetCPUEmulator();
 	FMachineStateZ80* pMachineStateZ80 = static_cast<FMachineStateZ80 *>(pMachineState);
 
-	pMachineStateZ80->AF = z80_af(pCPU);
-	pMachineStateZ80->BC = z80_bc(pCPU);
-	pMachineStateZ80->DE = z80_de(pCPU);
-	pMachineStateZ80->HL = z80_hl(pCPU);
-	pMachineStateZ80->AF_ = z80_af_(pCPU);
-	pMachineStateZ80->BC_ = z80_bc_(pCPU);
-	pMachineStateZ80->DE_ = z80_de_(pCPU);
-	pMachineStateZ80->HL_ = z80_hl_(pCPU);
-	pMachineStateZ80->IX = z80_ix(pCPU);
-	pMachineStateZ80->IY = z80_iy(pCPU);
-	pMachineStateZ80->SP = z80_sp(pCPU);
-	pMachineStateZ80->PC = z80_pc(pCPU);
-	pMachineStateZ80->I = z80_i(pCPU);
-	pMachineStateZ80->R = z80_r(pCPU);
-	pMachineStateZ80->IM = z80_im(pCPU);
+	pMachineStateZ80->AF = pCPU->af;
+	pMachineStateZ80->BC = pCPU->bc;
+	pMachineStateZ80->DE = pCPU->de;
+	pMachineStateZ80->HL = pCPU->hl;
+	pMachineStateZ80->AF_ = pCPU->af2;
+	pMachineStateZ80->BC_ = pCPU->bc2;
+	pMachineStateZ80->DE_ = pCPU->de2;
+	pMachineStateZ80->HL_ = pCPU->hl2;
+	pMachineStateZ80->IX = pCPU->ix;
+	pMachineStateZ80->IY = pCPU->iy;
+	pMachineStateZ80->SP = pCPU->sp;
+	pMachineStateZ80->PC = pCPU->pc;
+	pMachineStateZ80->I = pCPU->i;
+	pMachineStateZ80->R = pCPU->r;
+	pMachineStateZ80->IM = pCPU->im;
 
 	for (int stackVal = 0; stackVal < FMachineStateZ80::kNoStackEntries; stackVal++)
 		pMachineStateZ80->Stack[stackVal] = pCPUInterface->ReadWord(pMachineStateZ80->SP - (stackVal * 2));

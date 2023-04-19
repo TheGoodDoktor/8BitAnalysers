@@ -43,7 +43,7 @@ static inline uint16_t _ui_dbg_read_word(ui_dbg_t* win, uint16_t addr) {
 
 static inline uint16_t _ui_dbg_get_pc(ui_dbg_t* win) {
 #if defined(UI_DBG_USE_Z80)
-    return z80_pc(win->dbg.z80);
+    return win->dbg.z80->pc;
 #elif defined(UI_DBG_USE_M6502)
     return m6502_pc(win->dbg.m6502);
 #endif
