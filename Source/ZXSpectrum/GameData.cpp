@@ -647,7 +647,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 }
 
 const uint32_t kMachineStateMagic = 0xFaceCafe;
-const uint32_t kMachineStateVersion = 1;
+const uint32_t kMachineStateVersion = 2;
 
 
 void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
@@ -686,6 +686,8 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 	fwrite(&kMachineStateMagic, sizeof(kMachineStateMagic), 1, fp);
 	fwrite(&kMachineStateVersion, sizeof(kMachineStateVersion), 1, fp);
 
+	// write out emulator state, I could just write out the entire ZXEmuState struct
+
 	const uint32_t type = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128 ? 128 : 48;
 	fwrite(&type, sizeof(type), 1, fp);
 	const int noBanks = type == 128 ? 8 : 3;
@@ -701,12 +703,8 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 		fwrite(&memConfig, sizeof(memConfig), 1, fp);
 	}
 
-	// get CPU state
-	fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa, sizeof(uint64_t), 1, fp);
-	fwrite(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
-	fwrite(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
-	fwrite(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
-	fwrite(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+	// write out entire CPU state
+	fwrite(&pSpectrumEmu->ZXEmuState.cpu, sizeof(z80_t), 1, fp);
 }
 
 bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
@@ -719,6 +717,9 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 	// version
 	uint32_t fileVersion = 0;
 	fread(&fileVersion, sizeof(fileVersion), 1, fp);
+
+	if (fileVersion != kMachineStateVersion)	// since machine state is not that important different file version numbers get rejected
+		return false;
 	
 	// machine type
 	const uint32_t machineType = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128 ? 128 : 48;
@@ -759,11 +760,7 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 	}
 
 	// get CPU state
-	fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa, sizeof(uint64_t), 1, fp);
-	fread(&pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_, sizeof(uint64_t), 1, fp);
-	fread(&pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp, sizeof(uint64_t), 1, fp);
-	fread(&pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits, sizeof(uint64_t), 1, fp);
-	fread(&pSpectrumEmu->ZXEmuState.cpu.pins, sizeof(uint64_t), 1, fp);
+	fread(&pSpectrumEmu->ZXEmuState.cpu, sizeof(z80_t), 1, fp);
 
 	pSpectrumEmu->CodeAnalysis.SetAllBanksDirty();
 	return true;

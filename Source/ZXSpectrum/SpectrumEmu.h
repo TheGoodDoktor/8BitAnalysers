@@ -165,7 +165,7 @@ public:
 	zx_t			ZXEmuState;	// Chips Spectrum State
 	uint8_t*		MappedInMemory = nullptr;
 
-	unsigned char*	FrameBuffer;	// pixel buffer to store emu output
+	//unsigned char*	FrameBuffer;	// pixel buffer to store emu output
 	ImTextureID		Texture;		// texture 
 	
 	bool			ExecThisFrame = true; // Whether the emulator should execute this frame (controlled by UI)

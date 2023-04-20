@@ -48,6 +48,7 @@ include( ../Shared/CMakeShared.txt )
 
 # compiler defines
 add_compile_definitions( _CRT_SECURE_NO_WARNINGS )
+add_compile_definitions( _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS )
 
 # compiler options
 set(CMAKE_BUILD_TYPE Release)
@@ -113,7 +114,7 @@ set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${
 
 # program source
 file ( GLOB program_src 
-	./*.cpp ./*.h
+	./*.cpp ./*.c ./*.h
 	Exporters/*.cpp Exporters/*.h
 	GameViewers/*.cpp GameViewers/*.h
 	Importers/*.cpp Importers/*.h
@@ -134,6 +135,7 @@ source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${s
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main})
 
 set_target_properties( SpectrumAnalyser PROPERTIES CXX_STANDARD 20 )
+set_target_properties( SpectrumAnalyser PROPERTIES C_STANDARD 11 )
 
 #windows specific
 if(${gfxapi} STREQUAL "DX11")
