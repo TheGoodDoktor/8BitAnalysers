@@ -29,6 +29,33 @@ ImTextureID ImGui_CreateTextureRGBA(unsigned char* pixels, int width, int height
 	return textureId;
 }
 
+ImTextureID ImGui_CreateTexturePal8(unsigned char* pixels,uint32_t *pPalette, int width, int height)
+{
+	GLuint newTexture = 0;
+	GLint lastTexture;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTexture);
+	glGenTextures(1, &newTexture);
+	glBindTexture(GL_TEXTURE_2D, newTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+#ifdef GL_UNPACK_ROW_LENGTH // Not on WebGL/ES
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
+
+	
+
+	//glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_PALETTE4_RGB8_OES, width, height, 0, width * height, pixels);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+	// Store our identifier
+	ImTextureID textureId = (ImTextureID)(intptr_t)newTexture;
+
+	// Restore state
+	glBindTexture(GL_TEXTURE_2D, lastTexture);
+
+	return textureId;
+}
+
 void ImGui_FreeTexture(ImTextureID texture)
 {
 	glDeleteTextures(1, (GLuint*)(intptr_t*)&texture);

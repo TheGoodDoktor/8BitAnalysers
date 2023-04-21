@@ -707,10 +707,13 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	CodeAnalysis.Config.bShowBanks = config.Model == ESpectrumModel::Spectrum128K;
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 
-	// setup pixel buffer
-	//const size_t pixelBufferSize = 320 * 256 * 4;
-	//FrameBuffer = new unsigned char[pixelBufferSize * 2];
+	// setup texture
+	chips_display_info_t dispInfo = zx_display_info(&ZXEmuState);
 
+	// setup pixel buffer
+	const size_t pixelBufferSize = dispInfo.frame.dim.width * dispInfo.frame.dim.height * 4;
+	FrameBuffer = new unsigned char[pixelBufferSize * 2];
+	Texture = ImGui_CreateTextureRGBA(FrameBuffer, dispInfo.frame.dim.width, dispInfo.frame.dim.height);
 	
 	// setup emu
 	zx_type_t type = config.Model == ESpectrumModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
@@ -738,9 +741,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	zx_init(&ZXEmuState, &desc);
 
-	// setup texture
-	chips_display_info_t dispInfo = zx_display_info(&ZXEmuState);
-	Texture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(dispInfo.frame.buffer.ptr), dispInfo.frame.dim.width, dispInfo.frame.dim.height);
 
 	GamesList.Init(this);
 	if(config.Model == ESpectrumModel::Spectrum128K)
@@ -1569,7 +1569,8 @@ void FSpectrumEmu::Tick()
 		}*/
 
 		chips_display_info_t disp = zx_display_info(&ZXEmuState);
-		ImGui_UpdateTextureRGBA(Texture, (uint8_t*)disp.frame.buffer.ptr);
+		// TODO: convert texture to RGBA
+		ImGui_UpdateTextureRGBA(Texture, FrameBuffer);
 
 		FrameTraceViewer.CaptureFrame();
 		FrameScreenPixWrites.clear();
