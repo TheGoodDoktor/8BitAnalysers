@@ -31,7 +31,9 @@ void FSpectrumViewer::Draw()
 
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
-	ImGui::Image(pSpectrumEmu->Texture, ImVec2(320, 256));
+	ImVec2 uv0(0, 0);
+	ImVec2 uv1(320.0f / 512.0f, 1.0f);
+	ImGui::Image(pSpectrumEmu->Texture, ImVec2(320, 256),uv0,uv1);
 
 	// Draw an indicator to show which scanline is being drawn
 	if (config.bShowScanLineIndicator && pSpectrumEmu->UIZX.dbg.dbg.stopped)

@@ -711,8 +711,8 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	chips_display_info_t dispInfo = zx_display_info(&ZXEmuState);
 
 	// setup pixel buffer
-	const size_t pixelBufferSize = dispInfo.frame.dim.width * dispInfo.frame.dim.height * 4;
-	FrameBuffer = new unsigned char[pixelBufferSize * 2];
+	const size_t pixelBufferSize = dispInfo.frame.dim.width * dispInfo.frame.dim.height;
+	FrameBuffer = new uint32_t[pixelBufferSize * 2];
 	Texture = ImGui_CreateTextureRGBA(FrameBuffer, dispInfo.frame.dim.width, dispInfo.frame.dim.height);
 	
 	// setup emu
@@ -1569,7 +1569,13 @@ void FSpectrumEmu::Tick()
 		}*/
 
 		chips_display_info_t disp = zx_display_info(&ZXEmuState);
-		// TODO: convert texture to RGBA
+
+		// convert texture to RGBA
+		const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
+		const uint32_t* pal = (const uint32_t*)disp.palette.ptr;
+		for (int i = 0; i < disp.frame.buffer.size; i++)
+			FrameBuffer[i] = pal[pix[i]];
+
 		ImGui_UpdateTextureRGBA(Texture, FrameBuffer);
 
 		FrameTraceViewer.CaptureFrame();
