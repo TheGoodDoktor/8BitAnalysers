@@ -42,6 +42,7 @@
 #include "IOAnalysis.h"
 #include "SnapshotLoaders/RZXLoader.h"
 #include "Util/Misc.h"
+#include "Debugger.h"
 
 struct FGame;
 struct FGameViewer;
@@ -115,9 +116,9 @@ public:
 
 	uint16_t	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	bool		IsAddressBreakpointed(uint16_t addr) override;
-	bool		SetExecBreakpointAtAddress(uint16_t addr, bool bSet) override;
-	bool		SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize,bool bSet) override;
+	bool		IsAddressBreakpointed(FAddressRef addr) override;
+	bool		SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) override;
+	bool		SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize,bool bSet) override;
 	void		Break(void) override;
 	void		Continue(void) override;
 	void		StepOver(void) override;
@@ -166,9 +167,10 @@ public:
 	uint8_t*		MappedInMemory = nullptr;
 
 	uint32_t*		FrameBuffer;	// pixel buffer to store emu output
-	ImTextureID		Texture;		// texture 
+	ImTextureID		ScreenTexture;		// texture 
 	
-	bool			ExecThisFrame = true; // Whether the emulator should execute this frame (controlled by UI)
+	FDebugger		Debugger;
+	//bool			ExecThisFrame = true; // Whether the emulator should execute this frame (controlled by UI)
 	float			ExecSpeedScale = 1.0f;
 
 	// Chips UI

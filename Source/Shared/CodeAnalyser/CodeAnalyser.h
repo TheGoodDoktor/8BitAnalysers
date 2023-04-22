@@ -41,9 +41,9 @@ public:
 	virtual uint16_t	GetSP(void) = 0;
 
 	// breakpoints
-	virtual bool	IsAddressBreakpointed(uint16_t addr) = 0;
-	virtual bool	SetExecBreakpointAtAddress(uint16_t addr, bool bSet) = 0;
-	virtual bool	SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize, bool bSet) = 0;
+	virtual bool	IsAddressBreakpointed(FAddressRef addr) = 0;
+	virtual bool	SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) = 0;
+	virtual bool	SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bSet) = 0;
 
 	// commands
 	virtual void	Break() = 0;

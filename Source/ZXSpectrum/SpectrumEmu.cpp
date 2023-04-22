@@ -226,22 +226,25 @@ void* FSpectrumEmu::GetCPUEmulator(void) const
 }
 
 
-bool FSpectrumEmu::IsAddressBreakpointed(uint16_t addr)
+bool FSpectrumEmu::IsAddressBreakpointed(FAddressRef addr)
 {
+	return Debugger.IsAddressBreakpointed(addr);
+	/*
 	for (int i = 0; i < UIZX.dbg.dbg.num_breakpoints; i++) 
 	{
 		if (UIZX.dbg.dbg.breakpoints[i].addr == addr)
 			return true;
 	}
 
-	return false;
+	return false;*/
 }
 
-bool FSpectrumEmu::SetExecBreakpointAtAddress(uint16_t addr,bool bSet)
+bool FSpectrumEmu::SetExecBreakpointAtAddress(FAddressRef addr,bool bSet)
 {
 	const bool bAlreadySet = IsAddressBreakpointed(addr);
 	if (bAlreadySet == bSet)
 		return false;
+	/*
 
 	if (bSet)
 	{
@@ -250,19 +253,21 @@ bool FSpectrumEmu::SetExecBreakpointAtAddress(uint16_t addr,bool bSet)
 	else
 	{
 		const int index = _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr);
-		/* breakpoint already exists, remove */
+		// breakpoint already exists, remove 
 		assert(index >= 0);
 		_ui_dbg_bp_del(&UIZX.dbg, index);
 	}
-
+*/
 	return true;
 }
 
-bool FSpectrumEmu::SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize, bool bSet)
+bool FSpectrumEmu::SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bSet)
 {
 	const bool bAlreadySet = IsAddressBreakpointed(addr);
 	if (bAlreadySet == bSet)
 		return false;
+
+	/*
 	const int type = dataSize == 1 ? UI_DBG_BREAKTYPE_BYTE : UI_DBG_BREAKTYPE_WORD;
 
 	if (bSet)
@@ -288,39 +293,45 @@ bool FSpectrumEmu::SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize, 
 		assert(index >= 0);
 		_ui_dbg_bp_del(&UIZX.dbg, index);
 	}
-	
+	*/
 	return true;
 }
 
 void FSpectrumEmu::Break(void)
 {
+	Debugger.Break();
 	_ui_dbg_break(&UIZX.dbg);
 }
 
 void FSpectrumEmu::Continue(void) 
 {
+	Debugger.Continue();
 	_ui_dbg_continue(&UIZX.dbg);
 }
 
 void FSpectrumEmu::StepOver(void)
 {
+	Debugger.StepOver();
 	_ui_dbg_step_over(&UIZX.dbg);
 }
 
 void FSpectrumEmu::StepInto(void)
 {
+	Debugger.StepInto();
 	_ui_dbg_step_into(&UIZX.dbg);
 }
 
 void FSpectrumEmu::StepFrame()
 {
-	_ui_dbg_continue(&UIZX.dbg);
+	//_ui_dbg_continue(&UIZX.dbg);
+	Debugger.StepFrame();
 	bStepToNextFrame = true;
 }
 
 void FSpectrumEmu::StepScreenWrite()
 {
-	_ui_dbg_continue(&UIZX.dbg);
+	//_ui_dbg_continue(&UIZX.dbg);
+	Debugger.StepScreenWrite();
 	bStepToNextScreenWrite = true;
 }
 
@@ -332,12 +343,14 @@ void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address, int charWidth)
 
 bool	FSpectrumEmu::ShouldExecThisFrame(void) const
 {
-	return ExecThisFrame;
+	return Debugger.Stopped() == false;
+	//return ExecThisFrame;
 }
 
 bool FSpectrumEmu::IsStopped(void) const
 {
-	return UIZX.dbg.dbg.stopped;
+	return Debugger.Stopped();
+	//return UIZX.dbg.dbg.stopped;
 }
 
 
@@ -645,6 +658,8 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			}
 		}
 	}
+
+	Debugger.CPUTick(pins);
 	return pins;
 }
 
@@ -694,6 +709,12 @@ bool UISnapshotLoadCB(size_t slot_index)
 	return true;
 }
 
+void DebugCB(void* user_data, uint64_t pins)
+{
+	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
+	pEmu->Z80Tick(0, pins);
+}
+
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 {
 	SetWindowTitle(kAppTitle.c_str());
@@ -713,7 +734,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// setup pixel buffer
 	const size_t pixelBufferSize = dispInfo.frame.dim.width * dispInfo.frame.dim.height;
 	FrameBuffer = new uint32_t[pixelBufferSize * 2];
-	Texture = ImGui_CreateTextureRGBA(FrameBuffer, dispInfo.frame.dim.width, dispInfo.frame.dim.height);
+	ScreenTexture = ImGui_CreateTextureRGBA(FrameBuffer, dispInfo.frame.dim.width, dispInfo.frame.dim.height);
 	
 	// setup emu
 	zx_type_t type = config.Model == ESpectrumModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
@@ -738,6 +759,12 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	desc.roms.zx128_0.size = sizeof(dump_amstrad_zx128k_0_bin);
 	desc.roms.zx128_1.ptr = dump_amstrad_zx128k_1_bin;
 	desc.roms.zx128_1.size = sizeof(dump_amstrad_zx128k_1_bin);
+
+	// setup debug hook
+	Debugger.Init(this);
+	desc.debug.callback.func = DebugCB;
+	desc.debug.callback.user_data = this;
+	desc.debug.stopped = Debugger.GetDebuggerStoppedPtr();
 
 	zx_init(&ZXEmuState, &desc);
 
@@ -1507,9 +1534,7 @@ void FSpectrumEmu::Tick()
 {
 	SpectrumViewer.Tick();
 
-	ExecThisFrame = true;// ui_zx_before_exec(&UIZX);
-
-	if (ExecThisFrame)
+	if (Debugger.Stopped() == false)
 	{
 		const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
 		//const float frameTime = min(1000000.0f / 50, 32000.0f) * ExecSpeedScale;
@@ -1576,11 +1601,16 @@ void FSpectrumEmu::Tick()
 		for (int i = 0; i < disp.frame.buffer.size; i++)
 			FrameBuffer[i] = pal[pix[i]];
 
-		ImGui_UpdateTextureRGBA(Texture, FrameBuffer);
+		ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
 
 		FrameTraceViewer.CaptureFrame();
 		FrameScreenPixWrites.clear();
 		FrameScreenAttrWrites.clear();
+
+		if (Debugger.FrameTick())
+		{
+			CodeAnalysis.GetFocussedViewState().GoToAddress({ CodeAnalysis.GetBankFromAddress(GetPC()), GetPC() });
+		}
 
 		if (bStepToNextFrame)
 		{
