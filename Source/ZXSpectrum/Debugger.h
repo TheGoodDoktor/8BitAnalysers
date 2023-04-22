@@ -8,15 +8,34 @@ class FSpectrumEmu;
 
 enum class EDebugStepMode
 {
+	None,
 	StepInto,
 	StepOver,
 	Frame,
 	ScreenWrite
 };
 
-struct FBreakPoint
+enum class EBreakpointType
 {
+	None,
+	Exec,
+	Data
+};
+
+static const int kTrapId_None = 0;
+static const int kTrapId_Step = 128;
+static const int kTrapId_BpBase = kTrapId_Step + 1;
+
+struct FBreakpoint
+{
+	FBreakpoint() {}
+	FBreakpoint(FAddressRef addr, EBreakpointType type) :Address(addr), Type(type) {}
+	FBreakpoint(FAddressRef addr, EBreakpointType type, uint16_t size) :Address(addr), Type(type), Size(size) {}
+
 	FAddressRef		Address;
+	EBreakpointType	Type = EBreakpointType::None;
+	bool			bEnabled = true;
+	uint16_t		Size = 1;
 };
 
 class FDebugger
@@ -27,22 +46,31 @@ public:
 	bool	FrameTick(void);
 
 	// Actions
-	void	Break() { bDebuggerStopped = true; }
-	void	Continue() { bDebuggerStopped = false; }
+	void	Break();
+	void	Continue();
 	void	StepInto();
 	void	StepOver();
 	void	StepFrame();
 	void	StepScreenWrite();
 
+	bool	AddExecBreakpoint(FAddressRef addr);
+	bool	AddDataBreakpoint(FAddressRef addr, uint16_t size);
+	bool	RemoveBreakpoint(FAddressRef addr);
+
 	// Queries
 	bool	Stopped() const { return bDebuggerStopped; }
 	bool	IsAddressBreakpointed(FAddressRef addr);
+	FAddressRef	GetPC() const { return PC; }
 
 	bool* GetDebuggerStoppedPtr() { return &bDebuggerStopped; }
 private:
 	FSpectrumEmu*	pEmulator = nullptr;
-	bool			bDebuggerStopped = false;
 
-	std::vector<FBreakPoint>	Breakpoints;
+	uint64_t		LastTickPins = 0;
+	FAddressRef		PC;
+	bool			bDebuggerStopped = false;
+	EDebugStepMode	StepMode = EDebugStepMode::None;
+
+	std::vector<FBreakpoint>	Breakpoints;
 };
 

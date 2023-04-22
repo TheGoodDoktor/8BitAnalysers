@@ -37,7 +37,7 @@ public:
 	virtual const uint8_t*	GetMemPtr(uint16_t address) const = 0;
 	virtual void		WriteByte(uint16_t address, uint8_t value) = 0;
 
-	virtual uint16_t	GetPC(void) = 0;
+	virtual FAddressRef	GetPC(void) = 0;
 	virtual uint16_t	GetSP(void) = 0;
 
 	// breakpoints

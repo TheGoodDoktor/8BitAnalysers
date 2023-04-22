@@ -465,7 +465,7 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef acces
 	{
 		const int framesSinceExecuted = pCodeInfo->FrameLastExecuted != -1 ? state.CurrentFrameNo - pCodeInfo->FrameLastExecuted : 255;
 		const int brightVal = (255 - std::min(framesSinceExecuted << 2, 255)) & 0xff;
-		const bool bPCLine = accessorCodeAddr == state.AddressRefFromPhysicalAddress(state.CPUInterface->GetPC());
+		const bool bPCLine = accessorCodeAddr == state.CPUInterface->GetPC();
 
 		if (bPCLine || brightVal > 0)
 		{
@@ -1458,8 +1458,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	ImGui::SameLine();
 	if (ImGui::Button("Jump To PC"))
 	{
-		const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
-		viewState.GoToAddress(PCAddress);
+		//const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
+		viewState.GoToAddress(state.CPUInterface->GetPC());
 	}
 	ImGui::SameLine();
 	static int addrInput = 0;
@@ -1472,8 +1472,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 	if (viewState.TrackPCFrame == true)
 	{
-		const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
-		viewState.GoToAddress(PCAddress);
+		//const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
+		viewState.GoToAddress(state.CPUInterface->GetPC());
 		viewState.TrackPCFrame = false;
 	}
 	

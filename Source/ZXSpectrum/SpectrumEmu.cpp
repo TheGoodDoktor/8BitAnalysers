@@ -210,9 +210,9 @@ void FSpectrumEmu::WriteByte(uint16_t address, uint8_t value)
 }
 
 
-uint16_t	FSpectrumEmu::GetPC(void) 
+FAddressRef	FSpectrumEmu::GetPC(void) 
 {
-	return ZXEmuState.cpu.pc;
+	return Debugger.GetPC();
 } 
 
 uint16_t	FSpectrumEmu::GetSP(void)
@@ -241,10 +241,15 @@ bool FSpectrumEmu::IsAddressBreakpointed(FAddressRef addr)
 
 bool FSpectrumEmu::SetExecBreakpointAtAddress(FAddressRef addr,bool bSet)
 {
+	if (bSet)
+		return Debugger.AddExecBreakpoint(addr);
+	else
+		return Debugger.RemoveBreakpoint(addr);
+	/*
 	const bool bAlreadySet = IsAddressBreakpointed(addr);
 	if (bAlreadySet == bSet)
 		return false;
-	/*
+	
 
 	if (bSet)
 	{
@@ -263,9 +268,10 @@ bool FSpectrumEmu::SetExecBreakpointAtAddress(FAddressRef addr,bool bSet)
 
 bool FSpectrumEmu::SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bSet)
 {
-	const bool bAlreadySet = IsAddressBreakpointed(addr);
-	if (bAlreadySet == bSet)
-		return false;
+	if (bSet)
+		return Debugger.AddDataBreakpoint(addr,dataSize);
+	else
+		return Debugger.RemoveBreakpoint(addr);
 
 	/*
 	const int type = dataSize == 1 ? UI_DBG_BREAKTYPE_BYTE : UI_DBG_BREAKTYPE_WORD;
@@ -325,14 +331,14 @@ void FSpectrumEmu::StepFrame()
 {
 	//_ui_dbg_continue(&UIZX.dbg);
 	Debugger.StepFrame();
-	bStepToNextFrame = true;
+	//bStepToNextFrame = true;
 }
 
 void FSpectrumEmu::StepScreenWrite()
 {
 	//_ui_dbg_continue(&UIZX.dbg);
 	Debugger.StepScreenWrite();
-	bStepToNextScreenWrite = true;
+	//bStepToNextScreenWrite = true;
 }
 
 void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address, int charWidth)
@@ -548,7 +554,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	// we have to pass data to the tick through an internal state struct because the z80_t struct only gets updated after an emulation exec period
 	z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
 	//const FZ80InternalState& cpuState = pCPU->internal_state;
-	const uint16_t pc = pCPU->pc;
+	const uint16_t pc = Debugger.GetPC().Address;
 
 	/* memory and IO requests */
 	if (pins & Z80_MREQ) 
@@ -727,14 +733,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	CodeAnalysis.Config.bShowOpcodeValues = globalConfig.bShowOpcodeValues;
 	CodeAnalysis.Config.bShowBanks = config.Model == ESpectrumModel::Spectrum128K;
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
-
-	// setup texture
-	chips_display_info_t dispInfo = zx_display_info(&ZXEmuState);
-
-	// setup pixel buffer
-	const size_t pixelBufferSize = dispInfo.frame.dim.width * dispInfo.frame.dim.height;
-	FrameBuffer = new uint32_t[pixelBufferSize * 2];
-	ScreenTexture = ImGui_CreateTextureRGBA(FrameBuffer, dispInfo.frame.dim.width, dispInfo.frame.dim.height);
 	
 	// setup emu
 	zx_type_t type = config.Model == ESpectrumModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
@@ -1593,15 +1591,7 @@ void FSpectrumEmu::Tick()
 			kbd_update(&ZXEmuState.kbd);
 		}*/
 
-		chips_display_info_t disp = zx_display_info(&ZXEmuState);
-
-		// convert texture to RGBA
-		const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
-		const uint32_t* pal = (const uint32_t*)disp.palette.ptr;
-		for (int i = 0; i < disp.frame.buffer.size; i++)
-			FrameBuffer[i] = pal[pix[i]];
-
-		ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
+		
 
 		FrameTraceViewer.CaptureFrame();
 		FrameScreenPixWrites.clear();
@@ -1609,15 +1599,15 @@ void FSpectrumEmu::Tick()
 
 		if (Debugger.FrameTick())
 		{
-			CodeAnalysis.GetFocussedViewState().GoToAddress({ CodeAnalysis.GetBankFromAddress(GetPC()), GetPC() });
+			CodeAnalysis.GetFocussedViewState().GoToAddress(GetPC());
 		}
 
-		if (bStepToNextFrame)
+		/*if (bStepToNextFrame)
 		{
 			_ui_dbg_break(&UIZX.dbg);
-			CodeAnalysis.GetFocussedViewState().GoToAddress({ CodeAnalysis.GetBankFromAddress(GetPC()), GetPC() });
+			CodeAnalysis.GetFocussedViewState().GoToAddress(GetPC());
 			bStepToNextFrame = false;
-		}
+		}*/
 		
 		// on debug break send code analyser to address
 		/*else if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)

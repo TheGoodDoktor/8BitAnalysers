@@ -114,7 +114,7 @@ public:
 	const uint8_t*	GetMemPtr(uint16_t address) const override;
 	void		WriteByte(uint16_t address, uint8_t value) override;
 
-	uint16_t	GetPC(void) override;
+	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
 	bool		IsAddressBreakpointed(FAddressRef addr) override;
 	bool		SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) override;
@@ -166,11 +166,7 @@ public:
 	zx_t			ZXEmuState;	// Chips Spectrum State
 	uint8_t*		MappedInMemory = nullptr;
 
-	uint32_t*		FrameBuffer;	// pixel buffer to store emu output
-	ImTextureID		ScreenTexture;		// texture 
-	
 	FDebugger		Debugger;
-	//bool			ExecThisFrame = true; // Whether the emulator should execute this frame (controlled by UI)
 	float			ExecSpeedScale = 1.0f;
 
 	// Chips UI
@@ -217,12 +213,9 @@ public:
 	bool		bShowImGuiDemo = false;
 	bool		bShowImPlotDemo = false;
 private:
-	//z80_tick_t	OldTickCB = nullptr;
-	void*		OldTickUserData = nullptr;
-
 	std::vector<FViewerBase*>	Viewers;
 
-	bool	bStepToNextFrame = false;
+	//bool	bStepToNextFrame = false;
 	bool	bStepToNextScreenWrite = false;
 
 	bool	bShowDebugLog = false;
