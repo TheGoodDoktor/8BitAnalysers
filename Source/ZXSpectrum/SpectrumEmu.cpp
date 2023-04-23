@@ -460,30 +460,21 @@ static void PushAudio(const float* samples, int num_samples, void* user_data)
 		saudio_push(samples, num_samples);
 }
 
-int ZXSpectrumTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
-{
-	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
-	return pEmu->TrapFunction(pc, ticks, pins);
-}
-
-
-// Note - you can't read register values in Trap function
-// They are only written back at end of exec function
-int	FSpectrumEmu::TrapFunction(uint16_t nextpc, int ticks, uint64_t pins)
+void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 {
 	FCodeAnalysisState &state = CodeAnalysis;
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
 	const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
 	const bool irq = (pins & Z80_INT) && ZXEmuState.cpu.iff1;	
-
+	//const uint16_t nextpc = ZXEmuState.cpu.pc;	// not sure this is right - seems to be address after current instruction
 	//const uint16_t nextpc = pc;
 	// store program count in history
 	//const uint16_t prevPC = PCHistory[PCHistoryPos];
 	//PCHistoryPos = (PCHistoryPos + 1) % FSpectrumEmu::kPCHistorySize;
 	//PCHistory[PCHistoryPos] = pc;
 
-	const uint16_t pc = PreviousPC;	// set PC to pc of instruction just executed
+	const uint16_t pc = pins & 0xffff;	// set PC to pc of instruction just executed
 
 	if (irq)
 	{
@@ -495,24 +486,15 @@ int	FSpectrumEmu::TrapFunction(uint16_t nextpc, int ticks, uint64_t pins)
 		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
 	}
 
-	const bool bBreak = RegisterCodeExecuted(state, pc, nextpc);
+	RegisterCodeExecuted(state, pc, PreviousPC);
 	//FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	//pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
 	// check for breakpointed code line
-	if (bBreak)
-		return UI_DBG_BP_BASE_TRAPID;
+	//if (bBreak)
+	//	return UI_DBG_BP_BASE_TRAPID;
 	
-	int trapId = MemoryHandlerTrapFunction(pc, ticks, pins, this);
+	MemoryHandlerTrapFunction(pc, ticks, pins, this);
 
-	// break on screen memory write
-	if (bWrite && addr >= 0x4000 && addr < 0x5800)
-	{
-		if (bStepToNextScreenWrite)
-		{
-			bStepToNextScreenWrite = false;
-			return UI_DBG_BP_BASE_TRAPID;
-		}
-	}
 #if ENABLE_CAPTURES
 	FLabelInfo* pLabel = state.GetLabelForAddress(pc);
 	if (pLabel != nullptr)
@@ -536,8 +518,7 @@ int	FSpectrumEmu::TrapFunction(uint16_t nextpc, int ticks, uint64_t pins)
 
 	RZXManager.RegisterInstructions(iCount);
 
-	PreviousPC = nextpc;	// store for next trap
-	return trapId;
+	PreviousPC = pc;
 }
 
 int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, void* user_data)
@@ -663,6 +644,16 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 				Z80_SET_DATA(pins, (uint64_t)inVal);
 			}
 		}
+	}
+
+	InstructionsTicks++;
+
+	const bool bNewOp = z80_opdone(&ZXEmuState.cpu);
+
+	if (bNewOp)
+	{
+		OnInstructionExecuted(InstructionsTicks, pins);
+		InstructionsTicks = 0;
 	}
 
 	Debugger.CPUTick(pins);

@@ -787,7 +787,7 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 	return;
 }
 
-bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc)
+bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc)
 {
 	AnalyseAtPC(state, pc);
 
@@ -798,9 +798,9 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextp
 		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		return RegisterCodeExecutedZ80(state, pc, nextpc);
+		return RegisterCodeExecutedZ80(state, pc, oldpc);
 	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		return RegisterCodeExecuted6502(state, pc, nextpc);
+		return RegisterCodeExecuted6502(state, pc, oldpc);
 
 	return false;
 }

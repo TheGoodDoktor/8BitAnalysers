@@ -192,6 +192,8 @@ void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 void DrawCallStack(FCodeAnalysisState& state)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
+	// Draw current function & PC position
 	if (state.CallStack.empty() == false)
 	{
 		const FLabelInfo* pLabel = state.GetLabelForAddress(state.CallStack.back().FunctionAddr);
@@ -268,8 +270,15 @@ void DrawStack(FCodeAnalysisState& state)
 			ImGui::Text("%s", pDataInfo->Comment.c_str());
 
 			ImGui::TableSetColumnIndex(3);
-			ImGui::Text("%s :",NumStr(writerAddr.Address));
-			DrawAddressLabel(state,viewState,writerAddr);
+			if (writerAddr.IsValid())
+			{
+				ImGui::Text("%s :", NumStr(writerAddr.Address));
+				DrawAddressLabel(state, viewState, writerAddr);
+			}
+			else
+			{
+				ImGui::Text("None");
+			}
 		}
 
 		ImGui::EndTable();

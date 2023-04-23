@@ -11,6 +11,10 @@ void FDebugger::CPUTick(uint64_t pins)
     uint64_t risingPins = pins & (pins ^ LastTickPins);
     int trapId = kTrapId_None;
 
+    const uint16_t addr = Z80_GET_ADDR(pins);
+    const bool bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
+    const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
+
     const z80_t& cpu = pEmulator->ZXEmuState.cpu;
     const bool bNewOp = z80_opdone(&pEmulator->ZXEmuState.cpu);
 
@@ -26,6 +30,10 @@ void FDebugger::CPUTick(uint64_t pins)
             case EDebugStepMode::StepInto:
                 trapId = kTrapId_Step;
                 break;
+            case EDebugStepMode::StepOver:
+                // TODO: check against step over PC value and stop
+                break;
+
             }
         }
         else
@@ -50,6 +58,20 @@ void FDebugger::CPUTick(uint64_t pins)
                 }
             }
         }
+    }
+
+    // tick based stepping
+    switch (StepMode)
+    {
+        case EDebugStepMode::ScreenWrite:
+        {
+            // break on screen memory write
+            if (bWrite && addr >= 0x4000 && addr < 0x5800)
+            {
+                trapId = kTrapId_Step;
+            }
+        }
+        break;
     }
 
     if (trapId != kTrapId_None)

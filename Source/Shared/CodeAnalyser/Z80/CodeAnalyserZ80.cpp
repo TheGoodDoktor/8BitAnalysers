@@ -228,15 +228,17 @@ bool CheckStopInstructionZ80(FCodeAnalysisState& state, uint16_t pc)
 	}
 }
 
-bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t nextpc)
+bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
+	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
 	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator());
 	//const FZ80InternalState& cpuState = pCPU->internal_state;
 
 	bool bPushInstruction = false;
 	
+	// check current op code
 	switch (opcode)
 	{
 		// Stack
@@ -254,7 +256,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 				const uint8_t indexOpcode = pCPUInterface->ReadByte(pc + 1);
 				switch(indexOpcode)
 				{
-				case 0xe5:
+				case 0xe5:	// PUSH IX/IY
 					bPushInstruction = true;
 					break;
 				default:
@@ -269,53 +271,59 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 			/* CALL cc,nnnn */
 		case 0xDC: case 0xFC: case 0xD4: case 0xC4:
 		case 0xF4: case 0xEC: case 0xE4: case 0xCC:
-
 			bPushInstruction = true;
-
-			//if(nextpc == 0xc544)
-				//fprintf(stderr, "PC: $%04x, NextPC $%04x\n", pc, nextpc);
-
-			if (nextpc != pc + 3)	// call instructions are 3 bytes
-			{
-				FCPUFunctionCall callInfo;
-				callInfo.CallAddr = state.AddressRefFromPhysicalAddress(pc);
-				callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(nextpc);
-				callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(pc + 3);
-				state.CallStack.push_back(callInfo);
-			}
-			
-			break;
-
-
-			// ret
-		case 0xC0:
-		case 0xC8:
-		case 0xC9:
-		case 0xD0:
-		case 0xD8:
-		case 0xE0:
-		case 0xE8:
-		case 0xF0:
-		case 0xF8:
-			if (nextpc != pc + 1)	// ret instructions are 1 byte
-			{
-				if (state.CallStack.empty() == false)
-				{
-					FCPUFunctionCall& callInfo = state.CallStack.back();
-					//assert(callInfo.ReturnAddr == nextpc);
-					
-					state.CallStack.pop_back();
-
-					/*if (callInfo.ReturnAddr != nextpc)
-					{
-						fprintf(stderr, "PC: $%04x, NextPC $%04x, Return Address $%04x\n", pc, nextpc, callInfo.ReturnAddr);
-						return true;
-					}*/
-
-				}
-			}
 			break;
 	default:
+		break;
+	}
+
+	// TODO: check old opcode for jump/ret instructions
+	switch (oldOpcode)
+	{
+		// Call instructions
+		/* CALL nnnn */
+	case 0xCD:
+		/* CALL cc,nnnn */
+	case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+	case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+
+		if (pc != oldpc + 3)	// call instructions are 3 bytes
+		{
+			FCPUFunctionCall callInfo;
+			callInfo.CallAddr = state.AddressRefFromPhysicalAddress(oldpc);
+			callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(pc);
+			callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(oldpc + 3);
+			state.CallStack.push_back(callInfo);
+		}
+
+		break;
+		// ret
+	case 0xC0:
+	case 0xC8:
+	case 0xC9:
+	case 0xD0:
+	case 0xD8:
+	case 0xE0:
+	case 0xE8:
+	case 0xF0:
+	case 0xF8:
+		if (pc != oldpc + 1)	// ret instructions are 1 byte so if we're not on the next instruction, we've returned
+		{
+			if (state.CallStack.empty() == false)
+			{
+				FCPUFunctionCall& callInfo = state.CallStack.back();
+				//assert(callInfo.ReturnAddr == nextpc);
+
+				state.CallStack.pop_back();
+
+				/*if (callInfo.ReturnAddr != nextpc)
+				{
+					fprintf(stderr, "PC: $%04x, NextPC $%04x, Return Address $%04x\n", pc, nextpc, callInfo.ReturnAddr);
+					return true;
+				}*/
+
+			}
+		}
 		break;
 	}
 

@@ -96,7 +96,7 @@ public:
 	bool	ExportSkoolFile(bool bHexadecimal, const char* pName = nullptr);
 	void	DoSkoolKitTest(const char* pGameName, const char* pInSkoolFileName, bool bHexadecimal, const char* pOutSkoolName = nullptr);
 
-	int		TrapFunction(uint16_t pc, int ticks, uint64_t pins);
+	void	OnInstructionExecuted(int ticks, uint64_t pins);
 	uint64_t Z80Tick(int num, uint64_t pins);
 
 	void	Tick();
@@ -206,7 +206,9 @@ public:
 	// interrupt handling info
 	bool			bHasInterruptHandler = false;
 	uint16_t		InterruptHandlerAddress = 0;
+	
 	uint16_t		PreviousPC = 0;		// store previous pc
+	int				InstructionsTicks = 0;
 
 	FRZXManager		RZXManager;
 
@@ -214,9 +216,6 @@ public:
 	bool		bShowImPlotDemo = false;
 private:
 	std::vector<FViewerBase*>	Viewers;
-
-	//bool	bStepToNextFrame = false;
-	bool	bStepToNextScreenWrite = false;
 
 	bool	bShowDebugLog = false;
 	bool	bInitialised = false;
