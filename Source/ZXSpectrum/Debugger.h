@@ -11,6 +11,7 @@ enum class EDebugStepMode
 	None,
 	StepInto,
 	StepOver,
+	ToCursor,
 	Frame,
 	ScreenWrite
 };
@@ -19,7 +20,11 @@ enum class EBreakpointType
 {
 	None,
 	Exec,
-	Data
+	Data,
+	Irq,
+	NMI,
+	In,
+	Out
 };
 
 static const int kTrapId_None = 0;
@@ -33,6 +38,7 @@ struct FBreakpoint
 	FBreakpoint(FAddressRef addr, EBreakpointType type, uint16_t size) :Address(addr), Type(type), Size(size) {}
 
 	FAddressRef		Address;
+	int				Val = -1;
 	EBreakpointType	Type = EBreakpointType::None;
 	bool			bEnabled = true;
 	uint16_t		Size = 1;
@@ -70,7 +76,7 @@ private:
 	FAddressRef		PC;
 	bool			bDebuggerStopped = false;
 	EDebugStepMode	StepMode = EDebugStepMode::None;
-	uint16_t		StepOverPC = 0;
+	FAddressRef		StepOverPC;
 
 	std::vector<FBreakpoint>	Breakpoints;
 };

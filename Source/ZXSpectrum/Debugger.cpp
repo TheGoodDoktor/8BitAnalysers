@@ -8,20 +8,37 @@ void FDebugger::Init(FSpectrumEmu* pEmu)
 
 void FDebugger::CPUTick(uint64_t pins)
 {
-    uint64_t risingPins = pins & (pins ^ LastTickPins);
+    const uint64_t risingPins = pins & (pins ^ LastTickPins);
     int trapId = kTrapId_None;
 
-    const uint16_t addr = Z80_GET_ADDR(pins);
-    const bool bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
-    const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
+    ECPUType cpuType = pEmulator->CPUType;
+    z80_t* pZ80 = &pEmulator->ZXEmuState.cpu;
 
-    const z80_t& cpu = pEmulator->ZXEmuState.cpu;
-    const bool bNewOp = z80_opdone(&pEmulator->ZXEmuState.cpu);
+    uint16_t addr = 0;
+	bool bMemAccess = false;
+	bool bWrite = false;
+	bool bNewOp = false;
+
+    if (cpuType == ECPUType::Z80)
+    {
+        addr = Z80_GET_ADDR(pins);
+        bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
+        bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
+        bNewOp = z80_opdone(pZ80);
+    }
+    else if (cpuType == ECPUType::M6502)
+    {
+        // TODO: 6502 version
+		addr = M6502_GET_ADDR(pins);
+		bNewOp =  pins & M6502_SYNC;
+	}
+
+    const FAddressRef addrRef = pEmulator->CodeAnalysis.AddressRefFromPhysicalAddress(addr);
+    //const z80_t& cpu = pEmulator->ZXEmuState.cpu;
 
     if (bNewOp)
     {
         PC = pEmulator->CodeAnalysis.AddressRefFromPhysicalAddress(pins & 0xffff);
-        //FAddressRef pc = pEmulator->CodeAnalysis.AddressRefFromPhysicalAddress(cpu.pc);
 
         if (StepMode != EDebugStepMode::None)
         {
@@ -31,8 +48,10 @@ void FDebugger::CPUTick(uint64_t pins)
                 trapId = kTrapId_Step;
                 break;
             case EDebugStepMode::StepOver:
-                // TODO: check against step over PC value and stop
-                break;
+                // Check against step over PC value and stop
+                if(PC == StepOverPC)
+					trapId = kTrapId_Step;
+				break;
 
             }
         }
@@ -52,8 +71,6 @@ void FDebugger::CPUTick(uint64_t pins)
                             trapId = kTrapId_BpBase + i;
                         }
                         break;
-                    case EBreakpointType::Data:
-                        break;
                     }
                 }
             }
@@ -63,6 +80,7 @@ void FDebugger::CPUTick(uint64_t pins)
     // tick based stepping
     switch (StepMode)
     {
+        // This is ZX Spectrum specific - need to think of a generic way of doing it - large memory breakpoint?
         case EDebugStepMode::ScreenWrite:
         {
             // break on screen memory write
@@ -74,64 +92,67 @@ void FDebugger::CPUTick(uint64_t pins)
         break;
     }
 
+    // iterate through data breakpoints
+	for (int i = 0; i < Breakpoints.size(); i++)
+	{
+		const FBreakpoint& bp = Breakpoints[i];
+
+		if (bp.bEnabled)
+		{
+			switch (bp.Type)
+			{
+			case EBreakpointType::Data:
+                if (bWrite &&
+                    addrRef.BankId == bp.Address.BankId && 
+                    addrRef.Address >= bp.Address.Address &&
+                    addrRef.Address < bp.Address.Address + bp.Size)
+                {
+					trapId = kTrapId_BpBase + i;
+				}
+				break;
+
+            case EBreakpointType::Irq:
+                if (cpuType == ECPUType::Z80 && risingPins & Z80_INT)
+					trapId = kTrapId_BpBase + i;
+				else if (cpuType == ECPUType::M6502 && risingPins & M6502_IRQ)
+					trapId = kTrapId_BpBase + i;
+				break;
+
+			case EBreakpointType::NMI:
+				if (cpuType == ECPUType::Z80 && risingPins & Z80_NMI)
+					trapId = kTrapId_BpBase + i;
+				else if (cpuType == ECPUType::M6502 && risingPins & M6502_NMI)
+					trapId = kTrapId_BpBase + i;
+				break;
+
+            // In/Out - only for Z80
+			case EBreakpointType::In:
+				if (cpuType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
+                {
+					const uint16_t mask = bp.Val;
+					if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
+						trapId = kTrapId_BpBase + i;
+				}
+				break;
+
+			case EBreakpointType::Out:
+				if (cpuType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR))
+                {
+					const uint16_t mask = bp.Val;
+					if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
+						trapId = kTrapId_BpBase + i;
+				}
+				break;
+			}
+		}
+	}
+
     if (trapId != kTrapId_None)
     {
         Break();
     }
 
     LastTickPins = pins;
-#if 0
-    for (int i = 0; (i < win->dbg.num_breakpoints) && (trap_id == 0); i++) {
-        const ui_dbg_breakpoint_t* bp = &win->dbg.breakpoints[i];
-        if (bp->enabled) {
-            switch (bp->type) {
-            case UI_DBG_BREAKTYPE_IRQ:
-#if defined(UI_DBG_USE_Z80)
-                if (Z80_INT & rising_pins) {
-                    trap_id = UI_DBG_BP_BASE_TRAPID + i;
-                }
-#elif defined(UI_DBG_USE_M6502)
-                if (M6502_IRQ & rising_pins) {
-                    trap_id = UI_DBG_BP_BASE_TRAPID + i;
-                }
-#endif
-                break;
-
-            case UI_DBG_BREAKTYPE_NMI:
-#if defined(UI_DBG_USE_Z80)
-                if (Z80_NMI & rising_pins) {
-                    trap_id = UI_DBG_BP_BASE_TRAPID + i;
-                }
-#elif defined(UI_DBG_USE_M6502)
-                if (M6502_NMI & rising_pins) {
-                    trap_id = UI_DBG_BP_BASE_TRAPID + i;
-                }
-#endif
-                break;
-
-#if defined(UI_DBG_USE_Z80)
-            case UI_DBG_BREAKTYPE_OUT:
-                if ((pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR)) {
-                    const uint16_t mask = bp->val;
-                    if ((Z80_GET_ADDR(pins) & mask) == (bp->addr & mask)) {
-                        trap_id = UI_DBG_BP_BASE_TRAPID + i;
-                    }
-                }
-                break;
-
-            case UI_DBG_BREAKTYPE_IN:
-                if ((pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD)) {
-                    const uint16_t mask = bp->val;
-                    if ((Z80_GET_ADDR(pins) & mask) == (bp->addr & mask)) {
-                        trap_id = UI_DBG_BP_BASE_TRAPID + i;
-                    }
-                }
-                break;
-#endif
-            }
-        }
-    }
-#endif
 }
 
 bool FDebugger::FrameTick(void)
@@ -165,27 +186,34 @@ void FDebugger::StepInto()
     bDebuggerStopped = false;
 }
 
-/* check if the an instruction is a 'step over' op */
-static bool IsStepOverOpcode(uint8_t opcode) 
+// check if the an instruction is a 'step over' op 
+static bool IsStepOverOpcode(ECPUType cpuType, uint8_t opcode)
 {
-#if defined(UI_DBG_USE_Z80)
-    switch (opcode) 
+    if (cpuType == ECPUType::Z80)
     {
-        /* CALL nnnn */
-    case 0xCD:
-        /* CALL cc,nnnn */
-    case 0xDC: case 0xFC: case 0xD4: case 0xC4:
-    case 0xF4: case 0xEC: case 0xE4: case 0xCC:
-        /* DJNZ d */
-    case 0x10:
-        return true;
-    default:
+        switch (opcode)
+        {
+            // CALL nnnn 
+        case 0xCD:
+            // CALL cc,nnnn 
+        case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+        case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+            // DJNZ d 
+        case 0x10:
+            return true;
+        default:
+            return false;
+        }
+    }
+    else if (cpuType == ECPUType::M6502)
+    {
+        // on 6502, only JSR qualifies 
+        return opcode == 0x20;
+    }
+    else
+    {
         return false;
     }
-#elif defined(UI_DBG_USE_M6502)
-    /* on 6502, only JSR qualifies */
-    return opcode == 0x20;
-#endif
 }
 
 struct FStepDasmData
@@ -213,22 +241,23 @@ static void StepOverDasmOutCB(char c, void* userData)
 
 void	FDebugger::StepOver()
 {
-    // TODO: this one's a bit more tricky!
+	const ECPUType cpuType = pEmulator->CPUType;
+
+	// TODO: this one's a bit more tricky!
     FStepDasmData dasmData;
     dasmData.PC = PC.Address;
     dasmData.pCodeAnalysis = &pEmulator->CodeAnalysis;
     bDebuggerStopped = false;
+    uint16_t nextPC = 0;
+	if (cpuType == ECPUType::Z80)
+        nextPC = z80dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
+    else
+        nextPC = m6502dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
 
-#if defined(UI_DBG_USE_Z80)
-    uint16_t next_pc = z80dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
-#elif defined(UI_DBG_USE_M6502)
-    m6502dasm_op(pc, _ui_dbg_dasm_in_cb, _ui_dbg_dasm_out_cb, win);
-#endif
-
-    if (IsStepOverOpcode(dasmData.Data[0]))
+    if (IsStepOverOpcode(cpuType, dasmData.Data[0]))
     {
         StepMode = EDebugStepMode::StepOver;
-        StepOverPC = next_pc;
+        StepOverPC = pEmulator->CodeAnalysis.AddressRefFromPhysicalAddress(nextPC);
     }
     else 
     {
