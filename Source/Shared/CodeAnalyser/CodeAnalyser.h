@@ -15,13 +15,7 @@ class FCodeAnalysisState;
 
 enum class ELabelType;
 
-// CPU abstraction
-enum class ECPUType
-{
-	Unknown,
-	Z80,
-	M6502
-};
+
 
 /* the input callback type */
 typedef uint8_t(*FDasmInput)(void* user_data);

@@ -2,9 +2,16 @@
 
 #include <CodeAnalyser/CodeAnalyserTypes.h>
 
+#include <chips/z80.h>
+#include <chips/m6502.h>
 #include <vector>
 
 class FSpectrumEmu;
+class FCodeAnalysisState;
+
+// TODO: figure out how to forward dec these
+//struct z80_t;
+//struct m6502_t;
 
 enum class EDebugStepMode
 {
@@ -47,9 +54,12 @@ struct FBreakpoint
 class FDebugger
 {
 public:
-	void	Init(FSpectrumEmu* pEmu);
+	void	Init(FCodeAnalysisState* pCodeAnalysis);
 	void	CPUTick(uint64_t pins);
 	bool	FrameTick(void);
+
+	void	LoadFromFile(FILE* fp);
+	void	SaveToFile(FILE* fp);
 
 	// Actions
 	void	Break();
@@ -69,9 +79,15 @@ public:
 	FAddressRef	GetPC() const { return PC; }
 
 	bool* GetDebuggerStoppedPtr() { return &bDebuggerStopped; }
-private:
-	FSpectrumEmu*	pEmulator = nullptr;
 
+	// UI
+	void	DrawUI(void);
+private:
+	FCodeAnalysisState*	pCodeAnalysis = nullptr;
+
+	ECPUType		CPUType = ECPUType::Unknown;
+	z80_t*			pZ80 = nullptr;
+	m6502_t*		pM6502 = nullptr;
 	uint64_t		LastTickPins = 0;
 	FAddressRef		PC;
 	bool			bDebuggerStopped = false;

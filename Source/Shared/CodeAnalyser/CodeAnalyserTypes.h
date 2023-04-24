@@ -2,6 +2,14 @@
 
 #include <cstdint>
 
+// CPU abstraction
+enum class ECPUType
+{
+	Unknown,
+	Z80,
+	M6502
+};
+
 struct FAddressRef
 {
 	FAddressRef() :BankId(-1), Address(0) {}

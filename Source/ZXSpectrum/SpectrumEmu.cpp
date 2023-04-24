@@ -750,7 +750,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	desc.roms.zx128_1.size = sizeof(dump_amstrad_zx128k_1_bin);
 
 	// setup debug hook
-	Debugger.Init(this);
 	desc.debug.callback.func = DebugCB;
 	desc.debug.callback.user_data = this;
 	desc.debug.stopped = Debugger.GetDebuggerStoppedPtr();
@@ -811,7 +810,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	//UIZX.dbg.break_cb = UIEvalBreakpoint;
 	
 	// This is where we add the viewers we want
-	Viewers.push_back(new FBreakpointViewer(this));
+	//Viewers.push_back(new FBreakpointViewer(this));
 	Viewers.push_back(new FOverviewViewer(this));
 
 	// Initialise Viewers
@@ -907,6 +906,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		SetRAMBank(3, 0);	// 0xc000 - 0xffff
 	}
 
+
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
 
@@ -935,6 +935,8 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	if(config.SkoolkitImport.empty() == false)
 		ImportSkoolFile(config.SkoolkitImport.c_str());
+
+	Debugger.Init(&CodeAnalysis);
 
 	bInitialised = true;
 	return true;
@@ -1702,6 +1704,12 @@ void FSpectrumEmu::DrawUI()
 			ImGui::End();
 		}
 	}
+
+	if (ImGui::Begin("Debugger"))
+	{
+		Debugger.DrawUI();
+	}
+	ImGui::End();
 
 	//DasmDraw(&pUI->FunctionDasm);
 	// show spectrum window

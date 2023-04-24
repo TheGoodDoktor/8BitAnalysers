@@ -1,9 +1,15 @@
 #include "Debugger.h"
 #include "SpectrumEmu.h"
 
-void FDebugger::Init(FSpectrumEmu* pEmu)
+void FDebugger::Init(FCodeAnalysisState* pCA)
 {
-	pEmulator = pEmu;
+	pCodeAnalysis = pCA;
+    CPUType = pCodeAnalysis->GetCPUInterface()->CPUType;
+
+    if(CPUType == ECPUType::Z80)
+        pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+    if (CPUType == ECPUType::M6502)
+        pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 }
 
 void FDebugger::CPUTick(uint64_t pins)
@@ -11,34 +17,31 @@ void FDebugger::CPUTick(uint64_t pins)
     const uint64_t risingPins = pins & (pins ^ LastTickPins);
     int trapId = kTrapId_None;
 
-    ECPUType cpuType = pEmulator->CPUType;
-    z80_t* pZ80 = &pEmulator->ZXEmuState.cpu;
-
     uint16_t addr = 0;
 	bool bMemAccess = false;
 	bool bWrite = false;
 	bool bNewOp = false;
 
-    if (cpuType == ECPUType::Z80)
+    if (CPUType == ECPUType::Z80)
     {
         addr = Z80_GET_ADDR(pins);
         bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
         bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
         bNewOp = z80_opdone(pZ80);
     }
-    else if (cpuType == ECPUType::M6502)
+    else if (CPUType == ECPUType::M6502)
     {
         // TODO: 6502 version
 		addr = M6502_GET_ADDR(pins);
 		bNewOp =  pins & M6502_SYNC;
 	}
 
-    const FAddressRef addrRef = pEmulator->CodeAnalysis.AddressRefFromPhysicalAddress(addr);
+    const FAddressRef addrRef = pCodeAnalysis->AddressRefFromPhysicalAddress(addr);
     //const z80_t& cpu = pEmulator->ZXEmuState.cpu;
 
     if (bNewOp)
     {
-        PC = pEmulator->CodeAnalysis.AddressRefFromPhysicalAddress(pins & 0xffff);
+        PC = pCodeAnalysis->AddressRefFromPhysicalAddress(pins & 0xffff);
 
         if (StepMode != EDebugStepMode::None)
         {
@@ -112,22 +115,22 @@ void FDebugger::CPUTick(uint64_t pins)
 				break;
 
             case EBreakpointType::Irq:
-                if (cpuType == ECPUType::Z80 && risingPins & Z80_INT)
+                if (CPUType == ECPUType::Z80 && risingPins & Z80_INT)
 					trapId = kTrapId_BpBase + i;
-				else if (cpuType == ECPUType::M6502 && risingPins & M6502_IRQ)
+				else if (CPUType == ECPUType::M6502 && risingPins & M6502_IRQ)
 					trapId = kTrapId_BpBase + i;
 				break;
 
 			case EBreakpointType::NMI:
-				if (cpuType == ECPUType::Z80 && risingPins & Z80_NMI)
+				if (CPUType == ECPUType::Z80 && risingPins & Z80_NMI)
 					trapId = kTrapId_BpBase + i;
-				else if (cpuType == ECPUType::M6502 && risingPins & M6502_NMI)
+				else if (CPUType == ECPUType::M6502 && risingPins & M6502_NMI)
 					trapId = kTrapId_BpBase + i;
 				break;
 
             // In/Out - only for Z80
 			case EBreakpointType::In:
-				if (cpuType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
+				if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
                 {
 					const uint16_t mask = bp.Val;
 					if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
@@ -136,7 +139,7 @@ void FDebugger::CPUTick(uint64_t pins)
 				break;
 
 			case EBreakpointType::Out:
-				if (cpuType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR))
+				if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR))
                 {
 					const uint16_t mask = bp.Val;
 					if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
@@ -166,6 +169,19 @@ bool FDebugger::FrameTick(void)
 
 	return bDebuggerStopped;
 }
+
+// TODO: Load state - breakpoints, watches etc.
+void	FDebugger::LoadFromFile(FILE* fp)
+{
+
+}
+
+// TODO: Save state - breakpoints, watches etc.
+void	FDebugger::SaveToFile(FILE* fp)
+{
+
+}
+
 
 void FDebugger::Break()
 { 
@@ -241,23 +257,23 @@ static void StepOverDasmOutCB(char c, void* userData)
 
 void	FDebugger::StepOver()
 {
-	const ECPUType cpuType = pEmulator->CPUType;
+	//const ECPUType cpuType = pEmulator->CPUType;
 
 	// TODO: this one's a bit more tricky!
     FStepDasmData dasmData;
     dasmData.PC = PC.Address;
-    dasmData.pCodeAnalysis = &pEmulator->CodeAnalysis;
+    dasmData.pCodeAnalysis = pCodeAnalysis;
     bDebuggerStopped = false;
     uint16_t nextPC = 0;
-	if (cpuType == ECPUType::Z80)
+	if (CPUType == ECPUType::Z80)
         nextPC = z80dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
     else
         nextPC = m6502dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
 
-    if (IsStepOverOpcode(cpuType, dasmData.Data[0]))
+    if (IsStepOverOpcode(CPUType, dasmData.Data[0]))
     {
         StepMode = EDebugStepMode::StepOver;
-        StepOverPC = pEmulator->CodeAnalysis.AddressRefFromPhysicalAddress(nextPC);
+        StepOverPC = pCodeAnalysis->AddressRefFromPhysicalAddress(nextPC);
     }
     else 
     {
@@ -318,4 +334,10 @@ bool FDebugger::IsAddressBreakpointed(FAddressRef addr)
 			return true;
 	}
 	return false;
+}
+
+
+void FDebugger::DrawUI(void)
+{
+
 }
