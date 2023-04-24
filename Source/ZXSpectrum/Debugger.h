@@ -70,6 +70,7 @@ private:
 	FAddressRef		PC;
 	bool			bDebuggerStopped = false;
 	EDebugStepMode	StepMode = EDebugStepMode::None;
+	uint16_t		StepOverPC = 0;
 
 	std::vector<FBreakpoint>	Breakpoints;
 };

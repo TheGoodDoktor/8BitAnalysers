@@ -165,9 +165,75 @@ void FDebugger::StepInto()
     bDebuggerStopped = false;
 }
 
+/* check if the an instruction is a 'step over' op */
+static bool IsStepOverOpcode(uint8_t opcode) 
+{
+#if defined(UI_DBG_USE_Z80)
+    switch (opcode) 
+    {
+        /* CALL nnnn */
+    case 0xCD:
+        /* CALL cc,nnnn */
+    case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+    case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+        /* DJNZ d */
+    case 0x10:
+        return true;
+    default:
+        return false;
+    }
+#elif defined(UI_DBG_USE_M6502)
+    /* on 6502, only JSR qualifies */
+    return opcode == 0x20;
+#endif
+}
+
+struct FStepDasmData
+{
+    std::vector<uint8_t> Data;
+    FCodeAnalysisState* pCodeAnalysis = nullptr;
+    uint16_t    PC;
+};
+
+static uint8_t StepOverDasmInCB(void* userData)
+{
+    FStepDasmData* pDasmData = (FStepDasmData*)userData;
+
+    // Get Opcode bytes
+    uint8_t opcodeByte = pDasmData->pCodeAnalysis->ReadByte(pDasmData->PC++);
+    pDasmData->Data.push_back(opcodeByte);
+    return opcodeByte;
+}
+
+static void StepOverDasmOutCB(char c, void* userData)
+{
+    FStepDasmData* pDasmData = (FStepDasmData*)userData;
+    // do we need to do anything here?
+}
+
 void	FDebugger::StepOver()
 {
     // TODO: this one's a bit more tricky!
+    FStepDasmData dasmData;
+    dasmData.PC = PC.Address;
+    dasmData.pCodeAnalysis = &pEmulator->CodeAnalysis;
+    bDebuggerStopped = false;
+
+#if defined(UI_DBG_USE_Z80)
+    uint16_t next_pc = z80dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
+#elif defined(UI_DBG_USE_M6502)
+    m6502dasm_op(pc, _ui_dbg_dasm_in_cb, _ui_dbg_dasm_out_cb, win);
+#endif
+
+    if (IsStepOverOpcode(dasmData.Data[0]))
+    {
+        StepMode = EDebugStepMode::StepOver;
+        StepOverPC = next_pc;
+    }
+    else 
+    {
+        StepMode = EDebugStepMode::StepInto;
+    }
 }
 
 void	FDebugger::StepFrame()
