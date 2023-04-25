@@ -55,7 +55,7 @@ void FFrameTraceViewer::CaptureFrame()
 	// set up new trace frame
 	FSpeccyFrameTrace& frame = FrameTrace[CurrentTraceFrame];
 	//TODO: ImGui_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->FrameBuffer);
-	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.FrameTrace;
+	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.Debugger.GetFrameTrace();	// copy frame trace - use method?
 	frame.ScreenPixWrites = pSpectrumEmu->FrameScreenPixWrites;
 	frame.ScreenAttrWrites = pSpectrumEmu->FrameScreenAttrWrites;
 	frame.FrameOverview.clear();
@@ -131,9 +131,9 @@ void FFrameTraceViewer::Draw()
 	if (ImGui::SliderInt("Backwards Offset", &ShowFrame, 0, kNoFramesInTrace - 1))
 	{
 		if (ShowFrame == 0)
-			pSpectrumEmu->CodeAnalysis.CPUInterface->Continue();
+			pSpectrumEmu->CodeAnalysis.Debugger.Continue();
 		else
-			pSpectrumEmu->CodeAnalysis.CPUInterface->Break();
+			pSpectrumEmu->CodeAnalysis.Debugger.Break();
 
 		PixelWriteline = -1;
 		SelectedTraceLine = -1;
@@ -159,7 +159,7 @@ void FFrameTraceViewer::Draw()
 		RestoreFrame(frame);
 
 		// continue running
-		pSpectrumEmu->CodeAnalysis.CPUInterface->Continue();
+		pSpectrumEmu->CodeAnalysis.Debugger.Continue();
 
 		CurrentTraceFrame = frameNo;
 		ShowFrame = 0;

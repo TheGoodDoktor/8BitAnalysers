@@ -9,6 +9,7 @@
 
 #include "CodeAnalyserTypes.h"
 #include "CodeAnaysisPage.h"
+#include "Debugger.h"
 
 class FGraphicsView;
 class FCodeAnalysisState;
@@ -35,21 +36,21 @@ public:
 	virtual uint16_t	GetSP(void) = 0;
 
 	// breakpoints
-	virtual bool	IsAddressBreakpointed(FAddressRef addr) = 0;
-	virtual bool	SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) = 0;
-	virtual bool	SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bSet) = 0;
+	//virtual bool	IsAddressBreakpointed(FAddressRef addr) = 0;
+	//virtual bool	SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) = 0;
+	//virtual bool	SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bSet) = 0;
 
 	// commands
-	virtual void	Break() = 0;
-	virtual void	Continue() = 0;
-	virtual void	StepOver() = 0;
-	virtual void	StepInto() = 0;
-	virtual void	StepFrame() = 0;
-	virtual void	StepScreenWrite() = 0;
+	//virtual void	Break() = 0;
+	//virtual void	Continue() = 0;
+	//virtual void	StepOver() = 0;
+	//virtual void	StepInto() = 0;
+	//virtual void	StepFrame() = 0;
+	//virtual void	StepScreenWrite() = 0;
 	virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) = 0;
 
-	virtual bool	ShouldExecThisFrame(void) const = 0;
-	virtual bool	IsStopped(void) const = 0;
+	//virtual bool	ShouldExecThisFrame(void) const = 0;
+	//virtual bool	IsStopped(void) const = 0;
 
 	virtual void* GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
 
@@ -214,7 +215,7 @@ struct FCodeAnalysisConfig
 };
 
 // Analysis memory bank
-struct FCodeAnalysisBankBP
+/*struct FCodeAnalysisBankBP
 {
 	enum class EType
 	{
@@ -228,7 +229,7 @@ struct FCodeAnalysisBankBP
 	uint16_t	Address;
 	EType		Type;
 	uint16_t	Value;
-};
+};*/
 
 struct FCodeAnalysisBank
 {
@@ -244,11 +245,11 @@ struct FCodeAnalysisBank
 	bool				bReadOnly = false;
 	bool				bIsDirty = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
-	std::vector<FCodeAnalysisBankBP>	BreakPoints;
+	//std::vector<FCodeAnalysisBankBP>	BreakPoints;
 
-	bool		IsAddressBreakpointed(uint16_t addr) const;
-	bool		ToggleExecBreakpointAtAddress(uint16_t addr);
-	bool		ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize);
+	//bool		IsAddressBreakpointed(uint16_t addr) const;
+	//bool		ToggleExecBreakpointAtAddress(uint16_t addr);
+	//bool		ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize);
 
 	bool		AddressValid(uint16_t addr) const { return addr >= GetMappedAddress() && addr < GetMappedAddress() + (NoPages * FCodeAnalysisPage::kPageSize);	}
 	bool		IsUsed() const { return Pages[0].bUsed; }
@@ -256,16 +257,6 @@ struct FCodeAnalysisBank
 	uint16_t	GetMappedAddress() const { return PrimaryMappedPage * FCodeAnalysisPage::kPageSize; }
 	uint16_t	GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
 };
-
-
-
-struct FWatch : public FAddressRef
-{
-	FWatch() = default;
-	FWatch(const FAddressRef addressRef) : FAddressRef(addressRef) {}
-	FWatch(int16_t bankId, uint16_t address) : FAddressRef(bankId, address) {}
-};
-
 
 // code analysis information
 class FCodeAnalysisState
@@ -393,26 +384,6 @@ public:
 	bool	EnsureUniqueLabelName(std::string& lableName);
 	bool	RemoveLabelName(const std::string& labelName);	// for changing label names
 
-	// Watches
-	void InitWatches() { Watches.clear(); }
-	void	AddWatch(FWatch watch)
-	{
-		Watches.push_back(watch);
-	}
-
-	bool	RemoveWatch(FWatch watch)
-	{
-		for (auto watchIt = Watches.begin(); watchIt != Watches.end(); ++watchIt)
-		{
-			if(*watchIt == watch)
-				Watches.erase(watchIt);
-		}
-
-		return true;
-	}
-
-	const std::vector<FWatch>& GetWatches() const { return Watches; }
-
 public:
 
 	bool					bRegisterDataAccesses = true;
@@ -431,13 +402,11 @@ public:
 	FCodeAnalysisViewState& GetFocussedViewState() { return ViewState[FocussedWindowId]; }
 	FCodeAnalysisViewState& GetAltViewState() { return ViewState[FocussedWindowId ^ 1]; }
 	
-	std::vector<FWatch>		Watches;	
-	std::vector<FCPUFunctionCall>	CallStack;
+	FDebugger				Debugger;
 	uint16_t				StackMin;
 	uint16_t				StackMax;
 
 	FAddressRef				CopiedAddress;
-	std::vector<FAddressRef>	FrameTrace;
 
 	int						KeyConfig[(int)EKey::Count];
 

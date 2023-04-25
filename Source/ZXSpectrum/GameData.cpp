@@ -587,7 +587,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 	if (versionNo >= 5)
 		LoadCommentBlocksBin(state, fp, versionNo, addrStart, addrEnd);
 
-	// watches
+	// watches 
 	if (versionNo >= 7)
 	{
 		int noWatches;
@@ -598,7 +598,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 			uint16_t watchAddress;
 			fread(&watchAddress, sizeof(uint16_t), 1, fp);
 			if (watchAddress >= addrStart && watchAddress <= addrEnd)
-				state.AddWatch({ state.GetBankFromAddress(watchAddress), watchAddress });
+				state.Debugger.AddWatch({ state.GetBankFromAddress(watchAddress), watchAddress });
 		}
 	}
 

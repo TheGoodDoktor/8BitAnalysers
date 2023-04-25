@@ -7,6 +7,7 @@
 #include <chips/util/m6502dasm.h>
 
 #include <imgui.h>
+#include "UI/CodeAnalyserUI.h"
 
 void FDebugger::Init(FCodeAnalysisState* pCA)
 {
@@ -17,6 +18,8 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
         pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
     if (CPUType == ECPUType::M6502)
         pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+
+    Watches.clear();
 }
 
 void FDebugger::CPUTick(uint64_t pins)
@@ -85,6 +88,21 @@ void FDebugger::CPUTick(uint64_t pins)
                 }
             }
         }
+
+		// Handle IRQ
+		const bool irq = (pins & Z80_INT) && pZ80->iff1;
+		if (irq)
+		{
+			FCPUFunctionCall callInfo;
+			callInfo.CallAddr = PC;
+			callInfo.FunctionAddr = PC;
+			callInfo.ReturnAddr = PC;
+			CallStack.push_back(callInfo);
+			//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
+		}
+
+		FrameTrace.push_back(PC);
+
     }
 
     // tick based stepping
@@ -300,6 +318,8 @@ void	FDebugger::StepScreenWrite()
     bDebuggerStopped = false;
 }
 
+// Breakpoints
+
 bool FDebugger::AddExecBreakpoint(FAddressRef addr)
 {
 	if (IsAddressBreakpointed(addr))
@@ -333,7 +353,7 @@ bool FDebugger::RemoveBreakpoint(FAddressRef addr)
 }
 
 
-bool FDebugger::IsAddressBreakpointed(FAddressRef addr)
+bool FDebugger::IsAddressBreakpointed(FAddressRef addr) const
 {
 	for (int i = 0; i < Breakpoints.size(); i++)
 	{
@@ -341,6 +361,193 @@ bool FDebugger::IsAddressBreakpointed(FAddressRef addr)
 			return true;
 	}
 	return false;
+}
+
+// Watches
+
+void FDebugger::AddWatch(FWatch watch)
+{
+	Watches.push_back(watch);
+}
+
+bool FDebugger::RemoveWatch(FWatch watch)
+{
+	for (auto watchIt = Watches.begin(); watchIt != Watches.end(); ++watchIt)
+	{
+		if (*watchIt == watch)
+			Watches.erase(watchIt);
+	}
+
+	return true;
+}
+
+// UI Code
+
+void FDebugger::DrawTrace(void)
+{
+	FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	const float line_height = ImGui::GetTextLineHeight();
+	ImGuiListClipper clipper((int)FrameTrace.size(), line_height);
+
+	while (clipper.Step())
+	{
+		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+		{
+			const FAddressRef codeAddress = FrameTrace[FrameTrace.size() - i - 1];
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(codeAddress);
+			DrawCodeAddress(state, viewState, codeAddress, false);	// draw current PC
+			//DrawCodeInfo(state, viewState, FCodeAnalysisItem(pCodeInfo, codeAddress));
+		}
+	}
+
+}
+
+void FDebugger::DrawCallStack(void)
+{
+	FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
+	// Draw current function & PC position
+	if (CallStack.empty() == false)
+	{
+		const FLabelInfo* pLabel = state.GetLabelForAddress(CallStack.back().FunctionAddr);
+		if (pLabel != nullptr)
+		{
+			ImGui::Text("%s :", pLabel->Name.c_str());
+			ImGui::SameLine();
+		}
+	}
+	DrawCodeAddress(state, viewState, state.CPUInterface->GetPC(), false);	// draw current PC
+
+	for (int i = (int)CallStack.size() - 1; i >= 0; i--)
+	{
+		if (i > 0)
+		{
+			const FLabelInfo* pLabel = state.GetLabelForAddress(CallStack[i - 1].FunctionAddr);
+			if (pLabel != nullptr)
+			{
+				ImGui::Text("%s :", pLabel->Name.c_str());
+				ImGui::SameLine();
+			}
+		}
+		DrawCodeAddress(state, viewState, CallStack[i].CallAddr, false);
+	}
+}
+
+void FDebugger::DrawStack(void)
+{
+	FCodeAnalysisState& state = *pCodeAnalysis;
+	const uint16_t sp = state.CPUInterface->GetSP();
+	if (state.StackMin >= state.StackMax)	// stack is invalid
+	{
+		ImGui::Text("No valid stack discovered");
+		return;
+	}
+
+	if (sp < state.StackMin || sp > state.StackMax)	// sp is not in range
+	{
+		ImGui::Text("Stack pointer: %s", NumStr(sp));
+		DrawAddressLabel(state, state.GetFocussedViewState(), sp);
+		ImGui::SameLine();
+		ImGui::Text("not in stack range(%s - %s)", NumStr(state.StackMin), NumStr(state.StackMax));
+		return;
+	}
+
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
+	//static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+	static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
+
+	if (ImGui::BeginTable("stackinfo", 4, flags))
+	{
+		ImGui::TableSetupColumn("Address");
+		ImGui::TableSetupColumn("Value");
+		ImGui::TableSetupColumn("Comment");
+		ImGui::TableSetupColumn("Set by");
+		ImGui::TableHeadersRow();
+
+		for (int stackAddr = sp; stackAddr <= state.StackMax; stackAddr += 2)
+		{
+			ImGui::TableNextRow();
+
+			uint16_t stackVal = state.ReadWord(stackAddr);
+			FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(stackAddr);
+			const FAddressRef writerAddr = state.GetLastWriterForAddress(stackAddr);
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text("%s", NumStr((uint16_t)stackAddr));
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text("%s :", NumStr(stackVal));
+			DrawAddressLabel(state, viewState, stackVal);
+
+			ImGui::TableSetColumnIndex(2);
+			ImGui::Text("%s", pDataInfo->Comment.c_str());
+
+			ImGui::TableSetColumnIndex(3);
+			if (writerAddr.IsValid())
+			{
+				ImGui::Text("%s :", NumStr(writerAddr.Address));
+				DrawAddressLabel(state, viewState, writerAddr);
+			}
+			else
+			{
+				ImGui::Text("None");
+			}
+		}
+
+		ImGui::EndTable();
+	}
+}
+
+
+void DrawRegisters_Z80(FCodeAnalysisState& state);
+
+void DrawRegisters(FCodeAnalysisState& state)
+{
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		DrawRegisters_Z80(state);
+}
+
+void FDebugger::DrawWatches(void)
+{
+    FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	bool bDeleteSelectedWatch = false;
+
+	for (const auto& watch : Watches)
+	{
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch.Address);
+		ImGui::PushID(watch.Address);
+		if (ImGui::Selectable("##watchselect", watch == SelectedWatch, 0))
+		{
+			SelectedWatch = watch;
+		}
+		if (SelectedWatch.IsValid() && ImGui::BeginPopupContextItem("watch context menu"))
+		{
+			if (ImGui::Selectable("Delete Watch"))
+			{
+				bDeleteSelectedWatch = true;
+			}
+			if (ImGui::Selectable("Toggle Breakpoint"))
+			{
+				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(SelectedWatch.Address);
+				state.ToggleDataBreakpointAtAddress(SelectedWatch, pInfo->ByteSize);
+			}
+
+			ImGui::EndPopup();
+		}
+		ImGui::SetItemAllowOverlap();	// allow buttons
+		ImGui::SameLine();
+		DrawDataInfo(state, viewState, FCodeAnalysisItem(pDataInfo, watch.BankId, watch.Address), true, true);
+
+		// TODO: Edit Watch
+		ImGui::PopID();
+	}
+
+	if (bDeleteSelectedWatch)
+		RemoveWatch(SelectedWatch);
 }
 
 
@@ -362,7 +569,25 @@ void FDebugger::DrawUI(void)
 
 		if (ImGui::BeginTabItem("Registers"))
 		{
+            DrawRegisters(*pCodeAnalysis);
+			ImGui::EndTabItem();
+		}
 
+		if (ImGui::BeginTabItem("Stack"))
+		{
+			DrawStack();
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Call Stack"))
+		{
+			DrawCallStack();
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Trace"))
+		{
+			DrawTrace();
 			ImGui::EndTabItem();
 		}
 

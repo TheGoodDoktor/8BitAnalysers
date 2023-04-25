@@ -51,6 +51,21 @@ struct FBreakpoint
 	uint16_t		Size = 1;
 };
 
+struct FWatch : public FAddressRef
+{
+	FWatch() = default;
+	FWatch(const FAddressRef addressRef) : FAddressRef(addressRef) {}
+	FWatch(int16_t bankId, uint16_t address) : FAddressRef(bankId, address) {}
+};
+
+struct FCPUFunctionCall
+{
+	FAddressRef		FunctionAddr;
+	FAddressRef		CallAddr;
+	FAddressRef		ReturnAddr;
+};
+
+
 class FDebugger
 {
 public:
@@ -69,18 +84,36 @@ public:
 	void	StepFrame();
 	void	StepScreenWrite();
 
+	// Breakpoints
 	bool	AddExecBreakpoint(FAddressRef addr);
 	bool	AddDataBreakpoint(FAddressRef addr, uint16_t size);
 	bool	RemoveBreakpoint(FAddressRef addr);
 
+	// Watches
+	void	AddWatch(FWatch watch);
+	bool	RemoveWatch(FWatch watch);
+
+	const std::vector<FWatch>& GetWatches() const { return Watches; }
+
+	// Frame Trace
+	void	ResetFrameTrace() { FrameTrace.clear(); }
+	const std::vector<FAddressRef>& GetFrameTrace() const { return FrameTrace; }
+
+	std::vector<FCPUFunctionCall>& GetCallstack() { return CallStack; }
+
+
 	// Queries
-	bool	Stopped() const { return bDebuggerStopped; }
-	bool	IsAddressBreakpointed(FAddressRef addr);
+	bool	IsStopped() const { return bDebuggerStopped; }
+	bool	IsAddressBreakpointed(FAddressRef addr) const;
 	FAddressRef	GetPC() const { return PC; }
 
 	bool* GetDebuggerStoppedPtr() { return &bDebuggerStopped; }
 
 	// UI
+	void	DrawTrace(void);
+	void	DrawCallStack(void);
+	void	DrawStack(void);
+	void	DrawWatches(void);
 	void	DrawUI(void);
 private:
 	FCodeAnalysisState*	pCodeAnalysis = nullptr;
@@ -95,5 +128,10 @@ private:
 	FAddressRef		StepOverPC;
 
 	std::vector<FBreakpoint>	Breakpoints;
+	std::vector<FWatch>			Watches;
+	FWatch						SelectedWatch;
+	std::vector<FAddressRef>	FrameTrace;
+	std::vector<FCPUFunctionCall>	CallStack;
+
 };
 

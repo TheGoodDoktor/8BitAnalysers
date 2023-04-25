@@ -45,10 +45,6 @@ bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId);
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
-void DrawStackInfo(FCodeAnalysisState& state);
-void DrawTrace(FCodeAnalysisState& state);
-void DrawRegisters(FCodeAnalysisState& state);
-void DrawWatchWindow(FCodeAnalysisState& state);
 
 float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo);
 void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem &item, bool bDrawLabel = false, bool bEdit = true);

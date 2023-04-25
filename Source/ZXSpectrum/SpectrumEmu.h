@@ -42,7 +42,6 @@
 #include "IOAnalysis.h"
 #include "SnapshotLoaders/RZXLoader.h"
 #include "Util/Misc.h"
-#include "Debugger.h"
 
 struct FGame;
 struct FGameViewer;
@@ -116,21 +115,22 @@ public:
 
 	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	bool		IsAddressBreakpointed(FAddressRef addr) override;
-	bool		SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) override;
-	bool		SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize,bool bSet) override;
-	void		Break(void) override;
-	void		Continue(void) override;
-	void		StepOver(void) override;
-	void		StepInto(void) override;
-	void		StepFrame(void) override;
-	void		StepScreenWrite(void) override;
+	//bool		IsAddressBreakpointed(FAddressRef addr) override;
+	//bool		SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) override;
+	//bool		SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize,bool bSet) override;
+	//void		Break(void) override;
+	//void		Continue(void) override;
+	//void		StepOver(void) override;
+	//void		StepInto(void) override;
+	//void		StepFrame(void) override;
+	//void		StepScreenWrite(void) override;
 	void		GraphicsViewerSetView(FAddressRef address, int charWidth) override;
-	bool		ShouldExecThisFrame(void) const override;
-	bool		IsStopped(void) const override;
-	void		FormatSpectrumMemory(FCodeAnalysisState& state);
+	//bool		ShouldExecThisFrame(void) const override;
+	//bool		IsStopped(void) const override;
 	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
+
+	void		FormatSpectrumMemory(FCodeAnalysisState& state);
 
 	void SetROMBank(int bankNo);
 	void SetRAMBank(int slot, int bankNo);
@@ -166,7 +166,6 @@ public:
 	zx_t			ZXEmuState;	// Chips Spectrum State
 	uint8_t*		MappedInMemory = nullptr;
 
-	FDebugger		Debugger;
 	float			ExecSpeedScale = 1.0f;
 
 	// Chips UI

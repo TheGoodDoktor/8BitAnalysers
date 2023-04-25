@@ -212,7 +212,7 @@ void FSpectrumEmu::WriteByte(uint16_t address, uint8_t value)
 
 FAddressRef	FSpectrumEmu::GetPC(void) 
 {
-	return Debugger.GetPC();
+	return CodeAnalysis.Debugger.GetPC();
 } 
 
 uint16_t	FSpectrumEmu::GetSP(void)
@@ -226,137 +226,10 @@ void* FSpectrumEmu::GetCPUEmulator(void) const
 }
 
 
-bool FSpectrumEmu::IsAddressBreakpointed(FAddressRef addr)
-{
-	return Debugger.IsAddressBreakpointed(addr);
-	/*
-	for (int i = 0; i < UIZX.dbg.dbg.num_breakpoints; i++) 
-	{
-		if (UIZX.dbg.dbg.breakpoints[i].addr == addr)
-			return true;
-	}
-
-	return false;*/
-}
-
-bool FSpectrumEmu::SetExecBreakpointAtAddress(FAddressRef addr,bool bSet)
-{
-	if (bSet)
-		return Debugger.AddExecBreakpoint(addr);
-	else
-		return Debugger.RemoveBreakpoint(addr);
-	/*
-	const bool bAlreadySet = IsAddressBreakpointed(addr);
-	if (bAlreadySet == bSet)
-		return false;
-	
-
-	if (bSet)
-	{
-		_ui_dbg_bp_add_exec(&UIZX.dbg, true, addr);
-	}
-	else
-	{
-		const int index = _ui_dbg_bp_find(&UIZX.dbg, UI_DBG_BREAKTYPE_EXEC, addr);
-		// breakpoint already exists, remove 
-		assert(index >= 0);
-		_ui_dbg_bp_del(&UIZX.dbg, index);
-	}
-*/
-	return true;
-}
-
-bool FSpectrumEmu::SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bSet)
-{
-	if (bSet)
-		return Debugger.AddDataBreakpoint(addr,dataSize);
-	else
-		return Debugger.RemoveBreakpoint(addr);
-
-	/*
-	const int type = dataSize == 1 ? UI_DBG_BREAKTYPE_BYTE : UI_DBG_BREAKTYPE_WORD;
-
-	if (bSet)
-	{
-		// breakpoint doesn't exist, add a new one 
-		if (UIZX.dbg.dbg.num_breakpoints < UI_DBG_MAX_BREAKPOINTS)
-		{
-			ui_dbg_breakpoint_t* bp = &UIZX.dbg.dbg.breakpoints[UIZX.dbg.dbg.num_breakpoints++];
-			bp->type = type;
-			bp->cond = UI_DBG_BREAKCOND_NONEQUAL;
-			bp->addr = addr;
-			bp->val = type == UI_DBG_BREAKTYPE_BYTE ? ReadByte(addr) : ReadWord(addr);
-			bp->enabled = true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else
-	{
-		int index = _ui_dbg_bp_find(&UIZX.dbg, type, addr);
-		assert(index >= 0);
-		_ui_dbg_bp_del(&UIZX.dbg, index);
-	}
-	*/
-	return true;
-}
-
-void FSpectrumEmu::Break(void)
-{
-	Debugger.Break();
-	_ui_dbg_break(&UIZX.dbg);
-}
-
-void FSpectrumEmu::Continue(void) 
-{
-	Debugger.Continue();
-	_ui_dbg_continue(&UIZX.dbg);
-}
-
-void FSpectrumEmu::StepOver(void)
-{
-	Debugger.StepOver();
-	_ui_dbg_step_over(&UIZX.dbg);
-}
-
-void FSpectrumEmu::StepInto(void)
-{
-	Debugger.StepInto();
-	_ui_dbg_step_into(&UIZX.dbg);
-}
-
-void FSpectrumEmu::StepFrame()
-{
-	//_ui_dbg_continue(&UIZX.dbg);
-	Debugger.StepFrame();
-	//bStepToNextFrame = true;
-}
-
-void FSpectrumEmu::StepScreenWrite()
-{
-	//_ui_dbg_continue(&UIZX.dbg);
-	Debugger.StepScreenWrite();
-	//bStepToNextScreenWrite = true;
-}
-
 void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address, int charWidth)
 {
 	GraphicsViewerGoToAddress(address);
 	GraphicsViewerSetCharWidth(charWidth);
-}
-
-bool	FSpectrumEmu::ShouldExecThisFrame(void) const
-{
-	return Debugger.Stopped() == false;
-	//return ExecThisFrame;
-}
-
-bool FSpectrumEmu::IsStopped(void) const
-{
-	return Debugger.Stopped();
-	//return UIZX.dbg.dbg.stopped;
 }
 
 
@@ -466,7 +339,6 @@ void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
 	const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
-	const bool irq = (pins & Z80_INT) && ZXEmuState.cpu.iff1;	
 	//const uint16_t nextpc = ZXEmuState.cpu.pc;	// not sure this is right - seems to be address after current instruction
 	//const uint16_t nextpc = pc;
 	// store program count in history
@@ -476,15 +348,7 @@ void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 
 	const uint16_t pc = pins & 0xffff;	// set PC to pc of instruction just executed
 
-	if (irq)
-	{
-		FCPUFunctionCall callInfo;
-		callInfo.CallAddr = state.AddressRefFromPhysicalAddress(pc);
-		callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(pc);
-		callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(pc);
-		state.CallStack.push_back(callInfo);
-		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
-	}
+	
 
 	RegisterCodeExecuted(state, pc, PreviousPC);
 	//FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
@@ -535,7 +399,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	// we have to pass data to the tick through an internal state struct because the z80_t struct only gets updated after an emulation exec period
 	z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
 	//const FZ80InternalState& cpuState = pCPU->internal_state;
-	const uint16_t pc = Debugger.GetPC().Address;
+	const uint16_t pc = GetPC().Address;
 
 	/* memory and IO requests */
 	if (pins & Z80_MREQ) 
@@ -656,7 +520,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		InstructionsTicks = 0;
 	}
 
-	Debugger.CPUTick(pins);
+	CodeAnalysis.Debugger.CPUTick(pins);
 	return pins;
 }
 
@@ -752,7 +616,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// setup debug hook
 	desc.debug.callback.func = DebugCB;
 	desc.debug.callback.user_data = this;
-	desc.debug.stopped = Debugger.GetDebuggerStoppedPtr();
+	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
 
 	zx_init(&ZXEmuState, &desc);
 
@@ -936,7 +800,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	if(config.SkoolkitImport.empty() == false)
 		ImportSkoolFile(config.SkoolkitImport.c_str());
 
-	Debugger.Init(&CodeAnalysis);
 
 	bInitialised = true;
 	return true;
@@ -1030,7 +893,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	// 
 	// decode whole screen
 	DecodeScreen(&ZXEmuState);
-	Break();
+	CodeAnalysis.Debugger.Break();
 }
 
 bool FSpectrumEmu::StartGame(const char *pGameName)
@@ -1523,16 +1386,18 @@ void StoreRegisters_Z80(FCodeAnalysisState& state);
 
 void FSpectrumEmu::Tick()
 {
+	FDebugger& debugger = CodeAnalysis.Debugger;
+
 	SpectrumViewer.Tick();
 
-	if (Debugger.Stopped() == false)
+	if (debugger.IsStopped() == false)
 	{
 		const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * ExecSpeedScale;
 		//const float frameTime = min(1000000.0f / 50, 32000.0f) * ExecSpeedScale;
 		const uint32_t microSeconds = std::max(static_cast<uint32_t>(frameTime), uint32_t(1));
 
 		// TODO: Start frame method in analyser
-		CodeAnalysis.FrameTrace.clear();
+		CodeAnalysis.Debugger.ResetFrameTrace();
 		StoreRegisters_Z80(CodeAnalysis);
 #if ENABLE_CAPTURES
 		const uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
@@ -1590,7 +1455,7 @@ void FSpectrumEmu::Tick()
 		FrameScreenPixWrites.clear();
 		FrameScreenAttrWrites.clear();
 
-		if (Debugger.FrameTick())
+		if (debugger.FrameTick())
 		{
 			CodeAnalysis.GetFocussedViewState().GoToAddress(GetPC());
 		}
@@ -1669,9 +1534,9 @@ void FSpectrumEmu::DrawUI()
 	//if(ExecThisFrame)
 	//	ui_zx_after_exec(pZXUI);
 
-	const int instructionsThisFrame = (int)CodeAnalysis.FrameTrace.size();
-	static int maxInst = 0;
-	maxInst = std::max(maxInst, instructionsThisFrame);
+	//const int instructionsThisFrame = (int)CodeAnalysis.FrameTrace.size();
+	//static int maxInst = 0;
+	//maxInst = std::max(maxInst, instructionsThisFrame);
 
 	DrawMainMenu(timeMS);
 	if (pZXUI->memmap.open)
@@ -1707,7 +1572,7 @@ void FSpectrumEmu::DrawUI()
 
 	if (ImGui::Begin("Debugger"))
 	{
-		Debugger.DrawUI();
+		CodeAnalysis.Debugger.DrawUI();
 	}
 	ImGui::End();
 
@@ -1775,30 +1640,6 @@ void FSpectrumEmu::DrawUI()
 		}
 
 	}
-
-	if (ImGui::Begin("Call Stack"))
-	{
-		DrawStackInfo(CodeAnalysis);
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Trace"))
-	{
-		DrawTrace(CodeAnalysis);
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Registers"))
-	{
-		DrawRegisters(CodeAnalysis);
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Watches"))
-	{
-		DrawWatchWindow(CodeAnalysis);
-	}
-	ImGui::End();
 
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Character Maps"))

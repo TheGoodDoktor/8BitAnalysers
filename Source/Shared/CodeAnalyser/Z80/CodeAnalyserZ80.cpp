@@ -234,6 +234,9 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
 	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
 	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator());
+
+	std::vector<FCPUFunctionCall>&	callStack = state.Debugger.GetCallstack();
+
 	//const FZ80InternalState& cpuState = pCPU->internal_state;
 
 	bool bPushInstruction = false;
@@ -293,7 +296,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 			callInfo.CallAddr = state.AddressRefFromPhysicalAddress(oldpc);
 			callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(pc);
 			callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(oldpc + 3);
-			state.CallStack.push_back(callInfo);
+			callStack.push_back(callInfo);
 		}
 
 		break;
@@ -309,12 +312,12 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 	case 0xF8:
 		if (pc != oldpc + 1)	// ret instructions are 1 byte so if we're not on the next instruction, we've returned
 		{
-			if (state.CallStack.empty() == false)
+			if (callStack.empty() == false)
 			{
-				FCPUFunctionCall& callInfo = state.CallStack.back();
+				FCPUFunctionCall& callInfo = callStack.back();
 				//assert(callInfo.ReturnAddr == nextpc);
 
-				state.CallStack.pop_back();
+				callStack.pop_back();
 
 				/*if (callInfo.ReturnAddr != nextpc)
 				{

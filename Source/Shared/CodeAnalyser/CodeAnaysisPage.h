@@ -42,12 +42,7 @@ enum class EOperandType
 	Binary
 };
 
-struct FCPUFunctionCall
-{
-	FAddressRef		FunctionAddr;
-	FAddressRef		CallAddr;
-	FAddressRef		ReturnAddr;
-};
+
 
 struct FItem
 {
