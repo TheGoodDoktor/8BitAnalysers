@@ -1,5 +1,12 @@
 #include "Debugger.h"
-#include "SpectrumEmu.h"
+
+#include <CodeAnalyser/CodeAnalyser.h>
+
+#include <chips/z80.h>
+#include <chips/util/z80dasm.h>
+#include <chips/util/m6502dasm.h>
+
+#include <imgui.h>
 
 void FDebugger::Init(FCodeAnalysisState* pCA)
 {
@@ -339,5 +346,26 @@ bool FDebugger::IsAddressBreakpointed(FAddressRef addr)
 
 void FDebugger::DrawUI(void)
 {
+    if (ImGui::BeginTabBar("DebuggerTabBar"))
+    {
+        if (ImGui::BeginTabItem("Breakpoints"))
+        {
 
+			ImGui::EndTabItem();
+		}
+		
+        if (ImGui::BeginTabItem("Watches"))
+		{
+
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Registers"))
+		{
+
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
 }
