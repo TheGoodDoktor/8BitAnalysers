@@ -1072,30 +1072,38 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 {
 	ui_zx_t* pZXUI = &UIZX;
 	assert(pZXUI && pZXUI->zx && pZXUI->boot_cb);
-		
+
 	bool bExportAsm = false;
 
-	if (ImGui::BeginMainMenuBar()) 
+	if (ImGui::BeginMainMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
 		{
 			if (ImGui::BeginMenu("New Game from Snapshot File"))
 			{
-				for(int gameNo=0;gameNo<GamesList.GetNoGames();gameNo++)
+				const int numGames = GamesList.GetNoGames();
+				if (!numGames)
 				{
-					const FGameSnapshot& game = GamesList.GetGame(gameNo);
-					
-					if (ImGui::MenuItem(game.DisplayName.c_str()))
+					const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
+					ImGui::Text("No snapshots found in snapshot directory:\n\n'%s'.\n\nSnapshot directory is set in GlobalConfig.json", snapFolder.c_str());
+				}
+				else
+				{
+					for (int gameNo = 0; gameNo < numGames; gameNo++)
 					{
-						if (GamesList.LoadGame(gameNo))
+						const FGameSnapshot& game = GamesList.GetGame(gameNo);
+
+						if (ImGui::MenuItem(game.DisplayName.c_str()))
 						{
-							FGameConfig *pNewConfig = CreateNewGameConfigFromSnapshot(game);
-							if(pNewConfig != nullptr)
-								StartGame(pNewConfig);
+							if (GamesList.LoadGame(gameNo))
+							{
+								FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
+								if (pNewConfig != nullptr)
+									StartGame(pNewConfig);
+							}
 						}
 					}
 				}
-
 				ImGui::EndMenu();
 			}
 
@@ -1113,24 +1121,31 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 							FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
 							if (pNewConfig != nullptr)
 								StartGame(pNewConfig);
+							}
 						}
 					}
-				}
 				ImGui::EndMenu();
-			}
+				}
 #endif
-			if (ImGui::BeginMenu( "Open Game"))
+			if (ImGui::BeginMenu("Open Game"))
 			{
-				for (const auto& pGameConfig : GetGameConfigs())
+				if (GetGameConfigs().empty())
 				{
-					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
+					ImGui::Text("No games found.\n\nFirst, create a game via the 'New Game from Snapshot File' menu.");
+				}
+				else
+				{
+					for (const auto& pGameConfig : GetGameConfigs())
 					{
-						const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
-						const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
-
-						if(GamesList.LoadGame(gameFile.c_str()))
+						if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 						{
-							StartGame(pGameConfig);
+							const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
+							const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
+
+							if (GamesList.LoadGame(gameFile.c_str()))
+							{
+								StartGame(pGameConfig);
+							}
 						}
 					}
 				}
@@ -2078,6 +2093,17 @@ void FSpectrumEmu::DoSkoolKitTest(const char* pGameName, const char* pInSkoolFil
 	std::string outFname = "OutputSkoolKit/" + std::string(pGameName ? pGameName : pOutSkoolName) + ".skool";
 	FSkoolFile::Base base = bHexadecimal ? FSkoolFile::Base::Hexadecimal : FSkoolFile::Base::Decimal;
 	::ExportSkoolFile(CodeAnalysis, outFname.c_str(), base, &skoolInfo);
+}
+
+void FSpectrumEmu::AppFocusCallback(int focused)
+{
+	if (focused)
+	{
+		if (ZXEmuState.type == ZX_TYPE_128)
+			GamesList.EnumerateGames(GetGlobalConfig().SnapshotFolder128.c_str());
+		else
+			GamesList.EnumerateGames(GetGlobalConfig().SnapshotFolder.c_str());
+	}
 }
 
 void FSpectrumConfig::ParseCommandline(int argc, char** argv)

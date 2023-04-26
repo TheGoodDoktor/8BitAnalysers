@@ -92,6 +92,7 @@ public:
 	bool	ImportSkoolFile(const char* pFilename, const char* pOutSkoolInfoName = nullptr, FSkoolFileInfo* pSkoolInfo=nullptr);
 	bool	ExportSkoolFile(bool bHexadecimal, const char* pName = nullptr);
 	void	DoSkoolKitTest(const char* pGameName, const char* pInSkoolFileName, bool bHexadecimal, const char* pOutSkoolName = nullptr);
+	void	AppFocusCallback(int focused);
 
 	int		TrapFunction(uint16_t pc, int ticks, uint64_t pins);
 	uint64_t Z80Tick(int num, uint64_t pins);

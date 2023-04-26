@@ -34,9 +34,12 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
+void WindowFocusCallback(GLFWwindow* window, int focused);
+
 struct FAppState
 {
     GLFWwindow* MainWindow = nullptr;
+    FSpectrumEmu* pSpectrumEmu = nullptr;
 };
 
 // Globals
@@ -85,6 +88,8 @@ int main(int argc, char** argv)
         return 1;
     glfwMakeContextCurrent(appState.MainWindow);
     glfwSwapInterval(1); // Enable vsync
+
+    glfwSetWindowFocusCallback(appState.MainWindow, WindowFocusCallback);
 
 	// Setup audio
 	saudio_desc audioDesc = {};
@@ -165,6 +170,8 @@ int main(int argc, char** argv)
 	FSpectrumEmu* pSpectrumEmulator = new FSpectrumEmu;
 	pSpectrumEmulator->Init(config);
 
+    g_AppState.pSpectrumEmu = pSpectrumEmulator;
+
 	// Main loop
     while (!glfwWindowShouldClose(appState.MainWindow))
     {
@@ -242,4 +249,12 @@ void SetWindowIcon(const char* pIconFile)
 	images[0].pixels = stbi_load(pIconFile, &images[0].width, &images[0].height, 0, 4); //rgba channels 
 	glfwSetWindowIcon(g_AppState.MainWindow, 1, images);
 	stbi_image_free(images[0].pixels);
+}
+
+void WindowFocusCallback(GLFWwindow* window, int focused)
+{
+    if (g_AppState.pSpectrumEmu)
+    {
+        g_AppState.pSpectrumEmu->AppFocusCallback(focused);
+    }
 }
