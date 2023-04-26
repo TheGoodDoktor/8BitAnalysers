@@ -129,6 +129,7 @@ public:
 	void	DrawCallStack(void);
 	void	DrawStack(void);
 	void	DrawWatches(void);
+	void	DrawBreakpoints(void);
 	void	DrawUI(void);
 private:
 	FCodeAnalysisState*	pCodeAnalysis = nullptr;

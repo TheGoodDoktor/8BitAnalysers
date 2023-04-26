@@ -658,6 +658,49 @@ void FDebugger::DrawWatches(void)
 		RemoveWatch(SelectedWatch);
 }
 
+const char* GetBreakpointTypeText(EBreakpointType type)
+{
+	switch (type)
+	{
+	case EBreakpointType::Exec:
+		return "Exec";
+	case EBreakpointType::Data:
+		return "Data";
+	}
+
+	return "Unknown";
+}
+
+void FDebugger::DrawBreakpoints(void)
+{
+	FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
+	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit;
+	if (ImGui::BeginTable("Breakpoints", 4, flags))
+	{
+		ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed, 60);
+		ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,50);
+		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,40);
+		ImGui::TableHeadersRow();
+
+		for (auto& bp : Breakpoints)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Checkbox("##Enabled", &bp.bEnabled);
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text("%s:", NumStr(bp.Address.Address));
+			DrawAddressLabel(state, viewState, bp.Address);
+			ImGui::TableSetColumnIndex(2);
+			ImGui::Text("%s", GetBreakpointTypeText(bp.Type));
+			ImGui::TableSetColumnIndex(3);
+			ImGui::Text("%d", bp.Size);
+		}
+		ImGui::EndTable();
+	}
+}
 
 void FDebugger::DrawUI(void)
 {
@@ -665,13 +708,13 @@ void FDebugger::DrawUI(void)
     {
         if (ImGui::BeginTabItem("Breakpoints"))
         {
-
+			DrawBreakpoints();
 			ImGui::EndTabItem();
 		}
 		
         if (ImGui::BeginTabItem("Watches"))
 		{
-
+			DrawWatches();
 			ImGui::EndTabItem();
 		}
 
