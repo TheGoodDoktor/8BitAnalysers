@@ -851,8 +851,11 @@ bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 
 	if (versionNo > 16)
 	{
-		fread(&state.StackMin, sizeof(uint16_t), 1, fp);
-		fread(&state.StackMax, sizeof(uint16_t), 1, fp);
+		uint16_t	stackMin, stackMax;
+		fread(&stackMin, sizeof(uint16_t), 1, fp);
+		fread(&stackMax, sizeof(uint16_t), 1, fp);
+
+		// should we just discard them since the binary
 	}
 
 	if (versionNo > 15)

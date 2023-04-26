@@ -16,8 +16,6 @@ class FCodeAnalysisState;
 
 enum class ELabelType;
 
-
-
 /* the input callback type */
 typedef uint8_t(*FDasmInput)(void* user_data);
 /* the output callback type */
@@ -35,24 +33,9 @@ public:
 	virtual FAddressRef	GetPC(void) = 0;
 	virtual uint16_t	GetSP(void) = 0;
 
-	// breakpoints
-	//virtual bool	IsAddressBreakpointed(FAddressRef addr) = 0;
-	//virtual bool	SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) = 0;
-	//virtual bool	SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bSet) = 0;
-
-	// commands
-	//virtual void	Break() = 0;
-	//virtual void	Continue() = 0;
-	//virtual void	StepOver() = 0;
-	//virtual void	StepInto() = 0;
-	//virtual void	StepFrame() = 0;
-	//virtual void	StepScreenWrite() = 0;
 	virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) = 0;
 
-	//virtual bool	ShouldExecThisFrame(void) const = 0;
-	//virtual bool	IsStopped(void) const = 0;
-
-	virtual void* GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
+	virtual void*	GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
 
 	ECPUType	CPUType = ECPUType::Unknown;
 };
@@ -150,23 +133,13 @@ struct FLabelListFilter
 struct FCodeAnalysisItem
 {
 	FCodeAnalysisItem() {}
-	//FCodeAnalysisItem(FItem* pItem, uint16_t addr) :Item(pItem), BankId(-1), Address(addr) {}	// temp until we get refs working properly
 	FCodeAnalysisItem(FItem* pItem, int16_t bankId, uint16_t addr) :Item(pItem), AddressRef(bankId,addr) {}
 	FCodeAnalysisItem(FItem* pItem, FAddressRef addr) :Item(pItem), AddressRef(addr) {}
 
 	bool IsValid() const { return Item != nullptr; }
 	
-	FItem* Item = nullptr;
-	/*union
-	{
-		struct
-		{
-			int16_t		BankId;
-			uint16_t	Address;	// address in address space
-		};
-		FAddressRef		AddressRef;
-	};*/
-	FAddressRef		AddressRef;
+	FItem*		Item = nullptr;
+	FAddressRef	AddressRef;
 
 };
 
@@ -214,23 +187,6 @@ struct FCodeAnalysisConfig
 	const uint32_t*		CharacterColourLUT = nullptr;
 };
 
-// Analysis memory bank
-/*struct FCodeAnalysisBankBP
-{
-	enum class EType
-	{
-		Exe,
-		Byte,
-		Word
-	};
-
-	FCodeAnalysisBankBP(uint16_t addr, EType type, uint16_t value) :Address(addr),Type(type),Value(value) {}
-
-	uint16_t	Address;
-	EType		Type;
-	uint16_t	Value;
-};*/
-
 struct FCodeAnalysisBank
 {
 	int16_t				Id = -1;
@@ -245,11 +201,6 @@ struct FCodeAnalysisBank
 	bool				bReadOnly = false;
 	bool				bIsDirty = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
-	//std::vector<FCodeAnalysisBankBP>	BreakPoints;
-
-	//bool		IsAddressBreakpointed(uint16_t addr) const;
-	//bool		ToggleExecBreakpointAtAddress(uint16_t addr);
-	//bool		ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize);
 
 	bool		AddressValid(uint16_t addr) const { return addr >= GetMappedAddress() && addr < GetMappedAddress() + (NoPages * FCodeAnalysisPage::kPageSize);	}
 	bool		IsUsed() const { return Pages[0].bUsed; }
@@ -403,8 +354,6 @@ public:
 	FCodeAnalysisViewState& GetAltViewState() { return ViewState[FocussedWindowId ^ 1]; }
 	
 	FDebugger				Debugger;
-	uint16_t				StackMin;
-	uint16_t				StackMax;
 
 	FAddressRef				CopiedAddress;
 

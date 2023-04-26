@@ -65,12 +65,24 @@ struct FCPUFunctionCall
 	FAddressRef		ReturnAddr;
 };
 
+struct FStackInfo
+{
+	FStackInfo(uint16_t basePtr) :BasePtr(basePtr) {}
+
+	uint16_t					BasePtr;
+	std::vector<FAddressRef>	SetBy;
+
+	uint16_t				StackMin = 0xffff;
+	uint16_t				StackMax = 0;
+};
+
 
 class FDebugger
 {
 public:
 	void	Init(FCodeAnalysisState* pCodeAnalysis);
 	void	CPUTick(uint64_t pins);
+	int		OnInstructionExecuted(uint64_t pins);
 	bool	FrameTick(void);
 
 	void	LoadFromFile(FILE* fp);
@@ -99,8 +111,11 @@ public:
 	void	ResetFrameTrace() { FrameTrace.clear(); }
 	const std::vector<FAddressRef>& GetFrameTrace() const { return FrameTrace; }
 
-	std::vector<FCPUFunctionCall>& GetCallstack() { return CallStack; }
+	// Stack
+	void	RegisterNewStackPointer(uint16_t newSP, FAddressRef pc);
+	bool	IsAddressOnStack(uint16_t address);
 
+	std::vector<FCPUFunctionCall>& GetCallstack() { return CallStack; }
 
 	// Queries
 	bool	IsStopped() const { return bDebuggerStopped; }
@@ -132,6 +147,14 @@ private:
 	FWatch						SelectedWatch;
 	std::vector<FAddressRef>	FrameTrace;
 	std::vector<FCPUFunctionCall>	CallStack;
+
+	std::vector<FAddressRef>	StackSetLocations;
+	std::vector<FStackInfo>		Stacks;
+	int							CurrentStackNo = -1;
+
+	uint16_t				StackMin;
+	uint16_t				StackMax;
+
 
 };
 

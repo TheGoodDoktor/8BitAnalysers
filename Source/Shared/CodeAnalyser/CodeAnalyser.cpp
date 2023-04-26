@@ -1005,9 +1005,6 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	KeyConfig[(int)EKey::StepScreenWrite] = ImGuiKey_F7;
 	KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
 
-	StackMin = 0xffff;
-	StackMax = 0;
-
 	Debugger.Init(this);
 }
 

@@ -367,12 +367,7 @@ void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 			trapId = kCaptureTrapId;
 	}
 #endif
-	// work out stack size
-	const uint16_t sp = ZXEmuState.cpu.sp;	// this won't get the proper stack pos (see comment above function)
-	if (sp == state.StackMin - 2 || state.StackMin == 0xffff)
-		state.StackMin = sp;
-	if (sp == state.StackMax + 2 || state.StackMax == 0 )
-		state.StackMax = sp;
+	
 
 	// work out instruction count
 	int iCount = 1;
@@ -894,6 +889,8 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	// decode whole screen
 	DecodeScreen(&ZXEmuState);
 	CodeAnalysis.Debugger.Break();
+
+	CodeAnalysis.Debugger.RegisterNewStackPointer(ZXEmuState.cpu.sp, FAddressRef());
 }
 
 bool FSpectrumEmu::StartGame(const char *pGameName)

@@ -20,6 +20,10 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
         pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 
     Watches.clear();
+	Stacks.clear();
+
+	StackMin = 0xffff;
+	StackMax = 0;
 }
 
 void FDebugger::CPUTick(uint64_t pins)
@@ -52,58 +56,8 @@ void FDebugger::CPUTick(uint64_t pins)
     if (bNewOp)
     {
         PC = pCodeAnalysis->AddressRefFromPhysicalAddress(pins & 0xffff);
-
-        if (StepMode != EDebugStepMode::None)
-        {
-            switch (StepMode)
-            {
-            case EDebugStepMode::StepInto:
-                trapId = kTrapId_Step;
-                break;
-            case EDebugStepMode::StepOver:
-                // Check against step over PC value and stop
-                if(PC == StepOverPC)
-					trapId = kTrapId_Step;
-				break;
-
-            }
-        }
-        else
-        {
-            for (int i = 0; i < Breakpoints.size(); i++)
-            {
-                const FBreakpoint& bp = Breakpoints[i];
-
-                if (bp.bEnabled)
-                {
-                    switch (bp.Type)
-                    {
-                    case EBreakpointType::Exec:
-                        if (PC == bp.Address)
-                        {
-                            trapId = kTrapId_BpBase + i;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-
-		// Handle IRQ
-		const bool irq = (pins & Z80_INT) && pZ80->iff1;
-		if (irq)
-		{
-			FCPUFunctionCall callInfo;
-			callInfo.CallAddr = PC;
-			callInfo.FunctionAddr = PC;
-			callInfo.ReturnAddr = PC;
-			CallStack.push_back(callInfo);
-			//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
-		}
-
-		FrameTrace.push_back(PC);
-
-    }
+		trapId = OnInstructionExecuted(pins);
+	}
 
     // tick based stepping
     switch (StepMode)
@@ -181,6 +135,70 @@ void FDebugger::CPUTick(uint64_t pins)
     }
 
     LastTickPins = pins;
+}
+
+int FDebugger::OnInstructionExecuted(uint64_t pins)
+{
+	int trapId = kTrapId_None;
+
+	if (StepMode != EDebugStepMode::None)
+	{
+		switch (StepMode)
+		{
+		case EDebugStepMode::StepInto:
+			trapId = kTrapId_Step;
+			break;
+		case EDebugStepMode::StepOver:
+			// Check against step over PC value and stop
+			if (PC == StepOverPC)
+				trapId = kTrapId_Step;
+			break;
+
+		}
+	}
+	else
+	{
+		for (int i = 0; i < Breakpoints.size(); i++)
+		{
+			const FBreakpoint& bp = Breakpoints[i];
+
+			if (bp.bEnabled)
+			{
+				switch (bp.Type)
+				{
+				case EBreakpointType::Exec:
+					if (PC == bp.Address)
+					{
+						trapId = kTrapId_BpBase + i;
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	// Handle IRQ
+	const bool irq = (pins & Z80_INT) && pZ80->iff1;
+	if (irq)
+	{
+		FCPUFunctionCall callInfo;
+		callInfo.CallAddr = PC;
+		callInfo.FunctionAddr = PC;
+		callInfo.ReturnAddr = PC;
+		CallStack.push_back(callInfo);
+		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
+	}
+
+	FrameTrace.push_back(PC);
+
+	// update stack size
+	const uint16_t sp = pZ80->sp;	// this won't get the proper stack pos (see comment above function)
+	if (sp == StackMin - 2 || StackMin == 0xffff)
+		StackMin = sp;
+	if (sp == StackMax + 2 || StackMax == 0)
+		StackMax = sp;
+
+	return trapId;
 }
 
 bool FDebugger::FrameTick(void)
@@ -381,6 +399,64 @@ bool FDebugger::RemoveWatch(FWatch watch)
 	return true;
 }
 
+// Stack
+
+void FDebugger::RegisterNewStackPointer(uint16_t newSP, FAddressRef pc)
+{
+	if (pc.IsValid())
+	{
+		bool bFound = false;
+		for (int i = 0; i < StackSetLocations.size(); i++)
+		{
+			if (StackSetLocations[i] == pc)
+			{
+				bFound = true;
+				break;
+			}
+		}
+
+		if(bFound == false)
+			StackSetLocations.push_back(pc);
+	}
+	/*CurrentStackNo = -1;
+
+	for (int i = 0; i < Stacks.size(); i++)
+	{
+		if (Stacks[i].BasePtr == newSP)
+		{
+			CurrentStackNo = i;
+			break;
+		}
+	}
+
+	if (CurrentStackNo == -1)
+	{
+		CurrentStackNo = (int)Stacks.size();
+		Stacks.push_back(FStackInfo(newSP));
+	}
+
+	// maybe this needs to be somewhere else?
+	if (pc.IsValid())
+	{
+		FStackInfo& stack = Stacks[CurrentStackNo];
+		for (int i = 0; i < stack.SetBy.size(); i++)
+		{
+			if (stack.SetBy[i] == pc)
+				return;
+		}
+
+		stack.SetBy.push_back(pc);
+	}*/
+}
+
+bool FDebugger::IsAddressOnStack(uint16_t address) 
+{ 
+	//FStackInfo& stack = Stacks[CurrentStackNo];
+
+	return address >= StackMin && address <= StackMax;
+}
+
+
 // UI Code
 
 void FDebugger::DrawTrace(void)
@@ -438,23 +514,55 @@ void FDebugger::DrawCallStack(void)
 void FDebugger::DrawStack(void)
 {
 	FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const uint16_t sp = state.CPUInterface->GetSP();
-	if (state.StackMin >= state.StackMax)	// stack is invalid
+
+	/*for (int i = 0; i < Stacks.size(); i++)
+	{
+		FStackInfo& stack = Stacks[i];
+
+		ImGui::Text("Stack %d", i);
+		DrawAddressLabel(state, viewState, stack.BasePtr);
+		for (int j = 0; j < stack.SetBy.size(); j++)
+		{
+			DrawAddressLabel(state, viewState, stack.SetBy[j]);
+
+		}
+	}*/
+
+	if (ImGui::CollapsingHeader("Stack Set Locations"))
+	{
+		for (int i = 0; i < StackSetLocations.size(); i++)
+		{
+			ImGui::Text("%d: ",i);
+			DrawAddressLabel(state, viewState, StackSetLocations[i]);
+		}
+	}
+
+	if (StackMin >= StackMax)	// stack is invalid
 	{
 		ImGui::Text("No valid stack discovered");
 		return;
 	}
 
-	if (sp < state.StackMin || sp > state.StackMax)	// sp is not in range
+	if (sp < StackMin || sp > StackMax)	// sp is not in range
 	{
 		ImGui::Text("Stack pointer: %s", NumStr(sp));
 		DrawAddressLabel(state, state.GetFocussedViewState(), sp);
 		ImGui::SameLine();
-		ImGui::Text("not in stack range(%s - %s)", NumStr(state.StackMin), NumStr(state.StackMax));
+		ImGui::Text("not in stack range(%s - %s)", NumStr(StackMin), NumStr(StackMax));
 		return;
 	}
 
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	// StackInfo
+	if (StackMax > StackMin)
+	{
+		//ImGui::SameLine();
+		ImGui::Text("Stack range: ");
+		DrawAddressLabel(state, viewState, StackMin);
+		ImGui::SameLine();
+		DrawAddressLabel(state, viewState, StackMax);
+	}
 
 	//static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 	static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
@@ -467,7 +575,7 @@ void FDebugger::DrawStack(void)
 		ImGui::TableSetupColumn("Set by");
 		ImGui::TableHeadersRow();
 
-		for (int stackAddr = sp; stackAddr <= state.StackMax; stackAddr += 2)
+		for (int stackAddr = sp; stackAddr <= StackMax; stackAddr += 2)
 		{
 			ImGui::TableNextRow();
 

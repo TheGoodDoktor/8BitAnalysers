@@ -1315,17 +1315,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		ImGui::Text("This will reset all recorded references");
 		ImGui::EndTooltip();
 	}
-
-	// StackInfo
-	if (state.StackMax > state.StackMin)
-	{
-		ImGui::SameLine();
-		ImGui::Text("Stack range: ");
-		DrawAddressLabel(state, viewState, state.StackMin);
-		ImGui::SameLine();
-		DrawAddressLabel(state, viewState, state.StackMax);
-	}
-
+	
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{
 		if (ImGui::BeginTabBar("itemlist_tabbar"))

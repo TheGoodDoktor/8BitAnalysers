@@ -231,6 +231,7 @@ bool CheckStopInstructionZ80(FCodeAnalysisState& state, uint16_t pc)
 bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
+	FDebugger& debugger = state.Debugger;
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
 	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
 	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator());
@@ -245,6 +246,15 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 	switch (opcode)
 	{
 		// Stack
+		case 0x31:	// LD SP,NN
+			{
+				const uint16_t newSP = state.ReadWord(pc + 1);
+				debugger.RegisterNewStackPointer(newSP,state.AddressRefFromPhysicalAddress(pc));
+			}
+			break;
+		case 0xF9:	// LD SP,HL
+			debugger.RegisterNewStackPointer(pCPU->hl, state.AddressRefFromPhysicalAddress(pc));
+			break;
 		case 0xc5:	// PUSH BC
 		case 0xd5:	// PUSH DE
 		case 0xe5:	// PUSH HL
@@ -252,21 +262,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 			bPushInstruction = true;
 		break;
 
-		// index register opcodes
-		case 0xdd:
-		case 0xfd:
-			{
-				const uint8_t indexOpcode = pCPUInterface->ReadByte(pc + 1);
-				switch(indexOpcode)
-				{
-				case 0xe5:	// PUSH IX/IY
-					bPushInstruction = true;
-					break;
-				default:
-					break;
-				}
-			}
-		break;
+		
 		
 		// Call functions
 		/* CALL nnnn */
@@ -275,6 +271,43 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 		case 0xDC: case 0xFC: case 0xD4: case 0xC4:
 		case 0xF4: case 0xEC: case 0xE4: case 0xCC:
 			bPushInstruction = true;
+			break;
+
+			// index register opcodes
+		case 0xdd:
+		case 0xfd:
+		{
+			const bool bIX = opcode == 0xDD;
+			const uint8_t indexOpcode = pCPUInterface->ReadByte(pc + 1);
+			switch (indexOpcode)
+			{
+			case 0xF9:	// LD SP,IX/IY
+				debugger.RegisterNewStackPointer(bIX ? pCPU->ix : pCPU->iy, state.AddressRefFromPhysicalAddress(pc));
+				break;
+			case 0xe5:	// PUSH IX/IY
+				bPushInstruction = true;
+				break;
+			default:
+				break;
+			}
+		}
+		break;
+
+		case 0xed:
+		{
+			const uint8_t extendedOpcode = pCPUInterface->ReadByte(pc + 1);
+
+			switch (extendedOpcode)
+			{
+				case 0x7b:	// LD SP,(nn)
+				{
+					const uint16_t newSP = state.ReadWord(state.ReadWord(pc + 2));	// indirect
+					debugger.RegisterNewStackPointer(newSP, state.AddressRefFromPhysicalAddress(pc));
+				}
+				break;
+			}
+
+		}
 			break;
 	default:
 		break;
@@ -336,7 +369,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 	{
 		const uint16_t stackPointer = pCPU->sp - 2;
 
-		if (stackPointer >= state.StackMin && stackPointer <= state.StackMax)
+		if (state.Debugger.IsAddressOnStack(stackPointer))
 		{
 			FDataInfo* pStackItem = state.GetWriteDataInfoForAddress(stackPointer);	// -2 because SP was recorded before instruction was 	
 			const FCodeInfo* pCodeItem = state.GetCodeInfoForAddress(pc);
