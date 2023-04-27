@@ -1051,6 +1051,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 				viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
 			}
 
+			AddGameConfig(pGameConfig);
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
 			//SaveGameData(this, dataFName.c_str());		// The Past
 

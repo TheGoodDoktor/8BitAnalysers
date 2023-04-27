@@ -20,6 +20,13 @@ static std::vector< FGameConfig *>	g_GameConfigs;
 
 bool AddGameConfig(FGameConfig *pConfig)
 {
+	for (const auto& pGameConfig : GetGameConfigs())
+	{
+		// Dont add game configs with identical names
+		if (pGameConfig->Name == pConfig->Name)
+			return false;
+	}
+
 	g_GameConfigs.push_back(pConfig);
 	return true;
 }
