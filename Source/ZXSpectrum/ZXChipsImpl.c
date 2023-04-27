@@ -17,13 +17,15 @@ void ZXDecodeScreen(zx_t* pZX)
 	pZX->scanline_y = oldScanlineVal;
 }
 
+// Additional tick to support floating bus
 static uint64_t FloatingBusTick(zx_t* sys, uint64_t pins)
 {
 	if (pins & Z80_IORQ && pins & Z80_RD)
 	{
 		if ((pins & Z80_A0) == 0)	// ULA
 		{
-
+			// TODOO: if we want to emulate tape then we could put something here
+			// be careful not to lose the keyboard bits
 		}
 		else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0)	// Kempston
 		{
@@ -57,7 +59,7 @@ uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds)
 	const uint32_t num_ticks = clk_us_to_ticks(sys->freq_hz, micro_seconds);
 	uint64_t pins = sys->pins;
 	
-	if (0 == sys->debug.callback.func) 
+	if (sys->debug.callback.func == NULL) 
 	{
 		// run without debug hook
 		for (uint32_t tick = 0; tick < num_ticks; tick++) 

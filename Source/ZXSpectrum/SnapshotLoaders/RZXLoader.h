@@ -23,12 +23,13 @@ public:
 	bool			Init(FSpectrumEmu* pEmu);
 	bool			Load(const char* fName);
 	void			DrawUI(void);
-	void			RegisterInstructions(int num);
+	//void			RegisterInstructions(int num);
 	uint16_t		Update();
 	bool			GetInput(uint8_t& outVal);
 	EReplayMode		GetReplayMode() const { return ReplayMode; }
-	bool			RZXCallbackHandler(int msg, void* param);
+	//bool			RZXCallbackHandler(int msg, void* param);
 private:
+
 	FSpectrumEmu*	pZXEmulator = nullptr;
 	bool			Initialised = false;
 	EReplayMode		ReplayMode = EReplayMode::Off;

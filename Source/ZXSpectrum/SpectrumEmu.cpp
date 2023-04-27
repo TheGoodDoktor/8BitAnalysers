@@ -56,7 +56,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
 
-#define ENABLE_RZX 0
+#define ENABLE_RZX 1
 #define SAVE_ROM_JSON 0
 
 #define ENABLE_CAPTURES 0
@@ -375,7 +375,7 @@ void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 	if (opcode == 0xED || opcode == 0xCB)
 		iCount++;
 
-	RZXManager.RegisterInstructions(iCount);
+	//RZXManager.RegisterInstructions(iCount);
 
 	PreviousPC = pc;
 }
@@ -1241,19 +1241,20 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			}
 			ImGui::EndMenu();
 		}
+#if 0
 		if (ImGui::BeginMenu("Debug")) 
 		{
 			//ImGui::MenuItem("CPU Debugger", 0, &pZXUI->dbg.ui.open);
 			//ImGui::MenuItem("Breakpoints", 0, &pZXUI->dbg.ui.show_breakpoints);
-			ImGui::MenuItem("Memory Heatmap", 0, &pZXUI->dbg.ui.show_heatmap);
-			if (ImGui::BeginMenu("Memory Editor")) 
+			//ImGui::MenuItem("Memory Heatmap", 0, &pZXUI->dbg.ui.show_heatmap);
+			/*if (ImGui::BeginMenu("Memory Editor"))
 			{
 				ImGui::MenuItem("Window #1", 0, &pZXUI->memedit[0].open);
 				ImGui::MenuItem("Window #2", 0, &pZXUI->memedit[1].open);
 				ImGui::MenuItem("Window #3", 0, &pZXUI->memedit[2].open);
 				ImGui::MenuItem("Window #4", 0, &pZXUI->memedit[3].open);
 				ImGui::EndMenu();
-			}
+			}*/
 			/*if (ImGui::BeginMenu("Disassembler")) 
 			{
 				ImGui::MenuItem("Window #1", 0, &pZXUI->dasm[0].open);
@@ -1264,6 +1265,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			}*/
 			ImGui::EndMenu();
 		}
+#endif
 		/*if (ImGui::BeginMenu("ImGui"))
 		{
 			ImGui::MenuItem("Show Demo", 0, &pUI->bShowImGuiDemo);
@@ -1548,13 +1550,11 @@ void FSpectrumEmu::DrawUI()
 	ui_kbd_draw(&pZXUI->kbd);
 	ui_memmap_draw(&pZXUI->memmap);
 
-	for (int i = 0; i < 4; i++)
+	/*for (int i = 0; i < 4; i++)
 	{
 		ui_memedit_draw(&pZXUI->memedit[i]);
 		ui_dasm_draw(&pZXUI->dasm[i]);
-	}
-
-	//DrawDebuggerUI(&pZXUI->dbg);
+	}*/
 
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
@@ -1586,10 +1586,6 @@ void FSpectrumEmu::DrawUI()
 		FrameTraceViewer.Draw();
 	}
 	ImGui::End();
-
-
-	
-	
 
 	if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 	{
@@ -1715,7 +1711,7 @@ bool FSpectrumEmu::DrawDockingView()
 }
 
 // Cheats
-
+// TODO: move this out to another file/class
 void FSpectrumEmu::DrawCheatsUI()
 {
 	if (pActiveGame == nullptr)
