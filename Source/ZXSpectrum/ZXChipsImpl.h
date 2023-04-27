@@ -15,7 +15,8 @@
 extern "C" {
 #endif
 
-void DecodeScreen(zx_t* pZX);
+void ZXDecodeScreen(zx_t* pZX);
+uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds);
 
 #ifdef __cplusplus
 } // extern "C"

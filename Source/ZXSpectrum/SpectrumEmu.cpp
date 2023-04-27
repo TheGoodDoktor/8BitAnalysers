@@ -887,7 +887,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	// Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
 	// 
 	// decode whole screen
-	DecodeScreen(&ZXEmuState);
+	ZXDecodeScreen(&ZXEmuState);
 	CodeAnalysis.Debugger.Break();
 
 	CodeAnalysis.Debugger.RegisterNewStackPointer(ZXEmuState.cpu.sp, FAddressRef());
@@ -1421,7 +1421,7 @@ void FSpectrumEmu::Tick()
 		clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
 		kbd_update(&ZXEmuState.kbd);
 #else
-		zx_exec(&ZXEmuState, microSeconds);
+		ZXExeEmu(&ZXEmuState, microSeconds);
 #endif
 		/*if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
