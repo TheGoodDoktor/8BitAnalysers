@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 #include <zlib.h>
+#include <Util/MemoryBuffer.h>
 
 
 //#include "rzx.h"
@@ -76,33 +77,34 @@ struct FRZXRZXData
 	uint32_t	SnapshotLength = 0;
 	uint8_t*	SnapshotData = nullptr;
 
-	std::vector<FRZXInputRecordingBlock>	InputRecordingBlocks;
+	FRZXInputRecordingBlock		InputRecordingBlock;
 };
 
 class FRZXLoader
 {
 public:
-    bool    Load(const char* fName);
+    bool    Load(const char* fName, FRZXRZXData& rzxData);
 private:
-	ERZXError    ReadBlock(FILE* fp, bool bTestIRB);
+	ERZXError    ReadBlock(FMemoryBuffer& inputBuffer, FRZXRZXData& rzxData);
 
-	FRZXRZXData		RZXData;
 
 };
 
-ERZXError FRZXLoader::ReadBlock(FILE* fp, bool bTestIRB)
+ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXRZXData& rzxData)
 {
 	bool bDone = false;
 
 	while (bDone == false)
 	{
-		// get block Id & Length
-		uint8_t blockId;
-		uint32_t blockLength;
-		if (fread(&blockId, sizeof(uint8_t), 1, fp) != 1)
+		if (inputBuffer.Finished())
 			return ERZXError::Finished;
 
-		fread(&blockLength, sizeof(uint32_t), 1, fp);
+		// get block Id & Length
+		uint8_t blockId = 0;
+		uint32_t blockLength = 0;
+		
+		inputBuffer.Read(blockId);
+		inputBuffer.Read(blockLength);
 
 		if (blockLength == 0)
 			return ERZXError::Invalid;
@@ -112,14 +114,15 @@ ERZXError FRZXLoader::ReadBlock(FILE* fp, bool bTestIRB)
 			case kBlockId_CreatorInfo:
 			{
 				LOGINFO("RZXLoader: Creator Info Block");
-				fread(RZXData.CreatorIdentifier, 1, 20, fp);
-				fread(&RZXData.CreateVersionMajor, sizeof(uint16_t), 1, fp);
-				fread(&RZXData.CreateVersionMinor, sizeof(uint16_t), 1, fp);
+				inputBuffer.ReadBytes(rzxData.CreatorIdentifier, 20);
+				inputBuffer.Read(rzxData.CreateVersionMajor);
+				inputBuffer.Read(rzxData.CreateVersionMinor);
+
 				const uint32_t customDataSize = blockLength - 29;
 				if (customDataSize > 0)
 				{
-					RZXData.CreatorCustomData = new uint8_t[customDataSize];
-					fread(RZXData.CreatorCustomData, 1, customDataSize, fp);
+					rzxData.CreatorCustomData = new uint8_t[customDataSize];
+					inputBuffer.ReadBytes(rzxData.CreatorCustomData, customDataSize);
 				}
 			}
 			break;
@@ -127,8 +130,8 @@ ERZXError FRZXLoader::ReadBlock(FILE* fp, bool bTestIRB)
 			case kBlockId_SecurityInfo:
 			{
 				LOGINFO("RZXLoader: Security Info Block");
-				fread(&RZXData.SecurityKeyId, sizeof(uint32_t), 1, fp);
-				fread(&RZXData.SecurityWeekCode, sizeof(uint32_t), 1, fp);
+				inputBuffer.Read(rzxData.SecurityKeyId);
+				inputBuffer.Read(rzxData.SecurityWeekCode);
 			}
 			break;
 
@@ -136,25 +139,25 @@ ERZXError FRZXLoader::ReadBlock(FILE* fp, bool bTestIRB)
 			{
 				LOGINFO("RZXLoader: Security Signature Block");
 				const uint32_t securitySigSize = blockLength - 5;
-				RZXData.DSASignature = new uint8_t[securitySigSize];
-				fread(RZXData.DSASignature, 1, securitySigSize, fp);
+				rzxData.DSASignature = new uint8_t[securitySigSize];
+				inputBuffer.ReadBytes(rzxData.DSASignature, securitySigSize);
 			}
 			break;
 
 			case kBlockId_Snapshot:
 			{
 				LOGINFO("RZXLoader: Snapshot Block");
-				uint16_t snaphotFlags = 0;
-				fread(&snaphotFlags, sizeof(uint16_t), 1, fp);
+				uint32_t snaphotFlags = 0;
+				inputBuffer.Read(snaphotFlags);
 				const bool bExternalSnapshot = !!(snaphotFlags & 0x1);
 				const bool bCompressed = !!(snaphotFlags & 0x2);
 
-				fread(&RZXData.SnapshotExtension, sizeof(char), 4, fp);
-				fread(&RZXData.SnapshotLength, sizeof(uint32_t), 1, fp);
+				inputBuffer.Read(rzxData.SnapshotExtension);
+				inputBuffer.Read(rzxData.SnapshotLength);
 
 				uint32_t snapshotDataLength = blockLength - 17;
 				uint8_t* snapshotData = new uint8_t[snapshotDataLength];
-				fread(snapshotData, snapshotDataLength, 1, fp);
+				inputBuffer.ReadBytes(snapshotData, snapshotDataLength);
 
 				if (bExternalSnapshot)
 				{
@@ -164,15 +167,17 @@ ERZXError FRZXLoader::ReadBlock(FILE* fp, bool bTestIRB)
 				{
 					if (bCompressed)
 					{
-						uint8_t* decompressedData = new uint8_t[RZXData.SnapshotLength];
-						unsigned long nDataSize = RZXData.SnapshotLength;
+						uint8_t* decompressedData = new uint8_t[rzxData.SnapshotLength];
+						unsigned long nDataSize = rzxData.SnapshotLength;
 						// Decompress
 						LOGINFO("RZXLoader: Compressed snapshot");
 						uncompress(decompressedData, &nDataSize, snapshotData, snapshotDataLength);
+						delete[] snapshotData;
+						rzxData.SnapshotData = decompressedData;
 					}
 					else
 					{
-						RZXData.SnapshotData = snapshotData;
+						rzxData.SnapshotData = snapshotData;
 					}
 				}
 
@@ -183,17 +188,46 @@ ERZXError FRZXLoader::ReadBlock(FILE* fp, bool bTestIRB)
 			{
 				LOGINFO("RZXLoader: Input Recording Block");
 
-				FRZXInputRecordingBlock& irb = RZXData.InputRecordingBlocks.emplace_back();
+				FRZXInputRecordingBlock& irb = rzxData.InputRecordingBlock;
 
-				fread(&irb.NoFrames, sizeof(uint32_t), 1, fp);
+				inputBuffer.Read(irb.NoFrames);
 				uint8_t reserved;
-				fread(&reserved, sizeof(uint8_t), 1, fp);
-				fread(&irb.TStateCounterAtBeginning, sizeof(uint32_t), 1, fp);
+				inputBuffer.Read(reserved);
+				inputBuffer.Read(irb.TStateCounterAtBeginning);
 				uint32_t irbFlags = 0;
-				fread(&irbFlags, sizeof(uint32_t), 1, fp);
+				inputBuffer.Read(irbFlags);
 
 				const bool bProtected = !!(irbFlags & 0x1);
 				const bool bCompressed = !!(irbFlags & 0x2);
+
+				if (bCompressed)
+				{
+					const uint32_t compDataSize = blockLength - 18;
+					uint8_t* pCompData = new uint8_t[compDataSize];
+					inputBuffer.ReadBytes(pCompData, compDataSize);
+					unsigned long nDataSize = compDataSize * 4;
+					uint8_t* pDecompBuffer = new uint8_t[nDataSize];
+
+					uncompress(pDecompBuffer, &nDataSize, pCompData, compDataSize);
+
+					// TODO: process data
+					FMemoryBuffer framesBuffer;
+					framesBuffer.Init(pDecompBuffer, nDataSize);
+
+					for (int frameNo = 0; frameNo < irb.NoFrames; frameNo++)
+					{
+						FRZXInputRecordingBlockFrame& frame = irb.Frames.emplace_back();
+
+						framesBuffer.Read(frame.FetchCounter);
+						framesBuffer.Read(frame.NoIOPortReads);
+
+						if (frame.NoIOPortReads > 0)
+						{
+							frame.PortReadValues = new uint8_t[frame.NoIOPortReads];
+							framesBuffer.ReadBytes(frame.PortReadValues, frame.NoIOPortReads);
+						}
+					}
+				}
 			}
 			break;
 
@@ -208,37 +242,27 @@ ERZXError FRZXLoader::ReadBlock(FILE* fp, bool bTestIRB)
 }
 
 
-bool FRZXLoader::Load(const char* fName)
+bool FRZXLoader::Load(const char* fName, FRZXRZXData& rzxData)
 {
-	FILE* fp = fopen(fName, "rb");
-	if (fp == nullptr)
+	FMemoryBuffer inputBuffer;
+	if (inputBuffer.LoadFromFile(fName) == false)
 		return false;
 
 	// load & check signature
 	char signature[4];
-	fread(signature, 1, 4, fp);
+	inputBuffer.ReadBytes(signature, 4);
 	if (strncmp(signature, "RZX!", 4) != 0)
 	{
-		fclose(fp);
 		return false;
 	}
 
 	// get version number
-	uint8_t	verMajor = 0;
-	uint8_t	verMinor = 0;
-	fread(&verMajor, sizeof(uint8_t), 1, fp);
-	fread(&verMinor, sizeof(uint8_t), 1, fp);
+	uint8_t	verMajor = inputBuffer.Read<uint8_t>();
+	uint8_t	verMinor = inputBuffer.Read<uint8_t>();
 
 	// flags
-	uint32_t	flags;
-	fread(&flags, sizeof(uint32_t), 1, fp);
-
-	while (ReadBlock(fp, true) == ERZXError::Ok)
-	{
-
-	}
-
-	fclose(fp);
+	uint32_t	flags = inputBuffer.Read<uint32_t>();
+	ReadBlock(inputBuffer, rzxData);
 
 	return true;
 }
@@ -256,8 +280,9 @@ bool	FRZXManager::Init(FSpectrumEmu* pEmu)
 bool FRZXManager::Load(const char* fName)
 {
 	FRZXLoader	loader;
+	FRZXRZXData		rzxData;
 
-	loader.Load(fName);
+	loader.Load(fName, rzxData);
 
     return true;
 }
