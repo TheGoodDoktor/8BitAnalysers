@@ -56,7 +56,7 @@ void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
 
-#define ENABLE_RZX 1
+#define ENABLE_RZX 0
 #define SAVE_ROM_JSON 0
 
 #define ENABLE_CAPTURES 0
@@ -455,9 +455,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		}
 	}
 
-	// Memory gets remapped here
-	//pins = OldTickCB(num, pins, OldTickUserData);
-	
 	// Handle remapping
 	if (pins & Z80_IORQ)
 	{
@@ -485,7 +482,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			}
 		}
 	}
-
 
 	if (pins & Z80_INT)	// have we had a vblank interrupt?
 	{
@@ -1425,8 +1421,8 @@ void FSpectrumEmu::Tick()
 #else
 		if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{
-			if(RZXFetchesRemaining == 0)
-				RZXFetchesRemaining = RZXManager.Update();
+			if (RZXFetchesRemaining <= 0)
+				RZXFetchesRemaining += RZXManager.Update();
 			const uint32_t fetchesProcessed = ZXExeEmu_UseFetchCount(&ZXEmuState, RZXFetchesRemaining);
 			RZXFetchesRemaining -= fetchesProcessed;
 		}

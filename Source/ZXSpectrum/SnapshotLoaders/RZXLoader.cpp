@@ -317,9 +317,9 @@ uint32_t FRZXManager::Update(void)
 	if (FrameNo != -1)
 	{
 		FRZXInputRecordingBlockFrame& oldFrame = pData->InputRecordingBlock.Frames[FrameNo];
-		if (oldFrame.NoIOPortReads != InputCount)
+		if (oldFrame.NoIOPortReads != NoInputAttempts)
 		{
-			LOGINFO("FRZXManager : Read %d input, old frame had %d inputs", InputCount, oldFrame.NoIOPortReads);
+			LOGINFO("FRZXManager : %d input attempts, old frame had %d inputs", NoInputAttempts, oldFrame.NoIOPortReads);
 		}
 	}
 
@@ -328,19 +328,27 @@ uint32_t FRZXManager::Update(void)
 		return 0;	// we've reached the end
 
 	FRZXInputRecordingBlockFrame& frame = pData->InputRecordingBlock.Frames[FrameNo];
+
+	// update if not a repeating stream
+	if (frame.NoIOPortReads != 0xffff)
+	{
+		NoPortVals = frame.NoIOPortReads;
+		PortVals = frame.PortReadValues;
+	}
 	
 	InputCount = 0;
+	NoInputAttempts = 0;
     return frame.FetchCounter;
 }
 
 bool	FRZXManager::GetInput(uint8_t& outVal)
 {
-	FRZXInputRecordingBlockFrame& frame = pData->InputRecordingBlock.Frames[FrameNo];
-
-	if (InputCount >= frame.NoIOPortReads)
+	NoInputAttempts++;
+	if (NoInputAttempts > NoPortVals)
 		return false;
 
-	outVal = frame.PortReadValues[InputCount];
+	assert(PortVals != nullptr);
+	outVal = PortVals[InputCount];
 	InputCount++;
 
     return true;

@@ -32,6 +32,12 @@ private:
 	int				FrameNo = 0;
 	int				InputCount = 0;
 
+	int				NoPortVals = 0;
+	uint8_t*		PortVals = nullptr;
+
+	// debugg
+	int				NoInputAttempts = 0;
+
 	FRZXData*	pData = nullptr;
 };
 
