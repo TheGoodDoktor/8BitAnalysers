@@ -82,3 +82,62 @@ uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds)
 	kbd_update(&sys->kbd, micro_seconds);
 	return num_ticks;
 }
+
+uint32_t clk_ticks_to_us(uint64_t freq_hz, uint32_t ticks) 
+{
+	return (uint32_t)((ticks * 1000000) / freq_hz);
+}
+
+uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches)
+{
+	CHIPS_ASSERT(sys && sys->valid);
+	uint64_t pins = sys->pins;
+	uint32_t fetchCount = 0;
+	uint32_t tickCount = 0;
+
+	if (sys->debug.callback.func == NULL)
+	{
+		// run without debug hook
+		while(fetchCount < noFetches)
+		{
+			pins = _zx_tick(sys, pins);
+			pins = FloatingBusTick(sys, pins);
+			if (z80_opdone(&sys->cpu))
+			{
+				const uint16_t pc = pins & 0xffff;
+				const uint8_t opcode = sys->cpu.opcode;// ReadByte(pc);
+				if (opcode == 0xED || opcode == 0xCB)
+					fetchCount++;
+
+				fetchCount++;
+			}
+			tickCount++;
+		}
+	}
+	else
+	{
+		// run with debug hook
+		//for (uint32_t tick = 0; (tick < num_ticks) && !(*sys->debug.stopped); tick++)
+		while (fetchCount < noFetches && !(*sys->debug.stopped))
+		{
+			pins = _zx_tick(sys, pins);
+			pins = FloatingBusTick(sys, pins);
+			sys->debug.callback.func(sys->debug.callback.user_data, pins);
+			if (z80_opdone(&sys->cpu))
+			{
+				const uint16_t pc = pins & 0xffff;
+				const uint8_t opcode = sys->cpu.opcode;// ReadByte(pc);
+				if (opcode == 0xED || opcode == 0xCB)
+					fetchCount++;
+
+				fetchCount++;
+			}
+			tickCount++;
+		}
+	}
+
+	sys->pins = pins;
+	kbd_update(&sys->kbd, clk_ticks_to_us(sys->freq_hz, tickCount));
+
+	return fetchCount;
+}

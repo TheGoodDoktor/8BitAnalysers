@@ -1423,7 +1423,17 @@ void FSpectrumEmu::Tick()
 		clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
 		kbd_update(&ZXEmuState.kbd);
 #else
-		ZXExeEmu(&ZXEmuState, microSeconds);
+		if (RZXManager.GetReplayMode() == EReplayMode::Playback)
+		{
+			if(RZXFetchesRemaining == 0)
+				RZXFetchesRemaining = RZXManager.Update();
+			const uint32_t fetchesProcessed = ZXExeEmu_UseFetchCount(&ZXEmuState, RZXFetchesRemaining);
+			RZXFetchesRemaining -= fetchesProcessed;
+		}
+		else
+		{
+			ZXExeEmu(&ZXEmuState, microSeconds);
+		}
 #endif
 		/*if (RZXManager.GetReplayMode() == EReplayMode::Playback)
 		{

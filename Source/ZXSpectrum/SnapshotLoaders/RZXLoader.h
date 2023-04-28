@@ -11,11 +11,7 @@ enum class EReplayMode
 	Record
 };
 
-struct FRZXInfo
-{
-	std::string		Creator;
-
-};
+struct FRZXData;
 
 class FRZXManager
 {
@@ -24,7 +20,7 @@ public:
 	bool			Load(const char* fName);
 	void			DrawUI(void);
 	//void			RegisterInstructions(int num);
-	uint16_t		Update();
+	uint32_t		Update();
 	bool			GetInput(uint8_t& outVal);
 	EReplayMode		GetReplayMode() const { return ReplayMode; }
 	//bool			RZXCallbackHandler(int msg, void* param);
@@ -33,18 +29,10 @@ private:
 	FSpectrumEmu*	pZXEmulator = nullptr;
 	bool			Initialised = false;
 	EReplayMode		ReplayMode = EReplayMode::Off;
-	FRZXInfo		CurrentRZXInfo;
+	int				FrameNo = 0;
+	int				InputCount = 0;
 
-	int				IRBTStates = 0;
-	uint16_t		ICount = 0;
-	int				TickCounter = 0;
-	int				LastCounter = -1;
-	uint8_t			LastInput = 0;
-	int				InputsThisFrame = 0;
-	int				LastFrameInputVals = 0;
-	int				LastFrameInputCalls = 0;
-
-
+	FRZXData*	pData = nullptr;
 };
 
 //bool LoadRZXFile(FSpectrumEmu* pEmu, const char* fName);

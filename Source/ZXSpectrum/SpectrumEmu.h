@@ -210,6 +210,7 @@ public:
 	int				InstructionsTicks = 0;
 
 	FRZXManager		RZXManager;
+	uint32_t		RZXFetchesRemaining = 0;
 
 	bool		bShowImGuiDemo = false;
 	bool		bShowImPlotDemo = false;

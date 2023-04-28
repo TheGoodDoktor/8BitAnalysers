@@ -55,7 +55,7 @@ struct FRZXInputRecordingBlock
 	std::vector<FRZXInputRecordingBlockFrame>	Frames;
 };
 
-struct FRZXRZXData
+struct FRZXData
 {
 	uint8_t		VersionMajor = 0;
 	uint8_t		VersionMinor = 0;
@@ -83,14 +83,14 @@ struct FRZXRZXData
 class FRZXLoader
 {
 public:
-    bool    Load(const char* fName, FRZXRZXData& rzxData);
+    bool    Load(const char* fName, FRZXData& rzxData);
 private:
-	ERZXError    ReadBlock(FMemoryBuffer& inputBuffer, FRZXRZXData& rzxData);
+	ERZXError    ReadBlock(FMemoryBuffer& inputBuffer, FRZXData& rzxData);
 
 
 };
 
-ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXRZXData& rzxData)
+ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXData& rzxData)
 {
 	bool bDone = false;
 
@@ -209,12 +209,13 @@ ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXRZXData& rzxData
 					uint8_t* pDecompBuffer = new uint8_t[nDataSize];
 
 					uncompress(pDecompBuffer, &nDataSize, pCompData, compDataSize);
+					delete[] pCompData;
 
 					// TODO: process data
 					FMemoryBuffer framesBuffer;
 					framesBuffer.Init(pDecompBuffer, nDataSize);
 
-					for (int frameNo = 0; frameNo < irb.NoFrames; frameNo++)
+					for (uint32_t frameNo = 0; frameNo < irb.NoFrames; frameNo++)
 					{
 						FRZXInputRecordingBlockFrame& frame = irb.Frames.emplace_back();
 
@@ -227,6 +228,9 @@ ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXRZXData& rzxData
 							framesBuffer.ReadBytes(frame.PortReadValues, frame.NoIOPortReads);
 						}
 					}
+
+					delete[] pDecompBuffer;
+
 				}
 			}
 			break;
@@ -242,7 +246,7 @@ ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXRZXData& rzxData
 }
 
 
-bool FRZXLoader::Load(const char* fName, FRZXRZXData& rzxData)
+bool FRZXLoader::Load(const char* fName, FRZXData& rzxData)
 {
 	FMemoryBuffer inputBuffer;
 	if (inputBuffer.LoadFromFile(fName) == false)
@@ -264,6 +268,7 @@ bool FRZXLoader::Load(const char* fName, FRZXRZXData& rzxData)
 	uint32_t	flags = inputBuffer.Read<uint32_t>();
 	ReadBlock(inputBuffer, rzxData);
 
+
 	return true;
 }
 
@@ -272,7 +277,7 @@ bool FRZXLoader::Load(const char* fName, FRZXRZXData& rzxData)
 
 bool	FRZXManager::Init(FSpectrumEmu* pEmu) 
 { 
-    
+	pZXEmulator = pEmu;
     return true;
 }
 
@@ -280,11 +285,24 @@ bool	FRZXManager::Init(FSpectrumEmu* pEmu)
 bool FRZXManager::Load(const char* fName)
 {
 	FRZXLoader	loader;
-	FRZXRZXData		rzxData;
+	pData = new FRZXData;
 
-	loader.Load(fName, rzxData);
+	loader.Load(fName, *pData);
 
-    return true;
+	// Load Snapshot
+	bool bSnapLoaded = false;
+	if(strncmp(pData->SnapshotExtension,"Z80",3) == 0 || strncmp(pData->SnapshotExtension, "z80", 3) == 0)
+		bSnapLoaded = LoadZ80FromMemory(pZXEmulator, pData->SnapshotData, pData->SnapshotLength);
+	else if (strncmp(pData->SnapshotExtension, "SNA",3) == 0 || strncmp(pData->SnapshotExtension, "sna", 3) == 0)
+		bSnapLoaded = LoadSNAFromMemory(pZXEmulator, pData->SnapshotData, pData->SnapshotLength);
+
+	if (bSnapLoaded)
+	{
+		ReplayMode = EReplayMode::Playback;
+		FrameNo = -1;	// because if gets incremented at the start of the update
+		return true;
+	}
+    return false;
 }
 
 void FRZXManager::DrawUI(void)
@@ -292,14 +310,39 @@ void FRZXManager::DrawUI(void)
  
 }
 
-uint16_t FRZXManager::Update(void)
+// this should update the number of 
+uint32_t FRZXManager::Update(void)
 {
-    return 0;
+	// check if we've read all the IO reads
+	if (FrameNo != -1)
+	{
+		FRZXInputRecordingBlockFrame& oldFrame = pData->InputRecordingBlock.Frames[FrameNo];
+		if (oldFrame.NoIOPortReads != InputCount)
+		{
+			LOGINFO("FRZXManager : Read %d input, old frame had %d inputs", InputCount, oldFrame.NoIOPortReads);
+		}
+	}
+
+	FrameNo++;
+	if (FrameNo >= (int)pData->InputRecordingBlock.NoFrames)
+		return 0;	// we've reached the end
+
+	FRZXInputRecordingBlockFrame& frame = pData->InputRecordingBlock.Frames[FrameNo];
+	
+	InputCount = 0;
+    return frame.FetchCounter;
 }
 
 bool	FRZXManager::GetInput(uint8_t& outVal)
 {
-   
+	FRZXInputRecordingBlockFrame& frame = pData->InputRecordingBlock.Frames[FrameNo];
+
+	if (InputCount >= frame.NoIOPortReads)
+		return false;
+
+	outVal = frame.PortReadValues[InputCount];
+	InputCount++;
+
     return true;
 }
 

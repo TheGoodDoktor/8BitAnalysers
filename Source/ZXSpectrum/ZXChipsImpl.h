@@ -17,6 +17,7 @@ extern "C" {
 
 void ZXDecodeScreen(zx_t* pZX);
 uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds);
+uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches);
 
 #ifdef __cplusplus
 } // extern "C"
