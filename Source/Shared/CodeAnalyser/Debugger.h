@@ -95,6 +95,7 @@ public:
 	void	StepOver();
 	void	StepFrame();
 	void	StepScreenWrite();
+	void	SetPC(FAddressRef newPC) { PC = newPC; }
 
 	// Breakpoints
 	bool	AddExecBreakpoint(FAddressRef addr);

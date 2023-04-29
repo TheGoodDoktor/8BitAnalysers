@@ -6,16 +6,6 @@
 #include <cstdint>
 
 
-typedef void (*z80dasm_output_t)(char c, void* user_data);
-
-void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data);
-void DasmOutputU16(uint16_t val, z80dasm_output_t out_cb, void* user_data);
-void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data);
-
-
-#define _STR_U8(u8) DasmOutputU8((uint8_t)(u8),out_cb,user_data);
-#define _STR_U16(u16) DasmOutputU16((uint16_t)(u16),out_cb,user_data);
-#define _STR_D8(d8) DasmOutputD8((int8_t)(d8),out_cb,user_data);
 
 
 #include "GlobalConfig.h"
@@ -66,31 +56,6 @@ const char* kGlobalConfigFilename = "GlobalConfig.json";
 const char* kRomInfo48JsonFile = "RomInfo.json";
 const char* kRomInfo128JsonFile = "RomInfo128.json";
 const std::string kAppTitle = "Spectrum Analyser";
-
-/* output an unsigned 8-bit value as hex string */
-void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data) 
-{
-	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-	if(pNumberOutput)
-		pNumberOutput->OutputU8(val, out_cb);
-	
-}
-
-/* output an unsigned 16-bit value as hex string */
-void DasmOutputU16(uint16_t val, z80dasm_output_t out_cb, void* user_data) 
-{
-	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-	if (pNumberOutput)
-		pNumberOutput->OutputU16(val, out_cb);
-}
-
-/* output a signed 8-bit offset as hex string */
-void DasmOutputD8(int8_t val, z80dasm_output_t out_cb, void* user_data) 
-{
-	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-	if (pNumberOutput)
-		pNumberOutput->OutputD8(val, out_cb);
-}
 
 // Memory access functions
 #if 0
@@ -870,6 +835,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	// 
 	// decode whole screen
 	ZXDecodeScreen(&ZXEmuState);
+	CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(ZXEmuState.cpu.pc - 1));
 	CodeAnalysis.Debugger.Break();
 
 	CodeAnalysis.Debugger.RegisterNewStackPointer(ZXEmuState.cpu.sp, FAddressRef());

@@ -368,6 +368,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	switch (pDataInfo->DataType)
 	{
 	case EDataType::Byte:
+	case EDataType::InstructionOperand:
 	{
 		const uint8_t val = state.ReadByte(item.AddressRef);
 		ImGui::Text("db");

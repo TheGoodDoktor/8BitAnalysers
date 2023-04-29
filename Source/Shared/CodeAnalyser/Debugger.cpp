@@ -3,11 +3,10 @@
 #include <CodeAnalyser/CodeAnalyser.h>
 
 #include <chips/z80.h>
-#include <chips/util/z80dasm.h>
-#include <chips/util/m6502dasm.h>
 
 #include <imgui.h>
 #include "UI/CodeAnalyserUI.h"
+#include "Z80/Z80Disassembler.h"
 
 void FDebugger::Init(FCodeAnalysisState* pCA)
 {
@@ -275,45 +274,21 @@ static bool IsStepOverOpcode(ECPUType cpuType, uint8_t opcode)
     }
 }
 
-struct FStepDasmData
-{
-    std::vector<uint8_t> Data;
-    FCodeAnalysisState* pCodeAnalysis = nullptr;
-    uint16_t    PC;
-};
-
-static uint8_t StepOverDasmInCB(void* userData)
-{
-    FStepDasmData* pDasmData = (FStepDasmData*)userData;
-
-    // Get Opcode bytes
-    uint8_t opcodeByte = pDasmData->pCodeAnalysis->ReadByte(pDasmData->PC++);
-    pDasmData->Data.push_back(opcodeByte);
-    return opcodeByte;
-}
-
-static void StepOverDasmOutCB(char c, void* userData)
-{
-    FStepDasmData* pDasmData = (FStepDasmData*)userData;
-    // do we need to do anything here?
-}
-
 void	FDebugger::StepOver()
 {
 	//const ECPUType cpuType = pEmulator->CPUType;
 
+	uint8_t stepOpcode;
 	// TODO: this one's a bit more tricky!
-    FStepDasmData dasmData;
-    dasmData.PC = PC.Address;
-    dasmData.pCodeAnalysis = pCodeAnalysis;
+   
     bDebuggerStopped = false;
     uint16_t nextPC = 0;
 	if (CPUType == ECPUType::Z80)
-        nextPC = z80dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
-    else
-        nextPC = m6502dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
+		nextPC = Z80DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcode);
+    //else
+     //   nextPC = m6502dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
 
-    if (IsStepOverOpcode(CPUType, dasmData.Data[0]))
+    if (IsStepOverOpcode(CPUType, stepOpcode))
     {
         StepMode = EDebugStepMode::StepOver;
         StepOverPC = pCodeAnalysis->AddressRefFromPhysicalAddress(nextPC);

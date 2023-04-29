@@ -8,9 +8,6 @@
 
 #include <imgui.h>
 
-#include <util/z80dasm.h>
-#include <util/m6502dasm.h>
-
 #include "Util/Misc.h"
 #include "Util/GraphicsView.h"
 #include "UI/ImageViewer.h"
@@ -20,6 +17,7 @@
 #include <Debug/DebugLog.h>
 #include "Commands/CommandProcessor.h"
 #include "Commands/SetItemDataCommand.h"
+#include "Z80/Z80Disassembler.h"
 
 // memory bank code
 
@@ -480,86 +478,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 }
 
 
-class FAnalysisDasmState : public FDasmStateBase
-{
-public:
-	void OutputU8(uint8_t val, z80dasm_output_t outputCallback) override
-	{
-		if (outputCallback != nullptr)
-		{
-			ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
-			if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-				dispMode = ENumberDisplayMode::Decimal;
-			if (pCodeInfoItem->OperandType == EOperandType::Hex)
-				dispMode = ENumberDisplayMode::HexAitch;
-			if (pCodeInfoItem->OperandType == EOperandType::Binary)
-				dispMode = ENumberDisplayMode::Binary;
-
-			const char* outStr = NumStr(val, dispMode);
-			for (int i = 0; i < strlen(outStr); i++)
-				outputCallback(outStr[i], this);
-		}
-	}
-
-	void OutputU16(uint16_t val, z80dasm_output_t outputCallback) override
-	{
-		if (outputCallback)
-		{
-			ENumberDisplayMode dispMode = GetNumberDisplayMode();
-
-			if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-				dispMode = ENumberDisplayMode::Decimal;
-			if (pCodeInfoItem->OperandType == EOperandType::Hex)
-				dispMode = ENumberDisplayMode::HexAitch;
-			if (pCodeInfoItem->OperandType == EOperandType::Binary)
-				dispMode = ENumberDisplayMode::Binary;
-
-			const char* outStr = NumStr(val, dispMode);
-			for (int i = 0; i < strlen(outStr); i++)
-				outputCallback(outStr[i], this);
-		}
-	}
-
-	void OutputD8(int8_t val, z80dasm_output_t outputCallback) override
-	{
-		if (outputCallback)
-		{
-			if (val < 0)
-			{
-				outputCallback('-', this);
-				val = -val;
-			}
-			else
-			{
-				outputCallback('+', this);
-			}
-			const char* outStr = NumStr((uint8_t)val);
-			for (int i = 0; i < strlen(outStr); i++)
-				outputCallback(outStr[i], this);
-		}
-	}
-
-	FCodeInfo* pCodeInfoItem = nullptr;
-};
-
-
-/* disassembler callback to fetch the next instruction byte */
-static uint8_t AnalysisDasmInputCB(void* pUserData)
-{
-	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
-
-	return pDasmState->CodeAnalysisState->ReadByte( pDasmState->CurrentAddress++);
-}
-
-/* disassembler callback to output a character */
-static void AnalysisOutputCB(char c, void* pUserData)
-{
-	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
-
-	// add character to string
-	pDasmState->Text += c;
-}
 
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
@@ -567,18 +486,9 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	if (pCodeInfo == nullptr)	// code info could have been cleared
 		return;
 
-	FAnalysisDasmState dasmState;
-	dasmState.pCodeInfoItem = pCodeInfo;
-	dasmState.CodeAnalysisState = &state;
-	dasmState.CurrentAddress = pc;
-	SetNumberOutput(&dasmState);
-	if(state.CPUInterface->CPUType == ECPUType::Z80)
-		z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
-	else if(state.CPUInterface->CPUType == ECPUType::M6502)
-		m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
 
-	assert(pCodeInfo != nullptr);
-	pCodeInfo->Text = dasmState.Text;
 	SetNumberOutput(nullptr);
 }
 
@@ -630,19 +540,13 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	}
 
 	// generate disassembly
-	FAnalysisDasmState dasmState;
-	dasmState.pCodeInfoItem = pCodeInfo;
-	dasmState.CodeAnalysisState = &state;
-	dasmState.CurrentAddress = pc;
-	SetNumberOutput(&dasmState);	// not particularly happy with this - pointer to stack held globally
 	uint16_t newPC = pc;
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		newPC = z80dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		newPC = m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
+		newPC = Z80DisassembleCodeInfoItem(pc,state,pCodeInfo);
+	//else if (state.CPUInterface->CPUType == ECPUType::M6502)
+	//	newPC = m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
 
-	SetNumberOutput(nullptr);
 
 	state.SetCodeInfoForAddress(pc, pCodeInfo);	
 
@@ -654,7 +558,6 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		pOperandData->ByteSize = 1;
 		pOperandData->InstructionAddress = state.AddressRefFromPhysicalAddress(pc);
 	}
-	pCodeInfo->Text = dasmState.Text;
 	pCodeInfo->ByteSize = newPC - pc;
 
 	return newPC;
