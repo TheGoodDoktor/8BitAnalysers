@@ -487,20 +487,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	{
 	}
 
-	// RZX playback
-	if (RZXManager.GetReplayMode() == EReplayMode::Playback)
-	{
-		if ((pins & Z80_IORQ) && (pins & Z80_RD))
-		{
-			uint8_t inVal = 0;
-
-			if (RZXManager.GetInput(inVal))
-			{
-				Z80_SET_DATA(pins, (uint64_t)inVal);
-			}
-		}
-	}
-
 	InstructionsTicks++;
 
 	const bool bNewOp = z80_opdone(&ZXEmuState.cpu);
@@ -1379,6 +1365,13 @@ static void UpdateMemmap(ui_zx_t* ui)
 
 void StoreRegisters_Z80(FCodeAnalysisState& state);
 
+bool GetIOInputFunc(uint8_t* pInVal, void* pUserData)
+{
+	FSpectrumEmu* pEmu = (FSpectrumEmu*)pUserData;
+	return pEmu->RZXManager.GetInput(*pInVal);
+}
+
+
 void FSpectrumEmu::Tick()
 {
 	FDebugger& debugger = CodeAnalysis.Debugger;
@@ -1423,7 +1416,7 @@ void FSpectrumEmu::Tick()
 		{
 			if (RZXFetchesRemaining <= 0)
 				RZXFetchesRemaining += RZXManager.Update();
-			const uint32_t fetchesProcessed = ZXExeEmu_UseFetchCount(&ZXEmuState, RZXFetchesRemaining);
+			const uint32_t fetchesProcessed = ZXExeEmu_UseFetchCount(&ZXEmuState, RZXFetchesRemaining, GetIOInputFunc, this);
 			RZXFetchesRemaining -= fetchesProcessed;
 		}
 		else

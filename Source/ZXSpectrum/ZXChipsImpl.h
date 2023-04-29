@@ -14,10 +14,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+	
+typedef bool(*GetIOInput)(uint8_t* pInVal, void* pUserData);
 
 void ZXDecodeScreen(zx_t* pZX);
 uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds);
-uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches);
+uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches, GetIOInput ioInputCB, void* pUserData);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -53,6 +53,20 @@ static uint64_t FloatingBusTick(zx_t* sys, uint64_t pins)
 	return pins;
 }
 
+
+uint64_t ReadInputIOTick(uint64_t pins, GetIOInput ioInputCB, void* pUserData)
+{
+	if ((pins & Z80_IORQ) && (pins & Z80_RD))
+	{
+		uint8_t inVal = 0;
+
+		if (ioInputCB(&inVal,pUserData))
+		{
+			Z80_SET_DATA(pins, (uint64_t)inVal);
+		}
+	}
+}
+
 uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds) 
 {
 	CHIPS_ASSERT(sys && sys->valid);
@@ -88,7 +102,7 @@ uint32_t clk_ticks_to_us(uint64_t freq_hz, uint32_t ticks)
 	return (uint32_t)((ticks * 1000000) / freq_hz);
 }
 
-uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches)
+uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches, GetIOInput ioInputCB, void* pUserData)
 {
 	CHIPS_ASSERT(sys && sys->valid);
 	uint64_t pins = sys->pins;
@@ -102,6 +116,9 @@ uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches)
 		{
 			pins = _zx_tick(sys, pins);
 			pins = FloatingBusTick(sys, pins);
+			if (ioInputCB)
+				pins = ReadInputIOTick(pins, ioInputCB, pUserData);
+
 			if (z80_opdone(&sys->cpu))
 			{
 				const uint16_t pc = pins & 0xffff;
@@ -122,6 +139,8 @@ uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches)
 		{
 			pins = _zx_tick(sys, pins);
 			pins = FloatingBusTick(sys, pins);
+			if (ioInputCB)
+				pins = ReadInputIOTick(pins, ioInputCB, pUserData);
 			sys->debug.callback.func(sys->debug.callback.user_data, pins);
 			if (z80_opdone(&sys->cpu))
 			{
