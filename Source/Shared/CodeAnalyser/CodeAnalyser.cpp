@@ -18,6 +18,7 @@
 #include "Commands/CommandProcessor.h"
 #include "Commands/SetItemDataCommand.h"
 #include "Z80/Z80Disassembler.h"
+#include "6502/M6502Disassembler.h"
 
 // memory bank code
 
@@ -488,7 +489,8 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
-
+	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+		M6502DisassembleCodeInfoItem(pc, state, pCodeInfo);
 }
 
 // This assumes that the address passed in is mapped to physical memory
@@ -543,9 +545,8 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		newPC = Z80DisassembleCodeInfoItem(pc,state,pCodeInfo);
-	//else if (state.CPUInterface->CPUType == ECPUType::M6502)
-	//	newPC = m6502dasm_op(pc, AnalysisDasmInputCB, AnalysisOutputCB, &dasmState);
-
+	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+		newPC = M6502DisassembleCodeInfoItem(pc, state, pCodeInfo);
 
 	state.SetCodeInfoForAddress(pc, pCodeInfo);	
 

@@ -7,6 +7,7 @@
 #include <imgui.h>
 #include "UI/CodeAnalyserUI.h"
 #include "Z80/Z80Disassembler.h"
+#include "6502/M6502Disassembler.h"
 
 void FDebugger::Init(FCodeAnalysisState* pCA)
 {
@@ -285,8 +286,8 @@ void	FDebugger::StepOver()
     uint16_t nextPC = 0;
 	if (CPUType == ECPUType::Z80)
 		nextPC = Z80DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcode);
-    //else
-     //   nextPC = m6502dasm_op(PC.Address, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
+    else if (CPUType == ECPUType::M6502)
+		nextPC = M6502DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcode);
 
     if (IsStepOverOpcode(CPUType, stepOpcode))
     {
