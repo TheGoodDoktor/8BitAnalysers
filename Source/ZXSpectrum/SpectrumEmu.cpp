@@ -1351,7 +1351,7 @@ void FSpectrumEmu::Tick()
 		const uint32_t microSeconds = std::max(static_cast<uint32_t>(frameTime), uint32_t(1));
 
 		// TODO: Start frame method in analyser
-		CodeAnalysis.Debugger.ResetFrameTrace();
+		CodeAnalysis.Debugger.StartFrame();
 		StoreRegisters_Z80(CodeAnalysis);
 #if ENABLE_CAPTURES
 		const uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);

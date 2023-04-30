@@ -516,7 +516,8 @@ void FDebugger::DrawTrace(void)
 
 		if (FrameTraceItemIndex > 0)
 		{
-			viewState.GoToAddress(FrameTrace[FrameTraceItemIndex - 1]);
+			FrameTraceItemIndex--;
+			viewState.GoToAddress(FrameTrace[FrameTraceItemIndex]);
 		}
 	}
 	ImGui::SameLine();
@@ -529,7 +530,8 @@ void FDebugger::DrawTrace(void)
 
 		if (FrameTraceItemIndex < FrameTrace.size() - 1)
 		{
-			viewState.GoToAddress(FrameTrace[FrameTraceItemIndex + 1]);
+			FrameTraceItemIndex++;
+			viewState.GoToAddress(FrameTrace[FrameTraceItemIndex]);
 		}
 	}
 
