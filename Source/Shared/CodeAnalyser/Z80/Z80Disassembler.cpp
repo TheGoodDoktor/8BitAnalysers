@@ -462,6 +462,39 @@ uint16_t z80dasm_op(uint16_t pc, z80dasm_input_t in_cb, z80dasm_output_t out_cb,
     return pc;
 }
 
+// END CHIPS
+
+// These functions were added to support the 8bit Analysers
+
+// number output abstraction
+
+class IDasmNumberOutput
+{
+public:
+
+    virtual void OutputU8(uint8_t val, z80dasm_output_t out_cb) = 0;
+    virtual void OutputU16(uint16_t val, z80dasm_output_t out_cb) = 0;
+    virtual void OutputD8(int8_t val, z80dasm_output_t out_cb) = 0;
+};
+
+class FDasmStateBase : public IDasmNumberOutput
+{
+public:
+    FCodeAnalysisState* CodeAnalysisState;
+    uint16_t				CurrentAddress;
+    std::string				Text;
+};
+
+IDasmNumberOutput* g_pNumberOutputObj = nullptr;
+IDasmNumberOutput* GetNumberOutput()
+{
+    return g_pNumberOutputObj;
+}
+
+void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj)
+{
+    g_pNumberOutputObj = pNumberOutputObj;
+}
 
 // output an unsigned 8-bit value as hex string 
 void DasmOutputU8(uint8_t val, z80dasm_output_t out_cb, void* user_data)
@@ -613,7 +646,116 @@ uint16_t Z80DisassembleGetNextPC(uint16_t pc, FCodeAnalysisState& state, uint8_t
     FStepDasmData dasmData;
     dasmData.PC = pc;
     dasmData.pCodeAnalysis = &state;
-    const uint16_t nextPC = z80dasm_op(pc, StepOverDasmInCB, StepOverDasmOutCB, &dasmData);
+    const uint16_t nextPC = z80dasm_op(pc, StepOverDasmInCB, nullptr, &dasmData);
     opcode = dasmData.Data[0];
     return nextPC;
+}
+
+
+class FExportDasmState : public FDasmStateBase
+{
+public:
+    void OutputU8(uint8_t val, z80dasm_output_t outputCallback) override
+    {
+        if (outputCallback != nullptr)
+        {
+            ENumberDisplayMode dispMode = GetNumberDisplayMode();
+
+            if (pCodeInfoItem->OperandType == EOperandType::Decimal)
+                dispMode = ENumberDisplayMode::Decimal;
+            if (pCodeInfoItem->OperandType == EOperandType::Hex)
+                dispMode = HexDisplayMode;
+            if (pCodeInfoItem->OperandType == EOperandType::Binary)
+                dispMode = ENumberDisplayMode::Binary;
+
+            const char* outStr = NumStr(val, dispMode);
+            for (int i = 0; i < strlen(outStr); i++)
+                outputCallback(outStr[i], this);
+        }
+    }
+
+    void OutputU16(uint16_t val, z80dasm_output_t outputCallback) override
+    {
+        if (outputCallback)
+        {
+            const bool bOperandIsAddress = (pCodeInfoItem->OperandType == EOperandType::JumpAddress || pCodeInfoItem->OperandType == EOperandType::Pointer);
+            const FLabelInfo* pLabel = bOperandIsAddress ? CodeAnalysisState->GetLabelForAddress(val) : nullptr;
+            if (pLabel != nullptr)
+            {
+                for (int i = 0; i < pLabel->Name.size(); i++)
+                {
+                    outputCallback(pLabel->Name[i], this);
+                }
+            }
+            else
+            {
+                ENumberDisplayMode dispMode = GetNumberDisplayMode();
+
+                if (pCodeInfoItem->OperandType == EOperandType::Decimal)
+                    dispMode = ENumberDisplayMode::Decimal;
+                if (pCodeInfoItem->OperandType == EOperandType::Hex)
+                    dispMode = HexDisplayMode;
+                if (pCodeInfoItem->OperandType == EOperandType::Binary)
+                    dispMode = ENumberDisplayMode::Binary;
+
+                const char* outStr = NumStr(val, dispMode);
+                for (int i = 0; i < strlen(outStr); i++)
+                    outputCallback(outStr[i], this);
+            }
+        }
+    }
+
+    void OutputD8(int8_t val, z80dasm_output_t outputCallback) override
+    {
+        if (outputCallback)
+        {
+            if (val < 0)
+            {
+                outputCallback('-', this);
+                val = -val;
+            }
+            else
+            {
+                outputCallback('+', this);
+            }
+            const char* outStr = NumStr((uint8_t)val);
+            for (int i = 0; i < strlen(outStr); i++)
+                outputCallback(outStr[i], this);
+        }
+    }
+
+    FCodeInfo* pCodeInfoItem = nullptr;
+    ENumberDisplayMode	HexDisplayMode = ENumberDisplayMode::HexDollar;
+};
+
+
+/* disassembler callback to fetch the next instruction byte */
+static uint8_t ExportDasmInputCB(void* pUserData)
+{
+    FExportDasmState* pDasmState = (FExportDasmState*)pUserData;
+
+    return pDasmState->CodeAnalysisState->CPUInterface->ReadByte(pDasmState->CurrentAddress++);
+}
+
+/* disassembler callback to output a character */
+static void ExportOutputCB(char c, void* pUserData)
+{
+    FExportDasmState* pDasmState = (FExportDasmState*)pUserData;
+
+    // add character to string
+    pDasmState->Text += c;
+}
+
+std::string Z80GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode)
+{
+    FExportDasmState dasmState;
+    dasmState.CodeAnalysisState = &state;
+    dasmState.CurrentAddress = pc;
+    dasmState.HexDisplayMode = hexMode;
+    dasmState.pCodeInfoItem = state.GetCodeInfoForAddress(pc);
+    SetNumberOutput(&dasmState);
+    z80dasm_op(pc, ExportDasmInputCB, ExportOutputCB, &dasmState);
+    SetNumberOutput(nullptr);
+
+    return dasmState.Text;
 }

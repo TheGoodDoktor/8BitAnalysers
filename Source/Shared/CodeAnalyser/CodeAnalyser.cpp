@@ -489,7 +489,6 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
 
-	SetNumberOutput(nullptr);
 }
 
 // This assumes that the address passed in is mapped to physical memory
@@ -1093,20 +1092,6 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 			dataAddress++;
 		}
 	}
-}
-
-
-
-// number output abstraction
-IDasmNumberOutput* g_pNumberOutputObj = nullptr;
-IDasmNumberOutput* GetNumberOutput()
-{
-	return g_pNumberOutputObj;
-}
-
-void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj)
-{
-	g_pNumberOutputObj = pNumberOutputObj;
 }
 
 // machine state

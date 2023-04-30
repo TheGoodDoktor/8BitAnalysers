@@ -40,32 +40,12 @@ public:
 	ECPUType	CPUType = ECPUType::Unknown;
 };
 
-typedef void (*z80dasm_output_t)(char c, void* user_data);
-
-class IDasmNumberOutput
-{
-public:
-
-	virtual void OutputU8(uint8_t val, z80dasm_output_t out_cb) = 0;
-	virtual void OutputU16(uint16_t val, z80dasm_output_t out_cb) = 0;
-	virtual void OutputD8(int8_t val, z80dasm_output_t out_cb) = 0;
-};
-
-class FDasmStateBase : public IDasmNumberOutput
-{
-public:
-	FCodeAnalysisState*		CodeAnalysisState;
-	uint16_t				CurrentAddress;
-	std::string				Text;
-};
-
 struct FMemoryAccess
 {
 	FAddressRef	Address;
 	uint8_t		Value;
 	FAddressRef	PC;
 };
-
 
 enum class EKey
 {
@@ -568,10 +548,6 @@ void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item);
 void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText);
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options);
-
-// number output abstraction
-IDasmNumberOutput* GetNumberOutput();
-void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj);
 
 // machine state
 FMachineState* AllocateMachineState(FCodeAnalysisState& state);
