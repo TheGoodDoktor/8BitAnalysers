@@ -705,7 +705,13 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 					state.SetCodeInfoForAddress(addr + i, nullptr);
 			}
 
-			addr += pCodeInfo->ByteSize;
+			if (pCodeInfo->ByteSize == 0)
+			{
+				state.SetCodeInfoForAddress(addr, nullptr);
+				addr++;
+			}
+			else
+				addr += pCodeInfo->ByteSize;
 		}
 		else
 		{

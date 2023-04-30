@@ -201,6 +201,11 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	return trapId;
 }
 
+void FDebugger::StartFrame() 
+{ 
+	FrameTrace.clear(); 
+}
+
 bool FDebugger::FrameTick(void)
 {
 	// handle frame stepping
@@ -213,16 +218,65 @@ bool FDebugger::FrameTick(void)
 	return bDebuggerStopped;
 }
 
-// TODO: Load state - breakpoints, watches etc.
+static const uint32_t kVersionNo = 1;
+
+// Load state - breakpoints, watches etc.
 void	FDebugger::LoadFromFile(FILE* fp)
 {
+	uint32_t versionNo = 0;
+	fread(&versionNo, sizeof(uint32_t), 1, fp);
 
+	// watches
+	Watches.clear();
+	uint32_t num = 0;
+	fread(&num, sizeof(uint32_t), 1, fp);
+
+	for (int i = 0; i < (int)num; i++)
+	{
+		FWatch& watch = Watches.emplace_back();
+		fread(&watch.Val, sizeof(uint32_t), 1, fp);
+	}
+
+	// breakpoints
+	fread(&num, sizeof(uint32_t), 1, fp);
+	for (int i = 0; i < (int)num; i++)
+	{
+		FBreakpoint& bp = Breakpoints.emplace_back();
+		fread(&bp.Address.Val, sizeof(uint32_t), 1, fp);	// address
+		fread(&bp.bEnabled, sizeof(bp.bEnabled), 1, fp);	// enabled
+		fread(&bp.Type, sizeof(bp.Type), 1, fp);	// Type
+		fread(&bp.Size, sizeof(bp.Size), 1, fp);	// Size
+		fread(&bp.Val, sizeof(bp.Val), 1, fp);		// Val
+	}
 }
 
-// TODO: Save state - breakpoints, watches etc.
+// Save state - breakpoints, watches etc.
 void	FDebugger::SaveToFile(FILE* fp)
 {
+	fwrite(&kVersionNo, sizeof(uint32_t), 1, fp);
 
+	// watches
+	uint32_t num = (uint32_t)Watches.size();
+	fwrite(&num, sizeof(uint32_t), 1, fp);
+
+	for (int i = 0; i < (int)num; i++)
+	{
+		const FWatch& watch = Watches[i];
+		fwrite(&watch.Val, sizeof(uint32_t), 1, fp);
+	}
+
+	// breakpoints
+	num = (uint32_t)Breakpoints.size();
+	fwrite(&num, sizeof(uint32_t), 1, fp);
+	for (int i = 0; i < (int)num; i++)
+	{
+		const FBreakpoint& bp = Breakpoints[i];
+		fwrite(&bp.Address.Val, sizeof(uint32_t), 1, fp);	// address
+		fwrite(&bp.bEnabled, sizeof(bp.bEnabled), 1, fp);	// enabled
+		fwrite(&bp.Type, sizeof(bp.Type), 1, fp);	// Type
+		fwrite(&bp.Size, sizeof(bp.Size), 1, fp);	// Size
+		fwrite(&bp.Val, sizeof(bp.Val), 1, fp);		// Val
+	}
 }
 
 
@@ -435,6 +489,17 @@ bool FDebugger::IsAddressOnStack(uint16_t address)
 
 // UI Code
 
+int FDebugger::GetFrameTraceItemIndex(FAddressRef address)
+{
+	for (int i = 0; i < FrameTrace.size(); i++)
+	{
+		if (FrameTrace[i] == address)
+			return i;
+	}
+
+	return -1;
+}
+
 void FDebugger::DrawTrace(void)
 {
 	FCodeAnalysisState& state = *pCodeAnalysis;
@@ -442,17 +507,46 @@ void FDebugger::DrawTrace(void)
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)FrameTrace.size(), line_height);
 
-	while (clipper.Step())
+	if (ImGui::Button("Trace Back"))
 	{
-		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+		const FCodeAnalysisItem& cursorItem = viewState.GetCursorItem();
+
+		if (FrameTraceItemIndex == -1 || FrameTrace[FrameTraceItemIndex] != cursorItem.AddressRef)
+			FrameTraceItemIndex = GetFrameTraceItemIndex(cursorItem.AddressRef);
+
+		if (FrameTraceItemIndex > 0)
 		{
-			const FAddressRef codeAddress = FrameTrace[FrameTrace.size() - i - 1];
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(codeAddress);
-			DrawCodeAddress(state, viewState, codeAddress, false);	// draw current PC
-			//DrawCodeInfo(state, viewState, FCodeAnalysisItem(pCodeInfo, codeAddress));
+			viewState.GoToAddress(FrameTrace[FrameTraceItemIndex - 1]);
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Trace Forward"))
+	{
+		const FCodeAnalysisItem& cursorItem = viewState.GetCursorItem();
+
+		if (FrameTraceItemIndex == -1 || FrameTrace[FrameTraceItemIndex] != cursorItem.AddressRef)
+			FrameTraceItemIndex = GetFrameTraceItemIndex(cursorItem.AddressRef);
+
+		if (FrameTraceItemIndex < FrameTrace.size() - 1)
+		{
+			viewState.GoToAddress(FrameTrace[FrameTraceItemIndex + 1]);
 		}
 	}
 
+	if (ImGui::BeginChild("TraceListChild"))
+	{
+		while (clipper.Step())
+		{
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+			{
+				const FAddressRef codeAddress = FrameTrace[FrameTrace.size() - i - 1];
+				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(codeAddress);
+				DrawCodeAddress(state, viewState, codeAddress, false);	// draw current PC
+				//DrawCodeInfo(state, viewState, FCodeAnalysisItem(pCodeInfo, codeAddress));
+			}
+		}
+	}
+	ImGui::EndChild();
 }
 
 void FDebugger::DrawCallStack(void)
@@ -602,8 +696,8 @@ void FDebugger::DrawWatches(void)
 
 	for (const auto& watch : Watches)
 	{
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch.Address);
-		ImGui::PushID(watch.Address);
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch);
+		ImGui::PushID(watch.Val);
 		if (ImGui::Selectable("##watchselect", watch == SelectedWatch, 0))
 		{
 			SelectedWatch = watch;
@@ -616,7 +710,7 @@ void FDebugger::DrawWatches(void)
 			}
 			if (ImGui::Selectable("Toggle Breakpoint"))
 			{
-				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(SelectedWatch.Address);
+				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(SelectedWatch);
 				state.ToggleDataBreakpointAtAddress(SelectedWatch, pInfo->ByteSize);
 			}
 
@@ -663,6 +757,7 @@ void FDebugger::DrawBreakpoints(void)
 
 		for (auto& bp : Breakpoints)
 		{
+			ImGui::PushID(bp.Address.Val);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::Checkbox("##Enabled", &bp.bEnabled);
@@ -673,6 +768,7 @@ void FDebugger::DrawBreakpoints(void)
 			ImGui::Text("%s", GetBreakpointTypeText(bp.Type));
 			ImGui::TableSetColumnIndex(3);
 			ImGui::Text("%d", bp.Size);
+			ImGui::PopID();
 		}
 		ImGui::EndTable();
 	}

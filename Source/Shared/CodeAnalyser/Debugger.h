@@ -23,6 +23,7 @@ enum class EDebugStepMode
 	ScreenWrite
 };
 
+// only add to end otherwise you'll break the file format
 enum class EBreakpointType
 {
 	None,
@@ -83,6 +84,7 @@ public:
 	void	Init(FCodeAnalysisState* pCodeAnalysis);
 	void	CPUTick(uint64_t pins);
 	int		OnInstructionExecuted(uint64_t pins);
+	void	StartFrame();
 	bool	FrameTick(void);
 
 	void	LoadFromFile(FILE* fp);
@@ -109,7 +111,6 @@ public:
 	const std::vector<FWatch>& GetWatches() const { return Watches; }
 
 	// Frame Trace
-	void	ResetFrameTrace() { FrameTrace.clear(); }
 	const std::vector<FAddressRef>& GetFrameTrace() const { return FrameTrace; }
 
 	// Stack
@@ -133,6 +134,9 @@ public:
 	void	DrawBreakpoints(void);
 	void	DrawUI(void);
 private:
+	int		GetFrameTraceItemIndex(FAddressRef address);
+
+private:
 	FCodeAnalysisState*	pCodeAnalysis = nullptr;
 
 	ECPUType		CPUType = ECPUType::Unknown;
@@ -148,6 +152,7 @@ private:
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;
 	std::vector<FAddressRef>	FrameTrace;
+	int							FrameTraceItemIndex = -1;
 	std::vector<FCPUFunctionCall>	CallStack;
 
 	std::vector<FAddressRef>	StackSetLocations;
