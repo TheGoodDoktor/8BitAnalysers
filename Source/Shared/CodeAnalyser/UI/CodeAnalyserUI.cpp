@@ -332,6 +332,7 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef acces
 void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	const FCodeInfo* pCodeInfo = static_cast<const FCodeInfo*>(item.Item);
+	FDebugger& debugger = state.Debugger;
 
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
@@ -341,7 +342,8 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	ShowCodeAccessorActivity(state, item.AddressRef);
 
 	// show if breakpointed
-	if (state.IsAddressBreakpointed(item.AddressRef))
+	FBreakpoint* pBP = debugger.GetBreakpointForAddress(item.AddressRef);
+	if (pBP != nullptr)
 	{
 		const ImU32 bp_enabled_color = 0xFF0000FF;
 		const ImU32 bp_disabled_color = 0xFF000088;
@@ -351,8 +353,16 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		const float lh2 = (float)(int)(line_height / 2);
 		const ImVec2 mid(pos.x, pos.y + lh2);
 		
-		dl->AddCircleFilled(mid, 7, bp_enabled_color);
+		dl->AddCircleFilled(mid, 7, pBP->bEnabled ? bp_enabled_color : bp_disabled_color);
 		dl->AddCircle(mid, 7, brd_color);
+
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			const ImVec2 mousePos = ImGui::GetMousePos();
+			const ImVec2 dist(mousePos.x - mid.x, mousePos.y - mid.y);
+			if ((dist.x * dist.x + dist.y * dist.y) < (8 * 8))
+				pBP->bEnabled = !pBP->bEnabled;
+		}
 	}
 
 	if (state.GetMachineState(physAddress))

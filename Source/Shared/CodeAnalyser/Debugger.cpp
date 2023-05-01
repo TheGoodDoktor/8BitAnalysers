@@ -400,15 +400,21 @@ bool FDebugger::RemoveBreakpoint(FAddressRef addr)
 	return false;
 }
 
-
-bool FDebugger::IsAddressBreakpointed(FAddressRef addr) const
+const FBreakpoint* FDebugger::GetBreakpointForAddress(FAddressRef addr) const
 {
 	for (int i = 0; i < Breakpoints.size(); i++)
 	{
 		if (Breakpoints[i].Address == addr)
-			return true;
+			return &Breakpoints[i];
 	}
-	return false;
+
+	return nullptr;
+}
+
+
+bool FDebugger::IsAddressBreakpointed(FAddressRef addr) const
+{
+	return GetBreakpointForAddress(addr) != nullptr;
 }
 
 // Watches
