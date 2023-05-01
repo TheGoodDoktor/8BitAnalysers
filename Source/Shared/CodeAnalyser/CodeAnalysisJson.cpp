@@ -36,7 +36,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		bankJson["Id"] = bank.Id;
 		bankJson["Description"] = bank.Description;
 
-		bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
+		//bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
 		jsonGameData["Banks"].push_back(bankJson);
 
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
@@ -115,7 +115,9 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			{
 				if (bankJson.contains("Description"))
 					pBank->Description = bankJson["Description"];
-				pBank->PrimaryMappedPage = bankJson["PrimaryMappedPage"];
+				//if (bankJson.contains("Used"))
+				//	pBank-> = bankJson["Used"];
+				//pBank->PrimaryMappedPage = bankJson["PrimaryMappedPage"];
 			}
 		}
 	}

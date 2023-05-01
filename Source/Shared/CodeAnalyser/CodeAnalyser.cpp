@@ -83,25 +83,6 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 	}
 	bMemoryRemapped = true;
 
-	// enable breakpoints in the bank we're switching in
-	/*for (const auto& bp : pBank->BreakPoints)
-	{
-		const uint16_t addr = pBank->GetMappedAddress() + bp.Address;
-
-		switch (bp.Type)
-		{
-		case FCodeAnalysisBankBP::EType::Exe:
-			CPUInterface->SetExecBreakpointAtAddress(addr, true);
-			break;
-		case FCodeAnalysisBankBP::EType::Byte:
-			CPUInterface->SetDataBreakpointAtAddress(addr, 1, true);
-			break;
-		case FCodeAnalysisBankBP::EType::Word:
-			CPUInterface->SetDataBreakpointAtAddress(addr, 2, true);
-			break;
-		}
-	}*/
-
 	//RemappedBanks.push_back(bankId);
 	bCodeAnalysisDataDirty = true;
 
@@ -114,26 +95,6 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo)
 	if (pBank == nullptr || MappedBanks[startPageNo] != bankId)
 		return false;
 
-	/*
-	// disable breakpoints in the bank we're switching out
-	for (const auto& bp : pBank->BreakPoints)
-	{
-		const uint16_t addr = pBank->GetMappedAddress() + bp.Address;
-
-		switch (bp.Type)
-		{
-		case FCodeAnalysisBankBP::EType::Exe:
-			CPUInterface->SetExecBreakpointAtAddress(addr, false);
-			break;
-		case FCodeAnalysisBankBP::EType::Byte:
-			CPUInterface->SetDataBreakpointAtAddress(addr, 1, false);
-			break;
-		case FCodeAnalysisBankBP::EType::Word:
-			CPUInterface->SetDataBreakpointAtAddress(addr, 2, false);
-			break;
-		}
-	}
-	*/
 	for (int bankPage = 0; bankPage < pBank->NoPages; bankPage++)
 		MappedBanks[startPageNo + bankPage] = -1;
 
@@ -176,10 +137,17 @@ bool FCodeAnalysisState::IsAddressValid(FAddressRef addr) const
 
 bool FCodeAnalysisState::MapBankForAnalysis(FCodeAnalysisBank& bank)
 {
-	for(int i=0;i< kNoPagesInAddressSpace;i++)
+	for (int i = 0; i < kNoPagesInAddressSpace; i++)
+	{
+#ifdef _DEBUG
+		const FCodeAnalysisBank* pMappedBank = GetBank(MappedBanks[i]);
+		assert(pMappedBank->PrimaryMappedPage != -1);
+#endif
 		MappedBanksBackup[i] = MappedBanks[i];
+	}
 
 	const int startPageNo = bank.PrimaryMappedPage;
+	assert(startPageNo != -1);
 	for (int bankPageNo = 0; bankPageNo < bank.NoPages; bankPageNo++)
 	{
 		MappedBanks[startPageNo + bankPageNo] = bank.Id;
@@ -196,6 +164,7 @@ void FCodeAnalysisState::UnMapAnalysisBanks()
 	{
 		MappedBanks[i] = MappedBanksBackup[i];
 		const FCodeAnalysisBank* pMappedBank = GetBank(MappedBanks[i]);
+		assert(pMappedBank->PrimaryMappedPage != -1);
 		if (MappedMem[i] != nullptr)
 		{
 			const int mappedPage = i - pMappedBank->PrimaryMappedPage;
@@ -857,16 +826,17 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	// reset registered pages
 	for (FCodeAnalysisPage* pPage : GetRegisteredPages())
 	{
+		pPage->Reset();
 		//pPage->bUsed = false;
 
-		for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
+		/*for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 		{
 			pPage->Labels[addr] = nullptr;
 			pPage->CommentBlocks[addr] = nullptr;
 			pPage->CodeInfo[addr] = nullptr;
 			pPage->DataInfo[addr].Reset();
 			pPage->MachineState[addr] = nullptr;
-		}
+		}*/
 	}	
 
 	// clear mapped mem
@@ -887,7 +857,7 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	}
 
 	// reset banks
-	for (auto& bank : Banks)
+	for (FCodeAnalysisBank& bank : Banks)
 	{
 		bank.Description.clear();
 		bank.ItemList.clear();

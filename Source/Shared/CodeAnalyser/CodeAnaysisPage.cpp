@@ -107,30 +107,11 @@ void FCodeAnalysisPage::Reset(void)
 {
 	for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 	{
-		if (Labels[addr] != nullptr)
-		{
-			Labels[addr] = nullptr;
-		}
-
-		if (CodeInfo[addr] != nullptr)
-		{
-			FCodeInfo* pCodeInfo = CodeInfo[addr];
-			for(int i=0;i<pCodeInfo->ByteSize;i++)
-				CodeInfo[addr + i] = nullptr;
-			//delete pCodeInfo;
-		}
-
-		if (DataInfo[addr].ImageData != nullptr)
-		{
-			delete DataInfo[addr].ImageData;
-			DataInfo[addr].ImageData = nullptr;
-		}
-		
-		/*if (DataInfo[addr] != nullptr)
-		{
-			delete DataInfo[addr];
-			DataInfo[addr] = nullptr;
-		}*/
+		Labels[addr] = nullptr;
+		CommentBlocks[addr] = nullptr;
+		CodeInfo[addr] = nullptr;
+		DataInfo[addr].Reset();
+		MachineState[addr] = nullptr;
 	}
 
 	Initialise();
