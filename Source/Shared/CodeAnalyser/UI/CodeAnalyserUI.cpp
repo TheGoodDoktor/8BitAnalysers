@@ -1201,6 +1201,16 @@ void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& view
 	{
 		state.Debugger.StepScreenWrite();
 	}
+	ImGui::SameLine();
+	if (ImGui::Button("<<< Trace"))
+	{
+		state.Debugger.TraceBack(viewState);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Trace >>>"))
+	{
+		state.Debugger.TraceForward(viewState);
+	}
 	//ImGui::SameLine();
 	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }

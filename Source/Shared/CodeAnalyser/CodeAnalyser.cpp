@@ -917,6 +917,19 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	Debugger.Init(this);
 }
 
+void FCodeAnalysisState::OnFrameStart()
+{
+	Debugger.StartFrame();
+}
+
+void FCodeAnalysisState::OnFrameEnd()
+{
+	if (Debugger.FrameTick())
+	{
+		GetFocussedViewState().GoToAddress(CPUInterface->GetPC());
+	}
+}
+
 
 void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
 {

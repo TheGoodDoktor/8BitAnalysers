@@ -486,6 +486,37 @@ bool FDebugger::IsAddressOnStack(uint16_t address)
 	return address >= StackMin && address <= StackMax;
 }
 
+bool	FDebugger::TraceForward(FCodeAnalysisViewState& viewState)
+{
+	const FCodeAnalysisItem& cursorItem = viewState.GetCursorItem();
+
+	if (FrameTraceItemIndex == -1 || FrameTrace[FrameTraceItemIndex] != cursorItem.AddressRef)
+		FrameTraceItemIndex = GetFrameTraceItemIndex(cursorItem.AddressRef);
+
+	if (FrameTraceItemIndex >= 0 && FrameTraceItemIndex < FrameTrace.size() - 1)
+	{
+		FrameTraceItemIndex++;
+		viewState.GoToAddress(FrameTrace[FrameTraceItemIndex]);
+	}
+	return FrameTraceItemIndex != -1;
+}
+
+bool	FDebugger::TraceBack(FCodeAnalysisViewState& viewState)
+{
+	const FCodeAnalysisItem& cursorItem = viewState.GetCursorItem();
+
+	if (FrameTraceItemIndex == -1 || FrameTrace[FrameTraceItemIndex] != cursorItem.AddressRef)
+		FrameTraceItemIndex = GetFrameTraceItemIndex(cursorItem.AddressRef);
+
+	if (FrameTraceItemIndex > 0)
+	{
+		FrameTraceItemIndex--;
+		viewState.GoToAddress(FrameTrace[FrameTraceItemIndex]);
+	}
+
+	return FrameTraceItemIndex != -1;
+}
+
 
 // UI Code
 
@@ -509,30 +540,12 @@ void FDebugger::DrawTrace(void)
 
 	if (ImGui::Button("Trace Back"))
 	{
-		const FCodeAnalysisItem& cursorItem = viewState.GetCursorItem();
-
-		if (FrameTraceItemIndex == -1 || FrameTrace[FrameTraceItemIndex] != cursorItem.AddressRef)
-			FrameTraceItemIndex = GetFrameTraceItemIndex(cursorItem.AddressRef);
-
-		if (FrameTraceItemIndex > 0)
-		{
-			FrameTraceItemIndex--;
-			viewState.GoToAddress(FrameTrace[FrameTraceItemIndex]);
-		}
+		TraceBack(viewState);
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Trace Forward"))
 	{
-		const FCodeAnalysisItem& cursorItem = viewState.GetCursorItem();
-
-		if (FrameTraceItemIndex == -1 || FrameTrace[FrameTraceItemIndex] != cursorItem.AddressRef)
-			FrameTraceItemIndex = GetFrameTraceItemIndex(cursorItem.AddressRef);
-
-		if (FrameTraceItemIndex < FrameTrace.size() - 1)
-		{
-			FrameTraceItemIndex++;
-			viewState.GoToAddress(FrameTrace[FrameTraceItemIndex]);
-		}
+		TraceForward(viewState);
 	}
 
 	if (ImGui::BeginChild("TraceListChild"))

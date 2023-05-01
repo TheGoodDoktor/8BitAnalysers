@@ -8,6 +8,7 @@
 
 class FSpectrumEmu;
 class FCodeAnalysisState;
+struct FCodeAnalysisViewState;
 
 // TODO: figure out how to forward dec these
 //struct z80_t;
@@ -112,6 +113,8 @@ public:
 
 	// Frame Trace
 	const std::vector<FAddressRef>& GetFrameTrace() const { return FrameTrace; }
+	bool	TraceForward(FCodeAnalysisViewState& viewState);
+	bool	TraceBack(FCodeAnalysisViewState& viewState);
 
 	// Stack
 	void	RegisterNewStackPointer(uint16_t newSP, FAddressRef pc);

@@ -1350,8 +1350,7 @@ void FSpectrumEmu::Tick()
 		//const float frameTime = min(1000000.0f / 50, 32000.0f) * ExecSpeedScale;
 		const uint32_t microSeconds = std::max(static_cast<uint32_t>(frameTime), uint32_t(1));
 
-		// TODO: Start frame method in analyser
-		CodeAnalysis.Debugger.StartFrame();
+		CodeAnalysis.OnFrameStart();
 		StoreRegisters_Z80(CodeAnalysis);
 #if ENABLE_CAPTURES
 		const uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
@@ -1412,30 +1411,10 @@ void FSpectrumEmu::Tick()
 			clk_ticks_executed(&ZXEmuState.clk, ticksExecuted);
 			kbd_update(&ZXEmuState.kbd);
 		}*/
-
-		
-
 		FrameTraceViewer.CaptureFrame();
 		FrameScreenPixWrites.clear();
 		FrameScreenAttrWrites.clear();
-
-		if (debugger.FrameTick())
-		{
-			CodeAnalysis.GetFocussedViewState().GoToAddress(GetPC());
-		}
-
-		/*if (bStepToNextFrame)
-		{
-			_ui_dbg_break(&UIZX.dbg);
-			CodeAnalysis.GetFocussedViewState().GoToAddress(GetPC());
-			bStepToNextFrame = false;
-		}*/
-		
-		// on debug break send code analyser to address
-		/*else if (UIZX.dbg.dbg.z80->trap_id >= UI_DBG_STEP_TRAPID)
-		{
-			CodeAnalysis.GetFocussedViewState().GoToAddress({ CodeAnalysis.GetBankFromAddress(GetPC()), GetPC() });
-		}*/
+		CodeAnalysis.OnFrameEnd();
 	}
 
 	UpdateCharacterSets(CodeAnalysis);

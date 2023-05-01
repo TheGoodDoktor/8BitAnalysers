@@ -201,6 +201,8 @@ public:
 
 	FCodeAnalysisState();
 	void	Init(ICPUInterface* pCPUInterface);
+	void	OnFrameStart();
+	void	OnFrameEnd();
 
 	const ICPUInterface* GetCPUInterface() const { return CPUInterface; }
 
