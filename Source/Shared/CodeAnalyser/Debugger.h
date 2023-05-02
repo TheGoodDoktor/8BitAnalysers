@@ -6,6 +6,8 @@
 #include <chips/m6502.h>
 #include <vector>
 
+#include <stdio.h>
+
 class FSpectrumEmu;
 class FCodeAnalysisState;
 struct FCodeAnalysisViewState;
