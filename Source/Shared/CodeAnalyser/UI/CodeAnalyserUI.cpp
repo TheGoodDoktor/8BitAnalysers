@@ -213,7 +213,7 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	// draw SMC fixups differently
 	if (pCodeInfo == nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 	{
-		ImGui::TextColored(labelColour, "\t\tOperand Fixup(% s) :",NumStr(item.AddressRef.Address));
+		ImGui::TextColored(labelColour, "\t\tOperand Fixup(%s) :",NumStr(item.AddressRef.Address));
 		ImGui::SameLine();
 		ImGui::TextColored(labelColour, "%s", pLabelInfo->Name.c_str());
 	}

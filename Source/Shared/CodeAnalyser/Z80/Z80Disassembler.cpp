@@ -3,6 +3,7 @@
 #include "../CodeAnalyser.h"
 
 #include <assert.h>
+#include <string.h>
 
 // This is a modified version of the Chips Z80 Disassembler by Andre Weissflog
 // I have kept the original comments from the header below
