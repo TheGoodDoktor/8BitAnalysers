@@ -481,8 +481,8 @@ public:
 class FDasmStateBase : public IDasmNumberOutput
 {
 public:
-    FCodeAnalysisState* CodeAnalysisState;
-    uint16_t				CurrentAddress;
+    FCodeAnalysisState*     CodeAnalysisState = nullptr;
+    uint16_t				CurrentAddress = 0;
     std::string				Text;
 };
 
@@ -623,7 +623,7 @@ struct FStepDasmData
 {
     std::vector<uint8_t> Data;
     FCodeAnalysisState* pCodeAnalysis = nullptr;
-    uint16_t    PC;
+    uint16_t    PC = 0;
 };
 
 static uint8_t StepOverDasmInCB(void* userData)

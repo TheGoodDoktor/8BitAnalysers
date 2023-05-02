@@ -356,6 +356,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		dl->AddCircleFilled(mid, 7, pBP->bEnabled ? bp_enabled_color : bp_disabled_color);
 		dl->AddCircle(mid, 7, brd_color);
 
+		// enable/disable by clicking on breakpoint indicator
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			const ImVec2 mousePos = ImGui::GetMousePos();
@@ -373,12 +374,14 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		dl->AddRectFilled(ImVec2(pos.x-12, pos.y), ImVec2(pos.x - 8, pos.y + line_height), 0xFFFF0000);
 	}
 
+	// regenerate code text if it hasn't been generated or SMC
 	if(pCodeInfo->bSelfModifyingCode == true || pCodeInfo->Text.empty())
 	{
 		//UpdateCodeInfoForAddress(state, pCodeInfo->Address);
 		WriteCodeInfoForAddress(state, physAddress);
 	}
 
+	// draw instruction address
 	ImGui::Text("\t%s", NumStr(physAddress));
 	const float line_start_x = ImGui::GetCursorPosX();
 	ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
@@ -424,7 +427,7 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		}
 	}
 
-	ImGui::Text("%s", pCodeInfo->Text.c_str());
+	ImGui::Text("%s", pCodeInfo->Text.c_str());	// draw the disassembly output for this instruction
 
 	if (pCodeInfo->bNOPped)
 		ImGui::PopStyleColor();

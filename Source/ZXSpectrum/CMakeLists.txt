@@ -36,7 +36,6 @@ include_directories( ${vendor_dir}/sokol )
 include_directories( ${vendor_dir}/imgui-docking )
 include_directories( ${vendor_dir}/chips )
 include_directories( ${vendor_dir}/magic_enum/include )
-include_directories( ${vendor_dir}/rzx-sdk )
 include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
 include_directories( ${vendor_dir}/json )
@@ -92,10 +91,6 @@ set ( implot_src ${vendor_dir}/implot/implot.h
 	${vendor_dir}/implot/implot_demo.cpp
 	${vendor_dir}/implot/implot_items.cpp
 	${vendor_dir}/implot/implot_internal.h)
-
-# rzx-lib
-set ( rzxlib_src ${vendor_dir}/rzx-sdk/rzx.c
-	${vendor_dir}/rzx-sdk/rzx.h)
 
 # zlib
 set ( zlib_src ${vendor_dir}/zlib/adler32.c

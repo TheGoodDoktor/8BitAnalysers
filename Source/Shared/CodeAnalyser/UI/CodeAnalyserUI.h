@@ -24,8 +24,8 @@ public:
 
 	virtual const char* GenerateAddressString(uint16_t addr) = 0;
 protected:
-	uint16_t	RegionMin;
-	uint16_t	RegionMax;
+	uint16_t	RegionMin = 0xffff;
+	uint16_t	RegionMax = 0;
 };
 
 

@@ -333,7 +333,7 @@ void	FDebugger::StepOver()
 {
 	//const ECPUType cpuType = pEmulator->CPUType;
 
-	uint8_t stepOpcode;
+	uint8_t stepOpcode = 0;
 	// TODO: this one's a bit more tricky!
    
     bDebuggerStopped = false;

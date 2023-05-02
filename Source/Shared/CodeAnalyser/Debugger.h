@@ -166,9 +166,7 @@ private:
 	std::vector<FStackInfo>		Stacks;
 	int							CurrentStackNo = -1;
 
-	uint16_t				StackMin;
-	uint16_t				StackMax;
-
-
+	uint16_t				StackMin = 0xffff;
+	uint16_t				StackMax = 0;
 };
 

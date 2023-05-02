@@ -30,7 +30,7 @@ struct FSpeccyFrameTrace
 	void*					Texture = nullptr;
 	uint8_t					MemoryBanks[8][16 * 1024];	// 8 x 16K banks
 	uint8_t					MemoryBankRegister = 0;
-	void*					CPUState;
+	void*					CPUState = nullptr;
 	std::vector<FAddressRef>	InstructionTrace;
 	std::vector<FMemoryAccess>	ScreenPixWrites;
 	std::vector<FMemoryAccess>	ScreenAttrWrites;

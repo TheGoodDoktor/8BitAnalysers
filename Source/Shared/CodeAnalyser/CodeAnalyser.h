@@ -175,7 +175,7 @@ struct FCodeAnalysisBank
 	std::vector<int>	MappedPages;	// banks can be mapped to multiple pages
 	int					PrimaryMappedPage = -1;
 	uint8_t*			Memory = nullptr;	// pointer to memory bank occupies
-	FCodeAnalysisPage*	Pages;
+	FCodeAnalysisPage*	Pages = nullptr;
 	std::string			Name;
 	std::string			Description;	// where we can describe what the bank is used for
 	bool				bReadOnly = false;
@@ -339,7 +339,7 @@ public:
 
 	FAddressRef				CopiedAddress;
 
-	int						KeyConfig[(int)EKey::Count];
+	int						KeyConfig[(int)EKey::Count] = { -1 };
 
 	std::vector< class FCommand *>	CommandStack;
 

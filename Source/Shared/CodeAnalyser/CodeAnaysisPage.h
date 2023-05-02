@@ -30,6 +30,8 @@ enum class EItemType
 	Data,
 	CommentBlock,
 	CommentLine,
+
+	Unknown
 };
 
 enum class EOperandType
@@ -46,9 +48,9 @@ enum class EOperandType
 
 struct FItem
 {
-	EItemType		Type;
+	EItemType		Type = EItemType::Unknown;
 	std::string		Comment;
-	uint16_t		ByteSize;
+	uint16_t		ByteSize = 0;
 };
 
 /*struct FItemReference
@@ -215,7 +217,7 @@ struct FDataInfo : FItem
 		};*/
 		FAddressRef	InstructionAddress;	// for operand data types
 	};
-	uint8_t		EmptyCharNo;
+	uint8_t		EmptyCharNo = 0;
 
 	int						LastFrameRead = -1;
 	FItemReferenceTracker	Reads;	// address and counts of data access instructions

@@ -38,14 +38,14 @@ static uint64_t FloatingBusTick(zx_t* sys, uint64_t pins)
 
 			if ((y < 32) || (y >= 224))
 			{
-				Z80_SET_DATA(pins, sys->border_color);
+				Z80_SET_DATA(pins, (uint64_t)sys->border_color);
 			}
 			else
 			{
 				const uint16_t yy = y - 32;
 				const uint16_t clr_offset = 0x1800 + (((yy & ~0x7) << 2));
 				const uint8_t clr = vidmem_bank[clr_offset];
-				Z80_SET_DATA(pins, clr);
+				Z80_SET_DATA(pins, (uint64_t)clr);
 			}
 
 		}
