@@ -9,19 +9,12 @@
 
 #include "CodeAnalyserTypes.h"
 #include "CodeAnaysisPage.h"
+#include "Debugger.h"
 
 class FGraphicsView;
 class FCodeAnalysisState;
 
 enum class ELabelType;
-
-// CPU abstraction
-enum class ECPUType
-{
-	Unknown,
-	Z80,
-	M6502
-};
 
 /* the input callback type */
 typedef uint8_t(*FDasmInput)(void* user_data);
@@ -37,48 +30,14 @@ public:
 	virtual const uint8_t*	GetMemPtr(uint16_t address) const = 0;
 	virtual void		WriteByte(uint16_t address, uint8_t value) = 0;
 
-	virtual uint16_t	GetPC(void) = 0;
+	virtual FAddressRef	GetPC(void) = 0;
 	virtual uint16_t	GetSP(void) = 0;
 
-	// breakpoints
-	virtual bool	IsAddressBreakpointed(uint16_t addr) = 0;
-	virtual bool	SetExecBreakpointAtAddress(uint16_t addr, bool bSet) = 0;
-	virtual bool	SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize, bool bSet) = 0;
-
-	// commands
-	virtual void	Break() = 0;
-	virtual void	Continue() = 0;
-	virtual void	StepOver() = 0;
-	virtual void	StepInto() = 0;
-	virtual void	StepFrame() = 0;
-	virtual void	StepScreenWrite() = 0;
 	virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) = 0;
 
-	virtual bool	ShouldExecThisFrame(void) const = 0;
-	virtual bool	IsStopped(void) const = 0;
-
-	virtual void* GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
+	virtual void*	GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
 
 	ECPUType	CPUType = ECPUType::Unknown;
-};
-
-typedef void (*z80dasm_output_t)(char c, void* user_data);
-
-class IDasmNumberOutput
-{
-public:
-
-	virtual void OutputU8(uint8_t val, z80dasm_output_t out_cb) = 0;
-	virtual void OutputU16(uint16_t val, z80dasm_output_t out_cb) = 0;
-	virtual void OutputD8(int8_t val, z80dasm_output_t out_cb) = 0;
-};
-
-class FDasmStateBase : public IDasmNumberOutput
-{
-public:
-	FCodeAnalysisState*		CodeAnalysisState;
-	uint16_t				CurrentAddress;
-	std::string				Text;
 };
 
 struct FMemoryAccess
@@ -87,7 +46,6 @@ struct FMemoryAccess
 	uint8_t		Value;
 	FAddressRef	PC;
 };
-
 
 enum class EKey
 {
@@ -155,23 +113,13 @@ struct FLabelListFilter
 struct FCodeAnalysisItem
 {
 	FCodeAnalysisItem() {}
-	//FCodeAnalysisItem(FItem* pItem, uint16_t addr) :Item(pItem), BankId(-1), Address(addr) {}	// temp until we get refs working properly
 	FCodeAnalysisItem(FItem* pItem, int16_t bankId, uint16_t addr) :Item(pItem), AddressRef(bankId,addr) {}
 	FCodeAnalysisItem(FItem* pItem, FAddressRef addr) :Item(pItem), AddressRef(addr) {}
 
 	bool IsValid() const { return Item != nullptr; }
 	
-	FItem* Item = nullptr;
-	/*union
-	{
-		struct
-		{
-			int16_t		BankId;
-			uint16_t	Address;	// address in address space
-		};
-		FAddressRef		AddressRef;
-	};*/
-	FAddressRef		AddressRef;
+	FItem*		Item = nullptr;
+	FAddressRef	AddressRef;
 
 };
 
@@ -219,23 +167,6 @@ struct FCodeAnalysisConfig
 	const uint32_t*		CharacterColourLUT = nullptr;
 };
 
-// Analysis memory bank
-struct FCodeAnalysisBankBP
-{
-	enum class EType
-	{
-		Exe,
-		Byte,
-		Word
-	};
-
-	FCodeAnalysisBankBP(uint16_t addr, EType type, uint16_t value) :Address(addr),Type(type),Value(value) {}
-
-	uint16_t	Address;
-	EType		Type;
-	uint16_t	Value;
-};
-
 struct FCodeAnalysisBank
 {
 	int16_t				Id = -1;
@@ -250,11 +181,6 @@ struct FCodeAnalysisBank
 	bool				bReadOnly = false;
 	bool				bIsDirty = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
-	std::vector<FCodeAnalysisBankBP>	BreakPoints;
-
-	bool		IsAddressBreakpointed(uint16_t addr) const;
-	bool		ToggleExecBreakpointAtAddress(uint16_t addr);
-	bool		ToggleDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize);
 
 	bool		AddressValid(uint16_t addr) const { return addr >= GetMappedAddress() && addr < GetMappedAddress() + (NoPages * FCodeAnalysisPage::kPageSize);	}
 	bool		IsUsed() const { return Pages[0].bUsed; }
@@ -262,16 +188,6 @@ struct FCodeAnalysisBank
 	uint16_t	GetMappedAddress() const { return PrimaryMappedPage * FCodeAnalysisPage::kPageSize; }
 	uint16_t	GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
 };
-
-
-
-struct FWatch : public FAddressRef
-{
-	FWatch() = default;
-	FWatch(const FAddressRef addressRef) : FAddressRef(addressRef) {}
-	FWatch(int16_t bankId, uint16_t address) : FAddressRef(bankId, address) {}
-};
-
 
 // code analysis information
 class FCodeAnalysisState
@@ -285,6 +201,8 @@ public:
 
 	FCodeAnalysisState();
 	void	Init(ICPUInterface* pCPUInterface);
+	void	OnFrameStart();
+	void	OnFrameEnd();
 
 	const ICPUInterface* GetCPUInterface() const { return CPUInterface; }
 
@@ -399,26 +317,6 @@ public:
 	bool	EnsureUniqueLabelName(std::string& lableName);
 	bool	RemoveLabelName(const std::string& labelName);	// for changing label names
 
-	// Watches
-	void InitWatches() { Watches.clear(); }
-	void	AddWatch(FWatch watch)
-	{
-		Watches.push_back(watch);
-	}
-
-	bool	RemoveWatch(FWatch watch)
-	{
-		for (auto watchIt = Watches.begin(); watchIt != Watches.end(); ++watchIt)
-		{
-			if(*watchIt == watch)
-				Watches.erase(watchIt);
-		}
-
-		return true;
-	}
-
-	const std::vector<FWatch>& GetWatches() const { return Watches; }
-
 public:
 
 	bool					bRegisterDataAccesses = true;
@@ -437,13 +335,9 @@ public:
 	FCodeAnalysisViewState& GetFocussedViewState() { return ViewState[FocussedWindowId]; }
 	FCodeAnalysisViewState& GetAltViewState() { return ViewState[FocussedWindowId ^ 1]; }
 	
-	std::vector<FWatch>		Watches;	
-	std::vector<FCPUFunctionCall>	CallStack;
-	uint16_t				StackMin;
-	uint16_t				StackMax;
+	FDebugger				Debugger;
 
 	FAddressRef				CopiedAddress;
-	std::vector<FAddressRef>	FrameTrace;
 
 	int						KeyConfig[(int)EKey::Count];
 
@@ -629,7 +523,7 @@ private:
 // Analysis
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addrRef, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
-bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t nextpc);
+bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc);
 void ReAnalyseCode(FCodeAnalysisState &state);
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState& state, uint16_t pc);
 void GenerateGlobalInfo(FCodeAnalysisState &state);
@@ -656,10 +550,6 @@ void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item);
 void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText);
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options);
-
-// number output abstraction
-IDasmNumberOutput* GetNumberOutput();
-void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj);
 
 // machine state
 FMachineState* AllocateMachineState(FCodeAnalysisState& state);

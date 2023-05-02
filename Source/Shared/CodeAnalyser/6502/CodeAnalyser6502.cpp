@@ -248,7 +248,7 @@ bool CheckStopInstruction6502(const FCodeAnalysisState& state, uint16_t pc)
 	return false;
 }
 
-bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t nextpc)
+bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc)
 {
 	return false;
 }

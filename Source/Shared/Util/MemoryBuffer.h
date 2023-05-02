@@ -7,8 +7,9 @@ class FMemoryBuffer
 public:
 	void	Init(size_t initialSize = 1024);
 	void	Init(void* pData, size_t dataSize);
+	bool	Finished() const { return ReadPosition == CurrentSize; }
 	void	WriteBytes(const void* pData, size_t noBytes);
-	void	ReadBytes(void* Dest, size_t noBytes);
+	bool	ReadBytes(void* Dest, size_t noBytes);
 
 	template <class T>
 	void	Write(T item) { WriteBytes(&item, sizeof(T)); }
@@ -19,7 +20,7 @@ public:
 	}
 
 	template <class T>
-	void	Read(T& item) { ReadBytes(&item, sizeof(T)); }
+	bool	Read(T& item) { return ReadBytes(&item, sizeof(T)); }
 	template <class T>
 	T	Read() { T item;  ReadBytes(&item, sizeof(T)); return item; }
 

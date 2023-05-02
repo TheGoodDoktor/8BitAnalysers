@@ -228,18 +228,33 @@ bool CheckStopInstructionZ80(FCodeAnalysisState& state, uint16_t pc)
 	}
 }
 
-bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t nextpc)
+bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
+	FDebugger& debugger = state.Debugger;
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
+	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
 	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator());
-	const FZ80InternalState& cpuState = pCPU->internal_state;
+
+	std::vector<FCPUFunctionCall>&	callStack = state.Debugger.GetCallstack();
+
+	//const FZ80InternalState& cpuState = pCPU->internal_state;
 
 	bool bPushInstruction = false;
 	
+	// check current op code
 	switch (opcode)
 	{
 		// Stack
+		case 0x31:	// LD SP,NN
+			{
+				const uint16_t newSP = state.ReadWord(pc + 1);
+				debugger.RegisterNewStackPointer(newSP,state.AddressRefFromPhysicalAddress(pc));
+			}
+			break;
+		case 0xF9:	// LD SP,HL
+			debugger.RegisterNewStackPointer(pCPU->hl, state.AddressRefFromPhysicalAddress(pc));
+			break;
 		case 0xc5:	// PUSH BC
 		case 0xd5:	// PUSH DE
 		case 0xe5:	// PUSH HL
@@ -247,21 +262,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 			bPushInstruction = true;
 		break;
 
-		// index register opcodes
-		case 0xdd:
-		case 0xfd:
-			{
-				const uint8_t indexOpcode = pCPUInterface->ReadByte(pc + 1);
-				switch(indexOpcode)
-				{
-				case 0xe5:
-					bPushInstruction = true;
-					break;
-				default:
-					break;
-				}
-			}
-		break;
+		
 		
 		// Call functions
 		/* CALL nnnn */
@@ -269,53 +270,96 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 			/* CALL cc,nnnn */
 		case 0xDC: case 0xFC: case 0xD4: case 0xC4:
 		case 0xF4: case 0xEC: case 0xE4: case 0xCC:
-
 			bPushInstruction = true;
-
-			//if(nextpc == 0xc544)
-				//fprintf(stderr, "PC: $%04x, NextPC $%04x\n", pc, nextpc);
-
-			if (nextpc != pc + 3)	// call instructions are 3 bytes
-			{
-				FCPUFunctionCall callInfo;
-				callInfo.CallAddr = state.AddressRefFromPhysicalAddress(pc);
-				callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(nextpc);
-				callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(pc + 3);
-				state.CallStack.push_back(callInfo);
-			}
-			
 			break;
 
-
-			// ret
-		case 0xC0:
-		case 0xC8:
-		case 0xC9:
-		case 0xD0:
-		case 0xD8:
-		case 0xE0:
-		case 0xE8:
-		case 0xF0:
-		case 0xF8:
-			if (nextpc != pc + 1)	// ret instructions are 1 byte
+			// index register opcodes
+		case 0xdd:
+		case 0xfd:
+		{
+			const bool bIX = opcode == 0xDD;
+			const uint8_t indexOpcode = pCPUInterface->ReadByte(pc + 1);
+			switch (indexOpcode)
 			{
-				if (state.CallStack.empty() == false)
-				{
-					FCPUFunctionCall& callInfo = state.CallStack.back();
-					//assert(callInfo.ReturnAddr == nextpc);
-					
-					state.CallStack.pop_back();
-
-					/*if (callInfo.ReturnAddr != nextpc)
-					{
-						fprintf(stderr, "PC: $%04x, NextPC $%04x, Return Address $%04x\n", pc, nextpc, callInfo.ReturnAddr);
-						return true;
-					}*/
-
-				}
+			case 0xF9:	// LD SP,IX/IY
+				debugger.RegisterNewStackPointer(bIX ? pCPU->ix : pCPU->iy, state.AddressRefFromPhysicalAddress(pc));
+				break;
+			case 0xe5:	// PUSH IX/IY
+				bPushInstruction = true;
+				break;
+			default:
+				break;
 			}
+		}
+		break;
+
+		case 0xed:
+		{
+			const uint8_t extendedOpcode = pCPUInterface->ReadByte(pc + 1);
+
+			switch (extendedOpcode)
+			{
+				case 0x7b:	// LD SP,(nn)
+				{
+					const uint16_t newSP = state.ReadWord(state.ReadWord(pc + 2));	// indirect
+					debugger.RegisterNewStackPointer(newSP, state.AddressRefFromPhysicalAddress(pc));
+				}
+				break;
+			}
+
+		}
 			break;
 	default:
+		break;
+	}
+
+	// TODO: check old opcode for jump/ret instructions
+	switch (oldOpcode)
+	{
+		// Call instructions
+		/* CALL nnnn */
+	case 0xCD:
+		/* CALL cc,nnnn */
+	case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+	case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+
+		if (pc != oldpc + 3)	// call instructions are 3 bytes
+		{
+			FCPUFunctionCall callInfo;
+			callInfo.CallAddr = state.AddressRefFromPhysicalAddress(oldpc);
+			callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(pc);
+			callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(oldpc + 3);
+			callStack.push_back(callInfo);
+		}
+
+		break;
+		// ret
+	case 0xC0:
+	case 0xC8:
+	case 0xC9:
+	case 0xD0:
+	case 0xD8:
+	case 0xE0:
+	case 0xE8:
+	case 0xF0:
+	case 0xF8:
+		if (pc != oldpc + 1)	// ret instructions are 1 byte so if we're not on the next instruction, we've returned
+		{
+			if (callStack.empty() == false)
+			{
+				FCPUFunctionCall& callInfo = callStack.back();
+				//assert(callInfo.ReturnAddr == nextpc);
+
+				callStack.pop_back();
+
+				/*if (callInfo.ReturnAddr != nextpc)
+				{
+					fprintf(stderr, "PC: $%04x, NextPC $%04x, Return Address $%04x\n", pc, nextpc, callInfo.ReturnAddr);
+					return true;
+				}*/
+
+			}
+		}
 		break;
 	}
 
@@ -323,9 +367,9 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ne
 	// store the comment from the code line that did the push at the location in the stack as a comment
 	if(bPushInstruction)
 	{
-		const uint16_t stackPointer = cpuState.SP - 2;
+		const uint16_t stackPointer = pCPU->sp - 2;
 
-		if (stackPointer >= state.StackMin && stackPointer <= state.StackMax)
+		if (state.Debugger.IsAddressOnStack(stackPointer))
 		{
 			FDataInfo* pStackItem = state.GetWriteDataInfoForAddress(stackPointer);	// -2 because SP was recorded before instruction was 	
 			const FCodeInfo* pCodeItem = state.GetCodeInfoForAddress(pc);
@@ -384,21 +428,21 @@ void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInt
 	z80_t* pCPU = (z80_t*)pCPUInterface->GetCPUEmulator();
 	FMachineStateZ80* pMachineStateZ80 = static_cast<FMachineStateZ80 *>(pMachineState);
 
-	pMachineStateZ80->AF = z80_af(pCPU);
-	pMachineStateZ80->BC = z80_bc(pCPU);
-	pMachineStateZ80->DE = z80_de(pCPU);
-	pMachineStateZ80->HL = z80_hl(pCPU);
-	pMachineStateZ80->AF_ = z80_af_(pCPU);
-	pMachineStateZ80->BC_ = z80_bc_(pCPU);
-	pMachineStateZ80->DE_ = z80_de_(pCPU);
-	pMachineStateZ80->HL_ = z80_hl_(pCPU);
-	pMachineStateZ80->IX = z80_ix(pCPU);
-	pMachineStateZ80->IY = z80_iy(pCPU);
-	pMachineStateZ80->SP = z80_sp(pCPU);
-	pMachineStateZ80->PC = z80_pc(pCPU);
-	pMachineStateZ80->I = z80_i(pCPU);
-	pMachineStateZ80->R = z80_r(pCPU);
-	pMachineStateZ80->IM = z80_im(pCPU);
+	pMachineStateZ80->AF = pCPU->af;
+	pMachineStateZ80->BC = pCPU->bc;
+	pMachineStateZ80->DE = pCPU->de;
+	pMachineStateZ80->HL = pCPU->hl;
+	pMachineStateZ80->AF_ = pCPU->af2;
+	pMachineStateZ80->BC_ = pCPU->bc2;
+	pMachineStateZ80->DE_ = pCPU->de2;
+	pMachineStateZ80->HL_ = pCPU->hl2;
+	pMachineStateZ80->IX = pCPU->ix;
+	pMachineStateZ80->IY = pCPU->iy;
+	pMachineStateZ80->SP = pCPU->sp;
+	pMachineStateZ80->PC = pCPU->pc;
+	pMachineStateZ80->I = pCPU->i;
+	pMachineStateZ80->R = pCPU->r;
+	pMachineStateZ80->IM = pCPU->im;
 
 	for (int stackVal = 0; stackVal < FMachineStateZ80::kNoStackEntries; stackVal++)
 		pMachineStateZ80->Stack[stackVal] = pCPUInterface->ReadWord(pMachineStateZ80->SP - (stackVal * 2));

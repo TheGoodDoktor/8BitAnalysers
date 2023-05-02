@@ -10,6 +10,7 @@
 #include "../GlobalConfig.h"
 
 #include <Util/Misc.h>
+#include <ImGuiSupport/ImGuiTexture.h>
 
 void DrawArrow(ImDrawList* dl, ImVec2 pos, bool bLeftDirection);
 
@@ -20,6 +21,15 @@ static const int kBorderOffsetY = (256 - 192) / 2;
 void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 {
 	pSpectrumEmu = pEmu;
+
+	// setup texture
+	chips_display_info_t dispInfo = zx_display_info(&pEmu->ZXEmuState);
+
+	// setup pixel buffer
+	const size_t pixelBufferSize = dispInfo.frame.dim.width * dispInfo.frame.dim.height;
+	FrameBuffer = new uint32_t[pixelBufferSize * 2];
+	ScreenTexture = ImGui_CreateTextureRGBA(FrameBuffer, dispInfo.frame.dim.width, dispInfo.frame.dim.height);
+
 	//SetInputEventHandler(this);
 }
 
@@ -29,9 +39,21 @@ void FSpectrumViewer::Draw()
 	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->CodeAnalysis;
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 
+	chips_display_info_t disp = zx_display_info(&pSpectrumEmu->ZXEmuState);
+
+	// convert texture to RGBA
+	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
+	const uint32_t* pal = (const uint32_t*)disp.palette.ptr;
+	for (int i = 0; i < disp.frame.buffer.size; i++)
+		FrameBuffer[i] = pal[pix[i]];
+
+	ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
+
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
-	ImGui::Image(pSpectrumEmu->Texture, ImVec2(320, 256));
+	ImVec2 uv0(0, 0);
+	ImVec2 uv1(320.0f / 512.0f, 1.0f);
+	ImGui::Image(ScreenTexture, ImVec2(320, 256),uv0,uv1);
 
 	// Draw an indicator to show which scanline is being drawn
 	if (config.bShowScanLineIndicator && pSpectrumEmu->UIZX.dbg.dbg.stopped)

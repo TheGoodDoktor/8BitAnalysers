@@ -16,7 +16,7 @@ void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 	// Init Frame Trace
 	for (int i = 0; i < kNoFramesInTrace; i++)
 	{
-		FrameTrace[i].Texture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->FrameBuffer), 320, 256);
+		//TODO: FrameTrace[i].Texture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->FrameBuffer), 320, 256);
 		FrameTrace[i].CPUState = malloc(sizeof(z80_t));
 	}
 
@@ -54,8 +54,8 @@ void FFrameTraceViewer::CaptureFrame()
 {
 	// set up new trace frame
 	FSpeccyFrameTrace& frame = FrameTrace[CurrentTraceFrame];
-	ImGui_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->FrameBuffer);
-	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.FrameTrace;
+	//TODO: ImGui_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->FrameBuffer);
+	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.Debugger.GetFrameTrace();	// copy frame trace - use method?
 	frame.ScreenPixWrites = pSpectrumEmu->FrameScreenPixWrites;
 	frame.ScreenAttrWrites = pSpectrumEmu->FrameScreenAttrWrites;
 	frame.FrameOverview.clear();
@@ -68,12 +68,7 @@ void FFrameTraceViewer::CaptureFrame()
 	frame.MemoryBankRegister = pSpectrumEmu->ZXEmuState.last_mem_config;
 
 	// get CPU state
-	z80_t* pCPUState = (z80_t*)frame.CPUState;
-	pCPUState->bc_de_hl_fa = pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa;
-	pCPUState->bc_de_hl_fa_ = pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_;
-	pCPUState->wz_ix_iy_sp = pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp;
-	pCPUState->im_ir_pc_bits = pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits;
-	pCPUState->pins = pSpectrumEmu->ZXEmuState.cpu.pins;
+	memcpy(frame.CPUState, &pSpectrumEmu->ZXEmuState.cpu, sizeof(z80_t));
 
 	// Generate diffs
 	const int prevFrameIndex = CurrentTraceFrame == 0 ? kNoFramesInTrace - 1 : CurrentTraceFrame - 1;
@@ -90,12 +85,7 @@ void FFrameTraceViewer::CaptureFrame()
 void FFrameTraceViewer::RestoreFrame(const FSpeccyFrameTrace& frame)
 {
 	// restore CPU regs
-	const z80_t* pCPUState = (const z80_t*)frame.CPUState;
-	pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa = pCPUState->bc_de_hl_fa;
-	pSpectrumEmu->ZXEmuState.cpu.bc_de_hl_fa_ = pCPUState->bc_de_hl_fa_;
-	pSpectrumEmu->ZXEmuState.cpu.wz_ix_iy_sp = pCPUState->wz_ix_iy_sp;
-	pSpectrumEmu->ZXEmuState.cpu.im_ir_pc_bits = pCPUState->im_ir_pc_bits;
-	pSpectrumEmu->ZXEmuState.cpu.pins = pCPUState->pins;
+	memcpy(&pSpectrumEmu->ZXEmuState.cpu, frame.CPUState, sizeof(z80_t));
 
 	// restore memory
 	const int noBanks = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_48K ? 3 : 8;
@@ -141,9 +131,9 @@ void FFrameTraceViewer::Draw()
 	if (ImGui::SliderInt("Backwards Offset", &ShowFrame, 0, kNoFramesInTrace - 1))
 	{
 		if (ShowFrame == 0)
-			pSpectrumEmu->CodeAnalysis.CPUInterface->Continue();
+			pSpectrumEmu->CodeAnalysis.Debugger.Continue();
 		else
-			pSpectrumEmu->CodeAnalysis.CPUInterface->Break();
+			pSpectrumEmu->CodeAnalysis.Debugger.Break();
 
 		PixelWriteline = -1;
 		SelectedTraceLine = -1;
@@ -169,7 +159,7 @@ void FFrameTraceViewer::Draw()
 		RestoreFrame(frame);
 
 		// continue running
-		pSpectrumEmu->CodeAnalysis.CPUInterface->Continue();
+		pSpectrumEmu->CodeAnalysis.Debugger.Continue();
 
 		CurrentTraceFrame = frameNo;
 		ShowFrame = 0;

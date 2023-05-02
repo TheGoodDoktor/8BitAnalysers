@@ -7,3 +7,9 @@
 [submodule "Source/Vendor/stb"]
 	path = Source/Vendor/stb
 	url = https://github.com/nothings/stb
+[submodule "Source/Vendor/chips"]
+	path = Source/Vendor/chips
+	url = https://github.com/floooh/chips
+[submodule "Source/Vendor/chips-test"]
+	path = Source/Vendor/chips-test
+	url = https://github.com/floooh/chips-test

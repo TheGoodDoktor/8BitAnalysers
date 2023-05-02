@@ -32,7 +32,7 @@ bool CheckPointerRefInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint1
 bool CheckJumpInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
 bool CheckCallInstructionZ80(FCodeAnalysisState& state, uint16_t pc);
 bool CheckStopInstructionZ80(FCodeAnalysisState& state, uint16_t pc);
-bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t nextpc);
+bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc);
 
 FMachineStateZ80* AllocateMachineStateZ80();
 void FreeMachineStatesZ80();

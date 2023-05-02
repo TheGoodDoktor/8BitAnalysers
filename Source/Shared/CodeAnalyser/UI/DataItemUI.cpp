@@ -306,11 +306,13 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 	const uint16_t physAddr = item.AddressRef.Address;
+	const FDebugger& debugger = state.Debugger;
 
 	ShowDataItemActivity(state, item.AddressRef);
 
 	// show if breakpointed
-	if (state.IsAddressBreakpointed(item.AddressRef))
+	const FBreakpoint* pBP = debugger.GetBreakpointForAddress(item.AddressRef);
+	if (pBP != nullptr)
 	{
 		const ImU32 bp_enabled_color = 0xFF0000FF;
 		const ImU32 bp_disabled_color = 0xFF000088;
@@ -320,7 +322,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		const float lh2 = (float)(int)(line_height / 2);
 		const ImVec2 mid(pos.x + 7, pos.y + lh2);
 
-		dl->AddCircleFilled(mid, 7, bp_enabled_color);
+		dl->AddCircleFilled(mid, 7, pBP->bEnabled ? bp_enabled_color : bp_disabled_color);
 		dl->AddCircle(mid, 7, brd_color);
 	}
 
@@ -368,6 +370,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	switch (pDataInfo->DataType)
 	{
 	case EDataType::Byte:
+	case EDataType::InstructionOperand:
 	{
 		const uint8_t val = state.ReadByte(item.AddressRef);
 		ImGui::Text("db");

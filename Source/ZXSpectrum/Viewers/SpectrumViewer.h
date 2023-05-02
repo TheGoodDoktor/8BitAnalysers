@@ -27,6 +27,9 @@ private:
 private:
 	FSpectrumEmu* pSpectrumEmu = nullptr;
 
+	uint32_t*		FrameBuffer;	// pixel buffer to store emu output
+	ImTextureID		ScreenTexture;		// texture 
+
 	// screen inspector
 	bool		bScreenCharSelected = false;
 	uint16_t	SelectPixAddr = 0;

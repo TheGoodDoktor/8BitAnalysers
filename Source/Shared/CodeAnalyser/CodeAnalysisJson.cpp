@@ -36,7 +36,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		bankJson["Id"] = bank.Id;
 		bankJson["Description"] = bank.Description;
 
-		bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
+		//bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
 		jsonGameData["Banks"].push_back(bankJson);
 
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
@@ -53,14 +53,6 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		}
 	}
 	LOGINFO("%d pages written", pagesWritten);
-
-	// Write watches
-	for (const auto& watch : state.GetWatches())
-	{
-		jsonGameData["Watches"].push_back(watch.Address);
-	}
-
-	// Spectrum Specific
 
 	// Write character sets
 	for (int i = 0; i < GetNoCharacterSets(); i++)
@@ -123,7 +115,9 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			{
 				if (bankJson.contains("Description"))
 					pBank->Description = bankJson["Description"];
-				pBank->PrimaryMappedPage = bankJson["PrimaryMappedPage"];
+				//if (bankJson.contains("Used"))
+				//	pBank-> = bankJson["Used"];
+				//pBank->PrimaryMappedPage = bankJson["PrimaryMappedPage"];
 			}
 		}
 	}
@@ -203,7 +197,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		}
 	}
 
-	if (jsonGameData.contains("Watches"))
+	// Moved to debugger state
+	/*if (jsonGameData.contains("Watches"))
 	{
 		for (const auto& watchAddress : jsonGameData["Watches"])
 		{
@@ -212,7 +207,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			else if (watchAddress.is_object())
 				state.AddWatch({ watchAddress["Bank"], watchAddress["Address"] });
 		}
-	}
+	}*/
 
 
 	if (jsonGameData.contains("CharacterSets"))

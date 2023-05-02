@@ -188,182 +188,6 @@ void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	DrawCodeAddress(state, viewState, {state.GetBankFromAddress(addr), addr}, bFunctionRel);
 }
 
-
-void DrawCallStack(FCodeAnalysisState& state)
-{
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-	if (state.CallStack.empty() == false)
-	{
-		const FLabelInfo* pLabel = state.GetLabelForAddress(state.CallStack.back().FunctionAddr);
-		if (pLabel != nullptr)
-		{
-			ImGui::Text("%s :", pLabel->Name.c_str());
-			ImGui::SameLine();
-		}
-	}
-	DrawCodeAddress(state, viewState, state.CPUInterface->GetPC(), false);	// draw current PC
-
-	for (int i = (int)state.CallStack.size() - 1; i >= 0; i--)
-	{
-		if (i > 0)
-		{
-			const FLabelInfo* pLabel = state.GetLabelForAddress(state.CallStack[i-1].FunctionAddr);
-			if (pLabel != nullptr)
-			{
-				ImGui::Text("%s :", pLabel->Name.c_str());
-				ImGui::SameLine();
-			}
-		}
-		DrawCodeAddress(state, viewState, state.CallStack[i].CallAddr, false);
-	}
-}
-
-void DrawStack(FCodeAnalysisState& state)
-{
-	const uint16_t sp = state.CPUInterface->GetSP();
-	if (state.StackMin >= state.StackMax)	// stack is invalid
-	{
-		ImGui::Text("No valid stack discovered");
-		return;
-	}
-	
-	if (sp < state.StackMin || sp > state.StackMax)	// sp is not in range
-	{
-		ImGui::Text("Stack pointer: %s",NumStr(sp));
-		DrawAddressLabel(state,state.GetFocussedViewState(),sp);
-		ImGui::SameLine();
-		ImGui::Text("not in stack range(%s - %s)",NumStr(state.StackMin),NumStr(state.StackMax));
-		return;
-	}
-
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-
-	//static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-	static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
-
-	if (ImGui::BeginTable("stackinfo", 4, flags))
-	{
-		ImGui::TableSetupColumn("Address");
-		ImGui::TableSetupColumn("Value");
-		ImGui::TableSetupColumn("Comment");
-		ImGui::TableSetupColumn("Set by");
-		ImGui::TableHeadersRow();
-
-		for(int stackAddr = sp; stackAddr <= state.StackMax;stackAddr+=2)
-		{
-			ImGui::TableNextRow();
-
-			uint16_t stackVal = state.ReadWord(stackAddr);
-			FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(stackAddr);
-			const FAddressRef writerAddr = state.GetLastWriterForAddress(stackAddr);
-
-			ImGui::TableSetColumnIndex(0);
-			ImGui::Text("%s",NumStr((uint16_t)stackAddr));
-
-			ImGui::TableSetColumnIndex(1);
-			ImGui::Text("%s :",NumStr(stackVal));
-			DrawAddressLabel(state,viewState,stackVal);
-
-			ImGui::TableSetColumnIndex(2);
-			ImGui::Text("%s", pDataInfo->Comment.c_str());
-
-			ImGui::TableSetColumnIndex(3);
-			ImGui::Text("%s :",NumStr(writerAddr.Address));
-			DrawAddressLabel(state,viewState,writerAddr);
-		}
-
-		ImGui::EndTable();
-	}
-}
-
-void DrawStackInfo(FCodeAnalysisState& state)
-{
-	if(ImGui::BeginTabBar("StackTabs"))
-	{
-		if (ImGui::BeginTabItem("Stack"))
-		{
-			DrawStack(state);
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("Call Stack"))
-		{
-			DrawCallStack(state);
-			ImGui::EndTabItem();
-		}
-		
-		ImGui::EndTabBar();
-	}
-}
-
-void DrawTrace(FCodeAnalysisState& state)
-{
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-	const float line_height = ImGui::GetTextLineHeight();
-	ImGuiListClipper clipper((int)state.FrameTrace.size(), line_height);
-
-	while (clipper.Step())
-	{
-		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-		{
-			const FAddressRef codeAddress = state.FrameTrace[state.FrameTrace.size() - i - 1];
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(codeAddress);
-			DrawCodeAddress(state, viewState, codeAddress, false);	// draw current PC
-			//DrawCodeInfo(state, viewState, FCodeAnalysisItem(pCodeInfo, codeAddress));
-		}
-	}
-	
-}
-
-
-void DrawRegisters_Z80(FCodeAnalysisState& state);
-
-void DrawRegisters(FCodeAnalysisState& state)
-{
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		DrawRegisters_Z80(state);
-}
-
-void DrawWatchWindow(FCodeAnalysisState& state)
-{
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-	static FWatch selectedWatch;
-	bool bDeleteSelectedWatch = false;
-
-	for (const auto& watch : state.GetWatches())
-	{
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch.Address);
-		ImGui::PushID(watch.Address);
-		if (ImGui::Selectable("##watchselect", watch == selectedWatch, 0))
-		{
-			selectedWatch = watch;
-		}
-		if (selectedWatch.IsValid() && ImGui::BeginPopupContextItem("watch context menu"))
-		{
-			if (ImGui::Selectable("Delete Watch"))
-			{
-				bDeleteSelectedWatch = true;
-			}
-			if (ImGui::Selectable("Toggle Breakpoint"))
-			{
-				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(selectedWatch.Address);
-				state.ToggleDataBreakpointAtAddress(selectedWatch, pInfo->ByteSize);
-			}
-
-			ImGui::EndPopup();
-		}
-		ImGui::SetItemAllowOverlap();	// allow buttons
-		ImGui::SameLine();
-		DrawDataInfo(state, viewState, FCodeAnalysisItem(pDataInfo, watch.BankId, watch.Address), true,true);
-
-		// TODO: Edit Watch
-		ImGui::PopID();		
-	}
-
-	if(bDeleteSelectedWatch)
-		state.RemoveWatch(selectedWatch);
-}
-
 void DrawComment(const FItem *pItem, float offset)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
@@ -465,7 +289,7 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef acces
 	{
 		const int framesSinceExecuted = pCodeInfo->FrameLastExecuted != -1 ? state.CurrentFrameNo - pCodeInfo->FrameLastExecuted : 255;
 		const int brightVal = (255 - std::min(framesSinceExecuted << 2, 255)) & 0xff;
-		const bool bPCLine = accessorCodeAddr == state.AddressRefFromPhysicalAddress(state.CPUInterface->GetPC());
+		const bool bPCLine = accessorCodeAddr == state.CPUInterface->GetPC();
 
 		if (bPCLine || brightVal > 0)
 		{
@@ -489,7 +313,7 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef acces
 				dl->AddTriangleFilled(a, b, c, pc_color);
 				dl->AddTriangle(a, b, c, brd_color);
 
-				if (state.CPUInterface->IsStopped())
+				if (state.Debugger.IsStopped())
 				{
 					const ImVec2 lineStart(pos.x + 18, ImGui::GetItemRectMax().y);
 					dl->AddLine(lineStart, ImGui::GetItemRectMax(), pc_color);
@@ -508,6 +332,7 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef acces
 void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	const FCodeInfo* pCodeInfo = static_cast<const FCodeInfo*>(item.Item);
+	FDebugger& debugger = state.Debugger;
 
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
@@ -517,7 +342,8 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	ShowCodeAccessorActivity(state, item.AddressRef);
 
 	// show if breakpointed
-	if (state.IsAddressBreakpointed(item.AddressRef))
+	FBreakpoint* pBP = debugger.GetBreakpointForAddress(item.AddressRef);
+	if (pBP != nullptr)
 	{
 		const ImU32 bp_enabled_color = 0xFF0000FF;
 		const ImU32 bp_disabled_color = 0xFF000088;
@@ -527,8 +353,16 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 		const float lh2 = (float)(int)(line_height / 2);
 		const ImVec2 mid(pos.x, pos.y + lh2);
 		
-		dl->AddCircleFilled(mid, 7, bp_enabled_color);
+		dl->AddCircleFilled(mid, 7, pBP->bEnabled ? bp_enabled_color : bp_disabled_color);
 		dl->AddCircle(mid, 7, brd_color);
+
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			const ImVec2 mousePos = ImGui::GetMousePos();
+			const ImVec2 dist(mousePos.x - mid.x, mousePos.y - mid.y);
+			if ((dist.x * dist.x + dist.y * dist.y) < (8 * 8))
+				pBP->bEnabled = !pBP->bEnabled;
+		}
 	}
 
 	if (state.GetMachineState(physAddress))
@@ -791,31 +625,31 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 
 	if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::BreakContinue]))
 	{
-		if (state.CPUInterface->ShouldExecThisFrame())
+		if (state.Debugger.IsStopped())
 		{
-			state.CPUInterface->Break();
+			state.Debugger.Continue();
 			//viewState.TrackPCFrame = true;
 		}
 		else
 		{
-			state.CPUInterface->Continue();
+			state.Debugger.Break();
 		}
 	}
 	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::StepOver]))
 	{
-		state.CPUInterface->StepOver();
+		state.Debugger.StepOver();
 	}
 	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::StepInto]))
 	{
-		state.CPUInterface->StepInto();
+		state.Debugger.StepInto();
 	}
 	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::StepFrame]))
 	{
-		state.CPUInterface->StepFrame();
+		state.Debugger.StepFrame();
 	}
 	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::StepScreenWrite]))
 	{
-		state.CPUInterface->StepScreenWrite();
+		state.Debugger.StepScreenWrite();
 	}
 }
 
@@ -1109,7 +943,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			if (ImGui::Selectable("Toggle Data Breakpoint"))
 				state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize);
 			if (ImGui::Selectable("Add Watch"))
-				state.AddWatch(item.AddressRef);
+				state.Debugger.AddWatch(item.AddressRef);
 
 		}
 
@@ -1337,44 +1171,55 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	}
 }
 
+// Move to Debugger?
 void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
-	if (state.CPUInterface->ShouldExecThisFrame())
+	if (state.Debugger.IsStopped())
 	{
-		if (ImGui::Button("Break (F5)"))
+		if (ImGui::Button("Continue (F5)"))
 		{
-			state.CPUInterface->Break();
-			//viewState.TrackPCFrame = true;
+			state.Debugger.Continue();
 		}
 	}
 	else
 	{
-		if (ImGui::Button("Continue (F5)"))
+		if (ImGui::Button("Break (F5)"))
 		{
-			state.CPUInterface->Continue();
+			state.Debugger.Break();
+			//viewState.TrackPCFrame = true;
 		}
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Step Over (F10)"))
 	{
-		state.CPUInterface->StepOver();
+		state.Debugger.StepOver();
 		viewState.TrackPCFrame = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Step Into (F11)"))
 	{
-		state.CPUInterface->StepInto();
+		state.Debugger.StepInto();
 		viewState.TrackPCFrame = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Step Frame (F6)"))
 	{
-		state.CPUInterface->StepFrame();
+		state.Debugger.StepFrame();
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Step Screen Write (F7)"))
 	{
-		state.CPUInterface->StepScreenWrite();
+		state.Debugger.StepScreenWrite();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("<<< Trace"))
+	{
+		state.Debugger.TraceBack(viewState);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Trace >>>"))
+	{
+		state.Debugger.TraceForward(viewState);
 	}
 	//ImGui::SameLine();
 	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
@@ -1448,7 +1293,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	viewState.HighlightAddress = viewState.HoverAddress;
 	viewState.HoverAddress.SetInvalid();
 
-	if (state.CPUInterface->ShouldExecThisFrame())
+	if (state.Debugger.IsStopped() == false)
 		state.CurrentFrameNo++;
 
 	UpdateItemList(state);
@@ -1458,8 +1303,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	ImGui::SameLine();
 	if (ImGui::Button("Jump To PC"))
 	{
-		const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
-		viewState.GoToAddress(PCAddress);
+		//const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
+		viewState.GoToAddress(state.CPUInterface->GetPC());
 	}
 	ImGui::SameLine();
 	static int addrInput = 0;
@@ -1472,8 +1317,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 	if (viewState.TrackPCFrame == true)
 	{
-		const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
-		viewState.GoToAddress(PCAddress);
+		//const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
+		viewState.GoToAddress(state.CPUInterface->GetPC());
 		viewState.TrackPCFrame = false;
 	}
 	
@@ -1490,17 +1335,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		ImGui::Text("This will reset all recorded references");
 		ImGui::EndTooltip();
 	}
-
-	// StackInfo
-	if (state.StackMax > state.StackMin)
-	{
-		ImGui::SameLine();
-		ImGui::Text("Stack range: ");
-		DrawAddressLabel(state, viewState, state.StackMin);
-		ImGui::SameLine();
-		DrawAddressLabel(state, viewState, state.StackMax);
-	}
-
+	
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
 	{
 		if (ImGui::BeginTabBar("itemlist_tabbar"))

@@ -13,6 +13,7 @@ enum class SpeccyIODevice
 	Mic,	// for saving
 	Beeper,
 	BorderColour,
+	FloatingBus,
 	KempstonJoystick,
 	MemoryBank,		// Switching in/out RAM banks
 	SoundChip,		// AY

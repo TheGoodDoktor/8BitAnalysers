@@ -12,8 +12,9 @@ std::map< SpeccyIODevice, const char*> g_DeviceNames =
 	{SpeccyIODevice::Ear, "Ear"},
 	{SpeccyIODevice::Mic, "Mic"},
 	{SpeccyIODevice::Beeper, "Beeper"},
-	{SpeccyIODevice::BorderColour, "BorderColour"},
-	{SpeccyIODevice::KempstonJoystick, "KempstonJoystick"},
+	{SpeccyIODevice::BorderColour, "Border Colour"},
+	{SpeccyIODevice::KempstonJoystick, "Kempston Joystick"},
+	{SpeccyIODevice::FloatingBus, "Floating Bus"},	
 	{SpeccyIODevice::MemoryBank, "Memory Bank Switch"},
 	{SpeccyIODevice::SoundChip, "Sound Chip (AY)"},
 	{SpeccyIODevice::Unknown, "Unknown"},
@@ -23,9 +24,6 @@ void	FIOAnalysis::Init(FSpectrumEmu* pEmu)
 {
 	pSpectrumEmu = pEmu;
 }
-
-
-
 
 SpeccyIODevice GetIODeviceFromIOAddress(uint16_t ioAddr, bool bWrite)
 {
@@ -54,94 +52,6 @@ SpeccyIODevice GetIODeviceFromIOAddress(uint16_t ioAddr, bool bWrite)
 	}
 	return SpeccyIODevice::Unknown;
 }
-#if 0
- * if (pins & Z80_RD) {
-             an IO read
-                FIXME: reading from port xxFF should return 'current VRAM data'
-            
-if ((pins & Z80_A0) == 0) {
-	/* Spectrum ULA (...............0)
-		Bits 5 and 7 as read by INning from Port 0xfe are always one
-	*/
-	uint8_t data = (1 << 7) | (1 << 5);
-	/* MIC/EAR flags -> bit 6 */
-	if (sys->last_fe_out & (1 << 3 | 1 << 4)) {
-		data |= (1 << 6);
-	}
-	/* keyboard matrix bits are encoded in the upper 8 bit of the port address */
-	uint16_t column_mask = (~(Z80_GET_ADDR(pins) >> 8)) & 0x00FF;
-	const uint16_t kbd_lines = kbd_test_lines(&sys->kbd, column_mask);
-	data |= (~kbd_lines) & 0x1F;
-	Z80_SET_DATA(pins, data);
-}
-else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) {
-	/* Kempston Joystick (........000.....) */
-	Z80_SET_DATA(pins, sys->kbd_joymask | sys->joy_joymask);
-}
-else if (sys->type == ZX_TYPE_128) {
-	/* read from AY-3-8912 (11............0.) */
-	if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14)) {
-		pins = ay38910_iorq(&sys->ay, AY38910_BC1 | pins) & Z80_PIN_MASK;
-	}
-}
-		}
-		else if (pins & Z80_WR) {
-		// an IO write
-		const uint8_t data = Z80_GET_DATA(pins);
-		if ((pins & Z80_A0) == 0) {
-			/* Spectrum ULA (...............0)
-				"every even IO port addresses the ULA but to avoid
-				problems with other I/O devices, only FE should be used"
-				FIXME:
-					bit 3: MIC output (CAS SAVE, 0=On, 1=Off)
-			*/
-			sys->border_color = _zx_palette[data & 7] & 0xFFD7D7D7;
-			sys->last_fe_out = data;
-			beeper_set(&sys->beeper, 0 != (data & (1 << 4)));
-		}
-		else if (sys->type == ZX_TYPE_128) {
-			/* Spectrum 128 memory control (0.............0.)
-				http://8bit.yarek.pl/computer/zx.128/
-			*/
-			if ((pins & (Z80_A15 | Z80_A1)) == 0) {
-				if (!sys->memory_paging_disabled) {
-					sys->last_mem_config = data;
-					/* bit 3 defines the video scanout memory bank (5 or 7) */
-					sys->display_ram_bank = (data & (1 << 3)) ? 7 : 5;
-					/* only last memory bank is mappable */
-					mem_map_ram(&sys->mem, 0, 0xC000, 0x4000, sys->ram[data & 0x7]);
-
-					/* ROM0 or ROM1 */
-					if (data & (1 << 4)) {
-						/* bit 4 set: ROM1 */
-						mem_map_rom(&sys->mem, 0, 0x0000, 0x4000, sys->rom[1]);
-					}
-					else {
-						/* bit 4 clear: ROM0 */
-						mem_map_rom(&sys->mem, 0, 0x0000, 0x4000, sys->rom[0]);
-					}
-				}
-				if (data & (1 << 5)) {
-					/* bit 5 prevents further changes to memory pages
-						until computer is reset, this is used when switching
-						to the 48k ROM
-					*/
-					sys->memory_paging_disabled = true;
-				}
-			}
-			else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14)) {
-				/* select AY-3-8912 register (11............0.) */
-				ay38910_iorq(&sys->ay, AY38910_BDIR | AY38910_BC1 | pins);
-			}
-			else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == Z80_A15) {
-				/* write to AY-3-8912 (10............0.) */
-				ay38910_iorq(&sys->ay, AY38910_BDIR | pins);
-			}
-		}
-		}
- */
-
-#endif
 
 void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 {
@@ -162,6 +72,8 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 				readDevice = SpeccyIODevice::Keyboard;
 			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) // Kempston Joystick (........000.....)
 				readDevice = SpeccyIODevice::KempstonJoystick;
+			else if (pins & 0xff)
+				readDevice = SpeccyIODevice::FloatingBus;	// Joffa's Floating Bus
 			// 128K specific
 			else if(pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128)
 			{

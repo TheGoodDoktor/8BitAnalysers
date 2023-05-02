@@ -2,6 +2,7 @@
 
 #define UI_DBG_USE_Z80
 #define UI_DASM_USE_Z80
+#include "chips/chips_common.h"
 #include "chips/z80.h"
 #include "chips/m6502.h"
 #include "chips/beeper.h"
@@ -23,6 +24,7 @@
 #include "ui/ui_dbg.h"
 #include "ui/ui_memedit.h"
 #include "ui/ui_memmap.h"
+#include "ui/ui_snapshot.h"
 #include "ui/ui_zx.h"
 
 #include <map>
@@ -94,7 +96,7 @@ public:
 	void	DoSkoolKitTest(const char* pGameName, const char* pInSkoolFileName, bool bHexadecimal, const char* pOutSkoolName = nullptr);
 	void	AppFocusCallback(int focused);
 
-	int		TrapFunction(uint16_t pc, int ticks, uint64_t pins);
+	void	OnInstructionExecuted(int ticks, uint64_t pins);
 	uint64_t Z80Tick(int num, uint64_t pins);
 
 	void	Tick();
@@ -112,23 +114,24 @@ public:
 	const uint8_t*	GetMemPtr(uint16_t address) const override;
 	void		WriteByte(uint16_t address, uint8_t value) override;
 
-	uint16_t	GetPC(void) override;
+	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	bool		IsAddressBreakpointed(uint16_t addr) override;
-	bool		SetExecBreakpointAtAddress(uint16_t addr, bool bSet) override;
-	bool		SetDataBreakpointAtAddress(uint16_t addr, uint16_t dataSize,bool bSet) override;
-	void		Break(void) override;
-	void		Continue(void) override;
-	void		StepOver(void) override;
-	void		StepInto(void) override;
-	void		StepFrame(void) override;
-	void		StepScreenWrite(void) override;
+	//bool		IsAddressBreakpointed(FAddressRef addr) override;
+	//bool		SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) override;
+	//bool		SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize,bool bSet) override;
+	//void		Break(void) override;
+	//void		Continue(void) override;
+	//void		StepOver(void) override;
+	//void		StepInto(void) override;
+	//void		StepFrame(void) override;
+	//void		StepScreenWrite(void) override;
 	void		GraphicsViewerSetView(FAddressRef address, int charWidth) override;
-	bool		ShouldExecThisFrame(void) const override;
-	bool		IsStopped(void) const override;
-	void		FormatSpectrumMemory(FCodeAnalysisState& state);
+	//bool		ShouldExecThisFrame(void) const override;
+	//bool		IsStopped(void) const override;
 	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
+
+	void		FormatSpectrumMemory(FCodeAnalysisState& state);
 
 	void SetROMBank(int bankNo);
 	void SetRAMBank(int slot, int bankNo);
@@ -164,10 +167,6 @@ public:
 	zx_t			ZXEmuState;	// Chips Spectrum State
 	uint8_t*		MappedInMemory = nullptr;
 
-	unsigned char*	FrameBuffer;	// pixel buffer to store emu output
-	ImTextureID		Texture;		// texture 
-	
-	bool			ExecThisFrame = true; // Whether the emulator should execute this frame (controlled by UI)
 	float			ExecSpeedScale = 1.0f;
 
 	// Chips UI
@@ -207,20 +206,17 @@ public:
 	// interrupt handling info
 	bool			bHasInterruptHandler = false;
 	uint16_t		InterruptHandlerAddress = 0;
+	
 	uint16_t		PreviousPC = 0;		// store previous pc
+	int				InstructionsTicks = 0;
 
 	FRZXManager		RZXManager;
+	int				RZXFetchesRemaining = 0;
 
 	bool		bShowImGuiDemo = false;
 	bool		bShowImPlotDemo = false;
 private:
-	z80_tick_t	OldTickCB = nullptr;
-	void*		OldTickUserData = nullptr;
-
 	std::vector<FViewerBase*>	Viewers;
-
-	bool	bStepToNextFrame = false;
-	bool	bStepToNextScreenWrite = false;
 
 	bool	bShowDebugLog = false;
 	bool	bInitialised = false;
