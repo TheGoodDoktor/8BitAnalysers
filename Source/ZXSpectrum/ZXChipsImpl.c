@@ -65,6 +65,8 @@ uint64_t ReadInputIOTick(uint64_t pins, GetIOInput ioInputCB, void* pUserData)
 			Z80_SET_DATA(pins, (uint64_t)inVal);
 		}
 	}
+
+	return pins;
 }
 
 uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds) 
