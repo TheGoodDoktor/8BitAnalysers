@@ -56,7 +56,7 @@ static uint64_t FloatingBusTick(zx_t* sys, uint64_t pins)
 
 uint64_t ReadInputIOTick(uint64_t pins, GetIOInput ioInputCB, void* pUserData)
 {
-	if ((pins & Z80_IORQ) && (pins & Z80_RD))
+	if((pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
 	{
 		uint8_t inVal = 0;
 
