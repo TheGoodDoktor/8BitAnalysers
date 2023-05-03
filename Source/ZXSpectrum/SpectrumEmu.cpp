@@ -5,9 +5,6 @@
 #include "ZXChipsImpl.h"
 #include <cstdint>
 
-
-
-
 #include "GlobalConfig.h"
 #include "GameData.h"
 #include <ImGuiSupport/ImGuiTexture.h>
@@ -57,83 +54,11 @@ const char* kRomInfo48JsonFile = "RomInfo.json";
 const char* kRomInfo128JsonFile = "RomInfo128.json";
 const std::string kAppTitle = "Spectrum Analyser";
 
-// Memory access functions
-#if 0
-uint8_t* MemGetPtr(zx_t* zx, int layer, uint16_t addr)
-{
-	if (layer == 0)
-	{
-		/* ZX128 ROM, RAM 5, RAM 2, RAM 0 */
-		if (addr < 0x4000)
-			return &zx->rom[0][addr];
-		else if (addr < 0x8000)
-			return &zx->ram[5][addr - 0x4000];
-		else if (addr < 0xC000)
-			return &zx->ram[2][addr - 0x8000];
-		else
-			return &zx->ram[0][addr - 0xC000];
-	}
-	else if (layer == 1)
-	{
-		/* 48K ROM, RAM 1 */
-		if (addr < 0x4000)
-			return &zx->rom[1][addr];
-		else if (addr >= 0xC000)
-			return &zx->ram[1][addr - 0xC000];
-	}
-	else if (layer < 8)
-	{
-		if (addr >= 0xC000)
-			return &zx->ram[layer][addr - 0xC000];
-	}
-	/* fallthrough: unmapped memory */
-	return 0;
-}
-
-uint8_t MemReadFunc(int layer, uint16_t addr, void* user_data)
-{
-	assert(user_data);
-	zx_t* zx = (zx_t*)user_data;
-	if ((layer == 0) || (ZX_TYPE_48K == zx->type))
-	{
-		/* CPU visible layer */
-		return mem_rd(&zx->mem, addr);
-	}
-	else
-	{
-		uint8_t* ptr = MemGetPtr(zx, layer - 1, addr);
-		if (ptr)
-			return *ptr;
-		else
-			return 0xFF;
-	}
-}
-
-void MemWriteFunc(int layer, uint16_t addr, uint8_t data, void* user_data)
-{
-	assert(user_data);
-	zx_t* zx = (zx_t*)user_data;
-	if ((layer == 0) || (ZX_TYPE_48K == zx->type)) 
-	{
-		mem_wr(&zx->mem, addr, data);
-	}
-	else 
-	{
-		uint8_t* ptr = MemGetPtr(zx, layer - 1, addr);
-		if (ptr) 
-		{
-			*ptr = data;
-		}
-	}
-}
-#endif
 uint8_t		FSpectrumEmu::ReadByte(uint16_t address) const
 {
 	return mem_rd(const_cast<mem_t*>(&ZXEmuState.mem), address);
-
-	//return MemReadFunc(CurrentLayer, address, const_cast<zx_t *>(&ZXEmuState));
-
 }
+
 uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const 
 {
 	return ReadByte(address) | (ReadByte(address + 1) << 8);
@@ -170,8 +95,6 @@ const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const
 void FSpectrumEmu::WriteByte(uint16_t address, uint8_t value)
 {
 	mem_wr(&ZXEmuState.mem, address, value);
-
-	//MemWriteFunc(CurrentLayer, address, value, &ZXEmuState);
 }
 
 
@@ -304,24 +227,9 @@ void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
 	const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
-	//const uint16_t nextpc = ZXEmuState.cpu.pc;	// not sure this is right - seems to be address after current instruction
-	//const uint16_t nextpc = pc;
-	// store program count in history
-	//const uint16_t prevPC = PCHistory[PCHistoryPos];
-	//PCHistoryPos = (PCHistoryPos + 1) % FSpectrumEmu::kPCHistorySize;
-	//PCHistory[PCHistoryPos] = pc;
-
 	const uint16_t pc = pins & 0xffff;	// set PC to pc of instruction just executed
 
-	
-
 	RegisterCodeExecuted(state, pc, PreviousPC);
-	//FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
-	//pCodeInfo->FrameLastAccessed = state.CurrentFrameNo;
-	// check for breakpointed code line
-	//if (bBreak)
-	//	return UI_DBG_BP_BASE_TRAPID;
-	
 	MemoryHandlerTrapFunction(pc, ticks, pins, this);
 
 #if ENABLE_CAPTURES
@@ -332,15 +240,6 @@ void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 			trapId = kCaptureTrapId;
 	}
 #endif
-	
-
-	// work out instruction count
-	int iCount = 1;
-	uint8_t opcode = ReadByte(pc);
-	if (opcode == 0xED || opcode == 0xCB)
-		iCount++;
-
-	//RZXManager.RegisterInstructions(iCount);
 
 	PreviousPC = pc;
 }
@@ -350,16 +249,14 @@ int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, v
 	return 0;
 }
 
-// Note - you can't read the cpu vars during tick
-// They are only written back at end of exec function
 uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 {
 	FCodeAnalysisState &state = CodeAnalysis;
-
-	// we have to pass data to the tick through an internal state struct because the z80_t struct only gets updated after an emulation exec period
 	z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
-	//const FZ80InternalState& cpuState = pCPU->internal_state;
 	const uint16_t pc = GetPC().Address;
+	static uint64_t lastTickPins = 0;
+	const uint64_t risingPins = pins & (pins ^ lastTickPins);
+	lastTickPins = pins;
 
 	/* memory and IO requests */
 	if (pins & Z80_MREQ) 
@@ -371,7 +268,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		const uint8_t value = Z80_GET_DATA(pins);
 		if (pins & Z80_RD)
 		{
-			if (false)	// TODO: check if in interrupt
+			if (risingPins & Z80_INT)	// check if in interrupt - could this be done in the shared code analysis?
 			{
 				// TODO: read is to fetch interrupt handler address
 				//LOGINFO("Interrupt Handler at: %x", value);
@@ -399,32 +296,20 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
 			const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
 			state.SetLastWriterForAddress(addr, pcAddrRef);
-
-			// Log screen pixel writes
+			
 			if (addr >= 0x4000 && addr < 0x5800)
-			{
-				FrameScreenPixWrites.push_back({ addrRef,value, pcAddrRef });
-			}
-			// Log screen attribute writes
-			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
-			{
-				FrameScreenAttrWrites.push_back({ addrRef,value, pcAddrRef });
-			}
-			FDataInfo *pDataWrittenTo = state.GetReadDataInfoForAddress(addr);
-			if (pDataWrittenTo->DataType == EDataType::InstructionOperand) 
-			{
-				// TODO: record some info such as what byte was written
-				FCodeInfo* pCodeWrittenTo = state.GetCodeInfoForAddress(pDataWrittenTo->InstructionAddress);
-				pCodeWrittenTo->bSelfModifyingCode = true;
-			}
+				FrameScreenPixWrites.push_back({ addrRef,value, pcAddrRef });	// Log screen pixel writes
+			else if (addr >= 0x5800 && addr < 0x5800 + 0x400)
+				FrameScreenAttrWrites.push_back({ addrRef,value, pcAddrRef });	// Log screen attribute writes
 		}
 	}
 
-	// Handle remapping
+	// Handle IO operations
 	if (pins & Z80_IORQ)
 	{
 		IOAnalysis.IOHandler(pc, pins);
 
+		// handle bank switching on speccy 128
 		if (ZXEmuState.type == ZX_TYPE_128)
 		{
 			if (pins & Z80_WR)
@@ -576,16 +461,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
 
-	// Trap callback needs to be set before we create the UI
-	//z80_trap_cb(&ZXEmuState.cpu, ZXSpectrumTrapCallback, this);
-
-	// Setup out tick callback
-	//OldTickCB = ZXEmuState.cpu.tick_cb;
-	//OldTickUserData = ZXEmuState.cpu.user_data;
-	//ZXEmuState.cpu.tick_cb = Z80TickThunk;
-	//ZXEmuState.cpu.user_data = this;
-
-	//ui_init(zxui_draw);
 	{
 		ui_zx_desc_t desc = { 0 };
 		desc.zx = &ZXEmuState;
@@ -611,10 +486,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		ui_zx_init(&UIZX, &desc);
 	}
 
-	// additional debugger config
-	//pUI->UIZX.dbg.ui.open = true;
-	//UIZX.dbg.break_cb = UIEvalBreakpoint;
-	
 	// This is where we add the viewers we want
 	//Viewers.push_back(new FBreakpointViewer(this));
 	Viewers.push_back(new FOverviewViewer(this));
@@ -646,27 +517,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	LoadGameConfigs(this);
 
-	// Set up code analysis
-/*
-	// initialise code analysis pages
-	
-	// ROM
-	for (int pageNo = 0; pageNo < kNoROMPages; pageNo++)
-	{
-		char pageName[32];
-		sprintf(pageName, "ROM:%d", pageNo);
-		ROMPages[pageNo].Initialise(0);
-		CodeAnalysis.RegisterPage(&ROMPages[pageNo], pageName);
-	}
-	// RAM
-	for (int pageNo = 0; pageNo < kNoRAMPages; pageNo++)
-	{
-		char pageName[32];
-		sprintf(pageName, "RAM:%d", pageNo);
-		RAMPages[pageNo].Initialise(0);
-		CodeAnalysis.RegisterPage(&RAMPages[pageNo], pageName);
-	}
-*/
 	// create & register ROM banks
 	for (int bankNo = 0; bankNo < kNoROMBanks; bankNo++)
 	{
@@ -684,9 +534,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false);
 		CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
 	}
-
-	// CreateBank(name,size in kb,r/w)
-	// return bank id
 
 	// Setup initial machine memory config
 	if (config.Model == ESpectrumModel::Spectrum48K)
@@ -742,7 +589,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	if(config.SkoolkitImport.empty() == false)
 		ImportSkoolFile(config.SkoolkitImport.c_str());
 
-
+	CodeAnalysis.Debugger.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
 	bInitialised = true;
 	return true;
 }
@@ -762,8 +609,6 @@ void FSpectrumEmu::Shutdown()
 
 	SaveGlobalConfig(kGlobalConfigFilename);
 }
-
-
 
 void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 {

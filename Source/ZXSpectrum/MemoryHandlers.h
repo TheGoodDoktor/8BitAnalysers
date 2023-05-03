@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-//#include <map>
 #include <string>
 
 #include <CodeAnalyser/CodeAnaysisPage.h> 
@@ -9,7 +8,7 @@
 class FSpectrumEmu;
 struct FGame;
 
-enum class MemoryUse
+enum class EMemoryUse
 {
 	Code,
 	Data,
@@ -18,7 +17,7 @@ enum class MemoryUse
 
 struct FMemoryBlock
 {
-	MemoryUse	Use;
+	EMemoryUse	Use;
 	uint16_t	StartAddress;
 	uint16_t	EndAddress;
 	bool		ContainsSelfModifyingCode = false;
@@ -26,10 +25,11 @@ struct FMemoryBlock
 
 struct FMemoryStats
 {
+	static const int kMemorySize = 65536;
 	// counters for each memory address
-	int		ExecCount[0x10000];
-	int		ReadCount[0x10000];
-	int		WriteCount[0x10000];
+	int		ExecCount[kMemorySize];
+	int		ReadCount[kMemorySize];
+	int		WriteCount[kMemorySize];
 
 	std::vector< FMemoryBlock>	MemoryBlockInfo;
 

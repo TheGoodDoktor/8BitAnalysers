@@ -66,7 +66,7 @@ void FDebugger::CPUTick(uint64_t pins)
         case EDebugStepMode::ScreenWrite:
         {
             // break on screen memory write
-            if (bWrite && addr >= 0x4000 && addr < 0x5800)
+            if (bWrite && addr >= ScreenMemoryStart && addr <= ScreenMemoryEnd)
             {
                 trapId = kTrapId_Step;
             }

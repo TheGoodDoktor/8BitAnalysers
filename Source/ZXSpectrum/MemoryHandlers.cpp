@@ -72,7 +72,7 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEm
 
 
 
-MemoryUse DetermineAddressMemoryUse(const FMemoryStats &memStats, uint16_t addr, bool &smc)
+EMemoryUse DetermineAddressMemoryUse(const FMemoryStats &memStats, uint16_t addr, bool &smc)
 {
 	const bool bCode = memStats.ExecCount[addr] > 0;
 	const bool bData = memStats.ReadCount[addr] > 0 || memStats.WriteCount[addr] > 0;
@@ -83,11 +83,11 @@ MemoryUse DetermineAddressMemoryUse(const FMemoryStats &memStats, uint16_t addr,
 	}
 
 	if (bCode)
-		return MemoryUse::Code;
+		return EMemoryUse::Code;
 	if (bData)
-		return MemoryUse::Data;
+		return EMemoryUse::Data;
 
-	return MemoryUse::Unknown;
+	return EMemoryUse::Unknown;
 }
 
 void AnalyseMemory(FMemoryStats &memStats)
@@ -106,7 +106,7 @@ void AnalyseMemory(FMemoryStats &memStats)
 	for (int addr = 1; addr < (1<<16); addr++)
 	{
 		bSelfModifiedCode = false;
-		const MemoryUse addrUse = DetermineAddressMemoryUse(memStats, addr, bSelfModifiedCode);
+		const EMemoryUse addrUse = DetermineAddressMemoryUse(memStats, addr, bSelfModifiedCode);
 		if (bSelfModifiedCode)
 			memStats.CodeAndDataList.push_back(addr);
 		if (addrUse != currentBlock.Use)
@@ -196,7 +196,6 @@ void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 
 void DrawMemoryAnalysis(FSpectrumEmu* pUI)
 {
-
 	ImGui::Text("Memory Analysis");
 	if (ImGui::Button("Analyse"))
 	{
@@ -211,9 +210,9 @@ void DrawMemoryAnalysis(FSpectrumEmu* pUI)
 		for (const auto &memblock : memStats.MemoryBlockInfo)
 		{
 			const char *pTypeStr = "Unknown";
-			if (memblock.Use == MemoryUse::Code)
+			if (memblock.Use == EMemoryUse::Code)
 				pTypeStr = "Code";
-			else if (memblock.Use == MemoryUse::Data)
+			else if (memblock.Use == EMemoryUse::Data)
 				pTypeStr = "Data";
 			ImGui::Text("%s", pTypeStr);
 			ImGui::SameLine(100);

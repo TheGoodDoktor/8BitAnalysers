@@ -46,14 +46,6 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	return bankId;
 }
 
-/*FCodeAnalysisBank* FCodeAnalysisState::GetBank(int16_t bankId)
-{
-	if (bankId < 0 || bankId >= Banks.size())
-		return nullptr;
-
-	return &Banks[bankId];
-}*/
-
 // Set bank to memory pages starting at pageNo
 bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 {
@@ -650,6 +642,15 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
 	pDataInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+
+	// check for SMC
+	if (pDataInfo->DataType == EDataType::InstructionOperand)
+	{
+		// TODO: record some info such as what byte was written
+		FCodeInfo* pCodeWrittenTo = state.GetCodeInfoForAddress(pDataInfo->InstructionAddress);
+		if (pCodeWrittenTo != nullptr)	// sometime data can be malformed so do a defensive check
+			pCodeWrittenTo->bSelfModifyingCode = true;
+	}
 }
 
 void ReAnalyseCode(FCodeAnalysisState &state)
