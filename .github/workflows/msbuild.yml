@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: MSBuild
 
 on:
   #push:
