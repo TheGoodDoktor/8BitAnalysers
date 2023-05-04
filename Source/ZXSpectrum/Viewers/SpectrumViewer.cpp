@@ -214,12 +214,12 @@ void FSpectrumViewer::Draw()
 	{
 		DrawAddressInput(codeAnalysis, "X Coord", XCoordAddress);
 		ImGui::SameLine();
-		ImGui::Checkbox("Invert", &bInvertXCoord);
+		ImGui::Checkbox("Invert X", &bInvertXCoord);
 
 		//ImGui::SameLine();
 		DrawAddressInput(codeAnalysis, "Y Coord", YCoordAddress);
 		ImGui::SameLine();
-		ImGui::Checkbox("Invert", &bInvertYCoord);
+		ImGui::Checkbox("Invert Y", &bInvertYCoord);
 		ImGui::SameLine();
 		if (ImGui::Button("Set to X+1"))
 		{

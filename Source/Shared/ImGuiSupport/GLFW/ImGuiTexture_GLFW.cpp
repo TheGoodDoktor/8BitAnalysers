@@ -6,7 +6,7 @@
 
 
 // assume it's 8bpp
-ImTextureID ImGui_CreateTextureRGBA(void* pixels, int width, int height)
+ImTextureID ImGui_CreateTextureRGBA(const void* pixels, int width, int height)
 {
 	GLuint newTexture = 0;
 	GLint lastTexture;
@@ -29,7 +29,7 @@ ImTextureID ImGui_CreateTextureRGBA(void* pixels, int width, int height)
 	return textureId;
 }
 
-ImTextureID ImGui_CreateTexturePal8(void* pixels,uint32_t *pPalette, int width, int height)
+ImTextureID ImGui_CreateTexturePal8(const void* pixels,uint32_t *pPalette, int width, int height)
 {
 	GLuint newTexture = 0;
 	GLint lastTexture;
@@ -61,7 +61,7 @@ void ImGui_FreeTexture(ImTextureID texture)
 	glDeleteTextures(1, (GLuint*)(intptr_t*)&texture);
 }
 
-void ImGui_UpdateTextureRGBA(ImTextureID texture,void* pixels)
+void ImGui_UpdateTextureRGBA(ImTextureID texture,const void* pixels)
 {
 	GLint lastTexture;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTexture);
@@ -79,7 +79,7 @@ void ImGui_UpdateTextureRGBA(ImTextureID texture,void* pixels)
 
 static std::vector<uint32_t>	g_UploadBuffer;
 
-void ImGui_UpdateTextureRGBA(ImTextureID texture,void* pixels, int srcWidth, int srcHeight)
+void ImGui_UpdateTextureRGBA(ImTextureID texture,const void* pixels, int srcWidth, int srcHeight)
 {
 	GLint lastTexture;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTexture);

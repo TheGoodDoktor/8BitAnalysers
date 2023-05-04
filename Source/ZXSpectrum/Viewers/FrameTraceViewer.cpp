@@ -12,11 +12,12 @@
 void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 {
 	pSpectrumEmu = pEmu;
+	chips_display_info_t dispInfo = zx_display_info(&pEmu->ZXEmuState);
 
 	// Init Frame Trace
 	for (int i = 0; i < kNoFramesInTrace; i++)
 	{
-		//TODO: FrameTrace[i].Texture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(pEmu->FrameBuffer), 320, 256);
+		FrameTrace[i].Texture = ImGui_CreateTextureRGBA(pSpectrumEmu->SpectrumViewer.GetFrameBuffer(), dispInfo.frame.dim.width, dispInfo.frame.dim.height);
 		FrameTrace[i].CPUState = malloc(sizeof(z80_t));
 	}
 
@@ -54,7 +55,7 @@ void FFrameTraceViewer::CaptureFrame()
 {
 	// set up new trace frame
 	FSpeccyFrameTrace& frame = FrameTrace[CurrentTraceFrame];
-	//TODO: ImGui_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->FrameBuffer);
+	ImGui_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->SpectrumViewer.GetFrameBuffer());
 	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.Debugger.GetFrameTrace();	// copy frame trace - use method?
 	frame.ScreenPixWrites = pSpectrumEmu->FrameScreenPixWrites;
 	frame.ScreenAttrWrites = pSpectrumEmu->FrameScreenAttrWrites;
@@ -167,8 +168,11 @@ void FFrameTraceViewer::Draw()
 	ImGui::SameLine();
 	ImGui::Checkbox("Restore On Scrub", &RestoreOnScrub);
 	
-	ImGui::Image(frame.Texture, ImVec2(320, 256));
+	ImVec2 uv0(0, 0);
+	ImVec2 uv1(320.0f / 512.0f, 1.0f);
+	ImGui::Image(frame.Texture, ImVec2(320, 256), uv0, uv1);
 	ImGui::SameLine();
+
 	ShowWritesView->Draw();
 
 	// draw clipped list

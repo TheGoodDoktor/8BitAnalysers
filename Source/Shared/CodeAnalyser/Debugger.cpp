@@ -45,13 +45,13 @@ void FDebugger::CPUTick(uint64_t pins)
     }
     else if (CPUType == ECPUType::M6502)
     {
-        // TODO: 6502 version
 		addr = M6502_GET_ADDR(pins);
+		// TODO: bMemAccess
+		// TODO: bWrite
 		bNewOp =  pins & M6502_SYNC;
 	}
 
     const FAddressRef addrRef = pCodeAnalysis->AddressRefFromPhysicalAddress(addr);
-    //const z80_t& cpu = pEmulator->ZXEmuState.cpu;
 
     if (bNewOp)
     {
@@ -72,6 +72,24 @@ void FDebugger::CPUTick(uint64_t pins)
             }
         }
         break;
+
+		case EDebugStepMode::IORead:
+		{
+			if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
+			{
+				trapId = kTrapId_Step;
+			}
+		}
+		break;
+
+		case EDebugStepMode::IOWrite:
+		{
+			if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR))
+			{
+				trapId = kTrapId_Step;
+			}
+		}
+		break;
     }
 
     // iterate through data breakpoints
@@ -364,6 +382,18 @@ void	FDebugger::StepScreenWrite()
 {
     StepMode = EDebugStepMode::ScreenWrite;
     bDebuggerStopped = false;
+}
+
+void	FDebugger::StepIORead()
+{
+	StepMode = EDebugStepMode::IORead;
+	bDebuggerStopped = false;
+}
+
+void	FDebugger::StepIOWrite()
+{
+	StepMode = EDebugStepMode::IOWrite;
+	bDebuggerStopped = false;
 }
 
 // Breakpoints
@@ -797,6 +827,12 @@ void FDebugger::DrawBreakpoints(void)
 
 void FDebugger::DrawUI(void)
 {
+	if (ImGui::Button("Step IO Read"))
+		StepIORead();
+	ImGui::SameLine();
+	if (ImGui::Button("Step IO Write"))
+		StepIOWrite();
+
     if (ImGui::BeginTabBar("DebuggerTabBar"))
     {
         if (ImGui::BeginTabItem("Breakpoints"))

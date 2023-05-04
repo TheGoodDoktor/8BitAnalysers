@@ -5,9 +5,11 @@
 class FMemoryBuffer
 {
 public:
+	~FMemoryBuffer();
 	void	Init(size_t initialSize = 1024);
 	void	Init(void* pData, size_t dataSize);
 	bool	Finished() const { return ReadPosition == CurrentSize; }
+	void	ResetPosition() { ReadPosition = 0; }
 	void	WriteBytes(const void* pData, size_t noBytes);
 	bool	ReadBytes(void* Dest, size_t noBytes);
 

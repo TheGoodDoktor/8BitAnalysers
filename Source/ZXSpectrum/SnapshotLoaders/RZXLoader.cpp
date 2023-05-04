@@ -90,6 +90,50 @@ private:
 
 };
 
+bool DecompressToBuffer(void* pCompData, uint32_t compDataSize, FMemoryBuffer& outBuffer)
+{
+	z_stream stream;
+	memset(&stream, 0, sizeof(stream));
+	stream.avail_in = compDataSize;
+	stream.next_in = (Bytef*)pCompData;
+	if (inflateInit(&stream) != Z_OK)
+	{
+		LOGERROR("RZXLoader: Decompression Error!");
+		return false;
+	}
+
+	// Decompress the data
+	char buffer[1024];
+	int ret;
+	outBuffer.Init(1024);
+	do 
+	{
+		stream.avail_out = sizeof(buffer);
+		stream.next_out = (Bytef*)buffer;
+		ret = inflate(&stream, Z_NO_FLUSH);
+		switch (ret) 
+		{
+		case Z_NEED_DICT:
+		case Z_DATA_ERROR:
+		case Z_MEM_ERROR:
+			LOGERROR("RZXLoader: Error while decompressing the data");
+			inflateEnd(&stream);
+			return false;
+		}
+		int have = sizeof(buffer) - stream.avail_out;
+		if (have > 0) 
+		{
+			outBuffer.WriteBytes(buffer, have);
+		}
+	} while (ret != Z_STREAM_END);
+
+	// Clean up the decompression stream
+	inflateEnd(&stream);
+
+	outBuffer.ResetPosition();	// reset to beginning
+	return true;
+}
+
 ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXData& rzxData)
 {
 	bool bDone = false;
@@ -200,38 +244,35 @@ ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXData& rzxData)
 				const bool bProtected = !!(irbFlags & 0x1);
 				const bool bCompressed = !!(irbFlags & 0x2);
 
+				const uint32_t framesDataSize = blockLength - 18;
+				uint8_t* pFramesData = new uint8_t[framesDataSize];
+				inputBuffer.ReadBytes(pFramesData, framesDataSize);
+
+				FMemoryBuffer framesBuffer;
+
 				if (bCompressed)
+					DecompressToBuffer(pFramesData, framesDataSize, framesBuffer);
+				else
+					framesBuffer.Init(pFramesData, framesDataSize);
+
+				for (uint32_t frameNo = 0; frameNo < irb.NoFrames; frameNo++)
 				{
-					const uint32_t compDataSize = blockLength - 18;
-					uint8_t* pCompData = new uint8_t[compDataSize];
-					inputBuffer.ReadBytes(pCompData, compDataSize);
-					unsigned long nDataSize = compDataSize * 4;
-					uint8_t* pDecompBuffer = new uint8_t[nDataSize];
+					FRZXInputRecordingBlockFrame& frame = irb.Frames.emplace_back();
 
-					uncompress(pDecompBuffer, &nDataSize, pCompData, compDataSize);
-					delete[] pCompData;
+					framesBuffer.Read(frame.FetchCounter);
+					framesBuffer.Read(frame.NoIOPortReads);
+					assert(frame.FetchCounter != 0);
+					assert(frame.NoIOPortReads < frame.FetchCounter || frame.NoIOPortReads == 65535);
 
-					// TODO: process data
-					FMemoryBuffer framesBuffer;
-					framesBuffer.Init(pDecompBuffer, nDataSize);
-
-					for (uint32_t frameNo = 0; frameNo < irb.NoFrames; frameNo++)
+					if (frame.NoIOPortReads > 0 && frame.NoIOPortReads != 65535)
 					{
-						FRZXInputRecordingBlockFrame& frame = irb.Frames.emplace_back();
-
-						framesBuffer.Read(frame.FetchCounter);
-						framesBuffer.Read(frame.NoIOPortReads);
-
-						if (frame.NoIOPortReads > 0)
-						{
-							frame.PortReadValues = new uint8_t[frame.NoIOPortReads];
-							framesBuffer.ReadBytes(frame.PortReadValues, frame.NoIOPortReads);
-						}
+						frame.PortReadValues = new uint8_t[frame.NoIOPortReads];
+						framesBuffer.ReadBytes(frame.PortReadValues, frame.NoIOPortReads);
 					}
-
-					delete[] pDecompBuffer;
-
 				}
+
+				delete[] pFramesData;
+
 			}
 			break;
 
@@ -317,9 +358,9 @@ uint32_t FRZXManager::Update(void)
 	if (FrameNo != -1)
 	{
 		FRZXInputRecordingBlockFrame& oldFrame = pData->InputRecordingBlock.Frames[FrameNo];
-		if (oldFrame.NoIOPortReads != NoInputAttempts)
+		if (NoPortVals != NoInputAttempts)
 		{
-			LOGINFO("FRZXManager : %d input attempts, old frame had %d inputs", NoInputAttempts, oldFrame.NoIOPortReads);
+			LOGINFO("FRZXManager : %d input attempts, old frame had %d inputs", NoInputAttempts, NoPortVals);
 		}
 	}
 

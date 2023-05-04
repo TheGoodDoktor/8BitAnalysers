@@ -19,6 +19,8 @@ public:
 	void	Draw();
 	void	Tick(void);
 
+	const uint32_t* GetFrameBuffer() const { return FrameBuffer; }
+
 private:
 	// private methods
 	void	DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos);

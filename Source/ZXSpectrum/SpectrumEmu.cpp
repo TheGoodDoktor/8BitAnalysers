@@ -43,7 +43,7 @@
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
 
-#define ENABLE_RZX 0
+#define ENABLE_RZX 1
 #define SAVE_ROM_JSON 0
 
 #define ENABLE_CAPTURES 0
@@ -596,7 +596,8 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 void FSpectrumEmu::Shutdown()
 {
-	SaveCurrentGameData();	// save on close
+	if (RZXManager.GetReplayMode() == EReplayMode::Off)
+		SaveCurrentGameData();	// save on close
 
 	// Save Global Config - move to function?
 	FGlobalConfig& config = GetGlobalConfig();
@@ -848,10 +849,12 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				OpenFileDialog(pokFile, ".\\POKFiles", "POK\0*.pok\0");
 			}*/
 			
-			if (ImGui::MenuItem("Save Game Data"))
+			if (RZXManager.GetReplayMode() == EReplayMode::Off)
 			{
-				SaveCurrentGameData();
+				if (ImGui::MenuItem("Save Game Data"))
+					SaveCurrentGameData();
 			}
+
 			if (ImGui::MenuItem("Export Binary File"))
 			{
 				if (pActiveGame != nullptr)

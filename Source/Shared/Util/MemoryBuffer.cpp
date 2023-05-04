@@ -6,6 +6,13 @@
 
 #include "FileUtil.h"
 
+FMemoryBuffer::~FMemoryBuffer()
+{
+	if (AllocationSize != 0)
+		free(BasePtr);
+}
+
+
 void FMemoryBuffer::Init(size_t initialSize)
 {
 	if (BasePtr != nullptr)	// free old buffer

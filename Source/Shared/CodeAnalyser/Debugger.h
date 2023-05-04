@@ -23,7 +23,9 @@ enum class EDebugStepMode
 	StepOver,
 	ToCursor,
 	Frame,
-	ScreenWrite
+	ScreenWrite,
+	IORead,
+	IOWrite
 };
 
 // only add to end otherwise you'll break the file format
@@ -100,6 +102,8 @@ public:
 	void	StepOver();
 	void	StepFrame();
 	void	StepScreenWrite();
+	void	StepIORead();
+	void	StepIOWrite();
 	void	SetPC(FAddressRef newPC) { PC = newPC; }
 
 	// Breakpoints
