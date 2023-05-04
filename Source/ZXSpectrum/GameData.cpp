@@ -725,10 +725,13 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 	*sys = im;	// copy across new state
 
 	// Set code analysis banks
-	const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
-	pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1 : 0);
-	pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
-	pSpectrumEmu->CodeAnalysis.SetAllBanksDirty();
+	if (sys->type == ZX_TYPE_128)
+	{
+		const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
+		pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1 : 0);
+		pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
+		pSpectrumEmu->CodeAnalysis.SetAllBanksDirty();
+	}
 	return true;
 }
 
