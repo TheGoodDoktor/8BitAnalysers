@@ -50,7 +50,9 @@ add_compile_definitions( _CRT_SECURE_NO_WARNINGS )
 add_compile_definitions( _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS )
 
 # compiler options
-set(CMAKE_BUILD_TYPE Release)
+if (NOT CMAKE_BUILD_TYPE)
+    set (CMAKE_BUILD_TYPE Release)
+endif ()
 
 # vendor source
 
