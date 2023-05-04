@@ -86,8 +86,9 @@ set ( implot_src ${vendor_dir}/implot/implot.h
 	${vendor_dir}/implot/implot_internal.h)
 
 # rzx-lib
-set ( rzxlib_src ${vendor_dir}/rzx-sdk/rzx.c
-	${vendor_dir}/rzx-sdk/rzx.h)
+# FIXME: Missing in vendor folder, so disable for now
+#set ( rzxlib_src ${vendor_dir}/rzx-sdk/rzx.c
+#	${vendor_dir}/rzx-sdk/rzx.h)
 
 # zlib
 set ( zlib_src ${vendor_dir}/zlib/adler32.c

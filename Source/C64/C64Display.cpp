@@ -1,5 +1,6 @@
 #include "C64Display.h"
 
+#include <chips/chips_common.h>
 #include <chips/m6502.h>
 #include <chips/m6526.h>
 #include <chips/m6569.h>
@@ -8,6 +9,9 @@
 #include <chips/kbd.h>
 #include <chips/mem.h>
 #include <chips/clk.h>
+#include <chips/m6522.h>
+#include <systems/c1530.h>
+#include <systems/c1541.h>
 #include <systems/c64.h>
 
 #include <imgui.h>
@@ -22,12 +26,15 @@ void FC64Display::Init(FCodeAnalysisState* pAnalysis, void* pC64Emu)
 	CodeAnalysis = pAnalysis;
 
     // setup pixel buffer
+    // FIXME: seems uncommitted changes
+    /*
     FramePixelBufferSize = c64_max_display_size();
     FramePixelBuffer = new unsigned char[FramePixelBufferSize * 2];
 
     // setup texture
     FrameBufferTexture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), c64_std_display_width(), c64_std_display_height());
     //DebugFrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
+    */
 
 }
 
@@ -80,8 +87,12 @@ void FC64Display::DrawUI()
     const int screenHeightChars = 25;// pC64->vic.reg.ctrl_1& (1 << 3) ? 25 : 24;
     const int graphicsScreenWidth = screenWidthChars * 8;
     const int graphicsScreenHeight = screenHeightChars * 8;
-    const int dispFrameWidth = c64_display_width(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_WIDTH : _C64_STD_DISPLAY_WIDTH;
-    const int dispFrameHeight = c64_display_height(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_HEIGHT : _C64_STD_DISPLAY_HEIGHT;
+
+    // FIXME: Seems uncommitted changes
+    const int dispFrameWidth = 0;
+    const int dispFrameHeight = 0;
+    //const int dispFrameWidth = c64_display_width(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_WIDTH : _C64_STD_DISPLAY_WIDTH;
+    //const int dispFrameHeight = c64_display_height(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_HEIGHT : _C64_STD_DISPLAY_HEIGHT;
 
     ImGui_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer, dispFrameWidth, dispFrameHeight);
 
@@ -114,8 +125,12 @@ void FC64Display::DrawUI()
 
     if (ImGui::IsItemHovered())
     {
-        const int borderOffsetX = ((((dispFrameWidth>>3) - (graphicsScreenWidth>>3)) / 2) << 3) + xScrollOff;
-        const int borderOffsetY = ((((dispFrameHeight>>3) - (graphicsScreenHeight>>3)) / 2) << 3) + yScrollOff;
+        // FIXME:: rethink shifts of signed numbers
+        const int borderOffsetX = ((((dispFrameWidth>>3) - (graphicsScreenWidth>>3)) / 2) * 8) + xScrollOff;
+        const int borderOffsetY = ((((dispFrameHeight>>3) - (graphicsScreenHeight>>3)) / 2) * 8) + yScrollOff;
+        //const int borderOffsetX = ((((dispFrameWidth>>3) - (graphicsScreenWidth>>3)) / 2) << 3) + xScrollOff;
+        //const int borderOffsetY = ((((dispFrameHeight>>3) - (graphicsScreenHeight>>3)) / 2) << 3) + yScrollOff;
+
         const int xp = std::min(std::max((int)(io.MousePos.x - pos.x - borderOffsetX), 0), graphicsScreenWidth - 1);
         const int yp = std::min(std::max((int)(io.MousePos.y - pos.y - borderOffsetY), 0), graphicsScreenHeight - 1);
         
@@ -145,9 +160,9 @@ void FC64Display::DrawUI()
             else
                 ImGui::Text("Char: $%04X Colour Ram: $%04X", scrCharAddress, scrColourRamAddress);
 
-            const uint16_t lastBitmapWriter = CodeAnalysis->GetLastWriterForAddress(scrBitmapAddress);
-            const uint16_t lastCharWriter = CodeAnalysis->GetLastWriterForAddress(scrCharAddress);
-            const uint16_t lastColourRamWriter = CodeAnalysis->GetLastWriterForAddress(scrColourRamAddress);
+            const FAddressRef lastBitmapWriter = CodeAnalysis->GetLastWriterForAddress(scrBitmapAddress);
+            const FAddressRef lastCharWriter = CodeAnalysis->GetLastWriterForAddress(scrCharAddress);
+            const FAddressRef lastColourRamWriter = CodeAnalysis->GetLastWriterForAddress(scrColourRamAddress);
 
             if (bBitmapMode)
             {
@@ -177,6 +192,8 @@ void FC64Display::DrawUI()
             if (ImGui::IsMouseClicked(1))
                 bScreenCharSelected = false;
 
+            // FIXME: seems uncommitted changes
+            /*
             if (ImGui::IsMouseDoubleClicked(0))
             {
                 if(bBitmapMode)
@@ -186,6 +203,7 @@ void FC64Display::DrawUI()
             }
             if (ImGui::IsMouseDoubleClicked(1))
                 CodeAnalyserGoToAddress(viewState, lastColourRamWriter);
+            */
         }
 
     }
@@ -198,15 +216,15 @@ void FC64Display::DrawUI()
 
         if (bBitmapMode)
         {
-            const uint16_t lastBitmapWriter = CodeAnalysis->GetLastWriterForAddress(SelectBitmapAddr);
+            const FAddressRef lastBitmapWriter = CodeAnalysis->GetLastWriterForAddress(SelectBitmapAddr);
             ImGui::Text("Bitmap Address: $%X, Last Writer:", SelectBitmapAddr);
             DrawAddressLabel(*CodeAnalysis, viewState, lastBitmapWriter);
         }
-        const uint16_t lastCharWriter = CodeAnalysis->GetLastWriterForAddress(SelectCharAddr);
+        const FAddressRef lastCharWriter = CodeAnalysis->GetLastWriterForAddress(SelectCharAddr);
         ImGui::Text("Char Address: $%X, Last Writer:", SelectCharAddr);
         DrawAddressLabel(*CodeAnalysis, viewState, lastCharWriter);
 
-        const uint16_t lastColourRamWriter = CodeAnalysis->GetLastWriterForAddress(SelectColourRamAddr);
+        const FAddressRef lastColourRamWriter = CodeAnalysis->GetLastWriterForAddress(SelectColourRamAddr);
         ImGui::Text("Colour RAM Address: $%X, Last Writer:", SelectColourRamAddr);
         DrawAddressLabel(*CodeAnalysis, viewState, lastColourRamWriter);
     }

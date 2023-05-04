@@ -268,12 +268,14 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		// Get colour from colour info
 		switch (characterSet.Params.ColourInfo)
 		{
-		case EColourInfo::MemoryLUT:
-			colAttr = state.ReadByte(characterSet.Params.AttribsAddress.Address + charNo);
-			break;
-		case EColourInfo::InterleavedPost:
-			colAttr = state.ReadByte(addr++);
-			break;
+            case EColourInfo::MemoryLUT:
+                colAttr = state.ReadByte(characterSet.Params.AttribsAddress.Address + charNo);
+                break;
+            case EColourInfo::InterleavedPost:
+                colAttr = state.ReadByte(addr++);
+                break;
+            default:
+                break;
 		}
 
 		if (colAttr != 0xff)

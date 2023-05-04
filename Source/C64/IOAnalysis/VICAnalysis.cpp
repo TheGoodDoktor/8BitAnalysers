@@ -1,5 +1,6 @@
 #include "VICAnalysis.h"
 #include <CodeAnalyser/CodeAnalyser.h>
+#include <chips/chips_common.h>
 
 void FVICAnalysis::Init(FCodeAnalysisState* pAnalysis)
 {
@@ -23,7 +24,9 @@ void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
 	FC64IORegisterInfo& vicRegister = VICRegisters[reg];
 	const uint8_t regChange = vicRegister.LastVal ^ val;	// which bits have changed
 
-	int16_t pageId = pCodeAnalysis->GetAddressReadPageId(pc);
+    // FIXME: FCodeAnalysisState::GetAddressReadPageId is a private member
+	//int16_t pageId = pCodeAnalysis->GetAddressReadPageId(pc);
+    int16_t pageId = 0;
 	vicRegister.Accesses[pc + (pageId << 16)].WriteVals.insert(val);
 
 	vicRegister.LastVal = val;
@@ -172,7 +175,7 @@ void FVICAnalysis::DrawUI(void)
 		for (int i = 0; i < (int)g_VICRegDrawInfo.size(); i++)
 		{
 			char selectableTXT[32];
-			sprintf_s(selectableTXT, "$%X %s", i, g_VICRegDrawInfo[i].Name);
+			snprintf(selectableTXT, sizeof(selectableTXT), "$%X %s", i, g_VICRegDrawInfo[i].Name);
 			if (ImGui::Selectable(selectableTXT, SelectedRegister == i))
 			{
 				SelectedRegister = i;
@@ -200,7 +203,10 @@ void FVICAnalysis::DrawUI(void)
 			for (auto& access : vicRegister.Accesses)
 			{
 				ImGui::Separator();
-				const char* pPageName = pCodeAnalysis->GetPageName(access.first >> 16);
+
+                // FIXME: FCodeAnalysisState::GetPageName is a private member
+				//const char* pPageName = pCodeAnalysis->GetPageName(access.first >> 16);
+                const char* pPageName = "";
 				ImGui::Text("Code at: %s:$%X", pPageName, access.first & 0xffff);
 				DrawAddressLabel(*pCodeAnalysis, pCodeAnalysis->GetFocussedViewState(), access.first & 0xffff);
 
