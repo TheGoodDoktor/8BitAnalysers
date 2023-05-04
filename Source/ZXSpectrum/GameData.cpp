@@ -647,7 +647,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 }
 
 const uint32_t kMachineStateMagic = 0xFaceCafe;
-const uint32_t kMachineStateVersion = 2;
+const uint32_t kMachineStateVersion = 4;
 
 
 void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
@@ -686,25 +686,15 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 	fwrite(&kMachineStateMagic, sizeof(kMachineStateMagic), 1, fp);
 	fwrite(&kMachineStateVersion, sizeof(kMachineStateVersion), 1, fp);
 
-	// write out emulator state, I could just write out the entire ZXEmuState struct
+	// just save the whole thing out
+	static zx_t dst = pSpectrumEmu->ZXEmuState;	// copy to temp
+	chips_debug_snapshot_onsave(&dst.debug);
+	chips_audio_callback_snapshot_onsave(&dst.audio.callback);
+	ay38910_snapshot_onsave(&dst.ay);
+	mem_snapshot_onsave(&dst.mem, &pSpectrumEmu->ZXEmuState);
 
-	const uint32_t type = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128 ? 128 : 48;
-	fwrite(&type, sizeof(type), 1, fp);
-	const int noBanks = type == 128 ? 8 : 3;
-
-	// write out the RAM banks
-	for (int ramBank = 0; ramBank < noBanks; ramBank++)
-		fwrite(pSpectrumEmu->ZXEmuState.ram[ramBank], 0x4000, 1, fp);
-
-	// write memory setup
-	if (type == 128)
-	{
-		const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
-		fwrite(&memConfig, sizeof(memConfig), 1, fp);
-	}
-
-	// write out entire CPU state
-	fwrite(&pSpectrumEmu->ZXEmuState.cpu, sizeof(z80_t), 1, fp);
+	fwrite(&dst, sizeof(zx_t), 1, fp);
+	return;
 }
 
 bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
@@ -720,48 +710,24 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 
 	if (fileVersion != kMachineStateVersion)	// since machine state is not that important different file version numbers get rejected
 		return false;
-	
-	// machine type
-	const uint32_t machineType = pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128 ? 128 : 48;
-	uint32_t type = 0;
-	fread(&type, sizeof(type), 1, fp);
-	if (type != machineType)
-		return false;
 
-	// read memory
-	const int noBanks = type == 128 ? 8 : 3;
+	// load the entire state
+	zx_t* sys = &pSpectrumEmu->ZXEmuState;
+	static zx_t im;
 
-	// read in the RAM banks
-	for (int ramBank = 0; ramBank < noBanks; ramBank++)
-		fread(pSpectrumEmu->ZXEmuState.ram[ramBank], 0x4000, 1, fp);
+	fread(&im, sizeof(zx_t), 1, fp);
 
-	// write memory setup
-	if (type == 128)
-	{
-		uint8_t memConfig = 0;
-		fread(&memConfig, sizeof(memConfig), 1, fp);
-		pSpectrumEmu->ZXEmuState.last_mem_config = memConfig;
+	// fixup pointers & callbacks
+	chips_debug_snapshot_onload(&im.debug, &sys->debug);
+	chips_audio_callback_snapshot_onload(&im.audio.callback, &sys->audio.callback);
+	ay38910_snapshot_onload(&im.ay, &sys->ay);
+	mem_snapshot_onload(&im.mem, sys);
+	*sys = im;	// copy across new state
 
-		// bit 3 defines the video scanout memory bank (5 or 7) 
-		pSpectrumEmu->ZXEmuState.display_ram_bank = (memConfig & (1 << 3)) ? 7 : 5;
-
-		// map last bank
-		mem_map_ram(&pSpectrumEmu->ZXEmuState.mem, 0, 0xC000, 0x4000, pSpectrumEmu->ZXEmuState.ram[memConfig & 0x7]);
-
-		// map ROM
-		if (memConfig & (1 << 4)) // bit 4 set: ROM1 
-			mem_map_rom(&pSpectrumEmu->ZXEmuState.mem, 0, 0x0000, 0x4000, pSpectrumEmu->ZXEmuState.rom[1]);
-		else // bit 4 clear: ROM0 
-			mem_map_rom(&pSpectrumEmu->ZXEmuState.mem, 0, 0x0000, 0x4000, pSpectrumEmu->ZXEmuState.rom[0]);
-
-		// Set code analysis banks
-		pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1:0);
-		pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
-	}
-
-	// get CPU state
-	fread(&pSpectrumEmu->ZXEmuState.cpu, sizeof(z80_t), 1, fp);
-
+	// Set code analysis banks
+	const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
+	pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1 : 0);
+	pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
 	pSpectrumEmu->CodeAnalysis.SetAllBanksDirty();
 	return true;
 }
