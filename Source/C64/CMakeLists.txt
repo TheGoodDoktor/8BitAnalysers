@@ -107,7 +107,7 @@ set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${
 
 # program source
 file ( GLOB program_src 
-	./*.cpp ./*.h
+	./*.cpp ./*.c ./*.h
 	GraphicsViewer/*.cpp GraphicsViewer/*.h
 	IOAnalysis/*.cpp IOAnalysis/*.h )
 
@@ -125,6 +125,7 @@ source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${s
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX C64 FILES ${program_src} ${platform_main})
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 )
+set_target_properties( ${PROJECT_NAME} PROPERTIES C_STANDARD 11 )
 
 #windows specific
 if(${gfxapi} STREQUAL "DX11")

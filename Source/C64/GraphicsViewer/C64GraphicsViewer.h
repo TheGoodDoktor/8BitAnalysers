@@ -2,8 +2,7 @@
 
 #include <cstdint>
 
-struct FCodeAnalysisState;
-#pragma once
+class FCodeAnalysisState;
 
 class FGraphicsView;
 

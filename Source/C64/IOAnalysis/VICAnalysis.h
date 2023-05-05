@@ -2,7 +2,7 @@
 
 #include "IORegisterAnalysis.h"
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 struct FCodeAnalysisPage;
 
 class FVICAnalysis

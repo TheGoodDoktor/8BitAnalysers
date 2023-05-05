@@ -5,6 +5,8 @@
 #include <set>
 #include <vector>
 
+class FCodeAnalysisState;
+
 struct FC64IORegisterAccessInfo
 {
 	std::set<uint8_t>	WriteVals;
@@ -27,4 +29,4 @@ void DrawRegValueHex(uint8_t val);
 void DrawRegValueDecimal(uint8_t val);
 
 int DrawRegSelectList(std::vector<FRegDisplayConfig>& regList, int selection);
-void DrawRegDetails(FC64IORegisterInfo& reg, const FRegDisplayConfig& regConfig, struct FCodeAnalysisState* pCodeAnalysis);
+void DrawRegDetails(FC64IORegisterInfo& reg, const FRegDisplayConfig& regConfig, FCodeAnalysisState* pCodeAnalysis);

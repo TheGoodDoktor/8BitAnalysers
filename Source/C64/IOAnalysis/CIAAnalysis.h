@@ -3,7 +3,7 @@
 #include "IORegisterAnalysis.h"
 #include <vector>
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 struct FCodeAnalysisPage;
 
 class FCIAAnalysis

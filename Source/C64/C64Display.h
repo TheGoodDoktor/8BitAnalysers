@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <cstdint>
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 // claas for drawing the C64
 class FC64Display

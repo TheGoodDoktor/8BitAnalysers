@@ -8,7 +8,7 @@
 #include "SIDAnalysis.h"
 #include "CIAAnalysis.h"
 
-struct FCodeAnalysisState;
+class FCodeAnalysisState;
 
 class FC64IOAnalysis
 {

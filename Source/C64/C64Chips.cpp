@@ -2,7 +2,7 @@
     UI implementation for c64.c, this must live in a .cc file.
 */
 //#include "common.h"
-#define CHIPS_IMPL
+//#define CHIPS_IMPL
 
 #include "imgui.h"
 #include "chips/chips_common.h"
@@ -24,10 +24,13 @@
 
 #define UI_DASM_USE_Z80
 #define UI_DASM_USE_M6502
-#define UI_DBG_USE_M6502
 //#include "ui.h"
 #include "util/m6502dasm.h"
 #include "util/z80dasm.h"
+
+#define CHIPS_UI_IMPL
+#define UI_DBG_USE_M6502
+
 #include "ui/ui_util.h"
 #include "ui/ui_chip.h"
 #include "ui/ui_memedit.h"
@@ -629,6 +632,9 @@ void FC64Emulator::ResetCodeAnalysis(void)
 
 bool FC64Emulator::SaveCodeAnalysis(const FGameInfo* pGameInfo)
 {
+    // TODO: Json save
+    return false;
+#if 0
     FMemoryBuffer saveBuffer;
     saveBuffer.Init();
 
@@ -652,10 +658,14 @@ bool FC64Emulator::SaveCodeAnalysis(const FGameInfo* pGameInfo)
     char fileName[128];
     snprintf(fileName, sizeof(fileName), "AnalysisData/%s.bin", pGameInfo->Name.c_str());
     return saveBuffer.SaveToFile(fileName);
+#endif
 }
 
 bool FC64Emulator::LoadCodeAnalysis(const FGameInfo *pGameInfo)
 {
+    // TODO: Json load
+    return false;
+#if 0
     char fileName[128];
     snprintf(fileName, sizeof(fileName), "AnalysisData/%s.bin",pGameInfo->Name.c_str());
     FMemoryBuffer loadBuffer;
@@ -683,6 +693,7 @@ bool FC64Emulator::LoadCodeAnalysis(const FGameInfo *pGameInfo)
 	//CodeAnalysis.SetCodeAnalysisDirty();
 
     return true;
+#endif
 }
 
 
@@ -697,13 +708,13 @@ void FC64Emulator::Shutdown()
 
 void FC64Emulator::Tick()
 {
-    const float frameTime = fmin(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
+    const float frameTime = (float)fmin(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
     FCodeAnalysisViewState& viewState =  CodeAnalysis.GetFocussedViewState();
 
     // FIXME: invalid function signature
     //if (ui_c64_before_exec(&C64UI))
     {
-        c64_exec(&C64Emu, fmax(static_cast<uint32_t>(frameTime), uint32_t(1)));
+        c64_exec(&C64Emu, (uint32_t)fmax(static_cast<uint32_t>(frameTime), uint32_t(1)));
 
         // FIXME: invalid function signature
         //ui_c64_after_exec(&C64UI);
@@ -915,12 +926,10 @@ int    FC64Emulator::OnCPUTrap(uint16_t pc, int ticks, uint64_t pins)
     return 0;
 }
 
-extern uint16_t g_M6502PC;
-
 uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 {
     static uint16_t lastPC = m6502_pc(&C64Emu.cpu);
-    const uint16_t pc = g_M6502PC;// m6502_pc(&C64Emu.cpu);// pc after execution?
+    const uint16_t pc = C64Emu.cpu.PC;// g_M6502PC;// m6502_pc(&C64Emu.cpu);// pc after execution?
     const uint16_t addr = M6502_GET_ADDR(pins);
     const uint8_t val = M6502_GET_DATA(pins);
     bool irq = pins & M6502_IRQ;
