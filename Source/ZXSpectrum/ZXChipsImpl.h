@@ -9,13 +9,13 @@
 #include "chips/mem.h"
 #include "systems/zx.h"
 
-// This file will contain C function for compatability reasons
+// This file will contain C function for compatibility reasons
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 	
-typedef bool(*GetIOInput)(uint8_t* pInVal, void* pUserData);
+typedef bool(*GetIOInput)(uint16_t port, uint8_t* pInVal, void* pUserData);
 
 void ZXDecodeScreen(zx_t* pZX);
 uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds);

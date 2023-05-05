@@ -21,7 +21,7 @@ public:
 	void			DrawUI(void);
 	//void			RegisterInstructions(int num);
 	uint32_t		Update();
-	bool			GetInput(uint8_t& outVal);
+	bool			GetInput(uint16_t port, uint8_t& outVal);
 	EReplayMode		GetReplayMode() const { return ReplayMode; }
 	//bool			RZXCallbackHandler(int msg, void* param);
 private:
@@ -35,7 +35,7 @@ private:
 	int				NoPortVals = 0;
 	uint8_t*		PortVals = nullptr;
 
-	// debugg
+	// debug info
 	int				NoInputAttempts = 0;
 
 	FRZXData*	pData = nullptr;

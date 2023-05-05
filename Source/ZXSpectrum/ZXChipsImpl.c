@@ -59,8 +59,9 @@ uint64_t ReadInputIOTick(uint64_t pins, GetIOInput ioInputCB, void* pUserData)
 	if((pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
 	{
 		uint8_t inVal = 0;
+		const uint16_t port = Z80_GET_ADDR(pins);
 
-		if (ioInputCB(&inVal,pUserData))
+		if (ioInputCB(port, &inVal,pUserData))
 		{
 			Z80_SET_DATA(pins, (uint64_t)inVal);
 		}
@@ -111,6 +112,8 @@ uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches, GetIOInput ioInpu
 	uint32_t fetchCount = 0;
 	uint32_t tickCount = 0;
 
+	uint32_t rCounter = 0;
+
 	if (sys->debug.callback.func == NULL)
 	{
 		// run without debug hook
@@ -136,9 +139,20 @@ uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches, GetIOInput ioInpu
 	else
 	{
 		// run with debug hook
-		//for (uint32_t tick = 0; (tick < num_ticks) && !(*sys->debug.stopped); tick++)
 		while (fetchCount < noFetches && !(*sys->debug.stopped))
 		{
+			/*switch (sys->cpu.step)
+			{
+			case 1:
+			case 4:
+			case 23:
+			case 26:
+			case 1471:
+			case 1490:
+			case 1507:
+				fetchCount++;
+			}*/
+
 			pins = _zx_tick(sys, pins);
 			pins = FloatingBusTick(sys, pins);
 			if (ioInputCB)
@@ -146,13 +160,21 @@ uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches, GetIOInput ioInpu
 			sys->debug.callback.func(sys->debug.callback.user_data, pins);
 			if (z80_opdone(&sys->cpu))
 			{
-				//const uint16_t pc = pins & 0xffff;
-				//const uint8_t opcode = mem_rd(&sys->mem, pc);
-				//if (opcode == 0xED || opcode == 0xCB)
-				//	fetchCount++;
+				const uint16_t pc = pins & 0xffff;
+				const uint8_t opcode = mem_rd(&sys->mem, pc);
+				if (opcode == 0xED || opcode == 0xCB)
+					fetchCount++;
+				else if (opcode == 0xDD || opcode == 0xFD)
+				{
+					fetchCount++;
+					const uint8_t opcode2 = mem_rd(&sys->mem, pc+1);
+					if(opcode2 == 0xCB)
+						fetchCount++;
+				}
 
 				fetchCount++;
 			}
+
 			tickCount++;
 		}
 	}

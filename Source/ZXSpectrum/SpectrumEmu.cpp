@@ -1195,10 +1195,10 @@ static void UpdateMemmap(ui_zx_t* ui)
 
 void StoreRegisters_Z80(FCodeAnalysisState& state);
 
-bool GetIOInputFunc(uint8_t* pInVal, void* pUserData)
+bool GetIOInputFunc(uint16_t port, uint8_t* pInVal, void* pUserData)
 {
 	FSpectrumEmu* pEmu = (FSpectrumEmu*)pUserData;
-	return pEmu->RZXManager.GetInput(*pInVal);
+	return pEmu->RZXManager.GetInput(port, *pInVal);
 }
 
 

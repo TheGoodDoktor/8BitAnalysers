@@ -10,6 +10,8 @@
 #include <zlib.h>
 #include <Util/MemoryBuffer.h>
 
+#include "../SpectrumEmu.h"
+
 
 //#include "rzx.h"
 // https://worldofspectrum.net/RZXformat.html
@@ -261,8 +263,8 @@ ERZXError FRZXLoader::ReadBlock(FMemoryBuffer& inputBuffer, FRZXData& rzxData)
 
 					framesBuffer.Read(frame.FetchCounter);
 					framesBuffer.Read(frame.NoIOPortReads);
-					assert(frame.FetchCounter != 0);
-					assert(frame.NoIOPortReads < frame.FetchCounter || frame.NoIOPortReads == 65535);
+					//assert(frame.FetchCounter != 0);
+					//assert(frame.NoIOPortReads < frame.FetchCounter || frame.NoIOPortReads == 65535);
 
 					if (frame.NoIOPortReads > 0 && frame.NoIOPortReads != 65535)
 					{
@@ -360,7 +362,7 @@ uint32_t FRZXManager::Update(void)
 		FRZXInputRecordingBlockFrame& oldFrame = pData->InputRecordingBlock.Frames[FrameNo];
 		if (NoPortVals != NoInputAttempts)
 		{
-			LOGINFO("FRZXManager : %d input attempts, old frame had %d inputs", NoInputAttempts, NoPortVals);
+			LOGINFO("FRZXManager : [Frame:%d] %d input attempts, old frame had %d inputs", FrameNo, NoInputAttempts, NoPortVals);
 		}
 	}
 
@@ -382,16 +384,71 @@ uint32_t FRZXManager::Update(void)
     return frame.FetchCounter;
 }
 
-bool	FRZXManager::GetInput(uint8_t& outVal)
+static void OutputPortDebug(FSpectrumEmu* pEmu, uint16_t port, uint8_t val);
+
+bool	FRZXManager::GetInput(uint16_t port, uint8_t& outVal)
 {
 	NoInputAttempts++;
+
 	if (NoInputAttempts > NoPortVals)
 		return false;
 
 	assert(PortVals != nullptr);
 	outVal = PortVals[InputCount];
+	//OutputPortDebug(pZXEmulator, port, outVal);
 	InputCount++;
 
     return true;
+}
+
+// Some debugging stuff
+
+#include <map>
+
+std::map<uint16_t,std::vector<std::string>> g_KeyNames =
+{
+	{0xfefe, {"Shift","Z","X","C","V"}},
+	{0xfdfe, {"A","S","D","F","G"}},
+	{0xfbfe, {"Q","W","E","R","T"}},
+	{0xf7fe, {"1","2","3","4","5"}},
+	{0xeffe, {"0","9","8","7","6"}},
+	{0xdffe, {"P","O","I","U","Y"}},
+	{0xbffe, {"Enter","L","K","J","H"}},
+	{0x7ffe, {"Space","Sym","M","N","B"}},
+};
+
+static void OutputPortDebug(FSpectrumEmu* pEmu,uint16_t port, uint8_t val)
+{
+	if ((val & 0x1f) == 0x1f)	// no key down
+		return;
+
+	/*const uint16_t columnMask = (~(port >> 8)) & 0x00FF;
+
+	for (int colNo = 0; colNo < 8; colNo++)
+	{
+		if (columnMask & (1 << colNo))
+		{
+			for (int i = 0; i < 5; i++)
+			{
+				if ((val & (1 << i)) == 0)
+				{
+					LOGINFO("0x%04X : Column %d, key %d Down", pEmu->GetPC().Address, colNo, i);
+
+				}
+			}
+		}
+	}*/
+
+	const auto findIt = g_KeyNames.find(port);
+	if (findIt == g_KeyNames.end())
+		return;
+
+	auto& row = findIt->second;
+	for (int i = 0; i < 5; i++)
+	{
+		if ((val & (1 << i)) == 0)
+			LOGINFO("0x%04X : Key %s pressed", pEmu->GetPC().Address, row[i].c_str());
+	}
+
 }
 
