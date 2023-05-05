@@ -1,8 +1,9 @@
 #include "C64GraphicsViewer.h"
 #include <CodeAnalyser/CodeAnalyser.h>
-#include <util/GraphicsView.h>
+#include <Util/GraphicsView.h>
 #include <imgui.h>
 
+#include <chips/chips_common.h>
 #include <chips/m6502.h>
 #include <chips/m6526.h>
 #include <chips/m6569.h>
@@ -11,6 +12,10 @@
 #include <chips/kbd.h>
 #include <chips/mem.h>
 #include <chips/clk.h>
+#include <chips/m6522.h>
+#include <systems/c1530.h>
+#include <systems/c1541.h>
+#include <systems/c64.h>
 #include <systems/c64.h>
 
 void FC64GraphicsViewer::Init(FCodeAnalysisState* pAnalysis, void* pEmu)

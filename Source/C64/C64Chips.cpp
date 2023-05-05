@@ -5,6 +5,7 @@
 #define CHIPS_IMPL
 
 #include "imgui.h"
+#include "chips/chips_common.h"
 #include "chips/z80.h"
 #include "chips/m6502.h"
 #include "chips/m6526.h"
@@ -14,7 +15,13 @@
 #include "chips/kbd.h"
 #include "chips/mem.h"
 #include "chips/clk.h"
-#include "systems/c64.h"
+#include <chips/m6502.h>
+#include <chips/m6522.h>
+#include <chips/m6569.h>
+#include <systems/c1530.h>
+#include <systems/c1541.h>
+#include <systems/c64.h>
+
 #define UI_DASM_USE_Z80
 #define UI_DASM_USE_M6502
 #define UI_DBG_USE_M6502
@@ -27,6 +34,7 @@
 #include "ui/ui_memmap.h"
 #include "ui/ui_dasm.h"
 #include "ui/ui_dbg.h"
+#include "ui/ui_snapshot.h"
 #include "ui/ui_m6502.h"
 #include "ui/ui_m6526.h"
 #include "ui/ui_m6581.h"
@@ -90,9 +98,12 @@ public:
         mem_wr(&C64Emu.mem_cpu, address, value);
     }
 
-    uint16_t	GetPC(void) override
+    FAddressRef GetPC() override
     {
-        return m6502_pc(&C64Emu.cpu);
+        uint16_t address = m6502_pc(&C64Emu.cpu);
+        FAddressRef result(0, address);
+
+        return result;
     }
 
     uint16_t	GetSP(void) override
@@ -100,6 +111,8 @@ public:
         return m6502_s(&C64Emu.cpu) + 0x100;    // stack begins at 0x100
     }
 
+    // FIXME: undeclared functions
+    /*
     void	Break(void) override
     {
         C64UI.dbg.dbg.stopped = true;
@@ -153,6 +166,7 @@ public:
     void		GraphicsViewerSetView(uint16_t address, int charWidth) override
     {
     }
+    */
     // End ICPUInterface interface implementation
 
     c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
@@ -201,7 +215,8 @@ private:
     bool                bCharacterROMMapped = false;
     bool                bIOMapped = true;
 
-    m6502_tick_t    OldTickCB = nullptr;
+    // FIXME: no such type in m6502.h
+    //m6502_tick_t    OldTickCB = nullptr;
 };
 
 FC64Emulator g_C64Emu;
@@ -225,9 +240,9 @@ void gfx_destroy_texture(void* h)
 /* reboot callback */
 static void C64BootCallback(c64_t* sys) 
 {
-    FC64Emulator* pC64Emu = (FC64Emulator*)sys->user_data;
-    pC64Emu->OnBoot();
-    
+    // FIXME: no such struct member
+    //FC64Emulator* pC64Emu = (FC64Emulator*)sys->user_data;
+    //pC64Emu->OnBoot();
 }
 
 static int CPUTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)
@@ -239,8 +254,11 @@ static int CPUTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_dat
 uint64_t CPUTickCallback(uint64_t pins, void* user_data)
 {
     c64_t* sys = (c64_t*)user_data;
-    FC64Emulator* pC64Emu = (FC64Emulator*)sys->user_data;
-    return pC64Emu->OnCPUTick(pins);
+
+    // FIXME: no such struct field
+    return 0;
+    //FC64Emulator* pC64Emu = (FC64Emulator*)sys->user_data;
+    //return pC64Emu->OnCPUTick(pins);
 }
 
 /* audio-streaming callback */
@@ -255,6 +273,9 @@ c64_desc_t FC64Emulator::GenerateC64Desc(c64_joystick_type_t joy_type)
     c64_desc_t desc;
     memset(&desc, 0, sizeof(c64_desc_t));
     desc.joystick_type = joy_type;
+
+    // FIXME: No such fields in c64_desc_t
+    /*
     desc.pixel_buffer = Display.GetPixelBuffer();
     desc.pixel_buffer_size = Display.GetPixelBufferSize();
     desc.audio_cb = push_audio;
@@ -266,6 +287,7 @@ c64_desc_t FC64Emulator::GenerateC64Desc(c64_joystick_type_t joy_type)
     desc.rom_basic_size = sizeof(dump_c64_basic_bin);
     desc.rom_kernal = dump_c64_kernalv3_bin;
     desc.rom_kernal_size = sizeof(dump_c64_kernalv3_bin);
+    */
      
     return desc;
 }
@@ -315,20 +337,27 @@ bool FC64Emulator::Init()
     c64_joystick_type_t joy_type = C64_JOYSTICKTYPE_NONE;
     c64_desc_t desc = GenerateC64Desc(joy_type);
     c64_init(&C64Emu, &desc);
-    C64Emu.user_data = this;
+
+    // FIXME: no such struct member
+    //C64Emu.user_data = this;
 
     // trap callback
-    m6502_trap_cb(&C64Emu.cpu, CPUTrapCallback, this);
+    // FIXME: no such function
+    //m6502_trap_cb(&C64Emu.cpu, CPUTrapCallback, this);
 
     // Tick callback - why isn't this working?
-    OldTickCB = C64Emu.cpu.tick_cb;
-    C64Emu.cpu.tick_cb = CPUTickCallback;
+    // FIXME: no such struct member
+    //OldTickCB = C64Emu.cpu.tick_cb;
+    //C64Emu.cpu.tick_cb = CPUTickCallback;
 
     // Setup C64 UI
     ui_c64_desc_t uiDesc;
-    memset(&desc, 0, sizeof(ui_c64_desc_t));
+    memset(&uiDesc, 0, sizeof(ui_c64_desc_t));
     uiDesc.c64 = &C64Emu;
     uiDesc.boot_cb = C64BootCallback;
+
+    // FIXME: no such fields in c64_desc_t
+    /*
     uiDesc.create_texture_cb = gfx_create_texture;
     uiDesc.update_texture_cb = gfx_update_texture;
     uiDesc.destroy_texture_cb = gfx_destroy_texture;
@@ -342,6 +371,7 @@ bool FC64Emulator::Init()
     uiDesc.dbg_keys.step_into_name = "F7";
     uiDesc.dbg_keys.toggle_breakpoint_keycode = ImGuiKey_F9;
     uiDesc.dbg_keys.toggle_breakpoint_name = "F9";
+    */
     ui_c64_init(&C64UI, &uiDesc);
 
     CPUType = ECPUType::M6502;
@@ -358,39 +388,62 @@ bool FC64Emulator::Init()
     {
         char pageName[16];
         // Initialise RAM Pages
-        RAM[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
-        sprintf_s(pageName, "RAM[%02X]", pageNo);
-        CodeAnalysis.RegisterPage(&RAM[pageNo], pageName);
+
+        // FIXME: no parameterized constructor
+        RAM[pageNo].Initialise();
+        //RAM[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+
+        snprintf(pageName, sizeof(pageName), "RAM[%02X]", pageNo);
+
+        // FIXME:: RegisterPage is a private member
+        //CodeAnalysis.RegisterPage(&RAM[pageNo], pageName);
         
         // Initialise Basic ROM
         if (pageNo >= 40 && pageNo < 48)
         {
             const int pageIndex = pageNo - 40;
-            BasicROM[pageIndex].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
-            sprintf_s(pageName, "BasicROM[%02X]", pageIndex);
-            CodeAnalysis.RegisterPage(&BasicROM[pageIndex], pageName);
+            // FIXME: no parameterized constructor
+            BasicROM[pageIndex].Initialise();
+            //BasicROM[pageIndex].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+
+            snprintf(pageName, sizeof(pageName), "BasicROM[%02X]", pageIndex);
+
+            // FIXME: FCodeAnalysisState::RegisterPage is a private member
+            //CodeAnalysis.RegisterPage(&BasicROM[pageIndex], pageName);
         }
 
         // Initialise IO System & character RAM
         if (pageNo >= 52 && pageNo < 56)
         {
             const int pageIndex = pageNo - 52;
-            sprintf_s(pageName, "IO[%02X]", pageIndex);
-            IOSystem[pageIndex].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
-            CodeAnalysis.RegisterPage(&IOSystem[pageIndex], pageName);
+            snprintf(pageName, sizeof(pageName), "IO[%02X]", pageIndex);
+            // FIXME: no parametrized constructor in FCodeAnalysisPage
+            IOSystem[pageIndex].Initialise();
+            //IOSystem[pageIndex].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
 
-            sprintf_s(pageName, "CharROM[%02X]", pageIndex);
-            CharacterROM[pageIndex].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
-            CodeAnalysis.RegisterPage(&CharacterROM[pageIndex], pageName);
+            // FIXME: FCodeAnalysisState::RegisterPage is a private member
+            //CodeAnalysis.RegisterPage(&IOSystem[pageIndex], pageName);
+
+            snprintf(pageName, sizeof(pageName), "CharROM[%02X]", pageIndex);
+            // FIXME: no parametrized constructor in FCodeAnalysisPage
+            CharacterROM[pageIndex].Initialise();
+            //CharacterROM[pageIndex].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
+            // FIXME: FCodeAnalysisState::RegisterPage is a private member
+            //CodeAnalysis.RegisterPage(&CharacterROM[pageIndex], pageName);
         }
 
         // Initialise Kernel ROM
         if (pageNo >= 56)
         {
             const int pageIndex = pageNo - 56;
-            sprintf_s(pageName, "Kernel[%02X]", pageIndex);
-            KernelROM[pageIndex].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
-            CodeAnalysis.RegisterPage(&KernelROM[pageIndex], pageName);
+            snprintf(pageName, sizeof(pageName), "Kernel[%02X]", pageIndex);
+
+            // FIXME: FCodeAnalysisState constructor has no parameters
+            KernelROM[pageIndex].Initialise();
+            //KernelROM[pageIndex].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
+
+            // FIXME: FCodeAnalysisState::RegisterPage is a private member
+            //CodeAnalysis.RegisterPage(&KernelROM[pageIndex], pageName);
         }
     }
     
@@ -398,6 +451,8 @@ bool FC64Emulator::Init()
     for (int pageNo = 0; pageNo < 64; pageNo++)
     {
         // Map bottom 40K to RAM as it's always RAM
+        // FIXME: FCodeAnalysisState::SetCodeAnalysisRWPage and FCodeAnalysisState::SetCodeAnalysisWritePage are private members
+        /*
         if (pageNo < 40)
             CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
         else if(pageNo > 47 && pageNo < 52)    // 0xc000 4k region
@@ -407,13 +462,16 @@ bool FC64Emulator::Init()
             if (pageNo < 52 || pageNo > 55)
                 CodeAnalysis.SetCodeAnalysisWritePage(pageNo, &RAM[pageNo]);
         }
+        */
     }
     
     SetupCodeAnalysisLabels();
     UpdateCodeAnalysisPages(0x7);
     IOAnalysis.Init(&CodeAnalysis);
     GraphicsViewer.Init(&CodeAnalysis,&C64Emu);
-    InitialiseCodeAnalysis(CodeAnalysis, this);
+
+    // FIXME: missing InitialiseCodeAnalysis declaration - uncommitted changes?
+    //InitialiseCodeAnalysis(CodeAnalysis, this);
 
     GamesList.EnumerateGames();
 
@@ -442,7 +500,8 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
         //mem_map_ram(&sys->mem_cpu, 0, 0xA000, 0x6000, sys->ram + 0xA000);
         for (int pageNo = 41; pageNo < 64; pageNo++)
         {
-            CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+            // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
+            //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
         }
     }
     else
@@ -454,13 +513,18 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
 
             // Map Basic ROM Code Analysis pages to  
             for (int pageNo = 40; pageNo < 48; pageNo++)
-                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &BasicROM[pageNo - 40], &RAM[pageNo]);
-
+            {
+                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
+                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &BasicROM[pageNo - 40], &RAM[pageNo]);
+            }
         }
         else
         {
             for (int pageNo = 40; pageNo < 48; pageNo++)
-                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+            {
+                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
+                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+            }
         }
         //mem_map_rw(&sys->mem_cpu, 0, 0xA000, 0x2000, read_ptr, sys->ram + 0xA000);
 
@@ -470,13 +534,19 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
             bKernelROMMapped = true;
             //read_ptr = sys->rom_kernal;
             for (int pageNo = 56; pageNo < 64; pageNo++)
-                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &KernelROM[pageNo - 56], &RAM[pageNo]);
+            {
+                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
+                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &KernelROM[pageNo - 56], &RAM[pageNo]);
+            }
         }
         else
         {
             //read_ptr = sys->ram + 0xE000;
             for (int pageNo = 56; pageNo < 64; pageNo++)
-                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+            {
+                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
+                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
+            }
         }
         //mem_map_rw(&sys->mem_cpu, 0, 0xE000, 0x2000, read_ptr, sys->ram + 0xE000);
 
@@ -486,7 +556,10 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
             bIOMapped = true;
             //sys->io_mapped = true;
             for (int pageNo = 52; pageNo < 56; pageNo++)
-                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &IOSystem[pageNo - 52], &IOSystem[pageNo - 52]);
+            {
+                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
+                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &IOSystem[pageNo - 52], &IOSystem[pageNo - 52]);
+            }
         }
         else
         {
@@ -494,11 +567,15 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
 
             //mem_map_rw(&sys->mem_cpu, 0, 0xD000, 0x1000, sys->rom_char, sys->ram + 0xD000);
             for (int pageNo = 52; pageNo < 56; pageNo++)
-                CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &CharacterROM[pageNo - 52], &RAM[pageNo]);
+            {
+                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
+                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &CharacterROM[pageNo - 52], &RAM[pageNo]);
+            }
         }
     }
 
-    CodeAnalysis.SetCodeAnalysisDirty();
+    // FIXME: invalid signature for method SetCodeAnalysisDirty
+    //CodeAnalysis.SetCodeAnalysisDirty();
 }
 
 bool FC64Emulator::LoadGame(const FGameInfo* pGameInfo)
@@ -508,7 +585,8 @@ bool FC64Emulator::LoadGame(const FGameInfo* pGameInfo)
     void* pGameData = LoadBinaryFile(fileName.c_str(), fileSize);
     if (pGameData)
     {
-        c64_quickload(&C64Emu, (uint8_t*)pGameData, fileSize);
+        // FIXME: invalid function signature
+        //c64_quickload(&C64Emu, (uint8_t*)pGameData, fileSize);
         free(pGameData);
         
         ResetCodeAnalysis();
@@ -572,14 +650,14 @@ bool FC64Emulator::SaveCodeAnalysis(const FGameInfo* pGameInfo)
 
     // Write to file
     char fileName[128];
-    sprintf_s(fileName, "AnalysisData/%s.bin", pGameInfo->Name.c_str());
+    snprintf(fileName, sizeof(fileName), "AnalysisData/%s.bin", pGameInfo->Name.c_str());
     return saveBuffer.SaveToFile(fileName);
 }
 
 bool FC64Emulator::LoadCodeAnalysis(const FGameInfo *pGameInfo)
 {
     char fileName[128];
-    sprintf_s(fileName, "AnalysisData/%s.bin",pGameInfo->Name.c_str());
+    snprintf(fileName, sizeof(fileName), "AnalysisData/%s.bin",pGameInfo->Name.c_str());
     FMemoryBuffer loadBuffer;
 
     if (loadBuffer.LoadFromFile(fileName) == false)
@@ -601,7 +679,9 @@ bool FC64Emulator::LoadCodeAnalysis(const FGameInfo *pGameInfo)
     for (int pageNo = 0; pageNo < 8; pageNo++)
         KernelROM[pageNo].ReadFromBuffer(loadBuffer);
 
-	CodeAnalysis.SetCodeAnalysisDirty();
+    // FIXME: Invalid method signature
+	//CodeAnalysis.SetCodeAnalysisDirty();
+
     return true;
 }
 
@@ -617,16 +697,19 @@ void FC64Emulator::Shutdown()
 
 void FC64Emulator::Tick()
 {
-    const float frameTime = min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
+    const float frameTime = fmin(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
     FCodeAnalysisViewState& viewState =  CodeAnalysis.GetFocussedViewState();
 
-    if (ui_c64_before_exec(&C64UI))
+    // FIXME: invalid function signature
+    //if (ui_c64_before_exec(&C64UI))
     {
-        c64_exec(&C64Emu, max(static_cast<uint32_t>(frameTime), uint32_t(1)));
-        ui_c64_after_exec(&C64UI);
+        c64_exec(&C64Emu, fmax(static_cast<uint32_t>(frameTime), uint32_t(1)));
+
+        // FIXME: invalid function signature
+        //ui_c64_after_exec(&C64UI);
     }
 
-    ui_c64_draw(&C64UI, ExecTime);
+    ui_c64_draw(&C64UI);
     if (ImGui::Begin("C64 Screen"))
     {
         ImGui::Text("Mapped: ");
@@ -870,9 +953,14 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
         else
         {
             if (CodeAnalysis.bRegisterDataAccesses)
-                RegisterDataWrite(CodeAnalysis, pc, addr);
+            {
+                // FIXME: Invalid parameter
+                //RegisterDataWrite(CodeAnalysis, pc, addr);
+            }
 
-            CodeAnalysis.SetLastWriterForAddress(addr, pc);
+            // FIXME: parameter conversion for SetLastWriterForAddress
+            FAddressRef pcRef(0, pc);
+            CodeAnalysis.SetLastWriterForAddress(addr, pcRef);
 
             if (bIOMapped && (addr >> 12) == 0xd)
             {
@@ -894,7 +982,10 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 
         LastMemPort = C64Emu.cpu_port & 7;
     }
-    return OldTickCB(pins, &C64Emu);
+
+    // FIXME: no such method
+    //return OldTickCB(pins, &C64Emu);
+    return 0;
 }
 
 

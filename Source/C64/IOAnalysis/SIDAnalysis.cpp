@@ -27,6 +27,7 @@ void	FSIDAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
 
 #include <imgui.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
+#include <chips/chips_common.h>
 #include <chips/m6569.h>
 #include <vector>
 #include <CodeAnalyser/CodeAnaysisPage.h>

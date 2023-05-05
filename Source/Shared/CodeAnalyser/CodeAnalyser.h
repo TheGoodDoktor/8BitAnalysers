@@ -33,7 +33,9 @@ public:
 	virtual FAddressRef	GetPC(void) = 0;
 	virtual uint16_t	GetSP(void) = 0;
 
-	virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) = 0;
+    // FIXME - no other implementation for the method - unable to instantiate abstract class
+    virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) {};
+	//virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) = 0;
 
 	virtual void*	GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
 

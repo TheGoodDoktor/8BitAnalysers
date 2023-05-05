@@ -20,7 +20,7 @@ int DrawRegSelectList(std::vector<FRegDisplayConfig>& regList, int selection)
 	for (int i = 0; i < (int)regList.size(); i++)
 	{
 		char selectableTXT[32];
-		sprintf_s(selectableTXT, "$%X %s", i, regList[i].Name);
+		snprintf(selectableTXT, sizeof(selectableTXT), "$%X %s", i, regList[i].Name);
 		if (ImGui::Selectable(selectableTXT, selection == i))
 		{
 			selection = i;
