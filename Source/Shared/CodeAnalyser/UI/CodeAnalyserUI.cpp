@@ -244,22 +244,13 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,const FCodeAnalysisItem& item )
 {
 	FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
-	static std::string oldLabelString;
-	static std::string labelString;
-	static FItem *pCurrItem = nullptr;
-	if (pCurrItem != pLabelInfo)
+	std::string LabelText = pLabelInfo->Name;
+	if (ImGui::InputText("Name", &LabelText))
 	{
-		oldLabelString = labelString = pLabelInfo->Name;
-		pCurrItem = pLabelInfo;
-	}
+		if (LabelText.empty())
+			LabelText = pLabelInfo->Name;
 
-	//ImGui::Text("Comments");
-	if (ImGui::InputText("Name", &labelString))
-	{
-		if (labelString.empty())
-			labelString = oldLabelString;
-
-		SetLabelName(state, pLabelInfo, labelString.c_str());
+		SetLabelName(state, pLabelInfo, LabelText.c_str());
 	}
 
 	if(ImGui::Checkbox("Global", &pLabelInfo->Global))

@@ -298,9 +298,22 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 			state.SetLastWriterForAddress(addr, pcAddrRef);
 			
 			if (addr >= 0x4000 && addr < 0x5800)
-				FrameScreenPixWrites.push_back({ addrRef,value, pcAddrRef });	// Log screen pixel writes
-			else if (addr >= 0x5800 && addr < 0x5800 + 0x400)
-				FrameScreenAttrWrites.push_back({ addrRef,value, pcAddrRef });	// Log screen attribute writes
+			{
+				FrameScreenPixWrites.push_back({ addrRef,value, pcAddrRef });
+			}
+			// Log screen attribute writes
+			if (addr >= 0x5800 && addr < 0x5800 + 0x400)
+			{
+				FrameScreenAttrWrites.push_back({ addrRef,value, pcAddrRef });
+			}
+			FDataInfo *pDataWrittenTo = state.GetReadDataInfoForAddress(addr);
+			if (pDataWrittenTo->DataType == EDataType::InstructionOperand) 
+			{
+				// TODO: record some info such as what byte was written
+				FCodeInfo* pCodeWrittenTo = state.GetCodeInfoForAddress(pDataWrittenTo->InstructionAddress);
+				if(pCodeWrittenTo!=nullptr)
+					pCodeWrittenTo->bSelfModifyingCode = true;
+			}
 		}
 	}
 
