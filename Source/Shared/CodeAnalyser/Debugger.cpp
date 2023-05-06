@@ -40,7 +40,7 @@ void FDebugger::CPUTick(uint64_t pins)
     {
         addr = Z80_GET_ADDR(pins);
         bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
-        bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
+        bWrite = (risingPins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
         bNewOp = z80_opdone(pZ80);
     }
     else if (CPUType == ECPUType::M6502)
@@ -236,7 +236,7 @@ bool FDebugger::FrameTick(void)
 	return bDebuggerStopped;
 }
 
-static const uint32_t kVersionNo = 1;
+static const uint32_t kVersionNo = 2;
 
 // Load state - breakpoints, watches etc.
 void	FDebugger::LoadFromFile(FILE* fp)
@@ -256,6 +256,7 @@ void	FDebugger::LoadFromFile(FILE* fp)
 	}
 
 	// breakpoints
+	Breakpoints.clear();
 	fread(&num, sizeof(uint32_t), 1, fp);
 	for (int i = 0; i < (int)num; i++)
 	{
@@ -265,6 +266,18 @@ void	FDebugger::LoadFromFile(FILE* fp)
 		fread(&bp.Type, sizeof(bp.Type), 1, fp);	// Type
 		fread(&bp.Size, sizeof(bp.Size), 1, fp);	// Size
 		fread(&bp.Val, sizeof(bp.Val), 1, fp);		// Val
+	}
+
+	// frame trace
+	if (versionNo > 1)
+	{
+		FrameTrace.clear();
+		fread(&num, sizeof(uint32_t), 1, fp);
+		for (int i = 0; i < (int)num; i++)
+		{
+			FAddressRef& address = FrameTrace.emplace_back();
+			fread(&address.Val, sizeof(uint32_t), 1, fp);	// address
+		}
 	}
 }
 
@@ -294,6 +307,14 @@ void	FDebugger::SaveToFile(FILE* fp)
 		fwrite(&bp.Type, sizeof(bp.Type), 1, fp);	// Type
 		fwrite(&bp.Size, sizeof(bp.Size), 1, fp);	// Size
 		fwrite(&bp.Val, sizeof(bp.Val), 1, fp);		// Val
+	}
+
+	// frame trace
+	num = (uint32_t)FrameTrace.size();
+	fwrite(&num, sizeof(uint32_t), 1, fp);
+	for (int i = 0; i < (int)num; i++)
+	{
+		fwrite(&FrameTrace[i].Val,sizeof(uint32_t), 1, fp);	// address
 	}
 }
 
