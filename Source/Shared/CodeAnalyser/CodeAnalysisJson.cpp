@@ -42,7 +42,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
 			const FCodeAnalysisPage& page = bank.Pages[pageNo];
-			if (page.bUsed)
+			//if (page.bUsed)
 			{
 				json pageData;
 
