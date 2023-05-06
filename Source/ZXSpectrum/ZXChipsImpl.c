@@ -126,10 +126,17 @@ uint32_t ZXExeEmu_UseFetchCount(zx_t* sys, uint32_t noFetches, GetIOInput ioInpu
 
 			if (z80_opdone(&sys->cpu))
 			{
-				//const uint16_t pc = pins & 0xffff;
-				//const uint8_t opcode = mem_rd(&sys->mem, pc);
-				//if (opcode == 0xED || opcode == 0xCB)
-				//	fetchCount++;
+				const uint16_t pc = pins & 0xffff;
+				const uint8_t opcode = mem_rd(&sys->mem, pc);
+				if (opcode == 0xED || opcode == 0xCB)
+					fetchCount++;
+				else if (opcode == 0xDD || opcode == 0xFD)
+				{
+					fetchCount++;
+					const uint8_t opcode2 = mem_rd(&sys->mem, pc + 1);
+					if (opcode2 == 0xCB)
+						fetchCount++;
+				}
 
 				fetchCount++;
 			}
