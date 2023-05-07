@@ -1753,6 +1753,7 @@ bool DrawAddressInput(const char* label, uint16_t* value)
 
 bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef& address)
 {
+	bool bValueInput = false;
 	/*
 	if (state.Config.bShowBanks)
 	{
@@ -1771,7 +1772,7 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 	if (ImGui::InputScalar("##addronput", ImGuiDataType_U16, &address.Address, 0, 0, format, inputFlags))
 	{
 		address = state.AddressRefFromPhysicalAddress(address.Address);
-		return true;
+		bValueInput = true;
 	}
 
 	if (ImGui::BeginPopupContextItem("address input context menu"))
@@ -1779,6 +1780,7 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 		if (ImGui::Selectable("Paste Address"))
 		{
 			address = state.CopiedAddress;
+			bValueInput = true;
 		}
 		ImGui::EndPopup();
 	}
@@ -1794,7 +1796,7 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 			ImGui::Text("(None)");
 	}
 
-	return false;
+	return bValueInput;
 }
 
 const char* GetBankText(FCodeAnalysisState& state, int16_t bankId)
