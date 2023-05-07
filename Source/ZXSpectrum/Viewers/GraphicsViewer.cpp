@@ -260,13 +260,15 @@ void DrawGraphicsViewer(FGraphicsViewerState &viewerState)
 	else
 		ImGui::Text("Clicked Address: %s", NumStr(viewerState.ClickedAddress.Address));
 	ImGui::SameLine();
-	if(viewerState.ClickedAddress.IsValid())
-		DrawAddressLabel(state, state.GetFocussedViewState(), viewerState.ClickedAddress);
-	if(ImGui::CollapsingHeader("Details"))
+	if (viewerState.ClickedAddress.IsValid())
 	{
-		const int16_t bankId = viewerState.Bank != -1 ? viewerState.Bank : state.GetBankFromAddress(viewerState.ClickedAddress.Address);
-		const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(viewerState.ClickedAddress), viewerState.ClickedAddress);
-		DrawDataDetails(state, state.GetFocussedViewState(), item);
+		DrawAddressLabel(state, state.GetFocussedViewState(), viewerState.ClickedAddress);
+		if (ImGui::CollapsingHeader("Details"))
+		{
+			const int16_t bankId = viewerState.Bank != -1 ? viewerState.Bank : state.GetBankFromAddress(viewerState.ClickedAddress.Address);
+			const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(viewerState.ClickedAddress), viewerState.ClickedAddress);
+			DrawDataDetails(state, state.GetFocussedViewState(), item);
+		}
 	}
 	
 	// view 1 - straight character
