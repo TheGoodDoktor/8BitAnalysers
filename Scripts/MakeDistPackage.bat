@@ -1,3 +1,17 @@
+echo off
+
+echo Deleting old package files...
+if exist ..\Package rmdir /s /q ..\Package
+
+echo Building SpectrumAnalyser.exe...
+if exist ..\Source\ZXSpectrum\build\Release rmdir /s /q ..\Source\ZXSpectrum\build\Release
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe" ..\Source\ZXSpectrum\build\SpectrumAnalyser.sln SpectrumAnalyser /Build Release
+
+if not exist ..\Source\ZXSpectrum\build\Release\SpectrumAnalyser.exe (
+	echo Failed to build SpectrumAnalyser.exe. Aborting.
+	exit /b
+) 
+
 mkdir ..\Package\Loose\Configs
 mkdir ..\Package\Loose\GameData
 mkdir ..\Package\Loose\Games
@@ -20,4 +34,5 @@ rem Make a batch file to run the 128k version
 @echo SpectrumAnalyser.exe -128> "..\Package\Loose\SpectrumAnalyser128k.bat"
 
 7z a ..\Package\SpectrumAnalyser.zip ..\Package\Loose\.
+
 pause
