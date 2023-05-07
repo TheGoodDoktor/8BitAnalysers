@@ -1,0 +1,30 @@
+{
+    "128KGame": false,
+    "Name": "aufmonty_pristine",
+    "Options": {
+        "ViewConfigs": [
+            {
+                "Enabled": true,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            }
+        ],
+        "WriteSnapshot": false
+    },
+    "SnapshotFile": "aufmonty_pristine.z80"
+}
