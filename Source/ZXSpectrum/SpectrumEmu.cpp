@@ -800,20 +800,27 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 #if ENABLE_RZX
 			if (ImGui::BeginMenu("New Game from RZX File"))
 			{
-				for (int gameNo = 0; gameNo < RZXGamesList.GetNoGames(); gameNo++)
+				if (RZXGamesList.GetNoGames() == 0)
 				{
-					const FGameSnapshot& game = RZXGamesList.GetGame(gameNo);
-
-					if (ImGui::MenuItem(game.DisplayName.c_str()))
+					ImGui::Text("No RZX files found in RZX directory:\n\n'%s'.\n\nRZX directory is set in GlobalConfig.json", GetGlobalConfig().RZXFolder.c_str());
+				}
+				else
+				{
+					for (int gameNo = 0; gameNo < RZXGamesList.GetNoGames(); gameNo++)
 					{
-						if (RZXManager.Load(game.FileName.c_str()))
+						const FGameSnapshot& game = RZXGamesList.GetGame(gameNo);
+
+						if (ImGui::MenuItem(game.DisplayName.c_str()))
 						{
-							FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
-							if (pNewConfig != nullptr)
-								StartGame(pNewConfig);
+							if (RZXManager.Load(game.FileName.c_str()))
+							{
+								FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
+								if (pNewConfig != nullptr)
+									StartGame(pNewConfig);
 							}
 						}
 					}
+				}
 				ImGui::EndMenu();
 				}
 #endif
