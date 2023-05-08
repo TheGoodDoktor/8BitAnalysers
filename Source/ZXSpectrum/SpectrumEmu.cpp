@@ -1795,6 +1795,10 @@ void FSpectrumConfig::ParseCommandline(int argc, char** argv)
 			}
 			SkoolkitImport = *++argIt;
 		}
+		else if (*argIt == std::string("-runtests"))
+		{
+			RunTests = true;
+		}
 
 		++argIt;
 	}

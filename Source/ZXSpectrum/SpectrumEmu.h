@@ -62,6 +62,7 @@ struct FSpectrumConfig
 	ESpectrumModel	Model = ESpectrumModel::Spectrum48K;
 	std::string		SpecificGame;
 	std::string		SkoolkitImport;
+	bool			RunTests = false;
 };
 
 struct FGame

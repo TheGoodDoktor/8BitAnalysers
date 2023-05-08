@@ -116,7 +116,8 @@ file ( GLOB program_src
 	GameViewers/*.cpp GameViewers/*.h
 	Importers/*.cpp Importers/*.h
 	SnapshotLoaders/*.cpp SnapshotLoaders/*.h
-	Viewers/*.cpp Viewers/*.h)
+	Viewers/*.cpp Viewers/*.h
+	Tests/*.cpp Tests/*.h)
 
 if(${gfxapi} STREQUAL "GLFWApi")
 	set ( platform_main GLFW/GLFWMain.cpp )

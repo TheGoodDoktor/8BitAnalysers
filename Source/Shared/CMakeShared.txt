@@ -8,6 +8,7 @@ file ( GLOB shared_base_src
 	../Shared/CodeAnalyser/UI/*.cpp ../Shared/CodeAnalyser/UI/*.h
 	../Shared/CodeAnalyser/UI/6502/*.cpp ../Shared/CodeAnalyser/UI/6502/*.h
 	../Shared/CodeAnalyser/UI/Z80/*.cpp ../Shared/CodeAnalyser/UI/Z80/*.h
+	../Shared/CodeAnalyser/Tests/*.cpp ../Shared/CodeAnalyser/Tests/*.h
 	../Shared/Debug/*.cpp ../Shared/Debug/*.h
 	../Shared/ImGuiSupport/*.cpp ../Shared/ImGuiSupport/*.h
 	../Shared/Misc/*.cpp ../Shared/Misc/*.h

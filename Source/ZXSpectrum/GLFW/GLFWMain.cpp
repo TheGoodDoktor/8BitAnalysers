@@ -27,6 +27,7 @@
 #endif
 
 #include "../SpectrumEmu.h"
+#include "../Tests/SpectrumTests.h"
 
 #define SOKOL_IMPL
 #include <sokol_audio.h>
@@ -167,6 +168,11 @@ int main(int argc, char** argv)
 	// Speccy 
 	FSpectrumConfig config;
     config.ParseCommandline(argc, argv);
+    if (config.RunTests)
+    {
+        const bool bSuccess = RunSpectrumTests();
+        return bSuccess ? 0 : 1;
+    }
 	FSpectrumEmu* pSpectrumEmulator = new FSpectrumEmu;
 	pSpectrumEmulator->Init(config);
 
