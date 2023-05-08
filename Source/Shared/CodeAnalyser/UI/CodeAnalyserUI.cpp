@@ -1382,7 +1382,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 					tabFlags = (bSwitchTabs && showBank == bank.Id) ? ImGuiTabItemFlags_SetSelected : 0;
 
 					const bool bMapped = bank.MappedPages.empty() == false;
+					if (!bMapped)
+						ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 144, 144, 144));
 					const bool bTabOpen = ImGui::BeginTabItem(bank.Name.c_str(), nullptr, tabFlags);
+					if (!bMapped)
+						ImGui::PopStyleColor();
 
 					if (ImGui::IsItemHovered())
 					{
