@@ -1,7 +1,19 @@
 # This is for the features that allow the creating of filter folders in Visual Studio (source_group)
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.14)
 
 project (SpectrumAnalyser)
+
+# for Google test
+set(CMAKE_CXX_STANDARD 14)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
 set(APP_NAME SpectrumAnalyser)
 
@@ -116,8 +128,7 @@ file ( GLOB program_src
 	GameViewers/*.cpp GameViewers/*.h
 	Importers/*.cpp Importers/*.h
 	SnapshotLoaders/*.cpp SnapshotLoaders/*.h
-	Viewers/*.cpp Viewers/*.h
-	Tests/*.cpp Tests/*.h)
+	Viewers/*.cpp Viewers/*.h)
 
 if(${gfxapi} STREQUAL "GLFWApi")
 	set ( platform_main GLFW/GLFWMain.cpp )
@@ -126,6 +137,18 @@ else()
 endif()
 
 add_executable (SpectrumAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
+
+# set up test
+file ( GLOB test_src
+	Tests/*.cpp Tests/*.h)
+
+add_executable (SpectrumAnalyserTest MACOSX_BUNDLE ${test_src} ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
+
+set_target_properties( SpectrumAnalyserTest PROPERTIES CXX_STANDARD 20 )
+set_target_properties( SpectrumAnalyserTest PROPERTIES C_STANDARD 11 )
+
+include(GoogleTest)
+gtest_discover_tests(SpectrumAnalyserTest)
 
 # This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
@@ -149,6 +172,7 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	# debugger working dir
 	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
+	set_property(TARGET SpectrumAnalyserTest PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
 
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 	
