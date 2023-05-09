@@ -184,6 +184,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 			${X11_LIBRARIES}
 			${CMAKE_DL_LIBS}
 			)
+		target_link_libraries(SpectrumAnalyserTest
+			glfw 
+			${OPENGL_LIBRARIES} 
+			${CMAKE_THREAD_LIBS_INIT}
+			${X11_LIBRARIES}
+			${CMAKE_DL_LIBS}
+			)
 	endif()
 endif()
 
