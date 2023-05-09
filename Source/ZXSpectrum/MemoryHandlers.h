@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include <CodeAnalyser/CodeAnaysisPage.h> 
+#include <CodeAnalyser/CodeAnalysisPage.h> 
 
 class FSpectrumEmu;
 struct FGame;

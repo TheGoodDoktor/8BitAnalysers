@@ -11,7 +11,7 @@
 
 class FMemoryBuffer;
 
-
+// don't change order or you'll mess up the load/save
 enum class ELabelType
 {
 	Data,

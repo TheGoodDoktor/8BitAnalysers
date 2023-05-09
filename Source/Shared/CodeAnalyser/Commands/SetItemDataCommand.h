@@ -1,6 +1,6 @@
 #pragma once
 #include "CommandProcessor.h"
-#include "../CodeAnaysisPage.h"
+#include "../CodeAnalysisPage.h"
 #include "../CodeAnalyser.h"
 
 struct FItem;

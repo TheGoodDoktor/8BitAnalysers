@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "../CodeAnaysisPage.h"
+#include "../CodeAnalysisPage.h"
 
 class ICPUInterface;
 class FCodeAnalysisState;

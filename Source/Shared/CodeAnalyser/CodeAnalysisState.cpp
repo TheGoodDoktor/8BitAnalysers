@@ -1,7 +1,7 @@
 #include "CodeAnalysisState.h"
 
 #include <stdint.h>
-#include "CodeAnaysisPage.h"
+#include "CodeAnalysisPage.h"
 #include "CodeAnalyser.h"
 
 const uint32_t kAnalysisStateMagic = 0xBeefCafe;

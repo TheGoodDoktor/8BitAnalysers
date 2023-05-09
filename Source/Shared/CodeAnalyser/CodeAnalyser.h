@@ -8,7 +8,7 @@
 #include <assert.h>
 
 #include "CodeAnalyserTypes.h"
-#include "CodeAnaysisPage.h"
+#include "CodeAnalysisPage.h"
 #include "Debugger.h"
 
 class FGraphicsView;

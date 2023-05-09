@@ -1,4 +1,4 @@
-#include "CodeAnaysisPage.h"
+#include "CodeAnalysisPage.h"
 #include "CodeAnalyser.h"
 
 #include "Util/MemoryBuffer.h"

@@ -1,6 +1,6 @@
 #include "CodeAnalysisJson.h"
 #include "CodeAnalyser.h"
-#include "CodeAnaysisPage.h"
+#include "CodeAnalysisPage.h"
 
 #include <stdint.h>
 #include <iomanip>

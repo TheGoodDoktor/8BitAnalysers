@@ -1,5 +1,5 @@
 #include "SetItemDataCommand.h"
-#include "../CodeAnaysisPage.h"
+#include "../CodeAnalysisPage.h"
 #include "../CodeAnalyser.h"
 
 void FSetItemDataCommand::Do(FCodeAnalysisState& state)
