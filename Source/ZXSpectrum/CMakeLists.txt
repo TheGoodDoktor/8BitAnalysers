@@ -141,19 +141,23 @@ add_executable (SpectrumAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${pl
 # set up test
 file ( GLOB test_src
 	Tests/*.cpp Tests/*.h)
+file ( GLOB shared_test_src
+	../Shared/CodeAnalyser/Tests/*.cpp ../Shared/CodeAnalyser/Tests/*.h)
 
-add_executable (SpectrumAnalyserTest MACOSX_BUNDLE ${test_src} ${shared_src} ${program_src} ${vendor_src} )
+add_executable (SpectrumAnalyserTest MACOSX_BUNDLE ${test_src} ${shared_test_src} ${shared_src} ${program_src} ${vendor_src} )
 
 set_target_properties( SpectrumAnalyserTest PROPERTIES CXX_STANDARD 20 )
 set_target_properties( SpectrumAnalyserTest PROPERTIES C_STANDARD 11 )
+
+target_link_libraries( SpectrumAnalyserTest GTest::gtest_main )
 
 include(GoogleTest)
 gtest_discover_tests(SpectrumAnalyserTest)
 
 # This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} )
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main})
+source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} ${shared_test_src})
+source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program_src} ${platform_main} ${test_src})
 
 set_target_properties( SpectrumAnalyser PROPERTIES CXX_STANDARD 20 )
 set_target_properties( SpectrumAnalyser PROPERTIES C_STANDARD 11 )
