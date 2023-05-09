@@ -203,10 +203,26 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		${X11_LIBRARIES}
 		${CMAKE_DL_LIBS}
 		)
+
+	target_link_libraries(SpectrumAnalyserTest
+		glfw
+		asound
+		${OPENGL_LIBRARIES} 
+		${CMAKE_THREAD_LIBS_INIT}
+		${X11_LIBRARIES}
+		${CMAKE_DL_LIBS}
+		)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	target_link_libraries(${PROJECT_NAME}
+		glfw
+		${OPENGL_LIBRARIES} 
+		${CMAKE_THREAD_LIBS_INIT}
+		${CMAKE_DL_LIBS}
+		${AUDIOTOOLBOX_LIBRARY}
+		)
+	target_link_libraries(SpectrumAnalyserTest
 		glfw
 		${OPENGL_LIBRARIES} 
 		${CMAKE_THREAD_LIBS_INIT}
