@@ -142,7 +142,7 @@ add_executable (SpectrumAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${pl
 file ( GLOB test_src
 	Tests/*.cpp Tests/*.h)
 
-add_executable (SpectrumAnalyserTest MACOSX_BUNDLE ${test_src} ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
+add_executable (SpectrumAnalyserTest MACOSX_BUNDLE ${test_src} ${shared_src} ${program_src} ${vendor_src} )
 
 set_target_properties( SpectrumAnalyserTest PROPERTIES CXX_STANDARD 20 )
 set_target_properties( SpectrumAnalyserTest PROPERTIES C_STANDARD 11 )
