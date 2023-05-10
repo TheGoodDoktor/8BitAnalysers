@@ -1,7 +1,7 @@
 #include "CIAAnalysis.h"
 #include <vector>
 #include <imgui.h>
-#include <CodeAnalyser/CodeAnaysisPage.h>
+#include <CodeAnalyser/CodeAnalysisPage.h>
 
 static std::vector<FRegDisplayConfig>	g_CIA1RegDrawInfo =
 {

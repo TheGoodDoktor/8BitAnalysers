@@ -36,7 +36,7 @@ void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <chips/m6569.h>
 #include <vector>
-#include <CodeAnalyser/CodeAnaysisPage.h>
+#include <CodeAnalyser/CodeAnalysisPage.h>
 
 void DrawRegValueSpriteEnable(uint8_t val)
 {
