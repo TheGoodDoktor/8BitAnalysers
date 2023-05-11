@@ -21,6 +21,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(APP_NAME SpectrumAnalyser)
+set( with_tests true )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	find_package(OpenGL REQUIRED)
@@ -38,11 +39,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	find_package(Threads REQUIRED)
 	find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
 	set( gfxapi "GLFWApi")
+	set( with_tests false )
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	#set( gfxapi "DX11")
 	set( gfxapi "GLFWApi")	
+	set( with_tests true )
 endif()
 
 
@@ -144,7 +147,7 @@ endif()
 add_executable (SpectrumAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
 # set up test
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(${with_tests})
 
 file ( GLOB test_src
 	Tests/*.cpp Tests/*.h)
@@ -185,8 +188,9 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	# debugger working dir
 	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
-	set_property(TARGET SpectrumAnalyserTest PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
-
+	if(${with_tests})
+		set_property(TARGET SpectrumAnalyserTest PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/SpectrumAnalyser")
+	endif()
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 	
 	if(${gfxapi} STREQUAL "GLFWApi")
@@ -197,13 +201,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 			${X11_LIBRARIES}
 			${CMAKE_DL_LIBS}
 			)
-		target_link_libraries(SpectrumAnalyserTest
-			glfw 
-			${OPENGL_LIBRARIES} 
-			${CMAKE_THREAD_LIBS_INIT}
-			${X11_LIBRARIES}
-			${CMAKE_DL_LIBS}
-			)
+		if(${with_tests})
+			target_link_libraries(SpectrumAnalyserTest
+				glfw 
+				${OPENGL_LIBRARIES} 
+				${CMAKE_THREAD_LIBS_INIT}
+				${X11_LIBRARIES}
+				${CMAKE_DL_LIBS}
+				)
+		endif()
 	endif()
 endif()
 
@@ -235,13 +241,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		${CMAKE_DL_LIBS}
 		${AUDIOTOOLBOX_LIBRARY}
 		)
-	target_link_libraries(SpectrumAnalyserTest
-		glfw
-		${OPENGL_LIBRARIES} 
-		${CMAKE_THREAD_LIBS_INIT}
-		${CMAKE_DL_LIBS}
-		${AUDIOTOOLBOX_LIBRARY}
-		)
+	if(${with_tests})
+		target_link_libraries(SpectrumAnalyserTest
+			glfw
+			${OPENGL_LIBRARIES} 
+			${CMAKE_THREAD_LIBS_INIT}
+			${CMAKE_DL_LIBS}
+			${AUDIOTOOLBOX_LIBRARY}
+			)
+	endif()
 	install(TARGETS ${APP_NAME}
 		BUNDLE DESTINATION . COMPONENT RunTime
 		RUNTIME DESTINATION bin COMPONENT RunTime
