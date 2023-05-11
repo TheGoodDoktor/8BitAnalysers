@@ -144,6 +144,8 @@ endif()
 add_executable (SpectrumAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
 # set up test
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
 file ( GLOB test_src
 	Tests/*.cpp Tests/*.h)
 file ( GLOB shared_test_src
@@ -158,6 +160,8 @@ target_link_libraries( SpectrumAnalyserTest GTest::gtest_main )
 
 include(GoogleTest)
 gtest_discover_tests(SpectrumAnalyserTest)
+
+endif()
 
 # This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
