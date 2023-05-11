@@ -1,11 +1,12 @@
 #include "SpectrumTests.h"
 
-#include "CodeAnalyser/Tests/CodeAnalyserTests.h"
+#include "../SpectrumEmu.h"
 
 #define SOKOL_IMPL
 #include <sokol_audio.h>
 
 #include <gtest/gtest.h>
+#include "../SnapshotLoaders/SNALoader.h"
 
 // Demonstrate some basic assertions.
 TEST(ZXSpectrumTest, BasicAssertions) 
@@ -16,23 +17,43 @@ TEST(ZXSpectrumTest, BasicAssertions)
 	EXPECT_EQ(7 * 6, 42);
 }
 
-void SetWindowTitle(const char* pTitle)
+class FSpectrumEmuTest : public ::testing::Test
 {
-}
+protected:
+	void SetUp() override
+	{
+		FSpectrumConfig config;
+		pEmu = new FSpectrumEmu;
+		pEmu->Init(config);
+	}
 
-void SetWindowIcon(const char* pIconFile)
+	void TearDown() override 
+	{
+		pEmu->Shutdown();
+		delete pEmu;
+		pEmu = nullptr;
+	}
+
+	FSpectrumEmu* pEmu = nullptr;
+};
+
+TEST_F(FSpectrumEmuTest, InitialisationTest)
 {
-}
+	ASSERT_NE(pEmu, nullptr);
+	EXPECT_EQ(pEmu->IsInitialised(), true);
+};
 
-bool RunSpectrumTests()
+TEST_F(FSpectrumEmuTest, SnapshotLoaderTest)
 {
-	// TODO: Run tests on spectrum emu & code analyser
-	bool bSuccess = true;
+	ASSERT_NE(pEmu, nullptr);
+	const bool bLoaded = LoadSNAFile(pEmu, "Tests/Test.sna");
+	EXPECT_EQ(bLoaded, true);
+};
 
-	bSuccess &= RunCodeAnalyserTests();
 
-	return bSuccess;
-}
+// needed to get it compiling
+void SetWindowTitle(const char* pTitle) {}
+void SetWindowIcon(const char* pIconFile) {}
 
 int main(int argc, char* argv[])
 {
