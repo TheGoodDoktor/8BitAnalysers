@@ -13,6 +13,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
 #include <sstream>
+#include <cctype>
 #include "chips/z80.h"
 #include "CodeToolTips.h"
 
