@@ -10,6 +10,8 @@ enum class ESnapshotType
 	Z80,
 	SNA,
 	RZX,
+	TAP,
+	TZX,
 
 	Unknown
 };

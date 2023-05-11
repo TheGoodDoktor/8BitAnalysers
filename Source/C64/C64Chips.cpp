@@ -4,6 +4,8 @@
 //#include "common.h"
 //#define CHIPS_IMPL
 
+#define NOMINMAX
+
 #include "imgui.h"
 #include "chips/chips_common.h"
 #include "chips/z80.h"
@@ -66,6 +68,7 @@
 #include "C64Display.h"
 #include "C64GamesList.h"
 #include <Util/Misc.h>
+#include <algorithm>
 
 class FC64Emulator : public ICPUInterface
 {
@@ -665,17 +668,10 @@ void FC64Emulator::Shutdown()
 
 void FC64Emulator::Tick()
 {
-    const float frameTime = (float)fmin(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
+    const float frameTime = (float)std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
     FCodeAnalysisViewState& viewState =  CodeAnalysis.GetFocussedViewState();
 
-    // FIXME: invalid function signature
-    //if (ui_c64_before_exec(&C64UI))
-    {
-        c64_exec(&C64Emu, (uint32_t)fmax(static_cast<uint32_t>(frameTime), uint32_t(1)));
-
-        // FIXME: invalid function signature
-        //ui_c64_after_exec(&C64UI);
-    }
+    c64_exec(&C64Emu, (uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 
     ui_c64_draw(&C64UI);
     if (ImGui::Begin("C64 Screen"))
