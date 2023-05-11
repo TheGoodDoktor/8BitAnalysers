@@ -46,7 +46,7 @@ TEST_F(FSpectrumEmuTest, InitialisationTest)
 TEST_F(FSpectrumEmuTest, SnapshotLoaderTest)
 {
 	ASSERT_NE(pEmu, nullptr);
-	const bool bLoaded = LoadSNAFile(pEmu, "Tests/Test.sna");
+	const bool bLoaded = LoadSNAFile(pEmu, "Tests/testminimal.sna");
 	EXPECT_EQ(bLoaded, true);
 };
 
