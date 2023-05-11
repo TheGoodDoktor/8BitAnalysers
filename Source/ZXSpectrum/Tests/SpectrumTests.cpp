@@ -48,6 +48,9 @@ TEST_F(FSpectrumEmuTest, SnapshotLoaderTest)
 	ASSERT_NE(pEmu, nullptr);
 	const bool bLoaded = LoadSNAFile(pEmu, "Tests/testminimal.sna");
 	EXPECT_EQ(bLoaded, true);
+
+	// check if byte at 0x8000 is 1
+	EXPECT_EQ(pEmu->ReadByte(0x8000), 1);
 };
 
 
