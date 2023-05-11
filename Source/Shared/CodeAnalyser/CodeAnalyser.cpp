@@ -53,9 +53,6 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 	if (pBank == nullptr || MappedBanks[startPageNo] == bankId)	// not found or already mapped to this locatiom
 		return false;
 
-	if (pBank->bReadOnly == true && startPageNo > 0)
-		assert(0);
-
 	if (pBank->PrimaryMappedPage == -1 )	// Newly mapped?
 	{
 		pBank->PrimaryMappedPage = startPageNo;

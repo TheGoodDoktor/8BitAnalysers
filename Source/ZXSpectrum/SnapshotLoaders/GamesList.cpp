@@ -3,6 +3,8 @@
 #include "Z80Loader.h"
 #include "SNALoader.h"
 #include "RZXLoader.h"
+#include "TAPLoader.h"
+#include "TZXLoader.h"
 
 ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn)
 {
@@ -12,6 +14,10 @@ ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn)
 		return ESnapshotType::SNA;
 	else if ((fn.substr(fn.find_last_of(".") + 1) == "rzx") || (fn.substr(fn.find_last_of(".") + 1) == "RZX"))
 		return ESnapshotType::RZX;
+	else if ((fn.substr(fn.find_last_of(".") + 1) == "tap") || (fn.substr(fn.find_last_of(".") + 1) == "TAP"))
+		return ESnapshotType::TAP;
+	else if ((fn.substr(fn.find_last_of(".") + 1) == "tzx") || (fn.substr(fn.find_last_of(".") + 1) == "TZX"))
+		return ESnapshotType::TZX;
 	else
 		return ESnapshotType::Unknown;
 }
@@ -61,6 +67,10 @@ bool FGamesList::LoadGame(const char* pFileName)
 		return LoadZ80File(pSpectrumEmu, pFileName);
 	case ESnapshotType::SNA:
 		return LoadSNAFile(pSpectrumEmu, pFileName);
+	case ESnapshotType::TAP:
+		return LoadTAPFile(pSpectrumEmu, pFileName);
+	case ESnapshotType::TZX:
+		return LoadTZXFile(pSpectrumEmu, pFileName);
 	default: return false;
 	}
 }

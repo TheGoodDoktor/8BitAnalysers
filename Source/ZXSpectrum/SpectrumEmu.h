@@ -62,7 +62,6 @@ struct FSpectrumConfig
 	ESpectrumModel	Model = ESpectrumModel::Spectrum48K;
 	std::string		SpecificGame;
 	std::string		SkoolkitImport;
-	bool			RunTests = false;
 };
 
 struct FGame
@@ -87,6 +86,9 @@ public:
 
 	bool	Init(const FSpectrumConfig& config);
 	void	Shutdown();
+
+	bool	IsInitialised() const { return bInitialised; }
+
 	void	StartGame(FGameConfig* pGameConfig);
 	bool	StartGame(const char* pGameName);
 	void	SaveCurrentGameData();
