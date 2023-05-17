@@ -463,8 +463,9 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 				pCodeInfo->OpcodeBkp[i] = state.ReadByte(physAddress + i);
 
 				// NOP it out
+				// Note: This is not going to work with ROM
 				if(state.CPUInterface->CPUType == ECPUType::Z80)
-					state.WriteByte(physAddress + i,0);
+					state.WriteByte(physAddress + i,0);	
 				else if(state.CPUInterface->CPUType == ECPUType::M6502)
 					state.WriteByte(physAddress + i, 0xEA);
 			}
