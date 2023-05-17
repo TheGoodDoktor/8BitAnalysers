@@ -15,8 +15,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
+	set(MACOSX_BUNDLE_BUNDLE_NAME C64Analyser)
 	find_package(OpenGL REQUIRED)
 	find_package(Threads REQUIRED)
+	find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
 	set( gfxapi "GLFWApi")
 endif()
 
@@ -178,4 +181,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		${CMAKE_DL_LIBS}
 		${AUDIOTOOLBOX_LIBRARY}
 		)
+	install(TARGETS ${APP_NAME}
+		BUNDLE DESTINATION . COMPONENT RunTime
+		RUNTIME DESTINATION bin COMPONENT RunTime
+		)
+	add_custom_command(TARGET ${APP_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/imgui.ini
+		$<TARGET_FILE_DIR:${APP_NAME}>
+		)
+	set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
+	set(LIBS )
+	set(DIRS ${CMAKE_BINARY_DIR})
+	install(CODE "include(BundleUtilities)
+	fixup_bundle(\"${APPS}\" \"${LIBS}\" \"${DIRS}\")")
+	set(CPACK_GENERATOR "DRAGNDROP")
+	include(CPack)
 endif()
