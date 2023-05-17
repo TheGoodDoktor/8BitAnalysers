@@ -3,8 +3,9 @@ cmake_minimum_required (VERSION 3.10)
 
 project (C64Analyser)
 
-set(CMAKE_CXX_STANDARD 20)
-
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	find_package(OpenGL REQUIRED)
@@ -127,7 +128,7 @@ source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} )
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX C64 FILES ${program_src} ${platform_main})
 
-set_target_properties( ${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 )
+#set_target_properties( ${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 )
 set_target_properties( ${PROJECT_NAME} PROPERTIES C_STANDARD 11 )
 
 #windows specific
@@ -175,5 +176,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		${OPENGL_LIBRARIES} 
 		${CMAKE_THREAD_LIBS_INIT}
 		${CMAKE_DL_LIBS}
+		${AUDIOTOOLBOX_LIBRARY}
 		)
 endif()
