@@ -23,7 +23,7 @@ void FMemoryBuffer::Init(size_t initialSize)
 	CurrentSize = 0;
 }
 
-void FMemoryBuffer::Init(void *pData, size_t dataSize)
+void FMemoryBuffer::Init(const void *pData, size_t dataSize)
 {
 	Init(dataSize);
 	CurrentSize = dataSize;

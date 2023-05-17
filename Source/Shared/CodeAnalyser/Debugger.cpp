@@ -34,13 +34,15 @@ void FDebugger::CPUTick(uint64_t pins)
     uint16_t addr = 0;
 	bool bMemAccess = false;
 	bool bWrite = false;
+	bool bRead = false;
 	bool bNewOp = false;
 
     if (CPUType == ECPUType::Z80)
     {
         addr = Z80_GET_ADDR(pins);
         bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
-        bWrite = (risingPins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
+		bWrite = (risingPins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
+		bRead = (risingPins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_RD);
         bNewOp = z80_opdone(pZ80);
     }
     else if (CPUType == ECPUType::M6502)
@@ -48,6 +50,7 @@ void FDebugger::CPUTick(uint64_t pins)
 		addr = M6502_GET_ADDR(pins);
 		// TODO: bMemAccess
 		// TODO: bWrite
+		// TODO: bRead
 		bNewOp =  pins & M6502_SYNC;
 	}
 
