@@ -712,18 +712,18 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	// Setup Debugger
 	FDebugger& debugger = CodeAnalysis.Debugger;
 	debugger.RegisterEventType((int)EEventType::None, "None", 0);
-	debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen Pixel Write", 0xffff0000, nullptr, EventShowPixValue);
-	debugger.RegisterEventType((int)EEventType::ScreenAttrWrite, "Screen Attribute Write", 0xffff0000, nullptr, EventShowAttrValue);
-	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff00ff00, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::KempstonJoystickRead, "Kempston Joystick Read", 0xff00ff00, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::FloatingBusRead, "Floating Bus Read", 0xff00ff00, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::SoundChipRead, "Sound Chip Read", 0xff00ff00, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::SoundChipRegisterSelect, "Sound Chip Register Select", 0, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::SoundChipRegisterWrite, "Sound Chip Register Write", 0, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::SwitchMemoryBanks, "Switch Memory Banks", 0, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::SetBorderColour, "Set Border Colour", 0, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::OutputBeeper, "Output Beeper", 0, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::OutputMic, "Output Mic", 0, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen Pixel Write", 0xff0000ff, nullptr, EventShowPixValue);
+	debugger.RegisterEventType((int)EEventType::ScreenAttrWrite, "Screen Attr Write", 0xff007fff, nullptr, EventShowAttrValue);
+	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff00ff1f, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::KempstonJoystickRead, "Kempston Read", 0xff007f1f, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::FloatingBusRead, "Floating Bus Read", 0xff407f00, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::SoundChipRead, "AY Chip Read", 0xff007f40, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::SoundChipRegisterSelect, "AY Register Select", 0xff007f7f, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::SoundChipRegisterWrite, "AY Register Write", 0xff00ffff, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::SwitchMemoryBanks, "Switch Memory Banks", 0xffff00ff, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::SetBorderColour, "Set Border Colour", 0xff003f1f, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::OutputBeeper, "Output Beeper", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::OutputMic, "Output Mic", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
 
 	debugger.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
 
