@@ -25,7 +25,9 @@ enum class EDebugStepMode
 	Frame,
 	ScreenWrite,
 	IORead,
-	IOWrite
+	IOWrite,
+	Interrupt,
+	NMI,
 };
 
 // only add to end otherwise you'll break the file format
@@ -83,6 +85,21 @@ struct FStackInfo
 };
 
 
+struct FEvent
+{
+	FEvent(uint8_t type, FAddressRef pc, uint16_t address, uint8_t value, uint16_t scanlinePos)
+		: Type(type), PC(pc), Address(address), Value(value), ScanlinePos(scanlinePos) {}
+
+	uint8_t			Type;
+	uint16_t		Address;
+	uint8_t			Value;
+	uint16_t		ScanlinePos;
+	FAddressRef		PC;
+};
+
+typedef void (*ShowEventInfoCB)(FCodeAnalysisState& state, const FEvent& event);
+
+
 class FDebugger
 {
 public:
@@ -119,6 +136,15 @@ public:
 
 	const std::vector<FWatch>& GetWatches() const { return Watches; }
 
+	// Events 
+	void RegisterEventType(uint8_t type, const char* pName, uint32_t col, ShowEventInfoCB pShowAddress = nullptr, ShowEventInfoCB pShowValue = nullptr);
+	void ResetScanlineEvents(void);
+	void RegisterEvent(uint8_t type, FAddressRef pc, uint16_t address, uint8_t value, uint16_t scanlinePos);
+	const std::vector<FEvent>& GetEventTrace() const { return EventTrace; }
+	const uint8_t* GetScanlineEvents() const { return ScanlineEvents; }
+	uint32_t GetEventColour(uint8_t type);
+	const char* GetEventName(uint8_t type);
+
 	// Frame Trace
 	const std::vector<FAddressRef>& GetFrameTrace() const { return FrameTrace; }
 	bool	TraceForward(FCodeAnalysisViewState& viewState);
@@ -143,6 +169,7 @@ public:
 	void	DrawStack(void);
 	void	DrawWatches(void);
 	void	DrawBreakpoints(void);
+	void	DrawEvents(void);
 	void	DrawUI(void);
 private:
 	int		GetFrameTraceItemIndex(FAddressRef address);
@@ -163,6 +190,9 @@ private:
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;
 	std::vector<FAddressRef>	FrameTrace;
+	std::vector<FEvent>			EventTrace;
+	uint8_t						ScanlineEvents[320];
+
 	int							FrameTraceItemIndex = -1;
 	std::vector<FCPUFunctionCall>	CallStack;
 
@@ -177,3 +207,5 @@ private:
 	uint16_t				ScreenMemoryEnd = 0;
 };
 
+void EventShowPixValue(FCodeAnalysisState& state, const FEvent& event);
+void EventShowAttrValue(FCodeAnalysisState& state, const FEvent& event);

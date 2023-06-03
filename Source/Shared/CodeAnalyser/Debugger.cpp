@@ -8,6 +8,7 @@
 #include "UI/CodeAnalyserUI.h"
 #include "Z80/Z80Disassembler.h"
 #include "6502/M6502Disassembler.h"
+#include <Util/GraphicsView.h>
 
 void FDebugger::Init(FCodeAnalysisState* pCA)
 {
@@ -70,27 +71,33 @@ void FDebugger::CPUTick(uint64_t pins)
         {
             // break on screen memory write
             if (bWrite && addr >= ScreenMemoryStart && addr <= ScreenMemoryEnd)
-            {
-                trapId = kTrapId_Step;
-            }
+                trapId = kTrapId_Step;            
         }
         break;
 
 		case EDebugStepMode::IORead:
 		{
 			if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
-			{
 				trapId = kTrapId_Step;
-			}
 		}
 		break;
 
 		case EDebugStepMode::IOWrite:
 		{
 			if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR))
-			{
 				trapId = kTrapId_Step;
-			}
+		}
+		break;
+
+		case EDebugStepMode::Interrupt:
+		{
+			if (CPUType == ECPUType::Z80 && (pins & Z80_INT) && pZ80->iff1)
+				trapId = kTrapId_Step;
+		}
+		break;
+
+		case EDebugStepMode::NMI:
+		{
 		}
 		break;
     }
@@ -199,6 +206,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	}
 
 	// Handle IRQ
+	//  Note: This is Z80 specific
 	const bool irq = (pins & Z80_INT) && pZ80->iff1;
 	if (irq)
 	{
@@ -224,7 +232,8 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 
 void FDebugger::StartFrame() 
 { 
-	FrameTrace.clear(); 
+	EventTrace.clear();
+	FrameTrace.clear();
 }
 
 bool FDebugger::FrameTick(void)
@@ -546,6 +555,50 @@ bool FDebugger::IsAddressOnStack(uint16_t address)
 	return address >= StackMin && address <= StackMax;
 }
 
+// Events 
+void FDebugger::ResetScanlineEvents(void)
+{
+	memset(ScanlineEvents, 0, sizeof(ScanlineEvents));
+}
+
+static const size_t kEventNameLength = 32;
+struct FEventTypeInfo
+{
+	char		EventName[kEventNameLength];
+	uint32_t	EventColour;
+
+	ShowEventInfoCB	ShowAddressCB = nullptr;
+	ShowEventInfoCB	ShowValueCB = nullptr;
+};
+
+FEventTypeInfo g_EventTypeInfo[256];
+
+void FDebugger::RegisterEventType(uint8_t type, const char* pName, uint32_t col, ShowEventInfoCB pShowAddress, ShowEventInfoCB pShowValue)
+{
+	FEventTypeInfo& typeInfo = g_EventTypeInfo[type];
+	assert(strlen(pName) < kEventNameLength);
+	strncpy(typeInfo.EventName, pName, kEventNameLength);
+	typeInfo.EventColour = col;
+	typeInfo.ShowAddressCB = pShowAddress;
+	typeInfo.ShowValueCB = pShowValue;
+}
+
+void FDebugger::RegisterEvent(uint8_t type, FAddressRef pc, uint16_t address, uint8_t value, uint16_t scanlinePos)
+{
+	ScanlineEvents[scanlinePos] = type;
+	EventTrace.emplace_back(type, pc, address, value, scanlinePos);
+}
+
+uint32_t FDebugger::GetEventColour(uint8_t type)
+{
+	return g_EventTypeInfo[type].EventColour;
+}
+
+const char* FDebugger::GetEventName(uint8_t type)
+{
+	return g_EventTypeInfo[type].EventName;
+}
+
 bool	FDebugger::TraceForward(FCodeAnalysisViewState& viewState)
 {
 	const FCodeAnalysisItem& cursorItem = viewState.GetCursorItem();
@@ -849,6 +902,140 @@ void FDebugger::DrawBreakpoints(void)
 	}
 }
 
+// Generic Event render functions
+void EventShowPixValue(FCodeAnalysisState& state, const FEvent& event)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float line_height = ImGui::GetTextLineHeight();
+	const float rectSize = line_height / 2;
+	const uint8_t pixels = event.Value;
+	//dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize * 8, pos.y + rectSize), 0xffffffff);
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (pixels & (1 << (7 - i)))
+			dl->AddRectFilled(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
+
+		dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
+		pos.x += rectSize;
+	}
+
+	// tool tip?
+	//ImGui::Text("%s", NumStr(event.Value));
+}
+
+void EventShowAttrValue(FCodeAnalysisState& state, const FEvent& event)
+{
+	const uint32_t* colourLUT = state.Config.CharacterColourLUT;
+
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float line_height = ImGui::GetTextLineHeight();
+	const float rectSize = line_height;
+
+	const uint8_t colAttr = event.Value;
+
+	const bool bBright = !!(colAttr & (1 << 6));
+	const uint32_t inkCol = GetColFromAttr(colAttr & 7, colourLUT, bBright);
+	const uint32_t paperCol = GetColFromAttr(colAttr >> 3, colourLUT, bBright);
+
+	// Ink
+	{
+		const ImVec2 rectMin(pos.x, pos.y);
+		const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize / 2);
+		dl->AddRectFilled(rectMin, rectMax, inkCol);
+	}
+
+	// Paper
+	{
+		const ImVec2 rectMin(pos.x, pos.y + rectSize / 2);
+		const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+		dl->AddRectFilled(rectMin, rectMax, paperCol);
+	}
+
+	dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
+	// tool tip?
+	//ImGui::Text("%s", NumStr(event.Value));
+}
+void FDebugger::DrawEvents(void)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	const float lineHeight = ImGui::GetTextLineHeight();
+	ImGuiListClipper clipper((int)EventTrace.size(), lineHeight);
+	const float rectSize = lineHeight;
+
+	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollY;
+	if (ImGui::BeginTable("Events", 4, flags))
+	{
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 150);
+		ImGui::TableSetupColumn("PC", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 50);
+		ImGui::TableHeadersRow();
+
+		//if (ImGui::BeginChild("EventListChild"))
+		{
+			while (clipper.Step())
+			{
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+				{
+					const FEvent& event = EventTrace[i];
+					const FEventTypeInfo& typeInfo = g_EventTypeInfo[event.Type];
+					ImGui::PushID(i);
+					ImGui::TableNextRow();
+
+					ImGui::TableSetColumnIndex(0);
+					ImVec2 pos = ImGui::GetCursorScreenPos();
+					
+					// Type
+					const ImVec2 rectMin(pos.x, pos.y);
+					const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+					dl->AddRectFilled(rectMin, rectMax, typeInfo.EventColour);
+
+					ImGui::Text("   %s", GetEventName(event.Type));
+					
+					// PC
+					ImGui::TableSetColumnIndex(1);
+					ImGui::Text("%s:", NumStr(event.PC.Address));
+					DrawAddressLabel(state, viewState, event.PC);
+
+					// Address
+					ImGui::TableSetColumnIndex(2);
+					if (typeInfo.ShowAddressCB != nullptr)
+					{
+						typeInfo.ShowAddressCB(state, event);
+					}
+					else
+					{
+						ImGui::Text("%s:", NumStr(event.Address));
+						DrawAddressLabel(state, viewState, event.Address);
+					}
+
+					// Value
+					ImGui::TableSetColumnIndex(3);
+					if (typeInfo.ShowValueCB != nullptr)
+					{
+						typeInfo.ShowValueCB(state, event);
+					}
+					else
+					{
+						ImGui::Text("%s", NumStr(event.Value));
+					}
+					ImGui::PopID();
+
+				}
+			}
+		}
+		//ImGui::EndChild();
+
+		ImGui::EndTable();
+
+	}
+}
+
 void FDebugger::DrawUI(void)
 {
 	if (ImGui::Button("Step IO Read"))
@@ -892,6 +1079,12 @@ void FDebugger::DrawUI(void)
 		if (ImGui::BeginTabItem("Trace"))
 		{
 			DrawTrace();
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Events"))
+		{
+			DrawEvents();
 			ImGui::EndTabItem();
 		}
 

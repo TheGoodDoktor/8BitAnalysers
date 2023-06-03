@@ -405,7 +405,7 @@ bool	FRZXManager::GetInput(uint16_t port, uint8_t& outVal)
 
 #include <map>
 
-std::map<uint16_t,std::vector<std::string>> g_KeyNames =
+static std::map<uint16_t,std::vector<std::string>> g_KeyNames =
 {
 	{0xfefe, {"Shift","Z","X","C","V"}},
 	{0xfdfe, {"A","S","D","F","G"}},

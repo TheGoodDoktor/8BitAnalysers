@@ -37,6 +37,7 @@ void FSpectrumViewer::Draw()
 {
 	const FGlobalConfig& config = GetGlobalConfig();
 	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->CodeAnalysis;
+	FDebugger& debugger = codeAnalysis.Debugger;
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 
 	chips_display_info_t disp = zx_display_info(&pSpectrumEmu->ZXEmuState);
@@ -55,13 +56,24 @@ void FSpectrumViewer::Draw()
 	ImVec2 uv1(320.0f / 512.0f, 1.0f);
 	ImGui::Image(ScreenTexture, ImVec2(320, 256),uv0,uv1);
 
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	const int topScreenScanLine = pSpectrumEmu->ZXEmuState.top_border_scanlines - 32;
+
+	const uint8_t* scanlineEvents = debugger.GetScanlineEvents();
+	for (int scanlineNo = 0; scanlineNo < 320; scanlineNo++)
+	{
+		const int scanlineY = std::min(std::max(scanlineNo - topScreenScanLine, 0), 256);
+		if (scanlineEvents[scanlineNo] != (int)EEventType::None)
+		{
+			const uint32_t col = debugger.GetEventColour(scanlineEvents[scanlineNo]);
+			dl->AddLine(ImVec2(pos.x + 320, pos.y + scanlineY), ImVec2(pos.x + 320 + 32, pos.y + scanlineY), col);
+		}
+	}
 	// Draw an indicator to show which scanline is being drawn
 	if (config.bShowScanLineIndicator && pSpectrumEmu->UIZX.dbg.dbg.stopped)
 	{
 		// Compensate for the fact the border area on a real spectrum is bigger than the emulated spectrum.
-		const int topScreenScanLine = pSpectrumEmu->ZXEmuState.top_border_scanlines - 32;
 		int scanlineY = std::min(std::max(pSpectrumEmu->ZXEmuState.scanline_y - topScreenScanLine, 0), 256);
-		ImDrawList* dl = ImGui::GetWindowDrawList();
 		dl->AddLine(ImVec2(pos.x + 4, pos.y + scanlineY), ImVec2(pos.x + 320 - 8, pos.y + scanlineY), 0x50ffffff);
 		DrawArrow(dl, ImVec2(pos.x - 2, pos.y + scanlineY - 6), false);
 		DrawArrow(dl, ImVec2(pos.x + 320 - 11, pos.y + scanlineY - 6), true);
@@ -243,7 +255,7 @@ void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, 
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const uint8_t xVal = codeAnalysis.ReadByte(XCoordAddress);
-		const float xLinePos = (float)(bInvertYCoord ? 255 - xVal : xVal);
+		const float xLinePos = (float)(bInvertXCoord ? 255 - xVal : xVal);
 		const ImVec2 lineStart(pos.x + kBorderOffsetX + xLinePos, pos.y + kBorderOffsetY);
 		const ImVec2 lineEnd(pos.x + kBorderOffsetX + xLinePos, pos.y + kBorderOffsetY + 192.0f);
 

@@ -30,8 +30,7 @@ void FFrameTraceViewer::Reset()
 	{
 		auto& frame = FrameTrace[i];
 		frame.InstructionTrace.clear();
-		frame.ScreenPixWrites.clear();
-		frame.ScreenAttrWrites.clear();
+		frame.FrameEvents.clear();
 		frame.FrameOverview.clear();
 		frame.MemoryDiffs.clear();
 	}
@@ -57,8 +56,7 @@ void FFrameTraceViewer::CaptureFrame()
 	FSpeccyFrameTrace& frame = FrameTrace[CurrentTraceFrame];
 	ImGui_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->SpectrumViewer.GetFrameBuffer());
 	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.Debugger.GetFrameTrace();	// copy frame trace - use method?
-	frame.ScreenPixWrites = pSpectrumEmu->FrameScreenPixWrites;
-	frame.ScreenAttrWrites = pSpectrumEmu->FrameScreenAttrWrites;
+	frame.FrameEvents = pSpectrumEmu->CodeAnalysis.Debugger.GetEventTrace();
 	frame.FrameOverview.clear();
 
 	// copy memory

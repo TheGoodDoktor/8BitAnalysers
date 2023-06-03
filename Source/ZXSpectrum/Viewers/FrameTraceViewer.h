@@ -10,6 +10,23 @@
 class FSpectrumEmu;
 class FZXGraphicsView;
 
+enum class EEventType : uint8_t
+{
+	None = 0,
+	ScreenPixWrite,
+	ScreenAttrWrite,
+	KeyboardRead,
+	KempstonJoystickRead,
+	FloatingBusRead,
+	SoundChipRead,
+	SoundChipRegisterSelect,
+	SoundChipRegisterWrite,
+	SwitchMemoryBanks,
+	SetBorderColour,
+	OutputBeeper,
+	OutputMic
+};
+
 struct FFrameOverviewItem
 {
 	std::string		Label;
@@ -33,7 +50,7 @@ struct FSpeccyFrameTrace
 	void*					CPUState = nullptr;
 	std::vector<FAddressRef>	InstructionTrace;
 	std::vector<FMemoryAccess>	ScreenPixWrites;
-	std::vector<FMemoryAccess>	ScreenAttrWrites;
+	std::vector<FEvent>			FrameEvents;
 
 	std::vector<FFrameOverviewItem>	FrameOverview;
 	std::vector<FMemoryDiff>	MemoryDiffs;

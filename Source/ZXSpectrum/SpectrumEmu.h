@@ -56,6 +56,8 @@ enum class ESpectrumModel
 	Spectrum128K
 };
 
+
+
 struct FSpectrumConfig
 {
 	void ParseCommandline(int argc, char** argv);
@@ -201,8 +203,6 @@ public:
 	// Memory handling
 	std::string							SelectedMemoryHandler;
 	std::vector< FMemoryAccessHandler>	MemoryAccessHandlers;
-	std::vector< FMemoryAccess>			FrameScreenPixWrites;
-	std::vector< FMemoryAccess>			FrameScreenAttrWrites;
 
 	FMemoryStats	MemStats;
 
