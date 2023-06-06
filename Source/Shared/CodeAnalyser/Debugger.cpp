@@ -973,7 +973,7 @@ void FDebugger::DrawEvents(void)
 		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 150);
 		ImGui::TableSetupColumn("PC", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 50);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100);
 		ImGui::TableHeadersRow();
 
 		//if (ImGui::BeginChild("EventListChild"))

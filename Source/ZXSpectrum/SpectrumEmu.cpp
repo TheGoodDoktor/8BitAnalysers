@@ -469,6 +469,26 @@ static std::map<uint16_t, std::vector<std::string>> g_KeyPortLUT =
 	{0x7ffe, {"Space","Sym","M","N","B"}},
 };
 
+const char* g_AYRegNames[] = {
+	"CH A Period Fine",
+	"CH A Period Coarse",
+	"CH B Period Fine",
+	"CH B Period Coarse",
+	"CH C Period Fine",
+	"CH C Period Coarse",
+	"Noise Pitch",
+	"Mixer",
+	"CH A Volume",
+	"CH B Volume",
+	"CH C Volume",
+	"Env Dur fine",
+	"Env Dur coarse",
+	"Env Shape",
+	"I/O Port A",
+	"I/O Port B",
+};
+
+
 // Event viewer address/value visualisers - move somewhere?
 void IOPortEventShowAddress(FCodeAnalysisState& state, const FEvent& event)
 {
@@ -514,6 +534,14 @@ void IOPortEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 				}
 			}
 		}
+	}
+	else if (event.Type == (int)EEventType::SwitchMemoryBanks)
+	{
+		ImGui::Text("RAM:%d ROM:%d", event.Value & 0x7, (event.Value >> 4) & 1);
+	}
+	else if (event.Type == (int)EEventType::SoundChipRegisterSelect)
+	{
+		ImGui::Text("%s", g_AYRegNames[event.Value & 15]);
 	}
 	else
 	{
