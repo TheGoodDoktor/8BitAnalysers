@@ -144,6 +144,7 @@ public:
 	const uint8_t* GetScanlineEvents() const { return ScanlineEvents; }
 	uint32_t GetEventColour(uint8_t type);
 	const char* GetEventName(uint8_t type);
+	void ClearEvents();
 
 	// Frame Trace
 	const std::vector<FAddressRef>& GetFrameTrace() const { return FrameTrace; }
@@ -192,6 +193,7 @@ private:
 	std::vector<FAddressRef>	FrameTrace;
 	std::vector<FEvent>			EventTrace;
 	uint8_t						ScanlineEvents[320];
+	bool							bClearEventsEveryFrame = true;
 
 	int							FrameTraceItemIndex = -1;
 	std::vector<FCPUFunctionCall>	CallStack;

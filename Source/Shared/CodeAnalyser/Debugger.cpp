@@ -232,7 +232,8 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 
 void FDebugger::StartFrame() 
 { 
-	EventTrace.clear();
+	if (bClearEventsEveryFrame)
+		ClearEvents();
 	FrameTrace.clear();
 }
 
@@ -569,6 +570,8 @@ struct FEventTypeInfo
 
 	ShowEventInfoCB	ShowAddressCB = nullptr;
 	ShowEventInfoCB	ShowValueCB = nullptr;
+	
+	bool bEnabled = true;
 };
 
 FEventTypeInfo g_EventTypeInfo[256];
@@ -585,6 +588,9 @@ void FDebugger::RegisterEventType(uint8_t type, const char* pName, uint32_t col,
 
 void FDebugger::RegisterEvent(uint8_t type, FAddressRef pc, uint16_t address, uint8_t value, uint16_t scanlinePos)
 {
+	if (!g_EventTypeInfo[type].bEnabled)
+		return;
+
 	ScanlineEvents[scanlinePos] = type;
 	EventTrace.emplace_back(type, pc, address, value, scanlinePos);
 }
@@ -597,6 +603,11 @@ uint32_t FDebugger::GetEventColour(uint8_t type)
 const char* FDebugger::GetEventName(uint8_t type)
 {
 	return g_EventTypeInfo[type].EventName;
+}
+
+void FDebugger::ClearEvents()
+{
+	EventTrace.clear();
 }
 
 bool	FDebugger::TraceForward(FCodeAnalysisViewState& viewState)
@@ -960,12 +971,35 @@ void EventShowAttrValue(FCodeAnalysisState& state, const FEvent& event)
 }
 void FDebugger::DrawEvents(void)
 {
-	ImDrawList* dl = ImGui::GetWindowDrawList();
+	if (ImGui::Button("Clear"))
+	{
+		ClearEvents();
+	}
+	ImGui::Checkbox("Clear Every Frame", &bClearEventsEveryFrame);
+
 	FCodeAnalysisState& state = *pCodeAnalysis;
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float lineHeight = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)EventTrace.size(), lineHeight);
 	const float rectSize = lineHeight;
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	
+	if (ImGui::CollapsingHeader("Event Types"))
+	{
+		int e = 1;	// skip event type None
+		while (g_EventTypeInfo[e].EventName[0])
+		{
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			const ImVec2 rectMin(pos.x, pos.y + 3);
+			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize + 3);
+			dl->AddRectFilled(rectMin, rectMax, g_EventTypeInfo[e].EventColour);
+
+			ImGui::Text("  "); 
+			ImGui::SameLine();
+			ImGui::Checkbox(g_EventTypeInfo[e].EventName, &g_EventTypeInfo[e].bEnabled);
+			e++;
+		}
+	}
 
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollY;
 	if (ImGui::BeginTable("Events", 4, flags))
