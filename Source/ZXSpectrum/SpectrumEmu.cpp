@@ -469,23 +469,24 @@ static std::map<uint16_t, std::vector<std::string>> g_KeyPortLUT =
 	{0x7ffe, {"Space","Sym","M","N","B"}},
 };
 
-const char* g_AYRegNames[] = {
-	"CH A Period Fine",
-	"CH A Period Coarse",
-	"CH B Period Fine",
-	"CH B Period Coarse",
-	"CH C Period Fine",
-	"CH C Period Coarse",
-	"Noise Pitch",
-	"Mixer",
-	"CH A Volume",
-	"CH B Volume",
-	"CH C Volume",
-	"Env Dur fine",
-	"Env Dur coarse",
-	"Env Shape",
-	"I/O Port A",
-	"I/O Port B",
+const char* g_AYRegNames[] = 
+{
+	"CH A Period Fine",		// 0
+	"CH A Period Coarse",	// 1
+	"CH B Period Fine",		// 2
+	"CH B Period Coarse",	// 3
+	"CH C Period Fine",		// 4
+	"CH C Period Coarse",	// 5
+	"Noise Pitch",			// 6
+	"Mixer",				// 7
+	"CH A Volume",			// 8
+	"CH B Volume",			// 9
+	"CH C Volume",			// 10 (A)
+	"Env Dur fine",			// 11 (B)
+	"Env Dur coarse",		// 12 (C)
+	"Env Shape",			// 13 (D)
+	"I/O Port A",			// 14 (E)
+	"I/O Port B",			// 15 (F)
 };
 
 

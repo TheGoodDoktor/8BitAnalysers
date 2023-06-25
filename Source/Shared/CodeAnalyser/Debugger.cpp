@@ -10,6 +10,14 @@
 #include "6502/M6502Disassembler.h"
 #include <Util/GraphicsView.h>
 
+static const uint32_t	BPMask_Exec			= 0x0001;
+static const uint32_t	BPMask_DataWrite	= 0x0002;
+static const uint32_t	BPMask_DataRead		= 0x0004;
+static const uint32_t	BPMask_IORead		= 0x0008;
+static const uint32_t	BPMask_IOWrite		= 0x0010;
+static const uint32_t	BPMask_IRQ			= 0x0020;
+static const uint32_t	BPMask_NMI			= 0x0040;
+
 void FDebugger::Init(FCodeAnalysisState* pCA)
 {
 	pCodeAnalysis = pCA;
@@ -37,14 +45,24 @@ void FDebugger::CPUTick(uint64_t pins)
 	bool bWrite = false;
 	bool bRead = false;
 	bool bNewOp = false;
+	bool bIORead = false;
+	bool bIOWrite = false;
+	bool bIrq = false;
+	bool bNMI = false;
+	uint32_t BPMaskCheck = 0;
 
     if (CPUType == ECPUType::Z80)
     {
         addr = Z80_GET_ADDR(pins);
+
         bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
 		bWrite = (risingPins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
 		bRead = (risingPins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_RD);
         bNewOp = z80_opdone(pZ80);
+		bIORead = (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD);
+		bIOWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR);
+		bIrq = (pins & Z80_INT) && pZ80->iff1;
+		bNMI = risingPins & Z80_NMI;
     }
     else if (CPUType == ECPUType::M6502)
     {
@@ -53,7 +71,12 @@ void FDebugger::CPUTick(uint64_t pins)
 		// TODO: bWrite
 		// TODO: bRead
 		bNewOp =  pins & M6502_SYNC;
+		bIrq = risingPins & M6502_IRQ;
+		bNMI = risingPins & M6502_NMI;
 	}
+
+	// setup breakpoint mask to check
+	BPMaskCheck |= bWrite ? BPMask_DataWrite : 0;
 
     const FAddressRef addrRef = pCodeAnalysis->AddressRefFromPhysicalAddress(addr);
 
@@ -77,21 +100,21 @@ void FDebugger::CPUTick(uint64_t pins)
 
 		case EDebugStepMode::IORead:
 		{
-			if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
+			if (bIORead)
 				trapId = kTrapId_Step;
 		}
 		break;
 
 		case EDebugStepMode::IOWrite:
 		{
-			if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR))
+			if (bIOWrite)
 				trapId = kTrapId_Step;
 		}
 		break;
 
 		case EDebugStepMode::Interrupt:
 		{
-			if (CPUType == ECPUType::Z80 && (pins & Z80_INT) && pZ80->iff1)
+			if (bIrq)
 				trapId = kTrapId_Step;
 		}
 		break;
@@ -103,56 +126,57 @@ void FDebugger::CPUTick(uint64_t pins)
     }
 
     // iterate through data breakpoints
-	for (int i = 0; i < Breakpoints.size(); i++)
+	// this can slow down if there are a lot of BPs
+	// Do a mask check
+	if (BPMaskCheck & BreakpointMask)
 	{
-		const FBreakpoint& bp = Breakpoints[i];
-
-		if (bp.bEnabled)
+		for (int i = 0; i < Breakpoints.size(); i++)
 		{
-			switch (bp.Type)
+			const FBreakpoint& bp = Breakpoints[i];
+
+			if (bp.bEnabled)
 			{
-			case EBreakpointType::Data:
-                if (bWrite &&
-                    addrRef.BankId == bp.Address.BankId && 
-                    addrRef.Address >= bp.Address.Address &&
-                    addrRef.Address < bp.Address.Address + bp.Size)
-                {
-					trapId = kTrapId_BpBase + i;
-				}
-				break;
-
-            case EBreakpointType::Irq:
-                if (CPUType == ECPUType::Z80 && risingPins & Z80_INT)
-					trapId = kTrapId_BpBase + i;
-				else if (CPUType == ECPUType::M6502 && risingPins & M6502_IRQ)
-					trapId = kTrapId_BpBase + i;
-				break;
-
-			case EBreakpointType::NMI:
-				if (CPUType == ECPUType::Z80 && risingPins & Z80_NMI)
-					trapId = kTrapId_BpBase + i;
-				else if (CPUType == ECPUType::M6502 && risingPins & M6502_NMI)
-					trapId = kTrapId_BpBase + i;
-				break;
-
-            // In/Out - only for Z80
-			case EBreakpointType::In:
-				if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD))
-                {
-					const uint16_t mask = bp.Val;
-					if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
+				switch (bp.Type)
+				{
+				case EBreakpointType::Data:
+					if (bWrite &&
+						addrRef.BankId == bp.Address.BankId &&
+						addrRef.Address >= bp.Address.Address &&
+						addrRef.Address < bp.Address.Address + bp.Size)
+					{
 						trapId = kTrapId_BpBase + i;
-				}
-				break;
+					}
+					break;
 
-			case EBreakpointType::Out:
-				if (CPUType == ECPUType::Z80 && (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR))
-                {
-					const uint16_t mask = bp.Val;
-					if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
+				case EBreakpointType::Irq:
+					if (bIrq)
 						trapId = kTrapId_BpBase + i;
+					break;
+
+				case EBreakpointType::NMI:
+					if (bNMI)
+						trapId = kTrapId_BpBase + i;
+					break;
+
+					// In/Out - only for Z80
+				case EBreakpointType::In:
+					if (bIORead)
+					{
+						const uint16_t mask = bp.Val;
+						if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
+							trapId = kTrapId_BpBase + i;
+					}
+					break;
+
+				case EBreakpointType::Out:
+					if (bIOWrite)
+					{
+						const uint16_t mask = bp.Val;
+						if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
+							trapId = kTrapId_BpBase + i;
+					}
+					break;
 				}
-				break;
 			}
 		}
 	}
@@ -184,7 +208,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 
 		}
 	}
-	else
+	else if(BreakpointMask & BPMask_Exec)
 	{
 		for (int i = 0; i < Breakpoints.size(); i++)
 		{
@@ -235,6 +259,39 @@ void FDebugger::StartFrame()
 	if (bClearEventsEveryFrame)
 		ClearEvents();
 	FrameTrace.clear();
+
+	// Setup breakpoint mask 
+	BreakpointMask = 0;
+
+	for (int i = 0; i < Breakpoints.size(); i++)
+	{
+		const FBreakpoint& bp = Breakpoints[i];
+
+		if (bp.bEnabled)
+		{
+			switch (bp.Type)
+			{
+			case EBreakpointType::Exec:
+				BreakpointMask |= BPMask_Exec;
+				break;
+			case EBreakpointType::Data:
+				BreakpointMask |= BPMask_DataWrite;
+				break;
+			case EBreakpointType::In:
+				BreakpointMask |= BPMask_IORead;
+				break;
+			case EBreakpointType::Out:
+				BreakpointMask |= BPMask_IORead;
+				break;
+			case EBreakpointType::Irq:
+				BreakpointMask |= BPMask_IRQ;
+				break;
+			case EBreakpointType::NMI:
+				BreakpointMask |= BPMask_NMI;
+				break;
+			}
+		}
+	}
 }
 
 bool FDebugger::FrameTick(void)

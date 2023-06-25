@@ -1343,7 +1343,10 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 			if (goToAddress.IsValid())
 			{
 				// check if we can just jump in the address view
-				if (viewState.ViewingBankId != goToAddress.BankId && state.IsBankIdMapped(goToAddress.BankId))
+				//if (viewState.ViewingBankId != goToAddress.BankId && state.IsBankIdMapped(goToAddress.BankId))
+				//	showBank = -1;
+				//else
+				if (state.Config.bShowBanks == false)
 					showBank = -1;
 				else
 					showBank = goToAddress.BankId;

@@ -188,6 +188,7 @@ private:
 	FAddressRef		StepOverPC;
 
 	std::vector<FBreakpoint>	Breakpoints;
+	uint32_t					BreakpointMask = 0;
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;
 	std::vector<FAddressRef>	FrameTrace;
