@@ -649,6 +649,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 const uint32_t kMachineStateMagic = 0xFaceCafe;
 const uint32_t kMachineStateVersion = 4;
 
+static zx_t g_SaveSlot;
 
 void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 {
@@ -687,7 +688,8 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 	fwrite(&kMachineStateVersion, sizeof(kMachineStateVersion), 1, fp);
 
 	// just save the whole thing out
-	static zx_t dst = pSpectrumEmu->ZXEmuState;	// copy to temp
+	zx_t& dst =  g_SaveSlot;
+	dst = pSpectrumEmu->ZXEmuState;	// copy to save slot
 	chips_debug_snapshot_onsave(&dst.debug);
 	chips_audio_callback_snapshot_onsave(&dst.audio.callback);
 	ay38910_snapshot_onsave(&dst.ay);
@@ -713,9 +715,9 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 
 	// load the entire state
 	zx_t* sys = &pSpectrumEmu->ZXEmuState;
-	static zx_t im;
+	zx_t& im = g_SaveSlot;
 
-	fread(&im, sizeof(zx_t), 1, fp);
+	fread(&im, sizeof(zx_t), 1, fp);	// load into save slot
 
 	// fixup pointers & callbacks
 	chips_debug_snapshot_onload(&im.debug, &sys->debug);
