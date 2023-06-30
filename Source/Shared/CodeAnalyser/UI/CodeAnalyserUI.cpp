@@ -1650,7 +1650,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	}
 }
 
-void GenerateFilteredLabelList(const FLabelListFilter&filter,const std::vector<FCodeAnalysisItem>& sourceLabelList, std::vector<FCodeAnalysisItem>& filteredList)
+void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter&filter,const std::vector<FCodeAnalysisItem>& sourceLabelList, std::vector<FCodeAnalysisItem>& filteredList)
 {
 	filteredList.clear();
 
@@ -1661,6 +1661,13 @@ void GenerateFilteredLabelList(const FLabelListFilter&filter,const std::vector<F
 	{
 		if (labelItem.AddressRef.Address < filter.MinAddress || labelItem.AddressRef.Address > filter.MaxAddress)	// skip min address
 			continue;
+
+		const FCodeAnalysisBank* pBank = state.GetBank(labelItem.AddressRef.BankId);
+		if (pBank)
+		{
+			if (filter.bRAMOnly && pBank->bReadOnly)
+				continue;
+		}
 		
 		const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(labelItem.Item);
 		std::string labelTextLower = pLabelInfo->Name;
@@ -1681,15 +1688,15 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 			ImGui::SameLine();
 			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
 			{
-				viewState.GlobalFunctionsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
-				viewState.GlobalDataItemsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
 				state.bRebuildFilteredGlobalFunctions = true;
 				state.bRebuildFilteredGlobalDataItems = true;
 			}
 
 			if (state.bRebuildFilteredGlobalFunctions)
 			{
-				GenerateFilteredLabelList(viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
+				viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
+				viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
+				GenerateFilteredLabelList(state, viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
 				state.bRebuildFilteredGlobalFunctions = false;
 			}
 
@@ -1703,15 +1710,15 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 			ImGui::SameLine();
 			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
 			{
-				viewState.GlobalFunctionsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
-				viewState.GlobalDataItemsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
 				state.bRebuildFilteredGlobalFunctions = true;
 				state.bRebuildFilteredGlobalDataItems = true;
 			}
 
 			if (state.bRebuildFilteredGlobalDataItems)
 			{
-				GenerateFilteredLabelList(viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
+				viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
+				viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
+				GenerateFilteredLabelList(state, viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
 				state.bRebuildFilteredGlobalDataItems = false;
 			}
 

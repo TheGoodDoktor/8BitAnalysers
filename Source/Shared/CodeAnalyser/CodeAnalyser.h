@@ -108,8 +108,9 @@ struct FDataFormattingOptions
 struct FLabelListFilter
 {
 	std::string		FilterText;
-	uint16_t		MinAddress = 0x4000;
+	uint16_t		MinAddress = 0x0000;
 	uint16_t		MaxAddress = 0xffff;
+	bool			bRAMOnly = false;
 };
 
 struct FCodeAnalysisItem
