@@ -452,6 +452,11 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	if (DrawOperandTypeCombo("Operand Type", pCodeInfo->OperandType))
 		pCodeInfo->Text.clear();	// clear for a rewrite
 
+	if (state.Config.bShowBanks && pCodeInfo->OperandType == EOperandType::Pointer)
+	{
+		DrawBankInput(state, "Bank", pCodeInfo->PointerAddress.BankId);
+	}
+
 	if (ImGui::Checkbox("NOP out instruction", &pCodeInfo->bNOPped))
 	{
 		if (pCodeInfo->bNOPped == true)
@@ -1818,15 +1823,18 @@ const char* GetBankText(FCodeAnalysisState& state, int16_t bankId)
 	return pBank->Name.c_str();
 }
 
-bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId)
+bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId, bool bAllowNone)
 {
 	bool bBankChanged = false;
 	if (ImGui::BeginCombo("Bank", GetBankText(state, bankId)))
 	{
-		if (ImGui::Selectable(GetBankText(state, -1), bankId == -1))
+		if (bAllowNone)
 		{
-			bankId = -1;
-			bBankChanged = true;
+			if (ImGui::Selectable(GetBankText(state, -1), bankId == -1))
+			{
+				bankId = -1;
+				bBankChanged = true;
+			}
 		}
 
 		const auto& banks = state.GetBanks();
