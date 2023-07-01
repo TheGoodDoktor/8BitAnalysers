@@ -31,6 +31,20 @@ bool AddGameConfig(FGameConfig *pConfig)
 	return true;
 }
 
+bool RemoveGameConfig(const char* pName)
+{
+	for (std::vector< FGameConfig*>::iterator it = g_GameConfigs.begin(); it != g_GameConfigs.end(); ++it)
+	{
+		FGameConfig* pConfig = *it;
+		if (pConfig->Name == pName)
+		{
+			g_GameConfigs.erase(it);
+			return true;
+		}
+	}
+	return false;
+}
+
 const std::vector< FGameConfig *>& GetGameConfigs()
 {
 	return g_GameConfigs;

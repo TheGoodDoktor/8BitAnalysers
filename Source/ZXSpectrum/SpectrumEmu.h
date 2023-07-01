@@ -91,10 +91,14 @@ public:
 
 	bool	IsInitialised() const { return bInitialised; }
 
-	void	StartGame(FGameConfig* pGameConfig);
+	void	StartGame(FGameConfig* pGameConfig, bool bLoadGameData = true);
 	bool	StartGame(const char* pGameName);
 	void	SaveCurrentGameData();
+	bool	NewGameFromSnapshot(int snapshotIndex);
+
 	void	DrawMainMenu(double timeMS);
+	void	DrawExportAsmModalPopup();
+	void	DrawReplaceGameModalPopup();
 	void	DrawCheatsUI();
 	bool	ImportSkoolFile(const char* pFilename, const char* pOutSkoolInfoName = nullptr, FSkoolFileInfo* pSkoolInfo=nullptr);
 	bool	ExportSkoolFile(bool bHexadecimal, const char* pName = nullptr);
@@ -221,9 +225,13 @@ public:
 private:
 	std::vector<FViewerBase*>	Viewers;
 
+	bool	bReplaceGamePopup = false;
+	bool	bExportAsm = false;
+
+	int		ReplaceGameSnapshotIndex = 0;
+
 	bool	bShowDebugLog = false;
 	bool	bInitialised = false;
-
 };
 
 

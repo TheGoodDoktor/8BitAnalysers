@@ -198,3 +198,11 @@ void FIOAnalysis::DrawUI()
 
 }
 
+void FIOAnalysis::Reset()
+{
+  for (int i = 0; i < (int)SpeccyIODevice::Count; i++)
+  {
+	 IODeviceAcceses[i].Callers.Reset();
+  }
+}
+

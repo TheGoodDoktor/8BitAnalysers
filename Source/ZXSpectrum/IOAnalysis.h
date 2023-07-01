@@ -39,6 +39,7 @@ public:
 	void	Init(FSpectrumEmu* pEmu);
 	void	IOHandler(uint16_t pc, uint64_t pins);
 	void	DrawUI();
+	void	Reset();
 
 private:
 	FSpectrumEmu*		pSpectrumEmu = nullptr;

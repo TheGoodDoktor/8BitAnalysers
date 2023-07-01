@@ -81,6 +81,28 @@ bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen)
 	return true;
 }
 
+void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FAddressRef addr)
+{
+	// Bring up snippet in tool tip
+	const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	if (pBank != nullptr)
+	{
+		const int index = GetItemIndexForAddress(state, addr);
+		if (index != -1)
+		{
+			const int kToolTipNoLines = 10;
+			ImGui::BeginTooltip();
+			const int startIndex = std::max(index - (kToolTipNoLines / 2), 0);
+			for (int line = 0; line < kToolTipNoLines; line++)
+			{
+				if (startIndex + line < (int)pBank->ItemList.size())
+					DrawCodeAnalysisItem(state, viewState, pBank->ItemList[startIndex + line]);
+			}
+			ImGui::EndTooltip();
+		}
+	}
+}
+
 // TODO: phase this out
 void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel)
 {
@@ -142,24 +164,7 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		if (ImGui::IsItemHovered())
 		{
 			// Bring up snippet in tool tip
-			const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
-			if (pBank != nullptr)
-			{
-				const int index = GetItemIndexForAddress(state, addr);
-				if (index != -1)
-				{
-					const int kToolTipNoLines = 10;
-					ImGui::BeginTooltip();
-					const int startIndex = std::max(index - (kToolTipNoLines / 2), 0);
-					for (int line = 0; line < kToolTipNoLines; line++)
-					{
-						if (startIndex + line < (int)pBank->ItemList.size())
-							DrawCodeAnalysisItem(state, viewState, pBank->ItemList[startIndex + line]);
-					}
-					ImGui::EndTooltip();
-				}
-			}
-			
+			DrawSnippetToolTip(state, viewState, addr);
 
 			ImGuiIO& io = ImGui::GetIO();
 			if (io.KeyShift && ImGui::IsMouseDoubleClicked(0))
@@ -1515,6 +1520,11 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 				//else
 					ImGui::Text("%s", pLabelInfo->Name.c_str());
 				ImGui::PopID();
+
+				if (ImGui::IsItemHovered())
+				{
+					DrawSnippetToolTip(state, viewState, item.AddressRef);
+				}
 			}
 		}
 	}
@@ -1655,7 +1665,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	}
 }
 
-void GenerateFilteredLabelList(const FLabelListFilter&filter,const std::vector<FCodeAnalysisItem>& sourceLabelList, std::vector<FCodeAnalysisItem>& filteredList)
+void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter&filter,const std::vector<FCodeAnalysisItem>& sourceLabelList, std::vector<FCodeAnalysisItem>& filteredList)
 {
 	filteredList.clear();
 
@@ -1666,6 +1676,13 @@ void GenerateFilteredLabelList(const FLabelListFilter&filter,const std::vector<F
 	{
 		if (labelItem.AddressRef.Address < filter.MinAddress || labelItem.AddressRef.Address > filter.MaxAddress)	// skip min address
 			continue;
+
+		const FCodeAnalysisBank* pBank = state.GetBank(labelItem.AddressRef.BankId);
+		if (pBank)
+		{
+			if (filter.bRAMOnly && pBank->bReadOnly)
+				continue;
+		}
 		
 		const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(labelItem.Item);
 		std::string labelTextLower = pLabelInfo->Name;
@@ -1686,15 +1703,15 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 			ImGui::SameLine();
 			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
 			{
-				viewState.GlobalFunctionsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
-				viewState.GlobalDataItemsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
 				state.bRebuildFilteredGlobalFunctions = true;
 				state.bRebuildFilteredGlobalDataItems = true;
 			}
 
 			if (state.bRebuildFilteredGlobalFunctions)
 			{
-				GenerateFilteredLabelList(viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
+				viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
+				viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
+				GenerateFilteredLabelList(state, viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
 				state.bRebuildFilteredGlobalFunctions = false;
 			}
 
@@ -1708,15 +1725,15 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 			ImGui::SameLine();
 			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
 			{
-				viewState.GlobalFunctionsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
-				viewState.GlobalDataItemsFilter.MinAddress = viewState.ShowROMLabels ? 0 : 0x4000;
 				state.bRebuildFilteredGlobalFunctions = true;
 				state.bRebuildFilteredGlobalDataItems = true;
 			}
 
 			if (state.bRebuildFilteredGlobalDataItems)
 			{
-				GenerateFilteredLabelList(viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
+				viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
+				viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
+				GenerateFilteredLabelList(state, viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
 				state.bRebuildFilteredGlobalDataItems = false;
 			}
 

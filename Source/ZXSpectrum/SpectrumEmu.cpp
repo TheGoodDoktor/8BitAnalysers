@@ -777,7 +777,7 @@ void FSpectrumEmu::Shutdown()
 	SaveGlobalConfig(kGlobalConfigFilename);
 }
 
-void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
+void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  true*/)
 {
 	// reset systems
 	MemoryAccessHandlers.clear();	// remove old memory handlers
@@ -805,6 +805,8 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
 
+	IOAnalysis.Reset();
+
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
@@ -812,31 +814,34 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig)
 		CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
 	}
 
-	const std::string root = GetGlobalConfig().WorkspaceRoot;
-	const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
-	std::string romJsonFName = kRomInfo48JsonFile;
-
-	if (ZXEmuState.type == ZX_TYPE_128)
-		romJsonFName = root + kRomInfo128JsonFile;
-
-	const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
-	const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
-	const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
-	if (FileExists(analysisJsonFName.c_str()))
+	if (bLoadGameData)
 	{
-		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		const std::string root = GetGlobalConfig().WorkspaceRoot;
+		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
+		std::string romJsonFName = kRomInfo48JsonFile;
+
+		if (ZXEmuState.type == ZX_TYPE_128)
+			romJsonFName = root + kRomInfo128JsonFile;
+
+		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
+		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+		if (FileExists(analysisJsonFName.c_str()))
+		{
+			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		}
+		else
+			LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
+
+		LoadGameState(this, saveStateFName.c_str());
+
+		if (FileExists(romJsonFName.c_str()))
+			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+
+		// where do we want pokes to live?
+		LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}
-	else
-		LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
-
-	LoadGameState(this, saveStateFName.c_str());
-
-	if (FileExists(romJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
-
-	// where do we want pokes to live?
-	LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	FormatSpectrumMemory(CodeAnalysis);
@@ -924,12 +929,36 @@ void FSpectrumEmu::SaveCurrentGameData()
 #endif
 }
 
+bool FSpectrumEmu::NewGameFromSnapshot(int snapshotIndex)
+{
+	if (GamesList.LoadGame(snapshotIndex))
+	{
+		const FGameSnapshot& game = GamesList.GetGame(snapshotIndex);
+
+		// Remove any existing config 
+		RemoveGameConfig(game.DisplayName.c_str());
+
+		FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
+
+		if (pNewConfig != nullptr)
+		{
+			StartGame(pNewConfig, /* bLoadGameData */ false);
+			AddGameConfig(pNewConfig);
+			SaveCurrentGameData();
+
+			return true;
+		}
+	}
+	return false;
+}
+
 void FSpectrumEmu::DrawMainMenu(double timeMS)
 {
 	ui_zx_t* pZXUI = &UIZX;
 	assert(pZXUI && pZXUI->zx && pZXUI->boot_cb);
 
-	bool bExportAsm = false;
+	bExportAsm = false;
+	bReplaceGamePopup = false;
 
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -951,11 +980,21 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 						if (ImGui::MenuItem(game.DisplayName.c_str()))
 						{
-							if (GamesList.LoadGame(gameNo))
+							bool bGameExists = false;
+
+							for (const auto& pGameConfig : GetGameConfigs())
 							{
-								FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
-								if (pNewConfig != nullptr)
-									StartGame(pNewConfig);
+								if (pGameConfig->SnapshotFile == game.DisplayName)
+									bGameExists = true;
+							}
+							if (bGameExists)
+							{
+								bReplaceGamePopup = true;
+								ReplaceGameSnapshotIndex = gameNo;
+							}
+							else
+							{
+								NewGameFromSnapshot(gameNo);
 							}
 						}
 					}
@@ -1280,6 +1319,15 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		ImGui::EndMainMenuBar();
 	}
 
+	// Draw any modal popups that have been requested from clicking on menu items.
+	// This is a workaround for an open bug.
+	// https://github.com/ocornut/imgui/issues/331
+	DrawExportAsmModalPopup();
+	DrawReplaceGameModalPopup();
+}
+
+void FSpectrumEmu::DrawExportAsmModalPopup()
+{
 	if (bExportAsm)
 	{
 		ImGui::OpenPopup("Export ASM File");
@@ -1298,15 +1346,15 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		ImGui::SameLine();
 		ImGui::InputScalar("End", ImGuiDataType_U16, &addrEnd, NULL, NULL, formatStr, flags);
 
-		if (ImGui::Button("Export", ImVec2(120, 0))) 
-		{ 
+		if (ImGui::Button("Export", ImVec2(120, 0)))
+		{
 			if (addrEnd > addrStart)
 			{
 				if (pActiveGame != nullptr)
 				{
 					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputASM/";
 					EnsureDirectoryExists(dir.c_str());
-				
+
 					char addrRangeStr[16];
 					if (bHex)
 						snprintf(addrRangeStr, 16, "_%x_%x", addrStart, addrEnd);
@@ -1317,14 +1365,52 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 					ExportAssembler(CodeAnalysis, outBinFname.c_str(), addrStart, addrEnd);
 				}
-				ImGui::CloseCurrentPopup(); 
+				ImGui::CloseCurrentPopup();
 			}
 		}
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) 
-		{ 
-			ImGui::CloseCurrentPopup(); 
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void FSpectrumEmu::DrawReplaceGameModalPopup()
+{
+	if (bReplaceGamePopup)
+	{
+		ImGui::OpenPopup("Overwrite Game?");
+	}
+	if (ImGui::BeginPopupModal("Overwrite Game?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Do you want to overwrite existing game data?\nAny reverse engineering progress will be lost!\n\n");
+		ImGui::Separator();
+
+		if (ImGui::Button("Overwrite", ImVec2(120, 0)))
+		{
+			if (GamesList.LoadGame(ReplaceGameSnapshotIndex))
+			{
+				const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
+
+				for (const auto& pGameConfig : GetGameConfigs())
+				{
+					if (pGameConfig->SnapshotFile == game.DisplayName)
+					{
+						NewGameFromSnapshot(ReplaceGameSnapshotIndex);
+						break;
+					}
+				}
+			}
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}
