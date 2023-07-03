@@ -126,6 +126,12 @@ struct FCodeAnalysisItem
 
 };
 
+struct FAddressCoord
+{
+	FAddressRef		Address;
+	float			YPos;
+};
+
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
@@ -135,11 +141,25 @@ struct FCodeAnalysisViewState
 	{
 		CursorItem = item;
 	}
-		
+
 	FAddressRef& GetGotoAddress() { return GoToAddressRef; }
 	const FAddressRef& GetGotoAddress() const { return GoToAddressRef; }
 	void GoToAddress(FAddressRef address, bool bLabel = false);
 	bool GoToPreviousAddress();
+
+	bool GetYPosForAddress(FAddressRef addr, float& ypos)
+	{
+		for (const auto& item : AddressCoords)
+		{
+			if (item.Address == addr)
+			{
+				ypos = item.YPos;
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	bool			Enabled = false;
 	bool			TrackPCFrame = false;
@@ -153,7 +173,8 @@ struct FCodeAnalysisViewState
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
 	FLabelListFilter				GlobalFunctionsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
-
+	std::vector< FAddressCoord>		AddressCoords;
+	int								JumpLineIndent;
 
 	bool					DataFormattingTabOpen = false;
 	FDataFormattingOptions	DataFormattingOptions;
