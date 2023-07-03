@@ -58,4 +58,4 @@ bool DrawU8Input(const char* label, uint8_t* value);
 bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef& address);
 bool DrawAddressInput(const char* label, uint16_t* value);
 const char* GetBankText(FCodeAnalysisState& state, int16_t bankId);
-bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId);
+bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId, bool bAllowNone = false);
