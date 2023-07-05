@@ -123,6 +123,7 @@ struct FCodeInfo : FItem
 			bool			bDisabled : 1;
 			bool			bSelfModifyingCode : 1;
 			bool			bUnused : 1;
+			bool			bIsCall : 1;
 		};
 		uint32_t	Flags = 0;
 	};

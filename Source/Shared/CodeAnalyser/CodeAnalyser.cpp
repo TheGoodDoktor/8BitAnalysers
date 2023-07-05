@@ -436,14 +436,13 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	return pLabel;	
 }
 
-
-
-
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo == nullptr)	// code info could have been cleared
 		return;
+
+	pCodeInfo->bIsCall = CheckCallInstruction(state, pc);
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
@@ -465,8 +464,8 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	uint16_t jumpAddr;
 	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
-		const bool isCall = CheckCallInstruction(state, pc);
-		FLabelInfo* pLabel = GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(jumpAddr), isCall ? ELabelType::Function : ELabelType::Code);
+		pCodeInfo->bIsCall = CheckCallInstruction(state, pc);
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(jumpAddr), pCodeInfo->bIsCall ? ELabelType::Function : ELabelType::Code);
 		if(pLabel)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 

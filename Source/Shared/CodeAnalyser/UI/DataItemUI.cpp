@@ -326,7 +326,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		dl->AddCircle(mid, 7, brd_color);
 	}
 
-	ImGui::Text("\t%s", NumStr(item.AddressRef.Address));
+	ImGui::Text("\t\t%s", NumStr(item.AddressRef.Address));
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
 	bool bShowItemLabel = true;
@@ -358,13 +358,13 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	if (bDrawLabel)
 	{
 		DrawAddressLabel(state, viewState, item.AddressRef);
-		ImGui::SameLine(line_start_x + cell_width * 10 + glyph_width * 2);
+		ImGui::SameLine(line_start_x + cell_width * 12 + glyph_width * 2);
 		ImGui::Text(":");
 		ImGui::SameLine();
 	}
 	else
 	{
-		ImGui::SameLine(line_start_x + cell_width * 4 + glyph_width * 2);
+		ImGui::SameLine(line_start_x + cell_width * 6 + glyph_width * 2);
 	}
 
 	switch (pDataInfo->DataType)
