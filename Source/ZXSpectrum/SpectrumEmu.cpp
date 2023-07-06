@@ -1227,6 +1227,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 
 #ifndef NDEBUG
+			ImGui::MenuItem("Show Config", 0, &CodeAnalysis.Config.bShowConfigWindow);
 			ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
 			ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
 #endif // NDEBUG
@@ -1681,6 +1682,16 @@ void FSpectrumEmu::DrawUI()
 		
 	}
 	ImGui::End();
+
+#ifndef NDEBUG
+	// config
+	if (CodeAnalysis.Config.bShowConfigWindow)
+	{
+		if(ImGui::Begin("Configuration", &CodeAnalysis.Config.bShowConfigWindow))
+			DrawCodeAnalysisConfigWindow(CodeAnalysis);
+		ImGui::End();
+	}
+#endif
 
 	DrawGraphicsViewer(GraphicsViewer);
 	DrawMemoryTools();

@@ -228,7 +228,8 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	}
 	else
 	{
-		ImGui::TextColored(labelColour, "\t%s: ", pLabelInfo->Name.c_str());
+		ImGui::SameLine(state.Config.LabelPos);
+		ImGui::TextColored(labelColour, "%s: ", pLabelInfo->Name.c_str());
 	}
 
 	// hover tool tip
@@ -422,9 +423,10 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 	}
 
 	// draw instruction address
-	ImGui::Text("\t\t%s", NumStr(physAddress));
-	const float line_start_x = ImGui::GetCursorPosX();
-	ImGui::SameLine(line_start_x + cell_width * 6 + glyph_width * 2);
+	const float lineStartX = ImGui::GetCursorPosX();
+	ImGui::SameLine(lineStartX + state.Config.AddressPos);
+	ImGui::Text("%s", NumStr(physAddress));
+	ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpace);
 
 	// grey out NOPed code
 	if(pCodeInfo->bNOPped)
@@ -495,17 +497,17 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 			if (viewState.GetYPosForAddress(pCodeInfo->JumpAddress, ypos))
 			{
 				const float distance = fabsf(ypos - pos.y);
-				const float xEnd = pos.x + 48;
+				const float xEnd = pos.x + state.Config.AddressPos - 2.0f;
 				ImVec2 lineStart = pos;
 				const int noLines = static_cast<int>(distance / line_height);
-				const int maxIndent = 8;
-				int indentAmount = maxIndent - std::min(noLines / 5, maxIndent);
+				const int maxIndent = state.Config.BranchMaxIndent;
+				const int indentAmount = maxIndent - std::min(noLines / state.Config.BranchLinesPerIndent, maxIndent);
 
-				lineStart.x += indentAmount * 4.0f;
-				lineStart.y += line_height * 0.5f;
+				lineStart.x += indentAmount * state.Config.BranchSpacing;
+				lineStart.y += line_height * 0.5f;	// middle
 
 				ImVec2 lineEnd = lineStart;
-				lineEnd.y = ypos + line_height * 0.5f;
+				lineEnd.y = ypos + line_height * 0.5f;// middle
 
 				viewState.JumpLineIndent++;
 
@@ -524,15 +526,15 @@ void DrawCodeInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, 
 				const int thisIndex = GetItemIndexForAddress(state, item.AddressRef);
 				const int jumpIndex = GetItemIndexForAddress(state, pCodeInfo->JumpAddress);
 				const int noLines = abs(thisIndex - jumpIndex);
-				const int maxIndent = 8;
+				const int maxIndent = state.Config.BranchMaxIndent;
 				const int indentAmount = maxIndent - std::min(noLines / 5, maxIndent);
 
 				const bool bDirectionUp = pCodeInfo->JumpAddress.Address < item.AddressRef.Address;
 				ImVec2 lineStart = pos;
-				lineStart.x += indentAmount * 4.0f;
-				lineStart.y += line_height * 0.5f;
+				lineStart.x += indentAmount * state.Config.BranchSpacing;
+				lineStart.y += line_height * 0.5f;// middle
 
-				const float xEnd = pos.x + 48;
+				const float xEnd = pos.x + state.Config.AddressPos;
 				dl->AddLine(lineStart, { xEnd, lineStart.y }, lineCol);	// -
 				if (bDirectionUp)
 				{
@@ -622,7 +624,8 @@ void DrawCommentLine(FCodeAnalysisState& state, const FCommentLine* pCommentLine
 {
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
-	ImGui::Text("\t; %s", pCommentLine->Comment.c_str());
+	ImGui::SameLine(state.Config.CommentLinePos);
+	ImGui::Text("; %s", pCommentLine->Comment.c_str());
 	ImGui::PopStyleColor();
 }
 
@@ -1985,4 +1988,20 @@ bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId
 	}
 
 	return bBankChanged;
+}
+
+// Config Window - Debug?
+
+void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state)
+{
+	FCodeAnalysisConfig& config = state.Config;
+
+	ImGui::SliderFloat("Label Pos", &config.LabelPos, 0, 200.0f);
+	ImGui::SliderFloat("Comment Pos", &config.CommentLinePos, 0, 200.0f);
+	ImGui::SliderFloat("Address Pos", &config.AddressPos, 0, 200.0f);
+	ImGui::SliderFloat("Address Space", &config.AddressSpace, 0, 200.0f);
+
+	ImGui::SliderFloat("Branch Line Start", &config.BranchLineIndentStart, 0, 200.0f);
+	ImGui::SliderFloat("Branch Line Spacing", &config.BranchSpacing, 0, 20.0f);
+	ImGui::SliderInt("Branch Line No Indents", &config.BranchMaxIndent,1,10);
 }

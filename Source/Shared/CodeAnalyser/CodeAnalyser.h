@@ -189,6 +189,17 @@ struct FCodeAnalysisConfig
 	bool				bShowOpcodeValues = false;
 	bool				bShowBanks = false;
 	const uint32_t*		CharacterColourLUT = nullptr;
+
+	// horizontal positions
+	bool	bShowConfigWindow = false;
+	float	LabelPos = 42.0f;
+	float	CommentLinePos = 42.0f;
+	float	AddressPos = 48.0f;
+	float	AddressSpace = 70.0f;
+	float	BranchLineIndentStart = 0;
+	float	BranchSpacing = 4.0f;
+	int		BranchMaxIndent = 8;
+	int		BranchLinesPerIndent = 5;
 };
 
 struct FCodeAnalysisBank

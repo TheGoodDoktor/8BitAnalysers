@@ -15,7 +15,7 @@ float DrawDataCharMapLine(FCodeAnalysisState& state,uint16_t addr, const FDataIn
 	const float rectSize = line_height + 4;
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	pos.x += 150.0f;
+	pos.x += state.Config.AddressPos + state.Config.AddressSpace + 100.0f;// 150.0f;
 	const float startPos = pos.x;
 	pos.y -= rectSize + 2;
 
@@ -57,7 +57,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 	float rectSize = line_height + 4;
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	pos.x += 200.0f;
+	pos.x += state.Config.AddressPos + state.Config.AddressSpace + 100.0f;
 	pos.y -= rectSize + 2;
 	const ImVec2 startPos = pos;
 
@@ -326,7 +326,9 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		dl->AddCircle(mid, 7, brd_color);
 	}
 
-	ImGui::Text("\t\t%s", NumStr(item.AddressRef.Address));
+	const float lineStartX = ImGui::GetCursorPosX();
+	ImGui::SameLine(lineStartX + state.Config.AddressPos);
+	ImGui::Text("%s", NumStr(item.AddressRef.Address));
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
 	bool bShowItemLabel = true;
@@ -358,13 +360,13 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	if (bDrawLabel)
 	{
 		DrawAddressLabel(state, viewState, item.AddressRef);
-		ImGui::SameLine(line_start_x + cell_width * 12 + glyph_width * 2);
+		ImGui::SameLine(line_start_x + cell_width * 12 + glyph_width * 2);	// TODO
 		ImGui::Text(":");
 		ImGui::SameLine();
 	}
 	else
 	{
-		ImGui::SameLine(line_start_x + cell_width * 6 + glyph_width * 2);
+		ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpace);
 	}
 
 	switch (pDataInfo->DataType)
