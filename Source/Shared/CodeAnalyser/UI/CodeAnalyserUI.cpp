@@ -618,67 +618,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 				pageNo++;
 			}
 		}
-#if 0
-		// special case for expanded lines
-		// TODO: there should be a more general case
-		FItemListBuilder listBuilder(state.ItemList);
-		//FCommentBlock* viewStateCommentBlocks[FCodeAnalysisState::kNoViewStates] = { nullptr };
-		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-		{
-			const FCodeAnalysisItem& cursorItem = state.ViewState[i].GetCursorItem();
-			if (cursorItem.IsValid() && cursorItem.Item->Type == EItemType::CommentLine)
-			{
-				FCommentBlock* pBlock = state.GetCommentBlockForAddress(cursorItem.Address);
-				listBuilder.ViewStateCommentBlocks[i] = pBlock;
-			}
-		}
 
-		// loop across address range
-		for (listBuilder.CurrAddr = 0; listBuilder.CurrAddr < (1 << 16); listBuilder.CurrAddr++)
-		{
-			// convert comment block into multiple comment lines
-			FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(listBuilder.CurrAddr);
-			if (pCommentBlock != nullptr)
-				ExpandCommentBlock(state, listBuilder, pCommentBlock);
-			
-			FLabelInfo* pLabelInfo = state.GetLabelForAddress(listBuilder.CurrAddr);
-			if (pLabelInfo != nullptr)
-			{
-				listBuilder.ItemList.emplace_back(pLabelInfo, listBuilder.CurrAddr);
-			}
-
-			// check if we have gone past this item
-			if (listBuilder.CurrAddr >= nextItemAddress)
-			{
-				FCodeInfo *pCodeInfo = state.GetCodeInfoForAddress(listBuilder.CurrAddr);
-				if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
-				{
-					nextItemAddress = listBuilder.CurrAddr + pCodeInfo->ByteSize;
-					listBuilder.ItemList.emplace_back(pCodeInfo, listBuilder.CurrAddr);
-				}
-				else // code and data are mutually exclusive
-				{
-					FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(listBuilder.CurrAddr);
-					if (pDataInfo != nullptr)
-					{
-						if (pDataInfo->DataType != EDataType::Blob && pDataInfo->DataType != EDataType::ScreenPixels)	// not sure why we want this
-							nextItemAddress = listBuilder.CurrAddr + pDataInfo->ByteSize;
-						else
-							nextItemAddress = listBuilder.CurrAddr + 1;
-
-						listBuilder.ItemList.emplace_back(pDataInfo, listBuilder.CurrAddr);
-					}
-				}
-			}
-
-			// update cursor item index
-			/*for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-			{
-				if (state.ViewState[i].GetCursorItem().Item == state.ItemList.back().Item)
-					state.ViewState[i].CursorItemIndex = (int)state.ItemList.size() - 1;
-			}*/
-		}
-#endif
 		// Maybe this needs to follow the same algorithm as the main view?
 		//ImGui::SetScrollY(state.GetFocussedViewState().CursorItemIndex * line_height);
 		state.ClearDirtyStatus();
@@ -778,22 +718,9 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		return;
 
 	// TODO: item below might need bank check
-	bool bHighlight = (viewState.HighlightAddress.Address >= physAddr && viewState.HighlightAddress.Address < physAddr + item.Item->ByteSize);
+	bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.Address >= physAddr && viewState.HighlightAddress.Address < physAddr + item.Item->ByteSize);
 	uint32_t kHighlightColour = 0xff00ff00;
 	ImGui::PushID(item.Item);
-
-	// Highlight formatting selection
-	/*if (state.DataFormattingOptions.IsValid() &&
-		pItem->Address >= state.DataFormattingOptions.StartAddress &&
-		pItem->Address <= state.DataFormattingOptions.EndAddress)
-	{
-		bHighlight = true;
-		kHighlightColour = 0xffffff00;
-	}*/
-
-	//const FItem *pPrevItem = i > 0 ? state.ItemList[i-1] : nullptr;
-	//if (pPrevItem != nullptr && pItem->Address > pPrevItem->Address + pPrevItem->ByteSize)
-	//	ImGui::Separator();
 
 	// selectable
 	const uint16_t endAddress = viewState.DataFormattingOptions.CalcEndAddress();

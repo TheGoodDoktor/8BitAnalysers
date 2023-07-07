@@ -91,6 +91,71 @@ void DrawJumpIndicator(int nDirection)
 	}
 }
 
+void DrawBranchLines(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
+{
+	const FCodeInfo* pCodeInfo = static_cast<const FCodeInfo*>(item.Item);
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	const ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float lineHeight = ImGui::GetTextLineHeight();
+
+	ImU32 lineCol = 0xff7f7f7f;	// grey
+	if (viewState.HighlightAddress == pCodeInfo->JumpAddress)
+		lineCol = 0xff00ff00;	// green
+	float ypos;
+	if (viewState.GetYPosForAddress(pCodeInfo->JumpAddress, ypos))
+	{
+		const float distance = fabsf(ypos - pos.y);
+		const float xEnd = pos.x + state.Config.AddressPos - 2.0f;
+		ImVec2 lineStart = pos;
+		const int noLines = static_cast<int>(distance / lineHeight);
+		const int maxIndent = state.Config.BranchMaxIndent;
+		const int indentAmount = maxIndent - std::min(noLines / state.Config.BranchLinesPerIndent, maxIndent);
+
+		lineStart.x += indentAmount * state.Config.BranchSpacing;
+		lineStart.y += lineHeight * 0.5f;	// middle
+
+		ImVec2 lineEnd = lineStart;
+		lineEnd.y = ypos + lineHeight * 0.5f;// middle
+
+		viewState.JumpLineIndent++;
+
+		dl->AddLine(lineStart, { xEnd, lineStart.y }, lineCol);	// -
+		dl->AddLine(lineStart, lineEnd, lineCol);				// |
+		dl->AddLine(lineEnd, { xEnd, lineEnd.y }, lineCol);		// -
+
+		// arrow
+		const ImVec2 a = { xEnd - 6, lineEnd.y - 3 };
+		const ImVec2 b = { xEnd - 6, lineEnd.y + 3 };
+		const ImVec2 c = { xEnd, lineEnd.y };
+		dl->AddTriangleFilled(a, b, c, lineCol);
+	}
+	else // do off-screen lines
+	{
+		const int thisIndex = GetItemIndexForAddress(state, item.AddressRef);
+		const int jumpIndex = GetItemIndexForAddress(state, pCodeInfo->JumpAddress);
+		const int noLines = abs(thisIndex - jumpIndex);
+		const int maxIndent = state.Config.BranchMaxIndent;
+		const int indentAmount = maxIndent - std::min(noLines / 5, maxIndent);
+
+		const bool bDirectionUp = pCodeInfo->JumpAddress.Address < item.AddressRef.Address;
+		ImVec2 lineStart = pos;
+		lineStart.x += indentAmount * state.Config.BranchSpacing;
+		lineStart.y += lineHeight * 0.5f;// middle
+
+		const float xEnd = pos.x + state.Config.AddressPos;
+		dl->AddLine(lineStart, { xEnd, lineStart.y }, lineCol);	// -
+		if (bDirectionUp)
+		{
+			dl->AddLine(lineStart, { lineStart.x,0 }, lineCol);				// |
+		}
+		else
+		{
+			const float yPos = ImGui::GetWindowPos().y + ImGui::GetWindowHeight();
+			dl->AddLine(lineStart, { lineStart.x,yPos }, lineCol);				// |
+		}
+	}
+}
+
 // this assumes that the code item is mapped into physical memory
 void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
@@ -105,6 +170,10 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	ShowCodeAccessorActivity(state, item.AddressRef);
+
+	// draw branch lines
+	if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid() && pCodeInfo->bIsCall == false)
+		DrawBranchLines(state, viewState, item);
 
 	// show if breakpointed
 	FBreakpoint* pBP = debugger.GetBreakpointForAddress(item.AddressRef);
@@ -207,69 +276,6 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		DrawAddressLabel(state, viewState, pCodeInfo->JumpAddress);
 
 		DrawJumpIndicator(pCodeInfo->JumpAddress.Address == physAddress ? 0 : pCodeInfo->JumpAddress.Address > physAddress ? -1 : 1);
-		// draw arrow to jump dest
-#if 1
-		// TODO: this needs to be a function
-		if (pCodeInfo->bIsCall == false)
-		{
-			ImU32 lineCol = 0xff7f7f7f;	// grey
-			if (viewState.HighlightAddress == pCodeInfo->JumpAddress)
-				lineCol = 0xff007f00;	// green
-			float ypos;
-			if (viewState.GetYPosForAddress(pCodeInfo->JumpAddress, ypos))
-			{
-				const float distance = fabsf(ypos - pos.y);
-				const float xEnd = pos.x + state.Config.AddressPos - 2.0f;
-				ImVec2 lineStart = pos;
-				const int noLines = static_cast<int>(distance / line_height);
-				const int maxIndent = state.Config.BranchMaxIndent;
-				const int indentAmount = maxIndent - std::min(noLines / state.Config.BranchLinesPerIndent, maxIndent);
-
-				lineStart.x += indentAmount * state.Config.BranchSpacing;
-				lineStart.y += line_height * 0.5f;	// middle
-
-				ImVec2 lineEnd = lineStart;
-				lineEnd.y = ypos + line_height * 0.5f;// middle
-
-				viewState.JumpLineIndent++;
-
-				dl->AddLine(lineStart, { xEnd, lineStart.y }, lineCol);	// -
-				dl->AddLine(lineStart, lineEnd, lineCol);				// |
-				dl->AddLine(lineEnd, { xEnd, lineEnd.y }, lineCol);		// -
-
-				// arrow
-				const ImVec2 a = { xEnd - 6, lineEnd.y - 3 };
-				const ImVec2 b = { xEnd - 6, lineEnd.y + 3 };
-				const ImVec2 c = { xEnd, lineEnd.y };
-				dl->AddTriangleFilled(a, b, c, lineCol);
-			}
-			else // do off-screen lines
-			{
-				const int thisIndex = GetItemIndexForAddress(state, item.AddressRef);
-				const int jumpIndex = GetItemIndexForAddress(state, pCodeInfo->JumpAddress);
-				const int noLines = abs(thisIndex - jumpIndex);
-				const int maxIndent = state.Config.BranchMaxIndent;
-				const int indentAmount = maxIndent - std::min(noLines / 5, maxIndent);
-
-				const bool bDirectionUp = pCodeInfo->JumpAddress.Address < item.AddressRef.Address;
-				ImVec2 lineStart = pos;
-				lineStart.x += indentAmount * state.Config.BranchSpacing;
-				lineStart.y += line_height * 0.5f;// middle
-
-				const float xEnd = pos.x + state.Config.AddressPos;
-				dl->AddLine(lineStart, { xEnd, lineStart.y }, lineCol);	// -
-				if (bDirectionUp)
-				{
-					dl->AddLine(lineStart, { lineStart.x,0 }, lineCol);				// |
-				}
-				else
-				{
-					const float yPos = ImGui::GetWindowPos().y + ImGui::GetWindowHeight();
-					dl->AddLine(lineStart, { lineStart.x,yPos }, lineCol);				// |
-				}
-			}
-		}
-#endif
 	}
 	else if (pCodeInfo->OperandType == EOperandType::Pointer && pCodeInfo->PointerAddress.IsValid())
 	{
