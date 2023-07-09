@@ -3,6 +3,8 @@
 #include "../CodeAnalyser.h"
 #include "CodeToolTips.h"
 
+#include <math.h>
+
 #include "imgui.h"
 
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr)
