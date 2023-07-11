@@ -729,17 +729,16 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	return pLabel;
 }
 
-FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address)
+FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef addressRef)
 {
-	FCommentBlock* pExistingBlock = state.GetCommentBlockForAddress(address);
+	FCommentBlock* pExistingBlock = state.GetCommentBlockForAddress(addressRef);
 	if(pExistingBlock == nullptr)
 	{
 		FCommentBlock* pCommentBlock = FCommentBlock::Allocate();
 		pCommentBlock->Comment = "";
-		//pCommentBlock->Address = address;
 		pCommentBlock->ByteSize = 1;
-		state.SetCommentBlockForAddress(address, pCommentBlock);
-		state.SetCodeAnalysisDirty(address);
+		state.SetCommentBlockForAddress(addressRef, pCommentBlock);
+		state.SetCodeAnalysisDirty(addressRef);
 		return pCommentBlock;
 	}
 

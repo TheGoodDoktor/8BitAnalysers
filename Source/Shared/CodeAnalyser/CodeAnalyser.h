@@ -444,10 +444,29 @@ public:
 		}
 	}
 
-	FCommentBlock* GetCommentBlockForAddress(uint16_t addr) const { return GetReadPage(addr)->CommentBlocks[addr & kPageMask]; }
-	void SetCommentBlockForAddress(uint16_t addr, FCommentBlock* pCommentBlock)
+	//FCommentBlock* GetCommentBlockForAddress(uint16_t addr) const { return GetReadPage(addr)->CommentBlocks[addr & kPageMask]; }
+	FCommentBlock* GetCommentBlockForAddress(FAddressRef addrRef)
 	{
-		GetReadPage(addr)->CommentBlocks[addr & kPageMask] = pCommentBlock;
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			return pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].CommentBlocks[bankAddr & FCodeAnalysisPage::kPageMask];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+	void SetCommentBlockForAddress(FAddressRef addrRef, FCommentBlock* pCommentBlock)
+	{
+		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].CommentBlocks[bankAddr & FCodeAnalysisPage::kPageMask] = pCommentBlock;
+		}
+		//GetReadPage(addr)->CommentBlocks[addr & kPageMask] = pCommentBlock;
 	}
 
 	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
@@ -573,7 +592,7 @@ std::string GetItemText(FCodeAnalysisState& state, FAddressRef address);
 void Undo(FCodeAnalysisState &state);
 
 FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type);
-FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, uint16_t address);
+FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef address);
 FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
 void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);

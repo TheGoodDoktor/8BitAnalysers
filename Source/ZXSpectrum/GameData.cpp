@@ -415,12 +415,13 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 	}
 }
 
+#if 0
 void SaveCommentBlocksBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount = 0;
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		if (state.GetCommentBlockForAddress(i) != nullptr)
+		if (state.GetCommentBlockForAddress(state.AddressRefFromPhysicalAddress(i)) != nullptr)
 			recordCount++;
 	}
 
@@ -428,7 +429,7 @@ void SaveCommentBlocksBin(const FCodeAnalysisState& state, FILE* fp, uint16_t st
 
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		const FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(i);
+		const FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(state.AddressRefFromPhysicalAddress(i));
 		if (pCommentBlock != nullptr)
 		{
 			uint16_t addr = (uint16_t)i;
@@ -437,7 +438,7 @@ void SaveCommentBlocksBin(const FCodeAnalysisState& state, FILE* fp, uint16_t st
 		}
 	}
 }
-
+#endif
 void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount;
@@ -449,7 +450,7 @@ void LoadCommentBlocksBin(FCodeAnalysisState& state, FILE* fp, int versionNo, ui
 		uint16_t address;
 		fread(&address, sizeof(address), 1, fp);
 		ReadStringFromFile(pCommentBlock->Comment, fp);
-		state.SetCommentBlockForAddress(address, pCommentBlock);
+		state.SetCommentBlockForAddress(state.AddressRefFromPhysicalAddress(address), pCommentBlock);
 	}
 }
 

@@ -298,16 +298,16 @@ void DrawCommentLine(FCodeAnalysisState& state, const FCommentLine* pCommentLine
 
 void DrawCommentBlockDetails(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 {
-	const uint16_t physAddress = item.AddressRef.Address;
-	FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(physAddress);
+	//const uint16_t physAddress = item.AddressRef.Address;
+	FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(item.AddressRef);
 	if (pCommentBlock == nullptr)
 		return;
 
 	if (ImGui::InputTextMultiline("Comment Text", &pCommentBlock->Comment))
 	{
 		if (pCommentBlock->Comment.empty() == true)
-			state.SetCommentBlockForAddress(physAddress, nullptr);
-		state.SetCodeAnalysisDirty(physAddress);
+			state.SetCommentBlockForAddress(item.AddressRef, nullptr);
+		state.SetCodeAnalysisDirty(item.AddressRef);
 	}
 
 }
@@ -393,7 +393,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddCommentBlock]))
 		{
-			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef.Address);
+			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef);
 			viewState.SetCursorItem(FCodeAnalysisItem(pCommentBlock, cursorItem.AddressRef));
 			ImGui::OpenPopup("Enter Comment Text Multi");
 			ImGui::SetWindowFocus("Enter Comment Text Multi");
@@ -855,7 +855,7 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			break;
 		case EItemType::CommentLine:
 			{
-				FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(item.AddressRef.Address);
+				FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(item.AddressRef);
 				if (pCommentBlock != nullptr)
 					DrawCommentBlockDetails(state, item);
 			}

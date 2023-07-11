@@ -539,10 +539,10 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 
 		if (!comments.empty())
 		{
-			FCommentBlock* pBlock = state.GetCommentBlockForAddress(instruction.Address);
+			FCommentBlock* pBlock = state.GetCommentBlockForAddress(state.AddressRefFromPhysicalAddress(instruction.Address));
 			
 			if (pBlock == nullptr)
-				pBlock = AddCommentBlock(state, instruction.Address);
+				pBlock = AddCommentBlock(state, state.AddressRefFromPhysicalAddress(instruction.Address));
 			else
 			{
 				std::string commentExcerpt = pBlock->Comment.substr(0, 1024);

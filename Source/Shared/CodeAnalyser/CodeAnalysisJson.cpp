@@ -154,7 +154,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		{
 			const uint16_t addr = commentBlockJson["Address"];
 			FCommentBlock* pCommentBlock = CreateCommentBlockFromJson(commentBlockJson);
-			state.SetCommentBlockForAddress(addr, pCommentBlock);
+			state.SetCommentBlockForAddress(state.AddressRefFromPhysicalAddress(addr), pCommentBlock);
 		}
 	}
 
@@ -352,6 +352,7 @@ void WriteCommentBlockToJson(uint16_t addr, const FCommentBlock* pCommentBlock, 
 	jsonDoc["CommentBlocks"].push_back(commentBlockJson);
 }
 
+#if 0
 void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress, int endAddress, json& jsonDoc)
 {
 	int address = startAddress;
@@ -389,7 +390,7 @@ void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress, int en
 		}
 	}
 }
-
+#endif
 
 FCommentBlock* CreateCommentBlockFromJson(const json& commentBlockJson)
 {

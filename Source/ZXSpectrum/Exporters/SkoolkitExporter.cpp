@@ -212,7 +212,7 @@ public:
 			}
 
 			std::string commentLines;
-			if (FCommentBlock* pCommentBlock = State.GetCommentBlockForAddress(addr.Address))
+			if (FCommentBlock* pCommentBlock = State.GetCommentBlockForAddress(State.AddressRefFromPhysicalAddress(addr.Address)))
 			{
 				commentLines = pCommentBlock->Comment;
 			}
