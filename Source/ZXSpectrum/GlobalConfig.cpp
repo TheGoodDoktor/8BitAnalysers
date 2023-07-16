@@ -47,6 +47,11 @@ bool LoadGlobalConfig(const char* fileName)
 	if (jsonConfigFile.contains("RZXFolder"))
 		config.RZXFolder = jsonConfigFile["RZXFolder"];
 
+	if (jsonConfigFile.contains("Font"))
+		config.Font = jsonConfigFile["Font"];
+	if (jsonConfigFile.contains("FontSizePixels"))
+		config.FontSizePixels = jsonConfigFile["FontSizePixels"];
+
 	if(config.WorkspaceRoot.back() != '/')
 		config.WorkspaceRoot += "/";
 	if (config.SnapshotFolder.back() != '/')
@@ -76,6 +81,8 @@ bool SaveGlobalConfig(const char* fileName)
 	jsonConfigFile["SnapshotFolder128"] = config.SnapshotFolder128;
 	jsonConfigFile["PokesFolder"] = config.PokesFolder;
 	jsonConfigFile["RZXFolder"] = config.RZXFolder;
+	jsonConfigFile["Font"] = config.Font;
+	jsonConfigFile["FontSizePixels"] = config.FontSizePixels;
 
 	std::ofstream outFileStream(fileName);
 	if (outFileStream.is_open())
