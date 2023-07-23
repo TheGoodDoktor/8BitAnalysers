@@ -555,7 +555,7 @@ void IOPortEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 {
 	SetWindowTitle(kAppTitle.c_str());
-	SetWindowIcon("SALOGO.png");
+	SetWindowIcon("SALogo.png");
 
 	// Initialise Emulator
 	LoadGlobalConfig(kGlobalConfigFilename);

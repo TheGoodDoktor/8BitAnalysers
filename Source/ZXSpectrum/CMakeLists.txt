@@ -48,6 +48,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	set( with_tests true )
 endif()
 
+# Put binary and configuration files to /bin subfolder
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 
 # vendor includes
 set( vendor_dir ../Vendor )
@@ -211,6 +214,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 				)
 		endif()
 	endif()
+
+	# Copy ini file to /bin
+	add_custom_command(TARGET ${APP_NAME} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/imgui.ini
+			$<TARGET_FILE_DIR:${APP_NAME}>
+			)
+
+	# Copy icon file to /bin
+	add_custom_command(TARGET ${APP_NAME} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/SALogo.png
+			$<TARGET_FILE_DIR:${APP_NAME}>
+			)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -231,6 +248,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		${X11_LIBRARIES}
 		${CMAKE_DL_LIBS}
 		)
+
+	# Copy ini file to /bin
+	add_custom_command(TARGET ${APP_NAME} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/imgui.ini
+			$<TARGET_FILE_DIR:${APP_NAME}>
+			)
+
+	# Copy icon file to /bin
+	add_custom_command(TARGET ${APP_NAME} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/SALogo.png
+			$<TARGET_FILE_DIR:${APP_NAME}>
+			)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -254,14 +285,22 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		BUNDLE DESTINATION . COMPONENT RunTime
 		RUNTIME DESTINATION bin COMPONENT RunTime
 		)
+	# Copy ini file to /bin
 	add_custom_command(TARGET ${APP_NAME} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-		${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/imgui.ini
-		$<TARGET_FILE_DIR:${APP_NAME}>
-		)
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/imgui.ini
+			$<TARGET_FILE_DIR:${APP_NAME}>
+			)
+
+	# Copy icon file to /bin
+	add_custom_command(TARGET ${APP_NAME} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/SALogo.png
+			$<TARGET_FILE_DIR:${APP_NAME}>
+			)
 	set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
 	set(LIBS )
-	set(DIRS ${CMAKE_BINARY_DIR})
+	set(DIRS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 	install(CODE "include(BundleUtilities)
 	fixup_bundle(\"${APPS}\" \"${LIBS}\" \"${DIRS}\")")
 	set(CPACK_GENERATOR "DRAGNDROP")
