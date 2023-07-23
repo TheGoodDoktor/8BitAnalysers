@@ -188,6 +188,7 @@ struct FCodeAnalysisConfig
 {
 	bool				bShowOpcodeValues = false;
 	bool				bShowBanks = false;
+	int					BranchLinesDisplayMode = 1;
 	const uint32_t*		CharacterColourLUT = nullptr;
 
 	// horizontal positions

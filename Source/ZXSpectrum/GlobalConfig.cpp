@@ -35,7 +35,8 @@ bool LoadGlobalConfig(const char* fileName)
 		config.bShowOpcodeValues = jsonConfigFile["ShowOpcodeValues"];
 	config.LastGame = jsonConfigFile["LastGame"];
 	config.NumberDisplayMode = (ENumberDisplayMode)jsonConfigFile["NumberMode"];
-
+	if (jsonConfigFile.contains("BranchLinesDisplayMode"))
+		config.BranchLinesDisplayMode = jsonConfigFile["BranchLinesDisplayMode"];
 	if(jsonConfigFile.contains("WorkspaceRoot"))
 		config.WorkspaceRoot = jsonConfigFile["WorkspaceRoot"];
 	if (jsonConfigFile.contains("SnapshotFolder"))
@@ -76,6 +77,7 @@ bool SaveGlobalConfig(const char* fileName)
 	jsonConfigFile["ShowOpcodeValues"] = config.bShowOpcodeValues;
 	jsonConfigFile["LastGame"] = config.LastGame;
 	jsonConfigFile["NumberMode"] = (int)config.NumberDisplayMode;
+	jsonConfigFile["BranchLinesDisplayMode"] = config.BranchLinesDisplayMode;
 	jsonConfigFile["WorkspaceRoot"] = config.WorkspaceRoot;
 	jsonConfigFile["SnapshotFolder"] = config.SnapshotFolder;
 	jsonConfigFile["SnapshotFolder128"] = config.SnapshotFolder128;

@@ -53,6 +53,48 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef acces
 	}
 }
 
+#if 0
+void DrawJumpIndicator(int nDirection)
+{
+	ImGui::SameLine();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	ImGui::Text("");
+
+	const float lineHeight = ImGui::GetTextLineHeight();
+	const ImU32 col = 0xffffffff;
+
+	const float ahh = 5.0f; // arrow head height
+	const float ahw = 4.0f; // arrow head width
+	const float vth = 4.0f; // vertical tail height
+	const float htw = 6.0f; // horizontal tail width
+
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+
+	// pos is the tip of the arrow
+
+	pos.x += 4.0f;
+
+	if (nDirection > 0) // up arrow
+	{
+		pos.y += 2.0f;
+		dl->AddTriangleFilled(ImVec2(pos.x + ahw, pos.y + ahh), ImVec2(pos.x - ahw, pos.y + ahh), pos, col);
+		dl->AddRectFilled(ImVec2(pos.x - 1.0f, pos.y + ahh), ImVec2(pos.x + 1.0f, pos.y + ahh + vth), col); // vertical tail
+		dl->AddRectFilled(ImVec2(pos.x - htw, pos.y + ahh + vth - 1.0f), ImVec2(pos.x + 1.0f, pos.y + ahh + vth + 1.0f), col); // horizontal tail
+	}
+	else if (nDirection < 0) // down arrow
+	{
+		pos.y += lineHeight - 1.0f;
+		dl->AddTriangleFilled(ImVec2(pos.x - ahw, pos.y - ahh), ImVec2(pos.x + ahw, pos.y - ahh), pos, col);
+		dl->AddRectFilled(ImVec2(pos.x - 1.0f, pos.y - ahh), ImVec2(pos.x + 1.0f, pos.y - ahh - vth), col); // vertical tail
+		dl->AddRectFilled(ImVec2(pos.x - htw, pos.y - ahh - vth - 1.0f), ImVec2(pos.x + 1.0f, pos.y - ahh - vth + 1.0f), col); // horizontal tail
+	}
+	else // left arrow 
+	{
+		// todo
+	}
+}
+#endif
+
 void DrawBranchLines(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	const FCodeInfo* pCodeInfo = static_cast<const FCodeInfo*>(item.Item);
@@ -133,9 +175,20 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	ShowCodeAccessorActivity(state, item.AddressRef);
 
-	// draw branch lines
-	if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid() && pCodeInfo->bIsCall == false)
-		DrawBranchLines(state, viewState, item);
+	bool bDisplayBranchLine = state.Config.BranchLinesDisplayMode == 2;
+	if (state.Config.BranchLinesDisplayMode == 1)
+	{
+		const bool bSelected = (item.Item == viewState.GetCursorItem().Item);
+		const bool bHighlighted = (viewState.HighlightAddress == pCodeInfo->JumpAddress);
+		bDisplayBranchLine = bSelected || bHighlighted;
+	}
+
+	if (bDisplayBranchLine)
+	{
+		// draw branch lines
+		if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid() && pCodeInfo->bIsCall == false)
+			DrawBranchLines(state, viewState, item);
+	}
 
 	// show if breakpointed
 	FBreakpoint* pBP = debugger.GetBreakpointForAddress(item.AddressRef);
