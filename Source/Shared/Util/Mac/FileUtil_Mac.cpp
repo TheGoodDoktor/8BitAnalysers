@@ -7,7 +7,11 @@ bool CreateDir(const char* osDir)
 {
 	struct stat st = { 0 };
 
-	if (stat(osDir, &st) == -1)
+    int status = stat(osDir, &st);
+    if (status == 0)
+        return true; // already exists
+    
+	if (status == -1)
 	{
 		mkdir(osDir, 0700);
 		return true;
