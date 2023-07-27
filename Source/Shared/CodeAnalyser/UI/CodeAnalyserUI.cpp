@@ -1408,24 +1408,70 @@ void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter
 
 void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
+	if (ImGui::InputText("Filter", &viewState.FilterText))
+	{
+		viewState.GlobalFunctionsFilter.FilterText = viewState.FilterText;
+		viewState.GlobalDataItemsFilter.FilterText = viewState.FilterText;
+		state.bRebuildFilteredGlobalFunctions = true;
+		state.bRebuildFilteredGlobalDataItems = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
+	{
+		viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
+		viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
+		state.bRebuildFilteredGlobalFunctions = true;
+		state.bRebuildFilteredGlobalDataItems = true;
+	}
+
 	if(ImGui::BeginTabBar("GlobalsTabBar"))
 	{
 		if(ImGui::BeginTabItem("Functions"))
 		{
-			state.bRebuildFilteredGlobalFunctions |= ImGui::InputText("Filter", &viewState.GlobalFunctionsFilter.FilterText);
-			ImGui::SameLine();
-			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
-			{
-				state.bRebuildFilteredGlobalFunctions = true;
-				state.bRebuildFilteredGlobalDataItems = true;
-			}
+	
+			// only constantly sort number of calls
+			bool bSort = viewState.FunctionSortMode == 2;	//TODO: enum
+			if (ImGui::Combo("Sort Mode", &viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency"))
+				bSort = true;
 
 			if (state.bRebuildFilteredGlobalFunctions)
 			{
-				viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
-				viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
 				GenerateFilteredLabelList(state, viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
 				state.bRebuildFilteredGlobalFunctions = false;
+			}
+
+			// sort by execution count
+			if (bSort)
+			{
+				switch (viewState.FunctionSortMode)
+				{
+				case 0:	// location
+					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+						{
+							return a.AddressRef.Address < b.AddressRef.Address;
+						});
+					break;
+				case 1:	// alphabetical
+					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+						{
+							const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
+							const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
+							return pLabelA->Name < pLabelB->Name;
+						});
+					break;
+				case 2:	// call frequency
+					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+						{
+							const FCodeInfo* pCodeInfoA = state.GetCodeInfoForAddress(a.AddressRef);
+							const FCodeInfo* pCodeInfoB = state.GetCodeInfoForAddress(b.AddressRef);
+
+							const int countA = pCodeInfoA != nullptr ? pCodeInfoA->ExecutionCount : 0;
+							const int countB = pCodeInfoB != nullptr ? pCodeInfoB->ExecutionCount : 0;
+
+							return countA > countB;
+						});
+					break;
+				}
 			}
 
 			DrawLabelList(state, viewState, viewState.FilteredGlobalFunctions);
@@ -1434,18 +1480,8 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 
 		if (ImGui::BeginTabItem("Data"))
 		{
-			state.bRebuildFilteredGlobalDataItems |= ImGui::InputText("Filter", &viewState.GlobalDataItemsFilter.FilterText);
-			ImGui::SameLine();
-			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
-			{
-				state.bRebuildFilteredGlobalFunctions = true;
-				state.bRebuildFilteredGlobalDataItems = true;
-			}
-
 			if (state.bRebuildFilteredGlobalDataItems)
 			{
-				viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
-				viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
 				GenerateFilteredLabelList(state, viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
 				state.bRebuildFilteredGlobalDataItems = false;
 			}
