@@ -60,7 +60,7 @@ enum class EKey
 	AddLabel,
 	Rename,
 	Comment,
-	AddCommentBlock,
+	CommentLegacy,
 
 	// Debugger
 	BreakContinue,
@@ -410,8 +410,8 @@ public:
 	}
 	const FCodeAnalysisPage* GetWritePage(uint16_t addr) const { return ((FCodeAnalysisState*)this)->GetWritePage(addr); }
 
-	const FLabelInfo* GetLabelForAddress(uint16_t addr) const { return GetReadPage(addr)->Labels[addr & kPageMask]; }
-	FLabelInfo* GetLabelForAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
+	const FLabelInfo* GetLabelForPhysicalAddress(uint16_t addr) const { return GetReadPage(addr)->Labels[addr & kPageMask]; }
+	FLabelInfo* GetLabelForPhysicalAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
 	FLabelInfo* GetLabelForAddress(FAddressRef addrRef)
 	{
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
@@ -425,7 +425,7 @@ public:
 			return nullptr;
 		}
 	}
-	void SetLabelForAddress(uint16_t addr, FLabelInfo* pLabel) 
+	void SetLabelForPhysicalAddress(uint16_t addr, FLabelInfo* pLabel)
 	{
 		if(pLabel != nullptr)	// ensure no name clashes
 			EnsureUniqueLabelName(pLabel->Name);

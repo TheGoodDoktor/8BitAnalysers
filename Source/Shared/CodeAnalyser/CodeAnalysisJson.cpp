@@ -183,7 +183,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		{
 			const uint16_t addr = labelInfoJson["Address"];
 			FLabelInfo* pLabelInfo = CreateLabelInfoFromJson(labelInfoJson);
-			state.SetLabelForAddress(addr, pLabelInfo);
+			state.SetLabelForPhysicalAddress(addr, pLabelInfo);
 		}
 	}
 

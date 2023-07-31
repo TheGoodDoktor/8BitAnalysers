@@ -124,7 +124,7 @@ void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address, int charWidth)
 void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
 {
 	// Format screen pixel memory if it hasn't already been
-	if (state.GetLabelForAddress(kScreenPixMemStart) == nullptr)
+	if (state.GetLabelForPhysicalAddress(kScreenPixMemStart) == nullptr)
 	{
 		AddLabel(state, 0x4000, "ScreenPixels", ELabelType::Data);
 
@@ -135,7 +135,7 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 	}
 
 	// Format attribute memory if it hasn't already
-	if (state.GetLabelForAddress(kScreenAttrMemStart) == nullptr)
+	if (state.GetLabelForPhysicalAddress(kScreenAttrMemStart) == nullptr)
 	{
 		AddLabel(state, 0x5800, "ScreenAttributes", ELabelType::Data);
 

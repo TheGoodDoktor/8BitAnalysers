@@ -680,7 +680,7 @@ public:
         if (outputCallback)
         {
             const bool bOperandIsAddress = (pCodeInfoItem->OperandType == EOperandType::JumpAddress || pCodeInfoItem->OperandType == EOperandType::Pointer);
-            const FLabelInfo* pLabel = bOperandIsAddress ? CodeAnalysisState->GetLabelForAddress(val) : nullptr;
+            const FLabelInfo* pLabel = bOperandIsAddress ? CodeAnalysisState->GetLabelForPhysicalAddress(val) : nullptr;
             if (pLabel != nullptr)
             {
                 for (int i = 0; i < pLabel->Name.size(); i++)

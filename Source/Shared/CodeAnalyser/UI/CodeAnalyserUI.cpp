@@ -380,7 +380,14 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				ImGui::SetWindowFocus("Enter Label Text");
 			}
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]))
+		else if (io.KeyShift && ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]))
+		{
+			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef);
+			viewState.SetCursorItem(FCodeAnalysisItem(pCommentBlock, cursorItem.AddressRef));
+			ImGui::OpenPopup("Enter Comment Text Multi");
+			ImGui::SetWindowFocus("Enter Comment Text Multi");
+		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]) || ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::CommentLegacy]))
 		{
 			ImGui::OpenPopup("Enter Comment Text");
 			ImGui::SetWindowFocus("Enter Comment Text");
@@ -391,13 +398,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 			ImGui::OpenPopup("Enter Label Text");
 			ImGui::SetWindowFocus("Enter Label Text");
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddCommentBlock]))
-		{
-			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef);
-			viewState.SetCursorItem(FCodeAnalysisItem(pCommentBlock, cursorItem.AddressRef));
-			ImGui::OpenPopup("Enter Comment Text Multi");
-			ImGui::SetWindowFocus("Enter Comment Text Multi");
-		}
+		
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Breakpoint]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
