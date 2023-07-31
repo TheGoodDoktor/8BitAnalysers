@@ -1427,16 +1427,16 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 	if(ImGui::BeginTabBar("GlobalsTabBar"))
 	{
 		if(ImGui::BeginTabItem("Functions"))
-		{
-	
-			// only constantly sort number of calls
-			bool bSort = viewState.FunctionSortMode == 2;	//TODO: enum
-			if (ImGui::Combo("Sort Mode", &viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency"))
+		{	
+			// only constantly sort call frequency
+			bool bSort = viewState.FunctionSortMode == EFunctionSortMode::CallFrequency;	
+			if (ImGui::Combo("Sort Mode", (int*)&viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency"))
 				bSort = true;
 
 			if (state.bRebuildFilteredGlobalFunctions)
 			{
 				GenerateFilteredLabelList(state, viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
+				bSort = true;
 				state.bRebuildFilteredGlobalFunctions = false;
 			}
 
@@ -1445,13 +1445,13 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 			{
 				switch (viewState.FunctionSortMode)
 				{
-				case 0:	// location
+				case EFunctionSortMode::Location:	
 					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
 						{
 							return a.AddressRef.Address < b.AddressRef.Address;
 						});
 					break;
-				case 1:	// alphabetical
+				case EFunctionSortMode::Alphabetical:	
 					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
 						{
 							const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
@@ -1459,7 +1459,7 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 							return pLabelA->Name < pLabelB->Name;
 						});
 					break;
-				case 2:	// call frequency
+				case EFunctionSortMode::CallFrequency:	
 					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
 						{
 							const FCodeInfo* pCodeInfoA = state.GetCodeInfoForAddress(a.AddressRef);
@@ -1470,6 +1470,8 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 
 							return countA > countB;
 						});
+					break;
+				default:
 					break;
 				}
 			}

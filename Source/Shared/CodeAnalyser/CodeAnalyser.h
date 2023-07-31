@@ -73,6 +73,13 @@ enum class EKey
 	Count
 };
 
+enum class EFunctionSortMode : int
+{
+	Location = 0,
+	Alphabetical,
+	CallFrequency
+};
+
 
 struct FDataFormattingOptions
 {
@@ -174,7 +181,7 @@ struct FCodeAnalysisViewState
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
 	FLabelListFilter				GlobalFunctionsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
-	int								FunctionSortMode = 0;
+	EFunctionSortMode				FunctionSortMode = EFunctionSortMode::Location;
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
 
