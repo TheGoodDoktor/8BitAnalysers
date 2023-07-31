@@ -601,7 +601,10 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo != nullptr)
+	{
 		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
+		pCodeInfo->ExecutionCount++;
+	}
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		return RegisterCodeExecutedZ80(state, pc, oldpc);
@@ -628,6 +631,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 	if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
+		pDataInfo->ReadCount++;
 		pDataInfo->LastFrameRead = state.CurrentFrameNo;
 		pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 	}
@@ -636,6 +640,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,uint8_t value)
 {
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
+	pDataInfo->WriteCount++;
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
 	pDataInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 

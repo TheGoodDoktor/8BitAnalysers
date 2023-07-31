@@ -73,6 +73,13 @@ enum class EKey
 	Count
 };
 
+enum class EFunctionSortMode : int
+{
+	Location = 0,
+	Alphabetical,
+	CallFrequency
+};
+
 
 struct FDataFormattingOptions
 {
@@ -110,7 +117,7 @@ struct FLabelListFilter
 	std::string		FilterText;
 	uint16_t		MinAddress = 0x0000;
 	uint16_t		MaxAddress = 0xffff;
-	bool			bRAMOnly = false;
+	bool			bRAMOnly = true;
 };
 
 struct FCodeAnalysisItem
@@ -169,10 +176,12 @@ struct FCodeAnalysisViewState
 	int16_t			ViewingBankId = -1;
 	// for global Filters
 	bool						ShowROMLabels = false;
+	std::string					FilterText;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
 	FLabelListFilter				GlobalFunctionsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
+	EFunctionSortMode				FunctionSortMode = EFunctionSortMode::Location;
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
 
@@ -188,6 +197,7 @@ struct FCodeAnalysisConfig
 {
 	bool				bShowOpcodeValues = false;
 	bool				bShowBanks = false;
+	int					BranchLinesDisplayMode = 1;
 	const uint32_t*		CharacterColourLUT = nullptr;
 
 	// horizontal positions
@@ -359,7 +369,7 @@ public:
 	std::vector<FCodeAnalysisItem>	ItemList;
 
 	std::vector<FCodeAnalysisItem>	GlobalDataItems;
-	bool						bRebuildFilteredGlobalDataItems = true;
+	bool						bRebuildFilteredGlobalDataItems = true;	// should this be in the view 
 	
 	std::vector<FCodeAnalysisItem>	GlobalFunctions;
 	bool						bRebuildFilteredGlobalFunctions = true;

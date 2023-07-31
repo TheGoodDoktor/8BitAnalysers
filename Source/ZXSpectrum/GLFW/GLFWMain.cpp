@@ -27,6 +27,8 @@
 #endif
 
 #include "../SpectrumEmu.h"
+#include "../GlobalConfig.h"
+#include "Debug/DebugLog.h"
 
 #define SOKOL_IMPL
 #include <sokol_audio.h>
@@ -143,7 +145,7 @@ int main(int argc, char** argv)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(appState.MainWindow, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
-
+    
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
     // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
@@ -171,6 +173,16 @@ int main(int argc, char** argv)
 	pSpectrumEmulator->Init(config);
 
     g_AppState.pSpectrumEmu = pSpectrumEmulator;
+
+    FGlobalConfig& globalConfig = GetGlobalConfig();
+    if (!globalConfig.Font.empty())
+    {
+        std::string fontPath = "./Fonts/" + globalConfig.Font;
+        if (!io.Fonts->AddFontFromFileTTF(fontPath.c_str(), (float)globalConfig.FontSizePixels))
+        {
+            LOGWARNING("Could not load font '%s'", fontPath.c_str());
+        }
+    }
 
 	// Main loop
     while (!glfwWindowShouldClose(appState.MainWindow))

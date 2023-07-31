@@ -9,6 +9,7 @@ struct FGlobalConfig
 	bool				bShowScanLineIndicator = false;
 	bool				bShowOpcodeValues = false;
 	ENumberDisplayMode	NumberDisplayMode = ENumberDisplayMode::HexAitch;
+	int					BranchLinesDisplayMode = 1;
 	std::string			LastGame;
 
 	std::string			WorkspaceRoot = "./";
@@ -16,6 +17,9 @@ struct FGlobalConfig
 	std::string			SnapshotFolder128 = "./Games128/";
 	std::string			PokesFolder = "./Pokes/";
 	std::string			RZXFolder = "./RZX/";
+
+	std::string			Font = ""; // if no font is specified the default font will be used
+	uint32_t			FontSizePixels = 13;
 };
 
 FGlobalConfig& GetGlobalConfig();

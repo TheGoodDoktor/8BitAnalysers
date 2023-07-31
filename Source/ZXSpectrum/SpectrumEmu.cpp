@@ -14,7 +14,7 @@
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/GraphicsViewer.h"
 #include "Viewers/ZXGraphicsView.h"
-#include "Viewers/BreakpointViewer.h"
+//#include "Viewers/BreakpointViewer.h"
 #include "Viewers/OverviewViewer.h"
 #include "Util/FileUtil.h"
 
@@ -562,6 +562,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	FGlobalConfig& globalConfig = GetGlobalConfig();
 	SetNumberDisplayMode(globalConfig.NumberDisplayMode);
 	CodeAnalysis.Config.bShowOpcodeValues = globalConfig.bShowOpcodeValues;
+	CodeAnalysis.Config.BranchLinesDisplayMode = globalConfig.BranchLinesDisplayMode;
 	CodeAnalysis.Config.bShowBanks = config.Model == ESpectrumModel::Spectrum128K;
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 	
@@ -773,8 +774,11 @@ void FSpectrumEmu::Shutdown()
 
 	config.NumberDisplayMode = GetNumberDisplayMode();
 	config.bShowOpcodeValues = CodeAnalysis.Config.bShowOpcodeValues;
+	config.BranchLinesDisplayMode = CodeAnalysis.Config.BranchLinesDisplayMode;
 
 	SaveGlobalConfig(kGlobalConfigFilename);
+
+	ShutdownGraphicsViewer(GraphicsViewer);
 }
 
 void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  true*/)
@@ -1223,6 +1227,25 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			ImGui::MenuItem("Enable Audio", 0, &config.bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
 			ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.Config.bShowOpcodeValues);
+
+			if (ImGui::BeginMenu("Display Branch Lines"))
+			{
+				if (ImGui::MenuItem("Off", 0, CodeAnalysis.Config.BranchLinesDisplayMode == 0))
+				{
+					CodeAnalysis.Config.BranchLinesDisplayMode = 0;
+				}
+				if (ImGui::MenuItem("Minimal", 0, CodeAnalysis.Config.BranchLinesDisplayMode == 1))
+				{
+					CodeAnalysis.Config.BranchLinesDisplayMode = 1;
+				}
+				if (ImGui::MenuItem("Full", 0, CodeAnalysis.Config.BranchLinesDisplayMode == 2))
+				{
+					CodeAnalysis.Config.BranchLinesDisplayMode = 2;
+				}
+
+				ImGui::EndMenu();
+			}
+
 			if(pActiveGame!=nullptr)
 				ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 

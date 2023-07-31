@@ -19,12 +19,14 @@ mkdir ..\Package\Loose\Games128
 mkdir ..\Package\Loose\Pokes
 mkdir ..\Package\Loose\RZX
 mkdir ..\Package\Loose\Docs
+mkdir ..\Package\Loose\Fonts
 
 rem Add some files to describe what to put in the empty directories
 @echo>"..\Package\Loose\Games\48k snapshots go here - z80 or sna"
 @echo>"..\Package\Loose\Games128\128k snapshots go here - z80 or sna"
 @echo>"..\Package\Loose\Pokes\pok files go here - filename matching game name"
 @echo>"..\Package\Loose\RZX\rzx files go here"
+@echo>"..\Package\Loose\RZX\fonts go here in ttf format"
 
 copy ..\Source\ZXSpectrum\build\Release\SpectrumAnalyser.exe ..\Package\Loose\
 copy ..\Data\SpectrumAnalyser\imgui.ini ..\Package\Loose\

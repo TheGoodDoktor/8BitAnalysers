@@ -53,6 +53,7 @@ void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef acces
 	}
 }
 
+#if 0
 void DrawJumpIndicator(int nDirection)
 {
 	ImGui::SameLine();
@@ -92,6 +93,7 @@ void DrawJumpIndicator(int nDirection)
 		// todo
 	}
 }
+#endif
 
 void DrawBranchLines(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
@@ -173,9 +175,20 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	ShowCodeAccessorActivity(state, item.AddressRef);
 
-	// draw branch lines
-	if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid() && pCodeInfo->bIsCall == false)
-		DrawBranchLines(state, viewState, item);
+	bool bDisplayBranchLine = state.Config.BranchLinesDisplayMode == 2;
+	if (state.Config.BranchLinesDisplayMode == 1)
+	{
+		const bool bSelected = (item.Item == viewState.GetCursorItem().Item);
+		const bool bHighlighted = (viewState.HighlightAddress == pCodeInfo->JumpAddress);
+		bDisplayBranchLine = bSelected || bHighlighted;
+	}
+
+	if (bDisplayBranchLine)
+	{
+		// draw branch lines
+		if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid() && pCodeInfo->bIsCall == false)
+			DrawBranchLines(state, viewState, item);
+	}
 
 	// show if breakpointed
 	FBreakpoint* pBP = debugger.GetBreakpointForAddress(item.AddressRef);
@@ -276,8 +289,6 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid())
 	{
 		DrawAddressLabel(state, viewState, pCodeInfo->JumpAddress);
-
-		DrawJumpIndicator(pCodeInfo->JumpAddress.Address == physAddress ? 0 : pCodeInfo->JumpAddress.Address > physAddress ? -1 : 1);
 	}
 	else if (pCodeInfo->OperandType == EOperandType::Pointer && pCodeInfo->PointerAddress.IsValid())
 	{
