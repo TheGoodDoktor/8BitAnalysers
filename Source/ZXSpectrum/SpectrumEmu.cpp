@@ -14,7 +14,7 @@
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/GraphicsViewer.h"
 #include "Viewers/ZXGraphicsView.h"
-#include "Viewers/BreakpointViewer.h"
+//#include "Viewers/BreakpointViewer.h"
 #include "Viewers/OverviewViewer.h"
 #include "Util/FileUtil.h"
 
@@ -777,6 +777,8 @@ void FSpectrumEmu::Shutdown()
 	config.BranchLinesDisplayMode = CodeAnalysis.Config.BranchLinesDisplayMode;
 
 	SaveGlobalConfig(kGlobalConfigFilename);
+
+	ShutdownGraphicsViewer(GraphicsViewer);
 }
 
 void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  true*/)
