@@ -179,9 +179,11 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 		ImGui::EndCombo();
 	}
 
+	ImGui::Combo("ViewMode", (int*)&viewerState.ViewMode, "Character\0CharacterWinding", (int)GraphicsViewMode::Count);
+
 	// Address input
 	int addrInput = pBank ? pBank->GetMappedAddress() + viewerState.AddressOffset : viewerState.AddressOffset;
-	ImGui::Text("viewerState Map Address: %s", NumStr((uint16_t)addrInput));
+	//ImGui::Text("viewerState Map Address: %s", NumStr((uint16_t)addrInput));
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	pGraphicsView->Draw();
@@ -205,7 +207,10 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 			ptrAddress = state.AddressRefFromPhysicalAddress(gfxAddressOffset);
 		
 		if (ImGui::IsMouseDoubleClicked(0))
-			state.GetFocussedViewState().GoToAddress( ptrAddress );	
+		{
+			state.GetFocussedViewState().GoToAddress(ptrAddress);
+			addrInput = pBank ? pBank->GetMappedAddress() + gfxAddressOffset : gfxAddressOffset;
+		}
 		if (ImGui::IsMouseClicked(0))
 			viewerState.ClickedAddress = ptrAddress;
 
@@ -217,27 +222,32 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 	
 	ImGui::SameLine();
 
-	static int kRowSize = kHorizontalDispCharCount * 8;
+	// simpler slider
+	ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff);
+
+	/*static int kRowSize = kHorizontalDispCharCount * 8;
 	int addrLine = addrInput / kRowSize;
 	int addrOffset = addrInput % kRowSize;
 
-	if(ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrLine,0, 0xffff / kRowSize))
+
+	if (ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrLine, 0, 0xffff / kRowSize))
 	{
 		addrInput = (addrLine * kRowSize) + addrOffset;
 	}
 	if (ImGui::SliderInt("##offset", &addrOffset, 0, kRowSize -1))
 	{
 		addrInput = (addrLine * kRowSize) + addrOffset;
-	}
+	}*/
 	
+	ImGui::SetNextItemWidth(100.0f);
 	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
-		ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsDecimal);
+		ImGui::InputInt("##Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsDecimal);
 	else
-		ImGui::InputInt("Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
-	
+		ImGui::InputInt("##Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
+	DrawAddressLabel(state, state.GetFocussedViewState(), state.AddressRefFromPhysicalAddress(addrInput));
 
-	ImGui::Combo("ViewMode", (int*)&viewerState.ViewMode, "Character\0CharacterWinding", (int)GraphicsViewMode::Count);
-	ImGui::SliderInt("Heatmap frame threshold", &viewerState.HeatmapThreshold, 0, 60);
+	// put in config? 
+	//ImGui::SliderInt("Heatmap frame threshold", &viewerState.HeatmapThreshold, 0, 60);
 	pGraphicsView->Clear(0xff000000);
 
 	FCodeAnalysisBank* pClickedBank = state.GetBank(viewerState.ClickedAddress.BankId);
@@ -245,7 +255,7 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 		ImGui::Text("Clicked Address: [%s]%s", pClickedBank->Name.c_str(), NumStr(viewerState.ClickedAddress.Address));
 	else
 		ImGui::Text("Clicked Address: %s", NumStr(viewerState.ClickedAddress.Address));
-	ImGui::SameLine();
+	//ImGui::SameLine();
 	if (viewerState.ClickedAddress.IsValid())
 	{
 		DrawAddressLabel(state, state.GetFocussedViewState(), viewerState.ClickedAddress);
@@ -270,8 +280,9 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 
 	// draw 64 * 8 bytes
 	ImGui::InputInt("XSize", &viewerState.XSize, 1, 4);
-	ImGui::InputInt("YSize", &viewerState.YSize, 8, 8);
-	ImGui::InputInt("YSize Fine", &viewerState.YSize, 1, 8);
+	ImGui::InputInt("YSize", &viewerState.YSize, 1, 8);
+	//ImGui::InputInt("YSize Fine", &viewerState.YSize, 1, 8);
+#if 0
 	ImGui::InputInt("Count", &viewerState.ImageCount, 1, 4);
 
 	ImGui::Separator();
@@ -297,7 +308,7 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 		}
 			
 	}
-
+#endif
 	viewerState.XSize = std::min(std::max(1, viewerState.XSize), kHorizontalDispCharCount);
 	viewerState.YSize = std::min(std::max(1, viewerState.YSize), kVerticalDispPixCount);
 

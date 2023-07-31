@@ -34,7 +34,7 @@ struct FGraphicsViewerState
 	int				HeatmapThreshold = 4;
 
 	int				XSize = 1;			// Image X Size in characters
-	int				YSize = 8;			// Image Y Size in pixels
+	int				YSize = 1;			// Image Y Size in pixels
 	int				ImageCount = 10;	// how many images?
 
 	std::string		NewConfigName;
