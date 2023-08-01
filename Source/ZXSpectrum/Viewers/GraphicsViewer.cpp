@@ -115,12 +115,26 @@ void DrawMemoryBankAsGraphicsColumn(FGraphicsViewerState& viewerState, int16_t b
 	}
 }
 
+// WIP
+// the idea is to store graphic sets that run sequentially in memory as these structures and have a viewer for them
+struct FGraphicSet
+{
+	FAddressRef	Address;	// start address of images
+	int			XSize;	// width in chars
+	int			YSize;	// height in scanlines
+	int			Count;	// number of images
+};
+
+// draw a graphic set to a graphics view
+void DrawGraphicSetToView(FZXGraphicsView* pGraphicsView, const FCodeAnalysisState& state, const FGraphicSet& graphic)
+{
+}
+
 void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState);
 void DrawScreenViewer(FGraphicsViewerState& viewerState);
 
 
 // Viewer to view spectrum graphics
-// TODO: do a tab view of screen & character graphics
 void DrawGraphicsViewer(FGraphicsViewerState& viewerState)
 {
 	if (ImGui::Begin("Graphics View"))
