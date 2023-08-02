@@ -33,9 +33,10 @@ struct FGraphicsViewerState
 	//bool			bColumnMode = true;
 	int				HeatmapThreshold = 4;
 
-	int				XSize = 1;			// Image X Size in characters
-	int				YSize = 1;			// Image Y Size in pixels
-	int				ImageCount = 10;	// how many images?
+	int				XSizePixels = 8;			// Image X Size in pixels
+	int				YSizePixels = 8;			// Image Y Size in pixels
+	int				ImageCount = 1;	// how many images?
+	bool			YSizePixelsFineCtrl = false;
 
 	std::string		NewConfigName;
 

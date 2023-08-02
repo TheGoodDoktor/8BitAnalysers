@@ -47,19 +47,20 @@ static const uint32_t g_kColourLUT[8] =
 
 uint16_t GetAddressOffsetFromPositionInView(const FGraphicsViewerState &viewerState, int x,int y)
 {
+	const int xSizeChars = viewerState.XSizePixels >> 3;
 	const FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
 	const FCodeAnalysisBank* pBank = state.GetBank(viewerState.Bank);
 	const uint16_t addrInput = viewerState.AddressOffset;
-	const int xCount = kHorizontalDispCharCount / viewerState.XSize;
-	const int xSize = xCount * viewerState.XSize;
+	const int xCount = kHorizontalDispCharCount / xSizeChars;
+	const int xSize = xCount * xSizeChars;
 	const int xp = std::max(std::min(xSize, x / 8), 0);
 	const int yp = std::max(std::min(kGraphicsViewerHeight, y), 0);
-	const int column = xp / viewerState.XSize;
-	const int columnSize = kGraphicsViewerHeight * viewerState.XSize;
+	const int column = xp / xSizeChars;
+	const int columnSize = kGraphicsViewerHeight * xSizeChars;
 
 	ImGui::Text("xp: %d, yp: %d, column: %d", xp, yp, column);
-	return ((addrInput + xp) + (column * columnSize) + (y * viewerState.XSize)) % viewerState.MemorySize;
+	return ((addrInput + xp) + (column * columnSize) + (y * xSizeChars)) % viewerState.MemorySize;
 }
 
 uint8_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
@@ -203,17 +204,19 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 	pGraphicsView->Draw();
 	if (ImGui::IsItemHovered())
 	{
-		const int xp = (int)(io.MousePos.x - pos.x);
-		const int yp = (int)(io.MousePos.y - pos.y);
+		const int xp = (int)(io.MousePos.x - pos.x);// -(viewerState.XSizePixels / 2));
+		const int yp = std::max((int)(io.MousePos.y - pos.y - (viewerState.YSizePixels/2)),0);
 
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const int xPix = viewerState.XSize * 8;
-		const int rx = static_cast<int>(pos.x) + ((xp / xPix) * xPix);
-		const int ry = static_cast<int>(pos.y) + ((yp / viewerState.YSize) * viewerState.YSize);
-		dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)(rx + xPix), (float)(ry + viewerState.YSize)), 0xff00ffff);
+		const int xChars = viewerState.XSizePixels >> 3;
+		const int rx = (xp / viewerState.XSizePixels) * viewerState.XSizePixels;
+		const int ry = yp;// ((yp / viewerState.YSizePixels) * viewerState.YSizePixels);
+		const float rxp = pos.x + (float)rx;
+		const float ryp = pos.y + (float)ry;
+		dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewerState.XSizePixels, ryp + (float)viewerState.YSizePixels), 0xff00ffff);
 		//const int addressOffset = (xp / 8) + (yp * (256 / 8));
 		ImGui::BeginTooltip();
-		const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInView(viewerState,xp, yp);
+		const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInView(viewerState,rx, ry);
 		FAddressRef ptrAddress;
 		if (pBank != nullptr)
 			ptrAddress = FAddressRef(pBank->Id, gfxAddressOffset + pBank->GetMappedAddress());
@@ -281,7 +284,7 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 		}
 	}
 	
-	const int graphicsUnitSize = viewerState.XSize * viewerState.YSize;
+	const int graphicsUnitSize = (viewerState.XSizePixels>>3) * viewerState.YSizePixels;
 
 	//ImGui::Checkbox("Column Mode", &state.bColumnMode);
 	if (ImGui::Button("<<"))
@@ -293,9 +296,12 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 	viewerState.AddressOffset = pBank != nullptr ? (int)addrInput - pBank->GetMappedAddress() : addrInput;
 
 	// draw 64 * 8 bytes
-	ImGui::InputInt("XSize", &viewerState.XSize, 1, 4);
-	ImGui::InputInt("YSize", &viewerState.YSize, 1, 8);
-	//ImGui::InputInt("YSize Fine", &viewerState.YSize, 1, 8);
+	ImGui::InputInt("XSize", &viewerState.XSizePixels, 8, 8);
+	ImGui::InputInt("YSize", &viewerState.YSizePixels, viewerState.YSizePixelsFineCtrl? 1:8, 8);
+	ImGui::SameLine();
+	ImGui::Checkbox("Fine", &viewerState.YSizePixelsFineCtrl);
+	ImGui::InputInt("Count", &viewerState.ImageCount, 1, 1);
+	//ImGui::InputInt("YSize Fine", &viewerState.YSizePixels, 1, 8);
 #if 0
 	ImGui::InputInt("Count", &viewerState.ImageCount, 1, 4);
 
@@ -323,14 +329,15 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 			
 	}
 #endif
-	viewerState.XSize = std::min(std::max(1, viewerState.XSize), kHorizontalDispCharCount);
-	viewerState.YSize = std::min(std::max(1, viewerState.YSize), kVerticalDispPixCount);
+	viewerState.XSizePixels = std::min(std::max(8, viewerState.XSizePixels), kHorizontalDispCharCount * 8);
+	viewerState.YSizePixels = std::min(std::max(1, viewerState.YSizePixels), kVerticalDispPixCount);
 
-	const int xcount = kHorizontalDispCharCount / viewerState.XSize;
-	const int ycount = kVerticalDispPixCount / viewerState.YSize;
+	const int xcount = kHorizontalDispCharCount / (viewerState.XSizePixels >> 3);
+	const int ycount = kVerticalDispPixCount / viewerState.YSizePixels;
 
 	int y = 0;
 	int address = viewerState.AddressOffset;
+	int xSizeChars = viewerState.XSizePixels >> 3;
 
 	if (viewerState.ViewMode == GraphicsViewMode::Character)
 	{
@@ -341,10 +348,10 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 				bankId = state.GetBankFromAddress(address);
 
 			assert(bankId != -1);
-			DrawMemoryBankAsGraphicsColumn(viewerState, bankId, address & 0x3fff, x * viewerState.XSize * 8, viewerState.XSize);
+			DrawMemoryBankAsGraphicsColumn(viewerState, bankId, address & 0x3fff, x * viewerState.XSizePixels, xSizeChars);
 			//	DrawMemoryAsGraphicsColumn(viewerState, address, x * viewerState.XSize * 8, viewerState.XSize);
 
-			address += viewerState.XSize * kVerticalDispPixCount;
+			address += xSizeChars * kVerticalDispPixCount;
 		}
 	}
 	else if (viewerState.ViewMode == GraphicsViewMode::CharacterWinding)
@@ -356,22 +363,22 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 			for (int x = 0; x < xcount; x++)
 			{
 				// draw single item
-				for (int yLine = 0; yLine < viewerState.YSize; yLine++)	// loop down scan lines
+				for (int yLine = 0; yLine < viewerState.YSizePixels; yLine++)	// loop down scan lines
 				{
-					for (int xChar = 0; xChar < viewerState.XSize; xChar++)
+					for (int xChar = 0; xChar < xSizeChars; xChar++)
 					{
 						const uint8_t* pImage = viewerState.pEmu->GetMemPtr(address);
-						const int xp = ((yLine & 1) == 0) ? xChar : (viewerState.XSize - 1) - xChar;
+						const int xp = ((yLine & 1) == 0) ? xChar : (xSizeChars - 1) - xChar;
 						if (address + graphicsUnitSize < 0xffff)
 							pGraphicsView->DrawCharLine(*pImage, offsetX + (xp * 8), offsetY + yLine);
 						address++;
 					}
 				}
 
-				offsetX += viewerState.XSize * 8;
+				offsetX += viewerState.XSizePixels;
 			}
 			offsetX = 0;
-			offsetY += viewerState.YSize;
+			offsetY += viewerState.YSizePixels;
 		}
 		address += graphicsUnitSize;
 	}
