@@ -633,7 +633,9 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 {
 	FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
 	const uint16_t physAddr = item.AddressRef.Address;
-	ImGui::Text("Number Mode Override");
+	ImGui::Text("Number Mode Override:");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(120.0f);
 	DrawOperandTypeCombo("##dataOperand",pDataInfo->OperandType);
 	switch (pDataInfo->DataType)
 	{

@@ -1166,8 +1166,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	ImGui::SameLine();
 	if(ImGui::BeginChild("##rightpanel", ImVec2(0, 0), true))
 	{
-		float height = ImGui::GetWindowContentRegionMax().y - ImGui::GetWindowContentRegionMin().y;
-		if (ImGui::BeginChild("##cadetails", ImVec2(0, height / 2), true))
+		//float height = ImGui::GetWindowContentRegionMax().y - ImGui::GetWindowContentRegionMin().y;
+		//if (ImGui::BeginChild("##cadetails", ImVec2(0, height / 2), true))
 		{
 			if (ImGui::BeginTabBar("details_tab_bar"))
 			{
@@ -1190,14 +1190,19 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				{
 					viewState.DataFormattingTabOpen = false;
 				}
+				if (ImGui::BeginTabItem("Globals"))
+				{
+					DrawGlobals(state, viewState);
+					ImGui::EndTabItem();
+				}
 
 				ImGui::EndTabBar();
 			}
 		}
-		ImGui::EndChild();
-		if (ImGui::BeginChild("##caglobals", ImVec2(0, 0), true))
-			DrawGlobals(state, viewState);
-		ImGui::EndChild();
+		//ImGui::EndChild();
+		//if (ImGui::BeginChild("##caglobals", ImVec2(0, 0), true))
+		//	DrawGlobals(state, viewState);
+		//ImGui::EndChild();
 	}
 	ImGui::EndChild(); // right panel
 }
