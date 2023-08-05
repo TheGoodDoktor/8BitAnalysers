@@ -160,7 +160,7 @@ public:
 	{
 		bIsBranchDestination = false;
 
-		pLabelInfo = State.GetLabelForAddress(addr);
+		pLabelInfo = State.GetLabelForPhysicalAddress(addr);
 		if (pLabelInfo)
 		{
 			// todo warn if label already exists?

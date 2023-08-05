@@ -531,7 +531,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	uint16_t jumpAddr;
 	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
-		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
+		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(jumpAddr);
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		if (pCodeInfo != nullptr)
@@ -546,7 +546,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	uint16_t ptr;
 	if (CheckPointerRefInstruction(state, pc, &ptr))
 	{
-		FLabelInfo* pLabel = state.GetLabelForAddress(ptr);
+		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(ptr);
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		if (pCodeInfo != nullptr)
@@ -601,7 +601,10 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
 	if (pCodeInfo != nullptr)
+	{
 		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
+		pCodeInfo->ExecutionCount++;
+	}
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		return RegisterCodeExecutedZ80(state, pc, oldpc);
@@ -628,6 +631,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 	if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
+		pDataInfo->ReadCount++;
 		pDataInfo->LastFrameRead = state.CurrentFrameNo;
 		pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 	}
@@ -636,6 +640,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,uint8_t value)
 {
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
+	pDataInfo->WriteCount++;
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
 	pDataInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
@@ -701,7 +706,7 @@ void ResetReferenceInfo(FCodeAnalysisState &state)
 			pDataInfo->Writes.Reset();
 		}
 
-		FLabelInfo* pLabelInfo = state.GetLabelForAddress(i);
+		FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(i);
 		if (pLabelInfo != nullptr)
 		{
 			pLabelInfo->References.Reset();
@@ -711,8 +716,7 @@ void ResetReferenceInfo(FCodeAnalysisState &state)
 	}
 }
 
-
-
+// TODO: Phase this out
 FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *name,ELabelType type)
 {
 	FLabelInfo *pLabel = FLabelInfo::Allocate();
@@ -721,7 +725,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	//pLabel->Address = address;
 	pLabel->ByteSize = 1;
 	pLabel->Global = type == ELabelType::Function;
-	state.SetLabelForAddress(address, pLabel);
+	state.SetLabelForPhysicalAddress(address, pLabel);
 
 	if (pLabel->Global)
 		GenerateGlobalInfo(state);
@@ -871,8 +875,8 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	KeyConfig[(int)EKey::ToggleItemBinary] = ImGuiKey_B;
 	KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
 	KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
-	KeyConfig[(int)EKey::Comment] = ImGuiKey_Slash; // '/'
-	KeyConfig[(int)EKey::AddCommentBlock] = ImGuiKey_Semicolon;	// ';'
+	KeyConfig[(int)EKey::Comment] = ImGuiKey_Semicolon; 
+	KeyConfig[(int)EKey::CommentLegacy] = ImGuiKey_Slash; // '/'
 	KeyConfig[(int)EKey::BreakContinue] = ImGuiKey_F5;
 	KeyConfig[(int)EKey::StepInto] = ImGuiKey_F11;
 	KeyConfig[(int)EKey::StepOver] = ImGuiKey_F10;
@@ -1036,7 +1040,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 		CreateCharacterMap(state, charMapParams);
 	}
 
-	if (options.AddLabelAtStart && state.GetLabelForAddress(dataAddress) == nullptr)	// only add label if one doesn't already exist
+	if (options.AddLabelAtStart && state.GetLabelForPhysicalAddress(dataAddress) == nullptr)	// only add label if one doesn't already exist
 	{
 		char labelName[16];
 		const char* pPrefix = "data";
@@ -1050,6 +1054,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 
 		snprintf(labelName,16, "%s_%s",pPrefix,NumStr(dataAddress));
 		FLabelInfo* pLabel = AddLabel(state, dataAddress, labelName, ELabelType::Data);
+		
 		pLabel->Global = true;
 	}
 

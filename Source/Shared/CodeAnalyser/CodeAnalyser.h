@@ -60,7 +60,7 @@ enum class EKey
 	AddLabel,
 	Rename,
 	Comment,
-	AddCommentBlock,
+	CommentLegacy,
 
 	// Debugger
 	BreakContinue,
@@ -71,6 +71,13 @@ enum class EKey
 	Breakpoint,
 
 	Count
+};
+
+enum class EFunctionSortMode : int
+{
+	Location = 0,
+	Alphabetical,
+	CallFrequency
 };
 
 
@@ -110,7 +117,7 @@ struct FLabelListFilter
 	std::string		FilterText;
 	uint16_t		MinAddress = 0x0000;
 	uint16_t		MaxAddress = 0xffff;
-	bool			bRAMOnly = false;
+	bool			bRAMOnly = true;
 };
 
 struct FCodeAnalysisItem
@@ -169,10 +176,12 @@ struct FCodeAnalysisViewState
 	int16_t			ViewingBankId = -1;
 	// for global Filters
 	bool						ShowROMLabels = false;
+	std::string					FilterText;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
 	FLabelListFilter				GlobalFunctionsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
+	EFunctionSortMode				FunctionSortMode = EFunctionSortMode::Location;
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
 
@@ -360,7 +369,7 @@ public:
 	std::vector<FCodeAnalysisItem>	ItemList;
 
 	std::vector<FCodeAnalysisItem>	GlobalDataItems;
-	bool						bRebuildFilteredGlobalDataItems = true;
+	bool						bRebuildFilteredGlobalDataItems = true;	// should this be in the view 
 	
 	std::vector<FCodeAnalysisItem>	GlobalFunctions;
 	bool						bRebuildFilteredGlobalFunctions = true;
@@ -411,8 +420,8 @@ public:
 	}
 	const FCodeAnalysisPage* GetWritePage(uint16_t addr) const { return ((FCodeAnalysisState*)this)->GetWritePage(addr); }
 
-	const FLabelInfo* GetLabelForAddress(uint16_t addr) const { return GetReadPage(addr)->Labels[addr & kPageMask]; }
-	FLabelInfo* GetLabelForAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
+	const FLabelInfo* GetLabelForPhysicalAddress(uint16_t addr) const { return GetReadPage(addr)->Labels[addr & kPageMask]; }
+	FLabelInfo* GetLabelForPhysicalAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
 	FLabelInfo* GetLabelForAddress(FAddressRef addrRef)
 	{
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
@@ -426,7 +435,7 @@ public:
 			return nullptr;
 		}
 	}
-	void SetLabelForAddress(uint16_t addr, FLabelInfo* pLabel) 
+	void SetLabelForPhysicalAddress(uint16_t addr, FLabelInfo* pLabel)
 	{
 		if(pLabel != nullptr)	// ensure no name clashes
 			EnsureUniqueLabelName(pLabel->Name);

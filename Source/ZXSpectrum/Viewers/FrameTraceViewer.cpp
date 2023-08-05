@@ -262,7 +262,7 @@ void	FFrameTraceViewer::GenerateTraceOverview(FSpeccyFrameTrace& frame)
 		for (int addrVal = instAddr.Address; addrVal >= 0; addrVal--)
 		{
 			//uint16_t addrVal = frame.InstructionTrace[traceIndex];
-			const FLabelInfo* pLabel = state.GetLabelForAddress(addrVal);
+			const FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(addrVal);
 			if (pLabel != nullptr && (pLabel->LabelType == ELabelType::Code || pLabel->LabelType == ELabelType::Function))
 			{
 				if (pLabel->LabelType == ELabelType::Function)

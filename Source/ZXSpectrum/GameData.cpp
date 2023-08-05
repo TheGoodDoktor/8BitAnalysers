@@ -88,13 +88,13 @@ EDataType GetDataEnumValue(const char* pString)
 }
 
 // Labels
-
+#if 0
 void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount = 0;
 	for (int i = startAddress; i <= endAddress; i++)
 	{
-		if (state.GetLabelForAddress(i) != nullptr)
+		if (state.GetLabelForPhysicalAddress(i) != nullptr)
 			recordCount++;
 	}
 
@@ -103,7 +103,7 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 	for (int i = startAddress; i <= endAddress; i++)
 	{
 
-		const FLabelInfo* pLabel = state.GetLabelForAddress(i);
+		const FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(i);
 		if (pLabel != nullptr)
 		{
 			const uint16_t addr = (uint16_t)i;
@@ -140,7 +140,7 @@ void SaveLabelsBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAddr
 		}
 	}
 }
-
+#endif
 void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t startAddress, uint16_t endAddress)
 {
 	int recordCount = 0;
@@ -188,7 +188,7 @@ void LoadLabelsBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_t 
 			}
 		}
 
-		state.SetLabelForAddress(addr, pLabel);
+		state.SetLabelForPhysicalAddress(addr, pLabel);
 	}
 }
 

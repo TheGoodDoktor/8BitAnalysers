@@ -16,7 +16,7 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef ad
 
 	for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
 	{
-		FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrVal);
+		FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(addrVal);
 		if (pLabelInfo != nullptr)
 		{
 			labelStr = "[" + pLabelInfo->Name;
@@ -145,7 +145,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			{
 				const uint16_t val = state.CPUInterface->ReadWord(addr);
 
-				const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForAddress(val) : nullptr;
+				const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForPhysicalAddress(val) : nullptr;
 				if (pLabel != nullptr)
 				{
 					fprintf(fp, "dw %s", pLabel->Name.c_str());

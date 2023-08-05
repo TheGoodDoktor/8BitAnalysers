@@ -168,7 +168,7 @@ public:
 
 	void GraphicsViewerSetCharWidth(uint16_t width)
 	{
-		GraphicsViewer.XSize = width;
+		GraphicsViewer.XSizePixels = width * 8;
 	}
 	// TODO: Make private
 //private:

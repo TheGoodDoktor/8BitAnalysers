@@ -380,7 +380,14 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				ImGui::SetWindowFocus("Enter Label Text");
 			}
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]))
+		else if (io.KeyShift && ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]))
+		{
+			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef);
+			viewState.SetCursorItem(FCodeAnalysisItem(pCommentBlock, cursorItem.AddressRef));
+			ImGui::OpenPopup("Enter Comment Text Multi");
+			ImGui::SetWindowFocus("Enter Comment Text Multi");
+		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]) || ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::CommentLegacy]))
 		{
 			ImGui::OpenPopup("Enter Comment Text");
 			ImGui::SetWindowFocus("Enter Comment Text");
@@ -391,13 +398,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 			ImGui::OpenPopup("Enter Label Text");
 			ImGui::SetWindowFocus("Enter Label Text");
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddCommentBlock]))
-		{
-			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef);
-			viewState.SetCursorItem(FCodeAnalysisItem(pCommentBlock, cursorItem.AddressRef));
-			ImGui::OpenPopup("Enter Comment Text Multi");
-			ImGui::SetWindowFocus("Enter Comment Text Multi");
-		}
+		
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Breakpoint]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
@@ -1165,8 +1166,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	ImGui::SameLine();
 	if(ImGui::BeginChild("##rightpanel", ImVec2(0, 0), true))
 	{
-		float height = ImGui::GetWindowContentRegionMax().y - ImGui::GetWindowContentRegionMin().y;
-		if (ImGui::BeginChild("##cadetails", ImVec2(0, height / 2), true))
+		//float height = ImGui::GetWindowContentRegionMax().y - ImGui::GetWindowContentRegionMin().y;
+		//if (ImGui::BeginChild("##cadetails", ImVec2(0, height / 2), true))
 		{
 			if (ImGui::BeginTabBar("details_tab_bar"))
 			{
@@ -1189,14 +1190,19 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				{
 					viewState.DataFormattingTabOpen = false;
 				}
+				if (ImGui::BeginTabItem("Globals"))
+				{
+					DrawGlobals(state, viewState);
+					ImGui::EndTabItem();
+				}
 
 				ImGui::EndTabBar();
 			}
 		}
-		ImGui::EndChild();
-		if (ImGui::BeginChild("##caglobals", ImVec2(0, 0), true))
-			DrawGlobals(state, viewState);
-		ImGui::EndChild();
+		//ImGui::EndChild();
+		//if (ImGui::BeginChild("##caglobals", ImVec2(0, 0), true))
+		//	DrawGlobals(state, viewState);
+		//ImGui::EndChild();
 	}
 	ImGui::EndChild(); // right panel
 }
@@ -1408,24 +1414,72 @@ void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter
 
 void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
+	if (ImGui::InputText("Filter", &viewState.FilterText))
+	{
+		viewState.GlobalFunctionsFilter.FilterText = viewState.FilterText;
+		viewState.GlobalDataItemsFilter.FilterText = viewState.FilterText;
+		state.bRebuildFilteredGlobalFunctions = true;
+		state.bRebuildFilteredGlobalDataItems = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
+	{
+		viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
+		viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
+		state.bRebuildFilteredGlobalFunctions = true;
+		state.bRebuildFilteredGlobalDataItems = true;
+	}
+
 	if(ImGui::BeginTabBar("GlobalsTabBar"))
 	{
 		if(ImGui::BeginTabItem("Functions"))
-		{
-			state.bRebuildFilteredGlobalFunctions |= ImGui::InputText("Filter", &viewState.GlobalFunctionsFilter.FilterText);
-			ImGui::SameLine();
-			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
-			{
-				state.bRebuildFilteredGlobalFunctions = true;
-				state.bRebuildFilteredGlobalDataItems = true;
-			}
+		{	
+			// only constantly sort call frequency
+			bool bSort = viewState.FunctionSortMode == EFunctionSortMode::CallFrequency;	
+			if (ImGui::Combo("Sort Mode", (int*)&viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency"))
+				bSort = true;
 
 			if (state.bRebuildFilteredGlobalFunctions)
 			{
-				viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
-				viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
 				GenerateFilteredLabelList(state, viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
+				bSort = true;
 				state.bRebuildFilteredGlobalFunctions = false;
+			}
+
+			// sort by execution count
+			if (bSort)
+			{
+				switch (viewState.FunctionSortMode)
+				{
+				case EFunctionSortMode::Location:	
+					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+						{
+							return a.AddressRef.Address < b.AddressRef.Address;
+						});
+					break;
+				case EFunctionSortMode::Alphabetical:	
+					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+						{
+							const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
+							const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
+							return pLabelA->Name < pLabelB->Name;
+						});
+					break;
+				case EFunctionSortMode::CallFrequency:	
+					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+						{
+							const FCodeInfo* pCodeInfoA = state.GetCodeInfoForAddress(a.AddressRef);
+							const FCodeInfo* pCodeInfoB = state.GetCodeInfoForAddress(b.AddressRef);
+
+							const int countA = pCodeInfoA != nullptr ? pCodeInfoA->ExecutionCount : 0;
+							const int countB = pCodeInfoB != nullptr ? pCodeInfoB->ExecutionCount : 0;
+
+							return countA > countB;
+						});
+					break;
+				default:
+					break;
+				}
 			}
 
 			DrawLabelList(state, viewState, viewState.FilteredGlobalFunctions);
@@ -1434,18 +1488,8 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 
 		if (ImGui::BeginTabItem("Data"))
 		{
-			state.bRebuildFilteredGlobalDataItems |= ImGui::InputText("Filter", &viewState.GlobalDataItemsFilter.FilterText);
-			ImGui::SameLine();
-			if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
-			{
-				state.bRebuildFilteredGlobalFunctions = true;
-				state.bRebuildFilteredGlobalDataItems = true;
-			}
-
 			if (state.bRebuildFilteredGlobalDataItems)
 			{
-				viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
-				viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
 				GenerateFilteredLabelList(state, viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
 				state.bRebuildFilteredGlobalDataItems = false;
 			}

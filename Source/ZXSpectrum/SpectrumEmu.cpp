@@ -14,7 +14,7 @@
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/GraphicsViewer.h"
 #include "Viewers/ZXGraphicsView.h"
-#include "Viewers/BreakpointViewer.h"
+//#include "Viewers/BreakpointViewer.h"
 #include "Viewers/OverviewViewer.h"
 #include "Util/FileUtil.h"
 
@@ -124,7 +124,7 @@ void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address, int charWidth)
 void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
 {
 	// Format screen pixel memory if it hasn't already been
-	if (state.GetLabelForAddress(kScreenPixMemStart) == nullptr)
+	if (state.GetLabelForPhysicalAddress(kScreenPixMemStart) == nullptr)
 	{
 		AddLabel(state, 0x4000, "ScreenPixels", ELabelType::Data);
 
@@ -135,7 +135,7 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 	}
 
 	// Format attribute memory if it hasn't already
-	if (state.GetLabelForAddress(kScreenAttrMemStart) == nullptr)
+	if (state.GetLabelForPhysicalAddress(kScreenAttrMemStart) == nullptr)
 	{
 		AddLabel(state, 0x5800, "ScreenAttributes", ELabelType::Data);
 
@@ -777,6 +777,8 @@ void FSpectrumEmu::Shutdown()
 	config.BranchLinesDisplayMode = CodeAnalysis.Config.BranchLinesDisplayMode;
 
 	SaveGlobalConfig(kGlobalConfigFilename);
+
+	ShutdownGraphicsViewer(GraphicsViewer);
 }
 
 void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  true*/)
