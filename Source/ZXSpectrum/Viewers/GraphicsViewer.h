@@ -21,36 +21,61 @@ enum class GraphicsViewMode : int
 	Count
 };
 
-// Graphics Viewer
-// TODO: Make class
-struct FGraphicsViewerState
+struct FGraphicsSet
 {
+	FAddressRef	Address;	// start address of images
+	int			XSizePixels;	// width in pixels
+	int			YSizePixels;	// height in pixels
+	int			Count;	// number of images
+};
+
+// Graphics Viewer
+class FGraphicsViewerState
+{
+public:
+	bool			Init(FSpectrumEmu* emuPtr);
+	void			Shutdown(void);
+
+	void			GoToAddress(FAddressRef address);
+
+	void			Draw();
+
+	bool			SaveGraphicsSets(const char* pFName);
+	bool			LoadGraphicsSets(const char* pFName);
+private:
+	void			DrawCharacterGraphicsViewer(void);
+	void			DrawScreenViewer(void);
+
+	uint16_t		GetAddressOffsetFromPositionInView(int x, int y) const;
+
+	void			DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
+	void			UpdateCharacterGraphicsViewerImage(void); // make virtual for other platforms?
+protected:
+	bool			bShowPhysicalMemory = true;
 	int32_t			Bank = -1;
 	uint16_t		AddressOffset = 0;	// offset to view from the start of the region (bank or physical address space)
 	uint32_t		MemorySize = 0x10000;	// size of area being viewed
 	FAddressRef		ClickedAddress;
 	GraphicsViewMode	ViewMode = GraphicsViewMode::Character;
-	//bool			bColumnMode = true;
+	int				ViewScale = 1;
 	int				HeatmapThreshold = 4;
 
 	int				XSizePixels = 8;			// Image X Size in pixels
 	int				YSizePixels = 8;			// Image Y Size in pixels
-	int				ImageCount = 1;	// how many images?
+	int				ImageCount = 0;	// how many images?
 	bool			YSizePixelsFineCtrl = false;
 
-	std::string		NewConfigName;
+	std::string		ImageSetName;
 
-	std::string				SelectedSpriteList;
-	std::map<std::string, FUISpriteList>	SpriteLists;
+
+	std::map<FAddressRef, FGraphicsSet>		GraphicSets;
 
 	// housekeeping
 	FZXGraphicsView* pGraphicsView = nullptr;
 	FZXGraphicsView* pScreenView = nullptr;
-	FSpectrumEmu*	pEmu = nullptr;		// can we phase this out?
-	FGame*			pGame = nullptr;	// can we phase this out?
-
+public:
+	FSpectrumEmu*			pEmu = nullptr;		// can we phase this out?
+	std::map<std::string, FUISpriteList>	SpriteLists;
+	std::string				SelectedSpriteList;
 };
 
-bool InitGraphicsViewer(FGraphicsViewerState &state);
-void ShutdownGraphicsViewer(FGraphicsViewerState& state);
-void DrawGraphicsViewer(FGraphicsViewerState &state);

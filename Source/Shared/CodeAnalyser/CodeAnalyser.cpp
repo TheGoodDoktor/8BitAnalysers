@@ -957,6 +957,7 @@ void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 	}
 }
 
+#if 0
 void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 {
 	FDataInfo* pDataItem = static_cast<FDataInfo*>(item.Item);
@@ -971,6 +972,7 @@ void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 		pDataItem->ByteSize = pDataItem->ImageData->SetSizeChars(1,1);
 	}
 }
+#endif
 
 FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address)
 {
@@ -1040,20 +1042,33 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 		CreateCharacterMap(state, charMapParams);
 	}
 
-	if (options.AddLabelAtStart && state.GetLabelForPhysicalAddress(dataAddress) == nullptr)	// only add label if one doesn't already exist
+	if (options.AddLabelAtStart)
 	{
-		char labelName[16];
-		const char* pPrefix = "data";
+		std::string labelText = options.LabelName;
 
-		if (options.DataType == EDataType::Bitmap)
-			pPrefix = "bitmap";
-		else if (options.DataType == EDataType::CharacterMap)
-			pPrefix = "charmap";
-		else if (options.DataType == EDataType::Text)
-			pPrefix = "text";
+		// generate label if none is supplied
+		if (labelText.empty())
+		{
+			char labelName[16];
+			const char* pPrefix = "data";
 
-		snprintf(labelName,16, "%s_%s",pPrefix,NumStr(dataAddress));
-		FLabelInfo* pLabel = AddLabel(state, dataAddress, labelName, ELabelType::Data);
+			if (options.DataType == EDataType::Bitmap)
+				pPrefix = "bitmap";
+			else if (options.DataType == EDataType::CharacterMap)
+				pPrefix = "charmap";
+			else if (options.DataType == EDataType::Text)
+				pPrefix = "text";
+
+			snprintf(labelName, 16, "%s_%s", pPrefix, NumStr(dataAddress));
+			labelText = labelName;
+		}
+
+		// Add or rename label
+		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(dataAddress);
+		if (pLabel == nullptr)
+			pLabel = AddLabel(state, dataAddress, labelText.c_str(), ELabelType::Data);
+		else
+			SetLabelName(state, pLabel, labelText.c_str());
 		
 		pLabel->Global = true;
 	}
@@ -1069,6 +1084,10 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 		{
 			pDataInfo->CharSetAddress = options.CharacterSet;
 			pDataInfo->EmptyCharNo = options.EmptyCharNo;
+		}
+		else if (options.DataType == EDataType::Bitmap)
+		{
+			pDataInfo->GraphicsSetRef = options.GraphicsSetRef;
 		}
 
 		// iterate through each memory location

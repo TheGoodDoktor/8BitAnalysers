@@ -114,10 +114,11 @@ void* FSpectrumEmu::GetCPUEmulator(void) const
 }
 
 
-void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address, int charWidth)
+void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address)
 {
-	GraphicsViewerGoToAddress(address);
-	GraphicsViewerSetCharWidth(charWidth);
+	GraphicsViewer.GoToAddress(address);
+	//GraphicsViewerGoToAddress(address);
+	//GraphicsViewerSetCharWidth(charWidth);
 }
 
 
@@ -649,8 +650,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		}
 	}
 
-	GraphicsViewer.pEmu = this;
-	InitGraphicsViewer(GraphicsViewer);
+	GraphicsViewer.Init(this);
 	IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
@@ -778,7 +778,7 @@ void FSpectrumEmu::Shutdown()
 
 	SaveGlobalConfig(kGlobalConfigFilename);
 
-	ShutdownGraphicsViewer(GraphicsViewer);
+	GraphicsViewer.Shutdown();
 }
 
 void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  true*/)
@@ -801,7 +801,6 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 	pNewGame->pConfig = pGameConfig;
 	pNewGame->pViewerConfig = pGameConfig->pViewerConfig;
 	assert(pGameConfig->pViewerConfig != nullptr);
-	GraphicsViewer.pGame = pNewGame;
 	pActiveGame = pNewGame;
 	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pGameConfig);
 	GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
@@ -828,6 +827,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 			romJsonFName = root + kRomInfo128JsonFile;
 
 		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
 		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 		if (FileExists(analysisJsonFName.c_str()))
@@ -837,6 +837,8 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 		}
 		else
 			LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
+
+		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
 		LoadGameState(this, saveStateFName.c_str());
 
@@ -897,11 +899,13 @@ void FSpectrumEmu::SaveCurrentGameData()
 			const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
 			const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 			const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+			const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
 			const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 			const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 			EnsureDirectoryExists(std::string(root + "Configs").c_str());
 			EnsureDirectoryExists(std::string(root + "GameData").c_str());
 			EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
+			EnsureDirectoryExists(std::string(root + "GraphicsSets").c_str());
 			EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
 			EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
 
@@ -923,6 +927,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 			SaveGameState(this, saveStateFName.c_str());
 			ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 			ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+			GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
 		}
 	}
 
@@ -1716,7 +1721,7 @@ void FSpectrumEmu::DrawUI()
 	}
 #endif
 
-	DrawGraphicsViewer(GraphicsViewer);
+	GraphicsViewer.Draw();
 	DrawMemoryTools();
 
 	// COde analysis views

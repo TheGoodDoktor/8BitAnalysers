@@ -18,18 +18,65 @@ static int kScreenViewerWidth = 256;
 static int kScreenViewerHeight = 192;
 
 
-bool InitGraphicsViewer(FGraphicsViewerState &state)
+bool FGraphicsViewerState::Init(FSpectrumEmu* emuPtr)
 {
-	state.pGraphicsView = new FZXGraphicsView(kGraphicsViewerWidth, kGraphicsViewerHeight);
-	state.pScreenView = new FZXGraphicsView(kScreenViewerWidth, kScreenViewerHeight);
+	pEmu = emuPtr;
+	const FCodeAnalysisState& state = pEmu->CodeAnalysis;
+
+	assert(pGraphicsView == nullptr);
+	assert(pScreenView == nullptr);
+	pGraphicsView = new FZXGraphicsView(kGraphicsViewerWidth, kGraphicsViewerHeight);
+	pScreenView = new FZXGraphicsView(kScreenViewerWidth, kScreenViewerHeight);
 
 	return true;
 }
 
-void ShutdownGraphicsViewer(FGraphicsViewerState& state)
+void FGraphicsViewerState::Shutdown(void)
 {
-	delete state.pGraphicsView;
-	delete state.pScreenView;
+	delete pGraphicsView;
+	pGraphicsView = nullptr;
+	delete pScreenView;
+	pScreenView = nullptr;
+}
+
+void FGraphicsViewerState::GoToAddress(FAddressRef address)
+{
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+
+	const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
+	if (pDataInfo->DataType == EDataType::Bitmap)
+	{
+		// see if we can find a graphics set
+		const auto& graphicsSetIt = GraphicSets.find(pDataInfo->GraphicsSetRef);
+		if (graphicsSetIt != GraphicSets.end())
+		{
+			const FGraphicsSet& graphicsSet = graphicsSetIt->second;
+			XSizePixels = graphicsSet.XSizePixels;
+			XSizePixels = graphicsSet.XSizePixels;
+			ImageCount = graphicsSet.Count;
+			address = graphicsSet.Address;
+		}
+		else
+		{
+			XSizePixels = pDataInfo->ByteSize * 8;
+		}
+	}
+
+	const FCodeAnalysisBank* pBank = state.GetBank(address.BankId);
+
+	if (pBank == nullptr || pBank->IsMapped())	// default to physical memory view
+	{
+		AddressOffset = address.Address;
+		bShowPhysicalMemory = true;
+	}
+	else
+	{
+		AddressOffset = address.Address - pBank->GetMappedAddress();
+		Bank = address.BankId;
+		bShowPhysicalMemory = false;
+	}
+
+	
 }
 
 // speccy colour CLUT
@@ -45,22 +92,28 @@ static const uint32_t g_kColourLUT[8] =
 	0xFFFFFFFF,     // 7 - white
 };
 
-uint16_t GetAddressOffsetFromPositionInView(const FGraphicsViewerState &viewerState, int x,int y)
+uint16_t FGraphicsViewerState::GetAddressOffsetFromPositionInView(int x,int y) const
 {
-	const int xSizeChars = viewerState.XSizePixels >> 3;
-	const FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;
-	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
-	const FCodeAnalysisBank* pBank = state.GetBank(viewerState.Bank);
-	const uint16_t addrInput = viewerState.AddressOffset;
+	const int scaledViewWidth = kGraphicsViewerWidth / ViewScale;
+	const int scaledViewHeight = kGraphicsViewerHeight / ViewScale;
+	const int scaledX = x / ViewScale;
+	const int scaledY = y / ViewScale;
+
+	const int xSizeChars = XSizePixels >> 3;
+	const FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	const int kHorizontalDispCharCount = (scaledViewWidth / 8);
+	const FCodeAnalysisBank* pBank = state.GetBank(Bank);
+	const uint16_t addrInput = AddressOffset;
 	const int xCount = kHorizontalDispCharCount / xSizeChars;
 	const int xSize = xCount * xSizeChars;
-	const int xp = std::max(std::min(xSize, x / 8), 0);
-	const int yp = std::max(std::min(kGraphicsViewerHeight, y), 0);
+	const int xp = std::max(std::min(xSize, (scaledX / 8)), 0);
+	const int yp = std::max(std::min(scaledViewHeight, scaledY), 0);
 	const int column = xp / xSizeChars;
-	const int columnSize = kGraphicsViewerHeight * xSizeChars;
+	const int columnSize = scaledViewHeight * xSizeChars;
 
-	ImGui::Text("xp: %d, yp: %d, column: %d", xp, yp, column);
-	return ((addrInput + xp) + (column * columnSize) + (y * xSizeChars)) % viewerState.MemorySize;
+	//ImGui::Text("ScaledX: %d, Scaled Y: %d", scaledX, scaledY);
+	//ImGui::Text("xp: %d, yp: %d, column: %d", xp, yp, column);
+	return (addrInput + (column * columnSize) + (scaledY * xSizeChars)) % MemorySize;
 }
 
 uint8_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
@@ -94,10 +147,9 @@ uint8_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t
 	return 7;
 }
 
-void DrawMemoryBankAsGraphicsColumn(FGraphicsViewerState& viewerState, int16_t bankId, uint16_t memAddr, int xPos, int columnWidth)
+void FGraphicsViewerState::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth)
 {
-	FZXGraphicsView* pGraphicsView = viewerState.pGraphicsView;
-	FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
 	FCodeAnalysisBank* pBank = state.GetBank(bankId);
 	const uint16_t bankSizeMask = pBank->SizeMask;
 
@@ -108,7 +160,7 @@ void DrawMemoryBankAsGraphicsColumn(FGraphicsViewerState& viewerState, int16_t b
 			const uint16_t bankAddr = memAddr & bankSizeMask;
 			const uint8_t charLine = pBank->Memory[bankAddr];
 			FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
-			const uint8_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo,viewerState.HeatmapThreshold);
+			const uint8_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo,HeatmapThreshold);
 			pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col);
 
 			memAddr++;
@@ -118,25 +170,15 @@ void DrawMemoryBankAsGraphicsColumn(FGraphicsViewerState& viewerState, int16_t b
 
 // WIP
 // the idea is to store graphic sets that run sequentially in memory as these structures and have a viewer for them
-struct FGraphicSet
-{
-	FAddressRef	Address;	// start address of images
-	int			XSize;	// width in chars
-	int			YSize;	// height in scanlines
-	int			Count;	// number of images
-};
+
 
 // draw a graphic set to a graphics view
-void DrawGraphicSetToView(FZXGraphicsView* pGraphicsView, const FCodeAnalysisState& state, const FGraphicSet& graphic)
+void DrawGraphicsSetToView(FZXGraphicsView* pGraphicsView, const FCodeAnalysisState& state, const FGraphicsSet& graphic)
 {
 }
 
-void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState);
-void DrawScreenViewer(FGraphicsViewerState& viewerState);
-
-
 // Viewer to view spectrum graphics
-void DrawGraphicsViewer(FGraphicsViewerState& viewerState)
+void FGraphicsViewerState::Draw()
 {
 	if (ImGui::Begin("Graphics View"))
 	{
@@ -144,119 +186,208 @@ void DrawGraphicsViewer(FGraphicsViewerState& viewerState)
 		{
 			if (ImGui::BeginTabItem("GFX"))
 			{
-				DrawCharacterGraphicsViewer(viewerState);
+				DrawCharacterGraphicsViewer();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Screen"))
 			{
-				DrawScreenViewer(viewerState);
+				DrawScreenViewer();
 				ImGui::EndTabItem();
 			}
 		}
 		ImGui::EndTabBar();
-
 	}
 
 	ImGui::End();
 }
 
-void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
+// UI widget - move?
+bool StepInt(const char* title, int& val, int stepAmount)
 {
-	FZXGraphicsView* pGraphicsView = viewerState.pGraphicsView;
-	FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;
-	FCodeAnalysisBank* pBank = state.GetBank(viewerState.Bank);
+	const int oldVal = val;
+	ImGui::PushID(title);
+	ImGui::Text(title);
+	ImGui::SameLine();
+	if (ImGui::Button("<<"))
+		val -= stepAmount;
+	ImGui::SameLine();
+	if (ImGui::Button(">>"))
+		val += stepAmount;
+	ImGui::PopID();
 
-	int byteOff = 0;
+	return val != oldVal;
+}
+
+void FGraphicsViewerState::UpdateCharacterGraphicsViewerImage(void)
+{
+	//FZXGraphicsView* pGraphicsView = viewerState.pGraphicsView;
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
 	const int kVerticalDispPixCount = kGraphicsViewerHeight;
 
-	// maybe find a better way to go between physical address space and banks
-	if (ImGui::BeginCombo("Bank", GetBankText(state, viewerState.Bank)))
+	XSizePixels = std::min(std::max(8, XSizePixels), kHorizontalDispCharCount * 8);
+	YSizePixels = std::min(std::max(1, YSizePixels), kVerticalDispPixCount);
+
+	const int scaledHDispCharCount = kHorizontalDispCharCount / ViewScale;
+	const int scaledVDispPixCount = kVerticalDispPixCount / ViewScale;
+	const int xcount = scaledHDispCharCount / (XSizePixels >> 3);
+	const int ycount = scaledVDispPixCount / YSizePixels;
+
+	int y = 0;
+	int address = AddressOffset;
+	const int xSizeChars = XSizePixels >> 3;
+
+	if (ViewMode == GraphicsViewMode::Character)
 	{
-		if (ImGui::Selectable(GetBankText(state, -1), viewerState.Bank == -1))
+		for (int x = 0; x < xcount; x++)
 		{
-			viewerState.Bank = -1;
-			viewerState.MemorySize = 0x10000;	// 64K
+			const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(address) : Bank;
+			assert(bankId != -1);
+			DrawMemoryBankAsGraphicsColumn(bankId, address & 0x3fff, x * XSizePixels, xSizeChars);
+
+			address += xSizeChars * scaledVDispPixCount;
 		}
-		const auto& banks = state.GetBanks();
-		for (const auto& bank : banks)
+	}
+	else if (ViewMode == GraphicsViewMode::CharacterWinding)
+	{
+		const int graphicsUnitSize = (XSizePixels >> 3) * YSizePixels;
+		int offsetX = 0;
+		int offsetY = 0;
+		for (int y = 0; y < ycount; y++)
 		{
-			if (ImGui::Selectable(GetBankText(state, bank.Id), viewerState.Bank == bank.Id))
+			for (int x = 0; x < xcount; x++)
 			{
-				FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
-				viewerState.Bank = bank.Id;
-				viewerState.AddressOffset = 0;
-				viewerState.MemorySize = pNewBank->GetSizeBytes();
+				// draw single item
+				for (int yLine = 0; yLine < YSizePixels; yLine++)	// loop down scan lines
+				{
+					for (int xChar = 0; xChar < xSizeChars; xChar++)
+					{
+						const uint8_t* pImage = pEmu->GetMemPtr(address);
+						const int xp = ((yLine & 1) == 0) ? xChar : (xSizeChars - 1) - xChar;
+						if (address + graphicsUnitSize < 0xffff)
+							pGraphicsView->DrawCharLine(*pImage, offsetX + (xp * 8), offsetY + yLine);
+						address++;
+					}
+				}
 
+				offsetX += XSizePixels;
 			}
-		}	
+			offsetX = 0;
+			offsetY += YSizePixels;
+		}
+		address += graphicsUnitSize;
+	}
+}
 
-		ImGui::EndCombo();
+void FGraphicsViewerState::DrawCharacterGraphicsViewer(void)
+{
+	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	FCodeAnalysisBank* pBank = state.GetBank(Bank);
+
+	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
+	const int kVerticalDispPixCount = kGraphicsViewerHeight;
+
+	if (ImGui::Checkbox("Physical Memory", &bShowPhysicalMemory))
+	{
+		if (bShowPhysicalMemory == true)
+		{
+			AddressOffset = 0;
+			MemorySize = 65536;
+		}
+		else
+		{
+			// get the first bank - better way?
+			if(Bank == -1)
+				Bank = state.GetBanks()[0].Id;
+
+			FCodeAnalysisBank* pNewBank = state.GetBank(Bank);
+			AddressOffset = 0;
+			MemorySize = pNewBank->GetSizeBytes();
+		}
 	}
 
-	ImGui::Combo("ViewMode", (int*)&viewerState.ViewMode, "Character\0CharacterWinding", (int)GraphicsViewMode::Count);
+	// show combo for banked mode
+	if (bShowPhysicalMemory == false)
+	{
+		if (ImGui::BeginCombo("Bank", GetBankText(state, Bank)))
+		{
+			const auto& banks = state.GetBanks();
+			for (const auto& bank : banks)
+			{
+				if (ImGui::Selectable(GetBankText(state, bank.Id), Bank == bank.Id))
+				{
+					FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
+					Bank = bank.Id;
+					AddressOffset = 0;
+					MemorySize = pNewBank->GetSizeBytes();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+	}
+
+	ImGui::Combo("ViewMode", (int*)&ViewMode, "Character\0CharacterWinding", (int)GraphicsViewMode::Count);
+
+	// View Scale
+	ImGui::InputInt("Scale", &ViewScale, 1, 1);
+	ViewScale = std::max(1, ViewScale);	// clamp
+	const int viewSizeX = XSizePixels * ViewScale;
+	const int viewSizeY = YSizePixels * ViewScale;
+	const int xChars = XSizePixels >> 3;
 
 	// Address input
-	int addrInput = pBank ? pBank->GetMappedAddress() + viewerState.AddressOffset : viewerState.AddressOffset;
-	//ImGui::Text("viewerState Map Address: %s", NumStr((uint16_t)addrInput));
+	int addrInput = pBank ? pBank->GetMappedAddress() + AddressOffset : AddressOffset;
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	pGraphicsView->Draw();
+
+	// Zoomed graphics view - put into class?
+	ImVec2 uv0(0, 0);
+	ImVec2 uv1(1.0f / (float)ViewScale, 1.0f / (float)ViewScale);
+	ImVec2 size((float)kGraphicsViewerWidth, (float)kGraphicsViewerHeight);
+	pGraphicsView->UpdateTexture();
+	ImGui::Image((void*)pGraphicsView->GetTexture(), size, uv0, uv1);
+
 	if (ImGui::IsItemHovered())
 	{
-		const int xp = (int)(io.MousePos.x - pos.x);// -(viewerState.XSizePixels / 2));
-		const int yp = std::max((int)(io.MousePos.y - pos.y - (viewerState.YSizePixels/2)),0);
+		const int xp = (int)(io.MousePos.x - pos.x);
+		const int yp = std::max((int)(io.MousePos.y - pos.y - (YSizePixels / 2)), 0);
 
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const int xChars = viewerState.XSizePixels >> 3;
-		const int rx = (xp / viewerState.XSizePixels) * viewerState.XSizePixels;
-		const int ry = yp;// ((yp / viewerState.YSizePixels) * viewerState.YSizePixels);
+		const int rx = (xp / viewSizeX) * viewSizeX;
+		const int ry = (yp / ViewScale) * ViewScale;
 		const float rxp = pos.x + (float)rx;
 		const float ryp = pos.y + (float)ry;
-		dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewerState.XSizePixels, ryp + (float)viewerState.YSizePixels), 0xff00ffff);
-		//const int addressOffset = (xp / 8) + (yp * (256 / 8));
+		dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewSizeX, ryp + (float)viewSizeY), 0xff00ffff);
 		ImGui::BeginTooltip();
-		const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInView(viewerState,rx, ry);
+		const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInView(rx, ry);
 		FAddressRef ptrAddress;
 		if (pBank != nullptr)
 			ptrAddress = FAddressRef(pBank->Id, gfxAddressOffset + pBank->GetMappedAddress());
 		else
 			ptrAddress = state.AddressRefFromPhysicalAddress(gfxAddressOffset);
-		
+
 		if (ImGui::IsMouseDoubleClicked(0))
 		{
 			state.GetFocussedViewState().GoToAddress(ptrAddress);
 			addrInput = pBank ? pBank->GetMappedAddress() + gfxAddressOffset : gfxAddressOffset;
 		}
 		if (ImGui::IsMouseClicked(0))
-			viewerState.ClickedAddress = ptrAddress;
+			ClickedAddress = ptrAddress;
 
 		ImGui::Text("%s", NumStr(ptrAddress.Address));
 		ImGui::SameLine();
 		DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
 		ImGui::EndTooltip();
 	}
-	
+		
 	ImGui::SameLine();
 
 	// simpler slider
 	ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff);
-
-	/*static int kRowSize = kHorizontalDispCharCount * 8;
-	int addrLine = addrInput / kRowSize;
-	int addrOffset = addrInput % kRowSize;
-
-
-	if (ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrLine, 0, 0xffff / kRowSize))
-	{
-		addrInput = (addrLine * kRowSize) + addrOffset;
-	}
-	if (ImGui::SliderInt("##offset", &addrOffset, 0, kRowSize -1))
-	{
-		addrInput = (addrLine * kRowSize) + addrOffset;
-	}*/
 	
-	ImGui::SetNextItemWidth(100.0f);
+	ImGui::SetNextItemWidth(120.0f);
 	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
 		ImGui::InputInt("##Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsDecimal);
 	else
@@ -267,129 +398,116 @@ void DrawCharacterGraphicsViewer(FGraphicsViewerState& viewerState)
 	//ImGui::SliderInt("Heatmap frame threshold", &viewerState.HeatmapThreshold, 0, 60);
 	pGraphicsView->Clear(0xff000000);
 
-	FCodeAnalysisBank* pClickedBank = state.GetBank(viewerState.ClickedAddress.BankId);
+	FCodeAnalysisBank* pClickedBank = state.GetBank(ClickedAddress.BankId);
 	if(pClickedBank !=nullptr && state.Config.bShowBanks)
-		ImGui::Text("Clicked Address: [%s]%s", pClickedBank->Name.c_str(), NumStr(viewerState.ClickedAddress.Address));
+		ImGui::Text("Clicked Address: [%s]%s", pClickedBank->Name.c_str(), NumStr(ClickedAddress.Address));
 	else
-		ImGui::Text("Clicked Address: %s", NumStr(viewerState.ClickedAddress.Address));
+		ImGui::Text("Clicked Address: %s", NumStr(ClickedAddress.Address));
 	//ImGui::SameLine();
-	if (viewerState.ClickedAddress.IsValid())
+	if (ClickedAddress.IsValid())
 	{
-		DrawAddressLabel(state, state.GetFocussedViewState(), viewerState.ClickedAddress);
+		DrawAddressLabel(state, state.GetFocussedViewState(), ClickedAddress);
 		if (ImGui::CollapsingHeader("Details"))
 		{
-			const int16_t bankId = viewerState.Bank != -1 ? viewerState.Bank : state.GetBankFromAddress(viewerState.ClickedAddress.Address);
-			const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(viewerState.ClickedAddress), viewerState.ClickedAddress);
+			const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(ClickedAddress.Address) : Bank;
+			const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(ClickedAddress), ClickedAddress);
 			DrawDataDetails(state, state.GetFocussedViewState(), item);
 		}
 	}
 	
-	const int graphicsUnitSize = (viewerState.XSizePixels>>3) * viewerState.YSizePixels;
+	const int graphicsUnitSize = (XSizePixels >> 3) * YSizePixels;
 
-	//ImGui::Checkbox("Column Mode", &state.bColumnMode);
-	if (ImGui::Button("<<"))
-		addrInput -= graphicsUnitSize;
-	ImGui::SameLine();
-	if (ImGui::Button(">>"))
-		addrInput += graphicsUnitSize;
-
-	viewerState.AddressOffset = pBank != nullptr ? (int)addrInput - pBank->GetMappedAddress() : addrInput;
+	// step address based on image attributes
+	StepInt("Step Line", addrInput, xChars);
+	StepInt("Step Image", addrInput, graphicsUnitSize);
 
 	// draw 64 * 8 bytes
-	ImGui::InputInt("XSize", &viewerState.XSizePixels, 8, 8);
-	ImGui::InputInt("YSize", &viewerState.YSizePixels, viewerState.YSizePixelsFineCtrl? 1:8, 8);
+	ImGui::InputInt("XSize", &XSizePixels, 8, 8);
+	ImGui::InputInt("YSize", &YSizePixels, YSizePixelsFineCtrl? 1:8, 8);
 	ImGui::SameLine();
-	ImGui::Checkbox("Fine", &viewerState.YSizePixelsFineCtrl);
-	ImGui::InputInt("Count", &viewerState.ImageCount, 1, 1);
-	//ImGui::InputInt("YSize Fine", &viewerState.YSizePixels, 1, 8);
-#if 0
-	ImGui::InputInt("Count", &viewerState.ImageCount, 1, 4);
+	ImGui::Checkbox("Fine", &YSizePixelsFineCtrl);
+	ImGui::InputInt("Count", &ImageCount, 1, 1);
 
-	ImGui::Separator();
-	ImGui::InputText("Config Name", &viewerState.NewConfigName);
-	ImGui::SameLine();
-	if (ImGui::Button("Store"))
+	UpdateCharacterGraphicsViewerImage();	// update texture data
+
+	// Image Set UI - move to function
+	if (ImageCount > 0)
 	{
-		// Store this in the config map
-		auto& spriteConfigs = viewerState.pGame->pConfig->SpriteConfigs;
-		if(spriteConfigs.find(viewerState.NewConfigName) == spriteConfigs.end())	// not found - add
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const int scaledVDispPixCount = kVerticalDispPixCount / ViewScale;
+		const int ycount = scaledVDispPixCount / YSizePixels;
+
+		for (int i = 0; i < ImageCount; i++)
 		{
-			FSpriteDefConfig newConfig;
-			newConfig.BaseAddress = viewerState.AddressOffset;	// TODO: fix for banks
-			newConfig.Count = viewerState.ImageCount;
-			newConfig.Width = viewerState.XSize;
-			newConfig.Height = viewerState.YSize / 8;	// sprite height in chars atm - TODO: move to line count
-			spriteConfigs[viewerState.NewConfigName] = newConfig;
-
-			// TODO: tell sprite view to refresh
-			GenerateSpriteListsFromConfig(viewerState, viewerState.pGame->pConfig);
-
-			// TODO: Save Config?
+			ImVec2 rectPos;
+			rectPos.x = pos.x + static_cast<float>(i / ycount) * (float)viewSizeX;
+			rectPos.y = pos.y + static_cast<float>(i % ycount) * (float)viewSizeY;
+			dl->AddRect(rectPos, ImVec2(rectPos.x + (float)viewSizeX, rectPos.y + (float)viewSizeY), 0xff00ff00);
 		}
-			
-	}
-#endif
-	viewerState.XSizePixels = std::min(std::max(8, viewerState.XSizePixels), kHorizontalDispCharCount * 8);
-	viewerState.YSizePixels = std::min(std::max(1, viewerState.YSizePixels), kVerticalDispPixCount);
 
-	const int xcount = kHorizontalDispCharCount / (viewerState.XSizePixels >> 3);
-	const int ycount = kVerticalDispPixCount / viewerState.YSizePixels;
+		ImGui::InputText("Image Set Name", &ImageSetName);
 
-	int y = 0;
-	int address = viewerState.AddressOffset;
-	int xSizeChars = viewerState.XSizePixels >> 3;
-
-	if (viewerState.ViewMode == GraphicsViewMode::Character)
-	{
-		for (int x = 0; x < xcount; x++)
+		// currently this only works for physical memory
+		if (ImGui::Button("Format Memory"))
 		{
-			int16_t bankId = viewerState.Bank;
-			if (bankId == -1)
-				bankId = state.GetBankFromAddress(address);
+			FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addrInput);
+			uint16_t address = addrInput;
 
-			assert(bankId != -1);
-			DrawMemoryBankAsGraphicsColumn(viewerState, bankId, address & 0x3fff, x * viewerState.XSizePixels, xSizeChars);
-			//	DrawMemoryAsGraphicsColumn(viewerState, address, x * viewerState.XSize * 8, viewerState.XSize);
-
-			address += xSizeChars * kVerticalDispPixCount;
-		}
-	}
-	else if (viewerState.ViewMode == GraphicsViewMode::CharacterWinding)
-	{
-		int offsetX = 0;
-		int offsetY = 0;
-		for (int y = 0; y < ycount; y++)
-		{
-			for (int x = 0; x < xcount; x++)
+			for (int i = 0; i < ImageCount; i++)
 			{
-				// draw single item
-				for (int yLine = 0; yLine < viewerState.YSizePixels; yLine++)	// loop down scan lines
+				FDataFormattingOptions format;
+				format.AddLabelAtStart = true;
+
+				// Generate label
+				if (ImageSetName.empty() == false)
 				{
-					for (int xChar = 0; xChar < xSizeChars; xChar++)
+					if (ImageCount > 1)
 					{
-						const uint8_t* pImage = viewerState.pEmu->GetMemPtr(address);
-						const int xp = ((yLine & 1) == 0) ? xChar : (xSizeChars - 1) - xChar;
-						if (address + graphicsUnitSize < 0xffff)
-							pGraphicsView->DrawCharLine(*pImage, offsetX + (xp * 8), offsetY + yLine);
-						address++;
+						char numStr[8];
+						sprintf(numStr, "_%d", i);
+						format.LabelName = ImageSetName + numStr;
+					}
+					else
+					{
+						format.LabelName = ImageSetName;
 					}
 				}
 
-				offsetX += viewerState.XSizePixels;
+				format.SetupForBitmap(address, XSizePixels, YSizePixels);
+				format.GraphicsSetRef = addrRef;
+				FormatData(state, format);
+				state.SetCodeAnalysisDirty(address);
+
+				address += graphicsUnitSize;
 			}
-			offsetX = 0;
-			offsetY += viewerState.YSizePixels;
+
+			// Add graphic set
+			FGraphicsSet graphicsSet;
+			graphicsSet.Address = addrRef;
+			graphicsSet.XSizePixels = XSizePixels;
+			graphicsSet.YSizePixels = YSizePixels;
+			graphicsSet.Count = ImageCount;
+			GraphicSets[addrRef] = graphicsSet;
 		}
-		address += graphicsUnitSize;
+
+		// TODO: We could have something to store the image set and reference it in address space somehow
+		StepInt("Step Image Set", addrInput, graphicsUnitSize * ImageCount);
+
+		for (const auto& graphicsSetIt : GraphicSets)
+		{
+
+		}
 	}
+
+	AddressOffset = pBank != nullptr ? (int)addrInput - pBank->GetMappedAddress() : addrInput;
 }
 
 // http://www.breakintoprogram.co.uk/computers/zx-spectrum/screen-memory-layout
-void DrawScreenViewer(FGraphicsViewerState& viewerState)
+void FGraphicsViewerState::DrawScreenViewer()
 {
-	FZXGraphicsView* pGraphicsView = viewerState.pScreenView;
-	const FCodeAnalysisState& state = viewerState.pEmu->CodeAnalysis;	
-	const int16_t bankId = viewerState.Bank == -1 ? state.GetBankFromAddress(0x4000) : viewerState.Bank;
+	FZXGraphicsView* pGraphicsView = pScreenView;
+	const FCodeAnalysisState& state = pEmu->CodeAnalysis;	
+	const int16_t bankId = Bank == -1 ? state.GetBankFromAddress(0x4000) : Bank;
 	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
 
 	uint16_t bankAddr = 0;
@@ -408,7 +526,7 @@ void DrawScreenViewer(FGraphicsViewerState& viewerState)
 		{
 			const uint8_t charLine = pBank->Memory[bankAddr];
 			const FCodeAnalysisPage& page = pBank->Pages[bankAddr >> 10];
-			const uint8_t col = GetHeatmapColourForMemoryAddress(page, bankAddr, state.CurrentFrameNo, viewerState.HeatmapThreshold);
+			const uint8_t col = GetHeatmapColourForMemoryAddress(page, bankAddr, state.CurrentFrameNo, HeatmapThreshold);
 
 			for (int xpix = 0; xpix < 8; xpix++)
 			{
@@ -422,4 +540,43 @@ void DrawScreenViewer(FGraphicsViewerState& viewerState)
 	}
 
 	pGraphicsView->Draw();
+}
+
+// Save/Load Graphics sets to json
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include <json.hpp>
+using json = nlohmann::json;
+
+bool FGraphicsViewerState::SaveGraphicsSets(const char* pJsonFileName)
+{
+	return false; // TODO: remove when saving is implemented
+	json jsonGraphicsSets;
+
+	// TODO: fill up document
+
+	// Write file out
+	std::ofstream outFileStream(pJsonFileName);
+	if (outFileStream.is_open())
+	{
+		outFileStream << std::setw(4) << jsonGraphicsSets << std::endl;
+		return true;
+	}
+
+	return false;
+}
+
+bool FGraphicsViewerState::LoadGraphicsSets(const char* pJsonFileName)
+{
+	std::ifstream inFileStream(pJsonFileName);
+	if (inFileStream.is_open() == false)
+		return false;
+
+	json jsonGraphicsSets;
+
+	inFileStream >> jsonGraphicsSets;
+	inFileStream.close();
+
+	return true;
 }

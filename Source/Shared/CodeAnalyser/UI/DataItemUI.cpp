@@ -723,7 +723,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		ImGui::InputScalar("Null Character", ImGuiDataType_U8, &pDataInfo->EmptyCharNo,0,0,format,flags);
 	}
 	break;
-
+#if 0
 	case EDataType::Image:
 		// This is currently disabled
 		if (0)
@@ -781,6 +781,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			pImageData->GraphicsView->Draw();
 		}
 		break;
+#endif
 	default:
 		break;
 	}

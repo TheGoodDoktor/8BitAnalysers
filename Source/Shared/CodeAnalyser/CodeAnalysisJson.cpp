@@ -278,21 +278,15 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 	if (pDataInfo->Comment.empty() == false)
 		dataInfoJson["Comment"] = pDataInfo->Comment;
 
-	// These have moved to a binary file
-	//for (const auto& read : pDataInfo->Reads.GetReferences())
-	//	dataInfoJson["Reads"].push_back(read.InstructionAddress);
-
-	//for (const auto& write : pDataInfo->Writes.GetReferences())
-	//	dataInfoJson["Writes"].push_back(write.InstructionAddress);
-
-	//if (pDataInfo->LastWriter != 0)
-	//	dataInfoJson["LastWriter"] = pDataInfo->LastWriter;
-
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
 	{
 		dataInfoJson["CharSetAddressRef"] = pDataInfo->CharSetAddress.Val;
 		dataInfoJson["EmptyCharNo"] = pDataInfo->EmptyCharNo;
+	}
+	else if (pDataInfo->DataType == EDataType::Bitmap)
+	{
+		dataInfoJson["GraphicsSetRef"] = pDataInfo->GraphicsSetRef.Val;
 	}
 
 	if (dataInfoJson.size() != 0)	// only write it if it deviates from the normal
@@ -489,6 +483,8 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 			pDataInfo->CharSetAddress = state.AddressRefFromPhysicalAddress(dataInfoJson["CharSetAddress"]);	// legacy
 		if (dataInfoJson.contains("CharSetAddressRef"))
 			pDataInfo->CharSetAddress.Val = dataInfoJson["CharSetAddressRef"];
+		if (dataInfoJson.contains("GraphicsSetRef"))
+			pDataInfo->GraphicsSetRef.Val = dataInfoJson["GraphicsSetRef"];
 		if (dataInfoJson.contains("EmptyCharNo"))
 			pDataInfo->EmptyCharNo = dataInfoJson["EmptyCharNo"];
 	}

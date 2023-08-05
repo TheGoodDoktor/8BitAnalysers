@@ -5,7 +5,7 @@
 #include <cinttypes>
 
 class FZXGraphicsView;
-struct FGraphicsViewerState;
+class FGraphicsViewerState;
 class FSpectrumEmu;
 struct FGameConfig;
 

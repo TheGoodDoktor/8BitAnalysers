@@ -696,13 +696,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 				
 		if (ImGui::Selectable("View in graphics viewer"))
 		{
-			FDataInfo* pDataItem = state.GetReadDataInfoForAddress(item.AddressRef);
-			int byteSize = 1;
-			if (pDataItem->DataType == EDataType::Bitmap)
-			{
-				byteSize = pDataItem->ByteSize;
-			}
-			state.CPUInterface->GraphicsViewerSetView(item.AddressRef, byteSize);
+			state.CPUInterface->GraphicsViewerSetView(item.AddressRef);
 		}
 
 		ImGui::EndPopup();

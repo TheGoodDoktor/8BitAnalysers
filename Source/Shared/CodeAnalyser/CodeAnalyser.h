@@ -33,9 +33,7 @@ public:
 	virtual FAddressRef	GetPC(void) = 0;
 	virtual uint16_t	GetSP(void) = 0;
 
-    // FIXME - no other implementation for the method - unable to instantiate abstract class
-    virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) {};
-	//virtual void	GraphicsViewerSetView(FAddressRef address, int charWidth) = 0;
+    virtual void	GraphicsViewerSetView(FAddressRef address) {};
 
 	virtual void*	GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
 
@@ -88,19 +86,21 @@ struct FDataFormattingOptions
 	int			ItemSize = 1;
 	int			NoItems = 1;
 	FAddressRef	CharacterSet;
+	FAddressRef GraphicsSetRef;
 	uint8_t		EmptyCharNo = 0;
 	bool		ClearCodeInfo = false;
 	bool		ClearLabels = false;
 	bool		AddLabelAtStart = false;
+	std::string	LabelName;
 
 	bool		IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
 	uint16_t	CalcEndAddress() const { return StartAddress + (NoItems * ItemSize) - 1; }
-	void		SetupForBitmap(uint16_t address, int xSize, int ySize)
+	void		SetupForBitmap(uint16_t address, int xSizePixels, int ySizePixels)
 	{
 		DataType = EDataType::Bitmap;
 		StartAddress = address;
-		ItemSize = xSize / 8;
-		NoItems = ySize;
+		ItemSize = xSizePixels / 8;
+		NoItems = ySizePixels;
 	}
 
 	void		SetupForCharmap(uint16_t address, int xSize, int ySize)

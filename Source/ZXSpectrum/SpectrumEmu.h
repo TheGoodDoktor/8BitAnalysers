@@ -125,18 +125,7 @@ public:
 
 	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	//bool		IsAddressBreakpointed(FAddressRef addr) override;
-	//bool		SetExecBreakpointAtAddress(FAddressRef addr, bool bSet) override;
-	//bool		SetDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize,bool bSet) override;
-	//void		Break(void) override;
-	//void		Continue(void) override;
-	//void		StepOver(void) override;
-	//void		StepInto(void) override;
-	//void		StepFrame(void) override;
-	//void		StepScreenWrite(void) override;
-	void		GraphicsViewerSetView(FAddressRef address, int charWidth) override;
-	//bool		ShouldExecThisFrame(void) const override;
-	//bool		IsStopped(void) const override;
+	void		GraphicsViewerSetView(FAddressRef address) override;
 	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
@@ -149,20 +138,22 @@ public:
 	{
 		MemoryAccessHandlers.push_back(handler);
 	}
-
+#if 0
 	void GraphicsViewerGoToAddress(FAddressRef address)
 	{
+		// TODO: this code should be in the graphics viewer
 		const FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(address.BankId);
 		
 		if (pBank == nullptr || pBank->IsMapped())	// default to physical memory view
 		{
 			GraphicsViewer.AddressOffset = address.Address;
-			GraphicsViewer.Bank = -1;
+			GraphicsViewer.bShowPhysicalMemory = true;
 		}
 		else
 		{
 			GraphicsViewer.AddressOffset = address.Address - pBank->GetMappedAddress();
 			GraphicsViewer.Bank = address.BankId;
+			GraphicsViewer.bShowPhysicalMemory = false;
 		}
 	}
 
@@ -170,6 +161,7 @@ public:
 	{
 		GraphicsViewer.XSizePixels = width * 8;
 	}
+#endif
 	// TODO: Make private
 //private:
 	// Emulator 

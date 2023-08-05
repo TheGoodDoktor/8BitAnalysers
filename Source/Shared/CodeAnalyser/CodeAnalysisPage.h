@@ -214,8 +214,9 @@ struct FDataInfo : FItem
 
 	union
 	{
-		FImageData* ImageData = nullptr;	// additional data for images
+		//FImageData* ImageData = nullptr;	// additional data for images
 		FAddressRef	CharSetAddress;	// address of character set
+		FAddressRef	GraphicsSetRef;	// for bitmap data
 		/*struct
 		{
 		};*/

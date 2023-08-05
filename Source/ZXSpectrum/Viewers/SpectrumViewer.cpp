@@ -160,7 +160,7 @@ void FSpectrumViewer::Draw()
 						CharDataFound = codeAnalysis.FindMemoryPattern(CharData, 8, 0, FoundCharDataAddress);
 				}
 
-				pSpectrumEmu->GraphicsViewerGoToAddress(codeAnalysis.AddressRefFromPhysicalAddress(FoundCharDataAddress));
+				pSpectrumEmu->GraphicsViewer.GoToAddress(codeAnalysis.AddressRefFromPhysicalAddress(FoundCharDataAddress));
 			}
 		}
 	}
