@@ -19,6 +19,7 @@ enum class GraphicsViewMode : int
 
 struct FGraphicsSet
 {
+	std::string	Name;
 	FAddressRef	Address;	// start address of images
 	int			XSizePixels;	// width in pixels
 	int			YSizePixels;	// height in pixels
@@ -71,7 +72,7 @@ protected:
 
 	std::string		ImageSetName;
 
-	std::map<FAddressRef, FGraphicsSet>		GraphicSets;
+	std::map<FAddressRef, FGraphicsSet>		GraphicsSets;
 
 	// housekeeping
 	FCodeAnalysisState* pCodeAnalysis = nullptr;

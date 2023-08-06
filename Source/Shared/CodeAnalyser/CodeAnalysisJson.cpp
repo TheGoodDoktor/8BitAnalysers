@@ -483,10 +483,13 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 			pDataInfo->CharSetAddress = state.AddressRefFromPhysicalAddress(dataInfoJson["CharSetAddress"]);	// legacy
 		if (dataInfoJson.contains("CharSetAddressRef"))
 			pDataInfo->CharSetAddress.Val = dataInfoJson["CharSetAddressRef"];
-		if (dataInfoJson.contains("GraphicsSetRef"))
-			pDataInfo->GraphicsSetRef.Val = dataInfoJson["GraphicsSetRef"];
 		if (dataInfoJson.contains("EmptyCharNo"))
 			pDataInfo->EmptyCharNo = dataInfoJson["EmptyCharNo"];
+	}
+	else if (pDataInfo->DataType == EDataType::Bitmap)
+	{
+		if (dataInfoJson.contains("GraphicsSetRef"))
+			pDataInfo->GraphicsSetRef.Val = dataInfoJson["GraphicsSetRef"];
 	}
 }
 

@@ -43,12 +43,12 @@ void FGraphicsViewer::GoToAddress(FAddressRef address)
 	if (pDataInfo->DataType == EDataType::Bitmap)
 	{
 		// see if we can find a graphics set
-		const auto& graphicsSetIt = GraphicSets.find(pDataInfo->GraphicsSetRef);
-		if (graphicsSetIt != GraphicSets.end())
+		const auto& graphicsSetIt = GraphicsSets.find(pDataInfo->GraphicsSetRef);
+		if (graphicsSetIt != GraphicsSets.end())
 		{
 			const FGraphicsSet& graphicsSet = graphicsSetIt->second;
 			XSizePixels = graphicsSet.XSizePixels;
-			XSizePixels = graphicsSet.XSizePixels;
+			YSizePixels = graphicsSet.YSizePixels;
 			ImageCount = graphicsSet.Count;
 			address = graphicsSet.Address;
 		}
@@ -473,17 +473,18 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 			// Add graphic set
 			FGraphicsSet graphicsSet;
+			graphicsSet.Name = ImageSetName;
 			graphicsSet.Address = addrRef;
 			graphicsSet.XSizePixels = XSizePixels;
 			graphicsSet.YSizePixels = YSizePixels;
 			graphicsSet.Count = ImageCount;
-			GraphicSets[addrRef] = graphicsSet;
+			GraphicsSets[addrRef] = graphicsSet;
 		}
 
 		// TODO: We could have something to store the image set and reference it in address space somehow
 		StepInt("Step Image Set", addrInput, graphicsUnitSize * ImageCount);
 
-		for (const auto& graphicsSetIt : GraphicSets)
+		for (const auto& graphicsSetIt : GraphicsSets)
 		{
 
 		}
@@ -503,10 +504,21 @@ using json = nlohmann::json;
 
 bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 {
-	return false; // TODO: remove when saving is implemented
 	json jsonGraphicsSets;
 
-	// TODO: fill up document
+	// Fill up document
+	for (const auto& graphicsSetIt : GraphicsSets)
+	{
+		const FGraphicsSet& set = graphicsSetIt.second;
+		json graphicsSetJson;
+		graphicsSetJson["Name"] = set.Name;
+		graphicsSetJson["AddressRef"] = set.Address.Val;
+		graphicsSetJson["XSizePixels"] = set.XSizePixels;
+		graphicsSetJson["YSizePixels"] = set.YSizePixels;
+		graphicsSetJson["ImageCount"] = set.Count;
+
+		jsonGraphicsSets["GraphicsSets"].push_back(graphicsSetJson);
+	}
 
 	// Write file out
 	std::ofstream outFileStream(pJsonFileName);
@@ -515,6 +527,8 @@ bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 		outFileStream << std::setw(4) << jsonGraphicsSets << std::endl;
 		return true;
 	}
+
+	// TODO: in the future we might want to save out the graphic sets as PNGs - wouldn't that be nice!
 
 	return false;
 }
@@ -529,6 +543,22 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 
 	inFileStream >> jsonGraphicsSets;
 	inFileStream.close();
+
+	if (jsonGraphicsSets.contains("GraphicsSets"))
+	{
+		GraphicsSets.clear();
+
+		for (const auto& graphicsSetJson : jsonGraphicsSets["GraphicsSets"])
+		{
+			FGraphicsSet set;
+			set.Name = graphicsSetJson["Name"];
+			set.Address.Val = graphicsSetJson["AddressRef"];
+			set.XSizePixels = graphicsSetJson["XSizePixels"];
+			set.YSizePixels = graphicsSetJson["YSizePixels"];
+			set.Count = graphicsSetJson["ImageCount"];
+			GraphicsSets[set.Address] = set;
+		}
+	}
 
 	return true;
 }
