@@ -11,8 +11,8 @@ struct FCodeAnalysisPage;
 
 enum class GraphicsViewMode : int
 {
-	Character,	// 8x8 bitmap graphics
-	CharacterWinding,	// winding bitmap (0,0) (1,0) (1,1) (0,1)
+	CharacterBitmap,		// 8x8 bitmap graphics
+	CharacterBitmapWinding,	// winding bitmap (0,0) (1,0) (1,1) (0,1)
 
 	Count
 };
@@ -60,7 +60,7 @@ protected:
 	uint16_t		AddressOffset = 0;	// offset to view from the start of the region (bank or physical address space)
 	uint32_t		MemorySize = 0x10000;	// size of area being viewed
 	FAddressRef		ClickedAddress;
-	GraphicsViewMode	ViewMode = GraphicsViewMode::Character;
+	GraphicsViewMode	ViewMode = GraphicsViewMode::CharacterBitmap;
 	int				ViewScale = 1;
 	int				HeatmapThreshold = 4;
 

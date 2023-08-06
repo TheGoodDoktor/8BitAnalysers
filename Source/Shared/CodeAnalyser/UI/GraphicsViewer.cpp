@@ -206,19 +206,15 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
 	const int kVerticalDispPixCount = kGraphicsViewerHeight;
 
-	XSizePixels = std::min(std::max(8, XSizePixels), kHorizontalDispCharCount * 8);
-	YSizePixels = std::min(std::max(1, YSizePixels), kVerticalDispPixCount);
-
 	const int scaledHDispCharCount = kHorizontalDispCharCount / ViewScale;
 	const int scaledVDispPixCount = kVerticalDispPixCount / ViewScale;
 	const int xcount = scaledHDispCharCount / (XSizePixels >> 3);
 	const int ycount = scaledVDispPixCount / YSizePixels;
 
-	int y = 0;
 	int address = AddressOffset;
 	const int xSizeChars = XSizePixels >> 3;
 
-	if (ViewMode == GraphicsViewMode::Character)
+	if (ViewMode == GraphicsViewMode::CharacterBitmap)
 	{
 		for (int x = 0; x < xcount; x++)
 		{
@@ -229,7 +225,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			address += xSizeChars * scaledVDispPixCount;
 		}
 	}
-	else if (ViewMode == GraphicsViewMode::CharacterWinding)
+	else if (ViewMode == GraphicsViewMode::CharacterBitmapWinding)
 	{
 		const int graphicsUnitSize = (XSizePixels >> 3) * YSizePixels;
 		int offsetX = 0;
@@ -413,9 +409,13 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	// draw 64 * 8 bytes
 	ImGui::InputInt("XSize", &XSizePixels, 8, 8);
+	XSizePixels = std::min(std::max(8, XSizePixels), kHorizontalDispCharCount * 8);
+	
 	ImGui::InputInt("YSize", &YSizePixels, YSizePixelsFineCtrl ? 1 : 8, 8);
 	ImGui::SameLine();
 	ImGui::Checkbox("Fine", &YSizePixelsFineCtrl);
+	YSizePixels = std::min(std::max(1, YSizePixels), kVerticalDispPixCount);
+	
 	ImGui::InputInt("Count", &ImageCount, 1, 1);
 
 	UpdateCharacterGraphicsViewerImage();	// update texture data
