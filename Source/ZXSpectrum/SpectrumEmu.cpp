@@ -12,7 +12,6 @@
 #include "GameViewers/StarquakeViewer.h"
 #include "GameViewers/MiscGameViewers.h"
 #include "Viewers/SpectrumViewer.h"
-#include "Viewers/GraphicsViewer.h"
 #include "Viewers/ZXGraphicsView.h"
 //#include "Viewers/BreakpointViewer.h"
 #include "Viewers/OverviewViewer.h"
@@ -650,7 +649,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		}
 	}
 
-	GraphicsViewer.Init(this);
+	GraphicsViewer.Init(&CodeAnalysis);
 	IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);

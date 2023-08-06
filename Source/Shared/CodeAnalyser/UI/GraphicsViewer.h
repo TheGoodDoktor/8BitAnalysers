@@ -1,17 +1,13 @@
 #pragma once
 
-#include "imgui.h"
 #include <cstdint>
-#include "SpriteViewer.h"
 #include <map>
 #include <string>
-
 #include <CodeAnalyser/CodeAnalyserTypes.h>
 
-class FSpectrumEmu;
-struct FGame;
-class FZXGraphicsView;
-
+class FGraphicsView;
+class FCodeAnalysisState;
+struct FCodeAnalysisPage;
 
 enum class GraphicsViewMode : int
 {
@@ -30,10 +26,10 @@ struct FGraphicsSet
 };
 
 // Graphics Viewer
-class FGraphicsViewerState
+class FGraphicsViewer
 {
 public:
-	bool			Init(FSpectrumEmu* emuPtr);
+	bool			Init(FCodeAnalysisState* pCodeAnalysis);
 	void			Shutdown(void);
 
 	void			GoToAddress(FAddressRef address);
@@ -42,15 +38,23 @@ public:
 
 	bool			SaveGraphicsSets(const char* pFName);
 	bool			LoadGraphicsSets(const char* pFName);
-private:
+
+	// protected methods
+protected:
+	FCodeAnalysisState& GetCodeAnalysis() { return *pCodeAnalysis; }
+	const FCodeAnalysisState& GetCodeAnalysis() const { return *pCodeAnalysis; }
 	void			DrawCharacterGraphicsViewer(void);
-	void			DrawScreenViewer(void);
+	virtual void	DrawScreenViewer(void) = 0;
 
 	uint16_t		GetAddressOffsetFromPositionInView(int x, int y) const;
 
 	void			DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
 	void			UpdateCharacterGraphicsViewerImage(void); // make virtual for other platforms?
+
+	// protected Members
 protected:
+	int				ScreenWidth = 0;
+	int				ScreenHeight = 0;
 	bool			bShowPhysicalMemory = true;
 	int32_t			Bank = -1;
 	uint16_t		AddressOffset = 0;	// offset to view from the start of the region (bank or physical address space)
@@ -67,15 +71,12 @@ protected:
 
 	std::string		ImageSetName;
 
-
 	std::map<FAddressRef, FGraphicsSet>		GraphicSets;
 
 	// housekeeping
-	FZXGraphicsView* pGraphicsView = nullptr;
-	FZXGraphicsView* pScreenView = nullptr;
-public:
-	FSpectrumEmu*			pEmu = nullptr;		// can we phase this out?
-	std::map<std::string, FUISpriteList>	SpriteLists;
-	std::string				SelectedSpriteList;
+	FCodeAnalysisState* pCodeAnalysis = nullptr;
+	FGraphicsView* pGraphicsView = nullptr;
+	FGraphicsView* pScreenView = nullptr;
 };
 
+uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold);

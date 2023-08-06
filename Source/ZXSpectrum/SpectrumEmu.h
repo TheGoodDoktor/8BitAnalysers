@@ -35,7 +35,7 @@
 //#include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "Viewers/ViewerBase.h"
-#include "Viewers/GraphicsViewer.h"
+#include "Viewers/ZXGraphicsViewer.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/FrameTraceViewer.h"
 #include "SnapshotLoaders/GamesList.h"
@@ -181,7 +181,7 @@ public:
 	//Viewers
 	FSpectrumViewer			SpectrumViewer;
 	FFrameTraceViewer		FrameTraceViewer;
-	FGraphicsViewerState	GraphicsViewer;
+	FZXGraphicsViewer		GraphicsViewer;
 	FCodeAnalysisState		CodeAnalysis;
 	FIOAnalysis				IOAnalysis;
 

@@ -12,7 +12,7 @@ FGameViewerData *InitMiscGameViewer(FSpectrumEmu*pEmu, FGameConfig *pGameConfig)
 	return pGameViewerData;
 }
 
-void DrawMiscGameViewer(FSpectrumEmu*pUI, FGame *pGame)
+void DrawMiscGameViewer(FSpectrumEmu* pEmu, FGame *pGame)
 {
 	FGameViewerData* pGameViewer = pGame->pViewerData;
 
@@ -20,7 +20,7 @@ void DrawMiscGameViewer(FSpectrumEmu*pUI, FGame *pGame)
 	
 	if (ImGui::BeginTabItem("Sprites"))
 	{
-		DrawSpriteListGUI(pUI->GraphicsViewer, pGameViewer->pSpriteGraphicsView);
+		DrawSpriteListGUI(pEmu->GraphicsViewer, pGameViewer->pSpriteGraphicsView);
 		ImGui::EndTabItem();
 	}
 

@@ -1,37 +1,33 @@
 #include "GraphicsViewer.h"
+
 #include <ImGuiSupport/ImGuiTexture.h>
 
-#include "ZXGraphicsView.h"
-#include "../SpectrumEmu.h"
-#include "../GameConfig.h"
+#include "Util/GraphicsView.h"
 #include <algorithm>
+#include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
-#include "misc/cpp/imgui_stdlib.h"
 #include <Util/Misc.h>
-
+#include <imgui.h>
+#include <misc/cpp/imgui_stdlib.h>
 
 // Graphics Viewer
 static int kGraphicsViewerWidth = 256;
 static int kGraphicsViewerHeight = 512;
-static int kScreenViewerWidth = 256;
-static int kScreenViewerHeight = 192;
 
-
-bool FGraphicsViewerState::Init(FSpectrumEmu* emuPtr)
+bool FGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysisState)
 {
-	pEmu = emuPtr;
-	const FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	pCodeAnalysis = pCodeAnalysisState;
 
 	assert(pGraphicsView == nullptr);
 	assert(pScreenView == nullptr);
-	pGraphicsView = new FZXGraphicsView(kGraphicsViewerWidth, kGraphicsViewerHeight);
-	pScreenView = new FZXGraphicsView(kScreenViewerWidth, kScreenViewerHeight);
+	pGraphicsView = new FGraphicsView(kGraphicsViewerWidth, kGraphicsViewerHeight);
+	pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
 
 	return true;
 }
 
-void FGraphicsViewerState::Shutdown(void)
+void FGraphicsViewer::Shutdown(void)
 {
 	delete pGraphicsView;
 	pGraphicsView = nullptr;
@@ -39,9 +35,9 @@ void FGraphicsViewerState::Shutdown(void)
 	pScreenView = nullptr;
 }
 
-void FGraphicsViewerState::GoToAddress(FAddressRef address)
+void FGraphicsViewer::GoToAddress(FAddressRef address)
 {
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	FCodeAnalysisState& state = GetCodeAnalysis();
 
 	const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
 	if (pDataInfo->DataType == EDataType::Bitmap)
@@ -75,24 +71,9 @@ void FGraphicsViewerState::GoToAddress(FAddressRef address)
 		Bank = address.BankId;
 		bShowPhysicalMemory = false;
 	}
-
-	
 }
 
-// speccy colour CLUT
-static const uint32_t g_kColourLUT[8] =
-{
-	0xFF000000,     // 0 - black
-	0xFFFF0000,     // 1 - blue
-	0xFF0000FF,     // 2 - red
-	0xFFFF00FF,     // 3 - magenta
-	0xFF00FF00,     // 4 - green
-	0xFFFFFF00,     // 5 - cyan
-	0xFF00FFFF,     // 6 - yellow
-	0xFFFFFFFF,     // 7 - white
-};
-
-uint16_t FGraphicsViewerState::GetAddressOffsetFromPositionInView(int x,int y) const
+uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInView(int x, int y) const
 {
 	const int scaledViewWidth = kGraphicsViewerWidth / ViewScale;
 	const int scaledViewHeight = kGraphicsViewerHeight / ViewScale;
@@ -100,7 +81,7 @@ uint16_t FGraphicsViewerState::GetAddressOffsetFromPositionInView(int x,int y) c
 	const int scaledY = y / ViewScale;
 
 	const int xSizeChars = XSizePixels >> 3;
-	const FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	const FCodeAnalysisState& state = GetCodeAnalysis();
 	const int kHorizontalDispCharCount = (scaledViewWidth / 8);
 	const FCodeAnalysisBank* pBank = state.GetBank(Bank);
 	const uint16_t addrInput = AddressOffset;
@@ -116,7 +97,7 @@ uint16_t FGraphicsViewerState::GetAddressOffsetFromPositionInView(int x,int y) c
 	return (addrInput + (column * columnSize) + (scaledY * xSizeChars)) % MemorySize;
 }
 
-uint8_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
+uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
 {
 	const uint16_t pageAddress = addr & FCodeAnalysisPage::kPageMask;
 	const FCodeInfo* pCodeInfo = page.CodeInfo[pageAddress];
@@ -125,32 +106,32 @@ uint8_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t
 	{
 		const int framesSinceExecuted = currentFrameNo - pCodeInfo->FrameLastExecuted;
 		if (pCodeInfo->FrameLastExecuted != -1 && (framesSinceExecuted < frameThreshold))
-			return 6;	// yellow code
+			return 0xFF00FFFF;	// yellow code
 	}
 
 	const FDataInfo& dataInfo = page.DataInfo[pageAddress];
-	
+
 	if (dataInfo.LastFrameWritten != -1)
 	{
 		const int framesSinceWritten = currentFrameNo - dataInfo.LastFrameWritten;
 		if (framesSinceWritten < frameThreshold)
-			return 2; // red
+			return 0xFF0000FF; // red
 	}
 
 	if (dataInfo.LastFrameRead != -1)
 	{
 		const int framesSinceRead = currentFrameNo - dataInfo.LastFrameRead;
 		if (framesSinceRead < frameThreshold)
-			return 4;	// green
-	}	
+			return 0xFF00FF00;	// green
+	}
 
-	return 7;
+	return 0xFFFFFFFF;
 }
 
-void FGraphicsViewerState::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth)
+void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth)
 {
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
-	FCodeAnalysisBank* pBank = state.GetBank(bankId);
+	const FCodeAnalysisState& state = GetCodeAnalysis();
+	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
 	const uint16_t bankSizeMask = pBank->SizeMask;
 
 	for (int y = 0; y < kGraphicsViewerHeight; y++)
@@ -160,8 +141,8 @@ void FGraphicsViewerState::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16
 			const uint16_t bankAddr = memAddr & bankSizeMask;
 			const uint8_t charLine = pBank->Memory[bankAddr];
 			FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
-			const uint8_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo,HeatmapThreshold);
-			pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col);
+			const uint32_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo, HeatmapThreshold);
+			pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col, 0);
 
 			memAddr++;
 		}
@@ -173,12 +154,12 @@ void FGraphicsViewerState::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16
 
 
 // draw a graphic set to a graphics view
-void DrawGraphicsSetToView(FZXGraphicsView* pGraphicsView, const FCodeAnalysisState& state, const FGraphicsSet& graphic)
+void DrawGraphicsSetToView(FGraphicsView* pGraphicsView, const FCodeAnalysisState& state, const FGraphicsSet& graphic)
 {
 }
 
 // Viewer to view spectrum graphics
-void FGraphicsViewerState::Draw()
+void FGraphicsViewer::Draw()
 {
 	if (ImGui::Begin("Graphics View"))
 	{
@@ -218,10 +199,9 @@ bool StepInt(const char* title, int& val, int stepAmount)
 	return val != oldVal;
 }
 
-void FGraphicsViewerState::UpdateCharacterGraphicsViewerImage(void)
+void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 {
-	//FZXGraphicsView* pGraphicsView = viewerState.pGraphicsView;
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	const FCodeAnalysisState& state = GetCodeAnalysis();
 
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
 	const int kVerticalDispPixCount = kGraphicsViewerHeight;
@@ -254,6 +234,11 @@ void FGraphicsViewerState::UpdateCharacterGraphicsViewerImage(void)
 		const int graphicsUnitSize = (XSizePixels >> 3) * YSizePixels;
 		int offsetX = 0;
 		int offsetY = 0;
+
+		const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(address) : Bank;
+		const FCodeAnalysisBank* pBank = state.GetBank(bankId);
+		const uint16_t bankSizeMask = pBank->SizeMask;
+
 		for (int y = 0; y < ycount; y++)
 		{
 			for (int x = 0; x < xcount; x++)
@@ -263,10 +248,15 @@ void FGraphicsViewerState::UpdateCharacterGraphicsViewerImage(void)
 				{
 					for (int xChar = 0; xChar < xSizeChars; xChar++)
 					{
-						const uint8_t* pImage = pEmu->GetMemPtr(address);
 						const int xp = ((yLine & 1) == 0) ? xChar : (xSizeChars - 1) - xChar;
+
+						const uint16_t bankAddr = address & bankSizeMask;
+						const uint8_t charLine = pBank->Memory[bankAddr];
+						FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
+						const uint32_t col = GetHeatmapColourForMemoryAddress(page, address, state.CurrentFrameNo, HeatmapThreshold);
+
 						if (address + graphicsUnitSize < 0xffff)
-							pGraphicsView->DrawCharLine(*pImage, offsetX + (xp * 8), offsetY + yLine);
+							pGraphicsView->DrawCharLine(charLine, offsetX + (xp * 8), offsetY + yLine, col, 0);
 						address++;
 					}
 				}
@@ -280,9 +270,9 @@ void FGraphicsViewerState::UpdateCharacterGraphicsViewerImage(void)
 	}
 }
 
-void FGraphicsViewerState::DrawCharacterGraphicsViewer(void)
+void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 {
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	FCodeAnalysisState& state = GetCodeAnalysis();
 	FCodeAnalysisBank* pBank = state.GetBank(Bank);
 
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
@@ -298,7 +288,7 @@ void FGraphicsViewerState::DrawCharacterGraphicsViewer(void)
 		else
 		{
 			// get the first bank - better way?
-			if(Bank == -1)
+			if (Bank == -1)
 				Bank = state.GetBanks()[0].Id;
 
 			FCodeAnalysisBank* pNewBank = state.GetBank(Bank);
@@ -381,12 +371,12 @@ void FGraphicsViewerState::DrawCharacterGraphicsViewer(void)
 		DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
 		ImGui::EndTooltip();
 	}
-		
+
 	ImGui::SameLine();
 
 	// simpler slider
 	ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff);
-	
+
 	ImGui::SetNextItemWidth(120.0f);
 	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
 		ImGui::InputInt("##Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsDecimal);
@@ -399,7 +389,7 @@ void FGraphicsViewerState::DrawCharacterGraphicsViewer(void)
 	pGraphicsView->Clear(0xff000000);
 
 	FCodeAnalysisBank* pClickedBank = state.GetBank(ClickedAddress.BankId);
-	if(pClickedBank !=nullptr && state.Config.bShowBanks)
+	if (pClickedBank != nullptr && state.Config.bShowBanks)
 		ImGui::Text("Clicked Address: [%s]%s", pClickedBank->Name.c_str(), NumStr(ClickedAddress.Address));
 	else
 		ImGui::Text("Clicked Address: %s", NumStr(ClickedAddress.Address));
@@ -414,7 +404,7 @@ void FGraphicsViewerState::DrawCharacterGraphicsViewer(void)
 			DrawDataDetails(state, state.GetFocussedViewState(), item);
 		}
 	}
-	
+
 	const int graphicsUnitSize = (XSizePixels >> 3) * YSizePixels;
 
 	// step address based on image attributes
@@ -423,7 +413,7 @@ void FGraphicsViewerState::DrawCharacterGraphicsViewer(void)
 
 	// draw 64 * 8 bytes
 	ImGui::InputInt("XSize", &XSizePixels, 8, 8);
-	ImGui::InputInt("YSize", &YSizePixels, YSizePixelsFineCtrl? 1:8, 8);
+	ImGui::InputInt("YSize", &YSizePixels, YSizePixelsFineCtrl ? 1 : 8, 8);
 	ImGui::SameLine();
 	ImGui::Checkbox("Fine", &YSizePixelsFineCtrl);
 	ImGui::InputInt("Count", &ImageCount, 1, 1);
@@ -502,45 +492,7 @@ void FGraphicsViewerState::DrawCharacterGraphicsViewer(void)
 	AddressOffset = pBank != nullptr ? (int)addrInput - pBank->GetMappedAddress() : addrInput;
 }
 
-// http://www.breakintoprogram.co.uk/computers/zx-spectrum/screen-memory-layout
-void FGraphicsViewerState::DrawScreenViewer()
-{
-	FZXGraphicsView* pGraphicsView = pScreenView;
-	const FCodeAnalysisState& state = pEmu->CodeAnalysis;	
-	const int16_t bankId = Bank == -1 ? state.GetBankFromAddress(0x4000) : Bank;
-	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
 
-	uint16_t bankAddr = 0;
-	for (int y = 0; y < 192; y++)
-	{
-		const int y0to2 = ((bankAddr >> 8) & 7);
-		const int y3to5 = ((bankAddr >> 5) & 7) << 3;
-		const int y6to7 = ((bankAddr >> 11) & 3) << 6;
-		const int yDestPos = y0to2 | y3to5 | y6to7;	// or offsets together
-
-		// determine dest pointer for scanline
-		uint32_t* pLineAddr = pGraphicsView->GetPixelBuffer() + (yDestPos * kGraphicsViewerWidth);
-
-		// pixel line
-		for (int x = 0; x < 256 / 8; x++)
-		{
-			const uint8_t charLine = pBank->Memory[bankAddr];
-			const FCodeAnalysisPage& page = pBank->Pages[bankAddr >> 10];
-			const uint8_t col = GetHeatmapColourForMemoryAddress(page, bankAddr, state.CurrentFrameNo, HeatmapThreshold);
-
-			for (int xpix = 0; xpix < 8; xpix++)
-			{
-				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
-				const uint32_t colRGBA = bSet ? g_kColourLUT[col] : 0xff000000;
-				*(pLineAddr + xpix + (x * 8)) = colRGBA;
-			}
-
-			bankAddr++;
-		}
-	}
-
-	pGraphicsView->Draw();
-}
 
 // Save/Load Graphics sets to json
 #include <iomanip>
@@ -549,7 +501,7 @@ void FGraphicsViewerState::DrawScreenViewer()
 #include <json.hpp>
 using json = nlohmann::json;
 
-bool FGraphicsViewerState::SaveGraphicsSets(const char* pJsonFileName)
+bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 {
 	return false; // TODO: remove when saving is implemented
 	json jsonGraphicsSets;
@@ -567,7 +519,7 @@ bool FGraphicsViewerState::SaveGraphicsSets(const char* pJsonFileName)
 	return false;
 }
 
-bool FGraphicsViewerState::LoadGraphicsSets(const char* pJsonFileName)
+bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 {
 	std::ifstream inFileStream(pJsonFileName);
 	if (inFileStream.is_open() == false)

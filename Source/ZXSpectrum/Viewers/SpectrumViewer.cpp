@@ -6,7 +6,6 @@
 #include "../SpectrumEmu.h"
 #include "../SpectrumConstants.h"
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
-#include "GraphicsViewer.h"
 #include "../GlobalConfig.h"
 
 #include <Util/Misc.h>

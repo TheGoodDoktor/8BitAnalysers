@@ -5,7 +5,7 @@
 #include <cinttypes>
 
 class FZXGraphicsView;
-class FGraphicsViewerState;
+class FZXGraphicsViewer;
 class FSpectrumEmu;
 struct FGameConfig;
 
@@ -36,5 +36,5 @@ struct FUISpriteList
 	FSpriteDefList	SpriteList;
 };
 
-void GenerateSpriteListsFromConfig(FGraphicsViewerState &state, FGameConfig *pGameConfig);
-void DrawSpriteListGUI(FGraphicsViewerState &state, FZXGraphicsView *pGraphicsView);
+void GenerateSpriteListsFromConfig(FZXGraphicsViewer& graphicsViewer, FGameConfig *pGameConfig);
+void DrawSpriteListGUI(FZXGraphicsViewer& graphicsViewer, FZXGraphicsView *pGraphicsView);

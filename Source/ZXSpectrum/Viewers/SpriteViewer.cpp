@@ -1,5 +1,5 @@
 #include "SpriteViewer.h"
-#include "GraphicsViewer.h"
+#include "ZXGraphicsViewer.h"
 #include "../SpectrumEmu.h"
 #include <algorithm>
 #include "../GameConfig.h"
@@ -30,13 +30,13 @@ void GenerateSpriteList(FSpriteDefList &spriteList, uint16_t startAddress, int c
 }
 
 // Generate sprite lists from configs
-void GenerateSpriteListsFromConfig(FGraphicsViewerState &state, FGameConfig *pGameConfig)
+void GenerateSpriteListsFromConfig(FZXGraphicsViewer& graphicsViewer, FGameConfig *pGameConfig)
 {
-	state.SpriteLists.clear();
+	graphicsViewer.SpriteLists.clear();
 	for (const auto &sprConfIt : pGameConfig->SpriteConfigs)
 	{
 		const FSpriteDefConfig& config = sprConfIt.second;
-		FUISpriteList &sprites = state.SpriteLists[sprConfIt.first];
+		FUISpriteList &sprites = graphicsViewer.SpriteLists[sprConfIt.first];
 		GenerateSpriteList(sprites.SpriteList, config.BaseAddress, config.Count, config.Width, config.Height);
 	}
 }
@@ -56,7 +56,7 @@ void DrawSpriteList(const FSpriteDefList &spriteList, int &selection, FZXGraphic
 	DrawSpriteOnGraphicsView(spriteList.Sprites[selection], 0, 0, pGraphicsView, pSpeccy);
 }
 
-void DrawSpriteListGUI(FGraphicsViewerState &state, FZXGraphicsView *pGraphicsView)
+void DrawSpriteListGUI(FZXGraphicsViewer &graphicsViewer, FZXGraphicsView *pGraphicsView)
 {
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawSpriteListGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
@@ -68,9 +68,9 @@ void DrawSpriteListGUI(FGraphicsViewerState &state, FZXGraphicsView *pGraphicsVi
 	static int h = 0;
 	static int count = 0;
 	
-	for (auto &spriteList : state.SpriteLists)
+	for (auto &spriteList : graphicsViewer.SpriteLists)
 	{
-		const bool bSelected = state.SelectedSpriteList == spriteList.first;
+		const bool bSelected = graphicsViewer.SelectedSpriteList == spriteList.first;
 		if (bSelected)
 		{
 			pSpriteList = &spriteList.second;
@@ -78,7 +78,7 @@ void DrawSpriteListGUI(FGraphicsViewerState &state, FZXGraphicsView *pGraphicsVi
 	
 		if (ImGui::Selectable(spriteList.first.c_str(), bSelected))
 		{
-			state.SelectedSpriteList = spriteList.first;
+			graphicsViewer.SelectedSpriteList = spriteList.first;
 			FSpriteDefList &spriteDefList = spriteList.second.SpriteList;
 
 			// set up editable properties
@@ -112,7 +112,8 @@ void DrawSpriteListGUI(FGraphicsViewerState &state, FZXGraphicsView *pGraphicsVi
 				GenerateSpriteList(spriteDefList, baseAddress, count, w, h);
 			}
 		}
-		DrawSpriteList(pSpriteList->SpriteList, pSpriteList->Selection, pGraphicsView, state.pEmu);
+		//TODO: fix this
+		//DrawSpriteList(pSpriteList->SpriteList, pSpriteList->Selection, pGraphicsView, graphicsViewer.pEmu);
 	}
 	pGraphicsView->Draw();
 
