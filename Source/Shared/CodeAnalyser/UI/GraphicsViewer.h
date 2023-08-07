@@ -73,6 +73,7 @@ protected:
 	std::string		ImageSetName;
 
 	std::map<FAddressRef, FGraphicsSet>		GraphicsSets;
+	FAddressRef		SelectedGraphicSet;
 
 	// housekeeping
 	FCodeAnalysisState* pCodeAnalysis = nullptr;

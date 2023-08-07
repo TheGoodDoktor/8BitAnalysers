@@ -51,6 +51,7 @@ void FGraphicsViewer::GoToAddress(FAddressRef address)
 			YSizePixels = graphicsSet.YSizePixels;
 			ImageCount = graphicsSet.Count;
 			address = graphicsSet.Address;
+			SelectedGraphicSet = address;
 		}
 		else
 		{
@@ -408,9 +409,12 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	StepInt("Step Image", addrInput, graphicsUnitSize);
 
 	// draw 64 * 8 bytes
+	const float kNumSize = 80.0f;
+	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::InputInt("XSize", &XSizePixels, 8, 8);
 	XSizePixels = std::min(std::max(8, XSizePixels), kHorizontalDispCharCount * 8);
-	
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::InputInt("YSize", &YSizePixels, YSizePixelsFineCtrl ? 1 : 8, 8);
 	ImGui::SameLine();
 	ImGui::Checkbox("Fine", &YSizePixelsFineCtrl);
@@ -483,14 +487,27 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 		// TODO: We could have something to store the image set and reference it in address space somehow
 		StepInt("Step Image Set", addrInput, graphicsUnitSize * ImageCount);
-
-		for (const auto& graphicsSetIt : GraphicsSets)
-		{
-
-		}
 	}
 
 	AddressOffset = pBank != nullptr ? (int)addrInput - pBank->GetMappedAddress() : addrInput;
+
+	// List graphic sets
+	ImGui::Text("Graphic Sets");
+	if (ImGui::BeginChild("GraphicSetListChild",ImVec2(0,0),true))
+	{
+		for (const auto& graphicsSetIt : GraphicsSets)
+		{
+			const FGraphicsSet& set = graphicsSetIt.second;
+			bool bSelected = set.Address == SelectedGraphicSet;
+			if (ImGui::Selectable(set.Name.c_str(), &bSelected))
+			{
+				GoToAddress(set.Address);
+				state.GetFocussedViewState().GoToAddress(set.Address);
+			}
+		}
+	}
+	ImGui::EndChild();
+
 }
 
 

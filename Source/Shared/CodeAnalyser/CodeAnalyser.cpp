@@ -218,7 +218,7 @@ bool FCodeAnalysisState::RemoveLabelName(const std::string& labelName)
 }
 
 // Search memory space for a block of data
-bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr)
+bool FCodeAnalysisState::FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr)
 {
 	uint16_t address = offset;
 	ICPUInterface* pCPUInterface = CPUInterface;
@@ -227,7 +227,7 @@ bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint
 	do
 	{
 		bool bFound = true;
-		for (int byteNo = 0; byteNo < 8; byteNo++)
+		for (int byteNo = 0; byteNo < dataSize; byteNo++)
 		{
 			const uint8_t byte = ReadByte(address + byteNo);
 			if (byte != pData[byteNo])
@@ -247,6 +247,35 @@ bool FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize, uint
 	} while (address != 0);	// 16 bit address overflow
 
 	return false;
+}
+
+FAddressRef FCodeAnalysisState::FindMemoryPattern(uint8_t* pData, size_t dataSize)
+{
+	// iterate through banks
+	for (auto& bank : Banks)
+	{
+		const int bankByteSize = bank.GetSizeBytes();
+		for (int bAddr = 0; bAddr < bankByteSize - dataSize; bAddr++)
+		{
+			bool bFound = true;
+			for (int byteNo = 0; byteNo < dataSize; byteNo++)
+			{
+				const uint8_t byte = bank.Memory[bAddr + byteNo];
+				if (byte != pData[byteNo])
+				{
+					bFound = false;
+					break;
+				}
+			}
+
+			if (bFound)
+			{
+				return FAddressRef(bank.Id, bAddr + bank.GetMappedAddress());
+			}
+		}
+	}
+
+	return FAddressRef();	// return invalid address
 }
 
 bool IsAscii(uint8_t byte)

@@ -40,6 +40,7 @@ private:
 	int			SelectedCharY = 0;
 	bool		CharDataFound = false;
 	uint16_t	FoundCharDataAddress = 0;
+	FAddressRef	FoundCharAddress;
 	uint8_t		CharData[8] = {0};
 	bool		bCharSearchWrap = true;
 	bool		bWindowFocused = false;
