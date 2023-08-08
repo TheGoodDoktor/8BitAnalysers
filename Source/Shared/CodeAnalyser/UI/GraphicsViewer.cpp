@@ -441,11 +441,10 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 		ImGui::InputText("Image Set Name", &ImageSetName);
 
-		// currently this only works for physical memory
+		// TODO: put in function?
 		if (ImGui::Button("Format Memory"))
 		{
-			FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addrInput);
-			uint16_t address = addrInput;
+			FAddressRef addrRef = bShowPhysicalMemory ? state.AddressRefFromPhysicalAddress(addrInput) : FAddressRef(pBank->Id, addrInput);
 
 			for (int i = 0; i < ImageCount; i++)
 			{
@@ -467,12 +466,13 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 					}
 				}
 
-				format.SetupForBitmap(address, XSizePixels, YSizePixels);
+				format.SetupForBitmap(addrRef, XSizePixels, YSizePixels);
 				format.GraphicsSetRef = addrRef;
 				FormatData(state, format);
-				state.SetCodeAnalysisDirty(address);
+				state.SetCodeAnalysisDirty(addrRef);
 
-				address += graphicsUnitSize;
+				state.AdvanceAddressRef(addrRef, graphicsUnitSize);
+				//address += graphicsUnitSize;
 			}
 
 			// Add graphic set
@@ -501,6 +501,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			bool bSelected = set.Address == SelectedGraphicSet;
 			if (ImGui::Selectable(set.Name.c_str(), &bSelected))
 			{
+				ImageSetName = set.Name;
 				GoToAddress(set.Address);
 				state.GetFocussedViewState().GoToAddress(set.Address);
 			}

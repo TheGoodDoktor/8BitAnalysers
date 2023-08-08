@@ -352,7 +352,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	}
 	// Format Mask - 6 bytes bitmap
 	FDataFormattingOptions format;
-	format.SetupForBitmap(kPlatformAddr, 8, 6);
+	format.SetupForBitmap(state.AddressRefFromPhysicalAddress(kPlatformAddr), 8, 6);
 	FormatData(state, format);
 
 	// find number of chars using mask
@@ -378,7 +378,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr - noPlatformChars, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
-		format.StartAddress = kPlatformAddr - noPlatformChars;
+		format.StartAddress = state.AddressRefFromPhysicalAddress(kPlatformAddr - noPlatformChars);
 
 		for (int i = 0; i < 6; i++)
 		{
@@ -388,7 +388,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 				format.ItemSize = charCount[i];
 				format.NoItems = 1;
 				FormatData(state, format);
-				format.StartAddress += charCount[i];
+				state.AdvanceAddressRef(format.StartAddress,charCount[i]);
 			}
 		}
 	}
@@ -401,7 +401,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 		FLabelInfo* pLabel = AddLabel(state, platCharAddr, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
-		format.SetupForBitmap(platCharAddr, 8, 8);
+		format.SetupForBitmap(state.AddressRefFromPhysicalAddress(platCharAddr), 8, 8);
 		FormatData(state, format);
 
 		platCharAddr += 8;
@@ -423,7 +423,7 @@ void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 
 	// Format Charmap 2x2
 	FDataFormattingOptions format;
-	format.SetupForCharmap(kBigPlatformData, 2, 2);
+	format.SetupForCharmap(state.AddressRefFromPhysicalAddress(kBigPlatformData), 2, 2);
 	FormatData(state, format);
 	state.SetCodeAnalysisDirty(kBigPlatformData);
 }
@@ -441,7 +441,7 @@ void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
 
 	// Format Charmap 4x3
 	FDataFormattingOptions format;
-	format.SetupForCharmap(kScreenData, 4, 3);
+	format.SetupForCharmap(state.AddressRefFromPhysicalAddress(kScreenData), 4, 3);
 	FormatData(state, format);
 	state.SetCodeAnalysisDirty(kScreenData);
 }
@@ -459,7 +459,7 @@ void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 
 	// Format Bitmap 16x8
 	FDataFormattingOptions format;
-	format.SetupForBitmap(platformAddr, 16, 8);
+	format.SetupForBitmap(state.AddressRefFromPhysicalAddress(platformAddr), 16, 8);
 	FormatData(state, format);
 	state.SetCodeAnalysisDirty(platformAddr);
 }

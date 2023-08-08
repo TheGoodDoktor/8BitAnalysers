@@ -720,7 +720,11 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 	// selectable
 	const uint16_t endAddress = viewState.DataFormattingOptions.CalcEndAddress();
 	const bool bSelected = (item.Item == viewState.GetCursorItem().Item) || 
-		(viewState.DataFormattingTabOpen && physAddr >= viewState.DataFormattingOptions.StartAddress && physAddr <= endAddress);
+		(viewState.DataFormattingTabOpen && 
+			item.AddressRef.BankId == viewState.DataFormattingOptions.StartAddress.BankId && 
+			item.AddressRef.Address >= viewState.DataFormattingOptions.StartAddress.Address && 
+			item.AddressRef.Address <= endAddress);
+
 	if (ImGui::Selectable("##codeanalysisline", bSelected, ImGuiSelectableFlags_SelectOnNav))
 	{
 		if (bSelected == false)
@@ -735,11 +739,11 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 				if (io.KeyShift)
 				{
 					if (viewState.DataFormattingOptions.ItemSize > 0)
-						viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress - viewState.GetCursorItem().AddressRef.Address) / viewState.DataFormattingOptions.ItemSize;
+						viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress.Address - viewState.GetCursorItem().AddressRef.Address) / viewState.DataFormattingOptions.ItemSize;
 				}
 				else
 				{
-					viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().AddressRef.Address;
+					viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().AddressRef;
 				}
 			}
 		}
@@ -1253,7 +1257,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	{
 		if (viewState.GetCursorItem().IsValid())
 		{
-			formattingOptions.StartAddress = viewState.GetCursorItem().AddressRef.Address;
+			formattingOptions.StartAddress = viewState.GetCursorItem().AddressRef;
 			//formattingOptions.EndAddress = viewState.pCursorItem->Address;
 		}
 
@@ -1262,7 +1266,8 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 
 	// Set Start address of region to format
 	ImGui::PushID("Start");
-	ImGui::InputInt("Start Address", &formattingOptions.StartAddress, 1, 100, inputFlags);
+	ImGui::Text("Start Address: %s", NumStr(formattingOptions.StartAddress.Address));
+	//ImGui::InputInt("Start Address", &formattingOptions.StartAddress.Address, 1, 100, inputFlags);
 	ImGui::PopID();
 
 	// Set End address of region to format
@@ -1366,9 +1371,9 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		if (ImGui::Button("Format & Advance"))
 		{
 			FormatData(state, formattingOptions);
-			formattingOptions.StartAddress += formattingOptions.ItemSize * formattingOptions.NoItems;
+			state.AdvanceAddressRef(formattingOptions.StartAddress, formattingOptions.ItemSize * formattingOptions.NoItems);
 			state.SetCodeAnalysisDirty(formattingOptions.StartAddress);
-			viewState.GoToAddress({ state.GetBankFromAddress(formattingOptions.StartAddress),(uint16_t)formattingOptions.StartAddress });
+			viewState.GoToAddress(formattingOptions.StartAddress);
 		}
 	}
 

@@ -140,7 +140,7 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 		AddLabel(state, 0x5800, "ScreenAttributes", ELabelType::Data);
 
 		FDataFormattingOptions format;
-		format.StartAddress = kScreenAttrMemStart;
+		format.StartAddress = state.AddressRefFromPhysicalAddress(kScreenAttrMemStart);
 		format.DataType = EDataType::ColAttr;
 		format.ItemSize = 32;
 		format.NoItems = 24;

@@ -127,9 +127,9 @@ void FSpectrumViewer::Draw()
 		//ImGui::SameLine();
 		DrawAddressLabel(codeAnalysis, viewState, SelectAttrAddr);
 
-		if (CharDataFound)
+		if (FoundCharAddress.IsValid())
 		{
-			ImGui::Text("Found at: %s", NumStr(FoundCharDataAddress));
+			ImGui::Text("Found at: %s", NumStr(FoundCharAddress.Address));
 			DrawAddressLabel(codeAnalysis, viewState, FoundCharAddress);
 			//ImGui::SameLine();
 			bool bShowInGfxView = ImGui::Button("Show in GFX View");
@@ -139,13 +139,13 @@ void FSpectrumViewer::Draw()
 			if (ImGui::Button("Format as Bitmap"))
 			{
 				FDataFormattingOptions formattingOptions;
-				formattingOptions.StartAddress = FoundCharDataAddress;
+				formattingOptions.StartAddress = FoundCharAddress;
 				formattingOptions.ItemSize = 1;
 				formattingOptions.NoItems = 8;
 				formattingOptions.DataType = EDataType::Bitmap;
 
 				FormatData(codeAnalysis, formattingOptions);
-				viewState.GoToAddress({ codeAnalysis.GetBankFromAddress(FoundCharDataAddress), FoundCharDataAddress }, false);
+				viewState.GoToAddress(FoundCharAddress, false);
 			}
 
 			if (bShowInGfxView)
@@ -187,9 +187,9 @@ void FSpectrumViewer::Draw()
 
 				if (bContainsBits)
 				{
-					uint16_t foundCharDataAddress;
+					FAddressRef foundCharDataAddress = codeAnalysis.FindMemoryPattern(charData, 8);
 
-					if (codeAnalysis.FindMemoryPatternInPhysicalMemory(charData, 8, 0x5800, foundCharDataAddress))
+					if (foundCharDataAddress.IsValid())
 					{
 						const FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(foundCharDataAddress);
 						if (pCodeInfo == nullptr || pCodeInfo->bDisabled)

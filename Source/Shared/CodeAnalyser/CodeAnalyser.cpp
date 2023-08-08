@@ -762,6 +762,22 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	return pLabel;
 }
 
+FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char* name, ELabelType type)
+{
+	FLabelInfo* pLabel = FLabelInfo::Allocate();
+	pLabel->Name = name;
+	pLabel->LabelType = type;
+	//pLabel->Address = address;
+	pLabel->ByteSize = 1;
+	pLabel->Global = type == ELabelType::Function;
+	state.SetLabelForAddress(address, pLabel);
+
+	if (pLabel->Global)
+		GenerateGlobalInfo(state);
+
+	return pLabel;
+}
+
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef addressRef)
 {
 	FCommentBlock* pExistingBlock = state.GetCommentBlockForAddress(addressRef);
@@ -1057,13 +1073,14 @@ void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options)
 {
-	uint16_t dataAddress = options.StartAddress;
+	//uint16_t dataAddress = options.StartAddress;
+	FAddressRef addressRef = options.StartAddress;// state.AddressRefFromPhysicalAddress(dataAddress);
 
 	// TODO: Register Character Maps here?
 	if (options.DataType == EDataType::CharacterMap)
 	{
 		FCharMapCreateParams charMapParams;
-		charMapParams.Address = state.AddressRefFromPhysicalAddress(dataAddress);
+		charMapParams.Address = addressRef;
 		charMapParams.CharacterSet = options.CharacterSet;
 		charMapParams.Width = options.ItemSize;
 		charMapParams.Height = options.NoItems;
@@ -1088,14 +1105,14 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 			else if (options.DataType == EDataType::Text)
 				pPrefix = "text";
 
-			snprintf(labelName, 16, "%s_%s", pPrefix, NumStr(dataAddress));
+			snprintf(labelName, 16, "%s_%s", pPrefix, NumStr(addressRef.Address));
 			labelText = labelName;
 		}
 
 		// Add or rename label
-		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(dataAddress);
+		FLabelInfo* pLabel = state.GetLabelForAddress(addressRef);
 		if (pLabel == nullptr)
-			pLabel = AddLabel(state, dataAddress, labelText.c_str(), ELabelType::Data);
+			pLabel = AddLabel(state, addressRef, labelText.c_str(), ELabelType::Data);
 		else
 			SetLabelName(state, pLabel, labelText.c_str());
 		
@@ -1104,7 +1121,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 
 	for (int itemNo = 0; itemNo < options.NoItems; itemNo++)
 	{
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddress);
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addressRef);
 
 		pDataInfo->ByteSize = options.ItemSize;
 		pDataInfo->DataType = options.DataType;
@@ -1123,12 +1140,17 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 		for (int i = 0; i < options.ItemSize;i++)
 		{
 			if (options.ClearCodeInfo)
-				state.SetCodeInfoForAddress(dataAddress, nullptr);
+				state.SetCodeInfoForAddress(addressRef, nullptr);
 			
-			if (options.ClearLabels && dataAddress != options.StartAddress)	// don't remove first label
-				RemoveLabelAtAddress(state, state.AddressRefFromPhysicalAddress(dataAddress));
+			if (options.ClearLabels && addressRef != options.StartAddress)	// don't remove first label
+				RemoveLabelAtAddress(state, addressRef);
 
-			dataAddress++;
+			if (state.AdvanceAddressRef(addressRef, 1) == false)
+			{
+				// TODO: report?
+				break;
+			}
+			//dataAddress++;
 		}
 	}
 }
