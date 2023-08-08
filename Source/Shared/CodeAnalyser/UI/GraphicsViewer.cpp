@@ -135,7 +135,11 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
 	const uint16_t bankSizeMask = pBank->SizeMask;
 
-	for (int y = 0; y < kGraphicsViewerHeight; y++)
+	const int kVerticalDispPixCount = kGraphicsViewerHeight;
+	const int scaledVDispPixCount = kVerticalDispPixCount / ViewScale;
+	const int ycount = scaledVDispPixCount / YSizePixels;
+
+	for (int y = 0; y < ycount * YSizePixels; y++)
 	{
 		for (int xChar = 0; xChar < columnWidth; xChar++)
 		{
@@ -223,7 +227,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			assert(bankId != -1);
 			DrawMemoryBankAsGraphicsColumn(bankId, address & 0x3fff, x * XSizePixels, xSizeChars);
 
-			address += xSizeChars * scaledVDispPixCount;
+			address += xSizeChars * ycount * YSizePixels;
 		}
 	}
 	else if (ViewMode == GraphicsViewMode::CharacterBitmapWinding)
@@ -315,7 +319,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		}
 	}
 
-	ImGui::Combo("ViewMode", (int*)&ViewMode, "Character\0CharacterWinding", (int)GraphicsViewMode::Count);
+	ImGui::Combo("ViewMode", (int*)&ViewMode, "CharacterBitmap\0CharacterBitmapWinding", (int)GraphicsViewMode::Count);
 
 	// View Scale
 	ImGui::InputInt("Scale", &ViewScale, 1, 1);
