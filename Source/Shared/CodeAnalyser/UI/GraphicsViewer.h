@@ -32,11 +32,13 @@ class FGraphicsViewer
 public:
 	bool			Init(FCodeAnalysisState* pCodeAnalysis);
 	void			Shutdown(void);
+	void			Reset();
 
 	void			GoToAddress(FAddressRef address);
 
 	void			Draw();
 
+	
 	bool			SaveGraphicsSets(const char* pFName);
 	bool			LoadGraphicsSets(const char* pFName);
 
@@ -79,6 +81,10 @@ protected:
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
 	FGraphicsView* pGraphicsView = nullptr;
 	FGraphicsView* pScreenView = nullptr;
+
+	int				ItemNo = 0;
+	FAddressRef		ImageGraphicSet;
+	FGraphicsView* pItemView = nullptr;
 };
 
 uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold);

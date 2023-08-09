@@ -12,6 +12,7 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 // Graphics Viewer
+static int kMaxImageSize = 256;
 static int kGraphicsViewerWidth = 256;
 static int kGraphicsViewerHeight = 512;
 
@@ -21,9 +22,10 @@ bool FGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysisState)
 
 	assert(pGraphicsView == nullptr);
 	assert(pScreenView == nullptr);
+	assert(pItemView == nullptr);
 	pGraphicsView = new FGraphicsView(kGraphicsViewerWidth, kGraphicsViewerHeight);
 	pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
-
+	pItemView = new FGraphicsView(kMaxImageSize, kMaxImageSize);
 	return true;
 }
 
@@ -33,7 +35,34 @@ void FGraphicsViewer::Shutdown(void)
 	pGraphicsView = nullptr;
 	delete pScreenView;
 	pScreenView = nullptr;
+	delete pItemView;
+	pItemView = nullptr;
 }
+
+void FGraphicsViewer::Reset(void)
+{
+	Bank = -1;
+	AddressOffset = 0;
+	bShowPhysicalMemory = true;
+
+	XSizePixels = 8;
+	YSizePixels = 8;
+	ImageCount = 0;
+
+	ClickedAddress = FAddressRef();
+	ViewMode = GraphicsViewMode::CharacterBitmap;
+	ViewScale = 1;
+	YSizePixelsFineCtrl = false;
+
+	ImageSetName = "";
+
+	GraphicsSets.clear();
+	SelectedGraphicSet = FAddressRef();
+
+	ItemNo = 0;
+	ImageGraphicSet = FAddressRef();
+}
+
 
 void FGraphicsViewer::GoToAddress(FAddressRef address)
 {
@@ -413,16 +442,18 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	StepInt("Step Image", addrInput, graphicsUnitSize);
 
 	// draw 64 * 8 bytes
-	const float kNumSize = 80.0f;
+	const float kNumSize = 80.0f;	// size for number GUI widget
 	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::InputInt("XSize", &XSizePixels, 8, 8);
-	XSizePixels = std::min(std::max(8, XSizePixels), kHorizontalDispCharCount * 8);
-	ImGui::SameLine();
+	//ImGui::SameLine();
 	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::InputInt("YSize", &YSizePixels, YSizePixelsFineCtrl ? 1 : 8, 8);
 	ImGui::SameLine();
 	ImGui::Checkbox("Fine", &YSizePixelsFineCtrl);
-	YSizePixels = std::min(std::max(1, YSizePixels), kVerticalDispPixCount);
+
+	// clamp sizes
+	XSizePixels = std::min(std::max(8, XSizePixels), kMaxImageSize);
+	YSizePixels = std::min(std::max(1, YSizePixels), kMaxImageSize);
 	
 	ImGui::InputInt("Count", &ImageCount, 1, 1);
 
@@ -446,14 +477,18 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		ImGui::InputText("Image Set Name", &ImageSetName);
 
 		// TODO: put in function?
+		const FAddressRef baseAddrRef = bShowPhysicalMemory ? state.AddressRefFromPhysicalAddress(addrInput) : FAddressRef(pBank->Id, addrInput);
+
 		if (ImGui::Button("Format Memory"))
 		{
-			FAddressRef addrRef = bShowPhysicalMemory ? state.AddressRefFromPhysicalAddress(addrInput) : FAddressRef(pBank->Id, addrInput);
+
+			FAddressRef imageAddressRef = baseAddrRef;	// updated per image
 
 			for (int i = 0; i < ImageCount; i++)
 			{
 				FDataFormattingOptions format;
 				format.AddLabelAtStart = true;
+				format.ClearLabels = true;
 
 				// Generate label
 				if (ImageSetName.empty() == false)
@@ -470,30 +505,67 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 					}
 				}
 
-				format.SetupForBitmap(addrRef, XSizePixels, YSizePixels);
-				format.GraphicsSetRef = addrRef;
+				format.SetupForBitmap(imageAddressRef, XSizePixels, YSizePixels);
+				format.GraphicsSetRef = imageAddressRef;
 				FormatData(state, format);
-				state.SetCodeAnalysisDirty(addrRef);
+				state.SetCodeAnalysisDirty(imageAddressRef);
 
-				state.AdvanceAddressRef(addrRef, graphicsUnitSize);
+				state.AdvanceAddressRef(imageAddressRef, graphicsUnitSize);
 				//address += graphicsUnitSize;
 			}
 
 			// Add graphic set
 			FGraphicsSet graphicsSet;
 			graphicsSet.Name = ImageSetName;
-			graphicsSet.Address = addrRef;
+			graphicsSet.Address = baseAddrRef;
 			graphicsSet.XSizePixels = XSizePixels;
 			graphicsSet.YSizePixels = YSizePixels;
 			graphicsSet.Count = ImageCount;
-			GraphicsSets[addrRef] = graphicsSet;
+			GraphicsSets[baseAddrRef] = graphicsSet;
+			SelectedGraphicSet = baseAddrRef;
 		}
 
 		// TODO: We could have something to store the image set and reference it in address space somehow
 		StepInt("Step Image Set", addrInput, graphicsUnitSize * ImageCount);
+
+		if(SelectedGraphicSet.IsValid())
+		{
+			ImGui::Separator();
+		
+			bool bUpdate = ImageGraphicSet != baseAddrRef;
+			ItemNo = std::min(ItemNo, ImageCount - 1);	// clamp
+			bUpdate |= ImGui::SliderInt("Item Number", &ItemNo, 0, ImageCount - 1);
+
+			// TODO: update image view - only if needed
+			//if (bUpdate)
+			{
+				FAddressRef itemAddress = baseAddrRef;
+				state.AdvanceAddressRef(itemAddress, ItemNo * graphicsUnitSize);
+				for (int yp = 0; yp < YSizePixels; yp++)
+				{
+					for (int xp = 0; xp < xChars; xp++)
+					{
+						const uint8_t charLine = state.ReadByte(itemAddress);
+						pItemView->DrawCharLine(charLine, xp * 8, yp, 0xffffffff, 0);
+						state.AdvanceAddressRef(itemAddress, 1);
+					}
+				}
+				pItemView->UpdateTexture();
+
+				ImageGraphicSet = baseAddrRef;				
+			}
+
+			float scaleFactor = 4.0f;
+			const ImVec2 uv0(0, 0);
+			const ImVec2 uv1((float)XSizePixels / (float)kMaxImageSize, (float)YSizePixels / (float)kMaxImageSize);
+			const ImVec2 size(std::min((float)XSizePixels * scaleFactor, (float)kMaxImageSize), std::min((float)YSizePixels * scaleFactor, (float)kMaxImageSize));
+			ImGui::Image((void*)pItemView->GetTexture(), size, uv0, uv1);
+		}
 	}
 
 	AddressOffset = pBank != nullptr ? (int)addrInput - pBank->GetMappedAddress() : addrInput;
+
+	ImGui::Separator();
 
 	// List graphic sets
 	ImGui::Text("Graphic Sets");
@@ -512,6 +584,10 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		}
 	}
 	ImGui::EndChild();
+	if (ImGui::Button("Delete"))
+	{
+
+	}
 
 }
 
