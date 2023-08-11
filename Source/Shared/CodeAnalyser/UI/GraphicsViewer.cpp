@@ -608,7 +608,8 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	ImGui::SameLine();
 	if (ImGui::Button("Export"))
 	{
-
+		ExportImages();
+		//pGraphicsView->SavePNG("test.png");
 	}
 
 }
@@ -620,6 +621,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 #include <fstream>
 #include <sstream>
 #include <json.hpp>
+#include <Util/FileUtil.h>
 using json = nlohmann::json;
 
 bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
@@ -678,6 +680,68 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 			set.Count = graphicsSetJson["ImageCount"];
 			GraphicsSets[set.Address] = set;
 		}
+	}
+
+	return true;
+}
+
+void FGraphicsViewer::DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* pView, int imageNo, int x, int y)
+{
+	FCodeAnalysisState& state = GetCodeAnalysis();
+	const int xChars = (set.XSizePixels >> 3);
+	const int graphicsUnitSize = xChars * set.YSizePixels;
+
+	FAddressRef itemAddress = set.Address;
+
+	state.AdvanceAddressRef(itemAddress, imageNo * graphicsUnitSize);
+	for (int yp = 0; yp < set.YSizePixels; yp++)
+	{
+		for (int xp = 0; xp < xChars; xp++)
+		{
+			const uint8_t charLine = state.ReadByte(itemAddress);
+			pView->DrawCharLine(charLine, x + (xp * 8), y + yp, 0xffffffff, 0);
+			state.AdvanceAddressRef(itemAddress, 1);
+		}
+	}
+}
+
+// export all graphic sets as separate PNG files
+bool FGraphicsViewer::ExportGraphicSet(const FGraphicsSet& set)
+{
+	const int maxImageXSize = 256;
+	const int maxImagesX = maxImageXSize / set.XSizePixels;
+	const int noImagesX = set.Count % maxImagesX;
+	const int noImagesY = (set.Count / maxImagesX) + 1;
+
+	FGraphicsView* pSaveImage = new FGraphicsView(set.XSizePixels * noImagesX, set.YSizePixels * noImagesY);
+
+	// write out graphics to memory buffer
+	FAddressRef addrRef = set.Address;
+
+	for (int imageNo = 0; imageNo < set.Count; imageNo++)
+	{
+		const int x = (imageNo % noImagesX) * set.XSizePixels;
+		const int y = (imageNo / noImagesX) / set.YSizePixels;
+
+		DrawGraphicToView(set, pSaveImage, imageNo, x, y);
+	}
+
+	// export png
+	std::string fName = ImagesRoot + set.Name + ".png";
+	pSaveImage->SavePNG(fName.c_str());
+
+	delete pSaveImage;
+	return true;
+}
+
+bool FGraphicsViewer::ExportImages(void)
+{
+	EnsureDirectoryExists(ImagesRoot.c_str());
+	for (const auto& graphicsSetIt : GraphicsSets)
+	{
+		const FGraphicsSet& set = graphicsSetIt.second;
+		if (ExportGraphicSet(set) == false)
+			return false;
 	}
 
 	return true;

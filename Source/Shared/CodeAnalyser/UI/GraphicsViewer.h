@@ -37,10 +37,13 @@ public:
 	void			GoToAddress(FAddressRef address);
 
 	void			Draw();
-
 	
+	void			SetImagesRoot(const char* pImagesRoot) { ImagesRoot = pImagesRoot; }
 	bool			SaveGraphicsSets(const char* pFName);
 	bool			LoadGraphicsSets(const char* pFName);
+	bool			ExportImages(void);
+	bool			ExportGraphicSet(const FGraphicsSet& set);
+	void			DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* pView, int imageNo, int x, int y);
 
 	// protected methods
 protected:
@@ -78,6 +81,7 @@ protected:
 	FAddressRef		SelectedGraphicSet;
 
 	// housekeeping
+	std::string			ImagesRoot;
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
 	FGraphicsView* pGraphicsView = nullptr;
 	FGraphicsView* pScreenView = nullptr;
