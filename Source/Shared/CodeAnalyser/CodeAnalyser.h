@@ -10,6 +10,7 @@
 #include "CodeAnalyserTypes.h"
 #include "CodeAnalysisPage.h"
 #include "Debugger.h"
+#include "MemoryAnalyser.h"
 
 class FGraphicsView;
 class FCodeAnalysisState;
@@ -399,6 +400,7 @@ public:
 	FCodeAnalysisViewState& GetAltViewState() { return ViewState[FocussedWindowId ^ 1]; }
 	
 	FDebugger				Debugger;
+	FMemoryAnalyser			MemoryAnalyser;
 
 	FAddressRef				CopiedAddress;
 

@@ -1673,6 +1673,12 @@ void FSpectrumEmu::DrawUI()
 	}
 	ImGui::End();
 
+	if (ImGui::Begin("Memory Analyser"))
+	{
+		CodeAnalysis.MemoryAnalyser.DrawUI();
+	}
+	ImGui::End();
+
 	//DasmDraw(&pUI->FunctionDasm);
 	// show spectrum window
 	if (ImGui::Begin("Spectrum View"))
