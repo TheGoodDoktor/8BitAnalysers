@@ -330,7 +330,14 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	// show combo for banked mode
 	if (bShowPhysicalMemory == false)
 	{
-		if (ImGui::BeginCombo("Bank", GetBankText(state, Bank)))
+		if (DrawBankInput(state, "Bank", Bank))
+		{
+			FCodeAnalysisBank* pNewBank = state.GetBank(Bank);
+			AddressOffset = 0;
+			MemorySize = pNewBank->GetSizeBytes();
+		}
+
+		/*if (ImGui::BeginCombo("Bank", GetBankText(state, Bank)))
 		{
 			const auto& banks = state.GetBanks();
 			for (const auto& bank : banks)
@@ -345,7 +352,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			}
 
 			ImGui::EndCombo();
-		}
+		}*/
 	}
 
 	ImGui::Combo("ViewMode", (int*)&ViewMode, "CharacterBitmap\0CharacterBitmapWinding", (int)GraphicsViewMode::Count);
@@ -363,9 +370,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	// Zoomed graphics view - put into class?
-	ImVec2 uv0(0, 0);
-	ImVec2 uv1(1.0f / (float)ViewScale, 1.0f / (float)ViewScale);
-	ImVec2 size((float)kGraphicsViewerWidth, (float)kGraphicsViewerHeight);
+	const ImVec2 uv0(0, 0);
+	const ImVec2 uv1(1.0f / (float)ViewScale, 1.0f / (float)ViewScale);
+	const ImVec2 size((float)kGraphicsViewerWidth, (float)kGraphicsViewerHeight);
 	pGraphicsView->UpdateTexture();
 	ImGui::Image((void*)pGraphicsView->GetTexture(), size, uv0, uv1);
 
@@ -399,6 +406,16 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		ImGui::Text("%s", NumStr(ptrAddress.Address));
 		ImGui::SameLine();
 		DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
+		
+		// show magnifier
+		const float magAmount = 8.0f;
+		const int magXP = rx / ViewScale;// ((int)(io.MousePos.x - pos.x) / viewSizeX)* viewSizeX;
+		const int magYP = ry / ViewScale;//std::max((int)(io.MousePos.y - pos.y - (viewSizeY / 2)), 0);
+		const ImVec2 magSize(XSizePixels * magAmount, YSizePixels * magAmount);
+		const ImVec2 magUV0(magXP * (1.0f/ kGraphicsViewerWidth), magYP * (1.0f / kGraphicsViewerHeight));
+		const ImVec2 magUV1(magUV0.x + XSizePixels * (1.0f / kGraphicsViewerWidth), magUV0.y + YSizePixels * (1.0f / kGraphicsViewerHeight));
+		ImGui::Image((void*)pGraphicsView->GetTexture(), magSize, magUV0, magUV1);
+
 		ImGui::EndTooltip();
 	}
 
@@ -569,7 +586,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	// List graphic sets
 	ImGui::Text("Graphic Sets");
-	if (ImGui::BeginChild("GraphicSetListChild",ImVec2(0,0),true))
+	if (ImGui::BeginChild("GraphicSetListChild",ImVec2(0,-40),true))
 	{
 		for (const auto& graphicsSetIt : GraphicsSets)
 		{
@@ -585,6 +602,11 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	}
 	ImGui::EndChild();
 	if (ImGui::Button("Delete"))
+	{
+
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Export"))
 	{
 
 	}

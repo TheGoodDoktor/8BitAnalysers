@@ -59,7 +59,7 @@ protected:
 	int				ScreenWidth = 0;
 	int				ScreenHeight = 0;
 	bool			bShowPhysicalMemory = true;
-	int32_t			Bank = -1;
+	int16_t			Bank = -1;
 	uint16_t		AddressOffset = 0;	// offset to view from the start of the region (bank or physical address space)
 	uint32_t		MemorySize = 0x10000;	// size of area being viewed
 	FAddressRef		ClickedAddress;
