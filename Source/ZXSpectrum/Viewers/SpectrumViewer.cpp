@@ -10,6 +10,7 @@
 
 #include <Util/Misc.h>
 #include <ImGuiSupport/ImGuiTexture.h>
+#include <ImGuiSupport/ImGuiScaling.h>
 
 void DrawArrow(ImDrawList* dl, ImVec2 pos, bool bLeftDirection);
 
@@ -50,10 +51,11 @@ void FSpectrumViewer::Draw()
 	ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
 
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float scale = ImGui_GetScaling();
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
 	ImVec2 uv0(0, 0);
 	ImVec2 uv1(320.0f / 512.0f, 1.0f);
-	ImGui::Image(ScreenTexture, ImVec2(320, 256),uv0,uv1);
+	ImGui::Image(ScreenTexture, ImVec2(320 * scale, 256 * scale),uv0,uv1);
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	const int topScreenScanLine = pSpectrumEmu->ZXEmuState.top_border_scanlines - 32;
@@ -65,7 +67,7 @@ void FSpectrumViewer::Draw()
 		if (scanlineEvents[scanlineNo] != (int)EEventType::None)
 		{
 			const uint32_t col = debugger.GetEventColour(scanlineEvents[scanlineNo]);
-			dl->AddLine(ImVec2(pos.x + 320, pos.y + scanlineY), ImVec2(pos.x + 320 + 32, pos.y + scanlineY), col);
+			dl->AddLine(ImVec2(pos.x + (320 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (320 + 32) * scale, pos.y + (scanlineY * scale)), col);
 		}
 	}
 	// Draw an indicator to show which scanline is being drawn
@@ -73,9 +75,9 @@ void FSpectrumViewer::Draw()
 	{
 		// Compensate for the fact the border area on a real spectrum is bigger than the emulated spectrum.
 		int scanlineY = std::min(std::max(pSpectrumEmu->ZXEmuState.scanline_y - topScreenScanLine, 0), 256);
-		dl->AddLine(ImVec2(pos.x + 4, pos.y + scanlineY), ImVec2(pos.x + 320 - 8, pos.y + scanlineY), 0x50ffffff);
+		dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (320 - 8) * scale, pos.y + (scanlineY * scale)), 0x50ffffff);
 		DrawArrow(dl, ImVec2(pos.x - 2, pos.y + scanlineY - 6), false);
-		DrawArrow(dl, ImVec2(pos.x + 320 - 11, pos.y + scanlineY - 6), true);
+		DrawArrow(dl, ImVec2(pos.x + (320 - 11) * scale, pos.y + (scanlineY - 6) * scale), true);
 	}
 
 	if (bShowCoordinates)
@@ -127,10 +129,12 @@ void FSpectrumViewer::Draw()
 		//ImGui::SameLine();
 		DrawAddressLabel(codeAnalysis, viewState, SelectAttrAddr);
 
-		if (FoundCharAddress.IsValid())
+		if (FoundCharAddresses.empty() == false)
 		{
-			ImGui::Text("Found at: %s", NumStr(FoundCharAddress.Address));
-			DrawAddressLabel(codeAnalysis, viewState, FoundCharAddress);
+			// list?
+			const FAddressRef& foundCharAddress = FoundCharAddresses[0];	// just first item for now
+			ImGui::Text("Found at: %s", NumStr(foundCharAddress.Address));
+			DrawAddressLabel(codeAnalysis, viewState, foundCharAddress);
 			//ImGui::SameLine();
 			bool bShowInGfxView = ImGui::Button("Show in GFX View");
 			ImGui::SameLine();
@@ -139,13 +143,13 @@ void FSpectrumViewer::Draw()
 			if (ImGui::Button("Format as Bitmap"))
 			{
 				FDataFormattingOptions formattingOptions;
-				formattingOptions.StartAddress = FoundCharAddress;
+				formattingOptions.StartAddress = foundCharAddress;
 				formattingOptions.ItemSize = 1;
 				formattingOptions.NoItems = 8;
 				formattingOptions.DataType = EDataType::Bitmap;
 
 				FormatData(codeAnalysis, formattingOptions);
-				viewState.GoToAddress(FoundCharAddress, false);
+				viewState.GoToAddress(foundCharAddress, false);
 			}
 
 			if (bShowInGfxView)
@@ -175,27 +179,28 @@ void FSpectrumViewer::Draw()
 			{
 				const int xp = xChar * 8;
 				const int yp = yChar * 8;
-				bool bContainsBits = false;
+				bool bEmpty = true;
 
 				// store pixel data for selected character
 				for (int charLine = 0; charLine < 8; charLine++)
 				{
 					charData[charLine] = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp, yp + charLine));
 					if (charData[charLine] != 0)
-						bContainsBits = true;
+						bEmpty = false;
 				}
 
-				if (bContainsBits)
+				if (bEmpty == false)
 				{
-					FAddressRef foundCharDataAddress = codeAnalysis.FindMemoryPattern(charData, 8);
+					const auto foundCharDataAddresses = codeAnalysis.FindAllMemoryPatterns(charData, 8, false);
 
-					if (foundCharDataAddress.IsValid())
+					if (foundCharDataAddresses.empty() == false)
 					{
-						const FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(foundCharDataAddress);
+						const FAddressRef& foundAddress = foundCharDataAddresses[0];	// just do first address for now
+						const FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(foundAddress);
 						if (pCodeInfo == nullptr || pCodeInfo->bDisabled)
 						{
 							FDataFormattingOptions formattingOptions;
-							formattingOptions.StartAddress = foundCharDataAddress;
+							formattingOptions.StartAddress = foundAddress;
 							formattingOptions.ItemSize = 1;
 							formattingOptions.NoItems = 8;
 							formattingOptions.DataType = EDataType::Bitmap;
@@ -274,11 +279,12 @@ void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, 
 
 bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnalysis, FCodeAnalysisViewState& viewState)
 {
+	const float scale = ImGui_GetScaling();
 	bool bJustSelectedChar = false;
 	
 	ImGuiIO& io = ImGui::GetIO();
-	const int xp = std::min(std::max((int)(io.MousePos.x - pos.x - kBorderOffsetX), 0), 255);
-	const int yp = std::min(std::max((int)(io.MousePos.y - pos.y - kBorderOffsetY), 0), 191);
+	const int xp = std::min(std::max((int)((io.MousePos.x - pos.x - kBorderOffsetX) / scale), 0), 255);
+	const int yp = std::min(std::max((int)((io.MousePos.y - pos.y - kBorderOffsetY) / scale), 0), 191);
 
 	const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
 	const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
@@ -286,9 +292,9 @@ bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnaly
 	if (scrPixAddress != 0)
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const int rx = static_cast<int>(pos.x) + kBorderOffsetX + (xp & ~0x7);
-		const int ry = static_cast<int>(pos.y) + kBorderOffsetY + (yp & ~0x7);
-		dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);
+		const int rx = kBorderOffsetX + (xp & ~0x7);
+		const int ry = kBorderOffsetY + (yp & ~0x7);
+		dl->AddRect(ImVec2(pos.x + ((float)rx * scale), pos.y + ((float)ry * scale)), ImVec2(pos.x + (float)(rx + 8) * scale,pos.y + (float)(ry + 8) * scale), 0xffffffff);
 		ImGui::BeginTooltip();
 		ImGui::Text("Screen Pos (%d,%d)", xp, yp);
 		ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
@@ -358,7 +364,7 @@ bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnaly
 			for (int charLine = 0; charLine < 8; charLine++)
 				CharData[charLine] = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
 			CharDataFound = codeAnalysis.FindMemoryPatternInPhysicalMemory(CharData, 8, 0, FoundCharDataAddress);
-			FoundCharAddress = codeAnalysis.FindMemoryPattern(CharData, 8);
+			FoundCharAddresses = codeAnalysis.FindAllMemoryPatterns(CharData, 8, true);
 			bJustSelectedChar = true;
 		}
 

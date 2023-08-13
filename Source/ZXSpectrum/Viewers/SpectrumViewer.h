@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include "imgui.h"
 #include "Misc/InputEventHandler.h"
@@ -40,7 +41,7 @@ private:
 	int			SelectedCharY = 0;
 	bool		CharDataFound = false;
 	uint16_t	FoundCharDataAddress = 0;
-	FAddressRef	FoundCharAddress;
+	std::vector<FAddressRef>	FoundCharAddresses;
 	uint8_t		CharData[8] = {0};
 	bool		bCharSearchWrap = true;
 	bool		bWindowFocused = false;
