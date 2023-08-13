@@ -71,13 +71,13 @@ void FSpectrumViewer::Draw()
 		}
 	}
 	// Draw an indicator to show which scanline is being drawn
-	if (config.bShowScanLineIndicator && pSpectrumEmu->UIZX.dbg.dbg.stopped)
+	if (config.bShowScanLineIndicator && codeAnalysis.Debugger.IsStopped())
 	{
 		// Compensate for the fact the border area on a real spectrum is bigger than the emulated spectrum.
 		int scanlineY = std::min(std::max(pSpectrumEmu->ZXEmuState.scanline_y - topScreenScanLine, 0), 256);
 		dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (320 - 8) * scale, pos.y + (scanlineY * scale)), 0x50ffffff);
-		DrawArrow(dl, ImVec2(pos.x - 2, pos.y + scanlineY - 6), false);
-		DrawArrow(dl, ImVec2(pos.x + (320 - 11) * scale, pos.y + (scanlineY - 6) * scale), true);
+		DrawArrow(dl, ImVec2(pos.x - 2, pos.y + (scanlineY * scale) - 6), false);
+		DrawArrow(dl, ImVec2(pos.x + (320 - 11) * scale, pos.y + (scanlineY * scale) - 6), true);
 	}
 
 	if (bShowCoordinates)
@@ -283,8 +283,8 @@ bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnaly
 	bool bJustSelectedChar = false;
 	
 	ImGuiIO& io = ImGui::GetIO();
-	const int xp = std::min(std::max((int)((io.MousePos.x - pos.x - kBorderOffsetX) / scale), 0), 255);
-	const int yp = std::min(std::max((int)((io.MousePos.y - pos.y - kBorderOffsetY) / scale), 0), 191);
+	const int xp = std::min(std::max((int)((io.MousePos.x - pos.x) / scale) - kBorderOffsetX, 0), 255);
+	const int yp = std::min(std::max((int)((io.MousePos.y - pos.y) / scale) - kBorderOffsetY, 0), 191);
 
 	const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
 	const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
