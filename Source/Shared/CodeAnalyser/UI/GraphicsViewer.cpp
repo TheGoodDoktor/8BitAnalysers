@@ -10,6 +10,7 @@
 #include <Util/Misc.h>
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
+#include <ImGuiSupport/ImGuiScaling.h>
 
 // Graphics Viewer
 static int kMaxImageSize = 256;
@@ -302,6 +303,8 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 
 void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 {
+	const float scale = ImGui_GetScaling();
+
 	FCodeAnalysisState& state = GetCodeAnalysis();
 	FCodeAnalysisBank* pBank = state.GetBank(Bank);
 
@@ -372,21 +375,21 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	// Zoomed graphics view - put into class?
 	const ImVec2 uv0(0, 0);
 	const ImVec2 uv1(1.0f / (float)ViewScale, 1.0f / (float)ViewScale);
-	const ImVec2 size((float)kGraphicsViewerWidth, (float)kGraphicsViewerHeight);
+	const ImVec2 size((float)kGraphicsViewerWidth * scale, (float)kGraphicsViewerHeight * scale);
 	pGraphicsView->UpdateTexture();
 	ImGui::Image((void*)pGraphicsView->GetTexture(), size, uv0, uv1);
 
 	if (ImGui::IsItemHovered())
 	{
-		const int xp = (int)(io.MousePos.x - pos.x);
-		const int yp = std::max((int)(io.MousePos.y - pos.y - (YSizePixels / 2)), 0);
+		const int xp = (int)(io.MousePos.x - pos.x) / scale;
+		const int yp = std::max((int)((io.MousePos.y - pos.y - (YSizePixels / 2)) / scale), 0);
 
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const int rx = (xp / viewSizeX) * viewSizeX;
 		const int ry = (yp / ViewScale) * ViewScale;
-		const float rxp = pos.x + (float)rx;
-		const float ryp = pos.y + (float)ry;
-		dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewSizeX, ryp + (float)viewSizeY), 0xff00ffff);
+		const float rxp = pos.x + (float)rx * scale;
+		const float ryp = pos.y + (float)ry * scale;
+		dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewSizeX * scale, ryp + (float)viewSizeY * scale), 0xff00ffff);
 		ImGui::BeginTooltip();
 		const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInView(rx, ry);
 		FAddressRef ptrAddress;
@@ -424,7 +427,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	// simpler slider
 	ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff);
 
-	ImGui::SetNextItemWidth(120.0f);
+	ImGui::SetNextItemWidth(120.0f * scale);
 	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
 		ImGui::InputInt("##Address", &addrInput, 1, 8, ImGuiInputTextFlags_CharsDecimal);
 	else
@@ -459,7 +462,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	StepInt("Step Image", addrInput, graphicsUnitSize);
 
 	// draw 64 * 8 bytes
-	const float kNumSize = 80.0f;	// size for number GUI widget
+	const float kNumSize = 80.0f * scale;	// size for number GUI widget
 	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::InputInt("XSize", &XSizePixels, 8, 8);
 	//ImGui::SameLine();
@@ -486,9 +489,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		for (int i = 0; i < ImageCount; i++)
 		{
 			ImVec2 rectPos;
-			rectPos.x = pos.x + static_cast<float>(i / ycount) * (float)viewSizeX;
-			rectPos.y = pos.y + static_cast<float>(i % ycount) * (float)viewSizeY;
-			dl->AddRect(rectPos, ImVec2(rectPos.x + (float)viewSizeX, rectPos.y + (float)viewSizeY), 0xff00ff00);
+			rectPos.x = pos.x + (static_cast<float>(i / ycount) * (float)viewSizeX) * scale;
+			rectPos.y = pos.y + (static_cast<float>(i % ycount) * (float)viewSizeY) * scale;
+			dl->AddRect(rectPos, ImVec2(rectPos.x + (float)viewSizeX * scale, rectPos.y + (float)viewSizeY * scale), 0xff00ff00);
 		}
 
 		ImGui::InputText("Image Set Name", &ImageSetName);
@@ -498,7 +501,6 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 		if (ImGui::Button("Format Memory"))
 		{
-
 			FAddressRef imageAddressRef = baseAddrRef;	// updated per image
 
 			for (int i = 0; i < ImageCount; i++)
@@ -572,7 +574,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 				ImageGraphicSet = baseAddrRef;				
 			}
 
-			float scaleFactor = 4.0f;
+			float scaleFactor = 4.0f * scale;
 			const ImVec2 uv0(0, 0);
 			const ImVec2 uv1((float)XSizePixels / (float)kMaxImageSize, (float)YSizePixels / (float)kMaxImageSize);
 			const ImVec2 size(std::min((float)XSizePixels * scaleFactor, (float)kMaxImageSize), std::min((float)YSizePixels * scaleFactor, (float)kMaxImageSize));
