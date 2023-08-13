@@ -37,10 +37,13 @@ public:
 	void			GoToAddress(FAddressRef address);
 
 	void			Draw();
-
 	
+	void			SetImagesRoot(const char* pImagesRoot) { ImagesRoot = pImagesRoot; }
 	bool			SaveGraphicsSets(const char* pFName);
 	bool			LoadGraphicsSets(const char* pFName);
+	bool			ExportImages(void);
+	bool			ExportGraphicSet(const FGraphicsSet& set);
+	void			DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* pView, int imageNo, int x, int y);
 
 	// protected methods
 protected:
@@ -59,7 +62,7 @@ protected:
 	int				ScreenWidth = 0;
 	int				ScreenHeight = 0;
 	bool			bShowPhysicalMemory = true;
-	int32_t			Bank = -1;
+	int16_t			Bank = -1;
 	uint16_t		AddressOffset = 0;	// offset to view from the start of the region (bank or physical address space)
 	uint32_t		MemorySize = 0x10000;	// size of area being viewed
 	FAddressRef		ClickedAddress;
@@ -78,6 +81,7 @@ protected:
 	FAddressRef		SelectedGraphicSet;
 
 	// housekeeping
+	std::string			ImagesRoot;
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
 	FGraphicsView* pGraphicsView = nullptr;
 	FGraphicsView* pScreenView = nullptr;

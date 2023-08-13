@@ -650,6 +650,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	}
 
 	GraphicsViewer.Init(&CodeAnalysis);
+	
 	IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
@@ -862,6 +863,9 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 	CodeAnalysis.Debugger.Break();
 
 	CodeAnalysis.Debugger.RegisterNewStackPointer(ZXEmuState.cpu.sp, FAddressRef());
+
+	FGlobalConfig& globalConfig = GetGlobalConfig();
+	GraphicsViewer.SetImagesRoot((globalConfig.WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 }
 
 bool FSpectrumEmu::StartGame(const char *pGameName)
@@ -1666,6 +1670,12 @@ void FSpectrumEmu::DrawUI()
 	if (ImGui::Begin("Debugger"))
 	{
 		CodeAnalysis.Debugger.DrawUI();
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Memory Analyser"))
+	{
+		CodeAnalysis.MemoryAnalyser.DrawUI();
 	}
 	ImGui::End();
 

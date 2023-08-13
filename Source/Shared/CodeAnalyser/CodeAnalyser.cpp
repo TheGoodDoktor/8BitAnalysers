@@ -934,6 +934,7 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
 
 	Debugger.Init(this);
+	MemoryAnalyser.Init(this);
 }
 
 void FCodeAnalysisState::OnFrameStart()
@@ -943,6 +944,7 @@ void FCodeAnalysisState::OnFrameStart()
 
 void FCodeAnalysisState::OnFrameEnd()
 {
+	MemoryAnalyser.FrameTick();
 	if (Debugger.FrameTick())
 	{
 		GetFocussedViewState().GoToAddress(CPUInterface->GetPC());

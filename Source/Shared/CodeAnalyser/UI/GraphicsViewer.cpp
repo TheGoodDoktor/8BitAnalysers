@@ -330,7 +330,14 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	// show combo for banked mode
 	if (bShowPhysicalMemory == false)
 	{
-		if (ImGui::BeginCombo("Bank", GetBankText(state, Bank)))
+		if (DrawBankInput(state, "Bank", Bank))
+		{
+			FCodeAnalysisBank* pNewBank = state.GetBank(Bank);
+			AddressOffset = 0;
+			MemorySize = pNewBank->GetSizeBytes();
+		}
+
+		/*if (ImGui::BeginCombo("Bank", GetBankText(state, Bank)))
 		{
 			const auto& banks = state.GetBanks();
 			for (const auto& bank : banks)
@@ -345,7 +352,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			}
 
 			ImGui::EndCombo();
-		}
+		}*/
 	}
 
 	ImGui::Combo("ViewMode", (int*)&ViewMode, "CharacterBitmap\0CharacterBitmapWinding", (int)GraphicsViewMode::Count);
@@ -363,9 +370,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	// Zoomed graphics view - put into class?
-	ImVec2 uv0(0, 0);
-	ImVec2 uv1(1.0f / (float)ViewScale, 1.0f / (float)ViewScale);
-	ImVec2 size((float)kGraphicsViewerWidth, (float)kGraphicsViewerHeight);
+	const ImVec2 uv0(0, 0);
+	const ImVec2 uv1(1.0f / (float)ViewScale, 1.0f / (float)ViewScale);
+	const ImVec2 size((float)kGraphicsViewerWidth, (float)kGraphicsViewerHeight);
 	pGraphicsView->UpdateTexture();
 	ImGui::Image((void*)pGraphicsView->GetTexture(), size, uv0, uv1);
 
@@ -399,6 +406,16 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		ImGui::Text("%s", NumStr(ptrAddress.Address));
 		ImGui::SameLine();
 		DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
+		
+		// show magnifier
+		const float magAmount = 8.0f;
+		const int magXP = rx / ViewScale;// ((int)(io.MousePos.x - pos.x) / viewSizeX)* viewSizeX;
+		const int magYP = ry / ViewScale;//std::max((int)(io.MousePos.y - pos.y - (viewSizeY / 2)), 0);
+		const ImVec2 magSize(XSizePixels * magAmount, YSizePixels * magAmount);
+		const ImVec2 magUV0(magXP * (1.0f/ kGraphicsViewerWidth), magYP * (1.0f / kGraphicsViewerHeight));
+		const ImVec2 magUV1(magUV0.x + XSizePixels * (1.0f / kGraphicsViewerWidth), magUV0.y + YSizePixels * (1.0f / kGraphicsViewerHeight));
+		ImGui::Image((void*)pGraphicsView->GetTexture(), magSize, magUV0, magUV1);
+
 		ImGui::EndTooltip();
 	}
 
@@ -569,7 +586,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	// List graphic sets
 	ImGui::Text("Graphic Sets");
-	if (ImGui::BeginChild("GraphicSetListChild",ImVec2(0,0),true))
+	if (ImGui::BeginChild("GraphicSetListChild",ImVec2(0,-40),true))
 	{
 		for (const auto& graphicsSetIt : GraphicsSets)
 		{
@@ -588,6 +605,12 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	{
 
 	}
+	ImGui::SameLine();
+	if (ImGui::Button("Export"))
+	{
+		ExportImages();
+		//pGraphicsView->SavePNG("test.png");
+	}
 
 }
 
@@ -598,6 +621,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 #include <fstream>
 #include <sstream>
 #include <json.hpp>
+#include <Util/FileUtil.h>
 using json = nlohmann::json;
 
 bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
@@ -656,6 +680,68 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 			set.Count = graphicsSetJson["ImageCount"];
 			GraphicsSets[set.Address] = set;
 		}
+	}
+
+	return true;
+}
+
+void FGraphicsViewer::DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* pView, int imageNo, int x, int y)
+{
+	FCodeAnalysisState& state = GetCodeAnalysis();
+	const int xChars = (set.XSizePixels >> 3);
+	const int graphicsUnitSize = xChars * set.YSizePixels;
+
+	FAddressRef itemAddress = set.Address;
+
+	state.AdvanceAddressRef(itemAddress, imageNo * graphicsUnitSize);
+	for (int yp = 0; yp < set.YSizePixels; yp++)
+	{
+		for (int xp = 0; xp < xChars; xp++)
+		{
+			const uint8_t charLine = state.ReadByte(itemAddress);
+			pView->DrawCharLine(charLine, x + (xp * 8), y + yp, 0xffffffff, 0);
+			state.AdvanceAddressRef(itemAddress, 1);
+		}
+	}
+}
+
+// export all graphic sets as separate PNG files
+bool FGraphicsViewer::ExportGraphicSet(const FGraphicsSet& set)
+{
+	const int maxImageXSize = 256;
+	const int maxImagesX = maxImageXSize / set.XSizePixels;
+	const int noImagesX = set.Count % maxImagesX;
+	const int noImagesY = (set.Count / maxImagesX) + 1;
+
+	FGraphicsView* pSaveImage = new FGraphicsView(set.XSizePixels * noImagesX, set.YSizePixels * noImagesY);
+
+	// write out graphics to memory buffer
+	FAddressRef addrRef = set.Address;
+
+	for (int imageNo = 0; imageNo < set.Count; imageNo++)
+	{
+		const int x = (imageNo % noImagesX) * set.XSizePixels;
+		const int y = (imageNo / noImagesX) / set.YSizePixels;
+
+		DrawGraphicToView(set, pSaveImage, imageNo, x, y);
+	}
+
+	// export png
+	std::string fName = ImagesRoot + set.Name + ".png";
+	pSaveImage->SavePNG(fName.c_str());
+
+	delete pSaveImage;
+	return true;
+}
+
+bool FGraphicsViewer::ExportImages(void)
+{
+	EnsureDirectoryExists(ImagesRoot.c_str());
+	for (const auto& graphicsSetIt : GraphicsSets)
+	{
+		const FGraphicsSet& set = graphicsSetIt.second;
+		if (ExportGraphicSet(set) == false)
+			return false;
 	}
 
 	return true;

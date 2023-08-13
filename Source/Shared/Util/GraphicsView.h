@@ -34,6 +34,9 @@ public:
 	int GetWidth() const { return Width; }
 	int GetHeight() const { return Height; }
 	const void* GetTexture() const { return Texture; }
+
+	bool SavePNG(const char* pFName);
+
 private:
 	int				Width = 0;
 	int				Height = 0;

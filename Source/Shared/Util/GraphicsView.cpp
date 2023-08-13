@@ -6,6 +6,10 @@
 #include <cstdint>
 #include <vector>
 
+// TODO: should probably have a separate file with all the STB impls in
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
+
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bMagnifier = true);
 
 // speccy colour CLUT
@@ -118,6 +122,15 @@ void FGraphicsView::DrawBitImageChars(const uint8_t* pSrc, int xp, int yp, int w
 			pSrc+=8;
 		}
 	}
+}
+
+bool FGraphicsView::SavePNG(const char* pFName)
+{
+	// TODO: we might need to flip the bytes
+
+	stbi_write_png(pFName, Width, Height, 4, PixelBuffer, Width * sizeof(uint32_t));
+
+	return true;
 }
 
 
