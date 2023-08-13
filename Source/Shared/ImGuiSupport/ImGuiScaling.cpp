@@ -12,7 +12,7 @@ void ImGui_InitScaling(void)
 
 float ImGui_GetScaling(void)
 {
-	return 1.0f;	// temp
+	//return 1.0f;	// temp
 	const float fontSize = ImGui::GetFontSize();
 	return fontSize / 13.0f;
 	return g_Scaling;
