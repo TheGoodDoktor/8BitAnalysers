@@ -55,7 +55,7 @@ void FMemoryAnalyser::DrawPhysicalMemoryDiffUI(void)
 				if (ROMArea.InRange(addr) == false && (ScreenMemory.InRange(addr) == false || bDiffVideoMem))
 				{
 					if (pCodeAnalysis->ReadByte(addr) != DiffSnapShotMemory[addr])
-						DiffChangedLocations.push_back(addr);
+						DiffChangedLocations.push_back(pCodeAnalysis->AddressRefFromPhysicalAddress(addr));
 				}
 			}
 		}
@@ -76,18 +76,18 @@ void FMemoryAnalyser::DrawPhysicalMemoryDiffUI(void)
 			ImGui::TableHeadersRow();
 
 			// TODO: use clipper?
-			for (const uint16_t changedAddr : DiffChangedLocations)
+			for (const auto changedAddr : DiffChangedLocations)
 			{
 				const FDataInfo* pDataInfo = pCodeAnalysis->GetWriteDataInfoForAddress(changedAddr);
 				ImGui::TableNextRow();
-				ImGui::PushID(changedAddr);
+				ImGui::PushID(changedAddr.Val);
 				
 				ImGui::TableSetColumnIndex(0);
-				ImGui::Text("%s", NumStr(changedAddr));
+				ImGui::Text("%s", NumStr(changedAddr.Address));
 				DrawAddressLabel(*pCodeAnalysis, viewState, changedAddr);
 
 				ImGui::TableSetColumnIndex(1);
-				ImGui::Text("%s", NumStr(DiffSnapShotMemory[changedAddr]));
+				ImGui::Text("%s", NumStr(DiffSnapShotMemory[changedAddr.Address]));
 
 				ImGui::TableSetColumnIndex(2);
 				ImGui::Text("%s", NumStr(pCodeAnalysis->ReadByte(changedAddr)));

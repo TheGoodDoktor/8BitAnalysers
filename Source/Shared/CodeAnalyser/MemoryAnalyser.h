@@ -3,6 +3,8 @@
 #include <cinttypes>
 #include <vector>
 
+#include "CodeAnalyserTypes.h"
+
 class FCodeAnalysisState;
 
 struct FPhysicalMemoryRange
@@ -38,11 +40,10 @@ private:
 	FPhysicalMemoryRange	ScreenMemory;
 
 	// Physical Memory Diff
-	bool					bDiffVideoMem = false;
-	bool					bSnapshotAvailable = false;
-	uint8_t					DiffSnapShotMemory[1 << 16];	// 64 Kb
-	std::vector<uint16_t>	DiffChangedLocations;
-	int						DiffSelectedAddr = -1;
+	bool						bDiffVideoMem = false;
+	bool						bSnapshotAvailable = false;
+	uint8_t						DiffSnapShotMemory[1 << 16];	// 64 Kb
+	std::vector<FAddressRef>	DiffChangedLocations;
 
 
 };
