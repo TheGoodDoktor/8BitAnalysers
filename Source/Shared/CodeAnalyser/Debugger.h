@@ -129,7 +129,6 @@ public:
 	bool	RemoveBreakpoint(FAddressRef addr);
 	const FBreakpoint* GetBreakpointForAddress(FAddressRef addr) const;
 	FBreakpoint* GetBreakpointForAddress(FAddressRef addr) { return const_cast<FBreakpoint*>(const_cast<const FDebugger*>(this)->GetBreakpointForAddress(addr)); }
-	void	SetScreenMemoryArea(uint16_t start, uint16_t end) { ScreenMemoryStart = start; ScreenMemoryEnd = end; }
 	// Watches
 	void	AddWatch(FWatch watch);
 	bool	RemoveWatch(FWatch watch);
@@ -205,9 +204,6 @@ private:
 
 	uint16_t				StackMin = 0xffff;
 	uint16_t				StackMax = 0;
-
-	uint16_t				ScreenMemoryStart = 0;
-	uint16_t				ScreenMemoryEnd = 0;
 };
 
 void EventShowPixValue(FCodeAnalysisState& state, const FEvent& event);

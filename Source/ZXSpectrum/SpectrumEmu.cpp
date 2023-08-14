@@ -755,7 +755,9 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	debugger.RegisterEventType((int)EEventType::OutputBeeper, "Output Beeper", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::OutputMic, "Output Mic", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
 
-	debugger.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
+	// Setup Memory Analyser
+	CodeAnalysis.MemoryAnalyser.SetROMArea(kROMStart, kROMEnd);
+	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
 
 	bInitialised = true;
 	return true;
