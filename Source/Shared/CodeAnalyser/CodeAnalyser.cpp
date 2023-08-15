@@ -249,13 +249,16 @@ bool FCodeAnalysisState::FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_
 	return false;
 }
 
-std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(uint8_t* pData, size_t dataSize, bool bROM)
+std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly)
 {
 	std::vector<FAddressRef> results;
 	// iterate through banks
 	for (auto& bank : Banks)
 	{
 		if (bank.bReadOnly && bROM == false)
+			continue;
+
+		if (bank.IsMapped() == false && bPhysicalOnly)
 			continue;
 
 		const int bankByteSize = bank.GetSizeBytes();

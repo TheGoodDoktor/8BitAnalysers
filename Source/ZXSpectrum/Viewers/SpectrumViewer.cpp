@@ -191,7 +191,7 @@ void FSpectrumViewer::Draw()
 
 				if (bEmpty == false)
 				{
-					const auto foundCharDataAddresses = codeAnalysis.FindAllMemoryPatterns(charData, 8, false);
+					const auto foundCharDataAddresses = codeAnalysis.FindAllMemoryPatterns(charData, 8, false, false);
 
 					if (foundCharDataAddresses.empty() == false)
 					{
@@ -364,7 +364,7 @@ bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnaly
 			for (int charLine = 0; charLine < 8; charLine++)
 				CharData[charLine] = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
 			CharDataFound = codeAnalysis.FindMemoryPatternInPhysicalMemory(CharData, 8, 0, FoundCharDataAddress);
-			FoundCharAddresses = codeAnalysis.FindAllMemoryPatterns(CharData, 8, true);
+			FoundCharAddresses = codeAnalysis.FindAllMemoryPatterns(CharData, 8, true, false);
 			bJustSelectedChar = true;
 		}
 

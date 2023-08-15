@@ -34,7 +34,8 @@ public:
 	void	FrameTick(void);
 	void	DrawUI(void);
 
-	void	SetROMArea(uint16_t start, uint16_t end) { ROMArea = { start,end }; }
+	void	ClearROMAreas(void) { ROMAreas.clear(); }
+	void	AddROMArea(uint16_t start, uint16_t end) { ROMAreas.emplace_back(start,end); }
 
 	void	SetScreenMemoryArea(uint16_t start, uint16_t end) { ScreenMemory = { start,end }; }
 	bool	IsAddressInScreenMemory(uint16_t addr) const { return ScreenMemory.InRange(addr); }
@@ -46,14 +47,13 @@ private:
 	FCodeAnalysisState*		pCodeAnalysis = nullptr;
 
 	// Physical region identifiers
-	FPhysicalMemoryRange	ROMArea;
+	std::vector<FPhysicalMemoryRange>	ROMAreas;
 	FPhysicalMemoryRange	ScreenMemory;
 
 	// Physical Memory Diff
 	bool						bDiffPhysicalMemory = true;
 	bool						bDiffVideoMem = false;
 	bool						bSnapshotAvailable = false;
-	//uint8_t						DiffSnapShotPhysicalMemory[1 << 16];	// 64 Kb
 	std::map<int16_t,FBankMemory>	DiffSnapshotMemoryBanks;
 	std::vector<FAddressRef>	DiffChangedLocations;
 

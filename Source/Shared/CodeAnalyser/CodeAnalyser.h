@@ -565,7 +565,7 @@ public:
 	void SetMachineStateForAddress(uint16_t addr, FMachineState* pMachineState) { GetReadPage(addr)->MachineState[addr & kPageMask] = pMachineState; }
 
 	//FAddressRef FindMemoryPattern(uint8_t* pData, size_t dataSize);
-	std::vector<FAddressRef> FindAllMemoryPatterns(uint8_t* pData, size_t dataSize, bool bROM);
+	std::vector<FAddressRef> FindAllMemoryPatterns(uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly);
 
 	bool FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 

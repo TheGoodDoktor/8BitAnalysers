@@ -760,7 +760,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	debugger.RegisterEventType((int)EEventType::OutputMic, "Output Mic", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
 
 	// Setup Memory Analyser
-	CodeAnalysis.MemoryAnalyser.SetROMArea(kROMStart, kROMEnd);
+	CodeAnalysis.MemoryAnalyser.AddROMArea(kROMStart, kROMEnd);
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
 
 	bInitialised = true;
