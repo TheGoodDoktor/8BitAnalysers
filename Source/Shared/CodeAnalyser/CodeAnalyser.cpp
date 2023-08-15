@@ -216,7 +216,7 @@ bool FCodeAnalysisState::RemoveLabelName(const std::string& labelName)
 
 	return false;
 }
-
+/*
 // Search memory space for a block of data
 bool FCodeAnalysisState::FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr)
 {
@@ -247,7 +247,7 @@ bool FCodeAnalysisState::FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_
 	} while (address != 0);	// 16 bit address overflow
 
 	return false;
-}
+}*/
 
 std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly)
 {

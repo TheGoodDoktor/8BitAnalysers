@@ -39,8 +39,9 @@ private:
 	uint16_t	SelectAttrAddr = 0;
 	int			SelectedCharX = 0;
 	int			SelectedCharY = 0;
-	bool		CharDataFound = false;
-	uint16_t	FoundCharDataAddress = 0;
+	//bool		CharDataFound = false;
+	//uint16_t	FoundCharDataAddress = 0;
+	int			FoundCharIndex = 0;
 	std::vector<FAddressRef>	FoundCharAddresses;
 	uint8_t		CharData[8] = {0};
 	bool		bCharSearchWrap = true;

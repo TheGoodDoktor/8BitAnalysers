@@ -567,7 +567,7 @@ public:
 	//FAddressRef FindMemoryPattern(uint8_t* pData, size_t dataSize);
 	std::vector<FAddressRef> FindAllMemoryPatterns(uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly);
 
-	bool FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
+	//bool FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 
 	void FindAsciiStrings(uint16_t startAddress);
 

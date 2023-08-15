@@ -93,9 +93,9 @@ void FSpectrumViewer::Draw()
 			int xp, yp;
 			GetScreenAddressCoords(viewState.HighlightAddress.Address, xp, yp);
 
-			const int rx = static_cast<int>(pos.x) + kBorderOffsetX + xp;
-			const int ry = static_cast<int>(pos.y) + kBorderOffsetY + yp;
-			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 1), 0xffffffff);	// TODO: flash?
+			const int rx = static_cast<int>(pos.x) + (kBorderOffsetX + xp) * scale;
+			const int ry = static_cast<int>(pos.y) + (kBorderOffsetY + yp) * scale;
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (1 * scale)), 0xffffffff);	// TODO: flash?
 		}
 
 		if (viewState.HighlightAddress.Address >= kScreenAttrMemStart && viewState.HighlightAddress.Address <= kScreenAttrMemEnd)	// attributes
@@ -103,9 +103,9 @@ void FSpectrumViewer::Draw()
 			int xp, yp;
 			GetAttribAddressCoords(viewState.HighlightAddress.Address, xp, yp);
 
-			const int rx = static_cast<int>(pos.x) + kBorderOffsetX + xp;
-			const int ry = static_cast<int>(pos.y) + kBorderOffsetY + yp;
-			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);	// TODO: flash?
+			const int rx = static_cast<int>(pos.x) + (kBorderOffsetX + xp) * scale;
+			const int ry = static_cast<int>(pos.y) + (kBorderOffsetY + yp) * scale;
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (8 * scale)), 0xffffffff);	// TODO: flash?
 		}
 	}
 
@@ -132,14 +132,16 @@ void FSpectrumViewer::Draw()
 		if (FoundCharAddresses.empty() == false)
 		{
 			// list?
-			const FAddressRef& foundCharAddress = FoundCharAddresses[0];	// just first item for now
+			const FAddressRef& foundCharAddress = FoundCharAddresses[FoundCharIndex];	
 			ImGui::Text("Found at: %s", NumStr(foundCharAddress.Address));
 			DrawAddressLabel(codeAnalysis, viewState, foundCharAddress);
-			//ImGui::SameLine();
-			bool bShowInGfxView = ImGui::Button("Show in GFX View");
-			ImGui::SameLine();
-			ImGui::Checkbox("Wrap", &bCharSearchWrap);
-			ImGui::SameLine();
+			if (FoundCharAddresses.size() > 1)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("Next"))
+					FoundCharIndex = (FoundCharIndex + 1) % FoundCharAddresses.size();
+			}
+			
 			if (ImGui::Button("Format as Bitmap"))
 			{
 				FDataFormattingOptions formattingOptions;
@@ -151,19 +153,10 @@ void FSpectrumViewer::Draw()
 				FormatData(codeAnalysis, formattingOptions);
 				viewState.GoToAddress(foundCharAddress, false);
 			}
-
-			if (bShowInGfxView)
+			ImGui::SameLine();
+			if (ImGui::Button("Show in GFX View"))
 			{
-				if (!bJustSelectedChar)
-				{
-					bool bFound = codeAnalysis.FindMemoryPatternInPhysicalMemory(CharData, 8, FoundCharDataAddress+8, FoundCharDataAddress);
-					
-					// If we didn't find anything, then wraparound and look from the start of ram.
-					if (!bFound && bCharSearchWrap)
-						CharDataFound = codeAnalysis.FindMemoryPatternInPhysicalMemory(CharData, 8, 0, FoundCharDataAddress);
-				}
-
-				pSpectrumEmu->GraphicsViewer.GoToAddress(codeAnalysis.AddressRefFromPhysicalAddress(FoundCharDataAddress));
+				pSpectrumEmu->GraphicsViewer.GoToAddress(foundCharAddress);
 			}
 		}
 	}
@@ -254,14 +247,16 @@ void FSpectrumViewer::Draw()
 
 void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos)
 {
+	const float scale = ImGui_GetScaling();
+
 	// draw coordinate position
 	if (XCoordAddress.IsValid())
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const uint8_t xVal = codeAnalysis.ReadByte(XCoordAddress);
 		const float xLinePos = (float)(bInvertXCoord ? 255 - xVal : xVal);
-		const ImVec2 lineStart(pos.x + kBorderOffsetX + xLinePos, pos.y + kBorderOffsetY);
-		const ImVec2 lineEnd(pos.x + kBorderOffsetX + xLinePos, pos.y + kBorderOffsetY + 192.0f);
+		const ImVec2 lineStart(pos.x + (kBorderOffsetX + xLinePos) * scale, pos.y + kBorderOffsetY * scale);
+		const ImVec2 lineEnd(pos.x + (kBorderOffsetX + xLinePos) * scale, pos.y + (kBorderOffsetY + 192.0f) * scale);
 
 		dl->AddLine(lineStart, lineEnd, 0xffffffff);
 	}
@@ -270,8 +265,8 @@ void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, 
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const uint8_t yVal = codeAnalysis.ReadByte(YCoordAddress);
 		const float yLinePos = (float)(bInvertYCoord ? 192 - yVal : yVal);
-		const ImVec2 lineStart(pos.x + kBorderOffsetX, pos.y + kBorderOffsetY + yLinePos);
-		const ImVec2 lineEnd(pos.x + kBorderOffsetX + 256.0f, pos.y + kBorderOffsetY + yLinePos);
+		const ImVec2 lineStart(pos.x + kBorderOffsetX * scale, pos.y + (kBorderOffsetY + yLinePos) * scale);
+		const ImVec2 lineEnd(pos.x + (kBorderOffsetX + 256.0f) * scale, pos.y + (kBorderOffsetY + yLinePos) * scale);
 
 		dl->AddLine(lineStart, lineEnd, 0xffffffff);
 	}
@@ -363,8 +358,9 @@ bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnaly
 			// store pixel data for selected character
 			for (int charLine = 0; charLine < 8; charLine++)
 				CharData[charLine] = pSpectrumEmu->ReadByte(GetScreenPixMemoryAddress(xp & ~0x7, (yp & ~0x7) + charLine));
-			CharDataFound = codeAnalysis.FindMemoryPatternInPhysicalMemory(CharData, 8, 0, FoundCharDataAddress);
+			//CharDataFound = codeAnalysis.FindMemoryPatternInPhysicalMemory(CharData, 8, 0, FoundCharDataAddress);
 			FoundCharAddresses = codeAnalysis.FindAllMemoryPatterns(CharData, 8, true, false);
+			FoundCharIndex = 0;
 			bJustSelectedChar = true;
 		}
 
