@@ -935,6 +935,7 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 
 	Debugger.Init(this);
 	MemoryAnalyser.Init(this);
+	IOAnalyser.Init(this);
 }
 
 void FCodeAnalysisState::OnFrameStart()
@@ -945,6 +946,7 @@ void FCodeAnalysisState::OnFrameStart()
 void FCodeAnalysisState::OnFrameEnd()
 {
 	MemoryAnalyser.FrameTick();
+	IOAnalyser.FrameTick();
 	if (Debugger.FrameTick())
 	{
 		GetFocussedViewState().GoToAddress(CPUInterface->GetPC());

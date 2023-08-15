@@ -253,6 +253,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 {
 	FCodeAnalysisState &state = CodeAnalysis;
 	FDebugger& debugger = CodeAnalysis.Debugger;
+	FIOAnalyser& ioAnalyser = CodeAnalysis.IOAnalyser;
 	z80_t& cpu = ZXEmuState.cpu;
 	const uint16_t pc = GetPC().Address;
 	static uint64_t lastTickPins = 0;
@@ -324,6 +325,8 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 
 		if (pins & Z80_RD)
 		{
+			ioAnalyser.RegisterIORead(addr, data);
+
 			if ((pins & Z80_A0) == 0)
 				debugger.RegisterEvent((uint8_t)EEventType::KeyboardRead, pcAddrRef, addr , data, scanlinePos);
 			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) // Kempston Joystick (........000.....)
@@ -340,6 +343,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		else if (pins & Z80_WR)
 		{
 			// an IO write
+			ioAnalyser.RegisterIOWrite(addr, data);
 
 			// handle bank switching on speccy 128
 			if ((pins & Z80_A0) == 0)
@@ -1678,6 +1682,12 @@ void FSpectrumEmu::DrawUI()
 	if (ImGui::Begin("Memory Analyser"))
 	{
 		CodeAnalysis.MemoryAnalyser.DrawUI();
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("IO Analyser"))
+	{
+		CodeAnalysis.IOAnalyser.DrawUI();
 	}
 	ImGui::End();
 

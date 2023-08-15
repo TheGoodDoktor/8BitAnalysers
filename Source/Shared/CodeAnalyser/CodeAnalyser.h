@@ -11,6 +11,7 @@
 #include "CodeAnalysisPage.h"
 #include "Debugger.h"
 #include "MemoryAnalyser.h"
+#include "IOAnalyser.h"
 
 class FGraphicsView;
 class FCodeAnalysisState;
@@ -401,6 +402,7 @@ public:
 	
 	FDebugger				Debugger;
 	FMemoryAnalyser			MemoryAnalyser;
+	FIOAnalyser				IOAnalyser;
 
 	FAddressRef				CopiedAddress;
 

@@ -2,6 +2,7 @@
 
 #include <cinttypes>
 #include <vector>
+#include <map>
 
 #include "CodeAnalyserTypes.h"
 
@@ -17,10 +18,19 @@ struct FPhysicalMemoryRange
 	uint16_t	End = 0;
 };
 
+// used for diffing memory banks
+struct FBankMemory
+{
+	int16_t		BankId = -1;
+	uint16_t	SizeBytes = 0;
+	uint8_t* pMemory = nullptr;
+};
+
 class FMemoryAnalyser
 {
 public:
 	void	Init(FCodeAnalysisState* pCodeAnalysis);
+	void	Shutdown();
 	void	FrameTick(void);
 	void	DrawUI(void);
 
@@ -40,9 +50,11 @@ private:
 	FPhysicalMemoryRange	ScreenMemory;
 
 	// Physical Memory Diff
+	bool						bDiffPhysicalMemory = true;
 	bool						bDiffVideoMem = false;
 	bool						bSnapshotAvailable = false;
-	uint8_t						DiffSnapShotMemory[1 << 16];	// 64 Kb
+	//uint8_t						DiffSnapShotPhysicalMemory[1 << 16];	// 64 Kb
+	std::map<int16_t,FBankMemory>	DiffSnapshotMemoryBanks;
 	std::vector<FAddressRef>	DiffChangedLocations;
 
 

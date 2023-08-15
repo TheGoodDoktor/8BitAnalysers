@@ -5,9 +5,29 @@
 #include <imgui.h>
 #include "UI/CodeAnalyserUI.h"
 
+
+
 void FMemoryAnalyser::Init(FCodeAnalysisState* ptrCodeAnalysis)
 {
 	pCodeAnalysis = ptrCodeAnalysis;
+
+	const auto& banks = pCodeAnalysis->GetBanks();
+	for(const FCodeAnalysisBank& bank : banks)
+	{
+		FBankMemory& bankMem = DiffSnapshotMemoryBanks[bank.Id];
+		bankMem.BankId = bank.Id;
+		bankMem.SizeBytes = bank.GetSizeBytes();
+		bankMem.pMemory = new uint8_t[bankMem.SizeBytes];
+	}
+}
+
+void FMemoryAnalyser::Shutdown()
+{
+	for (auto& bankMemIt : DiffSnapshotMemoryBanks)
+	{
+		delete[] bankMemIt.second.pMemory;
+	}
+	DiffSnapshotMemoryBanks.clear();
 }
 
 void FMemoryAnalyser::FrameTick(void)
@@ -35,10 +55,24 @@ void FMemoryAnalyser::DrawPhysicalMemoryDiffUI(void)
 	
 	if (ImGui::Button("SnapShot"))
 	{
-		for (int addr = 0; addr < (1 << 16); addr++)	// might as well snapshot the whole thing
+		// Capture banks
+		for (auto& memBankIt : DiffSnapshotMemoryBanks)
 		{
-			DiffSnapShotMemory[addr] = pCodeAnalysis->ReadByte(addr);
+			FBankMemory& memBank = memBankIt.second;
+			const FCodeAnalysisBank* pBank = pCodeAnalysis->GetBank(memBank.BankId);
+
+			if (pBank->bReadOnly)	// skip ROM banks
+				continue;
+
+			if (bDiffPhysicalMemory == false || pBank->IsMapped())
+			{
+				assert(pBank != nullptr);
+				assert(pBank->GetSizeBytes() == memBank.SizeBytes);
+
+				memcpy(memBank.pMemory, pBank->Memory, memBank.SizeBytes);
+			}
 		}
+
 		bSnapshotAvailable = true;
 		DiffChangedLocations.clear();
 	}
@@ -50,12 +84,29 @@ void FMemoryAnalyser::DrawPhysicalMemoryDiffUI(void)
 		if (ImGui::Button("Diff"))
 		{
 			DiffChangedLocations.clear();
-			for (int addr = 0; addr < (1 << 16); addr++)
+
+			for (auto& memBankIt : DiffSnapshotMemoryBanks)
 			{
-				if (ROMArea.InRange(addr) == false && (ScreenMemory.InRange(addr) == false || bDiffVideoMem))
+				FBankMemory& memBank = memBankIt.second;
+				const FCodeAnalysisBank* pBank = pCodeAnalysis->GetBank(memBank.BankId);
+
+				if (bDiffPhysicalMemory == false || pBank->IsMapped())
 				{
-					if (pCodeAnalysis->ReadByte(addr) != DiffSnapShotMemory[addr])
-						DiffChangedLocations.push_back(pCodeAnalysis->AddressRefFromPhysicalAddress(addr));
+					assert(pBank != nullptr);
+					assert(pBank->GetSizeBytes() == memBank.SizeBytes);
+
+					if (pBank->bReadOnly)	// skip ROM banks
+						continue;
+
+					for (uint16_t addrOffset = 0; addrOffset < memBank.SizeBytes; addrOffset++)
+					{
+						uint16_t address = pBank->GetMappedAddress() + addrOffset;
+						if (ScreenMemory.InRange(address) == false || bDiffVideoMem)
+						{
+							if (pBank->Memory[addrOffset] != memBank.pMemory[addrOffset])
+								DiffChangedLocations.push_back(FAddressRef(pBank->Id, address));
+						}
+					}
 				}
 			}
 		}
@@ -63,6 +114,9 @@ void FMemoryAnalyser::DrawPhysicalMemoryDiffUI(void)
 
 	ImGui::SameLine();
 	ImGui::Checkbox("Include video memory", &bDiffVideoMem);
+	ImGui::SameLine();
+	ImGui::Checkbox("Physical memory", &bDiffPhysicalMemory);
+	
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	if (ImGui::BeginChild("DiffedMemory", ImVec2(0, 0), true, window_flags))
 	{
@@ -82,16 +136,21 @@ void FMemoryAnalyser::DrawPhysicalMemoryDiffUI(void)
 				ImGui::TableNextRow();
 				ImGui::PushID(changedAddr.Val);
 				
+				// Address
 				ImGui::TableSetColumnIndex(0);
 				ImGui::Text("%s", NumStr(changedAddr.Address));
 				DrawAddressLabel(*pCodeAnalysis, viewState, changedAddr);
 
+				// Snapshot value
 				ImGui::TableSetColumnIndex(1);
-				ImGui::Text("%s", NumStr(DiffSnapShotMemory[changedAddr.Address]));
+				const uint8_t oldValue = DiffSnapshotMemoryBanks[changedAddr.BankId].pMemory[changedAddr.Address];
+				ImGui::Text("%s", NumStr(oldValue));
 
+				// Current value
 				ImGui::TableSetColumnIndex(2);
 				ImGui::Text("%s", NumStr(pCodeAnalysis->ReadByte(changedAddr)));
 
+				// Code address that last wrote to value
 				ImGui::TableSetColumnIndex(3);
 				ImGui::Text("");
 				DrawAddressLabel(*pCodeAnalysis, viewState, pDataInfo->LastWriter);
