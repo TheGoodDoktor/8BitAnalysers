@@ -5,6 +5,7 @@
 #include <map>
 
 #include "CodeAnalyserTypes.h"
+#include "FindTool.h"
 
 class FCodeAnalysisState;
 
@@ -57,5 +58,5 @@ private:
 	std::map<int16_t,FBankMemory>	DiffSnapshotMemoryBanks;
 	std::vector<FAddressRef>	DiffChangedLocations;
 
-
+	FFindTool					FindTool;
 };

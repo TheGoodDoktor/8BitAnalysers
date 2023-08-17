@@ -19,6 +19,8 @@ void FMemoryAnalyser::Init(FCodeAnalysisState* ptrCodeAnalysis)
 		bankMem.SizeBytes = bank.GetSizeBytes();
 		bankMem.pMemory = new uint8_t[bankMem.SizeBytes];
 	}
+
+	FindTool.Init(ptrCodeAnalysis);
 }
 
 void FMemoryAnalyser::Shutdown()
@@ -42,8 +44,14 @@ void FMemoryAnalyser::DrawUI(void)
 		if (ImGui::BeginTabItem("Diff"))
 		{
 			DrawPhysicalMemoryDiffUI();
+			ImGui::EndTabItem();
 		}
-		ImGui::EndTabItem();
+
+		if (ImGui::BeginTabItem("Find"))
+		{
+			FindTool.DrawUI();
+			ImGui::EndTabItem();
+		}
 	}
 	ImGui::EndTabBar();
 }
