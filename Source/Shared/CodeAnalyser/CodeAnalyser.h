@@ -142,6 +142,12 @@ struct FAddressCoord
 	float			YPos;
 };
 
+struct FFoundString
+{
+	FAddressRef		Address;
+	std::string		String;
+};
+
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
@@ -566,6 +572,7 @@ public:
 
 	//FAddressRef FindMemoryPattern(uint8_t* pData, size_t dataSize);
 	std::vector<FAddressRef> FindAllMemoryPatterns(uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly);
+	std::vector<FFoundString> FindAllStrings(bool bROM, bool bPhysicalOnly);
 
 	//bool FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 

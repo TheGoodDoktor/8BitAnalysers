@@ -290,6 +290,124 @@ bool IsAscii(uint8_t byte)
 	return byte >= 32 && byte <= 126;
 }
 
+bool IsLetter(char c)
+{
+	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
+
+bool IsNumber(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
+bool IsAlphanumeric(char c)
+{
+	return IsLetter(c) || IsNumber(c);
+}
+
+bool IsVowel(char c)
+{
+	const char vowels[] = {'a','e','i','o','u'};
+	const char lc = tolower(c);
+	for (int i = 0; i < sizeof(vowels); i++)
+	{
+		if (lc == vowels[i])
+			return true;
+	}
+
+	return false;
+}
+
+bool IsValidStringStartChar(char c)
+{
+	return IsLetter(c);
+}
+
+std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bROM, bool bPhysicalOnly)
+{
+	std::vector<FFoundString> results;
+
+	for (auto& bank : Banks)
+	{
+		if (bank.bReadOnly && bROM == false)
+			continue;
+
+		if (bank.IsMapped() == false && bPhysicalOnly)
+			continue;
+
+		FAddressRef stringStart;	
+		int stringLength = 0;
+		int vowelCount = 0;
+		std::string foundString;
+
+		const int bankByteSize = bank.GetSizeBytes();
+		for (int bAddr = 0; bAddr < bankByteSize; bAddr++)
+		{
+			FAddressRef addressRef(bank.Id, bank.GetMappedAddress() + bAddr);
+			char c = bank.Memory[bAddr];
+			bool bTerminated = false;
+
+			if (c & (1 << 7))	// high bit terminated strings
+			{
+				c = c & ~(1 << 7);
+				bTerminated = true;
+			}
+
+			// Check for code & skip
+			const FCodeInfo* pCodeInfo = GetCodeInfoForAddress(addressRef);
+			if (pCodeInfo != nullptr)
+				continue;
+
+			// check data
+			const FDataInfo* pDataInfo = GetReadDataInfoForAddress(addressRef);
+			if (pDataInfo->DataType != EDataType::Byte)
+				continue;
+			if (pDataInfo->LastFrameWritten != -1)
+				continue;
+
+			if (stringStart.IsValid() == false)	// string start
+			{
+				if (IsValidStringStartChar(c))
+				{
+					stringStart = addressRef;
+					stringLength = 1;
+					foundString.push_back(c);
+				}
+			}
+			else if(IsAlphanumeric(c))
+			{
+				stringLength++;
+				if (IsVowel(c))
+					vowelCount++;
+				foundString.push_back(c);
+
+				if (stringLength == 4 && vowelCount == 0)	// string of 4 chars must have a vowel
+					bTerminated = true;
+			}
+			else
+			{
+				bTerminated = true;
+			}
+
+			if(bTerminated)
+			{
+				// Run through (simple) acceptance filter
+				if (stringLength > 4 && vowelCount > 1)
+				{
+					results.push_back({ stringStart, foundString });
+				}
+				stringStart.SetInvalid();;
+				stringLength = 0;
+				vowelCount = 0;
+				foundString.clear();
+			}
+		}
+	}
+
+	return results;
+}
+
+#if 0
 void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 {
 	uint16_t address = startAddress;
@@ -330,8 +448,7 @@ void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 	} while (address != 0);	// 16 bit address overflow
 
 }
-
-
+#endif
 
 bool CheckPointerIndirectionInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
