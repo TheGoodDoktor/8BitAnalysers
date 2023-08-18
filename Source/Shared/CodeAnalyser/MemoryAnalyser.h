@@ -41,7 +41,8 @@ public:
 	void	SetScreenMemoryArea(uint16_t start, uint16_t end) { ScreenMemory = { start,end }; }
 	bool	IsAddressInScreenMemory(uint16_t addr) const { return ScreenMemory.InRange(addr); }
 private:
-	void	DrawPhysicalMemoryDiffUI(void);
+	void	DrawMemoryDiffUI(void);
+	void	DrawStringSearchUI(void);
 
 
 private:
@@ -59,4 +60,9 @@ private:
 	std::vector<FAddressRef>	DiffChangedLocations;
 
 	FFindTool					FindTool;
+
+	// String find
+	bool						bSearchStringsInROM = true;
+	bool						bSearchStringsPhysicalMemOnly = false;
+	std::vector<FFoundString>	FoundStrings;
 };

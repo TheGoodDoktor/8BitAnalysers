@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 // CPU abstraction
 enum class ECPUType
@@ -30,4 +31,10 @@ struct FAddressRef
 		};
 		uint32_t	Val;
 	};
+};
+
+struct FFoundString
+{
+	FAddressRef		Address;
+	std::string		String;
 };

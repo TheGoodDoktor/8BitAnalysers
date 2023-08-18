@@ -142,11 +142,6 @@ struct FAddressCoord
 	float			YPos;
 };
 
-struct FFoundString
-{
-	FAddressRef		Address;
-	std::string		String;
-};
 
 // view state for code analysis window
 struct FCodeAnalysisViewState

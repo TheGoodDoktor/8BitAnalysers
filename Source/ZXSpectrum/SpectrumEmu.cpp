@@ -1275,11 +1275,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 #ifndef NDEBUG
 		if (ImGui::BeginMenu("Tools"))
 		{
-			if (ImGui::MenuItem("Find Ascii Strings"))
-			{
-				//CodeAnalysis.FindAsciiStrings(0x4000);
-				CodeAnalysis.FindAllStrings(false,false);
-			}
+			
 			ImGui::EndMenu();
 		}
 #endif
