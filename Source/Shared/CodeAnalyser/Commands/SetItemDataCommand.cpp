@@ -43,7 +43,7 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 			// set all bytes to be data
 			for (int i = 0; i < pCodeItem->ByteSize; i++)
 			{
-				FDataInfo* pOperandData = state.GetReadDataInfoForAddress(FAddressRef(Item.AddressRef.BankId,Item.AddressRef.Address + i));
+				FDataInfo* pOperandData = state.GetDataInfoForAddress(FAddressRef(Item.AddressRef.BankId,Item.AddressRef.Address + i));
 				pOperandData->DataType = EDataType::Byte;
 				pOperandData->ByteSize = 1;
 			}

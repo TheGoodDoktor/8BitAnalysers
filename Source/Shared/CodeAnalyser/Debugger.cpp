@@ -892,7 +892,7 @@ void FDebugger::DrawWatches(void)
 
 	for (const auto& watch : Watches)
 	{
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(watch);
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(watch);
 		ImGui::PushID(watch.Val);
 		if (ImGui::Selectable("##watchselect", watch == SelectedWatch, 0))
 		{
@@ -906,7 +906,7 @@ void FDebugger::DrawWatches(void)
 			}
 			if (ImGui::Selectable("Toggle Breakpoint"))
 			{
-				FDataInfo* pInfo = state.GetWriteDataInfoForAddress(SelectedWatch);
+				FDataInfo* pInfo = state.GetDataInfoForAddress(SelectedWatch);
 				state.ToggleDataBreakpointAtAddress(SelectedWatch, pInfo->ByteSize);
 			}
 

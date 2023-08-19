@@ -69,7 +69,7 @@ void FGraphicsViewer::GoToAddress(FAddressRef address)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
 
-	const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
+	const FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
 	if (pDataInfo->DataType == EDataType::Bitmap)
 	{
 		// see if we can find a graphics set
@@ -450,7 +450,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		if (ImGui::CollapsingHeader("Details"))
 		{
 			const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(ClickedAddress.Address) : Bank;
-			const FCodeAnalysisItem item(state.GetReadDataInfoForAddress(ClickedAddress), ClickedAddress);
+			const FCodeAnalysisItem item(state.GetDataInfoForAddress(ClickedAddress), ClickedAddress);
 			DrawDataDetails(state, state.GetFocussedViewState(), item);
 		}
 	}

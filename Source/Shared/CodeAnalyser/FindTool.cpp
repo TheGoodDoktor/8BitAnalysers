@@ -233,7 +233,7 @@ void FFindTool::DrawUI()
 						}
 
 						// Address
-						if (const FDataInfo* pWriteDataInfo = pCodeAnalysis->GetWriteDataInfoForAddress(resultAddr))
+						if (const FDataInfo* pWriteDataInfo = pCodeAnalysis->GetDataInfoForAddress(resultAddr))
 						{
 							ShowDataItemActivity(*pCodeAnalysis, resultAddr);
 						}
@@ -254,7 +254,7 @@ void FFindTool::DrawUI()
 
 						// Comment
 						ImGui::TableNextColumn();
-						if (const FDataInfo* pWriteDataInfo = pCodeAnalysis->GetWriteDataInfoForAddress(resultAddr))
+						if (const FDataInfo* pWriteDataInfo = pCodeAnalysis->GetDataInfoForAddress(resultAddr))
 						{
 							// what if this is code?
 							DrawComment(pWriteDataInfo);
@@ -318,14 +318,9 @@ void FFinder::Find(const FSearchOptions& opt)
 void FFinder::ProcessMatch(FAddressRef addr, const FSearchOptions& opt)
 {
 	bool bAddResult = true;
-	const FDataInfo* pAnyDataInfo = nullptr;
+	const FDataInfo* pDataInfo = pCodeAnalysis->GetDataInfoForAddress(addr);
 	const FCodeInfo* pCodeInfo = pCodeAnalysis->GetCodeInfoForAddress(addr);
-	{
-		const FDataInfo* pWriteDataInfo = pCodeAnalysis->GetWriteDataInfoForAddress(addr);
-		const FDataInfo* pReadDataInfo = pCodeAnalysis->GetReadDataInfoForAddress(addr);
-		pAnyDataInfo = pWriteDataInfo ? pWriteDataInfo : pReadDataInfo;
-	}
-	const bool bIsCode = pCodeInfo || (pAnyDataInfo && pAnyDataInfo->DataType == EDataType::InstructionOperand);
+	const bool bIsCode = pCodeInfo || (pDataInfo && pDataInfo->DataType == EDataType::InstructionOperand);
 
 	if (opt.MemoryType == ESearchMemoryType::SearchCode)
 	{
@@ -338,17 +333,17 @@ void FFinder::ProcessMatch(FAddressRef addr, const FSearchOptions& opt)
 
 	if (bAddResult)
 	{
-		if (pAnyDataInfo)
+		if (pDataInfo)	// MC: always true
 		{
 			if (!opt.bSearchUnaccessed)
 			{
-				if (pAnyDataInfo->LastFrameRead == -1 && pAnyDataInfo->LastFrameWritten == -1)
+				if (pDataInfo->LastFrameRead == -1 && pDataInfo->LastFrameWritten == -1)
 					bAddResult = false;
 			}
 
 			if (!opt.bSearchUnreferenced)
 			{
-				if (pAnyDataInfo->Reads.IsEmpty() && pAnyDataInfo->Writes.IsEmpty())
+				if (pDataInfo->Reads.IsEmpty() && pDataInfo->Writes.IsEmpty())
 				{
 					bAddResult = false;
 				}

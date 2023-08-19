@@ -318,9 +318,21 @@ bool IsVowel(char c)
 	return false;
 }
 
-bool IsValidStringStartChar(char c)
+bool IsPunctuation(char c)
 {
-	return IsLetter(c);
+	const char punctuation[] = { ' ',',','!','.','?','\'','`','"','@','$','-'};
+	for (int i = 0; i < sizeof(punctuation); i++)
+	{
+		if (c == punctuation[i])
+			return true;
+	}
+
+	return false;
+}
+
+bool IsValidStringChar(char c)
+{
+	return IsAlphanumeric(c) || IsPunctuation(c);
 }
 
 std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bROM, bool bPhysicalOnly)
@@ -341,17 +353,13 @@ std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bROM, bool bPh
 		std::string foundString;
 
 		const int bankByteSize = bank.GetSizeBytes();
-		for (int bAddr = 0; bAddr < bankByteSize; bAddr++)
+		int stringStartBankPos = 0;
+		
+		for(int bAddr = 0; bAddr < bankByteSize;bAddr++)
 		{
 			FAddressRef addressRef(bank.Id, bank.GetMappedAddress() + bAddr);
 			char c = bank.Memory[bAddr];
 			bool bTerminated = false;
-
-			if (c & (1 << 7))	// high bit terminated strings
-			{
-				c = c & ~(1 << 7);
-				bTerminated = true;
-			}
 
 			// Check for code & skip
 			const FCodeInfo* pCodeInfo = GetCodeInfoForAddress(addressRef);
@@ -359,42 +367,50 @@ std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bROM, bool bPh
 				continue;
 
 			// check data
-			const FDataInfo* pDataInfo = GetReadDataInfoForAddress(addressRef);
-			if (pDataInfo->DataType != EDataType::Byte)
+			const FDataInfo* pDataInfo = GetDataInfoForAddress(addressRef);
+			if (pDataInfo->DataType != EDataType::Byte && pDataInfo->DataType != EDataType::Text)
 				continue;
 			if (pDataInfo->LastFrameWritten != -1)
 				continue;
 
-			if (stringStart.IsValid() == false)	// string start
+			if (c & (1 << 7))	// high bit terminated strings
 			{
-				if (IsValidStringStartChar(c))
+				c = c & ~(1 << 7);
+				bTerminated = true;
+			}
+
+			if(IsValidStringChar(c))
+			{
+				if (stringStart.IsValid() == false)	// string start
 				{
 					stringStart = addressRef;
-					stringLength = 1;
-					foundString.push_back(c);
+					stringStartBankPos = bAddr;
+					stringLength = 0;
 				}
-			}
-			else if(IsAlphanumeric(c))
-			{
+
 				stringLength++;
 				if (IsVowel(c))
 					vowelCount++;
 				foundString.push_back(c);
 
-				if (stringLength == 4 && vowelCount == 0)	// string of 4 chars must have a vowel
-					bTerminated = true;
+				//if (stringLength == 4 && vowelCount == 0)	// string of 4 chars must have a vowel
+				//	bTerminated = true;
 			}
 			else
 			{
 				bTerminated = true;
 			}
 
-			if(bTerminated)
+			if(bTerminated && foundString.empty() == false)
 			{
 				// Run through (simple) acceptance filter
-				if (stringLength > 4 && vowelCount > 1)
+				if (stringLength > 2 && vowelCount > 0)
 				{
 					results.push_back({ stringStart, foundString });
+				}
+				else
+				{
+					bAddr = stringStartBankPos;	// wind back to start of string
 				}
 				stringStart.SetInvalid();;
 				stringLength = 0;
@@ -518,7 +534,7 @@ bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
 // this function assumes the text is mapped in
 std::string GetItemText(FCodeAnalysisState& state, FAddressRef address)
 {
-	FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
+	FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
 	std::string textString;
 
 	if (pDataInfo->DataType != EDataType::Text)
@@ -1098,7 +1114,7 @@ void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 			pDataItem->ByteSize = 0;	// reset byte counter
 
 			FAddressRef charAddr = item.AddressRef;
-			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(charAddr);
+			FDataInfo* pDataInfo = state.GetDataInfoForAddress(charAddr);
 			while (pDataInfo != nullptr && pDataInfo->DataType == EDataType::Byte)
 			{
 				const uint8_t val = state.ReadByte(charAddr);
@@ -1154,7 +1170,7 @@ FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address)
 	if (state.GetLabelForAddress(address) == nullptr)
 	{
 		ELabelType labelType = ELabelType::Data;
-		const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
+		const FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
 		if (pDataInfo && pDataInfo->DataType == EDataType::Text)
 			labelType = ELabelType::Text;
 		const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(address);
@@ -1249,7 +1265,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 
 	for (int itemNo = 0; itemNo < options.NoItems; itemNo++)
 	{
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addressRef);
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(addressRef);
 
 		pDataInfo->ByteSize = options.ItemSize;
 		pDataInfo->DataType = options.DataType;

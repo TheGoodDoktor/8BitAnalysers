@@ -254,10 +254,10 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 
 void ShowDataItemActivity(FCodeAnalysisState& state, FAddressRef addr)
 {
-	const FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
-	const FDataInfo* pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
-	const int framesSinceWritten = pWriteDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pWriteDataInfo->LastFrameWritten;
-	const int framesSinceRead = pReadDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pReadDataInfo->LastFrameRead;
+	const FDataInfo* pDataInfo = state.GetDataInfoForAddress(addr);
+	//const FDataInfo* pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
+	const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
+	const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
 	const int wBrightVal = (255 - std::min(framesSinceWritten << 2, 255)) & 0xff;
 	const int rBrightVal = (255 - std::min(framesSinceRead << 2, 255)) & 0xff;
 	float offset = 0;

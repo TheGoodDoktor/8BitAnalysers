@@ -154,7 +154,7 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 				for (int rowNum = clipper.DisplayStart; rowNum < clipper.DisplayEnd; rowNum++)
 				{
 					FAddressRef changedAddr = DiffChangedLocations[rowNum];
-					const FDataInfo* pDataInfo = pCodeAnalysis->GetWriteDataInfoForAddress(changedAddr);
+					const FDataInfo* pDataInfo = pCodeAnalysis->GetDataInfoForAddress(changedAddr);
 					ImGui::TableNextRow();
 					ImGui::PushID(changedAddr.Val);
 

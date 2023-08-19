@@ -344,7 +344,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	{
 		// Show data reads & writes
 		// 
-		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(uiState.SelectedCharAddress);
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(uiState.SelectedCharAddress);
 		// List Data accesses
 		if (pDataInfo->Reads.IsEmpty() == false)
 		{
