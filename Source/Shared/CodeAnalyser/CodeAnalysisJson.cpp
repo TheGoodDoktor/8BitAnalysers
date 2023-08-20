@@ -458,26 +458,6 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 	if (dataInfoJson.contains("Comment"))
 		pDataInfo->Comment = dataInfoJson["Comment"];
 
-	// Moved to binary file
-	/*
-	if (dataInfoJson.contains("Reads"))
-	{
-		for (const auto& read : dataInfoJson["Reads"])
-		{
-			pDataInfo->Reads.RegisterAccess(read);
-		}
-	}
-	if (dataInfoJson.contains("Writes"))
-	{
-		for (const auto& write : dataInfoJson["Writes"])
-		{
-			pDataInfo->Writes.RegisterAccess(write);
-		}
-	}
-
-	if (dataInfoJson.contains("LastWriter"))
-		pDataInfo->LastWriter = dataInfoJson["LastWriter"];
-*/
 // Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
 	{
@@ -492,6 +472,9 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 	{
 		if (dataInfoJson.contains("GraphicsSetRef"))
 			pDataInfo->GraphicsSetRef.Val = dataInfoJson["GraphicsSetRef"];
+
+		if (pDataInfo->DisplayType == EDataItemDisplayType::Unknown)	// load fixup
+			pDataInfo->DisplayType = EDataItemDisplayType::Bitmap;
 	}
 }
 
