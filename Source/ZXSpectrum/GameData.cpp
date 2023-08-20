@@ -285,7 +285,7 @@ void SaveDataInfoBin(const FCodeAnalysisState& state, FILE* fp, uint16_t startAd
 			fwrite(&pDataInfo->ByteSize, sizeof(pDataInfo->ByteSize), 1, fp);
 			fwrite(&pDataInfo->Flags, sizeof(pDataInfo->Flags), 1, fp);
 			fwrite(&pDataInfo->CharSetAddress, sizeof(pDataInfo->CharSetAddress), 1, fp);
-			fwrite(&pDataInfo->OperandType, sizeof(pDataInfo->OperandType), 1, fp);
+			fwrite(&pDataInfo->DisplayType, sizeof(pDataInfo->DisplayType), 1, fp);
 			fwrite(&pDataInfo->EmptyCharNo, sizeof(pDataInfo->EmptyCharNo), 1, fp);
 			WriteStringToFile(pDataInfo->Comment, fp);
 
@@ -370,7 +370,7 @@ void LoadDataInfoBin(FCodeAnalysisState& state, FILE* fp, int versionNo, uint16_
 		if (versionNo > 10)
 		{
 			fread(&pDataInfo->CharSetAddress, sizeof(pDataInfo->CharSetAddress), 1, fp);
-			fread(&pDataInfo->OperandType, sizeof(pDataInfo->OperandType), 1, fp);
+			fread(&pDataInfo->DisplayType, sizeof(pDataInfo->DisplayType), 1, fp);
 		}
 
 		if (versionNo > 12)

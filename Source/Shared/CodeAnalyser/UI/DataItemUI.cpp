@@ -333,22 +333,22 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
 	bool bShowItemLabel = true;
 
-	if (pDataInfo->OperandType != EOperandType::Unknown)
+	if (pDataInfo->DisplayType != EDataItemDisplayType::Unknown)
 	{
-		switch (pDataInfo->OperandType)
+		switch (pDataInfo->DisplayType)
 		{
-		case EOperandType::Pointer:
-		case EOperandType::JumpAddress:
+		case EDataItemDisplayType::Pointer:
+		case EDataItemDisplayType::JumpAddress:
 			break;
-		case EOperandType::Decimal:
+		case EDataItemDisplayType::Decimal:
 			SetNumberDisplayMode(ENumberDisplayMode::Decimal);
 			bShowItemLabel = false;
 			break;
-		case EOperandType::Binary:
+		case EDataItemDisplayType::Binary:
 			SetNumberDisplayMode(ENumberDisplayMode::Binary);
 			bShowItemLabel = false;
 			break;
-		case EOperandType::Hex:
+		case EDataItemDisplayType::Hex:
 			bShowItemLabel = false;
 			break;
 		}
@@ -633,10 +633,10 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 {
 	FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
 	const uint16_t physAddr = item.AddressRef.Address;
-	ImGui::Text("Number Mode Override:");
+	ImGui::Text("Display Mode:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120.0f);
-	DrawOperandTypeCombo("##dataOperand",pDataInfo->OperandType);
+	DrawDataDisplayTypeCombo("##dataOperand",pDataInfo->DisplayType);
 	switch (pDataInfo->DataType)
 	{
 	case EDataType::Byte:

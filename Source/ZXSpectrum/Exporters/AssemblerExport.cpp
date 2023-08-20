@@ -109,14 +109,14 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			const FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
 			ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
-			if (pDataInfo->OperandType == EOperandType::Decimal)
+			if (pDataInfo->DisplayType == EDataItemDisplayType::Decimal)
 				dispMode = ENumberDisplayMode::Decimal;
-			if (pDataInfo->OperandType == EOperandType::Hex)
+			if (pDataInfo->DisplayType == EDataItemDisplayType::Hex)
 				dispMode = hexMode;
-			if (pDataInfo->OperandType == EOperandType::Binary)
+			if (pDataInfo->DisplayType == EDataItemDisplayType::Binary)
 				dispMode = ENumberDisplayMode::Binary;
 
-			const bool bOperandIsAddress = (pDataInfo->OperandType == EOperandType::JumpAddress || pDataInfo->OperandType == EOperandType::Pointer);
+			const bool bOperandIsAddress = (pDataInfo->DisplayType == EDataItemDisplayType::JumpAddress || pDataInfo->DisplayType == EDataItemDisplayType::Pointer);
 
 
 			fprintf(fp, "\t");

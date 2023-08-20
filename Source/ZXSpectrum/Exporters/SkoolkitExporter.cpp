@@ -271,21 +271,21 @@ public:
 		const uint16_t addr = item.AddressRef.Address;
 		
 		ENumberDisplayMode numMode = ENumberDisplayMode::None;
-		if (pDataInfo->OperandType == EOperandType::Unknown)
+		if (pDataInfo->DisplayType == EDataItemDisplayType::Unknown)
 		{
 			 numMode = Base == FSkoolFile::Base::Hexadecimal ? ENumberDisplayMode::HexDollar : ENumberDisplayMode::Decimal;
 		}
 		else
 		{
-			switch (pDataInfo->OperandType)
+			switch (pDataInfo->DisplayType)
 			{
-			case EOperandType::Decimal:
+			case EDataItemDisplayType::Decimal:
 				numMode = ENumberDisplayMode::Decimal;
 				break;
-			case EOperandType::Binary:
+			case EDataItemDisplayType::Binary:
 				numMode = ENumberDisplayMode::Binary;
 				break;
-			case EOperandType::Hex:
+			case EDataItemDisplayType::Hex:
 			default:
 				numMode = ENumberDisplayMode::HexDollar;
 				break;

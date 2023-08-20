@@ -11,6 +11,7 @@ struct FItem;
 class FGraphicsView;
 
 enum class ENumberDisplayMode;
+enum class EDataItemDisplayType;
 enum class EOperandType;
 
 
@@ -42,6 +43,7 @@ int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
 bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
+bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType);
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId);
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
