@@ -47,10 +47,12 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 }
 
 // Set bank to memory pages starting at pageNo
-bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
+bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess access)
 {
 	FCodeAnalysisBank* pBank = GetBank(bankId);
-	if (pBank == nullptr || MappedBanks[startPageNo] == bankId)	// not found or already mapped to this locatiom
+
+	// TODO: this needs proper logic
+	if (pBank == nullptr || MappedReadBanks[startPageNo] == bankId)	// not found or already mapped to this locatiom
 		return false;
 
 	if (pBank->PrimaryMappedPage == -1 )	// Newly mapped?
@@ -68,7 +70,10 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 		//else
 		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], &pBank->Pages[bankPageNo]);	// Read/Write
 
-		MappedBanks[startPageNo + bankPageNo] = bankId;
+		if(access == EBankAccess::Read || access == EBankAccess::ReadWrite)
+			MappedReadBanks[startPageNo + bankPageNo] = bankId;
+		if (access == EBankAccess::Write || access == EBankAccess::ReadWrite)
+			MappedWriteBanks[startPageNo + bankPageNo] = bankId;
 	}
 	bMemoryRemapped = true;
 
@@ -78,14 +83,21 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo)
 	return true;
 }
 
-bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo)
+bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo, EBankAccess access)
 {
 	FCodeAnalysisBank* pBank = GetBank(bankId);
-	if (pBank == nullptr || MappedBanks[startPageNo] != bankId)
+
+	// TODO: this needs proper logic
+	if (pBank == nullptr || MappedReadBanks[startPageNo] != bankId)
 		return false;
 
 	for (int bankPage = 0; bankPage < pBank->NoPages; bankPage++)
-		MappedBanks[startPageNo + bankPage] = -1;
+	{
+		if (access == EBankAccess::Read || access == EBankAccess::ReadWrite)
+			MappedReadBanks[startPageNo + bankPage] = -1;
+		if (access == EBankAccess::Write || access == EBankAccess::ReadWrite)
+			MappedWriteBanks[startPageNo + bankPage] = -1;
+	}
 
 	// erase from mapped pages - better way?
 	auto it = pBank->MappedPages.begin();
@@ -105,7 +117,9 @@ bool FCodeAnalysisState::IsBankIdMapped(int16_t bankId) const
 {
 	for (int bankIdx = 0; bankIdx < kNoPagesInAddressSpace; bankIdx++)
 	{
-		if (MappedBanks[bankIdx] == bankId)
+		if (MappedReadBanks[bankIdx] == bankId)
+			return true;
+		if (MappedWriteBanks[bankIdx] == bankId)
 			return true;
 	}
 
@@ -129,17 +143,19 @@ bool FCodeAnalysisState::MapBankForAnalysis(FCodeAnalysisBank& bank)
 	for (int i = 0; i < kNoPagesInAddressSpace; i++)
 	{
 #ifdef _DEBUG
-		const FCodeAnalysisBank* pMappedBank = GetBank(MappedBanks[i]);
+		const FCodeAnalysisBank* pMappedBank = GetBank(MappedReadBanks[i]);
 		assert(pMappedBank->PrimaryMappedPage != -1);
 #endif
-		MappedBanksBackup[i] = MappedBanks[i];
+		MappedReadBanksBackup[i] = MappedReadBanks[i];
+		MappedWriteBanksBackup[i] = MappedWriteBanks[i];
 	}
 
 	const int startPageNo = bank.PrimaryMappedPage;
 	assert(startPageNo != -1);
 	for (int bankPageNo = 0; bankPageNo < bank.NoPages; bankPageNo++)
 	{
-		MappedBanks[startPageNo + bankPageNo] = bank.Id;
+		MappedReadBanks[startPageNo + bankPageNo] = bank.Id;
+		MappedWriteBanks[startPageNo + bankPageNo] = bank.Id;
 		MappedMem[startPageNo + bankPageNo] = &bank.Memory[bankPageNo * FCodeAnalysisPage::kPageSize];
 		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &bank.Pages[bankPageNo], &bank.Pages[bankPageNo]);	// Read/Write
 	}
@@ -151,8 +167,9 @@ void FCodeAnalysisState::UnMapAnalysisBanks()
 {
 	for (int i = 0; i < kNoPagesInAddressSpace; i++)
 	{
-		MappedBanks[i] = MappedBanksBackup[i];
-		const FCodeAnalysisBank* pMappedBank = GetBank(MappedBanks[i]);
+		MappedReadBanks[i] = MappedReadBanksBackup[i];
+		MappedWriteBanks[i] = MappedWriteBanksBackup[i];
+		const FCodeAnalysisBank* pMappedBank = GetBank(MappedReadBanks[i]);
 		assert(pMappedBank->PrimaryMappedPage != -1);
 		if (MappedMem[i] != nullptr)
 		{
@@ -991,8 +1008,10 @@ FCodeAnalysisState::FCodeAnalysisState()
 	for (int i = 0; i < kNoPagesInAddressSpace; i++)
 	{
 		MappedMem[i] = nullptr;
-		MappedBanks[i] = -1;
-		MappedBanksBackup[i] = -1;
+		MappedReadBanks[i] = -1;
+		MappedWriteBanks[i] = -1;
+		MappedReadBanksBackup[i] = -1;
+		MappedWriteBanksBackup[i] = -1;
 		ReadPageTable[i] = nullptr;
 		WritePageTable[i] = nullptr;
 	}

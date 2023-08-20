@@ -238,6 +238,13 @@ struct FCodeAnalysisBank
 	uint16_t	GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
 };
 
+enum class EBankAccess
+{
+	Read,
+	Write,
+	ReadWrite
+};
+
 // code analysis information
 class FCodeAnalysisState
 {
@@ -260,8 +267,8 @@ public:
 
 	// Memory Banks & Pages
 	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly);
-	bool		MapBank(int16_t bankId, int startPageNo);
-	bool		UnMapBank(int16_t bankId, int startPageNo);
+	bool		MapBank(int16_t bankId, int startPageNo, EBankAccess access = EBankAccess::ReadWrite);
+	bool		UnMapBank(int16_t bankId, int startPageNo, EBankAccess access = EBankAccess::ReadWrite);
 	bool		IsBankIdMapped(int16_t bankId) const;
 	bool		IsAddressValid(FAddressRef addr) const;
 
@@ -275,7 +282,9 @@ public:
 	
 	FCodeAnalysisBank* GetBank(int16_t bankId) { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr; }
 	const FCodeAnalysisBank* GetBank(int16_t bankId) const { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr;	}
-	int16_t		GetBankFromAddress(uint16_t address) const { return MappedBanks[address >> kPageShift]; }
+	int16_t		GetBankFromAddress(uint16_t address) const { return MappedReadBanks[address >> kPageShift]; }
+	int16_t		GetReadBankFromAddress(uint16_t address) const { return MappedReadBanks[address >> kPageShift]; }
+	int16_t		GetWriteBankFromAddress(uint16_t address) const { return MappedWriteBanks[address >> kPageShift]; }
 	const std::vector<FCodeAnalysisBank>& GetBanks() const { return Banks; }
 	std::vector<FCodeAnalysisBank>& GetBanks() { return Banks; }
 
@@ -355,9 +364,12 @@ public:
 	{
 		for (int i = 0; i < kNoPagesInAddressSpace; i++)
 		{
-			FCodeAnalysisBank* pBank = GetBank(MappedBanks[i]);
-			if (pBank != nullptr)
-				pBank->bIsDirty = true;
+			FCodeAnalysisBank* pReadBank = GetBank(MappedReadBanks[i]);
+			if (pReadBank != nullptr)
+				pReadBank->bIsDirty = true;
+			FCodeAnalysisBank* pWriteBank = GetBank(MappedWriteBanks[i]);
+			if (pWriteBank != nullptr)
+				pWriteBank->bIsDirty = true;
 			bCodeAnalysisDataDirty = true;
 		}
 	}
@@ -607,8 +619,10 @@ private:
 	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];
 
 	std::vector<FCodeAnalysisBank>	Banks;
-	int16_t							MappedBanks[kNoPagesInAddressSpace];	// banks mapped into address space
-	int16_t							MappedBanksBackup[kNoPagesInAddressSpace];	// banks mapped into address space
+	int16_t							MappedReadBanks[kNoPagesInAddressSpace];	// banks mapped into address space
+	int16_t							MappedWriteBanks[kNoPagesInAddressSpace];	// banks mapped into address space
+	int16_t							MappedReadBanksBackup[kNoPagesInAddressSpace];	// banks mapped into address space
+	int16_t							MappedWriteBanksBackup[kNoPagesInAddressSpace];	// banks mapped into address space
 
 	uint8_t*						MappedMem[kNoPagesInAddressSpace];	// mapped analysis memory
 				
