@@ -58,9 +58,8 @@ enum class EDataItemDisplayType
 	Hex,
 	Binary,
 	Bitmap,
-	ColMap2Bpp,
-	ColMap4Bpp,
-	ColMap4Bpp_Twiddled,
+	ColMap2Bpp_CPC,
+	ColMap4Bpp_CPC,
 };
 
 enum class EDataType
