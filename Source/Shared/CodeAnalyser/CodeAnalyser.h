@@ -83,22 +83,24 @@ enum class EFunctionSortMode : int
 
 struct FDataFormattingOptions
 {
-	EDataType	DataType = EDataType::Byte;
-	//int			StartAddress = 0;	// TODO: use Address Ref
-	FAddressRef	StartAddress;
-	int			ItemSize = 1;
-	int			NoItems = 1;
-	FAddressRef	CharacterSet;
-	FAddressRef GraphicsSetRef;
-	uint8_t		EmptyCharNo = 0;
-	bool		ClearCodeInfo = false;
-	bool		ClearLabels = false;
-	bool		AddLabelAtStart = false;
-	std::string	LabelName;
+	EDataType				DataType = EDataType::Byte;
+	EDataItemDisplayType	DisplayType = EDataItemDisplayType::Unknown;
 
-	bool		IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
-	uint16_t	CalcEndAddress() const { return StartAddress.Address + (NoItems * ItemSize) - 1; }
-	void		SetupForBitmap(FAddressRef address, int xSizePixels, int ySizePixels)
+	//int			StartAddress = 0;	// TODO: use Address Ref
+	FAddressRef				StartAddress;
+	int						ItemSize = 1;
+	int						NoItems = 1;
+	FAddressRef				CharacterSet;
+	FAddressRef				GraphicsSetRef;
+	uint8_t					EmptyCharNo = 0;
+	bool					ClearCodeInfo = false;
+	bool					ClearLabels = false;
+	bool					AddLabelAtStart = false;
+	std::string				LabelName;
+
+	bool					IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
+	uint16_t				CalcEndAddress() const { return StartAddress.Address + (NoItems * ItemSize) - 1; }
+	void					SetupForBitmap(FAddressRef address, int xSizePixels, int ySizePixels)
 	{
 		DataType = EDataType::Bitmap;
 		StartAddress = address;

@@ -374,3 +374,45 @@ bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& p
 	g_CharacterMaps.push_back(pNewCharMap);
 	return true;
 }
+
+// Palette related
+
+FPalette::FPalette()
+{
+	SetColourCount(16);
+}
+
+void FPalette::SetColourCount(int count)
+{
+	Colours.resize(count);
+}
+
+void FPalette::SetColour(int colourIndex, uint32_t rgb)
+{
+	assert(colourIndex < Colours.size());
+	Colours[colourIndex] = rgb;
+}
+
+uint32_t FPalette::GetColour(int colourIndex) const
+{
+	assert(colourIndex < Colours.size());
+	uint32_t colour = Colours[colourIndex];
+	return Colours[colourIndex];
+}
+
+size_t FPalette::GetColourCount() const
+{
+	return Colours.size();
+}
+
+FPalette g_CurrentPalette;
+
+FPalette& GetCurrentPalette()
+{
+	return g_CurrentPalette;
+}
+
+const FPalette& GetCurrentPalette_Const()
+{
+	return g_CurrentPalette;
+}

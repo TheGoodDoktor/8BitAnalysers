@@ -1288,6 +1288,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 
 		pDataInfo->ByteSize = options.ItemSize;
 		pDataInfo->DataType = options.DataType;
+		pDataInfo->DisplayType = options.DisplayType;
 
 		if (options.DataType == EDataType::CharacterMap)
 		{

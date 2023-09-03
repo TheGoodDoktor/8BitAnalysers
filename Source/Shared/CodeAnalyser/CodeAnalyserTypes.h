@@ -57,7 +57,7 @@ enum class EDataItemDisplayType
 	Decimal,
 	Hex,
 	Binary,
-	Bitmap,
+	Bitmap,			// 1 bit per pixel
 	ColMap2Bpp_CPC,	// Amstrad CPC mode 1 format
 	ColMap4Bpp_CPC,	// Amstrad CPC mode 0 format
 };

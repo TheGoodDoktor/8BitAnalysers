@@ -860,6 +860,52 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 	return bChanged;
 }
 
+bool DrawDataTypeCombo(int& dataType)
+{
+	const int index = (int)dataType;
+	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr", "Text" };
+	
+	bool bChanged = false;
+
+	if (ImGui::BeginCombo("Data Type", dataTypes[index]))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(dataTypes); n++)
+		{
+			const bool isSelected = (index == n);
+			if (ImGui::Selectable(dataTypes[n], isSelected))
+			{
+				dataType = n;
+				bChanged = true;
+			}
+		}
+		ImGui::EndCombo();
+	}
+	return bChanged;
+}
+
+bool DrawBitmapFormatCombo(int& bitmapFormat)
+{
+	const int index = (int)bitmapFormat;
+	const char* bitmapFormats[] = { "1bpp", "2bpp (CPC Mode 1)", "4bpp (CPC Mode 0)" };
+
+	bool bChanged = false;
+
+	if (ImGui::BeginCombo("Bitmap Format", bitmapFormats[index]))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(bitmapFormats); n++)
+		{
+			const bool isSelected = (index == n);
+			if (ImGui::Selectable(bitmapFormats[n], isSelected))
+			{
+				bitmapFormat = n;
+				bChanged = true;
+			}
+		}
+		ImGui::EndCombo();
+	}
+	return bChanged;
+}
+
 void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
 	const FCodeAnalysisItem& item = viewState.GetCursorItem();
@@ -1301,24 +1347,8 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	//ImGui::InputInt("End Address", &formattingOptions.EndAddress, 1, 100, inputFlags);
 	ImGui::PopID();
 
-	
-	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr", "Text"};
-	static int dataTypeIndex = 0; // Here we store our selection data as an index.
-	const char* combo_preview_value = dataTypes[dataTypeIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
-	if (ImGui::BeginCombo("Data Type", combo_preview_value, 0))
-	{
-		for (int n = 0; n < IM_ARRAYSIZE(dataTypes); n++)
-		{
-			const bool isSelected = (dataTypeIndex == n);
-			if (ImGui::Selectable(dataTypes[n], isSelected))
-				dataTypeIndex = n;
-
-			// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
+	static int dataTypeIndex = 0; 
+	bool bDataTypeChanged = DrawDataTypeCombo(dataTypeIndex);
 
 	switch (dataTypeIndex)
 	{
@@ -1331,20 +1361,50 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		formattingOptions.DataType = EDataType::Word;
 		formattingOptions.ItemSize = 2;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
-
 		break;
 	case 2:
+	{
 		formattingOptions.DataType = EDataType::Bitmap;
+		
+		static int bitmapFormatIndex = 0;
+		bool bBitmapOptionsChanged = DrawBitmapFormatCombo(bitmapFormatIndex);
+
+		static int size[2];
+		bBitmapOptionsChanged |= ImGui::InputInt2("Bitmap Size(X,Y)", size);
+			
+		if (bBitmapOptionsChanged || bDataTypeChanged)
 		{
-			static int size[2];
-			if (ImGui::InputInt2("Bitmap Size(X,Y)", size))
+			switch (bitmapFormatIndex)
 			{
-				formattingOptions.ItemSize = std::max(1,size[0] / 8);
-				formattingOptions.NoItems = size[1];
+			case 0: // 1 bpp
+				formattingOptions.DisplayType = EDataItemDisplayType::Bitmap;
+				break;
+			case 1: // 2 bpp
+				formattingOptions.DisplayType = EDataItemDisplayType::ColMap2Bpp_CPC;
+				break;
+			case 2: // 4 bpp
+				formattingOptions.DisplayType = EDataItemDisplayType::ColMap4Bpp_CPC;
+				break;
 			}
-			//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+
+			int pixelsPerByte = 0;
+			switch (formattingOptions.DisplayType)
+			{
+			case EDataItemDisplayType::Bitmap: // 1 bpp
+				pixelsPerByte = 8;
+				break;
+			case EDataItemDisplayType::ColMap2Bpp_CPC: // 2 bpp
+				pixelsPerByte = 4;
+				break;
+			case EDataItemDisplayType::ColMap4Bpp_CPC: // 4 bpp
+				pixelsPerByte = 2;
+				break;
+			}
+			formattingOptions.ItemSize = std::max(1, size[0] / pixelsPerByte);
+			formattingOptions.NoItems = size[1];
 		}
 		break;
+	}
 	case 3:
 		formattingOptions.DataType = EDataType::CharacterMap;
 		{
@@ -1371,6 +1431,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	case 5:
 		formattingOptions.DataType = EDataType::Text;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+		formattingOptions.NoItems = 1;
 		break;
 	}
 

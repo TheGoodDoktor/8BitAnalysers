@@ -115,6 +115,21 @@ struct FCharacterMap
 	FCharMapCreateParams	Params;
 };
 
+// Palette
+struct FPalette
+{
+	FPalette();
+	void SetColourCount(int count);
+	void SetColour(int colourIndex, uint32_t rgb);
+	size_t GetColourCount() const;
+	uint32_t GetColour(int colourIndex) const;
+protected:
+	std::vector<uint32_t> Colours;
+};
+
+FPalette& GetCurrentPalette();
+const FPalette& GetCurrentPalette_Const();
+
 // utils
 uint32_t GetColFromAttr(uint8_t colBits, const uint32_t* colourLUT, bool bBright = true);
 

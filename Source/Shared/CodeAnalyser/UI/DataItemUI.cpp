@@ -69,43 +69,125 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 		rectSize *= areaWidth / itemWidth;
 	}*/
 
-	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
+	switch (pDataInfo->DisplayType)
 	{
-		const uint8_t val = state.ReadByte(addr + byte);
-
-		for (int bit = 7; bit >= 0; bit--)
+	case EDataItemDisplayType::Bitmap:	// 1 bit per pixel
+		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 		{
-			const ImVec2 rectMin(pos.x, pos.y);
-			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
-			if (val & (1 << bit))
-				dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
-			else if(rectSize > 4)
+			const uint8_t val = state.ReadByte(addr + byte);
+
+			for (int bit = 7; bit >= 0; bit--)
+			{
+				const ImVec2 rectMin(pos.x, pos.y);
+				const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+				if (val & (1 << bit))
+					dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
+				else if (rectSize > 4)
+					dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+				pos.x += rectSize;
+			}
+		}
+		break;
+	case EDataItemDisplayType::ColMap2Bpp_CPC:
+		// CPC Mode 1.
+		// 2 bits per pixel. Each pixel value is a lookup into a palette of 4 colours.
+		// http://www.cpcmania.com/Docs/Programming/Painting_pixels_introduction_to_video_memory.htm
+
+		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
+		{
+			const uint8_t val = state.ReadByte(addr + byte);
+
+			for (int pixel = 0; pixel < 4; pixel++)
+			{
+				const ImVec2 rectMin(pos.x, pos.y);
+				const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+
+				int colourIndex = 0;
+
+				switch (pixel)
+				{
+				case 0:
+					colourIndex = (val & 0x8 ? 1 : 0) | (val & 0x80 ? 2 : 0);
+					break;
+				case 1:
+					colourIndex = (val & 0x4 ? 1 : 0) | (val & 0x40 ? 2 : 0);
+					break;
+				case 2:
+					colourIndex = (val & 0x2 ? 1 : 0) | (val & 0x20 ? 2 : 0);
+					break;
+				case 3:
+					colourIndex = (val & 0x1 ? 1 : 0) | (val & 0x10 ? 2 : 0);
+					break;
+				}
+
+				const ImU32 colour = GetCurrentPalette_Const().GetColour(colourIndex);
+				dl->AddRectFilled(rectMin, rectMax, colour);
 				dl->AddRect(rectMin, rectMax, 0xffffffff);
 
-			pos.x += rectSize;
+				pos.x += rectSize;
+			}
 		}
+		break;
+	case EDataItemDisplayType::ColMap4Bpp_CPC:
+		// CPC Mode 0.
+		// 4 bits per pixel. Each pixel value is a lookup into a palette of 16 colours.
+		// Pixels are double width.
+
+		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
+		{
+			const uint8_t val = state.ReadByte(addr + byte);
+
+			for (int pixel = 0; pixel < 2; pixel++)
+			{
+				const ImVec2 rectMin(pos.x, pos.y);
+				const ImVec2 rectMax(pos.x + rectSize * 2.0f, pos.y + rectSize);
+
+				int colourIndex = 0;
+
+				switch (pixel)
+				{
+				case 0:
+					colourIndex = (val & 0x80 ? 1 : 0) | (val & 0x8 ? 2 : 0) | (val & 0x20 ? 4 : 0) | (val & 0x2 ? 8 : 0);
+					break;
+				case 1:
+					colourIndex = (val & 0x40 ? 1 : 0) | (val & 0x4 ? 2 : 0) | (val & 0x10 ? 4 : 0) | (val & 0x1 ? 8 : 0);
+					break;
+				}
+
+				const ImU32 colour = GetCurrentPalette_Const().GetColour(colourIndex);
+				dl->AddRectFilled(rectMin, rectMax, colour);
+				dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+				pos.x += rectSize * 2.0f;
+			}
+		}
+		break;
 	}
 
 	// Edit bits
-	if (bEditMode && ImGui::IsMouseClicked(0))
+	if (pDataInfo->DisplayType == EDataItemDisplayType::Bitmap)
 	{
-		ImGuiIO& io = ImGui::GetIO();
-		const int xp = (int)(io.MousePos.x - startPos.x);
-		const int yp = (int)(io.MousePos.y - startPos.y);
-		const int itemWidth = pDataInfo->ByteSize * 8 * (int)rectSize;
-	
-		if (xp >= 0 && yp >= 0 && xp < itemWidth && yp < rectSize)
+		if (bEditMode && ImGui::IsMouseClicked(0))
 		{
-			const int squareNo = xp / (int)rectSize;
-			const int byteNo = squareNo / 8;
-			const int bitNo = squareNo & 7;
-			const ImVec2 rectMin(startPos.x + (squareNo * rectSize), startPos.y);
-			const ImVec2 rectMax(startPos.x + rectSize, startPos.y + rectSize);
-			dl->AddRect(rectMin, rectMax, 0xffff00ff);
+			ImGuiIO& io = ImGui::GetIO();
+			const int xp = (int)(io.MousePos.x - startPos.x);
+			const int yp = (int)(io.MousePos.y - startPos.y);
+			const int itemWidth = pDataInfo->ByteSize * 8 * (int)rectSize;
 
-			uint8_t val = state.ReadByte(addr + byteNo);
-			val = val ^ (1 << (7-bitNo));
-			state.WriteByte(addr + byteNo,val);
+			if (xp >= 0 && yp >= 0 && xp < itemWidth && yp < rectSize)
+			{
+				const int squareNo = xp / (int)rectSize;
+				const int byteNo = squareNo / 8;
+				const int bitNo = squareNo & 7;
+				const ImVec2 rectMin(startPos.x + (squareNo * rectSize), startPos.y);
+				const ImVec2 rectMax(startPos.x + rectSize, startPos.y + rectSize);
+				dl->AddRect(rectMin, rectMax, 0xffff00ff);
+
+				uint8_t val = state.ReadByte(addr + byteNo);
+				val = val ^ (1 << (7 - bitNo));
+				state.WriteByte(addr + byteNo, val);
+			}
 		}
 	}
 	//return pos.x - startPos;
