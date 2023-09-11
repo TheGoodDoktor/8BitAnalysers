@@ -148,7 +148,7 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 			ImGui::TableHeadersRow();
 
 			ImGuiListClipper clipper;
-			clipper.Begin(DiffChangedLocations.size());
+			clipper.Begin((int)DiffChangedLocations.size());
 			while (clipper.Step())
 			{
 				for (int rowNum = clipper.DisplayStart; rowNum < clipper.DisplayEnd; rowNum++)
@@ -213,7 +213,7 @@ void FMemoryAnalyser::DrawStringSearchUI()
 		ImGui::TableHeadersRow();
 
 		ImGuiListClipper clipper;
-		clipper.Begin(FoundStrings.size());
+		clipper.Begin((int)FoundStrings.size());
 		while (clipper.Step())
 		{
 			for (int rowNum = clipper.DisplayStart; rowNum < clipper.DisplayEnd; rowNum++)

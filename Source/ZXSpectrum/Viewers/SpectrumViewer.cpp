@@ -93,8 +93,8 @@ void FSpectrumViewer::Draw()
 			int xp, yp;
 			GetScreenAddressCoords(viewState.HighlightAddress.Address, xp, yp);
 
-			const int rx = static_cast<int>(pos.x) + (kBorderOffsetX + xp) * scale;
-			const int ry = static_cast<int>(pos.y) + (kBorderOffsetY + yp) * scale;
+			const int rx = static_cast<int>(pos.x + (kBorderOffsetX + xp) * scale);
+			const int ry = static_cast<int>(pos.y + (kBorderOffsetY + yp) * scale);
 			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (1 * scale)), 0xffffffff);	// TODO: flash?
 		}
 
@@ -103,8 +103,8 @@ void FSpectrumViewer::Draw()
 			int xp, yp;
 			GetAttribAddressCoords(viewState.HighlightAddress.Address, xp, yp);
 
-			const int rx = static_cast<int>(pos.x) + (kBorderOffsetX + xp) * scale;
-			const int ry = static_cast<int>(pos.y) + (kBorderOffsetY + yp) * scale;
+			const int rx = static_cast<int>(pos.x + (kBorderOffsetX + xp) * scale);
+			const int ry = static_cast<int>(pos.y + (kBorderOffsetY + yp) * scale);
 			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (8 * scale)), 0xffffffff);	// TODO: flash?
 		}
 	}

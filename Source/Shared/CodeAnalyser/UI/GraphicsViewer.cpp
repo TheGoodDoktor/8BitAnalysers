@@ -381,7 +381,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	if (ImGui::IsItemHovered())
 	{
-		const int xp = (int)(io.MousePos.x - pos.x) / scale;
+		const int xp = (int)((io.MousePos.x - pos.x) / scale);
 		const int yp = std::max((int)((io.MousePos.y - pos.y - (YSizePixels / 2)) / scale), 0);
 
 		ImDrawList* dl = ImGui::GetWindowDrawList();
