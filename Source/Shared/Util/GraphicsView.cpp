@@ -12,22 +12,6 @@
 
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bMagnifier = true);
 
-// speccy colour CLUT
-static const uint32_t g_SpeccyColourLUT[8] =
-{
-	0xFF000000,     // 0 - black
-	0xFFFF0000,     // 1 - blue
-	0xFF0000FF,     // 2 - red
-	0xFFFF00FF,     // 3 - magenta
-	0xFF00FF00,     // 4 - green
-	0xFFFFFF00,     // 5 - cyan
-	0xFF00FFFF,     // 6 - yellow
-	0xFFFFFFFF,     // 7 - white
-};
-
-static const uint32_t* g_ColourLUT = g_SpeccyColourLUT;
-
-
 uint32_t GetColFromAttr(uint8_t colBits, const uint32_t* colourLUT, bool bBright )
 {
 	const uint32_t outCol = colourLUT[colBits];

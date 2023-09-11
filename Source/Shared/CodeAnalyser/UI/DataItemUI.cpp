@@ -217,7 +217,7 @@ float DrawColAttr(FCodeAnalysisState& state, uint16_t addr,const FDataInfo* pDat
 		uint8_t colAttr = state.ReadByte(addr + byte);
 		const bool bBright = !!(colAttr & (1 << 6));
 		const uint32_t inkCol = GetColFromAttr(colAttr & 7, colourLUT,bBright);
-		const uint32_t paperCol = GetColFromAttr(colAttr >> 3, colourLUT, bBright);
+		const uint32_t paperCol = GetColFromAttr((colAttr >> 3) & 7, colourLUT, bBright);
 
 		// Ink
 		{
