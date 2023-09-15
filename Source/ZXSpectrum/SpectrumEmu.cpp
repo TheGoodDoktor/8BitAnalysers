@@ -570,6 +570,13 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	CodeAnalysis.Config.bShowBanks = config.Model == ESpectrumModel::Spectrum128K;
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 	
+	// set supported bitmap format
+	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMap4Bpp_CPC] = true;
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::ColMap4Bpp_CPC;
+	}
+
 	// setup emu
 	zx_type_t type = config.Model == ESpectrumModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
 	zx_joystick_type_t joy_type = ZX_JOYSTICKTYPE_NONE;

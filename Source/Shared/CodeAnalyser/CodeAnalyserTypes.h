@@ -62,6 +62,16 @@ enum class EDataItemDisplayType
 	ColMap4Bpp_CPC,	// Amstrad CPC mode 0 format
 };
 
+enum class EBitmapFormat
+{
+	Bitmap_1Bpp,		// 1 bit per pixel
+	ColMap2Bpp_CPC,	// Amstrad CPC mode 1 format
+	ColMap4Bpp_CPC,	// Amstrad CPC mode 0 format
+
+	Max,
+	None = Max
+};
+
 enum class EDataType
 {
 	Byte,
