@@ -718,7 +718,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	ImGui::Text("Display Mode:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120.0f);
-	DrawDataDisplayTypeCombo("##dataOperand",pDataInfo->DisplayType);
+	DrawDataDisplayTypeCombo("##dataOperand",pDataInfo->DisplayType,state);
 	switch (pDataInfo->DataType)
 	{
 	case EDataType::Byte:

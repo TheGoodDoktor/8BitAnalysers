@@ -571,10 +571,10 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 	
 	// set supported bitmap format
-	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMap4Bpp_CPC] = true;
+	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
-		CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::ColMap4Bpp_CPC;
+		CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::Bitmap_1Bpp;
 	}
 
 	// setup emu
