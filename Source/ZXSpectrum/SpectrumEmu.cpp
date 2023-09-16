@@ -765,6 +765,8 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	for (int i = 0; i < 8; i++)
 		GetCurrentPalette().SetColour(i, CodeAnalysis.Config.CharacterColourLUT[i]);
 
+	SetCurrentPalette(FPalette(CodeAnalysis.Config.CharacterColourLUT, 8));
+
 	// Setup Memory Analyser
 	CodeAnalysis.MemoryAnalyser.AddROMArea(kROMStart, kROMEnd);
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);

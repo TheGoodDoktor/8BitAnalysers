@@ -391,6 +391,11 @@ size_t FPalette::GetColourCount() const
 
 FPalette g_CurrentPalette;
 
+void SetCurrentPalette(const FPalette& newPalette)
+{
+	g_CurrentPalette = newPalette;
+}
+
 FPalette& GetCurrentPalette()
 {
 	return g_CurrentPalette;
