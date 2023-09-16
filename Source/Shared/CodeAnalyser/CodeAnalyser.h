@@ -193,6 +193,8 @@ struct FCodeAnalysisViewState
 
 	bool					DataFormattingTabOpen = false;
 	FDataFormattingOptions	DataFormattingOptions;
+	EBitmapFormat CurBitmapFormat = EBitmapFormat::None;
+
 private:
 	FCodeAnalysisItem			CursorItem;
 	FAddressRef					GoToAddressRef;
@@ -205,6 +207,8 @@ struct FCodeAnalysisConfig
 	bool				bShowBanks = false;
 	int					BranchLinesDisplayMode = 1;
 	const uint32_t*		CharacterColourLUT = nullptr;
+
+	bool				bSupportedBitmapTypes[(int)EBitmapFormat::Max] = { false };
 
 	// horizontal positions
 	bool	bShowConfigWindow = false;
@@ -607,8 +611,16 @@ private:
 	const std::vector< FCodeAnalysisPage*>& GetRegisteredPages() const { return RegisteredPages; }
 
 
-	void					SetCodeAnalysisReadPage(int pageNo, FCodeAnalysisPage* pPage) { ReadPageTable[pageNo] = pPage; if (pPage != nullptr) pPage->bUsed = true; }
-	void					SetCodeAnalysisWritePage(int pageNo, FCodeAnalysisPage* pPage) { WritePageTable[pageNo] = pPage; if(pPage != nullptr) pPage->bUsed = true; }
+	void					SetCodeAnalysisReadPage(int pageNo, FCodeAnalysisPage* pPage) 
+	{ 
+		ReadPageTable[pageNo] = pPage; if (pPage != nullptr) 
+		pPage->bUsed = true; 
+	}
+	void					SetCodeAnalysisWritePage(int pageNo, FCodeAnalysisPage* pPage) 
+	{ 
+			WritePageTable[pageNo] = pPage; if(pPage != nullptr) 
+			pPage->bUsed = true; 
+	}
 	void					SetCodeAnalysisRWPage(int pageNo, FCodeAnalysisPage* pReadPage, FCodeAnalysisPage* pWritePage)
 	{
 		SetCodeAnalysisReadPage(pageNo, pReadPage);
