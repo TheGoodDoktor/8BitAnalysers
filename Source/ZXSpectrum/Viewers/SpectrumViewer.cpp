@@ -88,6 +88,14 @@ void FSpectrumViewer::Draw()
 	if (viewState.HighlightAddress.IsValid())
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
+
+		// generate flash colour
+		ImU32 flashCol = 0xff000000;
+		const int flashCounter = FrameCounter >> 2;
+		if (flashCounter & 1) flashCol |= 0xff << 0;
+		if (flashCounter & 2) flashCol |= 0xff << 8;
+		if (flashCounter & 4) flashCol |= 0xff << 16;
+		
 		if (viewState.HighlightAddress.Address >= kScreenPixMemStart && viewState.HighlightAddress.Address <= kScreenPixMemEnd)	// pixel
 		{
 			int xp, yp;
@@ -95,7 +103,7 @@ void FSpectrumViewer::Draw()
 
 			const int rx = static_cast<int>(pos.x + (kBorderOffsetX + xp) * scale);
 			const int ry = static_cast<int>(pos.y + (kBorderOffsetY + yp) * scale);
-			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (1 * scale)), 0xffffffff);	// TODO: flash?
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (1 * scale)), flashCol);	// TODO: flash?
 		}
 
 		if (viewState.HighlightAddress.Address >= kScreenAttrMemStart && viewState.HighlightAddress.Address <= kScreenAttrMemEnd)	// attributes
@@ -105,7 +113,7 @@ void FSpectrumViewer::Draw()
 
 			const int rx = static_cast<int>(pos.x + (kBorderOffsetX + xp) * scale);
 			const int ry = static_cast<int>(pos.y + (kBorderOffsetY + yp) * scale);
-			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (8 * scale)), 0xffffffff);	// TODO: flash?
+			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (8 * scale)), flashCol);	// TODO: flash?
 		}
 	}
 
@@ -243,6 +251,7 @@ void FSpectrumViewer::Draw()
 	}
 	
 	bWindowFocused = ImGui::IsWindowFocused();
+	FrameCounter++;
 }
 
 void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos)
