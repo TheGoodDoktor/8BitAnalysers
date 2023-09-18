@@ -1201,7 +1201,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				auto& banks = state.GetBanks();
 				for (auto& bank : banks)
 				{
-					if (bank.IsUsed() == false || bank.PrimaryMappedPage == -1)
+					//if (bank.IsUsed() == false || bank.PrimaryMappedPage == -1)
+					if (bank.PrimaryMappedPage == -1)
 						continue;
 
 					const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
