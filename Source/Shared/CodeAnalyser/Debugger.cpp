@@ -306,7 +306,7 @@ bool FDebugger::FrameTick(void)
 	return bDebuggerStopped;
 }
 
-static const uint32_t kVersionNo = 2;
+static const uint32_t kVersionNo = 3;
 
 // Load state - breakpoints, watches etc.
 void	FDebugger::LoadFromFile(FILE* fp)
@@ -349,6 +349,10 @@ void	FDebugger::LoadFromFile(FILE* fp)
 			fread(&address.Val, sizeof(uint32_t), 1, fp);	// address
 		}
 	}
+
+	// PC
+	if (versionNo > 2)
+		fread(&PC.Val, sizeof(uint32_t), 1, fp);	
 }
 
 // Save state - breakpoints, watches etc.
@@ -386,6 +390,9 @@ void	FDebugger::SaveToFile(FILE* fp)
 	{
 		fwrite(&FrameTrace[i].Val,sizeof(uint32_t), 1, fp);	// address
 	}
+
+	// PC
+	fwrite(&PC.Val,sizeof(uint32_t), 1, fp);
 }
 
 
