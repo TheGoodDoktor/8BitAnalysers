@@ -90,10 +90,27 @@ public:
 	std::string SearchText;
 };
 
+
+class FByteSequenceFinder : public FDataFinder
+{
+public:
+	static const int kMaxByteCount = 2;
+	static const int kSearchTextSize = (kMaxByteCount * 2) + 1;
+
+	virtual bool HasValueChanged(FAddressRef addr) const override;
+	virtual void Find(const FSearchOptions& opt) override;
+	virtual std::vector<FAddressRef> FindAllMatchesInBanks(const FSearchOptions& opt) override;
+	virtual const char* GetValueString(FAddressRef addr, ENumberDisplayMode numberMode) const override;
+	char SearchText[kSearchTextSize] = "";
+	uint8_t SearchBytes[kMaxByteCount];
+	int NumSearchBytes = 0;
+};
+
 enum ESearchType
 {
-	SearchValue,
-	SearchText,
+	SearchSingleValue,		// single value - byte or word
+	SearchByteSequence,	// sequence of bytes
+	SearchText,			// text string
 };
 
 enum ESearchDataType
@@ -113,7 +130,7 @@ public:
 
 private:
 	FSearchOptions Options;
-	ESearchType SearchType = ESearchType::SearchValue;
+	ESearchType SearchType = ESearchType::SearchSingleValue;
 	ESearchDataType DataSize = ESearchDataType::SearchByte;
 
 	bool bDecimal = true;
@@ -123,6 +140,7 @@ private:
 	FByteFinder ByteFinder;
 	FWordFinder WordFinder;
 	FTextFinder TextFinder;
+	FByteSequenceFinder ByteSequenceFinder;
 
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
 };

@@ -7,6 +7,19 @@
 #include "UI/CodeAnalyserUI.h"
 #include "Util/Misc.h"
 
+static void HelpMarker(const char* desc)
+{
+	ImGui::TextDisabled("(?)");
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+	{
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+		ImGui::TextUnformatted(desc);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
+}
+
 FFindTool::FFindTool()
 {
 	pCurFinder = &ByteFinder;
@@ -18,6 +31,7 @@ void FFindTool::Init(FCodeAnalysisState* ptrCodeAnalysis)
 	ByteFinder.Init(ptrCodeAnalysis);
 	WordFinder.Init(ptrCodeAnalysis);
 	TextFinder.Init(ptrCodeAnalysis);
+	ByteSequenceFinder.Init(ptrCodeAnalysis);
 }
 
 void FFindTool::Reset()
@@ -25,6 +39,7 @@ void FFindTool::Reset()
 	ByteFinder.Reset();
 	WordFinder.Reset();
 	TextFinder.Reset();
+	ByteSequenceFinder.Reset();
 }
 
 void FFindTool::DrawUI()
@@ -33,25 +48,56 @@ void FFindTool::DrawUI()
 	const ESearchType lastSearchType = SearchType;
 	const ESearchDataType lastDataSize = DataSize;
 
-	if (ImGui::RadioButton("Decimal Value", SearchType == ESearchType::SearchValue && bDecimal == true))
+	ImGuiTabBarFlags tabBarFlags = ImGuiTabBarFlags_None;
+	if (ImGui::BeginTabBar("SearchType", tabBarFlags))
 	{
-		SearchType = ESearchType::SearchValue;
-		bDecimal = true;
+		if (ImGui::BeginTabItem("Single Value"))
+		{
+			SearchType = ESearchType::SearchSingleValue;
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Hex Values"))
+		{
+			SearchType = ESearchType::SearchByteSequence;
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Text"))
+		{
+			SearchType = ESearchType::SearchText;
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
+	}
+
+#if 0
+	if (ImGui::RadioButton("Single Value", SearchType == ESearchType::SearchSingleValue))
+	{
+		SearchType = ESearchType::SearchSingleValue;
 	}
 	ImGui::SameLine();
-	if (ImGui::RadioButton("Hexadecimal Value", SearchType == ESearchType::SearchValue && bDecimal == false))
+	if (ImGui::RadioButton("Hex Values", SearchType == ESearchType::SearchByteSequence))
 	{
-		SearchType = ESearchType::SearchValue;
-		bDecimal = false;
+		SearchType = ESearchType::SearchByteSequence;
 	}
 	ImGui::SameLine();
 	if (ImGui::RadioButton("Text", SearchType == ESearchType::SearchText))
 	{
 		SearchType = ESearchType::SearchText;
 	}
+#endif
 
-	if (SearchType == ESearchType::SearchValue)
+	if (SearchType == ESearchType::SearchSingleValue)
 	{
+		if (ImGui::RadioButton("Decimal", bDecimal == true))
+		{
+			bDecimal = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::RadioButton("Hexadecimal", bDecimal == false))
+		{
+			bDecimal = false;
+		}
+
 		if (ImGui::RadioButton("Byte", DataSize == ESearchDataType::SearchByte))
 		{
 			DataSize = ESearchDataType::SearchByte;
@@ -67,14 +113,17 @@ void FFindTool::DrawUI()
 	{
 		if (SearchType == ESearchType::SearchText)
 			pCurFinder = &TextFinder;
+		else if (SearchType == ESearchType::SearchByteSequence)
+			pCurFinder = &ByteSequenceFinder;
 		else
 			pCurFinder = DataSize == ESearchDataType::SearchByte ? (FFinder*)&ByteFinder : &WordFinder;
 	}
 
+
 	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 	if (ImGui::TreeNode("Search Options"))
 	{
-		if (SearchType == ESearchType::SearchValue)
+		if (SearchType == ESearchType::SearchSingleValue || SearchType == ESearchType::SearchByteSequence)
 		{
 			if (ImGui::RadioButton("Data", Options.MemoryType == ESearchMemoryType::SearchData))
 			{
@@ -132,7 +181,7 @@ void FFindTool::DrawUI()
 	}
 
 	bool bPressedEnter = false;
-	if (SearchType == ESearchType::SearchValue)
+	if (SearchType == ESearchType::SearchSingleValue)
 	{
 		const char* formatStr = bDecimal ? "%u" : "%x";
 		ImGuiInputTextFlags flags = bDecimal ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
@@ -157,6 +206,15 @@ void FFindTool::DrawUI()
 		ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
 		ImGui::InputText("##searchtext", &TextFinder.SearchText);
 	}
+	else if (SearchType == ESearchType::SearchByteSequence)
+	{
+		ImGui::Text("Hex Values");
+		ImGui::SameLine();
+		HelpMarker("Enter hexadecimal values to search for. For example, '1BAFCD' will search for the byte sequence {1B, AF, CD}.");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
+		ImGui::InputText("##hexvalues", ByteSequenceFinder.SearchText, FByteSequenceFinder::kSearchTextSize, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
+	}
 
 	// sam. I wanted to use ImGuiInputTextFlags_EnterReturnsTrue here to do the search when enter is pressed but
 	// I ran into a bug where when clicking away from the input box would revert the value. 
@@ -177,7 +235,7 @@ void FFindTool::DrawUI()
 	}
 
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
-	const ImVec2 childSize = ImVec2(0, -ImGui::GetFrameHeightWithSpacing() * (SearchType == ESearchType::SearchValue ? 2.0f : 1.0f)); // Leave room for 1 or 2 lines below us
+	const ImVec2 childSize = ImVec2(0, -ImGui::GetFrameHeightWithSpacing() * (SearchType == ESearchType::SearchSingleValue ? 2.0f : 1.0f)); // Leave room for 1 or 2 lines below us
 	if (ImGui::BeginChild("SearchResults", childSize, true, window_flags))
 	{
 		if (pCurFinder->GetNumResults())
@@ -194,7 +252,7 @@ void FFindTool::DrawUI()
 				if (pCodeAnalysis->Config.bShowBanks)
 					ImGui::TableSetupColumn("Bank", ImGuiTableColumnFlags_WidthFixed, TEXT_BASE_WIDTH * 8);
 				ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthFixed, TEXT_BASE_WIDTH * 40);
-				if (SearchType == ESearchType::SearchValue)
+				if (SearchType == ESearchType::SearchSingleValue)
 					ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, TEXT_BASE_WIDTH * 6);
 				ImGui::TableSetupColumn("Comment", ImGuiTableColumnFlags_WidthStretch);
 				ImGui::TableHeadersRow();
@@ -243,10 +301,10 @@ void FFindTool::DrawUI()
 						DrawAddressLabel(*pCodeAnalysis, viewState, resultAddr);
 
 						// Value
-						if (SearchType == ESearchType::SearchValue)
+						if (SearchType == ESearchType::SearchSingleValue)
 						{
 							ImGui::TableNextColumn();
-							if (SearchType == ESearchType::SearchValue)
+							if (SearchType == ESearchType::SearchSingleValue)
 							{
 								ImGui::Text("%s", pCurFinder->GetValueString(resultAddr, numberMode));
 							}
@@ -273,7 +331,7 @@ void FFindTool::DrawUI()
 	ImGui::EndChild();
 	ImGui::Text("%d results found", pCurFinder->GetNumResults());
 
-	if (SearchType == ESearchType::SearchValue)
+	if (SearchType == ESearchType::SearchSingleValue)
 	{
 		if (ImGui::Button("Remove Unchanged Results"))
 		{
@@ -305,6 +363,8 @@ bool FFinder::HasValueChanged(FAddressRef addr) const
 
 void FFinder::Find(const FSearchOptions& opt)
 {
+	assert(pCodeAnalysis);
+
 	SearchResults.clear();
 
 	std::vector<FAddressRef> allMatches = FindAllMatchesInBanks(opt);
@@ -377,6 +437,7 @@ void FFinder::RemoveUnchangedResults()
 	}
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 std::vector<FAddressRef> FByteFinder::FindAllMatchesInBanks(const FSearchOptions& opt)
 {
 	return pCodeAnalysis->FindAllMemoryPatterns(&SearchValue, 1, opt.bSearchROM, opt.bSearchPhysicalOnly);
@@ -394,6 +455,7 @@ const char* FByteFinder::GetValueString(FAddressRef addr, ENumberDisplayMode num
 	return NumStr(value, numberMode);
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 void FWordFinder::Find(const FSearchOptions& opt)
 {
 	LastValue = SearchValue;
@@ -410,7 +472,7 @@ std::vector<FAddressRef> FWordFinder::FindAllMatchesInBanks(const FSearchOptions
 bool FWordFinder::HasValueChanged(FAddressRef addr) const
 {
 	const uint16_t curValue = pCodeAnalysis->ReadWord(addr);
-	return false;
+	return curValue != LastValue;
 }
 
 const char* FWordFinder::GetValueString(FAddressRef addr, ENumberDisplayMode numberMode) const
@@ -419,6 +481,54 @@ const char* FWordFinder::GetValueString(FAddressRef addr, ENumberDisplayMode num
 	return NumStr(value, numberMode);
 }
 
+//---------------------------------------------------------------------------------------------------------------------
+void FByteSequenceFinder::Find(const FSearchOptions& opt)
+{
+	const size_t strLen = strlen(SearchText);
+	// check for odd number of characters
+	if (strLen & 1)
+	{
+		// todo: display error message. or maybe add leading 0?
+		return;
+	}
+	else
+	{
+		const char* pCurBuf = SearchText;
+		const char* pEnd = SearchText + strlen(SearchText);
+		NumSearchBytes = 0;
+
+		int res;
+		while (pCurBuf < pEnd)
+		{
+			if (sscanf(pCurBuf, "%02X", &res) == 1)
+			{
+				SearchBytes[NumSearchBytes] = (uint8_t)res;
+				NumSearchBytes++;
+			}
+			pCurBuf += 2;
+		}
+	}
+
+	FFinder::Find(opt);
+}
+
+std::vector<FAddressRef> FByteSequenceFinder::FindAllMatchesInBanks(const FSearchOptions& opt)
+{
+	return pCodeAnalysis->FindAllMemoryPatterns(SearchBytes, NumSearchBytes, opt.bSearchROM, opt.bSearchPhysicalOnly);
+}
+
+bool FByteSequenceFinder::HasValueChanged(FAddressRef addr) const
+{
+	return false;
+}
+
+const char* FByteSequenceFinder::GetValueString(FAddressRef addr, ENumberDisplayMode numberMode) const
+{
+	const uint16_t value = pCodeAnalysis->ReadWord(addr);
+	return NumStr(value, numberMode);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 std::vector<FAddressRef> FTextFinder::FindAllMatchesInBanks(const FSearchOptions& opt)
 {
 	return pCodeAnalysis->FindAllMemoryPatterns((uint8_t*)SearchText.c_str(), SearchText.size(), opt.bSearchROM, opt.bSearchPhysicalOnly);

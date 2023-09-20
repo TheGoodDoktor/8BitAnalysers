@@ -20,17 +20,23 @@
 *.mod
 *.smod
 
+# CMake temporary folders
+**/CMakeFiles
+**/[Cc][Mm]ake-[Bb]uild*
+
+
 # Compiled Static libraries
 *.lai
 *.la
 *.a
 *.lib
 
-# Executables
+# Executables and IDE files
 *.exe
 *.out
 *.app
 /.vs
+.idea
 /VSProject/.vs/SpeccyExplorer/v15
 /VSProject/SpeccyExplorer/Debug
 /VSProject/SpeccyExplorer/x64/Debug
@@ -61,3 +67,4 @@
 /VSProject/C64/C64Explorer/.vs/C64Explorer/config
 /Source/C64/build
 /Source/C64/linuxbuild
+.DS_Store
