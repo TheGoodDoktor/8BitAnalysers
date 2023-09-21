@@ -52,6 +52,12 @@ FAppState   g_AppState;
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+
+#ifdef _WIN32
+    char tmp[1024];
+    snprintf(tmp, 1024, "Glfw Error %d: %s\n", error, description);
+    MessageBox(NULL, tmp, "Fatal Error", MB_OK | MB_ICONERROR);
+#endif
 }
 
 int main(int argc, char** argv)
