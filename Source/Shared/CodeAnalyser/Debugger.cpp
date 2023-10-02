@@ -254,10 +254,24 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	return trapId;
 }
 
-void FDebugger::StartFrame() 
-{ 
+// called every machine frame
+// will get called in the middle of emulation
+void FDebugger::OnMachineFrame()
+{
 	if (bClearEventsEveryFrame)
 		ClearEvents();
+
+	// handle frame stepping - should this be in the machine frame handler?
+	if (StepMode == EDebugStepMode::Frame)
+	{
+		StepMode = EDebugStepMode::None;
+		Break();
+	}
+}
+
+
+void FDebugger::StartFrame() 
+{ 
 	FrameTrace.clear();
 
 	// Setup breakpoint mask 
@@ -296,12 +310,7 @@ void FDebugger::StartFrame()
 
 bool FDebugger::FrameTick(void)
 {
-	// handle frame stepping
-	if (StepMode == EDebugStepMode::Frame)
-	{
-		StepMode = EDebugStepMode::None;
-		Break();
-	}
+	
 
 	return bDebuggerStopped;
 }
@@ -657,6 +666,15 @@ void FDebugger::RegisterEvent(uint8_t type, FAddressRef pc, uint16_t address, ui
 
 	ScanlineEvents[scanlinePos] = type;
 	EventTrace.emplace_back(type, pc, address, value, scanlinePos);
+
+	if(bWriteEventComments)
+	{ 
+		FCodeAnalysisState& state = *pCodeAnalysis;
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+
+		if (pCodeInfo != nullptr && pCodeInfo->Comment.empty())
+			pCodeInfo->Comment = GetEventName(type);
+	}
 }
 
 uint32_t FDebugger::GetEventColour(uint8_t type)
@@ -1035,13 +1053,26 @@ void EventShowAttrValue(FCodeAnalysisState& state, const FEvent& event)
 }
 void FDebugger::DrawEvents(void)
 {
-	if (ImGui::Button("Clear"))
-	{
-		ClearEvents();
-	}
-	ImGui::Checkbox("Clear Every Frame", &bClearEventsEveryFrame);
-
 	FCodeAnalysisState& state = *pCodeAnalysis;
+
+	if (ImGui::Button("Clear"))
+		ClearEvents();
+	ImGui::SameLine();
+	ImGui::Checkbox("Clear Every Frame", &bClearEventsEveryFrame);
+	ImGui::SameLine();
+	if (ImGui::Button("Write Comments"))
+	{
+		for (const auto& event : EventTrace)
+		{
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(event.PC);
+			if(pCodeInfo != nullptr && pCodeInfo->Comment.empty())
+				pCodeInfo->Comment = GetEventName(event.Type);
+		}
+	}
+	//disabled for now as it's a bit dangerous
+	//ImGui::SameLine();
+	//ImGui::Checkbox("Write On Register", &bWriteEventComments);
+
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float lineHeight = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)EventTrace.size(), lineHeight);
@@ -1081,66 +1112,63 @@ void FDebugger::DrawEvents(void)
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollY;
 	if (ImGui::BeginTable("Events", 4, flags))
 	{
-		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 150);
+		ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 200);
 		ImGui::TableSetupColumn("PC", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100);
 		ImGui::TableHeadersRow();
 
-		//if (ImGui::BeginChild("EventListChild"))
+		while (clipper.Step())
 		{
-			while (clipper.Step())
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
-				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+				const FEvent& event = EventTrace[i];
+				const FEventTypeInfo& typeInfo = g_EventTypeInfo[event.Type];
+				ImGui::PushID(i);
+				ImGui::TableNextRow();
+
+				ImGui::TableSetColumnIndex(0);
+				ImVec2 pos = ImGui::GetCursorScreenPos();
+					
+				// Type
+				const ImVec2 rectMin(pos.x, pos.y);
+				const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+				dl->AddRectFilled(rectMin, rectMax, typeInfo.EventColour);
+
+				ImGui::Text("   %s", GetEventName(event.Type));
+					
+				// PC
+				ImGui::TableSetColumnIndex(1);
+				ImGui::Text("%s:", NumStr(event.PC.Address));
+				DrawAddressLabel(state, viewState, event.PC);
+
+				// Address
+				ImGui::TableSetColumnIndex(2);
+				if (typeInfo.ShowAddressCB != nullptr)
 				{
-					const FEvent& event = EventTrace[i];
-					const FEventTypeInfo& typeInfo = g_EventTypeInfo[event.Type];
-					ImGui::PushID(i);
-					ImGui::TableNextRow();
-
-					ImGui::TableSetColumnIndex(0);
-					ImVec2 pos = ImGui::GetCursorScreenPos();
-					
-					// Type
-					const ImVec2 rectMin(pos.x, pos.y);
-					const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
-					dl->AddRectFilled(rectMin, rectMax, typeInfo.EventColour);
-
-					ImGui::Text("   %s", GetEventName(event.Type));
-					
-					// PC
-					ImGui::TableSetColumnIndex(1);
-					ImGui::Text("%s:", NumStr(event.PC.Address));
-					DrawAddressLabel(state, viewState, event.PC);
-
-					// Address
-					ImGui::TableSetColumnIndex(2);
-					if (typeInfo.ShowAddressCB != nullptr)
-					{
-						typeInfo.ShowAddressCB(state, event);
-					}
-					else
-					{
-						ImGui::Text("%s:", NumStr(event.Address));
-						DrawAddressLabel(state, viewState, event.Address);
-					}
-
-					// Value
-					ImGui::TableSetColumnIndex(3);
-					if (typeInfo.ShowValueCB != nullptr)
-					{
-						typeInfo.ShowValueCB(state, event);
-					}
-					else
-					{
-						ImGui::Text("%s", NumStr(event.Value));
-					}
-					ImGui::PopID();
-
+					typeInfo.ShowAddressCB(state, event);
 				}
+				else
+				{
+					ImGui::Text("%s:", NumStr(event.Address));
+					DrawAddressLabel(state, viewState, event.Address);
+				}
+
+				// Value
+				ImGui::TableSetColumnIndex(3);
+				if (typeInfo.ShowValueCB != nullptr)
+				{
+					typeInfo.ShowValueCB(state, event);
+				}
+				else
+				{
+					ImGui::Text("%s", NumStr(event.Value));
+				}
+				ImGui::PopID();
+
 			}
 		}
-		//ImGui::EndChild();
 
 		ImGui::EndTable();
 

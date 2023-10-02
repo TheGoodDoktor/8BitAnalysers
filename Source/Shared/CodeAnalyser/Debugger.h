@@ -106,6 +106,7 @@ public:
 	void	Init(FCodeAnalysisState* pCodeAnalysis);
 	void	CPUTick(uint64_t pins);
 	int		OnInstructionExecuted(uint64_t pins);
+	void	OnMachineFrame();
 	void	StartFrame();
 	bool	FrameTick(void);
 
@@ -193,7 +194,8 @@ private:
 	std::vector<FAddressRef>	FrameTrace;
 	std::vector<FEvent>			EventTrace;
 	uint8_t						ScanlineEvents[320];
-	bool							bClearEventsEveryFrame = true;
+	bool						bClearEventsEveryFrame = true;
+	bool						bWriteEventComments = false;
 
 	int							FrameTraceItemIndex = -1;
 	std::vector<FCPUFunctionCall>	CallStack;

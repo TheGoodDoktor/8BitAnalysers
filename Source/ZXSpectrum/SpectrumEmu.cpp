@@ -288,6 +288,8 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 					bHasInterruptHandler = true;
 					InterruptHandlerAddress = interruptHandler;
 				}
+
+				state.Debugger.OnMachineFrame();
 			}
 			else
 			{
