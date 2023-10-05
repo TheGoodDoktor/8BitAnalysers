@@ -1108,6 +1108,26 @@ void FCodeAnalysisState::OnFrameEnd()
 	}
 }
 
+void FCodeAnalysisState::OnCPUTick(uint64_t pins)
+{
+	// Only Z80 has IO operations
+	if(CPUInterface->CPUType == ECPUType::Z80)
+	{
+		// Handle IO operations
+		if (pins & Z80_IORQ)
+		{
+			const uint8_t data = Z80_GET_DATA(pins);
+			const uint16_t addr = Z80_GET_ADDR(pins);
+
+			if (pins & Z80_RD)
+				IOAnalyser.RegisterIORead(Debugger.GetPC(), addr, data);
+			else if (pins & Z80_WR)
+				IOAnalyser.RegisterIOWrite(Debugger.GetPC(), addr, data);
+		}
+	}
+
+	Debugger.CPUTick(pins);
+}
 
 void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
 {

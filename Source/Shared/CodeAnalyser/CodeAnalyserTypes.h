@@ -115,6 +115,17 @@ struct FAddressRef
 	};
 };
 
+
+// Hash function for FAddresRef so we can use unordered sets/maps
+template <>
+struct std::hash<FAddressRef>
+{
+	std::size_t operator()(const FAddressRef& k) const
+	{
+		return k.Val;
+	}
+};
+
 struct FFoundString
 {
 	FAddressRef		Address;
