@@ -253,7 +253,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 {
 	FCodeAnalysisState &state = CodeAnalysis;
 	FDebugger& debugger = CodeAnalysis.Debugger;
-	FIOAnalyser& ioAnalyser = CodeAnalysis.IOAnalyser;
 	z80_t& cpu = ZXEmuState.cpu;
 	const uint16_t pc = GetPC().Address;
 	static uint64_t lastTickPins = 0;
@@ -261,8 +260,8 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	lastTickPins = pins;
 	const uint16_t scanlinePos = (uint16_t)ZXEmuState.scanline_y;
 
-	if (scanlinePos == 0)	// clear scanline info on new frame
-		debugger.ResetScanlineEvents();
+	//if (scanlinePos == 0)	// clear scanline info on new frame
+	//	debugger.ResetScanlineEvents();
 
 	/* memory and IO requests */
 	if (pins & Z80_MREQ) 
@@ -323,12 +322,10 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		const uint8_t data = Z80_GET_DATA(pins);
 		const uint16_t addr = Z80_GET_ADDR(pins);
 
-		IOAnalysis.IOHandler(pc, pins);
+		//IOAnalysis.IOHandler(pc, pins);
 
 		if (pins & Z80_RD)
 		{
-			ioAnalyser.RegisterIORead(addr, data);
-
 			if ((pins & Z80_A0) == 0)
 				debugger.RegisterEvent((uint8_t)EEventType::KeyboardRead, pcAddrRef, addr , data, scanlinePos);
 			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) // Kempston Joystick (........000.....)
@@ -344,9 +341,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		}
 		else if (pins & Z80_WR)
 		{
-			// an IO write
-			ioAnalyser.RegisterIOWrite(addr, data);
-
 			// handle bank switching on speccy 128
 			if ((pins & Z80_A0) == 0)
 			{
@@ -388,12 +382,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 				else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == Z80_A15)	// write to AY-3-8912 (10............0.) 
 					debugger.RegisterEvent((uint8_t)EEventType::SoundChipRegisterWrite, pcAddrRef, addr, data, scanlinePos);
 			}
-
 		}
-	}
-
-	if (pins & Z80_INT)	// have we had a vblank interrupt?
-	{
 	}
 
 	InstructionsTicks++;
@@ -406,7 +395,8 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		InstructionsTicks = 0;
 	}
 
-	debugger.CPUTick(pins);
+	CodeAnalysis.OnCPUTick(pins);
+	//debugger.CPUTick(pins);
 	return pins;
 }
 
@@ -473,6 +463,23 @@ static std::map<uint16_t, std::vector<std::string>> g_KeyPortLUT =
 	{0xdffe, {"P","O","I","U","Y"}},
 	{0xbffe, {"Enter","L","K","J","H"}},
 	{0x7ffe, {"Space","Sym","M","N","B"}},
+};
+
+// keyboard/port LUT
+static std::vector<std::pair<uint16_t, const char*>> g_IOReadPortNames =
+{
+	{0xfefe, "Keys: Shift,Z,X,C,V"},
+	{0xfdfe, "Keys: A,S,D,F,G"},
+	{0xfbfe, "Keys: Q,W,E,R,T"},
+	{0xf7fe, "Keys: 1,2,3,4,5"},
+	{0xeffe, "Keys: 0,9,8,7,6"},
+	{0xdffe, "Keys: P,O,I,U,Y"},
+	{0xbffe, "Keys: Enter,L,K,J,H"},
+	{0x7ffe, "Keys: Space,Sym,M,N,B"},
+};
+
+static std::vector<std::pair<uint16_t, const char*>> g_IOWritePortNames =
+{
 };
 
 const char* g_AYRegNames[] = 
@@ -664,7 +671,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	GraphicsViewer.Init(&CodeAnalysis);
 	
-	IOAnalysis.Init(this);
+	//IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
 
@@ -780,6 +787,12 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	CodeAnalysis.MemoryAnalyser.AddROMArea(kROMStart, kROMEnd);
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
 
+	// Setup IO analyser
+	for(const auto& readPort : g_IOReadPortNames)
+		CodeAnalysis.IOAnalyser.SetIOReadAddressName(readPort.first,readPort.second);
+	for (const auto& writePort : g_IOWritePortNames)
+		CodeAnalysis.IOAnalyser.SetIOWriteAddressName(writePort.first, writePort.second);
+
 	bInitialised = true;
 	return true;
 }
@@ -832,7 +845,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
 
-	IOAnalysis.Reset();
+	//IOAnalysis.Reset();
 
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -1634,7 +1647,7 @@ void FSpectrumEmu::DrawMemoryTools()
 		}
 		if (ImGui::BeginTabItem("IO Analysis"))
 		{
-			IOAnalysis.DrawUI();
+			//IOAnalysis.DrawUI();
 			ImGui::EndTabItem();
 		}
 		
@@ -1657,14 +1670,8 @@ void FSpectrumEmu::DrawUI()
 	ui_zx_t* pZXUI = &UIZX;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 	
-	//if(ExecThisFrame)
-	//	ui_zx_after_exec(pZXUI);
-
-	//const int instructionsThisFrame = (int)CodeAnalysis.FrameTrace.size();
-	//static int maxInst = 0;
-	//maxInst = std::max(maxInst, instructionsThisFrame);
-
 	DrawMainMenu(timeMS);
+	
 	if (pZXUI->memmap.open)
 	{
 		UpdateMemmap(pZXUI);
@@ -1676,12 +1683,6 @@ void FSpectrumEmu::DrawUI()
 	ui_ay38910_draw(&pZXUI->ay);
 	ui_kbd_draw(&pZXUI->kbd);
 	ui_memmap_draw(&pZXUI->memmap);
-
-	/*for (int i = 0; i < 4; i++)
-	{
-		ui_memedit_draw(&pZXUI->memedit[i]);
-		ui_dasm_draw(&pZXUI->dasm[i]);
-	}*/
 
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
@@ -1712,7 +1713,6 @@ void FSpectrumEmu::DrawUI()
 	}
 	ImGui::End();
 
-	//DasmDraw(&pUI->FunctionDasm);
 	// show spectrum window
 	if (ImGui::Begin("Spectrum View"))
 	{
@@ -1765,7 +1765,7 @@ void FSpectrumEmu::DrawUI()
 #endif
 
 	GraphicsViewer.Draw();
-	DrawMemoryTools();
+	//DrawMemoryTools();
 
 	// COde analysis views
 	for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)

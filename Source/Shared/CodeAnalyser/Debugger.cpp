@@ -261,6 +261,8 @@ void FDebugger::OnMachineFrame()
 	if (bClearEventsEveryFrame)
 		ClearEvents();
 
+	ResetScanlineEvents();
+
 	// handle frame stepping - should this be in the machine frame handler?
 	if (StepMode == EDebugStepMode::Frame)
 	{

@@ -138,30 +138,7 @@ public:
 	{
 		MemoryAccessHandlers.push_back(handler);
 	}
-#if 0
-	void GraphicsViewerGoToAddress(FAddressRef address)
-	{
-		// TODO: this code should be in the graphics viewer
-		const FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(address.BankId);
-		
-		if (pBank == nullptr || pBank->IsMapped())	// default to physical memory view
-		{
-			GraphicsViewer.AddressOffset = address.Address;
-			GraphicsViewer.bShowPhysicalMemory = true;
-		}
-		else
-		{
-			GraphicsViewer.AddressOffset = address.Address - pBank->GetMappedAddress();
-			GraphicsViewer.Bank = address.BankId;
-			GraphicsViewer.bShowPhysicalMemory = false;
-		}
-	}
 
-	void GraphicsViewerSetCharWidth(uint16_t width)
-	{
-		GraphicsViewer.XSizePixels = width * 8;
-	}
-#endif
 	// TODO: Make private
 //private:
 	// Emulator 
@@ -183,7 +160,7 @@ public:
 	FFrameTraceViewer		FrameTraceViewer;
 	FZXGraphicsViewer		GraphicsViewer;
 	FCodeAnalysisState		CodeAnalysis;
-	FIOAnalysis				IOAnalysis;
+	//FIOAnalysis				IOAnalysis;
 
 	// Code analysis pages - to cover 48K & 128K Spectrums
 	static const int	kNoBankPages = 16;	// no of pages per physical address slot (16k)

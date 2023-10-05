@@ -265,6 +265,7 @@ public:
 	void	Init(ICPUInterface* pCPUInterface);
 	void	OnFrameStart();
 	void	OnFrameEnd();
+	void	OnCPUTick(uint64_t pins);
 
 	const ICPUInterface* GetCPUInterface() const { return CPUInterface; }
 
@@ -566,19 +567,7 @@ public:
 	
 	const FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) const { return  &GetWritePage(addr)->DataInfo[addr & kPageMask]; }
 	FDataInfo* GetWriteDataInfoForAddress(uint16_t addr) { return &GetWritePage(addr)->DataInfo[addr & kPageMask]; }
-	/*FDataInfo* GetWriteDataInfoForAddress(FAddressRef addrRef)
-	{
-		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
-		if (pBank != nullptr)
-		{
-			const uint16_t bankAddr = addrRef.Address - pBank->GetMappedAddress();
-			return &pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift].DataInfo[bankAddr & FCodeAnalysisPage::kPageMask];
-		}
-		else
-		{
-			return nullptr;
-		}
-	}*/
+	
 	FAddressRef GetLastWriterForAddress(uint16_t addr) const { return GetWritePage(addr)->DataInfo[addr & kPageMask].LastWriter; }
 	void SetLastWriterForAddress(uint16_t addr, FAddressRef lastWriter) { GetWritePage(addr)->DataInfo[addr & kPageMask].LastWriter = lastWriter; }
 
