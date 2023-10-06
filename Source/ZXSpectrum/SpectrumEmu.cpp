@@ -378,9 +378,15 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 					}
 				}
 				else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14))	// select AY-3-8912 register (11............0.)
+				{
 					debugger.RegisterEvent((uint8_t)EEventType::SoundChipRegisterSelect, pcAddrRef, addr, data, scanlinePos);
+					AYSoundChip.SelectAYRegister(pcAddrRef, data);
+				}
 				else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == Z80_A15)	// write to AY-3-8912 (10............0.) 
+				{
 					debugger.RegisterEvent((uint8_t)EEventType::SoundChipRegisterWrite, pcAddrRef, addr, data, scanlinePos);
+					AYSoundChip.WriteAYRegister(pcAddrRef, data);
+				}
 			}
 		}
 	}
@@ -482,25 +488,7 @@ static std::vector<std::pair<uint16_t, const char*>> g_IOWritePortNames =
 {
 };
 
-const char* g_AYRegNames[] = 
-{
-	"CH A Period Fine",		// 0
-	"CH A Period Coarse",	// 1
-	"CH B Period Fine",		// 2
-	"CH B Period Coarse",	// 3
-	"CH C Period Fine",		// 4
-	"CH C Period Coarse",	// 5
-	"Noise Pitch",			// 6
-	"Mixer",				// 7
-	"CH A Volume",			// 8
-	"CH B Volume",			// 9
-	"CH C Volume",			// 10 (A)
-	"Env Dur fine",			// 11 (B)
-	"Env Dur coarse",		// 12 (C)
-	"Env Shape",			// 13 (D)
-	"I/O Port A",			// 14 (E)
-	"I/O Port B",			// 15 (F)
-};
+
 
 
 // Event viewer address/value visualisers - move somewhere?
@@ -788,10 +776,11 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
 
 	// Setup IO analyser
-	for(const auto& readPort : g_IOReadPortNames)
-		CodeAnalysis.IOAnalyser.SetIOReadAddressName(readPort.first,readPort.second);
-	for (const auto& writePort : g_IOWritePortNames)
-		CodeAnalysis.IOAnalyser.SetIOWriteAddressName(writePort.first, writePort.second);
+	if (config.Model == ESpectrumModel::Spectrum128K)
+	{
+		AYSoundChip.SetEmulator(&ZXEmuState.ay);
+		CodeAnalysis.IOAnalyser.AddDevice(&AYSoundChip);
+	}
 
 	bInitialised = true;
 	return true;

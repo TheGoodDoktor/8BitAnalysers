@@ -34,6 +34,7 @@
 //#include "Disassembler.h"
 //#include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "CodeAnalyser/IOAnalyser.h"
 #include "Viewers/ViewerBase.h"
 #include "Viewers/ZXGraphicsViewer.h"
 #include "Viewers/SpectrumViewer.h"
@@ -160,7 +161,9 @@ public:
 	FFrameTraceViewer		FrameTraceViewer;
 	FZXGraphicsViewer		GraphicsViewer;
 	FCodeAnalysisState		CodeAnalysis;
-	//FIOAnalysis				IOAnalysis;
+
+	// IO Devices
+	FAYAudioDevice		AYSoundChip;
 
 	// Code analysis pages - to cover 48K & 128K Spectrums
 	static const int	kNoBankPages = 16;	// no of pages per physical address slot (16k)
