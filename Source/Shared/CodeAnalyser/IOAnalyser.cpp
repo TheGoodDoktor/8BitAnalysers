@@ -7,6 +7,8 @@
 
 #include "CodeAnalyser.h"
 #include "UI/CodeAnalyserUI.h"
+#include <ui/ui_chip.h>
+#include <ui/ui_ay38910.h>
 
 
 
@@ -69,6 +71,7 @@ void FIOAnalyser::DrawUI(void)
 	if(SelectedDeviceIndex != -1)
 	{
 		FIODevice* pDevice = Devices[SelectedDeviceIndex];
+		pDevice->DrawDetailsUI();
 		
 	}
 	ImGui::EndChild();
@@ -98,11 +101,58 @@ const char* g_AYRegNames[] =
 	"I/O Port B",			// 15 (F)
 };
 
+static const ui_chip_pin_t g_AY8912Pins[] =
+{
+	{ "DA0",  0, AY38910_DA0 },
+	{ "DA1",  1, AY38910_DA1 },
+	{ "DA2",  2, AY38910_DA2 },
+	{ "DA3",  3, AY38910_DA3 },
+	{ "DA4",  4, AY38910_DA4 },
+	{ "DA5",  5, AY38910_DA5 },
+	{ "DA6",  6, AY38910_DA6 },
+	{ "DA7",  7, AY38910_DA7 },
+	{ "BDIR", 9, AY38910_BDIR },
+	{ "BC1",  10, AY38910_BC1 },
+	{ "IOA0", 11, AY38910_IOA0 },
+	{ "IOA1", 12, AY38910_IOA1 },
+	{ "IOA2", 13, AY38910_IOA2 },
+	{ "IOA3", 14, AY38910_IOA3 },
+	{ "IOA4", 15, AY38910_IOA4 },
+	{ "IOA5", 16, AY38910_IOA5 },
+	{ "IOA6", 17, AY38910_IOA6 },
+	{ "IOA7", 18, AY38910_IOA7 },
+};
+
+ui_ay38910_t	g_AYUI;
+
 FAYAudioDevice::FAYAudioDevice()
 {
 	Name = "AYAudio";
 }
 
+bool FAYAudioDevice::Init(ay38910_t* ay)
+{
+	// Currently hard coded for 8912 but could be made more versatile
+	ui_ay38910_desc_t desc = { 0 };
+	desc.title = "AY-3-8912";
+	desc.ay = ay;
+	desc.x = 0;
+	desc.y = 0;
+	UI_CHIP_INIT_DESC(&desc.chip_desc, "8912", 22, g_AY8912Pins);
+	ui_ay38910_init(&g_AYUI, &desc);
+	pAYEmulator = ay;
+	return true;
+}
+
+void FAYAudioDevice::OnFrameTick()
+{
+
+}
+
+void FAYAudioDevice::OnMachineFrame()
+{
+	FrameNo++;
+}
 
 void	FAYAudioDevice::WriteAYRegister(FAddressRef pc, uint8_t value)
 {
@@ -110,16 +160,31 @@ void	FAYAudioDevice::WriteAYRegister(FAddressRef pc, uint8_t value)
 		return;
 
 	AYRegisters[SelectedAYRegister] = value;
+
+	// write to state buffer
+	WriteBufferDisplayIndex = WriteBufferWriteIndex;
+
+	FAYRegisterWrite& ayRegWrite = WriteBuffer[WriteBufferWriteIndex];
+	ayRegWrite.EmuState = *pAYEmulator;
+	ayRegWrite.PC = pc;
+	ayRegWrite.FrameNo = FrameNo;
+	ayRegWrite.Register = SelectedAYRegister;
+	ayRegWrite.Value = value;
+
+	WriteBufferWriteIndex++;
+
+	if(WriteBufferWriteIndex == kWriteBufferSize)
+		WriteBufferWriteIndex = 0;
 }
 
 
 void DrawAYStateUI(const ay38910_t* ay)
 {
 	ImGui::Columns(4, "##ay_channels", false);
-	ImGui::SetColumnWidth(0, 96);
-	ImGui::SetColumnWidth(1, 40);
-	ImGui::SetColumnWidth(2, 40);
-	ImGui::SetColumnWidth(3, 40);
+	ImGui::SetColumnWidth(0, 128);
+	ImGui::SetColumnWidth(1, 64);
+	ImGui::SetColumnWidth(2, 64);
+	ImGui::SetColumnWidth(3, 64);
 	ImGui::NextColumn();
 	ImGui::Text("ChnA"); ImGui::NextColumn();
 	ImGui::Text("ChnB"); ImGui::NextColumn();
@@ -170,9 +235,9 @@ void DrawAYStateUI(const ay38910_t* ay)
 	const int num_ports = (ay->type == AY38910_TYPE_8910) ? 2 : ((ay->type == AY38910_TYPE_8912) ? 1 : 0);
 	const int max_ports = 2;
 	ImGui::Columns(max_ports + 1, "##ay_ports", false);
-	ImGui::SetColumnWidth(0, 96);
-	ImGui::SetColumnWidth(1, 60);
-	ImGui::SetColumnWidth(2, 60);
+	ImGui::SetColumnWidth(0, 128);
+	ImGui::SetColumnWidth(1, 80);
+	ImGui::SetColumnWidth(2, 80);
 	ImGui::NextColumn();
 	ImGui::Text("PortA"); ImGui::NextColumn();
 	ImGui::Text("PortB"); ImGui::NextColumn();
@@ -195,7 +260,32 @@ void DrawAYStateUI(const ay38910_t* ay)
 }
 void FAYAudioDevice::DrawDetailsUI()
 {
+	if (pAYEmulator == nullptr)
+		return;
+
 	// TODO: Tabbed view - log, current state
-	if(pAYEmulator)
-		DrawAYStateUI(pAYEmulator);
+	if (ImGui::BeginTabBar("AYDetailsTabBar"))
+	{
+		if (ImGui::BeginTabItem("Log"))
+		{
+			//DrawMemoryDiffUI();
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("State"))
+		{
+			DrawAYStateUI(pAYEmulator);
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Chip"))
+		{
+			//DrawStringSearchUI();
+			ui_chip_draw(&g_AYUI.chip, pAYEmulator->pins);
+
+			ImGui::EndTabItem();
+		}
+	}
+	ImGui::EndTabBar();
+	
 }

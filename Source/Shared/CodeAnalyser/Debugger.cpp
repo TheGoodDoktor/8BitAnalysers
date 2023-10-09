@@ -256,13 +256,16 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 
 // called every machine frame
 // will get called in the middle of emulation
-void FDebugger::OnMachineFrame()
+void FDebugger::OnMachineFrameStart()
 {
 	if (bClearEventsEveryFrame)
 		ClearEvents();
 
 	ResetScanlineEvents();
+}
 
+void FDebugger::OnMachineFrameEnd()
+{
 	// handle frame stepping - should this be in the machine frame handler?
 	if (StepMode == EDebugStepMode::Frame)
 	{
@@ -270,7 +273,6 @@ void FDebugger::OnMachineFrame()
 		Break();
 	}
 }
-
 
 void FDebugger::StartFrame() 
 { 

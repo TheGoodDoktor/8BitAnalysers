@@ -258,10 +258,18 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	static uint64_t lastTickPins = 0;
 	const uint64_t risingPins = pins & (pins ^ lastTickPins);
 	lastTickPins = pins;
+	static uint16_t lastScanlinePos = 0;
 	const uint16_t scanlinePos = (uint16_t)ZXEmuState.scanline_y;
 
-	//if (scanlinePos == 0)	// clear scanline info on new frame
-	//	debugger.ResetScanlineEvents();
+	// trigger frame events on scanline pos
+	if(scanlinePos != lastScanlinePos)
+	{
+		if (scanlinePos == 0)	// first scanline
+			CodeAnalysis.OnMachineFrameStart();
+		if (scanlinePos == ZXEmuState.frame_scan_lines)	// last scanline
+			CodeAnalysis.OnMachineFrameEnd();
+	}
+	lastScanlinePos = scanlinePos;
 
 	/* memory and IO requests */
 	if (pins & Z80_MREQ) 
@@ -288,7 +296,6 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 					InterruptHandlerAddress = interruptHandler;
 				}
 
-				state.Debugger.OnMachineFrame();
 			}
 			else
 			{
@@ -327,11 +334,18 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 		if (pins & Z80_RD)
 		{
 			if ((pins & Z80_A0) == 0)
+			{
 				debugger.RegisterEvent((uint8_t)EEventType::KeyboardRead, pcAddrRef, addr , data, scanlinePos);
+				Keyboard.RegisterKeyboardRead(pcAddrRef,addr,data);
+			}
 			else if ((pins & (Z80_A7 | Z80_A6 | Z80_A5)) == 0) // Kempston Joystick (........000.....)
+			{
 				debugger.RegisterEvent((uint8_t)EEventType::KempstonJoystickRead, pcAddrRef, addr, data, scanlinePos);
+			}
 			else if (pins & 0xff)
+			{
 				debugger.RegisterEvent((uint8_t)EEventType::FloatingBusRead, pcAddrRef, addr, data, scanlinePos);
+			}
 			// 128K specific
 			else if (ZXEmuState.type == ZX_TYPE_128)
 			{
@@ -353,7 +367,10 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 
 				// has beeper changed
 				if ((data & (1 << 4)) != (LastFE & (1 << 4)))
+				{
 					debugger.RegisterEvent((uint8_t)EEventType::OutputBeeper, pcAddrRef, Z80_GET_ADDR(pins), data, scanlinePos);
+					Beeper.RegisterBeeperWrite(pcAddrRef,data);
+				}
 
 				// has mic output changed
 				if ((data & (1 << 3)) != (LastFE & (1 << 3)))
@@ -375,6 +392,8 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 
 						SetROMBank(romBank);
 						SetRAMBank(3, ramBank);
+
+						MemoryControl.RegisterMemoryConfigWrite(pcAddrRef, data);
 					}
 				}
 				else if ((pins & (Z80_A15 | Z80_A14 | Z80_A1)) == (Z80_A15 | Z80_A14))	// select AY-3-8912 register (11............0.)
@@ -776,10 +795,15 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
 
 	// Setup IO analyser
+	Keyboard.Init(&ZXEmuState.kbd);
+	CodeAnalysis.IOAnalyser.AddDevice(&Keyboard);
+	Beeper.Init(&ZXEmuState.beeper);
+	CodeAnalysis.IOAnalyser.AddDevice(&Beeper);
 	if (config.Model == ESpectrumModel::Spectrum128K)
 	{
-		AYSoundChip.SetEmulator(&ZXEmuState.ay);
+		AYSoundChip.Init(&ZXEmuState.ay);
 		CodeAnalysis.IOAnalyser.AddDevice(&AYSoundChip);
+		CodeAnalysis.IOAnalyser.AddDevice(&MemoryControl);
 	}
 
 	bInitialised = true;

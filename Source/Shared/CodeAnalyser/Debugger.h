@@ -106,7 +106,8 @@ public:
 	void	Init(FCodeAnalysisState* pCodeAnalysis);
 	void	CPUTick(uint64_t pins);
 	int		OnInstructionExecuted(uint64_t pins);
-	void	OnMachineFrame();
+	void	OnMachineFrameStart();
+	void	OnMachineFrameEnd();
 	void	StartFrame();
 	bool	FrameTick(void);
 

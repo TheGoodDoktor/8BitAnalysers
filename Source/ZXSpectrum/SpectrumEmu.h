@@ -43,6 +43,7 @@
 #include "IOAnalysis.h"
 #include "SnapshotLoaders/RZXLoader.h"
 #include "Util/Misc.h"
+#include "SpectrumDevices.h"
 
 struct FGame;
 struct FGameViewer;
@@ -163,7 +164,10 @@ public:
 	FCodeAnalysisState		CodeAnalysis;
 
 	// IO Devices
-	FAYAudioDevice		AYSoundChip;
+	FSpectrumKeyboard	Keyboard;
+	FSpectrumBeeper		Beeper;
+	FAYAudioDevice			AYSoundChip;
+	FSpectrum128MemoryCtrl	MemoryControl;
 
 	// Code analysis pages - to cover 48K & 128K Spectrums
 	static const int	kNoBankPages = 16;	// no of pages per physical address slot (16k)

@@ -1093,6 +1093,7 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	IOAnalyser.Init(this);
 }
 
+// Start/End handlers for host (imgui) frame
 void FCodeAnalysisState::OnFrameStart()
 {
 	Debugger.StartFrame();
@@ -1106,6 +1107,16 @@ void FCodeAnalysisState::OnFrameEnd()
 	{
 		GetFocussedViewState().GoToAddress(CPUInterface->GetPC());
 	}
+}
+
+// Start/End handlers for machine frame
+void	FCodeAnalysisState::OnMachineFrameStart()
+{
+	Debugger.OnMachineFrameStart();
+}
+void	FCodeAnalysisState::OnMachineFrameEnd()
+{
+	Debugger.OnMachineFrameEnd();
 }
 
 void FCodeAnalysisState::OnCPUTick(uint64_t pins)
