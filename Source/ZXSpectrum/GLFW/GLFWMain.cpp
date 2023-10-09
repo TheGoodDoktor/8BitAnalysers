@@ -48,15 +48,21 @@ struct FAppState
 
 // Globals
 FAppState   g_AppState;
+bool g_bGlfwInitialised = false;
 
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 
 #ifdef _WIN32
-    char tmp[1024];
-    snprintf(tmp, 1024, "Glfw Error %d: %s\n", error, description);
-    MessageBox(NULL, tmp, "Fatal Error", MB_OK | MB_ICONERROR);
+    // Display a message box with the error message, so the user gets a chance to see the error before it quits.
+    // This error callback can fire at runtime, after initialisation so only display if we're doing the init
+    if (!g_bGlfwInitialised)
+    {
+        char tmp[1024];
+        snprintf(tmp, 1024, "Glfw Error %d: %s\n", error, description);
+        MessageBox(NULL, tmp, "Error", MB_OK | MB_ICONERROR);
+    }
 #endif
 }
 
@@ -68,6 +74,8 @@ int main(int argc, char** argv)
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
+
+    g_bGlfwInitialised = true;
 
     // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
