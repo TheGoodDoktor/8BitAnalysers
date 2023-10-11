@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 #include <ui/ui_kbd.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
+#include "CodeAnalyser/CodeAnalyser.h"
 
 
 FSpectrumKeyboard::FSpectrumKeyboard()
@@ -45,12 +47,20 @@ bool FSpectrumBeeper::Init(beeper_t* beep)
 
 void FSpectrumBeeper::DrawDetailsUI()
 {
-
+    ImGui::Text("Access Locations");
+    for (const auto& location : AccessLocations)
+    {
+		ShowCodeAccessorActivity(*pCodeAnalyser, location);
+        
+        ImGui::Text("");
+        ImGui::SameLine(30);
+        DrawCodeAddress(*pCodeAnalyser,pCodeAnalyser->GetFocussedViewState(),location);
+    }
 }
 
 void FSpectrumBeeper::RegisterBeeperWrite(FAddressRef pc, uint8_t value)
 {
-
+	AccessLocations.insert(pc);
 }
 
 
@@ -63,7 +73,15 @@ FSpectrum128MemoryCtrl::FSpectrum128MemoryCtrl()
 
 void FSpectrum128MemoryCtrl::DrawDetailsUI()
 {
+	ImGui::Text("Access Locations");
+	for (const auto& location : AccessLocations)
+	{
+		ShowCodeAccessorActivity(*pCodeAnalyser, location);
 
+		ImGui::Text("");
+		ImGui::SameLine(30);
+		DrawCodeAddress(*pCodeAnalyser, pCodeAnalyser->GetFocussedViewState(), location);
+	}
 }
 
 void FSpectrum128MemoryCtrl::RegisterMemoryConfigWrite(FAddressRef pc, uint8_t value)
@@ -73,4 +91,6 @@ void FSpectrum128MemoryCtrl::RegisterMemoryConfigWrite(FAddressRef pc, uint8_t v
     const int displayRamBank = (value & (1 << 3)) ? 7 : 5;
 
     CurrentConfig = value;
+
+    AccessLocations.insert(pc);
 }

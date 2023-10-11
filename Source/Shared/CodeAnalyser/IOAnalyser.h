@@ -21,6 +21,8 @@ class FIODevice
 public:
 	virtual		~FIODevice(){}
 
+	void	SetAnalyser(FCodeAnalysisState* pAnalyser){ pCodeAnalyser = pAnalyser;}
+
 	const char*		GetName() const { return Name.c_str(); }
 
 	virtual void	DrawDetailsUI() = 0;
@@ -29,6 +31,7 @@ public:
 
 protected:
 	std::string		Name;
+	FCodeAnalysisState* pCodeAnalyser = nullptr;
 };
 
 
@@ -41,7 +44,7 @@ public:
 	void	Init(FCodeAnalysisState* pCodeAnalysis);
 	void	Shutdown();
 
-	void	AddDevice(FIODevice* pDevice){Devices.push_back(pDevice);}
+	void	AddDevice(FIODevice* pDevice){Devices.push_back(pDevice);pDevice->SetAnalyser(pCodeAnalysis);}
 
 	//void	SetIOReadAddressName(uint16_t IOAddress, const char* pName){ IOReadAddressName[IOAddress] = pName; }
 	//void	SetIOWriteAddressName(uint16_t IOAddress, const char* pName) { IOWriteAddressName[IOAddress] = pName; }

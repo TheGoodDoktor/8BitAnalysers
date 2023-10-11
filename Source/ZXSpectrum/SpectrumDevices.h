@@ -4,6 +4,8 @@
 #include <chips/kbd.h>
 #include <chips/beeper.h>
 
+#include <unordered_set>
+
 class FSpectrumKeyboard : public FIODevice
 {
 public:
@@ -30,6 +32,8 @@ public:
 	void	RegisterBeeperWrite(FAddressRef pc, uint8_t value);
 private:
 	beeper_t* pBeeper = nullptr;
+
+	std::unordered_set<FAddressRef>	AccessLocations;
 };
 
 
@@ -43,4 +47,5 @@ public:
 	void	RegisterMemoryConfigWrite(FAddressRef pc, uint8_t value);
 private:
 	uint8_t		CurrentConfig = 0;
+	std::unordered_set<FAddressRef>	AccessLocations;
 };
