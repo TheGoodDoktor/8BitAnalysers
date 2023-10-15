@@ -53,7 +53,7 @@ void FC64Display::Init(FCodeAnalysisState* pAnalysis, FC64Emulator* pC64Emu)
 
 uint16_t FC64Display::GetScreenBitmapAddress(int pixelX, int pixelY)
 {
-    c64_t* pC64 = (c64_t*)C64Emu;
+    c64_t* pC64 = C64Emu->GetEmu();
     const int charX = pixelX >> 3;
     const int charY = pixelY >> 3;
 
@@ -67,7 +67,7 @@ uint16_t FC64Display::GetScreenBitmapAddress(int pixelX, int pixelY)
 
 uint16_t FC64Display::GetScreenCharAddress(int pixelX, int pixelY)
 {
-    c64_t* pC64 = (c64_t*)C64Emu;
+    c64_t* pC64 = C64Emu->GetEmu();
     const int charX = pixelX >> 3;
     const int charY = pixelY >> 3;
 
@@ -87,7 +87,7 @@ uint16_t FC64Display::GetColourRAMAddress(int pixelX, int pixelY)
 
 void FC64Display::DrawUI()
 {
-    c64_t* pC64 = (c64_t*)C64Emu;
+    c64_t* pC64 = C64Emu->GetEmu();
     FCodeAnalysisViewState& viewState = CodeAnalysis->GetFocussedViewState();
 
     const bool bDebugFrame = pC64->vic.debug_vis;
@@ -101,12 +101,9 @@ void FC64Display::DrawUI()
     const int graphicsScreenWidth = screenWidthChars * 8;
     const int graphicsScreenHeight = screenHeightChars * 8;
 
-    // FIXME: Seems uncommitted changes
 	chips_display_info_t disp = c64_display_info(C64Emu->GetEmu());
-	const int dispFrameWidth = disp.frame.dim.width;
-    const int dispFrameHeight = disp.frame.dim.height;
-    //const int dispFrameWidth = c64_display_width(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_WIDTH : _C64_STD_DISPLAY_WIDTH;
-    //const int dispFrameHeight = c64_display_height(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_HEIGHT : _C64_STD_DISPLAY_HEIGHT;
+	const int dispFrameWidth = disp.screen.width;
+    const int dispFrameHeight = disp.screen.height;
 
 	// convert texture to RGBA
 	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
@@ -142,15 +139,16 @@ void FC64Display::DrawUI()
     ImGuiIO& io = ImGui::GetIO();
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    ImGui::Image(ScreenTexture, ImVec2((float)dispFrameWidth, (float)dispFrameHeight));
+    ImVec2 uv0(0, 0);
+    ImVec2 uv1((float)disp.screen.width / (float)disp.frame.dim.width, (float)disp.screen.height / (float)disp.frame.dim.height);
+
+
+    ImGui::Image(ScreenTexture, ImVec2((float)disp.screen.width, (float)disp.screen.height),uv0,uv1);
 
     if (ImGui::IsItemHovered())
     {
-        // FIXME:: rethink shifts of signed numbers
-        const int borderOffsetX = ((((dispFrameWidth>>3) - (graphicsScreenWidth>>3)) / 2) * 8) + xScrollOff;
-        const int borderOffsetY = ((((dispFrameHeight>>3) - (graphicsScreenHeight>>3)) / 2) * 8) + yScrollOff;
-        //const int borderOffsetX = ((((dispFrameWidth>>3) - (graphicsScreenWidth>>3)) / 2) << 3) + xScrollOff;
-        //const int borderOffsetY = ((((dispFrameHeight>>3) - (graphicsScreenHeight>>3)) / 2) << 3) + yScrollOff;
+        const int borderOffsetX = ((dispFrameWidth - graphicsScreenWidth) / 2) & ~7;    // align to character size
+        const int borderOffsetY = ((dispFrameHeight - graphicsScreenHeight) / 2);
 
         const int xp = std::min(std::max((int)(io.MousePos.x - pos.x - borderOffsetX), 0), graphicsScreenWidth - 1);
         const int yp = std::min(std::max((int)(io.MousePos.y - pos.y - borderOffsetY), 0), graphicsScreenHeight - 1);
@@ -193,10 +191,12 @@ void FC64Display::DrawUI()
             }
             ImGui::Text("Char Writer: ");
             ImGui::SameLine();
-            DrawCodeAddress(*CodeAnalysis, viewState, lastCharWriter);
+            if(lastCharWriter.IsValid())
+                DrawCodeAddress(*CodeAnalysis, viewState, lastCharWriter);
             ImGui::Text("Colour RAM Writer: ");
             ImGui::SameLine();
-            DrawCodeAddress(*CodeAnalysis, viewState, lastColourRamWriter);
+            if (lastColourRamWriter.IsValid())
+                DrawCodeAddress(*CodeAnalysis, viewState, lastColourRamWriter);
             ImGui::EndTooltip();
             //ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
 

@@ -93,6 +93,9 @@ public:
 	void	OnFrameTick() override;
 	void	OnMachineFrame() override;
 	void	DrawDetailsUI() override;
+
+	void	DrawAYStateUI(void);
+
 private:
 
 	FAddressRef	SelectPC;
@@ -106,6 +109,11 @@ private:
 	int					WriteBufferWriteIndex = 0;
 	int					WriteBufferDisplayIndex = 0;
 
+	static const int kNoValues = 100;
+	float	ChanAValues[kNoValues];
+	float	ChanBValues[kNoValues];
+	float	ChanCValues[kNoValues];
+	int		GraphOffset = 0;
 
 	const ay38910_t*	pAYEmulator = nullptr;
 };

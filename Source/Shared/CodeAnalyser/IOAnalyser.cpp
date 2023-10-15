@@ -177,8 +177,35 @@ void	FAYAudioDevice::WriteAYRegister(FAddressRef pc, uint8_t value)
 		WriteBufferWriteIndex = 0;
 }
 
+void FAYAudioDevice::DrawAYStateUI()
+{
+	const ay38910_t* ay = pAYEmulator;
+	const int clockFrequency = 1773500;	// TODO: this is for the spectrum, other system my be different
+	const int chanAFrequencyHz = (clockFrequency / 16) / ay->tone[0].period;
+	const int chanBFrequencyHz = (clockFrequency / 16) / ay->tone[1].period;
+	const int chanCFrequencyHz = (clockFrequency / 16) / ay->tone[2].period;
 
-void DrawAYStateUI(const ay38910_t* ay)
+	const int chanFrequencyMinHz = (clockFrequency / 16) / 4095;
+	const int chanFrequencyMaxHz = (clockFrequency / 16) / 20;	// not sure what to put here
+
+	//ImGui::ProgressBar()
+	ImGui::Text("Chan A Freq: %dHz", chanAFrequencyHz);
+	ImGui::PlotLines("ChanAFreq", ChanAValues, IM_ARRAYSIZE(ChanAValues), GraphOffset, "ChanA Freq", chanFrequencyMinHz, chanFrequencyMaxHz, ImVec2(0, 100));
+
+	ImGui::Text("Chan B Freq: %dHz", chanBFrequencyHz);
+	ImGui::PlotLines("ChanBFreq", ChanBValues, IM_ARRAYSIZE(ChanBValues), GraphOffset, "ChanB Freq", chanFrequencyMinHz, chanFrequencyMaxHz, ImVec2(0, 100));
+	
+	ImGui::Text("Chan C Freq: %dHz",chanCFrequencyHz);
+	ImGui::PlotLines("ChanCFreq", ChanCValues, IM_ARRAYSIZE(ChanCValues), GraphOffset, "ChanC Freq", chanFrequencyMinHz, chanFrequencyMaxHz, ImVec2(0, 100));
+
+	ChanAValues[GraphOffset] = chanAFrequencyHz;
+	ChanBValues[GraphOffset] = chanBFrequencyHz;
+	ChanCValues[GraphOffset] = chanCFrequencyHz;
+	GraphOffset = (GraphOffset + 1) % IM_ARRAYSIZE(ChanAValues);
+}
+
+// chips
+void DrawAYStateUIChips(const ay38910_t* ay)
 {
 	ImGui::Columns(4, "##ay_channels", false);
 	ImGui::SetColumnWidth(0, 128);
@@ -274,7 +301,7 @@ void FAYAudioDevice::DrawDetailsUI()
 
 		if (ImGui::BeginTabItem("State"))
 		{
-			DrawAYStateUI(pAYEmulator);
+			DrawAYStateUI();
 			ImGui::EndTabItem();
 		}
 
