@@ -20,6 +20,7 @@
 #include <chips/m6502.h>
 #include <chips/m6522.h>
 #include <chips/m6569.h>
+#include <chips/ay38910.h>
 #include <systems/c1530.h>
 #include <systems/c1541.h>
 #include <systems/c64.h>
@@ -47,6 +48,7 @@
 #include "ui/ui_audio.h"
 #include "ui/ui_kbd.h"
 #include "ui/ui_c64.h"
+#include "ui/ui_ay38910.h"
 
 #include "c64-roms.h"
 
@@ -156,7 +158,7 @@ private:
     uint16_t            LastPC = 0;
 
     FC64IOAnalysis      IOAnalysis;
-    FC64GraphicsViewer  GraphicsViewer;
+    //FC64GraphicsViewer  GraphicsViewer;
     std::set<uint16_t>  InterruptHandlers;
 
     // Mapping status
@@ -431,10 +433,9 @@ bool FC64Emulator::Init()
     SetupCodeAnalysisLabels();
     UpdateCodeAnalysisPages(0x7);
     IOAnalysis.Init(&CodeAnalysis);
-    GraphicsViewer.Init(&CodeAnalysis,&C64Emu);
+    //GraphicsViewer.Init(&CodeAnalysis,&C64Emu);
 
-    // FIXME: missing InitialiseCodeAnalysis declaration - uncommitted changes?
-    //InitialiseCodeAnalysis(CodeAnalysis, this);
+    CodeAnalysis.Init(this);
 
     GamesList.EnumerateGames();
 
@@ -672,9 +673,9 @@ void FC64Emulator::Tick()
     FCodeAnalysisViewState& viewState =  CodeAnalysis.GetFocussedViewState();
 
     c64_exec(&C64Emu, (uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
-
     ui_c64_draw(&C64UI);
-    if (ImGui::Begin("C64 Screen"))
+    
+    /*if (ImGui::Begin("C64 Screen"))
     {
         ImGui::Text("Mapped: ");
         if (bBasicROMMapped)
@@ -698,8 +699,6 @@ void FC64Emulator::Tick()
             ImGui::Text("CharROM ");
         }
 
-        
-
         Display.DrawUI();
 
         // Temp
@@ -710,23 +709,24 @@ void FC64Emulator::Tick()
             DrawAddressLabel(CodeAnalysis, viewState, intHandler);
         }
     }
-    ImGui::End();
+    ImGui::End();*/
+    //some code after here breaks imgui rendering
 
     if (ImGui::Begin("Code Analysis"))
     {
         DrawCodeAnalysisData(CodeAnalysis, 0);
     }
     ImGui::End();
-
+    
     if (ImGui::Begin("IO Analysis"))
     {
         IOAnalysis.DrawIOAnalysisUI();
     }
     ImGui::End();
-
+    
     if (ImGui::Begin("Graphics Viewer"))
     {
-        GraphicsViewer.DrawUI();
+        //GraphicsViewer.DrawUI();
     }
     ImGui::End();
 
@@ -921,7 +921,8 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
             }
 
             // FIXME: parameter conversion for SetLastWriterForAddress
-            FAddressRef pcRef(0, pc);
+            FAddressRef pcRef = CodeAnalysis.AddressRefFromPhysicalAddress(pc);
+            FAddressRef addrRef = CodeAnalysis.AddressRefFromPhysicalAddress(addr);
             CodeAnalysis.SetLastWriterForAddress(addr, pcRef);
 
             if (bIOMapped && (addr >> 12) == 0xd)
@@ -929,7 +930,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
                 IOAnalysis.RegisterIOWrite(addr, val, pc);
             }
 
-            FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addr);
+            FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);
             if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
                 pCodeWrittenTo->bSelfModifyingCode = true;
         }

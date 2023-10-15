@@ -61,19 +61,19 @@ void	FC64IOAnalysis::DrawIOAnalysisUI(void)
 
 		if (ImGui::BeginTabItem("SID"))
 		{
-			SIDAnalysis.DrawUI();
+			//SIDAnalysis.DrawUI();
 			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("CIA1"))
 		{
-			CIA1Analysis.DrawUI();
+			//CIA1Analysis.DrawUI();
 			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("CIA2"))
 		{
-			CIA2Analysis.DrawUI();
+			//CIA2Analysis.DrawUI();
 			ImGui::EndTabItem();
 		}
 

@@ -177,6 +177,7 @@ void FVICAnalysis::DrawUI(void)
 			char selectableTXT[32];
 			snprintf(selectableTXT, sizeof(selectableTXT), "$%X %s", i, g_VICRegDrawInfo[i].Name);
 			if (ImGui::Selectable(selectableTXT, SelectedRegister == i))
+			//if (ImGui::Selectable(g_VICRegDrawInfo[i].Name, SelectedRegister == i))
 			{
 				SelectedRegister = i;
 			}
@@ -186,7 +187,7 @@ void FVICAnalysis::DrawUI(void)
 	ImGui::SameLine();
 	if (ImGui::BeginChild("VIC Reg Details"))
 	{
-		if (SelectedRegister != -1)
+		if (0 && SelectedRegister != -1)
 		{
 			FC64IORegisterInfo& vicRegister = VICRegisters[SelectedRegister];
 			const FRegDisplayConfig& regConfig = g_VICRegDrawInfo[SelectedRegister];
