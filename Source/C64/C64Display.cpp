@@ -20,10 +20,23 @@
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <algorithm>
 
-void FC64Display::Init(FCodeAnalysisState* pAnalysis, void* pC64Emu)
+#include "C64Emulator.h"
+
+void FC64Display::Init(FCodeAnalysisState* pAnalysis, FC64Emulator* pC64Emu)
 {
 	C64Emu = pC64Emu;
 	CodeAnalysis = pAnalysis;
+
+
+	// setup texture
+	chips_display_info_t dispInfo = c64_display_info(C64Emu->GetEmu());
+
+
+	// setup pixel buffer
+	const size_t pixelBufferSize = dispInfo.frame.dim.width * dispInfo.frame.dim.height;
+	FrameBuffer = new uint32_t[pixelBufferSize * 2];
+	ScreenTexture = ImGui_CreateTextureRGBA(FrameBuffer, dispInfo.frame.dim.width, dispInfo.frame.dim.height);
+
 
     // setup pixel buffer
     // FIXME: seems uncommitted changes
@@ -89,12 +102,20 @@ void FC64Display::DrawUI()
     const int graphicsScreenHeight = screenHeightChars * 8;
 
     // FIXME: Seems uncommitted changes
-    const int dispFrameWidth = 0;
-    const int dispFrameHeight = 0;
+	chips_display_info_t disp = c64_display_info(C64Emu->GetEmu());
+	const int dispFrameWidth = disp.frame.dim.width;
+    const int dispFrameHeight = disp.frame.dim.height;
     //const int dispFrameWidth = c64_display_width(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_WIDTH : _C64_STD_DISPLAY_WIDTH;
     //const int dispFrameHeight = c64_display_height(pC64);// bDebugFrame ? _C64_DBG_DISPLAY_HEIGHT : _C64_STD_DISPLAY_HEIGHT;
 
-    ImGui_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer, dispFrameWidth, dispFrameHeight);
+	// convert texture to RGBA
+	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
+	const uint32_t* pal = (const uint32_t*)disp.palette.ptr;
+	for (int i = 0; i < disp.frame.buffer.size; i++)
+		FrameBuffer[i] = pal[pix[i]];
+
+	ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
+
 
     ImGui::Text("Frame buffer size = %d x %d", dispFrameWidth, dispFrameHeight);
 
@@ -121,7 +142,7 @@ void FC64Display::DrawUI()
     ImGuiIO& io = ImGui::GetIO();
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    ImGui::Image(FrameBufferTexture, ImVec2((float)dispFrameWidth, (float)dispFrameHeight));
+    ImGui::Image(ScreenTexture, ImVec2((float)dispFrameWidth, (float)dispFrameHeight));
 
     if (ImGui::IsItemHovered())
     {
