@@ -28,7 +28,7 @@
 #endif
 
 #include "../SpectrumEmu.h"
-#include "../GlobalConfig.h"
+#include "../ZXSpectrumConfig.h"
 #include "Debug/DebugLog.h"
 
 #define SOKOL_IMPL
@@ -191,11 +191,11 @@ int main(int argc, char** argv)
 
     g_AppState.pSpectrumEmu = pSpectrumEmulator;
 
-    FGlobalConfig& globalConfig = GetGlobalConfig();
-    if (!globalConfig.Font.empty())
+    const FGlobalConfig* pGlobalConfig = pSpectrumEmulator->pGlobalConfig;
+    if (!pGlobalConfig->Font.empty())
     {
-        std::string fontPath = "./Fonts/" + globalConfig.Font;
-        if (!io.Fonts->AddFontFromFileTTF(fontPath.c_str(), (float)globalConfig.FontSizePixels))
+        std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
+        if (!io.Fonts->AddFontFromFileTTF(fontPath.c_str(), (float)pGlobalConfig->FontSizePixels))
         {
             LOGWARNING("Could not load font '%s'", fontPath.c_str());
         }

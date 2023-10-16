@@ -11,11 +11,86 @@ using json = nlohmann::json;
 
 FGlobalConfig	g_GlobalConfig;
 
+void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
+{
+	bEnableAudio = jsonConfigFile["EnableAudio"];
+	bShowScanLineIndicator = jsonConfigFile["ShowScanlineIndicator"];
+	if (jsonConfigFile.contains("ShowOpcodeValues"))
+		bShowOpcodeValues = jsonConfigFile["ShowOpcodeValues"];
+	LastGame = jsonConfigFile["LastGame"];
+	NumberDisplayMode = (ENumberDisplayMode)jsonConfigFile["NumberMode"];
+	if (jsonConfigFile.contains("BranchLinesDisplayMode"))
+		BranchLinesDisplayMode = jsonConfigFile["BranchLinesDisplayMode"];
+	if (jsonConfigFile.contains("WorkspaceRoot"))
+		WorkspaceRoot = jsonConfigFile["WorkspaceRoot"];
+	if (jsonConfigFile.contains("SnapshotFolder"))
+		SnapshotFolder = jsonConfigFile["SnapshotFolder"];
+
+	if (jsonConfigFile.contains("Font"))
+		Font = jsonConfigFile["Font"];
+	if (jsonConfigFile.contains("FontSizePixels"))
+		FontSizePixels = jsonConfigFile["FontSizePixels"];
+	
+	// fixup paths
+	if (WorkspaceRoot.back() != '/')
+		WorkspaceRoot += "/";
+	if (SnapshotFolder.back() != '/')
+		SnapshotFolder += "/";
+}
+
+void FGlobalConfig::WriteToJson(json& jsonConfigFile)
+{
+	jsonConfigFile["EnableAudio"] = bEnableAudio;
+	jsonConfigFile["ShowScanlineIndicator"] = bShowScanLineIndicator;
+	jsonConfigFile["ShowOpcodeValues"] = bShowOpcodeValues;
+	jsonConfigFile["LastGame"] = LastGame;
+	jsonConfigFile["NumberMode"] = (int)NumberDisplayMode;
+	jsonConfigFile["BranchLinesDisplayMode"] = BranchLinesDisplayMode;
+	jsonConfigFile["WorkspaceRoot"] = WorkspaceRoot;
+	jsonConfigFile["SnapshotFolder"] = SnapshotFolder;
+	jsonConfigFile["Font"] = Font;
+	jsonConfigFile["FontSizePixels"] = FontSizePixels;
+}
+
+
+bool	FGlobalConfig::Load(const char* filename)
+{
+	std::ifstream inFileStream(filename);
+	if (inFileStream.is_open() == false)
+		return false;
+
+	json jsonConfigFile;
+
+	inFileStream >> jsonConfigFile;
+	inFileStream.close();
+
+	ReadFromJson(jsonConfigFile);
+	return true;
+}
+
+bool	FGlobalConfig::Save(const char* filename)
+{
+	json jsonConfigFile;
+
+	WriteToJson(jsonConfigFile);
+
+	std::ofstream outFileStream(filename);
+	if (outFileStream.is_open())
+	{
+		outFileStream << std::setw(4) << jsonConfigFile << std::endl;
+		return true;
+	}
+
+	return false;
+}
+
+
+
 FGlobalConfig& GetGlobalConfig()
 {
 	return g_GlobalConfig;
 }
-
+#if 0
 bool LoadGlobalConfig(const char* fileName)
 {
 	FGlobalConfig& config = GetGlobalConfig();
@@ -95,3 +170,5 @@ bool SaveGlobalConfig(const char* fileName)
 
 	return false;
 }
+
+#endif

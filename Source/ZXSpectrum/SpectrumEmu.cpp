@@ -5,7 +5,7 @@
 #include "ZXChipsImpl.h"
 #include <cstdint>
 
-#include "GlobalConfig.h"
+#include "ZXSpectrumConfig.h"
 #include "GameData.h"
 #include <ImGuiSupport/ImGuiTexture.h>
 #include "GameViewers/GameViewer.h"
@@ -217,7 +217,7 @@ void gfx_destroy_texture(void* h)
 static void PushAudio(const float* samples, int num_samples, void* user_data)
 {
 	FSpectrumEmu* pEmu = (FSpectrumEmu*)user_data;
-	if(GetGlobalConfig().bEnableAudio)
+	if(pEmu->pGlobalConfig->bEnableAudio)
 		saudio_push(samples, num_samples);
 }
 
@@ -578,11 +578,11 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	SetWindowIcon("SALogo.png");
 
 	// Initialise Emulator
-	LoadGlobalConfig(kGlobalConfigFilename);
-	FGlobalConfig& globalConfig = GetGlobalConfig();
-	SetNumberDisplayMode(globalConfig.NumberDisplayMode);
-	CodeAnalysis.Config.bShowOpcodeValues = globalConfig.bShowOpcodeValues;
-	CodeAnalysis.Config.BranchLinesDisplayMode = globalConfig.BranchLinesDisplayMode;
+	pGlobalConfig = new FZXSpectrumConfig();
+	pGlobalConfig->Load(kGlobalConfigFilename);
+	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
+	//FGlobalConfig& globalConfig = GetGlobalConfig();
+	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	CodeAnalysis.Config.bShowBanks = config.Model == ESpectrumModel::Spectrum128K;
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 	
@@ -627,13 +627,13 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	GamesList.Init(this);
 	if(config.Model == ESpectrumModel::Spectrum128K)
-		GamesList.EnumerateGames(globalConfig.SnapshotFolder128.c_str());
+		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder128.c_str());
 	else
-		GamesList.EnumerateGames(globalConfig.SnapshotFolder.c_str());
+		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder.c_str());
 
 	RZXManager.Init(this);
 	RZXGamesList.Init(this);
-	RZXGamesList.EnumerateGames(globalConfig.RZXFolder.c_str());
+	RZXGamesList.EnumerateGames(pGlobalConfig->RZXFolder.c_str());
 
 	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
@@ -744,9 +744,9 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	{
 		bLoadedGame = StartGame(config.SpecificGame.c_str());
 	}
-	else if (globalConfig.LastGame.empty() == false)
+	else if (pGlobalConfig->LastGame.empty() == false)
 	{
-		bLoadedGame = StartGame(globalConfig.LastGame.c_str());
+		bLoadedGame = StartGame(pGlobalConfig->LastGame.c_str());
 	}
 	
 	// Start ROM if no game has been loaded
@@ -816,16 +816,14 @@ void FSpectrumEmu::Shutdown()
 		SaveCurrentGameData();	// save on close
 
 	// Save Global Config - move to function?
-	FGlobalConfig& config = GetGlobalConfig();
-
 	if (pActiveGame != nullptr)
-		config.LastGame = pActiveGame->pConfig->Name;
+		pGlobalConfig->LastGame = pActiveGame->pConfig->Name;
 
-	config.NumberDisplayMode = GetNumberDisplayMode();
-	config.bShowOpcodeValues = CodeAnalysis.Config.bShowOpcodeValues;
-	config.BranchLinesDisplayMode = CodeAnalysis.Config.BranchLinesDisplayMode;
+	pGlobalConfig->NumberDisplayMode = GetNumberDisplayMode();
+	pGlobalConfig->bShowOpcodeValues = CodeAnalysis.pGlobalConfig->bShowOpcodeValues;
+	pGlobalConfig->BranchLinesDisplayMode = CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode;
 
-	SaveGlobalConfig(kGlobalConfigFilename);
+	pGlobalConfig->Save(kGlobalConfigFilename);
 
 	GraphicsViewer.Shutdown();
 }
@@ -869,7 +867,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 
 	if (bLoadGameData)
 	{
-		const std::string root = GetGlobalConfig().WorkspaceRoot;
+		const std::string root = pGlobalConfig->WorkspaceRoot;
 		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 		std::string romJsonFName = kRomInfo48JsonFile;
 
@@ -896,7 +894,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 
 		// where do we want pokes to live?
-		LoadPOKFile(*pGameConfig, std::string(GetGlobalConfig().PokesFolder + pGameConfig->Name + ".pok").c_str());
+		LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
@@ -920,8 +918,7 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
 
-	FGlobalConfig& globalConfig = GetGlobalConfig();
-	GraphicsViewer.SetImagesRoot((globalConfig.WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+	GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 }
 
 bool FSpectrumEmu::StartGame(const char *pGameName)
@@ -930,7 +927,7 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 	{
 		if (pGameConfig->Name == pGameName)
 		{
-			const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
+			const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
 			const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 			if (GamesList.LoadGame(gameFile.c_str()))
 			{
@@ -955,7 +952,7 @@ void FSpectrumEmu::SaveCurrentGameData()
 		}
 		else
 		{
-			const std::string root = GetGlobalConfig().WorkspaceRoot;
+			const std::string root = pGlobalConfig->WorkspaceRoot;
 			const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
 			const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 			const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
@@ -1038,7 +1035,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				const int numGames = GamesList.GetNoGames();
 				if (!numGames)
 				{
-					const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
+					const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
 					ImGui::Text("No snapshots found in snapshot directory:\n\n'%s'.\n\nSnapshot directory is set in GlobalConfig.json", snapFolder.c_str());
 				}
 				else
@@ -1076,7 +1073,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			{
 				if (RZXGamesList.GetNoGames() == 0)
 				{
-					ImGui::Text("No RZX files found in RZX directory:\n\n'%s'.\n\nRZX directory is set in GlobalConfig.json", GetGlobalConfig().RZXFolder.c_str());
+					ImGui::Text("No RZX files found in RZX directory:\n\n'%s'.\n\nRZX directory is set in GlobalConfig.json", pGlobalConfig->RZXFolder.c_str());
 				}
 				else
 				{
@@ -1110,7 +1107,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 					{
 						if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 						{
-							const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
+							const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
 							const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 
 							if (GamesList.LoadGame(gameFile.c_str()))
@@ -1140,7 +1137,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			{
 				if (pActiveGame != nullptr)
 				{
-					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputBin/";
+					const std::string dir = pGlobalConfig->WorkspaceRoot + "OutputBin/";
 					EnsureDirectoryExists(dir.c_str());
 					std::string outBinFname = dir + pActiveGame->pConfig->Name + ".bin";
 					uint8_t *pSpecMem = new uint8_t[65536];
@@ -1191,7 +1188,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			
 			if (pActiveGame && ImGui::MenuItem("Reload Snapshot"))
 			{
-				const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? GetGlobalConfig().SnapshotFolder128 : GetGlobalConfig().SnapshotFolder;
+				const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
 				const std::string gameFile = snapFolder + pActiveGame->pConfig->SnapshotFile;
 				GamesList.LoadGame(gameFile.c_str());
 			}
@@ -1250,8 +1247,6 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 		}
 		if (ImGui::BeginMenu("Options"))
 		{
-			FGlobalConfig& config = GetGlobalConfig();
-
 			if (ImGui::BeginMenu("Number Mode"))
 			{
 				bool bClearCode = false;
@@ -1288,24 +1283,24 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 				ImGui::EndMenu();
 			}
-			ImGui::MenuItem("Scan Line Indicator", 0, &config.bShowScanLineIndicator);
-			ImGui::MenuItem("Enable Audio", 0, &config.bEnableAudio);
+			ImGui::MenuItem("Scan Line Indicator", 0, &pGlobalConfig->bShowScanLineIndicator);
+			ImGui::MenuItem("Enable Audio", 0, &pGlobalConfig->bEnableAudio);
 			ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
-			ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.Config.bShowOpcodeValues);
+			ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.pGlobalConfig->bShowOpcodeValues);
 
 			if (ImGui::BeginMenu("Display Branch Lines"))
 			{
-				if (ImGui::MenuItem("Off", 0, CodeAnalysis.Config.BranchLinesDisplayMode == 0))
+				if (ImGui::MenuItem("Off", 0, CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode == 0))
 				{
-					CodeAnalysis.Config.BranchLinesDisplayMode = 0;
+					CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode = 0;
 				}
-				if (ImGui::MenuItem("Minimal", 0, CodeAnalysis.Config.BranchLinesDisplayMode == 1))
+				if (ImGui::MenuItem("Minimal", 0, CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode == 1))
 				{
-					CodeAnalysis.Config.BranchLinesDisplayMode = 1;
+					CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode = 1;
 				}
-				if (ImGui::MenuItem("Full", 0, CodeAnalysis.Config.BranchLinesDisplayMode == 2))
+				if (ImGui::MenuItem("Full", 0, CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode == 2))
 				{
-					CodeAnalysis.Config.BranchLinesDisplayMode = 2;
+					CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode = 2;
 				}
 
 				ImGui::EndMenu();
@@ -1438,7 +1433,7 @@ void FSpectrumEmu::DrawExportAsmModalPopup()
 			{
 				if (pActiveGame != nullptr)
 				{
-					const std::string dir = GetGlobalConfig().WorkspaceRoot + "OutputASM/";
+					const std::string dir = pGlobalConfig->WorkspaceRoot + "OutputASM/";
 					EnsureDirectoryExists(dir.c_str());
 
 					char addrRangeStr[16];
@@ -2019,7 +2014,7 @@ bool FSpectrumEmu::ImportSkoolFile(const char* pFilename, const char* pOutSkoolI
 
 	LOGINFO("Importing skool file '%s'", pFilename);
 
-	const std::string root = GetGlobalConfig().WorkspaceRoot;
+	const std::string root = pGlobalConfig->WorkspaceRoot;
 
 	if (pActiveGame)
 	{
@@ -2109,9 +2104,9 @@ void FSpectrumEmu::AppFocusCallback(int focused)
 	if (focused)
 	{
 		if (ZXEmuState.type == ZX_TYPE_128)
-			GamesList.EnumerateGames(GetGlobalConfig().SnapshotFolder128.c_str());
+			GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder128.c_str());
 		else
-			GamesList.EnumerateGames(GetGlobalConfig().SnapshotFolder.c_str());
+			GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder.c_str());
 	}
 }
 

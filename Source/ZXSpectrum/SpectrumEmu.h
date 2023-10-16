@@ -51,6 +51,7 @@ struct FGameViewerData;
 struct FGameConfig;
 struct FViewerConfig;
 struct FSkoolFileInfo;
+struct FZXSpectrumConfig;
 
 enum class ESpectrumModel
 {
@@ -146,6 +147,7 @@ public:
 	// Emulator 
 	zx_t			ZXEmuState;	// Chips Spectrum State
 	uint8_t*		MappedInMemory = nullptr;
+	FZXSpectrumConfig *	pGlobalConfig = nullptr;
 
 	float			ExecSpeedScale = 1.0f;
 

@@ -6,7 +6,7 @@
 #include "../SpectrumEmu.h"
 #include "../SpectrumConstants.h"
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
-#include "../GlobalConfig.h"
+#include "../ZXSpectrumConfig.h"
 
 #include <Util/Misc.h>
 #include <ImGuiSupport/ImGuiTexture.h>
@@ -35,7 +35,7 @@ void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 
 void FSpectrumViewer::Draw()
 {
-	const FGlobalConfig& config = GetGlobalConfig();
+	const FZXSpectrumConfig& config = *pSpectrumEmu->pGlobalConfig;
 	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->CodeAnalysis;
 	FDebugger& debugger = codeAnalysis.Debugger;
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();

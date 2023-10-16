@@ -175,8 +175,8 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	ShowCodeAccessorActivity(state, item.AddressRef);
 
-	bool bDisplayBranchLine = state.Config.BranchLinesDisplayMode == 2;
-	if (state.Config.BranchLinesDisplayMode == 1)
+	bool bDisplayBranchLine = state.pGlobalConfig->BranchLinesDisplayMode == 2;
+	if (state.pGlobalConfig->BranchLinesDisplayMode == 1)
 	{
 		const bool bSelected = (item.Item == viewState.GetCursorItem().Item);
 		const bool bHighlighted = (viewState.HighlightAddress == pCodeInfo->JumpAddress);
@@ -238,7 +238,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	if (pCodeInfo->bNOPped)
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
 
-	if (state.Config.bShowOpcodeValues)
+	if (state.pGlobalConfig->bShowOpcodeValues)
 	{
 		// Draw hex values of the instruction's opcode
 		char tmp[16] = { 0 };
