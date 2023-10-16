@@ -13,3 +13,6 @@
 [submodule "Source/Vendor/chips-test"]
 	path = Source/Vendor/chips-test
 	url = https://github.com/floooh/chips-test
+[submodule "Source/Vendor/json"]
+	path = Source/Vendor/json
+	url = https://github.com/nlohmann/json

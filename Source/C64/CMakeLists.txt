@@ -39,7 +39,7 @@ include_directories( ${vendor_dir}/chips )
 include_directories( ${vendor_dir}/rzx-sdk )
 include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
-include_directories( ${vendor_dir}/json )
+include_directories( ${vendor_dir}/json/single_include/nlohmann )
 
 # other includes
 include_directories( ../Shared )
