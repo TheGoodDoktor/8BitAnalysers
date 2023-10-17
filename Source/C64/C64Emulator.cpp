@@ -9,6 +9,11 @@
 #include <Util/FileUtil.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 
+#include "C64Config.h"
+
+const char* kGlobalConfigFilename = "GlobalConfig.json";
+const std::string kAppTitle = "C64 Analyser";
+
 
 /* reboot callback */
 static void C64BootCallback(c64_t* sys)
@@ -86,6 +91,14 @@ bool UISnapshotLoadCB(size_t slot_index)
 
 bool FC64Emulator::Init()
 {
+	//SetWindowTitle(kAppTitle.c_str());
+	//SetWindowIcon("SALogo.png");
+
+	// Initialise Emulator
+	pGlobalConfig = new FC64Config();
+	pGlobalConfig->Load(kGlobalConfigFilename);
+	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
+
     saudio_desc audiodesc;
     memset(&audiodesc, 0, sizeof(saudio_desc));
     saudio_setup(&audiodesc);
@@ -233,6 +246,16 @@ bool FC64Emulator::Init()
         }
         */
     }
+
+    //TODO: CodeAnalysis.SetGlobalConfig();
+    CodeAnalysis.Config.bShowBanks = true;
+	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
+
+    // TODO: Setup games list
+
+    // TODO: Setup debugger
+
+    // TODO: setup memory analyser
 
     SetupCodeAnalysisLabels();
     UpdateCodeAnalysisPages(0x7);
@@ -577,11 +600,40 @@ void FC64Emulator::DrawUI()
     }
     ImGui::End();
 
-    if (ImGui::Begin("Code Analysis"))
-    {
-        DrawCodeAnalysisData(CodeAnalysis, 0);
-    }
-    ImGui::End();
+
+	if (ImGui::Begin("Debugger"))
+	{
+		CodeAnalysis.Debugger.DrawUI();
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Memory Analyser"))
+	{
+		CodeAnalysis.MemoryAnalyser.DrawUI();
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("IO Analyser"))
+	{
+		CodeAnalysis.IOAnalyser.DrawUI();
+	}
+	ImGui::End();
+
+	// Code analysis views
+	for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
+	{
+		char name[32];
+		sprintf(name, "Code Analysis %d", codeAnalysisNo + 1);
+		if (CodeAnalysis.ViewState[codeAnalysisNo].Enabled)
+		{
+			if (ImGui::Begin(name, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled))
+			{
+				DrawCodeAnalysisData(CodeAnalysis, codeAnalysisNo);
+			}
+			ImGui::End();
+		}
+
+	}
 
     if (ImGui::Begin("IO Analysis"))
     {
@@ -609,10 +661,20 @@ void FC64Emulator::DrawUI()
 
 void FC64Emulator::Tick()
 {
-    const float frameTime = (float)std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
+	FDebugger& debugger = CodeAnalysis.Debugger;
 
-    c64_exec(&C64Emu, (uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 
+	if (debugger.IsStopped() == false)
+	{
+		const float frameTime = (float)std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
+    
+		CodeAnalysis.OnFrameStart();
+		//StoreRegisters_6502(CodeAnalysis);
+
+        c64_exec(&C64Emu, (uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
+
+		CodeAnalysis.OnFrameEnd();
+    }
     DrawDockingView();
 #if 0
     gfx_draw(c64_display_width(&c64), c64_display_height(&c64));
@@ -732,9 +794,12 @@ void    FC64Emulator::OnBoot(void)
     c64_init(&C64Emu, &desc);
 }
 
+// Don't think this is used anymore
+// 
 // pc points to instruction after the one just executed so we use the previous pc
 int    FC64Emulator::OnCPUTrap(uint16_t pc, int ticks, uint64_t pins)
 {
+#if 0
     const uint16_t addr = M6502_GET_ADDR(pins);
     const bool bMemAccess = !!(pins & M6502_RDY);
     const bool bWrite = !!(pins & M6502_RW);
@@ -748,13 +813,16 @@ int    FC64Emulator::OnCPUTrap(uint16_t pc, int ticks, uint64_t pins)
         return UI_DBG_BP_BASE_TRAPID;
 
     LastPC = pc;
+#endif
     return 0;
 }
 
 uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 {
-    static uint16_t lastPC = m6502_pc(&C64Emu.cpu);
-    const uint16_t pc = C64Emu.cpu.PC;// g_M6502PC;// m6502_pc(&C64Emu.cpu);// pc after execution?
+	FCodeAnalysisState& state = CodeAnalysis;
+
+	const uint16_t pc = GetPC().Address;
+
     const uint16_t addr = M6502_GET_ADDR(pins);
     const uint8_t val = M6502_GET_DATA(pins);
     bool irq = pins & M6502_IRQ;
@@ -776,7 +844,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
         if (pins & M6502_RW)
         {
 
-            if (CodeAnalysis.bRegisterDataAccesses)
+            if (state.bRegisterDataAccesses)
                 RegisterDataRead(CodeAnalysis, pc, addr);
 
             if (bIOMapped && (addr >> 12) == 0xd)
@@ -786,16 +854,16 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
         }
         else
         {
-            if (CodeAnalysis.bRegisterDataAccesses)
+            if (state.bRegisterDataAccesses)
             {
                 // FIXME: Invalid parameter
                 //RegisterDataWrite(CodeAnalysis, pc, addr);
             }
 
             // FIXME: parameter conversion for SetLastWriterForAddress
-            FAddressRef pcRef = CodeAnalysis.AddressRefFromPhysicalAddress(pc);
-            FAddressRef addrRef = CodeAnalysis.AddressRefFromPhysicalAddress(addr);
-            CodeAnalysis.SetLastWriterForAddress(addr, pcRef);
+            FAddressRef pcRef = state.AddressRefFromPhysicalAddress(pc);
+            FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
+            state.SetLastWriterForAddress(addr, pcRef);
 
             if (bIOMapped && (addr >> 12) == 0xd)
             {
@@ -807,8 +875,12 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
                 pCodeWrittenTo->bSelfModifyingCode = true;
         }
     }
+    else
+    {
+		RegisterCodeExecuted(state, pc, PreviousPC);
+		PreviousPC = pc;
+    }
 
-    lastPC = m6502_pc(&C64Emu.cpu);
 
     const bool bNeedMemUpdate = ((C64Emu.cpu_port ^ LastMemPort) & 7) != 0;
     if (bNeedMemUpdate)
@@ -817,6 +889,8 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 
         LastMemPort = C64Emu.cpu_port & 7;
     }
+
+	CodeAnalysis.OnCPUTick(pins);
 
     // FIXME: no such method
     //return OldTickCB(pins, &C64Emu);

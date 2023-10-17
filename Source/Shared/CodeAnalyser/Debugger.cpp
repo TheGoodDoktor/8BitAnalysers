@@ -231,26 +231,30 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 
 	// Handle IRQ
 	//  Note: This is Z80 specific
-	const bool irq = (pins & Z80_INT) && pZ80->iff1;
-	if (irq)
+	if (CPUType == ECPUType::Z80)
 	{
-		FCPUFunctionCall callInfo;
-		callInfo.CallAddr = PC;
-		callInfo.FunctionAddr = PC;
-		callInfo.ReturnAddr = PC;
-		CallStack.push_back(callInfo);
-		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
+		const bool irq = (pins & Z80_INT) && pZ80->iff1;
+		if (irq)
+		{
+			FCPUFunctionCall callInfo;
+			callInfo.CallAddr = PC;
+			callInfo.FunctionAddr = PC;
+			callInfo.ReturnAddr = PC;
+			CallStack.push_back(callInfo);
+			//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
+		}
 	}
-
 	FrameTrace.push_back(PC);
 
 	// update stack size
-	const uint16_t sp = pZ80->sp;	// this won't get the proper stack pos (see comment above function)
-	if (sp == StackMin - 2 || StackMin == 0xffff)
-		StackMin = sp;
-	if (sp == StackMax + 2 || StackMax == 0)
-		StackMax = sp;
-
+	if (CPUType == ECPUType::Z80)
+	{
+		const uint16_t sp = pZ80->sp;	// this won't get the proper stack pos (see comment above function)
+		if (sp == StackMin - 2 || StackMin == 0xffff)
+			StackMin = sp;
+		if (sp == StackMax + 2 || StackMax == 0)
+			StackMax = sp;
+	}
 	return trapId;
 }
 

@@ -48,6 +48,8 @@
 #include "IOAnalysis/C64IOAnalysis.h"
 #include "GraphicsViewer/C64GraphicsViewer.h"
 
+struct FC64Config;
+
 class FC64Emulator : public ICPUInterface
 {
 public:
@@ -118,6 +120,9 @@ private:
 	ui_c64_t    C64UI;
 	double      ExecTime;
 
+	FC64Config* pGlobalConfig = nullptr;
+
+
 	FC64GamesList       GamesList;
 	const FGameInfo* CurrentGame = nullptr;
 
@@ -133,7 +138,7 @@ private:
 	FCodeAnalysisPage   RAM[64];            // 64K RAM
 
 	uint8_t             LastMemPort = 0x7;  // Default startup
-	uint16_t            LastPC = 0;
+	uint16_t            PreviousPC = 0;
 
 	FC64IOAnalysis      IOAnalysis;
 	FC64GraphicsViewer  GraphicsViewer;
