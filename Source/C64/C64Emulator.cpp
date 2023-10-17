@@ -576,8 +576,7 @@ void FC64Emulator::DrawUI()
         }
     }
     ImGui::End();
-    //some code after here breaks imgui rendering
-    return;
+
     if (ImGui::Begin("Code Analysis"))
     {
         DrawCodeAnalysisData(CodeAnalysis, 0);
