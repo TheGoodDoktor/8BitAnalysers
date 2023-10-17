@@ -88,15 +88,17 @@ public:
 
 	FAddressRef GetPC() override
 	{
-		uint16_t address = m6502_pc(&C64Emu.cpu);
-		FAddressRef result(0, address);
-
-		return result;
+		return CodeAnalysis.Debugger.GetPC();
 	}
 
 	uint16_t	GetSP(void) override
 	{
 		return m6502_s(&C64Emu.cpu) + 0x100;    // stack begins at 0x100
+	}
+
+	void* GetCPUEmulator(void) const override
+	{
+		return (void*)&C64Emu.cpu;
 	}
 
 	// End ICPUInterface interface implementation
