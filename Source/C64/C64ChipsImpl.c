@@ -18,9 +18,6 @@
 #include <systems/c64.h>
 
 #define CHIPS_UTIL_IMPL
-#define UI_DASM_USE_Z80
-#define UI_DASM_USE_M6502
-//#include "ui.h"
 #include "util/m6502dasm.h"
 #include "util/z80dasm.h"
 
