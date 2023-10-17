@@ -82,22 +82,6 @@ typedef void (*m6502dasm_output_t)(char c, void* user_data);
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-    /* the input callback type */
-    typedef uint8_t(*m6502dasm_input_t)(void* user_data);
-    /* the output callback type */
-    typedef void (*m6502dasm_output_t)(char c, void* user_data);
-
-    /* disassemble a single 6502 instruction into a stream of ASCII characters */
-    uint16_t m6502dasm_op(uint16_t pc, m6502dasm_input_t in_cb, m6502dasm_output_t out_cb, void* user_data);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 typedef void (*m6502dasm_output_t)(char c, void* user_data);
 
 static void DasmOutputU8(uint8_t val, m6502dasm_output_t out_cb, void* user_data);
