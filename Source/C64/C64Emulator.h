@@ -54,6 +54,8 @@ public:
 
 	bool    Init();
 	void    Shutdown();
+	void	DrawUI();
+	bool	DrawDockingView();
 	void    Tick();
 
 	// Begin IInputEventHandler interface implementation
