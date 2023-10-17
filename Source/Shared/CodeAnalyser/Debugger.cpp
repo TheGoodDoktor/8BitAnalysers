@@ -910,11 +910,14 @@ void FDebugger::DrawStack(void)
 
 
 void DrawRegisters_Z80(FCodeAnalysisState& state);
+void DrawRegisters_6502(FCodeAnalysisState& state);
 
 void DrawRegisters(FCodeAnalysisState& state)
 {
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		DrawRegisters_Z80(state);
+	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+		DrawRegisters_6502(state);
 }
 
 void FDebugger::DrawWatches(void)
