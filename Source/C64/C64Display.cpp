@@ -239,15 +239,18 @@ void FC64Display::DrawUI()
         {
             const FAddressRef lastBitmapWriter = CodeAnalysis->GetLastWriterForAddress(SelectBitmapAddr);
             ImGui::Text("Bitmap Address: $%X, Last Writer:", SelectBitmapAddr);
-            DrawAddressLabel(*CodeAnalysis, viewState, lastBitmapWriter);
+            if (lastBitmapWriter.IsValid())
+                DrawAddressLabel(*CodeAnalysis, viewState, lastBitmapWriter);
         }
         const FAddressRef lastCharWriter = CodeAnalysis->GetLastWriterForAddress(SelectCharAddr);
         ImGui::Text("Char Address: $%X, Last Writer:", SelectCharAddr);
-        DrawAddressLabel(*CodeAnalysis, viewState, lastCharWriter);
+        if (lastCharWriter.IsValid())
+            (*CodeAnalysis, viewState, lastCharWriter);
 
         const FAddressRef lastColourRamWriter = CodeAnalysis->GetLastWriterForAddress(SelectColourRamAddr);
         ImGui::Text("Colour RAM Address: $%X, Last Writer:", SelectColourRamAddr);
-        DrawAddressLabel(*CodeAnalysis, viewState, lastColourRamWriter);
+        if(lastColourRamWriter.IsValid())
+            DrawAddressLabel(*CodeAnalysis, viewState, lastColourRamWriter);
     }
 
 	bWindowFocused = ImGui::IsWindowFocused();
@@ -257,7 +260,7 @@ void FC64Display::DrawUI()
 
 int C64KeyFromImGuiKey(ImGuiKey key)
 {
-	int c64Key = 0;
+    const bool bShift = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
 
     switch (key)
     {
@@ -269,6 +272,14 @@ int C64KeyFromImGuiKey(ImGuiKey key)
 			return C64_KEY_CTRL;
 		case ImGuiKey_Delete:
 			return C64_KEY_DEL;
+        case ImGuiKey_LeftArrow:
+            return C64_KEY_CSRLEFT;
+        case ImGuiKey_RightArrow:
+            return C64_KEY_CSRRIGHT;
+        case ImGuiKey_UpArrow:
+            return C64_KEY_CSRUP;
+        case ImGuiKey_DownArrow:
+            return C64_KEY_CSRDOWN;
 
         // Alphanumeric range
         default:
@@ -279,9 +290,19 @@ int C64KeyFromImGuiKey(ImGuiKey key)
 			}
 			else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
 			{
-                const bool bShift = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
-                return 'A' + (key - ImGuiKey_A) + 0x20;
+                char c = (bShift ? 'A' : 'a') + (key - ImGuiKey_A);
+
+                if (isupper(c))
+                    c = tolower(c);
+                else if (islower(c)) 
+                    c = toupper(c);
+                    
+                return c;
 			}
+            else if (key >= ImGuiKey_F1 && key <= ImGuiKey_F8)
+            {
+                return C64_KEY_F1 + (key - ImGuiKey_F1);
+            }
         }
         break;
     }
