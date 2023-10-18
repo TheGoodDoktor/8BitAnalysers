@@ -249,5 +249,83 @@ void FC64Display::DrawUI()
         ImGui::Text("Colour RAM Address: $%X, Last Writer:", SelectColourRamAddr);
         DrawAddressLabel(*CodeAnalysis, viewState, lastColourRamWriter);
     }
+
+	bWindowFocused = ImGui::IsWindowFocused();
+
 }
 
+
+int C64KeyFromImGuiKey(ImGuiKey key)
+{
+	int c64Key = 0;
+
+    switch (key)
+    {
+        case ImGuiKey_Space:
+            return C64_KEY_SPACE;
+		case ImGuiKey_Enter:
+			return C64_KEY_RETURN;
+		case ImGuiKey_LeftCtrl:
+			return C64_KEY_CTRL;
+		case ImGuiKey_Delete:
+			return C64_KEY_DEL;
+
+        // Alphanumeric range
+        default:
+        {
+			if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
+			{
+				return '0' + (key - ImGuiKey_0);
+			}
+			else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
+			{
+                const bool bShift = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+                return 'A' + (key - ImGuiKey_A) + 0x20;
+			}
+        }
+        break;
+    }
+
+    return 0;
+}
+
+uint8_t GetJoystickMaskFromImGui()
+{
+    uint8_t mask = 0;
+	if (ImGui::IsKeyDown(ImGuiNavInput_DpadRight))
+        mask |= C64_JOYSTICK_RIGHT;
+	if (ImGui::IsKeyDown(ImGuiNavInput_DpadLeft))
+        mask |= C64_JOYSTICK_LEFT;
+	if (ImGui::IsKeyDown(ImGuiNavInput_DpadDown))
+        mask |= C64_JOYSTICK_DOWN;
+	if (ImGui::IsKeyDown(ImGuiNavInput_DpadUp))
+        mask |= C64_JOYSTICK_UP;
+	if (ImGui::IsKeyDown(ImGuiNavInput_Activate))
+        mask |= C64_JOYSTICK_BTN;
+
+    return mask;
+}
+
+void FC64Display::Tick()
+{
+	// Check keys - not event driven, hopefully perf isn't too bad
+	for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
+	{
+		if (ImGui::IsKeyPressed(key, false))
+		{
+			const int c64Key = C64KeyFromImGuiKey(key);
+			if (c64Key != 0 && bWindowFocused)
+				c64_key_down(C64Emu->GetEmu(), c64Key);
+		}
+		else if (ImGui::IsKeyReleased(key))
+		{
+			const int c64Key = C64KeyFromImGuiKey(key);
+			if (c64Key != 0)
+                c64_key_up(C64Emu->GetEmu(), c64Key);
+		}
+	}
+
+	const uint8_t keyMask = GetJoystickMaskFromImGui();
+
+	c64_joystick(C64Emu->GetEmu(), 0, keyMask);
+}

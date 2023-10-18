@@ -1,7 +1,7 @@
 #include "C64Emulator.h"
 #define NOMINMAX
 
-#define SOKOL_IMPL
+//#define SOKOL_IMPL
 #include "sokol_audio.h"
 #include <ImGuiSupport/ImGuiTexture.h>
 
@@ -99,9 +99,9 @@ bool FC64Emulator::Init()
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 
-    saudio_desc audiodesc;
-    memset(&audiodesc, 0, sizeof(saudio_desc));
-    saudio_setup(&audiodesc);
+    //saudio_desc audiodesc;
+    //memset(&audiodesc, 0, sizeof(saudio_desc));
+    //saudio_setup(&audiodesc);
 
     Display.Init(&CodeAnalysis, this);
 
@@ -132,6 +132,8 @@ bool FC64Emulator::Init()
     uiDesc.dbg_keys.step_into.name = "F7";
     uiDesc.dbg_keys.toggle_breakpoint.keycode = ImGuiKey_F9;
     uiDesc.dbg_keys.toggle_breakpoint.name = "F9";
+
+	memset(&C64UI, 0, sizeof(C64UI));
 
     ui_c64_init(&C64UI, &uiDesc);
 
@@ -547,6 +549,7 @@ void FC64Emulator::Tick()
 {
 	FDebugger& debugger = CodeAnalysis.Debugger;
 
+    Display.Tick();
 
 	if (debugger.IsStopped() == false)
 	{
