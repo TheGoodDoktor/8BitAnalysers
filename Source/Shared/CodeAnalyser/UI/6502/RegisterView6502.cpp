@@ -19,21 +19,21 @@ struct F6502DisplayRegisters
 		PC = pCPU->PC;
 
 		// set flags
-		CarryFlag				= P & (1 << 0);
-		ZeroFlag				= P & (1 << 1);
-		InterruptDisableFlag	= P & (1 << 2);
-		DecimalModeFlag			= P & (1 << 3);
-		BreakFlag				= P & (1 << 4);
-		OverflowFlag			= P & (1 << 6);
-		NegativeFlag			= P & (1 << 7);
+		CarryFlag				= P & M6502_CF;
+		ZeroFlag				= P & M6502_ZF;
+		InterruptDisableFlag	= P & M6502_IF;
+		DecimalModeFlag			= P & M6502_DF;
+		BreakFlag				= P & M6502_BF;
+		OverflowFlag			= P & M6502_VF;
+		NegativeFlag			= P & M6502_NF;
 	}
 
-	uint8_t		A;
-	uint8_t		X;
-	uint8_t		Y;
-	uint8_t		S;
-	uint8_t		P;
-	uint16_t	PC;
+	uint8_t		A = 0;
+	uint8_t		X = 0;
+	uint8_t		Y = 0;
+	uint8_t		S = 0;
+	uint8_t		P = 0;
+	uint16_t	PC = 0;
 
 	// flags
 	bool	CarryFlag = false;
@@ -62,11 +62,6 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 
 	F6502DisplayRegisters curRegs(pCPU);
 	const F6502DisplayRegisters& oldRegs = g_OldRegs;
-
-	// A
-	ImGui::TextColored(curRegs.A != oldRegs.A ? regChangedCol : regNormalCol, "A:%s", NumStr(curRegs.A));
-
-	ImGui::Separator();
 
 	// CPU flags
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
@@ -102,16 +97,22 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 
 	ImGui::Separator();
 
+	// A
+	ImGui::TextColored(curRegs.A != oldRegs.A ? regChangedCol : regNormalCol, "A:%s", NumStr(curRegs.A));
+	// X
 	ImGui::TextColored(curRegs.X != oldRegs.X ? regChangedCol : regNormalCol, "X:%s", NumStr(curRegs.X));
-	ImGui::SameLine();
+	// Y
 	ImGui::TextColored(curRegs.Y != oldRegs.Y ? regChangedCol : regNormalCol, "Y:%s", NumStr(curRegs.Y));
 
+	// Program counter
 	ImGui::TextColored(curRegs.PC != oldRegs.PC ? regChangedCol : regNormalCol, "PC:%s", NumStr(curRegs.PC));
 	DrawAddressLabel(state, viewState, curRegs.PC);
 
+	// Stack pointer
+	// Add 0x100 to give physical address
 	const uint16_t StackPtr = curRegs.S + 0x100;
 	ImGui::TextColored(curRegs.S != oldRegs.S ? regChangedCol : regNormalCol, "SP:%s", NumStr(StackPtr));
 	DrawAddressLabel(state, viewState, StackPtr);
 
-	ImGui::Text("TODO: Implement for 6502");
+	StoreRegisters_6502(state);
 }

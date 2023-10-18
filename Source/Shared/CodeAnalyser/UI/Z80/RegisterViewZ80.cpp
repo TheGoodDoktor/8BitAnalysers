@@ -227,7 +227,9 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 	ImGui::SameLine();
 	ImGui::TextColored(curRegs.IFF2 != oldRegs.IFF2 ? regChangedCol : regNormalCol, "IFF2:%s", curRegs.IFF2 ? "Y" : "N");
 
-	
+	// Z80TODO: Shadow Registers
+
+	StoreRegisters_Z80(state);
 }
 
 void DrawMachineStateZ80(const FMachineState* pMachineStateBase, FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
@@ -291,4 +293,6 @@ void DrawMachineStateZ80(const FMachineState* pMachineStateBase, FCodeAnalysisSt
 
 	ImGui::Separator();
 */
+
+
 }

@@ -174,7 +174,7 @@ struct FCodeAnalysisViewState
 
 		return false;
 	}
-
+	
 	bool			Enabled = false;
 	bool			TrackPCFrame = false;
 	FAddressRef		HoverAddress;		// address being hovered over
@@ -237,6 +237,21 @@ struct FCodeAnalysisBank
 	bool				bReadOnly = false;
 	bool				bIsDirty = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
+
+
+	void UnmapFromPage(int startPageNo)
+	{
+		// erase from mapped pages - better way?
+		auto it = MappedPages.begin();
+
+		while (it != MappedPages.end())
+		{
+			if (*it == startPageNo)
+				it = MappedPages.erase(it);
+			else
+				++it;
+		}
+	}
 
 	bool		AddressValid(uint16_t addr) const { return addr >= GetMappedAddress() && addr < GetMappedAddress() + (NoPages * FCodeAnalysisPage::kPageSize);	}
 	bool		IsUsed() const { return Pages[0].bUsed; }

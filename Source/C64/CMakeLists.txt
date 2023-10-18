@@ -7,6 +7,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(APP_NAME C64Analyser)
+
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	find_package(OpenGL REQUIRED)
 	find_package(Threads REQUIRED)
@@ -185,6 +188,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		BUNDLE DESTINATION . COMPONENT RunTime
 		RUNTIME DESTINATION bin COMPONENT RunTime
 		)
+	# Copy ini file to /bin
 	add_custom_command(TARGET ${APP_NAME} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		${CMAKE_CURRENT_SOURCE_DIR}/../../Data/C64Analyser/imgui.ini
@@ -198,3 +202,4 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	set(CPACK_GENERATOR "DRAGNDROP")
 	include(CPack)
 endif()
+

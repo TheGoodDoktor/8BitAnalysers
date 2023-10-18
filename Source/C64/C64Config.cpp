@@ -10,12 +10,16 @@ void FC64Config::ReadFromJson(const nlohmann::json& jsonConfigFile)
 		TapesFolder = jsonConfigFile["TapesFolder"];
 	if (jsonConfigFile.contains("DisksFolder"))
 		DisksFolder = jsonConfigFile["DisksFolder"];
+	if (jsonConfigFile.contains("PrgFolder"))
+		PrgFolder = jsonConfigFile["PrgFolder"];
 
 	// fixup paths
 	if (TapesFolder.back() != '/')
 		TapesFolder += "/";
 	if (DisksFolder.back() != '/')
 		DisksFolder += "/";
+	if (PrgFolder.back() != '/')
+		PrgFolder += "/";
 }
 
 void FC64Config::WriteToJson(nlohmann::json& jsonConfigFile)
@@ -23,4 +27,5 @@ void FC64Config::WriteToJson(nlohmann::json& jsonConfigFile)
 	FGlobalConfig::WriteToJson(jsonConfigFile);
 	jsonConfigFile["TapesFolder"] = TapesFolder;
 	jsonConfigFile["DisksFolder"] = DisksFolder;
+	jsonConfigFile["PrgFolder"] = PrgFolder;
 }

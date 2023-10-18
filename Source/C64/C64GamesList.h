@@ -12,7 +12,7 @@ struct FGameInfo
 class FC64GamesList
 {
 public:
-	bool	EnumerateGames();
+	bool	EnumerateGames(const char* pDirectory);
 	int		GetNoGames() const { return (int)GamesList.size(); }
 	const FGameInfo& GetGameInfo(int index) { return GamesList[index]; }
 	int		GetSelectedGame() const { return SelectedGame; }

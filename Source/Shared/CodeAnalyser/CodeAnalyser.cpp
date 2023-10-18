@@ -39,6 +39,7 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	newBank.bReadOnly = bReadOnly;
 	for (int pageNo = 0; pageNo < noPages; pageNo++)
 	{
+		newBank.Pages[pageNo].Initialise();
 		char pageName[32];
 		sprintf(pageName, "%s:%d", bankName, pageNo);
 		RegisterPage(&newBank.Pages[pageNo], pageName);
@@ -71,9 +72,19 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], &pBank->Pages[bankPageNo]);	// Read/Write
 
 		if(access == EBankAccess::Read || access == EBankAccess::ReadWrite)
+		{
+			FCodeAnalysisBank* pOldBank = GetBank(MappedReadBanks[startPageNo + bankPageNo]);
+			if(pOldBank)
+				pOldBank->UnmapFromPage(startPageNo);
 			MappedReadBanks[startPageNo + bankPageNo] = bankId;
+		}
 		if (access == EBankAccess::Write || access == EBankAccess::ReadWrite)
+		{
+			FCodeAnalysisBank* pOldBank = GetBank(MappedWriteBanks[startPageNo + bankPageNo]);
+			if (pOldBank)
+				pOldBank->UnmapFromPage(startPageNo);
 			MappedWriteBanks[startPageNo + bankPageNo] = bankId;
+		}
 	}
 	bMemoryRemapped = true;
 
@@ -99,16 +110,7 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo, EBankAccess 
 			MappedWriteBanks[startPageNo + bankPage] = -1;
 	}
 
-	// erase from mapped pages - better way?
-	auto it = pBank->MappedPages.begin();
-
-	while (it != pBank->MappedPages.end())
-	{
-		if (*it == startPageNo)
-			it = pBank->MappedPages.erase(it);
-		else
-			++it;
-	}
+	pBank->UnmapFromPage(startPageNo);
 
 	return true;
 }

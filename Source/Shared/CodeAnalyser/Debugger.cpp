@@ -25,7 +25,7 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 
     if(CPUType == ECPUType::Z80)
         pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
-    if (CPUType == ECPUType::M6502)
+    else if (CPUType == ECPUType::M6502)
         pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 
     Watches.clear();
@@ -67,9 +67,9 @@ void FDebugger::CPUTick(uint64_t pins)
     else if (CPUType == ECPUType::M6502)
     {
 		addr = M6502_GET_ADDR(pins);
-		// TODO: bMemAccess
-		// TODO: bWrite
-		// TODO: bRead
+		bMemAccess = (pins & M6502_SYNC) == 0;
+		bRead = pins & M6502_RW;
+		bWrite = !bRead;
 		bNewOp =  pins & M6502_SYNC;
 		bIrq = risingPins & M6502_IRQ;
 		bNMI = risingPins & M6502_NMI;
@@ -249,11 +249,17 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	// update stack size
 	if (CPUType == ECPUType::Z80)
 	{
-		const uint16_t sp = pZ80->sp;	// this won't get the proper stack pos (see comment above function)
+		const uint16_t sp = pZ80->sp;
 		if (sp == StackMin - 2 || StackMin == 0xffff)
 			StackMin = sp;
 		if (sp == StackMax + 2 || StackMax == 0)
 			StackMax = sp;
+	}
+	else if (CPUType == ECPUType::M6502)
+	{
+		const uint16_t sp = pM6502->S + 0x100;
+		StackMin = std::min(sp, StackMin);
+		StackMax = std::max(sp, StackMax);
 	}
 	return trapId;
 }

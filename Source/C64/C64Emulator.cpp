@@ -146,7 +146,7 @@ bool FC64Emulator::Init()
 
     LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram, true);
     HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], true);
-    IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, nullptr, true);
+    IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, true);
 
     BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true); // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
     RAMBehindBasicROMId = CodeAnalysis.CreateBank("RAMBehindBasicROM", 8, &C64Emu.ram[0xa000], true);
@@ -154,102 +154,14 @@ bool FC64Emulator::Init()
     KernelROMId = CodeAnalysis.CreateBank("KernelROM", 8, C64Emu.rom_kernal, true);   // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
     RAMBehindKernelROMId = CodeAnalysis.CreateBank("RAMBehindKernelROM", 8, &C64Emu.ram[0xe000], true);
 
-    CharacterROMId = CodeAnalysis.CreateBank("CharacterROM", 4, C64Emu.rom_char, true);
+    CharacterROMId = CodeAnalysis.CreateBank("CharacterROM", 4, C64Emu.rom_char, true); // Char ROM - %D000 - $DFFF - page 52-55 - 4k
     RAMBehindCharROMId = CodeAnalysis.CreateBank("RAMBehindCharROM", 4, &C64Emu.ram[0xd000], true);
 
-    ColourRAMId = CodeAnalysis.CreateBank("ColourRAM", 1, C64Emu.color_ram, true);
+    //ColourRAMId = CodeAnalysis.CreateBank("ColourRAM", 1, C64Emu.color_ram, true);  // Colour RAM - $D800
 
-    // initial config
+    // map in permanent banks
     CodeAnalysis.MapBank(LowerRAMId, 0);        // RAM - $0000 - $9FFF - pages 0-39 - 40K
-    CodeAnalysis.MapBank(BasicROMId, 40);       // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
     CodeAnalysis.MapBank(HighRAMId, 48);        // RAM - $C000 - $CFFF - pages 48-51 - 4k
-    CodeAnalysis.MapBank(IOAreaId, 52);         // IO System - %D000 - $DFFF - page 52-55 - 4k
-    CodeAnalysis.MapBank(KernelROMId, 56);      // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
-
-    for (int pageNo = 0; pageNo < 64; pageNo++)
-    {
-        char pageName[16];
-        // Initialise RAM Pages
-
-        // FIXME: no parameterized constructor
-        RAM[pageNo].Initialise();
-        //RAM[pageNo].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
-
-        snprintf(pageName, sizeof(pageName), "RAM[%02X]", pageNo);
-
-        // FIXME:: RegisterPage is a private member
-        //CodeAnalysis.RegisterPage(&RAM[pageNo], pageName);
-
-        // Initialise Basic ROM
-        if (pageNo >= 40 && pageNo < 48)
-        {
-            const int pageIndex = pageNo - 40;
-            // FIXME: no parameterized constructor
-            BasicROM[pageIndex].Initialise();
-            //BasicROM[pageIndex].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
-
-            snprintf(pageName, sizeof(pageName), "BasicROM[%02X]", pageIndex);
-
-            // FIXME: FCodeAnalysisState::RegisterPage is a private member
-            //CodeAnalysis.RegisterPage(&BasicROM[pageIndex], pageName);
-        }
-
-        // Initialise IO System & character RAM
-        if (pageNo >= 52 && pageNo < 56)
-        {
-            const int pageIndex = pageNo - 52;
-            snprintf(pageName, sizeof(pageName), "IO[%02X]", pageIndex);
-            // FIXME: no parametrized constructor in FCodeAnalysisPage
-            IOSystem[pageIndex].Initialise();
-            //IOSystem[pageIndex].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
-
-            // FIXME: FCodeAnalysisState::RegisterPage is a private member
-            //CodeAnalysis.RegisterPage(&IOSystem[pageIndex], pageName);
-
-            snprintf(pageName, sizeof(pageName), "CharROM[%02X]", pageIndex);
-            // FIXME: no parametrized constructor in FCodeAnalysisPage
-            CharacterROM[pageIndex].Initialise();
-            //CharacterROM[pageIndex].Initialise(pageNo* FCodeAnalysisPage::kPageSize);
-            // FIXME: FCodeAnalysisState::RegisterPage is a private member
-            //CodeAnalysis.RegisterPage(&CharacterROM[pageIndex], pageName);
-        }
-
-        // Initialise Kernel ROM
-        if (pageNo >= 56)
-        {
-            const int pageIndex = pageNo - 56;
-            snprintf(pageName, sizeof(pageName), "Kernel[%02X]", pageIndex);
-
-            // FIXME: FCodeAnalysisState constructor has no parameters
-            KernelROM[pageIndex].Initialise();
-            //KernelROM[pageIndex].Initialise(pageNo * FCodeAnalysisPage::kPageSize);
-
-            // FIXME: FCodeAnalysisState::RegisterPage is a private member
-            //CodeAnalysis.RegisterPage(&KernelROM[pageIndex], pageName);
-        }
-    }
-
-    // Map permanent regions
-    for (int pageNo = 0; pageNo < 64; pageNo++)
-    {
-        // Map bottom 40K to RAM as it's always RAM
-        // FIXME: FCodeAnalysisState::SetCodeAnalysisRWPage and FCodeAnalysisState::SetCodeAnalysisWritePage are private members
-        /*
-        if (pageNo < 40)
-            CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
-        else if(pageNo > 47 && pageNo < 52)    // 0xc000 4k region
-            CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
-        else
-        {
-            if (pageNo < 52 || pageNo > 55)
-                CodeAnalysis.SetCodeAnalysisWritePage(pageNo, &RAM[pageNo]);
-        }
-        */
-    }
-
-    //TODO: CodeAnalysis.SetGlobalConfig();
-    CodeAnalysis.Config.bShowBanks = true;
-	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
     // TODO: Setup games list
 
@@ -257,14 +169,17 @@ bool FC64Emulator::Init()
 
     // TODO: setup memory analyser
 
-    SetupCodeAnalysisLabels();
-    UpdateCodeAnalysisPages(0x7);
     IOAnalysis.Init(&CodeAnalysis);
     GraphicsViewer.Init(&CodeAnalysis, &C64Emu);
 
+    // setup code analysis
     CodeAnalysis.Init(this);
-
-    GamesList.EnumerateGames();
+	CodeAnalysis.Config.bShowBanks = true;
+	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
+	SetupCodeAnalysisLabels();
+	UpdateCodeAnalysisPages(0x7);
+    
+    GamesList.EnumerateGames(pGlobalConfig->PrgFolder.c_str());
 
     return true;
 }
@@ -272,10 +187,11 @@ bool FC64Emulator::Init()
 void FC64Emulator::SetupCodeAnalysisLabels()
 {
     // Add IO Labels to code analysis
-    AddVICRegisterLabels(IOSystem[0]);  // Page $D000-$D3ff
-    AddSIDRegisterLabels(IOSystem[1]);  // Page $D400-$D7ff
-    IOSystem[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000);    // Colour RAM $D800
-    AddCIARegisterLabels(IOSystem[3]);  // Page $DC00-$Dfff
+    FCodeAnalysisBank* pIOBank = CodeAnalysis.GetBank(IOAreaId);
+    AddVICRegisterLabels(pIOBank->Pages[0]);  // Page $D000-$D3ff
+    AddSIDRegisterLabels(pIOBank->Pages[1]);  // Page $D400-$D7ff
+    pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000);    // Colour RAM $D800
+    AddCIARegisterLabels(pIOBank->Pages[3]);  // Page $DC00-$Dfff
 }
 
 void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
@@ -288,96 +204,61 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     /* shortcut if HIRAM and LORAM is 0, everything is RAM */
     if ((cpuPort & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == 0)
     {
-        //mem_map_ram(&sys->mem_cpu, 0, 0xA000, 0x6000, sys->ram + 0xA000);
-        for (int pageNo = 41; pageNo < 64; pageNo++)
-        {
-            // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
-            //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
-        }
+        // Map in all RAM
+		CodeAnalysis.MapBank(RAMBehindBasicROMId, 40);          // RAM Under BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
+		CodeAnalysis.MapBank(RAMBehindCharROMId, 52);           // RAM Under Char ROM - %D000 - $DFFF - page 52-55 - 4k
+		CodeAnalysis.MapBank(RAMBehindKernelROMId, 56);         // RAM Under Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
     }
     else
     {
         /* A000..BFFF is either RAM-behind-BASIC-ROM or RAM */
         if ((cpuPort & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM))
         {
+			CodeAnalysis.MapBank(BasicROMId, 40);       // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
             bBasicROMMapped = true;
-
-            // Map Basic ROM Code Analysis pages to  
-            for (int pageNo = 40; pageNo < 48; pageNo++)
-            {
-                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
-                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &BasicROM[pageNo - 40], &RAM[pageNo]);
-            }
         }
         else
         {
-            for (int pageNo = 40; pageNo < 48; pageNo++)
-            {
-                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
-                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
-            }
+			CodeAnalysis.MapBank(RAMBehindBasicROMId, 40);       // RAM Under BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
         }
-        //mem_map_rw(&sys->mem_cpu, 0, 0xA000, 0x2000, read_ptr, sys->ram + 0xA000);
 
         /* E000..FFFF is either RAM-behind-KERNAL-ROM or RAM */
         if (cpuPort & C64_CPUPORT_HIRAM)
         {
             bKernelROMMapped = true;
-            //read_ptr = sys->rom_kernal;
-            for (int pageNo = 56; pageNo < 64; pageNo++)
-            {
-                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
-                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &KernelROM[pageNo - 56], &RAM[pageNo]);
-            }
+			CodeAnalysis.MapBank(KernelROMId, 56);      // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
         }
         else
         {
-            //read_ptr = sys->ram + 0xE000;
-            for (int pageNo = 56; pageNo < 64; pageNo++)
-            {
-                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
-                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &RAM[pageNo], &RAM[pageNo]);
-            }
+			CodeAnalysis.MapBank(RAMBehindKernelROMId, 56);      // RAM Under Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
         }
-        //mem_map_rw(&sys->mem_cpu, 0, 0xE000, 0x2000, read_ptr, sys->ram + 0xE000);
 
         /* D000..DFFF can be Char-ROM or I/O */
         if (cpuPort & C64_CPUPORT_CHAREN)
         {
             bIOMapped = true;
-            //sys->io_mapped = true;
-            for (int pageNo = 52; pageNo < 56; pageNo++)
-            {
-                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
-                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &IOSystem[pageNo - 52], &IOSystem[pageNo - 52]);
-            }
-        }
+			CodeAnalysis.MapBank(IOAreaId, 52);         // IO System - %D000 - $DFFF - page 52-55 - 4k
+		}
         else
         {
             bCharacterROMMapped = true;
-
-            //mem_map_rw(&sys->mem_cpu, 0, 0xD000, 0x1000, sys->rom_char, sys->ram + 0xD000);
-            for (int pageNo = 52; pageNo < 56; pageNo++)
-            {
-                // FIXME: 'SetCodeAnalysisRWPage' is a private member of 'FCodeAnalysisState'
-                //CodeAnalysis.SetCodeAnalysisRWPage(pageNo, &CharacterROM[pageNo - 52], &RAM[pageNo]);
-            }
+			CodeAnalysis.MapBank(CharacterROMId, 52);       // Character ROM - %D000 - $DFFF - page 52-55 - 4k
         }
     }
-
-    // FIXME: invalid signature for method SetCodeAnalysisDirty
-    //CodeAnalysis.SetCodeAnalysisDirty();
 }
 
 bool FC64Emulator::LoadGame(const FGameInfo* pGameInfo)
 {
     size_t fileSize;
-    const std::string fileName = std::string("Games/") + pGameInfo->PRGFile;
-    void* pGameData = LoadBinaryFile(fileName.c_str(), fileSize);
+    void* pGameData = LoadBinaryFile(pGameInfo->PRGFile.c_str(), fileSize);
     if (pGameData)
     {
         // FIXME: invalid function signature
         //c64_quickload(&C64Emu, (uint8_t*)pGameData, fileSize);
+        chips_range_t data;
+        data.ptr = pGameData;
+        data.size = fileSize;
+        c64_quickload(&C64Emu, data);
         free(pGameData);
 
         ResetCodeAnalysis();
@@ -396,6 +277,7 @@ bool FC64Emulator::LoadGame(const FGameInfo* pGameInfo)
 
 void FC64Emulator::ResetCodeAnalysis(void)
 {
+#if 0
     // Reset RAM pages
     for (int pageNo = 0; pageNo < 64; pageNo++)
         RAM[pageNo].Reset();
@@ -411,7 +293,7 @@ void FC64Emulator::ResetCodeAnalysis(void)
     // Reset Kernel ROM
     for (int pageNo = 0; pageNo < 8; pageNo++)
         KernelROM[pageNo].Reset();
-
+#endif
     // Reset other analysers
     InterruptHandlers.clear();
     IOAnalysis.Reset();
@@ -487,6 +369,8 @@ bool FC64Emulator::LoadCodeAnalysis(const FGameInfo* pGameInfo)
 
 void FC64Emulator::Shutdown()
 {
+	pGlobalConfig->Save(kGlobalConfigFilename);
+
     if (CurrentGame != nullptr)
         SaveCodeAnalysis(CurrentGame);
 
@@ -843,7 +727,6 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
     {
         if (pins & M6502_RW)
         {
-
             if (state.bRegisterDataAccesses)
                 RegisterDataRead(CodeAnalysis, pc, addr);
 
@@ -868,6 +751,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
             if (bIOMapped && (addr >> 12) == 0xd)
             {
                 IOAnalysis.RegisterIOWrite(addr, val, pc);
+				IOMemBuffer[addr & 0xfff] = val;
             }
 
             FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);
@@ -892,7 +776,5 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 
 	CodeAnalysis.OnCPUTick(pins);
 
-    // FIXME: no such method
-    //return OldTickCB(pins, &C64Emu);
-    return 0;
+    return pins;
 }

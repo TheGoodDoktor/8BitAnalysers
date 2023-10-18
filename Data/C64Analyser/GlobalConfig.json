@@ -1,0 +1,15 @@
+{
+    "BranchLinesDisplayMode": 1,
+    "DisksFolder": "./Disks/",
+    "EnableAudio": false,
+    "Font": "Cousine-Regular",
+    "FontSizePixels": 20,
+    "LastGame": "",
+    "NumberMode": 2,
+    "PrgFolder": "E:/dev/Retro/C64/Games/Prg",
+    "ShowOpcodeValues": false,
+    "ShowScanlineIndicator": false,
+    "SnapshotFolder": "./Games/",
+    "TapesFolder": "./Tapes/",
+    "WorkspaceRoot": "./"
+}

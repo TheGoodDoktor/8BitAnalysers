@@ -132,12 +132,7 @@ private:
 
 	FCodeAnalysisState  CodeAnalysis;
 
-	// Analysis pages
-	FCodeAnalysisPage   KernelROM[8];       // 8K Kernel ROM
-	FCodeAnalysisPage   BasicROM[8];        // 8K Basic ROM
-	FCodeAnalysisPage   CharacterROM[4];    // 4K Character ROM
-	FCodeAnalysisPage   IOSystem[4];        // 4K IO System
-	FCodeAnalysisPage   RAM[64];            // 64K RAM
+	uint8_t				IOMemBuffer[0x1000];	// Buffer for IO memory
 
 	uint8_t             LastMemPort = 0x7;  // Default startup
 	uint16_t            PreviousPC = 0;
@@ -162,5 +157,4 @@ private:
 	uint16_t            RAMBehindKernelROMId = -1;
 	uint16_t            CharacterROMId = -1;
 	uint16_t            RAMBehindCharROMId = -1;
-	uint16_t            ColourRAMId = -1;
 };
