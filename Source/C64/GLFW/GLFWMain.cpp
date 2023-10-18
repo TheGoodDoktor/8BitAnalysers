@@ -21,28 +21,9 @@
 #endif
 
 #include "../C64Chips.h"
-#include "../C64Emulator.h"
-#include "../C64Config.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
-#include <ImGuiSupport/ImGuiScaling.h>
-
-#define SOKOL_IMPL
-#include "sokol_audio.h"
-#include "Debug/DebugLog.h"
-#include <stdexcept>
-
-void WindowFocusCallback(GLFWwindow* window, int focused);
-
-struct FAppState
-{
-	GLFWwindow* MainWindow = nullptr;
-	FC64Emulator* pC64Emu = nullptr;
-};
-
-// Globals
-FAppState   g_AppState;
+//#define SOKOL_IMPL
+//#include "sokol_audio.h"
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -51,8 +32,6 @@ static void glfw_error_callback(int error, const char* description)
 
 int main(int argc, char** argv)
 {
-	FAppState& appState = g_AppState;
-
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -82,19 +61,17 @@ int main(int argc, char** argv)
 #endif
 
     // Create window with graphics context
-	appState.MainWindow = glfwCreateWindow(1280, 720, "C64 Analyser", NULL, NULL);
-	if (appState.MainWindow == NULL)
-		return 1;
-	glfwMakeContextCurrent(appState.MainWindow);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "C64 Analyser", NULL, NULL);
+    if (window == NULL)
+        return 1;
+    glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
-	glfwSetWindowFocusCallback(appState.MainWindow, WindowFocusCallback);
-
     // Setup audio
-    saudio_desc audioDesc = {};
-    memset(&audioDesc, 0, sizeof(saudio_desc));
-    saudio_setup(&audioDesc);
-    assert(saudio_isvalid() == true);
+    //saudio_desc audioDesc = {};
+    //memset(&audioDesc, 0, sizeof(saudio_desc));
+    //saudio_setup(&audioDesc);
+    //assert(saudio_isvalid() == true);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -121,7 +98,7 @@ int main(int argc, char** argv)
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(appState.MainWindow, true);
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Load Fonts
@@ -136,7 +113,7 @@ int main(int argc, char** argv)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("./Fonts/Cousine-Regular.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    ImFont* font = io.Fonts->AddFontFromFileTTF("./Fonts/Cousine-Regular.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
     // Our state
@@ -144,23 +121,10 @@ int main(int argc, char** argv)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    FC64Emulator* pC64Emulator = new FC64Emulator;
-    pC64Emulator->Init();
-
-	g_AppState.pC64Emu = pC64Emulator;
-
-	const FGlobalConfig* pGlobalConfig = pC64Emulator->GetGlobalConfig();
-	if (!pGlobalConfig->Font.empty())
-	{
-		std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
-		if (!io.Fonts->AddFontFromFileTTF(fontPath.c_str(), (float)pGlobalConfig->FontSizePixels))
-		{
-			LOGWARNING("Could not load font '%s'", fontPath.c_str());
-		}
-	}
+    C64ChipsInit();
 
     // Main loop
-    while (!glfwWindowShouldClose(appState.MainWindow))
+    while (!glfwWindowShouldClose(window))
     {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -174,7 +138,7 @@ int main(int argc, char** argv)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        pC64Emulator->Tick();
+        C64ChipsTick();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         //if (pSpectrumEmulator->bShowImGuiDemo)
@@ -186,7 +150,7 @@ int main(int argc, char** argv)
         // Rendering
         ImGui::Render();
         int display_w, display_h;
-        glfwGetFramebufferSize(appState.MainWindow, &display_w, &display_h);
+        glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -203,10 +167,10 @@ int main(int argc, char** argv)
             glfwMakeContextCurrent(backup_current_context);
         }
 
-        glfwSwapBuffers(appState.MainWindow);
+        glfwSwapBuffers(window);
     }
 
-    pC64Emulator->Shutdown();
+    C64ChipsShutdown();
 
     //saudio_shutdown();
 
@@ -216,38 +180,8 @@ int main(int argc, char** argv)
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
-    glfwDestroyWindow(appState.MainWindow);
+    glfwDestroyWindow(window);
     glfwTerminate();
 
     return 0;
-}
-
-void SetWindowTitle(const char* pTitle)
-{
-	glfwSetWindowTitle(g_AppState.MainWindow, pTitle);
-}
-
-void SetWindowIcon(const char* pIconFile)
-{
-	GLFWimage images[1];
-	unsigned char* iconPixels = stbi_load(pIconFile, &images[0].width, &images[0].height, 0, 4);
-	if (iconPixels)
-	{
-		images[0].pixels = iconPixels;
-		//rgba channels
-		glfwSetWindowIcon(g_AppState.MainWindow, 1, images);
-		stbi_image_free(images[0].pixels);
-	}
-	else
-	{
-		throw std::logic_error("Logo file is missing");
-	}
-}
-
-void WindowFocusCallback(GLFWwindow* window, int focused)
-{
-	if (g_AppState.pC64Emu)
-	{
-		//TODO: g_AppState.pC64Emu->AppFocusCallback(focused);
-	}
 }

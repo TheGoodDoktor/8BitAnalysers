@@ -12,7 +12,6 @@ class FC64Display
 {
 public:
 	void	Init(FCodeAnalysisState* pAnalysis, FC64Emulator* pC64Emu);
-	void	Tick();
 	void	DrawUI();
 	//size_t          GetPixelBufferSize() const { return FramePixelBufferSize; }
 	//unsigned char*	GetPixelBuffer() { return FramePixelBuffer; }
@@ -36,7 +35,6 @@ private:
 	uint32_t* FrameBuffer;	// pixel buffer to store emu output
 	ImTextureID		ScreenTexture;		// texture 
 
-	bool			bWindowFocused = false;
 	//size_t          FramePixelBufferSize = 0;
 	//unsigned char*	FramePixelBuffer = nullptr;
 	//void*			FrameBufferTexture = nullptr;
