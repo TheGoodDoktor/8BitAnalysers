@@ -117,6 +117,7 @@ public:
 	uint64_t    OnCPUTick(uint64_t pins);
 
 	c64_t*	GetEmu() {return &C64Emu;}
+	const FC64Config*	GetGlobalConfig() { return pGlobalConfig;}
 private:
 	c64_t       C64Emu;
 	ui_c64_t    C64UI;

@@ -52,25 +52,6 @@ uint64_t CPUTickCallback(uint64_t pins, void* user_data)
 
 
 
-
-
-
-void C64ChipsInit()
-{
-    g_C64Emu.Init();
-}
-
-/* per frame stuff, tick the emulator, handle input, decode and draw emulator display */
-void C64ChipsTick(void) 
-{
-    g_C64Emu.Tick();
-}
-
-/* application cleanup callback */
-void C64ChipsShutdown(void) 
-{
-    g_C64Emu.Shutdown();
-}
 #if 0
 /* keyboard input handling */
 void app_input(const sapp_event* event) 
