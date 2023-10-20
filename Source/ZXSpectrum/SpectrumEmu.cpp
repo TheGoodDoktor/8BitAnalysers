@@ -2133,7 +2133,7 @@ void FSpectrumConfig::ParseCommandline(int argc, char** argv)
 				LOGERROR("-game : No game specified");
 				break;
 			}
-			SpecificGame = *++argIt;
+			SpecificGame = *argIt;
 		}
 		else if (*argIt == std::string("-skoolfile"))
 		{
@@ -2142,7 +2142,7 @@ void FSpectrumConfig::ParseCommandline(int argc, char** argv)
 				LOGERROR("-skoolfile : No skoolkit file specified");
 				break;
 			}
-			SkoolkitImport = *++argIt;
+			SkoolkitImport = *argIt;
 		}
 
 		++argIt;
