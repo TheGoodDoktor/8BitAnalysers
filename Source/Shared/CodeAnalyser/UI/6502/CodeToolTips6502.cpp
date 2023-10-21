@@ -4,19 +4,13 @@
 
 #include <imgui.h>
 
+// Descriptions got from
+// https://www.masswerk.at/6502/6502_instruction_set.html
+
 struct FInstrInfo
 {
 	std::string		Desc;
 };
-
-/*
-		PHP	PLP	PHA	PLA	DEY	TAY	INY	INX
-		08	28	48	68	88	A8	C8	E8
-		CLC	SEC	CLI	SEI	TYA	CLV	CLD	SED
-		18	38	58	78	98	B8	D8	F8
-		TXA	TXS	TAX	TSX	DEX	NOP
-		8A	9A	AA	BA	CA	EA
-*/
 
 std::unordered_map<uint8_t, FInstrInfo> g_SingleByteInstructions = 
 {
@@ -70,72 +64,99 @@ bool OutputTooltipBranchInstruction(FCodeAnalysisState& state, uint16_t addr, co
 	return true;
 }
 
+enum class EAddressMode
+{
+	Accumulator,
+	Immediate,
+	Absolute,
+	AbsoluteIndexed,
+	Indirect,
+	ZeroPage,
+	ZeroPageIndexed,			// zp,X
+	ZeroPageIndexedIndirect,	// (zp,X)
+	ZeroPageIndirectIndexed,	// (zp),X
+};
+
+std::string GenerateAddressModeDescription(FCodeAnalysisState& state, uint16_t addr, EAddressMode addressMode)
+{
+	std::string desc;
+
+	return desc;
+}
+
 void OutputTooltipGroupOne(FCodeAnalysisState& state, uint16_t addr, const uint8_t opcode)
 {
 	const uint8_t addressMode = (opcode >> 2) & 7;
 	const uint8_t instruction = (opcode >> 5) & 7;
 
-	switch (instruction)
-	{
-	case 0b000:	//	ORA
-		ImGui::Text("OR A");
-		break;
-	case 0b001:	//	AND
-		ImGui::Text("AND A");
-		break;
-	case 0b010:	//	EOR
-		ImGui::Text("EOR A");
-		break;
-	case 0b011:	//	ADC
-		ImGui::Text("Add A with carry");
-		break;
-	case 0b100:	//	STA
-		ImGui::Text("Store A");
-		break;
-	case 0b101:	//	LDA
-		ImGui::Text("Load A");
-		break;
-	case 0b110:	//	CMP
-		ImGui::Text("Compare A");
-		break;
-	case 0b111:	//	SBC
-		ImGui::Text("Subtract A with carry");
-		break;
-	}
+	char addressModeDesc[64];
 
 	switch (addressMode)
 	{
 		case 0b000: // (zero page, X)
+			snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of (zero page %s + X)", NumStr(state.ReadByte(addr + 1)));
 			break;
 		case 0b001: // zero page
-		{
-			const uint8_t zeroPage = state.ReadByte(addr + 1);
-
-			ImGui::Text("with zero page entry %s",NumStr(zeroPage));
-		}
+			snprintf(addressModeDesc, sizeof(addressModeDesc), "zero page %s", NumStr(state.ReadByte(addr + 1)));
 		break;
 		case 0b010: // #immediate
-		{
-			const uint8_t intermediate = state.ReadByte(addr + 1);
-
-			ImGui::Text("with %s", NumStr(intermediate));
-		}
+			snprintf(addressModeDesc, sizeof(addressModeDesc), "%s", NumStr(state.ReadByte(addr + 1)));
 		break;
 		case 0b011: // absolute
-		{
-
-		}
+			snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of %s", NumStr(state.ReadWord(addr + 1)));
 		break;
 
 		case 0b100: // (zero page), Y
+			snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of (zero page %s) + Y", NumStr(state.ReadByte(addr + 1)));
 			break;
 		case 0b101: // zero page, X
+			snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of zero page %s + X", NumStr(state.ReadByte(addr + 1)));
 			break;
 		case 0b110: // absolute, Y
+			snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of %s + Y", NumStr(state.ReadWord(addr + 1)));
 			break;
 		case 0b111: // absolute, X
+			snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of %s + X", NumStr(state.ReadWord(addr + 1)));
 			break;
 	}
+
+	switch (instruction)
+	{
+	case 0b000:	//	ORA
+		ImGui::Text("OR A with %s", addressModeDesc);
+		ImGui::Text("");
+		break;
+	case 0b001:	//	AND
+		ImGui::Text("AND A with %s", addressModeDesc);
+		ImGui::Text("A AND M -> A");
+		break;
+	case 0b010:	//	EOR
+		ImGui::Text("EOR A with %s", addressModeDesc);
+		ImGui::Text("A EOR M -> A");
+		break;
+	case 0b011:	//	ADC
+		ImGui::Text("Add A with carry to %s", addressModeDesc);
+		ImGui::Text("A + M + C -> A, C");
+		break;
+	case 0b100:	//	STA
+		ImGui::Text("Store A to %s", addressModeDesc);
+		ImGui::Text("");
+		break;
+	case 0b101:	//	LDA
+		ImGui::Text("Load A with %s", addressModeDesc);
+		ImGui::Text("M -> A");
+		break;
+	case 0b110:	//	CMP
+		ImGui::Text("Compare A to %s", addressModeDesc);
+		ImGui::Text("A - M");
+		break;
+	case 0b111:	//	SBC
+		ImGui::Text("Subtract A with carry to %s", addressModeDesc);
+		ImGui::Text("");
+		break;
+	}
+
+	
 }
 
 void OutputTooltipGroupTwo(FCodeAnalysisState& state, uint16_t addr, const uint8_t opcode)
@@ -151,19 +172,19 @@ void OutputTooltipGroupTwo(FCodeAnalysisState& state, uint16_t addr, const uint8
 		snprintf(addressModeDesc, sizeof(addressModeDesc), "%s", NumStr(state.ReadByte(addr + 1)));
 		break;
 	case 0b001://	zero page
-		snprintf(addressModeDesc, sizeof(addressModeDesc), "zero page %s",NumStr(state.ReadByte(addr + 1)));
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of zero page %s",NumStr(state.ReadByte(addr + 1)));
 		break;
 	case 0b010://	accumulator
 		snprintf(addressModeDesc,sizeof(addressModeDesc), "A");
 		break;
 	case 0b011://	absolute
-		snprintf(addressModeDesc, sizeof(addressModeDesc), "%s", NumStr(state.ReadWord(addr + 1)));
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of %s", NumStr(state.ReadWord(addr + 1)));
 		break;
 	case 0b101://	zero page, X
-		snprintf(addressModeDesc, sizeof(addressModeDesc), "zero page %s, x", NumStr(state.ReadByte(addr + 1)));
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of zero page %s + x", NumStr(state.ReadByte(addr + 1)));
 		break;
 	case 0b111://	absolute, X
-		snprintf(addressModeDesc, sizeof(addressModeDesc), "%s, x", NumStr(state.ReadWord(addr + 1)));
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of %s + x", NumStr(state.ReadWord(addr + 1)));
 		break;
 	}
 
@@ -171,27 +192,35 @@ void OutputTooltipGroupTwo(FCodeAnalysisState& state, uint16_t addr, const uint8
 	{
 		case 0b000://	ASL
 			ImGui::Text("Arithmetic shift left %s", addressModeDesc);
+			ImGui::Text("C <- [76543210] <- 0");
 			break;
 		case 0b001://	ROL
 			ImGui::Text("Bit rotate left %s", addressModeDesc);
+			ImGui::Text("");
 			break;
 		case 0b010://	LSR
 			ImGui::Text("Logical shift right %s", addressModeDesc);
+			ImGui::Text("");
 			break;
 		case 0b011://	ROR
 			ImGui::Text("Bit rotate right %s", addressModeDesc);
+			ImGui::Text("");
 			break;
 		case 0b100://	STX
 			ImGui::Text("Store X to %s", addressModeDesc);
+			ImGui::Text("X -> M");
 			break;
 		case 0b101://	LDX
 			ImGui::Text("Load X with %s", addressModeDesc);
+			ImGui::Text("M -> X");
 			break;
 		case 0b110://	DEC
-			ImGui::Text("Decrement %s", addressModeDesc);
+			ImGui::Text("Decrement memory at %s", addressModeDesc);
+			ImGui::Text("M - 1 -> M");
 			break;
 		case 0b111://	INC
-			ImGui::Text("Increment %s", addressModeDesc);
+			ImGui::Text("Increment memory at %s", addressModeDesc);
+			ImGui::Text("M + 1 -> M");
 			break;
 	}
 
@@ -202,48 +231,62 @@ void OutputTooltipGroupThree(FCodeAnalysisState& state, uint16_t addr, const uin
 {
 	const uint8_t addressMode = (opcode >> 2) & 7;
 	const uint8_t instruction = (opcode >> 5) & 7;
+	char addressModeDesc[64];
 
+	//The addressing modes are the same as the 10 case, except that accumulator mode is missing.
+	switch (addressMode)
+	{
+	case 0b000://	#immediate
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "%s", NumStr(state.ReadByte(addr + 1)));
+		break;
+	case 0b001://	zero page
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of zero page %s", NumStr(state.ReadByte(addr + 1)));
+		break;
+	case 0b010://	accumulator
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "A");
+		break;
+	case 0b011://	absolute
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of %s", NumStr(state.ReadWord(addr + 1)));
+		break;
+	case 0b101://	zero page, X
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of zero page %s + x", NumStr(state.ReadByte(addr + 1)));
+		break;
+	case 0b111://	absolute, X
+		snprintf(addressModeDesc, sizeof(addressModeDesc), "contents of %s + x", NumStr(state.ReadWord(addr + 1)));
+		break;
+	}
 	switch (instruction)
 	{
 		case 0b001://	BIT
-			ImGui::Text("Test bit");
+			ImGui::Text("Test bits with %s", addressModeDesc);
+			ImGui::Text("A AND M, M7 -> N, M6 -> V");
 			break;
 		case 0b010://	JMP
-			ImGui::Text("Jump");
+			ImGui::Text("Jump to %s", addressModeDesc);
+			ImGui::Text("(PC+1) -> PCL,	(PC + 2)->PCH");
 			break;
 		case 0b011://	JMP(abs)
-			ImGui::Text("Jump");
+			ImGui::Text("Jump to (%s)", NumStr(state.ReadWord(addr + 1)));
+			ImGui::Text("");
 			break;
 		case 0b100://	STY
-			ImGui::Text("Store Y");
+			ImGui::Text("Store Y in %s", addressModeDesc);
+			ImGui::Text("");
 			break;
 		case 0b101://	LDY
-			ImGui::Text("Load Y");
+			ImGui::Text("Load Y with %s", addressModeDesc);
+			ImGui::Text("");
 			break;
 		case 0b110://	CPY
-			ImGui::Text("Compare Y");
+			ImGui::Text("Compare Y to %s", addressModeDesc);
+			ImGui::Text("Y - M");
 			break;
 		case 0b111://	CPX
-			ImGui::Text("Compare X");
-
+			ImGui::Text("Compare X to %s", addressModeDesc);
+			ImGui::Text("X - M");
 			break;
 	}
 		
-	//The addressing modes are the same as the 10 case, except that accumulator mode is missing.
-
-	switch (addressMode)
-	{
-		case 0b000://	#immediate
-			break;
-		case 0b001://	zero page
-			break;
-		case 0b011://	absolute
-			break;
-		case 0b101://	zero page, X
-			break;
-		case 0b111://	absolute, X
-			break;
-	}
 }
 
 void OutputInstructionTooltip(FCodeAnalysisState& state, uint16_t addr)
