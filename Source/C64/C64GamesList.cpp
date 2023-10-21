@@ -27,6 +27,17 @@ bool FC64GamesList::EnumerateGames(const char *pDirectory)
 
 }
 
+const FGameInfo* FC64GamesList::GetGameInfo(const char* pName)
+{
+    for (int gameNo = 0; gameNo < (int)GamesList.size(); gameNo++)
+    {
+        if(GamesList[gameNo].Name == pName)
+            return &GamesList[gameNo];
+    }
+
+    return nullptr;
+}
+
 
 int		FC64GamesList::DrawGameSelect()
 {
