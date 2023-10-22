@@ -1,6 +1,7 @@
 #include "CIAAnalysis.h"
 #include <vector>
 #include <imgui.h>
+#include <CodeAnalyser/CodeAnalyser.h>
 #include <CodeAnalyser/CodeAnalysisPage.h>
 
 static std::vector<FRegDisplayConfig>	g_CIA1RegDrawInfo =
@@ -45,18 +46,20 @@ static std::vector<FRegDisplayConfig>	g_CIA2RegDrawInfo =
 
 FCIA1Analysis::FCIA1Analysis()
 {
+	Name = "CIA1";
 	RegConfig = &g_CIA1RegDrawInfo;
 }
 
 FCIA2Analysis::FCIA2Analysis()
 {
+	Name = "CIA2";
 	RegConfig = &g_CIA2RegDrawInfo;
-
 }
 
 void	FCIAAnalysis::Init(FCodeAnalysisState* pAnalysis)
 {
-	pCodeAnalysis = pAnalysis;
+	SetAnalyser(pAnalysis);
+	pAnalysis->IOAnalyser.AddDevice(this);
 }
 
 void FCIAAnalysis::Reset(void)
@@ -65,11 +68,11 @@ void FCIAAnalysis::Reset(void)
 		CIARegisters[i].Reset();
 }
 
-void	FCIAAnalysis::OnRegisterRead(uint8_t reg, uint16_t pc)
+void	FCIAAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
 {
 
 }
-void	FCIAAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
+void	FCIAAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 {
 	FC64IORegisterInfo& ciaRegister = CIARegisters[reg];
 	const uint8_t regChange = ciaRegister.LastVal ^ val;	// which bits have changed
@@ -79,7 +82,7 @@ void	FCIAAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
 	ciaRegister.LastVal = val;
 }
 
-void	FCIAAnalysis::DrawUI(void)
+void	FCIAAnalysis::DrawDetailsUI(void)
 {
 	if (ImGui::BeginChild("CIA Reg Select", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
 	{
@@ -91,7 +94,7 @@ void	FCIAAnalysis::DrawUI(void)
 	{
 		if (SelectedRegister != -1)
 		{
-			DrawRegDetails(CIARegisters[SelectedRegister], RegConfig->at(SelectedRegister), pCodeAnalysis);
+			DrawRegDetails(CIARegisters[SelectedRegister], RegConfig->at(SelectedRegister), pCodeAnalyser);
 		}
 	}
 	ImGui::EndChild();

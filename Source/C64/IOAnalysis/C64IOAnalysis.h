@@ -15,8 +15,8 @@ class FC64IOAnalysis
 public:
 	void	Init(FCodeAnalysisState *pAnalysis);
 	void	Reset();
-	void	RegisterIORead(uint16_t addr, uint16_t pc);
-	void	RegisterIOWrite(uint16_t addr, uint8_t val, uint16_t pc);
+	void	RegisterIORead(uint16_t addr, FAddressRef pc);
+	void	RegisterIOWrite(uint16_t addr, uint8_t val, FAddressRef pc);
 
 	void	DrawIOAnalysisUI(void);
 private:
@@ -25,6 +25,4 @@ private:
 	FSIDAnalysis	SIDAnalysis;
 	FCIA1Analysis	CIA1Analysis;
 	FCIA2Analysis	CIA2Analysis;
-	
-	FCodeAnalysisState* pCodeAnalysis = nullptr;
 };

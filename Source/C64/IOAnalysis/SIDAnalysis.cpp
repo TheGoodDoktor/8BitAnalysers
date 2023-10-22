@@ -1,8 +1,10 @@
 #include "SIDAnalysis.h"
-
+#include "CodeAnalyser/CodeAnalyser.h"
 void	FSIDAnalysis::Init(FCodeAnalysisState* pAnalysis)
 {
-	pCodeAnalysis = pAnalysis;
+	Name = "SID";
+	SetAnalyser(pAnalysis);
+	pAnalysis->IOAnalyser.AddDevice(this);
 }
 
 void FSIDAnalysis::Reset(void)
@@ -11,11 +13,11 @@ void FSIDAnalysis::Reset(void)
 		SIDRegisters[i].Reset();
 }
 
-void	FSIDAnalysis::OnRegisterRead(uint8_t reg, uint16_t pc)
+void	FSIDAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
 {
 
 }
-void	FSIDAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
+void	FSIDAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 {
 	FC64IORegisterInfo& sidRegister = SIDRegisters[reg];
 	const uint8_t regChange = sidRegister.LastVal ^ val;	// which bits have changed
@@ -69,7 +71,7 @@ static std::vector<FRegDisplayConfig>	g_SIDRegDrawInfo =
 };
 
 
-void	FSIDAnalysis::DrawUI(void)
+void	FSIDAnalysis::DrawDetailsUI(void)
 {
 	if (ImGui::BeginChild("VIC Reg Select", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
 	{
@@ -81,7 +83,7 @@ void	FSIDAnalysis::DrawUI(void)
 	{
 		if (SelectedRegister != -1)
 		{
-			DrawRegDetails(SIDRegisters[SelectedRegister], g_SIDRegDrawInfo[SelectedRegister], pCodeAnalysis);
+			DrawRegDetails(SIDRegisters[SelectedRegister], g_SIDRegDrawInfo[SelectedRegister], pCodeAnalyser);
 		}
 	}
 	ImGui::EndChild();

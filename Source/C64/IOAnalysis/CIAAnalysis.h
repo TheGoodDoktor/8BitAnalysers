@@ -1,28 +1,27 @@
 #pragma once
 
+#include "CodeAnalyser/IOAnalyser.h"
 #include "IORegisterAnalysis.h"
 #include <vector>
 
 class FCodeAnalysisState;
 struct FCodeAnalysisPage;
 
-class FCIAAnalysis
+class FCIAAnalysis : public FIODevice
 {
 public:
 	void	Init(FCodeAnalysisState* pAnalysis);
 	void	Reset();
-	void	OnRegisterRead(uint8_t reg, uint16_t pc);
-	void	OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc);
+	void	OnRegisterRead(uint8_t reg, FAddressRef pc);
+	void	OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc);
 
-	void	DrawUI(void);
+	void	DrawDetailsUI(void);
 
 private:
 	static const int kNoRegisters = 16;
 	FC64IORegisterInfo	CIARegisters[kNoRegisters];
 
 	int		SelectedRegister = -1;
-
-	FCodeAnalysisState* pCodeAnalysis = nullptr;
 protected:
 	std::vector<FRegDisplayConfig>* RegConfig = nullptr;
 };

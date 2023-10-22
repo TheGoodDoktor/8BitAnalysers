@@ -176,15 +176,18 @@ bool FC64Emulator::Init()
     CodeAnalysis.MapBank(LowerRAMId, 0);        // RAM - $0000 - $9FFF - pages 0-39 - 40K
     CodeAnalysis.MapBank(HighRAMId, 48);        // RAM - $C000 - $CFFF - pages 48-51 - 4k
 
+    
+    
+
     // TODO: Setup games list
 
     // TODO: Setup debugger
 
     // TODO: setup memory analyser
+    
 
-    IOAnalysis.Init(&CodeAnalysis);
-    GraphicsViewer.Init(&CodeAnalysis, &C64Emu);
 
+    
     // setup code analysis
     CodeAnalysis.Init(this);
 	CodeAnalysis.Config.bShowBanks = true;
@@ -192,11 +195,16 @@ bool FC64Emulator::Init()
 	SetupCodeAnalysisLabels();
 	UpdateCodeAnalysisPages(0x7);
     
+    IOAnalysis.Init(&CodeAnalysis);
+    GraphicsViewer.Init(&CodeAnalysis, &C64Emu);
+
     GamesList.EnumerateGames(pGlobalConfig->PrgFolder.c_str());
+
+    bool bLoadedGame = false;
 
     if (pGlobalConfig->LastGame.empty() == false)
     {
-        StartGame(pGlobalConfig->LastGame.c_str());
+        bLoadedGame = StartGame(pGlobalConfig->LastGame.c_str());
     }
 
 
@@ -266,16 +274,20 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     }
 }
 
-void FC64Emulator::StartGame(const char* pGameName)
+bool FC64Emulator::StartGame(const char* pGameName)
 {
     FC64GameConfig* pZXGameConfig = (FC64GameConfig*)GetGameConfigForName(pGameName);
     if(pZXGameConfig)
-        StartGame(pZXGameConfig);
+    {
+        return StartGame(pZXGameConfig);
+    }
+
+    return false;
 }
 
 void SetWindowTitle(const char* pTitle);
 
-void FC64Emulator::StartGame(FC64GameConfig* pGameConfig)
+bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig)
 {
     bool bLoadGameData = true;
     const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
@@ -353,6 +365,8 @@ void FC64Emulator::StartGame(FC64GameConfig* pGameConfig)
     }
 
     //GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+
+    return true;
 }
 
 bool FC64Emulator::NewGameFromSnapshot(const FGameInfo* pGameInfo)
@@ -643,11 +657,11 @@ void FC64Emulator::DrawUI()
 
 	}
 
-    if (ImGui::Begin("IO Analysis"))
+    /*if (ImGui::Begin("IO Analysis"))
     {
         IOAnalysis.DrawIOAnalysisUI();
     }
-    ImGui::End();
+    ImGui::End();*/
 
     if (ImGui::Begin("Graphics Viewer"))
     {
@@ -856,7 +870,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 
             if (bIOMapped && (addr >> 12) == 0xd)
             {
-                IOAnalysis.RegisterIORead(addr, pc);
+                IOAnalysis.RegisterIORead(addr, GetPC());
             }
         }
         else
@@ -872,7 +886,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 
             if (bIOMapped && (addr >> 12) == 0xd)
             {
-                IOAnalysis.RegisterIOWrite(addr, val, pc);
+                IOAnalysis.RegisterIOWrite(addr, val, GetPC());
 				IOMemBuffer[addr & 0xfff] = val;
             }
 

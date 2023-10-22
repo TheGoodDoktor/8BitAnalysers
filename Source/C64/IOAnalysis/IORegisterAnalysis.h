@@ -1,21 +1,23 @@
 #pragma once
 
+#include "CodeAnalyser/CodeAnalyserTypes.h"
+
 #include <cstdint>
-#include <map>
-#include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class FCodeAnalysisState;
 
 struct FC64IORegisterAccessInfo
 {
-	std::set<uint8_t>	WriteVals;
+	std::unordered_set<uint8_t>	WriteVals;
 };
 
 struct FC64IORegisterInfo
 {
 	void Reset() { Accesses.clear(); LastVal = 0; }
-	std::map<uint32_t, FC64IORegisterAccessInfo>	Accesses;
+	std::unordered_map<FAddressRef, FC64IORegisterAccessInfo>	Accesses;
 	uint8_t			LastVal = 0;
 };
 
