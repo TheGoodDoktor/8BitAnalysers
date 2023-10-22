@@ -38,7 +38,7 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 		SnapshotFolder += "/";
 }
 
-void FGlobalConfig::WriteToJson(json& jsonConfigFile)
+void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 {
 	jsonConfigFile["EnableAudio"] = bEnableAudio;
 	jsonConfigFile["ShowScanlineIndicator"] = bShowScanLineIndicator;

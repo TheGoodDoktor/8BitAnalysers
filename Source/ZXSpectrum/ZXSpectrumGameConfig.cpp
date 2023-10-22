@@ -185,7 +185,7 @@ bool LoadZXSpectrumGameConfigs(FSpectrumEmu* pEmu)
 		if ((fn.substr(fn.find_last_of(".") + 1) == "json"))
 		{
 			FZXSpectrumGameConfig* pNewConfig = new FZXSpectrumGameConfig;
-			if (LoadGameConfigFromFile(pEmu->CodeAnalysis, *pNewConfig, fn.c_str()))
+			if (LoadGameConfigFromFile(*pNewConfig, fn.c_str()))
 			{
 				if (pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
 					AddGameConfig(pNewConfig);

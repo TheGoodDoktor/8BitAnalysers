@@ -46,6 +46,25 @@ const std::vector< FGameConfig *>& GetGameConfigs()
 	return g_GameConfigs;
 }
 
+FGameConfig* GetGameConfigForName(const char* pGameName)
+{
+	for (const auto& pGameConfig : g_GameConfigs)
+	{
+		if (pGameConfig->Name == pGameName)
+			return pGameConfig;
+	}
+	return nullptr;
+}
+
+FGameConfig* GetGameConfigForSnapshot(const char* pSnapshotName)
+{
+	for (const auto& pGameConfig : g_GameConfigs)
+	{
+		if (pGameConfig->SnapshotFile == pSnapshotName)
+			return pGameConfig;
+	}
+	return nullptr;
+}
 
 
 bool SaveGameConfigToFile(const FGameConfig &config, const char *fname) 
@@ -67,6 +86,7 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 void FGameConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 {
 	jsonConfigFile["Name"] = Name;
+	jsonConfigFile["Machine"] = Machine;
 	jsonConfigFile["SnapshotFile"] = SnapshotFile;
 
 	// save character sets
@@ -97,7 +117,7 @@ void FGameConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 	
 
 
-bool LoadGameConfigFromFile(const FCodeAnalysisState& state, FGameConfig &config, const char *fname)
+bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 {
 	std::ifstream inFileStream(fname);
 	if (inFileStream.is_open() == false)
@@ -114,6 +134,9 @@ bool LoadGameConfigFromFile(const FCodeAnalysisState& state, FGameConfig &config
 void FGameConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 {
 	Name = jsonConfigFile["Name"].get<std::string>();
+
+	if (jsonConfigFile.contains("Machine"))
+		Machine = jsonConfigFile["Machine"];
 
 	if (jsonConfigFile.contains("SnapshotFile"))
 		SnapshotFile = GetFileFromPath(jsonConfigFile["SnapshotFile"].get<std::string>().c_str());

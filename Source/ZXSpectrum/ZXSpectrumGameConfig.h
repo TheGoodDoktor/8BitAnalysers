@@ -2,6 +2,14 @@
 
 #include <misc/GameConfig.h>
 
+
+struct FGame;
+struct FGameViewerData;
+struct FGameSnapshot;
+
+struct FZXSpectrumGameConfig;
+class FSpectrumEmu;
+
 struct FCheatMemoryEntry
 {
 	uint16_t	Address;

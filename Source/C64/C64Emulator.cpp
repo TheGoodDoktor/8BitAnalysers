@@ -100,6 +100,7 @@ bool FC64Emulator::Init()
 	pGlobalConfig = new FC64Config();
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
+    LoadC64GameConfigs(this);
 
     //saudio_desc audiodesc;
     //memset(&audiodesc, 0, sizeof(saudio_desc));
@@ -187,9 +188,7 @@ bool FC64Emulator::Init()
 
     if (pGlobalConfig->LastGame.empty() == false)
     {
-        const FGameInfo* pGame = GamesList.GetGameInfo(pGlobalConfig->LastGame.c_str());
-        if(pGame != nullptr)
-            LoadGame(pGame);
+        StartGame(pGlobalConfig->LastGame.c_str());
     }
 
 
@@ -259,33 +258,109 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     }
 }
 
-bool FC64Emulator::LoadGame(const FGameInfo* pGameInfo)
+void FC64Emulator::StartGame(const char* pGameName)
 {
-    size_t fileSize;
-    void* pGameData = LoadBinaryFile(pGameInfo->PRGFile.c_str(), fileSize);
-    if (pGameData)
+    FC64GameConfig* pZXGameConfig = (FC64GameConfig*)GetGameConfigForName(pGameName);
+    if(pZXGameConfig)
+        StartGame(pZXGameConfig);
+}
+
+void SetWindowTitle(const char* pTitle);
+
+void FC64Emulator::StartGame(FC64GameConfig* pGameConfig)
+{
+    bool bLoadGameData = true;
+    const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
+    SetWindowTitle(windowTitle.c_str());
+
+    pCurrentGameConfig = pGameConfig;
+
+    // Initialise code analysis
+    CodeAnalysis.Init(this);
+
+    //IOAnalysis.Reset();
+
+    // Set options from config
+    for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
     {
-        // FIXME: invalid function signature
-        //c64_quickload(&C64Emu, (uint8_t*)pGameData, fileSize);
-        chips_range_t data;
-        data.ptr = pGameData;
-        data.size = fileSize;
-        c64_quickload(&C64Emu, data);
-        free(pGameData);
-
-        ResetCodeAnalysis();
-        if (LoadCodeAnalysis(pGameInfo) == false)
-        {
-            SetupCodeAnalysisLabels();
-        }
-        GenerateGlobalInfo(CodeAnalysis);// Note this might not work because pages might not have been set up
-
-        CurrentGame = pGameInfo;
-
-       
-        return true;
+        CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
+        CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
     }
 
+    if (bLoadGameData)
+    {
+        const std::string root = pGlobalConfig->WorkspaceRoot;
+        const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
+        //std::string romJsonFName = kRomInfo48JsonFile;
+
+        //if (ZXEmuState.type == ZX_TYPE_128)
+          //  romJsonFName = root + kRomInfo128JsonFile;
+
+        const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+        const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
+        const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
+        const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+        if (FileExists(analysisJsonFName.c_str()))
+        {
+            ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+            ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+        }
+
+        //GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
+
+        // Load machine state
+        if (FileExists(saveStateFName.c_str()))
+        {
+            size_t stateSize;
+            c64_t* pSnapshot = (c64_t*)LoadBinaryFile(saveStateFName.c_str(), stateSize);
+            c64_load_snapshot(&C64Emu, 1, pSnapshot);
+            free(pSnapshot);
+        }
+
+        //if (FileExists(romJsonFName.c_str()))
+          //  ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+
+        // where do we want pokes to live?
+        //LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
+    }
+    ReAnalyseCode(CodeAnalysis);
+    GenerateGlobalInfo(CodeAnalysis);
+    CodeAnalysis.SetAddressRangeDirty();
+
+    // Start in break mode so the memory will be in its initial state. 
+    // Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
+    // 
+    // decode whole screen
+    //ZXDecodeScreen(&ZXEmuState);
+    CodeAnalysis.Debugger.Break();
+
+    CodeAnalysis.Debugger.RegisterNewStackPointer(C64Emu.cpu.S, FAddressRef());
+
+    // some extra initialisation for creating new analysis from snnapshot
+    if (bLoadGameData == false)
+    {
+        FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(C64Emu.cpu.PC);
+        SetItemCode(CodeAnalysis, initialPC);
+        CodeAnalysis.Debugger.SetPC(initialPC);
+    }
+
+    //GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+}
+
+bool FC64Emulator::NewGameFromSnapshot(const FGameInfo* pGameInfo)
+{
+    // Remove any existing config 
+    RemoveGameConfig(pGameInfo->Name.c_str());
+    FC64GameConfig* pNewConfig = CreateNewC64GameConfigFromGameInfo(*pGameInfo);
+
+    if (pNewConfig != nullptr)
+    {
+        StartGame(pNewConfig);
+        AddGameConfig(pNewConfig);
+        SaveCurrentGame();
+
+        return true;
+    }
     return false;
 }
 
@@ -296,14 +371,18 @@ void FC64Emulator::ResetCodeAnalysis(void)
     IOAnalysis.Reset();
 }
 
-bool FC64Emulator::SaveCodeAnalysis(const FGameInfo* pGameInfo)
+bool FC64Emulator::SaveCurrentGame(void)
 {
+    if(pCurrentGameConfig == nullptr)
+        return false;
+
     // save snapshot
     const std::string root = pGlobalConfig->WorkspaceRoot;
-    const std::string analysisJsonFName = root + "AnalysisJson/" + pGameInfo->Name + ".json";
-    const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameInfo->Name + ".json";
-    const std::string analysisStateFName = root + "AnalysisState/" + pGameInfo->Name + ".astate";
-    const std::string saveStateFName = root + "SaveStates/" + pGameInfo->Name + ".state";
+    const std::string configFName = root + "Configs/" + pCurrentGameConfig->Name + ".json";
+    const std::string analysisJsonFName = root + "AnalysisJson/" + pCurrentGameConfig->Name + ".json";
+    const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pCurrentGameConfig->Name + ".json";
+    const std::string analysisStateFName = root + "AnalysisState/" + pCurrentGameConfig->Name + ".astate";
+    const std::string saveStateFName = root + "SaveStates/" + pCurrentGameConfig->Name + ".state";
 
     EnsureDirectoryExists(std::string(root + "Configs").c_str());
     EnsureDirectoryExists(std::string(root + "GameData").c_str());
@@ -311,22 +390,6 @@ bool FC64Emulator::SaveCodeAnalysis(const FGameInfo* pGameInfo)
     EnsureDirectoryExists(std::string(root + "GraphicsSets").c_str());
     EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
     EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
-
-    // set config values
-/*
-    for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-    {
-        const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
-        FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
-
-        viewConfig.bEnabled = viewState.Enabled;
-        viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
-    }
-
-    AddGameConfig(pGameConfig);
-    SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-  */  
-    //SaveGameState(this, saveStateFName.c_str());
 
     // save game snapshot
     FILE* fp = fopen(saveStateFName.c_str(),"wb");
@@ -343,35 +406,24 @@ bool FC64Emulator::SaveCodeAnalysis(const FGameInfo* pGameInfo)
     ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
     ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
     //GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
+    // 
+    // set config values
+    for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+    {
+        const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
+        FCodeAnalysisViewConfig& viewConfig = pCurrentGameConfig->ViewConfigs[i];
+
+        viewConfig.bEnabled = viewState.Enabled;
+        viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
+    }
+
+    AddGameConfig(pCurrentGameConfig);
+    SaveGameConfigToFile(*pCurrentGameConfig, configFName.c_str());
     // TODO: Json save
     return true;
-#if 0
-    FMemoryBuffer saveBuffer;
-    saveBuffer.Init();
-
-    // Save RAM pages
-    for (int pageNo = 0; pageNo < 64; pageNo++)
-        RAM[pageNo].WriteToBuffer(saveBuffer);
-
-    // Save IO
-    for (int pageNo = 0; pageNo < 4; pageNo++)
-        IOSystem[pageNo].WriteToBuffer(saveBuffer);
-
-    // Save Basic ROM
-    for (int pageNo = 0; pageNo < 8; pageNo++)
-        BasicROM[pageNo].WriteToBuffer(saveBuffer);
-
-    // Save Kernel ROM
-    for (int pageNo = 0; pageNo < 8; pageNo++)
-        KernelROM[pageNo].WriteToBuffer(saveBuffer);
-
-    // Write to file
-    char fileName[128];
-    snprintf(fileName, sizeof(fileName), "AnalysisData/%s.bin", pGameInfo->Name.c_str());
-    return saveBuffer.SaveToFile(fileName);
-#endif
 }
 
+#if 0
 bool FC64Emulator::LoadCodeAnalysis(const FGameInfo* pGameInfo)
 {
     const std::string root = pGlobalConfig->WorkspaceRoot;
@@ -425,15 +477,15 @@ bool FC64Emulator::LoadCodeAnalysis(const FGameInfo* pGameInfo)
     return true;
 #endif
 }
-
+#endif
 
 void FC64Emulator::Shutdown()
 {
-    if (CurrentGame != nullptr)
+    if (pCurrentGameConfig != nullptr)
     {
         // Save Global Config - move to function?
-        pGlobalConfig->LastGame = CurrentGame->Name;
-        SaveCodeAnalysis(CurrentGame);
+        pGlobalConfig->LastGame = pCurrentGameConfig->Name;
+        SaveCurrentGame();
     }
 
     pGlobalConfig->Save(kGlobalConfigFilename);
@@ -600,8 +652,7 @@ void FC64Emulator::DrawUI()
         GamesList.DrawGameSelect();
         if (GamesList.GetSelectedGame() != -1 && ImGui::Button("Load"))
         {
-            LoadGame(&GamesList.GetGameInfo(GamesList.GetSelectedGame()));
-
+            NewGameFromSnapshot(&GamesList.GetGameInfo(GamesList.GetSelectedGame()));
         }
     }
     ImGui::End();

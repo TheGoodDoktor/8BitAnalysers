@@ -923,18 +923,16 @@ void FSpectrumEmu::StartGame(FZXSpectrumGameConfig *pGameConfig, bool bLoadGameD
 
 bool FSpectrumEmu::StartGame(const char *pGameName)
 {
-	for (const auto& pGameConfig : GetGameConfigs())
+	FZXSpectrumGameConfig* pZXGameConfig = (FZXSpectrumGameConfig*)GetGameConfigForName(pGameName);
+
+	if (pZXGameConfig != nullptr)
 	{
-		FZXSpectrumGameConfig* pZXGameConfig = (FZXSpectrumGameConfig *)pGameConfig;
-		if (pZXGameConfig->Name == pGameName)
+		const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
+		const std::string gameFile = snapFolder + pZXGameConfig->SnapshotFile;
+		if (GamesList.LoadGame(gameFile.c_str()))
 		{
-			const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-			const std::string gameFile = snapFolder + pZXGameConfig->SnapshotFile;
-			if (GamesList.LoadGame(gameFile.c_str()))
-			{
-				StartGame(pZXGameConfig);
-				return true;
-			}
+			StartGame(pZXGameConfig);
+			return true;
 		}
 	}
 
