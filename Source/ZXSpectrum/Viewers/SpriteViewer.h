@@ -7,7 +7,7 @@
 class FZXGraphicsView;
 class FZXGraphicsViewer;
 class FSpectrumEmu;
-struct FGameConfig;
+struct FZXSpectrumGameConfig;
 
 // Sprite Stuff
 
@@ -36,5 +36,5 @@ struct FUISpriteList
 	FSpriteDefList	SpriteList;
 };
 
-void GenerateSpriteListsFromConfig(FZXGraphicsViewer& graphicsViewer, FGameConfig *pGameConfig);
+void GenerateSpriteListsFromConfig(FZXGraphicsViewer& graphicsViewer, FZXSpectrumGameConfig* pGameConfig);
 void DrawSpriteListGUI(FZXGraphicsViewer& graphicsViewer, FZXGraphicsView *pGraphicsView);

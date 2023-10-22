@@ -52,6 +52,7 @@ struct FGameConfig;
 struct FViewerConfig;
 struct FSkoolFileInfo;
 struct FZXSpectrumConfig;
+struct FZXSpectrumGameConfig;
 
 enum class ESpectrumModel
 {
@@ -94,7 +95,7 @@ public:
 
 	bool	IsInitialised() const { return bInitialised; }
 
-	void	StartGame(FGameConfig* pGameConfig, bool bLoadGameData = true);
+	void	StartGame(FZXSpectrumGameConfig* pGameConfig, bool bLoadGameData = true);
 	bool	StartGame(const char* pGameName);
 	void	SaveCurrentGameData();
 	bool	NewGameFromSnapshot(int snapshotIndex);

@@ -2,7 +2,7 @@
 #include "ZXGraphicsViewer.h"
 #include "../SpectrumEmu.h"
 #include <algorithm>
-#include "../GameConfig.h"
+#include "../ZXSpectrumGameConfig.h"
 #include "ZXGraphicsView.h"
 #include <Util/Misc.h>
 
@@ -30,7 +30,7 @@ void GenerateSpriteList(FSpriteDefList &spriteList, uint16_t startAddress, int c
 }
 
 // Generate sprite lists from configs
-void GenerateSpriteListsFromConfig(FZXGraphicsViewer& graphicsViewer, FGameConfig *pGameConfig)
+void GenerateSpriteListsFromConfig(FZXGraphicsViewer& graphicsViewer, FZXSpectrumGameConfig *pGameConfig)
 {
 	graphicsViewer.SpriteLists.clear();
 	for (const auto &sprConfIt : pGameConfig->SpriteConfigs)

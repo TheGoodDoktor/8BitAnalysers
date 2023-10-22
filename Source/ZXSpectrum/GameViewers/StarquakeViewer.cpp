@@ -4,9 +4,9 @@
 #include <ImGuiSupport/ImGuiTexture.h>
 #include <algorithm>
 #include "GameViewer.h"
-#include "../GameConfig.h"
 #include "../Viewers/ZXGraphicsView.h"
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
+#include "../ZXSpectrumGameConfig.h"
 
 // Starquake addresses
 
@@ -184,7 +184,7 @@ struct FStarquakeViewerData : FGameViewerData
 };
 
 
-FGameViewerData *InitStarquakeViewer(FSpectrumEmu *pEmu, FGameConfig *pGameConfig)
+FGameViewerData *InitStarquakeViewer(FSpectrumEmu *pEmu, FZXSpectrumGameConfig *pGameConfig)
 {
 	FStarquakeViewerData* pStarquakeViewerData = new FStarquakeViewerData;
 	pStarquakeViewerData->pEmu = pEmu;

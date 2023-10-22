@@ -3,7 +3,7 @@
 class FSpectrumEmu;
 class FZXGraphicsView;
 struct FGame;
-struct FGameConfig;
+struct FZXSpectrumGameConfig;
 struct FViewerConfig;
 
 // Base class for game viewer data
@@ -17,7 +17,7 @@ struct FGameViewerData
 	FZXGraphicsView*	pScreenGraphicsView = nullptr;
 };
 
-void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig);
+void InitGameViewer(FGameViewerData *pGameViewer, FZXSpectrumGameConfig*pGameConfig);
 
 // View Config Management
 bool AddViewerConfig(FViewerConfig* pConfig);
