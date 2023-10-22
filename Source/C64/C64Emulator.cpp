@@ -102,6 +102,14 @@ bool FC64Emulator::Init()
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
     LoadC64GameConfigs(this);
 
+    // set supported bitmap format
+    CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
+    CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMap2Bpp_C64] = true;
+    for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+    {
+        CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::Bitmap_1Bpp;
+    }
+
     //saudio_desc audiodesc;
     //memset(&audiodesc, 0, sizeof(saudio_desc));
     //saudio_setup(&audiodesc);
@@ -855,11 +863,9 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
         {
             if (state.bRegisterDataAccesses)
             {
-                // FIXME: Invalid parameter
-                //RegisterDataWrite(CodeAnalysis, pc, addr);
+                RegisterDataWrite(CodeAnalysis, pc, addr, val);
             }
 
-            // FIXME: parameter conversion for SetLastWriterForAddress
             FAddressRef pcRef = state.AddressRefFromPhysicalAddress(pc);
             FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
             state.SetLastWriterForAddress(addr, pcRef);
