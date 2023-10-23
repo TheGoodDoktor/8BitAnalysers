@@ -204,7 +204,8 @@ bool FC64Emulator::Init()
 
     if (pGlobalConfig->LastGame.empty() == false)
     {
-        bLoadedGame = StartGame(pGlobalConfig->LastGame.c_str());
+        bLoadedGame = StartGame(pGlobalConfig->LastGame.c_str(), true);
+        SetupCodeAnalysisLabels();
     }
 
 
@@ -274,12 +275,12 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     }
 }
 
-bool FC64Emulator::StartGame(const char* pGameName)
+bool FC64Emulator::StartGame(const char* pGameName, bool bLoadGameData)
 {
     FC64GameConfig* pZXGameConfig = (FC64GameConfig*)GetGameConfigForName(pGameName);
     if(pZXGameConfig)
     {
-        return StartGame(pZXGameConfig);
+        return StartGame(pZXGameConfig, bLoadGameData);
     }
 
     return false;
@@ -287,9 +288,8 @@ bool FC64Emulator::StartGame(const char* pGameName)
 
 void SetWindowTitle(const char* pTitle);
 
-bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig)
+bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
 {
-    bool bLoadGameData = true;
     const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
     SetWindowTitle(windowTitle.c_str());
 
@@ -337,6 +337,9 @@ bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig)
             free(pSnapshot);
         }
 
+        // Set memory banks
+		UpdateCodeAnalysisPages(C64Emu.cpu_port);
+
         //if (FileExists(romJsonFName.c_str()))
           //  ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 
@@ -377,7 +380,15 @@ bool FC64Emulator::NewGameFromSnapshot(const FGameInfo* pGameInfo)
 
     if (pNewConfig != nullptr)
     {
-        StartGame(pNewConfig);
+        chips_range_t snapshotData;
+        snapshotData.ptr = LoadBinaryFile(pGameInfo->PRGFile.c_str(), snapshotData.size);
+        if(snapshotData.ptr!=nullptr)
+        {
+		    c64_quickload(&C64Emu, snapshotData);
+            free(snapshotData.ptr);
+        }
+
+        StartGame(pNewConfig, false);
         AddGameConfig(pNewConfig);
         SaveCurrentGame();
 

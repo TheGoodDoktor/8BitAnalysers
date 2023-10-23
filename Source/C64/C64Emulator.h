@@ -107,8 +107,8 @@ public:
 	c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
 	void SetupCodeAnalysisLabels(void);
 	void UpdateCodeAnalysisPages(uint8_t cpuPort);
-	bool StartGame(const char* pGameName);
-	bool StartGame(FC64GameConfig *pConfig);
+	bool StartGame(const char* pGameName, bool bLoadGame);
+	bool StartGame(FC64GameConfig *pConfig, bool bLoadGame);
 	bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
 	void ResetCodeAnalysis(void);
 	bool SaveCurrentGame(void);
