@@ -140,7 +140,7 @@ private:
 
 	FC64IOAnalysis      IOAnalysis;
 	FC64GraphicsViewer  GraphicsViewer;
-	std::set<uint16_t>  InterruptHandlers;
+	std::set<FAddressRef>  InterruptHandlers;
 
 	// Mapping status
 	bool                bBasicROMMapped = true;

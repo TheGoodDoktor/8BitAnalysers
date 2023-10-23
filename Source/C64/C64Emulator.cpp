@@ -448,7 +448,7 @@ bool FC64Emulator::DrawDockingView()
 void FC64Emulator::DrawUI()
 {
     FCodeAnalysisViewState& viewState = CodeAnalysis.GetFocussedViewState();
-    ui_c64_draw(&C64UI);
+    //ui_c64_draw(&C64UI);
 
     if (ImGui::Begin("C64 Screen"))
     {
@@ -478,10 +478,17 @@ void FC64Emulator::DrawUI()
 
         // Temp
         ImGui::Text("Interrupt Handlers");
+        ImGui::SameLine();
+        if(ImGui::Button("Clear"))
+            InterruptHandlers.clear();
+
         for (auto& intHandler : InterruptHandlers)
         {
-            ImGui::Text("$%04X:", intHandler);
-            DrawAddressLabel(CodeAnalysis, viewState, intHandler);
+            //ImGui::Text("$%04X:", intHandler);
+            ShowCodeAccessorActivity(CodeAnalysis, intHandler);
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(CodeAnalysis, viewState, intHandler);
         }
     }
     ImGui::End();
@@ -717,11 +724,13 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
     bool rdy = pins & M6502_RDY;
     bool aec = pins & M6510_AEC;
     bool hitIrq = false;
+
+    // register interrupt handlers
     if ((addr == 0xfffe || addr == 0xffff) && irq)
     {
         hitIrq = true;
         const uint16_t interruptHandler = ReadWord(0xfffe);
-        InterruptHandlers.insert(interruptHandler);
+        InterruptHandlers.insert(CodeAnalysis.AddressRefFromPhysicalAddress(interruptHandler));
     }
 
     bool bReadingInstruction = addr == m6502_pc(&C64Emu.cpu) - 1;
