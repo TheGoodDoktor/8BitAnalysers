@@ -12,5 +12,5 @@ struct FZXSpectrumConfig : public FGlobalConfig
 protected:
 
 	void ReadFromJson(const nlohmann::json& jsonConfigFile) override;
-	void WriteToJson(nlohmann::json& jsonConfigFile) override;
+	void WriteToJson(nlohmann::json& jsonConfigFile) const override;
 };

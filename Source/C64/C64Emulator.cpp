@@ -10,6 +10,8 @@
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 
 #include "C64Config.h"
+#include <CodeAnalyser/CodeAnalysisJson.h>
+#include <CodeAnalyser/CodeAnalysisState.h>
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "C64 Analyser";
@@ -98,6 +100,15 @@ bool FC64Emulator::Init()
 	pGlobalConfig = new FC64Config();
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
+    LoadC64GameConfigs(this);
+
+    // set supported bitmap format
+    CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
+    CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMap2Bpp_C64] = true;
+    for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+    {
+        CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::Bitmap_1Bpp;
+    }
 
     //saudio_desc audiodesc;
     //memset(&audiodesc, 0, sizeof(saudio_desc));
@@ -146,18 +157,18 @@ bool FC64Emulator::Init()
     // RAM - $C000 - $CFFF - pages 48-51 - 4k
     // IO System - %D000 - $DFFF - page 52-55 - 4k
 
-    LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram, true);
-    HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], true);
-    IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, true);
+    LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram, false);
+    HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false);
+    IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, false);
 
     BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true); // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
-    RAMBehindBasicROMId = CodeAnalysis.CreateBank("RAMBehindBasicROM", 8, &C64Emu.ram[0xa000], true);
+    RAMBehindBasicROMId = CodeAnalysis.CreateBank("RAMBehindBasicROM", 8, &C64Emu.ram[0xa000], false);
 
     KernelROMId = CodeAnalysis.CreateBank("KernelROM", 8, C64Emu.rom_kernal, true);   // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
-    RAMBehindKernelROMId = CodeAnalysis.CreateBank("RAMBehindKernelROM", 8, &C64Emu.ram[0xe000], true);
+    RAMBehindKernelROMId = CodeAnalysis.CreateBank("RAMBehindKernelROM", 8, &C64Emu.ram[0xe000], false);
 
     CharacterROMId = CodeAnalysis.CreateBank("CharacterROM", 4, C64Emu.rom_char, true); // Char ROM - %D000 - $DFFF - page 52-55 - 4k
-    RAMBehindCharROMId = CodeAnalysis.CreateBank("RAMBehindCharROM", 4, &C64Emu.ram[0xd000], true);
+    RAMBehindCharROMId = CodeAnalysis.CreateBank("RAMBehindCharROM", 4, &C64Emu.ram[0xd000], false);
 
     //ColourRAMId = CodeAnalysis.CreateBank("ColourRAM", 1, C64Emu.color_ram, true);  // Colour RAM - $D800
 
@@ -165,15 +176,18 @@ bool FC64Emulator::Init()
     CodeAnalysis.MapBank(LowerRAMId, 0);        // RAM - $0000 - $9FFF - pages 0-39 - 40K
     CodeAnalysis.MapBank(HighRAMId, 48);        // RAM - $C000 - $CFFF - pages 48-51 - 4k
 
+    
+    
+
     // TODO: Setup games list
 
     // TODO: Setup debugger
 
     // TODO: setup memory analyser
+    
 
-    IOAnalysis.Init(&CodeAnalysis);
-    GraphicsViewer.Init(&CodeAnalysis, &C64Emu);
 
+    
     // setup code analysis
     CodeAnalysis.Init(this);
 	CodeAnalysis.Config.bShowBanks = true;
@@ -181,7 +195,18 @@ bool FC64Emulator::Init()
 	SetupCodeAnalysisLabels();
 	UpdateCodeAnalysisPages(0x7);
     
+    IOAnalysis.Init(&CodeAnalysis);
+    GraphicsViewer.Init(&CodeAnalysis, &C64Emu);
+
     GamesList.EnumerateGames(pGlobalConfig->PrgFolder.c_str());
+
+    bool bLoadedGame = false;
+
+    if (pGlobalConfig->LastGame.empty() == false)
+    {
+        bLoadedGame = StartGame(pGlobalConfig->LastGame.c_str());
+    }
+
 
     return true;
 }
@@ -249,93 +274,200 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     }
 }
 
-bool FC64Emulator::LoadGame(const FGameInfo* pGameInfo)
+bool FC64Emulator::StartGame(const char* pGameName)
 {
-    size_t fileSize;
-    void* pGameData = LoadBinaryFile(pGameInfo->PRGFile.c_str(), fileSize);
-    if (pGameData)
+    FC64GameConfig* pZXGameConfig = (FC64GameConfig*)GetGameConfigForName(pGameName);
+    if(pZXGameConfig)
     {
-        // FIXME: invalid function signature
-        //c64_quickload(&C64Emu, (uint8_t*)pGameData, fileSize);
-        chips_range_t data;
-        data.ptr = pGameData;
-        data.size = fileSize;
-        c64_quickload(&C64Emu, data);
-        free(pGameData);
-
-        ResetCodeAnalysis();
-        if (LoadCodeAnalysis(pGameInfo) == false)
-        {
-            SetupCodeAnalysisLabels();
-        }
-        GenerateGlobalInfo(CodeAnalysis);// Note this might not work because pages might not have been set up
-
-        CurrentGame = pGameInfo;
-        return true;
+        return StartGame(pZXGameConfig);
     }
 
     return false;
 }
 
+void SetWindowTitle(const char* pTitle);
+
+bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig)
+{
+    bool bLoadGameData = true;
+    const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
+    SetWindowTitle(windowTitle.c_str());
+
+    pCurrentGameConfig = pGameConfig;
+
+    // Initialise code analysis
+    CodeAnalysis.Init(this);
+
+    //IOAnalysis.Reset();
+
+    // Set options from config
+    for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+    {
+        CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
+        CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
+    }
+
+    if (bLoadGameData)
+    {
+        const std::string root = pGlobalConfig->WorkspaceRoot;
+        const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
+        //std::string romJsonFName = kRomInfo48JsonFile;
+
+        //if (ZXEmuState.type == ZX_TYPE_128)
+          //  romJsonFName = root + kRomInfo128JsonFile;
+
+        const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+        const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
+        const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
+        const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+        if (FileExists(analysisJsonFName.c_str()))
+        {
+            ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+            ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+        }
+
+        //GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
+
+        // Load machine state
+        if (FileExists(saveStateFName.c_str()))
+        {
+            size_t stateSize;
+            c64_t* pSnapshot = (c64_t*)LoadBinaryFile(saveStateFName.c_str(), stateSize);
+            c64_load_snapshot(&C64Emu, 1, pSnapshot);
+            free(pSnapshot);
+        }
+
+        //if (FileExists(romJsonFName.c_str()))
+          //  ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+
+        // where do we want pokes to live?
+        //LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
+    }
+    ReAnalyseCode(CodeAnalysis);
+    GenerateGlobalInfo(CodeAnalysis);
+    CodeAnalysis.SetAddressRangeDirty();
+
+    // Start in break mode so the memory will be in its initial state. 
+    // Otherwise, if we export a skool/asm file once the game is running the memory could be in an arbitrary state.
+    // 
+    // decode whole screen
+    //ZXDecodeScreen(&ZXEmuState);
+    CodeAnalysis.Debugger.Break();
+
+    CodeAnalysis.Debugger.RegisterNewStackPointer(C64Emu.cpu.S, FAddressRef());
+
+    // some extra initialisation for creating new analysis from snnapshot
+    if (bLoadGameData == false)
+    {
+        FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(C64Emu.cpu.PC);
+        SetItemCode(CodeAnalysis, initialPC);
+        CodeAnalysis.Debugger.SetPC(initialPC);
+    }
+
+    //GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+
+    return true;
+}
+
+bool FC64Emulator::NewGameFromSnapshot(const FGameInfo* pGameInfo)
+{
+    // Remove any existing config 
+    RemoveGameConfig(pGameInfo->Name.c_str());
+    FC64GameConfig* pNewConfig = CreateNewC64GameConfigFromGameInfo(*pGameInfo);
+
+    if (pNewConfig != nullptr)
+    {
+        StartGame(pNewConfig);
+        AddGameConfig(pNewConfig);
+        SaveCurrentGame();
+
+        return true;
+    }
+    return false;
+}
+
 void FC64Emulator::ResetCodeAnalysis(void)
 {
-#if 0
-    // Reset RAM pages
-    for (int pageNo = 0; pageNo < 64; pageNo++)
-        RAM[pageNo].Reset();
-
-    // Reset IO
-    for (int pageNo = 0; pageNo < 4; pageNo++)
-        IOSystem[pageNo].Reset();
-
-    // Reset Basic ROM
-    for (int pageNo = 0; pageNo < 8; pageNo++)
-        BasicROM[pageNo].Reset();
-
-    // Reset Kernel ROM
-    for (int pageNo = 0; pageNo < 8; pageNo++)
-        KernelROM[pageNo].Reset();
-#endif
     // Reset other analysers
     InterruptHandlers.clear();
     IOAnalysis.Reset();
-
 }
 
-bool FC64Emulator::SaveCodeAnalysis(const FGameInfo* pGameInfo)
+bool FC64Emulator::SaveCurrentGame(void)
 {
+    if(pCurrentGameConfig == nullptr)
+        return false;
+
+    // save snapshot
+    const std::string root = pGlobalConfig->WorkspaceRoot;
+    const std::string configFName = root + "Configs/" + pCurrentGameConfig->Name + ".json";
+    const std::string analysisJsonFName = root + "AnalysisJson/" + pCurrentGameConfig->Name + ".json";
+    const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pCurrentGameConfig->Name + ".json";
+    const std::string analysisStateFName = root + "AnalysisState/" + pCurrentGameConfig->Name + ".astate";
+    const std::string saveStateFName = root + "SaveStates/" + pCurrentGameConfig->Name + ".state";
+
+    EnsureDirectoryExists(std::string(root + "Configs").c_str());
+    EnsureDirectoryExists(std::string(root + "GameData").c_str());
+    EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
+    EnsureDirectoryExists(std::string(root + "GraphicsSets").c_str());
+    EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
+    EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
+
+    // save game snapshot
+    FILE* fp = fopen(saveStateFName.c_str(),"wb");
+    if(fp != nullptr)
+    {
+        c64_t* pSnapshot = new c64_t;;
+        c64_save_snapshot(&C64Emu, pSnapshot);
+        fwrite(pSnapshot, sizeof(c64_t), 1, fp);
+
+        delete pSnapshot;
+        fclose(fp);
+    }
+
+    ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+    ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+    //GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
+    // 
+    // set config values
+    for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+    {
+        const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
+        FCodeAnalysisViewConfig& viewConfig = pCurrentGameConfig->ViewConfigs[i];
+
+        viewConfig.bEnabled = viewState.Enabled;
+        viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
+    }
+
+    AddGameConfig(pCurrentGameConfig);
+    SaveGameConfigToFile(*pCurrentGameConfig, configFName.c_str());
     // TODO: Json save
-    return false;
-#if 0
-    FMemoryBuffer saveBuffer;
-    saveBuffer.Init();
-
-    // Save RAM pages
-    for (int pageNo = 0; pageNo < 64; pageNo++)
-        RAM[pageNo].WriteToBuffer(saveBuffer);
-
-    // Save IO
-    for (int pageNo = 0; pageNo < 4; pageNo++)
-        IOSystem[pageNo].WriteToBuffer(saveBuffer);
-
-    // Save Basic ROM
-    for (int pageNo = 0; pageNo < 8; pageNo++)
-        BasicROM[pageNo].WriteToBuffer(saveBuffer);
-
-    // Save Kernel ROM
-    for (int pageNo = 0; pageNo < 8; pageNo++)
-        KernelROM[pageNo].WriteToBuffer(saveBuffer);
-
-    // Write to file
-    char fileName[128];
-    snprintf(fileName, sizeof(fileName), "AnalysisData/%s.bin", pGameInfo->Name.c_str());
-    return saveBuffer.SaveToFile(fileName);
-#endif
+    return true;
 }
 
+#if 0
 bool FC64Emulator::LoadCodeAnalysis(const FGameInfo* pGameInfo)
 {
-    // TODO: Json load
+    const std::string root = pGlobalConfig->WorkspaceRoot;
+    const std::string analysisJsonFName = root + "AnalysisJson/" + pGameInfo->Name + ".json";
+    const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameInfo->Name + ".json";
+    const std::string analysisStateFName = root + "AnalysisState/" + pGameInfo->Name + ".astate";
+    const std::string saveStateFName = root + "SaveStates/" + pGameInfo->Name + ".state";
+    if (FileExists(analysisJsonFName.c_str()))
+    {
+        ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+        ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+    }
+
+    //GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
+    if (FileExists(saveStateFName.c_str()))
+    {
+        size_t stateSize;
+        c64_t* pSnapshot = (c64_t*)LoadBinaryFile(saveStateFName.c_str(), stateSize);
+        c64_load_snapshot(&C64Emu, 1, pSnapshot);
+        free(pSnapshot);
+        return true;
+    }
     return false;
 #if 0
     char fileName[128];
@@ -367,14 +499,18 @@ bool FC64Emulator::LoadCodeAnalysis(const FGameInfo* pGameInfo)
     return true;
 #endif
 }
-
+#endif
 
 void FC64Emulator::Shutdown()
 {
-	pGlobalConfig->Save(kGlobalConfigFilename);
+    if (pCurrentGameConfig != nullptr)
+    {
+        // Save Global Config - move to function?
+        pGlobalConfig->LastGame = pCurrentGameConfig->Name;
+        SaveCurrentGame();
+    }
 
-    if (CurrentGame != nullptr)
-        SaveCodeAnalysis(CurrentGame);
+    pGlobalConfig->Save(kGlobalConfigFilename);
 
     ui_c64_discard(&C64UI);
     c64_discard(&C64Emu);
@@ -528,11 +664,11 @@ void FC64Emulator::DrawUI()
 
 	}
 
-    if (ImGui::Begin("IO Analysis"))
+    /*if (ImGui::Begin("IO Analysis"))
     {
         IOAnalysis.DrawIOAnalysisUI();
     }
-    ImGui::End();
+    ImGui::End();*/
 
     if (ImGui::Begin("Graphics Viewer"))
     {
@@ -545,8 +681,7 @@ void FC64Emulator::DrawUI()
         GamesList.DrawGameSelect();
         if (GamesList.GetSelectedGame() != -1 && ImGui::Button("Load"))
         {
-            LoadGame(&GamesList.GetGameInfo(GamesList.GetSelectedGame()));
-
+            NewGameFromSnapshot(&GamesList.GetGameInfo(GamesList.GetSelectedGame()));
         }
     }
     ImGui::End();
@@ -744,25 +879,23 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 
             if (bIOMapped && (addr >> 12) == 0xd)
             {
-                IOAnalysis.RegisterIORead(addr, pc);
+                IOAnalysis.RegisterIORead(addr, GetPC());
             }
         }
         else
         {
             if (state.bRegisterDataAccesses)
             {
-                // FIXME: Invalid parameter
-                //RegisterDataWrite(CodeAnalysis, pc, addr);
+                RegisterDataWrite(CodeAnalysis, pc, addr, val);
             }
 
-            // FIXME: parameter conversion for SetLastWriterForAddress
             FAddressRef pcRef = state.AddressRefFromPhysicalAddress(pc);
             FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
             state.SetLastWriterForAddress(addr, pcRef);
 
             if (bIOMapped && (addr >> 12) == 0xd)
             {
-                IOAnalysis.RegisterIOWrite(addr, val, pc);
+                IOAnalysis.RegisterIOWrite(addr, val, GetPC());
 				IOMemBuffer[addr & 0xfff] = val;
             }
 

@@ -10,10 +10,10 @@
 #include "SpectrumEmu.h"
 #include "GameViewers/GameViewer.h"
 #include "SnapshotLoaders/GamesList.h"
-#include "GameConfig.h"
 #include "Debug/DebugLog.h"
 #include "Util/Misc.h"
 #include <Util/GraphicsView.h>
+#include "ZXSpectrumGameConfig.h"
 
 static const int g_kBinaryFileVersionNo = 17;
 static const int g_kBinaryFileMagic = 0xdeadface;
@@ -655,7 +655,7 @@ static zx_t g_SaveSlot;
 void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 {
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
-	FGameConfig& config = *pSpectrumEmu->pActiveGame->pConfig;
+	FZXSpectrumGameConfig& config = *(FZXSpectrumGameConfig*)pSpectrumEmu->pActiveGame->pConfig;
 
 	// revert cheats
 	for (FCheat& cheat : config.Cheats)

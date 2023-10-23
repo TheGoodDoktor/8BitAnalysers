@@ -89,7 +89,7 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 		ImGui::TextColored(curRegs.BreakFlag != oldRegs.BreakFlag ? regChangedCol : regNormalCol, "%s", curRegs.BreakFlag ? "Y" : "N");
 		ImGui::TableSetColumnIndex(5);
 		ImGui::TextColored(curRegs.OverflowFlag != oldRegs.OverflowFlag ? regChangedCol : regNormalCol, "%s", curRegs.OverflowFlag ? "Y" : "N");
-		ImGui::TableSetColumnIndex(5);
+		ImGui::TableSetColumnIndex(6);
 		ImGui::TextColored(curRegs.NegativeFlag != oldRegs.NegativeFlag ? regChangedCol : regNormalCol, "%s", curRegs.NegativeFlag ? "Y" : "N");
 
 		ImGui::EndTable();

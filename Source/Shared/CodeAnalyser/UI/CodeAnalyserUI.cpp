@@ -912,7 +912,7 @@ bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState
 	}
 
 	const int index = (int)bitmapFormat;
-	const char* bitmapFormats[] = { "1bpp", "2bpp (CPC Mode 1)", "4bpp (CPC Mode 0)" };
+	const char* bitmapFormats[] = { "1bpp", "2bpp (CPC Mode 1)", "4bpp (CPC Mode 0)", "2bpp (C64 Multicolour)" };
 
 	bool bChanged = false;
 

@@ -49,6 +49,7 @@
 #include "GraphicsViewer/C64GraphicsViewer.h"
 
 struct FC64Config;
+struct FC64GameConfig;
 
 class FC64Emulator : public ICPUInterface
 {
@@ -106,10 +107,12 @@ public:
 	c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
 	void SetupCodeAnalysisLabels(void);
 	void UpdateCodeAnalysisPages(uint8_t cpuPort);
-	bool LoadGame(const FGameInfo* pGameInfo);
+	bool StartGame(const char* pGameName);
+	bool StartGame(FC64GameConfig *pConfig);
+	bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
 	void ResetCodeAnalysis(void);
-	bool SaveCodeAnalysis(const FGameInfo* pGameInfo);
-	bool LoadCodeAnalysis(const FGameInfo* pGameInfo);
+	bool SaveCurrentGame(void);
+	//bool LoadCodeAnalysis(const FGameInfo* pGameInfo);
 
 	// Emulator Event Handlers
 	void    OnBoot(void);
@@ -117,14 +120,16 @@ public:
 	uint64_t    OnCPUTick(uint64_t pins);
 
 	c64_t*	GetEmu() {return &C64Emu;}
+	FCodeAnalysisState& GetCodeAnalysis(){ return CodeAnalysis; }
+
 	const FC64Config*	GetGlobalConfig() { return pGlobalConfig;}
 private:
 	c64_t       C64Emu;
 	ui_c64_t    C64UI;
 	double      ExecTime;
 
-	FC64Config* pGlobalConfig = nullptr;
-
+	FC64Config*			pGlobalConfig = nullptr;
+	FC64GameConfig*		pCurrentGameConfig = nullptr;
 
 	FC64GamesList       GamesList;
 	const FGameInfo* CurrentGame = nullptr;

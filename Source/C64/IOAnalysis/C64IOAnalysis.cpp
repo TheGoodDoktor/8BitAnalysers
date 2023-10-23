@@ -4,7 +4,6 @@
 
 void	FC64IOAnalysis::Init(FCodeAnalysisState* pAnalysis)
 {
-	pCodeAnalysis = pAnalysis;
 	VICAnalysis.Init(pAnalysis);
 	SIDAnalysis.Init(pAnalysis);
 	CIA1Analysis.Init(pAnalysis);
@@ -26,12 +25,12 @@ void	FC64IOAnalysis::Reset()
 }
 
 
-void	FC64IOAnalysis::RegisterIORead(uint16_t addr, uint16_t pc)
+void	FC64IOAnalysis::RegisterIORead(uint16_t addr, FAddressRef pc)
 {
 
 }
 
-void	FC64IOAnalysis::RegisterIOWrite(uint16_t addr, uint8_t val, uint16_t pc)
+void	FC64IOAnalysis::RegisterIOWrite(uint16_t addr, uint8_t val, FAddressRef pc)
 {
 	// VIC D000 - D3FFF
 	if (addr >= 0xd000 && addr < 0xd400)
@@ -51,11 +50,12 @@ void	FC64IOAnalysis::RegisterIOWrite(uint16_t addr, uint8_t val, uint16_t pc)
 
 void	FC64IOAnalysis::DrawIOAnalysisUI(void)
 {
+#if 0
 	if (ImGui::BeginTabBar("IO Tab Bar"))
 	{
 		if (ImGui::BeginTabItem("VIC"))
 		{
-			VICAnalysis.DrawUI();
+			//VICAnalysis.DrawUI();
 			ImGui::EndTabItem();
 		}
 
@@ -79,4 +79,5 @@ void	FC64IOAnalysis::DrawIOAnalysisUI(void)
 
 		ImGui::EndTabBar();
 	}
+#endif
 }

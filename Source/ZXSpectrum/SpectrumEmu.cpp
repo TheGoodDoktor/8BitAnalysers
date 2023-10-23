@@ -37,10 +37,10 @@
 #include "Exporters/SkoolFileInfo.h"
 #include "Exporters/AssemblerExport.h"
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
-#include "GameConfig.h"
 #include "App.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
+#include "ZXSpectrumGameConfig.h"
 
 #define ENABLE_RZX 1
 #define SAVE_ROM_JSON 0
@@ -692,7 +692,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	RegisterStarquakeViewer(this);
 	RegisterGames(this);
 
-	LoadGameConfigs(this);
+	LoadZXSpectrumGameConfigs(this);
 
 	// create & register ROM banks
 	for (int bankNo = 0; bankNo < kNoROMBanks; bankNo++)
@@ -828,7 +828,7 @@ void FSpectrumEmu::Shutdown()
 	GraphicsViewer.Shutdown();
 }
 
-void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  true*/)
+void FSpectrumEmu::StartGame(FZXSpectrumGameConfig *pGameConfig, bool bLoadGameData /* =  true*/)
 {
 	// reset systems
 	MemoryAccessHandlers.clear();	// remove old memory handlers
@@ -923,17 +923,16 @@ void FSpectrumEmu::StartGame(FGameConfig *pGameConfig, bool bLoadGameData /* =  
 
 bool FSpectrumEmu::StartGame(const char *pGameName)
 {
-	for (const auto& pGameConfig : GetGameConfigs())
+	FZXSpectrumGameConfig* pZXGameConfig = (FZXSpectrumGameConfig*)GetGameConfigForName(pGameName);
+
+	if (pZXGameConfig != nullptr)
 	{
-		if (pGameConfig->Name == pGameName)
+		const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
+		const std::string gameFile = snapFolder + pZXGameConfig->SnapshotFile;
+		if (GamesList.LoadGame(gameFile.c_str()))
 		{
-			const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-			const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
-			if (GamesList.LoadGame(gameFile.c_str()))
-			{
-				StartGame(pGameConfig);
-				return true;
-			}
+			StartGame(pZXGameConfig);
+			return true;
 		}
 	}
 
@@ -1004,7 +1003,7 @@ bool FSpectrumEmu::NewGameFromSnapshot(int snapshotIndex)
 		// Remove any existing config 
 		RemoveGameConfig(game.DisplayName.c_str());
 
-		FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
+		FZXSpectrumGameConfig* pNewConfig = CreateNewZXGameConfigFromSnapshot(game);
 
 		if (pNewConfig != nullptr)
 		{
@@ -1085,7 +1084,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 						{
 							if (RZXManager.Load(game.FileName.c_str()))
 							{
-								FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
+								FZXSpectrumGameConfig* pNewConfig = CreateNewZXGameConfigFromSnapshot(game);
 								if (pNewConfig != nullptr)
 									StartGame(pNewConfig);
 							}
@@ -1112,7 +1111,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 							if (GamesList.LoadGame(gameFile.c_str()))
 							{
-								StartGame(pGameConfig);
+								StartGame((FZXSpectrumGameConfig*)pGameConfig);
 							}
 						}
 					}
@@ -1306,8 +1305,8 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 				ImGui::EndMenu();
 			}
 
-			if(pActiveGame!=nullptr)
-				ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
+			//if(pActiveGame!=nullptr)
+			//	ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 
 #ifndef NDEBUG
 			ImGui::MenuItem("Show Config", 0, &CodeAnalysis.Config.bShowConfigWindow);
@@ -1874,7 +1873,9 @@ void FSpectrumEmu::DrawCheatsUI()
 	if (pActiveGame == nullptr)
 		return;
 	
-	if (pActiveGame->pConfig->Cheats.size() == 0)
+	FZXSpectrumGameConfig& config = *(FZXSpectrumGameConfig*)pActiveGame->pConfig;
+
+	if (config.Cheats.size() == 0)
 	{
 		ImGui::Text("No pokes loaded");
 		return;
@@ -1886,7 +1887,6 @@ void FSpectrumEmu::DrawCheatsUI()
     ImGui::RadioButton("Advanced", &bAdvancedMode, 1);
 	ImGui::Separator();
     
-	FGameConfig &config = *pActiveGame->pConfig;
 
 	for (FCheat &cheat : config.Cheats)
 	{
@@ -2133,7 +2133,7 @@ void FSpectrumConfig::ParseCommandline(int argc, char** argv)
 				LOGERROR("-game : No game specified");
 				break;
 			}
-			SpecificGame = *++argIt;
+			SpecificGame = *argIt;
 		}
 		else if (*argIt == std::string("-skoolfile"))
 		{
@@ -2142,7 +2142,7 @@ void FSpectrumConfig::ParseCommandline(int argc, char** argv)
 				LOGERROR("-skoolfile : No skoolkit file specified");
 				break;
 			}
-			SkoolkitImport = *++argIt;
+			SkoolkitImport = *argIt;
 		}
 
 		++argIt;

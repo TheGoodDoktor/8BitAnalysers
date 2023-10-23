@@ -1,8 +1,8 @@
 #include "GameViewer.h"
 
 #include "../SpectrumEmu.h"
-#include "../GameConfig.h"
 #include "../Viewers/ZXGraphicsView.h"
+#include "../ZXSpectrumGameConfig.h"
 
 static std::map<std::string, FViewerConfig *>	g_ViewerConfigs;
 
@@ -13,7 +13,7 @@ FGameViewerData::~FGameViewerData()
 }
 
 
-void InitGameViewer(FGameViewerData *pGameViewer, FGameConfig *pGameConfig)
+void InitGameViewer(FGameViewerData *pGameViewer, FZXSpectrumGameConfig *pGameConfig)
 {
 	FSpectrumEmu *pEmu = pGameViewer->pEmu;
 

@@ -4,6 +4,8 @@
 #include "Util/Misc.h"
 #include <json_fwd.hpp>
 
+// Global system config base class
+// Individual machine configs will derive from this
 struct FGlobalConfig
 {
 	bool				bEnableAudio;
@@ -23,14 +25,6 @@ struct FGlobalConfig
 	bool	Save(const char* filename);
 protected:
 	virtual void ReadFromJson(const nlohmann::json& jsonConfigFile);
-	virtual void WriteToJson(nlohmann::json& jsonConfigFile);
-
-	//virtual bool	Load(const char* pFileName);
-	//virtual bool	Save(const char *pFileName);
+	virtual void WriteToJson(nlohmann::json& jsonConfigFile) const;
 };
 
-
-
-//FGlobalConfig& GetGlobalConfig();
-//bool LoadGlobalConfig(const char* fileName);
-//bool SaveGlobalConfig(const char* fileName);

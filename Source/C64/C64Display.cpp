@@ -186,17 +186,25 @@ void FC64Display::DrawUI()
             if (bBitmapMode)
             {
                 ImGui::Text("Bitmap Writer: ");
-                ImGui::SameLine();
-                DrawCodeAddress(*CodeAnalysis, viewState, lastBitmapWriter);
+                if(lastBitmapWriter.IsValid())
+                {
+                    ImGui::SameLine();
+                    DrawCodeAddress(*CodeAnalysis, viewState, lastBitmapWriter);
+                }
             }
             ImGui::Text("Char Writer: ");
             ImGui::SameLine();
             if(lastCharWriter.IsValid())
+            { 
+                ImGui::SameLine();
                 DrawCodeAddress(*CodeAnalysis, viewState, lastCharWriter);
+            }
             ImGui::Text("Colour RAM Writer: ");
-            ImGui::SameLine();
             if (lastColourRamWriter.IsValid())
+            {
+                ImGui::SameLine();
                 DrawCodeAddress(*CodeAnalysis, viewState, lastColourRamWriter);
+            }
             ImGui::EndTooltip();
             //ImGui::Text("Pixel Writer: %04X, Attrib Writer: %04X", lastPixWriter, lastAttrWriter);
 

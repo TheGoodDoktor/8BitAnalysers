@@ -1,27 +1,27 @@
 #pragma once
 
+#include "CodeAnalyser/IOAnalyser.h"
+
 #include "IORegisterAnalysis.h"
 
 class FCodeAnalysisState;
 struct FCodeAnalysisPage;
 
-class FVICAnalysis
+class FVICAnalysis : public FIODevice
 {
 public:
 	void	Init(FCodeAnalysisState* pAnalysis);
 	void	Reset();
-	void	OnRegisterRead(uint8_t reg, uint16_t pc);
-	void	OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc);
+	void	OnRegisterRead(uint8_t reg, FAddressRef pc);
+	void	OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc);
 
-	void	DrawUI(void);
+	void	DrawDetailsUI(void);
 
 private:
 	static const int kNoRegisters = 64;
 	FC64IORegisterInfo	VICRegisters[kNoRegisters];
 
 	int		SelectedRegister = -1;
-
-	FCodeAnalysisState* pCodeAnalysis = nullptr;
 };
 
 void AddVICRegisterLabels(FCodeAnalysisPage& IOPage);

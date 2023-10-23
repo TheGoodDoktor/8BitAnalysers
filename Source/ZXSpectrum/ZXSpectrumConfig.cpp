@@ -22,7 +22,7 @@ void FZXSpectrumConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 		RZXFolder += "/";
 }
 
-void FZXSpectrumConfig::WriteToJson(nlohmann::json& jsonConfigFile)
+void FZXSpectrumConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 {
 	FGlobalConfig::WriteToJson(jsonConfigFile);
 	jsonConfigFile["SnapshotFolder128"] = SnapshotFolder128;

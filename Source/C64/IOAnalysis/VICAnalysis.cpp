@@ -4,8 +4,9 @@
 
 void FVICAnalysis::Init(FCodeAnalysisState* pAnalysis)
 {
-	pCodeAnalysis = pAnalysis;
-
+	Name = "VIC-II";
+	SetAnalyser(pAnalysis);
+	pAnalysis->IOAnalyser.AddDevice(this);
 }
 
 void FVICAnalysis::Reset(void)
@@ -14,20 +15,17 @@ void FVICAnalysis::Reset(void)
 		VICRegisters[i].Reset();
 }
 
-void FVICAnalysis::OnRegisterRead(uint8_t reg, uint16_t pc)
+void FVICAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
 {
 
 }
 
-void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, uint16_t pc)
+void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 {
 	FC64IORegisterInfo& vicRegister = VICRegisters[reg];
 	const uint8_t regChange = vicRegister.LastVal ^ val;	// which bits have changed
 
-    // FIXME: FCodeAnalysisState::GetAddressReadPageId is a private member
-	//int16_t pageId = pCodeAnalysis->GetAddressReadPageId(pc);
-    int16_t pageId = 0;
-	vicRegister.Accesses[pc + (pageId << 16)].WriteVals.insert(val);
+	vicRegister.Accesses[pc].WriteVals.insert(val);
 
 	vicRegister.LastVal = val;
 }
@@ -168,7 +166,7 @@ static std::vector<FRegDisplayConfig>	g_VICRegDrawInfo =
 	{"VIC_Sprite7Colour",		DrawRegValueColour}// 0x2e
 };
 
-void FVICAnalysis::DrawUI(void)
+void FVICAnalysis::DrawDetailsUI(void)
 {
 	if (ImGui::BeginChild("VIC Reg Select", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
 	{
@@ -187,7 +185,7 @@ void FVICAnalysis::DrawUI(void)
 	ImGui::SameLine();
 	if (ImGui::BeginChild("VIC Reg Details"))
 	{
-		if (0 && SelectedRegister != -1)
+		if (SelectedRegister != -1)
 		{
 			FC64IORegisterInfo& vicRegister = VICRegisters[SelectedRegister];
 			const FRegDisplayConfig& regConfig = g_VICRegDrawInfo[SelectedRegister];
@@ -205,11 +203,7 @@ void FVICAnalysis::DrawUI(void)
 			{
 				ImGui::Separator();
 
-                // FIXME: FCodeAnalysisState::GetPageName is a private member
-				//const char* pPageName = pCodeAnalysis->GetPageName(access.first >> 16);
-                const char* pPageName = "";
-				ImGui::Text("Code at: %s:$%X", pPageName, access.first & 0xffff);
-				DrawAddressLabel(*pCodeAnalysis, pCodeAnalysis->GetFocussedViewState(), access.first & 0xffff);
+				DrawCodeAddress(*pCodeAnalyser, pCodeAnalyser->GetFocussedViewState(), access.first);
 
 				ImGui::Text("Values:");
 
