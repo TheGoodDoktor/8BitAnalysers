@@ -124,6 +124,11 @@ void FC64Display::DrawUI()
     const bool bMultiColourMode = !!(pC64->vic.reg.ctrl_2 & (1<<4));
     uint16_t vicMemBase = pC64->vic_bank_select;
     uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
+    uint16_t spritePtrs = vicMemBase + screenMem + 1016;
+
+    uint8_t sprite1 = mem_rd(&pC64->mem_vic,spritePtrs);
+    // sprite address is sprite1 * 64
+
     ImGui::Text("VIC Bank: $%04X, Screen Mem: $%04X", vicMemBase, vicMemBase + screenMem);
     if (bBitmapMode)
     {
@@ -155,9 +160,13 @@ void FC64Display::DrawUI()
         int topScreenScanLine = 0;
         int scanlineX = pC64->vic.rs.h_count * M6569_PIXELS_PER_TICK;  
         int scanlineY = std::min(std::max(pC64->vic.rs.v_count - topScreenScanLine, 0), disp.screen.height);
+        int interruptScanline = pC64->vic.rs.v_irqline;
         dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (scanlineY * scale)), 0x50ffffff);
         DrawArrow(dl, ImVec2(pos.x - 2, pos.y + (scanlineY * scale) - 6), false);
         DrawArrow(dl, ImVec2(pos.x + (disp.screen.width - 11) * scale, pos.y + (scanlineY * scale) - 6), true);
+
+        // interrupt scanline
+        dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (interruptScanline * scale)), ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (interruptScanline * scale)), 0x50ffffff);
 
         if(config.bShowHCounter)
             dl->AddLine(ImVec2(pos.x + (scanlineX * scale), pos.y), ImVec2(pos.x + (scanlineX * scale), pos.y + disp.screen.height * scale), 0x50ffffff);
@@ -165,8 +174,8 @@ void FC64Display::DrawUI()
 
     if (ImGui::IsItemHovered())
     {
-        pC64->vic.crt.vis_x0 * M6569_PIXELS_PER_TICK;
-        pC64->vic.brd.left* M6569_PIXELS_PER_TICK;
+        //pC64->vic.crt.vis_x0 * M6569_PIXELS_PER_TICK;
+        //pC64->vic.brd.left* M6569_PIXELS_PER_TICK;
 
         const int borderOffsetX = ((dispFrameWidth - graphicsScreenWidth) / 2);    // align to character size
         const int borderOffsetY = ((dispFrameHeight - graphicsScreenHeight) / 2);
