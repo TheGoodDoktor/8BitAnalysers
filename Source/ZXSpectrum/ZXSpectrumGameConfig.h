@@ -1,6 +1,6 @@
 #pragma once
 
-#include <misc/GameConfig.h>
+#include <Misc/GameConfig.h>
 
 
 struct FGame;
