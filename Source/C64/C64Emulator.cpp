@@ -16,6 +16,8 @@
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "C64 Analyser";
 
+void SetWindowTitle(const char* pTitle);
+
 
 /* reboot callback */
 static void C64BootCallback(c64_t* sys)
@@ -93,7 +95,7 @@ bool UISnapshotLoadCB(size_t slot_index)
 
 bool FC64Emulator::Init()
 {
-	//SetWindowTitle(kAppTitle.c_str());
+	SetWindowTitle(kAppTitle.c_str());
 	//SetWindowIcon("SALogo.png");
 
 	// Initialise Emulator
@@ -286,7 +288,6 @@ bool FC64Emulator::StartGame(const char* pGameName, bool bLoadGameData)
     return false;
 }
 
-void SetWindowTitle(const char* pTitle);
 
 bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
 {
@@ -877,6 +878,19 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
         hitIrq = true;
         const uint16_t interruptHandler = ReadWord(0xfffe);
         InterruptHandlers.insert(CodeAnalysis.AddressRefFromPhysicalAddress(interruptHandler));
+    }
+
+    // trigger frame events on scanline pos
+    static uint16_t lastScanlinePos = 0;
+    const uint16_t scanlinePos = C64Emu.vic.rs.v_count;
+    if (scanlinePos != lastScanlinePos)
+    {
+        if(scanlinePos == 0)
+            CodeAnalysis.OnMachineFrameStart();
+        else if(scanlinePos == 311)    // last scanline
+            CodeAnalysis.OnMachineFrameEnd();
+
+        lastScanlinePos = scanlinePos;
     }
 
     bool bReadingInstruction = addr == m6502_pc(&C64Emu.cpu) - 1;

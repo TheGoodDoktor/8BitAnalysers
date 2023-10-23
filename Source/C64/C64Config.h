@@ -14,6 +14,8 @@ struct FC64Config : public FGlobalConfig
 	std::string			DisksFolder = "./Disks/";
 	std::string			PrgFolder = "./Prg/";
 
+	bool		bShowHCounter = false;
+
 protected:
 
 	void ReadFromJson(const nlohmann::json& jsonConfigFile) override;

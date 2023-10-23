@@ -15,6 +15,8 @@ void FC64Config::ReadFromJson(const nlohmann::json& jsonConfigFile)
 		DisksFolder = jsonConfigFile["DisksFolder"];
 	if (jsonConfigFile.contains("PrgFolder"))
 		PrgFolder = jsonConfigFile["PrgFolder"];
+	if (jsonConfigFile.contains("ShowHCounter"))
+		bShowHCounter = jsonConfigFile["ShowHCounter"];
 
 	// fixup paths
 	if (TapesFolder.back() != '/')
@@ -31,6 +33,7 @@ void FC64Config::WriteToJson(nlohmann::json& jsonConfigFile) const
 	jsonConfigFile["TapesFolder"] = TapesFolder;
 	jsonConfigFile["DisksFolder"] = DisksFolder;
 	jsonConfigFile["PrgFolder"] = PrgFolder;
+	jsonConfigFile["ShowHCounter"] = bShowHCounter;
 }
 
 void FC64GameConfig::LoadFromJson(const nlohmann::json& jsonConfig)

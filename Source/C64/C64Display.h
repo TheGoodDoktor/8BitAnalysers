@@ -30,8 +30,8 @@ private:
 	uint16_t		SelectBitmapAddr = 0;
 	uint16_t		SelectCharAddr = 0;
 	uint16_t		SelectColourRamAddr = 0;
-	int				SelectedCharX = 0;
-	int				SelectedCharY = 0;
+	float			SelectedCharX = 0;
+	float			SelectedCharY = 0;
 
 	uint32_t* FrameBuffer;	// pixel buffer to store emu output
 	ImTextureID		ScreenTexture;		// texture 

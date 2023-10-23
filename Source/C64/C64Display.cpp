@@ -21,6 +21,9 @@
 #include <algorithm>
 
 #include "C64Emulator.h"
+#include "C64Config.h"
+#include <ImGuiSupport/ImGuiScaling.h>
+#include <ImGuiSupport/ImGuiDrawing.h>
 
 void FC64Display::Init(FCodeAnalysisState* pAnalysis, FC64Emulator* pC64Emu)
 {
@@ -89,7 +92,7 @@ void FC64Display::DrawUI()
 {
     c64_t* pC64 = C64Emu->GetEmu();
     FCodeAnalysisViewState& viewState = CodeAnalysis->GetFocussedViewState();
-
+    const FC64Config &config = *C64Emu->GetGlobalConfig();
     const bool bDebugFrame = pC64->vic.debug_vis;
     //if (bDebugFrame)
     //else
@@ -138,29 +141,48 @@ void FC64Display::DrawUI()
 
     ImGuiIO& io = ImGui::GetIO();
     ImVec2 pos = ImGui::GetCursorScreenPos();
+    const float scale = ImGui_GetScaling();
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImVec2 uv0(0, 0);
     ImVec2 uv1((float)disp.screen.width / (float)disp.frame.dim.width, (float)disp.screen.height / (float)disp.frame.dim.height);
 
+    // Draw Screen
+    ImGui::Image(ScreenTexture, ImVec2((float)disp.screen.width * scale, (float)disp.screen.height * scale),uv0,uv1);
 
-    ImGui::Image(ScreenTexture, ImVec2((float)disp.screen.width, (float)disp.screen.height),uv0,uv1);
+    // Draw an indicator to show which scanline is being drawn
+    if (config.bShowScanLineIndicator && CodeAnalysis->Debugger.IsStopped())
+    {
+        int topScreenScanLine = 0;
+        int scanlineX = pC64->vic.rs.h_count * M6569_PIXELS_PER_TICK;  
+        int scanlineY = std::min(std::max(pC64->vic.rs.v_count - topScreenScanLine, 0), disp.screen.height);
+        dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (scanlineY * scale)), 0x50ffffff);
+        DrawArrow(dl, ImVec2(pos.x - 2, pos.y + (scanlineY * scale) - 6), false);
+        DrawArrow(dl, ImVec2(pos.x + (disp.screen.width - 11) * scale, pos.y + (scanlineY * scale) - 6), true);
+
+        if(config.bShowHCounter)
+            dl->AddLine(ImVec2(pos.x + (scanlineX * scale), pos.y), ImVec2(pos.x + (scanlineX * scale), pos.y + disp.screen.height * scale), 0x50ffffff);
+    }
 
     if (ImGui::IsItemHovered())
     {
-        const int borderOffsetX = ((dispFrameWidth - graphicsScreenWidth) / 2) & ~7;    // align to character size
+        pC64->vic.crt.vis_x0 * M6569_PIXELS_PER_TICK;
+        pC64->vic.brd.left* M6569_PIXELS_PER_TICK;
+
+        const int borderOffsetX = ((dispFrameWidth - graphicsScreenWidth) / 2);    // align to character size
         const int borderOffsetY = ((dispFrameHeight - graphicsScreenHeight) / 2);
 
-        const int xp = std::min(std::max((int)(io.MousePos.x - pos.x - borderOffsetX), 0), graphicsScreenWidth - 1);
-        const int yp = std::min(std::max((int)(io.MousePos.y - pos.y - borderOffsetY), 0), graphicsScreenHeight - 1);
+        const ImVec2 mouseOffset((io.MousePos.x - pos.x)/scale, (io.MousePos.y - pos.y) / scale);
+        const int xp = std::min(std::max((int)(mouseOffset.x - borderOffsetX), 0), graphicsScreenWidth - 1);
+        const int yp = std::min(std::max((int)(mouseOffset.y - borderOffsetY), 0), graphicsScreenHeight - 1);
         
         dl->AddRect(
-            ImVec2((float)pos.x + borderOffsetX, (float)pos.y + borderOffsetY), 
-            ImVec2((float)pos.x + borderOffsetX + graphicsScreenWidth, (float)pos.y + borderOffsetY + graphicsScreenHeight), 
+            ImVec2((float)pos.x + borderOffsetX * scale, (float)pos.y + borderOffsetY * scale), 
+            ImVec2((float)pos.x + borderOffsetX + graphicsScreenWidth * scale, (float)pos.y + (borderOffsetY + graphicsScreenHeight) * scale), 
             0xffffffff);
 
         dl->AddRect(
             ImVec2((float)pos.x, (float)pos.y),
-            ImVec2((float)pos.x + dispFrameWidth, (float)pos.y + dispFrameHeight),
+            ImVec2((float)pos.x + dispFrameWidth * scale, (float)pos.y + dispFrameHeight * scale),
             0xffffffff);
 
         const uint16_t scrBitmapAddress = GetScreenBitmapAddress(xp, yp);
@@ -169,9 +191,9 @@ void FC64Display::DrawUI()
 
         if (scrCharAddress != 0)
         {
-            const int rx = static_cast<int>(pos.x) + borderOffsetX + (xp & ~0x7);
-            const int ry = static_cast<int>(pos.y) + borderOffsetY + (yp & ~0x7);
-            dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + 8, (float)ry + 8), 0xffffffff);
+            const float rx = static_cast<int>(pos.x) + (borderOffsetX + (xp & ~0x7)) * scale;
+            const float ry = static_cast<int>(pos.y) + (borderOffsetY + (yp & ~0x7)) * scale;
+            dl->AddRect(ImVec2(rx, ry), ImVec2(rx + 8 * scale, ry + 8 * scale), 0xffffffff);
             ImGui::BeginTooltip();
             ImGui::Text("Screen Pos (%d,%d)", xp, yp);
             if(bBitmapMode)
@@ -241,7 +263,7 @@ void FC64Display::DrawUI()
     {
         ImDrawList* dl = ImGui::GetWindowDrawList();
         const ImU32 col = 0xffffffff;	// TODO: pulse
-        dl->AddRect(ImVec2((float)SelectedCharX, (float)SelectedCharY), ImVec2((float)SelectedCharX + 8, (float)SelectedCharY + 8), col);
+        dl->AddRect(ImVec2(SelectedCharX, SelectedCharY), ImVec2(SelectedCharX + 8 * scale, SelectedCharY + 8 * scale), col);
 
         if (bBitmapMode)
         {
