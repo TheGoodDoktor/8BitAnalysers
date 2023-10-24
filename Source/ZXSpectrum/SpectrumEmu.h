@@ -39,8 +39,9 @@
 #include "Viewers/ZXGraphicsViewer.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/FrameTraceViewer.h"
-#include "SnapshotLoaders/GamesList.h"
+#include "Misc/GamesList.h"
 #include "IOAnalysis.h"
+#include "SnapshotLoaders/GameLoader.h"
 #include "SnapshotLoaders/RZXLoader.h"
 #include "Util/Misc.h"
 #include "SpectrumDevices.h"
@@ -159,6 +160,7 @@ public:
 
 	FGamesList		GamesList;
 	FGamesList		RZXGamesList;
+	FZXGameLoader	GameLoader;
 
 	//Viewers
 	FSpectrumViewer			SpectrumViewer;

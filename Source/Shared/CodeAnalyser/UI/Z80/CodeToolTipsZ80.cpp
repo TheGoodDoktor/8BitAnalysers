@@ -630,7 +630,7 @@ void DoEDPrefix(uint8_t prefix, uint32_t* r, uint32_t* rp, uint16_t pc, const FC
 				const std::string strReg = GetRegName(r[y]);
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "Port (C) is read and the result is loaded into %s.", strReg.c_str());
 				snprintf(g_TTZ80TitleBuf, kTTZ80TitleLen, "Load %s from port (C)", strReg.c_str());
-				inst.RegFlags = r[y] | Z80Reg::C;
+				inst.RegFlags = r[y] | Z80Reg::BC;
 			}
 			break;
 		case 1: /* OUT (C), r*/
@@ -639,12 +639,12 @@ void DoEDPrefix(uint8_t prefix, uint32_t* r, uint32_t* rp, uint16_t pc, const FC
 				const std::string strReg = GetRegName(r[y]);
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "The contents of %s is written to port (C).", strReg.c_str());
 				snprintf(g_TTZ80TitleBuf, kTTZ80TitleLen, "Output %s to port (C)", strReg.c_str());
-				inst.RegFlags = r[y] | Z80Reg::C;
+				inst.RegFlags = r[y] | Z80Reg::BC;
 			}
 			else // OUT (C), 0 [Undocumented]
 			{
 				snprintf(g_TTZ80DescBuf, kTTZ80DescLen, "0 is written to port (C).");
-				inst.RegFlags = Z80Reg::C;
+				inst.RegFlags = Z80Reg::BC;
 			}
 			break;
 		case 2: /* SBC HL, ss. ADC HL, ss. Where ss is BC/DE/HL/SP*/

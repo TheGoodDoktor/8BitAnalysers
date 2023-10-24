@@ -1126,16 +1126,21 @@ void FDebugger::DrawEvents(void)
 		ImGui::TreePop();
 	}
 
+	viewState.HighlightScanline = -1;
+
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollY;
-	if (ImGui::BeginTable("Events", 4, flags))
+	if (ImGui::BeginTable("Events", 5, flags))
 	{
+		const float fontSize = ImGui::GetFontSize();
+
 		ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
-		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 200);
+		ImGui::TableSetupColumn("Scanline", ImGuiTableColumnFlags_WidthFixed, fontSize * 3);
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, fontSize * 14);
 		ImGui::TableSetupColumn("PC", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, fontSize * 8);
 		ImGui::TableHeadersRow();
-
+		
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
@@ -1146,6 +1151,9 @@ void FDebugger::DrawEvents(void)
 				ImGui::TableNextRow();
 
 				ImGui::TableSetColumnIndex(0);
+				ImGui::Text("%d", event.ScanlinePos);
+
+				ImGui::TableSetColumnIndex(1);
 				ImVec2 pos = ImGui::GetCursorScreenPos();
 					
 				// Type
@@ -1155,13 +1163,18 @@ void FDebugger::DrawEvents(void)
 
 				ImGui::Text("   %s", GetEventName(event.Type));
 					
+				if (ImGui::IsItemHovered())
+				{
+					viewState.HighlightScanline = event.ScanlinePos;
+				}
+
 				// PC
-				ImGui::TableSetColumnIndex(1);
+				ImGui::TableSetColumnIndex(2);
 				ImGui::Text("%s:", NumStr(event.PC.Address));
 				DrawAddressLabel(state, viewState, event.PC);
 
 				// Address
-				ImGui::TableSetColumnIndex(2);
+				ImGui::TableSetColumnIndex(3);
 				if (typeInfo.ShowAddressCB != nullptr)
 				{
 					typeInfo.ShowAddressCB(state, event);
@@ -1173,7 +1186,7 @@ void FDebugger::DrawEvents(void)
 				}
 
 				// Value
-				ImGui::TableSetColumnIndex(3);
+				ImGui::TableSetColumnIndex(4);
 				if (typeInfo.ShowValueCB != nullptr)
 				{
 					typeInfo.ShowValueCB(state, event);
@@ -1183,7 +1196,6 @@ void FDebugger::DrawEvents(void)
 					ImGui::Text("%s", NumStr(event.Value));
 				}
 				ImGui::PopID();
-
 			}
 		}
 

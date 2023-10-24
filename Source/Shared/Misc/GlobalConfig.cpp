@@ -14,7 +14,8 @@ FGlobalConfig	g_GlobalConfig;
 void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 {
 	bEnableAudio = jsonConfigFile["EnableAudio"];
-	bShowScanLineIndicator = jsonConfigFile["ShowScanlineIndicator"];
+	if (jsonConfigFile.contains("ShowScanlineIndicator"))
+		bShowScanLineIndicator = jsonConfigFile["ShowScanlineIndicator"];
 	if (jsonConfigFile.contains("ShowOpcodeValues"))
 		bShowOpcodeValues = jsonConfigFile["ShowOpcodeValues"];
 	LastGame = jsonConfigFile["LastGame"];

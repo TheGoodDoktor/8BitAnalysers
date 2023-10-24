@@ -108,16 +108,16 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 				switch (pixel)
 				{
 				case 0:
-					colourIndex = (val & 0x8 ? 1 : 0) | (val & 0x80 ? 2 : 0);
+					colourIndex = (val & 0x8 ? 2 : 0) | (val & 0x80 ? 1 : 0);
 					break;
 				case 1:
-					colourIndex = (val & 0x4 ? 1 : 0) | (val & 0x40 ? 2 : 0);
+					colourIndex = (val & 0x4 ? 2 : 0) | (val & 0x40 ? 1 : 0);
 					break;
 				case 2:
-					colourIndex = (val & 0x2 ? 1 : 0) | (val & 0x20 ? 2 : 0);
+					colourIndex = (val & 0x2 ? 2 : 0) | (val & 0x20 ? 1 : 0);
 					break;
 				case 3:
-					colourIndex = (val & 0x1 ? 1 : 0) | (val & 0x10 ? 2 : 0);
+					colourIndex = (val & 0x1 ? 2 : 0) | (val & 0x10 ? 1 : 0);
 					break;
 				}
 
