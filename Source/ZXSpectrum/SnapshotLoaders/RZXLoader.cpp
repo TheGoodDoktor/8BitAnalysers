@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "Util/FileUtil.h"
 #include "Debug/DebugLog.h"
-#include "GamesList.h"
+#include "Misc/GamesList.h"
 #include "Z80Loader.h"
 #include "SNALoader.h"
 

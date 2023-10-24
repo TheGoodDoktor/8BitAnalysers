@@ -26,6 +26,7 @@ private:
 	// private methods
 	void	DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos);
 	bool	OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnalysis, FCodeAnalysisViewState& viewState);
+	ImU32	GetFlashColour() const;
 
 private:
 	FSpectrumEmu* pSpectrumEmu = nullptr;

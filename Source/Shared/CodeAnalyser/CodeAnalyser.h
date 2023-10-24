@@ -177,10 +177,12 @@ struct FCodeAnalysisViewState
 	
 	bool			Enabled = false;
 	bool			TrackPCFrame = false;
-	FAddressRef		HoverAddress;		// address being hovered over
-	FAddressRef		HighlightAddress;	// address to highlight
+	FAddressRef		HoverAddress;			// address being hovered over
+	FAddressRef		HighlightAddress;		// address to highlight
+	int				HighlightScanline = -1;	// scanline to highlight
 	bool			GoToLabel = false;
 	int16_t			ViewingBankId = -1;
+
 	// for global Filters
 	bool						ShowROMLabels = false;
 	std::string					FilterText;

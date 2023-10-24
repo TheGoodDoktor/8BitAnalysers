@@ -3,15 +3,15 @@
 #include <string>
 #include <vector>
 
-class FSpectrumEmu;
+class FSystem;
 
 enum class ESnapshotType
 {
 	Z80,
 	SNA,
-	RZX,
 	TAP,
 	TZX,
+	RZX,
 
 	Unknown
 };
@@ -23,22 +23,30 @@ struct FGameSnapshot
 	std::string		FileName;
 };
 
+class IGameLoader
+{
+public:
+	virtual bool LoadGame(const char* pFileName) = 0;
+	virtual ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn) = 0;
+};
+
 class FGamesList
 {
 public:
-	void	Init(FSpectrumEmu* pEmu) { pSpectrumEmu = pEmu; }
+	void	Init(IGameLoader* pLoader) 
+	{ 
+		pGameLoader = pLoader;
+	}
 	bool	EnumerateGames(const char* pRootDir);
-	bool	LoadGame(int index);
-	bool	LoadGame(const char* pFileName);
+	bool	LoadGame(int index) const;
+	bool	LoadGame(const char* pFileName) const;
 
 	int		GetNoGames() const { return (int)GamesList.size(); }
 	const FGameSnapshot& GetGame(int index) const { return GamesList[index]; }
 	//const std::string& GetGameName(int index) const { return GamesList[index].DisplayName; }
 
 private:
-	FSpectrumEmu* pSpectrumEmu = nullptr;
 	std::vector< FGameSnapshot>	GamesList;
 	std::string RootDir;
+	IGameLoader* pGameLoader = 0;
 };
-
-ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn);

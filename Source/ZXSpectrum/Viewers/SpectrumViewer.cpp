@@ -79,6 +79,20 @@ void FSpectrumViewer::Draw()
 		DrawArrow(dl, ImVec2(pos.x + (320 - 11) * scale, pos.y + (scanlineY * scale) - 6), true);
 	}
 
+	// highlight scanline
+	if (debugger.IsStopped())
+	{
+		if (viewState.HighlightScanline != -1)
+		{
+			const int scanlineY = std::min(std::max(viewState.HighlightScanline - topScreenScanLine, 0), 256);
+
+			ImVec2 start = ImVec2(pos.x, pos.y + (scanlineY * scale));
+			const ImVec2 end = ImVec2(pos.x + (320 + 32) * scale, pos.y + (scanlineY * scale));
+
+			dl->AddLine(start, end, GetFlashColour(), 1 * scale);
+		}
+	}
+
 	if (bShowCoordinates)
 		DrawCoordinatePositions(codeAnalysis, pos);
 
@@ -87,14 +101,7 @@ void FSpectrumViewer::Draw()
 	if (viewState.HighlightAddress.IsValid())
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-
-		// generate flash colour
-		ImU32 flashCol = 0xff000000;
-		const int flashCounter = FrameCounter >> 2;
-		if (flashCounter & 1) flashCol |= 0xff << 0;
-		if (flashCounter & 2) flashCol |= 0xff << 8;
-		if (flashCounter & 4) flashCol |= 0xff << 16;
-		
+		const ImU32 flashCol = GetFlashColour();
 		if (viewState.HighlightAddress.Address >= kScreenPixMemStart && viewState.HighlightAddress.Address <= kScreenPixMemEnd)	// pixel
 		{
 			int xp, yp;
@@ -423,6 +430,17 @@ int SpectrumKeyFromImGuiKey(ImGuiKey key)
 		speccyKey = 0xc;
 	}
 	return speccyKey;
+}
+
+ImU32 FSpectrumViewer::GetFlashColour() const
+{
+	// generate flash colour
+	ImU32 flashCol = 0xff000000;
+	const int flashCounter = FrameCounter >> 2;
+	if (flashCounter & 1) flashCol |= 0xff << 0;
+	if (flashCounter & 2) flashCol |= 0xff << 8;
+	if (flashCounter & 4) flashCol |= 0xff << 16;
+	return flashCol;
 }
 
 void FSpectrumViewer::Tick(void)
