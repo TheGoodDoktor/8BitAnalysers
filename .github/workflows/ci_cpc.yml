@@ -1,0 +1,75 @@
+name: Continuous Integration CPC
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+  SPECAN_VERSION: ${{ github.ref_name }}
+
+permissions:
+  contents: read
+
+jobs:
+
+    build_latest:
+        name: Build Release
+        strategy:
+          matrix:
+            os: [ubuntu-latest, macos-latest, windows-latest]
+            include:
+              - os: ubuntu-latest
+                release_suffix: ubuntu
+              - os: macos-latest
+                release_suffix: mac
+              - os: windows-latest
+                release_suffix: windows
+        runs-on: ${{ matrix.os }}
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v3
+            with:
+                submodules: recursive
+          # Linux
+          - name: Run Linux Build
+            if: matrix.os == 'ubuntu-latest'
+            run: |
+                    sudo apt-get update
+                    sudo apt-get install -o Acquire::Retries=3 -y --no-install-recommends --fix-missing libegl-mesa0 libgl1-mesa-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libasound2-dev
+                    cd ${{ github.workspace }}/Source/CPC
+                    mkdir build
+                    cd build
+                    cmake ..
+                    make
+          # Mac
+          - name: Run Mac Build
+            if: matrix.os == 'macos-latest'
+            run: |
+                    cd ${{ github.workspace }}/Source/CPC
+                    mkdir build
+                    cd build
+                    cmake ..
+                    make
+          # Windows
+          - name: Setup Windows Build
+            if: matrix.os == 'windows-latest'
+            uses: microsoft/setup-msbuild@v1.0.2
+            
+          - name: Run Windows GLFW Build
+            if: matrix.os == 'windows-latest'
+            run: |
+                    cd ${{ github.workspace }}/Source/CPC
+                    mkdir build
+                    cd build
+                    cmake ..
+                    msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} CPCAnalyser.sln
+                    
+            
+
+ 
