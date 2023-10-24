@@ -243,8 +243,8 @@ void FVICAnalysis::OnMachineFrame(void)
 			FSpriteDef newSpriteDef;
 			newSpriteDef.Address = vicMemBase + (spriteDefNo * 64);
 			newSpriteDef.SpriteCols[0] = 0;	// transparent
-			newSpriteDef.SpriteCols[1] = m6569_color(pC64->vic.reg.mc[spriteNo]);
-			newSpriteDef.SpriteCols[2] = m6569_color(pC64->vic.reg.mm[0]);
+			newSpriteDef.SpriteCols[1] = m6569_color(pC64->vic.reg.mm[0]);
+			newSpriteDef.SpriteCols[2] = m6569_color(pC64->vic.reg.mc[spriteNo]);
 			newSpriteDef.SpriteCols[3] = m6569_color(pC64->vic.reg.mm[1]);
 			newSpriteDef.bMultiColour = pC64->vic.reg.mmc & (1 << spriteNo);
 
