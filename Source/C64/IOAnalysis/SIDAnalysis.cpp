@@ -1,10 +1,14 @@
 #include "SIDAnalysis.h"
 #include "CodeAnalyser/CodeAnalyser.h"
-void	FSIDAnalysis::Init(FCodeAnalysisState* pAnalysis)
+#include "../C64Emulator.h"
+
+
+void	FSIDAnalysis::Init(FC64Emulator* pEmulator)
 {
 	Name = "SID";
-	SetAnalyser(pAnalysis);
-	pAnalysis->IOAnalyser.AddDevice(this);
+	SetAnalyser(&pEmulator->GetCodeAnalysis());
+	pCodeAnalyser->IOAnalyser.AddDevice(this);
+	pC64Emu = pEmulator;
 }
 
 void FSIDAnalysis::Reset(void)

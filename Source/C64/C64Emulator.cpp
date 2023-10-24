@@ -197,8 +197,8 @@ bool FC64Emulator::Init()
 	SetupCodeAnalysisLabels();
 	UpdateCodeAnalysisPages(0x7);
     
-    IOAnalysis.Init(&CodeAnalysis);
-    GraphicsViewer.Init(&CodeAnalysis, &C64Emu);
+    IOAnalysis.Init(this);
+    GraphicsViewer.Init(this);
 
     GamesList.EnumerateGames(pGlobalConfig->PrgFolder.c_str());
 

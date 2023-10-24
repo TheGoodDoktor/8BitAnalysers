@@ -3,25 +3,26 @@
 #include <cstdint>
 
 class FCodeAnalysisState;
-
 class FGraphicsView;
+class FC64Emulator;
 
 class FC64GraphicsViewer
 {
 public:
-	void	Init(FCodeAnalysisState* pAnalysis,void* pC64Emu);
+	void	Init(FC64Emulator* pC64Emu);
 	void	Shutdown();
 	void	DrawUI();
 
 	void	DrawHiResSpriteAt(uint16_t addr, int xp, int yp);
 	void	DrawMultiColourSpriteAt(uint16_t addr, int xp, int yp);
 private:
-	void*				C64Emu = nullptr;
+	FC64Emulator*		C64Emu = nullptr;
 	FCodeAnalysisState* CodeAnalysis = nullptr;
 
 	FGraphicsView*		CharacterView = nullptr;
 	FGraphicsView*		SpriteView = nullptr;
-
+	FGraphicsView*		FoundSpritesView = nullptr;
+	
 	int		VicBankNo = 0;
 
 	bool			SpriteMultiColour = false;

@@ -1118,6 +1118,7 @@ void	FCodeAnalysisState::OnMachineFrameStart()
 }
 void	FCodeAnalysisState::OnMachineFrameEnd()
 {
+	IOAnalyser.OnMachineFrame();
 	Debugger.OnMachineFrameEnd();
 }
 

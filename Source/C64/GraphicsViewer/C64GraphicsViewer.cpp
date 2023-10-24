@@ -18,12 +18,15 @@
 #include <systems/c64.h>
 #include <systems/c64.h>
 
-void FC64GraphicsViewer::Init(FCodeAnalysisState* pAnalysis, void* pEmu)
+#include "../C64Emulator.h"
+
+void FC64GraphicsViewer::Init(FC64Emulator* pC64Emu)
 {
-	C64Emu = pEmu;
-	CodeAnalysis = pAnalysis;
+	C64Emu = pC64Emu;
+	CodeAnalysis = &pC64Emu->GetCodeAnalysis();
 	CharacterView = new FGraphicsView(320, 408);	// 40 * 51 enough for a 16K Vic bank
 	SpriteView = new FGraphicsView(384, 16 * 21); // 16x16 sprites for a VIC bank
+	FoundSpritesView = new FGraphicsView(384, 16 * 21); // 16x16 sprites 
 	SpriteCols[0] = 0x00000000;
 	SpriteCols[1] = 0xffffffff;
 	SpriteCols[2] = 0xff888888;
@@ -37,7 +40,9 @@ void FC64GraphicsViewer::Init(FCodeAnalysisState* pAnalysis, void* pEmu)
 
 void FC64GraphicsViewer::Shutdown()
 {
-
+	delete CharacterView;
+	delete SpriteView;
+	delete FoundSpritesView;
 }
 
 void DrawHiresImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, uint32_t* cols)
@@ -91,14 +96,14 @@ void DrawMultiColourImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars,
 
 void FC64GraphicsViewer::DrawHiResSpriteAt(uint16_t addr, int xp, int yp)
 { 
-	c64_t* pC64 = (c64_t*)C64Emu;
+	c64_t* pC64 = C64Emu->GetEmu();
 	const uint8_t* pRAMAddr = &pC64->ram[addr];
 	DrawHiresImageAt(pRAMAddr, xp, yp, 3, 21, SpriteView, SpriteCols);
 }
 
 void FC64GraphicsViewer::DrawMultiColourSpriteAt(uint16_t addr, int xp, int yp)
 {
-	c64_t* pC64 = (c64_t*)C64Emu;
+	c64_t* pC64 = C64Emu->GetEmu();
 	const uint8_t* pRAMAddr = &pC64->ram[addr];
 	DrawMultiColourImageAt(pRAMAddr, xp, yp, 3, 21, SpriteView, SpriteCols);
 }
@@ -166,6 +171,36 @@ void FC64GraphicsViewer::DrawUI()
 				ImGui::Separator();
 				ImGui::PopID();
 			}
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Found Sprites"))
+		{
+			SpriteView->Clear(0);
+
+			const auto& foundSprites = C64Emu->GetC64IOAnalysis().GetVICAnalysis().GetFoundSprites();
+
+			for (int y = 0; y < 16; y++)
+			{
+				for (int x = 0; x < 16; x++)
+				{
+					const int spriteNo = x + (y * 16);
+
+					if(spriteNo < foundSprites.size())
+					{
+						const FSpriteDef& spriteDef = foundSprites[spriteNo];
+
+						if (spriteDef.bMultiColour)
+							DrawMultiColourSpriteAt(spriteDef.Address, x * 24, y * 21);
+						else
+							DrawHiResSpriteAt(spriteDef.Address, x * 24, y * 21);
+					}
+					
+				}
+			}
+
+			SpriteView->Draw();
+
 			ImGui::EndTabItem();
 		}
 

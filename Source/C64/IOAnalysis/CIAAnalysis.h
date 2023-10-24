@@ -1,16 +1,15 @@
 #pragma once
 
-#include "CodeAnalyser/IOAnalyser.h"
 #include "IORegisterAnalysis.h"
 #include <vector>
 
 class FCodeAnalysisState;
 struct FCodeAnalysisPage;
 
-class FCIAAnalysis : public FIODevice
+class FCIAAnalysis : public FC64IODevice
 {
 public:
-	void	Init(FCodeAnalysisState* pAnalysis);
+	void	Init(FC64Emulator* pEmulator);
 	void	Reset();
 	void	OnRegisterRead(uint8_t reg, FAddressRef pc);
 	void	OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc);

@@ -3,6 +3,8 @@
 #include <imgui.h>
 #include <CodeAnalyser/CodeAnalyser.h>
 #include <CodeAnalyser/CodeAnalysisPage.h>
+#include "../C64Emulator.h"
+
 
 static std::vector<FRegDisplayConfig>	g_CIA1RegDrawInfo =
 {
@@ -56,10 +58,11 @@ FCIA2Analysis::FCIA2Analysis()
 	RegConfig = &g_CIA2RegDrawInfo;
 }
 
-void	FCIAAnalysis::Init(FCodeAnalysisState* pAnalysis)
+void	FCIAAnalysis::Init(FC64Emulator* pEmulator)
 {
-	SetAnalyser(pAnalysis);
-	pAnalysis->IOAnalyser.AddDevice(this);
+	SetAnalyser(&pEmulator->GetCodeAnalysis());
+	pCodeAnalyser->IOAnalyser.AddDevice(this);
+	pC64Emu = pEmulator;
 }
 
 void FCIAAnalysis::Reset(void)

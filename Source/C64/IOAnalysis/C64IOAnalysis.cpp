@@ -2,12 +2,12 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include <imgui.h>
 
-void	FC64IOAnalysis::Init(FCodeAnalysisState* pAnalysis)
+void	FC64IOAnalysis::Init(FC64Emulator* pEmulator)
 {
-	VICAnalysis.Init(pAnalysis);
-	SIDAnalysis.Init(pAnalysis);
-	CIA1Analysis.Init(pAnalysis);
-	CIA2Analysis.Init(pAnalysis);
+	VICAnalysis.Init(pEmulator);
+	SIDAnalysis.Init(pEmulator);
+	CIA1Analysis.Init(pEmulator);
+	CIA2Analysis.Init(pEmulator);
 
 	// TODO: set initial VIC register values
 	for (int i = 0; i < 64; i++)

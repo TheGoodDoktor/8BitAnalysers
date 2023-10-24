@@ -121,6 +121,7 @@ public:
 
 	c64_t*	GetEmu() {return &C64Emu;}
 	FCodeAnalysisState& GetCodeAnalysis(){ return CodeAnalysis; }
+	const FC64IOAnalysis&	GetC64IOAnalysis() { return IOAnalysis; }
 
 	const FC64Config*	GetGlobalConfig() { return pGlobalConfig;}
 private:

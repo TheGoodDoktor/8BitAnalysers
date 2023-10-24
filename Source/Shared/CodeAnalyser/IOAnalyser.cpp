@@ -40,8 +40,16 @@ void FIOAnalyser::RegisterIOWrite(FAddressRef pc, uint16_t IOAddress, uint8_t va
 
 void FIOAnalyser::FrameTick(void)
 {
-
+	for (FIODevice* pDevice : Devices)
+		pDevice->OnFrameTick();
 }
+
+void FIOAnalyser::OnMachineFrame(void)
+{
+	for (FIODevice* pDevice : Devices)
+		pDevice->OnMachineFrame();
+}
+
 
 void FIOAnalyser::DrawUI(void)
 {
@@ -198,9 +206,9 @@ void FAYAudioDevice::DrawAYStateUI()
 	ImGui::Text("Chan C Freq: %dHz",chanCFrequencyHz);
 	ImGui::PlotLines("ChanCFreq", ChanCValues, IM_ARRAYSIZE(ChanCValues), GraphOffset, "ChanC Freq", chanFrequencyMinHz, chanFrequencyMaxHz, ImVec2(0, 100));
 
-	ChanAValues[GraphOffset] = chanAFrequencyHz;
-	ChanBValues[GraphOffset] = chanBFrequencyHz;
-	ChanCValues[GraphOffset] = chanCFrequencyHz;
+	ChanAValues[GraphOffset] = (float)chanAFrequencyHz;
+	ChanBValues[GraphOffset] = (float)chanBFrequencyHz;
+	ChanCValues[GraphOffset] = (float)chanCFrequencyHz;
 	GraphOffset = (GraphOffset + 1) % IM_ARRAYSIZE(ChanAValues);
 }
 

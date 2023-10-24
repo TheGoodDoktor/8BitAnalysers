@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CodeAnalyser/CodeAnalyserTypes.h"
+#include "CodeAnalyser/IOAnalyser.h"
 
 #include <cstdint>
 #include <unordered_map>
@@ -8,6 +9,7 @@
 #include <vector>
 
 class FCodeAnalysisState;
+class FC64Emulator;
 
 struct FC64IORegisterAccessInfo
 {
@@ -26,6 +28,14 @@ struct FRegDisplayConfig
 	const char* Name;
 	void		(*UIDrawFunction)(uint8_t val);
 };
+
+class FC64IODevice : public FIODevice
+{
+
+protected:
+	FC64Emulator* pC64Emu = nullptr;
+};
+
 
 void DrawRegValueHex(uint8_t val);
 void DrawRegValueDecimal(uint8_t val);

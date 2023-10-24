@@ -6,10 +6,10 @@
 class FCodeAnalysisState;
 struct FCodeAnalysisPage;
 
-class FSIDAnalysis : public FIODevice
+class FSIDAnalysis : public FC64IODevice
 {
 public:
-	void	Init(FCodeAnalysisState* pAnalysis);
+	void	Init(FC64Emulator* pEmulator);
 	void	Reset();
 	void	OnRegisterRead(uint8_t reg, FAddressRef pc);
 	void	OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc);

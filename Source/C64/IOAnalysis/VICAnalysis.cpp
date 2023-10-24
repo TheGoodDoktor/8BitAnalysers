@@ -1,12 +1,15 @@
 #include "VICAnalysis.h"
 #include <CodeAnalyser/CodeAnalyser.h>
+#include "../C64Emulator.h"
+
 #include <chips/chips_common.h>
 
-void FVICAnalysis::Init(FCodeAnalysisState* pAnalysis)
+void FVICAnalysis::Init(FC64Emulator* pEmulator)
 {
 	Name = "VIC-II";
-	SetAnalyser(pAnalysis);
-	pAnalysis->IOAnalyser.AddDevice(this);
+	SetAnalyser(&pEmulator->GetCodeAnalysis());
+	pCodeAnalyser->IOAnalyser.AddDevice(this);
+	pC64Emu = pEmulator;
 }
 
 void FVICAnalysis::Reset(void)
@@ -215,6 +218,50 @@ void FVICAnalysis::DrawDetailsUI(void)
 		}
 	}
 	ImGui::EndChild();
+
+	for (const auto& spriteDefIt : SpriteDefs)
+	{
+		ImGui::Text("Sprite at %s",NumStr(spriteDefIt.Address));
+	}
+}
+
+void FVICAnalysis::OnMachineFrame(void)
+{
+	c64_t* pC64 = pC64Emu->GetEmu();
+	uint16_t vicMemBase = pC64->vic_bank_select;
+	uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
+
+	// Analyse active sprites
+	uint16_t spritePtrs = vicMemBase + screenMem + 1016;
+
+	for(int spriteNo=0; spriteNo < 8; spriteNo++)
+	{
+		if(pC64->vic.reg.me & (1 << spriteNo))
+		{
+			const uint8_t spriteDefNo = mem_rd(&pC64->mem_vic, spritePtrs + spriteNo);
+
+			FSpriteDef newSpriteDef;
+			newSpriteDef.Address = vicMemBase + (spriteDefNo * 64);
+			newSpriteDef.SpriteCols[0] = 0;	// transparent
+			newSpriteDef.SpriteCols[1] = m6569_color(pC64->vic.reg.mc[spriteNo]);
+			newSpriteDef.SpriteCols[2] = m6569_color(pC64->vic.reg.mm[0]);
+			newSpriteDef.SpriteCols[3] = m6569_color(pC64->vic.reg.mm[1]);
+			newSpriteDef.bMultiColour = pC64->vic.reg.mmc & (1 << spriteNo);
+
+			bool bFound = false;
+			for (const FSpriteDef& spriteDef : SpriteDefs)
+			{
+				if (spriteDef == newSpriteDef)
+				{
+					bFound = true;
+					break;
+				}
+			}
+
+			if(bFound == false)
+				SpriteDefs.push_back(newSpriteDef);
+		}
+	}
 }
 
 void AddVICRegisterLabels(FCodeAnalysisPage& IOPage)
