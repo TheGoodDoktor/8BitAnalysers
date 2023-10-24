@@ -45,7 +45,7 @@ void FC64GraphicsViewer::Shutdown()
 	delete FoundSpritesView;
 }
 
-void DrawHiresImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, uint32_t* cols)
+void DrawHiresImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, const uint32_t* cols)
 {
 	uint32_t* pBase = pGraphicsView->GetPixelBuffer() + (xp + (yp * pGraphicsView->GetWidth()));
 
@@ -69,7 +69,7 @@ void DrawHiresImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int h
 	}
 }
 
-void DrawMultiColourImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, uint32_t* cols)
+void DrawMultiColourImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, const uint32_t* cols)
 {
 	uint32_t* pBase = pGraphicsView->GetPixelBuffer() + (xp + (yp * pGraphicsView->GetWidth()));
 
@@ -141,9 +141,9 @@ void FC64GraphicsViewer::DrawUI()
 			ImGui::Text("Sprite Colours");
 			if (ImGui::Button("Get from VIC"))
 			{
-				c64_t* pC64 = (c64_t*)C64Emu;
-				SpriteCols[1] = m6569_color(pC64->vic.reg.mc[0]);
-				SpriteCols[2] = m6569_color(pC64->vic.reg.mm[0]);
+				c64_t* pC64 = C64Emu->GetEmu();
+				SpriteCols[1] = m6569_color(pC64->vic.reg.mm[0]);
+				SpriteCols[2] = m6569_color(pC64->vic.reg.mc[0]);	// sprite colour
 				SpriteCols[3] = m6569_color(pC64->vic.reg.mm[1]);
 			}
 			
@@ -176,9 +176,10 @@ void FC64GraphicsViewer::DrawUI()
 
 		if (ImGui::BeginTabItem("Found Sprites"))
 		{
-			SpriteView->Clear(0);
+			FoundSpritesView->Clear(0);
 
 			const auto& foundSprites = C64Emu->GetC64IOAnalysis().GetVICAnalysis().GetFoundSprites();
+			c64_t* pC64 = C64Emu->GetEmu();
 
 			for (int y = 0; y < 16; y++)
 			{
@@ -189,17 +190,17 @@ void FC64GraphicsViewer::DrawUI()
 					if(spriteNo < foundSprites.size())
 					{
 						const FSpriteDef& spriteDef = foundSprites[spriteNo];
-
+						const uint8_t* pRAMAddr = &pC64->ram[spriteDef.Address];
 						if (spriteDef.bMultiColour)
-							DrawMultiColourSpriteAt(spriteDef.Address, x * 24, y * 21);
+							DrawMultiColourImageAt(pRAMAddr, x * 24, y * 21, 3, 21, FoundSpritesView, spriteDef.SpriteCols);
 						else
-							DrawHiResSpriteAt(spriteDef.Address, x * 24, y * 21);
+							DrawHiresImageAt(pRAMAddr, x * 24, y * 21, 3, 21, FoundSpritesView, spriteDef.SpriteCols);
 					}
 					
 				}
 			}
 
-			SpriteView->Draw();
+			FoundSpritesView->Draw();
 
 			ImGui::EndTabItem();
 		}
@@ -215,7 +216,7 @@ void FC64GraphicsViewer::DrawUI()
 			{
 				for (int x = 0; x < 51; x++)
 				{
-					c64_t* pC64 = (c64_t*)C64Emu;
+					c64_t* pC64 = C64Emu->GetEmu();
 					const uint8_t* pRAMAddr = &pC64->ram[charAddr];
 
 					if (CharacterMultiColour)
