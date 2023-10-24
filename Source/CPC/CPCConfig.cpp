@@ -14,7 +14,7 @@ void FCPCConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 		SnapshotFolder128 += "/";
 }
 
-void FCPCConfig::WriteToJson(nlohmann::json& jsonConfigFile)
+void FCPCConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 {
 	FGlobalConfig::WriteToJson(jsonConfigFile);
 	jsonConfigFile["SnapshotFolder128"] = SnapshotFolder128;

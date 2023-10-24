@@ -6,12 +6,13 @@
 #include "CPCEmu.h"
 
 #include "CPCConfig.h"
-#include "GameConfig.h"
+#include "CPCGameConfig.h"
 #include "Util/FileUtil.h"
 #include "Util/GraphicsView.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
+#include "CPCGameConfig.h"
 #include "Debug/DebugLog.h"
 #include "CpcChipsImpl.h"
 
@@ -835,7 +836,7 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 	pScreenMemDescGenerator = new FScreenPixMemDescGenerator(this);
 	AddMemoryRegionDescGenerator(pScreenMemDescGenerator);
 
-	LoadGameConfigs(this);
+	LoadCPCGameConfigs(this);
 
 	GetCurrentPalette().SetColourCount(16);
 	// Set up code analysis
@@ -965,7 +966,7 @@ void FCpcEmu::Shutdown()
 	GraphicsViewer.Shutdown();
 }
 
-void FCpcEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  true*/)
+void FCpcEmu::StartGame(FCPCGameConfig* pGameConfig, bool bLoadGameData /* =  true*/)
 {
 #ifndef NDEBUG
 	LOGINFO("Start game '%s'", pGameConfig->Name.c_str());
@@ -991,7 +992,7 @@ void FCpcEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  true*
 
 	FGame* pNewGame = new FGame;
 	pNewGame->pConfig = pGameConfig;
-	pGameConfig->Cpc6128Game = CpcEmuState.type == CPC_TYPE_6128;
+	pGameConfig->bCPC6128Game = CpcEmuState.type == CPC_TYPE_6128;
 #if SPECCY
 	pNewGame->pViewerConfig = pGameConfig->pViewerConfig;
 	assert(pGameConfig->pViewerConfig != nullptr);
@@ -1083,18 +1084,16 @@ void FCpcEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  true*
 
 bool FCpcEmu::StartGame(const char* pGameName)
 {
-	for (const auto& pGameConfig : GetGameConfigs())
+	FCPCGameConfig* pCPCGameConfig = (FCPCGameConfig*)GetGameConfigForName(pGameName);
+
+	if (pCPCGameConfig != nullptr)
 	{
-		if (pGameConfig->Name == pGameName)
+		const std::string snapFolder = CpcEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
+		const std::string gameFile = snapFolder + pCPCGameConfig->SnapshotFile;
+		if (GamesList.LoadGame(gameFile.c_str()))
 		{
-			const std::string snapFolder = CpcEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-			const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
-			
-			if (GamesList.LoadGame(gameFile.c_str()))
-			{
-				StartGame(pGameConfig);
-				return true;
-			}
+			StartGame(pCPCGameConfig);
+			return true;
 		}
 	}
 
@@ -1165,7 +1164,7 @@ bool FCpcEmu::NewGameFromSnapshot(int snapshotIndex)
 		// Remove any existing config 
 		RemoveGameConfig(game.DisplayName.c_str());
 
-		FGameConfig* pNewConfig = CreateNewGameConfigFromSnapshot(game);
+		FCPCGameConfig* pNewConfig = CreateNewCPCGameConfigFromSnapshot(game);
 
 		if (pNewConfig != nullptr)
 		{
@@ -1239,7 +1238,7 @@ void FCpcEmu::DrawFileMenu()
 
 						if (GamesList.LoadGame(gameFile.c_str()))
 						{
-							StartGame(pGameConfig);
+							StartGame((FCPCGameConfig*)pGameConfig);
 						}
 					}
 				}

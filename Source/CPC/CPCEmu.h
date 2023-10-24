@@ -60,6 +60,7 @@ struct FViewerConfig;
 class FViewerBase;
 class FScreenPixMemDescGenerator;
 struct FCPCConfig;
+struct FCPCGameConfig;
 
 enum class ECpcModel
 {
@@ -101,7 +102,7 @@ public:
 
 	bool	Init(const FCpcConfig& config);
 	void	Shutdown();
-	void	StartGame(FGameConfig* pGameConfig, bool bLoadGameData = true);
+	void	StartGame(FCPCGameConfig* pGameConfig, bool bLoadGameData = true);
 	bool	StartGame(const char* pGameName);
 	void	SaveCurrentGameData();
 

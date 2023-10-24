@@ -69,3 +69,5 @@
 /Source/C64/linuxbuild
 .DS_Store
 /Data/C64Analyser/GlobalConfig.json
+/Source/CPC/build
+/Source/CPC/linuxbuild
