@@ -352,7 +352,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	}
 	// Format Mask - 6 bytes bitmap
 	FDataFormattingOptions format;
-	format.SetupForBitmap(state.AddressRefFromPhysicalAddress(kPlatformAddr), 8, 6);
+	format.SetupForBitmap(state.AddressRefFromPhysicalAddress(kPlatformAddr), 8, 6, 1);
 	FormatData(state, format);
 
 	// find number of chars using mask
@@ -401,7 +401,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 		FLabelInfo* pLabel = AddLabel(state, platCharAddr, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
-		format.SetupForBitmap(state.AddressRefFromPhysicalAddress(platCharAddr), 8, 8);
+		format.SetupForBitmap(state.AddressRefFromPhysicalAddress(platCharAddr), 8, 8, 1);
 		FormatData(state, format);
 
 		platCharAddr += 8;
@@ -459,7 +459,7 @@ void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 
 	// Format Bitmap 16x8
 	FDataFormattingOptions format;
-	format.SetupForBitmap(state.AddressRefFromPhysicalAddress(platformAddr), 16, 8);
+	format.SetupForBitmap(state.AddressRefFromPhysicalAddress(platformAddr), 16, 8, 1);
 	FormatData(state, format);
 	state.SetCodeAnalysisDirty(platformAddr);
 }
