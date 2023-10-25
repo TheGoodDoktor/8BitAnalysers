@@ -446,7 +446,7 @@ int	GetPaletteIndex(const uint32_t* palette, int noCols)
 	auto& paletteStore = g_PaletteStore;	
 
 	const int storesize = (int)paletteStore.size();
-	for (int i = 0; i < storesize - noCols; i++)
+	for (int i = 0; i <= storesize - noCols; i++)
 	{
 		bool bFound = true;
 		for (int colNo = 0; colNo < noCols; colNo++)
