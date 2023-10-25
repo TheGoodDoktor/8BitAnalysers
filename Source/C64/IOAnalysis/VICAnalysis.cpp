@@ -3,6 +3,7 @@
 #include "../C64Emulator.h"
 
 #include <chips/chips_common.h>
+#include "Util/GraphicsView.h"
 
 void FVICAnalysis::Init(FC64Emulator* pEmulator)
 {
@@ -218,11 +219,6 @@ void FVICAnalysis::DrawDetailsUI(void)
 		}
 	}
 	ImGui::EndChild();
-
-	for (const auto& spriteDefIt : SpriteDefs)
-	{
-		ImGui::Text("Sprite at %s",NumStr(spriteDefIt.Address));
-	}
 }
 
 void FVICAnalysis::OnMachineFrame(void)
@@ -239,19 +235,12 @@ void FVICAnalysis::OnMachineFrame(void)
 		if(pC64->vic.reg.me & (1 << spriteNo))
 		{
 			const uint8_t spriteDefNo = mem_rd(&pC64->mem_vic, spritePtrs + spriteNo);
-
-			FSpriteDef newSpriteDef;
-			newSpriteDef.Address = vicMemBase + (spriteDefNo * 64);
-			newSpriteDef.SpriteCols[0] = 0;	// transparent
-			newSpriteDef.SpriteCols[1] = m6569_color(pC64->vic.reg.mm[0]);
-			newSpriteDef.SpriteCols[2] = m6569_color(pC64->vic.reg.mc[spriteNo]);
-			newSpriteDef.SpriteCols[3] = m6569_color(pC64->vic.reg.mm[1]);
-			newSpriteDef.bMultiColour = pC64->vic.reg.mmc & (1 << spriteNo);
+			FAddressRef spriteDefAddress = pC64Emu->GetVICMemoryAddress(spriteDefNo * 64);
 
 			bool bFound = false;
 			for (const FSpriteDef& spriteDef : SpriteDefs)
 			{
-				if (spriteDef == newSpriteDef)
+				if (spriteDef.Address == spriteDefAddress)
 				{
 					bFound = true;
 					break;
@@ -259,7 +248,30 @@ void FVICAnalysis::OnMachineFrame(void)
 			}
 
 			if(bFound == false)
+			{
+				FSpriteDef newSpriteDef;
+				newSpriteDef.Address = spriteDefAddress;
+				newSpriteDef.bMultiColour = pC64->vic.reg.mmc & (1 << spriteNo);
+
+				uint32_t SpriteCols[4];
+				SpriteCols[0] = 0;	// transparent
+				SpriteCols[1] = m6569_color(pC64->vic.reg.mm[0]);
+				SpriteCols[2] = m6569_color(pC64->vic.reg.mc[spriteNo]);
+				SpriteCols[3] = m6569_color(pC64->vic.reg.mm[1]);
+
+				newSpriteDef.PaletteIndex = GetPaletteIndex(SpriteCols, newSpriteDef.bMultiColour ? 4 : 2);
+
+				// Create sprite texture
+				newSpriteDef.SpriteImage = new FGraphicsView(24,21);
+				const uint8_t* pRAMAddr = &pC64->ram[newSpriteDef.Address.Address];
+				if (newSpriteDef.bMultiColour)
+					newSpriteDef.SpriteImage->Draw2BppWideImageAt(pRAMAddr, 0, 0, 24, 21, SpriteCols);
+				else
+					newSpriteDef.SpriteImage->Draw1BppImageAt(pRAMAddr, 0, 0, 24, 21, SpriteCols);
+
+				newSpriteDef.SpriteImage->UpdateTexture();
 				SpriteDefs.push_back(newSpriteDef);
+			}
 		}
 	}
 }

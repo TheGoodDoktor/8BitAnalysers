@@ -277,6 +277,7 @@ struct FDataInfo : FItem
 		FAddressRef	InstructionAddress;	// for operand data types
 	};
 	uint8_t		EmptyCharNo = 0;
+	int			PaletteIndex = -1;
 
 	// Reads
 	int						ReadCount = 0;

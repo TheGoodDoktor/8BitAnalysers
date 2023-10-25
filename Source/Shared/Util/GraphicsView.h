@@ -170,3 +170,6 @@ FCharacterMap* GetCharacterMapFromIndex(int index);
 FCharacterMap* GetCharacterMapFromAddress(FAddressRef address);
 bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& params);
 
+// Palette store
+int	GetPaletteIndex(const uint32_t* palette, int noCols);
+uint32_t* GetPaletteFromIndex(int index);

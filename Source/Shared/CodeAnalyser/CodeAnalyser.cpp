@@ -1332,6 +1332,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 		else if (options.DataType == EDataType::Bitmap)
 		{
 			pDataInfo->GraphicsSetRef = options.GraphicsSetRef;
+			pDataInfo->PaletteIndex = options.PaletteIndex;
 		}
 
 		// iterate through each memory location

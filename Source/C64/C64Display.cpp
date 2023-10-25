@@ -124,11 +124,7 @@ void FC64Display::DrawUI()
     const bool bMultiColourMode = !!(pC64->vic.reg.ctrl_2 & (1<<4));
     uint16_t vicMemBase = pC64->vic_bank_select;
     uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
-    uint16_t spritePtrs = vicMemBase + screenMem + 1016;
-
-    uint8_t sprite1 = mem_rd(&pC64->mem_vic,spritePtrs);
-    // sprite address is sprite1 * 64
-
+    
     ImGui::Text("VIC Bank: $%04X, Screen Mem: $%04X", vicMemBase, vicMemBase + screenMem);
     if (bBitmapMode)
     {

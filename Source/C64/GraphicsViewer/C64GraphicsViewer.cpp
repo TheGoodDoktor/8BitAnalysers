@@ -19,6 +19,7 @@
 #include <systems/c64.h>
 
 #include "../C64Emulator.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
 void FC64GraphicsViewer::Init(FC64Emulator* pC64Emu)
 {
@@ -152,10 +153,33 @@ void FC64GraphicsViewer::DrawUI()
 
 		if (ImGui::BeginTabItem("Found Sprites"))
 		{
+			const auto& foundSprites = C64Emu->GetC64IOAnalysis().GetVICAnalysis().GetFoundSprites();
+		
+			for (int spriteNo = 0; spriteNo < foundSprites.size(); spriteNo++)
+			{
+				const FSpriteDef& spriteDef = foundSprites[spriteNo];
+				ImGui::PushID(spriteDef.Address.Val);
+				ImGui::Text("Address: %s",NumStr(spriteDef.Address.Address));
+				DrawAddressLabel(*CodeAnalysis, CodeAnalysis->GetFocussedViewState(), spriteDef.Address);
+				//ImGui::SameLine();
+				if (ImGui::Button("Format Memory"))
+				{
+					FDataFormattingOptions formatOptions;
+					formatOptions.SetupForBitmap(spriteDef.Address, spriteDef.bMultiColour ? 12:24,21, spriteDef.bMultiColour ? 2 : 1);
+					formatOptions.DisplayType = spriteDef.bMultiColour ? EDataItemDisplayType::ColMap2Bpp_C64 : EDataItemDisplayType::Bitmap;
+					formatOptions.PaletteIndex = spriteDef.PaletteIndex;
+					FormatData(*CodeAnalysis,formatOptions);
+					CodeAnalysis->SetCodeAnalysisDirty(spriteDef.Address);
+				}
+				spriteDef.SpriteImage->Draw(24 * 2,21 * 2,false);	// magnifier not working currently - do we need it?
+				ImGui::Separator();
+				ImGui::PopID();
+			}
+	#if 0
 			FoundSpritesView->Clear(0);
 
-			const auto& foundSprites = C64Emu->GetC64IOAnalysis().GetVICAnalysis().GetFoundSprites();
 			c64_t* pC64 = C64Emu->GetEmu();
+
 
 			for (int y = 0; y < 16; y++)
 			{
@@ -166,7 +190,7 @@ void FC64GraphicsViewer::DrawUI()
 					if(spriteNo < foundSprites.size())
 					{
 						const FSpriteDef& spriteDef = foundSprites[spriteNo];
-						const uint8_t* pRAMAddr = &pC64->ram[spriteDef.Address];
+						const uint8_t* pRAMAddr = &pC64->ram[spriteDef.Address.Address];
 						if (spriteDef.bMultiColour)
 							FoundSpritesView->Draw2BppWideImageAt(pRAMAddr, x * 24, y * 21, 24, 21, spriteDef.SpriteCols);
 						else
@@ -177,7 +201,7 @@ void FC64GraphicsViewer::DrawUI()
 			}
 
 			FoundSpritesView->Draw();
-
+			#endif
 			ImGui::EndTabItem();
 		}
 

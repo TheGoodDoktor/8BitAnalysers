@@ -163,6 +163,30 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 			}
 		}
 		break;
+
+	case EDataItemDisplayType::ColMap2Bpp_C64:	// 2 bits per pixel - wide pixels
+		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
+		{
+			const uint8_t val = state.ReadByte(addr + byte);
+
+			for (int xpix = 0; xpix < 4; xpix++)
+			{
+				const uint8_t colNo = (val >> (6 - (xpix * 2))) & 3;
+
+				const ImVec2 rectMin(pos.x, pos.y);
+				const ImVec2 rectMax(pos.x + rectSize * 2, pos.y + rectSize);
+
+				// TODO: colNo is palette index do palette lookup
+				const uint32_t* pPalette = GetPaletteFromIndex(pDataInfo->PaletteIndex);
+				const uint32_t pixelCol = pPalette ? pPalette[colNo] : colNo == 0 ? 0: 0xffffffff;
+
+				dl->AddRectFilled(rectMin, rectMax, pixelCol);
+				dl->AddRect(rectMin, rectMax, 0xffffffff);	// outline - needed? option?
+
+				pos.x += rectSize * 2;
+			}
+		}
+		break;
 	}
 
 	// Edit bits

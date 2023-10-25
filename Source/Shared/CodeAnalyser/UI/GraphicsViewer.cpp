@@ -524,7 +524,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 					}
 				}
 
-				format.SetupForBitmap(imageAddressRef, XSizePixels, YSizePixels);
+				format.SetupForBitmap(imageAddressRef, XSizePixels, YSizePixels, 1);
 				format.GraphicsSetRef = imageAddressRef;
 				FormatData(state, format);
 				state.SetCodeAnalysisDirty(imageAddressRef);

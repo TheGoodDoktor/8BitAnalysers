@@ -107,6 +107,11 @@ public:
 	c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
 	void SetupCodeAnalysisLabels(void);
 	void UpdateCodeAnalysisPages(uint8_t cpuPort);
+	FAddressRef	GetVICMemoryAddress(uint16_t vicAddress)	// VIC address is 14bit (16K range)
+	{
+		const uint16_t physicalAddress = C64Emu.vic_bank_select + vicAddress;
+		return FAddressRef(VICBankMapping[physicalAddress >> 12], physicalAddress);
+	}
 	bool StartGame(const char* pGameName, bool bLoadGame);
 	bool StartGame(FC64GameConfig *pConfig, bool bLoadGame);
 	bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
@@ -124,6 +129,7 @@ public:
 	const FC64IOAnalysis&	GetC64IOAnalysis() { return IOAnalysis; }
 
 	const FC64Config*	GetGlobalConfig() { return pGlobalConfig;}
+
 private:
 	c64_t       C64Emu;
 	ui_c64_t    C64UI;
@@ -158,10 +164,13 @@ private:
 	uint16_t            LowerRAMId = -1;
 	uint16_t            HighRAMId = -1;
 	uint16_t            IOAreaId = -1;
+	uint16_t            RAMBehindIOAreaId = -1;
 	uint16_t            BasicROMId = -1;
 	uint16_t            RAMBehindBasicROMId = -1;
 	uint16_t            KernelROMId = -1;
 	uint16_t            RAMBehindKernelROMId = -1;
 	uint16_t            CharacterROMId = -1;
 	uint16_t            RAMBehindCharROMId = -1;
+
+	uint16_t			VICBankMapping[16];
 };

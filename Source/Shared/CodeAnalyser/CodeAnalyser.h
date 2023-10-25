@@ -93,6 +93,7 @@ struct FDataFormattingOptions
 	int						NoItems = 1;
 	FAddressRef				CharacterSet;
 	FAddressRef				GraphicsSetRef;
+	int						PaletteIndex = -1;
 	uint8_t					EmptyCharNo = 0;
 	bool					ClearCodeInfo = false;
 	bool					ClearLabels = false;
@@ -101,11 +102,12 @@ struct FDataFormattingOptions
 
 	bool					IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
 	uint16_t				CalcEndAddress() const { return StartAddress.Address + (NoItems * ItemSize) - 1; }
-	void					SetupForBitmap(FAddressRef address, int xSizePixels, int ySizePixels)
+	void					SetupForBitmap(FAddressRef address, int xSizePixels, int ySizePixels, int bpp)
 	{
 		DataType = EDataType::Bitmap;
+		DisplayType = EDataItemDisplayType::Bitmap;
 		StartAddress = address;
-		ItemSize = xSizePixels / 8;
+		ItemSize = (xSizePixels * bpp) / 8;
 		NoItems = ySizePixels;
 	}
 

@@ -434,3 +434,50 @@ const FPalette& GetCurrentPalette_Const()
 {
 	return g_CurrentPalette;
 }
+
+
+// New Palette stuff - just to annoy Sam!
+// Palette Store - move?
+
+std::vector<uint32_t> g_PaletteStore;
+
+int	GetPaletteIndex(const uint32_t* palette, int noCols)
+{
+	auto& paletteStore = g_PaletteStore;	
+
+	const int storesize = (int)paletteStore.size();
+	for (int i = 0; i < storesize - noCols; i++)
+	{
+		bool bFound = true;
+		for (int colNo = 0; colNo < noCols; colNo++)
+		{
+			const uint32_t col = paletteStore[i + colNo];
+			if (col != palette[colNo])
+			{
+				bFound = false;
+				break;
+			}
+		}
+
+		if (bFound)
+			return i;
+	}
+
+	// add new palette
+	const int index = (int)paletteStore.size();
+	for(int colNo =0; colNo <noCols;colNo++)
+		paletteStore.push_back(palette[colNo]);
+
+	return index;
+}
+
+uint32_t* GetPaletteFromIndex(int index)
+{
+	if (index == -1)
+		return nullptr;
+
+	if(index < g_PaletteStore.size())
+		return g_PaletteStore.data() + index;
+
+	return nullptr;
+}

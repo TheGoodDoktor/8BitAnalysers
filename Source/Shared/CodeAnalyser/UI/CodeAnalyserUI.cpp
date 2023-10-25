@@ -851,7 +851,7 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 {
 	const int index = (int)displayType;
 	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex", "Binary",
-									"Bitmap", "ColMap2Bpp CPC", "ColMap4Bpp CPC" };
+									"Bitmap", "ColMap2Bpp CPC", "ColMap4Bpp CPC", "ColMap2Bpp C64" };
 	bool bChanged = false;
 
 	if (ImGui::BeginCombo(pLabel, operandTypes[index]))
@@ -1414,6 +1414,9 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			case EBitmapFormat::ColMap4Bpp_CPC:
 				formattingOptions.DisplayType = EDataItemDisplayType::ColMap4Bpp_CPC;
 				break;
+			case EBitmapFormat::ColMap2Bpp_C64:
+				formattingOptions.DisplayType = EDataItemDisplayType::ColMap2Bpp_C64;
+				break;
 			}
 
 			int pixelsPerByte = 0;
@@ -1427,6 +1430,9 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 				break;
 			case EDataItemDisplayType::ColMap4Bpp_CPC: // 4 bpp
 				pixelsPerByte = 2;
+				break;
+			case EDataItemDisplayType::ColMap2Bpp_C64: // 2 bpp
+				pixelsPerByte = 4;
 				break;
 			}
 			formattingOptions.ItemSize = std::max(1, size[0] / pixelsPerByte);

@@ -162,7 +162,7 @@ bool FC64Emulator::Init()
     LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram, false);
     HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false);
     IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, false);
-
+    RAMBehindIOAreaId = CodeAnalysis.CreateBank("RAMBehindIOAreaId", 4, &C64Emu.ram[0xd000], false);
     BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true); // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
     RAMBehindBasicROMId = CodeAnalysis.CreateBank("RAMBehindBasicROM", 8, &C64Emu.ram[0xa000], false);
 
@@ -179,7 +179,23 @@ bool FC64Emulator::Init()
     CodeAnalysis.MapBank(HighRAMId, 48);        // RAM - $C000 - $CFFF - pages 48-51 - 4k
 
     
-    
+    // Setup VIC Bank Mapping 16 * 4k pages
+	VICBankMapping[0x0] = LowerRAMId;
+	VICBankMapping[0x1] = CharacterROMId;
+	VICBankMapping[0x2] = LowerRAMId;
+	VICBankMapping[0x3] = LowerRAMId;
+	VICBankMapping[0x4] = LowerRAMId;
+	VICBankMapping[0x5] = LowerRAMId;
+	VICBankMapping[0x6] = LowerRAMId;
+	VICBankMapping[0x7] = LowerRAMId;
+	VICBankMapping[0x8] = LowerRAMId;
+	VICBankMapping[0x9] = CharacterROMId;
+   	VICBankMapping[0xa] = RAMBehindBasicROMId;
+	VICBankMapping[0xb] = RAMBehindBasicROMId;
+	VICBankMapping[0xc] = HighRAMId;
+    VICBankMapping[0xd] = RAMBehindIOAreaId;
+	VICBankMapping[0xe] = RAMBehindKernelROMId;
+	VICBankMapping[0xf] = RAMBehindKernelROMId;
 
     // TODO: Setup games list
 
