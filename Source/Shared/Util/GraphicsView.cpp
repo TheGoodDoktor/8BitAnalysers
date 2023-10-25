@@ -481,3 +481,24 @@ uint32_t* GetPaletteFromIndex(int index)
 
 	return nullptr;
 }
+
+#include <json.hpp>
+
+const char* kPaletteEntry = "Palettes";
+
+void SavePalettesToJson(nlohmann::json& jsonDoc)
+{
+	for (const auto& paletteEntry : g_PaletteStore)
+	{
+		jsonDoc[kPaletteEntry].push_back(paletteEntry);
+	}
+}
+
+void LoadPalettesFromJson(const nlohmann::json& jsonDoc)
+{
+	g_PaletteStore.clear();
+	if(jsonDoc.contains(kPaletteEntry) == false)
+		return;
+	for (const auto& paletteEntry : jsonDoc[kPaletteEntry])
+		g_PaletteStore.push_back(paletteEntry);
+}

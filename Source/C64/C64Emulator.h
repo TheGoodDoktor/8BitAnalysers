@@ -164,7 +164,6 @@ private:
 	uint16_t            LowerRAMId = -1;
 	uint16_t            HighRAMId = -1;
 	uint16_t            IOAreaId = -1;
-	uint16_t            RAMBehindIOAreaId = -1;
 	uint16_t            BasicROMId = -1;
 	uint16_t            RAMBehindBasicROMId = -1;
 	uint16_t            KernelROMId = -1;

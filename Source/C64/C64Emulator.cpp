@@ -162,7 +162,6 @@ bool FC64Emulator::Init()
     LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram, false);
     HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false);
     IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, false);
-    RAMBehindIOAreaId = CodeAnalysis.CreateBank("RAMBehindIOAreaId", 4, &C64Emu.ram[0xd000], false);
     BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true); // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
     RAMBehindBasicROMId = CodeAnalysis.CreateBank("RAMBehindBasicROM", 8, &C64Emu.ram[0xa000], false);
 
@@ -193,7 +192,7 @@ bool FC64Emulator::Init()
    	VICBankMapping[0xa] = RAMBehindBasicROMId;
 	VICBankMapping[0xb] = RAMBehindBasicROMId;
 	VICBankMapping[0xc] = HighRAMId;
-    VICBankMapping[0xd] = RAMBehindIOAreaId;
+    VICBankMapping[0xd] = RAMBehindCharROMId;
 	VICBankMapping[0xe] = RAMBehindKernelROMId;
 	VICBankMapping[0xf] = RAMBehindKernelROMId;
 
@@ -328,10 +327,6 @@ bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
     {
         const std::string root = pGlobalConfig->WorkspaceRoot;
         const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
-        //std::string romJsonFName = kRomInfo48JsonFile;
-
-        //if (ZXEmuState.type == ZX_TYPE_128)
-          //  romJsonFName = root + kRomInfo128JsonFile;
 
         const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
         const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
@@ -352,6 +347,17 @@ bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
             c64_t* pSnapshot = (c64_t*)LoadBinaryFile(saveStateFName.c_str(), stateSize);
             c64_load_snapshot(&C64Emu, 1, pSnapshot);
             free(pSnapshot);
+        }
+        else
+        {
+            const std::string snapshotFName = pGlobalConfig->PrgFolder + pGameConfig->SnapshotFile;
+            chips_range_t snapshotData;
+            snapshotData.ptr = LoadBinaryFile(snapshotFName.c_str(), snapshotData.size);
+            if (snapshotData.ptr != nullptr)
+            {
+                c64_quickload(&C64Emu, snapshotData);
+                free(snapshotData.ptr);
+            }
         }
 
         // Set memory banks

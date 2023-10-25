@@ -359,6 +359,7 @@ public:
 			*(MappedMem[(address >> kPageShift)] + (address & kPageMask)) = value;
 	}
 	
+	bool IsValidPageId(int16_t id) const { return id >=0 && id < RegisteredPages.size(); }
 	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
 
 	// Advance an address ref by a number of bytes, may go to next bank in physical memory

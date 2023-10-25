@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <json_fwd.hpp>
 #include "CodeAnalyser/CodeAnalyserTypes.h"
 
 class FCodeAnalysisState;
@@ -173,3 +174,5 @@ bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& p
 // Palette store
 int	GetPaletteIndex(const uint32_t* palette, int noCols);
 uint32_t* GetPaletteFromIndex(int index);
+void SavePalettesToJson(nlohmann::json& jsonDoc);
+void LoadPalettesFromJson(const nlohmann::json& jsonDoc);

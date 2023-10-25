@@ -84,6 +84,9 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		jsonGameData["CharacterMaps"].push_back(jsonCharacterMap);
 	}
 
+	// Write out palettes
+	SavePalettesToJson(jsonGameData);
+
 	// Write file out
 	std::ofstream outFileStream(pJsonFileName);
 	if (outFileStream.is_open())
@@ -126,6 +129,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		for (const auto& pageJson : jsonGameData["Pages"])
 		{
 			const int pageId = pageJson["PageId"];
+			if(state.IsValidPageId(pageId) == false)
+				continue;
 			FCodeAnalysisPage* pPage = state.GetPage(pageId);
 			if (pPage != nullptr)
 			{
@@ -257,6 +262,9 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		}
 	}
 
+	// Read in palettes
+	LoadPalettesFromJson(jsonGameData);
+
 	return true;
 }
 
@@ -277,6 +285,9 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 		dataInfoJson["Flags"] = pDataInfo->Flags;
 	if (pDataInfo->Comment.empty() == false)
 		dataInfoJson["Comment"] = pDataInfo->Comment;
+	if (pDataInfo->PaletteIndex != -1)
+		dataInfoJson["PaletteIndex"] = pDataInfo->PaletteIndex;
+
 
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
@@ -457,6 +468,9 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 		pDataInfo->Flags = dataInfoJson["Flags"];
 	if (dataInfoJson.contains("Comment"))
 		pDataInfo->Comment = dataInfoJson["Comment"];
+	if (dataInfoJson.contains("PaletteIndex"))
+		pDataInfo->PaletteIndex = dataInfoJson["PaletteIndex"];
+
 
 // Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
