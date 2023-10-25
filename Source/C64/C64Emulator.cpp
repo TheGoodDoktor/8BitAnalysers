@@ -177,7 +177,8 @@ bool FC64Emulator::Init()
     CodeAnalysis.MapBank(LowerRAMId, 0);        // RAM - $0000 - $9FFF - pages 0-39 - 40K
     CodeAnalysis.MapBank(HighRAMId, 48);        // RAM - $C000 - $CFFF - pages 48-51 - 4k
 
-    
+    CodeAnalysis.MapBank(RAMBehindCharROMId, 52);  // Map because VIC needs it
+
     // Setup VIC Bank Mapping 16 * 4k pages
 	VICBankMapping[0x0] = LowerRAMId;
 	VICBankMapping[0x1] = CharacterROMId;
