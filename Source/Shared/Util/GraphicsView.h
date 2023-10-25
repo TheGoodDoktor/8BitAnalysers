@@ -22,12 +22,15 @@ public:
 
 	// Draw image from a bitmap
 	// Size is given in (8x8) chars
-	void DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint32_t inkCol, uint32_t paperCol);
+	void Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
+
+	// Draw image from a 2Bpp colour map - wide pixels
+	void Draw2BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
 
 	// Draw image from a bitmap
 	// Size is given in (8x8) chars
 	// image is arranged chat by char
-	void DrawBitImageChars(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint32_t inkCol, uint32_t paperCol);
+	void Draw1BppImageFromCharsAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, const uint32_t* cols);
 
 	uint32_t* GetPixelBuffer() { return PixelBuffer; }
 	const uint32_t* GetPixelBuffer() const { return PixelBuffer; }

@@ -33,15 +33,13 @@ void FZXGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint8_t col
 void FZXGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr)
 {
 	const bool bBright = !!(colAttr & (1 << 6));
-	const uint32_t inkCol = GetColFromAttr(colAttr & 7, bBright);
-	const uint32_t paperCol = GetColFromAttr(colAttr >> 3, bBright);
-	FGraphicsView::DrawBitImage(pSrc, xp, yp, widthChars, heightChars, inkCol, paperCol);
+	const uint32_t cols[] = { GetColFromAttr(colAttr >> 3, bBright), GetColFromAttr(colAttr & 7, bBright) };
+	FGraphicsView::Draw1BppImageAt(pSrc, xp, yp, widthChars * 8, heightChars * 8, cols);
 }
 
 void FZXGraphicsView::DrawBitImageChars(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr)
 {
 	const bool bBright = !!(colAttr & (1 << 6));
-	const uint32_t inkCol = GetColFromAttr(colAttr & 7, bBright);
-	const uint32_t paperCol = GetColFromAttr(colAttr >> 3, bBright);
-	FGraphicsView::DrawBitImageChars(pSrc, xp, yp, widthChars, heightChars, inkCol, paperCol);
+	const uint32_t cols[] = { GetColFromAttr(colAttr >> 3, bBright), GetColFromAttr(colAttr & 7, bBright) };
+	FGraphicsView::Draw1BppImageFromCharsAt(pSrc, xp, yp, widthChars, heightChars, cols);
 }

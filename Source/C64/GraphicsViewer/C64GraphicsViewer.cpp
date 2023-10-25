@@ -45,6 +45,7 @@ void FC64GraphicsViewer::Shutdown()
 	delete FoundSpritesView;
 }
 
+/*
 void DrawHiresImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, const uint32_t* cols)
 {
 	uint32_t* pBase = pGraphicsView->GetPixelBuffer() + (xp + (yp * pGraphicsView->GetWidth()));
@@ -67,45 +68,20 @@ void DrawHiresImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int h
 
 		pBase += pGraphicsView->GetWidth();
 	}
-}
-
-void DrawMultiColourImageAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPix, FGraphicsView* pGraphicsView, const uint32_t* cols)
-{
-	uint32_t* pBase = pGraphicsView->GetPixelBuffer() + (xp + (yp * pGraphicsView->GetWidth()));
-
-	*pBase = 0;
-	for (int y = 0; y < heightPix; y++)
-	{
-		for (int x = 0; x < widthChars; x++)
-		{
-			const uint8_t charLine = *pSrc++;
-
-			for (int xpix = 0; xpix < 4; xpix++)
-			{
-				const uint8_t colNo = (charLine >> (6 - (xpix * 2))) & 3;
-
-				// 0 check for sprites?
-				*(pBase + (xpix * 2) + (x * 8)) = cols[colNo];
-				*(pBase + (xpix * 2) + 1 + (x * 8)) = cols[colNo];
-			}
-		}
-
-		pBase += pGraphicsView->GetWidth();
-	}
-}
+}*/
 
 void FC64GraphicsViewer::DrawHiResSpriteAt(uint16_t addr, int xp, int yp)
 { 
-	c64_t* pC64 = C64Emu->GetEmu();
+	const c64_t* pC64 = C64Emu->GetEmu();
 	const uint8_t* pRAMAddr = &pC64->ram[addr];
-	DrawHiresImageAt(pRAMAddr, xp, yp, 3, 21, SpriteView, SpriteCols);
+	SpriteView->Draw1BppImageAt(pRAMAddr, xp, yp, 24, 21, SpriteCols);
 }
 
 void FC64GraphicsViewer::DrawMultiColourSpriteAt(uint16_t addr, int xp, int yp)
 {
-	c64_t* pC64 = C64Emu->GetEmu();
+	const c64_t* pC64 = C64Emu->GetEmu();
 	const uint8_t* pRAMAddr = &pC64->ram[addr];
-	DrawMultiColourImageAt(pRAMAddr, xp, yp, 3, 21, SpriteView, SpriteCols);
+	SpriteView->Draw2BppWideImageAt(pRAMAddr, xp, yp, 24, 21, SpriteCols);
 }
 
 void FC64GraphicsViewer::DrawUI()
@@ -192,9 +168,9 @@ void FC64GraphicsViewer::DrawUI()
 						const FSpriteDef& spriteDef = foundSprites[spriteNo];
 						const uint8_t* pRAMAddr = &pC64->ram[spriteDef.Address];
 						if (spriteDef.bMultiColour)
-							DrawMultiColourImageAt(pRAMAddr, x * 24, y * 21, 3, 21, FoundSpritesView, spriteDef.SpriteCols);
+							FoundSpritesView->Draw2BppWideImageAt(pRAMAddr, x * 24, y * 21, 24, 21, spriteDef.SpriteCols);
 						else
-							DrawHiresImageAt(pRAMAddr, x * 24, y * 21, 3, 21, FoundSpritesView, spriteDef.SpriteCols);
+							FoundSpritesView->Draw1BppImageAt(pRAMAddr, x * 24, y * 21, 24, 21, spriteDef.SpriteCols);
 					}
 					
 				}
@@ -220,9 +196,9 @@ void FC64GraphicsViewer::DrawUI()
 					const uint8_t* pRAMAddr = &pC64->ram[charAddr];
 
 					if (CharacterMultiColour)
-						DrawMultiColourImageAt(pRAMAddr, x * 8, y * 8,1,8,CharacterView,CharCols);
+						CharacterView->Draw2BppWideImageAt(pRAMAddr, x * 8, y * 8, 8,8,CharCols);
 					else
-						DrawHiresImageAt(pRAMAddr, x * 8, y * 8, 1, 8, CharacterView, CharCols);
+						CharacterView->Draw1BppImageAt(pRAMAddr, x * 8, y * 8, 8, 8,  CharCols);
 
 					charAddr += 8;
 				}

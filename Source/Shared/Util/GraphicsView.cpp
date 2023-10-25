@@ -73,11 +73,13 @@ void FGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint32_t inkC
 	}
 }
 
-void FGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars,  uint32_t inkCol, uint32_t paperCol)
+void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
 {
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
+	int widthChars = widthPixels / 8;
+	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
 
-	for (int y = 0; y < heightChars * 8; y++)
+	for (int y = 0; y < heightPixels; y++)
 	{
 		for (int x = 0; x < widthChars; x++)
 		{
@@ -86,7 +88,7 @@ void FGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthC
 			for (int xpix = 0; xpix < 8; xpix++)
 			{
 				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
-				const uint32_t col = bSet ? inkCol : paperCol;
+				const uint32_t col = bSet ? cols[1] : cols[0];
 				if (col != 0xFF000000)
 					*(pBase + xpix + (x * 8)) = col;
 			}
@@ -96,13 +98,40 @@ void FGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthC
 	}
 }
 
-void FGraphicsView::DrawBitImageChars(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint32_t inkCol, uint32_t paperCol)
+void FGraphicsView::Draw2BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
+{
+	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
+	int widthChars = widthPixels / 8;
+	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
+
+	//*pBase = 0;
+	for (int y = 0; y < heightPixels; y++)
+	{
+		for (int x = 0; x < widthChars; x++)
+		{
+			const uint8_t charLine = *pSrc++;
+
+			for (int xpix = 0; xpix < 4; xpix++)
+			{
+				const uint8_t colNo = (charLine >> (6 - (xpix * 2))) & 3;
+
+				// 0 check for sprites?
+				*(pBase + (xpix * 2) + (x * 8)) = cols[colNo];
+				*(pBase + (xpix * 2) + 1 + (x * 8)) = cols[colNo];
+			}
+		}
+
+		pBase += Width;
+	}
+}
+
+void FGraphicsView::Draw1BppImageFromCharsAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, const uint32_t* cols)
 {
 	for (int y = 0; y < heightChars; y++)
 	{
 		for (int x = 0; x < widthChars; x++)
 		{
-			DrawBitImage(pSrc, xp + (x * 8), yp + (y * 8), 1, 1, inkCol, paperCol);
+			Draw1BppImageAt(pSrc, xp + (x * 8), yp + (y * 8), 8, 8, cols);
 			pSrc+=8;
 		}
 	}
@@ -232,6 +261,7 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 	const uint8_t paperMask = 7;
 	const uint8_t paperShift = 3;
 
+
 	characterSet.Image->Clear(0);	// clear first
 
 	for (int charNo = 0; charNo < 256; charNo++)
@@ -239,8 +269,7 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		const uint8_t* pCharData = state.CPUInterface->GetMemPtr(addr);
 		const int xp = (charNo & 15) * 8;
 		const int yp = (charNo >> 4) * 8;
-		uint32_t inkCol = 0xffffffff;
-		uint32_t paperCol = 0;
+		uint32_t cols[2] = { 0,0xffffffff };
 		uint8_t colAttr = 0xff;
 		uint8_t charPix[8];
 		uint8_t charMask[8];
@@ -274,11 +303,11 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		{
 			// get ink & paper
 			const bool bBright = !!(colAttr & brightMask);
-			inkCol = GetColFromAttr((colAttr >> inkShift) & inkMask, characterSet.Params.ColourLUT, bBright);
-			paperCol = GetColFromAttr((colAttr >> paperShift) & paperMask, characterSet.Params.ColourLUT, bBright);
+			cols[0] = GetColFromAttr((colAttr >> paperShift) & paperMask, characterSet.Params.ColourLUT, bBright);
+			cols[1] = GetColFromAttr((colAttr >> inkShift) & inkMask, characterSet.Params.ColourLUT, bBright);
 		}
 
-		characterSet.Image->DrawBitImage(charPix, xp, yp, 1, 1, inkCol, paperCol);
+		characterSet.Image->Draw1BppImageAt(charPix, xp, yp, 8, 8, cols);
 	}
 
 	characterSet.Image->UpdateTexture();
