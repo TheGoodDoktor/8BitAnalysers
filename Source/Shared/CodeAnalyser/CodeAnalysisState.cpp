@@ -200,9 +200,17 @@ bool ImportAnalysisState(FCodeAnalysisState& state, const char* pAnalysisBinFile
 
 	while (pageId != kTerminatorId)
 	{
-		FCodeAnalysisPage* pPage = state.GetPage(pageId);
-		assert(pPage != nullptr);
-		ReadPageState(*pPage, fp);
+		if(state.IsValidPageId(pageId))
+		{
+			FCodeAnalysisPage* pPage = state.GetPage(pageId);
+			assert(pPage != nullptr);
+			ReadPageState(*pPage, fp);
+		}
+		else
+		{
+			static FCodeAnalysisPage dummyPage;
+			ReadPageState(dummyPage, fp);
+		}
 
 		// get next pageId
 		fread(&magic, sizeof(magic), 1, fp);

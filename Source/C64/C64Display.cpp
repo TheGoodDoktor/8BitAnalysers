@@ -128,7 +128,7 @@ void FC64Display::DrawUI()
     ImGui::Text("VIC Bank: $%04X, Screen Mem: $%04X", vicMemBase, vicMemBase + screenMem);
     if (bBitmapMode)
     {
-        uint16_t bitmapMem = ((pC64->vic.reg.mem_ptrs >> 2) & 1) << 13;
+        uint16_t bitmapMem = ((pC64->vic.reg.mem_ptrs >> 3) & 1) << 13;
         ImGui::SameLine();
         ImGui::Text(", Bitmap Address: $%04X", vicMemBase + bitmapMem);
     }
