@@ -225,10 +225,9 @@ EC64ScreenMode GetScreenModeFromVIC(c64_t* pC64)
 void FC64GraphicsViewer::DrawCharacterScreen(bool bMulticolour, bool ECM)
 {
 	c64_t* pC64 = C64Emu->GetEmu();
-	const uint16_t vicMemBase = pC64->vic_bank_select;
-	const uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
-	const uint16_t charDefs = ((pC64->vic.reg.mem_ptrs >> 1) & 7) << 11;
-
+	const uint16_t charDefs = CharacterBankNo << 11;
+	const uint16_t vicMemBase = VicBankNo * 16384;
+	const uint16_t screenMem = ScreenBankNo << 10;
 	const uint16_t charMapAddress = vicMemBase + screenMem;
 	const uint16_t charDefsAddress = vicMemBase + charDefs;
 	uint32_t ScreenCols[4];
@@ -241,7 +240,6 @@ void FC64GraphicsViewer::DrawCharacterScreen(bool bMulticolour, bool ECM)
 
 	const uint32_t BackgroundCol1 = m6569_color(pC64->vic.reg.bc[1]);
 
-
 	for (int yChar = 0; yChar < 25; yChar++)
 	{
 		for (int xChar = 0; xChar < 40; xChar++)
@@ -251,20 +249,22 @@ void FC64GraphicsViewer::DrawCharacterScreen(bool bMulticolour, bool ECM)
 			const uint8_t colRamVal = pC64->color_ram[xChar + (yChar * 40)];
 			const bool bMultiColourChar = bMulticolour && (colRamVal & (1 << 3));
 
-			if(bMultiColourChar)
+			if(bMultiColourChar)	// if this a multi-colour character
 			{
 				ScreenCols[1] = BackgroundCol1;
 				ScreenCols[3] = m6569_color(colRamVal & 7);
+				ScreenView->Draw2BppWideImageAt(pCharDef, xChar * 8, yChar * 8, 8, 8, ScreenCols);
 			}
-			else
+			else if(bMulticolour)	// if this is a hires character in multicolour mode
 			{
 				ScreenCols[1] = m6569_color(colRamVal & 7);
-			}
-
-			if (bMultiColourChar)
-				ScreenView->Draw2BppWideImageAt(pCharDef, xChar * 8, yChar * 8, 8, 8, ScreenCols);
-			else
 				ScreenView->Draw1BppImageAt(pCharDef, xChar * 8, yChar * 8, 8, 8, ScreenCols);
+			}
+			else	// if this is a hires character in hires mode
+			{
+				ScreenCols[1] = m6569_color(colRamVal & 15);
+				ScreenView->Draw1BppImageAt(pCharDef, xChar * 8, yChar * 8, 8, 8, ScreenCols);
+			}
 		}
 	}
 }
@@ -272,17 +272,94 @@ void FC64GraphicsViewer::DrawCharacterScreen(bool bMulticolour, bool ECM)
 void FC64GraphicsViewer::DrawBitmapScreen(bool bMulticolour)
 {
 	c64_t* pC64 = C64Emu->GetEmu();
-	const uint16_t bitmapMem = ((pC64->vic.reg.mem_ptrs >> 3) & 1) << 13;
-	const uint16_t vicMemBase = pC64->vic_bank_select;
+	const uint16_t bitmapMem = BitmapBankNo << 13;
+	const uint16_t vicMemBase = VicBankNo * 16384;
 	const uint16_t bitmapAddress = vicMemBase + bitmapMem;
+	const uint16_t screenMem = ScreenBankNo << 10;
+	const uint16_t charMapAddress = vicMemBase + screenMem;
 
 	const uint8_t* pBitMapMemory = mem_readptr(&pC64->mem_vic, bitmapAddress);
+	uint32_t ScreenCols[4];
 
-	// This doesn't work - pity!
-	if (bMulticolour)
-		ScreenView->Draw2BppWideImageAt(pBitMapMemory, 0,0, 320, 200, CharCols);
-	else
-		ScreenView->Draw1BppImageAt(pBitMapMemory, 0,0, 320, 200, CharCols);
+	ScreenCols[0] = m6569_color(pC64->vic.reg.bc[0]);
+
+	ScreenView->Clear(0);
+
+	int charNo = 0;
+	for (int yChar = 0; yChar < 25; yChar++)
+	{
+		for (int xChar = 0; xChar < 40; xChar++)
+		{
+			const uint8_t colAttr = mem_rd(&pC64->mem_vic, charMapAddress + xChar + (yChar * 40));
+			const uint8_t colRamVal = pC64->color_ram[xChar + (yChar * 40)];
+			const uint8_t* pBitmapData = mem_readptr(&pC64->mem_vic, bitmapAddress + (charNo * 8));
+
+			if(bMulticolour)
+			{ 
+				ScreenCols[1] = m6569_color(colAttr >> 4);
+				ScreenCols[2] = m6569_color(colAttr & 15);
+				ScreenCols[3] = m6569_color(colRamVal & 15);
+				ScreenView->Draw2BppWideImageAt(pBitmapData, xChar * 8, yChar * 8, 8, 8, ScreenCols);
+			}
+			else
+			{
+				ScreenCols[0] = m6569_color(colAttr >> 4);
+				ScreenCols[1] = m6569_color(colAttr & 15);
+				ScreenView->Draw1BppImageAt(pBitmapData, xChar * 8, yChar * 8, 8, 8, ScreenCols);
+			}
+
+			charNo++;
+		}
+	}
+
+
+}
+
+void FC64GraphicsViewer::DrawCharacterBankCombo()
+{
+	const uint16_t charDefs = CharacterBankNo << 11;
+	const uint16_t vicMemBase = VicBankNo * 16384;
+	//const uint16_t screenMem = ScreenBankNo << 10;
+	//const uint16_t charMapAddress = vicMemBase + screenMem;
+	const uint16_t charDefsAddress = vicMemBase + charDefs;
+
+
+	if (ImGui::BeginCombo("Character Bank", NumStr(charDefsAddress), ImGuiComboFlags_None))
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			const uint16_t bankAddr = vicMemBase + (uint16_t)(i << 11);
+			if (ImGui::Selectable(NumStr(bankAddr), i == CharacterBankNo))
+			{
+				CharacterBankNo = i;
+			}
+		}
+		ImGui::EndCombo();
+	}
+}
+
+void FC64GraphicsViewer::DrawScreenBankCombo()
+{
+	const uint16_t vicMemBase = VicBankNo * 16384;
+	const uint16_t screenMem = ScreenBankNo << 10;
+	const uint16_t screenMemAddress = vicMemBase + screenMem;
+
+	if (ImGui::BeginCombo("Screen Bank", NumStr(screenMemAddress), ImGuiComboFlags_None))
+	{
+		for (int i = 0; i < 16; i++)
+		{
+			const uint16_t bankAddr = vicMemBase + (uint16_t)(i << 10);
+			if (ImGui::Selectable(NumStr(bankAddr), i == ScreenBankNo))
+			{
+				ScreenBankNo = i;
+			}
+		}
+		ImGui::EndCombo();
+	}
+}
+
+void FC64GraphicsViewer::DrawBitmapBankCombo()
+{
 
 }
 
@@ -290,18 +367,26 @@ void FC64GraphicsViewer::DrawScreenViewer()
 {
 	c64_t* pC64 = C64Emu->GetEmu();
 	ImGui::Combo("Screen Mode", (int*) &ScreenMode, "HiresText\0MulticolourText\0HiresBitmap\0MulticolourBitmap\0ECMText\0");
-	ImGui::SameLine();
+	DrawScreenBankCombo();
+	DrawCharacterBankCombo();
+	DrawBitmapBankCombo();
+	
 	if (ImGui::Button("Get from VIC"))
 	{
 		EC64ScreenMode mode = GetScreenModeFromVIC(pC64);
 		if(mode != EC64ScreenMode::Invalid)
 			ScreenMode = mode;
+
+		VicBankNo = pC64->vic_bank_select >> 14;
+		BitmapBankNo = ((pC64->vic.reg.mem_ptrs >> 3) & 1);
+		ScreenBankNo = pC64->vic.reg.mem_ptrs >> 4;
+		CharacterBankNo = (pC64->vic.reg.mem_ptrs >> 1) & 7;
 	}
 
 	// Memory locations
-	const uint16_t vicMemBase = pC64->vic_bank_select;
-	const uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
-	const uint16_t charDefs = ((pC64->vic.reg.mem_ptrs >> 1) & 7) << 11;
+	//const uint16_t vicMemBase = pC64->vic_bank_select;
+	//const uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
+	//const uint16_t charDefs = ((pC64->vic.reg.mem_ptrs >> 1) & 7) << 11;
 
 	switch (ScreenMode)
 	{

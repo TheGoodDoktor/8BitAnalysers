@@ -25,6 +25,9 @@ public:
 	void	DrawUI();
 
 private:
+	void	DrawCharacterBankCombo();
+	void	DrawScreenBankCombo();
+	void	DrawBitmapBankCombo();
 	void	DrawSpritesViewer();
 	void	DrawCharactersViewer();
 	void	DrawCharacterScreen(bool bMulticolour, bool ECM);
@@ -41,6 +44,9 @@ private:
 	FGraphicsView*		ScreenView = nullptr;
 	
 	int					VicBankNo = 0;
+	int					ScreenBankNo = 0;
+	int					BitmapBankNo = 0;
+	int					CharacterBankNo = 0;
 	EC64ScreenMode		ScreenMode = EC64ScreenMode::HiresText;
 
 	bool			SpriteMultiColour = false;
