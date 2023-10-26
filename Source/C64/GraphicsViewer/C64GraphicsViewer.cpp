@@ -271,6 +271,18 @@ void FC64GraphicsViewer::DrawCharacterScreen(bool bMulticolour, bool ECM)
 
 void FC64GraphicsViewer::DrawBitmapScreen(bool bMulticolour)
 {
+	c64_t* pC64 = C64Emu->GetEmu();
+	const uint16_t bitmapMem = ((pC64->vic.reg.mem_ptrs >> 3) & 1) << 13;
+	const uint16_t vicMemBase = pC64->vic_bank_select;
+	const uint16_t bitmapAddress = vicMemBase + bitmapMem;
+
+	const uint8_t* pBitMapMemory = mem_readptr(&pC64->mem_vic, bitmapAddress);
+
+	// This doesn't work - pity!
+	if (bMulticolour)
+		ScreenView->Draw2BppWideImageAt(pBitMapMemory, 0,0, 320, 200, CharCols);
+	else
+		ScreenView->Draw1BppImageAt(pBitMapMemory, 0,0, 320, 200, CharCols);
 
 }
 
@@ -289,7 +301,6 @@ void FC64GraphicsViewer::DrawScreenViewer()
 	// Memory locations
 	const uint16_t vicMemBase = pC64->vic_bank_select;
 	const uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
-	const uint16_t bitmapMem = ((pC64->vic.reg.mem_ptrs >> 3) & 1) << 13;
 	const uint16_t charDefs = ((pC64->vic.reg.mem_ptrs >> 1) & 7) << 11;
 
 	switch (ScreenMode)
