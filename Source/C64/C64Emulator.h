@@ -112,6 +112,10 @@ public:
 		const uint16_t physicalAddress = C64Emu.vic_bank_select + vicAddress;
 		return FAddressRef(VICBankMapping[physicalAddress >> 12], physicalAddress);
 	}
+	FAddressRef	GetColourRAMAddress(uint16_t colRamAddress)	// VIC address is 14bit (16K range)
+	{
+		return FAddressRef(IOAreaId, colRamAddress + 0xD800);
+	}
 	bool StartGame(const char* pGameName, bool bLoadGame);
 	bool StartGame(FC64GameConfig *pConfig, bool bLoadGame);
 	bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
