@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "CodeAnalyser/CodeAnalyserTypes.h"
 
 class FCodeAnalysisState;
 class FGraphicsView;
@@ -17,6 +18,14 @@ enum class EC64ScreenMode
 	Invalid
 };
 
+enum class EGraphicsMemoryAccess
+{
+	Characters,
+	Pixels,
+	MulticolourAttributes,
+	ColourRAM
+};
+
 class FC64GraphicsViewer
 {
 public:
@@ -28,10 +37,16 @@ private:
 	void	DrawCharacterBankCombo();
 	void	DrawScreenBankCombo();
 	void	DrawBitmapBankCombo();
+	void	DrawMemoryAccessCombo();
+
 	void	DrawSpritesViewer();
 	void	DrawCharactersViewer();
+
 	void	DrawCharacterScreen(bool bMulticolour, bool ECM);
 	void	DrawBitmapScreen(bool bMulticolour);
+	FAddressRef GetAddressOfCharData(int x, int y);
+	void	DrawScreenAccessOverlay(float x,float y, bool bBitmapMode);
+
 	void	DrawScreenViewer();
 	void	DrawHiResSpriteAt(uint16_t addr, int xp, int yp);
 	void	DrawMultiColourSpriteAt(uint16_t addr, int xp, int yp);
@@ -53,4 +68,10 @@ private:
 	bool			CharacterMultiColour = false;
 	uint32_t		SpriteCols[4];	// colours to draw sprites
 	uint32_t		CharCols[4];	// colours to draw characters
+
+	// For screen access view
+	EGraphicsMemoryAccess	MemoryAccessDisplay = EGraphicsMemoryAccess::Characters;
+	FAddressRef	SelectedCharAddress;
+	int			SelectedCharX = -1;
+	int			SelectedCharY = -1;
 };

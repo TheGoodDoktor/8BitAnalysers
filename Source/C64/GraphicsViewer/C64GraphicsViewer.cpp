@@ -20,6 +20,7 @@
 
 #include "../C64Emulator.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "ImGuiSupport/ImGuiScaling.h"
 
 
 // Useful VIC info:
@@ -315,6 +316,198 @@ void FC64GraphicsViewer::DrawBitmapScreen(bool bMulticolour)
 
 }
 
+FAddressRef FC64GraphicsViewer::GetAddressOfCharData(int x, int y)
+{
+	const uint16_t screenCharacterMem = ScreenBankNo << 10;
+	const uint16_t bitmapMem = BitmapBankNo << 13;
+
+	const int noCharsX = 40;
+	const int noCharsY = 25;
+
+	FAddressRef address;
+	
+	switch(MemoryAccessDisplay)
+	{
+	case EGraphicsMemoryAccess::Characters:
+	case EGraphicsMemoryAccess::MulticolourAttributes:
+			address = C64Emu->GetVICMemoryAddress(screenCharacterMem + x + (y * noCharsX));
+			break;
+
+		case EGraphicsMemoryAccess::Pixels:	// for Bitmap modes
+			address = C64Emu->GetVICMemoryAddress(bitmapMem + (x + (y * noCharsX)) * 8);
+			break;
+		case EGraphicsMemoryAccess::ColourRAM:
+			address = C64Emu->GetColourRAMAddress(x + (y * noCharsX));
+		break;
+
+	}
+
+	return address;
+}
+
+void FC64GraphicsViewer::DrawScreenAccessOverlay(float x, float y, bool bBitmapMode)
+{
+	// Display Character Map
+	const float imgScale = ImGui_GetScaling();
+
+	FCodeAnalysisState& state = *CodeAnalysis;
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	ImGuiIO& io = ImGui::GetIO();
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos(x,y);
+	const float rectSize = 8.0f * imgScale;
+	static bool bShowReadWrites = true;
+
+	const uint16_t vicMemBase = VicBankNo * 16384;
+	const uint16_t screenMem = ScreenBankNo << 10;
+	const uint16_t charMapAddress = screenMem;
+
+	const int noCharsX = 40;
+	const int noCharsY = 25;
+
+	for (int y = 0; y < noCharsY; y++)
+	{
+		for (int x = 0; x < noCharsX; x++)
+		{
+			FAddressRef curCharAddress = GetAddressOfCharData(x,y);
+			FDataInfo* pDataInfo = state.GetDataInfoForAddress(curCharAddress);
+			const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
+			const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
+			const int wBrightVal = (255 - std::min(framesSinceWritten << 3, 255)) & 0xff;
+			const int rBrightVal = (255 - std::min(framesSinceRead << 3, 255)) & 0xff;
+
+			if (wBrightVal > 0 || rBrightVal > 0)	// skip empty chars
+			{
+				const float xp = pos.x + (x * rectSize);
+				const float yp = pos.y + (y * rectSize);
+				ImVec2 rectMin(xp, yp);
+				ImVec2 rectMax(xp + rectSize, yp + rectSize);
+
+				if (bShowReadWrites)
+				{
+					if (rBrightVal > 0)
+					{
+						const ImU32 col = 0xff000000 | (rBrightVal << 8);
+						dl->AddRect(rectMin, rectMax, col);
+
+						rectMin = ImVec2(rectMin.x + 1, rectMin.y + 1);
+						rectMax = ImVec2(rectMax.x - 1, rectMax.y - 1);
+					}
+					if (wBrightVal > 0)
+					{
+						const ImU32 col = 0xff000000 | (wBrightVal << 0);
+						dl->AddRect(rectMin, rectMax, col);
+					}
+				}
+			}
+		}
+	}
+
+	// draw highlight rect
+	const float mousePosX = io.MousePos.x - pos.x;
+	const float mousePosY = io.MousePos.y - pos.y;
+	if (mousePosX >= 0 && mousePosY >= 0 && mousePosX < (noCharsX * rectSize) && mousePosY < (noCharsY * rectSize))
+	{
+		const int xChar = (int)floor(mousePosX / rectSize);
+		const int yChar = (int)floor(mousePosY / rectSize);
+
+		FAddressRef charAddress = GetAddressOfCharData(xChar,yChar);
+		//const uint16_t charAddress = charMapAddress + (xChar + (yChar * noCharsX));
+		const uint8_t charVal = state.ReadByte(charAddress);
+
+		const float xp = pos.x + (xChar * rectSize);
+		const float yp = pos.y + (yChar * rectSize);
+		const ImVec2 rectMin(xp, yp);
+		const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+		dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+		if (ImGui::IsMouseClicked(0))
+		{
+			SelectedCharAddress = charAddress;
+			SelectedCharX = xChar;
+			SelectedCharY = yChar;
+		}
+
+		// Tool Tip
+		ImGui::BeginTooltip();
+		ImGui::Text("Char Pos (%d,%d)", xChar, yChar);
+		ImGui::Text("Value: %s", NumStr(charVal));
+		ImGui::EndTooltip();
+	}
+
+	if (SelectedCharX != -1 && SelectedCharY != -1)
+	{
+		const float xp = pos.x + (SelectedCharX * rectSize);
+		const float yp = pos.y + (SelectedCharY * rectSize);
+		const ImVec2 rectMin(xp, yp);
+		const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+		dl->AddRect(rectMin, rectMax, 0xffffffff);
+	}
+
+	// draw hovered address
+	if (viewState.HighlightAddress.IsValid())
+	{
+		//const uint16_t charMapStartAddr = params.Address;
+		FAddressRef endAddr = GetAddressOfCharData(noCharsX, noCharsY);
+
+		const uint16_t charMapEndAddr = endAddr.Address;//charMapAddress + (noCharsX * noCharsY) - 1;
+		
+		// is checking bank ID enough?
+		if (	viewState.HighlightAddress.BankId == endAddr.BankId &&
+				viewState.HighlightAddress.Address >= charMapAddress && 
+				viewState.HighlightAddress.Address <= charMapEndAddr)	
+		{
+			const uint16_t addrOffset = viewState.HighlightAddress.Address - charMapAddress;
+			const int charX = addrOffset % noCharsX;
+			const int charY = addrOffset / noCharsX;
+			const float xp = pos.x + (charX * rectSize);
+			const float yp = pos.y + (charY * rectSize);
+			const ImVec2 rectMin(xp, yp);
+			const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+			dl->AddRect(rectMin, rectMax, 0xffff00ff);
+		}
+	}
+
+	pos.y += noCharsY * rectSize;
+	ImGui::SetCursorScreenPos(pos);
+
+	ImGui::Checkbox("Show Reads & Writes", &bShowReadWrites);
+	if (SelectedCharAddress.IsValid())
+	{
+		// Show data reads & writes
+		// 
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(SelectedCharAddress);
+		// List Data accesses
+		if (pDataInfo->Reads.IsEmpty() == false)
+		{
+			ImGui::Text("Reads:");
+			for (const auto& reader : pDataInfo->Reads.GetReferences())
+			{
+				ShowCodeAccessorActivity(state, reader);
+
+				ImGui::Text("   ");
+				ImGui::SameLine();
+				DrawCodeAddress(state, viewState, reader);
+			}
+		}
+
+		if (pDataInfo->Writes.IsEmpty() == false)
+		{
+			ImGui::Text("Writes:");
+			for (const auto& writer : pDataInfo->Writes.GetReferences())
+			{
+				ShowCodeAccessorActivity(state, writer);
+
+				ImGui::Text("   ");
+				ImGui::SameLine();
+				DrawCodeAddress(state, viewState, writer);
+			}
+		}
+	}
+
+
+}
+
 void FC64GraphicsViewer::DrawCharacterBankCombo()
 {
 	const uint16_t charDefs = CharacterBankNo << 11;
@@ -363,6 +556,32 @@ void FC64GraphicsViewer::DrawBitmapBankCombo()
 
 }
 
+const char* g_MemoryAccessEnum[]=
+{
+	"Characters",
+	"Pixels",
+	"MulticolourAttributes",
+	"ColourRAM"
+};
+
+void FC64GraphicsViewer::DrawMemoryAccessCombo()
+{
+	if (ImGui::BeginCombo("Show Memory Access", g_MemoryAccessEnum[(int)MemoryAccessDisplay], ImGuiComboFlags_None))
+	{
+		if (ImGui::Selectable("Characters", MemoryAccessDisplay == EGraphicsMemoryAccess::Characters))
+			MemoryAccessDisplay = EGraphicsMemoryAccess::Characters;
+		if (ImGui::Selectable("Pixels", MemoryAccessDisplay == EGraphicsMemoryAccess::Pixels))
+			MemoryAccessDisplay = EGraphicsMemoryAccess::Pixels;
+		if (ImGui::Selectable("MulticolourAttributes", MemoryAccessDisplay == EGraphicsMemoryAccess::MulticolourAttributes))
+			MemoryAccessDisplay = EGraphicsMemoryAccess::MulticolourAttributes;
+		if (ImGui::Selectable("ColourRAM", MemoryAccessDisplay == EGraphicsMemoryAccess::ColourRAM))
+			MemoryAccessDisplay = EGraphicsMemoryAccess::ColourRAM;
+
+		ImGui::EndCombo();
+	}
+}
+
+
 void FC64GraphicsViewer::DrawScreenViewer()
 {
 	c64_t* pC64 = C64Emu->GetEmu();
@@ -387,7 +606,7 @@ void FC64GraphicsViewer::DrawScreenViewer()
 	//const uint16_t vicMemBase = pC64->vic_bank_select;
 	//const uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
 	//const uint16_t charDefs = ((pC64->vic.reg.mem_ptrs >> 1) & 7) << 11;
-
+	bool bBitmapMode = false;
 	switch (ScreenMode)
 	{
 		case EC64ScreenMode::HiresText:
@@ -398,13 +617,18 @@ void FC64GraphicsViewer::DrawScreenViewer()
 			break;
 		case EC64ScreenMode::HiresBitmap:
 			DrawBitmapScreen(false);
+			bBitmapMode = true;
 			break;
 		case EC64ScreenMode::MulticolourBitmap:
 			DrawBitmapScreen(true);
+			bBitmapMode = true;
 			break;
 	}
 
+	DrawMemoryAccessCombo();
+	const ImVec2 pos = ImGui::GetCursorScreenPos();
 	ScreenView->Draw(true);
+	DrawScreenAccessOverlay(pos.x,pos.y, bBitmapMode);
 }
 
 
