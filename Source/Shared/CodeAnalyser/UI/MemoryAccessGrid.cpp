@@ -5,6 +5,8 @@
 #include "ImGuiSupport/ImGuiScaling.h"
 #include "CodeAnalyserUI.h"
 
+#include <cmath>
+
 FMemoryAccessGrid::FMemoryAccessGrid(FCodeAnalysisState* pCodeAnalysis, int xGridSize, int yGridSize)
 	: CodeAnalysis(pCodeAnalysis)
 	, GridSizeX(xGridSize)
