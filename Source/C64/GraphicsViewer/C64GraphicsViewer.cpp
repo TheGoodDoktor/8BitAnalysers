@@ -28,10 +28,14 @@
 
 void	DrawColourPicker(uint32_t colours[4]);
 
-void FC64GraphicsViewer::Init(FC64Emulator* pC64Emu)
+FC64GraphicsViewer::FC64GraphicsViewer(FC64Emulator* pEmu) : FViewerBase(pEmu)
 {
-	C64Emu = pC64Emu;
-	CodeAnalysis = &pC64Emu->GetCodeAnalysis();
+	Name = "Graphics Viewer";
+}
+bool FC64GraphicsViewer::Init(void)
+{
+	C64Emu = (FC64Emulator*)pEmulator;
+	CodeAnalysis = &pEmulator->GetCodeAnalysis();
 	CharacterView = new FGraphicsView(320, 408);	// 40 * 51 enough for a 16K Vic bank
 	SpriteView = new FGraphicsView(384, 16 * 21); // 16x16 sprites for a VIC bank
 	ScreenView = new FGraphicsView(320,200); 
@@ -45,6 +49,8 @@ void FC64GraphicsViewer::Init(FC64Emulator* pC64Emu)
 	CharCols[1] = 0xffffffff;
 	CharCols[2] = 0xff888888;
 	CharCols[3] = 0xff444444;
+
+	return true;
 }
 
 void FC64GraphicsViewer::Shutdown()

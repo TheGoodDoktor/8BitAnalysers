@@ -1092,7 +1092,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 					}
 				}
 				ImGui::EndMenu();
-				}
+			}
 #endif
 			if (ImGui::BeginMenu("Open Game"))
 			{

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "CodeAnalyser/CodeAnalyserTypes.h"
 #include "CodeAnalyser/UI/MemoryAccessGrid.h"
+#include "Misc/EmuBase.h"
 
 class FCodeAnalysisState;
 class FGraphicsView;
@@ -38,11 +39,12 @@ private:
 	FC64GraphicsViewer*	GraphicsViewer = nullptr;
 };
 
-class FC64GraphicsViewer
+class FC64GraphicsViewer : public FViewerBase
 {
 friend class FC64ScreenAccessGrid;
 public:
-	void	Init(FC64Emulator* pC64Emu);
+			FC64GraphicsViewer(FC64Emulator *pEmu);
+	bool	Init() override;
 	void	Shutdown();
 	void	DrawUI();
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "misc/EmuBase.h"
 
 //#define UI_DASM_USE_Z80
 #define UI_DASM_USE_M6502
@@ -51,15 +52,14 @@
 struct FC64Config;
 struct FC64GameConfig;
 
-class FC64Emulator : public ICPUInterface
+class FC64Emulator : public FEmuBase
 {
 public:
 
-	bool    Init();
-	void    Shutdown();
-	void	DrawUI();
-	bool	DrawDockingView();
-	void    Tick();
+	bool    Init() override;
+	void    Shutdown() override;
+	void	DrawEmulatorUI() override;
+	void    Tick() override;
 
 	// Begin IInputEventHandler interface implementation
 	void	OnKeyUp(int keyCode);
@@ -129,7 +129,6 @@ public:
 	uint64_t    OnCPUTick(uint64_t pins);
 
 	c64_t*	GetEmu() {return &C64Emu;}
-	FCodeAnalysisState& GetCodeAnalysis(){ return CodeAnalysis; }
 	const FC64IOAnalysis&	GetC64IOAnalysis() { return IOAnalysis; }
 
 	const FC64Config*	GetGlobalConfig() { return pGlobalConfig;}
@@ -143,11 +142,9 @@ private:
 	FC64GameConfig*		pCurrentGameConfig = nullptr;
 
 	FC64GamesList       GamesList;
-	const FGameInfo* CurrentGame = nullptr;
+	const FGameInfo*	CurrentGame = nullptr;
 
 	FC64Display         Display;
-
-	FCodeAnalysisState  CodeAnalysis;
 
 	uint8_t				IOMemBuffer[0x1000];	// Buffer for IO memory
 
@@ -155,7 +152,7 @@ private:
 	uint16_t            PreviousPC = 0;
 
 	FC64IOAnalysis      IOAnalysis;
-	FC64GraphicsViewer  GraphicsViewer;
+	//FC64GraphicsViewer* GraphicsViewer = nullptr;
 	std::set<FAddressRef>  InterruptHandlers;
 
 	// Mapping status
