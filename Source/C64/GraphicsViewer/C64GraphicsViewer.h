@@ -2,10 +2,12 @@
 
 #include <cstdint>
 #include "CodeAnalyser/CodeAnalyserTypes.h"
+#include "CodeAnalyser/UI/MemoryAccessGrid.h"
 
 class FCodeAnalysisState;
 class FGraphicsView;
 class FC64Emulator;
+class FC64GraphicsViewer;
 
 enum class EC64ScreenMode
 {
@@ -26,8 +28,19 @@ enum class EGraphicsMemoryAccess
 	ColourRAM
 };
 
+class FC64ScreenAccessGrid : public FMemoryAccessGrid
+{
+public:
+	FC64ScreenAccessGrid(FC64GraphicsViewer* pViewer);
+	void OnDraw() override;
+	FAddressRef GetGridSquareAddress(int x, int y) override;
+private:
+	FC64GraphicsViewer*	GraphicsViewer = nullptr;
+};
+
 class FC64GraphicsViewer
 {
+friend class FC64ScreenAccessGrid;
 public:
 	void	Init(FC64Emulator* pC64Emu);
 	void	Shutdown();
@@ -44,8 +57,8 @@ private:
 
 	void	DrawCharacterScreen(bool bMulticolour, bool ECM);
 	void	DrawBitmapScreen(bool bMulticolour);
-	FAddressRef GetAddressOfCharData(int x, int y);
-	void	DrawScreenAccessOverlay(float x,float y, bool bBitmapMode);
+	//FAddressRef GetAddressOfCharData(int x, int y);
+	//void	DrawScreenAccessOverlay(float x,float y, bool bBitmapMode);
 
 	void	DrawScreenViewer();
 	void	DrawHiResSpriteAt(uint16_t addr, int xp, int yp);
@@ -71,6 +84,8 @@ private:
 
 	// For screen access view
 	EGraphicsMemoryAccess	MemoryAccessDisplay = EGraphicsMemoryAccess::Characters;
+	FC64ScreenAccessGrid*	ScreenAccessGrid = nullptr;
+
 	FAddressRef	SelectedCharAddress;
 	int			SelectedCharX = -1;
 	int			SelectedCharY = -1;

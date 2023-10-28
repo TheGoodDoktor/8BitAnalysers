@@ -107,12 +107,12 @@ public:
 	c64_desc_t GenerateC64Desc(c64_joystick_type_t joy_type);
 	void SetupCodeAnalysisLabels(void);
 	void UpdateCodeAnalysisPages(uint8_t cpuPort);
-	FAddressRef	GetVICMemoryAddress(uint16_t vicAddress)	// VIC address is 14bit (16K range)
+	FAddressRef	GetVICMemoryAddress(uint16_t vicAddress) const	// VIC address is 14bit (16K range)
 	{
 		const uint16_t physicalAddress = C64Emu.vic_bank_select + vicAddress;
 		return FAddressRef(VICBankMapping[physicalAddress >> 12], physicalAddress);
 	}
-	FAddressRef	GetColourRAMAddress(uint16_t colRamAddress)	// VIC address is 14bit (16K range)
+	FAddressRef	GetColourRAMAddress(uint16_t colRamAddress)	const // VIC address is 14bit (16K range)
 	{
 		return FAddressRef(IOAreaId, colRamAddress + 0xD800);
 	}

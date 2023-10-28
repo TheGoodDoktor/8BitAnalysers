@@ -923,7 +923,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
         if (pins & M6502_RW)
         {
             if (state.bRegisterDataAccesses)
-                RegisterDataRead(CodeAnalysis, pc, addr);
+                RegisterDataRead(CodeAnalysis, pc, addr);   // this gives false positives on indirect addressing e.g. STA ($0a),y
 
             if (bIOMapped && (addr >> 12) == 0xd)
             {
