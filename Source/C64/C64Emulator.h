@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CodeAnalyser/CodeAnalyser.h"
-#include "misc/EmuBase.h"
+#include "Misc/EmuBase.h"
 
 //#define UI_DASM_USE_Z80
 #define UI_DASM_USE_M6502
