@@ -107,6 +107,8 @@ void FC64Display::DrawUI()
 	chips_display_info_t disp = c64_display_info(C64Emu->GetEmu());
 	const int dispFrameWidth = disp.screen.width;
     const int dispFrameHeight = disp.screen.height;
+    const int borderOffsetX = 32 + xScrollOff;//((dispFrameWidth - graphicsScreenWidth) / 2);    // align to character size
+    const int borderOffsetY = 32 + yScrollOff;//((dispFrameHeight - graphicsScreenHeight) / 2);
 
 	// convert texture to RGBA
 	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
@@ -150,6 +152,27 @@ void FC64Display::DrawUI()
     // Draw Screen
     ImGui::Image(ScreenTexture, ImVec2((float)disp.screen.width * scale, (float)disp.screen.height * scale),uv0,uv1);
 
+    if (C64Emu->GetHighlightX() != -1)
+    {
+        const float x = (borderOffsetX + C64Emu->GetHighlightX()) * scale;
+        dl->AddLine(ImVec2(pos.x + x, pos.y), ImVec2(pos.x + x, pos.y + disp.screen.height * scale), 0xffffff00);
+        C64Emu->SetXHighlight(-1);
+    }
+
+    if (C64Emu->GetHighlightY() != -1)
+    {
+        const float y = (borderOffsetY + C64Emu->GetHighlightY()) * scale;
+        dl->AddLine(ImVec2(pos.x, pos.y + y), ImVec2(pos.x + disp.screen.width * scale, pos.y + y), 0xffffff00);
+        C64Emu->SetYHighlight(-1);
+    }
+
+    if (C64Emu->GetHighlightScanline() != -1)
+    {
+        int topScreenScanLine = 0;
+        int scanlineY = std::min(std::max(C64Emu->GetHighlightScanline() - topScreenScanLine, 0), disp.screen.height);
+        dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (scanlineY * scale)), 0x50ffffff);
+        C64Emu->SetScanlineHighlight(-1);
+    }
     // Draw an indicator to show which scanline is being drawn
     if (config.bShowScanLineIndicator && CodeAnalysis->Debugger.IsStopped())
     {
@@ -172,10 +195,7 @@ void FC64Display::DrawUI()
     {
         //pC64->vic.crt.vis_x0 * M6569_PIXELS_PER_TICK;
         //pC64->vic.brd.left* M6569_PIXELS_PER_TICK;
-
-        const int borderOffsetX = ((dispFrameWidth - graphicsScreenWidth) / 2);    // align to character size
-        const int borderOffsetY = ((dispFrameHeight - graphicsScreenHeight) / 2);
-
+  
         const ImVec2 mouseOffset((io.MousePos.x - pos.x)/scale, (io.MousePos.y - pos.y) / scale);
         const int xp = std::min(std::max((int)(mouseOffset.x - borderOffsetX), 0), graphicsScreenWidth - 1);
         const int yp = std::min(std::max((int)(mouseOffset.y - borderOffsetY), 0), graphicsScreenHeight - 1);

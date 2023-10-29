@@ -151,16 +151,17 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 class FScreenPixMemDescGenerator : public FMemoryRegionDescGenerator
 {
 public:
-	FScreenPixMemDescGenerator()
+	FScreenPixMemDescGenerator(int16_t bankId)
 	{
 		RegionMin = kScreenPixMemStart;
 		RegionMax = kScreenPixMemEnd;
+		RegionBankId = bankId;
 	}
 
-	const char* GenerateAddressString(uint16_t addr) override
+	const char* GenerateAddressString(FAddressRef addr) override
 	{
 		int xp = 0, yp = 0;
-		GetScreenAddressCoords(addr, xp, yp);
+		GetScreenAddressCoords(addr.Address, xp, yp);
 		sprintf(DescStr, "Screen Pix: %d,%d", xp, yp);
 		return DescStr;
 	}
@@ -172,16 +173,17 @@ private:
 class FScreenAttrMemDescGenerator : public FMemoryRegionDescGenerator
 {
 public:
-	FScreenAttrMemDescGenerator()
+	FScreenAttrMemDescGenerator(int16_t bankId)
 	{
 		RegionMin = kScreenAttrMemStart;
 		RegionMax = kScreenAttrMemEnd;
+		RegionBankId = bankId;
 	}
 
-	const char* GenerateAddressString(uint16_t addr) override
+	const char* GenerateAddressString(FAddressRef addr) override
 	{
 		int xp = 0, yp = 0;
-		GetAttribAddressCoords(addr, xp, yp);
+		GetAttribAddressCoords(addr.Address, xp, yp);
 		sprintf(DescStr, "Screen Attr: %d,%d", xp/8, yp/8);
 		return DescStr;
 	}
@@ -684,9 +686,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
-	// Setup memory description handlers
-	AddMemoryRegionDescGenerator(new FScreenPixMemDescGenerator());
-	AddMemoryRegionDescGenerator(new FScreenAttrMemDescGenerator());	
+	
 
 	// register Viewers
 	RegisterStarquakeViewer(this);
@@ -723,6 +723,10 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		SetRAMBank(1, 0);	// 0x4000 - 0x7fff
 		SetRAMBank(2, 1);	// 0x8000 - 0xBfff
 		SetRAMBank(3, 2);	// 0xc000 - 0xffff
+
+		// Setup memory description handlers
+		AddMemoryRegionDescGenerator(new FScreenPixMemDescGenerator(RAMBanks[0]));
+		AddMemoryRegionDescGenerator(new FScreenAttrMemDescGenerator(RAMBanks[0]));
 	}
 	else
 	{
@@ -734,8 +738,13 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 		SetRAMBank(1, 5);	// 0x4000 - 0x7fff
 		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
 		SetRAMBank(3, 0);	// 0xc000 - 0xffff
+
+		// Setup memory description handlers
+		AddMemoryRegionDescGenerator(new FScreenPixMemDescGenerator(RAMBanks[5]));
+		AddMemoryRegionDescGenerator(new FScreenAttrMemDescGenerator(RAMBanks[5]));
 	}
 
+	
 
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;

@@ -64,7 +64,16 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, FAddressRef addr)
 
 std::vector<FMemoryRegionDescGenerator*>	g_RegionDescHandlers;
 
-const char* GetRegionDesc(uint16_t addr)
+void UpdateRegionDescs(void)
+{
+	for (FMemoryRegionDescGenerator* pDescGen : g_RegionDescHandlers)
+	{
+		if (pDescGen)
+			pDescGen->FrameTick();
+	}
+}
+
+const char* GetRegionDesc(FAddressRef addr)
 {
 	for (FMemoryRegionDescGenerator* pDescGen : g_RegionDescHandlers)
 	{
@@ -114,7 +123,7 @@ void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel)
 {
 	int labelOffset = 0;
-	const char *pLabelString = GetRegionDesc(addr.Address);
+	const char *pLabelString = GetRegionDesc(addr);
 	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
 	assert(pBank != nullptr);
 

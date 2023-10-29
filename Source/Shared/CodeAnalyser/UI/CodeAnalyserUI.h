@@ -18,13 +18,16 @@ enum class EOperandType;
 class FMemoryRegionDescGenerator
 {
 public:
-	bool	InRegion(uint16_t addr) const
+	bool	InRegion(FAddressRef addr) const
 	{
-		return addr >= RegionMin && addr <= RegionMax;
+		return (addr.BankId == RegionBankId || RegionBankId == -1) && addr.Address >= RegionMin && addr.Address <= RegionMax;
 	}
 
-	virtual const char* GenerateAddressString(uint16_t addr) = 0;
+	virtual const char* GenerateAddressString(FAddressRef addr) = 0;
+
+	virtual void FrameTick() {}
 protected:
+	int16_t		RegionBankId = -1;	// -1 means any bank (needed for regions that span banks)
 	uint16_t	RegionMin = 0xffff;
 	uint16_t	RegionMax = 0;
 };
@@ -33,6 +36,7 @@ protected:
 // UI
 
 bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen);
+void UpdateRegionDescs(void);
 
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr);
 //void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);

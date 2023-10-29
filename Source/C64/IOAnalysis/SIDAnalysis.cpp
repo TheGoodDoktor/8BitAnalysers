@@ -2,6 +2,11 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "../C64Emulator.h"
 
+void SIDWriteEventShowAddress(FCodeAnalysisState& state, const FEvent& event);
+void SIDWriteEventShowValue(FCodeAnalysisState& state, const FEvent& event);
+
+FSIDAnalysis* pSID = nullptr; // hack
+
 
 void	FSIDAnalysis::Init(FC64Emulator* pEmulator)
 {
@@ -9,6 +14,10 @@ void	FSIDAnalysis::Init(FC64Emulator* pEmulator)
 	SetAnalyser(&pEmulator->GetCodeAnalysis());
 	pCodeAnalyser->IOAnalyser.AddDevice(this);
 	pC64Emu = pEmulator;
+
+	pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::SIDRegisterWrite, "SID Write", 0xffff0000, SIDWriteEventShowAddress, SIDWriteEventShowValue);
+
+	pSID = this;
 }
 
 void FSIDAnalysis::Reset(void)
@@ -23,9 +32,11 @@ void	FSIDAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
 }
 void	FSIDAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 {
+	c64_t* pC64 = pC64Emu->GetEmu();
 	FC64IORegisterInfo& sidRegister = SIDRegisters[reg];
 	const uint8_t regChange = sidRegister.LastVal ^ val;	// which bits have changed
 
+	pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::SIDRegisterWrite, pc, reg, val, pC64->vic.rs.v_count);
 	sidRegister.Accesses[pc].WriteVals.insert(val);
 
 	sidRegister.LastVal = val;
@@ -74,6 +85,17 @@ static std::vector<FRegDisplayConfig>	g_SIDRegDrawInfo =
 	{"SID_Unused3",				DrawRegValueDecimal},	// 0x1f
 };
 
+void SIDWriteEventShowAddress(FCodeAnalysisState& state, const FEvent& event)
+{
+	ImGui::Text("%s", g_SIDRegDrawInfo[event.Address].Name);
+}
+
+void SIDWriteEventShowValue(FCodeAnalysisState& state, const FEvent& event)
+{
+
+	g_SIDRegDrawInfo[event.Address].UIDrawFunction(pSID, event.Value);
+}
+
 
 void	FSIDAnalysis::DrawDetailsUI(void)
 {
@@ -87,7 +109,7 @@ void	FSIDAnalysis::DrawDetailsUI(void)
 	{
 		if (SelectedRegister != -1)
 		{
-			DrawRegDetails(SIDRegisters[SelectedRegister], g_SIDRegDrawInfo[SelectedRegister], pCodeAnalyser);
+			DrawRegDetails(this, SIDRegisters[SelectedRegister], g_SIDRegDrawInfo[SelectedRegister], pCodeAnalyser);
 		}
 	}
 	ImGui::EndChild();

@@ -592,6 +592,7 @@ void FC64Emulator::DrawEmulatorUI()
             ImGui::Text("CharROM ");
         }
 
+
         Display.DrawUI();
 
         // Temp

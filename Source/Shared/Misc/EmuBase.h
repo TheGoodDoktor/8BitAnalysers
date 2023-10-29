@@ -34,7 +34,16 @@ public:
 	void			AddViewer(FViewerBase* pViewr);
 	void			InitViewers();
 
+	void			SetXHighlight(int x) { HighlightXPos = x; }
+	void			SetYHighlight(int y) { HighlightYPos = y; }
+	void			SetScanlineHighlight(int scanline) { HighlightScanline = scanline;}
+
+	int				GetHighlightX() const { return HighlightXPos; }
+	int				GetHighlightY() const { return HighlightYPos; }
+	int				GetHighlightScanline() const { return HighlightScanline;}
+
 	FCodeAnalysisState& GetCodeAnalysis() { return CodeAnalysis; }
+
 
 protected:
 	void	FileMenu();
@@ -43,6 +52,11 @@ protected:
 
 
 	FCodeAnalysisState  CodeAnalysis;
+
+	// Highligthing
+	int					HighlightXPos = -1;
+	int					HighlightYPos = -1;
+	int					HighlightScanline = -1;
 
 	std::vector<FViewerBase*>	Viewers;
 

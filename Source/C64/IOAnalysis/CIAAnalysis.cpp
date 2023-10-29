@@ -97,7 +97,7 @@ void	FCIAAnalysis::DrawDetailsUI(void)
 	{
 		if (SelectedRegister != -1)
 		{
-			DrawRegDetails(CIARegisters[SelectedRegister], RegConfig->at(SelectedRegister), pCodeAnalyser);
+			DrawRegDetails(this, CIARegisters[SelectedRegister], RegConfig->at(SelectedRegister), pCodeAnalyser);
 		}
 	}
 	ImGui::EndChild();

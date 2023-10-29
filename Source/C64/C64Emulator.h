@@ -49,6 +49,13 @@
 #include "IOAnalysis/C64IOAnalysis.h"
 #include "GraphicsViewer/C64GraphicsViewer.h"
 
+enum class EC64Event
+{
+	VICRegisterWrite,
+	SIDRegisterWrite,
+	CIARegisterWrite,
+};
+
 struct FC64Config;
 struct FC64GameConfig;
 
@@ -111,6 +118,10 @@ public:
 	{
 		const uint16_t physicalAddress = C64Emu.vic_bank_select + vicAddress;
 		return FAddressRef(VICBankMapping[physicalAddress >> 12], physicalAddress);
+	}
+	bool IsAddressedByVIC(FAddressRef addr)
+	{
+		return VICBankMapping[addr.Address >> 12] == addr.BankId;
 	}
 	FAddressRef	GetColourRAMAddress(uint16_t colRamAddress)	const // VIC address is 14bit (16K range)
 	{

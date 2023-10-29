@@ -5,12 +5,12 @@
 #include <CodeAnalyser/CodeAnalyser.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 
-void DrawRegValueHex(uint8_t val)
+void DrawRegValueHex(FC64IODevice* pDevice, uint8_t val)
 {
 	ImGui::Text("$%X", val);
 }
 
-void DrawRegValueDecimal(uint8_t val)
+void DrawRegValueDecimal(FC64IODevice* pDevice, uint8_t val)
 {
 	ImGui::Text("%d", val);
 }
@@ -30,7 +30,7 @@ int DrawRegSelectList(std::vector<FRegDisplayConfig>& regList, int selection)
 	return selection;
 }
 
-void DrawRegDetails(FC64IORegisterInfo& reg, const FRegDisplayConfig& regConfig, FCodeAnalysisState* pCodeAnalysis)
+void DrawRegDetails(FC64IODevice* pDevice, FC64IORegisterInfo& reg, const FRegDisplayConfig& regConfig, FCodeAnalysisState* pCodeAnalysis)
 {
 	if (ImGui::Button("Clear"))
 	{
@@ -39,7 +39,7 @@ void DrawRegDetails(FC64IORegisterInfo& reg, const FRegDisplayConfig& regConfig,
 	}
 	// move out into function?
 	ImGui::Text("Last Val:");
-	regConfig.UIDrawFunction(reg.LastVal);
+	regConfig.UIDrawFunction(pDevice, reg.LastVal);
 	ImGui::Text("Accesses:");
 	for (auto& access : reg.Accesses)
 	{
@@ -51,7 +51,7 @@ void DrawRegDetails(FC64IORegisterInfo& reg, const FRegDisplayConfig& regConfig,
 
 		for (auto& val : access.second.WriteVals)
 		{
-			regConfig.UIDrawFunction(val);
+			regConfig.UIDrawFunction(pDevice, val);
 		}
 	}
 }

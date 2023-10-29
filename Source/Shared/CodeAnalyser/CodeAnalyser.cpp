@@ -19,6 +19,7 @@
 #include "Commands/SetItemDataCommand.h"
 #include "Z80/Z80Disassembler.h"
 #include "6502/M6502Disassembler.h"
+#include "UI/CodeAnalyserUI.h"
 
 // memory bank code
 
@@ -1103,6 +1104,7 @@ void FCodeAnalysisState::OnFrameStart()
 
 void FCodeAnalysisState::OnFrameEnd()
 {
+	UpdateRegionDescs();
 	MemoryAnalyser.FrameTick();
 	IOAnalyser.FrameTick();
 	if (Debugger.FrameTick())
