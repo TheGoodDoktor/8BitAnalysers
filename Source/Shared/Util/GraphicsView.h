@@ -25,8 +25,14 @@ public:
 	// Size is given in (8x8) chars
 	void Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
 
+	// Draw image from a 2Bpp colour map
+	void Draw2BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
+
 	// Draw image from a 2Bpp colour map - wide pixels
 	void Draw2BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
+
+	// Draw image from a 4Bpp colour map - wide pixels
+	void Draw4BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
 
 	// Draw image from a bitmap
 	// Size is given in (8x8) chars
@@ -143,6 +149,8 @@ struct FPalette
 	void SetColour(int colourIndex, uint32_t rgb);
 	size_t GetColourCount() const;
 	uint32_t GetColour(int colourIndex) const;
+	const uint32_t* GetData() const;
+
 protected:
 	std::vector<uint32_t> Colours;
 };
