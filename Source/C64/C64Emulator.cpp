@@ -45,7 +45,9 @@ void gfx_destroy_texture(void* h)
 /* audio-streaming callback */
 static void push_audio(const float* samples, int num_samples, void* user_data)
 {
-    saudio_push(samples, num_samples);
+    FC64Emulator* pC64Emu = (FC64Emulator*)user_data;
+    if(pC64Emu->GetGlobalConfig()->bEnableAudio)
+        saudio_push(samples, num_samples);
 }
 
 void DebugCB(void* user_data, uint64_t pins)
@@ -62,7 +64,7 @@ c64_desc_t FC64Emulator::GenerateC64Desc(c64_joystick_type_t joy_type)
     desc.joystick_type = joy_type;
 
     desc.audio.callback.func = push_audio;
-    desc.audio.callback.user_data = nullptr;
+    desc.audio.callback.user_data = this;
     desc.audio.sample_rate = saudio_sample_rate();
     //desc.audio.tape_sound = false;// sargs_boolean("tape_sound"),
 

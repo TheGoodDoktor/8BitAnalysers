@@ -5,6 +5,29 @@
 #include <chips/m6502.h>
 #include <imgui.h>
 #include <CodeAnalyser/6502/CodeAnalyser6502.h>
+#include <CodeAnalyser/UI/MemoryAccessGrid.h>
+#include <ImGuiSupport/ImGuiScaling.h>
+
+class FZeroPageGrid : public FMemoryAccessGrid
+{
+	public:
+		FZeroPageGrid(FCodeAnalysisState* pCodeAnalysis) :FMemoryAccessGrid(pCodeAnalysis, 16, 16)
+		{
+			//bDetailsToSide = true;
+			bShowValues = true;
+			bOutlineAllSquares = true;
+		}
+
+		FAddressRef GetGridSquareAddress(int x, int y)
+		{
+			return CodeAnalysis->AddressRefFromPhysicalAddress(x + (y * 16));
+		}
+		void OnDraw() 
+		{
+			const float imgScale = ImGui_GetScaling();
+			GridSquareSize = 20.0f * imgScale;	// to fit an 8x8 square on a scaling screen image
+		}
+};
 
 struct F6502DisplayRegisters
 {
@@ -59,6 +82,8 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 	const ImVec4 regNormalCol(1.0f, 1.0f, 1.0f, 1.0f);
 	const ImVec4 regChangedCol(1.0f, 1.0f, 0.0f, 1.0f);
 	ImVec4 regColour = regNormalCol;
+	static FZeroPageGrid zeroPageGrid(&state);
+
 
 	F6502DisplayRegisters curRegs(pCPU);
 	const F6502DisplayRegisters& oldRegs = g_OldRegs;
@@ -114,5 +139,10 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 	ImGui::TextColored(curRegs.S != oldRegs.S ? regChangedCol : regNormalCol, "SP:%s", NumStr(StackPtr));
 	DrawAddressLabel(state, viewState, StackPtr);
 
+	ImGui::Separator();
+	ImGui::Text("Zero Page");
+	const ImVec2 pos = ImGui::GetCursorScreenPos(); 
+	zeroPageGrid.DrawAt(pos.x, pos.y);
+	zeroPageGrid.OnDraw();
 	StoreRegisters_6502(state);
 }

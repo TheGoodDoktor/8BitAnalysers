@@ -21,9 +21,12 @@ protected:
 	int		GridSizeX = -1;
 	int		GridSizeY = -1;
 
+	bool	bShowValues = false;
 	bool	bShowReadWrites = true;
+	bool	bOutlineAllSquares = false;
 
 	FAddressRef	SelectedCharAddress;
 	int			SelectedCharX = -1;
 	int			SelectedCharY = -1;
+	bool		bDetailsToSide = false;
 };

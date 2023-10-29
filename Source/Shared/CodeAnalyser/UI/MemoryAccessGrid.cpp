@@ -50,6 +50,11 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos(x, y);
 	const float rectSize = GridSquareSize;
+	const float imgScale = ImGui_GetScaling();
+	const float fontSize = ImGui::GetFontSize();
+
+	const float txtOffX = (rectSize / 2) - (fontSize/2);
+	const float txtOffY = (rectSize / 2) - (fontSize/2);
 
 	for (int y = 0; y < GridSizeY; y++)
 	{
@@ -61,14 +66,13 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 			const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
 			const int wBrightVal = (255 - std::min(framesSinceWritten << 3, 255)) & 0xff;
 			const int rBrightVal = (255 - std::min(framesSinceRead << 3, 255)) & 0xff;
+			const float xp = pos.x + (x * rectSize);
+			const float yp = pos.y + (y * rectSize);
+			ImVec2 rectMin(xp, yp);
+			ImVec2 rectMax(xp + rectSize, yp + rectSize);
 
 			if (wBrightVal > 0 || rBrightVal > 0)	// skip empty chars
 			{
-				const float xp = pos.x + (x * rectSize);
-				const float yp = pos.y + (y * rectSize);
-				ImVec2 rectMin(xp, yp);
-				ImVec2 rectMax(xp + rectSize, yp + rectSize);
-
 				if (bShowReadWrites)
 				{
 					if (rBrightVal > 0)
@@ -85,6 +89,19 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 						dl->AddRect(rectMin, rectMax, col);
 					}
 				}
+			}
+			else if(bOutlineAllSquares)
+			{
+				dl->AddRect(rectMin, rectMax, 0xffffffff);
+			}
+
+			if (bShowValues)
+			{
+				const uint8_t val = state.ReadByte(curCharAddress);
+				char valTxt[8];
+				snprintf(valTxt, 8, "%02x", val);
+				dl->AddText(ImVec2(xp + txtOffX, yp + txtOffY), 0xffffffff, valTxt);
+				//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);
 			}
 		}
 	}
@@ -112,6 +129,10 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 			SelectedCharAddress = charAddress;
 			SelectedCharX = xChar;
 			SelectedCharY = yChar;
+		}
+		if (ImGui::IsMouseDoubleClicked(0))
+		{
+			viewState.GoToAddress(charAddress);
 		}
 
 		// Tool Tip
@@ -142,7 +163,11 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 		dl->AddRect(rectMin, rectMax, 0xffff00ff);
 	}
 
-	pos.y += GridSizeY * rectSize;
+	if(bDetailsToSide)
+		pos.x += GridSizeX * rectSize;
+	else
+		pos.y += GridSizeY * rectSize;
+
 	ImGui::SetCursorScreenPos(pos);
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadWrites);
 	if (SelectedCharAddress.IsValid())
