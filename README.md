@@ -36,3 +36,5 @@ This is very much work in progress and shouldn't be considered usable at this ti
 # CPC Analyser
 ![ci status](https://github.com/TheGoodDoktor/SpeccyExplorer/actions/workflows/ci_cpc.yml/badge.svg)\
 This is usable but may contain missing or incomplete features compared to Spectrum Analyser.
+### Home Page
+https://colourclash.co.uk/cpc-analyser/

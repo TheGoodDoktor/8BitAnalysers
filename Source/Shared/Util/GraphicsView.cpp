@@ -98,6 +98,45 @@ void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 	}
 }
 
+void FGraphicsView::Draw2BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
+{
+	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
+	const int bytesPerLine = widthPixels / 4;
+	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
+	
+	for (int y = 0; y < heightPixels; y++)
+	{
+		for (int x = 0; x < bytesPerLine; x++)
+		{
+			const uint8_t val = *pSrc++;
+
+			for (int xpix = 0; xpix < 4; xpix++)
+			{
+				uint8_t colNo = 0;
+
+				switch (xpix)
+				{
+				case 0:
+					colNo = (val & 0x8 ? 2 : 0) | (val & 0x80 ? 1 : 0);
+					break;
+				case 1:
+					colNo = (val & 0x4 ? 2 : 0) | (val & 0x40 ? 1 : 0);
+					break;
+				case 2:
+					colNo = (val & 0x2 ? 2 : 0) | (val & 0x20 ? 1 : 0);
+					break;
+				case 3:
+					colNo = (val & 0x1 ? 2 : 0) | (val & 0x10 ? 1 : 0);
+					break;
+				}
+				
+				*(pBase + xpix + (x * 4)) = cols[colNo];
+			}
+		}
+		pBase += Width;
+	}
+}
+
 void FGraphicsView::Draw2BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
 {
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
@@ -121,6 +160,35 @@ void FGraphicsView::Draw2BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int
 			}
 		}
 
+		pBase += Width;
+	}
+}
+
+void FGraphicsView::Draw4BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
+{
+	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
+	const int bytesPerLine = widthPixels / 2;
+	assert((widthPixels & 1) == 0);	// we don't currently support sub character widths - maybe you should implement it?
+
+	for (int y = 0; y < heightPixels; y++)
+	{
+		for (int x = 0; x < bytesPerLine; x++)
+		{
+			const uint8_t val = *pSrc++;
+
+			for (int xpix = 0; xpix < 2; xpix++)
+			{
+				uint8_t colNo = 0;
+
+				if (xpix == 0)
+					colNo = (val & 0x80 ? 1 : 0) | (val & 0x8 ? 2 : 0) | (val & 0x20 ? 4 : 0) | (val & 0x2 ? 8 : 0);
+				else 
+					colNo = (val & 0x40 ? 1 : 0) | (val & 0x4 ? 2 : 0) | (val & 0x10 ? 4 : 0) | (val & 0x1 ? 8 : 0);
+
+				*(pBase + (xpix*2) + (x * 4)) = cols[colNo];
+				*(pBase + (xpix*2) + 1 + (x * 4)) = cols[colNo];
+			}
+		}
 		pBase += Width;
 	}
 }
@@ -416,6 +484,11 @@ uint32_t FPalette::GetColour(int colourIndex) const
 size_t FPalette::GetColourCount() const
 {
 	return Colours.size();
+}
+
+const uint32_t* FPalette::GetData() const 
+{ 
+	return Colours.data(); 
 }
 
 FPalette g_CurrentPalette;
