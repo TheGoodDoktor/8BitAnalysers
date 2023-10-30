@@ -63,7 +63,7 @@ void FSpectrumViewer::Draw()
 	for (int scanlineNo = 0; scanlineNo < 320; scanlineNo++)
 	{
 		const int scanlineY = std::min(std::max(scanlineNo - topScreenScanLine, 0), 256);
-		if (scanlineEvents[scanlineNo] != (int)EEventType::None)
+		if (scanlineEvents[scanlineNo])// != (int)EEventType::None)
 		{
 			const uint32_t col = debugger.GetEventColour(scanlineEvents[scanlineNo]);
 			dl->AddLine(ImVec2(pos.x + (320 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (320 + 32) * scale, pos.y + (scanlineY * scale)), col);

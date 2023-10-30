@@ -777,7 +777,7 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 
 	// Setup Debugger
 	FDebugger& debugger = CodeAnalysis.Debugger;
-	debugger.RegisterEventType((int)EEventType::None, "None", 0);
+	//debugger.RegisterEventType((int)EEventType::None, "None", 0);
 	debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen Pixel Write", 0xff0000ff, nullptr, EventShowPixValue);
 	debugger.RegisterEventType((int)EEventType::ScreenAttrWrite, "Screen Attr Write", 0xff007fff, nullptr, EventShowAttrValue);
 	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff00ff1f, IOPortEventShowAddress, IOPortEventShowValue);

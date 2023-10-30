@@ -661,11 +661,16 @@ struct FEventTypeInfo
 	bool bEnabled = true;
 };
 
-FEventTypeInfo g_EventTypeInfo[256];
+std::vector<FEventTypeInfo> g_EventTypeInfo;
 
 void FDebugger::RegisterEventType(uint8_t type, const char* pName, uint32_t col, ShowEventInfoCB pShowAddress, ShowEventInfoCB pShowValue)
 {
-	FEventTypeInfo& typeInfo = g_EventTypeInfo[type];
+	std::vector<FEventTypeInfo>& eventTypeInfo = g_EventTypeInfo;
+
+	if(type >= eventTypeInfo.size())
+		eventTypeInfo.resize(type + 1);
+
+	FEventTypeInfo& typeInfo = eventTypeInfo[type];
 	assert(strlen(pName) < kEventNameLength);
 	strncpy(typeInfo.EventName, pName, kEventNameLength);
 	typeInfo.EventColour = col;
@@ -675,7 +680,9 @@ void FDebugger::RegisterEventType(uint8_t type, const char* pName, uint32_t col,
 
 void FDebugger::RegisterEvent(uint8_t type, FAddressRef pc, uint16_t address, uint8_t value, uint16_t scanlinePos)
 {
-	if (!g_EventTypeInfo[type].bEnabled)
+	std::vector<FEventTypeInfo>& eventTypeInfo = g_EventTypeInfo;
+
+	if (!eventTypeInfo[type].bEnabled)
 		return;
 
 	ScanlineEvents[scanlinePos] = type;
@@ -1070,6 +1077,7 @@ void EventShowAttrValue(FCodeAnalysisState& state, const FEvent& event)
 }
 void FDebugger::DrawEvents(void)
 {
+	std::vector<FEventTypeInfo>& eventTypeInfo = g_EventTypeInfo;
 	FCodeAnalysisState& state = *pCodeAnalysis;
 
 	if (ImGui::Button("Clear"))
@@ -1098,30 +1106,27 @@ void FDebugger::DrawEvents(void)
 	
 	if (ImGui::TreeNode("Event Types"))
 	{
-		ImGui::Text("  ");
+		const bool bSelectAll = ImGui::Button("Select All");
 		ImGui::SameLine();
-		if (ImGui::Checkbox("All", &g_EventTypeInfo[0].bEnabled))
-		{
-			int e = 1;	// skip event type None
-			while (g_EventTypeInfo[e].EventName[0])
-			{
-				g_EventTypeInfo[e].bEnabled = g_EventTypeInfo[0].bEnabled;
-				e++;
-			}
-		}
+		const bool bSelectNone = ImGui::Button("Select None");
 
-		int e = 1;	// skip event type None
-		while (g_EventTypeInfo[e].EventName[0])
+		if (bSelectAll || bSelectNone)
+		{
+			const bool writeVal = bSelectAll ? true : false;
+			for(auto& eventType : eventTypeInfo)
+				eventType.bEnabled = writeVal;
+		}
+				
+		for (auto& eventType : eventTypeInfo)
 		{
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 			const ImVec2 rectMin(pos.x, pos.y + 3);
 			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize + 3);
-			dl->AddRectFilled(rectMin, rectMax, g_EventTypeInfo[e].EventColour);
+			dl->AddRectFilled(rectMin, rectMax, eventType.EventColour);
 
 			ImGui::Text("  "); 
 			ImGui::SameLine();
-			ImGui::Checkbox(g_EventTypeInfo[e].EventName, &g_EventTypeInfo[e].bEnabled);
-			e++;
+			ImGui::Checkbox(eventType.EventName, &eventType.bEnabled);
 		}
 		ImGui::TreePop();
 	}

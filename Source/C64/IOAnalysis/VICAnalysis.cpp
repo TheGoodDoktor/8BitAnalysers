@@ -16,7 +16,6 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 	public:
 		FVICMemDescGenerator(FC64Emulator* pEmulator):pC64Emulator(pEmulator)
 		{
-			FrameTick();	// force a tick to get memory regions
 		}
 
 		const char* GenerateAddressString(FAddressRef addr) override
