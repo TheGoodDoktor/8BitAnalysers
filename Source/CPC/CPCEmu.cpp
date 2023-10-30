@@ -222,11 +222,12 @@ public:
 		UpdateScreenMemoryLocation();
 	}
 
-	const char* GenerateAddressString(uint16_t addr) override
+	const char* GenerateAddressString(FAddressRef addr) override
 	{
+		// MARKC: this has changed to use an address ref, you might want to check the bankid?
 		// todo: deal with screen mode? display both scr mode's x coords?
 		int xp = 0, yp = 0;
-		if (pCpcEmu->Screen.GetScreenAddressCoords(addr, xp, yp))
+		if (pCpcEmu->Screen.GetScreenAddressCoords(addr.Address, xp, yp))
 			sprintf(DescStr, "Screen: %d,%d", xp, yp);
 		else
 			sprintf(DescStr, "Screen: ?,?");
