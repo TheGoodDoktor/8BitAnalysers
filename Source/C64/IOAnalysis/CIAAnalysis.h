@@ -22,6 +22,8 @@ private:
 
 	int		SelectedRegister = -1;
 protected:
+	uint8_t		WriteEventType = 0;
+	uint8_t		ReadEventType = 0;
 	std::vector<FRegDisplayConfig>* RegConfig = nullptr;
 };
 

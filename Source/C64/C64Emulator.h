@@ -53,7 +53,10 @@ enum class EC64Event
 {
 	VICRegisterWrite,
 	SIDRegisterWrite,
-	CIARegisterWrite,
+	CIA1RegisterWrite,
+	CIA1RegisterRead,
+	CIA2RegisterWrite,
+	CIA2RegisterRead,
 };
 
 struct FC64Config;

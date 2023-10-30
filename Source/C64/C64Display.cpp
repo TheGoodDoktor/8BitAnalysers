@@ -269,17 +269,17 @@ void FC64Display::DrawUI()
                 bScreenCharSelected = false;
 
             // FIXME: seems uncommitted changes
-            /*
+            
             if (ImGui::IsMouseDoubleClicked(0))
             {
                 if(bBitmapMode)
-                    CodeAnalyserGoToAddress(viewState, lastBitmapWriter);
+                    viewState.GoToAddress(lastBitmapWriter);
                 else
-                    CodeAnalyserGoToAddress(viewState, lastCharWriter);
+                    viewState.GoToAddress(lastCharWriter);
             }
             if (ImGui::IsMouseDoubleClicked(1))
-                CodeAnalyserGoToAddress(viewState, lastColourRamWriter);
-            */
+                viewState.GoToAddress(lastColourRamWriter);
+            
         }
 
     }

@@ -46,22 +46,58 @@ static std::vector<FRegDisplayConfig>	g_CIA2RegDrawInfo =
 	{"CIA2_TimerB_Control",		DrawRegValueHex},	// 0x0f
 };
 
+FCIA1Analysis* pCIA1 = nullptr;
+FCIA2Analysis* pCIA2 = nullptr;
+
 FCIA1Analysis::FCIA1Analysis()
 {
 	Name = "CIA1";
 	RegConfig = &g_CIA1RegDrawInfo;
+	WriteEventType = (uint8_t)EC64Event::CIA1RegisterWrite;
+	ReadEventType = (uint8_t)EC64Event::CIA1RegisterRead;
+	pCIA1 = this;
 }
 
 FCIA2Analysis::FCIA2Analysis()
 {
 	Name = "CIA2";
 	RegConfig = &g_CIA2RegDrawInfo;
+	WriteEventType = (uint8_t)EC64Event::CIA2RegisterWrite;
+	ReadEventType = (uint8_t)EC64Event::CIA2RegisterRead;
+	pCIA2 = this;
 }
+
+void CIA1WriteEventShowAddress(FCodeAnalysisState& state, const FEvent& event)
+{
+	ImGui::Text("%s", g_CIA1RegDrawInfo[event.Address].Name);
+}
+
+void CIA1WriteEventShowValue(FCodeAnalysisState& state, const FEvent& event)
+{
+	g_CIA1RegDrawInfo[event.Address].UIDrawFunction(pCIA1, event.Value);
+}
+
+void CIA2WriteEventShowAddress(FCodeAnalysisState& state, const FEvent& event)
+{
+	ImGui::Text("%s", g_CIA2RegDrawInfo[event.Address].Name);
+}
+
+void CIA2WriteEventShowValue(FCodeAnalysisState& state, const FEvent& event)
+{
+	g_CIA2RegDrawInfo[event.Address].UIDrawFunction(pCIA2, event.Value);
+}
+
 
 void	FCIAAnalysis::Init(FC64Emulator* pEmulator)
 {
 	SetAnalyser(&pEmulator->GetCodeAnalysis());
 	pCodeAnalyser->IOAnalyser.AddDevice(this);
+
+	pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::CIA1RegisterWrite, "CIA1 Write", 0xff00ff00, CIA1WriteEventShowAddress, CIA1WriteEventShowValue);
+	pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::CIA1RegisterRead, "CIA1 Read", 0xff007f00, CIA1WriteEventShowAddress, CIA1WriteEventShowValue);
+	pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::CIA2RegisterWrite, "CIA2 Write", 0xff00ff00, CIA2WriteEventShowAddress, CIA2WriteEventShowValue);
+	pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::CIA2RegisterRead, "CIA2 Read", 0xff007f00, CIA2WriteEventShowAddress, CIA2WriteEventShowValue);
+
 	pC64Emu = pEmulator;
 }
 
@@ -73,12 +109,18 @@ void FCIAAnalysis::Reset(void)
 
 void	FCIAAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
 {
+	c64_t* pC64 = pC64Emu->GetEmu();
+	const uint8_t val = M6526_GET_DATA(pC64->cia_1.pins);	// Not sure if this is correct
+	pCodeAnalyser->Debugger.RegisterEvent(ReadEventType, pc, reg, val, pC64->vic.rs.v_count);
 
 }
 void	FCIAAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 {
+	c64_t* pC64 = pC64Emu->GetEmu();
 	FC64IORegisterInfo& ciaRegister = CIARegisters[reg];
 	const uint8_t regChange = ciaRegister.LastVal ^ val;	// which bits have changed
+
+	pCodeAnalyser->Debugger.RegisterEvent(WriteEventType, pc, reg, val, pC64->vic.rs.v_count);
 
 	ciaRegister.Accesses[pc].WriteVals.insert(val);
 

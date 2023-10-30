@@ -27,7 +27,18 @@ void	FC64IOAnalysis::Reset()
 
 void	FC64IOAnalysis::RegisterIORead(uint16_t addr, FAddressRef pc)
 {
-
+	// VIC D000 - D3FFF
+	if (addr >= 0xd000 && addr < 0xd400)
+		VICAnalysis.OnRegisterRead(addr & 0x3f, pc);
+	// SID D400 - D7FFF
+	if (addr >= 0xd400 && addr < 0xd800)
+		SIDAnalysis.OnRegisterRead(addr & 0x1f, pc);
+	// CIA 1
+	if (addr >= 0xdc00 && addr < 0xdd00)
+		CIA1Analysis.OnRegisterRead(addr & 0xf, pc);
+	// CIA 2
+	if (addr >= 0xdd00 && addr < 0xde00)
+		CIA2Analysis.OnRegisterRead(addr & 0xf, pc);
 }
 
 void	FC64IOAnalysis::RegisterIOWrite(uint16_t addr, uint8_t val, FAddressRef pc)
