@@ -124,8 +124,8 @@ void FC64Display::DrawUI()
     const bool bBitmapMode = !!(pC64->vic.reg.ctrl_1 & (1 << 5));
     const bool bExtendedBackgroundMode = !!(pC64->vic.reg.ctrl_1 & (1 << 6));
     const bool bMultiColourMode = !!(pC64->vic.reg.ctrl_2 & (1<<4));
-    uint16_t vicMemBase = pC64->vic_bank_select;
-    uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
+    const uint16_t vicMemBase = pC64->vic_bank_select;
+    const uint16_t screenMem = (pC64->vic.reg.mem_ptrs >> 4) << 10;
     
     ImGui::Text("VIC Bank: $%04X, Screen Mem: $%04X", vicMemBase, vicMemBase + screenMem);
     if (bBitmapMode)

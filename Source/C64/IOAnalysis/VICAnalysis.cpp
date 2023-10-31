@@ -39,27 +39,43 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 				sprintf(DescStr, "Sprite %d Image No", addr.Address - spritePtrs);
 				return DescStr;
 			}
+			else if (bBitmapMode && addr.Address >= BitmapAddress && addr.Address < BitmapAddress + (1 << 13))
+			{
+				const uint16_t bitmapAddressOffset = addr.Address - BitmapAddress;
+				//const uint16_t bitmapCharNo = bitmapAddressOffset / 8;
+				const int bitmapX = bitmapAddressOffset % 40;
+				const int bitmapY = bitmapAddressOffset / 40;
+
+				sprintf(DescStr, "Bitmap Screen: %d,%d",bitmapX,bitmapY);
+				return DescStr;
+			}
 			return nullptr;
 		}
 
 		void FrameTick() override 
 		{
 			c64_t* pC64 = pC64Emulator->GetEmu();
-			uint16_t vicMemBase = pC64->vic_bank_select;
+			const uint16_t vicMemBase = pC64->vic_bank_select;
 
 			RegionMin = vicMemBase;
 			RegionMax = vicMemBase + 16384 - 1;	// 16K after
 			RegionBankId = -1;//pC64Emulator->GetVICMemoryAddress(0).BankId;
 
-			uint16_t bitmapBankNo = ((pC64->vic.reg.mem_ptrs >> 3) & 1);
-			uint16_t screenBankNo = pC64->vic.reg.mem_ptrs >> 4;
-			uint16_t characterBankNo = (pC64->vic.reg.mem_ptrs >> 1) & 7;
+			const uint16_t bitmapBankNo = ((pC64->vic.reg.mem_ptrs >> 3) & 1);
+			const uint16_t screenBankNo = pC64->vic.reg.mem_ptrs >> 4;
+			const uint16_t characterBankNo = (pC64->vic.reg.mem_ptrs >> 1) & 7;
 			const uint16_t screenMem = screenBankNo << 10;
 			CharMapAddress = vicMemBase + screenMem;
+			
+			// bitmap mode
+			bBitmapMode = !!(pC64->vic.reg.ctrl_1 & (1 << 5));
+			BitmapAddress = vicMemBase + (bitmapBankNo << 13);
 		}
 	private:
 		FC64Emulator* pC64Emulator = nullptr;
 		uint16_t CharMapAddress = 0;
+		bool bBitmapMode = false;
+		uint16_t BitmapAddress = 0;
 		char DescStr[32] = { 0 };
 };
 
