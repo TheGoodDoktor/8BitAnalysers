@@ -8,42 +8,90 @@
 
 static std::vector<FRegDisplayConfig>	g_CIA1RegDrawInfo =
 {
-	{"CIA1_KeyBJoy2",			DrawRegValueHex},	// 0x00
-	{"CIA1_KeyBJoy1",			DrawRegValueHex},	// 0x01
-	{"CIA1_PortA_DDR",			DrawRegValueHex},	// 0x02
-	{"CIA1_PortB_DDR",			DrawRegValueHex},	// 0x03
-	{"CIA1_TimerA_L",			DrawRegValueHex},	// 0x04
-	{"CIA1_TimerA_H",			DrawRegValueHex},	// 0x05
-	{"CIA1_TimerB_L",			DrawRegValueHex},	// 0x06
-	{"CIA1_TimerB_H",			DrawRegValueHex},	// 0x07
-	{"CIA1_TOD_dsecs",			DrawRegValueHex},	// 0x08
-	{"CIA1_TOD_secs",			DrawRegValueHex},	// 0x09
-	{"CIA1_TOD_mins",			DrawRegValueHex},	// 0x0a
-	{"CIA1_TOD_hours",			DrawRegValueHex},	// 0x0b
-	{"CIA1_SerialShift",		DrawRegValueHex},	// 0x0c
-	{"CIA1_InterruptCS",		DrawRegValueHex},	// 0x0d
-	{"CIA1_TimerA_CR",			DrawRegValueHex},	// 0x0e
-	{"CIA1_TimerB_CR",			DrawRegValueHex},	// 0x0f
+	{"CIA1 PortA KeyB/Joy2",			DrawRegValueHex},	// 0x00
+	{"CIA1 PortB KeyB/Joy1",			DrawRegValueHex},	// 0x01
+	{"CIA1 PortA DDR",			DrawRegValueHex},	// 0x02
+	{"CIA1 PortB DDR",			DrawRegValueHex},	// 0x03
+	{"CIA1 TimerA L",			DrawRegValueHex},	// 0x04
+	{"CIA1 TimerA H",			DrawRegValueHex},	// 0x05
+	{"CIA1 TimerB L",			DrawRegValueHex},	// 0x06
+	{"CIA1 TimerB H",			DrawRegValueHex},	// 0x07
+	{"CIA1 TOD Dsecs",			DrawRegValueHex},	// 0x08
+	{"CIA1 TOD Secs",			DrawRegValueHex},	// 0x09
+	{"CIA1 TOD Mins",			DrawRegValueHex},	// 0x0a
+	{"CIA1 TOD Hours",			DrawRegValueHex},	// 0x0b
+	{"CIA1 SerialShift",		DrawRegValueHex},	// 0x0c
+	{"CIA1 InterruptCS",		DrawRegValueHex},	// 0x0d
+	{"CIA1 TimerA Control",			DrawRegValueHex},	// 0x0e
+	{"CIA1 TimerB Control",			DrawRegValueHex},	// 0x0f
+};
+
+static const char* CIA1PortABits[]
+{
+	"Keyboard Matrix Column 0",
+	"Keyboard Matrix Column 1",
+	"Keyboard Matrix Column 2",
+	"Keyboard Matrix Column 3",
+	"Keyboard Matrix Column 4",
+	"Keyboard Matrix Column 5",
+	"Keyboard Matrix Column 6",
+	"Keyboard Matrix Column 7",
+};
+
+static const char* CIA1PortBBits[]
+{
+	"Keyboard Matrix Row 0",
+	"Keyboard Matrix Row 1",
+	"Keyboard Matrix Row 2",
+	"Keyboard Matrix Row 3",
+	"Keyboard Matrix Row 4",
+	"Keyboard Matrix Row 5",
+	"Keyboard Matrix Row 6",
+	"Keyboard Matrix Row 7",
 };
 
 static std::vector<FRegDisplayConfig>	g_CIA2RegDrawInfo =
 {
-	{"CIA2_PortA_Serial",		DrawRegValueHex},	// 0x00
-	{"CIA2_PortB_RS232",		DrawRegValueHex},	// 0x01
-	{"CIA2_PortA_DDR",			DrawRegValueHex},	// 0x02
-	{"CIA2_PortB_DDR",			DrawRegValueHex},	// 0x03
-	{"CIA2_TimerA_L",			DrawRegValueHex},	// 0x04
-	{"CIA2_TimerA_H",			DrawRegValueHex},	// 0x05
-	{"CIA2_TimerB_L",			DrawRegValueHex},	// 0x06
-	{"CIA2_TimerB_H",			DrawRegValueHex},	// 0x07
-	{"CIA2_TOD_dsecs",			DrawRegValueHex},	// 0x08
-	{"CIA2_TOD_secs",			DrawRegValueHex},	// 0x09
-	{"CIA2_TOD_mins",			DrawRegValueHex},	// 0x0a
-	{"CIA2_TOD_hours",			DrawRegValueHex},	// 0x0b
-	{"CIA2_SerialShift",		DrawRegValueHex},	// 0x0c
-	{"CIA2_InterruptCS",		DrawRegValueHex},	// 0x0d
-	{"CIA2_TimerA_Control",		DrawRegValueHex},	// 0x0e
-	{"CIA2_TimerB_Control",		DrawRegValueHex},	// 0x0f
+	{"CIA2 PortA Serial",		DrawRegValueHex},	// 0x00
+	{"CIA2 PortB RS232",		DrawRegValueHex},	// 0x01
+	{"CIA2 PortA DDR",			DrawRegValueHex},	// 0x02
+	{"CIA2 PortB DDR",			DrawRegValueHex},	// 0x03
+	{"CIA2 TimerA L",			DrawRegValueHex},	// 0x04
+	{"CIA2 TimerA H",			DrawRegValueHex},	// 0x05
+	{"CIA2 TimerB L",			DrawRegValueHex},	// 0x06
+	{"CIA2 TimerB H",			DrawRegValueHex},	// 0x07
+	{"CIA2 TOD dsecs",			DrawRegValueHex},	// 0x08
+	{"CIA2 TOD secs",			DrawRegValueHex},	// 0x09
+	{"CIA2 TOD mins",			DrawRegValueHex},	// 0x0a
+	{"CIA2 TOD hours",			DrawRegValueHex},	// 0x0b
+	{"CIA2 Serial Shift",		DrawRegValueHex},	// 0x0c
+	{"CIA2 Interrupt CS",		DrawRegValueHex},	// 0x0d
+	{"CIA2 TimerA Control",		DrawRegValueHex},	// 0x0e
+	{"CIA2 TimerB Control",		DrawRegValueHex},	// 0x0f
+};
+
+static const char* CIA2PortABits[]
+{
+	"VIC Bank Select bit 0",
+	"VIC Bank Select bit 1",
+	"RS232 TXD Output",
+	"Serial ATN Out",
+	"Serial Clock Out",
+	"Serial Data Out",
+	"Serial Clock In",
+	"Serial Data In",
+};
+
+static const char* CIA2PortBBits[]
+{
+	"User Port 0/RS232: RXD",
+	"User Port 1/RS232: RTS",
+	"User Port 2/RS232: DTR",
+	"User Port 3/RS232: RI",
+	"User Port 4/RS232: DCD",
+	"User Port 5",
+	"User Port 6/RS232: CTS",
+	"User Port 7/RS232: DSR",
 };
 
 FCIA1Analysis* pCIA1 = nullptr;
@@ -55,7 +103,15 @@ FCIA1Analysis::FCIA1Analysis()
 	RegConfig = &g_CIA1RegDrawInfo;
 	WriteEventType = (uint8_t)EC64Event::CIA1RegisterWrite;
 	ReadEventType = (uint8_t)EC64Event::CIA1RegisterRead;
+	PortABitNames = CIA1PortABits;
+	PortBBitNames = CIA1PortBBits;
 	pCIA1 = this;
+}
+
+const m6526_t* FCIA1Analysis::GetCIA()
+{
+	c64_t* pC64 = pC64Emu->GetEmu();
+	return &pC64->cia_1;
 }
 
 FCIA2Analysis::FCIA2Analysis()
@@ -64,7 +120,15 @@ FCIA2Analysis::FCIA2Analysis()
 	RegConfig = &g_CIA2RegDrawInfo;
 	WriteEventType = (uint8_t)EC64Event::CIA2RegisterWrite;
 	ReadEventType = (uint8_t)EC64Event::CIA2RegisterRead;
+	PortABitNames = CIA2PortABits;
+	PortBBitNames = CIA2PortBBits;
 	pCIA2 = this;
+}
+
+const m6526_t* FCIA2Analysis::GetCIA()
+{
+	c64_t* pC64 = pC64Emu->GetEmu();
+	return &pC64->cia_2;
 }
 
 void CIA1WriteEventShowAddress(FCodeAnalysisState& state, const FEvent& event)
@@ -127,15 +191,103 @@ void	FCIAAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 	ciaRegister.LastVal = val;
 }
 
+void DrawPortState(const m6526_port_t& port, const char** portNames)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	const float lineHeight = ImGui::GetTextLineHeight();
+	const float rectSize = lineHeight;
+
+	for (int portBit = 0; portBit < 8; portBit++)
+	{
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImVec2 rectMin(pos.x, pos.y + 3);
+		ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize + 3);
+		
+		// Data direction register
+		const uint32_t ddCol = (port.ddr & (1<< portBit)) ? 0xff0000ff : 0xff00ff00;
+		dl->AddRectFilled(rectMin, rectMax, ddCol);
+		rectMin.x += rectSize + 4;
+		rectMax.x += rectSize + 4;
+
+		// port pins
+		if(port.pins & (1 << portBit))
+			dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
+		else
+			dl->AddRect(rectMin, rectMax, 0xffffffff);
+		rectMin.x += rectSize + 4;
+		rectMax.x += rectSize + 4;
+
+		// input latch
+		if (port.inp & (1 << portBit))
+			dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
+		else
+			dl->AddRect(rectMin, rectMax, 0xffffffff);
+		rectMin.x += rectSize + 4;
+		rectMax.x += rectSize + 4;
+
+		// reg
+		if (port.reg & (1 << portBit))
+			dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
+		else
+			dl->AddRect(rectMin, rectMax, 0xffffffff);
+		rectMin.x += rectSize + 4;
+		rectMax.x += rectSize + 4;
+
+		// port bit title
+		ImGui::SetCursorScreenPos(rectMin);
+		ImGui::Text("%s",portNames[portBit]);
+
+	}
+}
+
 void	FCIAAnalysis::DrawDetailsUI(void)
 {
+	c64_t* pC64 = pC64Emu->GetEmu();
+
+	const m6526_t* pCIA = GetCIA();
+	const float lineHeight = ImGui::GetTextLineHeight();
+
+	//ImVec2 pos = ImGui::GetCursorScreenPos();
+	if(ImGui::BeginChild("CIA Ports", ImVec2(0, lineHeight * 15)))
+	{
+		if(ImGui::BeginChild("PortAChild", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0)))
+		{
+			ImGui::Text("Port A");
+			DrawPortState(pCIA->pa, PortABitNames);
+		}
+		ImGui::EndChild();
+		ImGui::SameLine();
+		if (ImGui::BeginChild("PortBChild"))
+		{
+			ImGui::Text("Port B");
+			DrawPortState(pCIA->pb, PortBBitNames);
+		}
+		ImGui::EndChild();
+	}
+	ImGui::EndChild();
+
+#if 0
+	const ENumberDisplayMode numberMode = GetNumberDisplayMode();
+	SetNumberDisplayMode(ENumberDisplayMode::Binary);
+	ImGui::Text("Port A");
+	ImGui::Text("DDR:  \t %s", NumStr(pCIA->pa.ddr));
+	ImGui::Text("Pins: \t %s", NumStr(pCIA->pa.pins));
+	ImGui::Text("Reg:  \t %s", NumStr(pCIA->pa.reg));
+	ImGui::Text("Latch:\t %s",NumStr(pCIA->pa.inp));
+	ImGui::Text("Port B");
+	ImGui::Text("DDR:  \t %s", NumStr(pCIA->pb.ddr));
+	ImGui::Text("Pins: \t %s", NumStr(pCIA->pb.pins));
+	ImGui::Text("Reg:  \t %s", NumStr(pCIA->pb.reg));
+	ImGui::Text("Latch:\t %s", NumStr(pCIA->pb.inp));
+	SetNumberDisplayMode(numberMode);
+#endif
 	if (ImGui::BeginChild("CIA Reg Select", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
 	{
 		SelectedRegister = DrawRegSelectList(*RegConfig, SelectedRegister);
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();
-	if (ImGui::BeginChild("VIC Reg Details"))
+	if (ImGui::BeginChild("CIA Reg Details"))
 	{
 		if (SelectedRegister != -1)
 		{
