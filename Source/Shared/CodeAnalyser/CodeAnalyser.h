@@ -103,7 +103,7 @@ struct FDataFormattingOptions
 	int						NoItems = 1;
 	FAddressRef				CharacterSet;
 	FAddressRef				GraphicsSetRef;
-	int						PaletteIndex = -1;
+	int						PaletteNo = -1;
 	uint8_t					EmptyCharNo = 0;
 	bool					ClearCodeInfo = false;
 	bool					ClearLabels = false;
