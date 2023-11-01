@@ -1127,6 +1127,8 @@ void FDebugger::DrawEvents(void)
 				
 		for (auto& eventType : eventTypeInfo)
 		{
+			if (eventType.EventName[0] == 0)	// Skip 'None'
+				continue;
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 			const ImVec2 rectMin(pos.x, pos.y + 3);
 			const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize + 3);

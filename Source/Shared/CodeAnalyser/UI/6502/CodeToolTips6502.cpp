@@ -60,7 +60,35 @@ bool OutputTooltipBranchInstruction(FCodeAnalysisState& state, uint16_t addr, co
 	if((opcode & 0b11111) != 0b10000)
 		return false;
 
-	ImGui::Text("Branch on %s flag %s", flagNames[opcode >> 6], opcode & 0b00100000 ? "set" : "clear");
+	const int flagIndex = opcode >> 6;
+	const bool bSet = opcode & 0b00100000;
+
+	switch (opcode)
+	{
+		case 0x90:
+			ImGui::Text("BCC - Branch if Reg < Data");
+			break;
+		case 0x30:
+			ImGui::Text("BMI - Branch if Reg < Data(signed)");
+				break;
+		case 0xB0:
+			ImGui::Text("BCS - Branch if Reg >= Data");
+			break;
+		case 0x10:
+			ImGui::Text("BPL - Branch if Reg >= Data(signed)");
+			break;
+		case 0xD0:
+			ImGui::Text("BNE - Branch if Reg != Data");
+			break;
+		case 0xF0:
+			ImGui::Text("BEQ - Branch if Reg == Data");
+			break;
+		default:
+			return false;
+	}
+
+
+	ImGui::Text("Branch on %s flag %s", flagNames[flagIndex], bSet ? "set" : "clear");
 	return true;
 }
 
@@ -124,7 +152,7 @@ void OutputTooltipGroupOne(FCodeAnalysisState& state, uint16_t addr, const uint8
 	{
 	case 0b000:	//	ORA
 		ImGui::Text("OR A with %s", addressModeDesc);
-		ImGui::Text("");
+		ImGui::Text("A OR M -> A");
 		break;
 	case 0b001:	//	AND
 		ImGui::Text("AND A with %s", addressModeDesc);
@@ -140,19 +168,28 @@ void OutputTooltipGroupOne(FCodeAnalysisState& state, uint16_t addr, const uint8
 		break;
 	case 0b100:	//	STA
 		ImGui::Text("Store A to %s", addressModeDesc);
-		ImGui::Text("");
+		ImGui::Text("A -> M");
 		break;
 	case 0b101:	//	LDA
 		ImGui::Text("Load A with %s", addressModeDesc);
 		ImGui::Text("M -> A");
+		ImGui::Text("M == 0: Z=0 else Z=1");
+		ImGui::Text("M bit 7 set : N=1 else N=0");
 		break;
 	case 0b110:	//	CMP
 		ImGui::Text("Compare A to %s", addressModeDesc);
 		ImGui::Text("A - M");
+		ImGui::Text("A < M: Z=0 C=0");
+		ImGui::Text("A == M: N=0 Z=1 C=1");
+		ImGui::Text("A > M: Z=0 C=1");
 		break;
 	case 0b111:	//	SBC
 		ImGui::Text("Subtract A with carry to %s", addressModeDesc);
-		ImGui::Text("");
+		ImGui::Text("A - M - ~C -> A");
+		ImGui::Text("Res >= 0: C=1");
+		ImGui::Text("Res < 0: C=0");
+		ImGui::Text("Res < -127 or Res > 128 : V = 1");
+		ImGui::Text("Res bit 7 set : N = 1");
 		break;
 	}
 

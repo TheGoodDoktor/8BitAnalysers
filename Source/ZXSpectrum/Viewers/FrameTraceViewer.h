@@ -12,7 +12,7 @@ class FZXGraphicsView;
 
 enum class EEventType : uint8_t
 {
-	//None = 0,
+	None = 0,
 	ScreenPixWrite,
 	ScreenAttrWrite,
 	KeyboardRead,
