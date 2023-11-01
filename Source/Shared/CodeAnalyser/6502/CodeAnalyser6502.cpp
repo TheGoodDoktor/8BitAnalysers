@@ -250,6 +250,40 @@ bool CheckStopInstruction6502(const FCodeAnalysisState& state, uint16_t pc)
 
 bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc)
 {
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+	FDebugger& debugger = state.Debugger;
+	const uint8_t opcode = pCPUInterface->ReadByte(pc);
+	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
+	const m6502_t* pCPU = static_cast<m6502_t*>(state.CPUInterface->GetCPUEmulator());
+
+	std::vector<FCPUFunctionCall>& callStack = state.Debugger.GetCallstack();
+
+	switch (opcode)
+	{
+		case 0x20:  // JSR
+		{
+			FCPUFunctionCall callInfo;
+			callInfo.CallAddr = state.AddressRefFromPhysicalAddress(pc);
+			callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(state.ReadWord(pc+1));
+			callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(pc + 3);
+			callStack.push_back(callInfo);
+		}
+		break;
+
+		// TODO: ret
+		case 0x40:	// RTI
+		case 0x60:	// RTS
+			if (callStack.empty() == false)
+			{
+				FCPUFunctionCall& callInfo = callStack.back();
+				//assert(callInfo.ReturnAddr == nextpc);
+
+				callStack.pop_back();
+			}
+		break;
+	}
+	bool bPushInstruction = false;
+
 	return false;
 }
 

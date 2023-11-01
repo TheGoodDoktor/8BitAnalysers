@@ -24,15 +24,22 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
     CPUType = pCodeAnalysis->GetCPUInterface()->CPUType;
 
     if(CPUType == ECPUType::Z80)
+	{
         pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
-    else if (CPUType == ECPUType::M6502)
+		StackMin = 0xffff;
+		StackMax = 0;
+	}
+	else if (CPUType == ECPUType::M6502)
+	{ 
         pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
-
+		// Stack in 6502 is hard coded between 0x100-0x1ff
+		StackMin = 0x1ff;
+		StackMax = 0x1ff;
+	}
     Watches.clear();
 	Stacks.clear();
 
-	StackMin = 0xffff;
-	StackMax = 0;
+
 }
 
 void FDebugger::CPUTick(uint64_t pins)
@@ -452,6 +459,7 @@ static bool IsStepOverOpcode(ECPUType cpuType, uint8_t opcode)
         case 0xF4: case 0xEC: case 0xE4: case 0xCC:
             // DJNZ d 
         case 0x10:
+			// TODO: LDIR & others
             return true;
         default:
             return false;

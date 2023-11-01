@@ -3,6 +3,8 @@
 #include "IORegisterAnalysis.h"
 #include <vector>
 
+#include <chips/chips/m6526.h>
+
 class FCodeAnalysisState;
 struct FCodeAnalysisPage;
 
@@ -16,6 +18,7 @@ public:
 
 	void	DrawDetailsUI(void);
 
+	virtual const m6526_t*	GetCIA() = 0;
 private:
 	static const int kNoRegisters = 16;
 	FC64IORegisterInfo	CIARegisters[kNoRegisters];
@@ -24,6 +27,8 @@ private:
 protected:
 	uint8_t		WriteEventType = 0;
 	uint8_t		ReadEventType = 0;
+	const char**	PortABitNames = nullptr;
+	const char**	PortBBitNames = nullptr;
 	std::vector<FRegDisplayConfig>* RegConfig = nullptr;
 };
 
@@ -31,12 +36,16 @@ class FCIA1Analysis : public FCIAAnalysis
 {
 public:
 	FCIA1Analysis();
+	const m6526_t* GetCIA() override;
+
 };
 
 class FCIA2Analysis : public FCIAAnalysis
 {
 public:
 	FCIA2Analysis();
+	const m6526_t* GetCIA() override;
+
 };
 
 void AddCIARegisterLabels(FCodeAnalysisPage& IOPage);
