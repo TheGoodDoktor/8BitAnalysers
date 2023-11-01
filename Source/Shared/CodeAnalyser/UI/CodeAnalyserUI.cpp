@@ -906,6 +906,29 @@ bool DrawDataTypeCombo(int& dataType)
 	return bChanged;
 }
 
+bool DrawDataTypeFilterCombo(EDataTypeFilter& dataType)
+{
+	const int index = (int)dataType;
+	const char* dataTypes[] = { "All", "Pointer", "Text", "Bitmap", "Char Map", "Col Attr"};
+
+	bool bChanged = false;
+
+	if (ImGui::BeginCombo("Data Type", dataTypes[index]))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(dataTypes); n++)
+		{
+			const bool isSelected = (index == n);
+			if (ImGui::Selectable(dataTypes[n], isSelected))
+			{
+				dataType = (EDataTypeFilter)n;
+				bChanged = true;
+			}
+		}
+		ImGui::EndCombo();
+	}
+	return bChanged;
+}
+
 bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState& state)
 {
 	assert(bitmapFormat < EBitmapFormat::Max);
@@ -1532,6 +1555,36 @@ void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter
 				continue;
 		}
 		
+		if (filter.DataType != EDataTypeFilter::All)
+		{
+			if (const FDataInfo* pDataInfo = state.GetDataInfoForAddress(labelItem.AddressRef))
+			{
+				switch (filter.DataType)
+				{
+				case EDataTypeFilter::Pointer:
+					if (pDataInfo->DisplayType != EDataItemDisplayType::Pointer)
+						continue;
+						break;
+				case EDataTypeFilter::Text:
+					if (pDataInfo->DataType != EDataType::Text)
+						continue;
+					break;
+				case EDataTypeFilter::Bitmap:
+					if (pDataInfo->DataType != EDataType::Bitmap)
+						continue;
+					break;
+				case EDataTypeFilter::CharacterMap:
+					if (pDataInfo->DataType != EDataType::CharacterMap)
+						continue;
+					break;
+				case EDataTypeFilter::ColAttr:
+					if (pDataInfo->DataType != EDataType::ColAttr)
+						continue;
+					break;
+				}
+			}
+		}
+
 		const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(labelItem.Item);
 		std::string labelTextLower = pLabelInfo->Name;
 		std::transform(labelTextLower.begin(), labelTextLower.end(), labelTextLower.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -1617,6 +1670,12 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 
 		if (ImGui::BeginTabItem("Data"))
 		{
+			if (DrawDataTypeFilterCombo(viewState.DataTypeFilter))
+			{
+				viewState.GlobalDataItemsFilter.DataType = viewState.DataTypeFilter;
+				state.bRebuildFilteredGlobalDataItems = true;
+			}
+
 			if (state.bRebuildFilteredGlobalDataItems)
 			{
 				GenerateFilteredLabelList(state, viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);

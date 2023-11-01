@@ -81,6 +81,16 @@ enum class EFunctionSortMode : int
 	CallFrequency
 };
 
+// Entries for the data type filter drop-down
+enum class EDataTypeFilter : int
+{
+	All,
+	Pointer,
+	Text,
+	Bitmap,
+	CharacterMap,
+	ColAttr,
+};
 
 struct FDataFormattingOptions
 {
@@ -125,7 +135,7 @@ struct FLabelListFilter
 	std::string		FilterText;
 	uint16_t		MinAddress = 0x0000;
 	uint16_t		MaxAddress = 0xffff;
-	bool			bRAMOnly = true;
+	EDataTypeFilter DataType = EDataTypeFilter::All;
 };
 
 struct FCodeAnalysisItem
@@ -188,6 +198,7 @@ struct FCodeAnalysisViewState
 	// for global Filters
 	bool						ShowROMLabels = false;
 	std::string					FilterText;
+	EDataTypeFilter						DataTypeFilter = EDataTypeFilter::All;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
 	FLabelListFilter				GlobalFunctionsFilter;
