@@ -889,6 +889,19 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 		SetRAMBank(3, 3);	// 0xc000 - 0xffff
 	}
 
+	FDebugger& debugger = CodeAnalysis.Debugger;
+	debugger.RegisterEventType((int)EEventType::None, "None", 0);
+	debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen RAM Write", 0xff0000ff, nullptr, EventShowPixValue);
+	debugger.RegisterEventType((int)EEventType::PaletteSelect, "Palette Select", 0xffffffff, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::PaletteColour, "Palette Colour", 0xff00ffff, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::BorderColour, "Border Colour", 0xff00ff00, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::ScreenModeChange, "Screen Mode", 0xff0080ff, IOPortEventShowAddress, ScreenModeShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterSelect, "CRTC Reg. Select", 0xffff00ff, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterRead, "CRTC Reg. Read", 0xffff0000, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite, "CRTC Reg. Write", 0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
+
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
 
@@ -916,19 +929,6 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 #endif
 	}
-
-	FDebugger& debugger = CodeAnalysis.Debugger;
-	debugger.RegisterEventType((int)EEventType::None, "None", 0);
-	debugger.RegisterEventType((int)EEventType::ScreenPixWrite,				"Screen RAM Write",	0xff0000ff, nullptr, EventShowPixValue);
-	debugger.RegisterEventType((int)EEventType::PaletteSelect,				"Palette Select",	0xffffffff, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::PaletteColour,				"Palette Colour",	0xff00ffff, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::BorderColour,				"Border Colour",	0xff00ff00, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::ScreenModeChange,			"Screen Mode",		0xff0080ff, IOPortEventShowAddress, ScreenModeShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterSelect,			"CRTC Reg. Select",	0xffff00ff, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterRead,			"CRTC Reg. Read",	0xffff0000, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite,			"CRTC Reg. Write",	0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::KeyboardRead,				"Keyboard Read",	0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange,	"Set Scr. Addr.",	0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
 
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
 
