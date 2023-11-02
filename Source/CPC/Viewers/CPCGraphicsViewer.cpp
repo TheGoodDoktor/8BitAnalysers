@@ -47,6 +47,13 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 	const FCodeAnalysisState& state = GetCodeAnalysis();
 	const float fontSize = ImGui::GetFontSize();
 
+	static int palette = -1;
+	if (ImGui::Button("Create palette"))
+	{
+		palette =	GetPaletteIndex(GetCurrentPalette_Const().GetData(), pCpcEmu->CpcEmuState.ga.video.mode == 0 ? 16 : 4);
+	}
+	ImGui::Text("Palette %d", palette);
+
 	// todo: deal with Bank being set
 	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
 
