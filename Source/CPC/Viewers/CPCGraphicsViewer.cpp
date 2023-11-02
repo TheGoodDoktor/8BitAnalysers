@@ -50,7 +50,7 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 	static int palette = -1;
 	if (ImGui::Button("Create palette"))
 	{
-		palette =	GetPaletteIndex(GetCurrentPalette_Const().GetData(), pCpcEmu->CpcEmuState.ga.video.mode == 0 ? 16 : 4);
+		palette = GetPaletteNo(GetCurrentPalette_Const().GetData(), pCpcEmu->CpcEmuState.ga.video.mode == 0 ? 16 : 4);
 	}
 	ImGui::Text("Palette %d", palette);
 
