@@ -12,8 +12,7 @@ class FGraphicsView;
 struct FSpriteDef
 {
 	FAddressRef	Address;
-	//uint32_t	SpriteCols[4];
-	int			PaletteIndex = -1;
+	int			PaletteNo = -1;
 	FGraphicsView*	SpriteImage;
 	bool		bMultiColour = false;
 };

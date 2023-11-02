@@ -198,6 +198,8 @@ private:
 	bool						bClearEventsEveryFrame = true;
 	bool						bWriteEventComments = false;
 
+	//bool						bInterruptTriggered = false;
+
 	int							FrameTraceItemIndex = -1;
 	std::vector<FCPUFunctionCall>	CallStack;
 

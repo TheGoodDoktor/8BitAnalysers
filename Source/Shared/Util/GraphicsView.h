@@ -180,7 +180,16 @@ FCharacterMap* GetCharacterMapFromAddress(FAddressRef address);
 bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& params);
 
 // Palette store
-int	GetPaletteIndex(const uint32_t* palette, int noCols);
-uint32_t* GetPaletteFromIndex(int index);
+
+struct FPaletteEntry
+{
+	int	FirstColourIndex = -1;
+	int NoColours = 0;
+};
+
+int	GetPaletteNo(const uint32_t* palette, int noCols);
+uint32_t* GetPaletteFromPaletteNo(int index);
+int GetNoPaletteEntries(void);
+const FPaletteEntry* GetPaletteEntry(int paletteNo);
 void SavePalettesToJson(nlohmann::json& jsonDoc);
 void LoadPalettesFromJson(const nlohmann::json& jsonDoc);

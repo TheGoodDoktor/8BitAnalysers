@@ -1,5 +1,6 @@
 #include "CodeAnalyser6502.h"
 #include "../CodeAnalyser.h"
+#include <Debug/DebugLog.h>
 
 enum class EAddressMode : uint8_t
 {
@@ -272,6 +273,7 @@ bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t o
 
 		// TODO: ret
 		case 0x40:	// RTI
+			//LOGINFO("RTI at $%04X", pc);
 		case 0x60:	// RTS
 			if (callStack.empty() == false)
 			{

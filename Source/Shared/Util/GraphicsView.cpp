@@ -512,66 +512,115 @@ const FPalette& GetCurrentPalette_Const()
 // New Palette stuff - just to annoy Sam!
 // Palette Store - move?
 
-std::vector<uint32_t> g_PaletteStore;
+std::vector<uint32_t>	g_PaletteColours;
+std::vector<FPaletteEntry>	g_Palettes;
 
-int	GetPaletteIndex(const uint32_t* palette, int noCols)
+int	GetPaletteNo(const uint32_t* palette, int noCols)
 {
-	auto& paletteStore = g_PaletteStore;	
+	auto& paletteStore = g_PaletteColours;
+	auto& paletteEntries = g_Palettes;
 
-	const int storesize = (int)paletteStore.size();
-	for (int i = 0; i <= storesize - noCols; i++)
+	// find out if palette is already there
+	for (int paletteNo = 0; paletteNo < paletteEntries.size(); paletteNo++)
 	{
-		bool bFound = true;
-		for (int colNo = 0; colNo < noCols; colNo++)
+		FPaletteEntry& paletteEntry = paletteEntries[paletteNo];
+		if (paletteEntry.NoColours == noCols)
 		{
-			const uint32_t col = paletteStore[i + colNo];
-			if (col != palette[colNo])
-			{
-				bFound = false;
-				break;
-			}
-		}
+			bool bFound = true;
 
-		if (bFound)
-			return i;
+			for (int colNo = 0; colNo < noCols; colNo++)
+			{
+				if (paletteStore[paletteEntry.FirstColourIndex + colNo] != palette[colNo])
+				{
+					bFound = false;
+					break;
+				}
+			}
+
+			if(bFound == true)
+				return paletteNo;
+		}
 	}
 
 	// add new palette
-	const int index = (int)paletteStore.size();
-	for(int colNo =0; colNo <noCols;colNo++)
+	FPaletteEntry newEntry;
+	newEntry.FirstColourIndex = (int)paletteStore.size();
+	for (int colNo = 0; colNo < noCols; colNo++)
 		paletteStore.push_back(palette[colNo]);
+	newEntry.NoColours = noCols;
+	const int newPaletteNo = (int)g_Palettes.size();
+	g_Palettes.push_back(newEntry);
 
-	return index;
+	return newPaletteNo;
 }
 
-uint32_t* GetPaletteFromIndex(int index)
+uint32_t* GetPaletteFromPaletteNo(int index)
 {
 	if (index == -1)
 		return nullptr;
 
-	if(index < g_PaletteStore.size())
-		return g_PaletteStore.data() + index;
+	auto& paletteStore = g_PaletteColours;
+	auto& paletteEntries = g_Palettes;
+
+	if(index < paletteEntries.size())
+		return paletteStore.data() + paletteEntries[index].FirstColourIndex;
+
+	return nullptr;
+}
+
+int GetNoPaletteEntries(void)
+{
+	return (int)g_Palettes.size();
+}
+
+const FPaletteEntry* GetPaletteEntry(int paletteNo)
+{
+	if(paletteNo > 0 && paletteNo < g_Palettes.size())
+		return &g_Palettes[paletteNo];
 
 	return nullptr;
 }
 
 #include <json.hpp>
 
-const char* kPaletteEntry = "Palettes";
+const char* kPaletteColours = "PaletteColours";
+const char* kPaletteEntries = "PaletteEntries";
 
 void SavePalettesToJson(nlohmann::json& jsonDoc)
 {
-	for (const auto& paletteEntry : g_PaletteStore)
+	for (const auto& paletteEntry : g_PaletteColours)
 	{
-		jsonDoc[kPaletteEntry].push_back(paletteEntry);
+		jsonDoc[kPaletteColours].push_back(paletteEntry);
+	}
+
+	for (const auto& palette : g_Palettes)
+	{
+		nlohmann::json jsonPalette;
+		jsonPalette["FirstColourIndex"] = palette.FirstColourIndex;
+		jsonPalette["NoColours"] = palette.NoColours;
+		jsonDoc[kPaletteEntries].push_back(jsonPalette);
 	}
 }
 
 void LoadPalettesFromJson(const nlohmann::json& jsonDoc)
 {
-	g_PaletteStore.clear();
-	if(jsonDoc.contains(kPaletteEntry) == false)
-		return;
-	for (const auto& paletteEntry : jsonDoc[kPaletteEntry])
-		g_PaletteStore.push_back(paletteEntry);
+	g_PaletteColours.clear();
+	g_Palettes.clear();
+
+	if (jsonDoc.contains(kPaletteColours))	// new
+	{
+		for (const auto& paletteColour : jsonDoc[kPaletteColours])
+			g_PaletteColours.push_back(paletteColour);
+	}
+
+	if (jsonDoc.contains(kPaletteEntries))	// new
+	{
+		for (const auto& jsonPalette : jsonDoc[kPaletteEntries])
+		{
+			FPaletteEntry palette;
+			palette.FirstColourIndex = jsonPalette["FirstColourIndex"];
+			palette.NoColours = jsonPalette["NoColours"];
+			g_Palettes.push_back(palette);
+		}
+	}
 }

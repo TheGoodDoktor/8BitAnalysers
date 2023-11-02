@@ -237,20 +237,29 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	}
 
 	// Handle IRQ
+	const uint64_t risingPins = pins & (pins ^ LastTickPins);
+	bool bIRQ = false;
+	
 	//  Note: This is Z80 specific
 	if (CPUType == ECPUType::Z80)
+		bIRQ = (pins & Z80_INT) && pZ80->iff1;
+	else if(CPUType == ECPUType::M6502)
+		bIRQ = pM6502->brk_flags & M6502_BRK_IRQ;
+
+	if (bIRQ)
 	{
-		const bool irq = (pins & Z80_INT) && pZ80->iff1;
-		if (irq)
-		{
-			FCPUFunctionCall callInfo;
-			callInfo.CallAddr = PC;
-			callInfo.FunctionAddr = PC;
-			callInfo.ReturnAddr = PC;
-			CallStack.push_back(callInfo);
-			//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
-		}
+		FCPUFunctionCall callInfo;
+		callInfo.CallAddr = PC;
+		if (CPUType == ECPUType::Z80)
+			callInfo.FunctionAddr = PC;	// Z80TODO: get interrupt handler address
+		else if (CPUType == ECPUType::M6502)
+			callInfo.FunctionAddr = pCodeAnalysis->AddressRefFromPhysicalAddress(pCodeAnalysis->ReadWord(0xfffe));
+	
+		callInfo.ReturnAddr = PC;
+		CallStack.push_back(callInfo);
+		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
 	}
+
 	FrameTrace.push_back(PC);
 
 	// update stack size
@@ -266,7 +275,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	{
 		const uint16_t sp = pM6502->S + 0x100;
 		StackMin = std::min(sp, StackMin);
-		StackMax = std::max(sp, StackMax);
+		StackMax = 0x1ff;	// always starts here on 6502
 	}
 	return trapId;
 }

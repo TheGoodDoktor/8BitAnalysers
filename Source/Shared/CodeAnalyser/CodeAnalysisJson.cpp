@@ -285,8 +285,8 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 		dataInfoJson["Flags"] = pDataInfo->Flags;
 	if (pDataInfo->Comment.empty() == false)
 		dataInfoJson["Comment"] = pDataInfo->Comment;
-	if (pDataInfo->PaletteIndex != -1)
-		dataInfoJson["PaletteIndex"] = pDataInfo->PaletteIndex;
+	if (pDataInfo->PaletteNo != -1)
+		dataInfoJson["PaletteNo"] = pDataInfo->PaletteNo;
 
 
 	// Charmap specific
@@ -468,8 +468,8 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 		pDataInfo->Flags = dataInfoJson["Flags"];
 	if (dataInfoJson.contains("Comment"))
 		pDataInfo->Comment = dataInfoJson["Comment"];
-	if (dataInfoJson.contains("PaletteIndex"))
-		pDataInfo->PaletteIndex = dataInfoJson["PaletteIndex"];
+	if (dataInfoJson.contains("PaletteNo"))
+		pDataInfo->PaletteNo = dataInfoJson["PaletteNo"];
 
 
 // Charmap specific

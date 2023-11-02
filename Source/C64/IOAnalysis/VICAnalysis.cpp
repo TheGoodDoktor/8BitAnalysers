@@ -379,7 +379,7 @@ void FVICAnalysis::OnMachineFrame(void)
 				SpriteCols[2] = m6569_color(pC64->vic.reg.mc[spriteNo]);
 				SpriteCols[3] = m6569_color(pC64->vic.reg.mm[1]);
 
-				newSpriteDef.PaletteIndex = GetPaletteIndex(SpriteCols, newSpriteDef.bMultiColour ? 4 : 2);
+				newSpriteDef.PaletteNo = GetPaletteNo(SpriteCols, newSpriteDef.bMultiColour ? 4 : 2);
 
 				// Create sprite texture
 				newSpriteDef.SpriteImage = new FGraphicsView(24,21);

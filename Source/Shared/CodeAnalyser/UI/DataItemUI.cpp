@@ -177,7 +177,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 				const ImVec2 rectMax(pos.x + rectSize * 2, pos.y + rectSize);
 
 				// TODO: colNo is palette index do palette lookup
-				const uint32_t* pPalette = GetPaletteFromIndex(pDataInfo->PaletteIndex);
+				const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
 				const uint32_t pixelCol = pPalette ? pPalette[colNo] : colNo == 0 ? 0: 0xffffffff;
 
 				dl->AddRectFilled(rectMin, rectMax, pixelCol);
