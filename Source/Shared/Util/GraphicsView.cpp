@@ -575,7 +575,7 @@ int GetNoPaletteEntries(void)
 
 const FPaletteEntry* GetPaletteEntry(int paletteNo)
 {
-	if(paletteNo > 0 && paletteNo < g_Palettes.size())
+	if(paletteNo >= 0 && paletteNo < g_Palettes.size())
 		return &g_Palettes[paletteNo];
 
 	return nullptr;
