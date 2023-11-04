@@ -36,7 +36,7 @@ public:
 
 	void			GoToAddress(FAddressRef address);
 
-	void			Draw();
+	virtual void	Draw();
 	
 	void			SetImagesRoot(const char* pImagesRoot) { ImagesRoot = pImagesRoot; }
 	bool			SaveGraphicsSets(const char* pFName);
@@ -54,7 +54,7 @@ protected:
 
 	uint16_t		GetAddressOffsetFromPositionInView(int x, int y) const;
 
-	void			DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
+	virtual void	DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
 	void			UpdateCharacterGraphicsViewerImage(void); // make virtual for other platforms?
 
 	// protected Members

@@ -831,6 +831,7 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 
 	IOAnalysis.Init(this);
 	CpcViewer.Init(this);
+	CodeAnalysis.Config.bShowBanks = true;
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
 	// Setup memory description handlers
