@@ -839,7 +839,6 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 
 	LoadCPCGameConfigs(this);
 
-	GetCurrentPalette().SetColourCount(16);
 	// Set up code analysis
 	// initialise code analysis pages
 
@@ -1841,7 +1840,7 @@ void FCpcConfig::ParseCommandline(int argc, char** argv)
 
 void FCpcEmu::UpdatePalette()
 {
-	FPalette& palette = GetCurrentPalette();
+	FPalette& palette = Screen.GetCurrentPalette();
 	for (int i = 0; i < palette.GetColourCount(); i++)
 	{
 		palette.SetColour(i, CpcEmuState.ga.hw_colors[CpcEmuState.ga.regs.ink[i]]);

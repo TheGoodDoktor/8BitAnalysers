@@ -1489,7 +1489,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			break;
 		}
 
-		int pixelsPerByte = 0;
+		int pixelsPerByte = 8;
 		int colorsPerPixel = 0;
 		switch (formattingOptions.DisplayType)
 		{
