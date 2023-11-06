@@ -336,7 +336,7 @@ static void DrawScreen(int screenNum, int xp, int yp, FStarquakeViewerData *pSta
 
 void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 {
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	const uint16_t kPlatformPtr = kSmallPlatformGfxAddr + (platformNo * 2);
 	const uint16_t kPlatformAddr = state.CPUInterface->ReadWord(kPlatformPtr);
 
@@ -412,7 +412,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 
 void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 {
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	const uint16_t kBigPlatformData = kBigPlatformDataAddr + (platformNo * 4);
 	char labelName[32];
 
@@ -430,7 +430,7 @@ void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 
 void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
 {
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	const uint16_t kScreenData = kScreenDataAddr + (screenNo * 12);
 	char labelName[32];
 
@@ -448,7 +448,7 @@ void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
 
 void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 {
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	const uint16_t platformAddr = kPlatformSpritesAddr + (platformNo * 16);
 	char labelName[32];
 
@@ -467,7 +467,7 @@ void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 {
 	FStarquakeViewerData* pStarquakeViewer = (FStarquakeViewerData*)pGame->pViewerData;
-	FCodeAnalysisState& state = pEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 
 	UpdateSQGameState( pEmu, pStarquakeViewer->State );
 

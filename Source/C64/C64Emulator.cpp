@@ -95,9 +95,9 @@ bool UISnapshotLoadCB(size_t slot_index)
 }
 
 
-bool FC64Emulator::Init()
+bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 {
-    if(FEmuBase::Init() == false)
+    if(FEmuBase::Init(launchConfig) == false)
         return false;
 
 	SetWindowTitle(kAppTitle.c_str());
@@ -224,7 +224,7 @@ bool FC64Emulator::Init()
     //GraphicsViewer = new FC64GraphicsViewer(this);
     //GraphicsViewer->Init();
 
-    GamesList.EnumerateGames(pGlobalConfig->PrgFolder.c_str());
+    GamesList.EnumerateGames(GetC64GlobalConfig()->PrgFolder.c_str());
 
     bool bLoadedGame = false;
 
@@ -359,7 +359,7 @@ bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
         }
         else
         {
-            const std::string snapshotFName = pGlobalConfig->PrgFolder + pGameConfig->SnapshotFile;
+            const std::string snapshotFName = GetC64GlobalConfig()->PrgFolder + pGameConfig->SnapshotFile;
             chips_range_t snapshotData;
             snapshotData.ptr = LoadBinaryFile(snapshotFName.c_str(), snapshotData.size);
             if (snapshotData.ptr != nullptr)

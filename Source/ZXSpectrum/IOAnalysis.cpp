@@ -1,3 +1,4 @@
+#if 0
 #include "IOAnalysis.h"
 
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
@@ -206,3 +207,4 @@ void FIOAnalysis::Reset()
   }
 }
 
+#endif

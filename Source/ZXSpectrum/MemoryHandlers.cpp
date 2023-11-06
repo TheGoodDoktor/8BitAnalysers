@@ -6,12 +6,13 @@
 
 int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEmu*pEmu)
 {
+	FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bRead = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_RD);
 	const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
 	
-	FCodeInfo* pCodeInfo = pEmu->CodeAnalysis.GetCodeInfoForAddress(pc);
-	const FAddressRef PCaddrRef = pEmu->CodeAnalysis.AddressRefFromPhysicalAddress(pc);
+	FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(pc);
+	const FAddressRef PCaddrRef = codeAnalysis.AddressRefFromPhysicalAddress(pc);
 
 	// increment counters
 	//pEmu->MemStats.ExecCount[pc]++;
@@ -139,7 +140,9 @@ void ResetMemoryStats(FMemoryStats &memStats)
 // UI
 void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 {
-	FCodeAnalysisViewState& viewState = pSpectrumEmu->CodeAnalysis.GetFocussedViewState();
+	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->GetCodeAnalysis();
+
+	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawMemoryHandlersGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
 	FMemoryAccessHandler *pSelectedHandler = nullptr;
@@ -172,11 +175,11 @@ void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 
 		ImGui::Text("Start: %s", NumStr(pSelectedHandler->MemStart));
 		ImGui::SameLine();
-		DrawAddressLabel(pSpectrumEmu->CodeAnalysis, viewState, pSelectedHandler->MemStart);
+		DrawAddressLabel(codeAnalysis, viewState, pSelectedHandler->MemStart);
 
 		ImGui::Text("End: %s",NumStr(pSelectedHandler->MemEnd));
 		ImGui::SameLine();
-		DrawAddressLabel(pSpectrumEmu->CodeAnalysis, viewState, pSelectedHandler->MemEnd);
+		DrawAddressLabel(codeAnalysis, viewState, pSelectedHandler->MemEnd);
 
 		ImGui::Text("Total Accesses %d", pSelectedHandler->TotalCount);
 
@@ -184,7 +187,7 @@ void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 		for (const auto &accessPC : pSelectedHandler->Callers.GetReferences())
 		{
 			ImGui::PushID(accessPC.Val);
-			DrawCodeAddress(pSpectrumEmu->CodeAnalysis, viewState, accessPC);
+			DrawCodeAddress(codeAnalysis, viewState, accessPC);
 			//ImGui::SameLine();
 			//ImGui::Text(" - %d accesses",accessPC.second);
 			ImGui::PopID();
@@ -231,7 +234,8 @@ int g_DiffSelectedAddr = -1;
 
 void DrawMemoryDiffUI(FSpectrumEmu* pSpectrumEmu)
 {
-	FCodeAnalysisViewState& viewState = pSpectrumEmu->CodeAnalysis.GetFocussedViewState();
+	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 	const int startAddr = g_bDiffVideoMem ? 0x4000 : 0x5C00;	// TODO: have a header with constants in
 	
 	if(ImGui::Button("SnapShot"))
@@ -275,7 +279,7 @@ void DrawMemoryDiffUI(FSpectrumEmu* pSpectrumEmu)
 			ImGui::SameLine();
 			ImGui::Text("%s\t%s\t%s", NumStr(changedAddr), NumStr(g_DiffSnapShotMemory[changedAddr]), NumStr(pSpectrumEmu->ReadByte( changedAddr)));
 			ImGui::SameLine();
-			DrawAddressLabel(pSpectrumEmu->CodeAnalysis, viewState, changedAddr);
+			DrawAddressLabel(codeAnalysis, viewState, changedAddr);
 			ImGui::PopID();
 		}
 	}

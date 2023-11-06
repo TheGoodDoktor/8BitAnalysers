@@ -38,7 +38,7 @@ void WindowFocusCallback(GLFWwindow* window, int focused);
 struct FAppState
 {
 	GLFWwindow* MainWindow = nullptr;
-	FC64Emulator* pC64Emu = nullptr;
+    FEmuBase*   pEmulator = nullptr;
 };
 
 // Globals
@@ -144,12 +144,14 @@ int main(int argc, char** argv)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    FC64Emulator* pC64Emulator = new FC64Emulator;
-    pC64Emulator->Init();
+    FC64LaunchConfig launchConfig;
+    launchConfig.ParseCommandline(argc,argv);
+    FEmuBase* pEmulator = new FC64Emulator;
+    pEmulator->Init(launchConfig);
 
-	g_AppState.pC64Emu = pC64Emulator;
+	g_AppState.pEmulator = pEmulator;
 
-	const FGlobalConfig* pGlobalConfig = pC64Emulator->GetGlobalConfig();
+	const FGlobalConfig* pGlobalConfig = pEmulator->GetGlobalConfig();
 	if (!pGlobalConfig->Font.empty())
 	{
 		std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
@@ -174,7 +176,7 @@ int main(int argc, char** argv)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        pC64Emulator->Tick();
+        pEmulator->Tick();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         //if (pSpectrumEmulator->bShowImGuiDemo)
@@ -206,7 +208,7 @@ int main(int argc, char** argv)
         glfwSwapBuffers(appState.MainWindow);
     }
 
-    pC64Emulator->Shutdown();
+    pEmulator->Shutdown();
 
     //saudio_shutdown();
 
@@ -246,7 +248,7 @@ void SetWindowIcon(const char* pIconFile)
 
 void WindowFocusCallback(GLFWwindow* window, int focused)
 {
-	if (g_AppState.pC64Emu)
+	if (g_AppState.pEmulator)
 	{
 		//TODO: g_AppState.pC64Emu->AppFocusCallback(focused);
 	}

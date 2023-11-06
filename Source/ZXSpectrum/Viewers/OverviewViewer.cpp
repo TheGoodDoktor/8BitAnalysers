@@ -31,7 +31,8 @@ void FOverviewViewer::DrawStats()
 
 void FOverviewViewer::CalculateStats()
 {
-    int UnCommentedCodeCount = 0;
+	FCodeAnalysisState& codeAnalysis = pEmulator->GetCodeAnalysis();
+	int UnCommentedCodeCount = 0;
     int CommentedCodeCount = 0;
     int ReadOnlyDataCount = 0;
     int WriteOnlyDataCount = 0;
@@ -41,7 +42,7 @@ void FOverviewViewer::CalculateStats()
     for (int i = 0; i < (1 << 16); i++)
     {
         const bool bInRom = i < 0x4000;
-        const FCodeInfo* pCodeInfo = pSpectrumEmu->CodeAnalysis.GetCodeInfoForAddress(i);
+        const FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(i);
         if (pCodeInfo != nullptr)
         {
             if (pCodeInfo->Comment.empty())
@@ -51,7 +52,7 @@ void FOverviewViewer::CalculateStats()
         }
         else
         {
-            const FDataInfo *pDataInfo = pSpectrumEmu->CodeAnalysis.GetReadDataInfoForAddress(i);
+            const FDataInfo *pDataInfo = codeAnalysis.GetReadDataInfoForAddress(i);
             const bool bRead = pDataInfo->LastFrameRead != -1;
             const bool bWrite = pDataInfo->LastFrameWritten != -1;
 

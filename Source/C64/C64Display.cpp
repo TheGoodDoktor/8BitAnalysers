@@ -92,7 +92,7 @@ void FC64Display::DrawUI()
 {
     c64_t* pC64 = C64Emu->GetEmu();
     FCodeAnalysisViewState& viewState = CodeAnalysis->GetFocussedViewState();
-    const FC64Config &config = *C64Emu->GetGlobalConfig();
+    const FC64Config &config = *C64Emu->GetC64GlobalConfig();
     const bool bDebugFrame = pC64->vic.debug_vis;
     //if (bDebugFrame)
     //else

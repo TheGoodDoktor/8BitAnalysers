@@ -43,7 +43,7 @@ void WindowFocusCallback(GLFWwindow* window, int focused);
 struct FAppState
 {
     GLFWwindow* MainWindow = nullptr;
-    FSpectrumEmu* pSpectrumEmu = nullptr;
+    FEmuBase* pEmulator = nullptr;
 };
 
 // Globals
@@ -184,14 +184,14 @@ int main(int argc, char** argv)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	// Speccy 
-	FSpectrumConfig config;
+	FSpectrumLaunchConfig config;
     config.ParseCommandline(argc, argv);
-	FSpectrumEmu* pSpectrumEmulator = new FSpectrumEmu;
-	pSpectrumEmulator->Init(config);
+	FEmuBase* pEmulator = new FSpectrumEmu;
+    pEmulator->Init(config);
 
-    g_AppState.pSpectrumEmu = pSpectrumEmulator;
+    g_AppState.pEmulator = pEmulator;
 
-    const FGlobalConfig* pGlobalConfig = pSpectrumEmulator->pGlobalConfig;
+    const FGlobalConfig* pGlobalConfig = pEmulator->GetGlobalConfig();
     if (!pGlobalConfig->Font.empty())
     {
         std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
@@ -219,14 +219,14 @@ int main(int argc, char** argv)
         ImGui::NewFrame();
 
 		// speccy update & render
-		pSpectrumEmulator->Tick();
+        pEmulator->Tick();
 
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (pSpectrumEmulator->bShowImGuiDemo)
-			ImGui::ShowDemoWindow(&pSpectrumEmulator->bShowImGuiDemo);
+		if (pEmulator->bShowImGuiDemo)
+			ImGui::ShowDemoWindow(&pEmulator->bShowImGuiDemo);
 
-		if (pSpectrumEmulator->bShowImPlotDemo)
-			ImPlot::ShowDemoWindow(&pSpectrumEmulator->bShowImPlotDemo);
+		if (pEmulator->bShowImPlotDemo)
+			ImPlot::ShowDemoWindow(&pEmulator->bShowImPlotDemo);
 
         // Rendering
         ImGui::Render();
@@ -251,8 +251,8 @@ int main(int argc, char** argv)
         glfwSwapBuffers(appState.MainWindow);
     }
 
-	// shutdown the speccy stuff
-	pSpectrumEmulator->Shutdown();
+	// shutdown the emulator
+	pEmulator->Shutdown();
 
 	saudio_shutdown();
 
@@ -293,8 +293,8 @@ void SetWindowIcon(const char* pIconFile)
 
 void WindowFocusCallback(GLFWwindow* window, int focused)
 {
-    if (g_AppState.pSpectrumEmu)
+    if (g_AppState.pEmulator)
     {
-        g_AppState.pSpectrumEmu->AppFocusCallback(focused);
+        g_AppState.pEmulator->AppFocusCallback(focused);
     }
 }

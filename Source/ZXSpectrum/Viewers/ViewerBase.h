@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 #include <string>
 
 class FSpectrumEmu;
@@ -18,3 +19,4 @@ protected:
 private:
 	bool		bOpen = true;
 };
+#endif

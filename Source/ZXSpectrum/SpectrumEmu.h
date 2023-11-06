@@ -45,6 +45,7 @@
 #include "SnapshotLoaders/RZXLoader.h"
 #include "Util/Misc.h"
 #include "SpectrumDevices.h"
+#include "Misc/EmuBase.h"
 
 struct FGame;
 struct FGameViewer;
@@ -61,13 +62,10 @@ enum class ESpectrumModel
 	Spectrum128K
 };
 
-
-
-struct FSpectrumConfig
+struct FSpectrumLaunchConfig : public FEmulatorLaunchConfig
 {
-	void ParseCommandline(int argc, char** argv);
+	void ParseCommandline(int argc, char** argv) override;
 	ESpectrumModel	Model = ESpectrumModel::Spectrum48K;
-	std::string		SpecificGame;
 	std::string		SkoolkitImport;
 };
 
@@ -79,7 +77,7 @@ struct FGame
 };
 
 
-class FSpectrumEmu : public ICPUInterface
+class FSpectrumEmu : public FEmuBase
 {
 public:
 	FSpectrumEmu()
@@ -91,8 +89,9 @@ public:
 			RAMBanks[i] = -1;
 	}
 
-	bool	Init(const FSpectrumConfig& config);
-	void	Shutdown();
+	bool	Init(const FEmulatorLaunchConfig& config) override;
+	void	Shutdown() override;
+	void	Tick() override;
 
 	bool	IsInitialised() const { return bInitialised; }
 
@@ -108,15 +107,14 @@ public:
 	bool	ImportSkoolFile(const char* pFilename, const char* pOutSkoolInfoName = nullptr, FSkoolFileInfo* pSkoolInfo=nullptr);
 	bool	ExportSkoolFile(bool bHexadecimal, const char* pName = nullptr);
 	void	DoSkoolKitTest(const char* pGameName, const char* pInSkoolFileName, bool bHexadecimal, const char* pOutSkoolName = nullptr);
-	void	AppFocusCallback(int focused);
+	void	AppFocusCallback(int focused) override;
 
 	void	OnInstructionExecuted(int ticks, uint64_t pins);
 	uint64_t Z80Tick(int num, uint64_t pins);
 
-	void	Tick();
 	void	DrawMemoryTools();
-	void	DrawUI();
-	bool	DrawDockingView();
+	void	DrawEmulatorUI();
+	//bool	DrawDockingView();
 
 	// disable copy & assign because this class is big!
 	FSpectrumEmu(const FSpectrumEmu&) = delete;
@@ -144,12 +142,15 @@ public:
 		MemoryAccessHandlers.push_back(handler);
 	}
 
+	const FZXSpectrumConfig* GetZXSpectrumGlobalConfig() { return (const FZXSpectrumConfig*)pGlobalConfig; }
+
+
 	// TODO: Make private
 //private:
 	// Emulator 
 	zx_t			ZXEmuState;	// Chips Spectrum State
 	uint8_t*		MappedInMemory = nullptr;
-	FZXSpectrumConfig *	pGlobalConfig = nullptr;
+	//FZXSpectrumConfig *	pGlobalConfig = nullptr;
 
 	float			ExecSpeedScale = 1.0f;
 
@@ -166,7 +167,7 @@ public:
 	FSpectrumViewer			SpectrumViewer;
 	FFrameTraceViewer		FrameTraceViewer;
 	FZXGraphicsViewer		GraphicsViewer;
-	FCodeAnalysisState		CodeAnalysis;
+	//FCodeAnalysisState		CodeAnalysis;
 
 	// IO Devices
 	FSpectrumKeyboard	Keyboard;
@@ -201,10 +202,8 @@ public:
 	FRZXManager		RZXManager;
 	int				RZXFetchesRemaining = 0;
 
-	bool		bShowImGuiDemo = false;
-	bool		bShowImPlotDemo = false;
 private:
-	std::vector<FViewerBase*>	Viewers;
+	//std::vector<FViewerBase*>	Viewers;
 
 	bool	bReplaceGamePopup = false;
 	bool	bExportAsm = false;

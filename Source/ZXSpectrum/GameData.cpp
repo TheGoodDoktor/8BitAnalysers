@@ -653,7 +653,7 @@ static zx_t g_SaveSlot;
 
 void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
 {
-	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	FZXSpectrumGameConfig& config = *(FZXSpectrumGameConfig*)pSpectrumEmu->pActiveGame->pConfig;
 
 	// revert cheats
@@ -732,7 +732,7 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 		const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
 		pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1 : 0);
 		pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
-		pSpectrumEmu->CodeAnalysis.SetAllBanksDirty();
+		pSpectrumEmu->GetCodeAnalysis().SetAllBanksDirty();
 	}
 	return true;
 }
@@ -802,7 +802,7 @@ bool SaveROMData(const FCodeAnalysisState& state, const char* fname)
 #endif
 bool LoadGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
-	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 
 	FILE* fp = fopen(fname, "rb");
 	if (fp == NULL)

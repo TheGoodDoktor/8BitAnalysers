@@ -3,6 +3,14 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 
 class FEmuBase;
+struct FGlobalConfig;
+
+struct FEmulatorLaunchConfig
+{
+	virtual void ParseCommandline(int argc, char** argv);
+
+	std::string		SpecificGame;
+};
 
 class FViewerBase
 {
@@ -22,9 +30,10 @@ public:
 class FEmuBase : public ICPUInterface
 {
 public:
-	virtual bool	Init();
+	virtual bool	Init(const FEmulatorLaunchConfig& launchConfig);
 	virtual void    Shutdown();
 	virtual void    Tick();
+	virtual void	AppFocusCallback(int focused){}
 
 	bool			DrawDockingView();
 	void			DrawMainMenu();
@@ -42,15 +51,15 @@ public:
 	int				GetHighlightY() const { return HighlightYPos; }
 	int				GetHighlightScanline() const { return HighlightScanline;}
 
-	FCodeAnalysisState& GetCodeAnalysis() { return CodeAnalysis; }
-
+	FCodeAnalysisState&		GetCodeAnalysis() { return CodeAnalysis; }
+	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
 
 protected:
 	void	FileMenu();
 	void	OptionsMenu();
 	void	WindowsMenu();
 
-
+	FGlobalConfig*		pGlobalConfig = nullptr;
 	FCodeAnalysisState  CodeAnalysis;
 
 	// Highligthing
@@ -59,5 +68,8 @@ protected:
 	int					HighlightScanline = -1;
 
 	std::vector<FViewerBase*>	Viewers;
+public:
+	bool		bShowImGuiDemo = false;
+	bool		bShowImPlotDemo = false;
 
 };

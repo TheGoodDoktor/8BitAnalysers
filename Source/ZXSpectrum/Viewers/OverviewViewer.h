@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ViewerBase.h"
+#include "Misc/EmuBase.h"
 
 class FSpectrumEmu;
 
@@ -17,7 +17,7 @@ struct FOverviewStats
 class FOverviewViewer : public FViewerBase
 {
 public:
-			FOverviewViewer(FSpectrumEmu* pEmu) : FViewerBase(pEmu) { Name = "Overview"; }
+			FOverviewViewer(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Overview"; }
 
 	bool	Init(void) override { return true; }
 	void	DrawUI(void) override;

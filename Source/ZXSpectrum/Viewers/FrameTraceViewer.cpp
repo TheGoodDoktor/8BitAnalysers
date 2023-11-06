@@ -53,10 +53,11 @@ void	FFrameTraceViewer::Shutdown()
 void FFrameTraceViewer::CaptureFrame()
 {
 	// set up new trace frame
+	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->GetCodeAnalysis();
 	FSpeccyFrameTrace& frame = FrameTrace[CurrentTraceFrame];
 	ImGui_UpdateTextureRGBA(frame.Texture, pSpectrumEmu->SpectrumViewer.GetFrameBuffer());
-	frame.InstructionTrace = pSpectrumEmu->CodeAnalysis.Debugger.GetFrameTrace();	// copy frame trace - use method?
-	frame.FrameEvents = pSpectrumEmu->CodeAnalysis.Debugger.GetEventTrace();
+	frame.InstructionTrace = codeAnalysis.Debugger.GetFrameTrace();	// copy frame trace - use method?
+	frame.FrameEvents = codeAnalysis.Debugger.GetEventTrace();
 	frame.FrameOverview.clear();
 
 	// copy memory
@@ -116,6 +117,7 @@ void FFrameTraceViewer::RestoreFrame(const FSpeccyFrameTrace& frame)
 
 void FFrameTraceViewer::Draw()
 {
+	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->GetCodeAnalysis();
 	if (ImGui::ArrowButton("##left", ImGuiDir_Left))
 		ShowFrame = std::max(--ShowFrame, 0);
 
@@ -130,9 +132,9 @@ void FFrameTraceViewer::Draw()
 	if (ImGui::SliderInt("Backwards Offset", &ShowFrame, 0, kNoFramesInTrace - 1))
 	{
 		if (ShowFrame == 0)
-			pSpectrumEmu->CodeAnalysis.Debugger.Continue();
+			codeAnalysis.Debugger.Continue();
 		else
-			pSpectrumEmu->CodeAnalysis.Debugger.Break();
+			codeAnalysis.Debugger.Break();
 
 		PixelWriteline = -1;
 		SelectedTraceLine = -1;
@@ -158,7 +160,7 @@ void FFrameTraceViewer::Draw()
 		RestoreFrame(frame);
 
 		// continue running
-		pSpectrumEmu->CodeAnalysis.Debugger.Continue();
+		codeAnalysis.Debugger.Continue();
 
 		CurrentTraceFrame = frameNo;
 		ShowFrame = 0;
@@ -209,7 +211,7 @@ void FFrameTraceViewer::Draw()
 
 void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)frame.InstructionTrace.size(), line_height);
@@ -245,7 +247,7 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 
 void	FFrameTraceViewer::GenerateTraceOverview(FSpeccyFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	frame.FrameOverview.clear();
 	for (int i = 0; i < frame.InstructionTrace.size(); i++)
 	{
@@ -325,7 +327,7 @@ void FFrameTraceViewer::GenerateMemoryDiff(const FSpeccyFrameTrace& frame, const
 
 void	FFrameTraceViewer::DrawTraceOverview(const FSpeccyFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)frame.FrameOverview.size(), line_height);
@@ -368,7 +370,7 @@ void FFrameTraceViewer::DrawFrameScreenWritePixels(const FSpeccyFrameTrace& fram
 
 void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	if (ImGui::BeginChild("ScreenPxWrites", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
@@ -409,7 +411,7 @@ void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 
 void FFrameTraceViewer::DrawMemoryDiffs(const FSpeccyFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	for (const auto& diff : frame.MemoryDiffs)

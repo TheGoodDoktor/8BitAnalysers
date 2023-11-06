@@ -3,7 +3,35 @@
 #include <imgui.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 
-bool	FEmuBase::Init()
+#include "Debug/DebugLog.h"
+
+void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
+{
+	std::vector<std::string> argList;
+	for (int arg = 0; arg < argc; arg++)
+	{
+		argList.emplace_back(argv[arg]);
+	}
+
+	auto argIt = argList.begin();
+	argIt++;	// skip exe name
+	while (argIt != argList.end())
+	{
+		if (*argIt == std::string("-game"))
+		{
+			if (++argIt == argList.end())
+			{
+				LOGERROR("-game : No game specified");
+				break;
+			}
+			SpecificGame = *argIt;
+		}
+
+		++argIt;
+	}
+}
+
+bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 {
 
     return true;

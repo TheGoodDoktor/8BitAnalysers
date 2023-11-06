@@ -62,11 +62,15 @@ enum class EC64Event
 struct FC64Config;
 struct FC64GameConfig;
 
+struct FC64LaunchConfig : public FEmulatorLaunchConfig
+{
+};
+
 class FC64Emulator : public FEmuBase
 {
 public:
 
-	bool    Init() override;
+	bool    Init(const FEmulatorLaunchConfig& launchConfig) override;
 	void    Shutdown() override;
 	void	DrawEmulatorUI() override;
 	void    Tick() override;
@@ -145,14 +149,13 @@ public:
 	c64_t*	GetEmu() {return &C64Emu;}
 	const FC64IOAnalysis&	GetC64IOAnalysis() { return IOAnalysis; }
 
-	const FC64Config*	GetGlobalConfig() { return pGlobalConfig;}
+	const FC64Config*	GetC64GlobalConfig() { return (const FC64Config *)pGlobalConfig;}
 
 private:
 	c64_t       C64Emu;
 	ui_c64_t    C64UI;
 	double      ExecTime;
 
-	FC64Config*			pGlobalConfig = nullptr;
 	FC64GameConfig*		pCurrentGameConfig = nullptr;
 
 	FC64GamesList       GamesList;

@@ -23,7 +23,7 @@ class FSpectrumEmuTest : public ::testing::Test
 protected:
 	void SetUp() override
 	{
-		FSpectrumConfig config;
+		FSpectrumLaunchConfig config;
 		config.SpecificGame = "ROM";	// to make it not load the last game
 		pEmu = new FSpectrumEmu;
 		pEmu->Init(config);
@@ -56,7 +56,7 @@ TEST_F(FSpectrumEmuTest, SnapshotLoaderTest)
 	EXPECT_EQ(pEmu->ZXEmuState.cpu.pc, 0x8001);	// PC should be after data
 
 	// test step
-	pEmu->CodeAnalysis.Debugger.StepInto();
+	pEmu->GetCodeAnalysis().Debugger.StepInto();
 	ZXExeEmu(&pEmu->ZXEmuState, 1000000);
 	EXPECT_EQ(pEmu->ZXEmuState.cpu.pc, 0x8002);	// PC should be after data
 

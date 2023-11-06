@@ -34,8 +34,8 @@ void FSpectrumViewer::Init(FSpectrumEmu* pEmu)
 
 void FSpectrumViewer::Draw()
 {
-	const FZXSpectrumConfig& config = *pSpectrumEmu->pGlobalConfig;
-	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->CodeAnalysis;
+	const FZXSpectrumConfig& config = *pSpectrumEmu->GetZXSpectrumGlobalConfig();
+	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->GetCodeAnalysis();
 	FDebugger& debugger = codeAnalysis.Debugger;
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 
