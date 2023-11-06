@@ -12,6 +12,7 @@ void FCPCGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysis, FCpcEmu* pEmu)
 {
 	pCpcEmu = pEmu;
 	FGraphicsViewer::Init(pCodeAnalysis);
+	BitmapFormat = EBitmapFormat::ColMap2Bpp_CPC;
 
 #if 0
 	// test views
@@ -234,36 +235,6 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 	}
 }
 
-void FCPCGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth)
-{
-	const FCodeAnalysisState& state = GetCodeAnalysis();
-	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
-	const uint16_t bankSizeMask = pBank->SizeMask;
-
-	const int kVerticalDispPixCount = pGraphicsView->GetHeight();
-	const int scaledVDispPixCount = kVerticalDispPixCount / ViewScale;
-	const int ycount = scaledVDispPixCount / YSizePixels;
-
-	for (int y = 0; y < ycount * YSizePixels; y++)
-	{
-		for (int xChar = 0; xChar < columnWidth; xChar++)
-		{
-			const uint16_t bankAddr = memAddr & bankSizeMask;
-			const uint8_t* pPixels = &pBank->Memory[bankAddr];
-
-			// MODE 1
-			pGraphicsView->Draw2BppImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pCpcEmu->Screen.GetCurrentPalette().GetData());
-			memAddr+=2;
-			
-			// MODE 0
-			//pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, GetCurrentPalette_Const().GetData());
-			//memAddr+=4;
-			
-			// can memAddr be > max bank addr?
-		}
-	}
-}
-
 void FCPCGraphicsViewer::DrawPalette(const uint32_t* palette, int numColours)
 {
 	const float scale = ImGui_GetScaling();
@@ -309,4 +280,9 @@ void FCPCGraphicsViewer::DrawPaletteViewer()
 			DrawPalette(palette, pEntry->NoColours);
 		}
 	}
+}
+
+const uint32_t* FCPCGraphicsViewer::GetCurrentPalette() const 
+{ 
+	return pCpcEmu->Screen.GetCurrentPalette().GetData();
 }

@@ -174,12 +174,45 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 		for (int xChar = 0; xChar < columnWidth; xChar++)
 		{
 			const uint16_t bankAddr = memAddr & bankSizeMask;
-			const uint8_t charLine = pBank->Memory[bankAddr];
-			FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
-			const uint32_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo, HeatmapThreshold);
-			pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col, 0);
+			switch (BitmapFormat)
+			{
+				case EBitmapFormat::Bitmap_1Bpp:
+				{
+					const uint8_t charLine = pBank->Memory[bankAddr];
+					FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
+					const uint32_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo, HeatmapThreshold);
+					pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col, 0);
 
-			memAddr++;
+					memAddr++;
+					break;
+				}
+				case EBitmapFormat::ColMap2Bpp_CPC:
+				{
+					const uint8_t* pPixels = &pBank->Memory[bankAddr];
+					const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+
+					// todo: indicate r/w with heatmap?
+					pGraphicsView->Draw2BppImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+
+					//this doesnt display correctly.
+					// it repeats images from the previous column in the next column
+					memAddr += 2;
+					break;
+				}
+				case EBitmapFormat::ColMap4Bpp_CPC:
+				{
+					// todo
+					const uint8_t* pPixels = &pBank->Memory[bankAddr];
+					const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+
+					pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+
+					//this doesnt display correctly.
+					// it repeats images from the previous column in the next column
+					memAddr += 4;
+					break;
+				}
+			}
 		}
 	}
 }
@@ -301,6 +334,22 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 	}
 }
 
+int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
+{
+	switch (bitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+		return 1;
+	case EBitmapFormat::ColMap2Bpp_CPC:
+		return 2;
+	case EBitmapFormat::ColMap4Bpp_CPC:
+		return 4;
+	case EBitmapFormat::ColMap2Bpp_C64:
+		return 2;
+	}
+	return 1;
+}
+
 void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 {
 	const float scale = ImGui_GetScaling();
@@ -310,6 +359,13 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
 	const int kVerticalDispPixCount = kGraphicsViewerHeight;
+
+	if (DrawBitmapFormatCombo(BitmapFormat, state))
+		PaletteNo = -1;
+
+	const int bpp = GetBppForBitmapFormat(BitmapFormat);	
+	if (bpp > 1)
+		DrawPaletteCombo("Palette", "Current", PaletteNo, bpp * bpp);
 
 	if (ImGui::Checkbox("Physical Memory", &bShowPhysicalMemory))
 	{
@@ -455,7 +511,8 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		}
 	}
 
-	const int graphicsUnitSize = (XSizePixels >> 3) * YSizePixels;
+	const int pixelsPerByte = 8 / bpp;
+	const int graphicsUnitSize = (XSizePixels / pixelsPerByte) * YSizePixels;
 
 	// step address based on image attributes
 	StepInt("Step Line", addrInput, xChars);
@@ -508,6 +565,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 				FDataFormattingOptions format;
 				format.AddLabelAtStart = true;
 				format.ClearLabels = true;
+				format.ClearCodeInfo = true;
 
 				// Generate label
 				if (ImageSetName.empty() == false)
@@ -523,10 +581,24 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 						format.LabelName = ImageSetName;
 					}
 				}
+				
+				int paletteToFormat = PaletteNo;
+				if (PaletteNo == -1)
+				{
+					// Store current palette
+					if (const uint32_t* pCurrentPalette = GetCurrentPalette())
+					{
+						paletteToFormat = GetPaletteNo(pCurrentPalette, bpp * bpp);
+					}
+				}
+				EDataItemDisplayType displayType = GetDisplayTypeForBitmapFormat(BitmapFormat);
 
-				format.SetupForBitmap(imageAddressRef, XSizePixels, YSizePixels, 1);
+				format.SetupForBitmap(imageAddressRef, XSizePixels, YSizePixels, bpp);
+				format.DisplayType = displayType;
 				format.GraphicsSetRef = imageAddressRef;
+				format.PaletteNo = paletteToFormat;
 				FormatData(state, format);
+				
 				state.SetCodeAnalysisDirty(imageAddressRef);
 
 				state.AdvanceAddressRef(imageAddressRef, graphicsUnitSize);

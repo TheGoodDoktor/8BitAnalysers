@@ -26,9 +26,10 @@ public:
 	void	DrawScreenViewer(void) override;
 	void	Init(FCodeAnalysisState* pCodeAnalysis, FCpcEmu* pEmu);
 
-	void	DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth) override;
 	void	DrawPaletteViewer();
 	void	DrawPalette(const uint32_t* palette, int numColours);
+protected:
+	const uint32_t* GetCurrentPalette() const override;
 
 private:
 	uint32_t	GetRGBValueForPixel(int yPos, int colourIndex, uint32_t heatMapCol) const;

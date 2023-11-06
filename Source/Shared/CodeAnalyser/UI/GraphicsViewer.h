@@ -54,8 +54,10 @@ protected:
 
 	uint16_t		GetAddressOffsetFromPositionInView(int x, int y) const;
 
-	virtual void	DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
+	void			DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
 	void			UpdateCharacterGraphicsViewerImage(void); // make virtual for other platforms?
+
+	virtual			const uint32_t* GetCurrentPalette() const { return nullptr; }
 
 	// protected Members
 protected:
@@ -79,6 +81,9 @@ protected:
 
 	std::map<FAddressRef, FGraphicsSet>		GraphicsSets;
 	FAddressRef		SelectedGraphicSet;
+
+	EBitmapFormat	BitmapFormat = EBitmapFormat::Bitmap_1Bpp;
+	int				PaletteNo = -1;
 
 	// housekeeping
 	std::string			ImagesRoot;
