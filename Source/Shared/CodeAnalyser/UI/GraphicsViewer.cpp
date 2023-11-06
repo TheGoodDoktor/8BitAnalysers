@@ -17,6 +17,8 @@ static int kMaxImageSize = 256;
 static int kGraphicsViewerWidth = 256;
 static int kGraphicsViewerHeight = 512;
 
+int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
+
 bool FGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysisState)
 {
 	pCodeAnalysis = pCodeAnalysisState;
@@ -281,6 +283,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 
 	int address = AddressOffset;
 	const int xSizeChars = XSizePixels >> 3;
+	const int bpp = GetBppForBitmapFormat(BitmapFormat);
 
 	if (ViewMode == GraphicsViewMode::CharacterBitmap)
 	{
@@ -290,7 +293,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			assert(bankId != -1);
 			DrawMemoryBankAsGraphicsColumn(bankId, address & 0x3fff, x * XSizePixels, xSizeChars);
 
-			address += xSizeChars * ycount * YSizePixels;
+			address += xSizeChars * ycount * YSizePixels * bpp;
 		}
 	}
 	else if (ViewMode == GraphicsViewMode::CharacterBitmapWinding)
@@ -332,22 +335,6 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 		}
 		address += graphicsUnitSize;
 	}
-}
-
-int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
-{
-	switch (bitmapFormat)
-	{
-	case EBitmapFormat::Bitmap_1Bpp:
-		return 1;
-	case EBitmapFormat::ColMap2Bpp_CPC:
-		return 2;
-	case EBitmapFormat::ColMap4Bpp_CPC:
-		return 4;
-	case EBitmapFormat::ColMap2Bpp_C64:
-		return 2;
-	}
-	return 1;
 }
 
 void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
@@ -819,4 +806,20 @@ bool FGraphicsViewer::ExportImages(void)
 	}
 
 	return true;
+}
+
+int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
+{
+	switch (bitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+		return 1;
+	case EBitmapFormat::ColMap2Bpp_CPC:
+		return 2;
+	case EBitmapFormat::ColMap4Bpp_CPC:
+		return 4;
+	case EBitmapFormat::ColMap2Bpp_C64:
+		return 2;
+	}
+	return 1;
 }
