@@ -29,10 +29,11 @@ void FC64Display::Init(FCodeAnalysisState* pAnalysis, FC64Emulator* pC64Emu)
 {
 	C64Emu = pC64Emu;
 	CodeAnalysis = pAnalysis;
-
+    c64_t* pC64 = C64Emu->GetEmu();
+    pC64->vic.debug_vis = true;
 
 	// setup texture
-	chips_display_info_t dispInfo = c64_display_info(C64Emu->GetEmu());
+	chips_display_info_t dispInfo = c64_display_info(pC64);
 
 
 	// setup pixel buffer
@@ -93,14 +94,10 @@ void FC64Display::DrawUI()
     c64_t* pC64 = C64Emu->GetEmu();
     FCodeAnalysisViewState& viewState = CodeAnalysis->GetFocussedViewState();
     const FC64Config &config = *C64Emu->GetGlobalConfig();
-    const bool bDebugFrame = pC64->vic.debug_vis;
-    //if (bDebugFrame)
-    //else
-      //  ImGui_ImplDX11_UpdateTextureRGBA(FrameBufferTexture, FramePixelBuffer, _C64_STD_DISPLAY_WIDTH, _C64_STD_DISPLAY_HEIGHT);
     const int xScrollOff = pC64->vic.reg.ctrl_2 & 7;
     const int yScrollOff = pC64->vic.reg.ctrl_1 & 7;
-    const int screenWidthChars = 40;// pC64->vic.reg.ctrl_2& (1 << 3) ? 40 : 38;
-    const int screenHeightChars = 25;// pC64->vic.reg.ctrl_1& (1 << 3) ? 25 : 24;
+    const int screenWidthChars = pC64->vic.reg.ctrl_2& (1 << 3) ? 40 : 38;
+    const int screenHeightChars = pC64->vic.reg.ctrl_1& (1 << 3) ? 25 : 24;
     const int graphicsScreenWidth = screenWidthChars * 8;
     const int graphicsScreenHeight = screenHeightChars * 8;
 
@@ -141,7 +138,7 @@ void FC64Display::DrawUI()
         ImGui::Text(", Character Defs: $%04X", vicMemBase + charDefs);
     }
     ImGui::Text("%s Mode, Multi Colour %s, ECBM:%s", bBitmapMode ? "Bitmap" : "Character", bMultiColourMode ? "Yes" : "No", bExtendedBackgroundMode ? "Yes" : "No");
-
+    ImGui::Checkbox("Debug Vis",&pC64->vic.debug_vis);
     ImGuiIO& io = ImGui::GetIO();
     ImVec2 pos = ImGui::GetCursorScreenPos();
     const float scale = ImGui_GetScaling();
@@ -151,7 +148,8 @@ void FC64Display::DrawUI()
 
     // Draw Screen
     ImGui::Image(ScreenTexture, ImVec2((float)disp.screen.width * scale, (float)disp.screen.height * scale),uv0,uv1);
-
+    if(config.bShowVICOverlay)
+        C64Emu->GetC64IOAnalysis().GetVICAnalysis().DrawScreenOverlay(pos.x,pos.y);
     if (C64Emu->GetHighlightX() != -1)
     {
         const float x = (borderOffsetX + C64Emu->GetHighlightX()) * scale;
@@ -176,7 +174,7 @@ void FC64Display::DrawUI()
     // Draw an indicator to show which scanline is being drawn
     if (config.bShowScanLineIndicator && CodeAnalysis->Debugger.IsStopped())
     {
-        int topScreenScanLine = 0;
+        int topScreenScanLine = pC64->vic.crt.vis_y0;
         int scanlineX = pC64->vic.rs.h_count * M6569_PIXELS_PER_TICK;  
         int scanlineY = std::min(std::max(pC64->vic.rs.v_count - topScreenScanLine, 0), disp.screen.height);
         int interruptScanline = pC64->vic.rs.v_irqline;

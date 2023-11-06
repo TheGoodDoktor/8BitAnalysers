@@ -7,12 +7,16 @@
 #include "TZXLoader.h"
 
 #include <string>
+#include "../SpectrumEmu.h"
+#include "../ZXSpectrumConfig.h"
 
-bool FZXGameLoader::LoadGame(const char* pFileName)
+bool FZXGameLoader::LoadSnapshot(const FGameSnapshot& snapshot)
 {
-	const std::string fn(pFileName);
+	FZXSpectrumConfig*	pGlobalConfig = pSpectrumEmu->pGlobalConfig;
 
-	switch (GetSnapshotTypeFromFileName(fn))
+	const char* pFileName = snapshot.FileName.c_str();
+
+	switch (snapshot.Type)
 	{
 	case ESnapshotType::Z80:
 		return LoadZ80File(pSpectrumEmu, pFileName);
@@ -22,10 +26,12 @@ bool FZXGameLoader::LoadGame(const char* pFileName)
 		return LoadTAPFile(pSpectrumEmu, pFileName);
 	case ESnapshotType::TZX:
 		return LoadTZXFile(pSpectrumEmu, pFileName);
-	default: return false;
+	default: 
+		return false;
 	}
 }
 
+#if 0
 ESnapshotType FZXGameLoader::GetSnapshotTypeFromFileName(const std::string& fn)
 {
 	if ((fn.substr(fn.find_last_of(".") + 1) == "z80") || (fn.substr(fn.find_last_of(".") + 1) == "Z80"))
@@ -41,3 +47,4 @@ ESnapshotType FZXGameLoader::GetSnapshotTypeFromFileName(const std::string& fn)
 	else
 		return ESnapshotType::Unknown;
 }
+#endif

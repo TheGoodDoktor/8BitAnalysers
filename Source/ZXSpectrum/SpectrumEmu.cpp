@@ -627,14 +627,14 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	zx_init(&ZXEmuState, &desc);
 
 	GameLoader.Init(this);
-	GamesList.Init(&GameLoader);
+	GamesList.SetLoader(&GameLoader);
 	if(config.Model == ESpectrumModel::Spectrum128K)
 		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder128.c_str());
 	else
 		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder.c_str());
 
 	RZXManager.Init(this);
-	RZXGamesList.Init(&GameLoader);
+	RZXGamesList.SetLoader(&GameLoader);
 	RZXGamesList.EnumerateGames(pGlobalConfig->RZXFolder.c_str());
 
 	// Clear UI
@@ -936,9 +936,9 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 
 	if (pZXGameConfig != nullptr)
 	{
-		const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-		const std::string gameFile = snapFolder + pZXGameConfig->SnapshotFile;
-		if (GamesList.LoadGame(gameFile.c_str()))
+		//const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
+		//const std::string gameFile = snapFolder + pZXGameConfig->SnapshotFile;
+		if (GamesList.LoadGame(pZXGameConfig->SnapshotFile.c_str()))
 		{
 			StartGame(pZXGameConfig);
 			return true;

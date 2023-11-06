@@ -737,7 +737,7 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 
 	// A class that deals with loading games.
 	GameLoader.Init(this);
-	GamesList.Init(&GameLoader);
+	GamesList.SetLoader(&GameLoader);
 	if (config.Model == ECpcModel::CPC_6128)
 		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder128.c_str());
 	else
@@ -1089,9 +1089,9 @@ bool FCpcEmu::StartGame(const char* pGameName)
 
 	if (pCPCGameConfig != nullptr)
 	{
-		const std::string snapFolder = CpcEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-		const std::string gameFile = snapFolder + pCPCGameConfig->SnapshotFile;
-		if (GamesList.LoadGame(gameFile.c_str()))
+		//const std::string snapFolder = CpcEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
+		//const std::string gameFile = snapFolder + pCPCGameConfig->SnapshotFile;
+		if (GamesList.LoadGame(pCPCGameConfig->Name.c_str()))
 		{
 			StartGame(pCPCGameConfig);
 			return true;

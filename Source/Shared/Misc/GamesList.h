@@ -12,6 +12,7 @@ enum class ESnapshotType
 	TAP,
 	TZX,
 	RZX,
+	PRG,
 
 	Unknown
 };
@@ -26,14 +27,14 @@ struct FGameSnapshot
 class IGameLoader
 {
 public:
-	virtual bool LoadGame(const char* pFileName) = 0;
-	virtual ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn) = 0;
+	virtual bool LoadSnapshot(const FGameSnapshot& snapshot) = 0;
+	//virtual ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn) = 0;
 };
 
 class FGamesList
 {
 public:
-	void	Init(IGameLoader* pLoader) 
+	void	SetLoader(IGameLoader* pLoader) 
 	{ 
 		pGameLoader = pLoader;
 	}
@@ -43,6 +44,7 @@ public:
 
 	int		GetNoGames() const { return (int)GamesList.size(); }
 	const FGameSnapshot& GetGame(int index) const { return GamesList[index]; }
+	const FGameSnapshot* GetGame(const char* pSnapshotName) const;
 	//const std::string& GetGameName(int index) const { return GamesList[index].DisplayName; }
 
 private:
