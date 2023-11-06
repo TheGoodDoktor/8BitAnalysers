@@ -121,8 +121,10 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 					break;
 				}
 
-				const ImU32 colour = GetCurrentPalette_Const().GetColour(colourIndex);
-				dl->AddRectFilled(rectMin, rectMax, colour);
+				const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
+				const uint32_t pixelCol = pPalette ? pPalette[colourIndex] : colourIndex == 0 ? 0 : 0xffffffff;
+
+				dl->AddRectFilled(rectMin, rectMax, pixelCol);
 				dl->AddRect(rectMin, rectMax, 0xffffffff);
 
 				pos.x += rectSize;
@@ -155,8 +157,10 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 					break;
 				}
 
-				const ImU32 colour = GetCurrentPalette_Const().GetColour(colourIndex);
-				dl->AddRectFilled(rectMin, rectMax, colour);
+				const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
+				const uint32_t pixelCol = pPalette ? pPalette[colourIndex] : colourIndex == 0 ? 0 : 0xffffffff;
+
+				dl->AddRectFilled(rectMin, rectMax, pixelCol);
 				dl->AddRect(rectMin, rectMax, 0xffffffff);
 
 				pos.x += rectSize * 2.0f;

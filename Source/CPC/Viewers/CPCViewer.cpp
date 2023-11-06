@@ -133,15 +133,18 @@ void FCpcViewer::Draw()
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 
-	// draw line around the screen area.
-	if (bDrawScreenExtents)
+	if (ImGui::IsItemHovered())
 	{
-		const float x_min = Clamp(pos.x + (ScreenEdgeL * scale), pos.x, pos.x + (TextureWidth * scale));
-		const float x_max = Clamp(pos.x + (ScreenEdgeL * scale) + (ScreenWidth * scale), pos.x, pos.x + (TextureWidth * scale));
-		const float y_min = Clamp(pos.y + (ScreenTop * scale), pos.y, pos.y + (TextureHeight * scale));
-		const float y_max = Clamp(pos.y + (ScreenTop * scale) + (ScreenHeight * scale), pos.y, pos.y + (TextureHeight * scale));
+		// draw line around the screen area.
+		if (bDrawScreenExtents)
+		{
+			const float x_min = Clamp(pos.x + (ScreenEdgeL * scale), pos.x, pos.x + (TextureWidth * scale));
+			const float x_max = Clamp(pos.x + (ScreenEdgeL * scale) + (ScreenWidth * scale), pos.x, pos.x + (TextureWidth * scale));
+			const float y_min = Clamp(pos.y + (ScreenTop * scale), pos.y, pos.y + (TextureHeight * scale));
+			const float y_max = Clamp(pos.y + (ScreenTop * scale) + (ScreenHeight * scale), pos.y, pos.y + (TextureHeight * scale));
 
-		dl->AddRect(ImVec2(x_min, y_min), ImVec2(x_max, y_max), 0xffffffff, 0, 0, 1 * scale);
+			dl->AddRect(ImVec2(x_min, y_min), ImVec2(x_max, y_max), 0xffffffff, 0, 0, 1 * scale);
+		}
 	}
 
 	// colourize scanlines depending on the screen mode

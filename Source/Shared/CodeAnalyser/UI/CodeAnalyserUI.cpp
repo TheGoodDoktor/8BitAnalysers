@@ -967,6 +967,58 @@ bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState
 	return bChanged;
 }
 
+bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int requiredNumColors)
+{
+	int index = paletteEntryIndex;
+	const std::string palettePreview = "Palette " + std::to_string(index);
+	const char* pComboPreview = index == -1 ? pFirstItemLabel : palettePreview.c_str();
+	
+	bool bChanged = false;
+	if (ImGui::BeginCombo(pLabel, pComboPreview))
+	{
+		if (ImGui::Selectable(pFirstItemLabel, index == -1))
+		{
+			paletteEntryIndex = -1;
+		}
+
+		const int numPalettes = GetNoPaletteEntries();
+		for (int p = 0; p < numPalettes; p++)
+		{
+			if (const FPaletteEntry* pEntry = GetPaletteEntry(p))
+			{
+				if (pEntry->NoColours == requiredNumColors)
+				{
+					const std::string str = "Palette " + std::to_string(p);
+					const bool isSelected = (index == p);
+					if (ImGui::Selectable(str.c_str(), isSelected))
+					{
+						paletteEntryIndex = p;
+						bChanged = true;
+					}
+				}
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+	return bChanged;
+}
+
+EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat)
+{
+	switch (bitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+		return EDataItemDisplayType::Bitmap;
+	case EBitmapFormat::ColMap2Bpp_CPC:
+		return  EDataItemDisplayType::ColMap2Bpp_CPC;
+	case EBitmapFormat::ColMap4Bpp_CPC:
+		return  EDataItemDisplayType::ColMap4Bpp_CPC;
+	case EBitmapFormat::ColMap2Bpp_C64:
+		return  EDataItemDisplayType::ColMap2Bpp_C64;
+	}
+}
+
 void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
 	const FCodeAnalysisItem& item = viewState.GetCursorItem();
@@ -1428,47 +1480,43 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	{
 		formattingOptions.DataType = EDataType::Bitmap;
 		
-		bool bBitmapOptionsChanged = DrawBitmapFormatCombo(viewState.CurBitmapFormat, state);
+		static int paletteNo = -1;
+		if (DrawBitmapFormatCombo(viewState.CurBitmapFormat, state))
+			paletteNo = -1;
 
 		static int size[2];
-		bBitmapOptionsChanged |= ImGui::InputInt2("Bitmap Size(X,Y)", size);
+		ImGui::InputInt2("Bitmap Size(X,Y)", size);
 			
-		if (bBitmapOptionsChanged || bDataTypeChanged)
-		{
-			switch (viewState.CurBitmapFormat)
-			{
-			case EBitmapFormat::Bitmap_1Bpp:
-				formattingOptions.DisplayType = EDataItemDisplayType::Bitmap;
-				break;
-			case EBitmapFormat::ColMap2Bpp_CPC:
-				formattingOptions.DisplayType = EDataItemDisplayType::ColMap2Bpp_CPC;
-				break;
-			case EBitmapFormat::ColMap4Bpp_CPC:
-				formattingOptions.DisplayType = EDataItemDisplayType::ColMap4Bpp_CPC;
-				break;
-			case EBitmapFormat::ColMap2Bpp_C64:
-				formattingOptions.DisplayType = EDataItemDisplayType::ColMap2Bpp_C64;
-				break;
-			}
+		formattingOptions.DisplayType = GetDisplayTypeForBitmapFormat(viewState.CurBitmapFormat);
 
-			int pixelsPerByte = 0;
-			switch (formattingOptions.DisplayType)
-			{
-			case EDataItemDisplayType::Bitmap: // 1 bpp
-				pixelsPerByte = 8;
-				break;
-			case EDataItemDisplayType::ColMap2Bpp_CPC: // 2 bpp
-				pixelsPerByte = 4;
-				break;
-			case EDataItemDisplayType::ColMap4Bpp_CPC: // 4 bpp
-				pixelsPerByte = 2;
-				break;
-			case EDataItemDisplayType::ColMap2Bpp_C64: // 2 bpp
-				pixelsPerByte = 4;
-				break;
-			}
-			formattingOptions.ItemSize = std::max(1, size[0] / pixelsPerByte);
-			formattingOptions.NoItems = size[1];
+		int pixelsPerByte = 8;
+		int colorsPerPixel = 0;
+		switch (formattingOptions.DisplayType)
+		{
+		case EDataItemDisplayType::Bitmap: // 1 bpp
+			pixelsPerByte = 8;
+			colorsPerPixel = 0;
+			break;
+		case EDataItemDisplayType::ColMap2Bpp_CPC: // 2 bpp
+			pixelsPerByte = 4;
+			colorsPerPixel = 4;
+			break;
+		case EDataItemDisplayType::ColMap4Bpp_CPC: // 4 bpp
+			pixelsPerByte = 2;
+			colorsPerPixel = 16;
+			break;
+		case EDataItemDisplayType::ColMap2Bpp_C64: // 2 bpp
+			pixelsPerByte = 4;
+			colorsPerPixel = 4;
+			break;
+		}
+		formattingOptions.ItemSize = std::max(1, size[0] / pixelsPerByte);
+		formattingOptions.NoItems = size[1];
+
+		if (colorsPerPixel > 0)
+		{
+			DrawPaletteCombo("Palette", "None", paletteNo, colorsPerPixel);
+			formattingOptions.PaletteNo = paletteNo;
 		}
 		break;
 	}

@@ -791,14 +791,6 @@ bool FSpectrumEmu::Init(const FSpectrumConfig& config)
 	debugger.RegisterEventType((int)EEventType::OutputBeeper, "Output Beeper", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::OutputMic, "Output Mic", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
 
-	// Setup palette
-	// This doesn't currently serve any purpose and is just for demonstration purposes.
-	GetCurrentPalette().SetColourCount(16);
-	for (int i = 0; i < 8; i++)
-		GetCurrentPalette().SetColour(i, CodeAnalysis.Config.CharacterColourLUT[i]);
-
-	SetCurrentPalette(FPalette(CodeAnalysis.Config.CharacterColourLUT, 8));
-
 	// Setup Memory Analyser
 	CodeAnalysis.MemoryAnalyser.AddROMArea(kROMStart, kROMEnd);
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);

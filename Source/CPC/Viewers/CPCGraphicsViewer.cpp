@@ -3,6 +3,8 @@
 
 #include <Util/GraphicsView.h>
 #include <CodeAnalyser/CodeAnalyser.h>
+#include "CPCGraphicsView.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 #include "../CPCEmu.h"
 
@@ -10,6 +12,45 @@ void FCPCGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysis, FCpcEmu* pEmu)
 {
 	pCpcEmu = pEmu;
 	FGraphicsViewer::Init(pCodeAnalysis);
+	BitmapFormat = EBitmapFormat::ColMap2Bpp_CPC;
+
+#if 0
+	// test views
+	pTestCPCGraphicsView = new FCpcGraphicsView(32, 32);
+	pTestCPCGraphicsView->Clear(0xfffff00);
+
+	// test views
+	pTestGraphicsView = new FGraphicsView(128, 128);
+	pTestGraphicsView->Clear(0xfffff00);
+#endif
+}
+
+void FCPCGraphicsViewer::Draw()
+{
+	if (ImGui::Begin("Graphics View"))
+	{
+		if (ImGui::BeginTabBar("GraphicsViewTabBar"))
+		{
+			if (ImGui::BeginTabItem("GFX"))
+			{
+				DrawCharacterGraphicsViewer();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Screen"))
+			{
+				DrawScreenViewer();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Palette"))
+			{
+				DrawPaletteViewer();
+				ImGui::EndTabItem();
+			}
+		}
+		ImGui::EndTabBar();
+	}
+
+	ImGui::End();
 }
 
 // Amstrad CPC specific implementation
@@ -17,6 +58,34 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 {
 	UpdateScreenPixelImage();
 	pScreenView->Draw();
+
+#if 0
+	const uint32_t* pPalette = pCpcEmu->Screen.GetCurrentPalette().GetData();
+	if (1)
+	{
+		// 1943
+		// mode 0
+		const uint16_t spriteAddress = 0x585f;
+		const uint8_t* ptr = pCpcEmu->GetMemPtr(spriteAddress);
+		pTestCPCGraphicsView->Draw4BppWideImageAt(ptr, 0, 0, 14, 21, pPalette);
+		pTestCPCGraphicsView->Draw();
+
+		pTestGraphicsView->Draw4BppWideImageAt(ptr, 32, 32, 14, 21, pPalette);
+		pTestGraphicsView->Draw();
+	}
+	if (0)
+	{
+		// laser squad
+		// mode 1
+		const uint16_t spriteAddress = 0xafbf;
+		const uint8_t* ptr = pCpcEmu->GetMemPtr(spriteAddress);
+		pTestCPCGraphicsView->Draw2BppImageAt(ptr, 0, 0, 16, 16, pPalette);
+		pTestCPCGraphicsView->Draw();
+
+		pTestGraphicsView->Draw2BppImageAt(ptr, 32, 32, 16, 16, pPalette);
+		pTestGraphicsView->Draw();
+	}
+#endif
 }
 
 // get offset into screen ram for a given horizontal pixel line (scan line)
@@ -47,17 +116,10 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 	const FCodeAnalysisState& state = GetCodeAnalysis();
 	const float fontSize = ImGui::GetFontSize();
 
-	static int palette = -1;
-	if (ImGui::Button("Create palette"))
-	{
-		palette = GetPaletteNo(GetCurrentPalette_Const().GetData(), pCpcEmu->CpcEmuState.ga.video.mode == 0 ? 16 : 4);
-	}
-	ImGui::Text("Palette %d", palette);
-
 	// todo: deal with Bank being set
 	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
 
-	if (ImGui::Button("Set From CRTC Registers"))
+	if (ImGui::Button("Get From CRTC Registers"))
 	{
 		DisplayAddress = pCpcEmu->Screen.GetScreenAddrStart();
 		WidthChars = crtc.h_displayed;
@@ -171,4 +233,56 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 			}
 		}
 	}
+}
+
+void FCPCGraphicsViewer::DrawPalette(const uint32_t* palette, int numColours)
+{
+	const float scale = ImGui_GetScaling();
+	const ImVec2 size(14 * scale, 14 * scale);
+
+	for (int c = 0; c < numColours; c++)
+	{
+		ImGui::PushID(c);
+		const uint32_t colour = *(palette + c);
+		ImGui::ColorButton("##palette_color", ImColor(colour), ImGuiColorEditFlags_NoAlpha |ImGuiColorEditFlags_Uint8, size);
+		ImGui::PopID();
+		if (c < numColours-1)
+			ImGui::SameLine();
+	}
+}
+
+void FCPCGraphicsViewer::DrawPaletteViewer()
+{
+	const uint32_t* pCurrentPalette = pCpcEmu->Screen.GetCurrentPalette().GetData();
+
+	ImGui::Text("Current Palette: ");
+	DrawPalette(pCurrentPalette, pCpcEmu->CpcEmuState.ga.video.mode == 0 ? 16 : 4);
+	ImGui::Separator();
+
+	static int paletteIndex = -1;
+	if (ImGui::Button("Store Current Palette"))
+	{
+		paletteIndex = GetPaletteNo(pCurrentPalette, pCpcEmu->CpcEmuState.ga.video.mode == 0 ? 16 : 4);
+	}
+
+	const float scale = ImGui_GetScaling();
+
+	int numPalettes = GetNoPaletteEntries();
+	ImGui::Text("Palettes Stored: %d", GetNoPaletteEntries());
+
+	for (int p = 0; p < numPalettes; p++)
+	{
+		if (const FPaletteEntry* pEntry = GetPaletteEntry(p))
+		{
+			const uint32_t* palette = GetPaletteFromPaletteNo(p);
+			ImGui::Text("%02d: ", p);
+			ImGui::SameLine();
+			DrawPalette(palette, pEntry->NoColours);
+		}
+	}
+}
+
+const uint32_t* FCPCGraphicsViewer::GetCurrentPalette() const 
+{ 
+	return pCpcEmu->Screen.GetCurrentPalette().GetData();
 }

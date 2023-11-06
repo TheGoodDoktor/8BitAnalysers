@@ -48,6 +48,10 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
 bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state);
+bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState& state);
+bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int requiredNumColors);
+EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat);
+
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId);
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);

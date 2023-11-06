@@ -7,6 +7,21 @@
 
 class FCpcEmu;
 
+// Palette
+struct FPalette
+{
+	FPalette();
+	bool operator == (const FPalette& p) const;
+	void SetColourCount(int count);
+	void SetColour(int colourIndex, uint32_t rgb);
+	size_t GetColourCount() const;
+	uint32_t GetColour(int colourIndex) const;
+	const uint32_t* GetData() const;
+
+protected:
+	std::vector<uint32_t> Colours;
+};
+
 // A class of helper functions related to the CPC screen.
 class FCPCScreen
 {
@@ -14,6 +29,9 @@ public:
 	void Init(FCpcEmu* pEmu);
 	void Tick();
 	void Reset();
+
+	const FPalette& GetCurrentPalette() const { return CurrentPalette; }
+	FPalette& GetCurrentPalette() { return CurrentPalette; }
 
 	int GetTopScanline() const { return ScreenTopScanline; }
 	int GetLeftEdgeScanline() const { return ScreenLeftEdgeOffset; }
@@ -48,6 +66,7 @@ private:
 	int ScreenTopScanline = 0;
 	int ScreenLeftEdgeOffset = 0;
 
+	FPalette CurrentPalette;
 	FCpcEmu* pCpcEmu;
 };
 
