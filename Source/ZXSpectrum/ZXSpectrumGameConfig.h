@@ -58,5 +58,6 @@ struct FZXSpectrumGameConfig : FGameConfig
 };
 
 FZXSpectrumGameConfig* CreateNewZXGameConfigFromSnapshot(const FGameSnapshot& snapshot);
+FZXSpectrumGameConfig* CreateNewZXBasicConfig(void);
 bool LoadZXSpectrumGameConfigs(FSpectrumEmu* pUI);
 bool LoadPOKFile(FZXSpectrumGameConfig& config, const char* fname);

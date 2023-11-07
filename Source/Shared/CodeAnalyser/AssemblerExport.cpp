@@ -1,5 +1,4 @@
 #include "CodeAnalyser/CodeAnalyser.h"
-#include "../SpectrumConstants.h"
 #include "Util/Misc.h"
 #include <util/z80dasm.h>
 #include "Debug/DebugLog.h"
@@ -45,7 +44,7 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef ad
 
 uint16_t g_DbgAddress = 0xEA71;
 
-bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint16_t startAddr /* = kScreenAttrMemEnd + 1*/, uint16_t endAddr /* = 0xffff */)
+bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint16_t startAddr , uint16_t endAddr)
 {
 	FILE* fp =fopen(pTextFileName, "wt");
 

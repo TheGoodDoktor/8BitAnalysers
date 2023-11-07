@@ -453,6 +453,7 @@ bool FC64Emulator::LoadGameState(const char* fname)
 		free(pSnapshot);
 		return bSuccess;
 	}
+    return false;
 }
 
 bool FC64Emulator::SaveCurrentGame(void)
@@ -632,12 +633,24 @@ void FC64Emulator::DrawEmulatorUI()
     ImGui::End();*/
 }
 
-// Add C64 specific options
-void FC64Emulator::AddPlatformOptions(void) 
+// Add C64 specific menu items
+void	FC64Emulator::FileMenuAdditions(void) 
 {
-    const FC64Config* pC64Config = GetC64GlobalConfig();
-    ImGui::MenuItem("Show H Counter", 0, &pC64Config->bShowHCounter);
-    ImGui::MenuItem("Show VIC Overlay", 0, &pC64Config->bShowVICOverlay);
+}
+
+void	FC64Emulator::SystemMenuAdditions(void) 
+{
+}
+
+void	FC64Emulator::OptionsMenuAdditions(void) 
+{
+	const FC64Config* pC64Config = GetC64GlobalConfig();
+	ImGui::MenuItem("Show H Counter", 0, &pC64Config->bShowHCounter);
+	ImGui::MenuItem("Show VIC Overlay", 0, &pC64Config->bShowVICOverlay);
+}
+
+void	FC64Emulator::WindowsMenuAdditions(void) 
+{
 }
 
 

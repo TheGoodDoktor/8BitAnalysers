@@ -76,7 +76,11 @@ public:
 	void    Tick() override;
 	void    Reset() override;
 
-	void	AddPlatformOptions(void) override;
+	void	FileMenuAdditions(void) override;
+	void	SystemMenuAdditions(void) override;
+	void	OptionsMenuAdditions(void) override;
+	void	WindowsMenuAdditions(void) override;
+
 	bool	NewGameFromSnapshot(const FGameSnapshot& gameConfig);
 
 
@@ -143,6 +147,8 @@ public:
 	//bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
 	void ResetCodeAnalysis(void);
 	bool SaveCurrentGame(void);
+	bool LoadGameState(const char* fname);
+	bool SaveGameState(const char* fname);
 	//bool LoadCodeAnalysis(const FGameInfo* pGameInfo);
 
 	// Emulator Event Handlers

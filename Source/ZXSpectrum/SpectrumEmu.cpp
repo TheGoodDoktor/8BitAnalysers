@@ -35,7 +35,6 @@
 #include "SpectrumConstants.h"
 
 #include "Exporters/SkoolFileInfo.h"
-#include "Exporters/AssemblerExport.h"
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "App.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
@@ -812,6 +811,10 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 		CodeAnalysis.IOAnalyser.AddDevice(&MemoryControl);
 	}
 
+	// default assembler settings
+	AssemblerExportStartAddress = kScreenAttrMemEnd + 1;
+	AssemblerExportEndAddress = 0xffff;
+
 	bInitialised = true;
 	return true;
 }
@@ -846,22 +849,33 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	FrameTraceViewer.Reset();
 	GraphicsViewer.Reset();
 
-	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
-	SetWindowTitle(windowTitle.c_str());
+	if(pGameConfig!=nullptr)
+	{
+		const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
+		SetWindowTitle(windowTitle.c_str());
+	}
+	else
+	{
+		SetWindowTitle(kAppTitle.c_str());
+	}
 	
 	// start up game
 	if(pActiveGame!=nullptr)
 		delete pActiveGame->pViewerData;
 	delete pActiveGame;
+	pActiveGame = nullptr;
 	
-	FGame *pNewGame = new FGame;
-	pSpectrumGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
-	pNewGame->pConfig = pGameConfig;
-	pNewGame->pViewerConfig = pSpectrumGameConfig->pViewerConfig;
-	assert(pSpectrumGameConfig->pViewerConfig != nullptr);
-	pActiveGame = pNewGame;
-	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pSpectrumGameConfig);
-	GenerateSpriteListsFromConfig(GraphicsViewer, pSpectrumGameConfig);
+	if(pGameConfig != nullptr)
+	{
+		FGame* pNewGame = new FGame;
+		pSpectrumGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
+		pNewGame->pConfig = pGameConfig;
+		pNewGame->pViewerConfig = pSpectrumGameConfig->pViewerConfig;
+		assert(pSpectrumGameConfig->pViewerConfig != nullptr);
+		pActiveGame = pNewGame;
+		pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pSpectrumGameConfig);
+		GenerateSpriteListsFromConfig(GraphicsViewer, pSpectrumGameConfig);
+	}
 
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
@@ -869,12 +883,14 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	//IOAnalysis.Reset();
 
 	// Set options from config
-	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	if (pGameConfig != nullptr)
 	{
-		CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
-		CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
+		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+		{
+			CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
+			CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
+		}
 	}
-
 	if (bLoadGameData)
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
@@ -933,7 +949,8 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
 
-	GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+	if(pGameConfig != nullptr)
+		GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 	return true;
 }
 #if 0
@@ -1030,6 +1047,114 @@ bool FSpectrumEmu::NewGameFromSnapshot(const FGameSnapshot& snapshot)
 	return false;
 }
 
+
+void FSpectrumEmu::FileMenuAdditions(void)	
+{
+	const FZXSpectrumConfig* pZXGlobalConfig = GetZXSpectrumGlobalConfig();
+#if ENABLE_RZX
+	if (ImGui::BeginMenu("New Game from RZX File"))
+	{
+		if (RZXGamesList.GetNoGames() == 0)
+		{
+			ImGui::Text("No RZX files found in RZX directory:\n\n'%s'.\n\nRZX directory is set in GlobalConfig.json", pZXGlobalConfig->RZXFolder.c_str());
+		}
+		else
+		{
+			for (int gameNo = 0; gameNo < RZXGamesList.GetNoGames(); gameNo++)
+			{
+				const FGameSnapshot& game = RZXGamesList.GetGame(gameNo);
+
+				if (ImGui::MenuItem(game.DisplayName.c_str()))
+				{
+					if (RZXManager.Load(game.FileName.c_str()))
+					{
+						FZXSpectrumGameConfig* pNewConfig = CreateNewZXGameConfigFromSnapshot(game);
+						if (pNewConfig != nullptr)
+							StartGame(pNewConfig, true);
+					}
+				}
+			}
+		}
+		ImGui::EndMenu();
+	}
+#endif
+
+	if (ImGui::MenuItem("Export Binary File"))
+	{
+		if (pActiveGame != nullptr)
+		{
+			const std::string dir = pGlobalConfig->WorkspaceRoot + "OutputBin/";
+			EnsureDirectoryExists(dir.c_str());
+			std::string outBinFname = dir + pActiveGame->pConfig->Name + ".bin";
+			uint8_t* pSpecMem = new uint8_t[65536];
+			for (int i = 0; i < 65536; i++)
+				pSpecMem[i] = ReadByte(i);
+			SaveBinaryFile(outBinFname.c_str(), pSpecMem, 65536);
+			delete[] pSpecMem;
+		}
+	}
+
+	if (ImGui::BeginMenu("Export Skool File"))
+	{
+		if (ImGui::MenuItem("Export as Hexadecimal"))
+		{
+			ExportSkoolFile(true /* bHexadecimal*/);
+		}
+		if (ImGui::MenuItem("Export as Decimal"))
+		{
+			ExportSkoolFile(false /* bHexadecimal*/);
+		}
+#ifndef NDEBUG
+		if (ImGui::BeginMenu("DEBUG"))
+		{
+			if (ImGui::MenuItem("Export ROM"))
+			{
+				ExportSkoolFile(true /* bHexadecimal */, "rom");
+			}
+			ImGui::EndMenu();
+		}
+#endif // NDEBUG
+		ImGui::EndMenu();
+	}
+
+	if (ImGui::MenuItem("Export Region Info File"))
+	{
+	}
+}
+
+void FSpectrumEmu::SystemMenuAdditions(void)
+{
+	if (ImGui::BeginMenu("Joystick"))
+	{
+		if (ImGui::MenuItem("None", 0, ZXEmuState.joystick_type == ZX_JOYSTICKTYPE_NONE))
+		{
+			ZXEmuState.joystick_type = ZX_JOYSTICKTYPE_NONE;
+		}
+		if (ImGui::MenuItem("Kempston", 0, ZXEmuState.joystick_type == ZX_JOYSTICKTYPE_KEMPSTON))
+		{
+			ZXEmuState.joystick_type = ZX_JOYSTICKTYPE_KEMPSTON;
+		}
+		if (ImGui::MenuItem("Sinclair #1", 0, ZXEmuState.joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_1))
+		{
+			ZXEmuState.joystick_type = ZX_JOYSTICKTYPE_SINCLAIR_1;
+		}
+		if (ImGui::MenuItem("Sinclair #2", 0, ZXEmuState.joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_2))
+		{
+			ZXEmuState.joystick_type = ZX_JOYSTICKTYPE_SINCLAIR_2;
+		}
+		ImGui::EndMenu();
+	}
+}
+
+void FSpectrumEmu::OptionsMenuAdditions(void)
+{
+}
+
+void FSpectrumEmu::WindowsMenuAdditions(void)
+{
+}
+
+#if 0
 void FSpectrumEmu::DrawMainMenu(double timeMS)
 {
 	ui_zx_t* pZXUI = &UIZX;
@@ -1203,10 +1328,11 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 			
 			if (pActiveGame && ImGui::MenuItem("Reload Snapshot"))
 			{
-				const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pZXGlobalConfig->SnapshotFolder128 : pZXGlobalConfig->SnapshotFolder;
-				const std::string gameFile = snapFolder + pActiveGame->pConfig->SnapshotFile;
-				GamesList.LoadGame(gameFile.c_str());
+				//const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pZXGlobalConfig->SnapshotFolder128 : pZXGlobalConfig->SnapshotFolder;
+				//const std::string gameFile = snapFolder + pActiveGame->pConfig->SnapshotFile;
+				GamesList.LoadGame(pActiveGame->pConfig->Name.c_str());
 			}
+
 			if (ImGui::MenuItem("Reset")) 
 			{
 				zx_reset(pZXUI->zx);
@@ -1511,6 +1637,8 @@ void FSpectrumEmu::DrawReplaceGameModalPopup()
 		ImGui::EndPopup();
 	}
 }
+#endif
+
 
 static void UpdateMemmap(ui_zx_t* ui)
 {
@@ -1646,7 +1774,16 @@ void FSpectrumEmu::Tick()
 
 void FSpectrumEmu::Reset()
 {
-	// TODO: Reset speccy
+	// Reset speccy
+	zx_reset(&ZXEmuState);
+	//ui_dbg_reset(&pZXUI->dbg);
+
+	FZXSpectrumGameConfig* pBasicConfig = (FZXSpectrumGameConfig * )GetGameConfigForName("ZXBasic");
+	
+	if(pBasicConfig == nullptr)
+		pBasicConfig = CreateNewZXBasicConfig();
+
+	StartGame(pBasicConfig,false);	// reset code analysis
 }
 
 void FSpectrumEmu::DrawMemoryTools()
@@ -1822,8 +1959,8 @@ void FSpectrumEmu::DrawEmulatorUI()
 	}
 	ImGui::End();
 
-	if (bShowDebugLog)
-		g_ImGuiLog.Draw("Debug Log", &bShowDebugLog);
+	//if (bShowDebugLog)
+	//	g_ImGuiLog.Draw("Debug Log", &bShowDebugLog);
 }
 
 #if 0

@@ -102,9 +102,16 @@ public:
 	//bool	StartGame(const char* pGameName);
 	void	SaveCurrentGameData();
 
-	void	DrawMainMenu(double timeMS);
-	void	DrawExportAsmModalPopup();
-	void	DrawReplaceGameModalPopup();
+	//void	DrawMainMenu(double timeMS);
+	
+	void	FileMenuAdditions(void) override;
+	void	SystemMenuAdditions(void)  override;
+	void	OptionsMenuAdditions(void) override;
+	void	WindowsMenuAdditions(void)  override;
+
+
+	//void	DrawExportAsmModalPopup();
+	//void	DrawReplaceGameModalPopup();
 	void	DrawCheatsUI();
 	bool	ImportSkoolFile(const char* pFilename, const char* pOutSkoolInfoName = nullptr, FSkoolFileInfo* pSkoolInfo=nullptr);
 	bool	ExportSkoolFile(bool bHexadecimal, const char* pName = nullptr);
@@ -207,12 +214,12 @@ public:
 private:
 	//std::vector<FViewerBase*>	Viewers;
 
-	bool	bReplaceGamePopup = false;
-	bool	bExportAsm = false;
+	//bool	bReplaceGamePopup = false;
+	//bool	bExportAsm = false;
 
-	int		ReplaceGameSnapshotIndex = 0;
+	//int		ReplaceGameSnapshotIndex = 0;
 
-	bool	bShowDebugLog = false;
+	//bool	bShowDebugLog = false;
 	bool	bInitialised = false;
 };
 

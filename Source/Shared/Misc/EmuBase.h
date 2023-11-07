@@ -39,7 +39,7 @@ public:
 	virtual void    Reset();
 	virtual void	AppFocusCallback(int focused){}
 
-	virtual void	AddPlatformOptions(void){}
+
 	virtual bool	NewGameFromSnapshot(const FGameSnapshot& gameConfig) = 0;
 	virtual bool	StartGame(FGameConfig* pConfig, bool bLoadGame) = 0;
 
@@ -65,9 +65,21 @@ public:
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
 
 protected:
-	void	FileMenu();
-	void	OptionsMenu();
-	void	WindowsMenu();
+	void			FileMenu();
+	virtual void	FileMenuAdditions(void) {}	// system specific additions
+
+	void			SystemMenu();
+	virtual void	SystemMenuAdditions(void) {}	// system specific additions
+	
+	void			OptionsMenu();
+	virtual void	OptionsMenuAdditions(void) {}	// system specific additions
+	
+	void			WindowsMenu();
+	virtual void	WindowsMenuAdditions(void) {}	// system specific additions
+
+
+	void			DrawExportAsmModalPopup(void);
+	void			DrawReplaceGameModalPopup(void);
 
 	FGlobalConfig*		pGlobalConfig = nullptr;
 	FGameConfig*		pCurrentGameConfig = nullptr;
@@ -81,8 +93,17 @@ protected:
 	int					HighlightScanline = -1;
 
 	std::vector<FViewerBase*>	Viewers;
+
+	// Assembler Export
+	uint16_t			AssemblerExportStartAddress = 0x0000;
+	uint16_t			AssemblerExportEndAddress = 0xffff;
 public:
 	bool		bShowImGuiDemo = false;
 	bool		bShowImPlotDemo = false;
+private:
+	bool		bShowDebugLog = false;
+	bool		bReplaceGamePopup = false;
+	bool		bExportAsm = false;
 
+	int		ReplaceGameSnapshotIndex = 0;
 };

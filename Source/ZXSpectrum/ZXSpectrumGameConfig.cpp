@@ -76,6 +76,18 @@ FZXSpectrumGameConfig* CreateNewZXGameConfigFromSnapshot(const FGameSnapshot& sn
 	return pNewConfig;
 }
 
+FZXSpectrumGameConfig* CreateNewZXBasicConfig(void)
+{
+	FZXSpectrumGameConfig* pNewConfig = new FZXSpectrumGameConfig;
+
+	pNewConfig->Name = "ZXBasic";
+	pNewConfig->SnapshotFile = "";
+	pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
+
+	return pNewConfig;
+}
+
+
 enum PokeFileToken
 {
 	Description = 'N',

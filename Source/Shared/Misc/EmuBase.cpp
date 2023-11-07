@@ -2,9 +2,12 @@
 
 #include <imgui.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
+#include <CodeAnalyser/AssemblerExport.h>
 #include "GameConfig.h"
 
 #include "Debug/DebugLog.h"
+#include "Debug/ImGuiLog.h"
+#include "Util/FileUtil.h"
 
 void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 {
@@ -167,6 +170,10 @@ void FEmuBase::DrawUI()
         }
 
     }
+
+	if (bShowDebugLog)
+		g_ImGuiLog.Draw("Debug Log", &bShowDebugLog);
+
     DrawEmulatorUI();
 }
 
@@ -235,11 +242,14 @@ void FEmuBase::FileMenu()
         ImGui::EndMenu();
     }
 
-    ImGui::Separator();
-    if (ImGui::MenuItem("Reset"))
-    {
-        Reset();
-    }
+	if (ImGui::MenuItem("Export ASM File"))
+	{
+		// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
+		bExportAsm = true;
+	}
+    
+	ImGui::Separator();
+	FileMenuAdditions();
 }
 
 void FEmuBase::OptionsMenu()
@@ -308,17 +318,33 @@ void FEmuBase::OptionsMenu()
 
 #ifndef NDEBUG
     ImGui::MenuItem("Show Config", 0, &CodeAnalysis.Config.bShowConfigWindow);
-    //TODO: ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
-    //TODO: ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
+    ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
+    ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
 #endif // NDEBUG
 
     ImGui::Separator();
-    AddPlatformOptions();
+    OptionsMenuAdditions();
+}
+
+void FEmuBase::SystemMenu()
+{
+	if (pCurrentGameConfig && ImGui::MenuItem("Reload Snapshot"))
+	{
+		GamesList.LoadGame(pCurrentGameConfig->Name.c_str());
+	}
+
+	if (ImGui::MenuItem("Reset"))
+	{
+		Reset();
+	}
+
+	ImGui::Separator();
+	SystemMenuAdditions();
 }
 
 void FEmuBase::WindowsMenu()
 {
-    //TODO: ImGui::MenuItem("DebugLog", 0, &bShowDebugLog);
+    ImGui::MenuItem("DebugLog", 0, &bShowDebugLog);
     if (ImGui::BeginMenu("Code Analysis"))
     {
         for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
@@ -336,6 +362,9 @@ void FEmuBase::WindowsMenu()
         ImGui::MenuItem(Viewer->GetName(), 0, &Viewer->bOpen);
 
     }
+
+	ImGui::Separator();
+	WindowsMenuAdditions();
 }
 
 void FEmuBase::DrawMainMenu()
@@ -347,6 +376,12 @@ void FEmuBase::DrawMainMenu()
             FileMenu();
             ImGui::EndMenu();
         }
+
+		if (ImGui::BeginMenu("System"))
+		{
+			SystemMenu();
+			ImGui::EndMenu();
+		}
 
         if (ImGui::BeginMenu("Options"))
         {
@@ -360,9 +395,116 @@ void FEmuBase::DrawMainMenu()
             ImGui::EndMenu();
         }
 
+		// draw emu timings
+		const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
+		ImGui::SameLine(ImGui::GetWindowWidth() - 120);
+		if (CodeAnalysis.Debugger.IsStopped())
+			ImGui::Text("emu: stopped");
+		else
+			ImGui::Text("emu: %.2fms", timeMS);
+
         ImGui::EndMainMenuBar();
     }
+
+	// Draw any modal popups that have been requested from clicking on menu items.
+	// This is a workaround for an open bug.
+	// https://github.com/ocornut/imgui/issues/331
+	DrawExportAsmModalPopup();
+	DrawReplaceGameModalPopup();
 }
+
+void FEmuBase::DrawExportAsmModalPopup()
+{
+	if (bExportAsm)
+	{
+		ImGui::OpenPopup("Export ASM File");
+	}
+	if (ImGui::BeginPopupModal("Export ASM File", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+        // TODO: get defaults from system
+        // Could initialise member variables
+		//static ImU16 addrStart = 0;
+		//static ImU16 addrEnd = 0xffff;
+
+		ImGui::Text("Address range to export");
+		bool bHex = GetNumberDisplayMode() != ENumberDisplayMode::Decimal;
+		const char* formatStr = bHex ? "%x" : "%u";
+		ImGuiInputTextFlags flags = bHex ? ImGuiInputTextFlags_CharsHexadecimal : ImGuiInputTextFlags_CharsDecimal;
+
+		ImGui::InputScalar("Start", ImGuiDataType_U16, &AssemblerExportStartAddress, NULL, NULL, formatStr, flags);
+		ImGui::SameLine();
+		ImGui::InputScalar("End", ImGuiDataType_U16, &AssemblerExportEndAddress, NULL, NULL, formatStr, flags);
+
+		if (ImGui::Button("Export", ImVec2(120, 0)))
+		{
+			if (AssemblerExportEndAddress > AssemblerExportEndAddress)
+			{
+				if (pCurrentGameConfig != nullptr)
+				{
+					const std::string dir = pGlobalConfig->WorkspaceRoot + "OutputASM/";
+					EnsureDirectoryExists(dir.c_str());
+
+					char addrRangeStr[16];
+					if (bHex)
+						snprintf(addrRangeStr, 16, "_%x_%x", AssemblerExportEndAddress, AssemblerExportEndAddress);
+					else
+						snprintf(addrRangeStr, 16, "_%u_%u", AssemblerExportEndAddress, AssemblerExportEndAddress);
+
+					const std::string outBinFname = dir + pCurrentGameConfig->Name + addrRangeStr + ".asm";
+
+					ExportAssembler(CodeAnalysis, outBinFname.c_str(), AssemblerExportEndAddress, AssemblerExportEndAddress);
+				}
+				ImGui::CloseCurrentPopup();
+			}
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void FEmuBase::DrawReplaceGameModalPopup()
+{
+	if (bReplaceGamePopup)
+	{
+		ImGui::OpenPopup("Overwrite Game?");
+	}
+	if (ImGui::BeginPopupModal("Overwrite Game?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Do you want to overwrite existing game data?\nAny reverse engineering progress will be lost!\n\n");
+		ImGui::Separator();
+
+		if (ImGui::Button("Overwrite", ImVec2(120, 0)))
+		{
+			if (GamesList.LoadGame(ReplaceGameSnapshotIndex))
+			{
+				const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
+
+				for (const auto& pGameConfig : GetGameConfigs())
+				{
+					if (pGameConfig->SnapshotFile == game.DisplayName)
+					{
+						NewGameFromSnapshot(game);
+						break;
+					}
+				}
+			}
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+
 
 // Viewers
 void FEmuBase::AddViewer(FViewerBase* pViewer)
