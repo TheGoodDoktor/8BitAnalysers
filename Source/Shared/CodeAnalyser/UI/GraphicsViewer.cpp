@@ -19,6 +19,13 @@ static int kGraphicsViewerHeight = 512;
 
 int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
 
+namespace ImGui
+{
+	// SetItemUsingMouseWheel() has been replaced by SetItemKeyOwner() in v1.89.1
+	// https://github.com/ocornut/imgui/pull/2891#issuecomment-1307753952
+	extern void SetItemUsingMouseWheel();
+}
+
 bool FGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysisState)
 {
 	pCodeAnalysis = pCodeAnalysisState;
@@ -282,6 +289,8 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 	const int xSizeChars = XSizePixels >> 3;
 	const int bpp = GetBppForBitmapFormat(BitmapFormat);
 
+	GraphicColumnSizeBytes = xSizeChars * ycount * YSizePixels * bpp;
+
 	if (ViewMode == GraphicsViewMode::CharacterBitmap)
 	{
 		for (int x = 0; x < xcount; x++)
@@ -290,7 +299,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			assert(bankId != -1);
 			DrawMemoryBankAsGraphicsColumn(bankId, address & 0x3fff, x * XSizePixels, xSizeChars);
 
-			address += xSizeChars * ycount * YSizePixels * bpp;
+			address += GraphicColumnSizeBytes;
 		}
 	}
 	else if (ViewMode == GraphicsViewMode::CharacterBitmapWinding)
@@ -464,8 +473,30 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	ImGui::SameLine();
 
+	static bool bVSliderFineControl = false;
 	// simpler slider
-	ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff);
+	if (ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff))
+	{
+		if (!bVSliderFineControl)
+		{ 
+			addrInput = ((int)((float)addrInput / (float)GraphicColumnSizeBytes) * GraphicColumnSizeBytes);
+		}
+	}
+	ImGui::SetItemUsingMouseWheel();
+
+	const int pixelsPerByte = 8 / bpp;
+	const int graphicsUnitSize = (XSizePixels / pixelsPerByte) * YSizePixels;
+	if (ImGui::IsAnyItemHovered())
+	{
+		float wheel = ImGui::GetIO().MouseWheel;
+		if (wheel)
+		{
+			addrInput += (int)wheel * GraphicColumnSizeBytes;
+			addrInput = std::min(std::max(0, addrInput), 0xffff);
+		}
+	}
+	ImGui::SameLine();
+	ImGui::Checkbox("Fine", &bVSliderFineControl);
 
 	ImGui::SetNextItemWidth(120.0f * scale);
 	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
@@ -495,12 +526,11 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		}
 	}
 
-	const int pixelsPerByte = 8 / bpp;
-	const int graphicsUnitSize = (XSizePixels / pixelsPerByte) * YSizePixels;
 
 	// step address based on image attributes
 	StepInt("Step Line", addrInput, xChars * bpp);
 	StepInt("Step Image", addrInput, graphicsUnitSize);
+	StepInt("Step Column", addrInput, GraphicColumnSizeBytes);
 
 	// draw 64 * 8 bytes
 	const float kNumSize = 80.0f * scale;	// size for number GUI widget

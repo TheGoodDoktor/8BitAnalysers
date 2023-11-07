@@ -76,6 +76,7 @@ protected:
 	int				YSizePixels = 8;			// Image Y Size in pixels
 	int				ImageCount = 0;	// how many images?
 	bool			YSizePixelsFineCtrl = false;
+	int				GraphicColumnSizeBytes = 0;
 
 	std::string		ImageSetName;
 
