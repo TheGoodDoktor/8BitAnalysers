@@ -17,6 +17,8 @@ static int kMaxImageSize = 256;
 static int kGraphicsViewerWidth = 256;
 static int kGraphicsViewerHeight = 512;
 
+int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
+
 bool FGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysisState)
 {
 	pCodeAnalysis = pCodeAnalysisState;
@@ -191,11 +193,8 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 					const uint8_t* pPixels = &pBank->Memory[bankAddr];
 					const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 
-					// todo: indicate r/w with heatmap?
 					pGraphicsView->Draw2BppImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
 
-					//this doesnt display correctly.
-					// it repeats images from the previous column in the next column
 					memAddr += 2;
 					break;
 				}
@@ -207,8 +206,6 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 
 					pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
 
-					//this doesnt display correctly.
-					// it repeats images from the previous column in the next column
 					memAddr += 4;
 					break;
 				}
@@ -257,11 +254,13 @@ bool StepInt(const char* title, int& val, int stepAmount)
 	ImGui::PushID(title);
 	ImGui::Text(title);
 	ImGui::SameLine();
+	ImGui::PushButtonRepeat(true);
 	if (ImGui::Button("<<"))
 		val -= stepAmount;
 	ImGui::SameLine();
 	if (ImGui::Button(">>"))
 		val += stepAmount;
+	ImGui::PopButtonRepeat();
 	ImGui::PopID();
 
 	return val != oldVal;
@@ -281,6 +280,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 
 	int address = AddressOffset;
 	const int xSizeChars = XSizePixels >> 3;
+	const int bpp = GetBppForBitmapFormat(BitmapFormat);
 
 	if (ViewMode == GraphicsViewMode::CharacterBitmap)
 	{
@@ -290,7 +290,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			assert(bankId != -1);
 			DrawMemoryBankAsGraphicsColumn(bankId, address & 0x3fff, x * XSizePixels, xSizeChars);
 
-			address += xSizeChars * ycount * YSizePixels;
+			address += xSizeChars * ycount * YSizePixels * bpp;
 		}
 	}
 	else if (ViewMode == GraphicsViewMode::CharacterBitmapWinding)
@@ -332,22 +332,6 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 		}
 		address += graphicsUnitSize;
 	}
-}
-
-int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
-{
-	switch (bitmapFormat)
-	{
-	case EBitmapFormat::Bitmap_1Bpp:
-		return 1;
-	case EBitmapFormat::ColMap2Bpp_CPC:
-		return 2;
-	case EBitmapFormat::ColMap4Bpp_CPC:
-		return 4;
-	case EBitmapFormat::ColMap2Bpp_C64:
-		return 2;
-	}
-	return 1;
 }
 
 void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
@@ -515,7 +499,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	const int graphicsUnitSize = (XSizePixels / pixelsPerByte) * YSizePixels;
 
 	// step address based on image attributes
-	StepInt("Step Line", addrInput, xChars);
+	StepInt("Step Line", addrInput, xChars * bpp);
 	StepInt("Step Image", addrInput, graphicsUnitSize);
 
 	// draw 64 * 8 bytes
@@ -553,11 +537,17 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 		ImGui::InputText("Image Set Name", &ImageSetName);
 
+
 		// TODO: put in function?
 		const FAddressRef baseAddrRef = bShowPhysicalMemory ? state.AddressRefFromPhysicalAddress(addrInput) : FAddressRef(pBank->Id, addrInput);
 
 		if (ImGui::Button("Format Memory"))
 		{
+			if (ImageSetName.empty())
+			{
+				ImageSetName = "Unnamed";
+			}
+
 			FAddressRef imageAddressRef = baseAddrRef;	// updated per image
 
 			for (int i = 0; i < ImageCount; i++)
@@ -568,18 +558,15 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 				format.ClearCodeInfo = true;
 
 				// Generate label
-				if (ImageSetName.empty() == false)
+				if (ImageCount > 1)
 				{
-					if (ImageCount > 1)
-					{
-						char numStr[8];
-						sprintf(numStr, "_%d", i);
-						format.LabelName = ImageSetName + numStr;
-					}
-					else
-					{
-						format.LabelName = ImageSetName;
-					}
+					char numStr[8];
+					sprintf(numStr, "_%d", i);
+					format.LabelName = ImageSetName + numStr;
+				}
+				else
+				{
+					format.LabelName = ImageSetName;
 				}
 				
 				int paletteToFormat = PaletteNo;
@@ -636,9 +623,29 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 				{
 					for (int xp = 0; xp < xChars; xp++)
 					{
-						const uint8_t charLine = state.ReadByte(itemAddress);
-						pItemView->DrawCharLine(charLine, xp * 8, yp, 0xffffffff, 0);
-						state.AdvanceAddressRef(itemAddress, 1);
+						switch (BitmapFormat)
+						{
+							case EBitmapFormat::Bitmap_1Bpp:
+							{
+								const uint8_t charLine = state.ReadByte(itemAddress);
+								pItemView->DrawCharLine(charLine, xp * 8, yp, 0xffffffff, 0);
+								state.AdvanceAddressRef(itemAddress, 1);
+								break;
+							}
+							case EBitmapFormat::ColMap2Bpp_CPC:
+							{
+								const uint16_t charLine = state.ReadWord(itemAddress);
+								const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+								pItemView->Draw2BppImageAt((uint8_t*)&charLine, xp * 8, yp, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+								state.AdvanceAddressRef(itemAddress, 2);
+								break;
+							}
+							case EBitmapFormat::ColMap4Bpp_CPC:
+							{
+								// todo
+								break;
+							}
+						}
 					}
 				}
 				pItemView->UpdateTexture();
@@ -772,9 +779,34 @@ void FGraphicsViewer::DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* 
 	{
 		for (int xp = 0; xp < xChars; xp++)
 		{
-			const uint8_t charLine = state.ReadByte(itemAddress);
-			pView->DrawCharLine(charLine, x + (xp * 8), y + yp, 0xffffffff, 0);
-			state.AdvanceAddressRef(itemAddress, 1);
+			switch (BitmapFormat)
+			{
+				case EBitmapFormat::Bitmap_1Bpp:
+				{
+					const uint8_t charLine = state.ReadByte(itemAddress);
+					pView->DrawCharLine(charLine, x + (xp * 8), y + yp, 0xffffffff, 0);
+					state.AdvanceAddressRef(itemAddress, 1);
+					break;
+				}
+				case EBitmapFormat::ColMap2Bpp_CPC:
+				{
+					const uint16_t charLine = state.ReadWord(itemAddress);
+					const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+					pGraphicsView->Draw2BppImageAt((uint8_t*)&charLine, x + (xp * 8), y + yp, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+					state.AdvanceAddressRef(itemAddress, 2);
+					break;
+				}
+				case EBitmapFormat::ColMap4Bpp_CPC:
+				{
+					break;
+				}
+			}
+
+
+
+
+
+			
 		}
 	}
 }
@@ -819,4 +851,20 @@ bool FGraphicsViewer::ExportImages(void)
 	}
 
 	return true;
+}
+
+int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
+{
+	switch (bitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+		return 1;
+	case EBitmapFormat::ColMap2Bpp_CPC:
+		return 2;
+	case EBitmapFormat::ColMap4Bpp_CPC:
+		return 4;
+	case EBitmapFormat::ColMap2Bpp_C64:
+		return 2;
+	}
+	return 1;
 }
