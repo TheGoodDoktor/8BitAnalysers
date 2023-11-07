@@ -33,7 +33,7 @@ int FCPCScreen::GetScreenModeForYPos(int yPos) const
 const FPalette& FCPCScreen::GetPaletteForScanline(int scanline) const
 {
 	if (scanline < 0 || scanline >= AM40010_DISPLAY_HEIGHT)
-		return GetCurrentPalette_Const();
+		return CurrentPalette;
 
 	return PalettePerScanline[scanline];
 }
@@ -219,6 +219,52 @@ bool FCPCScreen::GetScreenAddressCoords(uint16_t addr, int& x, int& y) const
 	y = (charRowIndex * charHeight) + charLine;
 
 	return true;
+}
+
+// Palette related
+
+FPalette::FPalette()
+{
+	SetColourCount(16);
+}
+
+bool FPalette::operator == (const FPalette& p) const
+{
+	const size_t numColours = GetColourCount();
+	if (numColours != p.GetColourCount())
+		return false;
+	for (int c = 0; c < numColours; c++)
+		if (Colours[c] != p.Colours[c])
+			return false;
+	return true;
+}
+
+void FPalette::SetColourCount(int count)
+{
+	Colours.resize(count);
+}
+
+void FPalette::SetColour(int colourIndex, uint32_t rgb)
+{
+	assert(colourIndex < Colours.size());
+	Colours[colourIndex] = rgb;
+}
+
+uint32_t FPalette::GetColour(int colourIndex) const
+{
+	assert(colourIndex < Colours.size());
+	uint32_t colour = Colours[colourIndex];
+	return Colours[colourIndex];
+}
+
+size_t FPalette::GetColourCount() const
+{
+	return Colours.size();
+}
+
+const uint32_t* FPalette::GetData() const
+{
+	return Colours.data();
 }
 
 // Given a byte containing multiple pixels, decode the colour index for a specified pixel.

@@ -9,7 +9,9 @@
 
 class FCpcEmu;
 struct FGame;
-class FCpcEmu;
+
+// test
+class FCpcGraphicsView;
 
 class FCPCGraphicsViewer : public FGraphicsViewer
 {
@@ -20,8 +22,14 @@ public:
 		ScreenHeight = 200;
 	}
 
+	void	Draw() override;
 	void	DrawScreenViewer(void) override;
 	void	Init(FCodeAnalysisState* pCodeAnalysis, FCpcEmu* pEmu);
+
+	void	DrawPaletteViewer();
+	void	DrawPalette(const uint32_t* palette, int numColours);
+protected:
+	const uint32_t* GetCurrentPalette() const override;
 
 private:
 	uint32_t	GetRGBValueForPixel(int yPos, int colourIndex, uint32_t heatMapCol) const;
@@ -35,4 +43,9 @@ private:
 	int			HeightChars = 25;
 	int			ScreenMode = 1;
 	int			CharacterHeight = 8;
+
+#if 0
+	FGraphicsView* pTestGraphicsView = 0;
+	FCpcGraphicsView* pTestCPCGraphicsView = 0;
+#endif
 };

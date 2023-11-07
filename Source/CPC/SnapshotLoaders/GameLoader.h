@@ -6,8 +6,8 @@ class FCpcGameLoader : public IGameLoader
 {
 public:
 	// IGameLoader
-	bool LoadGame(const char* pFileName) override;
-	ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn) override;
+	bool LoadSnapshot(const FGameSnapshot& snapshot) override;
+	//ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn) override;
 	// ~IGameLoader
 
 	void Init(FCpcEmu* pCpc)

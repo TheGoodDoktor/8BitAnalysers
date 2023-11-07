@@ -74,6 +74,11 @@ public:
 	void    Shutdown() override;
 	void	DrawEmulatorUI() override;
 	void    Tick() override;
+	void    Reset() override;
+
+	void	AddPlatformOptions(void) override;
+	bool	NewGameFromSnapshot(const FGameSnapshot& gameConfig);
+
 
 	// Begin IInputEventHandler interface implementation
 	void	OnKeyUp(int keyCode);
@@ -134,9 +139,8 @@ public:
 	{
 		return FAddressRef(IOAreaId, colRamAddress + 0xD800);
 	}
-	bool StartGame(const char* pGameName, bool bLoadGame);
-	bool StartGame(FC64GameConfig *pConfig, bool bLoadGame);
-	bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
+	bool StartGame(FGameConfig *pConfig, bool bLoadGame) override;
+	//bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
 	void ResetCodeAnalysis(void);
 	bool SaveCurrentGame(void);
 	//bool LoadCodeAnalysis(const FGameInfo* pGameInfo);
@@ -156,9 +160,10 @@ private:
 	ui_c64_t    C64UI;
 	double      ExecTime;
 
-	FC64GameConfig*		pCurrentGameConfig = nullptr;
+	//FC64Config*			pGlobalConfig = nullptr;
+	//FC64GameConfig*		pCurrentGameConfig = nullptr;
 
-	FC64GamesList       GamesList;
+	//FC64GamesList       GamesList;
 	const FGameInfo*	CurrentGame = nullptr;
 
 	FC64Display         Display;

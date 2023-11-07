@@ -1116,11 +1116,12 @@ void FCodeAnalysisState::OnFrameEnd()
 // Start/End handlers for machine frame
 void	FCodeAnalysisState::OnMachineFrameStart()
 {
+	IOAnalyser.OnMachineFrameStart();
 	Debugger.OnMachineFrameStart();
 }
 void	FCodeAnalysisState::OnMachineFrameEnd()
 {
-	IOAnalyser.OnMachineFrame();
+	IOAnalyser.OnMachineFrameEnd();
 	Debugger.OnMachineFrameEnd();
 }
 

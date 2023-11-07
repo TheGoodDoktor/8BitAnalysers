@@ -121,12 +121,14 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
     //memset(&audiodesc, 0, sizeof(saudio_desc));
     //saudio_setup(&audiodesc);
 
-    Display.Init(&CodeAnalysis, this);
 
     // Setup C64 Emulator
     c64_joystick_type_t joy_type = C64_JOYSTICKTYPE_NONE;
     c64_desc_t desc = GenerateC64Desc(joy_type);
     c64_init(&C64Emu, &desc);
+
+    Display.Init(&CodeAnalysis, this);
+
 
     // Setup C64 UI
     ui_c64_desc_t uiDesc;
@@ -230,7 +232,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
     if (pGlobalConfig->LastGame.empty() == false)
     {
-        bLoadedGame = StartGame(pGlobalConfig->LastGame.c_str(), true);
+        bLoadedGame = FEmuBase::StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
         SetupCodeAnalysisLabels();
     }
 
@@ -301,21 +303,10 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     }
 }
 
-bool FC64Emulator::StartGame(const char* pGameName, bool bLoadGameData)
+// Note : can be passed nullptr on a reset
+bool FC64Emulator::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 {
-    FC64GameConfig* pZXGameConfig = (FC64GameConfig*)GetGameConfigForName(pGameName);
-    if(pZXGameConfig)
-    {
-        return StartGame(pZXGameConfig, bLoadGameData);
-    }
-
-    return false;
-}
-
-
-bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
-{
-    const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
+    const std::string windowTitle = pGameConfig != nullptr ? kAppTitle + " - " + pGameConfig->Name : kAppTitle;
     SetWindowTitle(windowTitle.c_str());
 
     pCurrentGameConfig = pGameConfig;
@@ -326,10 +317,13 @@ bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
     //IOAnalysis.Reset();
 
     // Set options from config
-    for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+    if(pGameConfig)
     {
-        CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
-        CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
+        for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+        {
+            CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
+            CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
+        }
     }
 
     if (bLoadGameData)
@@ -349,15 +343,8 @@ bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
 
         //GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
-        // Load machine state
-        if (FileExists(saveStateFName.c_str()))
-        {
-            size_t stateSize;
-            c64_t* pSnapshot = (c64_t*)LoadBinaryFile(saveStateFName.c_str(), stateSize);
-            c64_load_snapshot(&C64Emu, 1, pSnapshot);
-            free(pSnapshot);
-        }
-        else
+        // Load machine state, if it fails, reload the prg file
+        if (LoadGameState(saveStateFName.c_str()) == false)
         {
             const std::string snapshotFName = GetC64GlobalConfig()->PrgFolder + pGameConfig->SnapshotFile;
             chips_range_t snapshotData;
@@ -399,21 +386,23 @@ bool FC64Emulator::StartGame(FC64GameConfig* pGameConfig, bool bLoadGameData)
         CodeAnalysis.Debugger.SetPC(initialPC);
     }
 
+    SetupCodeAnalysisLabels();
+
     //GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 
     return true;
 }
 
-bool FC64Emulator::NewGameFromSnapshot(const FGameInfo* pGameInfo)
+bool FC64Emulator::NewGameFromSnapshot(const FGameSnapshot& gameSnapshot)
 {
     // Remove any existing config 
-    RemoveGameConfig(pGameInfo->Name.c_str());
-    FC64GameConfig* pNewConfig = CreateNewC64GameConfigFromGameInfo(*pGameInfo);
+    RemoveGameConfig(gameSnapshot.DisplayName.c_str());
+    FC64GameConfig* pNewConfig = CreateNewC64GameConfigFromGameInfo(gameSnapshot);
 
     if (pNewConfig != nullptr)
     {
         chips_range_t snapshotData;
-        snapshotData.ptr = LoadBinaryFile(pGameInfo->PRGFile.c_str(), snapshotData.size);
+        snapshotData.ptr = LoadBinaryFile(gameSnapshot.FileName.c_str(), snapshotData.size);
         if(snapshotData.ptr!=nullptr)
         {
 		    c64_quickload(&C64Emu, snapshotData);
@@ -436,6 +425,36 @@ void FC64Emulator::ResetCodeAnalysis(void)
     IOAnalysis.Reset();
 }
 
+bool FC64Emulator::SaveGameState(const char* fname)
+{
+	// save game snapshot
+	FILE* fp = fopen(fname, "wb");
+	if (fp != nullptr)
+	{
+		c64_t* pSnapshot = new c64_t;;
+		c64_save_snapshot(&C64Emu, pSnapshot);
+		fwrite(pSnapshot, sizeof(c64_t), 1, fp);
+
+		delete pSnapshot;
+		fclose(fp);
+        return true;
+	}
+
+    return false;
+}
+
+bool FC64Emulator::LoadGameState(const char* fname)
+{
+	size_t stateSize;
+	c64_t* pSnapshot = (c64_t*)LoadBinaryFile(fname, stateSize);
+	if (pSnapshot != nullptr)
+	{
+		const bool bSuccess = c64_load_snapshot(&C64Emu, 1, pSnapshot);
+		free(pSnapshot);
+		return bSuccess;
+	}
+}
+
 bool FC64Emulator::SaveCurrentGame(void)
 {
     if(pCurrentGameConfig == nullptr)
@@ -456,18 +475,8 @@ bool FC64Emulator::SaveCurrentGame(void)
     EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
     EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
 
-    // save game snapshot
-    FILE* fp = fopen(saveStateFName.c_str(),"wb");
-    if(fp != nullptr)
-    {
-        c64_t* pSnapshot = new c64_t;;
-        c64_save_snapshot(&C64Emu, pSnapshot);
-        fwrite(pSnapshot, sizeof(c64_t), 1, fp);
-
-        delete pSnapshot;
-        fclose(fp);
-    }
-
+    SaveGameState(saveStateFName.c_str());
+    
     ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
     ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
     //GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
@@ -612,7 +621,7 @@ void FC64Emulator::DrawEmulatorUI()
     }
     ImGui::End();
 
-    if (ImGui::Begin("Games List"))
+    /*if (ImGui::Begin("Games List"))
     {
         GamesList.DrawGameSelect();
         if (GamesList.GetSelectedGame() != -1 && ImGui::Button("Load"))
@@ -620,8 +629,17 @@ void FC64Emulator::DrawEmulatorUI()
             NewGameFromSnapshot(&GamesList.GetGameInfo(GamesList.GetSelectedGame()));
         }
     }
-    ImGui::End();
+    ImGui::End();*/
 }
+
+// Add C64 specific options
+void FC64Emulator::AddPlatformOptions(void) 
+{
+    const FC64Config* pC64Config = GetC64GlobalConfig();
+    ImGui::MenuItem("Show H Counter", 0, &pC64Config->bShowHCounter);
+    ImGui::MenuItem("Show VIC Overlay", 0, &pC64Config->bShowVICOverlay);
+}
+
 
 void FC64Emulator::Tick()
 {
@@ -689,6 +707,21 @@ void FC64Emulator::Tick()
     }
 #endif
 }
+
+void   FC64Emulator::Reset(void)
+{
+    FEmuBase::Reset();
+
+    c64_reset(&C64Emu);
+    ui_dbg_reset(&C64UI.dbg);
+    if (C64UI.c64->c1541.valid) 
+        ui_dbg_reset(&C64UI.c1541_dbg);
+    
+    // Set memory banks
+    UpdateCodeAnalysisPages(C64Emu.cpu_port);
+    StartGame(nullptr, false);
+}
+
 
 int GetC64KeyFromKeyCode(int keyCode)
 {
@@ -813,7 +846,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
     {
         if(scanlinePos == 0)
             CodeAnalysis.OnMachineFrameStart();
-        else if(scanlinePos == 311)    // last scanline
+        else if(scanlinePos == M6569_VTOTAL - 1)    // last scanline
             CodeAnalysis.OnMachineFrameEnd();
 
         lastScanlinePos = scanlinePos;

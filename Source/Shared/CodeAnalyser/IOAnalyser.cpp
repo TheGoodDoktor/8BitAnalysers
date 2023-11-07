@@ -44,10 +44,16 @@ void FIOAnalyser::FrameTick(void)
 		pDevice->OnFrameTick();
 }
 
-void FIOAnalyser::OnMachineFrame(void)
+void FIOAnalyser::OnMachineFrameStart(void)
 {
 	for (FIODevice* pDevice : Devices)
-		pDevice->OnMachineFrame();
+		pDevice->OnMachineFrameStart();
+}
+
+void FIOAnalyser::OnMachineFrameEnd(void)
+{
+	for (FIODevice* pDevice : Devices)
+		pDevice->OnMachineFrameEnd();
 }
 
 
@@ -157,7 +163,7 @@ void FAYAudioDevice::OnFrameTick()
 
 }
 
-void FAYAudioDevice::OnMachineFrame()
+void FAYAudioDevice::OnMachineFrameEnd()
 {
 	FrameNo++;
 }

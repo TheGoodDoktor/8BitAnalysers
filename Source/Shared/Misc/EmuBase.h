@@ -1,8 +1,11 @@
 #pragma once
 
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "GamesList.h"
 
 class FEmuBase;
+struct FGameConfig;
+struct FGameSnapshot;
 struct FGlobalConfig;
 
 struct FEmulatorLaunchConfig
@@ -33,7 +36,14 @@ public:
 	virtual bool	Init(const FEmulatorLaunchConfig& launchConfig);
 	virtual void    Shutdown();
 	virtual void    Tick();
+	virtual void    Reset();
 	virtual void	AppFocusCallback(int focused){}
+
+	virtual void	AddPlatformOptions(void){}
+	virtual bool	NewGameFromSnapshot(const FGameSnapshot& gameConfig) = 0;
+	virtual bool	StartGame(FGameConfig* pConfig, bool bLoadGame) = 0;
+
+	bool			StartGameFromName(const char* pGameName, bool bLoadGame);
 
 	bool			DrawDockingView();
 	void			DrawMainMenu();
@@ -60,7 +70,10 @@ protected:
 	void	WindowsMenu();
 
 	FGlobalConfig*		pGlobalConfig = nullptr;
+	FGameConfig*		pCurrentGameConfig = nullptr;
+
 	FCodeAnalysisState  CodeAnalysis;
+	FGamesList			GamesList;
 
 	// Highligthing
 	int					HighlightXPos = -1;

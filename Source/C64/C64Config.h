@@ -4,7 +4,7 @@
 #include "Misc/GameConfig.h"
 
 class FC64Emulator;
-struct FGameInfo;
+struct FGameSnapshot;
 
 // C64 specific configs
 
@@ -15,6 +15,7 @@ struct FC64Config : public FGlobalConfig
 	std::string			PrgFolder = "./Prg/";
 
 	bool		bShowHCounter = false;
+	bool		bShowVICOverlay = false;
 
 protected:
 
@@ -30,4 +31,4 @@ struct FC64GameConfig : public FGameConfig
 
 bool LoadC64GameConfigs(FC64Emulator* pC64Emu);
 
-FC64GameConfig* CreateNewC64GameConfigFromGameInfo(const FGameInfo& gameInfo);
+FC64GameConfig* CreateNewC64GameConfigFromGameInfo(const FGameSnapshot& gameConfig);

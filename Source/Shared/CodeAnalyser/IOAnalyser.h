@@ -26,7 +26,8 @@ public:
 	const char*		GetName() const { return Name.c_str(); }
 
 	virtual void	DrawDetailsUI() = 0;
-	virtual void	OnMachineFrame() {}
+	virtual void	OnMachineFrameStart() {}
+	virtual void	OnMachineFrameEnd() {}
 	virtual void	OnFrameTick() {}
 
 protected:
@@ -53,7 +54,8 @@ public:
 	void	RegisterIOWrite(FAddressRef pc, uint16_t IOAddress, uint8_t value);
 
 	void	FrameTick(void);
-	void	OnMachineFrame(void);
+	void	OnMachineFrameStart(void);
+	void	OnMachineFrameEnd(void);
 	void	DrawUI(void);
 private:
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
@@ -91,7 +93,7 @@ public:
 	void	WriteAYRegister(FAddressRef pc, uint8_t value);
 	
 	void	OnFrameTick() override;
-	void	OnMachineFrame() override;
+	void	OnMachineFrameEnd() override;
 	void	DrawDetailsUI() override;
 
 	void	DrawAYStateUI(void);

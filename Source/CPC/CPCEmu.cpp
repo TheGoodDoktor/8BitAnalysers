@@ -737,7 +737,7 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 
 	// A class that deals with loading games.
 	GameLoader.Init(this);
-	GamesList.Init(&GameLoader);
+	GamesList.SetLoader(&GameLoader);
 	if (config.Model == ECpcModel::CPC_6128)
 		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder128.c_str());
 	else
@@ -831,6 +831,7 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 
 	IOAnalysis.Init(this);
 	CpcViewer.Init(this);
+	CodeAnalysis.Config.bShowBanks = true;
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
 	// Setup memory description handlers
@@ -839,7 +840,6 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 
 	LoadCPCGameConfigs(this);
 
-	GetCurrentPalette().SetColourCount(16);
 	// Set up code analysis
 	// initialise code analysis pages
 
@@ -889,6 +889,19 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 		SetRAMBank(3, 3);	// 0xc000 - 0xffff
 	}
 
+	FDebugger& debugger = CodeAnalysis.Debugger;
+	debugger.RegisterEventType((int)EEventType::None, "None", 0);
+	debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen RAM Write", 0xff0000ff, nullptr, EventShowPixValue);
+	debugger.RegisterEventType((int)EEventType::PaletteSelect, "Palette Select", 0xffffffff, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::PaletteColour, "Palette Colour", 0xff00ffff, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::BorderColour, "Border Colour", 0xff00ff00, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::ScreenModeChange, "Screen Mode", 0xff0080ff, IOPortEventShowAddress, ScreenModeShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterSelect, "CRTC Reg. Select", 0xffff00ff, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterRead, "CRTC Reg. Read", 0xffff0000, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite, "CRTC Reg. Write", 0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
+
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
 
@@ -916,19 +929,6 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 #endif
 	}
-
-	FDebugger& debugger = CodeAnalysis.Debugger;
-	debugger.RegisterEventType((int)EEventType::None, "None", 0);
-	debugger.RegisterEventType((int)EEventType::ScreenPixWrite,				"Screen RAM Write",	0xff0000ff, nullptr, EventShowPixValue);
-	debugger.RegisterEventType((int)EEventType::PaletteSelect,				"Palette Select",	0xffffffff, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::PaletteColour,				"Palette Colour",	0xff00ffff, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::BorderColour,				"Border Colour",	0xff00ff00, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::ScreenModeChange,			"Screen Mode",		0xff0080ff, IOPortEventShowAddress, ScreenModeShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterSelect,			"CRTC Reg. Select",	0xffff00ff, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterRead,			"CRTC Reg. Read",	0xffff0000, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite,			"CRTC Reg. Write",	0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::KeyboardRead,				"Keyboard Read",	0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange,	"Set Scr. Addr.",	0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
 
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
 
@@ -1028,9 +1028,14 @@ void FCpcEmu::StartGame(FCPCGameConfig* pGameConfig, bool bLoadGameData /* =  tr
 
 #if SPECCY
 		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
+#endif
+		if (LoadGameState(saveStateFName.c_str()) == false)
+		{
+			GamesList.LoadGame(pGameConfig->Name.c_str());
+		}
+		// TODO: update analysis banks
 
-		LoadGameState(this, saveStateFName.c_str());
-
+#if SPECCY
 		if (FileExists(romJsonFName.c_str()))
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 
@@ -1089,9 +1094,9 @@ bool FCpcEmu::StartGame(const char* pGameName)
 
 	if (pCPCGameConfig != nullptr)
 	{
-		const std::string snapFolder = CpcEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-		const std::string gameFile = snapFolder + pCPCGameConfig->SnapshotFile;
-		if (GamesList.LoadGame(gameFile.c_str()))
+		//const std::string snapFolder = CpcEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
+		//const std::string gameFile = snapFolder + pCPCGameConfig->SnapshotFile;
+		if (GamesList.LoadGame(pCPCGameConfig->Name.c_str()))
 		{
 			StartGame(pCPCGameConfig);
 			return true;
@@ -1099,6 +1104,36 @@ bool FCpcEmu::StartGame(const char* pGameName)
 	}
 
 	return false;
+}
+
+bool FCpcEmu::SaveGameState(const char* fname)
+{
+	// save game snapshot
+	FILE* fp = fopen(fname, "wb");
+	if (fp != nullptr)
+	{
+		cpc_t* pSnapshot = new cpc_t;
+		cpc_save_snapshot(&CpcEmuState, pSnapshot);
+		fwrite(pSnapshot, sizeof(cpc_t), 1, fp);
+
+		delete pSnapshot;
+		fclose(fp);
+		return true;
+	}
+
+	return false;
+}
+
+bool FCpcEmu::LoadGameState(const char* fname)
+{
+	size_t stateSize;
+	cpc_t* pSnapshot = (cpc_t*)LoadBinaryFile(fname, stateSize);
+	if (pSnapshot != nullptr)
+	{
+		const bool bSuccess = cpc_load_snapshot(&CpcEmuState, 1, pSnapshot);
+		free(pSnapshot);
+		return bSuccess;
+	}
 }
 
 // save config & data
@@ -1136,10 +1171,7 @@ void FCpcEmu::SaveCurrentGameData()
 			}
 
 			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-#if SPECCY			
-			// The Future
-			SaveGameState(this, saveStateFName.c_str());
-#endif // #if SPECCY
+			SaveGameState(saveStateFName.c_str());
 			ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 			ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 			//ExportGameJson(this, analysisJsonFName.c_str());
@@ -1234,13 +1266,7 @@ void FCpcEmu::DrawFileMenu()
 				{
 					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 					{
-						const std::string snapFolder = CpcEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-						const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
-
-						if (GamesList.LoadGame(gameFile.c_str()))
-						{
-							StartGame((FCPCGameConfig*)pGameConfig);
-						}
+						StartGame((FCPCGameConfig*)pGameConfig);
 					}
 				}
 			}
@@ -1841,7 +1867,7 @@ void FCpcConfig::ParseCommandline(int argc, char** argv)
 
 void FCpcEmu::UpdatePalette()
 {
-	FPalette& palette = GetCurrentPalette();
+	FPalette& palette = Screen.GetCurrentPalette();
 	for (int i = 0; i < palette.GetColourCount(); i++)
 	{
 		palette.SetColour(i, CpcEmuState.ga.hw_colors[CpcEmuState.ga.regs.ink[i]]);

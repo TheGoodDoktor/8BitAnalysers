@@ -754,10 +754,10 @@ bool LoadGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)
 	if (fp == NULL)
 		return false;
 
-	LoadMachineState(pSpectrumEmu, fp);
+	const bool bRes = LoadMachineState(pSpectrumEmu, fp);
 	fclose(fp);
 
-	return true;
+	return bRes;
 }
 #if 0
 bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)

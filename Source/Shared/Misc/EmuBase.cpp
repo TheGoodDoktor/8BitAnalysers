@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
+#include "GameConfig.h"
 
 #include "Debug/DebugLog.h"
 
@@ -44,6 +45,11 @@ void FEmuBase::Shutdown()
 }
 
 void FEmuBase::Tick()
+{
+
+}
+
+void FEmuBase::Reset()
 {
 
 }
@@ -168,7 +174,72 @@ void FEmuBase::DrawUI()
 void FEmuBase::FileMenu()
 {
     // New game from snapshot
+    if (ImGui::BeginMenu("New Game from Snapshot File"))
+    {
+        const int numGames = GamesList.GetNoGames();
+        if (!numGames)
+        {
+            const std::string snapFolder = pGlobalConfig->SnapshotFolder;
+            ImGui::Text("No snapshots found in snapshot directory:\n\n'%s'.\n\nSnapshot directory is set in GlobalConfig.json", snapFolder.c_str());
+        }
+        else
+        {
+            for (int gameNo = 0; gameNo < numGames; gameNo++)
+            {
+                const FGameSnapshot& game = GamesList.GetGame(gameNo);
 
+                if (ImGui::MenuItem(game.DisplayName.c_str()))
+                {
+                    bool bGameExists = false;
+
+                    for (const auto& pGameConfig : GetGameConfigs())
+                    {
+                        if (pGameConfig->SnapshotFile == game.DisplayName)
+                            bGameExists = true;
+                    }
+                    if (bGameExists)
+                    {
+                        //bReplaceGamePopup = true;
+                        //ReplaceGameSnapshotIndex = gameNo;
+                    }
+                    else
+                    {
+                        NewGameFromSnapshot(game);
+                    }
+                }
+            }
+        }
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Open Game"))
+    {
+        if (GetGameConfigs().empty())
+        {
+            ImGui::Text("No games found.\n\nFirst, create a game via the 'New Game from Snapshot File' menu.");
+        }
+        else
+        {
+            for (const auto& pGameConfig : GetGameConfigs())
+            {
+                if (ImGui::MenuItem(pGameConfig->Name.c_str()))
+                {
+                    //if (GamesList.LoadGame(gameFile.c_str()))
+                    {
+                        StartGame(pGameConfig,true);
+                    }
+                }
+            }
+        }
+
+        ImGui::EndMenu();
+    }
+
+    ImGui::Separator();
+    if (ImGui::MenuItem("Reset"))
+    {
+        Reset();
+    }
 }
 
 void FEmuBase::OptionsMenu()
@@ -240,6 +311,9 @@ void FEmuBase::OptionsMenu()
     //TODO: ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
     //TODO: ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
 #endif // NDEBUG
+
+    ImGui::Separator();
+    AddPlatformOptions();
 }
 
 void FEmuBase::WindowsMenu()
@@ -305,4 +379,15 @@ void FEmuBase::InitViewers()
             // TODO: report error
         }
     }
+}
+
+bool FEmuBase::StartGameFromName(const char* pGameName, bool bLoadGameData)
+{
+    FGameConfig* pGameConfig = GetGameConfigForName(pGameName);
+    if (pGameConfig)
+    {
+        return StartGame(pGameConfig, bLoadGameData);
+    }
+
+    return false;
 }

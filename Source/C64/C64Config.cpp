@@ -17,6 +17,8 @@ void FC64Config::ReadFromJson(const nlohmann::json& jsonConfigFile)
 		PrgFolder = jsonConfigFile["PrgFolder"];
 	if (jsonConfigFile.contains("ShowHCounter"))
 		bShowHCounter = jsonConfigFile["ShowHCounter"];
+	if (jsonConfigFile.contains("ShowVICOverlay"))
+		bShowVICOverlay = jsonConfigFile["ShowVICOverlay"];
 
 	// fixup paths
 	if (TapesFolder.back() != '/')
@@ -34,6 +36,7 @@ void FC64Config::WriteToJson(nlohmann::json& jsonConfigFile) const
 	jsonConfigFile["DisksFolder"] = DisksFolder;
 	jsonConfigFile["PrgFolder"] = PrgFolder;
 	jsonConfigFile["ShowHCounter"] = bShowHCounter;
+	jsonConfigFile["ShowVICOverlay"] = bShowVICOverlay;
 }
 
 void FC64GameConfig::LoadFromJson(const nlohmann::json& jsonConfig)
@@ -76,12 +79,12 @@ bool LoadC64GameConfigs(FC64Emulator* pC64Emu)
 	return true;
 }
 
-FC64GameConfig* CreateNewC64GameConfigFromGameInfo(const FGameInfo& gameInfo)
+FC64GameConfig* CreateNewC64GameConfigFromGameInfo(const FGameSnapshot& gameSnapshot)
 {
 	FC64GameConfig* pNewConfig = new FC64GameConfig;
 
-	pNewConfig->Name = gameInfo.Name;
-	pNewConfig->SnapshotFile = GetFileFromPath(gameInfo.PRGFile.c_str());
+	pNewConfig->Name = gameSnapshot.DisplayName;
+	pNewConfig->SnapshotFile = GetFileFromPath(gameSnapshot.FileName.c_str());
 	//pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
 
 	return pNewConfig;

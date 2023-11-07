@@ -104,6 +104,8 @@ public:
 	void	Shutdown();
 	void	StartGame(FCPCGameConfig* pGameConfig, bool bLoadGameData = true);
 	bool	StartGame(const char* pGameName);
+	bool	SaveGameState(const char* fname);
+	bool	LoadGameState(const char* fname);
 	void	SaveCurrentGameData();
 
 	void	OnInstructionExecuted(int ticks, uint64_t pins);

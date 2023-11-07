@@ -632,15 +632,15 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 
 	const FZXSpectrumConfig* pSpectrumConfig = GetZXSpectrumGlobalConfig();
 	GameLoader.Init(this);
-	GamesList.Init(&GameLoader);
+	GamesList.SetLoader(&GameLoader);
 	if(spectrumLaunchConfig.Model == ESpectrumModel::Spectrum128K)
-		GamesList.EnumerateGames(pSpectrumConfig->SnapshotFolder128.c_str());
+		GamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->SnapshotFolder128.c_str());
 	else
 		GamesList.EnumerateGames(pSpectrumConfig->SnapshotFolder.c_str());
 
 	RZXManager.Init(this);
-	RZXGamesList.Init(&GameLoader);
-	RZXGamesList.EnumerateGames(pSpectrumConfig->RZXFolder.c_str());
+	RZXGamesList.SetLoader(&GameLoader);
+	RZXGamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->RZXFolder.c_str());
 
 	// Clear UI
 	memset(&UIZX, 0, sizeof(ui_zx_t));
@@ -756,11 +756,11 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 
 	if (config.SpecificGame.empty() == false)
 	{
-		bLoadedGame = StartGame(config.SpecificGame.c_str());
+		bLoadedGame = StartGameFromName(config.SpecificGame.c_str(), true);
 	}
 	else if (pGlobalConfig->LastGame.empty() == false)
 	{
-		bLoadedGame = StartGame(pGlobalConfig->LastGame.c_str());
+		bLoadedGame = StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
 	}
 	
 	// Start ROM if no game has been loaded
@@ -795,14 +795,6 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	debugger.RegisterEventType((int)EEventType::SetBorderColour, "Set Border Colour", 0xff003f1f, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::OutputBeeper, "Output Beeper", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::OutputMic, "Output Mic", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
-
-	// Setup palette
-	// This doesn't currently serve any purpose and is just for demonstration purposes.
-	GetCurrentPalette().SetColourCount(16);
-	for (int i = 0; i < 8; i++)
-		GetCurrentPalette().SetColour(i, CodeAnalysis.Config.CharacterColourLUT[i]);
-
-	SetCurrentPalette(FPalette(CodeAnalysis.Config.CharacterColourLUT, 8));
 
 	// Setup Memory Analyser
 	CodeAnalysis.MemoryAnalyser.AddROMArea(kROMStart, kROMEnd);
@@ -844,8 +836,10 @@ void FSpectrumEmu::Shutdown()
 	GraphicsViewer.Shutdown();
 }
 
-void FSpectrumEmu::StartGame(FZXSpectrumGameConfig *pGameConfig, bool bLoadGameData /* =  true*/)
+bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  true*/)
 {
+	FZXSpectrumGameConfig *pSpectrumGameConfig = (FZXSpectrumGameConfig*)pGameConfig;
+	
 	// reset systems
 	MemoryAccessHandlers.clear();	// remove old memory handlers
 	ResetMemoryStats(MemStats);
@@ -861,13 +855,13 @@ void FSpectrumEmu::StartGame(FZXSpectrumGameConfig *pGameConfig, bool bLoadGameD
 	delete pActiveGame;
 	
 	FGame *pNewGame = new FGame;
-	pGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
+	pSpectrumGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
 	pNewGame->pConfig = pGameConfig;
-	pNewGame->pViewerConfig = pGameConfig->pViewerConfig;
-	assert(pGameConfig->pViewerConfig != nullptr);
+	pNewGame->pViewerConfig = pSpectrumGameConfig->pViewerConfig;
+	assert(pSpectrumGameConfig->pViewerConfig != nullptr);
 	pActiveGame = pNewGame;
-	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pGameConfig);
-	GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
+	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pSpectrumGameConfig);
+	GenerateSpriteListsFromConfig(GraphicsViewer, pSpectrumGameConfig);
 
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
@@ -904,13 +898,18 @@ void FSpectrumEmu::StartGame(FZXSpectrumGameConfig *pGameConfig, bool bLoadGameD
 
 		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
-		LoadGameState(this, saveStateFName.c_str());
+		if(LoadGameState(this, saveStateFName.c_str()) == false)
+		{
+			// if the game state didn't load then reload the snapshot
+			const FGameSnapshot* snapshot = GamesList.GetGame(pGameConfig->Name.c_str());
+			GameLoader.LoadSnapshot(*snapshot);
+		}
 
 		if (FileExists(romJsonFName.c_str()))
 			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
 
 		// where do we want pokes to live?
-		LoadPOKFile(*pGameConfig, std::string(GetZXSpectrumGlobalConfig()->PokesFolder + pGameConfig->Name + ".pok").c_str());
+		LoadPOKFile(*pSpectrumGameConfig, std::string(GetZXSpectrumGlobalConfig()->PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
@@ -935,8 +934,9 @@ void FSpectrumEmu::StartGame(FZXSpectrumGameConfig *pGameConfig, bool bLoadGameD
 	}
 
 	GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+	return true;
 }
-
+#if 0
 bool FSpectrumEmu::StartGame(const char *pGameName)
 {
 	FZXSpectrumGameConfig* pZXGameConfig = (FZXSpectrumGameConfig*)GetGameConfigForName(pGameName);
@@ -944,9 +944,9 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 
 	if (pZXGameConfig != nullptr)
 	{
-		const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pZXGlobalConfig->SnapshotFolder128 : pZXGlobalConfig->SnapshotFolder;
-		const std::string gameFile = snapFolder + pZXGameConfig->SnapshotFile;
-		if (GamesList.LoadGame(gameFile.c_str()))
+		//const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
+		//const std::string gameFile = snapFolder + pZXGameConfig->SnapshotFile;
+		if (GamesList.LoadGame(pZXGameConfig->SnapshotFile.c_str()))
 		{
 			StartGame(pZXGameConfig);
 			return true;
@@ -955,6 +955,7 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 
 	return false;
 }
+#endif
 
 // save config & data
 void FSpectrumEmu::SaveCurrentGameData()
@@ -1011,25 +1012,20 @@ void FSpectrumEmu::SaveCurrentGameData()
 #endif
 }
 
-bool FSpectrumEmu::NewGameFromSnapshot(int snapshotIndex)
+bool FSpectrumEmu::NewGameFromSnapshot(const FGameSnapshot& snapshot)
 {
-	if (GamesList.LoadGame(snapshotIndex))
+	// Remove any existing config 
+	RemoveGameConfig(snapshot.DisplayName.c_str());
+
+	FZXSpectrumGameConfig* pNewConfig = CreateNewZXGameConfigFromSnapshot(snapshot);
+
+	if (pNewConfig != nullptr)
 	{
-		const FGameSnapshot& game = GamesList.GetGame(snapshotIndex);
+		StartGame(pNewConfig, /* bLoadGameData */ false);
+		AddGameConfig(pNewConfig);
+		SaveCurrentGameData();
 
-		// Remove any existing config 
-		RemoveGameConfig(game.DisplayName.c_str());
-
-		FZXSpectrumGameConfig* pNewConfig = CreateNewZXGameConfigFromSnapshot(game);
-
-		if (pNewConfig != nullptr)
-		{
-			StartGame(pNewConfig, /* bLoadGameData */ false);
-			AddGameConfig(pNewConfig);
-			SaveCurrentGameData();
-
-			return true;
-		}
+		return true;
 	}
 	return false;
 }
@@ -1079,7 +1075,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 							}
 							else
 							{
-								NewGameFromSnapshot(gameNo);
+								NewGameFromSnapshot(game);
 							}
 						}
 					}
@@ -1106,7 +1102,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 							{
 								FZXSpectrumGameConfig* pNewConfig = CreateNewZXGameConfigFromSnapshot(game);
 								if (pNewConfig != nullptr)
-									StartGame(pNewConfig);
+									StartGame(pNewConfig, true);
 							}
 						}
 					}
@@ -1131,7 +1127,7 @@ void FSpectrumEmu::DrawMainMenu(double timeMS)
 
 							if (GamesList.LoadGame(gameFile.c_str()))
 							{
-								StartGame((FZXSpectrumGameConfig*)pGameConfig);
+								StartGame((FZXSpectrumGameConfig*)pGameConfig, true);
 							}
 						}
 					}
@@ -1499,7 +1495,7 @@ void FSpectrumEmu::DrawReplaceGameModalPopup()
 				{
 					if (pGameConfig->SnapshotFile == game.DisplayName)
 					{
-						NewGameFromSnapshot(ReplaceGameSnapshotIndex);
+						NewGameFromSnapshot(game);
 						break;
 					}
 				}
@@ -1646,6 +1642,11 @@ void FSpectrumEmu::Tick()
 
 	// Draw UI
 	DrawDockingView();
+}
+
+void FSpectrumEmu::Reset()
+{
+	// TODO: Reset speccy
 }
 
 void FSpectrumEmu::DrawMemoryTools()
@@ -2109,7 +2110,7 @@ void FSpectrumEmu::DoSkoolKitTest(const char* pGameName, const char* pInSkoolFil
 
 	if (pGameName)
 	{
-		if (!StartGame(pGameName))
+		if (!StartGameFromName(pGameName,true))
 			return;
 	}
 

@@ -92,13 +92,15 @@ public:
 	bool	Init(const FEmulatorLaunchConfig& config) override;
 	void	Shutdown() override;
 	void	Tick() override;
+	void	Reset() override;
+
+	bool	NewGameFromSnapshot(const FGameSnapshot& snapshot) override;
 
 	bool	IsInitialised() const { return bInitialised; }
 
-	void	StartGame(FZXSpectrumGameConfig* pGameConfig, bool bLoadGameData = true);
-	bool	StartGame(const char* pGameName);
+	bool	StartGame(FGameConfig* pGameConfig, bool bLoadGame) override;
+	//bool	StartGame(const char* pGameName);
 	void	SaveCurrentGameData();
-	bool	NewGameFromSnapshot(int snapshotIndex);
 
 	void	DrawMainMenu(double timeMS);
 	void	DrawExportAsmModalPopup();
