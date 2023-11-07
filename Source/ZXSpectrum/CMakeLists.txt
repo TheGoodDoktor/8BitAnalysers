@@ -161,7 +161,7 @@ add_executable (SpectrumAnalyserTest MACOSX_BUNDLE ${test_src} ${shared_test_src
 
 set_target_properties( SpectrumAnalyserTest PROPERTIES CXX_STANDARD 20 )
 set_target_properties( SpectrumAnalyserTest PROPERTIES C_STANDARD 11 )
-
+target_compile_definitions( SpectrumAnalyserTest PRIVATE TEST )
 target_link_libraries( SpectrumAnalyserTest GTest::gtest_main )
 
 include(GoogleTest)
