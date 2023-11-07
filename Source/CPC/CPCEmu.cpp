@@ -11,12 +11,12 @@
 #include "Util/GraphicsView.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
+#include <CodeAnalyser/AssemblerExport.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
 #include "CPCGameConfig.h"
 #include "Debug/DebugLog.h"
 #include "CpcChipsImpl.h"
 
-#include "Exporters/AssemblerExport.h"
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "App.h"
 #include "Viewers/CRTCViewer.h"
