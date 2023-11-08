@@ -482,12 +482,13 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			addrInput = ((int)((float)addrInput / (float)GraphicColumnSizeBytes) * GraphicColumnSizeBytes);
 		}
 	}
-	ImGui::SetItemUsingMouseWheel();
 
 	const int pixelsPerByte = 8 / bpp;
 	const int graphicsUnitSize = (XSizePixels / pixelsPerByte) * YSizePixels;
-	if (ImGui::IsAnyItemHovered())
+
+	if (ImGui::IsItemHovered())
 	{
+		ImGui::SetItemUsingMouseWheel();
 		float wheel = ImGui::GetIO().MouseWheel;
 		if (wheel)
 		{
@@ -495,6 +496,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			addrInput = std::min(std::max(0, addrInput), 0xffff);
 		}
 	}
+
 	ImGui::SameLine();
 	ImGui::Checkbox("Fine", &bVSliderFineControl);
 
