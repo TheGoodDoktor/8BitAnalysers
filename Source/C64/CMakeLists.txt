@@ -121,13 +121,6 @@ file ( GLOB program_src
 	GraphicsViewer/*.cpp GraphicsViewer/*.h
 	IOAnalysis/*.cpp IOAnalysis/*.h )
 
-#if(${gfxapi} STREQUAL "GLFWApi")
-#	set ( platform_main GLFW/GLFWMain.cpp )
-#else()
-#	set ( platform_main Windows/WinMain.cpp )
-#endif()
-
-#add_executable ( ${PROJECT_NAME} ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 add_executable ( ${PROJECT_NAME} ${shared_src} ${program_src} ${vendor_src} )
 
 # This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
