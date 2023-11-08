@@ -1147,7 +1147,7 @@ bool FCpcEmu::LoadGameState(const char* fname)
 		return bSuccess;
 	}
 
-	return true;
+	return false;
 }
 
 // save config & data
