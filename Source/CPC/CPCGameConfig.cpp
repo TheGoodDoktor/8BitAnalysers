@@ -41,7 +41,7 @@ bool LoadCPCGameConfigs(FCpcEmu* pEmu)
 {
 	FDirFileList listing;
 
-	const std::string root = pEmu->pGlobalConfig->WorkspaceRoot;
+	const std::string root = pEmu->GetGlobalConfig()->WorkspaceRoot;
 	const std::string configDir = root + "Configs/";
 
 	if (EnumerateDirectory(configDir.c_str(), listing) == false)

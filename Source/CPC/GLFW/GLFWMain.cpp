@@ -56,7 +56,7 @@ static void glfw_error_callback(int error, const char* description)
 #endif
 }
 
-int main(int argc, char** argv)
+int MainLoop(FEmuBase* pEmulator,const FEmulatorLaunchConfig& launchConfig)
 {
     FAppState& appState = g_AppState;
 
@@ -168,12 +168,10 @@ int main(int argc, char** argv)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    FCpcConfig config;
-    config.ParseCommandline(argc, argv);
-    FCpcEmu* pCpcEmulator = new FCpcEmu;
-    pCpcEmulator->Init(config);
+    
+    pEmulator->Init(launchConfig);
 
-    const FGlobalConfig* pGlobalConfig = pCpcEmulator->pGlobalConfig;
+    const FGlobalConfig* pGlobalConfig = pEmulator->GetGlobalConfig();
     if (!pGlobalConfig->Font.empty())
     {
         std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
@@ -201,14 +199,14 @@ int main(int argc, char** argv)
         ImGui::NewFrame();
 
 		// cpc update & render
-		pCpcEmulator->Tick();
+        pEmulator->Tick();
 
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (pCpcEmulator->bShowImGuiDemo)
-			ImGui::ShowDemoWindow(&pCpcEmulator->bShowImGuiDemo);
+		if (pEmulator->bShowImGuiDemo)
+			ImGui::ShowDemoWindow(&pEmulator->bShowImGuiDemo);
 
-		if (pCpcEmulator->bShowImPlotDemo)
-			ImPlot::ShowDemoWindow(&pCpcEmulator->bShowImPlotDemo);
+		if (pEmulator->bShowImPlotDemo)
+			ImPlot::ShowDemoWindow(&pEmulator->bShowImPlotDemo);
 
         // Rendering
         ImGui::Render();
@@ -234,7 +232,7 @@ int main(int argc, char** argv)
     }
 
 	// shutdown the cpc stuff
-	pCpcEmulator->Shutdown();
+    pEmulator->Shutdown();
 
 	saudio_shutdown();
 
@@ -263,3 +261,4 @@ void SetWindowIcon(const char* pIconFile)
 	glfwSetWindowIcon(g_AppState.MainWindow, 1, images);
 	stbi_image_free(images[0].pixels);
 }
+

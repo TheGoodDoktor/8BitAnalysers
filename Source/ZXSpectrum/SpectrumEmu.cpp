@@ -975,51 +975,47 @@ bool FSpectrumEmu::StartGame(const char *pGameName)
 #endif
 
 // save config & data
-void FSpectrumEmu::SaveCurrentGameData()
+bool FSpectrumEmu::SaveCurrentGameData()
 {
 	if (pActiveGame != nullptr)
 	{
 		FGameConfig *pGameConfig = pActiveGame->pConfig;
-		if (pGameConfig->Name.empty())
-		{
+		if (pGameConfig == nullptr || pGameConfig->Name.empty())
+			return false;
 			
-		}
-		else
+		const std::string root = pGlobalConfig->WorkspaceRoot;
+		const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
+		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
+		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
+		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
+		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+		EnsureDirectoryExists(std::string(root + "Configs").c_str());
+		EnsureDirectoryExists(std::string(root + "GameData").c_str());
+		EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
+		EnsureDirectoryExists(std::string(root + "GraphicsSets").c_str());
+		EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
+		EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
+
+		// set config values
+		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 		{
-			const std::string root = pGlobalConfig->WorkspaceRoot;
-			const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
-			const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
-			const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
-			const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
-			const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
-			const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
-			EnsureDirectoryExists(std::string(root + "Configs").c_str());
-			EnsureDirectoryExists(std::string(root + "GameData").c_str());
-			EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
-			EnsureDirectoryExists(std::string(root + "GraphicsSets").c_str());
-			EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
-			EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
+			const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
+			FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
 
-			// set config values
-			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-			{
-				const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
-				FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
-
-				viewConfig.bEnabled = viewState.Enabled;
-				viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
-			}
-
-			AddGameConfig(pGameConfig);
-			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-			//SaveGameData(this, dataFName.c_str());		// The Past
-
-			// The Future
-			SaveGameState(this, saveStateFName.c_str());
-			ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-			ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
-			GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
+			viewConfig.bEnabled = viewState.Enabled;
+			viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
 		}
+
+		AddGameConfig(pGameConfig);
+		SaveGameConfigToFile(*pGameConfig, configFName.c_str());
+		//SaveGameData(this, dataFName.c_str());		// The Past
+
+		// The Future
+		SaveGameState(this, saveStateFName.c_str());
+		ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+		ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
 	}
 
 	// TODO: this could use
@@ -1027,6 +1023,8 @@ void FSpectrumEmu::SaveCurrentGameData()
 	const std::string romJsonFName = root + kRomInfoJsonFile;
 	ExportAnalysisJson(CodeAnalysis, romJsonFName.c_str(), true);	// export ROMS only
 #endif
+
+	return true;
 }
 
 bool FSpectrumEmu::NewGameFromSnapshot(const FGameSnapshot& snapshot)

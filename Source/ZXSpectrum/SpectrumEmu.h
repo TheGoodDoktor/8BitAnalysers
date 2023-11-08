@@ -27,7 +27,7 @@
 #include "ui/ui_snapshot.h"
 #include "ui/ui_zx.h"
 
-#include <map>
+//#include <map>
 #include <string>
 #include "Viewers/SpriteViewer.h"
 #include "MemoryHandlers.h"
@@ -95,12 +95,10 @@ public:
 	void	Reset() override;
 
 	bool	NewGameFromSnapshot(const FGameSnapshot& snapshot) override;
+	bool	StartGame(FGameConfig* pGameConfig, bool bLoadGame) override;
+	bool	SaveCurrentGameData() override;
 
 	bool	IsInitialised() const { return bInitialised; }
-
-	bool	StartGame(FGameConfig* pGameConfig, bool bLoadGame) override;
-	//bool	StartGame(const char* pGameName);
-	void	SaveCurrentGameData();
 
 	//void	DrawMainMenu(double timeMS);
 	

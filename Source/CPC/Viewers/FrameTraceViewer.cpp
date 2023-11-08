@@ -54,12 +54,13 @@ void FFrameTraceViewer::CaptureFrame()
 {
 	// temp
 	return;
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
 
 	// set up new trace frame
 	FCpcFrameTrace& frame = FrameTrace[CurrentTraceFrame];
 	ImGui_UpdateTextureRGBA(frame.Texture, pCpcEmu->CpcViewer.GetFrameBuffer());
-	frame.InstructionTrace = pCpcEmu->CodeAnalysis.Debugger.GetFrameTrace();	// copy frame trace - use method?
-	frame.FrameEvents = pCpcEmu->CodeAnalysis.Debugger.GetEventTrace();
+	frame.InstructionTrace = state.Debugger.GetFrameTrace();	// copy frame trace - use method?
+	frame.FrameEvents = state.Debugger.GetEventTrace();
 	frame.FrameOverview.clear();
 
 	// copy memory
@@ -124,6 +125,8 @@ void FFrameTraceViewer::Draw()
 {
 	// sam. todo
 	return;
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+
 
 	if (ImGui::ArrowButton("##left", ImGuiDir_Left))
 		ShowFrame = std::max(--ShowFrame, 0);
@@ -139,9 +142,9 @@ void FFrameTraceViewer::Draw()
 	if (ImGui::SliderInt("Backwards Offset", &ShowFrame, 0, kNoFramesInTrace - 1))
 	{
 		if (ShowFrame == 0)
-			pCpcEmu->CodeAnalysis.Debugger.Continue();
+			state.Debugger.Continue();
 		else
-			pCpcEmu->CodeAnalysis.Debugger.Break();
+			state.Debugger.Break();
 
 		PixelWriteline = -1;
 		SelectedTraceLine = -1;
@@ -167,7 +170,7 @@ void FFrameTraceViewer::Draw()
 		RestoreFrame(frame);
 
 		// continue running
-		pCpcEmu->CodeAnalysis.Debugger.Continue();
+		state.Debugger.Continue();
 
 		CurrentTraceFrame = frameNo;
 		ShowFrame = 0;
@@ -219,7 +222,7 @@ void FFrameTraceViewer::Draw()
 
 void	FFrameTraceViewer::DrawInstructionTrace(const FCpcFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)frame.InstructionTrace.size(), line_height);
@@ -255,7 +258,7 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FCpcFrameTrace& frame)
 
 void	FFrameTraceViewer::GenerateTraceOverview(FCpcFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
 	frame.FrameOverview.clear();
 	for (int i = 0; i < frame.InstructionTrace.size(); i++)
 	{
@@ -335,7 +338,7 @@ void FFrameTraceViewer::GenerateMemoryDiff(const FCpcFrameTrace& frame, const FC
 
 void	FFrameTraceViewer::DrawTraceOverview(const FCpcFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)frame.FrameOverview.size(), line_height);
@@ -380,7 +383,7 @@ void FFrameTraceViewer::DrawFrameScreenWritePixels(const FCpcFrameTrace& frame, 
 
 void	FFrameTraceViewer::DrawScreenWrites(const FCpcFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	if (ImGui::BeginChild("ScreenPxWrites", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
@@ -421,7 +424,7 @@ void	FFrameTraceViewer::DrawScreenWrites(const FCpcFrameTrace& frame)
 
 void FFrameTraceViewer::DrawMemoryDiffs(const FCpcFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	for (const auto& diff : frame.MemoryDiffs)

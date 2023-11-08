@@ -46,6 +46,7 @@ void FCpcViewer::Init(FCpcEmu* pEmu)
 
 void FCpcViewer::Draw()
 {		
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
 #ifdef CPCVIEWER_EXTRA_DEBUG
 	DrawSnapLoadButtons(pCpcEmu);
 #endif 
@@ -165,8 +166,8 @@ void FCpcViewer::Draw()
 	// cpc seems to have 312 scanlines
 	// AM40010_FRAMEBUFFER_HEIGHT is 312
 
-	const FCodeAnalysisViewState& viewState = pCpcEmu->CodeAnalysis.GetFocussedViewState();
-	FDebugger& debugger = pCpcEmu->CodeAnalysis.Debugger;
+	const FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	FDebugger& debugger = state.Debugger;
 	const uint8_t* scanlineEvents = debugger.GetScanlineEvents();
 	for (int scanlineNo = 0; scanlineNo < 320; scanlineNo++)
 	{
@@ -275,7 +276,7 @@ bool FCpcViewer::OnHovered(const ImVec2& pos)
 			dl->AddRect(ImVec2(rx, ry), ImVec2((float)rx + (charWidth * scale), (float)ry + (CharacterHeight * scale)), 0xffffffff, 0, 0, 1 * scale);
 		}
 
-		FCodeAnalysisState& codeAnalysis = pCpcEmu->CodeAnalysis;
+		FCodeAnalysisState& codeAnalysis = pCpcEmu->GetCodeAnalysis();
 		const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrAddress);
 
 #ifdef CPCVIEWER_EXTRA_DEBUG
@@ -366,7 +367,7 @@ float FCpcViewer::DrawScreenCharacter(int xChar, int yChar, float x, float y, fl
 
 	const int screenMode = GetScreenModeForPixelLine(yChar * CharacterHeight);
 	
-	const FCodeAnalysisState& codeAnalysis = pCpcEmu->CodeAnalysis;
+	const FCodeAnalysisState& codeAnalysis = pCpcEmu->GetCodeAnalysis();
 	const int xMult = screenMode == 0 ? 2 : 1;
 	ImVec2 pixelSize = ImVec2(pixelHeight * (float)xMult, pixelHeight);
 

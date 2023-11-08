@@ -53,6 +53,7 @@
 #include "Viewers/CPCGraphicsViewer.h"
 #include "MemoryHandlers.h"
 #include "IOAnalysis.h"
+#include "Misc/EmuBase.h"
 
 struct FGameViewerData;
 struct FGameConfig;
@@ -78,11 +79,11 @@ enum EROMBank
 	ROM_NONE,
 };
 
-struct FCpcConfig
+struct FCpcLaunchConfig : public FEmulatorLaunchConfig
 {
-	void ParseCommandline(int argc, char** argv);
+	void ParseCommandline(int argc, char** argv) override;
+
 	ECpcModel Model = ECpcModel::CPC_464;
-	std::string	SpecificGame;
 };
 
 struct FGame
@@ -92,7 +93,7 @@ struct FGame
 	FGameViewerData* pViewerData = nullptr;
 };
 
-class FCpcEmu : public ICPUInterface
+class FCpcEmu : public FEmuBase
 {
 public:
 	FCpcEmu()
@@ -100,18 +101,26 @@ public:
 		CPUType = ECPUType::Z80;
 	}
 
-	bool	Init(const FCpcConfig& config);
-	void	Shutdown();
-	void	StartGame(FCPCGameConfig* pGameConfig, bool bLoadGameData = true);
-	bool	StartGame(const char* pGameName);
+	bool	Init(const FEmulatorLaunchConfig& config) override;
+	void	Shutdown() override;
+	bool	StartGame(FGameConfig* pGameConfig, bool bLoadGameData) override;
+	bool	SaveCurrentGameData() override;
 	bool	SaveGameState(const char* fname);
 	bool	LoadGameState(const char* fname);
-	void	SaveCurrentGameData();
 
 	void	OnInstructionExecuted(int ticks, uint64_t pins);
 	uint64_t Z80Tick(int num, uint64_t pins);
 
-	void	Tick();
+	void	Reset() override;
+	void	Tick() override;
+
+	void	DrawEmulatorUI(void);
+
+	void	FileMenuAdditions(void) override;		
+	void	SystemMenuAdditions(void) override;
+	void	OptionsMenuAdditions(void) override;
+	void	WindowsMenuAdditions(void) override;
+#if 0
 	void	DrawMemoryTools();
 	void	DrawUI();
 	bool	DrawDockingView();
@@ -127,7 +136,7 @@ public:
 	void	DrawMainMenu(double timeMS);
 	void	DrawExportAsmModalPopup();
 	void	DrawReplaceGameModalPopup();
-
+#endif
 	// disable copy & assign because this class is big!
 	FCpcEmu(const FCpcEmu&) = delete;
 	FCpcEmu& operator= (const FCpcEmu&) = delete;
@@ -151,12 +160,12 @@ public:
 
 	void UpdatePalette();
 
-	bool NewGameFromSnapshot(int snapshotIndex);
+	bool NewGameFromSnapshot(const FGameSnapshot& snaphot) override;
 
 	// Emulator 
 	cpc_t			CpcEmuState;		// Chips CPC State
 	uint8_t*		MappedInMemory = nullptr;
-	FCPCConfig*		pGlobalConfig = nullptr;
+	//FCPCConfig*		pGlobalConfig = nullptr;
 
 	float			ExecSpeedScale = 1.0f;
 
@@ -168,7 +177,7 @@ public:
 	FCpcViewer				CpcViewer;
 	FFrameTraceViewer		FrameTraceViewer;
 	FCPCGraphicsViewer		GraphicsViewer;
-	FCodeAnalysisState		CodeAnalysis;
+	//FCodeAnalysisState		CodeAnalysis;
 	
 	// todo: refactor this to move all event related code out of it
 	FIOAnalysis				IOAnalysis;
@@ -201,18 +210,18 @@ public:
 	uint16_t		PreviousPC = 0;		// store previous pc
 	int			InstructionsTicks = 0;
 
-	bool	bShowImGuiDemo = false;
-	bool	bShowImPlotDemo = false;
+	//bool	bShowImGuiDemo = false;
+	//bool	bShowImPlotDemo = false;
 
 	const FGamesList& GetGamesList() const { return GamesList;  }
 
 	FCPCScreen Screen;
 
 private:
-	FGamesList		GamesList;
+	//FGamesList		GamesList;
 	FCpcGameLoader	GameLoader;
 
-	std::vector<FViewerBase*>	Viewers;
+	//std::vector<FViewerBase*>	Viewers;
 
 	FScreenPixMemDescGenerator* pScreenMemDescGenerator = 0;
 

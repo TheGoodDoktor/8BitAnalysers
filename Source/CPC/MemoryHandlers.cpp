@@ -9,12 +9,14 @@
 
 int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FCpcEmu* pEmu)
 {
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
 	const uint16_t addr = Z80_GET_ADDR(pins);
 	const bool bRead = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_RD);
 	const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
 	
-	FCodeInfo* pCodeInfo = pEmu->CodeAnalysis.GetCodeInfoForAddress(pc);
-	const FAddressRef PCaddrRef = pEmu->CodeAnalysis.AddressRefFromPhysicalAddress(pc);
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	const FAddressRef PCaddrRef = state.AddressRefFromPhysicalAddress(pc);
 
 	// increment counters
 	//pEmu->MemStats.ExecCount[pc]++;

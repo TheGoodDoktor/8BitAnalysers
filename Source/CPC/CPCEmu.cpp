@@ -275,7 +275,7 @@ void gfx_destroy_texture(void* h)
 static void PushAudio(const float* samples, int num_samples, void* user_data)
 {
 	FCpcEmu* pEmu = (FCpcEmu*)user_data;
-	if(pEmu->pGlobalConfig->bEnableAudio)
+	if(pEmu->GetGlobalConfig()->bEnableAudio)
 		saudio_push(samples, num_samples);
 }
 
@@ -706,13 +706,17 @@ void ScreenModeShowValue(FCodeAnalysisState& state, const FEvent& event)
 	ImGui::Text("Mode %d", event.Value);
 }
 
-bool FCpcEmu::Init(const FCpcConfig& config)
+bool FCpcEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 {
+	FEmuBase::Init(launchConfig);
+
+	FCpcLaunchConfig& cpcLaunchConfig = (FCpcLaunchConfig&)launchConfig;
+	FCPCConfig* pCPCConfig = (FCPCConfig*)pGlobalConfig;
 #ifndef NDEBUG
 	LOGINFO("Init CPCEmu...");
 #endif
 
-	const std::string memStr = config.Model == ECpcModel::CPC_6128 ? " (CPC 6128)" : " (CPC 464)";
+	const std::string memStr = cpcLaunchConfig.Model == ECpcModel::CPC_6128 ? " (CPC 6128)" : " (CPC 464)";
 	SetWindowTitle((std::string(kAppTitle) + memStr).c_str());
 	SetWindowIcon("CPCALogo.png");
 
@@ -738,8 +742,8 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 	// A class that deals with loading games.
 	GameLoader.Init(this);
 	GamesList.SetLoader(&GameLoader);
-	if (config.Model == ECpcModel::CPC_6128)
-		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder128.c_str());
+	if (cpcLaunchConfig.Model == ECpcModel::CPC_6128)
+		GamesList.EnumerateGames(pCPCConfig->SnapshotFolder128.c_str());
 	else
 		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder.c_str());
 	
@@ -752,7 +756,7 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 
 	//cpc_type_t type = CPC_TYPE_464;
 	//cpc_type_t type = CPC_TYPE_6128;
-	cpc_type_t type = config.Model == ECpcModel::CPC_6128 ? CPC_TYPE_6128 : CPC_TYPE_464;
+	cpc_type_t type = cpcLaunchConfig.Model == ECpcModel::CPC_6128 ? CPC_TYPE_6128 : CPC_TYPE_464;
 	cpc_joystick_type_t joy_type = CPC_JOYSTICK_NONE;
 
 	cpc_desc_t desc;
@@ -864,7 +868,7 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 	}
 
 	// Setup initial machine memory config
-	if (config.Model == ECpcModel::CPC_464)
+	if (cpcLaunchConfig.Model == ECpcModel::CPC_464)
 	{
 		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0;
 		CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 16;
@@ -905,13 +909,13 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
 
-	if (config.SpecificGame.empty() == false)
+	if (launchConfig.SpecificGame.empty() == false)
 	{
-		bLoadedGame = StartGame(config.SpecificGame.c_str());
+		bLoadedGame = StartGameFromName(launchConfig.SpecificGame.c_str(), true);
 	}
 	else if (pGlobalConfig->LastGame.empty() == false)
 	{
-		bLoadedGame = StartGame(pGlobalConfig->LastGame.c_str());
+		bLoadedGame = StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
 	}
 	// Start ROM if no game has been loaded
 	if (bLoadedGame == false)
@@ -951,6 +955,8 @@ bool FCpcEmu::Init(const FCpcConfig& config)
 
 void FCpcEmu::Shutdown()
 {
+	FEmuBase::Shutdown();
+
 	SaveCurrentGameData();	// save on close
 
 	// Save Global Config - move to function?
@@ -967,8 +973,10 @@ void FCpcEmu::Shutdown()
 	GraphicsViewer.Shutdown();
 }
 
-void FCpcEmu::StartGame(FCPCGameConfig* pGameConfig, bool bLoadGameData /* =  true*/)
+bool FCpcEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 {
+	FCPCGameConfig* pCPCGameConfig = (FCPCGameConfig*)pGameConfig;
+
 #ifndef NDEBUG
 	LOGINFO("Start game '%s'", pGameConfig->Name.c_str());
 #endif
@@ -993,7 +1001,7 @@ void FCpcEmu::StartGame(FCPCGameConfig* pGameConfig, bool bLoadGameData /* =  tr
 
 	FGame* pNewGame = new FGame;
 	pNewGame->pConfig = pGameConfig;
-	pGameConfig->bCPC6128Game = CpcEmuState.type == CPC_TYPE_6128;
+	pCPCGameConfig->bCPC6128Game = CpcEmuState.type == CPC_TYPE_6128;
 #if SPECCY
 	pNewGame->pViewerConfig = pGameConfig->pViewerConfig;
 	assert(pGameConfig->pViewerConfig != nullptr);
@@ -1086,8 +1094,11 @@ void FCpcEmu::StartGame(FCPCGameConfig* pGameConfig, bool bLoadGameData /* =  tr
 	FGlobalConfig& globalConfig = GetGlobalConfig();
 	GraphicsViewer.SetImagesRoot((globalConfig.WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 #endif
+
+	return true;
 }
 
+#if 0
 bool FCpcEmu::StartGame(const char* pGameName)
 {
 	FCPCGameConfig* pCPCGameConfig = (FCPCGameConfig*)GetGameConfigForName(pGameName);
@@ -1105,6 +1116,7 @@ bool FCpcEmu::StartGame(const char* pGameName)
 
 	return false;
 }
+#endif
 
 bool FCpcEmu::SaveGameState(const char* fname)
 {
@@ -1134,51 +1146,49 @@ bool FCpcEmu::LoadGameState(const char* fname)
 		free(pSnapshot);
 		return bSuccess;
 	}
+
+	return true;
 }
 
 // save config & data
-void FCpcEmu::SaveCurrentGameData()
+bool FCpcEmu::SaveCurrentGameData(void)
 {
 	if (pActiveGame != nullptr)
 	{
 		FGameConfig* pGameConfig = pActiveGame->pConfig;
-		if (pGameConfig->Name.empty())
-		{
+		if (pGameConfig == nullptr || pGameConfig->Name.empty())
+			return false;
 
+		const std::string root = pGlobalConfig->WorkspaceRoot;
+		const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
+		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
+		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
+		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+		EnsureDirectoryExists(std::string(root + "Configs").c_str());
+		EnsureDirectoryExists(std::string(root + "GameData").c_str());
+		EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
+		EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
+		EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
+
+		// set config values
+		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+		{
+			const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
+			FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
+
+			viewConfig.bEnabled = viewState.Enabled;
+			viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
 		}
-		else
-		{
-			const std::string root = pGlobalConfig->WorkspaceRoot;
-			const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
-			const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
-			const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
-			const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
-			const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
-			EnsureDirectoryExists(std::string(root + "Configs").c_str());
-			EnsureDirectoryExists(std::string(root + "GameData").c_str());
-			EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
-			EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
-			EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
 
-			// set config values
-			for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-			{
-				const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
-				FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
-
-				viewConfig.bEnabled = viewState.Enabled;
-				viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
-			}
-
-			SaveGameConfigToFile(*pGameConfig, configFName.c_str());
-			SaveGameState(saveStateFName.c_str());
-			ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-			ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
-			//ExportGameJson(this, analysisJsonFName.c_str());
+		SaveGameConfigToFile(*pGameConfig, configFName.c_str());
+		SaveGameState(saveStateFName.c_str());
+		ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+		ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		//ExportGameJson(this, analysisJsonFName.c_str());
 #if SPECCY			
-			GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
+		GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
 #endif
-		}
 	}
 
 	// TODO: get this working?
@@ -1186,30 +1196,30 @@ void FCpcEmu::SaveCurrentGameData()
 	const std::string romJsonFName = root + kRomInfoJsonFile;
 	ExportROMJson(CodeAnalysis, romJsonFName.c_str());
 #endif
+
+	return true;
 }
 
-bool FCpcEmu::NewGameFromSnapshot(int snapshotIndex)
+bool FCpcEmu::NewGameFromSnapshot(const FGameSnapshot& snaphot)
 {
-	if (GamesList.LoadGame(snapshotIndex))
+	// Remove any existing config 
+	RemoveGameConfig(snaphot.DisplayName.c_str());
+
+	FCPCGameConfig* pNewConfig = CreateNewCPCGameConfigFromSnapshot(snaphot);
+
+	if (pNewConfig != nullptr)
 	{
-		const FGameSnapshot& game = GamesList.GetGame(snapshotIndex);
+		StartGame(pNewConfig, /* bLoadGameData */ false);
+		AddGameConfig(pNewConfig);
+		SaveCurrentGameData();
 
-		// Remove any existing config 
-		RemoveGameConfig(game.DisplayName.c_str());
-
-		FCPCGameConfig* pNewConfig = CreateNewCPCGameConfigFromSnapshot(game);
-
-		if (pNewConfig != nullptr)
-		{
-			StartGame(pNewConfig, /* bLoadGameData */ false);
-			AddGameConfig(pNewConfig);
-			SaveCurrentGameData();
-
-			return true;
-		}
+		return true;
 	}
+
 	return false;
 }
+
+#if 0
 
 void FCpcEmu::DrawFileMenu()
 {
@@ -1526,6 +1536,7 @@ void FCpcEmu::DrawMainMenu(double timeMS)
 	DrawReplaceGameModalPopup();
 }
 
+
 void FCpcEmu::DrawExportAsmModalPopup()
 {
 	if (bExportAsm)
@@ -1616,8 +1627,17 @@ void FCpcEmu::DrawReplaceGameModalPopup()
 	}
 }
 
+#endif
+
+void FCpcEmu::Reset()
+{
+	FEmuBase::Reset();
+}
+
 void FCpcEmu::Tick()
 {
+	FEmuBase::Tick();
+
 	FDebugger& debugger = CodeAnalysis.Debugger;
 
 	CpcViewer.Tick();
@@ -1645,6 +1665,7 @@ void FCpcEmu::Tick()
 	DrawDockingView();
 }
 
+#if 0
 // todo: delete?
 void FCpcEmu::DrawMemoryTools()
 {
@@ -1666,14 +1687,33 @@ void FCpcEmu::DrawMemoryTools()
 
 	ImGui::End();
 }
+#endif
 
-void FCpcEmu::DrawUI()
+// These functions are used to add to the bottom of the menus
+void	FCpcEmu::FileMenuAdditions(void)
+{
+}
+
+void	FCpcEmu::SystemMenuAdditions(void)
+{
+}
+
+void	FCpcEmu::OptionsMenuAdditions(void)
+{
+}
+
+void	FCpcEmu::WindowsMenuAdditions(void)
+{
+}
+
+
+void FCpcEmu::DrawEmulatorUI()
 {
 	ui_cpc_t* pCPCUI = &UICpc;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 	
 	// Draw the main menu
-	DrawMainMenu(timeMS);
+	//DrawMainMenu(timeMS);
 
 	if (pCPCUI->memmap.open)
 	{
@@ -1694,7 +1734,8 @@ void FCpcEmu::DrawUI()
 	ui_kbd_draw(&pCPCUI->kbd);
 	ui_memmap_draw(&pCPCUI->memmap);
 	ui_am40010_draw(&pCPCUI->ga);
-	
+
+#if 0	
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
 	{
@@ -1717,7 +1758,7 @@ void FCpcEmu::DrawUI()
 		CodeAnalysis.MemoryAnalyser.DrawUI();
 	}
 	ImGui::End();
-
+#endif
 	if (ImGui::Begin("CPC View"))
 	{
 		CpcViewer.Draw();
@@ -1745,6 +1786,7 @@ void FCpcEmu::DrawUI()
 	GraphicsViewer.Draw();
 	//DrawMemoryTools();
 
+#if 0
 	// Code analysis views
 	for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
 	{
@@ -1759,7 +1801,7 @@ void FCpcEmu::DrawUI()
 			ImGui::End();
 		}
 	}
-
+#endif
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Character Maps"))
 	{
@@ -1768,6 +1810,7 @@ void FCpcEmu::DrawUI()
 	ImGui::End();
 }
 
+#if 0
 bool FCpcEmu::DrawDockingView()
 {
 	//SCOPE_PROFILE_CPU("UI", "DrawUI", ProfCols::UI);
@@ -1832,9 +1875,12 @@ bool FCpcEmu::DrawDockingView()
 
 	return bQuit;
 }
+#endif
 
-void FCpcConfig::ParseCommandline(int argc, char** argv)
+void FCpcLaunchConfig::ParseCommandline(int argc, char** argv)
 {
+	FEmulatorLaunchConfig::ParseCommandline(argc, argv);	// call base class
+
 	std::vector<std::string> argList;
 	for (int arg = 0; arg < argc; arg++)
 	{
@@ -1850,15 +1896,6 @@ void FCpcConfig::ParseCommandline(int argc, char** argv)
 #ifdef ENABLE_CPC_6128
 			Model = ECpcModel::CPC_6128;
 #endif
-		}
-		else if (*argIt == std::string("-game"))
-		{
-			if (++argIt == argList.end())
-			{
-				LOGERROR("-game : No game specified");
-				break;
-			}
-			SpecificGame = *++argIt;
 		}
 
 		++argIt;

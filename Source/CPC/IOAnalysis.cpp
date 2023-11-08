@@ -273,15 +273,17 @@ void FIOAnalysis::HandleGateArray(uint64_t pins, CpcIODevice& readDevice, CpcIOD
 
 void FIOAnalysis::RegisterEvent(uint8_t type, uint16_t address, uint8_t value)
 {
-	const uint16_t pc = pCpcEmu->CodeAnalysis.Debugger.GetPC().Address;
-	const FAddressRef pcAddrRef = pCpcEmu->CodeAnalysis.AddressRefFromPhysicalAddress(pc);
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	const uint16_t pc = state.Debugger.GetPC().Address;
+	const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
 	const uint16_t scanlinePos = pCpcEmu->CpcEmuState.ga.crt.v_pos;
-	pCpcEmu->CodeAnalysis.Debugger.RegisterEvent(type, pcAddrRef, address, value, scanlinePos);
+	state.Debugger.RegisterEvent(type, pcAddrRef, address, value, scanlinePos);
 }
 
 void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 {
-	 const FAddressRef PCaddrRef = pCpcEmu->CodeAnalysis.AddressRefFromPhysicalAddress(pc);
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	const FAddressRef PCaddrRef = state.AddressRefFromPhysicalAddress(pc);
 
 	 CpcIODevice readDevice = CpcIODevice::None;
 	 CpcIODevice writeDevice = CpcIODevice::None;
@@ -334,7 +336,7 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 
 void FIOAnalysis::DrawUI()
 {
-	FCodeAnalysisState& state = pCpcEmu->CodeAnalysis;
+	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	
@@ -424,7 +426,7 @@ void FIOAnalysis::DrawUI()
 		}
 	}
 
-	if (!pCpcEmu->CodeAnalysis.Debugger.IsStopped())
+	if (!pCpcEmu->GetCodeAnalysis().Debugger.IsStopped())
 	{
 	  // reset for frame
 	  for (int i = 0; i < (int)CpcIODevice::Count; i++)

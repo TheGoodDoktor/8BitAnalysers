@@ -29,6 +29,8 @@ void FOverviewViewer::DrawStats()
 
 void FOverviewViewer::CalculateStats()
 {
+    FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+
     int UnCommentedCodeCount = 0;
     int CommentedCodeCount = 0;
     int ReadOnlyDataCount = 0;
@@ -39,7 +41,7 @@ void FOverviewViewer::CalculateStats()
     for (int i = 0; i < (1 << 16); i++)
     {
         const bool bInRom = i < 0x4000;  // sam todo. this wont work for cpc
-        const FCodeInfo* pCodeInfo = pCpcEmu->CodeAnalysis.GetCodeInfoForAddress(i);
+        const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(i);
         if (pCodeInfo != nullptr)
         {
             if (pCodeInfo->Comment.empty())
@@ -49,7 +51,7 @@ void FOverviewViewer::CalculateStats()
         }
         else
         {
-            const FDataInfo *pDataInfo = pCpcEmu->CodeAnalysis.GetReadDataInfoForAddress(i);
+            const FDataInfo *pDataInfo = state.GetReadDataInfoForAddress(i);
             const bool bRead = pDataInfo->LastFrameRead != -1;
             const bool bWrite = pDataInfo->LastFrameWritten != -1;
 

@@ -146,7 +146,7 @@ public:
 	bool StartGame(FGameConfig *pConfig, bool bLoadGame) override;
 	//bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
 	void ResetCodeAnalysis(void);
-	bool SaveCurrentGame(void);
+	bool SaveCurrentGameData(void) override;
 	bool LoadGameState(const char* fname);
 	bool SaveGameState(const char* fname);
 	//bool LoadCodeAnalysis(const FGameInfo* pGameInfo);

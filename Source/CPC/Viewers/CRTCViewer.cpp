@@ -45,6 +45,7 @@ bool FCrtcViewer::Init(void)
 
 void FCrtcViewer::DrawUI(void)
 {
+	FCpcEmu* pCpcEmu = (FCpcEmu*)pEmulator;
 	mc6845_t& mc = pCpcEmu->CpcEmuState.crtc;
 
 	ImGui::Columns(2, "##regs", false);

@@ -1,11 +1,13 @@
 #pragma once
 
-#include "ViewerBase.h"
+#include "Misc/EmuBase.h"
+
+class FCpcEmu;
 
 class FCrtcViewer : public FViewerBase
 {
 public:
-			FCrtcViewer(FCpcEmu* pEmu) :FViewerBase(pEmu) { Name = "CRTC"; }
+			FCrtcViewer(FEmuBase* pEmu) :FViewerBase(pEmu) { Name = "CRTC"; }
 			bool	Init(void) override;
 	void	DrawUI() override;
 

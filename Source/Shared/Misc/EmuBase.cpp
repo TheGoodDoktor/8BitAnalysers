@@ -242,13 +242,17 @@ void FEmuBase::FileMenu()
         ImGui::EndMenu();
     }
 
+	if (ImGui::MenuItem("Save Game Data"))
+	{
+		SaveCurrentGameData();
+	}
+
 	if (ImGui::MenuItem("Export ASM File"))
 	{
 		// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
 		bExportAsm = true;
 	}
     
-	ImGui::Separator();
 	FileMenuAdditions();
 }
 
@@ -322,7 +326,6 @@ void FEmuBase::OptionsMenu()
     ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
 #endif // NDEBUG
 
-    ImGui::Separator();
     OptionsMenuAdditions();
 }
 
@@ -338,7 +341,6 @@ void FEmuBase::SystemMenu()
 		Reset();
 	}
 
-	ImGui::Separator();
 	SystemMenuAdditions();
 }
 
@@ -363,7 +365,6 @@ void FEmuBase::WindowsMenu()
 
     }
 
-	ImGui::Separator();
 	WindowsMenuAdditions();
 }
 

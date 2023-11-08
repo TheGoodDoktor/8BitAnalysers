@@ -1,4 +1,5 @@
 #pragma once
+#if 0
 
 #include <string>
 
@@ -18,3 +19,5 @@ protected:
 private:
 	bool		bOpen = true;
 };
+
+#endif

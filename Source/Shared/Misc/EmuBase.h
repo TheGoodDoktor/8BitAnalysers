@@ -42,6 +42,7 @@ public:
 
 	virtual bool	NewGameFromSnapshot(const FGameSnapshot& gameConfig) = 0;
 	virtual bool	StartGame(FGameConfig* pConfig, bool bLoadGame) = 0;
+	virtual bool	SaveCurrentGameData(void) = 0;
 
 	bool			StartGameFromName(const char* pGameName, bool bLoadGame);
 
@@ -66,15 +67,13 @@ public:
 
 protected:
 	void			FileMenu();
-	virtual void	FileMenuAdditions(void) {}	// system specific additions
-
 	void			SystemMenu();
-	virtual void	SystemMenuAdditions(void) {}	// system specific additions
-	
 	void			OptionsMenu();
-	virtual void	OptionsMenuAdditions(void) {}	// system specific additions
-	
 	void			WindowsMenu();
+	
+	virtual void	FileMenuAdditions(void) {}	// system specific additions
+	virtual void	SystemMenuAdditions(void) {}	// system specific additions
+	virtual void	OptionsMenuAdditions(void) {}	// system specific additions
 	virtual void	WindowsMenuAdditions(void) {}	// system specific additions
 
 

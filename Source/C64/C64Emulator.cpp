@@ -411,7 +411,7 @@ bool FC64Emulator::NewGameFromSnapshot(const FGameSnapshot& gameSnapshot)
 
         StartGame(pNewConfig, false);
         AddGameConfig(pNewConfig);
-        SaveCurrentGame();
+        SaveCurrentGameData();
 
         return true;
     }
@@ -456,7 +456,7 @@ bool FC64Emulator::LoadGameState(const char* fname)
     return false;
 }
 
-bool FC64Emulator::SaveCurrentGame(void)
+bool FC64Emulator::SaveCurrentGameData(void)
 {
     if(pCurrentGameConfig == nullptr)
         return false;
@@ -560,7 +560,7 @@ void FC64Emulator::Shutdown()
     {
         // Save Global Config - move to function?
         pGlobalConfig->LastGame = pCurrentGameConfig->Name;
-        SaveCurrentGame();
+        SaveCurrentGameData();
     }
 
     pGlobalConfig->Save(kGlobalConfigFilename);
