@@ -117,12 +117,6 @@ file ( GLOB program_src
 	SnapshotLoaders/*.cpp SnapshotLoaders/*.h
 	Viewers/*.cpp Viewers/*.h)
 
-if(${gfxapi} STREQUAL "GLFWApi")
-	set ( platform_main GLFW/GLFWMain.cpp )
-else()
-	set ( platform_main Windows/WinMain.cpp )
-endif()
-
 add_executable (CPCAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
 # This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
