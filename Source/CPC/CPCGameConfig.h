@@ -16,4 +16,5 @@ struct FCPCGameConfig : FGameConfig
 };
 
 FCPCGameConfig* CreateNewCPCGameConfigFromSnapshot(const FGameSnapshot& snapshot);
+FCPCGameConfig* CreateNewAmstradBasicConfig(void);
 bool LoadCPCGameConfigs(FCpcEmu* pUI);

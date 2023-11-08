@@ -37,6 +37,16 @@ FCPCGameConfig* CreateNewCPCGameConfigFromSnapshot(const FGameSnapshot& snapshot
 	return pNewConfig;
 }
 
+FCPCGameConfig* CreateNewAmstradBasicConfig(void)
+{
+	FCPCGameConfig* pNewConfig = new FCPCGameConfig;
+
+	pNewConfig->Name = "AmstradBasic";
+	pNewConfig->SnapshotFile = "";
+
+	return pNewConfig;
+}
+
 bool LoadCPCGameConfigs(FCpcEmu* pEmu)
 {
 	FDirFileList listing;

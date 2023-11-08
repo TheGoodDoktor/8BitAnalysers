@@ -1095,6 +1095,7 @@ bool FCpcEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	GraphicsViewer.SetImagesRoot((globalConfig.WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 #endif
 
+	pCurrentGameConfig = pGameConfig;
 	return true;
 }
 
@@ -1632,6 +1633,15 @@ void FCpcEmu::DrawReplaceGameModalPopup()
 void FCpcEmu::Reset()
 {
 	FEmuBase::Reset();
+	cpc_reset(&CpcEmuState);
+	ui_dbg_reset(&UICpc.dbg);
+
+	FCPCGameConfig* pBasicConfig = (FCPCGameConfig*)GetGameConfigForName("AmstradBasic");
+
+	if (pBasicConfig == nullptr)
+		pBasicConfig = CreateNewAmstradBasicConfig();
+
+	StartGame(pBasicConfig, false);	// reset code analysis
 }
 
 void FCpcEmu::Tick()

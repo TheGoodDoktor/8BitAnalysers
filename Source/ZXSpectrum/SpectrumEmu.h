@@ -166,7 +166,7 @@ public:
 
 	FGame *			pActiveGame = nullptr;
 
-	FGamesList		GamesList;
+	//FGamesList		GamesList;
 	FGamesList		RZXGamesList;
 	FZXGameLoader	GameLoader;
 

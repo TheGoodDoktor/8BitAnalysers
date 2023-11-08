@@ -951,6 +951,8 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 
 	if(pGameConfig != nullptr)
 		GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+
+	pCurrentGameConfig = pGameConfig;
 	return true;
 }
 #if 0
