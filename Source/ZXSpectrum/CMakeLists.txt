@@ -141,12 +141,6 @@ file ( GLOB program_src
 	SnapshotLoaders/*.cpp SnapshotLoaders/*.h
 	Viewers/*.cpp Viewers/*.h)
 
-if(${gfxapi} STREQUAL "GLFWApi")
-	set ( platform_main GLFW/GLFWMain.cpp )
-else()
-	set ( platform_main Windows/WinMain.cpp )
-endif()
-
 add_executable (SpectrumAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
 
 # set up test
