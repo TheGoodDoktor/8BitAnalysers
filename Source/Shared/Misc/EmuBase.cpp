@@ -231,10 +231,8 @@ void FEmuBase::FileMenu()
             {
                 if (ImGui::MenuItem(pGameConfig->Name.c_str()))
                 {
-                    //if (GamesList.LoadGame(gameFile.c_str()))
-                    {
-                        StartGame(pGameConfig,true);
-                    }
+                    SaveCurrentGameData();  // save previous game
+                    StartGame(pGameConfig,true);
                 }
             }
         }

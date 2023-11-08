@@ -27,7 +27,7 @@
 
 #include <ImGuiSupport/ImGuiTexture.h>
 
-#define RUN_AHEAD_TO_GENERATE_SCREEN
+//#define RUN_AHEAD_TO_GENERATE_SCREEN
 
 // Disabled for now
 //#define ENABLE_CPC_6128
@@ -1050,6 +1050,10 @@ bool FCpcEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		// where do we want pokes to live?
 		LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
 #endif
+	}
+	else
+	{
+		GamesList.LoadGame(pGameConfig->Name.c_str());
 	}
 
 	ReAnalyseCode(CodeAnalysis);
