@@ -49,7 +49,7 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-int main(int argc, char** argv)
+int RunMainLoop(FEmuBase* pEmulator, int argc, char** argv)
 {
 	FAppState& appState = g_AppState;
 
@@ -146,7 +146,6 @@ int main(int argc, char** argv)
 
     FC64LaunchConfig launchConfig;
     launchConfig.ParseCommandline(argc,argv);
-    FEmuBase* pEmulator = new FC64Emulator;
     pEmulator->Init(launchConfig);
 
 	g_AppState.pEmulator = pEmulator;
@@ -252,4 +251,11 @@ void WindowFocusCallback(GLFWwindow* window, int focused)
 	{
 		//TODO: g_AppState.pC64Emu->AppFocusCallback(focused);
 	}
+}
+
+
+int main(int argc, char** argv)
+{
+	FEmuBase* pEmulator = new FC64Emulator;
+    RunMainLoop(pEmulator,argc,argv);
 }

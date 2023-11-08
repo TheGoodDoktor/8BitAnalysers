@@ -2,7 +2,7 @@
 
 #include "../SpectrumEmu.h"
 
-#define SOKOL_IMPL
+//#define SOKOL_IMPL
 #include <sokol_audio.h>
 
 #include <gtest/gtest.h>
@@ -64,8 +64,8 @@ TEST_F(FSpectrumEmuTest, SnapshotLoaderTest)
 
 
 // needed to get it compiling
-void SetWindowTitle(const char* pTitle) {}
-void SetWindowIcon(const char* pIconFile) {}
+//void SetWindowTitle(const char* pTitle) {}
+//void SetWindowIcon(const char* pIconFile) {}
 
 int main(int argc, char* argv[])
 {
