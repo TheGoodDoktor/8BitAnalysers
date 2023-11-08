@@ -1070,9 +1070,9 @@ bool FCpcEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	ImGui_UpdateTextureRGBA(CpcViewer.GetScreenTexture(), CpcViewer.GetFrameBuffer());
 
 	// Load the game again (from memory - it should be cached) to restore the cpc state.
-	const std::string snapFolder = pGlobalConfig->SnapshotFolder;
-	const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
-	GamesList.LoadGame(gameFile.c_str());
+	//const std::string snapFolder = pGlobalConfig->SnapshotFolder;
+	//const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
+	GamesList.LoadGame(pGameConfig->Name.c_str());
 #endif
 
 	// Start in break mode so the memory will be in it's initial state. 
