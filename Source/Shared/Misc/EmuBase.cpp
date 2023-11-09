@@ -206,8 +206,8 @@ void FEmuBase::FileMenu()
                     }
                     if (bGameExists)
                     {
-                        //bReplaceGamePopup = true;
-                        //ReplaceGameSnapshotIndex = gameNo;
+                        bReplaceGamePopup = true;
+                        ReplaceGameSnapshotIndex = gameNo;
                     }
                     else
                     {
@@ -232,7 +232,11 @@ void FEmuBase::FileMenu()
                 if (ImGui::MenuItem(pGameConfig->Name.c_str()))
                 {
                     SaveCurrentGameData();  // save previous game
-                    StartGame(pGameConfig,true);
+                    if (StartGame(pGameConfig, true) == false)
+                    {
+                        // TODO: Output Error
+                        Reset();
+                    }
                 }
             }
         }

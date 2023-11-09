@@ -841,6 +841,7 @@ void FSpectrumEmu::Shutdown()
 
 bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  true*/)
 {
+	assert(pGameConfig != nullptr);
 	FZXSpectrumGameConfig *pSpectrumGameConfig = (FZXSpectrumGameConfig*)pGameConfig;
 	
 	// reset systems
@@ -849,15 +850,8 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	FrameTraceViewer.Reset();
 	GraphicsViewer.Reset();
 
-	if(pGameConfig!=nullptr)
-	{
-		const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
-		SetWindowTitle(windowTitle.c_str());
-	}
-	else
-	{
-		SetWindowTitle(kAppTitle.c_str());
-	}
+	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
+	SetWindowTitle(windowTitle.c_str());
 	
 	// start up game
 	if(pActiveGame!=nullptr)
@@ -865,32 +859,28 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	delete pActiveGame;
 	pActiveGame = nullptr;
 	
-	if(pGameConfig != nullptr)
-	{
-		FGame* pNewGame = new FGame;
-		pSpectrumGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
-		pNewGame->pConfig = pGameConfig;
-		pNewGame->pViewerConfig = pSpectrumGameConfig->pViewerConfig;
-		assert(pSpectrumGameConfig->pViewerConfig != nullptr);
-		pActiveGame = pNewGame;
-		pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pSpectrumGameConfig);
-		GenerateSpriteListsFromConfig(GraphicsViewer, pSpectrumGameConfig);
-	}
+	FGame* pNewGame = new FGame;
+	pSpectrumGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
+	pNewGame->pConfig = pGameConfig;
+	pNewGame->pViewerConfig = pSpectrumGameConfig->pViewerConfig;
+	assert(pSpectrumGameConfig->pViewerConfig != nullptr);
+	pActiveGame = pNewGame;
+	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pSpectrumGameConfig);
+	GenerateSpriteListsFromConfig(GraphicsViewer, pSpectrumGameConfig);
 
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
 
-	//IOAnalysis.Reset();
-
 	// Set options from config
-	if (pGameConfig != nullptr)
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
-		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-		{
-			CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
-			CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
-		}
+		CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
+		CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
 	}
+
+	bool bLoadSnapshot = pGameConfig->SnapshotFile.empty() == false;
+
+	// Are we loading a previously saved game
 	if (bLoadGameData)
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
@@ -914,19 +904,32 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 
 		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
-		if(LoadGameState(this, saveStateFName.c_str()) == false)
+		if(LoadGameState(this, saveStateFName.c_str()))
 		{
-			// if the game state didn't load then reload the snapshot
-			const FGameSnapshot* snapshot = GamesList.GetGame(pGameConfig->Name.c_str());
-			GameLoader.LoadSnapshot(*snapshot);
+			// if the game state loaded then we don't need the snapshot
+			bLoadSnapshot = false;
 		}
 
-		if (FileExists(romJsonFName.c_str()))
-			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
-
 		// where do we want pokes to live?
-		LoadPOKFile(*pSpectrumGameConfig, std::string(GetZXSpectrumGlobalConfig()->PokesFolder + pGameConfig->Name + ".pok").c_str());
+		if (pSpectrumGameConfig != nullptr)
+			LoadPOKFile(*pSpectrumGameConfig, std::string(GetZXSpectrumGlobalConfig()->PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}
+
+	// we always want to load the ROM info even if we aren't loading a previous analysis
+	const std::string romJsonFName = (ZXEmuState.type == ZX_TYPE_128) ? kRomInfo128JsonFile : kRomInfo48JsonFile;
+
+	if (FileExists(romJsonFName.c_str()))
+		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+	
+	if (bLoadSnapshot)
+	{
+		// if the game state didn't load then reload the snapshot
+		const FGameSnapshot* snapshot = GamesList.GetGame(pGameConfig->Name.c_str());
+		if(snapshot == nullptr)
+			return false;
+		GameLoader.LoadSnapshot(*snapshot);
+	}
+
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	FormatSpectrumMemory(CodeAnalysis);
@@ -949,32 +952,12 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
 
-	if(pGameConfig != nullptr)
-		GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+	GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 
 	pCurrentGameConfig = pGameConfig;
 	return true;
 }
-#if 0
-bool FSpectrumEmu::StartGame(const char *pGameName)
-{
-	FZXSpectrumGameConfig* pZXGameConfig = (FZXSpectrumGameConfig*)GetGameConfigForName(pGameName);
-	const FZXSpectrumConfig* pZXGlobalConfig = GetZXSpectrumGlobalConfig();
 
-	if (pZXGameConfig != nullptr)
-	{
-		//const std::string snapFolder = ZXEmuState.type == ZX_TYPE_128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-		//const std::string gameFile = snapFolder + pZXGameConfig->SnapshotFile;
-		if (GamesList.LoadGame(pZXGameConfig->SnapshotFile.c_str()))
-		{
-			StartGame(pZXGameConfig);
-			return true;
-		}
-	}
-
-	return false;
-}
-#endif
 
 // save config & data
 bool FSpectrumEmu::SaveCurrentGameData()
