@@ -201,7 +201,7 @@ void FEmuBase::FileMenu()
 
                     for (const auto& pGameConfig : GetGameConfigs())
                     {
-                        if (pGameConfig->SnapshotFile == game.DisplayName)
+                        if (pGameConfig->Name == game.DisplayName)
                             bGameExists = true;
                     }
                     if (bGameExists)
@@ -471,11 +471,10 @@ void FEmuBase::DrawExportAsmModalPopup()
 }
 
 void FEmuBase::DrawReplaceGameModalPopup()
-{
-	if (bReplaceGamePopup)
-	{
+{   
+	if (bReplaceGamePopup)  // invoke popup if bool set
 		ImGui::OpenPopup("Overwrite Game?");
-	}
+
 	if (ImGui::BeginPopupModal("Overwrite Game?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::Text("Do you want to overwrite existing game data?\nAny reverse engineering progress will be lost!\n\n");
@@ -483,25 +482,17 @@ void FEmuBase::DrawReplaceGameModalPopup()
 
 		if (ImGui::Button("Overwrite", ImVec2(120, 0)))
 		{
-			if (GamesList.LoadGame(ReplaceGameSnapshotIndex))
-			{
-				const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
-
-				for (const auto& pGameConfig : GetGameConfigs())
-				{
-					if (pGameConfig->SnapshotFile == game.DisplayName)
-					{
-						NewGameFromSnapshot(game);
-						break;
-					}
-				}
-			}
+			const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
+			if (NewGameFromSnapshot(game))
+				bReplaceGamePopup = false;
+			
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0)))
 		{
+			bReplaceGamePopup = false;
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
