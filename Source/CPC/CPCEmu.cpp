@@ -15,7 +15,7 @@
 #include "CodeAnalyser/CodeAnalysisJson.h"
 #include "CPCGameConfig.h"
 #include "Debug/DebugLog.h"
-#include "CpcChipsImpl.h"
+#include "CPCChipsImpl.h"
 
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "App.h"

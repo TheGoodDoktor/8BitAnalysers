@@ -1,6 +1,6 @@
 
 #define CHIPS_IMPL
-#include "CpcChipsImpl.h"
+#include "CPCChipsImpl.h"
 
 #define CHIPS_UTIL_IMPL
 #include "util/z80dasm.h"
