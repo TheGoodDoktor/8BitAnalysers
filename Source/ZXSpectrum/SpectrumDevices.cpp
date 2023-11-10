@@ -23,13 +23,21 @@ bool	FSpectrumKeyboard::Init(kbd_t* kbd)
 
 void FSpectrumKeyboard::RegisterKeyboardRead(FAddressRef pc, uint16_t ioAddress, uint8_t value)
 {
+	AccessLocations.insert(pc);
 
 }
 
 void FSpectrumKeyboard::DrawDetailsUI()
 {
-  
+	ImGui::Text("Access Locations");
+	for (const auto& location : AccessLocations)
+	{
+		ShowCodeAccessorActivity(*pCodeAnalyser, location);
 
+		ImGui::Text("");
+		ImGui::SameLine(30);
+		DrawCodeAddress(*pCodeAnalyser, pCodeAnalyser->GetFocussedViewState(), location);
+	}
 }
 
 

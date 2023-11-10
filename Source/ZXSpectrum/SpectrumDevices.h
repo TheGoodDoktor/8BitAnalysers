@@ -19,6 +19,8 @@ public:
 	void	RegisterKeyboardRead(FAddressRef pc,uint16_t ioAddress,uint8_t value);
 private:
 	kbd_t*	pKeyboard = nullptr;
+	std::unordered_set<FAddressRef>	AccessLocations;
+
 };
 
 class FSpectrumBeeper : public FIODevice
