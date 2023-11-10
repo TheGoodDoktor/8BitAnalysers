@@ -18,6 +18,7 @@ static int kGraphicsViewerWidth = 256;
 static int kGraphicsViewerHeight = 512;
 
 int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
+EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType);
 
 namespace ImGui
 {
@@ -94,7 +95,9 @@ void FGraphicsViewer::GoToAddress(FAddressRef address)
 		}
 		else
 		{
-			XSizePixels = pDataInfo->ByteSize * 8;
+			const EBitmapFormat bitmapFormat = GetBitmapFormatForDisplayType(pDataInfo->DisplayType);
+			const int bpp = bitmapFormat == EBitmapFormat::None ? 1 : GetBppForBitmapFormat(bitmapFormat);
+			XSizePixels = (pDataInfo->ByteSize / bpp) * 8;
 		}
 	}
 
@@ -883,6 +886,22 @@ bool FGraphicsViewer::ExportImages(void)
 	}
 
 	return true;
+}
+
+EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType)
+{
+	switch (displayType)
+	{
+	case EDataItemDisplayType::Bitmap:
+		return EBitmapFormat::Bitmap_1Bpp;
+	case EDataItemDisplayType::ColMap2Bpp_CPC:
+		return EBitmapFormat::ColMap2Bpp_CPC;
+	case EDataItemDisplayType::ColMap4Bpp_CPC:
+		return EBitmapFormat::ColMap4Bpp_CPC;
+	case  EDataItemDisplayType::ColMap2Bpp_C64:
+		return EBitmapFormat::ColMap2Bpp_C64;
+	}
+	return EBitmapFormat::None;
 }
 
 int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)

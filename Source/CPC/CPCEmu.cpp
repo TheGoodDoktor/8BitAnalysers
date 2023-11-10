@@ -839,9 +839,8 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	pCPCGameConfig->bCPC6128Game = CPCEmuState.type == CPC_TYPE_6128;
 	pActiveGame = pNewGame;
 
-#if SPECCY
-	GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
-#endif
+	//GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
+
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
 	
@@ -858,15 +857,15 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
 		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
 		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 
 		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
-#if SPECCY
 		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
-#endif
+
 		if (LoadGameState(saveStateFName.c_str()) == false)
 		{
 			GamesList.LoadGame(pGameConfig->Name.c_str());
@@ -912,10 +911,7 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
 
-#if SPECCY
-	FGlobalConfig& globalConfig = GetGlobalConfig();
-	GraphicsViewer.SetImagesRoot((globalConfig.WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
-#endif
+	GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 
 	pCurrentGameConfig = pGameConfig;
 	return true;
@@ -986,11 +982,13 @@ bool FCPCEmu::SaveCurrentGameData(void)
 		const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
 		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
 		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 		EnsureDirectoryExists(std::string(root + "Configs").c_str());
 		EnsureDirectoryExists(std::string(root + "GameData").c_str());
 		EnsureDirectoryExists(std::string(root + "AnalysisJson").c_str());
+		EnsureDirectoryExists(std::string(root + "GraphicsSets").c_str());
 		EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
 		EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
 
@@ -1009,9 +1007,7 @@ bool FCPCEmu::SaveCurrentGameData(void)
 		ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		//ExportGameJson(this, analysisJsonFName.c_str());
-#if SPECCY			
 		GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
-#endif
 	}
 
 	return true;

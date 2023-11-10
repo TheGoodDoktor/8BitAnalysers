@@ -10,9 +10,9 @@ public:
 	//ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn) override;
 	// ~IGameLoader
 
-	void Init(FCPCEmu* pCPCEmu)
+	void Init(FCPCEmu* pEmu)
 	{
-		pCPCEmu = pCPCEmu;
+		pCPCEmu = pEmu;
 	}
 
 	// When caching is enabled, repeated loading of the same snapshot will not need to load the file from disk.
