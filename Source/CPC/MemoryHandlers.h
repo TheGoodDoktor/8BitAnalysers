@@ -7,7 +7,7 @@
 #include <string>
 
 
-class FCpcEmu;
+class FCPCEmu;
 struct FGame;
 
 enum class MemoryUse
@@ -61,11 +61,11 @@ struct FMemoryAccessHandler
 	FItemReferenceTracker	Callers;
 };
 
-int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FCpcEmu* pEmu);
+int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FCPCEmu* pEmu);
 
 void AnalyseMemory(FMemoryStats &memStats);
 void ResetMemoryStats(FMemoryStats &memStats);
 
 // UI
-void DrawMemoryAnalysis(FCpcEmu* pEmu);
-void DrawMemoryHandlers(FCpcEmu* pEmu);
+void DrawMemoryAnalysis(FCPCEmu* pEmu);
+void DrawMemoryHandlers(FCPCEmu* pEmu);

@@ -1,6 +1,6 @@
 #include "CPCGraphicsView.h"
 
-const uint32_t FCpcGraphicsView::ColourLUT[32] =
+const uint32_t FCPCGraphicsView::ColourLUT[32] =
 {
     0xff6B7D6E,         // #40 white
     0xff6D7D6E,         // #41 white
@@ -38,7 +38,7 @@ const uint32_t FCpcGraphicsView::ColourLUT[32] =
 
 // MARKC: This isn't going to use the LUT properly, it appears to be copy & pasted from the speccy version and gets the colours from a speccy attribute
 
-uint32_t FCpcGraphicsView::GetColFromAttr(uint8_t colBits, bool bBright)
+uint32_t FCPCGraphicsView::GetColFromAttr(uint8_t colBits, bool bBright)
 {
 	const uint32_t outCol = ColourLUT[colBits & 7]; // MARKC: will only allow access to first 8 colours
 	if (bBright == false)
@@ -47,7 +47,7 @@ uint32_t FCpcGraphicsView::GetColFromAttr(uint8_t colBits, bool bBright)
 		return outCol;
 }
 
-void FCpcGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint8_t colAttr)
+void FCPCGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint8_t colAttr)
 {
 	const bool bBright = !!(colAttr & (1 << 6));
 	const uint32_t inkCol = GetColFromAttr(colAttr & 7, bBright);
@@ -55,14 +55,14 @@ void FCpcGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint8_t co
 	FGraphicsView::DrawCharLine(charLine, xp, yp, inkCol, paperCol);
 }
 
-void FCpcGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr)
+void FCPCGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr)
 {
 	const bool bBright = !!(colAttr & (1 << 6));
     const uint32_t cols[] = { GetColFromAttr(colAttr >> 3, bBright), GetColFromAttr(colAttr & 7, bBright)};
 	FGraphicsView::Draw1BppImageAt(pSrc, xp, yp, widthChars * 8, heightChars * 8, cols);
 }
 
-void FCpcGraphicsView::DrawBitImageChars(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr)
+void FCPCGraphicsView::DrawBitImageChars(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr)
 {
 	const bool bBright = !!(colAttr & (1 << 6));
 	const uint32_t cols[] = { GetColFromAttr(colAttr >> 3, bBright), GetColFromAttr(colAttr & 7, bBright) };

@@ -16,21 +16,21 @@
 #include <algorithm>
 #include <cassert>
 
-int CpcKeyFromImGuiKey(ImGuiKey key);
+int CPCKeyFromImGuiKey(ImGuiKey key);
 void DrawPalette(const FPalette& palette);
-void DrawSnapLoadButtons(FCpcEmu* pCpcEmu);
+void DrawSnapLoadButtons(FCPCEmu* pCPCEmu);
 
 template<typename T> static inline T Clamp(T v, T mn, T mx)
 { 
 	return (v < mn) ? mn : (v > mx) ? mx : v; 
 }
 
-void FCpcViewer::Init(FCpcEmu* pEmu)
+void FCPCViewer::Init(FCPCEmu* pEmu)
 {
-	pCpcEmu = pEmu;
+	pCPCEmu = pEmu;
 
 	// setup texture
-	chips_display_info_t dispInfo = cpc_display_info(&pEmu->CpcEmuState);
+	chips_display_info_t dispInfo = cpc_display_info(&pEmu->CPCEmuState);
 
 	// setup pixel buffer
 	int w = dispInfo.frame.dim.width; // 1024
@@ -44,11 +44,11 @@ void FCpcViewer::Init(FCpcEmu* pEmu)
 	TextureHeight = AM40010_DISPLAY_HEIGHT;
 }
 
-void FCpcViewer::Draw()
+void FCPCViewer::Draw()
 {		
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 #ifdef CPCVIEWER_EXTRA_DEBUG
-	DrawSnapLoadButtons(pCpcEmu);
+	DrawSnapLoadButtons(pCPCEmu);
 #endif 
 
 	CalculateScreenProperties();
@@ -68,10 +68,10 @@ void FCpcViewer::Draw()
 	const float scale = ImGui_GetScaling();
 
 	// see if mixed screen modes are used
-	int scrMode = pCpcEmu->CpcEmuState.ga.video.mode;
+	int scrMode = pCPCEmu->CPCEmuState.ga.video.mode;
 	for (int s=0; s< AM40010_DISPLAY_HEIGHT; s++)
 	{
-		if (pCpcEmu->Screen.GetScreenModeForScanline(s) != scrMode)
+		if (pCPCEmu->Screen.GetScreenModeForScanline(s) != scrMode)
 		{
 			scrMode = -1;
 			break;
@@ -79,7 +79,7 @@ void FCpcViewer::Draw()
 	}
 
 	// display screen mode and resolution
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	const int multiplier[4] = {4, 8, 16, 4};
 	if(scrMode == -1)
 	{
@@ -96,22 +96,22 @@ void FCpcViewer::Draw()
 	const uint16_t size = (crtc.start_addr_hi >> 2) & 0x3;
 
 	ImGui::Text("Screen RAM: %s. Page: %s. Size %s. Scrolled: %s", 
-		NumStr(pCpcEmu->Screen.GetScreenAddrStart()), 
+		NumStr(pCPCEmu->Screen.GetScreenAddrStart()), 
 		NumStr(pageIndex),
 		size == 3 ? "32k" : "16k",
-		pCpcEmu->Screen.IsScrolled() ? "Yes" : "No");
+		pCPCEmu->Screen.IsScrolled() ? "Yes" : "No");
 
 	int numPaletteChanges = false;
 	// see if palette changes occured during last frame
 	for (int p = 1; p < AM40010_DISPLAY_HEIGHT; p++)
 	{
-		if (pCpcEmu->Screen.GetPaletteForScanline(p - 1) != pCpcEmu->Screen.GetPaletteForScanline(p))
+		if (pCPCEmu->Screen.GetPaletteForScanline(p - 1) != pCPCEmu->Screen.GetPaletteForScanline(p))
 			numPaletteChanges++;
 	}
 	ImGui::Text("Palette changes: %d", numPaletteChanges);
 
 	// draw the cpc display
-	chips_display_info_t disp = cpc_display_info(&pCpcEmu->CpcEmuState);
+	chips_display_info_t disp = cpc_display_info(&pCPCEmu->CPCEmuState);
 
 	// convert texture to RGBA
 	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
@@ -153,7 +153,7 @@ void FCpcViewer::Draw()
 	{
 		for (int s=0; s< AM40010_DISPLAY_HEIGHT; s++)
 		{
-			const uint8_t scrMode = pCpcEmu->Screen.GetScreenModeForScanline(s);
+			const uint8_t scrMode = pCPCEmu->Screen.GetScreenModeForScanline(s);
 			dl->AddLine(ImVec2(pos.x, pos.y + (s * scale)), ImVec2(pos.x + (TextureWidth * scale), pos.y + (s * scale)), scrMode == 0 ? 0x40ffff00 : 0x4000ffff, 1 * scale);
 		}
 	}
@@ -201,10 +201,10 @@ void FCpcViewer::Draw()
 	if (viewState.HighlightAddress.IsValid())
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		if (viewState.HighlightAddress.Address >= pCpcEmu->Screen.GetScreenAddrStart() && viewState.HighlightAddress.Address <= pCpcEmu->Screen.GetScreenAddrEnd())
+		if (viewState.HighlightAddress.Address >= pCPCEmu->Screen.GetScreenAddrStart() && viewState.HighlightAddress.Address <= pCPCEmu->Screen.GetScreenAddrEnd())
 		{
 			int xp=0, yp=0;
-			if (pCpcEmu->Screen.GetScreenAddressCoords(viewState.HighlightAddress.Address, xp, yp))
+			if (pCPCEmu->Screen.GetScreenAddressCoords(viewState.HighlightAddress.Address, xp, yp))
 			{
 				const int rx = static_cast<int>(pos.x + (ScreenEdgeL + xp) * scale);
 				const int ry = static_cast<int>(pos.y + (ScreenTop + yp) * scale);
@@ -231,10 +231,10 @@ void FCpcViewer::Draw()
 		DrawTestScreen();
 #endif
 
-	ImGui::SliderFloat("Speed Scale", &pCpcEmu->ExecSpeedScale, 0.0f, 2.0f);
+	ImGui::SliderFloat("Speed Scale", &pCPCEmu->ExecSpeedScale, 0.0f, 2.0f);
 	ImGui::SameLine();
 	if (ImGui::Button("Reset"))
-		pCpcEmu->ExecSpeedScale = 1.0f;
+		pCPCEmu->ExecSpeedScale = 1.0f;
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
 	bWindowFocused = ImGui::IsWindowFocused();
@@ -242,7 +242,7 @@ void FCpcViewer::Draw()
 }
 
 // todo tidy this whole function up
-bool FCpcViewer::OnHovered(const ImVec2& pos)
+bool FCPCViewer::OnHovered(const ImVec2& pos)
 {
 	const float scale = ImGui_GetScaling();
 
@@ -262,7 +262,7 @@ bool FCpcViewer::OnHovered(const ImVec2& pos)
 	// note: for screen mode 0 this will be in coord space of 320 x 200.
 	// not sure that is right?
 	uint16_t scrAddress = 0;
-	if (pCpcEmu->Screen.GetScreenMemoryAddress(xp, yp, scrAddress))
+	if (pCPCEmu->Screen.GetScreenMemoryAddress(xp, yp, scrAddress))
 	{
 		// position (in pixels) of the start of the character
 		const int charStartX = xp & ~(charWidth - 1); 
@@ -276,7 +276,7 @@ bool FCpcViewer::OnHovered(const ImVec2& pos)
 			dl->AddRect(ImVec2(rx, ry), ImVec2((float)rx + (charWidth * scale), (float)ry + (CharacterHeight * scale)), 0xffffffff, 0, 0, 1 * scale);
 		}
 
-		FCodeAnalysisState& codeAnalysis = pCpcEmu->GetCodeAnalysis();
+		FCodeAnalysisState& codeAnalysis = pCPCEmu->GetCodeAnalysis();
 		const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrAddress);
 
 #ifdef CPCVIEWER_EXTRA_DEBUG
@@ -289,11 +289,11 @@ bool FCpcViewer::OnHovered(const ImVec2& pos)
 				uint16_t plotAddress = 0;
 				for (int y = 0; y < CharacterHeight; y++)
 				{
-					if (pCpcEmu->Screen.GetScreenMemoryAddress(charStartX, charStartY + y, plotAddress))
+					if (pCPCEmu->Screen.GetScreenMemoryAddress(charStartX, charStartY + y, plotAddress))
 					{
 						for (int b = 0; b < numBytes; b++)
 						{
-							pCpcEmu->WriteByte(plotAddress + b, 1<<y);
+							pCPCEmu->WriteByte(plotAddress + b, 1<<y);
 						}
 					}
 				}
@@ -359,7 +359,7 @@ bool FCpcViewer::OnHovered(const ImVec2& pos)
 }
 
 // returns how much horizontal space it took
-float FCpcViewer::DrawScreenCharacter(int xChar, int yChar, float x, float y, float pixelHeight) const 
+float FCPCViewer::DrawScreenCharacter(int xChar, int yChar, float x, float y, float pixelHeight) const 
 {
 	// todo move this comment out of this function
 	// the x coord will be in mode 1 coordinates. [320 pixels]
@@ -367,7 +367,7 @@ float FCpcViewer::DrawScreenCharacter(int xChar, int yChar, float x, float y, fl
 
 	const int screenMode = GetScreenModeForPixelLine(yChar * CharacterHeight);
 	
-	const FCodeAnalysisState& codeAnalysis = pCpcEmu->GetCodeAnalysis();
+	const FCodeAnalysisState& codeAnalysis = pCPCEmu->GetCodeAnalysis();
 	const int xMult = screenMode == 0 ? 2 : 1;
 	ImVec2 pixelSize = ImVec2(pixelHeight * (float)xMult, pixelHeight);
 
@@ -380,7 +380,7 @@ float FCpcViewer::DrawScreenCharacter(int xChar, int yChar, float x, float y, fl
 		// todo: check return from this
 		// todo: deal with non contiguous screen memory bytes
 		uint16_t pixLineAddress = 0;
-		pCpcEmu->Screen.GetScreenMemoryAddress(xChar * xMult * 8, yChar * CharacterHeight + pixline, pixLineAddress);
+		pCPCEmu->Screen.GetScreenMemoryAddress(xChar * xMult * 8, yChar * CharacterHeight + pixline, pixLineAddress);
 
 		switch (screenMode)
 		{
@@ -431,12 +431,12 @@ float FCpcViewer::DrawScreenCharacter(int xChar, int yChar, float x, float y, fl
 	return rectWidth;
 }
 
-void FCpcViewer::CalculateScreenProperties()
+void FCPCViewer::CalculateScreenProperties()
 {
 	// work out the position and size of the logical cpc screen based on the crtc registers.
 	// note: these calculations will be wrong if the game sets crtc registers dynamically during the frame.
 	// registers not hooked up: R3
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 
 	CharacterHeight = crtc.max_scanline_addr + 1;			// crtc register 9 defines how many scanlines in a character square
 	
@@ -462,26 +462,26 @@ void FCpcViewer::CalculateScreenProperties()
 	// not sure this is right?
 	ScreenTop = Clamp(ScreenTop, 0, AM40010_FRAMEBUFFER_HEIGHT);
 #else
-	ScreenTop = pCpcEmu->Screen.GetTopScanline();
-	ScreenEdgeL = pCpcEmu->Screen.GetLeftEdgeScanline();
+	ScreenTop = pCPCEmu->Screen.GetTopScanline();
+	ScreenEdgeL = pCPCEmu->Screen.GetLeftEdgeScanline();
 #endif
 
 	HorizCharCount = crtc.h_displayed;
 }
 
-int FCpcViewer::GetScreenModeForPixelLine(int yPos) const
+int FCPCViewer::GetScreenModeForPixelLine(int yPos) const
 {
 	const int scanline = ScreenTop + yPos;
-	return pCpcEmu->Screen.GetScreenModeForScanline(scanline);
+	return pCPCEmu->Screen.GetScreenModeForScanline(scanline);
 }
 
-const FPalette& FCpcViewer::GetPaletteForPixelLine(int yPos) const
+const FPalette& FCPCViewer::GetPaletteForPixelLine(int yPos) const
 {
 	const int scanline = ScreenTop + yPos;
-	return pCpcEmu->Screen.GetPaletteForScanline(scanline);
+	return pCPCEmu->Screen.GetPaletteForScanline(scanline);
 }
 
-ImU32 FCpcViewer::GetFlashColour() const
+ImU32 FCPCViewer::GetFlashColour() const
 {
 	// generate flash colour
 	ImU32 flashCol = 0xff000000;
@@ -492,7 +492,7 @@ ImU32 FCpcViewer::GetFlashColour() const
 	return flashCol;
 }
 
-void FCpcViewer::Tick(void)
+void FCPCViewer::Tick(void)
 {
 	// Check keys - not event driven, hopefully perf isn't too bad
 	for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
@@ -501,22 +501,22 @@ void FCpcViewer::Tick(void)
 		{ 
 			if (bWindowFocused)
 			{
-				int cpcKey = CpcKeyFromImGuiKey(key);
+				int cpcKey = CPCKeyFromImGuiKey(key);
 				if (cpcKey != 0)
-					cpc_key_down(&pCpcEmu->CpcEmuState, cpcKey);
+					cpc_key_down(&pCPCEmu->CPCEmuState, cpcKey);
 			}
 		}
 		else if (ImGui::IsKeyReleased(key))
 		{
-			const int cpcKey = CpcKeyFromImGuiKey(key);
+			const int cpcKey = CPCKeyFromImGuiKey(key);
 			if (cpcKey != 0)
-				cpc_key_up(&pCpcEmu->CpcEmuState, cpcKey);
+				cpc_key_up(&pCPCEmu->CPCEmuState, cpcKey);
 		}
 	}
 }
 
 
-int CpcKeyFromImGuiKey(ImGuiKey key)
+int CPCKeyFromImGuiKey(ImGuiKey key)
 {
 	int cpcKey = 0;
 
@@ -667,9 +667,9 @@ void DrawPalette(const FPalette& palette)
 
 #ifdef CPCVIEWER_EXTRA_DEBUG
 // Draw an entire screen out of characters - to test the code for drawing a screen character.
-void FCpcViewer::DrawTestScreen()
+void FCPCViewer::DrawTestScreen()
 {
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	ImVec2 curPos = ImGui::GetCursorScreenPos();
 	const float xStart = curPos.x;
 
@@ -678,7 +678,7 @@ void FCpcViewer::DrawTestScreen()
 	const float pixelHeight = 5.0f;
 	for (int y = 0; y < crtc.v_displayed; y++)
 	{
-		const int scrMode = pCpcEmu->Screen.GetScreenModeForScanline(scanLine);
+		const int scrMode = pCPCEmu->Screen.GetScreenModeForScanline(scanLine);
 		const int charCount = scrMode == 0 ? HorizCharCount / 2 : HorizCharCount;
 		for (int x = 0; x < charCount; x++)
 		{
@@ -692,9 +692,9 @@ void FCpcViewer::DrawTestScreen()
 }
 
 // Debug code to manually iterate through all snaps in a directory.
-void DrawSnapLoadButtons(FCpcEmu* pCpcEmu)
+void DrawSnapLoadButtons(FCPCEmu* pCPCEmu)
 {
-	if (pCpcEmu->GetGamesList().GetNoGames())
+	if (pCPCEmu->GetGamesList().GetNoGames())
 	{
 		static int gGameIndex = 0;
 		bool bLoadSnap = false;
@@ -707,17 +707,17 @@ void DrawSnapLoadButtons(FCpcEmu* pCpcEmu)
 		ImGui::SameLine();
 		if (ImGui::Button("Next snap") || ImGui::IsKeyPressed(ImGuiKey_F2))
 		{
-			if (gGameIndex < pCpcEmu->GetGamesList().GetNoGames() - 1)
+			if (gGameIndex < pCPCEmu->GetGamesList().GetNoGames() - 1)
 				gGameIndex++;
 			bLoadSnap = true;
 		}
 		ImGui::SameLine();
-		const FGameSnapshot& game = pCpcEmu->GetGamesList().GetGame(gGameIndex);
-		ImGui::Text("(%d/%d) %s", gGameIndex + 1, pCpcEmu->GetGamesList().GetNoGames(), game.DisplayName.c_str());
+		const FGameSnapshot& game = pCPCEmu->GetGamesList().GetGame(gGameIndex);
+		ImGui::Text("(%d/%d) %s", gGameIndex + 1, pCPCEmu->GetGamesList().GetNoGames(), game.DisplayName.c_str());
 		if (bLoadSnap)
 		{
 			LOGINFO("Load game '%s'", game.DisplayName.c_str());
-			pCpcEmu->GetGamesList().LoadGame(gGameIndex);
+			pCPCEmu->GetGamesList().LoadGame(gGameIndex);
 		}
 	}
 }

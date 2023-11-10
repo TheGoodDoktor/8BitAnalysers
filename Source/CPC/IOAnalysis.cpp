@@ -8,34 +8,34 @@
 
 #include "imgui.h"
 
-std::map< CpcIODevice, const char*> g_DeviceNames = 
+std::map< CPCIODevice, const char*> g_DeviceNames = 
 {
-	{CpcIODevice::Keyboard, "Keyboard"},
-	{CpcIODevice::Joystick, "Joystick"},
-	{CpcIODevice::CRTC, "CRTC"},
-	{CpcIODevice::PaletteRegisterSelect, "Palette Select"},
-	{CpcIODevice::PaletteWrite, "Palette Write"},
-	{CpcIODevice::BorderColour, "BorderColour"},
+	{CPCIODevice::Keyboard, "Keyboard"},
+	{CPCIODevice::Joystick, "Joystick"},
+	{CPCIODevice::CRTC, "CRTC"},
+	{CPCIODevice::PaletteRegisterSelect, "Palette Select"},
+	{CPCIODevice::PaletteWrite, "Palette Write"},
+	{CPCIODevice::BorderColour, "BorderColour"},
 #if SPECCY
 	{SpeccyIODevice::MemoryBank, "Memory Bank Switch"},
 	{SpeccyIODevice::SoundChip, "Sound Chip (AY)"},
 #endif
-	{CpcIODevice::Unknown, "Unknown"},
+	{CPCIODevice::Unknown, "Unknown"},
 };
 
-void FIOAnalysis::Init(FCpcEmu* pEmu)
+void FIOAnalysis::Init(FCPCEmu* pEmu)
 {
-	pCpcEmu = pEmu;
+	pCPCEmu = pEmu;
 }
 
 // todo get rid of the code duplication here
-void FIOAnalysis::HandlePPI(uint64_t pins, CpcIODevice& readDevice, CpcIODevice& writeDevice)
+void FIOAnalysis::HandlePPI(uint64_t pins, CPCIODevice& readDevice, CPCIODevice& writeDevice)
 {
   if (pins & I8255_RD)
   {
 	 //if ((pins & (I8255_A0 | I8255_A1)) == 0) // think we were missing some keyboard reads because of this check
 	 {
-		i8255_t& ppi = pCpcEmu->CpcEmuState.ppi;
+		i8255_t& ppi = pCPCEmu->CPCEmuState.ppi;
 		if (!((ppi.control & I8255_CTRL_A) == I8255_CTRL_A_OUTPUT))
 		{
 		  uint64_t ay_pins = 0;
@@ -47,20 +47,20 @@ void FIOAnalysis::HandlePPI(uint64_t pins, CpcIODevice& readDevice, CpcIODevice&
 		  {
 			 if (!(ay_pins & AY38910_BDIR))
 			 {
-				const ay38910_t* ay = &pCpcEmu->CpcEmuState.psg;
+				const ay38910_t* ay = &pCPCEmu->CPCEmuState.psg;
 				if (ay->addr < AY38910_NUM_REGISTERS)
 				{
 				  if (ay->addr == AY38910_REG_IO_PORT_A)
 				  {
 					 if ((ay->enable & (1 << 6)) == 0)
 					 {
-						if (pCpcEmu->CpcEmuState.kbd.active_columns & (1 << 9))
+						if (pCPCEmu->CPCEmuState.kbd.active_columns & (1 << 9))
 						{
-							readDevice = CpcIODevice::Joystick;
+							readDevice = CPCIODevice::Joystick;
 						}
 						else
 						{
-							readDevice = CpcIODevice::Keyboard;
+							readDevice = CPCIODevice::Keyboard;
 
 							RegisterEvent((uint8_t)EEventType::KeyboardRead, Z80_GET_ADDR(pins), AY38910_GET_DATA(pins));
 						}
@@ -76,7 +76,7 @@ void FIOAnalysis::HandlePPI(uint64_t pins, CpcIODevice& readDevice, CpcIODevice&
   {
 	 if ((pins & (I8255_A0 | I8255_A1)) == I8255_A1)
 	 {
-		const uint8_t ay_ctrl = pCpcEmu->CpcEmuState.ppi.pc.outp & ((1 << 7) | (1 << 6));
+		const uint8_t ay_ctrl = pCPCEmu->CPCEmuState.ppi.pc.outp & ((1 << 7) | (1 << 6));
 		if (ay_ctrl)
 		{
 		  uint64_t ay_pins = 0;
@@ -86,14 +86,14 @@ void FIOAnalysis::HandlePPI(uint64_t pins, CpcIODevice& readDevice, CpcIODevice&
 		  {
 			 if (!(ay_pins & AY38910_BDIR))
 			 {
-				const ay38910_t* ay = &pCpcEmu->CpcEmuState.psg;
+				const ay38910_t* ay = &pCPCEmu->CPCEmuState.psg;
 				if (ay->addr < AY38910_NUM_REGISTERS)
 				{
 					if (ay->addr == AY38910_REG_IO_PORT_A)
 					{
 						if ((ay->enable & (1 << 6)) == 0)
 						{
-							writeDevice = CpcIODevice::Keyboard;
+							writeDevice = CPCIODevice::Keyboard;
 
 							// todo register event here?
 						}
@@ -114,11 +114,11 @@ static uint8_t _mc6845_rw[MC6845_NUM_TYPES][0x20] = {
 	 { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
-void FIOAnalysis::HandleCRTC(uint64_t pins, CpcIODevice& readDevice, CpcIODevice& writeDevice)
+void FIOAnalysis::HandleCRTC(uint64_t pins, CPCIODevice& readDevice, CPCIODevice& writeDevice)
 {
   if (pins & MC6845_CS) // chip select
   {
-	 mc6845_t* c = &pCpcEmu->CpcEmuState.crtc;
+	 mc6845_t* c = &pCPCEmu->CPCEmuState.crtc;
 
 	 // note: some of this logic for checking pins looks inverted but it's not.
 	 // if the bit is _not_ set then the statement it's true.
@@ -137,16 +137,16 @@ void FIOAnalysis::HandleCRTC(uint64_t pins, CpcIODevice& readDevice, CpcIODevice
 		  uint8_t val = 0;
 		  if (_mc6845_rw[c->type][r] & (1 << 1))
 		  {
-			 //readDevice = CpcIODevice::CRTC;
+			 //readDevice = CPCIODevice::CRTC;
 		  }
-		  readDevice = CpcIODevice::CRTC;
+		  readDevice = CPCIODevice::CRTC;
 		}
 		else 
 		{
 		  /* write register value (only if register is writable) */
 		  if (_mc6845_rw[c->type][r] & (1 << 0))
 		  {
-			 writeDevice = CpcIODevice::CRTC;
+			 writeDevice = CPCIODevice::CRTC;
 
 			 // think data should potentially be this, to limit number of bits per register?
 			 // MC6845_GET_DATA(pins) & _mc6845_mask[r]
@@ -156,7 +156,7 @@ void FIOAnalysis::HandleCRTC(uint64_t pins, CpcIODevice& readDevice, CpcIODevice
 			 {
 				 // Add a bespoke event for changing the screen memory address, so we can see which address it got changed to
 				 // when displayed in the event list.
-				 RegisterEvent((uint8_t)EEventType::ScreenMemoryAddressChange, pCpcEmu->Screen.GetScreenAddrStart(), r);
+				 RegisterEvent((uint8_t)EEventType::ScreenMemoryAddressChange, pCPCEmu->Screen.GetScreenAddrStart(), r);
 			 }
 		  }
 		}
@@ -169,12 +169,12 @@ void FIOAnalysis::HandleCRTC(uint64_t pins, CpcIODevice& readDevice, CpcIODevice
 		{
 		  // ???
 		  // potentially crtc read 
-		  readDevice = CpcIODevice::CRTC;
+		  readDevice = CPCIODevice::CRTC;
 		}
 		else
 		{
 		  /* write to address register */
-		  writeDevice = CpcIODevice::CRTC;
+		  writeDevice = CPCIODevice::CRTC;
 		
 		  RegisterEvent((uint8_t)EEventType::CrtcRegisterSelect , MC6845_GET_ADDR(pins), Z80_GET_DATA(pins));
 		}
@@ -184,9 +184,9 @@ void FIOAnalysis::HandleCRTC(uint64_t pins, CpcIODevice& readDevice, CpcIODevice
 
 #define AM40010_GET_DATA(p) ((uint8_t)(((p)&0xFF0000ULL)>>16))
 
-void FIOAnalysis::HandleGateArray(uint64_t pins, CpcIODevice& readDevice, CpcIODevice& writeDevice)
+void FIOAnalysis::HandleGateArray(uint64_t pins, CPCIODevice& readDevice, CPCIODevice& writeDevice)
 {
-	am40010_t& ga = pCpcEmu->CpcEmuState.ga;
+	am40010_t& ga = pCPCEmu->CPCEmuState.ga;
 
 	if ((pins & (AM40010_A14 | AM40010_A15)) == AM40010_A14) 
 	{
@@ -200,7 +200,7 @@ void FIOAnalysis::HandleGateArray(uint64_t pins, CpcIODevice& readDevice, CpcIOD
 				one of the 16 ink pens
 			*/
 		case 0:
-			writeDevice = CpcIODevice::PaletteRegisterSelect;
+			writeDevice = CPCIODevice::PaletteRegisterSelect;
 
 			RegisterEvent((uint8_t)EEventType::PaletteSelect, Z80_GET_ADDR(pins), data);
 			break;
@@ -209,13 +209,13 @@ void FIOAnalysis::HandleGateArray(uint64_t pins, CpcIODevice& readDevice, CpcIOD
 		{
 			if (ga.regs.inksel & (1 << 4))
 			{
-				writeDevice = CpcIODevice::BorderColour;
+				writeDevice = CPCIODevice::BorderColour;
 
 				RegisterEvent((uint8_t)EEventType::BorderColour, Z80_GET_ADDR(pins), data);
 			}
 			else
 			{
-				writeDevice = CpcIODevice::PaletteWrite;
+				writeDevice = CPCIODevice::PaletteWrite;
 
 				RegisterEvent((uint8_t)EEventType::PaletteColour, Z80_GET_ADDR(pins), data);
 			}
@@ -273,20 +273,20 @@ void FIOAnalysis::HandleGateArray(uint64_t pins, CpcIODevice& readDevice, CpcIOD
 
 void FIOAnalysis::RegisterEvent(uint8_t type, uint16_t address, uint8_t value)
 {
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 	const uint16_t pc = state.Debugger.GetPC().Address;
 	const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
-	const uint16_t scanlinePos = pCpcEmu->CpcEmuState.ga.crt.v_pos;
+	const uint16_t scanlinePos = pCPCEmu->CPCEmuState.ga.crt.v_pos;
 	state.Debugger.RegisterEvent(type, pcAddrRef, address, value, scanlinePos);
 }
 
 void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 {
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 	const FAddressRef PCaddrRef = state.AddressRefFromPhysicalAddress(pc);
 
-	 CpcIODevice readDevice = CpcIODevice::None;
-	 CpcIODevice writeDevice = CpcIODevice::None;
+	 CPCIODevice readDevice = CPCIODevice::None;
+	 CPCIODevice writeDevice = CPCIODevice::None;
 
 	 if ((pins & Z80_IORQ) && (pins & (Z80_RD | Z80_WR))) 
 	 {
@@ -317,7 +317,7 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 
 	 HandleGateArray(pins, readDevice, writeDevice);
 
-	 if (writeDevice != CpcIODevice::None)
+	 if (writeDevice != CPCIODevice::None)
 	 {
 		 FIOAccess& ioDevice = IODeviceAcceses[(int)writeDevice];
 		 ioDevice.Writers.RegisterAccess(PCaddrRef);
@@ -325,7 +325,7 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 		 ioDevice.FrameReadCount++;
 	 }
 
-	 if (readDevice != CpcIODevice::None)
+	 if (readDevice != CPCIODevice::None)
 	 {
 		FIOAccess& ioDevice = IODeviceAcceses[(int)readDevice];
 		ioDevice.Readers.RegisterAccess(PCaddrRef);
@@ -336,7 +336,7 @@ void FIOAnalysis::IOHandler(uint16_t pc, uint64_t pins)
 
 void FIOAnalysis::DrawUI()
 {
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	
@@ -348,12 +348,12 @@ void FIOAnalysis::DrawUI()
 
 	ImGui::BeginChild("DrawIOAnalysisGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
 	FIOAccess *pSelectedIOAccess = nullptr;
-	static CpcIODevice selectedDevice = CpcIODevice::None;
+	static CPCIODevice selectedDevice = CPCIODevice::None;
 
-	for (int i = 0; i < (int)CpcIODevice::Count; i++)
+	for (int i = 0; i < (int)CPCIODevice::Count; i++)
 	{
 		FIOAccess &ioAccess = IODeviceAcceses[i];
-		const CpcIODevice device = (CpcIODevice)i;
+		const CPCIODevice device = (CPCIODevice)i;
 
 		const bool bSelected = (int)selectedDevice == i;
 
@@ -426,10 +426,10 @@ void FIOAnalysis::DrawUI()
 		}
 	}
 
-	if (!pCpcEmu->GetCodeAnalysis().Debugger.IsStopped())
+	if (!pCPCEmu->GetCodeAnalysis().Debugger.IsStopped())
 	{
 	  // reset for frame
-	  for (int i = 0; i < (int)CpcIODevice::Count; i++)
+	  for (int i = 0; i < (int)CPCIODevice::Count; i++)
 	  {
 		 IODeviceAcceses[i].FrameReadCount = 0;
 		 IODeviceAcceses[i].FrameWriteCount = 0;
@@ -442,7 +442,7 @@ void FIOAnalysis::DrawUI()
 
 void FIOAnalysis::Reset()
 {
-  for (int i = 0; i < (int)CpcIODevice::Count; i++)
+  for (int i = 0; i < (int)CPCIODevice::Count; i++)
   {
 	 IODeviceAcceses->ReadCount = 0;
 	 IODeviceAcceses->WriteCount = 0;

@@ -4,13 +4,13 @@
 #include <string>
 #include <algorithm>
 
-void FCpcGameLoader::SetCachingEnabled(bool bEnabled)
+void FCPCGameLoader::SetCachingEnabled(bool bEnabled)
 {
 	ClearCache();
 	bCachingEnabled = bEnabled;
 }
 
-void FCpcGameLoader::ClearCache()
+void FCPCGameLoader::ClearCache()
 {
 	if (pDataCache) 
 		free(pDataCache);
@@ -19,7 +19,7 @@ void FCpcGameLoader::ClearCache()
 	CachedDataSize = 0;
 }
 
-bool FCpcGameLoader::LoadSnapshot(const FGameSnapshot& snapshot)
+bool FCPCGameLoader::LoadSnapshot(const FGameSnapshot& snapshot)
 {
 	switch (snapshot.Type)
 	{
@@ -31,7 +31,7 @@ bool FCpcGameLoader::LoadSnapshot(const FGameSnapshot& snapshot)
 			if (CachedFilename != snapshot.FileName)
 				ClearCache();
 
-			bOk = LoadSNAFileCached(pCpcEmu, snapshot.FileName.c_str(), pDataCache, CachedDataSize);
+			bOk = LoadSNAFileCached(pCPCEmu, snapshot.FileName.c_str(), pDataCache, CachedDataSize);
 
 			if (bOk)
 				CachedFilename = snapshot.FileName;
@@ -40,7 +40,7 @@ bool FCpcGameLoader::LoadSnapshot(const FGameSnapshot& snapshot)
 		}
 		else
 		{
-			bOk = LoadSNAFile(pCpcEmu, snapshot.FileName.c_str());
+			bOk = LoadSNAFile(pCPCEmu, snapshot.FileName.c_str());
 		}
 		return bOk;
 	}

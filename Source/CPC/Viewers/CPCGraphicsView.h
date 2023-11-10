@@ -2,10 +2,10 @@
 
 #include "Util/GraphicsView.h"
 
-class FCpcGraphicsView : public FGraphicsView
+class FCPCGraphicsView : public FGraphicsView
 {
 public:
-	FCpcGraphicsView(int width, int height) :FGraphicsView(width, height) {}
+	FCPCGraphicsView(int width, int height) :FGraphicsView(width, height) {}
 
 	void DrawCharLine(uint8_t charLine, int xp, int yp, uint8_t colAttr = 0x7);
 	void DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr = 0x7);

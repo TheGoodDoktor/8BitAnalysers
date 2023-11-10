@@ -5,7 +5,7 @@
 #include <Util/FileUtil.h>
 #include <systems/cpc.h>
 
-bool LoadSNAFile(FCpcEmu* pEmu, const char* fName)
+bool LoadSNAFile(FCPCEmu* pEmu, const char* fName)
 {
 	size_t byteCount = 0;
 	uint8_t* pData = (uint8_t*)LoadBinaryFile(fName, byteCount);
@@ -18,7 +18,7 @@ bool LoadSNAFile(FCpcEmu* pEmu, const char* fName)
 	return bSuccess;
 }
 
-bool LoadSNAFileCached(FCpcEmu* pEmu, const char* fName, uint8_t*& pData , size_t& dataSize)
+bool LoadSNAFileCached(FCPCEmu* pEmu, const char* fName, uint8_t*& pData , size_t& dataSize)
 {
 	if (pData == nullptr)
 	{
@@ -29,7 +29,7 @@ bool LoadSNAFileCached(FCpcEmu* pEmu, const char* fName, uint8_t*& pData , size_
 	return LoadSNAFromMemory(pEmu, pData, dataSize);
 }
 
-bool LoadSNAFromMemory(FCpcEmu * pEmu, uint8_t * pData, size_t dataSize)
+bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 {	
 	chips_range_t range;
 	range.ptr = static_cast<void*>(pData);
@@ -50,14 +50,14 @@ bool LoadSNAFromMemory(FCpcEmu * pEmu, uint8_t * pData, size_t dataSize)
 	uint8_t sizeH = *(pData + 0x6c);
 	const uint16_t dump_size = sizeH << 8 | sizeL;
 
-	bool bResult = cpc_quickload(&pEmu->CpcEmuState, range);
+	bool bResult = cpc_quickload(&pEmu->CPCEmuState, range);
 	if (bResult == true)
 	{
-		if (pEmu->CpcEmuState.type == CPC_TYPE_6128)
+		if (pEmu->CPCEmuState.type == CPC_TYPE_6128)
 		{
 			// todo: set rom bank here
 
-			pEmu->SetRAMBanksPreset(pEmu->CpcEmuState.ga.ram_config & 7);
+			pEmu->SetRAMBanksPreset(pEmu->CPCEmuState.ga.ram_config & 7);
 		}
 		// todo: maybe set rom and ram banks here for 464 too
 

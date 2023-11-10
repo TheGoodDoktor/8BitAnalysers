@@ -3,9 +3,9 @@
 #include <string>
 #include <CodeAnalyser/CodeAnalysisPage.h> 
 
-class FCpcEmu;
+class FCPCEmu;
 
-enum class CpcIODevice
+enum class CPCIODevice
 {
 	None = -1,
 	Keyboard,
@@ -34,20 +34,20 @@ struct FIOAccess
 class FIOAnalysis
 {
 public:
-  void	Init(FCpcEmu* pEmu);
+  void	Init(FCPCEmu* pEmu);
   void	IOHandler(uint16_t pc, uint64_t pins);
   void	DrawUI();
   void	Reset();
 
 private:
-  void HandlePPI(uint64_t pins, CpcIODevice& readDevice, CpcIODevice& writeDevice);
-  void HandleCRTC(uint64_t pins, CpcIODevice& readDevice, CpcIODevice& writeDevice);
-  void HandleGateArray(uint64_t pins, CpcIODevice& readDevice, CpcIODevice& writeDevice);
+  void HandlePPI(uint64_t pins, CPCIODevice& readDevice, CPCIODevice& writeDevice);
+  void HandleCRTC(uint64_t pins, CPCIODevice& readDevice, CPCIODevice& writeDevice);
+  void HandleGateArray(uint64_t pins, CPCIODevice& readDevice, CPCIODevice& writeDevice);
   void RegisterEvent(uint8_t type, uint16_t address, uint8_t value);
 
-  FCpcEmu*	  pCpcEmu = nullptr;
-  FIOAccess	  IODeviceAcceses[(int)CpcIODevice::Count];
+  FCPCEmu*	  pCPCEmu = nullptr;
+  FIOAccess	  IODeviceAcceses[(int)CPCIODevice::Count];
   uint8_t	  LastFE = 0;
-  CpcIODevice SelectedDevice = CpcIODevice::None;
+  CPCIODevice SelectedDevice = CPCIODevice::None;
   int		  CurScreenMode = -1;
 };

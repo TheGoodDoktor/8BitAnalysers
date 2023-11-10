@@ -7,8 +7,8 @@
 #include <vector>
 #include <string>
 
-class FCpcEmu;
-class FCpcGraphicsView;
+class FCPCEmu;
+class FCPCGraphicsView;
 
 enum class EEventType : uint8_t
 {
@@ -45,7 +45,7 @@ struct FMemoryDiff
 	uint8_t		NewVal;
 };
 
-struct FCpcFrameTrace
+struct FCPCFrameTrace
 {
 	void*					Texture = nullptr;
 	uint8_t					MemoryBanks[8][16 * 1024];	// 8 x 16K banks
@@ -62,31 +62,31 @@ struct FCpcFrameTrace
 class FFrameTraceViewer
 {
 public:
-	void	Init(FCpcEmu* pEmu);
+	void	Init(FCPCEmu* pEmu);
 	void	Reset();
 	void	Shutdown();
 	void	CaptureFrame();
 	void	Draw();
 private:
-	void	RestoreFrame(const FCpcFrameTrace& frame);
-	void	DrawInstructionTrace(const FCpcFrameTrace& frame);
-	void	GenerateTraceOverview(FCpcFrameTrace& frame);
-	void	GenerateMemoryDiff(const FCpcFrameTrace& frameA, const FCpcFrameTrace& frameB, std::vector<FMemoryDiff>& outDiff);
-	void	DrawTraceOverview(const FCpcFrameTrace& frame);
-	void	DrawFrameScreenWritePixels(const FCpcFrameTrace& frame, int lastIndex = -1);
-	void	DrawScreenWrites(const FCpcFrameTrace& frame);
-	void	DrawMemoryDiffs(const FCpcFrameTrace& frame);
+	void	RestoreFrame(const FCPCFrameTrace& frame);
+	void	DrawInstructionTrace(const FCPCFrameTrace& frame);
+	void	GenerateTraceOverview(FCPCFrameTrace& frame);
+	void	GenerateMemoryDiff(const FCPCFrameTrace& frameA, const FCPCFrameTrace& frameB, std::vector<FMemoryDiff>& outDiff);
+	void	DrawTraceOverview(const FCPCFrameTrace& frame);
+	void	DrawFrameScreenWritePixels(const FCPCFrameTrace& frame, int lastIndex = -1);
+	void	DrawScreenWrites(const FCPCFrameTrace& frame);
+	void	DrawMemoryDiffs(const FCPCFrameTrace& frame);
 
-	FCpcEmu* pCpcEmu = nullptr;
+	FCPCEmu* pCPCEmu = nullptr;
 
 	int					ShowFrame = 0;
 	int					CurrentTraceFrame = 0;
 	bool				RestoreOnScrub = false;
 	static const int	kNoFramesInTrace = 300;
-	FCpcFrameTrace	FrameTrace[kNoFramesInTrace];
+	FCPCFrameTrace	FrameTrace[kNoFramesInTrace];
 
 	int		SelectedTraceLine = -1;
 	int		PixelWriteline = -1;
-	FCpcGraphicsView*	ShowWritesView = nullptr;
+	FCPCGraphicsView*	ShowWritesView = nullptr;
 
 };

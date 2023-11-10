@@ -5,7 +5,7 @@
 
 #include <Util/GraphicsView.h>
 
-class FCpcEmu;
+class FCPCEmu;
 
 // Palette
 struct FPalette
@@ -26,7 +26,7 @@ protected:
 class FCPCScreen
 {
 public:
-	void Init(FCpcEmu* pEmu);
+	void Init(FCPCEmu* pEmu);
 	void Tick();
 	void Reset();
 
@@ -67,7 +67,7 @@ private:
 	int ScreenLeftEdgeOffset = 0;
 
 	FPalette CurrentPalette;
-	FCpcEmu* pCpcEmu;
+	FCPCEmu* pCPCEmu;
 };
 
 int GetHWColourIndexForPixel(uint8_t val, int pixelIndex, int scrMode);

@@ -2,7 +2,7 @@
 
 #include "Misc/EmuBase.h"
 
-class FCpcEmu;
+class FCPCEmu;
 
 struct FOverviewStats
 {

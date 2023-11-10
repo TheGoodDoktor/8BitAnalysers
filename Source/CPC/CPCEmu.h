@@ -63,7 +63,7 @@ class FScreenPixMemDescGenerator;
 struct FCPCConfig;
 struct FCPCGameConfig;
 
-enum class ECpcModel
+enum class ECPCModel
 {
 	CPC_464,
 	CPC_6128,
@@ -79,11 +79,11 @@ enum EROMBank
 	ROM_NONE,
 };
 
-struct FCpcLaunchConfig : public FEmulatorLaunchConfig
+struct FCPCLaunchConfig : public FEmulatorLaunchConfig
 {
 	void ParseCommandline(int argc, char** argv) override;
 
-	ECpcModel Model = ECpcModel::CPC_464;
+	ECPCModel Model = ECPCModel::CPC_464;
 };
 
 struct FGame
@@ -93,10 +93,10 @@ struct FGame
 	FGameViewerData* pViewerData = nullptr;
 };
 
-class FCpcEmu : public FEmuBase
+class FCPCEmu : public FEmuBase
 {
 public:
-	FCpcEmu()
+	FCPCEmu()
 	{
 		CPUType = ECPUType::Z80;
 	}
@@ -138,8 +138,8 @@ public:
 	void	DrawReplaceGameModalPopup();
 #endif
 	// disable copy & assign because this class is big!
-	FCpcEmu(const FCpcEmu&) = delete;
-	FCpcEmu& operator= (const FCpcEmu&) = delete;
+	FCPCEmu(const FCPCEmu&) = delete;
+	FCPCEmu& operator= (const FCPCEmu&) = delete;
 
 	//ICPUInterface Begin
 	uint8_t	ReadByte(uint16_t address) const override;
@@ -152,7 +152,6 @@ public:
 	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 	
-	//void SetROMBank(int bankNo);
 	void SetROMBankLo(int bankNo);
 	void SetROMBankHi(int bankNo);
 	void SetRAMBank(int slot, int bankNo);
@@ -163,28 +162,24 @@ public:
 	bool NewGameFromSnapshot(const FGameSnapshot& snaphot) override;
 
 	// Emulator 
-	cpc_t			CpcEmuState;		// Chips CPC State
+	cpc_t			CPCEmuState;		// Chips CPC State
 	uint8_t*		MappedInMemory = nullptr;
 	//FCPCConfig*		pGlobalConfig = nullptr;
 
 	float			ExecSpeedScale = 1.0f;
 
-	ui_cpc_t		UICpc;
+	ui_cpc_t		UICPC;
 
 	FGame*			pActiveGame = nullptr;
 
 	// Viewers
-	FCpcViewer				CpcViewer;
+	FCPCViewer					CPCViewer;
 	FFrameTraceViewer		FrameTraceViewer;
 	FCPCGraphicsViewer		GraphicsViewer;
 	//FCodeAnalysisState		CodeAnalysis;
 	
 	// todo: refactor this to move all event related code out of it
 	FIOAnalysis				IOAnalysis;
-
-	// todo: hook this up to the IO Analyser
-	// IO Devices
-	//FAYAudioDevice		AYSoundChip;
 
 	static const int	kNoBankPages = 16;	// no of pages per physical address slot (16k)
 	static const int	kNoRAMPages = 128;
@@ -203,7 +198,6 @@ public:
 	// Memory handling
 	std::string				SelectedMemoryHandler;
 	std::vector< FMemoryAccessHandler>	MemoryAccessHandlers;
-	//std::vector< FMemoryAccess>	FrameScreenPixWrites;
 
 	FMemoryStats	MemStats;
 
@@ -219,7 +213,7 @@ public:
 
 private:
 	//FGamesList		GamesList;
-	FCpcGameLoader	GameLoader;
+	FCPCGameLoader	GameLoader;
 
 	//std::vector<FViewerBase*>	Viewers;
 

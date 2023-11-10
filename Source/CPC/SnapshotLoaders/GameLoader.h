@@ -1,8 +1,8 @@
 #include "Misc/GamesList.h"
 
-class FCpcEmu;
+class FCPCEmu;
 
-class FCpcGameLoader : public IGameLoader
+class FCPCGameLoader : public IGameLoader
 {
 public:
 	// IGameLoader
@@ -10,9 +10,9 @@ public:
 	//ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn) override;
 	// ~IGameLoader
 
-	void Init(FCpcEmu* pCpc)
+	void Init(FCPCEmu* pCPCEmu)
 	{
-		pCpcEmu = pCpc;
+		pCPCEmu = pCPCEmu;
 	}
 
 	// When caching is enabled, repeated loading of the same snapshot will not need to load the file from disk.
@@ -20,7 +20,7 @@ public:
 	void ClearCache();
 
 private:
-	FCpcEmu* pCpcEmu = 0;
+	FCPCEmu* pCPCEmu = 0;
 
 	bool bCachingEnabled = false;
 	uint8_t* pDataCache = 0;

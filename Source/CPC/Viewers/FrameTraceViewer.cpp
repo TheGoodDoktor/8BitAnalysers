@@ -9,19 +9,19 @@
 #include <Util/Misc.h>
 
 
-void FFrameTraceViewer::Init(FCpcEmu* pEmu)
+void FFrameTraceViewer::Init(FCPCEmu* pEmu)
 {
-	pCpcEmu = pEmu;
-	chips_display_info_t dispInfo = cpc_display_info(&pEmu->CpcEmuState);
+	pCPCEmu = pEmu;
+	chips_display_info_t dispInfo = cpc_display_info(&pEmu->CPCEmuState);
 
 	// Init Frame Trace
 	for (int i = 0; i < kNoFramesInTrace; i++)
 	{
-		FrameTrace[i].Texture = ImGui_CreateTextureRGBA(pEmu->CpcViewer.GetFrameBuffer(), dispInfo.frame.dim.width, dispInfo.frame.dim.height);
+		FrameTrace[i].Texture = ImGui_CreateTextureRGBA(pEmu->CPCViewer.GetFrameBuffer(), dispInfo.frame.dim.width, dispInfo.frame.dim.height);
 		FrameTrace[i].CPUState = malloc(sizeof(z80_t));
 	}
 
-	ShowWritesView = new FCpcGraphicsView(320, 256);
+	ShowWritesView = new FCPCGraphicsView(320, 256);
 }
 
 void FFrameTraceViewer::Reset()
@@ -54,29 +54,29 @@ void FFrameTraceViewer::CaptureFrame()
 {
 	// temp
 	return;
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 
 	// set up new trace frame
-	FCpcFrameTrace& frame = FrameTrace[CurrentTraceFrame];
-	ImGui_UpdateTextureRGBA(frame.Texture, pCpcEmu->CpcViewer.GetFrameBuffer());
+	FCPCFrameTrace& frame = FrameTrace[CurrentTraceFrame];
+	ImGui_UpdateTextureRGBA(frame.Texture, pCPCEmu->CPCViewer.GetFrameBuffer());
 	frame.InstructionTrace = state.Debugger.GetFrameTrace();	// copy frame trace - use method?
 	frame.FrameEvents = state.Debugger.GetEventTrace();
 	frame.FrameOverview.clear();
 
 	// copy memory
-	const int noBanks = pCpcEmu->CpcEmuState.type == CPC_TYPE_464 ? 3:8;
+	const int noBanks = pCPCEmu->CPCEmuState.type == CPC_TYPE_464 ? 3:8;
 	for (int i = 0; i < noBanks; i++)
-		memcpy(frame.MemoryBanks[i], pCpcEmu->CpcEmuState.ram[i], 16 * 1024);
+		memcpy(frame.MemoryBanks[i], pCPCEmu->CPCEmuState.ram[i], 16 * 1024);
 
 #if SPECCY
-	frame.MemoryBankRegister = pCpcEmu->CpcEmuState.last_mem_config;
+	frame.MemoryBankRegister = pCPCEmu->CPCEmuState.last_mem_config;
 #endif
 	// get CPU state
-	memcpy(frame.CPUState, &pCpcEmu->CpcEmuState.cpu, sizeof(z80_t));
+	memcpy(frame.CPUState, &pCPCEmu->CPCEmuState.cpu, sizeof(z80_t));
 
 	// Generate diffs
 	const int prevFrameIndex = CurrentTraceFrame == 0 ? kNoFramesInTrace - 1 : CurrentTraceFrame - 1;
-	const FCpcFrameTrace& prevFrame = FrameTrace[prevFrameIndex];
+	const FCPCFrameTrace& prevFrame = FrameTrace[prevFrameIndex];
 
 	// Not used atm
 	//GenerateMemoryDiff(frame, prevFrame, frame.MemoryDiffs);
@@ -86,37 +86,37 @@ void FFrameTraceViewer::CaptureFrame()
 }
 
 
-void FFrameTraceViewer::RestoreFrame(const FCpcFrameTrace& frame)
+void FFrameTraceViewer::RestoreFrame(const FCPCFrameTrace& frame)
 {
 #if SPECCY
 	// restore CPU regs
-	memcpy(&pCpcEmu->CpcEmuState.cpu, frame.CPUState, sizeof(z80_t));
+	memcpy(&pCPCEmu->CPCEmuState.cpu, frame.CPUState, sizeof(z80_t));
 
 	// restore memory
-	const int noBanks = pCpcEmu->CpcEmuState.type == CPC_TYPE_464 ? 3 : 8;
+	const int noBanks = pCPCEmu->CPCEmuState.type == CPC_TYPE_464 ? 3 : 8;
 	for (int i = 0; i < noBanks; i++)
-		memcpy(FCpcEmu->CpcEmuState.ram[i],frame.MemoryBanks[i],  16 * 1024);
+		memcpy(FCPCEmu->CPCEmuState.ram[i],frame.MemoryBanks[i],  16 * 1024);
 
 	// restore bank setup
-	if (pCpcEmu->CpcEmuState.type == CPC_TYPE_6128)
+	if (pCPCEmu->CPCEmuState.type == CPC_TYPE_6128)
 	{
-		pCpcEmu->CpcEmuState.last_mem_config = frame.MemoryBankRegister;
+		pCPCEmu->CPCEmuState.last_mem_config = frame.MemoryBankRegister;
 
 		// bit 3 defines the video scanout memory bank (5 or 7) 
-		pCpcEmu->CpcEmuState.display_ram_bank = (frame.MemoryBankRegister & (1 << 3)) ? 7 : 5;
+		pCPCEmu->CPCEmuState.display_ram_bank = (frame.MemoryBankRegister & (1 << 3)) ? 7 : 5;
 
 		// map last bank
-		mem_map_ram(&pCpcEmu->CpcEmuState.mem, 0, 0xC000, 0x4000, pCpcEmu->CpcEmuState.ram[frame.MemoryBankRegister & 0x7]);
+		mem_map_ram(&pCPCEmu->CPCEmuState.mem, 0, 0xC000, 0x4000, pCPCEmu->CPCEmuState.ram[frame.MemoryBankRegister & 0x7]);
 
 		// map ROM
 		if (frame.MemoryBankRegister & (1 << 4)) // bit 4 set: ROM1 
-			mem_map_rom(&pCpcEmu->CpcEmuState.mem, 0, 0x0000, 0x4000, pCpcEmu->CpcEmuState.rom[1]);
+			mem_map_rom(&pCPCEmu->CPCEmuState.mem, 0, 0x0000, 0x4000, pCPCEmu->CPCEmuState.rom[1]);
 		else // bit 4 clear: ROM0 
-			mem_map_rom(&pCpcEmu->CpcEmuState.mem, 0, 0x0000, 0x4000, pCpcEmu->CpcEmuState.rom[0]);
+			mem_map_rom(&pCPCEmu->CPCEmuState.mem, 0, 0x0000, 0x4000, pCPCEmu->CPCEmuState.rom[0]);
 
 		// Set code analysis banks
-		pCpcEmu->SetROMBank(frame.MemoryBankRegister & (1 << 4) ? 1 : 0);
-		pCpcEmu->SetRAMBank(3, frame.MemoryBankRegister & 0x7);
+		pCPCEmu->SetROMBank(frame.MemoryBankRegister & (1 << 4) ? 1 : 0);
+		pCPCEmu->SetRAMBank(3, frame.MemoryBankRegister & 0x7);
 	}
 #endif
 }
@@ -125,7 +125,7 @@ void FFrameTraceViewer::Draw()
 {
 	// sam. todo
 	return;
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 
 
 	if (ImGui::ArrowButton("##left", ImGuiDir_Left))
@@ -162,7 +162,7 @@ void FFrameTraceViewer::Draw()
 		if (frameNo < 0)
 			frameNo += kNoFramesInTrace;
 	}
-	const FCpcFrameTrace& frame = FrameTrace[frameNo];
+	const FCPCFrameTrace& frame = FrameTrace[frameNo];
 	
 
 	if (ImGui::Button("Restore"))
@@ -220,9 +220,9 @@ void FFrameTraceViewer::Draw()
 	
 }
 
-void	FFrameTraceViewer::DrawInstructionTrace(const FCpcFrameTrace& frame)
+void	FFrameTraceViewer::DrawInstructionTrace(const FCPCFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)frame.InstructionTrace.size(), line_height);
@@ -256,9 +256,9 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FCpcFrameTrace& frame)
 	}
 }
 
-void	FFrameTraceViewer::GenerateTraceOverview(FCpcFrameTrace& frame)
+void	FFrameTraceViewer::GenerateTraceOverview(FCPCFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 	frame.FrameOverview.clear();
 	for (int i = 0; i < frame.InstructionTrace.size(); i++)
 	{
@@ -312,14 +312,14 @@ void	FFrameTraceViewer::GenerateTraceOverview(FCpcFrameTrace& frame)
 	}
 }
 
-void FFrameTraceViewer::GenerateMemoryDiff(const FCpcFrameTrace& frame, const FCpcFrameTrace& otherFrame, std::vector<FMemoryDiff>& outDiff)
+void FFrameTraceViewer::GenerateMemoryDiff(const FCPCFrameTrace& frame, const FCPCFrameTrace& otherFrame, std::vector<FMemoryDiff>& outDiff)
 {
 	outDiff.clear();
 
 	// diff RAM with previous frame
 	// skip ROM & screen memory
 	// might want to exclude stack (once we determine where it is)
-	const int noBanks = pCpcEmu->CpcEmuState.type == CPC_TYPE_464 ? 3 : 8;
+	const int noBanks = pCPCEmu->CPCEmuState.type == CPC_TYPE_464 ? 3 : 8;
 	for (int bankNo = 0; bankNo < noBanks; bankNo++)
 	{
 		for (int addr = 0; addr < 16 * 1024; addr++)
@@ -336,9 +336,9 @@ void FFrameTraceViewer::GenerateMemoryDiff(const FCpcFrameTrace& frame, const FC
 	}
 }
 
-void	FFrameTraceViewer::DrawTraceOverview(const FCpcFrameTrace& frame)
+void	FFrameTraceViewer::DrawTraceOverview(const FCPCFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
 	ImGuiListClipper clipper((int)frame.FrameOverview.size(), line_height);
@@ -363,7 +363,7 @@ void	FFrameTraceViewer::DrawTraceOverview(const FCpcFrameTrace& frame)
 	}
 }
 
-void FFrameTraceViewer::DrawFrameScreenWritePixels(const FCpcFrameTrace& frame, int lastIndex)
+void FFrameTraceViewer::DrawFrameScreenWritePixels(const FCPCFrameTrace& frame, int lastIndex)
 {
 #if SPECCY
 	if (lastIndex == -1 || lastIndex >= frame.ScreenPixWrites.size())
@@ -375,15 +375,15 @@ void FFrameTraceViewer::DrawFrameScreenWritePixels(const FCpcFrameTrace& frame, 
 		int xp, yp;
 		GetScreenAddressCoords(access.Address.Address, xp, yp);
 		const uint16_t attrAddress = GetScreenAttrMemoryAddress(xp, yp);
-		const uint8_t attr = pCpcEmu->ReadByte(attrAddress);
+		const uint8_t attr = pCPCEmu->ReadByte(attrAddress);
 		ShowWritesView->DrawCharLine(access.Value, xp, yp, attr);
 	}
 #endif
 }
 
-void	FFrameTraceViewer::DrawScreenWrites(const FCpcFrameTrace& frame)
+void	FFrameTraceViewer::DrawScreenWrites(const FCPCFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	if (ImGui::BeginChild("ScreenPxWrites", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
@@ -422,9 +422,9 @@ void	FFrameTraceViewer::DrawScreenWrites(const FCpcFrameTrace& frame)
 	ImGui::EndChild();
 }
 
-void FFrameTraceViewer::DrawMemoryDiffs(const FCpcFrameTrace& frame)
+void FFrameTraceViewer::DrawMemoryDiffs(const FCPCFrameTrace& frame)
 {
-	FCodeAnalysisState& state = pCpcEmu->GetCodeAnalysis();
+	FCodeAnalysisState& state = pCPCEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	for (const auto& diff : frame.MemoryDiffs)

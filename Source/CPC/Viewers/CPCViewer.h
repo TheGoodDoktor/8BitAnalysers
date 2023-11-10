@@ -5,7 +5,7 @@
 #include "imgui.h"
 #include "Misc/InputEventHandler.h"
 
-class FCpcEmu;
+class FCPCEmu;
 class FCodeAnalysisState;
 struct FCodeAnalysisViewState;
 struct FPalette;
@@ -14,12 +14,12 @@ struct FPalette;
 //#define CPCVIEWER_EXTRA_DEBUG
 #endif
 
-class FCpcViewer
+class FCPCViewer
 {
 public:
-	FCpcViewer() {}
+	FCPCViewer() {}
 
-	void	Init(FCpcEmu* pEmu);
+	void	Init(FCPCEmu* pEmu);
 	void	Draw();
 	void	Tick(void);
 
@@ -39,7 +39,7 @@ private:
 #endif
 private:
 
-	FCpcEmu* pCpcEmu = nullptr;
+	FCPCEmu* pCPCEmu = nullptr;
 
 	uint32_t* FrameBuffer = 0;	// pixel buffer to store emu output
 	ImTextureID	ScreenTexture = 0;		// texture

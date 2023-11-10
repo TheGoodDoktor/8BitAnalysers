@@ -7,11 +7,11 @@
 #include <CodeAnalyser/CodeAnalyserTypes.h>
 #include <CodeAnalyser/UI/GraphicsViewer.h>
 
-class FCpcEmu;
+class FCPCEmu;
 struct FGame;
 
 // test
-class FCpcGraphicsView;
+class FCPCGraphicsView;
 
 class FCPCGraphicsViewer : public FGraphicsViewer
 {
@@ -24,7 +24,7 @@ public:
 
 	void	Draw() override;
 	void	DrawScreenViewer(void) override;
-	void	Init(FCodeAnalysisState* pCodeAnalysis, FCpcEmu* pEmu);
+	void	Init(FCodeAnalysisState* pCodeAnalysis, FCPCEmu* pEmu);
 
 	void	DrawPaletteViewer();
 	void	DrawPalette(const uint32_t* palette, int numColours);
@@ -36,7 +36,7 @@ private:
 	void		UpdateScreenPixelImage(void);
 	uint16_t	GetPixelLineOffset(int yPos);
 
-	FCpcEmu*	pCpcEmu = nullptr;
+	FCPCEmu*	pCPCEmu = nullptr;
 
 	int			DisplayAddress = 0xc000;
 	int			WidthChars = 40;
@@ -46,6 +46,6 @@ private:
 
 #if 0
 	FGraphicsView* pTestGraphicsView = 0;
-	FCpcGraphicsView* pTestCPCGraphicsView = 0;
+	FCPCGraphicsView* pTestCPCGraphicsView = 0;
 #endif
 };

@@ -3,18 +3,18 @@
 
 #include <string>
 
-class FCpcEmu;
+class FCPCEmu;
 
 class FViewerBase
 {
-	friend class FCpcEmu;
+	friend class FCPCEmu;
 public:
-					FViewerBase(FCpcEmu* pEmu) : pCpcEmu(pEmu) {}
+					FViewerBase(FCPCEmu* pEmu) : pCPCEmu(pEmu) {}
 	virtual bool	Init() = 0;
 	virtual void	DrawUI() = 0;
 	const char*		GetName() const { return Name.c_str(); }
 protected:
-	FCpcEmu*	pCpcEmu;
+	FCPCEmu*	pCPCEmu;
 	std::string		Name;
 private:
 	bool		bOpen = true;

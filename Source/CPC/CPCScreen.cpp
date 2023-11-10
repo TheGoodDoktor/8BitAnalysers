@@ -3,9 +3,9 @@
 #include "CPCEmu.h"
 #include "Debug/DebugLog.h"
 
-void FCPCScreen::Init(FCpcEmu* pEmu)
+void FCPCScreen::Init(FCPCEmu* pEmu)
 {
-	pCpcEmu = pEmu;
+	pCPCEmu = pEmu;
 }
 
 void FCPCScreen::Reset()
@@ -45,7 +45,7 @@ const FPalette& FCPCScreen::GetPaletteForYPos(int yPos) const
 
 void FCPCScreen::Tick()
 {
-	const am40010_crt_t& crt = pCpcEmu->CpcEmuState.ga.crt;
+	const am40010_crt_t& crt = pCPCEmu->CPCEmuState.ga.crt;
 	const uint16_t scanlinePos = crt.v_pos;
 
 	if (!bInVblank)
@@ -60,7 +60,7 @@ void FCPCScreen::Tick()
 		{
 			if (crt.visible)
 			{
-				if (pCpcEmu->CpcEmuState.ga.crtc_pins & AM40010_DE)
+				if (pCPCEmu->CPCEmuState.ga.crtc_pins & AM40010_DE)
 				{
 					bDrawingPixels = true;
 					ScreenTopScanline = crt.pos_y;
@@ -79,7 +79,7 @@ void FCPCScreen::Tick()
 
 	// Store the screen mode per scanline.
 	// Shame to do this here. Would be nice to have a horizontal blank callback
-	const am40010_t ga = pCpcEmu->CpcEmuState.ga;
+	const am40010_t ga = pCPCEmu->CPCEmuState.ga;
 	const int curScanline = ga.crt.pos_y;
 	if (LastScanline != curScanline)
 	{
@@ -97,7 +97,7 @@ void FCPCScreen::Tick()
 // https://gist.github.com/neuro-sys/eeb7a323b27a9d8ad891b41144916946#registers
 uint16_t FCPCScreen::GetScreenAddrStart() const
 {
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	const uint16_t dispStart = (crtc.start_addr_hi << 8) | crtc.start_addr_lo;
 	// Bits 12 & 13 hold the page/bank index. It can be one of the 4 16k physical memory banks.
 	const uint16_t pageIndex = (dispStart >> 12) & 0x3; 
@@ -108,7 +108,7 @@ uint16_t FCPCScreen::GetScreenAddrStart() const
 
 bool FCPCScreen::IsScrolled() const
 {
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	const uint16_t dispStart = (crtc.start_addr_hi << 8) | crtc.start_addr_lo;
 	// Bits 0 - 9 hold the scroll offset.
 	return (dispStart & 0x3ff);
@@ -127,7 +127,7 @@ uint16_t FCPCScreen::GetScreenAddrEnd() const
 // Usually screen mem size is 16k but it's possible to be set to 32k if both bits are set.
 uint16_t FCPCScreen::GetScreenMemSize() const
 {
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	const uint16_t dispSize = (crtc.start_addr_hi >> 2) & 0x3;
 	return dispSize == 0x3 ? 0x8000 : 0x4000;
 }
@@ -140,7 +140,7 @@ bool FCPCScreen::GetScreenMemoryAddress(int x, int y, uint16_t& addr) const
 	//if (x < 0 || x>255 || y < 0 || y> 191)
 	//	return false;
 	 
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	const uint8_t charHeight = crtc.max_scanline_addr + 1;
 	const uint8_t bytesPerScrLine = crtc.h_displayed * 2;
 	const uint16_t yCharIndex = y / charHeight; // which character row are we in?
@@ -203,7 +203,7 @@ bool FCPCScreen::GetScreenAddressCoords(uint16_t addr, int& x, int& y) const
 	if (addr < startAddr || addr >= GetScreenAddrEnd()) // todo: fix this logic if the screen is scrolled
 		return false;
 
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	if (crtc.h_displayed == 0)
 		return false;
 

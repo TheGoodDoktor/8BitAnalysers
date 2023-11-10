@@ -4,9 +4,9 @@
 
 int main(int argc, char** argv)
 {
-	FCpcLaunchConfig config;
+	FCPCLaunchConfig config;
 	config.ParseCommandline(argc, argv);
-	FEmuBase* pEmulator = new FCpcEmu;
+	FEmuBase* pEmulator = new FCPCEmu;
 
 	RunMainLoop(pEmulator,config);
 	return 0;

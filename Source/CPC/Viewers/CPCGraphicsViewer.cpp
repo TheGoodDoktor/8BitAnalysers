@@ -8,15 +8,15 @@
 
 #include "../CPCEmu.h"
 
-void FCPCGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysis, FCpcEmu* pEmu)
+void FCPCGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysis, FCPCEmu* pEmu)
 {
-	pCpcEmu = pEmu;
+	pCPCEmu = pEmu;
 	FGraphicsViewer::Init(pCodeAnalysis);
 	BitmapFormat = EBitmapFormat::ColMap2Bpp_CPC;
 
 #if 0
 	// test views
-	pTestCPCGraphicsView = new FCpcGraphicsView(32, 32);
+	pTestCPCGraphicsView = new FCPCGraphicsView(32, 32);
 	pTestCPCGraphicsView->Clear(0xfffff00);
 
 	// test views
@@ -60,13 +60,13 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 	pScreenView->Draw();
 
 #if 0
-	const uint32_t* pPalette = pCpcEmu->Screen.GetCurrentPalette().GetData();
+	const uint32_t* pPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
 	if (1)
 	{
 		// 1943
 		// mode 0
 		const uint16_t spriteAddress = 0x585f;
-		const uint8_t* ptr = pCpcEmu->GetMemPtr(spriteAddress);
+		const uint8_t* ptr = pCPCEmu->GetMemPtr(spriteAddress);
 		pTestCPCGraphicsView->Draw4BppWideImageAt(ptr, 0, 0, 14, 21, pPalette);
 		pTestCPCGraphicsView->Draw();
 
@@ -78,7 +78,7 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 		// laser squad
 		// mode 1
 		const uint16_t spriteAddress = 0xafbf;
-		const uint8_t* ptr = pCpcEmu->GetMemPtr(spriteAddress);
+		const uint8_t* ptr = pCPCEmu->GetMemPtr(spriteAddress);
 		pTestCPCGraphicsView->Draw2BppImageAt(ptr, 0, 0, 16, 16, pPalette);
 		pTestCPCGraphicsView->Draw();
 
@@ -91,14 +91,14 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 // get offset into screen ram for a given horizontal pixel line (scan line)
 uint16_t FCPCGraphicsViewer::GetPixelLineOffset(int yPos)
 {
-	// todo: couldn't we use FCpcEmu::GetScreenMemoryAddress() instead?
+	// todo: couldn't we use FCPCEmu::GetScreenMemoryAddress() instead?
 
 	return ((yPos / CharacterHeight) * (ScreenWidth / 4)) + ((yPos % CharacterHeight) * 2048);
 }
 
 uint32_t FCPCGraphicsViewer::GetRGBValueForPixel(int yPos, int colourIndex, uint32_t heatMapCol) const
 {
-	const ImColor colour = pCpcEmu->Screen.GetPaletteForYPos(yPos).GetColour(colourIndex);
+	const ImColor colour = pCPCEmu->Screen.GetPaletteForYPos(yPos).GetColour(colourIndex);
 	
 	// Grayscale value is R * 0.299 + G * 0.587 + B * 0.114
 	const float grayScaleValue = colour.Value.x * 0.299f + colour.Value.y * 0.587f + colour.Value.z * 0.114f;
@@ -117,14 +117,14 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 	const float fontSize = ImGui::GetFontSize();
 
 	// todo: deal with Bank being set
-	const mc6845_t& crtc = pCpcEmu->CpcEmuState.crtc;
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 
 	if (ImGui::Button("Get From CRTC Registers"))
 	{
-		DisplayAddress = pCpcEmu->Screen.GetScreenAddrStart();
+		DisplayAddress = pCPCEmu->Screen.GetScreenAddrStart();
 		WidthChars = crtc.h_displayed;
 		HeightChars = crtc.v_displayed;
-		ScreenMode = pCpcEmu->CpcEmuState.ga.video.mode;
+		ScreenMode = pCPCEmu->CPCEmuState.ga.video.mode;
 		CharacterHeight = crtc.max_scanline_addr + 1;
 	}
 
@@ -253,16 +253,16 @@ void FCPCGraphicsViewer::DrawPalette(const uint32_t* palette, int numColours)
 
 void FCPCGraphicsViewer::DrawPaletteViewer()
 {
-	const uint32_t* pCurrentPalette = pCpcEmu->Screen.GetCurrentPalette().GetData();
+	const uint32_t* pCurrentPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
 
 	ImGui::Text("Current Palette: ");
-	DrawPalette(pCurrentPalette, pCpcEmu->CpcEmuState.ga.video.mode == 0 ? 16 : 4);
+	DrawPalette(pCurrentPalette, pCPCEmu->CPCEmuState.ga.video.mode == 0 ? 16 : 4);
 	ImGui::Separator();
 
 	static int paletteIndex = -1;
 	if (ImGui::Button("Store Current Palette"))
 	{
-		paletteIndex = GetPaletteNo(pCurrentPalette, pCpcEmu->CpcEmuState.ga.video.mode == 0 ? 16 : 4);
+		paletteIndex = GetPaletteNo(pCurrentPalette, pCPCEmu->CPCEmuState.ga.video.mode == 0 ? 16 : 4);
 	}
 
 	const float scale = ImGui_GetScaling();
@@ -284,5 +284,5 @@ void FCPCGraphicsViewer::DrawPaletteViewer()
 
 const uint32_t* FCPCGraphicsViewer::GetCurrentPalette() const 
 { 
-	return pCpcEmu->Screen.GetCurrentPalette().GetData();
+	return pCPCEmu->Screen.GetCurrentPalette().GetData();
 }

@@ -7,7 +7,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include <cstdint>
 
-int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FCpcEmu* pEmu)
+int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FCPCEmu* pEmu)
 {
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 
@@ -141,16 +141,16 @@ void ResetMemoryStats(FMemoryStats &memStats)
 
 #if 0
 // UI
-void DrawMemoryHandlers(FCpcEmu* pCpcEmu)
+void DrawMemoryHandlers(FCPCEmu* pCPCEmu)
 {
-	FCodeAnalysisViewState& viewState = pCpcEmu->CodeAnalysis.GetFocussedViewState();
+	FCodeAnalysisViewState& viewState = pCPCEmu->CodeAnalysis.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("DrawMemoryHandlersGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
 	FMemoryAccessHandler *pSelectedHandler = nullptr;
 
-	for (auto &handler : pCpcEmu->MemoryAccessHandlers)
+	for (auto &handler : pCPCEmu->MemoryAccessHandlers)
 	{
-		const bool bSelected = pCpcEmu->SelectedMemoryHandler == handler.Name;
+		const bool bSelected = pCPCEmu->SelectedMemoryHandler == handler.Name;
 		if (bSelected)
 		{
 			pSelectedHandler = &handler;
@@ -158,7 +158,7 @@ void DrawMemoryHandlers(FCpcEmu* pCpcEmu)
 
 		if (ImGui::Selectable(handler.Name.c_str(), bSelected))
 		{
-			pCpcEmu->SelectedMemoryHandler = handler.Name;
+			pCPCEmu->SelectedMemoryHandler = handler.Name;
 		}
 
 	}
@@ -176,11 +176,11 @@ void DrawMemoryHandlers(FCpcEmu* pCpcEmu)
 
 		ImGui::Text("Start: %s", NumStr(pSelectedHandler->MemStart));
 		ImGui::SameLine();
-		DrawAddressLabel(pCpcEmu->CodeAnalysis, viewState, pSelectedHandler->MemStart);
+		DrawAddressLabel(pCPCEmu->CodeAnalysis, viewState, pSelectedHandler->MemStart);
 
 		ImGui::Text("End: %s", NumStr(pSelectedHandler->MemEnd));
 		ImGui::SameLine();
-		DrawAddressLabel(pCpcEmu->CodeAnalysis, viewState, pSelectedHandler->MemEnd);
+		DrawAddressLabel(pCPCEmu->CodeAnalysis, viewState, pSelectedHandler->MemEnd);
 
 		ImGui::Text("Total Accesses %d", pSelectedHandler->TotalCount);
 
@@ -188,7 +188,7 @@ void DrawMemoryHandlers(FCpcEmu* pCpcEmu)
 		for (const auto& accessPC : pSelectedHandler->Callers.GetReferences())
 		{
 			ImGui::PushID(accessPC.Val);
-			DrawCodeAddress(pCpcEmu->CodeAnalysis, viewState, accessPC);
+			DrawCodeAddress(pCPCEmu->CodeAnalysis, viewState, accessPC);
 			//ImGui::SameLine();
 			//ImGui::Text(" - %d accesses",accessPC.second);
 			ImGui::PopID();
@@ -198,7 +198,7 @@ void DrawMemoryHandlers(FCpcEmu* pCpcEmu)
 	ImGui::EndChild();
 }
 
-void DrawMemoryAnalysis(FCpcEmu* pUI)
+void DrawMemoryAnalysis(FCPCEmu* pUI)
 {
 	ImGui::Text("Memory Analysis");
 	if (ImGui::Button("Analyse"))

@@ -47,7 +47,7 @@ FCPCGameConfig* CreateNewAmstradBasicConfig(void)
 	return pNewConfig;
 }
 
-bool LoadCPCGameConfigs(FCpcEmu* pEmu)
+bool LoadCPCGameConfigs(FCPCEmu* pEmu)
 {
 	FDirFileList listing;
 
@@ -65,7 +65,7 @@ bool LoadCPCGameConfigs(FCpcEmu* pEmu)
 			FCPCGameConfig* pNewConfig = new FCPCGameConfig;
 			if (LoadGameConfigFromFile(*pNewConfig, fn.c_str()))
 			{
-				if (pNewConfig->bCPC6128Game == (pEmu->CpcEmuState.type == CPC_TYPE_6128))
+				if (pNewConfig->bCPC6128Game == (pEmu->CPCEmuState.type == CPC_TYPE_6128))
 					AddGameConfig(pNewConfig);
 			}
 			else

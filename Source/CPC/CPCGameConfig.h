@@ -4,7 +4,7 @@
 
 struct FGame;
 struct FGameSnapshot;
-class FCpcEmu;
+class FCPCEmu;
 
 // CPC specific
 struct FCPCGameConfig : FGameConfig
@@ -17,4 +17,4 @@ struct FCPCGameConfig : FGameConfig
 
 FCPCGameConfig* CreateNewCPCGameConfigFromSnapshot(const FGameSnapshot& snapshot);
 FCPCGameConfig* CreateNewAmstradBasicConfig(void);
-bool LoadCPCGameConfigs(FCpcEmu* pUI);
+bool LoadCPCGameConfigs(FCPCEmu* pUI);

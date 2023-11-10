@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cinttypes>
 
-class FCpcEmu;
+class FCPCEmu;
 
-bool LoadSNAFile(FCpcEmu* pEmu, const char* fName);
-bool LoadSNAFileCached(FCpcEmu* pEmu, const char* fName, uint8_t*& pData, size_t& dataSize);
-bool LoadSNAFromMemory(FCpcEmu* pEmu, uint8_t* pData, size_t dataSize);
+bool LoadSNAFile(FCPCEmu* pEmu, const char* fName);
+bool LoadSNAFileCached(FCPCEmu* pEmu, const char* fName, uint8_t*& pData, size_t& dataSize);
+bool LoadSNAFromMemory(FCPCEmu* pEmu, uint8_t* pData, size_t dataSize);
