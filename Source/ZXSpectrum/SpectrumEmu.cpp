@@ -894,6 +894,13 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
 		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+
+		if (LoadGameState(this, saveStateFName.c_str()))
+		{
+			// if the game state loaded then we don't need the snapshot
+			bLoadSnapshot = false;
+		}
+
 		if (FileExists(analysisJsonFName.c_str()))
 		{
 			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
@@ -903,12 +910,6 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 			LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
 
 		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
-
-		if(LoadGameState(this, saveStateFName.c_str()))
-		{
-			// if the game state loaded then we don't need the snapshot
-			bLoadSnapshot = false;
-		}
 
 		// where do we want pokes to live?
 		if (pSpectrumGameConfig != nullptr)
