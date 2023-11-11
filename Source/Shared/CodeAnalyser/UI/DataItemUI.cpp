@@ -794,12 +794,20 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		static FCharSetCreateParams params;
 		params.Address = item.AddressRef;
 		DrawMaskInfoComboBox(&params.MaskInfo);
-		DrawColourInfoComboBox(&params.ColourInfo);
-		if (params.ColourInfo == EColourInfo::MemoryLUT)
+		DrawBitmapFormatCombo(params.BitmapFormat, state);
+		if (params.BitmapFormat == EBitmapFormat::Bitmap_1Bpp)
 		{
-			DrawAddressInput(state, "Attribs Address", params.AttribsAddress);
-		}
+			DrawColourInfoComboBox(&params.ColourInfo);
 
+			if (params.ColourInfo == EColourInfo::MemoryLUT)
+			{
+				DrawAddressInput(state, "Attribs Address", params.AttribsAddress);
+			}
+		}
+		else
+		{
+			DrawPaletteCombo("Palette", "None", params.PaletteNo, GetNumColoursForBitmapFormat(params.BitmapFormat));
+		}
 		FCharacterSet *pCharSet = GetCharacterSetFromAddress(item.AddressRef);
 		if (pCharSet != nullptr)
 		{

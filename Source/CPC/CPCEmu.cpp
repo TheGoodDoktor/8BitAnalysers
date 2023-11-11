@@ -861,15 +861,15 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 
-		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
-
-		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
-
 		if (LoadGameState(saveStateFName.c_str()) == false)
 		{
 			GamesList.LoadGame(pGameConfig->Name.c_str());
 		}
+
+		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+
+		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 	}
 	else
 	{

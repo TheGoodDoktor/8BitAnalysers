@@ -144,11 +144,20 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 			}
 			DrawAddressLabel(state, viewState, params.Address);
 			DrawMaskInfoComboBox(&params.MaskInfo);
-			DrawColourInfoComboBox(&params.ColourInfo);
-			if (params.ColourInfo == EColourInfo::MemoryLUT)
+			DrawBitmapFormatCombo(params.BitmapFormat, state);
+			if (params.BitmapFormat == EBitmapFormat::Bitmap_1Bpp)
 			{
-				DrawAddressInput(state, "Attribs Address", params.AttribsAddress);
+				DrawColourInfoComboBox(&params.ColourInfo);
+				if (params.ColourInfo == EColourInfo::MemoryLUT)
+				{
+					DrawAddressInput(state, "Attribs Address", params.AttribsAddress);
+				}
 			}
+			else
+			{
+				DrawPaletteCombo("Palette", "None", params.PaletteNo, GetNumColoursForBitmapFormat(params.BitmapFormat));
+			}
+
 			ImGui::Checkbox("Dynamic", &params.bDynamic);
 			if (ImGui::Button("Update Character Set"))
 			{
@@ -156,7 +165,6 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 				UpdateCharacterSet(state, *pCharSet, params);
 			}
 			pCharSet->Image->Draw();
-
 		}
 	}
 	ImGui::EndChild();

@@ -94,7 +94,7 @@ public:
 class FByteSequenceFinder : public FDataFinder
 {
 public:
-	static const int kMaxByteCount = 2;
+	static const int kMaxByteCount = 32;
 	static const int kSearchTextSize = (kMaxByteCount * 2) + 1;
 
 	virtual bool HasValueChanged(FAddressRef addr) const override;

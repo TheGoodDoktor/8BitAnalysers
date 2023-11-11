@@ -65,6 +65,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		jsonCharacterSet["MaskInfo"] = pCharSet->Params.MaskInfo;
 		jsonCharacterSet["ColourInfo"] = pCharSet->Params.ColourInfo;
 		jsonCharacterSet["Dynamic"] = pCharSet->Params.bDynamic;
+		jsonCharacterSet["BitmapFormat"] = (int)pCharSet->Params.BitmapFormat;
+		jsonCharacterSet["PaletteNo"] = pCharSet->Params.PaletteNo;
 
 		jsonGameData["CharacterSets"].push_back(jsonCharacterSet);
 	}
@@ -214,6 +216,9 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		}
 	}*/
 
+	// Read in palettes.
+	// May be needed to create the character set.
+	LoadPalettesFromJson(jsonGameData);
 
 	if (jsonGameData.contains("CharacterSets"))
 	{
@@ -230,6 +235,11 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			if (charSet.contains("AttribsAddressRef"))
 				params.AttribsAddress.Val = charSet["AttribsAddressRef"];
 
+			if (charSet.contains("BitmapFormat"))
+				params.BitmapFormat = (EBitmapFormat)(int)charSet["BitmapFormat"];
+			if (charSet.contains("PaletteNo"))
+				params.PaletteNo = charSet["PaletteNo"];
+			
 			params.MaskInfo = charSet["MaskInfo"];
 			params.ColourInfo = charSet["ColourInfo"];
 			params.bDynamic = charSet["Dynamic"];
@@ -261,9 +271,6 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			CreateCharacterMap(state, params);
 		}
 	}
-
-	// Read in palettes
-	LoadPalettesFromJson(jsonGameData);
 
 	return true;
 }

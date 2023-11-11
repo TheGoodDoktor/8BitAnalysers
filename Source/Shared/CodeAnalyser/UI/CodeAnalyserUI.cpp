@@ -967,7 +967,7 @@ bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState
 	return bChanged;
 }
 
-bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int requiredNumColors)
+bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours /* = -1 */)
 {
 	int index = paletteEntryIndex;
 	const std::string palettePreview = "Palette " + std::to_string(index);
@@ -986,7 +986,7 @@ bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& pale
 		{
 			if (const FPaletteEntry* pEntry = GetPaletteEntry(p))
 			{
-				if (pEntry->NoColours == requiredNumColors)
+				if (numColours == -1 || pEntry->NoColours == numColours)
 				{
 					const std::string str = "Palette " + std::to_string(p);
 					const bool isSelected = (index == p);
@@ -1490,34 +1490,13 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::InputInt2("Bitmap Size(X,Y)", size);
 			
 		formattingOptions.DisplayType = GetDisplayTypeForBitmapFormat(viewState.CurBitmapFormat);
-
-		int pixelsPerByte = 8;
-		int colorsPerPixel = 0;
-		switch (formattingOptions.DisplayType)
-		{
-		case EDataItemDisplayType::Bitmap: // 1 bpp
-			pixelsPerByte = 8;
-			colorsPerPixel = 0;
-			break;
-		case EDataItemDisplayType::ColMap2Bpp_CPC: // 2 bpp
-			pixelsPerByte = 4;
-			colorsPerPixel = 4;
-			break;
-		case EDataItemDisplayType::ColMap4Bpp_CPC: // 4 bpp
-			pixelsPerByte = 2;
-			colorsPerPixel = 16;
-			break;
-		case EDataItemDisplayType::ColMap2Bpp_C64: // 2 bpp
-			pixelsPerByte = 4;
-			colorsPerPixel = 4;
-			break;
-		}
+		int pixelsPerByte = 8 / GetBppForBitmapFormat(viewState.CurBitmapFormat);
 		formattingOptions.ItemSize = std::max(1, size[0] / pixelsPerByte);
 		formattingOptions.NoItems = size[1];
 
-		if (colorsPerPixel > 0)
+		if (viewState.CurBitmapFormat != EBitmapFormat::Bitmap_1Bpp)
 		{
-			DrawPaletteCombo("Palette", "None", paletteNo, colorsPerPixel);
+			DrawPaletteCombo("Palette", "None", paletteNo, GetNumColoursForBitmapFormat(viewState.CurBitmapFormat));
 			formattingOptions.PaletteNo = paletteNo;
 		}
 		break;
@@ -1794,7 +1773,7 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 	const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
 	ImGui::Text("%s", label);
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(40.0f);
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 3.f);
 	if (ImGui::InputScalar("##addronput", ImGuiDataType_U16, &address.Address, 0, 0, format, inputFlags))
 	{
 		address = state.AddressRefFromPhysicalAddress(address.Address);
@@ -1880,4 +1859,41 @@ void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state)
 	ImGui::SliderFloat("Branch Line Start", &config.BranchLineIndentStart, 0, 200.0f);
 	ImGui::SliderFloat("Branch Line Spacing", &config.BranchSpacing, 0, 20.0f);
 	ImGui::SliderInt("Branch Line No Indents", &config.BranchMaxIndent,1,10);
+}
+
+EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType)
+{
+	switch (displayType)
+	{
+	case EDataItemDisplayType::Bitmap:
+		return EBitmapFormat::Bitmap_1Bpp;
+	case EDataItemDisplayType::ColMap2Bpp_CPC:
+		return EBitmapFormat::ColMap2Bpp_CPC;
+	case EDataItemDisplayType::ColMap4Bpp_CPC:
+		return EBitmapFormat::ColMap4Bpp_CPC;
+	case  EDataItemDisplayType::ColMap2Bpp_C64:
+		return EBitmapFormat::ColMap2Bpp_C64;
+	}
+	return EBitmapFormat::None;
+}
+
+int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
+{
+	switch (bitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+		return 1;
+	case EBitmapFormat::ColMap2Bpp_CPC:
+		return 2;
+	case EBitmapFormat::ColMap4Bpp_CPC:
+		return 4;
+	case EBitmapFormat::ColMap2Bpp_C64:
+		return 2;
+	}
+	return 1;
+}
+
+int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
+{
+	return 1 << GetBppForBitmapFormat(bitmapFormat);
 }

@@ -91,6 +91,8 @@ struct FCharSetCreateParams
 	EMaskInfo		MaskInfo = EMaskInfo::None;
 	EColourInfo		ColourInfo = EColourInfo::None;
 	const uint32_t* ColourLUT = nullptr;
+	EBitmapFormat	BitmapFormat = EBitmapFormat::Bitmap_1Bpp;
+	int				PaletteNo = -1;
 
 	bool			bDynamic = false;
 };

@@ -17,9 +17,6 @@ static int kMaxImageSize = 256;
 static int kGraphicsViewerWidth = 256;
 static int kGraphicsViewerHeight = 512;
 
-int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
-EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType);
-
 namespace ImGui
 {
 	// SetItemUsingMouseWheel() has been replaced by SetItemKeyOwner() in v1.89.1
@@ -359,9 +356,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	if (DrawBitmapFormatCombo(BitmapFormat, state))
 		PaletteNo = -1;
 
-	const int bpp = GetBppForBitmapFormat(BitmapFormat);	
+	const int bpp = GetBppForBitmapFormat(BitmapFormat);
 	if (bpp > 1)
-		DrawPaletteCombo("Palette", "Current", PaletteNo, bpp * bpp);
+		DrawPaletteCombo("Palette", "Current", PaletteNo, GetNumColoursForBitmapFormat(BitmapFormat));
 
 	if (ImGui::Checkbox("Physical Memory", &bShowPhysicalMemory))
 	{
@@ -482,7 +479,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	{
 		if (!bVSliderFineControl)
 		{ 
-			addrInput = ((int)((float)addrInput / (float)GraphicColumnSizeBytes) * GraphicColumnSizeBytes);
+			// Round up to the number of bytes for a column
+			const int c = GraphicColumnSizeBytes;
+			addrInput = ((addrInput + c - 1) / c) * c;
 		}
 	}
 
@@ -496,9 +495,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		if (wheel)
 		{
 			addrInput += (int)wheel * GraphicColumnSizeBytes;
-			addrInput = std::min(std::max(0, addrInput), 0xffff);
 		}
 	}
+	addrInput = std::min(std::max(0, addrInput), 0xffff);
 
 	ImGui::SameLine();
 	ImGui::Checkbox("Fine", &bVSliderFineControl);
@@ -530,7 +529,6 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			DrawDataDetails(state, state.GetFocussedViewState(), item);
 		}
 	}
-
 
 	// step address based on image attributes
 	StepInt("Step Line", addrInput, xChars * bpp);
@@ -702,7 +700,8 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	// List graphic sets
 	ImGui::Text("Graphic Sets");
-	if (ImGui::BeginChild("GraphicSetListChild",ImVec2(0,-40),true))
+	const float childHeight = ImGui::GetTextLineHeightWithSpacing() * (GraphicsSets.size() + 1);
+	if (ImGui::BeginChild("GraphicSetListChild",ImVec2(0, childHeight),true))
 	{
 		for (const auto& graphicsSetIt : GraphicsSets)
 		{
@@ -888,34 +887,3 @@ bool FGraphicsViewer::ExportImages(void)
 	return true;
 }
 
-EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType)
-{
-	switch (displayType)
-	{
-	case EDataItemDisplayType::Bitmap:
-		return EBitmapFormat::Bitmap_1Bpp;
-	case EDataItemDisplayType::ColMap2Bpp_CPC:
-		return EBitmapFormat::ColMap2Bpp_CPC;
-	case EDataItemDisplayType::ColMap4Bpp_CPC:
-		return EBitmapFormat::ColMap4Bpp_CPC;
-	case  EDataItemDisplayType::ColMap2Bpp_C64:
-		return EBitmapFormat::ColMap2Bpp_C64;
-	}
-	return EBitmapFormat::None;
-}
-
-int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
-{
-	switch (bitmapFormat)
-	{
-	case EBitmapFormat::Bitmap_1Bpp:
-		return 1;
-	case EBitmapFormat::ColMap2Bpp_CPC:
-		return 2;
-	case EBitmapFormat::ColMap4Bpp_CPC:
-		return 4;
-	case EBitmapFormat::ColMap2Bpp_C64:
-		return 2;
-	}
-	return 1;
-}

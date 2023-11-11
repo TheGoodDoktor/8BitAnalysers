@@ -129,8 +129,8 @@ void FGraphicsView::Draw2BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 					colNo = (val & 0x1 ? 2 : 0) | (val & 0x10 ? 1 : 0);
 					break;
 				}
-				
-				*(pBase + xpix + (x * 4)) = cols[colNo];
+				const uint32_t pixelCol = cols ? cols[colNo] : colNo == 0 ? 0 : 0xffffffff;
+				*(pBase + xpix + (x * 4)) = pixelCol;
 			}
 		}
 		pBase += Width;
@@ -317,20 +317,28 @@ FCharacterSet* GetCharacterSetFromAddress(FAddressRef address)
 	return nullptr;
 }
 
-// This function assumes the data is mapped in memory
-void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& characterSet)
+void DrawCharacterSetImage2BppCPC(FCodeAnalysisState& state, FCharacterSet& characterSet, uint16_t addr)
 {
-	uint16_t addr = characterSet.Params.Address.Address;
+	for (int charNo = 0; charNo < 256; charNo++)
+	{
+		const uint8_t* pCharData = state.CPUInterface->GetMemPtr(addr);
+		const int xp = (charNo & 15) * 8;
+		const int yp = (charNo >> 4) * 8;
 
+		const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(characterSet.Params.PaletteNo);
+		characterSet.Image->Draw2BppImageAt(pCharData, xp, yp, 8, 8, pPaletteColours);
+		addr += 16; // 2bpp * 8
+	}
+}
+
+void DrawCharacterSetImage1Bpp(FCodeAnalysisState& state, FCharacterSet& characterSet, uint16_t addr)
+{
 	// TODO: these are speccy specific, put in config
 	const uint8_t brightMask = 1 << 6;
 	const uint8_t inkMask = 7;
 	const uint8_t inkShift = 0;
 	const uint8_t paperMask = 7;
 	const uint8_t paperShift = 3;
-
-
-	characterSet.Image->Clear(0);	// clear first
 
 	for (int charNo = 0; charNo < 256; charNo++)
 	{
@@ -376,6 +384,24 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		}
 
 		characterSet.Image->Draw1BppImageAt(charPix, xp, yp, 8, 8, cols);
+	}
+}
+
+// This function assumes the data is mapped in memory
+void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& characterSet)
+{
+	uint16_t addr = characterSet.Params.Address.Address;
+
+	characterSet.Image->Clear(0);	// clear first
+
+	switch (characterSet.Params.BitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+		DrawCharacterSetImage1Bpp(state, characterSet, addr);
+		break;
+	case EBitmapFormat::ColMap2Bpp_CPC:
+		DrawCharacterSetImage2BppCPC(state, characterSet, addr);
+		break;
 	}
 
 	characterSet.Image->UpdateTexture();

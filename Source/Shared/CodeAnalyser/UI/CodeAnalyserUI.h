@@ -49,7 +49,7 @@ bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
 bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state);
 bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState& state);
-bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int requiredNumColors);
+bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours=-1);
 EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat);
 
 
@@ -69,6 +69,9 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 bool DrawAddressInput(const char* label, uint16_t* value);
 const char* GetBankText(FCodeAnalysisState& state, int16_t bankId);
 bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId, bool bAllowNone = false);
+EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType);
+int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
+int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat);
 
 // config - move?
 void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state);
