@@ -181,10 +181,13 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
     //ColourRAMId = CodeAnalysis.CreateBank("ColourRAM", 1, C64Emu.color_ram, true);  // Colour RAM - $D800
 
     // map in permanent banks
-    CodeAnalysis.MapBank(LowerRAMId, 0);        // RAM - $0000 - $9FFF - pages 0-39 - 40K
-    CodeAnalysis.MapBank(HighRAMId, 48);        // RAM - $C000 - $CFFF - pages 48-51 - 4k
+    CodeAnalysis.MapBank(LowerRAMId, 0, EBankAccess::ReadWrite);        // RAM - $0000 - $9FFF - pages 0-39 - 40K
+    CodeAnalysis.MapBank(HighRAMId, 48, EBankAccess::ReadWrite);        // RAM - $C000 - $CFFF - pages 48-51 - 4k
 
-    CodeAnalysis.MapBank(RAMBehindCharROMId, 52);  // Map because VIC needs it
+    // map RAM behind ROM banks a write
+    CodeAnalysis.MapBank(RAMBehindBasicROMId, 40, EBankAccess::Write);
+    CodeAnalysis.MapBank(RAMBehindCharROMId, 52, EBankAccess::Write);  // Map because VIC needs map address to be set - hack
+    CodeAnalysis.MapBank(RAMBehindKernelROMId, 56, EBankAccess::Write);
 
     // Setup VIC Bank Mapping 16 * 4k pages
 	VICBankMapping[0x0] = LowerRAMId;
@@ -261,44 +264,45 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
     if ((cpuPort & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == 0)
     {
         // Map in all RAM
-		CodeAnalysis.MapBank(RAMBehindBasicROMId, 40);          // RAM Under BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
-		CodeAnalysis.MapBank(RAMBehindCharROMId, 52);           // RAM Under Char ROM - %D000 - $DFFF - page 52-55 - 4k
-		CodeAnalysis.MapBank(RAMBehindKernelROMId, 56);         // RAM Under Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
+		CodeAnalysis.MapBank(RAMBehindBasicROMId, 40, EBankAccess::ReadWrite);          // RAM Under BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
+		CodeAnalysis.MapBank(RAMBehindCharROMId, 52, EBankAccess::ReadWrite);           // RAM Under Char ROM - %D000 - $DFFF - page 52-55 - 4k
+		CodeAnalysis.MapBank(RAMBehindKernelROMId, 56, EBankAccess::ReadWrite);         // RAM Under Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
     }
     else
     {
         /* A000..BFFF is either RAM-behind-BASIC-ROM or RAM */
         if ((cpuPort & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM))
         {
-			CodeAnalysis.MapBank(BasicROMId, 40);       // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
+			CodeAnalysis.MapBank(BasicROMId, 40, EBankAccess::Read);       // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
             bBasicROMMapped = true;
         }
         else
         {
-			CodeAnalysis.MapBank(RAMBehindBasicROMId, 40);       // RAM Under BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
+			CodeAnalysis.MapBank(RAMBehindBasicROMId, 40, EBankAccess::Read);       // RAM Under BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
         }
 
         /* E000..FFFF is either RAM-behind-KERNAL-ROM or RAM */
         if (cpuPort & C64_CPUPORT_HIRAM)
         {
             bKernelROMMapped = true;
-			CodeAnalysis.MapBank(KernelROMId, 56);      // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
+			CodeAnalysis.MapBank(KernelROMId, 56, EBankAccess::Read);      // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
         }
         else
         {
-			CodeAnalysis.MapBank(RAMBehindKernelROMId, 56);      // RAM Under Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
+			CodeAnalysis.MapBank(RAMBehindKernelROMId, 56, EBankAccess::Read);      // RAM Under Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
         }
 
         /* D000..DFFF can be Char-ROM or I/O */
         if (cpuPort & C64_CPUPORT_CHAREN)
         {
             bIOMapped = true;
-			CodeAnalysis.MapBank(IOAreaId, 52);         // IO System - %D000 - $DFFF - page 52-55 - 4k
+			CodeAnalysis.MapBank(IOAreaId, 52, EBankAccess::ReadWrite);         // IO System - %D000 - $DFFF - page 52-55 - 4k
 		}
         else
         {
             bCharacterROMMapped = true;
-			CodeAnalysis.MapBank(CharacterROMId, 52);       // Character ROM - %D000 - $DFFF - page 52-55 - 4k
+			CodeAnalysis.MapBank(CharacterROMId, 52, EBankAccess::Read);       // Character ROM - %D000 - $DFFF - page 52-55 - 4k
+            CodeAnalysis.MapBank(RAMBehindCharROMId, 52, EBankAccess::Write);
         }
     }
 }

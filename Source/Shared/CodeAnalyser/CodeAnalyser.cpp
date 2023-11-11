@@ -70,21 +70,25 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 		//if(pBank->bReadOnly)
 		//	SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], nullptr);	// Read only
 		//else
-		SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], &pBank->Pages[bankPageNo]);	// Read/Write
 
+		// Set Read Page
 		if(access == EBankAccess::Read || access == EBankAccess::ReadWrite)
 		{
 			FCodeAnalysisBank* pOldBank = GetBank(MappedReadBanks[startPageNo + bankPageNo]);
 			if(pOldBank)
 				pOldBank->UnmapFromPage(startPageNo);
 			MappedReadBanks[startPageNo + bankPageNo] = bankId;
+			SetCodeAnalysisReadPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo]);	// Read
 		}
+
+		// Set Write Page
 		if (access == EBankAccess::Write || access == EBankAccess::ReadWrite)
 		{
 			FCodeAnalysisBank* pOldBank = GetBank(MappedWriteBanks[startPageNo + bankPageNo]);
 			if (pOldBank)
 				pOldBank->UnmapFromPage(startPageNo);
 			MappedWriteBanks[startPageNo + bankPageNo] = bankId;
+			SetCodeAnalysisWritePage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo]);	// Write
 		}
 	}
 	bMemoryRemapped = true;
