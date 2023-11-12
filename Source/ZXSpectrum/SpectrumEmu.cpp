@@ -114,7 +114,7 @@ void* FSpectrumEmu::GetCPUEmulator(void) const
 
 void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address)
 {
-	GraphicsViewer.GoToAddress(address);
+	pGraphicsViewer->GoToAddress(address);
 	//GraphicsViewerGoToAddress(address);
 	//GraphicsViewerSetCharWidth(charWidth);
 }
@@ -672,6 +672,9 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	// This is where we add the viewers we want
 	//Viewers.push_back(new FBreakpointViewer(this));
 	Viewers.push_back(new FOverviewViewer(this));
+	Viewers.push_back(new FCharacterMapViewer(this));
+	pGraphicsViewer = new FZXGraphicsViewer(this);
+	Viewers.push_back(pGraphicsViewer);
 
 	// Initialise Viewers
 	for (auto Viewer : Viewers)
@@ -682,7 +685,7 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 		}
 	}
 
-	GraphicsViewer.Init(&CodeAnalysis);
+	//GraphicsViewer.Init(&CodeAnalysis);
 	
 	//IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
@@ -836,7 +839,7 @@ void FSpectrumEmu::Shutdown()
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 
-	GraphicsViewer.Shutdown();
+	//GraphicsViewer.Shutdown();
 }
 
 bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  true*/)
@@ -848,7 +851,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	MemoryAccessHandlers.clear();	// remove old memory handlers
 	ResetMemoryStats(MemStats);
 	FrameTraceViewer.Reset();
-	GraphicsViewer.Reset();
+	pGraphicsViewer->Reset();
 
 	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
 	SetWindowTitle(windowTitle.c_str());
@@ -866,7 +869,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	assert(pSpectrumGameConfig->pViewerConfig != nullptr);
 	pActiveGame = pNewGame;
 	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pSpectrumGameConfig);
-	GenerateSpriteListsFromConfig(GraphicsViewer, pSpectrumGameConfig);
+	GenerateSpriteListsFromConfig(*(FZXGraphicsViewer*)pGraphicsViewer, pSpectrumGameConfig);
 
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
@@ -909,7 +912,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		else
 			LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
 
-		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
+		pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
 		// where do we want pokes to live?
 		if (pSpectrumGameConfig != nullptr)
@@ -953,7 +956,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
 
-	GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 
 	pCurrentGameConfig = pGameConfig;
 	return true;
@@ -1001,7 +1004,7 @@ bool FSpectrumEmu::SaveCurrentGameData()
 		SaveGameState(this, saveStateFName.c_str());
 		ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
-		GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
+		pGraphicsViewer->SaveGraphicsSets(graphicsSetsJsonFName.c_str());
 	}
 
 	// TODO: this could use
@@ -1916,7 +1919,7 @@ void FSpectrumEmu::DrawEmulatorUI()
 	}
 #endif
 
-	GraphicsViewer.Draw();
+	//GraphicsViewer.Draw();
 	//DrawMemoryTools();
 
 #if 0
@@ -1935,13 +1938,13 @@ void FSpectrumEmu::DrawEmulatorUI()
 		}
 
 	}
-#endif
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Character Maps"))
 	{
 		DrawCharacterMapViewer(CodeAnalysis, CodeAnalysis.GetFocussedViewState());
 	}
 	ImGui::End();
+#endif
 
 	//if (bShowDebugLog)
 	//	g_ImGuiLog.Draw("Debug Log", &bShowDebugLog);

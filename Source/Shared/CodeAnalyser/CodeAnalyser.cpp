@@ -64,7 +64,7 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 	}
 	assert(pBank->PrimaryMappedPage != -1);
 
-	pBank->MappedPages.push_back(startPageNo);
+	pBank->MapToPage(startPageNo, access);
 	for (int bankPageNo = 0; bankPageNo < pBank->NoPages; bankPageNo++)
 	{
 		//if(pBank->bReadOnly)
@@ -76,7 +76,7 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 		{
 			FCodeAnalysisBank* pOldBank = GetBank(MappedReadBanks[startPageNo + bankPageNo]);
 			if(pOldBank)
-				pOldBank->UnmapFromPage(startPageNo);
+				pOldBank->UnmapFromPage(startPageNo,EBankAccess::Read);
 			MappedReadBanks[startPageNo + bankPageNo] = bankId;
 			SetCodeAnalysisReadPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo]);	// Read
 		}
@@ -86,7 +86,7 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 		{
 			FCodeAnalysisBank* pOldBank = GetBank(MappedWriteBanks[startPageNo + bankPageNo]);
 			if (pOldBank)
-				pOldBank->UnmapFromPage(startPageNo);
+				pOldBank->UnmapFromPage(startPageNo,EBankAccess::Write);
 			MappedWriteBanks[startPageNo + bankPageNo] = bankId;
 			SetCodeAnalysisWritePage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo]);	// Write
 		}
@@ -115,7 +115,7 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo, EBankAccess 
 			MappedWriteBanks[startPageNo + bankPage] = -1;
 	}
 
-	pBank->UnmapFromPage(startPageNo);
+	pBank->UnmapFromPage(startPageNo,access);
 
 	return true;
 }
@@ -626,6 +626,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	if (pLabel->Global)
 		GenerateGlobalInfo(state);
 	state.SetLabelForAddress(address, pLabel);
+	state.SetCodeAnalysisDirty(address);
 	return pLabel;	
 }
 
@@ -673,18 +674,24 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		uint16_t ptr;
 		if (CheckPointerRefInstruction(state, pc, &ptr))
 		{
+			const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
+			pCodeInfo->PointerAddress = ptrAddr;
 			if(pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
-			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
+
+			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
+			if (pLabel)
+				pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		}
 
 		if (CheckPointerIndirectionInstruction(state, pc, &ptr))
 		{
-			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
+			const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
+			pCodeInfo->PointerAddress = ptrAddr;
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
 			
-			FLabelInfo* pLabel = GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(ptr), ELabelType::Data);
+			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
 			if (pLabel)
 				pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		}
@@ -739,9 +746,11 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	uint16_t ptr;
 	if (CheckPointerRefInstruction(state, pc, &ptr))
 	{
-		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(ptr);
-		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+		const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
+		FLabelInfo* pLabel = state.GetLabelForAddress(ptrAddr);
+		if (pLabel == nullptr)
+			pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
+		pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		if (pCodeInfo != nullptr)
 			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
 	}

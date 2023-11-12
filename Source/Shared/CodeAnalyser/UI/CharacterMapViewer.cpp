@@ -450,8 +450,11 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 	ImGui::EndChild();
 }
 
-void DrawCharacterMapViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+void FCharacterMapViewer::DrawUI(void)
 {
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
 	if (ImGui::BeginTabBar("CharacterMapTabs"))
 	{
 		if (ImGui::BeginTabItem("Character Sets"))

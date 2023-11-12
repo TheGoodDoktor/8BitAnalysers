@@ -173,7 +173,7 @@ public:
 	//Viewers
 	FSpectrumViewer			SpectrumViewer;
 	FFrameTraceViewer		FrameTraceViewer;
-	FZXGraphicsViewer		GraphicsViewer;
+	//FZXGraphicsViewer		GraphicsViewer;
 	//FCodeAnalysisState		CodeAnalysis;
 
 	// IO Devices

@@ -108,7 +108,7 @@ private:
 
 void FCPCEmu::GraphicsViewerSetView(FAddressRef address)
 {
-	GraphicsViewer.GoToAddress(address);
+	pGraphicsViewer->GoToAddress(address);
 }
 
 /* reboot callback */
@@ -680,6 +680,9 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	// This is where we add the viewers we want
 	Viewers.push_back(new FCrtcViewer(this));
 	Viewers.push_back(new FOverviewViewer(this));
+	Viewers.push_back(new FCharacterMapViewer(this));
+	pGraphicsViewer = new FCPCGraphicsViewer(this);
+	Viewers.push_back(pGraphicsViewer);
 
 	// Initialise Viewers
 	for (auto Viewer : Viewers)
@@ -690,7 +693,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		}
 	}
 
-	GraphicsViewer.Init(&CodeAnalysis, this);
+	//GraphicsViewer.Init(&CodeAnalysis, this);
 
 	IOAnalysis.Init(this);
 	CPCViewer.Init(this);
@@ -809,7 +812,7 @@ void FCPCEmu::Shutdown()
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 
-	GraphicsViewer.Shutdown();
+	//GraphicsViewer.Shutdown();
 }
 
 bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
@@ -824,7 +827,7 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	MemoryAccessHandlers.clear();	// remove old memory handlers
 	ResetMemoryStats(MemStats);
 	FrameTraceViewer.Reset();
-	GraphicsViewer.Reset();
+	pGraphicsViewer->Reset();
 	Screen.Reset();
 
 	const std::string memStr = CPCEmuState.type == CPC_TYPE_6128 ? " (CPC 6128)" : " (CPC 464)";
@@ -869,7 +872,7 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
-		GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
+		pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 	}
 	else
 	{
@@ -911,7 +914,7 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
 
-	GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 
 	pCurrentGameConfig = pGameConfig;
 	return true;
@@ -1007,7 +1010,7 @@ bool FCPCEmu::SaveCurrentGameData(void)
 		ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		//ExportGameJson(this, analysisJsonFName.c_str());
-		GraphicsViewer.SaveGraphicsSets(graphicsSetsJsonFName.c_str());
+		pGraphicsViewer->SaveGraphicsSets(graphicsSetsJsonFName.c_str());
 	}
 
 	return true;
@@ -1600,7 +1603,7 @@ void FCPCEmu::DrawEmulatorUI()
 	}
 #endif
 
-	GraphicsViewer.Draw();
+	//GraphicsViewer.Draw();
 	//DrawMemoryTools();
 
 #if 0
@@ -1618,13 +1621,13 @@ void FCPCEmu::DrawEmulatorUI()
 			ImGui::End();
 		}
 	}
-#endif
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Character Maps"))
 	{
 		DrawCharacterMapViewer(CodeAnalysis, CodeAnalysis.GetFocussedViewState());
 	}
 	ImGui::End();
+#endif
 }
 
 #if 0

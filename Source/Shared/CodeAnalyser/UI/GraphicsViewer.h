@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <CodeAnalyser/CodeAnalyserTypes.h>
+#include <Misc/EmuBase.h>
 
 class FGraphicsView;
 class FCodeAnalysisState;
@@ -27,16 +28,17 @@ struct FGraphicsSet
 };
 
 // Graphics Viewer
-class FGraphicsViewer
+class FGraphicsViewer : public FViewerBase
 {
 public:
-	bool			Init(FCodeAnalysisState* pCodeAnalysis);
-	void			Shutdown(void);
+					FGraphicsViewer(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Graphics View";}
+	bool			Init(void) override;
+	void			Shutdown(void) override;
 	void			Reset();
 
 	void			GoToAddress(FAddressRef address);
 
-	virtual void	Draw();
+	void			DrawUI() override;
 	
 	void			SetImagesRoot(const char* pImagesRoot) { ImagesRoot = pImagesRoot; }
 	bool			SaveGraphicsSets(const char* pFName);

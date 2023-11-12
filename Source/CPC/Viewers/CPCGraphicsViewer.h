@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <map>
-#include <string>
+//#include <map>
+//#include <string>
 
 #include <CodeAnalyser/CodeAnalyserTypes.h>
 #include <CodeAnalyser/UI/GraphicsViewer.h>
@@ -16,15 +16,16 @@ class FCPCGraphicsView;
 class FCPCGraphicsViewer : public FGraphicsViewer
 {
 public:
-	FCPCGraphicsViewer()
+	FCPCGraphicsViewer(FEmuBase *pEmu) : FGraphicsViewer(pEmu)
 	{
 		ScreenWidth = 320;
 		ScreenHeight = 200;
 	}
 
-	void	Draw() override;
+	void	DrawUI() override;
 	void	DrawScreenViewer(void) override;
-	void	Init(FCodeAnalysisState* pCodeAnalysis, FCPCEmu* pEmu);
+	bool	Init(void) override;
+
 
 	void	DrawPaletteViewer();
 	void	DrawPalette(const uint32_t* palette, int numColours);

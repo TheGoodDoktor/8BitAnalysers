@@ -615,7 +615,8 @@ void DrawStarquakeViewer(FSpectrumEmu*pEmu, FGame *pGame)
 
 	if (ImGui::BeginTabItem("Sprites"))
 	{
-		DrawSpriteListGUI(pEmu->GraphicsViewer, pStarquakeViewer->pSpriteGraphicsView);
+		// TODO: sort this out 
+		//DrawSpriteListGUI(*(FZXGraphicsViewer*)pEmu->pGraphicsViewer, pStarquakeViewer->pSpriteGraphicsView);
 		ImGui::EndTabItem();
 	}
 

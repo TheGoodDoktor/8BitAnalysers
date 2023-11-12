@@ -20,7 +20,8 @@ void DrawMiscGameViewer(FSpectrumEmu* pEmu, FGame *pGame)
 	
 	if (ImGui::BeginTabItem("Sprites"))
 	{
-		DrawSpriteListGUI(pEmu->GraphicsViewer, pGameViewer->pSpriteGraphicsView);
+		// TODO: fix this
+		//DrawSpriteListGUI(pEmu->GraphicsViewer, pGameViewer->pSpriteGraphicsView);
 		ImGui::EndTabItem();
 	}
 

@@ -12,6 +12,8 @@
 #include "C64Config.h"
 #include <CodeAnalyser/CodeAnalysisJson.h>
 #include <CodeAnalyser/CodeAnalysisState.h>
+#include "CodeAnalyser/UI/CharacterMapViewer.h"
+
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "C64 Analyser";
@@ -225,6 +227,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
     
     IOAnalysis.Init(this);
 
+    AddViewer(new FCharacterMapViewer(this));
     AddViewer(new FC64GraphicsViewer(this));
     //GraphicsViewer = new FC64GraphicsViewer(this);
     //GraphicsViewer->Init();

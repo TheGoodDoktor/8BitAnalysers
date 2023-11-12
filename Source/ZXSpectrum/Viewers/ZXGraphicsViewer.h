@@ -18,7 +18,7 @@ struct FGame;
 class FZXGraphicsViewer : public FGraphicsViewer
 {
 public:
-	FZXGraphicsViewer()
+	FZXGraphicsViewer(FEmuBase *pEmu) : FGraphicsViewer(pEmu)
 	{
 		ScreenWidth = 256;
 		ScreenHeight = 192;

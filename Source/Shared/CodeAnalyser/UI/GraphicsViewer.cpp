@@ -24,9 +24,9 @@ namespace ImGui
 	extern void SetItemUsingMouseWheel();
 }
 
-bool FGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysisState)
+bool FGraphicsViewer::Init()
 {
-	pCodeAnalysis = pCodeAnalysisState;
+	pCodeAnalysis = &pEmulator->GetCodeAnalysis();
 
 	assert(pGraphicsView == nullptr);
 	assert(pScreenView == nullptr);
@@ -231,9 +231,9 @@ void DrawGraphicsSetToView(FGraphicsView* pGraphicsView, const FCodeAnalysisStat
 }
 
 // Viewer to view spectrum graphics
-void FGraphicsViewer::Draw()
+void FGraphicsViewer::DrawUI()
 {
-	if (ImGui::Begin("Graphics View"))
+	//if (ImGui::Begin("Graphics View"))
 	{
 		if (ImGui::BeginTabBar("GraphicsViewTabBar"))
 		{
@@ -251,7 +251,7 @@ void FGraphicsViewer::Draw()
 		ImGui::EndTabBar();
 	}
 
-	ImGui::End();
+	//ImGui::End();
 }
 
 // UI widget - move?

@@ -175,7 +175,7 @@ public:
 	// Viewers
 	FCPCViewer					CPCViewer;
 	FFrameTraceViewer		FrameTraceViewer;
-	FCPCGraphicsViewer		GraphicsViewer;
+	//FCPCGraphicsViewer		GraphicsViewer;
 	//FCodeAnalysisState		CodeAnalysis;
 	
 	// todo: refactor this to move all event related code out of it

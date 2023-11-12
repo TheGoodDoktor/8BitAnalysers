@@ -20,6 +20,7 @@ public:
 			FOverviewViewer(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Overview"; }
 
 	bool	Init(void) override { return true; }
+	void	Shutdown() override {}
 	void	DrawUI(void) override;
 
 	void	DrawStats();

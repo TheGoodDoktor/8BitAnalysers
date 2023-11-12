@@ -170,7 +170,7 @@ void FSpectrumViewer::Draw()
 			ImGui::SameLine();
 			if (ImGui::Button("Show in GFX View"))
 			{
-				pSpectrumEmu->GraphicsViewer.GoToAddress(foundCharAddress);
+				pSpectrumEmu->GraphicsViewerSetView(foundCharAddress);
 			}
 		}
 	}

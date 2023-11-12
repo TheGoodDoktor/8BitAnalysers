@@ -8,10 +8,10 @@
 
 #include "../CPCEmu.h"
 
-void FCPCGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysis, FCPCEmu* pEmu)
+bool FCPCGraphicsViewer::Init()
 {
-	pCPCEmu = pEmu;
-	FGraphicsViewer::Init(pCodeAnalysis);
+	pCPCEmu = (FCPCEmu*)pEmulator;
+	FGraphicsViewer::Init();
 	BitmapFormat = EBitmapFormat::ColMap2Bpp_CPC;
 
 #if 0
@@ -23,34 +23,30 @@ void FCPCGraphicsViewer::Init(FCodeAnalysisState* pCodeAnalysis, FCPCEmu* pEmu)
 	pTestGraphicsView = new FGraphicsView(128, 128);
 	pTestGraphicsView->Clear(0xfffff00);
 #endif
+	return true;
 }
 
-void FCPCGraphicsViewer::Draw()
+void FCPCGraphicsViewer::DrawUI(void)
 {
-	if (ImGui::Begin("Graphics View"))
+	if (ImGui::BeginTabBar("GraphicsViewTabBar"))
 	{
-		if (ImGui::BeginTabBar("GraphicsViewTabBar"))
+		if (ImGui::BeginTabItem("GFX"))
 		{
-			if (ImGui::BeginTabItem("GFX"))
-			{
-				DrawCharacterGraphicsViewer();
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Screen"))
-			{
-				DrawScreenViewer();
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Palette"))
-			{
-				DrawPaletteViewer();
-				ImGui::EndTabItem();
-			}
+			DrawCharacterGraphicsViewer();
+			ImGui::EndTabItem();
 		}
-		ImGui::EndTabBar();
+		if (ImGui::BeginTabItem("Screen"))
+		{
+			DrawScreenViewer();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Palette"))
+		{
+			DrawPaletteViewer();
+			ImGui::EndTabItem();
+		}
 	}
-
-	ImGui::End();
+	ImGui::EndTabBar();
 }
 
 // Amstrad CPC specific implementation

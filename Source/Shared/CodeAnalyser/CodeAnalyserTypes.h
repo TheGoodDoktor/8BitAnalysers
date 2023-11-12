@@ -63,6 +63,7 @@ enum class EDataItemDisplayType
 	ColMap2Bpp_C64,	// C64 Multicolour format
 };
 
+// NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
 enum class EBitmapFormat
 {
 	Bitmap_1Bpp,		// 1 bit per pixel

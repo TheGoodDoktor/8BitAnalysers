@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
-//#include <set>
+#include <unordered_set>
 #include <vector>
 //#include <algorithm>
 #include <assert.h>
@@ -90,6 +90,15 @@ enum class EDataTypeFilter : int
 	Bitmap,
 	CharacterMap,
 	ColAttr,
+};
+
+enum class EBankAccess
+{
+	None	= 0x00,
+	Read	= 0x01,
+	Write	= 0x02,
+	ReadWrite	= 0x03,
+
 };
 
 struct FDataFormattingOptions
@@ -244,7 +253,9 @@ struct FCodeAnalysisBank
 	int16_t				Id = -1;
 	int					NoPages = 0;
 	uint32_t			SizeMask = 0;
-	std::vector<int>	MappedPages;	// banks can be mapped to multiple pages
+	//std::vector<int>	MappedPages;	// banks can be mapped to multiple pages
+	std::unordered_set<int>	MappedReadPages;
+	std::unordered_set<int>	MappedWritePages;
 	int					PrimaryMappedPage = -1;
 	uint8_t*			Memory = nullptr;	// pointer to memory bank occupies
 	FCodeAnalysisPage*	Pages = nullptr;
@@ -254,9 +265,36 @@ struct FCodeAnalysisBank
 	bool				bIsDirty = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
 
+	EBankAccess			Mapping = EBankAccess::None;
 
-	void UnmapFromPage(int startPageNo)
+	void UpdateMapping()
 	{
+		int mapping = 0;
+		if(MappedReadPages.empty() == false)
+			mapping |= 1;
+		if (MappedWritePages.empty() == false)
+			mapping |= 2;
+
+		Mapping = (EBankAccess)mapping;
+	}
+	void MapToPage(int startPageNo, EBankAccess access)
+	{
+		if((int)access & 1)
+			MappedReadPages.insert(startPageNo);
+		if ((int)access & 2)
+			MappedWritePages.insert(startPageNo);
+
+		UpdateMapping();
+	}
+	void UnmapFromPage(int startPageNo, EBankAccess access)
+	{
+		if ((int)access & 1)
+			MappedReadPages.erase(startPageNo);
+		if ((int)access & 2)
+			MappedWritePages.erase(startPageNo);
+		UpdateMapping();
+
+	#if 0
 		// erase from mapped pages - better way?
 		auto it = MappedPages.begin();
 
@@ -267,21 +305,18 @@ struct FCodeAnalysisBank
 			else
 				++it;
 		}
+	#endif
 	}
 
 	bool		AddressValid(uint16_t addr) const { return addr >= GetMappedAddress() && addr < GetMappedAddress() + (NoPages * FCodeAnalysisPage::kPageSize);	}
 	bool		IsUsed() const { return Pages[0].bUsed; }
-	bool		IsMapped() const { return MappedPages.empty() == false; }
+	bool		IsMapped() const { return Mapping!= EBankAccess::None; }
+	EBankAccess	GetBankMapping(int16_t bankId) const { return Mapping;}
 	uint16_t	GetMappedAddress() const { return PrimaryMappedPage * FCodeAnalysisPage::kPageSize; }
 	uint16_t	GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
 };
 
-enum class EBankAccess
-{
-	Read,
-	Write,
-	ReadWrite
-};
+
 
 // code analysis information
 class FCodeAnalysisState
