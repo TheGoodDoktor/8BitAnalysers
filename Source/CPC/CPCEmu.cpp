@@ -106,11 +106,6 @@ private:
 	char DescStr[32] = { 0 };
 };
 
-void FCPCEmu::GraphicsViewerSetView(FAddressRef address)
-{
-	pGraphicsViewer->GoToAddress(address);
-}
-
 /* reboot callback */
 static void boot_cb(cpc_t* sys, cpc_type_t type)
 {
@@ -649,22 +644,11 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	}
 
 	// This is where we add the viewers we want
-	Viewers.push_back(new FCrtcViewer(this));
-	Viewers.push_back(new FOverviewViewer(this));
-	Viewers.push_back(new FCharacterMapViewer(this));
+	AddViewer(new FCrtcViewer(this));
+	AddViewer(new FOverviewViewer(this));
+	AddViewer(new FCharacterMapViewer(this));
 	pGraphicsViewer = new FCPCGraphicsViewer(this);
-	Viewers.push_back(pGraphicsViewer);
-
-	// Initialise Viewers
-	for (auto Viewer : Viewers)
-	{
-		if (Viewer->Init() == false)
-		{
-			// TODO: report error
-		}
-	}
-
-	//GraphicsViewer.Init(&CodeAnalysis, this);
+	AddViewer(pGraphicsViewer);
 
 	IOAnalysis.Init(this);
 	CPCViewer.Init(this);

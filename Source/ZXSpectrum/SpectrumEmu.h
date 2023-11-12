@@ -135,7 +135,6 @@ public:
 
 	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	void		GraphicsViewerSetView(FAddressRef address) override;
 	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 

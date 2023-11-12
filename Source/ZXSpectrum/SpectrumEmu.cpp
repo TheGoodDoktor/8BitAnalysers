@@ -111,15 +111,6 @@ void* FSpectrumEmu::GetCPUEmulator(void) const
 	return (void *)&ZXEmuState.cpu;
 }
 
-
-void FSpectrumEmu::GraphicsViewerSetView(FAddressRef address)
-{
-	pGraphicsViewer->GoToAddress(address);
-	//GraphicsViewerGoToAddress(address);
-	//GraphicsViewerSetCharWidth(charWidth);
-}
-
-
 void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
 {
 	// Format screen pixel memory if it hasn't already been
@@ -671,19 +662,10 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 
 	// This is where we add the viewers we want
 	//Viewers.push_back(new FBreakpointViewer(this));
-	Viewers.push_back(new FOverviewViewer(this));
-	Viewers.push_back(new FCharacterMapViewer(this));
+	AddViewer(new FOverviewViewer(this));
+	AddViewer(new FCharacterMapViewer(this));
 	pGraphicsViewer = new FZXGraphicsViewer(this);
-	Viewers.push_back(pGraphicsViewer);
-
-	// Initialise Viewers
-	for (auto Viewer : Viewers)
-	{
-		if (Viewer->Init() == false)
-		{
-			// TODO: report error
-		}
-	}
+	AddViewer(pGraphicsViewer);
 
 	//GraphicsViewer.Init(&CodeAnalysis);
 	

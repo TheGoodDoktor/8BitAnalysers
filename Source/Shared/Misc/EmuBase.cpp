@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <CodeAnalyser/AssemblerExport.h>
+#include <CodeAnalyser/UI/GraphicsViewer.h>
 #include "GameConfig.h"
 
 #include "Debug/DebugLog.h"
@@ -503,18 +504,8 @@ void FEmuBase::DrawReplaceGameModalPopup()
 // Viewers
 void FEmuBase::AddViewer(FViewerBase* pViewer)
 {
+    pViewer->Init();
     Viewers.push_back(pViewer);
-}
-
-void FEmuBase::InitViewers()
-{
-    for (auto Viewer : Viewers)
-    {
-        if (Viewer->Init() == false)
-        {
-            // TODO: report error
-        }
-    }
 }
 
 bool FEmuBase::StartGameFromName(const char* pGameName, bool bLoadGameData)
@@ -526,4 +517,10 @@ bool FEmuBase::StartGameFromName(const char* pGameName, bool bLoadGameData)
     }
 
     return false;
+}
+
+void FEmuBase::GraphicsViewerSetView(FAddressRef address)
+{
+    if(pGraphicsViewer)
+        pGraphicsViewer->GoToAddress(address);
 }

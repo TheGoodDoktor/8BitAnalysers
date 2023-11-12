@@ -148,7 +148,6 @@ public:
 	void		WriteByte(uint16_t address, uint8_t value) override;
 	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	void		GraphicsViewerSetView(FAddressRef address) override;
 	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 	

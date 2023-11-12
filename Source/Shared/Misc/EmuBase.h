@@ -49,13 +49,14 @@ public:
 
 	bool			StartGameFromName(const char* pGameName, bool bLoadGame);
 
+	void			GraphicsViewerSetView(FAddressRef address) override;
+
 	bool			DrawDockingView();
 	void			DrawMainMenu();
 	void			DrawUI();
 	virtual void	DrawEmulatorUI() = 0;
 
 	void			AddViewer(FViewerBase* pViewr);
-	void			InitViewers();
 
 	void			SetXHighlight(int x) { HighlightXPos = x; }
 	void			SetYHighlight(int y) { HighlightYPos = y; }
@@ -95,7 +96,6 @@ protected:
 	int					HighlightYPos = -1;
 	int					HighlightScanline = -1;
 
-	std::vector<FViewerBase*>	Viewers;
 
 	// Assembler Export
 	uint16_t			AssemblerExportStartAddress = 0x0000;
@@ -109,4 +109,6 @@ private:
 	bool		bExportAsm = false;
 
 	int		ReplaceGameSnapshotIndex = 0;
+
+	std::vector<FViewerBase*>	Viewers;
 };
