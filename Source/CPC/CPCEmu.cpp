@@ -246,16 +246,11 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 	//debugger.CPUTick(pins);
 	CodeAnalysis.OnCPUTick(pins);
 
-// might need to move this to the chipsimpl code as we use chips functions/defines only available when CHIPS_IMPL is defined
-//#if FIXME
 	if (pins & Z80_IORQ)
 	{
 		// This is still needed because it deals with adding events to the event trace.
 		IOAnalysis.IOHandler(pc, pins);
 
-
-#if FIXME
-		// This is a failed attempt to get bank switching working, including switching in rom banks. 
 		// Some of this logic is based on what happens in _cpc_bankswitch().
 		// note: some of this code logic is duplicated in IOAnalysis.cpp in HandleGateArray
 		if (pins & (Z80_RD | Z80_WR))
@@ -263,7 +258,6 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 			if ((pins & (AM40010_A14 | AM40010_A15)) == AM40010_A14)
 			{
 				// extract 8-bit data bus from 64-bit pin mask
-				//#define _AM40010_GET_DATA(p) ((uint8_t)(((p)&0xFF0000ULL)>>16))
 				const uint8_t data = ((uint8_t)(((pins) & 0xFF0000ULL) >> 16));
 
 				/* data bits 6 and 7 select the register type */
@@ -271,33 +265,53 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 				{
 					case (1 << 7):
 					{
-						am40010_registers_t& regs = CPCEmuState.ga.regs;
+						const am40010_registers_t& regs = CPCEmuState.ga.regs;
 						if (regs.config & AM40010_CONFIG_LROMEN)
 						{
-							// disable low rom
-							SetROMBankLo(ROM_NONE);
+							if (CurROMBankLo != EROMBank::NONE)
+							{
+								// Disable low rom. RAM now is read/write
+								CurROMBankLo = EROMBank::NONE;
+								SetRAMBank(0, 0, EBankAccess::Read);	// 0x0000 - 0x3fff
+							}
 						}
 						else
 						{
-							// enable low rom
-							SetROMBankLo(ROM_OS);
+							if (CurROMBankLo == EROMBank::NONE)
+							{
+								// Enable low rom. RAM is now write only (RAM behind ROM)
+								CodeAnalysis.MapBank(ROMBanks[EROMBank::OS], 0, EBankAccess::Read);
+								CurROMBankLo = EROMBank::OS;
+							}
 						}
 
 						if (regs.config & AM40010_CONFIG_HROMEN)
 						{
-							// disable high rom
-							SetROMBankHi(ROM_NONE);
+							if (CurROMBankHi != EROMBank::NONE)
+							{
+								// Disable high rom. RAM now is read/write
+								CurROMBankHi = EROMBank::NONE;
+								SetRAMBank(3, 3, EBankAccess::Read);	// 0xc000 - 0xffff
+							}
 						}
 						else
 						{
-							// enable high rom
-							SetROMBankHi(CPCEmuState.ga.rom_select == 7 ? ROM_AMSDOS : ROM_BASIC);
+							if (CurROMBankHi == EROMBank::NONE)
+							{
+								// Enable high rom. RAM is now write only (RAM behind ROM)
+								CodeAnalysis.MapBank(ROMBanks[EROMBank::BASIC], 0, EBankAccess::Read);
+								CurROMBankLo = EROMBank::BASIC;
+
+								// sam todo: on 6128 we need to support mapping in AMSDOS or BASIC
+							}
 						}
-						// sam is this right?
-						CodeAnalysis.SetAllBanksDirty();
+						
+						// sam do I need to do this?
+						//CodeAnalysis.SetAllBanksDirty();
 					}
 					break;
 
+#if 0
 					/* RAM bank switching (6128 only) */
 					case (1 << 6) | (1 << 7) :
 					{
@@ -310,10 +324,10 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 						}
 						break;
 					}
+#endif
 				}
 			}		
 		}
-#endif // FIXME
 	}
 
 	return pins;
@@ -325,60 +339,17 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 	return pEmu->Z80Tick(num, pins);
 }
 
-// Set the low rom bank (0x0000 - 0x4000).
-// This is the OS ROM.
-void FCPCEmu::SetROMBankLo(int bankNo)
-{
-	const int16_t bankId = bankNo == ROM_NONE ? ROM_NONE : ROMBanks[bankNo];
-	if (CurROMBankLo == bankId)
-		return;
-
-	//LOGDEBUG("%s OS ROM", bankNo == ROM_NONE ? "Disable" : "Enable");
- 
-// sam. currently disabled until separate banks for read and write are supported
-#if 0
-	// Unmap old bank
-	CodeAnalysis.UnMapBank(CurROMBankLo, 0);
-	if (bankNo != ROM_NONE)
-		CodeAnalysis.MapBank(bankId, 0, EBankAccess::Read);
-#endif
-	CurROMBankLo = bankId;
-}
-
-// Set the high rom bank (0xc000 - 0xffff).
-// This can either be the AMSDOS or the BASIC ROM
-void FCPCEmu::SetROMBankHi(int bankNo)
-{
-	const int16_t bankId = bankNo == ROM_NONE ? ROM_NONE : ROMBanks[bankNo];
-	if (CurROMBankHi == bankId)
-		return;
-
-	//LOGDEBUG("%s %s ROM", bankNo == ROM_NONE ? "Disable" : "Enable", bankNo == ROM_AMSDOS ? "AMSDOS" : "BASIC");
-
-// sam. currently disabled until separate banks for read and write are supported
-#if 0
-	// Unmap old bank
-	CodeAnalysis.UnMapBank(CurROMBankHi, 0);
-	if (bankNo != ROM_NONE)
-		CodeAnalysis.MapBank(bankId, 0, EBankAccess::Read);
-#endif
-	CurROMBankHi = bankId;
-}
-
 // Slot is physical 16K memory region (0-3) 
 // Bank is a 16K CPC RAM bank (0-7)
-void FCPCEmu::SetRAMBank(int slot, int bankNo)
+void FCPCEmu::SetRAMBank(int slot, int bankNo, EBankAccess access)
 {
 	const int16_t bankId = RAMBanks[bankNo];
-	if (CurRAMBank[slot] == bankId)
-		return;
-
-	// Unmap old bank
+	
 	const int startPage = slot * kNoBankPages;
-	CodeAnalysis.UnMapBank(CurRAMBank[slot], startPage);
-	CodeAnalysis.MapBank(bankId, startPage);
+	CodeAnalysis.MapBank(bankId, startPage, access);
 
-	CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = slot * 16;
+	// is this needed? possibly for the 128k version.
+	//CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = slot * 16;
 
 	CurRAMBank[slot] = bankId;
 }
@@ -707,16 +678,16 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	// initialise code analysis pages
 
 	// Low ROM 0x0000 - 0x3fff
-	ROMBanks[ROM_OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true);
-	CodeAnalysis.GetBank(ROMBanks[ROM_OS])->PrimaryMappedPage = 0;
+	ROMBanks[EROMBank::OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true);
+	CodeAnalysis.GetBank(ROMBanks[EROMBank::OS])->PrimaryMappedPage = 0;
 
 	// High ROM AMSDOS 0xc000 - 0xffff
-	ROMBanks[ROM_AMSDOS] = CodeAnalysis.CreateBank("ROM AMSDOS", 16, CPCEmuState.rom_amsdos, true);
-	CodeAnalysis.GetBank(ROMBanks[ROM_AMSDOS])->PrimaryMappedPage = 48;
+	ROMBanks[EROMBank::AMSDOS] = CodeAnalysis.CreateBank("ROM AMSDOS", 16, CPCEmuState.rom_amsdos, true);
+	CodeAnalysis.GetBank(ROMBanks[EROMBank::AMSDOS])->PrimaryMappedPage = 48;
 
 	// High ROM BASIC 0xc000 - 0xffff
-	ROMBanks[ROM_BASIC] = CodeAnalysis.CreateBank("ROM BASIC", 16, CPCEmuState.rom_basic, true);
-	CodeAnalysis.GetBank(ROMBanks[ROM_BASIC])->PrimaryMappedPage = 48;
+	ROMBanks[EROMBank::BASIC] = CodeAnalysis.CreateBank("ROM BASIC", 16, CPCEmuState.rom_basic, true);
+	CodeAnalysis.GetBank(ROMBanks[EROMBank::BASIC])->PrimaryMappedPage = 48;
 
 	// create & register RAM banks
 	for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
@@ -734,10 +705,10 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
 		CodeAnalysis.GetBank(RAMBanks[3])->PrimaryMappedPage = 48;
 
-		SetRAMBank(0, 0);	// 0x0000 - 0x3fff
-		SetRAMBank(1, 1);	// 0x4000 - 0x7fff
-		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
-		SetRAMBank(3, 3);	// 0xc000 - 0xffff
+		SetRAMBank(0, 0, EBankAccess::ReadWrite);	// 0x0000 - 0x3fff
+		SetRAMBank(1, 1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
+		SetRAMBank(2, 2, EBankAccess::ReadWrite);	// 0x8000 - 0xBfff
+		SetRAMBank(3, 3, EBankAccess::ReadWrite);	// 0xc000 - 0xffff
 	}
 	else
 	{
@@ -746,10 +717,10 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
 		CodeAnalysis.GetBank(RAMBanks[3])->PrimaryMappedPage = 48;
 
-		SetRAMBank(0, 0);	// 0x0000 - 0x3fff
-		SetRAMBank(1, 1);	// 0x4000 - 0x7fff
-		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
-		SetRAMBank(3, 3);	// 0xc000 - 0xffff
+		SetRAMBank(0, 0, EBankAccess::ReadWrite);	// 0x0000 - 0x3fff
+		SetRAMBank(1, 1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
+		SetRAMBank(2, 2, EBankAccess::ReadWrite);	// 0x8000 - 0xBfff
+		SetRAMBank(3, 3, EBankAccess::ReadWrite);	// 0xc000 - 0xffff
 	}
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
@@ -1513,6 +1484,13 @@ void	FCPCEmu::FileMenuAdditions(void)
 
 void	FCPCEmu::SystemMenuAdditions(void)
 {
+	ImGui::MenuItem("Memory Map", 0, &UICPC.memmap.open);
+	//ImGui::MenuItem("Keyboard Matrix", 0, &UICPC.kbd.open);
+	//ImGui::MenuItem("Audio Output", 0, &UICPC.audio.open);
+	//ImGui::MenuItem("Z80 CPU", 0, &UICPC.cpu.open);
+	ImGui::MenuItem("AM40010 (Gate Array)", 0, &UICPC.ga.open);
+	ImGui::MenuItem("AY-3-8912 (PSG)", 0, &UICPC.psg.open);
+	//ImGui::EndMenu();
 }
 
 void	FCPCEmu::OptionsMenuAdditions(void)

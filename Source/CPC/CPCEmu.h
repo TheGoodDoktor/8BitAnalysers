@@ -72,11 +72,11 @@ enum class ECPCModel
 
 enum EROMBank
 {
-	ROM_OS = 0,
-	ROM_AMSDOS,
-	ROM_BASIC,
+	OS = 0,
+	AMSDOS,
+	BASIC,
 
-	ROM_NONE,
+	NONE,
 };
 
 struct FCPCLaunchConfig : public FEmulatorLaunchConfig
@@ -152,9 +152,7 @@ public:
 	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 	
-	void SetROMBankLo(int bankNo);
-	void SetROMBankHi(int bankNo);
-	void SetRAMBank(int slot, int bankNo);
+	void SetRAMBank(int slot, int bankNo, EBankAccess access);
 	void SetRAMBanksPreset(int bankPresetIndex);
 
 	void UpdatePalette();
@@ -191,8 +189,10 @@ public:
 	//FCodeAnalysisPage	ROMPages[kNoROMPages];
 	//FCodeAnalysisPage	RAMPages[kNoRAMPages];
 	
-	int16_t				CurROMBankLo = -1;
-	int16_t				CurROMBankHi = -1;
+	EROMBank			CurROMBankLo = EROMBank::NONE;
+	EROMBank			CurROMBankHi = EROMBank::NONE;
+	bool				bLoROMEnabled = false;
+	bool				bHiROMEnabled = false;
 	int16_t				CurRAMBank[4] = { -1,-1,-1,-1 };
 
 	// Memory handling
