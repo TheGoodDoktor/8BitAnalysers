@@ -260,49 +260,7 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 				{
 					case (1 << 7):
 					{
-						const am40010_registers_t& regs = CPCEmuState.ga.regs;
-						if (regs.config & AM40010_CONFIG_LROMEN)
-						{
-							if (CurROMBankLo != EROMBank::NONE)
-							{
-								// Disable low rom. RAM now is read/write
-								CurROMBankLo = EROMBank::NONE;
-								SetRAMBank(0, 0, EBankAccess::Read);	// 0x0000 - 0x3fff
-							}
-						}
-						else
-						{
-							if (CurROMBankLo == EROMBank::NONE)
-							{
-								// Enable low rom. RAM is now write only (RAM behind ROM)
-								CodeAnalysis.MapBank(ROMBanks[EROMBank::OS], 0, EBankAccess::Read);
-								CurROMBankLo = EROMBank::OS;
-							}
-						}
-
-						if (regs.config & AM40010_CONFIG_HROMEN)
-						{
-							if (CurROMBankHi != EROMBank::NONE)
-							{
-								// Disable high rom. RAM now is read/write
-								CurROMBankHi = EROMBank::NONE;
-								SetRAMBank(3, 3, EBankAccess::Read);	// 0xc000 - 0xffff
-							}
-						}
-						else
-						{
-							if (CurROMBankHi == EROMBank::NONE)
-							{
-								// Enable high rom. RAM is now write only (RAM behind ROM)
-								CodeAnalysis.MapBank(ROMBanks[EROMBank::BASIC], 0, EBankAccess::Read);
-								CurROMBankLo = EROMBank::BASIC;
-
-								// sam todo: on 6128 we need to support mapping in AMSDOS or BASIC
-							}
-						}
-						
-						// sam do I need to do this?
-						//CodeAnalysis.SetAllBanksDirty();
+						UpdateBankMappings();
 					}
 					break;
 
@@ -332,6 +290,58 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 {
 	FCPCEmu* pEmu = (FCPCEmu*)user_data;
 	return pEmu->Z80Tick(num, pins);
+}
+
+void FCPCEmu::InitBankMappings()
+{
+	CurROMBankLo = EROMBank::INVALID;
+	CurROMBankHi = EROMBank::INVALID;
+	UpdateBankMappings();
+}
+
+void FCPCEmu::UpdateBankMappings()
+{
+	const uint8_t configByte = CPCEmuState.ga.regs.config;
+
+	if (configByte & AM40010_CONFIG_LROMEN)
+	{
+		if (CurROMBankLo != EROMBank::NONE)
+		{
+			// Disable low rom. RAM now is read/write
+			CurROMBankLo = EROMBank::NONE;
+			SetRAMBank(0, 0, EBankAccess::Read);	// 0x0000 - 0x3fff
+		}
+	}
+	else
+	{
+		if (CurROMBankLo >= EROMBank::NONE)
+		{
+			// Enable low rom. RAM is now write only (RAM behind ROM)
+			CodeAnalysis.MapBank(ROMBanks[EROMBank::OS], 0, EBankAccess::Read);
+			CurROMBankLo = EROMBank::OS;
+		}
+	}
+
+	if (configByte & AM40010_CONFIG_HROMEN)
+	{
+		if (CurROMBankHi != EROMBank::NONE)
+		{
+			// Disable high rom. RAM now is read/write
+			CurROMBankHi = EROMBank::NONE;
+			SetRAMBank(3, 3, EBankAccess::Read);	// 0xc000 - 0xffff
+		}
+	}
+	else
+	{
+		if (CurROMBankHi >= EROMBank::NONE)
+		{
+			// Enable high rom. RAM is now write only (RAM behind ROM)
+			CodeAnalysis.MapBank(ROMBanks[EROMBank::BASIC], 48, EBankAccess::Read);
+			CurROMBankHi = EROMBank::BASIC;
+
+			// sam todo: on 6128 we need to support mapping in AMSDOS or BASIC
+		}
+	}
 }
 
 // Slot is physical 16K memory region (0-3) 
@@ -823,7 +833,9 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		{
 			GamesList.LoadGame(pGameConfig->Name.c_str());
 		}
-
+		
+		InitBankMappings();
+		
 		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
@@ -853,7 +865,7 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	//const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 	GamesList.LoadGame(pGameConfig->Name.c_str());
 #endif
-
+	
 	// Start in break mode so the memory will be in it's initial state. 
 	// Otherwise, if we export an asm file once the game is running the memory will be in an arbitrary state.
 	CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(CPCEmuState.cpu.pc - 1));
@@ -1406,6 +1418,8 @@ void FCPCEmu::Reset()
 	if (pBasicConfig == nullptr)
 		pBasicConfig = CreateNewAmstradBasicConfig();
 
+	InitBankMappings();
+	
 	StartGame(pBasicConfig, false);	// reset code analysis
 }
 

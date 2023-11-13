@@ -76,7 +76,9 @@ enum EROMBank
 	AMSDOS,
 	BASIC,
 
+	COUNT,
 	NONE,
+	INVALID,
 };
 
 struct FCPCLaunchConfig : public FEmulatorLaunchConfig
@@ -151,6 +153,8 @@ public:
 	void*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 	
+	void InitBankMappings();
+	void UpdateBankMappings();
 	void SetRAMBank(int slot, int bankNo, EBankAccess access);
 	void SetRAMBanksPreset(int bankPresetIndex);
 
@@ -180,7 +184,7 @@ public:
 
 	static const int	kNoBankPages = 16;	// no of pages per physical address slot (16k)
 	static const int	kNoRAMPages = 128;
-	static const int	kNoROMBanks = 3;
+	static const int	kNoROMBanks = EROMBank::COUNT;
 	static const int	kNoRAMBanks = 8;
 
 	int16_t				ROMBanks[kNoROMBanks];
@@ -188,8 +192,8 @@ public:
 	//FCodeAnalysisPage	ROMPages[kNoROMPages];
 	//FCodeAnalysisPage	RAMPages[kNoRAMPages];
 	
-	EROMBank			CurROMBankLo = EROMBank::NONE;
-	EROMBank			CurROMBankHi = EROMBank::NONE;
+	EROMBank			CurROMBankLo = EROMBank::INVALID;
+	EROMBank			CurROMBankHi = EROMBank::INVALID;
 	bool				bLoROMEnabled = false;
 	bool				bHiROMEnabled = false;
 	int16_t				CurRAMBank[4] = { -1,-1,-1,-1 };
