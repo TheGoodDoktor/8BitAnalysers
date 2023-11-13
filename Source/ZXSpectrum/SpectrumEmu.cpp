@@ -431,7 +431,7 @@ void FSpectrumEmu::SetROMBank(int bankNo)
 	if (CurROMBank == bankId)
 		return;
 	// Unmap old bank
-	CodeAnalysis.UnMapBank(CurROMBank, 0);
+	//CodeAnalysis.UnMapBank(CurROMBank, 0);
 	CodeAnalysis.MapBank(bankId, 0);
 	CurROMBank = bankId;
 }
@@ -446,8 +446,8 @@ void FSpectrumEmu::SetRAMBank(int slot, int bankNo)
 
 	// Unmap old bank
 	const int startPage = slot * kNoBankPages;
-	CodeAnalysis.UnMapBank(CurRAMBank[slot], startPage);
-	CodeAnalysis.MapBank(bankId, startPage);
+	//CodeAnalysis.UnMapBank(CurRAMBank[slot], startPage);
+	CodeAnalysis.MapBank(bankId, startPage, EBankAccess::ReadWrite);
 
 	CurRAMBank[slot] = bankId;
 }

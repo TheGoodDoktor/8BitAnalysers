@@ -91,6 +91,17 @@ bool CheckPointerIndirectionInstruction6502(const FCodeAnalysisState& state, uin
 	case EAddressMode::ZPIndirect_Y:
 		*out_addr = state.ReadByte(pc + 1);
 		return true;
+
+	case EAddressMode::Absolute:
+	case EAddressMode::Absolute_X:
+	case EAddressMode::Absolute_Y:
+		*out_addr = state.ReadWord(pc + 1);
+		return true;
+
+	case EAddressMode::ZP:
+	case EAddressMode::ZP_X:
+		*out_addr = state.ReadByte(pc + 1);
+		return true;
 	}
 /*
 	switch (instrByte)
@@ -114,12 +125,16 @@ bool CheckPointerRefInstruction6502(const FCodeAnalysisState& state, uint16_t pc
 {
 	const uint8_t instrByte = state.ReadByte(pc);
 
+	if (CheckPointerIndirectionInstruction6502(state, pc, out_addr))
+		return true;
+
 	// use switch to catch specifics
 	/*switch (instrByte)
 	{
 	}*/
 
 	// otherwise decode addressing mode
+#if 0
 	const EAddressMode addrMode = GetInstructionAddressMode(instrByte);
 
 	switch (addrMode)
@@ -135,7 +150,7 @@ bool CheckPointerRefInstruction6502(const FCodeAnalysisState& state, uint16_t pc
 		*out_addr = state.ReadByte(pc + 1);
 		return true;
 	}
-
+#endif
 	/*switch (instrByte)
 	{
 		// full address

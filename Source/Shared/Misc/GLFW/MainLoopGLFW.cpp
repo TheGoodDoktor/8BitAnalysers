@@ -237,10 +237,7 @@ void SetWindowIcon(const char* pIconFile)
 		glfwSetWindowIcon(g_AppState.MainWindow, 1, images);
 		stbi_image_free(images[0].pixels);
 	}
-	else
-	{
-		throw std::logic_error("Logo file is missing");
-	}
+	
 }
 
 void WindowFocusCallback(GLFWwindow* window, int focused)

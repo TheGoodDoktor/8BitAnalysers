@@ -54,7 +54,7 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 	FCodeAnalysisBank* pBank = GetBank(bankId);
 
 	// TODO: this needs proper logic
-	if (pBank == nullptr || MappedReadBanks[startPageNo] == bankId)	// not found or already mapped to this locatiom
+	if (pBank == nullptr)	// not found or already mapped to this locatiom
 		return false;
 
 	if (pBank->PrimaryMappedPage == -1 )	// Newly mapped?
@@ -64,19 +64,26 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 	}
 	assert(pBank->PrimaryMappedPage != -1);
 
+	// unmap old banks
+	if (access == EBankAccess::Read || access == EBankAccess::ReadWrite)
+	{
+		FCodeAnalysisBank* pOldBank = GetBank(MappedReadBanks[startPageNo]);
+		if (pOldBank != nullptr && pOldBank != pBank)
+			pOldBank->UnmapFromPage(startPageNo, EBankAccess::Read);
+	}
+	if (access == EBankAccess::Write || access == EBankAccess::ReadWrite)
+	{
+		FCodeAnalysisBank* pOldBank = GetBank(MappedWriteBanks[startPageNo]);
+		if (pOldBank != nullptr && pOldBank != pBank)
+			pOldBank->UnmapFromPage(startPageNo, EBankAccess::Write);
+	}
+
 	pBank->MapToPage(startPageNo, access);
 	for (int bankPageNo = 0; bankPageNo < pBank->NoPages; bankPageNo++)
 	{
-		//if(pBank->bReadOnly)
-		//	SetCodeAnalysisRWPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo], nullptr);	// Read only
-		//else
-
 		// Set Read Page
 		if(access == EBankAccess::Read || access == EBankAccess::ReadWrite)
 		{
-			FCodeAnalysisBank* pOldBank = GetBank(MappedReadBanks[startPageNo + bankPageNo]);
-			if(pOldBank)
-				pOldBank->UnmapFromPage(startPageNo,EBankAccess::Read);
 			MappedReadBanks[startPageNo + bankPageNo] = bankId;
 			SetCodeAnalysisReadPage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo]);	// Read
 		}
@@ -84,9 +91,6 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 		// Set Write Page
 		if (access == EBankAccess::Write || access == EBankAccess::ReadWrite)
 		{
-			FCodeAnalysisBank* pOldBank = GetBank(MappedWriteBanks[startPageNo + bankPageNo]);
-			if (pOldBank)
-				pOldBank->UnmapFromPage(startPageNo,EBankAccess::Write);
 			MappedWriteBanks[startPageNo + bankPageNo] = bankId;
 			SetCodeAnalysisWritePage(startPageNo + bankPageNo, &pBank->Pages[bankPageNo]);	// Write
 		}
@@ -99,6 +103,7 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 	return true;
 }
 
+#if 0
 bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo, EBankAccess access)
 {
 	FCodeAnalysisBank* pBank = GetBank(bankId);
@@ -119,7 +124,7 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo, EBankAccess 
 
 	return true;
 }
-
+#endif
 bool FCodeAnalysisState::IsBankIdMapped(int16_t bankId) const
 {
 	for (int bankIdx = 0; bankIdx < kNoPagesInAddressSpace; bankIdx++)
@@ -734,7 +739,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		const FAddressRef jumpAddr = state.AddressRefFromPhysicalAddress(jumpPhysAddr);
 		assert(state.IsAddressValid(jumpAddr));
 
-		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
+		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(jumpPhysAddr);
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		if (pCodeInfo != nullptr)
@@ -746,13 +751,12 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	uint16_t ptr;
 	if (CheckPointerRefInstruction(state, pc, &ptr))
 	{
-		const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
-		FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
+		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(ptr); // NOTE: we have to use the physical address because of banks mapped twice
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
 		if (pCodeInfo != nullptr)
-			pCodeInfo->PointerAddress = ptrAddr;
+			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
 	}
 
 	const char* pOldComment = nullptr;
