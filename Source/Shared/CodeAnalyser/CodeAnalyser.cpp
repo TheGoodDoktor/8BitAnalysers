@@ -582,7 +582,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 {
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel != nullptr)
-		return nullptr;
+		return pLabel;
 		
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
@@ -728,17 +728,17 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	// Register Code accesses
 	// 
 	// set jump reference
-	uint16_t jumpAddr;
-	if (CheckJumpInstruction(state, pc, &jumpAddr))
+	uint16_t jumpPhysAddr;
+	if (CheckJumpInstruction(state, pc, &jumpPhysAddr))
 	{
-		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(jumpAddr);
+		const FAddressRef jumpAddr = state.AddressRefFromPhysicalAddress(jumpPhysAddr);
+		assert(state.IsAddressValid(jumpAddr));
+
+		FLabelInfo* pLabel = state.GetLabelForAddress(jumpAddr);
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		if (pCodeInfo != nullptr)
-		{
-			pCodeInfo->JumpAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
-			assert(state.IsAddressValid(pCodeInfo->JumpAddress));
-		}
+			pCodeInfo->JumpAddress = jumpAddr;
 
 	}
 
@@ -747,12 +747,12 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	if (CheckPointerRefInstruction(state, pc, &ptr))
 	{
 		const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
-		FLabelInfo* pLabel = state.GetLabelForAddress(ptrAddr);
-		if (pLabel == nullptr)
-			pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
-		pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
+		if (pLabel != nullptr)
+			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+
 		if (pCodeInfo != nullptr)
-			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
+			pCodeInfo->PointerAddress = ptrAddr;
 	}
 
 	const char* pOldComment = nullptr;
