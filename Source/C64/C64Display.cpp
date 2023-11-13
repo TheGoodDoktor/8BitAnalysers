@@ -95,7 +95,7 @@ void FC64Display::DrawUI()
     FCodeAnalysisViewState& viewState = CodeAnalysis->GetFocussedViewState();
     const FC64Config &config = *C64Emu->GetC64GlobalConfig();
     const bool bDebugFrame = pC64->vic.debug_vis;
-     const int xScrollOff = pC64->vic.reg.ctrl_2 & 7;
+    const int xScrollOff = pC64->vic.reg.ctrl_2 & 7;
     const int yScrollOff = pC64->vic.reg.ctrl_1 & 7;
     const int screenWidthChars = pC64->vic.reg.ctrl_2& (1 << 3) ? 40 : 38;
     const int screenHeightChars = pC64->vic.reg.ctrl_1& (1 << 3) ? 25 : 24;
@@ -201,7 +201,7 @@ void FC64Display::DrawUI()
         
         dl->AddRect(
             ImVec2((float)pos.x + borderOffsetX * scale, (float)pos.y + borderOffsetY * scale), 
-            ImVec2((float)pos.x + borderOffsetX + graphicsScreenWidth * scale, (float)pos.y + (borderOffsetY + graphicsScreenHeight) * scale), 
+            ImVec2((float)pos.x + (borderOffsetX + graphicsScreenWidth) * scale, (float)pos.y + (borderOffsetY + graphicsScreenHeight) * scale), 
             0xffffffff);
 
         dl->AddRect(
