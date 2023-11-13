@@ -707,18 +707,23 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		{
 			const FGraphicsSet& set = graphicsSetIt.second;
 			bool bSelected = set.Address == SelectedGraphicSet;
+			ImGui::PushID(set.Address.Val);
 			if (ImGui::Selectable(set.Name.c_str(), &bSelected))
 			{
 				ImageSetName = set.Name;
+				SelectedGraphicSet = set.Address;
 				GoToAddress(set.Address);
 				state.GetFocussedViewState().GoToAddress(set.Address);
 			}
+			ImGui::PopID();
 		}
 	}
 	ImGui::EndChild();
 	if (ImGui::Button("Delete"))
 	{
-
+		auto delIt = GraphicsSets.find(SelectedGraphicSet);
+		if(delIt != GraphicsSets.end())
+			GraphicsSets.erase(delIt);
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Export"))
