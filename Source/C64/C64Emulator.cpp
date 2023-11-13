@@ -242,7 +242,6 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
         SetupCodeAnalysisLabels();
     }
 
-    InitViewers();
     return true;
 }
 
