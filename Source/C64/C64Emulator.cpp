@@ -226,11 +226,10 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	UpdateCodeAnalysisPages(0x7);
     
     IOAnalysis.Init(this);
-
+    
     AddViewer(new FCharacterMapViewer(this));
-    AddViewer(new FC64GraphicsViewer(this));
-    //GraphicsViewer = new FC64GraphicsViewer(this);
-    //GraphicsViewer->Init();
+    pGraphicsViewer = new FC64GraphicsViewer(this);
+    AddViewer(pGraphicsViewer);
 
     GamesList.EnumerateGames(GetC64GlobalConfig()->PrgFolder.c_str());
 

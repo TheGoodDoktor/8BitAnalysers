@@ -10,10 +10,12 @@ class FGraphicsView;
 class FCodeAnalysisState;
 struct FCodeAnalysisPage;
 
-enum class GraphicsViewMode : int
+enum class EGraphicsViewMode : int
 {
-	CharacterBitmap,		// 8x8 bitmap graphics
-	CharacterBitmapWinding,	// winding bitmap (0,0) (1,0) (1,1) (0,1)
+	Bitmap,				// bitmap - byte granularity in X
+	BitmapChars,		// 8x8 character bitmap graphics
+
+	BitmapWinding,	// winding bitmap (0,0) (1,0) (1,1) (0,1)
 
 	Count
 };
@@ -57,6 +59,7 @@ protected:
 	uint16_t		GetAddressOffsetFromPositionInView(int x, int y) const;
 
 	void			DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
+	void			DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
 	void			UpdateCharacterGraphicsViewerImage(void); // make virtual for other platforms?
 
 	virtual			const uint32_t* GetCurrentPalette() const { return nullptr; }
@@ -70,7 +73,7 @@ protected:
 	uint16_t		AddressOffset = 0;	// offset to view from the start of the region (bank or physical address space)
 	uint32_t		MemorySize = 0x10000;	// size of area being viewed
 	FAddressRef		ClickedAddress;
-	GraphicsViewMode	ViewMode = GraphicsViewMode::CharacterBitmap;
+	EGraphicsViewMode	ViewMode = EGraphicsViewMode::Bitmap;
 	int				ViewScale = 1;
 	int				HeatmapThreshold = 4;
 

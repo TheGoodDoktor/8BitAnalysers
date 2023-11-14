@@ -58,7 +58,7 @@ void FGraphicsViewer::Reset(void)
 	ImageCount = 0;
 
 	ClickedAddress = FAddressRef();
-	ViewMode = GraphicsViewMode::CharacterBitmap;
+	ViewMode = EGraphicsViewMode::Bitmap;
 	ViewScale = 1;
 	YSizePixelsFineCtrl = false;
 
@@ -177,6 +177,7 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 	const int kVerticalDispPixCount = kGraphicsViewerHeight;
 	const int scaledVDispPixCount = kVerticalDispPixCount / ViewScale;
 	const int ycount = scaledVDispPixCount / YSizePixels;
+	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 
 	for (int y = 0; y < ycount * YSizePixels; y++)
 	{
@@ -193,29 +194,90 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 					pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col, 0);
 
 					memAddr++;
-					break;
 				}
+				break;
 				case EBitmapFormat::ColMap2Bpp_CPC:
 				{
 					const uint8_t* pPixels = &pBank->Memory[bankAddr];
-					const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
-
 					pGraphicsView->Draw2BppImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
 
 					memAddr += 2;
-					break;
 				}
+				break;
 				case EBitmapFormat::ColMap4Bpp_CPC:
 				{
 					// todo
 					const uint8_t* pPixels = &pBank->Memory[bankAddr];
-					const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
-
 					pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
 
 					memAddr += 4;
-					break;
 				}
+				break;
+				case EBitmapFormat::ColMap2Bpp_C64:
+				{
+					const uint8_t* pPixels = &pBank->Memory[bankAddr];
+					pGraphicsView->Draw2BppWideImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+					memAddr ++;
+				}
+				break;
+			}
+		}
+	}
+}
+
+// draw columns using 8x8 chars
+void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth)
+{
+	const FCodeAnalysisState& state = GetCodeAnalysis();
+	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
+	const uint16_t bankSizeMask = pBank->SizeMask;
+
+	const int kVerticalDispPixCount = kGraphicsViewerHeight;
+	const int scaledVDispPixCount = kVerticalDispPixCount / ViewScale;
+	const int ycount = scaledVDispPixCount / 8;
+	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+
+	for (int y = 0; y < ycount; y++)
+	{
+		for (int xChar = 0; xChar < columnWidth; xChar++)
+		{
+			const uint16_t bankAddr = memAddr & bankSizeMask;
+			switch (BitmapFormat)
+			{
+			case EBitmapFormat::Bitmap_1Bpp:
+			{
+				const uint8_t* pPixels = &pBank->Memory[bankAddr];
+				FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
+				const uint32_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo, HeatmapThreshold);
+				const uint32_t cols[] = { 0, col};
+				pGraphicsView->Draw1BppImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, cols);
+				memAddr+=8;
+			}
+			break;
+			case EBitmapFormat::ColMap2Bpp_CPC:
+			{
+				const uint8_t* pPixels = &pBank->Memory[bankAddr];
+				pGraphicsView->Draw2BppImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+
+				memAddr += 2 * 8;
+			}
+			break;
+			case EBitmapFormat::ColMap4Bpp_CPC:
+			{
+				// todo
+				const uint8_t* pPixels = &pBank->Memory[bankAddr];
+				pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+
+				memAddr += 4 * 8;
+			}
+			break;
+			case EBitmapFormat::ColMap2Bpp_C64:
+			{
+				const uint8_t* pPixels = &pBank->Memory[bankAddr];
+				pGraphicsView->Draw2BppWideImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+				memAddr += 8;
+			}
+			break;
 			}
 		}
 	}
@@ -291,7 +353,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 
 	GraphicColumnSizeBytes = xSizeChars * ycount * YSizePixels * bpp;
 
-	if (ViewMode == GraphicsViewMode::CharacterBitmap)
+	if (ViewMode == EGraphicsViewMode::Bitmap)
 	{
 		for (int x = 0; x < xcount; x++)
 		{
@@ -302,7 +364,18 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			address += GraphicColumnSizeBytes;
 		}
 	}
-	else if (ViewMode == GraphicsViewMode::CharacterBitmapWinding)
+	if (ViewMode == EGraphicsViewMode::BitmapChars)
+	{
+		for (int x = 0; x < xcount; x++)
+		{
+			const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(address) : Bank;
+			assert(bankId != -1);
+			DrawMemoryBankAsGraphicsColumnChars(bankId, address & 0x3fff, x * XSizePixels, xSizeChars);
+
+			address += GraphicColumnSizeBytes;
+		}
+	}
+	else if (ViewMode == EGraphicsViewMode::BitmapWinding)
 	{
 		const int graphicsUnitSize = (XSizePixels >> 3) * YSizePixels;
 		int offsetX = 0;
@@ -407,7 +480,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		}*/
 	}
 
-	ImGui::Combo("ViewMode", (int*)&ViewMode, "CharacterBitmap\0CharacterBitmapWinding", (int)GraphicsViewMode::Count);
+	ImGui::Combo("ViewMode", (int*)&ViewMode, "Bitmap\0BitmapChars\0BitmapWinding", (int)EGraphicsViewMode::Count);
 
 	// View Scale
 	ImGui::InputInt("Scale", &ViewScale, 1, 1);

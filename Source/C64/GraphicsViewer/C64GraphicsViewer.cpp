@@ -51,6 +51,11 @@ bool FC64GraphicsViewer::Init(void)
 	CharCols[2] = 0xff888888;
 	CharCols[3] = 0xff444444;
 
+	CurrentPalette[0] = 0x00000000;
+	CurrentPalette[1] = 0xffffffff;
+	CurrentPalette[2] = 0xff888888;
+	CurrentPalette[3] = 0xff444444;
+
 	return true;
 }
 

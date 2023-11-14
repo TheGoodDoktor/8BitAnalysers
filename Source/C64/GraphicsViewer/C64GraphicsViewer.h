@@ -49,6 +49,8 @@ public:
 	void	Shutdown() override;
 	void	DrawUI() override;
 
+	virtual const uint32_t* GetCurrentPalette() const override { return CurrentPalette; }
+
 private:
 	void	DrawCharacterBankCombo();
 	void	DrawScreenBankCombo();
@@ -84,6 +86,7 @@ private:
 	bool			CharacterMultiColour = false;
 	uint32_t		SpriteCols[4];	// colours to draw sprites
 	uint32_t		CharCols[4];	// colours to draw characters
+	uint32_t		CurrentPalette[4];	// 'current palette'
 
 	// For screen access view
 	EGraphicsMemoryAccess	MemoryAccessDisplay = EGraphicsMemoryAccess::Characters;
