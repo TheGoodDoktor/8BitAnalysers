@@ -49,7 +49,6 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 //#include "CodeAnalyser/IOAnalyser.h"
 #include "Viewers/CPCViewer.h"
-#include "Viewers/FrameTraceViewer.h"
 #include "Viewers/CPCGraphicsViewer.h"
 #include "MemoryHandlers.h"
 #include "IOAnalysis.h"
@@ -175,7 +174,7 @@ public:
 
 	// Viewers
 	FCPCViewer					CPCViewer;
-	FFrameTraceViewer		FrameTraceViewer;
+	//FFrameTraceViewer		FrameTraceViewer;
 	//FCPCGraphicsViewer		GraphicsViewer;
 	//FCodeAnalysisState		CodeAnalysis;
 	

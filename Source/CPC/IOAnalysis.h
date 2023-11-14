@@ -5,6 +5,26 @@
 
 class FCPCEmu;
 
+enum class EEventType : uint8_t
+{
+	None = 0,
+	ScreenPixWrite,
+	PaletteSelect,
+	PaletteColour,
+	BorderColour,
+	ScreenModeChange,
+	CrtcRegisterSelect,
+	CrtcRegisterRead,
+	CrtcRegisterWrite,
+	KeyboardRead,
+	// this is technically the same event as setting CRTC registers R12 or R13 but we have a separate event for convenience.
+	ScreenMemoryAddressChange,
+	//SoundChipRead,
+	//SoundChipRegisterSelect,
+	//SoundChipRegisterWrite,
+	//SwitchMemoryBanks,
+};
+
 enum class CPCIODevice
 {
 	None = -1,

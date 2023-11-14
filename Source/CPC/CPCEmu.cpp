@@ -791,7 +791,8 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	// reset systems
 	MemoryAccessHandlers.clear();	// remove old memory handlers
 	ResetMemoryStats(MemStats);
-	FrameTraceViewer.Reset();
+	// sam todo
+	//FrameTraceViewer.Reset();
 	pGraphicsViewer->Reset();
 	Screen.Reset();
 
@@ -1442,7 +1443,8 @@ void FCPCEmu::Tick()
 
 		cpc_exec(&CPCEmuState, microSeconds);
 		
-		FrameTraceViewer.CaptureFrame();
+		// sam todo
+		//FrameTraceViewer.CaptureFrame();
 
 		CodeAnalysis.OnFrameEnd();
 	}
