@@ -1,6 +1,7 @@
 #include "ImGuiScaling.h"
 
 #include <imgui.h>
+#include  <math.h>
 
 static float g_Scaling = 1.0f;
 
@@ -14,6 +15,6 @@ float ImGui_GetScaling(void)
 {
 	//return 1.0f;	// temp
 	const float fontSize = ImGui::GetFontSize();
-	return fontSize / 13.0f;
+	g_Scaling = ceilf(fontSize / 13.0f);
 	return g_Scaling;
 }
