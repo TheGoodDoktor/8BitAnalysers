@@ -60,7 +60,7 @@ enum class EDataItemDisplayType
 	Bitmap,			// 1 bit per pixel
 	ColMap2Bpp_CPC,	// Amstrad CPC mode 1 format
 	ColMap4Bpp_CPC,	// Amstrad CPC mode 0 format
-	ColMap2Bpp_C64,	// C64 Multicolour format
+	ColMapMulticolour_C64,	// C64 Multicolour format
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
@@ -71,7 +71,7 @@ enum class EBitmapFormat
 	ColMap2Bpp_CPC,	// Amstrad CPC mode 1 format
 	ColMap4Bpp_CPC,	// Amstrad CPC mode 0 format
 
-	ColMap2Bpp_C64,	// C64 Multicolour format
+	ColMapMulticolour_C64,	// C64 Multicolour format
 
 	Max,
 	None = Max

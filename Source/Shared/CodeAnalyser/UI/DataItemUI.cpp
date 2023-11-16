@@ -168,7 +168,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 		}
 		break;
 
-	case EDataItemDisplayType::ColMap2Bpp_C64:	// 2 bits per pixel - wide pixels
+	case EDataItemDisplayType::ColMapMulticolour_C64:	// 2 bits per pixel - wide pixels
 		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 		{
 			const uint8_t val = state.ReadByte(addr + byte);
@@ -180,7 +180,6 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 				const ImVec2 rectMin(pos.x, pos.y);
 				const ImVec2 rectMax(pos.x + rectSize * 2, pos.y + rectSize);
 
-				// TODO: colNo is palette index do palette lookup
 				const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
 				const uint32_t pixelCol = pPalette ? pPalette[colNo] : colNo == 0 ? 0: 0xffffffff;
 

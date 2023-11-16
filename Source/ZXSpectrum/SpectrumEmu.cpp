@@ -64,29 +64,37 @@ uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const
 
 const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const 
 {
+	const uint8_t* ptr = nullptr;
+	
+
 	if (ZXEmuState.type == ZX_TYPE_48K)
 	{
 		const int bank = address >> 14;
 		const int bankAddr = address & 0x3fff;
 
 		if (bank == 0)
-			return &ZXEmuState.rom[0][bankAddr];
+			ptr = &ZXEmuState.rom[0][bankAddr];
 		else
-			return &ZXEmuState.ram[bank - 1][bankAddr];
+			ptr = &ZXEmuState.ram[bank - 1][bankAddr];
 	}
 	else
 	{
 		const uint8_t memConfig = ZXEmuState.last_mem_config;
 
 		if (address < 0x4000)
-			return &ZXEmuState.rom[(memConfig & (1 << 4)) ? 1 : 0][address];
+			ptr = &ZXEmuState.rom[(memConfig & (1 << 4)) ? 1 : 0][address];
 		else if (address < 0x8000)
-			return &ZXEmuState.ram[5][address - 0x4000];
+			ptr = &ZXEmuState.ram[5][address - 0x4000];
 		else if (address < 0xC000)
-			return &ZXEmuState.ram[2][address - 0x8000];
+			ptr = &ZXEmuState.ram[2][address - 0x8000];
 		else
-			return &ZXEmuState.ram[memConfig & 7][address - 0xC000];
+			ptr = &ZXEmuState.ram[memConfig & 7][address - 0xC000];
 	}
+
+	// so why aren't we using this? - switch to this if we don't assert
+	assert(ptr == mem_readptr(const_cast<mem_t*>(&ZXEmuState.mem), address));
+
+	return ptr;
 }
 
 

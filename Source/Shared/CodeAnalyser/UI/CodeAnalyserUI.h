@@ -72,6 +72,7 @@ bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId
 EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType);
 int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
 int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat);
+bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat);
 
 // config - move?
 void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state);

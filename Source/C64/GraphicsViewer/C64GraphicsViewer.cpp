@@ -157,8 +157,8 @@ void FC64GraphicsViewer::DrawSpritesViewer()
 				if (ImGui::Button("Format Memory"))
 				{
 					FDataFormattingOptions formatOptions;
-					formatOptions.SetupForBitmap(spriteDef.Address, spriteDef.bMultiColour ? 12 : 24, 21, spriteDef.bMultiColour ? 2 : 1);
-					formatOptions.DisplayType = spriteDef.bMultiColour ? EDataItemDisplayType::ColMap2Bpp_C64 : EDataItemDisplayType::Bitmap;
+					formatOptions.SetupForBitmap(spriteDef.Address, 24, 21, 1);
+					formatOptions.DisplayType = spriteDef.bMultiColour ? EDataItemDisplayType::ColMapMulticolour_C64 : EDataItemDisplayType::Bitmap;
 					formatOptions.PaletteNo = spriteDef.PaletteNo;
 					formatOptions.AddLabelAtStart = true;
 					formatOptions.LabelName = std::string("sprite_") + NumStr(spriteDef.Address.Address);

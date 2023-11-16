@@ -58,6 +58,8 @@ protected:
 
 	uint16_t		GetAddressOffsetFromPositionInView(int x, int y) const;
 
+	void			DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int xPos, int columnWidth);
+	void			DrawPhysicalMemoryAsGraphicsColumnChars(uint16_t memAddr, int xPos, int columnWidth);
 	void			DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
 	void			DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16_t memAddr, int xPos, int columnWidth);
 	void			UpdateCharacterGraphicsViewerImage(void); // make virtual for other platforms?
@@ -80,7 +82,8 @@ protected:
 	int				XSizePixels = 8;			// Image X Size in pixels
 	int				YSizePixels = 8;			// Image Y Size in pixels
 	int				ImageCount = 0;	// how many images?
-	bool			YSizePixelsFineCtrl = false;
+	bool			bYSizePixelsFineCtrl = false;
+	bool			bVSliderFineControl = false;
 	int				GraphicColumnSizeBytes = 0;
 
 	std::string		ImageSetName;

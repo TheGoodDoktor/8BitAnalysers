@@ -851,6 +851,8 @@ bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysi
 			return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMap2Bpp_CPC];
 		case EDataItemDisplayType::ColMap4Bpp_CPC:
 			return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMap4Bpp_CPC];
+		case EDataItemDisplayType::ColMapMulticolour_C64:
+			return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMapMulticolour_C64];
 		default:
 			return true;
 	}
@@ -860,7 +862,7 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 {
 	const int index = (int)displayType;
 	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex", "Binary",
-									"Bitmap", "ColMap2Bpp CPC", "ColMap4Bpp CPC", "ColMap2Bpp C64" };
+									"Bitmap", "ColMap2Bpp CPC", "ColMap4Bpp CPC", "Multicolour C64" };
 	bool bChanged = false;
 
 	if (ImGui::BeginCombo(pLabel, operandTypes[index]))
@@ -944,7 +946,7 @@ bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState
 	}
 
 	const int index = (int)bitmapFormat;
-	const char* bitmapFormats[] = { "1bpp", "2bpp (CPC Mode 1)", "4bpp (CPC Mode 0)", "2bpp (C64 Multicolour)" };
+	const char* bitmapFormats[] = { "1bpp", "2bpp (CPC Mode 1)", "4bpp (CPC Mode 0)", "C64 Multicolour" };
 
 	bool bChanged = false;
 
@@ -1014,8 +1016,8 @@ EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat)
 		return  EDataItemDisplayType::ColMap2Bpp_CPC;
 	case EBitmapFormat::ColMap4Bpp_CPC:
 		return  EDataItemDisplayType::ColMap4Bpp_CPC;
-	case EBitmapFormat::ColMap2Bpp_C64:
-		return  EDataItemDisplayType::ColMap2Bpp_C64;
+	case EBitmapFormat::ColMapMulticolour_C64:
+		return  EDataItemDisplayType::ColMapMulticolour_C64;
 	default:
 		return EDataItemDisplayType::Unknown;
 	}
@@ -1872,8 +1874,8 @@ EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType)
 		return EBitmapFormat::ColMap2Bpp_CPC;
 	case EDataItemDisplayType::ColMap4Bpp_CPC:
 		return EBitmapFormat::ColMap4Bpp_CPC;
-	case  EDataItemDisplayType::ColMap2Bpp_C64:
-		return EBitmapFormat::ColMap2Bpp_C64;
+	case  EDataItemDisplayType::ColMapMulticolour_C64:
+		return EBitmapFormat::ColMapMulticolour_C64;
 	}
 	return EBitmapFormat::None;
 }
@@ -1888,13 +1890,30 @@ int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
 		return 2;
 	case EBitmapFormat::ColMap4Bpp_CPC:
 		return 4;
-	case EBitmapFormat::ColMap2Bpp_C64:
-		return 2;
+	case EBitmapFormat::ColMapMulticolour_C64:
+		return 1;	// it's a bit of a bodge because they're wide
 	}
 	return 1;
 }
 
+bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat)
+{
+	switch (bitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+		return false;
+	case EBitmapFormat::ColMap2Bpp_CPC:
+	case EBitmapFormat::ColMap4Bpp_CPC:
+	case EBitmapFormat::ColMapMulticolour_C64:
+		return true;	
+	}
+	return false;
+}
+
 int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 {
+	if(bitmapFormat == EBitmapFormat::ColMapMulticolour_C64)	// special case
+		return 4;
+
 	return 1 << GetBppForBitmapFormat(bitmapFormat);
 }

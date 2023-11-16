@@ -113,7 +113,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
     // set supported bitmap format
     CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
-    CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMap2Bpp_C64] = true;
+    CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMapMulticolour_C64] = true;
     for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
     {
         CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::Bitmap_1Bpp;
