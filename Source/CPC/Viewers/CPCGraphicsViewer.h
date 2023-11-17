@@ -26,9 +26,7 @@ public:
 	void	DrawScreenViewer(void) override;
 	bool	Init(void) override;
 
-
 	void	DrawPaletteViewer();
-	void	DrawPalette(const uint32_t* palette, int numColours);
 protected:
 	const uint32_t* GetCurrentPalette() const override;
 

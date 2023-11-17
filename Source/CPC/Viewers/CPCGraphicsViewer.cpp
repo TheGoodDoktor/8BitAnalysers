@@ -230,28 +230,12 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 	}
 }
 
-void FCPCGraphicsViewer::DrawPalette(const uint32_t* palette, int numColours)
-{
-	const float scale = ImGui_GetScaling();
-	const ImVec2 size(14 * scale, 14 * scale);
-
-	for (int c = 0; c < numColours; c++)
-	{
-		ImGui::PushID(c);
-		const uint32_t colour = *(palette + c);
-		ImGui::ColorButton("##palette_color", ImColor(colour), ImGuiColorEditFlags_NoAlpha |ImGuiColorEditFlags_Uint8, size);
-		ImGui::PopID();
-		if (c < numColours-1)
-			ImGui::SameLine();
-	}
-}
-
 void FCPCGraphicsViewer::DrawPaletteViewer()
 {
 	const uint32_t* pCurrentPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
 
 	ImGui::Text("Current Palette: ");
-	DrawPalette(pCurrentPalette, pCPCEmu->CPCEmuState.ga.video.mode == 0 ? 16 : 4);
+	DrawPalette(pCurrentPalette, pCPCEmu->CPCEmuState.ga.video.mode == 0 ? 16 : 4, ImGui::GetTextLineHeight());
 	ImGui::Separator();
 
 	static int paletteIndex = -1;
@@ -272,7 +256,7 @@ void FCPCGraphicsViewer::DrawPaletteViewer()
 			const uint32_t* palette = GetPaletteFromPaletteNo(p);
 			ImGui::Text("%02d: ", p);
 			ImGui::SameLine();
-			DrawPalette(palette, pEntry->NoColours);
+			DrawPalette(palette, pEntry->NoColours, ImGui::GetTextLineHeight());
 		}
 	}
 }

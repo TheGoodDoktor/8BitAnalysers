@@ -969,6 +969,21 @@ bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState
 	return bChanged;
 }
 
+void DrawPalette(const uint32_t* palette, int numColours, float height)
+{
+	const ImVec2 size(height, height);
+
+	for (int c = 0; c < numColours; c++)
+	{
+		ImGui::PushID(c);
+		const uint32_t colour = *(palette + c);
+		ImGui::ColorButton("##palette_color", ImColor(colour), ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_Uint8, size);
+		ImGui::PopID();
+		if (c < numColours - 1)
+			ImGui::SameLine();
+	}
+}
+
 bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours /* = -1 */)
 {
 	int index = paletteEntryIndex;
@@ -996,6 +1011,14 @@ bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& pale
 					{
 						paletteEntryIndex = p;
 						bChanged = true;
+					}
+
+					float sz = ImGui::GetTextLineHeight();
+					uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+					if (pPalette)
+					{
+						ImGui::SameLine();
+						DrawPalette(pPalette, pEntry->NoColours, sz);
 					}
 				}
 			}

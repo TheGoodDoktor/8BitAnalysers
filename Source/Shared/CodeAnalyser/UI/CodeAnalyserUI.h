@@ -50,6 +50,7 @@ bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state);
 bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState& state);
 bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours=-1);
+void DrawPalette(const uint32_t* palette, int numColours, float height);
 EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat);
 
 
