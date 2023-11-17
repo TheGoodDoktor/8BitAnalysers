@@ -3,6 +3,7 @@
 
 #include <Util/GraphicsView.h>
 #include <CodeAnalyser/CodeAnalyser.h>
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 
 #include "../CPCEmu.h"
@@ -75,8 +76,11 @@ uint16_t FCPCGraphicsViewer::GetPixelLineOffset(int yPos)
 
 uint32_t FCPCGraphicsViewer::GetRGBValueForPixel(int yPos, int colourIndex, uint32_t heatMapCol) const
 {
-	const ImColor colour = pCPCEmu->Screen.GetPaletteForYPos(yPos).GetColour(colourIndex);
-	
+	const ImColor colour = pPaletteColours ? pPaletteColours[colourIndex] : colourIndex == 0 ? 0xff000000 : 0xffffffff;
+
+	if (!bShowReadsWrites)
+		return colour;
+
 	// Grayscale value is R * 0.299 + G * 0.587 + B * 0.114
 	const float grayScaleValue = colour.Value.x * 0.299f + colour.Value.y * 0.587f + colour.Value.z * 0.114f;
 	const ImColor grayScaleColour = ImColor(grayScaleValue, grayScaleValue, grayScaleValue);
@@ -105,6 +109,24 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 		CharacterHeight = crtc.max_scanline_addr + 1;
 	}
 
+	if (ImGui::InputInt("Screen Mode", &ScreenMode, 1, 8, ImGuiInputTextFlags_CharsDecimal))
+	{
+		ScreenMode = std::min(std::max(ScreenMode, 0), 1);
+	}
+
+	DrawPaletteCombo("Palette", "Current", PaletteNo, ScreenMode == 0 ? 16 : 4);
+
+	if (PaletteNo == -1)
+	{
+		pPaletteColours = (uint32_t*)pCPCEmu->Screen.GetCurrentPalette().GetData();
+	}
+	else
+	{
+		pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+	}
+
+	ImGui::Checkbox("Show Reads & Writes", &bShowReadsWrites);
+
 	ImGui::PushItemWidth(fontSize * 10.0f);
 
 	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
@@ -126,10 +148,6 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 		HeightChars = std::min(std::max(HeightChars, 0), 35);
 	}
 
-	if (ImGui::InputInt("Screen Mode", &ScreenMode, 1, 8, ImGuiInputTextFlags_CharsDecimal))
-	{
-		ScreenMode = std::min(std::max(ScreenMode, 0), 1);
-	}
 
 	if (ImGui::InputInt("Character Height", &CharacterHeight, 1, 8, ImGuiInputTextFlags_CharsDecimal))
 	{

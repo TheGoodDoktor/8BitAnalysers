@@ -44,7 +44,9 @@ private:
 	int			HeightChars = 25;
 	int			ScreenMode = 1;
 	int			CharacterHeight = 8;
-
+	bool		bShowReadsWrites = true;
+	int			PaletteNo = -1;
+	uint32_t*	pPaletteColours = nullptr;
 #if 0
 	FGraphicsView* pTestGraphicsView = 0;
 	FCPCGraphicsView* pTestCPCGraphicsView = 0;
