@@ -133,8 +133,8 @@ void FSpectrumViewer::Draw()
 	if (bScreenCharSelected == true)
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const ImU32 col = 0xffffffff;	// TODO: pulse
-		dl->AddRect(ImVec2((float)SelectedCharX, (float)SelectedCharY), ImVec2((float)SelectedCharX + 8, (float)SelectedCharY + 8), col);
+		const ImU32 col = GetFlashColour();
+		dl->AddRect(ImVec2(pos.x + ((float)SelectedCharX * scale),pos.y + (float)SelectedCharY * scale), ImVec2(pos.x + ((float)SelectedCharX + 8) * scale,pos.y + ((float)SelectedCharY + 8) * scale), col);
 
 		ImGui::Text("Pixel Char Address: %s", NumStr(SelectPixAddr));
 		//ImGui::SameLine();
