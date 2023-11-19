@@ -538,7 +538,17 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	const int bpp = GetBppForBitmapFormat(BitmapFormat);
 	if (BitmapFormatHasPalette(BitmapFormat))
+	{
+		const int numColours = GetNumColoursForBitmapFormat(BitmapFormat);
 		DrawPaletteCombo("Palette", "Current", PaletteNo, GetNumColoursForBitmapFormat(BitmapFormat));
+
+		if (PaletteNo == -1)
+		{
+			ImGui::SameLine();
+			if (const uint32_t* pCurPalette = GetCurrentPalette())
+				DrawPalette(pCurPalette, numColours);
+		}
+	}
 
 	if (ImGui::Checkbox("Physical Memory", &bShowPhysicalMemory))
 	{
@@ -656,7 +666,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		const float wheel = ImGui::GetIO().MouseWheel;
 		if (wheel != 0)
 		{
-			if(ImGui::GetIO().KeyShift)
+			if(ImGui::GetIO().KeyShift || bVSliderFineControl)
 				addrInput += (int)wheel;
 			else
 				addrInput += (int)wheel * GraphicColumnSizeBytes;
