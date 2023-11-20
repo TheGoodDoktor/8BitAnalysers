@@ -888,7 +888,7 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 bool DrawDataTypeCombo(int& dataType)
 {
 	const int index = (int)dataType;
-	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr", "Text" };
+	const char* dataTypes[] = { "Byte", "Byte Array", "Word", "Word Array", "Bitmap", "Char Map", "Col Attr", "Text" };
 	
 	bool bChanged = false;
 
@@ -1490,7 +1490,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	ImGui::PopID();
 
 	static int dataTypeIndex = 0; 
-	bool bDataTypeChanged = DrawDataTypeCombo(dataTypeIndex);
+	DrawDataTypeCombo(dataTypeIndex);
 
 	switch (dataTypeIndex)
 	{
@@ -1500,11 +1500,27 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	case 1:
+	{
+		formattingOptions.DataType = EDataType::ByteArray;
+		ImGui::InputInt("Array Size", &formattingOptions.ItemSize);
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		break;
+	}
+	case 2:
 		formattingOptions.DataType = EDataType::Word;
 		formattingOptions.ItemSize = 2;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
-	case 2:
+	case 3:
+	{
+		formattingOptions.DataType = EDataType::WordArray;
+		static int arraySize = 0;
+		ImGui::InputInt("Array Size", &arraySize);
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		formattingOptions.ItemSize = arraySize * 2;
+		break;
+	}
+	case 4:
 	{
 		formattingOptions.DataType = EDataType::Bitmap;
 		
@@ -1527,7 +1543,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		break;
 	}
-	case 3:
+	case 5:
 		formattingOptions.DataType = EDataType::CharacterMap;
 		{
 			static int size[2];
@@ -1545,12 +1561,12 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		break;
-	case 4:
+	case 6:
 		formattingOptions.DataType = EDataType::ColAttr;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
-	case 5:
+	case 7:
 		formattingOptions.DataType = EDataType::Text;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		formattingOptions.NoItems = 1;
