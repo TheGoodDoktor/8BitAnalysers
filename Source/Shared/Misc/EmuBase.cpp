@@ -31,6 +31,10 @@ void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 			}
 			SpecificGame = *argIt;
 		}
+        else if (*argIt == std::string("-nomultiwindow"))
+        {
+            bMultiWindow = false;
+        }
 
 		++argIt;
 	}

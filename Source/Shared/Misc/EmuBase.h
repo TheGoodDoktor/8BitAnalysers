@@ -15,6 +15,8 @@ struct FEmulatorLaunchConfig
 	virtual void ParseCommandline(int argc, char** argv);
 
 	std::string		SpecificGame;
+
+	bool		bMultiWindow = true;
 };
 
 class FViewerBase
