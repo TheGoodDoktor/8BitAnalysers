@@ -440,7 +440,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ImGui::Text("%s", NumStr(item.AddressRef.Address));
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
-	bool bShowItemLabel = true;
+	bool bShowItemLabel = false;
 
 	if (pDataInfo->DisplayType != EDataItemDisplayType::Unknown)
 	{
@@ -448,17 +448,15 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		{
 		case EDataItemDisplayType::Pointer:
 		case EDataItemDisplayType::JumpAddress:
+			bShowItemLabel = true;
 			break;
 		case EDataItemDisplayType::Decimal:
 			SetNumberDisplayMode(ENumberDisplayMode::Decimal);
-			bShowItemLabel = false;
 			break;
 		case EDataItemDisplayType::Binary:
 			SetNumberDisplayMode(ENumberDisplayMode::Binary);
-			bShowItemLabel = false;
 			break;
 		case EDataItemDisplayType::Hex:
-			bShowItemLabel = false;
 			break;
 		}
 	}

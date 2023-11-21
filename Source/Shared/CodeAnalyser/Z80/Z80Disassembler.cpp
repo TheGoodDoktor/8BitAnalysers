@@ -538,6 +538,8 @@ public:
                 dispMode = ENumberDisplayMode::HexAitch;
             if (pCodeInfoItem->OperandType == EOperandType::Binary)
                 dispMode = ENumberDisplayMode::Binary;
+            if (pCodeInfoItem->OperandType == EOperandType::Pointer)
+                return;
 
             const char* outStr = NumStr(val, dispMode);
             for (int i = 0; i < strlen(outStr); i++)

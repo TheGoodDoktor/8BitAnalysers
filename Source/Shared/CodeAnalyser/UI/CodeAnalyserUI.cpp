@@ -820,20 +820,30 @@ bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
 	return bChanged;
 }
 
-bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
+// Generic combo function for enums
+template <typename EnumType>
+bool DrawEnumCombo(const char* pLabel, EnumType& operandType, const std::vector<std::pair<const char*, EnumType>> &enumLookup)
 {
-	const int index = (int)operandType;
-	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex", "Binary" };
 	bool bChanged = false;
-
-	if (ImGui::BeginCombo(pLabel, operandTypes[index]))
+	const char* pPreviewStr = nullptr;
+	for (const auto& val : enumLookup)
 	{
-		for (int n = 0; n < IM_ARRAYSIZE(operandTypes); n++)
+		if (val.second == operandType)
 		{
-			const bool isSelected = (index == n);
-			if (ImGui::Selectable(operandTypes[n], isSelected))
+			pPreviewStr = val.first;
+			break;
+		}
+	}
+
+	assert(pPreviewStr != nullptr);
+	if (ImGui::BeginCombo(pLabel, pPreviewStr))
+	{
+		for (int n = 0; n < (int)enumLookup.size(); n++)
+		{
+			const bool isSelected = (operandType == enumLookup[n].second);
+			if (ImGui::Selectable(enumLookup[n].first, isSelected))
 			{
-				operandType = (EOperandType)n;
+				operandType = enumLookup[n].second;
 				bChanged = true;
 			}
 		}
@@ -841,6 +851,24 @@ bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
 	}
 
 	return bChanged;
+}
+
+static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
+{
+	{ "Unknown" ,		EOperandType::Unknown},
+	{ "Pointer" ,		EOperandType::Pointer},
+	{ "JumpAddress",	EOperandType::JumpAddress},
+	{ "Decimal",		EOperandType::Decimal},
+	{ "Hex",			EOperandType::Hex},
+	{ "Binary",			EOperandType::Binary},
+	//{ "Signed Number",		EOperandType::SignedNumber},
+	//{ "Unsigned Number",	EOperandType::UnsignedNumber},
+};
+
+
+bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
+{
+	return DrawEnumCombo<EOperandType>(pLabel, operandType, g_OperandTypes);
 }
 
 bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysisState& state)
@@ -858,6 +886,7 @@ bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysi
 	}
 }
 
+// TODO: use generic
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state)
 {
 	const int index = (int)displayType;
@@ -885,6 +914,7 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 	return bChanged;
 }
 
+// TODO: use generic
 bool DrawDataTypeCombo(int& dataType)
 {
 	const int index = (int)dataType;
