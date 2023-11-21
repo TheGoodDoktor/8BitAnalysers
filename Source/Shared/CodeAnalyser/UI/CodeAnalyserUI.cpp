@@ -214,7 +214,10 @@ void DrawComment(const FItem *pItem, float offset)
 	{
 		ImGui::SameLine(offset);
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
-		ImGui::Text("\t; %s", pItem->Comment.c_str());
+		//old ImGui::Text("\t; %s", pItem->Comment.c_str());
+		ImGui::Text("\t;");
+		ImGui::SameLine();
+		DrawMarkupText(pItem->Comment.c_str());
 		ImGui::PopStyleColor();
 	}
 }
@@ -1955,4 +1958,38 @@ int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 		return 4;
 
 	return 1 << GetBppForBitmapFormat(bitmapFormat);
+}
+
+// Markup code
+
+// <addr:0x3456>	-	address label
+
+void ParseMarkupText(const std::string& inString)
+{
+	size_t pos = 0;
+
+	size_t tagStart = inString.find("<", pos);
+	size_t tagEnd = inString.find(">", pos);
+	if (tagStart != std::string::npos && tagEnd != std::string::npos)
+	{
+		std::string tag = inString.substr(tagStart + 1, tagEnd - 2);
+		size_t typeEnd = tag.find(":");
+		if (typeEnd != std::string::npos)
+		{
+			std::string tagType = tag.substr(0, typeEnd);
+			if (tagType == std::string("addr"))
+			{
+				std::string tagValue = tag.substr(typeEnd + 1);
+			}
+		}
+	}
+}
+
+void DrawMarkupText(const char* pText)
+{
+	//std::string inString("This is at <addr:0x3456>");
+
+	
+
+	ImGui::Text("%s",pText);
 }

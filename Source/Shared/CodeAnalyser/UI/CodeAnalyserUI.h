@@ -77,3 +77,5 @@ bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat);
 
 // config - move?
 void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state);
+
+void DrawMarkupText(const char *text);
