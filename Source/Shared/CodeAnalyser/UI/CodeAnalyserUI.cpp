@@ -214,7 +214,10 @@ void DrawComment(const FItem *pItem, float offset)
 	{
 		ImGui::SameLine(offset);
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
-		ImGui::Text("\t; %s", pItem->Comment.c_str());
+		//old ImGui::Text("\t; %s", pItem->Comment.c_str());
+		ImGui::Text("\t;");
+		ImGui::SameLine();
+		DrawMarkupText(pItem->Comment.c_str());
 		ImGui::PopStyleColor();
 	}
 }
@@ -918,7 +921,7 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 bool DrawDataTypeCombo(int& dataType)
 {
 	const int index = (int)dataType;
-	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr", "Text" };
+	const char* dataTypes[] = { "Byte", "Byte Array", "Word", "Word Array", "Bitmap", "Char Map", "Col Attr", "Text" };
 	
 	bool bChanged = false;
 
@@ -1520,7 +1523,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	ImGui::PopID();
 
 	static int dataTypeIndex = 0; 
-	bool bDataTypeChanged = DrawDataTypeCombo(dataTypeIndex);
+	DrawDataTypeCombo(dataTypeIndex);
 
 	switch (dataTypeIndex)
 	{
@@ -1530,11 +1533,27 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	case 1:
+	{
+		formattingOptions.DataType = EDataType::ByteArray;
+		ImGui::InputInt("Array Size", &formattingOptions.ItemSize);
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		break;
+	}
+	case 2:
 		formattingOptions.DataType = EDataType::Word;
 		formattingOptions.ItemSize = 2;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
-	case 2:
+	case 3:
+	{
+		formattingOptions.DataType = EDataType::WordArray;
+		static int arraySize = 0;
+		ImGui::InputInt("Array Size", &arraySize);
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		formattingOptions.ItemSize = arraySize * 2;
+		break;
+	}
+	case 4:
 	{
 		formattingOptions.DataType = EDataType::Bitmap;
 		
@@ -1557,7 +1576,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		break;
 	}
-	case 3:
+	case 5:
 		formattingOptions.DataType = EDataType::CharacterMap;
 		{
 			static int size[2];
@@ -1575,12 +1594,12 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		break;
-	case 4:
+	case 6:
 		formattingOptions.DataType = EDataType::ColAttr;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
-	case 5:
+	case 7:
 		formattingOptions.DataType = EDataType::Text;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		formattingOptions.NoItems = 1;
@@ -1969,4 +1988,38 @@ int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 		return 4;
 
 	return 1 << GetBppForBitmapFormat(bitmapFormat);
+}
+
+// Markup code
+
+// <addr:0x3456>	-	address label
+
+void ParseMarkupText(const std::string& inString)
+{
+	size_t pos = 0;
+
+	size_t tagStart = inString.find("<", pos);
+	size_t tagEnd = inString.find(">", pos);
+	if (tagStart != std::string::npos && tagEnd != std::string::npos)
+	{
+		std::string tag = inString.substr(tagStart + 1, tagEnd - 2);
+		size_t typeEnd = tag.find(":");
+		if (typeEnd != std::string::npos)
+		{
+			std::string tagType = tag.substr(0, typeEnd);
+			if (tagType == std::string("addr"))
+			{
+				std::string tagValue = tag.substr(typeEnd + 1);
+			}
+		}
+	}
+}
+
+void DrawMarkupText(const char* pText)
+{
+	//std::string inString("This is at <addr:0x3456>");
+
+	
+
+	ImGui::Text("%s",pText);
 }
