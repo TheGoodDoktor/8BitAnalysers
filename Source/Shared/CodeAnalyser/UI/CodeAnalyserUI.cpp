@@ -2024,8 +2024,8 @@ void ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 	if (tagName == std::string("ADDR"))
 	{
 		int address = 0;
-		sscanf(tagValue.c_str(), "0x%04x",&address);
-		DrawAddressLabel(state,viewState,state.AddressRefFromPhysicalAddress(address));
+		if(sscanf(tagValue.c_str(), "0x%04x",&address) != 0)
+			DrawAddressLabel(state,viewState,state.AddressRefFromPhysicalAddress(address));
 	}
 }
 
@@ -2036,14 +2036,12 @@ void DrawMarkupText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState
 	const char* pTxtPtr = pText;
 	bool bInTag = false;
 
-	const int kMaxStringSize =64;
+	// temp string on stack
+	const int kMaxStringSize = 64;
 	char str[kMaxStringSize + 1];
 	int strPos = 0;
 
 	std::string tag;
-	//const int kMaxTagSize = 32;
-	//char tagName[kMaxTagSize + 1];
-	//int tagPos=0;
 		
 	while (*pTxtPtr != 0)
 	{
@@ -2082,11 +2080,4 @@ void DrawMarkupText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState
 			ImGui::Text("%s", str);
 		}
 	}
-
-	/*if (strPos != 0)	// remainder of string
-	{
-		str[strPos] = 0;
-		strPos = 0;
-		ImGui::Text("%s", str);
-	}*/
 }
