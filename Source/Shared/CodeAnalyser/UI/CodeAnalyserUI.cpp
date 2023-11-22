@@ -1991,35 +1991,15 @@ int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 }
 
 // Markup code
+// -----------
 
-// <addr:0x3456>	-	address label
-
-void ParseMarkupText(const std::string& inString)
-{
-	size_t pos = 0;
-
-	size_t tagStart = inString.find("<", pos);
-	size_t tagEnd = inString.find(">", pos);
-	if (tagStart != std::string::npos && tagEnd != std::string::npos)
-	{
-		std::string tag = inString.substr(tagStart + 1, tagEnd - 2);
-		size_t typeEnd = tag.find(":");
-		if (typeEnd != std::string::npos)
-		{
-			std::string tagType = tag.substr(0, typeEnd);
-			if (tagType == std::string("addr"))
-			{
-				std::string tagValue = tag.substr(typeEnd + 1);
-			}
-		}
-	}
-}
-
+// tag format is <tagName>:<tagValue>
+// E.g. ADDR:0x1234
 void ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const std::string& tag)
 {
 	const size_t tagNameEnd = tag.find(":");
-	std::string tagName = tag.substr(0, tagNameEnd);
-	std::string tagValue = tag.substr(tagNameEnd+1);
+	const std::string tagName = tag.substr(0, tagNameEnd);
+	const std::string tagValue = tag.substr(tagNameEnd+1);
 
 	if (tagName == std::string("ADDR"))
 	{
