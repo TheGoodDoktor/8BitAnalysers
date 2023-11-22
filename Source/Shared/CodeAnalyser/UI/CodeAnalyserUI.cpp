@@ -208,7 +208,7 @@ void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	DrawCodeAddress(state, viewState, {state.GetBankFromAddress(addr), addr}, bFunctionRel);
 }
 
-void DrawComment(const FItem *pItem, float offset)
+void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem *pItem, float offset)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
 	{
@@ -217,7 +217,7 @@ void DrawComment(const FItem *pItem, float offset)
 		//old ImGui::Text("\t; %s", pItem->Comment.c_str());
 		ImGui::Text("\t;");
 		ImGui::SameLine();
-		DrawMarkupText(pItem->Comment.c_str());
+		DrawMarkupText(state,viewState,pItem->Comment.c_str());
 		ImGui::PopStyleColor();
 	}
 }
@@ -262,7 +262,7 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 		ImGui::EndTooltip();
 	}
 
-	DrawComment(pLabelInfo);	
+	DrawComment(state,viewState,pLabelInfo);	
 }
 
 void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,const FCodeAnalysisItem& item )
@@ -2015,11 +2015,78 @@ void ParseMarkupText(const std::string& inString)
 	}
 }
 
-void DrawMarkupText(const char* pText)
+void ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const std::string& tag)
 {
-	//std::string inString("This is at <addr:0x3456>");
+	const size_t tagNameEnd = tag.find(":");
+	std::string tagName = tag.substr(0, tagNameEnd);
+	std::string tagValue = tag.substr(tagNameEnd+1);
 
-	
+	if (tagName == std::string("ADDR"))
+	{
+		int address = 0;
+		sscanf(tagValue.c_str(), "0x%04x",&address);
+		DrawAddressLabel(state,viewState,state.AddressRefFromPhysicalAddress(address));
+	}
+}
 
-	ImGui::Text("%s",pText);
+void DrawMarkupText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const char* pText)
+{
+	//std::string inString("This is at #ADDR:0x3456#");
+
+	const char* pTxtPtr = pText;
+	bool bInTag = false;
+
+	const int kMaxStringSize =64;
+	char str[kMaxStringSize + 1];
+	int strPos = 0;
+
+	std::string tag;
+	//const int kMaxTagSize = 32;
+	//char tagName[kMaxTagSize + 1];
+	//int tagPos=0;
+		
+	while (*pTxtPtr != 0)
+	{
+		const char ch = *pTxtPtr++;
+
+		if (bInTag == false)
+		{
+			if (ch == '#')	// start tag
+			{
+				bInTag = true;
+				tag.clear();
+			}
+			else
+			{ 
+				str[strPos++] = ch;	// add to string
+			}
+		}
+		else
+		{
+			if (ch == '#')	// finish tag
+			{
+				ProcessTag(state,viewState,tag);
+				bInTag = false;
+			}
+			else
+			{
+				tag += ch;	// add to tag
+			}
+		}
+
+		if (strPos == kMaxStringSize || (bInTag && strPos != 0) || *pTxtPtr == 0)
+		{
+			str[strPos] = 0;
+			strPos = 0;
+			ImGui::SameLine();
+			ImGui::Text("%s", str);
+		}
+	}
+
+	/*if (strPos != 0)	// remainder of string
+	{
+		str[strPos] = 0;
+		strPos = 0;
+		ImGui::Text("%s", str);
+	}*/
 }

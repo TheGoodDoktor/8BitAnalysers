@@ -62,7 +62,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void ShowDataItemActivity(FCodeAnalysisState& state, FAddressRef addr);
 
-void DrawComment(const FItem* pItem, float offset = 0.0f);
+void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem, float offset = 0.0f);
 
 // util functions - move?
 bool DrawU8Input(const char* label, uint8_t* value);
@@ -78,4 +78,4 @@ bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat);
 // config - move?
 void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state);
 
-void DrawMarkupText(const char *text);
+void DrawMarkupText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const char* pText);

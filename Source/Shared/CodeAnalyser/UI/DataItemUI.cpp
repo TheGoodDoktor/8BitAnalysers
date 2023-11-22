@@ -583,7 +583,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	SetNumberDisplayMode(trueNumberDisplayMode);
 
-	DrawComment(pDataInfo, offset);
+	DrawComment(state, viewState, pDataInfo, offset);
 }
 
 struct FDataValueGraphState

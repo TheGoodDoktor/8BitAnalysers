@@ -253,7 +253,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		DrawAddressLabel(state, viewState, pCodeInfo->PointerAddress);
 	}
 
-	DrawComment(pCodeInfo);
+	DrawComment(state, viewState, pCodeInfo);
 
 }
 
