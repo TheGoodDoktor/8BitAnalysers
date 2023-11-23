@@ -25,7 +25,7 @@
 
 // create a bank
 // a bank is a list of memory pages
-int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly)
+int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly, bool bFixed)
 {
 	const int16_t bankId = (int16_t)Banks.size();
 	const int noPages = noKb;
@@ -38,6 +38,7 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	newBank.Pages = new FCodeAnalysisPage[noPages];
 	newBank.Name = bankName;
 	newBank.bReadOnly = bReadOnly;
+	newBank.bFixed = bFixed;
 	for (int pageNo = 0; pageNo < noPages; pageNo++)
 	{
 		newBank.Pages[pageNo].Initialise();
@@ -214,37 +215,7 @@ bool FCodeAnalysisState::ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_
 }
 
 
-bool FCodeAnalysisState::EnsureUniqueLabelName(std::string& labelName)
-{
-	auto labelIt = LabelUsage.find(labelName);
-	if (labelIt == LabelUsage.end())
-	{
-		LabelUsage[labelName] = 0;
-		return false;
-	}
 
-	char postFix[32];
-	snprintf(postFix,32, "_%d", ++LabelUsage[labelName]);
-	labelName += std::string(postFix);
-
-	return true;
-}
-
-bool FCodeAnalysisState::RemoveLabelName(const std::string& labelName)
-{
-	auto labelIt = LabelUsage.find(labelName);
-	//assert(labelIt != LabelUsage.end());	// shouldn't happen - it does though - investigate
-	if (labelIt == LabelUsage.end())
-		return false;
-
-	if (labelIt->second == 0)	// only a single use so we can remove from the map
-	{
-		LabelUsage.erase(labelIt);
-		return true;
-	}
-
-	return false;
-}
 /*
 // Search memory space for a block of data
 bool FCodeAnalysisState::FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr)
@@ -588,6 +559,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel != nullptr)
 		return pLabel;
+
 		
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
@@ -598,15 +570,26 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	char label[kLabelSize] = { 0 };
 	switch (labelType)
 	{
-	case ELabelType::Function:
-		snprintf(label, kLabelSize,"function_%04X", address.Address);
-		break;
-	case ELabelType::Code:
-		snprintf(label, kLabelSize, "label_%04X", address.Address);
-		break;
-	case ELabelType::Data:
-		snprintf(label, kLabelSize, "data_%04X", address.Address);
-		pLabel->Global = true;
+		case ELabelType::Function:
+			snprintf(label, kLabelSize,"function_%04X", address.Address);
+			break;
+		case ELabelType::Code:
+			snprintf(label, kLabelSize, "label_%04X", address.Address);
+			break;
+		case ELabelType::Data:
+		{
+			FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
+			if(pDataInfo->DataType == EDataType::InstructionOperand)
+				snprintf(label, kLabelSize, "operand_%04X", address.Address);
+			else
+				snprintf(label, kLabelSize, "data_%04X", address.Address);
+
+			// zero page labels for 6502
+			if (state.CPUInterface->CPUType == ECPUType::M6502 && address.Address < 256)
+				snprintf(label, kLabelSize, "zp_%02X", address.Address);
+
+			pLabel->Global = true;
+		}
 		break;
 	case ELabelType::Text:
 	{
@@ -627,7 +610,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	break;
 	}
 
-	pLabel->Name = label;
+	pLabel->InitialiseName(label);
 	if (pLabel->Global)
 		GenerateGlobalInfo(state);
 	state.SetLabelForAddress(address, pLabel);
@@ -668,8 +651,8 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		if(pLabel)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
-		pCodeInfo->JumpAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
-		assert(state.IsAddressValid(pCodeInfo->JumpAddress));
+		pCodeInfo->OperandAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
+		assert(state.IsAddressValid(pCodeInfo->OperandAddress));
 
 		if (pCodeInfo->OperandType == EOperandType::Unknown)
 			pCodeInfo->OperandType = EOperandType::JumpAddress;
@@ -677,22 +660,21 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	else
 	{
 		uint16_t ptr;
-		if (CheckPointerRefInstruction(state, pc, &ptr))
+		if (CheckPointerRefInstruction(state, pc, &ptr))	// this is just a 16 bit number so don't assume a pointer
 		{
 			const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
-			pCodeInfo->PointerAddress = ptrAddr;
-			if(pCodeInfo->OperandType == EOperandType::Unknown)
-				pCodeInfo->OperandType = EOperandType::Pointer;
+			pCodeInfo->OperandAddress = ptrAddr;
+			//if(pCodeInfo->OperandType == EOperandType::Unknown)
+			//	pCodeInfo->OperandType = EOperandType::Pointer;
 
-			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
-			if (pLabel)
-				pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+			//FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
+			//if (pLabel)
+			//	pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		}
-
-		if (CheckPointerIndirectionInstruction(state, pc, &ptr))
+		else if (CheckPointerIndirectionInstruction(state, pc, &ptr))
 		{
 			const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
-			pCodeInfo->PointerAddress = ptrAddr;
+			pCodeInfo->OperandAddress = ptrAddr;
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
 			
@@ -743,7 +725,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		if (pLabel != nullptr)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		if (pCodeInfo != nullptr)
-			pCodeInfo->JumpAddress = jumpAddr;
+			pCodeInfo->OperandAddress = jumpAddr;
 
 	}
 
@@ -756,7 +738,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 
 		if (pCodeInfo != nullptr)
-			pCodeInfo->PointerAddress = state.AddressRefFromPhysicalAddress(ptr);
+			pCodeInfo->OperandAddress = state.AddressRefFromPhysicalAddress(ptr);
 	}
 
 	const char* pOldComment = nullptr;
@@ -860,6 +842,7 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,
 	}
 }
 
+// TODO: this needs to be rewritten for banks
 void ReAnalyseCode(FCodeAnalysisState &state)
 {
 	int addr = 0;
@@ -926,7 +909,7 @@ void ResetReferenceInfo(FCodeAnalysisState &state)
 FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *name,ELabelType type)
 {
 	FLabelInfo *pLabel = FLabelInfo::Allocate();
-	pLabel->Name = name;
+	pLabel->InitialiseName(name);
 	pLabel->LabelType = type;
 	//pLabel->Address = address;
 	pLabel->ByteSize = 1;
@@ -942,7 +925,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char* name, ELabelType type)
 {
 	FLabelInfo* pLabel = FLabelInfo::Allocate();
-	pLabel->Name = name;
+	pLabel->InitialiseName(name);
 	pLabel->LabelType = type;
 	//pLabel->Address = address;
 	pLabel->ByteSize = 1;
@@ -1044,7 +1027,7 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 	InitImageViewers();
 	InitCharacterSets();
 	
-	ResetLabelNames();
+	FLabelInfo::ResetLabelNames();
 	ItemList.clear();
 
 	// reset registered pages
@@ -1273,16 +1256,6 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address)
 	}
 }
 
-void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText)
-{
-	if (strlen(pText) == 0)	// don't let a label be empty
-		return;
-
-	state.RemoveLabelName(pLabel->Name);
-	pLabel->Name = pText;
-	state.EnsureUniqueLabelName(pLabel->Name);
-}
-
 void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText)
 {
 	item.Item->Comment = pText;
@@ -1331,7 +1304,7 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 		if (pLabel == nullptr)
 			pLabel = AddLabel(state, addressRef, labelText.c_str(), ELabelType::Data);
 		else
-			SetLabelName(state, pLabel, labelText.c_str());
+			pLabel->ChangeName(labelText.c_str());
 		
 		pLabel->Global = true;
 	}

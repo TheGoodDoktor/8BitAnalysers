@@ -18,7 +18,7 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef ad
 		FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(addrVal);
 		if (pLabelInfo != nullptr)
 		{
-			labelStr = "[" + pLabelInfo->Name;
+			labelStr = "[" + std::string(pLabelInfo->GetName());
 			break;
 		}
 
@@ -73,7 +73,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 		case EItemType::Label:
 		{
 			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
-			fprintf(fp, "%s:", pLabelInfo->Name.c_str());
+			fprintf(fp, "%s:", pLabelInfo->GetName());
 		}
 		break;
 		case EItemType::Code:
@@ -87,18 +87,12 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			const std::string dasmString = Z80GenerateDasmStringForAddress(state, addr, hexMode);
 			fprintf(fp, "\t%s", dasmString.c_str());
 
-			if (pCodeInfo->JumpAddress.IsValid())
+			if (pCodeInfo->OperandAddress.IsValid())
 			{
-				const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->JumpAddress);
+				const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->OperandAddress);
 				if (labelStr.empty() == false)
 					fprintf(fp, "\t;%s", labelStr.c_str());
 
-			}
-			else if (pCodeInfo->PointerAddress.IsValid())
-			{
-				const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->PointerAddress);
-				if (labelStr.empty() == false)
-					fprintf(fp, "\t;%s", labelStr.c_str());
 			}
 		}
 
@@ -147,7 +141,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForPhysicalAddress(val) : nullptr;
 				if (pLabel != nullptr)
 				{
-					fprintf(fp, "dw %s", pLabel->Name.c_str());
+					fprintf(fp, "dw %s", pLabel->GetName());
 				}
 				else
 				{

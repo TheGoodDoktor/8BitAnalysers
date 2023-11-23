@@ -262,8 +262,11 @@ struct FCodeAnalysisBank
 	std::string			Name;
 	std::string			Description;	// where we can describe what the bank is used for
 	bool				bReadOnly = false;
+	bool				bFixed = false;	// bank is never remapped
 	bool				bIsDirty = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
+
+	FCommentLine::FAllocator	CommentLineAllocator;
 
 	EBankAccess			Mapping = EBankAccess::None;
 
@@ -293,19 +296,6 @@ struct FCodeAnalysisBank
 		if ((int)access & 2)
 			MappedWritePages.erase(startPageNo);
 		UpdateMapping();
-
-	#if 0
-		// erase from mapped pages - better way?
-		auto it = MappedPages.begin();
-
-		while (it != MappedPages.end())
-		{
-			if (*it == startPageNo)
-				it = MappedPages.erase(it);
-			else
-				++it;
-		}
-	#endif
 	}
 
 	bool		AddressValid(uint16_t addr) const { return addr >= GetMappedAddress() && addr < GetMappedAddress() + (NoPages * FCodeAnalysisPage::kPageSize);	}
@@ -344,7 +334,7 @@ public:
 	void	SetGlobalConfig(FGlobalConfig *pConfig) { pGlobalConfig = pConfig; }
 
 	// Memory Banks & Pages
-	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly);
+	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly, bool bFixed = false);
 	bool		MapBank(int16_t bankId, int startPageNo, EBankAccess access = EBankAccess::ReadWrite);
 	//bool		UnMapBank(int16_t bankId, int startPageNo, EBankAccess access = EBankAccess::ReadWrite);
 	bool		IsBankIdMapped(int16_t bankId) const;
@@ -470,9 +460,8 @@ public:
 	bool HasMemoryBeenRemapped() const { return bMemoryRemapped; }
 	//const std::vector<int16_t>& GetDirtyBanks() const { return RemappedBanks; }
 
-	void	ResetLabelNames() { LabelUsage.clear(); }
-	bool	EnsureUniqueLabelName(std::string& lableName);
-	bool	RemoveLabelName(const std::string& labelName);	// for changing label names
+	//bool	EnsureUniqueLabelName(std::string& lableName);
+	//bool	RemoveLabelName(const std::string& labelName);	// for changing label names
 
 public:
 
@@ -554,13 +543,13 @@ public:
 	void SetLabelForPhysicalAddress(uint16_t addr, FLabelInfo* pLabel)
 	{
 		if(pLabel != nullptr)	// ensure no name clashes
-			EnsureUniqueLabelName(pLabel->Name);
+			pLabel->EnsureUniqueName();
 		GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; 
 	}
 	void SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLabel)
 	{
 		if (pLabel != nullptr)	// ensure no name clashes
-			EnsureUniqueLabelName(pLabel->Name);
+			pLabel->EnsureUniqueName();
 
 		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
 		if (pBank != nullptr)
@@ -712,7 +701,6 @@ private:
 	std::vector<FCodeAnalysisPage*>	RegisteredPages;
 	std::vector<std::string>	PageNames;
 	int32_t						NextPageId = 0;
-	std::map<std::string, int>	LabelUsage;
 
 	bool						bCodeAnalysisDataDirty = false;
 	bool						bMemoryRemapped = true;
@@ -740,7 +728,6 @@ FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* na
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef address);
 FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
-void SetLabelName(FCodeAnalysisState &state, FLabelInfo *pLabel, const char *pText);
 void SetItemCode(FCodeAnalysisState& state, FAddressRef addr);
 //void SetItemCode(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
 void SetItemData(FCodeAnalysisState &state, const FCodeAnalysisItem& item);

@@ -1,6 +1,7 @@
 #include "M6502Disassembler.h"
 
 #include "../CodeAnalyser.h"
+#include "../Disassembler.h"
 
 #include <assert.h>
 #include <string.h>
@@ -14,10 +15,6 @@
 
 #define CHIPS_ASSERT(c) assert(c)
 
-/* the input callback type */
-typedef uint8_t(*m6502dasm_input_t)(void* user_data);
-/* the output callback type */
-typedef void (*m6502dasm_output_t)(char c, void* user_data);
 
 /*#
     # m6502dasm.h
@@ -84,12 +81,7 @@ typedef void (*m6502dasm_output_t)(char c, void* user_data);
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef void (*m6502dasm_output_t)(char c, void* user_data);
-
-static void DasmOutputU8(uint8_t val, m6502dasm_output_t out_cb, void* user_data);
-static void DasmOutputU16(uint16_t val, m6502dasm_output_t out_cb, void* user_data);
-static void DasmOutputD8(int8_t val, m6502dasm_output_t out_cb, void* user_data);
-
+//typedef void (*m6502dasm_output_t)(char c, void* user_data);
 
 /* fetch unsigned 8-bit value and track pc */
 #define _FETCH_U8(v) v=in_cb(user_data);pc++;
@@ -184,7 +176,7 @@ static uint8_t _m6502dasm_ops[4][8][8] = {
 static const char* _m6502dasm_hex = "0123456789ABCDEF";
 
 /* helper function to output string */
-static void _m6502dasm_str(const char* str, m6502dasm_output_t out_cb, void* user_data) {
+static void _m6502dasm_str(const char* str, dasm_output_t out_cb, void* user_data) {
     if (out_cb) {
         char c;
         while (0 != (c = *str++)) {
@@ -194,7 +186,7 @@ static void _m6502dasm_str(const char* str, m6502dasm_output_t out_cb, void* use
 }
 
 /* helper function to output an unsigned 8-bit value as hex string */
-static void _m6502dasm_u8(uint8_t val, m6502dasm_output_t out_cb, void* user_data) {
+static void _m6502dasm_u8(uint8_t val, dasm_output_t out_cb, void* user_data) {
     if (out_cb) {
         out_cb('$', user_data);
         for (int i = 1; i >= 0; i--) {
@@ -204,7 +196,7 @@ static void _m6502dasm_u8(uint8_t val, m6502dasm_output_t out_cb, void* user_dat
 }
 
 /* helper function to output an unsigned 16-bit value as hex string */
-static void _m6502dasm_u16(uint16_t val, m6502dasm_output_t out_cb, void* user_data) {
+static void _m6502dasm_u16(uint16_t val, dasm_output_t out_cb, void* user_data) {
     if (out_cb) {
         out_cb('$', user_data);
         for (int i = 3; i >= 0; i--) {
@@ -214,7 +206,7 @@ static void _m6502dasm_u16(uint16_t val, m6502dasm_output_t out_cb, void* user_d
 }
 
 /* main disassembler function */
-uint16_t m6502dasm_op(uint16_t pc, m6502dasm_input_t in_cb, m6502dasm_output_t out_cb, void* user_data) {
+uint16_t m6502dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void* user_data) {
     CHIPS_ASSERT(in_cb);
     uint8_t op;
     _FETCH_U8(op);
@@ -457,23 +449,8 @@ uint16_t m6502dasm_op(uint16_t pc, m6502dasm_input_t in_cb, m6502dasm_output_t o
 
 // number output abstraction
 
-class IDasmNumberOutput
-{
-public:
 
-	virtual void OutputU8(uint8_t val, m6502dasm_output_t out_cb) = 0;
-	virtual void OutputU16(uint16_t val, m6502dasm_output_t out_cb) = 0;
-	virtual void OutputD8(int8_t val, m6502dasm_output_t out_cb) = 0;
-};
-
-class FDasmStateBase : public IDasmNumberOutput
-{
-public:
-	FCodeAnalysisState* CodeAnalysisState = nullptr;
-	uint16_t				CurrentAddress = 0;
-	std::string				Text;
-};
-
+#if 0
 static IDasmNumberOutput* g_pNumberOutputObj = nullptr;
 static IDasmNumberOutput* GetNumberOutput()
 {
@@ -486,7 +463,7 @@ static void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj)
 }
 
 // output an unsigned 8-bit value as hex string 
-static void DasmOutputU8(uint8_t val, m6502dasm_output_t out_cb, void* user_data)
+static void DasmOutputU8(uint8_t val, dasm_output_t out_cb, void* user_data)
 {
 	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
 	if (pNumberOutput)
@@ -495,7 +472,7 @@ static void DasmOutputU8(uint8_t val, m6502dasm_output_t out_cb, void* user_data
 }
 
 // output an unsigned 16-bit value as hex string 
-static void DasmOutputU16(uint16_t val, m6502dasm_output_t out_cb, void* user_data)
+static void DasmOutputU16(uint16_t val, dasm_output_t out_cb, void* user_data)
 {
 	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
 	if (pNumberOutput)
@@ -503,76 +480,14 @@ static void DasmOutputU16(uint16_t val, m6502dasm_output_t out_cb, void* user_da
 }
 
 // output a signed 8-bit offset as hex string 
-static void DasmOutputD8(int8_t val, m6502dasm_output_t out_cb, void* user_data)
+static void DasmOutputD8(int8_t val, dasm_output_t out_cb, void* user_data)
 {
 	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
 	if (pNumberOutput)
 		pNumberOutput->OutputD8(val, out_cb);
 }
-
 // helper functions
-class FAnalysisDasmState : public FDasmStateBase
-{
-public:
-	void OutputU8(uint8_t val, m6502dasm_output_t outputCallback) override
-	{
-		if (outputCallback != nullptr)
-		{
-			ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
-			if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-				dispMode = ENumberDisplayMode::Decimal;
-			if (pCodeInfoItem->OperandType == EOperandType::Hex)
-				dispMode = ENumberDisplayMode::HexAitch;
-			if (pCodeInfoItem->OperandType == EOperandType::Binary)
-				dispMode = ENumberDisplayMode::Binary;
-
-			const char* outStr = NumStr(val, dispMode);
-			for (int i = 0; i < strlen(outStr); i++)
-				outputCallback(outStr[i], this);
-		}
-	}
-
-	void OutputU16(uint16_t val, m6502dasm_output_t outputCallback) override
-	{
-		if (outputCallback)
-		{
-			ENumberDisplayMode dispMode = GetNumberDisplayMode();
-
-			if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-				dispMode = ENumberDisplayMode::Decimal;
-			if (pCodeInfoItem->OperandType == EOperandType::Hex)
-				dispMode = ENumberDisplayMode::HexAitch;
-			if (pCodeInfoItem->OperandType == EOperandType::Binary)
-				dispMode = ENumberDisplayMode::Binary;
-
-			const char* outStr = NumStr(val, dispMode);
-			for (int i = 0; i < strlen(outStr); i++)
-				outputCallback(outStr[i], this);
-		}
-	}
-
-	void OutputD8(int8_t val, m6502dasm_output_t outputCallback) override
-	{
-		if (outputCallback)
-		{
-			if (val < 0)
-			{
-				outputCallback('-', this);
-				val = -val;
-			}
-			else
-			{
-				outputCallback('+', this);
-			}
-			const char* outStr = NumStr((uint8_t)val);
-			for (int i = 0; i < strlen(outStr); i++)
-				outputCallback(outStr[i], this);
-		}
-	}
-
-	FCodeInfo* pCodeInfoItem = nullptr;
-};
 
 
 // disassembler callback to fetch the next instruction byte 
@@ -591,6 +506,7 @@ static void AnalysisOutputCB(char c, void* pUserData)
 	// add character to string
 	pDasmState->Text += c;
 }
+#endif
 
 // Helper function to generate the disassembly for a code info item
 uint16_t M6502DisassembleCodeInfoItem(uint16_t pc, FCodeAnalysisState& state, FCodeInfo* pCodeInfo)
@@ -639,85 +555,7 @@ uint16_t M6502DisassembleGetNextPC(uint16_t pc, FCodeAnalysisState& state, uint8
 	opcode = dasmData.Data[0];
 	return nextPC;
 }
-
-
-class FExportDasmState : public FDasmStateBase
-{
-public:
-	void OutputU8(uint8_t val, m6502dasm_output_t outputCallback) override
-	{
-		if (outputCallback != nullptr)
-		{
-			ENumberDisplayMode dispMode = GetNumberDisplayMode();
-
-			if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-				dispMode = ENumberDisplayMode::Decimal;
-			if (pCodeInfoItem->OperandType == EOperandType::Hex)
-				dispMode = HexDisplayMode;
-			if (pCodeInfoItem->OperandType == EOperandType::Binary)
-				dispMode = ENumberDisplayMode::Binary;
-
-			const char* outStr = NumStr(val, dispMode);
-			for (int i = 0; i < strlen(outStr); i++)
-				outputCallback(outStr[i], this);
-		}
-	}
-
-	void OutputU16(uint16_t val, m6502dasm_output_t outputCallback) override
-	{
-		if (outputCallback)
-		{
-			const bool bOperandIsAddress = (pCodeInfoItem->OperandType == EOperandType::JumpAddress || pCodeInfoItem->OperandType == EOperandType::Pointer);
-			const FLabelInfo* pLabel = bOperandIsAddress ? CodeAnalysisState->GetLabelForPhysicalAddress(val) : nullptr;
-			if (pLabel != nullptr)
-			{
-				for (int i = 0; i < pLabel->Name.size(); i++)
-				{
-					outputCallback(pLabel->Name[i], this);
-				}
-			}
-			else
-			{
-				ENumberDisplayMode dispMode = GetNumberDisplayMode();
-
-				if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-					dispMode = ENumberDisplayMode::Decimal;
-				if (pCodeInfoItem->OperandType == EOperandType::Hex)
-					dispMode = HexDisplayMode;
-				if (pCodeInfoItem->OperandType == EOperandType::Binary)
-					dispMode = ENumberDisplayMode::Binary;
-
-				const char* outStr = NumStr(val, dispMode);
-				for (int i = 0; i < strlen(outStr); i++)
-					outputCallback(outStr[i], this);
-			}
-		}
-	}
-
-	void OutputD8(int8_t val, m6502dasm_output_t outputCallback) override
-	{
-		if (outputCallback)
-		{
-			if (val < 0)
-			{
-				outputCallback('-', this);
-				val = -val;
-			}
-			else
-			{
-				outputCallback('+', this);
-			}
-			const char* outStr = NumStr((uint8_t)val);
-			for (int i = 0; i < strlen(outStr); i++)
-				outputCallback(outStr[i], this);
-		}
-	}
-
-	FCodeInfo* pCodeInfoItem = nullptr;
-	ENumberDisplayMode	HexDisplayMode = ENumberDisplayMode::HexDollar;
-};
-
-
+#if 0
 /* disassembler callback to fetch the next instruction byte */
 static uint8_t ExportDasmInputCB(void* pUserData)
 {
@@ -734,6 +572,7 @@ static void ExportOutputCB(char c, void* pUserData)
 	// add character to string
 	pDasmState->Text += c;
 }
+#endif
 
 std::string M6502GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode)
 {

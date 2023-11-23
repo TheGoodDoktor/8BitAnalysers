@@ -62,7 +62,7 @@ void DrawCharacterSetComboBox(FCodeAnalysisState& state, FAddressRef& addr)
 	const FCharacterSet* pCharSet = addr.IsValid() ? GetCharacterSetFromAddress(addr) : nullptr;
 	const FLabelInfo* pLabel = pCharSet != nullptr ? state.GetLabelForAddress(addr) : nullptr;
 
-	const char* pCharSetName = pLabel != nullptr ? pLabel->Name.c_str() : "None";
+	const char* pCharSetName = pLabel != nullptr ? pLabel->GetName() : "None";
 
 	if (ImGui::BeginCombo("CharacterSet", pCharSetName))
 	{
@@ -77,7 +77,7 @@ void DrawCharacterSetComboBox(FCodeAnalysisState& state, FAddressRef& addr)
 			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
 			if (pSetLabel == nullptr)
 				continue;
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), addr == pCharSet->Params.Address))
+			if (ImGui::Selectable(pSetLabel->GetName(), addr == pCharSet->Params.Address))
 			{
 				addr = pCharSet->Params.Address;
 			}
@@ -106,7 +106,7 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 
 			ImGui::PushID(i);
 
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), bSelected))
+			if (ImGui::Selectable(pSetLabel->GetName(), bSelected))
 			{
 				selectedCharSetAddr = pCharSet->Params.Address;
 				if (params.Address != pCharSet->Params.Address)
@@ -405,7 +405,7 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 
 			ImGui::PushID(i);
 
-			if (ImGui::Selectable(pSetLabel->Name.c_str(), bSelected))
+			if (ImGui::Selectable(pSetLabel->GetName(), bSelected))
 			{
 				uiState.SelectedCharMapAddr = pCharMap->Params.Address;
 				if (uiState.SelectedCharMapAddr != uiState.Params.Address)

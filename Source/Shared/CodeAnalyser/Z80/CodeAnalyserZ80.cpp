@@ -62,9 +62,9 @@ bool CheckPointerIndirectionInstructionZ80(FCodeAnalysisState& state, uint16_t p
 // These functions are just loading a 16bit value into a register
 bool CheckPointerRefInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	if (CheckPointerIndirectionInstructionZ80(state, pc, out_addr))
-		return true;
-
+	//if (CheckPointerIndirectionInstructionZ80(state, pc, out_addr))
+	//	return true;
+	//return false;
 	const uint8_t instrByte = state.ReadByte(pc);
 
 	switch (instrByte)

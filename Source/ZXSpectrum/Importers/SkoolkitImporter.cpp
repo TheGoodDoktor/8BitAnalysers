@@ -201,7 +201,7 @@ bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 					AddLabelAtAddress(state, state.AddressRefFromPhysicalAddress(address));
 					if (FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(address))
 					{
-						SetLabelName(state, pLabelInfo, labelStr.c_str());
+						pLabelInfo->ChangeName(labelStr.c_str());
 					}
 				}
 				// todo: decimal and 0x notation
@@ -561,7 +561,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			AddLabelAtAddress(state, state.AddressRefFromPhysicalAddress(instruction.Address));
 			if (FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(instruction.Address))
 			{
-				SetLabelName(state, pLabelInfo, label.c_str());
+				pLabelInfo->ChangeName(label.c_str());
 			}
 			
 			label.clear();

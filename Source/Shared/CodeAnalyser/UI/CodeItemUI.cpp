@@ -61,10 +61,10 @@ void DrawBranchLines(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	const float lineHeight = ImGui::GetTextLineHeight();
 
 	ImU32 lineCol = 0xff7f7f7f;	// grey
-	if (viewState.HighlightAddress == pCodeInfo->JumpAddress)
+	if (viewState.HighlightAddress == pCodeInfo->OperandAddress)
 		lineCol = 0xff00ff00;	// green
 	float ypos;
-	if (viewState.GetYPosForAddress(pCodeInfo->JumpAddress, ypos))
+	if (viewState.GetYPosForAddress(pCodeInfo->OperandAddress, ypos))
 	{
 		const float distance = fabsf(ypos - pos.y);
 		const float xEnd = pos.x + state.Config.AddressPos - 2.0f;
@@ -94,12 +94,12 @@ void DrawBranchLines(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	else // do off-screen lines
 	{
 		const int thisIndex = GetItemIndexForAddress(state, item.AddressRef);
-		const int jumpIndex = GetItemIndexForAddress(state, pCodeInfo->JumpAddress);
+		const int jumpIndex = GetItemIndexForAddress(state, pCodeInfo->OperandAddress);
 		const int noLines = abs(thisIndex - jumpIndex);
 		const int maxIndent = state.Config.BranchMaxIndent;
 		const int indentAmount = maxIndent - std::min(noLines / 5, maxIndent);
 
-		const bool bDirectionUp = pCodeInfo->JumpAddress.Address < item.AddressRef.Address;
+		const bool bDirectionUp = pCodeInfo->OperandAddress.Address < item.AddressRef.Address;
 		ImVec2 lineStart = pos;
 		lineStart.x += indentAmount * state.Config.BranchSpacing;
 		lineStart.y += lineHeight * 0.5f;// middle
@@ -137,14 +137,14 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	if (state.pGlobalConfig->BranchLinesDisplayMode == 1)
 	{
 		const bool bSelected = (item.Item == viewState.GetCursorItem().Item);
-		const bool bHighlighted = (viewState.HighlightAddress == pCodeInfo->JumpAddress);
+		const bool bHighlighted = (viewState.HighlightAddress == pCodeInfo->OperandAddress);
 		bDisplayBranchLine = bSelected || bHighlighted;
 	}
 
 	if (bDisplayBranchLine)
 	{
 		// draw branch lines
-		if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid() && pCodeInfo->bIsCall == false)
+		if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->OperandAddress.IsValid() && pCodeInfo->bIsCall == false)
 			DrawBranchLines(state, viewState, item);
 	}
 
@@ -189,7 +189,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	// draw instruction address
 	const float lineStartX = ImGui::GetCursorPosX();
 	ImGui::SameLine(lineStartX + state.Config.AddressPos);
-	ImGui::Text("%s", NumStr(physAddress));
+	ImGui::Text("%s ", NumStr(physAddress));
 	ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpace);
 
 	// grey out NOPed code
@@ -233,7 +233,10 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		}
 	}
 
-	ImGui::Text("%s", pCodeInfo->Text.c_str());	// draw the disassembly output for this instruction
+	Markup::SetCodeInfo(pCodeInfo);
+	Markup::DrawText(state,viewState,pCodeInfo->Text.c_str()); // draw the disassembly output for this instruction
+	Markup::SetCodeInfo(nullptr);
+	//ImGui::Text("%s", pCodeInfo->Text.c_str());	// draw the disassembly output for this instruction
 
 	if (pCodeInfo->bNOPped)
 		ImGui::PopStyleColor();
@@ -243,6 +246,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ShowCodeToolTip(state, physAddress);
 	}
 
+	#if 0
 	// draw jump address label name
 	if (pCodeInfo->OperandType == EOperandType::JumpAddress && pCodeInfo->JumpAddress.IsValid())
 	{
@@ -252,7 +256,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	{
 		DrawAddressLabel(state, viewState, pCodeInfo->PointerAddress);
 	}
-
+	#endif
 	DrawComment(state, viewState, pCodeInfo);
 
 }
@@ -268,7 +272,7 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 
 	if (state.Config.bShowBanks && pCodeInfo->OperandType == EOperandType::Pointer)
 	{
-		DrawBankInput(state, "Bank", pCodeInfo->PointerAddress.BankId);
+		DrawBankInput(state, "Bank", pCodeInfo->OperandAddress.BankId);
 	}
 
 	if (ImGui::Checkbox("NOP out instruction", &pCodeInfo->bNOPped))

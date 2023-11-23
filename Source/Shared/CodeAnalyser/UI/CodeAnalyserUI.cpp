@@ -115,17 +115,19 @@ void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 }
 
 // TODO: phase this out
-void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel)
+void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, uint32_t displayFlags)
 {
-	DrawAddressLabel(state, viewState, { state.GetBankFromAddress(addr),addr }, bFunctionRel);
+	DrawAddressLabel(state, viewState, { state.GetBankFromAddress(addr),addr },displayFlags);
 }
 
-void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel)
+void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags)
 {
+	bool bFunctionRel = false;
 	int labelOffset = 0;
 	const char *pLabelString = GetRegionDesc(addr);
 	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
 	assert(pBank != nullptr);
+	bool bGlobalHighlighting = pLabelString != nullptr;
 
 	if (pLabelString == nullptr)	// get a label
 	{
@@ -141,9 +143,11 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			const FLabelInfo* pLabel = state.GetLabelForAddress(FAddressRef(pBank->Id,addrVal));
 			if (pLabel != nullptr)
 			{
+				bGlobalHighlighting = pLabel->Global || pLabel->LabelType == ELabelType::Function;
+
 				if (bFunctionRel == false || pLabel->LabelType == ELabelType::Function)
 				{
-					pLabelString = pLabel->Name.c_str();
+					pLabelString = pLabel->GetName();
 					break;
 				}
 			}
@@ -157,23 +161,38 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	
 	if (pLabelString != nullptr)
 	{
-		ImGui::SameLine();
-		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+		ImGui::SameLine(0,0);
+
+		if(bGlobalHighlighting && displayFlags & kAddressLabelFlag_White)
+			ImGui::PushStyleColor(ImGuiCol_Text, 0xffffffff);
+		else
+			ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+
 		const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
 
-		if (state.Config.bShowBanks)
+		if (pBank->bFixed == false && state.Config.bShowBanks && (displayFlags & kAddressLabelFlag_NoBank) == 0)
 		{
 			ImGui::Text("[%s]", pBank->Name.c_str());
 			ImGui::SameLine(0,0);
 		}
 
-		if(labelOffset == 0)
-			ImGui::Text("[%s]", pLabelString);
+		if (displayFlags & kAddressLabelFlag_NoBrackets)
+		{
+			if (labelOffset == 0)
+				ImGui::Text("%s", pLabelString);
+			else
+				ImGui::Text("%s + %d", pLabelString, labelOffset);
+		}
 		else
-			ImGui::Text("[%s + %d]", pLabelString, labelOffset);
-
+		{
+			if(labelOffset == 0)
+				ImGui::Text("[%s]", pLabelString);
+			else
+				ImGui::Text("[%s + %d]", pLabelString, labelOffset);
+		}
 		if (ImGui::IsItemHovered())
 		{
+			ImGui::PopStyleColor();
 			// Bring up snippet in tool tip
 			const int indentBkp = viewState.JumpLineIndent;
 			viewState.JumpLineIndent = 0;
@@ -188,24 +207,26 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		
 			viewState.HoverAddress = addr;
 		}
-
-		ImGui::PopStyleColor();
+		else
+		{ 
+			ImGui::PopStyleColor();
+		}
 	}
 }
 
-void DrawCodeAddress(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel)
+void DrawCodeAddress(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags)
 {
 	//ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
 	ImGui::Text("%s", NumStr(addr.Address));
 	//ImGui::PopStyleColor();
 	ImGui::SameLine();
-	DrawAddressLabel(state, viewState, addr, bFunctionRel);
+	DrawAddressLabel(state, viewState, addr, displayFlags);
 }
 
 // TODO: Phase this out
-void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel)
+void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, uint32_t displayFlags)
 {
-	DrawCodeAddress(state, viewState, {state.GetBankFromAddress(addr), addr}, bFunctionRel);
+	DrawCodeAddress(state, viewState, {state.GetBankFromAddress(addr), addr});
 }
 
 void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem *pItem, float offset)
@@ -215,9 +236,9 @@ void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, c
 		ImGui::SameLine(offset);
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
 		//old ImGui::Text("\t; %s", pItem->Comment.c_str());
-		ImGui::Text("\t;");
+		ImGui::Text("\t; ");
 		ImGui::SameLine();
-		DrawMarkupText(state,viewState,pItem->Comment.c_str());
+		Markup::DrawText(state,viewState,pItem->Comment.c_str());
 		ImGui::PopStyleColor();
 	}
 }
@@ -238,12 +259,12 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	{
 		ImGui::TextColored(labelColour, "\t\tOperand Fixup(%s) :",NumStr(item.AddressRef.Address));
 		ImGui::SameLine();
-		ImGui::TextColored(labelColour, "%s", pLabelInfo->Name.c_str());
+		ImGui::TextColored(labelColour, "%s", pLabelInfo->GetName());
 	}
 	else
 	{
 		ImGui::SameLine(state.Config.LabelPos);
-		ImGui::TextColored(labelColour, "%s: ", pLabelInfo->Name.c_str());
+		ImGui::TextColored(labelColour, "%s: ", pLabelInfo->GetName());
 	}
 
 	// hover tool tip
@@ -268,13 +289,13 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,const FCodeAnalysisItem& item )
 {
 	FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
-	std::string LabelText = pLabelInfo->Name;
+	std::string LabelText = pLabelInfo->GetName();
 	if (ImGui::InputText("Name", &LabelText))
 	{
 		if (LabelText.empty())
-			LabelText = pLabelInfo->Name;
+			LabelText = pLabelInfo->GetName();
 
-		SetLabelName(state, pLabelInfo, LabelText.c_str());
+		pLabelInfo->ChangeName(LabelText.c_str());
 	}
 
 	if(ImGui::Checkbox("Global", &pLabelInfo->Global))
@@ -303,7 +324,10 @@ void DrawCommentLine(FCodeAnalysisState& state, const FCommentLine* pCommentLine
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
 	ImGui::SameLine(state.Config.CommentLinePos);
-	ImGui::Text("; %s", pCommentLine->Comment.c_str());
+	//ImGui::Text("; %s", pCommentLine->Comment.c_str());
+	ImGui::Text("\t; ");
+	ImGui::SameLine();
+	//Markup::DrawText(state, viewState, pItem->Comment.c_str());
 	ImGui::PopStyleColor();
 }
 
@@ -484,11 +508,10 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		FLabelInfo *pLabel = (FLabelInfo *)cursorItem.Item;
 		
 		ImGui::SetKeyboardFocusHere();
-		std::string LabelText = pLabel->Name;
+		std::string LabelText = pLabel->GetName();
 		if (ImGui::InputText("##comment", &LabelText, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
-			if (LabelText.empty() == false)
-				pLabel->Name = LabelText;
+			pLabel->ChangeName(LabelText.c_str());
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
@@ -513,13 +536,14 @@ void ExpandCommentBlock(FCodeAnalysisState& state, FItemListBuilder& builder, FC
 	std::stringstream stringStream(pCommentBlock->Comment);
 	std::string line;
 	FCommentLine* pFirstLine = nullptr;
+	FCodeAnalysisBank* pBank = state.GetBank(builder.BankId);
 
 	while (std::getline(stringStream, line, '\n'))
 	{
 		if (line.empty() || line[0] == '@')	// skip lines starting with @ - we might want to create items from them in future
 			continue;
 
-		FCommentLine* pLine = FCommentLine::Allocate();
+		FCommentLine* pLine = pBank->CommentLineAllocator.Allocate();
 		pLine->Comment = line;
 		//pLine->Address = addr;
 		builder.ItemList.emplace_back(pLine, builder.BankId, builder.CurrAddr);
@@ -538,6 +562,7 @@ void ExpandCommentBlock(FCodeAnalysisState& state, FItemListBuilder& builder, FC
 void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
 {
 	bank.ItemList.clear();
+	bank.CommentLineAllocator.FreeAll();
 	FItemListBuilder listBuilder(bank.ItemList);
 	listBuilder.BankId = bank.Id;
 
@@ -595,7 +620,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 		const float line_height = ImGui::GetTextLineHeight();
 		
 		state.ItemList.clear();
-		FCommentLine::FreeAll();	// recycle comment lines
+		//FCommentLine::FreeAll();	// recycle comment lines
 
 		//int nextItemAddress = 0;
 
@@ -793,7 +818,8 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 			ImGui::PopStyleColor();
 		break;
 	case EItemType::CommentLine:
-		DrawCommentLine(state, static_cast<const FCommentLine*>(item.Item));
+		DrawComment(state,viewState,item.Item);
+		//DrawCommentLine(state, static_cast<const FCommentLine*>(item.Item));
 		break;
 	}
 
@@ -1481,7 +1507,7 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 				//if(state.Config.bShowBanks)
 				//	ImGui::Text("[%s]%s", item.AddressRef.BankId,pLabelInfo->Name.c_str());
 				//else
-					ImGui::Text("%s", pLabelInfo->Name.c_str());
+					ImGui::Text("%s", pLabelInfo->GetName());
 				ImGui::PopID();
 
 				if (ImGui::IsItemHovered())
@@ -1690,7 +1716,7 @@ void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter
 		}
 
 		const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(labelItem.Item);
-		std::string labelTextLower = pLabelInfo->Name;
+		std::string labelTextLower = pLabelInfo->GetName();
 		std::transform(labelTextLower.begin(), labelTextLower.end(), labelTextLower.begin(), [](unsigned char c){ return std::tolower(c); });
 
 		if (filter.FilterText.empty() || labelTextLower.find(filterTextLower) != std::string::npos)
@@ -1748,7 +1774,7 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 						{
 							const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
 							const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
-							return pLabelA->Name < pLabelB->Name;
+							return std::string(pLabelA->GetName()) < std::string(pLabelB->GetName());	// dodgy!
 						});
 					break;
 				case EFunctionSortMode::CallFrequency:	
@@ -1992,9 +2018,18 @@ int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 
 // Markup code
 // -----------
-
+// 
 // tag format is <tagName>:<tagValue>
 // E.g. ADDR:0x1234
+namespace Markup
+{
+static const FCodeInfo* g_CodeInfo = nullptr;
+
+void SetCodeInfo(const FCodeInfo* pCodeInfo)
+{
+	g_CodeInfo= pCodeInfo;
+}
+
 void ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const std::string& tag)
 {
 	const size_t tagNameEnd = tag.find(":");
@@ -2007,9 +2042,20 @@ void ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 		if(sscanf(tagValue.c_str(), "0x%04x",&address) != 0)
 			DrawAddressLabel(state,viewState,state.AddressRefFromPhysicalAddress(address));
 	}
+	else if (tagName == std::string("OPERAND_ADDR"))
+	{
+		const FCodeInfo* pCodeInfo = g_CodeInfo;
+		if(pCodeInfo != nullptr)
+		{
+			uint32_t labelFlags = kAddressLabelFlag_NoBank | kAddressLabelFlag_NoBrackets;
+			//if(pCodeInfo->OperandType == EOperandType::Pointer)
+				labelFlags |= kAddressLabelFlag_White;
+			DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
+		}
+	}
 }
 
-void DrawMarkupText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const char* pText)
+void DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const char* pText)
 {
 	//std::string inString("This is at #ADDR:0x3456#");
 
@@ -2056,8 +2102,10 @@ void DrawMarkupText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState
 		{
 			str[strPos] = 0;
 			strPos = 0;
-			ImGui::SameLine();
+			ImGui::SameLine(0,0);
 			ImGui::Text("%s", str);
 		}
 	}
 }
+
+}// namespace Markup

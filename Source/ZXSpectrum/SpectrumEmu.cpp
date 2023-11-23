@@ -899,8 +899,6 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		}
-		else
-			LoadGameData(this, dataFName.c_str());	// Load the old one - this needs to go in time
 
 		pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 

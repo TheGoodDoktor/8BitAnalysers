@@ -8,11 +8,9 @@
 
 //#include "json.hpp"
 std::vector<FCodeInfo*>		FCodeInfo::AllocatedList;
-std::vector<FLabelInfo*>	FLabelInfo::AllocatedList;
+std::vector<FLabelInfo*>				FLabelInfo::AllocatedList;
+std::unordered_map<std::string, int>	FLabelInfo::LabelUsage;
 std::vector<FCommentBlock*>	FCommentBlock::AllocatedList;
-
-std::vector<FCommentLine*>	FCommentLine::AllocatedList;
-std::vector<FCommentLine*>	FCommentLine::FreeList;
 
 FImageData::~FImageData() 
 { 
@@ -63,27 +61,6 @@ void FCommentBlock::FreeAll()
 
 	AllocatedList.clear();
 }
-
-FCommentLine* FCommentLine::Allocate()
-{
-	if (FreeList.size() == 0)
-		FreeList.push_back(new FCommentLine);
-	
-	FCommentLine* pLine = FreeList.back();
-	AllocatedList.push_back(pLine);
-	FreeList.pop_back();
-
-	return pLine;
-}
-
-void FCommentLine::FreeAll()
-{
-	for (auto it : AllocatedList)
-		FreeList.push_back(it);
-
-	AllocatedList.clear();
-}
-
 
 void FCodeAnalysisPage::Initialise()
 {
@@ -299,13 +276,15 @@ void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, ELabelType typ
 	if (pLabel == nullptr)
 	{
 		pLabel = FLabelInfo::Allocate();
+		pLabel->InitialiseName(pLabelName);
 		Labels[addr] = pLabel;
 	}
-
-	pLabel->Name = pLabelName;
-	pLabel->LabelType = type;
+	else
+	{
+		pLabel->ChangeName(pLabelName);
+		pLabel->LabelType = type;
+	}
 }
-
 
 #if 0
 void FCodeAnalysisPage::WriteToJSon(nlohmann::json& jsonOutput)

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 // Enums
 
@@ -177,8 +178,56 @@ struct FLabelInfo : FItem
 	static FLabelInfo* Allocate();
 	static void FreeAll();
 
-	std::string				Name;
+	bool EnsureUniqueName(void)
+	{
+		auto labelIt = LabelUsage.find(Name);
+		if (labelIt == LabelUsage.end())
+		{
+			LabelUsage[Name] = 0;
+			return false;
+		}
+
+		char postFix[32];
+		snprintf(postFix, 32, "_%d", ++LabelUsage[Name]);
+		Name += std::string(postFix);
+
+		return true;
+	}
+
+	bool RemoveLabelName(const std::string& labelName)
+	{
+		auto labelIt = LabelUsage.find(labelName);
+		//assert(labelIt != LabelUsage.end());	// shouldn't happen - it does though - investigate
+		if (labelIt == LabelUsage.end())
+			return false;
+
+		if (labelIt->second == 0)	// only a single use so we can remove from the map
+		{
+			LabelUsage.erase(labelIt);
+			return true;
+		}
+
+		return false;
+	}
+
+	static void	ResetLabelNames() { LabelUsage.clear(); }
+
+
+	void			InitialiseName(const char* pNewName) { Name = pNewName; }
+	void			ChangeName(const char* pNewName) 
+	{
+		if (strlen(pNewName) == 0)	// don't let a label be empty
+			return;
+
+		RemoveLabelName(Name);
+		Name = pNewName;
+		EnsureUniqueName();
+		Edited = true;
+	}
+	const char*		GetName() const {return Name.c_str(); }
+
 	bool					Global = false;
+	bool					Edited = false;	// has the name been changed since generation?
 	ELabelType				LabelType = ELabelType::Data;
 	FItemReferenceTracker	References;
 	//std::map<uint16_t, int>	References;
@@ -186,7 +235,11 @@ private:
 	FLabelInfo() { Type = EItemType::Label; }
 	~FLabelInfo() = default;
 
+	std::string				Name;
+
 	static std::vector<FLabelInfo*>	AllocatedList;
+	static std::unordered_map<std::string, int>	LabelUsage;
+
 };
 
 struct FCodeInfo : FItem
@@ -196,8 +249,9 @@ struct FCodeInfo : FItem
 
 	EOperandType	OperandType = EOperandType::Unknown;
 	std::string		Text;				// Disassembly text
-	FAddressRef		JumpAddress;	// optional jump address
-	FAddressRef		PointerAddress;	// optional pointer address
+	//FAddressRef		JumpAddress;	// optional jump address
+	//FAddressRef		PointerAddress;	// optional pointer address
+	FAddressRef		OperandAddress;	// optional operand address
 	int				FrameLastExecuted = -1;
 	int				ExecutionCount = 0;
 
@@ -309,13 +363,34 @@ private:
 
 struct FCommentLine : FItem
 {
+	class FAllocator
+	{
+		public:
+			FCommentLine* Allocate()
+			{
+				if (FreeList.size() == 0)
+					FreeList.push_back(new FCommentLine);
 
-	static FCommentLine* Allocate();
-	static void FreeAll();
+				FCommentLine* pLine = FreeList.back();
+				AllocatedList.push_back(pLine);
+				FreeList.pop_back();
+
+				return pLine;
+			}
+			void FreeAll()
+			{
+				for (auto it : AllocatedList)
+					FreeList.push_back(it);
+
+				AllocatedList.clear();
+			}
+		private:
+			std::vector<FCommentLine*>	AllocatedList;
+			std::vector<FCommentLine*>	FreeList;
+	};
+
 private:
 	FCommentLine() : FItem() { Type = EItemType::CommentLine; }
 	~FCommentLine() = default;
 
-	static std::vector<FCommentLine*>	AllocatedList;
-	static std::vector<FCommentLine*>	FreeList;
 };

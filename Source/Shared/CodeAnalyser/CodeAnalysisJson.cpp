@@ -338,7 +338,7 @@ void WriteLabelInfoToJson(uint16_t addr, const FLabelInfo* pLabelInfo, json& jso
 {
 	json labelInfoJson;
 	labelInfoJson["Address"] = addressOverride == -1 ? addr : addressOverride;
-	labelInfoJson["Name"] = pLabelInfo->Name;
+	labelInfoJson["Name"] = pLabelInfo->GetName();
 	if (pLabelInfo->Global)
 		labelInfoJson["Global"] = pLabelInfo->Global;
 	labelInfoJson["LabelType"] = pLabelInfo->LabelType;
@@ -436,7 +436,7 @@ FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson)
 {
 	FLabelInfo* pLabelInfo = FLabelInfo::Allocate();
 
-	pLabelInfo->Name = labelInfoJson["Name"];
+	pLabelInfo->InitialiseName(((std::string)labelInfoJson["Name"]).c_str());
 	if (labelInfoJson.contains("Global"))
 		pLabelInfo->Global = true;
 

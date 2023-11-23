@@ -819,7 +819,7 @@ void FDebugger::DrawCallStack(void)
 		const FLabelInfo* pLabel = state.GetLabelForAddress(CallStack.back().FunctionAddr);
 		if (pLabel != nullptr)
 		{
-			ImGui::Text("%s :", pLabel->Name.c_str());
+			ImGui::Text("%s :", pLabel->GetName());
 			ImGui::SameLine();
 		}
 	}
@@ -832,7 +832,7 @@ void FDebugger::DrawCallStack(void)
 			const FLabelInfo* pLabel = state.GetLabelForAddress(CallStack[i - 1].FunctionAddr);
 			if (pLabel != nullptr)
 			{
-				ImGui::Text("%s :", pLabel->Name.c_str());
+				ImGui::Text("%s :", pLabel->GetName());
 				ImGui::SameLine();
 			}
 		}

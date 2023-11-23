@@ -522,7 +522,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		if (bEdit)
 			EditWordDataItem(state, physAddr);
 		else
-			ImGui::Text("%s", NumStr(val));
+			ImGui::Text("%s ", NumStr(val));
 
 		if (bShowItemLabel)
 		{

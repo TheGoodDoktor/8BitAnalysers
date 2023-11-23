@@ -168,7 +168,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
     // RAM - $C000 - $CFFF - pages 48-51 - 4k
     // IO System - %D000 - $DFFF - page 52-55 - 4k
 
-    LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram, false);
+    LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram, false, true);
     HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false);
     IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, false);
     BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true); // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k

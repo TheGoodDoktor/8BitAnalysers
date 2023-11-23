@@ -13,6 +13,7 @@
 #include "Util/Misc.h"
 #include <Util/GraphicsView.h>
 #include "ZXSpectrumGameConfig.h"
+#if 0
 
 static const int g_kBinaryFileVersionNo = 17;
 static const int g_kBinaryFileMagic = 0xdeadface;
@@ -646,119 +647,7 @@ void LoadGameDataBin(FCodeAnalysisState& state, FILE *fp, int versionNo, uint16_
 	}
 }
 
-const uint32_t kMachineStateMagic = 0xFaceCafe;
-const uint32_t kMachineStateVersion = 4;
 
-static zx_t g_SaveSlot;
-
-void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE *fp)
-{
-	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
-	FZXSpectrumGameConfig& config = *(FZXSpectrumGameConfig*)pSpectrumEmu->pActiveGame->pConfig;
-
-	// revert cheats
-	for (FCheat& cheat : config.Cheats)
-	{
-		for (auto& entry : cheat.Entries)
-		{
-			if (cheat.bEnabled)	// cheat activated so revert
-			{
-				pSpectrumEmu->WriteByte(entry.Address, entry.OldValue);
-				cheat.bEnabled = false;
-			}
-		}
-	}
-
-	// revert NOPs
-	for (int addr = 0x4000; addr <= 0xffff; addr++)
-	{
-		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
-		if (pCodeInfo && pCodeInfo->bNOPped)
-		{
-			// Restore
-			for (int i = 0; i < pCodeInfo->ByteSize; i++)
-				state.CPUInterface->WriteByte(addr + i, pCodeInfo->OpcodeBkp[i]);
-
-			pCodeInfo->bNOPped = false;
-		}
-	}
-
-	// write magic
-	fwrite(&kMachineStateMagic, sizeof(kMachineStateMagic), 1, fp);
-	fwrite(&kMachineStateVersion, sizeof(kMachineStateVersion), 1, fp);
-
-	// just save the whole thing out
-	zx_t& dst =  g_SaveSlot;
-	dst = pSpectrumEmu->ZXEmuState;	// copy to save slot
-	chips_debug_snapshot_onsave(&dst.debug);
-	chips_audio_callback_snapshot_onsave(&dst.audio.callback);
-	ay38910_snapshot_onsave(&dst.ay);
-	mem_snapshot_onsave(&dst.mem, &pSpectrumEmu->ZXEmuState);
-
-	fwrite(&dst, sizeof(zx_t), 1, fp);
-	return;
-}
-
-bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
-{
-	uint32_t magicVal;
-	fread(&magicVal, sizeof(magicVal), 1, fp);
-	if (magicVal != kMachineStateMagic)
-		return false;
-
-	// version
-	uint32_t fileVersion = 0;
-	fread(&fileVersion, sizeof(fileVersion), 1, fp);
-
-	if (fileVersion != kMachineStateVersion)	// since machine state is not that important different file version numbers get rejected
-		return false;
-
-	// load the entire state
-	zx_t* sys = &pSpectrumEmu->ZXEmuState;
-	zx_t& im = g_SaveSlot;
-
-	fread(&im, sizeof(zx_t), 1, fp);	// load into save slot
-
-	// fixup pointers & callbacks
-	chips_debug_snapshot_onload(&im.debug, &sys->debug);
-	chips_audio_callback_snapshot_onload(&im.audio.callback, &sys->audio.callback);
-	ay38910_snapshot_onload(&im.ay, &sys->ay);
-	mem_snapshot_onload(&im.mem, sys);
-	*sys = im;	// copy across new state
-
-	// Set code analysis banks
-	if (sys->type == ZX_TYPE_128)
-	{
-		const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
-		pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1 : 0);
-		pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
-		pSpectrumEmu->GetCodeAnalysis().SetAllBanksDirty();
-	}
-	return true;
-}
-
-bool SaveGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)
-{
-	FILE* fp = fopen(fname, "wb");
-	if (fp == NULL)
-		return false;
-	SaveMachineState(pSpectrumEmu, fp);
-	fclose(fp);
-
-	return true;
-}
-
-bool LoadGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)
-{
-	FILE* fp = fopen(fname, "rb");
-	if (fp == NULL)
-		return false;
-
-	const bool bRes = LoadMachineState(pSpectrumEmu, fp);
-	fclose(fp);
-
-	return bRes;
-}
 #if 0
 bool SaveGameData(FSpectrumEmu* pSpectrumEmu, const char* fname)
 {
@@ -863,4 +752,119 @@ bool LoadROMData(FCodeAnalysisState& state, const char* fname)
 
 	fclose(fp);
 	return true;
+}
+#endif
+
+const uint32_t kMachineStateMagic = 0xFaceCafe;
+const uint32_t kMachineStateVersion = 4;
+
+static zx_t g_SaveSlot;
+
+void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
+{
+	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
+	FZXSpectrumGameConfig& config = *(FZXSpectrumGameConfig*)pSpectrumEmu->pActiveGame->pConfig;
+
+	// revert cheats
+	for (FCheat& cheat : config.Cheats)
+	{
+		for (auto& entry : cheat.Entries)
+		{
+			if (cheat.bEnabled)	// cheat activated so revert
+			{
+				pSpectrumEmu->WriteByte(entry.Address, entry.OldValue);
+				cheat.bEnabled = false;
+			}
+		}
+	}
+
+	// revert NOPs
+	for (int addr = 0x4000; addr <= 0xffff; addr++)
+	{
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
+		if (pCodeInfo && pCodeInfo->bNOPped)
+		{
+			// Restore
+			for (int i = 0; i < pCodeInfo->ByteSize; i++)
+				state.CPUInterface->WriteByte(addr + i, pCodeInfo->OpcodeBkp[i]);
+
+			pCodeInfo->bNOPped = false;
+		}
+	}
+
+	// write magic
+	fwrite(&kMachineStateMagic, sizeof(kMachineStateMagic), 1, fp);
+	fwrite(&kMachineStateVersion, sizeof(kMachineStateVersion), 1, fp);
+
+	// just save the whole thing out
+	zx_t& dst = g_SaveSlot;
+	dst = pSpectrumEmu->ZXEmuState;	// copy to save slot
+	chips_debug_snapshot_onsave(&dst.debug);
+	chips_audio_callback_snapshot_onsave(&dst.audio.callback);
+	ay38910_snapshot_onsave(&dst.ay);
+	mem_snapshot_onsave(&dst.mem, &pSpectrumEmu->ZXEmuState);
+
+	fwrite(&dst, sizeof(zx_t), 1, fp);
+	return;
+}
+
+bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
+{
+	uint32_t magicVal;
+	fread(&magicVal, sizeof(magicVal), 1, fp);
+	if (magicVal != kMachineStateMagic)
+		return false;
+
+	// version
+	uint32_t fileVersion = 0;
+	fread(&fileVersion, sizeof(fileVersion), 1, fp);
+
+	if (fileVersion != kMachineStateVersion)	// since machine state is not that important different file version numbers get rejected
+		return false;
+
+	// load the entire state
+	zx_t* sys = &pSpectrumEmu->ZXEmuState;
+	zx_t& im = g_SaveSlot;
+
+	fread(&im, sizeof(zx_t), 1, fp);	// load into save slot
+
+	// fixup pointers & callbacks
+	chips_debug_snapshot_onload(&im.debug, &sys->debug);
+	chips_audio_callback_snapshot_onload(&im.audio.callback, &sys->audio.callback);
+	ay38910_snapshot_onload(&im.ay, &sys->ay);
+	mem_snapshot_onload(&im.mem, sys);
+	*sys = im;	// copy across new state
+
+	// Set code analysis banks
+	if (sys->type == ZX_TYPE_128)
+	{
+		const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
+		pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1 : 0);
+		pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
+		pSpectrumEmu->GetCodeAnalysis().SetAllBanksDirty();
+	}
+	return true;
+}
+
+bool SaveGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)
+{
+	FILE* fp = fopen(fname, "wb");
+	if (fp == NULL)
+		return false;
+	SaveMachineState(pSpectrumEmu, fp);
+	fclose(fp);
+
+	return true;
+}
+
+bool LoadGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)
+{
+	FILE* fp = fopen(fname, "rb");
+	if (fp == NULL)
+		return false;
+
+	const bool bRes = LoadMachineState(pSpectrumEmu, fp);
+	fclose(fp);
+
+	return bRes;
 }

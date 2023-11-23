@@ -270,7 +270,7 @@ void	FFrameTraceViewer::GenerateTraceOverview(FSpeccyFrameTrace& frame)
 				if (pLabel->LabelType == ELabelType::Function)
 				{
 					functionAddress = addrVal;
-					pLabelString = pLabel->Name.c_str();
+					pLabelString = pLabel->GetName();
 					bFound = true;
 					if (labelAddress == 0)	// we found a function before a label
 					{

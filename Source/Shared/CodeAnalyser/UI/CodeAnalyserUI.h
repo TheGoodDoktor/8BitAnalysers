@@ -32,6 +32,9 @@ protected:
 	uint16_t	RegionMax = 0;
 };
 
+const uint32_t kAddressLabelFlag_NoBank		= 0x0001;
+const uint32_t kAddressLabelFlag_NoBrackets	= 0x0002;
+const uint32_t kAddressLabelFlag_White		= 0x0004;
 
 // UI
 
@@ -39,10 +42,9 @@ bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen);
 void UpdateRegionDescs(void);
 
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr);
-//void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
-void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel = false);
-void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, bool bFunctionRel = false);
-void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, bool bFunctionRel = false);
+void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags = 0);
+void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, uint32_t displayFlags = 0);
+void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags = 0);
 int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
@@ -78,4 +80,8 @@ bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat);
 // config - move?
 void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state);
 
-void DrawMarkupText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const char* pText);
+namespace Markup
+{ 
+void SetCodeInfo(const FCodeInfo* pCodeInfo);
+void DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const char* pText);
+}
