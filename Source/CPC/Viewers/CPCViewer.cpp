@@ -30,11 +30,11 @@ void FCPCViewer::Init(FCPCEmu* pEmu)
 	pCPCEmu = pEmu;
 
 	// setup texture
-	chips_display_info_t dispInfo = cpc_display_info(&pEmu->CPCEmuState);
+	const chips_display_info_t dispInfo = cpc_display_info(&pEmu->CPCEmuState);
 
 	// setup pixel buffer
-	int w = dispInfo.frame.dim.width; // 1024
-	int h = dispInfo.frame.dim.height; // 312
+	const int w = dispInfo.frame.dim.width; // 1024
+	const int h = dispInfo.frame.dim.height; // 312
 
 	const size_t pixelBufferSize = w * h;
 	FrameBuffer = new uint32_t[pixelBufferSize * 2];
@@ -65,19 +65,22 @@ void FCPCViewer::Draw()
 	ImGui::Checkbox("Write to screen on click", &bClickWritesToScreen);
 #endif
 
+	const bool bHasScreen = pCPCEmu->Screen.HasBeenDrawn();
 	const float scale = ImGui_GetScaling();
 
 	// see if mixed screen modes are used
 	int scrMode = pCPCEmu->CPCEmuState.ga.video.mode;
-	for (int s=0; s< AM40010_DISPLAY_HEIGHT; s++)
+	if (bHasScreen)
 	{
-		if (pCPCEmu->Screen.GetScreenModeForScanline(s) != scrMode)
+		for (int s = 0; s < AM40010_DISPLAY_HEIGHT; s++)
 		{
-			scrMode = -1;
-			break;
+			if (pCPCEmu->Screen.GetScreenModeForScanline(s) != scrMode)
+			{
+				scrMode = -1;
+				break;
+			}
 		}
 	}
-
 	// display screen mode and resolution
 	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	const int multiplier[4] = {4, 8, 16, 4};
@@ -101,12 +104,15 @@ void FCPCViewer::Draw()
 		size == 3 ? "32k" : "16k",
 		pCPCEmu->Screen.IsScrolled() ? "Yes" : "No");
 
-	int numPaletteChanges = false;
 	// see if palette changes occured during last frame
-	for (int p = 1; p < AM40010_DISPLAY_HEIGHT; p++)
+	int numPaletteChanges = 0;
+	if (bHasScreen)
 	{
-		if (pCPCEmu->Screen.GetPaletteForScanline(p - 1) != pCPCEmu->Screen.GetPaletteForScanline(p))
-			numPaletteChanges++;
+		for (int p = 1; p < AM40010_DISPLAY_HEIGHT; p++)
+		{
+			if (pCPCEmu->Screen.GetPaletteForScanline(p - 1) != pCPCEmu->Screen.GetPaletteForScanline(p))
+				numPaletteChanges++;
+		}
 	}
 	ImGui::Text("Palette changes: %d", numPaletteChanges);
 
@@ -118,7 +124,7 @@ void FCPCViewer::Draw()
 	const uint32_t* pal = (const uint32_t*)disp.palette.ptr;
 	for (int i = 0; i < disp.frame.buffer.size; i++)
 		FrameBuffer[i] = pal[pix[i]];
-
+	
 	ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
 
 	const static float uv0w = 0.0f;
@@ -134,7 +140,7 @@ void FCPCViewer::Draw()
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 
-	if (ImGui::IsItemHovered())
+	if (bHasScreen && ImGui::IsItemHovered())
 	{
 		// draw line around the screen area.
 		if (bDrawScreenExtents)
@@ -158,14 +164,8 @@ void FCPCViewer::Draw()
 		}
 	}
 	
-	// why do we need this?
-	static int scanlineStart = 32;
-	//ImGui::InputInt("Scanline start", &scanlineStart);
-
 	// Draw a line at each scanline position for each debugger event
-	// cpc seems to have 312 scanlines
-	// AM40010_FRAMEBUFFER_HEIGHT is 312
-
+	static int scanlineStart = 32;
 	const FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	FDebugger& debugger = state.Debugger;
 	const uint8_t* scanlineEvents = debugger.GetScanlineEvents();
@@ -218,10 +218,9 @@ void FCPCViewer::Draw()
 		}
 	}
 
-	bool bJustSelectedChar = false;
 	if (ImGui::IsItemHovered())
 	{
-		bJustSelectedChar = OnHovered(pos);
+		OnHovered(pos);
 	}
 
 #ifdef CPCVIEWER_EXTRA_DEBUG
@@ -244,6 +243,12 @@ void FCPCViewer::Draw()
 // todo tidy this whole function up
 bool FCPCViewer::OnHovered(const ImVec2& pos)
 {
+	if (!pCPCEmu->Screen.HasBeenDrawn())
+	{
+		ImGui::SetTooltip("Screen information will be unavailable until emulator has started.");
+		return false;
+	}
+
 	const float scale = ImGui_GetScaling();
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -293,7 +298,7 @@ bool FCPCViewer::OnHovered(const ImVec2& pos)
 					{
 						for (int b = 0; b < numBytes; b++)
 						{
-							pCPCEmu->WriteByte(plotAddress + b, 1<<y);
+							pCPCEmu->WriteByte(plotAddress + b, 1 << y);
 						}
 					}
 				}
@@ -446,25 +451,8 @@ void FCPCViewer::CalculateScreenProperties()
 	ScreenWidth = crtc.h_displayed * 8; // note: this is always in mode 1 coords. 
 	ScreenHeight = crtc.v_displayed * CharacterHeight;
 
-#ifdef CALCULATE_SCREEN_OFFSETS_FROM_CRTC_REGS
-	// This is my first attempt at calculating the screen extents from the crtc register values.
-	// It mostly worked but I found a better way. 
-
-	const int hTotOffset = (crtc.h_total - 63) * 8;					// offset based on the default horiz total size (63 chars)
-	const int hSyncOffset = (crtc.h_sync_pos - 46) * 8;				// offset based on the default horiz sync position (46 chars)
-	ScreenEdgeL = crtc.h_displayed * 8 - hSyncOffset + 32 - ScreenWidth + hTotOffset;
-
-	const int scanLinesPerCharOffset = 37 - (8 - (crtc.max_scanline_addr + 1)) * 9;
-	const int vTotalOffset = (crtc.v_total - 38) * CharacterHeight;		// offset based on the default vertical total size (38 chars)
-	const int vSyncOffset = (crtc.v_sync_pos - 30) * CharacterHeight;	// offset based on the default vert sync position (30 chars)
-	ScreenTop = crtc.v_displayed * CharacterHeight - vSyncOffset + scanLinesPerCharOffset - ScreenHeight + crtc.v_total_adjust + vTotalOffset;
-
-	// not sure this is right?
-	ScreenTop = Clamp(ScreenTop, 0, AM40010_FRAMEBUFFER_HEIGHT);
-#else
-	ScreenTop = pCPCEmu->Screen.GetTopScanline();
-	ScreenEdgeL = pCPCEmu->Screen.GetLeftEdgeScanline();
-#endif
+	ScreenTop = pCPCEmu->Screen.GetTopPixelEdge();
+	ScreenEdgeL = pCPCEmu->Screen.GetLeftPixelEdge();
 
 	HorizCharCount = crtc.h_displayed;
 }

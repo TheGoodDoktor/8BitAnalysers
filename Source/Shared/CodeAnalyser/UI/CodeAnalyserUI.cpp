@@ -24,6 +24,12 @@ void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState
 void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 
+namespace ImGui
+{
+	bool BeginComboPreview();
+	void EndComboPreview();
+}
+
 void FCodeAnalysisViewState::GoToAddress(FAddressRef newAddress, bool bLabel)
 {
 	if(GetCursorItem().IsValid())
@@ -1030,6 +1036,9 @@ bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState
 
 void DrawPalette(const uint32_t* palette, int numColours, float height)
 {
+	if (!height)
+		height = ImGui::GetTextLineHeight();
+
 	const ImVec2 size(height, height);
 
 	for (int c = 0; c < numColours; c++)
@@ -1046,11 +1055,9 @@ void DrawPalette(const uint32_t* palette, int numColours, float height)
 bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours /* = -1 */)
 {
 	int index = paletteEntryIndex;
-	const std::string palettePreview = "Palette " + std::to_string(index);
-	const char* pComboPreview = index == -1 ? pFirstItemLabel : palettePreview.c_str();
-	
+
 	bool bChanged = false;
-	if (ImGui::BeginCombo(pLabel, pComboPreview))
+	if (ImGui::BeginCombo(pLabel, nullptr, ImGuiComboFlags_CustomPreview))
 	{
 		if (ImGui::Selectable(pFirstItemLabel, index == -1))
 		{
@@ -1072,18 +1079,34 @@ bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& pale
 						bChanged = true;
 					}
 
-					float sz = ImGui::GetTextLineHeight();
-					uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+					const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
 					if (pPalette)
 					{
 						ImGui::SameLine();
-						DrawPalette(pPalette, pEntry->NoColours, sz);
+						DrawPalette(pPalette, pEntry->NoColours);
 					}
 				}
 			}
 		}
 
 		ImGui::EndCombo();
+	}
+
+	const std::string palettePreview = "Palette " + std::to_string(index);
+	const char* pComboPreview = index == -1 ? pFirstItemLabel : palettePreview.c_str();
+	if (ImGui::BeginComboPreview())
+	{
+		ImGui::Text(pComboPreview);
+		if (const FPaletteEntry* pEntry = GetPaletteEntry(index))
+		{
+			const uint32_t* pPalette = GetPaletteFromPaletteNo(index);
+			if (pPalette)
+			{
+				ImGui::SameLine();
+				DrawPalette(pPalette, numColours);
+			}
+		}
+		ImGui::EndComboPreview();
 	}
 	return bChanged;
 }

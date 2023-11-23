@@ -33,8 +33,11 @@ public:
 	const FPalette& GetCurrentPalette() const { return CurrentPalette; }
 	FPalette& GetCurrentPalette() { return CurrentPalette; }
 
-	int GetTopScanline() const { return ScreenTopScanline; }
-	int GetLeftEdgeScanline() const { return ScreenLeftEdgeOffset; }
+	// Get the scanline index where the top border ends and the screen's pixels begin.
+	int GetTopPixelEdge() const; // { return ScreenTopScanline; }
+	// Get the position of where the left border ends and the screen's pixels begin.
+	int GetLeftPixelEdge() const; // { return ScreenLeftEdgeOffset; }
+	
 	int GetScreenModeForScanline(int scanline) const;
 	int GetScreenModeForYPos(int yPos) const;
 	const FPalette& GetPaletteForScanline(int scanline) const;
@@ -51,6 +54,8 @@ public:
 
 	// Get the position on the screen, given a screen memory address.
 	bool GetScreenAddressCoords(uint16_t addr, int& x, int& y) const;
+
+	bool HasBeenDrawn() const { return LastScanline > 0; };
 
 private:
 	// Note: the screen mode (on real HW anyway) can, in theory, be changed mid-scanline. 
