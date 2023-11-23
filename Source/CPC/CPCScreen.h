@@ -55,6 +55,8 @@ public:
 	// Get the position on the screen, given a screen memory address.
 	bool GetScreenAddressCoords(uint16_t addr, int& x, int& y) const;
 
+	bool HasBeenDrawn() const { return LastScanline > 0; };
+
 private:
 	// Note: the screen mode (on real HW anyway) can, in theory, be changed mid-scanline. 
 	// We don't currently support this. Don't know if CHIPS supports this or if any games do this.

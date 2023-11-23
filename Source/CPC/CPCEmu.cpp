@@ -796,6 +796,10 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	pGraphicsViewer->Reset();
 	Screen.Reset();
 
+	// Clear the cpc frame buffer with a single colour. Otherwise we may see the framebuffer from the previous game.
+	const chips_display_info_t dispInfo = cpc_display_info(&CPCEmuState);
+	memset(dispInfo.frame.buffer.ptr, 0, dispInfo.frame.buffer.size);
+	
 	const std::string memStr = CPCEmuState.type == CPC_TYPE_6128 ? " (CPC 6128)" : " (CPC 464)";
 	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name + memStr;
 	SetWindowTitle(windowTitle.c_str());
