@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <cstring>
 #include <vector>
 #include <unordered_map>
 
