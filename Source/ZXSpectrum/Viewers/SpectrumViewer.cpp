@@ -40,6 +40,11 @@ void FSpectrumViewer::Draw()
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 
 	chips_display_info_t disp = zx_display_info(&pSpectrumEmu->ZXEmuState);
+	
+	if(Scale == 0)
+		Scale = (int)ImGui_GetScaling();
+
+	ImGui::InputInt("Scale",&Scale);
 
 	// convert texture to RGBA
 	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
@@ -50,7 +55,7 @@ void FSpectrumViewer::Draw()
 	ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
 
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
-	const float scale = ImGui_GetScaling();
+	const float scale = (float)Scale;//ImGui_GetScaling();
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
 	ImVec2 uv0(0, 0);
 	ImVec2 uv1(320.0f / 512.0f, 1.0f);
