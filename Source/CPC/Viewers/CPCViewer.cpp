@@ -446,7 +446,6 @@ void FCPCViewer::CalculateScreenProperties()
 	ScreenWidth = crtc.h_displayed * 8; // note: this is always in mode 1 coords. 
 	ScreenHeight = crtc.v_displayed * CharacterHeight;
 
-#ifdef CALCULATE_SCREEN_OFFSETS_FROM_CRTC_REGS
 	// This is my first attempt at calculating the screen extents from the crtc register values.
 	// It mostly worked but I found a better way. 
 
