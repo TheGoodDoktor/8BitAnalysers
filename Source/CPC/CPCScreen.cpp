@@ -3,6 +3,14 @@
 #include "CPCEmu.h"
 #include "Debug/DebugLog.h"
 
+// Calculate the position of the left/top edge of the screen directly from the CRTC registers.
+// I'm not convinved my logic works for all scenarios but it seems to work for mostly all.
+// With this disabled, the screen offsets will be set in FCPCScreen::Tick() based on logic
+// that determines if the screen pixels are being drawn or not. The disadvantage of doing it this
+// way is it relies on the emulator being running to work. When a snapshot is freshly loaded
+// we won't know the screen offsets until a frame is drawn. 
+#define CALCULATE_SCREEN_OFFSETS_FROM_CRTC_REGS
+
 void FCPCScreen::Init(FCPCEmu* pEmu)
 {
 	pCPCEmu = pEmu;
@@ -15,6 +23,50 @@ void FCPCScreen::Reset()
 	bDrawingPixels = false;
 	ScreenTopScanline = 0;
 	ScreenLeftEdgeOffset = 0;
+
+	for (int i = 0; i < AM40010_DISPLAY_HEIGHT; i++)
+		ScreenModePerScanline[i] = -1;
+}
+
+int FCPCScreen::GetTopPixelEdge() const 
+{ 
+#ifdef CALCULATE_SCREEN_OFFSETS_FROM_CRTC_REGS
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
+	int CharacterHeight = crtc.max_scanline_addr + 1;			// crtc register 9 defines how many scanlines in a character square
+
+	// not sure I should be doing this, but values >8 cause problems.
+	CharacterHeight = std::min(CharacterHeight, 8);
+
+	const int ScreenWidth = crtc.h_displayed * 8; // note: this is always in mode 1 coords. 
+	const int ScreenHeight = crtc.v_displayed * CharacterHeight;
+
+	const int scanLinesPerCharOffset = 37 - (8 - (crtc.max_scanline_addr + 1)) * 9;
+	const int vTotalOffset = (crtc.v_total - 38) * CharacterHeight;		// offset based on the default vertical total size (38 chars)
+	const int vSyncOffset = (crtc.v_sync_pos - 30) * CharacterHeight;	// offset based on the default vert sync position (30 chars)
+	int ScreenTop = crtc.v_displayed * CharacterHeight - vSyncOffset + scanLinesPerCharOffset - ScreenHeight + crtc.v_total_adjust + vTotalOffset;
+
+	// sam. not sure using AM40010_FRAMEBUFFER_HEIGHT is right?
+	ScreenTop = std::min(std::max(ScreenTop, 0), AM40010_FRAMEBUFFER_HEIGHT);
+	return ScreenTop;
+#else
+	return ScreenTopScanline; 
+#endif
+}
+
+int FCPCScreen::GetLeftPixelEdge() const 
+{ 
+#ifdef CALCULATE_SCREEN_OFFSETS_FROM_CRTC_REGS
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
+
+	const int ScreenWidth = crtc.h_displayed * 8; // note: this is always in mode 1 coords. 
+	const int hTotOffset = (crtc.h_total - 63) * 8;					// offset based on the default horiz total size (63 chars)
+	const int hSyncOffset = (crtc.h_sync_pos - 46) * 8;				// offset based on the default horiz sync position (46 chars)
+	const int ScreenEdgeL = crtc.h_displayed * 8 - hSyncOffset + 32 - ScreenWidth + hTotOffset;
+
+	return ScreenEdgeL;
+#else
+	return ScreenLeftEdgeOffset; 
+#endif
 }
 
 int FCPCScreen::GetScreenModeForScanline(int scanline) const

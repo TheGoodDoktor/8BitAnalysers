@@ -214,13 +214,16 @@ void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	DrawCodeAddress(state, viewState, {state.GetBankFromAddress(addr), addr}, bFunctionRel);
 }
 
-void DrawComment(const FItem *pItem, float offset)
+void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem *pItem, float offset)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
 	{
 		ImGui::SameLine(offset);
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
-		ImGui::Text("\t; %s", pItem->Comment.c_str());
+		//old ImGui::Text("\t; %s", pItem->Comment.c_str());
+		ImGui::Text("\t;");
+		ImGui::SameLine();
+		DrawMarkupText(state,viewState,pItem->Comment.c_str());
 		ImGui::PopStyleColor();
 	}
 }
@@ -265,7 +268,7 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 		ImGui::EndTooltip();
 	}
 
-	DrawComment(pLabelInfo);	
+	DrawComment(state,viewState,pLabelInfo);	
 }
 
 void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,const FCodeAnalysisItem& item )
@@ -826,20 +829,30 @@ bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
 	return bChanged;
 }
 
-bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
+// Generic combo function for enums
+template <typename EnumType>
+bool DrawEnumCombo(const char* pLabel, EnumType& operandType, const std::vector<std::pair<const char*, EnumType>> &enumLookup)
 {
-	const int index = (int)operandType;
-	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex", "Binary" };
 	bool bChanged = false;
-
-	if (ImGui::BeginCombo(pLabel, operandTypes[index]))
+	const char* pPreviewStr = nullptr;
+	for (const auto& val : enumLookup)
 	{
-		for (int n = 0; n < IM_ARRAYSIZE(operandTypes); n++)
+		if (val.second == operandType)
 		{
-			const bool isSelected = (index == n);
-			if (ImGui::Selectable(operandTypes[n], isSelected))
+			pPreviewStr = val.first;
+			break;
+		}
+	}
+
+	assert(pPreviewStr != nullptr);
+	if (ImGui::BeginCombo(pLabel, pPreviewStr))
+	{
+		for (int n = 0; n < (int)enumLookup.size(); n++)
+		{
+			const bool isSelected = (operandType == enumLookup[n].second);
+			if (ImGui::Selectable(enumLookup[n].first, isSelected))
 			{
-				operandType = (EOperandType)n;
+				operandType = enumLookup[n].second;
 				bChanged = true;
 			}
 		}
@@ -847,6 +860,24 @@ bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
 	}
 
 	return bChanged;
+}
+
+static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
+{
+	{ "Unknown" ,		EOperandType::Unknown},
+	{ "Pointer" ,		EOperandType::Pointer},
+	{ "JumpAddress",	EOperandType::JumpAddress},
+	{ "Decimal",		EOperandType::Decimal},
+	{ "Hex",			EOperandType::Hex},
+	{ "Binary",			EOperandType::Binary},
+	//{ "Signed Number",		EOperandType::SignedNumber},
+	//{ "Unsigned Number",	EOperandType::UnsignedNumber},
+};
+
+
+bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
+{
+	return DrawEnumCombo<EOperandType>(pLabel, operandType, g_OperandTypes);
 }
 
 bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysisState& state)
@@ -864,6 +895,7 @@ bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysi
 	}
 }
 
+// TODO: use generic
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state)
 {
 	const int index = (int)displayType;
@@ -891,10 +923,11 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 	return bChanged;
 }
 
+// TODO: use generic
 bool DrawDataTypeCombo(int& dataType)
 {
 	const int index = (int)dataType;
-	const char* dataTypes[] = { "Byte", "Word", "Bitmap", "Char Map", "Col Attr", "Text" };
+	const char* dataTypes[] = { "Byte", "Byte Array", "Word", "Word Array", "Bitmap", "Char Map", "Col Attr", "Text" };
 	
 	bool bChanged = false;
 
@@ -1513,7 +1546,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	ImGui::PopID();
 
 	static int dataTypeIndex = 0; 
-	bool bDataTypeChanged = DrawDataTypeCombo(dataTypeIndex);
+	DrawDataTypeCombo(dataTypeIndex);
 
 	switch (dataTypeIndex)
 	{
@@ -1523,11 +1556,27 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	case 1:
+	{
+		formattingOptions.DataType = EDataType::ByteArray;
+		ImGui::InputInt("Array Size", &formattingOptions.ItemSize);
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		break;
+	}
+	case 2:
 		formattingOptions.DataType = EDataType::Word;
 		formattingOptions.ItemSize = 2;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
-	case 2:
+	case 3:
+	{
+		formattingOptions.DataType = EDataType::WordArray;
+		static int arraySize = 0;
+		ImGui::InputInt("Array Size", &arraySize);
+		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		formattingOptions.ItemSize = arraySize * 2;
+		break;
+	}
+	case 4:
 	{
 		formattingOptions.DataType = EDataType::Bitmap;
 		
@@ -1550,7 +1599,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		break;
 	}
-	case 3:
+	case 5:
 		formattingOptions.DataType = EDataType::CharacterMap;
 		{
 			static int size[2];
@@ -1568,12 +1617,12 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		break;
-	case 4:
+	case 6:
 		formattingOptions.DataType = EDataType::ColAttr;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
-	case 5:
+	case 7:
 		formattingOptions.DataType = EDataType::Text;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		formattingOptions.NoItems = 1;
@@ -1962,4 +2011,76 @@ int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 		return 4;
 
 	return 1 << GetBppForBitmapFormat(bitmapFormat);
+}
+
+// Markup code
+// -----------
+
+// tag format is <tagName>:<tagValue>
+// E.g. ADDR:0x1234
+void ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const std::string& tag)
+{
+	const size_t tagNameEnd = tag.find(":");
+	const std::string tagName = tag.substr(0, tagNameEnd);
+	const std::string tagValue = tag.substr(tagNameEnd+1);
+
+	if (tagName == std::string("ADDR"))
+	{
+		int address = 0;
+		if(sscanf(tagValue.c_str(), "0x%04x",&address) != 0)
+			DrawAddressLabel(state,viewState,state.AddressRefFromPhysicalAddress(address));
+	}
+}
+
+void DrawMarkupText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const char* pText)
+{
+	//std::string inString("This is at #ADDR:0x3456#");
+
+	const char* pTxtPtr = pText;
+	bool bInTag = false;
+
+	// temp string on stack
+	const int kMaxStringSize = 64;
+	char str[kMaxStringSize + 1];
+	int strPos = 0;
+
+	std::string tag;
+		
+	while (*pTxtPtr != 0)
+	{
+		const char ch = *pTxtPtr++;
+
+		if (bInTag == false)
+		{
+			if (ch == '#')	// start tag
+			{
+				bInTag = true;
+				tag.clear();
+			}
+			else
+			{ 
+				str[strPos++] = ch;	// add to string
+			}
+		}
+		else
+		{
+			if (ch == '#')	// finish tag
+			{
+				ProcessTag(state,viewState,tag);
+				bInTag = false;
+			}
+			else
+			{
+				tag += ch;	// add to tag
+			}
+		}
+
+		if (strPos == kMaxStringSize || (bInTag && strPos != 0) || *pTxtPtr == 0)
+		{
+			str[strPos] = 0;
+			strPos = 0;
+			ImGui::SameLine();
+			ImGui::Text("%s", str);
+		}
+	}
 }

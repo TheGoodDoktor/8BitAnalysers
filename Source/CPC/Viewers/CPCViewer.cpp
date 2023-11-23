@@ -446,25 +446,8 @@ void FCPCViewer::CalculateScreenProperties()
 	ScreenWidth = crtc.h_displayed * 8; // note: this is always in mode 1 coords. 
 	ScreenHeight = crtc.v_displayed * CharacterHeight;
 
-#ifdef CALCULATE_SCREEN_OFFSETS_FROM_CRTC_REGS
-	// This is my first attempt at calculating the screen extents from the crtc register values.
-	// It mostly worked but I found a better way. 
-
-	const int hTotOffset = (crtc.h_total - 63) * 8;					// offset based on the default horiz total size (63 chars)
-	const int hSyncOffset = (crtc.h_sync_pos - 46) * 8;				// offset based on the default horiz sync position (46 chars)
-	ScreenEdgeL = crtc.h_displayed * 8 - hSyncOffset + 32 - ScreenWidth + hTotOffset;
-
-	const int scanLinesPerCharOffset = 37 - (8 - (crtc.max_scanline_addr + 1)) * 9;
-	const int vTotalOffset = (crtc.v_total - 38) * CharacterHeight;		// offset based on the default vertical total size (38 chars)
-	const int vSyncOffset = (crtc.v_sync_pos - 30) * CharacterHeight;	// offset based on the default vert sync position (30 chars)
-	ScreenTop = crtc.v_displayed * CharacterHeight - vSyncOffset + scanLinesPerCharOffset - ScreenHeight + crtc.v_total_adjust + vTotalOffset;
-
-	// not sure this is right?
-	ScreenTop = Clamp(ScreenTop, 0, AM40010_FRAMEBUFFER_HEIGHT);
-#else
-	ScreenTop = pCPCEmu->Screen.GetTopScanline();
-	ScreenEdgeL = pCPCEmu->Screen.GetLeftEdgeScanline();
-#endif
+	ScreenTop = pCPCEmu->Screen.GetTopPixelEdge();
+	ScreenEdgeL = pCPCEmu->Screen.GetLeftPixelEdge();
 
 	HorizCharCount = crtc.h_displayed;
 }

@@ -45,7 +45,9 @@ enum class EOperandType
 	JumpAddress,
 	Decimal,
 	Hex,
-	Binary
+	Binary,
+	UnsignedNumber,
+	SignedNumber
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
@@ -61,6 +63,8 @@ enum class EDataItemDisplayType
 	ColMap2Bpp_CPC,	// Amstrad CPC mode 1 format
 	ColMap4Bpp_CPC,	// Amstrad CPC mode 0 format
 	ColMapMulticolour_C64,	// C64 Multicolour format
+	UnsignedNumber,
+	SignedNumber
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)

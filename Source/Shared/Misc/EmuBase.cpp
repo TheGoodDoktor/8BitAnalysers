@@ -31,6 +31,10 @@ void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 			}
 			SpecificGame = *argIt;
 		}
+        else if (*argIt == std::string("-nomultiwindow"))
+        {
+            bMultiWindow = false;
+        }
 
 		++argIt;
 	}
@@ -441,7 +445,7 @@ void FEmuBase::DrawExportAsmModalPopup()
 
 		if (ImGui::Button("Export", ImVec2(120, 0)))
 		{
-			if (AssemblerExportEndAddress > AssemblerExportEndAddress)
+			if (AssemblerExportEndAddress > AssemblerExportStartAddress)
 			{
 				if (pCurrentGameConfig != nullptr)
 				{
@@ -450,22 +454,24 @@ void FEmuBase::DrawExportAsmModalPopup()
 
 					char addrRangeStr[16];
 					if (bHex)
-						snprintf(addrRangeStr, 16, "_%x_%x", AssemblerExportEndAddress, AssemblerExportEndAddress);
+						snprintf(addrRangeStr, 16, "_%x_%x", AssemblerExportStartAddress, AssemblerExportEndAddress);
 					else
-						snprintf(addrRangeStr, 16, "_%u_%u", AssemblerExportEndAddress, AssemblerExportEndAddress);
+						snprintf(addrRangeStr, 16, "_%u_%u", AssemblerExportStartAddress, AssemblerExportEndAddress);
 
 					const std::string outBinFname = dir + pCurrentGameConfig->Name + addrRangeStr + ".asm";
 
-					ExportAssembler(CodeAnalysis, outBinFname.c_str(), AssemblerExportEndAddress, AssemblerExportEndAddress);
+					ExportAssembler(CodeAnalysis, outBinFname.c_str(), AssemblerExportStartAddress, AssemblerExportEndAddress);
 				}
-				ImGui::CloseCurrentPopup();
 			}
+            bExportAsm = false;
+            ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0)))
 		{
-			ImGui::CloseCurrentPopup();
+            bExportAsm = false;
+            ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}
