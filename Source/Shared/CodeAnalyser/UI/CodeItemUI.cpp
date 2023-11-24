@@ -234,14 +234,16 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 
 	Markup::SetCodeInfo(pCodeInfo);
-	Markup::DrawText(state,viewState,pCodeInfo->Text.c_str()); // draw the disassembly output for this instruction
+	const bool bShownTooltip = Markup::DrawText(state,viewState,pCodeInfo->Text.c_str()); // draw the disassembly output for this instruction
 	Markup::SetCodeInfo(nullptr);
 	//ImGui::Text("%s", pCodeInfo->Text.c_str());	// draw the disassembly output for this instruction
 
 	if (pCodeInfo->bNOPped)
 		ImGui::PopStyleColor();
 
-	if (ImGui::IsItemHovered())
+	//ImGui::SameLine();
+	//ImGui::TextColored(ImVec4(0.2f,0.2f,0.2f,1.0f),"?");
+	if (bShownTooltip == false && ImGui::IsItemHovered())
 	{
 		ShowCodeToolTip(state, physAddress);
 	}

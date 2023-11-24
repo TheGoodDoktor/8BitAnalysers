@@ -5,6 +5,7 @@
 #include "CodeAnalyserUI.h"
 
 #include <cmath>
+#include <ImGuiSupport/ImGuiScaling.h>
 
 static const char* g_MaskInfoTxt[] =
 {
@@ -223,11 +224,12 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	ImGuiIO& io = ImGui::GetIO();
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	const float rectSize = 12.0f;
 	uint16_t byte = 0;
 	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
 	static bool bShowReadWrites = true;
 	const uint16_t physAddress = params.Address.Address;
+	float scale = ImGui_GetScaling();
+	const float rectSize = 12.0f * scale;
 
 	for (int y = 0; y < params.Height; y++)
 	{

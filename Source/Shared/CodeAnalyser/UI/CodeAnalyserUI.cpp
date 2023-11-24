@@ -16,6 +16,16 @@
 #include "chips/z80.h"
 #include "CodeToolTips.h"
 
+// Colour Presets
+namespace Colours
+{
+	const ImVec4 localLabel(0.5f, 0.5f, 0.5f, 1.0f);	// local label
+	const ImVec4 globalLabel(1.0f,1.0f,1.0f,1.0f);		// global label
+	const ImVec4 comment(0.0f,0.5f,0.0f,1.0f);			// comment
+	const ImVec4 reg(1.0f, 1.0f, 0.0f, 1.0f);			// registers
+
+}//namespace Colours
+
 // UI
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
@@ -121,14 +131,15 @@ void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 }
 
 // TODO: phase this out
-void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, uint32_t displayFlags)
+bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, uint32_t displayFlags)
 {
-	DrawAddressLabel(state, viewState, { state.GetBankFromAddress(addr),addr },displayFlags);
+	return DrawAddressLabel(state, viewState, { state.GetBankFromAddress(addr),addr },displayFlags);
 }
 
-void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags)
+bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags)
 {
 	bool bFunctionRel = false;
+	bool bToolTipShown = false;
 	int labelOffset = 0;
 	const char *pLabelString = GetRegionDesc(addr);
 	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
@@ -170,9 +181,9 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		ImGui::SameLine(0,0);
 
 		if(bGlobalHighlighting && displayFlags & kAddressLabelFlag_White)
-			ImGui::PushStyleColor(ImGuiCol_Text, 0xffffffff);
+			ImGui::PushStyleColor(ImGuiCol_Text, Colours::globalLabel);
 		else
-			ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+			ImGui::PushStyleColor(ImGuiCol_Text, Colours::localLabel);
 
 		const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
 
@@ -212,12 +223,15 @@ void DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 				viewState.GoToAddress( addr, false);
 		
 			viewState.HoverAddress = addr;
+			bToolTipShown = true;
 		}
 		else
 		{ 
 			ImGui::PopStyleColor();
 		}
 	}
+
+	return bToolTipShown;
 }
 
 void DrawCodeAddress(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags)
@@ -240,7 +254,7 @@ void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, c
 	if(pItem != nullptr && pItem->Comment.empty() == false)
 	{
 		ImGui::SameLine(offset);
-		ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
+		ImGui::PushStyleColor(ImGuiCol_Text, Colours::comment);
 		//old ImGui::Text("\t; %s", pItem->Comment.c_str());
 		ImGui::Text("\t; ");
 		ImGui::SameLine();
@@ -2039,6 +2053,8 @@ int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 	return 1 << GetBppForBitmapFormat(bitmapFormat);
 }
 
+
+
 // Markup code
 // -----------
 // 
@@ -2053,17 +2069,18 @@ void SetCodeInfo(const FCodeInfo* pCodeInfo)
 	g_CodeInfo= pCodeInfo;
 }
 
-void ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const std::string& tag)
+bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const std::string& tag)
 {
 	const size_t tagNameEnd = tag.find(":");
 	const std::string tagName = tag.substr(0, tagNameEnd);
 	const std::string tagValue = tag.substr(tagNameEnd+1);
+	bool bShownToolTip = false;
 
 	if (tagName == std::string("ADDR"))
 	{
 		int address = 0;
 		if(sscanf(tagValue.c_str(), "0x%04x",&address) != 0)
-			DrawAddressLabel(state,viewState,state.AddressRefFromPhysicalAddress(address));
+			bShownToolTip = DrawAddressLabel(state,viewState,state.AddressRefFromPhysicalAddress(address));
 	}
 	else if (tagName == std::string("OPERAND_ADDR"))
 	{
@@ -2073,17 +2090,38 @@ void ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 			uint32_t labelFlags = kAddressLabelFlag_NoBank | kAddressLabelFlag_NoBrackets;
 			//if(pCodeInfo->OperandType == EOperandType::Pointer)
 				labelFlags |= kAddressLabelFlag_White;
-			DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
+			bShownToolTip = DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
 		}
 	}
+	else if (tagName == std::string("REG"))
+	{
+		char regName[4];
+		if (sscanf(tagValue.c_str(), "%s",regName))
+		{
+			ImGui::SameLine(0,0);
+			ImGui::TextColored(Colours::reg, "%s", regName);
+			// TODO: tooltip of register value
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text("%s:%s",regName,state.Debugger.GetRegisterValueStr(regName));
+				ImGui::EndTooltip();
+				bShownToolTip = true;
+			}
+		}
+	}
+
+	return bShownToolTip;
 }
 
-void DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const char* pText)
+bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const char* pText)
 {
+	ImGui::BeginGroup();
 	//std::string inString("This is at #ADDR:0x3456#");
 
 	const char* pTxtPtr = pText;
 	bool bInTag = false;
+	bool bToolTipshown = false;
 
 	// temp string on stack
 	const int kMaxStringSize = 64;
@@ -2112,7 +2150,7 @@ void DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 		{
 			if (ch == '#')	// finish tag
 			{
-				ProcessTag(state,viewState,tag);
+				bToolTipshown |= ProcessTag(state,viewState,tag);
 				bInTag = false;
 			}
 			else
@@ -2129,6 +2167,10 @@ void DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 			ImGui::Text("%s", str);
 		}
 	}
+
+	ImGui::EndGroup();
+
+	return bToolTipshown;
 }
 
 }// namespace Markup

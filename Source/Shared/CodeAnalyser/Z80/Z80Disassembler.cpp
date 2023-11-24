@@ -92,13 +92,6 @@
 #*/
 #include <stdint.h>
 
-
-//typedef void (*dasm_output_t)(char c, void* user_data);
-
-//void DasmOutputU8(uint8_t val, dasm_output_t out_cb, void* user_data);
-//void DasmOutputU16(uint16_t val, dasm_output_t out_cb, void* user_data);
-//void DasmOutputD8(int8_t val, dasm_output_t out_cb, void* user_data);
-
 /* fetch unsigned 8-bit value and track pc */
 #define _FETCH_U8(v) v=in_cb(user_data);pc++;
 
@@ -153,6 +146,7 @@
 #endif
 #define _IMM8() _FETCH_U8(u8); _STR_U8(u8);
 
+#if 0
 static const char* _z80dasm_r[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
 static const char* _z80dasm_rix[8] = { "B", "C", "D", "E", "IXH", "IXL", "(IX", "A" };
 static const char* _z80dasm_riy[8] = { "B", "C", "D", "E", "IYH", "IYL", "(IY", "A" };
@@ -167,6 +161,24 @@ static const char* _z80dasm_alu[8] = { "ADD A,", "ADC A,", "SUB ", "SBC A,", "AN
 static const char* _z80dasm_rot[8] = { "RLC ", "RRC ", "RL ", "RR ", "SLA ", "SRA ", "SLL ", "SRL " };
 static const char* _z80dasm_x0z7[8] = { "RLCA", "RRCA", "RLA", "RRA", "DAA", "CPL", "SCF", "CCF" };
 static const char* _z80dasm_edx1z7[8] = { "LD I,A", "LD R,A", "LD A,I", "LD A,R", "RRD", "RLD", "NOP (ED)", "NOP (ED)" };
+#else
+// new registers with markup
+static const char* _z80dasm_r[8] = { "#REG:B#", "#REG:C#", "#REG:D#", "#REG:E#", "#REG:H#", "#REG:L#", "(#REG:HL#)", "#REG:A#" };
+static const char* _z80dasm_rix[8] = { "#REG:B#", "#REG:C#", "#REG:D#", "#REG:E#", "#REG:IXH#", "#REG:IXL#", "(#REG:IX#", "#REG:A#" };
+static const char* _z80dasm_riy[8] = { "#REG:B#", "#REG:C#", "#REG:D#", "#REG:E#", "#REG:IYH#", "#REG:IYL#", "(#REG:IY#", "#REG:A#" };
+static const char* _z80dasm_rp[4] = { "#REG:BC#", "#REG:DE#", "#REG:HL#", "#REG:SP#" };
+static const char* _z80dasm_rpix[4] = { "#REG:BC#", "#REG:DE#", "#REG:IX#", "#REG:SP#" };
+static const char* _z80dasm_rpiy[4] = { "#REG:BC#", "#REG:DE#", "#REG:IY#", "#REG:SP#" };
+static const char* _z80dasm_rp2[4] = { "#REG:BC#", "#REG:DE#", "#REG:HL#", "#REG:AF#" };
+static const char* _z80dasm_rp2ix[4] = { "#REG:BC#", "#REG:DE#", "#REG:IX#", "#REG:AF#" };
+static const char* _z80dasm_rp2iy[4] = { "#REG:BC#", "#REG:DE#", "#REG:IY#", "#REG:AF#" };
+static const char* _z80dasm_cc[8] = { "NZ", "Z", "NC", "C", "PO", "PE", "P", "M" };
+static const char* _z80dasm_alu[8] = { "ADD #REG:A#,", "ADC #REG:A#,", "SUB ", "SBC #REG:A#,", "AND ", "XOR ", "OR ", "CP " };
+static const char* _z80dasm_rot[8] = { "RLC ", "RRC ", "RL ", "RR ", "SLA ", "SRA ", "SLL ", "SRL " };
+static const char* _z80dasm_x0z7[8] = { "RLCA", "RRCA", "RLA", "RRA", "DAA", "CPL", "SCF", "CCF" };
+static const char* _z80dasm_edx1z7[8] = { "LD #REG:I#,#REG:A#", "LD #REG:R#,#REG:A#", "LD #REG:A#,#REG:I#", "LD #REG:A#,#REG:R#", "RRD", "RLD", "NOP (#REG:ED#)", "NOP (#REG:ED#)" };
+#endif
+
 static const char* _z80dasm_im[8] = { "0", "0", "1", "2", "0", "0", "1", "2" };
 static const char* _z80dasm_bli[4][4] = {
     { "LDI", "CPI", "INI", "OUTI" },
@@ -332,14 +344,14 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                 {
                     _STR("LD ");
                     switch (y) {
-                        case 0: _STR("(BC),A"); break;
-                        case 1: _STR("A,(BC)"); break;
-                        case 2: _STR("(DE),A"); break;
-                        case 3: _STR("A,(DE)"); break;
+                        case 0: _STR("(#REG:BC#),A"); break;
+                        case 1: _STR("A,(#REG:BC#)"); break;
+                        case 2: _STR("(#REG:DE#),A"); break;
+                        case 3: _STR("A,(#REG:DE#)"); break;
                         case 4: _STR("("); _IMM16(); _STR("),"); _STR(rp[2]); break;
                         case 5: _STR(rp[2]); _STR(",("); _IMM16(); _STR(")"); break;
                         case 6: _STR("("); _IMM16(); _STR("),A"); break;
-                        case 7: _STR("A,("); _IMM16(); _STR(")"); break;
+                        case 7: _STR("#REG:A#,("); _IMM16(); _STR(")"); break;
                     }
                 }
                 break;
@@ -362,7 +374,7 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                         case 0: _STR("RET"); break;
                         case 1: _STR("EXX"); break;
                         case 2: _STR("JP "); _CHR('('); _STR(rp[2]); _CHR(')'); break;
-                        case 3: _STR("LD SP,"); _STR(rp[2]); break;
+                        case 3: _STR("LD #REG:SP#,"); _STR(rp[2]); break;
                     }
                 }
                 break;
@@ -371,9 +383,9 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                 switch (y) {
                     case 0: _STR("JP "); _IMM16(); break;
                     case 2: _STR("OUT ("); _IMM8(); _CHR(')'); _STR(",A"); break;
-                    case 3: _STR("IN A,("); _IMM8(); _CHR(')'); break;
-                    case 4: _STR("EX (SP),"); _STR(rp[2]); break;
-                    case 5: _STR("EX DE,HL"); break;
+                    case 3: _STR("IN #REG:A#,("); _IMM8(); _CHR(')'); break;
+                    case 4: _STR("EX (#REG:SP#),"); _STR(rp[2]); break;
+                    case 5: _STR("EX #REG:DE#,#REG:HL#"); break;
                     case 6: _STR("DI"); break;
                     case 7: _STR("EI"); break;
                     case 1: /* CB prefix */
@@ -437,7 +449,7 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                                 switch (z) {
                                     case 0: _STR("IN "); if(y!=6){_STR(r[y]);_CHR(',');} _STR("(C)"); break;
                                     case 1: _STR("OUT (C),"); _STR(y==6?"0":r[y]); break;
-                                    case 2: _STR(q==0?"SBC":"ADC"); _STR(" HL,"); _STR(rp[p]); break;
+                                    case 2: _STR(q==0?"SBC":"ADC"); _STR(" #REG:HL#,"); _STR(rp[p]); break;
                                     case 3:
                                         _STR("LD ");
                                         if (q == 0) {
@@ -467,58 +479,6 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
 // END CHIPS
 
 // These functions were added to support the 8bit Analysers
-
-// number output abstraction
-#if 0
-class IDasmNumberOutput
-{
-public:
-
-    virtual void OutputU8(uint8_t val, dasm_output_t out_cb) = 0;
-    virtual void OutputU16(uint16_t val, dasm_output_t out_cb) = 0;
-    virtual void OutputD8(int8_t val, dasm_output_t out_cb) = 0;
-};
-
-class FDasmStateBase : public IDasmNumberOutput
-{
-public:
-    FCodeAnalysisState*     CodeAnalysisState = nullptr;
-    uint16_t				CurrentAddress = 0;
-    std::string				Text;
-};
-#endif
-
-#if 0
-
-
-
-// output an unsigned 8-bit value as hex string 
-void DasmOutputU8(uint8_t val, dasm_output_t out_cb, void* user_data)
-{
-    IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-    if (pNumberOutput)
-        pNumberOutput->OutputU8(val, out_cb);
-
-}
-
-// output an unsigned 16-bit value as hex string 
-void DasmOutputU16(uint16_t val, dasm_output_t out_cb, void* user_data)
-{
-    IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-    if (pNumberOutput)
-        pNumberOutput->OutputU16(val, out_cb);
-}
-
-// output a signed 8-bit offset as hex string 
-void DasmOutputD8(int8_t val, dasm_output_t out_cb, void* user_data)
-{
-    IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-    if (pNumberOutput)
-        pNumberOutput->OutputD8(val, out_cb);
-}
-
-#endif
-
 
 // Helper function to generate the disassembly for a code info item
 uint16_t Z80DisassembleCodeInfoItem(uint16_t pc, FCodeAnalysisState& state, FCodeInfo* pCodeInfo)

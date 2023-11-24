@@ -42,11 +42,14 @@ void FSpectrumViewer::Draw()
 	chips_display_info_t disp = zx_display_info(&pSpectrumEmu->ZXEmuState);
 	
 	if(Scale == 0)
+	{
 		Scale = (int)ImGui_GetScaling();
-
-	ImGui::InputInt("Scale",&Scale);
-	Scale = std::max(Scale,1);	// clamp
-
+	}
+	else
+	{ 
+		ImGui::InputInt("Scale",&Scale);
+		Scale = std::max(Scale,1);	// clamp
+	}
 	// convert texture to RGBA
 	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
 	const uint32_t* pal = (const uint32_t*)disp.palette.ptr;

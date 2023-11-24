@@ -763,6 +763,53 @@ bool	FDebugger::TraceBack(FCodeAnalysisViewState& viewState)
 	return FrameTraceItemIndex != -1;
 }
 
+const char* FDebugger::GetRegisterValueStr(const char* regName) const
+{
+	if (CPUType == ECPUType::Z80)
+	{
+		if (strcmp(regName, "A") == 0)
+			return NumStr(pZ80->a);
+		else if (strcmp(regName, "B") == 0)
+			return NumStr(pZ80->b);
+		else if (strcmp(regName, "C") == 0)
+			return NumStr(pZ80->c);
+		else if (strcmp(regName, "D") == 0)
+			return NumStr(pZ80->d);
+		else if (strcmp(regName, "E") == 0)
+			return NumStr(pZ80->e);
+		else if (strcmp(regName, "H") == 0)
+			return NumStr(pZ80->h);
+		else if (strcmp(regName, "L") == 0)
+			return NumStr(pZ80->l);
+		else if (strcmp(regName, "R") == 0)
+			return NumStr(pZ80->r);
+		else if (strcmp(regName, "I") == 0)
+			return NumStr(pZ80->i);
+		else if (strcmp(regName, "BC") == 0)
+			return NumStr(pZ80->bc);
+		else if (strcmp(regName, "DE") == 0)
+			return NumStr(pZ80->de);
+		else if (strcmp(regName, "HL") == 0)
+			return NumStr(pZ80->hl);
+		else if (strcmp(regName, "IX") == 0)
+			return NumStr(pZ80->ix);
+		else if (strcmp(regName, "IY") == 0)
+			return NumStr(pZ80->iy); 
+		else if (strcmp(regName, "SP") == 0)
+			return NumStr(pZ80->sp);
+	}
+	else if (CPUType == ECPUType::M6502)
+	{
+		if (strcmp(regName, "A") == 0)
+			return NumStr(pM6502->A);
+		else if (strcmp(regName, "X") == 0)
+			return NumStr(pM6502->X);
+		else if (strcmp(regName, "Y") == 0)
+			return NumStr(pM6502->Y);
+	}
+	return "TODO";
+}
+
 
 // UI Code
 

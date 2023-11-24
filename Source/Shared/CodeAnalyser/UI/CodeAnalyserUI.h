@@ -43,8 +43,8 @@ void UpdateRegionDescs(void);
 
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr);
 void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags = 0);
-void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, uint32_t displayFlags = 0);
-void DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags = 0);
+bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, uint32_t displayFlags = 0);
+bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags = 0);
 int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
@@ -83,5 +83,5 @@ void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state);
 namespace Markup
 { 
 void SetCodeInfo(const FCodeInfo* pCodeInfo);
-void DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const char* pText);
+bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const char* pText);
 }

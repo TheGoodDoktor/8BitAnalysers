@@ -162,6 +162,7 @@ public:
 	bool	IsStopped() const { return bDebuggerStopped; }
 	bool	IsAddressBreakpointed(FAddressRef addr) const;
 	FAddressRef	GetPC() const { return PC; }
+	const char*	GetRegisterValueStr(const char* regName) const;
 
 	bool* GetDebuggerStoppedPtr() { return &bDebuggerStopped; }
 
