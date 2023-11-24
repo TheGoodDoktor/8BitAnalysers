@@ -45,6 +45,7 @@ void FSpectrumViewer::Draw()
 		Scale = (int)ImGui_GetScaling();
 
 	ImGui::InputInt("Scale",&Scale);
+	Scale = std::max(Scale,1);	// clamp
 
 	// convert texture to RGBA
 	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
@@ -267,7 +268,7 @@ void FSpectrumViewer::Draw()
 
 void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos)
 {
-	const float scale = ImGui_GetScaling();
+	const float scale = (float)Scale;//ImGui_GetScaling();
 
 	// draw coordinate position
 	if (XCoordAddress.IsValid())
@@ -294,7 +295,7 @@ void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, 
 
 bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnalysis, FCodeAnalysisViewState& viewState)
 {
-	const float scale = ImGui_GetScaling();
+	const float scale = (float)Scale;//ImGui_GetScaling();
 	bool bJustSelectedChar = false;
 	
 	ImGuiIO& io = ImGui::GetIO();
