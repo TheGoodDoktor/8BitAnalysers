@@ -594,10 +594,12 @@ void FDebugger::AddWatch(FWatch watch)
 
 bool FDebugger::RemoveWatch(FWatch watch)
 {
-	for (auto watchIt = Watches.begin(); watchIt != Watches.end(); ++watchIt)
+	for (auto watchIt = Watches.begin(); watchIt != Watches.end();)
 	{
 		if (*watchIt == watch)
-			Watches.erase(watchIt);
+			watchIt = Watches.erase(watchIt);
+		else
+			++watchIt;
 	}
 
 	return true;
