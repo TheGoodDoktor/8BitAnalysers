@@ -586,6 +586,7 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 	//FGlobalConfig& globalConfig = GetGlobalConfig();
+	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	CodeAnalysis.Config.bShowBanks = spectrumLaunchConfig.Model == ESpectrumModel::Spectrum128K;
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();

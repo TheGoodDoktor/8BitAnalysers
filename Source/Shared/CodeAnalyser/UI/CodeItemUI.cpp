@@ -189,7 +189,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	// draw instruction address
 	const float lineStartX = ImGui::GetCursorPosX();
 	ImGui::SameLine(lineStartX + state.Config.AddressPos);
-	ImGui::Text("%s ", NumStr(physAddress));
+	ImGui::Text("%s  ", NumStr(physAddress));
 	ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpace);
 
 	// grey out NOPed code
@@ -241,8 +241,6 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	if (pCodeInfo->bNOPped)
 		ImGui::PopStyleColor();
 
-	//ImGui::SameLine();
-	//ImGui::TextColored(ImVec4(0.2f,0.2f,0.2f,1.0f),"?");
 	if (bShownTooltip == false && ImGui::IsItemHovered())
 	{
 		ShowCodeToolTip(state, physAddress);

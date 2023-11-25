@@ -763,50 +763,71 @@ bool	FDebugger::TraceBack(FCodeAnalysisViewState& viewState)
 	return FrameTraceItemIndex != -1;
 }
 
-const char* FDebugger::GetRegisterValueStr(const char* regName) const
+bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 {
 	if (CPUType == ECPUType::Z80)
 	{
 		if (strcmp(regName, "A") == 0)
-			return NumStr(pZ80->a);
+			return outVal = pZ80->a, true;
 		else if (strcmp(regName, "B") == 0)
-			return NumStr(pZ80->b);
+			return outVal = pZ80->b, true;
 		else if (strcmp(regName, "C") == 0)
-			return NumStr(pZ80->c);
+			return outVal = pZ80->c, true;
 		else if (strcmp(regName, "D") == 0)
-			return NumStr(pZ80->d);
+			return outVal = pZ80->d, true;
 		else if (strcmp(regName, "E") == 0)
-			return NumStr(pZ80->e);
+			return outVal = pZ80->e, true;
 		else if (strcmp(regName, "H") == 0)
-			return NumStr(pZ80->h);
+			return outVal = pZ80->h, true;
 		else if (strcmp(regName, "L") == 0)
-			return NumStr(pZ80->l);
+			return outVal = pZ80->l, true;
 		else if (strcmp(regName, "R") == 0)
-			return NumStr(pZ80->r);
+			return outVal = pZ80->r, true;
 		else if (strcmp(regName, "I") == 0)
-			return NumStr(pZ80->i);
-		else if (strcmp(regName, "BC") == 0)
-			return NumStr(pZ80->bc);
-		else if (strcmp(regName, "DE") == 0)
-			return NumStr(pZ80->de);
-		else if (strcmp(regName, "HL") == 0)
-			return NumStr(pZ80->hl);
-		else if (strcmp(regName, "IX") == 0)
-			return NumStr(pZ80->ix);
-		else if (strcmp(regName, "IY") == 0)
-			return NumStr(pZ80->iy); 
-		else if (strcmp(regName, "SP") == 0)
-			return NumStr(pZ80->sp);
+			return outVal = pZ80->i, true;
 	}
 	else if (CPUType == ECPUType::M6502)
 	{
 		if (strcmp(regName, "A") == 0)
-			return NumStr(pM6502->A);
+			return outVal = pM6502->A, true;
 		else if (strcmp(regName, "X") == 0)
-			return NumStr(pM6502->X);
+			return outVal = pM6502->X, true;
 		else if (strcmp(regName, "Y") == 0)
-			return NumStr(pM6502->Y);
+			return outVal = pM6502->Y, true;
 	}
+
+	return false;
+}
+
+bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) const
+{
+	if (CPUType == ECPUType::Z80)
+	{
+		if (strcmp(regName, "BC") == 0)
+			return outVal = pZ80->bc, true;
+		else if (strcmp(regName, "DE") == 0)
+			return outVal = pZ80->de, true;
+		else if (strcmp(regName, "HL") == 0)
+			return outVal = pZ80->hl, true;
+		else if (strcmp(regName, "IX") == 0)
+			return outVal = pZ80->ix, true;
+		else if (strcmp(regName, "IY") == 0)
+			return outVal = pZ80->iy, true;
+		else if (strcmp(regName, "SP") == 0)
+			return outVal = pZ80->sp, true;
+	}
+	return false;
+}
+
+const char* FDebugger::GetRegisterStringValue(const char* regName) const
+{
+	uint8_t byteVal = 0;
+	if(GetRegisterByteValue(regName,byteVal))
+		return NumStr(byteVal);
+	uint16_t wordVal = 0;
+	if (GetRegisterWordValue(regName, wordVal))
+		return NumStr(wordVal);
+		
 	return "TODO";
 }
 

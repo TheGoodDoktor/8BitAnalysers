@@ -14,6 +14,8 @@ enum class ENumberDisplayMode
 };
 
 void SetNumberDisplayMode(ENumberDisplayMode mode);
+void SetHexNumberDisplayMode(ENumberDisplayMode mode);
+ENumberDisplayMode GetHexNumberDisplayMode();
 ENumberDisplayMode GetNumberDisplayMode();
 const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode);
 const char* NumStr(uint8_t);

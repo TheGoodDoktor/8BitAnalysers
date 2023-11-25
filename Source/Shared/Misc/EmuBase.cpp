@@ -277,12 +277,14 @@ void FEmuBase::OptionsMenu()
         if (ImGui::MenuItem("Hex - FEh", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAitch))
         {
             SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
+            SetHexNumberDisplayMode(ENumberDisplayMode::HexAitch);
             CodeAnalysis.SetAllBanksDirty();
             bClearCode = true;
         }
         if (ImGui::MenuItem("Hex - $FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexDollar))
         {
             SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
+            SetHexNumberDisplayMode(ENumberDisplayMode::HexDollar);
             CodeAnalysis.SetAllBanksDirty();
             bClearCode = true;
         }

@@ -173,10 +173,10 @@ static const char* _z80dasm_rp2[4] = { "#REG:BC#", "#REG:DE#", "#REG:HL#", "#REG
 static const char* _z80dasm_rp2ix[4] = { "#REG:BC#", "#REG:DE#", "#REG:IX#", "#REG:AF#" };
 static const char* _z80dasm_rp2iy[4] = { "#REG:BC#", "#REG:DE#", "#REG:IY#", "#REG:AF#" };
 static const char* _z80dasm_cc[8] = { "NZ", "Z", "NC", "C", "PO", "PE", "P", "M" };
-static const char* _z80dasm_alu[8] = { "ADD #REG:A#,", "ADC #REG:A#,", "SUB ", "SBC #REG:A#,", "AND ", "XOR ", "OR ", "CP " };
-static const char* _z80dasm_rot[8] = { "RLC ", "RRC ", "RL ", "RR ", "SLA ", "SRA ", "SLL ", "SRL " };
+static const char* _z80dasm_alu[8] = { "ADD  #REG:A#,", "ADC  #REG:A#,", "SUB  ", "SBC  #REG:A#,", "AND  ", "XOR  ", "OR   ", "CP   " };
+static const char* _z80dasm_rot[8] = { "RLC  ", "RRC  ", "RL   ", "RR   ", "SLA  ", "SRA  ", "SLL  ", "SRL  " };
 static const char* _z80dasm_x0z7[8] = { "RLCA", "RRCA", "RLA", "RRA", "DAA", "CPL", "SCF", "CCF" };
-static const char* _z80dasm_edx1z7[8] = { "LD #REG:I#,#REG:A#", "LD #REG:R#,#REG:A#", "LD #REG:A#,#REG:I#", "LD #REG:A#,#REG:R#", "RRD", "RLD", "NOP (#REG:ED#)", "NOP (#REG:ED#)" };
+static const char* _z80dasm_edx1z7[8] = { "LD   #REG:I#,#REG:A#", "LD   #REG:R#,#REG:A#", "LD   #REG:A#,#REG:I#", "LD   #REG:A#,#REG:R#", "RRD", "RLD", "NOP  (#REG:ED#)", "NOP  (#REG:ED#)" };
 #endif
 
 static const char* _z80dasm_im[8] = { "0", "0", "1", "2", "0", "0", "1", "2" };
@@ -290,7 +290,7 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
             }
             else {
                 /* LD (HL),r; LD (IX+d),r; LD (IY+d),r */
-                _STR("LD "); _M(); _CHR(',');
+                _STR("LD   "); _M(); _CHR(',');
                 if (pre && ((z == 4) || (z == 5))) {
                     /* special case LD (IX+d),L/H (don't use IXL/IXH) */
                     _STR(_z80dasm_r[z]);
@@ -302,7 +302,7 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
         }
         else if (z == 6) {
             /* LD r,(HL); LD r,(IX+d); LD r,(IY+d) */
-            _STR("LD ");
+            _STR("LD   ");
             if (pre && ((y == 4) || (y == 5))) {
                 /* special case LD H/L,(IX+d) (don't use IXL/IXH) */
                 _STR(_z80dasm_r[y]);
@@ -314,7 +314,7 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
         }
         else {
             /* regular LD r,s */
-            _STR("LD "); _STR(r[y]); _CHR(','); _STR(r[z]);
+            _STR("LD   "); _STR(r[y]); _CHR(','); _STR(r[z]);
         }
     }
     else if (x == 2) {
@@ -325,24 +325,24 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
         switch (z) {
             case 0:
                 switch (y) {
-                    case 0: _STR("NOP"); break;
-                    case 1: _STR("EX AF,AF'"); break;
+                    case 0: _STR("NOP "); break;
+                    case 1: _STR("EX   AF,AF'"); break;
                     case 2: _STR("DJNZ "); _FETCH_I8(d); _STR_U16(pc+d); break;
-                    case 3: _STR("JR "); _FETCH_I8(d); _STR_U16(pc+d); break;
-                    default: _STR("JR "); _STR(cc[y-4]); _CHR(','); _FETCH_I8(d); _STR_U16(pc+d); break;
+                    case 3: _STR("JR   "); _FETCH_I8(d); _STR_U16(pc+d); break;
+                    default: _STR("JR   "); _STR(cc[y-4]); _CHR(','); _FETCH_I8(d); _STR_U16(pc+d); break;
                 }
                 break;
             case 1:
                 if (q == 0) {
-                    _STR("LD "); _STR(rp[p]); _CHR(','); _IMM16();
+                    _STR("LD   "); _STR(rp[p]); _CHR(','); _IMM16();
                 }
                 else {
-                    _STR("ADD "); _STR(rp[2]); _CHR(','); _STR(rp[p]);
+                    _STR("ADD  "); _STR(rp[2]); _CHR(','); _STR(rp[p]);
                 }
                 break;
             case 2: 
                 {
-                    _STR("LD ");
+                    _STR("LD   ");
                     switch (y) {
                         case 0: _STR("(#REG:BC#),A"); break;
                         case 1: _STR("A,(#REG:BC#)"); break;
@@ -355,39 +355,39 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                     }
                 }
                 break;
-            case 3: _STR(q==0?"INC ":"DEC "); _STR(rp[p]); break;
-            case 4: _STR("INC "); _MR(y); break;
-            case 5: _STR("DEC "); _MR(y); break;
-            case 6: _STR("LD "); _MR(y); _CHR(','); _IMM8(); break;
+            case 3: _STR(q==0?"INC  ":"DEC  "); _STR(rp[p]); break;
+            case 4: _STR("INC  "); _MR(y); break;
+            case 5: _STR("DEC  "); _MR(y); break;
+            case 6: _STR("LD   "); _MR(y); _CHR(','); _IMM8(); break;
             case 7: _STR(_z80dasm_x0z7[y]); break;
         }
     }
     else {
         switch (z) {
-            case 0: _STR("RET "); _STR(cc[y]); break;
+            case 0: _STR("RET  "); _STR(cc[y]); break;
             case 1:
                 if (q == 0) {
-                    _STR("POP "); _STR(rp2[p]);
+                    _STR("POP  "); _STR(rp2[p]);
                 }
                 else {
                     switch (p) {
-                        case 0: _STR("RET"); break;
-                        case 1: _STR("EXX"); break;
-                        case 2: _STR("JP "); _CHR('('); _STR(rp[2]); _CHR(')'); break;
-                        case 3: _STR("LD #REG:SP#,"); _STR(rp[2]); break;
+                        case 0: _STR("RET "); break;
+                        case 1: _STR("EXX "); break;
+                        case 2: _STR("JP   "); _CHR('('); _STR(rp[2]); _CHR(')'); break;
+                        case 3: _STR("LD   #REG:SP#,"); _STR(rp[2]); break;
                     }
                 }
                 break;
-            case 2: _STR("JP "); _STR(cc[y]); _CHR(','); _IMM16(); break;
+            case 2: _STR("JP   "); _STR(cc[y]); _CHR(','); _IMM16(); break;
             case 3:
                 switch (y) {
-                    case 0: _STR("JP "); _IMM16(); break;
-                    case 2: _STR("OUT ("); _IMM8(); _CHR(')'); _STR(",A"); break;
-                    case 3: _STR("IN #REG:A#,("); _IMM8(); _CHR(')'); break;
-                    case 4: _STR("EX (#REG:SP#),"); _STR(rp[2]); break;
-                    case 5: _STR("EX #REG:DE#,#REG:HL#"); break;
-                    case 6: _STR("DI"); break;
-                    case 7: _STR("EI"); break;
+                    case 0: _STR("JP   "); _IMM16(); break;
+                    case 2: _STR("OUT  ("); _IMM8(); _CHR(')'); _STR(",A"); break;
+                    case 3: _STR("IN   #REG:A#,("); _IMM8(); _CHR(')'); break;
+                    case 4: _STR("EX   (#REG:SP#),"); _STR(rp[2]); break;
+                    case 5: _STR("EX   #REG:DE#,#REG:HL#"); break;
+                    case 6: _STR("DI  "); break;
+                    case 7: _STR("EI  "); break;
                     case 1: /* CB prefix */
                         if (pre) {
                             _FETCH_I8(d);
@@ -402,9 +402,9 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                         }
                         else {
                             /* bit instructions */
-                            if (x == 1) { _STR("BIT "); }
-                            else if (x == 2) { _STR("RES "); }
-                            else { _STR("SET "); }
+                            if (x == 1) { _STR("BIT  "); }
+                            else if (x == 2) { _STR("RES  "); }
+                            else { _STR("SET  "); }
                             _CHR(_z80dasm_oct[y]);
                             if (pre) {
                                 _CHR(','); _Md(d);
@@ -434,7 +434,7 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                             p = y >> 1;
                             q = y & 1;
                             if ((x == 0) || (x == 3)) {
-                                _STR("NOP (ED)");
+                                _STR("NOP  (ED)");
                             }
                             else if (x == 2) {
                                 if ((y >= 4) && (z <= 3)) {
@@ -442,16 +442,16 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                                     _STR(_z80dasm_bli[y-4][z]);
                                 }
                                 else {
-                                    _STR("NOP (ED)");
+                                    _STR("NOP  (ED)");
                                 }
                             }
                             else {
                                 switch (z) {
-                                    case 0: _STR("IN "); if(y!=6){_STR(r[y]);_CHR(',');} _STR("(C)"); break;
-                                    case 1: _STR("OUT (C),"); _STR(y==6?"0":r[y]); break;
+                                    case 0: _STR("IN   "); if(y!=6){_STR(r[y]);_CHR(',');} _STR("(C)"); break;
+                                    case 1: _STR("OUT  (C),"); _STR(y==6?"0":r[y]); break;
                                     case 2: _STR(q==0?"SBC":"ADC"); _STR(" #REG:HL#,"); _STR(rp[p]); break;
                                     case 3:
-                                        _STR("LD ");
+                                        _STR("LD   ");
                                         if (q == 0) {
                                             _CHR('('); _IMM16(); _STR("),"); _STR(rp[p]);
                                         }
@@ -459,9 +459,9 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                                             _STR(rp[p]); _STR(",("); _IMM16(); _CHR(')');
                                         }
                                         break;
-                                    case 4: _STR("NEG"); break;
+                                    case 4: _STR("NEG  "); break;
                                     case 5: _STR(y==1?"RETI":"RETN"); break;
-                                    case 6: _STR("IM "); _STR(_z80dasm_im[y]); break;
+                                    case 6: _STR("IM   "); _STR(_z80dasm_im[y]); break;
                                     case 7: _STR(_z80dasm_edx1z7[y]); break;
                                 }
                             }
@@ -470,7 +470,7 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                 }
                 break;
             case 6: _STR(alu[y]); _IMM8(); break; /* ALU n */
-            case 7: _STR("RST "); _STR_U8(y*8); break;
+            case 7: _STR("RST  "); _STR_U8(y*8); break;
         }
     }
     return pc;

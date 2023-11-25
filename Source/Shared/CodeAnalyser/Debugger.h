@@ -161,8 +161,11 @@ public:
 	// Queries
 	bool	IsStopped() const { return bDebuggerStopped; }
 	bool	IsAddressBreakpointed(FAddressRef addr) const;
+
 	FAddressRef	GetPC() const { return PC; }
-	const char*	GetRegisterValueStr(const char* regName) const;
+	const char*	GetRegisterStringValue(const char* regName) const;
+	bool GetRegisterByteValue(const char* regName, uint8_t& outVal) const;
+	bool GetRegisterWordValue(const char* regName, uint16_t& outVal) const;
 
 	bool* GetDebuggerStoppedPtr() { return &bDebuggerStopped; }
 

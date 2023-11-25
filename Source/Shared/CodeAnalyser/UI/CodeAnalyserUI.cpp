@@ -2103,8 +2103,23 @@ bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 			// TODO: tooltip of register value
 			if (ImGui::IsItemHovered())
 			{
+				uint8_t byteVal = 0;
+				uint16_t wordVal = 0;
 				ImGui::BeginTooltip();
-				ImGui::Text("%s:%s",regName,state.Debugger.GetRegisterValueStr(regName));
+				if (state.Debugger.GetRegisterByteValue(regName, byteVal))
+				{
+					ImGui::Text("%s: %s (%d,'%c')", regName, NumStr(byteVal, GetHexNumberDisplayMode()),byteVal,byteVal);
+				}
+				else if (state.Debugger.GetRegisterWordValue(regName, wordVal))
+				{
+					ImGui::Text("%s: %s", regName, NumStr(wordVal));
+					DrawAddressLabel(state, viewState, wordVal);
+					if (ImGui::IsMouseDoubleClicked(0))
+					{
+						viewState.GoToAddress(state.AddressRefFromPhysicalAddress(wordVal));
+					}
+				}
+
 				ImGui::EndTooltip();
 				bShownToolTip = true;
 			}

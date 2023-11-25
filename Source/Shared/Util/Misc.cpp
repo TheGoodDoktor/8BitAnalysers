@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 
+static ENumberDisplayMode g_HexNumDispMode = ENumberDisplayMode::HexAitch;
 static ENumberDisplayMode g_NumDispMode = ENumberDisplayMode::HexAitch;
 static const int kTextLength = 24;
 static const int kNoStrings = 8;
@@ -22,6 +23,15 @@ char* GetStrPtr()
 void SetNumberDisplayMode(ENumberDisplayMode mode)
 {
 	g_NumDispMode = mode;
+}
+
+void SetHexNumberDisplayMode(ENumberDisplayMode mode)
+{
+	g_HexNumDispMode = mode;
+}
+ENumberDisplayMode GetHexNumberDisplayMode()
+{
+	return g_HexNumDispMode;
 }
 
 ENumberDisplayMode GetNumberDisplayMode()
