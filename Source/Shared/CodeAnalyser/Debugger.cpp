@@ -568,6 +568,16 @@ bool FDebugger::RemoveBreakpoint(FAddressRef addr)
 	return false;
 }
 
+bool FDebugger::ChangeBreakpointAddress(FAddressRef oldAddress, FAddressRef newAddress)
+{
+	FBreakpoint* pBP = GetBreakpointForAddress(oldAddress);
+	if(pBP == nullptr || IsAddressBreakpointed(newAddress))	// return false if either address is invalid
+		return false;
+	pBP->Address = newAddress;
+	return true;
+}
+
+
 const FBreakpoint* FDebugger::GetBreakpointForAddress(FAddressRef addr) const
 {
 	for (int i = 0; i < Breakpoints.size(); i++)

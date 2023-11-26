@@ -129,6 +129,7 @@ public:
 	bool	AddExecBreakpoint(FAddressRef addr);
 	bool	AddDataBreakpoint(FAddressRef addr, uint16_t size);
 	bool	RemoveBreakpoint(FAddressRef addr);
+	bool	ChangeBreakpointAddress(FAddressRef oldAddress,FAddressRef newAddress);
 	const FBreakpoint* GetBreakpointForAddress(FAddressRef addr) const;
 	FBreakpoint* GetBreakpointForAddress(FAddressRef addr) { return const_cast<FBreakpoint*>(const_cast<const FDebugger*>(this)->GetBreakpointForAddress(addr)); }
 	// Watches

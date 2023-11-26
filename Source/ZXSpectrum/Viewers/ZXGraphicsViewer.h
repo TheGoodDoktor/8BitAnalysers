@@ -30,5 +30,7 @@ private:
 public:
 	std::map<std::string, FUISpriteList>	SpriteLists;
 	std::string				SelectedSpriteList;
+	bool					bShowScreenMemoryAccesses = true;
+	bool					bShowScreenAttributes = false;
 };
 

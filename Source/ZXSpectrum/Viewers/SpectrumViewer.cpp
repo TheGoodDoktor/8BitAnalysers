@@ -123,57 +123,11 @@ void FSpectrumViewer::Draw()
 		}
 	}
 
-	bool bJustSelectedChar = false;
-
 	if (ImGui::IsItemHovered())
-	{
-		bJustSelectedChar = OnHovered(pos, codeAnalysis, viewState);
-	}
+		OnHovered(pos, codeAnalysis, viewState);
 
 	if (bScreenCharSelected == true)
-	{
-		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const ImU32 col = GetFlashColour();
-		dl->AddRect(ImVec2(pos.x + ((float)SelectedCharX * scale),pos.y + (float)SelectedCharY * scale), ImVec2(pos.x + ((float)SelectedCharX + 8) * scale,pos.y + ((float)SelectedCharY + 8) * scale), col);
-
-		ImGui::Text("Pixel Char Address: %s", NumStr(SelectPixAddr));
-		//ImGui::SameLine();
-		DrawAddressLabel(codeAnalysis, viewState, SelectPixAddr);
-		ImGui::Text("Attribute Address: %s", NumStr(SelectAttrAddr));
-		//ImGui::SameLine();
-		DrawAddressLabel(codeAnalysis, viewState, SelectAttrAddr);
-
-		if (FoundCharAddresses.empty() == false)
-		{
-			// list?
-			const FAddressRef& foundCharAddress = FoundCharAddresses[FoundCharIndex];	
-			ImGui::Text("Found at: %s", NumStr(foundCharAddress.Address));
-			DrawAddressLabel(codeAnalysis, viewState, foundCharAddress);
-			if (FoundCharAddresses.size() > 1)
-			{
-				ImGui::SameLine();
-				if (ImGui::Button("Next"))
-					FoundCharIndex = (FoundCharIndex + 1) % FoundCharAddresses.size();
-			}
-			
-			if (ImGui::Button("Format as Bitmap"))
-			{
-				FDataFormattingOptions formattingOptions;
-				formattingOptions.StartAddress = foundCharAddress;
-				formattingOptions.ItemSize = 1;
-				formattingOptions.NoItems = 8;
-				formattingOptions.DataType = EDataType::Bitmap;
-
-				FormatData(codeAnalysis, formattingOptions);
-				viewState.GoToAddress(foundCharAddress, false);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Show in GFX View"))
-			{
-				pSpectrumEmu->GraphicsViewerSetView(foundCharAddress);
-			}
-		}
-	}
+		DrawSelectedCharUI(pos);
 
 	// This is experimental
 	if (ImGui::Button("Find and format all on-screen chars"))
@@ -288,6 +242,100 @@ void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, 
 	}
 }
 
+void FSpectrumViewer::DrawSelectedCharUI(const ImVec2& pos)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();	
+	FCodeAnalysisState& codeAnalysis = pSpectrumEmu->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
+	FDebugger& debugger = codeAnalysis.Debugger;
+	const FZXSpectrumConfig& config = *pSpectrumEmu->GetZXSpectrumGlobalConfig();
+	const float scale = (float)config.ImageScale;//ImGui_GetScaling();
+
+	const ImU32 col = GetFlashColour();
+	dl->AddRect(ImVec2(pos.x + ((float)SelectedCharX * scale), pos.y + (float)SelectedCharY * scale), ImVec2(pos.x + ((float)SelectedCharX + 8) * scale, pos.y + ((float)SelectedCharY + 8) * scale), col);
+
+	ImGui::Text("Pixel Char Address: %s", NumStr(SelectPixAddr.Address));
+	//ImGui::SameLine();
+	DrawAddressLabel(codeAnalysis, viewState, SelectPixAddr);
+	ImGui::Text("Attribute Address: %s", NumStr(SelectAttrAddr.Address));
+	//ImGui::SameLine();
+	DrawAddressLabel(codeAnalysis, viewState, SelectAttrAddr);
+
+	// character pixel breakpoint
+	if (ImGui::Checkbox("Break on pixel write", &bBreakOnCharPixelWrite))
+	{
+		if (bBreakOnCharPixelWrite)
+		{
+			// Add data breakpoint
+			debugger.AddDataBreakpoint(SelectPixAddr, 8);
+			CharacterPixelBPAddress = SelectPixAddr;
+		}
+		else
+		{
+			debugger.RemoveBreakpoint(CharacterPixelBPAddress);
+		}
+	}
+
+	if (bBreakOnCharPixelWrite && SelectPixAddr != CharacterPixelBPAddress)
+	{
+		debugger.ChangeBreakpointAddress(CharacterPixelBPAddress, SelectPixAddr);
+		CharacterPixelBPAddress = SelectPixAddr;
+	}
+
+	// attribute breakpoint
+	if (ImGui::Checkbox("Break on attr write", &bBreakOnCharAttrWrite))
+	{
+		if (bBreakOnCharAttrWrite)
+		{
+			// Add data breakpoint
+			debugger.AddDataBreakpoint(SelectAttrAddr, 1);
+			CharacterAttrBPAddress = SelectAttrAddr;
+		}
+		else
+		{
+			debugger.RemoveBreakpoint(CharacterAttrBPAddress);
+		}
+	}
+
+	if (bBreakOnCharAttrWrite && SelectAttrAddr != CharacterAttrBPAddress)
+	{
+		debugger.ChangeBreakpointAddress(CharacterAttrBPAddress, SelectAttrAddr);
+		CharacterAttrBPAddress = SelectAttrAddr;
+	}
+
+	if (FoundCharAddresses.empty() == false)
+	{
+		// list?
+		const FAddressRef& foundCharAddress = FoundCharAddresses[FoundCharIndex];
+		ImGui::Text("Found at: %s", NumStr(foundCharAddress.Address));
+		DrawAddressLabel(codeAnalysis, viewState, foundCharAddress);
+		if (FoundCharAddresses.size() > 1)
+		{
+			ImGui::SameLine();
+			if (ImGui::Button("Next"))
+				FoundCharIndex = (FoundCharIndex + 1) % FoundCharAddresses.size();
+		}
+
+		if (ImGui::Button("Format as Bitmap"))
+		{
+			FDataFormattingOptions formattingOptions;
+			formattingOptions.StartAddress = foundCharAddress;
+			formattingOptions.ItemSize = 1;
+			formattingOptions.NoItems = 8;
+			formattingOptions.DataType = EDataType::Bitmap;
+
+			FormatData(codeAnalysis, formattingOptions);
+			viewState.GoToAddress(foundCharAddress, false);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Show in GFX View"))
+		{
+			pSpectrumEmu->GraphicsViewerSetView(foundCharAddress);
+		}
+	}
+}
+
+
 bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnalysis, FCodeAnalysisViewState& viewState)
 {
 	const FZXSpectrumConfig& config = *pSpectrumEmu->GetZXSpectrumGlobalConfig();
@@ -369,8 +417,8 @@ bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnaly
 			bScreenCharSelected = true;
 			SelectedCharX = rx;
 			SelectedCharY = ry;
-			SelectPixAddr = scrPixAddress;
-			SelectAttrAddr = scrAttrAddress;
+			SelectPixAddr = codeAnalysis.AddressRefFromPhysicalAddress(scrPixAddress);
+			SelectAttrAddr = codeAnalysis.AddressRefFromPhysicalAddress(scrAttrAddress);
 
 			// store pixel data for selected character
 			for (int charLine = 0; charLine < 8; charLine++)

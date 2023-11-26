@@ -25,6 +25,7 @@ public:
 private:
 	// private methods
 	void	DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos);
+	void	DrawSelectedCharUI(const ImVec2& pos);
 	bool	OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnalysis, FCodeAnalysisViewState& viewState);
 	ImU32	GetFlashColour() const;
 
@@ -36,8 +37,8 @@ private:
 
 	// screen inspector
 	bool		bScreenCharSelected = false;
-	uint16_t	SelectPixAddr = 0;
-	uint16_t	SelectAttrAddr = 0;
+	FAddressRef	SelectPixAddr;
+	FAddressRef	SelectAttrAddr;
 	int			SelectedCharX = 0;
 	int			SelectedCharY = 0;
 	int			FoundCharIndex = 0;
@@ -45,6 +46,11 @@ private:
 	uint8_t		CharData[8] = {0};
 	bool		bCharSearchWrap = true;
 	bool		bWindowFocused = false;
+
+	bool		bBreakOnCharPixelWrite = false;
+	FAddressRef	CharacterPixelBPAddress;
+	bool		bBreakOnCharAttrWrite = false;
+	FAddressRef	CharacterAttrBPAddress;
 
 	FAddressRef	XCoordAddress;	// for debugging
 	FAddressRef	YCoordAddress;

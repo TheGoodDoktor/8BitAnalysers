@@ -11,6 +11,8 @@ void FZXGraphicsViewer::DrawScreenViewer()
 {
 	UpdateScreenPixelImage();
 	pScreenView->Draw();
+	ImGui::Checkbox("Show Memory Accesses", &bShowScreenMemoryAccesses);
+	ImGui::Checkbox("Show Attributes",&bShowScreenAttributes);
 }
 
 // Description of memory format here:
@@ -38,12 +40,24 @@ void FZXGraphicsViewer::UpdateScreenPixelImage(void)
 		{
 			const uint8_t charLine = pBank->Memory[bankAddr];
 			const FCodeAnalysisPage& page = pBank->Pages[bankAddr >> 10];
-			const uint32_t col = GetHeatmapColourForMemoryAddress(page, bankAddr, state.CurrentFrameNo, HeatmapThreshold);
+			uint32_t inkCol = 0xffffffff;
+			uint32_t paperCol = 0xff000000;
+			
+			if(bShowScreenMemoryAccesses)
+				inkCol = GetHeatmapColourForMemoryAddress(page, bankAddr, state.CurrentFrameNo, HeatmapThreshold);
+			if (bShowScreenAttributes && inkCol == 0xffffffff)
+			{
+				uint8_t colAttr = pBank->Memory[kScreenPixMemSize + ((yDestPos >>3) * 32) + x];
+				const uint32_t* colourLUT = state.Config.CharacterColourLUT;
+				const bool bBright = !!(colAttr & (1 << 6));
+				inkCol = GetColFromAttr(colAttr & 7, colourLUT, bBright);
+				paperCol = GetColFromAttr((colAttr >> 3) & 7, colourLUT, bBright);
+			}
 
 			for (int xpix = 0; xpix < 8; xpix++)
 			{
 				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
-				*(pLineAddr + xpix + (x * 8)) = bSet ? col : 0xff000000;
+				*(pLineAddr + xpix + (x * 8)) = bSet ? inkCol : paperCol;
 			}
 
 			bankAddr++;
