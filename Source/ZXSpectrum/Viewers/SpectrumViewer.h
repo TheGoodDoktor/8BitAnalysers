@@ -53,5 +53,5 @@ private:
 	bool		bShowCoordinates = false;
 
 	int			FrameCounter = 0;
-	int			Scale = 0;
+	//int			Scale = 0;
 };

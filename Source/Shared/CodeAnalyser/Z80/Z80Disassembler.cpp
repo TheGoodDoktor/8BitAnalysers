@@ -344,13 +344,13 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
                 {
                     _STR("LD   ");
                     switch (y) {
-                        case 0: _STR("(#REG:BC#),A"); break;
-                        case 1: _STR("A,(#REG:BC#)"); break;
-                        case 2: _STR("(#REG:DE#),A"); break;
-                        case 3: _STR("A,(#REG:DE#)"); break;
+                        case 0: _STR("(#REG:BC#),#REG:A#"); break;
+                        case 1: _STR("#REG:A#,(#REG:BC#)"); break;
+                        case 2: _STR("(#REG:DE#),#REG:A#"); break;
+                        case 3: _STR("#REG:A#,(#REG:DE#)"); break;
                         case 4: _STR("("); _IMM16(); _STR("),"); _STR(rp[2]); break;
                         case 5: _STR(rp[2]); _STR(",("); _IMM16(); _STR(")"); break;
-                        case 6: _STR("("); _IMM16(); _STR("),A"); break;
+                        case 6: _STR("("); _IMM16(); _STR("),#REG:A#"); break;
                         case 7: _STR("#REG:A#,("); _IMM16(); _STR(")"); break;
                     }
                 }

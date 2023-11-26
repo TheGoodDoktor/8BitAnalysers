@@ -31,6 +31,8 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 		Font = jsonConfigFile["Font"];
 	if (jsonConfigFile.contains("FontSizePixels"))
 		FontSizePixels = jsonConfigFile["FontSizePixels"];
+	if (jsonConfigFile.contains("ImageScale"))
+		ImageScale = jsonConfigFile["ImageScale"];
 	
 	// fixup paths
 	if (WorkspaceRoot.back() != '/')
@@ -51,6 +53,8 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["SnapshotFolder"] = SnapshotFolder;
 	jsonConfigFile["Font"] = Font;
 	jsonConfigFile["FontSizePixels"] = FontSizePixels;
+	jsonConfigFile["ImageScale"] = ImageScale;
+
 }
 
 

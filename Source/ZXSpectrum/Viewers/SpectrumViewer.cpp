@@ -41,15 +41,6 @@ void FSpectrumViewer::Draw()
 
 	chips_display_info_t disp = zx_display_info(&pSpectrumEmu->ZXEmuState);
 	
-	if(Scale == 0)
-	{
-		Scale = (int)ImGui_GetScaling();
-	}
-	else
-	{ 
-		ImGui::InputInt("Scale",&Scale);
-		Scale = std::max(Scale,1);	// clamp
-	}
 	// convert texture to RGBA
 	const uint8_t* pix = (const uint8_t*)disp.frame.buffer.ptr;
 	const uint32_t* pal = (const uint32_t*)disp.palette.ptr;
@@ -59,7 +50,7 @@ void FSpectrumViewer::Draw()
 	ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
 
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
-	const float scale = (float)Scale;//ImGui_GetScaling();
+	const float scale = (float)config.ImageScale;//ImGui_GetScaling();
 	//ImGui::Text("Instructions this frame: %d \t(max:%d)", instructionsThisFrame,maxInst);
 	ImVec2 uv0(0, 0);
 	ImVec2 uv1(320.0f / 512.0f, 1.0f);
@@ -271,7 +262,8 @@ void FSpectrumViewer::Draw()
 
 void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos)
 {
-	const float scale = (float)Scale;//ImGui_GetScaling();
+	const FZXSpectrumConfig& config = *pSpectrumEmu->GetZXSpectrumGlobalConfig();
+	const float scale = (float)config.ImageScale;//ImGui_GetScaling();
 
 	// draw coordinate position
 	if (XCoordAddress.IsValid())
@@ -298,7 +290,8 @@ void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, 
 
 bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnalysis, FCodeAnalysisViewState& viewState)
 {
-	const float scale = (float)Scale;//ImGui_GetScaling();
+	const FZXSpectrumConfig& config = *pSpectrumEmu->GetZXSpectrumGlobalConfig();
+	const float scale = (float)config.ImageScale;//ImGui_GetScaling();
 	bool bJustSelectedChar = false;
 	
 	ImGuiIO& io = ImGui::GetIO();

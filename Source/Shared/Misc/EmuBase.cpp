@@ -307,7 +307,17 @@ void FEmuBase::OptionsMenu()
     ImGui::MenuItem("Enable Audio", 0, &CodeAnalysis.pGlobalConfig->bEnableAudio);
     ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
     ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.pGlobalConfig->bShowOpcodeValues);
-
+    if (ImGui::BeginMenu("Image Scale"))
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            char numStr[4];
+            snprintf(numStr,4,"%dx",i+1);
+            if (ImGui::MenuItem(numStr, 0, CodeAnalysis.pGlobalConfig->ImageScale == i+1))
+                CodeAnalysis.pGlobalConfig->ImageScale = i+1;
+        }
+        ImGui::EndMenu();
+    }
     if (ImGui::BeginMenu("Display Branch Lines"))
     {
         if (ImGui::MenuItem("Off", 0, CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode == 0))
