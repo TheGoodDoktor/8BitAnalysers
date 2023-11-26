@@ -161,6 +161,7 @@ public:
 	}
 
 	bool IsEmpty() const { return References.empty(); }
+	int NumReferences() const { return (int)References.size(); }
 	const std::vector<FAddressRef>& GetReferences() const { return References; }
 private:
 	std::vector<FAddressRef>	References;

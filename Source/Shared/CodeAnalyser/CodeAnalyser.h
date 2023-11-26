@@ -74,11 +74,13 @@ enum class EKey
 	Count
 };
 
+// don't change order! loose references!
 enum class EFunctionSortMode : int
 {
 	Location = 0,
 	Alphabetical,
-	CallFrequency
+	CallFrequency,
+	NoReferences
 };
 
 // Entries for the data type filter drop-down

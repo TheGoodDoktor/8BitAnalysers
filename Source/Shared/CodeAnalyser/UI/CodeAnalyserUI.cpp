@@ -1785,7 +1785,7 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 		{	
 			// only constantly sort call frequency
 			bool bSort = viewState.FunctionSortMode == EFunctionSortMode::CallFrequency;	
-			if (ImGui::Combo("Sort Mode", (int*)&viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency"))
+			if (ImGui::Combo("Sort Mode", (int*)&viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency\0No References"))
 				bSort = true;
 
 			if (state.bRebuildFilteredGlobalFunctions)
@@ -1824,6 +1824,14 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 							const int countB = pCodeInfoB != nullptr ? pCodeInfoB->ExecutionCount : 0;
 
 							return countA > countB;
+						});
+					break;
+				case EFunctionSortMode::NoReferences:
+					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+						{
+							const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
+							const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
+							return pLabelA->References.NumReferences() > pLabelB->References.NumReferences();
 						});
 					break;
 				default:
