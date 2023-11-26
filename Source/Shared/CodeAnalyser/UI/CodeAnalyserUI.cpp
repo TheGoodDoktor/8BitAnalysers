@@ -1785,7 +1785,7 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 		{	
 			// only constantly sort call frequency
 			bool bSort = viewState.FunctionSortMode == EFunctionSortMode::CallFrequency;	
-			if (ImGui::Combo("Sort Mode", (int*)&viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency\0No References"))
+			if (ImGui::Combo("Sort Mode", (int*)&viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency\0Num References"))
 				bSort = true;
 
 			if (state.bRebuildFilteredGlobalFunctions)
