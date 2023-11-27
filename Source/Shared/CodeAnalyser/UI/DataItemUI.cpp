@@ -442,24 +442,33 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
 	bool bShowItemLabel = false;
 
-	if (pDataInfo->DisplayType != EDataItemDisplayType::Unknown)
+	uint32_t valueColour = Colours::defaultValue;
+
+	switch (pDataInfo->DisplayType)
 	{
-		switch (pDataInfo->DisplayType)
-		{
-		case EDataItemDisplayType::Pointer:
-		case EDataItemDisplayType::JumpAddress:
-			bShowItemLabel = true;
-			break;
-		case EDataItemDisplayType::Decimal:
-			SetNumberDisplayMode(ENumberDisplayMode::Decimal);
-			break;
-		case EDataItemDisplayType::Binary:
-			SetNumberDisplayMode(ENumberDisplayMode::Binary);
-			break;
-		case EDataItemDisplayType::Hex:
-			break;
-		}
+	case EDataItemDisplayType::Pointer:
+	case EDataItemDisplayType::JumpAddress:
+		bShowItemLabel = true;
+		break;
+	case EDataItemDisplayType::Decimal:
+	case EDataItemDisplayType::SignedNumber:
+		SetNumberDisplayMode(ENumberDisplayMode::Decimal);
+		break;
+	case EDataItemDisplayType::Binary:
+		SetNumberDisplayMode(ENumberDisplayMode::Binary);
+		break;
+	case EDataItemDisplayType::Hex:
+		SetNumberDisplayMode(GetHexNumberDisplayMode());
+		break;
+	case EDataItemDisplayType::UnsignedNumber:	// this should use the number display mode
+		break;
+	case EDataItemDisplayType::Unknown:
+		valueColour = Colours::unknownValue;
+		break;
+
 	}
+
+	ImGui::PushStyleColor(ImGuiCol_Text, valueColour);
 
 	const float line_start_x = ImGui::GetCursorPosX();
 	float offset = 0;
@@ -574,6 +583,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::Text("%d Bytes", pDataInfo->ByteSize);
 		break;
 	}
+
+	ImGui::PopStyleColor();
 
 	if (state.CPUInterface->GetSP() == physAddr)
 	{

@@ -15,14 +15,18 @@
 #include <cctype>
 #include "chips/z80.h"
 #include "CodeToolTips.h"
+#include <functional>
 
 // Colour Presets
 namespace Colours
 {
-	const ImVec4 localLabel(0.5f, 0.5f, 0.5f, 1.0f);	// local label
-	const ImVec4 globalLabel(1.0f,1.0f,1.0f,1.0f);		// global label
-	const ImVec4 comment(0.0f,0.5f,0.0f,1.0f);			// comment
-	const ImVec4 reg(1.0f, 1.0f, 0.0f, 1.0f);			// registers
+	// ABGR
+	uint32_t defaultValue = 0xffffffff;		// default value 
+	uint32_t unknownValue = 0xff808080;		// unknown value
+	uint32_t localLabel = 0xff808080;	// local label
+	uint32_t globalLabel = 0xffffffff;		// global label
+	uint32_t comment = 0xff008000;			// comment
+	uint32_t reg = 0xff00ffff;			// registers
 
 }//namespace Colours
 
@@ -871,7 +875,11 @@ bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
 
 // Generic combo function for enums
 template <typename EnumType>
-bool DrawEnumCombo(const char* pLabel, EnumType& operandType, const std::vector<std::pair<const char*, EnumType>> &enumLookup)
+bool DrawEnumCombo(const char* pLabel, 
+	EnumType& operandType, 
+	const std::vector<std::pair<const char*, EnumType>> &enumLookup, 
+	std::function<bool(EnumType)> validEnumFunc = [](EnumType){return true;}
+	)
 {
 	bool bChanged = false;
 	const char* pPreviewStr = nullptr;
@@ -889,11 +897,14 @@ bool DrawEnumCombo(const char* pLabel, EnumType& operandType, const std::vector<
 	{
 		for (int n = 0; n < (int)enumLookup.size(); n++)
 		{
-			const bool isSelected = (operandType == enumLookup[n].second);
-			if (ImGui::Selectable(enumLookup[n].first, isSelected))
+			if(validEnumFunc(enumLookup[n].second))
 			{
-				operandType = enumLookup[n].second;
-				bChanged = true;
+				const bool isSelected = (operandType == enumLookup[n].second);
+				if (ImGui::Selectable(enumLookup[n].first, isSelected))
+				{
+					operandType = enumLookup[n].second;
+					bChanged = true;
+				}
 			}
 		}
 		ImGui::EndCombo();
@@ -935,9 +946,29 @@ bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysi
 	}
 }
 
+static const std::vector<std::pair<const char*, EDataItemDisplayType>> g_DisplayTypes =
+{
+	{ "Unknown" ,		EDataItemDisplayType::Unknown},
+	{ "Signed Number",		EDataItemDisplayType::SignedNumber},
+	{ "Unsigned Number",	EDataItemDisplayType::UnsignedNumber},
+	{ "Pointer" ,		EDataItemDisplayType::Pointer},
+	{ "JumpAddress",	EDataItemDisplayType::JumpAddress},
+	{ "Decimal",		EDataItemDisplayType::Decimal},
+	{ "Hex",			EDataItemDisplayType::Hex},
+	{ "Binary",			EDataItemDisplayType::Binary},
+	{ "Bitmap",			EDataItemDisplayType::Bitmap},
+	{ "ColMap2Bpp CPC",			EDataItemDisplayType::ColMap2Bpp_CPC},
+	{ "ColMap4Bpp CPC",			EDataItemDisplayType::ColMap4Bpp_CPC},
+	{ "Multicolour C64",			EDataItemDisplayType::ColMapMulticolour_C64},
+
+};
+
 // TODO: use generic
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state)
 {
+
+	return DrawEnumCombo<EDataItemDisplayType>(pLabel, displayType, g_DisplayTypes, [state](EDataItemDisplayType type){ return IsDisplayTypeSupported(type,state);});
+#if 0
 	const int index = (int)displayType;
 	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex", "Binary",
 									"Bitmap", "ColMap2Bpp CPC", "ColMap4Bpp CPC", "Multicolour C64" };
@@ -961,6 +992,7 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 	}
 
 	return bChanged;
+#endif
 }
 
 // TODO: use generic
@@ -2107,8 +2139,10 @@ bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 		if (sscanf(tagValue.c_str(), "%s",regName))
 		{
 			ImGui::SameLine(0,0);
-			ImGui::TextColored(Colours::reg, "%s", regName);
-			// TODO: tooltip of register value
+			ImGui::PushStyleColor(ImGuiCol_Text, Colours::reg);
+			ImGui::Text( "%s", regName);
+			ImGui::PopStyleColor();
+			// tooltip of register value
 			if (ImGui::IsItemHovered())
 			{
 				uint8_t byteVal = 0;
@@ -2120,12 +2154,20 @@ bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 				}
 				else if (state.Debugger.GetRegisterWordValue(regName, wordVal))
 				{
+					FAddressRef addr = state.AddressRefFromPhysicalAddress(wordVal);	// I think this should be OK
 					ImGui::Text("%s: %s", regName, NumStr(wordVal));
-					DrawAddressLabel(state, viewState, wordVal);
+					DrawAddressLabel(state, viewState, addr);
+					// Bring up snippet in tool tip
+					const int indentBkp = viewState.JumpLineIndent;
+					viewState.JumpLineIndent = 0;
+					DrawSnippetToolTip(state, viewState, addr);
+					viewState.JumpLineIndent = indentBkp;
+					viewState.HoverAddress = addr;
 					if (ImGui::IsMouseDoubleClicked(0))
 					{
-						viewState.GoToAddress(state.AddressRefFromPhysicalAddress(wordVal));
+						viewState.GoToAddress(addr);
 					}
+					
 				}
 
 				ImGui::EndTooltip();
