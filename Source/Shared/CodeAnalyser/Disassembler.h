@@ -25,6 +25,12 @@ public:
 class FDasmStateBase : public IDasmNumberOutput
 {
 public:
+	void PushString(const char* pString, dasm_output_t outputCallback)
+	{
+		for (int i = 0; i < strlen(pString); i++)
+			outputCallback(pString[i], this);
+	}
+
 	FCodeAnalysisState*		CodeAnalysisState = nullptr;
 	uint16_t				CurrentAddress = 0;
 	std::string				Text;

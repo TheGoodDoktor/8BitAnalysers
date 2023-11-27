@@ -87,14 +87,3 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, cons
 }
 
 
-// Colour Presets
-namespace Colours
-{
-	extern uint32_t defaultValue;		// default value 
-	extern uint32_t unknownValue;		// unknown value
-	extern uint32_t localLabel;	// local label
-	extern uint32_t globalLabel;		// global label
-	extern uint32_t comment;			// comment
-	extern uint32_t reg;			// registers
-
-}//namespace Colours
