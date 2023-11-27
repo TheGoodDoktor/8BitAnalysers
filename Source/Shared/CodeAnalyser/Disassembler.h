@@ -2,6 +2,7 @@
 
 #include <cinttypes>
 #include <string>
+#include <cstring>
 #include "Util/Misc.h"
 
 class FCodeAnalysisState;
