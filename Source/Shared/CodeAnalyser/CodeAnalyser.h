@@ -266,6 +266,7 @@ struct FCodeAnalysisBank
 	bool				bReadOnly = false;
 	bool				bFixed = false;	// bank is never remapped
 	bool				bIsDirty = false;
+	bool				bEverBeenMapped = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
 
 	FCommentLine::FAllocator	CommentLineAllocator;
@@ -289,6 +290,7 @@ struct FCodeAnalysisBank
 		if ((int)access & 2)
 			MappedWritePages.insert(startPageNo);
 
+		bEverBeenMapped = true;
 		UpdateMapping();
 	}
 	void UnmapFromPage(int startPageNo, EBankAccess access)

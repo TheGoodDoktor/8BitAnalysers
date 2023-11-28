@@ -13,8 +13,7 @@
 #include "GameViewers/MiscGameViewers.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/ZXGraphicsView.h"
-//#include "Viewers/BreakpointViewer.h"
-#include "Viewers/OverviewViewer.h"
+#include "CodeAnalyser/UI/OverviewViewer.h"
 #include "Util/FileUtil.h"
 
 #include "ui/ui_dbg.h"
@@ -670,21 +669,15 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	}
 
 	// This is where we add the viewers we want
-	//Viewers.push_back(new FBreakpointViewer(this));
 	AddViewer(new FOverviewViewer(this));
 	AddViewer(new FCharacterMapViewer(this));
 	pGraphicsViewer = new FZXGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
-	//GraphicsViewer.Init(&CodeAnalysis);
-	
-	//IOAnalysis.Init(this);
 	SpectrumViewer.Init(this);
 	FrameTraceViewer.Init(this);
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
-
-	
 
 	// register Viewers
 	RegisterStarquakeViewer(this);

@@ -6,6 +6,16 @@ class FSpectrumEmu;
 
 struct FOverviewStats
 {
+	int UnCommentedCodeCount = 0;
+	int CommentedCodeCount = 0;
+	int ReadOnlyDataCount = 0;
+	int WriteOnlyDataCount = 0;
+	int ReadWriteDataCount = 0;
+	int UnknownCount = 0;
+	int TotalItems = 0;
+
+	int NoCodeItems() const {	return CommentedCodeCount + UnCommentedCodeCount;	}
+
 	float PercentReadOnlyData = 0.0f;
 	float PercentReadWriteData = 0.0f;
 	float PercentWriteOnlyData = 0.0f;
