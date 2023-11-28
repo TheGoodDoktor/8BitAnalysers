@@ -17,18 +17,7 @@
 #include "CodeToolTips.h"
 #include <functional>
 
-// Colour Presets
-namespace Colours
-{
-	// ABGR
-	uint32_t defaultValue = 0xffffffff;		// default value 
-	uint32_t unknownValue = 0xff808080;		// unknown value
-	uint32_t localLabel = 0xff808080;	// local label
-	uint32_t globalLabel = 0xffffffff;		// global label
-	uint32_t comment = 0xff008000;			// comment
-	uint32_t reg = 0xff00ffff;			// registers
-
-}//namespace Colours
+#include "UIColours.h"
 
 // UI
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
@@ -149,6 +138,7 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
 	assert(pBank != nullptr);
 	bool bGlobalHighlighting = pLabelString != nullptr;
+	bool bFunctionHighlighting = false;
 
 	if (pLabelString == nullptr)	// get a label
 	{
@@ -164,7 +154,8 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			const FLabelInfo* pLabel = state.GetLabelForAddress(FAddressRef(pBank->Id,addrVal));
 			if (pLabel != nullptr)
 			{
-				bGlobalHighlighting = pLabel->Global || pLabel->LabelType == ELabelType::Function;
+				bFunctionHighlighting = pLabel->LabelType == ELabelType::Function;
+				bGlobalHighlighting = pLabel->Global;
 
 				if (bFunctionRel == false || pLabel->LabelType == ELabelType::Function)
 				{
@@ -184,7 +175,9 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	{
 		ImGui::SameLine(0,0);
 
-		if(bGlobalHighlighting && displayFlags & kAddressLabelFlag_White)
+		if (bFunctionHighlighting && displayFlags & kAddressLabelFlag_White)
+			ImGui::PushStyleColor(ImGuiCol_Text, Colours::function);
+		else if(bGlobalHighlighting && displayFlags & kAddressLabelFlag_White)
 			ImGui::PushStyleColor(ImGuiCol_Text, Colours::globalLabel);
 		else
 			ImGui::PushStyleColor(ImGuiCol_Text, Colours::localLabel);
@@ -272,24 +265,31 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
 	const FDataInfo* pDataInfo = state.GetDataInfoForAddress(item.AddressRef);	// for self-modifying code
 	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.AddressRef);
-	ImVec4 labelColour = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-	if (viewState.HighlightAddress == item.AddressRef)
-		labelColour = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
-	else if (pLabelInfo->Global || pLabelInfo->LabelType == ELabelType::Function)
-		labelColour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 	
+	ImU32 labelColour = Colours::localLabel;
+	if (viewState.HighlightAddress == item.AddressRef)
+		labelColour = Colours::highlight;
+	else if (pLabelInfo->LabelType == ELabelType::Function)
+		labelColour = Colours::function;
+	else if (pLabelInfo->Global)
+		labelColour = Colours::globalLabel;
+
+	ImGui::PushStyleColor(ImGuiCol_Text, labelColour);
+
 	// draw SMC fixups differently
 	if (pCodeInfo == nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 	{
-		ImGui::TextColored(labelColour, "\t\tOperand Fixup(%s) :",NumStr(item.AddressRef.Address));
+		ImGui::Text( "\t\tOperand Fixup(%s) :",NumStr(item.AddressRef.Address));
 		ImGui::SameLine();
-		ImGui::TextColored(labelColour, "%s", pLabelInfo->GetName());
+		ImGui::Text("%s", pLabelInfo->GetName());
 	}
 	else
 	{
 		ImGui::SameLine(state.Config.LabelPos);
-		ImGui::TextColored(labelColour, "%s: ", pLabelInfo->GetName());
+		ImGui::Text("%s: ", pLabelInfo->GetName());
 	}
+
+	ImGui::PopStyleColor();
 
 	// hover tool tip
 	if (ImGui::IsItemHovered() && pLabelInfo->References.IsEmpty() == false)
@@ -346,7 +346,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 void DrawCommentLine(FCodeAnalysisState& state, const FCommentLine* pCommentLine)
 {
 	ImGui::SameLine();
-	ImGui::PushStyleColor(ImGuiCol_Text, 0xff008000);
+	ImGui::PushStyleColor(ImGuiCol_Text, Colours::comment);
 	ImGui::SameLine(state.Config.CommentLinePos);
 	//ImGui::Text("; %s", pCommentLine->Comment.c_str());
 	ImGui::Text("\t; ");
@@ -774,7 +774,6 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 
 	// TODO: item below might need bank check
 	bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.Address >= physAddr && viewState.HighlightAddress.Address < physAddr + item.Item->ByteSize);
-	uint32_t kHighlightColour = 0xff00ff00;
 	ImGui::PushID(item.Item);
 
 	// selectable
@@ -829,14 +828,14 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		break;
 	case EItemType::Code:
 		if (bHighlight)
-			ImGui::PushStyleColor(ImGuiCol_Text, kHighlightColour);
+			ImGui::PushStyleColor(ImGuiCol_Text, Colours::highlight);
 		DrawCodeInfo(state, viewState, item);
 		if (bHighlight)
 			ImGui::PopStyleColor();
 		break;
 	case EItemType::Data:
 		if (bHighlight)
-			ImGui::PushStyleColor(ImGuiCol_Text, kHighlightColour);
+			ImGui::PushStyleColor(ImGuiCol_Text, Colours::highlight);
 		DrawDataInfo(state, viewState, item,false,state.bAllowEditing);
 		if (bHighlight)
 			ImGui::PopStyleColor();
@@ -916,13 +915,13 @@ bool DrawEnumCombo(const char* pLabel,
 static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
 {
 	{ "Unknown" ,		EOperandType::Unknown},
+	{ "Number",			EOperandType::UnsignedNumber},
 	{ "Pointer" ,		EOperandType::Pointer},
 	{ "JumpAddress",	EOperandType::JumpAddress},
 	{ "Decimal",		EOperandType::Decimal},
 	{ "Hex",			EOperandType::Hex},
 	{ "Binary",			EOperandType::Binary},
-	//{ "Signed Number",		EOperandType::SignedNumber},
-	//{ "Unsigned Number",	EOperandType::UnsignedNumber},
+	//{ "Signed Number",	EOperandType::SignedNumber},
 };
 
 
@@ -2132,6 +2131,13 @@ bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 				labelFlags |= kAddressLabelFlag_White;
 			bShownToolTip = DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
 		}
+	}
+	else if (tagName == std::string("IM"))	// immediate
+	{
+		ImGui::SameLine(0, 0);
+		ImGui::PushStyleColor(ImGuiCol_Text, Colours::immediate);
+		ImGui::Text("%s", tagValue.c_str());
+		ImGui::PopStyleColor();
 	}
 	else if (tagName == std::string("REG"))
 	{

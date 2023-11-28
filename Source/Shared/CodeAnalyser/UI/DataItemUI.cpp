@@ -8,6 +8,7 @@
 
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
+#include "UIColours.h"
 
 float DrawDataCharMapLine(FCodeAnalysisState& state,uint16_t addr, const FDataInfo* pDataInfo)
 {
@@ -415,6 +416,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 	const uint16_t physAddr = item.AddressRef.Address;
+	const bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.Address >= physAddr && viewState.HighlightAddress.Address < physAddr + item.Item->ByteSize);
 	const FDebugger& debugger = state.Debugger;
 
 	ShowDataItemActivity(state, item.AddressRef);
@@ -437,7 +439,9 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	const float lineStartX = ImGui::GetCursorPosX();
 	ImGui::SameLine(lineStartX + state.Config.AddressPos);
+	ImGui::PushStyleColor(ImGuiCol_Text, bHighlight ? Colours::highlight : Colours::address);
 	ImGui::Text("%s", NumStr(item.AddressRef.Address));
+	ImGui::PopStyleColor();
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
 	bool bShowItemLabel = false;

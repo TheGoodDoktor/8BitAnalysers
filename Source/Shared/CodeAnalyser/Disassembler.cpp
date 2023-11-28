@@ -3,6 +3,7 @@
 #include "CodeAnalyser.h"
 
 
+
 void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback) 
 {
 	if (outputCallback != nullptr)
@@ -12,7 +13,6 @@ void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 		if (pCodeInfoItem->OperandType == EOperandType::Pointer || pCodeInfoItem->OperandType == EOperandType::JumpAddress)
 		{
 			char pointerMarkup[16];
-			//snprintf(pointerMarkup,16,"#ADDR:0x%04X#", val);
 			strcpy(pointerMarkup, "#OPERAND_ADDR#");
 			for (int i = 0; i < strlen(pointerMarkup); i++)
 				outputCallback(pointerMarkup[i], this);
@@ -25,10 +25,15 @@ void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 			dispMode = ENumberDisplayMode::HexAitch;
 		if (pCodeInfoItem->OperandType == EOperandType::Binary)
 			dispMode = ENumberDisplayMode::Binary;
+		if (pCodeInfoItem->OperandType == EOperandType::SignedNumber)
+			dispMode = ENumberDisplayMode::Decimal;
 
-		const char* outStr = NumStr(val, dispMode);
-		for (int i = 0; i < strlen(outStr); i++)
-			outputCallback(outStr[i], this);
+		PushString("#IM:", outputCallback);
+		PushString(NumStr(val, dispMode), outputCallback);
+		PushString("#", outputCallback);
+		//const char* outStr = NumStr(val, dispMode);
+		//for (int i = 0; i < strlen(outStr); i++)
+		//	outputCallback(outStr[i], this);
 	}
 }
 
@@ -55,9 +60,13 @@ void FAnalysisDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 		else if (pCodeInfoItem->OperandType == EOperandType::Binary)
 			dispMode = ENumberDisplayMode::Binary;
 
-		const char* outStr = NumStr(val, dispMode);
-		for (int i = 0; i < strlen(outStr); i++)
-			outputCallback(outStr[i], this);
+		PushString("#IM:", outputCallback);
+		PushString(NumStr(val, dispMode), outputCallback);
+		PushString("#", outputCallback);
+
+		//const char* outStr = NumStr(val, dispMode);
+		//for (int i = 0; i < strlen(outStr); i++)
+		//	outputCallback(outStr[i], this);
 	}
 }
 
@@ -74,9 +83,14 @@ void FAnalysisDasmState::OutputD8(int8_t val, dasm_output_t outputCallback)
 		{
 			outputCallback('+', this);
 		}
-		const char* outStr = NumStr((uint8_t)val);
-		for (int i = 0; i < strlen(outStr); i++)
-			outputCallback(outStr[i], this);
+
+		PushString("#IM:", outputCallback);
+		PushString(NumStr((uint8_t)val), outputCallback);
+		PushString("#", outputCallback);
+
+		//const char* outStr = NumStr((uint8_t)val);
+		//for (int i = 0; i < strlen(outStr); i++)
+		//	outputCallback(outStr[i], this);
 	}
 }
 

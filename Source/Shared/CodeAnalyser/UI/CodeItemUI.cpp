@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "imgui.h"
+#include "UIColours.h"
 
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr)
 {
@@ -128,6 +129,8 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
 	const uint16_t physAddress = item.AddressRef.Address;
+	const bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.Address >= physAddress && viewState.HighlightAddress.Address < physAddress + item.Item->ByteSize);
+
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
 
@@ -189,12 +192,14 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	// draw instruction address
 	const float lineStartX = ImGui::GetCursorPosX();
 	ImGui::SameLine(lineStartX + state.Config.AddressPos);
+	ImGui::PushStyleColor(ImGuiCol_Text, bHighlight ? Colours::highlight : Colours::address);
 	ImGui::Text("%s  ", NumStr(physAddress));
+	ImGui::PopStyleColor();
 	ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpace);
 
 	// grey out NOPed code
-	if (pCodeInfo->bNOPped)
-		ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
+	//if (pCodeInfo->bNOPped)
+	//	ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
 
 	if (state.pGlobalConfig->bShowOpcodeValues)
 	{
@@ -234,12 +239,14 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 
 	Markup::SetCodeInfo(pCodeInfo);
+	ImGui::PushStyleColor(ImGuiCol_Text, pCodeInfo->bNOPped ? Colours::noppedMnemonic : Colours::mnemonic);
 	const bool bShownTooltip = Markup::DrawText(state,viewState,pCodeInfo->Text.c_str()); // draw the disassembly output for this instruction
+	ImGui::PopStyleColor();
 	Markup::SetCodeInfo(nullptr);
 	//ImGui::Text("%s", pCodeInfo->Text.c_str());	// draw the disassembly output for this instruction
 
-	if (pCodeInfo->bNOPped)
-		ImGui::PopStyleColor();
+	//if (pCodeInfo->bNOPped)
+	//	ImGui::PopStyleColor();
 
 	if (bShownTooltip == false && ImGui::IsItemHovered())
 	{
