@@ -16,6 +16,7 @@
 
 class FGraphicsView;
 class FCodeAnalysisState;
+class FEmuBase;
 
 enum class ELabelType;
 
@@ -36,7 +37,7 @@ public:
 	virtual FAddressRef	GetPC(void) = 0;
 	virtual uint16_t	GetSP(void) = 0;
 
-    virtual void	GraphicsViewerSetView(FAddressRef address) {};
+    //virtual void	GraphicsViewerSetView(FAddressRef address) {};
 
 	virtual void*	GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
 
@@ -323,12 +324,15 @@ public:
 	static const int kNoPagesInAddressSpace = kAddressSize / FCodeAnalysisPage::kPageSize;
 
 	FCodeAnalysisState();
-	void	Init(ICPUInterface* pCPUInterface);
+	void	Init(FEmuBase* pEmu);
 	void	OnFrameStart();
 	void	OnFrameEnd();
 	void	OnMachineFrameStart();
 	void	OnMachineFrameEnd();
 	void	OnCPUTick(uint64_t pins);
+
+	const FEmuBase* GetEmulator() const { return pEmulator; }
+	FEmuBase* GetEmulator() { return pEmulator; }
 
 	const ICPUInterface* GetCPUInterface() const { return CPUInterface; }
 
@@ -690,6 +694,7 @@ private:
 	}
 
 	// private data members
+	FEmuBase*						pEmulator = nullptr;
 
 	FCodeAnalysisPage*				ReadPageTable[kNoPagesInAddressSpace];
 	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];

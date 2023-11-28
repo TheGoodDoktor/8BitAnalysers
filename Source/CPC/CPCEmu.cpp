@@ -20,7 +20,7 @@
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "App.h"
 #include "Viewers/CRTCViewer.h"
-#include "Viewers/OverviewViewer.h"
+#include "CodeAnalyser/UI/OverviewViewer.h"
 
 #include <sokol_audio.h>
 #include "cpc-roms.h"

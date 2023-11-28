@@ -2,6 +2,7 @@
 
 #include "../../Util/GraphicsView.h"
 #include "Misc/EmuBase.h"
+#include "MemoryAccessGrid.h"
 
 struct FCodeAnalysisViewState;
 
@@ -19,5 +20,14 @@ public:
 	bool	Init(void) override { return true; }
 	void	Shutdown() override {}
 	void	DrawUI(void) override;
+
+	void	GoToAddress(FAddressRef addr);
 private:
+	void	DrawCharacterMapViewer(void);
+
+	// Viewer setup
+	FAddressRef	ViewerAddress;
+	int			NumCharsX = 0;
+	int			NumCharsY = 0;
+	//FMemoryAccessGrid	ViewerGrid;
 };

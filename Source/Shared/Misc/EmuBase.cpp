@@ -4,6 +4,7 @@
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <CodeAnalyser/AssemblerExport.h>
 #include <CodeAnalyser/UI/GraphicsViewer.h>
+#include <CodeAnalyser/UI/CharacterMapViewer.h>
 #include "GameConfig.h"
 
 #include "Debug/DebugLog.h"
@@ -541,4 +542,10 @@ void FEmuBase::GraphicsViewerSetView(FAddressRef address)
 {
     if(pGraphicsViewer)
         pGraphicsViewer->GoToAddress(address);
+}
+
+void FEmuBase::CharacterMapViewerSetView(FAddressRef address)
+{
+	if (pCharacterMapViewer)
+		pCharacterMapViewer->GoToAddress(address);
 }

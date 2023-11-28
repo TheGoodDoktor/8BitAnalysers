@@ -452,6 +452,17 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 	ImGui::EndChild();
 }
 
+void FCharacterMapViewer::DrawCharacterMapViewer(void)
+{
+
+}
+
+void FCharacterMapViewer::GoToAddress(FAddressRef addr)
+{
+	ViewerAddress = addr;
+}
+
+
 void FCharacterMapViewer::DrawUI(void)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
@@ -459,6 +470,12 @@ void FCharacterMapViewer::DrawUI(void)
 
 	if (ImGui::BeginTabBar("CharacterMapTabs"))
 	{
+		if (ImGui::BeginTabItem("Character Map Viewer"))
+		{
+			DrawCharacterMapViewer();
+			ImGui::EndTabItem();
+		}
+
 		if (ImGui::BeginTabItem("Character Sets"))
 		{
 			DrawCharacterSetViewer(state, viewState);
@@ -470,6 +487,7 @@ void FCharacterMapViewer::DrawUI(void)
 			DrawCharacterMaps(state, viewState);
 			ImGui::EndTabItem();
 		}
+
 		ImGui::EndTabBar();
 	}
 }

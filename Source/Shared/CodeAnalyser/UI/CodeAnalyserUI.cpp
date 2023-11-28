@@ -756,7 +756,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 				
 		if (ImGui::Selectable("View in graphics viewer"))
 		{
-			state.CPUInterface->GraphicsViewerSetView(item.AddressRef);
+			state.GetEmulator()->GraphicsViewerSetView(item.AddressRef);
 		}
 
 		ImGui::EndPopup();

@@ -21,6 +21,8 @@
 #include "6502/M6502Disassembler.h"
 #include "UI/CodeAnalyserUI.h"
 
+#include "Misc/EmuBase.h"
+
 // memory bank code
 
 // create a bank
@@ -1022,7 +1024,7 @@ FCodeAnalysisState::FCodeAnalysisState()
 }
 
 // Called each time a new game is loaded up
-void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
+void FCodeAnalysisState::Init(FEmuBase* pEmu)
 {
 	InitImageViewers();
 	InitCharacterSets();
@@ -1070,7 +1072,8 @@ void FCodeAnalysisState::Init(ICPUInterface* pCPUInterface)
 		bank.ItemList.clear();
 	}
 
-	CPUInterface = pCPUInterface;
+	pEmulator = pEmu;
+	CPUInterface = pEmu;
 	//uint16_t initialPC = pCPUInterface->GetPC();
 	//RunStaticCodeAnalysis(*this, initialPC);
 

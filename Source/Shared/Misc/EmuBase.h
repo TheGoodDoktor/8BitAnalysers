@@ -5,6 +5,7 @@
 
 class FEmuBase;
 class FGraphicsViewer;
+class FCharacterMapViewer;
 
 struct FGameConfig;
 struct FGameSnapshot;
@@ -51,7 +52,8 @@ public:
 
 	bool			StartGameFromName(const char* pGameName, bool bLoadGame);
 
-	void			GraphicsViewerSetView(FAddressRef address) override;
+	void			GraphicsViewerSetView(FAddressRef address);
+	void			CharacterMapViewerSetView(FAddressRef address);
 
 	bool			DrawDockingView();
 	void			DrawMainMenu();
@@ -92,6 +94,7 @@ protected:
 	FCodeAnalysisState  CodeAnalysis;
 	FGamesList			GamesList;
 	FGraphicsViewer*	pGraphicsViewer = nullptr;
+	FCharacterMapViewer* pCharacterMapViewer = nullptr;
 
 	// Highligthing
 	int					HighlightXPos = -1;
