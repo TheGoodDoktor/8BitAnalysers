@@ -563,9 +563,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			if (Bank == -1)
 				Bank = state.GetBanks()[0].Id;
 
-			FCodeAnalysisBank* pNewBank = state.GetBank(Bank);
+			pBank = state.GetBank(Bank);
 			AddressOffset = 0;
-			MemorySize = pNewBank->GetSizeBytes();
+			MemorySize = pBank->GetSizeBytes();
 		}
 	}
 
@@ -574,9 +574,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	{
 		if (DrawBankInput(state, "Bank", Bank))
 		{
-			FCodeAnalysisBank* pNewBank = state.GetBank(Bank);
+			pBank = state.GetBank(Bank);
 			AddressOffset = 0;
-			MemorySize = pNewBank->GetSizeBytes();
+			MemorySize = pBank->GetSizeBytes();
 		}
 	}
 
