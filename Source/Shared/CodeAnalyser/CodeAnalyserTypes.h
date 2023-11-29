@@ -178,6 +178,7 @@ struct FItem
 struct FLabelInfo : FItem
 {
 	static FLabelInfo* Allocate();
+	static FLabelInfo* Duplicate(const FLabelInfo* pSourceLabel);
 	static void FreeAll();
 
 	bool EnsureUniqueName(void)

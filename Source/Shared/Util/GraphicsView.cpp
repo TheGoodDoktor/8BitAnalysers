@@ -447,6 +447,20 @@ void DeleteCharacterMap(int index)
 	g_CharacterMaps.erase(g_CharacterMaps.begin() + index);
 }
 
+bool DeleteCharacterMap(FAddressRef address)
+{
+	for (auto it = g_CharacterMaps.begin(); it != g_CharacterMaps.end(); ++it)
+	{
+		if ((*it)->Params.Address == address)
+		{
+			g_CharacterMaps.erase(it);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 FCharacterMap* GetCharacterMapFromIndex(int index)
 {
 	if (index >= 0 && index < GetNoCharacterMaps())

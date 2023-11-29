@@ -62,6 +62,10 @@ void FSetItemDataCommand::Undo(FCodeAnalysisState& state)
 	FDataInfo* pDataItem = static_cast<FDataInfo*>(Item.Item);
 	pDataItem->DataType = oldDataType;
 	pDataItem->ByteSize = oldDataSize;
+	FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(Item.Item);
+	if(pCodeItem)
+		pCodeItem->bDisabled = false;
+	state.SetCodeAnalysisDirty(Item.AddressRef);
 }
 
 // Set Item Code
@@ -76,7 +80,7 @@ void FSetItemCodeCommand::Do(FCodeAnalysisState& state)
 	}
 	else
 	{
-		RunStaticCodeAnalysis(state, Addr.Address);
+		RunStaticCodeAnalysis(state, Addr.Address);		// TODO: this needs to fill an undo buffer
 		UpdateCodeInfoForAddress(state, Addr.Address);
 	}
 	state.SetCodeAnalysisDirty(Addr);
@@ -84,5 +88,6 @@ void FSetItemCodeCommand::Do(FCodeAnalysisState& state)
 
 void FSetItemCodeCommand::Undo(FCodeAnalysisState& state)
 {
-	// TODO:
+	state.SetCodeInfoForAddress(Addr,nullptr);
+	state.SetCodeAnalysisDirty(Addr);
 }

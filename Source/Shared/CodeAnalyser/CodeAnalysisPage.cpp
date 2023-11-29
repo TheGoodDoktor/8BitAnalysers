@@ -39,6 +39,16 @@ FLabelInfo* FLabelInfo::Allocate()
 	return pLabelInfo;
 }
 
+FLabelInfo* FLabelInfo::Duplicate(const FLabelInfo* pSourceLabel)
+{
+	if(pSourceLabel == nullptr)
+		return nullptr;
+
+	FLabelInfo* pDuplicateLabel = Allocate();
+	*pDuplicateLabel = *pSourceLabel;
+	return pDuplicateLabel;
+}
+
 void FLabelInfo::FreeAll()
 {
 	for (auto it : AllocatedList)

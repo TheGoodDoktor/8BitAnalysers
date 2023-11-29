@@ -1264,90 +1264,11 @@ void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item
 	item.Item->Comment = pText;
 }
 
+
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options)
 {
-	//uint16_t dataAddress = options.StartAddress;
-	FAddressRef addressRef = options.StartAddress;// state.AddressRefFromPhysicalAddress(dataAddress);
-
-	// TODO: Register Character Maps here?
-	if (options.DataType == EDataType::CharacterMap)
-	{
-		FCharMapCreateParams charMapParams;
-		charMapParams.Address = addressRef;
-		charMapParams.CharacterSet = options.CharacterSet;
-		charMapParams.Width = options.ItemSize;
-		charMapParams.Height = options.NoItems;
-		charMapParams.IgnoreCharacter = options.EmptyCharNo;
-		CreateCharacterMap(state, charMapParams);
-	}
-
-	if (options.AddLabelAtStart)
-	{
-		std::string labelText = options.LabelName;
-
-		// generate label if none is supplied
-		if (labelText.empty())
-		{
-			char labelName[16];
-			const char* pPrefix = "data";
-
-			if (options.DataType == EDataType::Bitmap)
-				pPrefix = "bitmap";
-			else if (options.DataType == EDataType::CharacterMap)
-				pPrefix = "charmap";
-			else if (options.DataType == EDataType::Text)
-				pPrefix = "text";
-
-			snprintf(labelName, 16, "%s_%s", pPrefix, NumStr(addressRef.Address));
-			labelText = labelName;
-		}
-
-		// Add or rename label
-		FLabelInfo* pLabel = state.GetLabelForAddress(addressRef);
-		if (pLabel == nullptr)
-			pLabel = AddLabel(state, addressRef, labelText.c_str(), ELabelType::Data);
-		else
-			pLabel->ChangeName(labelText.c_str());
-		
-		pLabel->Global = true;
-	}
-
-	for (int itemNo = 0; itemNo < options.NoItems; itemNo++)
-	{
-		FDataInfo* pDataInfo = state.GetDataInfoForAddress(addressRef);
-
-		pDataInfo->ByteSize = options.ItemSize;
-		pDataInfo->DataType = options.DataType;
-		pDataInfo->DisplayType = options.DisplayType;
-
-		if (options.DataType == EDataType::CharacterMap)
-		{
-			pDataInfo->CharSetAddress = options.CharacterSet;
-			pDataInfo->EmptyCharNo = options.EmptyCharNo;
-		}
-		else if (options.DataType == EDataType::Bitmap)
-		{
-			pDataInfo->GraphicsSetRef = options.GraphicsSetRef;
-			pDataInfo->PaletteNo = options.PaletteNo;
-		}
-
-		// iterate through each memory location
-		for (int i = 0; i < options.ItemSize;i++)
-		{
-			if (options.ClearCodeInfo)
-				state.SetCodeInfoForAddress(addressRef, nullptr);
-			
-			if (options.ClearLabels && addressRef != options.StartAddress)	// don't remove first label
-				RemoveLabelAtAddress(state, addressRef);
-
-			if (state.AdvanceAddressRef(addressRef, 1) == false)
-			{
-				// TODO: report?
-				break;
-			}
-			//dataAddress++;
-		}
-	}
+	FFormatDataCommand* pFormatCommand = new FFormatDataCommand(options);
+	DoCommand(state,pFormatCommand);	
 }
 
 // machine state
