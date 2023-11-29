@@ -13,7 +13,11 @@ void UndoCommand(FCodeAnalysisState& state)
 {
 	if (state.CommandStack.empty() == false)
 	{
-		state.CommandStack.back()->Undo(state);
+		FCommand* pCommand = state.CommandStack.back();
+		pCommand->Undo(state);
 		state.CommandStack.pop_back();
+
+		// Delete command or do we want 'redo'?
+		
 	}
 }

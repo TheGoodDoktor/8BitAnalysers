@@ -144,6 +144,7 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 // Character Maps
 int GetNoCharacterMaps();
 void DeleteCharacterMap(int index);
+bool DeleteCharacterMap(FAddressRef address);
 FCharacterMap* GetCharacterMapFromIndex(int index);
 FCharacterMap* GetCharacterMapFromAddress(FAddressRef address);
 bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& params);

@@ -13,6 +13,7 @@
 #include "MemoryAnalyser.h"
 #include "IOAnalyser.h"
 #include <Misc/GlobalConfig.h>
+#include "Commands/FormatDataCommand.h"
 
 class FGraphicsView;
 class FCodeAnalysisState;
@@ -102,44 +103,6 @@ enum class EBankAccess
 	Write	= 0x02,
 	ReadWrite	= 0x03,
 
-};
-
-struct FDataFormattingOptions
-{
-	EDataType				DataType = EDataType::Byte;
-	EDataItemDisplayType	DisplayType = EDataItemDisplayType::Unknown;
-
-	//int			StartAddress = 0;	// TODO: use Address Ref
-	FAddressRef				StartAddress;
-	int						ItemSize = 1;
-	int						NoItems = 1;
-	FAddressRef				CharacterSet;
-	FAddressRef				GraphicsSetRef;
-	int						PaletteNo = -1;
-	uint8_t					EmptyCharNo = 0;
-	bool					ClearCodeInfo = false;
-	bool					ClearLabels = false;
-	bool					AddLabelAtStart = false;
-	std::string				LabelName;
-
-	bool					IsValid() const {	return NoItems > 0 && ItemSize > 0;	}
-	uint16_t				CalcEndAddress() const { return StartAddress.Address + (NoItems * ItemSize) - 1; }
-	void					SetupForBitmap(FAddressRef address, int xSizePixels, int ySizePixels, int bpp)
-	{
-		DataType = EDataType::Bitmap;
-		DisplayType = EDataItemDisplayType::Bitmap;
-		StartAddress = address;
-		ItemSize = (xSizePixels * bpp) / 8;
-		NoItems = ySizePixels;
-	}
-
-	void		SetupForCharmap(FAddressRef address, int xSize, int ySize)
-	{
-		DataType = EDataType::CharacterMap;
-		StartAddress = address;
-		ItemSize = xSize;
-		NoItems = ySize;
-	}
 };
 
 struct FLabelListFilter
@@ -734,9 +697,10 @@ void ResetReferenceInfo(FCodeAnalysisState &state);
 std::string GetItemText(FCodeAnalysisState& state, FAddressRef address);
 
 // Commands
-void Undo(FCodeAnalysisState &state);
+//void Undo(FCodeAnalysisState &state);
 
 FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type);
+FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char* name, ELabelType type);
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef address);
 FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);

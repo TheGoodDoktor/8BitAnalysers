@@ -1731,6 +1731,11 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			state.SetCodeAnalysisDirty(formattingOptions.StartAddress);
 			viewState.GoToAddress(formattingOptions.StartAddress);
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Undo"))
+		{
+			UndoCommand(state);
+		}
 	}
 
 	if (ImGui::Button("Clear Selection"))
