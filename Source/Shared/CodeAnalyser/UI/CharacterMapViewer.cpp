@@ -1,5 +1,6 @@
 #include "CharacterMapViewer.h"
 #include "../CodeAnalyser.h"
+#include "MemoryAccessGrid.h"
 
 #include <imgui.h>
 #include "CodeAnalyserUI.h"
@@ -452,14 +453,110 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 	ImGui::EndChild();
 }
 
-void FCharacterMapViewer::DrawCharacterMapViewer(void)
+
+class FCharacterMapGrid : public FMemoryAccessGrid
+{
+public:
+	FCharacterMapGrid(FCodeAnalysisState* pCodeAnalysis, int xGridSize, int yGridSize):FMemoryAccessGrid(pCodeAnalysis,xGridSize,yGridSize)
+	{
+		bShowValues = true;
+		bShowReadWrites = true;
+		bOutlineAllSquares = true;	
+	}
+
+	FAddressRef GetGridSquareAddress(int x, int y) override
+	{
+		const int offset = x + (y * GridSizeX);
+		FAddressRef squareAddress = Address;
+		if(CodeAnalysis->AdvanceAddressRef(squareAddress,offset))
+			return squareAddress;
+		else
+		return FAddressRef();
+	}
+
+	void OnDraw() override
+	{
+		const float scale = ImGui_GetScaling();
+		const float kNumSize = 80.0f * scale;	// size for number GUI widget
+		ImGui::Text("Grid Size");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(kNumSize);
+		ImGui::InputInt("##GridSizeX", &GridSizeX);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(kNumSize);
+		ImGui::InputInt("##GridSizeY", &GridSizeY);
+		
+		ImGui::SetNextItemWidth(120.0f * scale);
+		bool bUpdated = false;
+		if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
+			bUpdated |= ImGui::InputInt("##Address", &PhysicalAddress, 1, 8, ImGuiInputTextFlags_CharsDecimal);
+		else
+			bUpdated |= ImGui::InputInt("##Address", &PhysicalAddress, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
+		if(bUpdated)
+			Address = CodeAnalysis->AddressRefFromPhysicalAddress(PhysicalAddress);
+		if(Address.IsValid())
+			DrawAddressLabel(*CodeAnalysis, CodeAnalysis->GetFocussedViewState(), Address);
+		ImGui::SameLine();
+		ImGui::Checkbox("##UseIgnoreValue", &bUseIgnoreValue);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(16.0f * scale);
+		ImGui::InputScalar("Ignore Value", ImGuiDataType_U8,&IgnoreValue);
+
+		// create and format a character map
+		if (ImGui::Button("Create"))
+		{
+			FDataFormattingOptions formattingOptions;
+			formattingOptions.StartAddress = Address;
+			formattingOptions.DataType = EDataType::CharacterMap;
+			formattingOptions.ItemSize = GridSizeX;
+			formattingOptions.NoItems = GridSizeY;
+			formattingOptions.ClearCodeInfo = true;
+			formattingOptions.ClearLabels = true;
+			formattingOptions.AddLabelAtStart = true;
+			FormatData(*CodeAnalysis, formattingOptions);
+			CodeAnalysis->SetCodeAnalysisDirty(formattingOptions.StartAddress);
+		}
+
+		GridSquareSize = 14.0f * scale;	// to fit an 8x8 square on a scaling screen image
+	}
+
+	void SetAddress(FAddressRef addr) 
+	{ 
+		Address = addr; 
+		PhysicalAddress = addr.Address;
+	}
+
+	FAddressRef Address;
+	int PhysicalAddress = 0;
+};
+
+bool	FCharacterMapViewer::Init(void) 
+{ 
+	ViewerGrid = new FCharacterMapGrid(&pEmulator->GetCodeAnalysis(), 16, 16);
+
+	return true; 
+}
+
+void	FCharacterMapViewer::Shutdown() 
 {
 
 }
 
+void FCharacterMapViewer::DrawCharacterMapViewer(void)
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	
+	ViewerGrid->Draw();
+}
+
 void FCharacterMapViewer::GoToAddress(FAddressRef addr)
 {
-	ViewerAddress = addr;
+	ViewerGrid->SetAddress(addr);
+}
+
+void FCharacterMapViewer::SetGridSize(int x, int y)
+{
+	ViewerGrid->SetGridSize(x,y);
 }
 
 

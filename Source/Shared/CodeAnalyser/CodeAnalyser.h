@@ -410,6 +410,9 @@ public:
 	// Advance an address ref by a number of bytes, may go to next bank in physical memory
 	bool AdvanceAddressRef(FAddressRef& addressRef, int amount)
 	{
+		if(addressRef.IsValid() == false)
+			return false;
+
 		const FCodeAnalysisBank* pBank = GetBank(addressRef.BankId);
 		if (addressRef.Address + amount < pBank->GetMappedAddress() + pBank->GetSizeBytes())
 		{

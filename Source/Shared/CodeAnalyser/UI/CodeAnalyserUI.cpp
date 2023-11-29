@@ -759,6 +759,11 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			state.GetEmulator()->GraphicsViewerSetView(item.AddressRef);
 		}
 
+		if (ImGui::Selectable("View in character map viewer"))
+		{
+			state.GetEmulator()->CharacterMapViewerSetView(item.AddressRef);
+		}
+
 		ImGui::EndPopup();
 	}
 }

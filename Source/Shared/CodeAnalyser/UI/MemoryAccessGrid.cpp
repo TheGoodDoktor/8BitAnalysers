@@ -39,10 +39,8 @@ bool FMemoryAccessGrid::GetAddressGridPosition(FAddressRef address, int& outX, i
 	return false;
 }
 
-void FMemoryAccessGrid::DrawAt(float x, float y)
+void FMemoryAccessGrid::DrawAtInternal(float x, float y)
 {
-	OnDraw();
-
 	// Display Character Map
 	FCodeAnalysisState& state = *CodeAnalysis;
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
@@ -61,6 +59,9 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 		for (int x = 0; x < GridSizeX; x++)
 		{
 			FAddressRef curCharAddress = GetGridSquareAddress(x, y);
+			if(curCharAddress.IsValid() == false)
+				continue;
+
 			FDataInfo* pDataInfo = state.GetDataInfoForAddress(curCharAddress);
 			const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
 			const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
@@ -70,6 +71,8 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 			const float yp = pos.y + (y * rectSize);
 			ImVec2 rectMin(xp, yp);
 			ImVec2 rectMax(xp + rectSize, yp + rectSize);
+
+			bool bIgnoreThis = bUseIgnoreValue && IgnoreValue == state.ReadByte(curCharAddress);
 
 			if (wBrightVal > 0 || rBrightVal > 0)	// skip empty chars
 			{
@@ -90,12 +93,12 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 					}
 				}
 			}
-			else if(bOutlineAllSquares)
+			else if(bOutlineAllSquares && bIgnoreThis == false)
 			{
 				dl->AddRect(rectMin, rectMax, 0xffffffff);
 			}
 
-			if (bShowValues)
+			if (bShowValues && bIgnoreThis == false)
 			{
 				const uint8_t val = state.ReadByte(curCharAddress);
 				char valTxt[8];
@@ -115,31 +118,33 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 		const int yChar = (int)floor(mousePosY / rectSize);
 
 		FAddressRef charAddress = GetGridSquareAddress(xChar, yChar);
-		//const uint16_t charAddress = charMapAddress + (xChar + (yChar * noCharsX));
-		const uint8_t charVal = state.ReadByte(charAddress);
-
-		const float xp = pos.x + (xChar * rectSize);
-		const float yp = pos.y + (yChar * rectSize);
-		const ImVec2 rectMin(xp, yp);
-		const ImVec2 rectMax(xp + rectSize, yp + rectSize);
-		dl->AddRect(rectMin, rectMax, 0xffffffff);
-
-		if (ImGui::IsMouseClicked(0))
+		if(charAddress.IsValid())
 		{
-			SelectedCharAddress = charAddress;
-			SelectedCharX = xChar;
-			SelectedCharY = yChar;
-		}
-		if (ImGui::IsMouseDoubleClicked(0))
-		{
-			viewState.GoToAddress(charAddress);
-		}
+			const uint8_t charVal = state.ReadByte(charAddress);
 
-		// Tool Tip
-		ImGui::BeginTooltip();
-		ImGui::Text("Char Pos (%d,%d)", xChar, yChar);
-		ImGui::Text("Value: %s", NumStr(charVal));
-		ImGui::EndTooltip();
+			const float xp = pos.x + (xChar * rectSize);
+			const float yp = pos.y + (yChar * rectSize);
+			const ImVec2 rectMin(xp, yp);
+			const ImVec2 rectMax(xp + rectSize, yp + rectSize);
+			dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+			if (ImGui::IsMouseClicked(0))
+			{
+				SelectedCharAddress = charAddress;
+				SelectedCharX = xChar;
+				SelectedCharY = yChar;
+			}
+			if (ImGui::IsMouseDoubleClicked(0))
+			{
+				viewState.GoToAddress(charAddress);
+			}
+
+			// Tool Tip
+			ImGui::BeginTooltip();
+			ImGui::Text("Char Pos (%d,%d)", xChar, yChar);
+			ImGui::Text("Value: %s", NumStr(charVal));
+			ImGui::EndTooltip();
+		}
 	}
 
 	if (SelectedCharX != -1 && SelectedCharY != -1)
@@ -203,4 +208,17 @@ void FMemoryAccessGrid::DrawAt(float x, float y)
 			}
 		}
 	}
+}
+
+void FMemoryAccessGrid::DrawAt(float x, float y)
+{
+	OnDraw();
+	DrawAtInternal(x, y);
+}
+
+void FMemoryAccessGrid::Draw()
+{
+	OnDraw();
+	const ImVec2 pos = ImGui::GetCursorScreenPos();
+	DrawAtInternal(pos.x,pos.y);
 }

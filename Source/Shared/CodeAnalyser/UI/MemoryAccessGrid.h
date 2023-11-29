@@ -13,17 +13,25 @@ public:
 	virtual void OnDraw() = 0;
 
 	bool	GetAddressGridPosition(FAddressRef address, int& outX, int& outY);
-	void	DrawAt(float x,float y);
+	void	DrawAt(float x, float y);
+	void	Draw();
+
+	void	SetGridSize(int x,int y) { GridSizeX = x; GridSizeY = y;}
 protected:
+	void	DrawAtInternal(float x, float y);
+
 	FCodeAnalysisState*	CodeAnalysis = nullptr;
 
 	float	GridSquareSize = 10.0f;
 	int		GridSizeX = -1;
 	int		GridSizeY = -1;
 
+
 	bool	bShowValues = false;
 	bool	bShowReadWrites = true;
 	bool	bOutlineAllSquares = false;
+	bool	bUseIgnoreValue = false;
+	uint8_t	IgnoreValue = 0;
 
 	FAddressRef	SelectedCharAddress;
 	int			SelectedCharX = -1;

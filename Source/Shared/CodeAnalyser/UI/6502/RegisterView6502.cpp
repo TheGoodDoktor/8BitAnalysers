@@ -18,11 +18,11 @@ class FZeroPageGrid : public FMemoryAccessGrid
 			bOutlineAllSquares = true;
 		}
 
-		FAddressRef GetGridSquareAddress(int x, int y)
+		FAddressRef GetGridSquareAddress(int x, int y) override
 		{
 			return CodeAnalysis->AddressRefFromPhysicalAddress(x + (y * 16));
 		}
-		void OnDraw() 
+		void OnDraw() override
 		{
 			const float imgScale = ImGui_GetScaling();
 			GridSquareSize = 20.0f * imgScale;	// to fit an 8x8 square on a scaling screen image
