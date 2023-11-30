@@ -292,6 +292,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/SALogo.png
 			$<TARGET_FILE_DIR:${APP_NAME}>
 			)
+    
+    set_target_properties( SpectrumAnalyser PROPERTIES XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep" )
+
 	set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
 	set(LIBS )
 	set(DIRS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
@@ -299,4 +302,5 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	fixup_bundle(\"${APPS}\" \"${LIBS}\" \"${DIRS}\")")
 	set(CPACK_GENERATOR "DRAGNDROP")
 	include(CPack)
+ 
 endif()

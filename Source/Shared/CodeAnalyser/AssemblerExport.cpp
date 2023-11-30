@@ -29,8 +29,9 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef ad
 	{
 		if (labelOffset > 0)	// add offset string
 		{
-			char offsetString[16];
-			sprintf(offsetString, " + %d]", labelOffset);
+            const int kOffsetStringSize = 16;
+			char offsetString[kOffsetStringSize];
+			snprintf(offsetString,kOffsetStringSize, " + %d]", labelOffset);
 			labelStr += offsetString;
 		}
 		else
@@ -128,7 +129,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				{
 					const uint8_t val = state.CPUInterface->ReadByte(addr + i);
 					char valTxt[16];
-					sprintf(valTxt, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
+					snprintf(valTxt,16, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
 					textString += valTxt;
 				}
 				fprintf(fp, "db %s", textString.c_str());
@@ -157,7 +158,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				{
 					const uint16_t val = state.CPUInterface->ReadWord(addr + (i * 2));
 					char valTxt[16];
-					sprintf(valTxt, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
+					snprintf(valTxt,16, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
 					textString += valTxt;
 				}
 				fprintf(fp, "dw %s", textString.c_str());
