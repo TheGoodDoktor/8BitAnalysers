@@ -48,7 +48,7 @@ bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
-bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType);
+bool DrawOperandTypeCombo(const char* pLabel, FCodeInfo* pCodeInfo);
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state);
 bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState& state);
 bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours=-1);

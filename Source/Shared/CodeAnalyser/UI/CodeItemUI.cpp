@@ -274,7 +274,7 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(item.Item);
 	const uint16_t physAddress = item.AddressRef.Address;
 
-	if (DrawOperandTypeCombo("Operand Type", pCodeInfo->OperandType))
+	if (DrawOperandTypeCombo("Operand Type", pCodeInfo))
 		pCodeInfo->Text.clear();	// clear for a rewrite
 
 	if (state.Config.bShowBanks && pCodeInfo->OperandType == EOperandType::Pointer)

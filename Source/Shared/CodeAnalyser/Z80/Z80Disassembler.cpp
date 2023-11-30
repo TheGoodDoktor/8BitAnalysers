@@ -449,7 +449,7 @@ uint16_t z80dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, void*
 								switch (z) {
 									case 0: _STR("IN   "); if(y!=6){_STR(r[y]);_CHR(',');} _STR("(C)"); break;
 									case 1: _STR("OUT  (C),"); _STR(y==6?"0":r[y]); break;
-									case 2: _STR(q==0?"SBC":"ADC"); _STR(" #REG:HL#,"); _STR(rp[p]); break;
+									case 2: _STR(q==0?"SBC ":"ADC "); _STR(" #REG:HL#,"); _STR(rp[p]); break;
 									case 3:
 										_STR("LD   ");
 										if (q == 0) {

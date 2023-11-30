@@ -929,10 +929,22 @@ static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
 	//{ "Signed Number",	EOperandType::SignedNumber},
 };
 
-
-bool DrawOperandTypeCombo(const char* pLabel, EOperandType& operandType)
+bool IsOperandTypeSupported(EOperandType operandType, const FCodeInfo* pCodeInfo)
 {
-	return DrawEnumCombo<EOperandType>(pLabel, operandType, g_OperandTypes);
+	switch (operandType)
+	{
+	case EOperandType::Pointer:
+	case EOperandType::JumpAddress:
+		return pCodeInfo->OperandAddress.IsValid();
+	default:
+		return true;
+	}
+}
+
+bool DrawOperandTypeCombo(const char* pLabel, FCodeInfo* pCodeInfo)
+{
+	return DrawEnumCombo<EOperandType>(pLabel, pCodeInfo->OperandType, g_OperandTypes, 
+		[pCodeInfo](EOperandType operandType){ return IsOperandTypeSupported(operandType,pCodeInfo);});
 }
 
 bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysisState& state)
@@ -2139,7 +2151,8 @@ bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 			uint32_t labelFlags = kAddressLabelFlag_NoBank | kAddressLabelFlag_NoBrackets;
 			//if(pCodeInfo->OperandType == EOperandType::Pointer)
 				labelFlags |= kAddressLabelFlag_White;
-			bShownToolTip = DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
+			if(g_CodeInfo->OperandAddress.IsValid())
+				bShownToolTip = DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
 		}
 	}
 	else if (tagName == std::string("IM"))	// immediate
