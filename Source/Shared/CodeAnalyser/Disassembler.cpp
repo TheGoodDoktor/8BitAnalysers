@@ -10,7 +10,8 @@ void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 	{
 		ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
-		if (pCodeInfoItem->OperandType == EOperandType::Pointer || pCodeInfoItem->OperandType == EOperandType::JumpAddress)
+		if ((pCodeInfoItem->OperandType == EOperandType::Pointer || pCodeInfoItem->OperandType == EOperandType::JumpAddress)
+			&& pCodeInfoItem->OperandAddress.IsValid())
 		{
 			char pointerMarkup[16];
 			strcpy(pointerMarkup, "#OPERAND_ADDR#");
