@@ -12,7 +12,6 @@
 #include "Util/GraphicsView.h"
 
 #include <ImGuiSupport/ImGuiTexture.h>
-#include <ImGuiSupport/ImGuiScaling.h>
 #include <algorithm>
 #include <cassert>
 
@@ -66,7 +65,8 @@ void FCPCViewer::Draw()
 #endif
 
 	const bool bHasScreen = pCPCEmu->Screen.HasBeenDrawn();
-	const float scale = ImGui_GetScaling();
+	const FGlobalConfig* pConfig = pCPCEmu->GetGlobalConfig();
+	const float scale = pConfig->ImageScale;
 
 	// see if mixed screen modes are used
 	int scrMode = pCPCEmu->CPCEmuState.ga.video.mode;
@@ -249,7 +249,8 @@ bool FCPCViewer::OnHovered(const ImVec2& pos)
 		return false;
 	}
 
-	const float scale = ImGui_GetScaling();
+	const FGlobalConfig* pConfig = pCPCEmu->GetGlobalConfig();
+	const float scale = pConfig->ImageScale;
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImGuiIO& io = ImGui::GetIO();
