@@ -22,6 +22,7 @@ struct FGlobalConfig
 	uint32_t			FontSizePixels = 13;
 	int					ImageScale = 1;
 
+    virtual bool    Init(void);
 	bool	Load(const char* filename);
 	bool	Save(const char* filename);
 protected:

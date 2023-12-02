@@ -34,7 +34,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
-	set(MACOSX_BUNDLE_BUNDLE_NAME SpectrumAnalyser)
+	set(MACOSX_BUNDLE_BUNDLE_NAME Spectrum Analyser)
 	find_package(OpenGL REQUIRED)
 	find_package(Threads REQUIRED)
 	find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
@@ -279,6 +279,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		BUNDLE DESTINATION . COMPONENT RunTime
 		RUNTIME DESTINATION bin COMPONENT RunTime
 		)
+    
+    # Resource Files
+    set(RESOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/imgui.ini
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/SALogo.png
+    )
+    
 	# Copy ini file to /bin
 	add_custom_command(TARGET ${APP_NAME} POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -293,14 +300,21 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 			$<TARGET_FILE_DIR:${APP_NAME}>
 			)
     
-    set_target_properties( SpectrumAnalyser PROPERTIES XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep" )
-
-	set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
-	set(LIBS )
-	set(DIRS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-	install(CODE "include(BundleUtilities)
-	fixup_bundle(\"${APPS}\" \"${LIBS}\" \"${DIRS}\")")
-	set(CPACK_GENERATOR "DRAGNDROP")
-	include(CPack)
+    set_target_properties( SpectrumAnalyser PROPERTIES
+        XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep"
+        BUNDLE True
+        MACOSX_BUNDLE_GUI_IDENTIFIER org.colourclash.SpectrumAnalyser
+        MACOSX_BUNDLE_BUNDLE_NAME ${APP_NAME}
+        MACOSX_BUNDLE_BUNDLE_VERSION "0.1"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+        RESOURCE "${RESOURCE_FILES}")
+    
+	#set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
+	#set(LIBS )
+	#set(DIRS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+	#install(CODE "include(BundleUtilities)
+	#fixup_bundle(\"${APPS}\" \"${LIBS}\" \"${DIRS}\")")
+	#set(CPACK_GENERATOR "DRAGNDROP")
+	#sinclude(CPack)
  
 endif()

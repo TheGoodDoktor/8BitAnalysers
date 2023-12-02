@@ -1,5 +1,6 @@
 #include "GlobalConfig.h"
 
+#include "Util/FileUtil.h"
 #include "json.hpp"
 
 #include <iomanip>
@@ -10,6 +11,11 @@ using json = nlohmann::json;
 
 
 FGlobalConfig	g_GlobalConfig;
+
+bool FGlobalConfig::Init(void)
+{
+    return true;
+}
 
 void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 {
@@ -60,7 +66,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 
 bool	FGlobalConfig::Load(const char* filename)
 {
-	std::ifstream inFileStream(filename);
+	std::ifstream inFileStream(GetAppSupportPath(filename));
 	if (inFileStream.is_open() == false)
 		return false;
 
@@ -79,7 +85,7 @@ bool	FGlobalConfig::Save(const char* filename)
 
 	WriteToJson(jsonConfigFile);
 
-	std::ofstream outFileStream(filename);
+	std::ofstream outFileStream(GetAppSupportPath(filename));
 	if (outFileStream.is_open())
 	{
 		outFileStream << std::setw(4) << jsonConfigFile << std::endl;

@@ -47,7 +47,7 @@ endif()
 # Linux files
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	file ( GLOB shared_platform_src
-		../Shared/Util/Mac/*.cpp ../Shared/Util/Mac/*.h
+		../Shared/Util/Mac/*.cpp ../Shared/Util/Mac/*.mm ../Shared/Util/Mac/*.h
 		)
 endif()
 

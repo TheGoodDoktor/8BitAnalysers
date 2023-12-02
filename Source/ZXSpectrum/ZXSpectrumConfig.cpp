@@ -1,7 +1,19 @@
 #include "ZXSpectrumConfig.h"
 
 #include "json.hpp"
+#include "Util/FileUtil.h"
 
+bool FZXSpectrumConfig::Init(void)
+{
+    if(FGlobalConfig::Init() == false)
+        return false;
+    
+    SnapshotFolder = GetDocumentsPath("SpectrumGames/48K");
+    SnapshotFolder128 = GetDocumentsPath("SpectrumGames/128K");
+    WorkspaceRoot = GetDocumentsPath("SpectrumAnalyserProjects");
+    
+    return true;
+}
 void FZXSpectrumConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 {
 	FGlobalConfig::ReadFromJson(jsonConfigFile);

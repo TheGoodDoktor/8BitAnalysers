@@ -55,6 +55,25 @@ bool EnumerateDirectory_Win32(const char *dir, FDirFileList &outDirListing)
 }
 #endif
 
+void FileInit(void)
+{
+}
+
+const char * GetBundlePath(const char *fileName)
+{
+    return fileName;
+}
+
+const char * GetDocumentsPath(const char *fileName)
+{
+    return fileName;
+}
+
+const char * GetAppSupportPath(const char *fileName)
+{
+    return fileName;
+}
+
 bool CreateDir(const char* osDir)
 {
 	DWORD ftyp = GetFileAttributesA(osDir);

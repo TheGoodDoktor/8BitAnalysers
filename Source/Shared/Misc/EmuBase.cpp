@@ -43,7 +43,18 @@ void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 
 bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 {
-
+    FileInit();
+    
+    // check if we have an imgui.ini file in our app support dir
+    if(FileExists(GetAppSupportPath("imgui.ini")) == false)
+    {
+        // TODO: copy it from the bundle
+    }
+    
+    static std::string iniFile = GetAppSupportPath("imgui.ini");
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = iniFile.c_str();
+    
     return true;
 }
 

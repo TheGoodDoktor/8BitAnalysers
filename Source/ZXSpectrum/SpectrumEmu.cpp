@@ -578,10 +578,11 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	const FSpectrumLaunchConfig& spectrumLaunchConfig = (const FSpectrumLaunchConfig&)config;
 
 	SetWindowTitle(kAppTitle.c_str());
-	SetWindowIcon("SALogo.png");
+	SetWindowIcon(GetBundlePath("SALogo.png"));
 
 	// Initialise Emulator
 	pGlobalConfig = new FZXSpectrumConfig();
+    pGlobalConfig->Init();
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 	//FGlobalConfig& globalConfig = GetGlobalConfig();
