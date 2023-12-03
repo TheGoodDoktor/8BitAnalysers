@@ -21,6 +21,7 @@
 #endif
 
 #include "Misc/EmuBase.h"
+#include "Util/FileUtil.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -153,7 +154,7 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
 	if (!pGlobalConfig->Font.empty())
 	{
 		std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
-		if (!io.Fonts->AddFontFromFileTTF(fontPath.c_str(), (float)pGlobalConfig->FontSizePixels))
+		if (!io.Fonts->AddFontFromFileTTF(GetBundlePath(fontPath.c_str()), (float)pGlobalConfig->FontSizePixels))
 		{
 			LOGWARNING("Could not load font '%s'", fontPath.c_str());
 		}

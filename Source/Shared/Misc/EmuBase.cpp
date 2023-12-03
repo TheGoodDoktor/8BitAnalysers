@@ -45,13 +45,24 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 {
     FileInit();
     
+    const char* pImGuiConfigFile = "imgui.ini";
+    
     // check if we have an imgui.ini file in our app support dir
-    if(FileExists(GetAppSupportPath("imgui.ini")) == false)
+    if(FileExists(GetAppSupportPath(pImGuiConfigFile)) == false)
     {
-        // TODO: copy it from the bundle
+        // copy it from the bundle
+        size_t byteCount = 0;
+        void *pFileData = LoadBinaryFile(GetBundlePath(pImGuiConfigFile), byteCount);
+        if(pFileData == nullptr)
+        {
+            LOGERROR("Can't find imgui.ini file in bundle");
+            return false;
+        }
+        
+        SaveBinaryFile(GetAppSupportPath(pImGuiConfigFile), pFileData, byteCount);
     }
     
-    static std::string iniFile = GetAppSupportPath("imgui.ini");
+    static std::string iniFile = GetAppSupportPath(pImGuiConfigFile);
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = iniFile.c_str();
     

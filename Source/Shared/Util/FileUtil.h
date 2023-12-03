@@ -25,6 +25,7 @@ const std::string &GetDataDirectory();
 
 std::string RemoveFileExtension(const char* fname);
 std::string GetFileFromPath(const char* fname);
+
 const char * GetBundlePath(const char *fileName);
 const char * GetDocumentsPath(const char *fileName);
 const char * GetAppSupportPath(const char *fileName);

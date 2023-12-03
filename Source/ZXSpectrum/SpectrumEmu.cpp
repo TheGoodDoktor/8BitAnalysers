@@ -762,8 +762,8 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 
 		CodeAnalysis.Init(this);
 
-		if (FileExists(romJsonFName.c_str()))
-			ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+		if (FileExists(GetBundlePath(romJsonFName.c_str())))
+			ImportAnalysisJson(CodeAnalysis, GetBundlePath(romJsonFName.c_str()));
 	}
 
 	if(spectrumLaunchConfig.SkoolkitImport.empty() == false)
@@ -875,10 +875,10 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
 		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
-		std::string romJsonFName = kRomInfo48JsonFile;
+		//std::string romJsonFName = kRomInfo48JsonFile;
 
-		if (ZXEmuState.type == ZX_TYPE_128)
-			romJsonFName = root + kRomInfo128JsonFile;
+		//if (ZXEmuState.type == ZX_TYPE_128)
+		//	romJsonFName = root + kRomInfo128JsonFile;
 
 		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
 		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
@@ -907,8 +907,8 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	// we always want to load the ROM info even if we aren't loading a previous analysis
 	const std::string romJsonFName = (ZXEmuState.type == ZX_TYPE_128) ? kRomInfo128JsonFile : kRomInfo48JsonFile;
 
-	if (FileExists(romJsonFName.c_str()))
-		ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+	if (FileExists(GetBundlePath(romJsonFName.c_str())))
+		ImportAnalysisJson(CodeAnalysis, GetBundlePath(romJsonFName.c_str()));
 	
 	if (bLoadSnapshot)
 	{

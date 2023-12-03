@@ -46,10 +46,8 @@ const std::string GetApplicationDirectory()
 
 const char * GetBundlePath(const char *fileName)
 {
-    //std::string appDir = GetApplicationDirectory();
-    
-    //fileName =[[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent: @(fileName)].UTF8String;
-    fileName =[[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent: @(fileName)].UTF8String;
+    NSString* bundlePath = [[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent: @("/Contents/MacOS")];
+    fileName =[bundlePath stringByAppendingPathComponent: @(fileName)].UTF8String;
     return fileName;
 }
 
@@ -67,12 +65,11 @@ const char * GetAppSupportPath(const char *fileName)
     NSString *bundleID = [info objectForKey: @"CFBundleIdentifier"];
     NSString *applicationSupportDirectory = [[paths firstObject] stringByAppendingPathComponent:bundleID];
     return [applicationSupportDirectory stringByAppendingPathComponent: @(fileName)].UTF8String;
-    //NSString *applicationSupportDirectory = [paths firstObject];
-
 }
 
 #define PLATFORM_MAX_PATH 256
 static char g_appSupportPath[PLATFORM_MAX_PATH];
+static char g_documentPath[PLATFORM_MAX_PATH];
 static char g_bundlePath[PLATFORM_MAX_PATH];
 
 void FileInit(void)

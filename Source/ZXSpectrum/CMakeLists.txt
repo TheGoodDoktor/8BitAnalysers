@@ -284,6 +284,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(RESOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/imgui.ini
         ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/SALogo.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/RomInfo.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/Fonts/Cousine-Regular.ttf
     )
     
 	# Copy ini file to /bin
@@ -299,12 +301,31 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/SALogo.png
 			$<TARGET_FILE_DIR:${APP_NAME}>
 			)
+   
+       # Copy icon file to /bin
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/RomInfo.json
+            $<TARGET_FILE_DIR:${APP_NAME}>
+            )
+            
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/Fonts
+            $<TARGET_FILE_DIR:${APP_NAME}>
+            )
+            
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/Fonts/Cousine-Regular.ttf
+            $<TARGET_FILE_DIR:${APP_NAME}>/Fonts
+            )
     
     set_target_properties( SpectrumAnalyser PROPERTIES
         XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep"
         BUNDLE True
         MACOSX_BUNDLE_GUI_IDENTIFIER org.colourclash.SpectrumAnalyser
-        MACOSX_BUNDLE_BUNDLE_NAME ${APP_NAME}
+        MACOSX_BUNDLE_BUNDLE_NAME "${APP_NAME}"
         MACOSX_BUNDLE_BUNDLE_VERSION "0.1"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
         RESOURCE "${RESOURCE_FILES}")
