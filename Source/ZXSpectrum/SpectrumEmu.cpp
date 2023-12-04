@@ -43,6 +43,8 @@
 #define ENABLE_RZX 1
 #define SAVE_ROM_JSON 0
 
+#define SAVE_NEW_DIRS 1
+
 #define ENABLE_CAPTURES 0
 const int kCaptureTrapId = 0xffff;
 
@@ -874,16 +876,21 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	if (bLoadGameData)
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
-		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
-		//std::string romJsonFName = kRomInfo48JsonFile;
 
-		//if (ZXEmuState.type == ZX_TYPE_128)
-		//	romJsonFName = root + kRomInfo128JsonFile;
+		std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+		std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
+		std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
+		std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
 
-		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
-		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
-		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
-		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+		// check for new location & adjust paths accordingly
+		const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pGameConfig->Name + "/";
+		if (FileExists((gameRoot + "Config.json").c_str()))	
+		{
+			analysisJsonFName = gameRoot + "Analysis.json";
+			graphicsSetsJsonFName = gameRoot + "GraphicsSets.json";
+			analysisStateFName = gameRoot + "AnalysisState.bin";
+			saveStateFName = gameRoot + "SaveState.bin";
+		}
 
 		if (LoadGameState(this, saveStateFName.c_str()))
 		{
@@ -941,7 +948,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
 
-	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "/" + pGameConfig->Name + "/GraphicsSets/").c_str());
 
 	pCurrentGameConfig = pGameConfig;
 	return true;
@@ -957,9 +964,18 @@ bool FSpectrumEmu::SaveCurrentGameData()
 		if (pGameConfig == nullptr || pGameConfig->Name.empty())
 			return false;
 			
+#if SAVE_NEW_DIRS
+		const std::string root = pGlobalConfig->WorkspaceRoot + pGameConfig->Name + "/";
+		const std::string configFName = root + "Config.json";
+		const std::string analysisJsonFName = root + "Analysis.json";
+		const std::string graphicsSetsJsonFName = root + "GraphicsSets.json";
+		const std::string analysisStateFName = root + "AnalysisState.bin";
+		const std::string saveStateFName = root + "SaveState.bin";
+		EnsureDirectoryExists(root.c_str());
+#else
 		const std::string root = pGlobalConfig->WorkspaceRoot;
 		const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
-		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
+		//const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
 		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
 		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
@@ -970,7 +986,7 @@ bool FSpectrumEmu::SaveCurrentGameData()
 		EnsureDirectoryExists(std::string(root + "GraphicsSets").c_str());
 		EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
 		EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
-
+#endif
 		// set config values
 		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 		{

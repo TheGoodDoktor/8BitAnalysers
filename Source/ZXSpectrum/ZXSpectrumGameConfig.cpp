@@ -184,8 +184,47 @@ bool LoadPOKFile(FZXSpectrumGameConfig& config, const char* fname)
 bool LoadZXSpectrumGameConfigs(FSpectrumEmu* pEmu)
 {
 	FDirFileList listing;
-
+	
 	const std::string root = pEmu->GetGlobalConfig()->WorkspaceRoot;
+
+	// New method - search through each game directory
+	if (EnumerateDirectory(root.c_str(), listing) == false)
+		return false;
+
+	for (const auto& file : listing)
+	{
+		if (file.FileType == FDirEntry::Directory)
+		{
+			if(file.FileName == "." || file.FileName == "..")
+				continue;
+
+			FDirFileList directoryListing;
+			std::string gameDir = root + file.FileName;
+			if (EnumerateDirectory(gameDir.c_str(), directoryListing))
+			{
+				for (const auto& gameFile : directoryListing)
+				{
+					if (gameFile.FileName == "Config.json")
+					{
+						const std::string& configFileName = gameDir + "/" + gameFile.FileName;
+						FZXSpectrumGameConfig* pNewConfig = new FZXSpectrumGameConfig;
+						if (LoadGameConfigFromFile(*pNewConfig, configFileName.c_str()))
+						{
+							if (pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
+								AddGameConfig(pNewConfig);
+						}
+						else
+						{
+							delete pNewConfig;
+						}
+
+					}
+				}
+			}
+		}
+	}
+
+	// Old method - keep this in while we have need of it
 	const std::string configDir = root + "Configs/";
 
 	if (EnumerateDirectory(configDir.c_str(), listing) == false)
