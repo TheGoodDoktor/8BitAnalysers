@@ -67,7 +67,7 @@ jobs:
                     cd ${{ github.workspace }}/Source/C64
                     mkdir build
                     cd build
-                    cmake ..
+                    cmake .. -DBUILD_SHARED_LIBS=OFF
                     msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} C64Analyser.sln
                     
             

@@ -1,5 +1,5 @@
 # This is for the features that allow the creating of filter folders in Visual Studio (source_group)
-cmake_minimum_required (VERSION 3.26)
+cmake_minimum_required (VERSION 3.24)
 
 project (SpectrumAnalyser)
 
@@ -335,6 +335,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         MACOSX_BUNDLE_BUNDLE_NAME "${APP_NAME}"
         MACOSX_BUNDLE_BUNDLE_VERSION "0.1"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+        OUTPUT_NAME "Spectrum Analyser"
         RESOURCE "${RESOURCE_FILES}")
     
 	#set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
