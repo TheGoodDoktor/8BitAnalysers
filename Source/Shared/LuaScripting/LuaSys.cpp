@@ -5,27 +5,37 @@ extern "C"
 #include <lualib.h>
 }
 
+#include "LuaCoreAPI.h"
+
 namespace LuaSys
 {
-	lua_State*	GlobalState = nullptr;
-	bool Init(void)
-	{
-		GlobalState = luaL_newstate();	// create the global state
 
-		// Add system libraries
-		luaopen_base(GlobalState);		// opens the basic library
-		luaopen_table(GlobalState);		// opens the table library
-		luaopen_io(GlobalState);		// opens the I/O library
-		luaopen_string(GlobalState);	// opens the string lib.
-		luaopen_math(GlobalState);		//opens the math lib. 
+lua_State*	GlobalState = nullptr;
+bool Init(void)
+{
+    GlobalState = luaL_newstate();	// create the global state
 
-		// TODO: Add our libraries
+    // Add system libraries
+    luaopen_base(GlobalState);		// opens the basic library
+    luaopen_table(GlobalState);		// opens the table library
+    luaopen_io(GlobalState);		// opens the I/O library
+    luaopen_string(GlobalState);	// opens the string lib.
+    luaopen_math(GlobalState);		//opens the math lib.
 
-		return true;
-	}
+    // TODO: Add our libraries
 
-	void Shutdown(void)
-	{
-
-	}
+    return true;
 }
+
+void Shutdown(void)
+{
+
+}
+
+bool LoadFile(const char* pFileName)
+{
+    luaL_dofile(GlobalState, pFileName);
+}
+
+}//namespace LuaSys
+
