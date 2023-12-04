@@ -67,7 +67,7 @@ jobs:
                     cd ${{ github.workspace }}/Source/ZXSpectrum
                     mkdir build
                     cd build
-                    cmake ..
+                    cmake .. -DBUILD_SHARED_LIBS=OFF
                     msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} SpectrumAnalyser.sln
                     
             
