@@ -10,6 +10,7 @@ file ( GLOB shared_base_src
 	../Shared/CodeAnalyser/UI/Z80/*.cpp ../Shared/CodeAnalyser/UI/Z80/*.h
 	../Shared/Debug/*.cpp ../Shared/Debug/*.h
 	../Shared/ImGuiSupport/*.cpp ../Shared/ImGuiSupport/*.h
+	../Shared/LuaScripting/*.cpp ../Shared/LuaScripting/*.h
 	../Shared/Misc/*.cpp ../Shared/Misc/*.h
 	../Shared/Util/*.cpp ../Shared/Util/*.h
 	../Shared/CMakeShared.txt

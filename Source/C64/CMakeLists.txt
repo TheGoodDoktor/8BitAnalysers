@@ -44,6 +44,9 @@ include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
 include_directories( ${vendor_dir}/json/single_include/nlohmann )
 
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory( ${vendor_dir}/lua ./lua )
+
 # other includes
 include_directories( ../Shared )
 
@@ -130,6 +133,8 @@ source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX C64 FILES ${program_src} )
 
 #set_target_properties( ${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 )
 set_target_properties( ${PROJECT_NAME} PROPERTIES C_STANDARD 11 )
+
+target_link_libraries( ${PROJECT_NAME} lua::lib )
 
 #windows specific
 if(${gfxapi} STREQUAL "DX11")

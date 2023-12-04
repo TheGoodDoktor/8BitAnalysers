@@ -62,6 +62,10 @@ include_directories( ${vendor_dir}/magic_enum/include )
 include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
 include_directories( ${vendor_dir}/json/single_include/nlohmann )
+include_directories( ${vendor_dir}/lua/upstream )
+
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory( ${vendor_dir}/lua ./lua )
 
 # other includes
 include_directories( ../Shared )
@@ -157,6 +161,7 @@ set_target_properties( SpectrumAnalyserTest PROPERTIES CXX_STANDARD 20 )
 set_target_properties( SpectrumAnalyserTest PROPERTIES C_STANDARD 11 )
 target_compile_definitions( SpectrumAnalyserTest PRIVATE TEST )
 target_link_libraries( SpectrumAnalyserTest GTest::gtest_main )
+target_link_libraries( SpectrumAnalyserTest lua::lib )
 
 include(GoogleTest)
 gtest_discover_tests(SpectrumAnalyserTest)
@@ -170,6 +175,8 @@ source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX ZXSpectrum FILES ${program
 
 set_target_properties( SpectrumAnalyser PROPERTIES CXX_STANDARD 20 )
 set_target_properties( SpectrumAnalyser PROPERTIES C_STANDARD 11 )
+
+target_link_libraries( ${PROJECT_NAME} lua::lib )
 
 #windows specific
 if(${gfxapi} STREQUAL "DX11")

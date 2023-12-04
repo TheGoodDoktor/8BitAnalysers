@@ -16,3 +16,6 @@
 [submodule "Source/Vendor/json"]
 	path = Source/Vendor/json
 	url = https://github.com/nlohmann/json
+[submodule "Source/Vendor/lua"]
+	path = Source/Vendor/lua
+	url = https://github.com/lubgr/lua-cmake
