@@ -120,7 +120,7 @@ public:
 	uint64_t Z80Tick(int num, uint64_t pins);
 
 	void	DrawMemoryTools();
-	void	DrawEmulatorUI();
+	void	DrawEmulatorUI() override;
 	//bool	DrawDockingView();
 
 	// disable copy & assign because this class is big!

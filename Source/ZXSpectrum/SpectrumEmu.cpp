@@ -161,7 +161,7 @@ public:
 	{
 		int xp = 0, yp = 0;
 		GetScreenAddressCoords(addr.Address, xp, yp);
-		sprintf(DescStr, "Screen Pix: %d,%d", xp, yp);
+		snprintf(DescStr,32, "Screen Pix: %d,%d", xp, yp);
 		return DescStr;
 	}
 private:
@@ -183,7 +183,7 @@ public:
 	{
 		int xp = 0, yp = 0;
 		GetAttribAddressCoords(addr.Address, xp, yp);
-		sprintf(DescStr, "Screen Attr: %d,%d", xp/8, yp/8);
+		snprintf(DescStr, 32, "Screen Attr: %d,%d", xp/8, yp/8);
 		return DescStr;
 	}
 private:
@@ -694,7 +694,7 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	for (int bankNo = 0; bankNo < kNoROMBanks; bankNo++)
 	{
 		char bankName[32];
-		sprintf(bankName, "ROM %d", bankNo);
+		snprintf(bankName,32, "ROM %d", bankNo);
 		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16,ZXEmuState.rom[bankNo], true);
 		CodeAnalysis.GetBank(ROMBanks[bankNo])->PrimaryMappedPage = 0;
 	}
@@ -703,7 +703,7 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
 	{
 		char bankName[32];
-		sprintf(bankName, "RAM %d", bankNo);
+		snprintf(bankName, 32, "RAM %d", bankNo);
 		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false);
 		CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
 	}
@@ -1903,7 +1903,7 @@ void FSpectrumEmu::DrawEmulatorUI()
 	{
 		if (pActiveGame != nullptr)
 		{
-			ImGui::Text(pActiveGame->pConfig->Name.c_str());
+			ImGui::Text("%s",pActiveGame->pConfig->Name.c_str());
 			pActiveGame->pViewerConfig->pDrawFunction(this, pActiveGame);
 		}
 		
@@ -2048,7 +2048,7 @@ void FSpectrumEmu::DrawCheatsUI()
 		
 		if (cheat.bHasUserDefinedEntries)
 		{
-			ImGui::Text(cheat.Description.c_str());
+			ImGui::Text("%s",cheat.Description.c_str());
 		}
 		else
 		{
@@ -2069,7 +2069,7 @@ void FSpectrumEmu::DrawCheatsUI()
 			if (entry.bUserDefined)
 			{
 				char tempStr[16] = {0};
-				sprintf(tempStr, "##Value %d", ++userDefinedCount);
+				snprintf(tempStr,16, "##Value %d", ++userDefinedCount);
 				
 				// Display the value of the memory location in the input field.
 				// If the user has modified the value then display that instead.

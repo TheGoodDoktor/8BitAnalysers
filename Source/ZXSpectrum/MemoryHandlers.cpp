@@ -171,7 +171,7 @@ void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 	{
 		ImGui::Checkbox("Enabled", &pSelectedHandler->bEnabled);
 		ImGui::Checkbox("Break", &pSelectedHandler->bBreak);
-		ImGui::Text(pSelectedHandler->Name.c_str());
+		ImGui::Text("%s", pSelectedHandler->Name.c_str());
 
 		ImGui::Text("Start: %s", NumStr(pSelectedHandler->MemStart));
 		ImGui::SameLine();

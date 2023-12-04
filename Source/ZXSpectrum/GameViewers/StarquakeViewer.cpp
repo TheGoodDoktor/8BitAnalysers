@@ -346,7 +346,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	// Create Label
 	//if (state.GetLabelForAddress(kPlatformAddr) == nullptr)
 	{
-		sprintf(labelName, "SmallPlatform_%d", platformNo);
+		snprintf(labelName,32, "SmallPlatform_%d", platformNo);
 		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr, labelName, ELabelType::Data);
 		pLabel->Global = true;
 	}
@@ -374,7 +374,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	// Add attribute label
 	if(noPlatformChars > 0)
 	{
-		sprintf(labelName, "SmallPlatform_%d_Attributes", platformNo);
+		snprintf(labelName,32, "SmallPlatform_%d_Attributes", platformNo);
 		FLabelInfo* pLabel = AddLabel(state, kPlatformAddr - noPlatformChars, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
@@ -397,7 +397,7 @@ void FormatSmallPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	uint16_t platCharAddr = kPlatformAddr + 6;
 	for (int platChar = 0; platChar < noPlatformChars; platChar++)
 	{
-		sprintf(labelName, "SmallPlatform_%d_Char_%d", platformNo, platChar);
+		snprintf(labelName,32, "SmallPlatform_%d_Char_%d", platformNo, platChar);
 		FLabelInfo* pLabel = AddLabel(state, platCharAddr, labelName, ELabelType::Data);
 		pLabel->Global = true;
 
@@ -417,7 +417,7 @@ void FormatBigPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	char labelName[32];
 
 	// Label
-	sprintf(labelName, "BigPlatform_%d", platformNo);
+	snprintf(labelName,32, "BigPlatform_%d", platformNo);
 	FLabelInfo* pLabel = AddLabel(state, kBigPlatformData, labelName, ELabelType::Data);
 	pLabel->Global = true;
 
@@ -435,7 +435,7 @@ void FormatScreenMemory(FSpectrumEmu* pEmu, int screenNo)
 	char labelName[32];
 
 	// Label
-	sprintf(labelName, "Screen_%d", screenNo);
+	snprintf(labelName,32, "Screen_%d", screenNo);
 	FLabelInfo* pLabel = AddLabel(state, kScreenData, labelName, ELabelType::Data);
 	pLabel->Global = true;
 
@@ -453,7 +453,7 @@ void FormatPlatformMemory(FSpectrumEmu* pEmu, int platformNo)
 	char labelName[32];
 
 	// Label
-	sprintf(labelName, "Platform_%d", platformNo);
+	snprintf(labelName, 32, "Platform_%d", platformNo);
 	FLabelInfo* pLabel = AddLabel(state, platformAddr, labelName, ELabelType::Data);
 	pLabel->Global = true;
 

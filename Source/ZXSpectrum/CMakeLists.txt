@@ -265,7 +265,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 			)
 endif()
 
+#
+# MacOS Version
+#
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
+    # This little macro lets you set any XCode specific property
+    macro (set_xcode_property TARGET XCODE_PROPERTY XCODE_VALUE)
+        set_property (TARGET ${TARGET} PROPERTY XCODE_ATTRIBUTE_${XCODE_PROPERTY} ${XCODE_VALUE})
+    endmacro (set_xcode_property)
+
+    set(APP_BUNDLE_IDENTIFIER "org.colourclash.SpectrumAnalyser")
+
 	target_link_libraries(${PROJECT_NAME}
 		glfw
 		${OPENGL_LIBRARIES} 
@@ -331,14 +342,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set_target_properties( SpectrumAnalyser PROPERTIES
         XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep"
         BUNDLE True
-        MACOSX_BUNDLE_GUI_IDENTIFIER org.colourclash.SpectrumAnalyser
+        MACOSX_BUNDLE_INFO_STRING ${APP_BUNDLE_IDENTIFIER}
+        MACOSX_BUNDLE_GUI_IDENTIFIER ${APP_BUNDLE_IDENTIFIER}
+        MACOSX_BUNDLE_BUNDLE_NAME ${APP_BUNDLE_IDENTIFIER}
         MACOSX_BUNDLE_BUNDLE_NAME "${APP_NAME}"
         MACOSX_BUNDLE_BUNDLE_VERSION "0.1"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
         OUTPUT_NAME "Spectrum Analyser"
         RESOURCE "${RESOURCE_FILES}")
-    
-	#set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
+ 
+    set_xcode_property(${APP_NAME} PRODUCT_BUNDLE_IDENTIFIER ${APP_BUNDLE_IDENTIFIER})
+	
+    #set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
 	#set(LIBS )
 	#set(DIRS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 	#install(CODE "include(BundleUtilities)
