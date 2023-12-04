@@ -24,3 +24,22 @@ char GetDirSep()
 {
 	return '/';
 }
+
+void FileInit(void)
+{
+}
+
+const char* GetBundlePath(const char* fileName)
+{
+	return fileName;
+}
+
+const char* GetDocumentsPath(const char* fileName)
+{
+	return fileName;
+}
+
+const char* GetAppSupportPath(const char* fileName)
+{
+	return fileName;
+}
