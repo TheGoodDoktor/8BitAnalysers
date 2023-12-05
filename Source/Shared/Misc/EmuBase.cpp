@@ -1,6 +1,7 @@
 #include "EmuBase.h"
 
 #include <imgui.h>
+#include <implot.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <CodeAnalyser/AssemblerExport.h>
 #include <CodeAnalyser/UI/GraphicsViewer.h>
@@ -46,7 +47,7 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 {
 	FileInit();
 	
-	LuaSys::Init();
+	LuaSys::Init(this);
 
 	const char* pImGuiConfigFile = "imgui.ini";
 	
@@ -190,7 +191,7 @@ void FEmuBase::DrawUI()
 	for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
 	{
 		char name[32];
-		sprintf(name, "Code Analysis %d", codeAnalysisNo + 1);
+		snprintf(name, 32,"Code Analysis %d", codeAnalysisNo + 1);
 		if (CodeAnalysis.ViewState[codeAnalysisNo].Enabled)
 		{
 			if (ImGui::Begin(name, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled))
@@ -204,6 +205,12 @@ void FEmuBase::DrawUI()
 
 	if (bShowDebugLog)
 		g_ImGuiLog.Draw("Debug Log", &bShowDebugLog);
+
+    if (bShowImGuiDemo)
+        ImGui::ShowDemoWindow(&bShowImGuiDemo);
+
+    if (bShowImPlotDemo)
+        ImPlot::ShowDemoWindow(&bShowImPlotDemo);
 
 	DrawEmulatorUI();
 }
@@ -397,7 +404,7 @@ void FEmuBase::WindowsMenu()
 		for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
 		{
 			char menuName[32];
-			sprintf(menuName, "Code Analysis %d", codeAnalysisNo + 1);
+			snprintf(menuName,32, "Code Analysis %d", codeAnalysisNo + 1);
 			ImGui::MenuItem(menuName, 0, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled);
 		}
 

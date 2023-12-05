@@ -6,12 +6,14 @@ extern "C"
 }
 
 #include "LuaCoreAPI.h"
+#include "Misc/EmuBase.h"
 
 namespace LuaSys
 {
 
 lua_State*	GlobalState = nullptr;
-bool Init(void)
+
+bool Init(FEmuBase* pEmulator)
 {
     GlobalState = luaL_newstate();	// create the global state
 

@@ -19,3 +19,6 @@
 [submodule "Source/Vendor/lua"]
 	path = Source/Vendor/lua
 	url = https://github.com/lubgr/lua-cmake
+[submodule "Source/Vendor/ImGuiColorTextEdit"]
+	path = Source/Vendor/ImGuiColorTextEdit
+	url = https://github.com/BalazsJako/ImGuiColorTextEdit

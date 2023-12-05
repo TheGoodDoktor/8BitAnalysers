@@ -2,6 +2,6 @@
 
 namespace LuaSys
 {
-	bool Init(void);
+	bool Init(FEmuBase* pEmulator);
 	void Shutdown(void);
 }

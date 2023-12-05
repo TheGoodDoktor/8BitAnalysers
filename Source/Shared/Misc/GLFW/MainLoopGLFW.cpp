@@ -179,12 +179,7 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
         pEmulator->Tick();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        //if (pSpectrumEmulator->bShowImGuiDemo)
-        //    ImGui::ShowDemoWindow(&pSpectrumEmulator->bShowImGuiDemo);
-
-        //if (pSpectrumEmulator->bShowImPlotDemo)
-        //    ImPlot::ShowDemoWindow(&pSpectrumEmulator->bShowImPlotDemo);
-
+        
         // Rendering
         ImGui::Render();
         int display_w, display_h;
