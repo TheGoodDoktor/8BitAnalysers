@@ -62,7 +62,6 @@ include_directories( ${vendor_dir}/magic_enum/include )
 include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
 include_directories( ${vendor_dir}/json/single_include/nlohmann )
-include_directories( ${vendor_dir}/lua/upstream )
 
 set(BUILD_SHARED_LIBS OFF)
 add_subdirectory( ${vendor_dir}/lua ./lua )
@@ -133,8 +132,12 @@ set ( zlib_src ${vendor_dir}/zlib/adler32.c
 	${vendor_dir}/zlib/trees.c
 	${vendor_dir}/zlib/uncompr.c
 	${vendor_dir}/zlib/zutil.c )
+ 
+# imgui lua bindings
+#set ( luaimgui ${vendor_dir}/imgui_lua_bindings/imgui_lua_bindings.cpp )
+set ( imguitextedit ${vendor_dir}/ImGuiColorTextEdit/TextEditor.cpp ${vendor_dir}/ImGuiColorTextEdit/TextEditor.h )
 
-set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} )
+set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} ${imguitextedit} )
 
 # program source
 file ( GLOB program_src 

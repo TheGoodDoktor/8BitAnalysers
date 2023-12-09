@@ -40,6 +40,9 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 	if (jsonConfigFile.contains("ImageScale"))
 		ImageScale = jsonConfigFile["ImageScale"];
 	
+    if (jsonConfigFile.contains("EnableLua"))
+        bEnableLua = jsonConfigFile["EnableLua"];
+    
 	// fixup paths
 	if (WorkspaceRoot.back() != '/')
 		WorkspaceRoot += "/";
@@ -60,6 +63,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["Font"] = Font;
 	jsonConfigFile["FontSizePixels"] = FontSizePixels;
 	jsonConfigFile["ImageScale"] = ImageScale;
+    jsonConfigFile["EnableLua"] = bEnableLua;
 
 }
 

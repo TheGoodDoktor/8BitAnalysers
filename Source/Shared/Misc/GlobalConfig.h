@@ -21,6 +21,8 @@ struct FGlobalConfig
 	std::string			Font = ""; // if no font is specified the default font will be used
 	uint32_t			FontSizePixels = 13;
 	int					ImageScale = 1;
+    
+    bool                bEnableLua = false;
 
     virtual bool    Init(void);
 	bool	Load(const char* filename);

@@ -213,6 +213,8 @@ void FEmuBase::DrawUI()
         ImPlot::ShowDemoWindow(&bShowImPlotDemo);
 
 	DrawEmulatorUI();
+    
+    LuaSys::DrawUI();
 }
 
 

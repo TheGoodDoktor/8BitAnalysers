@@ -22,3 +22,6 @@
 [submodule "Source/Vendor/ImGuiColorTextEdit"]
 	path = Source/Vendor/ImGuiColorTextEdit
 	url = https://github.com/BalazsJako/ImGuiColorTextEdit
+[submodule "Source/Vendor/imgui_lua_bindings"]
+	path = Source/Vendor/imgui_lua_bindings
+	url = https://github.com/megumumpkin/imgui_lua_bindings

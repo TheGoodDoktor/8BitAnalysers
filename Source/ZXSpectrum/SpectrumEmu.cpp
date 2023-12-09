@@ -40,6 +40,9 @@
 #include "CodeAnalyser/CodeAnalysisJson.h"
 #include "ZXSpectrumGameConfig.h"
 
+#include "LuaScripting/LuaSys.h"
+#include "SpectrumLuaAPI.h"
+
 #define ENABLE_RZX 1
 #define SAVE_ROM_JSON 0
 
@@ -807,7 +810,9 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	AssemblerExportStartAddress = kScreenAttrMemEnd + 1;
 	AssemblerExportEndAddress = 0xffff;
 
-	bInitialised = true;
+    // register Lua API
+    RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
+    bInitialised = true;
 	return true;
 }
 
@@ -881,7 +886,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
 		std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
 		std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
-
+        
 		// check for new location & adjust paths accordingly
 		const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pGameConfig->Name + "/";
 		if (FileExists((gameRoot + "Config.json").c_str()))	
@@ -891,6 +896,12 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 			analysisStateFName = gameRoot + "AnalysisState.bin";
 			saveStateFName = gameRoot + "SaveState.bin";
 		}
+        
+        std::string luaScriptFName = gameRoot + "ViewerScript.lua";
+        if(LuaSys::LoadFile(luaScriptFName.c_str()))
+        {
+            LuaSys::ExecuteString("InitViewer()");
+        }
 
 		if (LoadGameState(this, saveStateFName.c_str()))
 		{

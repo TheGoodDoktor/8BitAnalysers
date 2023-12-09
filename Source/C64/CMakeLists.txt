@@ -116,7 +116,10 @@ set ( zlib_src ${vendor_dir}/zlib/adler32.c
 	${vendor_dir}/zlib/uncompr.c
 	${vendor_dir}/zlib/zutil.c )
 
-set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} )
+set ( imguitextedit ${vendor_dir}/ImGuiColorTextEdit/TextEditor.cpp ${vendor_dir}/ImGuiColorTextEdit/TextEditor.h )
+
+
+set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} ${imguitextedit} )
 
 # program source
 file ( GLOB program_src 
