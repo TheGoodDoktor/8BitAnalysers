@@ -32,7 +32,7 @@ protected:
 	virtual void WriteToJson(nlohmann::json& jsonConfigFile) const;
 
 	// Ensure that paths have a trailing slash.
-	void fixupPaths(void)
+	void FixupPaths(void)
 	{
 		if (WorkspaceRoot.back() != '/')
 			WorkspaceRoot += "/";

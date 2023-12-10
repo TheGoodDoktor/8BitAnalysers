@@ -12,7 +12,7 @@ bool FZXSpectrumConfig::Init(void)
 	SnapshotFolder128 = GetDocumentsPath("SpectrumGames/128K");
 	WorkspaceRoot = GetDocumentsPath("SpectrumAnalyserProjects");
 
-	fixupPaths();
+	FixupPaths();
 
 	return true;
 }
@@ -28,7 +28,7 @@ void FZXSpectrumConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 	if (jsonConfigFile.contains("RZXFolder"))
 		RZXFolder = jsonConfigFile["RZXFolder"];
 
-	fixupPaths();
+	FixupPaths();
 }
 
 void FZXSpectrumConfig::WriteToJson(nlohmann::json& jsonConfigFile) const

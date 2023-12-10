@@ -18,9 +18,9 @@ protected:
 private:
 
 	// Ensure that paths have a trailing slash.
-	void fixupPaths(void)
+	void FixupPaths(void)
 	{
-		FGlobalConfig::fixupPaths();
+		FGlobalConfig::FixupPaths();
 
 		if (SnapshotFolder128.back() != '/')
 			SnapshotFolder128 += "/";
