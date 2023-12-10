@@ -28,96 +28,73 @@ char GetDirSep()
 	return '/';
 }
 
-
-
-#if 1
-const std::string GetApplicationDirectory()
-{
-    id info = [[NSBundle mainBundle] infoDictionary];
-    NSString *bundleID = [info objectForKey: @"CFBundleIdentifier"];
-
-    NSWorkspace *wp = [[NSWorkspace alloc] init];
-    NSString *app   = [wp absolutePathForAppBundleWithIdentifier: bundleID];
-
-    const char *str = [[app substringToIndex: [app length] - [[app lastPathComponent] length]] cStringUsingEncoding: NSASCIIStringEncoding];
-    return std::string( str );
-}
-#endif
-
-const char * GetBundlePath(const char *fileName)
-{
-    NSString* bundlePath = [[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent: @("/Contents/MacOS")];
-    fileName =[bundlePath stringByAppendingPathComponent: @(fileName)].UTF8String;
-    return fileName;
-}
-
-const char * GetDocumentsPath(const char *fileName)
-{
-    NSArray *docPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsFolder = [docPaths firstObject];
-    return [documentsFolder stringByAppendingPathComponent: @(fileName)].UTF8String;
- }
-
-const char * GetAppSupportPath(const char *fileName)
-{
-    id info = [[NSBundle mainBundle] infoDictionary];
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-    NSString *bundleID = [info objectForKey: @"CFBundleIdentifier"];
-    NSString *applicationSupportDirectory = [[paths firstObject] stringByAppendingPathComponent:bundleID];
-    return [applicationSupportDirectory stringByAppendingPathComponent: @(fileName)].UTF8String;
-}
-
 #define PLATFORM_MAX_PATH 256
 static char g_appSupportPath[PLATFORM_MAX_PATH];
 static char g_documentPath[PLATFORM_MAX_PATH];
 static char g_bundlePath[PLATFORM_MAX_PATH];
 
+const char *GetBundlePath(const char *fileName)
+{
+	static char path[PLATFORM_MAX_PATH];
+
+	// App resources are presently being installed alongside the executable in
+	// Contents/MacOS which is unusual. They're normally kept in the Resources
+	// directory.
+	snprintf(path, sizeof(path), "%s/Contents/MacOS/%s", g_bundlePath, fileName);
+	return path;
+}
+
+const char *GetDocumentsPath(const char *fileName)
+{
+	static char path[PLATFORM_MAX_PATH];
+
+	snprintf(path, sizeof(path), "%s/%s", g_documentPath, fileName);
+	return path;
+}
+
+const char *GetAppSupportPath(const char *fileName)
+{
+	static char path[PLATFORM_MAX_PATH];
+
+	snprintf(path, sizeof(path), "%s/%s", g_appSupportPath, fileName);
+	return path;
+}
+
 void FileInit(void)
 {
-    id info = [[NSBundle mainBundle] infoDictionary];
-    NSString *bundleID = [info objectForKey: @"CFBundleIdentifier"];
+	// Find bundle path
+	NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
 
-    // Setup Bundle Root
-    const char* bundlePath = [[[NSBundle mainBundle] resourcePath] UTF8String];
-    sprintf(g_bundlePath,"%s/",bundlePath);
-    
-    // Setup Application Support Dir
-    //NSString* bundleID = [[NSBundle mainBundle] bundleIdentifier];
-    NSFileManager*fm = [NSFileManager defaultManager];
-    NSURL*    dirPath = nil;
-    
-    NSArray *docPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsFolder = [docPaths firstObject];
-    
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-    NSString *applicationSupportDirectory = [paths firstObject];
-    //dirPath = [applicationSupportDirectory appendString:bundleID];
+	NSFileManager *defaultFileManager = [NSFileManager defaultManager];
 
-/*
-    // Find the application support directory in the home directory.
-    NSArray* appSupportDir = [fm URLsForDirectory:NSApplicationSupportDirectory
-                                        inDomains:NSUserDomainMask];
-    if ([appSupportDir count] > 0)
-    {
-        // Append the bundle ID to the URL for the
-        // Application Support directory
-        dirPath = [[appSupportDir objectAtIndex:0] URLByAppendingPathComponent:bundleID];
-        
-        // If the directory does not exist, this method creates it.
-        // This method is only available in OS X v10.7 and iOS 5.0 or later.
-        NSError*    theError = nil;
-        if (![fm createDirectoryAtURL:dirPath withIntermediateDirectories:YES
-                           attributes:nil error:&theError])
-        {
-            // Handle the error.
-            
-        }
-    }
-    */
-    if(applicationSupportDirectory != nil)
-    {
-        const char* appSupportPath = applicationSupportDirectory.UTF8String;
-        sprintf(g_appSupportPath, "%s/",appSupportPath);
-    }
-    
+	// Find document path
+	NSArray *documentsPaths = [defaultFileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask];
+	NSString *documentsPath = [documentsPaths firstObject];
+
+	// Find application support path
+	NSArray *applicationSupportDirectory = [defaultFileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask];
+	NSString *spectrumAnalyserDirectory = nil;
+	if ([applicationSupportDirectory count] > 0)
+	{
+		NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+		NSURL *spectrumAnalyserDirectoryURL = nil;
+		NSError *theError = nil;
+
+		spectrumAnalyserDirectoryURL = [[applicationSupportDirectory objectAtIndex:0] URLByAppendingPathComponent:bundleID];
+
+		if (![defaultFileManager createDirectoryAtURL:spectrumAnalyserDirectoryURL
+						  withIntermediateDirectories:YES
+										   attributes:nil
+												error:&theError])
+		{
+			NSLog(@"Create directory error: %@", theError);
+			return;
+		}
+
+		spectrumAnalyserDirectory = [spectrumAnalyserDirectoryURL path];
+	}
+
+	snprintf(g_bundlePath, PLATFORM_MAX_PATH, "%s", [bundlePath fileSystemRepresentation]);
+	snprintf(g_documentPath, PLATFORM_MAX_PATH, "%s", [documentsPath fileSystemRepresentation]);
+	snprintf(g_appSupportPath, PLATFORM_MAX_PATH, "%s", [spectrumAnalyserDirectory fileSystemRepresentation]);
 }

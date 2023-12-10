@@ -30,5 +30,13 @@ struct FGlobalConfig
 protected:
 	virtual void ReadFromJson(const nlohmann::json& jsonConfigFile);
 	virtual void WriteToJson(nlohmann::json& jsonConfigFile) const;
-};
 
+	// Ensure that paths have a trailing slash.
+	void fixupPaths(void)
+	{
+		if (WorkspaceRoot.back() != '/')
+			WorkspaceRoot += "/";
+		if (SnapshotFolder.back() != '/')
+			SnapshotFolder += "/";
+	}
+};
