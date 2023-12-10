@@ -5,15 +5,18 @@
 
 bool FZXSpectrumConfig::Init(void)
 {
-    if(FGlobalConfig::Init() == false)
-        return false;
-    
-    SnapshotFolder = GetDocumentsPath("SpectrumGames/48K");
-    SnapshotFolder128 = GetDocumentsPath("SpectrumGames/128K");
-    WorkspaceRoot = GetDocumentsPath("SpectrumAnalyserProjects");
-    
-    return true;
+	if(FGlobalConfig::Init() == false)
+		return false;
+
+	SnapshotFolder = GetDocumentsPath("SpectrumGames/48K");
+	SnapshotFolder128 = GetDocumentsPath("SpectrumGames/128K");
+	WorkspaceRoot = GetDocumentsPath("SpectrumAnalyserProjects");
+
+	fixupPaths();
+
+	return true;
 }
+
 void FZXSpectrumConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 {
 	FGlobalConfig::ReadFromJson(jsonConfigFile);
@@ -25,13 +28,7 @@ void FZXSpectrumConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 	if (jsonConfigFile.contains("RZXFolder"))
 		RZXFolder = jsonConfigFile["RZXFolder"];
 
-	// fixup paths
-	if (SnapshotFolder128.back() != '/')
-		SnapshotFolder128 += "/";
-	if (PokesFolder.back() != '/')
-		PokesFolder += "/";
-	if (RZXFolder.back() != '/')
-		RZXFolder += "/";
+	fixupPaths();
 }
 
 void FZXSpectrumConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
