@@ -146,11 +146,20 @@ void DrawViewerTab(lua_State* pState)
     {
         if(ImGui::BeginTabItem(lua_tostring(pState, -1)))
         {
-            
+            lua_pushvalue(pState,-2);
+            lua_pushstring(pState, "onDrawUI");
+            lua_gettable(pState, -2);
+            if(lua_isfunction(pState, -1))
+            {
+                lua_pcall(pState, 0, 0, 0); // 0 arguments, 0 return values
+            }
+            lua_pop(pState,2);  // onDraw function
         }
         ImGui::EndTabItem();
     }
-    lua_pop(pState,1);  //
+    lua_pop(pState,1);  // name string
+    
+    
 }
 
 void DrawUI()
@@ -254,9 +263,14 @@ void DrawTextEditor(void)
             {
                 if(ImGui::BeginTabItem(editor.SourceName.c_str()))
                 {
-                    if(ImGui::Button("Run"))
+                    if(ImGui::Button("Update"))
                     {
                         ExecuteString(editor.LuaTextEditor.GetText().c_str());
+                    }
+                    ImGui::SameLine();
+                    if(ImGui::Button("Save"))
+                    {
+                        // TODO: Save Action
                     }
                     editor.LuaTextEditor.Render(editor.SourceName.c_str());
                 }

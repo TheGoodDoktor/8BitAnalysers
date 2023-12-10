@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 //-----------------------------------------------------------------------------
 // [SECTION] Example App: Debug Console / ShowExampleAppConsole()
