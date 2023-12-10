@@ -21,6 +21,21 @@ extern "C"
 namespace LuaSys
 {
 
+FLuaScopeCheck::FLuaScopeCheck(lua_State* pState):LuaState(pState)
+{
+    InitialStackItems = lua_gettop(LuaState);
+}
+
+FLuaScopeCheck::~FLuaScopeCheck()
+{
+    if(InitialStackItems != lua_gettop(LuaState))
+    {
+        LOGWARNING("Lua stack imbalance now:%d, should be:%d",lua_gettop(LuaState),InitialStackItems);
+        LOGWARNING("Stack:");
+        DumpStack(LuaState);
+    }
+}
+
 lua_State*	GlobalState = nullptr;
 
 FLuaConsole LuaConsole;
@@ -58,11 +73,13 @@ bool Init(FEmuBase* pEmulator)
     GlobalState = pState;
     EmuBase = pEmulator;
     
+    LoadFile(GetBundlePath("Lua/LuaBase.lua"));
+    
     // Create the global 'Viewers' table
-    lua_getglobal(pState, "_G");
-    lua_pushstring(pState, "Viewers");
-    lua_newtable(pState);
-    lua_rawset(pState, -3);
+    //lua_getglobal(pState, "_G");
+    //lua_pushstring(pState, "Viewers");
+    //lua_newtable(pState);
+    //lua_rawset(pState, -3);
     
     return true;
 }
@@ -121,7 +138,7 @@ void OutputDebugString(const char* fmt, ...)
     va_start(args, fmt);
     vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
     LuaConsole.AddLog("%s",buf);
-    printf("%s\n",buf);
+    LOGDEBUG("%s",buf);
 }
 
 FLuaConsole* GetLuaConsole()
@@ -136,6 +153,7 @@ FEmuBase* GetEmulator()
 
 void DrawViewerTab(lua_State* pState)
 {
+    FLuaScopeCheck StackCheck(pState);
     //DumpStack(pState);
     if(!lua_istable(pState, -1))
         return;
@@ -153,13 +171,14 @@ void DrawViewerTab(lua_State* pState)
             {
                 lua_pcall(pState, 0, 0, 0); // 0 arguments, 0 return values
             }
-            lua_pop(pState,2);  // onDraw function
+            lua_pop(pState,1);  // onDraw function
+        
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
     lua_pop(pState,1);  // name string
     
-    
+    //DumpStack(pState);
 }
 
 void DrawUI()
@@ -171,6 +190,8 @@ void DrawUI()
     LuaConsole.Draw("Lua Console", &bOpen);
     
     lua_State* pState = GlobalState;
+    FLuaScopeCheck StackCheck(pState);
+   
     const int top = lua_gettop(pState);
 
     lua_getglobal(pState, "Viewers");
@@ -189,8 +210,9 @@ void DrawUI()
                     DrawViewerTab(pState);
                     lua_pop(pState,1);  // pop item
                 }
-            }
-            ImGui::EndTabBar();
+                
+                ImGui::EndTabBar();
+           }
         }
         ImGui::End();
     }
@@ -270,11 +292,12 @@ void DrawTextEditor(void)
                     ImGui::SameLine();
                     if(ImGui::Button("Save"))
                     {
-                        // TODO: Save Action
+                        SaveTextFile(editor.SourceFileName.c_str(), editor.LuaTextEditor.GetText().c_str());
                     }
                     editor.LuaTextEditor.Render(editor.SourceName.c_str());
+                    ImGui::EndTabItem();
                 }
-                ImGui::EndTabItem();
+                
             }
         }
         ImGui::EndTabBar();

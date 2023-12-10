@@ -10,35 +10,39 @@
 #ifdef _WIN32
 
 #define PLATFORM_FORMAT_LOG_MESSAGE(fn, level)  \
-	char buf[16*1024]; \
+    const int kBufSize = 16*1024; \
+    char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
-	vsprintf_s(buf,16*1024, fmt, ap); \
+	vsprintf_s(buf,kBufSize, fmt, ap); \
 	va_end(ap); \
 	fn(buf); 
 
 #define PLATFORM_FORMAT_LOG_MESSAGE_LF(fn, level)  \
-	char buf[16*1024]; \
+    const int kBufSize = 16*1024; \
+    char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
-	vsprintf_s(buf,16*1024, fmt, ap); \
+	vsprintf_s(buf,kBufSize, fmt, ap); \
 	va_end(ap); \
 	strcat_s(buf,16*1024, "\n"); \
 	fn(buf); 
 #else
 #define PLATFORM_FORMAT_LOG_MESSAGE(fn, level)  \
-	char buf[16*1024]; \
+    const int kBufSize = 16*1024; \
+	char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
-	vsprintf(buf, fmt, ap); \
+	vsnprintf(buf, kBufSize, fmt, ap); \
 	va_end(ap); \
 	fn(buf); 
 
 #define PLATFORM_FORMAT_LOG_MESSAGE_LF(fn, level)  \
-	char buf[16*1024]; \
+    const int kBufSize = 16*1024; \
+	char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
-	vsprintf(buf, fmt, ap); \
+	vsnprintf(buf,kBufSize, fmt, ap); \
 	va_end(ap); \
 	strcat(buf, "\n"); \
 	fn(buf); 
@@ -48,6 +52,8 @@ void LogFatal(const char* str)
 {
 #ifdef WIN32
 	OutputDebugStringA(str);
+#else
+    printf("%s",str);
 #endif
 	g_ImGuiLog.AddLog("[Fatal] %s", str);
 }
@@ -56,6 +62,8 @@ void LogError(const char* str)
 {
 #ifdef WIN32
 	OutputDebugStringA(str);
+#else
+    printf("%s",str);
 #endif
 	g_ImGuiLog.AddLog("[Error] %s", str);
 }
@@ -64,6 +72,8 @@ void LogWarning(const char* str)
 {
 #ifdef WIN32
 	OutputDebugStringA(str);
+#else
+    printf("%s",str);
 #endif
 	g_ImGuiLog.AddLog("[Warning] %s", str);
 }
@@ -72,6 +82,8 @@ void LogInfo(const char* str)
 {
 #ifdef WIN32
 	OutputDebugStringA(str);
+#else
+    printf("%s",str);
 #endif
 	g_ImGuiLog.AddLog("[Info] %s", str);
 }
@@ -80,6 +92,8 @@ void LogDebug(const char* str)
 {
 #ifdef WIN32
 	OutputDebugStringA(str);
+#else
+    printf("%s",str);
 #endif
 	g_ImGuiLog.AddLog("[Debug] %s", str);
 }

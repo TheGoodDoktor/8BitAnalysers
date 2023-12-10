@@ -582,6 +582,9 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	
 	const FSpectrumLaunchConfig& spectrumLaunchConfig = (const FSpectrumLaunchConfig&)config;
 
+    // register Lua API
+    RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
+    
 	SetWindowTitle(kAppTitle.c_str());
 	SetWindowIcon(GetBundlePath("SALogo.png"));
 
@@ -810,8 +813,7 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	AssemblerExportStartAddress = kScreenAttrMemEnd + 1;
 	AssemblerExportEndAddress = 0xffff;
 
-    // register Lua API
-    RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
+    
     bInitialised = true;
 	return true;
 }

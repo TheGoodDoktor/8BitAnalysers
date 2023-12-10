@@ -78,7 +78,7 @@ static int getMemPtr(lua_State* pState)
 }
 static int addViewer(lua_State* pState)
 {
-    //LuaSys::DumpStack(pState);
+    //LuaSys::FLuaScopeCheck check(pState);
     
     if(lua_istable(pState, -1))
     {
@@ -97,7 +97,7 @@ static const luaL_Reg corelib[] =
     {"print", print},
     {"readbyte", readbyte},
     {"readword", readword},
-    {"addViewer", addViewer},
+    //{"addViewer", addViewer},
     {NULL, NULL}    // terminator
 };
 

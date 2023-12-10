@@ -35,6 +35,7 @@ bool EnsureDirectoryExists(const char *pDirectory);	// Ensure a directory exists
 
 bool FileExists(const char *pFilename);
 char *LoadTextFile(const char *pFilename);
+bool SaveTextFile(const char* pFileName, const char* pText);
 void *LoadBinaryFile(const char *pFilename, size_t &byteCount);
 bool SaveBinaryFile(const char *pFilename, const void * pData, size_t byteCount);
 

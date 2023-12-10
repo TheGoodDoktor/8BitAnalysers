@@ -331,15 +331,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             )
             
     add_custom_command(TARGET ${APP_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/Fonts
-            $<TARGET_FILE_DIR:${APP_NAME}>
+            $<TARGET_FILE_DIR:${APP_NAME}>/Fonts
             )
             
     add_custom_command(TARGET ${APP_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/Fonts/Cousine-Regular.ttf
-            $<TARGET_FILE_DIR:${APP_NAME}>/Fonts
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/SpectrumAnalyser/Lua
+            $<TARGET_FILE_DIR:${APP_NAME}>/Lua
             )
     
     set_target_properties( SpectrumAnalyser PROPERTIES
