@@ -14,4 +14,20 @@ protected:
 
 	void ReadFromJson(const nlohmann::json& jsonConfigFile) override;
 	void WriteToJson(nlohmann::json& jsonConfigFile) const override;
+
+private:
+
+	// Ensure that paths have a trailing slash.
+	void fixupPaths(void)
+	{
+		FGlobalConfig::fixupPaths();
+
+		if (SnapshotFolder128.back() != '/')
+			SnapshotFolder128 += "/";
+		if (PokesFolder.back() != '/')
+			PokesFolder += "/";
+		if (RZXFolder.back() != '/')
+			RZXFolder += "/";
+	}
+
 };
