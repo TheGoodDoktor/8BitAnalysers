@@ -47,12 +47,12 @@
 
 #include "CPCScreen.h"
 #include "CodeAnalyser/CodeAnalyser.h"
-//#include "CodeAnalyser/IOAnalyser.h"
 #include "Viewers/CPCViewer.h"
 #include "Viewers/CPCGraphicsViewer.h"
 #include "MemoryHandlers.h"
 #include "IOAnalysis.h"
 #include "Misc/EmuBase.h"
+#include "ExternalROMSupport.h"
 
 struct FGameViewerData;
 struct FGameConfig;
@@ -69,6 +69,7 @@ enum class ECPCModel
 	CPC_KCKompact,
 };
 
+// Built in ROM banks
 enum EROMBank
 {
 	OS = 0,
@@ -102,78 +103,78 @@ public:
 		CPUType = ECPUType::Z80;
 	}
 
-	bool	Init(const FEmulatorLaunchConfig& config) override;
-	void	Shutdown() override;
-	bool	StartGame(FGameConfig* pGameConfig, bool bLoadGameData) override;
-	bool	SaveCurrentGameData() override;
-	bool	SaveGameState(const char* fname);
-	bool	LoadGameState(const char* fname);
+	bool				Init(const FEmulatorLaunchConfig& config) override;
+	void				Shutdown() override;
+	bool				StartGame(FGameConfig* pGameConfig, bool bLoadGameData) override;
+	bool				SaveCurrentGameData() override;
+	bool				SaveGameState(const char* fname);
+	bool				LoadGameState(const char* fname);
 
-	void	OnInstructionExecuted(int ticks, uint64_t pins);
-	uint64_t Z80Tick(int num, uint64_t pins);
+	void				OnInstructionExecuted(int ticks, uint64_t pins);
+	uint64_t		Z80Tick(int num, uint64_t pins);
 
-	void	Reset() override;
-	void	Tick() override;
+	void				Reset() override;
+	void				Tick() override;
 
-	void	DrawEmulatorUI(void);
+	void				DrawEmulatorUI(void);
 
-	void	FileMenuAdditions(void) override;		
-	void	SystemMenuAdditions(void) override;
-	void	OptionsMenuAdditions(void) override;
-	void	WindowsMenuAdditions(void) override;
+	void				FileMenuAdditions(void) override;		
+	void				SystemMenuAdditions(void) override;
+	void				OptionsMenuAdditions(void) override;
+	void				WindowsMenuAdditions(void) override;
 #if 0
-	void	DrawMemoryTools();
-	void	DrawUI();
-	bool	DrawDockingView();
+	void				DrawMemoryTools();
+	void				DrawUI();
+	bool				DrawDockingView();
 
-	void	DrawFileMenu();
-	void	DrawSystemMenu();
-	void	DrawHardwareMenu();
-	void	DrawOptionsMenu();
-	void	DrawToolsMenu();
-	void	DrawWindowsMenu();
-	void	DrawDebugMenu();
-	void	DrawMenus();
-	void	DrawMainMenu(double timeMS);
-	void	DrawExportAsmModalPopup();
-	void	DrawReplaceGameModalPopup();
+	void				DrawFileMenu();
+	void				DrawSystemMenu();
+	void				DrawHardwareMenu();
+	void				DrawOptionsMenu();
+	void				DrawToolsMenu();
+	void				DrawWindowsMenu();
+	void				DrawDebugMenu();
+	void				DrawMenus();
+	void				DrawMainMenu(double timeMS);
+	void				DrawExportAsmModalPopup();
+	void				DrawReplaceGameModalPopup();
 #endif
 	// disable copy & assign because this class is big!
 	FCPCEmu(const FCPCEmu&) = delete;
 	FCPCEmu& operator= (const FCPCEmu&) = delete;
 
 	//ICPUInterface Begin
-	uint8_t	ReadByte(uint16_t address) const override;
-	uint16_t	ReadWord(uint16_t address) const override;
-	const uint8_t* GetMemPtr(uint16_t address) const override;
-	void		WriteByte(uint16_t address, uint8_t value) override;
-	FAddressRef	GetPC(void) override;
-	uint16_t	GetSP(void) override;
-	void*		GetCPUEmulator(void) const override;
+	uint8_t					ReadByte(uint16_t address) const override;
+	uint16_t				ReadWord(uint16_t address) const override;
+	const uint8_t*	GetMemPtr(uint16_t address) const override;
+	void						WriteByte(uint16_t address, uint8_t value) override;
+	FAddressRef			GetPC(void) override;
+	uint16_t				GetSP(void) override;
+	void*						GetCPUEmulator(void) const override;
 	//ICPUInterface End
 	
-	void InitBankMappings();
-	void UpdateBankMappings();
-	void SetRAMBank(int slot, int bankNo, EBankAccess access);
-	void SetRAMBanksPreset(int bankPresetIndex);
+	void				InitBankMappings();
+	void				UpdateBankMappings();
+	void				SetRAMBank(int slot, int bankNo, EBankAccess access);
+	void				SetRAMBanksPreset(int bankPresetIndex);
 
-	void UpdatePalette();
+	void				UpdatePalette();
 
-	bool NewGameFromSnapshot(const FGameSnapshot& snaphot) override;
+	bool				NewGameFromSnapshot(const FGameSnapshot& snaphot) override;
 
 	// Emulator 
-	cpc_t			CPCEmuState;		// Chips CPC State
+	cpc_t				CPCEmuState;		// Chips CPC State
 	uint8_t*		MappedInMemory = nullptr;
 	//FCPCConfig*		pGlobalConfig = nullptr;
 
-	float			ExecSpeedScale = 1.0f;
+	float				ExecSpeedScale = 1.0f;
 
 	ui_cpc_t		UICPC;
 
 	FGame*			pActiveGame = nullptr;
 
 	// Viewers
-	FCPCViewer					CPCViewer;
+	FCPCViewer	CPCViewer;
 	//FFrameTraceViewer		FrameTraceViewer;
 	//FCPCGraphicsViewer		GraphicsViewer;
 	//FCodeAnalysisState		CodeAnalysis;
@@ -186,32 +187,36 @@ public:
 	static const int	kNoROMBanks = EROMBank::COUNT;
 	static const int	kNoRAMBanks = 8;
 
-	int16_t				ROMBanks[kNoROMBanks];
-	int16_t				RAMBanks[kNoRAMBanks];
+	// Banks IDs of all ROM/RAM banks that have been created
+	int16_t			ROMBanks[kNoROMBanks];
+	int16_t			RAMBanks[kNoRAMBanks];
+
+	// Bank IDs of upper ROM slots
+	int16_t			UpperROMSlot[kNumUpperROMSlots];
+	int					CurUpperROMSlot = -1;
+
 	//FCodeAnalysisPage	ROMPages[kNoROMPages];
 	//FCodeAnalysisPage	RAMPages[kNoRAMPages];
 	
-	EROMBank			CurROMBankLo = EROMBank::INVALID;
-	EROMBank			CurROMBankHi = EROMBank::INVALID;
-	bool				bLoROMEnabled = false;
-	bool				bHiROMEnabled = false;
-	int16_t				CurRAMBank[4] = { -1,-1,-1,-1 };
+	int16_t			CurRAMBank[4] = { -1,-1,-1,-1 };
+
+	uint8_t			LastGAConfigReg = 0;
 
 	// Memory handling
-	std::string				SelectedMemoryHandler;
+	std::string	SelectedMemoryHandler;
 	std::vector< FMemoryAccessHandler>	MemoryAccessHandlers;
 
 	FMemoryStats	MemStats;
 
 	uint16_t		PreviousPC = 0;		// store previous pc
-	int			InstructionsTicks = 0;
+	int					InstructionsTicks = 0;
 
 	//bool	bShowImGuiDemo = false;
 	//bool	bShowImPlotDemo = false;
 
 	const FGamesList& GetGamesList() const { return GamesList;  }
 
-	FCPCScreen Screen;
+	FCPCScreen	Screen;
 
 private:
 	//FGamesList		GamesList;
@@ -221,10 +226,10 @@ private:
 
 	FScreenPixMemDescGenerator* pScreenMemDescGenerator = 0;
 
-	bool bReplaceGamePopup = false;
-	int ReplaceGameSnapshotIndex = 0;
+	bool				bReplaceGamePopup = false;
+	int					ReplaceGameSnapshotIndex = 0;
 
-	bool bExportAsm = false;
+	bool				bExportAsm = false;
 
-	bool	bInitialised = false;
+	bool				bInitialised = false;
 };

@@ -241,15 +241,42 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 	//debugger.CPUTick(pins);
 	CodeAnalysis.OnCPUTick(pins);
 
+	const am40010_t& ga = CPCEmuState.ga;
 	if (pins & Z80_IORQ)
 	{
 		// This is still needed because it deals with adding events to the event trace.
 		IOAnalysis.IOHandler(pc, pins);
 
-		// Some of this logic is based on what happens in _cpc_bankswitch().
 		// note: some of this code logic is duplicated in IOAnalysis.cpp in HandleGateArray
 		if (pins & (Z80_RD | Z80_WR))
 		{
+			if ((pins & Z80_A13) == 0)
+			{
+				// ROM select. This will get called when a $BC OUT instruction happens
+				
+				const uint8_t romNumber = Z80_GET_DATA(pins);
+				const int newRomNumber = SelectUpperROM(romNumber);
+				if (newRomNumber != -1)
+				{
+					bool bDirty = newRomNumber != CurUpperROMSlot;
+
+					CurUpperROMSlot = newRomNumber;
+
+					if (bDirty)
+					{
+						UpdateBankMappings();
+
+						// Call the modified Chips bank switch code, in order to switch to the newly selected upper ROM.
+						// Note: the bank switch CB will have already been called by the Chips code but we need to call it
+						// again after selecting the upper ROM.
+						// The alternative would have been to call SelectUpperROM() in the bank switch CB but that would mean
+						// calling it more often than we need to.
+						
+						CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
+					}
+				}
+			}
+
 			if ((pins & (AM40010_A14 | AM40010_A15)) == AM40010_A14)
 			{
 				// extract 8-bit data bus from 64-bit pin mask
@@ -260,7 +287,9 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 				{
 					case (1 << 7):
 					{
-						UpdateBankMappings();
+						const uint8_t ROMEnableDirty = (LastGAConfigReg ^ ga.regs.config) & (AM40010_CONFIG_LROMEN | AM40010_CONFIG_HROMEN);
+						if (ROMEnableDirty != 0)
+							UpdateBankMappings();
 					}
 					break;
 
@@ -294,9 +323,14 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 
 void FCPCEmu::InitBankMappings()
 {
-	CurROMBankLo = EROMBank::INVALID;
-	CurROMBankHi = EROMBank::INVALID;
+	am40010_t& ga = CPCEmuState.ga;
+
+	CurUpperROMSlot = ga.rom_select;
+	SelectUpperROM(CurUpperROMSlot);
+
 	UpdateBankMappings();
+
+	CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
 }
 
 void FCPCEmu::UpdateBankMappings()
@@ -305,43 +339,23 @@ void FCPCEmu::UpdateBankMappings()
 
 	if (configByte & AM40010_CONFIG_LROMEN)
 	{
-		if (CurROMBankLo != EROMBank::NONE)
-		{
-			// Disable low rom. RAM now is read/write
-			CurROMBankLo = EROMBank::NONE;
-			SetRAMBank(0, 0, EBankAccess::Read);	// 0x0000 - 0x3fff
-		}
+		SetRAMBank(0, 0, EBankAccess::Read);	// 0x0000 - 0x3fff
 	}
 	else
 	{
-		if (CurROMBankLo >= EROMBank::NONE)
-		{
-			// Enable low rom. RAM is now write only (RAM behind ROM)
-			CodeAnalysis.MapBank(ROMBanks[EROMBank::OS], 0, EBankAccess::Read);
-			CurROMBankLo = EROMBank::OS;
-		}
+		CodeAnalysis.MapBank(ROMBanks[EROMBank::OS], 0, EBankAccess::Read);
 	}
 
 	if (configByte & AM40010_CONFIG_HROMEN)
 	{
-		if (CurROMBankHi != EROMBank::NONE)
-		{
-			// Disable high rom. RAM now is read/write
-			CurROMBankHi = EROMBank::NONE;
-			SetRAMBank(3, 3, EBankAccess::Read);	// 0xc000 - 0xffff
-		}
+		SetRAMBank(3, 3, EBankAccess::Read);	// 0xc000 - 0xffff
 	}
 	else
 	{
-		if (CurROMBankHi >= EROMBank::NONE)
-		{
-			// Enable high rom. RAM is now write only (RAM behind ROM)
-			CodeAnalysis.MapBank(ROMBanks[EROMBank::BASIC], 48, EBankAccess::Read);
-			CurROMBankHi = EROMBank::BASIC;
-
-			// sam todo: on 6128 we need to support mapping in AMSDOS or BASIC
-		}
+		CodeAnalysis.MapBank(UpperROMSlot[CurUpperROMSlot], 48, EBankAccess::Read);
 	}
+
+	LastGAConfigReg = configByte;
 }
 
 // Slot is physical 16K memory region (0-3) 
@@ -623,6 +637,9 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
 
 	cpc_init(&CPCEmuState, &desc);
+	InitChipsImpl(&CPCEmuState);
+
+	CPCEmuState.ga.bankswitch_cb = CPCBankSwitchCB;
 
 	// Clear UI
 	memset(&UICPC, 0, sizeof(ui_cpc_t));
@@ -673,6 +690,10 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	// Set up code analysis
 	// initialise code analysis pages
+	
+	InitExternalROMs();
+	
+	//LoadExternalROM("test.rom", 7);
 
 	// Low ROM 0x0000 - 0x3fff
 	ROMBanks[EROMBank::OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true);
@@ -718,6 +739,19 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		SetRAMBank(1, 1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
 		SetRAMBank(2, 2, EBankAccess::ReadWrite);	// 0x8000 - 0xBfff
 		SetRAMBank(3, 3, EBankAccess::ReadWrite);	// 0xc000 - 0xffff
+	}
+
+	// Setup upper ROM slots
+	UpperROMSlot[0] = ROMBanks[EROMBank::BASIC];
+
+	char romName[16];
+	for (int i = 1; i < kNumUpperROMSlots-1; i++)
+	{
+		const uint8_t* pROMData = GetUpperROMSlot(i);
+		sprintf(romName, "Upper ROM %d", i);
+		UpperROMSlot[i] = CodeAnalysis.CreateBank(romName, 16, (uint8_t*)pROMData, true);
+		if (pROMData)
+			CodeAnalysis.GetBank(UpperROMSlot[i])->PrimaryMappedPage = 48;
 	}
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
@@ -849,7 +883,9 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	else
 	{
 		GamesList.LoadGame(pGameConfig->Name.c_str());
+		InitBankMappings();
 	}
+
 
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
