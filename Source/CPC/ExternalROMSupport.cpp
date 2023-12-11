@@ -3,6 +3,7 @@
 #include "Util/FileUtil.h"
 
 #include <cassert>
+#include <cstring>
 
 extern unsigned char dump_cpc464_basic_bin[];
 
