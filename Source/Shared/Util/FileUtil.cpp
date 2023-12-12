@@ -98,12 +98,12 @@ char *LoadTextFile(const char *pFilename)
 	fseek(fp, 0, SEEK_END);
 	size_t fileSize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	char *pTextData = new char[fileSize];
+	char *pTextData = new char[fileSize + 1];
 	if (pTextData == nullptr)
 		return nullptr;
-	fread(pTextData, fileSize, 1, fp);
+	size_t bytesRead = fread(pTextData,1, fileSize, fp);
 	fclose(fp);
-
+	pTextData[bytesRead] = 0;	// null terminator
 	return pTextData;
 }
 
