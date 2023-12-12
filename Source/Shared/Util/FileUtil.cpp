@@ -101,7 +101,7 @@ char *LoadTextFile(const char *pFilename)
 	char *pTextData = new char[fileSize + 1];
 	if (pTextData == nullptr)
 		return nullptr;
-	size_t bytesRead = fread(pTextData,1, fileSize, fp);
+	const size_t bytesRead = fread(pTextData,1, fileSize, fp);
 	fclose(fp);
 	pTextData[bytesRead] = 0;	// null terminator
 	return pTextData;
