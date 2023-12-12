@@ -86,14 +86,21 @@ public:
 
 	const char* GenerateAddressString(FAddressRef addr) override
 	{
-		// MARKC: this has changed to use an address ref, you might want to check the bankid?
-		// todo: deal with screen mode? display both scr mode's x coords?
-		int xp = 0, yp = 0;
-		if (pCPCEmu->Screen.GetScreenAddressCoords(addr.Address, xp, yp))
-			sprintf(DescStr, "Screen: %d,%d", xp, yp);
-		else
-			sprintf(DescStr, "Screen: ?,?");
-		return DescStr;
+		if (const FCodeAnalysisBank* pBank = pCPCEmu->GetCodeAnalysis().GetBank(addr.BankId))
+		{
+			// ROM can't be screen memory
+			if (pBank->bReadOnly)
+				return nullptr;
+
+			// todo: deal with screen mode? display both scr mode's x coords?
+			int xp = 0, yp = 0;
+			if (pCPCEmu->Screen.GetScreenAddressCoords(addr.Address, xp, yp))
+				sprintf(DescStr, "Screen: %d,%d", xp, yp);
+			else
+				sprintf(DescStr, "Screen: ?,?");
+			return DescStr;
+		}
+		return nullptr;
 	}
 
 	void UpdateScreenMemoryLocation()
