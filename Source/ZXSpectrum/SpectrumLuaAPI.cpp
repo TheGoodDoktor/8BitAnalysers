@@ -25,7 +25,10 @@ static int CreateZXGraphicsView(lua_State *pState)
 static int ClearGraphicsView(lua_State *pState)
 {
     FZXGraphicsView* pGraphicsView = (FZXGraphicsView*)lua_touserdata(pState, 1 );
-    pGraphicsView->Clear();
+    uint32_t clearCol = 0;
+    if(lua_isinteger(pState, 2))
+        clearCol = lua_tointeger(pState, 2);
+    pGraphicsView->Clear(clearCol);
     return 0;
 }
 
@@ -46,7 +49,8 @@ static int DrawZXBitImage(lua_State *pState)
     const int yp = (int)lua_tointeger(pState,4);
     const int widthChars = (int)lua_tointeger(pState,5);
     const int heightChars = (int)lua_tointeger(pState,6);
-    pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars);
+    const uint8_t attrib = (uint8_t)lua_tointeger(pState,7);
+    pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib);
     return 0;
 }
 

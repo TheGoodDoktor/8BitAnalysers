@@ -60,6 +60,9 @@ void lua_warning_function(void *ud, const char *msg, int tocont)
 
 bool Init(FEmuBase* pEmulator)
 {
+    if(GlobalState != nullptr)  // shutdown old instance
+        Shutdown();
+    
     lua_State* pState = luaL_newstate();	// create the global state
 
     // Add system libraries
@@ -86,7 +89,8 @@ bool Init(FEmuBase* pEmulator)
 
 void Shutdown(void)
 {
-
+    lua_close(GlobalState);
+    GlobalState = nullptr;
 }
 
 lua_State*  GetGlobalState()
@@ -169,9 +173,16 @@ void DrawViewerTab(lua_State* pState)
             lua_gettable(pState, -2);
             if(lua_isfunction(pState, -1))
             {
-                lua_pcall(pState, 0, 0, 0); // 0 arguments, 0 return values
+                lua_pushvalue(pState, -2);  // get table as argument for function
+                //DumpStack(pState);
+                if(lua_pcall(pState, 1, 0, 0) != LUA_OK)
+                {
+                    OutputDebugString("Error calling 'onDraw' function for viewer: %s", lua_tostring(pState, -1));
+                    DumpStack(pState);
+                    lua_pop(pState,1); // pop error
+                }
             }
-            lua_pop(pState,1);  // onDraw function
+            lua_pop(pState,1);  // onDraw function & table copy
         
             ImGui::EndTabItem();
         }
@@ -226,32 +237,39 @@ void DrawUI()
 void DumpStack(lua_State *L)
 {
     const int top = lua_gettop(L);
+    const int kValueStrSize = 32;
+    char valueStr[kValueStrSize];
     
     for (int i = 1; i <= top; i++)
     {
         const int t = lua_type(L, i);
+       
         switch (t)
         {
             case LUA_TSTRING:  /* strings */
-                OutputDebugString("`%s'", lua_tostring(L, i));
+                snprintf(valueStr,kValueStrSize,"`%s'", lua_tostring(L, i));
+                //OutputDebugString("`%s'", lua_tostring(L, i));
                 break;
 
             case LUA_TBOOLEAN:  /* booleans */
-                OutputDebugString(lua_toboolean(L, i) ? "true" : "false");
+                //OutputDebugString(lua_toboolean(L, i) ? "true" : "false");
+                snprintf(valueStr,kValueStrSize,"%s",lua_toboolean(L, i) ? "true" : "false");
                 break;
 
             case LUA_TNUMBER:  /* numbers */
-                OutputDebugString("%g", lua_tonumber(L, i));
+                snprintf(valueStr,kValueStrSize,"%g", lua_tonumber(L, i));
                 break;
 
             default:  /* other values */
-                OutputDebugString("%s", lua_typename(L, t));
+                snprintf(valueStr,kValueStrSize,"");
+                //OutputDebugString("%s", lua_typename(L, t));
                 break;
 
         }
-        OutputDebugString("  ");  /* put a separator */
+        OutputDebugString("%d(%d) : %s %s",i, -1 - (top - i),lua_typename(L, t),valueStr);
+        //OutputDebugString("  ");  /* put a separator */
     }
-    OutputDebugString("\n");  /* end the listing */
+    //OutputDebugString("\n");  /* end the listing */
 }
 
 // Text Editor - move?
@@ -283,10 +301,20 @@ void DrawTextEditor(void)
         {
             for(auto& editor : TextEditors)
             {
-                if(ImGui::BeginTabItem(editor.SourceName.c_str()))
+                const bool bTabOpen =ImGui::BeginTabItem(editor.SourceName.c_str());
+                
+                if(ImGui::IsItemHovered())  // full filename on tooltip
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::Text("%s",editor.SourceFileName.c_str());
+                    ImGui::EndTooltip();
+                }
+                
+                if(bTabOpen)
                 {
                     if(ImGui::Button("Update"))
                     {
+                        OutputDebugString("Updating script: %s",editor.SourceName.c_str());
                         ExecuteString(editor.LuaTextEditor.GetText().c_str());
                     }
                     ImGui::SameLine();
