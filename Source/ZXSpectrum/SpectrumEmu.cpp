@@ -581,9 +581,6 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	FEmuBase::Init(config);
 	
 	const FSpectrumLaunchConfig& spectrumLaunchConfig = (const FSpectrumLaunchConfig&)config;
-
-    // register Lua API
-    RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
     
 	SetWindowTitle(kAppTitle.c_str());
 	SetWindowIcon(GetBundlePath("SALogo.png"));
@@ -899,11 +896,11 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 			saveStateFName = gameRoot + "SaveState.bin";
 		}
         
+        // Setup Lua - reinitialised for each game
+        LuaSys::Init(this);
+        RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
         std::string luaScriptFName = gameRoot + "ViewerScript.lua";
-        if(LuaSys::LoadFile(luaScriptFName.c_str()))
-        {
-            LuaSys::ExecuteString("InitViewer()");
-        }
+        LuaSys::LoadFile(luaScriptFName.c_str());
 
 		if (LoadGameState(this, saveStateFName.c_str()))
 		{

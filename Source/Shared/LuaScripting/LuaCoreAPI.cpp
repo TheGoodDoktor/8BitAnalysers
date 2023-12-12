@@ -35,7 +35,7 @@ static int print(lua_State* pState)
     return 0;
 }
 
-static int readbyte(lua_State* pState)
+static int ReadByte(lua_State* pState)
 {
     FEmuBase* pEmu = LuaSys::GetEmulator();
     
@@ -49,7 +49,7 @@ static int readbyte(lua_State* pState)
     return 0;
 }
 
-static int readword(lua_State* pState)
+static int ReadWord(lua_State* pState)
 {
     FEmuBase* pEmu = LuaSys::GetEmulator();
     
@@ -63,7 +63,7 @@ static int readword(lua_State* pState)
     return 0;
 }
 
-static int getMemPtr(lua_State* pState)
+static int GetMemPtr(lua_State* pState)
 {
     FEmuBase* pEmu = LuaSys::GetEmulator();
     
@@ -76,6 +76,8 @@ static int getMemPtr(lua_State* pState)
     
     return 0;
 }
+
+#if 0
 static int addViewer(lua_State* pState)
 {
     //LuaSys::FLuaScopeCheck check(pState);
@@ -91,12 +93,14 @@ static int addViewer(lua_State* pState)
     }
     return 0;
 }
+#endif
 
 static const luaL_Reg corelib[] =
 {
     {"print", print},
-    {"readbyte", readbyte},
-    {"readword", readword},
+    {"ReadByte", ReadByte},
+    {"ReadWord", ReadWord},
+    {"GetMemPtr", GetMemPtr},
     //{"addViewer", addViewer},
     {NULL, NULL}    // terminator
 };

@@ -47,8 +47,6 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 {
 	FileInit();
 	
-	LuaSys::Init(this);
-
 	const char* pImGuiConfigFile = "imgui.ini";
 	
 	// check if we have an imgui.ini file in our app support dir
