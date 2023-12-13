@@ -11,9 +11,8 @@ extern "C"
 
 static int CreateZXGraphicsView(lua_State *pState)
 {
-    // TODO: validate?
-    const int width = (int)lua_tointeger(pState, 1);
-    const int height = (int)lua_tointeger(pState, 2);
+    const int width = (int)luaL_optnumber(pState, 1, 256);
+    const int height = (int)luaL_optnumber(pState, 2, 256);
     
     FZXGraphicsView* pGraphicsView = new FZXGraphicsView(width,height);
     pGraphicsView->Clear();
@@ -25,6 +24,9 @@ static int CreateZXGraphicsView(lua_State *pState)
 static int ClearGraphicsView(lua_State *pState)
 {
     FZXGraphicsView* pGraphicsView = (FZXGraphicsView*)lua_touserdata(pState, 1 );
+	if(pGraphicsView == nullptr)
+		return 0;
+
     uint32_t clearCol = 0;
     if(lua_isinteger(pState, 2))
         clearCol = lua_tointeger(pState, 2);
@@ -35,6 +37,9 @@ static int ClearGraphicsView(lua_State *pState)
 static int DrawGraphicsView(lua_State *pState)
 {
     FZXGraphicsView* pGraphicsView = (FZXGraphicsView*)lua_touserdata(pState, 1 );
+	if (pGraphicsView == nullptr)
+		return 0;
+
     pGraphicsView->UpdateTexture();
     pGraphicsView->Draw();
     return 0;
@@ -42,14 +47,19 @@ static int DrawGraphicsView(lua_State *pState)
 
 static int DrawZXBitImage(lua_State *pState)
 {
-    // TODO: validate?
     FZXGraphicsView* pGraphicsView = (FZXGraphicsView*)lua_touserdata(pState, 1 );
+	if (pGraphicsView == nullptr)
+		return 0;
+
     const uint8_t* pImageData = (const uint8_t*)lua_touserdata(pState,2);
-    const int xp = (int)lua_tointeger(pState,3);
-    const int yp = (int)lua_tointeger(pState,4);
-    const int widthChars = (int)lua_tointeger(pState,5);
-    const int heightChars = (int)lua_tointeger(pState,6);
-    const uint8_t attrib = (uint8_t)lua_tointeger(pState,7);
+	if (pImageData == nullptr)
+		return 0;
+
+    const int xp = (int)luaL_optinteger(pState,3, 0);
+    const int yp = (int)luaL_optinteger(pState,4, 0);
+    const int widthChars = (int)luaL_optinteger(pState,5,1);
+    const int heightChars = (int)luaL_optinteger(pState,6,1);
+    const uint8_t attrib = (uint8_t)luaL_optinteger(pState,7,0x47);
     pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib);
     return 0;
 }
