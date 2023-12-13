@@ -73,7 +73,7 @@ void FGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint32_t inkC
 	}
 }
 
-void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
+void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride)
 {
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
 	int widthChars = widthPixels / 8;
@@ -83,7 +83,8 @@ void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 	{
 		for (int x = 0; x < widthChars; x++)
 		{
-			const uint8_t charLine = *pSrc++;
+			const uint8_t charLine = *pSrc;
+			pSrc+=stride;
 
 			for (int xpix = 0; xpix < 8; xpix++)
 			{

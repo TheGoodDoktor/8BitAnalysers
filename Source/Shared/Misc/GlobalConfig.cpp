@@ -10,7 +10,7 @@
 using json = nlohmann::json;
 
 
-FGlobalConfig	g_GlobalConfig;
+//FGlobalConfig	g_GlobalConfig;
 
 bool FGlobalConfig::Init(void)
 {
@@ -42,6 +42,9 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 	
     if (jsonConfigFile.contains("EnableLua"))
         bEnableLua = jsonConfigFile["EnableLua"];
+
+	if (jsonConfigFile.contains("EditLuaBaseFiles"))
+		bEditLuaBaseFiles = jsonConfigFile["EditLuaBaseFiles"];
     
 	// fixup paths
 	if (WorkspaceRoot.back() != '/')
@@ -64,6 +67,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["FontSizePixels"] = FontSizePixels;
 	jsonConfigFile["ImageScale"] = ImageScale;
     jsonConfigFile["EnableLua"] = bEnableLua;
+	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;
 
 }
 
@@ -100,12 +104,12 @@ bool	FGlobalConfig::Save(const char* filename)
 }
 
 
-
+#if 0
 FGlobalConfig& GetGlobalConfig()
 {
 	return g_GlobalConfig;
 }
-#if 0
+
 bool LoadGlobalConfig(const char* fileName)
 {
 	FGlobalConfig& config = GetGlobalConfig();

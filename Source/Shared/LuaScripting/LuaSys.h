@@ -22,7 +22,7 @@ namespace LuaSys
 
     lua_State*  GetGlobalState();
 
-    bool LoadFile(const char* pFileName);
+    bool LoadFile(const char* pFileName, bool bAddEditor);
     void ExecuteString(const char *pString);
     void OutputDebugString(const char* fmt, ...);
 

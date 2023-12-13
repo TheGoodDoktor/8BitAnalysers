@@ -72,6 +72,7 @@ public:
 
 	FCodeAnalysisState&		GetCodeAnalysis() { return CodeAnalysis; }
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
+	const FGameConfig*		GetGameConfig() const { return pCurrentGameConfig; }
 
 protected:
 	void			FileMenu();

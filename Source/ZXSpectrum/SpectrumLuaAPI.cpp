@@ -59,8 +59,20 @@ static int DrawZXBitImage(lua_State *pState)
     const int yp = (int)luaL_optinteger(pState,4, 0);
     const int widthChars = (int)luaL_optinteger(pState,5,1);
     const int heightChars = (int)luaL_optinteger(pState,6,1);
-    const uint8_t attrib = (uint8_t)luaL_optinteger(pState,7,0x47);
-    pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib);
+	if (lua_islightuserdata(pState, 7))
+	{
+		const uint8_t* pAttribData = (const uint8_t*)lua_touserdata(pState, 7);
+		if (pAttribData == nullptr)
+			return 0;
+
+		pGraphicsView->DrawBitImageWithAttribs(pImageData, xp, yp, widthChars, heightChars, pAttribData);
+	}
+	else
+    {
+		const uint8_t attrib = (uint8_t)luaL_optinteger(pState,7,0x47);
+		pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib);
+	}
+
     return 0;
 }
 

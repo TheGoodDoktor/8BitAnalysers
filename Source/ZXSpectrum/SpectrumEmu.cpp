@@ -899,8 +899,9 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
         // Setup Lua - reinitialised for each game
         LuaSys::Init(this);
         RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
+		LuaSys::LoadFile(GetBundlePath("Lua/ZXBase.lua"), pGlobalConfig->bEditLuaBaseFiles);
         std::string luaScriptFName = gameRoot + "ViewerScript.lua";
-        LuaSys::LoadFile(luaScriptFName.c_str());
+        LuaSys::LoadFile(luaScriptFName.c_str(), true);
 
 		if (LoadGameState(this, saveStateFName.c_str()))
 		{
