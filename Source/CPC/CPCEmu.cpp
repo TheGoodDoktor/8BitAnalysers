@@ -27,6 +27,8 @@
 
 #include <ImGuiSupport/ImGuiTexture.h>
 
+#include "LuaScripting/LuaSys.h"
+
 //#define RUN_AHEAD_TO_GENERATE_SCREEN
 
 // Disabled for now
@@ -881,6 +883,9 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		}
 		
 		InitBankMappings();
+
+		// Setup Lua - reinitialised for each game
+		LuaSys::Init(this);
 		
 		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
