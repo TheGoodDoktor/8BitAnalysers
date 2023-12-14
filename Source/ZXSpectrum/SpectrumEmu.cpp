@@ -895,14 +895,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 			analysisStateFName = gameRoot + "AnalysisState.bin";
 			saveStateFName = gameRoot + "SaveState.bin";
 		}
-        
-        // Setup Lua - reinitialised for each game
-        LuaSys::Init(this);
-        RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
-		LuaSys::LoadFile(GetBundlePath("Lua/ZXBase.lua"), pGlobalConfig->bEditLuaBaseFiles);
-        std::string luaScriptFName = gameRoot + "ViewerScript.lua";
-        LuaSys::LoadFile(luaScriptFName.c_str(), true);
-
+       
 		if (LoadGameState(this, saveStateFName.c_str()))
 		{
 			// if the game state loaded then we don't need the snapshot
@@ -962,6 +955,15 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "/" + pGameConfig->Name + "/GraphicsSets/").c_str());
 
 	pCurrentGameConfig = pGameConfig;
+
+	// Setup Lua - reinitialised for each game
+	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pGameConfig->Name + "/";
+	LuaSys::Init(this);
+	RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
+	LuaSys::LoadFile(GetBundlePath("Lua/ZXBase.lua"), pGlobalConfig->bEditLuaBaseFiles);
+	std::string luaScriptFName = gameRoot + "ViewerScript.lua";
+	LuaSys::LoadFile(luaScriptFName.c_str(), true);
+
 	return true;
 }
 
