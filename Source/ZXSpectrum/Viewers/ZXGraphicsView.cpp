@@ -37,6 +37,13 @@ void FZXGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widt
 	FGraphicsView::Draw1BppImageAt(pSrc, xp, yp, widthChars * 8, heightChars * 8, cols);
 }
 
+void FZXGraphicsView::DrawBitImageFineY(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPixels, uint8_t colAttr)
+{
+	const bool bBright = !!(colAttr & (1 << 6));
+	const uint32_t cols[] = { GetColFromAttr(colAttr >> 3, bBright), GetColFromAttr(colAttr & 7, bBright) };
+	FGraphicsView::Draw1BppImageAt(pSrc, xp, yp, widthChars * 8, heightPixels, cols);
+}
+
 // This draw a bit image using an attribute map for the colours
 void FZXGraphicsView::DrawBitImageWithAttribs(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars,const uint8_t* colAttrs)
 {

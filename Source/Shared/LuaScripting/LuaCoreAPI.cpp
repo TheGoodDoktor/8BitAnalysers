@@ -11,6 +11,7 @@ extern "C"
 //#include "LuaConsole.h"
 
 #include "Misc/EmuBase.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 
 
@@ -77,6 +78,12 @@ static int GetMemPtr(lua_State* pState)
     return 0;
 }
 
+static int GetImageScale(lua_State* pState)
+{
+	lua_pushnumber(pState, ImGui_GetScaling());
+	return 1;
+}
+
 #if 0
 static int addViewer(lua_State* pState)
 {
@@ -101,6 +108,7 @@ static const luaL_Reg corelib[] =
     {"ReadByte", ReadByte},
     {"ReadWord", ReadWord},
     {"GetMemPtr", GetMemPtr},
+	{"GetImageScale", GetImageScale},
     //{"addViewer", addViewer},
     {NULL, NULL}    // terminator
 };
