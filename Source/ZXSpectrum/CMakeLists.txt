@@ -134,10 +134,12 @@ set ( zlib_src ${vendor_dir}/zlib/adler32.c
 	${vendor_dir}/zlib/zutil.c )
  
 # imgui lua bindings
-#set ( luaimgui ${vendor_dir}/imgui_lua_bindings/imgui_lua_bindings.cpp )
-set ( imguitextedit ${vendor_dir}/ImGuiColorTextEdit/TextEditor.cpp ${vendor_dir}/ImGuiColorTextEdit/TextEditor.h )
+set ( imguiextras 
+		${vendor_dir}/imgui_lua_bindings/imgui_lua_bindings.cpp 
+		${vendor_dir}/ImGuiColorTextEdit/TextEditor.cpp 
+		${vendor_dir}/ImGuiColorTextEdit/TextEditor.h )
 
-set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} ${imguitextedit} )
+set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} ${imguiextras} )
 
 # program source
 file ( GLOB program_src 

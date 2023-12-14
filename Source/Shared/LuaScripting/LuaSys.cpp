@@ -20,6 +20,10 @@ extern "C"
 #include <Misc/GlobalConfig.h>
 #include <Misc/GameConfig.h>
 
+// For the imgui bindings
+extern lua_State* lState;
+extern void LoadImguiBindings();
+
 namespace LuaSys
 {
 
@@ -37,6 +41,8 @@ FLuaScopeCheck::~FLuaScopeCheck()
 		DumpStack(LuaState);
 	}
 }
+
+
 
 lua_State*	GlobalState = nullptr;
 
@@ -84,6 +90,8 @@ bool Init(FEmuBase* pEmulator)
 	
 	LoadFile(GetBundlePath("Lua/LuaBase.lua"),EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
  
+	lState = GlobalState;
+	LoadImguiBindings();
 	return true;
 }
 
