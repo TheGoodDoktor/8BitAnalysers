@@ -9,7 +9,7 @@ function AddViewer(viewer)
     print(viewer.name .. " added")
     table.insert(Viewers,viewer)
     if(viewer.onAdd ~= nil) then
-        print("onAdd called")
+        --print("onAdd called")
         viewer:onAdd()
     end
 end
