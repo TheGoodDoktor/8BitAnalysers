@@ -89,7 +89,8 @@ bool Init(FEmuBase* pEmulator)
 	EmuBase = pEmulator;
 	
 	LoadFile(GetBundlePath("Lua/LuaBase.lua"),EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
- 
+	LoadFile(GetBundlePath("Lua/ViewerBase.lua"), EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
+
 	lState = GlobalState;
 	LoadImguiBindings();
 	return true;
