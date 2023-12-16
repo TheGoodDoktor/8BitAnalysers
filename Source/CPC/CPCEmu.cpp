@@ -572,7 +572,6 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	FEmuBase::Init(launchConfig);
 
 	FCPCLaunchConfig& cpcLaunchConfig = (FCPCLaunchConfig&)launchConfig;
-	FCPCConfig* pCPCConfig = (FCPCConfig*)pGlobalConfig;
 #ifndef NDEBUG
 	LOGINFO("Init CPCEmu...");
 #endif
@@ -601,6 +600,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	}
 
 	// A class that deals with loading games.
+	const FCPCConfig* pCPCConfig = GetCPCGlobalConfig();
 	GameLoader.Init(this);
 	GamesList.SetLoader(&GameLoader);
 	if (cpcLaunchConfig.Model == ECPCModel::CPC_6128)
@@ -700,10 +700,8 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	// Set up code analysis
 	// initialise code analysis pages
 	
-	InitExternalROMs();
+	InitExternalROMs(pCPCConfig);
 	
-	//LoadExternalROM("test.rom", 7);
-
 	// Low ROM 0x0000 - 0x3fff
 	ROMBanks[EROMBank::OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true);
 	CodeAnalysis.GetBank(ROMBanks[EROMBank::OS])->PrimaryMappedPage = 0;
@@ -754,7 +752,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	UpperROMSlot[0] = ROMBanks[EROMBank::BASIC];
 
 	char romName[16];
-	for (int i = 1; i < kNumUpperROMSlots-1; i++)
+	for (int i = 1; i < kNumUpperROMSlots; i++)
 	{
 		const uint8_t* pROMData = GetUpperROMSlot(i);
 		sprintf(romName, "Upper ROM %d", i);

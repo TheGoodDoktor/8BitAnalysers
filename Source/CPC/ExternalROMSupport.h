@@ -8,8 +8,8 @@ static const int kNumUpperROMSlots = 16;
 extern "C" {
 #endif	
 
-	void InitExternalROMs();
-	void LoadExternalROM(const char* pFilename, int slotIndex);
+	void InitExternalROMs(const struct FCPCConfig* pConfig);
+	bool LoadExternalROM(const char* pFilename, int slotIndex);
 	const uint8_t* GetUpperROMData();
 	const uint8_t* GetUpperROMSlot(int slotIndex);
 	int SelectUpperROM(int slotIndex);

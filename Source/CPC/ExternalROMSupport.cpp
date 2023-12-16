@@ -1,6 +1,8 @@
 #include "ExternalROMSupport.h"
 
 #include "Util/FileUtil.h"
+#include "CPCConfig.h"
+#include "Debug/DebugLog.h"
 
 #include <cassert>
 #include <cstring>
@@ -11,15 +13,34 @@ const int kUpperROMSize = 0x4000;
 uint8_t* pUpperROM[kNumUpperROMSlots] = { 0 };
 uint8_t* pUpperROMData = nullptr;
 
-void InitExternalROMs()
+void InitExternalROMs(const FCPCConfig* pConfig)
 {
-	for (int i = 0; i < kNumUpperROMSlots; i++)
-	{
-		pUpperROM[i] = nullptr;
-	}
-
 	// sam todo: 6128 support
 	pUpperROM[0] = dump_cpc464_basic_bin;
+
+	for (int i = 1; i < kNumUpperROMSlots; i++)
+	{
+		pUpperROM[i] = nullptr;
+
+		if (pConfig->UpperROMSlot.size() > i)
+		{
+			if (!pConfig->UpperROMSlot[i].empty())
+			{
+				const std::string romName = pConfig->UpperROMSlot[i];
+				const std::string relPath = "Roms/" + romName;
+				const char* fullPath = GetBundlePath(relPath.c_str());
+
+				if (LoadExternalROM(fullPath, i))
+				{
+					LOGINFO("Loaded external ROM '%s' into slot %d", romName.c_str(), i);
+				}
+				else
+				{
+					LOGWARNING("Could not load external ROM file '%s' into slot %d", romName.c_str(), i);
+				}
+			}
+		}
+	}
 }
 
 // Returns index of rom slot that was selected.
@@ -49,14 +70,19 @@ const uint8_t* GetUpperROMData()
 	return pUpperROMData;
 }
 
-void LoadExternalROM(const char* pFilename, int slotIndex)
+bool LoadExternalROM(const char* pFilename, int slotIndex)
 {
+	// todo use rom path
 	if (slotIndex >= kNumUpperROMSlots)
-		return;
+		return false;
 
 	size_t byteCount = 0;
 	uint8_t* pData = (uint8_t*)LoadBinaryFile(pFilename, byteCount);
 	
+	if (!pData)
+		return false;
+	
+	bool bOk = true;
 	if (pData)
 	{
 		assert(pUpperROM[slotIndex] == nullptr);
@@ -71,6 +97,11 @@ void LoadExternalROM(const char* pFilename, int slotIndex)
 				memcpy(pUpperROM[slotIndex], pData, byteCount);
 			}
 		}
+		else
+		{
+			bOk = false;
+		}
 		free(pData);
 	}
+	return bOk;
 }

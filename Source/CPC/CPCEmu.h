@@ -162,6 +162,8 @@ public:
 
 	bool				NewGameFromSnapshot(const FGameSnapshot& snaphot) override;
 
+	const FCPCConfig* GetCPCGlobalConfig() { return (const FCPCConfig*)pGlobalConfig; }
+
 	// Emulator 
 	cpc_t				CPCEmuState;		// Chips CPC State
 	uint8_t*		MappedInMemory = nullptr;

@@ -10,6 +10,7 @@ mkdir ..\Package\Loose\GameData
 mkdir ..\Package\Loose\Games
 mkdir ..\Package\Loose\Docs
 mkdir ..\Package\Loose\Fonts
+mkdir ..\Package\Loose\Roms
 
 echo Building CPCAnalyser.exe...
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" 
@@ -21,6 +22,7 @@ if errorlevel 0 copy .\build\CPCAnalyser.exe ..\Package\Loose\
 rem Add some files to describe what to put in the empty directories
 @echo>"..\Package\Loose\Games\464 snapshots go here in sna format"
 @echo>"..\Package\Loose\Fonts\fonts go here in ttf format"
+@echo>"..\Package\Loose\Roms\external roms go here"
 
 echo copy imgui.ini...
 copy ..\Data\CPCAnalyser\imgui.ini ..\Package\Loose\

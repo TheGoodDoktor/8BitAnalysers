@@ -5,8 +5,10 @@
 // CPC specific config
 struct FCPCConfig : public FGlobalConfig
 {
-	std::string			SnapshotFolder128 = "./Games128/";
+	FCPCConfig();
 
+	std::string					SnapshotFolder128 = "./Games128/";
+	std::vector<std::string>	UpperROMSlot;
 protected:
 
 	void ReadFromJson(const nlohmann::json& jsonConfigFile) override;
