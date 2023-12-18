@@ -98,7 +98,8 @@ bool Init(FEmuBase* pEmulator)
 
 void Shutdown(void)
 {
-	lua_close(GlobalState);
+	if (GlobalState)
+		lua_close(GlobalState);
 	GlobalState = nullptr;
 }
 
@@ -204,7 +205,7 @@ void DrawViewerTab(lua_State* pState)
 
 void DrawUI()
 {
-	if( EmuBase->GetGlobalConfig()->bEnableLua == false)
+	if(!EmuBase || EmuBase->GetGlobalConfig()->bEnableLua == false)
 		return;
 	
 	static bool bOpen = true;
