@@ -7,8 +7,9 @@ struct FCPCConfig : public FGlobalConfig
 {
 	FCPCConfig();
 
-	std::string					SnapshotFolder128 = "./Games128/";
+	std::string						SnapshotFolder128 = "./Games128/";
 	std::vector<std::string>	UpperROMSlot;
+	const char* GetUpperROMSlotName(int slotIndex) const { return slotIndex < UpperROMSlot.size() ? UpperROMSlot[slotIndex].c_str() : nullptr; }
 protected:
 
 	void ReadFromJson(const nlohmann::json& jsonConfigFile) override;

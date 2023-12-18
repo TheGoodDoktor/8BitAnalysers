@@ -27,8 +27,6 @@
 
 #include <ImGuiSupport/ImGuiTexture.h>
 
-#include "LuaScripting/LuaSys.h"
-
 //#define RUN_AHEAD_TO_GENERATE_SCREEN
 
 // Disabled for now
@@ -330,16 +328,52 @@ static uint64_t Z80TickThunk(int num, uint64_t pins, void* user_data)
 	return pEmu->Z80Tick(num, pins);
 }
 
-void FCPCEmu::InitBankMappings()
+bool FCPCEmu::CanSelectUpperROM(uint8_t romSlot)
+{
+	// Check the currently selected rom bank contains memory. As the roms are specified in the global config file 
+	// the user may have removed the rom file entry or the rom file may have failed to load.
+	if (const FCodeAnalysisBank* pBank = GetCodeAnalysis().GetBank(UpperROMSlot[romSlot]))
+	{
+		if (pBank->Memory)
+		{
+			return true;
+		}
+		else
+		{
+			LOGWARNING("Currently selected upper ROM bank '%s' contains no memory.", pBank->Name.c_str());
+
+			if (const char* pROMName = GetCPCGlobalConfig()->GetUpperROMSlotName(romSlot))
+			{
+				if (pROMName[0] != 0)
+					LOGWARNING("ROM file '%s' may not have loaded", pROMName);
+				else
+					LOGWARNING("ROM file does not exist in upper rom slot %d", romSlot);
+			}
+
+			return false;
+		}
+	}
+	
+	return false;
+}
+
+bool FCPCEmu::InitBankMappings()
 {
 	am40010_t& ga = CPCEmuState.ga;
 
-	CurUpperROMSlot = ga.rom_select;
+	if (!CanSelectUpperROM(ga.rom_select))
+	{
+		return false;
+	}
+
+	CurUpperROMSlot = ga.rom_select;	
+	
 	SelectUpperROM(CurUpperROMSlot);
 
 	UpdateBankMappings();
 
 	CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
+	return true;
 }
 
 void FCPCEmu::UpdateBankMappings()
@@ -785,12 +819,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	{
 		bLoadedGame = StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
 	}
-	else
-	{
-		// Sam. Temp crash fix for when no GlobalConfig loaded
-		LuaSys::Init(this);
-	}
-
+	
 	// Start ROM if no game has been loaded
 	if (bLoadedGame == false)
 	{
@@ -886,9 +915,15 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 			GamesList.LoadGame(pGameConfig->Name.c_str());
 		}
 		
-		InitBankMappings();
+		if (!InitBankMappings())
+		{
+			LOGERROR("Failed to start game '%s' due to bank issues.", pGameConfig->Name.c_str());
+			
+			// Abort the starting of the game.This probably needs to be dealt with higher up?
+			Reset();
+			return false;
+		}
 
-		
 		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
@@ -899,7 +934,6 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		GamesList.LoadGame(pGameConfig->Name.c_str());
 		InitBankMappings();
 	}
-
 
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
@@ -937,10 +971,6 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	}
 
 	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
-
-	// Setup Lua - reinitialised for each game
-	// sam. Temp. This is just to stop it crashing in LuaSys::DrawUI() with a null EmuBase pointer.
-	LuaSys::Init(this);
 
 	pCurrentGameConfig = pGameConfig;
 	return true;
@@ -1470,6 +1500,8 @@ void FCPCEmu::Reset()
 {
 	FEmuBase::Reset();
 	cpc_reset(&CPCEmuState);
+	// Resetting rom_select to 0 because Chips doesn't do it.
+	CPCEmuState.ga.rom_select = 0;
 	ui_dbg_reset(&UICPC.dbg);
 
 	FCPCGameConfig* pBasicConfig = (FCPCGameConfig*)GetGameConfigForName("AmstradBasic");
@@ -1480,6 +1512,8 @@ void FCPCEmu::Reset()
 	InitBankMappings();
 	
 	StartGame(pBasicConfig, false);	// reset code analysis
+
+	CodeAnalysis.Debugger.Continue();
 }
 
 void FCPCEmu::Tick()

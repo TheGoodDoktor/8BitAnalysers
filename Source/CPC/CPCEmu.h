@@ -153,7 +153,8 @@ public:
 	void*						GetCPUEmulator(void) const override;
 	//ICPUInterface End
 	
-	void				InitBankMappings();
+	bool				CanSelectUpperROM(uint8_t romSlot);
+	bool				InitBankMappings();
 	void				UpdateBankMappings();
 	void				SetRAMBank(int slot, int bankNo, EBankAccess access);
 	void				SetRAMBanksPreset(int bankPresetIndex);

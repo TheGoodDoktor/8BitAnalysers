@@ -36,14 +36,10 @@ void FCPCConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 	FGlobalConfig::WriteToJson(jsonConfigFile);
 	jsonConfigFile["SnapshotFolder128"] = SnapshotFolder128;
 
-	for (int i = 1; i < kNumUpperROMSlots; i++)
+	for (int i = 1; i < UpperROMSlot.size(); i++)
 	{
 		char temp[32] = { 0 };
 		sprintf(temp, "UpperROMSlot%02d", i);
-		
-		if (UpperROMSlot.size() > i)
-		{
-			jsonConfigFile[temp] = UpperROMSlot[i].c_str();
-		}
+		jsonConfigFile[temp] = UpperROMSlot[i].c_str();
 	}
 }

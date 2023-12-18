@@ -64,6 +64,7 @@ void CPCBankSwitchCB(uint8_t ram_config, uint8_t rom_enable, uint8_t rom_select,
 	else {
 		// RAM-behind-ROM
 		// This will switch to the current upper ROM bank slot, including external rom banks.
+		assert(GetUpperROMData());
 		mem_map_rw(&sys->mem, 0, 0xC000, 0x4000, GetUpperROMData(), sys->ram[i3]);
 	}
 }
