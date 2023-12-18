@@ -785,6 +785,12 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	{
 		bLoadedGame = StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
 	}
+	else
+	{
+		// Sam. Temp crash fix for when no GlobalConfig loaded
+		LuaSys::Init(this);
+	}
+
 	// Start ROM if no game has been loaded
 	if (bLoadedGame == false)
 	{
@@ -882,8 +888,6 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		
 		InitBankMappings();
 
-		// Setup Lua - reinitialised for each game
-		LuaSys::Init(this);
 		
 		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
@@ -933,6 +937,10 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	}
 
 	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+
+	// Setup Lua - reinitialised for each game
+	// sam. Temp. This is just to stop it crashing in LuaSys::DrawUI() with a null EmuBase pointer.
+	LuaSys::Init(this);
 
 	pCurrentGameConfig = pGameConfig;
 	return true;
