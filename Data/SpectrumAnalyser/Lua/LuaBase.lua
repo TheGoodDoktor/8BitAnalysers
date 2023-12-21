@@ -1,10 +1,6 @@
 
 Viewers = {}
 
-function InitViewers()
-   Viewers = {}
-end
-
 function AddViewer(viewer)
     print(viewer.name .. " added")
     table.insert(Viewers,viewer)
@@ -31,3 +27,16 @@ function dumpFunc(o)
  function dump(o)
     print(dumpFunc(o))
  end
+
+
+
+
+
+
+
+
+
+
+
+
+

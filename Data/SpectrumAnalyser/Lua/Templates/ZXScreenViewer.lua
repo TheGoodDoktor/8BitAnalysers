@@ -37,5 +37,4 @@ ScreenViewer =
 
 -- Initialise the template viewer
 print("Template Viewer Initialised")
-InitViewers();
 AddViewer(ScreenViewer);

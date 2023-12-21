@@ -9,12 +9,11 @@
 
 using json = nlohmann::json;
 
-
-//FGlobalConfig	g_GlobalConfig;
-
 bool FGlobalConfig::Init(void)
 {
-    return true;
+	LuaBaseFiles.push_back("Lua/LuaBase.lua");
+	LuaBaseFiles.push_back("Lua/ViewerBase.lua");
+	return true;
 }
 
 void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
@@ -45,7 +44,16 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 
 	if (jsonConfigFile.contains("EditLuaBaseFiles"))
 		bEditLuaBaseFiles = jsonConfigFile["EditLuaBaseFiles"];
-    
+
+	if (jsonConfigFile.contains("LuaBaseFiles"))
+    {
+		LuaBaseFiles.clear();
+		for (const auto& srcJson : jsonConfigFile["LuaBaseFiles"])
+		{
+			LuaBaseFiles.push_back(srcJson);
+		}
+	}
+
 	// fixup paths
 	if (WorkspaceRoot.back() != '/')
 		WorkspaceRoot += "/";
@@ -68,6 +76,11 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["ImageScale"] = ImageScale;
     jsonConfigFile["EnableLua"] = bEnableLua;
 	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;
+
+	for (const auto& luaSrc : LuaBaseFiles)
+	{
+		jsonConfigFile["LuaBaseFiles"].push_back(luaSrc);
+	}
 
 }
 

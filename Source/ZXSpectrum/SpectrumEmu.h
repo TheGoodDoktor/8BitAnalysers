@@ -94,6 +94,8 @@ public:
 	void	Tick() override;
 	void	Reset() override;
 
+	bool	LoadLua() override;
+
 	bool	NewGameFromSnapshot(const FGameSnapshot& snapshot) override;
 	bool	StartGame(FGameConfig* pGameConfig, bool bLoadGame) override;
 	bool	SaveCurrentGameData() override;

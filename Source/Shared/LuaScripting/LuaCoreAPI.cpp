@@ -43,7 +43,7 @@ static int ReadByte(lua_State* pState)
     if(pEmu != nullptr && lua_isinteger(pState, -1))
     {
         const lua_Integer address = lua_tointeger(pState, -1);
-        lua_pushinteger(pState, pEmu->ReadByte(address));
+        lua_pushinteger(pState, pEmu->ReadByte((uint16_t)address));
         return 1;
     }
     
@@ -57,7 +57,7 @@ static int ReadWord(lua_State* pState)
     if(pEmu != nullptr && lua_isinteger(pState, -1))
     {
         const lua_Integer address = lua_tointeger(pState, -1);
-        lua_pushinteger(pState, pEmu->ReadWord(address));
+        lua_pushinteger(pState, pEmu->ReadWord((uint16_t)address));
         return 1;
     }
     
@@ -71,7 +71,7 @@ static int GetMemPtr(lua_State* pState)
     if(pEmu != nullptr && lua_isinteger(pState, -1))
     {
         const lua_Integer address = lua_tointeger(pState, -1);
-        lua_pushlightuserdata(pState, (void*)pEmu->GetMemPtr(address));
+        lua_pushlightuserdata(pState, (void*)pEmu->GetMemPtr((uint16_t)address));
         return 1;
     }
     

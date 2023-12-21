@@ -956,15 +956,29 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 
 	pCurrentGameConfig = pGameConfig;
 
-	// Setup Lua - reinitialised for each game
-	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pGameConfig->Name + "/";
-	LuaSys::Init(this);
-	RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
-	LuaSys::LoadFile(GetBundlePath("Lua/ZXBase.lua"), pGlobalConfig->bEditLuaBaseFiles);
-	std::string luaScriptFName = gameRoot + "ViewerScript.lua";
-	LuaSys::LoadFile(luaScriptFName.c_str(), true);
-
+	LoadLua();
 	return true;
+}
+
+bool FSpectrumEmu::LoadLua()
+{
+	// Setup Lua - reinitialised for each game
+	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentGameConfig->Name + "/";
+	if (LuaSys::Init(this))
+	{
+		RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
+		
+		//LuaSys::LoadFile(GetBundlePath("Lua/ZXBase.lua"), pGlobalConfig->bEditLuaBaseFiles);
+
+		for(const auto& gameScript : pCurrentGameConfig->LuaSourceFiles)
+		{
+			std::string luaScriptFName = gameRoot + gameScript;
+			LuaSys::LoadFile(luaScriptFName.c_str(), true);
+		}
+		return true;
+	}
+
+	return false;
 }
 
 

@@ -25,6 +25,7 @@ struct FGlobalConfig
 	// Lua config
     bool                bEnableLua = false;
 	bool				bEditLuaBaseFiles = false;
+	std::vector<std::string>	LuaBaseFiles;
 
     virtual bool    Init(void);
 	bool	Load(const char* filename);

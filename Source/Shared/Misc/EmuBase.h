@@ -45,6 +45,7 @@ public:
 	virtual void    Reset();
 	virtual void	AppFocusCallback(int focused){}
 
+	virtual bool	LoadLua(){ return false;}
 
 	virtual bool	NewGameFromSnapshot(const FGameSnapshot& gameConfig) = 0;
 	virtual bool	StartGame(FGameConfig* pConfig, bool bLoadGame) = 0;

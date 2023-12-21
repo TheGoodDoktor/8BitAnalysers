@@ -113,6 +113,11 @@ void FGameConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 	}
 
 	jsonConfigFile["Options"] = optionsJson;
+
+	for (const auto& luaSrc : LuaSourceFiles)
+	{
+		jsonConfigFile["LuaSourceFiles"].push_back(luaSrc);
+	}
 }
 	
 
@@ -169,5 +174,25 @@ void FGameConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 			}
 		}
 	}
+
+	// Lua related config
+	if (jsonConfigFile.contains("LuaSourceFiles"))
+	{
+		LuaSourceFiles.clear();
+		for (const auto& srcJson : jsonConfigFile["LuaSourceFiles"])
+		{
+			LuaSourceFiles.push_back(srcJson);
+		}
+	}
 }
 
+bool FGameConfig::AddLuaSourceFile(const char* pFilename)
+{
+	for (const auto& luaFile : LuaSourceFiles)
+	{
+		if(luaFile == pFilename)
+			return false;
+	}
+
+	LuaSourceFiles.push_back(pFilename);
+}

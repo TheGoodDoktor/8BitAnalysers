@@ -9,6 +9,7 @@ extern "C"
 
 #include "LuaCoreAPI.h"
 #include "LuaConsole.h"
+#include "LuaEditor.h"
 
 #include "Misc/EmuBase.h"
 #include "Misc/GlobalConfig.h"
@@ -16,7 +17,6 @@ extern "C"
 
 #include "Debug/DebugLog.h"
 
-#include "ImGuiColorTextEdit/TextEditor.h"
 #include <Misc/GlobalConfig.h>
 #include <Misc/GameConfig.h>
 
@@ -50,18 +50,6 @@ FLuaConsole LuaConsole;
 
 FEmuBase*   EmuBase = nullptr;
 
-// text editor stuff - move?
-struct FLuaTextEditor
-{
-	std::string SourceFileName;
-	std::string SourceName;
-	TextEditor  LuaTextEditor;
-};
-
-bool InitTextEditors(void);
-FLuaTextEditor& AddTextEditor(const char* fileName, const char* pTextData);
-void DrawTextEditor(void);
-
 void lua_warning_function(void *ud, const char *msg, int tocont)
 {
 	LuaConsole.AddLog("%s",msg);
@@ -73,6 +61,9 @@ bool Init(FEmuBase* pEmulator)
 	if(GlobalState != nullptr)  // shutdown old instance
 		Shutdown();
 	
+	if (pEmulator->GetGlobalConfig()->bEnableLua == false)
+		return false;
+
 	InitTextEditors();
 
 	lua_State* pState = luaL_newstate();	// create the global state
@@ -88,8 +79,11 @@ bool Init(FEmuBase* pEmulator)
 	GlobalState = pState;
 	EmuBase = pEmulator;
 	
-	LoadFile(GetBundlePath("Lua/LuaBase.lua"),EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
-	LoadFile(GetBundlePath("Lua/ViewerBase.lua"), EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
+	for(const auto& luaFile : EmuBase->GetGlobalConfig()->LuaBaseFiles)
+		LoadFile(GetBundlePath(luaFile.c_str()), EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
+
+	//LoadFile(GetBundlePath("Lua/LuaBase.lua"),EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
+	//LoadFile(GetBundlePath("Lua/ViewerBase.lua"), EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
 
 	lState = GlobalState;
 	LoadImguiBindings();
@@ -110,6 +104,9 @@ lua_State*  GetGlobalState()
 
 bool LoadFile(const char* pFileName, bool bAddEditor)
 {
+	if (GlobalState == nullptr)
+		return false;
+
 	char* pTextData = LoadTextFile(pFileName);
 	if(pTextData != nullptr)
 	{
@@ -134,6 +131,9 @@ bool LoadFile(const char* pFileName, bool bAddEditor)
 
 void ExecuteString(const char *pString)
 {
+	if (GlobalState == nullptr)
+		return;
+
 	//luaL_dostring(GlobalState, pString);
 	lua_State* pState = GlobalState;
 	
@@ -205,42 +205,42 @@ void DrawViewerTab(lua_State* pState)
 
 void DrawUI()
 {
-	if(!EmuBase || EmuBase->GetGlobalConfig()->bEnableLua == false)
+	if(GlobalState == nullptr)
 		return;
 	
 	static bool bOpen = true;
 	LuaConsole.Draw("Lua Console", &bOpen);
 	
 	lua_State* pState = GlobalState;
-	FLuaScopeCheck StackCheck(pState);
-   
-	const int top = lua_gettop(pState);
 
-	lua_getglobal(pState, "Viewers");
-	//DumpStack(pState);
-	if(lua_istable(pState,-1) && lua_rawlen(pState, -1) > 0)
+	// scope block for stack check
 	{
-		if(ImGui::Begin("Game Viewers"))
+		FLuaScopeCheck StackCheck(pState);
+   
+		lua_getglobal(pState, "Viewers");
+		
+		if(lua_istable(pState,-1) && lua_rawlen(pState, -1) > 0)
 		{
-			if(ImGui::BeginTabBar("Viewer Tabs"))
+			if(ImGui::Begin("Game Viewers"))
 			{
-				const int itemCount = (int)lua_rawlen(pState, -1);
-				for(int i=0;i<itemCount;i++)
+				if(ImGui::BeginTabBar("Viewer Tabs"))
 				{
-					lua_pushnumber(pState, i+1);// indexes start at 1
-					lua_gettable(pState,-2);
-					DrawViewerTab(pState);
-					lua_pop(pState,1);  // pop item
-				}
+					const int itemCount = (int)lua_rawlen(pState, -1);
+					for(int i=0;i<itemCount;i++)
+					{
+						lua_pushnumber(pState, i+1);// indexes start at 1
+						lua_gettable(pState,-2);
+						DrawViewerTab(pState);
+						lua_pop(pState,1);  // pop item
+					}
 				
-				ImGui::EndTabBar();
-		   }
+					ImGui::EndTabBar();
+			   }
+			}
+			ImGui::End();
 		}
-		ImGui::End();
+		lua_pop(pState,1);
 	}
-	lua_pop(pState,1);
-	
-	const int top2 = lua_gettop(pState);
 
 	DrawTextEditor();
 }
@@ -283,97 +283,6 @@ void DumpStack(lua_State *L)
 	//OutputDebugString("\n");  /* end the listing */
 }
 
-// Text Editor - move?
-
-
-std::vector<FLuaTextEditor> TextEditors;
-
-bool InitTextEditors(void)
-{
-	TextEditors.clear();
-	return true;
-}
-
-bool CreateNewLuaFileFromTemplate(const char* pFileName, const char* pTemplateFilename)
-{
-	if(FileExists(pFileName))	// does the file already exist? - don't overwrite it!
-		return false;
-
-	char* pTextData = LoadTextFile(pTemplateFilename);	// load template
-	if (pTextData != nullptr)
-	{
-		ExecuteString(pTextData);
-		FLuaTextEditor& editor = AddTextEditor(pFileName, pTextData);
-		SaveTextFile(editor.SourceFileName.c_str(), editor.LuaTextEditor.GetText().c_str());	// Save new file
-		delete pTextData;
-		return true;
-	}
-	return true;
-}
-
-FLuaTextEditor& AddTextEditor(const char* pFileName, const char* pTextData)
-{
-	FLuaTextEditor& editor = TextEditors.emplace_back();
-	
-	editor.SourceName = GetFileFromPath(pFileName);
-	editor.SourceFileName = std::string(pFileName);
-	
-	// set up text editor
-	auto lang = TextEditor::LanguageDefinition::Lua();
-	editor.LuaTextEditor.SetLanguageDefinition(lang);
-	editor.LuaTextEditor.SetText(pTextData);
-	
-	return editor;
-}
-
-void DrawTextEditor(void)
-{
-	if(ImGui::Begin("Lua Editor"))
-	{
-		// This is very hard coded, we probably want a list of templates etc. somewhere
-		if (ImGui::Button("Create Viewer Script"))
-		{
-			// Create Viewer Lua file
-			const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetGameConfig()->Name + "/";
-			std::string luaScriptFName = gameRoot + "ViewerScript.lua";
-			CreateNewLuaFileFromTemplate(luaScriptFName.c_str(), GetBundlePath("Lua/ZXViewerTemplate.lua"));
-		}
-
-		if(ImGui::BeginTabBar("Editor Tabs"))
-		{
-			for(auto& editor : TextEditors)
-			{
-				const bool bTabOpen =ImGui::BeginTabItem(editor.SourceName.c_str());
-				
-				if(ImGui::IsItemHovered())  // full filename on tooltip
-				{
-					ImGui::BeginTooltip();
-					ImGui::Text("%s",editor.SourceFileName.c_str());
-					ImGui::EndTooltip();
-				}
-				
-				if(bTabOpen)
-				{
-					if(ImGui::Button("Update"))
-					{
-						OutputDebugString("Updating script: %s",editor.SourceName.c_str());
-						ExecuteString(editor.LuaTextEditor.GetText().c_str());
-					}
-					ImGui::SameLine();
-					if(ImGui::Button("Save"))
-					{
-						SaveTextFile(editor.SourceFileName.c_str(), editor.LuaTextEditor.GetText().c_str());
-					}
-					editor.LuaTextEditor.Render(editor.SourceName.c_str());
-					ImGui::EndTabItem();
-				}
-				
-			}
-		}
-		ImGui::EndTabBar();
-	}
-	ImGui::End();
-}
 
 
 }//namespace LuaSys

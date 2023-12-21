@@ -4,7 +4,7 @@ ViewerBase =
 {
     graphicsView = nil,
     width = 256,
-    height = 256,
+    height = 192,
 }
 
 function ViewerBase:new(t)
@@ -57,3 +57,16 @@ function ZXViewerBase:onDrawUI()
         self:DrawUI()
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
