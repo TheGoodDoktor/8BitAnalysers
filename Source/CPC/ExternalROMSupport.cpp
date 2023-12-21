@@ -41,6 +41,8 @@ void InitExternalROMs(const FCPCConfig* pConfig)
 			}
 		}
 	}
+	// Ensure we have some default upper rom data
+	SelectUpperROM(0);
 }
 
 // Returns index of rom slot that was selected.

@@ -66,7 +66,7 @@ void FCPCViewer::Draw()
 
 	const bool bHasScreen = pCPCEmu->Screen.HasBeenDrawn();
 	const FGlobalConfig* pConfig = pCPCEmu->GetGlobalConfig();
-	const float scale = pConfig->ImageScale;
+	const float scale = (float)pConfig->ImageScale;
 
 	// see if mixed screen modes are used
 	int scrMode = pCPCEmu->CPCEmuState.ga.video.mode;
@@ -236,7 +236,7 @@ void FCPCViewer::Draw()
 		pCPCEmu->ExecSpeedScale = 1.0f;
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-	bWindowFocused = ImGui::IsWindowFocused();
+	bWindowFocused = ImGui::IsWindowHovered() || ImGui::IsWindowFocused();
 	FrameCounter++;
 }
 
@@ -245,12 +245,12 @@ bool FCPCViewer::OnHovered(const ImVec2& pos)
 {
 	if (!pCPCEmu->Screen.HasBeenDrawn())
 	{
-		ImGui::SetTooltip("Screen information will be unavailable until emulator has started.");
+		ImGui::SetTooltip("Screen information will be unavailable until emulator is running.");
 		return false;
 	}
 
 	const FGlobalConfig* pConfig = pCPCEmu->GetGlobalConfig();
-	const float scale = pConfig->ImageScale;
+	const float scale = (float)pConfig->ImageScale;
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImGuiIO& io = ImGui::GetIO();
