@@ -47,6 +47,9 @@ float DrawDataCharMapLine(FCodeAnalysisState& state,uint16_t addr, const FDataIn
 		}
 		pos.x += rectSize;
 	}
+
+	ImGui::SameLine(pos.x);
+	ImGui::Text(" ");
 	return pos.x;
 
 }
@@ -218,6 +221,10 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 			}
 		}
 	}
+
+	//ImGui::SetCursorScreenPos(pos);
+	ImGui::SameLine(pos.x);
+	ImGui::Text(" ");
 	//return pos.x - startPos;
 	return pos.x;
 }

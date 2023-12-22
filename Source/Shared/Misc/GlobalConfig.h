@@ -15,7 +15,7 @@ struct FGlobalConfig
 	int					BranchLinesDisplayMode = 1;
 	std::string			LastGame;
 
-	std::string			WorkspaceRoot = "./";
+	std::string			WorkspaceRoot = "./Workspace/";
 	std::string			SnapshotFolder = "./Games/";
 
 	std::string			Font = ""; // if no font is specified the default font will be used

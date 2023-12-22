@@ -95,7 +95,11 @@ void DrawTextEditor(void)
 			if(bSaveBeforeReload)
 			{ 
 				for (auto& editor : TextEditors)
-					SaveTextFile(editor.SourceFileName.c_str(), editor.LuaTextEditor.GetText().c_str());
+				{
+					// Note: I think the GetText() function adds a newline character to the file
+					std::string saveText = editor.LuaTextEditor.GetText();
+					SaveTextFile(editor.SourceFileName.c_str(), saveText.c_str());
+				}
 			}
 			pEmulator->LoadLua();
 		}
