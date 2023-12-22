@@ -15,6 +15,7 @@ std::vector<FLuaTextEditor> TextEditors;
 std::vector<std::string> TemplateFiles;
 std::string SelectedTemplate = "None";
 std::string NewFilenameTxt;
+bool bSaveBeforeReload = true;
 
 bool EnumerateTemplates()
 {
@@ -90,13 +91,16 @@ void DrawTextEditor(void)
 	{
 		if (ImGui::Button("Reload Scripts"))
 		{
-			// save all
-			for (auto& editor : TextEditors)
-			{
-				SaveTextFile(editor.SourceFileName.c_str(), editor.LuaTextEditor.GetText().c_str());
+			// save all - you might not want to do this if you're using an external editor
+			if(bSaveBeforeReload)
+			{ 
+				for (auto& editor : TextEditors)
+					SaveTextFile(editor.SourceFileName.c_str(), editor.LuaTextEditor.GetText().c_str());
 			}
 			pEmulator->LoadLua();
 		}
+		ImGui::SameLine();
+		ImGui::Checkbox("Save before reload",&bSaveBeforeReload);
 
 		ImGui::SetNextItemWidth(300);
 		ImGui::InputText("Filename",&NewFilenameTxt);
