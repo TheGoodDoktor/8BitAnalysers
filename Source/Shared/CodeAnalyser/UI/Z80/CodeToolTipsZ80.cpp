@@ -1326,7 +1326,7 @@ void ShowCodeToolTipZ80(FCodeAnalysisState& state, uint16_t addr)
 	ImGui::BeginTooltip();
 
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
-	const float wrap_width = 400.0f;
+	const float wrap_width = 30 * ImGui::GetFontSize();
 	ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + wrap_width);
 
 	// Draw title (if there is one)
