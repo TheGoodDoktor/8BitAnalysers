@@ -102,6 +102,8 @@ bool CheckPointerIndirectionInstruction6502(const FCodeAnalysisState& state, uin
 	case EAddressMode::ZP_X:
 		*out_addr = state.ReadByte(pc + 1);
 		return true;
+    default:
+        return false;
 	}
 /*
 	switch (instrByte)

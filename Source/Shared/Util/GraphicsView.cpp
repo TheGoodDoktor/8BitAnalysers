@@ -9,6 +9,8 @@
 // TODO: should probably have a separate file with all the STB impls in
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb/stb_image_resize.h"
 
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bMagnifier = true);
 
@@ -204,6 +206,16 @@ void FGraphicsView::Draw1BppImageFromCharsAt(const uint8_t* pSrc, int xp, int yp
 			pSrc+=8;
 		}
 	}
+}
+
+void FGraphicsView::DrawOtherGraphicsViewScaled(const FGraphicsView* pView, int xp, int yp, int xsize, int ysize)
+{
+    if(xp < 0 || yp < 0 || xp + xsize >= Width || yp + ysize >= Height) // no clipping - just reject
+        return;
+    
+    uint8_t* destAddress = (uint8_t *)(PixelBuffer + xp + (yp * Width * 4));
+    stbir_resize_uint8((uint8_t *)pView->PixelBuffer , pView->Width , pView->Height , pView->Width * 4,
+                       destAddress, xsize, ysize, Width * 4, 4);
 }
 
 bool FGraphicsView::SavePNG(const char* pFName)
@@ -403,6 +415,8 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 	case EBitmapFormat::ColMap2Bpp_CPC:
 		DrawCharacterSetImage2BppCPC(state, characterSet, addr);
 		break;
+    default:
+        break;
 	}
 
 	characterSet.Image->UpdateTexture();

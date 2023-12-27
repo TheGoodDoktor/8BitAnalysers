@@ -130,6 +130,9 @@ void FDebugger::CPUTick(uint64_t pins)
 		{
 		}
 		break;
+        
+        default:
+            break;
     }
 
     // iterate through data breakpoints
@@ -183,6 +186,8 @@ void FDebugger::CPUTick(uint64_t pins)
 							trapId = kTrapId_BpBase + i;
 					}
 					break;
+                default:
+                    break;
 				}
 			}
 		}
@@ -212,7 +217,8 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 			if (PC == StepOverPC)
 				trapId = kTrapId_Step;
 			break;
-
+        default:
+            break;
 		}
 	}
 	else if(BreakpointMask & BPMask_Exec)
@@ -231,7 +237,9 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 						trapId = kTrapId_BpBase + i;
 					}
 					break;
-				}
+                default:
+                    break;
+                }
 			}
 		}
 	}
@@ -333,6 +341,8 @@ void FDebugger::StartFrame()
 			case EBreakpointType::NMI:
 				BreakpointMask |= BPMask_NMI;
 				break;
+            default:
+                break;
 			}
 		}
 	}
@@ -1078,9 +1088,9 @@ const char* GetBreakpointTypeText(EBreakpointType type)
 		return "Exec";
 	case EBreakpointType::Data:
 		return "Data";
+    default:
+        return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 void FDebugger::DrawBreakpoints(void)

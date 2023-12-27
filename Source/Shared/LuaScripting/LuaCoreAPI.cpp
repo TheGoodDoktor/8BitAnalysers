@@ -11,6 +11,9 @@ extern "C"
 //#include "LuaConsole.h"
 
 #include "Misc/EmuBase.h"
+#include "Misc/GlobalConfig.h"
+#include "Misc/GameConfig.h"
+#include "Util/GraphicsView.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 
 
@@ -84,23 +87,62 @@ static int GetImageScale(lua_State* pState)
 	return 1;
 }
 
-#if 0
-static int addViewer(lua_State* pState)
+
+static int ClearGraphicsView(lua_State *pState)
 {
-    //LuaSys::FLuaScopeCheck check(pState);
-    
-    if(lua_istable(pState, -1))
-    {
-        lua_getglobal(pState, "Viewers");
-        if(lua_istable(pState, -1))
-        {
-            lua_pushvalue(pState,-2);
-            lua_rawseti(pState,-2,lua_rawlen(pState,-2) + 1);
-        }
-    }
+    FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
+    if(pGraphicsView == nullptr)
+        return 0;
+
+    uint32_t clearCol = 0;
+    if(lua_isinteger(pState, 2))
+        clearCol = (uint32_t)lua_tointeger(pState, 2);
+    pGraphicsView->Clear(clearCol);
     return 0;
 }
-#endif
+
+static int DrawGraphicsView(lua_State *pState)
+{
+    FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
+    if (pGraphicsView == nullptr)
+        return 0;
+
+    pGraphicsView->UpdateTexture();
+    pGraphicsView->Draw();
+    return 0;
+}
+
+static int SaveGraphicsViewPNG(lua_State *pState)
+{
+    FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
+    if (pGraphicsView == nullptr)
+        return 0;
+    
+    FEmuBase* pEmulator = LuaSys::GetEmulator();
+    const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetGameConfig()->Name + "/";
+    const std::string fname = gameRoot + luaL_optstring(pState, 2, "temp.png");
+    
+    pGraphicsView->SavePNG(fname.c_str());
+    return 0;
+}
+
+static int DrawOtherGraphicsViewScaled(lua_State *pState)
+{
+    FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
+    if (pGraphicsView == nullptr)
+        return 0;
+
+    FGraphicsView* pOtherGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
+    if (pOtherGraphicsView == nullptr)
+        return 0;
+
+    const int xp = (int)luaL_optinteger(pState,3, 0);
+    const int yp = (int)luaL_optinteger(pState,4, 0);
+    const int xsize = (int)luaL_optinteger(pState,5, 64);
+    const int ysize = (int)luaL_optinteger(pState,6, 64);
+
+    pGraphicsView->DrawOtherGraphicsViewScaled(pOtherGraphicsView, xp, yp, xsize, ysize);
+}
 
 static const luaL_Reg corelib[] =
 {
@@ -109,7 +151,11 @@ static const luaL_Reg corelib[] =
     {"ReadWord", ReadWord},
     {"GetMemPtr", GetMemPtr},
 	{"GetImageScale", GetImageScale},
-    //{"addViewer", addViewer},
+    {"ClearGraphicsView", ClearGraphicsView},
+    {"DrawGraphicsView", DrawGraphicsView},
+    {"SaveGraphicsViewPNG", SaveGraphicsViewPNG},
+    {"DrawOtherGraphicsViewScaled", DrawOtherGraphicsViewScaled},
+
     {NULL, NULL}    // terminator
 };
 

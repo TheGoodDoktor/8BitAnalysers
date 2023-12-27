@@ -189,6 +189,8 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			}
 		}
 		break;
+        default:
+        break;
 		}
 
 		// put comment on the end

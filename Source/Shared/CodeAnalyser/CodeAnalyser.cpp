@@ -45,7 +45,7 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	{
 		newBank.Pages[pageNo].Initialise();
 		char pageName[32];
-		sprintf(pageName, "%s:%d", bankName, pageNo);
+		snprintf(pageName,32, "%s:%d", bankName, pageNo);
 		RegisterPage(&newBank.Pages[pageNo], pageName);
 	}
 	return bankId;
@@ -593,23 +593,25 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 			pLabel->Global = true;
 		}
 		break;
-	case ELabelType::Text:
-	{
-		const char* pPrefix = "txt_";
-		const std::string textString = GetItemText(state, address);
-		std::string labelString;
-		const int len = (int)std::min(textString.size(), (size_t)kLabelSize - strlen(pPrefix));
-		for (int i = 0; i < len; i++)
-		{
-			if (textString[i] == ' ')
-				labelString += '_';
-			else
-				labelString += textString[i];
-		}
+        case ELabelType::Text:
+        {
+            const char* pPrefix = "txt_";
+            const std::string textString = GetItemText(state, address);
+            std::string labelString;
+            const int len = (int)std::min(textString.size(), (size_t)kLabelSize - strlen(pPrefix));
+            for (int i = 0; i < len; i++)
+            {
+                if (textString[i] == ' ')
+                    labelString += '_';
+                else
+                    labelString += textString[i];
+            }
 
-		snprintf(label, kLabelSize, "%s%s", pPrefix, labelString.c_str());
-	}
-	break;
+            snprintf(label, kLabelSize, "%s%s", pPrefix, labelString.c_str());
+        }
+        break;
+        default:
+        break;
 	}
 
 	pLabel->InitialiseName(label);
@@ -1296,6 +1298,8 @@ void FreeMachineStates(FCodeAnalysisState& state)
 		return FreeMachineStatesZ80();
 	case ECPUType::M6502:
 		return;// TODO: this needs to be implemented
+    default:
+    break;
 	}
 }
 
@@ -1309,5 +1313,7 @@ void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterf
 	case ECPUType::M6502:
 		// TODO: this needs to be implemented
 		return;
+    default:
+    break;
 	}
 }

@@ -21,29 +21,7 @@ static int CreateZXGraphicsView(lua_State *pState)
     return 1;
 }
 
-static int ClearGraphicsView(lua_State *pState)
-{
-    FZXGraphicsView* pGraphicsView = (FZXGraphicsView*)lua_touserdata(pState, 1 );
-	if(pGraphicsView == nullptr)
-		return 0;
 
-    uint32_t clearCol = 0;
-    if(lua_isinteger(pState, 2))
-        clearCol = lua_tointeger(pState, 2);
-    pGraphicsView->Clear(clearCol);
-    return 0;
-}
-
-static int DrawGraphicsView(lua_State *pState)
-{
-    FZXGraphicsView* pGraphicsView = (FZXGraphicsView*)lua_touserdata(pState, 1 );
-	if (pGraphicsView == nullptr)
-		return 0;
-
-    pGraphicsView->UpdateTexture();
-    pGraphicsView->Draw();
-    return 0;
-}
 
 static int DrawZXBitImage(lua_State *pState)
 {
@@ -98,8 +76,6 @@ static int DrawZXBitImageFineY(lua_State* pState)
 static const luaL_Reg spectrumlib[] =
 {
     {"CreateZXGraphicsView", CreateZXGraphicsView},
-    {"ClearGraphicsView", ClearGraphicsView},
-    {"DrawGraphicsView", DrawGraphicsView},
     {"DrawZXBitImage", DrawZXBitImage},
 	{"DrawZXBitImageFineY", DrawZXBitImageFineY},
     //{"readbyte", readbyte},

@@ -215,6 +215,8 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int x
 				memAddr++;
 			}
 			break;
+            default:
+            break;
 			}
 		}
 	}
@@ -269,6 +271,8 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumnChars(uint16_t memAddr, 
 					memAddr += 8;
 				}
 				break;
+                default:
+                break;
 			}
 		}
 	}
@@ -326,6 +330,8 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 					memAddr ++;
 				}
 				break;
+                default:
+                break;
 			}
 		}
 	}
@@ -384,6 +390,8 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16
 				memAddr += 8;
 			}
 			break;
+            default:
+            break;
 			}
 		}
 	}
@@ -427,7 +435,7 @@ bool StepInt(const char* title, int& val, int stepAmount)
 {
 	const int oldVal = val;
 	ImGui::PushID(title);
-	ImGui::Text(title);
+	ImGui::Text("%s",title);
 	ImGui::SameLine();
 	ImGui::PushButtonRepeat(true);
 	if (ImGui::Button("<<"))
@@ -769,7 +777,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 				if (ImageCount > 1)
 				{
 					char numStr[8];
-					sprintf(numStr, "_%d", i);
+					snprintf(numStr,8, "_%d", i);
 					format.LabelName = ImageSetName + numStr;
 				}
 				else
@@ -858,6 +866,8 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 								// todo
 								break;
 							}
+                            default:
+                            break;
 						}
 					}
 				}
@@ -1019,13 +1029,9 @@ void FGraphicsViewer::DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* 
 				{
 					break;
 				}
+                default:
+                break;
 			}
-
-
-
-
-
-			
 		}
 	}
 }

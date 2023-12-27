@@ -194,6 +194,8 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 			}
 		}
 		break;
+    default:
+        break;
 	}
 
 	// Edit bits
@@ -297,6 +299,8 @@ void EditByteDataItem(FCodeAnalysisState& state, uint16_t address)
 	case ENumberDisplayMode::HexDollar:
 		flags |= ImGuiInputTextFlags_CharsHexadecimal;
 		break;
+    default:
+        break;
 	}
 
 	ImGui::PushID(address);
@@ -342,7 +346,9 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 	case ENumberDisplayMode::HexDollar:
 		flags |= ImGuiInputTextFlags_CharsHexadecimal;
 		break;
-	}
+    default:
+        break;
+    }
 
 	ImGui::PushID(address);
 	if (numMode == ENumberDisplayMode::HexDollar)
@@ -476,7 +482,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	case EDataItemDisplayType::Unknown:
 		valueColour = Colours::unknownValue;
 		break;
-
+    default:
+        break;
 	}
 
 	ImGui::PushStyleColor(ImGuiCol_Text, valueColour);

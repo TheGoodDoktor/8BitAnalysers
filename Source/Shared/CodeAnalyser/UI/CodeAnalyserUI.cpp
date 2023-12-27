@@ -849,6 +849,8 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		DrawComment(state,viewState,item.Item);
 		//DrawCommentLine(state, static_cast<const FCommentLine*>(item.Item));
 		break;
+    default:
+        break;
 	}
 
 	ImGui::PopID();
@@ -1158,7 +1160,7 @@ bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& pale
 	const char* pComboPreview = index == -1 ? pFirstItemLabel : palettePreview.c_str();
 	if (ImGui::BeginComboPreview())
 	{
-		ImGui::Text(pComboPreview);
+		ImGui::Text("%s",pComboPreview);
 		if (const FPaletteEntry* pEntry = GetPaletteEntry(index))
 		{
 			const uint32_t* pPalette = GetPaletteFromPaletteNo(index);
@@ -1214,6 +1216,8 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 					DrawCommentBlockDetails(state, item);
 			}
 			break;
+        default:
+            break;
 		}
 
 		if(item.Item->Type != EItemType::CommentLine)
@@ -1801,6 +1805,8 @@ void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter
 					if (pDataInfo->DataType != EDataType::ColAttr)
 						continue;
 					break;
+                default:
+                    break;
 				}
 			}
 		}
@@ -2072,8 +2078,9 @@ EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType)
 		return EBitmapFormat::ColMap4Bpp_CPC;
 	case  EDataItemDisplayType::ColMapMulticolour_C64:
 		return EBitmapFormat::ColMapMulticolour_C64;
+    default:
+        return EBitmapFormat::None;
 	}
-	return EBitmapFormat::None;
 }
 
 int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
@@ -2088,8 +2095,10 @@ int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
 		return 4;
 	case EBitmapFormat::ColMapMulticolour_C64:
 		return 1;	// it's a bit of a bodge because they're wide
+    default:
+        return 1;
 	}
-	return 1;
+	
 }
 
 bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat)
@@ -2102,8 +2111,9 @@ bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat)
 	case EBitmapFormat::ColMap4Bpp_CPC:
 	case EBitmapFormat::ColMapMulticolour_C64:
 		return true;	
+    default:
+        return false;
 	}
-	return false;
 }
 
 int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)

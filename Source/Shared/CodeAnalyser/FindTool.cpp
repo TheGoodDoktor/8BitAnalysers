@@ -329,7 +329,7 @@ void FFindTool::DrawUI()
 		}
 	}
 	ImGui::EndChild();
-	ImGui::Text("%d results found", pCurFinder->GetNumResults());
+	ImGui::Text("%d results found", (int)pCurFinder->GetNumResults());
 
 	if (SearchType == ESearchType::SearchSingleValue)
 	{

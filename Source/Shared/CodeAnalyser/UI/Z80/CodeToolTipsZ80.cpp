@@ -1336,7 +1336,7 @@ void ShowCodeToolTipZ80(FCodeAnalysisState& state, uint16_t addr)
 
 		ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x - 20, pos.y - 4), ImVec2(pos.x + itemRectMax.x, pos.y + ImGui::GetTextLineHeightWithSpacing()), IM_COL32(64, 64, 64, 255));
 
-		ImGui::Text(instrInfo.Title.c_str());
+		ImGui::Text("%s",instrInfo.Title.c_str());
 		ImGui::Separator();
 	}
 
