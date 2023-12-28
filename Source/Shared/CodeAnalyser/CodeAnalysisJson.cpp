@@ -9,6 +9,7 @@
 #include <json.hpp>
 #include "Util/GraphicsView.h"
 #include "Debug/DebugLog.h"
+#include <iostream>
 using json = nlohmann::json;
 
 void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc);
@@ -169,6 +170,11 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	{
 		for (const auto codeInfoJson : jsonGameData["CodeInfo"])
 		{
+			if(codeInfoJson.contains("Address") == false)
+			{
+				std::cout << codeInfoJson;
+				continue;
+			}
 			const uint16_t addr = codeInfoJson["Address"];
 			FCodeInfo* pCodeInfo = CreateCodeInfoFromJson(codeInfoJson);
 			state.SetCodeInfoForAddress(addr, pCodeInfo);

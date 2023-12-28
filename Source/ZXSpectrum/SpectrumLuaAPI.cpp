@@ -48,10 +48,32 @@ static int DrawZXBitImage(lua_State *pState)
 	else
     {
 		const uint8_t attrib = (uint8_t)luaL_optinteger(pState,7,0x47);
-		pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib);
+		const int stride = (int)luaL_optinteger(pState, 8, 1);
+		pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib, stride);
 	}
 
     return 0;
+}
+
+static int DrawZXBitImageMask(lua_State* pState)
+{
+	FZXGraphicsView* pGraphicsView = (FZXGraphicsView*)lua_touserdata(pState, 1);
+	if (pGraphicsView == nullptr)
+		return 0;
+
+	const uint8_t* pImageData = (const uint8_t*)lua_touserdata(pState, 2);
+	if (pImageData == nullptr)
+		return 0;
+
+	const int xp = (int)luaL_optinteger(pState, 3, 0);
+	const int yp = (int)luaL_optinteger(pState, 4, 0);
+	const int widthChars = (int)luaL_optinteger(pState, 5, 1);
+	const int heightChars = (int)luaL_optinteger(pState, 6, 1);
+	const uint8_t attrib = (uint8_t)luaL_optinteger(pState, 7, 0x47);
+	const int stride = (int)luaL_optinteger(pState, 8, 1);
+	pGraphicsView->DrawBitImageMask(pImageData, xp, yp, widthChars, heightChars, attrib, stride);
+	
+	return 0;
 }
 
 static int DrawZXBitImageFineY(lua_State* pState)
@@ -69,14 +91,16 @@ static int DrawZXBitImageFineY(lua_State* pState)
 	const int widthChars = (int)luaL_optinteger(pState, 5, 1);
 	const int heightPixels = (int)luaL_optinteger(pState, 6, 1);
 	const uint8_t attrib = (uint8_t)luaL_optinteger(pState, 7, 0x47);
+	const int stride = (int)luaL_optinteger(pState, 8, 1);
 
-	pGraphicsView->DrawBitImageFineY(pImageData, xp, yp, widthChars, heightPixels, attrib);
+	pGraphicsView->DrawBitImageFineY(pImageData, xp, yp, widthChars, heightPixels, attrib, stride);
 }
 
 static const luaL_Reg spectrumlib[] =
 {
     {"CreateZXGraphicsView", CreateZXGraphicsView},
     {"DrawZXBitImage", DrawZXBitImage},
+	{"DrawZXBitImageMask", DrawZXBitImageMask},
 	{"DrawZXBitImageFineY", DrawZXBitImageFineY},
     //{"readbyte", readbyte},
     //{"readword", readword},

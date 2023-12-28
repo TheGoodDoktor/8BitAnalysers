@@ -101,6 +101,34 @@ void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 	}
 }
 
+void FGraphicsView::Draw1BppImageAtMask(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride)
+{
+	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
+	int widthChars = widthPixels / 8;
+	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
+
+	for (int y = 0; y < heightPixels; y++)
+	{
+		for (int x = 0; x < widthChars; x++)
+		{
+			const uint8_t mask = *pSrc++;
+			const uint8_t pixels = *pSrc;
+			pSrc += stride;
+
+			for (int xpix = 0; xpix < 8; xpix++)
+			{
+				const bool bMasked = (mask & (1 << (7 - xpix))) != 0;
+				const bool bSet = (pixels & (1 << (7 - xpix))) != 0;
+				const uint32_t col = bSet ? cols[1] : cols[0];
+				if (bMasked == false)
+					*(pBase + xpix + (x * 8)) = col;
+			}
+		}
+
+		pBase += Width;
+	}
+}
+
 void FGraphicsView::Draw2BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
 {
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));

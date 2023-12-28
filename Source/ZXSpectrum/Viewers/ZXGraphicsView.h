@@ -8,8 +8,9 @@ public:
 	FZXGraphicsView(int width, int height) :FGraphicsView(width, height) {}
 
 	void DrawCharLine(uint8_t charLine, int xp, int yp, uint8_t colAttr = 0x7);
-	void DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr = 0x7);
-	void DrawBitImageFineY(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPixels, uint8_t colAttr = 0x47);
+	void DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr = 0x47, int stride = 1);
+	void DrawBitImageMask(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr = 0x47, int stride = 1);
+	void DrawBitImageFineY(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightPixels, uint8_t colAttr = 0x47, int stride = 1);
 	void DrawBitImageWithAttribs(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars,const uint8_t* colAttrs);
 	void DrawBitImageChars(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr = 0x7);
 	uint32_t GetColFromAttr(uint8_t colBits, bool bBright);
