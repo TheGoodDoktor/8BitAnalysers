@@ -63,7 +63,8 @@ include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
 include_directories( ${vendor_dir}/json/single_include/nlohmann )
 
-set(BUILD_SHARED_LIBS OFF)
+# For Windows: Make sure that lua shared libs are always build, otherwise the clean build will fail
+set(BUILD_SHARED_LIBS CACHE STRING "ON" FORCE)
 add_subdirectory( ${vendor_dir}/lua ./lua )
 
 # other includes
