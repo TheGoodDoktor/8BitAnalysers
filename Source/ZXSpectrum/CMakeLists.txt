@@ -63,8 +63,7 @@ include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
 include_directories( ${vendor_dir}/json/single_include/nlohmann )
 
-set(BUILD_SHARED_LIBS OFF)
-add_subdirectory( ${vendor_dir}/lua ./lua )
+include( ../Vendor/CMakeVendor.txt )
 
 # other includes
 include_directories( ../Shared )
@@ -80,66 +79,6 @@ if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE Release)
 endif ()
 
-# vendor source
-
-# chips
-file ( GLOB_RECURSE chips_src 
-	${vendor_dir}/chips/*.h)
-
-# imgui
-set ( imgui_src_dir ${vendor_dir}/imgui-docking )
-
-set ( imgui_src ${imgui_src_dir}/imgui.cpp 
-	${imgui_src_dir}/imgui_demo.cpp 
-	${imgui_src_dir}/imgui_draw.cpp 
-	${imgui_src_dir}/misc/cpp/imgui_stdlib.cpp 
-	${imgui_src_dir}/imgui_tables.cpp
-	${imgui_src_dir}/imgui_widgets.cpp )
-	
-if(${gfxapi} STREQUAL "GLFWApi")
-	set( imgui_backend_src ${imgui_src_dir}/backends/imgui_impl_glfw.cpp
-	${imgui_src_dir}/backends/imgui_impl_opengl3.cpp )
-
-	find_package(OpenGL REQUIRED)
-	include_directories( ${OPENGL_INCLUDE_DIRS} )
-	
-	set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
-	set( GLFW_INSTALL OFF CACHE BOOL  "GLFW lib only" )
-
-	add_subdirectory( ${vendor_dir}/glfw ./glfw )
-
-elseif(${gfxapi} STREQUAL "DX11")
-	set( imgui_backend_src ${imgui_src_dir}/backends/imgui_impl_win32.cpp
-	${imgui_src_dir}/backends/imgui_impl_dx11.cpp )
-endif()
-
-# implot
-set ( implot_src ${vendor_dir}/implot/implot.h
-	${vendor_dir}/implot/implot.cpp
-	${vendor_dir}/implot/implot_demo.cpp
-	${vendor_dir}/implot/implot_items.cpp
-	${vendor_dir}/implot/implot_internal.h)
-
-# zlib
-set ( zlib_src ${vendor_dir}/zlib/adler32.c
-	${vendor_dir}/zlib/compress.c
-	${vendor_dir}/zlib/crc32.c
-	${vendor_dir}/zlib/deflate.c
-	${vendor_dir}/zlib/infback.c
-	${vendor_dir}/zlib/inffast.c
-	${vendor_dir}/zlib/inflate.c
-	${vendor_dir}/zlib/inftrees.c
-	${vendor_dir}/zlib/trees.c
-	${vendor_dir}/zlib/uncompr.c
-	${vendor_dir}/zlib/zutil.c )
- 
-# imgui lua bindings
-set ( imguiextras 
-		${vendor_dir}/imgui_lua_bindings/imgui_lua_bindings.cpp 
-		${vendor_dir}/ImGuiColorTextEdit/TextEditor.cpp 
-		${vendor_dir}/ImGuiColorTextEdit/TextEditor.h )
-
-set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} ${imguiextras} )
 
 # program source
 file ( GLOB program_src 
