@@ -1,5 +1,14 @@
-set(BUILD_SHARED_LIBS OFF)
-add_subdirectory( ${vendor_dir}/lua ./lua )
+# vendor includes
+set( vendor_dir ../Vendor )
+include_directories( ${vendor_dir} )
+include_directories( ${vendor_dir}/sokol )
+include_directories( ${vendor_dir}/imgui-docking )
+include_directories( ${vendor_dir}/chips )
+include_directories( ${vendor_dir}/luasrc )
+include_directories( ${vendor_dir}/magic_enum/include )
+include_directories( ${vendor_dir}/zlib )
+include_directories( ${vendor_dir}/implot )
+include_directories( ${vendor_dir}/json/single_include/nlohmann )
 
 # vendor source
 
@@ -53,6 +62,43 @@ set ( zlib_src ${vendor_dir}/zlib/adler32.c
 	${vendor_dir}/zlib/trees.c
 	${vendor_dir}/zlib/uncompr.c
 	${vendor_dir}/zlib/zutil.c )
+
+# lua
+set(BUILD_SHARED_LIBS OFF)
+set( lua_src ${vendor_dir}/luasrc/lapi.c 
+		${vendor_dir}/luasrc/lauxlib.c 
+		${vendor_dir}/luasrc/lbaselib.c 
+		${vendor_dir}/luasrc/lcode.c 
+		${vendor_dir}/luasrc/lcorolib.c 
+		${vendor_dir}/luasrc/lctype.c 
+		${vendor_dir}/luasrc/ldblib.c 
+		${vendor_dir}/luasrc/ldebug.c 
+		${vendor_dir}/luasrc/ldo.c
+		${vendor_dir}/luasrc/ldump.c 
+		${vendor_dir}/luasrc/lfunc.c 
+		${vendor_dir}/luasrc/lgc.c 
+		${vendor_dir}/luasrc/linit.c 
+		${vendor_dir}/luasrc/liolib.c 
+		${vendor_dir}/luasrc/llex.c 
+		${vendor_dir}/luasrc/lmathlib.c 
+		${vendor_dir}/luasrc/lmem.c 
+		${vendor_dir}/luasrc/loadlib.c 
+		${vendor_dir}/luasrc/lobject.c 
+		${vendor_dir}/luasrc/lopcodes.c
+		${vendor_dir}/luasrc/loslib.c 
+		${vendor_dir}/luasrc/lparser.c 
+		${vendor_dir}/luasrc/lstate.c 
+		${vendor_dir}/luasrc/lstring.c 
+		${vendor_dir}/luasrc/lstrlib.c 
+		${vendor_dir}/luasrc/ltable.c 
+		${vendor_dir}/luasrc/ltablib.c 
+		${vendor_dir}/luasrc/ltests.c 
+		${vendor_dir}/luasrc/ltm.c 
+		${vendor_dir}/luasrc/lundump.c
+		${vendor_dir}/luasrc/lutf8lib.c 
+		${vendor_dir}/luasrc/lvm.c 
+		${vendor_dir}/luasrc/lzio.c)
+
  
 # imgui lua bindings
 set ( imguiextras 
@@ -60,4 +106,13 @@ set ( imguiextras
 		${vendor_dir}/ImGuiColorTextEdit/TextEditor.cpp 
 		${vendor_dir}/ImGuiColorTextEdit/TextEditor.h )
 
-set ( vendor_src ${imgui_src} ${imgui_backend_src} ${implot_src} ${chips_src} ${rzxlib_src} ${zlib_src} ${imguiextras} ${vendor_dir}/CMakeVendor.txt)
+set ( vendor_src 
+	${imgui_src} 
+	${imgui_backend_src} 
+	${implot_src} 
+	${chips_src} 
+	${rzxlib_src} 
+	${zlib_src} 
+	${lua_src}
+	${imguiextras} 
+	${vendor_dir}/CMakeVendor.txt)

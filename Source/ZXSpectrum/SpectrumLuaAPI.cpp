@@ -94,6 +94,7 @@ static int DrawZXBitImageFineY(lua_State* pState)
 	const int stride = (int)luaL_optinteger(pState, 8, 1);
 
 	pGraphicsView->DrawBitImageFineY(pImageData, xp, yp, widthChars, heightPixels, attrib, stride);
+	return 0;
 }
 
 static const luaL_Reg spectrumlib[] =

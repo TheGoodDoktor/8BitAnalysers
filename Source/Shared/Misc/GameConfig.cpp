@@ -195,4 +195,5 @@ bool FGameConfig::AddLuaSourceFile(const char* pFilename)
 	}
 
 	LuaSourceFiles.push_back(pFilename);
+	return true;
 }

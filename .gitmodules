@@ -19,3 +19,7 @@
 [submodule "Source/Vendor/ImGuiColorTextEdit"]
 	path = Source/Vendor/ImGuiColorTextEdit
 	url = https://github.com/BalazsJako/ImGuiColorTextEdit
+
+[submodule "Source/Vendor/luasrc"]
+	path = Source/Vendor/luasrc
+	url = https://github.com/lua/lua
