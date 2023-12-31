@@ -12,6 +12,7 @@
 #include "Debug/ImGuiLog.h"
 #include "Util/FileUtil.h"
 #include "LuaScripting/LuaSys.h"
+#include <CodeAnalyser/UI/UIColours.h>
 
 void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 {
@@ -79,7 +80,7 @@ void FEmuBase::Shutdown()
 
 void FEmuBase::Tick()
 {
-
+	Colours::Tick();
 }
 
 void FEmuBase::Reset()

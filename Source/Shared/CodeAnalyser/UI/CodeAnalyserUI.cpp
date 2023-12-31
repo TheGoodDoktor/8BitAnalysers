@@ -207,6 +207,9 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::PopStyleColor();
+			viewState.HoverAddress = addr;
+			viewState.HighlightAddress = viewState.HoverAddress;
+
 			// Bring up snippet in tool tip
 			const int indentBkp = viewState.JumpLineIndent;
 			viewState.JumpLineIndent = 0;
@@ -218,8 +221,7 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 				state.GetAltViewState().GoToAddress( addr, false);
 			else if (ImGui::IsMouseDoubleClicked(0))
 				viewState.GoToAddress( addr, false);
-		
-			viewState.HoverAddress = addr;
+	
 			bToolTipShown = true;
 		}
 		else

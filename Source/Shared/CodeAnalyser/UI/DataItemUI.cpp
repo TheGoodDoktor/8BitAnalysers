@@ -10,7 +10,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "UIColours.h"
 
-float DrawDataCharMapLine(FCodeAnalysisState& state,uint16_t addr, const FDataInfo* pDataInfo)
+float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, const FDataInfo* pDataInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
 	const float rectSize = line_height + 4;
@@ -20,11 +20,13 @@ float DrawDataCharMapLine(FCodeAnalysisState& state,uint16_t addr, const FDataIn
 	const float startPos = pos.x;
 	pos.y -= rectSize + 2;
 
+	FAddressRef charAddress = addr;
+
 	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(pDataInfo->CharSetAddress);
 
 	for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 	{
-		const uint8_t val = state.ReadByte(addr + byte);
+		const uint8_t val = state.ReadByte(addr);
 		if (val != pDataInfo->EmptyCharNo)	// skip empty chars
 		{
 			const ImVec2 rectMin(pos.x, pos.y);
@@ -45,6 +47,13 @@ float DrawDataCharMapLine(FCodeAnalysisState& state,uint16_t addr, const FDataIn
 			}
 			
 		}
+
+		if(addr == viewState.HighlightAddress)
+		{
+			dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize) , Colours::GetFlashColour());
+		}
+
+		state.AdvanceAddressRef(addr, 1);	// advance by one byte
 		pos.x += rectSize;
 	}
 
@@ -599,7 +608,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		break;
 	case EDataType::CharacterMap:
 		ImGui::Text("Charmap");
-		offset = DrawDataCharMapLine(state, physAddr, pDataInfo);
+		offset = DrawDataCharMapLine(state,viewState, item.AddressRef, pDataInfo);
 		break;
 	case EDataType::ColAttr:
 		ImGui::Text("ColAttr");

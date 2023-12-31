@@ -21,5 +21,23 @@ namespace Colours
 
 	uint32_t highlight		= IM_COLRGB(0,255,0);	// highlighted addresses/labels
 
+	static int FrameCounter = 0;
+
+	void Tick()
+	{
+		FrameCounter++;
+	}
+
+	uint32_t GetFlashColour()
+	{
+		// generate flash colour
+		uint32_t flashCol = 0xff000000;
+		const int flashCounter = FrameCounter >> 2;
+		if (flashCounter & 1) flashCol |= 0xff << 0;
+		if (flashCounter & 2) flashCol |= 0xff << 8;
+		if (flashCounter & 4) flashCol |= 0xff << 16;
+		return flashCol;
+	}
+
 
 }//namespace Colours

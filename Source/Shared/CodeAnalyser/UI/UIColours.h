@@ -18,4 +18,9 @@ namespace Colours
 	extern uint32_t immediate;		// immediate values
 
 	extern uint32_t highlight;	// highlighted text
+
+
+	void Tick();
+	uint32_t GetFlashColour();
+
 }//namespace Colours
