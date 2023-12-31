@@ -48,6 +48,9 @@ float DrawDataCharMapLine(FCodeAnalysisState& state,uint16_t addr, const FDataIn
 		pos.x += rectSize;
 	}
 
+	// convert from screen space to local space
+	pos.x -= ImGui::GetWindowPos().x;
+
 	ImGui::SameLine(pos.x);
 	ImGui::Text(" ");
 	return pos.x;
@@ -224,6 +227,9 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 		}
 	}
 
+	// convert from screen space to local space
+	pos.x -= ImGui::GetWindowPos().x;
+
 	//ImGui::SetCursorScreenPos(pos);
 	ImGui::SameLine(pos.x);
 	ImGui::Text(" ");
@@ -273,6 +279,10 @@ float DrawColAttr(FCodeAnalysisState& state, uint16_t addr,const FDataInfo* pDat
 		
 		pos.x += rectSize;
 	}
+
+	// convert from screen space to local space
+	pos.x -= ImGui::GetWindowPos().x;
+
 	return pos.x;
 }
 
