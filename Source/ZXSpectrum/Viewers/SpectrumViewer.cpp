@@ -12,6 +12,7 @@
 #include <ImGuiSupport/ImGuiTexture.h>
 #include <ImGuiSupport/ImGuiScaling.h>
 #include <ImGuiSupport/ImGuiDrawing.h>
+#include <CodeAnalyser/UI/UIColours.h>
 
 static const int kBorderOffsetX = (320 - 256) / 2;
 static const int kBorderOffsetY = (256 - 192) / 2;
@@ -89,7 +90,7 @@ void FSpectrumViewer::Draw()
 			ImVec2 start = ImVec2(pos.x, pos.y + (scanlineY * scale));
 			const ImVec2 end = ImVec2(pos.x + (320 + 32) * scale, pos.y + (scanlineY * scale));
 
-			dl->AddLine(start, end, GetFlashColour(), 1 * scale);
+			dl->AddLine(start, end, Colours::GetFlashColour(), 1 * scale);
 		}
 	}
 
@@ -101,7 +102,7 @@ void FSpectrumViewer::Draw()
 	if (viewState.HighlightAddress.IsValid())
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const ImU32 flashCol = GetFlashColour();
+		const ImU32 flashCol = Colours::GetFlashColour();
 		if (viewState.HighlightAddress.Address >= kScreenPixMemStart && viewState.HighlightAddress.Address <= kScreenPixMemEnd)	// pixel
 		{
 			int xp, yp;
@@ -211,7 +212,6 @@ void FSpectrumViewer::Draw()
 	}
 	
 	bWindowFocused = ImGui::IsWindowFocused();
-	FrameCounter++;
 }
 
 void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos)
@@ -251,7 +251,7 @@ void FSpectrumViewer::DrawSelectedCharUI(const ImVec2& pos)
 	const FZXSpectrumConfig& config = *pSpectrumEmu->GetZXSpectrumGlobalConfig();
 	const float scale = (float)config.ImageScale;//ImGui_GetScaling();
 
-	const ImU32 col = GetFlashColour();
+	const ImU32 col = Colours::GetFlashColour();
 	dl->AddRect(ImVec2(pos.x + ((float)SelectedCharX * scale), pos.y + (float)SelectedCharY * scale), ImVec2(pos.x + ((float)SelectedCharX + 8) * scale, pos.y + ((float)SelectedCharY + 8) * scale), col);
 
 	ImGui::Text("Pixel Char Address: %s", NumStr(SelectPixAddr.Address));
@@ -480,17 +480,6 @@ int SpectrumKeyFromImGuiKey(ImGuiKey key)
 		speccyKey = 0xc;
 	}
 	return speccyKey;
-}
-
-ImU32 FSpectrumViewer::GetFlashColour() const
-{
-	// generate flash colour
-	ImU32 flashCol = 0xff000000;
-	const int flashCounter = FrameCounter >> 2;
-	if (flashCounter & 1) flashCol |= 0xff << 0;
-	if (flashCounter & 2) flashCol |= 0xff << 8;
-	if (flashCounter & 4) flashCol |= 0xff << 16;
-	return flashCol;
 }
 
 void FSpectrumViewer::Tick(void)
