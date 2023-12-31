@@ -17,6 +17,7 @@
 #include <Debug/DebugLog.h>
 #include "Commands/CommandProcessor.h"
 #include "Commands/SetItemDataCommand.h"
+#include "Commands/SetCommentCommand.h"
 #include "Z80/Z80Disassembler.h"
 #include "6502/M6502Disassembler.h"
 #include "UI/CodeAnalyserUI.h"
@@ -1161,6 +1162,11 @@ void SetItemData(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 	DoCommand(state, new FSetItemDataCommand(item));
 }
 
+void SetDataItemDisplayType(FCodeAnalysisState& state, const FCodeAnalysisItem& item, EDataItemDisplayType displayType)
+{
+	DoCommand(state, new FSetDataItemDisplayTypeCommand(item,displayType));
+}
+
 void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 {
 	if (item.IsValid() == false)
@@ -1263,6 +1269,7 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address)
 
 void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText)
 {
+	//DoCommand(state, new FSetItemCommentCommand(item,pText));
 	item.Item->Comment = pText;
 }
 

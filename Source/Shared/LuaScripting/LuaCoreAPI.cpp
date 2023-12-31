@@ -81,6 +81,59 @@ static int GetMemPtr(lua_State* pState)
 	return 0;
 }
 
+// Analysis related
+
+static int SetDataItemComment(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isinteger(pState, 1) && lua_isstring(pState, 2))
+	{
+		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+		// TODO: we'll need bank specified at some point
+		const lua_Integer address = lua_tointeger(pState, 1);
+		FAddressRef addrRef = state.AddressRefFromPhysicalAddress(address);
+		size_t length = 0;
+		const char *pText = luaL_tolstring(pState,2,&length);
+
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(addrRef);
+		pDataInfo->Comment = pText;
+		//SetItemCommentText(state,,pText);
+	}
+
+	return 0;
+}
+
+static int SetDataItemDisplayType(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isinteger(pState, 1) && lua_isinteger(pState, 2))
+	{
+		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+		// TODO: we'll need bank specified at some point
+		const lua_Integer address = lua_tointeger(pState, 1);
+		const EDataItemDisplayType displayType = (EDataItemDisplayType)lua_tointeger(pState, 2);
+		FAddressRef addrRef = state.AddressRefFromPhysicalAddress(address);
+
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(addrRef);
+		pDataInfo->DisplayType = displayType;
+
+		if(displayType == EDataItemDisplayType::Pointer)
+		{
+			//if(pDataInfo->ByteSize == 1)
+			{
+				pDataInfo->ByteSize = 2;
+				pDataInfo->DataType = EDataType::Word;
+				state.SetCodeAnalysisDirty(addrRef);
+			}
+		}
+	}
+	return 0;
+}
+
 // Gui related
 
 static int DrawAddressLabel(lua_State* pState)
@@ -166,10 +219,16 @@ static int DrawOtherGraphicsViewScaled(lua_State *pState)
 static const luaL_Reg corelib[] =
 {
 	{"print", print},
+	// Memory/Machine state
 	{"ReadByte", ReadByte},
 	{"ReadWord", ReadWord},
 	{"GetMemPtr", GetMemPtr},
+	// Analysis
+	{"SetDataItemComment", SetDataItemComment},
+	{"SetDataItemDisplayType", SetDataItemDisplayType},
+	// UI
 	{"DrawAddressLabel", DrawAddressLabel},
+	//Graphics
 	{"GetImageScale", GetImageScale},
 	{"ClearGraphicsView", ClearGraphicsView},
 	{"DrawGraphicsView", DrawGraphicsView},

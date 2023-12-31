@@ -20,6 +20,19 @@ public:
 	uint16_t	oldDataSize = 0;
 };
 
+class FSetDataItemDisplayTypeCommand : public FCommand
+{
+public:
+	FSetDataItemDisplayTypeCommand(const FCodeAnalysisItem& item, EDataItemDisplayType displayType) :Item(item), DisplayType(displayType){}
+
+	virtual void Do(FCodeAnalysisState& state) override;
+	virtual void Undo(FCodeAnalysisState& state) override;
+
+	FCodeAnalysisItem Item;
+	EDataItemDisplayType	DisplayType = EDataItemDisplayType::Unknown;
+	EDataItemDisplayType	OldDisplayType = EDataItemDisplayType::Unknown;
+};
+
 class FSetItemCodeCommand : public FCommand
 {
 public:

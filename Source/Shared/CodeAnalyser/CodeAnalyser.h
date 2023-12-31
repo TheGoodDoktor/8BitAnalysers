@@ -707,6 +707,7 @@ void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
 void SetItemCode(FCodeAnalysisState& state, FAddressRef addr);
 //void SetItemCode(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
 void SetItemData(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
+void SetDataItemDisplayType(FCodeAnalysisState& state, const FCodeAnalysisItem& item, EDataItemDisplayType displayType);
 void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item);
 void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item);
 void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText);

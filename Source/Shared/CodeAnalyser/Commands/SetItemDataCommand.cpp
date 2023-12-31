@@ -68,6 +68,28 @@ void FSetItemDataCommand::Undo(FCodeAnalysisState& state)
 	state.SetCodeAnalysisDirty(Item.AddressRef);
 }
 
+
+// Set Data Item Display Type 
+void FSetDataItemDisplayTypeCommand::Do(FCodeAnalysisState& state)
+{
+	if (Item.Item->Type == EItemType::Data)
+	{
+		FDataInfo* pDataItem = static_cast<FDataInfo*>(Item.Item);
+		OldDisplayType = pDataItem->DisplayType;
+		pDataItem->DisplayType = DisplayType;
+	}
+
+}
+
+void FSetDataItemDisplayTypeCommand::Undo(FCodeAnalysisState& state)
+{
+	if (Item.Item->Type == EItemType::Data)
+	{
+		FDataInfo* pDataItem = static_cast<FDataInfo*>(Item.Item);
+		pDataItem->DisplayType = OldDisplayType;
+	}
+}
+
 // Set Item Code
 
 void FSetItemCodeCommand::Do(FCodeAnalysisState& state)
