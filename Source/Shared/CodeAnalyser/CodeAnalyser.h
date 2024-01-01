@@ -59,6 +59,7 @@ enum class EKey
 	SetItemCode,
 	SetItemImage,
 	ToggleItemBinary,
+	SetItemPointer,
 
 	AddLabel,
 	Rename,

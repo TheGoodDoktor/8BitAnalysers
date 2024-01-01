@@ -429,6 +429,23 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				//pDataItem->bShowBinary = !pDataItem->bShowBinary;
 			}
 		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemPointer]))
+		{
+			if (cursorItem.Item->Type == EItemType::Data)
+			{
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
+				pDataItem->DataType = EDataType::Word;
+				pDataItem->ByteSize = 2;
+				pDataItem->DisplayType = EDataItemDisplayType::Pointer;
+				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
+			}
+			else if (cursorItem.Item->Type == EItemType::Code)
+			{
+				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+				pCodeItem->OperandType = EOperandType::Pointer;
+				pCodeItem->Text.clear();
+			}
+		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddLabel]))
 		{
 			if (cursorItem.Item->Type != EItemType::Label)
