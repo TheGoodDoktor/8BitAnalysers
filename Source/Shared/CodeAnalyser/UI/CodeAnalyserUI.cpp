@@ -516,6 +516,26 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 	}
 }
 
+void MarkupHelpPopup()
+{
+	ImGui::SameLine();
+	ImGui::Button("?");
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("Markup Syntax");
+		ImGui::BulletText("#REG:N#");
+		ImGui::BulletText("#ADDR:0xNNNN#");
+		ImGui::Text("");
+		ImGui::Text("Examples");
+		ImGui::BulletText("#REG:B#");
+		ImGui::BulletText("#REG:HL#");
+		ImGui::BulletText("#ADDR:0x8000#");
+		ImGui::EndTooltip();
+	}
+}
+
 void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
 	const FCodeAnalysisItem& cursorItem = viewState.GetCursorItem();
@@ -525,23 +545,33 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 
 	if (ImGui::BeginPopup("Enter Comment Text", ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		ImGui::SetNextItemWidth(50 * ImGui::GetFontSize());
+
 		ImGui::SetKeyboardFocusHere();
 		if (ImGui::InputText("##comment", &cursorItem.Item->Comment, ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			ImGui::CloseCurrentPopup();
 		}
+
+		MarkupHelpPopup();
+
 		ImGui::SetItemDefaultFocus();
 		ImGui::EndPopup();
 	}
 
 	if (ImGui::BeginPopup("Enter Comment Text Multi", ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		ImGui::SetNextItemWidth(50 * ImGui::GetFontSize());
+
 		ImGui::SetKeyboardFocusHere();
 		if(ImGui::InputTextMultiline("##comment", &cursorItem.Item->Comment,ImVec2(), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine))
 		{
 			state.SetCodeAnalysisDirty(cursorItem.AddressRef);
 			ImGui::CloseCurrentPopup();
 		}
+
+		MarkupHelpPopup();
+
 		ImGui::SetItemDefaultFocus();
 		ImGui::EndPopup();
 	}
@@ -1409,6 +1439,27 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	{
 		const FAddressRef address(state.GetBankFromAddress(addrInput), addrInput);	// TODO: if we're in a bank view
 		viewState.GoToAddress(address);
+	}
+
+	ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetFrameHeight());
+	ImGui::Button("?");
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text(      "Keyboard shortcuts");
+		ImGui::BulletText("b : Set item as bitmap");
+		ImGui::BulletText("c : Set item as code");
+		ImGui::BulletText("d : Set item as data");
+		ImGui::BulletText("p : Set data item or code operand as pointer");
+		ImGui::BulletText("t : Set item as text");
+		ImGui::Separator();
+		ImGui::BulletText("l : Add label");
+		ImGui::BulletText("r : Rename label");
+		ImGui::Separator();
+		ImGui::BulletText("; : Add inline comment");
+		ImGui::BulletText("Shift + ; : Add multi-line comment");
+		ImGui::EndTooltip();
 	}
 
 	if (viewState.TrackPCFrame == true)
