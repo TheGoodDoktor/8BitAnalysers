@@ -292,6 +292,9 @@ float DrawColAttr(FCodeAnalysisState& state, uint16_t addr,const FDataInfo* pDat
 	// convert from screen space to local space
 	pos.x -= ImGui::GetWindowPos().x;
 
+	ImGui::SameLine(pos.x);
+	ImGui::Text(" ");
+
 	return pos.x;
 }
 
