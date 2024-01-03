@@ -93,7 +93,7 @@ static int SetDataItemComment(lua_State* pState)
 
 		// TODO: we'll need bank specified at some point
 		const lua_Integer address = lua_tointeger(pState, 1);
-		FAddressRef addrRef = state.AddressRefFromPhysicalAddress(address);
+		FAddressRef addrRef = state.AddressRefFromPhysicalAddress((uint16_t)address);
 		size_t length = 0;
 		const char *pText = luaL_tolstring(pState,2,&length);
 
@@ -116,7 +116,7 @@ static int SetDataItemDisplayType(lua_State* pState)
 		// TODO: we'll need bank specified at some point
 		const lua_Integer address = lua_tointeger(pState, 1);
 		const EDataItemDisplayType displayType = (EDataItemDisplayType)lua_tointeger(pState, 2);
-		FAddressRef addrRef = state.AddressRefFromPhysicalAddress(address);
+		FAddressRef addrRef = state.AddressRefFromPhysicalAddress((uint16_t)address);
 
 		FDataInfo* pDataInfo = state.GetDataInfoForAddress(addrRef);
 		pDataInfo->DisplayType = displayType;

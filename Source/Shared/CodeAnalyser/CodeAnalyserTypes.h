@@ -160,6 +160,19 @@ public:
 		References.emplace_back(addrRef);
 	}
 
+	bool RemoveReference(const FAddressRef& addrRef)
+	{
+		for(auto it = References.begin();it!=References.end();++it)
+		{
+			if(*it == addrRef)
+			{
+				References.erase(it);
+				return true;
+			}
+		}
+
+		return false;
+	}
 	bool IsEmpty() const { return References.empty(); }
 	int NumReferences() const { return (int)References.size(); }
 	const std::vector<FAddressRef>& GetReferences() const { return References; }

@@ -136,6 +136,9 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	int labelOffset = 0;
 	const char *pLabelString = GetRegionDesc(addr);
 	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	if(pBank == nullptr)
+		return false;
+
 	assert(pBank != nullptr);
 	bool bGlobalHighlighting = pLabelString != nullptr;
 	bool bFunctionHighlighting = false;
@@ -334,13 +337,43 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	}
 
 	ImGui::Text("References:");
-	for (const auto & caller : pLabelInfo->References.GetReferences())
+	FAddressRef removeRef;
+	for (const auto & ref : pLabelInfo->References.GetReferences())
 	{
-		ShowCodeAccessorActivity(state, caller);
+		ImGui::PushID(ref.Val);
+		ShowCodeAccessorActivity(state, ref);
 
 		ImGui::Text("   ");
 		ImGui::SameLine();
-		DrawCodeAddress(state, viewState, caller);
+		DrawCodeAddress(state, viewState, ref);
+		ImGui::SameLine();
+		if(ImGui::Button("Remove"))
+		{
+			removeRef = ref;
+		}
+		ImGui::PopID();
+	}
+	if(removeRef.IsValid())
+		pLabelInfo->References.RemoveReference(removeRef);
+
+	if(ImGui::Button("Find References"))
+	{
+		std::vector<FAddressRef> results = state.FindAllMemoryPatterns((const uint8_t*)&item.AddressRef.Address,2,false,false);
+
+		for(const auto& result : results)
+		{
+			FDataInfo* pDataInfo = state.GetDataInfoForAddress(result);
+
+			if(pDataInfo->DataType == EDataType::InstructionOperand)	// handle instructions differently
+				pLabelInfo->References.RegisterAccess(pDataInfo->InstructionAddress);
+			else
+				pLabelInfo->References.RegisterAccess(result);
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Clear References"))
+	{
+		pLabelInfo->References.Reset();
 	}
 }
 
@@ -443,6 +476,36 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 			{
 				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
 				pCodeItem->OperandType = EOperandType::Pointer;
+				pCodeItem->Text.clear();
+			}
+		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemNumber]))
+		{
+			if (cursorItem.Item->Type == EItemType::Data)
+			{
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
+				pDataItem->DisplayType = EDataItemDisplayType::SignedNumber;
+				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
+			}
+			else if (cursorItem.Item->Type == EItemType::Code)
+			{
+				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+				pCodeItem->OperandType = EOperandType::SignedNumber;
+				pCodeItem->Text.clear();
+			}
+		}
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemUnknown]))
+		{
+			if (cursorItem.Item->Type == EItemType::Data)
+			{
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
+				pDataItem->DisplayType = EDataItemDisplayType::Unknown;
+				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
+			}
+			else if (cursorItem.Item->Type == EItemType::Code)
+			{
+				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+				pCodeItem->OperandType = EOperandType::Unknown;
 				pCodeItem->Text.clear();
 			}
 		}
@@ -941,12 +1004,13 @@ bool DrawEnumCombo(const char* pLabel,
 static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
 {
 	{ "Unknown" ,		EOperandType::Unknown},
-	{ "Number",			EOperandType::UnsignedNumber},
+	{ "Number",			EOperandType::SignedNumber},
 	{ "Pointer" ,		EOperandType::Pointer},
-	{ "JumpAddress",	EOperandType::JumpAddress},
+	{ "Jump Address",	EOperandType::JumpAddress},
 	{ "Decimal",		EOperandType::Decimal},
 	{ "Hex",			EOperandType::Hex},
 	{ "Binary",			EOperandType::Binary},
+	{ "Unsigned Number",			EOperandType::UnsignedNumber},
 	//{ "Signed Number",	EOperandType::SignedNumber},
 };
 

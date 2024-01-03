@@ -218,41 +218,7 @@ bool FCodeAnalysisState::ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_
 }
 
 
-
-/*
-// Search memory space for a block of data
-bool FCodeAnalysisState::FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr)
-{
-	uint16_t address = offset;
-	ICPUInterface* pCPUInterface = CPUInterface;
-	size_t dataOffset = 0;
-
-	do
-	{
-		bool bFound = true;
-		for (int byteNo = 0; byteNo < dataSize; byteNo++)
-		{
-			const uint8_t byte = ReadByte(address + byteNo);
-			if (byte != pData[byteNo])
-			{
-				bFound = false;
-				break;
-			}
-		}
-
-		if (bFound)
-		{
-			outAddr = static_cast<uint16_t>(address);
-			return true;
-		}
-
-		address++;
-	} while (address != 0);	// 16 bit address overflow
-
-	return false;
-}*/
-
-std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly)
+std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(const uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly)
 {
 	std::vector<FAddressRef> results;
 	// iterate through banks
@@ -1087,6 +1053,8 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	KeyConfig[(int)EKey::SetItemImage] = ImGuiKey_I;
 	KeyConfig[(int)EKey::ToggleItemBinary] = ImGuiKey_B;
 	KeyConfig[(int)EKey::SetItemPointer] = ImGuiKey_P;
+	KeyConfig[(int)EKey::SetItemNumber] = ImGuiKey_N;
+	KeyConfig[(int)EKey::SetItemUnknown] = ImGuiKey_U;
 	KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
 	KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
 	KeyConfig[(int)EKey::Comment] = ImGuiKey_Semicolon; 
