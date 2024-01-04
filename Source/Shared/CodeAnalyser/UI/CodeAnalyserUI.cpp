@@ -2300,7 +2300,6 @@ std::string ExpandTag(const std::string& tag)
 		{
 			if (g_CodeInfo->OperandAddress.IsValid())
 				return std::string(NumStr((uint16_t)g_CodeInfo->OperandAddress.Address));
-				//bShownToolTip = DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
 		}
 	}
 	else if (tagName == std::string("IM"))	// immediate
