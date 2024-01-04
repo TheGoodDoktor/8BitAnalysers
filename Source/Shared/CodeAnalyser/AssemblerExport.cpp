@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <CodeAnalyser/Z80/Z80Disassembler.h>
+#include "UI/CodeAnalyserUI.h"
 
 // this might be a bit broken
 std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef addr)
@@ -86,7 +87,9 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 				LOGINFO("DebugAddress");
 
 			const std::string dasmString = Z80GenerateDasmStringForAddress(state, addr, hexMode);
-			fprintf(fp, "\t%s", dasmString.c_str());
+			Markup::SetCodeInfo(pCodeInfo);
+			const std::string expString = Markup::ExpandString(dasmString.c_str());
+			fprintf(fp, "\t%s", expString.c_str());
 
 			if (pCodeInfo->OperandAddress.IsValid())
 			{

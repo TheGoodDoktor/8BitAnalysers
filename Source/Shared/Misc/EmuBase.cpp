@@ -495,7 +495,7 @@ void FEmuBase::DrawExportAsmModalPopup()
 			{
 				if (pCurrentGameConfig != nullptr)
 				{
-					const std::string dir = pGlobalConfig->WorkspaceRoot + "OutputASM/";
+					const std::string dir = GetGameWorkspaceRoot();
 					EnsureDirectoryExists(dir.c_str());
 
 					char addrRangeStr[16];
@@ -505,7 +505,7 @@ void FEmuBase::DrawExportAsmModalPopup()
 						snprintf(addrRangeStr, 16, "_%u_%u", AssemblerExportStartAddress, AssemblerExportEndAddress);
 
 					const std::string outBinFname = dir + pCurrentGameConfig->Name + addrRangeStr + ".asm";
-
+					
 					ExportAssembler(CodeAnalysis, outBinFname.c_str(), AssemblerExportStartAddress, AssemblerExportEndAddress);
 				}
 			}
@@ -581,4 +581,12 @@ void FEmuBase::CharacterMapViewerSetView(FAddressRef address)
 {
 	if (pCharacterMapViewer)
 		pCharacterMapViewer->GoToAddress(address);
+}
+
+
+// Util
+
+std::string FEmuBase::GetGameWorkspaceRoot() const
+{
+	return GetGlobalConfig()->WorkspaceRoot + GetGameConfig()->Name + "/";
 }

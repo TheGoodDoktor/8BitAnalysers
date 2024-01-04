@@ -2281,6 +2281,40 @@ void SetCodeInfo(const FCodeInfo* pCodeInfo)
 	g_CodeInfo= pCodeInfo;
 }
 
+std::string ExpandTag(const std::string& tag)
+{
+	const size_t tagNameEnd = tag.find(":");
+	const std::string tagName = tag.substr(0, tagNameEnd);
+	const std::string tagValue = tag.substr(tagNameEnd + 1);
+	
+	if (tagName == std::string("ADDR"))
+	{
+		int address = 0;
+		if (sscanf(tagValue.c_str(), "0x%04x", &address) != 0)
+			return std::string(NumStr((uint16_t)address));
+	}
+	else if (tagName == std::string("OPERAND_ADDR"))
+	{
+		const FCodeInfo* pCodeInfo = g_CodeInfo;
+		if (pCodeInfo != nullptr)
+		{
+			if (g_CodeInfo->OperandAddress.IsValid())
+				return std::string(NumStr((uint16_t)g_CodeInfo->OperandAddress.Address));
+				//bShownToolTip = DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
+		}
+	}
+	else if (tagName == std::string("IM"))	// immediate
+	{
+		return tagValue;
+	}
+	else if (tagName == std::string("REG"))
+	{
+		return tagValue;
+	}
+
+	return std::string();
+}
+
 bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const std::string& tag)
 {
 	const size_t tagNameEnd = tag.find(":");
@@ -2416,6 +2450,61 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 	ImGui::EndGroup();
 
 	return bToolTipshown;
+}
+
+std::string ExpandString(const char* pText)
+{
+	const char* pTxtPtr = pText;
+	bool bInTag = false;
+	std::string outString;
+
+	// temp string on stack
+	const int kMaxStringSize = 64;
+	char str[kMaxStringSize + 1];
+	int strPos = 0;
+
+	std::string tag;
+
+	while (*pTxtPtr != 0)
+	{
+		const char ch = *pTxtPtr++;
+
+		if (bInTag == false)
+		{
+			if (ch == '#')	// start tag
+			{
+				bInTag = true;
+				tag.clear();
+			}
+			else
+			{
+				str[strPos++] = ch;	// add to string
+			}
+		}
+		else
+		{
+			if (ch == '#')	// finish tag
+			{
+				outString += ExpandTag(tag);
+				bInTag = false;
+			}
+			else
+			{
+				tag += ch;	// add to tag
+			}
+		}
+
+		if (strPos == kMaxStringSize || (bInTag && strPos != 0) || *pTxtPtr == 0)
+		{
+			str[strPos] = 0;
+			strPos = 0;
+			outString += str;
+			//ImGui::SameLine(0, 0);
+			//ImGui::Text("%s", str);
+		}
+	}
+
+	return outString;
 }
 
 }// namespace Markup

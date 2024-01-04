@@ -84,6 +84,7 @@ namespace Markup
 { 
 void SetCodeInfo(const FCodeInfo* pCodeInfo);
 bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const char* pText);
+std::string ExpandString(const char* pText);
 }
 
 

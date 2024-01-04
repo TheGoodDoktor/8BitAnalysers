@@ -75,6 +75,8 @@ public:
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
 	const FGameConfig*		GetGameConfig() const { return pCurrentGameConfig; }
 
+	std::string		GetGameWorkspaceRoot() const;
+
 protected:
 	void			FileMenu();
 	void			SystemMenu();

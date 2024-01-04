@@ -2237,7 +2237,7 @@ bool FSpectrumEmu::ExportSkoolFile(bool bHexadecimal, const char* pName /* = nul
 	if (!pActiveGame)
 		return false;
 	
-	const std::string outputDir = "OutputSkoolKit/";
+	const std::string outputDir = GetGameWorkspaceRoot();
 	EnsureDirectoryExists(outputDir.c_str());
 
 	const std::string name = pName ? std::string(pName) : pActiveGame->pConfig->Name;

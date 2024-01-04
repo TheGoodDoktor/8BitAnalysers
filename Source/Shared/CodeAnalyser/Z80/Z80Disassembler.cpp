@@ -529,9 +529,9 @@ std::string Z80GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t 
 	dasmState.CurrentAddress = pc;
 	dasmState.HexDisplayMode = hexMode;
 	dasmState.pCodeInfoItem = state.GetCodeInfoForAddress(pc);
-	//SetNumberOutput(&dasmState);
+	SetNumberOutput(&dasmState);
 	z80dasm_op(pc, ExportDasmInputCB, ExportOutputCB, &dasmState);
-	//SetNumberOutput(nullptr);
+	SetNumberOutput(nullptr);
 
 	return dasmState.Text;
 }

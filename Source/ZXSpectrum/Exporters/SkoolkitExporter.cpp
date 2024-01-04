@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 
 bool IsSpectrumChar(char value)
 {
@@ -196,8 +197,9 @@ public:
 			
 			if (pCodeInfo != nullptr)
 			{
-				UpdateCodeInfoForAddress(State, addr.Address); // what does this do again?
-				operationText = pCodeInfo->Text;
+				WriteCodeInfoForAddress(State, addr.Address); // what does this do again?
+				Markup::SetCodeInfo(pCodeInfo);
+				operationText = Markup::ExpandString(pCodeInfo->Text.c_str());
 				pItem = pCodeInfo;
 			}
 			else if (pDataInfo != nullptr)
