@@ -292,6 +292,9 @@ float DrawColAttr(FCodeAnalysisState& state, uint16_t addr,const FDataInfo* pDat
 	// convert from screen space to local space
 	pos.x -= ImGui::GetWindowPos().x;
 
+	ImGui::SameLine(pos.x);
+	ImGui::Text(" ");
+
 	return pos.x;
 }
 
@@ -487,7 +490,6 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		bShowItemLabel = true;
 		break;
 	case EDataItemDisplayType::Decimal:
-	case EDataItemDisplayType::SignedNumber:
 		SetNumberDisplayMode(ENumberDisplayMode::Decimal);
 		break;
 	case EDataItemDisplayType::Binary:
@@ -496,7 +498,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	case EDataItemDisplayType::Hex:
 		SetNumberDisplayMode(GetHexNumberDisplayMode());
 		break;
-	case EDataItemDisplayType::UnsignedNumber:	// this should use the number display mode
+	case EDataItemDisplayType::SignedNumber:
+	case EDataItemDisplayType::UnsignedNumber:	// these should use the number display mode
 		break;
 	case EDataItemDisplayType::Unknown:
 		valueColour = Colours::unknownValue;
