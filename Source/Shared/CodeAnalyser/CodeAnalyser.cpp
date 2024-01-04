@@ -1051,7 +1051,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	KeyConfig[(int)EKey::SetItemText] = ImGuiKey_T;
 	KeyConfig[(int)EKey::SetItemCode] = ImGuiKey_C;
 	KeyConfig[(int)EKey::SetItemImage] = ImGuiKey_I;
-	KeyConfig[(int)EKey::ToggleItemBinary] = ImGuiKey_B;
+	KeyConfig[(int)EKey::SetItemBinary] = ImGuiKey_B;
 	KeyConfig[(int)EKey::SetItemPointer] = ImGuiKey_P;
 	KeyConfig[(int)EKey::SetItemNumber] = ImGuiKey_N;
 	KeyConfig[(int)EKey::SetItemUnknown] = ImGuiKey_U;

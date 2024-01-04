@@ -450,16 +450,19 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 			SetItemImage(state, cursorItem);
 		}
 #endif
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::ToggleItemBinary]))
+		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemBinary]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
 			{
 				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
-				if (pDataItem->DataType != EDataType::Bitmap)
-					pDataItem->DataType = EDataType::Bitmap;
-				else
-					pDataItem->DataType = EDataType::Byte;
-				//pDataItem->bShowBinary = !pDataItem->bShowBinary;
+				pDataItem->DataType = EDataType::Byte;
+				pDataItem->DisplayType = EDataItemDisplayType::Binary;
+			}
+			else if (cursorItem.Item->Type == EItemType::Code)
+			{
+				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+				pCodeItem->OperandType = EOperandType::Binary;
+				pCodeItem->Text.clear();
 			}
 		}
 		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemPointer]))
@@ -1780,6 +1783,10 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		formattingOptions.DataType = EDataType::Byte;
 		formattingOptions.ItemSize = 1;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		ImGui::Text("Display Mode:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(120.0f);
+		DrawDataDisplayTypeCombo("##dataOperand", formattingOptions.DisplayType, state);
 		break;
 	case 1:
 	{
