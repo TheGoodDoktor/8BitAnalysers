@@ -14,14 +14,27 @@ static int CreateZXGraphicsView(lua_State *pState)
     const int width = (int)luaL_optnumber(pState, 1, 256);
     const int height = (int)luaL_optnumber(pState, 2, 256);
     
-    FZXGraphicsView* pGraphicsView = new FZXGraphicsView(width,height);
+	void *mem = lua_newuserdata(pState, sizeof(FZXGraphicsView));
+	luaL_setmetatable(pState, "GraphicsViewMT");
+
+	// create object using placement new with the memory we allocated for the user data
+    FZXGraphicsView* pGraphicsView = new(mem) FZXGraphicsView(width,height);
     pGraphicsView->Clear();
-    lua_pushlightuserdata(pState, pGraphicsView);
+    //lua_pushlightuserdata(pState, pGraphicsView);
     
     return 1;
 }
 
 
+static int FreeGraphicsView(lua_State* pState)
+{
+	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1);
+	if (pGraphicsView == nullptr)
+		return 0;
+
+	pGraphicsView->~FGraphicsView();	// call destructor
+	return 0;
+}
 
 static int DrawZXBitImage(lua_State *pState)
 {
@@ -109,11 +122,23 @@ static const luaL_Reg spectrumlib[] =
     {NULL, NULL}    // terminator
 };
 
+// meta table for graphics view
+static const luaL_Reg graphicsViewMT[] = 
+{
+	{"__gc",	FreeGraphicsView},
+
+	{NULL, NULL}    // terminator
+};
 
 int RegisterSpectrumLuaAPI(lua_State *pState)
 {
     lua_getglobal(pState, "_G");
     luaL_setfuncs(pState, spectrumlib, 0);  // for Lua versions 5.2 or greater
     lua_pop(pState, 1);
+
+	luaL_newmetatable(pState,"GraphicsViewMT");
+	luaL_setfuncs(pState, graphicsViewMT, 0);
+	lua_pop(pState, 1);
+
     return 1;
 }
