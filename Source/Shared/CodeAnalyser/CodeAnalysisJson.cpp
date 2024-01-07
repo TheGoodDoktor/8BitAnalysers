@@ -18,6 +18,7 @@ FCommentBlock* CreateCommentBlockFromJson(const json& commentBlockJson);
 FCodeInfo* CreateCodeInfoFromJson(const json& codeInfoJson);
 FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson);
 void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const json& dataInfoJson);
+void FixupPostLoad(FCodeAnalysisState& state);
 
 bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bool bROMS)
 {
@@ -210,18 +211,6 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		}
 	}
 
-	// Moved to debugger state
-	/*if (jsonGameData.contains("Watches"))
-	{
-		for (const auto& watchAddress : jsonGameData["Watches"])
-		{
-			if (watchAddress.is_number_integer())
-				state.AddWatch({ state.GetBankFromAddress(watchAddress), watchAddress });
-			else if (watchAddress.is_object())
-				state.AddWatch({ watchAddress["Bank"], watchAddress["Address"] });
-		}
-	}*/
-
 	// Read in palettes.
 	// May be needed to create the character set.
 	LoadPalettesFromJson(jsonGameData);
@@ -277,6 +266,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			CreateCharacterMap(state, params);
 		}
 	}
+
+	FixupPostLoad(state);
 
 	return true;
 }
@@ -589,4 +580,43 @@ void ReadPageFromJson(FCodeAnalysisState &state, FCodeAnalysisPage& page, const 
 			LoadDataInfoFromJson(state, pDataInfo, dataInfoJson);
 		}
 	}
+}
+
+
+void FixupPostLoad(FCodeAnalysisState& state)
+{
+	// TODO: iterate through pages & fix the up
+
+	auto& banks = state.GetBanks();
+	for (FCodeAnalysisBank& bank : banks)
+	{
+		assert(bank.PrimaryMappedPage !=-1);
+		for(int pageNo=0;pageNo < bank.NoPages;pageNo++)
+		{
+			FCodeAnalysisPage& page = bank.Pages[pageNo];
+
+			for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
+			{
+				const FDataInfo& dataInfo = page.DataInfo[addr];
+				FAddressRef dataRef = FAddressRef(bank.Id,addr + (bank.PrimaryMappedPage + pageNo) * FCodeAnalysisPage::kPageSize);
+				
+				for (int readRef = 0; readRef < dataInfo.Reads.NumReferences(); readRef++)
+				{
+					FAddressRef ref = dataInfo.Reads.GetReferences()[readRef];
+					FCodeInfo*pCodeInfo = state.GetCodeInfoForAddress(ref);
+					assert(pCodeInfo!=nullptr);
+					pCodeInfo->Reads.RegisterAccess(dataRef);
+				}
+
+				for (int writeRef = 0; writeRef < dataInfo.Writes.NumReferences(); writeRef++)
+				{
+					FAddressRef ref = dataInfo.Writes.GetReferences()[writeRef];
+					FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(ref);
+					assert(pCodeInfo != nullptr);
+					pCodeInfo->Writes.RegisterAccess(dataRef);
+				}
+			}
+		}
+	}
+
 }

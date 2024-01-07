@@ -790,18 +790,26 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 	if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
-		pDataInfo->ReadCount++;
-		pDataInfo->LastFrameRead = state.CurrentFrameNo;
-		pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+		if(pDataInfo->DataType != EDataType::InstructionOperand)
+		{
+			pDataInfo->ReadCount++;
+			pDataInfo->LastFrameRead = state.CurrentFrameNo;
+			pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+		
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(state.AddressRefFromPhysicalAddress(pc));
+			if (pCodeInfo)
+				pCodeInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalReadAddress(dataAddr));
+		}
 	}
 }
 
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,uint8_t value)
 {
+	const FAddressRef pcAddr = state.AddressRefFromPhysicalAddress(pc);
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
 	pDataInfo->WriteCount++;
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
-	pDataInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+	pDataInfo->Writes.RegisterAccess(pcAddr);
 
 	// check for SMC
 	if (pDataInfo->DataType == EDataType::InstructionOperand)
@@ -810,6 +818,12 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,
 		FCodeInfo* pCodeWrittenTo = state.GetCodeInfoForAddress(pDataInfo->InstructionAddress);
 		if (pCodeWrittenTo != nullptr)	// sometime data can be malformed so do a defensive check
 			pCodeWrittenTo->bSelfModifyingCode = true;
+	}
+
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pcAddr);
+	if(pCodeInfo)
+	{
+		pCodeInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalWriteAddress(dataAddr));
 	}
 }
 

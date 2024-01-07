@@ -331,6 +331,8 @@ public:
 	std::vector<FCodeAnalysisBank>& GetBanks() { return Banks; }
 
 	FAddressRef	AddressRefFromPhysicalAddress(uint16_t physAddr) const { return FAddressRef(GetBankFromAddress(physAddr), physAddr); }
+	FAddressRef	AddressRefFromPhysicalReadAddress(uint16_t physAddr) const { return FAddressRef(GetReadBankFromAddress(physAddr), physAddr); }
+	FAddressRef	AddressRefFromPhysicalWriteAddress(uint16_t physAddr) const { return FAddressRef(GetWriteBankFromAddress(physAddr), physAddr); }
 
 	uint8_t		ReadByte(uint16_t address) const
 	{
@@ -370,6 +372,7 @@ public:
 			*(MappedMem[(address >> kPageShift)] + (address & kPageMask)) = value;
 	}
 	
+	int GetNoPages() const { return (int)RegisteredPages.size();}
 	bool IsValidPageId(int16_t id) const { return id >=0 && id < RegisteredPages.size(); }
 	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
 

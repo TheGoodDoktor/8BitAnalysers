@@ -148,14 +148,22 @@ class FItemReferenceTracker
 public:
 	void Reset() { References.clear(); }
 
-	void	RegisterAccess(const FAddressRef& addrRef)
+	bool	HasReferenceTo(FAddressRef addrRef)
 	{
 		const auto size = References.size();
 		for (int i = 0; i < size; i++)
 		{
 			if (References[i] == addrRef)
-				return;
+				return true;
 		}
+
+		return false;
+	}
+
+	void	RegisterAccess(const FAddressRef& addrRef)
+	{
+		if(HasReferenceTo(addrRef))	// already has reference
+			return;
 
 		References.emplace_back(addrRef);
 	}
@@ -265,8 +273,6 @@ struct FCodeInfo : FItem
 
 	EOperandType	OperandType = EOperandType::Unknown;
 	std::string		Text;				// Disassembly text
-	//FAddressRef		JumpAddress;	// optional jump address
-	//FAddressRef		PointerAddress;	// optional pointer address
 	FAddressRef		OperandAddress;	// optional operand address
 	int				FrameLastExecuted = -1;
 	int				ExecutionCount = 0;
@@ -285,6 +291,10 @@ struct FCodeInfo : FItem
 
 	bool	bNOPped = false;
 	uint8_t	OpcodeBkp[4] = { 0 };
+
+	FItemReferenceTracker	Reads;	// addresses read by this instruction
+	FItemReferenceTracker	Writes;	// addresses written to by this function
+
 private:
 	FCodeInfo() :FItem() { Type = EItemType::Code; }
 	~FCodeInfo() = default;

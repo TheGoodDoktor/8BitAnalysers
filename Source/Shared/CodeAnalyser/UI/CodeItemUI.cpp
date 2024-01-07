@@ -327,5 +327,31 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			}
 		}
 	}
+
+	if(pCodeInfo->Reads.IsEmpty() == false)
+	{
+		ImGui::Text("Reads:");
+		for (const auto& read : pCodeInfo->Reads.GetReferences())
+		{
+			ShowDataItemActivity(state, read);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, read);
+		}
+	}
+
+	if (pCodeInfo->Writes.IsEmpty() == false)
+	{
+		ImGui::Text("Writes:");
+		for (const auto& written : pCodeInfo->Writes.GetReferences())
+		{
+			ShowDataItemActivity(state, written);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, written);
+		}
+	}
 }
 
