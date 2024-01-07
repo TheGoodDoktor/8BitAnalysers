@@ -98,6 +98,8 @@ void DrawTextEditor(void)
 				{
 					// Note: I think the GetText() function adds a newline character to the file
 					std::string saveText = editor.LuaTextEditor.GetText();
+					if(saveText[saveText.size() - 1] == '\n')	// remove newline added to end
+						saveText[saveText.size() - 1] = 0;
 					SaveTextFile(editor.SourceFileName.c_str(), saveText.c_str());
 				}
 			}
