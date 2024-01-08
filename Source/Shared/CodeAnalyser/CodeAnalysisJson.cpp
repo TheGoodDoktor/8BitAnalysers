@@ -604,16 +604,22 @@ void FixupPostLoad(FCodeAnalysisState& state)
 				{
 					FAddressRef ref = dataInfo.Reads.GetReferences()[readRef];
 					FCodeInfo*pCodeInfo = state.GetCodeInfoForAddress(ref);
-					assert(pCodeInfo!=nullptr);
-					pCodeInfo->Reads.RegisterAccess(dataRef);
+					//assert(pCodeInfo!=nullptr);
+					if (pCodeInfo != nullptr)
+						pCodeInfo->Reads.RegisterAccess(dataRef);
+					else
+						LOGWARNING("Code at 0x%04X reading from 0x%04X not found", ref.Address, dataRef.Address);
 				}
 
 				for (int writeRef = 0; writeRef < dataInfo.Writes.NumReferences(); writeRef++)
 				{
-					FAddressRef ref = dataInfo.Writes.GetReferences()[writeRef];
+					const FAddressRef ref = dataInfo.Writes.GetReferences()[writeRef];
 					FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(ref);
-					assert(pCodeInfo != nullptr);
-					pCodeInfo->Writes.RegisterAccess(dataRef);
+					//assert(pCodeInfo != nullptr);
+					if(pCodeInfo != nullptr)
+						pCodeInfo->Writes.RegisterAccess(dataRef);
+					else
+						LOGWARNING("Code at 0x%04X writing to 0x%04X not found",ref.Address,dataRef.Address);
 				}
 			}
 		}
