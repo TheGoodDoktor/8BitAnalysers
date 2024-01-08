@@ -13,6 +13,7 @@
 #include <ImGuiSupport/ImGuiScaling.h>
 #include <ImGuiSupport/ImGuiDrawing.h>
 #include <CodeAnalyser/UI/UIColours.h>
+#include <LuaScripting/LuaSys.h>
 
 static const int kBorderOffsetX = (320 - 256) / 2;
 static const int kBorderOffsetY = (256 - 192) / 2;
@@ -56,6 +57,7 @@ void FSpectrumViewer::Draw()
 	ImVec2 uv0(0, 0);
 	ImVec2 uv1(320.0f / 512.0f, 1.0f);
 	ImGui::Image(ScreenTexture, ImVec2(320 * scale, 256 * scale),uv0,uv1);
+	LuaSys::OnEmulatorScreenDrawn(pos.x,pos.y,scale);	// Call Lua hadnler
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	const int topScreenScanLine = pSpectrumEmu->ZXEmuState.top_border_scanlines - 32;
