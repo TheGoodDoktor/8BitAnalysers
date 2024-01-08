@@ -141,7 +141,7 @@ void ExecuteString(const char *pString)
 
 	if (ret != LUA_OK)
 	{
-		LuaConsole.AddLog("[error] %s", lua_tostring(pState, -1));
+		OutputDebugString("[error] %s", lua_tostring(pState, -1));
 		lua_pop(pState, 1); // pop error message
 	}
 }
@@ -187,6 +187,8 @@ bool OnEmulatorScreenDrawn(float x, float y, float scale)
 		lua_pushnumber(pState, scale);
 		if (lua_pcall(pState, 3, 0, 0) != LUA_OK)
 		{
+			OutputDebugString("[error] %s", lua_tostring(pState, -1));
+			lua_pop(pState, 1); // pop error message
 			return false;
 		}
 		return true;

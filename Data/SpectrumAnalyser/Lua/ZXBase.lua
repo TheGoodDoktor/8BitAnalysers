@@ -30,6 +30,11 @@ function ScreenOverlay:drawLine(x1,y1,x2,y2)
     imgui.DrawList_AddLine(xp1,yp1,xp2,yp2, self.drawCol)
 end
 
+function ScreenOverlay:drawCoord(x,y)
+	self:drawLine(x,0,x,191)
+	self:drawLine(0,y,255,y)
+end
+
 function ScreenOverlay:drawText(x,y,text)
     local scale = self.imageScale
     local xp = self.viewScreenPos.x + (x * scale)
