@@ -146,7 +146,11 @@ struct FFoundString
 class FItemReferenceTracker
 {
 public:
-	void Reset() { References.clear(); }
+	void Reset() 
+	{
+		References.clear(); 
+		WriteCounter =0;	
+	}
 
 	bool	HasReferenceTo(FAddressRef addrRef)
 	{
