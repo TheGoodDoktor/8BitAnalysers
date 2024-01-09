@@ -151,6 +151,18 @@ struct FCodeAnalysisViewState
 	const FAddressRef& GetGotoAddress() const { return GoToAddressRef; }
 	void GoToAddress(FAddressRef address, bool bLabel = false);
 	bool GoToPreviousAddress();
+	void BookmarkAddress(int bookmarkNo, FAddressRef address)
+	{
+		if(bookmarkNo>=0 && bookmarkNo < kNoBookmarks)
+			Bookmarks[bookmarkNo] = address;
+	}
+
+	void GoToBookmarkAddress(int bookmarkNo)
+	{
+		if (bookmarkNo >= 0 && bookmarkNo < kNoBookmarks)
+			GoToAddress(Bookmarks[bookmarkNo]);
+	}
+
 
 	bool GetYPosForAddress(FAddressRef addr, float& ypos)
 	{
@@ -194,6 +206,8 @@ private:
 	FCodeAnalysisItem			CursorItem;
 	FAddressRef					GoToAddressRef;
 	std::vector<FAddressRef>	AddressStack;
+	static const int			kNoBookmarks = 5;
+	FAddressRef					Bookmarks[kNoBookmarks];
 };
 
 struct FCodeAnalysisConfig
