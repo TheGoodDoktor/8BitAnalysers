@@ -57,7 +57,6 @@ void FSpectrumViewer::Draw()
 	ImVec2 uv0(0, 0);
 	ImVec2 uv1(320.0f / 512.0f, 1.0f);
 	ImGui::Image(ScreenTexture, ImVec2(320 * scale, 256 * scale),uv0,uv1);
-	LuaSys::OnEmulatorScreenDrawn(pos.x,pos.y,scale);	// Call Lua hadnler
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	const int topScreenScanLine = pSpectrumEmu->ZXEmuState.top_border_scanlines - 32;
@@ -213,6 +212,8 @@ void FSpectrumViewer::Draw()
 		bShowCoordinates = false;
 	}
 	
+	LuaSys::OnEmulatorScreenDrawn(pos.x, pos.y, scale);	// Call Lua handler
+
 	bWindowFocused = ImGui::IsWindowFocused();
 }
 
