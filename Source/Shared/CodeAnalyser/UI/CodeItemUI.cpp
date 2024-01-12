@@ -119,10 +119,32 @@ void DrawBranchLines(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	}
 }
 
+bool EditHexDataItem(FCodeAnalysisState& state, uint16_t address)
+{
+	uint8_t val = state.ReadByte(address);
+
+	ImGui::PushID(address);
+	ImGui::SetNextItemWidth(ImGui::CalcTextSize("0").x * 2.5f);
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+	ImGui::SetItemAllowOverlap();	// allow controls
+
+	bool bChanged = false;
+	if (ImGui::InputScalar("##hexbyteinput", ImGuiDataType_U8, &val, NULL, NULL, "%02X", ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EnterReturnsTrue))
+	{
+		// Write value
+		state.CPUInterface->WriteByte(address, val);
+		bChanged = true;
+	}
+	ImGui::PopStyleVar();
+
+	ImGui::PopID();
+	return bChanged;
+}
+
 // this assumes that the code item is mapped into physical memory
 void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
-	const FCodeInfo* pCodeInfo = static_cast<const FCodeInfo*>(item.Item);
+	FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(item.Item);
 	FDebugger& debugger = state.Debugger;
 
 	const float line_height = ImGui::GetTextLineHeight();
@@ -210,14 +232,10 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		bool bByteModified = false;
 		for (int i = 0; i < 4; i++)
 		{
-			std::string strHexValue;
-
 			if (i < pCodeInfo->ByteSize)
 				snprintf(tmp, 16, "%02X", state.ReadByte(item.AddressRef.Address + i));
 			else
 				snprintf(tmp, 16, "  ");
-
-			strHexValue += tmp;
 
 			if (pCodeInfo->bSelfModifyingCode)
 			{
@@ -233,9 +251,23 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 				bByteModified = false;
 			}
 
-			ImGui::TextColored(bByteModified ? byteChangedCol : byteNormalCol, "%s%s", strHexValue.c_str(), i == 3 ? "  " : "");
+			if (state.bAllowEditing && i < pCodeInfo->ByteSize)
+			{
+				if (EditHexDataItem(state, physAddress + i))
+				{
+					pCodeInfo->Text.clear();
+				}
+			}
+			else
+			{
+				ImGui::TextColored(bByteModified ? byteChangedCol : byteNormalCol, "%s", tmp);
+			}
+			
 			ImGui::SameLine();
 		}
+
+		ImGui::Text(" ");
+		ImGui::SameLine();
 	}
 
 	Markup::SetCodeInfo(pCodeInfo);

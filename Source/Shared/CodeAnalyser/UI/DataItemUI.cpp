@@ -308,13 +308,14 @@ void EditByteDataItem(FCodeAnalysisState& state, uint16_t address)
 	const ENumberDisplayMode numMode = GetNumberDisplayMode();
 	uint8_t val = state.ReadByte(address);
 	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
-	int width = 18;
+	const float glyphWidth = ImGui::CalcTextSize("0").x;
+	float width = glyphWidth * 2.5f;
 	const char* format = "%02X";
 
 	switch (numMode)
 	{
 	case ENumberDisplayMode::Decimal:
-		width = 24;
+		width += glyphWidth;
 		format = "%d";
 		break;
 	case ENumberDisplayMode::HexAitch:
@@ -355,13 +356,14 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 	const ENumberDisplayMode numMode = GetNumberDisplayMode();
 	uint16_t val = state.CPUInterface->ReadWord(address);
 	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
-	int width = 30;
+	const float glyphWidth = ImGui::CalcTextSize("0").x;
+	float width = glyphWidth * 4.5f;
 	const char* format = "%04X";
 
 	switch (numMode)
 	{
 	case ENumberDisplayMode::Decimal:
-		width = 50;
+		width += glyphWidth;
 		format = "%d";
 		break;
 	case ENumberDisplayMode::HexAitch:
