@@ -26,6 +26,8 @@ namespace LuaSys
     void ExecuteString(const char *pString);
     void OutputDebugString(const char* fmt, ...);
 
+	bool OnEmulatorScreenDrawn(float x, float y, float scale);
+
     //FLuaConsole* GetLuaConsole();
     FEmuBase* GetEmulator();
     void DrawUI();

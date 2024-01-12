@@ -580,6 +580,27 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 	{
 		state.Debugger.StepScreenWrite();
 	}
+
+	// navigation controls
+	if(io.KeyCtrl || io.KeyShift)
+	{
+		int bookmarkNo = -1;
+
+		for(int keyNo =0;keyNo<5;keyNo++)
+		if(ImGui::IsKeyPressed(ImGuiKey_1 + keyNo))
+			bookmarkNo = keyNo;
+
+		if(bookmarkNo != -1)
+		{
+			// store bookmark
+			if (io.KeyCtrl)
+				viewState.BookmarkAddress(bookmarkNo, cursorItem.AddressRef);
+			// go to bookmark
+			else if(io.KeyShift)
+				viewState.GoToBookmarkAddress(bookmarkNo);
+		}
+
+	}
 }
 
 void MarkupHelpPopup()

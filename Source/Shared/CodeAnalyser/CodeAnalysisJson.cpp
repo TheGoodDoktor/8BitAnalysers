@@ -582,11 +582,9 @@ void ReadPageFromJson(FCodeAnalysisState &state, FCodeAnalysisPage& page, const 
 	}
 }
 
-
+// This is called after all the json is loaded to fix up any data referencing
 void FixupPostLoad(FCodeAnalysisState& state)
 {
-	// TODO: iterate through pages & fix the up
-
 	auto& banks = state.GetBanks();
 	for (FCodeAnalysisBank& bank : banks)
 	{

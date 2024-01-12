@@ -13,6 +13,7 @@
 #include <ImGuiSupport/ImGuiScaling.h>
 #include <ImGuiSupport/ImGuiDrawing.h>
 #include <CodeAnalyser/UI/UIColours.h>
+#include <LuaScripting/LuaSys.h>
 
 static const int kBorderOffsetX = (320 - 256) / 2;
 static const int kBorderOffsetY = (256 - 192) / 2;
@@ -211,6 +212,8 @@ void FSpectrumViewer::Draw()
 		bShowCoordinates = false;
 	}
 	
+	LuaSys::OnEmulatorScreenDrawn(pos.x, pos.y, scale);	// Call Lua handler
+
 	bWindowFocused = ImGui::IsWindowFocused();
 }
 

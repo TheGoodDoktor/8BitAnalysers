@@ -141,7 +141,7 @@ void ExecuteString(const char *pString)
 
 	if (ret != LUA_OK)
 	{
-		LuaConsole.AddLog("[error] %s", lua_tostring(pState, -1));
+		OutputDebugString("[error] %s", lua_tostring(pState, -1));
 		lua_pop(pState, 1); // pop error message
 	}
 }
@@ -155,6 +155,48 @@ void OutputDebugString(const char* fmt, ...)
 	LuaConsole.AddLog("%s",buf);
 	LOGDEBUG("%s",buf);
 }
+
+void CallFunction(const char* pFunctionName)
+{
+	if (GlobalState == nullptr)
+		return;
+
+	lua_State* pState = GlobalState;
+
+	lua_getglobal(pState, pFunctionName);
+	if (lua_isfunction(pState, -1))
+	{
+		if (lua_pcall(pState, 0, 0, 0) != LUA_OK)
+		{
+		}
+	}
+}
+
+bool OnEmulatorScreenDrawn(float x, float y, float scale)
+{
+	if (GlobalState == nullptr)
+		return false;
+
+	lua_State* pState = GlobalState;
+
+	lua_getglobal(pState, "OnScreenDraw");
+	if (lua_isfunction(pState, -1))
+	{
+		lua_pushnumber(pState, x);
+		lua_pushnumber(pState, y);
+		lua_pushnumber(pState, scale);
+		if (lua_pcall(pState, 3, 0, 0) != LUA_OK)
+		{
+			OutputDebugString("[error] %s", lua_tostring(pState, -1));
+			lua_pop(pState, 1); // pop error message
+			return false;
+		}
+		return true;
+	}
+
+	return false;
+}
+
 
 FLuaConsole* GetLuaConsole()
 {

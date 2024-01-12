@@ -146,7 +146,11 @@ struct FFoundString
 class FItemReferenceTracker
 {
 public:
-	void Reset() { References.clear(); }
+	void Reset() 
+	{
+		References.clear(); 
+		WriteCounter =0;	
+	}
 
 	bool	HasReferenceTo(FAddressRef addrRef)
 	{
@@ -165,7 +169,12 @@ public:
 		if(HasReferenceTo(addrRef))	// already has reference
 			return;
 
-		References.emplace_back(addrRef);
+		if(WriteCounter < MaxEntryCount)
+			References.emplace_back(addrRef);
+		else
+			References[WriteCounter % MaxEntryCount] = addrRef;
+
+		WriteCounter++;
 	}
 
 	bool RemoveReference(const FAddressRef& addrRef)
@@ -185,6 +194,8 @@ public:
 	int NumReferences() const { return (int)References.size(); }
 	const std::vector<FAddressRef>& GetReferences() const { return References; }
 private:
+	int		MaxEntryCount = 32;
+	int		WriteCounter = 0;
 	std::vector<FAddressRef>	References;
 };
 
