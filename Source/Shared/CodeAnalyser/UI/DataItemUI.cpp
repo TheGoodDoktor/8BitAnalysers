@@ -309,7 +309,7 @@ void EditByteDataItem(FCodeAnalysisState& state, uint16_t address)
 	uint8_t val = state.ReadByte(address);
 	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
 	const float glyphWidth = ImGui::CalcTextSize("0").x;
-	float width = glyphWidth * 2.5f;
+	float width = glyphWidth * 2.0f;
 	const char* format = "%02X";
 
 	switch (numMode)
@@ -357,7 +357,7 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 	uint16_t val = state.CPUInterface->ReadWord(address);
 	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
 	const float glyphWidth = ImGui::CalcTextSize("0").x;
-	float width = glyphWidth * 4.5f;
+	float width = glyphWidth * 4.0f;
 	const char* format = "%04X";
 
 	switch (numMode)

@@ -124,7 +124,7 @@ bool EditHexDataItem(FCodeAnalysisState& state, uint16_t address)
 	uint8_t val = state.ReadByte(address);
 
 	ImGui::PushID(address);
-	ImGui::SetNextItemWidth(ImGui::CalcTextSize("0").x * 2.5f);
+	ImGui::SetNextItemWidth(ImGui::CalcTextSize("0").x * 2.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 	ImGui::SetItemAllowOverlap();	// allow controls
 
