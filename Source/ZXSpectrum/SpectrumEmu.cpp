@@ -770,9 +770,11 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 		if (FileExists(GetBundlePath(romJsonFName.c_str())))
 			ImportAnalysisJson(CodeAnalysis, GetBundlePath(romJsonFName.c_str()));
 	}
-
-	if(spectrumLaunchConfig.SkoolkitImport.empty() == false)
-		ImportSkoolFile(spectrumLaunchConfig.SkoolkitImport.c_str());
+	else
+	{
+		if (spectrumLaunchConfig.SkoolkitImport.empty() == false && config.SpecificGame.empty() == false)
+			ImportSkoolFile(spectrumLaunchConfig.SkoolkitImport.c_str());
+	}
 
 	// Setup Debugger
 	FDebugger& debugger = CodeAnalysis.Debugger;
@@ -2190,23 +2192,38 @@ bool FSpectrumEmu::ImportSkoolFile(const char* pFilename, const char* pOutSkoolI
 	if (!pActiveGame && !pOutSkoolInfoName)
 		return false;
 
+	if (!pCurrentGameConfig)
+		return false;
+
 	LOGINFO("Importing skool file '%s'", pFilename);
 
 	const std::string root = pGlobalConfig->WorkspaceRoot;
 
+	// backup analysis json
 	if (pActiveGame)
 	{
-		// backup their gamedata
-		std::string dir = root + "AnalysisJson/";
-		const std::string dataFName = dir + pActiveGame->pConfig->Name + ".json.bak";
-		EnsureDirectoryExists(dir.c_str());
-		/*if (!SaveGameData(this, dataFName.c_str()))
+		std::string analysisBackupFname;
+		const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentGameConfig->Name + "/";
+		if (FileExists((gameRoot + "Config.json").c_str()))
 		{
-			LOGERROR("Failed to import skool file. Could not save backup of analysis data to '%s'", dataFName.c_str());
+			// new folder structure: folder per game
+			analysisBackupFname = gameRoot + "Analysis.json.bak";
+		}
+		else
+		{
+			// old method
+			analysisBackupFname = root + "AnalysisJson/" + pCurrentGameConfig->Name + ".json.bak";
+		}
+
+		LOGINFO("Backing up analysis data to '%s'", analysisBackupFname.c_str());
+		
+		if (!ExportAnalysisJson(CodeAnalysis, analysisBackupFname.c_str()))
+		{
+			LOGERROR("Failed to import skool file. Could not save backup of analysis data to '%s'", analysisBackupFname.c_str());
 			return false;
-		}*/
+		}
 	}
-	// use FSkoolFileInfo pointer if it's passed in. Otherwise use a temporary local struct.
+	// use FSkoolFileInfo pointer if it's passed in.
 	FSkoolFileInfo skoolInfo;
 	FSkoolFileInfo* pInfo = pSkoolInfo ? pSkoolInfo : &skoolInfo;
 	if (!ImportSkoolKitFile(CodeAnalysis, pFilename, pSkoolInfo ? pSkoolInfo : pInfo))

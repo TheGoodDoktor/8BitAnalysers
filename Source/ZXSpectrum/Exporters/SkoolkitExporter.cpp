@@ -305,7 +305,8 @@ public:
 			|| pDataInfo->DataType == EDataType::Blob
 			|| pDataInfo->DataType == EDataType::Bitmap
 			|| pDataInfo->DataType == EDataType::CharacterMap
-			|| pDataInfo->DataType == EDataType::ColAttr)
+			|| pDataInfo->DataType == EDataType::ColAttr
+			|| pDataInfo->DataType == EDataType::InstructionOperand)
 		{
 			asmText = "DEFB ";
 			const uint16_t numItems = pDataInfo->ByteSize;
