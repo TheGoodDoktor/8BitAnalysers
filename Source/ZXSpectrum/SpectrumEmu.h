@@ -52,7 +52,6 @@ struct FGameViewer;
 struct FGameViewerData;
 struct FGameConfig;
 struct FViewerConfig;
-struct FSkoolFileInfo;
 struct FZXSpectrumConfig;
 struct FZXSpectrumGameConfig;
 
@@ -113,9 +112,6 @@ public:
 	//void	DrawExportAsmModalPopup();
 	//void	DrawReplaceGameModalPopup();
 	void	DrawCheatsUI();
-	bool	ImportSkoolFile(const char* pFilename, const char* pOutSkoolInfoName = nullptr, FSkoolFileInfo* pSkoolInfo=nullptr);
-	bool	ExportSkoolFile(bool bHexadecimal, const char* pName = nullptr);
-	void	DoSkoolKitTest(const char* pGameName, const char* pInSkoolFileName, bool bHexadecimal, const char* pOutSkoolName = nullptr);
 	void	AppFocusCallback(int focused) override;
 
 	void	OnInstructionExecuted(int ticks, uint64_t pins);
