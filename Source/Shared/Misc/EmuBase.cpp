@@ -339,7 +339,14 @@ void FEmuBase::OptionsMenu()
 	}
 	ImGui::MenuItem("Scan Line Indicator", 0, &CodeAnalysis.pGlobalConfig->bShowScanLineIndicator);
 	ImGui::MenuItem("Enable Audio", 0, &CodeAnalysis.pGlobalConfig->bEnableAudio);
-	ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
+	if (ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing))
+	{
+		if(CodeAnalysis.bAllowEditing)
+			OnEnterEditMode();
+		else
+			OnExitEditMode();
+			
+	}
 	ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.pGlobalConfig->bShowOpcodeValues);
 	if (ImGui::BeginMenu("Image Scale"))
 	{

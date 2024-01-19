@@ -51,6 +51,9 @@ public:
 	virtual bool	StartGame(FGameConfig* pConfig, bool bLoadGame) = 0;
 	virtual bool	SaveCurrentGameData(void) = 0;
 
+	virtual void	OnEnterEditMode(void) {}
+	virtual void	OnExitEditMode(void) {}
+
 	bool			StartGameFromName(const char* pGameName, bool bLoadGame);
 
 	void			GraphicsViewerSetView(FAddressRef address);
