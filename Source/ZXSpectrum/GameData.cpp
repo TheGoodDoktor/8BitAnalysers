@@ -756,7 +756,7 @@ bool LoadROMData(FCodeAnalysisState& state, const char* fname)
 #endif
 
 const uint32_t kMachineStateMagic = 0xFaceCafe;
-const uint32_t kMachineStateVersion = 4;
+const uint32_t kMachineStateVersion = 5;
 
 static zx_t g_SaveSlot;
 
@@ -779,6 +779,7 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 	}
 
 	// revert NOPs
+#if 0
 	for (int addr = 0x4000; addr <= 0xffff; addr++)
 	{
 		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
@@ -791,20 +792,24 @@ void SaveMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 			pCodeInfo->bNOPped = false;
 		}
 	}
-
+#endif
 	// write magic
 	fwrite(&kMachineStateMagic, sizeof(kMachineStateMagic), 1, fp);
 	fwrite(&kMachineStateVersion, sizeof(kMachineStateVersion), 1, fp);
-
-	// just save the whole thing out
-	zx_t& dst = g_SaveSlot;
-	dst = pSpectrumEmu->ZXEmuState;	// copy to save slot
-	chips_debug_snapshot_onsave(&dst.debug);
-	chips_audio_callback_snapshot_onsave(&dst.audio.callback);
-	ay38910_snapshot_onsave(&dst.ay);
-	mem_snapshot_onsave(&dst.mem, &pSpectrumEmu->ZXEmuState);
-
-	fwrite(&dst, sizeof(zx_t), 1, fp);
+    
+    // save backup state in edit mode
+    if(state.bAllowEditing)
+    {
+        const uint32_t snapshotVersion = ZX_SNAPSHOT_VERSION;
+        fwrite(&snapshotVersion, sizeof(snapshotVersion), 1, fp);
+        fwrite(&pSpectrumEmu->BackupState, sizeof(zx_t), 1, fp);
+    }
+    else
+    {
+        const uint32_t snapshotVersion = zx_save_snapshot(&pSpectrumEmu->ZXEmuState,&g_SaveSlot);
+        fwrite(&snapshotVersion, sizeof(snapshotVersion), 1, fp);
+        fwrite(&g_SaveSlot, sizeof(zx_t), 1, fp);
+    }
 	return;
 }
 
@@ -822,18 +827,16 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 	if (fileVersion != kMachineStateVersion)	// since machine state is not that important different file version numbers get rejected
 		return false;
 
+    uint32_t snapshotVersion = 0;
+    fread(&snapshotVersion, sizeof(snapshotVersion), 1, fp);
+
 	// load the entire state
 	zx_t* sys = &pSpectrumEmu->ZXEmuState;
 	zx_t& im = g_SaveSlot;
 
 	fread(&im, sizeof(zx_t), 1, fp);	// load into save slot
 
-	// fixup pointers & callbacks
-	chips_debug_snapshot_onload(&im.debug, &sys->debug);
-	chips_audio_callback_snapshot_onload(&im.audio.callback, &sys->audio.callback);
-	ay38910_snapshot_onload(&im.ay, &sys->ay);
-	mem_snapshot_onload(&im.mem, sys);
-	*sys = im;	// copy across new state
+    zx_load_snapshot(sys, snapshotVersion, &g_SaveSlot);
 
 	// Set code analysis banks
 	if (sys->type == ZX_TYPE_128)

@@ -219,10 +219,6 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ImGui::PopStyleColor();
 	ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpace);
 
-	// grey out NOPed code
-	//if (pCodeInfo->bNOPped)
-	//	ImGui::PushStyleColor(ImGuiCol_Text, 0xff808080);
-
 	if (state.pGlobalConfig->bShowOpcodeValues)
 	{
 		// Draw hex values of the instruction's opcode
@@ -271,14 +267,11 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 
 	Markup::SetCodeInfo(pCodeInfo);
-	ImGui::PushStyleColor(ImGuiCol_Text, pCodeInfo->bNOPped ? Colours::noppedMnemonic : Colours::mnemonic);
+    const bool bNOPed = state.bAllowEditing && pCodeInfo->bNOPped;
+	ImGui::PushStyleColor(ImGuiCol_Text, bNOPed ? Colours::noppedMnemonic : Colours::mnemonic);
 	const bool bShownTooltip = Markup::DrawText(state,viewState,pCodeInfo->Text.c_str()); // draw the disassembly output for this instruction
 	ImGui::PopStyleColor();
 	Markup::SetCodeInfo(nullptr);
-	//ImGui::Text("%s", pCodeInfo->Text.c_str());	// draw the disassembly output for this instruction
-
-	//if (pCodeInfo->bNOPped)
-	//	ImGui::PopStyleColor();
 
 	if (bShownTooltip == false && ImGui::IsItemHovered())
 	{
@@ -314,7 +307,7 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		DrawBankInput(state, "Bank", pCodeInfo->OperandAddress.BankId);
 	}
 
-	if (ImGui::Checkbox("NOP out instruction", &pCodeInfo->bNOPped))
+	if (state.bAllowEditing && ImGui::Checkbox("NOP out instruction", &pCodeInfo->bNOPped))
 	{
 		if (pCodeInfo->bNOPped == true)
 		{

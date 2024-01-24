@@ -1070,7 +1070,7 @@ void FDebugger::DrawWatches(void)
 		}
 		ImGui::SetItemAllowOverlap();	// allow buttons
 		ImGui::SameLine();
-		DrawDataInfo(state, viewState, FCodeAnalysisItem(pDataInfo, watch.BankId, watch.Address), true, true);
+		DrawDataInfo(state, viewState, FCodeAnalysisItem(pDataInfo, watch.BankId, watch.Address), true, state.bAllowEditing);
 
 		// TODO: Edit Watch
 		ImGui::PopID();

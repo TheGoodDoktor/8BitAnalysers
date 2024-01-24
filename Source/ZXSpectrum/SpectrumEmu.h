@@ -92,8 +92,12 @@ public:
 	void	Shutdown() override;
 	void	Tick() override;
 	void	Reset() override;
+    void    OnEnterEditMode(void) override;
+    void    OnExitEditMode(void) override;
 
 	bool	LoadLua() override;
+    
+
 
 	bool	NewGameFromSnapshot(const FGameSnapshot& snapshot) override;
 	bool	StartGame(FGameConfig* pGameConfig, bool bLoadGame) override;
@@ -153,6 +157,7 @@ public:
 //private:
 	// Emulator 
 	zx_t			ZXEmuState;	// Chips Spectrum State
+    zx_t            BackupState;
 	uint8_t*		MappedInMemory = nullptr;
 	//FZXSpectrumConfig *	pGlobalConfig = nullptr;
 

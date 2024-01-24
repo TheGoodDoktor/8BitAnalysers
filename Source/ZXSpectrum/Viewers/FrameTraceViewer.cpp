@@ -8,6 +8,7 @@
 
 #include <Util/Misc.h>
 
+#include "CodeAnalyser/UI/UIColours.h"
 
 void FFrameTraceViewer::Init(FSpectrumEmu* pEmu)
 {
@@ -235,9 +236,20 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instAddr);
 			if (pCodeInfo)
 			{
-				ImGui::Text("%s %s", NumStr(instAddr.Address), pCodeInfo->Text.c_str());
-				ImGui::SameLine();
-				DrawAddressLabel(state, viewState, instAddr);
+				//ImGui::Text("%s %s", NumStr(instAddr.Address), pCodeInfo->Text.c_str());
+                
+                if (pCodeInfo->bSelfModifyingCode == true || pCodeInfo->Text.empty())
+                    WriteCodeInfoForAddress(state, instAddr.Address);
+                
+                Markup::SetCodeInfo(pCodeInfo);
+                ImGui::Text("%s ", NumStr(instAddr.Address));
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Text, Colours::mnemonic);
+                Markup::DrawText(state,viewState,pCodeInfo->Text.c_str());
+                ImGui::PopStyleColor();
+                Markup::SetCodeInfo(nullptr);
+				//ImGui::SameLine();
+				//DrawAddressLabel(state, viewState, instAddr);
 			}
 
 			ImGui::PopID();

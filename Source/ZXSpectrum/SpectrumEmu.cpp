@@ -1801,6 +1801,17 @@ void FSpectrumEmu::Reset()
 	StartGame(pBasicConfig,false);	// reset code analysis
 }
 
+void    FSpectrumEmu::OnEnterEditMode(void)
+{
+    zx_save_snapshot(&ZXEmuState,&BackupState);
+}
+
+void    FSpectrumEmu::OnExitEditMode(void)
+{
+    zx_load_snapshot(&ZXEmuState, ZX_SNAPSHOT_VERSION, &BackupState);
+}
+
+
 void FSpectrumEmu::DrawMemoryTools()
 {
 	if (ImGui::Begin("Memory Tools") == false)
