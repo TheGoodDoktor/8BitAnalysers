@@ -603,7 +603,13 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	case EDataType::Text:
 	{
 		const std::string textString = GetItemText(state, item.AddressRef);
-		ImGui::Text("ascii '%s'", textString.c_str());
+		ImGui::PushStyleColor(ImGuiCol_Text, Colours::defaultValue);
+		ImGui::Text("ascii"); 
+		ImGui::PopStyleColor();
+		ImGui::SameLine();
+		ImGui::PushStyleColor(ImGuiCol_Text, Colours::text);
+		ImGui::Text("'%s'", textString.c_str());
+		ImGui::PopStyleColor();
 	}
 	break;
 
