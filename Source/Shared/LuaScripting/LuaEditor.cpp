@@ -107,6 +107,11 @@ void DrawTextEditor(void)
 		}
 		ImGui::SameLine();
 		ImGui::Checkbox("Save before reload",&bSaveBeforeReload);
+		ImGui::SameLine();
+		if (ImGui::Button("Generate globals file"))
+		{
+			LuaSys::ExportGlobalLabels();
+		}
 
 		ImGui::SetNextItemWidth(300);
 		ImGui::InputText("Filename",&NewFilenameTxt);

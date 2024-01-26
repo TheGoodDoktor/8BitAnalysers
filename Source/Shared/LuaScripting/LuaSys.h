@@ -33,4 +33,6 @@ namespace LuaSys
     void DrawUI();
 
     void DumpStack(lua_State *L);
+
+	bool ExportGlobalLabels();
 }

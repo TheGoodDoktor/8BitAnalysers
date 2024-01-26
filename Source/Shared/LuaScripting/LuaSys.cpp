@@ -42,12 +42,9 @@ FLuaScopeCheck::~FLuaScopeCheck()
 	}
 }
 
-
-
+// Globals
 lua_State*	GlobalState = nullptr;
-
 FLuaConsole LuaConsole;
-
 FEmuBase*   EmuBase = nullptr;
 
 void lua_warning_function(void *ud, const char *msg, int tocont)
@@ -82,11 +79,15 @@ bool Init(FEmuBase* pEmulator)
 	for(const auto& luaFile : EmuBase->GetGlobalConfig()->LuaBaseFiles)
 		LoadFile(GetBundlePath(luaFile.c_str()), EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
 
-	//LoadFile(GetBundlePath("Lua/LuaBase.lua"),EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
-	//LoadFile(GetBundlePath("Lua/ViewerBase.lua"), EmuBase->GetGlobalConfig()->bEditLuaBaseFiles);
-
 	lState = GlobalState;
 	LoadImguiBindings();
+
+	//ExportGlobalLabels();	// might have this on a button if frequently updating proves to be problematic
+
+	// Load globals
+	const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetGameConfig()->Name + "/";
+	std::string globalsFName = gameRoot + "Globals.lua";
+	LoadFile(globalsFName.c_str(),true);
 	return true;
 }
 
@@ -325,7 +326,42 @@ void DumpStack(lua_State *L)
 	//OutputDebugString("\n");  /* end the listing */
 }
 
+bool ExportGlobalLabels()
+{
+	if(EmuBase == nullptr)
+		return false;
 
+	const FCodeAnalysisState& state = EmuBase->GetCodeAnalysis();
+
+	std::string outputStr;
+
+	outputStr += "-- Auto generated global labels file for " + EmuBase->GetGameConfig()->Name + "\n";
+	outputStr += "globals = {\n";
+
+	for (const auto& global : state.GlobalDataItems)
+	{
+		// Skip ROM labels
+		const FCodeAnalysisBank* pBank = state.GetBank(global.AddressRef.BankId);
+		if (pBank)
+		{
+			if (pBank->bReadOnly)
+				continue;
+		}
+
+		const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(global.Item);
+		const int kLabelStringLength = 128;
+		char labelString[kLabelStringLength];
+		snprintf(labelString,kLabelStringLength,"\t%s = 0x%X, \n", pLabelInfo->GetName(),global.AddressRef.Address);
+
+		outputStr+=std::string(labelString);
+	}
+	outputStr += "}";
+
+	const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetGameConfig()->Name + "/";
+	std::string luaScriptFName = gameRoot + "Globals.lua";
+
+	return SaveTextFile(luaScriptFName.c_str(),outputStr.c_str());
+}
 
 }//namespace LuaSys
 
