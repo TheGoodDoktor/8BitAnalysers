@@ -20,6 +20,45 @@ bool LoadZ80FromMemory(FSpectrumEmu* pSpectrumEmu, const uint8_t* pData, size_t 
 	chips_range_t dataInfo;
 	dataInfo.ptr = (void*)pData;
 	dataInfo.size = dataSize;
+
+	if (dataSize < 35)
+	{
+		pSpectrumEmu->SetLastError("Snapshot data size is invalid.");
+		return false;
+	}
+
+	const uint16_t pc = *(pData + 7) << 8 | *(pData + 6);
+	const bool bIsVersion1 = 0 != pc;
+	if (!bIsVersion1) 
+	{
+		const uint8_t machineType = *(pData + 34);
+		if (machineType < 3)
+		{
+			if (pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128) 
+			{
+				pSpectrumEmu->SetLastError("Snapshot is a 48k machine snapshot. Only 128k machine snapshots can be used.");
+				return false;
+			}
+		}
+		else 
+		{
+			if (pSpectrumEmu->ZXEmuState.type == ZX_TYPE_48K) 
+			{
+				pSpectrumEmu->SetLastError("Snapshot is not a 48k machine snapshot. Only 48k machine snapshots can be used.");
+				return false;
+			}
+		}
+	}
+	else 
+	{
+		// version 1 is 48k only
+		if (pSpectrumEmu->ZXEmuState.type == ZX_TYPE_128) 
+		{
+			pSpectrumEmu->SetLastError("Snapshot is a 48k machine snapshot. Only 128k machine snapshots can be used.");
+			return false;
+		}
+	}
+
 	if (zx_quickload(&pSpectrumEmu->ZXEmuState, dataInfo) == false)
 		return false;
 

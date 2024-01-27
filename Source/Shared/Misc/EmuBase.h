@@ -79,6 +79,9 @@ public:
 	const FGameConfig*		GetGameConfig() const { return pCurrentGameConfig; }
 
 	std::string		GetGameWorkspaceRoot() const;
+	
+	void					SetLastError(const std::string& msg) { LastError = msg; }
+	void					DisplayErrorMessage(const std::string& text);
 
 protected:
 	void			FileMenu();
@@ -94,6 +97,7 @@ protected:
 
 	void			DrawExportAsmModalPopup(void);
 	void			DrawReplaceGameModalPopup(void);
+	void			DrawErrorMessageModalPopup(void);
 
 	FGlobalConfig*		pGlobalConfig = nullptr;
 	FGameConfig*		pCurrentGameConfig = nullptr;
@@ -112,6 +116,7 @@ protected:
 	// Assembler Export
 	uint16_t			AssemblerExportStartAddress = 0x0000;
 	uint16_t			AssemblerExportEndAddress = 0xffff;
+	
 public:
 	bool		bShowImGuiDemo = false;
 	bool		bShowImPlotDemo = false;
@@ -121,6 +126,10 @@ private:
 	bool		bExportAsm = false;
 
 	int		ReplaceGameSnapshotIndex = 0;
+
+	std::string ErrorPopupText;
+	std::string LastError;
+	bool				bErrorMessagePopup = false;
 
 	std::vector<FViewerBase*>	Viewers;
 };
