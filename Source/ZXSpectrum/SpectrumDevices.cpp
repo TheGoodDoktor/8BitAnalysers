@@ -5,6 +5,7 @@
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include "CodeAnalyser/CodeAnalyser.h"
 
+#include "SpectrumEmu.h"
 
 FSpectrumKeyboard::FSpectrumKeyboard()
 {
@@ -101,4 +102,21 @@ void FSpectrum128MemoryCtrl::RegisterMemoryConfigWrite(FAddressRef pc, uint8_t v
     CurrentConfig = value;
 
     AccessLocations.insert(pc);
+}
+
+
+const char* FScreenPixMemDescGenerator::GenerateAddressString(FAddressRef addr) 
+{
+    int xp = 0, yp = 0;
+    GetScreenAddressCoords(addr.Address, xp, yp);
+    snprintf(DescStr,32, "Screen Pix: %d,%d", xp, yp);
+    return DescStr;
+}
+
+const char* FScreenAttrMemDescGenerator::GenerateAddressString(FAddressRef addr) 
+{
+    int xp = 0, yp = 0;
+    GetAttribAddressCoords(addr.Address, xp, yp);
+    snprintf(DescStr, 32, "Screen Attr: %d,%d", xp/8, yp/8);
+    return DescStr;
 }

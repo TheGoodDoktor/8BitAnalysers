@@ -210,7 +210,7 @@ bool LoadZXSpectrumGameConfigs(FSpectrumEmu* pEmu)
 						FZXSpectrumGameConfig* pNewConfig = new FZXSpectrumGameConfig;
 						if (LoadGameConfigFromFile(*pNewConfig, configFileName.c_str()))
 						{
-							if (pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
+							//if (pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
 								AddGameConfig(pNewConfig);
 						}
 						else
@@ -238,7 +238,7 @@ bool LoadZXSpectrumGameConfigs(FSpectrumEmu* pEmu)
 			FZXSpectrumGameConfig* pNewConfig = new FZXSpectrumGameConfig;
 			if (LoadGameConfigFromFile(*pNewConfig, fn.c_str()))
 			{
-				if (pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
+				//if (pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
 					AddGameConfig(pNewConfig);
 			}
 			else

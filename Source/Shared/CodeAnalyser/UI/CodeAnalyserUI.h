@@ -22,10 +22,12 @@ public:
 	{
 		return (addr.BankId == RegionBankId || RegionBankId == -1) && addr.Address >= RegionMin && addr.Address <= RegionMax;
 	}
+    void SetRegionBankId(int16_t bankId) { RegionBankId = bankId; }
 
 	virtual const char* GenerateAddressString(FAddressRef addr) = 0;
 
 	virtual void FrameTick() {}
+    
 protected:
 	int16_t		RegionBankId = -1;	// -1 means any bank (needed for regions that span banks)
 	uint16_t	RegionMin = 0xffff;
@@ -37,7 +39,7 @@ const uint32_t kAddressLabelFlag_NoBrackets	= 0x0002;
 const uint32_t kAddressLabelFlag_White		= 0x0004;
 
 // UI
-
+void ResetRegionDescs(void);
 bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen);
 void UpdateRegionDescs(void);
 

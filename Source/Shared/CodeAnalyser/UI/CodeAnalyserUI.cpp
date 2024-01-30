@@ -73,6 +73,11 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, FAddressRef addr)
 
 std::vector<FMemoryRegionDescGenerator*>	g_RegionDescHandlers;
 
+void ResetRegionDescs(void)
+{
+    g_RegionDescHandlers.clear();
+}
+
 void UpdateRegionDescs(void)
 {
 	for (FMemoryRegionDescGenerator* pDescGen : g_RegionDescHandlers)

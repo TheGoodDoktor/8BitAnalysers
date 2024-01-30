@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Misc/GameConfig.h>
-
+#include "SpectrumEmu.h"    // for ESpectrumModel enum
 
 struct FGame;
 struct FGameViewerData;
@@ -48,6 +48,8 @@ struct FZXSpectrumGameConfig : FGameConfig
 {
 	void	LoadFromJson(const nlohmann::json& jsonConfig) override;
 	void	SaveToJson(nlohmann::json& jsonConfig) const override;
+    
+    ESpectrumModel  GetSpectrumModel() { return Spectrum128KGame ? ESpectrumModel::Spectrum128K : ESpectrumModel::Spectrum48K; }
 
 	bool			Spectrum128KGame = false;
 

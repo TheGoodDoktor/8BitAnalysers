@@ -10,7 +10,7 @@ bool FZXSpectrumConfig::Init(void)
 
 	LuaBaseFiles.push_back("Lua/ZXBase.lua");
 	SnapshotFolder = GetDocumentsPath("SpectrumGames/48K");
-	SnapshotFolder128 = GetDocumentsPath("SpectrumGames/128K");
+	//SnapshotFolder128 = GetDocumentsPath("SpectrumGames/128K");
 	WorkspaceRoot = GetDocumentsPath("SpectrumAnalyserProjects");
 
 	FixupPaths();
@@ -22,8 +22,8 @@ void FZXSpectrumConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 {
 	FGlobalConfig::ReadFromJson(jsonConfigFile);
 
-	if (jsonConfigFile.contains("SnapshotFolder128"))
-		SnapshotFolder128 = jsonConfigFile["SnapshotFolder128"];
+	//if (jsonConfigFile.contains("SnapshotFolder128"))
+	//	SnapshotFolder128 = jsonConfigFile["SnapshotFolder128"];
 	if (jsonConfigFile.contains("PokesFolder"))
 		PokesFolder = jsonConfigFile["PokesFolder"];
 	if (jsonConfigFile.contains("RZXFolder"))
@@ -35,7 +35,7 @@ void FZXSpectrumConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 void FZXSpectrumConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 {
 	FGlobalConfig::WriteToJson(jsonConfigFile);
-	jsonConfigFile["SnapshotFolder128"] = SnapshotFolder128;
+	//jsonConfigFile["SnapshotFolder128"] = SnapshotFolder128;
 	jsonConfigFile["PokesFolder"] = PokesFolder;
 	jsonConfigFile["RZXFolder"] = RZXFolder;
 }

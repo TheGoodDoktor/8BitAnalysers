@@ -89,6 +89,7 @@ public:
 	}
 
 	bool	Init(const FEmulatorLaunchConfig& config) override;
+    bool    InitForModel(ESpectrumModel model);
 	void	Shutdown() override;
 	void	Tick() override;
 	void	Reset() override;
@@ -142,6 +143,7 @@ public:
 
 	void		FormatSpectrumMemory(FCodeAnalysisState& state);
 
+    ESpectrumModel  GetCurrentSpectrumModel() const { return ZXEmuState.type == ZX_TYPE_128 ? ESpectrumModel::Spectrum128K : ESpectrumModel::Spectrum48K;}
 	void SetROMBank(int bankNo);
 	void SetRAMBank(int slot, int bankNo);
 
@@ -183,6 +185,9 @@ public:
 	FSpectrumBeeper		Beeper;
 	FAYAudioDevice			AYSoundChip;
 	FSpectrum128MemoryCtrl	MemoryControl;
+    
+    FScreenPixMemDescGenerator  PixMemDescGenerator;
+    FScreenAttrMemDescGenerator AttrMemDescGenerator;
 
 	// Code analysis pages - to cover 48K & 128K Spectrums
 	static const int	kNoBankPages = 16;	// no of pages per physical address slot (16k)

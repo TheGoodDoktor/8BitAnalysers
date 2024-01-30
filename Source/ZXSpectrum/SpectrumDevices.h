@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CodeAnalyser/IOAnalyser.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "SpectrumConstants.h"
 #include <chips/kbd.h>
 #include <chips/beeper.h>
 
@@ -50,4 +52,38 @@ public:
 private:
 	uint8_t		CurrentConfig = 0;
 	std::unordered_set<FAddressRef>	AccessLocations;
+};
+
+
+class FScreenPixMemDescGenerator : public FMemoryRegionDescGenerator
+{
+public:
+    FScreenPixMemDescGenerator():FScreenPixMemDescGenerator(-1){}
+    FScreenPixMemDescGenerator(int16_t bankId)
+    {
+        RegionMin = kScreenPixMemStart;
+        RegionMax = kScreenPixMemEnd;
+        RegionBankId = bankId;
+    }
+
+    const char* GenerateAddressString(FAddressRef addr) override;
+private:
+    char DescStr[32] = { 0 };
+};
+
+
+class FScreenAttrMemDescGenerator : public FMemoryRegionDescGenerator
+{
+public:
+    FScreenAttrMemDescGenerator():FScreenAttrMemDescGenerator(-1){}
+    FScreenAttrMemDescGenerator(int16_t bankId)
+    {
+        RegionMin = kScreenAttrMemStart;
+        RegionMax = kScreenAttrMemEnd;
+        RegionBankId = bankId;
+    }
+
+    const char* GenerateAddressString(FAddressRef addr) override;
+private:
+    char DescStr[32] = { 0 };
 };

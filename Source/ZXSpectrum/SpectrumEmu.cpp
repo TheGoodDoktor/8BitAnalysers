@@ -148,48 +148,6 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 	}
 }
 
-class FScreenPixMemDescGenerator : public FMemoryRegionDescGenerator
-{
-public:
-	FScreenPixMemDescGenerator(int16_t bankId)
-	{
-		RegionMin = kScreenPixMemStart;
-		RegionMax = kScreenPixMemEnd;
-		RegionBankId = bankId;
-	}
-
-	const char* GenerateAddressString(FAddressRef addr) override
-	{
-		int xp = 0, yp = 0;
-		GetScreenAddressCoords(addr.Address, xp, yp);
-		snprintf(DescStr,32, "Screen Pix: %d,%d", xp, yp);
-		return DescStr;
-	}
-private:
-	char DescStr[32] = { 0 };
-};
-
-
-class FScreenAttrMemDescGenerator : public FMemoryRegionDescGenerator
-{
-public:
-	FScreenAttrMemDescGenerator(int16_t bankId)
-	{
-		RegionMin = kScreenAttrMemStart;
-		RegionMax = kScreenAttrMemEnd;
-		RegionBankId = bankId;
-	}
-
-	const char* GenerateAddressString(FAddressRef addr) override
-	{
-		int xp = 0, yp = 0;
-		GetAttribAddressCoords(addr.Address, xp, yp);
-		snprintf(DescStr, 32, "Screen Attr: %d,%d", xp/8, yp/8);
-		return DescStr;
-	}
-private:
-	char DescStr[32] = { 0 };
-};
 
 //FSpectrumCPUInterface	SpeccyCPUIF;
 
@@ -572,7 +530,105 @@ void IOPortEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 	}
 }
 
+// This shgould be callable after initialisation
+bool FSpectrumEmu::InitForModel(ESpectrumModel model)
+{
+    // setup emu
+    zx_type_t type = model == ESpectrumModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
+    zx_joystick_type_t joy_type = ZX_JOYSTICKTYPE_NONE;
 
+    zx_desc_t desc;
+    memset(&desc, 0, sizeof(zx_desc_t));
+    desc.type = type;
+    desc.joystick_type = joy_type;
+ 
+    // audio
+    desc.audio.callback.func = PushAudio;    // our audio callback
+    desc.audio.callback.user_data = this;
+    desc.audio.sample_rate = saudio_sample_rate();
+    
+    // roms
+    desc.roms.zx48k.ptr = dump_amstrad_zx48k_bin;
+    desc.roms.zx48k.size = sizeof(dump_amstrad_zx48k_bin);
+    desc.roms.zx128_0.ptr = dump_amstrad_zx128k_0_bin;
+    desc.roms.zx128_0.size = sizeof(dump_amstrad_zx128k_0_bin);
+    desc.roms.zx128_1.ptr = dump_amstrad_zx128k_1_bin;
+    desc.roms.zx128_1.size = sizeof(dump_amstrad_zx128k_1_bin);
+
+    // setup debug hook
+    desc.debug.callback.func = DebugCB;
+    desc.debug.callback.user_data = this;
+    desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
+
+    zx_init(&ZXEmuState, &desc);
+    
+    // Clear UI
+    memset(&UIZX, 0, sizeof(ui_zx_t));
+
+    {
+        ui_zx_desc_t desc = { 0 };
+        desc.zx = &ZXEmuState;
+        desc.boot_cb = boot_cb;
+        
+        desc.dbg_texture.create_cb = gfx_create_texture;
+        desc.dbg_texture.update_cb = gfx_update_texture;
+        desc.dbg_texture.destroy_cb = gfx_destroy_texture;
+
+        desc.dbg_keys.stop.keycode = ImGui::GetKeyIndex(ImGuiKey_Space);
+        desc.dbg_keys.stop.name = "F5";
+        desc.dbg_keys.cont.keycode = ImGui::GetKeyIndex(ImGuiKey_F5);
+        desc.dbg_keys.cont.name = "F5";
+        desc.dbg_keys.step_over.keycode = ImGui::GetKeyIndex(ImGuiKey_F6);
+        desc.dbg_keys.step_over.name = "F6";
+        desc.dbg_keys.step_into.keycode = ImGui::GetKeyIndex(ImGuiKey_F7);
+        desc.dbg_keys.step_into.name = "F7";
+        desc.dbg_keys.toggle_breakpoint.keycode = ImGui::GetKeyIndex(ImGuiKey_F9);
+        desc.dbg_keys.toggle_breakpoint.name = "F9";
+
+        desc.snapshot.load_cb = UISnapshotLoadCB;
+        desc.snapshot.save_cb = UISnapshotSaveCB;
+        ui_zx_init(&UIZX, &desc);
+    }
+    
+    for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
+        CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
+    
+    // Setup initial machine memory config
+    if (model == ESpectrumModel::Spectrum48K)
+    {
+        CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 16;
+        CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 32;
+        CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 48;
+
+        SetROMBank(0);
+        SetRAMBank(1, 0);    // 0x4000 - 0x7fff
+        SetRAMBank(2, 1);    // 0x8000 - 0xBfff
+        SetRAMBank(3, 2);    // 0xc000 - 0xffff
+
+        // Setup memory description handlers
+        PixMemDescGenerator.SetRegionBankId(RAMBanks[0]);
+        AttrMemDescGenerator.SetRegionBankId(RAMBanks[0]);
+    }
+    else
+    {
+        CodeAnalysis.GetBank(RAMBanks[5])->PrimaryMappedPage = 16;
+        CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
+        CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 48;
+
+        SetROMBank(0);
+        SetRAMBank(1, 5);    // 0x4000 - 0x7fff
+        SetRAMBank(2, 2);    // 0x8000 - 0xBfff
+        SetRAMBank(3, 0);    // 0xc000 - 0xffff
+
+        // Setup memory description handlers
+        PixMemDescGenerator.SetRegionBankId(RAMBanks[5]);
+        AttrMemDescGenerator.SetRegionBankId(RAMBanks[5]);
+    }
+
+    CodeAnalysis.Config.bShowBanks = model == ESpectrumModel::Spectrum128K;
+    
+    return true;
+}
 
 bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 {
@@ -591,7 +647,6 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	//FGlobalConfig& globalConfig = GetGlobalConfig();
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
-	CodeAnalysis.Config.bShowBanks = spectrumLaunchConfig.Model == ESpectrumModel::Spectrum128K;
 	CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 	
 	// set supported bitmap format
@@ -601,77 +656,17 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 		CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::Bitmap_1Bpp;
 	}
 
-	// setup emu
-	zx_type_t type = spectrumLaunchConfig.Model == ESpectrumModel::Spectrum128K ? ZX_TYPE_128 : ZX_TYPE_48K;
-	zx_joystick_type_t joy_type = ZX_JOYSTICKTYPE_NONE;
-
-	zx_desc_t desc;
-	memset(&desc, 0, sizeof(zx_desc_t));
-	desc.type = type;
-	desc.joystick_type = joy_type;
-	//desc.pixel_buffer = FrameBuffer;
-	//desc.pixel_buffer_size = pixelBufferSize;
-
-	// audio
-	desc.audio.callback.func = PushAudio;	// our audio callback
-	desc.audio.callback.user_data = this;
-	desc.audio.sample_rate = saudio_sample_rate();
 	
-	// roms
-	desc.roms.zx48k.ptr = dump_amstrad_zx48k_bin;
-	desc.roms.zx48k.size = sizeof(dump_amstrad_zx48k_bin);
-	desc.roms.zx128_0.ptr = dump_amstrad_zx128k_0_bin;
-	desc.roms.zx128_0.size = sizeof(dump_amstrad_zx128k_0_bin);
-	desc.roms.zx128_1.ptr = dump_amstrad_zx128k_1_bin;
-	desc.roms.zx128_1.size = sizeof(dump_amstrad_zx128k_1_bin);
-
-	// setup debug hook
-	desc.debug.callback.func = DebugCB;
-	desc.debug.callback.user_data = this;
-	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
-
-	zx_init(&ZXEmuState, &desc);
-
 	const FZXSpectrumConfig* pSpectrumConfig = GetZXSpectrumGlobalConfig();
 	GameLoader.Init(this);
 	GamesList.SetLoader(&GameLoader);
-	if(spectrumLaunchConfig.Model == ESpectrumModel::Spectrum128K)
-		GamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->SnapshotFolder128.c_str());
-	else
-		GamesList.EnumerateGames(pSpectrumConfig->SnapshotFolder.c_str());
+	GamesList.EnumerateGames(pSpectrumConfig->SnapshotFolder.c_str());
 
 	RZXManager.Init(this);
 	RZXGamesList.SetLoader(&GameLoader);
 	RZXGamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->RZXFolder.c_str());
 
-	// Clear UI
-	memset(&UIZX, 0, sizeof(ui_zx_t));
-
-	{
-		ui_zx_desc_t desc = { 0 };
-		desc.zx = &ZXEmuState;
-		desc.boot_cb = boot_cb;
-		
-		desc.dbg_texture.create_cb = gfx_create_texture;
-		desc.dbg_texture.update_cb = gfx_update_texture;
-		desc.dbg_texture.destroy_cb = gfx_destroy_texture;
-
-		desc.dbg_keys.stop.keycode = ImGui::GetKeyIndex(ImGuiKey_Space);
-		desc.dbg_keys.stop.name = "F5";
-		desc.dbg_keys.cont.keycode = ImGui::GetKeyIndex(ImGuiKey_F5);
-		desc.dbg_keys.cont.name = "F5";
-		desc.dbg_keys.step_over.keycode = ImGui::GetKeyIndex(ImGuiKey_F6);
-		desc.dbg_keys.step_over.name = "F6";
-		desc.dbg_keys.step_into.keycode = ImGui::GetKeyIndex(ImGuiKey_F7);
-		desc.dbg_keys.step_into.name = "F7";
-		desc.dbg_keys.toggle_breakpoint.keycode = ImGui::GetKeyIndex(ImGuiKey_F9);
-		desc.dbg_keys.toggle_breakpoint.name = "F9";
-
-		desc.snapshot.load_cb = UISnapshotLoadCB;
-		desc.snapshot.save_cb = UISnapshotSaveCB;
-		ui_zx_init(&UIZX, &desc);
-	}
-
+    
 	// This is where we add the viewers we want
 	AddViewer(new FOverviewViewer(this));
 	pCharacterMapViewer = new FCharacterMapViewer(this);
@@ -708,40 +703,9 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false);
 		CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
 	}
-
-	// Setup initial machine memory config
-	if (spectrumLaunchConfig.Model == ESpectrumModel::Spectrum48K)
-	{
-		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 16;
-		CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 32;
-		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 48;
-
-		SetROMBank(0);
-		SetRAMBank(1, 0);	// 0x4000 - 0x7fff
-		SetRAMBank(2, 1);	// 0x8000 - 0xBfff
-		SetRAMBank(3, 2);	// 0xc000 - 0xffff
-
-		// Setup memory description handlers
-		AddMemoryRegionDescGenerator(new FScreenPixMemDescGenerator(RAMBanks[0]));
-		AddMemoryRegionDescGenerator(new FScreenAttrMemDescGenerator(RAMBanks[0]));
-	}
-	else
-	{
-		CodeAnalysis.GetBank(RAMBanks[5])->PrimaryMappedPage = 16;
-		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
-		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 48;
-
-		SetROMBank(0);
-		SetRAMBank(1, 5);	// 0x4000 - 0x7fff
-		SetRAMBank(2, 2);	// 0x8000 - 0xBfff
-		SetRAMBank(3, 0);	// 0xc000 - 0xffff
-
-		// Setup memory description handlers
-		AddMemoryRegionDescGenerator(new FScreenPixMemDescGenerator(RAMBanks[5]));
-		AddMemoryRegionDescGenerator(new FScreenAttrMemDescGenerator(RAMBanks[5]));
-	}
-
-	
+    
+    if(InitForModel(spectrumLaunchConfig.Model) == false)
+        return false;
 
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
@@ -799,17 +763,19 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	CodeAnalysis.IOAnalyser.AddDevice(&Keyboard);
 	Beeper.Init(&ZXEmuState.beeper);
 	CodeAnalysis.IOAnalyser.AddDevice(&Beeper);
-	if (spectrumLaunchConfig.Model == ESpectrumModel::Spectrum128K)
+	//if (spectrumLaunchConfig.Model == ESpectrumModel::Spectrum128K)
 	{
 		AYSoundChip.Init(&ZXEmuState.ay);
 		CodeAnalysis.IOAnalyser.AddDevice(&AYSoundChip);
 		CodeAnalysis.IOAnalyser.AddDevice(&MemoryControl);
 	}
+    
+    AddMemoryRegionDescGenerator(&PixMemDescGenerator);
+    AddMemoryRegionDescGenerator(&AttrMemDescGenerator);
 
 	// default assembler settings
 	AssemblerExportStartAddress = kScreenAttrMemEnd + 1;
 	AssemblerExportEndAddress = 0xffff;
-
     
     bInitialised = true;
 	return true;
@@ -855,8 +821,9 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	delete pActiveGame;
 	pActiveGame = nullptr;
 	
+    // This stuff is a bit legacy
 	FGame* pNewGame = new FGame;
-	pSpectrumGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
+	//pSpectrumGameConfig->Spectrum128KGame = ZXEmuState.type == ZX_TYPE_128;
 	pNewGame->pConfig = pGameConfig;
 	pNewGame->pViewerConfig = pSpectrumGameConfig->pViewerConfig;
 	assert(pSpectrumGameConfig->pViewerConfig != nullptr);
@@ -864,6 +831,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	pNewGame->pViewerData = pNewGame->pViewerConfig->pInitFunction(this, pSpectrumGameConfig);
 	GenerateSpriteListsFromConfig(*(FZXGraphicsViewer*)pGraphicsViewer, pSpectrumGameConfig);
 
+    InitForModel(pSpectrumGameConfig->Spectrum128KGame ? ESpectrumModel::Spectrum128K : ESpectrumModel::Spectrum48K);
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
 
@@ -895,6 +863,11 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 			analysisStateFName = gameRoot + "AnalysisState.bin";
 			saveStateFName = gameRoot + "SaveState.bin";
 		}
+        
+        if(pSpectrumGameConfig->GetSpectrumModel() != GetCurrentSpectrumModel())
+        {
+            InitForModel(pSpectrumGameConfig->GetSpectrumModel());
+        }
        
 		if (LoadGameState(this, saveStateFName.c_str()))
 		{
@@ -927,7 +900,8 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		const FGameSnapshot* snapshot = GamesList.GetGame(pGameConfig->Name.c_str());
 		if(snapshot == nullptr)
 			return false;
-		GameLoader.LoadSnapshot(*snapshot);
+		if(GameLoader.LoadSnapshot(*snapshot) == false)
+            return false;
 	}
 
 	ReAnalyseCode(CodeAnalysis);
@@ -1054,7 +1028,9 @@ bool FSpectrumEmu::NewGameFromSnapshot(const FGameSnapshot& snapshot)
 	if (pNewConfig != nullptr)
 	{
 		StartGame(pNewConfig, /* bLoadGameData */ false);
-		AddGameConfig(pNewConfig);
+        pNewConfig->Spectrum128KGame = GetCurrentSpectrumModel() == ESpectrumModel::Spectrum128K;
+        
+        AddGameConfig(pNewConfig);
 		SaveCurrentGameData();
 
 		return true;
@@ -2192,10 +2168,7 @@ void FSpectrumEmu::AppFocusCallback(int focused)
 {
 	if (focused)
 	{
-		if (ZXEmuState.type == ZX_TYPE_128)
-			GamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->SnapshotFolder128.c_str());
-		else
-			GamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->SnapshotFolder.c_str());
+		GamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->SnapshotFolder.c_str());
 	}
 }
 

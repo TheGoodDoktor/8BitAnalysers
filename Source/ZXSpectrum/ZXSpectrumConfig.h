@@ -6,7 +6,7 @@
 struct FZXSpectrumConfig : public FGlobalConfig
 {
     bool Init(void) override;
-	std::string			SnapshotFolder128 = "./Games128/";
+	//std::string			SnapshotFolder128 = "./Games128/";
 	std::string			PokesFolder = "./Pokes/";
 	std::string			RZXFolder = "./RZX/";
 
@@ -22,8 +22,8 @@ private:
 	{
 		FGlobalConfig::FixupPaths();
 
-		if (SnapshotFolder128.back() != '/')
-			SnapshotFolder128 += "/";
+		//if (SnapshotFolder128.back() != '/')
+		//	SnapshotFolder128 += "/";
 		if (PokesFolder.back() != '/')
 			PokesFolder += "/";
 		if (RZXFolder.back() != '/')
