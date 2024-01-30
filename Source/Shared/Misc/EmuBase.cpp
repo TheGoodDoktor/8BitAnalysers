@@ -642,10 +642,11 @@ bool FEmuBase::StartGameFromName(const char* pGameName, bool bLoadGameData)
 		{
 			Reset();
 			DisplayErrorMessage("Could not start game '%s'",pGameConfig->Name.c_str());
+			return false;
 		}
 	}
 
-	return false;
+	return true;
 }
 
 void FEmuBase::GraphicsViewerSetView(FAddressRef address)
