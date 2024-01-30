@@ -250,7 +250,11 @@ void FEmuBase::FileMenu()
 					}
 					else
 					{
-						NewGameFromSnapshot(game);
+						if (!NewGameFromSnapshot(game))
+						{
+							DisplayErrorMessage("Could not load snapshot '" + game.FileName + "'.");
+						}
+						break;
 					}
 				}
 			}
@@ -273,8 +277,8 @@ void FEmuBase::FileMenu()
 					SaveCurrentGameData();  // save previous game
 					if (StartGame(pGameConfig, true) == false)
 					{
-						// TODO: Output Error
 						Reset();
+						DisplayErrorMessage("Could not start game '" + pGameConfig->Name + "'.");
 					}
 				}
 			}
@@ -393,7 +397,10 @@ void FEmuBase::SystemMenu()
 {
 	if (pCurrentGameConfig && ImGui::MenuItem("Reload Snapshot"))
 	{
-		GamesList.LoadGame(pCurrentGameConfig->Name.c_str());
+		if (!GamesList.LoadGame(pCurrentGameConfig->Name.c_str()))
+		{
+			DisplayErrorMessage("Could not load snapshot '" + pGlobalConfig->SnapshotFolder + pCurrentGameConfig->Name + "'.");
+		}
 	}
 
 	if (ImGui::MenuItem("Reset"))
@@ -472,6 +479,7 @@ void FEmuBase::DrawMainMenu()
 	// https://github.com/ocornut/imgui/issues/331
 	DrawExportAsmModalPopup();
 	DrawReplaceGameModalPopup();
+	DrawErrorMessageModalPopup();
 }
 
 void FEmuBase::DrawExportAsmModalPopup()
@@ -543,8 +551,12 @@ void FEmuBase::DrawReplaceGameModalPopup()
 		if (ImGui::Button("Overwrite", ImVec2(120, 0)))
 		{
 			const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
-			if (NewGameFromSnapshot(game))
-				bReplaceGamePopup = false;
+			if (!NewGameFromSnapshot(game))
+			{
+				DisplayErrorMessage("Could not load snapshot '" + game.FileName + "'.");
+			}
+			
+			bReplaceGamePopup = false;
 			
 			ImGui::CloseCurrentPopup();
 		}
@@ -559,6 +571,41 @@ void FEmuBase::DrawReplaceGameModalPopup()
 	}
 }
 
+void FEmuBase::DrawErrorMessageModalPopup()
+{
+	if (bErrorMessagePopup)
+	{
+		ImGui::OpenPopup("Error");
+		bErrorMessagePopup = false;
+	}
+
+	if (ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text(ErrorPopupText.c_str());
+
+		if (!LastError.empty())
+		{
+			ImGui::Separator();
+			ImGui::Text("Reason:");
+			ImGui::SameLine();
+			ImGui::Text(LastError.c_str());
+		}
+
+		if (ImGui::Button("Ok", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape))
+		{
+			ImGui::CloseCurrentPopup();
+			LastError = "";
+		}
+		
+		ImGui::EndPopup();
+	}
+}
+
+void FEmuBase::DisplayErrorMessage(const std::string& text)
+{
+	bErrorMessagePopup = true;
+	ErrorPopupText = text;
+}
 
 // Viewers
 void FEmuBase::AddViewer(FViewerBase* pViewer)
@@ -572,7 +619,11 @@ bool FEmuBase::StartGameFromName(const char* pGameName, bool bLoadGameData)
 	FGameConfig* pGameConfig = GetGameConfigForName(pGameName);
 	if (pGameConfig)
 	{
-		return StartGame(pGameConfig, bLoadGameData);
+		if (StartGame(pGameConfig, true) == false)
+		{
+			Reset();
+			DisplayErrorMessage("Could not start game '" + pGameConfig->Name + "'.");
+		}
 	}
 
 	return false;

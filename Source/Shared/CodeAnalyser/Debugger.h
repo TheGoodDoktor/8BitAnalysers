@@ -207,6 +207,7 @@ private:
 
 	int							FrameTraceItemIndex = -1;
 	std::vector<FCPUFunctionCall>	CallStack;
+	int														SelectedCallstackNo = -1;
 
 	std::vector<FAddressRef>	StackSetLocations;
 	std::vector<FStackInfo>		Stacks;

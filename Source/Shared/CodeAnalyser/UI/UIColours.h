@@ -16,7 +16,7 @@ namespace Colours
 	extern uint32_t mnemonic;
 	extern uint32_t noppedMnemonic;
 	extern uint32_t immediate;		// immediate values
-
+	extern uint32_t text;
 	extern uint32_t highlight;	// highlighted text
 
 

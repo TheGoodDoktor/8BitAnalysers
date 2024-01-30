@@ -898,10 +898,15 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	{
 		// if the game state didn't load then reload the snapshot
 		const FGameSnapshot* snapshot = GamesList.GetGame(pGameConfig->Name.c_str());
-		if(snapshot == nullptr)
+		if (snapshot == nullptr)
+		{
+			SetLastError("Could not find '" + pGlobalConfig->SnapshotFolder + pGameConfig->SnapshotFile + "'");
 			return false;
-		if(GameLoader.LoadSnapshot(*snapshot) == false)
-            return false;
+		}
+		if (!GameLoader.LoadSnapshot(*snapshot))
+		{
+			return false;
+		}
 	}
 
 	ReAnalyseCode(CodeAnalysis);
@@ -1027,7 +1032,8 @@ bool FSpectrumEmu::NewGameFromSnapshot(const FGameSnapshot& snapshot)
 
 	if (pNewConfig != nullptr)
 	{
-		StartGame(pNewConfig, /* bLoadGameData */ false);
+        if (!StartGame(pNewConfig, /* bLoadGameData */ false))
+            return false;
         pNewConfig->Spectrum128KGame = GetCurrentSpectrumModel() == ESpectrumModel::Spectrum128K;
         
         AddGameConfig(pNewConfig);

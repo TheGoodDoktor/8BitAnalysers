@@ -18,6 +18,7 @@ namespace Colours
 	uint32_t mnemonic		= IM_COLRGB(207, 255, 255);		// opcode
 	uint32_t noppedMnemonic	= IM_COLRGB(128, 128, 128);		// nopped opcode
 	uint32_t immediate		= IM_COLRGB(255, 255, 255);		// immediate
+	uint32_t text			= IM_COLRGB(255, 200, 128);		// text 
 
 	uint32_t highlight		= IM_COLRGB(0,255,0);	// highlighted addresses/labels
 

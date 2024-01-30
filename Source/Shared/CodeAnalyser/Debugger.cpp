@@ -455,6 +455,8 @@ void FDebugger::Continue()
 { 
     StepMode = EDebugStepMode::None; 
     bDebuggerStopped = false; 
+
+    SelectedCallstackNo = -1;
 }
 
 
@@ -903,29 +905,47 @@ void FDebugger::DrawCallStack(void)
 	FCodeAnalysisState& state = *pCodeAnalysis;
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
+	if (ImGui::Selectable("##callstacktop", SelectedCallstackNo == CallStack.size()))
+	{
+		viewState.GoToAddress(CallStack.empty() ? state.CPUInterface->GetPC() : CallStack.back().FunctionAddr, false);
+		SelectedCallstackNo = CallStack.size();
+	}
+
 	// Draw current function & PC position
 	if (CallStack.empty() == false)
 	{
 		const FLabelInfo* pLabel = state.GetLabelForAddress(CallStack.back().FunctionAddr);
 		if (pLabel != nullptr)
 		{
-			ImGui::Text("%s :", pLabel->GetName());
 			ImGui::SameLine();
+			ImGui::Text("%s :", pLabel->GetName());
 		}
 	}
+
+	ImGui::SameLine();
 	DrawCodeAddress(state, viewState, state.CPUInterface->GetPC(), false);	// draw current PC
 
 	for (int i = (int)CallStack.size() - 1; i >= 0; i--)
 	{
+		ImGui::PushID(i);
+		if (ImGui::Selectable("##callstack", SelectedCallstackNo == i))
+		{
+			viewState.GoToAddress(CallStack[i].CallAddr, false);
+			SelectedCallstackNo = i;
+		}
+		ImGui::PopID();
+
 		if (i > 0)
 		{
 			const FLabelInfo* pLabel = state.GetLabelForAddress(CallStack[i - 1].FunctionAddr);
 			if (pLabel != nullptr)
 			{
-				ImGui::Text("%s :", pLabel->GetName());
 				ImGui::SameLine();
+				ImGui::Text("%s :", pLabel->GetName());
 			}
 		}
+		
+		ImGui::SameLine();
 		DrawCodeAddress(state, viewState, CallStack[i].CallAddr, false);
 	}
 }
