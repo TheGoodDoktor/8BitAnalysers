@@ -908,7 +908,7 @@ void FDebugger::DrawCallStack(void)
 	if (ImGui::Selectable("##callstacktop", SelectedCallstackNo == CallStack.size()))
 	{
 		viewState.GoToAddress(CallStack.empty() ? state.CPUInterface->GetPC() : CallStack.back().FunctionAddr, false);
-		SelectedCallstackNo = CallStack.size();
+		SelectedCallstackNo = (int)CallStack.size();
 	}
 
 	// Draw current function & PC position

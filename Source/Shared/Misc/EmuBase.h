@@ -80,8 +80,8 @@ public:
 
 	std::string		GetGameWorkspaceRoot() const;
 	
-	void					SetLastError(const std::string& msg) { LastError = msg; }
-	void					DisplayErrorMessage(const std::string& text);
+    void			SetLastError(const char* fmt, ...);
+	void			DisplayErrorMessage(const char *fmt, ...);
 
 protected:
 	void			FileMenu();

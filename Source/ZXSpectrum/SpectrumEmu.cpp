@@ -900,7 +900,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		const FGameSnapshot* snapshot = GamesList.GetGame(pGameConfig->Name.c_str());
 		if (snapshot == nullptr)
 		{
-			SetLastError("Could not find '" + pGlobalConfig->SnapshotFolder + pGameConfig->SnapshotFile + "'");
+			SetLastError("Could not find '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pGameConfig->SnapshotFile.c_str());
 			return false;
 		}
 		if (!GameLoader.LoadSnapshot(*snapshot))

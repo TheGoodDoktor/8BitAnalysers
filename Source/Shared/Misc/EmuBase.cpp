@@ -252,7 +252,7 @@ void FEmuBase::FileMenu()
 					{
 						if (!NewGameFromSnapshot(game))
 						{
-							DisplayErrorMessage("Could not load snapshot '" + game.FileName + "'.");
+							DisplayErrorMessage("Could not load snapshot '%s'", game.FileName.c_str());
 						}
 						break;
 					}
@@ -278,7 +278,7 @@ void FEmuBase::FileMenu()
 					if (StartGame(pGameConfig, true) == false)
 					{
 						Reset();
-						DisplayErrorMessage("Could not start game '" + pGameConfig->Name + "'.");
+						DisplayErrorMessage("Could not start game '%s'",pGameConfig->Name.c_str());
 					}
 				}
 			}
@@ -399,7 +399,7 @@ void FEmuBase::SystemMenu()
 	{
 		if (!GamesList.LoadGame(pCurrentGameConfig->Name.c_str()))
 		{
-			DisplayErrorMessage("Could not load snapshot '" + pGlobalConfig->SnapshotFolder + pCurrentGameConfig->Name + "'.");
+			DisplayErrorMessage("Could not load snapshot '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pCurrentGameConfig->Name.c_str());
 		}
 	}
 
@@ -553,7 +553,7 @@ void FEmuBase::DrawReplaceGameModalPopup()
 			const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
 			if (!NewGameFromSnapshot(game))
 			{
-				DisplayErrorMessage("Could not load snapshot '" + game.FileName + "'.");
+				DisplayErrorMessage("Could not load snapshot '%s'",game.FileName.c_str());
 			}
 			
 			bReplaceGamePopup = false;
@@ -581,14 +581,14 @@ void FEmuBase::DrawErrorMessageModalPopup()
 
 	if (ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::Text(ErrorPopupText.c_str());
+		ImGui::Text("%s",ErrorPopupText.c_str());
 
 		if (!LastError.empty())
 		{
 			ImGui::Separator();
 			ImGui::Text("Reason:");
 			ImGui::SameLine();
-			ImGui::Text(LastError.c_str());
+			ImGui::Text("%s",LastError.c_str());
 		}
 
 		if (ImGui::Button("Ok", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape))
@@ -601,10 +601,29 @@ void FEmuBase::DrawErrorMessageModalPopup()
 	}
 }
 
-void FEmuBase::DisplayErrorMessage(const std::string& text)
+void FEmuBase::SetLastError(const char *fmt, ...)
 {
+    const int kBufSize = 1024;
+    char buf[kBufSize];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf,kBufSize, fmt, ap);
+    va_end(ap);
+    
+    LastError = buf;
+}
+
+void FEmuBase::DisplayErrorMessage(const char *fmt, ...)
+{
+    const int kBufSize = 1024;
+    char buf[kBufSize];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf,kBufSize, fmt, ap);
+    va_end(ap);
+    
 	bErrorMessagePopup = true;
-	ErrorPopupText = text;
+	ErrorPopupText = buf;
 }
 
 // Viewers
@@ -622,7 +641,7 @@ bool FEmuBase::StartGameFromName(const char* pGameName, bool bLoadGameData)
 		if (StartGame(pGameConfig, true) == false)
 		{
 			Reset();
-			DisplayErrorMessage("Could not start game '" + pGameConfig->Name + "'.");
+			DisplayErrorMessage("Could not start game '%s'",pGameConfig->Name.c_str());
 		}
 	}
 
