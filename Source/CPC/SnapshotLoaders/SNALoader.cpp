@@ -7,6 +7,16 @@
 #include <systems/cpc.h>
 #include "../CPCChipsImpl.h"
 
+#ifndef _NDEBUG
+#define SNAPSHOT_LOADER_DEBUG
+#endif
+
+#ifdef SNAPSHOT_LOADER_DEBUG
+#define SNAPSHOT_LOG(...)  { LOGINFO("[SNA Loader] " __VA_ARGS__); }
+#else
+#define SNAPSHOT_LOG(...)
+#endif
+
 bool LoadSNAFile(FCPCEmu* pEmu, const char* fName)
 {
 	size_t byteCount = 0;
@@ -198,7 +208,7 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 	// todo: maybe set rom and ram banks here for 464 too
 	
 	const uint16_t dumpSize = pHdr->DumpSizehH << 8 | pHdr->DumpSizeL;
-	LOGINFO("Dump size is %d", dumpSize);
+	SNAPSHOT_LOG("Dump size is %d", dumpSize);
 	
 	// If dumpSize is non-zero then an uncompressed memory dump will follow
 	// the header. Dump size can be either 64 or 128.
@@ -222,7 +232,7 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 			pEmu->SetLastError("Memory dump size is too big for RAM.");
 			return false;
 		}
-		LOGINFO("Copying %d bytes to ram", dumpNumBytes);
+		SNAPSHOT_LOG("Copying %d bytes to ram", dumpNumBytes);
 
 		memcpy(cpc.ram, pCur, dumpNumBytes);
 	}
@@ -237,13 +247,20 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 			pCur += 4; // skip chunk ID
 			const uint32_t chunkSize = (pCur[3] << 24) | (pCur[2] << 16) | (pCur[1] << 8) | pCur[0];
 			pCur += 4; // skip chunkSize
-			LOGINFO("Found %c%c%c%c chunk of size %d", pChunkId[0], pChunkId[1], pChunkId[2], pChunkId[3], chunkSize);
+			SNAPSHOT_LOG("Found %c%c%c%c chunk of size %d", pChunkId[0], pChunkId[1], pChunkId[2], pChunkId[3], chunkSize);
 
 			if (pChunkId[0] == 'M' && pChunkId[1] == 'E' && pChunkId[2] == 'M' && pChunkId[3] == '0')
 			{
-				// todo if chunk size is 65536 then the data is uncompressed
-
-				DecompressSnapshotDataToRAM(pEmu, pCur, chunkSize, 0);
+				if (chunkSize == 65536)
+				{
+					// todo if chunk size is 65536 then the data is uncompressed
+					pEmu->SetLastError("MEM0 chunk contains uncompressed data. Not currently supported");
+					return false;
+				}
+				else
+				{
+					DecompressSnapshotDataToRAM(pEmu, pCur, chunkSize, 0);
+				}
 			}
 			pCur += chunkSize;
 		}

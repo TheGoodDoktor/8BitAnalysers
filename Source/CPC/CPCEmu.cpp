@@ -340,14 +340,14 @@ bool FCPCEmu::CanSelectUpperROM(uint8_t romSlot)
 		}
 		else
 		{
-			LOGWARNING("Currently selected upper ROM bank '%s' contains no memory.", pBank->Name.c_str());
+			std::string error = "Currently selected upper ROM bank '" + pBank->Name + "' contains no memory.";
 
 			if (const char* pROMName = GetCPCGlobalConfig()->GetUpperROMSlotName(romSlot))
 			{
 				if (pROMName[0] != 0)
-					LOGWARNING("ROM file '%s' may not have loaded", pROMName);
+					SetLastError("%s. ROM file '%s' may not have loaded", error.c_str(), pROMName);
 				else
-					LOGWARNING("ROM file does not exist in upper rom slot %d", romSlot);
+					SetLastError("%s. ROM file does not exist in upper rom slot %d", error.c_str(), romSlot);
 			}
 
 			return false;
@@ -642,10 +642,12 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	else
 		GamesList.EnumerateGames(pGlobalConfig->SnapshotFolder.c_str());
 	
+#ifdef RUN_AHEAD_TO_GENERATE_SCREEN
 	// Turn caching on for the game loader. This means that if the same game is loaded more than once
 	// the second time will involve no disk i/o.
 	// We use this so we can quickly restore the game state after running ahead to generate the frame buffer in StartGame().
 	GameLoader.SetCachingEnabled(true);
+#endif
 
 	Screen.Init(this);
 
@@ -917,10 +919,6 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		
 		if (!InitBankMappings())
 		{
-			LOGERROR("Failed to start game '%s' due to bank issues.", pGameConfig->Name.c_str());
-			
-			// Abort the starting of the game.This probably needs to be dealt with higher up?
-			Reset();
 			return false;
 		}
 
@@ -931,7 +929,9 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	}
 	else
 	{
-		GamesList.LoadGame(pGameConfig->Name.c_str());
+		if (!GamesList.LoadGame(pGameConfig->Name.c_str()))
+			return false;
+
 		InitBankMappings();
 	}
 
@@ -1081,7 +1081,9 @@ bool FCPCEmu::NewGameFromSnapshot(const FGameSnapshot& snaphot)
 
 	if (pNewConfig != nullptr)
 	{
-		StartGame(pNewConfig, /* bLoadGameData */ false);
+		if (!StartGame(pNewConfig, /* bLoadGameData */ false))
+			return false;
+
 		AddGameConfig(pNewConfig);
 		SaveCurrentGameData();
 
@@ -1402,7 +1404,6 @@ void FCPCEmu::DrawMainMenu(double timeMS)
 	DrawExportAsmModalPopup();
 	DrawReplaceGameModalPopup();
 }
-
 
 void FCPCEmu::DrawExportAsmModalPopup()
 {
