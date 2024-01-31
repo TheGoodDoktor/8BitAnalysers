@@ -5,7 +5,7 @@
 #include "Debug/DebugLog.h"
 #include <Util/FileUtil.h>
 #include <systems/cpc.h>
-#include "..\CPCChipsImpl.h"
+#include "../CPCChipsImpl.h"
 
 bool LoadSNAFile(FCPCEmu* pEmu, const char* fName)
 {
