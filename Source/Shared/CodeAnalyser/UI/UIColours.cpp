@@ -12,7 +12,7 @@ namespace Colours
 	uint32_t localLabel		= IM_COLRGB(128, 128, 128);		// local label
 	uint32_t globalLabel	= IM_COLRGB(128, 255, 128);		// global label
 	uint32_t function		= IM_COLRGB(255, 200, 128);		// function
-	uint32_t comment		= IM_COLRGB(0, 128, 0);			// comment
+	uint32_t comment		= IM_COLRGB(87, 166, 74);			// comment
 	uint32_t reg			= IM_COLRGB(175, 255, 255);		// registers
 	uint32_t address		= IM_COLRGB(175, 175, 255);		// addresses
 	uint32_t mnemonic		= IM_COLRGB(207, 255, 255);		// opcode
