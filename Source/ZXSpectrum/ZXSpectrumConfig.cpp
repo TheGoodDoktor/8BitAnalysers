@@ -9,7 +9,7 @@ bool FZXSpectrumConfig::Init(void)
 		return false;
 
 	LuaBaseFiles.push_back("Lua/ZXBase.lua");
-	SnapshotFolder = GetDocumentsPath("SpectrumGames/48K");
+	SnapshotFolder = GetDocumentsPath("SpectrumGames");
 	//SnapshotFolder128 = GetDocumentsPath("SpectrumGames/128K");
 	WorkspaceRoot = GetDocumentsPath("SpectrumAnalyserProjects");
 
