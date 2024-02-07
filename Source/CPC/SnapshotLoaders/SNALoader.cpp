@@ -119,6 +119,23 @@ int DecompressSnapshotDataToRAM(FCPCEmu* pEmu, const uint8_t* pData, int dataSiz
 	return bytesWritten;
 }
 
+const std::string GetSnapshotMachineName(uint8_t machineType)
+{
+	std::string machineTypes[7] =
+	{
+		"CPC 464",
+		"CPC 664",
+		"CPC 6128",
+		"unknown",
+		"6128 Plus",
+		"464 Plus",
+		"GX4000"
+	};
+	if (machineType < 7)
+		return machineTypes[machineType];
+	return "unknown machine type";
+}
+
 bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 {	
 	const uint8_t* const pEnd = pData + dataSize;
@@ -144,17 +161,6 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 
 	const FCPCSnapHeader* pHdr = (const FCPCSnapHeader*)pCur;
 	pCur += sizeof(FCPCSnapHeader);
-
-	if (pHdr->Version > 1)
-	{
-		// MachineType should be 0 for 464 machines.
-		// disabled this because it can be set to 2 for 64k snapshots
-		/*if (pHdr->MachineType != 0)
-		{
-			pEmu->SetLastError("Snapshot is not a 464 snapshot.");
-			return false;
-		}*/
-	}
 
 	z80_reset(&cpc.cpu);
 	cpc.cpu.f = pHdr->F; cpc.cpu.a = pHdr->A;
@@ -207,11 +213,21 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 
 	// todo: maybe set rom and ram banks here for 464 too
 	
+	if (pHdr->Version > 1)
+	{
+		const std::string machine = GetSnapshotMachineName(pHdr->MachineType);
+		SNAPSHOT_LOG("Machine type is %s", machine.c_str());
+		if (pEmu->CPCEmuState.type == CPC_TYPE_464 && pHdr->MachineType != 0)
+		{
+			LOGWARNING("Snapshot is for '%s' and may not be compatible with the current machine: CPC 464", machine.c_str());
+		}
+	}
+
 	const uint16_t dumpSize = pHdr->DumpSizehH << 8 | pHdr->DumpSizeL;
 	SNAPSHOT_LOG("Dump size is %d", dumpSize);
 	
-	// If dumpSize is non-zero then an uncompressed memory dump will follow
-	// the header. Dump size can be either 64 or 128.
+	// If dumpSize is non-zero then an uncompressed memory dump will follow the header. 
+	// Dump size can be either 64 or 128.
 	if (dumpSize)
 	{
 		if (pEmu->CPCEmuState.type == CPC_TYPE_464 && dumpSize > 64)
