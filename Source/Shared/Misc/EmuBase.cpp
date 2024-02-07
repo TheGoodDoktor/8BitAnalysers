@@ -328,11 +328,12 @@ void FEmuBase::OptionsMenu()
 		}
 
 		// clear code text so it can be written again
+		// TODO: this needs to work for banks
 		if (bClearCode)
 		{
 			for (int i = 0; i < 1 << 16; i++)
 			{
-				FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(i);
+				FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForPhysicalAddress(i);
 				if (pCodeInfo && pCodeInfo->Text.empty() == false)
 					pCodeInfo->Text.clear();
 

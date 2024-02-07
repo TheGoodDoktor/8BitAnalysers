@@ -414,11 +414,11 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		{
 			// Address is code
 
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(instruction.Address);
 			if (!pCodeInfo)
 			{
 				WriteCodeInfoForAddress(state, instruction.Address);
-				pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
+				pCodeInfo = state.GetCodeInfoForPhysicalAddress(instruction.Address);
 
 			}
 			pItem = pCodeInfo;
@@ -434,7 +434,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			// Address is data
 			
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(instruction.Address);
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(instruction.Address);
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(instruction.Address);
 			if (pCodeInfo)
 			{
 				LOGWARNING("Item at $%02X was set to code: %s",instruction.Address, pCodeInfo->Text.c_str());

@@ -64,7 +64,8 @@ void WritePageState(const FCodeAnalysisPage& page, FILE* fp)
 				fwrite(&pDataInfo->LastWriter.Val, sizeof(pDataInfo->LastWriter), 1, fp);
 			}
 
-			pageAddr += pDataInfo->ByteSize;
+			//pageAddr += pDataInfo->ByteSize;
+			pageAddr ++;
 		}
 		else if (pCodeInfoItem != nullptr)
 		{

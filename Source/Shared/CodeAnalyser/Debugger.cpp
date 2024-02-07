@@ -38,7 +38,7 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 	}
     Watches.clear();
 	Stacks.clear();
-
+	Breakpoints.clear();
 
 }
 

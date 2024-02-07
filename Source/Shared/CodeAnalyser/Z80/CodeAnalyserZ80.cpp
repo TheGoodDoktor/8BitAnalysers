@@ -372,7 +372,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 		if (state.Debugger.IsAddressOnStack(stackPointer))
 		{
 			FDataInfo* pStackItem = state.GetWriteDataInfoForAddress(stackPointer);	// -2 because SP was recorded before instruction was 	
-			const FCodeInfo* pCodeItem = state.GetCodeInfoForAddress(pc);
+			const FCodeInfo* pCodeItem = state.GetCodeInfoForPhysicalAddress(pc);
 
 			if (pCodeItem != nullptr)// && pCodeItem->Comment.empty() == false)
 				pStackItem->Comment = pCodeItem->Comment;

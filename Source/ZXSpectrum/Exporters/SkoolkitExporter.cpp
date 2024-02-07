@@ -29,7 +29,7 @@ public:
 
 		for (int addr = startAddr; addr <= endAddr;)
 		{
-			pCodeInfo = State.GetCodeInfoForAddress(addr);
+			pCodeInfo = State.GetCodeInfoForPhysicalAddress(addr);
 			if (!pCodeInfo || pCodeInfo->bDisabled == true)
 				pDataInfo = State.GetReadDataInfoForAddress(addr);
 

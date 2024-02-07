@@ -581,8 +581,8 @@ public:
 		//GetReadPage(addr)->CommentBlocks[addr & kPageMask] = pCommentBlock;
 	}
 
-	const FCodeInfo* GetCodeInfoForAddress(uint16_t addr) const { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
-	FCodeInfo* GetCodeInfoForAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
+	const FCodeInfo* GetCodeInfoForPhysicalAddress(uint16_t addr) const { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
+	FCodeInfo* GetCodeInfoForPhysicalAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
 	FCodeInfo* GetCodeInfoForAddress(FAddressRef addrRef)
 	{
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);

@@ -57,6 +57,7 @@ bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& pale
 void DrawPalette(const uint32_t* palette, int numColours, float height = 0.f);
 EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat);
 
+void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FAddressRef addr);
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId);
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
@@ -72,8 +73,8 @@ void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, c
 bool DrawU8Input(const char* label, uint8_t* value);
 bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef& address);
 bool DrawAddressInput(const char* label, uint16_t* value);
-const char* GetBankText(FCodeAnalysisState& state, int16_t bankId);
-bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId, bool bAllowNone = false);
+const char* GetBankText(const FCodeAnalysisState& state, int16_t bankId);
+bool DrawBankInput(const FCodeAnalysisState& state, const char* label, int16_t& bankId, bool bAllowNone = false);
 EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType);
 int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
 int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat);

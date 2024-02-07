@@ -591,7 +591,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pCodeInfo == nullptr)	// code info could have been cleared
 		return;
 
@@ -606,7 +606,7 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 // This assumes that the address passed in is mapped to physical memory
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pCodeInfo == nullptr)
 	{
 		pCodeInfo = FCodeInfo::Allocate();
@@ -681,7 +681,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 // return if we should continue
 bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 {
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 
 	// Register Code accesses
 	// 
@@ -733,7 +733,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	const uint16_t newPC = WriteCodeInfoForAddress(state, pc);
 
 	// get new code info
-	pCodeInfo = state.GetCodeInfoForAddress(pc);
+	pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pOldComment != nullptr)	// restore old comment
 		pCodeInfo->Comment = std::string(pOldComment);
 
@@ -758,7 +758,7 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 {
 	AnalyseAtPC(state, pc);
 
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pCodeInfo != nullptr)
 	{
 		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
@@ -787,7 +787,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 		LOGINFO("Access 0x%04X at PC:", g_DbgReadAddress, pc);
 	}
 
-	if (state.GetCodeInfoForAddress(dataAddr) == nullptr)	// don't register instruction data reads
+	if (state.GetCodeInfoForPhysicalAddress(dataAddr) == nullptr)	// don't register instruction data reads
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
 		if(pDataInfo->DataType != EDataType::InstructionOperand)
@@ -833,7 +833,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 	int addr = 0;
 	while ( addr < (1 << 16))
 	{
-		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(addr);
 		if (pCodeInfo != nullptr)
 		{
 			pCodeInfo->bSelfModifyingCode = false;

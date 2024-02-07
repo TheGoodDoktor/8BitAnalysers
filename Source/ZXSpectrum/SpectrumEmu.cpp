@@ -2155,7 +2155,7 @@ void FSpectrumEmu::DrawCheatsUI()
 				}
 
 				// if code has been modified then clear the code text so it gets regenerated
-				FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(entry.Address);
+				FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForPhysicalAddress(entry.Address);
 				if (pCodeInfo)
 					pCodeInfo->Text.clear();
 			

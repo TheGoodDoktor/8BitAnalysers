@@ -15,7 +15,7 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FCPCEmu* pE
 	const bool bRead = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_RD);
 	const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
 	
-	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pc);
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	const FAddressRef PCaddrRef = state.AddressRefFromPhysicalAddress(pc);
 
 	// increment counters

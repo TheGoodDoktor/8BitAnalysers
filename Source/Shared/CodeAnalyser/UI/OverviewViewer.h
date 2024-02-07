@@ -29,12 +29,22 @@ class FOverviewViewer : public FViewerBase
 public:
 			FOverviewViewer(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Overview"; }
 
-	bool	Init(void) override { return true; }
+	bool	Init(void) override;
 	void	Shutdown() override {}
 	void	DrawUI(void) override;
 
 	void	DrawStats();
 	void	CalculateStats();
+
+	void	DrawBankOverview();
+	void	DrawPhysicalMemoryOverview();
+
+	void	DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix);
+	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
+
 private:
 	FOverviewStats	Stats;
+	int16_t		OverviewBankId = -1;
+
+	FGraphicsView*	MemoryViewImage = nullptr;
 };

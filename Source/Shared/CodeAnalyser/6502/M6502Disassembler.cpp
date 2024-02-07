@@ -580,7 +580,7 @@ std::string M6502GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_
 	dasmState.CodeAnalysisState = &state;
 	dasmState.CurrentAddress = pc;
 	dasmState.HexDisplayMode = hexMode;
-	dasmState.pCodeInfoItem = state.GetCodeInfoForAddress(pc);
+	dasmState.pCodeInfoItem = state.GetCodeInfoForPhysicalAddress(pc);
 	SetNumberOutput(&dasmState);
 	m6502dasm_op(pc, ExportDasmInputCB, ExportOutputCB, &dasmState);
 	SetNumberOutput(nullptr);

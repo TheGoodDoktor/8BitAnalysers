@@ -2176,7 +2176,7 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 	return bValueInput;
 }
 
-const char* GetBankText(FCodeAnalysisState& state, int16_t bankId)
+const char* GetBankText(const FCodeAnalysisState& state, int16_t bankId)
 {
 	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
 
@@ -2186,7 +2186,7 @@ const char* GetBankText(FCodeAnalysisState& state, int16_t bankId)
 	return pBank->Name.c_str();
 }
 
-bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId, bool bAllowNone)
+bool DrawBankInput(const FCodeAnalysisState& state, const char* label, int16_t& bankId, bool bAllowNone)
 {
 	bool bBankChanged = false;
 	if (ImGui::BeginCombo("Bank", GetBankText(state, bankId)))
@@ -2205,7 +2205,7 @@ bool DrawBankInput(FCodeAnalysisState& state, const char* label, int16_t& bankId
 		{
 			if (ImGui::Selectable(GetBankText(state, bank.Id), bankId == bank.Id))
 			{
-				FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
+				//const FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
 				bankId = bank.Id;
 				bBankChanged = true;
 			}
