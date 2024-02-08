@@ -6,11 +6,12 @@
 #include "Util/GraphicsView.h"
 #include "ImGuiSupport/ImGuiScaling.h"
 
-static const int kMemoryViewImageSize = 256;
+static const int kMemoryViewImageWidth = 128;
+static const int kMemoryViewImageHeight = 512;
 
 bool FOverviewViewer::Init(void)
 {
-	MemoryViewImage = new FGraphicsView(kMemoryViewImageSize, kMemoryViewImageSize);
+	MemoryViewImage = new FGraphicsView(kMemoryViewImageWidth, kMemoryViewImageHeight);
 	MemoryViewImage->Clear(0xff000000);	
 
 	return true;
@@ -18,9 +19,9 @@ bool FOverviewViewer::Init(void)
 
 void FOverviewViewer::DrawUI(void)
 {
-    DrawStats();
+    //DrawStats();
 	//DrawBankOverview();
-	//DrawPhysicalMemoryOverview();
+	DrawPhysicalMemoryOverview();
 }
 
 void FOverviewViewer::DrawStats()
@@ -185,21 +186,36 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	//DrawAccessMap(state, pPix);
 	DrawUtilisationMap(state,pPix);
 
-	const float scale = ImGui_GetScaling();
-	ImGuiIO& io = ImGui::GetIO();
-	ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
-	MemoryViewImage->Draw();
+	ImGui::InputInt("Scale", &ViewScale, 1, 1);
+	ViewScale = std::max(1, ViewScale);	// clamp
+	ImGui::SameLine();
+	ImGui::Checkbox("Include ROM", &bShowROM);
+
+	const float scale = ImGui_GetScaling() * (float)ViewScale;
+
+	MemoryViewImage->UpdateTexture();
+
+	ImGuiIO& io = ImGui::GetIO();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+
+	// Draw Image
+	const float height = bShowROM ? kMemoryViewImageHeight : kMemoryViewImageHeight - (kMemoryViewImageHeight / 4);
+	const ImVec2 size((float)kMemoryViewImageWidth * scale, height * scale);
+	const ImVec2 uv0(0, 0);
+	const ImVec2 uv1(1.0f, bShowROM ? 1.0f : 0.75f);
+	ImGui::Image((void*)MemoryViewImage->GetTexture(), size,uv0,uv1);
 
 	if (ImGui::IsItemHovered())
 	{
 		const int xp = (int)((io.MousePos.x - pos.x) / scale);
 		const int yp = (int)((io.MousePos.y - pos.y) / scale);
 
-		const uint16_t addr = xp + yp * 256;
+		const uint16_t addr = (xp + yp * kMemoryViewImageWidth) + (bShowROM ? 0 : 0x4000);	// add offset if we're not showing ROM
 		const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
+		ImGui::Text("Location:");
 		DrawAddressLabel(state,viewState,addrRef);
 		DrawSnippetToolTip(state, viewState, addrRef);
 
@@ -268,17 +284,22 @@ void FOverviewViewer::DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix)
 
 void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 {
-	const int frameThreshold = 8;
+	const int frameThreshold = 4;
 	const int currentFrameNo = state.CurrentFrameNo;
 
-	const uint32_t kCodeCol = 0xff00ffff;
+	const uint32_t kCodeCol = 0xff008080;
+	const uint32_t kCodeColActive = 0xff00ffff;
+	const uint32_t kDataReadCol = 0xff00ff00;
+	const uint32_t kDataWriteCol = 0xff0000ff;
 	const uint32_t kDefaultDataCol = 0xffff0000;
 	const uint32_t kBitmapDataCol = 0xffffffff;
 	const uint32_t kCharMapDataCol = 0xff00ff00;
 	const uint32_t kTextDataCol = 0xffff00ff;
+	const uint32_t kScreenPixelsDataCol = 0xffff80ff;
+	const uint32_t kColAttribDataCol = 0xff0080ff;
 	const uint32_t kUnknownDataCol = 0xff808080;
 
-	uint32_t addr = 0;
+	uint32_t addr = bShowROM ? 0 : 0x4000;
 
 	while (addr < (1 << 16))
 	{
@@ -286,8 +307,15 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 
 		if (pCodeInfo)
 		{
-			const int framesSinceExecuted = currentFrameNo - pCodeInfo->FrameLastExecuted;
-			const uint32_t codeCol = 0xFF00FFFF;
+			uint32_t codeCol = kCodeCol;
+			
+			if (bShowActivity)
+			{
+				const int framesSinceExecuted = currentFrameNo - pCodeInfo->FrameLastExecuted;
+				if(pCodeInfo->FrameLastExecuted != -1 && framesSinceExecuted < frameThreshold) 
+					codeCol = kCodeColActive;
+			}
+
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
 			{
 				addr++;
@@ -313,7 +341,12 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 				case EDataType::Text:
 					dataCol = kTextDataCol;
 					break;
-
+				case EDataType::ScreenPixels:
+					dataCol = kScreenPixelsDataCol;
+					break;
+				case EDataType::ColAttr:
+					dataCol = kColAttribDataCol;
+					break;
 				default:
 					if(pDataInfo->DisplayType == EDataItemDisplayType::Unknown)
 						dataCol = kUnknownDataCol;
@@ -321,8 +354,32 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 
 			for (int i = 0; i < pDataInfo->ByteSize; i++)
 			{
+				if (bShowActivity)
+				{
+					const FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
+					const FDataInfo* pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
+					uint32_t drawCol = dataCol;
+
+					if (pWriteDataInfo != nullptr && pWriteDataInfo->LastFrameWritten != -1)	// Show write
+					{
+						const int framesSinceWritten = currentFrameNo - pWriteDataInfo->LastFrameWritten;
+						if (framesSinceWritten < frameThreshold)
+							drawCol = kDataWriteCol;
+					}
+					else if (pReadDataInfo != nullptr && pReadDataInfo->LastFrameRead != -1)	// Show read
+					{
+						const int framesSinceRead = currentFrameNo - pReadDataInfo->LastFrameRead;
+						if (framesSinceRead < frameThreshold)
+							drawCol = kDataReadCol;
+					}
+
+					*pPix++ = drawCol;
+				}
+				else
+				{
+					*pPix++ = dataCol;
+				}
 				addr++;
-				*pPix++ = dataCol;
 			}
 		}
 	}

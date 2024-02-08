@@ -46,5 +46,8 @@ private:
 	FOverviewStats	Stats;
 	int16_t		OverviewBankId = -1;
 
+	bool		bShowActivity = true;
 	FGraphicsView*	MemoryViewImage = nullptr;
+	int			ViewScale = 1;
+	bool		bShowROM = false;
 };
