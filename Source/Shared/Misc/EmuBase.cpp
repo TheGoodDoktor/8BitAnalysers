@@ -252,6 +252,7 @@ void FEmuBase::FileMenu()
 					{
 						if (!NewGameFromSnapshot(game))
 						{
+							Reset();
 							DisplayErrorMessage("Could not load snapshot '%s'", game.FileName.c_str());
 						}
 						break;
@@ -554,6 +555,7 @@ void FEmuBase::DrawReplaceGameModalPopup()
 			const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
 			if (!NewGameFromSnapshot(game))
 			{
+				Reset();
 				DisplayErrorMessage("Could not load snapshot '%s'",game.FileName.c_str());
 			}
 			
