@@ -1,6 +1,7 @@
 #include <cstdint>
 
 #define CHIPS_UI_IMPL
+#define SAVE_NEW_DIRS 1
 
 #include <imgui.h>
 #include "CPCEmu.h"
@@ -652,7 +653,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	Screen.Init(this);
 
 	cpc_type_t type = cpcLaunchConfig.Model == ECPCModel::CPC_6128 ? CPC_TYPE_6128 : CPC_TYPE_464;
-	cpc_joystick_type_t joy_type = CPC_JOYSTICK_NONE;
+	cpc_joystick_type_t joy_type = CPC_JOYSTICK_DIGITAL;
 
 	cpc_desc_t desc;
 	memset(&desc, 0, sizeof(cpc_desc_t));
@@ -846,6 +847,7 @@ void FCPCEmu::Shutdown()
 
 	// Save Global Config - move to function?
 
+	// todo: dont save active game if the game didn't load successfully
 	if (pActiveGame != nullptr)
 		pGlobalConfig->LastGame = pActiveGame->pConfig->Name;
 
@@ -907,10 +909,21 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	if (bLoadGameData)
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
-		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
-		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
-		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
-		const std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+
+		std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
+		std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
+		std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
+		std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
+
+		// check for new location & adjust paths accordingly
+		const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pGameConfig->Name + "/";
+		if (FileExists((gameRoot + "Config.json").c_str()))
+		{
+			analysisJsonFName = gameRoot + "Analysis.json";
+			graphicsSetsJsonFName = gameRoot + "GraphicsSets.json";
+			analysisStateFName = gameRoot + "AnalysisState.bin";
+			saveStateFName = gameRoot + "SaveState.bin";
+		}
 
 		if (LoadGameState(saveStateFName.c_str()) == false)
 		{
@@ -969,32 +982,12 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		SetItemCode(CodeAnalysis, initialPC);
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
-
-	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+	
+	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "/" + pGameConfig->Name + "/GraphicsSets/").c_str());
 
 	pCurrentGameConfig = pGameConfig;
 	return true;
 }
-
-#if 0
-bool FCPCEmu::StartGame(const char* pGameName)
-{
-	FCPCGameConfig* pCPCGameConfig = (FCPCGameConfig*)GetGameConfigForName(pGameName);
-
-	if (pCPCGameConfig != nullptr)
-	{
-		//const std::string snapFolder = CPCEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-		//const std::string gameFile = snapFolder + pCPCGameConfig->SnapshotFile;
-		if (GamesList.LoadGame(pCPCGameConfig->Name.c_str()))
-		{
-			StartGame(pCPCGameConfig);
-			return true;
-		}
-	}
-
-	return false;
-}
-#endif
 
 bool FCPCEmu::SaveGameState(const char* fname)
 {
@@ -1037,9 +1030,19 @@ bool FCPCEmu::SaveCurrentGameData(void)
 		if (pGameConfig == nullptr || pGameConfig->Name.empty())
 			return false;
 
+#if SAVE_NEW_DIRS
+		const std::string root = pGlobalConfig->WorkspaceRoot + pGameConfig->Name + "/";
+		const std::string configFName = root + "Config.json";
+		const std::string analysisJsonFName = root + "Analysis.json";
+		const std::string graphicsSetsJsonFName = root + "GraphicsSets.json";
+		const std::string analysisStateFName = root + "AnalysisState.bin";
+		const std::string saveStateFName = root + "SaveState.bin";
+		EnsureDirectoryExists(root.c_str());
+#else
+
 		const std::string root = pGlobalConfig->WorkspaceRoot;
 		const std::string configFName = root + "Configs/" + pGameConfig->Name + ".json";
-		const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
+		//const std::string dataFName = root + "GameData/" + pGameConfig->Name + ".bin";
 		const std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
 		const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
 		const std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
@@ -1050,6 +1053,7 @@ bool FCPCEmu::SaveCurrentGameData(void)
 		EnsureDirectoryExists(std::string(root + "GraphicsSets").c_str());
 		EnsureDirectoryExists(std::string(root + "AnalysisState").c_str());
 		EnsureDirectoryExists(std::string(root + "SaveStates").c_str());
+#endif
 
 		// set config values
 		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -1092,410 +1096,6 @@ bool FCPCEmu::NewGameFromSnapshot(const FGameSnapshot& snaphot)
 
 	return false;
 }
-
-#if 0
-
-void FCPCEmu::DrawFileMenu()
-{
-	if (ImGui::BeginMenu("File"))
-	{
-		if (ImGui::BeginMenu("New Game from Snapshot File"))
-		{
-			const int numGames = GamesList.GetNoGames();
-			if (!numGames)
-			{
-				const std::string snapFolder = CPCEmuState.type == CPC_TYPE_6128 ? pGlobalConfig->SnapshotFolder128 : pGlobalConfig->SnapshotFolder;
-				ImGui::Text("No snapshots found in snapshot directory:\n\n'%s'.\n\nSnapshot directory is set in GlobalConfig.json", snapFolder.c_str());
-			}
-			else
-			{
-				for (int gameNo = 0; gameNo < GamesList.GetNoGames(); gameNo++)
-				{
-					const FGameSnapshot& game = GamesList.GetGame(gameNo);
-
-					if (ImGui::MenuItem(game.DisplayName.c_str()))
-					{
-						bool bGameExists = false;
-
-						// does the game config exist?
-						for (const auto& pGameConfig : GetGameConfigs())
-						{
-							if (pGameConfig->SnapshotFile == game.DisplayName)
-								bGameExists = true;
-						}
-						if (bGameExists)
-						{
-							bReplaceGamePopup = true;
-							ReplaceGameSnapshotIndex = gameNo;
-						}
-						else
-						{
-							NewGameFromSnapshot(gameNo);
-						}
-					}
-				}
-			}
-			ImGui::EndMenu();
-		}
-
-		if (ImGui::BeginMenu("Open Game"))
-		{
-			if (GetGameConfigs().empty())
-			{
-				ImGui::Text("No games found.\n\nFirst, create a game via the 'New Game from Snapshot File' menu.");
-			}
-			else
-			{
-				for (const auto& pGameConfig : GetGameConfigs())
-				{
-					if (ImGui::MenuItem(pGameConfig->Name.c_str()))
-					{
-						StartGame((FCPCGameConfig*)pGameConfig);
-					}
-				}
-			}
-
-			ImGui::EndMenu();
-		}
-
-
-		if (ImGui::MenuItem("Save Game Data"))
-		{
-			SaveCurrentGameData();
-		}
-		/*if (ImGui::MenuItem("Export Binary File"))
-		{
-			/*if (pActiveGame != nullptr)
-			{
-				const std::string dir = pGlobalConfig->WorkspaceRoot + "OutputBin/";
-				EnsureDirectoryExists(dir.c_str());
-				std::string outBinFname = dir + pActiveGame->pConfig->Name + ".bin";
-				uint8_t *pSpecMem = new uint8_t[65536];
-				for (int i = 0; i < 65536; i++)
-					pSpecMem[i] = ReadByte(i);
-				SaveBinaryFile(outBinFname.c_str(), pSpecMem, 65536);
-				delete [] pSpecMem;
-			}
-		}*/
-
-		if (ImGui::MenuItem("Export ASM File"))
-		{
-			// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
-			bExportAsm = true;
-		}
-		ImGui::EndMenu();
-	}
-}
-
-void FCPCEmu::DrawSystemMenu()
-{
-	if (ImGui::BeginMenu("System"))
-	{
-		/*if (pActiveGame && ImGui::MenuItem("Reload Snapshot"))
-		{
-			const std::string snapFolder = pGlobalConfig->SnapshotFolder;
-			const std::string gameFile = snapFolder + pActiveGame->pConfig->SnapshotFile;
-			GamesList.LoadGame(gameFile.c_str());
-		}*/
-		if (ImGui::MenuItem("Reset"))
-		{
-			cpc_reset(&CPCEmuState);
-			ui_dbg_reset(&UICPC.dbg);
-			//IOAnalysis.Reset();
-		}
-
-		if (ImGui::BeginMenu("Joystick"))
-		{
-			/*if (ImGui::MenuItem("None", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_NONE)))
-			{
-				pZXUI->zx->joystick_type = ZX_JOYSTICKTYPE_NONE;
-			}
-			if (ImGui::MenuItem("Kempston", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_KEMPSTON)))
-			{
-				pZXUI->zx->joystick_type = ZX_JOYSTICKTYPE_KEMPSTON;
-			}
-			if (ImGui::MenuItem("Sinclair #1", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_1)))
-			{
-				pZXUI->zx->joystick_type = ZX_JOYSTICKTYPE_SINCLAIR_1;
-			}
-			if (ImGui::MenuItem("Sinclair #2", 0, (pZXUI->zx->joystick_type == ZX_JOYSTICKTYPE_SINCLAIR_2)))
-			{
-				pZXUI->zx->joystick_type = ZX_JOYSTICKTYPE_SINCLAIR_2;
-			}*/
-			ImGui::EndMenu();
-		}
-		ImGui::EndMenu();
-	}
-}
-
-void FCPCEmu::DrawHardwareMenu()
-{
-	if (ImGui::BeginMenu("Hardware"))
-	{
-		ImGui::MenuItem("Memory Map", 0, &UICPC.memmap.open);
-		ImGui::MenuItem("Keyboard Matrix", 0, &UICPC.kbd.open);
-		ImGui::MenuItem("Audio Output", 0, &UICPC.audio.open);
-		ImGui::MenuItem("Z80 CPU", 0, &UICPC.cpu.open);
-		ImGui::MenuItem("AM40010 (Gate Array)", 0, &UICPC.ga.open);
-		ImGui::MenuItem("AY-3-8912 (PSG)", 0, &UICPC.psg.open);
-		ImGui::EndMenu();
-	}
-}
-
-void FCPCEmu::DrawOptionsMenu()
-{
-	if (ImGui::BeginMenu("Options"))
-	{
-		if (ImGui::BeginMenu("Number Mode"))
-		{
-			bool bClearCode = false;
-			if (ImGui::MenuItem("Decimal", 0, GetNumberDisplayMode() == ENumberDisplayMode::Decimal))
-			{
-				SetNumberDisplayMode(ENumberDisplayMode::Decimal);
-				CodeAnalysis.SetAllBanksDirty();
-				bClearCode = true;
-			}
-			if (ImGui::MenuItem("Hex - FEh", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAitch))
-			{
-				SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
-				CodeAnalysis.SetAllBanksDirty();
-				bClearCode = true;
-			}
-			if (ImGui::MenuItem("Hex - $FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexDollar))
-			{
-				SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
-				CodeAnalysis.SetAllBanksDirty();
-				bClearCode = true;
-			}
-
-			// clear code text so it can be written again
-			if (bClearCode)
-			{
-				for (int i = 0; i < 1 << 16; i++)
-				{
-					FCodeInfo* pCodeInfo = CodeAnalysis.GetCodeInfoForAddress(i);
-					if (pCodeInfo && pCodeInfo->Text.empty() == false)
-						pCodeInfo->Text.clear();
-
-				}
-			}
-
-			ImGui::EndMenu();
-		}
-
-		ImGui::MenuItem("Enable Audio", 0, &pGlobalConfig->bEnableAudio);
-		ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing);
-		ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.pGlobalConfig->bShowOpcodeValues);
-
-		if (ImGui::BeginMenu("Display Branch Lines"))
-		{
-			if (ImGui::MenuItem("Off", 0, CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode == 0))
-			{
-				CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode = 0;
-			}
-			if (ImGui::MenuItem("Minimal", 0, CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode == 1))
-			{
-				CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode = 1;
-			}
-			if (ImGui::MenuItem("Full", 0, CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode == 2))
-			{
-				CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode = 2;
-			}
-
-			ImGui::EndMenu();
-		}
-#ifndef NDEBUG
-		ImGui::MenuItem("Show Config", 0, &CodeAnalysis.Config.bShowConfigWindow);
-		ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
-		ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
-#endif // NDEBUG
-		ImGui::EndMenu();
-	}
-}
-
-void FCPCEmu::DrawToolsMenu()
-{
-	// Note: this is a WIP menu, it'll be added in when it works properly!
-#ifndef NDEBUG
-	if (ImGui::BeginMenu("Tools"))
-	{
-		ImGui::EndMenu();
-	}
-#endif
-}
-
-void FCPCEmu::DrawWindowsMenu()
-{
-	if (ImGui::BeginMenu("Windows"))
-	{
-		//ImGui::MenuItem("DebugLog", 0, &bShowDebugLog);
-		if (ImGui::BeginMenu("Code Analysis"))
-		{
-			for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
-			{
-				char menuName[32];
-				sprintf(menuName, "Code Analysis %d", codeAnalysisNo + 1);
-				ImGui::MenuItem(menuName, 0, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled);
-			}
-
-			ImGui::EndMenu();
-		}
-
-		for (auto Viewer : Viewers)
-		{
-			ImGui::MenuItem(Viewer->GetName(), 0, &Viewer->bOpen);
-
-		}
-		ImGui::EndMenu();
-	}
-}
-
-void FCPCEmu::DrawDebugMenu()
-{
-	/*if (ImGui::BeginMenu("Debug"))
-	{
-		ImGui::MenuItem("Memory Heatmap", 0, &pCPCUI->dbg.ui.show_heatmap);
-		if (ImGui::BeginMenu("Memory Editor"))
-		{
-			ImGui::MenuItem("Window #1", 0, &pCPCUI->memedit[0].open);
-			ImGui::MenuItem("Window #2", 0, &pCPCUI->memedit[1].open);
-			ImGui::MenuItem("Window #3", 0, &pCPCUI->memedit[2].open);
-			ImGui::MenuItem("Window #4", 0, &pCPCUI->memedit[3].open);
-			ImGui::EndMenu();
-		}
-
-		ImGui::EndMenu();
-	}*/
-}
-
-void FCPCEmu::DrawMenus()
-{
-	DrawFileMenu();
-	DrawSystemMenu();
-	DrawHardwareMenu();
-	DrawOptionsMenu();
-	DrawToolsMenu();
-	DrawWindowsMenu();
-	DrawDebugMenu();
-}
-
-void FCPCEmu::DrawMainMenu(double timeMS)
-{
-	bExportAsm = false;
-	bReplaceGamePopup = false;
-
-	if (ImGui::BeginMainMenuBar())
-	{
-		DrawMenus();
-
-		// draw emu timings
-		ImGui::SameLine(ImGui::GetWindowWidth() - 120);
-		if (UICPC.dbg.dbg.stopped)
-			ImGui::Text("emu: stopped");
-		else
-			ImGui::Text("emu: %.2fms", timeMS);
-
-		ImGui::EndMainMenuBar();
-	}
-
-	// Draw any modal popups that have been requested from clicking on menu items.
-	// This is a workaround for an open bug.
-	// https://github.com/ocornut/imgui/issues/331
-	DrawExportAsmModalPopup();
-	DrawReplaceGameModalPopup();
-}
-
-void FCPCEmu::DrawExportAsmModalPopup()
-{
-	if (bExportAsm)
-	{
-		ImGui::OpenPopup("Export ASM File");
-	}
-	if (ImGui::BeginPopupModal("Export ASM File", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		static ImU16 addrStart = 0;//kScreenAttrMemEnd + 1;
-		static ImU16 addrEnd = 0xffff;
-
-		ImGui::Text("Address range to export");
-		bool bHex = GetNumberDisplayMode() != ENumberDisplayMode::Decimal;
-		const char* formatStr = bHex ? "%x" : "%u";
-		ImGuiInputTextFlags flags = bHex ? ImGuiInputTextFlags_CharsHexadecimal : ImGuiInputTextFlags_CharsDecimal;
-
-		ImGui::InputScalar("Start", ImGuiDataType_U16, &addrStart, NULL, NULL, formatStr, flags);
-		ImGui::SameLine();
-		ImGui::InputScalar("End", ImGuiDataType_U16, &addrEnd, NULL, NULL, formatStr, flags);
-
-		if (ImGui::Button("Export", ImVec2(120, 0)))
-		{
-			if (addrEnd > addrStart)
-			{
-				if (pActiveGame != nullptr)
-				{
-					const std::string dir = pGlobalConfig->WorkspaceRoot + "OutputASM/";
-					EnsureDirectoryExists(dir.c_str());
-
-					char addrRangeStr[16];
-					if (bHex)
-						snprintf(addrRangeStr, 16, "_%x_%x", addrStart, addrEnd);
-					else
-						snprintf(addrRangeStr, 16, "_%u_%u", addrStart, addrEnd);
-
-					std::string outBinFname = dir + pActiveGame->pConfig->Name + addrRangeStr + ".asm";
-
-					ExportAssembler(CodeAnalysis, outBinFname.c_str(), addrStart, addrEnd);
-				}
-				ImGui::CloseCurrentPopup();
-			}
-		}
-		ImGui::SetItemDefaultFocus();
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0)))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
-	}
-}
-
-void FCPCEmu::DrawReplaceGameModalPopup()
-{
-	if (bReplaceGamePopup)
-	{
-		ImGui::OpenPopup("Overwrite Game?");
-	}
-	if (ImGui::BeginPopupModal("Overwrite Game?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text("Do you want to overwrite existing game data?\nAny reverse engineering progress will be lost!\n\n");
-		ImGui::Separator();
-
-		if (ImGui::Button("Overwrite", ImVec2(120, 0)))
-		{
-			if (GamesList.LoadGame(ReplaceGameSnapshotIndex))
-			{
-				const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
-
-				for (const auto& pGameConfig : GetGameConfigs())
-				{
-					if (pGameConfig->SnapshotFile == game.DisplayName)
-					{
-						NewGameFromSnapshot(ReplaceGameSnapshotIndex);
-						break;
-					}
-				}
-			}
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::SetItemDefaultFocus();
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0)))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
-	}
-}
-
-#endif
 
 void FCPCEmu::Reset()
 {
@@ -1576,6 +1176,37 @@ void FCPCEmu::DrawMemoryTools()
 // These functions are used to add to the bottom of the menus
 void	FCPCEmu::FileMenuAdditions(void)
 {
+	if (ImGui::MenuItem("Export Binary File"))
+	{
+		if (pActiveGame != nullptr)
+		{
+			const std::string dir = pGlobalConfig->WorkspaceRoot + "OutputBin/";
+			EnsureDirectoryExists(dir.c_str());
+			std::string outBinFname = dir + pActiveGame->pConfig->Name + ".bin";
+			// todo fixup for 6128
+			uint8_t* pCPCMem = new uint8_t[65536];
+			memset(pCPCMem, 0, 65536);
+
+			uint16_t addr = 0;
+			for (int b = 0; b < kNoRAMBanks; b++)
+			{
+				if (const FCodeAnalysisBank* pBank = GetCodeAnalysis().GetBank(RAMBanks[b]))
+				{
+					if (pBank->PrimaryMappedPage != -1)
+					{
+						for (int i = 0; i < pBank->GetSizeBytes(); i++)
+						{
+							pCPCMem[addr] = pBank->Memory[i];
+							addr++;
+						}
+					}
+				}
+			}
+			
+			SaveBinaryFile(outBinFname.c_str(), pCPCMem, 65536);
+			delete[] pCPCMem;
+		}
+	}
 }
 
 void	FCPCEmu::SystemMenuAdditions(void)
@@ -1586,7 +1217,19 @@ void	FCPCEmu::SystemMenuAdditions(void)
 	//ImGui::MenuItem("Z80 CPU", 0, &UICPC.cpu.open);
 	ImGui::MenuItem("AM40010 (Gate Array)", 0, &UICPC.ga.open);
 	ImGui::MenuItem("AY-3-8912 (PSG)", 0, &UICPC.psg.open);
-	//ImGui::EndMenu();
+
+	if (ImGui::BeginMenu("Joystick"))
+	{
+		if (ImGui::MenuItem("Disabled", 0, (UICPC.cpc->joystick_type == CPC_JOYSTICK_NONE)))
+		{
+			UICPC.cpc->joystick_type = CPC_JOYSTICK_NONE;
+		}
+		if (ImGui::MenuItem("Enabled (Cursor Keys and Space)", 0, (UICPC.cpc->joystick_type == CPC_JOYSTICK_DIGITAL)))
+		{
+			UICPC.cpc->joystick_type = CPC_JOYSTICK_DIGITAL;
+		}
+		ImGui::EndMenu();
+	}
 }
 
 void	FCPCEmu::OptionsMenuAdditions(void)
@@ -1626,31 +1269,7 @@ void FCPCEmu::DrawEmulatorUI()
 	ui_memmap_draw(&pCPCUI->memmap);
 	ui_am40010_draw(&pCPCUI->ga);
 
-#if 0	
-	// Draw registered viewers
-	for (auto Viewer : Viewers)
-	{
-		if (Viewer->bOpen)
-		{
-			if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen))
-				Viewer->DrawUI();
-			ImGui::End();
-		}
-	}
-
-	if (ImGui::Begin("Debugger"))
-	{
-		CodeAnalysis.Debugger.DrawUI();
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Memory Analyser"))
-	{
-		CodeAnalysis.MemoryAnalyser.DrawUI();
-	}
-	ImGui::End();
-#endif
-	if (ImGui::Begin("CPC View"))
+	if (ImGui::Begin("CPC View", nullptr, ImGuiWindowFlags_NoNavInputs))
 	{
 		CPCViewer.Draw();
 	}
@@ -1676,97 +1295,8 @@ void FCPCEmu::DrawEmulatorUI()
 
 	//GraphicsViewer.Draw();
 	//DrawMemoryTools();
-
-#if 0
-	// Code analysis views
-	for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
-	{
-		char name[32];
-		sprintf(name, "Code Analysis %d", codeAnalysisNo + 1);
-		if (CodeAnalysis.ViewState[codeAnalysisNo].Enabled)
-		{
-			if (ImGui::Begin(name, &CodeAnalysis.ViewState[codeAnalysisNo].Enabled))
-			{
-				DrawCodeAnalysisData(CodeAnalysis, codeAnalysisNo);
-			}
-			ImGui::End();
-		}
-	}
-	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin("Character Maps"))
-	{
-		DrawCharacterMapViewer(CodeAnalysis, CodeAnalysis.GetFocussedViewState());
-	}
-	ImGui::End();
-#endif
 }
 
-#if 0
-bool FCPCEmu::DrawDockingView()
-{
-	//SCOPE_PROFILE_CPU("UI", "DrawUI", ProfCols::UI);
-
-	static bool opt_fullscreen_persistant = true;
-	bool opt_fullscreen = opt_fullscreen_persistant;
-	//static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-	bool bOpen = false;
-	ImGuiDockNodeFlags dockFlags = 0;
-
-	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-	// because it would be confusing to have two docking targets within each others.
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-	if (opt_fullscreen)
-	{
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->Pos);
-		ImGui::SetNextWindowSize(viewport->Size);
-		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-	}
-
-	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
-	if (dockFlags & ImGuiDockNodeFlags_PassthruCentralNode)
-		window_flags |= ImGuiWindowFlags_NoBackground;
-
-	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive, 
-	// all active windows docked into it will lose their parent and become undocked.
-	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise 
-	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-	bool bQuit = false;
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	if (ImGui::Begin("DockSpace Demo", &bOpen, window_flags))
-	{
-		ImGui::PopStyleVar();
-
-		if (opt_fullscreen)
-			ImGui::PopStyleVar(2);
-
-		// DockSpace
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		{
-			const ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
-			ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockFlags);
-		}
-
-		//bQuit = MainMenu();
-		//DrawDebugWindows(uiState);
-		DrawUI();
-		ImGui::End();
-	}
-	else
-	{
-		ImGui::PopStyleVar();
-		bQuit = true;
-	}
-
-	return bQuit;
-}
-#endif
 
 void FCPCLaunchConfig::ParseCommandline(int argc, char** argv)
 {
