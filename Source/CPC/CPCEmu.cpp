@@ -653,7 +653,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	Screen.Init(this);
 
 	cpc_type_t type = cpcLaunchConfig.Model == ECPCModel::CPC_6128 ? CPC_TYPE_6128 : CPC_TYPE_464;
-	cpc_joystick_type_t joy_type = CPC_JOYSTICK_DIGITAL;
+	cpc_joystick_type_t joy_type = CPC_JOYSTICK_NONE;
 
 	cpc_desc_t desc;
 	memset(&desc, 0, sizeof(cpc_desc_t));
