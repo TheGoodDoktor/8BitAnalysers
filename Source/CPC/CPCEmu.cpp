@@ -28,6 +28,9 @@
 
 #include <ImGuiSupport/ImGuiTexture.h>
 
+#include "LuaScripting/LuaSys.h"
+#include "CPCLuaAPI.h"
+
 //#define RUN_AHEAD_TO_GENERATE_SCREEN
 
 // Disabled for now
@@ -617,6 +620,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	// Initialise the CPC emulator
 	pGlobalConfig = new FCPCConfig();
+	pGlobalConfig->Init();
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
@@ -986,7 +990,28 @@ bool FCPCEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "/" + pGameConfig->Name + "/GraphicsSets/").c_str());
 
 	pCurrentGameConfig = pGameConfig;
+
+	LoadLua();
 	return true;
+}
+
+bool FCPCEmu::LoadLua()
+{
+	// Setup Lua - reinitialised for each game
+	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentGameConfig->Name + "/";
+	if (LuaSys::Init(this))
+	{
+		RegisterCPCLuaAPI(LuaSys::GetGlobalState());
+
+		for (const auto& gameScript : pCurrentGameConfig->LuaSourceFiles)
+		{
+			std::string luaScriptFName = gameRoot + gameScript;
+			LuaSys::LoadFile(luaScriptFName.c_str(), true);
+		}
+		return true;
+	}
+
+	return false;
 }
 
 bool FCPCEmu::SaveGameState(const char* fname)

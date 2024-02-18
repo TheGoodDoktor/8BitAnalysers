@@ -111,10 +111,12 @@ public:
 	bool				LoadGameState(const char* fname);
 
 	void				OnInstructionExecuted(int ticks, uint64_t pins);
-	uint64_t		Z80Tick(int num, uint64_t pins);
+	uint64_t			Z80Tick(int num, uint64_t pins);
 
 	void				Reset() override;
 	void				Tick() override;
+
+	bool				LoadLua();
 
 	void				DrawEmulatorUI(void);
 
@@ -122,23 +124,7 @@ public:
 	void				SystemMenuAdditions(void) override;
 	void				OptionsMenuAdditions(void) override;
 	void				WindowsMenuAdditions(void) override;
-#if 0
-	void				DrawMemoryTools();
-	void				DrawUI();
-	bool				DrawDockingView();
 
-	void				DrawFileMenu();
-	void				DrawSystemMenu();
-	void				DrawHardwareMenu();
-	void				DrawOptionsMenu();
-	void				DrawToolsMenu();
-	void				DrawWindowsMenu();
-	void				DrawDebugMenu();
-	void				DrawMenus();
-	void				DrawMainMenu(double timeMS);
-	void				DrawExportAsmModalPopup();
-	void				DrawReplaceGameModalPopup();
-#endif
 	// disable copy & assign because this class is big!
 	FCPCEmu(const FCPCEmu&) = delete;
 	FCPCEmu& operator= (const FCPCEmu&) = delete;

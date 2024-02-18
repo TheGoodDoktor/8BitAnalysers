@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <cassert>
 
+#include <LuaScripting/LuaSys.h>
+
 int CPCKeyFromImGuiKey(ImGuiKey key);
 void DrawPalette(const FPalette& palette);
 void DrawSnapLoadButtons(FCPCEmu* pCPCEmu);
@@ -235,6 +237,8 @@ void FCPCViewer::Draw()
 	if (ImGui::Button("Reset"))
 		pCPCEmu->ExecSpeedScale = 1.0f;
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+	LuaSys::OnEmulatorScreenDrawn(pos.x, pos.y, scale);	// Call Lua handler
 
 	bWindowFocused = ImGui::IsWindowHovered() || ImGui::IsWindowFocused();
 	FrameCounter++;
@@ -703,10 +707,16 @@ void DrawSnapLoadButtons(FCPCEmu* pCPCEmu)
 		ImGui::SameLine();
 		const FGameSnapshot& game = pCPCEmu->GetGamesList().GetGame(gGameIndex);
 		ImGui::Text("(%d/%d) %s", gGameIndex + 1, pCPCEmu->GetGamesList().GetNoGames(), game.DisplayName.c_str());
+		if (ImGui::IsKeyPressed(ImGuiKey_F3))
+			bLoadSnap = true;
+
 		if (bLoadSnap)
 		{
 			LOGINFO("Load game '%s'", game.DisplayName.c_str());
-			pCPCEmu->GetGamesList().LoadGame(gGameIndex);
+			if (!pCPCEmu->GetGamesList().LoadGame(gGameIndex))
+			{
+				pCPCEmu->DisplayErrorMessage("Could not load '%s'", game.DisplayName.c_str());
+			}
 		}
 	}
 }

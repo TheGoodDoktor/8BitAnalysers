@@ -2,10 +2,21 @@
 
 #include "json.hpp"
 #include "ExternalROMSupport.h"
+#include "Util/FileUtil.h"
 
 FCPCConfig::FCPCConfig()
 {
 	UpperROMSlot.resize(kNumUpperROMSlots);
+}
+
+bool FCPCConfig::Init(void)
+{
+	if (FGlobalConfig::Init() == false)
+		return false;
+
+	LuaBaseFiles.push_back("Lua/CPCBase.lua");
+	
+	return true;
 }
 
 void FCPCConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)

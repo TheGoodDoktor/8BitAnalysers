@@ -6,6 +6,7 @@
 struct FCPCConfig : public FGlobalConfig
 {
 	FCPCConfig();
+	bool Init(void) override;
 
 	std::string						SnapshotFolder128 = "./Games128/";
 	std::vector<std::string>	UpperROMSlot;
