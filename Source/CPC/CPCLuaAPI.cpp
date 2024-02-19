@@ -89,7 +89,7 @@ static int DrawCPCMode1Image(lua_State* pState)
 		if (pColData == nullptr)
 			return 0;
 
-		//const uint32_t palette[4] = { 0xffffffff, 0xffff0000, 0xff00ff00, 0xff0000ff };
+		const uint32_t palette[4] = { 0xff010200, 0xff6b7df3, 0xfff980fa, 0xfff9f3ff };
 		pGraphicsView->Draw2BppImageAt(pImageData, xp, yp, widthPixels, heightPixels, palette);
 	}
 	/*
