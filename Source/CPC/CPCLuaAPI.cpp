@@ -7,7 +7,7 @@ extern "C"
 #include <lualib.h>
 }
 
-#include "Util/GraphicsView.h"
+#include "Viewers/CPCGraphicsView.h"
 
 static int CreateCPCGraphicsView(lua_State *pState)
 {
@@ -18,7 +18,7 @@ static int CreateCPCGraphicsView(lua_State *pState)
 	luaL_setmetatable(pState, "GraphicsViewMT");
 
 	// create object using placement new with the memory we allocated for the user data
-	FGraphicsView* pGraphicsView = new(mem) FGraphicsView(width,height);
+	FCPCGraphicsView* pGraphicsView = new(mem) FCPCGraphicsView(width,height);
 	pGraphicsView->Clear();
 	
 	return 1;
@@ -35,74 +35,38 @@ static int FreeGraphicsView(lua_State* pState)
 	return 0;
 }
 
-static int DrawCPCMode0Image(lua_State *pState)
+static int DrawCPCImage(lua_State* pState, int mode)
 {
-	/*
-    FZXGraphicsView* pGraphicsView = (FZXGraphicsView*)lua_touserdata(pState, 1 );
+	FCPCGraphicsView* pGraphicsView = (FCPCGraphicsView*)lua_touserdata(pState, 1);
 	if (pGraphicsView == nullptr)
 		return 0;
 
-    const uint8_t* pImageData = (const uint8_t*)lua_touserdata(pState,2);
+	const uint8_t* pImageData = (const uint8_t*)lua_touserdata(pState, 2);
 	if (pImageData == nullptr)
 		return 0;
 
-    const int xp = (int)luaL_optinteger(pState,3, 0);
-    const int yp = (int)luaL_optinteger(pState,4, 0);
-    const int widthChars = (int)luaL_optinteger(pState,5,1);
-    const int heightChars = (int)luaL_optinteger(pState,6,1);
-	if (lua_islightuserdata(pState, 7))
-	{
-		const uint8_t* pAttribData = (const uint8_t*)lua_touserdata(pState, 7);
-		if (pAttribData == nullptr)
-			return 0;
+	const int xp = (int)luaL_optinteger(pState, 3, 0);
+	const int yp = (int)luaL_optinteger(pState, 4, 0);
+	const int widthPixels = (int)luaL_optinteger(pState, 5, 1);
+	const int heightPixels = (int)luaL_optinteger(pState, 6, 1);
+	const int paletteIndex = (int)luaL_optinteger(pState, 7, 1);
 
-		pGraphicsView->DrawBitImageWithAttribs(pImageData, xp, yp, widthChars, heightChars, pAttribData);
-	}
+	if (mode == 0)
+		pGraphicsView->DrawMode0Image(pImageData, xp, yp, widthPixels, heightPixels, paletteIndex);
 	else
-    {
-		const uint8_t attrib = (uint8_t)luaL_optinteger(pState,7,0x47);
-		const int stride = (int)luaL_optinteger(pState, 8, 1);
-		if (xp < pGraphicsView->GetWidth() && yp < pGraphicsView->GetHeight())
-			pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib, stride);
-	}
-	*/
-    return 0;
+		pGraphicsView->DrawMode1Image(pImageData, xp, yp, widthPixels, heightPixels, paletteIndex);
+
+	return 0;
+}
+
+static int DrawCPCMode0Image(lua_State *pState)
+{
+	return DrawCPCImage(pState, 0);
 }
 
 static int DrawCPCMode1Image(lua_State* pState)
 {
-	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
-	if (pGraphicsView == nullptr)
-		return 0;
-
-	const uint8_t* pImageData = (const uint8_t*)lua_touserdata(pState,2);
-	if (pImageData == nullptr)
-		return 0;
-
-	const int xp = (int)luaL_optinteger(pState,3, 0);
-	const int yp = (int)luaL_optinteger(pState,4, 0);
-	const int widthPixels = (int)luaL_optinteger(pState,5,1);
-	const int heightPixels = (int)luaL_optinteger(pState,6,1);
-	if (lua_islightuserdata(pState, 7))
-	{
-		const uint8_t* pColData = (const uint8_t*)lua_touserdata(pState, 7);
-		if (pColData == nullptr)
-			return 0;
-
-		const uint32_t palette[4] = { 0xff010200, 0xff6b7df3, 0xfff980fa, 0xfff9f3ff };
-		pGraphicsView->Draw2BppImageAt(pImageData, xp, yp, widthPixels, heightPixels, palette);
-	}
-	/*
-	else
-	{
-		const uint8_t attrib = (uint8_t)luaL_optinteger(pState,7,0x47);
-		const int stride = (int)luaL_optinteger(pState, 8, 1);
-		if (xp < pGraphicsView->GetWidth() && yp < pGraphicsView->GetHeight())
-			pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib, stride);
-	}
-	*/
-	
-	return 0;
+	return DrawCPCImage(pState, 1);
 }
 
 static const luaL_Reg cpclib[] =
@@ -110,6 +74,7 @@ static const luaL_Reg cpclib[] =
     {"CreateCPCGraphicsView", CreateCPCGraphicsView},
 	 {"DrawCPCMode0Image", DrawCPCMode0Image},
 	 {"DrawCPCMode1Image", DrawCPCMode1Image},
+
     {NULL, NULL}    // terminator
 };
 
@@ -131,5 +96,5 @@ int RegisterCPCLuaAPI(lua_State *pState)
 	luaL_setfuncs(pState, graphicsViewMT, 0);
 	lua_pop(pState, 1);
 
-    return 1;
+	return 1;
 }

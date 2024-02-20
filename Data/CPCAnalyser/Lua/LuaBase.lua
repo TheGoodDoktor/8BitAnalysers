@@ -1,6 +1,4 @@
 
-print("luabase start")
-
 -- enumerate types
 
 EDataItemDisplayType = 

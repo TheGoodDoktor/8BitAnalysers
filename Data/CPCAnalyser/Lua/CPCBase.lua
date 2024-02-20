@@ -1,8 +1,5 @@
 -- This contains base CPC routines used by all CPC games
 
-print("CPCBase Loaded")
-
-
 ScreenOverlay = 
 { 
     viewScreenPos = { x=0, y=0 }, 

@@ -1,6 +1,4 @@
 
-print("ViewerBase start")
-
 ViewerBase = 
 {
     graphicsView = nil,
@@ -58,4 +56,3 @@ function CPCViewerBase:onDrawUI()
         self:DrawUI()
     end
 end
-print("ViewerBase end")

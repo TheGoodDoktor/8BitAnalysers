@@ -1,5 +1,4 @@
 
-
 -- this gets called after the emulator screen has been drawn
 function OnDrawScreenOverlay(screenOverlay)
     
