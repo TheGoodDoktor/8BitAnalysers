@@ -51,12 +51,22 @@ static int DrawCPCImage(lua_State* pState, int mode)
 	const int heightPixels = (int)luaL_optinteger(pState, 6, 1);
 	const int paletteIndex = (int)luaL_optinteger(pState, 7, 1);
 
-	if (mode == 0)
+	if (mode == -1)
+	{
+		const uint32_t cols[] = { 0, 0xffffffff };
+		pGraphicsView->Draw1BppImageAt(pImageData, xp, yp, widthPixels, heightPixels, cols);	
+	}
+	else if (mode == 0)
 		pGraphicsView->DrawMode0Image(pImageData, xp, yp, widthPixels, heightPixels, paletteIndex);
 	else
 		pGraphicsView->DrawMode1Image(pImageData, xp, yp, widthPixels, heightPixels, paletteIndex);
 
 	return 0;
+}
+
+static int DrawCPCBitImage(lua_State* pState)
+{
+	return DrawCPCImage(pState, -1);
 }
 
 static int DrawCPCMode0Image(lua_State *pState)
@@ -71,11 +81,12 @@ static int DrawCPCMode1Image(lua_State* pState)
 
 static const luaL_Reg cpclib[] =
 {
-    {"CreateCPCGraphicsView", CreateCPCGraphicsView},
-	 {"DrawCPCMode0Image", DrawCPCMode0Image},
-	 {"DrawCPCMode1Image", DrawCPCMode1Image},
+	{"CreateCPCGraphicsView", CreateCPCGraphicsView},
+	{"DrawCPCBitImage", DrawCPCBitImage},
+	{"DrawCPCMode0Image", DrawCPCMode0Image},
+	{"DrawCPCMode1Image", DrawCPCMode1Image},
 
-    {NULL, NULL}    // terminator
+	{NULL, NULL}    // terminator
 };
 
 // meta table for graphics view
