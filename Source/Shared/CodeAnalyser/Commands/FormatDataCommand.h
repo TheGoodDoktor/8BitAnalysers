@@ -21,6 +21,8 @@ struct FDataFormattingOptions
 	bool					ClearLabels = false;
 	bool					AddLabelAtStart = false;
 	std::string				LabelName;
+	bool					AddCommentAtStart = false;
+	std::string				CommentText;
 
 	bool					IsValid() const { return NoItems > 0 && ItemSize > 0; }
 	uint16_t				CalcEndAddress() const { return StartAddress.Address + (NoItems * ItemSize) - 1; }

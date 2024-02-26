@@ -19,6 +19,8 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 	if(addressRef.IsValid() == false)
 		return;
 
+	const FAddressRef firstAddres = addressRef;
+
 	// TODO: Register Character Maps here?
 	if (FormatOptions.DataType == EDataType::CharacterMap)
 	{
@@ -67,7 +69,7 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			pLabel->ChangeName(labelText.c_str());
 
 		pLabel->Global = true;
-	}
+	}	
 
 	for (int itemNo = 0; itemNo < FormatOptions.NoItems; itemNo++)
 	{
@@ -119,6 +121,12 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			}
 			//dataAddress++;
 		}
+	}
+
+	if (FormatOptions.AddCommentAtStart)
+	{
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(firstAddres);
+		pDataInfo->Comment = FormatOptions.CommentText;
 	}
 }
 

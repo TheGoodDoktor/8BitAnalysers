@@ -1898,7 +1898,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	ImGui::SameLine();
 	ImGui::Checkbox("Clear Labels", &formattingOptions.ClearLabels);
 	ImGui::Checkbox("Add Label at Start", &formattingOptions.AddLabelAtStart);
-
+	
 	if (formattingOptions.IsValid())
 	{
 		if (ImGui::Button("Format"))
@@ -1918,6 +1918,45 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		if (ImGui::Button("Undo"))
 		{
 			UndoCommand(state);
+		}
+
+		if (ImGui::CollapsingHeader("Batch Format"))
+		{
+			static int batchSize = 1;
+			static bool addLabel = false;
+			static bool addComment = false;
+			static char prefix[16];
+
+			ImGui::InputInt("Count",&batchSize);
+			ImGui::Checkbox("Add Label", &addLabel);
+			ImGui::SameLine();
+			ImGui::Checkbox("Add Comment", &addComment);
+			ImGui::InputText("Prefix",prefix,16);
+			if (ImGui::Button("Process Batch"))
+			{
+				for(int i=0;i<batchSize;i++)
+				{
+					char prefixTxt[32];
+					snprintf(prefixTxt,32,"%s_%d",prefix,i);
+					if(addLabel)
+					{
+						formattingOptions.AddLabelAtStart = true;
+						formattingOptions.LabelName = prefixTxt;
+					}
+					if (addComment)
+					{
+						formattingOptions.AddCommentAtStart = true;
+						formattingOptions.CommentText = prefixTxt;
+					}
+
+					FormatData(state, formattingOptions);
+					state.AdvanceAddressRef(formattingOptions.StartAddress, formattingOptions.ItemSize* formattingOptions.NoItems);
+					state.SetCodeAnalysisDirty(formattingOptions.StartAddress);
+				}
+			}
+
+			formattingOptions.AddCommentAtStart = false;
+			formattingOptions.CommentText = std::string();
 		}
 	}
 
