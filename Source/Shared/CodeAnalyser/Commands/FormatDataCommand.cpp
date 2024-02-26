@@ -22,6 +22,7 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 	const FAddressRef firstAddres = addressRef;
 
 	// TODO: Register Character Maps here?
+	// I think this should be optional as it's only useful for active character maps
 	if (FormatOptions.DataType == EDataType::CharacterMap)
 	{
 		FCharMapCreateParams charMapParams;
