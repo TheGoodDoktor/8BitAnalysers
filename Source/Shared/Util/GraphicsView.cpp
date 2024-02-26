@@ -528,10 +528,12 @@ bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& p
 	if (params.Address.IsValid() == false || GetCharacterMapFromAddress(params.Address) != nullptr)
 		return false;
 
-	FLabelInfo* pLabel = state.GetLabelForAddress(params.Address);
-	if (pLabel == nullptr)
-		AddLabelAtAddress(state, params.Address);	
-
+	if(params.bAddLabel)
+	{ 
+		FLabelInfo* pLabel = state.GetLabelForAddress(params.Address);
+		if (pLabel == nullptr)
+			AddLabelAtAddress(state, params.Address);	
+	}
 	FCharacterMap* pNewCharMap = new FCharacterMap;
 	pNewCharMap->Params = params;
 

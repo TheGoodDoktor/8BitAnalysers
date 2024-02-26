@@ -30,6 +30,7 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 		charMapParams.Width = FormatOptions.ItemSize;
 		charMapParams.Height = FormatOptions.NoItems;
 		charMapParams.IgnoreCharacter = FormatOptions.EmptyCharNo;
+		charMapParams.bAddLabel = false;
 		CreateCharacterMap(state, charMapParams);
 
 		// Character map undo data
@@ -125,8 +126,10 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 
 	if (FormatOptions.AddCommentAtStart)
 	{
-		FDataInfo* pDataInfo = state.GetDataInfoForAddress(firstAddres);
-		pDataInfo->Comment = FormatOptions.CommentText;
+		//FDataInfo* pDataInfo = state.GetDataInfoForAddress(firstAddres);
+		//pDataInfo->Comment = FormatOptions.CommentText;
+		FCommentBlock* pCommentBlock = AddCommentBlock(state,firstAddres);
+		pCommentBlock->Comment = FormatOptions.CommentText;
 	}
 }
 

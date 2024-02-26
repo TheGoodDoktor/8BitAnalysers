@@ -202,7 +202,7 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	// Draw Image
-	const float height = bShowROM ? kMemoryViewImageHeight : kMemoryViewImageHeight - (kMemoryViewImageHeight / 4);
+	const int height = bShowROM ? kMemoryViewImageHeight : kMemoryViewImageHeight - (kMemoryViewImageHeight / 4);
 	const ImVec2 size((float)kMemoryViewImageWidth * scale, height * scale);
 	const ImVec2 uv0(0, 0);
 	const ImVec2 uv1(1.0f, bShowROM ? 1.0f : 0.75f);

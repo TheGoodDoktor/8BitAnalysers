@@ -1953,6 +1953,8 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 					state.AdvanceAddressRef(formattingOptions.StartAddress, formattingOptions.ItemSize* formattingOptions.NoItems);
 					state.SetCodeAnalysisDirty(formattingOptions.StartAddress);
 				}
+
+
 			}
 
 			formattingOptions.AddCommentAtStart = false;
