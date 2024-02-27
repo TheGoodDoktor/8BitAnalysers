@@ -4,11 +4,79 @@
 #include "Debug/DebugLog.h"
 
 #include <string.h>
+#include <stdarg.h>
+
 #include <CodeAnalyser/Z80/Z80Disassembler.h>
 #include "UI/CodeAnalyserUI.h"
 
+// Class to encapsulate ASM exporting
+class FASMExporter
+{
+	public:
+		FASMExporter(const char *pFilename, FCodeAnalysisState* pState);
+		~FASMExporter();
+
+		bool		Init();
+		void		Output(const char* pFormat, ...);
+		bool		ExportAddressRange(uint16_t startAddr, uint16_t endAddr);
+
+		std::string		GenerateAddressLabelString(FAddressRef addr);
+		void			ExportDataInfoASM(FAddressRef addr);
+
+	private:
+		bool			bInitialised = false;
+		ENumberDisplayMode HexMode = ENumberDisplayMode::HexDollar;
+		ENumberDisplayMode OldNumberMode;
+
+		std::string		Filename;
+		FILE*			FilePtr = nullptr;
+		FCodeAnalysisState*	pCodeAnalyser = nullptr;
+};
+
+FASMExporter::FASMExporter(const char* pFilename, FCodeAnalysisState* pState) 
+	: Filename(pFilename)
+	, pCodeAnalyser(pState) 
+{
+
+}
+
+FASMExporter::~FASMExporter()
+{
+	if(FilePtr != nullptr)
+		fclose(FilePtr);
+
+	SetNumberDisplayMode(OldNumberMode);
+}
+
+bool FASMExporter::Init()
+{
+	FilePtr = fopen(Filename.c_str(), "wt");
+
+	if (FilePtr == nullptr)
+		return false;
+
+
+	OldNumberMode = GetNumberDisplayMode();
+	SetNumberDisplayMode(HexMode);
+	bInitialised = true;
+	return true;
+}
+
+
+void FASMExporter::Output(const char* pFormat, ...)
+{
+	//const int kBufSize = 16 * 1024; 
+	//char buf[kBufSize];
+	va_list ap;
+	va_start(ap, pFormat);
+	//vsnprintf(buf, kBufSize, pFormat, ap);
+	vfprintf(FilePtr, pFormat, ap);
+	va_end(ap);
+}
+
+
 // this might be a bit broken
-std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef addr)
+std::string FASMExporter::GenerateAddressLabelString(FAddressRef addr)
 {
 	int labelOffset = 0;
 	const char* pLabelString = nullptr;
@@ -16,7 +84,7 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef ad
 
 	for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
 	{
-		FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(addrVal);
+		FLabelInfo* pLabelInfo = pCodeAnalyser->GetLabelForPhysicalAddress(addrVal);
 		if (pLabelInfo != nullptr)
 		{
 			labelStr = "[" + std::string(pLabelInfo->GetName());
@@ -46,21 +114,123 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef ad
 
 uint16_t g_DbgAddress = 0xEA71;
 
-bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint16_t startAddr , uint16_t endAddr)
+void AppendCharToString(char ch, std::string& outString);
+
+void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 {
-	FILE* fp =fopen(pTextFileName, "wt");
+	const FDataInfo* pDataInfo = pCodeAnalyser->GetDataInfoForAddress(addr);
+	FCodeAnalysisState& state = *pCodeAnalyser;
 
-	if (fp == nullptr)
-		return false;
+	ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
-	ENumberDisplayMode hexMode = ENumberDisplayMode::HexDollar;
+	if (pDataInfo->DisplayType == EDataItemDisplayType::Decimal)
+		dispMode = ENumberDisplayMode::Decimal;
+	if (pDataInfo->DisplayType == EDataItemDisplayType::Hex)
+		dispMode = HexMode;
+	if (pDataInfo->DisplayType == EDataItemDisplayType::Binary)
+		dispMode = ENumberDisplayMode::Binary;
 
-	ENumberDisplayMode oldMode = GetNumberDisplayMode();
-	SetNumberDisplayMode(hexMode);
+	const bool bOperandIsAddress = (pDataInfo->DisplayType == EDataItemDisplayType::JumpAddress || pDataInfo->DisplayType == EDataItemDisplayType::Pointer);
 
+	EDataType outputDataType;
+
+	// TODO: redirect other types (char maps, bitmaps etc.) to byte arrays etc.
+
+	switch (pDataInfo->DataType)
+	{
+	case EDataType::CharacterMap:
+	case EDataType::Bitmap:
+	case EDataType::ColAttr:
+			outputDataType = EDataType::ByteArray;
+			break;
+		default:
+			outputDataType = pDataInfo->DataType;
+	}
+
+	Output("\t");
+	switch (outputDataType)
+	{
+	case EDataType::Byte:
+	{
+		const uint8_t val = state.ReadByte(addr);
+		Output("db %s", NumStr(val, dispMode));
+	}
+	break;
+	case EDataType::ByteArray:
+	{
+		std::string textString;
+		FAddressRef byteAddress = addr;
+		for (int i = 0; i < pDataInfo->ByteSize; i++)
+		{
+			const uint8_t val = state.ReadByte(byteAddress);
+			char valTxt[16];
+			snprintf(valTxt, 16, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
+			textString += valTxt;
+
+			state.AdvanceAddressRef(byteAddress,1);
+		}
+		Output("db %s", textString.c_str());
+	}
+	break;
+	case EDataType::Word:
+	{
+		const uint16_t val = state.ReadWord(addr);
+
+		const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForPhysicalAddress(val) : nullptr;
+		if (pLabel != nullptr)
+		{
+			Output("dw %s", pLabel->GetName());
+		}
+		else
+		{
+			Output("dw %s", NumStr(val, dispMode));
+		}
+	}
+	break;
+	case EDataType::WordArray:
+	{
+		const int wordSize = pDataInfo->ByteSize / 2;
+		std::string textString;
+		FAddressRef wordAddr = addr;
+		for (int i = 0; i < wordSize; i++)
+		{
+			const uint16_t val = state.ReadWord(wordAddr);
+			char valTxt[16];
+			snprintf(valTxt, 16, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
+			textString += valTxt;
+			state.AdvanceAddressRef(wordAddr,2);
+		}
+		Output("dw %s", textString.c_str());
+	}
+	break;
+	case EDataType::Text:
+	{
+		std::string textString;
+		FAddressRef charAddress = addr;
+		for (int i = 0; i < pDataInfo->ByteSize; i++)
+		{
+			const char ch = state.ReadByte(charAddress);
+			AppendCharToString(ch,textString);
+			state.AdvanceAddressRef(charAddress,1);
+		}
+		Output("ascii '%s'", textString.c_str());
+	}
+	break;
+
+	case EDataType::ScreenPixels:
+	case EDataType::Blob:
+	default:
+		Output("%d Bytes", pDataInfo->ByteSize);
+		break;
+	}
+}
+
+bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
+{
+	FCodeAnalysisState& state = *pCodeAnalyser;
 	// TODO: write screen memory regions
 
-	for (const FCodeAnalysisItem &item : state.ItemList)
+	for (const FCodeAnalysisItem &item : pCodeAnalyser->ItemList)
 	{
 		const uint16_t addr = item.AddressRef.Address;
 
@@ -75,7 +245,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 		case EItemType::Label:
 		{
 			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
-			fprintf(fp, "%s:", pLabelInfo->GetName());
+			Output("%s:", pLabelInfo->GetName());
 		}
 		break;
 		case EItemType::Code:
@@ -86,125 +256,111 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 			if (addr == g_DbgAddress)
 				LOGINFO("DebugAddress");
 
-			const std::string dasmString = Z80GenerateDasmStringForAddress(state, addr, hexMode);
+			const std::string dasmString = Z80GenerateDasmStringForAddress(state, addr, HexMode);
 			Markup::SetCodeInfo(pCodeInfo);
 			const std::string expString = Markup::ExpandString(dasmString.c_str());
-			fprintf(fp, "\t%s", expString.c_str());
+			Output("\t%s", expString.c_str());
 
-			if (pCodeInfo->OperandAddress.IsValid())
+			/*if (pCodeInfo->OperandAddress.IsValid())
 			{
-				const std::string labelStr = GenerateAddressLabelString(state, pCodeInfo->OperandAddress);
+				const std::string labelStr = GenerateAddressLabelString(pCodeInfo->OperandAddress);
 				if (labelStr.empty() == false)
 					fprintf(fp, "\t;%s", labelStr.c_str());
 
-			}
+			}*/
 		}
 
 		break;
 		case EItemType::Data:
 		{
-			const FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
-			ENumberDisplayMode dispMode = GetNumberDisplayMode();
-
-			if (pDataInfo->DisplayType == EDataItemDisplayType::Decimal)
-				dispMode = ENumberDisplayMode::Decimal;
-			if (pDataInfo->DisplayType == EDataItemDisplayType::Hex)
-				dispMode = hexMode;
-			if (pDataInfo->DisplayType == EDataItemDisplayType::Binary)
-				dispMode = ENumberDisplayMode::Binary;
-
-			const bool bOperandIsAddress = (pDataInfo->DisplayType == EDataItemDisplayType::JumpAddress || pDataInfo->DisplayType == EDataItemDisplayType::Pointer);
-
-
-			fprintf(fp, "\t");
-			switch (pDataInfo->DataType)
-			{
-			case EDataType::Byte:
-			{
-				const uint8_t val = state.CPUInterface->ReadByte(addr);
-				fprintf(fp, "db %s", NumStr(val, dispMode));
-			}
-			break;
-			case EDataType::ByteArray:
-			{
-				std::string textString;
-				for (int i = 0; i < pDataInfo->ByteSize; i++)
-				{
-					const uint8_t val = state.CPUInterface->ReadByte(addr + i);
-					char valTxt[16];
-					snprintf(valTxt,16, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
-					textString += valTxt;
-				}
-				fprintf(fp, "db %s", textString.c_str());
-			}
-			break;
-			case EDataType::Word:
-			{
-				const uint16_t val = state.CPUInterface->ReadWord(addr);
-
-				const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForPhysicalAddress(val) : nullptr;
-				if (pLabel != nullptr)
-				{
-					fprintf(fp, "dw %s", pLabel->GetName());
-				}
-				else
-				{
-					fprintf(fp, "dw %s", NumStr(val, dispMode));
-				}
-			}
-			break;
-			case EDataType::WordArray:
-			{
-				const int wordSize = pDataInfo->ByteSize / 2;
-				std::string textString;
-				for (int i = 0; i < wordSize; i++)
-				{
-					const uint16_t val = state.CPUInterface->ReadWord(addr + (i * 2));
-					char valTxt[16];
-					snprintf(valTxt,16, "%s%c", NumStr(val), i < wordSize - 1 ? ',' : ' ');
-					textString += valTxt;
-				}
-				fprintf(fp, "dw %s", textString.c_str());
-			}
-			break;
-			case EDataType::Text:
-			{
-				std::string textString;
-				for (int i = 0; i < pDataInfo->ByteSize; i++)
-				{
-					const char ch = state.CPUInterface->ReadByte(addr + i);
-					if (ch == '\n')
-						textString += "<cr>";
-					if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
-						textString += ch & ~(1 << 7);	// remove bit 7
-					else
-						textString += ch;
-				}
-				fprintf(fp, "ascii '%s'", textString.c_str());
-			}
-			break;
-
-			case EDataType::ScreenPixels:
-			case EDataType::Blob:
-			default:
-				fprintf(fp, "%d Bytes", pDataInfo->ByteSize);
-				break;
-			}
+			//const FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
+			ExportDataInfoASM(item.AddressRef);
+		}
+		break;
+		case EItemType::CommentLine:
+		{
+			Output("; %s", item.Item->Comment.c_str());
 		}
 		break;
         default:
+			LOGINFO("ASM export - unhandled type:%",(int)item.Item->Type);
         break;
 		}
 
-		// put comment on the end
-		if (item.Item->Comment.empty() == false)
-			fprintf(fp, "\t;%s", item.Item->Comment.c_str());
-		fprintf(fp, "\n");
+		// put comment on the end - not for comment lines
+		if (item.Item->Type != EItemType::CommentLine && item.Item->Comment.empty() == false)
+			Output("\t\t\t; %s", item.Item->Comment.c_str());
+		Output("\n");
 	}
-
-	fclose(fp);
-
-
-	SetNumberDisplayMode(oldMode);
+	
 	return true;
+}
+
+
+bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr)
+{
+	FASMExporter exporter(pTextFileName,&state);
+	if(exporter.Init() == false)
+		return false;
+		
+	if(exporter.ExportAddressRange(startAddr,endAddr) == false)
+		return false;
+
+	return true;
+}
+
+// Util functions
+
+// There's probably a better way of doing this
+void AppendCharToString(char ch, std::string& outString)
+{
+	switch (ch)
+	{
+	case '\'':
+		outString+= "\\'";
+		break;
+
+	case '\"':
+		outString += "\\\"";
+		break;
+
+	case '\?':
+		outString += "\\?";
+		break;
+
+	case '\\':
+		outString += "\\\\";
+		break;
+
+	case '\a':
+		outString += "\\a";
+		break;
+
+	case '\b':
+		outString += "\\b";
+		break;
+
+	case '\f':
+		outString += "\\f";
+		break;
+
+	case '\n':
+		outString += "\\n";
+		break;
+
+	case '\r':
+		outString += "\\r";
+		break;
+
+	case '\t':
+		outString += "\\t";
+		break;
+
+	case '\v':
+		outString += "\\v";
+		break;
+
+	default:
+		outString += ch;
+	}
 }

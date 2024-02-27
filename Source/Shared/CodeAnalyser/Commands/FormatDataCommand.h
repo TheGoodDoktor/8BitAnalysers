@@ -17,10 +17,13 @@ struct FDataFormattingOptions
 	FAddressRef				GraphicsSetRef;
 	int						PaletteNo = -1;
 	uint8_t					EmptyCharNo = 0;
+	bool					RegisterItem = false;
 	bool					ClearCodeInfo = false;
 	bool					ClearLabels = false;
 	bool					AddLabelAtStart = false;
 	std::string				LabelName;
+	bool					AddCommentAtStart = false;
+	std::string				CommentText;
 
 	bool					IsValid() const { return NoItems > 0 && ItemSize > 0; }
 	uint16_t				CalcEndAddress() const { return StartAddress.Address + (NoItems * ItemSize) - 1; }
@@ -62,4 +65,30 @@ public:
 private: 
 	FDataFormattingOptions	FormatOptions;
 	FFormatUndoData			UndoData;
+};
+
+// Batch formatting command
+// This formats multiple items
+struct FBatchDataFormattingOptions
+{
+	int				NoItems = 0;
+	FDataFormattingOptions	FormatOptions;
+
+	bool			AddLabel = false;
+	bool			AddComment = false;
+	std::string		Prefix;
+};
+
+
+class FBatchFormatDataCommand : public FCommand
+{
+public:
+	FBatchFormatDataCommand(const FBatchDataFormattingOptions& options);
+	void Do(FCodeAnalysisState& state) override;
+	void Undo(FCodeAnalysisState& state) override;
+
+private:
+	FBatchDataFormattingOptions	BatchFormatOptions;
+
+	std::vector<FFormatDataCommand>	SubCommands;
 };

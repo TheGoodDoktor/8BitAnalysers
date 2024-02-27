@@ -1269,6 +1269,12 @@ void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options
 	DoCommand(state,pFormatCommand);	
 }
 
+void BatchFormatData(FCodeAnalysisState& state, const FBatchDataFormattingOptions& options)
+{
+	FBatchFormatDataCommand* pFormatCommand = new FBatchFormatDataCommand(options);
+	DoCommand(state, pFormatCommand);
+}
+
 // machine state
 FMachineState* AllocateMachineState(FCodeAnalysisState& state)
 {

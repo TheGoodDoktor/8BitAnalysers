@@ -199,8 +199,11 @@ struct FCodeAnalysisViewState
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
 
-	bool					DataFormattingTabOpen = false;
-	FDataFormattingOptions	DataFormattingOptions;
+	// formatting
+	bool						DataFormattingTabOpen = false;
+	FDataFormattingOptions		DataFormattingOptions;
+	FBatchDataFormattingOptions	BatchFormattingOptions;
+
 	EBitmapFormat CurBitmapFormat = EBitmapFormat::None;
 
 private:
@@ -394,7 +397,7 @@ public:
 	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
 
 	// Advance an address ref by a number of bytes, may go to next bank in physical memory
-	bool AdvanceAddressRef(FAddressRef& addressRef, int amount)
+	bool AdvanceAddressRef(FAddressRef& addressRef, int amount = 1)
 	{
 		if(addressRef.IsValid() == false)
 			return false;
@@ -737,6 +740,7 @@ void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item);
 void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText);
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options);
+void BatchFormatData(FCodeAnalysisState& state, const FBatchDataFormattingOptions& options);
 
 // machine state
 FMachineState* AllocateMachineState(FCodeAnalysisState& state);

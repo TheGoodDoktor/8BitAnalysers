@@ -11,7 +11,7 @@ class FCPCEmu;
 struct FGame;
 
 // test
-class FCPCGraphicsView;
+//class FCPCGraphicsView;
 
 class FCPCGraphicsViewer : public FGraphicsViewer
 {

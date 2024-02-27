@@ -19,8 +19,10 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 	if(addressRef.IsValid() == false)
 		return;
 
-	// TODO: Register Character Maps here?
-	if (FormatOptions.DataType == EDataType::CharacterMap)
+	const FAddressRef firstAddres = addressRef;
+
+	// Optionally register character maps
+	if (FormatOptions.DataType == EDataType::CharacterMap && FormatOptions.RegisterItem == true)
 	{
 		FCharMapCreateParams charMapParams;
 		charMapParams.Address = addressRef;
@@ -28,6 +30,7 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 		charMapParams.Width = FormatOptions.ItemSize;
 		charMapParams.Height = FormatOptions.NoItems;
 		charMapParams.IgnoreCharacter = FormatOptions.EmptyCharNo;
+		charMapParams.bAddLabel = false;
 		CreateCharacterMap(state, charMapParams);
 
 		// Character map undo data
@@ -67,7 +70,7 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			pLabel->ChangeName(labelText.c_str());
 
 		pLabel->Global = true;
-	}
+	}	
 
 	for (int itemNo = 0; itemNo < FormatOptions.NoItems; itemNo++)
 	{
@@ -120,6 +123,21 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			//dataAddress++;
 		}
 	}
+
+	if (FormatOptions.AddCommentAtStart)
+	{
+		//FDataInfo* pDataInfo = state.GetDataInfoForAddress(firstAddres);
+		//pDataInfo->Comment = FormatOptions.CommentText;
+		FCommentBlock* pCommentBlock = AddCommentBlock(state,firstAddres);
+		if (FormatOptions.CommentText.empty() == false)
+		{
+			pCommentBlock->Comment += '\n' + FormatOptions.CommentText;
+		}
+		else
+		{
+			pCommentBlock->Comment = FormatOptions.CommentText;
+		}
+	}
 }
 
 void FFormatDataCommand::Undo(FCodeAnalysisState& state)
@@ -148,4 +166,46 @@ void FFormatDataCommand::Undo(FCodeAnalysisState& state)
 		state.SetCodeAnalysisDirty(codeItem.first);
 	}
 
+}
+
+
+FBatchFormatDataCommand::FBatchFormatDataCommand(const FBatchDataFormattingOptions& options)
+	:BatchFormatOptions(options)
+{
+
+}
+
+
+void FBatchFormatDataCommand::Do(FCodeAnalysisState& state)
+{
+	FDataFormattingOptions options = BatchFormatOptions.FormatOptions;
+
+	for (int i = 0; i < BatchFormatOptions.NoItems; i++)
+	{
+		char prefixTxt[32];
+		snprintf(prefixTxt, 32, "%s_%d", BatchFormatOptions.Prefix.c_str(), i);
+		if (BatchFormatOptions.AddLabel)
+		{
+			options.AddLabelAtStart = true;
+			options.LabelName = prefixTxt;
+		}
+		if (BatchFormatOptions.AddComment)
+		{
+			options.AddCommentAtStart = true;
+			options.CommentText = prefixTxt;
+		}
+
+		FFormatDataCommand& cmd = SubCommands.emplace_back(options);
+		cmd.Do(state);
+		state.AdvanceAddressRef(options.StartAddress, options.ItemSize * options.NoItems);
+		state.SetCodeAnalysisDirty(options.StartAddress);
+	}
+}
+
+void FBatchFormatDataCommand::Undo(FCodeAnalysisState& state)
+{
+	for (FFormatDataCommand& cmd : SubCommands )
+	{
+		cmd.Undo(state);
+	}
 }
