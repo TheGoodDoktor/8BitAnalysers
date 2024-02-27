@@ -997,28 +997,8 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 	ImGui::PopID();
 }
 
-bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
-{
-	const int index = (int)numberMode + 1;
-	const char* numberTypes[] = { "None", "Decimal", "$ Hex", "Hex h" };
-	bool bChanged = false;
-
-	if (ImGui::BeginCombo(pLabel, numberTypes[index]))
-	{
-		for (int n = 0; n < IM_ARRAYSIZE(numberTypes); n++)
-		{
-			const bool isSelected = (index == n);
-			if (ImGui::Selectable(numberTypes[n], isSelected))
-			{
-				numberMode = (ENumberDisplayMode)(n - 1);
-				bChanged = true;
-			}
-		}
-		ImGui::EndCombo();
-	}
-
-	return bChanged;
-}
+// Type combo boxes
+// TODO: move to its own file
 
 // Generic combo function for enums
 template <typename EnumType>
@@ -1058,6 +1038,39 @@ bool DrawEnumCombo(const char* pLabel,
 	}
 
 	return bChanged;
+}
+
+static const std::vector<std::pair<const char *,ENumberDisplayMode>> g_NumberTypes =
+{
+    { "None",       ENumberDisplayMode::None },
+    { "Decimal",    ENumberDisplayMode::Decimal },
+    { "$ Hex",      ENumberDisplayMode::HexDollar },
+    { "Hex h",      ENumberDisplayMode::HexAitch },
+};
+
+bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
+{
+    return DrawEnumCombo<ENumberDisplayMode>(pLabel, numberMode, g_NumberTypes);
+/*
+    const int index = (int)numberMode + 1;
+    const char* numberTypes[] = { "None", "Decimal", "$ Hex", "Hex h" };
+    bool bChanged = false;
+
+    if (ImGui::BeginCombo(pLabel, numberTypes[index]))
+    {
+        for (int n = 0; n < IM_ARRAYSIZE(numberTypes); n++)
+        {
+            const bool isSelected = (index == n);
+            if (ImGui::Selectable(numberTypes[n], isSelected))
+            {
+                numberMode = (ENumberDisplayMode)(n - 1);
+                bChanged = true;
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    return bChanged;*/
 }
 
 static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
@@ -1123,40 +1136,30 @@ static const std::vector<std::pair<const char*, EDataItemDisplayType>> g_Display
 
 };
 
-// TODO: use generic
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state)
 {
 
 	return DrawEnumCombo<EDataItemDisplayType>(pLabel, displayType, g_DisplayTypes, [state](EDataItemDisplayType type){ return IsDisplayTypeSupported(type,state);});
-#if 0
-	const int index = (int)displayType;
-	const char* operandTypes[] = { "Unknown", "Pointer", "JumpAddress", "Decimal", "Hex", "Binary",
-									"Bitmap", "ColMap2Bpp CPC", "ColMap4Bpp CPC", "Multicolour C64" };
-	bool bChanged = false;
-
-	if (ImGui::BeginCombo(pLabel, operandTypes[index]))
-	{
-		for (int n = 0; n < IM_ARRAYSIZE(operandTypes); n++)
-		{
-			if(IsDisplayTypeSupported((EDataItemDisplayType)n,state))
-			{
-				const bool isSelected = (index == n);
-				if (ImGui::Selectable(operandTypes[n], isSelected))
-				{
-					displayType = (EDataItemDisplayType)n;
-					bChanged = true;
-				}
-			}
-		}
-		ImGui::EndCombo();
-	}
-
-	return bChanged;
-#endif
 }
 
-// TODO: use generic
-bool DrawDataTypeCombo(int& dataType)
+static const std::vector<std::pair<const char*, EDataType>> g_DataTypes =
+{
+    { "Byte",           EDataType::Byte },
+    { "Byte Array",     EDataType::ByteArray },
+    { "Word",           EDataType::Word },
+    { "Word Array",     EDataType::WordArray } ,
+    { "Bitmap",         EDataType::Bitmap },
+    { "Char Map",       EDataType::CharacterMap },
+    { "Col Attr",       EDataType::ColAttr },
+    { "Text",           EDataType::Text },
+};
+    
+bool DrawDataTypeCombo(const char* pLabel, EDataType& displayType)
+{
+    return DrawEnumCombo<EDataType>(pLabel, displayType, g_DataTypes);//, [state](EDataType type){ return true;});
+}
+
+/*bool DrawDataTypeCombo(int& dataType)
 {
 	const int index = (int)dataType;
 	const char* dataTypes[] = { "Byte", "Byte Array", "Word", "Word Array", "Bitmap", "Char Map", "Col Attr", "Text" };
@@ -1177,10 +1180,22 @@ bool DrawDataTypeCombo(int& dataType)
 		ImGui::EndCombo();
 	}
 	return bChanged;
-}
+}*/
 
-bool DrawDataTypeFilterCombo(EDataTypeFilter& dataType)
+static const std::vector<std::pair<const char*, EDataTypeFilter>> g_DataFilterTypes =
 {
+    { "All",        EDataTypeFilter::All },
+    { "Pointer",    EDataTypeFilter::Pointer },
+    { "Text",       EDataTypeFilter::Text },
+    { "Bitmap",     EDataTypeFilter::Bitmap },
+    { "Char Map",   EDataTypeFilter::CharacterMap },
+    { "Col Attr",   EDataTypeFilter::ColAttr },
+};
+
+bool DrawDataTypeFilterCombo(const char *pLabel, EDataTypeFilter& filterType)
+{
+    return DrawEnumCombo<EDataTypeFilter>(pLabel, filterType, g_DataFilterTypes);//, [state](EDataType type){ return true;});
+/*
 	const int index = (int)dataType;
 	const char* dataTypes[] = { "All", "Pointer", "Text", "Bitmap", "Char Map", "Col Attr"};
 
@@ -1200,6 +1215,7 @@ bool DrawDataTypeFilterCombo(EDataTypeFilter& dataType)
 		ImGui::EndCombo();
 	}
 	return bChanged;
+ */
 }
 
 bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState& state)
@@ -1512,8 +1528,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	viewState.HighlightAddress = viewState.HoverAddress;
 	viewState.HoverAddress.SetInvalid();
 
-	if (state.Debugger.IsStopped() == false)
-		state.CurrentFrameNo++;
+	//if (state.Debugger.IsStopped() == false)
+	//	state.CurrentFrameNo++;
 
 	UpdateItemList(state);
 
@@ -1800,12 +1816,12 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	//ImGui::InputInt("End Address", &formattingOptions.EndAddress, 1, 100, inputFlags);
 	ImGui::PopID();
 
-	static int dataTypeIndex = 0; 
-	DrawDataTypeCombo(dataTypeIndex);
+	static EDataType dataType = EDataType::None;
+	DrawDataTypeCombo("Data Type", dataType);   // TODSO: maybe pass in a list of supported types?
 
-	switch (dataTypeIndex)
+	switch (dataType)
 	{
-	case 0:
+	case EDataType::Byte:
 		formattingOptions.DataType = EDataType::Byte;
 		formattingOptions.ItemSize = 1;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
@@ -1814,19 +1830,19 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::SetNextItemWidth(120.0f);
 		DrawDataDisplayTypeCombo("##dataOperand", formattingOptions.DisplayType, state);
 		break;
-	case 1:
+	case EDataType::ByteArray:
 	{
 		formattingOptions.DataType = EDataType::ByteArray;
 		ImGui::InputInt("Array Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	}
-	case 2:
+	case EDataType::Word:
 		formattingOptions.DataType = EDataType::Word;
 		formattingOptions.ItemSize = 2;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
-	case 3:
+	case EDataType::WordArray:
 	{
 		formattingOptions.DataType = EDataType::WordArray;
 		static int arraySize = 0;
@@ -1835,7 +1851,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		formattingOptions.ItemSize = arraySize * 2;
 		break;
 	}
-	case 4:
+	case EDataType::Bitmap:
 	{
 		formattingOptions.DataType = EDataType::Bitmap;
 		
@@ -1858,7 +1874,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		break;
 	}
-	case 5:
+	case EDataType::CharacterMap:
 		formattingOptions.DataType = EDataType::CharacterMap;
 		{
 			static int size[2];
@@ -1876,16 +1892,18 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		break;
-	case 6:
+	case EDataType::ColAttr:
 		formattingOptions.DataType = EDataType::ColAttr;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
-	case 7:
+	case EDataType::Text:
 		formattingOptions.DataType = EDataType::Text;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		formattingOptions.NoItems = 1;
 		break;
+    default:
+        break;
 	}
 
 	//ImGui::SameLine();
@@ -2071,7 +2089,7 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 
 		if (ImGui::BeginTabItem("Data"))
 		{
-			if (DrawDataTypeFilterCombo(viewState.DataTypeFilter))
+			if (DrawDataTypeFilterCombo("Data Type", viewState.DataTypeFilter))
 			{
 				viewState.GlobalDataItemsFilter.DataType = viewState.DataTypeFilter;
 				state.bRebuildFilteredGlobalDataItems = true;

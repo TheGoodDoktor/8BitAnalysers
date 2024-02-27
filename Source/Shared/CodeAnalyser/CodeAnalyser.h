@@ -18,6 +18,7 @@
 class FGraphicsView;
 class FCodeAnalysisState;
 class FEmuBase;
+class FDataTypes;
 
 enum class ELabelType;
 
@@ -313,6 +314,8 @@ public:
 
 	const FEmuBase* GetEmulator() const { return pEmulator; }
 	FEmuBase* GetEmulator() { return pEmulator; }
+    
+    FDataTypes* GetDataTypes() {return pDataTypes;}
 
 	const ICPUInterface* GetCPUInterface() const { return CPUInterface; }
 
@@ -681,6 +684,7 @@ private:
 
 	// private data members
 	FEmuBase*						pEmulator = nullptr;
+    FDataTypes*                     pDataTypes = nullptr;
 
 	FCodeAnalysisPage*				ReadPageTable[kNoPagesInAddressSpace];
 	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];

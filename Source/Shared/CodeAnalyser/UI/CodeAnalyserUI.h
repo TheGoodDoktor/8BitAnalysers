@@ -51,6 +51,7 @@ int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
 bool DrawOperandTypeCombo(const char* pLabel, FCodeInfo* pCodeInfo);
+bool DrawDataTypeCombo(const char* pLabel, EDataType& dataType);
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state);
 bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState& state);
 bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours=-1);

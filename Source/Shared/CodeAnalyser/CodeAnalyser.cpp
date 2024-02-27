@@ -21,6 +21,7 @@
 #include "Z80/Z80Disassembler.h"
 #include "6502/M6502Disassembler.h"
 #include "UI/CodeAnalyserUI.h"
+#include "DataTypes.h"
 
 #include "Misc/EmuBase.h"
 
@@ -1004,6 +1005,7 @@ FCodeAnalysisState::FCodeAnalysisState()
 		WritePageTable[i] = nullptr;
 	}
 
+    pDataTypes = new FDataTypes;
 }
 
 // Called each time a new game is loaded up
@@ -1083,6 +1085,8 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	Debugger.Init(this);
 	MemoryAnalyser.Init(this);
 	IOAnalyser.Init(this);
+    
+    pDataTypes->Reset();
 }
 
 // Start/End handlers for host (imgui) frame
@@ -1112,6 +1116,8 @@ void	FCodeAnalysisState::OnMachineFrameEnd()
 {
 	IOAnalyser.OnMachineFrameEnd();
 	Debugger.OnMachineFrameEnd();
+    if (Debugger.IsStopped() == false)
+        CurrentFrameNo++;
 }
 
 void FCodeAnalysisState::OnCPUTick(uint64_t pins)

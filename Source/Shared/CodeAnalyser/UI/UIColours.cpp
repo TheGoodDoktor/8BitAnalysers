@@ -21,7 +21,7 @@ namespace Colours
 	uint32_t text			= IM_COLRGB(255, 200, 128);		// text 
 
 	uint32_t highlight		= IM_COLRGB(0,255,0);	// highlighted addresses/labels
-
+    uint32_t error          = IM_COLRGB(255,0,0);
 	static int FrameCounter = 0;
 
 	void Tick()

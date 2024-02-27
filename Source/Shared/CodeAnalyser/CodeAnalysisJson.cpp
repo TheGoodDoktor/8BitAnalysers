@@ -1,15 +1,17 @@
 #include "CodeAnalysisJson.h"
 #include "CodeAnalyser.h"
 #include "CodeAnalysisPage.h"
+#include "DataTypes.h"
 
 #include <stdint.h>
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-#include <json.hpp>
+
 #include "Util/GraphicsView.h"
 #include "Debug/DebugLog.h"
 #include <iostream>
+#include <json.hpp>
 using json = nlohmann::json;
 
 void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc);
@@ -54,7 +56,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 			}
 		}
 	}
-	LOGINFO("%d pages written", pagesWritten);
+	//LOGINFO("%d pages written", pagesWritten);
 
 	// Write character sets
 	for (int i = 0; i < GetNoCharacterSets(); i++)
@@ -90,7 +92,17 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 
 	// Write out palettes
 	SavePalettesToJson(jsonGameData);
-
+    
+    // Write out data types
+    const FDataTypes* pDataTypes = state.GetDataTypes();
+    
+    if(pDataTypes != nullptr)
+    {
+        json dataTypesJson;
+        pDataTypes->WriteToJson(dataTypesJson);
+        jsonGameData["DataTypes"] = dataTypesJson;
+    }
+    
 	// Write file out
 	std::ofstream outFileStream(pJsonFileName);
 	if (outFileStream.is_open())
@@ -266,6 +278,12 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			CreateCharacterMap(state, params);
 		}
 	}
+    
+    FDataTypes* pDataTypes = state.GetDataTypes();
+    if (pDataTypes != nullptr && jsonGameData.contains("DataTypes"))
+    {
+        pDataTypes->ReadFromJson(jsonGameData["DataTypes"]);
+    }
 
 	FixupPostLoad(state);
 
