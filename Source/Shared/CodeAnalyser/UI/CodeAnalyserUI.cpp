@@ -1818,13 +1818,12 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	//ImGui::InputInt("End Address", &formattingOptions.EndAddress, 1, 100, inputFlags);
 	ImGui::PopID();
 
-	static EDataType dataType = EDataType::None;
-	DrawDataTypeCombo("Data Type", dataType);   // TODSO: maybe pass in a list of supported types?
+	//static EDataType dataType = EDataType::Byte;
+	DrawDataTypeCombo("Data Type", formattingOptions.DataType);   // TODSO: maybe pass in a list of supported types?
 
-	switch (dataType)
+	switch (formattingOptions.DataType)
 	{
 	case EDataType::Byte:
-		formattingOptions.DataType = EDataType::Byte;
 		formattingOptions.ItemSize = 1;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		ImGui::Text("Display Mode:");
@@ -1834,19 +1833,16 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		break;
 	case EDataType::ByteArray:
 	{
-		formattingOptions.DataType = EDataType::ByteArray;
 		ImGui::InputInt("Array Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	}
 	case EDataType::Word:
-		formattingOptions.DataType = EDataType::Word;
 		formattingOptions.ItemSize = 2;
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	case EDataType::WordArray:
 	{
-		formattingOptions.DataType = EDataType::WordArray;
 		static int arraySize = 0;
 		ImGui::InputInt("Array Size", &arraySize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
@@ -1855,8 +1851,6 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	}
 	case EDataType::Bitmap:
 	{
-		formattingOptions.DataType = EDataType::Bitmap;
-		
 		static int paletteNo = -1;
 		if (DrawBitmapFormatCombo(viewState.CurBitmapFormat, state))
 			paletteNo = -1;
@@ -1877,8 +1871,8 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		break;
 	}
 	case EDataType::CharacterMap:
-		formattingOptions.DataType = EDataType::CharacterMap;
-			static int size[2];
+        {
+            static int size[2];
 			if (ImGui::InputInt2("CharMap Size(X,Y)", size))
 			{
 				formattingOptions.ItemSize = std::max(1, size[0]);
@@ -1893,12 +1887,10 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		}
 		break;
 	case EDataType::ColAttr:
-		formattingOptions.DataType = EDataType::ColAttr;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
 		break;
 	case EDataType::Text:
-		formattingOptions.DataType = EDataType::Text;
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		formattingOptions.NoItems = 1;
 		break;
