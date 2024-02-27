@@ -21,9 +21,8 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 
 	const FAddressRef firstAddres = addressRef;
 
-	// TODO: Register Character Maps here?
-	// I think this should be optional as it's only useful for active character maps
-	if (FormatOptions.DataType == EDataType::CharacterMap)
+	// Optionally register character maps
+	if (FormatOptions.DataType == EDataType::CharacterMap && FormatOptions.RegisterItem == true)
 	{
 		FCharMapCreateParams charMapParams;
 		charMapParams.Address = addressRef;
@@ -130,7 +129,14 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 		//FDataInfo* pDataInfo = state.GetDataInfoForAddress(firstAddres);
 		//pDataInfo->Comment = FormatOptions.CommentText;
 		FCommentBlock* pCommentBlock = AddCommentBlock(state,firstAddres);
-		pCommentBlock->Comment = FormatOptions.CommentText;
+		if (FormatOptions.CommentText.empty() == false)
+		{
+			pCommentBlock->Comment += '\n' + FormatOptions.CommentText;
+		}
+		else
+		{
+			pCommentBlock->Comment = FormatOptions.CommentText;
+		}
 	}
 }
 
@@ -160,4 +166,46 @@ void FFormatDataCommand::Undo(FCodeAnalysisState& state)
 		state.SetCodeAnalysisDirty(codeItem.first);
 	}
 
+}
+
+
+FBatchFormatDataCommand::FBatchFormatDataCommand(const FBatchDataFormattingOptions& options)
+	:BatchFormatOptions(options)
+{
+
+}
+
+
+void FBatchFormatDataCommand::Do(FCodeAnalysisState& state)
+{
+	FDataFormattingOptions options = BatchFormatOptions.FormatOptions;
+
+	for (int i = 0; i < BatchFormatOptions.NoItems; i++)
+	{
+		char prefixTxt[32];
+		snprintf(prefixTxt, 32, "%s_%d", BatchFormatOptions.Prefix.c_str(), i);
+		if (BatchFormatOptions.AddLabel)
+		{
+			options.AddLabelAtStart = true;
+			options.LabelName = prefixTxt;
+		}
+		if (BatchFormatOptions.AddComment)
+		{
+			options.AddCommentAtStart = true;
+			options.CommentText = prefixTxt;
+		}
+
+		FFormatDataCommand& cmd = SubCommands.emplace_back(options);
+		cmd.Do(state);
+		state.AdvanceAddressRef(options.StartAddress, options.ItemSize * options.NoItems);
+		state.SetCodeAnalysisDirty(options.StartAddress);
+	}
+}
+
+void FBatchFormatDataCommand::Undo(FCodeAnalysisState& state)
+{
+	for (FFormatDataCommand& cmd : SubCommands )
+	{
+		cmd.Undo(state);
+	}
 }

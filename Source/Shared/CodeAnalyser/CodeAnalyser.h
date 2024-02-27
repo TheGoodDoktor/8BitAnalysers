@@ -198,8 +198,11 @@ struct FCodeAnalysisViewState
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
 
-	bool					DataFormattingTabOpen = false;
-	FDataFormattingOptions	DataFormattingOptions;
+	// formatting
+	bool						DataFormattingTabOpen = false;
+	FDataFormattingOptions		DataFormattingOptions;
+	FBatchDataFormattingOptions	BatchFormattingOptions;
+
 	EBitmapFormat CurBitmapFormat = EBitmapFormat::None;
 
 private:
@@ -733,6 +736,7 @@ void SetItemImage(FCodeAnalysisState& state, const FCodeAnalysisItem& item);
 void SetItemCommentText(FCodeAnalysisState &state, const FCodeAnalysisItem& item, const char *pText);
 
 void FormatData(FCodeAnalysisState& state, const FDataFormattingOptions& options);
+void BatchFormatData(FCodeAnalysisState& state, const FBatchDataFormattingOptions& options);
 
 // machine state
 FMachineState* AllocateMachineState(FCodeAnalysisState& state);

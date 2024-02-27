@@ -1775,6 +1775,8 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
 	FDataFormattingOptions& formattingOptions = viewState.DataFormattingOptions;
+	FBatchDataFormattingOptions& batchFormattingOptions = viewState.BatchFormattingOptions;
+
 	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 
 	if (viewState.DataFormattingTabOpen == false)
@@ -1859,8 +1861,8 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		break;
 	}
 	case 5:
-		formattingOptions.DataType = EDataType::CharacterMap;
 		{
+		formattingOptions.DataType = EDataType::CharacterMap;
 			static int size[2];
 			if (ImGui::InputInt2("CharMap Size(X,Y)", size))
 			{
@@ -1872,9 +1874,8 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			const char* format = "%02X";
 			int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal;
 			ImGui::InputScalar("Null Character", ImGuiDataType_U8, &formattingOptions.EmptyCharNo, 0, 0, format, flags);
-			//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
+			ImGui::Checkbox("Register Char Map",&formattingOptions.RegisterItem);
 		}
-		//ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		break;
 	case 6:
 		formattingOptions.DataType = EDataType::ColAttr;
@@ -1922,18 +1923,21 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 
 		if (ImGui::CollapsingHeader("Batch Format"))
 		{
-			static int batchSize = 1;
-			static bool addLabel = false;
-			static bool addComment = false;
-			static char prefix[16];
+			//static int batchSize = 1;
+			//static bool addLabel = false;
+			//static bool addComment = false;
+			//static char prefix[16];
 
-			ImGui::InputInt("Count",&batchSize);
-			ImGui::Checkbox("Add Label", &addLabel);
+			ImGui::InputInt("Count",&batchFormattingOptions.NoItems);
+			ImGui::Checkbox("Add Label", &batchFormattingOptions.AddLabel);
 			ImGui::SameLine();
-			ImGui::Checkbox("Add Comment", &addComment);
-			ImGui::InputText("Prefix",prefix,16);
+			ImGui::Checkbox("Add Comment", &batchFormattingOptions.AddComment);
+			ImGui::InputText("Prefix", &batchFormattingOptions.Prefix);
 			if (ImGui::Button("Process Batch"))
 			{
+				batchFormattingOptions.FormatOptions = formattingOptions;	// copy formatting options
+				BatchFormatData(state, batchFormattingOptions);
+				/*
 				for(int i=0;i<batchSize;i++)
 				{
 					char prefixTxt[32];
@@ -1953,12 +1957,11 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 					state.AdvanceAddressRef(formattingOptions.StartAddress, formattingOptions.ItemSize* formattingOptions.NoItems);
 					state.SetCodeAnalysisDirty(formattingOptions.StartAddress);
 				}
-
-
+				*/
 			}
 
-			formattingOptions.AddCommentAtStart = false;
-			formattingOptions.CommentText = std::string();
+			//formattingOptions.AddCommentAtStart = false;
+			//formattingOptions.CommentText = std::string();
 		}
 	}
 
