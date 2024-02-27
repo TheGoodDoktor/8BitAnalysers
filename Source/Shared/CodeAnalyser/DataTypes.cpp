@@ -458,18 +458,18 @@ void FDataTypesViewer::DrawTypeList(FDataTypeList& typeList)
     // TODO: This is type specific
     if(ImGui::Button("Add"))
     {
-        typeList.Add(NameText);
+        typeList.Add(NameText.c_str());
     }
     ImGui::SameLine();
     
     // TODO: Make red if type exists?
-    const bool bDupe = typeList.GetTypeFromName(NameText) != nullptr;
+    const bool bDupe = typeList.GetTypeFromName(NameText.c_str()) != nullptr;
     
     // Draw red if dupe
     if(bDupe)
         ImGui::PushStyleColor(ImGuiCol_Text, Colours::error);
     
-    if(ImGui::InputText("Name", NameText, kNameTextSize))
+    if(ImGui::InputText("Name", &NameText))
     {
         
     }

@@ -175,6 +175,6 @@ private:
     
     int32_t             SelectedType = -1;
     std::string         TypeName;   // for editing
-    static const int    kNameTextSize = 16;
-    char                NameText[kNameTextSize];
+    //static const int    kNameTextSize = 16;
+    std::string         NameText;
 };
