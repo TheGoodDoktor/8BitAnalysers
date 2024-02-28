@@ -9,6 +9,25 @@
 #include <CodeAnalyser/Z80/Z80Disassembler.h>
 #include "UI/CodeAnalyserUI.h"
 
+struct FAssemblerConfig
+{
+	const char* DataBytePrefix = nullptr;
+	const char* DataWordPrefix = nullptr;
+	const char* DataTextPrefix = nullptr;
+};
+
+FAssemblerConfig g_DefaultAsmConfig = {
+	"db",
+	"dw",
+	"ascii"
+};
+
+FAssemblerConfig g_ez80AsmConfig = {
+	".db",
+	".dw",
+	"ascii"
+};
+
 // Class to encapsulate ASM exporting
 class FASMExporter
 {
@@ -31,13 +50,15 @@ class FASMExporter
 		std::string		Filename;
 		FILE*			FilePtr = nullptr;
 		FCodeAnalysisState*	pCodeAnalyser = nullptr;
+
+		FAssemblerConfig*	pAssemblerConfig;
 };
 
 FASMExporter::FASMExporter(const char* pFilename, FCodeAnalysisState* pState) 
 	: Filename(pFilename)
 	, pCodeAnalyser(pState) 
 {
-
+	pAssemblerConfig = &g_DefaultAsmConfig;
 }
 
 FASMExporter::~FASMExporter()
@@ -65,11 +86,8 @@ bool FASMExporter::Init()
 
 void FASMExporter::Output(const char* pFormat, ...)
 {
-	//const int kBufSize = 16 * 1024; 
-	//char buf[kBufSize];
 	va_list ap;
 	va_start(ap, pFormat);
-	//vsnprintf(buf, kBufSize, pFormat, ap);
 	vfprintf(FilePtr, pFormat, ap);
 	va_end(ap);
 }
@@ -153,7 +171,7 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	case EDataType::Byte:
 	{
 		const uint8_t val = state.ReadByte(addr);
-		Output("db %s", NumStr(val, dispMode));
+		Output("%s %s", pAssemblerConfig->DataBytePrefix, NumStr(val, dispMode));
 	}
 	break;
 	case EDataType::ByteArray:
@@ -169,7 +187,7 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 
 			state.AdvanceAddressRef(byteAddress,1);
 		}
-		Output("db %s", textString.c_str());
+		Output("%s %s", pAssemblerConfig->DataBytePrefix, textString.c_str());
 	}
 	break;
 	case EDataType::Word:
@@ -179,11 +197,11 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 		const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForPhysicalAddress(val) : nullptr;
 		if (pLabel != nullptr)
 		{
-			Output("dw %s", pLabel->GetName());
+			Output("%s %s", pAssemblerConfig->DataWordPrefix, pLabel->GetName());
 		}
 		else
 		{
-			Output("dw %s", NumStr(val, dispMode));
+			Output("%s %s", pAssemblerConfig->DataWordPrefix, NumStr(val, dispMode));
 		}
 	}
 	break;
@@ -213,7 +231,7 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 			AppendCharToString(ch,textString);
 			state.AdvanceAddressRef(charAddress,1);
 		}
-		Output("ascii '%s'", textString.c_str());
+		Output("%s '%s'", pAssemblerConfig->DataTextPrefix, textString.c_str());
 	}
 	break;
 
