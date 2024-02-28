@@ -692,6 +692,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	CPCEmuState.ga.bankswitch_cb = CPCBankSwitchCB;
 
 	// Clear UI
+	/*
 	memset(&UICPC, 0, sizeof(ui_cpc_t));
 
 	{
@@ -719,6 +720,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 
 		ui_cpc_init(&UICPC, &desc);
 	}
+*/
 
 	// This is where we add the viewers we want
 	AddViewer(new FCrtcViewer(this));
@@ -1128,7 +1130,7 @@ void FCPCEmu::Reset()
 	cpc_reset(&CPCEmuState);
 	// Resetting rom_select to 0 because Chips doesn't do it.
 	CPCEmuState.ga.rom_select = 0;
-	ui_dbg_reset(&UICPC.dbg);
+	//ui_dbg_reset(&UICPC.dbg);
 
 	FCPCGameConfig* pBasicConfig = (FCPCGameConfig*)GetGameConfigForName("AmstradBasic");
 
@@ -1236,22 +1238,22 @@ void	FCPCEmu::FileMenuAdditions(void)
 
 void	FCPCEmu::SystemMenuAdditions(void)
 {
-	ImGui::MenuItem("Memory Map", 0, &UICPC.memmap.open);
+	//ImGui::MenuItem("Memory Map", 0, &UICPC.memmap.open);
 	//ImGui::MenuItem("Keyboard Matrix", 0, &UICPC.kbd.open);
 	//ImGui::MenuItem("Audio Output", 0, &UICPC.audio.open);
 	//ImGui::MenuItem("Z80 CPU", 0, &UICPC.cpu.open);
-	ImGui::MenuItem("AM40010 (Gate Array)", 0, &UICPC.ga.open);
-	ImGui::MenuItem("AY-3-8912 (PSG)", 0, &UICPC.psg.open);
+	//ImGui::MenuItem("AM40010 (Gate Array)", 0, &UICPC.ga.open);
+	//ImGui::MenuItem("AY-3-8912 (PSG)", 0, &UICPC.psg.open);
 
 	if (ImGui::BeginMenu("Joystick"))
 	{
-		if (ImGui::MenuItem("Disabled", 0, (UICPC.cpc->joystick_type == CPC_JOYSTICK_NONE)))
+		if (ImGui::MenuItem("Disabled", 0, (CPCEmuState.joystick_type == CPC_JOYSTICK_NONE)))
 		{
-			UICPC.cpc->joystick_type = CPC_JOYSTICK_NONE;
+			CPCEmuState.joystick_type = CPC_JOYSTICK_NONE;
 		}
-		if (ImGui::MenuItem("Enabled (Cursor Keys and Space)", 0, (UICPC.cpc->joystick_type == CPC_JOYSTICK_DIGITAL)))
+		if (ImGui::MenuItem("Enabled (Cursor Keys and Space)", 0, (CPCEmuState.joystick_type == CPC_JOYSTICK_DIGITAL)))
 		{
-			UICPC.cpc->joystick_type = CPC_JOYSTICK_DIGITAL;
+			CPCEmuState.joystick_type = CPC_JOYSTICK_DIGITAL;
 		}
 		ImGui::EndMenu();
 	}
@@ -1268,12 +1270,12 @@ void	FCPCEmu::WindowsMenuAdditions(void)
 
 void FCPCEmu::DrawEmulatorUI()
 {
-	ui_cpc_t* pCPCUI = &UICPC;
+	//ui_cpc_t* pCPCUI = &UICPC;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 	
 	// Draw the main menu
 	//DrawMainMenu(timeMS);
-
+	/*
 	if (pCPCUI->memmap.open)
 	{
 		// sam todo work out why SpectrumEmu.cpp has it's own version of UpdateMemmap()
@@ -1293,7 +1295,7 @@ void FCPCEmu::DrawEmulatorUI()
 	ui_kbd_draw(&pCPCUI->kbd);
 	ui_memmap_draw(&pCPCUI->memmap);
 	ui_am40010_draw(&pCPCUI->ga);
-
+	*/
 	if (ImGui::Begin("CPC View", nullptr, ImGuiWindowFlags_NoNavInputs))
 	{
 		CPCViewer.Draw();

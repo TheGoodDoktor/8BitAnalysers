@@ -346,7 +346,7 @@ void FIOAnalysis::DrawUI()
 	}
 	ImGui::Separator();
 
-	ImGui::BeginChild("DrawIOAnalysisGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
+	ImGui::BeginChild("DrawIOAnalysisGUIChild1", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), false, window_flags);
 	FIOAccess *pSelectedIOAccess = nullptr;
 	static CPCIODevice selectedDevice = CPCIODevice::None;
 

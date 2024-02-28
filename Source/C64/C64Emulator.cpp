@@ -133,6 +133,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 
     // Setup C64 UI
+/*
     ui_c64_desc_t uiDesc;
     memset(&uiDesc, 0, sizeof(ui_c64_desc_t));
     uiDesc.c64 = &C64Emu;
@@ -158,7 +159,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	memset(&C64UI, 0, sizeof(C64UI));
 
     ui_c64_init(&C64UI, &uiDesc);
-
+*/
     CPUType = ECPUType::M6502;
     SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 
@@ -570,7 +571,7 @@ void FC64Emulator::Shutdown()
 
     pGlobalConfig->Save(kGlobalConfigFilename);
 
-    ui_c64_discard(&C64UI);
+    //ui_c64_discard(&C64UI);
     c64_discard(&C64Emu);
 
     FEmuBase::Shutdown();
@@ -731,9 +732,9 @@ void   FC64Emulator::Reset(void)
     FEmuBase::Reset();
 
     c64_reset(&C64Emu);
-    ui_dbg_reset(&C64UI.dbg);
-    if (C64UI.c64->c1541.valid) 
-        ui_dbg_reset(&C64UI.c1541_dbg);
+    //ui_dbg_reset(&C64UI.dbg);
+    //if (C64UI.c64->c1541.valid) 
+    //    ui_dbg_reset(&C64UI.c1541_dbg);
     
     // Set memory banks
     UpdateCodeAnalysisPages(C64Emu.cpu_port);

@@ -488,20 +488,20 @@ ImU32 FCPCViewer::GetFlashColour() const
 void FCPCViewer::Tick(void)
 {
 	// Check keys - not event driven, hopefully perf isn't too bad
-	for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
+	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
 	{
-		if (ImGui::IsKeyPressed(key,false))
+		if (ImGui::IsKeyPressed((ImGuiKey)key,false))
 		{ 
 			if (bWindowFocused)
 			{
-				int cpcKey = CPCKeyFromImGuiKey(key);
+				int cpcKey = CPCKeyFromImGuiKey((ImGuiKey)key);
 				if (cpcKey != 0)
 					cpc_key_down(&pCPCEmu->CPCEmuState, cpcKey);
 			}
 		}
-		else if (ImGui::IsKeyReleased(key))
+		else if (ImGui::IsKeyReleased((ImGuiKey)key))
 		{
-			const int cpcKey = CPCKeyFromImGuiKey(key);
+			const int cpcKey = CPCKeyFromImGuiKey((ImGuiKey)key);
 			if (cpcKey != 0)
 				cpc_key_up(&pCPCEmu->CPCEmuState, cpcKey);
 		}

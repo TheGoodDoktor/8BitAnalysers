@@ -479,7 +479,7 @@ void FVICAnalysis::DrawDetailsUI(void)
 
 void FVICAnalysis::DrawVICRegisterInfo(void)
 {
-	if (ImGui::BeginChild("VIC Reg Select", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
+	if (ImGui::BeginChild("VIC Reg Select", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), true))
 	{
 		for (int i = 0; i < (int)g_VICRegDrawInfo.size(); i++)
 		{

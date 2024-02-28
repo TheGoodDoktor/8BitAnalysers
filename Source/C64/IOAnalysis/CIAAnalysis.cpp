@@ -250,7 +250,7 @@ void	FCIAAnalysis::DrawDetailsUI(void)
 	//ImVec2 pos = ImGui::GetCursorScreenPos();
 	if(ImGui::BeginChild("CIA Ports", ImVec2(0, lineHeight * 15)))
 	{
-		if(ImGui::BeginChild("PortAChild", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0)))
+		if(ImGui::BeginChild("PortAChild", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0)))
 		{
 			ImGui::Text("Port A");
 			DrawPortState(pCIA->pa, PortABitNames);
@@ -281,7 +281,7 @@ void	FCIAAnalysis::DrawDetailsUI(void)
 	ImGui::Text("Latch:\t %s", NumStr(pCIA->pb.inp));
 	SetNumberDisplayMode(numberMode);
 #endif
-	if (ImGui::BeginChild("CIA Reg Select", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
+	if (ImGui::BeginChild("CIA Reg Select", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), true))
 	{
 		SelectedRegister = DrawRegSelectList(*RegConfig, SelectedRegister);
 	}

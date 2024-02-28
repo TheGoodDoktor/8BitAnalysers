@@ -99,7 +99,7 @@ void SIDWriteEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 
 void	FSIDAnalysis::DrawDetailsUI(void)
 {
-	if (ImGui::BeginChild("VIC Reg Select", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
+	if (ImGui::BeginChild("VIC Reg Select", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), true))
 	{
 		SelectedRegister = DrawRegSelectList(g_SIDRegDrawInfo, SelectedRegister);
 	}

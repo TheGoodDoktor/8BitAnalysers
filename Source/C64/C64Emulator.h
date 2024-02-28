@@ -26,6 +26,7 @@
 #include <util/z80dasm.h>
 
 // Chips UI includes
+/*
 #include <ui/ui_util.h>
 #include <ui/ui_chip.h>
 #include <ui/ui_util.h>
@@ -42,7 +43,7 @@
 #include <ui/ui_snapshot.h>
 #include <ui/ui_c64.h>
 #include <ui/ui_ay38910.h>
-
+*/
 #include "C64GamesList.h"
 #include "C64Display.h"
 
@@ -163,7 +164,7 @@ public:
 
 private:
 	c64_t       C64Emu;
-	ui_c64_t    C64UI;
+	//ui_c64_t    C64UI;
 	double      ExecTime;
 
 	//FC64Config*			pGlobalConfig = nullptr;

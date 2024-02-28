@@ -367,15 +367,15 @@ int C64KeyFromImGuiKey(ImGuiKey key)
 uint8_t GetJoystickMaskFromImGui()
 {
     uint8_t mask = 0;
-	if (ImGui::IsKeyDown(ImGuiNavInput_DpadRight))
+	if (ImGui::IsKeyDown(ImGuiKey_GamepadDpadRight))
         mask |= C64_JOYSTICK_RIGHT;
-	if (ImGui::IsKeyDown(ImGuiNavInput_DpadLeft))
+	if (ImGui::IsKeyDown(ImGuiKey_GamepadDpadLeft))
         mask |= C64_JOYSTICK_LEFT;
-	if (ImGui::IsKeyDown(ImGuiNavInput_DpadDown))
+	if (ImGui::IsKeyDown(ImGuiKey_GamepadDpadDown))
         mask |= C64_JOYSTICK_DOWN;
-	if (ImGui::IsKeyDown(ImGuiNavInput_DpadUp))
+	if (ImGui::IsKeyDown(ImGuiKey_GamepadDpadUp))
         mask |= C64_JOYSTICK_UP;
-	if (ImGui::IsKeyDown(ImGuiNavInput_Activate))
+	if (ImGui::IsKeyDown(ImGuiKey_GamepadFaceDown))
         mask |= C64_JOYSTICK_BTN;
 
     return mask;
@@ -384,8 +384,10 @@ uint8_t GetJoystickMaskFromImGui()
 void FC64Display::Tick()
 {
 	// Check keys - not event driven, hopefully perf isn't too bad
-	for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
+	for (int keyNo = ImGuiKey_NamedKey_BEGIN; keyNo < ImGuiKey_COUNT; keyNo++)
 	{
+		const ImGuiKey key = (ImGuiKey)keyNo;
+
 		if (ImGui::IsKeyPressed(key, false))
 		{
 			const int c64Key = C64KeyFromImGuiKey(key);

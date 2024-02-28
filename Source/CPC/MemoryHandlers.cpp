@@ -65,7 +65,7 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FCPCEmu* pE
 				handler.pHandlerFunction(handler, pEmu->pActiveGame, pc, pins);
 #endif
 			if (handler.bBreak)
-				return UI_DBG_STEP_TRAPID;
+				return 128;	// TODO: use a constant
 		}
 	}
 	
