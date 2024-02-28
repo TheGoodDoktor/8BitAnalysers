@@ -27,3 +27,6 @@
 	path = Source/Vendor/imgui
 	url = https://github.com/ocornut/imgui/
 	branch = docking
+[submodule "Source/Vendor/implot"]
+	path = Source/Vendor/implot
+	url = https://github.com/epezent/implot

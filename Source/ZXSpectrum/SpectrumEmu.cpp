@@ -16,7 +16,7 @@
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "Util/FileUtil.h"
 
-#include "ui/ui_dbg.h"
+//#include "ui/ui_dbg.h"
 #include "MemoryHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
@@ -204,10 +204,11 @@ void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 	PreviousPC = pc;
 }
 
+/*
 int UIEvalBreakpoint(ui_dbg_t* dbg_win, uint16_t pc, int ticks, uint64_t pins, void* user_data)
 {
 	return 0;
-}
+}*/
 
 uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 {
@@ -563,7 +564,7 @@ bool FSpectrumEmu::InitForModel(ESpectrumModel model)
     zx_init(&ZXEmuState, &desc);
     
     // Clear UI
-    memset(&UIZX, 0, sizeof(ui_zx_t));
+   /* memset(&UIZX, 0, sizeof(ui_zx_t));
 
     {
         ui_zx_desc_t desc = { 0 };
@@ -589,7 +590,7 @@ bool FSpectrumEmu::InitForModel(ESpectrumModel model)
         desc.snapshot.save_cb = UISnapshotSaveCB;
         ui_zx_init(&UIZX, &desc);
     }
-    
+    */
     for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
         CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
     
@@ -1636,7 +1637,7 @@ void FSpectrumEmu::DrawReplaceGameModalPopup()
 }
 #endif
 
-
+#if 0
 static void UpdateMemmap(ui_zx_t* ui)
 {
 	assert(ui && ui->zx);
@@ -1672,7 +1673,7 @@ static void UpdateMemmap(ui_zx_t* ui)
 		ui_memmap_region(&ui->memmap, "RAM 7", 0xC000, 0x4000, 7 == (m & 7));
 	}
 }
-
+#endif
 void StoreRegisters_Z80(FCodeAnalysisState& state);
 
 bool GetIOInputFunc(uint16_t port, uint8_t* pInVal, void* pUserData)
@@ -1842,11 +1843,11 @@ void FSpectrumEmu::DrawMemoryTools()
 
 void FSpectrumEmu::DrawEmulatorUI()
 {
-	ui_zx_t* pZXUI = &UIZX;
+	//ui_zx_t* pZXUI = &UIZX;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 	
 	//DrawMainMenu(timeMS);
-	
+	/*
 	if (pZXUI->memmap.open)
 	{
 		UpdateMemmap(pZXUI);
@@ -1858,7 +1859,7 @@ void FSpectrumEmu::DrawEmulatorUI()
 	ui_ay38910_draw(&pZXUI->ay);
 	ui_kbd_draw(&pZXUI->kbd);
 	ui_memmap_draw(&pZXUI->memmap);
-
+	*/
 	// Draw registered viewers
 	/*for (auto Viewer : Viewers)
 	{

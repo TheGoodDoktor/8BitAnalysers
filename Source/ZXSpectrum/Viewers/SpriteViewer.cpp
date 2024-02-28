@@ -59,7 +59,7 @@ void DrawSpriteList(const FSpriteDefList &spriteList, int &selection, FZXGraphic
 void DrawSpriteListGUI(FZXGraphicsViewer &graphicsViewer, FZXGraphicsView *pGraphicsView)
 {
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
-	ImGui::BeginChild("DrawSpriteListGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
+	ImGui::BeginChild("DrawSpriteListGUIChild1", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), false, window_flags);
 	FUISpriteList *pSpriteList = nullptr;
 
 	// TODO: put in structure?

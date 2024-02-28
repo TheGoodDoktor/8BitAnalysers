@@ -94,7 +94,7 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 	static FAddressRef selectedCharSetAddr; 
 	static FCharSetCreateParams params;
 
-	if (ImGui::BeginChild("##charsetselect", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), true))
+	if (ImGui::BeginChild("##charsetselect", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), true))
 	{
 		int deleteIndex = -1;
 		for (int i = 0; i < GetNoCharacterSets(); i++)
@@ -393,7 +393,7 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 {
 	static FCharacterMapViewerUIState uiState;
 
-	if (ImGui::BeginChild("##charmapselect", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), true))
+	if (ImGui::BeginChild("##charmapselect", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), true))
 	{
 		int deleteIndex = -1;
 

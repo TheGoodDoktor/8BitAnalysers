@@ -437,25 +437,25 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 
 	if (ImGui::IsWindowFocused() && cursorItem.IsValid())
 	{
-		if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemCode]))
+		if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemCode]))
 		{
 			SetItemCode(state, cursorItem.AddressRef);
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemData]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemData]))
 		{
 			SetItemData(state, cursorItem);
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemText]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemText]))
 		{
 			SetItemText(state, cursorItem);
 		}
 #ifdef ENABLE_IMAGE_TYPE
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemImage]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemImage]))
 		{
 			SetItemImage(state, cursorItem);
 		}
 #endif
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemBinary]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemBinary]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
 			{
@@ -470,7 +470,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pCodeItem->Text.clear();
 			}
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemPointer]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemPointer]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
 			{
@@ -487,7 +487,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pCodeItem->Text.clear();
 			}
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemNumber]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemNumber]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
 			{
@@ -502,7 +502,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pCodeItem->Text.clear();
 			}
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::SetItemUnknown]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemUnknown]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
 			{
@@ -517,7 +517,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pCodeItem->Text.clear();
 			}
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::AddLabel]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::AddLabel]))
 		{
 			if (cursorItem.Item->Type != EItemType::Label)
 			{
@@ -529,26 +529,26 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				ImGui::SetWindowFocus("Enter Label Text");
 			}
 		}
-		else if (io.KeyShift && ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]))
+		else if (io.KeyShift && ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::Comment]))
 		{
 			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef);
 			viewState.SetCursorItem(FCodeAnalysisItem(pCommentBlock, cursorItem.AddressRef));
 			ImGui::OpenPopup("Enter Comment Text Multi");
 			ImGui::SetWindowFocus("Enter Comment Text Multi");
 		}
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Comment]) || ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::CommentLegacy]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::Comment]) || ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::CommentLegacy]))
 		{
 			ImGui::OpenPopup("Enter Comment Text");
 			ImGui::SetWindowFocus("Enter Comment Text");
 		}
-		else if (cursorItem.Item->Type == EItemType::Label && ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Rename]))
+		else if (cursorItem.Item->Type == EItemType::Label && ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::Rename]))
 		{
 			//AddLabelAtAddress(state, state.pCursorItem->Address);
 			ImGui::OpenPopup("Enter Label Text");
 			ImGui::SetWindowFocus("Enter Label Text");
 		}
 		
-		else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::Breakpoint]))
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::Breakpoint]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
 				state.ToggleDataBreakpointAtAddress(cursorItem.AddressRef, cursorItem.Item->ByteSize);
@@ -557,7 +557,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 	}
 
-	if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::BreakContinue]))
+	if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::BreakContinue]))
 	{
 		if (state.Debugger.IsStopped())
 		{
@@ -569,19 +569,19 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 			state.Debugger.Break();
 		}
 	}
-	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::StepOver]))
+	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepOver]))
 	{
 		state.Debugger.StepOver();
 	}
-	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::StepInto]))
+	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepInto]))
 	{
 		state.Debugger.StepInto();
 	}
-	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::StepFrame]))
+	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepFrame]))
 	{
 		state.Debugger.StepFrame();
 	}
-	else if (ImGui::IsKeyPressed(state.KeyConfig[(int)EKey::StepScreenWrite]))
+	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepScreenWrite]))
 	{
 		state.Debugger.StepScreenWrite();
 	}
@@ -592,7 +592,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		int bookmarkNo = -1;
 
 		for(int keyNo =0;keyNo<5;keyNo++)
-		if(ImGui::IsKeyPressed(ImGuiKey_1 + keyNo))
+		if(ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey_1 + keyNo)))
 			bookmarkNo = keyNo;
 
 		if(bookmarkNo != -1)
@@ -1496,7 +1496,8 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 
 	// draw clipped list
-	ImGuiListClipper clipper((int)itemList.size(), lineHeight);
+	ImGuiListClipper clipper;
+	clipper.Begin((int)itemList.size(), lineHeight);
 	std::vector<FAddressCoord> newList;
 
 	while (clipper.Step())
@@ -1592,7 +1593,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		ImGui::EndTooltip();
 	}
 	
-	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.75f, 0), true))
+	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
 	{
 		if (ImGui::BeginTabBar("itemlist_tabbar"))
 		{
@@ -1750,7 +1751,8 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false))
 	{		
 		const float lineHeight = ImGui::GetTextLineHeight();
-		ImGuiListClipper clipper((int)labelList.size(), lineHeight);
+		ImGuiListClipper clipper;
+		clipper.Begin((int)labelList.size(), lineHeight);
 
 		while (clipper.Step())
 		{

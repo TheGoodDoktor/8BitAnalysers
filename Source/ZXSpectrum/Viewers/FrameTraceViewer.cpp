@@ -215,7 +215,8 @@ void	FFrameTraceViewer::DrawInstructionTrace(const FSpeccyFrameTrace& frame)
 	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
-	ImGuiListClipper clipper((int)frame.InstructionTrace.size(), line_height);
+	ImGuiListClipper clipper;
+	clipper.Begin((int)frame.InstructionTrace.size(), line_height);
 
 	while (clipper.Step())
 	{
@@ -342,7 +343,8 @@ void	FFrameTraceViewer::DrawTraceOverview(const FSpeccyFrameTrace& frame)
 	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float line_height = ImGui::GetTextLineHeight();
-	ImGuiListClipper clipper((int)frame.FrameOverview.size(), line_height);
+	ImGuiListClipper clipper;
+	clipper.Begin((int)frame.FrameOverview.size(), line_height);
 
 	while (clipper.Step())
 	{
@@ -385,10 +387,11 @@ void	FFrameTraceViewer::DrawScreenWrites(const FSpeccyFrameTrace& frame)
 	FCodeAnalysisState& state = pSpectrumEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
-	if (ImGui::BeginChild("ScreenPxWrites", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, 0), true))
+	if (ImGui::BeginChild("ScreenPxWrites", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), true))
 	{
 		const float line_height = ImGui::GetTextLineHeight();
-		ImGuiListClipper clipper((int)frame.ScreenPixWrites.size(), line_height);
+		ImGuiListClipper clipper;
+		clipper.Begin((int)frame.ScreenPixWrites.size(), line_height);
 
 		while (clipper.Step())
 		{

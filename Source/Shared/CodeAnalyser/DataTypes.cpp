@@ -476,7 +476,7 @@ void FDataTypesViewer::DrawTypeList(FDataTypeList& typeList)
 	if(bDupe)
 		ImGui::PopStyleColor();
 	
-	if (ImGui::BeginChild("##typesselect", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), true))
+	if (ImGui::BeginChild("##typesselect", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), true))
 	{
 		if (ImGui::BeginChild("##typeslist", ImVec2(0, -lineHeight * 2.0f), false))
 		{

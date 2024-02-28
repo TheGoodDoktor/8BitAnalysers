@@ -61,7 +61,7 @@ int MemoryHandlerTrapFunction(uint16_t pc, int ticks, uint64_t pins, FSpectrumEm
 				handler.pHandlerFunction(handler, pEmu->pActiveGame, pc, pins);
 
 			if (handler.bBreak)
-				return UI_DBG_STEP_TRAPID;
+				return 128;	// TODO: sort out trap ids
 		}
 	}
 	
@@ -144,7 +144,7 @@ void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
-	ImGui::BeginChild("DrawMemoryHandlersGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
+	ImGui::BeginChild("DrawMemoryHandlersGUIChild1", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), false, window_flags);
 	FMemoryAccessHandler *pSelectedHandler = nullptr;
 
 	for (auto &handler : pSpectrumEmu->MemoryAccessHandlers)

@@ -871,9 +871,8 @@ void FDebugger::DrawTrace(void)
 {
 	FCodeAnalysisState& state = *pCodeAnalysis;
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-	const float line_height = ImGui::GetTextLineHeight();
-	ImGuiListClipper clipper((int)FrameTrace.size(), line_height);
-
+	//const float line_height = ImGui::GetTextLineHeight();
+	
 	if (ImGui::Button("Trace Back"))
 	{
 		TraceBack(viewState);
@@ -886,6 +885,8 @@ void FDebugger::DrawTrace(void)
 
 	if (ImGui::BeginChild("TraceListChild"))
 	{
+		ImGuiListClipper clipper;
+		clipper.Begin((int)FrameTrace.size());
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
@@ -1227,7 +1228,7 @@ void FDebugger::DrawEvents(void)
 
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const float lineHeight = ImGui::GetTextLineHeight();
-	ImGuiListClipper clipper((int)EventTrace.size(), lineHeight);
+	
 	const float rectSize = lineHeight;
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	
@@ -1274,7 +1275,8 @@ void FDebugger::DrawEvents(void)
 		ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, fontSize * 8);
 		ImGui::TableHeadersRow();
-		
+		ImGuiListClipper clipper;
+		clipper.Begin((int)EventTrace.size());
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)

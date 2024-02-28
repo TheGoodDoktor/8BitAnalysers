@@ -143,7 +143,7 @@ void FIOAnalysis::DrawUI()
 	FCodeAnalysisState& state = pSpectrumEmu->CodeAnalysis;
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
-	ImGui::BeginChild("DrawIOAnalysisGUIChild1", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, window_flags);
+	ImGui::BeginChild("DrawIOAnalysisGUIChild1", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), false, window_flags);
 	FIOAccess *pSelectedIOAccess = nullptr;
 	static SpeccyIODevice selectedDevice = SpeccyIODevice::None;
 

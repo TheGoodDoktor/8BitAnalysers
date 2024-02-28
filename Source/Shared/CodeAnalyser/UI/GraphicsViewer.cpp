@@ -8,7 +8,11 @@
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
 #include <Util/Misc.h>
+
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include <imgui_internal.h>
 #include <imgui.h>
+
 #include <misc/cpp/imgui_stdlib.h>
 #include <ImGuiSupport/ImGuiScaling.h>
 
@@ -21,7 +25,7 @@ namespace ImGui
 {
 	// SetItemUsingMouseWheel() has been replaced by SetItemKeyOwner() in v1.89.1
 	// https://github.com/ocornut/imgui/pull/2891#issuecomment-1307753952
-	extern void SetItemUsingMouseWheel();
+	//extern void SetItemKeyOwner();
 }
 
 bool FGraphicsViewer::Init()
@@ -670,7 +674,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetItemUsingMouseWheel();
+		ImGui::SetKeyOwner(ImGuiKey_MouseWheelY, ImGui::GetItemID());
 		const float wheel = ImGui::GetIO().MouseWheel;
 		if (wheel != 0)
 		{

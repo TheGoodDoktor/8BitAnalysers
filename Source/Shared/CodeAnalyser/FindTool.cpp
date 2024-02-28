@@ -258,7 +258,8 @@ void FFindTool::DrawUI()
 				ImGui::TableHeadersRow();
 
 				//const float lineHeight = ImGui::GetTextLineHeight(); // this breaks the clipper and makes it impossible to see the last few rows.
-				ImGuiListClipper clipper((int)pCurFinder->GetNumResults()/*, lineHeight*/);
+				ImGuiListClipper clipper;
+				clipper.Begin((int)pCurFinder->GetNumResults());
 
 				bool bUserPrefersHexAitch = GetNumberDisplayMode() == ENumberDisplayMode::HexAitch;
 				const ENumberDisplayMode numberMode = bDecimal ? ENumberDisplayMode::Decimal : bUserPrefersHexAitch ? ENumberDisplayMode::HexAitch : ENumberDisplayMode::HexDollar;

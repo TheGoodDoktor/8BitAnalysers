@@ -2,7 +2,7 @@
 set( vendor_dir ../Vendor )
 include_directories( ${vendor_dir} )
 include_directories( ${vendor_dir}/sokol )
-include_directories( ${vendor_dir}/imgui-docking )
+include_directories( ${vendor_dir}/imgui )
 include_directories( ${vendor_dir}/chips )
 include_directories( ${vendor_dir}/luasrc )
 include_directories( ${vendor_dir}/magic_enum/include )
@@ -17,7 +17,7 @@ file ( GLOB_RECURSE chips_src
 	${vendor_dir}/chips/*.h)
 
 # imgui
-set ( imgui_src_dir ${vendor_dir}/imgui-docking )
+set ( imgui_src_dir ${vendor_dir}/imgui )
 
 set ( imgui_src ${imgui_src_dir}/imgui.cpp 
 	${imgui_src_dir}/imgui_demo.cpp 

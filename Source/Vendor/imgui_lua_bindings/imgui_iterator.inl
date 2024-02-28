@@ -2253,6 +2253,7 @@ END_IMGUI_FUNC
 //    IMGUI_API ImGuiStorage* GetStateStorage();
 // Unsupported return type ImGuiStorage*
 //    IMGUI_API void          CalcListClipping(int items_count, float items_height, int* out_items_display_start, int* out_items_display_end);    // calculate coarse clipping for large list of evenly sized items. Prefer using the ImGuiListClipper higher-level helper if you can.
+/*
 IMGUI_FUNCTION(CalcListClipping)
 INT_ARG(items_count)
 NUMBER_ARG(items_height)
@@ -2261,7 +2262,7 @@ INT_POINTER_ARG(out_items_display_end)
 CALL_FUNCTION_NO_RET(CalcListClipping, items_count, items_height, out_items_display_start, out_items_display_end)
 END_INT_POINTER(out_items_display_start)
 END_INT_POINTER(out_items_display_end)
-END_IMGUI_FUNC
+END_IMGUI_FUNC*/
 //    IMGUI_API bool          BeginChildFrame(ImGuiID id, const ImVec2& size, ImGuiWindowFlags flags = 0); // helper to create a child window / scrolling region that looks like a normal widget frame
 IMGUI_FUNCTION(BeginChildFrame)
 UINT_ARG(id)
@@ -2332,26 +2333,26 @@ END_IMGUI_FUNC
 //    IMGUI_API int           GetKeyIndex(ImGuiKey imgui_key);                                    // map ImGuiKey_* values into user's key index. == io.KeyMap[key]
 IMGUI_FUNCTION(GetKeyIndex)
 INT_ARG(imgui_key)
-CALL_FUNCTION(GetKeyIndex, int, imgui_key)
+CALL_FUNCTION(GetKeyIndex, int, (ImGuiKey)imgui_key)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyDown(int user_key_index);                                      // is key being held. == io.KeysDown[user_key_index].
 IMGUI_FUNCTION(IsKeyDown)
 INT_ARG(user_key_index)
-CALL_FUNCTION(IsKeyDown, bool, user_key_index)
+CALL_FUNCTION(IsKeyDown, bool, (ImGuiKey)user_key_index)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyPressed(int user_key_index, bool repeat = true);               // was key pressed (went from !Down to Down)? if repeat=true, uses io.KeyRepeatDelay / KeyRepeatRate
 IMGUI_FUNCTION(IsKeyPressed)
 INT_ARG(user_key_index)
 OPTIONAL_BOOL_ARG(repeat, true)
-CALL_FUNCTION(IsKeyPressed, bool, user_key_index, repeat)
+CALL_FUNCTION(IsKeyPressed, bool, (ImGuiKey)user_key_index, repeat)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsKeyReleased(int user_key_index);                                  // was key released (went from Down to !Down)?
 IMGUI_FUNCTION(IsKeyReleased)
 INT_ARG(user_key_index)
-CALL_FUNCTION(IsKeyReleased, bool, user_key_index)
+CALL_FUNCTION(IsKeyReleased, bool, (ImGuiKey)user_key_index)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API int           GetKeyPressedAmount(int key_index, float repeat_delay, float rate); // uses provided repeat rate/delay. return a count, most often 0 or 1 but might be >1 if RepeatRate is small enough that DeltaTime > RepeatRate
@@ -2359,7 +2360,7 @@ IMGUI_FUNCTION(GetKeyPressedAmount)
 INT_ARG(key_index)
 NUMBER_ARG(repeat_delay)
 NUMBER_ARG(rate)
-CALL_FUNCTION(GetKeyPressedAmount, int, key_index, repeat_delay, rate)
+CALL_FUNCTION(GetKeyPressedAmount, int, (ImGuiKey)key_index, repeat_delay, rate)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          CaptureKeyboardFromApp(bool want_capture_keyboard_value = true);    // attention: misleading name! manually override io.WantCaptureKeyboard flag next frame (said flag is entirely left for your application to handle). e.g. force capture keyboard when your widget is being hovered. This is equivalent to setting "io.WantCaptureKeyboard = want_capture_keyboard_value"; after the next NewFrame() call.
@@ -3078,7 +3079,7 @@ MAKE_ENUM(ImGuiKey_Enter,Enter)
 //    ImGuiKey_Escape,
 MAKE_ENUM(ImGuiKey_Escape,Escape)
 //    ImGuiKey_KeyPadEnter,
-MAKE_ENUM(ImGuiKey_KeyPadEnter,KeyPadEnter)
+MAKE_ENUM(ImGuiKey_KeypadEnter,KeyPadEnter)
 //    ImGuiKey_A,                 // for text edit CTRL+A: select all
 MAKE_ENUM(ImGuiKey_A,A)
 //    ImGuiKey_C,                 // for text edit CTRL+C: copy
@@ -3096,18 +3097,18 @@ MAKE_ENUM(ImGuiKey_COUNT,COUNT)
 END_ENUM(Key)
 //enum ImGuiKeyModFlags_
 
-START_ENUM(KeyModFlags)
+START_ENUM(ModFlags)
 //    ImGuiKeyModFlags_None       = 0,
-MAKE_ENUM(ImGuiKeyModFlags_None,None)
+MAKE_ENUM(ImGuiModFlags_None,None)
 //    ImGuiKeyModFlags_Ctrl       = 1 << 0,
-MAKE_ENUM(ImGuiKeyModFlags_Ctrl,Ctrl)
+MAKE_ENUM(ImGuiModFlags_Ctrl,Ctrl)
 //    ImGuiKeyModFlags_Shift      = 1 << 1,
-MAKE_ENUM(ImGuiKeyModFlags_Shift,Shift)
+MAKE_ENUM(ImGuiModFlags_Shift,Shift)
 //    ImGuiKeyModFlags_Alt        = 1 << 2,
-MAKE_ENUM(ImGuiKeyModFlags_Alt,Alt)
+MAKE_ENUM(ImGuiModFlags_Alt,Alt)
 //    ImGuiKeyModFlags_Super      = 1 << 3
-MAKE_ENUM(ImGuiKeyModFlags_Super,Super)
-END_ENUM(KeyModFlags)
+MAKE_ENUM(ImGuiModFlags_Super,Super)
+END_ENUM(ModFlags)
 //enum ImGuiNavInput_
 
 START_ENUM(NavInput)

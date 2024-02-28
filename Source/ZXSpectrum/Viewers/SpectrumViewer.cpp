@@ -488,17 +488,17 @@ int SpectrumKeyFromImGuiKey(ImGuiKey key)
 void FSpectrumViewer::Tick(void)
 {
 	// Check keys - not event driven, hopefully perf isn't too bad
-	for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
+	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
 	{
-		if (ImGui::IsKeyPressed(key,false))
+		if (ImGui::IsKeyPressed((ImGuiKey)key,false))
 		{ 
-			const int speccyKey = SpectrumKeyFromImGuiKey(key);
+			const int speccyKey = SpectrumKeyFromImGuiKey((ImGuiKey)key);
 			if (speccyKey != 0 && bWindowFocused)
 				zx_key_down(&pSpectrumEmu->ZXEmuState, speccyKey);
 		}
-		else if (ImGui::IsKeyReleased(key))
+		else if (ImGui::IsKeyReleased((ImGuiKey)key))
 		{
-			const int speccyKey = SpectrumKeyFromImGuiKey(key);
+			const int speccyKey = SpectrumKeyFromImGuiKey((ImGuiKey)key);
 			if (speccyKey != 0)
 				zx_key_up(&pSpectrumEmu->ZXEmuState, speccyKey);
 		}
@@ -508,15 +508,15 @@ void FSpectrumViewer::Tick(void)
 	if (zx_joystick_type(&pSpectrumEmu->ZXEmuState) != ZX_JOYSTICKTYPE_NONE)
 	{
 		int mask = 0;
-		if (ImGui::IsKeyDown(ImGuiNavInput_DpadRight))
+		if (ImGui::IsKeyDown(ImGuiKey_GamepadDpadRight))
 			mask |= 1 << 0;
-		if (ImGui::IsKeyDown(ImGuiNavInput_DpadLeft))
+		if (ImGui::IsKeyDown(ImGuiKey_GamepadDpadLeft))
 			mask |= 1 << 1;
-		if (ImGui::IsKeyDown(ImGuiNavInput_DpadDown))
+		if (ImGui::IsKeyDown(ImGuiKey_GamepadDpadDown))
 			mask |= 1 << 2;
-		if (ImGui::IsKeyDown(ImGuiNavInput_DpadUp))
+		if (ImGui::IsKeyDown(ImGuiKey_GamepadDpadUp))
 			mask |= 1 << 3;
-		if (ImGui::IsKeyDown(ImGuiNavInput_Activate))
+		if (ImGui::IsKeyDown(ImGuiKey_GamepadFaceDown))
 			mask |= 1 << 4;
 
 		zx_joystick(&pSpectrumEmu->ZXEmuState, mask);

@@ -14,6 +14,7 @@
 #include "chips/clk.h"
 #include "systems/zx.h"
 #include "chips/mem.h"
+/*
 #include "ui/ui_util.h"
 #include "ui/ui_chip.h"
 #include "ui/ui_z80.h"
@@ -26,7 +27,7 @@
 #include "ui/ui_memmap.h"
 #include "ui/ui_snapshot.h"
 #include "ui/ui_zx.h"
-
+*/
 //#include <map>
 #include <string>
 #include "Viewers/SpriteViewer.h"
@@ -166,7 +167,7 @@ public:
 	float			ExecSpeedScale = 1.0f;
 
 	// Chips UI
-	ui_zx_t			UIZX;
+	//ui_zx_t			UIZX;
 
 	FGame *			pActiveGame = nullptr;
 

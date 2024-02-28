@@ -7,6 +7,9 @@
 
 #include "CodeAnalyser.h"
 #include "UI/CodeAnalyserUI.h"
+
+#define CHIPS_UI_IMPL
+#include <ui/ui_util.h>
 #include <ui/ui_chip.h>
 #include <ui/ui_ay38910.h>
 
@@ -62,7 +65,7 @@ void FIOAnalyser::DrawUI(void)
 	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
 
 	// List
-	ImGui::BeginChild("IOAnalyserList", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.25f, 0), false, windowFlags);
+	ImGui::BeginChild("IOAnalyserList", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), false, windowFlags);
 
 	for (int i=0; i< Devices.size();i++)
 	{

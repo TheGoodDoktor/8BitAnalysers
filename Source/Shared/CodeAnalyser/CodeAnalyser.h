@@ -15,6 +15,7 @@
 #include <Misc/GlobalConfig.h>
 #include "Commands/FormatDataCommand.h"
 
+
 class FGraphicsView;
 class FCodeAnalysisState;
 class FEmuBase;
@@ -487,7 +488,7 @@ public:
 
 	FAddressRef				CopiedAddress;
 
-	int						KeyConfig[(int)EKey::Count] = { -1 };
+	int				KeyConfig[(int)EKey::Count] = { 0 };
 
 	std::vector< class FCommand *>	CommandStack;
 
