@@ -23,3 +23,7 @@
 [submodule "Source/Vendor/luasrc"]
 	path = Source/Vendor/luasrc
 	url = https://github.com/lua/lua
+[submodule "Source/Vendor/imgui"]
+	path = Source/Vendor/imgui
+	url = https://github.com/ocornut/imgui/
+	branch = docking
