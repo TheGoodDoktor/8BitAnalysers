@@ -15,17 +15,17 @@ FFormatDataCommand::FFormatDataCommand(const FDataFormattingOptions& options)
 
 void FFormatDataCommand::Do(FCodeAnalysisState& state)
 {
-	FAddressRef addressRef = FormatOptions.StartAddress;
-	if(addressRef.IsValid() == false)
+	
+	if(FormatOptions.StartAddress.IsValid() == false)
 		return;
 
-	const FAddressRef firstAddres = addressRef;
+	const FAddressRef firstAddress = FormatOptions.StartAddress;
 
 	// Optionally register character maps
 	if (FormatOptions.DataType == EDataType::CharacterMap && FormatOptions.RegisterItem == true)
 	{
 		FCharMapCreateParams charMapParams;
-		charMapParams.Address = addressRef;
+		charMapParams.Address = firstAddress;
 		charMapParams.CharacterSet = FormatOptions.CharacterSet;
 		charMapParams.Width = FormatOptions.ItemSize;
 		charMapParams.Height = FormatOptions.NoItems;
@@ -34,7 +34,62 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 		CreateCharacterMap(state, charMapParams);
 
 		// Character map undo data
-		UndoData.CharacterMapLocation = addressRef;
+		UndoData.CharacterMapLocation = firstAddress;
+	}
+
+	{
+		FAddressRef addressRef = firstAddress;
+		for (int itemNo = 0; itemNo < FormatOptions.NoItems; itemNo++)
+		{
+			FDataInfo* pDataInfo = state.GetDataInfoForAddress(addressRef);
+
+			UndoData.DataItems.push_back({ addressRef,*pDataInfo });
+
+			pDataInfo->ByteSize = FormatOptions.ItemSize;
+			pDataInfo->DataType = FormatOptions.DataType;
+			pDataInfo->DisplayType = FormatOptions.DisplayType;
+
+			if (FormatOptions.DataType == EDataType::CharacterMap)
+			{
+				pDataInfo->CharSetAddress = FormatOptions.CharacterSet;
+				pDataInfo->EmptyCharNo = FormatOptions.EmptyCharNo;
+			}
+			else if (FormatOptions.DataType == EDataType::Bitmap)
+			{
+				pDataInfo->GraphicsSetRef = FormatOptions.GraphicsSetRef;
+				pDataInfo->PaletteNo = FormatOptions.PaletteNo;
+			}
+
+			// iterate through each memory location
+			for (int i = 0; i < FormatOptions.ItemSize; i++)
+			{
+				if (FormatOptions.ClearCodeInfo)
+				{
+					FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addressRef);
+
+					if (pDataInfo != nullptr)
+						UndoData.CodeItems.push_back({ addressRef,pCodeInfo });
+
+					state.SetCodeInfoForAddress(addressRef, nullptr);
+				}
+
+				if (FormatOptions.ClearLabels)// && addressRef != FormatOptions.StartAddress)	// don't remove first label
+				{
+					FLabelInfo* pLabel = state.GetLabelForAddress(addressRef);
+					if (pLabel != nullptr)
+						UndoData.Labels.push_back({ addressRef,pLabel });
+
+					RemoveLabelAtAddress(state, addressRef);
+				}
+
+				if (state.AdvanceAddressRef(addressRef, 1) == false)
+				{
+					// TODO: report?
+					break;
+				}
+				//dataAddress++;
+			}
+		}
 	}
 
 	if (FormatOptions.AddLabelAtStart)
@@ -54,88 +109,38 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			else if (FormatOptions.DataType == EDataType::Text)
 				pPrefix = "text";
 
-			snprintf(labelName, 16, "%s_%s", pPrefix, NumStr(addressRef.Address));
+			snprintf(labelName, 16, "%s_%s", pPrefix, NumStr(firstAddress.Address));
 			labelText = labelName;
 		}
 
 		// Add or rename label
-		FLabelInfo* pLabel = state.GetLabelForAddress(addressRef);
+		FLabelInfo* pLabel = state.GetLabelForAddress(firstAddress);
 
 		// Undo
-		UndoData.Labels.push_back({ addressRef, FLabelInfo::Duplicate(pLabel) });	// duplicate return nullptr if passed nullptr
+		UndoData.Labels.push_back({ firstAddress, FLabelInfo::Duplicate(pLabel) });	// duplicate return nullptr if passed nullptr
 
 		if (pLabel == nullptr)
-			pLabel = AddLabel(state, addressRef, labelText.c_str(), ELabelType::Data);
+			pLabel = AddLabel(state, firstAddress, labelText.c_str(), ELabelType::Data);
 		else
 			pLabel->ChangeName(labelText.c_str());
 
 		pLabel->Global = true;
-	}	
-
-	for (int itemNo = 0; itemNo < FormatOptions.NoItems; itemNo++)
-	{
-		FDataInfo* pDataInfo = state.GetDataInfoForAddress(addressRef);
-
-		UndoData.DataItems.push_back({ addressRef,*pDataInfo });
-
-		pDataInfo->ByteSize = FormatOptions.ItemSize;
-		pDataInfo->DataType = FormatOptions.DataType;
-		pDataInfo->DisplayType = FormatOptions.DisplayType;
-
-		if (FormatOptions.DataType == EDataType::CharacterMap)
-		{
-			pDataInfo->CharSetAddress = FormatOptions.CharacterSet;
-			pDataInfo->EmptyCharNo = FormatOptions.EmptyCharNo;
-		}
-		else if (FormatOptions.DataType == EDataType::Bitmap)
-		{
-			pDataInfo->GraphicsSetRef = FormatOptions.GraphicsSetRef;
-			pDataInfo->PaletteNo = FormatOptions.PaletteNo;
-		}
-
-		// iterate through each memory location
-		for (int i = 0; i < FormatOptions.ItemSize; i++)
-		{
-			if (FormatOptions.ClearCodeInfo)
-			{
-				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addressRef);
-
-				if (pDataInfo != nullptr)
-					UndoData.CodeItems.push_back({ addressRef,pCodeInfo });
-
-				state.SetCodeInfoForAddress(addressRef, nullptr);
-			}
-
-			if (FormatOptions.ClearLabels && addressRef != FormatOptions.StartAddress)	// don't remove first label
-			{
-				FLabelInfo* pLabel = state.GetLabelForAddress(addressRef);
-				if (pLabel != nullptr)
-					UndoData.Labels.push_back({ addressRef,pLabel });
-
-				RemoveLabelAtAddress(state, addressRef);
-			}
-
-			if (state.AdvanceAddressRef(addressRef, 1) == false)
-			{
-				// TODO: report?
-				break;
-			}
-			//dataAddress++;
-		}
 	}
 
 	if (FormatOptions.AddCommentAtStart)
 	{
-		//FDataInfo* pDataInfo = state.GetDataInfoForAddress(firstAddres);
-		//pDataInfo->Comment = FormatOptions.CommentText;
-		FCommentBlock* pCommentBlock = AddCommentBlock(state,firstAddres);
-		if (FormatOptions.CommentText.empty() == false)
+		FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(firstAddress);
+		// Undo
+		UndoData.CommentBlocks.push_back({ firstAddress, FCommentBlock::Duplicate(pCommentBlock) });	// duplicate return nullptr if passed nullptr
+
+		if (pCommentBlock == nullptr)
 		{
-			pCommentBlock->Comment += '\n' + FormatOptions.CommentText;
+			pCommentBlock = AddCommentBlock(state, firstAddress);
+			pCommentBlock->Comment = FormatOptions.CommentText;
 		}
 		else
 		{
-			pCommentBlock->Comment = FormatOptions.CommentText;
+			pCommentBlock->Comment += '\n' + FormatOptions.CommentText;
 		}
 	}
 }
@@ -152,6 +157,12 @@ void FFormatDataCommand::Undo(FCodeAnalysisState& state)
 	{
 		state.SetLabelForAddress(label.first, label.second);
 		state.SetCodeAnalysisDirty(label.first);
+	}
+
+	for (auto& commentBlock : UndoData.CommentBlocks)
+	{
+		state.SetCommentBlockForAddress(commentBlock.first, commentBlock.second);
+		state.SetCodeAnalysisDirty(commentBlock.first);
 	}
 
 	for (auto& dataItem : UndoData.DataItems)

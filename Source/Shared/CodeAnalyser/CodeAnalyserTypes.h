@@ -390,6 +390,7 @@ struct FDataInfo : FItem
 struct FCommentBlock : FItem
 {
 	static FCommentBlock* Allocate();
+	static FCommentBlock* Duplicate(const FCommentBlock* pSourceCommentBlock);
 	static void FreeAll();
 
 private:

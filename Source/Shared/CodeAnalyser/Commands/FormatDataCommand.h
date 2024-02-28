@@ -50,6 +50,7 @@ struct FFormatUndoData
 {
 	FAddressRef	CharacterMapLocation;
 	std::vector<std::pair<FAddressRef, FLabelInfo*>>	Labels;
+	std::vector<std::pair<FAddressRef, FCommentBlock*>>	CommentBlocks;
 	std::vector<std::pair<FAddressRef, FDataInfo>>	DataItems;
 	std::vector<std::pair<FAddressRef, FCodeInfo*>>	CodeItems;	// pointer might be a bad idea
 };

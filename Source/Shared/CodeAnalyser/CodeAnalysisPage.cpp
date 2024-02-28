@@ -72,6 +72,16 @@ void FCommentBlock::FreeAll()
 	AllocatedList.clear();
 }
 
+FCommentBlock* FCommentBlock::Duplicate(const FCommentBlock* pSourceCommentBlock)
+{
+	if (pSourceCommentBlock == nullptr)
+		return nullptr;
+
+	FCommentBlock* pDuplicateCommentBlock = Allocate();
+	*pDuplicateCommentBlock = *pSourceCommentBlock;
+	return pDuplicateCommentBlock;
+}
+
 void FCodeAnalysisPage::Initialise()
 {
 	bUsed = false;
