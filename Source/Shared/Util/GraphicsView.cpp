@@ -10,7 +10,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include "stb/stb_image_resize.h"
+#include "stb/stb_image_resize2.h"
 
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bMagnifier = true);
 
@@ -242,8 +242,8 @@ void FGraphicsView::DrawOtherGraphicsViewScaled(const FGraphicsView* pView, int 
         return;
     
     uint8_t* destAddress = (uint8_t *)(PixelBuffer + xp + (yp * Width * 4));
-    stbir_resize_uint8((uint8_t *)pView->PixelBuffer , pView->Width , pView->Height , pView->Width * 4,
-                       destAddress, xsize, ysize, Width * 4, 4);
+	stbir_resize_uint8_linear((uint8_t *)pView->PixelBuffer , pView->Width , pView->Height , pView->Width * 4,
+                       destAddress, xsize, ysize, Width * 4, (stbir_pixel_layout)4);
 }
 
 bool FGraphicsView::SavePNG(const char* pFName)
