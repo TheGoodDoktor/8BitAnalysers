@@ -35,6 +35,7 @@ if(${gfxapi} STREQUAL "GLFWApi")
 	
 	set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
 	set( GLFW_INSTALL OFF CACHE BOOL  "GLFW lib only" )
+	set( GLFW_BUILD_WAYLAND OFF )
 
 	add_subdirectory( ${vendor_dir}/glfw ./glfw )
 
