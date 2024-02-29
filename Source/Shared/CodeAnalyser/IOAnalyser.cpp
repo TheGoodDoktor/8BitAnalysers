@@ -8,11 +8,12 @@
 #include "CodeAnalyser.h"
 #include "UI/CodeAnalyserUI.h"
 
+#if 0
 #define CHIPS_UI_IMPL
 #include <ui/ui_util.h>
 #include <ui/ui_chip.h>
 #include <ui/ui_ay38910.h>
-
+#endif
 
 
 // IO Analyser
@@ -118,6 +119,7 @@ const char* g_AYRegNames[] =
 	"I/O Port B",			// 15 (F)
 };
 
+#if 0
 static const ui_chip_pin_t g_AY8912Pins[] =
 {
 	{ "DA0",  0, AY38910_DA0 },
@@ -141,6 +143,7 @@ static const ui_chip_pin_t g_AY8912Pins[] =
 };
 
 ui_ay38910_t	g_AYUI;
+#endif
 
 FAYAudioDevice::FAYAudioDevice()
 {
@@ -150,6 +153,7 @@ FAYAudioDevice::FAYAudioDevice()
 bool FAYAudioDevice::Init(ay38910_t* ay)
 {
 	// Currently hard coded for 8912 but could be made more versatile
+#if 0
 	ui_ay38910_desc_t desc = { 0 };
 	desc.title = "AY-3-8912";
 	desc.ay = ay;
@@ -157,6 +161,7 @@ bool FAYAudioDevice::Init(ay38910_t* ay)
 	desc.y = 0;
 	UI_CHIP_INIT_DESC(&desc.chip_desc, "8912", 22, g_AY8912Pins);
 	ui_ay38910_init(&g_AYUI, &desc);
+#endif
 	pAYEmulator = ay;
 	return true;
 }
@@ -322,13 +327,14 @@ void FAYAudioDevice::DrawDetailsUI()
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Chip"))
+		// Do we actually want this? If so write our own.
+		/*if (ImGui::BeginTabItem("Chip"))
 		{
 			//DrawStringSearchUI();
 			ui_chip_draw(&g_AYUI.chip, pAYEmulator->pins);
 
 			ImGui::EndTabItem();
-		}
+		}*/
 	}
 	ImGui::EndTabBar();
 	
