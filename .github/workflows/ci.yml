@@ -41,7 +41,7 @@ jobs:
             if: matrix.os == 'ubuntu-latest'
             run: |
                     sudo apt-get update
-                    sudo apt-get install -o Acquire::Retries=3 -y --no-install-recommends --fix-missing libegl-mesa0 libgl1-mesa-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libasound2-dev libwayland-server0 libwayland-cursor0 libwayland-client0
+                    sudo apt-get install -o Acquire::Retries=3 -y --no-install-recommends --fix-missing libegl-mesa0 libgl1-mesa-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libasound2-dev
                     cd ${{ github.workspace }}/Source/ZXSpectrum
                     mkdir build
                     cd build
