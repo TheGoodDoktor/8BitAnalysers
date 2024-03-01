@@ -111,7 +111,16 @@ bool LoadFile(const char* pFileName, bool bAddEditor)
 	char* pTextData = LoadTextFile(pFileName);
 	if(pTextData != nullptr)
 	{
-		ExecuteString(pTextData);
+		lua_State* pState = GlobalState;
+
+		const int ret = luaL_dostring(pState, pTextData);
+
+		if (ret != LUA_OK)
+		{
+			OutputDebugString("%s:[error] %s", pFileName, lua_tostring(pState, -1));
+			lua_pop(pState, 1); // pop error message
+		}
+
 		if(bAddEditor)
 			AddTextEditor(pFileName, pTextData);
 		delete pTextData;
