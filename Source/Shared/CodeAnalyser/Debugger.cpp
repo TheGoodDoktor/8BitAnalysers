@@ -84,6 +84,7 @@ void FDebugger::CPUTick(uint64_t pins)
 
 	// setup breakpoint mask to check
 	BPMaskCheck |= bWrite ? BPMask_DataWrite : 0;
+	BPMaskCheck |= bRead ? BPMask_DataRead : 0;
 
     const FAddressRef addrRef = pCodeAnalysis->AddressRefFromPhysicalAddress(addr);
 
@@ -149,7 +150,7 @@ void FDebugger::CPUTick(uint64_t pins)
 				switch (bp.Type)
 				{
 				case EBreakpointType::Data:
-					if (bWrite &&
+					if ((bWrite || bRead) &&
 						addrRef.BankId == bp.Address.BankId &&
 						addrRef.Address >= bp.Address.Address &&
 						addrRef.Address < bp.Address.Address + bp.Size)
@@ -328,6 +329,7 @@ void FDebugger::StartFrame()
 				break;
 			case EBreakpointType::Data:
 				BreakpointMask |= BPMask_DataWrite;
+				BreakpointMask |= BPMask_DataRead;
 				break;
 			case EBreakpointType::In:
 				BreakpointMask |= BPMask_IORead;
