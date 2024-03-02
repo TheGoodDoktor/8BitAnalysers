@@ -1558,15 +1558,19 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	{
 		ImGui::BeginTooltip();
 		ImGui::Text(      "Keyboard shortcuts");
-		ImGui::BulletText("b : Set item as bitmap");
-		ImGui::BulletText("c : Set item as code");
-		ImGui::BulletText("d : Set item as data");
-		ImGui::BulletText("p : Set data item or code operand as pointer");
-		ImGui::BulletText("t : Set item as text");
-		ImGui::Separator();
+		ImGui::SeparatorText("Item Type");
+		ImGui::BulletText("c : Set as Code");
+		ImGui::BulletText("d : Set as Data");
+		ImGui::BulletText("t : Set as Text");
+		ImGui::SeparatorText("Display Mode & Operand Type");
+		ImGui::BulletText("b : Set as Binary");
+		ImGui::BulletText("n : Set as Number");
+		ImGui::BulletText("p : Set as Pointer");
+		ImGui::BulletText("t : Set as Unknown");
+		ImGui::SeparatorText("Labels");
 		ImGui::BulletText("l : Add label");
 		ImGui::BulletText("r : Rename label");
-		ImGui::Separator();
+		ImGui::SeparatorText("Comments");
 		ImGui::BulletText("; : Add inline comment");
 		ImGui::BulletText("Shift + ; : Add multi-line comment");
 		ImGui::EndTooltip();

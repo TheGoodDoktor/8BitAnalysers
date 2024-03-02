@@ -105,6 +105,28 @@ static int SetDataItemComment(lua_State* pState)
 	return 0;
 }
 
+static int SetCodeItemComment(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isinteger(pState, 1) && lua_isstring(pState, 2))
+	{
+		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+		// TODO: we'll need bank specified at some point
+		const lua_Integer address = lua_tointeger(pState, 1);
+		FAddressRef addrRef = state.AddressRefFromPhysicalAddress((uint16_t)address);
+		size_t length = 0;
+		const char* pText = luaL_tolstring(pState, 2, &length);
+
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addrRef);
+		if (pCodeInfo)
+			pCodeInfo->Comment = pText;
+	}
+
+	return 0;
+}
+
 static int SetDataItemDisplayType(lua_State* pState)
 {
 	FEmuBase* pEmu = LuaSys::GetEmulator();
@@ -225,6 +247,7 @@ static const luaL_Reg corelib[] =
 	{"GetMemPtr", GetMemPtr},
 	// Analysis
 	{"SetDataItemComment", SetDataItemComment},
+	{"SetCodeItemComment", SetCodeItemComment},
 	{"SetDataItemDisplayType", SetDataItemDisplayType},
 	// UI
 	{"DrawAddressLabel", DrawAddressLabel},
