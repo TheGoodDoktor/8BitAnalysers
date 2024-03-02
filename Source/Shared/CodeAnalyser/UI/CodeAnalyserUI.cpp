@@ -1566,13 +1566,16 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		ImGui::BulletText("b : Set as Binary");
 		ImGui::BulletText("n : Set as Number");
 		ImGui::BulletText("p : Set as Pointer");
-		ImGui::BulletText("t : Set as Unknown");
+		ImGui::BulletText("u : Set as Unknown");
 		ImGui::SeparatorText("Labels");
 		ImGui::BulletText("l : Add label");
 		ImGui::BulletText("r : Rename label");
 		ImGui::SeparatorText("Comments");
 		ImGui::BulletText("; : Add inline comment");
 		ImGui::BulletText("Shift + ; : Add multi-line comment");
+		ImGui::SeparatorText("Bookmarks");
+		ImGui::BulletText("Ctrl + 1..5 : Store bookmark");
+		ImGui::BulletText("Shift + 1..5 : Goto bookmark");
 		ImGui::EndTooltip();
 	}
 
