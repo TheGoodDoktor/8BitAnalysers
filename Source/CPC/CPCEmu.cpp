@@ -1016,17 +1016,22 @@ bool FCPCEmu::LoadLua()
 	return false;
 }
 
+const uint32_t kMachineStateMagic = 0xBeefCafe;
+static cpc_t g_SaveSlot;
+
 bool FCPCEmu::SaveGameState(const char* fname)
 {
 	// save game snapshot
 	FILE* fp = fopen(fname, "wb");
 	if (fp != nullptr)
 	{
-		cpc_t* pSnapshot = new cpc_t;
-		cpc_save_snapshot(&CPCEmuState, pSnapshot);
-		fwrite(pSnapshot, sizeof(cpc_t), 1, fp);
+		// write magic
+		fwrite(&kMachineStateMagic, sizeof(kMachineStateMagic), 1, fp);
 
-		delete pSnapshot;
+		const uint32_t versionNo = cpc_save_snapshot(&CPCEmuState, &g_SaveSlot);
+		fwrite(&versionNo, sizeof(versionNo), 1, fp);
+		fwrite(&g_SaveSlot, sizeof(cpc_t), 1, fp);
+
 		fclose(fp);
 		return true;
 	}
@@ -1036,16 +1041,25 @@ bool FCPCEmu::SaveGameState(const char* fname)
 
 bool FCPCEmu::LoadGameState(const char* fname)
 {
-	size_t stateSize;
-	cpc_t* pSnapshot = (cpc_t*)LoadBinaryFile(fname, stateSize);
-	if (pSnapshot != nullptr)
-	{
-		const bool bSuccess = cpc_load_snapshot(&CPCEmuState, 1, pSnapshot);
-		free(pSnapshot);
-		return bSuccess;
-	}
+	FILE* fp = fopen(fname, "rb");
+	if (fp == NULL)
+		return false;
 
-	return false;
+	uint32_t magicVal;
+	fread(&magicVal, sizeof(magicVal), 1, fp);
+	if (magicVal != kMachineStateMagic)
+		return false;
+
+	uint32_t snapshotVersion = 0;
+	fread(&snapshotVersion, sizeof(snapshotVersion), 1, fp);
+	fread(&g_SaveSlot, sizeof(cpc_t), 1, fp);	// load into save slot
+
+	const bool bSuccess = cpc_load_snapshot(&CPCEmuState, 1, &g_SaveSlot);
+
+	// TODO: you'll need to do some bank setup if banks have been switched - see speccy version
+
+	fclose(fp);
+	return bSuccess;
 }
 
 // save config & data
