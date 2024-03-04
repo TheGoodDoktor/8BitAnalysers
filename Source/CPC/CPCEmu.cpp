@@ -746,32 +746,36 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	InitExternalROMs(pCPCConfig);
 	
 	// Low ROM 0x0000 - 0x3fff
-	ROMBanks[EROMBank::OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true);
-	CodeAnalysis.GetBank(ROMBanks[EROMBank::OS])->PrimaryMappedPage = 0;
+	ROMBanks[EROMBank::OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true, 0x0000);
+	//CodeAnalysis.GetBank(ROMBanks[EROMBank::OS])->PrimaryMappedPage = 0;
 
 	// High ROM AMSDOS 0xc000 - 0xffff
-	ROMBanks[EROMBank::AMSDOS] = CodeAnalysis.CreateBank("ROM AMSDOS", 16, CPCEmuState.rom_amsdos, true);
-	CodeAnalysis.GetBank(ROMBanks[EROMBank::AMSDOS])->PrimaryMappedPage = 48;
+	ROMBanks[EROMBank::AMSDOS] = CodeAnalysis.CreateBank("ROM AMSDOS", 16, CPCEmuState.rom_amsdos, true, 0xC000);
+	//CodeAnalysis.GetBank(ROMBanks[EROMBank::AMSDOS])->PrimaryMappedPage = 48;
 
 	// High ROM BASIC 0xc000 - 0xffff
-	ROMBanks[EROMBank::BASIC] = CodeAnalysis.CreateBank("ROM BASIC", 16, CPCEmuState.rom_basic, true);
-	CodeAnalysis.GetBank(ROMBanks[EROMBank::BASIC])->PrimaryMappedPage = 48;
+	ROMBanks[EROMBank::BASIC] = CodeAnalysis.CreateBank("ROM BASIC", 16, CPCEmuState.rom_basic, true, 0xC000);
+	//CodeAnalysis.GetBank(ROMBanks[EROMBank::BASIC])->PrimaryMappedPage = 48;
 
 	// create & register RAM banks
 	for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
 	{
 		char bankName[32];
 		sprintf(bankName, "RAM %d", bankNo);
-		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, CPCEmuState.ram[bankNo], false);
+		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, CPCEmuState.ram[bankNo], false, 0x0000);
 	}
 
 	// Setup initial machine memory config
 	if (cpcLaunchConfig.Model == ECPCModel::CPC_464)
 	{
-		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0;
-		CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 16;
-		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
-		CodeAnalysis.GetBank(RAMBanks[3])->PrimaryMappedPage = 48;
+		//CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0;
+		//CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 16;
+		//CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
+		//CodeAnalysis.GetBank(RAMBanks[3])->PrimaryMappedPage = 48;
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[0], 0);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[1], 16);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[2], 32);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[3], 48);
 
 		SetRAMBank(0, 0, EBankAccess::ReadWrite);	// 0x0000 - 0x3fff
 		SetRAMBank(1, 1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
@@ -780,10 +784,14 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	}
 	else
 	{
-		CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0;
-		CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 16;
-		CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
-		CodeAnalysis.GetBank(RAMBanks[3])->PrimaryMappedPage = 48;
+		//CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0;
+		//CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 16;
+		//CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
+		//CodeAnalysis.GetBank(RAMBanks[3])->PrimaryMappedPage = 48;
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[0], 0);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[1], 16);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[2], 32);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[3], 48);
 
 		SetRAMBank(0, 0, EBankAccess::ReadWrite);	// 0x0000 - 0x3fff
 		SetRAMBank(1, 1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
@@ -799,9 +807,9 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	{
 		const uint8_t* pROMData = GetUpperROMSlot(i);
 		sprintf(romName, "Upper ROM %d", i);
-		UpperROMSlot[i] = CodeAnalysis.CreateBank(romName, 16, (uint8_t*)pROMData, true);
-		if (pROMData)
-			CodeAnalysis.GetBank(UpperROMSlot[i])->PrimaryMappedPage = 48;
+		UpperROMSlot[i] = CodeAnalysis.CreateBank(romName, 16, (uint8_t*)pROMData, true, 0xC000);
+		//if (pROMData)
+		//	CodeAnalysis.GetBank(UpperROMSlot[i])->PrimaryMappedPage = 48;
 	}
 
 	FDebugger& debugger = CodeAnalysis.Debugger;

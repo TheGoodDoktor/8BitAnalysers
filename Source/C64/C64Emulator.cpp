@@ -164,22 +164,18 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
     SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 
     // setup default memory configuration
-    // RAM - $0000 - $9FFF - pages 0-39 - 40K
 
-    // RAM - $C000 - $CFFF - pages 48-51 - 4k
-    // IO System - %D000 - $DFFF - page 52-55 - 4k
+    LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram,false, 0x0000,  true);		// RAM - $0000 - $9FFF - pages 0-39 - 40K
+    HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false, 0xC000);	// RAM - $C000 - $CFFF - pages 48-51 - 4k
+    IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, false, 0xC000);			// IO System - %D000 - $DFFF - page 52-55 - 4k
+    BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true,0xA000); // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
+    RAMBehindBasicROMId = CodeAnalysis.CreateBank("RAMBehindBasicROM", 8, &C64Emu.ram[0xa000], false, 0xA000);
 
-    LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram, false, true);
-    HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false);
-    IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, false);
-    BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true); // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
-    RAMBehindBasicROMId = CodeAnalysis.CreateBank("RAMBehindBasicROM", 8, &C64Emu.ram[0xa000], false);
+    KernelROMId = CodeAnalysis.CreateBank("KernelROM", 8, C64Emu.rom_kernal, true, 0xE000);   // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
+    RAMBehindKernelROMId = CodeAnalysis.CreateBank("RAMBehindKernelROM", 8, &C64Emu.ram[0xe000], false, 0xE000);
 
-    KernelROMId = CodeAnalysis.CreateBank("KernelROM", 8, C64Emu.rom_kernal, true);   // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
-    RAMBehindKernelROMId = CodeAnalysis.CreateBank("RAMBehindKernelROM", 8, &C64Emu.ram[0xe000], false);
-
-    CharacterROMId = CodeAnalysis.CreateBank("CharacterROM", 4, C64Emu.rom_char, true); // Char ROM - %D000 - $DFFF - page 52-55 - 4k
-    RAMBehindCharROMId = CodeAnalysis.CreateBank("RAMBehindCharROM", 4, &C64Emu.ram[0xd000], false);
+    CharacterROMId = CodeAnalysis.CreateBank("CharacterROM", 4, C64Emu.rom_char, true,0xD000); // Char ROM - %D000 - $DFFF - page 52-55 - 4k
+    RAMBehindCharROMId = CodeAnalysis.CreateBank("RAMBehindCharROM", 4, &C64Emu.ram[0xd000], false, 0xD000);
 
     //ColourRAMId = CodeAnalysis.CreateBank("ColourRAM", 1, C64Emu.color_ram, true);  // Colour RAM - $D800
 

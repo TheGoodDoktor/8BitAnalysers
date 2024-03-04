@@ -244,7 +244,7 @@ struct FCodeAnalysisBank
 	//std::vector<int>	MappedPages;	// banks can be mapped to multiple pages
 	std::unordered_set<int>	MappedReadPages;
 	std::unordered_set<int>	MappedWritePages;
-	int					PrimaryMappedPage = -1;
+	int					PrimaryMappedPage = -1;	// the page this bank is normally mapped to
 	uint8_t*			Memory = nullptr;	// pointer to memory bank occupies
 	FCodeAnalysisPage*	Pages = nullptr;
 	std::string			Name;
@@ -329,7 +329,8 @@ public:
 	void	SetGlobalConfig(FGlobalConfig *pConfig) { pGlobalConfig = pConfig; }
 
 	// Memory Banks & Pages
-	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly, bool bFixed = false);
+	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly, uint16_t initialAddress, bool bFixed = false);
+	bool		SetBankPrimaryPage(int16_t bankId, int startPageNo);
 	bool		MapBank(int16_t bankId, int startPageNo, EBankAccess access = EBankAccess::ReadWrite);
 	//bool		UnMapBank(int16_t bankId, int startPageNo, EBankAccess access = EBankAccess::ReadWrite);
 	bool		IsBankIdMapped(int16_t bankId) const;

@@ -29,7 +29,7 @@
 
 // create a bank
 // a bank is a list of memory pages
-int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly, bool bFixed)
+int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly, uint16_t initialAddress, bool bFixed)
 {
 	const int16_t bankId = (int16_t)Banks.size();
 	const int noPages = noKb;
@@ -43,6 +43,7 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	newBank.Name = bankName;
 	newBank.bReadOnly = bReadOnly;
 	newBank.bFixed = bFixed;
+	newBank.PrimaryMappedPage = initialAddress / 1024;	// byte addres to 1kb page address
 	for (int pageNo = 0; pageNo < noPages; pageNo++)
 	{
 		newBank.Pages[pageNo].Initialise();
@@ -53,18 +54,28 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	return bankId;
 }
 
+bool FCodeAnalysisState::SetBankPrimaryPage(int16_t bankId, int startPageNo)
+{
+	FCodeAnalysisBank* pBank = GetBank(bankId);
+	if (pBank == nullptr)	// not found 
+		return false;
+
+	pBank->PrimaryMappedPage = startPageNo;
+	return true;
+}
+
 // Set bank to memory pages starting at pageNo
 bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess access)
 {
 	FCodeAnalysisBank* pBank = GetBank(bankId);
 
-	// TODO: this needs proper logic
 	if (pBank == nullptr)	// not found or already mapped to this locatiom
 		return false;
 
-	if (pBank->PrimaryMappedPage == -1 )	// Newly mapped?
+	if (pBank->bEverBeenMapped == false )	// Newly mapped?
 	{
-		pBank->PrimaryMappedPage = startPageNo;
+		if (pBank->PrimaryMappedPage == -1)
+			pBank->PrimaryMappedPage = startPageNo;
 		pBank->bIsDirty = true;
 	}
 	assert(pBank->PrimaryMappedPage != -1);
@@ -102,7 +113,6 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 	}
 	bMemoryRemapped = true;
 
-	//RemappedBanks.push_back(bankId);
 	bCodeAnalysisDataDirty = true;
 
 	return true;

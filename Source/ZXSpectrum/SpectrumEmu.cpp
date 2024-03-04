@@ -597,9 +597,12 @@ bool FSpectrumEmu::InitForModel(ESpectrumModel model)
     // Setup initial machine memory config
     if (model == ESpectrumModel::Spectrum48K)
     {
-        CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 16;
-        CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 32;
-        CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 48;
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[0], 16);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[1], 32);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[2], 48);
+        //CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 16;
+        //CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 32;
+        //CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 48;
 
         SetROMBank(0);
         SetRAMBank(1, 0);    // 0x4000 - 0x7fff
@@ -612,9 +615,12 @@ bool FSpectrumEmu::InitForModel(ESpectrumModel model)
     }
     else
     {
-        CodeAnalysis.GetBank(RAMBanks[5])->PrimaryMappedPage = 16;
-        CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
-        CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 48;
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[5], 16);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[2], 32);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[1], 48);
+        //CodeAnalysis.GetBank(RAMBanks[5])->PrimaryMappedPage = 16;
+        //CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
+        //CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 48;
 
         SetROMBank(0);
         SetRAMBank(1, 5);    // 0x4000 - 0x7fff
@@ -692,8 +698,8 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	{
 		char bankName[32];
 		snprintf(bankName,32, "ROM %d", bankNo);
-		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16,ZXEmuState.rom[bankNo], true);
-		CodeAnalysis.GetBank(ROMBanks[bankNo])->PrimaryMappedPage = 0;
+		ROMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16,ZXEmuState.rom[bankNo], true, 0x0000);
+		//CodeAnalysis.GetBank(ROMBanks[bankNo])->PrimaryMappedPage = 0;
 	}
 
 	// create & register RAM banks
@@ -701,8 +707,8 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	{
 		char bankName[32];
 		snprintf(bankName, 32, "RAM %d", bankNo);
-		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false);
-		CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
+		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, ZXEmuState.ram[bankNo], false, 0xC000);
+		//CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = 48;
 	}
     
     if(InitForModel(spectrumLaunchConfig.Model) == false)
@@ -898,7 +904,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	if (bLoadSnapshot)
 	{
 		// if the game state didn't load then reload the snapshot
-		const FGameSnapshot* snapshot = GamesList.GetGame(pGameConfig->Name.c_str());
+		const FGameSnapshot* snapshot = GamesList.GetGame(RemoveFileExtension(pGameConfig->SnapshotFile.c_str()).c_str());
 		if (snapshot == nullptr)
 		{
 			SetLastError("Could not find '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pGameConfig->SnapshotFile.c_str());
