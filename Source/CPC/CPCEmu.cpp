@@ -781,6 +781,12 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		SetRAMBank(1, 1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
 		SetRAMBank(2, 2, EBankAccess::ReadWrite);	// 0x8000 - 0xBfff
 		SetRAMBank(3, 3, EBankAccess::ReadWrite);	// 0xc000 - 0xffff
+
+		// We don't want these banks to show up in the Code Analysis view, so set primary mapped page to -1.
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[4], -1);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[5], -1);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[6], -1);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[7], -1);
 	}
 	else
 	{
@@ -808,8 +814,12 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		const uint8_t* pROMData = GetUpperROMSlot(i);
 		sprintf(romName, "Upper ROM %d", i);
 		UpperROMSlot[i] = CodeAnalysis.CreateBank(romName, 16, (uint8_t*)pROMData, true, 0xC000);
-		//if (pROMData)
-		//	CodeAnalysis.GetBank(UpperROMSlot[i])->PrimaryMappedPage = 48;
+		if (!pROMData)
+		{
+			// If we don't have a rom loaded for this slot then set the primary mapped page to -1.
+			// This prevents the bank being displayed in the Code Analysis view.
+			CodeAnalysis.SetBankPrimaryPage(UpperROMSlot[i], -1);
+		}
 	}
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
