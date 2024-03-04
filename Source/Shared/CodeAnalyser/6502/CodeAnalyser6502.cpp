@@ -127,8 +127,8 @@ bool CheckPointerRefInstruction6502(const FCodeAnalysisState& state, uint16_t pc
 {
 	const uint8_t instrByte = state.ReadByte(pc);
 
-	if (CheckPointerIndirectionInstruction6502(state, pc, out_addr))
-		return true;
+	//if (CheckPointerIndirectionInstruction6502(state, pc, out_addr))
+	//	return true;
 
 	// use switch to catch specifics
 	/*switch (instrByte)
