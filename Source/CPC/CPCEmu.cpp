@@ -834,15 +834,19 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	{
 		// Setup upper ROM slots
 		UpperROMSlot[0] = ROMBanks[EROMBank::BASIC];
-
-		const uint8_t* pROMData = GetUpperROMSlot(i);
-		sprintf(romName, "Upper ROM %d", i);
-		UpperROMSlot[i] = CodeAnalysis.CreateBank(romName, 16, (uint8_t*)pROMData, true, 0xC000);
-		if (!pROMData)
+		
+		char romName[16];
+		for (int i = 1; i < kNumUpperROMSlots; i++)
 		{
-			// If we don't have a rom loaded for this slot then set the primary mapped page to -1.
-			// This prevents the bank being displayed in the Code Analysis view.
-			CodeAnalysis.SetBankPrimaryPage(UpperROMSlot[i], -1);
+			const uint8_t* pROMData = GetUpperROMSlot(i);
+			sprintf(romName, "Upper ROM %d", i);
+			UpperROMSlot[i] = CodeAnalysis.CreateBank(romName, 16, (uint8_t*)pROMData, true, 0xC000);
+			if (!pROMData)
+			{
+				// If we don't have a rom loaded for this slot then set the primary mapped page to -1.
+				// This prevents the bank being displayed in the Code Analysis view.
+				CodeAnalysis.SetBankPrimaryPage(UpperROMSlot[i], -1);
+			}
 		}
 	}
 
