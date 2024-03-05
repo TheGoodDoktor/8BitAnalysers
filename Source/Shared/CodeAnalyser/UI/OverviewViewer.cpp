@@ -110,7 +110,7 @@ void FOverviewViewer::CalculateStats()
 	Stats.PercentUnknown = Stats.UnknownCount * (1.0f / Stats.TotalItems) * 100.0f;
 }
 
-
+#if 0
 void	FOverviewViewer::DrawBankOverview()
 {
 	const FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
@@ -173,6 +173,7 @@ void	FOverviewViewer::DrawBankOverview()
 
 	MemoryViewImage->Draw();
 }
+#endif
 
 void	FOverviewViewer::DrawPhysicalMemoryOverview()
 {
@@ -183,9 +184,7 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	uint32_t* pViewImagePixels = MemoryViewImage->GetPixelBuffer();
 	uint32_t* pPix = pViewImagePixels;
 
-	//DrawAccessMap(state, pPix);
 	DrawUtilisationMap(state,pPix);
-
 
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
@@ -224,9 +223,9 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 			viewState.GoToAddress(addrRef, false);
 		}
 	}
-
 }
 
+#if 0
 void FOverviewViewer::DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix)
 {
 	const int frameThreshold = 8;
@@ -279,7 +278,7 @@ void FOverviewViewer::DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix)
 		}
 	}	
 }
-
+#endif
 
 
 void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
@@ -299,11 +298,14 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 	const uint32_t kColAttribDataCol = 0xff0080ff;
 	const uint32_t kUnknownDataCol = 0xff808080;
 
-	uint32_t addr = bShowROM ? 0 : 0x4000;
+	uint32_t physicalAddress = bShowROM ? 0 : 0x4000;
 
-	while (addr < (1 << 16))
+	while (physicalAddress < (1 << 16))
 	{
-		const FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(addr);
+		FAddressRef readAddrRef = state.AddressRefFromPhysicalReadAddress(physicalAddress);
+		FAddressRef writeAddrRef = state.AddressRefFromPhysicalWriteAddress(physicalAddress);
+
+		const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(readAddrRef);
 
 		if (pCodeInfo)
 		{
@@ -318,13 +320,13 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
 			{
-				addr++;
+				physicalAddress++;
 				*pPix++ = codeCol;
 			}
 		}
 		else
 		{
-			const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(addr);
+			const FDataInfo* pDataInfo = state.GetDataInfoForAddress(readAddrRef);
 			
 			uint32_t dataCol = kDefaultDataCol;
 
@@ -356,8 +358,8 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 			{
 				if (bShowActivity)
 				{
-					const FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
-					const FDataInfo* pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
+					const FDataInfo* pReadDataInfo = state.GetDataInfoForAddress(readAddrRef);
+					const FDataInfo* pWriteDataInfo = state.GetDataInfoForAddress(writeAddrRef);
 					uint32_t drawCol = dataCol;
 
 					if (pWriteDataInfo != nullptr && pWriteDataInfo->LastFrameWritten != -1)	// Show write
@@ -379,8 +381,17 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 				{
 					*pPix++ = dataCol;
 				}
-				addr++;
+
+				state.AdvanceAddressRef(readAddrRef);
+				state.AdvanceAddressRef(writeAddrRef);
+				physicalAddress++;
 			}
 		}
 	}
 }
+
+
+// TODO: Insights
+// Search for common coding patterns such as:
+// Multiplications through adds
+// Conditional jumps

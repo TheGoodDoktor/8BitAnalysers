@@ -2,6 +2,8 @@
 ![ci status](https://github.com/TheGoodDoktor/SpeccyExplorer/actions/workflows/ci.yml/badge.svg)
 ## Home Page
 https://colourclash.co.uk/spectrum-analyser/
+## Wiki
+https://github.com/TheGoodDoktor/8BitAnalysers/wiki
 ## Getting Started
 ### Clone project:
 git clone --recursive https://github.com/TheGoodDoktor/8BitAnalysers

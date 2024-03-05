@@ -836,17 +836,17 @@ bool LoadMachineState(FSpectrumEmu* pSpectrumEmu, FILE* fp)
 
 	fread(&im, sizeof(zx_t), 1, fp);	// load into save slot
 
-    zx_load_snapshot(sys, snapshotVersion, &g_SaveSlot);
+    const bool bSuccess = zx_load_snapshot(sys, snapshotVersion, &g_SaveSlot);
 
 	// Set code analysis banks
-	if (sys->type == ZX_TYPE_128)
+	if (bSuccess && sys->type == ZX_TYPE_128)
 	{
 		const uint8_t memConfig = pSpectrumEmu->ZXEmuState.last_mem_config;
 		pSpectrumEmu->SetROMBank(memConfig & (1 << 4) ? 1 : 0);
 		pSpectrumEmu->SetRAMBank(3, memConfig & 0x7);
 		pSpectrumEmu->GetCodeAnalysis().SetAllBanksDirty();
 	}
-	return true;
+	return bSuccess;
 }
 
 bool SaveGameState(FSpectrumEmu* pSpectrumEmu, const char* fname)

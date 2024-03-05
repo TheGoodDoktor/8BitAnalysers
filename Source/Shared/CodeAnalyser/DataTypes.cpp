@@ -317,9 +317,10 @@ void FStruct::DrawDetailsUI()
 		ImGui::TableHeadersRow();
 		
 		bool bEdited = false;
+		int memberIndex = 0;
 		for(FStructMember& structMember : Members)
 		{
-			ImGui::PushID(structMember.Name.c_str());
+			ImGui::PushID(memberIndex);
 			ImGui::TableNextRow();
 			
 			ImGui::TableSetColumnIndex(0);
@@ -327,6 +328,7 @@ void FStruct::DrawDetailsUI()
 			ImGui::TableSetColumnIndex(1);
 			bEdited |= DrawDataTypeCombo("Type", structMember.DataType);
 			ImGui::PopID();
+			memberIndex++;
 		}
 		
 		ImGui::EndTable();
