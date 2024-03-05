@@ -284,6 +284,7 @@ bool FC64Emulator::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 	CodeAnalysis.Init(this);
 
 	//IOAnalysis.Reset();
+	bool bLoadSnapshot = false;
 
 	// Set options from config
 	if(pGameConfig)
@@ -293,10 +294,11 @@ bool FC64Emulator::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 			CodeAnalysis.ViewState[i].Enabled = pGameConfig->ViewConfigs[i].bEnabled;
 			CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
 		}
+
+		bLoadSnapshot = pGameConfig->SnapshotFile.empty() == false;
 	}
 
-	bool bLoadSnapshot = pGameConfig->SnapshotFile.empty() == false;
-
+	
 	if (bLoadGameData)
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
@@ -733,7 +735,7 @@ void   FC64Emulator::Reset(void)
 	
 	// Set memory banks
 	UpdateCodeAnalysisPages(C64Emu.cpu_port);
-	StartGame(nullptr, false);
+	//StartGame(nullptr, false);
 }
 
 
