@@ -326,7 +326,7 @@ bool FC64Emulator::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		//GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
 		// Load machine state, if it fails, reload the prg file
-		if (LoadMachineState(saveStateFName.c_str()) == false)
+		if (LoadMachineState(saveStateFName.c_str()))
 		{
 			// if the game state loaded then we don't need the snapshot
 			bLoadSnapshot = false;
@@ -424,6 +424,7 @@ void FC64Emulator::ResetCodeAnalysis(void)
 }
 
 static const uint32_t kMachineStateMagic = 0xFaceCafe;
+static c64_t g_SaveSlot;
 
 bool FC64Emulator::SaveMachineState(const char* fname)
 {
@@ -431,13 +432,11 @@ bool FC64Emulator::SaveMachineState(const char* fname)
 	FILE* fp = fopen(fname, "wb");
 	if (fp != nullptr)
 	{
-		c64_t* pSnapshot = new c64_t;;
-		const uint32_t versionNo = c64_save_snapshot(&C64Emu, pSnapshot);
+		const uint32_t versionNo = c64_save_snapshot(&C64Emu, &g_SaveSlot);
 		fwrite(&kMachineStateMagic, sizeof(uint32_t), 1, fp);
 		fwrite(&versionNo, sizeof(uint32_t), 1, fp);
-		fwrite(pSnapshot, sizeof(c64_t), 1, fp);
+		fwrite(&g_SaveSlot, sizeof(c64_t), 1, fp);
 
-		delete pSnapshot;
 		fclose(fp);
 		return true;
 	}
@@ -457,12 +456,10 @@ bool FC64Emulator::LoadMachineState(const char* fname)
 	fread(&magic, sizeof(uint32_t), 1, fp);
 	if(magic == kMachineStateMagic)
 	{
-		c64_t* pSnapshot = new c64_t;
 		fread(&versionNo, sizeof(uint32_t), 1, fp);
-		fread(pSnapshot, sizeof(c64_t), 1, fp);
+		fread(&g_SaveSlot, sizeof(c64_t), 1, fp);
 
-		bSuccess = c64_load_snapshot(&C64Emu, versionNo, pSnapshot);
-		delete pSnapshot;
+		bSuccess = c64_load_snapshot(&C64Emu, versionNo, &g_SaveSlot);
 	}
 	fclose(fp);
 	return bSuccess;
