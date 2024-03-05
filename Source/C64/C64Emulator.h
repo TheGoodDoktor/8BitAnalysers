@@ -62,9 +62,24 @@ enum class EC64Event
 
 struct FC64Config;
 struct FC64GameConfig;
+class FC64Emulator;
 
 struct FC64LaunchConfig : public FEmulatorLaunchConfig
 {
+};
+
+
+class FC64GameLoader : public IGameLoader
+{
+public:
+	// IGameLoader
+	bool LoadSnapshot(const FGameSnapshot& snapshot) override;
+	// ~IGameLoader
+
+	void Init(FC64Emulator* pCpc) { pC64Emu = pCpc; }
+
+private:
+	FC64Emulator* pC64Emu = nullptr;
 };
 
 class FC64Emulator : public FEmuBase
@@ -148,8 +163,8 @@ public:
 	//bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
 	void ResetCodeAnalysis(void);
 	bool SaveCurrentGameData(void) override;
-	bool LoadGameState(const char* fname);
-	bool SaveGameState(const char* fname);
+	bool LoadMachineState(const char* fname);
+	bool SaveMachineState(const char* fname);
 	//bool LoadCodeAnalysis(const FGameInfo* pGameInfo);
 
 	// Emulator Event Handlers
@@ -171,6 +186,9 @@ private:
 	//FC64GameConfig*		pCurrentGameConfig = nullptr;
 
 	//FC64GamesList       GamesList;
+	FC64GameLoader		GameLoader;
+
+
 	const FGameInfo*	CurrentGame = nullptr;
 
 	FC64Display         Display;
