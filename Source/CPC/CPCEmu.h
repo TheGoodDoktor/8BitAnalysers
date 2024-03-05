@@ -182,7 +182,7 @@ public:
 
 	// Bank IDs of upper ROM slots
 	int16_t			UpperROMSlot[kNumUpperROMSlots];
-	int					CurUpperROMSlot = -1;
+	int				CurUpperROMSlot = -1;
 
 	//FCodeAnalysisPage	ROMPages[kNoROMPages];
 	//FCodeAnalysisPage	RAMPages[kNoRAMPages];
@@ -198,7 +198,7 @@ public:
 	FMemoryStats	MemStats;
 
 	uint16_t		PreviousPC = 0;		// store previous pc
-	int					InstructionsTicks = 0;
+	int			InstructionsTicks = 0;
 
 	//bool	bShowImGuiDemo = false;
 	//bool	bShowImPlotDemo = false;
@@ -216,9 +216,10 @@ private:
 	FScreenPixMemDescGenerator* pScreenMemDescGenerator = 0;
 
 	bool				bReplaceGamePopup = false;
-	int					ReplaceGameSnapshotIndex = 0;
+	int				ReplaceGameSnapshotIndex = 0;
 
 	bool				bExportAsm = false;
 
 	bool				bInitialised = false;
+	bool				bUpperROMSupport = true;
 };
