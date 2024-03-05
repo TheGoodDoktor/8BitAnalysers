@@ -33,9 +33,6 @@
 
 //#define RUN_AHEAD_TO_GENERATE_SCREEN
 
-// Disabled for now
-//#define ENABLE_CPC_6128
-
 const std::string kAppTitle = "CPC Analyser";
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 
@@ -263,27 +260,30 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 		{
 			if ((pins & Z80_A13) == 0)
 			{
-				// ROM select. This will get called when a $BC OUT instruction happens
-				
-				const uint8_t romNumber = Z80_GET_DATA(pins);
-				const int newRomNumber = SelectUpperROM(romNumber);
-				if (newRomNumber != -1)
+				if (bUpperROMSupport)
 				{
-					bool bDirty = newRomNumber != CurUpperROMSlot;
-
-					CurUpperROMSlot = newRomNumber;
-
-					if (bDirty)
+					// ROM select. This will get called when a $BC OUT instruction happens
+				
+					const uint8_t romNumber = Z80_GET_DATA(pins);
+					const int newRomNumber = SelectUpperROM(romNumber);
+					if (newRomNumber != -1)
 					{
-						UpdateBankMappings();
+						bool bDirty = newRomNumber != CurUpperROMSlot;
 
-						// Call the modified Chips bank switch code, in order to switch to the newly selected upper ROM.
-						// Note: the bank switch CB will have already been called by the Chips code but we need to call it
-						// again after selecting the upper ROM.
-						// The alternative would have been to call SelectUpperROM() in the bank switch CB but that would mean
-						// calling it more often than we need to.
+						CurUpperROMSlot = newRomNumber;
+
+						if (bDirty)
+						{
+							UpdateBankMappings();
+
+							// Call the modified Chips bank switch code, in order to switch to the newly selected upper ROM.
+							// Note: the bank switch CB will have already been called by the Chips code but we need to call it
+							// again after selecting the upper ROM.
+							// The alternative would have been to call SelectUpperROM() in the bank switch CB but that would mean
+							// calling it more often than we need to.
 						
-						CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
+							CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
+						}
 					}
 				}
 			}
@@ -304,20 +304,18 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 					}
 					break;
 
-#if 0
 					/* RAM bank switching (6128 only) */
 					case (1 << 6) | (1 << 7) :
 					{
-						int bankPresetIndex;
-						if (AM40010_CPC_TYPE_6128 == CPCEmuState.type)
+						if (CPCEmuState.type == CPC_TYPE_6128)
 						{
-							// sam todo. only set ram banks if dirty?
-							bankPresetIndex = CPCEmuState.ga.ram_config & 7;
+							const int bankPresetIndex = CPCEmuState.ga.ram_config & 7;
 							SetRAMBanksPreset(bankPresetIndex);
+							// sam. Do I need to do this?
+							CodeAnalysis.SetAllBanksDirty();
 						}
 						break;
 					}
-#endif
 				}
 			}		
 		}
@@ -364,19 +362,25 @@ bool FCPCEmu::CanSelectUpperROM(uint8_t romSlot)
 bool FCPCEmu::InitBankMappings()
 {
 	am40010_t& ga = CPCEmuState.ga;
-
-	if (!CanSelectUpperROM(ga.rom_select))
+	if (bUpperROMSupport)
 	{
-		return false;
-	}
 
-	CurUpperROMSlot = ga.rom_select;	
+		if (!CanSelectUpperROM(ga.rom_select))
+		{
+			return false;
+		}
+
+		CurUpperROMSlot = ga.rom_select;	
 	
-	SelectUpperROM(CurUpperROMSlot);
+		SelectUpperROM(CurUpperROMSlot);
+	}
 
 	UpdateBankMappings();
 
-	CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
+	if (bUpperROMSupport)
+	{
+		CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
+	}
 	return true;
 }
 
@@ -420,22 +424,33 @@ void FCPCEmu::SetRAMBank(int slot, int bankNo, EBankAccess access)
 	CurRAMBank[slot] = bankId;
 }
 
-void FCPCEmu::SetRAMBanksPreset(int bankPresetIndex)
+// This is a copy of the _cpc_ram_config array from the Chips code 
+static const int gCPCRAMConfig[8][4] = 
 {
-	//_cpc_ram_config isn't available because we don't have CHIPS_IMPL.
-	// might have to move this whole function to cpchipsimpl.c.
-	// or write a GetRamConfig() function in cpcchipsimpl.c
-#if FIXME
-	const int slot0BankIndex = _cpc_ram_config[bankPresetIndex][0];
-	const int slot1BankIndex = _cpc_ram_config[bankPresetIndex][1];
-	const int slot2BankIndex = _cpc_ram_config[bankPresetIndex][2];
-	const int slot3BankIndex = _cpc_ram_config[bankPresetIndex][3];
+	 { 0, 1, 2, 3 }, // 0
+	 { 0, 1, 2, 7 }, // 1
+	 { 4, 5, 6, 7 }, // 2
+	 { 0, 3, 2, 7 }, // 3
+	 { 0, 4, 2, 3 }, // 4
+	 { 0, 5, 2, 3 }, // 5
+	 { 0, 6, 2, 3 }, // 6
+	 { 0, 7, 2, 3 }  // 7
+};
 
-	SetRAMBank(0, slot0BankIndex);
-	SetRAMBank(1, slot1BankIndex);
-	SetRAMBank(2, slot2BankIndex);
-	SetRAMBank(3, slot3BankIndex);
-#endif
+void FCPCEmu::SetRAMBanksPreset(int presetIndex)
+{
+	assert(presetIndex < 8);
+
+	const int slot0BankIndex = gCPCRAMConfig[presetIndex][0];
+	const int slot1BankIndex = gCPCRAMConfig[presetIndex][1];
+	const int slot2BankIndex = gCPCRAMConfig[presetIndex][2];
+	const int slot3BankIndex = gCPCRAMConfig[presetIndex][3];
+
+	// todo 6128: bank access?
+	SetRAMBank(0, slot0BankIndex, EBankAccess::ReadWrite);
+	SetRAMBank(1, slot1BankIndex, EBankAccess::ReadWrite);
+	SetRAMBank(2, slot2BankIndex, EBankAccess::ReadWrite);
+	SetRAMBank(3, slot3BankIndex, EBankAccess::ReadWrite);
 
 	// sam todo: only set dirty banks that have changed?
 	CodeAnalysis.SetAllBanksDirty();
@@ -687,9 +702,16 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
 
 	cpc_init(&CPCEmuState, &desc);
-	InitChipsImpl(&CPCEmuState);
 
-	CPCEmuState.ga.bankswitch_cb = CPCBankSwitchCB;
+	if (type == CPC_TYPE_6128)
+	{
+		// disable upper rom support on 6128 for now as it's broken
+		bUpperROMSupport = false;
+	}
+	if (bUpperROMSupport)
+	{
+		CPCEmuState.ga.bankswitch_cb = CPCBankSwitchCB;
+	}
 
 	// Clear UI
 	/*
@@ -743,7 +765,10 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	// Set up code analysis
 	// initialise code analysis pages
 	
-	InitExternalROMs(pCPCConfig);
+	if (bUpperROMSupport)
+	{
+		InitExternalROMs(pCPCConfig);
+	}
 	
 	// Low ROM 0x0000 - 0x3fff
 	ROMBanks[EROMBank::OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true, 0x0000);
@@ -805,20 +830,23 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		SetRAMBank(3, 3, EBankAccess::ReadWrite);	// 0xc000 - 0xffff
 	}
 
-	// Setup upper ROM slots
-	UpperROMSlot[0] = ROMBanks[EROMBank::BASIC];
-
-	char romName[16];
-	for (int i = 1; i < kNumUpperROMSlots; i++)
+	if (bUpperROMSupport)
 	{
-		const uint8_t* pROMData = GetUpperROMSlot(i);
-		sprintf(romName, "Upper ROM %d", i);
-		UpperROMSlot[i] = CodeAnalysis.CreateBank(romName, 16, (uint8_t*)pROMData, true, 0xC000);
-		if (!pROMData)
+		// Setup upper ROM slots
+		UpperROMSlot[0] = ROMBanks[EROMBank::BASIC];
+		
+		char romName[16];
+		for (int i = 1; i < kNumUpperROMSlots; i++)
 		{
-			// If we don't have a rom loaded for this slot then set the primary mapped page to -1.
-			// This prevents the bank being displayed in the Code Analysis view.
-			CodeAnalysis.SetBankPrimaryPage(UpperROMSlot[i], -1);
+			const uint8_t* pROMData = GetUpperROMSlot(i);
+			sprintf(romName, "Upper ROM %d", i);
+			UpperROMSlot[i] = CodeAnalysis.CreateBank(romName, 16, (uint8_t*)pROMData, true, 0xC000);
+			if (!pROMData)
+			{
+				// If we don't have a rom loaded for this slot then set the primary mapped page to -1.
+				// This prevents the bank being displayed in the Code Analysis view.
+				CodeAnalysis.SetBankPrimaryPage(UpperROMSlot[i], -1);
+			}
 		}
 	}
 
@@ -1074,7 +1102,12 @@ bool FCPCEmu::LoadGameState(const char* fname)
 
 	const bool bSuccess = cpc_load_snapshot(&CPCEmuState, 1, &g_SaveSlot);
 
-	// TODO: you'll need to do some bank setup if banks have been switched - see speccy version
+	if (CPCEmuState.type == CPC_TYPE_6128)
+	{
+		const int bankPresetIndex = CPCEmuState.ga.ram_config & 7;
+		SetRAMBanksPreset(bankPresetIndex);
+		GetCodeAnalysis().SetAllBanksDirty();
+	}
 
 	fclose(fp);
 	return bSuccess;
@@ -1208,30 +1241,6 @@ void FCPCEmu::Tick()
 	DrawDockingView();
 }
 
-#if 0
-// todo: delete?
-void FCPCEmu::DrawMemoryTools()
-{
-	if (ImGui::Begin("Memory Tools") == false)
-	{
-		ImGui::End();
-		return;
-	}
-	if (ImGui::BeginTabBar("MemoryToolsTabBar"))
-	{
-		if (ImGui::BeginTabItem("IO Analysis"))
-		{
-			//IOAnalysis.DrawUI();
-			ImGui::EndTabItem();
-		}
-
-		ImGui::EndTabBar();
-	}
-
-	ImGui::End();
-}
-#endif
-
 // These functions are used to add to the bottom of the menus
 void	FCPCEmu::FileMenuAdditions(void)
 {
@@ -1308,13 +1317,6 @@ void FCPCEmu::DrawEmulatorUI()
 	// Draw the main menu
 	//DrawMainMenu(timeMS);
 	/*
-	if (pCPCUI->memmap.open)
-	{
-		// sam todo work out why SpectrumEmu.cpp has it's own version of UpdateMemmap()
-		// why doesn't it call _ui_zx_update_memmap()?
-		//UpdateMemmap(pCPCUI);
-	}
-
 	if (pCPCUI->memmap.open) 
 	{
 		_ui_cpc_update_memmap(pCPCUI);
@@ -1373,9 +1375,7 @@ void FCPCLaunchConfig::ParseCommandline(int argc, char** argv)
 	{
 		if (*argIt == std::string("-128"))
 		{
-#ifdef ENABLE_CPC_6128
 			Model = ECPCModel::CPC_6128;
-#endif
 		}
 
 		++argIt;

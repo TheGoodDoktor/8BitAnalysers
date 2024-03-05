@@ -26,7 +26,6 @@ uint32_t GetCPCColour(unsigned int index);
 
 // This is a modified version of the Chips _cpc_bankswitch() code. It has been extended to allow mapping of external upper ROM banks.
 void CPCBankSwitchCB(uint8_t ram_config, uint8_t rom_enable, uint8_t rom_select, void* user_data);
-void InitChipsImpl(cpc_t* sys);
 
 #ifdef __cplusplus
 } // extern "C"
