@@ -400,7 +400,7 @@ uint16_t m6502dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, voi
     uint8_t u8; int8_t i8; uint16_t u16;
     switch (_m6502dasm_ops[cc][bbb][aaa]) {
     case A_IMM:
-        _CHR(' '); _FETCH_U8(u8); _CHR('#'); _STR_U8(u8);
+        _CHR(' '); _FETCH_U8(u8); _CHR('\\'); _CHR('#'); _STR_U8(u8);
         break;
     case A_ZER:
         _CHR(' '); _FETCH_U8(u8); _STR_U8(u8);

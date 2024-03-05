@@ -2500,6 +2500,12 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 	{
 		const char ch = *pTxtPtr++;
 
+		if (ch == '\\')	// escape char
+		{
+			str[strPos++] = *pTxtPtr++;
+			continue;
+		}
+
 		if (bInTag == false)
 		{
 			if (ch == '#')	// start tag

@@ -167,7 +167,7 @@ void ReadStringFromFile(std::string& str, FILE* fp)
 std::string MakeHexString(uint16_t val)
 {
 	char hexStr[16];
-	sprintf(hexStr, "0x%x", val);
+	snprintf(hexStr,16, "0x%x", val);
 	return std::string(hexStr);
 }
 

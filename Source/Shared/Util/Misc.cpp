@@ -56,19 +56,19 @@ const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode)
 	switch (numDispMode)
 	{
 	case ENumberDisplayMode::Decimal:
-		sprintf(pStrAddress, "%d", num);
+		snprintf(pStrAddress,kTextLength, "%d", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexAitch:
-		sprintf(pStrAddress, "%02Xh", num);
+		snprintf(pStrAddress,kTextLength, "%02Xh", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexDollar:
-		sprintf(pStrAddress, "$%02X", num);
+		snprintf(pStrAddress,kTextLength, "$%02X", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::Binary:
-		sprintf(pStrAddress, "%c%c%c%c%c%c%c%c%c", '%', BYTE_TO_BINARY(num));
+		snprintf(pStrAddress,kTextLength, "%c%c%c%c%c%c%c%c%c", '%', BYTE_TO_BINARY(num));
 		return pStrAddress;
 
 	default:
@@ -90,19 +90,19 @@ const char* NumStr(uint16_t num, ENumberDisplayMode numDispMode)
 	switch (numDispMode)
 	{
 	case ENumberDisplayMode::Decimal:
-		sprintf(pStrAddress, "%d", num);
+		snprintf(pStrAddress,kTextLength, "%d", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexAitch:
-		sprintf(pStrAddress, "%04Xh", num);
+		snprintf(pStrAddress,kTextLength, "%04Xh", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::HexDollar:
-		sprintf(pStrAddress, "$%04X", num);
+		snprintf(pStrAddress,kTextLength, "$%04X", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::Binary:
-		sprintf(pStrAddress, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", '%', BYTE_TO_BINARY(num>>8), BYTE_TO_BINARY(num));
+		snprintf(pStrAddress,kTextLength, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", '%', BYTE_TO_BINARY(num>>8), BYTE_TO_BINARY(num));
 		return pStrAddress;
 
 	default:
