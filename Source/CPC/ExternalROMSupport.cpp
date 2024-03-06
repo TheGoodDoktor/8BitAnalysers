@@ -45,7 +45,6 @@ void InitExternalROMs(const FCPCConfig* pConfig)
 	SelectUpperROM(0);
 }
 
-// Returns index of rom slot that was selected.
 int SelectUpperROM(int slotIndex)
 {
 	if (slotIndex >= kNumUpperROMSlots)

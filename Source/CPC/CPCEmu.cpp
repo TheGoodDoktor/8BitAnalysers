@@ -403,7 +403,10 @@ void FCPCEmu::UpdateBankMappings()
 	}
 	else
 	{
-		CodeAnalysis.MapBank(UpperROMSlot[CurUpperROMSlot], 48, EBankAccess::Read);
+		if (bUpperROMSupport)
+		{
+			CodeAnalysis.MapBank(UpperROMSlot[CurUpperROMSlot], 48, EBankAccess::Read);
+		}
 	}
 
 	LastGAConfigReg = configByte;
@@ -538,6 +541,10 @@ void IOPortEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 			}
 		}
 	}
+	/*else if (event.Type == (int)EEventType::SwitchMemoryBanks)
+	{
+
+	}*/
 	else
 	{
 		ImGui::Text("%s", NumStr(event.Value));
@@ -862,6 +869,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite, "CRTC Reg. Write", 0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
+	debugger.RegisterEventType((int)EEventType::SwitchMemoryBanks, "Switch Banks", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
 
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
