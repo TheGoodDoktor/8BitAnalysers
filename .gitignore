@@ -67,6 +67,7 @@
 /VSProject/C64/C64Explorer/x64/Debug
 /VSProject/C64/C64Explorer/.vs/C64Explorer/config
 /Source/C64/build
+/Source/C64/buildxc
 /Source/C64/linuxbuild
 .DS_Store
 /Data/C64Analyser/GlobalConfig.json
