@@ -11,13 +11,6 @@ uint32_t GetCPCColour(unsigned int index)
     return _am40010_cpc_colors[index];
 }
 
-void InitChipsImpl(cpc_t* sys)
-{
-	// fixup missing shift and ctrl keys not working
-	kbd_register_key(&sys->kbd, 0x0E, 2, 5, 0); /* Shift */
-	kbd_register_key(&sys->kbd, 0x0FF, 2, 7, 0); /* Ctrl */
-}
-
 // This will be called when either of these occur:
 // - lower/upper ROM enable/disable
 // - RAM bank configuration switch (6128 only)
@@ -27,16 +20,16 @@ void CPCBankSwitchCB(uint8_t ram_config, uint8_t rom_enable, uint8_t rom_select,
 	cpc_t* sys = (cpc_t*)user_data;
 	int ram_config_index;
 	const uint8_t* rom0_ptr;
-	//const uint8_t* rom1_ptr;
+	const uint8_t* rom1_ptr;
 	if (CPC_TYPE_6128 == sys->type) {
 		ram_config_index = ram_config & 7;
 		rom0_ptr = sys->rom_os;
-		//rom1_ptr = (rom_select == 7) ? sys->rom_amsdos : sys->rom_basic;
+		rom1_ptr = (rom_select == 7) ? sys->rom_amsdos : sys->rom_basic;
 	}
 	else {
 		ram_config_index = 0;
 		rom0_ptr = sys->rom_os;
-		//rom1_ptr = sys->rom_basic;
+		rom1_ptr = sys->rom_basic;
 	}
 	const int i0 = _cpc_ram_config[ram_config_index][0];
 	const int i1 = _cpc_ram_config[ram_config_index][1];

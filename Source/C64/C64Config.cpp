@@ -55,6 +55,45 @@ bool LoadC64GameConfigs(FC64Emulator* pC64Emu)
 	FDirFileList listing;
 
 	const std::string root = pC64Emu->GetGlobalConfig()->WorkspaceRoot;
+
+	// New method - search through each game directory
+	if (EnumerateDirectory(root.c_str(), listing) == false)
+		return false;
+
+	for (const auto& file : listing)
+	{
+		if (file.FileType == FDirEntry::Directory)
+		{
+			if (file.FileName == "." || file.FileName == "..")
+				continue;
+
+			FDirFileList directoryListing;
+			std::string gameDir = root + file.FileName;
+			if (EnumerateDirectory(gameDir.c_str(), directoryListing))
+			{
+				for (const auto& gameFile : directoryListing)
+				{
+					if (gameFile.FileName == "Config.json")
+					{
+						const std::string& configFileName = gameDir + "/" + gameFile.FileName;
+						FC64GameConfig* pNewConfig = new FC64GameConfig;
+						if (LoadGameConfigFromFile(*pNewConfig, configFileName.c_str()))
+						{
+							//if (pNewConfig->Spectrum128KGame == (pEmu->ZXEmuState.type == ZX_TYPE_128))
+							AddGameConfig(pNewConfig);
+						}
+						else
+						{
+							delete pNewConfig;
+						}
+
+					}
+				}
+			}
+		}
+	}
+
+	// Keep old method in for now
 	const std::string configDir = root + "Configs/";
 
 	if (EnumerateDirectory(configDir.c_str(), listing) == false)

@@ -209,6 +209,7 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 	ay38910_set_addr_latch(&cpc.psg, pHdr->PSGSelectedReg);
 
 	cpc.ga.video.mode = cpc.ga.regs.config & AM40010_CONFIG_MODE;
+	// why am I resetting this?
 	cpc.ga.rom_select = 0;
 
 	// todo: maybe set rom and ram banks here for 464 too
@@ -284,9 +285,9 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 
 	if (pEmu->CPCEmuState.type == CPC_TYPE_6128)
 	{
-		// todo: set rom bank here
-
-		pEmu->SetRAMBanksPreset(pEmu->CPCEmuState.ga.ram_config & 7);
+		const int bankPresetIndex = pEmu->CPCEmuState.ga.ram_config & 7;
+		pEmu->SetRAMBanksPreset(bankPresetIndex);
+		pEmu->GetCodeAnalysis().SetAllBanksDirty();
 	}
 	
 	return true;
