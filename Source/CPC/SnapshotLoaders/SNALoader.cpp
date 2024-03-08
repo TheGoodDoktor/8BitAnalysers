@@ -58,7 +58,7 @@ struct FCPCSnapHeader
 	uint8_t InterruptMode;
 	uint8_t F_, A_, C_, B_, E_, D_, L_, H_;
 	uint8_t SelectedPen;
-	uint8_t CurrentPalette[17];             // palette + border colors
+	uint8_t CurrentPalette[17];	// palette + border colors
 	uint8_t GateArrayConfig;
 	uint8_t RAMConfig;
 	uint8_t CRTCSelectedReg;
@@ -189,7 +189,9 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 	cpc.ga.regs.config = pHdr->GateArrayConfig & 0x3F;
 	cpc.ga.ram_config = pHdr->RAMConfig & 0x3F;
 	cpc.ga.rom_select = pHdr->ROMConfig;
-	CPCBankSwitchCB(cpc.ga.ram_config, cpc.ga.regs.config, cpc.ga.rom_select, cpc.ga.user_data);
+	
+	// Tell chips to map the correct ROM/RAM banks. 
+	ChipsBankSwitchCB(cpc.ga.ram_config, cpc.ga.regs.config, cpc.ga.rom_select, cpc.ga.user_data);
 
 	for (int i = 0; i < 18; i++) 
 	{
@@ -207,6 +209,11 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 		ay38910_set_register(&cpc.psg, i, pHdr->PSGRegisters[i]);
 	}
 	ay38910_set_addr_latch(&cpc.psg, pHdr->PSGSelectedReg);
+
+	if (pEmu->CPCEmuState.type == CPC_TYPE_6128)
+	{
+		pEmu->UpdateBankMappings();
+	}
 
 	cpc.ga.video.mode = cpc.ga.regs.config & AM40010_CONFIG_MODE;
 	// why am I resetting this?
@@ -281,13 +288,6 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 			}
 			pCur += chunkSize;
 		}
-	}
-
-	if (pEmu->CPCEmuState.type == CPC_TYPE_6128)
-	{
-		const int bankPresetIndex = pEmu->CPCEmuState.ga.ram_config & 7;
-		pEmu->SetRAMBanksPreset(bankPresetIndex);
-		pEmu->GetCodeAnalysis().SetAllBanksDirty();
 	}
 	
 	return true;

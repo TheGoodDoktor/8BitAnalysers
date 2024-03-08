@@ -20,12 +20,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif	
-
 // put any function definitions that need to be called from c++ here
+
 uint32_t GetCPCColour(unsigned int index);
 
 // This is a modified version of the Chips _cpc_bankswitch() code. It has been extended to allow mapping of external upper ROM banks.
-void CPCBankSwitchCB(uint8_t ram_config, uint8_t rom_enable, uint8_t rom_select, void* user_data);
+void ChipsBankSwitchCB(uint8_t ram_config, uint8_t rom_enable, uint8_t rom_select, void* user_data);
 
 #ifdef __cplusplus
 } // extern "C"
