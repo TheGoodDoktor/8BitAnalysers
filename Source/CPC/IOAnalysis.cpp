@@ -16,10 +16,6 @@ std::map< CPCIODevice, const char*> g_DeviceNames =
 	{CPCIODevice::PaletteRegisterSelect, "Palette Select"},
 	{CPCIODevice::PaletteWrite, "Palette Write"},
 	{CPCIODevice::BorderColour, "BorderColour"},
-#if SPECCY
-	{SpeccyIODevice::MemoryBank, "Memory Bank Switch"},
-	{SpeccyIODevice::SoundChip, "Sound Chip (AY)"},
-#endif
 	{CPCIODevice::Unknown, "Unknown"},
 };
 
@@ -241,34 +237,8 @@ void FIOAnalysis::HandleGateArray(uint64_t pins, CPCIODevice& readDevice, CPCIOD
 			CurScreenMode = curScrMode;
 		}
 		break;
-
-		// RAM bank switching (6128 only)
-		case (1 << 6) | (1 << 7) :
-			/*if (AM40010_CPC_TYPE_6128 == ga->cpc_type)
-			{
-				uint8_t ram_dirty = (ga->ram_config ^ data) & 7;
-				ga->ram_config = data & 7;
-				if (0 != ram_dirty) 
-				{
-					ga->bankswitch_cb(ga->ram_config, ga->regs.config, ga->rom_select, ga->user_data);
-				}
-			}*/
-		break;
-
 		}
 	}
-
-	// upper ROM bank select
-	/*if ((pins & (AM40010_A13 | AM40010_WR)) == AM40010_WR)
-	{
-		const uint8_t data = _AM40010_GET_DATA(pins);
-		bool rom_select_dirty = ga.rom_select != data;
-		ga.rom_select = data;
-		if (rom_select_dirty) 
-		{
-			ga.bankswitch_cb(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
-		}
-	}*/
 }
 
 void FIOAnalysis::RegisterEvent(uint8_t type, uint16_t address, uint8_t value)

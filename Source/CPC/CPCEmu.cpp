@@ -260,21 +260,25 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 		{
 			if ((pins & Z80_A13) == 0)
 			{
+				// ROM select. This will get called when an OUT $dfXX instruction happens
+				int selectedRomSlot = Z80_GET_DATA(pins);
+
 				if (bExternalROMSupport)
 				{
-					// ROM select. This will get called when a $BC OUT instruction happens
-					// shouldnt this be OUT $DF?
-					const uint8_t romNumber = Z80_GET_DATA(pins);
-					const int newRomNumber = SelectUpperROM(romNumber);
-					if (newRomNumber != -1)
+					// Try to select the requested rom slot.
+					// Rom slot will change if we could not select the slot. 
+					selectedRomSlot = SelectUpperROM(selectedRomSlot);
+				}
+
+				if (selectedRomSlot != -1)
+				{
+					bool bDirty = selectedRomSlot != CurUpperROMSlot;
+					if (bDirty)
 					{
-						bool bDirty = newRomNumber != CurUpperROMSlot;
-						CurUpperROMSlot = newRomNumber;
-
-						if (bDirty)
+						UpdateBankMappings();
+						
+						if (bExternalROMSupport)
 						{
-							UpdateBankMappings();
-
 							// Call the modified Chips bank switch code, in order to switch to the newly selected upper ROM.
 							// Note: the bank switch CB will have already been called by the Chips code but we need to call it
 							// again after selecting the upper ROM.
@@ -284,24 +288,26 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 							ChipsBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
 						}
 					}
+					CurUpperROMSlot = selectedRomSlot;
 				}
+
+				const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+				debugger.RegisterEvent((uint8_t)EEventType::UpperROMSelect, pcAddrRef, Z80_GET_ADDR(pins), Z80_GET_DATA(pins), scanlinePos);
 			}
 
 			if ((pins & (AM40010_A14 | AM40010_A15)) == AM40010_A14)
 			{
 				const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
 				const uint16_t addr = Z80_GET_ADDR(pins);
-
-				// extract 8-bit data bus from 64-bit pin mask
-				// why are we doing this and not using Z80_GET_DATA()?
-				// this is _AM40010_GET_DATA
-				const uint8_t data = ((uint8_t)(((pins) & 0xFF0000ULL) >> 16));
+				const uint8_t data = Z80_GET_DATA(pins);
 
 				/* data bits 6 and 7 select the register type */
 				switch (data & ((1 << 7) | (1 << 6)))
 				{
 					case (1 << 7):
 					{
+						// ROM enable/disable.
+						// This occurs when an OUT $7fXX instruction happens.
 						const uint8_t ROMEnableDirty = (LastGAConfigReg ^ ga.regs.config) & (AM40010_CONFIG_LROMEN | AM40010_CONFIG_HROMEN);
 						if (ROMEnableDirty != 0)
 						{
@@ -897,6 +903,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
 	debugger.RegisterEventType((int)EEventType::RAMBankSwitch, "RAM Banks Switch", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
 
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;

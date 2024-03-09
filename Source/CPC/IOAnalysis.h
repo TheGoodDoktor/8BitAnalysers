@@ -24,6 +24,7 @@ enum class EEventType : uint8_t
 	//SoundChipRegisterWrite,
 	RAMBankSwitch,
 	ROMBankSwitch,
+	UpperROMSelect,
 };
 
 enum class CPCIODevice

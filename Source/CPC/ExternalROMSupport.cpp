@@ -20,8 +20,11 @@ void InitExternalROMs(const FCPCConfig* pConfig, bool bIs6128)
 	if (!bExternalROMSupport)
 		return;
 
-	// sam todo: 6128 support
 	pUpperROM[0] = dump_cpc464_basic_bin;
+
+	// sam todo: test 6128 support
+	if (bIs6128)
+		pUpperROM[7] = dump_cpc6128_amsdos_bin;
 
 	for (int i = 1; i < kNumUpperROMSlots; i++)
 	{
@@ -47,9 +50,6 @@ void InitExternalROMs(const FCPCConfig* pConfig, bool bIs6128)
 		}
 	}
 	
-	if (bIs6128)
-		pUpperROM[7] = dump_cpc6128_amsdos_bin;
-
 	// Ensure we have some default upper rom data
 	SelectUpperROM(0);
 }
