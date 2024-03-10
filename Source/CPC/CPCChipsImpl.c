@@ -25,12 +25,12 @@ void ChipsBankSwitchCB(uint8_t ram_config, uint8_t rom_enable, uint8_t rom_selec
 		if (CPC_TYPE_6128 == sys->type) {
 			ram_config_index = ram_config & 7;
 			rom0_ptr = sys->rom_os;
-			//rom1_ptr = (rom_select == 7) ? sys->rom_amsdos : sys->rom_basic;
+			rom1_ptr = (rom_select == 7) ? sys->rom_amsdos : sys->rom_basic;
 		}
 		else {
 			ram_config_index = 0;
 			rom0_ptr = sys->rom_os;
-			//rom1_ptr = sys->rom_basic;
+			rom1_ptr = sys->rom_basic;
 		}
 		const int i0 = _cpc_ram_config[ram_config_index][0];
 		const int i1 = _cpc_ram_config[ram_config_index][1];
