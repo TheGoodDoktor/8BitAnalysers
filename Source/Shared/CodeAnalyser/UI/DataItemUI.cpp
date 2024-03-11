@@ -634,6 +634,13 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	ImGui::PopStyleColor();
 
+	// TODO: show struct info if struct member
+	if (pDataInfo->bStructMember)
+	{
+		pDataInfo->SubTypeId;	// struct Id
+		pDataInfo->StructByteOffset;	// byte offset
+	}
+
 	if (state.CPUInterface->GetSP() == physAddr)
 	{
 		ImGui::SameLine();
