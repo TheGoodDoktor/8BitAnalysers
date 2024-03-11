@@ -49,7 +49,10 @@ enum class EOperandType
 	Hex,
 	Binary,
 	UnsignedNumber,
-	SignedNumber
+	SignedNumber,
+	Enum,
+	Flags,
+	Struct,
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
@@ -283,6 +286,7 @@ struct FCodeInfo : FItem
 	static void FreeAll();
 
 	EOperandType	OperandType = EOperandType::Unknown;
+	int				StructId = -1;
 	std::string		Text;				// Disassembly text
 	FAddressRef		OperandAddress;	// optional operand address
 	int				FrameLastExecuted = -1;

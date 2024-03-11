@@ -2,6 +2,7 @@
 
 #include "../CodeAnalyser.h"
 #include "CodeToolTips.h"
+#include "CodeAnalyser/DataTypes.h"
 
 #include <math.h>
 
@@ -141,6 +142,27 @@ bool EditHexDataItem(FCodeAnalysisState& state, uint16_t address)
 	return bChanged;
 }
 
+// Get an offset from an instruction
+// this looks for specific instructions that have an offset
+// so far it's only Z80 IX/IY indexing instructions
+// this should probably be moved to the CPU abstraction
+int GetInstructionByteOffset(const FCodeAnalysisState& state, FAddressRef addr)
+{
+	if(state.CPUInterface->CPUType != ECPUType::Z80)
+		return -1;
+
+	const uint8_t instr = state.ReadByte(addr);
+	switch (instr)
+	{
+	case 0xDD:	// IX
+	case 0xFD:	// IY
+			if(state.AdvanceAddressRef(addr,2))
+				return state.ReadByte(addr);
+			break;
+	}
+	return -1;
+}
+
 // this assumes that the code item is mapped into physical memory
 void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
@@ -273,6 +295,27 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ImGui::PopStyleColor();
 	Markup::SetCodeInfo(nullptr);
 
+	// show struct members
+	//if (pCodeInfo->OperandType == EOperandType::Struct)
+	{
+		FStruct* pStruct = state.GetDataTypes()->GetStructFromTypeId(pCodeInfo->StructId);
+		if (pStruct)
+		{
+			// Get byte offset from instruction
+			const int byteOffset = GetInstructionByteOffset(state, item.AddressRef);
+
+			// Get member from byte offset and display
+			FStructMember* pStructMember = pStruct->GetStructMemberFromByteOffset(byteOffset);
+			if (pStructMember != nullptr)
+			{
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text,Colours::comment);
+				ImGui::Text("(%s::%s)", pStruct->Name.c_str(), pStructMember->Name.c_str());
+				ImGui::PopStyleColor();
+			}
+		}
+	}
+
 	if (bShownTooltip == false && ImGui::IsItemHovered())
 	{
 		ShowCodeToolTip(state, physAddress);
@@ -301,6 +344,12 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 
 	if (DrawOperandTypeCombo("Operand Type", pCodeInfo))
 		pCodeInfo->Text.clear();	// clear for a rewrite
+
+	//if (pCodeInfo->OperandType == EOperandType::Struct)
+	if(GetInstructionByteOffset(state, item.AddressRef) != -1)
+	{
+		state.GetDataTypes()->DrawStructComboBox("Struct", pCodeInfo->StructId);
+	}
 
 	if (state.Config.bShowBanks && pCodeInfo->OperandType == EOperandType::Pointer)
 	{

@@ -295,6 +295,39 @@ bool FStructTypeList::Add(const char* pName)
 	return true;
 };
 
+int DataTypeSize(EDataType dataType)
+{
+	switch (dataType)
+	{
+		case EDataType::Word:
+			return 2;
+		default:
+			return 1;
+	}
+}
+
+void FStruct::CalcByteOffsets()
+{
+	int byteNo = 0;
+	for (FStructMember& structMember : Members)
+	{
+		structMember.ByteOffset = byteNo;
+		byteNo += DataTypeSize(structMember.DataType);
+	}
+}
+
+FStructMember* FStruct::GetStructMemberFromByteOffset(int byteOffset)
+{
+	for (FStructMember& structMember : Members)
+	{
+		if(structMember.ByteOffset == byteOffset)
+			return &structMember;
+	}
+
+	return nullptr;
+}
+
+
 void FStruct::DrawDetailsUI()
 {
 	if(ImGui::Button("Add Member"))
@@ -306,12 +339,14 @@ void FStruct::DrawDetailsUI()
 		newMember.Name = memberName;
 		newMember.DataType = EDataType::Byte;
 		Members.push_back(newMember);
+		CalcByteOffsets();
 	}
 	
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 	
-	if (ImGui::BeginTable("structtable", 2, flags))
+	if (ImGui::BeginTable("structtable", 3, flags))
 	{
+		ImGui::TableSetupColumn("Byte");
 		ImGui::TableSetupColumn("Name");
 		ImGui::TableSetupColumn("Type");
 		ImGui::TableHeadersRow();
@@ -324,13 +359,18 @@ void FStruct::DrawDetailsUI()
 			ImGui::TableNextRow();
 			
 			ImGui::TableSetColumnIndex(0);
-			bEdited |= ImGui::InputText("##name",&structMember.Name);
+			ImGui::Text("%d", structMember.ByteOffset);
 			ImGui::TableSetColumnIndex(1);
-			bEdited |= DrawDataTypeCombo("Type", structMember.DataType);
+			bEdited |= ImGui::InputText("##name",&structMember.Name);
+			ImGui::TableSetColumnIndex(2);
+			bEdited |= DrawDataTypeCombo("##Type", structMember.DataType);
 			ImGui::PopID();
 			memberIndex++;
 		}
-		
+
+		if(bEdited)
+			CalcByteOffsets();
+
 		ImGui::EndTable();
 	}
 }
@@ -348,6 +388,8 @@ void    FStruct::ReadJson(const json& jsonIn)
 		member.DataType = (EDataType)jsonMember["Type"];
 		Members.push_back(member);
 	}
+
+	CalcByteOffsets();
 }
 
 void    FStruct:: WriteJson(json& jsonOut) const
@@ -436,6 +478,42 @@ bool FDataTypes::ReadFromJson(const json& jsonDataTypes)
 }
 
 
+bool DrawTypeListCombo(const char* pLabel, int& selection, const FDataTypeList& typeList)
+{
+	bool bChanged = false;
+	const char* pPreviewStr = nullptr;
+	for (const auto& type : typeList.Items)
+	{
+		if (type->TypeId == selection)
+		{
+			pPreviewStr = type->Name.c_str();
+			break;
+		}
+	}
+
+	if (ImGui::BeginCombo(pLabel, pPreviewStr))
+	{
+		for (const auto type : typeList.Items)
+		{
+			const bool isSelected = (selection == type->TypeId);
+			if (ImGui::Selectable(type->Name.c_str(), isSelected))
+			{
+				selection = type->TypeId;
+				bChanged = true;
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	return bChanged;
+}
+
+bool FDataTypes::DrawStructComboBox(const char* pLabel, int& selection)
+{
+	return DrawTypeListCombo(pLabel,selection, StructTypes);
+}
+
 // Viewer
 
 bool FDataTypesViewer::Init(void)
@@ -451,6 +529,8 @@ bool FDataTypesViewer::Init(void)
 void FDataTypesViewer::Shutdown(void)
 {
 }
+
+
 
 void FDataTypesViewer::DrawTypeList(FDataTypeList& typeList)
 {

@@ -1083,6 +1083,7 @@ static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
 	{ "Hex",			EOperandType::Hex},
 	{ "Binary",			EOperandType::Binary},
 	{ "Unsigned Number",			EOperandType::UnsignedNumber},
+	//{ "Struct",			EOperandType::Struct},
 	//{ "Signed Number",	EOperandType::SignedNumber},
 };
 
