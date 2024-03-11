@@ -154,6 +154,7 @@ public:
 	FStructTypeList&    GetStructs() { return StructTypes;}
 
 	bool				DrawStructComboBox(const char* pLabel,int& selection);
+	void				DrawStructMember(int structId, int byteOffset);
 
 	bool                WriteToJson(nlohmann::json& jsonDataTypes) const;
 	bool                ReadFromJson(const nlohmann::json& jsonDataTypes);

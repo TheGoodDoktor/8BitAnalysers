@@ -375,6 +375,8 @@ void FStruct::DrawDetailsUI()
 	}
 }
 
+
+
 void    FStruct::ReadJson(const json& jsonIn)
 {
 	Name = jsonIn["Name"];
@@ -512,6 +514,23 @@ bool DrawTypeListCombo(const char* pLabel, int& selection, const FDataTypeList& 
 bool FDataTypes::DrawStructComboBox(const char* pLabel, int& selection)
 {
 	return DrawTypeListCombo(pLabel,selection, StructTypes);
+}
+
+void FDataTypes::DrawStructMember(int structId, int byteOffset)
+{
+	FStruct* pStruct = GetStructFromTypeId(structId);
+	if (pStruct)
+	{
+		// Get member from byte offset and display
+		FStructMember* pStructMember = pStruct->GetStructMemberFromByteOffset(byteOffset);
+		if (pStructMember != nullptr)
+		{
+			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Text, Colours::comment);
+			ImGui::Text("(%s::%s)", pStruct->Name.c_str(), pStructMember->Name.c_str());
+			ImGui::PopStyleColor();
+		}
+	}
 }
 
 // Viewer

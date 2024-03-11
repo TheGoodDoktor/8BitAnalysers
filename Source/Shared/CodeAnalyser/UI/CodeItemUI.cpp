@@ -296,25 +296,8 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	Markup::SetCodeInfo(nullptr);
 
 	// show struct members
-	//if (pCodeInfo->OperandType == EOperandType::Struct)
-	{
-		FStruct* pStruct = state.GetDataTypes()->GetStructFromTypeId(pCodeInfo->StructId);
-		if (pStruct)
-		{
-			// Get byte offset from instruction
-			const int byteOffset = GetInstructionByteOffset(state, item.AddressRef);
-
-			// Get member from byte offset and display
-			FStructMember* pStructMember = pStruct->GetStructMemberFromByteOffset(byteOffset);
-			if (pStructMember != nullptr)
-			{
-				ImGui::SameLine();
-				ImGui::PushStyleColor(ImGuiCol_Text,Colours::comment);
-				ImGui::Text("(%s::%s)", pStruct->Name.c_str(), pStructMember->Name.c_str());
-				ImGui::PopStyleColor();
-			}
-		}
-	}
+	if(pCodeInfo->StructId != -1)
+		state.GetDataTypes()->DrawStructMember(pCodeInfo->StructId, GetInstructionByteOffset(state, item.AddressRef));
 
 	if (bShownTooltip == false && ImGui::IsItemHovered())
 	{

@@ -100,6 +100,7 @@ enum class EDataType
 	Blob,		// opaque data blob
 	ColAttr,	// colour attribute
 	InstructionOperand,	// an operand for an instruction
+	Struct,		// structure
 
 	Max,
 	None = Max
