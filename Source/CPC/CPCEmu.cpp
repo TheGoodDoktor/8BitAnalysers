@@ -260,47 +260,60 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 		{
 			if ((pins & Z80_A13) == 0)
 			{
-				if (bUpperROMSupport)
+				// ROM select. This will get called when an OUT $dfXX instruction happens
+				int selectedRomSlot = Z80_GET_DATA(pins);
+
+				if (bExternalROMSupport)
 				{
-					// ROM select. This will get called when a $BC OUT instruction happens
-				
-					const uint8_t romNumber = Z80_GET_DATA(pins);
-					const int newRomNumber = SelectUpperROM(romNumber);
-					if (newRomNumber != -1)
+					// Try to select the requested rom slot.
+					// Rom slot will change if we could not select the slot. 
+					selectedRomSlot = SelectUpperROM(selectedRomSlot);
+				}
+
+				if (selectedRomSlot != -1)
+				{
+					bool bDirty = selectedRomSlot != CurUpperROMSlot;
+					if (bDirty)
 					{
-						bool bDirty = newRomNumber != CurUpperROMSlot;
-
-						CurUpperROMSlot = newRomNumber;
-
-						if (bDirty)
+						UpdateBankMappings();
+						
+						if (bExternalROMSupport)
 						{
-							UpdateBankMappings();
-
 							// Call the modified Chips bank switch code, in order to switch to the newly selected upper ROM.
 							// Note: the bank switch CB will have already been called by the Chips code but we need to call it
 							// again after selecting the upper ROM.
 							// The alternative would have been to call SelectUpperROM() in the bank switch CB but that would mean
 							// calling it more often than we need to.
 						
-							CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
+							ChipsBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
 						}
 					}
+					CurUpperROMSlot = selectedRomSlot;
 				}
+
+				const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+				debugger.RegisterEvent((uint8_t)EEventType::UpperROMSelect, pcAddrRef, Z80_GET_ADDR(pins), Z80_GET_DATA(pins), scanlinePos);
 			}
 
 			if ((pins & (AM40010_A14 | AM40010_A15)) == AM40010_A14)
 			{
-				// extract 8-bit data bus from 64-bit pin mask
-				const uint8_t data = ((uint8_t)(((pins) & 0xFF0000ULL) >> 16));
+				const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+				const uint16_t addr = Z80_GET_ADDR(pins);
+				const uint8_t data = Z80_GET_DATA(pins);
 
 				/* data bits 6 and 7 select the register type */
 				switch (data & ((1 << 7) | (1 << 6)))
 				{
 					case (1 << 7):
 					{
+						// ROM enable/disable.
+						// This occurs when an OUT $7fXX instruction happens.
 						const uint8_t ROMEnableDirty = (LastGAConfigReg ^ ga.regs.config) & (AM40010_CONFIG_LROMEN | AM40010_CONFIG_HROMEN);
 						if (ROMEnableDirty != 0)
+						{
 							UpdateBankMappings();
+							debugger.RegisterEvent((uint8_t)EEventType::ROMBankSwitch, pcAddrRef, addr, data, scanlinePos);
+						}
 					}
 					break;
 
@@ -309,10 +322,9 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 					{
 						if (CPCEmuState.type == CPC_TYPE_6128)
 						{
-							const int bankPresetIndex = CPCEmuState.ga.ram_config & 7;
-							SetRAMBanksPreset(bankPresetIndex);
-							// sam. Do I need to do this?
-							CodeAnalysis.SetAllBanksDirty();
+							// todo: only do if dirty?
+							UpdateBankMappings();
+							debugger.RegisterEvent((uint8_t)EEventType::RAMBankSwitch, pcAddrRef, addr, data, scanlinePos);
 						}
 						break;
 					}
@@ -362,9 +374,8 @@ bool FCPCEmu::CanSelectUpperROM(uint8_t romSlot)
 bool FCPCEmu::InitBankMappings()
 {
 	am40010_t& ga = CPCEmuState.ga;
-	if (bUpperROMSupport)
+	if (bExternalROMSupport)
 	{
-
 		if (!CanSelectUpperROM(ga.rom_select))
 		{
 			return false;
@@ -377,55 +388,15 @@ bool FCPCEmu::InitBankMappings()
 
 	UpdateBankMappings();
 
-	if (bUpperROMSupport)
+	if (bExternalROMSupport)
 	{
-		CPCBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
+		ChipsBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
 	}
 	return true;
 }
 
-void FCPCEmu::UpdateBankMappings()
-{
-	const uint8_t configByte = CPCEmuState.ga.regs.config;
-
-	if (configByte & AM40010_CONFIG_LROMEN)
-	{
-		SetRAMBank(0, 0, EBankAccess::Read);	// 0x0000 - 0x3fff
-	}
-	else
-	{
-		CodeAnalysis.MapBank(ROMBanks[EROMBank::OS], 0, EBankAccess::Read);
-	}
-
-	if (configByte & AM40010_CONFIG_HROMEN)
-	{
-		SetRAMBank(3, 3, EBankAccess::Read);	// 0xc000 - 0xffff
-	}
-	else
-	{
-		CodeAnalysis.MapBank(UpperROMSlot[CurUpperROMSlot], 48, EBankAccess::Read);
-	}
-
-	LastGAConfigReg = configByte;
-}
-
-// Slot is physical 16K memory region (0-3) 
-// Bank is a 16K CPC RAM bank (0-7)
-void FCPCEmu::SetRAMBank(int slot, int bankNo, EBankAccess access)
-{
-	const int16_t bankId = RAMBanks[bankNo];
-	
-	const int startPage = slot * kNoBankPages;
-	CodeAnalysis.MapBank(bankId, startPage, access);
-
-	// is this needed? possibly for the 128k version.
-	//CodeAnalysis.GetBank(RAMBanks[bankNo])->PrimaryMappedPage = slot * 16;
-
-	CurRAMBank[slot] = bankId;
-}
-
 // This is a copy of the _cpc_ram_config array from the Chips code 
-static const int gCPCRAMConfig[8][4] = 
+static const int gCPCRAMConfig[8][4] =
 {
 	 { 0, 1, 2, 3 }, // 0
 	 { 0, 1, 2, 7 }, // 1
@@ -437,23 +408,76 @@ static const int gCPCRAMConfig[8][4] =
 	 { 0, 7, 2, 3 }  // 7
 };
 
-void FCPCEmu::SetRAMBanksPreset(int presetIndex)
+void FCPCEmu::UpdateBankMappings()
 {
-	assert(presetIndex < 8);
+	const uint8_t romEnable = CPCEmuState.ga.regs.config;
+	uint8_t ramPreset = 0;
+	int16_t upperRomBank = ROMBanks[EROMBank::BASIC];
 
-	const int slot0BankIndex = gCPCRAMConfig[presetIndex][0];
-	const int slot1BankIndex = gCPCRAMConfig[presetIndex][1];
-	const int slot2BankIndex = gCPCRAMConfig[presetIndex][2];
-	const int slot3BankIndex = gCPCRAMConfig[presetIndex][3];
+	if (CPCEmuState.type == CPC_TYPE_6128)
+	{
+		ramPreset = CPCEmuState.ga.ram_config & 7;
+		if (CPCEmuState.ga.rom_select == 7)
+			upperRomBank = ROMBanks[EROMBank::AMSDOS];
+	}
 
-	// todo 6128: bank access?
-	SetRAMBank(0, slot0BankIndex, EBankAccess::ReadWrite);
-	SetRAMBank(1, slot1BankIndex, EBankAccess::ReadWrite);
-	SetRAMBank(2, slot2BankIndex, EBankAccess::ReadWrite);
-	SetRAMBank(3, slot3BankIndex, EBankAccess::ReadWrite);
+	const int bankIndex0 = gCPCRAMConfig[ramPreset][0];
+	const int bankIndex1 = gCPCRAMConfig[ramPreset][1];
+	const int bankIndex2 = gCPCRAMConfig[ramPreset][2];
+	const int bankIndex3 = gCPCRAMConfig[ramPreset][3];
 
-	// sam todo: only set dirty banks that have changed?
+	if (romEnable & AM40010_CONFIG_LROMEN)
+	{
+		// The RAM is now read/write 
+		SetRAMBank(0, bankIndex0, EBankAccess::Read);	// 0x0000 - 0x3fff
+	}
+	else
+	{
+		// ROM now shares the same address space as RAM.
+		// Reads go to ROM and writes go to RAM. RAM behind ROM.
+		CodeAnalysis.MapBank(ROMBanks[EROMBank::OS], 0, EBankAccess::Read);
+	}
+
+	SetRAMBank(1, bankIndex1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
+	SetRAMBank(2, bankIndex2, EBankAccess::ReadWrite);	// 0x8000 - 0xbfff
+
+	if (romEnable & AM40010_CONFIG_HROMEN)
+	{
+		// The RAM is now read/write 
+		SetRAMBank(3, bankIndex3, EBankAccess::Read);	// 0xc000 - 0xffff
+	}
+	else
+	{
+		if (bExternalROMSupport)
+		{
+			// dont we need this for the 464 to switch the basic rom in/out?
+			CodeAnalysis.MapBank(UpperROMSlot[CurUpperROMSlot], 48, EBankAccess::Read);
+		}
+		else
+		{
+			CodeAnalysis.MapBank(upperRomBank, 48, EBankAccess::Read);
+		}
+	}
+
+	// sam. Do I need to do this here?
 	CodeAnalysis.SetAllBanksDirty();
+
+	LastGAConfigReg = romEnable;
+}
+
+// Slot is physical 16K memory region (0-3) 
+// Bank is a 16K CPC RAM bank (0-7)
+void FCPCEmu::SetRAMBank(int slot, int bankNo, EBankAccess access)
+{
+	const int16_t bankId = RAMBanks[bankNo];
+	
+	const int startPage = slot * kNoBankPages;
+	CodeAnalysis.MapBank(bankId, startPage, access);
+	
+	if (CPCEmuState.type == CPC_TYPE_6128)
+		CodeAnalysis.SetBankPrimaryPage(bankId, slot * 16);
+
+	CurRAMBank[slot] = bankId;
 }
 
 // callback function to save snapshot to a numbered slot
@@ -536,6 +560,29 @@ void IOPortEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 					}
 				}
 			}
+		}
+	}
+	else if (event.Type == (int)EEventType::ROMBankSwitch)
+	{
+		const uint8_t romEnable = event.Value & 0x1F;
+		if (romEnable & AM40010_CONFIG_LROMEN)
+		{
+			ImGui::Text("Lower: OFF.");
+		}
+		else
+		{
+			ImGui::Text("Lower: ON.");
+		}
+
+		if (romEnable & AM40010_CONFIG_HROMEN)
+		{
+			ImGui::SameLine();
+			ImGui::Text("Upper: OFF.");
+		}
+		else
+		{
+			ImGui::SameLine();
+			ImGui::Text("Upper: ON.");
 		}
 	}
 	else
@@ -706,15 +753,16 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	if (type == CPC_TYPE_6128)
 	{
 		// disable upper rom support on 6128 for now as it's broken
-		bUpperROMSupport = false;
+		bExternalROMSupport = false;
 	}
-	if (bUpperROMSupport)
+	if (bExternalROMSupport)
 	{
-		CPCEmuState.ga.bankswitch_cb = CPCBankSwitchCB;
+		CPCEmuState.ga.bankswitch_cb = ChipsBankSwitchCB;
 	}
+	SetExternalROMSupportEnabled(bExternalROMSupport);
 
 	// Clear UI
-	/*
+	
 	memset(&UICPC, 0, sizeof(ui_cpc_t));
 
 	{
@@ -742,7 +790,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 
 		ui_cpc_init(&UICPC, &desc);
 	}
-*/
+
 
 	// This is where we add the viewers we want
 	AddViewer(new FCrtcViewer(this));
@@ -765,10 +813,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	// Set up code analysis
 	// initialise code analysis pages
 	
-	if (bUpperROMSupport)
-	{
-		InitExternalROMs(pCPCConfig);
-	}
+	InitExternalROMs(pCPCConfig, CPCEmuState.type == CPC_TYPE_6128);
 	
 	// Low ROM 0x0000 - 0x3fff
 	ROMBanks[EROMBank::OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true, 0x0000);
@@ -793,10 +838,6 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	// Setup initial machine memory config
 	if (cpcLaunchConfig.Model == ECPCModel::CPC_464)
 	{
-		//CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0;
-		//CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 16;
-		//CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
-		//CodeAnalysis.GetBank(RAMBanks[3])->PrimaryMappedPage = 48;
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[0], 0);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[1], 16);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[2], 32);
@@ -815,10 +856,6 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	}
 	else
 	{
-		//CodeAnalysis.GetBank(RAMBanks[0])->PrimaryMappedPage = 0;
-		//CodeAnalysis.GetBank(RAMBanks[1])->PrimaryMappedPage = 16;
-		//CodeAnalysis.GetBank(RAMBanks[2])->PrimaryMappedPage = 32;
-		//CodeAnalysis.GetBank(RAMBanks[3])->PrimaryMappedPage = 48;
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[0], 0);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[1], 16);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[2], 32);
@@ -830,11 +867,14 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		SetRAMBank(3, 3, EBankAccess::ReadWrite);	// 0xc000 - 0xffff
 	}
 
-	if (bUpperROMSupport)
+	if (bExternalROMSupport)
 	{
 		// Setup upper ROM slots
 		UpperROMSlot[0] = ROMBanks[EROMBank::BASIC];
-		
+
+		if (CPCEmuState.type == CPC_TYPE_6128)
+			UpperROMSlot[7] = ROMBanks[EROMBank::AMSDOS];
+
 		char romName[16];
 		for (int i = 1; i < kNumUpperROMSlots; i++)
 		{
@@ -851,7 +891,6 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	}
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
-	debugger.RegisterEventType((int)EEventType::None, "None", 0);
 	debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen RAM Write", 0xff0000ff, nullptr, EventShowPixValue);
 	debugger.RegisterEventType((int)EEventType::PaletteSelect, "Palette Select", 0xffffffff, IOPortEventShowAddress, PaletteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::PaletteColour, "Palette Colour", 0xff00ffff, IOPortEventShowAddress, PaletteEventShowValue);
@@ -862,6 +901,9 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite, "CRTC Reg. Write", 0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
+	debugger.RegisterEventType((int)EEventType::RAMBankSwitch, "RAM Banks Switch", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
 
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
@@ -1104,9 +1146,7 @@ bool FCPCEmu::LoadGameState(const char* fname)
 
 	if (CPCEmuState.type == CPC_TYPE_6128)
 	{
-		const int bankPresetIndex = CPCEmuState.ga.ram_config & 7;
-		SetRAMBanksPreset(bankPresetIndex);
-		GetCodeAnalysis().SetAllBanksDirty();
+		UpdateBankMappings();
 	}
 
 	fclose(fp);
@@ -1195,7 +1235,7 @@ void FCPCEmu::Reset()
 	cpc_reset(&CPCEmuState);
 	// Resetting rom_select to 0 because Chips doesn't do it.
 	CPCEmuState.ga.rom_select = 0;
-	//ui_dbg_reset(&UICPC.dbg);
+	ui_dbg_reset(&UICPC.dbg);
 
 	FCPCGameConfig* pBasicConfig = (FCPCGameConfig*)GetGameConfigForName("AmstradBasic");
 
@@ -1279,7 +1319,7 @@ void	FCPCEmu::FileMenuAdditions(void)
 
 void	FCPCEmu::SystemMenuAdditions(void)
 {
-	//ImGui::MenuItem("Memory Map", 0, &UICPC.memmap.open);
+	ImGui::MenuItem("Memory Map", 0, &UICPC.memmap.open);
 	//ImGui::MenuItem("Keyboard Matrix", 0, &UICPC.kbd.open);
 	//ImGui::MenuItem("Audio Output", 0, &UICPC.audio.open);
 	//ImGui::MenuItem("Z80 CPU", 0, &UICPC.cpu.open);
@@ -1311,25 +1351,28 @@ void	FCPCEmu::WindowsMenuAdditions(void)
 
 void FCPCEmu::DrawEmulatorUI()
 {
-	//ui_cpc_t* pCPCUI = &UICPC;
+	ui_cpc_t* pCPCUI = &UICPC;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 	
 	// Draw the main menu
 	//DrawMainMenu(timeMS);
-	/*
+	
 	if (pCPCUI->memmap.open) 
 	{
 		_ui_cpc_update_memmap(pCPCUI);
 	}
-
+	
+	/*
 	// call the Chips UI functions
 	ui_audio_draw(&pCPCUI->audio, pCPCUI->cpc->audio.sample_pos);
 	ui_z80_draw(&pCPCUI->cpu);
 	ui_ay38910_draw(&pCPCUI->psg);
 	ui_kbd_draw(&pCPCUI->kbd);
-	ui_memmap_draw(&pCPCUI->memmap);
 	ui_am40010_draw(&pCPCUI->ga);
 	*/
+	
+	ui_memmap_draw(&pCPCUI->memmap);
+	
 	if (ImGui::Begin("CPC View", nullptr, ImGuiWindowFlags_NoNavInputs))
 	{
 		CPCViewer.Draw();

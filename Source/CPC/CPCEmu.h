@@ -23,7 +23,7 @@
 #include "chips/fdd_cpc.h"
 #include "systems/cpc.h"
 #include "chips/mem.h"
-/*
+
 #include "ui/ui_util.h"
 #include "ui/ui_fdd.h"
 #include "ui/ui_chip.h"
@@ -41,7 +41,7 @@
 #include "ui/ui_am40010.h"
 #include "ui/ui_snapshot.h"
 #include "ui/ui_cpc.h"
-*/
+
 #include <map>
 #include <string>
 
@@ -158,7 +158,7 @@ public:
 
 	float				ExecSpeedScale = 1.0f;
 
-	//ui_cpc_t		UICPC;
+	ui_cpc_t		UICPC;
 
 	FGame*			pActiveGame = nullptr;
 
@@ -207,6 +207,7 @@ public:
 
 	FCPCScreen	Screen;
 
+
 private:
 	//FGamesList		GamesList;
 	FCPCGameLoader	GameLoader;
@@ -221,5 +222,5 @@ private:
 	bool				bExportAsm = false;
 
 	bool				bInitialised = false;
-	bool				bUpperROMSupport = true;
+	bool				bExternalROMSupport = true;
 };

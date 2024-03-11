@@ -1265,7 +1265,7 @@ void FDebugger::DrawEvents(void)
 
 	viewState.HighlightScanline = -1;
 
-	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollY;
+	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
 	if (ImGui::BeginTable("Events", 5, flags))
 	{
 		const float fontSize = ImGui::GetFontSize();

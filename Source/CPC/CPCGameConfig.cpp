@@ -76,6 +76,7 @@ bool LoadCPCGameConfigs(FCPCEmu* pEmu)
 						FCPCGameConfig* pNewConfig = new FCPCGameConfig;
 						if (LoadGameConfigFromFile(*pNewConfig, configFileName.c_str()))
 						{
+							// todo 6128?
 							//if (pNewConfig->bCPC6128Game == (pEmu->CPCEmuState.type == CPC_TYPE_6128))
 							AddGameConfig(pNewConfig);
 						}

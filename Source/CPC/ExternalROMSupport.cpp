@@ -8,15 +8,23 @@
 #include <cstring>
 
 extern unsigned char dump_cpc464_basic_bin[];
+extern unsigned char dump_cpc6128_amsdos_bin[];
 
 const int kUpperROMSize = 0x4000;
 uint8_t* pUpperROM[kNumUpperROMSlots] = { 0 };
 uint8_t* pUpperROMData = nullptr;
+bool bExternalROMSupport = true;
 
-void InitExternalROMs(const FCPCConfig* pConfig)
+void InitExternalROMs(const FCPCConfig* pConfig, bool bIs6128)
 {
-	// sam todo: 6128 support
+	if (!bExternalROMSupport)
+		return;
+
 	pUpperROM[0] = dump_cpc464_basic_bin;
+
+	// sam todo: test 6128 support
+	if (bIs6128)
+		pUpperROM[7] = dump_cpc6128_amsdos_bin;
 
 	for (int i = 1; i < kNumUpperROMSlots; i++)
 	{
@@ -41,14 +49,14 @@ void InitExternalROMs(const FCPCConfig* pConfig)
 			}
 		}
 	}
+	
 	// Ensure we have some default upper rom data
 	SelectUpperROM(0);
 }
 
-// Returns index of rom slot that was selected.
 int SelectUpperROM(int slotIndex)
 {
-	if (slotIndex >= kNumUpperROMSlots)
+	if (!bExternalROMSupport || slotIndex >= kNumUpperROMSlots)
 		return -1;
 
 	if (!pUpperROM[slotIndex])
@@ -61,7 +69,7 @@ int SelectUpperROM(int slotIndex)
 
 const uint8_t* GetUpperROMSlot(int slotIndex)
 {
-	if (slotIndex >= kNumUpperROMSlots)
+	if (!bExternalROMSupport || slotIndex >= kNumUpperROMSlots)
 		return nullptr;
 
 	return pUpperROM[slotIndex];
@@ -106,4 +114,14 @@ bool LoadExternalROM(const char* pFilename, int slotIndex)
 		free(pData);
 	}
 	return bOk;
+}
+
+void SetExternalROMSupportEnabled(bool bEnabled)
+{
+	bExternalROMSupport = bEnabled;
+}
+
+bool IsExternalROMSupportEnabled()
+{
+	return bExternalROMSupport;
 }
