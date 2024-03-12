@@ -1,6 +1,7 @@
 #include "FormatDataCommand.h"
 #include "Util/GraphicsView.h"
 #include "../CodeAnalyser.h"
+#include "CodeAnalyser/DataTypes.h"
 
 void UndoFormatData(FCodeAnalysisState& state, const FFormatUndoData& undoData)
 {
@@ -37,6 +38,8 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 		UndoData.CharacterMapLocation = firstAddress;
 	}
 
+	
+
 	{
 		FAddressRef addressRef = firstAddress;
 		for (int itemNo = 0; itemNo < FormatOptions.NoItems; itemNo++)
@@ -58,6 +61,26 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			{
 				pDataInfo->GraphicsSetRef = FormatOptions.GraphicsSetRef;
 				pDataInfo->PaletteNo = FormatOptions.PaletteNo;
+			}
+			else if (FormatOptions.DataType == EDataType::Struct)
+			{
+				const FStruct* pStruct = state.GetDataTypes()->GetStructFromTypeId(FormatOptions.StructId);
+				if (pStruct)
+				{
+					// Format memory as struct
+					for (const auto& member : pStruct->Members)
+					{
+						FAddressRef memberAddr = addressRef;
+						state.AdvanceAddressRef(memberAddr,member.ByteOffset);
+						FDataInfo* pMemberDataInfo = state.GetDataInfoForAddress(memberAddr);
+						pMemberDataInfo->DataType = member.DataType;
+						pMemberDataInfo->bStructMember = true;
+						pMemberDataInfo->SubTypeId = FormatOptions.StructId;
+						pMemberDataInfo->StructByteOffset = member.ByteOffset;
+
+						// TODO: undo buffer
+					}
+				}
 			}
 
 			// iterate through each memory location

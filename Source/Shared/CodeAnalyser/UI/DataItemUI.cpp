@@ -1,5 +1,6 @@
 #include "CodeAnalyserUI.h"
 #include "../CodeAnalyser.h"
+#include "CodeAnalyser/DataTypes.h"
 #include "CharacterMapViewer.h"
 
 #include "Util/Misc.h"
@@ -633,6 +634,12 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 
 	ImGui::PopStyleColor();
+
+	// show struct info if struct member
+	if (pDataInfo->bStructMember)
+	{
+		state.GetDataTypes()->DrawStructMember(pDataInfo->SubTypeId, pDataInfo->StructByteOffset);
+	}
 
 	if (state.CPUInterface->GetSP() == physAddr)
 	{

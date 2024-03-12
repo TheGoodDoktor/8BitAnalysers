@@ -16,6 +16,7 @@ struct FDataFormattingOptions
 	FAddressRef				CharacterSet;
 	FAddressRef				GraphicsSetRef;
 	int						PaletteNo = -1;
+	int						StructId = -1;
 	uint8_t					EmptyCharNo = 0;
 	bool					RegisterItem = false;
 	bool					ClearCodeInfo = false;

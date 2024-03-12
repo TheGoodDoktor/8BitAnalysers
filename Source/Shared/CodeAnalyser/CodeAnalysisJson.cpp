@@ -341,6 +341,8 @@ void WriteCodeInfoToJson(uint16_t addr, const FCodeInfo* pCodeInfoItem, json& js
 		codeInfoJson["SMC"] = true;
 	if (pCodeInfoItem->OperandType != EOperandType::Unknown)
 		codeInfoJson["OperandType"] = (int)pCodeInfoItem->OperandType;
+	if (pCodeInfoItem->StructId != -1)
+		codeInfoJson["OperandSubType"] = pCodeInfoItem->StructId;
 	if (pCodeInfoItem->Flags != 0)
 		codeInfoJson["Flags"] = pCodeInfoItem->Flags;
 	if (pCodeInfoItem->Comment.empty() == false)
@@ -437,6 +439,13 @@ FCodeInfo* CreateCodeInfoFromJson(const json& codeInfoJson)
 
 	if (codeInfoJson.contains("OperandType"))
 		pCodeInfo->OperandType = codeInfoJson["OperandType"];
+
+	// hack patch for previous mistake - remove
+	if(pCodeInfo->OperandType == EOperandType::Struct)
+		pCodeInfo->OperandType = EOperandType::Unknown;
+
+	if (codeInfoJson.contains("StructId"))
+		pCodeInfo->StructId = codeInfoJson["StructId"];
 
 	if (codeInfoJson.contains("Flags"))
 		pCodeInfo->Flags = codeInfoJson["Flags"];

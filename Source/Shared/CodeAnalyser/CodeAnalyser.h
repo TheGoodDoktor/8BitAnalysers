@@ -399,7 +399,7 @@ public:
 	FCodeAnalysisPage* GetPage(int16_t id) { return RegisteredPages[id]; }
 
 	// Advance an address ref by a number of bytes, may go to next bank in physical memory
-	bool AdvanceAddressRef(FAddressRef& addressRef, int amount = 1)
+	bool AdvanceAddressRef(FAddressRef& addressRef, int amount = 1) const
 	{
 		if(addressRef.IsValid() == false)
 			return false;

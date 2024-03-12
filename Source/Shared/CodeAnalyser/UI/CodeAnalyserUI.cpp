@@ -1,6 +1,7 @@
 #include "CodeAnalyserUI.h"
 #include "CharacterMapViewer.h"
 #include "../CodeAnalyser.h"
+#include "CodeAnalyser/DataTypes.h"
 #include "Misc/GlobalConfig.h"	
 
 
@@ -1083,6 +1084,7 @@ static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
 	{ "Hex",			EOperandType::Hex},
 	{ "Binary",			EOperandType::Binary},
 	{ "Unsigned Number",			EOperandType::UnsignedNumber},
+	//{ "Struct",			EOperandType::Struct},
 	//{ "Signed Number",	EOperandType::SignedNumber},
 };
 
@@ -1151,7 +1153,8 @@ static const std::vector<std::pair<const char*, EDataType>> g_DataTypes =
     { "Bitmap",         EDataType::Bitmap },
     { "Char Map",       EDataType::CharacterMap },
     { "Col Attr",       EDataType::ColAttr },
-    { "Text",           EDataType::Text },
+	{ "Text",           EDataType::Text },
+	{ "Struct",         EDataType::Struct },
 };
     
 bool DrawDataTypeCombo(const char* pLabel, EDataType& displayType)
@@ -1903,6 +1906,8 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 		ImGui::InputInt("Item Size", &formattingOptions.ItemSize);
 		formattingOptions.NoItems = 1;
 		break;
+	case EDataType::Struct:
+		state.GetDataTypes()->DrawStructComboBox("Struct", formattingOptions.StructId);
     default:
         break;
 	}

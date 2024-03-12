@@ -1978,72 +1978,6 @@ void FSpectrumEmu::DrawEmulatorUI()
 	//	g_ImGuiLog.Draw("Debug Log", &bShowDebugLog);
 }
 
-#if 0
-bool FSpectrumEmu::DrawDockingView()
-{
-	//SCOPE_PROFILE_CPU("UI", "DrawUI", ProfCols::UI);
-
-	static bool opt_fullscreen_persistant = true;
-	bool opt_fullscreen = opt_fullscreen_persistant;
-	//static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-	bool bOpen = false;
-	ImGuiDockNodeFlags dockFlags = 0;
-
-	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-	// because it would be confusing to have two docking targets within each others.
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-	if (opt_fullscreen)
-	{
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->Pos);
-		ImGui::SetNextWindowSize(viewport->Size);
-		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-	}
-
-	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
-	if (dockFlags & ImGuiDockNodeFlags_PassthruCentralNode)
-		window_flags |= ImGuiWindowFlags_NoBackground;
-
-	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive, 
-	// all active windows docked into it will lose their parent and become undocked.
-	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise 
-	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-	bool bQuit = false;
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	if (ImGui::Begin("DockSpace Demo", &bOpen, window_flags))
-	{
-		ImGui::PopStyleVar();
-
-		if (opt_fullscreen)
-			ImGui::PopStyleVar(2);
-
-		// DockSpace
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		{
-			const ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
-			ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockFlags);
-		}
-
-		//bQuit = MainMenu();
-		//DrawDebugWindows(uiState);
-		DrawUI();
-		ImGui::End();
-	}
-	else
-	{
-		ImGui::PopStyleVar();
-		bQuit = true;
-	}
-
-	return bQuit;
-}
-#endif
 // Cheats
 // TODO: move this out to another file/class
 void FSpectrumEmu::DrawCheatsUI()
@@ -2184,6 +2118,59 @@ void FSpectrumEmu::AppFocusCallback(int focused)
 		GamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->SnapshotFolder.c_str());
 	}
 }
+
+bool FSpectrumEmu::SaveSnapshot(int snapshotNo)
+{
+	if (snapshotNo > 0 && snapshotNo < kNoSnapshots)
+	{
+		FSnapshot& snapshot = Snapshots[snapshotNo];
+		zx_save_snapshot(&ZXEmuState, &snapshot.State);
+
+		if (snapshot.bValid == false)
+		{
+			// setup texture
+			chips_display_info_t dispInfo = zx_display_info(&ZXEmuState);
+			snapshot.Thumbnail = ImGui_CreateTextureRGBA(SpectrumViewer.GetFrameBuffer(), dispInfo.frame.dim.width, dispInfo.frame.dim.height);
+			snapshot.bValid = true;
+		}
+		else
+		{
+			// update texture
+			ImGui_UpdateTextureRGBA(snapshot.Thumbnail, SpectrumViewer.GetFrameBuffer());
+		}
+		
+		return true;
+	}
+
+	return false;
+}
+
+bool FSpectrumEmu::LoadSnapshot(int snapshotNo)
+{
+	if (snapshotNo > 0 && snapshotNo < kNoSnapshots)
+	{
+		FSnapshot& snapshot = Snapshots[snapshotNo];
+		if(snapshot.bValid == false)
+			return false;
+		zx_load_snapshot(&ZXEmuState, ZX_SNAPSHOT_VERSION, &snapshot.State);
+		return true;
+	}
+
+	return false;
+}
+
+ImTextureID	FSpectrumEmu::GetSnapshotThumbnail(int snapshotNo) const
+{
+	if (snapshotNo > 0 && snapshotNo < kNoSnapshots)
+	{
+		const FSnapshot& snapshot = Snapshots[snapshotNo];
+		if (snapshot.bValid == true)
+			return snapshot.Thumbnail;
+	}
+
+	return 0;
+}
+
 
 void FSpectrumLaunchConfig::ParseCommandline(int argc, char** argv)
 {

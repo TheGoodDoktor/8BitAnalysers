@@ -49,7 +49,10 @@ enum class EOperandType
 	Hex,
 	Binary,
 	UnsignedNumber,
-	SignedNumber
+	SignedNumber,
+	Enum,
+	Flags,
+	Struct,
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
@@ -97,6 +100,7 @@ enum class EDataType
 	Blob,		// opaque data blob
 	ColAttr,	// colour attribute
 	InstructionOperand,	// an operand for an instruction
+	Struct,		// structure
 
 	Max,
 	None = Max
@@ -283,6 +287,7 @@ struct FCodeInfo : FItem
 	static void FreeAll();
 
 	EOperandType	OperandType = EOperandType::Unknown;
+	int				StructId = -1;
 	std::string		Text;				// Disassembly text
 	FAddressRef		OperandAddress;	// optional operand address
 	int				FrameLastExecuted = -1;
@@ -349,9 +354,10 @@ struct FDataInfo : FItem
 		Writes.Reset();
 	}
 
-	EDataType	DataType = EDataType::Byte;
+	EDataType				DataType = EDataType::Byte;
 	EDataItemDisplayType	DisplayType = EDataItemDisplayType::Unknown;
 
+	// Flags
 	union
 	{
 		struct
@@ -362,18 +368,31 @@ struct FDataInfo : FItem
 			bool			bBit7Terminator : 1;	// for bit 7 terminated strings
 			bool			bShowBinary : 1;	// display the value(s) as binary
 			bool			bShowCharMap : 1;	// display memory as character map
+			bool			bStructMember : 1;	// is item a member of a structure
 		};
 		uint32_t	Flags = 0;
 	};
 
+	// Address references
 	union
 	{
 		FAddressRef	CharSetAddress;	// address of character set
 		FAddressRef	GraphicsSetRef;	// for bitmap data
 		FAddressRef	InstructionAddress;	// for operand data types
 	};
-	uint8_t		EmptyCharNo = 0;
-	int			PaletteNo = -1;
+
+	union 
+	{
+		uint8_t		EmptyCharNo = 0;
+		uint8_t		StructByteOffset;
+	};
+
+	// sub type references
+	union 
+	{
+		int			PaletteNo = -1;
+		int			SubTypeId;
+	};
 
 	// Reads
 	int						ReadCount = 0;

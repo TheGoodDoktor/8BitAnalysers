@@ -76,6 +76,13 @@ struct FGame
 	FGameViewerData *	pViewerData = nullptr;
 };
 
+struct FSnapshot
+{
+	bool		bValid = false;
+	ImTextureID	Thumbnail = 0;
+	zx_t		State;
+};
+
 
 class FSpectrumEmu : public FEmuBase
 {
@@ -155,12 +162,21 @@ public:
 
 	const FZXSpectrumConfig* GetZXSpectrumGlobalConfig() { return (const FZXSpectrumConfig*)pGlobalConfig; }
 
-
+	// snapshots
+	int			GetNoSnapshots() const { return kNoSnapshots;}
+	bool		SaveSnapshot(int snapshotNo);
+	bool		LoadSnapshot(int snapshotNo);
+	ImTextureID	GetSnapshotThumbnail(int snapshotNo) const;
 	// TODO: Make private
 //private:
 	// Emulator 
-	zx_t			ZXEmuState;	// Chips Spectrum State
-    zx_t            BackupState;
+	zx_t			ZXEmuState;		// Chips Spectrum State
+    zx_t            BackupState;	// Backup state for edit mode
+
+	// snapshots
+	static const int kNoSnapshots = 5;
+	FSnapshot		Snapshots[kNoSnapshots];
+
 	uint8_t*		MappedInMemory = nullptr;
 	//FZXSpectrumConfig *	pGlobalConfig = nullptr;
 
