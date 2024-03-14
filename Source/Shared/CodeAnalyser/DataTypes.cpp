@@ -516,7 +516,7 @@ bool FDataTypes::DrawStructComboBox(const char* pLabel, int& selection)
 	return DrawTypeListCombo(pLabel,selection, StructTypes);
 }
 
-void FDataTypes::DrawStructMember(int structId, int byteOffset)
+void FDataTypes::DrawStructMember(int structId, int byteOffset, bool bDrawStructName)
 {
 	FStruct* pStruct = GetStructFromTypeId(structId);
 	if (pStruct)
@@ -527,7 +527,10 @@ void FDataTypes::DrawStructMember(int structId, int byteOffset)
 		{
 			ImGui::SameLine();
 			ImGui::PushStyleColor(ImGuiCol_Text, Colours::comment);
-			ImGui::Text("(%s::%s)", pStruct->Name.c_str(), pStructMember->Name.c_str());
+			if(bDrawStructName)
+				ImGui::Text("(%s::%s)", pStruct->Name.c_str(), pStructMember->Name.c_str());
+			else
+				ImGui::Text("(%s)",pStructMember->Name.c_str());
 			ImGui::PopStyleColor();
 		}
 	}

@@ -638,7 +638,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	// show struct info if struct member
 	if (pDataInfo->bStructMember)
 	{
-		state.GetDataTypes()->DrawStructMember(pDataInfo->SubTypeId, pDataInfo->StructByteOffset);
+		state.GetDataTypes()->DrawStructMember(pDataInfo->SubTypeId, pDataInfo->StructByteOffset, false);
 	}
 
 	if (state.CPUInterface->GetSP() == physAddr)
