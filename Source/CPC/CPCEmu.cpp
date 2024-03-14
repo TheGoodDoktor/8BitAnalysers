@@ -450,7 +450,6 @@ void FCPCEmu::UpdateBankMappings()
 	{
 		if (bExternalROMSupport)
 		{
-			// dont we need this for the 464 to switch the basic rom in/out?
 			CodeAnalysis.MapBank(UpperROMSlot[CurUpperROMSlot], 48, EBankAccess::Read);
 		}
 		else
@@ -536,6 +535,64 @@ void IOPortEventShowAddress(FCodeAnalysisState& state, const FEvent& event)
 		ImGui::Text("IO Port: %s", NumStr(event.Address));
 	}
 }
+void RAMBankSwitchShowValue(FCodeAnalysisState& state, const FEvent& event)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float rectSize = ImGui::GetTextLineHeight();
+	const float textOffset = (rectSize / 2.0f) - (ImGui::CalcTextSize("0").x / 2.0f);
+
+	const int ramPreset = event.Value & 0x7;
+	int bankIndex[4];
+	bankIndex[0] = gCPCRAMConfig[ramPreset][0];
+	bankIndex[1] = gCPCRAMConfig[ramPreset][1];
+	bankIndex[2] = gCPCRAMConfig[ramPreset][2];
+	bankIndex[3] = gCPCRAMConfig[ramPreset][3];
+
+	for (int i = 0; i < 4; i++)
+	{
+		dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
+		char bankTxt[2];
+		snprintf(bankTxt, 2, "%d", bankIndex[i]);
+		dl->AddText(ImVec2(pos.x + textOffset, pos.y), 0xffffffff, bankTxt);
+		pos.x += rectSize;
+	}
+
+	ImGui::Text("%d", event.Value);
+}
+
+void ROMBankSwitchShowValue(FCodeAnalysisState& state, const FEvent& event)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float rectSize = ImGui::GetTextLineHeight();
+	const uint8_t romEnable = event.Value & 0x1F;
+
+	// Some text to hover over (because the rects are not hoverable).
+	ImGui::Text("        ");
+
+	for (int i = 0; i < 4; i++)
+	{
+		if ((i == 0 && !(romEnable & AM40010_CONFIG_LROMEN)) || (i == 3 && !(romEnable & AM40010_CONFIG_HROMEN)))
+		{
+			dl->AddRectFilled(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
+		}
+
+		dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
+		pos.x += rectSize;
+	}
+	
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+
+		ImGui::Text("Lower ROM: %s.", romEnable & AM40010_CONFIG_LROMEN ? "OFF" : "ON");
+		ImGui::SameLine();
+		ImGui::Text("Upper ROM: %s.", romEnable & AM40010_CONFIG_HROMEN ? "OFF" : "ON");
+
+		ImGui::EndTooltip();
+	}
+}
 
 void IOPortEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 {
@@ -560,29 +617,6 @@ void IOPortEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 					}
 				}
 			}
-		}
-	}
-	else if (event.Type == (int)EEventType::ROMBankSwitch)
-	{
-		const uint8_t romEnable = event.Value & 0x1F;
-		if (romEnable & AM40010_CONFIG_LROMEN)
-		{
-			ImGui::Text("Lower: OFF.");
-		}
-		else
-		{
-			ImGui::Text("Lower: ON.");
-		}
-
-		if (romEnable & AM40010_CONFIG_HROMEN)
-		{
-			ImGui::SameLine();
-			ImGui::Text("Upper: OFF.");
-		}
-		else
-		{
-			ImGui::SameLine();
-			ImGui::Text("Upper: ON.");
 		}
 	}
 	else
@@ -901,8 +935,8 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite, "CRTC Reg. Write", 0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
-	debugger.RegisterEventType((int)EEventType::RAMBankSwitch, "RAM Banks Switch", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::RAMBankSwitch, "RAM Banks Switch", 0xffff69b4, IOPortEventShowAddress, RAMBankSwitchShowValue);
+	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xffff69b4, IOPortEventShowAddress, ROMBankSwitchShowValue);
 	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
 
 	// load the command line game if none specified then load the last game
