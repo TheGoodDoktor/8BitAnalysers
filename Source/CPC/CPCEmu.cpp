@@ -308,7 +308,8 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 					{
 						// ROM enable/disable.
 						// This occurs when an OUT $7fXX instruction happens.
-						const uint8_t ROMEnableDirty = (LastGAConfigReg ^ ga.regs.config) & (AM40010_CONFIG_LROMEN | AM40010_CONFIG_HROMEN);
+						const uint8_t ROMEnableDirty = (LastGateArrayConfig ^ ga.regs.config) & (AM40010_CONFIG_LROMEN | AM40010_CONFIG_HROMEN);
+						LastGateArrayConfig = ga.regs.config;
 						if (ROMEnableDirty != 0)
 						{
 							UpdateBankMappings();
@@ -322,9 +323,13 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 					{
 						if (CPCEmuState.type == CPC_TYPE_6128)
 						{
-							// todo: only do if dirty?
-							UpdateBankMappings();
-							debugger.RegisterEvent((uint8_t)EEventType::RAMBankSwitch, pcAddrRef, addr, data, scanlinePos);
+							const uint8_t RAMConfigDirty = (LastGateArrayRAMConfig ^ CPCEmuState.ga.ram_config) & 7;
+							LastGateArrayRAMConfig = CPCEmuState.ga.ram_config;
+							if (RAMConfigDirty)
+							{
+								UpdateBankMappings();
+								debugger.RegisterEvent((uint8_t)EEventType::RAMBankSwitch, pcAddrRef, addr, data, scanlinePos);
+							}
 						}
 						break;
 					}
@@ -460,8 +465,6 @@ void FCPCEmu::UpdateBankMappings()
 
 	// sam. Do I need to do this here?
 	CodeAnalysis.SetAllBanksDirty();
-
-	LastGAConfigReg = romEnable;
 }
 
 // Slot is physical 16K memory region (0-3) 
@@ -535,6 +538,31 @@ void IOPortEventShowAddress(FCodeAnalysisState& state, const FEvent& event)
 		ImGui::Text("IO Port: %s", NumStr(event.Address));
 	}
 }
+
+void UpperROMSelectShowValue(FCodeAnalysisState& state, const FEvent& event)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float rectSize = ImGui::GetTextLineHeight();
+	const float textOffset = (rectSize / 2.0f) - (ImGui::CalcTextSize("0").x / 2.0f);
+
+	char tmp[16];
+	for (int i = 0; i < 4; i++)
+	{
+		dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
+		if (i == 3)
+		{
+			snprintf(tmp, 16, "%x", event.Value);
+			dl->AddText(ImVec2(pos.x + textOffset, pos.y), 0xffffffff, tmp);
+		}
+		pos.x += rectSize;
+	}
+
+	pos.x += rectSize / 2.f;
+	snprintf(tmp, 16, "(%s)", NumStr(event.Value));
+	dl->AddText(ImVec2(pos.x, pos.y), 0xffffffff, tmp);
+}
+
 void RAMBankSwitchShowValue(FCodeAnalysisState& state, const FEvent& event)
 {
 	ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -549,16 +577,18 @@ void RAMBankSwitchShowValue(FCodeAnalysisState& state, const FEvent& event)
 	bankIndex[2] = gCPCRAMConfig[ramPreset][2];
 	bankIndex[3] = gCPCRAMConfig[ramPreset][3];
 
+	char tmp[16];
 	for (int i = 0; i < 4; i++)
 	{
 		dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
-		char bankTxt[2];
-		snprintf(bankTxt, 2, "%d", bankIndex[i]);
-		dl->AddText(ImVec2(pos.x + textOffset, pos.y), 0xffffffff, bankTxt);
+		snprintf(tmp, 16, "%d", bankIndex[i]);
+		dl->AddText(ImVec2(pos.x + textOffset, pos.y), 0xffffffff, tmp);
 		pos.x += rectSize;
 	}
 
-	ImGui::Text("%d", event.Value);
+	pos.x += rectSize / 2.f;
+	snprintf(tmp, 16, "(%s)", NumStr(event.Value));
+	dl->AddText(ImVec2(pos.x, pos.y), 0xffffffff, tmp);
 }
 
 void ROMBankSwitchShowValue(FCodeAnalysisState& state, const FEvent& event)
@@ -929,15 +959,15 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::PaletteSelect, "Palette Select", 0xffffffff, IOPortEventShowAddress, PaletteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::PaletteColour, "Palette Colour", 0xff00ffff, IOPortEventShowAddress, PaletteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::BorderColour, "Border Colour", 0xff00ff00, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::ScreenModeChange, "Screen Mode", 0xff0080ff, IOPortEventShowAddress, ScreenModeShowValue);
+	debugger.RegisterEventType((int)EEventType::ScreenModeChange, "Screen Mode", 0xffccccff, IOPortEventShowAddress, ScreenModeShowValue);
 	debugger.RegisterEventType((int)EEventType::CrtcRegisterSelect, "CRTC Reg. Select", 0xffff00ff, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::CrtcRegisterRead, "CRTC Reg. Read", 0xffff0000, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite, "CRTC Reg. Write", 0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
 	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
 	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
-	debugger.RegisterEventType((int)EEventType::RAMBankSwitch, "RAM Banks Switch", 0xffff69b4, IOPortEventShowAddress, RAMBankSwitchShowValue);
-	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xffff69b4, IOPortEventShowAddress, ROMBankSwitchShowValue);
-	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xffff69b4, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::RAMBankSwitch, "RAM Banks Switch", 0xff006699, IOPortEventShowAddress, RAMBankSwitchShowValue);
+	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xff3357ff, IOPortEventShowAddress, ROMBankSwitchShowValue);
+	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xff3f0c90, IOPortEventShowAddress, UpperROMSelectShowValue);
 
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;

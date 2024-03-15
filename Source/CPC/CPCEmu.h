@@ -111,7 +111,7 @@ public:
 	bool				LoadGameState(const char* fname);
 
 	void				OnInstructionExecuted(int ticks, uint64_t pins);
-	uint64_t			Z80Tick(int num, uint64_t pins);
+	uint64_t		Z80Tick(int num, uint64_t pins);
 
 	void				Reset() override;
 	void				Tick() override;
@@ -154,7 +154,6 @@ public:
 	// Emulator 
 	cpc_t				CPCEmuState;		// Chips CPC State
 	uint8_t*		MappedInMemory = nullptr;
-	//FCPCConfig*		pGlobalConfig = nullptr;
 
 	float				ExecSpeedScale = 1.0f;
 
@@ -164,9 +163,6 @@ public:
 
 	// Viewers
 	FCPCViewer	CPCViewer;
-	//FFrameTraceViewer		FrameTraceViewer;
-	//FCPCGraphicsViewer		GraphicsViewer;
-	//FCodeAnalysisState		CodeAnalysis;
 	
 	// todo: refactor this to move all event related code out of it
 	FIOAnalysis				IOAnalysis;
@@ -184,12 +180,11 @@ public:
 	int16_t			UpperROMSlot[kNumUpperROMSlots];
 	int				CurUpperROMSlot = -1;
 
-	//FCodeAnalysisPage	ROMPages[kNoROMPages];
-	//FCodeAnalysisPage	RAMPages[kNoRAMPages];
-	
 	int16_t			CurRAMBank[4] = { -1,-1,-1,-1 };
 
-	uint8_t			LastGAConfigReg = 0;
+	// Temp variables so we can tell when Chips registers are dirty
+	uint8_t			LastGateArrayRAMConfig = 0;
+	uint8_t			LastGateArrayConfig = 0;
 
 	// Memory handling
 	std::string	SelectedMemoryHandler;
@@ -199,9 +194,6 @@ public:
 
 	uint16_t		PreviousPC = 0;		// store previous pc
 	int			InstructionsTicks = 0;
-
-	//bool	bShowImGuiDemo = false;
-	//bool	bShowImPlotDemo = false;
 
 	const FGamesList& GetGamesList() const { return GamesList;  }
 
