@@ -60,6 +60,15 @@ enum class EC64Event
 	CIA2RegisterRead,
 };
 
+enum class EPRGLoadPhase
+{
+	Idle,
+	Reset,
+	BasicReady,
+	LoadedPRG,
+	Run
+};
+
 struct FC64Config;
 struct FC64GameConfig;
 class FC64Emulator;
@@ -181,6 +190,8 @@ private:
 	c64_t       C64Emu;
 	//ui_c64_t    C64UI;
 	double      ExecTime;
+
+	EPRGLoadPhase	PRGLoadPhase = EPRGLoadPhase::Idle;
 
 	//FC64Config*			pGlobalConfig = nullptr;
 	//FC64GameConfig*		pCurrentGameConfig = nullptr;

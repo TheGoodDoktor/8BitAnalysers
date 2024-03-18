@@ -401,18 +401,22 @@ bool FC64Emulator::NewGameFromSnapshot(const FGameSnapshot& gameSnapshot)
 
 	if (pNewConfig != nullptr)
 	{
-		chips_range_t snapshotData;
+		/*chips_range_t snapshotData;
 		snapshotData.ptr = LoadBinaryFile(gameSnapshot.FileName.c_str(), snapshotData.size);
 		if(snapshotData.ptr!=nullptr)
 		{
 			c64_quickload(&C64Emu, snapshotData);
 			free(snapshotData.ptr);
-		}
+		}*/
+
+		PRGLoadPhase = EPRGLoadPhase::Reset;
+		Reset();
 
 		StartGame(pNewConfig, false);
 		AddGameConfig(pNewConfig);
 		SaveCurrentGameData();
 
+		CodeAnalysis.Debugger.Continue();
 		return true;
 	}
 	return false;
@@ -677,6 +681,22 @@ void FC64Emulator::Tick()
 		CodeAnalysis.OnFrameEnd();
 	}
 	DrawDockingView();
+
+	switch(PRGLoadPhase)
+	{
+		case EPRGLoadPhase::BasicReady:
+			GamesList.LoadGame(pCurrentGameConfig->Name.c_str());
+			PRGLoadPhase = EPRGLoadPhase::LoadedPRG;
+			break;
+		case EPRGLoadPhase::LoadedPRG:
+			c64_basic_run(&C64Emu);
+			PRGLoadPhase = EPRGLoadPhase::Run;
+			break;
+
+		default:
+			break;
+	}
+
 #if 0
 	gfx_draw(c64_display_width(&c64), c64_display_height(&c64));
 	const uint32_t load_delay_frames = 180;
@@ -908,6 +928,12 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 	{
 		RegisterCodeExecuted(state, pc, PreviousPC);
 		PreviousPC = pc;
+
+		if(PRGLoadPhase == EPRGLoadPhase::Reset)
+		{
+			if(pc == 0xE5CD)
+				PRGLoadPhase = EPRGLoadPhase::BasicReady;
+		}
 	}
 
 
