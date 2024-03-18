@@ -66,6 +66,7 @@ uint16_t	FSpectrumEmu::ReadWord(uint16_t address) const
 
 const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const 
 {
+#if 0
 	const uint8_t* ptr = nullptr;
 	
 
@@ -97,6 +98,8 @@ const uint8_t* FSpectrumEmu::GetMemPtr(uint16_t address) const
 	assert(ptr == mem_readptr(const_cast<mem_t*>(&ZXEmuState.mem), address));
 
 	return ptr;
+#endif
+	return mem_readptr(const_cast<mem_t*>(&ZXEmuState.mem), address);
 }
 
 
