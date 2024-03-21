@@ -222,7 +222,7 @@ void FEmuBase::DrawUI()
 void FEmuBase::FileMenu()
 {
 	// New game from snapshot
-	if (ImGui::BeginMenu("New Game from Snapshot File"))
+	if (ImGui::BeginMenu("New Project from Snapshot File"))
 	{
 		const int numGames = GamesList.GetNoGames();
 		if (!numGames)
@@ -265,11 +265,59 @@ void FEmuBase::FileMenu()
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::BeginMenu("Open Game"))
+	for (const auto& gamesList : GamesLists)
+	{
+		char menuTitle[128];
+		snprintf(menuTitle,128,"New Project from %s",gamesList.GetFileType());
+
+		if (ImGui::BeginMenu(menuTitle))
+		{
+			const int numGames = gamesList.GetNoGames();
+			if (!numGames)
+			{
+				ImGui::Text("No %s found in directory:\n\n'%s'.\nDirectory is set in GlobalConfig.json", gamesList.GetFileType(), gamesList.GetRootDir());
+			}
+			else
+			{
+				for (int gameNo = 0; gameNo < numGames; gameNo++)
+				{
+					const FGameSnapshot& game = gamesList.GetGame(gameNo);
+
+					if (ImGui::MenuItem(game.DisplayName.c_str()))
+					{
+						bool bGameExists = false;
+
+						for (const auto& pGameConfig : GetGameConfigs())
+						{
+							if (pGameConfig->Name == game.DisplayName)
+								bGameExists = true;
+						}
+						if (bGameExists)
+						{
+							bReplaceGamePopup = true;
+							ReplaceGameSnapshotIndex = gameNo;
+						}
+						else
+						{
+							if (!NewGameFromSnapshot(game))
+							{
+								Reset();
+								DisplayErrorMessage("Could not load snapshot '%s'", game.FileName.c_str());
+							}
+							break;
+						}
+					}
+				}
+			}
+			ImGui::EndMenu();
+		}
+	}
+
+	if (ImGui::BeginMenu("Open Project"))
 	{
 		if (GetGameConfigs().empty())
 		{
-			ImGui::Text("No games found.\n\nFirst, create a game via the 'New Game from Snapshot File' menu.");
+			ImGui::Text("No projects found.\n\nFirst, create a project via the 'New Project ..' menu.");
 		}
 		else
 		{
@@ -281,7 +329,7 @@ void FEmuBase::FileMenu()
 					if (StartGame(pGameConfig, true) == false)
 					{
 						Reset();
-						DisplayErrorMessage("Could not start game '%s'",pGameConfig->Name.c_str());
+						DisplayErrorMessage("Could not start project '%s'",pGameConfig->Name.c_str());
 					}
 				}
 			}
@@ -290,7 +338,7 @@ void FEmuBase::FileMenu()
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::MenuItem("Save Game Data"))
+	if (ImGui::MenuItem("Save Project"))
 	{
 		SaveCurrentGameData();
 	}
@@ -669,6 +717,15 @@ void FEmuBase::CharacterMapViewerSetView(FAddressRef address)
 	if (pCharacterMapViewer)
 		pCharacterMapViewer->GoToAddress(address);
 }
+
+bool	FEmuBase::AddGamesList(const char* pFileType, const char* pRootDir, IGameLoader* pLoader)
+{
+	FGamesList& gamesList = GamesLists.emplace_back(pFileType, pRootDir, pLoader);
+	gamesList.EnumerateGames(pRootDir);
+
+	return true;
+}
+
 
 
 // Util

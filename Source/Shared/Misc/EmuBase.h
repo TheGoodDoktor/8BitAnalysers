@@ -83,6 +83,9 @@ public:
     void			SetLastError(const char* fmt, ...);
 	void			DisplayErrorMessage(const char *fmt, ...);
 
+	// Games List
+	bool	AddGamesList(const char* pFileType, const char* pRootDir, IGameLoader* pLoader);
+
 protected:
 	void			FileMenu();
 	void			SystemMenu();
@@ -104,6 +107,7 @@ protected:
 
 	FCodeAnalysisState  CodeAnalysis;
 	FGamesList			GamesList;
+	std::vector<FGamesList>	GamesLists;
 	FGraphicsViewer*	pGraphicsViewer = nullptr;
 	FCharacterMapViewer* pCharacterMapViewer = nullptr;
 

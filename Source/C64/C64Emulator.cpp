@@ -175,6 +175,9 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	// TODO: Setup games list
 	GameLoader.Init(this);
+	AddGamesList("PRG File", GetC64GlobalConfig()->PrgFolder.c_str(), &GameLoader);
+
+	// old - TODO: remove
 	GamesList.SetLoader(&GameLoader);
 	GamesList.EnumerateGames(GetC64GlobalConfig()->PrgFolder.c_str());
 
