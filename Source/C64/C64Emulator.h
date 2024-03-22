@@ -164,6 +164,9 @@ public:
 	{
 		return VICBankMapping[addr.Address >> 12] == addr.BankId;
 	}
+	
+	uint16_t GetIOAreaBankId() const { return IOAreaId; }
+
 	FAddressRef	GetColourRAMAddress(uint16_t colRamAddress)	const // VIC address is 14bit (16K range)
 	{
 		return FAddressRef(IOAreaId, colRamAddress + 0xD800);

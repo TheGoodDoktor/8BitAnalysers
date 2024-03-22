@@ -32,12 +32,12 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 				const int charX = charNo % 40;
 				const int charY = charNo / 40;
 
-				sprintf(DescStr, "Screen Char: %d,%d", charX, charY);
+				sprintf(DescStr, "<Screen Char: %d,%d>", charX, charY);
 				return DescStr;
 			}
 			else if(addr.Address >= spritePtrs && addr.Address < spritePtrs + 8)
 			{
-				sprintf(DescStr, "Sprite%dImageNo", addr.Address - spritePtrs);
+				sprintf(DescStr, "<Sprite%dImageNo>", addr.Address - spritePtrs);
 				return DescStr;
 			}
 			else if (bBitmapMode && addr.Address >= BitmapAddress && addr.Address < BitmapAddress + (1 << 13))
@@ -47,7 +47,7 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 				const int bitmapX = bitmapAddressOffset % 40;
 				const int bitmapY = bitmapAddressOffset / 40;
 
-				sprintf(DescStr, "Bitmap Screen: %d,%d",bitmapX,bitmapY);
+				sprintf(DescStr, "<Bitmap Screen: %d,%d>",bitmapX,bitmapY);
 				return DescStr;
 			}
 			return nullptr;
@@ -80,6 +80,29 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 		char DescStr[32] = { 0 };
 };
 
+class FColourRAMMemDescGenerator : public FMemoryRegionDescGenerator
+{
+public:
+	FColourRAMMemDescGenerator(FC64Emulator* pEmulator)
+	{
+		RegionMin = 0xD800;
+		RegionMax = 0xDBE7;
+		RegionBankId = pEmulator->GetIOAreaBankId();
+	}
+
+	const char* GenerateAddressString(FAddressRef addr) override
+	{
+		const int ColRAMAddr = addr.Address - RegionMin;
+		const int colX = ColRAMAddr % 40;
+		const int colY = ColRAMAddr / 40;
+		sprintf(DescStr, "<Colour RAM: %d,%d>", colX, colY);
+		return DescStr;
+	}
+private:
+	char DescStr[32] = { 0 };
+};
+
+
 void FVICAnalysis::Init(FC64Emulator* pEmulator)
 {
 	Name = "VIC-II";
@@ -89,6 +112,7 @@ void FVICAnalysis::Init(FC64Emulator* pEmulator)
 	pVIC = this;
 
 	AddMemoryRegionDescGenerator(new FVICMemDescGenerator(pEmulator));
+	AddMemoryRegionDescGenerator(new FColourRAMMemDescGenerator(pEmulator));
 	pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::VICRegisterWrite, "VIC Write", 0xff0000ff, VICWriteEventShowAddress, VICWriteEventShowValue);
 }
 

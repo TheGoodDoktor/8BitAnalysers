@@ -221,7 +221,7 @@ void FC64Emulator::SetupCodeAnalysisLabels()
 	FCodeAnalysisBank* pIOBank = CodeAnalysis.GetBank(IOAreaId);
 	AddVICRegisterLabels(pIOBank->Pages[0]);  // Page $D000-$D3ff
 	AddSIDRegisterLabels(pIOBank->Pages[1]);  // Page $D400-$D7ff
-	pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000);    // Colour RAM $D800
+	pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000,true);    // Colour RAM $D800
 	AddCIARegisterLabels(pIOBank->Pages[3]);  // Page $DC00-$Dfff
 }
 
@@ -509,7 +509,8 @@ bool FC64Emulator::SaveCurrentGameData(void)
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
-	ExportAnalysisJson(CodeAnalysis, kROMAnalysisFilename, true);
+	ExportAnalysisJson(CodeAnalysis, kROMAnalysisFilename, true);	// Do this on a config?
+
 	return true;
 }
 
