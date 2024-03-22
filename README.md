@@ -1,20 +1,24 @@
-# Spectrum Analyser
-![ci status](https://github.com/TheGoodDoktor/SpeccyExplorer/actions/workflows/ci.yml/badge.svg)
-## Home Page
-https://colourclash.co.uk/spectrum-analyser/
+# 8-Bit Analysers
+A set of tools that assist the analysis & annotation of 8-bit games running on a selection of 8-bit systems.
 ## Wiki
 https://github.com/TheGoodDoktor/8BitAnalysers/wiki
 ## Getting Started
 ### Clone project:
 git clone --recursive https://github.com/TheGoodDoktor/8BitAnalysers
-### Building
+# Spectrum Analyser
+![ci status](https://github.com/TheGoodDoktor/SpeccyExplorer/actions/workflows/ci.yml/badge.svg)
+## Home Page
+https://colourclash.co.uk/spectrum-analyser
+## Building
 cd Source/ZXSpectrum\
 mkdir build\
 cd build\
 cmake ..
 
 Then for Linux/Mac:\
-make
+make\
+To build an XCode project for Mac:\
+cmake -G Xcode ..
 
 For windows a solution will be built in the build folder
 ## Running
@@ -33,7 +37,15 @@ The pokes folder is where your .pok files are stored
 
 # C64 Analyser
 ![ci status](https://github.com/TheGoodDoktor/SpeccyExplorer/actions/workflows/ci_c64.yml/badge.svg)\
-This is very much work in progress and shouldn't be considered usable at this time....
+This project is usable but behind Spectrum Analyser.\
+At the moment only PRG files are supported with TAP support on the way.
+## Building, Running & Configuring
+This is similar to Spectrum Analyser but with the C64 directory.\
+For example to build:\
+cd Source/C64\
+mkdir build\
+cd build\
+cmake ..
 
 # CPC Analyser
 ![ci status](https://github.com/TheGoodDoktor/SpeccyExplorer/actions/workflows/ci_cpc.yml/badge.svg)\
