@@ -184,7 +184,8 @@ public:
 	c64_t*	GetEmu() {return &C64Emu;}
 	const FC64IOAnalysis&	GetC64IOAnalysis() { return IOAnalysis; }
 
-	const FC64Config*	GetC64GlobalConfig() { return (const FC64Config *)pGlobalConfig;}
+	const FC64Config* GetC64GlobalConfig() const { return (const FC64Config*)pGlobalConfig; }
+	FC64Config* GetC64GlobalConfig() { return (FC64Config*)pGlobalConfig; }
 
 private:
 	c64_t       C64Emu;

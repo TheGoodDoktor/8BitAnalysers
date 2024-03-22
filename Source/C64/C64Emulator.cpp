@@ -13,6 +13,7 @@
 #include <CodeAnalyser/CodeAnalysisJson.h>
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
+#include <Debug/DebugLog.h>
 
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
@@ -654,7 +655,7 @@ void	FC64Emulator::SystemMenuAdditions(void)
 
 void	FC64Emulator::OptionsMenuAdditions(void) 
 {
-	const FC64Config* pC64Config = GetC64GlobalConfig();
+	FC64Config* pC64Config = GetC64GlobalConfig();
 	ImGui::MenuItem("Show H Counter", 0, &pC64Config->bShowHCounter);
 	ImGui::MenuItem("Show VIC Overlay", 0, &pC64Config->bShowVICOverlay);
 }
