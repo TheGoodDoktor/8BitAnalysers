@@ -19,6 +19,8 @@
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "C64 Analyser";
 
+const char* kROMAnalysisFilename = "C64RomsAnalysis.json";
+
 void SetWindowTitle(const char* pTitle);
 
 
@@ -356,8 +358,8 @@ bool FC64Emulator::StartGame(FGameConfig* pGameConfig, bool bLoadGameData)
 		//LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}
 
-	//if (FileExists(romJsonFName.c_str()))
-		  //  ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+	if (FileExists(kROMAnalysisFilename))
+		ImportAnalysisJson(CodeAnalysis, kROMAnalysisFilename);
 
 
 	if (bLoadSnapshot)
@@ -507,6 +509,7 @@ bool FC64Emulator::SaveCurrentGameData(void)
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
+	ExportAnalysisJson(CodeAnalysis, kROMAnalysisFilename, true);
 	return true;
 }
 

@@ -1,0 +1,216 @@
+{
+    "Banks": [
+        {
+            "Description": "",
+            "Id": 3
+        },
+        {
+            "Description": "",
+            "Id": 5
+        },
+        {
+            "Description": "",
+            "Id": 7
+        }
+    ],
+    "DataTypes": {
+        "Enums": null,
+        "Flags": null,
+        "NextItemId": 0,
+        "Structs": null
+    },
+    "Pages": [
+        {
+            "PageId": 48
+        },
+        {
+            "PageId": 49
+        },
+        {
+            "PageId": 50
+        },
+        {
+            "PageId": 51
+        },
+        {
+            "PageId": 52
+        },
+        {
+            "PageId": 53
+        },
+        {
+            "PageId": 54
+        },
+        {
+            "PageId": 55
+        },
+        {
+            "PageId": 64
+        },
+        {
+            "PageId": 65
+        },
+        {
+            "PageId": 66
+        },
+        {
+            "PageId": 67
+        },
+        {
+            "PageId": 68
+        },
+        {
+            "PageId": 69
+        },
+        {
+            "PageId": 70
+        },
+        {
+            "CodeInfo": [
+                {
+                    "Address": 840,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 841,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 842,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 843,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 844,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 845,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 846,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 849,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 851,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 856,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                }
+            ],
+            "LabelInfo": [
+                {
+                    "Address": 840,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "KernelInterruptHandler"
+                },
+                {
+                    "Address": 856,
+                    "LabelType": 2,
+                    "Name": "label_FF58"
+                }
+            ],
+            "PageId": 71
+        },
+        {
+            "PageId": 80
+        },
+        {
+            "PageId": 81
+        },
+        {
+            "PageId": 82
+        },
+        {
+            "PageId": 83
+        }
+    ],
+    "PaletteColours": [
+        0,
+        4288359470,
+        4293619056,
+        4294967295,
+        0,
+        4288359470,
+        4285623492,
+        4294967295,
+        0,
+        4288359470,
+        4291350133,
+        4294967295,
+        0,
+        4278204501,
+        4280897678,
+        4285657581,
+        0,
+        4288359470,
+        4280897678,
+        4294967295,
+        0,
+        4288359470,
+        4285657581,
+        4294967295,
+        0,
+        4288359470,
+        4278190080,
+        4294967295,
+        0,
+        4288359470,
+        4283058762,
+        4294967295,
+        0,
+        4288101518
+    ],
+    "PaletteEntries": [
+        {
+            "FirstColourIndex": 0,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 4,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 8,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 12,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 16,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 20,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 24,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 28,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 32,
+            "NoColours": 2
+        }
+    ]
+}
