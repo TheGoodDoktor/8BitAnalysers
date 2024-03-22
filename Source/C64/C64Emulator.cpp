@@ -132,6 +132,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 
 	// setup default memory configuration
+	memset(IOMemBuffer,0,sizeof(IOMemBuffer));	// clear to 0
 
 	LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram,false, 0x0000,  true);		// RAM - $0000 - $9FFF - pages 0-39 - 40K
 	HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false, 0xC000);	// RAM - $C000 - $CFFF - pages 48-51 - 4k

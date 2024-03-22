@@ -96,6 +96,7 @@ public:
 
 private:
 	void	DrawVICRegisterInfo(void);
+	void	DrawLastFrameSpriteInfo(void);
 	int		GetFrameSprite(int scanLine, int spriteNo);
 private:
 	static const int kScanlineMax = 320;

@@ -290,7 +290,7 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 }
 #endif
 
-void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr)
+void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr, bool bGlobal)
 {
 	FLabelInfo* pLabel = Labels[addr];
 	if (pLabel == nullptr)
@@ -304,6 +304,8 @@ void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, ELabelType typ
 		pLabel->ChangeName(pLabelName);
 		pLabel->LabelType = type;
 	}
+
+	pLabel->Global = bGlobal;
 }
 
 #if 0

@@ -297,18 +297,33 @@ void	FCIAAnalysis::DrawDetailsUI(void)
 	ImGui::EndChild();
 }
 
+std::string GetCIALabelName(int ciaNo, int reg)
+{
+	std::vector<FRegDisplayConfig>& regList = (ciaNo == 1) ? g_CIA1RegDrawInfo : g_CIA2RegDrawInfo;
+	std::string displayName = regList[reg].Name;
+	std::string labelName;
+
+	for (auto ch : displayName)
+	{
+		if (ch != ' ')
+			labelName += ch;
+	}
+
+	return labelName;
+}
+
 void AddCIARegisterLabels(FCodeAnalysisPage& IOPage)
 {
 	// CIA 1 -$DC00 - $DC0F
 	std::vector<FRegDisplayConfig>& CIA1RegList = g_CIA1RegDrawInfo;
 
 	for (int reg = 0; reg < (int)CIA1RegList.size(); reg++)
-		IOPage.SetLabelAtAddress(CIA1RegList[reg].Name, ELabelType::Data, reg);
+		IOPage.SetLabelAtAddress(GetCIALabelName(1,reg).c_str(), ELabelType::Data, reg, true);
 
 	// CIA 2 -$DD00 - $DD0F
 	std::vector<FRegDisplayConfig>& CIA2RegList = g_CIA1RegDrawInfo;
 
 	for (int reg = 0; reg < (int)CIA2RegList.size(); reg++)
-		IOPage.SetLabelAtAddress(CIA2RegList[reg].Name, ELabelType::Data, reg + 0x100);	// offset by 256 bytes
+		IOPage.SetLabelAtAddress(GetCIALabelName(2, reg).c_str(), ELabelType::Data, reg + 0x100, true);	// offset by 256 bytes
 
 }

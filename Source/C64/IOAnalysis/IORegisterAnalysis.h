@@ -36,6 +36,7 @@ struct FRegDisplayConfig
 {
 	const char* Name;
 	void		(*UIDrawFunction)(FC64IODevice* pDevice, uint8_t val);
+	EDataItemDisplayType	DisplayType = EDataItemDisplayType::Decimal;
 };
 
 
