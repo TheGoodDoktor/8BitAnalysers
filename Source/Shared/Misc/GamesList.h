@@ -50,7 +50,7 @@ public:
 	bool	LoadGame(const char* pFileName) const;
 
 	const char*		GetFileType() const { return FileType.c_str(); }
-	const char*		GetRootDir() const { return FileType.c_str(); }
+	const char*		GetRootDir() const { return RootDir.c_str(); }
 	int		GetNoGames() const { return (int)GamesList.size(); }
 	const FGameSnapshot& GetGame(int index) const { return GamesList[index]; }
 	const FGameSnapshot* GetGame(const char* pSnapshotName) const;
