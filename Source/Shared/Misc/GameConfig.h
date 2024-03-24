@@ -5,6 +5,7 @@
 
 #include <Util/Misc.h>
 #include <CodeAnalyser/CodeAnalyser.h>
+#include "GamesList.h"
 
 #include <json_fwd.hpp>
 
@@ -16,9 +17,9 @@ struct FCodeAnalysisViewConfig
 	FAddressRef	ViewAddress;
 };
 
-struct FGameConfig
+struct FProjectConfig
 {
-	FGameConfig()
+	FProjectConfig()
 	{
 		ViewConfigs[0].bEnabled = true;
 	}
@@ -29,21 +30,21 @@ struct FGameConfig
 	bool AddLuaSourceFile(const char *pFilename);
 	std::string		Name;
 	std::string		Machine;
-	std::string		SnapshotFile;
+	FEmulatorFile	EmulatorFile;
 
 	std::vector<std::string>	LuaSourceFiles;
 
 	FCodeAnalysisViewConfig	ViewConfigs[FCodeAnalysisState::kNoViewStates];
 };
 
-bool AddGameConfig(FGameConfig *pConfig);
+bool AddGameConfig(FProjectConfig *pConfig);
 bool RemoveGameConfig(const char* pName);
-FGameConfig* GetGameConfigForName(const char* pName);
-FGameConfig* GetGameConfigForSnapshot(const char* pName);
-const std::vector< FGameConfig *>& GetGameConfigs();
+FProjectConfig* GetGameConfigForName(const char* pName);
+FProjectConfig* GetGameConfigForSnapshot(const char* pName);
+const std::vector< FProjectConfig *>& GetGameConfigs();
 
-bool SaveGameConfigToFile(const FGameConfig &config, const char *fname);
-bool LoadGameConfigFromFile(FGameConfig &config, const char *fname);
+bool SaveGameConfigToFile(const FProjectConfig &config, const char *fname);
+bool LoadGameConfigFromFile(FProjectConfig &config, const char *fname);
 
 
 

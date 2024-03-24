@@ -3,48 +3,49 @@
 #include <unordered_map>
 #include <algorithm>
 
-std::unordered_map<std::string, ESnapshotType> g_ExtensionSnapshotType = 
+std::unordered_map<std::string, EEmuFileType> g_ExtensionEmuFileType = 
 {
-	{"z80", ESnapshotType::Z80},
-	{"sna", ESnapshotType::SNA},
-	{"tap", ESnapshotType::TAP},
-	{"tzx", ESnapshotType::TZX},
-	{"rzx", ESnapshotType::RZX},
-	{"prg", ESnapshotType::PRG},
+	{"z80", EEmuFileType::Z80},
+	{"sna", EEmuFileType::SNA},
+	{"tap", EEmuFileType::TAP},
+	{"tzx", EEmuFileType::TZX},
+	{"rzx", EEmuFileType::RZX},
+	{"prg", EEmuFileType::PRG},
 };
 
-ESnapshotType GetSnapshotTypeFromFileName(const std::string& filename)
+EEmuFileType GetEmuFileTypeFromFileName(const std::string& filename)
 {
 	std::string extension = filename.substr(filename.find_last_of(".") + 1);;
 	std::transform(extension.begin(), extension.end(), extension.begin(),
 		[](unsigned char c) { return std::tolower(c); });
 
-	const auto& extIt = g_ExtensionSnapshotType.find(extension);
-	if(extIt == g_ExtensionSnapshotType.end())
-		return ESnapshotType::Unknown;
+	const auto& extIt = g_ExtensionEmuFileType.find(extension);
+	if(extIt == g_ExtensionEmuFileType.end())
+		return EEmuFileType::Unknown;
 
 	return extIt->second;
 }
 
-bool FGamesList::EnumerateGames(const char* pDir)
+bool FGamesList::EnumerateGames(void)
 {
 	FDirFileList listing;
 
-	RootDir = std::string(pDir);
+	//RootDir = std::string(pDir);
 
 	GamesList.clear();
 
-	if (EnumerateDirectory(pDir, listing) == false)
+	if (EnumerateDirectory(RootDir.c_str(), listing) == false)
 		return false;
 
 	for (const auto& file : listing)
 	{
-		const ESnapshotType type = GetSnapshotTypeFromFileName(file.FileName);
+		const EEmuFileType type = GetEmuFileTypeFromFileName(file.FileName);
 
-		if (type != ESnapshotType::Unknown)
+		if (type != EEmuFileType::Unknown)
 		{
-			FGameSnapshot newGame;
-			newGame.FileName = RootDir + file.FileName;
+			FEmulatorFile newGame;
+			newGame.FileName = file.FileName;
+			newGame.ListName = GetFileType();
 			newGame.DisplayName = RemoveFileExtension(file.FileName.c_str());
 			newGame.Type = type;
 			GamesList.push_back(newGame);
@@ -53,7 +54,7 @@ bool FGamesList::EnumerateGames(const char* pDir)
 	return true;
 }
 
-const FGameSnapshot* FGamesList::GetGame(const char* pName) const
+const FEmulatorFile* FGamesList::GetGame(const char* pName) const
 {
 	const std::string name(pName);
 
@@ -65,7 +66,7 @@ const FGameSnapshot* FGamesList::GetGame(const char* pName) const
 	return nullptr;
 }
 
-
+#if 0
 bool FGamesList::LoadGame(int index) const
 {
 	if (index < 0 || index >= GamesList.size())
@@ -82,3 +83,4 @@ bool FGamesList::LoadGame(const char* pFileName) const
 
 	return false;
 }
+#endif

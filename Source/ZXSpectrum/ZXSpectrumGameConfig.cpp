@@ -14,11 +14,14 @@
 
 void FZXSpectrumGameConfig::LoadFromJson(const nlohmann::json& jsonConfigFile)
 {
-	FGameConfig::LoadFromJson(jsonConfigFile);
+	FProjectConfig::LoadFromJson(jsonConfigFile);
+
+	if(EmulatorFile.ListName.empty())
+		EmulatorFile.ListName = "Snapshot File";
 
 	// Patch up old field that assumed everything was in the 'Games' dir
-	if (jsonConfigFile.contains("Z80File"))
-		SnapshotFile = std::string("./Games/") + jsonConfigFile["Z80File"].get<std::string>();
+	//if (jsonConfigFile.contains("Z80File"))
+	//	SnapshotFile = std::string("./Games/") + jsonConfigFile["Z80File"].get<std::string>();
 
 	// spectrum specific
 	if (jsonConfigFile.contains("128KGame"))
@@ -43,7 +46,7 @@ void FZXSpectrumGameConfig::LoadFromJson(const nlohmann::json& jsonConfigFile)
 
 void FZXSpectrumGameConfig::SaveToJson(nlohmann::json& jsonConfigFile) const
 {
-	FGameConfig::SaveToJson(jsonConfigFile);
+	FProjectConfig::SaveToJson(jsonConfigFile);
 
 	// Spectrum specific
 	jsonConfigFile["128KGame"] = Spectrum128KGame;
@@ -65,12 +68,12 @@ void FZXSpectrumGameConfig::SaveToJson(nlohmann::json& jsonConfigFile) const
 
 }
 
-FZXSpectrumGameConfig* CreateNewZXGameConfigFromSnapshot(const FGameSnapshot& snapshot)
+FZXSpectrumGameConfig* CreateNewZXGameConfigFromSnapshot(const FEmulatorFile& snapshot)
 {
 	FZXSpectrumGameConfig* pNewConfig = new FZXSpectrumGameConfig;
 
 	pNewConfig->Name = RemoveFileExtension(snapshot.DisplayName.c_str());
-	pNewConfig->SnapshotFile = GetFileFromPath(snapshot.FileName.c_str());
+	pNewConfig->EmulatorFile = snapshot;
 	pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
 
 	return pNewConfig;
@@ -81,7 +84,7 @@ FZXSpectrumGameConfig* CreateNewZXBasicConfig(void)
 	FZXSpectrumGameConfig* pNewConfig = new FZXSpectrumGameConfig;
 
 	pNewConfig->Name = "ZXBasic";
-	pNewConfig->SnapshotFile = "";
+	//pNewConfig->SnapshotFile = "";
 	pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
 
 	return pNewConfig;

@@ -1,3 +1,4 @@
+#if 0
 #include "GameLoader.h"
 
 #include "SNALoader.h"
@@ -49,3 +50,4 @@ bool FCPCGameLoader::LoadSnapshot(const FGameSnapshot& snapshot)
 	}
 }
 
+#endif

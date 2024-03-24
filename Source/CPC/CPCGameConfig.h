@@ -3,11 +3,11 @@
 #include <Misc/GameConfig.h>
 
 struct FGame;
-struct FGameSnapshot;
+struct FEmulatorFile;
 class FCPCEmu;
 
 // CPC specific
-struct FCPCGameConfig : FGameConfig
+struct FCPCProjectConfig : FProjectConfig
 {
 	void	LoadFromJson(const nlohmann::json& jsonConfig) override;
 	void	SaveToJson(nlohmann::json& jsonConfig) const override;
@@ -15,6 +15,6 @@ struct FCPCGameConfig : FGameConfig
 	bool	bCPC6128Game = false;
 };
 
-FCPCGameConfig* CreateNewCPCGameConfigFromSnapshot(const FGameSnapshot& snapshot);
-FCPCGameConfig* CreateNewAmstradBasicConfig(void);
+FCPCProjectConfig* CreateNewCPCProjectConfigFromEmulatorFile(const FEmulatorFile& snapshot);
+FCPCProjectConfig* CreateNewAmstradBasicConfig(void);
 bool LoadCPCGameConfigs(FCPCEmu* pUI);

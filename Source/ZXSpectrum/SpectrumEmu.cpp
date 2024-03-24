@@ -40,6 +40,10 @@
 
 #include "LuaScripting/LuaSys.h"
 #include "SpectrumLuaAPI.h"
+#include "SnapshotLoaders/Z80Loader.h"
+#include "SnapshotLoaders/SNALoader.h"
+#include "SnapshotLoaders/TAPLoader.h"
+#include "SnapshotLoaders/TZXLoader.h"
 
 #define ENABLE_RZX 1
 #define SAVE_ROM_JSON 0
@@ -668,14 +672,16 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 
 	
 	const FZXSpectrumConfig* pSpectrumConfig = GetZXSpectrumGlobalConfig();
-	GameLoader.Init(this);
-	GamesList.SetLoader(&GameLoader);
-	GamesList.EnumerateGames(pSpectrumConfig->SnapshotFolder.c_str());
+	//GameLoader.Init(this);
+	//GamesList.SetLoader(&GameLoader);
+	//GamesList.EnumerateGames(pSpectrumConfig->SnapshotFolder.c_str());
+	AddGamesList("Snapshot File", GetZXSpectrumGlobalConfig()->SnapshotFolder.c_str());
 
-	RZXManager.Init(this);
-	RZXGamesList.SetLoader(&GameLoader);
-	RZXGamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->RZXFolder.c_str());
-
+	//RZXManager.Init(this);
+	//RZXGamesList.SetLoader(&GameLoader);
+#if ENABLE_RZX
+	AddGamesList("RZX File", GetZXSpectrumGlobalConfig()->RZXFolder.c_str());
+#endif
     
 	// This is where we add the viewers we want
 	AddViewer(new FOverviewViewer(this));
@@ -796,7 +802,7 @@ void FSpectrumEmu::Shutdown()
 	FEmuBase::Shutdown();
 	
 	if (RZXManager.GetReplayMode() == EReplayMode::Off)
-		SaveCurrentGameData();	// save on close
+		SaveProject();	// save on close
 
 	// Save Global Config - move to function?
 	if (pActiveGame != nullptr)
@@ -811,7 +817,7 @@ void FSpectrumEmu::Shutdown()
 	//GraphicsViewer.Shutdown();
 }
 
-bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  true*/)
+bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  true*/)
 {
 	assert(pGameConfig != nullptr);
 	FZXSpectrumGameConfig *pSpectrumGameConfig = (FZXSpectrumGameConfig*)pGameConfig;
@@ -852,7 +858,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 		CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
 	}
 
-	bool bLoadSnapshot = pGameConfig->SnapshotFile.empty() == false;
+	bool bLoadSnapshot = pGameConfig->EmulatorFile.FileName.empty() == false;
 
 	// Are we loading a previously saved game
 	if (bLoadGameData)
@@ -907,13 +913,13 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 	if (bLoadSnapshot)
 	{
 		// if the game state didn't load then reload the snapshot
-		const FGameSnapshot* snapshot = GamesList.GetGame(RemoveFileExtension(pGameConfig->SnapshotFile.c_str()).c_str());
+		/*/const FGameSnapshot* snapshot = &CurrentGameSnapshot;//GamesList.GetGame(RemoveFileExtension(pGameConfig->SnapshotFile.c_str()).c_str());
 		if (snapshot == nullptr)
 		{
 			SetLastError("Could not find '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pGameConfig->SnapshotFile.c_str());
 			return false;
-		}
-		if (!GameLoader.LoadSnapshot(*snapshot))
+		}*/
+		if (!LoadEmulatorFile(&pGameConfig->EmulatorFile))
 		{
 			return false;
 		}
@@ -943,7 +949,7 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 
 	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "/" + pGameConfig->Name + "/GraphicsSets/").c_str());
 
-	pCurrentGameConfig = pGameConfig;
+	pCurrentProjectConfig = pGameConfig;
 
 	LoadLua();
 	return true;
@@ -952,14 +958,14 @@ bool FSpectrumEmu::StartGame(FGameConfig* pGameConfig, bool bLoadGameData /* =  
 bool FSpectrumEmu::LoadLua()
 {
 	// Setup Lua - reinitialised for each game
-	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentGameConfig->Name + "/";
+	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
 	if (LuaSys::Init(this))
 	{
 		RegisterSpectrumLuaAPI(LuaSys::GetGlobalState());
 		
 		//LuaSys::LoadFile(GetBundlePath("Lua/ZXBase.lua"), pGlobalConfig->bEditLuaBaseFiles);
 
-		for(const auto& gameScript : pCurrentGameConfig->LuaSourceFiles)
+		for(const auto& gameScript : pCurrentProjectConfig->LuaSourceFiles)
 		{
 			std::string luaScriptFName = gameRoot + gameScript;
 			LuaSys::LoadFile(luaScriptFName.c_str(), true);
@@ -972,11 +978,11 @@ bool FSpectrumEmu::LoadLua()
 
 
 // save config & data
-bool FSpectrumEmu::SaveCurrentGameData()
+bool FSpectrumEmu::SaveProject()
 {
 	if (pActiveGame != nullptr)
 	{
-		FGameConfig *pGameConfig = pActiveGame->pConfig;
+		FProjectConfig *pGameConfig = pActiveGame->pConfig;
 		if (pGameConfig == nullptr || pGameConfig->Name.empty())
 			return false;
 			
@@ -1033,7 +1039,31 @@ bool FSpectrumEmu::SaveCurrentGameData()
 	return true;
 }
 
-bool FSpectrumEmu::NewGameFromSnapshot(const FGameSnapshot& snapshot)
+bool FSpectrumEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
+{
+	auto findIt = GamesLists.find(pSnapshot->ListName);
+	if(findIt == GamesLists.end())
+		return false;
+
+	const std::string fileName = findIt->second.GetRootDir() + pSnapshot->FileName;
+	const char* pFileName = fileName.c_str();
+
+	switch (pSnapshot->Type)
+	{
+	case EEmuFileType::Z80:
+		return LoadZ80File(this, pFileName);
+	case EEmuFileType::SNA:
+		return LoadSNAFile(this, pFileName);
+	case EEmuFileType::TAP:
+		return LoadTAPFile(this, pFileName);
+	case EEmuFileType::TZX:
+		return LoadTZXFile(this, pFileName);
+	default:
+		return false;
+	}
+}
+
+bool FSpectrumEmu::NewProjectFromEmulatorFile(const FEmulatorFile& snapshot)
 {
 	// Remove any existing config 
 	RemoveGameConfig(snapshot.DisplayName.c_str());
@@ -1042,12 +1072,13 @@ bool FSpectrumEmu::NewGameFromSnapshot(const FGameSnapshot& snapshot)
 
 	if (pNewConfig != nullptr)
 	{
-        if (!StartGame(pNewConfig, /* bLoadGameData */ false))
+        if (!LoadProject(pNewConfig, /* bLoadGameData */ false))
             return false;
         pNewConfig->Spectrum128KGame = GetCurrentSpectrumModel() == ESpectrumModel::Spectrum128K;
-        
+		pNewConfig->EmulatorFile = snapshot;
+
         AddGameConfig(pNewConfig);
-		SaveCurrentGameData();
+		SaveProject();
 
 		return true;
 	}
@@ -1058,7 +1089,7 @@ bool FSpectrumEmu::NewGameFromSnapshot(const FGameSnapshot& snapshot)
 void FSpectrumEmu::FileMenuAdditions(void)	
 {
 	const FZXSpectrumConfig* pZXGlobalConfig = GetZXSpectrumGlobalConfig();
-#if ENABLE_RZX
+#if 0
 	if (ImGui::BeginMenu("New Game from RZX File"))
 	{
 		if (RZXGamesList.GetNoGames() == 0)
@@ -1790,7 +1821,7 @@ void FSpectrumEmu::Reset()
 	if(pBasicConfig == nullptr)
 		pBasicConfig = CreateNewZXBasicConfig();
 
-	StartGame(pBasicConfig,false);	// reset code analysis
+	LoadProject(pBasicConfig,false);	// reset code analysis
 }
 
 void    FSpectrumEmu::OnEnterEditMode(void)
@@ -2118,11 +2149,14 @@ void FSpectrumEmu::AppFocusCallback(int focused)
 {
 	if (focused)
 	{
-		GamesList.EnumerateGames(GetZXSpectrumGlobalConfig()->SnapshotFolder.c_str());
+		for(auto& listIt : GamesLists)
+		{ 
+			listIt.second.EnumerateGames();
+		}
 	}
 }
 
-bool FSpectrumEmu::SaveSnapshot(int snapshotNo)
+bool FSpectrumEmu::SaveMachineSnapshot(int snapshotNo)
 {
 	if (snapshotNo > 0 && snapshotNo < kNoSnapshots)
 	{
@@ -2148,7 +2182,7 @@ bool FSpectrumEmu::SaveSnapshot(int snapshotNo)
 	return false;
 }
 
-bool FSpectrumEmu::LoadSnapshot(int snapshotNo)
+bool FSpectrumEmu::LoadMachineSnapshot(int snapshotNo)
 {
 	if (snapshotNo > 0 && snapshotNo < kNoSnapshots)
 	{
@@ -2162,7 +2196,7 @@ bool FSpectrumEmu::LoadSnapshot(int snapshotNo)
 	return false;
 }
 
-ImTextureID	FSpectrumEmu::GetSnapshotThumbnail(int snapshotNo) const
+ImTextureID	FSpectrumEmu::GetMachineSnapshotThumbnail(int snapshotNo) const
 {
 	if (snapshotNo > 0 && snapshotNo < kNoSnapshots)
 	{

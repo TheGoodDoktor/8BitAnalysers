@@ -7,8 +7,8 @@ class FEmuBase;
 class FGraphicsViewer;
 class FCharacterMapViewer;
 
-struct FGameConfig;
-struct FGameSnapshot;
+struct FProjectConfig;
+struct FEmulatorFile;
 struct FGlobalConfig;
 
 struct FEmulatorLaunchConfig
@@ -47,9 +47,11 @@ public:
 
 	virtual bool	LoadLua(){ return false;}
 
-	virtual bool	NewGameFromSnapshot(const FGameSnapshot& gameConfig) = 0;
-	virtual bool	StartGame(FGameConfig* pConfig, bool bLoadGame) = 0;
-	virtual bool	SaveCurrentGameData(void) = 0;
+	virtual bool	LoadEmulatorFile(const FEmulatorFile* pSnapshot) = 0;
+
+	virtual bool	NewProjectFromEmulatorFile(const FEmulatorFile& gameSnapshot) = 0;
+	virtual bool	LoadProject(FProjectConfig* pConfig, bool bLoadGame) = 0;
+	virtual bool	SaveProject(void) = 0;
 
 	virtual void	OnEnterEditMode(void) {}
 	virtual void	OnExitEditMode(void) {}
@@ -76,7 +78,7 @@ public:
 
 	FCodeAnalysisState&		GetCodeAnalysis() { return CodeAnalysis; }
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
-	const FGameConfig*		GetGameConfig() const { return pCurrentGameConfig; }
+	const FProjectConfig*		GetProjectConfig() const { return pCurrentProjectConfig; }
 
 	std::string		GetGameWorkspaceRoot() const;
 	
@@ -84,7 +86,7 @@ public:
 	void			DisplayErrorMessage(const char *fmt, ...);
 
 	// Games List
-	bool	AddGamesList(const char* pFileType, const char* pRootDir, IGameLoader* pLoader);
+	bool	AddGamesList(const char* pFileType, const char* pRootDir);
 
 protected:
 	void			FileMenu();
@@ -103,11 +105,11 @@ protected:
 	void			DrawErrorMessageModalPopup(void);
 
 	FGlobalConfig*		pGlobalConfig = nullptr;
-	FGameConfig*		pCurrentGameConfig = nullptr;
+	FProjectConfig*		pCurrentProjectConfig = nullptr;
 
 	FCodeAnalysisState  CodeAnalysis;
-	FGamesList			GamesList;
-	std::vector<FGamesList>	GamesLists;
+	//FGamesList			GamesList;
+	std::unordered_map<std::string, FGamesList>	GamesLists;
 	FGraphicsViewer*	pGraphicsViewer = nullptr;
 	FCharacterMapViewer* pCharacterMapViewer = nullptr;
 
@@ -124,12 +126,12 @@ protected:
 public:
 	bool		bShowImGuiDemo = false;
 	bool		bShowImPlotDemo = false;
-private:
+protected:
 	bool		bShowDebugLog = false;
 	bool		bReplaceGamePopup = false;
 	bool		bExportAsm = false;
 
-	int		ReplaceGameSnapshotIndex = 0;
+	FEmulatorFile EmulatorFileToLoad;	// for 'are you sure?' popup
 
 	std::string ErrorPopupText;
 	std::string LastError;

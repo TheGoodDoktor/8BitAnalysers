@@ -12,9 +12,9 @@
 #include <Util/GraphicsView.h>
 
 using json = nlohmann::json;
-static std::vector< FGameConfig *>	g_GameConfigs;
+static std::vector< FProjectConfig *>	g_GameConfigs;
 
-bool AddGameConfig(FGameConfig *pConfig)
+bool AddGameConfig(FProjectConfig *pConfig)
 {
 	for (const auto& pGameConfig : GetGameConfigs())
 	{
@@ -29,9 +29,9 @@ bool AddGameConfig(FGameConfig *pConfig)
 
 bool RemoveGameConfig(const char* pName)
 {
-	for (std::vector< FGameConfig*>::iterator it = g_GameConfigs.begin(); it != g_GameConfigs.end(); ++it)
+	for (std::vector< FProjectConfig*>::iterator it = g_GameConfigs.begin(); it != g_GameConfigs.end(); ++it)
 	{
-		FGameConfig* pConfig = *it;
+		FProjectConfig* pConfig = *it;
 		if (pConfig->Name == pName)
 		{
 			g_GameConfigs.erase(it);
@@ -41,12 +41,12 @@ bool RemoveGameConfig(const char* pName)
 	return false;
 }
 
-const std::vector< FGameConfig *>& GetGameConfigs()
+const std::vector< FProjectConfig *>& GetGameConfigs()
 {
 	return g_GameConfigs;
 }
 
-FGameConfig* GetGameConfigForName(const char* pGameName)
+FProjectConfig* GetGameConfigForName(const char* pGameName)
 {
 	for (const auto& pGameConfig : g_GameConfigs)
 	{
@@ -56,18 +56,18 @@ FGameConfig* GetGameConfigForName(const char* pGameName)
 	return nullptr;
 }
 
-FGameConfig* GetGameConfigForSnapshot(const char* pSnapshotName)
+FProjectConfig* GetGameConfigForSnapshot(const char* pSnapshotName)
 {
 	for (const auto& pGameConfig : g_GameConfigs)
 	{
-		if (pGameConfig->SnapshotFile == pSnapshotName)
+		if (pGameConfig->EmulatorFile.FileName == pSnapshotName)
 			return pGameConfig;
 	}
 	return nullptr;
 }
 
 
-bool SaveGameConfigToFile(const FGameConfig &config, const char *fname) 
+bool SaveGameConfigToFile(const FProjectConfig &config, const char *fname) 
 {
 	json jsonConfigFile;
 
@@ -83,11 +83,19 @@ bool SaveGameConfigToFile(const FGameConfig &config, const char *fname)
 	return false;
 }
 
-void FGameConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
+void FProjectConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 {
 	jsonConfigFile["Name"] = Name;
 	jsonConfigFile["Machine"] = Machine;
-	jsonConfigFile["SnapshotFile"] = SnapshotFile;
+	//jsonConfigFile["SnapshotFile"] = SnapshotFile;
+
+	// snapshot
+	json snapshotJson;
+	snapshotJson["Type"] = EmulatorFile.Type;
+	snapshotJson["DisplayName"] = EmulatorFile.DisplayName;
+	snapshotJson["FileName"] = EmulatorFile.FileName;
+	snapshotJson["ListName"] = EmulatorFile.ListName;
+	jsonConfigFile["Snapshot"] = snapshotJson;
 
 	// save character sets
 
@@ -122,7 +130,7 @@ void FGameConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 	
 
 
-bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
+bool LoadGameConfigFromFile(FProjectConfig &config, const char *fname)
 {
 	std::ifstream inFileStream(fname);
 	if (inFileStream.is_open() == false)
@@ -136,15 +144,32 @@ bool LoadGameConfigFromFile(FGameConfig &config, const char *fname)
 	return true;
 }
 
-void FGameConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
+void FProjectConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 {
 	Name = jsonConfigFile["Name"].get<std::string>();
 
 	if (jsonConfigFile.contains("Machine"))
 		Machine = jsonConfigFile["Machine"];
 
+	// old - patch up
 	if (jsonConfigFile.contains("SnapshotFile"))
-		SnapshotFile = GetFileFromPath(jsonConfigFile["SnapshotFile"].get<std::string>().c_str());
+	{ 
+		EmulatorFile.FileName = GetFileFromPath(jsonConfigFile["SnapshotFile"].get<std::string>().c_str());
+		EmulatorFile.ListName = "";
+		EmulatorFile.Type = GetEmuFileTypeFromFileName(EmulatorFile.FileName);
+		EmulatorFile.DisplayName = RemoveFileExtension(GetFileFromPath(EmulatorFile.FileName.c_str()).c_str());
+	}
+
+	// snapshot
+	if (jsonConfigFile.contains("Snapshot"))
+	{ 
+		// snapshot
+		const json& snapshotJson = jsonConfigFile["Snapshot"];
+		EmulatorFile.Type = snapshotJson["Type"];
+		EmulatorFile.DisplayName = snapshotJson["DisplayName"];
+		EmulatorFile.FileName = snapshotJson["FileName"];
+		EmulatorFile.ListName = snapshotJson["ListName"];
+	}
 
 	// load options
 	if (jsonConfigFile.contains("Options"))
@@ -186,7 +211,7 @@ void FGameConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 	}
 }
 
-bool FGameConfig::AddLuaSourceFile(const char* pFilename)
+bool FProjectConfig::AddLuaSourceFile(const char* pFilename)
 {
 	for (const auto& luaFile : LuaSourceFiles)
 	{

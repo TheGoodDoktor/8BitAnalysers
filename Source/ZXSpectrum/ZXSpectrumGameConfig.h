@@ -5,7 +5,7 @@
 
 struct FGame;
 struct FGameViewerData;
-struct FGameSnapshot;
+struct FEmulatorFile;
 
 struct FZXSpectrumGameConfig;
 class FSpectrumEmu;
@@ -44,7 +44,7 @@ struct FViewerConfig
 
 
 // spectrum specific
-struct FZXSpectrumGameConfig : FGameConfig
+struct FZXSpectrumGameConfig : FProjectConfig
 {
 	void	LoadFromJson(const nlohmann::json& jsonConfig) override;
 	void	SaveToJson(nlohmann::json& jsonConfig) const override;
@@ -59,7 +59,7 @@ struct FZXSpectrumGameConfig : FGameConfig
 	std::vector< FCheat> Cheats;
 };
 
-FZXSpectrumGameConfig* CreateNewZXGameConfigFromSnapshot(const FGameSnapshot& snapshot);
+FZXSpectrumGameConfig* CreateNewZXGameConfigFromSnapshot(const FEmulatorFile& snapshot);
 FZXSpectrumGameConfig* CreateNewZXBasicConfig(void);
 bool LoadZXSpectrumGameConfigs(FSpectrumEmu* pUI);
 bool LoadPOKFile(FZXSpectrumGameConfig& config, const char* fname);

@@ -5,7 +5,7 @@
 
 class FSystem;
 
-enum class ESnapshotType
+enum class EEmuFileType
 {
 	Z80,
 	SNA,
@@ -13,52 +13,51 @@ enum class ESnapshotType
 	TZX,
 	RZX,
 	PRG,
+	D64,
 
 	Unknown
 };
 
-struct FGameSnapshot
+// TODO: rename to emulator file
+struct FEmulatorFile
 {
-	ESnapshotType	Type;
+	EEmuFileType	Type;
 	std::string		DisplayName;
 	std::string		FileName;
+	std::string		ListName;
 };
-
+/*
 class IGameLoader
 {
 public:
 	virtual bool LoadSnapshot(const FGameSnapshot& snapshot) = 0;
-	//virtual ESnapshotType GetSnapshotTypeFromFileName(const std::string& fn) = 0;
-};
+};*/
 
 class FGamesList
 {
 public:
 	FGamesList() = default;
-	FGamesList(const char* pFileType, const char* pRootDir, IGameLoader* pLoader)
-		: FileType(pFileType)
+	FGamesList(const char* pListName, const char* pRootDir)
+		: ListName(pListName)
 		, RootDir(pRootDir)
-		, pGameLoader(pLoader)
 		{}
 
-	void	SetLoader(IGameLoader* pLoader) 
-	{ 
-		pGameLoader = pLoader;
-	}
-	bool	EnumerateGames(const char* pRootDir);
-	bool	LoadGame(int index) const;
-	bool	LoadGame(const char* pFileName) const;
+	bool	EnumerateGames(void);
+	//bool	LoadGame(int index) const;
+	//bool	LoadGame(const char* pFileName) const;
 
-	const char*		GetFileType() const { return FileType.c_str(); }
-	const char*		GetRootDir() const { return FileType.c_str(); }
+	const char*		GetFileType() const { return ListName.c_str(); }
+	const char*		GetRootDir() const { return RootDir.c_str(); }
 	int		GetNoGames() const { return (int)GamesList.size(); }
-	const FGameSnapshot& GetGame(int index) const { return GamesList[index]; }
-	const FGameSnapshot* GetGame(const char* pSnapshotName) const;
+	const FEmulatorFile& GetGame(int index) const { return GamesList[index]; }
+	const FEmulatorFile* GetGame(const char* pSnapshotName) const;
 	//const std::string& GetGameName(int index) const { return GamesList[index].DisplayName; }
 
 private:
-	std::string	FileType;
-	std::vector< FGameSnapshot>	GamesList;
+	std::string	ListName;
+	std::vector< FEmulatorFile>	GamesList;
 	std::string RootDir;
-	IGameLoader* pGameLoader = 0;
+	//IGameLoader* pGameLoader = 0;
 };
+
+EEmuFileType GetEmuFileTypeFromFileName(const std::string& filename);
