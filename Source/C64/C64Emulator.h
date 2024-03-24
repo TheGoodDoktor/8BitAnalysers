@@ -159,6 +159,9 @@ public:
 	{
 		return VICBankMapping[addr.Address >> 12] == addr.BankId;
 	}
+	
+	uint16_t GetIOAreaBankId() const { return IOAreaId; }
+
 	FAddressRef	GetColourRAMAddress(uint16_t colRamAddress)	const // VIC address is 14bit (16K range)
 	{
 		return FAddressRef(IOAreaId, colRamAddress + 0xD800);
@@ -183,7 +186,8 @@ public:
 	c64_t*	GetEmu() {return &C64Emu;}
 	const FC64IOAnalysis&	GetC64IOAnalysis() { return IOAnalysis; }
 
-	const FC64Config*	GetC64GlobalConfig() { return (const FC64Config *)pGlobalConfig;}
+	const FC64Config* GetC64GlobalConfig() const { return (const FC64Config*)pGlobalConfig; }
+	FC64Config* GetC64GlobalConfig() { return (FC64Config*)pGlobalConfig; }
 
 	void	SetLoadedFileType(EC64FileType type) { LoadedFileType = type;}
 private:

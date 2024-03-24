@@ -44,14 +44,16 @@ void DrawRegDetails(FC64IODevice* pDevice, FC64IORegisterInfo& reg, const FRegDi
 	for (auto& access : reg.Accesses)
 	{
 		ImGui::Separator();
-		ImGui::Text("Code at: $%X", access.first);
-		DrawAddressLabel(*pCodeAnalysis, pCodeAnalysis->GetFocussedViewState(), access.first);
+		ShowCodeAccessorActivity(*pCodeAnalysis, access.first);
 
-		ImGui::Text("Values:");
+		ImGui::Text("   ");
+		ImGui::SameLine();
+		DrawCodeAddress(*pCodeAnalysis, pCodeAnalysis->GetFocussedViewState(), access.first);
 
-		for (auto& val : access.second.WriteVals)
-		{
-			regConfig.UIDrawFunction(pDevice, val);
+		if(ImGui::CollapsingHeader("Values"))
+		{ 
+			for (auto& val : access.second.WriteVals)
+				regConfig.UIDrawFunction(pDevice, val);
 		}
 	}
 }

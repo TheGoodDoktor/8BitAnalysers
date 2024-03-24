@@ -28,7 +28,7 @@ struct FCodeAnalysisPage
 	//void WriteToBuffer(FMemoryBuffer& buffer);
 	//bool ReadFromBuffer(FMemoryBuffer& buffer);
 
-	void SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr);
+	void SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr, bool bGlobal = false);
 	static const int kPageSize = 1024;	// 1Kb page
 	static const int kPageShift = 10;	// 1Kb page
 	static const int kPageMask = kPageSize - 1;

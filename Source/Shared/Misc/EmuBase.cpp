@@ -277,7 +277,7 @@ void FEmuBase::FileMenu()
 			const int numGames = gamesList.GetNoGames();
 			if (!numGames)
 			{
-				ImGui::Text("No %s found in directory:\n\n'%s'.\nDirectory is set in GlobalConfig.json", gamesList.GetFileType(), gamesList.GetRootDir());
+				ImGui::Text("No %s found in directory:\n\n'%s'.\n\nDirectory is set in GlobalConfig.json", gamesList.GetFileType(), gamesList.GetRootDir());
 			}
 			else
 			{

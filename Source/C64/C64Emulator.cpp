@@ -13,10 +13,13 @@
 #include <CodeAnalyser/CodeAnalysisJson.h>
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
+#include <Debug/DebugLog.h>
 
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "C64 Analyser";
+
+const char* kROMAnalysisFilename = "C64RomsAnalysis.json";
 
 void SetWindowTitle(const char* pTitle);
 
@@ -134,6 +137,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 
 	// setup default memory configuration
+	memset(IOMemBuffer,0,sizeof(IOMemBuffer));	// clear to 0
 
 	LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram,false, 0x0000,  true);		// RAM - $0000 - $9FFF - pages 0-39 - 40K
 	HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false, 0xC000);	// RAM - $C000 - $CFFF - pages 48-51 - 4k
@@ -221,7 +225,7 @@ void FC64Emulator::SetupCodeAnalysisLabels()
 	FCodeAnalysisBank* pIOBank = CodeAnalysis.GetBank(IOAreaId);
 	AddVICRegisterLabels(pIOBank->Pages[0]);  // Page $D000-$D3ff
 	AddSIDRegisterLabels(pIOBank->Pages[1]);  // Page $D400-$D7ff
-	pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000);    // Colour RAM $D800
+	pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000,true);    // Colour RAM $D800
 	AddCIARegisterLabels(pIOBank->Pages[3]);  // Page $DC00-$Dfff
 }
 
@@ -358,8 +362,8 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 		//LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}
 
-	//if (FileExists(romJsonFName.c_str()))
-		  //  ImportAnalysisJson(CodeAnalysis, romJsonFName.c_str());
+	if (FileExists(kROMAnalysisFilename))
+		ImportAnalysisJson(CodeAnalysis, kROMAnalysisFilename);
 
 
 	/*if (bLoadSnapshot)
@@ -581,6 +585,8 @@ bool FC64Emulator::SaveProject(void)
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
+	ExportAnalysisJson(CodeAnalysis, kROMAnalysisFilename, true);	// Do this on a config?
+
 	return true;
 }
 
@@ -730,7 +736,7 @@ void	FC64Emulator::SystemMenuAdditions(void)
 
 void	FC64Emulator::OptionsMenuAdditions(void) 
 {
-	const FC64Config* pC64Config = GetC64GlobalConfig();
+	FC64Config* pC64Config = GetC64GlobalConfig();
 	ImGui::MenuItem("Show H Counter", 0, &pC64Config->bShowHCounter);
 	ImGui::MenuItem("Show VIC Overlay", 0, &pC64Config->bShowVICOverlay);
 }

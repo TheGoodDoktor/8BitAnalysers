@@ -32,12 +32,12 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 				const int charX = charNo % 40;
 				const int charY = charNo / 40;
 
-				sprintf(DescStr, "Screen Char: %d,%d", charX, charY);
+				sprintf(DescStr, "<Screen Char: %d,%d>", charX, charY);
 				return DescStr;
 			}
 			else if(addr.Address >= spritePtrs && addr.Address < spritePtrs + 8)
 			{
-				sprintf(DescStr, "Sprite %d Image No", addr.Address - spritePtrs);
+				sprintf(DescStr, "<Sprite%dImageNo>", addr.Address - spritePtrs);
 				return DescStr;
 			}
 			else if (bBitmapMode && addr.Address >= BitmapAddress && addr.Address < BitmapAddress + (1 << 13))
@@ -47,7 +47,7 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 				const int bitmapX = bitmapAddressOffset % 40;
 				const int bitmapY = bitmapAddressOffset / 40;
 
-				sprintf(DescStr, "Bitmap Screen: %d,%d",bitmapX,bitmapY);
+				sprintf(DescStr, "<Bitmap Screen: %d,%d>",bitmapX,bitmapY);
 				return DescStr;
 			}
 			return nullptr;
@@ -80,6 +80,29 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 		char DescStr[32] = { 0 };
 };
 
+class FColourRAMMemDescGenerator : public FMemoryRegionDescGenerator
+{
+public:
+	FColourRAMMemDescGenerator(FC64Emulator* pEmulator)
+	{
+		RegionMin = 0xD800;
+		RegionMax = 0xDBE7;
+		RegionBankId = pEmulator->GetIOAreaBankId();
+	}
+
+	const char* GenerateAddressString(FAddressRef addr) override
+	{
+		const int ColRAMAddr = addr.Address - RegionMin;
+		const int colX = ColRAMAddr % 40;
+		const int colY = ColRAMAddr / 40;
+		sprintf(DescStr, "<Colour RAM: %d,%d>", colX, colY);
+		return DescStr;
+	}
+private:
+	char DescStr[32] = { 0 };
+};
+
+
 void FVICAnalysis::Init(FC64Emulator* pEmulator)
 {
 	Name = "VIC-II";
@@ -89,6 +112,7 @@ void FVICAnalysis::Init(FC64Emulator* pEmulator)
 	pVIC = this;
 
 	AddMemoryRegionDescGenerator(new FVICMemDescGenerator(pEmulator));
+	AddMemoryRegionDescGenerator(new FColourRAMMemDescGenerator(pEmulator));
 	pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::VICRegisterWrite, "VIC Write", 0xff0000ff, VICWriteEventShowAddress, VICWriteEventShowValue);
 }
 
@@ -415,22 +439,22 @@ static std::vector<FRegDisplayConfig>	g_VICRegDrawInfo =
 	{"Sprite 6 Y",	DrawRegValueYPos}, 	// 0x0d
 	{"Sprite 7 X",	DrawRegValueXPos}, 	// 0x0e
 	{"Sprite 7 Y",	DrawRegValueYPos}, 	// 0x0f
-	{"Sprite X MSB",	DrawRegValueHex},	// 0x10
-	{"Screen Ctrl 1",	DrawRegValueScreenControlReg1},	// 0x11
+	{"Sprite X MSB",	DrawRegValueHex, EDataItemDisplayType::Binary},	// 0x10
+	{"Screen Ctrl 1",	DrawRegValueScreenControlReg1, EDataItemDisplayType::Hex},	// 0x11
 	{"Raster Line",	DrawRegValueScanline},	// 0x12
 	{"Light Pen X",	DrawRegValueDecimal},	// 0x13
 	{"Light Pen Y",	DrawRegValueDecimal},	// 0x14
-	{"Sprite Enable",	DrawRegValueSpriteEnable},	// 0x15
+	{"Sprite Enable",	DrawRegValueSpriteEnable, EDataItemDisplayType::Binary},	// 0x15
 	{"Screen Ctrl 2",		DrawRegValueScreenControlReg2},	// 0x16
-	{"Sprite Dbl Height",	DrawRegValueSpriteEnable},	// 0x17
-	{"Memory Setup",		DrawRegValueMemorySetup},	// 0x18
-	{"Interrupt Status",		DrawRegValueHex},	// 0x19
+	{"Sprite Dbl Height",	DrawRegValueSpriteEnable, EDataItemDisplayType::Binary},	// 0x17
+	{"Memory Setup",		DrawRegValueMemorySetup, EDataItemDisplayType::Hex},	// 0x18
+	{"Interrupt Status",		DrawRegValueHex, EDataItemDisplayType::Hex},	// 0x19
 	{"Interrupt Control",	DrawRegValueHex},// 0x1a
-	{"Sprite Priority",		DrawRegValueHex},// 0x1b
-	{"Sprite Multi Col",		DrawRegValueSpriteEnable},// 0x1c
-	{"Sprite Dbl Width",		DrawRegValueSpriteEnable},// 0x1d
-	{"Sprite-SpriteCol",		DrawRegValueSpriteEnable},// 0x1e
-	{"Sprite-BackCol",	DrawRegValueSpriteEnable},	// 0x1f
+	{"Sprite Priority",		DrawRegValueHex, EDataItemDisplayType::Binary},// 0x1b
+	{"Sprite Multi Col",		DrawRegValueSpriteEnable, EDataItemDisplayType::Binary},// 0x1c
+	{"Sprite Dbl Width",		DrawRegValueSpriteEnable, EDataItemDisplayType::Binary},// 0x1d
+	{"Sprite-SpriteCol",		DrawRegValueSpriteEnable, EDataItemDisplayType::Binary},// 0x1e
+	{"Sprite-BackCol",	DrawRegValueSpriteEnable, EDataItemDisplayType::Binary},	// 0x1f
 	{"Border Colour",		DrawRegValueColour},// 0x20
 	{"Background Colour",		DrawRegValueColour},// 0x21
 	{"Extra BackColour 1",		DrawRegValueColour},// 0x22
@@ -459,21 +483,25 @@ void VICWriteEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 	//ImGui::Text("VIC Value: %s", NumStr(event.Value));
 }
 
-void FVICAnalysis::DrawDetailsUI(void)
+void FVICAnalysis::DrawLastFrameSpriteInfo(void)
 {
 	for (const auto& frameSprite : LastFrameSprites)
 	{
 		ImGui::Text("Sprite No %d", frameSprite.SpriteNo);
 		ImGui::SameLine();
-		ImGui::Text("Pos: %d,%d", frameSprite.XPosition,frameSprite.YPosition);
-		
-		if(frameSprite.CodeAddress.IsValid())
-		{ 
+		ImGui::Text("Pos: %d,%d", frameSprite.XPosition, frameSprite.YPosition);
+
+		if (frameSprite.CodeAddress.IsValid())
+		{
 			ImGui::SameLine();
 			ImGui::Text("Set by:");	ImGui::SameLine();
-			DrawCodeAddress(*pCodeAnalyser,pCodeAnalyser->GetFocussedViewState(),frameSprite.CodeAddress);
+			DrawCodeAddress(*pCodeAnalyser, pCodeAnalyser->GetFocussedViewState(), frameSprite.CodeAddress);
 		}
 	}
+}
+
+void FVICAnalysis::DrawDetailsUI(void)
+{
 	DrawVICRegisterInfo();
 }
 
@@ -497,9 +525,12 @@ void FVICAnalysis::DrawVICRegisterInfo(void)
 	if (ImGui::BeginChild("VIC Reg Details"))
 	{
 		if (SelectedRegister != -1)
+			DrawRegDetails(this, VICRegisters[SelectedRegister], g_VICRegDrawInfo[SelectedRegister], pCodeAnalyser);
+#if 0
 		{
 			FC64IORegisterInfo& vicRegister = VICRegisters[SelectedRegister];
 			const FRegDisplayConfig& regConfig = g_VICRegDrawInfo[SelectedRegister];
+
 
 			if (ImGui::Button("Clear"))
 			{
@@ -516,24 +547,40 @@ void FVICAnalysis::DrawVICRegisterInfo(void)
 
 				ShowCodeAccessorActivity(*pCodeAnalyser, access.first);
 				ImGui::Text("   ");
-				ImGui::SameLine(); DrawCodeAddress(*pCodeAnalyser, pCodeAnalyser->GetFocussedViewState(), access.first);
+				ImGui::SameLine(); 
+				DrawCodeAddress(*pCodeAnalyser, pCodeAnalyser->GetFocussedViewState(), access.first);
 
-				ImGui::Text("Values:");
-
-				for (auto& val : access.second.WriteVals)
+				if(ImGui::CollapsingHeader("Values"))
 				{
-					regConfig.UIDrawFunction(this, val);
+					for (auto& val : access.second.WriteVals)
+						regConfig.UIDrawFunction(this, val);
 				}
 			}
 		}
+#endif
 	}
 	ImGui::EndChild();
 }
 
+std::string GetVICLabelName(int reg)
+{
+	std::string displayName = g_VICRegDrawInfo[reg].Name;
+	std::string labelName = "VIC_";
 
+	for (auto ch : displayName)
+	{
+		if(ch != ' ')
+			labelName += ch;
+	}
+
+	return labelName;
+}
 
 void AddVICRegisterLabels(FCodeAnalysisPage& IOPage)
 {
 	for(int reg=0;reg< (int)g_VICRegDrawInfo.size();reg++)
-		IOPage.SetLabelAtAddress(g_VICRegDrawInfo[reg].Name, ELabelType::Data, reg);
+	{
+		IOPage.SetLabelAtAddress(GetVICLabelName(reg).c_str(), ELabelType::Data, reg, true);
+		IOPage.DataInfo[reg].DisplayType = g_VICRegDrawInfo[reg].DisplayType;
+	}
 }

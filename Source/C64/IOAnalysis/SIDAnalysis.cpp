@@ -51,38 +51,38 @@ void	FSIDAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 
 static std::vector<FRegDisplayConfig>	g_SIDRegDrawInfo =
 {
-	{"SID_Voice1FreqL",			DrawRegValueDecimal},	// 0x00
-	{"SID_Voice1FreqH",			DrawRegValueDecimal},	// 0x01
-	{"SID_Voice1PulseWidthL",	DrawRegValueDecimal},	// 0x02
-	{"SID_Voice1PulseWidthH",	DrawRegValueDecimal},	// 0x03
-	{"SID_Voice1Control",		DrawRegValueDecimal},	// 0x04
-	{"SID_Voice1AD",			DrawRegValueDecimal},	// 0x05
-	{"SID_Voice1SR",			DrawRegValueDecimal},	// 0x06
-	{"SID_Voice2FreqL",			DrawRegValueDecimal},	// 0x07
-	{"SID_Voice2FreqH",			DrawRegValueDecimal},	// 0x08
-	{"SID_Voice2PulseWidthL",	DrawRegValueDecimal},	// 0x09
-	{"SID_Voice2PulseWidthH",	DrawRegValueDecimal},	// 0x0a
-	{"SID_Voice2Control",		DrawRegValueDecimal},	// 0x0b
-	{"SID_Voice2AD",			DrawRegValueDecimal},	// 0x0c
-	{"SID_Voice2SR",			DrawRegValueDecimal},	// 0x0d
-	{"SID_Voice3FreqL",			DrawRegValueDecimal},	// 0x0e
-	{"SID_Voice3FreqH",			DrawRegValueDecimal},	// 0x0f
-	{"SID_Voice3PulseWidthL",	DrawRegValueDecimal},	// 0x10
-	{"SID_Voice3PulseWidthH",	DrawRegValueDecimal},	// 0x11
-	{"SID_Voice3Control",		DrawRegValueDecimal},	// 0x12
-	{"SID_Voice3AD",			DrawRegValueDecimal},	// 0x13
-	{"SID_Voice3SR",			DrawRegValueDecimal},	// 0x14
-	{"SID_FilterCutOffL",		DrawRegValueDecimal},	// 0x15
-	{"SID_FilterCutOffH",		DrawRegValueDecimal},	// 0x16
-	{"SID_FilterControl",		DrawRegValueDecimal},	// 0x17
-	{"SID_VolAndFilterModes",	DrawRegValueDecimal},	// 0x18
-	{"SID_PaddleX",				DrawRegValueDecimal},	// 0x19
-	{"SID_PaddleY",				DrawRegValueDecimal},	// 0x1a
-	{"SID_Voice3Waveform",		DrawRegValueDecimal},	// 0x1b
-	{"SID_Voice3ADSROut",		DrawRegValueDecimal},	// 0x1c
-	{"SID_Unused1",				DrawRegValueDecimal},	// 0x1d
-	{"SID_Unused2",				DrawRegValueDecimal},	// 0x1e
-	{"SID_Unused3",				DrawRegValueDecimal},	// 0x1f
+	{"Voice 1 Freq L",			DrawRegValueDecimal},	// 0x00
+	{"Voice 1 Freq H",			DrawRegValueDecimal},	// 0x01
+	{"Voice 1 Pulse Width L",	DrawRegValueDecimal},	// 0x02
+	{"Voice 1 Pulse Width H",	DrawRegValueDecimal},	// 0x03
+	{"Voice 1 Control",		DrawRegValueDecimal},	// 0x04
+	{"Voice 1 AD",			DrawRegValueDecimal},	// 0x05
+	{"Voice 1 SR",			DrawRegValueDecimal},	// 0x06
+	{"Voice 2 Freq L",			DrawRegValueDecimal},	// 0x07
+	{"Voice 2 Freq H",			DrawRegValueDecimal},	// 0x08
+	{"Voice 2 Pulse Width L",	DrawRegValueDecimal},	// 0x09
+	{"Voice 2 Pulse Width H",	DrawRegValueDecimal},	// 0x0a
+	{"Voice 2 Control",		DrawRegValueDecimal},	// 0x0b
+	{"Voice 2 AD",			DrawRegValueDecimal},	// 0x0c
+	{"Voice 2 SR",			DrawRegValueDecimal},	// 0x0d
+	{"Voice 3 Freq L",			DrawRegValueDecimal},	// 0x0e
+	{"Voice 3 Freq H",			DrawRegValueDecimal},	// 0x0f
+	{"Voice 3 Pulse Width L",	DrawRegValueDecimal},	// 0x10
+	{"Voice 3 Pulse Width H",	DrawRegValueDecimal},	// 0x11
+	{"Voice 3 Control",		DrawRegValueDecimal},	// 0x12
+	{"Voice 3 AD",			DrawRegValueDecimal},	// 0x13
+	{"Voice 3 SR",			DrawRegValueDecimal},	// 0x14
+	{"Filter Cut Off L",		DrawRegValueDecimal},	// 0x15
+	{"Filter Cut Off H",		DrawRegValueDecimal},	// 0x16
+	{"Filter Control",		DrawRegValueDecimal},	// 0x17
+	{"Vol And Filter Modes",	DrawRegValueDecimal},	// 0x18
+	{"Paddle X",				DrawRegValueDecimal},	// 0x19
+	{"Paddle Y",				DrawRegValueDecimal},	// 0x1a
+	{"Voice 3 Waveform",		DrawRegValueDecimal},	// 0x1b
+	{"Voice 3 ADSR Out",		DrawRegValueDecimal},	// 0x1c
+	{"Unused1",				DrawRegValueDecimal},	// 0x1d
+	{"Unused2",				DrawRegValueDecimal},	// 0x1e
+	{"Unused3",				DrawRegValueDecimal},	// 0x1f
 };
 
 void SIDWriteEventShowAddress(FCodeAnalysisState& state, const FEvent& event)
@@ -99,13 +99,13 @@ void SIDWriteEventShowValue(FCodeAnalysisState& state, const FEvent& event)
 
 void	FSIDAnalysis::DrawDetailsUI(void)
 {
-	if (ImGui::BeginChild("VIC Reg Select", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), true))
+	if (ImGui::BeginChild("SID Reg Select", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), true))
 	{
 		SelectedRegister = DrawRegSelectList(g_SIDRegDrawInfo, SelectedRegister);
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();
-	if (ImGui::BeginChild("VIC Reg Details"))
+	if (ImGui::BeginChild("SID Reg Details"))
 	{
 		if (SelectedRegister != -1)
 		{
@@ -115,11 +115,45 @@ void	FSIDAnalysis::DrawDetailsUI(void)
 	ImGui::EndChild();
 }
 
+std::string GetSIDLabelName(int regNo)
+{
+	const int reg = regNo & 0x1f;
+	const int mirrorNo = regNo >> 8;
+	const std::string displayName = g_SIDRegDrawInfo[reg].Name;
+	std::string labelName = "SID_";
+
+	if(mirrorNo > 0)
+	{
+		labelName += "Mirror";
+		labelName += '0' + mirrorNo;
+		labelName += '_';
+	}
+
+	for (auto ch : displayName)
+	{
+		if (ch != ' ')
+			labelName += ch;
+	}
+
+	
+
+	return labelName;
+}
+
 void AddSIDRegisterLabels(FCodeAnalysisPage& IOPage)
 {
 	std::vector<FRegDisplayConfig>& regList = g_SIDRegDrawInfo;
 
-	for (int reg = 0; reg < (int)regList.size(); reg++)
-		IOPage.SetLabelAtAddress(regList[reg].Name, ELabelType::Data, reg);
+	for(int mirrorNo =0;mirrorNo<4;mirrorNo++)
+	{
+		const int mirrorOffset = mirrorNo * 0x100;
+		
+		for (int reg = 0; reg < (int)regList.size(); reg++)
+		{
+			const int addr = reg + mirrorOffset;
+			IOPage.SetLabelAtAddress(GetSIDLabelName(addr).c_str(), ELabelType::Data, addr, true);
+			IOPage.DataInfo[addr].DisplayType = regList[reg].DisplayType;
+		}
+	}
 
 }
