@@ -12,6 +12,7 @@ void VICWriteEventShowValue(FCodeAnalysisState& state, const FEvent& event);
 
 FVICAnalysis* pVIC = nullptr; // hack
 
+// Handler to describe VIC memory regions
 class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 {
 	public:
@@ -230,20 +231,28 @@ int	 FVICAnalysis::GetFrameSprite(int scanline, int spriteNo)
 	return -1;
 }
 
+EC64Event FVICAnalysis::GetVICEvent(uint8_t reg, uint8_t val, FAddressRef pc)
+{
+
+	return EC64Event::VICRegisterWrite;
+}
+
 
 void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 {
 	c64_t* pC64 = pC64Emu->GetEmu();
+	const int scanline = pC64->vic.rs.v_count;
+
 	FC64IORegisterInfo& vicRegister = VICRegisters[reg];
 	const uint8_t regChange = vicRegister.LastVal ^ val;	// which bits have changed
 
-	pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::VICRegisterWrite,pc,reg,val, pC64->vic.rs.v_count);
+	// Events
+	pCodeAnalyser->Debugger.RegisterEvent((uint8_t)GetVICEvent(reg,val,pc),pc,reg,val, scanline);
 	vicRegister.Accesses[pc].WriteVals.insert(val);
 
 	vicRegister.LastVal = val;
 
 	// check for sprite register updates
-	const int scanline = pC64->vic.rs.v_count;
 	if (reg <= (int)EVicRegister::Sprite7_Y)	// set sprite coordinate
 	{
 		const int spriteNo = reg >> 1;
@@ -354,9 +363,7 @@ void DrawRegValueScanline(FC64IODevice* pDevice, uint8_t val)
 {
 	ImGui::Text("%d", val);
 	if (ImGui::IsItemHovered())
-	{
 		pDevice->GetC64()->SetScanlineHighlight(val);
-	}
 }
 
 

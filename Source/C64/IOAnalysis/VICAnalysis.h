@@ -9,6 +9,8 @@ struct FCodeAnalysisPage;
 class FC64Emulator;
 class FGraphicsView;
 
+enum class EC64Event;
+
 enum class EVicRegister
 {
 	Sprite0_X = 0,
@@ -95,6 +97,7 @@ public:
 	const std::vector<FSpriteDef>&	GetFoundSprites() const { return SpriteDefs; }
 
 private:
+	EC64Event	GetVICEvent(uint8_t reg, uint8_t val, FAddressRef pc);
 	void	DrawVICRegisterInfo(void);
 	void	DrawLastFrameSpriteInfo(void);
 	int		GetFrameSprite(int scanLine, int spriteNo);

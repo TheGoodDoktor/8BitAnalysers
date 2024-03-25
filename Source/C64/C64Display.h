@@ -22,6 +22,9 @@ public:
 	uint16_t	GetColourRAMAddress(int pixelX, int pixelY);
 
 private:
+	void	OverlayHighlightAddress(ImVec2 pos);
+
+
 	FC64Emulator*		C64Emu = nullptr;
 	FCodeAnalysisState* CodeAnalysis = nullptr;
 
