@@ -9,6 +9,7 @@
 #include "Z80/Z80Disassembler.h"
 #include "6502/M6502Disassembler.h"
 #include <Util/GraphicsView.h>
+#include "Misc/EmuBase.h"
 
 static const uint32_t	BPMask_Exec			= 0x0001;
 static const uint32_t	BPMask_DataWrite	= 0x0002;
@@ -1209,6 +1210,7 @@ void FDebugger::DrawEvents(void)
 {
 	std::vector<FEventTypeInfo>& eventTypeInfo = g_EventTypeInfo;
 	FCodeAnalysisState& state = *pCodeAnalysis;
+	FEmuBase* pEmuBase = state.GetEmulator();
 
 	if (ImGui::Button("Clear"))
 		ClearEvents();
@@ -1290,6 +1292,10 @@ void FDebugger::DrawEvents(void)
 
 				ImGui::TableSetColumnIndex(0);
 				ImGui::Text("%d", event.ScanlinePos);
+				
+				// highlight scanline
+				if (ImGui::IsItemHovered())	
+					pEmuBase->SetScanlineHighlight(event.ScanlinePos);
 
 				ImGui::TableSetColumnIndex(1);
 				ImVec2 pos = ImGui::GetCursorScreenPos();

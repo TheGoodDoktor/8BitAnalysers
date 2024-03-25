@@ -52,12 +52,15 @@
 
 enum class EC64Event
 {
+	None = 0,
+
 	VICRegisterWrite,
 	SIDRegisterWrite,
 	CIA1RegisterWrite,
 	CIA1RegisterRead,
 	CIA2RegisterWrite,
 	CIA2RegisterRead,
+
 };
 
 enum class EC64FileType
