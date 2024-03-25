@@ -173,7 +173,7 @@ void FC64Display::DrawUI()
 	chips_display_info_t disp = c64_display_info(C64Emu->GetEmu());
 	const int dispFrameWidth = disp.screen.width;
 	const int dispFrameHeight = disp.screen.height;
-	const int borderOffsetX = 32 + xScrollOff;//((dispFrameWidth - graphicsScreenWidth) / 2);    // align to character size
+	const int borderOffsetX = 32 + xScrollOff + (pC64->vic.reg.ctrl_2 & (1 << 3) ? 0 : 8);//((dispFrameWidth - graphicsScreenWidth) / 2);    // align to character size
 	const int borderOffsetY = 32 + yScrollOff;//((dispFrameHeight - graphicsScreenHeight) / 2);
 
 	// convert texture to RGBA
@@ -214,7 +214,7 @@ void FC64Display::DrawUI()
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 uv0(0, 0);
 	ImVec2 uv1((float)disp.screen.width / (float)disp.frame.dim.width, (float)disp.screen.height / (float)disp.frame.dim.height);
-	const int topScreenScanLine = pC64->vic.crt.vis_y0;
+	const int topScreenScanLine = 16;//pC64->vic.crt.vis_y0;
 
 	// Draw Screen
 	ImGui::Image(ScreenTexture, ImVec2((float)disp.screen.width * scale, (float)disp.screen.height * scale),uv0,uv1);
@@ -263,7 +263,7 @@ void FC64Display::DrawUI()
 	{
 		int scanlineX = pC64->vic.rs.h_count * M6569_PIXELS_PER_TICK;  
 		int scanlineY = std::min(std::max(pC64->vic.rs.v_count - topScreenScanLine, 0), disp.screen.height);
-		int interruptScanline = pC64->vic.rs.v_irqline;
+		const int interruptScanline = pC64->vic.rs.v_irqline - topScreenScanLine;
 		dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (scanlineY * scale)), 0x50ffffff);
 		DrawArrow(dl, ImVec2(pos.x - 2, pos.y + (scanlineY * scale) - 6), false);
 		DrawArrow(dl, ImVec2(pos.x + (disp.screen.width - 11) * scale, pos.y + (scanlineY * scale) - 6), true);

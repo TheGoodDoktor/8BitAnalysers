@@ -386,14 +386,19 @@ Write: Raster line to generate interrupt at (bit #8).
 
 void DrawRegValueScreenControlReg1(FC64IODevice* pDevice, uint8_t val)
 {
-	ImGui::Text("($%X) VScroll:%d, Height:%d, Scr:%s, %s, ExtBG:%s, RastMSB:%d",
-		val,
-		val & 7,
-		val & (1 << 3) ? 25 : 24,
-		val & (1 << 4) ? "ON" : "OFF",
-		val & (1 << 5) ? "BMP" : "TXT",
-		val & (1 << 6) ? "ON" : "OFF",
-		val & (1 << 7) ? 1 : 0);
+	ImGui::Text("$%X",val);
+	if(ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("VScroll:%d, Height:%d, Scr:%s, %s, ExtBG:%s, RastMSB:%d",
+			val & 7,
+			val & (1 << 3) ? 25 : 24,
+			val & (1 << 4) ? "ON" : "OFF",
+			val & (1 << 5) ? "BMP" : "TXT",
+			val & (1 << 6) ? "ON" : "OFF",
+			val & (1 << 7) ? 1 : 0);
+		ImGui::EndTooltip();
+	}
 }
 
 /*
@@ -408,24 +413,31 @@ Bit #4: 1 = Multicolor mode on.
 
 void DrawRegValueScreenControlReg2(FC64IODevice* pDevice, uint8_t val)
 {
-	ImGui::Text("($%X) HScroll:%d, Width:%d, MultiColour:%s",
-		val,
-		val & 7,
-		val & (1 << 3) ? 40 : 38,
-		val & (1 << 4) ? "ON" : "OFF");
+	ImGui::Text("$%X", val);
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("HScroll:%d, Width:%d, MultiColour:%s",
+			val & 7,
+			val & (1 << 3) ? 40 : 38,
+			val & (1 << 4) ? "ON" : "OFF");
+		ImGui::EndTooltip();
+	}
 
 }
 
 void DrawRegValueMemorySetup(FC64IODevice* pDevice, uint8_t val)
 {
-	ImGui::Text("($%X) Char Addr: $%04X, Bitmap Address: $%04X, Screen Address: $%04X",
-		val,
-		((val >> 1) & 7) << 11,
-		((val >> 3) & 1) << 13,
-		(val >> 4) << 10
-	);
-	ImGui::Text("\t$%X", val);
-
+	ImGui::Text("$%X", val);
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("Char Addr: $%04X, Bitmap Address: $%04X, Screen Address: $%04X",
+			((val >> 1) & 7) << 11,
+			((val >> 3) & 1) << 13,
+			(val >> 4) << 10);
+		ImGui::EndTooltip();
+	}
 }
 
 static std::vector<FRegDisplayConfig>	g_VICRegDrawInfo = 
