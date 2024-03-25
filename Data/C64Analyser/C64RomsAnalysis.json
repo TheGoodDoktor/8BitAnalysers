@@ -178,7 +178,17 @@
         4283058762,
         4294967295,
         0,
-        4288101518
+        4288101518,
+        0,
+        4293619056,
+        4288359470,
+        4294967295,
+        0,
+        4293619056,
+        4278190080,
+        4294967295,
+        0,
+        4293619056
     ],
     "PaletteEntries": [
         {
@@ -215,6 +225,18 @@
         },
         {
             "FirstColourIndex": 32,
+            "NoColours": 2
+        },
+        {
+            "FirstColourIndex": 34,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 38,
+            "NoColours": 4
+        },
+        {
+            "FirstColourIndex": 42,
             "NoColours": 2
         }
     ]

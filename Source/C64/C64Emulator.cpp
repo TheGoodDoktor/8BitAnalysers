@@ -203,7 +203,8 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	
 	IOAnalysis.Init(this);
 	
-	AddViewer(new FCharacterMapViewer(this));
+	pCharacterMapViewer = new FCharacterMapViewer(this);
+	AddViewer(pCharacterMapViewer);
 	pGraphicsViewer = new FC64GraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
