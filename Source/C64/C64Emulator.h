@@ -55,6 +55,11 @@ enum class EC64Event
 	None = 0,
 
 	VICRegisterWrite,
+    VICScreenModeChar,
+    VICScreenModeBmp,
+    VICScreenModeMultiColour,
+    VICScreenModeHiRes,
+    
 	SIDRegisterWrite,
 	CIA1RegisterWrite,
 	CIA1RegisterRead,

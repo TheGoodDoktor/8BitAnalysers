@@ -114,7 +114,14 @@ void FVICAnalysis::Init(FC64Emulator* pEmulator)
 
 	AddMemoryRegionDescGenerator(new FVICMemDescGenerator(pEmulator));
 	AddMemoryRegionDescGenerator(new FColourRAMMemDescGenerator(pEmulator));
+    
+    // Register Events
 	pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::VICRegisterWrite, "VIC Write", 0xff0000ff, VICWriteEventShowAddress, VICWriteEventShowValue);
+    
+    pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::VICScreenModeChar, "VIC Screen Mode Char", 0xff0010ff);
+    pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::VICScreenModeBmp, "VIC Screen Mode Bmp", 0xff0020ff);
+    pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::VICScreenModeMultiColour, "VIC Screen Mode MultiCol", 0xff0030ff);
+    pCodeAnalyser->Debugger.RegisterEventType((uint8_t)EC64Event::VICScreenModeHiRes, "VIC Screen Mode HiRes", 0xff0040ff);
 }
 
 void FVICAnalysis::Reset(void)
@@ -215,10 +222,7 @@ void FVICAnalysis::DrawScreenOverlay(float x,float y) const
 	}
 }
 
-void FVICAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
-{
-	
-}
+
 
 int	 FVICAnalysis::GetFrameSprite(int scanline, int spriteNo)
 {
@@ -237,6 +241,10 @@ EC64Event FVICAnalysis::GetVICEvent(uint8_t reg, uint8_t val, FAddressRef pc)
 	return EC64Event::VICRegisterWrite;
 }
 
+void FVICAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
+{
+    
+}
 
 void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 {
@@ -246,6 +254,24 @@ void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 	FC64IORegisterInfo& vicRegister = VICRegisters[reg];
 	const uint8_t regChange = vicRegister.LastVal ^ val;	// which bits have changed
 
+    // BMP <-> Char mode
+    if(reg == (uint8_t)EVicRegister::ScreenControl1 && regChange & (1<<5))
+    {
+        if( val & (1<<5))
+            pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::VICScreenModeBmp,pc,reg,val, scanline);
+        else
+            pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::VICScreenModeChar,pc,reg,val, scanline);
+    }
+    
+    // Multicolour On/Off
+    if(reg == (uint8_t)EVicRegister::ScreenControl2 && regChange & (1<<4))
+    {
+        if( val & (1<<5))
+            pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::VICScreenModeMultiColour,pc,reg,val, scanline);
+        else
+            pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::VICScreenModeHiRes,pc,reg,val, scanline);
+    }
+    
 	// Events
 	pCodeAnalyser->Debugger.RegisterEvent((uint8_t)GetVICEvent(reg,val,pc),pc,reg,val, scanline);
 	vicRegister.Accesses[pc].WriteVals.insert(val);
