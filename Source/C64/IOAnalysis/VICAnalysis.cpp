@@ -266,7 +266,7 @@ void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
     // Multicolour On/Off
     if(reg == (uint8_t)EVicRegister::ScreenControl2 && regChange & (1<<4))
     {
-        if( val & (1<<5))
+        if( val & (1<<4))
             pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::VICScreenModeMultiColour,pc,reg,val, scanline);
         else
             pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::VICScreenModeHiRes,pc,reg,val, scanline);
