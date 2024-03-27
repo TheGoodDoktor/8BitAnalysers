@@ -49,6 +49,7 @@ void FSpectrumViewer::Draw()
 	for (int i = 0; i < disp.frame.buffer.size; i++)
 		FrameBuffer[i] = pal[pix[i]];
 
+	// update screen texture
 	ImGui_UpdateTextureRGBA(ScreenTexture, FrameBuffer);
 
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
