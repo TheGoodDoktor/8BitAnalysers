@@ -55,12 +55,12 @@
 #include "ExternalROMSupport.h"
 
 struct FGameViewerData;
-struct FGameConfig;
+struct FProjectConfig;
 struct FViewerConfig;
 class FViewerBase;
 class FScreenPixMemDescGenerator;
 struct FCPCConfig;
-struct FCPCGameConfig;
+struct FCPCProjectConfig;
 
 enum class ECPCModel
 {
@@ -90,7 +90,7 @@ struct FCPCLaunchConfig : public FEmulatorLaunchConfig
 
 struct FGame
 {
-	FGameConfig* pConfig = nullptr;
+	FProjectConfig* pConfig = nullptr;
 	FViewerConfig* pViewerConfig = nullptr;
 	FGameViewerData* pViewerData = nullptr;
 };
@@ -105,8 +105,8 @@ public:
 
 	bool				Init(const FEmulatorLaunchConfig& config) override;
 	void				Shutdown() override;
-	bool				StartGame(FGameConfig* pGameConfig, bool bLoadGameData) override;
-	bool				SaveCurrentGameData() override;
+	bool				LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData) override;
+	bool				SaveProject() override;
 	bool				SaveGameState(const char* fname);
 	bool				LoadGameState(const char* fname);
 
@@ -147,7 +147,8 @@ public:
 
 	void				UpdatePalette();
 
-	bool				NewGameFromSnapshot(const FGameSnapshot& snaphot) override;
+	bool				LoadEmulatorFile(const FEmulatorFile* pEmuFile) override;
+	bool				NewProjectFromEmulatorFile(const FEmulatorFile& emuFile) override;
 
 	const FCPCConfig* GetCPCGlobalConfig() { return (const FCPCConfig*)pGlobalConfig; }
 
@@ -195,14 +196,14 @@ public:
 	uint16_t		PreviousPC = 0;		// store previous pc
 	int			InstructionsTicks = 0;
 
-	const FGamesList& GetGamesList() const { return GamesList;  }
+	//const FGamesList& GetGamesList() const { return GamesList;  }
 
 	FCPCScreen	Screen;
 
 
 private:
 	//FGamesList		GamesList;
-	FCPCGameLoader	GameLoader;
+	//FCPCGameLoader	GameLoader;
 
 	//std::vector<FViewerBase*>	Viewers;
 
@@ -215,4 +216,14 @@ private:
 
 	bool				bInitialised = false;
 	bool				bExternalROMSupport = true;
+
+	// When caching is enabled, repeated loading of the same snapshot will not need to load the file from disk.
+	void SetCachingEnabled(bool bEnabled);
+	void ClearCache();
+
+	// Snapshot Caching
+	bool bCachingEnabled = false;
+	uint8_t* pDataCache = 0;
+	size_t CachedDataSize = 0;
+	std::string CachedFilename;
 };

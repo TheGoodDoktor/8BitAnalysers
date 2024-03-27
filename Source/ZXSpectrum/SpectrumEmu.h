@@ -42,7 +42,6 @@
 #include "Viewers/FrameTraceViewer.h"
 #include "Misc/GamesList.h"
 #include "IOAnalysis.h"
-#include "SnapshotLoaders/GameLoader.h"
 #include "SnapshotLoaders/RZXLoader.h"
 #include "Util/Misc.h"
 #include "SpectrumDevices.h"
@@ -51,7 +50,7 @@
 struct FGame;
 struct FGameViewer;
 struct FGameViewerData;
-struct FGameConfig;
+struct FProjectConfig;
 struct FViewerConfig;
 struct FZXSpectrumConfig;
 struct FZXSpectrumGameConfig;
@@ -71,7 +70,7 @@ struct FSpectrumLaunchConfig : public FEmulatorLaunchConfig
 
 struct FGame
 {
-	FGameConfig *		pConfig	= nullptr;
+	FProjectConfig *		pConfig	= nullptr;
 	FViewerConfig *		pViewerConfig = nullptr;
 	FGameViewerData *	pViewerData = nullptr;
 };
@@ -106,11 +105,11 @@ public:
 
 	bool	LoadLua() override;
     
+	bool	LoadEmulatorFile(const FEmulatorFile* pSnapshot) override;
 
-
-	bool	NewGameFromSnapshot(const FGameSnapshot& snapshot) override;
-	bool	StartGame(FGameConfig* pGameConfig, bool bLoadGame) override;
-	bool	SaveCurrentGameData() override;
+	bool	NewProjectFromEmulatorFile(const FEmulatorFile& snapshot) override;
+	bool	LoadProject(FProjectConfig* pGameConfig, bool bLoadGame) override;
+	bool	SaveProject() override;
 
 	bool	IsInitialised() const { return bInitialised; }
 
@@ -162,11 +161,12 @@ public:
 
 	const FZXSpectrumConfig* GetZXSpectrumGlobalConfig() { return (const FZXSpectrumConfig*)pGlobalConfig; }
 
-	// snapshots
-	int			GetNoSnapshots() const { return kNoSnapshots;}
-	bool		SaveSnapshot(int snapshotNo);
-	bool		LoadSnapshot(int snapshotNo);
-	ImTextureID	GetSnapshotThumbnail(int snapshotNo) const;
+	// machine snapshots
+	// put in EmuBase? - when we're happy
+	int			GetNoMachineSnapshots() const { return kNoSnapshots;}
+	bool		SaveMachineSnapshot(int snapshotNo);
+	bool		LoadMachineSnapshot(int snapshotNo);
+	ImTextureID	GetMachineSnapshotThumbnail(int snapshotNo) const;
 	// TODO: Make private
 //private:
 	// Emulator 
@@ -178,7 +178,6 @@ public:
 	FSnapshot		Snapshots[kNoSnapshots];
 
 	uint8_t*		MappedInMemory = nullptr;
-	//FZXSpectrumConfig *	pGlobalConfig = nullptr;
 
 	float			ExecSpeedScale = 1.0f;
 
@@ -188,8 +187,7 @@ public:
 	FGame *			pActiveGame = nullptr;
 
 	//FGamesList		GamesList;
-	FGamesList		RZXGamesList;
-	FZXGameLoader	GameLoader;
+	//FGamesList		RZXGamesList;
 
 	//Viewers
 	FSpectrumViewer			SpectrumViewer;

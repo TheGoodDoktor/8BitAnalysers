@@ -222,6 +222,7 @@ void FEmuBase::DrawUI()
 void FEmuBase::FileMenu()
 {
 	// New game from snapshot
+#if 0
 	if (ImGui::BeginMenu("New Project from Snapshot File"))
 	{
 		const int numGames = GamesList.GetNoGames();
@@ -264,9 +265,10 @@ void FEmuBase::FileMenu()
 		}
 		ImGui::EndMenu();
 	}
-
-	for (const auto& gamesList : GamesLists)
+#endif
+	for (const auto& gamesListIt : GamesLists)
 	{
+		const FGamesList& gamesList = gamesListIt.second;
 		char menuTitle[128];
 		snprintf(menuTitle,128,"New Project from %s",gamesList.GetFileType());
 
@@ -281,7 +283,7 @@ void FEmuBase::FileMenu()
 			{
 				for (int gameNo = 0; gameNo < numGames; gameNo++)
 				{
-					const FGameSnapshot& game = gamesList.GetGame(gameNo);
+					const FEmulatorFile& game = gamesList.GetGame(gameNo);
 
 					if (ImGui::MenuItem(game.DisplayName.c_str()))
 					{
@@ -294,15 +296,16 @@ void FEmuBase::FileMenu()
 						}
 						if (bGameExists)
 						{
+							EmulatorFileToLoad = game;
 							bReplaceGamePopup = true;
-							ReplaceGameSnapshotIndex = gameNo;
+							//ReplaceGameSnapshotIndex = gameNo;
 						}
 						else
 						{
-							if (!NewGameFromSnapshot(game))
+							if (!NewProjectFromEmulatorFile(game))
 							{
 								Reset();
-								DisplayErrorMessage("Could not load snapshot '%s'", game.FileName.c_str());
+								DisplayErrorMessage("Could not load emulator file '%s'", game.FileName.c_str());
 							}
 							break;
 						}
@@ -325,8 +328,8 @@ void FEmuBase::FileMenu()
 			{
 				if (ImGui::MenuItem(pGameConfig->Name.c_str()))
 				{
-					SaveCurrentGameData();  // save previous game
-					if (StartGame(pGameConfig, true) == false)
+					SaveProject();  // save previous game
+					if (LoadProject(pGameConfig, true) == false)
 					{
 						Reset();
 						DisplayErrorMessage("Could not start project '%s'",pGameConfig->Name.c_str());
@@ -340,7 +343,7 @@ void FEmuBase::FileMenu()
 
 	if (ImGui::MenuItem("Save Project"))
 	{
-		SaveCurrentGameData();
+		SaveProject();
 	}
 
 	if (ImGui::MenuItem("Export ASM File"))
@@ -447,11 +450,11 @@ void FEmuBase::OptionsMenu()
 
 void FEmuBase::SystemMenu()
 {
-	if (pCurrentGameConfig && ImGui::MenuItem("Reload Snapshot"))
+	if (pCurrentProjectConfig && ImGui::MenuItem("Reload Emulator File"))
 	{
-		if (!GamesList.LoadGame(pCurrentGameConfig->Name.c_str()))
+		if (!LoadEmulatorFile(&pCurrentProjectConfig->EmulatorFile))
 		{
-			DisplayErrorMessage("Could not load snapshot '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pCurrentGameConfig->Name.c_str());
+			DisplayErrorMessage("Could not load emulator file '%s'", pCurrentProjectConfig->EmulatorFile.FileName.c_str());
 		}
 	}
 
@@ -560,7 +563,7 @@ void FEmuBase::DrawExportAsmModalPopup()
 		{
 			if (AssemblerExportEndAddress > AssemblerExportStartAddress)
 			{
-				if (pCurrentGameConfig != nullptr)
+				if (pCurrentProjectConfig != nullptr)
 				{
 					const std::string dir = GetGameWorkspaceRoot();
 					EnsureDirectoryExists(dir.c_str());
@@ -571,7 +574,7 @@ void FEmuBase::DrawExportAsmModalPopup()
 					else
 						snprintf(addrRangeStr, 16, "_%u_%u", AssemblerExportStartAddress, AssemblerExportEndAddress);
 
-					const std::string outBinFname = dir + pCurrentGameConfig->Name + addrRangeStr + ".asm";
+					const std::string outBinFname = dir + pCurrentProjectConfig->Name + addrRangeStr + ".asm";
 					
 					ExportAssembler(CodeAnalysis, outBinFname.c_str(), AssemblerExportStartAddress, AssemblerExportEndAddress);
 				}
@@ -602,11 +605,11 @@ void FEmuBase::DrawReplaceGameModalPopup()
 
 		if (ImGui::Button("Overwrite", ImVec2(120, 0)))
 		{
-			const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
-			if (!NewGameFromSnapshot(game))
+			//const FGameSnapshot& game = GamesList.GetGame(ReplaceGameSnapshotIndex);
+			if (!NewProjectFromEmulatorFile(EmulatorFileToLoad))
 			{
 				Reset();
-				DisplayErrorMessage("Could not load snapshot '%s'",game.FileName.c_str());
+				DisplayErrorMessage("Could not load emulator file '%s'", EmulatorFileToLoad.FileName.c_str());
 			}
 			
 			bReplaceGamePopup = false;
@@ -688,10 +691,10 @@ void FEmuBase::AddViewer(FViewerBase* pViewer)
 
 bool FEmuBase::StartGameFromName(const char* pGameName, bool bLoadGameData)
 {
-	FGameConfig* pGameConfig = GetGameConfigForName(pGameName);
+	FProjectConfig* pGameConfig = GetGameConfigForName(pGameName);
 	if (pGameConfig)
 	{
-		if (StartGame(pGameConfig, true) == false)
+		if (LoadProject(pGameConfig, true) == false)
 		{
 			Reset();
 			DisplayErrorMessage("Could not start game '%s'",pGameConfig->Name.c_str());
@@ -718,10 +721,12 @@ void FEmuBase::CharacterMapViewerSetView(FAddressRef address)
 		pCharacterMapViewer->GoToAddress(address);
 }
 
-bool	FEmuBase::AddGamesList(const char* pFileType, const char* pRootDir, IGameLoader* pLoader)
+bool	FEmuBase::AddGamesList(const char* pFileType, const char* pRootDir)
 {
-	FGamesList& gamesList = GamesLists.emplace_back(pFileType, pRootDir, pLoader);
-	gamesList.EnumerateGames(pRootDir);
+	auto insertRes = GamesLists.insert({std::string(pFileType),FGamesList(pFileType, pRootDir)});
+
+	if(insertRes.second)
+		insertRes.first->second.EnumerateGames();
 
 	return true;
 }
@@ -732,5 +737,5 @@ bool	FEmuBase::AddGamesList(const char* pFileType, const char* pRootDir, IGameLo
 
 std::string FEmuBase::GetGameWorkspaceRoot() const
 {
-	return GetGlobalConfig()->WorkspaceRoot + GetGameConfig()->Name + "/";
+	return GetGlobalConfig()->WorkspaceRoot + GetProjectConfig()->Name + "/";
 }

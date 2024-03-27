@@ -55,6 +55,11 @@ enum class EC64Event
 	None = 0,
 
 	VICRegisterWrite,
+    VICScreenModeChar,
+    VICScreenModeBmp,
+    VICScreenModeMultiColour,
+    VICScreenModeHiRes,
+    
 	SIDRegisterWrite,
 	CIA1RegisterWrite,
 	CIA1RegisterRead,
@@ -63,35 +68,30 @@ enum class EC64Event
 
 };
 
-enum class EPRGLoadPhase
+enum class EC64FileType
+{
+	None,
+	PRG,
+	Tape,
+	Disk
+};
+
+enum class EFileLoadPhase
 {
 	Idle,
 	Reset,
 	BasicReady,
-	LoadedPRG,
-	Run
+	Loaded,
+	Run,
+	TapePlaying
 };
 
 struct FC64Config;
-struct FC64GameConfig;
+struct FC64ProjectConfig;
 class FC64Emulator;
 
 struct FC64LaunchConfig : public FEmulatorLaunchConfig
 {
-};
-
-
-class FC64GameLoader : public IGameLoader
-{
-public:
-	// IGameLoader
-	bool LoadSnapshot(const FGameSnapshot& snapshot) override;
-	// ~IGameLoader
-
-	void Init(FC64Emulator* pCpc) { pC64Emu = pCpc; }
-
-private:
-	FC64Emulator* pC64Emu = nullptr;
 };
 
 class FC64Emulator : public FEmuBase
@@ -109,7 +109,7 @@ public:
 	void	OptionsMenuAdditions(void) override;
 	void	WindowsMenuAdditions(void) override;
 
-	bool	NewGameFromSnapshot(const FGameSnapshot& gameConfig);
+
 
 
 	// Begin IInputEventHandler interface implementation
@@ -174,10 +174,14 @@ public:
 	{
 		return FAddressRef(IOAreaId, colRamAddress + 0xD800);
 	}
-	bool StartGame(FGameConfig *pConfig, bool bLoadGame) override;
+
+	bool	LoadEmulatorFile(const FEmulatorFile* pEmuFile) override;
+	bool	NewProjectFromEmulatorFile(const FEmulatorFile& emuFile) override;
+	bool	LoadProject(FProjectConfig *pConfig, bool bLoadGame) override;
+	bool	SaveProject(void) override;
+
 	//bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
 	void ResetCodeAnalysis(void);
-	bool SaveCurrentGameData(void) override;
 	bool LoadMachineState(const char* fname);
 	bool SaveMachineState(const char* fname);
 	//bool LoadCodeAnalysis(const FGameInfo* pGameInfo);
@@ -193,18 +197,20 @@ public:
 	const FC64Config* GetC64GlobalConfig() const { return (const FC64Config*)pGlobalConfig; }
 	FC64Config* GetC64GlobalConfig() { return (FC64Config*)pGlobalConfig; }
 
+	void	SetLoadedFileType(EC64FileType type) { LoadedFileType = type;}
 private:
 	c64_t       C64Emu;
 	//ui_c64_t    C64UI;
 	double      ExecTime;
 
-	EPRGLoadPhase	PRGLoadPhase = EPRGLoadPhase::Idle;
+	EC64FileType	LoadedFileType = EC64FileType::None;
+	EFileLoadPhase	FileLoadPhase = EFileLoadPhase::Idle;
 
 	//FC64Config*			pGlobalConfig = nullptr;
 	//FC64GameConfig*		pCurrentGameConfig = nullptr;
 
 	//FC64GamesList       GamesList;
-	FC64GameLoader		GameLoader;
+	//FC64GameLoader		GameLoader;
 
 
 	const FGameInfo*	CurrentGame = nullptr;

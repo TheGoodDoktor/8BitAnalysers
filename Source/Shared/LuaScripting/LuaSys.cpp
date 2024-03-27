@@ -85,7 +85,7 @@ bool Init(FEmuBase* pEmulator)
 	//ExportGlobalLabels();	// might have this on a button if frequently updating proves to be problematic
 
 	// Load globals
-	const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetGameConfig()->Name + "/";
+	const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetProjectConfig()->Name + "/";
 	std::string globalsFName = gameRoot + "Globals.lua";
 	LoadFile(globalsFName.c_str(),true);
 	return true;
@@ -344,7 +344,7 @@ bool ExportGlobalLabels()
 
 	std::string outputStr;
 
-	outputStr += "-- Auto generated global labels file for " + EmuBase->GetGameConfig()->Name + "\n";
+	outputStr += "-- Auto generated global labels file for " + EmuBase->GetProjectConfig()->Name + "\n";
 	outputStr += "globals = {\n";
 
 	for (const auto& global : state.GlobalDataItems)
@@ -366,7 +366,7 @@ bool ExportGlobalLabels()
 	}
 	outputStr += "}";
 
-	const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetGameConfig()->Name + "/";
+	const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetProjectConfig()->Name + "/";
 	std::string luaScriptFName = gameRoot + "Globals.lua";
 
 	return SaveTextFile(luaScriptFName.c_str(),outputStr.c_str());

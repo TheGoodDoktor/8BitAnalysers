@@ -1,3 +1,4 @@
+#if 0
 #include "Misc/GamesList.h"
 
 class FCPCEmu;
@@ -27,3 +28,4 @@ private:
 	size_t CachedDataSize = 0;
 	std::string CachedFilename;
 };
+#endif

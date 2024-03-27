@@ -134,13 +134,13 @@ void DrawTextEditor(void)
 			// Ensure that NewFilename has a .lua extension
 			const std::string saveFilename = RemoveFileExtension(NewFilenameTxt.c_str()) + ".lua";
 			// Create Lua file
-			const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetGameConfig()->Name + "/";
+			const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetProjectConfig()->Name + "/";
 			std::string luaScriptFName = gameRoot + saveFilename;
 			std::string templateFilename = "Lua/Templates/" + SelectedTemplate;
 			if (CreateNewLuaFileFromTemplate(luaScriptFName.c_str(), GetBundlePath(templateFilename.c_str())))
 			{
 				// bit of a hack - need better access implementation
-				const_cast<FGameConfig *>(pEmulator->GetGameConfig())->AddLuaSourceFile(saveFilename.c_str());
+				const_cast<FProjectConfig *>(pEmulator->GetProjectConfig())->AddLuaSourceFile(saveFilename.c_str());
 			}
 		}
 

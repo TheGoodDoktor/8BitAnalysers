@@ -212,7 +212,7 @@ static int SaveGraphicsViewPNG(lua_State *pState)
 		return 0;
 	
 	FEmuBase* pEmulator = LuaSys::GetEmulator();
-	const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetGameConfig()->Name + "/";
+	const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetProjectConfig()->Name + "/";
 	const std::string fname = gameRoot + luaL_optstring(pState, 2, "temp.png");
 	
 	pGraphicsView->SavePNG(fname.c_str());

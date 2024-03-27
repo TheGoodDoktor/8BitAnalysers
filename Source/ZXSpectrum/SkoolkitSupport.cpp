@@ -10,7 +10,7 @@
 
 bool BackupAnalysisJson(FSpectrumEmu* pEmu, FCodeAnalysisState& CodeAnalysis)
 {
-	const FGameConfig* pCurrentGameConfig = pEmu->GetGameConfig();
+	const FProjectConfig* pCurrentGameConfig = pEmu->GetProjectConfig();
 	const std::string root = pEmu->GetGlobalConfig()->WorkspaceRoot;
 
 	if (pEmu->pActiveGame && pCurrentGameConfig)
