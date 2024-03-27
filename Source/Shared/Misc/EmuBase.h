@@ -70,11 +70,16 @@ public:
 
 	void			SetXHighlight(int x) { HighlightXPos = x; }
 	void			SetYHighlight(int y) { HighlightYPos = y; }
-	void			SetScanlineHighlight(int scanline) { HighlightScanline = scanline;}
+	void			SetScanlineHighlight(int scanline, uint32_t colour = 0x50ffffff) 
+	{
+		HighlightScanline = scanline; 
+		HighlightScanlineCol = colour;
+	}
 
 	int				GetHighlightX() const { return HighlightXPos; }
 	int				GetHighlightY() const { return HighlightYPos; }
-	int				GetHighlightScanline() const { return HighlightScanline;}
+	int				GetHighlightScanline() const { return HighlightScanline; }
+	int				GetHighlightScanlineColour() const { return HighlightScanlineCol; }
 
 	FCodeAnalysisState&		GetCodeAnalysis() { return CodeAnalysis; }
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
@@ -117,7 +122,7 @@ protected:
 	int					HighlightXPos = -1;
 	int					HighlightYPos = -1;
 	int					HighlightScanline = -1;
-
+	uint32_t			HighlightScanlineCol = 0x50ffffff;
 
 	// Assembler Export
 	uint16_t			AssemblerExportStartAddress = 0x0000;

@@ -240,8 +240,16 @@ void FC64Display::DrawUI()
 
 	if (C64Emu->GetHighlightScanline() != -1)
 	{
-		int scanlineY = std::min(std::max(C64Emu->GetHighlightScanline() - topScreenScanLine, 0), disp.screen.height);
-		dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (scanlineY * scale)), 0x50ffffff);
+		const int scanlineY = std::min(std::max(C64Emu->GetHighlightScanline() - topScreenScanLine, 0), disp.screen.height);
+		/*dl->AddLine(
+			ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), 
+			ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (scanlineY * scale)), 
+			C64Emu->GetHighlightScanlineColour());*/
+		dl->AddRectFilled(
+			ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)),
+			ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + ((scanlineY + 1) * scale)),
+			C64Emu->GetHighlightScanlineColour());
+
 		C64Emu->SetScanlineHighlight(-1);
 	}
 

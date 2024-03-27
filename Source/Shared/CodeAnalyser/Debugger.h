@@ -199,6 +199,7 @@ private:
 	FWatch						SelectedWatch;
 	std::vector<FAddressRef>	FrameTrace;
 	std::vector<FEvent>			EventTrace;
+	int							SelectedEventIndex = -1;
 	uint8_t						ScanlineEvents[320] = {0};
 	bool						bClearEventsEveryFrame = true;
 	bool						bWriteEventComments = false;

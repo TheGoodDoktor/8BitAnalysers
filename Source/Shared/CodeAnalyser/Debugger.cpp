@@ -1291,12 +1291,22 @@ void FDebugger::DrawEvents(void)
 				ImGui::TableNextRow();
 
 				ImGui::TableSetColumnIndex(0);
+				const bool bSelected = SelectedEventIndex == i;
+				ImGuiSelectableFlags selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap;
+				if (ImGui::Selectable("##eventselect", bSelected, selectableFlags, ImVec2(0, 0)))
+				{
+					SelectedEventIndex = i;
+				}
+				ImGui::SetItemAllowOverlap();	// allow buttons
+				ImGui::SameLine();
 				ImGui::Text("%d", event.ScanlinePos);
 				
 				// highlight scanline
-				if (ImGui::IsItemHovered())	
-					pEmuBase->SetScanlineHighlight(event.ScanlinePos);
-
+				if (bSelected)
+				{
+					const uint32_t col = GetEventColour(event.Type);
+					pEmuBase->SetScanlineHighlight(event.ScanlinePos, col);
+				}
 				ImGui::TableSetColumnIndex(1);
 				ImVec2 pos = ImGui::GetCursorScreenPos();
 					
