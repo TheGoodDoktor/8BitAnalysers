@@ -94,7 +94,8 @@ public:
 
 	void	DrawScreenOverlay(float x,float y) const;
 
-	const std::vector<FSpriteDef>&	GetFoundSprites() const { return SpriteDefs; }
+	const std::vector<FSpriteDef>& GetFoundSprites() const { return SpriteDefs; }
+	const std::vector<FAddressRef>&	GetFoundCharSets() const { return CharSets; }
 
 private:
 	EC64Event	GetVICEvent(uint8_t reg, uint8_t val, FAddressRef pc);
@@ -108,7 +109,8 @@ private:
 
 	int		SelectedRegister = -1;
 
-	std::vector<FSpriteDef>	SpriteDefs;
+	std::vector<FSpriteDef>		SpriteDefs;
+	std::vector<FAddressRef>	CharSets;
 
 	std::vector<FSpriteInfo>	FrameSprites;
 	std::vector<FSpriteInfo>	LastFrameSprites;

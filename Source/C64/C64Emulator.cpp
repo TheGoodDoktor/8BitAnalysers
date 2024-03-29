@@ -698,6 +698,17 @@ void FC64Emulator::DrawEmulatorUI()
 
 		Display.DrawUI();
 
+		// Scanline breakpoint
+		if(CodeAnalysis.Debugger.GetScanlineBreakpoint() != -1)
+		{
+			ImGui::PushID("ScanlineBP");
+			ImGui::Text("Scanline Breakpoint at line: %d", CodeAnalysis.Debugger.GetScanlineBreakpoint());
+			ImGui::SameLine();
+			if(ImGui::Button("Clear"))
+				CodeAnalysis.Debugger.ClearScanlineBreakpoint();
+			ImGui::PopID();
+		}
+
 		// Temp
 		ImGui::Text("Interrupt Handlers");
 		ImGui::SameLine();
@@ -980,6 +991,8 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 	const uint16_t scanlinePos = C64Emu.vic.rs.v_count;
 	if (scanlinePos != lastScanlinePos)
 	{
+		CodeAnalysis.Debugger.OnScanlineStart(scanlinePos);
+
 		if(scanlinePos == 0)
 			CodeAnalysis.OnMachineFrameStart();
 		else if(scanlinePos == M6569_VTOTAL - 1)    // last scanline
@@ -987,6 +1000,8 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 
 		lastScanlinePos = scanlinePos;
 	}
+
+	// TODO: scanline breakpoints
 
 	bool bReadingInstruction = addr == m6502_pc(&C64Emu.cpu) - 1;
 

@@ -271,6 +271,28 @@ void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
         else
             pCodeAnalyser->Debugger.RegisterEvent((uint8_t)EC64Event::VICScreenModeHiRes,pc,reg,val, scanline);
     }
+
+	if(reg == (uint8_t)EVicRegister::MemorySetup)
+	{
+		if((regChange >> 1) & 7)	// character address changed
+		{
+			const uint16_t vicMemBase = pC64->vic_bank_select;
+			const uint16_t charAddr = (((val >> 1) & 7) << 11);
+			FAddressRef charAddress = pC64Emu->GetVICMemoryAddress(charAddr);
+			bool bFound = false;
+			for(auto charAddrRef : CharSets)
+			{
+				if (charAddress == charAddrRef)
+				{
+					bFound = true;
+					break;
+				}
+			}
+
+			if(bFound == false)
+				CharSets.push_back(charAddress);
+		}
+	}
     
 	// Events
 	pCodeAnalyser->Debugger.RegisterEvent((uint8_t)GetVICEvent(reg,val,pc),pc,reg,val, scanline);
@@ -457,11 +479,13 @@ void DrawRegValueMemorySetup(FC64IODevice* pDevice, uint8_t val)
 	ImGui::Text("$%X", val);
 	if (ImGui::IsItemHovered())
 	{
+		const uint16_t vicMemBase = pDevice->GetC64()->GetEmu()->vic_bank_select;
+
 		ImGui::BeginTooltip();
 		ImGui::Text("Char Addr: $%04X, Bitmap Address: $%04X, Screen Address: $%04X",
-			((val >> 1) & 7) << 11,
-			((val >> 3) & 1) << 13,
-			(val >> 4) << 10);
+			vicMemBase + (((val >> 1) & 7) << 11),
+			vicMemBase + (((val >> 3) & 1) << 13),
+			vicMemBase + ((val >> 4) << 10));
 		ImGui::EndTooltip();
 	}
 }

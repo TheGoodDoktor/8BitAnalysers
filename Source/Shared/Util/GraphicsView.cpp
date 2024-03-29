@@ -372,6 +372,20 @@ void DrawCharacterSetImage2BppCPC(FCodeAnalysisState& state, FCharacterSet& char
 	}
 }
 
+void DrawCharacterSetImageMultiColourC64(FCodeAnalysisState& state, FCharacterSet& characterSet, uint16_t addr)
+{
+	for (int charNo = 0; charNo < 256; charNo++)
+	{
+		const uint8_t* pCharData = state.CPUInterface->GetMemPtr(addr);
+		const int xp = (charNo & 15) * 8;
+		const int yp = (charNo >> 4) * 8;
+
+		const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(characterSet.Params.PaletteNo);
+		characterSet.Image->Draw2BppWideImageAt(pCharData, xp, yp, 8, 8, pPaletteColours);
+		addr += 8; // half res pixels
+	}
+}
+
 void DrawCharacterSetImage1Bpp(FCodeAnalysisState& state, FCharacterSet& characterSet, uint16_t addr)
 {
 	// TODO: these are speccy specific, put in config
@@ -443,6 +457,9 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 	case EBitmapFormat::ColMap2Bpp_CPC:
 		DrawCharacterSetImage2BppCPC(state, characterSet, addr);
 		break;
+	case EBitmapFormat::ColMapMulticolour_C64:
+		DrawCharacterSetImageMultiColourC64(state, characterSet, addr);
+		break;
     default:
         break;
 	}
@@ -470,6 +487,16 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 	FCharacterSet* pNewCharSet = new FCharacterSet;
 	pNewCharSet->Image = new FGraphicsView(128, 128);
 	UpdateCharacterSet(state, *pNewCharSet, params);
+
+	// Char set needs to have a label
+	if (state.GetLabelForAddress(params.Address) == nullptr)
+	{
+		FLabelInfo* pLabel = AddLabelAtAddress(state,params.Address);
+		const int kLabelSize = 32;
+		char label[kLabelSize] = { 0 };
+		snprintf(label, kLabelSize, "charset_%04X", params.Address.Address);
+		pLabel->ChangeName(label);
+	}
 
 	g_CharacterSets.push_back(pNewCharSet);
 	return true;

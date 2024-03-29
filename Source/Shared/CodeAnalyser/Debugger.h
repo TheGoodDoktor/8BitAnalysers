@@ -39,7 +39,7 @@ enum class EBreakpointType
 	Irq,
 	NMI,
 	In,
-	Out
+	Out,
 };
 
 static const int kTrapId_None = 0;
@@ -106,6 +106,7 @@ public:
 	void	Init(FCodeAnalysisState* pCodeAnalysis);
 	void	CPUTick(uint64_t pins);
 	int		OnInstructionExecuted(uint64_t pins);
+	void	OnScanlineStart(int scanlineNo);
 	void	OnMachineFrameStart();
 	void	OnMachineFrameEnd();
 	void	StartFrame();
@@ -132,6 +133,10 @@ public:
 	bool	ChangeBreakpointAddress(FAddressRef oldAddress,FAddressRef newAddress);
 	const FBreakpoint* GetBreakpointForAddress(FAddressRef addr) const;
 	FBreakpoint* GetBreakpointForAddress(FAddressRef addr) { return const_cast<FBreakpoint*>(const_cast<const FDebugger*>(this)->GetBreakpointForAddress(addr)); }
+	void	SetScanlineBreakpoint(int scanline) { ScanlineBreakpoint = scanline;}
+	void	ClearScanlineBreakpoint(void) { ScanlineBreakpoint = -1;}
+	int		GetScanlineBreakpoint() const { return ScanlineBreakpoint;}
+	
 	// Watches
 	void	AddWatch(FWatch watch);
 	bool	RemoveWatch(FWatch watch);
@@ -195,6 +200,7 @@ private:
 
 	std::vector<FBreakpoint>	Breakpoints;
 	uint32_t					BreakpointMask = 0;
+	int							ScanlineBreakpoint = -1;
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;
 	std::vector<FAddressRef>	FrameTrace;

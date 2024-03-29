@@ -290,6 +290,17 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	return trapId;
 }
 
+// called at the start of every scanline
+void FDebugger::OnScanlineStart(int scanlineNo)
+{
+	//if (BreakpointMask & BPMask_Scanline)
+	{
+		// TODO: check for scanline breakpoint
+		if(scanlineNo == ScanlineBreakpoint)
+			Break();
+	}
+}
+
 // called every machine frame
 // will get called in the middle of emulation
 void FDebugger::OnMachineFrameStart()
@@ -358,7 +369,7 @@ bool FDebugger::FrameTick(void)
 	return bDebuggerStopped;
 }
 
-static const uint32_t kVersionNo = 3;
+static const uint32_t kVersionNo = 4;
 
 // Load state - breakpoints, watches etc.
 void	FDebugger::LoadFromFile(FILE* fp)
@@ -405,6 +416,9 @@ void	FDebugger::LoadFromFile(FILE* fp)
 	// PC
 	if (versionNo > 2)
 		fread(&PC.Val, sizeof(uint32_t), 1, fp);	
+
+	if (versionNo > 3)
+		fread(&ScanlineBreakpoint, sizeof(int), 1, fp);
 }
 
 // Save state - breakpoints, watches etc.
@@ -445,6 +459,9 @@ void	FDebugger::SaveToFile(FILE* fp)
 
 	// PC
 	fwrite(&PC.Val,sizeof(uint32_t), 1, fp);
+
+	// Scanline BP
+	fwrite(&ScanlineBreakpoint, sizeof(int), 1, fp);
 }
 
 

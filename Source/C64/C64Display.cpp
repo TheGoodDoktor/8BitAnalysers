@@ -253,6 +253,15 @@ void FC64Display::DrawUI()
 		C64Emu->SetScanlineHighlight(-1);
 	}
 
+	if (debugger.GetScanlineBreakpoint() != -1)
+	{
+		const int scanlineY = std::min(std::max(debugger.GetScanlineBreakpoint() - topScreenScanLine, 0), disp.screen.height);
+		dl->AddRectFilled(
+			ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)),
+			ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + ((scanlineY + 1) * scale)),
+			0xff0000ff);
+	}
+
 	// Draw Events
 	const uint8_t* scanlineEvents = debugger.GetScanlineEvents();
 	for (int scanlineNo = 0; scanlineNo < 320; scanlineNo++)
@@ -297,6 +306,18 @@ void FC64Display::DrawUI()
 			ImVec2((float)pos.x + (borderOffsetX + graphicsScreenWidth) * scale, (float)pos.y + (borderOffsetY + graphicsScreenHeight) * scale), 
 			0xffffffff);
 
+		// TODO: breakpoint scanline select
+		if(mouseOffset.x > graphicsScreenWidth + borderOffsetX * 2)
+		{
+			dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (mouseOffset.y * scale)), ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (mouseOffset.y * scale)), 0xff0000ff);
+			if (ImGui::IsMouseClicked(0))
+			{
+				// TODO: set scanline breakpoint?
+				debugger.SetScanlineBreakpoint((int)mouseOffset.y + topScreenScanLine);
+			}
+			if (ImGui::IsMouseClicked(1))
+				debugger.ClearScanlineBreakpoint();
+		}
 		dl->AddRect(
 			ImVec2((float)pos.x, (float)pos.y),
 			ImVec2((float)pos.x + dispFrameWidth * scale, (float)pos.y + dispFrameHeight * scale),
