@@ -306,15 +306,13 @@ void FC64Display::DrawUI()
 			ImVec2((float)pos.x + (borderOffsetX + graphicsScreenWidth) * scale, (float)pos.y + (borderOffsetY + graphicsScreenHeight) * scale), 
 			0xffffffff);
 
-		// TODO: breakpoint scanline select
-		if(mouseOffset.x > graphicsScreenWidth + borderOffsetX * 2)
+		// Breakpoint scanline select
+		if(mouseOffset.x > graphicsScreenWidth + borderOffsetX )
 		{
 			dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (mouseOffset.y * scale)), ImVec2(pos.x + (disp.screen.width - 8) * scale, pos.y + (mouseOffset.y * scale)), 0xff0000ff);
+			
 			if (ImGui::IsMouseClicked(0))
-			{
-				// TODO: set scanline breakpoint?
 				debugger.SetScanlineBreakpoint((int)mouseOffset.y + topScreenScanLine);
-			}
 			if (ImGui::IsMouseClicked(1))
 				debugger.ClearScanlineBreakpoint();
 		}
