@@ -467,7 +467,7 @@ public:
 
 	FAddressRef GetGridSquareAddress(int x, int y) override
 	{
-		const int offset = x + (y * GridSizeX);
+		const int offset = x + OffsetX + ((y + OffsetY) * GridStride);
 		FAddressRef squareAddress = Address;
 		if(CodeAnalysis->AdvanceAddressRef(squareAddress,offset))
 			return squareAddress;
@@ -486,7 +486,10 @@ public:
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(kNumSize);
 		ImGui::InputInt("##GridSizeY", &GridSizeY);
-		
+		ImGui::InputInt("Grid Stride", &GridStride);
+		ImGui::InputInt2("Offset", &OffsetX);
+		DrawCharacterSetComboBox(*CodeAnalysis, CharacterSet);
+
 		ImGui::SetNextItemWidth(120.0f * scale);
 		bool bUpdated = false;
 		if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
@@ -514,11 +517,26 @@ public:
 			formattingOptions.ClearCodeInfo = true;
 			formattingOptions.ClearLabels = true;
 			formattingOptions.AddLabelAtStart = true;
+			formattingOptions.CharacterSet = CharacterSet;
 			FormatData(*CodeAnalysis, formattingOptions);
 			CodeAnalysis->SetCodeAnalysisDirty(formattingOptions.StartAddress);
 		}
 
 		GridSquareSize = 14.0f * scale;	// to fit an 8x8 square on a scaling screen image
+	}
+
+	void DrawCharacterMap()
+	{
+		const FCharacterSet* pCharSet = GetCharacterSetFromAddress(CharacterSet);
+		if(pCharSet == nullptr)
+			return;
+
+		for (int y = 0; y < GridSizeY; y++)
+		{
+			for (int x = 0; x < GridSizeX; x++)
+			{
+			}
+		}
 	}
 
 	void SetAddress(FAddressRef addr) 
@@ -529,6 +547,9 @@ public:
 
 	FAddressRef Address;
 	int PhysicalAddress = 0;
+
+	FAddressRef		CharacterSet;
+
 };
 
 bool	FCharacterMapViewer::Init(void) 
@@ -547,6 +568,7 @@ void FCharacterMapViewer::DrawCharacterMapViewer(void)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	
+	ViewerGrid->DrawCharacterMap();
 	ViewerGrid->Draw();
 }
 

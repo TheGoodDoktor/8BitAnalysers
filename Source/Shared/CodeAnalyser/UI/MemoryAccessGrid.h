@@ -25,6 +25,10 @@ protected:
 	float	GridSquareSize = 10.0f;
 	int		GridSizeX = -1;
 	int		GridSizeY = -1;
+	int		GridStride = -1;
+	int		OffsetX = 0;
+	int		OffsetY = 0;
+
 
 
 	bool	bShowValues = false;

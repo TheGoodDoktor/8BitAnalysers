@@ -11,6 +11,7 @@ FMemoryAccessGrid::FMemoryAccessGrid(FCodeAnalysisState* pCodeAnalysis, int xGri
 	: CodeAnalysis(pCodeAnalysis)
 	, GridSizeX(xGridSize)
 	, GridSizeY(yGridSize)
+	, GridStride(xGridSize)
 {
 
 }
