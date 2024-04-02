@@ -358,13 +358,13 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	if (viewState.HighlightAddress.IsValid())
 	{
 		//const uint16_t charMapStartAddr = params.Address;
-		const uint16_t charMapEndAddr = params.Address.Address + (params.Width * params.Height) - 1;
+		const uint16_t charMapEndAddr = params.Address.Address + (params.Stride * params.Height) - 1;
 		// TODO: this needs to use banks
 		if (viewState.HighlightAddress.Address >= params.Address.Address && viewState.HighlightAddress.Address <= charMapEndAddr)	// pixel
 		{
 			const uint16_t addrOffset = viewState.HighlightAddress.Address - params.Address.Address;
-			const int charX = addrOffset % params.Width;
-			const int charY = addrOffset / params.Width;
+			const int charX = addrOffset % params.Stride;
+			const int charY = addrOffset / params.Stride;
 			const float xp = pos.x + (charX * rectSize);
 			const float yp = pos.y + (charY * rectSize);
 			const ImVec2 rectMin(xp, yp);
@@ -381,6 +381,8 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	{
 		// Show data reads & writes
 		// 
+		ImGui::Text("Address: %s", NumStr(uiState.SelectedCharAddress.Address));
+		DrawAddressLabel(state, state.GetFocussedViewState(), uiState.SelectedCharAddress);
 		FDataInfo* pDataInfo = state.GetDataInfoForAddress(uiState.SelectedCharAddress);
 		// List Data accesses
 		if (pDataInfo->Reads.IsEmpty() == false)

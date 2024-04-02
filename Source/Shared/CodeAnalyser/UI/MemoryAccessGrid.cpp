@@ -32,8 +32,8 @@ bool FMemoryAccessGrid::GetAddressGridPosition(FAddressRef address, int& outX, i
 			address.Address <= endAddr.Address)
 		{
 			const uint16_t addrOffset = address.Address - startAddr.Address;
-			outX = addrOffset % GridSizeX;
-			outY = addrOffset / GridSizeX;
+			outX = addrOffset % GridStride;
+			outY = addrOffset / GridStride;
 			return true;
 		}
 	}
@@ -118,7 +118,7 @@ void FMemoryAccessGrid::DrawGrid(float x, float y)
 		const int xChar = (int)floor(mousePosX / rectSize);
 		const int yChar = (int)floor(mousePosY / rectSize);
 
-		FAddressRef charAddress = GetGridSquareAddress(xChar, yChar);
+		const FAddressRef charAddress = GetGridSquareAddress(xChar, yChar);
 		if(charAddress.IsValid())
 		{
 			const uint8_t charVal = state.ReadByte(charAddress);
@@ -142,7 +142,7 @@ void FMemoryAccessGrid::DrawGrid(float x, float y)
 
 			// Tool Tip
 			ImGui::BeginTooltip();
-			ImGui::Text("Char Pos (%d,%d)", xChar, yChar);
+			ImGui::Text("Char Pos (%d,%d)", xChar + OffsetX, yChar + OffsetY);
 			ImGui::Text("Value: %s", NumStr(charVal));
 			ImGui::EndTooltip();
 		}
