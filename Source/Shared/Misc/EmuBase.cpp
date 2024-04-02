@@ -83,6 +83,7 @@ void FEmuBase::Shutdown()
 void FEmuBase::Tick()
 {
 	Colours::Tick();
+	UpdateCharacterSets(CodeAnalysis);
 }
 
 void FEmuBase::Reset()

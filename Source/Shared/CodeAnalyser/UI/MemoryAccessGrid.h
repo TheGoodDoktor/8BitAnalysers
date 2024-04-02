@@ -18,7 +18,8 @@ public:
 
 	void	SetGridSize(int x,int y) { GridSizeX = x; GridSizeY = y;}
 protected:
-	void	DrawAtInternal(float x, float y);
+	virtual void	DrawBackground(float x, float y) {}
+	void	DrawGrid(float x, float y);
 
 	FCodeAnalysisState*	CodeAnalysis = nullptr;
 
@@ -30,7 +31,7 @@ protected:
 	int		OffsetY = 0;
 
 
-
+	bool	bDrawGrid = true;
 	bool	bShowValues = false;
 	bool	bShowReadWrites = true;
 	bool	bOutlineAllSquares = false;

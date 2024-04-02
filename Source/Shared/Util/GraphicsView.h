@@ -122,6 +122,7 @@ struct FCharMapCreateParams
 	FAddressRef	Address;
 	int			Width = 0;
 	int			Height = 0;
+	int			Stride = 0;
 	FAddressRef	CharacterSet;
 	uint8_t		IgnoreCharacter = 0;
 	bool		bAddLabel = false;

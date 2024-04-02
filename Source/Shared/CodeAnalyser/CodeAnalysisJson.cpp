@@ -84,6 +84,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		jsonCharacterMap["AddressRef"] = pCharMap->Params.Address.Val;
 		jsonCharacterMap["Width"] = pCharMap->Params.Width;
 		jsonCharacterMap["Height"] = pCharMap->Params.Height;
+		jsonCharacterMap["Stride"] = pCharMap->Params.Stride;
 		jsonCharacterMap["CharacterSetRef"] = pCharMap->Params.CharacterSet.Val;
 		jsonCharacterMap["IgnoreCharacter"] = pCharMap->Params.IgnoreCharacter;
 
@@ -268,7 +269,11 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 
 			params.Width = charMap["Width"];
 			params.Height = charMap["Height"];
-			
+			if (charMap.contains("Stride"))
+				params.Stride = charMap["Stride"];
+			else
+				params.Stride = params.Width;
+
 			if (charMap.contains("CharacterSet"))	// legacy
 				params.CharacterSet = state.AddressRefFromPhysicalAddress(charMap["CharacterSet"]);
 			if (charMap.contains("CharacterSetRef"))	
@@ -381,46 +386,6 @@ void WriteCommentBlockToJson(uint16_t addr, const FCommentBlock* pCommentBlock, 
 
 	jsonDoc["CommentBlocks"].push_back(commentBlockJson);
 }
-
-#if 0
-void WriteAddressRangeToJson(FCodeAnalysisState& state, int startAddress, int endAddress, json& jsonDoc)
-{
-	int address = startAddress;
-
-	// info on last writer
-	// TODO: move to binary
-	//jsonDoc["LastWriterStart"] = startAddress;
-	//for (int addr = startAddress; addr <= endAddress; addr++)
-	//	jsonDoc["LastWriter"].push_back(state.GetLastWriterForAddress(addr));
-
-	while (address <= endAddress)
-	{
-		FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(address);
-		if (pCommentBlock != nullptr)
-			WriteCommentBlockToJson(address, pCommentBlock, jsonDoc);
-
-		FLabelInfo* pLabelInfo = state.GetLabelForAddress(address);
-		if (pLabelInfo)
-			WriteLabelInfoToJson(address, pLabelInfo, jsonDoc);
-
-		FCodeInfo* pCodeInfoItem = state.GetCodeInfoForAddress(address);
-		if (pCodeInfoItem)	// only write code items for first byte of the instruction
-		{
-			WriteCodeInfoToJson(address, pCodeInfoItem, jsonDoc);
-
-			if (pCodeInfoItem->bSelfModifyingCode == false)	// this is so that we can write info on SMC accesses
-				address += pCodeInfoItem->ByteSize;
-		}
-
-		if (pCodeInfoItem == nullptr || pCodeInfoItem->bSelfModifyingCode)
-		{
-			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(address);
-			WriteDataInfoToJson(address, pDataInfo, jsonDoc);
-			address += pDataInfo->ByteSize;
-		}
-	}
-}
-#endif
 
 FCommentBlock* CreateCommentBlockFromJson(const json& commentBlockJson)
 {

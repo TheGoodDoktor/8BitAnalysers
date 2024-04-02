@@ -222,15 +222,16 @@ void FC64GraphicsViewer::DrawCharactersViewer()
 
 			for (auto charSet : foundCharSets)
 			{
-				ImGui::PushID(charSet.Val);
-				ImGui::Text("%s",NumStr(charSet.Address));
-				DrawAddressLabel(*CodeAnalysis,CodeAnalysis->GetFocussedViewState(), charSet);
+				ImGui::PushID(charSet.Address.Val);
+				ImGui::Text("%s",NumStr(charSet.Address.Address));
+				DrawAddressLabel(*CodeAnalysis,CodeAnalysis->GetFocussedViewState(), charSet.Address);
 				ImGui::SameLine();
 				if (ImGui::Button("Create"))
 				{
 					FCharSetCreateParams params;
-					params.Address = charSet;
-					params.BitmapFormat = EBitmapFormat::Bitmap_1Bpp;	// TODO: handle multicolour
+					params.Address = charSet.Address;
+					params.BitmapFormat = charSet.bMultiColour ? EBitmapFormat::ColMapMulticolour_C64 : EBitmapFormat::Bitmap_1Bpp;	// TODO: handle multicolour
+					params.PaletteNo = charSet.PaletteNo;
 					CreateCharacterSetAt(*CodeAnalysis, params);
 				}
 				ImGui::PopID();

@@ -1804,7 +1804,7 @@ void FSpectrumEmu::Tick()
 		CodeAnalysis.OnFrameEnd();
 	}
 
-	UpdateCharacterSets(CodeAnalysis);
+	//UpdateCharacterSets(CodeAnalysis);
 
 	// Draw UI
 	DrawDockingView();

@@ -29,6 +29,25 @@ void RunEnumTests()
 	assert(IM_ARRAYSIZE(g_ColourInfoTxt) == (int)EColourInfo::Max);	// if this asserts then you need to look at how EColourInfo maps to g_ColourInfoTxt
 }
 
+bool DrawIntInputXY(const char *pLabel,int &x,int &y)
+{
+	const float scale = ImGui_GetScaling();
+	const float kNumSize = 80.0f * scale;	// size for number GUI widget
+	bool bChanged = false;
+
+	ImGui::Text(pLabel);
+	ImGui::PushID(pLabel);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(kNumSize);
+	bChanged |= ImGui::InputInt("X", &x);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(kNumSize);
+	bChanged |= ImGui::InputInt("Y", &y);
+	ImGui::PopID();
+
+	return bChanged;
+}
+
 void DrawMaskInfoComboBox(EMaskInfo* pValue)
 {
 	if (ImGui::BeginCombo("Mask Info", g_MaskInfoTxt[(int)*pValue]))
@@ -180,6 +199,9 @@ struct FCharacterMapViewerUIState
 	FAddressRef				SelectedCharAddress;
 	int						SelectedCharX = -1;
 	int						SelectedCharY = -1;
+
+	int						OffsetX = 0;
+	int						OffsetY = 0;
 };
 
 // this assumes the character map is in address space
@@ -190,6 +212,9 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	if (pCharMap == nullptr)
 		return;
 	
+	const float scale = ImGui_GetScaling();
+	const float kNumSize = 80.0f * scale;	// size for number GUI widget
+
 	FCharMapCreateParams& params = uiState.Params;
 	
 	DrawAddressLabel(state, viewState, uiState.SelectedCharMapAddr);
@@ -197,12 +222,12 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	// Display and edit params
 	DrawAddressInput(state, "Address", params.Address);
 	DrawCharacterSetComboBox(state, params.CharacterSet);
-	int sz[2] = { params.Width, params.Height };
-	if (ImGui::InputInt2("Size (X,Y)", sz))
-	{
-		params.Width = sz[0];
-		params.Height = sz[1];
-	}
+	DrawIntInputXY("Size", params.Width, params.Height);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(kNumSize);
+	ImGui::InputInt("Stride", &params.Stride);
+	DrawIntInputXY("Offset", uiState.OffsetX, uiState.OffsetY);
+
 	DrawU8Input("Null Character", &params.IgnoreCharacter);
 
 	if (ImGui::Button("Apply"))
@@ -226,17 +251,17 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	ImGuiIO& io = ImGui::GetIO();
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	uint16_t byte = 0;
+	//uint16_t byte = 0;
 	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
 	static bool bShowReadWrites = true;
 	const uint16_t physAddress = params.Address.Address;
-	float scale = ImGui_GetScaling();
 	const float rectSize = 12.0f * scale;
 
 	for (int y = 0; y < params.Height; y++)
 	{
 		for (int x = 0; x < params.Width; x++)
 		{
+			const int byte = (x + uiState.OffsetX) + ((y + uiState.OffsetY) * params.Stride);
 			const uint8_t val = state.ReadByte(physAddress + byte);
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(physAddress + byte);
 			const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
@@ -286,7 +311,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 				}
 			}
 
-			byte++;	// go to next byte
+			//byte++;	// go to next byte
 		}
 	}
 
@@ -297,7 +322,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	{
 		const int xChar = (int)floor(mousePosX / rectSize);
 		const int yChar = (int)floor(mousePosY / rectSize);
-		const uint16_t charAddress = pCharMap->Params.Address.Address + (xChar + (yChar * pCharMap->Params.Width));
+		const uint16_t charAddress = pCharMap->Params.Address.Address + (xChar + uiState.OffsetX + ((yChar + uiState.OffsetY)* pCharMap->Params.Stride));
 		const uint8_t charVal = state.ReadByte(charAddress);
 
 		const float xp = pos.x + (xChar * rectSize);
@@ -479,15 +504,36 @@ public:
 	{
 		const float scale = ImGui_GetScaling();
 		const float kNumSize = 80.0f * scale;	// size for number GUI widget
-		ImGui::Text("Grid Size");
+		
+		// Size
+		DrawIntInputXY("Grid Size", GridSizeX, GridSizeY);
+		/*ImGui::Text("Grid Size");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(kNumSize);
 		ImGui::InputInt("##GridSizeX", &GridSizeX);
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(kNumSize);
-		ImGui::InputInt("##GridSizeY", &GridSizeY);
-		ImGui::InputInt("Grid Stride", &GridStride);
-		ImGui::InputInt2("Offset", &OffsetX);
+		ImGui::InputInt("##GridSizeY", &GridSizeY);*/
+
+		// Stride
+		ImGui::SetNextItemWidth(kNumSize);
+		ImGui::Text("Grid Stride");
+		ImGui::SameLine();
+		ImGui::InputInt("##GridStride", &GridStride);
+
+		// Offset
+		DrawIntInputXY("Offset", OffsetX, OffsetY);
+		/*
+		ImGui::Text("Offset");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(kNumSize);
+		ImGui::InputInt("##GridOffsetX", &OffsetX);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(kNumSize);
+		ImGui::InputInt("##GridOffsetY", &OffsetY);
+		*/
+
+		// Character Set
 		DrawCharacterSetComboBox(*CodeAnalysis, CharacterSet);
 
 		ImGui::SetNextItemWidth(120.0f * scale);
@@ -505,6 +551,7 @@ public:
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(16.0f * scale);
 		ImGui::InputScalar("Ignore Value", ImGuiDataType_U8,&IgnoreValue);
+		ImGui::Checkbox("DrawGrid",&bDrawGrid);
 
 		// create and format a character map
 		if (ImGui::Button("Create"))
@@ -518,6 +565,7 @@ public:
 			formattingOptions.ClearLabels = true;
 			formattingOptions.AddLabelAtStart = true;
 			formattingOptions.CharacterSet = CharacterSet;
+			formattingOptions.RegisterItem = true;
 			FormatData(*CodeAnalysis, formattingOptions);
 			CodeAnalysis->SetCodeAnalysisDirty(formattingOptions.StartAddress);
 		}
@@ -525,16 +573,31 @@ public:
 		GridSquareSize = 14.0f * scale;	// to fit an 8x8 square on a scaling screen image
 	}
 
-	void DrawCharacterMap()
+	void DrawBackground(float x, float y) override
 	{
 		const FCharacterSet* pCharSet = GetCharacterSetFromAddress(CharacterSet);
 		if(pCharSet == nullptr)
 			return;
 
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		ImVec2 pos(x,y);
+		const float scale = ImGui_GetScaling();
+		const float rectSize = GridSquareSize;
+
 		for (int y = 0; y < GridSizeY; y++)
 		{
 			for (int x = 0; x < GridSizeX; x++)
 			{
+				const int byte = (x + OffsetX) + ((y + OffsetY) * GridStride);
+				const uint8_t val = CodeAnalysis->ReadByte(PhysicalAddress + byte);
+
+				const float xp = pos.x + (x * rectSize);
+				const float yp = pos.y + (y * rectSize);
+				ImVec2 rectMin(xp, yp);
+				ImVec2 rectMax(xp + rectSize, yp + rectSize);
+				const FCharUVS UVS = pCharSet->GetCharacterUVS(val);
+				dl->AddImage((ImTextureID)pCharSet->Image->GetTexture(), rectMin, rectMax, ImVec2(UVS.U0, UVS.V0), ImVec2(UVS.U1, UVS.V1));
+
 			}
 		}
 	}
@@ -568,7 +631,6 @@ void FCharacterMapViewer::DrawCharacterMapViewer(void)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	
-	ViewerGrid->DrawCharacterMap();
 	ViewerGrid->Draw();
 }
 

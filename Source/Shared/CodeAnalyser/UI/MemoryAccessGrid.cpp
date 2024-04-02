@@ -40,7 +40,7 @@ bool FMemoryAccessGrid::GetAddressGridPosition(FAddressRef address, int& outX, i
 	return false;
 }
 
-void FMemoryAccessGrid::DrawAtInternal(float x, float y)
+void FMemoryAccessGrid::DrawGrid(float x, float y)
 {
 	// Display Character Map
 	FCodeAnalysisState& state = *CodeAnalysis;
@@ -214,12 +214,16 @@ void FMemoryAccessGrid::DrawAtInternal(float x, float y)
 void FMemoryAccessGrid::DrawAt(float x, float y)
 {
 	OnDraw();
-	DrawAtInternal(x, y);
+	DrawBackground(x,y);
+	if(bDrawGrid)
+		DrawGrid(x, y);
 }
 
 void FMemoryAccessGrid::Draw()
 {
 	OnDraw();
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
-	DrawAtInternal(pos.x,pos.y);
+	DrawBackground(pos.x, pos.y);
+	if(bDrawGrid)
+		DrawGrid(pos.x,pos.y);
 }

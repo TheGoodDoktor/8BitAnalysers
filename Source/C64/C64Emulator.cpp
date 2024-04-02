@@ -331,12 +331,6 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 			saveStateFName = gameRoot + "SaveState.bin";
 		}
 
-		if (FileExists(analysisJsonFName.c_str()))
-		{
-			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
-		}
-
 		//GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
 		// Load machine state, if it fails, reload the prg file
@@ -355,6 +349,11 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 			}*/
 		}
 
+		if (FileExists(analysisJsonFName.c_str()))
+		{
+			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		}
 		// Set memory banks
 		UpdateCodeAnalysisPages(C64Emu.cpu_port);
 

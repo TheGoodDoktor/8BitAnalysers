@@ -282,7 +282,7 @@ void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 			bool bFound = false;
 			for(auto charAddrRef : CharSets)
 			{
-				if (charAddress == charAddrRef)
+				if (charAddress == charAddrRef.Address)
 				{
 					bFound = true;
 					break;
@@ -290,7 +290,20 @@ void FVICAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
 			}
 
 			if(bFound == false)
-				CharSets.push_back(charAddress);
+			{
+				uint32_t charCols[4];
+				charCols[0] = m6569_color(pC64->vic.reg.bc[0]);
+				charCols[1] = m6569_color(pC64->vic.reg.bc[1]);
+				charCols[2] = m6569_color(pC64->vic.reg.bc[2]);
+				charCols[3] = 0;//m6569_color(pC64->vic.reg.bc[3]);
+
+				FCharSetDef newCharSet;
+				newCharSet.Address = charAddress;
+				newCharSet.bMultiColour = pC64->vic.reg.ctrl_1 & (1 << 4);
+				newCharSet.PaletteNo = GetPaletteNo(charCols, newCharSet.bMultiColour ? 4 : 2);
+
+				CharSets.push_back(newCharSet);
+			}
 		}
 	}
     

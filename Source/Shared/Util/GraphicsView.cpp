@@ -445,7 +445,7 @@ void DrawCharacterSetImage1Bpp(FCodeAnalysisState& state, FCharacterSet& charact
 // This function assumes the data is mapped in memory
 void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& characterSet)
 {
-	uint16_t addr = characterSet.Params.Address.Address;
+	const uint16_t addr = characterSet.Params.Address.Address;
 
 	characterSet.Image->Clear(0);	// clear first
 
@@ -470,11 +470,6 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params)
 {
 	characterSet.Params = params;
-	//characterSet.Params.Address = params.Address;
-	//characterSet.Params.AttribsAddress = params.AttribsAddress;
-	//characterSet.Params.MaskInfo = params.MaskInfo;
-	//characterSet.Params.ColourInfo = params.ColourInfo;
-	//characterSet.Params.bDynamic = params.bDynamic;
 
 	UpdateCharacterSetImage(state, characterSet);
 }
