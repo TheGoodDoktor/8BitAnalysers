@@ -202,6 +202,8 @@ struct FCharacterMapViewerUIState
 
 	int						OffsetX = 0;
 	int						OffsetY = 0;
+
+	float					Scale = 1.0f;
 };
 
 // this assumes the character map is in address space
@@ -228,7 +230,10 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	ImGui::InputInt("Stride", &params.Stride);
 	DrawIntInputXY("Offset", uiState.OffsetX, uiState.OffsetY);
 
+	ImGui::SetNextItemWidth(kNumSize);
 	DrawU8Input("Null Character", &params.IgnoreCharacter);
+	ImGui::SetNextItemWidth(kNumSize);
+	ImGui::SliderFloat("Scale", &uiState.Scale, 0.1f, 2.0f);
 
 	if (ImGui::Button("Apply"))
 	{
@@ -255,7 +260,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
 	static bool bShowReadWrites = true;
 	const uint16_t physAddress = params.Address.Address;
-	const float rectSize = 12.0f * scale;
+	const float rectSize = 12.0f * scale * uiState.Scale;
 
 	for (int y = 0; y < params.Height; y++)
 	{
