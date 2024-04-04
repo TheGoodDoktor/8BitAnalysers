@@ -13,6 +13,7 @@ struct FC64Config : public FGlobalConfig
 	std::string			TapesFolder = "./Tapes/";
 	std::string			DisksFolder = "./Disks/";
 	std::string			PrgFolder = "./Prg/";
+	std::string			CrtFolder = "./Crt/";
 
 	bool		bShowHCounter = false;
 	bool		bShowVICOverlay = false;

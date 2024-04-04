@@ -15,6 +15,8 @@
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include <Debug/DebugLog.h>
 
+#include "FileLoaders/CRTFile.h"
+
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "C64 Analyser";
@@ -180,20 +182,11 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	VICBankMapping[0xe] = RAMBehindKernelROMId;
 	VICBankMapping[0xf] = RAMBehindKernelROMId;
 
-	// TODO: Setup games list
-	//GameLoader.Init(this);
+	// Setup games lists
 	AddGamesList("PRG File", GetC64GlobalConfig()->PrgFolder.c_str());
 	AddGamesList("Tape File", GetC64GlobalConfig()->TapesFolder.c_str());
+	AddGamesList("Crt File", GetC64GlobalConfig()->CrtFolder.c_str());
 
-	// old - TODO: remove
-	//GamesList.SetLoader(&GameLoader);
-	//GamesList.EnumerateGames(GetC64GlobalConfig()->PrgFolder.c_str());
-
-	// TODO: Setup debugger
-
-	// TODO: setup memory analyser
-
-	
 	// setup code analysis
 	CodeAnalysis.Init(this);
 	CodeAnalysis.Config.bShowBanks = true;
@@ -207,7 +200,6 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	AddViewer(pCharacterMapViewer);
 	pGraphicsViewer = new FC64GraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
-
 	
 	bool bLoadedGame = false;
 
@@ -465,6 +457,11 @@ bool FC64Emulator::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 		{
 			return false;
 		}
+	}
+	break;
+	case EEmuFileType::CRT:
+	{
+		return LoadCRTFile(fileName.c_str());
 	}
 	break;
 	default:

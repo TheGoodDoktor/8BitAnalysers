@@ -52,7 +52,8 @@ endif ()
 file ( GLOB program_src 
 	./*.cpp ./*.c ./*.h
 	GraphicsViewer/*.cpp GraphicsViewer/*.h
-	IOAnalysis/*.cpp IOAnalysis/*.h )
+	IOAnalysis/*.cpp IOAnalysis/*.h 
+	FileLoaders/*.cpp FileLoaders/*.h)
 
 add_executable ( ${PROJECT_NAME} MACOSX_BUNDLE ${shared_src} ${program_src} ${vendor_src} )
 

@@ -14,6 +14,7 @@ enum class EEmuFileType
 	RZX,
 	PRG,
 	D64,
+	CRT,
 
 	Unknown
 };

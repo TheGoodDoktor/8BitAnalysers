@@ -15,6 +15,8 @@ void FC64Config::ReadFromJson(const nlohmann::json& jsonConfigFile)
 		DisksFolder = jsonConfigFile["DisksFolder"];
 	if (jsonConfigFile.contains("PrgFolder"))
 		PrgFolder = jsonConfigFile["PrgFolder"];
+	if (jsonConfigFile.contains("CrtFolder"))
+		CrtFolder = jsonConfigFile["CrtFolder"];
 	if (jsonConfigFile.contains("ShowHCounter"))
 		bShowHCounter = jsonConfigFile["ShowHCounter"];
 	if (jsonConfigFile.contains("ShowVICOverlay"))
@@ -27,6 +29,8 @@ void FC64Config::ReadFromJson(const nlohmann::json& jsonConfigFile)
 		DisksFolder += "/";
 	if (PrgFolder.back() != '/')
 		PrgFolder += "/";
+	if (CrtFolder.back() != '/')
+		CrtFolder += "/";
 }
 
 void FC64Config::WriteToJson(nlohmann::json& jsonConfigFile) const
@@ -35,6 +39,7 @@ void FC64Config::WriteToJson(nlohmann::json& jsonConfigFile) const
 	jsonConfigFile["TapesFolder"] = TapesFolder;
 	jsonConfigFile["DisksFolder"] = DisksFolder;
 	jsonConfigFile["PrgFolder"] = PrgFolder;
+	jsonConfigFile["CrtFolder"] = CrtFolder;
 	jsonConfigFile["ShowHCounter"] = bShowHCounter;
 	jsonConfigFile["ShowVICOverlay"] = bShowVICOverlay;
 }
