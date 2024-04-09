@@ -39,6 +39,7 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 		if (pCodeItem->bDisabled == false)
 		{
 			pCodeItem->bDisabled = true;
+			pCodeItem->Text.clear();
 
 			// set all bytes to be data
 			for (int i = 0; i < pCodeItem->ByteSize; i++)

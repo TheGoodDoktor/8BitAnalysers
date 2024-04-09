@@ -29,7 +29,7 @@
 
 
 
-FC64Emulator g_C64Emu;
+//FC64Emulator g_C64Emu;
 
 #if 0
 static int CPUTrapCallback(uint16_t pc, int ticks, uint64_t pins, void* user_data)

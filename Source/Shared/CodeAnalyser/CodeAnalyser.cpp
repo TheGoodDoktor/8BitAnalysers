@@ -31,7 +31,8 @@
 // a bank is a list of memory pages
 int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly, uint16_t initialAddress, bool bFixed)
 {
-	const int16_t bankId = (int16_t)Banks.size();
+	const int16_t bankId = GetNextBankId();
+	assert(bankId == (int16_t)Banks.size());
 	const int noPages = noKb;
 
 	FCodeAnalysisBank& newBank = Banks.emplace_back();
@@ -52,6 +53,12 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 		RegisterPage(&newBank.Pages[pageNo], pageName);
 	}
 	return bankId;
+}
+
+bool FCodeAnalysisState::FreeBanksFrom(int16_t bankId)
+{
+	Banks.resize(bankId);
+	return true;
 }
 
 bool FCodeAnalysisState::SetBankPrimaryPage(int16_t bankId, int startPageNo)
@@ -896,6 +903,16 @@ void ResetReferenceInfo(FCodeAnalysisState &state)
 		{
 			pLabelInfo->References.Reset();
 		}
+
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(i);
+		if(pCodeInfo != nullptr)
+		{
+			pCodeInfo->bSelfModifyingCode = false;
+			pCodeInfo->FrameLastExecuted = -1;
+			pCodeInfo->Reads.Reset();
+			pCodeInfo->Writes.Reset();
+		}
+
 
 		state.SetLastWriterForAddress(i,  FAddressRef());
 	}

@@ -73,7 +73,8 @@ enum class EC64FileType
 	None,
 	PRG,
 	Tape,
-	Disk
+	Disk,
+	Cartridge
 };
 
 enum class EFileLoadPhase
@@ -90,6 +91,52 @@ struct FC64Config;
 struct FC64ProjectConfig;
 class FC64Emulator;
 
+// Cartridges
+enum class ECartridgeSlot
+{
+	Addr_8000,
+	Addr_A000,
+	Addr_E000,
+
+	Unknown,
+	Max = Unknown
+};
+
+// information on cartridge bank
+struct FCartridgeBank
+{
+	//~FCartridgeBank() { delete[] Data; Data = nullptr; }
+
+	int			BankNo = -1;
+	int16_t		BankId = -1;
+	uint16_t	Address = 0;
+	uint32_t	DataSize = 0;
+	uint8_t*	Data = nullptr;
+};
+
+struct FCartridgeSlot
+{
+	void Init(uint16_t baseAddress, uint16_t size)
+	{
+		BaseAddress = baseAddress;
+		Size = size;
+	}
+	void Reset()
+	{
+		for(auto& bank : Banks)
+			delete[] bank.Data;
+
+		Banks.clear();
+		CurrentBank = -1;
+	}
+
+	uint16_t	BaseAddress = 0;	// where slot is mapped in address space
+	uint16_t	Size = 0;			// size in bytes
+
+	int			CurrentBank = -1;
+	std::vector<FCartridgeBank>	Banks;
+};
+
 struct FC64LaunchConfig : public FEmulatorLaunchConfig
 {
 };
@@ -97,6 +144,7 @@ struct FC64LaunchConfig : public FEmulatorLaunchConfig
 class FC64Emulator : public FEmuBase
 {
 public:
+	FC64Emulator() = default;
 
 	bool    Init(const FEmulatorLaunchConfig& launchConfig) override;
 	void    Shutdown() override;
@@ -108,9 +156,6 @@ public:
 	void	SystemMenuAdditions(void) override;
 	void	OptionsMenuAdditions(void) override;
 	void	WindowsMenuAdditions(void) override;
-
-
-
 
 	// Begin IInputEventHandler interface implementation
 	void	OnKeyUp(int keyCode);
@@ -180,11 +225,16 @@ public:
 	bool	LoadProject(FProjectConfig *pConfig, bool bLoadGame) override;
 	bool	SaveProject(void) override;
 
-	//bool NewGameFromSnapshot(const FGameInfo* pGameInfo);
+	void	ResetCartridgeBanks();
+	FCartridgeSlot&	GetCartridgeSlot(ECartridgeSlot slot) { assert(slot!=ECartridgeSlot::Unknown); return CartridgeSlots[(int)slot]; }
+	FCartridgeBank&	AddCartridgeBank(int bankNo, uint16_t address, uint32_t dataSize);
+	void	InitCartMapping(void);
+	bool	MapCartridgeBank(ECartridgeSlot slot, int bankNo);
+	void	UnMapCartridge(ECartridgeSlot slot);
+
 	void ResetCodeAnalysis(void);
 	bool LoadMachineState(const char* fname);
 	bool SaveMachineState(const char* fname);
-	//bool LoadCodeAnalysis(const FGameInfo* pGameInfo);
 
 	// Emulator Event Handlers
 	void    OnBoot(void);
@@ -200,18 +250,10 @@ public:
 	void	SetLoadedFileType(EC64FileType type) { LoadedFileType = type;}
 private:
 	c64_t       C64Emu;
-	//ui_c64_t    C64UI;
 	double      ExecTime;
 
 	EC64FileType	LoadedFileType = EC64FileType::None;
 	EFileLoadPhase	FileLoadPhase = EFileLoadPhase::Idle;
-
-	//FC64Config*			pGlobalConfig = nullptr;
-	//FC64GameConfig*		pCurrentGameConfig = nullptr;
-
-	//FC64GamesList       GamesList;
-	//FC64GameLoader		GameLoader;
-
 
 	const FGameInfo*	CurrentGame = nullptr;
 
@@ -222,8 +264,15 @@ private:
 	uint8_t             LastMemPort = 0x7;  // Default startup
 	uint16_t            PreviousPC = 0;
 
+	//static const int	kMaxCartridgeBanks = 64;
+	//int					ActiveCartridgeBanks = 0;
+	//int					CurrentCartridgeBank = -1;
+	//FCartridgeBank		CartridgeBanks[kMaxCartridgeBanks];
+
+	FCartridgeSlot		CartridgeSlots[(int)ECartridgeSlot::Max];
+	int16_t				FirstCartridgeBankId = -1;
+
 	FC64IOAnalysis      IOAnalysis;
-	//FC64GraphicsViewer* GraphicsViewer = nullptr;
 	std::set<FAddressRef>  InterruptHandlers;
 
 	// Mapping status
@@ -234,6 +283,7 @@ private:
 
 	// Bank Ids
 	uint16_t            LowerRAMId = -1;
+	uint16_t			LowerRAM2Id = -1;
 	uint16_t            HighRAMId = -1;
 	uint16_t            IOAreaId = -1;
 	uint16_t            BasicROMId = -1;
@@ -244,4 +294,8 @@ private:
 	uint16_t            RAMBehindCharROMId = -1;
 
 	uint16_t			VICBankMapping[16];
+
+	FC64Emulator(const FC64Emulator&) = delete;                 // Prevent copy-construction
+	FC64Emulator& operator=(const FC64Emulator&) = delete;      // Prevent assignment
+
 };

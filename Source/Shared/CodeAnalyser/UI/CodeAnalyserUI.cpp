@@ -1141,7 +1141,7 @@ static const std::vector<std::pair<const char*, EDataItemDisplayType>> g_Display
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state)
 {
 
-	return DrawEnumCombo<EDataItemDisplayType>(pLabel, displayType, g_DisplayTypes, [state](EDataItemDisplayType type){ return IsDisplayTypeSupported(type,state);});
+	return DrawEnumCombo<EDataItemDisplayType>(pLabel, displayType, g_DisplayTypes, [&state](EDataItemDisplayType type){ return IsDisplayTypeSupported(type,state);});
 }
 
 static const std::vector<std::pair<const char*, EDataType>> g_DataTypes =
@@ -1650,7 +1650,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				for (auto& bank : banks)
 				{
 					//if (bank.IsUsed() == false || bank.PrimaryMappedPage == -1)
-					if (bank.PrimaryMappedPage == -1)
+					if (bank.PrimaryMappedPage == -1 || bank.bHidden == true)
 						continue;
 
 					const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;

@@ -458,6 +458,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const FDebugger& debugger = state.Debugger;
 
 	ShowDataItemActivity(state, item.AddressRef);
+	ShowCodeAccessorActivity(state, item.AddressRef);	// only really for PC - shortcut?
+
 
 	// show if breakpointed
 	const FBreakpoint* pBP = debugger.GetBreakpointForAddress(item.AddressRef);

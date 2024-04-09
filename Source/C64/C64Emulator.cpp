@@ -141,10 +141,11 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	// setup default memory configuration
 	memset(IOMemBuffer,0,sizeof(IOMemBuffer));	// clear to 0
 
-	LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 40, C64Emu.ram,false, 0x0000,  true);		// RAM - $0000 - $9FFF - pages 0-39 - 40K
-	HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false, 0xC000);	// RAM - $C000 - $CFFF - pages 48-51 - 4k
-	IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, false, 0xD000);			// IO System - %D000 - $DFFF - page 52-55 - 4k
-	BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true,0xA000); // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
+	LowerRAMId = CodeAnalysis.CreateBank("LoRAM", 32, C64Emu.ram,false, 0x0000,  true);				// RAM - $0000 - $7FFF - pages 0-31 - 32K
+	LowerRAM2Id = CodeAnalysis.CreateBank("LoRAM2", 8, &C64Emu.ram[0x8000], false, 0x8000, true);	// RAM - $8000 - $9FFF - pages 32-39 - 8K
+	HighRAMId = CodeAnalysis.CreateBank("HiRAM", 4, &C64Emu.ram[0xc000], false, 0xC000);			// RAM - $C000 - $CFFF - pages 48-51 - 4k
+	IOAreaId = CodeAnalysis.CreateBank("IOArea", 4, IOMemBuffer, false, 0xD000);					// IO System - %D000 - $DFFF - page 52-55 - 4k
+	BasicROMId = CodeAnalysis.CreateBank("BasicROM", 8, C64Emu.rom_basic, true,0xA000);				// BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
 	RAMBehindBasicROMId = CodeAnalysis.CreateBank("RAMBehindBasicROM", 8, &C64Emu.ram[0xa000], false, 0xA000);
 
 	KernelROMId = CodeAnalysis.CreateBank("KernelROM", 8, C64Emu.rom_kernal, true, 0xE000);   // Kernel ROM - $E000-$FFFF - pages 56-63 - 8k
@@ -156,8 +157,9 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	//ColourRAMId = CodeAnalysis.CreateBank("ColourRAM", 1, C64Emu.color_ram, true);  // Colour RAM - $D800
 
 	// map in permanent banks
-	CodeAnalysis.MapBank(LowerRAMId, 0, EBankAccess::ReadWrite);        // RAM - $0000 - $9FFF - pages 0-39 - 40K
-	CodeAnalysis.MapBank(HighRAMId, 48, EBankAccess::ReadWrite);        // RAM - $C000 - $CFFF - pages 48-51 - 4k
+	CodeAnalysis.MapBank(LowerRAMId, 0, EBankAccess::ReadWrite);	// RAM - $0000 - $7FFF - pages 0-31 - 32K
+	CodeAnalysis.MapBank(LowerRAM2Id, 32, EBankAccess::ReadWrite);	// RAM - $8000 - $9FFF - pages 32-39 - 8K
+	CodeAnalysis.MapBank(HighRAMId, 48, EBankAccess::ReadWrite);	// RAM - $C000 - $CFFF - pages 48-51 - 4k
 
 	// map RAM behind ROM banks a write
 	CodeAnalysis.MapBank(RAMBehindBasicROMId, 40, EBankAccess::Write);
@@ -172,8 +174,8 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	VICBankMapping[0x4] = LowerRAMId;
 	VICBankMapping[0x5] = LowerRAMId;
 	VICBankMapping[0x6] = LowerRAMId;
-	VICBankMapping[0x7] = LowerRAMId;
-	VICBankMapping[0x8] = LowerRAMId;
+	VICBankMapping[0x7] = LowerRAM2Id;
+	VICBankMapping[0x8] = LowerRAM2Id;
 	VICBankMapping[0x9] = CharacterROMId;
 	VICBankMapping[0xa] = RAMBehindBasicROMId;
 	VICBankMapping[0xb] = RAMBehindBasicROMId;
@@ -208,6 +210,12 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 		bLoadedGame = FEmuBase::StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
 		SetupCodeAnalysisLabels();
 	}
+
+	// Set up cartridges
+	FirstCartridgeBankId = CodeAnalysis.GetNextBankId();			// Record first cartridge bank
+	GetCartridgeSlot(ECartridgeSlot::Addr_8000).Init(0x8000, 0x2000);	
+	GetCartridgeSlot(ECartridgeSlot::Addr_A000).Init(0xA000, 0x2000);	
+	GetCartridgeSlot(ECartridgeSlot::Addr_E000).Init(0xE000,0x2000);	
 
 	return true;
 }
@@ -286,6 +294,7 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
+	ResetCartridgeBanks();
 
 	//IOAnalysis.Reset();
 	bool bLoadSnapshot = false;
@@ -461,7 +470,8 @@ bool FC64Emulator::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 	break;
 	case EEmuFileType::CRT:
 	{
-		return LoadCRTFile(fileName.c_str());
+		LoadedFileType = EC64FileType::Cartridge;
+		return LoadCRTFile(fileName.c_str(), this);
 	}
 	break;
 	default:
@@ -478,29 +488,131 @@ bool FC64Emulator::NewProjectFromEmulatorFile(const FEmulatorFile& emuFile)
 
 	if (pNewConfig != nullptr)
 	{
-		/*chips_range_t snapshotData;
-		snapshotData.ptr = LoadBinaryFile(gameSnapshot.FileName.c_str(), snapshotData.size);
-		if(snapshotData.ptr!=nullptr)
-		{
-			c64_quickload(&C64Emu, snapshotData);
-			free(snapshotData.ptr);
-		}*/
-
-		FileLoadPhase = EFileLoadPhase::Reset;
 		c64_desc_t desc = GenerateC64Desc(C64Emu.joystick_type);
 		c64_init(&C64Emu, &desc);
-
-		//Reset();
 
 		LoadProject(pNewConfig, false);
 		AddGameConfig(pNewConfig);
 		SaveProject();
 
 		CodeAnalysis.Debugger.Continue();
+
+		if (emuFile.Type == EEmuFileType::CRT)	// cartridge can start instantly
+		{
+			LoadEmulatorFile(&emuFile);
+			FileLoadPhase = EFileLoadPhase::Run;
+
+			// TODO: map in the cartridge bank & set up bank switch handler
+			// Map slots based on cartridge type
+			InitCartMapping();
+		}
+		else
+		{
+			FileLoadPhase = EFileLoadPhase::Reset;
+		}
+
 		return true;
 	}
 	return false;
 }
+
+void FC64Emulator::ResetCartridgeBanks() 
+{ 
+#if 0
+	for(auto& bank : CartridgeBanks)
+	{
+		delete bank.Data;
+		bank.Data = nullptr;
+	}
+
+	ActiveCartridgeBanks = 0;
+#endif
+	for(int slotNo = 0;slotNo<(int)ECartridgeSlot::Max;slotNo++)
+	{
+		FCartridgeSlot& slot = CartridgeSlots[slotNo];
+		slot.Reset();
+	}
+	if(FirstCartridgeBankId != -1)
+		CodeAnalysis.FreeBanksFrom(FirstCartridgeBankId);
+}
+
+ECartridgeSlot GetSlotFromAddress(uint16_t address)
+{
+	if(address == 0x8000)
+		return ECartridgeSlot::Addr_8000;
+	else if(address == 0xA000)
+		return ECartridgeSlot::Addr_A000;
+	else if (address == 0xE000)
+		return ECartridgeSlot::Addr_E000;
+	else
+		return ECartridgeSlot::Unknown;
+}
+
+FCartridgeBank& FC64Emulator::AddCartridgeBank(int bankNo, uint16_t address, uint32_t dataSize)
+{
+	ECartridgeSlot slot = GetSlotFromAddress(address);
+	assert(slot != ECartridgeSlot::Unknown);
+	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
+	assert(cartridgeSlot.Banks.size() == bankNo);	// assume they get added in a linear way
+
+	FCartridgeBank& bank = cartridgeSlot.Banks.emplace_back();
+	bank.BankNo = bankNo;
+	bank.DataSize = dataSize;
+	bank.Data = new uint8_t[bank.DataSize];
+	bank.Address = address;
+
+	// Create Analyser Bank
+	char bankName[32];
+	snprintf(bankName, 32, "CartBank%d", bankNo);
+	bank.BankId = CodeAnalysis.CreateBank(bankName, bank.DataSize / 1024, bank.Data, false, bank.Address);
+
+	//assert(ActiveCartridgeBanks == bankNo);
+	//ActiveCartridgeBanks++;
+	return bank;
+}
+
+void FC64Emulator::InitCartMapping(void)
+{
+	for(int slotNo=0;slotNo<(int)ECartridgeSlot::Max;slotNo++)
+	{
+		if(CartridgeSlots[slotNo].Banks.empty() == false)
+		{
+			MapCartridgeBank((ECartridgeSlot)slotNo,0);
+		}
+	}
+}
+
+bool FC64Emulator::MapCartridgeBank(ECartridgeSlot slot, int bankNo)
+{
+	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
+	FCartridgeBank& bank = cartridgeSlot.Banks[bankNo];
+
+	// Map in memory page
+	mem_map_rw(&C64Emu.mem_cpu, 0, bank.Address, bank.DataSize, bank.Data, &C64Emu.ram[bank.Address]);
+
+	// Map in analysis
+	CodeAnalysis.MapBank(bank.BankId, bank.Address / 1024, EBankAccess::Read);
+
+	cartridgeSlot.CurrentBank = bankNo;
+
+	return true;
+}
+
+void	FC64Emulator::UnMapCartridge(ECartridgeSlot slot)
+{
+	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
+
+	mem_map_ram(&C64Emu.mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, &C64Emu.ram[cartridgeSlot.BaseAddress]);
+
+	if(slot == ECartridgeSlot::Addr_8000)
+		CodeAnalysis.MapBank(LowerRAM2Id, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
+	else if (slot == ECartridgeSlot::Addr_A000)
+		CodeAnalysis.MapBank(RAMBehindBasicROMId, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
+
+	cartridgeSlot.CurrentBank = -1;
+}
+
+
 
 void FC64Emulator::ResetCodeAnalysis(void)
 {
@@ -523,6 +635,26 @@ bool FC64Emulator::SaveMachineState(const char* fname)
 		fwrite(&versionNo, sizeof(uint32_t), 1, fp);
 		fwrite(&g_SaveSlot, sizeof(c64_t), 1, fp);
 
+		// Cartridges
+		const uint32_t noSlots = (uint32_t)ECartridgeSlot::Max;
+		fwrite(&noSlots, sizeof(uint32_t), 1, fp);
+		for(int slotNo=0;slotNo<(int)noSlots;slotNo++)
+		{
+			const FCartridgeSlot& slot = CartridgeSlots[slotNo];
+			fwrite(&slot.BaseAddress,sizeof(uint16_t),1,fp);
+
+			const uint32_t noCartBanks = (uint32_t)slot.Banks.size();
+			fwrite(&noCartBanks,sizeof(uint32_t),1,fp);
+			for(int bankNo =0;bankNo<(int)noCartBanks;bankNo++)
+			{
+				const FCartridgeBank&bank = slot.Banks[bankNo];
+				fwrite(&bank.BankNo, sizeof(int), 1, fp);
+				fwrite(&bank.Address, sizeof(uint16_t), 1, fp);
+				fwrite(&bank.DataSize, sizeof(uint32_t), 1,fp);
+				fwrite(bank.Data,bank.DataSize,1,fp);
+			}
+			fwrite(&slot.CurrentBank, sizeof(int),1,fp);
+		}
 		fclose(fp);
 		return true;
 	}
@@ -546,6 +678,40 @@ bool FC64Emulator::LoadMachineState(const char* fname)
 		fread(&g_SaveSlot, sizeof(c64_t), 1, fp);
 
 		bSuccess = c64_load_snapshot(&C64Emu, versionNo, &g_SaveSlot);
+
+		uint32_t noCartSlots = 0;
+		if(fread(&noCartSlots, sizeof(uint32_t), 1, fp) == 1)	// check if cartridge info is there
+		{
+			for(int slotNo =0;slotNo<noCartSlots;slotNo++)	// load each slot
+			{
+				uint16_t slotBaseAddress = 0;
+				fread(&slotBaseAddress,sizeof(uint16_t),1,fp);
+
+				FCartridgeSlot& slot = GetCartridgeSlot(GetSlotFromAddress(slotBaseAddress));
+				uint32_t noCartBanks = 0;
+				fread(&noCartBanks, sizeof(uint32_t), 1, fp);
+				for(int i=0;i<(int)noCartBanks;i++)
+				{
+					int bankNo;
+					uint16_t address;
+					uint32_t dataSize;
+					fread(&bankNo, sizeof(int), 1, fp);
+					fread(&address, sizeof(uint16_t), 1, fp);
+					fread(&dataSize, sizeof(uint32_t), 1, fp);
+
+					FCartridgeBank& bank = AddCartridgeBank(bankNo, address, dataSize);
+					fread(bank.Data, bank.DataSize, 1, fp);
+				}
+
+				fread(&slot.CurrentBank, sizeof(int), 1, fp);
+				if(slot.CurrentBank != -1)
+					MapCartridgeBank((ECartridgeSlot)slotNo, slot.CurrentBank);
+			}
+
+			LoadedFileType = EC64FileType::Cartridge;
+
+		}
+
 	}
 	fclose(fp);
 	return bSuccess;
@@ -586,62 +752,6 @@ bool FC64Emulator::SaveProject(void)
 
 	return true;
 }
-
-#if 0
-bool FC64Emulator::LoadCodeAnalysis(const FGameInfo* pGameInfo)
-{
-	const std::string root = pGlobalConfig->WorkspaceRoot;
-	const std::string analysisJsonFName = root + "AnalysisJson/" + pGameInfo->Name + ".json";
-	const std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameInfo->Name + ".json";
-	const std::string analysisStateFName = root + "AnalysisState/" + pGameInfo->Name + ".astate";
-	const std::string saveStateFName = root + "SaveStates/" + pGameInfo->Name + ".state";
-	if (FileExists(analysisJsonFName.c_str()))
-	{
-		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
-	}
-
-	//GraphicsViewer.LoadGraphicsSets(graphicsSetsJsonFName.c_str());
-	if (FileExists(saveStateFName.c_str()))
-	{
-		size_t stateSize;
-		c64_t* pSnapshot = (c64_t*)LoadBinaryFile(saveStateFName.c_str(), stateSize);
-		c64_load_snapshot(&C64Emu, 1, pSnapshot);
-		free(pSnapshot);
-		return true;
-	}
-	return false;
-#if 0
-	char fileName[128];
-	snprintf(fileName, sizeof(fileName), "AnalysisData/%s.bin", pGameInfo->Name.c_str());
-	FMemoryBuffer loadBuffer;
-
-	if (loadBuffer.LoadFromFile(fileName) == false)
-		return false;
-
-	// Load RAM pages
-	for (int pageNo = 0; pageNo < 64; pageNo++)
-		RAM[pageNo].ReadFromBuffer(loadBuffer);
-
-	// Load IO
-	for (int pageNo = 0; pageNo < 4; pageNo++)
-		IOSystem[pageNo].ReadFromBuffer(loadBuffer);
-
-	// Load Basic ROM
-	for (int pageNo = 0; pageNo < 8; pageNo++)
-		BasicROM[pageNo].ReadFromBuffer(loadBuffer);
-
-	// Load Kernel ROM
-	for (int pageNo = 0; pageNo < 8; pageNo++)
-		KernelROM[pageNo].ReadFromBuffer(loadBuffer);
-
-	// FIXME: Invalid method signature
-	//CodeAnalysis.SetCodeAnalysisDirty();
-
-	return true;
-#endif
-}
-#endif
 
 void FC64Emulator::Shutdown()
 {
@@ -862,6 +972,8 @@ void   FC64Emulator::Reset(void)
 	
 	// Set memory banks
 	UpdateCodeAnalysisPages(C64Emu.cpu_port);
+	if(LoadedFileType == EC64FileType::Cartridge)
+		InitCartMapping();
 	//StartGame(nullptr, false);
 }
 
@@ -1028,6 +1140,14 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 			{
 				IOAnalysis.RegisterIOWrite(addr, val, GetPC());
 				IOMemBuffer[addr & 0xfff] = val;
+				
+				if(addr == 0xDE00)
+				{
+					if(val & (1<<7))	// map RAM back in
+						UnMapCartridge(ECartridgeSlot::Addr_8000);
+					else
+						MapCartridgeBank(ECartridgeSlot::Addr_8000, val & 0x7f);
+				}
 			}
 
 			FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);

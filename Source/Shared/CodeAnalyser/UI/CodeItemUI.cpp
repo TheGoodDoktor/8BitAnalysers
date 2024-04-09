@@ -12,9 +12,10 @@
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr)
 {
 	const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(accessorCodeAddr);
-	if (pCodeInfo != nullptr)
+	const int FrameLastExecuted = pCodeInfo != nullptr ? pCodeInfo->FrameLastExecuted : -1;
+	// (pCodeInfo != nullptr)
 	{
-		const int framesSinceExecuted = pCodeInfo->FrameLastExecuted != -1 ? state.CurrentFrameNo - pCodeInfo->FrameLastExecuted : 255;
+		const int framesSinceExecuted = FrameLastExecuted != -1 ? state.CurrentFrameNo - FrameLastExecuted : 255;
 		const int brightVal = (255 - std::min(framesSinceExecuted << 2, 255)) & 0xff;
 		const bool bPCLine = accessorCodeAddr == state.CPUInterface->GetPC();
 

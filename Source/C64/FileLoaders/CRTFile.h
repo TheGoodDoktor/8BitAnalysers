@@ -1,3 +1,5 @@
 #pragma once
 
-bool LoadCRTFile(const char* pFName);
+class FC64Emulator;
+
+bool LoadCRTFile(const char* pFName, FC64Emulator* pEmulator);

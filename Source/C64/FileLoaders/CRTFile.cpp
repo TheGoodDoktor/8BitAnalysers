@@ -3,6 +3,10 @@
 #include <cinttypes>
 
 #include <climits>
+#include <vector>
+#include <cassert>
+#include "../C64Emulator.h"
+#include <Debug/DebugLog.h>
 
 template <typename T>
 T swap_endian(T u)
@@ -47,8 +51,10 @@ struct FChipPacketHeader
 	uint16_t	ROMSizeBytes;
 };
 
-bool LoadCRTFile(const char* pFName)
+bool LoadCRTFile(const char* pFName, FC64Emulator* pEmulator)
 {
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+
 	FILE *fp = fopen(pFName,"rb");
 	if(fp == nullptr)
 		return false;
@@ -58,6 +64,14 @@ bool LoadCRTFile(const char* pFName)
 	header.HeaderLength = swap_endian<uint32_t>(header.HeaderLength);
 	header.CartridgeType = swap_endian<uint16_t>(header.CartridgeType);
 
+	LOGINFO("Loaded CRT file %s", pFName);
+	LOGINFO("Name: %s",header.Name);
+	LOGINFO("CRT Version %d.%d", header.VersionMajor, header.VersionMinor);
+	LOGINFO("Cartridge Type: %d",header.CartridgeType);
+	LOGINFO("GAME Line: %d",header.GAMELine);
+	LOGINFO("EXROM Line: %d",header.EXROMLine);
+	LOGINFO("Hardware Revision: %d", header.HardwareRevision);
+
 	while(true)
 	{
 		FChipPacketHeader chipHeader;
@@ -65,13 +79,23 @@ bool LoadCRTFile(const char* pFName)
 		if(noRead == 0)
 			break;
 
+		assert(memcmp(chipHeader.Signature,"CHIP",4) == 0);
+
 		chipHeader.PacketLength = swap_endian<uint32_t>(chipHeader.PacketLength);
 		chipHeader.ChipType = swap_endian<uint16_t>(chipHeader.ChipType);
 		chipHeader.BankNumber = swap_endian<uint16_t>(chipHeader.BankNumber);
 		chipHeader.StartingLoadAddress = swap_endian<uint16_t>(chipHeader.StartingLoadAddress);
 		chipHeader.ROMSizeBytes = swap_endian<uint16_t>(chipHeader.ROMSizeBytes);
 
-		// TODO: read in bank data
+		LOGINFO("--CHIP SECTION--");
+		LOGINFO("Chip bank number: %d", chipHeader.BankNumber);
+		LOGINFO("Type: %d",chipHeader.ChipType);
+		LOGINFO("Address: $%04X",chipHeader.StartingLoadAddress);
+		LOGINFO("Size: %d bytes", chipHeader.ROMSizeBytes);
+
+		// Create bank & read in data
+		FCartridgeBank& bank = pEmulator->AddCartridgeBank(chipHeader.BankNumber,chipHeader.StartingLoadAddress,chipHeader.ROMSizeBytes);
+		fread(bank.Data,bank.DataSize,1,fp);
 	}
 	fclose(fp);
 	return true;
