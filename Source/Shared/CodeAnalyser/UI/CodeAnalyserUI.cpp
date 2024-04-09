@@ -1523,18 +1523,42 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int windowId)
 {
-	const float kListWidth = 100.0f;
+	const float glyphWidth = ImGui::CalcTextSize("F").x;
+	const float kListWidth = 20.0f * glyphWidth;
+
 	if (ImGui::BeginChild("##bankList", ImVec2(kListWidth, 0), true))
 	{
 		auto& banks = state.GetBanks();
 		for (auto& bank : banks)
 		{
-			bool bSelected = viewState.ViewingBankId == bank.Id;
+			const bool bSelected = viewState.ViewingBankId == bank.Id;
+
+			const EBankAccess access = bank.GetBankMapping();
+			ImU32 col = IM_COL32(144, 144, 144, 255);
+
+			switch (access)
+			{
+			case EBankAccess::Read:
+				col = 0xff00ff00;
+				break;
+			case EBankAccess::Write:
+				col = 0xff0000ff;
+				break;
+			case EBankAccess::ReadWrite:
+				col = 0xffffffff;
+				break;
+			}
+			
+			
+			ImGui::PushStyleColor(ImGuiCol_Text, col);
+			
 			if (ImGui::Selectable(bank.Name.c_str(), bSelected))
 			{
 				// Set selected bank
 				viewState.ViewingBankId = bank.Id;
 			}
+
+			ImGui::PopStyleColor();
 		}
 	}
 	ImGui::EndChild();
@@ -1569,7 +1593,11 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		}
 		else
 		{
-			ImGui::Text("No bank selected");
+			//ImGui::Text("No bank selected");
+			DrawItemList(state, viewState, state.ItemList);
+			// only handle keypresses for focussed window
+			if (state.FocussedWindowId == windowId)
+				ProcessKeyCommands(state, viewState);
 		}
 
 	}
@@ -1705,6 +1733,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 			if (state.Config.bShowBanks)
 			{
 #if NEWBANKVIEW
+				tabFlags = (bSwitchTabs && showBank != -1) ? ImGuiTabItemFlags_SetSelected : 0;
+
+				if (bSwitchTabs)
+					viewState.ViewingBankId = showBank;
+
 				if (ImGui::BeginTabItem("Banks", nullptr, tabFlags))
 				{
 					DrawBankAnalysis(state,viewState,windowId);
