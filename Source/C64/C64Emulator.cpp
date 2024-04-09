@@ -682,7 +682,7 @@ bool FC64Emulator::LoadMachineState(const char* fname)
 		uint32_t noCartSlots = 0;
 		if(fread(&noCartSlots, sizeof(uint32_t), 1, fp) == 1)	// check if cartridge info is there
 		{
-			for(int slotNo =0;slotNo<noCartSlots;slotNo++)	// load each slot
+			for(int slotNo =0;slotNo<(int)noCartSlots;slotNo++)	// load each slot
 			{
 				uint16_t slotBaseAddress = 0;
 				fread(&slotBaseAddress,sizeof(uint16_t),1,fp);

@@ -1519,6 +1519,64 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	viewState.AddressCoords = newList;
 }
 
+#define NEWBANKVIEW 0
+
+void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int windowId)
+{
+	const float kListWidth = 100.0f;
+	if (ImGui::BeginChild("##bankList", ImVec2(kListWidth, 0), true))
+	{
+		auto& banks = state.GetBanks();
+		for (auto& bank : banks)
+		{
+			bool bSelected = viewState.ViewingBankId == bank.Id;
+			if (ImGui::Selectable(bank.Name.c_str(), bSelected))
+			{
+				// Set selected bank
+				viewState.ViewingBankId = bank.Id;
+			}
+		}
+	}
+	ImGui::EndChild();
+	ImGui::SameLine();
+	if (ImGui::BeginChild("##bankanalysis"))
+	{
+		FCodeAnalysisBank* pBank = state.GetBank(viewState.ViewingBankId);
+		if (pBank != nullptr)
+		{
+			FCodeAnalysisBank&bank = *pBank;
+			const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
+			const uint16_t kBankEnd = kBankStart + (bank.NoPages * FCodeAnalysisPage::kPageSize) - 1;
+			const bool bMapped = bank.IsMapped();
+
+			state.MapBankForAnalysis(bank);
+
+			// Bank header
+			ImGui::Text("%s[%d]: 0x%04X - 0x%X %s", bank.Name.c_str(), bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped" : "");
+			ImGui::InputText("Description", &bank.Description);
+
+			if (ImGui::BeginChild("##itemlist"))
+				DrawItemList(state, viewState, bank.ItemList);
+			// only handle keypresses for focussed window
+			if (state.FocussedWindowId == windowId)
+				ProcessKeyCommands(state, viewState);
+			UpdatePopups(state, viewState);
+
+			ImGui::EndChild();
+
+			// map bank out
+			state.UnMapAnalysisBanks();
+		}
+		else
+		{
+			ImGui::Text("No bank selected");
+		}
+
+	}
+	ImGui::EndChild();
+
+}
+
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 {
 	FCodeAnalysisViewState& viewState = state.ViewState[windowId];
@@ -1646,6 +1704,13 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 			if (state.Config.bShowBanks)
 			{
+#if NEWBANKVIEW
+				if (ImGui::BeginTabItem("Banks", nullptr, tabFlags))
+				{
+					DrawBankAnalysis(state,viewState,windowId);
+					ImGui::EndTabItem();
+				}
+#else
 				auto& banks = state.GetBanks();
 				for (auto& bank : banks)
 				{
@@ -1702,8 +1767,8 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 						
 					}
 
-
 				}
+#endif
 			}
 
 			ImGui::EndTabBar();

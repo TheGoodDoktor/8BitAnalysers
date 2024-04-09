@@ -31,7 +31,7 @@ void FC64Display::Init(FCodeAnalysisState* pAnalysis, FC64Emulator* pC64Emu)
 	C64Emu = pC64Emu;
 	CodeAnalysis = pAnalysis;
 	c64_t* pC64 = C64Emu->GetEmu();
-	pC64->vic.debug_vis = true;
+	pC64->vic.debug_vis = false;
 
 	// setup texture
 	chips_display_info_t dispInfo = c64_display_info(pC64);
@@ -41,19 +41,6 @@ void FC64Display::Init(FCodeAnalysisState* pAnalysis, FC64Emulator* pC64Emu)
 	const size_t pixelBufferSize = dispInfo.frame.dim.width * dispInfo.frame.dim.height;
 	FrameBuffer = new uint32_t[pixelBufferSize * 2];
 	ScreenTexture = ImGui_CreateTextureRGBA(FrameBuffer, dispInfo.frame.dim.width, dispInfo.frame.dim.height);
-
-
-	// setup pixel buffer
-	// FIXME: seems uncommitted changes
-	/*
-	FramePixelBufferSize = c64_max_display_size();
-	FramePixelBuffer = new unsigned char[FramePixelBufferSize * 2];
-
-	// setup texture
-	FrameBufferTexture = ImGui_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), c64_std_display_width(), c64_std_display_height());
-	//DebugFrameBufferTexture = ImGui_ImplDX11_CreateTextureRGBA(static_cast<unsigned char*>(FramePixelBuffer), _C64_DBG_DISPLAY_WIDTH, _C64_DBG_DISPLAY_HEIGHT);
-	*/
-
 }
 
 uint16_t FC64Display::GetScreenBitmapAddress(int pixelX, int pixelY)
