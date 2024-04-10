@@ -467,6 +467,14 @@ void FEmuBase::SystemMenu()
 	SystemMenuAdditions();
 }
 
+void FEmuBase::ActionsMenu()
+{
+	if (ImGui::MenuItem("Reset Reference Info"))
+	{
+		ResetReferenceInfo(CodeAnalysis);
+	}
+}
+
 void FEmuBase::WindowsMenu()
 {
 	ImGui::MenuItem("DebugLog", 0, &bShowDebugLog);
@@ -510,6 +518,12 @@ void FEmuBase::DrawMainMenu()
 		if (ImGui::BeginMenu("Options"))
 		{
 			OptionsMenu();
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Actions"))
+		{
+			ActionsMenu();
 			ImGui::EndMenu();
 		}
 

@@ -153,6 +153,7 @@ struct FCodeAnalysisViewState
 	const FAddressRef& GetGotoAddress() const { return GoToAddressRef; }
 	void GoToAddress(FAddressRef address, bool bLabel = false);
 	bool GoToPreviousAddress();
+	bool GoToNextAddress();
 	void BookmarkAddress(int bookmarkNo, FAddressRef address)
 	{
 		if(bookmarkNo>=0 && bookmarkNo < kNoBookmarks)
@@ -186,6 +187,7 @@ struct FCodeAnalysisViewState
 	FAddressRef		HighlightAddress;		// address to highlight
 	int				HighlightScanline = -1;	// scanline to highlight
 	bool			GoToLabel = false;
+	uint16_t		JumpAddress = 0;
 	int16_t			ViewingBankId = -1;
 
 	// for global Filters
@@ -210,7 +212,8 @@ struct FCodeAnalysisViewState
 private:
 	FCodeAnalysisItem			CursorItem;
 	FAddressRef					GoToAddressRef;
-	std::vector<FAddressRef>	AddressStack;
+	std::vector<FAddressRef>	PreviousAddressStack;
+	std::vector<FAddressRef>	NextAddressStack;
 	static const int			kNoBookmarks = 5;
 	FAddressRef					Bookmarks[kNoBookmarks];
 };

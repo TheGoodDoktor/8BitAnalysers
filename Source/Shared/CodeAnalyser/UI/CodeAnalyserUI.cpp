@@ -19,6 +19,7 @@
 #include <functional>
 
 #include "UIColours.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 // UI
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
@@ -37,19 +38,32 @@ namespace ImGui
 void FCodeAnalysisViewState::GoToAddress(FAddressRef newAddress, bool bLabel)
 {
 	if(GetCursorItem().IsValid())
-		AddressStack.push_back(GetCursorItem().AddressRef);
+		PreviousAddressStack.push_back(GetCursorItem().AddressRef);
 	GoToAddressRef = newAddress;
 	GoToLabel = bLabel;
 }
 
 bool FCodeAnalysisViewState::GoToPreviousAddress()
 {
-	if (AddressStack.empty())
+	if (PreviousAddressStack.empty())
 		return false;
 
-	GoToAddressRef = AddressStack.back();
+	GoToAddressRef = PreviousAddressStack.back();
+	NextAddressStack.push_back(GetCursorItem().AddressRef);
 	GoToLabel = false;
-	AddressStack.pop_back();
+	PreviousAddressStack.pop_back();
+	return true;
+}
+
+bool FCodeAnalysisViewState::GoToNextAddress()
+{
+	if (NextAddressStack.empty())
+		return false;
+
+	GoToAddressRef = NextAddressStack.back();
+	PreviousAddressStack.push_back(GetCursorItem().AddressRef);
+	GoToLabel = false;
+	NextAddressStack.pop_back();
 	return true;
 }
 
@@ -1401,6 +1415,38 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	}
 }
 
+void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+{
+	const float glyphWidth = ImGui_GetFontCharWidth();
+
+	if (ImGui::ArrowButton("##btnprev", ImGuiDir_Left))
+		viewState.GoToPreviousAddress();
+	ImGui::SameLine();
+	if (ImGui::ArrowButton("##btnnext", ImGuiDir_Right))
+		viewState.GoToNextAddress();
+	ImGui::SameLine();
+	if (ImGui::Button("Jump To PC"))
+	{
+		//const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
+		viewState.GoToAddress(state.CPUInterface->GetPC());
+	}
+	ImGui::SameLine();
+	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+	const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
+	ImGui::Text("Jump To Address:");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(glyphWidth * 10.0f);
+	ImGui::InputScalar("##jumpaddressinput", ImGuiDataType_U16, &viewState.JumpAddress, nullptr, nullptr, format, inputFlags);
+	ImGui::SameLine();
+	if (ImGui::Button("Go"))
+	{
+		if (viewState.ViewingBankId == -1)
+			viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
+		else
+			viewState.GoToAddress(FAddressRef(viewState.ViewingBankId, viewState.JumpAddress));
+	}
+}
+
 // Move to Debugger?
 void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 {
@@ -1519,46 +1565,89 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	viewState.AddressCoords = newList;
 }
 
-#define NEWBANKVIEW 0
+#define NEWBANKVIEW 1
 
 void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, int windowId)
 {
-	const float glyphWidth = ImGui::CalcTextSize("F").x;
-	const float kListWidth = 20.0f * glyphWidth;
+	const float lineHeight = ImGui::GetTextLineHeight();
+	const float lh2 = (float)(int)(lineHeight / 2);
+	const float glyphWidth = ImGui_GetFontCharWidth();
+	const float kListWidth = 24.0f * glyphWidth;
+	const ImU32 brd_color = 0xFF000000;
 
 	if (ImGui::BeginChild("##bankList", ImVec2(kListWidth, 0), true))
 	{
+		if (ImGui::Selectable("##addressspace", viewState.ViewingBankId == -1))
+		{
+			// Set selected bank
+			viewState.ViewingBankId = -1;
+		}
+		const float lineStartX = ImGui::GetCursorPosX();
+		ImGui::SameLine(lineStartX + 20);
+		ImGui::Text(" Address Space");
+
 		auto& banks = state.GetBanks();
 		for (auto& bank : banks)
 		{
 			const bool bSelected = viewState.ViewingBankId == bank.Id;
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			ImDrawList* dl = ImGui::GetWindowDrawList();
+			bool bRead = false;
+			bool bWrite = false;
 
 			const EBankAccess access = bank.GetBankMapping();
-			ImU32 col = IM_COL32(144, 144, 144, 255);
+			ImU32 textCol = IM_COL32(144, 144, 144, 255);
 
 			switch (access)
 			{
 			case EBankAccess::Read:
-				col = 0xff00ff00;
+				textCol = 0xffffffff;
+				bRead = true;
 				break;
 			case EBankAccess::Write:
-				col = 0xff0000ff;
+				textCol = 0xffffffff;
+				bWrite = true;
 				break;
 			case EBankAccess::ReadWrite:
-				col = 0xffffffff;
+				textCol = 0xffffffff;
+				bRead = true;
+				bWrite = true;
 				break;
 			}
 			
-			
-			ImGui::PushStyleColor(ImGuiCol_Text, col);
-			
-			if (ImGui::Selectable(bank.Name.c_str(), bSelected))
+			if (bWrite)
+			{
+				const ImVec2 a(pos.x + 2, pos.y);
+				const ImVec2 b(pos.x + 12, pos.y + lh2);
+				const ImVec2 c(pos.x + 2, pos.y + lineHeight);
+
+				dl->AddTriangleFilled(a, b, c, 0xff0000ff);
+				dl->AddTriangle(a, b, c, brd_color);
+			}
+			pos.x += 10;
+			if (bRead)
+			{
+				const ImVec2 a(pos.x + 2, pos.y);
+				const ImVec2 b(pos.x + 12, pos.y + lh2);
+				const ImVec2 c(pos.x + 2, pos.y + lineHeight);
+
+				dl->AddTriangleFilled(a, b, c, 0xff00ff00);
+				dl->AddTriangle(a, b, c, brd_color);
+			}
+			ImGui::PushID(bank.Id);
+			if (ImGui::Selectable("##bankselector", bSelected))
 			{
 				// Set selected bank
 				viewState.ViewingBankId = bank.Id;
 			}
-
+			//ImGui::SameLine();
+			const float lineStartX = ImGui::GetCursorPosX();
+			ImGui::SameLine(lineStartX + 20);
+			ImGui::PushStyleColor(ImGuiCol_Text, textCol);
+			ImGui::Text(" %s", bank.Name.c_str());
+			
 			ImGui::PopStyleColor();
+			ImGui::PopID();
 		}
 	}
 	ImGui::EndChild();
@@ -1609,8 +1698,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 {
 	FCodeAnalysisViewState& viewState = state.ViewState[windowId];
 	const float lineHeight = ImGui::GetTextLineHeight();
-	const float glyph_width = ImGui::CalcTextSize("F").x;
-	const float cell_width = 3 * glyph_width;
+	//const float cellWidth = 3 * glyph_width;
 
 	if (ImGui::IsWindowFocused(ImGuiHoveredFlags_ChildWindows))
 		state.FocussedWindowId = windowId;
@@ -1623,23 +1711,12 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 	UpdateItemList(state);
 
-	if (ImGui::ArrowButton("##btn", ImGuiDir_Left))
-		viewState.GoToPreviousAddress();
-	ImGui::SameLine();
-	if (ImGui::Button("Jump To PC"))
-	{
-		//const FAddressRef PCAddress(state.GetBankFromAddress(state.CPUInterface->GetPC()), state.CPUInterface->GetPC());
-		viewState.GoToAddress(state.CPUInterface->GetPC());
-	}
-	ImGui::SameLine();
-	static int addrInput = 0;
-	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
-	if (ImGui::InputInt("Jump To", &addrInput, 1, 100, inputFlags))
-	{
-		const FAddressRef address(state.GetBankFromAddress(addrInput), addrInput);	// TODO: if we're in a bank view
-		viewState.GoToAddress(address);
-	}
+	// TODO: separate function for navigation buttons
+	//ImGui::Text("Navigation");
+	//ImGui::SameLine();
+	DrawNavigationButtons(state,viewState);
 
+	// TODO: Put this into a separate function
 	ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetFrameHeight());
 	ImGui::Button("?");
 
@@ -1675,10 +1752,12 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		viewState.TrackPCFrame = false;
 	}
 	
+	//ImGui::Text("Debugger");
+	//ImGui::SameLine();
 	DrawDebuggerButtons(state, viewState);
 
 	// Reset Reference Info
-	if (ImGui::Button("Reset Reference Info"))
+	/*if (ImGui::Button("Reset Reference Info"))
 	{
 		ResetReferenceInfo(state);
 	}
@@ -1687,35 +1766,57 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		ImGui::BeginTooltip();
 		ImGui::Text("This will reset all recorded references");
 		ImGui::EndTooltip();
-	}
+	}*/
 	
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
 	{
+		// Determine if we want to switch tabs
+		const FAddressRef& goToAddress = viewState.GetGotoAddress();
+		int16_t showBank = -1;
+		bool bSwitchViewBank = false;
+		if (goToAddress.IsValid())
+		{
+			// check if we can just jump in the address view
+			//if (viewState.ViewingBankId != goToAddress.BankId && state.IsBankIdMapped(goToAddress.BankId))
+			//	showBank = -1;
+			//else
+			if (state.Config.bShowBanks == false)
+				showBank = -1;
+			else
+				showBank = goToAddress.BankId;
+
+			bSwitchViewBank = showBank != viewState.ViewingBankId;
+		}
+
+#if NEWBANKVIEW
+		//ImGuiTabItemFlags tabFlags = (bSwitchTabs && showBank != -1) ? ImGuiTabItemFlags_SetSelected : 0;
+
+		if (state.Config.bShowBanks)
+		{
+			if (bSwitchViewBank)
+				viewState.ViewingBankId = showBank;
+
+			DrawBankAnalysis(state, viewState, windowId);
+		}
+		else
+		{
+			if (ImGui::BeginChild("##itemlist"))
+				DrawItemList(state, viewState, state.ItemList);
+			// only handle keypresses for focussed window
+			if (state.FocussedWindowId == windowId)
+				ProcessKeyCommands(state, viewState);
+			UpdatePopups(state, viewState);
+
+			ImGui::EndChild();
+		}
+#else
 		if (ImGui::BeginTabBar("itemlist_tabbar"))
 		{
-			// Determine if we want to switch tabs
-			const FAddressRef& goToAddress = viewState.GetGotoAddress();
-			int16_t showBank = -1;
-			bool bSwitchTabs = false;
-			if (goToAddress.IsValid())
-			{
-				// check if we can just jump in the address view
-				//if (viewState.ViewingBankId != goToAddress.BankId && state.IsBankIdMapped(goToAddress.BankId))
-				//	showBank = -1;
-				//else
-				if (state.Config.bShowBanks == false)
-					showBank = -1;
-				else
-					showBank = goToAddress.BankId;
-
-				bSwitchTabs = showBank != viewState.ViewingBankId;
-			}
-
-			ImGuiTabItemFlags tabFlags = (bSwitchTabs && showBank == -1) ? ImGuiTabItemFlags_SetSelected : 0;
+			ImGuiTabItemFlags tabFlags = (bSwitchViewBank && showBank == -1) ? ImGuiTabItemFlags_SetSelected : 0;
 
 			if (ImGui::BeginTabItem("Address Space",nullptr,tabFlags))
 			{
-				if (bSwitchTabs == false || showBank == -1)
+				if (bSwitchViewBank == false || showBank == -1)
 				{
 					viewState.ViewingBankId = -1;
 					if (ImGui::BeginChild("##itemlist"))
@@ -1732,18 +1833,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 			if (state.Config.bShowBanks)
 			{
-#if NEWBANKVIEW
-				tabFlags = (bSwitchTabs && showBank != -1) ? ImGuiTabItemFlags_SetSelected : 0;
 
-				if (bSwitchTabs)
-					viewState.ViewingBankId = showBank;
-
-				if (ImGui::BeginTabItem("Banks", nullptr, tabFlags))
-				{
-					DrawBankAnalysis(state,viewState,windowId);
-					ImGui::EndTabItem();
-				}
-#else
 				auto& banks = state.GetBanks();
 				for (auto& bank : banks)
 				{
@@ -1754,7 +1844,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 					const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
 					const uint16_t kBankEnd = kBankStart + (bank.NoPages * FCodeAnalysisPage::kPageSize) - 1;
 
-					tabFlags = (bSwitchTabs && showBank == bank.Id) ? ImGuiTabItemFlags_SetSelected : 0;
+					tabFlags = (bSwitchViewBank && showBank == bank.Id) ? ImGuiTabItemFlags_SetSelected : 0;
 
 					// TODO: Maybe we could colour code for read or write only access?
 					const bool bMapped = bank.IsMapped();
@@ -1773,7 +1863,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 
 					if (bTabOpen)
 					{
-						if (bSwitchTabs == false || showBank == bank.Id)
+						if (bSwitchViewBank == false || showBank == bank.Id)
 						{
 							// map bank in
 							viewState.ViewingBankId = bank.Id;
@@ -1801,12 +1891,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 					}
 
 				}
-#endif
 			}
 
 			ImGui::EndTabBar();
-		}
-		
+		}		
+#endif
 
 	}
 	ImGui::EndChild();

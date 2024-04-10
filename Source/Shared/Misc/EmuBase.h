@@ -97,6 +97,7 @@ protected:
 	void			FileMenu();
 	void			SystemMenu();
 	void			OptionsMenu();
+	void			ActionsMenu();
 	void			WindowsMenu();
 	
 	virtual void	FileMenuAdditions(void) {}	// system specific additions
