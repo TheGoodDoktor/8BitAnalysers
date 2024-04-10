@@ -130,6 +130,7 @@ struct FCartridgeSlot
 		CurrentBank = -1;
 	}
 
+	bool		bActive = false;
 	uint16_t	BaseAddress = 0;	// where slot is mapped in address space
 	uint16_t	Size = 0;			// size in bytes
 

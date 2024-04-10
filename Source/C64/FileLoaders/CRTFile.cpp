@@ -68,8 +68,8 @@ bool LoadCRTFile(const char* pFName, FC64Emulator* pEmulator)
 	LOGINFO("Name: %s",header.Name);
 	LOGINFO("CRT Version %d.%d", header.VersionMajor, header.VersionMinor);
 	LOGINFO("Cartridge Type: %d",header.CartridgeType);
-	LOGINFO("GAME Line: %d",header.GAMELine);
-	LOGINFO("EXROM Line: %d",header.EXROMLine);
+	LOGINFO("GAME Line: %d",header.GAMELine);	// $A000
+	LOGINFO("EXROM Line: %d",header.EXROMLine);	// $8000
 	LOGINFO("Hardware Revision: %d", header.HardwareRevision);
 
 	while(true)
@@ -97,6 +97,12 @@ bool LoadCRTFile(const char* pFName, FC64Emulator* pEmulator)
 		FCartridgeBank& bank = pEmulator->AddCartridgeBank(chipHeader.BankNumber,chipHeader.StartingLoadAddress,chipHeader.ROMSizeBytes);
 		fread(bank.Data,bank.DataSize,1,fp);
 	}
+
+	//if(header.GAMELine == 0)
+	//	pEmulator->GetCartridgeSlot(ECartridgeSlot::Addr_A000).bActive = true;
+	if (header.EXROMLine == 0)
+		pEmulator->GetCartridgeSlot(ECartridgeSlot::Addr_8000).bActive = true;
+
 	fclose(fp);
 	return true;
 }

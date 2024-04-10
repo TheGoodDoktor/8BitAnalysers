@@ -553,9 +553,11 @@ FCartridgeBank& FC64Emulator::AddCartridgeBank(int bankNo, uint16_t address, uin
 	ECartridgeSlot slot = GetSlotFromAddress(address);
 	assert(slot != ECartridgeSlot::Unknown);
 	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
-	assert(cartridgeSlot.Banks.size() == bankNo);	// assume they get added in a linear way
+	if(cartridgeSlot.Banks.size() <= bankNo)
+		cartridgeSlot.Banks.resize(bankNo+1);
+	//assert(cartridgeSlot.Banks.size() == bankNo);	// assume they get added in a linear way
 
-	FCartridgeBank& bank = cartridgeSlot.Banks.emplace_back();
+	FCartridgeBank& bank = cartridgeSlot.Banks[bankNo];
 	bank.BankNo = bankNo;
 	bank.DataSize = dataSize;
 	bank.Data = new uint8_t[bank.DataSize];
@@ -575,7 +577,7 @@ void FC64Emulator::InitCartMapping(void)
 {
 	for(int slotNo=0;slotNo<(int)ECartridgeSlot::Max;slotNo++)
 	{
-		if(CartridgeSlots[slotNo].Banks.empty() == false)
+		if(CartridgeSlots[slotNo].bActive == true)//Banks.empty() == false)
 		{
 			MapCartridgeBank((ECartridgeSlot)slotNo,0);
 		}
@@ -594,6 +596,7 @@ bool FC64Emulator::MapCartridgeBank(ECartridgeSlot slot, int bankNo)
 	CodeAnalysis.MapBank(bank.BankId, bank.Address / 1024, EBankAccess::Read);
 
 	cartridgeSlot.CurrentBank = bankNo;
+	cartridgeSlot.bActive = true;
 
 	return true;
 }
@@ -610,6 +613,7 @@ void	FC64Emulator::UnMapCartridge(ECartridgeSlot slot)
 		CodeAnalysis.MapBank(RAMBehindBasicROMId, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
 
 	cartridgeSlot.CurrentBank = -1;
+	cartridgeSlot.bActive = false;
 }
 
 
@@ -1147,6 +1151,11 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 						UnMapCartridge(ECartridgeSlot::Addr_8000);
 					else
 						MapCartridgeBank(ECartridgeSlot::Addr_8000, val & 0x7f);
+				}
+
+				if (addr == 0xDE02)
+				{
+					LOGINFO("$DE02 value: %02X",val);
 				}
 			}
 
