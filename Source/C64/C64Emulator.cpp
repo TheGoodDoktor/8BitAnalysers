@@ -579,7 +579,7 @@ void FC64Emulator::InitCartMapping(void)
 	{
 		if(CartridgeSlots[slotNo].bActive == true)//Banks.empty() == false)
 		{
-			MapCartridgeBank((ECartridgeSlot)slotNo,0);
+			MapCartridgeBank((ECartridgeSlot)slotNo,0);//find first bank instead?
 		}
 	}
 }
@@ -611,6 +611,8 @@ void	FC64Emulator::UnMapCartridge(ECartridgeSlot slot)
 		CodeAnalysis.MapBank(LowerRAM2Id, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
 	else if (slot == ECartridgeSlot::Addr_A000)
 		CodeAnalysis.MapBank(RAMBehindBasicROMId, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
+	else if (slot == ECartridgeSlot::Addr_E000)
+		CodeAnalysis.MapBank(RAMBehindKernelROMId, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
 
 	cartridgeSlot.CurrentBank = -1;
 	cartridgeSlot.bActive = false;
@@ -659,6 +661,7 @@ bool FC64Emulator::SaveMachineState(const char* fname)
 			}
 			fwrite(&slot.CurrentBank, sizeof(int),1,fp);
 		}
+		fwrite(&CartridgeType,sizeof(ECartridgeType),1,fp);
 		fclose(fp);
 		return true;
 	}
@@ -713,6 +716,9 @@ bool FC64Emulator::LoadMachineState(const char* fname)
 			}
 
 			LoadedFileType = EC64FileType::Cartridge;
+			CartridgeType = ECartridgeType::Generic;
+			fread(&CartridgeType, sizeof(ECartridgeType), 1, fp);
+			CreateCartridgeHandler(CartridgeType,this);
 
 		}
 
@@ -1127,6 +1133,11 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 			if (bIOMapped && (addr >> 12) == 0xd)
 			{
 				IOAnalysis.RegisterIORead(addr, GetPC());
+				uint8_t readVal = 0;
+				if (pCartridgeHandler && pCartridgeHandler->HandleIORead(addr, readVal))
+				{
+					M6502_SET_DATA(pins,readVal);
+				}
 			}
 		}
 		else
@@ -1145,6 +1156,11 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 				IOAnalysis.RegisterIOWrite(addr, val, GetPC());
 				IOMemBuffer[addr & 0xfff] = val;
 				
+				// cartridge
+				// Call abstract handler
+				if(pCartridgeHandler)
+					pCartridgeHandler->HandleIOWrite(addr,val);
+/*
 				if(addr == 0xDE00)
 				{
 					if(val & (1<<7))	// map RAM back in
@@ -1156,7 +1172,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 				if (addr == 0xDE02)
 				{
 					LOGINFO("$DE02 value: %02X",val);
-				}
+				}*/
 			}
 
 			FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);

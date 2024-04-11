@@ -51,6 +51,9 @@ struct FChipPacketHeader
 	uint16_t	ROMSizeBytes;
 };
 
+ECartridgeType GetCartridgeType(int typeNo);
+
+
 bool LoadCRTFile(const char* pFName, FC64Emulator* pEmulator)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
@@ -63,6 +66,9 @@ bool LoadCRTFile(const char* pFName, FC64Emulator* pEmulator)
 	fread(&header,sizeof(FCRTHeader),1,fp);
 	header.HeaderLength = swap_endian<uint32_t>(header.HeaderLength);
 	header.CartridgeType = swap_endian<uint16_t>(header.CartridgeType);
+	const ECartridgeType cartridgeType = GetCartridgeType(header.CartridgeType);
+	pEmulator->SetCartridgeType(cartridgeType);
+	CreateCartridgeHandler(cartridgeType,pEmulator);
 
 	LOGINFO("Loaded CRT file %s", pFName);
 	LOGINFO("Name: %s",header.Name);
@@ -87,6 +93,9 @@ bool LoadCRTFile(const char* pFName, FC64Emulator* pEmulator)
 		chipHeader.StartingLoadAddress = swap_endian<uint16_t>(chipHeader.StartingLoadAddress);
 		chipHeader.ROMSizeBytes = swap_endian<uint16_t>(chipHeader.ROMSizeBytes);
 
+		if(cartridgeType == ECartridgeType::EasyFlash && chipHeader.StartingLoadAddress == 0xA000)	//hack
+			chipHeader.StartingLoadAddress = 0xE000;
+
 		LOGINFO("--CHIP SECTION--");
 		LOGINFO("Chip bank number: %d", chipHeader.BankNumber);
 		LOGINFO("Type: %d",chipHeader.ChipType);
@@ -98,11 +107,106 @@ bool LoadCRTFile(const char* pFName, FC64Emulator* pEmulator)
 		fread(bank.Data,bank.DataSize,1,fp);
 	}
 
-	//if(header.GAMELine == 0)
-	//	pEmulator->GetCartridgeSlot(ECartridgeSlot::Addr_A000).bActive = true;
+	if(header.GAMELine == 0)
+		pEmulator->GetCartridgeSlot(ECartridgeSlot::Addr_E000).bActive = true;
 	if (header.EXROMLine == 0)
 		pEmulator->GetCartridgeSlot(ECartridgeSlot::Addr_8000).bActive = true;
 
 	fclose(fp);
 	return true;
+}
+
+ECartridgeType GetCartridgeType(int typeNo)
+{
+	switch (typeNo)
+	{
+		case 0:
+			return ECartridgeType::Generic;
+		case 19:
+			return ECartridgeType::MagicDesk;
+		case 32:
+			return ECartridgeType::EasyFlash;
+		default:
+			return ECartridgeType::Unknown;
+	}
+}
+
+// Cartridge handlers - other file?
+
+class FGenericCartridgeHandler : public FCartridgeHandler
+{
+public:
+	FGenericCartridgeHandler(FC64Emulator* pEmu):FCartridgeHandler(pEmu){}
+
+	bool	HandleIOWrite(uint16_t address, uint8_t value) override
+	{
+		if (address == 0xDE00)
+		{
+			if (value & (1 << 7))	// map RAM back in
+				pEmulator->UnMapCartridge(ECartridgeSlot::Addr_8000);
+			else
+				pEmulator->MapCartridgeBank(ECartridgeSlot::Addr_8000, value & 0x7f);
+		}
+
+		return true;
+	}
+};
+
+class FEasyFlashCartridgeHandler : public FCartridgeHandler
+{
+public:
+	FEasyFlashCartridgeHandler(FC64Emulator* pEmu) :FCartridgeHandler(pEmu) {}
+
+	bool	HandleIOWrite(uint16_t address, uint8_t value) override
+	{
+		if (address == 0xDE00)
+		{
+			if (value & (1 << 7))	// map RAM back in
+				pEmulator->UnMapCartridge(ECartridgeSlot::Addr_8000);
+			else
+				pEmulator->MapCartridgeBank(ECartridgeSlot::Addr_8000, value & 0x7f);
+		}
+
+		if ((address & 0xFF00) == 0xDF00)	// RAM
+		{
+			RAM[address & 0xff] = value;
+		}
+
+		return true;
+	}
+
+	bool	HandleIORead(uint16_t address, uint8_t& value)	override
+	{
+		if ((address & 0xFF00) == 0xDF00)	// RAM
+		{ 
+			value =  RAM[address & 0xff];
+			return true;
+		}
+		return false;
+	}
+
+
+	uint8_t	RAM[256];
+};
+
+bool CreateCartridgeHandler(ECartridgeType type, FC64Emulator* pEmulator)
+{
+	FCartridgeHandler* pHandler = nullptr;
+
+	switch (type)
+	{
+	case ECartridgeType::Generic:
+	case ECartridgeType::MagicDesk:
+		pHandler = new FGenericCartridgeHandler(pEmulator);
+		break;
+	case ECartridgeType::EasyFlash:
+		pHandler = new FEasyFlashCartridgeHandler(pEmulator);
+		break;
+	default:
+		break;
+	}
+
+	pEmulator->SetCartridgeHandler(pHandler);
+
+	return pHandler != nullptr;
 }

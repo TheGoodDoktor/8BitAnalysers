@@ -25,30 +25,12 @@
 #include <util/m6502dasm.h>
 #include <util/z80dasm.h>
 
-// Chips UI includes
-/*
-#include <ui/ui_util.h>
-#include <ui/ui_chip.h>
-#include <ui/ui_util.h>
-#include <ui/ui_m6502.h>
-#include <ui/ui_m6526.h>
-#include <ui/ui_m6569.h>
-#include <ui/ui_m6581.h>
-#include <ui/ui_audio.h>
-#include <ui/ui_dasm.h>
-#include <ui/ui_dbg.h>
-#include <ui/ui_memedit.h>
-#include <ui/ui_memmap.h>
-#include <ui/ui_kbd.h>
-#include <ui/ui_snapshot.h>
-#include <ui/ui_c64.h>
-#include <ui/ui_ay38910.h>
-*/
 #include "C64GamesList.h"
 #include "C64Display.h"
 
 #include "IOAnalysis/C64IOAnalysis.h"
 #include "GraphicsViewer/C64GraphicsViewer.h"
+#include "FileLoaders/CRTFile.h"
 
 enum class EC64Event
 {
@@ -92,6 +74,8 @@ struct FC64ProjectConfig;
 class FC64Emulator;
 
 // Cartridges
+class FCartridgeHandler;
+
 enum class ECartridgeSlot
 {
 	Addr_8000,
@@ -101,6 +85,7 @@ enum class ECartridgeSlot
 	Unknown,
 	Max = Unknown
 };
+
 
 // information on cartridge bank
 struct FCartridgeBank
@@ -226,9 +211,12 @@ public:
 	bool	LoadProject(FProjectConfig *pConfig, bool bLoadGame) override;
 	bool	SaveProject(void) override;
 
+	// Cartridge
+	void	SetCartridgeHandler(FCartridgeHandler* pHandler) { delete pCartridgeHandler; pCartridgeHandler = pHandler;}
 	void	ResetCartridgeBanks();
 	FCartridgeSlot&	GetCartridgeSlot(ECartridgeSlot slot) { assert(slot!=ECartridgeSlot::Unknown); return CartridgeSlots[(int)slot]; }
 	FCartridgeBank&	AddCartridgeBank(int bankNo, uint16_t address, uint32_t dataSize);
+	void	SetCartridgeType(ECartridgeType type) { CartridgeType = type;}
 	void	InitCartMapping(void);
 	bool	MapCartridgeBank(ECartridgeSlot slot, int bankNo);
 	void	UnMapCartridge(ECartridgeSlot slot);
@@ -269,7 +257,8 @@ private:
 	//int					ActiveCartridgeBanks = 0;
 	//int					CurrentCartridgeBank = -1;
 	//FCartridgeBank		CartridgeBanks[kMaxCartridgeBanks];
-
+	FCartridgeHandler*	pCartridgeHandler = nullptr;
+	ECartridgeType		CartridgeType = ECartridgeType::None;
 	FCartridgeSlot		CartridgeSlots[(int)ECartridgeSlot::Max];
 	int16_t				FirstCartridgeBankId = -1;
 
