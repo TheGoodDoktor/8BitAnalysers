@@ -69,59 +69,24 @@ enum class EFileLoadPhase
 	TapePlaying
 };
 
+struct FC64BankIds
+{
+	int16_t LowerRAM = -1;
+	int16_t LowerRAM2 = -1;
+	int16_t HighRAM = -1;
+	int16_t IOArea = -1;
+	int16_t BasicROM = -1;
+	int16_t RAMBehindBasicROM = -1;
+	int16_t KernelROM = -1;
+	int16_t RAMBehindKernelROM = -1;
+	int16_t CharacterROM = -1;
+	int16_t RAMBehindCharROM = -1;
+};
+
 struct FC64Config;
 struct FC64ProjectConfig;
 class FC64Emulator;
 
-// Cartridges
-class FCartridgeHandler;
-
-enum class ECartridgeSlot
-{
-	Addr_8000,
-	Addr_A000,
-	Addr_E000,
-
-	Unknown,
-	Max = Unknown
-};
-
-
-// information on cartridge bank
-struct FCartridgeBank
-{
-	//~FCartridgeBank() { delete[] Data; Data = nullptr; }
-
-	int			BankNo = -1;
-	int16_t		BankId = -1;
-	uint16_t	Address = 0;
-	uint32_t	DataSize = 0;
-	uint8_t*	Data = nullptr;
-};
-
-struct FCartridgeSlot
-{
-	void Init(uint16_t baseAddress, uint16_t size)
-	{
-		BaseAddress = baseAddress;
-		Size = size;
-	}
-	void Reset()
-	{
-		for(auto& bank : Banks)
-			delete[] bank.Data;
-
-		Banks.clear();
-		CurrentBank = -1;
-	}
-
-	bool		bActive = false;
-	uint16_t	BaseAddress = 0;	// where slot is mapped in address space
-	uint16_t	Size = 0;			// size in bytes
-
-	int			CurrentBank = -1;
-	std::vector<FCartridgeBank>	Banks;
-};
 
 struct FC64LaunchConfig : public FEmulatorLaunchConfig
 {
@@ -199,11 +164,12 @@ public:
 		return VICBankMapping[addr.Address >> 12] == addr.BankId;
 	}
 	
-	uint16_t GetIOAreaBankId() const { return IOAreaId; }
+	uint16_t GetIOAreaBankId() const { return BankIds.IOArea; }
+	const FC64BankIds& GetBankIds(void) const { return BankIds; }
 
 	FAddressRef	GetColourRAMAddress(uint16_t colRamAddress)	const // VIC address is 14bit (16K range)
 	{
-		return FAddressRef(IOAreaId, colRamAddress + 0xD800);
+		return FAddressRef(BankIds.IOArea, colRamAddress + 0xD800);
 	}
 
 	bool	LoadEmulatorFile(const FEmulatorFile* pEmuFile) override;
@@ -212,6 +178,7 @@ public:
 	bool	SaveProject(void) override;
 
 	// Cartridge
+#if 0
 	void	SetCartridgeHandler(FCartridgeHandler* pHandler) { delete pCartridgeHandler; pCartridgeHandler = pHandler;}
 	void	ResetCartridgeBanks();
 	FCartridgeSlot&	GetCartridgeSlot(ECartridgeSlot slot) { assert(slot!=ECartridgeSlot::Unknown); return CartridgeSlots[(int)slot]; }
@@ -220,7 +187,7 @@ public:
 	void	InitCartMapping(void);
 	bool	MapCartridgeBank(ECartridgeSlot slot, int bankNo);
 	void	UnMapCartridge(ECartridgeSlot slot);
-
+#endif
 	void ResetCodeAnalysis(void);
 	bool LoadMachineState(const char* fname);
 	bool SaveMachineState(const char* fname);
@@ -253,14 +220,11 @@ private:
 	uint8_t             LastMemPort = 0x7;  // Default startup
 	uint16_t            PreviousPC = 0;
 
-	//static const int	kMaxCartridgeBanks = 64;
-	//int					ActiveCartridgeBanks = 0;
-	//int					CurrentCartridgeBank = -1;
-	//FCartridgeBank		CartridgeBanks[kMaxCartridgeBanks];
-	FCartridgeHandler*	pCartridgeHandler = nullptr;
-	ECartridgeType		CartridgeType = ECartridgeType::None;
-	FCartridgeSlot		CartridgeSlots[(int)ECartridgeSlot::Max];
-	int16_t				FirstCartridgeBankId = -1;
+	FCartridgeManager	CartridgeManager;
+	//FCartridgeHandler*	pCartridgeHandler = nullptr;
+	//ECartridgeType		CartridgeType = ECartridgeType::None;
+	//FCartridgeSlot		CartridgeSlots[(int)ECartridgeSlot::Max];
+	//int16_t				FirstCartridgeBankId = -1;
 
 	FC64IOAnalysis      IOAnalysis;
 	std::set<FAddressRef>  InterruptHandlers;
@@ -271,18 +235,7 @@ private:
 	bool                bCharacterROMMapped = false;
 	bool                bIOMapped = true;
 
-	// Bank Ids
-	uint16_t            LowerRAMId = -1;
-	uint16_t			LowerRAM2Id = -1;
-	uint16_t            HighRAMId = -1;
-	uint16_t            IOAreaId = -1;
-	uint16_t            BasicROMId = -1;
-	uint16_t            RAMBehindBasicROMId = -1;
-	uint16_t            KernelROMId = -1;
-	uint16_t            RAMBehindKernelROMId = -1;
-	uint16_t            CharacterROMId = -1;
-	uint16_t            RAMBehindCharROMId = -1;
-
+	FC64BankIds			BankIds;
 	uint16_t			VICBankMapping[16];
 
 	FC64Emulator(const FC64Emulator&) = delete;                 // Prevent copy-construction
