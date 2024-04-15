@@ -708,7 +708,6 @@ void FC64Emulator::Shutdown()
 void FC64Emulator::DrawEmulatorUI()
 {
 	FCodeAnalysisViewState& viewState = CodeAnalysis.GetFocussedViewState();
-	//ui_c64_draw(&C64UI);
 
 	if (ImGui::Begin("C64 Screen"))
 	{
@@ -765,15 +764,7 @@ void FC64Emulator::DrawEmulatorUI()
 	}
 	ImGui::End();
 
-	/*if (ImGui::Begin("Games List"))
-	{
-		GamesList.DrawGameSelect();
-		if (GamesList.GetSelectedGame() != -1 && ImGui::Button("Load"))
-		{
-			NewGameFromSnapshot(&GamesList.GetGameInfo(GamesList.GetSelectedGame()));
-		}
-	}
-	ImGui::End();*/
+	CartridgeManager.DrawUI();
 }
 
 // Add C64 specific menu items

@@ -48,6 +48,8 @@ public:
 			virtual bool	HandleIOWrite(uint16_t address, uint8_t value) {return false;}
 			virtual bool	HandleIORead(uint16_t address, uint8_t& value) { return false;};
 
+			virtual void	DrawUI(void) {};
+
 protected:
 	FCartridgeManager* pCartridgeManager = nullptr;
 };
@@ -121,6 +123,9 @@ public:
 
 	bool	LoadData(FILE* fp);
 	bool	SaveData(FILE* fp);
+
+	void	DrawUI(void);
+
 private:
 	bool	CreateCartridgeHandler(ECartridgeType type);
 	void	SetHandler(FCartridgeHandler* pHandler) { delete pCartridgeHandler; pCartridgeHandler = pHandler; }

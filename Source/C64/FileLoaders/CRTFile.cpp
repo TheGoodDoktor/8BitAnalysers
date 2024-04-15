@@ -500,13 +500,64 @@ bool FCartridgeManager::LoadData(FILE* fp)
 	
 }
 
+// UI Code
+
+const char* GetMemoryModelName(ECartridgeMemoryModel model)
+{
+	switch (model)
+	{
+		case ECartridgeMemoryModel::Game8k:
+			return "16k Game";
+		case ECartridgeMemoryModel::Game16k:
+			return "16k Game";
+		case ECartridgeMemoryModel::Ultimax:
+			return "Ultimax";
+		case ECartridgeMemoryModel::Ram:
+			return "Ram/Off";
+		default:
+			return "Unknown";
+
+	}
+}
+
+void DrawSlotUI(const FCartridgeSlot& slot)
+{
+	ImGui::Text("Address $ % 04X, $ % 04X bytes", slot.BaseAddress, slot.Size);
+	ImGui::Text("%s", slot.bActive ? "Active" : "Inactive");
+	ImGui::Text("Bank %d",slot.CurrentBank);
+}
+
+void FCartridgeManager::DrawUI(void)
+{
+	if (ImGui::Begin("Cartridge Manager"))
+	{
+		ImGui::Text("Initial Memory Model: %s", GetMemoryModelName(InitialMemoryModel));
+		ImGui::Text("Current Memory Model: %s", GetMemoryModelName(CurrentMemoryModel));
+
+		// Draw Info on slots
+		ImGui::Separator();
+		ImGui::Text("Cartridge Slots");
+		ImGui::Separator();
+		ImGui::Text("ROM Low Slot");
+		DrawSlotUI(GetCartridgeSlot(ECartridgeSlot::RomLow));
+		ImGui::Separator();
+		ImGui::Text("ROM High Slot");
+		DrawSlotUI(GetCartridgeSlot(ECartridgeSlot::RomHigh));
+		ImGui::Separator();
+
+		if(pCartridgeHandler)
+			pCartridgeHandler->DrawUI();
+	}
+	ImGui::End();
+}
+
 
 // Cartridge handlers - other file?
 
-class FGenericCartridgeHandler : public FCartridgeHandler
+class FMagicDeskCartridgeHandler : public FCartridgeHandler
 {
 public:
-	FGenericCartridgeHandler(FCartridgeManager* pManager):FCartridgeHandler(pManager){}
+	FMagicDeskCartridgeHandler(FCartridgeManager* pManager):FCartridgeHandler(pManager){}
 
 	bool	HandleIOWrite(uint16_t address, uint8_t value) override
 	{
@@ -524,6 +575,11 @@ public:
 		}
 
 		return true;
+	}
+
+	void DrawUI(void)
+	{
+		ImGui::Text("MagicDesk Cartridge");
 	}
 };
 
@@ -580,6 +636,11 @@ public:
 		return false;
 	}
 
+	void DrawUI(void)
+	{
+		ImGui::Text("EasyFlash Cartridge");
+	}
+
 	ECartridgeMemoryModel	MemoryModel = ECartridgeMemoryModel::Unknown;
 	uint8_t	RAM[256] = {0};
 };
@@ -592,8 +653,9 @@ bool FCartridgeManager::CreateCartridgeHandler(ECartridgeType type)
 	switch (type)
 	{
 	case ECartridgeType::Generic:
+		return false;
 	case ECartridgeType::MagicDesk:
-		pCartridgeHandler = new FGenericCartridgeHandler(this);
+		pCartridgeHandler = new FMagicDeskCartridgeHandler(this);
 		break;
 	case ECartridgeType::EasyFlash:
 		pCartridgeHandler = new FEasyFlashCartridgeHandler(this);
