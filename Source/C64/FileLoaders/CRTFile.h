@@ -132,6 +132,7 @@ private:
 	ECartridgeMemoryModel	CurrentMemoryModel = ECartridgeMemoryModel::Unknown;
 	ECartridgeType		CartridgeType = ECartridgeType::None;
 	FCartridgeSlot		CartridgeSlots[(int)ECartridgeSlot::Max];
+	FCartridgeSlot		UltimaxSlot;
 	int16_t				FirstCartridgeBankId = -1;
 };
 

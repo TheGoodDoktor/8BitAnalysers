@@ -109,11 +109,8 @@ bool FCartridgeManager::LoadCRTFile(const char* pFName)
 	LOGINFO("EXROM Line: %d",header.EXROMLine);	// $8000
 	LOGINFO("Hardware Revision: %d", header.HardwareRevision);
 
-	// this is more reliable for generic cartridges - specific carts should set their own memory model in constructor
-	InitialMemoryModel = GetMemoryModelForCartLines(header.GAMELine != 0, header.EXROMLine != 0);
-
-	const ECartridgeType cartridgeType = GetCartridgeType(header.CartridgeType);
-	CreateCartridgeHandler(cartridgeType);
+	InitialMemoryModel = ECartridgeMemoryModel::Unknown;
+	CurrentMemoryModel = InitialMemoryModel;
 
 	while(true)
 	{
@@ -143,8 +140,21 @@ bool FCartridgeManager::LoadCRTFile(const char* pFName)
 		FCartridgeBank& bank = AddCartridgeBank(chipHeader.BankNumber,chipHeader.StartingLoadAddress,chipHeader.ROMSizeBytes);
 		fread(bank.Data, chipHeader.ROMSizeBytes,1,fp);
 	}
+	
+	// this is more reliable for generic cartridges - specific carts should set their own memory model in constructor
+	InitialMemoryModel = GetMemoryModelForCartLines(header.GAMELine != 0, header.EXROMLine != 0);
+
+	const ECartridgeType cartridgeType = GetCartridgeType(header.CartridgeType);
+	CreateCartridgeHandler(cartridgeType);
+
+	// Reset slots
+	GetCartridgeSlot(ECartridgeSlot::RomLow).bActive = false;
 	GetCartridgeSlot(ECartridgeSlot::RomLow).CurrentBank = 0;
+	GetCartridgeSlot(ECartridgeSlot::RomHigh).bActive = false;
 	GetCartridgeSlot(ECartridgeSlot::RomHigh).CurrentBank = 0;
+	UltimaxSlot.bActive = false;
+	UltimaxSlot.CurrentBank = 0;
+
 	CurrentMemoryModel = InitialMemoryModel;
 	MapSlotsForMemoryModel(CurrentMemoryModel);
 	InitCartMapping();
@@ -201,6 +211,7 @@ bool FCartridgeManager::Init(FC64Emulator* pEmu)
 	FirstCartridgeBankId = state.GetNextBankId();			// Record first cartridge bank
 	GetCartridgeSlot(ECartridgeSlot::RomLow).Init(0x8000, 0x2000);
 	GetCartridgeSlot(ECartridgeSlot::RomHigh).Init(0xA000, 0x2000);
+	UltimaxSlot.Init(0xE000, 0x2000);
 	return true;
 }
 
@@ -208,12 +219,22 @@ void FCartridgeManager::OnMachineReset()
 {
 	CurrentMemoryModel = InitialMemoryModel;
 	MapSlotsForMemoryModel(CurrentMemoryModel);
+	GetCartridgeSlot(ECartridgeSlot::RomLow).bActive = true;
+	GetCartridgeSlot(ECartridgeSlot::RomHigh).bActive = true;
+	UltimaxSlot.bActive = true;;
+
+	GetCartridgeSlot(ECartridgeSlot::RomLow).CurrentBank = -1;
+	GetCartridgeSlot(ECartridgeSlot::RomHigh).CurrentBank = -1;
+	UltimaxSlot.CurrentBank = -1;
 	InitCartMapping();
 }
 
 FCartridgeSlot& FCartridgeManager::GetCartridgeSlot(ECartridgeSlot slot)
 { 
 	assert(slot != ECartridgeSlot::Unknown); 
+	if(CurrentMemoryModel == ECartridgeMemoryModel::Ultimax && slot == ECartridgeSlot::RomHigh)
+		return UltimaxSlot;
+
 	return CartridgeSlots[(int)slot]; 
 }
 
@@ -224,22 +245,28 @@ FCartridgeBank& FCartridgeManager::AddCartridgeBank(int bankNo, uint16_t address
 	ECartridgeSlot slot = GetSlotFromAddress(address);
 	assert(slot != ECartridgeSlot::Unknown);
 	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
-	//if (cartridgeSlot.Banks.size() <= bankNo)
-	//	cartridgeSlot.Banks.resize(bankNo + 1);
-	//assert(cartridgeSlot.Banks.size() == bankNo);	// assume they get added in a linear way
-
-	//FCartridgeBank& bank = cartridgeSlot.Banks[bankNo];
 	FCartridgeBank bank;
 	//bank.BankNo = bankNo;
-	//bank.DataSize = dataSize;
 	bank.Data = new uint8_t[dataSize];
-	//bank.Address = address;
 
 	// Create Analyser Bank
 	char bankName[32];
-	snprintf(bankName, 32, "CartBank%d", bankNo);
+	const char* pSlotSuffix = slot == ECartridgeSlot::RomLow ? "_Low" : "_High";
+	snprintf(bankName, 32, "CartBank%d%s", bankNo,pSlotSuffix);
 	bank.BankId = state.CreateBank(bankName, dataSize / 1024, bank.Data, false, address);
 	cartridgeSlot.Banks.push_back(bank);
+
+	// Dupe to Ultimax
+	if(slot == ECartridgeSlot::RomHigh)
+	{
+		FCartridgeBank ultimaxBank;
+
+		char bankName[32];
+		snprintf(bankName, 32, "CartBank%d_U", bankNo);
+		ultimaxBank.Data = bank.Data; // same data
+		ultimaxBank.BankId = state.CreateBank(bankName, dataSize / 1024, bank.Data, false, 0xE000);
+		UltimaxSlot.Banks.push_back(ultimaxBank);
+	}
 
 	return cartridgeSlot.Banks.back();
 }
@@ -248,7 +275,7 @@ void FCartridgeManager::InitCartMapping(void)
 {
 	for (int slotNo = 0; slotNo < (int)ECartridgeSlot::Max; slotNo++)
 	{
-		if (CartridgeSlots[slotNo].bActive == true)//Banks.empty() == false)
+		//if (CartridgeSlots[slotNo].bActive == true)//Banks.empty() == false)
 		{
 			SetSlotBank((ECartridgeSlot)slotNo, 0);//find first bank instead?
 		}
@@ -290,6 +317,7 @@ bool	FCartridgeManager::MapSlotIn(ECartridgeSlot slot, uint16_t address)
 	mem_map_rw(&pC64->mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, bank.Data, &pC64->ram[cartridgeSlot.BaseAddress]);
 
 	// Map in analysis
+	//state.GetBank(bank.BankId)->PrimaryMappedPage = -1;
 	state.MapBank(bank.BankId, cartridgeSlot.BaseAddress / 1024, EBankAccess::Read);
 
 	cartridgeSlot.bActive = true;
