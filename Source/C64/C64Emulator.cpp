@@ -245,6 +245,7 @@ void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)
 	else
 	{
 		/* A000..BFFF is either RAM-behind-BASIC-ROM or RAM */
+		// both bits are set
 		if ((cpuPort & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM))
 		{
 			CodeAnalysis.MapBank(BankIds.BasicROM, 40, EBankAccess::Read);       // BASIC ROM - $A000-$BFFF - pages 40-47 - 8k
@@ -355,7 +356,7 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 		// Set memory banks
 		UpdateCodeAnalysisPages(C64Emu.cpu_port);
 
-		
+		CartridgeManager.MapSlotsForMemoryModel();
 		// where do we want pokes to live?
 		//LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}

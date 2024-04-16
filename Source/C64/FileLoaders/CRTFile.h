@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdio.h>
 #include <cinttypes>
 #include <vector>
 
@@ -98,7 +99,7 @@ public:
 
 	bool	Init(FC64Emulator* pEmu);
 
-	void	MapSlotsForMemoryModel(ECartridgeMemoryModel model);
+	void	MapSlotsForMemoryModel();
 	bool	LoadCRTFile(const char* pFName);
 	void	ResetCartridgeBanks();
 	void	OnMachineReset();
@@ -121,6 +122,8 @@ public:
 	bool	HandleIORead(uint16_t address, uint8_t& value);
 
 
+	void	WriteSlotToFile(const FCartridgeSlot& slot, FILE* fp);
+	void	ReadSlotFromFile(FCartridgeSlot& slot, FILE* fp);
 	bool	LoadData(FILE* fp);
 	bool	SaveData(FILE* fp);
 

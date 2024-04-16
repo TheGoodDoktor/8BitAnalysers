@@ -156,16 +156,16 @@ bool FCartridgeManager::LoadCRTFile(const char* pFName)
 	UltimaxSlot.CurrentBank = 0;
 
 	CurrentMemoryModel = InitialMemoryModel;
-	MapSlotsForMemoryModel(CurrentMemoryModel);
+	MapSlotsForMemoryModel();
 	InitCartMapping();
 
 	fclose(fp);
 	return true;
 }
 
-void	FCartridgeManager::MapSlotsForMemoryModel(ECartridgeMemoryModel model)
+void	FCartridgeManager::MapSlotsForMemoryModel()
 {
-	switch (model)
+	switch (CurrentMemoryModel)
 	{
 	case ECartridgeMemoryModel::Game8k:
 		MapSlotIn(ECartridgeSlot::RomLow, 0x8000);
@@ -218,7 +218,7 @@ bool FCartridgeManager::Init(FC64Emulator* pEmu)
 void FCartridgeManager::OnMachineReset()
 {
 	CurrentMemoryModel = InitialMemoryModel;
-	MapSlotsForMemoryModel(CurrentMemoryModel);
+	MapSlotsForMemoryModel();
 	GetCartridgeSlot(ECartridgeSlot::RomLow).bActive = true;
 	GetCartridgeSlot(ECartridgeSlot::RomHigh).bActive = true;
 	UltimaxSlot.bActive = true;;
@@ -420,7 +420,42 @@ bool FCartridgeManager::HandleIORead(uint16_t address, uint8_t& value)
 }
 
 static const uint32_t kCartridgeMagic = 0xdeadcafe;
-static const uint32_t kVersionNo = 1;
+static const uint32_t kVersionNo = 1 + 20000;
+
+void FCartridgeManager::WriteSlotToFile(const FCartridgeSlot& slot, FILE* fp)
+{
+	fwrite(&slot.BaseAddress, sizeof(uint16_t), 1, fp);
+	fwrite(&slot.bActive, sizeof(bool), 1, fp);
+
+	const uint32_t noCartBanks = (uint32_t)slot.Banks.size();
+	fwrite(&noCartBanks, sizeof(uint32_t), 1, fp);
+	for (int bankNo = 0; bankNo < (int)noCartBanks; bankNo++)
+	{
+		const FCartridgeBank& bank = slot.Banks[bankNo];
+		fwrite(bank.Data, slot.Size, 1, fp);
+	}
+	fwrite(&slot.CurrentBank, sizeof(int), 1, fp);
+	fwrite(&slot.RAMBank, sizeof(int16_t), 1, fp);
+}
+
+void FCartridgeManager::ReadSlotFromFile(FCartridgeSlot& slot, FILE* fp)
+{
+	fread(&slot.BaseAddress, sizeof(uint16_t), 1, fp);
+	fread(&slot.bActive, sizeof(bool), 1, fp);
+
+	uint32_t noCartBanks = 0;
+	fread(&noCartBanks, sizeof(uint32_t), 1, fp);
+	for (int i = 0; i < (int)noCartBanks; i++)
+	{
+		FCartridgeBank& bank = AddCartridgeBank(i, slot.BaseAddress, slot.Size);
+		fread(bank.Data, slot.Size, 1, fp);
+	}
+
+	fread(&slot.CurrentBank, sizeof(int), 1, fp);
+	fread(&slot.RAMBank, sizeof(int16_t), 1, fp);
+
+	slot.bActive = false;	// because we need to map them in
+}
 
 bool FCartridgeManager::SaveData(FILE* fp)
 {
@@ -429,24 +464,10 @@ bool FCartridgeManager::SaveData(FILE* fp)
 	fwrite(&kVersionNo, sizeof(uint32_t), 1, fp);
 
 	// Write Slots
-	const uint32_t noSlots = (uint32_t)ECartridgeSlot::Max;
-	fwrite(&noSlots, sizeof(uint32_t), 1, fp);
-	for (int slotNo = 0; slotNo < (int)noSlots; slotNo++)
-	{
-		const FCartridgeSlot& slot = CartridgeSlots[slotNo];
-		fwrite(&slot.BaseAddress, sizeof(uint16_t), 1, fp);
-		fwrite(&slot.bActive, sizeof(bool), 1, fp);
+	WriteSlotToFile(CartridgeSlots[0], fp);
+	WriteSlotToFile(CartridgeSlots[1], fp);
+	WriteSlotToFile(UltimaxSlot,fp);
 
-		const uint32_t noCartBanks = (uint32_t)slot.Banks.size();
-		fwrite(&noCartBanks, sizeof(uint32_t), 1, fp);
-		for (int bankNo = 0; bankNo < (int)noCartBanks; bankNo++)
-		{
-			const FCartridgeBank& bank = slot.Banks[bankNo];
-			fwrite(bank.Data, slot.Size, 1, fp);
-		}
-		fwrite(&slot.CurrentBank, sizeof(int), 1, fp);
-		fwrite(&slot.RAMBank, sizeof(int16_t), 1, fp);
-	}
 	fwrite(&CartridgeType, sizeof(ECartridgeType), 1, fp);
 	fwrite(&InitialMemoryModel, sizeof(ECartridgeMemoryModel), 1, fp);
 	fwrite(&CurrentMemoryModel, sizeof(ECartridgeMemoryModel), 1, fp);
@@ -467,35 +488,26 @@ bool FCartridgeManager::LoadData(FILE* fp)
 	if(versionNo != kVersionNo)
 		return false;
 
-	uint32_t noCartSlots = 0;
-	fread(&noCartSlots, sizeof(uint32_t), 1, fp);
-	
-	for (int slotNo = 0; slotNo < (int)noCartSlots; slotNo++)	// load each slot
-	{
-		FCartridgeSlot& slot = CartridgeSlots[slotNo];
-		fread(&slot.BaseAddress, sizeof(uint16_t), 1, fp);
-		fread(&slot.bActive, sizeof(bool), 1, fp);
-
-		uint32_t noCartBanks = 0;
-		fread(&noCartBanks, sizeof(uint32_t), 1, fp);
-		for (int i = 0; i < (int)noCartBanks; i++)
-		{
-			FCartridgeBank& bank = AddCartridgeBank(i, slot.BaseAddress, slot.Size);
-			fread(bank.Data, slot.Size, 1, fp);
-		}
-
-		fread(&slot.CurrentBank, sizeof(int), 1, fp);
-		fread(&slot.RAMBank, sizeof(int16_t), 1, fp);
-
-		if (slot.CurrentBank != -1)
-			SetSlotBank((ECartridgeSlot)slotNo, slot.CurrentBank);
-	}
+	// read slots
+	ReadSlotFromFile(CartridgeSlots[0], fp);
+	ReadSlotFromFile(CartridgeSlots[1], fp);
+	ReadSlotFromFile(UltimaxSlot, fp);
 
 	CartridgeType = ECartridgeType::Generic;
 	fread(&CartridgeType, sizeof(ECartridgeType), 1, fp);
 	fread(&InitialMemoryModel, sizeof(ECartridgeMemoryModel), 1, fp);
 	fread(&CurrentMemoryModel, sizeof(ECartridgeMemoryModel), 1, fp);
+
 	CreateCartridgeHandler(CartridgeType);
+	//MapSlotsForMemoryModel();
+
+#if 0
+	FCartridgeSlot& slotL = GetCartridgeSlot(ECartridgeSlot::RomLow);
+	FCartridgeSlot& slotH = GetCartridgeSlot(ECartridgeSlot::RomHigh);
+
+	SetSlotBank(ECartridgeSlot::RomLow, slotL.CurrentBank);
+	SetSlotBank(ECartridgeSlot::RomHigh, slotH.CurrentBank);
+#endif
 	return true;
 	
 }
@@ -565,8 +577,8 @@ public:
 		{
 			if (value & (1 << 7))	// map RAM back in
 			{
-				pCartridgeManager->MapSlotsForMemoryModel(ECartridgeMemoryModel::Ram);
 				pCartridgeManager->SetMemoryModel(ECartridgeMemoryModel::Ram);
+				pCartridgeManager->MapSlotsForMemoryModel();
 			}
 			else
 			{
@@ -615,7 +627,7 @@ public:
 			MemoryModel = GetMemoryModelForCartLines(bGameLine,bExROMLine);
 			// What do we do now?
 			pCartridgeManager->SetMemoryModel(MemoryModel);
-			pCartridgeManager->MapSlotsForMemoryModel(MemoryModel);
+			pCartridgeManager->MapSlotsForMemoryModel();
 		}
 
 		if ((address & 0xFF00) == 0xDF00)	// RAM
