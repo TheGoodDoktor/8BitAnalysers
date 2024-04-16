@@ -246,7 +246,7 @@ FCartridgeBank& FCartridgeManager::AddCartridgeBank(int bankNo, uint16_t address
 	assert(slot != ECartridgeSlot::Unknown);
 	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
 	FCartridgeBank bank;
-	//bank.BankNo = bankNo;
+	bank.BankNo = bankNo;
 	bank.Data = new uint8_t[dataSize];
 
 	// Create Analyser Bank
@@ -355,7 +355,7 @@ bool FCartridgeManager::SetSlotBank(ECartridgeSlot slot, int bankNo)
 	if (cartridgeSlot.bActive)	// only map memory if slot is active
 	{
 		FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-		FCartridgeBank& bank = cartridgeSlot.Banks[bankNo];
+		const FCartridgeBank& bank = cartridgeSlot.GetBank(bankNo);
 
 		// Map in memory page
 		mem_map_rw(&pC64->mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, bank.Data, &pC64->ram[cartridgeSlot.BaseAddress]);
@@ -420,7 +420,7 @@ bool FCartridgeManager::HandleIORead(uint16_t address, uint8_t& value)
 }
 
 static const uint32_t kCartridgeMagic = 0xdeadcafe;
-static const uint32_t kVersionNo = 1 + 20000;
+static const uint32_t kVersionNo = 1 + 20001;
 
 void FCartridgeManager::WriteSlotToFile(const FCartridgeSlot& slot, FILE* fp)
 {
@@ -432,6 +432,7 @@ void FCartridgeManager::WriteSlotToFile(const FCartridgeSlot& slot, FILE* fp)
 	for (int bankNo = 0; bankNo < (int)noCartBanks; bankNo++)
 	{
 		const FCartridgeBank& bank = slot.Banks[bankNo];
+		fwrite(&bank.BankNo, sizeof(int), 1, fp);
 		fwrite(bank.Data, slot.Size, 1, fp);
 	}
 	fwrite(&slot.CurrentBank, sizeof(int), 1, fp);
@@ -448,6 +449,7 @@ void FCartridgeManager::ReadSlotFromFile(FCartridgeSlot& slot, FILE* fp)
 	for (int i = 0; i < (int)noCartBanks; i++)
 	{
 		FCartridgeBank& bank = AddCartridgeBank(i, slot.BaseAddress, slot.Size);
+		fread(&bank.BankNo, sizeof(int), 1, fp);
 		fread(bank.Data, slot.Size, 1, fp);
 	}
 
@@ -474,19 +476,19 @@ bool FCartridgeManager::SaveData(FILE* fp)
 	return true;
 }
 
-bool FCartridgeManager::LoadData(FILE* fp)
+ELoadDataResult FCartridgeManager::LoadData(FILE* fp)
 {
 	uint32_t magicVal = 0;
 
 	// Write identifier & version
 	fread(&magicVal, sizeof(uint32_t), 1, fp);
 	if(magicVal != kCartridgeMagic)
-		return false;
+		return ELoadDataResult::NotFound;
 
 	uint32_t versionNo = 0;
 	fread(&versionNo, sizeof(uint32_t), 1, fp);
 	if(versionNo != kVersionNo)
-		return false;
+		return ELoadDataResult::InvalidData;
 
 	// read slots
 	ReadSlotFromFile(CartridgeSlots[0], fp);
@@ -508,7 +510,7 @@ bool FCartridgeManager::LoadData(FILE* fp)
 	SetSlotBank(ECartridgeSlot::RomLow, slotL.CurrentBank);
 	SetSlotBank(ECartridgeSlot::RomHigh, slotH.CurrentBank);
 #endif
-	return true;
+	return ELoadDataResult::OK;
 	
 }
 

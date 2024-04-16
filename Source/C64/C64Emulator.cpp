@@ -335,17 +335,7 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 		// Load machine state, if it fails, reload the prg file
 		if (LoadMachineState(saveStateFName.c_str()))
 		{
-			// if the game state loaded then we don't need the snapshot
 			bLoadSnapshot = false;
-			/*
-			const std::string snapshotFName = GetC64GlobalConfig()->PrgFolder + pGameConfig->SnapshotFile;
-			chips_range_t snapshotData;
-			snapshotData.ptr = LoadBinaryFile(snapshotFName.c_str(), snapshotData.size);
-			if (snapshotData.ptr != nullptr)
-			{
-				c64_quickload(&C64Emu, snapshotData);
-				free(snapshotData.ptr);
-			}*/
 		}
 
 		if (FileExists(analysisJsonFName.c_str()))
@@ -353,10 +343,13 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		}
+
 		// Set memory banks
 		UpdateCodeAnalysisPages(C64Emu.cpu_port);
 
-		CartridgeManager.MapSlotsForMemoryModel();
+		if(LoadedFileType == EC64FileType::Cartridge)
+			CartridgeManager.MapSlotsForMemoryModel();
+
 		// where do we want pokes to live?
 		//LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}
@@ -644,8 +637,18 @@ bool FC64Emulator::LoadMachineState(const char* fname)
 
 		bSuccess = c64_load_snapshot(&C64Emu, versionNo, &g_SaveSlot);
 
-		if(CartridgeManager.LoadData(fp))
-			LoadedFileType = EC64FileType::Cartridge;
+		const ELoadDataResult res = CartridgeManager.LoadData(fp);
+		switch(res)
+		{
+			case ELoadDataResult::OK:
+				LoadedFileType = EC64FileType::Cartridge;
+				break;
+			case ELoadDataResult::NotFound:
+				break;
+			case ELoadDataResult::InvalidData:
+				bSuccess = false;
+				break;
+		}
 	}
 	fclose(fp);
 	return bSuccess;

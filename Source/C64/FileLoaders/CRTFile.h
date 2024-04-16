@@ -38,6 +38,13 @@ enum class ECartridgeMemoryModel
 };
 
 
+enum class ELoadDataResult
+{
+	OK,
+	NotFound,
+	InvalidData
+};
+
 
 class FCartridgeHandler
 {
@@ -60,7 +67,7 @@ struct FCartridgeBank
 {
 	//~FCartridgeBank() { delete[] Data; Data = nullptr; }
 
-	//int			BankNo = -1;
+	int			BankNo = -1;
 	int16_t		BankId = -1;
 	//uint16_t	Address = 0;
 	//uint32_t	DataSize = 0;
@@ -81,6 +88,11 @@ struct FCartridgeSlot
 
 		Banks.clear();
 		CurrentBank = -1;
+	}
+
+	const FCartridgeBank& GetBank(int bankNo) const 
+	{
+		return Banks[bankNo];
 	}
 
 	bool		bActive = false;
@@ -124,7 +136,7 @@ public:
 
 	void	WriteSlotToFile(const FCartridgeSlot& slot, FILE* fp);
 	void	ReadSlotFromFile(FCartridgeSlot& slot, FILE* fp);
-	bool	LoadData(FILE* fp);
+	ELoadDataResult	LoadData(FILE* fp);
 	bool	SaveData(FILE* fp);
 
 	void	DrawUI(void);
