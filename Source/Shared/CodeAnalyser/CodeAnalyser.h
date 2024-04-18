@@ -762,5 +762,5 @@ FMachineState* AllocateMachineState(FCodeAnalysisState& state);
 void FreeMachineStates(FCodeAnalysisState& state);
 void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterface);
 
-void FixupAddressRef(FCodeAnalysisState& state, FAddressRef& addr);
-void FixupAddressRefList(FCodeAnalysisState& state, std::vector<FAddressRef>& addrList);
+void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr);
+void FixupAddressRefList(const FCodeAnalysisState& state, std::vector<FAddressRef>& addrList);
