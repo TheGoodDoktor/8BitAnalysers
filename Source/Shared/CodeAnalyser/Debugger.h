@@ -73,7 +73,7 @@ struct FCPUFunctionCall
 	FAddressRef		ReturnAddr;
 };
 
-struct FStackInfo
+/*struct FStackInfo
 {
 	FStackInfo(uint16_t basePtr) :BasePtr(basePtr) {}
 
@@ -82,7 +82,7 @@ struct FStackInfo
 
 	uint16_t				StackMin = 0xffff;
 	uint16_t				StackMax = 0;
-};
+};*/
 
 
 struct FEvent
@@ -183,6 +183,8 @@ public:
 	void	DrawBreakpoints(void);
 	void	DrawEvents(void);
 	void	DrawUI(void);
+
+	void FixupAddresRefs(void);
 private:
 	int		GetFrameTraceItemIndex(FAddressRef address);
 
@@ -217,7 +219,7 @@ private:
 	int														SelectedCallstackNo = -1;
 
 	std::vector<FAddressRef>	StackSetLocations;
-	std::vector<FStackInfo>		Stacks;
+	//std::vector<FStackInfo>		Stacks;
 	int							CurrentStackNo = -1;
 
 	uint16_t				StackMin = 0xffff;

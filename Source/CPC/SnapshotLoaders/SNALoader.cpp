@@ -17,28 +17,19 @@
 #define SNAPSHOT_LOG(...)
 #endif
 
-bool LoadSNAFile(FCPCEmu* pEmu, const char* fName)
+bool LoadSNAFromMemory(FCPCEmu* pEmu, uint8_t* pData, size_t dataSize, ECPCModel fallbackModel);
+
+bool LoadSNAFile(FCPCEmu* pEmu, const char* fName, ECPCModel fallbackModel)
 {
 	size_t byteCount = 0;
 	uint8_t* pData = (uint8_t*)LoadBinaryFile(fName, byteCount);
 	if (!pData)
 		return false;
 
-	const bool bSuccess = LoadSNAFromMemory(pEmu, pData, byteCount);
+	const bool bSuccess = LoadSNAFromMemory(pEmu, pData, byteCount, fallbackModel);
 	free(pData);
 
 	return bSuccess;
-}
-
-bool LoadSNAFileCached(FCPCEmu* pEmu, const char* fName, uint8_t*& pData , size_t& dataSize)
-{
-	if (pData == nullptr)
-	{
-		pData = (uint8_t*)LoadBinaryFile(fName, dataSize);
-		if (!pData)
-			return false;
-	}
-	return LoadSNAFromMemory(pEmu, pData, dataSize);
 }
 
 // This snapshot loading code is based on the Chips code but is modified to offer improved compatibility.
@@ -123,20 +114,20 @@ const std::string GetSnapshotMachineName(uint8_t machineType)
 {
 	std::string machineTypes[7] =
 	{
-		"CPC 464",
-		"CPC 664",
-		"CPC 6128",
-		"unknown",
-		"6128 Plus",
-		"464 Plus",
-		"GX4000"
+		"CPC 464",	// 0
+		"CPC 664",	// 1
+		"CPC 6128", // 2
+		"unknown",	// 3
+		"6128 Plus",// 4
+		"464 Plus", // 5
+		"GX4000"		// 6
 	};
 	if (machineType < 7)
 		return machineTypes[machineType];
 	return "unknown machine type";
 }
 
-bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
+bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize, ECPCModel fallbackModel)
 {	
 	const uint8_t* const pEnd = pData + dataSize;
 	const uint8_t* pCur = pData;
@@ -162,6 +153,51 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 	const FCPCSnapHeader* pHdr = (const FCPCSnapHeader*)pCur;
 	pCur += sizeof(FCPCSnapHeader);
 
+	const uint16_t dumpSize = pHdr->DumpSizehH << 8 | pHdr->DumpSizeL;
+	SNAPSHOT_LOG("Dump size is %d", dumpSize);
+
+	cpc_type_t type = fallbackModel == ECPCModel::CPC_464 ? CPC_TYPE_464 : CPC_TYPE_6128;
+	const std::string machine = GetSnapshotMachineName(pHdr->MachineType);
+	if (pHdr->Version == 1)
+	{
+		SNAPSHOT_LOG("Version 1. Machine '%s'. Dump size %d", machine.c_str(), dumpSize);
+	}
+	else
+	{
+		SNAPSHOT_LOG("Version %d. Machine type: '%s'. Dump size %d", pHdr->Version, machine.c_str(), dumpSize);
+
+		// todo: deal with machineType 3 - unknown?
+		if (pHdr->MachineType == 0)
+		{
+			type = CPC_TYPE_464;
+		}
+		else if (pHdr->MachineType == 2)
+		{
+			type = CPC_TYPE_6128;
+		}
+		else if (pHdr->MachineType == 1 || pHdr->MachineType > 3)
+		{
+			// We don't support Plus machines or 664.
+			pEmu->SetLastError("Machine '%s' is not compatible.", machine.c_str());
+			return false;
+		}
+	}
+
+	if (type == CPC_TYPE_6128)
+	{
+		if (cpc.type != CPC_TYPE_6128)
+		{
+			pEmu->InitForModel(ECPCModel::CPC_6128);
+		}
+	}
+	else
+	{
+		if (cpc.type != CPC_TYPE_464)
+		{
+			pEmu->InitForModel(ECPCModel::CPC_464);
+		}
+	}
+		
 	z80_reset(&cpc.cpu);
 	cpc.cpu.f = pHdr->F; cpc.cpu.a = pHdr->A;
 	cpc.cpu.c = pHdr->C; cpc.cpu.b = pHdr->B;
@@ -212,26 +248,15 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 
 	if (pEmu->CPCEmuState.type == CPC_TYPE_6128)
 	{
-		pEmu->UpdateBankMappings();
+		// moved this to FCPCEmu::StartGame()
+		//pEmu->UpdateBankMappings();
 	}
 
 	cpc.ga.video.mode = cpc.ga.regs.config & AM40010_CONFIG_MODE;
-	// why am I resetting this?
+	
+	// sam. why am I resetting this?
 	cpc.ga.rom_select = 0;
 
-	// todo: maybe set rom and ram banks here for 464 too
-	
-	if (pHdr->Version > 1)
-	{
-		const std::string machine = GetSnapshotMachineName(pHdr->MachineType);
-		SNAPSHOT_LOG("Machine type is %s", machine.c_str());
-		if (pEmu->CPCEmuState.type == CPC_TYPE_464 && pHdr->MachineType != 0)
-		{
-			LOGWARNING("Snapshot is for '%s' and may not be compatible with the current machine: CPC 464", machine.c_str());
-		}
-	}
-
-	const uint16_t dumpSize = pHdr->DumpSizehH << 8 | pHdr->DumpSizeL;
 	SNAPSHOT_LOG("Dump size is %d", dumpSize);
 	
 	// If dumpSize is non-zero then an uncompressed memory dump will follow the header. 
@@ -240,7 +265,7 @@ bool LoadSNAFromMemory(FCPCEmu * pEmu, uint8_t * pData, size_t dataSize)
 	{
 		if (pEmu->CPCEmuState.type == CPC_TYPE_464 && dumpSize > 64)
 		{
-			pEmu->SetLastError("Snapshot is not a 464 snapshot.");
+			pEmu->SetLastError("Snapshot is not a 464 snapshot. Memory dump size is too big: %dk", dumpSize);
 			return false;
 		}
 

@@ -38,7 +38,7 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 		StackMax = 0x1ff;
 	}
     Watches.clear();
-	Stacks.clear();
+	//Stacks.clear();
 	Breakpoints.clear();
 
 }
@@ -1174,6 +1174,7 @@ void EventShowPixValue(FCodeAnalysisState& state, const FEvent& event)
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	const float line_height = ImGui::GetTextLineHeight();
 	const float rectSize = line_height / 2;
+	pos.y += line_height / 4;
 	const uint8_t pixels = event.Value;
 	//dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize * 8, pos.y + rectSize), 0xffffffff);
 
@@ -1428,5 +1429,33 @@ void FDebugger::DrawUI(void)
 		}
 
 		ImGui::EndTabBar();
+	}
+}
+
+void FDebugger::FixupAddresRefs(void)
+{
+	for (auto& watch : Watches)
+	{
+		FixupAddressRef(*pCodeAnalysis, watch);
+	}
+
+	for (int i = 0; i < Breakpoints.size(); i++)
+	{
+		FixupAddressRef(*pCodeAnalysis, Breakpoints[i].Address);
+	}
+
+	FixupAddressRefList(*pCodeAnalysis, FrameTrace);
+	FixupAddressRefList(*pCodeAnalysis, StackSetLocations);
+
+	for (FCPUFunctionCall& functionCall : CallStack)
+	{
+		FixupAddressRef(*pCodeAnalysis, functionCall.CallAddr);
+		FixupAddressRef(*pCodeAnalysis, functionCall.FunctionAddr);
+		FixupAddressRef(*pCodeAnalysis, functionCall.ReturnAddr);
+	}
+
+	for (FEvent& event : EventTrace)
+	{
+		FixupAddressRef(*pCodeAnalysis, event.PC);
 	}
 }

@@ -13,7 +13,8 @@ extern unsigned char dump_cpc6128_amsdos_bin[];
 const int kUpperROMSize = 0x4000;
 uint8_t* pUpperROM[kNumUpperROMSlots] = { 0 };
 uint8_t* pUpperROMData = nullptr;
-bool bExternalROMSupport = true;
+// temp
+bool bExternalROMSupport = false;
 
 void InitExternalROMs(const FCPCConfig* pConfig, bool bIs6128)
 {
@@ -62,7 +63,7 @@ int SelectUpperROM(int slotIndex)
 	if (!pUpperROM[slotIndex])
 		slotIndex = 0;
 
-	// Fallback to upper rom 0 if no external rom in selected slot
+	// Fallback to upper rom 0 (BASIC) if no external rom in selected slot
 	pUpperROMData = pUpperROM[slotIndex];
 	return slotIndex;
 }
@@ -82,7 +83,6 @@ const uint8_t* GetUpperROMData()
 
 bool LoadExternalROM(const char* pFilename, int slotIndex)
 {
-	// todo use rom path
 	if (slotIndex >= kNumUpperROMSlots)
 		return false;
 

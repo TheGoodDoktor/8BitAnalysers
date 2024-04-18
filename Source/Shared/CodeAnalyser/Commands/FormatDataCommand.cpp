@@ -202,6 +202,40 @@ void FFormatDataCommand::Undo(FCodeAnalysisState& state)
 
 }
 
+void FFormatDataCommand::FixupAddressRefs(FCodeAnalysisState& state)
+{
+	FixupAddressRef(state, FormatOptions.GraphicsSetRef);
+	FixupAddressRef(state, FormatOptions.CharacterSet);
+	FixupAddressRef(state, FormatOptions.StartAddress);
+
+	FixupAddressRef(state, UndoData.CharacterMapLocation);
+
+	for (auto& label : UndoData.Labels)
+	{
+		FixupAddressRef(state, label.first);
+	}
+	
+	for (auto& dataItem : UndoData.DataItems)
+	{
+		FixupAddressRef(state, dataItem.first);
+	}
+
+	for (auto& commentBlock : UndoData.CommentBlocks)
+	{
+		FixupAddressRef(state, commentBlock.first);
+	}
+
+	for (auto& dataItem : UndoData.DataItems)
+	{
+		FixupAddressRef(state, dataItem.first);
+	}
+
+	for (auto& codeItem : UndoData.CodeItems)
+	{
+		FixupAddressRef(state, codeItem.first);
+	}
+}
+
 
 FBatchFormatDataCommand::FBatchFormatDataCommand(const FBatchDataFormattingOptions& options)
 	:BatchFormatOptions(options)
@@ -241,5 +275,17 @@ void FBatchFormatDataCommand::Undo(FCodeAnalysisState& state)
 	for (FFormatDataCommand& cmd : SubCommands )
 	{
 		cmd.Undo(state);
+	}
+}
+
+void FBatchFormatDataCommand::FixupAddressRefs(FCodeAnalysisState& state)
+{
+	FixupAddressRef(state, BatchFormatOptions.FormatOptions.GraphicsSetRef);
+	FixupAddressRef(state, BatchFormatOptions.FormatOptions.CharacterSet);
+	FixupAddressRef(state, BatchFormatOptions.FormatOptions.StartAddress);
+
+	for (FFormatDataCommand& cmd : SubCommands)
+	{
+		cmd.FixupAddressRefs(state);
 	}
 }

@@ -12,3 +12,8 @@ void FSetItemCommentCommand::Undo(FCodeAnalysisState& state)
 {
 	Item.Item->Comment = OldCommentText;
 }
+
+void FSetItemCommentCommand::FixupAddressRefs(FCodeAnalysisState& state)
+{
+	FixupAddressRef(state, Item.AddressRef);
+}

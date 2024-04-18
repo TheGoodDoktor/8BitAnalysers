@@ -346,6 +346,14 @@ void FFindTool::DrawUI()
 	}
 }
 
+void FFindTool::FixupAddressRefs()
+{
+	if (pCurFinder)
+	{
+		pCurFinder->FixupAddressRefs();
+	}
+}
+
 void FFinder::Init(FCodeAnalysisState* ptrCodeAnalysis)
 {
 	pCodeAnalysis = ptrCodeAnalysis;
@@ -436,6 +444,11 @@ void FFinder::RemoveUnchangedResults()
 		else
 			++it;
 	}
+}
+
+void FFinder::FixupAddressRefs()
+{
+	FixupAddressRefList(*pCodeAnalysis, SearchResults);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

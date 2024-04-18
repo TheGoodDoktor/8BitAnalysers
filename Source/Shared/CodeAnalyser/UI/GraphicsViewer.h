@@ -49,6 +49,8 @@ public:
 	bool			ExportGraphicSet(const FGraphicsSet& set);
 	void			DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* pView, int imageNo, int x, int y);
 
+	void			FixupAddressRefs() {}
+
 	// protected methods
 protected:
 	FCodeAnalysisState& GetCodeAnalysis() { return *pCodeAnalysis; }

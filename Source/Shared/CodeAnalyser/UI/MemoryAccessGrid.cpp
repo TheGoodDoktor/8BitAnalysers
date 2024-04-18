@@ -227,3 +227,8 @@ void FMemoryAccessGrid::Draw()
 	if(bDrawGrid)
 		DrawGrid(pos.x,pos.y);
 }
+
+void FMemoryAccessGrid::FixupAddressRefs()
+{
+	FixupAddressRef(*CodeAnalysis, SelectedCharAddress);
+}

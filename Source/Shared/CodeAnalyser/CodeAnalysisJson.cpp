@@ -237,6 +237,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 				params.Address = state.AddressRefFromPhysicalAddress(charSet["Address"]);
 			if (charSet.contains("AddressRef"))
 				params.Address.Val = charSet["AddressRef"];
+			FixupAddressRef(state, params.Address);
 
 			if (charSet.contains("AttribsAddress"))	// legacy
 				params.AttribsAddress = state.AddressRefFromPhysicalAddress(charSet["AttribsAddress"]);
@@ -266,6 +267,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 				params.Address = state.AddressRefFromPhysicalAddress(charMap["Address"]);
 			if (charMap.contains("AddressRef"))
 				params.Address.Val = charMap["AddressRef"];
+			FixupAddressRef(state, params.Address);
 
 			params.Width = charMap["Width"];
 			params.Height = charMap["Height"];

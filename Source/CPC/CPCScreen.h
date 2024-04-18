@@ -72,7 +72,9 @@ private:
 	int ScreenLeftEdgeOffset = 0;
 
 	FPalette CurrentPalette;
-	FCPCEmu* pCPCEmu;
+	FCPCEmu* pCPCEmu = nullptr;
+	am40010_t* pGateArray = nullptr;
+	am40010_crt_t* pCRT = nullptr;
 };
 
 int GetHWColourIndexForPixel(uint8_t val, int pixelIndex, int scrMode);

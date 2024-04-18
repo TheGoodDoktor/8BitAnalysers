@@ -153,6 +153,8 @@ void FIOAnalysis::HandleCRTC(uint64_t pins, CPCIODevice& readDevice, CPCIODevice
 				 // Add a bespoke event for changing the screen memory address, so we can see which address it got changed to
 				 // when displayed in the event list.
 				 RegisterEvent((uint8_t)EEventType::ScreenMemoryAddressChange, pCPCEmu->Screen.GetScreenAddrStart(), r);
+
+				 pCPCEmu->OnScreenRAMAddressChanged();
 			 }
 		  }
 		}

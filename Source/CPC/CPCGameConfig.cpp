@@ -37,11 +37,12 @@ FCPCProjectConfig* CreateNewCPCProjectConfigFromEmulatorFile(const FEmulatorFile
 	return pNewConfig;
 }
 
-FCPCProjectConfig* CreateNewAmstradBasicConfig(void)
+FCPCProjectConfig* CreateNewAmstradBasicConfig(bool bIs6128)
 {
 	FCPCProjectConfig* pNewConfig = new FCPCProjectConfig;
 
-	pNewConfig->Name = "AmstradBasic";
+	pNewConfig->Name = bIs6128 ? "AmstradBasic6128" : "AmstradBasic464";
+	pNewConfig->bCPC6128Game = bIs6128;
 	pNewConfig->EmulatorFile.FileName = "";
 
 	return pNewConfig;

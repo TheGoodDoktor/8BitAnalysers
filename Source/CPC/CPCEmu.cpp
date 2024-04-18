@@ -33,6 +33,14 @@
 #include "SnapshotLoaders/SNALoader.h"
 
 //#define RUN_AHEAD_TO_GENERATE_SCREEN
+#ifndef NDEBUG
+//#define BANK_SWITCH_DEBUG
+#endif
+#ifdef BANK_SWITCH_DEBUG
+#define BANK_LOG(...)  { LOGINFO("[BNK] " __VA_ARGS__); }
+#else
+#define BANK_LOG(...)
+#endif
 
 const std::string kAppTitle = "CPC Analyser";
 const char* kGlobalConfigFilename = "GlobalConfig.json";
@@ -99,7 +107,7 @@ public:
 			if (pCPCEmu->Screen.GetScreenAddressCoords(addr.Address, xp, yp))
 				sprintf(DescStr, "Screen: %d,%d", xp, yp);
 			else
-				sprintf(DescStr, "Screen: ?,?");
+				sprintf(DescStr, "Screen: ?,? (%s)", NumStr(addr.Address));
 			return DescStr;
 		}
 		return nullptr;
@@ -243,11 +251,10 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 		InstructionsTicks = 0;
 	}
 
-	// sam. need to do this somewhere better. like when the screen ram address gets set 
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
-	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
+	// sam. moved this to OnScreenRAMAddressChanged
+	//CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
+	//pScreenMemDescGenerator->UpdateScreenMemoryLocation();
 
-	//debugger.CPUTick(pins);
 	CodeAnalysis.OnCPUTick(pins);
 
 	const am40010_t& ga = CPCEmuState.ga;
@@ -310,12 +317,12 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 						// ROM enable/disable.
 						// This occurs when an OUT $7fXX instruction happens.
 						const uint8_t ROMEnableDirty = (LastGateArrayConfig ^ ga.regs.config) & (AM40010_CONFIG_LROMEN | AM40010_CONFIG_HROMEN);
-						LastGateArrayConfig = ga.regs.config;
 						if (ROMEnableDirty != 0)
 						{
 							UpdateBankMappings();
 							debugger.RegisterEvent((uint8_t)EEventType::ROMBankSwitch, pcAddrRef, addr, data, scanlinePos);
 						}
+						LastGateArrayConfig = ga.regs.config;
 					}
 					break;
 
@@ -325,12 +332,12 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 						if (CPCEmuState.type == CPC_TYPE_6128)
 						{
 							const uint8_t RAMConfigDirty = (LastGateArrayRAMConfig ^ CPCEmuState.ga.ram_config) & 7;
-							LastGateArrayRAMConfig = CPCEmuState.ga.ram_config;
 							if (RAMConfigDirty)
 							{
 								UpdateBankMappings();
 								debugger.RegisterEvent((uint8_t)EEventType::RAMBankSwitch, pcAddrRef, addr, data, scanlinePos);
 							}
+							LastGateArrayRAMConfig = CPCEmuState.ga.ram_config;
 						}
 						break;
 					}
@@ -414,8 +421,41 @@ static const int gCPCRAMConfig[8][4] =
 	 { 0, 7, 2, 3 }  // 7
 };
 
+// Fixup address refs tool-wide.
+void FCPCEmu::FixupAddressRefs()
+{
+	CodeAnalysis.FixupAddressRefs();
+
+	// Fixup game config
+	if (pActiveGame != nullptr)
+	{
+		if (FProjectConfig* pProjectConfig = pActiveGame->pConfig)
+		{
+			pProjectConfig->FixupAddressRefs(CodeAnalysis);
+		}
+	}
+
+	FixupCharacterMapAddressRefs(CodeAnalysis);
+	FixupCharacterSetAddressRefs(CodeAnalysis);
+
+	// Fixup viewers
+	pCharacterMapViewer->FixupAddressRefs();
+	pGraphicsViewer->FixupAddressRefs();
+}
+
 void FCPCEmu::UpdateBankMappings()
 {
+	int prevMappedPage[kNoRAMBanks];
+	if (CPCEmuState.type == CPC_TYPE_6128)
+	{
+		for (int b = 0; b < kNoRAMBanks; b++)
+		{
+			const FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(RAMBanks[b]);
+			prevMappedPage[b] = pBank ? pBank->PrimaryMappedPage : -1;
+		}
+	}
+
+	int16_t prevRAMBank[4] = { CurRAMBank[0], CurRAMBank[1], CurRAMBank[2], CurRAMBank[3] };
 	const uint8_t romEnable = CPCEmuState.ga.regs.config;
 	uint8_t ramPreset = 0;
 	int16_t upperRomBank = ROMBanks[EROMBank::BASIC];
@@ -427,30 +467,28 @@ void FCPCEmu::UpdateBankMappings()
 			upperRomBank = ROMBanks[EROMBank::AMSDOS];
 	}
 
-	const int bankIndex0 = gCPCRAMConfig[ramPreset][0];
-	const int bankIndex1 = gCPCRAMConfig[ramPreset][1];
-	const int bankIndex2 = gCPCRAMConfig[ramPreset][2];
-	const int bankIndex3 = gCPCRAMConfig[ramPreset][3];
+	const int bankIndex[4] = { gCPCRAMConfig[ramPreset][0], gCPCRAMConfig[ramPreset][1], gCPCRAMConfig[ramPreset][2], gCPCRAMConfig[ramPreset][3] };
 
+	// 0x0000 - 0x3fff
 	if (romEnable & AM40010_CONFIG_LROMEN)
 	{
-		// The RAM is now read/write 
-		SetRAMBank(0, bankIndex0, EBankAccess::Read);	// 0x0000 - 0x3fff
+		SetRAMBank(0, bankIndex[0], EBankAccess::ReadWrite);	
 	}
 	else
 	{
 		// ROM now shares the same address space as RAM.
 		// Reads go to ROM and writes go to RAM. RAM behind ROM.
 		CodeAnalysis.MapBank(ROMBanks[EROMBank::OS], 0, EBankAccess::Read);
+		SetRAMBank(0, bankIndex[0], EBankAccess::Write);
 	}
 
-	SetRAMBank(1, bankIndex1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
-	SetRAMBank(2, bankIndex2, EBankAccess::ReadWrite);	// 0x8000 - 0xbfff
+	SetRAMBank(1, bankIndex[1], EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
+	SetRAMBank(2, bankIndex[2], EBankAccess::ReadWrite);	// 0x8000 - 0xbfff
 
+	// 0xc000 - 0xffff
 	if (romEnable & AM40010_CONFIG_HROMEN)
 	{
-		// The RAM is now read/write 
-		SetRAMBank(3, bankIndex3, EBankAccess::Read);	// 0xc000 - 0xffff
+		SetRAMBank(3, bankIndex[3], EBankAccess::ReadWrite);
 	}
 	else
 	{
@@ -462,14 +500,68 @@ void FCPCEmu::UpdateBankMappings()
 		{
 			CodeAnalysis.MapBank(upperRomBank, 48, EBankAccess::Read);
 		}
+		SetRAMBank(3, bankIndex[3], EBankAccess::Write);	
 	}
 
-	// sam. Do I need to do this here?
+#ifdef BANK_SWITCH_DEBUG
+	std::string wBanks[4]; // writeable banks (could be read/write or write only)
+	std::string rBanks[4]; // read only banks
+	for (uint16_t i = 0, addr = 0; i < 4; i++, addr += 0x4000)
+	{
+		const uint16_t r = CodeAnalysis.GetReadBankFromAddress(addr);
+		const uint16_t w = CodeAnalysis.GetWriteBankFromAddress(addr);
+		if (const FCodeAnalysisBank* pReadBank = CodeAnalysis.GetBank(r))
+			rBanks[i] = (r != w) ? pReadBank->Name : "-";
+		if (const FCodeAnalysisBank* pWriteBank = CodeAnalysis.GetBank(w))
+			wBanks[i] = pWriteBank->Name;
+	}
+	BANK_LOG("Preset %d: [%x %x %x %x] ReadOnly = [%-6s, %s, %s, %-10s] Writable = [%-5s, %-5s, %-5s, %-5s]",
+		ramPreset, bankIndex[0], bankIndex[1], bankIndex[2], bankIndex[3],
+		rBanks[0].c_str(), rBanks[1].c_str(), rBanks[2].c_str(), rBanks[3].c_str(),
+		wBanks[0].c_str(), wBanks[1].c_str(), wBanks[2].c_str(), wBanks[3].c_str());
+
+#endif
+
+	if (CPCEmuState.type == CPC_TYPE_6128)
+	{
+		bool bFixupNeeded = false;
+		for (int r = 0; r < 4; r++)
+		{
+			if (CurRAMBank[r] != prevRAMBank[r])
+			{
+				const FCodeAnalysisBank* const pOldBank = CodeAnalysis.GetBank(prevRAMBank[r]);
+				const FCodeAnalysisBank* const pNewBank = CodeAnalysis.GetBank(CurRAMBank[r]);
+				if (pNewBank)
+				{
+					BANK_LOG("Slot %d changed. '%s' switched OUT. '%s' switched IN", r, pOldBank ? pOldBank->Name.c_str() : "unknown", pNewBank->Name.c_str());
+				
+					if (pNewBank->PrimaryMappedPage != prevMappedPage[bankIndex[r]])
+					{
+						bFixupNeeded = true;
+
+						BANK_LOG("Bank '%s' changed mapped address: 0x%x -> 0x%x", pNewBank->Name.c_str(), prevMappedPage[bankIndex[r]] * FCodeAnalysisPage::kPageSize, pNewBank->GetMappedAddress());
+					}
+				}
+			}
+		}
+
+		if (bFixupNeeded)
+		{
+			// Fixup tool address refs.
+			FixupAddressRefs();
+		}
+	}
+
+	// could we check our banks match the chips ones?
+	// it would be a great sanity test
+	
+	// Force all banks to update their item list.
+	// Also force the code analysis state to update it's ItemList too
 	CodeAnalysis.SetAllBanksDirty();
 }
 
 // Slot is physical 16K memory region (0-3) 
-// Bank is a 16K CPC RAM bank (0-7)
+// bankNo is a 16K CPC RAM bank (0-7)
 void FCPCEmu::SetRAMBank(int slot, int bankNo, EBankAccess access)
 {
 	const int16_t bankId = RAMBanks[bankNo];
@@ -737,13 +829,10 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	FEmuBase::Init(launchConfig);
 
 	FCPCLaunchConfig& cpcLaunchConfig = (FCPCLaunchConfig&)launchConfig;
+
 #ifndef NDEBUG
 	LOGINFO("Init CPCEmu...");
 #endif
-
-	const std::string memStr = cpcLaunchConfig.Model == ECPCModel::CPC_6128 ? " (CPC 6128)" : " (CPC 464)";
-	SetWindowTitle((std::string(kAppTitle) + memStr).c_str());
-	SetWindowIcon("CPCALogo.png");
 
 	// Initialise the CPC emulator
 	pGlobalConfig = new FCPCConfig();
@@ -751,6 +840,11 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
+
+	const FCPCConfig* pCPCConfig = GetCPCGlobalConfig();
+	const std::string memStr = pCPCConfig->bDefaultMachineIs6128 ? " (CPC 6128)" : " (CPC 464)";
+	SetWindowTitle((std::string(kAppTitle) + memStr).c_str());
+	SetWindowIcon("CPCALogo.png");
 
 	// temp hack to stop it crashing with a null pointer exception.
 	static const uint32_t ColourLUT[8] = { 0 };
@@ -765,101 +859,16 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::ColMap2Bpp_CPC;
 	}
 
-	// A class that deals with loading games.
-	const FCPCConfig* pCPCConfig = GetCPCGlobalConfig();
-	//GameLoader.Init(this);
-	if (cpcLaunchConfig.Model == ECPCModel::CPC_6128)
-		AddGamesList("6128 Game",pCPCConfig->SnapshotFolder128.c_str());
-	else
-		AddGamesList("464 Game", pGlobalConfig->SnapshotFolder.c_str());
-	
-#ifdef RUN_AHEAD_TO_GENERATE_SCREEN
-	// Turn caching on for the game loader. This means that if the same game is loaded more than once
-	// the second time will involve no disk i/o.
-	// We use this so we can quickly restore the game state after running ahead to generate the frame buffer in StartGame().
-	GameLoader.SetCachingEnabled(true);
-#endif
+	AddGamesList("Snapshot File", pGlobalConfig->SnapshotFolder.c_str());
 
 	Screen.Init(this);
-
-	cpc_type_t type = cpcLaunchConfig.Model == ECPCModel::CPC_6128 ? CPC_TYPE_6128 : CPC_TYPE_464;
-	cpc_joystick_type_t joy_type = CPC_JOYSTICK_NONE;
-
-	cpc_desc_t desc;
-	memset(&desc, 0, sizeof(cpc_desc_t));
-	desc.type = type;
-	desc.joystick_type = joy_type;
-	
-	// audio
-	desc.audio.callback.func = PushAudio;	// our audio callback
-	desc.audio.callback.user_data = this;
-	desc.audio.sample_rate = saudio_sample_rate();
-	
-	// roms
-	desc.roms.cpc464.os.ptr = dump_cpc464_os_bin;
-	desc.roms.cpc464.os.size= sizeof(dump_cpc464_os_bin);
-	desc.roms.cpc464.basic.ptr = dump_cpc464_basic_bin;
-	desc.roms.cpc464.basic.size = sizeof(dump_cpc464_basic_bin);
-	desc.roms.cpc6128.os.ptr = dump_cpc6128_os_bin;
-	desc.roms.cpc6128.os.size = sizeof(dump_cpc6128_os_bin);
-	desc.roms.cpc6128.basic.ptr = dump_cpc6128_basic_bin;
-	desc.roms.cpc6128.basic.size = sizeof(dump_cpc6128_basic_bin);
-	desc.roms.cpc6128.amsdos.ptr = dump_cpc6128_amsdos_bin;
-	desc.roms.cpc6128.amsdos.size = sizeof(dump_cpc6128_amsdos_bin);
-	
-	// setup debug hook
-	desc.debug.callback.func = DebugCB;
-	desc.debug.callback.user_data = this;
-	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
-
-	cpc_init(&CPCEmuState, &desc);
-
-	if (type == CPC_TYPE_6128)
-	{
-		// disable upper rom support on 6128 for now as it's broken
-		bExternalROMSupport = false;
-	}
-	if (bExternalROMSupport)
-	{
-		CPCEmuState.ga.bankswitch_cb = ChipsBankSwitchCB;
-	}
-	SetExternalROMSupportEnabled(bExternalROMSupport);
-
-	// Clear UI
-	
-	memset(&UICPC, 0, sizeof(ui_cpc_t));
-
-	{
-		ui_cpc_desc_t desc = { 0 };
-		desc.cpc = &CPCEmuState;
-		desc.boot_cb = boot_cb;
-
-		desc.dbg_texture.create_cb = gfx_create_texture;
-		desc.dbg_texture.update_cb = gfx_update_texture;
-		desc.dbg_texture.destroy_cb = gfx_destroy_texture;
-
-		desc.dbg_keys.stop.keycode = ImGui::GetKeyIndex(ImGuiKey_Space);
-		desc.dbg_keys.stop.name = "F5";
-		desc.dbg_keys.cont.keycode = ImGui::GetKeyIndex(ImGuiKey_F5);
-		desc.dbg_keys.cont.name = "F5";
-		desc.dbg_keys.step_over.keycode = ImGui::GetKeyIndex(ImGuiKey_F6);
-		desc.dbg_keys.step_over.name = "F6";
-		desc.dbg_keys.step_into.keycode = ImGui::GetKeyIndex(ImGuiKey_F7);
-		desc.dbg_keys.step_into.name = "F7";
-		desc.dbg_keys.toggle_breakpoint.keycode = ImGui::GetKeyIndex(ImGuiKey_F9);
-		desc.dbg_keys.toggle_breakpoint.name = "F9";
-
-		desc.snapshot.load_cb = UISnapshotLoadCB;
-		desc.snapshot.save_cb = UISnapshotSaveCB;
-
-		ui_cpc_init(&UICPC, &desc);
-	}
-
 
 	// This is where we add the viewers we want
 	AddViewer(new FCrtcViewer(this));
 	AddViewer(new FOverviewViewer(this));
-	AddViewer(new FCharacterMapViewer(this));
+	pCharacterMapViewer = new FCharacterMapViewer(this);
+	AddViewer(pCharacterMapViewer);
+	pCharacterMapViewer->SetGridSize(25, 20); // Based on Mode 0
 	pGraphicsViewer = new FCPCGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
@@ -874,22 +883,16 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	LoadCPCGameConfigs(this);
 
-	// Set up code analysis
-	// initialise code analysis pages
-	
-	InitExternalROMs(pCPCConfig, CPCEmuState.type == CPC_TYPE_6128);
-	
+	// create & register ROM banks
+
 	// Low ROM 0x0000 - 0x3fff
 	ROMBanks[EROMBank::OS] = CodeAnalysis.CreateBank("ROM OS", 16, CPCEmuState.rom_os, true, 0x0000);
-	//CodeAnalysis.GetBank(ROMBanks[EROMBank::OS])->PrimaryMappedPage = 0;
 
 	// High ROM AMSDOS 0xc000 - 0xffff
 	ROMBanks[EROMBank::AMSDOS] = CodeAnalysis.CreateBank("ROM AMSDOS", 16, CPCEmuState.rom_amsdos, true, 0xC000);
-	//CodeAnalysis.GetBank(ROMBanks[EROMBank::AMSDOS])->PrimaryMappedPage = 48;
 
 	// High ROM BASIC 0xc000 - 0xffff
 	ROMBanks[EROMBank::BASIC] = CodeAnalysis.CreateBank("ROM BASIC", 16, CPCEmuState.rom_basic, true, 0xC000);
-	//CodeAnalysis.GetBank(ROMBanks[EROMBank::BASIC])->PrimaryMappedPage = 48;
 
 	// create & register RAM banks
 	for (int bankNo = 0; bankNo < kNoRAMBanks; bankNo++)
@@ -899,9 +902,135 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		RAMBanks[bankNo] = CodeAnalysis.CreateBank(bankName, 16, CPCEmuState.ram[bankNo], false, 0x0000);
 	}
 
-	// Setup initial machine memory config
-	if (cpcLaunchConfig.Model == ECPCModel::CPC_464)
+	if (InitForModel(pCPCConfig->GetDefaultModel()) == false)
+		return false;
+
+	// Clear UI
+	memset(&UICPC, 0, sizeof(ui_cpc_t));
+
 	{
+		ui_cpc_desc_t desc = { 0 };
+		desc.cpc = &CPCEmuState;
+		desc.boot_cb = boot_cb;
+
+		desc.dbg_texture.create_cb = gfx_create_texture;
+		desc.dbg_texture.update_cb = gfx_update_texture;
+		desc.dbg_texture.destroy_cb = gfx_destroy_texture;
+		desc.snapshot.load_cb = UISnapshotLoadCB;
+		desc.snapshot.save_cb = UISnapshotSaveCB;
+
+		ui_cpc_init(&UICPC, &desc);
+	}
+
+	// load the command line game if none specified then load the last game
+	bool bLoadedGame = false;
+
+	if (launchConfig.SpecificGame.empty() == false)
+	{
+		bLoadedGame = StartGameFromName(launchConfig.SpecificGame.c_str(), true);
+	}
+	else if (pGlobalConfig->LastGame.empty() == false)
+	{
+		bLoadedGame = StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
+	}
+	
+	// Start ROM if no game has been loaded
+	if (bLoadedGame == false)
+	{
+		CodeAnalysis.Init(this);
+	}
+
+	// Setup Debugger
+	FDebugger& debugger = CodeAnalysis.Debugger;
+	debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen RAM Write", 0xff0000ff, nullptr, EventShowPixValue);
+	debugger.RegisterEventType((int)EEventType::PaletteSelect, "Palette Select", 0xffffffff, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::PaletteColour, "Palette Colour", 0xff00ffff, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::BorderColour, "Border Colour", 0xff00ff00, IOPortEventShowAddress, PaletteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::ScreenModeChange, "Screen Mode", 0xffccccff, IOPortEventShowAddress, ScreenModeShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterSelect, "CRTC Reg. Select", 0xffff00ff, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterRead, "CRTC Reg. Read", 0xffff0000, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite, "CRTC Reg. Write", 0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
+	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
+	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
+	debugger.RegisterEventType((int)EEventType::RAMBankSwitch, "RAM Banks Switch", 0xff006699, IOPortEventShowAddress, RAMBankSwitchShowValue);
+	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xff3357ff, IOPortEventShowAddress, ROMBankSwitchShowValue);
+	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xff3f0c90, IOPortEventShowAddress, UpperROMSelectShowValue);
+
+	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
+
+#ifndef NDEBUG
+	LOGINFO("Init CPCEmu...Done");
+#endif
+	return true;
+}
+
+// This should be callable after initialisation
+bool FCPCEmu::InitForModel(ECPCModel model)
+{
+	const cpc_type_t type = model == ECPCModel::CPC_6128 ? CPC_TYPE_6128 : CPC_TYPE_464;
+	cpc_joystick_type_t joy_type = CPC_JOYSTICK_NONE;
+
+	cpc_desc_t desc;
+	memset(&desc, 0, sizeof(cpc_desc_t));
+	desc.type = type;
+	desc.joystick_type = joy_type;
+
+	// audio
+	desc.audio.callback.func = PushAudio;	// our audio callback
+	desc.audio.callback.user_data = this;
+	desc.audio.sample_rate = saudio_sample_rate();
+
+	// roms
+	desc.roms.cpc464.os.ptr = dump_cpc464_os_bin;
+	desc.roms.cpc464.os.size = sizeof(dump_cpc464_os_bin);
+	desc.roms.cpc464.basic.ptr = dump_cpc464_basic_bin;
+	desc.roms.cpc464.basic.size = sizeof(dump_cpc464_basic_bin);
+	desc.roms.cpc6128.os.ptr = dump_cpc6128_os_bin;
+	desc.roms.cpc6128.os.size = sizeof(dump_cpc6128_os_bin);
+	desc.roms.cpc6128.basic.ptr = dump_cpc6128_basic_bin;
+	desc.roms.cpc6128.basic.size = sizeof(dump_cpc6128_basic_bin);
+	desc.roms.cpc6128.amsdos.ptr = dump_cpc6128_amsdos_bin;
+	desc.roms.cpc6128.amsdos.size = sizeof(dump_cpc6128_amsdos_bin);
+
+	// setup debug hook
+	desc.debug.callback.func = DebugCB;
+	desc.debug.callback.user_data = this;
+	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
+
+	cpc_init(&CPCEmuState, &desc);
+
+	/* todo
+	if (type == CPC_TYPE_6128)
+	{
+		// disable upper rom support on 6128 for now as it's broken
+		bExternalROMSupport = false;
+	}
+	if (bExternalROMSupport)
+	{
+		CPCEmuState.ga.bankswitch_cb = ChipsBankSwitchCB;
+	}
+	SetExternalROMSupportEnabled(bExternalROMSupport);
+	*/
+
+	const FCPCConfig* pCPCConfig = GetCPCGlobalConfig();
+	InitExternalROMs(pCPCConfig, CPCEmuState.type == CPC_TYPE_6128);
+
+	// Reset banks for re-use.
+	// Without doing this we can run into issues.
+	// We probably need a better way to do this.
+	for (FCodeAnalysisBank& bank : CodeAnalysis.GetBanks())
+	{
+		bank.bEverBeenMapped = false;
+		bank.Mapping = EBankAccess::None;
+		bank.PrimaryMappedPage = -1;
+	}
+
+	// Setup initial machine memory config
+	if (model == ECPCModel::CPC_464)
+	{
+		CodeAnalysis.SetBankPrimaryPage(ROMBanks[EROMBank::OS], 0);
+		CodeAnalysis.SetBankPrimaryPage(ROMBanks[EROMBank::BASIC], 48);
+
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[0], 0);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[1], 16);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[2], 32);
@@ -911,24 +1040,30 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		SetRAMBank(1, 1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
 		SetRAMBank(2, 2, EBankAccess::ReadWrite);	// 0x8000 - 0xBfff
 		SetRAMBank(3, 3, EBankAccess::ReadWrite);	// 0xc000 - 0xffff
-
-		// We don't want these banks to show up in the Code Analysis view, so set primary mapped page to -1.
-		CodeAnalysis.SetBankPrimaryPage(RAMBanks[4], -1);
-		CodeAnalysis.SetBankPrimaryPage(RAMBanks[5], -1);
-		CodeAnalysis.SetBankPrimaryPage(RAMBanks[6], -1);
-		CodeAnalysis.SetBankPrimaryPage(RAMBanks[7], -1);
 	}
 	else
 	{
+		CodeAnalysis.SetBankPrimaryPage(ROMBanks[EROMBank::OS], 0);
+		CodeAnalysis.SetBankPrimaryPage(ROMBanks[EROMBank::BASIC], 48);
+		CodeAnalysis.SetBankPrimaryPage(ROMBanks[EROMBank::AMSDOS], 48);
+
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[0], 0);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[1], 16);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[2], 32);
 		CodeAnalysis.SetBankPrimaryPage(RAMBanks[3], 48);
 
+		// Set a primary mapped page so the banks appear in the code analysis view.
+		// It could get overwritten next time is gets mapped but we just need a default that is not -1.
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[4], 48);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[5], 48);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[6], 48);
+		CodeAnalysis.SetBankPrimaryPage(RAMBanks[7], 48);
+
 		SetRAMBank(0, 0, EBankAccess::ReadWrite);	// 0x0000 - 0x3fff
 		SetRAMBank(1, 1, EBankAccess::ReadWrite);	// 0x4000 - 0x7fff
 		SetRAMBank(2, 2, EBankAccess::ReadWrite);	// 0x8000 - 0xBfff
 		SetRAMBank(3, 3, EBankAccess::ReadWrite);	// 0xc000 - 0xffff
+		
 	}
 
 	if (bExternalROMSupport)
@@ -954,46 +1089,6 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 		}
 	}
 
-	FDebugger& debugger = CodeAnalysis.Debugger;
-	debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen RAM Write", 0xff0000ff, nullptr, EventShowPixValue);
-	debugger.RegisterEventType((int)EEventType::PaletteSelect, "Palette Select", 0xffffffff, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::PaletteColour, "Palette Colour", 0xff00ffff, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::BorderColour, "Border Colour", 0xff00ff00, IOPortEventShowAddress, PaletteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::ScreenModeChange, "Screen Mode", 0xffccccff, IOPortEventShowAddress, ScreenModeShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterSelect, "CRTC Reg. Select", 0xffff00ff, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterRead, "CRTC Reg. Read", 0xffff0000, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::CrtcRegisterWrite, "CRTC Reg. Write", 0xffffff00, CRTCWriteEventShowAddress, CRTCWriteEventShowValue);
-	debugger.RegisterEventType((int)EEventType::KeyboardRead, "Keyboard Read", 0xff808080, IOPortEventShowAddress, IOPortEventShowValue);
-	debugger.RegisterEventType((int)EEventType::ScreenMemoryAddressChange, "Set Scr. Addr.", 0xffff69b4, nullptr, ScreenAddrChangeEventShowValue);
-	debugger.RegisterEventType((int)EEventType::RAMBankSwitch, "RAM Banks Switch", 0xff006699, IOPortEventShowAddress, RAMBankSwitchShowValue);
-	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xff3357ff, IOPortEventShowAddress, ROMBankSwitchShowValue);
-	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xff3f0c90, IOPortEventShowAddress, UpperROMSelectShowValue);
-
-	// load the command line game if none specified then load the last game
-	bool bLoadedGame = false;
-
-	if (launchConfig.SpecificGame.empty() == false)
-	{
-		bLoadedGame = StartGameFromName(launchConfig.SpecificGame.c_str(), true);
-	}
-	else if (pGlobalConfig->LastGame.empty() == false)
-	{
-		bLoadedGame = StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
-	}
-	
-	// Start ROM if no game has been loaded
-	if (bLoadedGame == false)
-	{
-		CodeAnalysis.Init(this);
-	}
-
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
-
-	bInitialised = true;
-
-#ifndef NDEBUG
-	LOGINFO("Init CPCEmu...Done");
-#endif
 	return true;
 }
 
@@ -1038,19 +1133,17 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	const chips_display_info_t dispInfo = cpc_display_info(&CPCEmuState);
 	memset(dispInfo.frame.buffer.ptr, 0, dispInfo.frame.buffer.size);
 	
-	const std::string memStr = CPCEmuState.type == CPC_TYPE_6128 ? " (CPC 6128)" : " (CPC 464)";
-	const std::string windowTitle = kAppTitle + " - " + pProjectConfig->Name + memStr;
-	SetWindowTitle(windowTitle.c_str());
-
 	// start up game
 	delete pActiveGame;
 
 	FGame* pNewGame = new FGame;
 	pNewGame->pConfig = pProjectConfig;
-	pCPCProjectConfig->bCPC6128Game = CPCEmuState.type == CPC_TYPE_6128;
 	pActiveGame = pNewGame;
 
 	//GenerateSpriteListsFromConfig(GraphicsViewer, pGameConfig);
+
+	const ECPCModel gameCPCModel = pCPCProjectConfig->GetCPCModel();
+	InitForModel(gameCPCModel);
 
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
@@ -1064,6 +1157,9 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 		CodeAnalysis.ViewState[i].GoToAddress(pProjectConfig->ViewConfigs[i].ViewAddress);
 	}
 
+	bool bLoadSnapshot = pCPCProjectConfig->EmulatorFile.FileName.empty() == false;
+
+	// Are we loading a previously saved game
 	if (bLoadGameData)
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
@@ -1083,32 +1179,58 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 			saveStateFName = gameRoot + "SaveState.bin";
 		}
 
-		if (LoadGameState(saveStateFName.c_str()) == false)
+		if (pCPCProjectConfig->GetCPCModel() != GetCurrentCPCModel())
 		{
-			LoadEmulatorFile(&pProjectConfig->EmulatorFile);
+			InitForModel(pCPCProjectConfig->GetCPCModel());
+		}
+
+		if (LoadGameState(saveStateFName.c_str()))
+		{
+			// if the game state loaded then we don't need the snapshot
+			bLoadSnapshot = false;
 		}
 		
+		// not sure this makes sense to be here now we're not loading the game here any more?
 		if (!InitBankMappings())
 		{
 			return false;
 		}
-
-		ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-		ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		
+		if (FileExists(analysisJsonFName.c_str()))
+		{
+			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		}
 
 		pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
+
+		FixupAddressRefs();
 	}
-	else
+	
+	if (bLoadSnapshot)
 	{
 		if (!LoadEmulatorFile(&pProjectConfig->EmulatorFile))
+		{
+			//SetLastError("Could not find '%s%s'", pGlobalConfig->SnapshotFolder.c_str(), pProjectConfig->EmulatorFile.c_str());
 			return false;
-
-		InitBankMappings();
+		}
 	}
+
+	if (!InitBankMappings())
+	{
+		return false;
+	}
+
+	const std::string memStr = CPCEmuState.type == CPC_TYPE_6128 ? " (CPC 6128)" : " (CPC 464)";
+	const std::string windowTitle = kAppTitle + " - " + pProjectConfig->Name + memStr;
+	SetWindowTitle(windowTitle.c_str());
 
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
+
+	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
+	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
 
 #ifdef RUN_AHEAD_TO_GENERATE_SCREEN
 	// Run the cpc for long enough to generate a frame buffer, otherwise the user will be staring at a black screen.
@@ -1120,7 +1242,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 
 	ImGui_UpdateTextureRGBA(CPCViewer.GetScreenTexture(), CPCViewer.GetFrameBuffer());
 
-	// Load the game again (from memory - it should be cached) to restore the cpc state.
+	// Load the game again to restore the cpc state.
 	//const std::string snapFolder = pGlobalConfig->SnapshotFolder;
 	//const std::string gameFile = snapFolder + pGameConfig->SnapshotFile;
 	GamesList.LoadGame(pGameConfig->Name.c_str());
@@ -1130,7 +1252,6 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	// Otherwise, if we export an asm file once the game is running the memory will be in an arbitrary state.
 	CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(CPCEmuState.cpu.pc - 1));
 	CodeAnalysis.Debugger.Break();
-
 	CodeAnalysis.Debugger.RegisterNewStackPointer(CPCEmuState.cpu.sp, FAddressRef());
 
 	// some extra initialisation for creating new analysis from snnapshot
@@ -1284,44 +1405,12 @@ bool FCPCEmu::LoadEmulatorFile(const FEmulatorFile* pEmuFile)
 	{
 		case EEmuFileType::SNA:
 		{
-			bool bOk = false;
-			if (bCachingEnabled)
-			{
-				if (CachedFilename != fileName)
-					ClearCache();
-
-				bOk = LoadSNAFileCached(this, fileName.c_str(), pDataCache, CachedDataSize);
-
-				if (bOk)
-					CachedFilename = fileName;
-				else
-					ClearCache();
-			}
-			else
-			{
-				bOk = LoadSNAFile(this, fileName.c_str());
-			}
-			return bOk;
+			return LoadSNAFile(this, fileName.c_str(), GetCPCGlobalConfig()->GetDefaultModel());
 		}
 
 		default: 
 			return false;
 	}
-}
-
-void FCPCEmu::SetCachingEnabled(bool bEnabled)
-{
-	ClearCache();
-	bCachingEnabled = bEnabled;
-}
-
-void FCPCEmu::ClearCache()
-{
-	if (pDataCache)
-		free(pDataCache);
-	pDataCache = nullptr;
-	CachedFilename = "";
-	CachedDataSize = 0;
 }
 
 bool FCPCEmu::NewProjectFromEmulatorFile(const FEmulatorFile& emuFile)
@@ -1330,17 +1419,23 @@ bool FCPCEmu::NewProjectFromEmulatorFile(const FEmulatorFile& emuFile)
 	RemoveGameConfig(emuFile.DisplayName.c_str());
 
 	FCPCProjectConfig* pNewConfig = CreateNewCPCProjectConfigFromEmulatorFile(emuFile);
+	
+	// Set the preferred CPC model. The snapshot can override this.
+	pNewConfig->bCPC6128Game = GetCPCGlobalConfig()->bDefaultMachineIs6128;
 
 	if (pNewConfig != nullptr)
 	{
 		if (!LoadProject(pNewConfig, /* bLoadGameData */ false))
 			return false;
+		
+		// Set the machine type based on the snapshot we read in StartGame().
+		pNewConfig->bCPC6128Game = GetCurrentCPCModel() == ECPCModel::CPC_6128;
 
 		AddGameConfig(pNewConfig);
 		SaveProject();
 
 		return true;
-	}
+	} 
 
 	return false;
 }
@@ -1353,12 +1448,14 @@ void FCPCEmu::Reset()
 	CPCEmuState.ga.rom_select = 0;
 	ui_dbg_reset(&UICPC.dbg);
 
-	FCPCProjectConfig* pBasicConfig = (FCPCProjectConfig*)GetGameConfigForName("AmstradBasic");
+	const bool bIs6128 = GetCPCGlobalConfig()->bDefaultMachineIs6128;
+	FCPCProjectConfig* pBasicConfig = (FCPCProjectConfig*)GetGameConfigForName(bIs6128 ? "AmstradBasic6128" : "AmstradBasic464");
 
 	if (pBasicConfig == nullptr)
-		pBasicConfig = CreateNewAmstradBasicConfig();
+		pBasicConfig = CreateNewAmstradBasicConfig(bIs6128);
 
-	InitBankMappings();
+	// don't think we need this? we do it in StartGame()
+	//InitBankMappings();
 	
 	LoadProject(pBasicConfig, false);	// reset code analysis
 
@@ -1454,6 +1551,20 @@ void	FCPCEmu::SystemMenuAdditions(void)
 		}
 		ImGui::EndMenu();
 	}
+
+	FCPCConfig* pCPCConfig = GetCPCGlobalConfig();
+	if (ImGui::BeginMenu("Default Model"))
+	{
+		if (ImGui::MenuItem("CPC 464", 0, (pCPCConfig->bDefaultMachineIs6128 == false)))
+		{
+			pCPCConfig->bDefaultMachineIs6128 = false;
+		}
+		if (ImGui::MenuItem("CPC 6128", 0, (pCPCConfig->bDefaultMachineIs6128 == true)))
+		{
+			pCPCConfig->bDefaultMachineIs6128 = true;
+		}
+		ImGui::EndMenu();
+	}
 }
 
 void	FCPCEmu::OptionsMenuAdditions(void)
@@ -1532,10 +1643,10 @@ void FCPCLaunchConfig::ParseCommandline(int argc, char** argv)
 	argIt++;	// skip exe name
 	while (argIt != argList.end())
 	{
-		if (*argIt == std::string("-128"))
+		/*if (*argIt == std::string("-128"))
 		{
 			Model = ECPCModel::CPC_6128;
-		}
+		}*/
 
 		++argIt;
 	}
@@ -1548,4 +1659,10 @@ void FCPCEmu::UpdatePalette()
 	{
 		palette.SetColour(i, CPCEmuState.ga.hw_colors[CPCEmuState.ga.regs.ink[i]]);
 	}
+}
+
+void FCPCEmu::OnScreenRAMAddressChanged()
+{
+	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
+	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
 }

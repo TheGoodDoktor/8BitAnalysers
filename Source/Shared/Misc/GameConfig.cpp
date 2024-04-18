@@ -127,7 +127,14 @@ void FProjectConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 		jsonConfigFile["LuaSourceFiles"].push_back(luaSrc);
 	}
 }
-	
+
+void FProjectConfig::FixupAddressRefs(FCodeAnalysisState& state)
+{
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		FixupAddressRef(state, ViewConfigs[i].ViewAddress);
+	}
+}
 
 
 bool LoadGameConfigFromFile(FProjectConfig &config, const char *fname)

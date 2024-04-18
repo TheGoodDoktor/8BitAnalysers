@@ -1168,6 +1168,71 @@ void FCodeAnalysisState::OnCPUTick(uint64_t pins)
 	Debugger.CPUTick(pins);
 }
 
+void FixupDataInfoAddressRefs(FCodeAnalysisState& state, FDataInfo* pDataInfo)
+{
+	// Because this is a union, it will also fixup GraphicsSetRef and CharSetAddress
+	FixupAddressRef(state, pDataInfo->InstructionAddress);
+	FixupAddressRef(state, pDataInfo->LastWriter);
+	FixupAddressRefList(state, pDataInfo->Reads.GetReferences());
+	FixupAddressRefList(state, pDataInfo->Writes.GetReferences());
+}
+
+void FixupCodeInfoAddressRefs(FCodeAnalysisState& state, FCodeInfo* pCodeInfo)
+{
+	FixupAddressRef(state, pCodeInfo->OperandAddress);
+	FixupAddressRefList(state, pCodeInfo->Reads.GetReferences());
+	FixupAddressRefList(state, pCodeInfo->Writes.GetReferences());
+}
+
+void FCodeAnalysisState::FixupAddressRefs()
+{
+	FixupAddressRef(*this, CopiedAddress);
+	Debugger.FixupAddresRefs();
+	MemoryAnalyser.FixupAddressRefs();
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		ViewState[i].FixupAddressRefs(*this);
+	}
+
+	for (FCommand* pCommand : CommandStack)
+	{
+		pCommand->FixupAddressRefs(*this);
+	}
+
+	// Go through the entire physical address range to fix up labels, code and data items.
+	int addr = 0;
+	while (addr <= 0xffff)
+	{
+		const FAddressRef wAddressRef(GetWriteBankFromAddress(addr), addr);
+		const FAddressRef rAddressRef(GetReadBankFromAddress(addr), addr);
+
+		// Fixup the code and data items in RAM.
+		if (FCodeInfo* pWriteCode = GetCodeInfoForAddress(wAddressRef))
+			FixupCodeInfoAddressRefs(*this, pWriteCode);
+
+		if (FDataInfo* pWriteData = GetDataInfoForAddress(wAddressRef))
+			FixupDataInfoAddressRefs(*this, pWriteData);
+
+		if (FLabelInfo* pWriteLabel = GetLabelForAddress(wAddressRef))
+			FixupAddressRefList(*this, pWriteLabel->References.GetReferences());
+
+		if (wAddressRef.BankId != rAddressRef.BankId)
+		{
+			// If we have RAM behind ROM then fixup the ROM separately
+			if (FCodeInfo* pReadCode = GetCodeInfoForAddress(rAddressRef))
+				FixupCodeInfoAddressRefs(*this, pReadCode);
+
+			if (FDataInfo* pReadData = GetDataInfoForAddress(rAddressRef))
+				FixupDataInfoAddressRefs(*this, pReadData);
+
+			if (FLabelInfo* pReadLabel = GetLabelForAddress(wAddressRef))
+				FixupAddressRefList(*this, pReadLabel->References.GetReferences());
+		}
+
+		addr++;
+	}
+}
+
 void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
 {
 	DoCommand(state, new FSetItemCodeCommand(address));
@@ -1344,5 +1409,22 @@ void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterf
 		return;
     default:
     break;
+	}
+}
+
+void FixupAddressRef(FCodeAnalysisState& state, FAddressRef& addr)
+{
+	if (FCodeAnalysisBank* pBank = state.GetBank(addr.BankId))
+	{
+		const uint16_t bankOffset = (addr.Address & pBank->SizeMask);
+		addr.Address = pBank->GetMappedAddress() + bankOffset;
+	}
+}
+
+void FixupAddressRefList(FCodeAnalysisState& state, std::vector<FAddressRef>& addrList)
+{
+	for (FAddressRef& addr : addrList)
+	{
+		FixupAddressRef(state, addr);
 	}
 }

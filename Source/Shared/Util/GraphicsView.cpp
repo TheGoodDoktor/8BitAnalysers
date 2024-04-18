@@ -497,6 +497,14 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 	return true;
 }
 
+void FixupCharacterSetAddressRefs(FCodeAnalysisState& state)
+{
+	for (int i = 0; i < GetNoCharacterSets(); i++)
+	{
+		FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
+		FixupAddressRef(state, pCharSet->Params.Address);
+	}
+}
 
 // Character Maps
 
@@ -561,6 +569,16 @@ bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& p
 
 	g_CharacterMaps.push_back(pNewCharMap);
 	return true;
+}
+
+void FixupCharacterMapAddressRefs(FCodeAnalysisState& state)
+{
+	for (int i = 0; i < GetNoCharacterMaps(); i++)
+	{
+		FCharacterMap* pCharMap = GetCharacterMapFromIndex(i);
+		FixupAddressRef(state, pCharMap->Params.Address);
+		FixupAddressRef(state, pCharMap->Params.CharacterSet);
+	}
 }
 
 // New Palette stuff - just to annoy Sam!

@@ -197,6 +197,7 @@ public:
 	bool IsEmpty() const { return References.empty(); }
 	int NumReferences() const { return (int)References.size(); }
 	const std::vector<FAddressRef>& GetReferences() const { return References; }
+	std::vector<FAddressRef>& GetReferences() { return References; }
 private:
 	int		MaxEntryCount = 32;
 	int		WriteCounter = 0;
@@ -376,7 +377,7 @@ struct FDataInfo : FItem
 	// Address references
 	union
 	{
-		FAddressRef	CharSetAddress;	// address of character set
+		FAddressRef	CharSetAddress = FAddressRef();	// address of character set
 		FAddressRef	GraphicsSetRef;	// for bitmap data
 		FAddressRef	InstructionAddress;	// for operand data types
 	};

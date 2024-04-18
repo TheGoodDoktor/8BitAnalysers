@@ -67,6 +67,31 @@ bool FCodeAnalysisViewState::GoToNextAddress()
 	return true;
 }
 
+void FCodeAnalysisViewState::FixupAddressRefs(FCodeAnalysisState& state)
+{
+	FixupAddressRef(state, CursorItem.AddressRef);
+	FixupAddressRef(state, HoverAddress);
+	FixupAddressRef(state, HighlightAddress);
+	FixupAddressRef(state, GoToAddressRef);
+	FixupAddressRefList(state, PreviousAddressStack);
+	FixupAddressRefList(state, NextAddressStack);
+
+	for (FCodeAnalysisItem& item : FilteredGlobalDataItems)
+		FixupAddressRef(state, item.AddressRef);
+	for (FCodeAnalysisItem& item : FilteredGlobalFunctions)
+		FixupAddressRef(state, item.AddressRef);
+
+	for (int i = 0; i < kNoBookmarks; i++)
+	{
+		FixupAddressRef(state, Bookmarks[i]);
+	}
+
+	for (FAddressCoord& coord : AddressCoords)
+	{
+		FixupAddressRef(state, coord.Address);
+	}
+}
+
 int GetItemIndexForAddress(const FCodeAnalysisState &state, FAddressRef addr)
 {
 	const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);

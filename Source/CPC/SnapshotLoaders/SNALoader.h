@@ -4,7 +4,6 @@
 #include <cinttypes>
 
 class FCPCEmu;
+enum class ECPCModel;
 
-bool LoadSNAFile(FCPCEmu* pEmu, const char* fName);
-bool LoadSNAFileCached(FCPCEmu* pEmu, const char* fName, uint8_t*& pData, size_t& dataSize);
-bool LoadSNAFromMemory(FCPCEmu* pEmu, uint8_t* pData, size_t dataSize);
+bool LoadSNAFile(FCPCEmu* pEmu, const char* fName, ECPCModel fallbackModel);

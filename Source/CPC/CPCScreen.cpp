@@ -14,6 +14,8 @@
 void FCPCScreen::Init(FCPCEmu* pEmu)
 {
 	pCPCEmu = pEmu;
+	pGateArray = &(pCPCEmu->CPCEmuState.ga);
+	pCRT = &(pCPCEmu->CPCEmuState.ga.crt);
 }
 
 void FCPCScreen::Reset()
@@ -97,12 +99,11 @@ const FPalette& FCPCScreen::GetPaletteForYPos(int yPos) const
 
 void FCPCScreen::Tick()
 {
-	const am40010_crt_t& crt = pCPCEmu->CPCEmuState.ga.crt;
-	const uint16_t scanlinePos = crt.v_pos;
+	const uint16_t scanlinePos = pCRT->v_pos;
 
 	if (!bInVblank)
 	{
-		if (crt.v_blank)
+		if (pCRT->v_blank)
 		{
 			bInVblank = true;
 			bDrawingPixels = false;
@@ -110,20 +111,20 @@ void FCPCScreen::Tick()
 
 		if (!bDrawingPixels)
 		{
-			if (crt.visible)
+			if (pCRT->visible)
 			{
-				if (pCPCEmu->CPCEmuState.ga.crtc_pins & AM40010_DE)
+				if (pGateArray->crtc_pins & AM40010_DE)
 				{
 					bDrawingPixels = true;
-					ScreenTopScanline = crt.pos_y;
-					ScreenLeftEdgeOffset = crt.pos_x * 8;
+					ScreenTopScanline = pCRT->pos_y;
+					ScreenLeftEdgeOffset = pCRT->pos_x * 8;
 				}
 			}
 		}
 	}
 	else
 	{
-		if (!crt.v_blank)
+		if (!pCRT->v_blank)
 		{
 			bInVblank = false;
 		}
@@ -131,18 +132,17 @@ void FCPCScreen::Tick()
 
 	// Store the screen mode per scanline.
 	// Shame to do this here. Would be nice to have a horizontal blank callback
-	const am40010_t ga = pCPCEmu->CPCEmuState.ga;
-	const int curScanline = ga.crt.pos_y;
+	const int curScanline = pCRT->pos_y;
 	if (LastScanline != curScanline)
 	{
-		const uint8_t screenMode = ga.video.mode;
+		const uint8_t screenMode = pGateArray->video.mode;
 		ScreenModePerScanline[curScanline] = screenMode;
 
 		FPalette& palette = PalettePerScanline[curScanline];
 		for (int i = 0; i < palette.GetColourCount(); i++)
-			palette.SetColour(i, ga.hw_colors[ga.regs.ink[i]]);
+			palette.SetColour(i, pGateArray->hw_colors[pGateArray->regs.ink[i]]);
 
-		LastScanline = ga.crt.pos_y;
+		LastScanline = pCRT->pos_y;
 	}
 }
 

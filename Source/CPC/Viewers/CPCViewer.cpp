@@ -645,7 +645,8 @@ int CPCKeyFromImGuiKey(ImGuiKey key)
 void DrawPalette(const FPalette& palette)
 {
 	// todo scale this
-	const ImVec2 size(24, 24);
+	const float length = ImGui::GetFontSize() * 1.5f;
+	const ImVec2 size(length, length);
 	for (int i = 0; i < palette.GetColourCount(); i++) 
 	{
 		ImGui::PushID(128 + i);
@@ -713,10 +714,17 @@ void DrawSnapLoadButtons(FCPCEmu* pCPCEmu)
 		if (bLoadSnap)
 		{
 			LOGINFO("Load game '%s'", game.DisplayName.c_str());
-			if (!pCPCEmu->GetGamesList().LoadGame(gGameIndex))
+			const FGameSnapshot& game = pCPCEmu->GetGamesList().GetGame(gGameIndex);
+			if (!pCPCEmu->NewGameFromSnapshot(game))
+			{
+				pCPCEmu->Reset();
+				pCPCEmu->DisplayErrorMessage("Could not create game '%s'", game.DisplayName.c_str());
+			}
+
+			/*if (!pCPCEmu->GetGamesList().LoadGame(gGameIndex))
 			{
 				pCPCEmu->DisplayErrorMessage("Could not load '%s'", game.DisplayName.c_str());
-			}
+			}*/
 		}
 	}
 }

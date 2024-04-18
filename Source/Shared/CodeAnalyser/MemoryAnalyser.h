@@ -40,6 +40,9 @@ public:
 
 	void	SetScreenMemoryArea(uint16_t start, uint16_t end) { ScreenMemory = { start,end }; }
 	bool	IsAddressInScreenMemory(uint16_t addr) const { return ScreenMemory.InRange(addr); }
+
+	void FixupAddressRefs();
+
 private:
 	void	DrawMemoryDiffUI(void);
 	void	DrawStringSearchUI(void);

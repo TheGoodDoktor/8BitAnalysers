@@ -250,3 +250,15 @@ void FMemoryAnalyser::DrawStringSearchUI()
 	}
 
 }
+
+void FMemoryAnalyser::FixupAddressRefs()
+{
+	FindTool.FixupAddressRefs();
+
+	for (FFoundString& foundStr : FoundStrings)
+	{
+		FixupAddressRef(*pCodeAnalysis, foundStr.Address);
+	}
+
+	FixupAddressRefList(*pCodeAnalysis, DiffChangedLocations);
+}

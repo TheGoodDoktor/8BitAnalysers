@@ -42,6 +42,8 @@ public:
 	size_t GetNumResults() const { return SearchResults.size(); }
 	FAddressRef GetResult(size_t index) const { return SearchResults[index]; }
 
+	void FixupAddressRefs();
+
 protected:
 	virtual std::vector<FAddressRef> FindAllMatchesInBanks(const FSearchOptions& opt) = 0;
 
@@ -127,6 +129,7 @@ public:
 	void Init(FCodeAnalysisState* ptrCodeAnalysis);
 	void DrawUI();
 	void Reset();
+	void FixupAddressRefs();
 
 private:
 	FSearchOptions Options;

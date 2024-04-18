@@ -17,6 +17,9 @@ public:
 	void	Draw();
 
 	void	SetGridSize(int x,int y) { GridSizeX = x; GridSizeY = y;}
+
+	virtual void FixupAddressRefs();
+
 protected:
 	virtual void	DrawBackground(float x, float y) {}
 	void	DrawGrid(float x, float y);

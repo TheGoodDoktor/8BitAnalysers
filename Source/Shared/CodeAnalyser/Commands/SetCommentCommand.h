@@ -13,6 +13,7 @@ public:
 
 	virtual void Do(FCodeAnalysisState& state) override;
 	virtual void Undo(FCodeAnalysisState& state) override;
+	virtual void FixupAddressRefs(FCodeAnalysisState& state) override;
 
 	FCodeAnalysisItem		Item;
 	std::string		CommentText;

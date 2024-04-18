@@ -108,10 +108,10 @@ void DrawCharacterSetComboBox(FCodeAnalysisState& state, FAddressRef& addr)
 	}
 }
 
-void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+void FCharacterMapViewer::DrawCharacterSetViewer()
 {
-	static FAddressRef selectedCharSetAddr; 
-	static FCharSetCreateParams params;
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	if (ImGui::BeginChild("##charsetselect", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), true))
 	{
@@ -120,7 +120,7 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
 			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
-			const bool bSelected = params.Address == pCharSet->Params.Address;
+			const bool bSelected = CharSetParams.Address == pCharSet->Params.Address;
 
 			if (pSetLabel == nullptr)
 				continue;
@@ -129,10 +129,10 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 
 			if (ImGui::Selectable(pSetLabel->GetName(), bSelected))
 			{
-				selectedCharSetAddr = pCharSet->Params.Address;
-				if (params.Address != pCharSet->Params.Address)
+				SelectedCharSetAddr = pCharSet->Params.Address;
+				if (CharSetParams.Address != pCharSet->Params.Address)
 				{
-					params = pCharSet->Params;
+					CharSetParams = pCharSet->Params;
 				}
 			}
 
@@ -156,34 +156,34 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 	ImGui::SameLine();
 	if (ImGui::BeginChild("##charsetdetails", ImVec2(0, 0), true))
 	{
-		FCharacterSet* pCharSet = GetCharacterSetFromAddress(selectedCharSetAddr);
+		FCharacterSet* pCharSet = GetCharacterSetFromAddress(SelectedCharSetAddr);
 		if (pCharSet)
 		{
-			if (DrawAddressInput(state, "Address", params.Address))
+			if (DrawAddressInput(state, "Address", CharSetParams.Address))
 			{
 				//UpdateCharacterSet(state, *pCharSet, params);
 			}
-			DrawAddressLabel(state, viewState, params.Address);
-			DrawMaskInfoComboBox(&params.MaskInfo);
-			DrawBitmapFormatCombo(params.BitmapFormat, state);
-			if (params.BitmapFormat == EBitmapFormat::Bitmap_1Bpp)
+			DrawAddressLabel(state, viewState, CharSetParams.Address);
+			DrawMaskInfoComboBox(&CharSetParams.MaskInfo);
+			DrawBitmapFormatCombo(CharSetParams.BitmapFormat, state);
+			if (CharSetParams.BitmapFormat == EBitmapFormat::Bitmap_1Bpp)
 			{
-				DrawColourInfoComboBox(&params.ColourInfo);
-				if (params.ColourInfo == EColourInfo::MemoryLUT)
+				DrawColourInfoComboBox(&CharSetParams.ColourInfo);
+				if (CharSetParams.ColourInfo == EColourInfo::MemoryLUT)
 				{
-					DrawAddressInput(state, "Attribs Address", params.AttribsAddress);
+					DrawAddressInput(state, "Attribs Address", CharSetParams.AttribsAddress);
 				}
 			}
 			else
 			{
-				DrawPaletteCombo("Palette", "None", params.PaletteNo, GetNumColoursForBitmapFormat(params.BitmapFormat));
+				DrawPaletteCombo("Palette", "None", CharSetParams.PaletteNo, GetNumColoursForBitmapFormat(CharSetParams.BitmapFormat));
 			}
 
-			ImGui::Checkbox("Dynamic", &params.bDynamic);
+			ImGui::Checkbox("Dynamic", &CharSetParams.bDynamic);
 			if (ImGui::Button("Update Character Set"))
 			{
-				selectedCharSetAddr = params.Address;
-				UpdateCharacterSet(state, *pCharSet, params);
+				SelectedCharSetAddr = CharSetParams.Address;
+				UpdateCharacterSet(state, *pCharSet, CharSetParams);
 			}
 			pCharSet->Image->Draw();
 		}
@@ -191,25 +191,13 @@ void DrawCharacterSetViewer(FCodeAnalysisState& state, FCodeAnalysisViewState& v
 	ImGui::EndChild();
 }
 
-struct FCharacterMapViewerUIState
-{
-	FAddressRef				SelectedCharMapAddr;
-	FCharMapCreateParams	Params;
-
-	FAddressRef				SelectedCharAddress;
-	int						SelectedCharX = -1;
-	int						SelectedCharY = -1;
-
-	int						OffsetX = 0;
-	int						OffsetY = 0;
-
-	float					Scale = 1.0f;
-};
-
 // this assumes the character map is in address space
-void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+void FCharacterMapViewer::DrawCharacterMap()
 {
-	FCharacterMap* pCharMap = GetCharacterMapFromAddress(uiState.SelectedCharMapAddr);
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
+	FCharacterMap* pCharMap = GetCharacterMapFromAddress(UIState.SelectedCharMapAddr);
 
 	if (pCharMap == nullptr)
 		return;
@@ -217,9 +205,9 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	const float scale = ImGui_GetScaling();
 	const float kNumSize = 80.0f * scale;	// size for number GUI widget
 
-	FCharMapCreateParams& params = uiState.Params;
-	
-	DrawAddressLabel(state, viewState, uiState.SelectedCharMapAddr);
+	FCharMapCreateParams& params = UIState.Params;
+
+	DrawAddressLabel(state, viewState, UIState.SelectedCharMapAddr);
 
 	// Display and edit params
 	DrawAddressInput(state, "Address", params.Address);
@@ -228,12 +216,13 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::InputInt("Stride", &params.Stride);
-	DrawIntInputXY("Offset", uiState.OffsetX, uiState.OffsetY);
+	DrawIntInputXY("Offset", UIState.OffsetX, UIState.OffsetY);
+
 
 	ImGui::SetNextItemWidth(kNumSize);
 	DrawU8Input("Null Character", &params.IgnoreCharacter);
 	ImGui::SetNextItemWidth(kNumSize);
-	ImGui::SliderFloat("Scale", &uiState.Scale, 0.1f, 2.0f);
+	ImGui::SliderFloat("Scale", &UIState.Scale, 0.1f, 2.0f);
 
 	if (ImGui::Button("Apply"))
 	{
@@ -260,13 +249,13 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
 	static bool bShowReadWrites = true;
 	const uint16_t physAddress = params.Address.Address;
-	const float rectSize = 12.0f * scale * uiState.Scale;
+	const float rectSize = 12.0f * scale * UIState.Scale;
 
 	for (int y = 0; y < params.Height; y++)
 	{
 		for (int x = 0; x < params.Width; x++)
 		{
-			const int byte = (x + uiState.OffsetX) + ((y + uiState.OffsetY) * params.Stride);
+			const int byte = (x + UIState.OffsetX) + ((y + UIState.OffsetY) * params.Stride);
 			const uint8_t val = state.ReadByte(physAddress + byte);
 			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(physAddress + byte);
 			const int framesSinceWritten = pDataInfo->LastFrameWritten == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameWritten;
@@ -327,7 +316,7 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	{
 		const int xChar = (int)floor(mousePosX / rectSize);
 		const int yChar = (int)floor(mousePosY / rectSize);
-		const uint16_t charAddress = pCharMap->Params.Address.Address + (xChar + uiState.OffsetX + ((yChar + uiState.OffsetY)* pCharMap->Params.Stride));
+		const uint16_t charAddress = pCharMap->Params.Address.Address + (xChar + UIState.OffsetX + ((yChar + UIState.OffsetY)* pCharMap->Params.Stride));
 		const uint8_t charVal = state.ReadByte(charAddress);
 
 		const float xp = pos.x + (xChar * rectSize);
@@ -338,9 +327,9 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 
 		if (ImGui::IsMouseClicked(0))
 		{
-			uiState.SelectedCharAddress = FAddressRef(pCharMap->Params.Address.BankId,charAddress);
-			uiState.SelectedCharX = xChar;
-			uiState.SelectedCharY = yChar;
+			UIState.SelectedCharAddress = FAddressRef(pCharMap->Params.Address.BankId,charAddress);
+			UIState.SelectedCharX = xChar;
+			UIState.SelectedCharY = yChar;
 		}
 
 		// Tool Tip
@@ -350,10 +339,10 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 		ImGui::EndTooltip();
 	}
 
-	if (uiState.SelectedCharX != -1 && uiState.SelectedCharY != -1)
+	if (UIState.SelectedCharX != -1 && UIState.SelectedCharY != -1)
 	{
-		const float xp = pos.x + (uiState.SelectedCharX * rectSize);
-		const float yp = pos.y + (uiState.SelectedCharY * rectSize);
+		const float xp = pos.x + (UIState.SelectedCharX * rectSize);
+		const float yp = pos.y + (UIState.SelectedCharY * rectSize);
 		const ImVec2 rectMin(xp, yp);
 		const ImVec2 rectMax(xp + rectSize, yp + rectSize);
 		dl->AddRect(rectMin, rectMax, 0xffffffff);
@@ -382,13 +371,14 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 	ImGui::SetCursorScreenPos(pos);
 
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadWrites);
-	if (uiState.SelectedCharAddress.IsValid())
+	if (UIState.SelectedCharAddress.IsValid())
 	{
 		// Show data reads & writes
 		// 
-		ImGui::Text("Address: %s", NumStr(uiState.SelectedCharAddress.Address));
-		DrawAddressLabel(state, state.GetFocussedViewState(), uiState.SelectedCharAddress);
-		FDataInfo* pDataInfo = state.GetDataInfoForAddress(uiState.SelectedCharAddress);
+		ImGui::Text("Address: %s", NumStr(UIState.SelectedCharAddress.Address));
+		DrawAddressLabel(state, state.GetFocussedViewState(), UIState.SelectedCharAddress);
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(UIState.SelectedCharAddress);
+
 		// List Data accesses
 		if (pDataInfo->Reads.IsEmpty() == false)
 		{
@@ -416,14 +406,12 @@ void DrawCharacterMap(FCharacterMapViewerUIState& uiState, FCodeAnalysisState& s
 			}
 		}
 	}
-
-	
-	
 }
 
-void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+void FCharacterMapViewer::DrawCharacterMaps()
 {
-	static FCharacterMapViewerUIState uiState;
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	if (ImGui::BeginChild("##charmapselect", ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, 0), true))
 	{
@@ -434,7 +422,7 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 		{
 			const FCharacterMap* pCharMap = GetCharacterMapFromIndex(i);
 			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharMap->Params.Address);
-			const bool bSelected = uiState.SelectedCharMapAddr == pCharMap->Params.Address;
+			const bool bSelected = UIState.SelectedCharMapAddr == pCharMap->Params.Address;
 
 			if (pSetLabel == nullptr)
 				continue;
@@ -443,13 +431,13 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 
 			if (ImGui::Selectable(pSetLabel->GetName(), bSelected))
 			{
-				uiState.SelectedCharMapAddr = pCharMap->Params.Address;
-				if (uiState.SelectedCharMapAddr != uiState.Params.Address)
+				UIState.SelectedCharMapAddr = pCharMap->Params.Address;
+				if (UIState.SelectedCharMapAddr != UIState.Params.Address)
 				{
-					uiState.Params = pCharMap->Params;	// copy params
-					uiState.SelectedCharAddress.SetInvalid();
-					uiState.SelectedCharX = -1;
-					uiState.SelectedCharY = -1;
+					UIState.Params = pCharMap->Params;	// copy params
+					UIState.SelectedCharAddress.SetInvalid();
+					UIState.SelectedCharX = -1;
+					UIState.SelectedCharY = -1;
 				}
 			}			
 
@@ -474,12 +462,12 @@ void DrawCharacterMaps(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 	ImGui::SameLine();
 	if (ImGui::BeginChild("##charmapdetails", ImVec2(0, 0), true))
 	{
-		if (uiState.SelectedCharMapAddr.IsValid())
+		if (UIState.SelectedCharMapAddr.IsValid())
 		{
-			FCodeAnalysisBank* pBank = state.GetBank(uiState.SelectedCharMapAddr.BankId);
+			FCodeAnalysisBank* pBank = state.GetBank(UIState.SelectedCharMapAddr.BankId);
 			assert(pBank != nullptr);
 			state.MapBankForAnalysis(*pBank);	// map bank in so it can be read ok
-			DrawCharacterMap(uiState, state, viewState);
+			DrawCharacterMap();
 			state.UnMapAnalysisBanks();	// map bank out
 		}
 	}
@@ -615,6 +603,14 @@ public:
 		PhysicalAddress = addr.Address;
 	}
 
+	void FixupAddressRefs() override
+	{
+		FMemoryAccessGrid::FixupAddressRefs();
+		FixupAddressRef(*CodeAnalysis, Address);
+		SetAddress(Address);
+		FixupAddressRef(*CodeAnalysis, CharacterSet);
+	}
+
 	FAddressRef Address;
 	int PhysicalAddress = 0;
 
@@ -636,8 +632,6 @@ void	FCharacterMapViewer::Shutdown()
 
 void FCharacterMapViewer::DrawCharacterMapViewer(void)
 {
-	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-	
 	ViewerGrid->Draw();
 }
 
@@ -654,9 +648,6 @@ void FCharacterMapViewer::SetGridSize(int x, int y)
 
 void FCharacterMapViewer::DrawUI(void)
 {
-	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-
 	if (ImGui::BeginTabBar("CharacterMapTabs"))
 	{
 		if (ImGui::BeginTabItem("Character Map Viewer"))
@@ -667,16 +658,32 @@ void FCharacterMapViewer::DrawUI(void)
 
 		if (ImGui::BeginTabItem("Character Sets"))
 		{
-			DrawCharacterSetViewer(state, viewState);
+			DrawCharacterSetViewer();
 			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("Character Maps"))
 		{
-			DrawCharacterMaps(state, viewState);
+			DrawCharacterMaps();
 			ImGui::EndTabItem();
 		}
 
 		ImGui::EndTabBar();
 	}
+}
+
+void FCharacterMapViewer::FixupAddressRefs()
+{
+	ViewerGrid->FixupAddressRefs();
+
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+
+	FixupAddressRef(state, SelectedCharSetAddr);
+	FixupAddressRef(state, CharSetParams.Address);
+	FixupAddressRef(state, CharSetParams.AttribsAddress);
+
+	FixupAddressRef(state, UIState.SelectedCharAddress);
+	FixupAddressRef(state, UIState.SelectedCharMapAddr);
+	FixupAddressRef(state, UIState.Params.Address);
+	FixupAddressRef(state, UIState.Params.CharacterSet);
 }
