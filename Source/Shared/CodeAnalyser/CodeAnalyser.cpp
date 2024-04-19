@@ -519,7 +519,7 @@ bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
 }
 
 // this function assumes the text is mapped in
-std::string GetItemText(FCodeAnalysisState& state, FAddressRef address)
+std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address)
 {
 	FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
 	std::string textString;

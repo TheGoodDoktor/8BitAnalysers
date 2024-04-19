@@ -13,7 +13,7 @@ void FSetItemCommentCommand::Undo(FCodeAnalysisState& state)
 	Item.Item->Comment = OldCommentText;
 }
 
-void FSetItemCommentCommand::FixupAddressRefs(FCodeAnalysisState& state)
+void FSetItemCommentCommand::FixupAddressRefs(const FCodeAnalysisState& state)
 {
 	FixupAddressRef(state, Item.AddressRef);
 }

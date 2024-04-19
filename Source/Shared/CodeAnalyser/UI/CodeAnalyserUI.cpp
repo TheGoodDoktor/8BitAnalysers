@@ -67,7 +67,7 @@ bool FCodeAnalysisViewState::GoToNextAddress()
 	return true;
 }
 
-void FCodeAnalysisViewState::FixupAddressRefs(FCodeAnalysisState& state)
+void FCodeAnalysisViewState::FixupAddressRefs(const FCodeAnalysisState& state)
 {
 	FixupAddressRef(state, CursorItem.AddressRef);
 	FixupAddressRef(state, HoverAddress);

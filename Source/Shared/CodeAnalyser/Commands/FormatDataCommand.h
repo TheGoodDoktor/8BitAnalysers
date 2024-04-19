@@ -63,7 +63,7 @@ public:
 	FFormatDataCommand(const FDataFormattingOptions& options);
 	void Do(FCodeAnalysisState& state) override;
 	void Undo(FCodeAnalysisState& state) override;
-	void FixupAddressRefs(FCodeAnalysisState& state) override;
+	void FixupAddressRefs(const FCodeAnalysisState& state) override;
 
 private: 
 	FDataFormattingOptions	FormatOptions;
@@ -89,7 +89,7 @@ public:
 	FBatchFormatDataCommand(const FBatchDataFormattingOptions& options);
 	void Do(FCodeAnalysisState& state) override;
 	void Undo(FCodeAnalysisState& state) override;
-	void FixupAddressRefs(FCodeAnalysisState& state) override;
+	void FixupAddressRefs(const FCodeAnalysisState& state) override;
 
 private:
 	FBatchDataFormattingOptions	BatchFormatOptions;

@@ -13,7 +13,7 @@ public:
 
 	virtual void Do(FCodeAnalysisState& state) override;
 	virtual void Undo(FCodeAnalysisState& state) override;
-	virtual void FixupAddressRefs(FCodeAnalysisState& state) override;
+	virtual void FixupAddressRefs(const FCodeAnalysisState& state) override;
 
 	FCodeAnalysisItem Item;
 
@@ -28,7 +28,7 @@ public:
 
 	virtual void Do(FCodeAnalysisState& state) override;
 	virtual void Undo(FCodeAnalysisState& state) override;
-	virtual void FixupAddressRefs(FCodeAnalysisState& state) override;
+	virtual void FixupAddressRefs(const FCodeAnalysisState& state) override;
 
 	FCodeAnalysisItem Item;
 	EDataItemDisplayType	DisplayType = EDataItemDisplayType::Unknown;
@@ -42,7 +42,7 @@ public:
 
 	virtual void Do(FCodeAnalysisState& state) override;
 	virtual void Undo(FCodeAnalysisState& state) override;
-	virtual void FixupAddressRefs(FCodeAnalysisState& state) override;
+	virtual void FixupAddressRefs(const FCodeAnalysisState& state) override;
 
 	FAddressRef	Addr;
 };

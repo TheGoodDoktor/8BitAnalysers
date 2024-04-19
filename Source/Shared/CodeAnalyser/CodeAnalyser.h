@@ -181,7 +181,7 @@ struct FCodeAnalysisViewState
 		return false;
 	}
 	
-	void FixupAddressRefs(FCodeAnalysisState& state);
+	void FixupAddressRefs(const FCodeAnalysisState& state);
 	
 	bool			Enabled = false;
 	bool			TrackPCFrame = false;
@@ -627,7 +627,7 @@ public:
 		}
 	}
 
-	FDataInfo* GetDataInfoForAddress(FAddressRef addrRef)
+	FDataInfo* GetDataInfoForAddress(FAddressRef addrRef) const
 	{
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
 		if (pBank != nullptr)
@@ -736,7 +736,7 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
 void ResetReferenceInfo(FCodeAnalysisState &state);
 
-std::string GetItemText(FCodeAnalysisState& state, FAddressRef address);
+std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address);
 
 // Commands
 //void Undo(FCodeAnalysisState &state);

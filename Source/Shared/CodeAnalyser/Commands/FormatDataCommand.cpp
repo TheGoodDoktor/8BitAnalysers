@@ -202,7 +202,7 @@ void FFormatDataCommand::Undo(FCodeAnalysisState& state)
 
 }
 
-void FFormatDataCommand::FixupAddressRefs(FCodeAnalysisState& state)
+void FFormatDataCommand::FixupAddressRefs(const FCodeAnalysisState& state)
 {
 	FixupAddressRef(state, FormatOptions.GraphicsSetRef);
 	FixupAddressRef(state, FormatOptions.CharacterSet);
@@ -278,7 +278,7 @@ void FBatchFormatDataCommand::Undo(FCodeAnalysisState& state)
 	}
 }
 
-void FBatchFormatDataCommand::FixupAddressRefs(FCodeAnalysisState& state)
+void FBatchFormatDataCommand::FixupAddressRefs(const FCodeAnalysisState& state)
 {
 	FixupAddressRef(state, BatchFormatOptions.FormatOptions.GraphicsSetRef);
 	FixupAddressRef(state, BatchFormatOptions.FormatOptions.CharacterSet);
