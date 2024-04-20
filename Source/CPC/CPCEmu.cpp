@@ -1,7 +1,10 @@
 #include <cstdint>
 
-#define CHIPS_UI_IMPL
 #define SAVE_NEW_DIRS 1
+
+#ifndef NDEBUG
+#define CHIPS_UI_IMPL
+#endif
 
 #include <imgui.h>
 #include "CPCEmu.h"
@@ -32,9 +35,10 @@
 #include "CPCLuaAPI.h"
 #include "SnapshotLoaders/SNALoader.h"
 
-//#define RUN_AHEAD_TO_GENERATE_SCREEN
+#define ENABLE_EXTERNAL_ROM_SUPPORT 0
+#define RUN_AHEAD_TO_GENERATE_SCREEN 0
 #ifndef NDEBUG
-//#define BANK_SWITCH_DEBUG
+#define BANK_SWITCH_DEBUG
 #endif
 #ifdef BANK_SWITCH_DEBUG
 #define BANK_LOG(...)  { LOGINFO("[BNK] " __VA_ARGS__); }
@@ -271,13 +275,14 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 				// ROM select. This will get called when an OUT $dfXX instruction happens
 				int selectedRomSlot = Z80_GET_DATA(pins);
 
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 				if (bExternalROMSupport)
 				{
 					// Try to select the requested rom slot.
 					// Rom slot will change if we could not select the slot. 
 					selectedRomSlot = SelectUpperROM(selectedRomSlot);
 				}
-
+#endif
 				if (selectedRomSlot != -1)
 				{
 					bool bDirty = selectedRomSlot != CurUpperROMSlot;
@@ -285,6 +290,7 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 					{
 						UpdateBankMappings();
 						
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 						if (bExternalROMSupport)
 						{
 							// Call the modified Chips bank switch code, in order to switch to the newly selected upper ROM.
@@ -295,6 +301,7 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 						
 							ChipsBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
 						}
+#endif
 					}
 					CurUpperROMSlot = selectedRomSlot;
 				}
@@ -387,6 +394,7 @@ bool FCPCEmu::CanSelectUpperROM(uint8_t romSlot)
 bool FCPCEmu::InitBankMappings()
 {
 	am40010_t& ga = CPCEmuState.ga;
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 	if (bExternalROMSupport)
 	{
 		if (!CanSelectUpperROM(ga.rom_select))
@@ -398,13 +406,16 @@ bool FCPCEmu::InitBankMappings()
 	
 		SelectUpperROM(CurUpperROMSlot);
 	}
+#endif
 
 	UpdateBankMappings();
 
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 	if (bExternalROMSupport)
 	{
 		ChipsBankSwitchCB(ga.ram_config, ga.regs.config, ga.rom_select, ga.user_data);
 	}
+#endif
 	return true;
 }
 
@@ -492,11 +503,13 @@ void FCPCEmu::UpdateBankMappings()
 	}
 	else
 	{
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 		if (bExternalROMSupport)
 		{
 			CodeAnalysis.MapBank(UpperROMSlot[CurUpperROMSlot], 48, EBankAccess::Read);
 		}
 		else
+#endif
 		{
 			CodeAnalysis.MapBank(upperRomBank, 48, EBankAccess::Read);
 		}
@@ -905,6 +918,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	if (InitForModel(pCPCConfig->GetDefaultModel()) == false)
 		return false;
 
+#ifdef CHIPS_UI_IMPL
 	// Clear UI
 	memset(&UICPC, 0, sizeof(ui_cpc_t));
 
@@ -921,6 +935,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 
 		ui_cpc_init(&UICPC, &desc);
 	}
+#endif
 
 	// load the command line game if none specified then load the last game
 	bool bLoadedGame = false;
@@ -999,6 +1014,8 @@ bool FCPCEmu::InitForModel(ECPCModel model)
 
 	cpc_init(&CPCEmuState, &desc);
 
+	
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 	/* todo
 	if (type == CPC_TYPE_6128)
 	{
@@ -1011,6 +1028,7 @@ bool FCPCEmu::InitForModel(ECPCModel model)
 	}
 	SetExternalROMSupportEnabled(bExternalROMSupport);
 	*/
+#endif
 
 	const FCPCConfig* pCPCConfig = GetCPCGlobalConfig();
 	InitExternalROMs(pCPCConfig, CPCEmuState.type == CPC_TYPE_6128);
@@ -1066,6 +1084,7 @@ bool FCPCEmu::InitForModel(ECPCModel model)
 		
 	}
 
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 	if (bExternalROMSupport)
 	{
 		// Setup upper ROM slots
@@ -1088,6 +1107,7 @@ bool FCPCEmu::InitForModel(ECPCModel model)
 			}
 		}
 	}
+#endif
 
 	return true;
 }
@@ -1232,7 +1252,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
 	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
 
-#ifdef RUN_AHEAD_TO_GENERATE_SCREEN
+#if RUN_AHEAD_TO_GENERATE_SCREEN
 	// Run the cpc for long enough to generate a frame buffer, otherwise the user will be staring at a black screen.
 	// sam todo: run for exactly 1 video frame. The current technique is crude and can render >1 frame, including partial frames and produce 
 	// a glitch when continuing execution.
@@ -1446,8 +1466,9 @@ void FCPCEmu::Reset()
 	cpc_reset(&CPCEmuState);
 	// Resetting rom_select to 0 because Chips doesn't do it.
 	CPCEmuState.ga.rom_select = 0;
+#ifdef CHIPS_UI_IMPL
 	ui_dbg_reset(&UICPC.dbg);
-
+#endif
 	const bool bIs6128 = GetCPCGlobalConfig()->bDefaultMachineIs6128;
 	FCPCProjectConfig* pBasicConfig = (FCPCProjectConfig*)GetGameConfigForName(bIs6128 ? "AmstradBasic6128" : "AmstradBasic464");
 
@@ -1532,7 +1553,9 @@ void	FCPCEmu::FileMenuAdditions(void)
 
 void	FCPCEmu::SystemMenuAdditions(void)
 {
+#ifdef CHIPS_UI_IMPL
 	ImGui::MenuItem("Memory Map", 0, &UICPC.memmap.open);
+#endif
 	//ImGui::MenuItem("Keyboard Matrix", 0, &UICPC.kbd.open);
 	//ImGui::MenuItem("Audio Output", 0, &UICPC.audio.open);
 	//ImGui::MenuItem("Z80 CPU", 0, &UICPC.cpu.open);
@@ -1578,11 +1601,9 @@ void	FCPCEmu::WindowsMenuAdditions(void)
 
 void FCPCEmu::DrawEmulatorUI()
 {
+#ifdef CHIPS_UI_IMPL
 	ui_cpc_t* pCPCUI = &UICPC;
 	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
-	
-	// Draw the main menu
-	//DrawMainMenu(timeMS);
 	
 	if (pCPCUI->memmap.open) 
 	{
@@ -1599,7 +1620,8 @@ void FCPCEmu::DrawEmulatorUI()
 	*/
 	
 	ui_memmap_draw(&pCPCUI->memmap);
-	
+#endif
+
 	if (ImGui::Begin("CPC View", nullptr, ImGuiWindowFlags_NoNavInputs))
 	{
 		CPCViewer.Draw();
