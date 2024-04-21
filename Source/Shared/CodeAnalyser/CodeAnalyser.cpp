@@ -1074,7 +1074,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		//ViewState[i].CursorItemIndex = -1;
-		ViewState[i].SetCursorItem(FCodeAnalysisItem());
+		ViewState[i].Reset();
 	}
 
 	// reset banks

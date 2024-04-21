@@ -1614,6 +1614,9 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		auto& banks = state.GetBanks();
 		for (auto& bank : banks)
 		{
+			if (bank.PrimaryMappedPage == -1)
+				continue;
+			
 			const bool bSelected = viewState.ViewingBankId == bank.Id;
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 			ImDrawList* dl = ImGui::GetWindowDrawList();

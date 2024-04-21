@@ -142,6 +142,11 @@ struct FAddressCoord
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
+	void Reset()
+	{
+		CursorItem = FCodeAnalysisItem();
+		ViewingBankId = -1;
+	}
 	// accessor functions
 	const FCodeAnalysisItem& GetCursorItem() const { return CursorItem; }
 	void SetCursorItem(const FCodeAnalysisItem& item)
