@@ -264,6 +264,7 @@ FCartridgeBank& FCartridgeManager::AddCartridgeBank(int bankNo, uint16_t address
 		char bankName[32];
 		snprintf(bankName, 32, "CartBank%d_U", bankNo);
 		ultimaxBank.Data = bank.Data; // same data
+		ultimaxBank.BankNo = bank.BankNo;
 		ultimaxBank.BankId = state.CreateBank(bankName, dataSize / 1024, bank.Data, false, 0xE000);
 		UltimaxSlot.Banks.push_back(ultimaxBank);
 	}
@@ -365,6 +366,7 @@ bool FCartridgeManager::SetSlotBank(ECartridgeSlot slot, int bankNo)
 	}
 
 	cartridgeSlot.CurrentBank = bankNo;
+	LOGINFO("Slot: $%04X Bank: %d",cartridgeSlot.BaseAddress,bankNo);
 	return true;
 }
 
@@ -459,6 +461,7 @@ void FCartridgeManager::ReadSlotFromFile(FCartridgeSlot& slot, FILE* fp)
 	slot.bActive = false;	// because we need to map them in
 }
 
+// Note - banks are not getting loaded in the order they were created so bank ids are wrong!
 bool FCartridgeManager::SaveData(FILE* fp)
 {
 	// Write identifier & version

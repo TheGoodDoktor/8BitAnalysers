@@ -92,6 +92,11 @@ struct FCartridgeSlot
 
 	const FCartridgeBank& GetBank(int bankNo) const 
 	{
+		for (auto& bank : Banks)
+		{
+			if(bank.BankNo == bankNo)
+				return bank;
+		}
 		return Banks[bankNo];
 	}
 
