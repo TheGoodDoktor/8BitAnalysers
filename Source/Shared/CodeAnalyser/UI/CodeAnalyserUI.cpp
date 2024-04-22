@@ -1614,6 +1614,9 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		auto& banks = state.GetBanks();
 		for (auto& bank : banks)
 		{
+			if (bank.PrimaryMappedPage == -1)
+				continue;
+			
 			const bool bSelected = viewState.ViewingBankId == bank.Id;
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 			ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -2221,7 +2224,7 @@ void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter
 		const FCodeAnalysisBank* pBank = state.GetBank(labelItem.AddressRef.BankId);
 		if (pBank)
 		{
-			if (filter.bRAMOnly && pBank->bReadOnly)
+			if (filter.bNoMachineRoms && pBank->bMachineROM)
 				continue;
 		}
 		
@@ -2278,8 +2281,8 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 	ImGui::SameLine();
 	if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
 	{
-		viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
-		viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
+		viewState.GlobalFunctionsFilter.bNoMachineRoms = !viewState.ShowROMLabels;
+		viewState.GlobalDataItemsFilter.bNoMachineRoms = !viewState.ShowROMLabels;
 		state.bRebuildFilteredGlobalFunctions = true;
 		state.bRebuildFilteredGlobalDataItems = true;
 	}

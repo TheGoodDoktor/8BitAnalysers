@@ -63,6 +63,32 @@ void DebugCB(void* user_data, uint64_t pins)
 	pC64Emu->OnCPUTick(pins);
 }
 
+class F6502MemDescGenerator : public FMemoryRegionDescGenerator
+{
+public:
+	F6502MemDescGenerator()
+	{
+		RegionMin = 0x100;
+		RegionMax = 0x1ff;	// 16K after
+		RegionBankId = -1;
+	}
+
+	const char* GenerateAddressString(FAddressRef addr) override
+	{
+		if(addr.Address == 0x100)
+			snprintf(DescStr, sizeof(DescStr), "StackBottom");
+		else if (addr.Address == 0x1FF)
+			snprintf(DescStr, sizeof(DescStr), "StackTop");
+		else
+			snprintf(DescStr,sizeof(DescStr),"Stack + $%04X", addr.Address - 0x100);
+
+		return DescStr;
+	}
+private:
+	char DescStr[32] = { 0 };
+
+};
+
 /* get c64_desc_t struct based on joystick type */
 c64_desc_t FC64Emulator::GenerateC64Desc(c64_joystick_type_t joy_type)
 {
@@ -196,6 +222,8 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	SetupCodeAnalysisLabels();
 	UpdateCodeAnalysisPages(0x7);
 	
+	AddMemoryRegionDescGenerator(new F6502MemDescGenerator());
+
 	IOAnalysis.Init(this);
 	
 	pCharacterMapViewer = new FCharacterMapViewer(this);
@@ -225,6 +253,8 @@ void FC64Emulator::SetupCodeAnalysisLabels()
 	AddSIDRegisterLabels(pIOBank->Pages[1]);  // Page $D400-$D7ff
 	pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000,true);    // Colour RAM $D800
 	AddCIARegisterLabels(pIOBank->Pages[3]);  // Page $DC00-$Dfff
+
+	// Add Stack??
 }
 
 void FC64Emulator::UpdateCodeAnalysisPages(uint8_t cpuPort)

@@ -115,7 +115,7 @@ struct FLabelListFilter
 	std::string		FilterText;
 	uint16_t		MinAddress = 0x0000;
 	uint16_t		MaxAddress = 0xffff;
-	bool				bRAMOnly = true;
+	bool			bNoMachineRoms = true;
 	EDataTypeFilter DataType = EDataTypeFilter::All;
 };
 
@@ -142,6 +142,11 @@ struct FAddressCoord
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
+	void Reset()
+	{
+		CursorItem = FCodeAnalysisItem();
+		ViewingBankId = -1;
+	}
 	// accessor functions
 	const FCodeAnalysisItem& GetCursorItem() const { return CursorItem; }
 	void SetCursorItem(const FCodeAnalysisItem& item)
@@ -254,7 +259,8 @@ struct FCodeAnalysisBank
 	FCodeAnalysisPage*	Pages = nullptr;
 	std::string			Name;
 	std::string			Description;	// where we can describe what the bank is used for
-	bool				bReadOnly = false;
+	//bool				bReadOnly = false;
+	bool				bMachineROM = false;
 	bool				bFixed = false;	// bank is never remapped
 	bool				bIsDirty = false;
 	bool				bEverBeenMapped = false;

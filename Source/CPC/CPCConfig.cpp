@@ -36,6 +36,7 @@ void FCPCConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 	if (jsonConfigFile.contains("DefaultMachineIs6128"))
 		bDefaultMachineIs6128 = jsonConfigFile["DefaultMachineIs6128"];
 
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 	for (int i = 1; i < UpperROMSlot.size(); i++)
 	{
 		char temp[32] = { 0 };
@@ -46,6 +47,7 @@ void FCPCConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 			UpperROMSlot[i] = jsonConfigFile[temp];
 		}
 	}
+#endif
 
 	FixupPaths();
 }
@@ -56,10 +58,12 @@ void FCPCConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 
 	jsonConfigFile["DefaultMachineIs6128"] = bDefaultMachineIs6128;
 
+#if ENABLE_EXTERNAL_ROM_SUPPORT
 	for (int i = 1; i < UpperROMSlot.size(); i++)
 	{
 		char temp[32] = { 0 };
 		sprintf(temp, "UpperROMSlot%02d", i);
 		jsonConfigFile[temp] = UpperROMSlot[i].c_str();
 	}
+#endif
 }

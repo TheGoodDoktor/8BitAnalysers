@@ -29,7 +29,7 @@
 
 // create a bank
 // a bank is a list of memory pages
-int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly, uint16_t initialAddress, bool bFixed)
+int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bMachineROM, uint16_t initialAddress, bool bFixed)
 {
 	const int16_t bankId = GetNextBankId();
 	assert(bankId == (int16_t)Banks.size());
@@ -42,7 +42,7 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	newBank.Memory = pBankMem;
 	newBank.Pages = new FCodeAnalysisPage[noPages];
 	newBank.Name = bankName;
-	newBank.bReadOnly = bReadOnly;
+	newBank.bMachineROM = bMachineROM;
 	newBank.bFixed = bFixed;
 	newBank.PrimaryMappedPage = initialAddress / 1024;	// byte addres to 1kb page address
 	for (int pageNo = 0; pageNo < noPages; pageNo++)
@@ -236,13 +236,13 @@ bool FCodeAnalysisState::ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_
 }
 
 
-std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(const uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly)
+std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(const uint8_t* pData, size_t dataSize, bool bCheckMachineROM, bool bPhysicalOnly)
 {
 	std::vector<FAddressRef> results;
 	// iterate through banks
 	for (auto& bank : Banks)
 	{
-		if (bank.bReadOnly && bROM == false)
+		if (bank.bMachineROM && bCheckMachineROM == false)
 			continue;
 
 		if (bank.IsMapped() == false && bPhysicalOnly)
@@ -322,13 +322,13 @@ bool IsValidStringChar(char c)
 	return IsAlphanumeric(c) || IsPunctuation(c);
 }
 
-std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bROM, bool bPhysicalOnly)
+std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bCheckMachineROM, bool bPhysicalOnly)
 {
 	std::vector<FFoundString> results;
 
 	for (auto& bank : Banks)
 	{
-		if (bank.bReadOnly && bROM == false)
+		if (bank.bMachineROM && bCheckMachineROM == false)
 			continue;
 
 		if (bank.IsMapped() == false && bPhysicalOnly)
@@ -1074,7 +1074,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		//ViewState[i].CursorItemIndex = -1;
-		ViewState[i].SetCursorItem(FCodeAnalysisItem());
+		ViewState[i].Reset();
 	}
 
 	// reset banks

@@ -276,7 +276,7 @@ FCartridgeBank& FCartridgeManager::AddCartridgeBankToSlot(ECartridgeSlot slot, c
 	char bankName[32];
 	const char* pSlotSuffix = slot == ECartridgeSlot::RomLow ? "_Low" : "_High";
 	snprintf(bankName, 32, "CartBank%d%s", create.BankNo,pSlotSuffix);
-	bank.BankId = state.CreateBank(bankName, create.DataSize / 1024, bank.Data, false, create.Address);
+	bank.BankId = state.CreateBank(bankName, create.DataSize / 1024, bank.Data, false, create.Address);	// we set read only to false so that it'll save - probably a bad idea
 	cartridgeSlot.Banks.push_back(bank);
 
 	// Dupe to Ultimax
@@ -387,7 +387,6 @@ bool FCartridgeManager::SetSlotBank(ECartridgeSlot slot, int bankNo)
 	if (cartridgeSlot.bActive)	// only map memory if slot is active
 	{
 		FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-		const FCartridgeBank& oldBank = cartridgeSlot.GetBank(cartridgeSlot.CurrentBank);
 		const FCartridgeBank& bank = cartridgeSlot.GetBank(bankNo);
 
 		// Map in memory page
@@ -406,49 +405,9 @@ bool FCartridgeManager::SetSlotBank(ECartridgeSlot slot, int bankNo)
 	}
 
 	cartridgeSlot.CurrentBank = bankNo;
+	LOGINFO("Slot: $%04X Bank: %d",cartridgeSlot.BaseAddress,bankNo);
 	return true;
 }
-
-#if 0
-bool FCartridgeManager::MapCartridgeBank(ECartridgeSlot slot, int bankNo)
-{
-	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-	c64_t* pC64 = pEmulator->GetEmu();
-	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
-	FCartridgeBank& bank = cartridgeSlot.Banks[bankNo];
-
-	// Map in memory page
-	mem_map_rw(&pC64->mem_cpu, 0, bank.Address, bank.DataSize, bank.Data, &pC64->ram[bank.Address]);
-
-	// Map in analysis
-	state.MapBank(bank.BankId, bank.Address / 1024, EBankAccess::Read);
-
-	cartridgeSlot.CurrentBank = bankNo;
-	cartridgeSlot.bActive = true;
-
-	return true;
-}
-
-void	FCartridgeManager::UnMapCartridge(ECartridgeSlot slot)
-{
-	c64_t* pC64 = pEmulator->GetEmu();
-	const FC64BankIds& bankIds = pEmulator->GetBankIds();
-	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
-
-	mem_map_ram(&pC64->mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, &pC64->ram[cartridgeSlot.BaseAddress]);
-
-	if (slot == ECartridgeSlot::Addr_8000)
-		state.MapBank(bankIds.LowerRAM2, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
-	else if (slot == ECartridgeSlot::Addr_A000)
-		state.MapBank(bankIds.RAMBehindBasicROM, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
-	else if (slot == ECartridgeSlot::Addr_E000)
-		state.MapBank(bankIds.RAMBehindKernelROM, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
-
-	cartridgeSlot.CurrentBank = -1;
-	cartridgeSlot.bActive = false;
-}
-#endif
 
 bool FCartridgeManager::HandleIOWrite(uint16_t address, uint8_t value)
 {
@@ -506,6 +465,7 @@ void FCartridgeManager::ReadSlotFromFile(FCartridgeSlot& slot, FILE* fp)
 	slot.bActive = false;	// because we need to map them in
 }
 
+// Note - banks are not getting loaded in the order they were created so bank ids are wrong!
 bool FCartridgeManager::SaveData(FILE* fp)
 {
 	// Write identifier & version
