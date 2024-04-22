@@ -51,6 +51,14 @@ struct FChipPacketHeader
 	uint16_t	ROMSizeBytes;
 };
 
+struct FCartridgeBankCreate
+{
+	uint16_t	Address = 0;	
+	int			BankNo = -1;
+	uint32_t	DataSize = 0;
+	uint8_t *	Data = nullptr;
+};
+
 ECartridgeType GetCartridgeType(int typeNo)
 {
 	switch (typeNo)
@@ -112,6 +120,8 @@ bool FCartridgeManager::LoadCRTFile(const char* pFName)
 	InitialMemoryModel = ECartridgeMemoryModel::Unknown;
 	CurrentMemoryModel = InitialMemoryModel;
 
+	std::map<ECartridgeSlot, std::vector<FCartridgeBankCreate> > createBanks;
+
 	while(true)
 	{
 		FChipPacketHeader chipHeader;
@@ -127,19 +137,30 @@ bool FCartridgeManager::LoadCRTFile(const char* pFName)
 		chipHeader.StartingLoadAddress = swap_endian<uint16_t>(chipHeader.StartingLoadAddress);
 		chipHeader.ROMSizeBytes = swap_endian<uint16_t>(chipHeader.ROMSizeBytes);
 
-		//if(cartridgeType == ECartridgeType::EasyFlash && chipHeader.StartingLoadAddress == 0xA000)	//hack
-		//	chipHeader.StartingLoadAddress = 0xE000;
-
 		LOGINFO("--CHIP SECTION--");
 		LOGINFO("Chip bank number: %d", chipHeader.BankNumber);
 		LOGINFO("Type: %d",chipHeader.ChipType);
 		LOGINFO("Address: $%04X",chipHeader.StartingLoadAddress);
 		LOGINFO("Size: %d bytes", chipHeader.ROMSizeBytes);
 
+		ECartridgeSlot slot = GetSlotFromAddress(chipHeader.StartingLoadAddress);
+		FCartridgeBankCreate bankCreate;
+		bankCreate.Address = chipHeader.StartingLoadAddress;
+		bankCreate.BankNo = chipHeader.BankNumber;
+		bankCreate.DataSize = chipHeader.ROMSizeBytes;
+		bankCreate.Data = new uint8_t[chipHeader.ROMSizeBytes];	// ownership gets passed to bank on creation
+		fread(bankCreate.Data, chipHeader.ROMSizeBytes, 1, fp);
+		createBanks[slot].push_back(bankCreate);
+
 		// Create bank & read in data
-		FCartridgeBank& bank = AddCartridgeBank(chipHeader.BankNumber,chipHeader.StartingLoadAddress,chipHeader.ROMSizeBytes);
-		fread(bank.Data, chipHeader.ROMSizeBytes,1,fp);
+		//FCartridgeBank& bank = AddCartridgeBank(chipHeader.BankNumber,chipHeader.StartingLoadAddress,chipHeader.ROMSizeBytes);
 	}
+
+	// create slots here, this is so that we always create the banks in the same order
+	for(auto& create : createBanks[ECartridgeSlot::RomLow])
+		AddCartridgeBankToSlot(ECartridgeSlot::RomLow,create);
+	for (auto& create : createBanks[ECartridgeSlot::RomHigh])
+		AddCartridgeBankToSlot(ECartridgeSlot::RomHigh, create);
 	
 	// this is more reliable for generic cartridges - specific carts should set their own memory model in constructor
 	InitialMemoryModel = GetMemoryModelForCartLines(header.GAMELine != 0, header.EXROMLine != 0);
@@ -152,8 +173,8 @@ bool FCartridgeManager::LoadCRTFile(const char* pFName)
 	GetCartridgeSlot(ECartridgeSlot::RomLow).CurrentBank = 0;
 	GetCartridgeSlot(ECartridgeSlot::RomHigh).bActive = false;
 	GetCartridgeSlot(ECartridgeSlot::RomHigh).CurrentBank = 0;
-	UltimaxSlot.bActive = false;
-	UltimaxSlot.CurrentBank = 0;
+	//UltimaxSlot.bActive = false;
+	//UltimaxSlot.CurrentBank = 0;
 
 	CurrentMemoryModel = InitialMemoryModel;
 	MapSlotsForMemoryModel();
@@ -211,7 +232,7 @@ bool FCartridgeManager::Init(FC64Emulator* pEmu)
 	FirstCartridgeBankId = state.GetNextBankId();			// Record first cartridge bank
 	GetCartridgeSlot(ECartridgeSlot::RomLow).Init(0x8000, 0x2000);
 	GetCartridgeSlot(ECartridgeSlot::RomHigh).Init(0xA000, 0x2000);
-	UltimaxSlot.Init(0xE000, 0x2000);
+	//UltimaxSlot.Init(0xE000, 0x2000);
 	return true;
 }
 
@@ -221,52 +242,54 @@ void FCartridgeManager::OnMachineReset()
 	MapSlotsForMemoryModel();
 	GetCartridgeSlot(ECartridgeSlot::RomLow).bActive = true;
 	GetCartridgeSlot(ECartridgeSlot::RomHigh).bActive = true;
-	UltimaxSlot.bActive = true;;
+	//UltimaxSlot.bActive = true;;
 
 	GetCartridgeSlot(ECartridgeSlot::RomLow).CurrentBank = -1;
 	GetCartridgeSlot(ECartridgeSlot::RomHigh).CurrentBank = -1;
-	UltimaxSlot.CurrentBank = -1;
+	//UltimaxSlot.CurrentBank = -1;
 	InitCartMapping();
 }
 
 FCartridgeSlot& FCartridgeManager::GetCartridgeSlot(ECartridgeSlot slot)
 { 
 	assert(slot != ECartridgeSlot::Unknown); 
-	if(CurrentMemoryModel == ECartridgeMemoryModel::Ultimax && slot == ECartridgeSlot::RomHigh)
-		return UltimaxSlot;
+	//if(CurrentMemoryModel == ECartridgeMemoryModel::Ultimax && slot == ECartridgeSlot::RomHigh)
+	//	return UltimaxSlot;
 
 	return CartridgeSlots[(int)slot]; 
 }
 
-FCartridgeBank& FCartridgeManager::AddCartridgeBank(int bankNo, uint16_t address, uint32_t dataSize)
+
+
+FCartridgeBank& FCartridgeManager::AddCartridgeBankToSlot(ECartridgeSlot slot, const FCartridgeBankCreate& create)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
-	ECartridgeSlot slot = GetSlotFromAddress(address);
+	//ECartridgeSlot slot = GetSlotFromAddress(address);
 	assert(slot != ECartridgeSlot::Unknown);
 	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
 	FCartridgeBank bank;
-	bank.BankNo = bankNo;
-	bank.Data = new uint8_t[dataSize];
+	bank.BankNo = create.BankNo;
+	bank.Data = create.Data;
 
 	// Create Analyser Bank
 	char bankName[32];
 	const char* pSlotSuffix = slot == ECartridgeSlot::RomLow ? "_Low" : "_High";
-	snprintf(bankName, 32, "CartBank%d%s", bankNo,pSlotSuffix);
-	bank.BankId = state.CreateBank(bankName, dataSize / 1024, bank.Data, false, address);
+	snprintf(bankName, 32, "CartBank%d%s", create.BankNo,pSlotSuffix);
+	bank.BankId = state.CreateBank(bankName, create.DataSize / 1024, bank.Data, false, create.Address);
 	cartridgeSlot.Banks.push_back(bank);
 
 	// Dupe to Ultimax
-	if(slot == ECartridgeSlot::RomHigh)
+	/*if (slot == ECartridgeSlot::RomHigh)
 	{
 		FCartridgeBank ultimaxBank;
 
 		char bankName[32];
-		snprintf(bankName, 32, "CartBank%d_U", bankNo);
+		snprintf(bankName, 32, "CartBank%d_U", create.BankNo);
 		ultimaxBank.Data = bank.Data; // same data
-		ultimaxBank.BankId = state.CreateBank(bankName, dataSize / 1024, bank.Data, false, 0xE000);
+		ultimaxBank.BankId = state.CreateBank(bankName, create.DataSize / 1024, bank.Data, false, 0xE000);
 		UltimaxSlot.Banks.push_back(ultimaxBank);
-	}
+	}*/
 
 	return cartridgeSlot.Banks.back();
 }
@@ -308,7 +331,10 @@ bool	FCartridgeManager::MapSlotIn(ECartridgeSlot slot, uint16_t address)
 	else if (address == 0xA000)
 		cartridgeSlot.RAMBank = bankIds.RAMBehindBasicROM;
 	else if (address == 0xE000)
-		cartridgeSlot.RAMBank = bankIds.RAMBehindKernelROM;;
+		cartridgeSlot.RAMBank = bankIds.RAMBehindKernelROM;
+
+	const uint16_t	oldSlotAddress = cartridgeSlot.BaseAddress;
+	const bool bSlotRemapped = cartridgeSlot.BaseAddress != address;
 
 	// Map slot into memory
 	cartridgeSlot.BaseAddress = address;
@@ -319,8 +345,14 @@ bool	FCartridgeManager::MapSlotIn(ECartridgeSlot slot, uint16_t address)
 	// Map in analysis
 	//state.GetBank(bank.BankId)->PrimaryMappedPage = -1;
 	state.MapBank(bank.BankId, cartridgeSlot.BaseAddress / 1024, EBankAccess::Read);
-
+	state.SetBankPrimaryPage(bank.BankId, cartridgeSlot.BaseAddress / 1024);
 	cartridgeSlot.bActive = true;
+
+	if(bSlotRemapped)
+	{
+		pEmulator->FixupAddressRefs();
+	}
+
 	return true;
 }
 
@@ -355,13 +387,22 @@ bool FCartridgeManager::SetSlotBank(ECartridgeSlot slot, int bankNo)
 	if (cartridgeSlot.bActive)	// only map memory if slot is active
 	{
 		FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+		const FCartridgeBank& oldBank = cartridgeSlot.GetBank(cartridgeSlot.CurrentBank);
 		const FCartridgeBank& bank = cartridgeSlot.GetBank(bankNo);
 
 		// Map in memory page
 		mem_map_rw(&pC64->mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, bank.Data, &pC64->ram[cartridgeSlot.BaseAddress]);
 
 		// Map in analysis
-		state.MapBank(bank.BankId, cartridgeSlot.BaseAddress / 1024, EBankAccess::Read);
+		const int slotPage = cartridgeSlot.BaseAddress / 1024;
+		FCodeAnalysisBank* pAnalysisBank = state.GetBank(bank.BankId);
+		const bool bRemapBank = pAnalysisBank->GetMappedAddress() != cartridgeSlot.BaseAddress;
+		state.MapBank(bank.BankId, slotPage, EBankAccess::Read);
+		if(bRemapBank)
+		{
+			state.SetBankPrimaryPage(bank.BankId, slotPage);
+			pEmulator->FixupAddressRefs();
+		}
 	}
 
 	cartridgeSlot.CurrentBank = bankNo;
@@ -420,7 +461,7 @@ bool FCartridgeManager::HandleIORead(uint16_t address, uint8_t& value)
 }
 
 static const uint32_t kCartridgeMagic = 0xdeadcafe;
-static const uint32_t kVersionNo = 1 + 20001;
+static const uint32_t kVersionNo = 1 + 20002;
 
 void FCartridgeManager::WriteSlotToFile(const FCartridgeSlot& slot, FILE* fp)
 {
@@ -444,13 +485,19 @@ void FCartridgeManager::ReadSlotFromFile(FCartridgeSlot& slot, FILE* fp)
 	fread(&slot.BaseAddress, sizeof(uint16_t), 1, fp);
 	fread(&slot.bActive, sizeof(bool), 1, fp);
 
+	const ECartridgeSlot cartSlot = GetSlotFromAddress(slot.BaseAddress);
+
 	uint32_t noCartBanks = 0;
 	fread(&noCartBanks, sizeof(uint32_t), 1, fp);
 	for (int i = 0; i < (int)noCartBanks; i++)
 	{
-		FCartridgeBank& bank = AddCartridgeBank(i, slot.BaseAddress, slot.Size);
-		fread(&bank.BankNo, sizeof(int), 1, fp);
-		fread(bank.Data, slot.Size, 1, fp);
+		FCartridgeBankCreate bankCreate;
+		bankCreate.Address = slot.BaseAddress;
+		bankCreate.Data = new uint8_t[slot.Size];
+		bankCreate.DataSize = slot.Size;
+		fread(&bankCreate.BankNo, sizeof(int), 1, fp);
+		fread(bankCreate.Data, slot.Size, 1, fp);
+		AddCartridgeBankToSlot(cartSlot, bankCreate);
 	}
 
 	fread(&slot.CurrentBank, sizeof(int), 1, fp);
@@ -468,7 +515,7 @@ bool FCartridgeManager::SaveData(FILE* fp)
 	// Write Slots
 	WriteSlotToFile(CartridgeSlots[0], fp);
 	WriteSlotToFile(CartridgeSlots[1], fp);
-	WriteSlotToFile(UltimaxSlot,fp);
+	//WriteSlotToFile(UltimaxSlot,fp);
 
 	fwrite(&CartridgeType, sizeof(ECartridgeType), 1, fp);
 	fwrite(&InitialMemoryModel, sizeof(ECartridgeMemoryModel), 1, fp);
@@ -493,7 +540,7 @@ ELoadDataResult FCartridgeManager::LoadData(FILE* fp)
 	// read slots
 	ReadSlotFromFile(CartridgeSlots[0], fp);
 	ReadSlotFromFile(CartridgeSlots[1], fp);
-	ReadSlotFromFile(UltimaxSlot, fp);
+	//ReadSlotFromFile(UltimaxSlot, fp);
 
 	CartridgeType = ECartridgeType::Generic;
 	fread(&CartridgeType, sizeof(ECartridgeType), 1, fp);

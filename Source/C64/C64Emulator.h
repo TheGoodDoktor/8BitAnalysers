@@ -102,6 +102,7 @@ public:
 	void	DrawEmulatorUI() override;
 	void    Tick() override;
 	void    Reset() override;
+	void	FixupAddressRefs();
 
 	void	FileMenuAdditions(void) override;
 	void	SystemMenuAdditions(void) override;

@@ -8,6 +8,8 @@ class FC64Emulator;
 class FCartridgeManager;
 class FCartridgeHandler;
 
+struct FCartridgeBankCreate;
+
 enum class ECartridgeType
 {
 	None,
@@ -117,7 +119,7 @@ public:
 	void	OnMachineReset();
 
 	FCartridgeSlot& GetCartridgeSlot(ECartridgeSlot slot);
-	FCartridgeBank& AddCartridgeBank(int bankNo, uint16_t address, uint32_t dataSize);
+	FCartridgeBank& AddCartridgeBankToSlot(ECartridgeSlot slot, const FCartridgeBankCreate& create);
 
 	void	SetInitialMemoryModel(ECartridgeMemoryModel model) { InitialMemoryModel = model; }
 	void	SetMemoryModel(ECartridgeMemoryModel model) { CurrentMemoryModel = model; }
@@ -152,7 +154,7 @@ private:
 	ECartridgeMemoryModel	CurrentMemoryModel = ECartridgeMemoryModel::Unknown;
 	ECartridgeType		CartridgeType = ECartridgeType::None;
 	FCartridgeSlot		CartridgeSlots[(int)ECartridgeSlot::Max];
-	FCartridgeSlot		UltimaxSlot;
+	//FCartridgeSlot		UltimaxSlot;
 	int16_t				FirstCartridgeBankId = -1;
 };
 

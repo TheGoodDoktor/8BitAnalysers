@@ -338,6 +338,7 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 			bLoadSnapshot = false;
 		}
 
+
 		if (FileExists(analysisJsonFName.c_str()))
 		{
 			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
@@ -346,6 +347,8 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 
 		// Set memory banks
 		UpdateCodeAnalysisPages(C64Emu.cpu_port);
+
+		FixupAddressRefs();
 
 		if(LoadedFileType == EC64FileType::Cartridge)
 			CartridgeManager.MapSlotsForMemoryModel();
@@ -899,6 +902,27 @@ void   FC64Emulator::Reset(void)
 	UpdateCodeAnalysisPages(C64Emu.cpu_port);
 	if(LoadedFileType == EC64FileType::Cartridge)
 		CartridgeManager.OnMachineReset();
+}
+
+void FC64Emulator::FixupAddressRefs()
+{
+	CodeAnalysis.FixupAddressRefs();
+
+	// TODO: Fixup game config
+	/*if (pActiveGame != nullptr)
+	{
+		if (FProjectConfig* pProjectConfig = pActiveGame->pConfig)
+		{
+			pProjectConfig->FixupAddressRefs(CodeAnalysis);
+		}
+	}*/
+
+	FixupCharacterMapAddressRefs(CodeAnalysis);
+	FixupCharacterSetAddressRefs(CodeAnalysis);
+
+	// Fixup viewers
+	pCharacterMapViewer->FixupAddressRefs();
+	pGraphicsViewer->FixupAddressRefs();
 }
 
 

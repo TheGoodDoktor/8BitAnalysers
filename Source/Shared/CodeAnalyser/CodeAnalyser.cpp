@@ -1168,7 +1168,7 @@ void FCodeAnalysisState::OnCPUTick(uint64_t pins)
 	Debugger.CPUTick(pins);
 }
 
-void FixupDataInfoAddressRefs(FCodeAnalysisState& state, FDataInfo* pDataInfo)
+void FixupDataInfoAddressRefs(const FCodeAnalysisState& state, FDataInfo* pDataInfo)
 {
 	// Because this is a union, it will also fixup GraphicsSetRef and CharSetAddress
 	FixupAddressRef(state, pDataInfo->InstructionAddress);
@@ -1177,7 +1177,7 @@ void FixupDataInfoAddressRefs(FCodeAnalysisState& state, FDataInfo* pDataInfo)
 	FixupAddressRefList(state, pDataInfo->Writes.GetReferences());
 }
 
-void FixupCodeInfoAddressRefs(FCodeAnalysisState& state, FCodeInfo* pCodeInfo)
+void FixupCodeInfoAddressRefs(const FCodeAnalysisState& state, FCodeInfo* pCodeInfo)
 {
 	FixupAddressRef(state, pCodeInfo->OperandAddress);
 	FixupAddressRefList(state, pCodeInfo->Reads.GetReferences());
@@ -1203,8 +1203,11 @@ void FCodeAnalysisState::FixupAddressRefs()
 	int addr = 0;
 	while (addr <= 0xffff)
 	{
-		const FAddressRef wAddressRef(GetWriteBankFromAddress(addr), addr);
-		const FAddressRef rAddressRef(GetReadBankFromAddress(addr), addr);
+		FAddressRef wAddressRef(GetWriteBankFromAddress(addr), addr);
+		FAddressRef rAddressRef(GetReadBankFromAddress(addr), addr);
+
+		//FixupAddressRef(*this, wAddressRef);
+		//FixupAddressRef(*this, rAddressRef);
 
 		// Fixup the code and data items in RAM.
 		if (FCodeInfo* pWriteCode = GetCodeInfoForAddress(wAddressRef))
