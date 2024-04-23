@@ -103,7 +103,7 @@ public:
 		if (const FCodeAnalysisBank* pBank = pCPCEmu->GetCodeAnalysis().GetBank(addr.BankId))
 		{
 			// ROM can't be screen memory
-			if (pBank->bReadOnly)
+			if (pBank->bMachineROM)
 				return nullptr;
 
 			// todo: deal with screen mode? display both scr mode's x coords?
