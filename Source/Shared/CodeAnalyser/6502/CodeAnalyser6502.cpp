@@ -258,9 +258,11 @@ bool CheckStopInstruction6502(const FCodeAnalysisState& state, uint16_t pc)
 	switch (instrByte)
 	{
 	case 0x00:	// BRK
-	case 0x20:	// JSR
+	//case 0x20:	// JSR
 	case 0x40:	// RTI
 	case 0x60:	// RTS
+	case 0x4C:	// JMP ind
+	case 0x6C:	// JMP abs
 		return true;
 	}
 	return false;
