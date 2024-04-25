@@ -8,6 +8,7 @@ mkdir ..\Package\Loose\Pokes
 mkdir ..\Package\Loose\RZX
 mkdir ..\Package\Loose\Docs
 mkdir ..\Package\Loose\Fonts
+mkdir ..\Package\Loose\Lua
 
 rem Add some files to describe what to put in the empty directories
 @echo>"..\Package\Loose\SpectrumGames\48k and 128k snapshots go here - z80 or sna"
@@ -19,8 +20,9 @@ copy ..\Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe ..\Package\Loos
 copy ..\Data\SpectrumAnalyser\imgui.ini ..\Package\Loose\
 copy ..\Data\SpectrumAnalyser\RomInfo.json ..\Package\Loose\
 copy ..\Data\SpectrumAnalyser\SALogo.png ..\Package\Loose\
+xcopy /e /v /y ..\Data\SpectrumAnalyser\Lua ..\Package\Loose\Lua\
 copy ..\Docs\*.* ..\Package\Loose\Docs\
 
-7z a ..\Package\SpectrumAnalyser.zip ..\Package\Loose\.
+"c:\program files\7-Zip\7z.exe" a ..\Package\SpectrumAnalyser.zip ..\Package\Loose\.
 
 pause
