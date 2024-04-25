@@ -203,6 +203,10 @@ bool OnEmulatorScreenDrawn(float x, float y, float scale)
 		}
 		return true;
 	}
+	else
+	{
+		lua_pop(pState, 1);
+	}
 
 	return false;
 }

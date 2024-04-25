@@ -42,17 +42,17 @@ end
 
 function OnScreenDraw(x,y,scale)
 
-    -- todo: Get this working. It causes a horrible D3D crash as it is!
+    -- todo: Get this working.
     -- I just guessed at these numbers when I implemented it.
     -- It will probably need to take into account the current screen mode.
-    
-    --ScreenOverlay.viewScreenPos.x = x + ((320 - 320) / 2) * scale
-    --ScreenOverlay.viewScreenPos.y = y + ((256 - 200) / 2) * scale
-    --ScreenOverlay.imageScale = scale
 
-    --if ScreenOverlay.drawFunc ~= nil then
-    --    ScreenOverlay:drawFunc()
-    --end
+    ScreenOverlay.viewScreenPos.x = x + ((320 - 320) / 2) * scale
+    ScreenOverlay.viewScreenPos.y = y + ((256 - 200) / 2) * scale
+    ScreenOverlay.imageScale = scale
+
+    if ScreenOverlay.drawFunc ~= nil then
+       ScreenOverlay:drawFunc()
+    end
 end
 
 function SetScreenDrawOverlayFunc(overlayFunc)
