@@ -229,11 +229,11 @@ bool CheckJumpInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint
 		// to absolute 16 address
 		case 0x20:	// JSR
 		case 0x4C:	// JMP abs
-		//case 0x6C:	// JMP indirect
+		case 0x6C:	// JMP indirect
 			*out_addr = state.ReadWord(pc + 1);
 			return true;
-		case 0x6C:	// JMP indirect
-			*out_addr = state.ReadWord(state.ReadWord(pc + 1));
+		//case 0x6C:	// JMP indirect
+		//	*out_addr = state.ReadWord(state.ReadWord(pc + 1));
 		return true;
 	}
 	return false;

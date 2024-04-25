@@ -356,6 +356,44 @@ bool	FCartridgeManager::MapSlotIn(ECartridgeSlot slot, uint16_t address)
 	return true;
 }
 
+// Hack!
+static void UpdateC64MemoryMap(c64_t* sys) 
+{
+	sys->io_mapped = false;
+	uint8_t* read_ptr;
+	// shortcut if HIRAM and LORAM is 0, everything is RAM
+	if ((sys->cpu_port & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == 0) {
+		mem_map_ram(&sys->mem_cpu, 0, 0xA000, 0x6000, sys->ram + 0xA000);
+	}
+	else {
+		// A000..BFFF is either RAM-behind-BASIC-ROM or RAM
+		if ((sys->cpu_port & (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) == (C64_CPUPORT_HIRAM | C64_CPUPORT_LORAM)) {
+			read_ptr = sys->rom_basic;
+		}
+		else {
+			read_ptr = sys->ram + 0xA000;
+		}
+		mem_map_rw(&sys->mem_cpu, 0, 0xA000, 0x2000, read_ptr, sys->ram + 0xA000);
+
+		// E000..FFFF is either RAM-behind-KERNAL-ROM or RAM
+		if (sys->cpu_port & C64_CPUPORT_HIRAM) {
+			read_ptr = sys->rom_kernal;
+		}
+		else {
+			read_ptr = sys->ram + 0xE000;
+		}
+		mem_map_rw(&sys->mem_cpu, 0, 0xE000, 0x2000, read_ptr, sys->ram + 0xE000);
+
+		// D000..DFFF can be Char-ROM or I/O
+		if (sys->cpu_port & C64_CPUPORT_CHAREN) {
+			sys->io_mapped = true;
+		}
+		else {
+			mem_map_rw(&sys->mem_cpu, 0, 0xD000, 0x1000, sys->rom_char, sys->ram + 0xD000);
+		}
+	}
+}
+
 bool	FCartridgeManager::MapSlotOut(ECartridgeSlot slot)
 {
 	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
@@ -367,12 +405,25 @@ bool	FCartridgeManager::MapSlotOut(ECartridgeSlot slot)
 	c64_t* pC64 = pEmulator->GetEmu();
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
-	mem_map_ram(&pC64->mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, &pC64->ram[cartridgeSlot.BaseAddress]);
+	//mem_map_ram(&pC64->mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, &pC64->ram[cartridgeSlot.BaseAddress]);
 
 	// map in old RAM bank to the analysis
-	state.MapBank(cartridgeSlot.RAMBank, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
+	//state.MapBank(cartridgeSlot.RAMBank, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
 
 	cartridgeSlot.bActive = false;
+
+	// this will only handle mapping out the ultimax or high ROM slot
+	if(slot == ECartridgeSlot::RomHigh)
+	{
+		UpdateC64MemoryMap(pC64);
+		pEmulator->UpdateCodeAnalysisPages(pC64->cpu_port);
+	}
+	else // handle lower slot
+	{
+		mem_map_ram(&pC64->mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, &pC64->ram[cartridgeSlot.BaseAddress]);
+		state.MapBank(cartridgeSlot.RAMBank, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
+	}
+
 	return true;
 }
 
