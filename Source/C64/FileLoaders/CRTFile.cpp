@@ -682,8 +682,8 @@ public:
 		if (address == 0xDE02)
 		{
 			// Set up memory model
-			const bool bGameLine = (value & 1) != 0;
-			const bool bExROMLine = (value & 2) != 0;
+			const bool bGameLine = (value & 1) == 0;
+			const bool bExROMLine = (value & 2) == 0;
 			MemoryModel = GetMemoryModelForCartLines(bGameLine,bExROMLine);
 			// What do we do now?
 			pCartridgeManager->SetMemoryModel(MemoryModel);
