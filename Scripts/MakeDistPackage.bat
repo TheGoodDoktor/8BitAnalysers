@@ -1,28 +1,31 @@
 echo off
 
-echo Deleting old package files...
-if exist ..\Package rmdir /s /q ..\Package
+set PACKAGE_PATH=..\Package\ZX
+set LOOSE_PATH=%PACKAGE_PATH%\Loose
 
-mkdir ..\Package\Loose\SpectrumGames
-mkdir ..\Package\Loose\Pokes
-mkdir ..\Package\Loose\RZX
-mkdir ..\Package\Loose\Docs
-mkdir ..\Package\Loose\Fonts
-mkdir ..\Package\Loose\Lua
+echo Deleting old package files...
+if exist %PACKAGE_PATH% rmdir /s /q %PACKAGE_PATH%
+
+mkdir %LOOSE_PATH%\SpectrumGames
+mkdir %LOOSE_PATH%\Pokes
+mkdir %LOOSE_PATH%\RZX
+mkdir %LOOSE_PATH%\Docs
+mkdir %LOOSE_PATH%\Fonts
+mkdir %LOOSE_PATH%\Lua
 
 rem Add some files to describe what to put in the empty directories
-@echo>"..\Package\Loose\SpectrumGames\48k and 128k snapshots go here - z80 or sna"
-@echo>"..\Package\Loose\Pokes\pok files go here - filename matching game name"
-@echo>"..\Package\Loose\RZX\rzx files go here"
-@echo>"..\Package\Loose\Fonts\fonts go here in ttf format"
+@echo>"%LOOSE_PATH%\SpectrumGames\48k and 128k snapshots go here - z80 or sna"
+@echo>"%LOOSE_PATH%\Pokes\pok files go here - filename matching game name"
+@echo>"%LOOSE_PATH%\RZX\rzx files go here"
+@echo>"%LOOSE_PATH%\Fonts\fonts go here in ttf format"
 
-copy ..\Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe ..\Package\Loose\
-copy ..\Data\SpectrumAnalyser\imgui.ini ..\Package\Loose\
-copy ..\Data\SpectrumAnalyser\RomInfo.json ..\Package\Loose\
-copy ..\Data\SpectrumAnalyser\SALogo.png ..\Package\Loose\
-xcopy /e /v /y ..\Data\SpectrumAnalyser\Lua ..\Package\Loose\Lua\
-copy ..\Docs\*.* ..\Package\Loose\Docs\
+copy ..\Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe %LOOSE_PATH%\
+copy ..\Data\SpectrumAnalyser\imgui.ini %LOOSE_PATH%\
+copy ..\Data\SpectrumAnalyser\RomInfo.json %LOOSE_PATH%\
+copy ..\Data\SpectrumAnalyser\SALogo.png %LOOSE_PATH%\
+xcopy /e /v /y ..\Data\SpectrumAnalyser\Lua %LOOSE_PATH%\Lua\
+copy ..\Docs\*.* %LOOSE_PATH%\Docs\
 
-"c:\program files\7-Zip\7z.exe" a ..\Package\SpectrumAnalyser.zip ..\Package\Loose\.
+"c:\program files\7-Zip\7z.exe" a %PACKAGE_PATH%\SpectrumAnalyser.zip %LOOSE_PATH%\.
 
 pause
