@@ -37,11 +37,11 @@ enum class EC64Event
 	None = 0,
 
 	VICRegisterWrite,
-    VICScreenModeChar,
-    VICScreenModeBmp,
-    VICScreenModeMultiColour,
-    VICScreenModeHiRes,
-    
+	VICScreenModeChar,
+	VICScreenModeBmp,
+	VICScreenModeMultiColour,
+	VICScreenModeHiRes,
+	
 	SIDRegisterWrite,
 	CIA1RegisterWrite,
 	CIA1RegisterRead,
@@ -178,17 +178,6 @@ public:
 	bool	LoadProject(FProjectConfig *pConfig, bool bLoadGame) override;
 	bool	SaveProject(void) override;
 
-	// Cartridge
-#if 0
-	void	SetCartridgeHandler(FCartridgeHandler* pHandler) { delete pCartridgeHandler; pCartridgeHandler = pHandler;}
-	void	ResetCartridgeBanks();
-	FCartridgeSlot&	GetCartridgeSlot(ECartridgeSlot slot) { assert(slot!=ECartridgeSlot::Unknown); return CartridgeSlots[(int)slot]; }
-	FCartridgeBank&	AddCartridgeBank(int bankNo, uint16_t address, uint32_t dataSize);
-	void	SetCartridgeType(ECartridgeType type) { CartridgeType = type;}
-	void	InitCartMapping(void);
-	bool	MapCartridgeBank(ECartridgeSlot slot, int bankNo);
-	void	UnMapCartridge(ECartridgeSlot slot);
-#endif
 	void ResetCodeAnalysis(void);
 	bool LoadMachineState(const char* fname);
 	bool SaveMachineState(const char* fname);
@@ -218,28 +207,24 @@ private:
 
 	uint8_t				IOMemBuffer[0x1000];	// Buffer for IO memory
 
-	uint8_t             LastMemPort = 0x7;  // Default startup
+	uint8_t             LastMemPort = 0x7;		// Default startup
 	uint16_t            PreviousPC = 0;
 
 	FCartridgeManager	CartridgeManager;
-	//FCartridgeHandler*	pCartridgeHandler = nullptr;
-	//ECartridgeType		CartridgeType = ECartridgeType::None;
-	//FCartridgeSlot		CartridgeSlots[(int)ECartridgeSlot::Max];
-	//int16_t				FirstCartridgeBankId = -1;
 
-	FC64IOAnalysis      IOAnalysis;
-	std::set<FAddressRef>  InterruptHandlers;
+	FC64IOAnalysis		IOAnalysis;
+	std::set<FAddressRef>	InterruptHandlers;
 
 	// Mapping status
-	bool                bBasicROMMapped = true;
-	bool                bKernelROMMapped = true;
-	bool                bCharacterROMMapped = false;
-	bool                bIOMapped = true;
+	bool				bBasicROMMapped = true;
+	bool				bKernelROMMapped = true;
+	bool				bCharacterROMMapped = false;
+	bool				bIOMapped = true;
 
 	FC64BankIds			BankIds;
 	uint16_t			VICBankMapping[16];
 
-	FC64Emulator(const FC64Emulator&) = delete;                 // Prevent copy-construction
-	FC64Emulator& operator=(const FC64Emulator&) = delete;      // Prevent assignment
+	FC64Emulator(const FC64Emulator&) = delete;				// Prevent copy-construction
+	FC64Emulator& operator=(const FC64Emulator&) = delete;	// Prevent assignment
 
 };

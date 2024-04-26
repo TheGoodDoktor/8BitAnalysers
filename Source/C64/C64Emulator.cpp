@@ -25,31 +25,7 @@ const char* kROMAnalysisFilename = "C64RomsAnalysis.json";
 
 void SetWindowTitle(const char* pTitle);
 
-
-/* reboot callback */
-static void C64BootCallback(c64_t* sys)
-{
-	// FIXME: no such struct member
-	//FC64Emulator* pC64Emu = (FC64Emulator*)sys->user_data;
-	//pC64Emu->OnBoot();
-}
-
-void* gfx_create_texture(int w, int h)
-{
-	return ImGui_CreateTextureRGBA(nullptr, w, h);
-}
-
-void gfx_update_texture(void* h, void* data, int data_byte_size)
-{
-	ImGui_UpdateTextureRGBA(h, (unsigned char*)data);
-}
-
-void gfx_destroy_texture(void* h)
-{
-
-}
-
-/* audio-streaming callback */
+// audio-streaming callback 
 static void push_audio(const float* samples, int num_samples, void* user_data)
 {
 	FC64Emulator* pC64Emu = (FC64Emulator*)user_data;
@@ -89,7 +65,7 @@ private:
 
 };
 
-/* get c64_desc_t struct based on joystick type */
+// get c64_desc_t struct based on joystick type 
 c64_desc_t FC64Emulator::GenerateC64Desc(c64_joystick_type_t joy_type)
 {
 	c64_desc_t desc;
@@ -118,18 +94,6 @@ c64_desc_t FC64Emulator::GenerateC64Desc(c64_joystick_type_t joy_type)
 
 	return desc;
 }
-
-// callback function to save snapshot to a numbered slot
-void UISnapshotSaveCB(size_t slot_index)
-{
-}
-
-// callback function to load snapshot from numbered slot
-bool UISnapshotLoadCB(size_t slot_index)
-{
-	return true;
-}
-
 
 bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 {
@@ -536,91 +500,6 @@ bool FC64Emulator::NewProjectFromEmulatorFile(const FEmulatorFile& emuFile)
 	}
 	return false;
 }
-
-#if 0
-void FC64Emulator::ResetCartridgeBanks() 
-{ 
-	for(int slotNo = 0;slotNo<(int)ECartridgeSlot::Max;slotNo++)
-	{
-		FCartridgeSlot& slot = CartridgeSlots[slotNo];
-		slot.Reset();
-	}
-	if(FirstCartridgeBankId != -1)
-		CodeAnalysis.FreeBanksFrom(FirstCartridgeBankId);
-}
-
-ECartridgeSlot GetSlotFromAddress(uint16_t address);
-FCartridgeBank& FC64Emulator::AddCartridgeBank(int bankNo, uint16_t address, uint32_t dataSize)
-{
-	ECartridgeSlot slot = GetSlotFromAddress(address);
-	assert(slot != ECartridgeSlot::Unknown);
-	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
-	if(cartridgeSlot.Banks.size() <= bankNo)
-		cartridgeSlot.Banks.resize(bankNo+1);
-	//assert(cartridgeSlot.Banks.size() == bankNo);	// assume they get added in a linear way
-
-	FCartridgeBank& bank = cartridgeSlot.Banks[bankNo];
-	bank.BankNo = bankNo;
-	bank.DataSize = dataSize;
-	bank.Data = new uint8_t[bank.DataSize];
-	bank.Address = address;
-
-	// Create Analyser Bank
-	char bankName[32];
-	snprintf(bankName, 32, "CartBank%d", bankNo);
-	bank.BankId = CodeAnalysis.CreateBank(bankName, bank.DataSize / 1024, bank.Data, false, bank.Address);
-
-	//assert(ActiveCartridgeBanks == bankNo);
-	//ActiveCartridgeBanks++;
-	return bank;
-}
-
-void FC64Emulator::InitCartMapping(void)
-{
-	for(int slotNo=0;slotNo<(int)ECartridgeSlot::Max;slotNo++)
-	{
-		if(CartridgeSlots[slotNo].bActive == true)//Banks.empty() == false)
-		{
-			MapCartridgeBank((ECartridgeSlot)slotNo,0);//find first bank instead?
-		}
-	}
-}
-
-bool FC64Emulator::MapCartridgeBank(ECartridgeSlot slot, int bankNo)
-{
-	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
-	FCartridgeBank& bank = cartridgeSlot.Banks[bankNo];
-
-	// Map in memory page
-	mem_map_rw(&C64Emu.mem_cpu, 0, bank.Address, bank.DataSize, bank.Data, &C64Emu.ram[bank.Address]);
-
-	// Map in analysis
-	CodeAnalysis.MapBank(bank.BankId, bank.Address / 1024, EBankAccess::Read);
-
-	cartridgeSlot.CurrentBank = bankNo;
-	cartridgeSlot.bActive = true;
-
-	return true;
-}
-
-void	FC64Emulator::UnMapCartridge(ECartridgeSlot slot)
-{
-	FCartridgeSlot& cartridgeSlot = GetCartridgeSlot(slot);
-
-	mem_map_ram(&C64Emu.mem_cpu, 0, cartridgeSlot.BaseAddress, cartridgeSlot.Size, &C64Emu.ram[cartridgeSlot.BaseAddress]);
-
-	if(slot == ECartridgeSlot::Addr_8000)
-		CodeAnalysis.MapBank(BankIds.LowerRAM2, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
-	else if (slot == ECartridgeSlot::Addr_A000)
-		CodeAnalysis.MapBank(BankIds.RAMBehindBasicROM, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
-	else if (slot == ECartridgeSlot::Addr_E000)
-		CodeAnalysis.MapBank(BankIds.RAMBehindKernelROM, cartridgeSlot.BaseAddress / 1024, EBankAccess::ReadWrite);
-
-	cartridgeSlot.CurrentBank = -1;
-	cartridgeSlot.bActive = false;
-}
-#endif
-
 
 void FC64Emulator::ResetCodeAnalysis(void)
 {
@@ -1087,9 +966,7 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 		lastScanlinePos = scanlinePos;
 	}
 
-	// TODO: scanline breakpoints
-
-	bool bReadingInstruction = addr == m6502_pc(&C64Emu.cpu) - 1;
+	const bool bReadingInstruction = addr == m6502_pc(&C64Emu.cpu) - 1;
 
 	if ((pins & M6502_SYNC) == 0) // not for instruction fetch
 	{
@@ -1143,7 +1020,6 @@ uint64_t FC64Emulator::OnCPUTick(uint64_t pins)
 				FileLoadPhase = EFileLoadPhase::BasicReady;
 		}
 	}
-
 
 	const bool bNeedMemUpdate = ((C64Emu.cpu_port ^ LastMemPort) & 7) != 0;
 	if (bNeedMemUpdate)
