@@ -1468,7 +1468,13 @@ void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 		if (viewState.ViewingBankId == -1)
 			viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
 		else
-			viewState.GoToAddress(FAddressRef(viewState.ViewingBankId, viewState.JumpAddress));
+		{
+			FAddressRef jumpAddr(viewState.ViewingBankId, viewState.JumpAddress);
+			if(state.IsAddressValid(jumpAddr))
+				viewState.GoToAddress(jumpAddr);
+			else
+				viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
+		}
 	}
 }
 
