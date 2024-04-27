@@ -118,7 +118,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	}
 
 	// Setup C64 Emulator
-	c64_joystick_type_t joy_type = C64_JOYSTICKTYPE_NONE;
+	c64_joystick_type_t joy_type = C64_JOYSTICKTYPE_DIGITAL_2;
 	c64_desc_t desc = GenerateC64Desc(joy_type);
 	c64_init(&C64Emu, &desc);
 
