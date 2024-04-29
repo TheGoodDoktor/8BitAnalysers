@@ -109,9 +109,19 @@ public:
 			// todo: deal with screen mode? display both scr mode's x coords?
 			int xp = 0, yp = 0;
 			if (pCPCEmu->Screen.GetScreenAddressCoords(addr.Address, xp, yp))
+			{
+				// Bit of a hack until GetScreenAddressCoords() is more accurate. Return null if we are outside of the displayable area vertically.
+				// This doesn't deal with memory locations that are in the holes between pixel rows.
+				if (yp >= pCPCEmu->Screen.GetHeight())
+					return nullptr;
+
 				sprintf(DescStr, "Screen: %d,%d", xp, yp);
+			}
 			else
-				sprintf(DescStr, "Screen: ?,? (%s)", NumStr(addr.Address));
+			{
+				return nullptr;
+				//sprintf(DescStr, "Screen: ?,? (%s)", NumStr(addr.Address));
+			}
 			return DescStr;
 		}
 		return nullptr;
@@ -1310,6 +1320,7 @@ bool FCPCEmu::LoadLua()
 }
 
 const uint32_t kMachineStateMagic = 0xBeefCafe;
+const uint32_t kMachineStateVersion = 0;
 static cpc_t g_SaveSlot;
 
 bool FCPCEmu::SaveGameState(const char* fname)
@@ -1320,10 +1331,21 @@ bool FCPCEmu::SaveGameState(const char* fname)
 	{
 		// write magic
 		fwrite(&kMachineStateMagic, sizeof(kMachineStateMagic), 1, fp);
+		fwrite(&kMachineStateVersion, sizeof(kMachineStateVersion), 1, fp);
 
-		const uint32_t versionNo = cpc_save_snapshot(&CPCEmuState, &g_SaveSlot);
-		fwrite(&versionNo, sizeof(versionNo), 1, fp);
-		fwrite(&g_SaveSlot, sizeof(cpc_t), 1, fp);
+		// save backup state in edit mode
+		if (GetCodeAnalysis().bAllowEditing)
+		{
+			const uint32_t snapshotVersion = CPC_SNAPSHOT_VERSION;
+			fwrite(&snapshotVersion, sizeof(snapshotVersion), 1, fp);
+			fwrite(&BackupState, sizeof(cpc_t), 1, fp);
+		}
+		else
+		{
+			const uint32_t snapshotVersionNo = cpc_save_snapshot(&CPCEmuState, &g_SaveSlot);
+			fwrite(&snapshotVersionNo, sizeof(snapshotVersionNo), 1, fp);
+			fwrite(&g_SaveSlot, sizeof(cpc_t), 1, fp);
+		}
 
 		fclose(fp);
 		return true;
@@ -1343,16 +1365,20 @@ bool FCPCEmu::LoadGameState(const char* fname)
 	if (magicVal != kMachineStateMagic)
 		return false;
 
+	// version
+	uint32_t fileVersion = 0;
+	fread(&fileVersion, sizeof(fileVersion), 1, fp);
+
+	if (fileVersion != kMachineStateVersion)	// since machine state is not that important different file version numbers get rejected
+		return false;
+
 	uint32_t snapshotVersion = 0;
 	fread(&snapshotVersion, sizeof(snapshotVersion), 1, fp);
 	fread(&g_SaveSlot, sizeof(cpc_t), 1, fp);	// load into save slot
 
 	const bool bSuccess = cpc_load_snapshot(&CPCEmuState, 1, &g_SaveSlot);
 
-	if (CPCEmuState.type == CPC_TYPE_6128)
-	{
-		UpdateBankMappings();
-	}
+	UpdateBankMappings();
 
 	fclose(fp);
 	return bSuccess;
@@ -1513,6 +1539,16 @@ void FCPCEmu::Tick()
 	UpdatePalette();
 
 	DrawDockingView();
+}
+
+void FCPCEmu::OnEnterEditMode(void)
+{
+	cpc_save_snapshot(&CPCEmuState, &BackupState);
+}
+
+void FCPCEmu::OnExitEditMode(void)
+{
+	cpc_load_snapshot(&CPCEmuState, CPC_SNAPSHOT_VERSION, &BackupState);
 }
 
 // These functions are used to add to the bottom of the menus

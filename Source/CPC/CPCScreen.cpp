@@ -30,6 +30,19 @@ void FCPCScreen::Reset()
 		ScreenModePerScanline[i] = -1;
 }
 
+int FCPCScreen::GetHeight() const
+{
+	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
+	const int CharacterHeight = crtc.max_scanline_addr + 1;
+	// Clamp to the supposed maximum screen height to stop us getting crazy values.
+	return std::min(crtc.v_displayed * CharacterHeight, 288);
+}
+
+int FCPCScreen::GetWidth() const
+{
+	return pCPCEmu->CPCEmuState.crtc.h_displayed * 8;
+}
+
 int FCPCScreen::GetTopPixelEdge() const 
 { 
 #ifdef CALCULATE_SCREEN_OFFSETS_FROM_CRTC_REGS
@@ -169,10 +182,14 @@ bool FCPCScreen::IsScrolled() const
 uint16_t FCPCScreen::GetScreenAddrEnd() const
 {
 	// todo: I don't think this is correct.
-	// it doesnt deal with the fact screen memory wraps around.
-	// for example, if screen start is $c200 it will wrap back around to $c000 and 
+	// It doesnt deal with the fact screen memory wraps around.
+	// For example, if screen start is $c200 it will wrap back around to $c000 and 
 	// not to the start of memory: $0 - $20.
-	// does this function even make sense when the screen is scrolled?
+	// Does this function even make sense when the screen is scrolled?
+	// It also doesn't return the actual last address of displayable memory.
+	// It doesn't take into account the screen size. If the screen size is set small
+	// there will be a lot of spare memory in the screen ram bank. Other code or data
+	// could be stored there.
 	return GetScreenAddrStart() + GetScreenMemSize() - 1;
 }
 
@@ -243,7 +260,7 @@ bool FCPCScreen::GetScreenMemoryAddress(int x, int y, uint16_t& addr) const
 	...
 	[Pixel line bytes for character row n]**
 
-	*Screen ram is almost always 16k but some it's possible for it to be 32k. 
+	*Screen ram is almost always 16k but it's possible for it to be 32k. 
 	**n depends on how many character rows are set in the CRTC register
 */
 
@@ -252,7 +269,11 @@ bool FCPCScreen::GetScreenMemoryAddress(int x, int y, uint16_t& addr) const
 bool FCPCScreen::GetScreenAddressCoords(uint16_t addr, int& x, int& y) const
 {
 	const uint16_t startAddr = GetScreenAddrStart();
-	if (addr < startAddr || addr >= GetScreenAddrEnd()) // todo: fix this logic if the screen is scrolled
+	// todo: Fix this logic if the screen is scrolled.
+	// Also, it potentially needs to deal with "holes" in the screen ram.
+	// There are locations in the screen ram bank that do not correspond
+	// to a pixel on the screen. 
+	if (addr < startAddr || addr >= GetScreenAddrEnd()) 
 		return false;
 
 	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;

@@ -33,6 +33,9 @@ public:
 	const FPalette& GetCurrentPalette() const { return CurrentPalette; }
 	FPalette& GetCurrentPalette() { return CurrentPalette; }
 
+	int GetHeight() const;
+	int GetWidth() const;
+
 	// Get the scanline index where the top border ends and the screen's pixels begin.
 	int GetTopPixelEdge() const; // { return ScreenTopScanline; }
 	// Get the position of where the left border ends and the screen's pixels begin.

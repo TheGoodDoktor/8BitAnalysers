@@ -112,6 +112,8 @@ public:
 	void				Tick() override;
 	bool				LoadLua() override;
 	void				DrawEmulatorUI(void) override;
+	void				OnEnterEditMode(void) override;
+	void				OnExitEditMode(void) override;
 	// ~FEmuBase End
 
 	bool				SaveGameState(const char* fname);
@@ -160,11 +162,11 @@ public:
 
 	// Emulator 
 	cpc_t				CPCEmuState;		// Chips CPC State
-	uint8_t*		MappedInMemory = nullptr;
+	cpc_t				BackupState;		// Backup state for edit mode
 
 	float				ExecSpeedScale = 1.0f;
 
-	ui_cpc_t		UICPC;
+	ui_cpc_t			UICPC;
 
 	FGame*			pActiveGame = nullptr;
 
