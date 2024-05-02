@@ -49,8 +49,97 @@ void FCPCGraphicsViewer::DrawUI(void)
 // Amstrad CPC specific implementation
 void FCPCGraphicsViewer::DrawScreenViewer()
 {
+	const float fontSize = ImGui::GetFontSize();
+
+	DrawPaletteCombo("Palette", "Current", PaletteNo, ScreenMode == 0 ? 16 : 4);
+
+	if (PaletteNo == -1)
+	{
+		pPaletteColours = (uint32_t*)pCPCEmu->Screen.GetCurrentPalette().GetData();
+}
+	else
+	{
+		pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+	}
+
+	ImGui::PushItemWidth(fontSize * 10.0f);
+
+	ImGui::SeparatorText("Screen Properties");
+
+	if (ImGui::InputInt("Screen Mode", &ScreenMode, 1, 8, ImGuiInputTextFlags_CharsDecimal))
+	{
+		ScreenMode = std::min(std::max(ScreenMode, 0), 1);
+	}
+
+	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
+	{
+		ImGui::InputInt("Address", &DisplayAddress, 1, 8, ImGuiInputTextFlags_CharsDecimal);
+	}
+	else
+	{
+		ImGui::InputInt("Address", &DisplayAddress, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
+	}
+
+	if (ImGui::InputInt("Width", &WidthChars, 1, 8, ImGuiInputTextFlags_CharsDecimal))
+	{
+		WidthChars = std::min(std::max(WidthChars, 0), 48);
+	}
+
+	if (ImGui::InputInt("Height", &HeightChars, 1, 8, ImGuiInputTextFlags_CharsDecimal))
+	{
+		HeightChars = std::min(std::max(HeightChars, 0), 35);
+	}
+
+	if (ImGui::InputInt("Character Height", &CharacterHeight, 1, 8, ImGuiInputTextFlags_CharsDecimal))
+	{
+		CharacterHeight = std::min(std::max(CharacterHeight, 1), 8);
+	}
+	ImGui::PopItemWidth();
+
+	if (ImGui::Button("Set Properties From CRTC Registers"))
+	{
+		const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
+		DisplayAddress = pCPCEmu->Screen.GetScreenAddrStart();
+		WidthChars = crtc.h_displayed;
+		HeightChars = crtc.v_displayed;
+		ScreenMode = pCPCEmu->CPCEmuState.ga.video.mode;
+		CharacterHeight = crtc.max_scanline_addr + 1;
+	}
+
+	ImGui::SeparatorText("Screen Address History");
+
+	const bool bIdentifyFrontBuffer = ScrAddrHistory[0] != ScrAddrHistory[1];
+	const uint16_t scrAddress = pCPCEmu->Screen.GetScreenAddrStart();
+
+	ImGui::Text("%s", NumStr(ScrAddrHistory[0]));
+	ImGui::SameLine();
+	if (ImGui::Button("Set##1"))
+	{
+		DisplayAddress = ScrAddrHistory[0];
+	}
+	if (bIdentifyFrontBuffer && scrAddress == ScrAddrHistory[0])
+	{
+		ImGui::SameLine();
+		ImGui::Text("<-- Front buffer");
+	}
+
+	ImGui::Text("%s", NumStr(ScrAddrHistory[1]));
+	ImGui::SameLine();
+	if (ImGui::Button("Set##2"))
+	{
+		DisplayAddress = ScrAddrHistory[1];
+	}
+	if (bIdentifyFrontBuffer && scrAddress == ScrAddrHistory[1])
+	{
+		ImGui::SameLine();
+		ImGui::Text("<-- Front buffer");
+	}
+
+	ImGui::Separator();
 	UpdateScreenPixelImage();
 	pScreenView->Draw();
+
+	ImGui::Checkbox("Show Reads & Writes", &bShowReadsWrites);
 
 #if 0
 	const uint32_t* pPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
@@ -94,66 +183,17 @@ uint32_t FCPCGraphicsViewer::GetRGBValueForPixel(int yPos, int colourIndex, uint
 
 void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 {
+#if 0
+	// clear pixel buffer with single colour
+	uint32_t* pPixBufAddr = pScreenView->GetPixelBuffer();
+	for (int i = 0; i < ScreenWidth * ScreenHeight; i++)
+	{
+		*pPixBufAddr = 0xffff00ff;
+		pPixBufAddr++;
+	}
+#endif
+
 	const FCodeAnalysisState& state = GetCodeAnalysis();
-	const float fontSize = ImGui::GetFontSize();
-
-	// todo: deal with Bank being set
-	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
-
-	if (ImGui::Button("Get From CRTC Registers"))
-	{
-		DisplayAddress = pCPCEmu->Screen.GetScreenAddrStart();
-		WidthChars = crtc.h_displayed;
-		HeightChars = crtc.v_displayed;
-		ScreenMode = pCPCEmu->CPCEmuState.ga.video.mode;
-		CharacterHeight = crtc.max_scanline_addr + 1;
-	}
-
-	if (ImGui::InputInt("Screen Mode", &ScreenMode, 1, 8, ImGuiInputTextFlags_CharsDecimal))
-	{
-		ScreenMode = std::min(std::max(ScreenMode, 0), 1);
-	}
-
-	DrawPaletteCombo("Palette", "Current", PaletteNo, ScreenMode == 0 ? 16 : 4);
-
-	if (PaletteNo == -1)
-	{
-		pPaletteColours = (uint32_t*)pCPCEmu->Screen.GetCurrentPalette().GetData();
-	}
-	else
-	{
-		pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
-	}
-
-	ImGui::Checkbox("Show Reads & Writes", &bShowReadsWrites);
-
-	ImGui::PushItemWidth(fontSize * 10.0f);
-
-	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
-	{
-		ImGui::InputInt("Address", &DisplayAddress, 1, 8, ImGuiInputTextFlags_CharsDecimal);
-	}
-	else
-	{
-		ImGui::InputInt("Address", &DisplayAddress, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
-	}
-
-	if (ImGui::InputInt("Width", &WidthChars, 1, 8, ImGuiInputTextFlags_CharsDecimal))
-	{
-		WidthChars = std::min(std::max(WidthChars, 0), 48);
-	}
-
-	if (ImGui::InputInt("Height", &HeightChars, 1, 8, ImGuiInputTextFlags_CharsDecimal))
-	{
-		HeightChars = std::min(std::max(HeightChars, 0), 35);
-	}
-
-
-	if (ImGui::InputInt("Character Height", &CharacterHeight, 1, 8, ImGuiInputTextFlags_CharsDecimal))
-	{
-		CharacterHeight = std::min(std::max(CharacterHeight, 1), 8);
-	}
-	ImGui::PopItemWidth();
 
 	const int16_t startOffset = DisplayAddress & 0x3fff;
 	const int16_t startBankId = Bank == -1 ? state.GetBankFromAddress(DisplayAddress) : Bank;
@@ -174,16 +214,6 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 		delete pScreenView;
 		pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
 	}
-
-#if 0
-	// clear pixel buffer with single colour
-	uint32_t* pPixBufAddr = pScreenView->GetPixelBuffer();
-	for (int i = 0; i < ScreenWidth * ScreenHeight; i++)
-	{
-		*pPixBufAddr = 0xffff00ff;
-		pPixBufAddr++;
-	}
-#endif
 
 	for (int y = 0; y < ScreenHeight; y++)
 	{

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <cstdint>
-//#include <map>
-//#include <string>
 
 #include <CodeAnalyser/CodeAnalyserTypes.h>
 #include <CodeAnalyser/UI/GraphicsViewer.h>
@@ -27,6 +25,9 @@ public:
 	bool	Init(void) override;
 
 	void	DrawPaletteViewer();
+
+	void	OnScreenAddressChanged(uint16_t addr);
+
 protected:
 	const uint32_t* GetCurrentPalette() const override;
 
@@ -45,6 +46,8 @@ private:
 	bool		bShowReadsWrites = true;
 	int			PaletteNo = -1;
 	uint32_t*	pPaletteColours = nullptr;
+	uint16_t		ScrAddrHistory[2] = { 0xc000, 0xc000 };
+	int			ScrAddrHistoryIndex = 0;
 #if 0
 	FGraphicsView* pTestGraphicsView = 0;
 	FCPCGraphicsView* pTestCPCGraphicsView = 0;

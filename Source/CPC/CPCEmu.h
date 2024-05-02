@@ -120,7 +120,7 @@ public:
 	bool				LoadGameState(const char* fname);
 
 	void				OnInstructionExecuted(int ticks, uint64_t pins);
-	uint64_t		Z80Tick(int num, uint64_t pins);
+	uint64_t			Z80Tick(int num, uint64_t pins);
 
 	// FEmuBase Begin
 	void				FileMenuAdditions(void) override;		

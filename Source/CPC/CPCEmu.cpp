@@ -1721,6 +1721,10 @@ void FCPCEmu::UpdatePalette()
 
 void FCPCEmu::OnScreenRAMAddressChanged()
 {
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
+	const uint16_t screenAddress = Screen.GetScreenAddrStart();
+	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(screenAddress, Screen.GetScreenAddrEnd());
 	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
+
+	//Screen.RegisterScreenAddressChange(screenAddress);
+	((FCPCGraphicsViewer*)pGraphicsViewer)->OnScreenAddressChanged(screenAddress);
 }
