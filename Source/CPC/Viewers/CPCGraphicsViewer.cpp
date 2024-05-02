@@ -295,3 +295,11 @@ const uint32_t* FCPCGraphicsViewer::GetCurrentPalette() const
 { 
 	return pCPCEmu->Screen.GetCurrentPalette().GetData();
 }
+
+void FCPCGraphicsViewer::OnScreenAddressChanged(uint16_t addr)
+{
+	if (ScrAddrHistory[0] == addr || ScrAddrHistory[1] == addr)
+		return;
+	ScrAddrHistory[ScrAddrHistoryIndex] = addr;
+	ScrAddrHistoryIndex = ScrAddrHistoryIndex ? 0 : 1;
+}
