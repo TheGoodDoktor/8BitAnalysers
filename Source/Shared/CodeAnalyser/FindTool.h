@@ -147,3 +147,6 @@ private:
 
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
 };
+
+// todo: move this somewhere better
+void HelpMarker(const char* desc);

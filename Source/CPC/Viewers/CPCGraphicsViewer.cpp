@@ -8,6 +8,8 @@
 
 #include "../CPCEmu.h"
 
+void HelpMarker(const char* desc);
+
 bool FCPCGraphicsViewer::Init()
 {
 	pCPCEmu = (FCPCEmu*)pEmulator;
@@ -62,6 +64,11 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 		pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 	}
 
+	/*if (ImGui::InputInt("Heatmap Threshold", &TestHeatmapThreshold, 1, 8, ImGuiInputTextFlags_CharsDecimal))
+	{
+		TestHeatmapThreshold = std::min(std::max(TestHeatmapThreshold, 0), 100);
+	}*/
+
 	ImGui::PushItemWidth(fontSize * 10.0f);
 
 	ImGui::SeparatorText("Screen Properties");
@@ -71,14 +78,15 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 		ScreenMode = std::min(std::max(ScreenMode, 0), 1);
 	}
 
-	if (GetNumberDisplayMode() == ENumberDisplayMode::Decimal)
+	const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+	ImGui::InputInt("Address", &DisplayAddress, 1, 8, inputFlags);
+
+	if (ImGui::Checkbox("Track Non-Active Screen Buffer Address", &bTrackNonActiveScrBufferAddress))
 	{
-		ImGui::InputInt("Address", &DisplayAddress, 1, 8, ImGuiInputTextFlags_CharsDecimal);
+		DisplayAddress = ScrAddrHistory[ScrAddrHistoryIndex ? 0 : 1];
 	}
-	else
-	{
-		ImGui::InputInt("Address", &DisplayAddress, 1, 8, ImGuiInputTextFlags_CharsHexadecimal);
-	}
+	ImGui::SameLine();
+	HelpMarker("For use in games with a double buffered screen setup, this will automatically display the back buffer. Serves no purpose in games that use a static screen.");
 
 	if (ImGui::InputInt("Width", &WidthChars, 1, 8, ImGuiInputTextFlags_CharsDecimal))
 	{
@@ -140,6 +148,7 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 	pScreenView->Draw();
 
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadsWrites);
+	FrameCounter++;
 
 #if 0
 	const uint32_t* pPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
@@ -226,6 +235,8 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 			curLineOffset -= bankSize;
 		}
 
+		const FCodeAnalysisViewState& viewState = pCPCEmu->GetCodeAnalysis().GetFocussedViewState();
+		
 		// get pointer to start of line in pixel buffer
 		uint32_t* pPixBufAddr = pScreenView->GetPixelBuffer() + (y * ScreenWidth);
 
@@ -235,12 +246,24 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 		{
 			const uint8_t val = pBank->Memory[curLineOffset];
 			const FCodeAnalysisPage& page = pBank->Pages[curLineOffset >> 10];
-			const uint32_t heatMapCol = GetHeatmapColourForMemoryAddress(page, curLineOffset, state.CurrentFrameNo, HeatmapThreshold);
 
 			for (int p = 0; p < pixelsPerByte; p++)
 			{
-				const int colourIndex = GetHWColourIndexForPixel(val, p, ScreenMode);
-				const ImU32 pixelColour = GetRGBValueForPixel(y, colourIndex, heatMapCol);
+				ImU32 pixelColour = 0;
+				if (viewState.HighlightAddress.IsValid())
+				{
+					if (viewState.HighlightAddress.Address == pBank->GetMappedAddress() + curLineOffset)
+					{
+						// Flash this pixel if the address is highlighted in the code analysis view 
+						pixelColour = GetFlashColour();
+					}
+				}
+				if (!pixelColour)
+				{
+					const uint32_t heatMapCol = GetHeatmapColourForMemoryAddress(page, curLineOffset, state.CurrentFrameNo, TestHeatmapThreshold);
+					const int colourIndex = GetHWColourIndexForPixel(val, p, ScreenMode);
+					pixelColour = GetRGBValueForPixel(y, colourIndex, heatMapCol);
+				}
 
 				*pPixBufAddr = pixelColour;
 				pPixBufAddr++;
@@ -298,8 +321,23 @@ const uint32_t* FCPCGraphicsViewer::GetCurrentPalette() const
 
 void FCPCGraphicsViewer::OnScreenAddressChanged(uint16_t addr)
 {
-	if (ScrAddrHistory[0] == addr || ScrAddrHistory[1] == addr)
+	if (ScrAddrHistory[ScrAddrHistoryIndex] == addr)
 		return;
-	ScrAddrHistory[ScrAddrHistoryIndex] = addr;
+
+	if (bTrackNonActiveScrBufferAddress)
+		DisplayAddress = ScrAddrHistory[ScrAddrHistoryIndex];
+
 	ScrAddrHistoryIndex = ScrAddrHistoryIndex ? 0 : 1;
+	ScrAddrHistory[ScrAddrHistoryIndex] = addr;
+}
+
+ImU32 FCPCGraphicsViewer::GetFlashColour() const
+{
+	// generate flash colour
+	ImU32 flashCol = 0xff000000;
+	const int flashCounter = FrameCounter >> 2;
+	if (flashCounter & 1) flashCol |= 0xff << 0;
+	if (flashCounter & 2) flashCol |= 0xff << 8;
+	if (flashCounter & 4) flashCol |= 0xff << 16;
+	return flashCol;
 }

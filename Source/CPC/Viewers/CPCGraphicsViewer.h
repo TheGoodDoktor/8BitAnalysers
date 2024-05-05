@@ -4,6 +4,7 @@
 
 #include <CodeAnalyser/CodeAnalyserTypes.h>
 #include <CodeAnalyser/UI/GraphicsViewer.h>
+#include "imgui.h"
 
 class FCPCEmu;
 struct FGame;
@@ -35,6 +36,7 @@ private:
 	uint32_t	GetRGBValueForPixel(int yPos, int colourIndex, uint32_t heatMapCol) const;
 	void		UpdateScreenPixelImage(void);
 	uint16_t	GetPixelLineOffset(int yPos);
+	ImU32		GetFlashColour() const;
 
 	FCPCEmu*	pCPCEmu = nullptr;
 
@@ -43,11 +45,14 @@ private:
 	int			HeightChars = 25;
 	int			ScreenMode = 1;
 	int			CharacterHeight = 8;
-	bool		bShowReadsWrites = true;
+	bool			bShowReadsWrites = true;
 	int			PaletteNo = -1;
 	uint32_t*	pPaletteColours = nullptr;
 	uint16_t		ScrAddrHistory[2] = { 0xc000, 0xc000 };
 	int			ScrAddrHistoryIndex = 0;
+	int			FrameCounter = 0;
+	int			TestHeatmapThreshold = 4;
+	bool			bTrackNonActiveScrBufferAddress = false;
 #if 0
 	FGraphicsView* pTestGraphicsView = 0;
 	FCPCGraphicsView* pTestCPCGraphicsView = 0;
