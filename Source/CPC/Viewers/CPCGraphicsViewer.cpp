@@ -64,11 +64,6 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 		pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 	}
 
-	/*if (ImGui::InputInt("Heatmap Threshold", &TestHeatmapThreshold, 1, 8, ImGuiInputTextFlags_CharsDecimal))
-	{
-		TestHeatmapThreshold = std::min(std::max(TestHeatmapThreshold, 0), 100);
-	}*/
-
 	ImGui::PushItemWidth(fontSize * 10.0f);
 
 	ImGui::SeparatorText("Screen Properties");
@@ -150,6 +145,18 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadsWrites);
 	FrameCounter++;
 
+	/*if (ImGui::Button("write to screen pixels"))
+	{
+		for (int i = 0; i < 0xffff; i++)
+		{
+			if (pCPCEmu->Screen.IsScreenAddress(i))
+			{
+				pCPCEmu->GetCodeAnalysis().WriteByte(i, 0xf0);
+			}
+		}
+	}*/
+
+
 #if 0
 	const uint32_t* pPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
 	if (1)
@@ -164,15 +171,7 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 #endif
 }
 
-// get offset into screen ram for a given horizontal pixel line (scan line)
-uint16_t FCPCGraphicsViewer::GetPixelLineOffset(int yPos)
-{
-	// todo: couldn't we use FCPCEmu::GetScreenMemoryAddress() instead?
-
-	return ((yPos / CharacterHeight) * (ScreenWidth / 4)) + ((yPos % CharacterHeight) * 2048);
-}
-
-uint32_t FCPCGraphicsViewer::GetRGBValueForPixel(int yPos, int colourIndex, uint32_t heatMapCol) const
+uint32_t FCPCGraphicsViewer::GetRGBValueForPixel(int colourIndex, uint32_t heatMapCol) const
 {
 	const ImColor colour = pPaletteColours ? pPaletteColours[colourIndex] : colourIndex == 0 ? 0xff000000 : 0xffffffff;
 
@@ -213,9 +212,6 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 	ScreenWidth = WidthChars * 8;
 	ScreenHeight = HeightChars * CharacterHeight;
 
-	ScreenHeight = std::min(ScreenHeight, AM40010_DISPLAY_HEIGHT);
-	ScreenWidth = std::min(ScreenWidth, AM40010_DISPLAY_WIDTH >> 1);
-
 	if (ScreenWidth != lastScreenWidth || ScreenHeight != lastScreenHeight)
 	{
 		// temp. recreate the screen view
@@ -224,35 +220,41 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 		pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
 	}
 
-	for (int y = 0; y < ScreenHeight; y++)
+	const FCodeAnalysisViewState& viewState = pCPCEmu->GetCodeAnalysis().GetFocussedViewState();
+	const uint32_t* pEnd = pScreenView->GetPixelBuffer() + (ScreenWidth * ScreenHeight);
+	const int bitShift = ScreenMode == 0 ? 0x1 : 0x0;
+
+	for (int l = 0; l < CharacterHeight; l++)
 	{
-		uint16_t curLineOffset = startOffset + GetPixelLineOffset(y);
+		uint32_t* pCurPixBufAddr = pScreenView->GetPixelBuffer() + (ScreenWidth * l);
+		int16_t curBnkOffset = startOffset + l * 2048;
 
-		const int bankSize = pBank->GetSizeBytes();
-		if (curLineOffset >= bankSize)
+		for (int c = 0; c < HeightChars; c++)
 		{
-			// Deal with screen memory wrapping around
-			curLineOffset -= bankSize;
-		}
-
-		const FCodeAnalysisViewState& viewState = pCPCEmu->GetCodeAnalysis().GetFocussedViewState();
-		
-		// get pointer to start of line in pixel buffer
-		uint32_t* pPixBufAddr = pScreenView->GetPixelBuffer() + (y * ScreenWidth);
-
-		const int pixelsPerByte = ScreenMode == 0 ? 2 : 4;
-		const int bytesPerLine = WidthChars * 2;
-		for (int b = 0; b < bytesPerLine; b++)
-		{
-			const uint8_t val = pBank->Memory[curLineOffset];
-			const FCodeAnalysisPage& page = pBank->Pages[curLineOffset >> 10];
-
-			for (int p = 0; p < pixelsPerByte; p++)
+			uint8_t screenByte = 0;
+			uint32_t heatMapCol = 0;
+			
+			// Draw a single pixel row
+			for (int x = 0; x < ScreenWidth; x++)
 			{
+				const int p = (x & 0x3);
+				if ((p & 0x3) == 0)
+				{
+					screenByte = pBank->Memory[curBnkOffset];
+					const FCodeAnalysisPage& page = pBank->Pages[curBnkOffset >> FCodeAnalysisPage::kPageShift];
+					heatMapCol = GetHeatmapColourForMemoryAddress(page, curBnkOffset, state.CurrentFrameNo, HeatmapThreshold);
+
+					curBnkOffset++;
+
+					// Deal with crossing a 2k page boundary. 
+					if ((curBnkOffset % 2048) == 0)
+						curBnkOffset -= 2048;
+				}
+
 				ImU32 pixelColour = 0;
 				if (viewState.HighlightAddress.IsValid())
 				{
-					if (viewState.HighlightAddress.Address == pBank->GetMappedAddress() + curLineOffset)
+					if (viewState.HighlightAddress.Address == pBank->GetMappedAddress() + curBnkOffset)
 					{
 						// Flash this pixel if the address is highlighted in the code analysis view 
 						pixelColour = GetFlashColour();
@@ -260,25 +262,15 @@ void FCPCGraphicsViewer::UpdateScreenPixelImage(void)
 				}
 				if (!pixelColour)
 				{
-					const uint32_t heatMapCol = GetHeatmapColourForMemoryAddress(page, curLineOffset, state.CurrentFrameNo, TestHeatmapThreshold);
-					const int colourIndex = GetHWColourIndexForPixel(val, p, ScreenMode);
-					pixelColour = GetRGBValueForPixel(y, colourIndex, heatMapCol);
+					const int colourIndex = GetHWColourIndexForPixel(screenByte, p >> bitShift, ScreenMode);
+					pixelColour = GetRGBValueForPixel(colourIndex, heatMapCol);
 				}
-
-				*pPixBufAddr = pixelColour;
-				pPixBufAddr++;
-
-				if (ScreenMode == 0)
-				{
-					*pPixBufAddr = pixelColour;
-					pPixBufAddr++;
-				}
+				assert(pCurPixBufAddr < pEnd);
+				*pCurPixBufAddr = pixelColour;
+				pCurPixBufAddr++;
 			}
-			curLineOffset++;
-			if (curLineOffset >= bankSize)
-			{
-				curLineOffset -= bankSize;
-			}
+
+			pCurPixBufAddr += ScreenWidth * (CharacterHeight - 1);
 		}
 	}
 }

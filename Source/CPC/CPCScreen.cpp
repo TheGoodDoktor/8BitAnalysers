@@ -3,6 +3,30 @@
 #include "CPCEmu.h"
 #include "Debug/DebugLog.h"
 
+/*
+	Screen ram is 16k.*
+	It is split into 8 sections, 2048 bytes apart.
+
+	[Screen eighth 0. 2048 bytes]
+	[Screen eighth 1. 2048 bytes]
+	...
+	[Screen eighth 7. 2048 bytes]
+
+	Each of those sections hold a single screen line for each character row of the screen.
+	First section holds the first line of each character. Second section holds the second line of each character. Etc..
+
+	Each screen eigth holds all the contiguous bytes for a character row line followed by the next character row line.
+	The bytes for row 0 will be followed by row 1, 2.. etc.
+
+	[Pixel line bytes for character row 0]
+	[Pixel line bytes for character row 1]
+	...
+	[Pixel line bytes for character row n]**
+
+	*Screen ram is almost always 16k but it's possible for it to be 32k. 
+	**n depends on how many character rows are set in the CRTC register
+*/
+
 // Calculate the position of the left/top edge of the screen directly from the CRTC registers.
 // I'm not convinved my logic works for all scenarios but it seems to work for mostly all.
 // With this disabled, the screen offsets will be set in FCPCScreen::Tick() based on logic
@@ -110,6 +134,12 @@ const FPalette& FCPCScreen::GetPaletteForYPos(int yPos) const
 	return GetPaletteForScanline(ScreenTopScanline + yPos);
 }
 
+uint16_t FCPCScreen::GetScreenPage() const
+{
+	const uint16_t pageAddr = (pCPCEmu->CPCEmuState.crtc.start_addr_hi & 0x30) << 10;
+	return pageAddr;
+}
+
 void FCPCScreen::Tick()
 {
 	const uint16_t scanlinePos = pCRT->v_pos;
@@ -162,6 +192,7 @@ void FCPCScreen::Tick()
 // https://gist.github.com/neuro-sys/eeb7a323b27a9d8ad891b41144916946#registers
 uint16_t FCPCScreen::GetScreenAddrStart() const
 {
+	// todo: cache the result of this calculation?
 	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
 	const uint16_t dispStart = (crtc.start_addr_hi << 8) | crtc.start_addr_lo;
 	// Bits 12 & 13 hold the page/bank index. It can be one of the 4 16k physical memory banks.
@@ -179,7 +210,7 @@ bool FCPCScreen::IsScrolled() const
 	return (dispStart & 0x3ff);
 }
 
-uint16_t FCPCScreen::GetScreenAddrEnd() const
+/*uint16_t FCPCScreen::GetScreenAddrEnd() const
 {
 	// todo: I don't think this is correct.
 	// It doesnt deal with the fact screen memory wraps around.
@@ -191,14 +222,36 @@ uint16_t FCPCScreen::GetScreenAddrEnd() const
 	// there will be a lot of spare memory in the screen ram bank. Other code or data
 	// could be stored there.
 	return GetScreenAddrStart() + GetScreenMemSize() - 1;
-}
+}*/
 
 // Usually screen mem size is 16k but it's possible to be set to 32k if both bits are set.
 uint16_t FCPCScreen::GetScreenMemSize() const
 {
-	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
-	const uint16_t dispSize = (crtc.start_addr_hi >> 2) & 0x3;
+	const uint16_t dispSize = (pCPCEmu->CPCEmuState.crtc.start_addr_hi >> 2) & 0x3;
 	return dispSize == 0x3 ? 0x8000 : 0x4000;
+}
+
+// sam todo: Can we optimise this function? It's called a lot.
+bool FCPCScreen::IsScreenAddress(uint16_t addr) const
+{
+	const uint16_t pageStart = GetScreenPage();
+	if (addr >= pageStart && addr < (pageStart + GetScreenMemSize()))
+	{
+		const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
+		const uint8_t bytesPerLine = crtc.h_displayed * 2;
+		uint16_t pixelsStartAddr = GetScreenAddrStart();
+
+		// todo: deal with when the screen is scrolled
+
+		for (int i = 0; i < 8; i++)
+		{
+			const uint16_t pixelsEndAddr = pixelsStartAddr + bytesPerLine * crtc.v_displayed;
+			if (addr >= pixelsStartAddr && addr < pixelsEndAddr)
+				return true;
+			pixelsStartAddr += 2048;
+		}
+	}
+	return false;
 }
 
 // values are in screen mode 1 coordinate system
@@ -232,7 +285,7 @@ bool FCPCScreen::GetScreenMemoryAddress(int x, int y, uint16_t& addr) const
 		// I didn't fully get my head around this logic so this code was written
 		// with some educated guesses and trial and error. It may not be correct.
 
-		uint16_t scrAddrOffsetFromBankStart = scrAddrStart & 0x3fff;
+		const uint16_t scrAddrOffsetFromBankStart = scrAddrStart & 0x3fff;
 		if (offsetFromBankStart % 2048 < scrAddrOffsetFromBankStart)
 			addr -= 2048; 
 	}
@@ -240,29 +293,6 @@ bool FCPCScreen::GetScreenMemoryAddress(int x, int y, uint16_t& addr) const
 	return true;
 }
 
-/*
-	Screen ram is 16k.*
-	It is split into 8 sections, 2048 bytes apart.
-
-	[Screen eighth 0. 2048 bytes]
-	[Screen eighth 1. 2048 bytes]
-	...
-	[Screen eighth 7. 2048 bytes]
-
-	Each of those sections hold a single screen line for each character row of the screen.
-	First section holds the first line of each character. Second section holds the second line of each character. Etc..
-
-	Each screen eigth holds all the contiguous bytes for a character row line followed by the next character row line.
-	The bytes for row 0 will be followed by row 1, 2.. etc.
-
-	[Pixel line bytes for character row 0]
-	[Pixel line bytes for character row 1]
-	...
-	[Pixel line bytes for character row n]**
-
-	*Screen ram is almost always 16k but it's possible for it to be 32k. 
-	**n depends on how many character rows are set in the CRTC register
-*/
 
 // should we pass in screen mode?
 // currently, it returns in mode 1 coords. 
@@ -273,25 +303,30 @@ bool FCPCScreen::GetScreenAddressCoords(uint16_t addr, int& x, int& y) const
 	// Also, it potentially needs to deal with "holes" in the screen ram.
 	// There are locations in the screen ram bank that do not correspond
 	// to a pixel on the screen. 
-	if (addr < startAddr || addr >= GetScreenAddrEnd()) 
-		return false;
+	const uint16_t pageStart = GetScreenPage();
+	if (addr >= pageStart && addr < (pageStart + GetScreenMemSize()))
+	{
+		//if (addr < startAddr || addr >= GetScreenAddrEnd()) 
+		//	return false;
 
-	const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
-	if (crtc.h_displayed == 0)
-		return false;
+		const mc6845_t& crtc = pCPCEmu->CPCEmuState.crtc;
+		if (crtc.h_displayed == 0)
+			return false;
 
-	const uint16_t totOffset = addr - startAddr; // Get byte offset into screen ram
-	const uint8_t charLine = totOffset / 2048; // Which line of the character are we [0-charHeight]
-	const uint8_t bytesPerLine = crtc.h_displayed * 2; // How many bytes in a single screen line?
-	const uint16_t charLineOffset = totOffset % 2048; // What is our offset into the char line area? 
-	const uint16_t charRowIndex = charLineOffset / bytesPerLine; // Which row are we on?
+		const uint16_t totOffset = addr - startAddr; // Get byte offset into screen ram
+		const uint8_t charLine = totOffset / 2048; // Which line of the character are we [0-charHeight]
+		const uint8_t bytesPerLine = crtc.h_displayed * 2; // How many bytes in a single screen line?
+		const uint16_t charLineOffset = totOffset % 2048; // What is our offset into the char line area? 
+		const uint16_t charRowIndex = charLineOffset / bytesPerLine; // Which row are we on?
 
-	x = (charLineOffset % bytesPerLine) * 4;
+		x = (charLineOffset % bytesPerLine) * 4;
 
-	const uint8_t charHeight = crtc.max_scanline_addr + 1;
-	y = (charRowIndex * charHeight) + charLine;
+		const uint8_t charHeight = crtc.max_scanline_addr + 1;
+		y = (charRowIndex * charHeight) + charLine;
 
-	return true;
+		return true;
+	}
+	return false;
 }
 
 // Palette related

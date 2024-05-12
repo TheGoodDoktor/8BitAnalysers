@@ -33,7 +33,7 @@ protected:
 	const uint32_t* GetCurrentPalette() const override;
 
 private:
-	uint32_t	GetRGBValueForPixel(int yPos, int colourIndex, uint32_t heatMapCol) const;
+	uint32_t	GetRGBValueForPixel(int colourIndex, uint32_t heatMapCol) const;
 	void		UpdateScreenPixelImage(void);
 	uint16_t	GetPixelLineOffset(int yPos);
 	ImU32		GetFlashColour() const;

@@ -203,7 +203,7 @@ void FCPCViewer::Draw()
 	if (viewState.HighlightAddress.IsValid())
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		if (viewState.HighlightAddress.Address >= pCPCEmu->Screen.GetScreenAddrStart() && viewState.HighlightAddress.Address <= pCPCEmu->Screen.GetScreenAddrEnd())
+		if (pCPCEmu->Screen.IsScreenAddress(viewState.HighlightAddress.Address))
 		{
 			int xp=0, yp=0;
 			if (pCPCEmu->Screen.GetScreenAddressCoords(viewState.HighlightAddress.Address, xp, yp))

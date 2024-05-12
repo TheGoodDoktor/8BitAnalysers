@@ -38,7 +38,7 @@
 #define ENABLE_EXTERNAL_ROM_SUPPORT 0
 #define RUN_AHEAD_TO_GENERATE_SCREEN 0
 #ifndef NDEBUG
-#define BANK_SWITCH_DEBUG
+//#define BANK_SWITCH_DEBUG
 #endif
 #ifdef BANK_SWITCH_DEBUG
 #define BANK_LOG(...)  { LOGINFO("[BNK] " __VA_ARGS__); }
@@ -129,8 +129,8 @@ public:
 
 	void UpdateScreenMemoryLocation()
 	{
-		RegionMin = pCPCEmu->Screen.GetScreenAddrStart();
-		RegionMax = pCPCEmu->Screen.GetScreenAddrEnd();
+		RegionMin = pCPCEmu->Screen.GetScreenPage();
+		RegionMax = pCPCEmu->Screen.GetScreenMemSize();
 	}
 private:
 	FCPCEmu* pCPCEmu = 0;
@@ -246,7 +246,7 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 			state.SetLastWriterForAddress(addr, pcAddrRef);
 
 			// Log screen pixel writes
-			if (addr >= Screen.GetScreenAddrStart() && addr <= Screen.GetScreenAddrEnd())
+			if (Screen.IsScreenAddress(addr))
 			{
 				debugger.RegisterEvent((uint8_t)EEventType::ScreenPixWrite, pcAddrRef, addr, value, scanlinePos);
 			}
@@ -981,7 +981,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xff3357ff, IOPortEventShowAddress, ROMBankSwitchShowValue);
 	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xff3f0c90, IOPortEventShowAddress, UpperROMSelectShowValue);
 
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
+	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
 
 #ifndef NDEBUG
 	LOGINFO("Init CPCEmu...Done");
@@ -1259,7 +1259,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
 
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenAddrStart(), Screen.GetScreenAddrEnd());
+	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
 	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
 
 #if RUN_AHEAD_TO_GENERATE_SCREEN
@@ -1721,10 +1721,8 @@ void FCPCEmu::UpdatePalette()
 
 void FCPCEmu::OnScreenRAMAddressChanged()
 {
-	const uint16_t screenAddress = Screen.GetScreenAddrStart();
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(screenAddress, Screen.GetScreenAddrEnd());
+	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
 	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
 
-	//Screen.RegisterScreenAddressChange(screenAddress);
-	((FCPCGraphicsViewer*)pGraphicsViewer)->OnScreenAddressChanged(screenAddress);
+	((FCPCGraphicsViewer*)pGraphicsViewer)->OnScreenAddressChanged(Screen.GetScreenAddrStart());
 }
