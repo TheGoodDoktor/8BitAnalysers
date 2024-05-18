@@ -133,8 +133,12 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
+    // Get scaling factors for High DPI support
+    float xscale, yscale;
+    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xscale, &yscale);
+
     // Create window with graphics context
-	appState.MainWindow = glfwCreateWindow(1280, 720, "8Bit Analyser", NULL, NULL);
+	appState.MainWindow = glfwCreateWindow(1280 * xscale, 720 * yscale, "8Bit Analyser", NULL, NULL);
 	if (appState.MainWindow == NULL)
 		return 1;
 	glfwMakeContextCurrent(appState.MainWindow);
@@ -207,7 +211,7 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
 	if (!pGlobalConfig->Font.empty())
 	{
 		std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
-		if (!io.Fonts->AddFontFromFileTTF(GetBundlePath(fontPath.c_str()), (float)pGlobalConfig->FontSizePixels))
+		if (!io.Fonts->AddFontFromFileTTF(GetBundlePath(fontPath.c_str()), (float)pGlobalConfig->FontSizePixels * xscale))
 		{
 			LOGWARNING("Could not load font '%s'", fontPath.c_str());
 		}
