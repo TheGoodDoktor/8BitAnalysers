@@ -208,8 +208,8 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int x
 			case EBitmapFormat::ColMap4Bpp_CPC:
 			{
 				const uint8_t* pPixels = pCPUInterface->GetMemPtr(memAddr);
-				pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
-				memAddr += 4;
+				pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 4, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+				memAddr += 2;
 			}
 			break;
 			case EBitmapFormat::ColMapMulticolour_C64:
@@ -656,10 +656,18 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		ImGui::EndTooltip();
 	}
 
+	char format[6] = { 0 };
+	if (GetNumberDisplayMode() == ENumberDisplayMode::HexAitch)
+		strncpy(format, "%02Xh", 6);
+	else if (GetNumberDisplayMode() == ENumberDisplayMode::HexDollar)
+		strncpy(format, "$%02X", 6);
+	else 
+		strncpy(format, "%d", 6);
+
 	ImGui::SameLine();
 
 	// simpler slider
-	if (ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff))
+	if (ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff, format))
 	{
 		if (!bVSliderFineControl)
 		{ 
