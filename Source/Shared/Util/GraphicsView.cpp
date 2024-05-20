@@ -195,7 +195,7 @@ void FGraphicsView::Draw2BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int
 	}
 }
 
-// Note: Due to the pixels being double-width, they will use twice as many pixel buffer pixels horizontally.
+// Note: Due to the pixels being double-width, they will use twice as many pixels horizontally.
 void FGraphicsView::Draw4BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
 {
 	assert((xp + (widthPixels * 2)) <= Width);

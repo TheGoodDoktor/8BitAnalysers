@@ -1462,8 +1462,11 @@ void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(glyphWidth * 10.0f);
 	ImGui::InputScalar("##jumpaddressinput", ImGuiDataType_U16, &viewState.JumpAddress, nullptr, nullptr, format, inputFlags);
+	const bool bEnteredJumpAddress = ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter, false);
+	
 	ImGui::SameLine();
-	if (ImGui::Button("Go"))
+	
+	if (ImGui::Button("Go") || bEnteredJumpAddress)
 	{
 		if (viewState.ViewingBankId == -1)
 			viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
@@ -2579,6 +2582,20 @@ int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 	return 1 << GetBppForBitmapFormat(bitmapFormat);
 }
 
+bool IsBitmapFormatDoubleWidth(EBitmapFormat bitmapFormat)
+{
+	switch (bitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+	case EBitmapFormat::ColMap2Bpp_CPC:
+	case EBitmapFormat::ColMapMulticolour_C64:
+		return false;
+	case EBitmapFormat::ColMap4Bpp_CPC:
+		return true;
+	default:
+		return false;
+	}
+}
 
 
 // Markup code
