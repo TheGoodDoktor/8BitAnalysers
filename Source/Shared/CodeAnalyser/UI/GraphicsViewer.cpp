@@ -114,6 +114,8 @@ uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInView(int x, int y) const
 {
 	const int scaledViewWidth = kGraphicsViewerWidth / ViewScale;
 	const int scaledViewHeight = kGraphicsViewerHeight / ViewScale;
+	// Deal with odd ViewScale values, when there is a gap between the bottom of the graphic column and the edge of the view. 
+	const int roundedViewHeight = (scaledViewHeight / 8) * 8;
 	const int scaledX = x / ViewScale;
 	const int scaledY = y / ViewScale;
 
@@ -125,13 +127,16 @@ uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInView(int x, int y) const
 	const int xCount = kHorizontalDispCharCount / xSizeChars;
 	const int xSize = xCount * xSizeChars;
 	const int xp = std::max(std::min(xSize, (scaledX / 8)), 0);
-	const int yp = std::max(std::min(scaledViewHeight, scaledY), 0);
+	const int yp = std::max(std::min(roundedViewHeight, scaledY), 0);
 	const int column = xp / xSizeChars;
-	const int columnSize = scaledViewHeight * xSizeChars;
+	const int bpp = GetBppForBitmapFormat(BitmapFormat);
+	const int columnSize = roundedViewHeight * xSizeChars;
+	const int widthFactor = IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
 
 	//ImGui::Text("ScaledX: %d, Scaled Y: %d", scaledX, scaledY);
 	//ImGui::Text("xp: %d, yp: %d, column: %d", xp, yp, column);
-	return (addrInput + (column * columnSize) + (scaledY * xSizeChars)) % MemorySize;
+	
+	return (addrInput + (column * columnSize * (bpp / widthFactor)) + (scaledY * xSizeChars * bpp)) % MemorySize;
 }
 
 uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
@@ -475,7 +480,8 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 				DrawPhysicalMemoryAsGraphicsColumn(address, x * columnWidthPixels, xSizeChars);
 			else
 				DrawMemoryBankAsGraphicsColumn(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
-			address += GraphicColumnSizeBytes;
+			
+			address += GraphicColumnSizeBytes / widthFactor;
 		}
 	}
 	if (ViewMode == EGraphicsViewMode::BitmapChars)
@@ -487,7 +493,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			else
 				DrawMemoryBankAsGraphicsColumnChars(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
 
-			address += GraphicColumnSizeBytes;
+			address += GraphicColumnSizeBytes / widthFactor;
 		}
 	}
 	else if (ViewMode == EGraphicsViewMode::BitmapWinding)
