@@ -23,6 +23,7 @@ copy ..\Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe %LOOSE_PATH%\
 copy ..\Data\SpectrumAnalyser\imgui.ini %LOOSE_PATH%\
 copy ..\Data\SpectrumAnalyser\RomInfo.json %LOOSE_PATH%\
 copy ..\Data\SpectrumAnalyser\SALogo.png %LOOSE_PATH%\
+copy ..\Data\SpectrumAnalyser\Fonts\Cousine-Regular.ttf %LOOSE_PATH%\Fonts\
 xcopy /e /v /y ..\Data\SpectrumAnalyser\Lua %LOOSE_PATH%\Lua\
 copy ..\Docs\*.* %LOOSE_PATH%\Docs\
 

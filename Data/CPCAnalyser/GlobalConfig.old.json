@@ -1,0 +1,21 @@
+{
+    "BranchLinesDisplayMode": 1,
+    "DefaultMachineIs6128": false,
+    "EditLuaBaseFiles": true,
+    "EnableAudio": false,
+    "EnableLua": true,
+    "Font": "Cousine-Regular.ttf",
+    "FontSizePixels": 23,
+    "ImageScale": 2,
+    "LastGame": "manicminer",
+    "LuaBaseFiles": [
+        "Lua/LuaBase.lua",
+        "Lua/ViewerBase.lua",
+        "Lua/CPCBase.lua"
+    ],
+    "NumberMode": 1,
+    "ShowOpcodeValues": true,
+    "ShowScanlineIndicator": false,
+    "SnapshotFolder": "C:/dev/cpcanalyserprojects/CPCAnalyserProjects/snapshots/464/",
+    "WorkspaceRoot": "C:/dev/cpcanalyserprojects/CPCAnalyserProjects/Workspace/"
+}

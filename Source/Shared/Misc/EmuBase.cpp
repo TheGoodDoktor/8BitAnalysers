@@ -358,6 +358,45 @@ void FEmuBase::FileMenu()
 
 void FEmuBase::OptionsMenu()
 {
+	if (ImGui::BeginMenu("Font"))
+	{
+		const ImFont* pCurFont = ImGui::GetFont();
+		ImGui::Text("Current Font: %s", pCurFont ? pCurFont->GetDebugName() : "None");
+
+		FGlobalConfig* pConfig = CodeAnalysis.pGlobalConfig;
+		if (!pConfig->Font.empty())
+		{
+			if (pCurFont && !strncmp(pConfig->Font.c_str(), pCurFont->GetDebugName(), pConfig->Font.length()))
+			{
+				if (ImGui::Button("Decrease Font Size"))
+				{
+					pConfig->FontSizePixels--;
+				}
+				ImGui::SameLine();
+
+				ImGui::Dummy(ImGui::CalcTextSize("FF"));
+
+				ImGui::SameLine();
+				if (ImGui::Button("Increase Font Size"))
+				{
+					pConfig->FontSizePixels++;
+				}
+
+				ImGui::InputInt("Size", &pConfig->FontSizePixels, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue);
+				pConfig->FontSizePixels = std::min(std::max(pConfig->FontSizePixels, 13), 50);
+			}
+			else
+			{
+				ImGui::Text("Font %s could not be loaded.", pConfig->Font.c_str());
+			}
+		}
+		else
+		{
+			ImGui::Text("No font defined in GlobalConfig.json.");
+		}
+
+		ImGui::EndMenu();
+	}
 	if (ImGui::BeginMenu("Number Mode"))
 	{
 		bool bClearCode = false;
@@ -695,6 +734,24 @@ void FEmuBase::DisplayErrorMessage(const char *fmt, ...)
     
 	bErrorMessagePopup = true;
 	ErrorPopupText = buf;
+}
+
+void FEmuBase::LoadFont()
+{
+	if (FGlobalConfig* pGlobalConfig = CodeAnalysis.pGlobalConfig)
+	{
+		if (!pGlobalConfig->Font.empty())
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.Fonts->Clear();
+			const std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
+			if (!io.Fonts->AddFontFromFileTTF(GetBundlePath(fontPath.c_str()), (float)pGlobalConfig->FontSizePixels))
+			{
+				LOGWARNING("Could not load font '%s'", fontPath.c_str());
+			}
+			io.Fonts->Build();
+		}
+	}
 }
 
 // Viewers

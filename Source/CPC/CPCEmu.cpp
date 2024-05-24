@@ -885,6 +885,8 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	AddGamesList("Snapshot File", pGlobalConfig->SnapshotFolder.c_str());
 
 	Screen.Init(this);
+	
+	LoadFont();
 
 	// This is where we add the viewers we want
 	AddViewer(new FCrtcViewer(this));
@@ -1137,6 +1139,7 @@ void FCPCEmu::Shutdown()
 	pGlobalConfig->NumberDisplayMode = GetNumberDisplayMode();
 	pGlobalConfig->bShowOpcodeValues = CodeAnalysis.pGlobalConfig->bShowOpcodeValues;
 	pGlobalConfig->BranchLinesDisplayMode = CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode;
+	pGlobalConfig->FontSizePixels = CodeAnalysis.pGlobalConfig->FontSizePixels;
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 
