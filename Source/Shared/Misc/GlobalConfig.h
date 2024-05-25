@@ -19,7 +19,7 @@ struct FGlobalConfig
 	std::string			SnapshotFolder = "./Games/";
 
 	std::string			Font = "Cousine-Regular.ttf"; // if no font is specified the default font will be used
-	int					FontSizePixels = 13;
+	int					FontSizePts = 13;
 	int					ImageScale = 1;
     
 	// Lua config

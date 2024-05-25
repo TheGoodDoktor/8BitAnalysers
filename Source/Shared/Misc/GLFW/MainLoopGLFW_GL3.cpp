@@ -133,8 +133,15 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
+    // Get scaling factors for High DPI support
+    float xscale = 1.0f, yscale = 1.0f;
+    if (GLFWmonitor* pPrimaryMonitor = glfwGetPrimaryMonitor())
+    {
+      glfwGetMonitorContentScale(pPrimaryMonitor, &xscale, &yscale);
+    }
+
     // Create window with graphics context
-	appState.MainWindow = glfwCreateWindow(1280, 720, "8Bit Analyser", NULL, NULL);
+	appState.MainWindow = glfwCreateWindow((int)(1280 * xscale), (int)(720 * yscale), "8Bit Analyser", NULL, NULL);
 	if (appState.MainWindow == NULL)
 		return 1;
 	glfwMakeContextCurrent(appState.MainWindow);
@@ -202,7 +209,7 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
     
     g_AppState.pEmulator = pEmulator;
 
-    int lastFontSize = pEmulator->GetCodeAnalysis().pGlobalConfig->FontSizePixels;
+    int lastFontSize = pEmulator->GetCodeAnalysis().pGlobalConfig->FontSizePts;
     
     // Main loop
     while (!glfwWindowShouldClose(appState.MainWindow))
@@ -215,7 +222,7 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
         glfwPollEvents();
         ImGui_InitScaling();
 
-        const int curFontSize = pEmulator->GetCodeAnalysis().pGlobalConfig->FontSizePixels;
+        const int curFontSize = pEmulator->GetCodeAnalysis().pGlobalConfig->FontSizePts;
         if (lastFontSize != curFontSize)
         {
             pEmulator->LoadFont();

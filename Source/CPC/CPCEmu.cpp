@@ -1139,7 +1139,7 @@ void FCPCEmu::Shutdown()
 	pGlobalConfig->NumberDisplayMode = GetNumberDisplayMode();
 	pGlobalConfig->bShowOpcodeValues = CodeAnalysis.pGlobalConfig->bShowOpcodeValues;
 	pGlobalConfig->BranchLinesDisplayMode = CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode;
-	pGlobalConfig->FontSizePixels = CodeAnalysis.pGlobalConfig->FontSizePixels;
+	pGlobalConfig->FontSizePts = CodeAnalysis.pGlobalConfig->FontSizePts;
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 
