@@ -211,11 +211,11 @@ uint64_t FCPCEmu::Z80Tick(int num, uint64_t pins)
 	{
 		if (scanlinePos == 0)
 		{
-			debugger.OnMachineFrameStart();
+			CodeAnalysis.OnMachineFrameStart();
 		}
 		if (scanlinePos == 311)
 		{
-			debugger.OnMachineFrameEnd();
+			CodeAnalysis.OnMachineFrameEnd();
 		}
 	}
 	lastScanlinePos = scanlinePos;
