@@ -14,6 +14,7 @@ enum class ECartridgeType
 {
 	None,
 	Generic,
+	System3,
 	MagicDesk,
 	EasyFlash,
 

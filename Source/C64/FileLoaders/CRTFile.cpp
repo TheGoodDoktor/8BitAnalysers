@@ -65,6 +65,8 @@ ECartridgeType GetCartridgeType(int typeNo)
 	{
 	case 0:
 		return ECartridgeType::Generic;
+	case 15:
+		return ECartridgeType::System3;
 	case 19:
 		return ECartridgeType::MagicDesk;
 	case 32:
@@ -655,6 +657,45 @@ public:
 	}
 };
 
+class FSystem3CartridgeHandler : public FCartridgeHandler
+{
+public:
+	FSystem3CartridgeHandler(FCartridgeManager* pManager) :FCartridgeHandler(pManager) {}
+
+	bool	HandleIOWrite(uint16_t address, uint8_t value) override
+	{
+		if ((address >> 8) ==  0xDE)
+		{
+			/*if (value & (1 << 7))	// map RAM back in
+			{
+				pCartridgeManager->SetMemoryModel(ECartridgeMemoryModel::Ram);
+				pCartridgeManager->MapSlotsForMemoryModel();
+			}
+			else*/
+			{
+				pCartridgeManager->SetSlotBank(ECartridgeSlot::RomLow, address & 63);
+			}
+		}
+
+		return true;
+	}
+
+	bool	HandleIORead(uint16_t address, uint8_t& value)	override
+	{
+		if ((address >> 8) == 0xDE)
+		{
+			pCartridgeManager->SetMemoryModel(ECartridgeMemoryModel::Ram);
+			pCartridgeManager->MapSlotsForMemoryModel();
+		}
+		return false;
+	}
+
+	void DrawUI(void)
+	{
+		ImGui::Text("MagicDesk Cartridge");
+	}
+};
+
 class FEasyFlashCartridgeHandler : public FCartridgeHandler
 {
 public:
@@ -726,6 +767,9 @@ bool FCartridgeManager::CreateCartridgeHandler(ECartridgeType type)
 	{
 	case ECartridgeType::Generic:
 		return false;
+	case ECartridgeType::System3:
+		pCartridgeHandler = new FSystem3CartridgeHandler(this);
+		break;
 	case ECartridgeType::MagicDesk:
 		pCartridgeHandler = new FMagicDeskCartridgeHandler(this);
 		break;
