@@ -2,6 +2,7 @@
 
 #include "Util/FileUtil.h"
 #include "json.hpp"
+#include <imgui.h>
 
 #include <iomanip>
 #include <fstream>
@@ -35,7 +36,14 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 	if (jsonConfigFile.contains("Font"))
 		Font = jsonConfigFile["Font"];
 	if (jsonConfigFile.contains("FontSizePixels"))
-		FontSizePixels = jsonConfigFile["FontSizePixels"];
+	{
+		// Legacy support. Convert from pixels to points. Remove this eventually
+		const float dpiScale = !ImGui::GetPlatformIO().Monitors.empty() ? ImGui::GetPlatformIO().Monitors[0].DpiScale : 1.0f;
+		const float fontSizePixels = jsonConfigFile["FontSizePixels"];
+		FontSizePts = (int)(fontSizePixels / dpiScale);
+	}
+	if (jsonConfigFile.contains("FontSizePts"))
+		FontSizePts = jsonConfigFile["FontSizePts"];
 	if (jsonConfigFile.contains("ImageScale"))
 		ImageScale = jsonConfigFile["ImageScale"];
 	
@@ -72,7 +80,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["WorkspaceRoot"] = WorkspaceRoot;
 	jsonConfigFile["SnapshotFolder"] = SnapshotFolder;
 	jsonConfigFile["Font"] = Font;
-	jsonConfigFile["FontSizePixels"] = FontSizePixels;
+	jsonConfigFile["FontSizePts"] = FontSizePts;
 	jsonConfigFile["ImageScale"] = ImageScale;
     jsonConfigFile["EnableLua"] = bEnableLua;
 	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;

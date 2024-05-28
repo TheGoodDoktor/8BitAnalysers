@@ -683,6 +683,8 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	AddGamesList("RZX File", GetZXSpectrumGlobalConfig()->RZXFolder.c_str());
 #endif
     
+	LoadFont();
+
 	// This is where we add the viewers we want
 	AddViewer(new FOverviewViewer(this));
 	pCharacterMapViewer = new FCharacterMapViewer(this);
@@ -811,6 +813,7 @@ void FSpectrumEmu::Shutdown()
 	pGlobalConfig->NumberDisplayMode = GetNumberDisplayMode();
 	pGlobalConfig->bShowOpcodeValues = CodeAnalysis.pGlobalConfig->bShowOpcodeValues;
 	pGlobalConfig->BranchLinesDisplayMode = CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode;
+	pGlobalConfig->FontSizePts = CodeAnalysis.pGlobalConfig->FontSizePts;
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 

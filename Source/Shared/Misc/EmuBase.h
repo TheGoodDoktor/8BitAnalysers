@@ -92,6 +92,8 @@ public:
 
 	// Games List
 	bool	AddGamesList(const char* pFileType, const char* pRootDir);
+	
+	void	LoadFont();
 
 protected:
 	void			FileMenu();

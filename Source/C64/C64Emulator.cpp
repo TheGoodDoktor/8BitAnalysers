@@ -124,6 +124,7 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	Display.Init(&CodeAnalysis, this);
 
+	LoadFont();
 
 	CPUType = ECPUType::M6502;
 	SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
