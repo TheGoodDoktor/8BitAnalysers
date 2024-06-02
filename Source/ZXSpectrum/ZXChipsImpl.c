@@ -38,7 +38,7 @@ static uint64_t FloatingBusTick(zx_t* sys, uint64_t pins)
 
 			if ((y < 32) || (y >= 224))
 			{
-				Z80_SET_DATA(pins, (uint64_t)sys->border_color);
+				Z80_SET_DATA(pins, 0xff);//(uint64_t)sys->border_color);
 			}
 			else
 			{
@@ -82,6 +82,8 @@ uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds)
 		for (uint32_t tick = 0; tick < num_ticks; tick++) 
 		{
 			pins = _zx_tick(sys, pins);
+			if (sys->cpu.step == 1490)	// this is a bit of a hack to fix IM2 on some games
+				sys->cpu.dlatch = 0xff;
 			pins = FloatingBusTick(sys, pins);
 		}
 	}
@@ -91,6 +93,8 @@ uint32_t ZXExeEmu(zx_t* sys, uint32_t micro_seconds)
 		for (uint32_t tick = 0; (tick < num_ticks) && !(*sys->debug.stopped); tick++) 
 		{
 			pins = _zx_tick(sys, pins);
+			if (sys->cpu.step == 1490)	// this is a bit of a hack to fix IM2 on some games
+				sys->cpu.dlatch = 0xff;
 			pins = FloatingBusTick(sys, pins);
 			sys->debug.callback.func(sys->debug.callback.user_data, pins);
 		}

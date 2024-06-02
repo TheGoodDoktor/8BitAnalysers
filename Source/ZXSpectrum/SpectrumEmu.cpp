@@ -258,7 +258,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 				if (im == 2)
 				{
 					const uint8_t i = cpu.i;	// I register has high byte of interrupt vector
-					const uint16_t interruptVector = (i << 8) | value;
+					const uint16_t interruptVector = (i << 8) | 0xff;//value;
 					const uint16_t interruptHandler = state.CPUInterface->ReadWord(interruptVector);
 					bHasInterruptHandler = true;
 					InterruptHandlerAddress = interruptHandler;
