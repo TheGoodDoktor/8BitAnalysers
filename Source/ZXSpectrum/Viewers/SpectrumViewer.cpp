@@ -360,7 +360,7 @@ bool FSpectrumViewer::OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnaly
 		const int ry = kBorderOffsetY + (yp & ~0x7);
 		dl->AddRect(ImVec2(pos.x + ((float)rx * scale), pos.y + ((float)ry * scale)), ImVec2(pos.x + (float)(rx + 8) * scale,pos.y + (float)(ry + 8) * scale), 0xffffffff);
 		ImGui::BeginTooltip();
-		ImGui::Text("Screen Pos (%d,%d)", xp, yp);
+		ImGui::Text("Screen Pos: (pix:%d,%d) (char:%d,%d)", xp, yp, xp/8, yp/8);
 		ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
 
 		const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
