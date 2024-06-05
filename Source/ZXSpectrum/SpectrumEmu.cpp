@@ -690,6 +690,7 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	pCharacterMapViewer = new FCharacterMapViewer(this);
 	AddViewer(pCharacterMapViewer);
 	pCharacterMapViewer->SetGridSize(32,24);
+	pCharacterMapViewer->SetGridStride(32);
 	pGraphicsViewer = new FZXGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 

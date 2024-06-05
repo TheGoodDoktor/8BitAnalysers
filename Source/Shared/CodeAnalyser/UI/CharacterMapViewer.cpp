@@ -645,6 +645,10 @@ void FCharacterMapViewer::SetGridSize(int x, int y)
 	ViewerGrid->SetGridSize(x,y);
 }
 
+void FCharacterMapViewer::SetGridStride(int stride)
+{
+	ViewerGrid->SetGridStride(stride);
+}
 
 void FCharacterMapViewer::DrawUI(void)
 {

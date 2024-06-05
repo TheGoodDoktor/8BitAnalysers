@@ -16,7 +16,8 @@ public:
 	void	DrawAt(float x, float y);
 	void	Draw();
 
-	void	SetGridSize(int x,int y) { GridSizeX = x; GridSizeY = y;}
+	void	SetGridSize(int x, int y) { GridSizeX = x; GridSizeY = y; }
+	void	SetGridStride(int stride) { GridStride = stride;}
 
 	virtual void FixupAddressRefs();
 

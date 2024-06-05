@@ -487,11 +487,11 @@ void FDebugger::StepInto()
 }
 
 // check if the an instruction is a 'step over' op 
-static bool IsStepOverOpcode(ECPUType cpuType, uint8_t opcode)
+static bool IsStepOverOpcode(ECPUType cpuType, const std::vector<uint8_t>& opcodes)
 {
     if (cpuType == ECPUType::Z80)
     {
-        switch (opcode)
+        switch (opcodes[0])
         {
             // CALL nnnn 
         case 0xCD:
@@ -500,8 +500,18 @@ static bool IsStepOverOpcode(ECPUType cpuType, uint8_t opcode)
         case 0xF4: case 0xEC: case 0xE4: case 0xCC:
             // DJNZ d 
         case 0x10:
-			// TODO: LDIR & others
             return true;
+		// TODO: LDIR & others
+		case 0xED:
+		{
+			switch (opcodes[1])
+			{
+				case 0xB0:	// LDIR
+					return true;
+				default:
+					return false;
+			}
+		}
         default:
             return false;
         }
@@ -509,7 +519,7 @@ static bool IsStepOverOpcode(ECPUType cpuType, uint8_t opcode)
     else if (cpuType == ECPUType::M6502)
     {
         // on 6502, only JSR qualifies 
-        return opcode == 0x20;
+        return opcodes[0] == 0x20;
     }
     else
     {
@@ -521,17 +531,17 @@ void	FDebugger::StepOver()
 {
 	//const ECPUType cpuType = pEmulator->CPUType;
 
-	uint8_t stepOpcode = 0;
+	std::vector<uint8_t> stepOpcodes;
 	// TODO: this one's a bit more tricky!
    
     bDebuggerStopped = false;
     uint16_t nextPC = 0;
 	if (CPUType == ECPUType::Z80)
-		nextPC = Z80DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcode);
+		nextPC = Z80DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
     else if (CPUType == ECPUType::M6502)
-		nextPC = M6502DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcode);
+		nextPC = M6502DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
 
-    if (IsStepOverOpcode(CPUType, stepOpcode))
+    if (IsStepOverOpcode(CPUType, stepOpcodes))
     {
         StepMode = EDebugStepMode::StepOver;
         StepOverPC = pCodeAnalysis->AddressRefFromPhysicalAddress(nextPC);

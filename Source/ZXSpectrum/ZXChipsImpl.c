@@ -38,7 +38,7 @@ static uint64_t FloatingBusTick(zx_t* sys, uint64_t pins)
 
 			if ((y < 32) || (y >= 224))
 			{
-				Z80_SET_DATA(pins, 0xff);//(uint64_t)sys->border_color);
+				Z80_SET_DATA(pins,(uint64_t)sys->border_color);
 			}
 			else
 			{
