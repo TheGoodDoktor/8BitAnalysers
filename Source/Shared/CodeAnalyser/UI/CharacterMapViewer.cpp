@@ -516,6 +516,9 @@ public:
 		ImGui::SameLine();
 		ImGui::InputInt("##GridStride", &GridStride);
 
+		GridSizeX = std::min(GridSizeX,GridStride);
+			
+
 		// Offset
 		DrawIntInputXY("Offset", OffsetX, OffsetY);
 		/*
