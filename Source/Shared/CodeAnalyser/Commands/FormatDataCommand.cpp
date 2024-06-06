@@ -30,6 +30,7 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 		charMapParams.CharacterSet = FormatOptions.CharacterSet;
 		charMapParams.Width = FormatOptions.ItemSize;
 		charMapParams.Height = FormatOptions.NoItems;
+		charMapParams.Stride = charMapParams.Width;
 		charMapParams.IgnoreCharacter = FormatOptions.EmptyCharNo;
 		charMapParams.bAddLabel = false;
 		CreateCharacterMap(state, charMapParams);

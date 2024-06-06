@@ -36,7 +36,8 @@ public:
 
 	void	GoToAddress(FAddressRef addr);
 
-	void	SetGridSize(int x,int y);
+	void	SetGridSize(int x, int y);
+	void	SetGridStride(int stride);
 
 	void	FixupAddressRefs();
 
