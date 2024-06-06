@@ -335,7 +335,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 		// Tool Tip
 		ImGui::BeginTooltip();
 		ImGui::Text("Char Pos (%d,%d)", xChar, yChar);
-		ImGui::Text("Value: %s", NumStr(charVal));
+		ImGui::Text("Value: %s %s", NumStr(charVal), NumStr(charVal,ENumberDisplayMode::Binary));
 		ImGui::EndTooltip();
 	}
 

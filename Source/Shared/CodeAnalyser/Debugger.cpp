@@ -924,7 +924,6 @@ void FDebugger::DrawTrace(void)
 				const FAddressRef codeAddress = FrameTrace[FrameTrace.size() - i - 1];
 				FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(codeAddress);
 				DrawCodeAddress(state, viewState, codeAddress, false);	// draw current PC
-				//DrawCodeInfo(state, viewState, FCodeAnalysisItem(pCodeInfo, codeAddress));
 			}
 		}
 	}
@@ -1186,7 +1185,6 @@ void EventShowPixValue(FCodeAnalysisState& state, const FEvent& event)
 	const float rectSize = line_height / 2;
 	pos.y += line_height / 4;
 	const uint8_t pixels = event.Value;
-	//dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize * 8, pos.y + rectSize), 0xffffffff);
 
 	for (int i = 0; i < 8; i++)
 	{
@@ -1196,9 +1194,6 @@ void EventShowPixValue(FCodeAnalysisState& state, const FEvent& event)
 		dl->AddRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + rectSize, pos.y + rectSize), 0xffffffff);
 		pos.x += rectSize;
 	}
-
-	// tool tip?
-	//ImGui::Text("%s", NumStr(event.Value));
 }
 
 void EventShowAttrValue(FCodeAnalysisState& state, const FEvent& event)
