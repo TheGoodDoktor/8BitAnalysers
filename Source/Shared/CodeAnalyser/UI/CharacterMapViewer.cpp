@@ -1,5 +1,6 @@
 #include "CharacterMapViewer.h"
 #include "../CodeAnalyser.h"
+#include "../DataTypes.h"
 #include "MemoryAccessGrid.h"
 
 #include <imgui.h>
@@ -224,6 +225,9 @@ void FCharacterMapViewer::DrawCharacterMap()
 	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::SliderFloat("Scale", &UIState.Scale, 0.1f, 2.0f);
 
+	state.GetDataTypes()->DrawFlagsComboBox("Flags", params.FlagSet);
+
+
 	if (ImGui::Button("Apply"))
 	{
 		pCharMap->Params = params;
@@ -336,6 +340,11 @@ void FCharacterMapViewer::DrawCharacterMap()
 		ImGui::BeginTooltip();
 		ImGui::Text("Char Pos (%d,%d)", xChar, yChar);
 		ImGui::Text("Value: %s %s", NumStr(charVal), NumStr(charVal,ENumberDisplayMode::Binary));
+		FFlagSet* pFlagSet = state.GetDataTypes()->GetFlagsFromTypeId(params.FlagSet);
+		if (pFlagSet)
+		{
+			ImGui::Text("Flags: %s",pFlagSet->GenerateFlagsString(charVal).c_str());
+		}
 		ImGui::EndTooltip();
 	}
 

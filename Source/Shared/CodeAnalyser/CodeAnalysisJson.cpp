@@ -87,6 +87,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		jsonCharacterMap["Stride"] = pCharMap->Params.Stride;
 		jsonCharacterMap["CharacterSetRef"] = pCharMap->Params.CharacterSet.Val;
 		jsonCharacterMap["IgnoreCharacter"] = pCharMap->Params.IgnoreCharacter;
+		jsonCharacterMap["FlagSet"] = pCharMap->Params.FlagSet;
 
 		jsonGameData["CharacterMaps"].push_back(jsonCharacterMap);
 	}
@@ -282,6 +283,10 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 				params.CharacterSet.Val = charMap["CharacterSetRef"];
 
 			params.IgnoreCharacter = charMap["IgnoreCharacter"];
+
+			if (charMap.contains("FlagSet"))
+				params.FlagSet = charMap["FlagSet"];
+			
 			CreateCharacterMap(state, params);
 		}
 	}

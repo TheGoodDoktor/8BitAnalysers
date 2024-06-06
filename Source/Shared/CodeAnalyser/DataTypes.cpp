@@ -8,6 +8,7 @@
 #include <json.hpp>
 using json = nlohmann::json;
 
+bool DrawTypeListCombo(const char* pLabel, int& selection, const FDataTypeList& typeList);
 
 int32_t FDataType::NextTypeId = 0;
 
@@ -262,6 +263,20 @@ void    FFlagSet:: WriteJson(json& jsonOut) const
 	jsonOut["FlagBits"] = flagBitsJson;
 }
 
+std::string FFlagSet::GenerateFlagsString(uint8_t val)
+{
+	std::string outString;
+
+	for (int i = 0; i < 8; i++)
+	{
+		if(val & (1<<i))
+		outString += Bits[i].Name + "|";
+	}
+	if(outString.size() > 0)	// remove last char
+		outString.pop_back();
+	return outString;
+}
+
 
 FFlagSet*   FDataTypes::CreateNewFlagSet(const char* name)
 {
@@ -274,6 +289,11 @@ FFlagSet*   FDataTypes::CreateNewFlagSet(const char* name)
 	}
 	
 	return pNewFlagSet;
+}
+
+bool FDataTypes::DrawFlagsComboBox(const char* pLabel, int& selection)
+{
+	return DrawTypeListCombo(pLabel, selection, FlagTypes);
 }
 
 // Structs

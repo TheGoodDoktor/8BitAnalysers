@@ -126,6 +126,7 @@ struct FCharMapCreateParams
 	FAddressRef	CharacterSet;
 	uint8_t		IgnoreCharacter = 0;
 	bool		bAddLabel = false;
+	int			FlagSet = -1;
 };
 
 struct FCharacterMap
