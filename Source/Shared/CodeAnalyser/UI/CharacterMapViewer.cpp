@@ -240,7 +240,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 		formattingOptions.NoItems = params.Height;
 		formattingOptions.CharacterSet = params.CharacterSet;
 		formattingOptions.EmptyCharNo = params.IgnoreCharacter;
-		formattingOptions.AddLabelAtStart = true;
+		formattingOptions.AddLabelAtStart = false;
 		FormatData(state, formattingOptions);
 		state.SetCodeAnalysisDirty(params.Address);
 	}
