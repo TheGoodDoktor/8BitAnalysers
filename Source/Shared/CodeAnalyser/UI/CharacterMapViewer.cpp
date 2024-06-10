@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <ImGuiSupport/ImGuiScaling.h>
+#include "UIColours.h"
 
 static const char* g_MaskInfoTxt[] =
 {
@@ -266,13 +267,14 @@ void FCharacterMapViewer::DrawCharacterMap()
 			const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
 			const int wBrightVal = (255 - std::min(framesSinceWritten << 3, 255)) & 0xff;
 			const int rBrightVal = (255 - std::min(framesSinceRead << 3, 255)) & 0xff;
+			const float xp = pos.x + (x * rectSize);
+			const float yp = pos.y + (y * rectSize);
+			ImVec2 rectMin(xp, yp);
+			ImVec2 rectMax(xp + rectSize, yp + rectSize);
 
 			if (val != params.IgnoreCharacter || wBrightVal > 0 || rBrightVal > 0)	// skip empty chars
 			{
-				const float xp = pos.x + (x * rectSize);
-				const float yp = pos.y + (y * rectSize);
-				ImVec2 rectMin(xp, yp);
-				ImVec2 rectMax(xp + rectSize, yp + rectSize);
+				
 
 				if (val != params.IgnoreCharacter)
 				{
@@ -290,26 +292,24 @@ void FCharacterMapViewer::DrawCharacterMap()
 						//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);
 					}
 				}
-
-				if (bShowReadWrites)
-				{
-					if (rBrightVal > 0)
-					{
-						const ImU32 col = 0xff000000 | (rBrightVal << 8);
-						dl->AddRect(rectMin, rectMax, col);
-
-						rectMin = ImVec2(rectMin.x + 1, rectMin.y + 1);
-						rectMax = ImVec2(rectMax.x - 1, rectMax.y - 1);
-					}
-					if (wBrightVal > 0)
-					{
-						const ImU32 col = 0xff000000 | (wBrightVal << 0);
-						dl->AddRect(rectMin, rectMax, col);
-					}
-				}
 			}
 
-			//byte++;	// go to next byte
+			if (bShowReadWrites)
+			{
+				if (rBrightVal > 0)
+				{
+					const ImU32 col = 0xff000000 | (rBrightVal << 8);
+					dl->AddRect(rectMin, rectMax, col);
+
+					rectMin = ImVec2(rectMin.x + 1, rectMin.y + 1);
+					rectMax = ImVec2(rectMax.x - 1, rectMax.y - 1);
+				}
+				if (wBrightVal > 0)
+				{
+					const ImU32 col = 0xff000000 | (wBrightVal << 0);
+					dl->AddRect(rectMin, rectMax, col);
+				}
+			}			
 		}
 	}
 
@@ -354,7 +354,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 		const float yp = pos.y + (UIState.SelectedCharY * rectSize);
 		const ImVec2 rectMin(xp, yp);
 		const ImVec2 rectMax(xp + rectSize, yp + rectSize);
-		dl->AddRect(rectMin, rectMax, 0xffffffff);
+		dl->AddRect(rectMin, rectMax, Colours::GetFlashColour());
 	}
 
 	// draw hovered address
