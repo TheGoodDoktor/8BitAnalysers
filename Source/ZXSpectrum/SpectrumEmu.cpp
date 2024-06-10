@@ -1192,6 +1192,12 @@ void FSpectrumEmu::OptionsMenuAdditions(void)
 {
 }
 
+void FSpectrumEmu::ActionMenuAdditions(void)
+{
+	
+}
+
+
 void FSpectrumEmu::WindowsMenuAdditions(void)
 {
 }

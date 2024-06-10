@@ -12,6 +12,7 @@
 #include "Debugger.h"
 #include "MemoryAnalyser.h"
 #include "IOAnalyser.h"
+#include "StaticAnalysis.h"
 #include <Misc/GlobalConfig.h>
 #include "Commands/FormatDataCommand.h"
 
@@ -473,6 +474,8 @@ public:
 	bool IsCodeAnalysisDataDirty() const { return bCodeAnalysisDataDirty; }
 	void ClearRemappings() { bMemoryRemapped = false; }
 	bool HasMemoryBeenRemapped() const { return bMemoryRemapped; }
+
+	bool RunStaticAnalysis() { return StaticAnalysis.RunAnalysis();}
 	//const std::vector<int16_t>& GetDirtyBanks() const { return RemappedBanks; }
 
 	//bool	EnsureUniqueLabelName(std::string& lableName);
@@ -501,6 +504,7 @@ public:
 	FDebugger				Debugger;
 	FMemoryAnalyser			MemoryAnalyser;
 	FIOAnalyser				IOAnalyser;
+	FStaticAnalyser			StaticAnalysis;
 
 	FAddressRef				CopiedAddress;
 
@@ -770,3 +774,6 @@ void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterf
 
 void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr);
 void FixupAddressRefList(const FCodeAnalysisState& state, std::vector<FAddressRef>& addrList);
+
+// static analysis functions
+EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr);

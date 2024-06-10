@@ -308,3 +308,9 @@ bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t o
 	return false;
 }
 
+EInstructionType GetInstructionType6502(FCodeAnalysisState& state, FAddressRef addr)
+{
+	// TODO:
+	return EInstructionType::Unknown;
+}
+

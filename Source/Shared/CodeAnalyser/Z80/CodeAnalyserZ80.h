@@ -4,6 +4,7 @@
 
 class ICPUInterface;
 class FCodeAnalysisState;
+enum class EInstructionType;
 
 struct FMachineStateZ80 : FMachineState
 {
@@ -37,3 +38,5 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 FMachineStateZ80* AllocateMachineStateZ80();
 void FreeMachineStatesZ80();
 void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInterface);
+
+EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef addr);

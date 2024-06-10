@@ -178,6 +178,12 @@ void FEmuBase::DrawUI()
 	}
 	ImGui::End();
 
+	if (ImGui::Begin("Static Analysis"))
+	{
+		CodeAnalysis.StaticAnalysis.DrawUI();
+	}
+	ImGui::End();
+
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
 	{
@@ -510,6 +516,13 @@ void FEmuBase::ActionsMenu()
 	{
 		ResetReferenceInfo(CodeAnalysis);
 	}
+
+	if (ImGui::MenuItem("Run Static Analysis"))
+	{
+		CodeAnalysis.RunStaticAnalysis();
+	}
+
+	ActionMenuAdditions();
 }
 
 void FEmuBase::WindowsMenu()

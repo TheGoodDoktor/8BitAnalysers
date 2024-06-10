@@ -490,6 +490,18 @@ bool CheckJumpInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_
 		return false;
 }
 
+EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr)
+{
+
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return GetInstructionTypeZ80(state, addr);
+	else if (pCPUInterface->CPUType == ECPUType::M6502)
+		return GetInstructionType6502(state, addr);
+	else
+		return EInstructionType::Unknown;
+}
 
 
 bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
@@ -1112,6 +1124,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	Debugger.Init(this);
 	MemoryAnalyser.Init(this);
 	IOAnalyser.Init(this);
+	StaticAnalysis.Init(this);
     
     pDataTypes->Reset();
 }

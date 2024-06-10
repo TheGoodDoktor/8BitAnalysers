@@ -105,6 +105,7 @@ protected:
 	virtual void	FileMenuAdditions(void) {}	// system specific additions
 	virtual void	SystemMenuAdditions(void) {}	// system specific additions
 	virtual void	OptionsMenuAdditions(void) {}	// system specific additions
+	virtual void	ActionMenuAdditions(void) {}	// system specific additions
 	virtual void	WindowsMenuAdditions(void) {}	// system specific additions
 
 

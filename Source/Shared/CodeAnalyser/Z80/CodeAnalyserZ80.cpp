@@ -447,3 +447,25 @@ void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInt
 	for (int stackVal = 0; stackVal < FMachineStateZ80::kNoStackEntries; stackVal++)
 		pMachineStateZ80->Stack[stackVal] = pCPUInterface->ReadWord(pMachineStateZ80->SP - (stackVal * 2));
 }
+
+
+// Static code analysis
+
+EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef addr)
+{
+	const uint8_t instByte = state.ReadByte(addr);
+
+	switch (instByte)
+	{
+		// Add to self
+		case 0x87:	// ADD A,A
+		case 0x29:	// ADD HL,HL
+			return EInstructionType::AddToSelf;
+
+		// Loop back
+		case 0x10:	// DJNZ
+			return EInstructionType::LoopBack;
+	}
+
+	return EInstructionType::Unknown;
+}
