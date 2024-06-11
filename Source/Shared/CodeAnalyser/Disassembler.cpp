@@ -22,12 +22,14 @@ void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 
 		if (pCodeInfoItem->OperandType == EOperandType::Decimal)
 			dispMode = ENumberDisplayMode::Decimal;
-		if (pCodeInfoItem->OperandType == EOperandType::Hex)
+		else if (pCodeInfoItem->OperandType == EOperandType::Hex)
 			dispMode = ENumberDisplayMode::HexAitch;
-		if (pCodeInfoItem->OperandType == EOperandType::Binary)
+		else if (pCodeInfoItem->OperandType == EOperandType::Binary)
 			dispMode = ENumberDisplayMode::Binary;
-		if (pCodeInfoItem->OperandType == EOperandType::SignedNumber)
+		else if (pCodeInfoItem->OperandType == EOperandType::SignedNumber)
 			dispMode = ENumberDisplayMode::Decimal;
+		else if (pCodeInfoItem->OperandType == EOperandType::Ascii)
+			dispMode = ENumberDisplayMode::Ascii;
 
 		PushString("#IM:", outputCallback);
 		PushString(NumStr(val, dispMode), outputCallback);

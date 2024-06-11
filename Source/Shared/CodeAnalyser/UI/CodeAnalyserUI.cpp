@@ -526,13 +526,31 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pCodeItem->OperandType = EOperandType::Pointer;
 				pCodeItem->Text.clear();
 			}
+		} 
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemAscii]))
+		{
+			if (cursorItem.Item->Type == EItemType::Data)
+			{
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
+				pDataItem->DisplayType = EDataItemDisplayType::Ascii;
+				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
+			}
+			else if (cursorItem.Item->Type == EItemType::Code)
+			{
+				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+				pCodeItem->OperandType = EOperandType::Ascii;
+				pCodeItem->Text.clear();
+			}
 		}
 		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemNumber]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
 			{
 				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
-				pDataItem->DisplayType = EDataItemDisplayType::SignedNumber;
+				if(pDataItem->DisplayType == EDataItemDisplayType::SignedNumber)
+					pDataItem->DisplayType = EDataItemDisplayType::Decimal;
+				else
+					pDataItem->DisplayType = EDataItemDisplayType::SignedNumber;
 				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
 			}
 			else if (cursorItem.Item->Type == EItemType::Code)
@@ -1082,35 +1100,15 @@ bool DrawEnumCombo(const char* pLabel,
 
 static const std::vector<std::pair<const char *,ENumberDisplayMode>> g_NumberTypes =
 {
-    { "None",       ENumberDisplayMode::None },
-    { "Decimal",    ENumberDisplayMode::Decimal },
-    { "$ Hex",      ENumberDisplayMode::HexDollar },
-    { "Hex h",      ENumberDisplayMode::HexAitch },
+	{ "None",       ENumberDisplayMode::None },
+	{ "Decimal",    ENumberDisplayMode::Decimal },
+	{ "$ Hex",      ENumberDisplayMode::HexDollar },
+	{ "Hex h",      ENumberDisplayMode::HexAitch },
 };
 
 bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
 {
-    return DrawEnumCombo<ENumberDisplayMode>(pLabel, numberMode, g_NumberTypes);
-/*
-    const int index = (int)numberMode + 1;
-    const char* numberTypes[] = { "None", "Decimal", "$ Hex", "Hex h" };
-    bool bChanged = false;
-
-    if (ImGui::BeginCombo(pLabel, numberTypes[index]))
-    {
-        for (int n = 0; n < IM_ARRAYSIZE(numberTypes); n++)
-        {
-            const bool isSelected = (index == n);
-            if (ImGui::Selectable(numberTypes[n], isSelected))
-            {
-                numberMode = (ENumberDisplayMode)(n - 1);
-                bChanged = true;
-            }
-        }
-        ImGui::EndCombo();
-    }
-
-    return bChanged;*/
+	return DrawEnumCombo<ENumberDisplayMode>(pLabel, numberMode, g_NumberTypes);
 }
 
 static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
@@ -1123,6 +1121,7 @@ static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
 	{ "Hex",			EOperandType::Hex},
 	{ "Binary",			EOperandType::Binary},
 	{ "Unsigned Number",			EOperandType::UnsignedNumber},
+	{ "Ascii",			EOperandType::Ascii},
 	//{ "Struct",			EOperandType::Struct},
 	//{ "Signed Number",	EOperandType::SignedNumber},
 };
@@ -1169,6 +1168,7 @@ static const std::vector<std::pair<const char*, EDataItemDisplayType>> g_Display
 	{ "JumpAddress",	EDataItemDisplayType::JumpAddress},
 	{ "Decimal",		EDataItemDisplayType::Decimal},
 	{ "Hex",			EDataItemDisplayType::Hex},
+	{ "Ascii",			EDataItemDisplayType::Ascii},
 	{ "Binary",			EDataItemDisplayType::Binary},
 	{ "Bitmap",			EDataItemDisplayType::Bitmap},
 	{ "ColMap2Bpp CPC",			EDataItemDisplayType::ColMap2Bpp_CPC},

@@ -70,7 +70,9 @@ const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode)
 	case ENumberDisplayMode::Binary:
 		snprintf(pStrAddress,kTextLength, "%c%c%c%c%c%c%c%c%c", '%', BYTE_TO_BINARY(num));
 		return pStrAddress;
-
+	case ENumberDisplayMode::Ascii:
+		snprintf(pStrAddress, kTextLength, "'%c'", num);
+		return pStrAddress;
 	default:
 		assert(0);
 		return nullptr;

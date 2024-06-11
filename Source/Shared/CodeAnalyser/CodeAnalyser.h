@@ -64,6 +64,7 @@ enum class EKey
 	SetItemBinary,
 	SetItemPointer,
 	SetItemNumber,
+	SetItemAscii,
 	SetItemUnknown,
 
 	AddLabel,
