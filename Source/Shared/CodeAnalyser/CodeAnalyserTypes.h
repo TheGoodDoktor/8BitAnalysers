@@ -53,6 +53,7 @@ enum class EOperandType
 	Enum,
 	Flags,
 	Struct,
+	Ascii,
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
@@ -69,7 +70,8 @@ enum class EDataItemDisplayType
 	ColMap4Bpp_CPC,	// Amstrad CPC mode 0 format
 	ColMapMulticolour_C64,	// C64 Multicolour format
 	UnsignedNumber,
-	SignedNumber
+	SignedNumber,
+	Ascii
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)

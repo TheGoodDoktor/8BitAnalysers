@@ -4,6 +4,7 @@
 
 class ICPUInterface;
 class FCodeAnalysisState;
+enum class EInstructionType;
 
 struct FMachineStateZ80 : FMachineState
 {
@@ -27,13 +28,15 @@ struct FMachineStateZ80 : FMachineState
 	uint16_t	Stack[kNoStackEntries];
 };
 
-bool CheckPointerIndirectionInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
-bool CheckPointerRefInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
-bool CheckJumpInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
-bool CheckCallInstructionZ80(FCodeAnalysisState& state, uint16_t pc);
-bool CheckStopInstructionZ80(FCodeAnalysisState& state, uint16_t pc);
+bool CheckPointerIndirectionInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
+bool CheckPointerRefInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
+bool CheckJumpInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
+bool CheckCallInstructionZ80(const FCodeAnalysisState& state, uint16_t pc);
+bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc);
 bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc);
 
 FMachineStateZ80* AllocateMachineStateZ80();
 void FreeMachineStatesZ80();
 void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInterface);
+
+EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef addr);

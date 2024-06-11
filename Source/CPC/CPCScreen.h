@@ -33,6 +33,9 @@ public:
 	const FPalette& GetCurrentPalette() const { return CurrentPalette; }
 	FPalette& GetCurrentPalette() { return CurrentPalette; }
 
+	int GetHeight() const;
+	int GetWidth() const;
+
 	// Get the scanline index where the top border ends and the screen's pixels begin.
 	int GetTopPixelEdge() const; // { return ScreenTopScanline; }
 	// Get the position of where the left border ends and the screen's pixels begin.
@@ -43,10 +46,20 @@ public:
 	const FPalette& GetPaletteForScanline(int scanline) const;
 	const FPalette& GetPaletteForYPos(int yPos) const;
 
-	uint16_t GetScreenAddrStart() const;
-	uint16_t GetScreenAddrEnd() const;
+	// Get the address of the 16k physical bank used for screen memory.
+	uint16_t GetScreenPage() const;
+
+	// Get the size of the screen RAM page(s). Can be either 16k or 32k.
 	uint16_t GetScreenMemSize() const;
 
+	// Get the address of the start of screen RAM.
+	uint16_t GetScreenAddrStart() const;
+	
+	// Identify an address as being located in screen memory. 
+	// This will take into account the regions in screen ram that are not mapped to pixels on the screen. 
+	bool IsScreenAddress(uint16_t addr) const;
+	
+	// Is the screen HW scrolled?
 	bool IsScrolled() const;
 
 	// Get a screen memory address for a screen position.

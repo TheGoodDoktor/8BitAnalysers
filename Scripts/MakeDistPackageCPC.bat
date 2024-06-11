@@ -1,38 +1,36 @@
 @echo off
-setlocal
-pushd "%~dp0"
+
+set PACKAGE_PATH=..\Package\CPC
+set LOOSE_PATH=%PACKAGE_PATH%\Loose
 
 echo Deleting old package files...
-if exist ..\Package rmdir /s /q ..\Package
+if exist %PACKAGE_PATH% rmdir /s /q %PACKAGE_PATH%
 
-mkdir ..\Package\Loose\Configs
-mkdir ..\Package\Loose\GameData
-mkdir ..\Package\Loose\Games
-mkdir ..\Package\Loose\Docs
-mkdir ..\Package\Loose\Fonts
-mkdir ..\Package\Loose\Roms
+mkdir %LOOSE_PATH%\CPCGames
+mkdir %LOOSE_PATH%\Docs
+mkdir %LOOSE_PATH%\Fonts
+rem mkdir %LOOSE_PATH%\Roms
+mkdir %LOOSE_PATH%\Lua
 
-echo Building CPCAnalyser.exe...
-call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" 
-if not exist build cmake -G Ninja -S ..\Source\CPC -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
 echo copy exe...
-if errorlevel 0 copy .\build\CPCAnalyser.exe ..\Package\Loose\
+if errorlevel 0 copy ..\Source\CPC\Build\Release\CPCAnalyser.exe %LOOSE_PATH%
 
 rem Add some files to describe what to put in the empty directories
-@echo>"..\Package\Loose\Games\464 snapshots go here in sna format"
-@echo>"..\Package\Loose\Fonts\fonts go here in ttf format"
-@echo>"..\Package\Loose\Roms\external roms go here"
+@echo>"%LOOSE_PATH%\CPCGames\464 or 6128 snapshots go here in sna format"
+@echo>"%LOOSE_PATH%\Fonts\fonts go here in ttf format"
+rem @echo>"%LOOSE_PATH%\Roms\external roms go here"
 
 echo copy imgui.ini...
-copy ..\Data\CPCAnalyser\imgui.ini ..\Package\Loose\
+copy ..\Data\CPCAnalyser\imgui.ini %LOOSE_PATH%\
 echo copy logo...
-copy ..\Data\CPCAnalyser\CPCALogo.png ..\Package\Loose\
+copy ..\Data\CPCAnalyser\CPCALogo.png %LOOSE_PATH%\
+echo copy font...
+copy ..\Data\CPCAnalyser\Fonts\Cousine-Regular.ttf %LOOSE_PATH%\Fonts\
 echo copy docs...
-copy ..\Docs\*.* ..\Package\Loose\Docs\
+copy ..\Docs\*.* %LOOSE_PATH%\Docs\
+echo copy Lua...
+xcopy /e /v /y ..\Data\CPCAnalyser\Lua %LOOSE_PATH%\Lua\
 
-7z a ..\Package\CPCAnalyser.zip ..\Package\Loose\.
+"C:\Program Files\7-Zip\7z.exe" a %PACKAGE_PATH%\CPCAnalyser.zip %LOOSE_PATH%\.
 
-popd
-endlocal
 pause

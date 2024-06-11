@@ -92,6 +92,8 @@ public:
 
 	// Games List
 	bool	AddGamesList(const char* pFileType, const char* pRootDir);
+	
+	void	LoadFont();
 
 protected:
 	void			FileMenu();
@@ -103,6 +105,7 @@ protected:
 	virtual void	FileMenuAdditions(void) {}	// system specific additions
 	virtual void	SystemMenuAdditions(void) {}	// system specific additions
 	virtual void	OptionsMenuAdditions(void) {}	// system specific additions
+	virtual void	ActionMenuAdditions(void) {}	// system specific additions
 	virtual void	WindowsMenuAdditions(void) {}	// system specific additions
 
 

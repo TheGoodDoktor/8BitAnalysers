@@ -229,11 +229,11 @@ bool CheckJumpInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint
 		// to absolute 16 address
 		case 0x20:	// JSR
 		case 0x4C:	// JMP abs
-		//case 0x6C:	// JMP indirect
+		case 0x6C:	// JMP indirect
 			*out_addr = state.ReadWord(pc + 1);
 			return true;
-		case 0x6C:	// JMP indirect
-			*out_addr = state.ReadWord(state.ReadWord(pc + 1));
+		//case 0x6C:	// JMP indirect
+		//	*out_addr = state.ReadWord(state.ReadWord(pc + 1));
 		return true;
 	}
 	return false;
@@ -258,9 +258,11 @@ bool CheckStopInstruction6502(const FCodeAnalysisState& state, uint16_t pc)
 	switch (instrByte)
 	{
 	case 0x00:	// BRK
-	case 0x20:	// JSR
+	//case 0x20:	// JSR
 	case 0x40:	// RTI
 	case 0x60:	// RTS
+	case 0x4C:	// JMP ind
+	case 0x6C:	// JMP abs
 		return true;
 	}
 	return false;
@@ -304,5 +306,11 @@ bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t o
 	bool bPushInstruction = false;
 
 	return false;
+}
+
+EInstructionType GetInstructionType6502(FCodeAnalysisState& state, FAddressRef addr)
+{
+	// TODO:
+	return EInstructionType::Unknown;
 }
 

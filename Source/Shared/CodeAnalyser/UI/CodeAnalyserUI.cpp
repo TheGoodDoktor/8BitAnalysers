@@ -67,7 +67,7 @@ bool FCodeAnalysisViewState::GoToNextAddress()
 	return true;
 }
 
-void FCodeAnalysisViewState::FixupAddressRefs(FCodeAnalysisState& state)
+void FCodeAnalysisViewState::FixupAddressRefs(const FCodeAnalysisState& state)
 {
 	FixupAddressRef(state, CursorItem.AddressRef);
 	FixupAddressRef(state, HoverAddress);
@@ -526,13 +526,31 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pCodeItem->OperandType = EOperandType::Pointer;
 				pCodeItem->Text.clear();
 			}
+		} 
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemAscii]))
+		{
+			if (cursorItem.Item->Type == EItemType::Data)
+			{
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
+				pDataItem->DisplayType = EDataItemDisplayType::Ascii;
+				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
+			}
+			else if (cursorItem.Item->Type == EItemType::Code)
+			{
+				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+				pCodeItem->OperandType = EOperandType::Ascii;
+				pCodeItem->Text.clear();
+			}
 		}
 		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemNumber]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
 			{
 				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
-				pDataItem->DisplayType = EDataItemDisplayType::SignedNumber;
+				if(pDataItem->DisplayType == EDataItemDisplayType::SignedNumber)
+					pDataItem->DisplayType = EDataItemDisplayType::Decimal;
+				else
+					pDataItem->DisplayType = EDataItemDisplayType::SignedNumber;
 				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
 			}
 			else if (cursorItem.Item->Type == EItemType::Code)
@@ -1082,35 +1100,15 @@ bool DrawEnumCombo(const char* pLabel,
 
 static const std::vector<std::pair<const char *,ENumberDisplayMode>> g_NumberTypes =
 {
-    { "None",       ENumberDisplayMode::None },
-    { "Decimal",    ENumberDisplayMode::Decimal },
-    { "$ Hex",      ENumberDisplayMode::HexDollar },
-    { "Hex h",      ENumberDisplayMode::HexAitch },
+	{ "None",       ENumberDisplayMode::None },
+	{ "Decimal",    ENumberDisplayMode::Decimal },
+	{ "$ Hex",      ENumberDisplayMode::HexDollar },
+	{ "Hex h",      ENumberDisplayMode::HexAitch },
 };
 
 bool DrawNumberTypeCombo(const char *pLabel, ENumberDisplayMode& numberMode)
 {
-    return DrawEnumCombo<ENumberDisplayMode>(pLabel, numberMode, g_NumberTypes);
-/*
-    const int index = (int)numberMode + 1;
-    const char* numberTypes[] = { "None", "Decimal", "$ Hex", "Hex h" };
-    bool bChanged = false;
-
-    if (ImGui::BeginCombo(pLabel, numberTypes[index]))
-    {
-        for (int n = 0; n < IM_ARRAYSIZE(numberTypes); n++)
-        {
-            const bool isSelected = (index == n);
-            if (ImGui::Selectable(numberTypes[n], isSelected))
-            {
-                numberMode = (ENumberDisplayMode)(n - 1);
-                bChanged = true;
-            }
-        }
-        ImGui::EndCombo();
-    }
-
-    return bChanged;*/
+	return DrawEnumCombo<ENumberDisplayMode>(pLabel, numberMode, g_NumberTypes);
 }
 
 static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
@@ -1123,6 +1121,7 @@ static const std::vector<std::pair<const char *,EOperandType>> g_OperandTypes =
 	{ "Hex",			EOperandType::Hex},
 	{ "Binary",			EOperandType::Binary},
 	{ "Unsigned Number",			EOperandType::UnsignedNumber},
+	{ "Ascii",			EOperandType::Ascii},
 	//{ "Struct",			EOperandType::Struct},
 	//{ "Signed Number",	EOperandType::SignedNumber},
 };
@@ -1169,6 +1168,7 @@ static const std::vector<std::pair<const char*, EDataItemDisplayType>> g_Display
 	{ "JumpAddress",	EDataItemDisplayType::JumpAddress},
 	{ "Decimal",		EDataItemDisplayType::Decimal},
 	{ "Hex",			EDataItemDisplayType::Hex},
+	{ "Ascii",			EDataItemDisplayType::Ascii},
 	{ "Binary",			EDataItemDisplayType::Binary},
 	{ "Bitmap",			EDataItemDisplayType::Bitmap},
 	{ "ColMap2Bpp CPC",			EDataItemDisplayType::ColMap2Bpp_CPC},
@@ -1462,13 +1462,22 @@ void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(glyphWidth * 10.0f);
 	ImGui::InputScalar("##jumpaddressinput", ImGuiDataType_U16, &viewState.JumpAddress, nullptr, nullptr, format, inputFlags);
+	const bool bEnteredJumpAddress = ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter, false);
+	
 	ImGui::SameLine();
-	if (ImGui::Button("Go"))
+	
+	if (ImGui::Button("Go") || bEnteredJumpAddress)
 	{
 		if (viewState.ViewingBankId == -1)
 			viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
 		else
-			viewState.GoToAddress(FAddressRef(viewState.ViewingBankId, viewState.JumpAddress));
+		{
+			FAddressRef jumpAddr(viewState.ViewingBankId, viewState.JumpAddress);
+			if(state.IsAddressValid(jumpAddr))
+				viewState.GoToAddress(jumpAddr);
+			else
+				viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
+		}
 	}
 }
 
@@ -1614,6 +1623,9 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		auto& banks = state.GetBanks();
 		for (auto& bank : banks)
 		{
+			if (bank.PrimaryMappedPage == -1)
+				continue;
+			
 			const bool bSelected = viewState.ViewingBankId == bank.Id;
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 			ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -2223,7 +2235,7 @@ void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter
 		const FCodeAnalysisBank* pBank = state.GetBank(labelItem.AddressRef.BankId);
 		if (pBank)
 		{
-			if (filter.bRAMOnly && pBank->bReadOnly)
+			if (filter.bNoMachineRoms && pBank->bMachineROM)
 				continue;
 		}
 		
@@ -2280,8 +2292,8 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 	ImGui::SameLine();
 	if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
 	{
-		viewState.GlobalFunctionsFilter.bRAMOnly = !viewState.ShowROMLabels;
-		viewState.GlobalDataItemsFilter.bRAMOnly = !viewState.ShowROMLabels;
+		viewState.GlobalFunctionsFilter.bNoMachineRoms = !viewState.ShowROMLabels;
+		viewState.GlobalDataItemsFilter.bNoMachineRoms = !viewState.ShowROMLabels;
 		state.bRebuildFilteredGlobalFunctions = true;
 		state.bRebuildFilteredGlobalDataItems = true;
 	}
@@ -2572,6 +2584,20 @@ int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat)
 	return 1 << GetBppForBitmapFormat(bitmapFormat);
 }
 
+bool IsBitmapFormatDoubleWidth(EBitmapFormat bitmapFormat)
+{
+	switch (bitmapFormat)
+	{
+	case EBitmapFormat::Bitmap_1Bpp:
+	case EBitmapFormat::ColMap2Bpp_CPC:
+	case EBitmapFormat::ColMapMulticolour_C64:
+		return false;
+	case EBitmapFormat::ColMap4Bpp_CPC:
+		return true;
+	default:
+		return false;
+	}
+}
 
 
 // Markup code

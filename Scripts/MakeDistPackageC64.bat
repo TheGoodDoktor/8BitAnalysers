@@ -1,22 +1,25 @@
-echo on
+echo off
+
+set PACKAGE_PATH=..\Package\C64
+set LOOSE_PATH=%PACKAGE_PATH%\Loose
 
 echo Deleting old package files...
-if exist ..\Package rmdir /s /q ..\Package
+if exist %PACKAGE_PATH% rmdir /s /q %PACKAGE_PATH%
 
-mkdir ..\Package\Loose\Prg
-mkdir ..\Package\Loose\Docs
-mkdir ..\Package\Loose\Fonts
+mkdir %LOOSE_PATH%\Prg
+mkdir %LOOSE_PATH%\Docs
+mkdir %LOOSE_PATH%\Fonts
 
 rem Add some files to describe what to put in the empty directories
-@echo>"..\Package\Loose\Prg\C64 prg files go here"
-@echo>"..\Package\Loose\Fonts\fonts go here in ttf format"
+@echo>"%LOOSE_PATH%\Prg\C64 prg files go here"
+@echo>"%LOOSE_PATH%\Fonts\fonts go here in ttf format"
 
-copy ..\Source\C64\build\bin\Release\C64Analyser.exe ..\Package\Loose\
-copy ..\Data\C64Analyser\imgui.ini ..\Package\Loose\
-copy ..\Data\C64Analyser\Fonts\Cousine-Regular.ttf ..\Package\Loose\Fonts\
-rem copy ..\Data\C64Analyser\SALogo.png ..\Package\Loose\
-copy ..\Docs\*.* ..\Package\Loose\Docs\
+copy ..\Source\C64\build\bin\Release\C64Analyser.exe %LOOSE_PATH%\
+copy ..\Data\C64Analyser\imgui.ini %LOOSE_PATH%\
+copy ..\Data\C64Analyser\Fonts\Cousine-Regular.ttf %LOOSE_PATH%\Fonts\
+rem copy ..\Data\C64Analyser\SALogo.png %LOOSE_PATH%\
+copy ..\Docs\*.* %LOOSE_PATH%\Docs\
 
-7z a ..\Package\C64Analyser.zip ..\Package\Loose\.
+7z a %PACKAGE_PATH%\C64Analyser.zip %LOOSE_PATH%\.
 
 pause

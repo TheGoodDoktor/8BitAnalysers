@@ -12,6 +12,7 @@
 #include "Debugger.h"
 #include "MemoryAnalyser.h"
 #include "IOAnalyser.h"
+#include "StaticAnalysis.h"
 #include <Misc/GlobalConfig.h>
 #include "Commands/FormatDataCommand.h"
 
@@ -63,6 +64,7 @@ enum class EKey
 	SetItemBinary,
 	SetItemPointer,
 	SetItemNumber,
+	SetItemAscii,
 	SetItemUnknown,
 
 	AddLabel,
@@ -115,7 +117,7 @@ struct FLabelListFilter
 	std::string		FilterText;
 	uint16_t		MinAddress = 0x0000;
 	uint16_t		MaxAddress = 0xffff;
-	bool				bRAMOnly = true;
+	bool			bNoMachineRoms = true;
 	EDataTypeFilter DataType = EDataTypeFilter::All;
 };
 
@@ -142,6 +144,11 @@ struct FAddressCoord
 // view state for code analysis window
 struct FCodeAnalysisViewState
 {
+	void Reset()
+	{
+		CursorItem = FCodeAnalysisItem();
+		ViewingBankId = -1;
+	}
 	// accessor functions
 	const FCodeAnalysisItem& GetCursorItem() const { return CursorItem; }
 	void SetCursorItem(const FCodeAnalysisItem& item)
@@ -181,7 +188,7 @@ struct FCodeAnalysisViewState
 		return false;
 	}
 	
-	void FixupAddressRefs(FCodeAnalysisState& state);
+	void FixupAddressRefs(const FCodeAnalysisState& state);
 	
 	bool			Enabled = false;
 	bool			TrackPCFrame = false;
@@ -254,7 +261,8 @@ struct FCodeAnalysisBank
 	FCodeAnalysisPage*	Pages = nullptr;
 	std::string			Name;
 	std::string			Description;	// where we can describe what the bank is used for
-	bool				bReadOnly = false;
+	//bool				bReadOnly = false;
+	bool				bMachineROM = false;
 	bool				bFixed = false;	// bank is never remapped
 	bool				bIsDirty = false;
 	bool				bEverBeenMapped = false;
@@ -467,6 +475,8 @@ public:
 	bool IsCodeAnalysisDataDirty() const { return bCodeAnalysisDataDirty; }
 	void ClearRemappings() { bMemoryRemapped = false; }
 	bool HasMemoryBeenRemapped() const { return bMemoryRemapped; }
+
+	bool RunStaticAnalysis() { return StaticAnalysis.RunAnalysis();}
 	//const std::vector<int16_t>& GetDirtyBanks() const { return RemappedBanks; }
 
 	//bool	EnsureUniqueLabelName(std::string& lableName);
@@ -495,6 +505,7 @@ public:
 	FDebugger				Debugger;
 	FMemoryAnalyser			MemoryAnalyser;
 	FIOAnalyser				IOAnalyser;
+	FStaticAnalyser			StaticAnalysis;
 
 	FAddressRef				CopiedAddress;
 
@@ -627,7 +638,7 @@ public:
 		}
 	}
 
-	FDataInfo* GetDataInfoForAddress(FAddressRef addrRef)
+	FDataInfo* GetDataInfoForAddress(FAddressRef addrRef) const
 	{
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
 		if (pBank != nullptr)
@@ -736,7 +747,7 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
 void ResetReferenceInfo(FCodeAnalysisState &state);
 
-std::string GetItemText(FCodeAnalysisState& state, FAddressRef address);
+std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address);
 
 // Commands
 //void Undo(FCodeAnalysisState &state);
@@ -764,3 +775,6 @@ void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterf
 
 void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr);
 void FixupAddressRefList(const FCodeAnalysisState& state, std::vector<FAddressRef>& addrList);
+
+// static analysis functions
+EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr);

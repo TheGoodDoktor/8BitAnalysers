@@ -485,6 +485,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
 	bool bShowItemLabel = false;
+	bool bShowASCII = false;
 
 	uint32_t valueColour = Colours::defaultValue;
 
@@ -506,8 +507,12 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	case EDataItemDisplayType::SignedNumber:
 	case EDataItemDisplayType::UnsignedNumber:	// these should use the number display mode
 		break;
+	case EDataItemDisplayType::Ascii:
+		bShowASCII = true;
+		break;
 	case EDataItemDisplayType::Unknown:
 		valueColour = Colours::unknownValue;
+		bShowASCII = true;
 		break;
     default:
         break;
@@ -544,11 +549,14 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		else
 			ImGui::Text("%s", NumStr(val));
 
-		ImGui::SameLine();
-		if (val == '\n')// carriage return messes up list
-			ImGui::Text("'<cr>'");
-		else
-			ImGui::Text("'%c'", val);
+		if(bShowASCII)
+		{
+			ImGui::SameLine();
+			if (val == '\n')// carriage return messes up list
+				ImGui::Text("'<cr>'");
+			else
+				ImGui::Text("'%c'", val);
+		}
 	}
 	break;
 

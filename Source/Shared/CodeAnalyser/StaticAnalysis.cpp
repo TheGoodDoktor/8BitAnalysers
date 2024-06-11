@@ -1,0 +1,135 @@
+#include "StaticAnalysis.h"
+
+#include <imgui.h>
+#include "CodeAnalyser.h"
+#include "UI/CodeAnalyserUI.h"
+
+// check for multiplies using adds
+class FMultByAddCheck : public FStaticAnalysisCheck
+{
+public:
+	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override
+	{
+		const EInstructionType instType = GetInstructionType(state, addrRef);
+
+		if (instType == EInstructionType::AddToSelf)
+		{
+			if (AddRunLength == 0)
+				Start = addrRef;
+			AddRunLength++;
+		}
+		else
+		{
+			if (AddRunLength > 0)
+			{
+				// Register item
+				char itemName[32];
+				snprintf(itemName, 32, "Multiply by %d", 1 << AddRunLength);
+				AddRunLength = 0;
+				return new FStaticAnalysisItem(Start, itemName);
+			}
+		}
+
+		return nullptr;
+	}
+private:
+	FAddressRef		Start;
+	int				AddRunLength = 0;
+};
+
+// check for port accesses
+class FPortAccessCheck : public FStaticAnalysisCheck
+{
+public:
+	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override
+	{
+		const EInstructionType instType = GetInstructionType(state, addrRef);
+
+		if (instType == EInstructionType::PortInput)
+			return new FStaticAnalysisItem(addrRef, "Port Input");
+		else if (instType == EInstructionType::PortOutput)
+			return new FStaticAnalysisItem(addrRef, "Port Output");
+
+		return nullptr;
+	}
+
+};
+
+bool FStaticAnalyser::Init(FCodeAnalysisState* pState)
+{
+	pCodeAnalysis = pState;
+
+	Checks.push_back(new FMultByAddCheck);
+	Checks.push_back(new FPortAccessCheck);
+	return true;
+}
+
+void FStaticAnalyser::ClearList()
+{
+	for (auto item : Items)
+	{
+		delete item;
+	}
+
+	Items.clear();
+}
+
+bool FStaticAnalyser::RunAnalysis(void)
+{
+	FCodeAnalysisState& state = *pCodeAnalysis;
+	const auto& banks = pCodeAnalysis->GetBanks();
+
+	ClearList();
+
+	// iterate through all registered banks
+	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
+	{
+		const FCodeAnalysisBank& bank = banks[bankNo];
+
+		if(bank.bMachineROM)
+			continue;
+
+		int addToSelfRun = 0;
+		FAddressRef addToSelfRunStart;
+
+		// iterate through all address in bank
+		int addr = bank.GetMappedAddress();
+		while (addr < bank.GetMappedAddress() + bank.GetSizeBytes())
+		{
+			FAddressRef addrRef(bank.Id,addr);
+			const FCodeInfo* pCodeInfoItem = pCodeAnalysis->GetCodeInfoForAddress(addrRef);
+			if (pCodeInfoItem)
+			{
+				for (auto check : Checks)
+				{
+					FStaticAnalysisItem* pItem = check->RunCheck(state,addrRef);
+					if(pItem)
+						Items.push_back(pItem);
+				}
+
+				addr += pCodeInfoItem->ByteSize;
+			}
+			else
+			{
+				addr++;
+			}
+
+		}
+	}
+
+	return true;
+}
+
+void FStaticAnalyser::DrawUI(void)
+{
+	for (auto item : Items)
+	{
+		item->DrawUi(*pCodeAnalysis,pCodeAnalysis->GetFocussedViewState());
+	}
+}
+
+void FStaticAnalysisItem::DrawUi(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+{
+	ImGui::Text("%s : ",Name.c_str());
+	DrawAddressLabel(state, viewState, AddressRef);
+}

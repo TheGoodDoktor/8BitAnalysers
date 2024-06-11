@@ -118,6 +118,7 @@ public:
 	void	FileMenuAdditions(void) override;
 	void	SystemMenuAdditions(void)  override;
 	void	OptionsMenuAdditions(void) override;
+	void	ActionMenuAdditions(void) override;
 	void	WindowsMenuAdditions(void)  override;
 
 

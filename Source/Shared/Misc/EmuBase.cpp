@@ -178,6 +178,12 @@ void FEmuBase::DrawUI()
 	}
 	ImGui::End();
 
+	if (ImGui::Begin("Static Analysis"))
+	{
+		CodeAnalysis.StaticAnalysis.DrawUI();
+	}
+	ImGui::End();
+
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
 	{
@@ -436,7 +442,44 @@ void FEmuBase::OptionsMenu()
 
 		ImGui::EndMenu();
 	}
+	if (ImGui::BeginMenu("Font"))
+	{
+		const ImFont* pCurFont = ImGui::GetFont();
+		ImGui::Text("Current Font: %s", pCurFont ? pCurFont->GetDebugName() : "None");
+		ImGui::Separator();
 
+		FGlobalConfig* pConfig = CodeAnalysis.pGlobalConfig;
+		if (!pConfig->Font.empty())
+		{
+			if (pCurFont && !strncmp(pConfig->Font.c_str(), pCurFont->GetDebugName(), pConfig->Font.length()))
+			{
+				if (ImGui::Button("Decrease Font Size"))
+				{
+					pConfig->FontSizePts--;
+				}
+				ImGui::SameLine();
+				ImGui::Dummy(ImGui::CalcTextSize("FF"));
+				ImGui::SameLine();
+				if (ImGui::Button("Increase Font Size"))
+				{
+					pConfig->FontSizePts++;
+				}
+
+				ImGui::InputInt("Size (Pt)", &pConfig->FontSizePts, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue);
+				pConfig->FontSizePts = std::min(std::max(pConfig->FontSizePts, 8), 72);
+			}
+			else
+			{
+				ImGui::Text("Font %s could not be loaded.", pConfig->Font.c_str());
+			}
+		}
+		else
+		{
+			ImGui::Text("No font defined in GlobalConfig.json.");
+		}
+
+		ImGui::EndMenu();
+	}
 	//if(pActiveGame!=nullptr)
 	//	ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 
@@ -473,6 +516,13 @@ void FEmuBase::ActionsMenu()
 	{
 		ResetReferenceInfo(CodeAnalysis);
 	}
+
+	if (ImGui::MenuItem("Run Static Analysis"))
+	{
+		CodeAnalysis.RunStaticAnalysis();
+	}
+
+	ActionMenuAdditions();
 }
 
 void FEmuBase::WindowsMenu()
@@ -695,6 +745,29 @@ void FEmuBase::DisplayErrorMessage(const char *fmt, ...)
     
 	bErrorMessagePopup = true;
 	ErrorPopupText = buf;
+}
+
+void FEmuBase::LoadFont()
+{
+	if (FGlobalConfig* pGlobalConfig = CodeAnalysis.pGlobalConfig)
+	{
+		if (!pGlobalConfig->Font.empty())
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.Fonts->Clear();
+			const std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
+
+			// Calculate the font pixel size based on the DPI scale of the primary monitor.
+			// Note: Monitors[0] is the primary monitor 
+			const ImGuiPlatformIO& platformIO = ImGui::GetPlatformIO();
+			const float dpiScale = !platformIO.Monitors.empty() ? platformIO.Monitors[0].DpiScale : 1.0f;
+			if (!io.Fonts->AddFontFromFileTTF(GetBundlePath(fontPath.c_str()), (float)pGlobalConfig->FontSizePts * dpiScale))
+			{
+				LOGWARNING("Could not load font '%s'", fontPath.c_str());
+			}
+			io.Fonts->Build();
+		}
+	}
 }
 
 // Viewers

@@ -1,5 +1,6 @@
 #include "CharacterMapViewer.h"
 #include "../CodeAnalyser.h"
+#include "../DataTypes.h"
 #include "MemoryAccessGrid.h"
 
 #include <imgui.h>
@@ -7,6 +8,7 @@
 
 #include <cmath>
 #include <ImGuiSupport/ImGuiScaling.h>
+#include "UIColours.h"
 
 static const char* g_MaskInfoTxt[] =
 {
@@ -224,6 +226,9 @@ void FCharacterMapViewer::DrawCharacterMap()
 	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::SliderFloat("Scale", &UIState.Scale, 0.1f, 2.0f);
 
+	state.GetDataTypes()->DrawFlagsComboBox("Flags", params.FlagSet);
+
+
 	if (ImGui::Button("Apply"))
 	{
 		pCharMap->Params = params;
@@ -236,7 +241,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 		formattingOptions.NoItems = params.Height;
 		formattingOptions.CharacterSet = params.CharacterSet;
 		formattingOptions.EmptyCharNo = params.IgnoreCharacter;
-		formattingOptions.AddLabelAtStart = true;
+		formattingOptions.AddLabelAtStart = false;
 		FormatData(state, formattingOptions);
 		state.SetCodeAnalysisDirty(params.Address);
 	}
@@ -262,13 +267,14 @@ void FCharacterMapViewer::DrawCharacterMap()
 			const int framesSinceRead = pDataInfo->LastFrameRead == -1 ? 255 : state.CurrentFrameNo - pDataInfo->LastFrameRead;
 			const int wBrightVal = (255 - std::min(framesSinceWritten << 3, 255)) & 0xff;
 			const int rBrightVal = (255 - std::min(framesSinceRead << 3, 255)) & 0xff;
+			const float xp = pos.x + (x * rectSize);
+			const float yp = pos.y + (y * rectSize);
+			ImVec2 rectMin(xp, yp);
+			ImVec2 rectMax(xp + rectSize, yp + rectSize);
 
 			if (val != params.IgnoreCharacter || wBrightVal > 0 || rBrightVal > 0)	// skip empty chars
 			{
-				const float xp = pos.x + (x * rectSize);
-				const float yp = pos.y + (y * rectSize);
-				ImVec2 rectMin(xp, yp);
-				ImVec2 rectMax(xp + rectSize, yp + rectSize);
+				
 
 				if (val != params.IgnoreCharacter)
 				{
@@ -286,26 +292,24 @@ void FCharacterMapViewer::DrawCharacterMap()
 						//dl->AddText(NULL, 8.0f, ImVec2(xp + 1, yp + 1), 0xffffffff, valTxt, NULL);
 					}
 				}
-
-				if (bShowReadWrites)
-				{
-					if (rBrightVal > 0)
-					{
-						const ImU32 col = 0xff000000 | (rBrightVal << 8);
-						dl->AddRect(rectMin, rectMax, col);
-
-						rectMin = ImVec2(rectMin.x + 1, rectMin.y + 1);
-						rectMax = ImVec2(rectMax.x - 1, rectMax.y - 1);
-					}
-					if (wBrightVal > 0)
-					{
-						const ImU32 col = 0xff000000 | (wBrightVal << 0);
-						dl->AddRect(rectMin, rectMax, col);
-					}
-				}
 			}
 
-			//byte++;	// go to next byte
+			if (bShowReadWrites)
+			{
+				if (rBrightVal > 0)
+				{
+					const ImU32 col = 0xff000000 | (rBrightVal << 8);
+					dl->AddRect(rectMin, rectMax, col);
+
+					rectMin = ImVec2(rectMin.x + 1, rectMin.y + 1);
+					rectMax = ImVec2(rectMax.x - 1, rectMax.y - 1);
+				}
+				if (wBrightVal > 0)
+				{
+					const ImU32 col = 0xff000000 | (wBrightVal << 0);
+					dl->AddRect(rectMin, rectMax, col);
+				}
+			}			
 		}
 	}
 
@@ -335,7 +339,12 @@ void FCharacterMapViewer::DrawCharacterMap()
 		// Tool Tip
 		ImGui::BeginTooltip();
 		ImGui::Text("Char Pos (%d,%d)", xChar, yChar);
-		ImGui::Text("Value: %s", NumStr(charVal));
+		ImGui::Text("Value: %s %s", NumStr(charVal), NumStr(charVal,ENumberDisplayMode::Binary));
+		FFlagSet* pFlagSet = state.GetDataTypes()->GetFlagsFromTypeId(params.FlagSet);
+		if (pFlagSet)
+		{
+			ImGui::Text("Flags: %s",pFlagSet->GenerateFlagsString(charVal).c_str());
+		}
 		ImGui::EndTooltip();
 	}
 
@@ -345,7 +354,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 		const float yp = pos.y + (UIState.SelectedCharY * rectSize);
 		const ImVec2 rectMin(xp, yp);
 		const ImVec2 rectMax(xp + rectSize, yp + rectSize);
-		dl->AddRect(rectMin, rectMax, 0xffffffff);
+		dl->AddRect(rectMin, rectMax, Colours::GetFlashColour());
 	}
 
 	// draw hovered address
@@ -516,6 +525,9 @@ public:
 		ImGui::SameLine();
 		ImGui::InputInt("##GridStride", &GridStride);
 
+		GridSizeX = std::min(GridSizeX,GridStride);
+			
+
 		// Offset
 		DrawIntInputXY("Offset", OffsetX, OffsetY);
 		/*
@@ -645,6 +657,10 @@ void FCharacterMapViewer::SetGridSize(int x, int y)
 	ViewerGrid->SetGridSize(x,y);
 }
 
+void FCharacterMapViewer::SetGridStride(int stride)
+{
+	ViewerGrid->SetGridStride(stride);
+}
 
 void FCharacterMapViewer::DrawUI(void)
 {

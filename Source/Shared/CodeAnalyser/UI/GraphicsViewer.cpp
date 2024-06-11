@@ -21,13 +21,6 @@ static int kMaxImageSize = 256;
 static int kGraphicsViewerWidth = 256;
 static int kGraphicsViewerHeight = 512;
 
-namespace ImGui
-{
-	// SetItemUsingMouseWheel() has been replaced by SetItemKeyOwner() in v1.89.1
-	// https://github.com/ocornut/imgui/pull/2891#issuecomment-1307753952
-	//extern void SetItemKeyOwner();
-}
-
 bool FGraphicsViewer::Init()
 {
 	pCodeAnalysis = &pEmulator->GetCodeAnalysis();
@@ -121,6 +114,8 @@ uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInView(int x, int y) const
 {
 	const int scaledViewWidth = kGraphicsViewerWidth / ViewScale;
 	const int scaledViewHeight = kGraphicsViewerHeight / ViewScale;
+	// Deal with odd ViewScale values, when there is a gap between the bottom of the graphic column and the edge of the view. 
+	const int roundedViewHeight = (scaledViewHeight / 8) * 8;
 	const int scaledX = x / ViewScale;
 	const int scaledY = y / ViewScale;
 
@@ -132,13 +127,16 @@ uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInView(int x, int y) const
 	const int xCount = kHorizontalDispCharCount / xSizeChars;
 	const int xSize = xCount * xSizeChars;
 	const int xp = std::max(std::min(xSize, (scaledX / 8)), 0);
-	const int yp = std::max(std::min(scaledViewHeight, scaledY), 0);
+	const int yp = std::max(std::min(roundedViewHeight, scaledY), 0);
 	const int column = xp / xSizeChars;
-	const int columnSize = scaledViewHeight * xSizeChars;
+	const int bpp = GetBppForBitmapFormat(BitmapFormat);
+	const int columnSize = roundedViewHeight * xSizeChars;
+	const int widthFactor = IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
 
 	//ImGui::Text("ScaledX: %d, Scaled Y: %d", scaledX, scaledY);
 	//ImGui::Text("xp: %d, yp: %d, column: %d", xp, yp, column);
-	return (addrInput + (column * columnSize) + (scaledY * xSizeChars)) % MemorySize;
+	
+	return (addrInput + (column * columnSize * (bpp / widthFactor)) + (scaledY * xSizeChars * bpp)) % MemorySize;
 }
 
 uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
@@ -208,8 +206,8 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int x
 			case EBitmapFormat::ColMap4Bpp_CPC:
 			{
 				const uint8_t* pPixels = pCPUInterface->GetMemPtr(memAddr);
-				pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
-				memAddr += 4;
+				pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 4, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+				memAddr += 2;
 			}
 			break;
 			case EBitmapFormat::ColMapMulticolour_C64:
@@ -263,9 +261,9 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumnChars(uint16_t memAddr, 
 				case EBitmapFormat::ColMap4Bpp_CPC:
 				{
 					const uint8_t* pPixels = pCPUInterface->GetMemPtr(memAddr);
-					pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+					pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y * 8, 4, 8, pPaletteColours ? pPaletteColours : GetCurrentPalette());
 
-					memAddr += 4 * 8;
+					memAddr += 2 * 8;
 				}
 				break;
 				case EBitmapFormat::ColMapMulticolour_C64:
@@ -320,11 +318,10 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 				break;
 				case EBitmapFormat::ColMap4Bpp_CPC:
 				{
-					// todo
 					const uint8_t* pPixels = &pBank->Memory[bankAddr];
-					pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+					pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y, 4, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
 
-					memAddr += 4;
+					memAddr += 2;
 				}
 				break;
 				case EBitmapFormat::ColMapMulticolour_C64:
@@ -380,11 +377,10 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16
 			break;
 			case EBitmapFormat::ColMap4Bpp_CPC:
 			{
-				// todo
 				const uint8_t* pPixels = &pBank->Memory[bankAddr];
 				pGraphicsView->Draw4BppWideImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, pPaletteColours ? pPaletteColours : GetCurrentPalette());
 
-				memAddr += 4 * 8;
+				memAddr += 2 * 8;
 			}
 			break;
 			case EBitmapFormat::ColMapMulticolour_C64:
@@ -457,29 +453,35 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 {
 	const FCodeAnalysisState& state = GetCodeAnalysis();
 
-	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
+	const int widthFactor = IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
+	const int kColumnWidthPixels = 8 * widthFactor;
+
+	const int kHorizontalDispCharCount = kGraphicsViewerWidth / kColumnWidthPixels;
 	const int kVerticalDispPixCount = kGraphicsViewerHeight;
 
 	const int scaledHDispCharCount = kHorizontalDispCharCount / ViewScale;
 	const int scaledVDispPixCount = kVerticalDispPixCount / ViewScale;
-	const int xcount = scaledHDispCharCount / (XSizePixels >> 3);
+	
+	const int xcount = scaledHDispCharCount / (XSizePixels / 8);
 	const int ycount = scaledVDispPixCount / YSizePixels;
 
 	int address = AddressOffset;
-	const int xSizeChars = XSizePixels >> 3;
+	const int xSizeChars = (XSizePixels >> 3) * widthFactor;
 	const int bpp = GetBppForBitmapFormat(BitmapFormat);
 
 	GraphicColumnSizeBytes = xSizeChars * ycount * YSizePixels * bpp;
+	const int columnWidthPixels = XSizePixels * widthFactor;
 
 	if (ViewMode == EGraphicsViewMode::Bitmap)
 	{
 		for (int x = 0; x < xcount; x++)
 		{
 			if (bShowPhysicalMemory)
-				DrawPhysicalMemoryAsGraphicsColumn(address, x * XSizePixels, xSizeChars);
+				DrawPhysicalMemoryAsGraphicsColumn(address, x * columnWidthPixels, xSizeChars);
 			else
-				DrawMemoryBankAsGraphicsColumn(Bank, address & 0x3fff, x * XSizePixels, xSizeChars);
-			address += GraphicColumnSizeBytes;
+				DrawMemoryBankAsGraphicsColumn(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
+			
+			address += GraphicColumnSizeBytes / widthFactor;
 		}
 	}
 	if (ViewMode == EGraphicsViewMode::BitmapChars)
@@ -487,11 +489,11 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 		for (int x = 0; x < xcount; x++)
 		{
 			if (bShowPhysicalMemory)
-				DrawPhysicalMemoryAsGraphicsColumnChars(address, x * XSizePixels, xSizeChars);
+				DrawPhysicalMemoryAsGraphicsColumnChars(address, x * columnWidthPixels, xSizeChars);
 			else
-				DrawMemoryBankAsGraphicsColumnChars(Bank, address & 0x3fff, x * XSizePixels, xSizeChars);
+				DrawMemoryBankAsGraphicsColumnChars(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
 
-			address += GraphicColumnSizeBytes;
+			address += GraphicColumnSizeBytes / widthFactor;
 		}
 	}
 	else if (ViewMode == EGraphicsViewMode::BitmapWinding)
@@ -526,7 +528,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 					}
 				}
 
-				offsetX += XSizePixels;
+				offsetX += columnWidthPixels;
 			}
 			offsetX = 0;
 			offsetY += YSizePixels;
@@ -597,7 +599,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	// View Scale
 	ImGui::InputInt("Scale", &ViewScale, 1, 1);
 	ViewScale = std::max(1, ViewScale);	// clamp
-	const int viewSizeX = XSizePixels * ViewScale;
+
+	const int widthFactor = IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
+	const int viewSizeX = XSizePixels * ViewScale * widthFactor;
 	const int viewSizeY = YSizePixels * ViewScale;
 	const int xChars = XSizePixels >> 3;
 
@@ -648,18 +652,26 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		const float magAmount = 8.0f;
 		const int magXP = rx / ViewScale;// ((int)(io.MousePos.x - pos.x) / viewSizeX)* viewSizeX;
 		const int magYP = ry / ViewScale;//std::max((int)(io.MousePos.y - pos.y - (viewSizeY / 2)), 0);
-		const ImVec2 magSize(XSizePixels * magAmount, YSizePixels * magAmount);
+		const ImVec2 magSize(XSizePixels * magAmount * widthFactor, YSizePixels * magAmount);
 		const ImVec2 magUV0(magXP * (1.0f/ kGraphicsViewerWidth), magYP * (1.0f / kGraphicsViewerHeight));
-		const ImVec2 magUV1(magUV0.x + XSizePixels * (1.0f / kGraphicsViewerWidth), magUV0.y + YSizePixels * (1.0f / kGraphicsViewerHeight));
+		const ImVec2 magUV1(magUV0.x + XSizePixels * widthFactor * (1.0f / kGraphicsViewerWidth), magUV0.y + YSizePixels * (1.0f / kGraphicsViewerHeight));
 		ImGui::Image((void*)pGraphicsView->GetTexture(), magSize, magUV0, magUV1);
 
 		ImGui::EndTooltip();
 	}
 
+	char format[6] = { 0 };
+	if (GetNumberDisplayMode() == ENumberDisplayMode::HexAitch)
+		strncpy(format, "%02Xh", 6);
+	else if (GetNumberDisplayMode() == ENumberDisplayMode::HexDollar)
+		strncpy(format, "$%02X", 6);
+	else 
+		strncpy(format, "%d", 6);
+
 	ImGui::SameLine();
 
 	// simpler slider
-	if (ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff))
+	if (ImGui::VSliderInt("##int", ImVec2(64.0f, (float)kGraphicsViewerHeight), &addrInput, 0, 0xffff, format))
 	{
 		if (!bVSliderFineControl)
 		{ 
@@ -862,7 +874,10 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 							}
 							case EBitmapFormat::ColMap4Bpp_CPC:
 							{
-								// todo
+								const uint16_t charLine = state.ReadWord(itemAddress);
+								const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+								pItemView->Draw2BppImageAt((uint8_t*)&charLine, xp * 8, yp, 4, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+								state.AdvanceAddressRef(itemAddress, 2);
 								break;
 							}
 							case EBitmapFormat::ColMapMulticolour_C64:

@@ -512,13 +512,13 @@ static uint8_t StepOverDasmInCB(void* userData)
 	return opcodeByte;
 }
 
-uint16_t Z80DisassembleGetNextPC(uint16_t pc, FCodeAnalysisState& state, uint8_t& opcode)
+uint16_t Z80DisassembleGetNextPC(uint16_t pc, FCodeAnalysisState& state, std::vector<uint8_t>& opcodes)
 {
 	FStepDasmData dasmData;
 	dasmData.PC = pc;
 	dasmData.pCodeAnalysis = &state;
 	const uint16_t nextPC = z80dasm_op(pc, StepOverDasmInCB, nullptr, &dasmData);
-	opcode = dasmData.Data[0];
+	opcodes = dasmData.Data;//[0];
 	return nextPC;
 }
 

@@ -5,7 +5,7 @@
 #include "chips/z80.h"
 
 
-bool CheckPointerIndirectionInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerIndirectionInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
 
@@ -60,7 +60,7 @@ bool CheckPointerIndirectionInstructionZ80(FCodeAnalysisState& state, uint16_t p
 }
 
 // These functions are just loading a 16bit value into a register
-bool CheckPointerRefInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
+bool CheckPointerRefInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	//if (CheckPointerIndirectionInstructionZ80(state, pc, out_addr))
 	//	return true;
@@ -93,7 +93,7 @@ bool CheckPointerRefInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint1
 	return false;
 }
 
-bool CheckJumpInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
+bool CheckJumpInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
 
@@ -137,7 +137,7 @@ bool CheckJumpInstructionZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t* o
 	return false;
 }
 
-bool CheckCallInstructionZ80(FCodeAnalysisState& state, uint16_t pc)
+bool CheckCallInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
 
@@ -162,7 +162,7 @@ bool CheckCallInstructionZ80(FCodeAnalysisState& state, uint16_t pc)
 	return false;
 }
 
-bool CheckStopInstructionZ80(FCodeAnalysisState& state, uint16_t pc)
+bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
 
@@ -446,4 +446,26 @@ void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInt
 
 	for (int stackVal = 0; stackVal < FMachineStateZ80::kNoStackEntries; stackVal++)
 		pMachineStateZ80->Stack[stackVal] = pCPUInterface->ReadWord(pMachineStateZ80->SP - (stackVal * 2));
+}
+
+
+// Static code analysis
+
+EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef addr)
+{
+	const uint8_t instByte = state.ReadByte(addr);
+
+	switch (instByte)
+	{
+		// Add to self
+		case 0x87:	// ADD A,A
+		case 0x29:	// ADD HL,HL
+			return EInstructionType::AddToSelf;
+
+		// Loop back
+		case 0x10:	// DJNZ
+			return EInstructionType::LoopBack;
+	}
+
+	return EInstructionType::Unknown;
 }

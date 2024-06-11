@@ -80,6 +80,7 @@ EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType);
 int GetBppForBitmapFormat(EBitmapFormat bitmapFormat);
 int GetNumColoursForBitmapFormat(EBitmapFormat bitmapFormat);
 bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat);
+bool IsBitmapFormatDoubleWidth(EBitmapFormat bitmapFormat);
 
 // config - move?
 void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state);

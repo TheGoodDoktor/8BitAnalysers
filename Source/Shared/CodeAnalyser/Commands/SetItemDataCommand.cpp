@@ -69,7 +69,7 @@ void FSetItemDataCommand::Undo(FCodeAnalysisState& state)
 	state.SetCodeAnalysisDirty(Item.AddressRef);
 }
 
-void FSetItemDataCommand::FixupAddressRefs(FCodeAnalysisState& state)
+void FSetItemDataCommand::FixupAddressRefs(const FCodeAnalysisState& state)
 {
 	FixupAddressRef(state, Item.AddressRef);
 }
@@ -96,7 +96,7 @@ void FSetDataItemDisplayTypeCommand::Undo(FCodeAnalysisState& state)
 	}
 }
 
-void FSetDataItemDisplayTypeCommand::FixupAddressRefs(FCodeAnalysisState& state)
+void FSetDataItemDisplayTypeCommand::FixupAddressRefs(const FCodeAnalysisState& state)
 {
 	FixupAddressRef(state, Item.AddressRef);
 }
@@ -125,7 +125,7 @@ void FSetItemCodeCommand::Undo(FCodeAnalysisState& state)
 	state.SetCodeAnalysisDirty(Addr);
 }
 
-void FSetItemCodeCommand::FixupAddressRefs(FCodeAnalysisState& state)
+void FSetItemCodeCommand::FixupAddressRefs(const FCodeAnalysisState& state)
 {
 	FixupAddressRef(state, Addr);
 }

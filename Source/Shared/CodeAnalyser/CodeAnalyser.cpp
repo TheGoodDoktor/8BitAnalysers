@@ -29,7 +29,7 @@
 
 // create a bank
 // a bank is a list of memory pages
-int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bReadOnly, uint16_t initialAddress, bool bFixed)
+int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bMachineROM, uint16_t initialAddress, bool bFixed)
 {
 	const int16_t bankId = GetNextBankId();
 	assert(bankId == (int16_t)Banks.size());
@@ -42,7 +42,7 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	newBank.Memory = pBankMem;
 	newBank.Pages = new FCodeAnalysisPage[noPages];
 	newBank.Name = bankName;
-	newBank.bReadOnly = bReadOnly;
+	newBank.bMachineROM = bMachineROM;
 	newBank.bFixed = bFixed;
 	newBank.PrimaryMappedPage = initialAddress / 1024;	// byte addres to 1kb page address
 	for (int pageNo = 0; pageNo < noPages; pageNo++)
@@ -236,13 +236,13 @@ bool FCodeAnalysisState::ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_
 }
 
 
-std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(const uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly)
+std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(const uint8_t* pData, size_t dataSize, bool bCheckMachineROM, bool bPhysicalOnly)
 {
 	std::vector<FAddressRef> results;
 	// iterate through banks
 	for (auto& bank : Banks)
 	{
-		if (bank.bReadOnly && bROM == false)
+		if (bank.bMachineROM && bCheckMachineROM == false)
 			continue;
 
 		if (bank.IsMapped() == false && bPhysicalOnly)
@@ -322,13 +322,13 @@ bool IsValidStringChar(char c)
 	return IsAlphanumeric(c) || IsPunctuation(c);
 }
 
-std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bROM, bool bPhysicalOnly)
+std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bCheckMachineROM, bool bPhysicalOnly)
 {
 	std::vector<FFoundString> results;
 
 	for (auto& bank : Banks)
 	{
-		if (bank.bReadOnly && bROM == false)
+		if (bank.bMachineROM && bCheckMachineROM == false)
 			continue;
 
 		if (bank.IsMapped() == false && bPhysicalOnly)
@@ -490,6 +490,18 @@ bool CheckJumpInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_
 		return false;
 }
 
+EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr)
+{
+
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+
+	if (pCPUInterface->CPUType == ECPUType::Z80)
+		return GetInstructionTypeZ80(state, addr);
+	else if (pCPUInterface->CPUType == ECPUType::M6502)
+		return GetInstructionType6502(state, addr);
+	else
+		return EInstructionType::Unknown;
+}
 
 
 bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
@@ -519,7 +531,7 @@ bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
 }
 
 // this function assumes the text is mapped in
-std::string GetItemText(FCodeAnalysisState& state, FAddressRef address)
+std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address)
 {
 	FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
 	std::string textString;
@@ -1074,7 +1086,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		//ViewState[i].CursorItemIndex = -1;
-		ViewState[i].SetCursorItem(FCodeAnalysisItem());
+		ViewState[i].Reset();
 	}
 
 	// reset banks
@@ -1097,6 +1109,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	KeyConfig[(int)EKey::SetItemBinary] = ImGuiKey_B;
 	KeyConfig[(int)EKey::SetItemPointer] = ImGuiKey_P;
 	KeyConfig[(int)EKey::SetItemNumber] = ImGuiKey_N;
+	KeyConfig[(int)EKey::SetItemAscii] = ImGuiKey_A;
 	KeyConfig[(int)EKey::SetItemUnknown] = ImGuiKey_U;
 	KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
 	KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
@@ -1112,6 +1125,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	Debugger.Init(this);
 	MemoryAnalyser.Init(this);
 	IOAnalyser.Init(this);
+	StaticAnalysis.Init(this);
     
     pDataTypes->Reset();
 }
@@ -1168,7 +1182,7 @@ void FCodeAnalysisState::OnCPUTick(uint64_t pins)
 	Debugger.CPUTick(pins);
 }
 
-void FixupDataInfoAddressRefs(FCodeAnalysisState& state, FDataInfo* pDataInfo)
+void FixupDataInfoAddressRefs(const FCodeAnalysisState& state, FDataInfo* pDataInfo)
 {
 	// Because this is a union, it will also fixup GraphicsSetRef and CharSetAddress
 	FixupAddressRef(state, pDataInfo->InstructionAddress);
@@ -1177,7 +1191,7 @@ void FixupDataInfoAddressRefs(FCodeAnalysisState& state, FDataInfo* pDataInfo)
 	FixupAddressRefList(state, pDataInfo->Writes.GetReferences());
 }
 
-void FixupCodeInfoAddressRefs(FCodeAnalysisState& state, FCodeInfo* pCodeInfo)
+void FixupCodeInfoAddressRefs(const FCodeAnalysisState& state, FCodeInfo* pCodeInfo)
 {
 	FixupAddressRef(state, pCodeInfo->OperandAddress);
 	FixupAddressRefList(state, pCodeInfo->Reads.GetReferences());
@@ -1203,8 +1217,11 @@ void FCodeAnalysisState::FixupAddressRefs()
 	int addr = 0;
 	while (addr <= 0xffff)
 	{
-		const FAddressRef wAddressRef(GetWriteBankFromAddress(addr), addr);
-		const FAddressRef rAddressRef(GetReadBankFromAddress(addr), addr);
+		FAddressRef wAddressRef(GetWriteBankFromAddress(addr), addr);
+		FAddressRef rAddressRef(GetReadBankFromAddress(addr), addr);
+
+		//FixupAddressRef(*this, wAddressRef);
+		//FixupAddressRef(*this, rAddressRef);
 
 		// Fixup the code and data items in RAM.
 		if (FCodeInfo* pWriteCode = GetCodeInfoForAddress(wAddressRef))

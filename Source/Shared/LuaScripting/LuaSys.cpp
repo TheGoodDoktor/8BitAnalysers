@@ -203,6 +203,10 @@ bool OnEmulatorScreenDrawn(float x, float y, float scale)
 		}
 		return true;
 	}
+	else
+	{
+		lua_pop(pState, 1);
+	}
 
 	return false;
 }
@@ -349,11 +353,11 @@ bool ExportGlobalLabels()
 
 	for (const auto& global : state.GlobalDataItems)
 	{
-		// Skip ROM labels
+		// Skip Machine ROM labels
 		const FCodeAnalysisBank* pBank = state.GetBank(global.AddressRef.BankId);
 		if (pBank)
 		{
-			if (pBank->bReadOnly)
+			if (pBank->bMachineROM)
 				continue;
 		}
 

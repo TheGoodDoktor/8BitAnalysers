@@ -10,7 +10,8 @@ enum class ENumberDisplayMode
 	Decimal = 0,
 	HexDollar,
 	HexAitch,
-	Binary
+	Binary,
+	Ascii
 };
 
 void SetNumberDisplayMode(ENumberDisplayMode mode);

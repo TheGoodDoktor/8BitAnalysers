@@ -258,7 +258,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 				if (im == 2)
 				{
 					const uint8_t i = cpu.i;	// I register has high byte of interrupt vector
-					const uint16_t interruptVector = (i << 8) | value;
+					const uint16_t interruptVector = (i << 8) | 0xff;//value;
 					const uint16_t interruptHandler = state.CPUInterface->ReadWord(interruptVector);
 					bHasInterruptHandler = true;
 					InterruptHandlerAddress = interruptHandler;
@@ -683,11 +683,14 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	AddGamesList("RZX File", GetZXSpectrumGlobalConfig()->RZXFolder.c_str());
 #endif
     
+	LoadFont();
+
 	// This is where we add the viewers we want
 	AddViewer(new FOverviewViewer(this));
 	pCharacterMapViewer = new FCharacterMapViewer(this);
 	AddViewer(pCharacterMapViewer);
 	pCharacterMapViewer->SetGridSize(32,24);
+	pCharacterMapViewer->SetGridStride(32);
 	pGraphicsViewer = new FZXGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
@@ -811,6 +814,7 @@ void FSpectrumEmu::Shutdown()
 	pGlobalConfig->NumberDisplayMode = GetNumberDisplayMode();
 	pGlobalConfig->bShowOpcodeValues = CodeAnalysis.pGlobalConfig->bShowOpcodeValues;
 	pGlobalConfig->BranchLinesDisplayMode = CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode;
+	pGlobalConfig->FontSizePts = CodeAnalysis.pGlobalConfig->FontSizePts;
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 
@@ -1187,6 +1191,12 @@ void FSpectrumEmu::SystemMenuAdditions(void)
 void FSpectrumEmu::OptionsMenuAdditions(void)
 {
 }
+
+void FSpectrumEmu::ActionMenuAdditions(void)
+{
+	
+}
+
 
 void FSpectrumEmu::WindowsMenuAdditions(void)
 {

@@ -153,7 +153,7 @@ bool ExportAnalysisState(FCodeAnalysisState& state, const char* pAnalysisBinFile
 	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
 	{
 		const FCodeAnalysisBank& bank = banks[bankNo];
-		if (bank.bReadOnly)	// skip read only banks - ROM
+		if (bank.bMachineROM)	// skip machine ROM banks
 			continue;
 
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)

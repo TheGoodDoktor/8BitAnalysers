@@ -44,7 +44,6 @@ void FOverviewViewer::DrawStats()
     //ImPlot::ShowDemoWindow();
 }
 
-// TODO: this needs to cover banks
 void FOverviewViewer::CalculateStats()
 {
 	FCodeAnalysisState& codeAnalysis = pEmulator->GetCodeAnalysis();
@@ -79,7 +78,7 @@ void FOverviewViewer::CalculateStats()
 				const FDataInfo& dataInfo = bank.Pages[bankAddress >> FCodeAnalysisPage::kPageShift].DataInfo[bankAddress & FCodeAnalysisPage::kPageMask];
 				const bool bRead = dataInfo.LastFrameRead != -1;
 				const bool bWrite = dataInfo.LastFrameWritten != -1;
-				if(bank.bReadOnly)
+				if(bank.bMachineROM)	// TODO: a 'read only' bool would service this better
 				{
 					Stats.ReadOnlyDataCount++;
 				}

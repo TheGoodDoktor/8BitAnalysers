@@ -36,16 +36,20 @@ end
 
 -- util functions
 function dumpFunc(o)
+--[[
+   local key,value
     if type(o) == 'table' then
        local s = '{ '
-       for k,v in pairs(o) do
-          if type(k) ~= 'number' then k = '"'..k..'"' end
-          s = s .. '['..k..'] = ' .. dumpFunc(v) .. ','
+       for key,value in pairs(o) do
+          if type(key) ~= 'number' then key = '"'..key..'"' end
+          s = s .. '['..key..'] = ' .. dumpFunc(value) .. ','
        end
        return s .. '} '
     else
        return tostring(o)
     end
+]]
+   return "not implemented"
  end
 
  function dump(o)

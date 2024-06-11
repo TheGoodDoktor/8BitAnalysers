@@ -22,7 +22,7 @@ FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson);
 void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const json& dataInfoJson);
 void FixupPostLoad(FCodeAnalysisState& state);
 
-bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bool bROMS)
+bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bool bExportMachineROM)
 {
 	json jsonGameData;
 
@@ -33,7 +33,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
 	{
 		const FCodeAnalysisBank& bank = banks[bankNo];
-		if (bank.bReadOnly != bROMS)	// skip read only banks - ROM
+		if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
 			continue;
 
 		json bankJson;
@@ -87,6 +87,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		jsonCharacterMap["Stride"] = pCharMap->Params.Stride;
 		jsonCharacterMap["CharacterSetRef"] = pCharMap->Params.CharacterSet.Val;
 		jsonCharacterMap["IgnoreCharacter"] = pCharMap->Params.IgnoreCharacter;
+		jsonCharacterMap["FlagSet"] = pCharMap->Params.FlagSet;
 
 		jsonGameData["CharacterMaps"].push_back(jsonCharacterMap);
 	}
@@ -282,6 +283,10 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 				params.CharacterSet.Val = charMap["CharacterSetRef"];
 
 			params.IgnoreCharacter = charMap["IgnoreCharacter"];
+
+			if (charMap.contains("FlagSet"))
+				params.FlagSet = charMap["FlagSet"];
+			
 			CreateCharacterMap(state, params);
 		}
 	}

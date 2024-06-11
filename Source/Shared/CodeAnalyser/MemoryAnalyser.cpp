@@ -75,7 +75,7 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 			FBankMemory& memBank = memBankIt.second;
 			const FCodeAnalysisBank* pBank = pCodeAnalysis->GetBank(memBank.BankId);
 
-			if (pBank->bReadOnly)	// skip ROM banks
+			if (pBank->bMachineROM)	// skip machine ROM banks
 				continue;
 
 			if (bDiffPhysicalMemory == false || pBank->IsMapped())
@@ -109,7 +109,7 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 					assert(pBank != nullptr);
 					assert(pBank->GetSizeBytes() == memBank.SizeBytes);
 
-					if (pBank->bReadOnly)	// skip ROM banks
+					if (pBank->bMachineROM)	// skip machine ROM banks
 						continue;
 
 					for (uint16_t addrOffset = 0; addrOffset < memBank.SizeBytes; addrOffset++)

@@ -70,6 +70,8 @@ struct FFlagSet : public FDataType
 	void    ReadJson(const nlohmann::json& jsonIn) override;
 	void    WriteJson(nlohmann::json& jsonOut) const override;
 
+	std::string	GenerateFlagsString(uint8_t val);
+
 	std::vector<FFlagBit>    Bits;
 };
 
@@ -139,6 +141,8 @@ public:
 	FFlagSet*   CreateNewFlagSet(const char* name);
 	FFlagSet*   GetFlagsFromTypeId(int32_t typeId) { return (FFlagSet*)FlagTypes.GetTypeFromId(typeId);}
 	FFlagSet*   GetFlagsFromName(const char * pName) { return (FFlagSet*)FlagTypes.GetTypeFromName(pName);}
+
+	bool		DrawFlagsComboBox(const char* pLabel, int& selection);
 
 	// Structs
 	FStruct* GetStructFromTypeId(int32_t typeId) { return (FStruct*)StructTypes.GetTypeFromId(typeId); }

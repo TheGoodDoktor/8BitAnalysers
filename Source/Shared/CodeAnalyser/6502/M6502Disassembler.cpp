@@ -546,13 +546,13 @@ static void StepOverDasmOutCB(char c, void* userData)
 	// do we need to do anything here?
 }
 
-uint16_t M6502DisassembleGetNextPC(uint16_t pc, FCodeAnalysisState& state, uint8_t& opcode)
+uint16_t M6502DisassembleGetNextPC(uint16_t pc, FCodeAnalysisState& state, std::vector<uint8_t>& opcodes)
 {
 	FStepDasmData dasmData;
 	dasmData.PC = pc;
 	dasmData.pCodeAnalysis = &state;
 	const uint16_t nextPC = m6502dasm_op(pc, StepOverDasmInCB, nullptr, &dasmData);
-	opcode = dasmData.Data[0];
+	opcodes = dasmData.Data;
 	return nextPC;
 }
 #if 0

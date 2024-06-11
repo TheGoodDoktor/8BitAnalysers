@@ -7,7 +7,7 @@
 #include "UI/CodeAnalyserUI.h"
 #include "Util/Misc.h"
 
-static void HelpMarker(const char* desc)
+void HelpMarker(const char* desc)
 {
 	ImGui::TextDisabled("(?)");
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
