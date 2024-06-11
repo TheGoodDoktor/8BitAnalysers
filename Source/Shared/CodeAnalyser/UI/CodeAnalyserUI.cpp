@@ -1638,6 +1638,8 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 				bRead = true;
 				bWrite = true;
 				break;
+            default:
+                break;
 			}
 			
 			if (bWrite)

@@ -35,7 +35,7 @@ bool DrawIntInputXY(const char *pLabel,int &x,int &y)
 	const float kNumSize = 80.0f * scale;	// size for number GUI widget
 	bool bChanged = false;
 
-	ImGui::Text(pLabel);
+	ImGui::Text("%s",pLabel);
 	ImGui::PushID(pLabel);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(kNumSize);
