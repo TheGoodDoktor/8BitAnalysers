@@ -8,6 +8,13 @@
 class FMultByAddCheck : public FStaticAnalysisCheck
 {
 public:
+
+	void Reset() override 
+	{
+		Start = FAddressRef();
+		AddRunLength = 0;
+	}
+
 	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override
 	{
 		const EInstructionType instType = GetInstructionType(state, addrRef);
@@ -64,14 +71,22 @@ bool FStaticAnalyser::Init(FCodeAnalysisState* pState)
 	return true;
 }
 
-void FStaticAnalyser::ClearList()
+void FStaticAnalyser::Reset()
 {
+	// reset item list
 	for (auto item : Items)
 	{
 		delete item;
 	}
 
 	Items.clear();
+
+	// reset checks
+	for (auto check : Checks)
+	{
+		check->Reset();
+	}
+
 }
 
 bool FStaticAnalyser::RunAnalysis(void)
@@ -79,7 +94,7 @@ bool FStaticAnalyser::RunAnalysis(void)
 	FCodeAnalysisState& state = *pCodeAnalysis;
 	const auto& banks = pCodeAnalysis->GetBanks();
 
-	ClearList();
+	Reset();
 
 	// iterate through all registered banks
 	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
@@ -100,7 +115,7 @@ bool FStaticAnalyser::RunAnalysis(void)
 			const FCodeInfo* pCodeInfoItem = pCodeAnalysis->GetCodeInfoForAddress(addrRef);
 			if (pCodeInfoItem)
 			{
-				for (auto check : Checks)
+				for (auto check : Checks)	// perform each check
 				{
 					FStaticAnalysisItem* pItem = check->RunCheck(state,addrRef);
 					if(pItem)

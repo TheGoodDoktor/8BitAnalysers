@@ -511,7 +511,13 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		bShowASCII = true;
 		break;
 	case EDataItemDisplayType::Unknown:
-		valueColour = Colours::unknownValue;
+
+		if (pDataInfo->Writes.IsEmpty() == false)
+			valueColour = Colours::unknownDataWrite;
+		else if(pDataInfo->Reads.IsEmpty() == false)
+			valueColour = Colours::unknownDataRead;
+		else
+			valueColour = Colours::unknownValue;
 		bShowASCII = true;
 		break;
     default:

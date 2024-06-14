@@ -462,9 +462,50 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 		case 0x29:	// ADD HL,HL
 			return EInstructionType::AddToSelf;
 
+		// port in
+		case 0xdb:
+			return EInstructionType::PortInput;
+
+		// port out
+		case 0xd3:
+			return EInstructionType::PortOutput;
+
 		// Loop back
 		case 0x10:	// DJNZ
 			return EInstructionType::LoopBack;
+
+		// extended instructions
+		case 0xED:
+		{
+			FAddressRef addrInst2 = addr;
+			state.AdvanceAddressRef(addrInst2, 1);
+			const uint8_t instByte2 = state.ReadByte(addrInst2);
+			switch (instByte2)
+			{
+			// port in
+			case 0x40:
+			case 0x48:
+			case 0x50:
+			case 0x58:
+			case 0x60:
+			case 0x68:
+			case 0x70:
+			case 0x78:
+				return EInstructionType::PortInput;
+
+			// port out
+			case 0x41:
+			case 0x49:
+			case 0x51:
+			case 0x59:
+			case 0x61:
+			case 0x69:
+			case 0x71:
+			case 0x79:
+				return EInstructionType::PortOutput;
+
+			}
+		}
 	}
 
 	return EInstructionType::Unknown;

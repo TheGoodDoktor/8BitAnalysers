@@ -287,8 +287,10 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 
 	const uint32_t kCodeCol = 0xff008080;
 	const uint32_t kCodeColActive = 0xff00ffff;
-	const uint32_t kDataReadCol = 0xff00ff00;
-	const uint32_t kDataWriteCol = 0xff0000ff;
+	const uint32_t kDataReadActiveCol = 0xff00ff00;
+	const uint32_t kDataReadCol = 0xff008000;
+	const uint32_t kDataWriteActiveCol = 0xff0000ff;
+	const uint32_t kDataWriteCol = 0xff000080;
 	const uint32_t kDefaultDataCol = 0xffff0000;
 	const uint32_t kBitmapDataCol = 0xffffffff;
 	const uint32_t kCharMapDataCol = 0xff00ff00;
@@ -361,17 +363,25 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 					const FDataInfo* pWriteDataInfo = state.GetDataInfoForAddress(writeAddrRef);
 					uint32_t drawCol = dataCol;
 
+					// show unknowns that have been read
+					if(dataCol == kUnknownDataCol && pWriteDataInfo->Reads.IsEmpty() == false)
+						drawCol = kDataReadCol;
+
+					// show unknowns that have been written to
+					if (dataCol == kUnknownDataCol && pWriteDataInfo->Writes.IsEmpty() == false)
+						drawCol = kDataWriteCol;
+
 					if (pWriteDataInfo != nullptr && pWriteDataInfo->LastFrameWritten != -1)	// Show write
 					{
 						const int framesSinceWritten = currentFrameNo - pWriteDataInfo->LastFrameWritten;
 						if (framesSinceWritten < frameThreshold)
-							drawCol = kDataWriteCol;
+							drawCol = kDataWriteActiveCol;
 					}
 					else if (pReadDataInfo != nullptr && pReadDataInfo->LastFrameRead != -1)	// Show read
 					{
 						const int framesSinceRead = currentFrameNo - pReadDataInfo->LastFrameRead;
 						if (framesSinceRead < frameThreshold)
-							drawCol = kDataReadCol;
+							drawCol = kDataReadActiveCol;
 					}
 
 					*pPix++ = drawCol;
@@ -389,8 +399,3 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 	}
 }
 
-
-// TODO: Insights
-// Search for common coding patterns such as:
-// Multiplications through adds
-// Conditional jumps

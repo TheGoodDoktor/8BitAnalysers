@@ -30,6 +30,7 @@ struct FStaticAnalysisItem
 class FStaticAnalysisCheck
 {
 public:
+	virtual void Reset(){}
 	virtual FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) = 0;
 };
 
@@ -37,7 +38,8 @@ class FStaticAnalyser
 {
 public:
 	bool	Init(FCodeAnalysisState* pState);
-	void	ClearList();
+
+	void	Reset();
 	bool	RunAnalysis(void);
 
 	void	DrawUI(void);

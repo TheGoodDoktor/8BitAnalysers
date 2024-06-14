@@ -8,7 +8,9 @@ namespace Colours
 {
 	// ABGR
 	uint32_t defaultValue	= IM_COLRGB(255, 255, 255);		// default value 
-	uint32_t unknownValue	= IM_COLRGB(128, 128, 128);		// unknown value
+	uint32_t unknownValue = IM_COLRGB(128, 128, 128);		// unknown value
+	uint32_t unknownDataRead = IM_COLRGB(0, 128, 0);		// unknown data read
+	uint32_t unknownDataWrite = IM_COLRGB(128, 0, 0);		// unknown data write
 	uint32_t localLabel		= IM_COLRGB(128, 128, 128);		// local label
 	uint32_t globalLabel	= IM_COLRGB(128, 255, 128);		// global label
 	uint32_t function		= IM_COLRGB(255, 200, 128);		// function
