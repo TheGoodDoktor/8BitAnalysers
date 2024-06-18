@@ -35,6 +35,7 @@
 #include "CPCLuaAPI.h"
 #include "SnapshotLoaders/SNALoader.h"
 
+#define EXPORT_ROM_ANALYSIS_JSON 0
 #define ENABLE_EXTERNAL_ROM_SUPPORT 0
 #define RUN_AHEAD_TO_GENERATE_SCREEN 0
 #ifndef NDEBUG
@@ -48,6 +49,7 @@
 
 const std::string kAppTitle = "CPC Analyser";
 const char* kGlobalConfigFilename = "GlobalConfig.json";
+const char* kROMAnalysisFilename6128 = "CPCRomsAnalysis6128.json";
 
 void StoreRegisters_Z80(FCodeAnalysisState& state);
 
@@ -965,6 +967,14 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	if (bLoadedGame == false)
 	{
 		CodeAnalysis.Init(this);
+
+		if (CPCEmuState.type == CPC_TYPE_6128) // todo: 464 ROM analysis
+		{
+			if (FileExists(kROMAnalysisFilename6128))
+			{
+				ImportAnalysisJson(CodeAnalysis, kROMAnalysisFilename6128);
+			}
+		}
 	}
 
 	// Setup Debugger
@@ -1249,6 +1259,15 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 		}
 	}
 
+	if (CPCEmuState.type == CPC_TYPE_6128) // todo: 464 ROM code analysis
+	{
+		// snapshot can change machine type, so do this after loading the snapshot
+		if (FileExists(kROMAnalysisFilename6128))
+		{
+			ImportAnalysisJson(CodeAnalysis, kROMAnalysisFilename6128);
+		}
+	}
+
 	if (!InitBankMappings())
 	{
 		return false;
@@ -1435,6 +1454,15 @@ bool FCPCEmu::SaveProject(void)
 		SaveGameState(saveStateFName.c_str());
 		ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 		ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		
+#if EXPORT_ROM_ANALYSIS_JSON
+		if (CPCEmuState.type == CPC_TYPE_6128)
+		{
+			const char* romAnalysisFilename = CPCEmuState.type == CPC_TYPE_6128 ? kROMAnalysisFilename6128 : kROMAnalysisFilename6128;
+			ExportAnalysisJson(CodeAnalysis, romAnalysisFilename, /*bExportMachineROM*/ true);
+		}
+#endif // EXPORT_ROM_ANALYSIS_JSON
+
 		//ExportGameJson(this, analysisJsonFName.c_str());
 		pGraphicsViewer->SaveGraphicsSets(graphicsSetsJsonFName.c_str());
 	}
