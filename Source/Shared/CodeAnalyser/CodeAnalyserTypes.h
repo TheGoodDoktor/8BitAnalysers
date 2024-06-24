@@ -103,6 +103,7 @@ enum class EDataType
 	ColAttr,	// colour attribute
 	InstructionOperand,	// an operand for an instruction
 	Struct,		// structure
+	Flags,		// flags
 
 	Max,
 	None = Max

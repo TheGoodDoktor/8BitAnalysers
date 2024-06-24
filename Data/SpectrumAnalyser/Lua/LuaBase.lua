@@ -1,6 +1,24 @@
 
 -- enumerate types
 
+EDataType =
+{
+   Byte = 0,
+   ByteArray = 1,
+   Word = 2,
+   WordArray = 3,
+   Text = 4,		
+   Bitmap = 5,
+   CharacterMap = 6,
+   ScreenPixels = 7,	
+   Image = 8,		
+   Blob = 9,		
+   ColAttr = 10,	
+   InstructionOperand = 11,	
+   Struct = 12,		
+   Flags = 13,		
+}
+
 EDataItemDisplayType = 
 {
    Unknown = 0,
@@ -14,7 +32,8 @@ EDataItemDisplayType =
    ColMap4Bpp_CPC = 8,	-- Amstrad CPC mode 0 format
    ColMapMulticolour_C64 = 9,	-- C64 Multicolour format
    UnsignedNumber = 10,
-   SignedNumber = 11
+   SignedNumber = 11,
+   Ascii = 12
 }
 
 function SetDataItemTypeAndComment(address,displayType,comment)

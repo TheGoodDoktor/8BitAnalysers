@@ -156,6 +156,142 @@ static int SetDataItemDisplayType(lua_State* pState)
 	return 0;
 }
 
+// Formatting
+
+// table getting functions
+// assumes the table is at the top of the stack
+bool GetLuaTableField(lua_State* pState, const char* fieldName, FAddressRef& value)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+	lua_getfield(pState, -1, fieldName);
+	const bool bValidField = lua_isinteger(pState, -1);
+	if (bValidField)
+		value = state.AddressRefFromPhysicalAddress((uint16_t)lua_tointeger(pState, -1));
+	lua_pop(pState, 1);
+	return bValidField;
+}
+
+bool GetLuaTableField(lua_State* pState, const char* fieldName, int& value)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+	lua_getfield(pState, -1, fieldName);
+	const bool bValidField = lua_isinteger(pState, -1);
+	if (bValidField)
+		value = (int)lua_tointeger(pState, -1);
+	lua_pop(pState, 1);
+	return bValidField;
+}
+
+bool GetLuaTableField(lua_State* pState, const char* fieldName, bool& value)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+	lua_getfield(pState, -1, fieldName);
+	const bool bValidField = lua_isboolean(pState, -1);
+	if (bValidField)
+		value = lua_toboolean(pState, -1);
+	lua_pop(pState, 1);
+	return bValidField;
+}
+
+bool GetLuaTableField(lua_State* pState, const char* fieldName, std::string& value)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+	lua_getfield(pState, -1, fieldName);
+	const bool bValidField = lua_isstring(pState, -1);
+	if (bValidField)
+		value = lua_tostring(pState, -1);
+	lua_pop(pState, 1);
+	return bValidField;
+}
+
+// Generic format command
+static int FormatMemory(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	if (pEmu == nullptr || lua_istable(pState, 1) == false)
+		return 0;
+
+	FDataFormattingOptions formatOptions;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+	// Pull values out of table
+	lua_settop(pState,1);	// make sure table is at top of stack
+	GetLuaTableField(pState, "DataType", (int&)formatOptions.DataType);
+	GetLuaTableField(pState, "DisplayType", (int&)formatOptions.DisplayType);
+	GetLuaTableField(pState, "StartAddress", formatOptions.StartAddress);
+	GetLuaTableField(pState, "ItemSize", formatOptions.ItemSize);
+	GetLuaTableField(pState, "NoItems", formatOptions.NoItems);
+	GetLuaTableField(pState, "CharacterSet", formatOptions.CharacterSet);
+	GetLuaTableField(pState, "GraphicsSetRef", formatOptions.GraphicsSetRef);
+	GetLuaTableField(pState, "PaletteNo", formatOptions.PaletteNo);
+	GetLuaTableField(pState, "StructId", formatOptions.StructId);
+	// TODO: uint8_t					EmptyCharNo = 0;
+	GetLuaTableField(pState, "RegisterItem", formatOptions.RegisterItem);
+	GetLuaTableField(pState, "ClearCodeInfo", formatOptions.ClearCodeInfo);
+	GetLuaTableField(pState, "ClearLabels", formatOptions.ClearLabels);
+	GetLuaTableField(pState, "AddLabelAtStart", formatOptions.AddLabelAtStart);
+	GetLuaTableField(pState, "LabelName", formatOptions.LabelName);
+	GetLuaTableField(pState, "AddCommentAtStart", formatOptions.AddCommentAtStart);
+	GetLuaTableField(pState, "CommentText", formatOptions.CommentText);
+
+	// format
+	FormatData(state, formatOptions);
+	return 0;
+}
+
+
+static int FormatMemoryAsBitmap(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	if(pEmu == nullptr || lua_isinteger(pState, 1) == false)
+		return 0;
+	
+	FDataFormattingOptions formatOptions;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+	// get parameters
+	const lua_Integer address = lua_tointeger(pState, 1);	// address
+	FAddressRef addrRef = state.AddressRefFromPhysicalAddress((uint16_t)address);
+	const lua_Integer width = lua_isinteger(pState, 2) ? lua_tointeger(pState, 2) : 8;	// width - default to 8
+	const lua_Integer height = lua_isinteger(pState, 3) ? lua_tointeger(pState, 3) : 8;	// height - default to 8
+	const lua_Integer bpp = lua_isinteger(pState,4) ? lua_tointeger(pState, 4) : 1;	// bpp - default to 1
+
+	formatOptions.SetupForBitmap(addrRef,(int)width, (int)height, (int)bpp);
+
+	FormatData(state,formatOptions);
+	return 0;
+}
+
+static int FormatMemoryAsCharMap(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	if (pEmu == nullptr || lua_isinteger(pState, 1) == false)
+		return 0;
+
+	FDataFormattingOptions formatOptions;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+	// get parameters
+	const lua_Integer address = lua_tointeger(pState, 1);	// address
+	FAddressRef addrRef = state.AddressRefFromPhysicalAddress((uint16_t)address);
+	const lua_Integer width = lua_isinteger(pState, 2) ? lua_tointeger(pState, 2) : 1;	// width - default to 1
+	const lua_Integer height = lua_isinteger(pState, 3) ? lua_tointeger(pState, 3) : 1;	// height - default to 1
+
+	formatOptions.SetupForCharmap(addrRef, (int)width, (int)height);
+
+	FormatData(state, formatOptions);
+	return 0;
+}
+
+
 // Gui related
 
 static int DrawAddressLabel(lua_State* pState)
@@ -249,6 +385,10 @@ static const luaL_Reg corelib[] =
 	{"SetDataItemComment", SetDataItemComment},
 	{"SetCodeItemComment", SetCodeItemComment},
 	{"SetDataItemDisplayType", SetDataItemDisplayType},
+	// Formatting
+	{"FormatMemory", FormatMemory},
+	{"FormatMemoryAsBitmap", FormatMemoryAsBitmap},
+	{"FormatMemoryAsCharMap", FormatMemoryAsCharMap},
 	// UI
 	{"DrawAddressLabel", DrawAddressLabel},
 	//Graphics
