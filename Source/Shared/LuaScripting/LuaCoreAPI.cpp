@@ -8,7 +8,7 @@ extern "C"
 }
 
 #include "LuaSys.h"
-//#include "LuaConsole.h"
+#include "LuaUtils.h"
 
 #include "Misc/EmuBase.h"
 #include "Misc/GlobalConfig.h"
@@ -87,19 +87,19 @@ static int SetDataItemComment(lua_State* pState)
 {
 	FEmuBase* pEmu = LuaSys::GetEmulator();
 
-	if (pEmu != nullptr && lua_isinteger(pState, 1) && lua_isstring(pState, 2))
+	if (pEmu != nullptr && lua_isstring(pState, 2))
 	{
 		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 
-		// TODO: we'll need bank specified at some point
-		const lua_Integer address = lua_tointeger(pState, 1);
-		FAddressRef addrRef = state.AddressRefFromPhysicalAddress((uint16_t)address);
-		size_t length = 0;
-		const char *pText = luaL_tolstring(pState,2,&length);
+		const FAddressRef addrRef = GetAddressRefFromLua(pState, 1);
+		if (addrRef.IsValid())
+		{
+			size_t length = 0;
+			const char* pText = luaL_tolstring(pState, 2, &length);
 
-		FDataInfo* pDataInfo = state.GetDataInfoForAddress(addrRef);
-		pDataInfo->Comment = pText;
-		//SetItemCommentText(state,,pText);
+			FDataInfo* pDataInfo = state.GetDataInfoForAddress(addrRef);
+			pDataInfo->Comment = pText;
+		}
 	}
 
 	return 0;
@@ -109,23 +109,47 @@ static int SetCodeItemComment(lua_State* pState)
 {
 	FEmuBase* pEmu = LuaSys::GetEmulator();
 
-	if (pEmu != nullptr && lua_isinteger(pState, 1) && lua_isstring(pState, 2))
+	if (pEmu != nullptr && lua_isstring(pState, 2))
 	{
 		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 
-		// TODO: we'll need bank specified at some point
-		const lua_Integer address = lua_tointeger(pState, 1);
-		FAddressRef addrRef = state.AddressRefFromPhysicalAddress((uint16_t)address);
-		size_t length = 0;
-		const char* pText = luaL_tolstring(pState, 2, &length);
+		const FAddressRef addrRef = GetAddressRefFromLua(pState, 1);
+		if(addrRef.IsValid())
+		{
+			size_t length = 0;
+			const char* pText = luaL_tolstring(pState, 2, &length);
 
-		FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addrRef);
-		if (pCodeInfo)
-			pCodeInfo->Comment = pText;
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addrRef);
+			if (pCodeInfo)
+				pCodeInfo->Comment = pText;
+		}
 	}
 
 	return 0;
 }
+
+static int AddCommentBlock(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isstring(pState, 2))
+	{
+		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+		const FAddressRef addrRef = GetAddressRefFromLua(pState, 1);
+		if (addrRef.IsValid())
+		{
+			size_t length = 0;
+			const char* pText = luaL_tolstring(pState, 2, &length);
+
+			FCommentBlock* pCommentBlock = AddCommentBlock(state, addrRef);
+			pCommentBlock->Comment = pText;
+		}
+	}
+
+	return 0;
+}
+
 
 static int SetDataItemDisplayType(lua_State* pState)
 {
@@ -157,60 +181,6 @@ static int SetDataItemDisplayType(lua_State* pState)
 }
 
 // Formatting
-
-// table getting functions
-// assumes the table is at the top of the stack
-bool GetLuaTableField(lua_State* pState, const char* fieldName, FAddressRef& value)
-{
-	FEmuBase* pEmu = LuaSys::GetEmulator();
-	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
-
-	lua_getfield(pState, -1, fieldName);
-	const bool bValidField = lua_isinteger(pState, -1);
-	if (bValidField)
-		value = state.AddressRefFromPhysicalAddress((uint16_t)lua_tointeger(pState, -1));
-	lua_pop(pState, 1);
-	return bValidField;
-}
-
-bool GetLuaTableField(lua_State* pState, const char* fieldName, int& value)
-{
-	FEmuBase* pEmu = LuaSys::GetEmulator();
-	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
-
-	lua_getfield(pState, -1, fieldName);
-	const bool bValidField = lua_isinteger(pState, -1);
-	if (bValidField)
-		value = (int)lua_tointeger(pState, -1);
-	lua_pop(pState, 1);
-	return bValidField;
-}
-
-bool GetLuaTableField(lua_State* pState, const char* fieldName, bool& value)
-{
-	FEmuBase* pEmu = LuaSys::GetEmulator();
-	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
-
-	lua_getfield(pState, -1, fieldName);
-	const bool bValidField = lua_isboolean(pState, -1);
-	if (bValidField)
-		value = lua_toboolean(pState, -1);
-	lua_pop(pState, 1);
-	return bValidField;
-}
-
-bool GetLuaTableField(lua_State* pState, const char* fieldName, std::string& value)
-{
-	FEmuBase* pEmu = LuaSys::GetEmulator();
-	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
-
-	lua_getfield(pState, -1, fieldName);
-	const bool bValidField = lua_isstring(pState, -1);
-	if (bValidField)
-		value = lua_tostring(pState, -1);
-	lua_pop(pState, 1);
-	return bValidField;
-}
 
 // Generic format command
 static int FormatMemory(lua_State* pState)
@@ -244,6 +214,7 @@ static int FormatMemory(lua_State* pState)
 
 	// format
 	FormatData(state, formatOptions);
+	state.SetCodeAnalysisDirty(formatOptions.StartAddress);
 	return 0;
 }
 
@@ -267,6 +238,7 @@ static int FormatMemoryAsBitmap(lua_State* pState)
 	formatOptions.SetupForBitmap(addrRef,(int)width, (int)height, (int)bpp);
 
 	FormatData(state,formatOptions);
+	state.SetCodeAnalysisDirty(formatOptions.StartAddress);
 	return 0;
 }
 
@@ -288,6 +260,7 @@ static int FormatMemoryAsCharMap(lua_State* pState)
 	formatOptions.SetupForCharmap(addrRef, (int)width, (int)height);
 
 	FormatData(state, formatOptions);
+	state.SetCodeAnalysisDirty(formatOptions.StartAddress);
 	return 0;
 }
 
@@ -384,6 +357,7 @@ static const luaL_Reg corelib[] =
 	// Analysis
 	{"SetDataItemComment", SetDataItemComment},
 	{"SetCodeItemComment", SetCodeItemComment},
+	{"AddCommentBlock", AddCommentBlock},
 	{"SetDataItemDisplayType", SetDataItemDisplayType},
 	// Formatting
 	{"FormatMemory", FormatMemory},

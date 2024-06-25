@@ -53,7 +53,15 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			pDataInfo->DataType = FormatOptions.DataType;
 			pDataInfo->DisplayType = FormatOptions.DisplayType;
 
-			if (FormatOptions.DataType == EDataType::CharacterMap)
+			if (FormatOptions.DataType == EDataType::Byte)
+			{
+				pDataInfo->ByteSize = 1;
+			}
+			else if (FormatOptions.DataType == EDataType::Word)
+			{
+				pDataInfo->ByteSize = 2;
+			}
+			else if (FormatOptions.DataType == EDataType::CharacterMap)
 			{
 				pDataInfo->CharSetAddress = FormatOptions.CharacterSet;
 				pDataInfo->EmptyCharNo = FormatOptions.EmptyCharNo;
