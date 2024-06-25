@@ -564,7 +564,7 @@ void FCPCEmu::UpdateBankMappings()
 					{
 						bFixupNeeded = true;
 
-						BANK_LOG("Bank '%s' changed mapped address: 0x%x -> 0x%x", pNewBank->Name.c_str(), prevMappedPage[bankIndex[r]] * FCodeAnalysisPage::kPageSize, pNewBank->GetMappedAddress());
+						BANK_LOG("'%s' changed mapped address: 0x%x -> 0x%x", pNewBank->Name.c_str(), prevMappedPage[bankIndex[r]] * FCodeAnalysisPage::kPageSize, pNewBank->GetMappedAddress());
 					}
 				}
 			}
@@ -1247,6 +1247,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 
 		pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
+		// sam. Maybe don't need to do this here if we are doing it below.
 		FixupAddressRefs();
 	}
 	
@@ -1254,14 +1255,16 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	{
 		if (!LoadEmulatorFile(&pProjectConfig->EmulatorFile))
 		{
-			//SetLastError("Could not find '%s%s'", pGlobalConfig->SnapshotFolder.c_str(), pProjectConfig->EmulatorFile.c_str());
+			SetLastError("Could not find '%s%s'", pGlobalConfig->SnapshotFolder.c_str(), pProjectConfig->EmulatorFile.FileName.c_str());
 			return false;
 		}
+
+		FixupAddressRefs();
 	}
 
 	if (CPCEmuState.type == CPC_TYPE_6128) // todo: 464 ROM code analysis
 	{
-		// snapshot can change machine type, so do this after loading the snapshot
+		// Snapshot can change machine type, so do this after loading the snapshot
 		if (FileExists(kROMAnalysisFilename6128))
 		{
 			ImportAnalysisJson(CodeAnalysis, kROMAnalysisFilename6128);

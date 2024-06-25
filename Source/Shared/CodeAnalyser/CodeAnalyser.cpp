@@ -1198,8 +1198,12 @@ void FixupCodeInfoAddressRefs(const FCodeAnalysisState& state, FCodeInfo* pCodeI
 	FixupAddressRefList(state, pCodeInfo->Writes.GetReferences());
 }
 
+int gAddressRefsFixed = 0;
+
 void FCodeAnalysisState::FixupAddressRefs()
 {
+	gAddressRefsFixed = 0;
+
 	FixupAddressRef(*this, CopiedAddress);
 	Debugger.FixupAddresRefs();
 	MemoryAnalyser.FixupAddressRefs();
@@ -1213,41 +1217,33 @@ void FCodeAnalysisState::FixupAddressRefs()
 		pCommand->FixupAddressRefs(*this);
 	}
 
-	// Go through the entire physical address range to fix up labels, code and data items.
-	int addr = 0;
-	while (addr <= 0xffff)
+	// Go through all banks to fix up labels, code and data items.
+	for (FCodeAnalysisBank& bank : Banks)
 	{
-		FAddressRef wAddressRef(GetWriteBankFromAddress(addr), addr);
-		FAddressRef rAddressRef(GetReadBankFromAddress(addr), addr);
-
-		//FixupAddressRef(*this, wAddressRef);
-		//FixupAddressRef(*this, rAddressRef);
-
-		// Fixup the code and data items in RAM.
-		if (FCodeInfo* pWriteCode = GetCodeInfoForAddress(wAddressRef))
-			FixupCodeInfoAddressRefs(*this, pWriteCode);
-
-		if (FDataInfo* pWriteData = GetDataInfoForAddress(wAddressRef))
-			FixupDataInfoAddressRefs(*this, pWriteData);
-
-		if (FLabelInfo* pWriteLabel = GetLabelForAddress(wAddressRef))
-			FixupAddressRefList(*this, pWriteLabel->References.GetReferences());
-
-		if (wAddressRef.BankId != rAddressRef.BankId)
+		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
-			// If we have RAM behind ROM then fixup the ROM separately
-			if (FCodeInfo* pReadCode = GetCodeInfoForAddress(rAddressRef))
-				FixupCodeInfoAddressRefs(*this, pReadCode);
+			FCodeAnalysisPage& page = bank.Pages[pageNo];
 
-			if (FDataInfo* pReadData = GetDataInfoForAddress(rAddressRef))
-				FixupDataInfoAddressRefs(*this, pReadData);
+			for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
+			{
+				const FDataInfo& dataInfo = page.DataInfo[addr];
+				FAddressRef ref = FAddressRef(bank.Id, addr + (bank.PrimaryMappedPage + pageNo) * FCodeAnalysisPage::kPageSize);
 
-			if (FLabelInfo* pReadLabel = GetLabelForAddress(wAddressRef))
-				FixupAddressRefList(*this, pReadLabel->References.GetReferences());
+				if (FDataInfo* pDataInfo = GetDataInfoForAddress(ref))
+					FixupDataInfoAddressRefs(*this, pDataInfo);
+
+				if (FCodeInfo* pCodeInfo = GetCodeInfoForAddress(ref))
+					FixupCodeInfoAddressRefs(*this, pCodeInfo);
+
+				if (FLabelInfo* pLabelInfo = GetLabelForAddress(ref))
+					FixupAddressRefList(*this, pLabelInfo->References.GetReferences());
+			}
 		}
-
-		addr++;
 	}
+
+#ifndef NDEBUG
+	LOGINFO("Fixed %d refs", gAddressRefsFixed);
+#endif
 }
 
 void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
@@ -1433,8 +1429,15 @@ void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr)
 {
 	if (const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId))
 	{
+#ifndef NDEBUG
+		if (!pBank->AddressValid(addr.Address))
+		{
+			gAddressRefsFixed++;
+		}
+#endif
 		const uint16_t bankOffset = (addr.Address & pBank->SizeMask);
 		addr.Address = pBank->GetMappedAddress() + bankOffset;
+		assert(pBank->AddressValid(addr.Address));
 	}
 }
 
