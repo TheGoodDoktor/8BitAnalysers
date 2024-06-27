@@ -252,12 +252,12 @@ static int FormatMemoryAsCharMap(lua_State* pState)
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 
 	// get parameters
-	const lua_Integer address = lua_tointeger(pState, 1);	// address
-	FAddressRef addrRef = state.AddressRefFromPhysicalAddress((uint16_t)address);
+	const FAddressRef addrRef = GetAddressRefFromLua(pState,1);
 	const lua_Integer width = lua_isinteger(pState, 2) ? lua_tointeger(pState, 2) : 1;	// width - default to 1
 	const lua_Integer height = lua_isinteger(pState, 3) ? lua_tointeger(pState, 3) : 1;	// height - default to 1
 
 	formatOptions.SetupForCharmap(addrRef, (int)width, (int)height);
+	formatOptions.CharacterSet = GetAddressRefFromLua(pState, 4);
 
 	FormatData(state, formatOptions);
 	state.SetCodeAnalysisDirty(formatOptions.StartAddress);
