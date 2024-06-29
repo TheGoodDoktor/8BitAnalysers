@@ -24,7 +24,7 @@
 #include "zx-roms.h"
 #include <algorithm>
 #include <sokol_audio.h>
-#include "SkoolkitSupport.h"
+#include "Misc/SkoolkitSupport.h"
 #include "Debug/DebugLog.h"
 #include "Debug/ImGuiLog.h"
 #include <cassert>
@@ -1140,18 +1140,18 @@ void FSpectrumEmu::FileMenuAdditions(void)
 	{
 		if (ImGui::MenuItem("Export as Hexadecimal"))
 		{
-			ExportSkoolFile(this, true /* bHexadecimal*/);
+			ExportSkoolFile(this, true /* bHexadecimal*/, 0x4000, 0xffff);
 		}
 		if (ImGui::MenuItem("Export as Decimal"))
 		{
-			ExportSkoolFile(this, false /* bHexadecimal*/);
+			ExportSkoolFile(this, false /* bHexadecimal*/, 0x4000, 0xffff, "rom");
 		}
 #ifndef NDEBUG
 		if (ImGui::BeginMenu("DEBUG"))
 		{
 			if (ImGui::MenuItem("Export ROM"))
 			{
-				ExportSkoolFile(this, true /* bHexadecimal */, "rom");
+				ExportSkoolFile(this, true /* bHexadecimal */, 0, 0x4000, "rom");
 			}
 			ImGui::EndMenu();
 		}
