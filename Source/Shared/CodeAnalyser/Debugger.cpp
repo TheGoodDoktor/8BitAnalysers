@@ -500,7 +500,9 @@ static bool IsStepOverOpcode(ECPUType cpuType, const std::vector<uint8_t>& opcod
         case 0xF4: case 0xEC: case 0xE4: case 0xCC:
             // DJNZ d 
         case 0x10:
-            return true;
+			// HALT
+		case 0x76:
+			return true;
 		// TODO: LDIR & others
 		case 0xED:
 		{
