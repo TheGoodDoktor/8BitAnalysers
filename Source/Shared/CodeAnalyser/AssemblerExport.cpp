@@ -43,6 +43,9 @@ class FASMExporter
 		void			ExportDataInfoASM(FAddressRef addr);
 
 	private:
+		void				OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo);
+		ENumberDisplayMode	GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo);
+
 		bool			bInitialised = false;
 		ENumberDisplayMode HexMode = ENumberDisplayMode::HexDollar;
 		ENumberDisplayMode OldNumberMode;
@@ -134,11 +137,8 @@ uint16_t g_DbgAddress = 0xEA71;
 
 void AppendCharToString(char ch, std::string& outString);
 
-void FASMExporter::ExportDataInfoASM(FAddressRef addr)
+ENumberDisplayMode FASMExporter::GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo)
 {
-	const FDataInfo* pDataInfo = pCodeAnalyser->GetDataInfoForAddress(addr);
-	FCodeAnalysisState& state = *pCodeAnalyser;
-
 	ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
 	if (pDataInfo->DisplayType == EDataItemDisplayType::Decimal)
@@ -147,6 +147,33 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 		dispMode = HexMode;
 	if (pDataInfo->DisplayType == EDataItemDisplayType::Binary)
 		dispMode = ENumberDisplayMode::Binary;
+
+	return dispMode;
+}
+
+void FASMExporter::OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo)
+{
+	FCodeAnalysisState& state = *pCodeAnalyser;
+	std::string textString;
+	FAddressRef byteAddress = addr;
+	for (int i = 0; i < pDataInfo->ByteSize; i++)
+	{
+		const uint8_t val = state.ReadByte(byteAddress);
+		char valTxt[16];
+		snprintf(valTxt, 16, "%s%c", NumStr(val, GetNumberDisplayModeForDataItem(pDataInfo)), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
+		textString += valTxt;
+
+		state.AdvanceAddressRef(byteAddress, 1);
+	}
+	Output("%s %s", pAssemblerConfig->DataBytePrefix, textString.c_str());
+}
+
+void FASMExporter::ExportDataInfoASM(FAddressRef addr)
+{
+	const FDataInfo* pDataInfo = pCodeAnalyser->GetDataInfoForAddress(addr);
+	FCodeAnalysisState& state = *pCodeAnalyser;
+
+	const ENumberDisplayMode dispMode = GetNumberDisplayModeForDataItem(pDataInfo);
 
 	const bool bOperandIsAddress = (pDataInfo->DisplayType == EDataItemDisplayType::JumpAddress || pDataInfo->DisplayType == EDataItemDisplayType::Pointer);
 
@@ -169,13 +196,15 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	switch (outputDataType)
 	{
 	case EDataType::Byte:
-	{
+	/* {
 		const uint8_t val = state.ReadByte(addr);
 		Output("%s %s", pAssemblerConfig->DataBytePrefix, NumStr(val, dispMode));
 	}
-	break;
+	break;*/
 	case EDataType::ByteArray:
 	{
+		OutputDataItemBytes(addr,pDataInfo);
+	/*
 		std::string textString;
 		FAddressRef byteAddress = addr;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
@@ -187,7 +216,7 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 
 			state.AdvanceAddressRef(byteAddress,1);
 		}
-		Output("%s %s", pAssemblerConfig->DataBytePrefix, textString.c_str());
+		Output("%s %s", pAssemblerConfig->DataBytePrefix, textString.c_str());*/
 	}
 	break;
 	case EDataType::Word:
@@ -238,7 +267,7 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	case EDataType::ScreenPixels:
 	case EDataType::Blob:
 	default:
-		Output("%d Bytes", pDataInfo->ByteSize);
+		OutputDataItemBytes(addr, pDataInfo);
 		break;
 	}
 }
@@ -247,6 +276,8 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 {
 	FCodeAnalysisState& state = *pCodeAnalyser;
 	// TODO: write screen memory regions
+
+	Output(".org %s\n", NumStr(startAddr));
 
 	for (const FCodeAnalysisItem &item : pCodeAnalyser->ItemList)
 	{
