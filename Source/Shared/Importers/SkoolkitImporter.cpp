@@ -349,8 +349,10 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			// instruction comment continuation
 			if (LastItem.IsValid())
 			{
-				if (LastItem.Item->Comment.back() != '\n')
+				if (!LastItem.Item->Comment.empty() && LastItem.Item->Comment.back() != '\n')
+				{
 					LastItem.Item->Comment += "\n";
+				}
 				LastItem.Item->Comment += trimmed.substr(2);
 				RemoveCarriageReturn(LastItem.Item->Comment);
 			}

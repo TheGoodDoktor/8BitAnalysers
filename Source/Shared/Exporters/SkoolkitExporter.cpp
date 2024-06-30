@@ -436,7 +436,7 @@ bool ExportSkoolFile(FCodeAnalysisState& state, const char* pTextFileName, FSkoo
 	bool bExportedOk = exporter.Export(pTextFileName, startAddr, endAddr, base);
 
 	if (bExportedOk)
-		LOGINFO("Successfully exported '%s'", pTextFileName);
+		LOGINFO("Successfully exported '%s' with range $%x - $%x", pTextFileName, startAddr, endAddr);
 	else
 		LOGINFO("Failed to export '%s'", pTextFileName);
 
