@@ -211,6 +211,11 @@ struct FCodeAnalysisViewState
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
 
+	// find
+	std::string					FindText;
+	std::vector<FAddressRef>	FindResults;
+	bool						SearchROM = false;
+
 	// formatting
 	bool						DataFormattingTabOpen = false;
 	FDataFormattingOptions		DataFormattingOptions;
@@ -668,6 +673,7 @@ public:
 	//FAddressRef FindMemoryPattern(uint8_t* pData, size_t dataSize);
 	std::vector<FAddressRef> FindAllMemoryPatterns(const uint8_t* pData, size_t dataSize, bool bROM, bool bPhysicalOnly);
 	std::vector<FFoundString> FindAllStrings(bool bROM, bool bPhysicalOnly);
+	std::vector<FAddressRef> FindInAnalysis(const char* pString, bool bSearchROM);
 
 	//bool FindMemoryPatternInPhysicalMemory(uint8_t* pData, size_t dataSize, uint16_t offset, uint16_t& outAddr);
 

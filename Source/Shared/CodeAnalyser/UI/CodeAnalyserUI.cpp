@@ -25,6 +25,7 @@
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
 void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
+void DrawFindTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
 
 void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
@@ -1952,11 +1953,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 					DrawDetailsPanel(state, viewState);
 					ImGui::EndTabItem();
 				}
-				if (ImGui::BeginTabItem("Capture"))
+				/*if (ImGui::BeginTabItem("Capture"))
 				{
 					DrawCaptureTab(state, viewState);
 					ImGui::EndTabItem();
-				}
+				}*/
 				if (ImGui::BeginTabItem("Format"))
 				{
 					DrawFormatTab(state, viewState);
@@ -1969,6 +1970,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				if (ImGui::BeginTabItem("Globals"))
 				{
 					DrawGlobals(state, viewState);
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Find"))
+				{
+					DrawFindTab(state, viewState);
 					ImGui::EndTabItem();
 				}
 
@@ -2405,6 +2411,34 @@ void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		DrawMachineStateZ80(pMachineState, state,viewState);
 
+}
+
+void DrawFindTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+{
+	ImGui::InputText("##findText", &viewState.FindText);
+	ImGui::SameLine();
+	if (ImGui::Button("Find"))
+	{
+		viewState.FindResults = state.FindInAnalysis(viewState.FindText.c_str(),viewState.SearchROM);
+	}
+	ImGui::SameLine();
+	ImGui::Checkbox("Search ROM", &viewState.SearchROM);
+
+	if(ImGui::BeginChild("FindResults"))
+	{
+		ImGuiListClipper clipper;
+		clipper.Begin((int)viewState.FindResults.size());
+		while (clipper.Step())
+		{
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+			{
+				const auto& result = viewState.FindResults[i];
+				ImGui::Text("%s ",NumStr(result.Address));
+				DrawAddressLabel(state,viewState,result);
+			}
+		}
+	}
+	ImGui::EndChild();
 }
 
 // Util functions - move?

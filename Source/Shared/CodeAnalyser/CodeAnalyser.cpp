@@ -272,6 +272,68 @@ std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(const uint8_t
 	return results;	
 }
 
+bool ContainsTextLower(const std::string& searchText, const std::string& stringToSearch)
+{
+	if(stringToSearch.empty())
+		return false;	// early out
+
+	std::string stringToSearchLower = stringToSearch;
+	std::transform(stringToSearchLower.begin(), stringToSearchLower.end(), stringToSearchLower.begin(), [](unsigned char c) { return std::tolower(c); });
+
+	return stringToSearchLower.find(searchText) != std::string::npos;
+}
+
+std::vector<FAddressRef> FCodeAnalysisState::FindInAnalysis(const char* pString, bool bSearchROM)
+{
+	std::vector<FAddressRef> results;
+
+	std::string searchTextLower = pString;
+	std::transform(searchTextLower.begin(), searchTextLower.end(), searchTextLower.begin(), [](unsigned char c) { return std::tolower(c); });
+
+	// iterate through banks
+	for (auto& bank : Banks)
+	{
+		if (bank.bMachineROM && bSearchROM == false)
+			continue;
+
+		for(int pageNo=0;pageNo<bank.NoPages;pageNo++)
+		{
+			const FCodeAnalysisPage& page = bank.Pages[pageNo];
+			for(int pageAddr=0;pageAddr< FCodeAnalysisPage::kPageSize;pageAddr++)
+			{
+				bool bFound = false;
+
+				// search code comment
+				const FCodeInfo* pCodeInfo = page.CodeInfo[pageAddr];
+				if(pCodeInfo && ContainsTextLower(searchTextLower,pCodeInfo->Comment))
+					bFound = true;
+
+				// search label comment
+				const FLabelInfo* pLabelInfo = page.Labels[pageAddr];
+				if (pLabelInfo && ContainsTextLower(searchTextLower, pLabelInfo->Comment))
+					bFound = true;
+				if (pLabelInfo && ContainsTextLower(searchTextLower, pLabelInfo->GetName()))
+					bFound = true;
+
+				// search data comment
+				if(ContainsTextLower(searchTextLower, page.DataInfo[pageAddr].Comment))
+					bFound = true;
+
+				// search comment block
+				const FCommentBlock* pCommentBlock = page.CommentBlocks[pageAddr];
+				if (pCommentBlock && ContainsTextLower(searchTextLower, pCommentBlock->Comment))
+					bFound = true;
+
+				if(bFound)
+					results.push_back(FAddressRef(bank.Id, bank.GetMappedAddress() + (pageNo * FCodeAnalysisPage::kPageSize) + pageAddr));
+
+			}
+		}
+	}
+
+	return results;
+}
+
 bool IsAscii(uint8_t byte)
 {
 	return byte >= 32 && byte <= 126;
