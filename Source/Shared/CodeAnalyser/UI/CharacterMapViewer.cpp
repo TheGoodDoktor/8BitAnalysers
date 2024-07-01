@@ -9,6 +9,7 @@
 #include <cmath>
 #include <ImGuiSupport/ImGuiScaling.h>
 #include "UIColours.h"
+#include "ComboBoxes.h"
 
 static const char* g_MaskInfoTxt[] =
 {

@@ -3,6 +3,7 @@
 #include "../CodeAnalyser.h"
 #include "CodeToolTips.h"
 #include "CodeAnalyser/DataTypes.h"
+#include "ComboBoxes.h"
 
 #include <math.h>
 

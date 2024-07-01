@@ -4,6 +4,7 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "CodeAnalyser/UI/UIColours.h"
+#include "CodeAnalyser/UI/ComboBoxes.h"
 
 #include <json.hpp>
 using json = nlohmann::json;

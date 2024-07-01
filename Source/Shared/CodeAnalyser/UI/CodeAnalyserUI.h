@@ -49,12 +49,6 @@ bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags = 0);
 int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
-bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
-bool DrawOperandTypeCombo(const char* pLabel, FCodeInfo* pCodeInfo);
-bool DrawDataTypeCombo(const char* pLabel, EDataType& dataType);
-bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state);
-bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState& state);
-bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours=-1);
 void DrawPalette(const uint32_t* palette, int numColours, float height = 0.f);
 EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat);
 

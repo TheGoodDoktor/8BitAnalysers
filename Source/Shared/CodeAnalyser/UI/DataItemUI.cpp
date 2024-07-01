@@ -10,6 +10,7 @@
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "UIColours.h"
+#include "ComboBoxes.h"
 
 float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, const FDataInfo* pDataInfo)
 {

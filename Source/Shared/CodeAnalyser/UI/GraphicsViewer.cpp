@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "CodeAnalyser/UI/ComboBoxes.h"
 
 #include <Util/Misc.h>
 
@@ -484,7 +485,19 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			address += GraphicColumnSizeBytes / widthFactor;
 		}
 	}
-	if (ViewMode == EGraphicsViewMode::BitmapChars)
+	else if (ViewMode == EGraphicsViewMode::MaskedInterleaved)
+	{
+		for (int x = 0; x < xcount; x++)
+		{
+			if (bShowPhysicalMemory)
+				DrawPhysicalMemoryAsGraphicsColumn(address, x * columnWidthPixels, xSizeChars);
+			else
+				DrawMemoryBankAsGraphicsColumn(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
+
+			address += GraphicColumnSizeBytes / widthFactor;
+		}
+	}
+	else if (ViewMode == EGraphicsViewMode::BitmapChars)
 	{
 		for (int x = 0; x < xcount; x++)
 		{
@@ -594,7 +607,8 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		}
 	}
 
-	ImGui::Combo("ViewMode", (int*)&ViewMode, "Bitmap\0BitmapChars\0BitmapWinding", (int)EGraphicsViewMode::Count);
+	DrawGraphicsViewModeCombo("ViewMode", ViewMode);
+	//ImGui::Combo("ViewMode", (int*)&ViewMode, "Bitmap\0BitmapChars\0BitmapWinding", (int)EGraphicsViewMode::Count);
 
 	// View Scale
 	ImGui::InputInt("Scale", &ViewScale, 1, 1);
