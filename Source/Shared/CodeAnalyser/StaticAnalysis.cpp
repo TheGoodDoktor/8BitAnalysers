@@ -62,6 +62,22 @@ public:
 
 };
 
+class FInterruptModeCheck : public FStaticAnalysisCheck
+{
+public:
+	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override
+	{
+		const EInstructionType instType = GetInstructionType(state, addrRef);
+
+		if (instType == EInstructionType::ChangeInterruptMode)
+			return new FStaticAnalysisItem(addrRef, "Interrupt Mode");
+
+		return nullptr;
+	}
+
+};
+
+
 bool FStaticAnalyser::Init(FCodeAnalysisState* pState)
 {
 	pCodeAnalysis = pState;

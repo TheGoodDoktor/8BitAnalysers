@@ -504,6 +504,12 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 			case 0x79:
 				return EInstructionType::PortOutput;
 
+			// interrupt modes
+			case 0x46:
+			case 0x56:
+			case 0x5E:
+				return EInstructionType::ChangeInterruptMode;
+
 			}
 		}
 	}
