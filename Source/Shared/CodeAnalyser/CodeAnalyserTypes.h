@@ -109,6 +109,35 @@ enum class EDataType
 	None = Max
 };
 
+// don't change order! loose references!
+enum class EFunctionSortMode : int
+{
+	Location = 0,
+	Alphabetical,
+	CallFrequency,
+	NoReferences
+};
+
+// Entries for the data type filter drop-down
+enum class EDataTypeFilter : int
+{
+	All,
+	Pointer,
+	Text,
+	Bitmap,
+	CharacterMap,
+	ColAttr,
+};
+
+enum class EBankAccess
+{
+	None = 0x00,
+	Read = 0x01,
+	Write = 0x02,
+	ReadWrite = 0x03,
+
+};
+
 // Structures
 
 struct FAddressRef

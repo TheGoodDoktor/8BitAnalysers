@@ -17,6 +17,9 @@ enum class EGraphicsViewMode : int
 
 	BitmapWinding,	// winding bitmap (0,0) (1,0) (1,1) (0,1)
 
+	Masked,				// bitmap line followed by mask line
+	MaskedInterleaved,	// 8 bits image, 8bits mask interleaved
+
 	Count
 };
 

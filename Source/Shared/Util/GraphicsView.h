@@ -20,6 +20,7 @@ public:
 	void Draw(bool bMagnifier = true);
 
 	void DrawCharLine(uint8_t charLine, int xp, int yp, uint32_t inkCol, uint32_t paperCol);
+	void DrawMaskedCharLine(uint8_t charLine, uint8_t maskLine, int xp, int yp, uint32_t inkCol, uint32_t paperCol);
 
 	// Draw image from a bitmap
 	// Size is given in (8x8) chars
