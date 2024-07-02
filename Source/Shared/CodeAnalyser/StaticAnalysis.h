@@ -11,6 +11,7 @@ enum class EInstructionType
 	PortInput,
 	PortOutput,
 	ChangeInterruptMode,
+	JumpToPointer,
 
 	Unknown,
 };

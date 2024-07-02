@@ -44,35 +44,27 @@ private:
 	int				AddRunLength = 0;
 };
 
-// check for port accesses
-class FPortAccessCheck : public FStaticAnalysisCheck
+// generic checks for simple Items
+class FSimpleChecks : public FStaticAnalysisCheck
 {
 public:
 	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override
 	{
 		const EInstructionType instType = GetInstructionType(state, addrRef);
 
-		if (instType == EInstructionType::PortInput)
-			return new FStaticAnalysisItem(addrRef, "Port Input");
-		else if (instType == EInstructionType::PortOutput)
-			return new FStaticAnalysisItem(addrRef, "Port Output");
-
-		return nullptr;
-	}
-
-};
-
-class FInterruptModeCheck : public FStaticAnalysisCheck
-{
-public:
-	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override
-	{
-		const EInstructionType instType = GetInstructionType(state, addrRef);
-
-		if (instType == EInstructionType::ChangeInterruptMode)
-			return new FStaticAnalysisItem(addrRef, "Interrupt Mode");
-
-		return nullptr;
+		switch (instType)
+		{
+			case EInstructionType::PortInput:
+				return new FStaticAnalysisItem(addrRef, "Port Input");
+			case EInstructionType::PortOutput:
+				return new FStaticAnalysisItem(addrRef, "Port Output");
+			case EInstructionType::ChangeInterruptMode:
+				return new FStaticAnalysisItem(addrRef, "Interrupt Mode");
+			case EInstructionType::JumpToPointer:
+				return new FStaticAnalysisItem(addrRef, "Jump to Pointer");
+			default:
+				return nullptr;
+		}
 	}
 
 };
@@ -83,7 +75,7 @@ bool FStaticAnalyser::Init(FCodeAnalysisState* pState)
 	pCodeAnalysis = pState;
 
 	Checks.push_back(new FMultByAddCheck);
-	Checks.push_back(new FPortAccessCheck);
+	Checks.push_back(new FSimpleChecks);
 	return true;
 }
 

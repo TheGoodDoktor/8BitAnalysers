@@ -474,6 +474,10 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 		case 0x10:	// DJNZ
 			return EInstructionType::LoopBack;
 
+		// Jump to pointer
+		case 0xE9:
+			return EInstructionType::JumpToPointer;
+
 		// extended instructions
 		case 0xED:
 		{
