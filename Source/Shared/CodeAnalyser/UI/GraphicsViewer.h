@@ -19,6 +19,7 @@ enum class EGraphicsViewMode : int
 
 	Masked,				// bitmap line followed by mask line
 	MaskedInterleaved,	// 8 bits image, 8bits mask interleaved
+	MaskedInterleavedZigZag,	// 8 bits image, 8bits mask interleaved, alternating left-right, right-left per scanline
 
 	Count
 };

@@ -191,10 +191,24 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int x
 			{
 				const FCodeAnalysisPage* pPage = state.GetReadPage(memAddr);
 				const uint32_t col = GetHeatmapColourForMemoryAddress(*pPage, memAddr, state.CurrentFrameNo, HeatmapThreshold);
-				const uint8_t charLine = pCPUInterface->ReadByte(memAddr);
 
-				pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col, 0);
-				memAddr++;
+				// handle masked view modes - move to another function?
+				if (ViewMode == EGraphicsViewMode::MaskedInterleaved || ViewMode == EGraphicsViewMode::MaskedInterleavedZigZag)
+				{
+					const uint8_t maskLine = pCPUInterface->ReadByte(memAddr++);
+					const uint8_t charLine = pCPUInterface->ReadByte(memAddr++);
+					if(ViewMode == EGraphicsViewMode::MaskedInterleaved || (y & 1) == 0)
+						pGraphicsView->DrawMaskedCharLine(charLine,maskLine, xPos + (xChar * 8), y, col, 0);
+					else
+						pGraphicsView->DrawMaskedCharLine(charLine, maskLine, xPos + ((columnWidth - 1 - xChar) * 8), y, col, 0);
+				}
+				else
+				{ 
+					const uint8_t charLine = pCPUInterface->ReadByte(memAddr);
+
+					pGraphicsView->DrawCharLine(charLine, xPos + (xChar * 8), y, col, 0);
+					memAddr++;
+				}
 			}
 			break;
 			case EBitmapFormat::ColMap2Bpp_CPC:
@@ -485,7 +499,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			address += GraphicColumnSizeBytes / widthFactor;
 		}
 	}
-	else if (ViewMode == EGraphicsViewMode::MaskedInterleaved)
+	else if (ViewMode == EGraphicsViewMode::MaskedInterleaved || ViewMode == EGraphicsViewMode::MaskedInterleavedZigZag)
 	{
 		for (int x = 0; x < xcount; x++)
 		{
@@ -494,7 +508,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			else
 				DrawMemoryBankAsGraphicsColumn(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
 
-			address += GraphicColumnSizeBytes / widthFactor;
+			address += (GraphicColumnSizeBytes * 2) / widthFactor;
 		}
 	}
 	else if (ViewMode == EGraphicsViewMode::BitmapChars)

@@ -214,6 +214,8 @@ static const std::vector<std::pair<const char*, EGraphicsViewMode>> g_GraphicsVi
 	{ "Bitmap",			EGraphicsViewMode::Bitmap },
 	{ "Bitmap Chars",	EGraphicsViewMode::BitmapChars },
 	{ "Bitmap Winding",	EGraphicsViewMode::BitmapWinding },
+	{ "Masked Interleaved",	EGraphicsViewMode::MaskedInterleaved },
+	{ "Masked Interleaved Zig Zag",	EGraphicsViewMode::MaskedInterleavedZigZag },
 };
 
 bool DrawGraphicsViewModeCombo(const char* pLabel, EGraphicsViewMode& viewMode)
