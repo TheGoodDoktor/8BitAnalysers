@@ -4,6 +4,7 @@
 #include <Util/GraphicsView.h>
 #include <CodeAnalyser/CodeAnalyser.h>
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "CodeAnalyser/UI/ComboBoxes.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 
 #include "../CPCEmu.h"

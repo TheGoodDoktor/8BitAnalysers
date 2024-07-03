@@ -2,11 +2,13 @@
 
 #include <vector>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <functional>
 
 #include "CodeAnalyserUI.h"
 #include "Util/Misc.h"
 #include "../CodeAnalyser.h"
+#include "Util/GraphicsView.h"
 
 #include "GraphicsViewer.h"
 
@@ -220,4 +222,63 @@ bool DrawGraphicsViewModeCombo(const char* pLabel, EGraphicsViewMode& viewMode)
 {
 	return DrawEnumCombo<EGraphicsViewMode>(pLabel, viewMode, g_GraphicsViewModeTypes);
 
+}
+
+bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours /* = -1 */)
+{
+	int index = paletteEntryIndex;
+
+	bool bChanged = false;
+	if (ImGui::BeginCombo(pLabel, nullptr, ImGuiComboFlags_CustomPreview))
+	{
+		if (ImGui::Selectable(pFirstItemLabel, index == -1))
+		{
+			paletteEntryIndex = -1;
+		}
+
+		const int numPalettes = GetNoPaletteEntries();
+		for (int p = 0; p < numPalettes; p++)
+		{
+			if (const FPaletteEntry* pEntry = GetPaletteEntry(p))
+			{
+				if (numColours == -1 || pEntry->NoColours == numColours)
+				{
+					const std::string str = "Palette " + std::to_string(p);
+					const bool isSelected = (index == p);
+					if (ImGui::Selectable(str.c_str(), isSelected))
+					{
+						paletteEntryIndex = p;
+						bChanged = true;
+					}
+
+					const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+					if (pPalette)
+					{
+						ImGui::SameLine();
+						DrawPalette(pPalette, pEntry->NoColours);
+					}
+				}
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	const std::string palettePreview = "Palette " + std::to_string(index);
+	const char* pComboPreview = index == -1 ? pFirstItemLabel : palettePreview.c_str();
+	if (ImGui::BeginComboPreview())
+	{
+		ImGui::Text("%s", pComboPreview);
+		if (const FPaletteEntry* pEntry = GetPaletteEntry(index))
+		{
+			const uint32_t* pPalette = GetPaletteFromPaletteNo(index);
+			if (pPalette)
+			{
+				ImGui::SameLine();
+				DrawPalette(pPalette, numColours);
+			}
+		}
+		ImGui::EndComboPreview();
+	}
+	return bChanged;
 }
