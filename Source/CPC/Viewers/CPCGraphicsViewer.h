@@ -35,7 +35,6 @@ protected:
 private:
 	uint32_t	GetRGBValueForPixel(int colourIndex, uint32_t heatMapCol) const;
 	void		UpdateScreenPixelImage(void);
-	uint16_t	GetPixelLineOffset(int yPos);
 	ImU32		GetFlashColour() const;
 
 	FCPCEmu*	pCPCEmu = nullptr;
@@ -53,6 +52,10 @@ private:
 	int			FrameCounter = 0;
 	int			TestHeatmapThreshold = 4;
 	bool			bTrackNonActiveScrBufferAddress = false;
+
+	bool			bDisplay = false;
+	bool			bScreenRAMUsed[8];
+	bool			bFoundUsedRAM = false;
 #if 0
 	FGraphicsView* pTestGraphicsView = 0;
 	FCPCGraphicsView* pTestCPCGraphicsView = 0;
