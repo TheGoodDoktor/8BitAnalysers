@@ -145,6 +145,9 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadsWrites);
 
+
+	// WIP. to tidy up
+#if 0
 	if (ImGui::Button("Find code and data in screen RAM"))
 	{
 		// calculate where screen pixels start for each line
@@ -258,6 +261,7 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 	}*/
 
 	FrameCounter++;
+#endif
 
 #if 0
 	const uint32_t* pPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
