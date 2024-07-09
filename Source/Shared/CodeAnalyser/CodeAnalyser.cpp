@@ -307,13 +307,17 @@ std::vector<FAddressRef> FCodeAnalysisState::FindInAnalysis(const char* pString,
 				const FCodeInfo* pCodeInfo = page.CodeInfo[pageAddr];
 				if(pCodeInfo && ContainsTextLower(searchTextLower,pCodeInfo->Comment))
 					bFound = true;
-				//if (pCodeInfo && ContainsTextLower(searchTextLower, pCodeInfo->Text))
-				//	bFound = true;
+				
+				// search code text
+				if (pCodeInfo && ContainsTextLower(searchTextLower, pCodeInfo->Text))
+					bFound = true;
 
 				// search label comment
 				const FLabelInfo* pLabelInfo = page.Labels[pageAddr];
 				if (pLabelInfo && ContainsTextLower(searchTextLower, pLabelInfo->Comment))
 					bFound = true;
+
+				// search label name
 				if (pLabelInfo && ContainsTextLower(searchTextLower, pLabelInfo->GetName()))
 					bFound = true;
 

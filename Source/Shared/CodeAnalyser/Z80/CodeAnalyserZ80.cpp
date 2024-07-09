@@ -478,6 +478,13 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 		case 0xE9:
 			return EInstructionType::JumpToPointer;
 
+		case 0xF9:	// LD SP,HL
+			return EInstructionType::SetStackPointer;
+
+		// Halt
+		case 0x76:
+			return EInstructionType::Halt;
+
 		// extended instructions
 		case 0xED:
 		{
@@ -514,6 +521,19 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 			case 0x5E:
 				return EInstructionType::ChangeInterruptMode;
 
+			}
+		}
+		break;
+
+		case 0xFD:
+		{
+			FAddressRef addrInst2 = addr;
+			state.AdvanceAddressRef(addrInst2, 1);
+			const uint8_t instByte2 = state.ReadByte(addrInst2);
+			switch (instByte2)
+			{
+				case 0xF9:	// LD SP,IY
+					return EInstructionType::SetStackPointer;
 			}
 		}
 	}

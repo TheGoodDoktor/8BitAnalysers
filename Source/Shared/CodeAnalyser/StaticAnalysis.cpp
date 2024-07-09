@@ -62,6 +62,10 @@ public:
 				return new FStaticAnalysisItem(addrRef, "Interrupt Mode");
 			case EInstructionType::JumpToPointer:
 				return new FStaticAnalysisItem(addrRef, "Jump to Pointer");
+			case EInstructionType::Halt:
+				return new FStaticAnalysisItem(addrRef, "Halt");
+			case EInstructionType::SetStackPointer:
+				return new FStaticAnalysisItem(addrRef, "Set Stack Pointer");
 			default:
 				return nullptr;
 		}
@@ -74,6 +78,9 @@ bool FStaticAnalyser::Init(FCodeAnalysisState* pState)
 {
 	pCodeAnalysis = pState;
 
+	for (auto check : Checks)
+		delete check;
+	Checks.clear();
 	Checks.push_back(new FMultByAddCheck);
 	Checks.push_back(new FSimpleChecks);
 	return true;
