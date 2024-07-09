@@ -528,6 +528,33 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pCodeItem->Text.clear();
 			}
 		} 
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemJumpAddress]))
+		{
+			if (cursorItem.Item->Type == EItemType::Data)
+			{
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
+				pDataItem->DataType = EDataType::Word;
+				pDataItem->ByteSize = 2;
+				pDataItem->DisplayType = EDataItemDisplayType::JumpAddress;
+				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
+
+				// Mark address as function & set as code
+				const FAddressRef jumpAddress = state.AddressRefFromPhysicalAddress(state.ReadWord(cursorItem.AddressRef));
+				GenerateLabelForAddress(state,jumpAddress,ELabelType::Function);
+				// maybe we should only do this if it's 'unknown'?
+				FDataInfo* pJumpAddressData = state.GetDataInfoForAddress(jumpAddress);
+				if(pJumpAddressData->IsUninitialised())
+				{
+					SetItemCode(state, jumpAddress);
+				}
+			}
+			else if (cursorItem.Item->Type == EItemType::Code)
+			{
+				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+				pCodeItem->OperandType = EOperandType::JumpAddress;
+				pCodeItem->Text.clear();
+			}
+		}
 		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemAscii]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)

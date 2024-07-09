@@ -63,6 +63,7 @@ enum class EKey
 	SetItemImage,
 	SetItemBinary,
 	SetItemPointer,
+	SetItemJumpAddress,
 	SetItemNumber,
 	SetItemAscii,
 	SetItemUnknown,

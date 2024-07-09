@@ -387,6 +387,14 @@ struct FDataInfo : FItem
 		Writes.Reset();
 	}
 
+	bool IsUninitialised() const
+	{
+		if (DataType == EDataType::Byte && DisplayType == EDataItemDisplayType::Unknown)
+			return true;
+
+		return false;
+	}
+
 	EDataType				DataType = EDataType::Byte;
 	EDataItemDisplayType	DisplayType = EDataItemDisplayType::Unknown;
 
