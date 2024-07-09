@@ -76,3 +76,5 @@
 /Source/CPC/build
 /Source/CPC/linuxbuild
 /Data/CPCAnalyser/GlobalConfig.json
+.vscode
+build
