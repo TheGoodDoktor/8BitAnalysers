@@ -528,6 +528,33 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pCodeItem->Text.clear();
 			}
 		} 
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemJumpAddress]))
+		{
+			if (cursorItem.Item->Type == EItemType::Data)
+			{
+				FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
+				pDataItem->DataType = EDataType::Word;
+				pDataItem->ByteSize = 2;
+				pDataItem->DisplayType = EDataItemDisplayType::JumpAddress;
+				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
+
+				// Mark address as function & set as code
+				const FAddressRef jumpAddress = state.AddressRefFromPhysicalAddress(state.ReadWord(cursorItem.AddressRef));
+				GenerateLabelForAddress(state,jumpAddress,ELabelType::Function);
+				// maybe we should only do this if it's 'unknown'?
+				FDataInfo* pJumpAddressData = state.GetDataInfoForAddress(jumpAddress);
+				if(pJumpAddressData->IsUninitialised())
+				{
+					SetItemCode(state, jumpAddress);
+				}
+			}
+			else if (cursorItem.Item->Type == EItemType::Code)
+			{
+				FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+				pCodeItem->OperandType = EOperandType::JumpAddress;
+				pCodeItem->Text.clear();
+			}
+		}
 		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::SetItemAscii]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
@@ -1072,65 +1099,6 @@ void DrawPalette(const uint32_t* palette, int numColours, float height)
 		if (c < numColours - 1)
 			ImGui::SameLine();
 	}
-}
-
-bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours /* = -1 */)
-{
-	int index = paletteEntryIndex;
-
-	bool bChanged = false;
-	if (ImGui::BeginCombo(pLabel, nullptr, ImGuiComboFlags_CustomPreview))
-	{
-		if (ImGui::Selectable(pFirstItemLabel, index == -1))
-		{
-			paletteEntryIndex = -1;
-		}
-
-		const int numPalettes = GetNoPaletteEntries();
-		for (int p = 0; p < numPalettes; p++)
-		{
-			if (const FPaletteEntry* pEntry = GetPaletteEntry(p))
-			{
-				if (numColours == -1 || pEntry->NoColours == numColours)
-				{
-					const std::string str = "Palette " + std::to_string(p);
-					const bool isSelected = (index == p);
-					if (ImGui::Selectable(str.c_str(), isSelected))
-					{
-						paletteEntryIndex = p;
-						bChanged = true;
-					}
-
-					const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
-					if (pPalette)
-					{
-						ImGui::SameLine();
-						DrawPalette(pPalette, pEntry->NoColours);
-					}
-				}
-			}
-		}
-
-		ImGui::EndCombo();
-	}
-
-	const std::string palettePreview = "Palette " + std::to_string(index);
-	const char* pComboPreview = index == -1 ? pFirstItemLabel : palettePreview.c_str();
-	if (ImGui::BeginComboPreview())
-	{
-		ImGui::Text("%s",pComboPreview);
-		if (const FPaletteEntry* pEntry = GetPaletteEntry(index))
-		{
-			const uint32_t* pPalette = GetPaletteFromPaletteNo(index);
-			if (pPalette)
-			{
-				ImGui::SameLine();
-				DrawPalette(pPalette, numColours);
-			}
-		}
-		ImGui::EndComboPreview();
-	}
-	return bChanged;
 }
 
 EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat)

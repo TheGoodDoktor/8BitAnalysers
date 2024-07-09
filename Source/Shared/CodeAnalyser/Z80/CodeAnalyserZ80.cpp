@@ -162,6 +162,8 @@ bool CheckCallInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 	return false;
 }
 
+// These should be functions that unconditionally change PC
+// Conditional calls & return don't fit into this category and have been removed
 bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
@@ -171,8 +173,8 @@ bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 		/* CALL nnnn */
 	case 0xCD:
 		/* CALL cc,nnnn */
-	case 0xDC: case 0xFC: case 0xD4: case 0xC4:
-	case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+	//case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+	//case 0xF4: case 0xEC: case 0xE4: case 0xCC:
 		/* RST */
 	case 0xC7:
 	case 0xCF:
@@ -183,11 +185,11 @@ bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 	case 0xF7:
 	case 0xFF:
 		// ret
-	case 0xC8:
 	case 0xC9:
-	case 0xD8:
-	case 0xE8:
-	case 0xF8:
+	//case 0xC8:
+	//case 0xD8:
+	//case 0xE8:
+	//case 0xF8:
 
 
 	case 0xc3:// jp
@@ -199,14 +201,15 @@ bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 		const uint8_t extInstrByte = state.ReadByte(pc + 1);
 		switch (extInstrByte)
 		{
-		case 0x4D:	// more RET functions
-		case 0x5D:
-		case 0x6D:
-		case 0x7D:
-		case 0x45:
-		case 0x55:
-		case 0x65:
-		case 0x75:
+			// more RET functions
+		case 0x4D:	// RETI 
+		//case 0x5D:
+		//case 0x6D:
+		//case 0x7D:
+		//case 0x45:
+		//case 0x55:
+		//case 0x65:
+		//case 0x75:
 			return true;
 		}
 	}
@@ -218,7 +221,7 @@ bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 		const uint8_t extInstrByte = state.ReadByte(pc + 1);
 		switch (extInstrByte)
 		{
-		case 0xE9:	// JP(IX)
+		case 0xE9:	// JP(IX/IY)
 			return true;
 		}
 		return false;

@@ -844,10 +844,20 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 }
 
 // Step through and analyse code from a location
+// we need some kind of safety feature so it doesn't trawl through data
 void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 {
-	while(AnalyseAtPC(state,pc))
+	bool bContinue = true;
+
+	while(bContinue)
+	{
+		bContinue = AnalyseAtPC(state,pc);
 		state.SetCodeAnalysisDirty(pc);
+
+		// stop analysis going through initialised data
+		const FDataInfo* pData = state.GetDataInfoForAddress(state.AddressRefFromPhysicalReadAddress(pc));
+		bContinue &= pData->IsUninitialised();
+	}
 
 	return;
 }
@@ -1176,6 +1186,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	KeyConfig[(int)EKey::SetItemImage] = ImGuiKey_I;
 	KeyConfig[(int)EKey::SetItemBinary] = ImGuiKey_B;
 	KeyConfig[(int)EKey::SetItemPointer] = ImGuiKey_P;
+	KeyConfig[(int)EKey::SetItemJumpAddress] = ImGuiKey_J;
 	KeyConfig[(int)EKey::SetItemNumber] = ImGuiKey_N;
 	KeyConfig[(int)EKey::SetItemAscii] = ImGuiKey_A;
 	KeyConfig[(int)EKey::SetItemUnknown] = ImGuiKey_U;

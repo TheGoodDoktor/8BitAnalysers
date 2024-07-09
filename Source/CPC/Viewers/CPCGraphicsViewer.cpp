@@ -4,6 +4,7 @@
 #include <Util/GraphicsView.h>
 #include <CodeAnalyser/CodeAnalyser.h>
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "CodeAnalyser/UI/ComboBoxes.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 
 #include "../CPCEmu.h"
@@ -81,7 +82,7 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 		DisplayAddress = ScrAddrHistory[ScrAddrHistoryIndex ? 0 : 1];
 	}
 	ImGui::SameLine();
-	HelpMarker("For use in games with a double buffered screen setup, this will automatically display the back buffer. Serves no purpose in games that use a static screen.");
+	HelpMarker("For use in games with a double buffered screen setup, this will automatically display the back buffer. Serves no purpose in games that use a static screen or that have HW scrolling.");
 
 	if (ImGui::InputInt("Width", &WidthChars, 1, 8, ImGuiInputTextFlags_CharsDecimal))
 	{
@@ -143,19 +144,124 @@ void FCPCGraphicsViewer::DrawScreenViewer()
 	pScreenView->Draw();
 
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadsWrites);
-	FrameCounter++;
 
-	/*if (ImGui::Button("write to screen pixels"))
+
+	// WIP. to tidy up
+#if 0
+	if (ImGui::Button("Find code and data in screen RAM"))
 	{
-		for (int i = 0; i < 0xffff; i++)
+		// calculate where screen pixels start for each line
+		// calculate where screen pixels end for each line
+		// set bool to say we want to display
+		// search for code and data in those regions
+		bDisplay = true;
+
+		for (int i = 0; i < 8; i++)
+			bScreenRAMUsed[i] = false;
+
+		const int bytesPerLine = WidthChars * 2;
+		const int bytesPerSection = bytesPerLine * HeightChars;
+		const int bytesFree = 2048 - bytesPerSection;
+		uint16_t curPixelsAddr = DisplayAddress;
+		for (int l = 0; l < CharacterHeight; l++)
 		{
-			if (pCPCEmu->Screen.IsScreenAddress(i))
+			const uint16_t spareRAMStart = curPixelsAddr + bytesPerSection;
+			const uint16_t spareRAMEnd = curPixelsAddr + 2047;
+			int numBytesToCheck = 2048 - bytesPerSection;
+
+			uint16_t cur = spareRAMStart;
+			int numZeros = 0;
+			while (numBytesToCheck)
 			{
-				pCPCEmu->GetCodeAnalysis().WriteByte(i, 0xf0);
+				if (pCPCEmu->GetCodeAnalysis().ReadByte(cur) == 0)
+				{
+					numZeros++;
+				}
+				cur++;
+				numBytesToCheck--;
+			}
+			if (numZeros == 2048 - bytesPerSection)
+			{
+				bScreenRAMUsed[l] = 0;
+				bFoundUsedRAM = false;
+			}
+			else
+			{
+				bScreenRAMUsed[l] = 1;
+				bFoundUsedRAM = true;
+			}
+			curPixelsAddr += 2048;
+		}
+	}
+
+	// todo 
+	// deal with > 2048 pixel segments producing negative bytes 
+	// deal with hw scrolled screen - dont show button?
+	// why does hovering over address label highlight a byte on the screen? shouldn't it be off-screen?
+	if (bDisplay)
+	{
+		if (bFoundUsedRAM)
+		{
+			int numUsedRegions = 0;
+			for (int i = 0; i < 8; i++)
+			{
+				if (bScreenRAMUsed[i])
+				numUsedRegions ++;
+			}
+			const int bytesPerLine = WidthChars * 2; // How many bytes in a single horizontal pixel line of the screen?
+			const int bytesPerScreenRegion = bytesPerLine * HeightChars; // How many contiguous bytes for an eighth of the screen?
+			const int bytesFreePerRegion = 2048 - bytesPerScreenRegion; // How many contiguous bytes per section can be used for code or data?
+			ImGui::Text("Found %d potentially used regions of size %d bytes. Contains non-zero bytes.", numUsedRegions, bytesFreePerRegion);
+			uint16_t curAddr = DisplayAddress;
+			for (int l = 0; l < CharacterHeight; l++)
+			{
+				if (bScreenRAMUsed[l])
+				{
+					ImGui::Separator();
+					const uint16_t start = curAddr + bytesPerScreenRegion;
+					const uint16_t end = curAddr + 2047;
+					ImGui::Text("Start: %s ", NumStr(start));
+					ImGui::SameLine();
+					DrawAddressLabel(GetCodeAnalysis(), GetCodeAnalysis().GetFocussedViewState(), start, 0);
+
+					ImGui::Text("End  : %s ", NumStr(end));
+					ImGui::SameLine();
+					DrawAddressLabel(GetCodeAnalysis(), GetCodeAnalysis().GetFocussedViewState(), end, 0);
+				}
+				curAddr += 2048;
 			}
 		}
+		else
+		{
+			ImGui::Text("None found");
+		}
+		if (ImGui::Button("Clear Results"))
+		{
+			bDisplay = false;
+		}
+	}
+
+	/*if (y < 8)
+	{
+		const uint16_t start = pBank->GetMappedAddress() + curLineBankOffset;
+		const uint16_t end = start + bytesPerLine * HeightChars;
+
+		ImGui::Text("%d: %x-%x. %d bytes", y, start, end - 1, start + 2048 - end);
+		ImGui::SameLine();
+		DrawAddressLabel(GetCodeAnalysis(), GetCodeAnalysis().GetFocussedViewState(), end, 0);
+
+		//FCommentBlock* pCommentBlock = state.GetCommentBlockForAddress(firstAddress);
+		ImGui::PushID(y);
+		if (ImGui::Button("AddComment"))
+		{
+			FCommentBlock* pCommentBlock = AddCommentBlock(GetCodeAnalysis(), FAddressRef(pBank->Id, start));
+			pCommentBlock->Comment = "COMMENT";
+		}
+		ImGui::PopID();
 	}*/
 
+	FrameCounter++;
+#endif
 
 #if 0
 	const uint32_t* pPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
