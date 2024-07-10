@@ -14,7 +14,7 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 		oldDataType = pDataItem->DataType;
 		oldDataSize = pDataItem->ByteSize;
 
-		if (pDataItem->DataType == EDataType::Byte)
+		if (pDataItem->DataType == EDataType::Byte || pDataItem->DataType == EDataType::InstructionOperand)
 		{
 			pDataItem->DataType = EDataType::Word;
 			pDataItem->ByteSize = 2;
