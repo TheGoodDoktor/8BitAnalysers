@@ -11,5 +11,6 @@ struct FLuaTextEditor
 };
 
 bool InitTextEditors(void);
+void RegisterLuaFunctionToolTip(const char* functionName, const char* tooltipText);
 FLuaTextEditor& AddTextEditor(const char* fileName, const char* pTextData);
 void DrawTextEditor(void);

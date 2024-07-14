@@ -17,6 +17,13 @@ std::string SelectedTemplate = "None";
 std::string NewFilenameTxt;
 bool bSaveBeforeReload = true;
 
+std::vector<std::pair<std::string,std::string>> g_FunctionToolTips;
+
+void RegisterLuaFunctionToolTip(const char* functionName, const char* tooltipText)
+{
+	g_FunctionToolTips.push_back({functionName,tooltipText});
+}
+
 bool EnumerateTemplates()
 {
 	FDirFileList listing;
@@ -76,6 +83,14 @@ FLuaTextEditor& AddTextEditor(const char* pFileName, const char* pTextData)
 
 	// set up text editor
 	auto lang = TextEditor::LanguageDefinition::Lua();
+
+	// add our identifiers & tooltips
+	for (const auto& functionToolTip : g_FunctionToolTips)
+	{
+		TextEditor::Identifier identifier;
+		identifier.mDeclaration = functionToolTip.second;
+		lang.mIdentifiers.insert(std::make_pair(functionToolTip.first, identifier));
+	}
 	editor.LuaTextEditor.SetLanguageDefinition(lang);
 	if(pTextData != nullptr)
 		editor.LuaTextEditor.SetText(pTextData);

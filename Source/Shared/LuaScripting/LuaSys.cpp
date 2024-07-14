@@ -62,6 +62,7 @@ bool Init(FEmuBase* pEmulator)
 		return false;
 
 	InitTextEditors();
+	//Example: RegisterLuaFunctionToolTip("ReadByte", "Read byte from memory");
 
 	lua_State* pState = luaL_newstate();	// create the global state
 
