@@ -206,6 +206,8 @@ void	FCartridgeManager::MapSlotsForMemoryModel()
 		MapSlotOut(ECartridgeSlot::RomLow);
 		MapSlotOut(ECartridgeSlot::RomHigh);
 		break;
+	default:
+		break;
 	}
 	
 }
@@ -690,7 +692,7 @@ public:
 		return false;
 	}
 
-	void DrawUI(void)
+	void DrawUI(void) override
 	{
 		ImGui::Text("MagicDesk Cartridge");
 	}
@@ -749,7 +751,7 @@ public:
 		return false;
 	}
 
-	void DrawUI(void)
+	void DrawUI(void) override
 	{
 		ImGui::Text("EasyFlash Cartridge");
 	}
