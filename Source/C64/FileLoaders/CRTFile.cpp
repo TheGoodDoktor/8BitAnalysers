@@ -596,7 +596,7 @@ const char* GetMemoryModelName(ECartridgeMemoryModel model)
 
 void DrawSlotUI(const FCartridgeSlot& slot)
 {
-	ImGui::Text("Address $ % 04X, $ % 04X bytes", slot.BaseAddress, slot.Size);
+	ImGui::Text("Address $ %04X, $ %04X bytes", slot.BaseAddress, slot.Size);
 	ImGui::Text("%s", slot.bActive ? "Active" : "Inactive");
 	ImGui::Text("Bank %d",slot.CurrentBank);
 }
@@ -651,7 +651,7 @@ public:
 		return true;
 	}
 
-	void DrawUI(void)
+	void DrawUI(void) override
 	{
 		ImGui::Text("MagicDesk Cartridge");
 	}

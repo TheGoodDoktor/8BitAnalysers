@@ -398,7 +398,7 @@ void FC64Display::DrawUI()
 		const FAddressRef lastCharWriter = CodeAnalysis->GetLastWriterForAddress(SelectCharAddr);
 		ImGui::Text("Char Address: $%X, Last Writer:", SelectCharAddr);
 		if (lastCharWriter.IsValid())
-			(*CodeAnalysis, viewState, lastCharWriter);
+			DrawAddressLabel(*CodeAnalysis, viewState, lastCharWriter);
 
 		const FAddressRef lastColourRamWriter = CodeAnalysis->GetLastWriterForAddress(SelectColourRamAddr);
 		ImGui::Text("Colour RAM Address: $%X, Last Writer:", SelectColourRamAddr);

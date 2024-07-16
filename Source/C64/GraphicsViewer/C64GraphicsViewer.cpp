@@ -506,6 +506,8 @@ void FC64GraphicsViewer::DrawScreenViewer()
 			DrawBitmapScreen(true);
 			bBitmapMode = true;
 			break;
+		default:	// TODO: Handle this properly...
+			break;
 	}
 
 	DrawMemoryAccessCombo();

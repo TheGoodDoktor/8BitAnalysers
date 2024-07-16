@@ -65,7 +65,7 @@ private:
 	//FAddressRef GetAddressOfCharData(int x, int y);
 	//void	DrawScreenAccessOverlay(float x,float y, bool bBitmapMode);
 
-	void	DrawScreenViewer();
+	void	DrawScreenViewer() override;
 	void	DrawHiResSpriteAt(uint16_t addr, int xp, int yp);
 	void	DrawMultiColourSpriteAt(uint16_t addr, int xp, int yp);
 private:
