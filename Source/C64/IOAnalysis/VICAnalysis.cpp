@@ -33,12 +33,12 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 				const int charX = charNo % 40;
 				const int charY = charNo / 40;
 
-				sprintf(DescStr, "<Screen Char: %d,%d>", charX, charY);
+				snprintf(DescStr, sizeof(DescStr), "<Screen Char: %d,%d>", charX, charY);
 				return DescStr;
 			}
 			else if(addr.Address >= spritePtrs && addr.Address < spritePtrs + 8)
 			{
-				sprintf(DescStr, "<Sprite%dImageNo>", addr.Address - spritePtrs);
+				snprintf(DescStr, sizeof(DescStr), "<Sprite%dImageNo>", addr.Address - spritePtrs);
 				return DescStr;
 			}
 			else if (bBitmapMode && addr.Address >= BitmapAddress && addr.Address < BitmapAddress + (1 << 13))
@@ -48,7 +48,7 @@ class FVICMemDescGenerator : public FMemoryRegionDescGenerator
 				const int bitmapX = bitmapAddressOffset % 40;
 				const int bitmapY = bitmapAddressOffset / 40;
 
-				sprintf(DescStr, "<Bitmap Screen: %d,%d>",bitmapX,bitmapY);
+				snprintf(DescStr, sizeof(DescStr), "<Bitmap Screen: %d,%d>",bitmapX,bitmapY);
 				return DescStr;
 			}
 			return nullptr;
@@ -96,7 +96,7 @@ public:
 		const int ColRAMAddr = addr.Address - RegionMin;
 		const int colX = ColRAMAddr % 40;
 		const int colY = ColRAMAddr / 40;
-		sprintf(DescStr, "<Colour RAM: %d,%d>", colX, colY);
+		snprintf(DescStr, sizeof(DescStr), "<Colour RAM: %d,%d>", colX, colY);
 		return DescStr;
 	}
 private:

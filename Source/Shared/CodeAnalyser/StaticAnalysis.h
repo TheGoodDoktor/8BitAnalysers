@@ -34,6 +34,8 @@ struct FStaticAnalysisItem
 class FStaticAnalysisCheck
 {
 public:
+	virtual ~FStaticAnalysisCheck(){}
+	
 	virtual void Reset(){}
 	virtual FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) = 0;
 };
