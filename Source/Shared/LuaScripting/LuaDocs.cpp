@@ -17,17 +17,17 @@ const FLuaDocFunc* FLuaDocLib::GetFunctionByName(const char* pName) const
 	return nullptr;
 }
 
-#ifndef NDEBUG
 void FLuaDocLib::Verify(const luaL_Reg* pReg) const
 {
+#ifndef NDEBUG
 	// Go through all lua libs and see if we have documentation for all the functions.
 	for (int i = 0; pReg[i].name != nullptr; i++)
 	{
 		if (GetFunctionByName(pReg[i].name) == nullptr)
 			LOGWARNING("Lua func '%s' for lib '%s' not documented", pReg[i].name, Name.c_str());
 	}
-}
 #endif
+}
 
 void ClearLuaDocs(void)
 {
