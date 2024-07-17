@@ -38,7 +38,9 @@
 #include "CodeAnalyser/CodeAnalysisJson.h"
 #include "ZXSpectrumGameConfig.h"
 
+#include "LuaScripting/LuaDocs.h"
 #include "LuaScripting/LuaSys.h"
+#include "LuaScripting/LuaCoreAPI.h"
 #include "SpectrumLuaAPI.h"
 #include "SnapshotLoaders/Z80Loader.h"
 #include "SnapshotLoaders/SNALoader.h"
@@ -961,6 +963,13 @@ bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /
 
 bool FSpectrumEmu::LoadLua()
 {
+	if (GetGlobalConfig()->bEnableLua == true)
+	{
+		ClearLuaDocs();
+		AddCoreLibLuaDoc();
+		AddZXLibLuaDocs();
+	}
+
 	// Setup Lua - reinitialised for each game
 	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
 	if (LuaSys::Init(this))

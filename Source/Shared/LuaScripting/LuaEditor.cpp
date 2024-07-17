@@ -53,6 +53,7 @@ bool InitTextEditors(void)
 {
 	EnumerateTemplates();
 	TextEditors.clear();
+	g_FunctionToolTips.clear();
 	return true;
 }
 

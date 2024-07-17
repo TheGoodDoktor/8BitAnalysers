@@ -9,6 +9,7 @@ extern "C"
 
 #include "LuaSys.h"
 #include "LuaUtils.h"
+#include "LuaDocs.h"
 
 #include "Misc/EmuBase.h"
 #include "Misc/GlobalConfig.h"
@@ -334,7 +335,7 @@ static int DrawOtherGraphicsViewScaled(lua_State *pState)
 	if (pGraphicsView == nullptr)
 		return 0;
 
-	FGraphicsView* pOtherGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
+	FGraphicsView* pOtherGraphicsView = (FGraphicsView*)lua_touserdata(pState, 2 );
 	if (pOtherGraphicsView == nullptr)
 		return 0;
 
@@ -375,6 +376,60 @@ static const luaL_Reg corelib[] =
 	{NULL, NULL}    // terminator
 };
 
+void AddCoreLibLuaDoc(void)
+{
+	FLuaDocLib& luaDocLib = AddLuaDocLib("Core API");
+
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("print", "Log text to the debug log.", "", { "..."}, ""));
+
+	// Memory/Machine state
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("ReadByte", "Read a byte from memory.", "", { "int address" }, "int value"));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("ReadWord", "Read a word from memory.", "", { "int address" }, "int value"));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("GetMemPtr", "Get pointer at memory address.", "", { "int address" }, "uint8_t* memory"));
+	
+	// Analysis
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("SetDataItemComment", "Set comment of data item at address.", "", { "int address", "string comment" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("SetCodeItemComment", "Set comment of code item at address.", "", { "int address", "string comment" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("AddCommentBlock", "Set comment block at address.", "", { "int address", "string comment" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("SetDataItemDisplayType", "Set the display type of the item at address.", "See LuaBase.lua for supported enums.", { "int address", "EDataItemDisplayType type" }, ""));
+
+	// Formatting
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("FormatMemory", "Format memory at address, using a table to specify formatting options",
+		"Table fields\n\n"
+		"DataType : int (EDataType)*\n"
+		"DisplayType : int (EDataItemDisplayType)*\n"
+		"StartAddress : int\n"
+		"NoItems : int\n"
+		"ItemSize : int\n"
+		"CharacterSet : int\n"
+		"GraphicsSetRef : int\n"
+		"PaletteNo : int\n"
+		"StructId : int\n"
+		"RegisterItem : bool\n"
+		"ClearCodeInfo : bool\n"
+		"ClearLabels : bool\n"
+		"AddLabelAtStart : bool\n"
+		"LabelName : string\n"
+		"AddCommentAtStart : bool\n"
+		"CommentText : string\n\n"
+		"* See LuaBase.lua for enums\n\n"
+		"See the Format tab in the Code Analysis view for an idea of how this works. It follows the same procedure.", { "{table}" }, ""));
+
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("FormatMemoryAsBitmap", "Format a region of memory as a bitmap.", "", { "int address", "int width", "int height", "int bpp" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("FormatMemoryAsCharMap", "Format a region of memory as a character map.", "", { "int address", "int width", "int height" }, ""));
+	
+	// UI
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawAddressLabel", "Draw a summary of a given address.", "", { "int address" }, ""));
+	
+	//Graphics
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("GetImageScale", "Get scaling value. TODO", "", { }, "float scale"));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("ClearGraphicsView", "Fill graphics view with a single colour.", "", { "GraphicsView view", "int colour" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawGraphicsView", "Draw the contents of a graphics view.", "", { "GraphicsView view" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("SaveGraphicsViewPNG", "Save graphics view to png file.", "", { "GraphicsView view", "string path" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawOtherGraphicsViewScaled", "TODO", "", { "GraphicsView view", "GraphicsView otherView", "int xPos", "int yPos", "int width", "int height" }, ""));
+
+	luaDocLib.Verify(corelib);
+}
 
 int luaopen_corelib(lua_State *pState)
 {

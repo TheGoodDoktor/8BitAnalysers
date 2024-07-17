@@ -10,6 +10,7 @@ extern "C"
 #include "LuaCoreAPI.h"
 #include "LuaConsole.h"
 #include "LuaEditor.h"
+#include "LuaDocs.h"
 
 #include "Misc/EmuBase.h"
 #include "Misc/GlobalConfig.h"
@@ -62,7 +63,10 @@ bool Init(FEmuBase* pEmulator)
 		return false;
 
 	InitTextEditors();
-	//Example: RegisterLuaFunctionToolTip("ReadByte", "Read byte from memory");
+
+	for (int i = 0; i < GetNumLuaDocLibs(); i++)
+		for (const FLuaDocFunc& func : GetLuaDocLibFromIndex(i)->Funcs)
+			RegisterLuaFunctionToolTip(func.Name.c_str(), func.Summary.c_str());
 
 	lua_State* pState = luaL_newstate();	// create the global state
 
@@ -300,6 +304,8 @@ void DrawUI()
 	}
 
 	DrawTextEditor();
+
+	DrawLuaDocs();
 }
 
 void DumpStack(lua_State *L)

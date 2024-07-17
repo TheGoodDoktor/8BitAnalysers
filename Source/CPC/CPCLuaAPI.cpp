@@ -7,6 +7,7 @@ extern "C"
 #include <lualib.h>
 }
 
+#include "LuaScripting/LuaDocs.h"
 #include "Viewers/CPCGraphicsView.h"
 
 static int CreateCPCGraphicsView(lua_State *pState)
@@ -127,6 +128,16 @@ static const luaL_Reg graphicsViewMT[] =
 
 	{NULL, NULL}    // terminator
 };
+
+void AddCPCLibLuaDocs(void)
+{
+	FLuaDocLib& luaDocLib = AddLuaDocLib("CPC API");
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("CreateCPCGraphicsView", "Create graphics view for drawing CPC graphics.", "", { "int width", "int height"}, "View"));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawCPCBitImage", "todo desc", "", { "GraphicsView view", "uint8_t* imageData", "int xPos", "int yPos", "int width", "int height", "int paletteIndex", "int paperIndex", "int inkIndex" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawCPCMode0Image", "Draw Mode 0 image to graphics view.", "", { "GraphicsView view", "uint8_t* imageData", "int xPos", "int yPos", "int width", "int height", "int paletteIndex" }, ""));
+	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawCPCMode1Image", "Draw Mode 1 image to graphics view.", "", { "GraphicsView view", "uint8_t* imageData", "int xPos", "int yPos", "int width", "int height", "int paletteIndex" }, ""));
+	luaDocLib.Verify(cpclib);
+}
 
 int RegisterCPCLuaAPI(lua_State *pState)
 {

@@ -31,6 +31,8 @@
 
 #include <ImGuiSupport/ImGuiTexture.h>
 
+#include "LuaScripting/LuaDocs.h"
+#include "LuaScripting/LuaCoreAPI.h"
 #include "LuaScripting/LuaSys.h"
 #include "CPCLuaAPI.h"
 #include "SnapshotLoaders/SNALoader.h"
@@ -1327,6 +1329,13 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 
 bool FCPCEmu::LoadLua()
 {
+	if (GetGlobalConfig()->bEnableLua == true)
+	{
+		ClearLuaDocs();
+		AddCoreLibLuaDoc();
+		AddCPCLibLuaDocs();
+	}
+
 	// Setup Lua - reinitialised for each game
 	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
 	if (LuaSys::Init(this))
@@ -1336,7 +1345,10 @@ bool FCPCEmu::LoadLua()
 		for (const auto& gameScript : pCurrentProjectConfig->LuaSourceFiles)
 		{
 			std::string luaScriptFName = gameRoot + gameScript;
-			LuaSys::LoadFile(luaScriptFName.c_str(), true);
+			if (LuaSys::LoadFile(luaScriptFName.c_str(), true))
+			{
+				LOGINFO("Load Lua '%s' OK", gameScript.c_str());
+			}
 		}
 		return true;
 	}
@@ -1475,11 +1487,21 @@ bool FCPCEmu::SaveProject(void)
 
 bool FCPCEmu::LoadEmulatorFile(const FEmulatorFile* pEmuFile)
 {
-	auto findIt = GamesLists.find(pEmuFile->ListName);
-	if (findIt == GamesLists.end())
-		return false;
+	std::string rootDir;
+	if (!pEmuFile->ListName.empty())
+	{
+		auto findIt = GamesLists.find(pEmuFile->ListName);
+		if (findIt == GamesLists.end())
+			return false;
+		rootDir = findIt->second.GetRootDir();
+	}
+	else
+	{
+		// Deal with a legacy project that didn't have a list set.
+		rootDir = GetCPCGlobalConfig()->SnapshotFolder;
+	}
 
-	const std::string fileName = findIt->second.GetRootDir() + pEmuFile->FileName;
+	const std::string fileName = rootDir + pEmuFile->FileName;
 
 	switch (pEmuFile->Type)
 	{
