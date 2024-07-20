@@ -1,0 +1,187 @@
+{
+    "Functions": [
+        {
+            "Args": [
+                "..."
+            ],
+            "Description": "",
+            "Name": "print",
+            "Returns": "",
+            "Summary": "Log text to the debug log.",
+            "Usage": "answer = 42\nprint(\"The answer is \" .. answer)"
+        },
+        {
+            "Args": [
+                "int address"
+            ],
+            "Description": "",
+            "Name": "ReadByte",
+            "Returns": "int value",
+            "Summary": "Read a byte from memory.",
+            "Usage": "print(\"The byte value at memory address 0 is \" .. ReadByte(0))"
+        },
+        {
+            "Args": [
+                "int address"
+            ],
+            "Description": "",
+            "Name": "ReadWord",
+            "Returns": "int value",
+            "Summary": "Read a word from memory.",
+            "Usage": "print(\"The word value at memory address 0 is \" .. ReadWord(0))"
+        },
+        {
+            "Args": [
+                "int address"
+            ],
+            "Description": "",
+            "Name": "GetMemPtr",
+            "Returns": "uint8_t* memory",
+            "Summary": "Get pointer at memory address.",
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)"
+        },
+        {
+            "Args": [
+                "int address",
+                "string comment"
+            ],
+            "Description": "",
+            "Name": "SetDataItemComment",
+            "Returns": "",
+            "Summary": "Set the comment of a data item at address.",
+            "Usage": "SetDataItemComment(0x8000, \"This data is interesting.\")"
+        },
+        {
+            "Args": [
+                "int address",
+                "string comment"
+            ],
+            "Description": "",
+            "Name": "SetCodeItemComment",
+            "Returns": "",
+            "Summary": "Set the comment of a code item at address.",
+            "Usage": "SetCodeItemComment(0, \"This code is interesting.\")"
+        },
+        {
+            "Args": [
+                "int address",
+                "string comment"
+            ],
+            "Description": "",
+            "Name": "AddCommentBlock",
+            "Returns": "",
+            "Summary": "Set the comment block at address.",
+            "Usage": "AddCommentBlock(0x8000, \"This is a comment block\")"
+        },
+        {
+            "Args": [
+                "int address",
+                "EDataItemDisplayType type"
+            ],
+            "Description": "See LuaBase.lua for supported enums.",
+            "Name": "SetDataItemDisplayType",
+            "Returns": "",
+            "Summary": "Set the display type of the item at address.",
+            "Usage": "SetDataItemDisplayType(0x4001, EDataItemDisplayType.Binary)"
+        },
+        {
+            "Args": [
+                "{table}"
+            ],
+            "Description": "Table fields\n\nDataType : EDataType*\nDisplayType : EDataItemDisplayType*\nStartAddress : int\nNoItems : int\nItemSize : int\nCharacterSet : int\nGraphicsSetRef : int\nPaletteNo : int\nStructId : int\nRegisterItem : bool\nClearCodeInfo : bool\nClearLabels : bool\nAddLabelAtStart : bool\nLabelName : string\nAddCommentAtStart : bool\nCommentText : string\n\n* See LuaBase.lua for enums\n\nSee the Format tab in the Code Analysis view for an idea of how this works. It follows the same procedure.",
+            "Name": "FormatMemory",
+            "Returns": "",
+            "Summary": "Format memory at address, using a table to specify formatting options",
+            "Usage": "FormatMemory({ StartAddress = 0x3ff8, DataType = EDataType.Byte, ItemSize = 1, NoItems = 8, DisplayType = EDataItemDisplayType.Binary })"
+        },
+        {
+            "Args": [
+                "int address",
+                "int width",
+                "int height",
+                "int bpp"
+            ],
+            "Description": "",
+            "Name": "FormatMemoryAsBitmap",
+            "Returns": "",
+            "Summary": "Format a region of memory as a bitmap.",
+            "Usage": "FormatMemoryAsBitmap(0x5000, 16, 16, 1)"
+        },
+        {
+            "Args": [
+                "int address",
+                "int width",
+                "int height"
+            ],
+            "Description": "",
+            "Name": "FormatMemoryAsCharMap",
+            "Returns": "",
+            "Summary": "Format a region of memory as a character map.",
+            "Usage": "FormatMemoryAsCharMap(0x5000, 32, 20)"
+        },
+        {
+            "Args": [
+                "int address"
+            ],
+            "Description": "This function must be called every frame in order to work.",
+            "Name": "DrawAddressLabel",
+            "Returns": "",
+            "Summary": "Draw a summary of a given address.",
+            "Usage": "DrawAddressLabel(0)"
+        },
+        {
+            "Description": "This gets the internal scaling value that is used to scale various graphical elements. This value is derived from the current font size.",
+            "Name": "GetImageScale",
+            "Returns": "float scale",
+            "Summary": "Get the internal scaling value.",
+            "Usage": "print(\"The current scaling value is \" .. GetImageScale())"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "int colour"
+            ],
+            "Description": "Colour is specified in the AABBGGRR format.",
+            "Name": "ClearGraphicsView",
+            "Returns": "",
+            "Summary": "Fill a graphics view with a single colour.",
+            "Usage": "image = CreateZXGraphicsView(256, 192)\nClearGraphicsView(image, 0xffff0000)"
+        },
+        {
+            "Args": [
+                "GraphicsView view"
+            ],
+            "Description": "This function needs to be called every frame in order to work.",
+            "Name": "DrawGraphicsView",
+            "Returns": "",
+            "Summary": "Draw the contents of a graphics view.",
+            "Usage": "SampleViewer =\n\t{\n\t\tname = \"Sample Viewer\",\n\t\tgraphicsView = nil,\n\t\tonAdd = function(self)\n\t\t\tself.graphicsView = CreateZXGraphicsView(128,128)\n\t\t\tClearGraphicsView(self.graphicsView, 0xffff0000)\n\t\tend,\n\t\tonDrawUI = function(self)\n\t\t\tDrawGraphicsView(self.graphicsView)\n\t\tend\n\t}\n\n\nAddViewer(SampleViewer);"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "string filename"
+            ],
+            "Description": "A PNG is written to disk with the contents of the graphics view. The PNG is written to the project's directory using the filename passed in.",
+            "Name": "SaveGraphicsViewPNG",
+            "Returns": "",
+            "Summary": "Save a graphics view to a PNG file.",
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)\nSaveGraphicsViewPNG(image, \"Glyph.png\")"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "GraphicsView otherView",
+                "int xPos",
+                "int yPos",
+                "int width",
+                "int height"
+            ],
+            "Description": "Graphics can be optionally scaled by setting a width and height different to the original.",
+            "Name": "DrawOtherGraphicsViewScaled",
+            "Returns": "",
+            "Summary": "Draw the contents of one graphics view onto another graphics view.",
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nglyphImage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(glyphImage, glyphData, 0, 0, 1, 1)\ndestImage = CreateZXGraphicsView(128, 128)\nDrawOtherGraphicsViewScaled(destImage, glyphImage, 0, 0, 64, 64)\n"
+        }
+    ]
+}

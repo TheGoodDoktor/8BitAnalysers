@@ -133,12 +133,9 @@ static const luaL_Reg graphicsViewMT[] =
 
 void AddZXLibLuaDocs(void)
 {
-	FLuaDocLib& luaDocLib = AddLuaDocLib("ZX Spectrum API");
-	luaDocLib.Funcs.emplace_back(FLuaDocFunc("CreateZXGraphicsView", "Create graphics view for drawing ZX Spectrum graphics.", "", { "int width", "int height" }, "GraphicsView view"));
-	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawZXBitImage", "Draw ZX Spectrum pixels to a graphics view. Height and width are specified in characters.", "", { "GraphicsView view", "uint8_t* pixels", "int xPos", "int yPos", "int widthChars", "int heightChars", "optionally int attrib or uint8_t* attribs" }, ""));
-	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawZXBitImageMask", "TODO", "", { "GraphicsView view", "uint8_t* pixels", "int xPos", "int yPos", "int widthChars", "int heightChars", "int attrib", "int stride" }, ""));
-	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawZXBitImageFineY", "Draw ZX Spectrum pixels to a graphics view. Height is specified in pixels. Width is specified in characters.", "", { "GraphicsView view", "uint8_t* pixels", "int xPos", "int yPos", "int widthChars", "int heightPixels", "int attrib", "int stride" }, ""));
-	luaDocLib.Verify(spectrumlib);
+	FLuaDocLib& zxLuaDocLib = AddLuaDocLib("ZX Spectrum API");
+	LoadLuaDocLibFromJson(zxLuaDocLib, "Lua\\Docs\\SpectrumLuaAPIDocs.json");
+	zxLuaDocLib.Verify(spectrumlib);
 }
 
 int RegisterSpectrumLuaAPI(lua_State *pState)
@@ -151,5 +148,5 @@ int RegisterSpectrumLuaAPI(lua_State *pState)
 	luaL_setfuncs(pState, graphicsViewMT, 0);
 	lua_pop(pState, 1);
 
-    return 1;
+	return 1;
 }

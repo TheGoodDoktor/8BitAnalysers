@@ -4,8 +4,36 @@
 #include <imgui.h>
 
 #include "Debug/DebugLog.h"
+#include "json.hpp"
+
+#include <fstream>
+#include <sstream>
+
+using json = nlohmann::json;
 
 std::vector<FLuaDocLib> gLuaDocLibs;
+
+void FLuaDocLib::LoadFromJson(const nlohmann::json& jsonDoc)
+{
+	for (const auto& funcJson : jsonDoc["Functions"])
+	{
+		FLuaDocFunc func;
+		func.Name = funcJson["Name"].get<std::string>();
+		func.Summary = funcJson["Summary"].get<std::string>();
+		func.Description = funcJson["Description"].get<std::string>();
+		func.Returns = funcJson["Returns"].get<std::string>();
+		func.Usage = funcJson["Usage"].get<std::string>();
+
+		if (funcJson.contains("Args"))
+		{
+			for (const auto& argJson : funcJson["Args"])
+			{
+				func.Args.push_back(argJson);
+			}
+		}
+		Funcs.emplace_back(func);
+	}
+}
 
 const FLuaDocFunc* FLuaDocLib::GetFunctionByName(const char* pName) const
 {
@@ -27,6 +55,54 @@ void FLuaDocLib::Verify(const luaL_Reg* pReg) const
 			LOGWARNING("Lua func '%s' for lib '%s' not documented", pReg[i].name, Name.c_str());
 	}
 #endif
+}
+
+bool LoadLuaDocLibFromJson(FLuaDocLib& luaDocLib, const char* fname)
+{
+	std::ifstream inFileStream(fname);
+	if (inFileStream.is_open() == false)
+		return false;
+
+	json jsonFile;
+
+	inFileStream >> jsonFile;
+	inFileStream.close();
+
+	luaDocLib.LoadFromJson(jsonFile);
+
+	return true;
+}
+
+// This is for development purposes only.
+bool SaveLuaDocLibToJson(const FLuaDocLib& luaDocLib, const char* fname)
+{
+#ifndef NDEBUG
+	json jsonFile;
+
+	for (const FLuaDocFunc& func : luaDocLib.Funcs)
+	{
+		json funcJson;
+		funcJson["Name"] = func.Name;
+		funcJson["Summary"] = func.Summary;
+		funcJson["Description"] = func.Description;
+		funcJson["Returns"] = func.Returns;
+		funcJson["Usage"] = func.Usage;
+
+		for (const auto& arg : func.Args)
+		{
+			funcJson["Args"].push_back(arg);
+		}
+		jsonFile["Functions"].push_back(funcJson);
+	}
+
+	std::ofstream outFileStream(fname);
+	if (outFileStream.is_open())
+	{
+		outFileStream << std::setw(4) << jsonFile << std::endl;
+		return true;
+	}
+#endif
+	return false;
 }
 
 void ClearLuaDocs(void)
@@ -113,6 +189,27 @@ void DrawLuaDocs(void)
 							ImGui::BulletText(func.Returns.c_str());
 						}
 						ImGui::Spacing();
+
+						// Usage
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("Usage");
+						ImGui::Spacing();
+						ImGui::Indent();
+						ImGui::TextWrapped(func.Usage.c_str());
+						
+						if (ImGui::BeginPopupContextItem("doc usage menu"))
+						{
+							if (ImGui::Selectable("Copy Text"))
+							{
+								ImGui::SetClipboardText(func.Usage.c_str());
+							}
+							ImGui::EndPopup();
+						}
+						
+						ImGui::Unindent();
+						ImGui::Spacing();
+
 						ImGui::EndTable();
 						ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() / 2.0f));
 					}
