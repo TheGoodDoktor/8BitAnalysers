@@ -155,7 +155,7 @@
             "Name": "DrawGraphicsView",
             "Returns": "",
             "Summary": "Draw the contents of a graphics view.",
-            "Usage": "SampleViewer =\n\t{\n\t\tname = \"Sample Viewer\",\n\t\tgraphicsView = nil,\n\t\tonAdd = function(self)\n\t\t\tself.graphicsView = CreateZXGraphicsView(128,128)\n\t\t\tClearGraphicsView(self.graphicsView, 0xffff0000)\n\t\tend,\n\t\tonDrawUI = function(self)\n\t\t\tDrawGraphicsView(self.graphicsView)\n\t\tend\n\t}\n\n\nAddViewer(SampleViewer);"
+            "Usage": "SampleViewer =\n{\n\tname = \"Sample Viewer\",\n\tgraphicsView = nil,\n\tonAdd = function(self)\n\t\tself.graphicsView = CreateZXGraphicsView(128,128)\n\t\tClearGraphicsView(self.graphicsView, 0xffff0000)\n\tend,\n\tonDrawUI = function(self)\n\t\tDrawGraphicsView(self.graphicsView)\n\tend\n}\nAddViewer(SampleViewer);"
         },
         {
             "Args": [

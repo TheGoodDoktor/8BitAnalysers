@@ -21,7 +21,7 @@
                 "int heightChars",
                 "int attrib or uint8_t* attribs"
             ],
-            "Description": "For the attributes, a single attribute value can be passed, or optionally an attribute map can be passed. An attribute map should hold an attribute for each character of the image.",
+            "Description": "For the attributes, a single byte attribute value can be passed, or optionally an uint8_t* attribute map can be passed. An attribute map should hold an attribute for each character of the image.",
             "Name": "DrawZXBitImage",
             "Returns": "",
             "Summary": "Draw ZX Spectrum pixels to a graphics view. Height and width are specified in characters.",

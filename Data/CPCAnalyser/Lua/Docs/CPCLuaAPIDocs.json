@@ -1,0 +1,65 @@
+{
+    "Functions": [
+        {
+            "Args": [
+                "int width",
+                "int height"
+            ],
+            "Description": "The graphics view can support Mode 0 or Mode 1 graphics. Graphics can be drawn to the view with DrawCPCBitImage, DrawCPCMode0Image or DrawCPCMode1Image.",
+            "Name": "CreateCPCGraphicsView",
+            "Returns": "GraphicsView",
+            "Summary": "Create a graphics view for drawing CPC graphics.",
+            "Usage": "view = CreateCPCGraphicsView(128, 128)"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "uint8_t* imageData",
+                "int xPos = 0",
+                "int yPos = 0",
+                "int widthPixels = 8",
+                "int heightPixels = 8",
+                "int paletteIndex = 0*",
+                "int paperIndex = 0*",
+                "int inkIndex = 1*"
+            ],
+            "Description": "A pair of colours can be specified by passing in a palette index, paper index and ink index. Palette index specifies which palette to use. The 2 colours from the palette can be chosen by specifying a paper index and ink index. These specify an index into the palette.\n\nIn the situation where there are no palettes defined, the bitmap will be drawn in black and white.\n\n*These arguments are optional. Default values will be used if they are omitted.",
+            "Name": "DrawCPCBitImage",
+            "Returns": "",
+            "Summary": "Draw bitmap (1bpp) graphics to a graphics view.",
+            "Usage": "pixelData = GetMemPtr(0x8000)\nimage = CreateCPCGraphicsView(128, 128)\nDrawCPCBitImage(image, pixelData, 0, 0, 16, 16, 0, 0, 1)"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "uint8_t* imageData",
+                "int xPos = 0",
+                "int yPos = 0",
+                "int widthPixels = 8",
+                "int heightPixels = 8",
+                "int paletteIndex = 0"
+            ],
+            "Description": "Each pixel in the imageData is a 4 bit index. The index is used to lookup a colour from the specified palette. The palette must be a 16 colour palette othwerwise the draw call will fail.",
+            "Name": "DrawCPCMode0Image",
+            "Returns": "",
+            "Summary": "Draw a Mode 0 (4bpp) image to a graphics view.",
+            "Usage": "pixelData = GetMemPtr(0x8000)\nimage = CreateCPCGraphicsView(128, 128)\nDrawCPCMode0Image(image, pixelData, 0, 0, 16, 16, 0)"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "uint8_t* imageData",
+                "int xPos = 0",
+                "int yPos = 0",
+                "int width = 8",
+                "int height = 8",
+                "int paletteIndex = 0"
+            ],
+            "Description": "Each pixel in the imageData is a 2 bit index. The index is used to lookup a colour from the specified palette.",
+            "Name": "DrawCPCMode1Image",
+            "Returns": "",
+            "Summary": "Draw a Mode 1 (2bpp) image to a graphics view.",
+            "Usage": "pixelData = GetMemPtr(0x8000)\nimage = CreateCPCGraphicsView(128, 128)\nDrawCPCMode1Image(image, pixelData, 0, 0, 16, 16, 0)"
+        }
+    ]
+}

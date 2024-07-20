@@ -25,7 +25,6 @@ static int CreateCPCGraphicsView(lua_State *pState)
 	return 1;
 }
 
-
 static int FreeGraphicsView(lua_State* pState)
 {
 	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1);
@@ -131,12 +130,9 @@ static const luaL_Reg graphicsViewMT[] =
 
 void AddCPCLibLuaDocs(void)
 {
-	FLuaDocLib& luaDocLib = AddLuaDocLib("CPC API");
-	luaDocLib.Funcs.emplace_back(FLuaDocFunc("CreateCPCGraphicsView", "Create graphics view for drawing CPC graphics.", "", { "int width", "int height"}, "View", ""));
-	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawCPCBitImage", "todo desc", "", { "GraphicsView view", "uint8_t* imageData", "int xPos", "int yPos", "int width", "int height", "int paletteIndex", "int paperIndex", "int inkIndex" }, "", ""));
-	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawCPCMode0Image", "Draw Mode 0 image to graphics view.", "", { "GraphicsView view", "uint8_t* imageData", "int xPos", "int yPos", "int width", "int height", "int paletteIndex" }, "", ""));
-	luaDocLib.Funcs.emplace_back(FLuaDocFunc("DrawCPCMode1Image", "Draw Mode 1 image to graphics view.", "", { "GraphicsView view", "uint8_t* imageData", "int xPos", "int yPos", "int width", "int height", "int paletteIndex" }, "", ""));
-	luaDocLib.Verify(cpclib);
+	FLuaDocLib& cpcLuaDocLib = AddLuaDocLib("CPC API");
+	LoadLuaDocLibFromJson(cpcLuaDocLib, "Lua\\Docs\\CPCLuaAPIDocs.json");
+	cpcLuaDocLib.Verify(cpclib);
 }
 
 int RegisterCPCLuaAPI(lua_State *pState)
