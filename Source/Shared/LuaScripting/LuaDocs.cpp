@@ -4,6 +4,8 @@
 #include <imgui.h>
 
 #include "Debug/DebugLog.h"
+#include <ImGuiSupport/ImGuiScaling.h>
+
 #include "json.hpp"
 
 #include <fstream>
@@ -12,26 +14,46 @@
 using json = nlohmann::json;
 
 std::vector<FLuaDocLib> gLuaDocLibs;
+int gSelectedFunctionIndex = 0;
+
+void FLuaDocFunc::MakeDefinition()
+{
+	// Build a string for the function's definition, to save making it every time we want it.
+	std::string allArgs;
+	for (int i = 0; i < Args.size(); i++)
+	{
+		allArgs += Args[i];
+		if (i < Args.size() - 1)
+			allArgs += ", ";
+	}
+
+	const int kBufSize = 256;
+	char definitionString[kBufSize];
+	snprintf(definitionString, kBufSize, "%s%s(%s)", Returns.empty() ? "" : std::string(Returns + " ").c_str(), Name.c_str(), allArgs.c_str());
+		
+	Definition = definitionString;
+}
 
 void FLuaDocLib::LoadFromJson(const nlohmann::json& jsonDoc)
 {
 	for (const auto& funcJson : jsonDoc["Functions"])
 	{
-		FLuaDocFunc func;
-		func.Name = funcJson["Name"].get<std::string>();
-		func.Summary = funcJson["Summary"].get<std::string>();
-		func.Description = funcJson["Description"].get<std::string>();
-		func.Returns = funcJson["Returns"].get<std::string>();
-		func.Usage = funcJson["Usage"].get<std::string>();
+		std::string name = funcJson["Name"].get<std::string>();
+		std::string summary = funcJson["Summary"].get<std::string>();
+		std::string description = funcJson["Description"].get<std::string>();
+		std::string returns = funcJson["Returns"].get<std::string>();
+		std::string usage = funcJson["Usage"].get<std::string>();
+		std::vector<std::string> args;
 
 		if (funcJson.contains("Args"))
 		{
 			for (const auto& argJson : funcJson["Args"])
 			{
-				func.Args.push_back(argJson);
+				args.push_back(argJson);
 			}
 		}
-		Funcs.emplace_back(func);
+
+		Funcs.emplace_back(FLuaDocFunc(name.c_str(), summary.c_str(), description.c_str(), args, returns.c_str(), usage.c_str()));
 	}
 }
 
@@ -133,90 +155,133 @@ void DrawLuaDocs(void)
 {
 	if (ImGui::Begin("Lua API Docs"))
 	{
+		const float glyphWidth = ImGui_GetFontCharWidth();
+		ImGui::BeginChild("##LuaDocsFunctionList", ImVec2(glyphWidth * 30.f, 0), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX);
+		
+		int curIndex = 0;
 		for (const FLuaDocLib& lib : gLuaDocLibs)
 		{
 			if (ImGui::CollapsingHeader(lib.Name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() / 2.0f));
-				static ImGuiTableFlags flags = ImGuiTableFlags_Borders /*| ImGuiTableFlags_SizingFixedFit*/;
-
 				for (const FLuaDocFunc& func : lib.Funcs)
 				{
-					if (ImGui::BeginTable("table1", 1, flags))
-					{
-						ImGui::TableSetupColumn(func.Name.c_str());
-						ImGui::TableHeadersRow();
-
-						// Summary & Description
-						ImGui::TableNextRow();
-						ImGui::TableSetColumnIndex(0);
-						ImGui::TextWrapped(func.Summary.c_str());
-						if (!func.Description.empty())
-						{
-							ImGui::Text("");
-							ImGui::TextWrapped(func.Description.c_str());
-						}
-						ImGui::Spacing();
-
-						// Arguments
-						ImGui::TableNextRow();
-						ImGui::TableSetColumnIndex(0);
-						ImGui::Text("Arguments");
-						if (func.Args.empty())	
-						{
-							ImGui::BulletText("None");
-						}
-						else
-						{
-							for (const std::string& arg : func.Args)
-							{
-								ImGui::BulletText(arg.c_str());
-							}
-						}
-						ImGui::Spacing();
-
-						// Returns
-						ImGui::TableNextRow();
-						ImGui::TableSetColumnIndex(0);
-						ImGui::Text("Returns");
-
-						if (func.Returns.empty())
-						{
-							ImGui::BulletText("Nothing");
-						}
-						else
-						{
-							ImGui::BulletText(func.Returns.c_str());
-						}
-						ImGui::Spacing();
-
-						// Usage
-						ImGui::TableNextRow();
-						ImGui::TableSetColumnIndex(0);
-						ImGui::Text("Usage");
-						ImGui::Spacing();
-						ImGui::Indent();
-						ImGui::TextWrapped(func.Usage.c_str());
-						
-						if (ImGui::BeginPopupContextItem("doc usage menu"))
-						{
-							if (ImGui::Selectable("Copy Text"))
-							{
-								ImGui::SetClipboardText(func.Usage.c_str());
-							}
-							ImGui::EndPopup();
-						}
-						
-						ImGui::Unindent();
-						ImGui::Spacing();
-
-						ImGui::EndTable();
-						ImGui::Dummy(ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() / 2.0f));
-					}
+					if (ImGui::Selectable(func.Name.c_str(), gSelectedFunctionIndex == curIndex))
+						gSelectedFunctionIndex = curIndex;
+					curIndex++;
 				}
 			}
 		}
+			
+		ImGui::EndChild();
+		ImGui::SameLine();
+
+		if (ImGui::BeginChild("##LuaDocsFunctionDetails"))
+		{
+			curIndex = 0;
+
+			for (const FLuaDocLib& lib : gLuaDocLibs)
+			{
+				static ImGuiTableFlags flags = ImGuiTableFlags_Borders;
+
+				for (const FLuaDocFunc& func : lib.Funcs)
+				{
+					if (curIndex == gSelectedFunctionIndex)
+					{
+						if (ImGui::BeginTable("luadoctable", 1, flags))
+						{
+							ImGui::TableSetupColumn(func.Definition.c_str());
+							ImGui::TableHeadersRow();
+
+							// Summary & Description
+							ImGui::TableNextRow();
+							ImGui::TableSetColumnIndex(0);
+							ImGui::TextWrapped(func.Summary.c_str());
+							if (!func.Description.empty())
+							{
+								ImGui::Text("");
+								ImGui::TextWrapped(func.Description.c_str());
+							}
+							ImGui::Spacing();
+
+							// Arguments
+							ImGui::TableNextRow();
+							ImGui::TableSetColumnIndex(0);
+							ImGui::Text("Arguments");
+							if (func.Args.empty())
+							{
+								ImGui::BulletText("None");
+							}
+							else
+							{
+								for (const std::string& arg : func.Args)
+								{
+									ImGui::BulletText(arg.c_str());
+								}
+							}
+							ImGui::Spacing();
+
+							// Returns
+							ImGui::TableNextRow();
+							ImGui::TableSetColumnIndex(0);
+							ImGui::Text("Returns");
+
+							if (func.Returns.empty())
+							{
+								ImGui::BulletText("Nothing");
+							}
+							else
+							{
+								ImGui::BulletText(func.Returns.c_str());
+							}
+							ImGui::Spacing();
+
+							// Usage
+							ImGui::TableNextRow();
+							ImGui::TableSetColumnIndex(0);
+							ImGui::Text("Usage");
+							ImGui::Spacing();
+							ImGui::Indent();
+							ImGui::TextWrapped(func.Usage.c_str());
+
+							if (ImGui::BeginPopupContextItem("doc usage menu"))
+							{
+								if (ImGui::Selectable("Copy Text"))
+								{
+									ImGui::SetClipboardText(func.Usage.c_str());
+								}
+								ImGui::EndPopup();
+							}
+
+							ImGui::Unindent();
+							ImGui::Spacing();
+
+							ImGui::EndTable();
+						}
+					}
+					curIndex++;
+				}
+			}
+		}
+		ImGui::EndChild();
 	}
 	ImGui::End();
+}
 
+void GoToFunction(const char* pName)
+{
+	ImGui::SetWindowFocus("Lua API Docs");
+
+	int curIndex = 0;
+	for (const FLuaDocLib& lib : gLuaDocLibs)
+	{
+		for (const FLuaDocFunc& func : lib.Funcs)
+		{
+			if (func.Name == pName)
+			{
+				gSelectedFunctionIndex = curIndex;
+				return;
+			}
+			curIndex++;
+		}
+	}
 }

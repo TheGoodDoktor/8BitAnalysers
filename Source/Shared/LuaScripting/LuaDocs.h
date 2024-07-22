@@ -6,9 +6,15 @@
 
 struct luaL_Reg;
 
+/*struct FLuaDocArg
+{
+	std::string name;
+	std::string description;
+	std::string defaultValue; // if the argument has a default value then this argument is optional
+};*/
+
 struct FLuaDocFunc
 {
-	FLuaDocFunc() {}
 	FLuaDocFunc(const char* pName, const char* pSummary, const char* pDescription, std::vector<std::string> args, const char* pReturns, const char * pUsage)
 		: Name(pName)
 		, Summary(pSummary)
@@ -16,13 +22,19 @@ struct FLuaDocFunc
 		, Args(args)
 		, Returns(pReturns)
 		, Usage(pUsage)
-			{}
+	{
+		MakeDefinition(); 
+	}
+	void MakeDefinition();
+
 	std::string Name;
 	std::string Summary;
 	std::string Description;
 	std::string Returns;
 	std::string Usage;
 	std::vector<std::string> Args;
+
+	std::string Definition;
 };
 
 struct FLuaDocLib
@@ -47,3 +59,4 @@ int GetNumLuaDocLibs(void);
 FLuaDocLib* GetLuaDocLibFromIndex(int index);
 
 void DrawLuaDocs(void);
+void GoToFunction(const char* pName);
