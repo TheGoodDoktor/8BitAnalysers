@@ -15,6 +15,8 @@ struct FGlobalConfig
 	int					BranchLinesDisplayMode = 1;
 	std::string			LastGame;
 
+	std::string			ExportAssembler;	// which assembler to exort to
+
 	std::string			WorkspaceRoot = "./Workspace/";
 	std::string			SnapshotFolder = "./Games/";
 

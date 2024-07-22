@@ -62,6 +62,9 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 		}
 	}
 
+	if (jsonConfigFile.contains("ExportAssembler"))
+		ExportAssembler = jsonConfigFile["ExportAssembler"];
+	
 	// fixup paths
 	if (WorkspaceRoot.back() != '/')
 		WorkspaceRoot += "/";
@@ -84,6 +87,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["ImageScale"] = ImageScale;
     jsonConfigFile["EnableLua"] = bEnableLua;
 	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;
+	jsonConfigFile["ExportAssembler"] = ExportAssembler;	
 
 	for (const auto& luaSrc : LuaBaseFiles)
 	{

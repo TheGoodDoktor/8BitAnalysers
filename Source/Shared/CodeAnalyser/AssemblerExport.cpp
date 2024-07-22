@@ -1,5 +1,6 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "Util/Misc.h"
+#include "Misc/EmuBase.h"
 #include <util/z80dasm.h>
 #include "Debug/DebugLog.h"
 
@@ -8,25 +9,42 @@
 
 #include <CodeAnalyser/Z80/Z80Disassembler.h>
 #include "UI/CodeAnalyserUI.h"
+#include "Disassembler.h"
 
 struct FAssemblerConfig
 {
 	const char* DataBytePrefix = nullptr;
 	const char* DataWordPrefix = nullptr;
 	const char* DataTextPrefix = nullptr;
+	const char*	ORGText = nullptr;
 };
 
 FAssemblerConfig g_DefaultAsmConfig = {
 	"db",
 	"dw",
-	"ascii"
+	"ascii",
+	"org",
 };
 
-FAssemblerConfig g_ez80AsmConfig = {
+FAssemblerConfig g_SpasmAsmConfig = {
 	".db",
 	".dw",
-	"ascii"
+	".text",
+	".org",
 };
+
+static const std::map<std::string, const FAssemblerConfig*> g_Configs = 
+{
+	{"Spasm",	&g_SpasmAsmConfig}
+};
+
+const FAssemblerConfig* GetAssemblerConfig(const char* pConfigName)
+{
+	auto findIt = g_Configs.find(pConfigName);
+	if(findIt == g_Configs.end())
+		return &g_DefaultAsmConfig;
+	return findIt->second;
+}
 
 // Class to encapsulate ASM exporting
 class FASMExporter
@@ -54,14 +72,14 @@ class FASMExporter
 		FILE*			FilePtr = nullptr;
 		FCodeAnalysisState*	pCodeAnalyser = nullptr;
 
-		FAssemblerConfig*	pAssemblerConfig;
+		const FAssemblerConfig*	pAssemblerConfig;
 };
 
 FASMExporter::FASMExporter(const char* pFilename, FCodeAnalysisState* pState) 
 	: Filename(pFilename)
 	, pCodeAnalyser(pState) 
 {
-	pAssemblerConfig = &g_DefaultAsmConfig;
+	pAssemblerConfig = GetAssemblerConfig(pState->GetEmulator()->GetGlobalConfig()->ExportAssembler.c_str());
 }
 
 FASMExporter::~FASMExporter()
@@ -277,7 +295,8 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 	FCodeAnalysisState& state = *pCodeAnalyser;
 	// TODO: write screen memory regions
 
-	Output(".org %s\n", NumStr(startAddr));
+	// place an 'org' at the start
+	Output("%s %s\n",pAssemblerConfig->ORGText, NumStr(startAddr));
 
 	for (const FCodeAnalysisItem &item : pCodeAnalyser->ItemList)
 	{
@@ -305,7 +324,8 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 			if (addr == g_DbgAddress)
 				LOGINFO("DebugAddress");
 
-			const std::string dasmString = Z80GenerateDasmStringForAddress(state, addr, HexMode);
+			const std::string dasmString = GenerateDasmStringForAddress(state, addr, HexMode);
+
 			Markup::SetCodeInfo(pCodeInfo);
 			const std::string expString = Markup::ExpandString(dasmString.c_str());
 			Output("\t%s", expString.c_str());

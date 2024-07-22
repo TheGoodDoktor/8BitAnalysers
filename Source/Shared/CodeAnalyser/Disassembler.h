@@ -68,3 +68,5 @@ void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj);
 void DasmOutputU8(uint8_t val, dasm_output_t out_cb, void* user_data);
 void DasmOutputU16(uint16_t val, dasm_output_t out_cb, void* user_data);
 void DasmOutputD8(int8_t val, dasm_output_t out_cb, void* user_data);
+
+std::string GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode);
