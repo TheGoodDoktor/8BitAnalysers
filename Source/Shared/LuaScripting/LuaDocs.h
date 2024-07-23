@@ -59,4 +59,4 @@ int GetNumLuaDocLibs(void);
 FLuaDocLib* GetLuaDocLibFromIndex(int index);
 
 void DrawLuaDocs(void);
-void GoToFunction(const char* pName);
+void GoToLuaFunctionDoc(const char* pName);

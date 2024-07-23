@@ -7,8 +7,8 @@
             ],
             "Description": "",
             "Name": "CreateZXGraphicsView",
-            "Returns": "GraphicsView view",
-            "Summary": "Create graphics view for drawing ZX Spectrum graphics.",
+            "Returns": "GraphicsView",
+            "Summary": "Create a graphics view for drawing ZX Spectrum graphics.",
             "Usage": "view = CreateGraphicsView(128, 128)"
         },
         {
@@ -19,7 +19,7 @@
                 "int yPos",
                 "int widthChars",
                 "int heightChars",
-                "int attrib or uint8_t* attribs"
+                "uint8_t attrib or uint8_t* attribs"
             ],
             "Description": "For the attributes, a single byte attribute value can be passed, or optionally an uint8_t* attribute map can be passed. An attribute map should hold an attribute for each character of the image.",
             "Name": "DrawZXBitImage",
@@ -35,14 +35,14 @@
                 "int yPos",
                 "int widthChars",
                 "int heightChars",
-                "int attrib",
+                "uint8_t attrib",
                 "int stride"
             ],
-            "Description": "",
+            "Description": "This is experimental.",
             "Name": "DrawZXBitImageMask",
             "Returns": "",
-            "Summary": "TODO",
-            "Usage": ""
+            "Summary": "Draws an image with a byte intervleaved mask.",
+            "Usage": "gfxData = GetMemPtr(0x8000)\nimage = CreateZXGraphicsView(128, 128)\nDrawZXBitImageMask(image, gfxData, 0, 0, 2, 2)"
         },
         {
             "Args": [
@@ -52,7 +52,7 @@
                 "int yPos",
                 "int widthChars",
                 "int heightPixels",
-                "int attrib",
+                "uint8_t attrib",
                 "int stride"
             ],
             "Description": "",

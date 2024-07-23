@@ -267,7 +267,7 @@ void DrawLuaDocs(void)
 	ImGui::End();
 }
 
-void GoToFunction(const char* pName)
+void GoToLuaFunctionDoc(const char* pName)
 {
 	ImGui::SetWindowFocus("Lua API Docs");
 

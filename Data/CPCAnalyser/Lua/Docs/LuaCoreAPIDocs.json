@@ -12,37 +12,37 @@
         },
         {
             "Args": [
-                "int address"
+                "uint16_t address"
             ],
-            "Description": "",
+            "Description": "Returns the value of the byte at the given address.",
             "Name": "ReadByte",
-            "Returns": "int value",
+            "Returns": "uint8_t",
             "Summary": "Read a byte from memory.",
             "Usage": "print(\"The byte value at memory address 0 is \" .. ReadByte(0))"
         },
         {
             "Args": [
-                "int address"
+                "uint16_t address"
             ],
-            "Description": "",
+            "Description": "Returns the value of the word at the given address.",
             "Name": "ReadWord",
-            "Returns": "int value",
+            "Returns": "uint16_t",
             "Summary": "Read a word from memory.",
             "Usage": "print(\"The word value at memory address 0 is \" .. ReadWord(0))"
         },
         {
             "Args": [
-                "int address"
+                "uint16_t address"
             ],
-            "Description": "",
+            "Description": "Returns a pointer to memory at the given address.",
             "Name": "GetMemPtr",
-            "Returns": "uint8_t* memory",
+            "Returns": "uint8_t*",
             "Summary": "Get pointer at memory address.",
             "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)"
         },
         {
             "Args": [
-                "int address",
+                "uint16_t address",
                 "string comment"
             ],
             "Description": "",
@@ -53,7 +53,7 @@
         },
         {
             "Args": [
-                "int address",
+                "uint16_t address",
                 "string comment"
             ],
             "Description": "",
@@ -75,7 +75,7 @@
         },
         {
             "Args": [
-                "int address",
+                "uint16_t address",
                 "EDataItemDisplayType type"
             ],
             "Description": "See LuaBase.lua for supported enums.",
@@ -96,7 +96,7 @@
         },
         {
             "Args": [
-                "int address",
+                "uint16_t address",
                 "int width",
                 "int height",
                 "int bpp"
@@ -109,7 +109,7 @@
         },
         {
             "Args": [
-                "int address",
+                "uint16_t address",
                 "int width",
                 "int height"
             ],
@@ -121,7 +121,7 @@
         },
         {
             "Args": [
-                "int address"
+                "uint16_t address"
             ],
             "Description": "This function must be called every frame in order to work.",
             "Name": "DrawAddressLabel",
@@ -132,14 +132,14 @@
         {
             "Description": "This gets the internal scaling value that is used to scale various graphical elements. This value is derived from the current font size.",
             "Name": "GetImageScale",
-            "Returns": "float scale",
+            "Returns": "float",
             "Summary": "Get the internal scaling value.",
             "Usage": "print(\"The current scaling value is \" .. GetImageScale())"
         },
         {
             "Args": [
                 "GraphicsView view",
-                "int colour"
+                "uint32_t colour"
             ],
             "Description": "Colour is specified in the AABBGGRR format.",
             "Name": "ClearGraphicsView",
