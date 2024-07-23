@@ -15,13 +15,13 @@
             "Args": [
                 "GraphicsView view",
                 "uint8_t* imageData",
-                "int xPos = 0",
-                "int yPos = 0",
-                "int widthPixels = 8",
-                "int heightPixels = 8",
-                "int paletteIndex = 0*",
-                "int paperIndex = 0*",
-                "int inkIndex = 1*"
+                "int xPos",
+                "int yPos",
+                "int widthPixels",
+                "int heightPixels",
+                "int paletteIndex*",
+                "int paperIndex",
+                "int inkIndex "
             ],
             "Description": "A pair of colours can be specified by passing in a palette index, paper index and ink index. Palette index specifies which palette to use. The 2 colours from the palette can be chosen by specifying a paper index and ink index. These specify an index into the palette.\n\nIn the situation where there are no palettes defined, the bitmap will be drawn in black and white.\n\n*These arguments are optional. Default values will be used if they are omitted.",
             "Name": "DrawCPCBitImage",
@@ -33,11 +33,11 @@
             "Args": [
                 "GraphicsView view",
                 "uint8_t* imageData",
-                "int xPos = 0",
-                "int yPos = 0",
-                "int widthPixels = 8",
-                "int heightPixels = 8",
-                "int paletteIndex = 0"
+                "int xPos",
+                "int yPos",
+                "int widthPixels",
+                "int heightPixels",
+                "int paletteIndex"
             ],
             "Description": "Each pixel in the imageData is a 4 bit index. The index is used to lookup a colour from the specified palette. The palette must be a 16 colour palette othwerwise the draw call will fail.",
             "Name": "DrawCPCMode0Image",
@@ -49,11 +49,11 @@
             "Args": [
                 "GraphicsView view",
                 "uint8_t* imageData",
-                "int xPos = 0",
-                "int yPos = 0",
-                "int width = 8",
-                "int height = 8",
-                "int paletteIndex = 0"
+                "int xPos",
+                "int yPos",
+                "int width",
+                "int height",
+                "int paletteIndex"
             ],
             "Description": "Each pixel in the imageData is a 2 bit index. The index is used to lookup a colour from the specified palette.",
             "Name": "DrawCPCMode1Image",
