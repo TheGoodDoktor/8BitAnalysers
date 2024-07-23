@@ -573,12 +573,38 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 		// TODO: add edit support
 
-		ImGui::Text("db %s", NumStr(val));
+		ImGui::Text("db", NumStr(val));
+		ImGui::SameLine();
+		if (bShowASCII)
+		{
+			if (val == '\n')// carriage return messes up list
+				ImGui::Text("'<cr>'");
+			else
+				ImGui::Text("'%c'", val);
+		}
+		else
+		{
+			ImGui::Text("%s", NumStr(val));
+		}
+
 		for (int i = 1; i < pDataInfo->ByteSize; i++)	// first word already written
 		{
 			val = state.ReadByte(physAddr + i);
-			ImGui::SameLine();
-			ImGui::Text(",%s", NumStr(val));
+			ImGui::SameLine(0,0);
+			ImGui::Text(",", NumStr(val));
+			ImGui::SameLine(0,0);
+
+			if (bShowASCII)
+			{
+				if (val == '\n')// carriage return messes up list
+					ImGui::Text("'<cr>'");
+				else
+					ImGui::Text("'%c'", val);
+			}
+			else
+			{
+				ImGui::Text("%s", NumStr(val));
+			}
 		}
 	}
 	break;
