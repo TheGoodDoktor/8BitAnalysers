@@ -214,28 +214,8 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	switch (outputDataType)
 	{
 	case EDataType::Byte:
-	/* {
-		const uint8_t val = state.ReadByte(addr);
-		Output("%s %s", pAssemblerConfig->DataBytePrefix, NumStr(val, dispMode));
-	}
-	break;*/
 	case EDataType::ByteArray:
-	{
 		OutputDataItemBytes(addr,pDataInfo);
-	/*
-		std::string textString;
-		FAddressRef byteAddress = addr;
-		for (int i = 0; i < pDataInfo->ByteSize; i++)
-		{
-			const uint8_t val = state.ReadByte(byteAddress);
-			char valTxt[16];
-			snprintf(valTxt, 16, "%s%c", NumStr(val, dispMode), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
-			textString += valTxt;
-
-			state.AdvanceAddressRef(byteAddress,1);
-		}
-		Output("%s %s", pAssemblerConfig->DataBytePrefix, textString.c_str());*/
-	}
 	break;
 	case EDataType::Word:
 	{
@@ -270,6 +250,9 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	break;
 	case EDataType::Text:
 	{
+		OutputDataItemBytes(addr,pDataInfo);
+		// This old text export doesn't really work
+		/*
 		std::string textString;
 		FAddressRef charAddress = addr;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
@@ -279,6 +262,7 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 			state.AdvanceAddressRef(charAddress,1);
 		}
 		Output("%s '%s'", pAssemblerConfig->DataTextPrefix, textString.c_str());
+		*/
 	}
 	break;
 
@@ -342,7 +326,6 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		break;
 		case EItemType::Data:
 		{
-			//const FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
 			ExportDataInfoASM(item.AddressRef);
 		}
 		break;
