@@ -1805,6 +1805,10 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	{
 		ImGui::InputInt("Array Size", &formattingOptions.ItemSize);
 		ImGui::InputInt("Item Count", &formattingOptions.NoItems);
+		ImGui::Text("Display Mode:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(120.0f);
+		DrawDataDisplayTypeCombo("##dataOperand", formattingOptions.DisplayType, state);
 		break;
 	}
 	case EDataType::Word:

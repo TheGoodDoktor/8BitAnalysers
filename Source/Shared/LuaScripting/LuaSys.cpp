@@ -65,8 +65,13 @@ bool Init(FEmuBase* pEmulator)
 	InitTextEditors();
 
 	for (int i = 0; i < GetNumLuaDocLibs(); i++)
+	{
 		for (const FLuaDocFunc& func : GetLuaDocLibFromIndex(i)->Funcs)
-			RegisterLuaFunctionToolTip(func.Name.c_str(), func.Summary.c_str());
+		{
+			std::string toolTip = func.Definition +"\n\n" + func.Summary;
+			RegisterLuaFunctionToolTip(func.Name.c_str(), toolTip.c_str());
+		}
+	}
 
 	lua_State* pState = luaL_newstate();	// create the global state
 
