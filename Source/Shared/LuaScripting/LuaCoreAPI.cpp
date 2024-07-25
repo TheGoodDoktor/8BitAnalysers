@@ -68,6 +68,45 @@ static int ReadWord(lua_State* pState)
 	return 0;
 }
 
+static int WriteByte(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isinteger(pState, 1) && lua_isinteger(pState, 2))
+	{
+		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+		if(state.bAllowEditing)
+		{
+			const lua_Integer address = lua_tointeger(pState, 1);
+			const lua_Integer value = lua_tointeger(pState, 2);
+			pEmu->WriteByte((uint16_t)address,(uint8_t)value);
+		}
+	}
+
+	return 0;
+}
+
+static int WriteWord(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isinteger(pState, 1) && lua_isinteger(pState, 2))
+	{
+		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+		if (state.bAllowEditing)
+		{
+			const lua_Integer address = lua_tointeger(pState, 1);
+			const lua_Integer value = lua_tointeger(pState, 2);
+			pEmu->WriteByte((uint16_t)address, (uint8_t)(value & 255));
+			pEmu->WriteByte((uint16_t)address + 1, (uint8_t)((value>>8) & 255));
+		}
+	}
+
+	return 0;
+}
+
 static int GetMemPtr(lua_State* pState)
 {
 	FEmuBase* pEmu = LuaSys::GetEmulator();
@@ -83,6 +122,25 @@ static int GetMemPtr(lua_State* pState)
 }
 
 // Analysis related
+static int SetEditMode(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isboolean(pState, 1))
+	{
+		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+		const bool bEnterEditMode = lua_toboolean(pState,1);
+		if (bEnterEditMode != state.bAllowEditing)
+		{
+			state.bAllowEditing = bEnterEditMode;
+			if(bEnterEditMode)
+				pEmu->OnEnterEditMode();
+			else
+				pEmu->OnExitEditMode();
+		}
+	}
+	return 0;
+}
 
 static int SetDataItemComment(lua_State* pState)
 {
@@ -354,8 +412,11 @@ static const luaL_Reg corelib[] =
 	// Memory/Machine state
 	{"ReadByte", ReadByte},
 	{"ReadWord", ReadWord},
+	{"WriteByte", WriteByte},
+	{"WriteWord", WriteWord},
 	{"GetMemPtr", GetMemPtr},
 	// Analysis
+	{"SetEditMode", SetEditMode},
 	{"SetDataItemComment", SetDataItemComment},
 	{"SetCodeItemComment", SetCodeItemComment},
 	{"AddCommentBlock", AddCommentBlock},
