@@ -795,8 +795,8 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
     AddMemoryRegionDescGenerator(&AttrMemDescGenerator);
 
 	// default assembler settings
-	AssemblerExportStartAddress = kScreenAttrMemEnd + 1;
-	AssemblerExportEndAddress = 0xffff;
+	ExportStartAddress = kScreenAttrMemEnd + 1;
+	ExportEndAddress = 0xffff;
     
     bInitialised = true;
 	return true;
@@ -1130,7 +1130,7 @@ void FSpectrumEmu::FileMenuAdditions(void)
 	}
 #endif
 
-	if (ImGui::MenuItem("Export Binary File"))
+	/*if (ImGui::MenuItem("Export Binary File"))
 	{
 		if (pActiveGame != nullptr)
 		{
@@ -1143,7 +1143,7 @@ void FSpectrumEmu::FileMenuAdditions(void)
 			SaveBinaryFile(outBinFname.c_str(), pSpecMem, 65536);
 			delete[] pSpecMem;
 		}
-	}
+	}*/
 
 	if (ImGui::BeginMenu("Export Skool File"))
 	{

@@ -229,50 +229,7 @@ void FEmuBase::DrawUI()
 void FEmuBase::FileMenu()
 {
 	// New game from snapshot
-#if 0
-	if (ImGui::BeginMenu("New Project from Snapshot File"))
-	{
-		const int numGames = GamesList.GetNoGames();
-		if (!numGames)
-		{
-			const std::string snapFolder = pGlobalConfig->SnapshotFolder;
-			ImGui::Text("No snapshots found in snapshot directory:\n\n'%s'.\n\nSnapshot directory is set in GlobalConfig.json", snapFolder.c_str());
-		}
-		else
-		{
-			for (int gameNo = 0; gameNo < numGames; gameNo++)
-			{
-				const FGameSnapshot& game = GamesList.GetGame(gameNo);
 
-				if (ImGui::MenuItem(game.DisplayName.c_str()))
-				{
-					bool bGameExists = false;
-
-					for (const auto& pGameConfig : GetGameConfigs())
-					{
-						if (pGameConfig->Name == game.DisplayName)
-							bGameExists = true;
-					}
-					if (bGameExists)
-					{
-						bReplaceGamePopup = true;
-						ReplaceGameSnapshotIndex = gameNo;
-					}
-					else
-					{
-						if (!NewGameFromSnapshot(game))
-						{
-							Reset();
-							DisplayErrorMessage("Could not load snapshot '%s'", game.FileName.c_str());
-						}
-						break;
-					}
-				}
-			}
-		}
-		ImGui::EndMenu();
-	}
-#endif
 	for (const auto& gamesListIt : GamesLists)
 	{
 		const FGamesList& gamesList = gamesListIt.second;
@@ -357,6 +314,12 @@ void FEmuBase::FileMenu()
 	{
 		// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
 		bExportAsm = true;
+	}
+
+	if (ImGui::MenuItem("Export Binary File"))
+	{
+		// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
+		bExportBinary = true;
 	}
 	
 	FileMenuAdditions();
@@ -604,11 +567,11 @@ void FEmuBase::DrawMainMenu()
 
 void FEmuBase::DrawExportAsmModalPopup()
 {
-	if (bExportAsm)
+	if (bExportAsm || bExportBinary)
 	{
-		ImGui::OpenPopup("Export ASM File");
+		ImGui::OpenPopup("Export Address Range");
 	}
-	if (ImGui::BeginPopupModal("Export ASM File", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::BeginPopupModal("Export Address Range", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		// TODO: get defaults from system
 		// Could initialise member variables
@@ -620,13 +583,13 @@ void FEmuBase::DrawExportAsmModalPopup()
 		const char* formatStr = bHex ? "%x" : "%u";
 		ImGuiInputTextFlags flags = bHex ? ImGuiInputTextFlags_CharsHexadecimal : ImGuiInputTextFlags_CharsDecimal;
 
-		ImGui::InputScalar("Start", ImGuiDataType_U16, &AssemblerExportStartAddress, NULL, NULL, formatStr, flags);
+		ImGui::InputScalar("Start", ImGuiDataType_U16, &ExportStartAddress, NULL, NULL, formatStr, flags);
 		ImGui::SameLine();
-		ImGui::InputScalar("End", ImGuiDataType_U16, &AssemblerExportEndAddress, NULL, NULL, formatStr, flags);
+		ImGui::InputScalar("End", ImGuiDataType_U16, &ExportEndAddress, NULL, NULL, formatStr, flags);
 
 		if (ImGui::Button("Export", ImVec2(120, 0)))
 		{
-			if (AssemblerExportEndAddress > AssemblerExportStartAddress)
+			if (ExportEndAddress > ExportStartAddress)
 			{
 				if (pCurrentProjectConfig != nullptr)
 				{
@@ -635,16 +598,32 @@ void FEmuBase::DrawExportAsmModalPopup()
 
 					char addrRangeStr[16];
 					if (bHex)
-						snprintf(addrRangeStr, 16, "_%x_%x", AssemblerExportStartAddress, AssemblerExportEndAddress);
+						snprintf(addrRangeStr, 16, "_%x_%x", ExportStartAddress, ExportEndAddress);
 					else
-						snprintf(addrRangeStr, 16, "_%u_%u", AssemblerExportStartAddress, AssemblerExportEndAddress);
+						snprintf(addrRangeStr, 16, "_%u_%u", ExportStartAddress, ExportEndAddress);
 
-					const std::string outBinFname = dir + pCurrentProjectConfig->Name + addrRangeStr + ".asm";
+					std::string outputFname = dir + pCurrentProjectConfig->Name + addrRangeStr;
 					
-					ExportAssembler(CodeAnalysis, outBinFname.c_str(), AssemblerExportStartAddress, AssemblerExportEndAddress);
+					if(bExportAsm)
+					{
+						outputFname += ".asm";
+						ExportAssembler(CodeAnalysis, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
+					}
+					else if (bExportBinary)
+					{
+						const int binarySize = ExportEndAddress - ExportStartAddress;
+						outputFname += ".bin";
+
+						uint8_t* pBinaryMem = (uint8_t *)malloc(binarySize);
+						for(int i = 0;i < binarySize;i++)
+							pBinaryMem[i] = ReadByte(ExportStartAddress + i);
+						SaveBinaryFile(outputFname.c_str(), pBinaryMem, binarySize);
+						free(pBinaryMem);
+					}
 				}
 			}
 			bExportAsm = false;
+			bExportBinary = false;
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();

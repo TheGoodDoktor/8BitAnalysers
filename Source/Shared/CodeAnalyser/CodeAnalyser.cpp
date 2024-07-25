@@ -647,7 +647,10 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 		{
 			FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
 			if(pDataInfo->DataType == EDataType::InstructionOperand)
+			{
+				address = pDataInfo->InstructionAddress;
 				snprintf(label, kLabelSize, "operand_%04X", address.Address);
+			}
 			else
 				snprintf(label, kLabelSize, "data_%04X", address.Address);
 

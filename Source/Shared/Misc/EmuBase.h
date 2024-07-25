@@ -129,8 +129,8 @@ protected:
 	uint32_t			HighlightScanlineCol = 0x50ffffff;
 
 	// Assembler Export
-	uint16_t			AssemblerExportStartAddress = 0x0000;
-	uint16_t			AssemblerExportEndAddress = 0xffff;
+	uint16_t			ExportStartAddress = 0x0000;
+	uint16_t			ExportEndAddress = 0xffff;
 	
 public:
 	bool		bShowImGuiDemo = false;
@@ -139,6 +139,7 @@ protected:
 	bool		bShowDebugLog = false;
 	bool		bReplaceGamePopup = false;
 	bool		bExportAsm = false;
+	bool		bExportBinary = false;
 
 	FEmulatorFile EmulatorFileToLoad;	// for 'are you sure?' popup
 
