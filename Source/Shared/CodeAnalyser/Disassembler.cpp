@@ -144,13 +144,41 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 	if (outputCallback)
 	{
 		const bool bOperandIsAddress = (pCodeInfoItem->OperandType == EOperandType::JumpAddress || pCodeInfoItem->OperandType == EOperandType::Pointer);
-		const FLabelInfo* pLabel = bOperandIsAddress ? CodeAnalysisState->GetLabelForPhysicalAddress(val) : nullptr;
-		if (pLabel != nullptr)
+
+		if (bOperandIsAddress)
 		{
-			std::string labelName(pLabel->GetName());
-			for (int i = 0; i < labelName.size(); i++)
+			int labelOffset = 0;
+
+			for (int addrVal = val; addrVal >= 0; addrVal--)
 			{
-				outputCallback(labelName[i], this);
+				const FLabelInfo* pLabel = CodeAnalysisState->GetLabelForPhysicalAddress(addrVal);
+				if (pLabel != nullptr)
+				{
+					std::string labelName(pLabel->GetName());
+					for (int i = 0; i < labelName.size(); i++)
+					{
+						outputCallback(labelName[i], this);
+					}
+
+					// add label offset
+					if (labelOffset != 0)
+					{
+						char offsetString[32];
+						sprintf(offsetString,"+%d",labelOffset);
+
+						for (int i = 0; i < strlen(offsetString); i++)
+							outputCallback(offsetString[i], this);
+					}
+					break;
+				}
+				else if (addrVal == 0)	// no label found
+				{
+					const char* outStr = NumStr(val, GetNumberDisplayMode());
+					for (int i = 0; i < strlen(outStr); i++)
+						outputCallback(outStr[i], this);
+				}
+
+				labelOffset++;
 			}
 		}
 		else

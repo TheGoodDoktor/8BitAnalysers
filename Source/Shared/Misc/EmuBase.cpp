@@ -443,6 +443,21 @@ void FEmuBase::OptionsMenu()
 
 		ImGui::EndMenu();
 	}
+
+	if (ImGui::BeginMenu("Assembler Exporter"))
+	{
+		const std::map<std::string, FASMExporter*>& exporters = GetAssemblerExporters();
+
+		for (auto exporter : exporters)
+		{
+			if (ImGui::MenuItem(exporter.first.c_str(), 0, CodeAnalysis.pGlobalConfig->ExportAssembler == exporter.first))
+			{
+				CodeAnalysis.pGlobalConfig->ExportAssembler = exporter.first;
+			}
+		}
+
+		ImGui::EndMenu();
+	}
 	//if(pActiveGame!=nullptr)
 	//	ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
 

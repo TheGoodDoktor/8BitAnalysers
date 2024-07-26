@@ -1,3 +1,5 @@
+#include "AssemblerExport.h"
+
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "Util/Misc.h"
 #include "Misc/EmuBase.h"
@@ -11,88 +13,41 @@
 #include "UI/CodeAnalyserUI.h"
 #include "Disassembler.h"
 
-struct FAssemblerConfig
-{
-	const char* DataBytePrefix = nullptr;
-	const char* DataWordPrefix = nullptr;
-	const char* DataTextPrefix = nullptr;
-	const char*	ORGText = nullptr;
-};
 
-FAssemblerConfig g_DefaultAsmConfig = {
+FAssemblerConfig g_DefaultConfig = {
 	"db",
 	"dw",
 	"ascii",
 	"org",
 };
 
-FAssemblerConfig g_SpasmAsmConfig = {
-	".db",
-	".dw",
-	".text",
-	".org",
-};
+static std::map<std::string, FASMExporter*> g_AssemblerExporters;
 
-static const std::map<std::string, const FAssemblerConfig*> g_Configs = 
+const std::map<std::string, FASMExporter*>& GetAssemblerExporters()
 {
-	{"Spasm",	&g_SpasmAsmConfig}
-};
+	return g_AssemblerExporters;
+}
 
-const FAssemblerConfig* GetAssemblerConfig(const char* pConfigName)
+bool AddAssemblerExporter(const char* pName, FASMExporter* pExporter)
 {
-	auto findIt = g_Configs.find(pConfigName);
-	if(findIt == g_Configs.end())
-		return &g_DefaultAsmConfig;
+	auto res = g_AssemblerExporters.insert({pName,pExporter });
+
+	return res.second;
+}
+
+FASMExporter* GetAssemblerExporter(const char* pConfigName)
+{
+	auto findIt = g_AssemblerExporters.find(pConfigName);
+	if(findIt == g_AssemblerExporters.end())
+		return nullptr;
 	return findIt->second;
 }
 
-// Class to encapsulate ASM exporting
-class FASMExporter
+
+bool FASMExporter::Init(const char* pFilename, FCodeAnalysisState* pState)
 {
-	public:
-		FASMExporter(const char *pFilename, FCodeAnalysisState* pState);
-		~FASMExporter();
-
-		bool		Init();
-		void		Output(const char* pFormat, ...);
-		bool		ExportAddressRange(uint16_t startAddr, uint16_t endAddr);
-
-		std::string		GenerateAddressLabelString(FAddressRef addr);
-		void			ExportDataInfoASM(FAddressRef addr);
-
-	private:
-		void				OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo);
-		ENumberDisplayMode	GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo);
-
-		bool			bInitialised = false;
-		ENumberDisplayMode HexMode = ENumberDisplayMode::HexDollar;
-		ENumberDisplayMode OldNumberMode;
-
-		std::string		Filename;
-		FILE*			FilePtr = nullptr;
-		FCodeAnalysisState*	pCodeAnalyser = nullptr;
-
-		const FAssemblerConfig*	pAssemblerConfig;
-};
-
-FASMExporter::FASMExporter(const char* pFilename, FCodeAnalysisState* pState) 
-	: Filename(pFilename)
-	, pCodeAnalyser(pState) 
-{
-	pAssemblerConfig = GetAssemblerConfig(pState->GetEmulator()->GetGlobalConfig()->ExportAssembler.c_str());
-}
-
-FASMExporter::~FASMExporter()
-{
-	if(FilePtr != nullptr)
-		fclose(FilePtr);
-
-	SetNumberDisplayMode(OldNumberMode);
-}
-
-bool FASMExporter::Init()
-{
-	FilePtr = fopen(Filename.c_str(), "wt");
+	pCodeAnalyser = pState;
+	FilePtr = fopen(pFilename, "wt");
 
 	if (FilePtr == nullptr)
 		return false;
@@ -104,6 +59,16 @@ bool FASMExporter::Init()
 	return true;
 }
 
+bool FASMExporter::Finish()
+{
+	if (FilePtr != nullptr)
+		fclose(FilePtr);
+
+	SetNumberDisplayMode(OldNumberMode);
+	return true;
+}
+
+
 
 void FASMExporter::Output(const char* pFormat, ...)
 {
@@ -113,7 +78,7 @@ void FASMExporter::Output(const char* pFormat, ...)
 	va_end(ap);
 }
 
-
+#if 0
 // this might be a bit broken
 std::string FASMExporter::GenerateAddressLabelString(FAddressRef addr)
 {
@@ -150,6 +115,7 @@ std::string FASMExporter::GenerateAddressLabelString(FAddressRef addr)
 
 	return labelStr;
 }
+#endif
 
 uint16_t g_DbgAddress = 0xEA71;
 
@@ -183,7 +149,7 @@ void FASMExporter::OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataI
 
 		state.AdvanceAddressRef(byteAddress, 1);
 	}
-	Output("%s %s", pAssemblerConfig->DataBytePrefix, textString.c_str());
+	Output("%s %s", Config.DataBytePrefix, textString.c_str());
 }
 
 void FASMExporter::ExportDataInfoASM(FAddressRef addr)
@@ -224,11 +190,11 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 		const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForPhysicalAddress(val) : nullptr;
 		if (pLabel != nullptr)
 		{
-			Output("%s %s", pAssemblerConfig->DataWordPrefix, pLabel->GetName());
+			Output("%s %s", Config.DataWordPrefix, pLabel->GetName());
 		}
 		else
 		{
-			Output("%s %s", pAssemblerConfig->DataWordPrefix, NumStr(val, dispMode));
+			Output("%s %s", Config.DataWordPrefix, NumStr(val, dispMode));
 		}
 	}
 	break;
@@ -280,7 +246,7 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 	// TODO: write screen memory regions
 
 	// place an 'org' at the start
-	Output("%s %s\n",pAssemblerConfig->ORGText, NumStr(startAddr));
+	Output("%s %s\n", Config.ORGText, NumStr(startAddr));
 
 	for (const FCodeAnalysisItem &item : pCodeAnalyser->ItemList)
 	{
@@ -351,14 +317,19 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 
 bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr)
 {
-	FASMExporter exporter(pTextFileName,&state);
-	if(exporter.Init() == false)
-		return false;
-		
-	if(exporter.ExportAddressRange(startAddr,endAddr) == false)
+	FASMExporter* pExporter = GetAssemblerExporter(state.pGlobalConfig->ExportAssembler.c_str());
+	if(pExporter == nullptr)
 		return false;
 
-	return true;
+	if(pExporter->Init(pTextFileName, &state) == false)
+		return false;
+
+	pExporter->AddHeader();
+		
+	const bool bSuccess = pExporter->ExportAddressRange(startAddr,endAddr);
+
+	pExporter->Finish();
+	return bSuccess;
 }
 
 // Util functions

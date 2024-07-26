@@ -47,6 +47,8 @@
 #include "SnapshotLoaders/TAPLoader.h"
 #include "SnapshotLoaders/TZXLoader.h"
 
+bool InitZXSpectrumAsmExporters(FSpectrumEmu* pZXEmu);
+
 #define ENABLE_RZX 1
 #define SAVE_ROM_JSON 0
 
@@ -795,6 +797,7 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
     AddMemoryRegionDescGenerator(&AttrMemDescGenerator);
 
 	// default assembler settings
+	InitZXSpectrumAsmExporters(this);
 	ExportStartAddress = kScreenAttrMemEnd + 1;
 	ExportEndAddress = 0xffff;
     
