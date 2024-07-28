@@ -623,11 +623,23 @@ std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address)
 
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef address, ELabelType labelType)
 {
+	bool bLabelOnOperand = false;
+
+	// for label to instruction operands, we want to put the label before the instruction
+	if(labelType == ELabelType::Data)
+	{
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
+		if (pDataInfo->DataType == EDataType::InstructionOperand)
+		{
+			address = pDataInfo->InstructionAddress;
+			bLabelOnOperand = true;
+		}
+	}
+
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel != nullptr)
 		return pLabel;
-
-		
+				
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
 	//pLabel->Address = address;
@@ -646,11 +658,8 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 		case ELabelType::Data:
 		{
 			FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
-			if(pDataInfo->DataType == EDataType::InstructionOperand)
-			{
-				address = pDataInfo->InstructionAddress;
+			if(bLabelOnOperand)
 				snprintf(label, kLabelSize, "operand_%04X", address.Address);
-			}
 			else
 				snprintf(label, kLabelSize, "data_%04X", address.Address);
 
