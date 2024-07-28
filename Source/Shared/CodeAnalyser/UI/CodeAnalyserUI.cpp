@@ -1494,8 +1494,9 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		ImGui::BulletText("d : Set as Data");
 		ImGui::BulletText("t : Set as Text");
 		ImGui::SeparatorText("Display Mode & Operand Type");
-		ImGui::BulletText("b : Set as Ascii");
+		ImGui::BulletText("a : Set as Ascii");
 		ImGui::BulletText("b : Set as Binary");
+		ImGui::BulletText("j : Set as Jump Address");
 		ImGui::BulletText("n : Set as Number");
 		ImGui::BulletText("p : Set as Pointer");
 		ImGui::BulletText("u : Set as Unknown");

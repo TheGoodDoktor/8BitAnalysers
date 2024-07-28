@@ -32,6 +32,28 @@
         },
         {
             "Args": [
+                "uint16_t address",
+                "uint8_t value"
+            ],
+            "Description": "The value of the given byte is written to memory at the specified address.\n\nNote: Edit Mode must be enabled prior to calling WriteByte() or the call will fail. Edit Mode can be enabled by calling SetEditMode(true).",
+            "Name": "WriteByte",
+            "Returns": "",
+            "Summary": "Write a byte to memory.",
+            "Usage": "SetEditMode(true)\nWriteByte(0x8000, 0xff)"
+        },
+        {
+            "Args": [
+                "uint16_t address",
+                "uint16_t value"
+            ],
+            "Description": "The value of the given word is written to memory at the specified address.\n\nNote: Edit Mode must be enabled prior to calling WriteWord() or the call will fail. Edit Mode can be enabled by calling SetEditMode(true).",
+            "Name": "WriteWord",
+            "Returns": "",
+            "Summary": "Write a word to memory.",
+            "Usage": "SetEditMode(true)\nWriteWord(0x8000, 0xffff)"
+        },
+        {
+            "Args": [
                 "uint16_t address"
             ],
             "Description": "Returns a pointer to memory at the given address.",
@@ -39,6 +61,16 @@
             "Returns": "uint8_t*",
             "Summary": "Get pointer at memory address.",
             "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)"
+        },
+        {
+            "Args": [
+                "bool enabled"
+            ],
+            "Description": "Edit Mode allows the user to modify the contents of memory via WriteByte() and WriteWord(). When Edit Mode is not active the memory cannot be modified and can be considered read-only to the user.\n\nWhen SetEditMode(true) is called, a snapshot of the machine's state will be saved. Upon calling SetEditMode(false), the machine's state will be restored to the point when Edit Mode was enabled. After exiting Edit mode, any changes written in Edit Mode will be lost.",
+            "Name": "SetEditMode",
+            "Returns": "",
+            "Summary": "Enable or disable Edit Mode.",
+            "Usage": "SetEditMode(true)\nWriteWord(0x8000, 0xffff)"
         },
         {
             "Args": [
