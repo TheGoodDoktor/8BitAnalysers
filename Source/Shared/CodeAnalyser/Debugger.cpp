@@ -10,6 +10,7 @@
 #include "6502/M6502Disassembler.h"
 #include <Util/GraphicsView.h>
 #include "Misc/EmuBase.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 static const uint32_t	BPMask_Exec			= 0x0001;
 static const uint32_t	BPMask_DataWrite	= 0x0002;
@@ -531,10 +532,7 @@ static bool IsStepOverOpcode(ECPUType cpuType, const std::vector<uint8_t>& opcod
 
 void	FDebugger::StepOver()
 {
-	//const ECPUType cpuType = pEmulator->CPUType;
-
 	std::vector<uint8_t> stepOpcodes;
-	// TODO: this one's a bit more tricky!
    
     bDebuggerStopped = false;
     uint16_t nextPC = 0;
@@ -1153,18 +1151,24 @@ void FDebugger::DrawBreakpoints(void)
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit;
 	if (ImGui::BeginTable("Breakpoints", 4, flags))
 	{
-		ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed, 60);
+		const float charWidth = ImGui_GetFontCharWidth();
+		ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed, 10 * charWidth);
 		ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,50);
-		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,40);
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,6 * charWidth);
+		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,6 * charWidth);
 		ImGui::TableHeadersRow();
-
+		FAddressRef deleteRef;
 		for (auto& bp : Breakpoints)
 		{
 			ImGui::PushID(bp.Address.Val);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::Checkbox("##Enabled", &bp.bEnabled);
+			ImGui::SameLine();
+			if (ImGui::Button("Delete"))
+			{
+				deleteRef = bp.Address;
+			}
 			ImGui::TableSetColumnIndex(1);
 			ImGui::Text("%s:", NumStr(bp.Address.Address));
 			DrawAddressLabel(state, viewState, bp.Address);
@@ -1173,6 +1177,11 @@ void FDebugger::DrawBreakpoints(void)
 			ImGui::TableSetColumnIndex(3);
 			ImGui::Text("%d", bp.Size);
 			ImGui::PopID();
+		}
+
+		if (deleteRef.IsValid())
+		{
+			RemoveBreakpoint(deleteRef);
 		}
 		ImGui::EndTable();
 	}
