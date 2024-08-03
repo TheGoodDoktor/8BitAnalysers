@@ -224,7 +224,8 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
             break;
 		}
 	}
-	else if(BreakpointMask & BPMask_Exec)
+	
+	if(BreakpointMask & BPMask_Exec)
 	{
 		for (int i = 0; i < Breakpoints.size(); i++)
 		{
@@ -821,6 +822,8 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 	{
 		if (strcmp(regName, "A") == 0)
 			return outVal = pZ80->a, true;
+		else if (strcmp(regName, "F") == 0)
+			return outVal = pZ80->f, true;
 		else if (strcmp(regName, "B") == 0)
 			return outVal = pZ80->b, true;
 		else if (strcmp(regName, "C") == 0)
@@ -846,6 +849,10 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 			return outVal = pM6502->X, true;
 		else if (strcmp(regName, "Y") == 0)
 			return outVal = pM6502->Y, true;
+		else if (strcmp(regName, "S") == 0)
+			return outVal = pM6502->S, true;
+		else if (strcmp(regName, "P") == 0)
+			return outVal = pM6502->P, true;
 	}
 
 	return false;
@@ -855,7 +862,9 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 {
 	if (CPUType == ECPUType::Z80)
 	{
-		if (strcmp(regName, "BC") == 0)
+		if (strcmp(regName, "AF") == 0)
+			return outVal = pZ80->af, true;
+		else if (strcmp(regName, "BC") == 0)
 			return outVal = pZ80->bc, true;
 		else if (strcmp(regName, "DE") == 0)
 			return outVal = pZ80->de, true;
@@ -867,6 +876,13 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 			return outVal = pZ80->iy, true;
 		else if (strcmp(regName, "SP") == 0)
 			return outVal = pZ80->sp, true;
+		else if (strcmp(regName, "PC") == 0)
+			return outVal = pZ80->pc, true;
+	}
+	else if (CPUType == ECPUType::M6502)
+	{
+		if (strcmp(regName, "PC") == 0)
+			return outVal = pM6502->PC, true;
 	}
 	return false;
 }
