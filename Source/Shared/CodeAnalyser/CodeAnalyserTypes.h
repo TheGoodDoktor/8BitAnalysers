@@ -334,6 +334,7 @@ struct FCodeInfo : FItem
 			bool			bSelfModifyingCode : 1;
 			bool			bUnused : 1;
 			bool			bIsCall : 1;
+			bool			bHasLuaHandler : 1;
 		};
 		uint32_t	Flags = 0;
 	};

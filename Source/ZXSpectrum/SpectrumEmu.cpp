@@ -195,9 +195,6 @@ static void PushAudio(const float* samples, int num_samples, void* user_data)
 void	FSpectrumEmu::OnInstructionExecuted(int ticks, uint64_t pins)
 {
 	FCodeAnalysisState &state = CodeAnalysis;
-	const uint16_t addr = Z80_GET_ADDR(pins);
-	const bool bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
-	const bool bWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
 	const uint16_t pc = pins & 0xffff;	// set PC to pc of instruction just executed
 
 	RegisterCodeExecuted(state, pc, PreviousPC);
@@ -1795,35 +1792,19 @@ void FSpectrumEmu::Tick()
 		}
 		else
 		{
+			//ImGui::Begin("Execution View");
 			ZXExeEmu(&ZXEmuState, microSeconds);
+			//ImGui::End();
 		}
 #endif
-		/*if (RZXManager.GetReplayMode() == EReplayMode::Playback)
-		{
-			assert(ZXEmuState.valid);
-			uint32_t icount = RZXManager.Update();
-
-			uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
-			uint32_t ticks_executed = z80_exec(&ZXEmuState.cpu, ticks_to_run);
-			clk_ticks_executed(&ZXEmuState.clk, ticks_executed);
-			kbd_update(&ZXEmuState.kbd);
-		}
-		else
-		{
-			uint32_t frameTicks = ZXEmuState.frame_scan_lines* ZXEmuState.scanline_period;
-			//zx_exec(&ZXEmuState, microSeconds);
-
-			//uint32_t ticks_to_run = clk_ticks_to_run(&ZXEmuState.clk, microSeconds);
-			//frameTicks = ticks_to_run;
-			ZXEmuState.clk.ticks_to_run = frameTicks;
-			const uint32_t ticksExecuted = z80_exec(&ZXEmuState.cpu, frameTicks);
-			clk_ticks_executed(&ZXEmuState.clk, ticksExecuted);
-			kbd_update(&ZXEmuState.kbd);
-		}*/
+		
 		FrameTraceViewer.CaptureFrame();
 		//FrameScreenPixWrites.clear();
 		//FrameScreenAttrWrites.clear();
 		CodeAnalysis.OnFrameEnd();
+	}
+	else
+	{
 	}
 
 	//UpdateCharacterSets(CodeAnalysis);

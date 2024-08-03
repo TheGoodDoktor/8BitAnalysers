@@ -24,6 +24,7 @@
 #include "DataTypes.h"
 
 #include "Misc/EmuBase.h"
+#include <LuaScripting/LuaSys.h>
 
 // memory bank code
 
@@ -881,6 +882,9 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pCodeInfo != nullptr)
 	{
+		if (pCodeInfo->bHasLuaHandler && LuaSys::OnInstructionExecuted(pc) == true)
+			state.Debugger.Break();
+
 		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
 		pCodeInfo->ExecutionCount++;
 	}

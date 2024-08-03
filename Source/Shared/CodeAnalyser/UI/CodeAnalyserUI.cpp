@@ -997,8 +997,6 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
-	//assert(i < (int)state.ItemList.size());
-	//const FCodeAnalysisItem& item = state.ItemList[i];
 	const uint16_t physAddr = item.AddressRef.Address;
 
 	if (item.IsValid() == false)
@@ -1018,7 +1016,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 
 	if (ImGui::Selectable("##codeanalysisline", bSelected, ImGuiSelectableFlags_SelectOnNav))
 	{
-		if (bSelected == false)
+		if (bSelected == false)	// item newly selected
 		{
 			viewState.SetCursorItem(item);
 			//viewState.CursorItemIndex = i;

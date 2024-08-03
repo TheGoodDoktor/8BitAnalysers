@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cinttypes>
+
 class FEmuBase;
 class FLuaConsole;
 
@@ -19,6 +21,10 @@ namespace LuaSys
 
 	bool Init(FEmuBase* pEmulator);
 	void Shutdown(void);
+
+	void RegisterExecutionHandler(uint16_t address, const char* functionName);
+	void RemoveExecutionHandler(uint16_t address);
+	bool OnInstructionExecuted(uint16_t pc);
 
     lua_State*  GetGlobalState();
 
