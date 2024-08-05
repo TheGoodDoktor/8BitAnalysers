@@ -19,8 +19,8 @@ struct FSNAHeader
 	uint16_t	HL;		//9
 	uint16_t	DE;
 	uint16_t	BC;
-	uint16_t	IX;
 	uint16_t	IY;
+	uint16_t	IX;
 
 	uint8_t		Interrupt;	// 19
 	uint8_t		R;			// 20
@@ -85,6 +85,7 @@ bool LoadSNAFromMemory(FSpectrumEmu * pEmu, const uint8_t * pData, size_t dataSi
 	pSys->cpu.bc2 = pHdr->BC_;
 	pSys->cpu.de2 = pHdr->DE_;
 	pSys->cpu.hl2 = pHdr->HL_;
+	pSys->cpu.sp = pHdr->SP;
 	pSys->cpu.i = pHdr->I;
 	pSys->cpu.r = pHdr->R;
 	pSys->cpu.iff2 = pHdr->Interrupt & (1 << 2);
@@ -98,11 +99,10 @@ bool LoadSNAFromMemory(FSpectrumEmu * pEmu, const uint8_t * pData, size_t dataSi
 		pRAMData++;
 	}
 
-	// pop PC off stack
-	pSys->cpu.pc = pEmu->ReadWord(pHdr->SP);
-	pSys->cpu.sp = pHdr->SP + 2;
+	// Simulate a RETN to restore the remaining state
+	pSys->cpu.iff1 = pSys->cpu.iff2;
+	pSys->cpu.pc = pEmu->ReadWord(pSys->cpu.sp);
+	pSys->cpu.sp += 2;
 
-
-	return true;	// NOT implemented
+	return true;
 }
-
