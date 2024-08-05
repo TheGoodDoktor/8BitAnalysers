@@ -5,12 +5,31 @@
 #include <CodeAnalyser/CodeAnalyser.h>
 
 #include "../SpectrumConstants.h"
+#include "../SpectrumEmu.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 // ZX Spectrum specific implementation
 void FZXGraphicsViewer::DrawScreenViewer()
 {
 	UpdateScreenPixelImage();
-	pScreenView->Draw();
+
+	// View Scale
+	ImGui::InputInt("Scale", &ScreenViewScale, 1, 1);
+	ScreenViewScale = std::max(1, ScreenViewScale);	// clamp
+
+	const float scale = ImGui_GetScaling() * ScreenViewScale;
+
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	pScreenView->Draw(pScreenView->GetWidth() * (float)ScreenViewScale, pScreenView->GetHeight() * (float)ScreenViewScale, true);
+	if (ImGui::IsItemHovered())
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		const int xp = std::min(std::max((int)((io.MousePos.x - pos.x) / scale), 0), 255);
+		const int yp = std::min(std::max((int)((io.MousePos.y - pos.y) / scale), 0), 191);
+
+		const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
+		const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
+	}
 	ImGui::Checkbox("Show Memory Accesses", &bShowScreenMemoryAccesses);
 	ImGui::Checkbox("Show Attributes",&bShowScreenAttributes);
 }
