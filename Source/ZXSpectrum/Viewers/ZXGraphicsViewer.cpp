@@ -11,6 +11,9 @@
 // ZX Spectrum specific implementation
 void FZXGraphicsViewer::DrawScreenViewer()
 {
+	FCodeAnalysisState& codeAnalysis = GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
+
 	UpdateScreenPixelImage();
 
 	// View Scale
@@ -29,6 +32,39 @@ void FZXGraphicsViewer::DrawScreenViewer()
 
 		const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
 		const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
+
+		if (scrPixAddress != 0)
+		{
+			ImDrawList* dl = ImGui::GetWindowDrawList();
+			const int rx = (xp & ~0x7);
+			const int ry = (yp & ~0x7);
+			dl->AddRect(ImVec2(pos.x + ((float)rx * scale), pos.y + ((float)ry * scale)), ImVec2(pos.x + (float)(rx + 8) * scale, pos.y + (float)(ry + 8) * scale), 0xffffffff);
+			
+			ImGui::BeginTooltip();
+			ImGui::Text("Screen Pos: (pix:%d,%d) (char:%d,%d)", xp, yp, xp / 8, yp / 8);
+			ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
+
+			const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
+			const FAddressRef lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
+			if (lastPixWriter.IsValid())
+			{
+				ImGui::Text("Pixel Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
+			}
+			if (lastAttrWriter.IsValid())
+			{
+				ImGui::Text("Attribute Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
+			}
+			ImGui::EndTooltip();
+
+			if (ImGui::IsMouseDoubleClicked(0))
+				viewState.GoToAddress(lastPixWriter);
+			if (ImGui::IsMouseDoubleClicked(1))
+				viewState.GoToAddress(lastAttrWriter);
+		}
 	}
 	ImGui::Checkbox("Show Memory Accesses", &bShowScreenMemoryAccesses);
 	ImGui::Checkbox("Show Attributes",&bShowScreenAttributes);
