@@ -1520,18 +1520,6 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::Text("Debugger");
 	//ImGui::SameLine();
 	DrawDebuggerButtons(state, viewState);
-
-	// Reset Reference Info
-	/*if (ImGui::Button("Reset Reference Info"))
-	{
-		ResetReferenceInfo(state);
-	}
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		ImGui::Text("This will reset all recorded references");
-		ImGui::EndTooltip();
-	}*/
 	
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
 	{

@@ -991,36 +991,50 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 }
 
 // Do we want to do this with every page?
-void ResetReferenceInfo(FCodeAnalysisState &state)
+void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites)
 {
 	for (int i = 0; i < (1 << 16); i++)
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
 		if (pDataInfo != nullptr)
 		{
-			pDataInfo->LastFrameRead = -1;
-			pDataInfo->Reads.Reset();
-			pDataInfo->LastFrameWritten = -1;
-			pDataInfo->Writes.Reset();
+			if(bReads)
+			{
+				pDataInfo->LastFrameRead = -1;
+				pDataInfo->Reads.Reset();
+			}
+			if(bWrites)
+			{
+				pDataInfo->LastFrameWritten = -1;
+				pDataInfo->Writes.Reset();
+			}
 		}
 
-		FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(i);
-		if (pLabelInfo != nullptr)
+		if(bReads)
 		{
-			pLabelInfo->References.Reset();
+			FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(i);
+			if (pLabelInfo != nullptr)
+			{
+				pLabelInfo->References.Reset();
+			}
 		}
 
 		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(i);
 		if(pCodeInfo != nullptr)
 		{
-			pCodeInfo->bSelfModifyingCode = false;
 			pCodeInfo->FrameLastExecuted = -1;
-			pCodeInfo->Reads.Reset();
-			pCodeInfo->Writes.Reset();
+			if(bReads)
+				pCodeInfo->Reads.Reset();
+			
+			if(bWrites)
+			{
+				pCodeInfo->Writes.Reset();
+				pCodeInfo->bSelfModifyingCode = false;
+			}
 		}
 
-
-		state.SetLastWriterForAddress(i,  FAddressRef());
+		if(bWrites)
+			state.SetLastWriterForAddress(i,  FAddressRef());
 	}
 }
 

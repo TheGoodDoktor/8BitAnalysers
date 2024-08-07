@@ -725,7 +725,7 @@ void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, uint8_t value);
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
-void ResetReferenceInfo(FCodeAnalysisState &state);
+void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites);
 
 std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address);
 

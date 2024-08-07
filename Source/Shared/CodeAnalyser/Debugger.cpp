@@ -41,7 +41,8 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
     Watches.clear();
 	//Stacks.clear();
 	Breakpoints.clear();
-
+	CallStack.clear();
+	FrameTrace.clear();
 }
 
 void FDebugger::CPUTick(uint64_t pins)
@@ -58,7 +59,7 @@ void FDebugger::CPUTick(uint64_t pins)
 	bool bIOWrite = false;
 	bool bIrq = false;
 	bool bNMI = false;
-	uint32_t BPMaskCheck = 0;
+	uint32_t bpMaskCheck = 0;
 
     if (CPUType == ECPUType::Z80)
     {
@@ -83,11 +84,7 @@ void FDebugger::CPUTick(uint64_t pins)
 		bIrq = risingPins & M6502_IRQ;
 		bNMI = risingPins & M6502_NMI;
 	}
-
-	// setup breakpoint mask to check
-	BPMaskCheck |= bWrite ? BPMask_DataWrite : 0;
-	BPMaskCheck |= bRead ? BPMask_DataRead : 0;
-
+	
     const FAddressRef addrRef = pCodeAnalysis->AddressRefFromPhysicalAddress(addr);
 
     if (bNewOp)
@@ -138,10 +135,22 @@ void FDebugger::CPUTick(uint64_t pins)
             break;
     }
 
+	// only set the mask if we know we're on an address that's breakpointed
+	if (bRead || bWrite)
+	{
+		FDataInfo* pDataInfo = pCodeAnalysis->GetDataInfoForAddress(addrRef);
+		if (pDataInfo->bHasBreakpoint)
+		{
+			// setup breakpoint mask to check
+			bpMaskCheck |= bWrite ? BPMask_DataWrite : 0;
+			bpMaskCheck |= bRead ? BPMask_DataRead : 0;
+		}
+	}
+
     // iterate through data breakpoints
 	// this can slow down if there are a lot of BPs
 	// Do a mask check
-	if (BPMaskCheck & BreakpointMask)
+	if (bpMaskCheck & BreakpointMask)
 	{
 		for (int i = 0; i < Breakpoints.size(); i++)
 		{
@@ -206,6 +215,8 @@ void FDebugger::CPUTick(uint64_t pins)
 
 int FDebugger::OnInstructionExecuted(uint64_t pins)
 {
+	FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(PC);
 	int trapId = kTrapId_None;
 
 	if (StepMode != EDebugStepMode::None)
@@ -225,27 +236,22 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		}
 	}
 	
-	if(BreakpointMask & BPMask_Exec)
+	if(pCodeInfo->bHasBreakpoint)
 	{
 		for (int i = 0; i < Breakpoints.size(); i++)
 		{
 			const FBreakpoint& bp = Breakpoints[i];
 
-			if (bp.bEnabled)
-			{
-				switch (bp.Type)
-				{
-				case EBreakpointType::Exec:
-					if (PC == bp.Address)
+			if (bp.bEnabled && 
+				bp.Type == EBreakpointType::Exec &&
+				PC == bp.Address)
 					{
 						trapId = kTrapId_BpBase + i;
+						break;
 					}
-					break;
-                default:
-                    break;
-                }
-			}
 		}
+
+		// TODO: remove breakpoint flag if no breakpoint found
 	}
 
 	// Handle IRQ
@@ -401,6 +407,25 @@ void	FDebugger::LoadFromFile(FILE* fp)
 		fread(&bp.Type, sizeof(bp.Type), 1, fp);	// Type
 		fread(&bp.Size, sizeof(bp.Size), 1, fp);	// Size
 		fread(&bp.Val, sizeof(bp.Val), 1, fp);		// Val
+
+		// make sure code info is flagged
+		if(bp.Type == EBreakpointType::Exec)
+		{ 
+			FCodeAnalysisState& state = *pCodeAnalysis;
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(bp.Address);
+			if(pCodeInfo != nullptr)
+				pCodeInfo->bHasBreakpoint = true;
+		}
+		else if (bp.Type == EBreakpointType::Data)
+		{
+			FAddressRef bpAddr = bp.Address;
+			for (int i = 0; i < bp.Size; i++)
+			{
+				FDataInfo* dataInfo = pCodeAnalysis->GetDataInfoForAddress(bpAddr);
+				dataInfo->bHasBreakpoint = true;
+				pCodeAnalysis->AdvanceAddressRef(bpAddr);
+			}
+		}
 	}
 
 	// frame trace
@@ -584,6 +609,9 @@ bool FDebugger::AddExecBreakpoint(FAddressRef addr)
 	if (IsAddressBreakpointed(addr))
 		return false;
 
+	FCodeInfo* pCodeInfo = pCodeAnalysis->GetCodeInfoForAddress(addr);
+	assert(pCodeInfo);
+	pCodeInfo->bHasBreakpoint = true;
 	Breakpoints.emplace_back(addr, EBreakpointType::Exec);
 	return true;
 }
@@ -593,6 +621,14 @@ bool FDebugger::AddDataBreakpoint(FAddressRef addr, uint16_t size)
 	if (IsAddressBreakpointed(addr))
 		return false;
 
+	FAddressRef bpAddr = addr;
+	for (int i = 0; i < size; i++)
+	{
+		FDataInfo* dataInfo = pCodeAnalysis->GetDataInfoForAddress(bpAddr);
+		dataInfo->bHasBreakpoint = true;
+		pCodeAnalysis->AdvanceAddressRef(bpAddr);
+	}
+
 	Breakpoints.emplace_back(addr, EBreakpointType::Data,size);
 	return true;
 }
@@ -601,10 +637,29 @@ bool FDebugger::RemoveBreakpoint(FAddressRef addr)
 {
 	for (int i = 0; i < Breakpoints.size(); i++)
 	{
-		if (Breakpoints[i].Address == addr)
+		FBreakpoint& bp = Breakpoints[i];
+
+		if (bp.Address == addr)
 		{
+			if (bp.Type == EBreakpointType::Exec)
+			{ 
+				FCodeInfo* pCodeInfo = pCodeAnalysis->GetCodeInfoForAddress(addr);
+				assert(pCodeInfo);
+				pCodeInfo->bHasBreakpoint = false;
+			}
+			else if (bp.Type == EBreakpointType::Data)
+			{
+				FAddressRef bpAddr = addr;
+				for (int i = 0; i < bp.Size; i++)
+				{
+					FDataInfo* dataInfo = pCodeAnalysis->GetDataInfoForAddress(bpAddr);
+					dataInfo->bHasBreakpoint = false;
+					pCodeAnalysis->AdvanceAddressRef(bpAddr);
+				}
+			}
 			Breakpoints[i] = Breakpoints.back();
 			Breakpoints.pop_back();
+			
 			return true;
 		}
 	}
