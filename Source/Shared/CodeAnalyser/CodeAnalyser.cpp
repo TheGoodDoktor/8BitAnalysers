@@ -304,14 +304,29 @@ std::vector<FAddressRef> FCodeAnalysisState::FindInAnalysis(const char* pString,
 			{
 				bool bFound = false;
 
-				// search code comment
+				// search code 
 				const FCodeInfo* pCodeInfo = page.CodeInfo[pageAddr];
-				if(pCodeInfo && ContainsTextLower(searchTextLower,pCodeInfo->Comment))
-					bFound = true;
+				if(pCodeInfo)
+				{
+					if(ContainsTextLower(searchTextLower,pCodeInfo->Comment))
+						bFound = true;
 				
-				// search code text
-				if (pCodeInfo && ContainsTextLower(searchTextLower, pCodeInfo->Text))
-					bFound = true;
+					// Generate code if there's no text
+					if(pCodeInfo->Text.empty())
+					{
+						MapBankForAnalysis(bank);	// map so we generate code for the correct bank
+						const uint16_t physAddress = bank.GetMappedAddress() + (pageNo * FCodeAnalysisPage::kPageSize) + pageAddr;
+						WriteCodeInfoForAddress(*this, physAddress);
+						UnMapAnalysisBanks();
+					}
+
+					Markup::SetCodeInfo(pCodeInfo);
+					const std::string expString = Markup::ExpandString(*this,pCodeInfo->Text.c_str());
+
+					// search code text
+					if (ContainsTextLower(searchTextLower, expString))
+						bFound = true;
+				}
 
 				// search label comment
 				const FLabelInfo* pLabelInfo = page.Labels[pageAddr];
@@ -1047,6 +1062,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	//pLabel->Address = address;
 	pLabel->ByteSize = 1;
 	pLabel->Global = type == ELabelType::Function;
+	pLabel->EnsureUniqueName();
 	state.SetLabelForPhysicalAddress(address, pLabel);
 
 	if (pLabel->Global)

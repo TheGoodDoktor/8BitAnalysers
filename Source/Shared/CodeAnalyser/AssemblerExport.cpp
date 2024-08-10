@@ -52,6 +52,10 @@ bool FASMExporter::Init(const char* pFilename, FCodeAnalysisState* pState)
 	if (FilePtr == nullptr)
 		return false;
 
+	HeaderText.clear();
+	BodyText.clear();
+	DasmState.CodeAnalysisState = pCodeAnalyser;
+	DasmState.HexDisplayMode = HexMode;
 
 	OldNumberMode = GetNumberDisplayMode();
 	SetNumberDisplayMode(HexMode);
@@ -62,7 +66,11 @@ bool FASMExporter::Init(const char* pFilename, FCodeAnalysisState* pState)
 bool FASMExporter::Finish()
 {
 	if (FilePtr != nullptr)
+	{
+		fwrite(HeaderText.c_str(), HeaderText.size(), 1, FilePtr);
+		fwrite(BodyText.c_str(), BodyText.size(),1,FilePtr);
 		fclose(FilePtr);
+	}
 
 	SetNumberDisplayMode(OldNumberMode);
 	return true;
@@ -74,48 +82,18 @@ void FASMExporter::Output(const char* pFormat, ...)
 {
 	va_list ap;
 	va_start(ap, pFormat);
-	vfprintf(FilePtr, pFormat, ap);
+	//vfprintf(FilePtr, pFormat, ap);
+
+	if (OutputString != nullptr)
+	{
+		const int kStringBufferSize = 256;
+		char stringBuffer[kStringBufferSize];
+		int ret = vsnprintf(stringBuffer, kStringBufferSize, pFormat, ap);
+		assert(ret < kStringBufferSize);	// increase kStrignBufferSize if this gets hit
+		*OutputString += stringBuffer;
+	}
 	va_end(ap);
 }
-
-#if 0
-// this might be a bit broken
-std::string FASMExporter::GenerateAddressLabelString(FAddressRef addr)
-{
-	int labelOffset = 0;
-	const char* pLabelString = nullptr;
-	std::string labelStr;
-
-	for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
-	{
-		FLabelInfo* pLabelInfo = pCodeAnalyser->GetLabelForPhysicalAddress(addrVal);
-		if (pLabelInfo != nullptr)
-		{
-			labelStr = "[" + std::string(pLabelInfo->GetName());
-			break;
-		}
-
-		labelOffset++;
-	}
-
-	if (labelStr.empty() == false)
-	{
-		if (labelOffset > 0)	// add offset string
-		{
-            const int kOffsetStringSize = 16;
-			char offsetString[kOffsetStringSize];
-			snprintf(offsetString,kOffsetStringSize, " + %d]", labelOffset);
-			labelStr += offsetString;
-		}
-		else
-		{
-			labelStr += "]";
-		}
-	}
-
-	return labelStr;
-}
-#endif
 
 uint16_t g_DbgAddress = 0xEA71;
 
@@ -243,9 +221,13 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 {
 	FCodeAnalysisState& state = *pCodeAnalyser;
-	// TODO: write screen memory regions
 
+	DasmState.ExportMin = startAddr;
+	DasmState.ExportMax = endAddr;
+	
 	// place an 'org' at the start
+	SetOutputToBody();
+
 	Output("%s %s\n", Config.ORGText, NumStr(startAddr));
 
 	for (const FCodeAnalysisItem &item : pCodeAnalyser->ItemList)
@@ -274,10 +256,15 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 			if (addr == g_DbgAddress)
 				LOGINFO("DebugAddress");
 
-			const std::string dasmString = GenerateDasmStringForAddress(state, addr, HexMode);
+			DasmState.CurrentAddress = addr;
+			DasmState.pCodeInfoItem = pCodeInfo;
+			DasmState.Text.clear();
+
+			GenerateDasmExportString(DasmState);
+			//const std::string dasmString = GenerateDasmStringForAddress(state, addr, HexMode);
 
 			Markup::SetCodeInfo(pCodeInfo);
-			const std::string expString = Markup::ExpandString(dasmString.c_str());
+			const std::string expString = Markup::ExpandString(state,DasmState.Text.c_str());
 			Output("\t%s", expString.c_str());
 
 			/*if (pCodeInfo->OperandAddress.IsValid())
@@ -310,6 +297,9 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 			Output("\t\t\t; %s", item.Item->Comment.c_str());
 		Output("\n");
 	}
+
+	ProcessLabelsOutsideExportedRange();
+	
 	
 	return true;
 }
@@ -324,6 +314,7 @@ bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint1
 	if(pExporter->Init(pTextFileName, &state) == false)
 		return false;
 
+	pExporter->SetOutputToHeader();
 	pExporter->AddHeader();
 		
 	const bool bSuccess = pExporter->ExportAddressRange(startAddr,endAddr);

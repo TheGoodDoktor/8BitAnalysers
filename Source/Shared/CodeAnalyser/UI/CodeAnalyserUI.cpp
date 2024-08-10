@@ -175,6 +175,54 @@ bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 	return DrawAddressLabel(state, viewState, { state.GetBankFromAddress(addr),addr },displayFlags);
 }
 
+std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef addr)
+{
+	bool bFunctionRel = false;
+	const char* pLabelString = nullptr;
+	int labelOffset = 0;
+	std::string labelOut;
+
+	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	if (pBank == nullptr)
+		return labelOut;
+
+	// find a label for this address
+	for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
+	{
+		if (pBank->AddressValid(addrVal) == false)
+		{
+			pBank = state.GetBank(state.GetBankFromAddress(addrVal));
+			assert(pBank != nullptr);
+		}
+
+		const FLabelInfo* pLabel = state.GetLabelForAddress(FAddressRef(pBank->Id, addrVal));
+		if (pLabel != nullptr)
+		{
+			pLabelString = pLabel->GetName();
+			break;
+		}
+
+		labelOffset++;
+
+		if (pLabelString == nullptr && addrVal == 0)
+			pLabelString = "0000";
+	}
+
+	if(pLabelString != nullptr)
+	{
+		labelOut = pLabelString;
+
+		if (labelOffset > 0)	// append offset
+		{
+			char offsetString[32];
+			snprintf(offsetString,32,"+%d",labelOffset);
+			labelOut += offsetString;
+		}
+	}
+
+	return labelOut;
+}
+
 bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags)
 {
 	bool bFunctionRel = false;
@@ -365,7 +413,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 {
 	FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
 	std::string LabelText = pLabelInfo->GetName();
-	if (ImGui::InputText("Name", &LabelText))
+	if (ImGui::InputText("Name", &LabelText, ImGuiInputTextFlags_EnterReturnsTrue))
 	{
 		if (LabelText.empty())
 			LabelText = pLabelInfo->GetName();
@@ -821,7 +869,20 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
 	const uint16_t bankPhysAddr = page * FCodeAnalysisPage::kPageSize;
 	int nextItemAddress = 0;
 
-	for (int bankAddr = 0; bankAddr < bank.NoPages * FCodeAnalysisPage::kPageSize; bankAddr++)
+	// This bank might start in the middle of an instruction from the previous bank
+	int bankStart = 0;
+	{
+		FDataInfo* pDataInfo = &bank.Pages[0].DataInfo[bankStart];
+		FCodeInfo* pCodeInfo = bank.Pages[0].CodeInfo[bankStart];
+		while(pCodeInfo == nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
+		{
+			bankStart++;
+			pDataInfo = &bank.Pages[0].DataInfo[bankStart];
+			pCodeInfo = bank.Pages[0].CodeInfo[bankStart];
+		}
+	}
+	
+	for (int bankAddr = bankStart; bankAddr < bank.NoPages * FCodeAnalysisPage::kPageSize; bankAddr++)
 	{
 		FCodeAnalysisPage& page = bank.Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
 		const uint16_t pageAddr = bankAddr & FCodeAnalysisPage::kPageMask;
@@ -2365,7 +2426,7 @@ void SetCodeInfo(const FCodeInfo* pCodeInfo)
 	g_CodeInfo= pCodeInfo;
 }
 
-std::string ExpandTag(const std::string& tag)
+std::string ExpandTag(FCodeAnalysisState& state, const std::string& tag)
 {
 	const size_t tagNameEnd = tag.find(":");
 	const std::string tagName = tag.substr(0, tagNameEnd);
@@ -2375,7 +2436,10 @@ std::string ExpandTag(const std::string& tag)
 	{
 		int address = 0;
 		if (sscanf(tagValue.c_str(), "0x%04x", &address) != 0)
-			return std::string(NumStr((uint16_t)address));
+		{
+			return GenerateAddressLabelString(state,state.AddressRefFromPhysicalAddress((uint16_t)address));
+		}
+			//return std::string(NumStr((uint16_t)address));
 	}
 	else if (tagName == std::string("OPERAND_ADDR"))
 	{
@@ -2383,7 +2447,9 @@ std::string ExpandTag(const std::string& tag)
 		if (pCodeInfo != nullptr)
 		{
 			if (g_CodeInfo->OperandAddress.IsValid())
-				return std::string(NumStr((uint16_t)g_CodeInfo->OperandAddress.Address));
+			{
+				return GenerateAddressLabelString(state, g_CodeInfo->OperandAddress);
+			}
 		}
 	}
 	else if (tagName == std::string("IM"))	// immediate
@@ -2541,7 +2607,7 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 	return bToolTipshown;
 }
 
-std::string ExpandString(const char* pText)
+std::string ExpandString(FCodeAnalysisState& state, const char* pText)
 {
 	const char* pTxtPtr = pText;
 	bool bInTag = false;
@@ -2574,7 +2640,7 @@ std::string ExpandString(const char* pText)
 		{
 			if (ch == '#')	// finish tag
 			{
-				outString += ExpandTag(tag);
+				outString += ExpandTag(state,tag);
 				bInTag = false;
 			}
 			else

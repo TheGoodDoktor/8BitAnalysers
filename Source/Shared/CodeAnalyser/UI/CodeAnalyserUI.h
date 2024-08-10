@@ -45,6 +45,7 @@ void UpdateRegionDescs(void);
 
 void ShowCodeAccessorActivity(FCodeAnalysisState& state, const FAddressRef accessorCodeAddr);
 void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags = 0);
+std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef addr);
 bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr, uint32_t displayFlags = 0);
 bool DrawAddressLabel(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags = 0);
 int GetItemIndexForAddress(const FCodeAnalysisState& state, FAddressRef addr);
@@ -83,7 +84,7 @@ namespace Markup
 { 
 void SetCodeInfo(const FCodeInfo* pCodeInfo);
 bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const char* pText);
-std::string ExpandString(const char* pText);
+std::string ExpandString(FCodeAnalysisState& state, const char* pText);
 }
 
 

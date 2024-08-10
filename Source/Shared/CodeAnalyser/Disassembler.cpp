@@ -148,13 +148,16 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 		if (bOperandIsAddress)
 		{
 			int labelOffset = 0;
-
+			uint16_t labelAddress = 0;
+			
 			for (int addrVal = val; addrVal >= 0; addrVal--)
 			{
 				const FLabelInfo* pLabel = CodeAnalysisState->GetLabelForPhysicalAddress(addrVal);
 				if (pLabel != nullptr)
 				{
-					std::string labelName(pLabel->GetName());
+					std::string labelName = pLabel->GetName();
+					labelAddress = addrVal;
+
 					for (int i = 0; i < labelName.size(); i++)
 					{
 						outputCallback(labelName[i], this);
@@ -179,6 +182,12 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 				}
 
 				labelOffset++;
+			}
+
+			if (labelAddress < ExportMin || labelAddress > ExportMax)
+			{
+				// referencing an address not in the disassembly
+				LabelsOutsideRange.insert(labelAddress);
 			}
 		}
 		else
@@ -273,11 +282,19 @@ void DasmOutputD8(int8_t val, dasm_output_t out_cb, void* user_data)
 	if (pNumberOutput)
 		pNumberOutput->OutputD8(val, out_cb);
 }
-
+/*
 std::string GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode)
 {
 	if(state.CPUInterface->CPUType == ECPUType::Z80)
 		return Z80GenerateDasmStringForAddress(state,pc,hexMode);
 	else
 		return M6502GenerateDasmStringForAddress(state, pc, hexMode);
+}*/
+
+bool GenerateDasmExportString(FExportDasmState& exportState)
+{
+	if (exportState.CodeAnalysisState->CPUInterface->CPUType == ECPUType::Z80)
+		return Z80GenerateDasmExportString(exportState);
+	else
+		return M6502GenerateDasmExportString(exportState);
 }

@@ -199,7 +199,7 @@ public:
 			{
 				WriteCodeInfoForAddress(State, addr.Address); // what does this do again?
 				Markup::SetCodeInfo(pCodeInfo);
-				operationText = Markup::ExpandString(pCodeInfo->Text.c_str());
+				operationText = Markup::ExpandString(State,pCodeInfo->Text.c_str());
 				pItem = pCodeInfo;
 			}
 			else if (pDataInfo != nullptr)

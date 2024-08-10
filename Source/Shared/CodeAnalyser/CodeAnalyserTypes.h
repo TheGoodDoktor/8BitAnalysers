@@ -266,6 +266,16 @@ struct FLabelInfo : FItem
 		return true;
 	}
 
+	void SanitizeName(void)
+	{
+		for (int i = 0; i < Name.size(); i++)
+		{
+			const char ch = Name[i];
+			if(ch == ' ')
+				Name[i] = '_';
+		}
+	}
+
 	bool RemoveLabelName(const std::string& labelName)
 	{
 		auto labelIt = LabelUsage.find(labelName);
