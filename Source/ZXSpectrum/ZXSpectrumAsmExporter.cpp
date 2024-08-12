@@ -1,7 +1,38 @@
 #include "CodeAnalyser/AssemblerExport.h"
 #include "SpectrumEmu.h"
 
-class FSJasmPlusExporter : public FASMExporter
+class FSpeccyAsmExporterBase : public FASMExporter
+{
+	public:
+		void ProcessLabelsOutsideExportedRange(void) override
+		{
+			FCodeAnalysisState& state = *pCodeAnalyser;
+
+			SetOutputToHeader();
+
+			Output("\n\n; ROM Labels\n");
+
+			for (auto labelAddr : DasmState.LabelsOutsideRange)
+			{
+				const FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(labelAddr);
+				if (labelAddr < 0x4000)
+					Output("%s: \t%s %s\n", pLabelInfo->GetName(),Config.EQUText, NumStr(labelAddr));
+			}
+
+			Output("\n; Screen Memory Labels\n");
+
+			for (auto labelAddr : DasmState.LabelsOutsideRange)
+			{
+				const FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(labelAddr);
+				if (labelAddr >= 0x4000)
+					Output("%s: \t%s %s\n", pLabelInfo->GetName(), Config.EQUText, NumStr(labelAddr));
+			}
+
+			Output("\n");
+		}
+};
+
+class FSJasmPlusExporter : public FSpeccyAsmExporterBase
 {
 public:
 	FSJasmPlusExporter()
@@ -10,6 +41,7 @@ public:
 		Config.DataWordPrefix = "dw";
 		Config.DataTextPrefix = "ascii";
 		Config.ORGText = "\torg";
+		Config.EQUText = "equ";
 	}
 
 	void AddHeader(void) override
@@ -17,36 +49,10 @@ public:
 		Output("\tdevice zxspectrum48\n");	// only 48k spectrum asm dumps are supported atm
 	}
 
-	void ProcessLabelsOutsideExportedRange(void) override
-	{
-		FCodeAnalysisState& state = *pCodeAnalyser;
-
-		SetOutputToHeader();
-
-		Output("\n\n; ROM Labels\n");
-
-		for (auto labelAddr : DasmState.LabelsOutsideRange)
-		{
-			const FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(labelAddr);
-			if(labelAddr < 0x4000)
-				Output("%s: \tequ %s\n", pLabelInfo->GetName(), NumStr(labelAddr));
-		}
-
-		Output("\n; Screen Memory Labels\n");
-
-		for (auto labelAddr : DasmState.LabelsOutsideRange)
-		{
-			const FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(labelAddr);
-			if (labelAddr >= 0x4000)
-				Output("%s: \tequ %s\n", pLabelInfo->GetName(), NumStr(labelAddr));
-		}
-
-		Output("\n");
-	}
 
 };
 
-class FSpasmExporter : public FASMExporter
+class FSpasmExporter : public FSpeccyAsmExporterBase
 {
 public:
 	FSpasmExporter()
@@ -55,17 +61,33 @@ public:
 		Config.DataWordPrefix = ".dw";
 		Config.DataTextPrefix = ".text";
 		Config.ORGText = ".org";
+		Config.EQUText = ".equ";
+	}
+};
+
+class FEZ80AsmExporter : public FSpeccyAsmExporterBase
+{
+public:
+	FEZ80AsmExporter()
+	{
+		Config.DataBytePrefix = ".db";
+		Config.DataWordPrefix = ".dw";
+		Config.DataTextPrefix = ".text";
+		Config.ORGText = ".org";
+		Config.EQUText = ".equ";
 	}
 };
 
 // Agon exporter uses Spasm but needs to add some other stuff
-class FAgonAsmExporter : public FSpasmExporter
+class FAgonAsmExporter : public FEZ80AsmExporter
 {
 public:
 	void	AddHeader(void) override
 	{
 		Output(".assume ADL=0\n");	// use standard z80 code
 	}
+
+
 
 };
 

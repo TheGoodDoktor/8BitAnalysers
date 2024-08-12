@@ -16,6 +16,7 @@ struct FAssemblerConfig
 	const char* DataWordPrefix = nullptr;
 	const char* DataTextPrefix = nullptr;
 	const char* ORGText = nullptr;
+	const char* EQUText = nullptr;
 };
 
 // Class to encapsulate ASM exporting
