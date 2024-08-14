@@ -276,7 +276,7 @@ struct FLabelInfo : FItem
 		}
 	}
 
-	bool RemoveLabelName(const std::string& labelName)
+	static bool RemoveLabelName(const std::string& labelName)
 	{
 		auto labelIt = LabelUsage.find(labelName);
 		//assert(labelIt != LabelUsage.end());	// shouldn't happen - it does though - investigate
