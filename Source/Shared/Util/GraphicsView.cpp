@@ -280,16 +280,16 @@ bool FGraphicsView::Save2222(const char* pFName)
 	if(fp == nullptr)
 		return false;
 
-	const uint32_t* pPixel = PixelBuffer;
+	const uint32_t* pPixel = PixelBuffer;	//ABGR
 
 	for (int i = 0; i < Width * Height; i++)
 	{
 		uint32_t pix8888 = *pPixel++;
 		uint8_t pix2222 =
-			(((pix8888 >> 30) & 3) << 6) |
-			(((pix8888 >> 22) & 3) << 4) |
-			(((pix8888 >> 14) & 3) << 2) |
-			(((pix8888 >> 6) & 3) << 0);
+			(((pix8888 >> 30) & 3) << 6) |	// A
+			(((pix8888 >> 22) & 3) << 0) |	// B
+			(((pix8888 >> 14) & 3) << 4) |	// G
+			(((pix8888 >> 6) & 3) << 2);	// R
 		fwrite(&pix2222,1,1,fp);
 	}
 
