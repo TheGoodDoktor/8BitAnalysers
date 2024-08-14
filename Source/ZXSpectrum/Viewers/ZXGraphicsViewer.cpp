@@ -5,12 +5,67 @@
 #include <CodeAnalyser/CodeAnalyser.h>
 
 #include "../SpectrumConstants.h"
+#include "../SpectrumEmu.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 // ZX Spectrum specific implementation
 void FZXGraphicsViewer::DrawScreenViewer()
 {
+	FCodeAnalysisState& codeAnalysis = GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
+
 	UpdateScreenPixelImage();
-	pScreenView->Draw();
+
+	// View Scale
+	ImGui::InputInt("Scale", &ScreenViewScale, 1, 1);
+	ScreenViewScale = std::max(1, ScreenViewScale);	// clamp
+
+	const float scale = ImGui_GetScaling() * ScreenViewScale;
+
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	pScreenView->Draw(pScreenView->GetWidth() * (float)ScreenViewScale, pScreenView->GetHeight() * (float)ScreenViewScale, true);
+	if (ImGui::IsItemHovered())
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		const int xp = std::min(std::max((int)((io.MousePos.x - pos.x) / scale), 0), 255);
+		const int yp = std::min(std::max((int)((io.MousePos.y - pos.y) / scale), 0), 191);
+
+		const uint16_t scrPixAddress = GetScreenPixMemoryAddress(xp, yp);
+		const uint16_t scrAttrAddress = GetScreenAttrMemoryAddress(xp, yp);
+
+		if (scrPixAddress != 0)
+		{
+			ImDrawList* dl = ImGui::GetWindowDrawList();
+			const int rx = (xp & ~0x7);
+			const int ry = (yp & ~0x7);
+			dl->AddRect(ImVec2(pos.x + ((float)rx * scale), pos.y + ((float)ry * scale)), ImVec2(pos.x + (float)(rx + 8) * scale, pos.y + (float)(ry + 8) * scale), 0xffffffff);
+			
+			ImGui::BeginTooltip();
+			ImGui::Text("Screen Pos: (pix:%d,%d) (char:%d,%d)", xp, yp, xp / 8, yp / 8);
+			ImGui::Text("Pixel: %s, Attr: %s", NumStr(scrPixAddress), NumStr(scrAttrAddress));
+
+			const FAddressRef lastPixWriter = codeAnalysis.GetLastWriterForAddress(scrPixAddress);
+			const FAddressRef lastAttrWriter = codeAnalysis.GetLastWriterForAddress(scrAttrAddress);
+			if (lastPixWriter.IsValid())
+			{
+				ImGui::Text("Pixel Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(codeAnalysis, viewState, lastPixWriter);
+			}
+			if (lastAttrWriter.IsValid())
+			{
+				ImGui::Text("Attribute Writer: ");
+				ImGui::SameLine();
+				DrawCodeAddress(codeAnalysis, viewState, lastAttrWriter);
+			}
+			ImGui::EndTooltip();
+
+			if (ImGui::IsMouseDoubleClicked(0))
+				viewState.GoToAddress(lastPixWriter);
+			if (ImGui::IsMouseDoubleClicked(1))
+				viewState.GoToAddress(lastAttrWriter);
+		}
+	}
 	ImGui::Checkbox("Show Memory Accesses", &bShowScreenMemoryAccesses);
 	ImGui::Checkbox("Show Attributes",&bShowScreenAttributes);
 }

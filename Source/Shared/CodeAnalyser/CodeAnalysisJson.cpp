@@ -434,6 +434,7 @@ FLabelInfo* CreateLabelInfoFromJson(const json& labelInfoJson)
 	FLabelInfo* pLabelInfo = FLabelInfo::Allocate();
 
 	pLabelInfo->InitialiseName(((std::string)labelInfoJson["Name"]).c_str());
+
 	if (labelInfoJson.contains("Global"))
 		pLabelInfo->Global = true;
 
@@ -558,6 +559,8 @@ void ReadPageFromJson(FCodeAnalysisState &state, FCodeAnalysisPage& page, const 
 		{
 			const uint16_t pageAddr = labelInfoJson["Address"];
 			FLabelInfo* pLabelInfo = CreateLabelInfoFromJson(labelInfoJson);
+			pLabelInfo->EnsureUniqueName();
+			pLabelInfo->SanitizeName();
 			page.Labels[pageAddr] = pLabelInfo;
 		}
 	}

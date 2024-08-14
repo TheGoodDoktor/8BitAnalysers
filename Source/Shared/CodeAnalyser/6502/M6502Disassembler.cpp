@@ -573,7 +573,7 @@ static void ExportOutputCB(char c, void* pUserData)
 	pDasmState->Text += c;
 }
 #endif
-
+/*
 std::string M6502GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode)
 {
 	FExportDasmState dasmState;
@@ -586,6 +586,14 @@ std::string M6502GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_
 	SetNumberOutput(nullptr);
 
 	return dasmState.Text;
+}*/
+
+bool M6502GenerateDasmExportString(FExportDasmState& exportState)
+{
+	SetNumberOutput(&exportState);
+	m6502dasm_op(exportState.CurrentAddress, ExportDasmInputCB, ExportOutputCB, &exportState);
+	SetNumberOutput(nullptr);
+	return true;
 }
 
 

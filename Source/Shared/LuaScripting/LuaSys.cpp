@@ -28,6 +28,9 @@ extern void LoadImguiBindings();
 namespace LuaSys
 {
 
+static bool g_EnableExecutionHandlers = true;
+static std::unordered_map<uint16_t, std::string>	g_ExecutionHandlers;
+
 FLuaScopeCheck::FLuaScopeCheck(lua_State* pState):LuaState(pState)
 {
 	InitialStackItems = lua_gettop(LuaState);
@@ -106,6 +109,16 @@ void Shutdown(void)
 	if (GlobalState)
 		lua_close(GlobalState);
 	GlobalState = nullptr;
+
+	FCodeAnalysisState& state = EmuBase->GetCodeAnalysis();
+
+	for (auto& handler : g_ExecutionHandlers)
+	{
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(handler.first);
+		if(pCodeInfo != nullptr)
+			pCodeInfo->bHasLuaHandler = false;
+	}
+	g_ExecutionHandlers.clear();
 }
 
 lua_State*  GetGlobalState()
@@ -190,6 +203,68 @@ void CallFunction(const char* pFunctionName)
 		{
 		}
 	}
+}
+
+
+
+void RegisterExecutionHandler(uint16_t address, const char* functionName)
+{
+	FCodeAnalysisState& state = EmuBase->GetCodeAnalysis();
+
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(address);
+	pCodeInfo->bHasLuaHandler = true;
+	g_ExecutionHandlers[address] = functionName;
+}
+
+void RemoveExecutionHandler(uint16_t address)
+{
+	FCodeAnalysisState& state = EmuBase->GetCodeAnalysis();
+
+	auto findIt = g_ExecutionHandlers.find(address);
+	if (findIt != g_ExecutionHandlers.end())
+	{
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(address);
+		pCodeInfo->bHasLuaHandler = false;
+		g_ExecutionHandlers.erase(findIt);
+	}
+}
+
+bool OnInstructionExecuted(uint16_t pc)
+{
+	if(g_EnableExecutionHandlers == false)
+		return false;
+
+	if (GlobalState == nullptr)
+		return false;
+
+	// look up execution handler
+	auto handlerIt = g_ExecutionHandlers.find(pc);
+	if(handlerIt == g_ExecutionHandlers.end())
+	{
+		// no handler found - remove flag
+		FCodeAnalysisState& state = EmuBase->GetCodeAnalysis();
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
+		pCodeInfo->bHasLuaHandler = false;
+		return false;
+	}
+
+	// Call execution handler
+	const char* pFunctionName = handlerIt->second.c_str();
+	lua_State* pState = GlobalState;
+
+	lua_getglobal(pState, pFunctionName);
+	if (lua_isfunction(pState, -1))
+	{
+		if (lua_pcall(pState, 0, 1, 0) == LUA_OK)
+		{
+			if (!lua_isboolean(pState, -1))
+				return false;
+			else
+				return lua_toboolean(pState,-1);
+		}
+	}
+
+	return false;
 }
 
 bool OnEmulatorScreenDrawn(float x, float y, float scale)

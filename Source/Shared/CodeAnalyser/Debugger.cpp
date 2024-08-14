@@ -10,6 +10,7 @@
 #include "6502/M6502Disassembler.h"
 #include <Util/GraphicsView.h>
 #include "Misc/EmuBase.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 static const uint32_t	BPMask_Exec			= 0x0001;
 static const uint32_t	BPMask_DataWrite	= 0x0002;
@@ -40,7 +41,8 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
     Watches.clear();
 	//Stacks.clear();
 	Breakpoints.clear();
-
+	CallStack.clear();
+	FrameTrace.clear();
 }
 
 void FDebugger::CPUTick(uint64_t pins)
@@ -57,7 +59,7 @@ void FDebugger::CPUTick(uint64_t pins)
 	bool bIOWrite = false;
 	bool bIrq = false;
 	bool bNMI = false;
-	uint32_t BPMaskCheck = 0;
+	uint32_t bpMaskCheck = 0;
 
     if (CPUType == ECPUType::Z80)
     {
@@ -82,11 +84,7 @@ void FDebugger::CPUTick(uint64_t pins)
 		bIrq = risingPins & M6502_IRQ;
 		bNMI = risingPins & M6502_NMI;
 	}
-
-	// setup breakpoint mask to check
-	BPMaskCheck |= bWrite ? BPMask_DataWrite : 0;
-	BPMaskCheck |= bRead ? BPMask_DataRead : 0;
-
+	
     const FAddressRef addrRef = pCodeAnalysis->AddressRefFromPhysicalAddress(addr);
 
     if (bNewOp)
@@ -137,10 +135,22 @@ void FDebugger::CPUTick(uint64_t pins)
             break;
     }
 
+	// only set the mask if we know we're on an address that's breakpointed
+	if (bRead || bWrite)
+	{
+		FDataInfo* pDataInfo = pCodeAnalysis->GetDataInfoForAddress(addrRef);
+		if (pDataInfo->bHasBreakpoint)
+		{
+			// setup breakpoint mask to check
+			bpMaskCheck |= bWrite ? BPMask_DataWrite : 0;
+			bpMaskCheck |= bRead ? BPMask_DataRead : 0;
+		}
+	}
+
     // iterate through data breakpoints
 	// this can slow down if there are a lot of BPs
 	// Do a mask check
-	if (BPMaskCheck & BreakpointMask)
+	if (bpMaskCheck & BreakpointMask)
 	{
 		for (int i = 0; i < Breakpoints.size(); i++)
 		{
@@ -205,6 +215,8 @@ void FDebugger::CPUTick(uint64_t pins)
 
 int FDebugger::OnInstructionExecuted(uint64_t pins)
 {
+	FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(PC);
 	int trapId = kTrapId_None;
 
 	if (StepMode != EDebugStepMode::None)
@@ -223,27 +235,23 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
             break;
 		}
 	}
-	else if(BreakpointMask & BPMask_Exec)
+	
+	if(pCodeInfo->bHasBreakpoint)
 	{
 		for (int i = 0; i < Breakpoints.size(); i++)
 		{
 			const FBreakpoint& bp = Breakpoints[i];
 
-			if (bp.bEnabled)
-			{
-				switch (bp.Type)
-				{
-				case EBreakpointType::Exec:
-					if (PC == bp.Address)
+			if (bp.bEnabled && 
+				bp.Type == EBreakpointType::Exec &&
+				PC == bp.Address)
 					{
 						trapId = kTrapId_BpBase + i;
+						break;
 					}
-					break;
-                default:
-                    break;
-                }
-			}
 		}
+
+		// TODO: remove breakpoint flag if no breakpoint found
 	}
 
 	// Handle IRQ
@@ -399,6 +407,25 @@ void	FDebugger::LoadFromFile(FILE* fp)
 		fread(&bp.Type, sizeof(bp.Type), 1, fp);	// Type
 		fread(&bp.Size, sizeof(bp.Size), 1, fp);	// Size
 		fread(&bp.Val, sizeof(bp.Val), 1, fp);		// Val
+
+		// make sure code info is flagged
+		if(bp.Type == EBreakpointType::Exec)
+		{ 
+			FCodeAnalysisState& state = *pCodeAnalysis;
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(bp.Address);
+			if(pCodeInfo != nullptr)
+				pCodeInfo->bHasBreakpoint = true;
+		}
+		else if (bp.Type == EBreakpointType::Data)
+		{
+			FAddressRef bpAddr = bp.Address;
+			for (int i = 0; i < bp.Size; i++)
+			{
+				FDataInfo* dataInfo = pCodeAnalysis->GetDataInfoForAddress(bpAddr);
+				dataInfo->bHasBreakpoint = true;
+				pCodeAnalysis->AdvanceAddressRef(bpAddr);
+			}
+		}
 	}
 
 	// frame trace
@@ -531,10 +558,7 @@ static bool IsStepOverOpcode(ECPUType cpuType, const std::vector<uint8_t>& opcod
 
 void	FDebugger::StepOver()
 {
-	//const ECPUType cpuType = pEmulator->CPUType;
-
 	std::vector<uint8_t> stepOpcodes;
-	// TODO: this one's a bit more tricky!
    
     bDebuggerStopped = false;
     uint16_t nextPC = 0;
@@ -585,6 +609,9 @@ bool FDebugger::AddExecBreakpoint(FAddressRef addr)
 	if (IsAddressBreakpointed(addr))
 		return false;
 
+	FCodeInfo* pCodeInfo = pCodeAnalysis->GetCodeInfoForAddress(addr);
+	assert(pCodeInfo);
+	pCodeInfo->bHasBreakpoint = true;
 	Breakpoints.emplace_back(addr, EBreakpointType::Exec);
 	return true;
 }
@@ -594,6 +621,14 @@ bool FDebugger::AddDataBreakpoint(FAddressRef addr, uint16_t size)
 	if (IsAddressBreakpointed(addr))
 		return false;
 
+	FAddressRef bpAddr = addr;
+	for (int i = 0; i < size; i++)
+	{
+		FDataInfo* dataInfo = pCodeAnalysis->GetDataInfoForAddress(bpAddr);
+		dataInfo->bHasBreakpoint = true;
+		pCodeAnalysis->AdvanceAddressRef(bpAddr);
+	}
+
 	Breakpoints.emplace_back(addr, EBreakpointType::Data,size);
 	return true;
 }
@@ -602,10 +637,29 @@ bool FDebugger::RemoveBreakpoint(FAddressRef addr)
 {
 	for (int i = 0; i < Breakpoints.size(); i++)
 	{
-		if (Breakpoints[i].Address == addr)
+		FBreakpoint& bp = Breakpoints[i];
+
+		if (bp.Address == addr)
 		{
+			if (bp.Type == EBreakpointType::Exec)
+			{ 
+				FCodeInfo* pCodeInfo = pCodeAnalysis->GetCodeInfoForAddress(addr);
+				assert(pCodeInfo);
+				pCodeInfo->bHasBreakpoint = false;
+			}
+			else if (bp.Type == EBreakpointType::Data)
+			{
+				FAddressRef bpAddr = addr;
+				for (int i = 0; i < bp.Size; i++)
+				{
+					FDataInfo* dataInfo = pCodeAnalysis->GetDataInfoForAddress(bpAddr);
+					dataInfo->bHasBreakpoint = false;
+					pCodeAnalysis->AdvanceAddressRef(bpAddr);
+				}
+			}
 			Breakpoints[i] = Breakpoints.back();
 			Breakpoints.pop_back();
+			
 			return true;
 		}
 	}
@@ -823,6 +877,8 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 	{
 		if (strcmp(regName, "A") == 0)
 			return outVal = pZ80->a, true;
+		else if (strcmp(regName, "F") == 0)
+			return outVal = pZ80->f, true;
 		else if (strcmp(regName, "B") == 0)
 			return outVal = pZ80->b, true;
 		else if (strcmp(regName, "C") == 0)
@@ -848,6 +904,10 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 			return outVal = pM6502->X, true;
 		else if (strcmp(regName, "Y") == 0)
 			return outVal = pM6502->Y, true;
+		else if (strcmp(regName, "S") == 0)
+			return outVal = pM6502->S, true;
+		else if (strcmp(regName, "P") == 0)
+			return outVal = pM6502->P, true;
 	}
 
 	return false;
@@ -857,7 +917,9 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 {
 	if (CPUType == ECPUType::Z80)
 	{
-		if (strcmp(regName, "BC") == 0)
+		if (strcmp(regName, "AF") == 0)
+			return outVal = pZ80->af, true;
+		else if (strcmp(regName, "BC") == 0)
 			return outVal = pZ80->bc, true;
 		else if (strcmp(regName, "DE") == 0)
 			return outVal = pZ80->de, true;
@@ -869,6 +931,13 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 			return outVal = pZ80->iy, true;
 		else if (strcmp(regName, "SP") == 0)
 			return outVal = pZ80->sp, true;
+		else if (strcmp(regName, "PC") == 0)
+			return outVal = pZ80->pc, true;
+	}
+	else if (CPUType == ECPUType::M6502)
+	{
+		if (strcmp(regName, "PC") == 0)
+			return outVal = pM6502->PC, true;
 	}
 	return false;
 }
@@ -1153,18 +1222,24 @@ void FDebugger::DrawBreakpoints(void)
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit;
 	if (ImGui::BeginTable("Breakpoints", 4, flags))
 	{
-		ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed, 60);
+		const float charWidth = ImGui_GetFontCharWidth();
+		ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed, 10 * charWidth);
 		ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,50);
-		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,40);
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,6 * charWidth);
+		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,6 * charWidth);
 		ImGui::TableHeadersRow();
-
+		FAddressRef deleteRef;
 		for (auto& bp : Breakpoints)
 		{
 			ImGui::PushID(bp.Address.Val);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::Checkbox("##Enabled", &bp.bEnabled);
+			ImGui::SameLine();
+			if (ImGui::Button("Delete"))
+			{
+				deleteRef = bp.Address;
+			}
 			ImGui::TableSetColumnIndex(1);
 			ImGui::Text("%s:", NumStr(bp.Address.Address));
 			DrawAddressLabel(state, viewState, bp.Address);
@@ -1173,6 +1248,11 @@ void FDebugger::DrawBreakpoints(void)
 			ImGui::TableSetColumnIndex(3);
 			ImGui::Text("%d", bp.Size);
 			ImGui::PopID();
+		}
+
+		if (deleteRef.IsValid())
+		{
+			RemoveBreakpoint(deleteRef);
 		}
 		ImGui::EndTable();
 	}

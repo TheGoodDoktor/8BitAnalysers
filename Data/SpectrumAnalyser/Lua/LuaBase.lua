@@ -74,3 +74,12 @@ function dumpFunc(o)
  function dump(o)
     print(dumpFunc(o))
  end
+
+-- CPU access tables
+Z80 = {}
+Z80Meta = {}
+
+Z80Meta.__index = function(table,key)
+	return GetRegValue(key)
+end
+setmetatable(Z80,Z80Meta)

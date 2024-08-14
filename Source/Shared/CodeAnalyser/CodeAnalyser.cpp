@@ -24,6 +24,7 @@
 #include "DataTypes.h"
 
 #include "Misc/EmuBase.h"
+#include <LuaScripting/LuaSys.h>
 
 // memory bank code
 
@@ -303,14 +304,29 @@ std::vector<FAddressRef> FCodeAnalysisState::FindInAnalysis(const char* pString,
 			{
 				bool bFound = false;
 
-				// search code comment
+				// search code 
 				const FCodeInfo* pCodeInfo = page.CodeInfo[pageAddr];
-				if(pCodeInfo && ContainsTextLower(searchTextLower,pCodeInfo->Comment))
-					bFound = true;
+				if(pCodeInfo)
+				{
+					if(ContainsTextLower(searchTextLower,pCodeInfo->Comment))
+						bFound = true;
 				
-				// search code text
-				if (pCodeInfo && ContainsTextLower(searchTextLower, pCodeInfo->Text))
-					bFound = true;
+					// Generate code if there's no text
+					if(pCodeInfo->Text.empty())
+					{
+						MapBankForAnalysis(bank);	// map so we generate code for the correct bank
+						const uint16_t physAddress = bank.GetMappedAddress() + (pageNo * FCodeAnalysisPage::kPageSize) + pageAddr;
+						WriteCodeInfoForAddress(*this, physAddress);
+						UnMapAnalysisBanks();
+					}
+
+					Markup::SetCodeInfo(pCodeInfo);
+					const std::string expString = Markup::ExpandString(*this,pCodeInfo->Text.c_str());
+
+					// search code text
+					if (ContainsTextLower(searchTextLower, expString))
+						bFound = true;
+				}
 
 				// search label comment
 				const FLabelInfo* pLabelInfo = page.Labels[pageAddr];
@@ -623,11 +639,23 @@ std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address)
 
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef address, ELabelType labelType)
 {
+	bool bLabelOnOperand = false;
+
+	// for label to instruction operands, we want to put the label before the instruction
+	if(labelType == ELabelType::Data)
+	{
+		FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
+		if (pDataInfo->DataType == EDataType::InstructionOperand)
+		{
+			address = pDataInfo->InstructionAddress;
+			bLabelOnOperand = true;
+		}
+	}
+
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel != nullptr)
 		return pLabel;
-
-		
+				
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
 	//pLabel->Address = address;
@@ -646,11 +674,8 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 		case ELabelType::Data:
 		{
 			FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
-			if(pDataInfo->DataType == EDataType::InstructionOperand)
-			{
-				address = pDataInfo->InstructionAddress;
+			if(bLabelOnOperand)
 				snprintf(label, kLabelSize, "operand_%04X", address.Address);
-			}
 			else
 				snprintf(label, kLabelSize, "data_%04X", address.Address);
 
@@ -872,6 +897,9 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pCodeInfo != nullptr)
 	{
+		if (pCodeInfo->bHasLuaHandler && LuaSys::OnInstructionExecuted(pc) == true)
+			state.Debugger.Break();
+
 		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
 		pCodeInfo->ExecutionCount++;
 	}
@@ -978,36 +1006,50 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 }
 
 // Do we want to do this with every page?
-void ResetReferenceInfo(FCodeAnalysisState &state)
+void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites)
 {
 	for (int i = 0; i < (1 << 16); i++)
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
 		if (pDataInfo != nullptr)
 		{
-			pDataInfo->LastFrameRead = -1;
-			pDataInfo->Reads.Reset();
-			pDataInfo->LastFrameWritten = -1;
-			pDataInfo->Writes.Reset();
+			if(bReads)
+			{
+				pDataInfo->LastFrameRead = -1;
+				pDataInfo->Reads.Reset();
+			}
+			if(bWrites)
+			{
+				pDataInfo->LastFrameWritten = -1;
+				pDataInfo->Writes.Reset();
+			}
 		}
 
-		FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(i);
-		if (pLabelInfo != nullptr)
+		if(bReads)
 		{
-			pLabelInfo->References.Reset();
+			FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(i);
+			if (pLabelInfo != nullptr)
+			{
+				pLabelInfo->References.Reset();
+			}
 		}
 
 		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(i);
 		if(pCodeInfo != nullptr)
 		{
-			pCodeInfo->bSelfModifyingCode = false;
 			pCodeInfo->FrameLastExecuted = -1;
-			pCodeInfo->Reads.Reset();
-			pCodeInfo->Writes.Reset();
+			if(bReads)
+				pCodeInfo->Reads.Reset();
+			
+			if(bWrites)
+			{
+				pCodeInfo->Writes.Reset();
+				pCodeInfo->bSelfModifyingCode = false;
+			}
 		}
 
-
-		state.SetLastWriterForAddress(i,  FAddressRef());
+		if(bWrites)
+			state.SetLastWriterForAddress(i,  FAddressRef());
 	}
 }
 
@@ -1020,6 +1062,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *nam
 	//pLabel->Address = address;
 	pLabel->ByteSize = 1;
 	pLabel->Global = type == ELabelType::Function;
+	pLabel->EnsureUniqueName();
 	state.SetLabelForPhysicalAddress(address, pLabel);
 
 	if (pLabel->Global)

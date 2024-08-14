@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include "Util/Misc.h"
+#include <set>
 
 class FCodeAnalysisState;
 struct FCodeInfo;
@@ -57,8 +58,13 @@ public:
 	void OutputU16(uint16_t val, dasm_output_t outputCallback) override;
 	void OutputD8(int8_t val, dasm_output_t outputCallback) override;
 
-	FCodeInfo* pCodeInfoItem = nullptr;
+	const FCodeInfo* pCodeInfoItem = nullptr;
 	ENumberDisplayMode	HexDisplayMode = ENumberDisplayMode::HexDollar;
+
+	uint16_t	ExportMin = 0;
+	uint16_t	ExportMax = 0xffff;
+
+	std::set<uint16_t>	LabelsOutsideRange;
 };
 
 uint8_t ExportDasmInputCB(void* pUserData);
@@ -69,4 +75,6 @@ void DasmOutputU8(uint8_t val, dasm_output_t out_cb, void* user_data);
 void DasmOutputU16(uint16_t val, dasm_output_t out_cb, void* user_data);
 void DasmOutputD8(int8_t val, dasm_output_t out_cb, void* user_data);
 
-std::string GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode);
+//std::string GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode);
+
+bool GenerateDasmExportString(FExportDasmState& exportState);

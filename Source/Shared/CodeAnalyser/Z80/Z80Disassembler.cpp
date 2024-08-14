@@ -522,6 +522,7 @@ uint16_t Z80DisassembleGetNextPC(uint16_t pc, FCodeAnalysisState& state, std::ve
 	return nextPC;
 }
 
+/*
 std::string Z80GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode)
 {
 	FExportDasmState dasmState;
@@ -534,4 +535,13 @@ std::string Z80GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t 
 	SetNumberOutput(nullptr);
 
 	return dasmState.Text;
+}
+*/
+
+bool Z80GenerateDasmExportString(FExportDasmState& exportState)
+{
+	SetNumberOutput(&exportState);
+	z80dasm_op(exportState.CurrentAddress, ExportDasmInputCB, ExportOutputCB, &exportState);
+	SetNumberOutput(nullptr);
+	return true;
 }

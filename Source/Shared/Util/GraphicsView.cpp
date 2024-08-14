@@ -269,8 +269,31 @@ bool FGraphicsView::SavePNG(const char* pFName)
 {
 	// TODO: we might need to flip the bytes
 
-	stbi_write_png(pFName, Width, Height, 4, PixelBuffer, Width * sizeof(uint32_t));
+	const int ret = stbi_write_png(pFName, Width, Height, 4, PixelBuffer, Width * sizeof(uint32_t));
 
+	return ret == 1;
+}
+
+bool FGraphicsView::Save2222(const char* pFName)
+{
+	FILE* fp = fopen(pFName,"wb");
+	if(fp == nullptr)
+		return false;
+
+	const uint32_t* pPixel = PixelBuffer;
+
+	for (int i = 0; i < Width * Height; i++)
+	{
+		uint32_t pix8888 = *pPixel++;
+		uint8_t pix2222 =
+			(((pix8888 >> 30) & 3) << 6) |
+			(((pix8888 >> 22) & 3) << 4) |
+			(((pix8888 >> 14) & 3) << 2) |
+			(((pix8888 >> 6) & 3) << 0);
+		fwrite(&pix2222,1,1,fp);
+	}
+
+	fclose(fp);
 	return true;
 }
 

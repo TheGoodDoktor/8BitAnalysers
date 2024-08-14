@@ -490,9 +490,16 @@ void FEmuBase::SystemMenu()
 
 void FEmuBase::ActionsMenu()
 {
-	if (ImGui::MenuItem("Reset Reference Info"))
+	if (ImGui::BeginMenu("Reset Reference Info"))
 	{
-		ResetReferenceInfo(CodeAnalysis);
+		if (ImGui::MenuItem("Read"))
+			ResetReferenceInfo(CodeAnalysis, true, false);
+		if (ImGui::MenuItem("Write"))
+			ResetReferenceInfo(CodeAnalysis, false, true);
+		if (ImGui::MenuItem("Both"))
+			ResetReferenceInfo(CodeAnalysis, true, true);
+
+		ImGui::EndMenu();
 	}
 
 	if (ImGui::MenuItem("Run Static Analysis"))

@@ -11,6 +11,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "UIColours.h"
 #include "ComboBoxes.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, const FDataInfo* pDataInfo)
 {
@@ -257,11 +258,12 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 // returns how much space it took
 float DrawColAttr(FCodeAnalysisState& state, uint16_t addr,const FDataInfo* pDataInfo, bool bEditMode)
 {
+	const float scale = ImGui_GetScaling();
 	const float line_height = ImGui::GetTextLineHeight();
 	const float rectSize = line_height + 4;
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	pos.x += 200.0f;
+	pos.x += 120.0f * scale;
 	pos.y -= rectSize + 2;
 	const ImVec2 startPos = pos;
 	const uint32_t* colourLUT = state.Config.CharacterColourLUT;
@@ -658,15 +660,21 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	break;
 
 	case EDataType::Bitmap:
+		ImGui::PushStyleColor(ImGuiCol_Text, Colours::defaultValue);
 		ImGui::Text("Bitmap");
+		ImGui::PopStyleColor();
 		offset = DrawDataBitmapLine(state, physAddr, pDataInfo, state.bAllowEditing);
 		break;
 	case EDataType::CharacterMap:
+		ImGui::PushStyleColor(ImGuiCol_Text, Colours::defaultValue);
 		ImGui::Text("Charmap");
+		ImGui::PopStyleColor();
 		offset = DrawDataCharMapLine(state,viewState, item.AddressRef, pDataInfo);
 		break;
 	case EDataType::ColAttr:
+		ImGui::PushStyleColor(ImGuiCol_Text, Colours::defaultValue);
 		ImGui::Text("ColAttr");
+		ImGui::PopStyleColor();
 		offset = DrawColAttr(state, physAddr, pDataInfo, state.bAllowEditing);
 		break;
 	case EDataType::ScreenPixels:

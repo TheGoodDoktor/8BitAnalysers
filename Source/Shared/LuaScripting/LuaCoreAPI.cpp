@@ -121,6 +121,61 @@ static int GetMemPtr(lua_State* pState)
 	return 0;
 }
 
+static int GetRegValue(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isstring(pState, -1))
+	{
+		FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+		size_t length = 0;
+		const char* pRegName = luaL_tolstring(pState, -1, &length);
+
+		uint8_t byteVal = 0;
+		if (state.Debugger.GetRegisterByteValue(pRegName, byteVal))
+		{
+			lua_pushinteger(pState,byteVal);
+			return 1;
+		}
+		uint16_t wordVal = 0;
+		if(state.Debugger.GetRegisterWordValue(pRegName, wordVal))
+		{
+			lua_pushinteger(pState, wordVal);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static int RegisterExecutionHandler(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isinteger(pState, 1) && lua_isstring(pState, 2))
+	{
+		size_t length = 0;
+		const lua_Integer address = lua_tointeger(pState, 1);
+		const char* pFunctionName = luaL_tolstring(pState, 2, &length);
+		LuaSys::RegisterExecutionHandler((uint16_t)address,pFunctionName);
+	}
+
+	return 0;	// TODO: return success?
+}
+
+static int RemoveExecutionHandler(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+
+	if (pEmu != nullptr && lua_isinteger(pState, 1))
+	{
+		const lua_Integer address = lua_tointeger(pState, 1);
+		LuaSys::RemoveExecutionHandler((uint16_t)address);
+	}
+
+	return 0;
+}
+
 // Analysis related
 static int SetEditMode(lua_State* pState)
 {
@@ -387,6 +442,20 @@ static int SaveGraphicsViewPNG(lua_State *pState)
 	return 0;
 }
 
+static int SaveGraphicsView2222(lua_State* pState)
+{
+	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1);
+	if (pGraphicsView == nullptr)
+		return 0;
+
+	FEmuBase* pEmulator = LuaSys::GetEmulator();
+	const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetProjectConfig()->Name + "/";
+	const std::string fname = gameRoot + luaL_optstring(pState, 2, "temp2222.png");
+
+	pGraphicsView->Save2222(fname.c_str());
+	return 0;
+}
+
 static int DrawOtherGraphicsViewScaled(lua_State *pState)
 {
 	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
@@ -415,6 +484,9 @@ static const luaL_Reg corelib[] =
 	{"WriteByte", WriteByte},
 	{"WriteWord", WriteWord},
 	{"GetMemPtr", GetMemPtr},
+	{"GetRegValue", GetRegValue},
+	{"RegisterExecutionHandler", RegisterExecutionHandler},
+	{"RemoveExecutionHandler", RemoveExecutionHandler},
 	// Analysis
 	{"SetEditMode", SetEditMode},
 	{"SetDataItemComment", SetDataItemComment},
@@ -432,6 +504,7 @@ static const luaL_Reg corelib[] =
 	{"ClearGraphicsView", ClearGraphicsView},
 	{"DrawGraphicsView", DrawGraphicsView},
 	{"SaveGraphicsViewPNG", SaveGraphicsViewPNG},
+	{"SaveGraphicsView2222", SaveGraphicsView2222},
 	{"DrawOtherGraphicsViewScaled", DrawOtherGraphicsViewScaled},
 
 	{NULL, NULL}    // terminator

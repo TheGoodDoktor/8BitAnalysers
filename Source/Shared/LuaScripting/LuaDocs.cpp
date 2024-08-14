@@ -74,7 +74,7 @@ void FLuaDocLib::Verify(const luaL_Reg* pReg) const
 	for (int i = 0; pReg[i].name != nullptr; i++)
 	{
 		if (GetFunctionByName(pReg[i].name) == nullptr)
-			LOGWARNING("Lua func '%s' for lib '%s' not documented", pReg[i].name, Name.c_str());
+			LOGWARNING("Lua function '%s' for lib '%s' not documented", pReg[i].name, Name.c_str());
 	}
 #endif
 }
