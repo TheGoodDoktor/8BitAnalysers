@@ -620,6 +620,17 @@ void FixupPostLoad(FCodeAnalysisState& state)
 					else
 						LOGWARNING("Code at 0x%04X writing to 0x%04X not found",ref.Address,dataRef.Address);
 				}
+
+				// Fix up labels on instruction operands
+				FLabelInfo* pLabel = page.Labels[addr];
+				if (pLabel != nullptr && dataInfo.DataType == EDataType::InstructionOperand)
+				{
+					if(dataInfo.InstructionAddress != dataRef)	// is label inside instruction?
+					{
+						FLabelInfo::RemoveLabelName(pLabel->GetName());
+						page.Labels[addr] = nullptr;
+					}
+				}
 			}
 		}
 	}
