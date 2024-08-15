@@ -284,7 +284,9 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		break;
 		case EItemType::CommentLine:
 		{
-			Output("; %s", item.Item->Comment.c_str());
+			const std::string expString = Markup::ExpandString(state, item.Item->Comment.c_str());
+
+			Output("; %s", expString.c_str());
 		}
 		break;
         default:
@@ -294,7 +296,10 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 
 		// put comment on the end - not for comment lines
 		if (item.Item->Type != EItemType::CommentLine && item.Item->Comment.empty() == false)
-			Output("\t\t\t; %s", item.Item->Comment.c_str());
+		{
+			const std::string expString = Markup::ExpandString(state, item.Item->Comment.c_str());
+			Output("\t\t\t; %s", expString.c_str());
+		}
 		Output("\n");
 	}
 
