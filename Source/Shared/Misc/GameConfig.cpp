@@ -126,6 +126,12 @@ void FProjectConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 	{
 		jsonConfigFile["LuaSourceFiles"].push_back(luaSrc);
 	}
+
+	for (const auto& funcName : StubOutFunctions)
+	{
+		jsonConfigFile["StubOutFunctions"].push_back(funcName);
+	}
+	
 }
 
 void FProjectConfig::FixupAddressRefs(FCodeAnalysisState& state)
@@ -216,6 +222,17 @@ void FProjectConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 			LuaSourceFiles.push_back(srcJson);
 		}
 	}
+
+	// functions to stub out for asm exports
+	if (jsonConfigFile.contains("StubOutFunctions"))
+	{
+		StubOutFunctions.clear();
+		for (const auto& funcName : jsonConfigFile["StubOutFunctions"])
+		{
+			StubOutFunctions.push_back(funcName);
+		}
+	}
+	
 }
 
 bool FProjectConfig::AddLuaSourceFile(const char* pFilename)

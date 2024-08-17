@@ -629,7 +629,7 @@ void FEmuBase::DrawExportAsmModalPopup()
 					if(bExportAsm)
 					{
 						outputFname += ".asm";
-						ExportAssembler(CodeAnalysis, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
+						ExportAssembler(this, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
 					}
 					else if (bExportBinary)
 					{
@@ -769,6 +769,49 @@ void FEmuBase::LoadFont()
 			io.Fonts->Build();
 		}
 	}
+}
+
+bool	FEmuBase::IsLabelStubbed(const char* pLabelName)
+{
+	if(pCurrentProjectConfig == nullptr)
+		return false;
+
+	const std::string labelName(pLabelName);
+
+	for (const auto& stub : pCurrentProjectConfig->StubOutFunctions)
+	{
+		if(stub == labelName)
+			return true;
+	}
+
+	return false;
+}
+
+bool	FEmuBase::AddStubbedLabel(const char* pLabelName)
+{
+	if(IsLabelStubbed(pLabelName))
+		return false;
+
+	pCurrentProjectConfig->StubOutFunctions.push_back(pLabelName);
+}
+
+bool	FEmuBase::RemoveStubbedLabel(const char* pLabelName)
+{
+	if (pCurrentProjectConfig == nullptr)
+		return false;
+
+	const std::string labelName(pLabelName);
+
+	for (auto stubIt = pCurrentProjectConfig->StubOutFunctions.begin(); stubIt != pCurrentProjectConfig->StubOutFunctions.end(); ++stubIt)
+	{
+		if (*stubIt == labelName)
+		{
+			pCurrentProjectConfig->StubOutFunctions.erase(stubIt);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // Viewers

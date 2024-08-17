@@ -1022,9 +1022,27 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 
 		if (item.Item->Type == EItemType::Label)
 		{
+			const FLabelInfo* pLabel = state.GetLabelForAddress(item.AddressRef);
+
 			if (ImGui::Selectable("Remove label"))
 			{
 				RemoveLabelAtAddress(state, item.AddressRef);
+			}
+
+			if(pLabel)
+			{
+				FEmuBase* pEmu = state.GetEmulator();
+
+				if(pEmu->IsLabelStubbed(pLabel->GetName()) == false)
+				{
+					if (ImGui::Selectable("Stub from ASM export"))
+						state.GetEmulator()->AddStubbedLabel(pLabel->GetName());
+				}
+				else
+				{
+					if (ImGui::Selectable("Remove stub from ASM export"))
+						state.GetEmulator()->RemoveStubbedLabel(pLabel->GetName());
+				}
 			}
 		}
 		else

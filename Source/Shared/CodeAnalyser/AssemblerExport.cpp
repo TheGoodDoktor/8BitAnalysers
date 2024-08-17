@@ -5,6 +5,7 @@
 #include "Misc/EmuBase.h"
 #include <util/z80dasm.h>
 #include "Debug/DebugLog.h"
+#include "misc/GameConfig.h"
 
 #include <string.h>
 #include <stdarg.h>
@@ -44,9 +45,9 @@ FASMExporter* GetAssemblerExporter(const char* pConfigName)
 }
 
 
-bool FASMExporter::Init(const char* pFilename, FCodeAnalysisState* pState)
+bool FASMExporter::Init(const char* pFilename, FEmuBase* pEmu)
 {
-	pCodeAnalyser = pState;
+	pEmulator = pEmu;
 	FilePtr = fopen(pFilename, "wt");
 
 	if (FilePtr == nullptr)
@@ -54,7 +55,7 @@ bool FASMExporter::Init(const char* pFilename, FCodeAnalysisState* pState)
 
 	HeaderText.clear();
 	BodyText.clear();
-	DasmState.CodeAnalysisState = pCodeAnalyser;
+	DasmState.CodeAnalysisState = &pEmu->GetCodeAnalysis();
 	DasmState.HexDisplayMode = HexMode;
 
 	OldNumberMode = GetNumberDisplayMode();
@@ -95,6 +96,19 @@ void FASMExporter::Output(const char* pFormat, ...)
 	va_end(ap);
 }
 
+bool FASMExporter::IsLabelStubbed(const char* pLabelName) const
+{
+	const FProjectConfig* pConfig = pEmulator->GetProjectConfig();
+	const std::string labelName(pLabelName);
+	for (const auto& stub : pConfig->StubOutFunctions)
+	{
+		if(stub == labelName)
+			return true;
+	}
+
+	return false;
+}
+
 uint16_t g_DbgAddress = 0xEA71;
 
 void AppendCharToString(char ch, std::string& outString);
@@ -115,7 +129,7 @@ ENumberDisplayMode FASMExporter::GetNumberDisplayModeForDataItem(const FDataInfo
 
 void FASMExporter::OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo)
 {
-	FCodeAnalysisState& state = *pCodeAnalyser;
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	std::string textString;
 	FAddressRef byteAddress = addr;
 	for (int i = 0; i < pDataInfo->ByteSize; i++)
@@ -132,8 +146,8 @@ void FASMExporter::OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataI
 
 void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 {
-	const FDataInfo* pDataInfo = pCodeAnalyser->GetDataInfoForAddress(addr);
-	FCodeAnalysisState& state = *pCodeAnalyser;
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	const FDataInfo* pDataInfo = state.GetDataInfoForAddress(addr);
 
 	const ENumberDisplayMode dispMode = GetNumberDisplayModeForDataItem(pDataInfo);
 
@@ -220,7 +234,7 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 
 bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 {
-	FCodeAnalysisState& state = *pCodeAnalyser;
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
 	DasmState.ExportMin = startAddr;
 	DasmState.ExportMax = endAddr;
@@ -230,7 +244,7 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 
 	Output("%s %s\n", Config.ORGText, NumStr(startAddr));
 
-	for (const FCodeAnalysisItem &item : pCodeAnalyser->ItemList)
+	for (const FCodeAnalysisItem &item : state.ItemList)
 	{
 		const uint16_t addr = item.AddressRef.Address;
 
@@ -245,7 +259,10 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		case EItemType::Label:
 		{
 			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
-			Output("%s:", pLabelInfo->GetName());
+			if(IsLabelStubbed(pLabelInfo->GetName()))
+				Output("%s_Stubbed:", pLabelInfo->GetName());
+			else
+				Output("%s:", pLabelInfo->GetName());
 		}
 		break;
 		case EItemType::Code:
@@ -310,13 +327,14 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 }
 
 
-bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr)
+bool ExportAssembler(FEmuBase* pEmu, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr)
 {
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	FASMExporter* pExporter = GetAssemblerExporter(state.pGlobalConfig->ExportAssembler.c_str());
 	if(pExporter == nullptr)
 		return false;
 
-	if(pExporter->Init(pTextFileName, &state) == false)
+	if(pExporter->Init(pTextFileName, pEmu) == false)
 		return false;
 
 	pExporter->SetOutputToHeader();

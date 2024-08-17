@@ -236,7 +236,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		}
 	}
 	
-	if(pCodeInfo->bHasBreakpoint)
+	if(pCodeInfo && pCodeInfo->bHasBreakpoint)	// TODO: investigate why this can sometime be null (seen on C64)
 	{
 		for (int i = 0; i < Breakpoints.size(); i++)
 		{

@@ -34,6 +34,7 @@ struct FProjectConfig
 	FEmulatorFile	EmulatorFile;
 
 	std::vector<std::string>	LuaSourceFiles;
+	std::vector<std::string>	StubOutFunctions;
 
 	FCodeAnalysisViewConfig	ViewConfigs[FCodeAnalysisState::kNoViewStates];
 };

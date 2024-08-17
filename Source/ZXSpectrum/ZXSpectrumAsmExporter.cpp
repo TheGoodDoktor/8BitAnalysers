@@ -6,7 +6,7 @@ class FSpeccyAsmExporterBase : public FASMExporter
 	public:
 		void ProcessLabelsOutsideExportedRange(void) override
 		{
-			FCodeAnalysisState& state = *pCodeAnalyser;
+			FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
 			SetOutputToHeader();
 

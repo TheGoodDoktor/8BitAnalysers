@@ -23,7 +23,7 @@ struct FAssemblerConfig
 class FASMExporter
 {
 public:
-	bool		Init(const char* pFilename, FCodeAnalysisState* pState);
+	bool		Init(const char* pFilename, class FEmuBase* pEmu);
 	bool		Finish();
 	void		SetOutputToHeader(){OutputString = &HeaderText;}
 	void		SetOutputToBody(){OutputString = &BodyText;}
@@ -38,6 +38,7 @@ public:
 protected:
 	void				OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo);
 	ENumberDisplayMode	GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo);
+	bool			IsLabelStubbed(const char* pLabelName) const;
 
 	bool			bInitialised = false;
 	ENumberDisplayMode HexMode = ENumberDisplayMode::HexDollar;
@@ -45,7 +46,7 @@ protected:
 
 	std::string		Filename;
 	FILE* FilePtr = nullptr;
-	FCodeAnalysisState* pCodeAnalyser = nullptr;
+	FEmuBase* pEmulator = nullptr;
 
 	FExportDasmState	DasmState;
 	std::string		HeaderText;
@@ -61,4 +62,4 @@ const std::map<std::string, FASMExporter*>&	GetAssemblerExporters();
 bool AddAssemblerExporter(const char* pName, FASMExporter* pExporter);
 
 // TODO: we should have a bank based approach?
-bool ExportAssembler(FCodeAnalysisState& state, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr);
+bool ExportAssembler(class FEmuBase* pEmu, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr);
