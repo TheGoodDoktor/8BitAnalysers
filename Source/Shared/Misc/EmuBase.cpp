@@ -793,6 +793,7 @@ bool	FEmuBase::AddStubbedLabel(const char* pLabelName)
 		return false;
 
 	pCurrentProjectConfig->StubOutFunctions.push_back(pLabelName);
+	return true;
 }
 
 bool	FEmuBase::RemoveStubbedLabel(const char* pLabelName)

@@ -274,6 +274,16 @@ bool FGraphicsView::SavePNG(const char* pFName)
 	return ret == 1;
 }
 
+uint8_t ConvertTo2Bpp(uint8_t val)
+{
+	if(val == 0)	
+		return 0;	// black
+	if(val == 0xff)
+		return 3;	// full bright
+	else
+		return 2;	// half bright
+}
+
 bool FGraphicsView::Save2222(const char* pFName)
 {
 	FILE* fp = fopen(pFName,"wb");
@@ -284,12 +294,18 @@ bool FGraphicsView::Save2222(const char* pFName)
 
 	for (int i = 0; i < Width * Height; i++)
 	{
-		uint32_t pix8888 = *pPixel++;
-		uint8_t pix2222 =
-			(((pix8888 >> 30) & 3) << 6) |	// A
-			(((pix8888 >> 22) & 3) << 0) |	// B
-			(((pix8888 >> 14) & 3) << 4) |	// G
-			(((pix8888 >> 6) & 3) << 2);	// R
+		const uint32_t pix8888 = *pPixel++;
+		const uint8_t a = (pix8888 >> 24) & 255;
+		const uint8_t b = (pix8888 >> 16) & 255;
+		const uint8_t g = (pix8888 >> 8) & 255;
+		const uint8_t r = (pix8888 >> 0) & 255;
+
+		const uint8_t pix2222 =
+			(ConvertTo2Bpp(a) << 6) |	// A
+			(ConvertTo2Bpp(b) << 0) |	// B
+			(ConvertTo2Bpp(g) << 4) |	// G
+			(ConvertTo2Bpp(r) << 2);	// R
+
 		fwrite(&pix2222,1,1,fp);
 	}
 

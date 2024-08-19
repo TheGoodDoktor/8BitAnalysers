@@ -18,6 +18,7 @@ uint32_t FZXGraphicsView::GetColFromAttr(uint8_t colBits, bool bBright)
 	const uint32_t outCol = ColourLUT[colBits & 7];
 	if (bBright == false)
 		return outCol & 0xFFD7D7D7;
+		//return outCol & 0xFF7F7F7F;
 	else
 		return outCol;
 }
