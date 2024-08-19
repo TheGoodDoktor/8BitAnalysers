@@ -5,7 +5,7 @@
 #include "Misc/EmuBase.h"
 #include <util/z80dasm.h>
 #include "Debug/DebugLog.h"
-#include "misc/GameConfig.h"
+#include "Misc/GameConfig.h"
 
 #include <string.h>
 #include <stdarg.h>
