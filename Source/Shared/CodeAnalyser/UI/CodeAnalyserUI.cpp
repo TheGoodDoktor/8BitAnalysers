@@ -2210,9 +2210,10 @@ void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState
 
 void DrawFindTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
-	ImGui::InputText("##findText", &viewState.FindText);
+	bool bActivateFind = ImGui::InputText("##findText", &viewState.FindText, ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::SameLine();
-	if (ImGui::Button("Find"))
+	bActivateFind |= ImGui::Button("Find");
+	if(bActivateFind)
 	{
 		viewState.FindResults = state.FindInAnalysis(viewState.FindText.c_str(),viewState.SearchROM);
 	}
