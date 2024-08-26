@@ -51,7 +51,8 @@ public:
 	const void* GetTexture() const { return Texture; }
 
 	bool SavePNG(const char* pFName);
-	bool Save2222(const char* pFName);
+	bool Save2222(const char* pFName, bool bUseAlpha);
+	bool SaveBitmap(const char* pFName);
 
 private:
 	int				Width = 0;

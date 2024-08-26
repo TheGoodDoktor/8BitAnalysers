@@ -284,7 +284,7 @@ uint8_t ConvertTo2Bpp(uint8_t val)
 		return 2;	// half bright
 }
 
-bool FGraphicsView::Save2222(const char* pFName)
+bool FGraphicsView::Save2222(const char* pFName,bool bUseAlpha)
 {
 	FILE* fp = fopen(pFName,"wb");
 	if(fp == nullptr)
@@ -295,7 +295,7 @@ bool FGraphicsView::Save2222(const char* pFName)
 	for (int i = 0; i < Width * Height; i++)
 	{
 		const uint32_t pix8888 = *pPixel++;
-		const uint8_t a = (pix8888 >> 24) & 255;
+		const uint8_t a = bUseAlpha ? (pix8888 >> 24) & 255 : 0xff;
 		const uint8_t b = (pix8888 >> 16) & 255;
 		const uint8_t g = (pix8888 >> 8) & 255;
 		const uint8_t r = (pix8888 >> 0) & 255;
@@ -312,6 +312,32 @@ bool FGraphicsView::Save2222(const char* pFName)
 	fclose(fp);
 	return true;
 }
+
+// 1 bit per pixel
+bool FGraphicsView::SaveBitmap(const char* pFName)
+{
+	FILE* fp = fopen(pFName, "wb");
+	if (fp == nullptr)
+		return false;
+
+	const uint32_t* pPixel = PixelBuffer;	//ABGR
+
+	for (int i = 0; i < (Width / 8) * Height; i++)
+	{
+		uint8_t pixelLine = 0;
+		for (int bit = 7; bit >= 0; bit--)
+		{
+			if(*pPixel++ != 0)
+				pixelLine |= 1 << bit;
+		}
+
+		fwrite(&pixelLine, 1, 1, fp);
+	}
+
+	fclose(fp);
+	return true;
+}
+
 
 
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bMagnifier)
