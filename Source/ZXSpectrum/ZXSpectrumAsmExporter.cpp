@@ -72,7 +72,7 @@ public:
 	{
 		Config.DataBytePrefix = ".db";
 		Config.DataWordPrefix = ".dw";
-		Config.DataTextPrefix = ".text";
+		Config.DataTextPrefix = ".db";
 		Config.ORGText = ".org";
 		Config.EQUText = ".equ";
 	}

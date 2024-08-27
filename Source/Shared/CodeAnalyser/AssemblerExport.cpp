@@ -208,9 +208,9 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	break;
 	case EDataType::Text:
 	{
-		OutputDataItemBytes(addr,pDataInfo);
+		//OutputDataItemBytes(addr,pDataInfo);
 		// This old text export doesn't really work
-		/*
+		
 		std::string textString;
 		FAddressRef charAddress = addr;
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
@@ -219,8 +219,8 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 			AppendCharToString(ch,textString);
 			state.AdvanceAddressRef(charAddress,1);
 		}
-		Output("%s '%s'", pAssemblerConfig->DataTextPrefix, textString.c_str());
-		*/
+		Output("%s \"%s\"", Config.DataTextPrefix, textString.c_str());
+		
 	}
 	break;
 
