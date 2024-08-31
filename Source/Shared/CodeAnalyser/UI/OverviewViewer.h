@@ -27,6 +27,21 @@ struct FOverviewStats
 class FOverviewViewer : public FViewerBase
 {
 public:
+	// constants
+	static const uint32_t kCodeCol = 0xff008080;
+	static const uint32_t kCodeColActive = 0xff00ffff;
+	static const uint32_t kDataReadActiveCol = 0xff00ff00;
+	static const uint32_t kDataReadCol = 0xff008000;
+	static const uint32_t kDataWriteActiveCol = 0xff0000ff;
+	static const uint32_t kDataWriteCol = 0xff000080;
+	static const uint32_t kDefaultDataCol = 0xffff0000;
+	static const uint32_t kBitmapDataCol = 0xffffffff;
+	static const uint32_t kCharMapDataCol = 0xff00ff00;
+	static const uint32_t kTextDataCol = 0xffff00ff;
+	static const uint32_t kScreenPixelsDataCol = 0xffff80ff;
+	static const uint32_t kColAttribDataCol = 0xff0080ff;
+	static const uint32_t kUnknownDataCol = 0xff808080;
+
 			FOverviewViewer(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Overview"; }
 
 	bool	Init(void) override;
@@ -41,6 +56,8 @@ public:
 
 	void	DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix);
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
+	
+	void	DrawLegend(void);
 
 private:
 	FOverviewStats	Stats;
@@ -50,4 +67,5 @@ private:
 	FGraphicsView*	MemoryViewImage = nullptr;
 	int			ViewScale = 1;
 	bool		bShowROM = false;
+	bool		bShowCurrentLocation = true;
 };
