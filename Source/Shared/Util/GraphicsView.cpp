@@ -302,9 +302,9 @@ bool FGraphicsView::Save2222(const char* pFName,bool bUseAlpha)
 
 		const uint8_t pix2222 =
 			(ConvertTo2Bpp(a) << 6) |	// A
-			(ConvertTo2Bpp(b) << 0) |	// B
-			(ConvertTo2Bpp(g) << 4) |	// G
-			(ConvertTo2Bpp(r) << 2);	// R
+			(ConvertTo2Bpp(b) << 4) |	// B
+			(ConvertTo2Bpp(g) << 2) |	// G
+			(ConvertTo2Bpp(r) << 0);	// R
 
 		fwrite(&pix2222,1,1,fp);
 	}

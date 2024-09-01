@@ -5,9 +5,12 @@
 #include "CodeAnalyserUI.h"
 #include "Util/GraphicsView.h"
 #include "ImGuiSupport/ImGuiScaling.h"
+#include "UIColours.h"
 
 static const int kMemoryViewImageWidth = 128;
 static const int kMemoryViewImageHeight = 512;
+
+void DrawHighlightBar(float x, float y, float width, float height);
 
 bool FOverviewViewer::Init(void)
 {
@@ -174,6 +177,59 @@ void	FOverviewViewer::DrawBankOverview()
 }
 #endif
 
+void	FOverviewViewer::DrawLegend()
+{
+	ImGui::BeginTooltip();
+
+	ImGui::ColorButton("Code", ImGui::ColorConvertU32ToFloat4(kCodeCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Code");
+
+	ImGui::ColorButton("Active Code", ImGui::ColorConvertU32ToFloat4(kCodeColActive), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Active Code");
+
+	ImGui::ColorButton("Data Read", ImGui::ColorConvertU32ToFloat4(kDataReadCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Data Read");
+
+	ImGui::ColorButton("Data Read Active", ImGui::ColorConvertU32ToFloat4(kDataReadActiveCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Data Read Active");
+
+	ImGui::ColorButton("Data Write", ImGui::ColorConvertU32ToFloat4(kDataWriteCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Data Write");
+
+	ImGui::ColorButton("Data Write Active", ImGui::ColorConvertU32ToFloat4(kDataWriteActiveCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Data Write Active");
+
+	ImGui::ColorButton("Bitmap Data", ImGui::ColorConvertU32ToFloat4(kBitmapDataCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Bitmap Data");
+
+	ImGui::ColorButton("Char Map Data", ImGui::ColorConvertU32ToFloat4(kCharMapDataCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Char Map Data");
+
+	ImGui::ColorButton("Screen Pixels", ImGui::ColorConvertU32ToFloat4(kScreenPixelsDataCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Screen Pixels");
+
+	ImGui::ColorButton("Colour Attributes", ImGui::ColorConvertU32ToFloat4(kColAttribDataCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Colour Attributes");
+
+	ImGui::ColorButton("Unknown Data", ImGui::ColorConvertU32ToFloat4(kUnknownDataCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Unknown Data");
+
+	ImGui::EndTooltip();
+}
+
+
+
 void	FOverviewViewer::DrawPhysicalMemoryOverview()
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
@@ -206,7 +262,19 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	const ImVec2 uv1(1.0f, bShowROM ? 1.0f : 0.75f);
 	ImGui::Image((void*)MemoryViewImage->GetTexture(), size,uv0,uv1);
 
+	const bool bMapIsHovered = ImGui::IsItemHovered();
+
+	ImGui::SameLine();
+	ImGui::Button("?");
+
 	if (ImGui::IsItemHovered())
+	{
+		DrawLegend();
+	}
+
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+
+	if (bMapIsHovered)
 	{
 		const int xp = (int)((io.MousePos.x - pos.x) / scale);
 		const int yp = (int)((io.MousePos.y - pos.y) / scale);
@@ -214,12 +282,42 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 		const uint16_t addr = (xp + yp * kMemoryViewImageWidth) + (bShowROM ? 0 : 0x4000);	// add offset if we're not showing ROM
 		const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
 		ImGui::Text("Location:");
-		DrawAddressLabel(state,viewState,addrRef);
+		DrawAddressLabel(state, viewState, addrRef);
 		DrawSnippetToolTip(state, viewState, addrRef);
 
 		if (ImGui::IsMouseDoubleClicked(0))
 		{
 			viewState.GoToAddress(addrRef, false);
+		}
+	}
+	else
+	{
+		ImGui::NewLine();
+	}
+
+	ImGui::Checkbox("Highlight Current Location", &bShowCurrentLocation);
+
+	if (bShowCurrentLocation)
+	{
+		// Highlight current Code Analysis view position
+		if (viewState.GetCursorItem().IsValid())
+		{
+			const FAddressRef cursorAddr = viewState.GetCursorItem().AddressRef;
+			const int address = cursorAddr.Address - (bShowROM ? 0 : 0x4000);
+			if (address >= 0)
+			{
+				float barMargin = std::max(scale, 8.0f);
+				float barHeight = scale + barMargin * 2; 
+		
+				const int bytesPerLine = 0x10000 / kMemoryViewImageHeight; // how many bytes in a single horizontal line?
+				const float offsetY = (address / bytesPerLine) * scale;
+
+				const float maxClampY = pos.y + size.y - barHeight;
+				const float pixelTopY = (float)((int)(pos.y + offsetY)); // Position of the top of the pixel on the pixel buffer texture.
+				const float barPosY = std::min(std::max((float)((int)(pixelTopY - barMargin)), pos.y), maxClampY);
+
+				DrawHighlightBar(pos.x, barPosY, size.x, barHeight);
+			}
 		}
 	}
 }
@@ -282,24 +380,23 @@ void FOverviewViewer::DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix)
 
 void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 {
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
 	const int frameThreshold = 4;
 	const int currentFrameNo = state.CurrentFrameNo;
 
-	const uint32_t kCodeCol = 0xff008080;
-	const uint32_t kCodeColActive = 0xff00ffff;
-	const uint32_t kDataReadActiveCol = 0xff00ff00;
-	const uint32_t kDataReadCol = 0xff008000;
-	const uint32_t kDataWriteActiveCol = 0xff0000ff;
-	const uint32_t kDataWriteCol = 0xff000080;
-	const uint32_t kDefaultDataCol = 0xffff0000;
-	const uint32_t kBitmapDataCol = 0xffffffff;
-	const uint32_t kCharMapDataCol = 0xff00ff00;
-	const uint32_t kTextDataCol = 0xffff00ff;
-	const uint32_t kScreenPixelsDataCol = 0xffff80ff;
-	const uint32_t kColAttribDataCol = 0xff0080ff;
-	const uint32_t kUnknownDataCol = 0xff808080;
-
 	uint32_t physicalAddress = bShowROM ? 0 : 0x4000;
+
+	FCodeInfo* pSelectedItemCodeInfo = nullptr;
+	int selectedItemAddr = -1;
+	if (bShowCurrentLocation)
+	{
+		if (viewState.GetCursorItem().IsValid())
+		{
+			pSelectedItemCodeInfo = state.GetCodeInfoForAddress(viewState.GetCursorItem().AddressRef);
+			selectedItemAddr = viewState.GetCursorItem().AddressRef.Address;
+		}
+	}
 
 	while (physicalAddress < (1 << 16))
 	{
@@ -319,16 +416,20 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 					codeCol = kCodeColActive;
 			}
 
+			const bool bIsSelectedItem = pSelectedItemCodeInfo == pCodeInfo;
+
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
 			{
 				physicalAddress++;
-				*pPix++ = codeCol;
+				*pPix++ = bIsSelectedItem ? Colours::GetFlashColour() : codeCol;
 			}
 		}
 		else
 		{
 			const FDataInfo* pDataInfo = state.GetDataInfoForAddress(readAddrRef);
-			
+
+			const bool bIsSelectedItem = selectedItemAddr >= (int)physicalAddress && selectedItemAddr < (int)(physicalAddress + pDataInfo->ByteSize);
+
 			uint32_t dataCol = kDefaultDataCol;
 
 			switch (pDataInfo->DataType)
@@ -384,18 +485,51 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 							drawCol = kDataReadActiveCol;
 					}
 
-					*pPix++ = drawCol;
+					*pPix++ = bIsSelectedItem ? Colours::GetFlashColour() : drawCol;
 				}
 				else
 				{
-					*pPix++ = dataCol;
+					*pPix++ = bIsSelectedItem ? Colours::GetFlashColour() : dataCol;
 				}
 
 				state.AdvanceAddressRef(readAddrRef);
 				state.AdvanceAddressRef(writeAddrRef);
+
 				physicalAddress++;
 			}
 		}
 	}
 }
 
+void DrawHighlightBar(float x, float y, float width, float height)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+
+	const float t1 = 2.f; // Thickness of frame's main part
+	const float t2 = 1.f; // Thickness of top and bottom "shadow"
+	const float frameHeight = t1 + t2 + t2;
+	const float minX = x - t1;
+	const float maxX = x + width + t1;
+	float posY = y - frameHeight; // t1 needs to be even for this to work
+
+	const int alpha = 0xf0 << 24;
+
+	// Horizontal top section
+	dl->AddRectFilled(ImVec2(minX, posY), ImVec2(maxX, posY + t2), alpha | 0x323232);
+	posY += t2;
+	dl->AddRectFilled(ImVec2(minX, posY), ImVec2(maxX, posY + t1), alpha | 0xf0f0f0);
+	posY += t1;
+	dl->AddRectFilled(ImVec2(minX, posY), ImVec2(maxX, posY + t2), alpha | 0x404040);
+
+	// Horizontal bottom section
+	posY += height + 1;
+	dl->AddRectFilled(ImVec2(minX, posY), ImVec2(maxX, posY + t2), alpha | 0x323232);
+	posY += t2;
+	dl->AddRectFilled(ImVec2(minX, posY), ImVec2(maxX, posY + t1), alpha | 0xf0f0f0);
+	posY += t1;
+	dl->AddRectFilled(ImVec2(minX, posY), ImVec2(maxX, posY + t2), alpha | 0x404040);
+
+	// Vertical side sections
+	dl->AddRectFilled(ImVec2(minX, y - frameHeight + t2), ImVec2(minX + t1, posY), alpha | 0xf0f0f0);
+	dl->AddRectFilled(ImVec2(x + width, y - frameHeight + t2), ImVec2(x + width + t1, posY), alpha | 0xf0f0f0);
+}
