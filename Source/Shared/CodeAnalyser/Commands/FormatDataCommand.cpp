@@ -156,7 +156,8 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 		else
 			pLabel->ChangeName(labelText.c_str());
 
-		pLabel->Global = true;
+		if(pLabel)
+			pLabel->Global = true;
 	}
 
 	if (FormatOptions.AddCommentAtStart)

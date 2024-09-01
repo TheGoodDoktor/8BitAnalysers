@@ -294,6 +294,27 @@ static int SetDataItemDisplayType(lua_State* pState)
 	return 0;
 }
 
+static int AddDataLabel(lua_State* pState)
+{
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	if (pEmu == nullptr || lua_isinteger(pState, 1) == false)
+		return 0;
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	const FAddressRef addrRef = GetAddressRefFromLua(pState, 1);
+	if (addrRef.IsValid())
+	{
+		size_t length = 0;
+		const char* pText = luaL_tolstring(pState, 2, &length);
+
+		const int memoryRange = luaL_optinteger(pState,3,1);
+
+		FLabelInfo* pLabel = AddLabel(state, addrRef, pText, ELabelType::Data,(uint16_t)memoryRange);
+		pLabel->Global = true;
+	}
+	return 0;
+}
+
+
 // Formatting
 
 // Generic format command
@@ -377,6 +398,7 @@ static int FormatMemoryAsCharMap(lua_State* pState)
 	state.SetCodeAnalysisDirty(formatOptions.StartAddress);
 	return 0;
 }
+
 
 
 // Gui related
@@ -508,6 +530,7 @@ static const luaL_Reg corelib[] =
 	{"SetCodeItemComment", SetCodeItemComment},
 	{"AddCommentBlock", AddCommentBlock},
 	{"SetDataItemDisplayType", SetDataItemDisplayType},
+	{"AddDataLabel", AddDataLabel},
 	// Formatting
 	{"FormatMemory", FormatMemory},
 	{"FormatMemoryAsBitmap", FormatMemoryAsBitmap},

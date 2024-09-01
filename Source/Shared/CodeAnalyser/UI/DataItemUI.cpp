@@ -955,65 +955,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		ImGui::InputScalar("Null Character", ImGuiDataType_U8, &pDataInfo->EmptyCharNo,0,0,format,flags);
 	}
 	break;
-#if 0
-	case EDataType::Image:
-		// This is currently disabled
-		if (0)
-		{
-			FImageData* pImageData = pDataInfo->ImageData;
-			bool bRebuildImage = false;
-			int sz[] = { pImageData->XSizeChars,pImageData->YSizeChars };
 
-			if (ImGui::InputInt2("Image Size (chars)", sz))
-			{
-				pDataInfo->ByteSize = pImageData->SetSizeChars(sz[0], sz[1]);
-				state.SetCodeAnalysisDirty(physAddr);	// force redraw of items
-				bRebuildImage = true;
-			}
-
-			// viewer drop down
-			const auto& viewerList = GetImageViewerList();
-			if (viewerList.empty() == false)
-			{
-				if (ImGui::BeginCombo("Viewer", viewerList[pImageData->ViewerId]->GetName()))
-				{
-					for (int i = 0; i < (int)viewerList.size(); i++)
-					{
-						const bool bSelected = i == pImageData->ViewerId;
-						if (ImGui::Selectable(viewerList[i]->GetName(), bSelected))
-						{
-							pImageData->ViewerId = i;
-							bRebuildImage = true;
-						}
-
-						if (bSelected)
-							ImGui::SetItemDefaultFocus();
-					}
-					ImGui::EndCombo();
-				}
-			}
-
-			// Draw image
-			if (pDataInfo->ImageData->GraphicsView == nullptr)
-				bRebuildImage = true;
-
-			if (bRebuildImage)
-			{
-				delete pImageData->GraphicsView;
-
-				pImageData->GraphicsView = new FGraphicsView(64, 64);// pDataInfo->ImgData.XSizeChars * 8, pDataInfo->ImgData.YSizeChars * 8);
-				pImageData->GraphicsView->Clear();
-
-				viewerList[pImageData->ViewerId]->DrawImageToView(
-					physAddr,
-					pImageData->XSizeChars, pImageData->YSizeChars,
-					pImageData->GraphicsView,
-					state.CPUInterface);
-			}
-			pImageData->GraphicsView->Draw();
-		}
-		break;
-#endif
 	default:
 		break;
 	}

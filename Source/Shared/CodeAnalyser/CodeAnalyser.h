@@ -732,8 +732,8 @@ std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address);
 // Commands
 //void Undo(FCodeAnalysisState &state);
 
-FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type);
-FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char* name, ELabelType type);
+FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type, uint16_t memoryRange = 1);
+FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char* name, ELabelType type, uint16_t memoryRange = 1);
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef address);
 FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
