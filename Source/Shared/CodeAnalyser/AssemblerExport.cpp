@@ -123,6 +123,8 @@ ENumberDisplayMode FASMExporter::GetNumberDisplayModeForDataItem(const FDataInfo
 		dispMode = HexMode;
 	if (pDataInfo->DisplayType == EDataItemDisplayType::Binary)
 		dispMode = ENumberDisplayMode::Binary;
+	if (pDataInfo->DisplayType == EDataItemDisplayType::Ascii)
+		dispMode = ENumberDisplayMode::Ascii;
 
 	return dispMode;
 }
@@ -136,8 +138,19 @@ void FASMExporter::OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataI
 	{
 		const uint8_t val = state.ReadByte(byteAddress);
 		char valTxt[16];
-		snprintf(valTxt, 16, "%s%c", NumStr(val, GetNumberDisplayModeForDataItem(pDataInfo)), i < pDataInfo->ByteSize - 1 ? ',' : ' ');
+
+		ENumberDisplayMode dispMode = GetNumberDisplayModeForDataItem(pDataInfo);
+		if (dispMode == ENumberDisplayMode::Ascii)
+		{
+			if(val < 0x20 || val > 0x7E)
+				dispMode = HexMode;
+		}
+		
+		snprintf(valTxt, 16, "%s", NumStr(val, dispMode));
+
 		textString += valTxt;
+		if (i < pDataInfo->ByteSize - 1)
+			textString += ',';
 
 		state.AdvanceAddressRef(byteAddress, 1);
 	}
