@@ -5,6 +5,7 @@
 #include <chips/z80.h>
 #include <chips/m6502.h>
 #include <vector>
+#include <optional>
 
 #include <stdio.h>
 
@@ -117,7 +118,7 @@ public:
 
 	// Actions
 	void	Break();
-	void	Continue();
+	void	Continue(std::optional<FAddressRef> stepToCursorAddr = std::nullopt);
 	void	StepInto();
 	void	StepOver();
 	void	StepFrame();
@@ -202,6 +203,7 @@ private:
 
 	std::vector<FBreakpoint>	Breakpoints;
 	uint32_t					BreakpointMask = 0;
+	std::optional<FAddressRef>	StepToCursorAddr;
 	int							ScanlineBreakpoint = -1;
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;
