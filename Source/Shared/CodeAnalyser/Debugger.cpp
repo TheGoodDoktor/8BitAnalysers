@@ -499,14 +499,14 @@ void	FDebugger::SaveToFile(FILE* fp)
 
 void FDebugger::Break()
 { 
-	StepToCursorAddr = std::nullopt;
+    StepToCursorAddr = std::nullopt;
     StepMode = EDebugStepMode::None;
     bDebuggerStopped = true;
 }
 
 void FDebugger::Continue(std::optional<FAddressRef> stepToCursorAddr)
 { 
-	StepToCursorAddr = stepToCursorAddr;
+    StepToCursorAddr = stepToCursorAddr;
     StepMode = EDebugStepMode::None; 
     bDebuggerStopped = false; 
 
