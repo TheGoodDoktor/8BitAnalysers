@@ -147,7 +147,7 @@ bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen)
 	return true;
 }
 
-void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FAddressRef addr)
+void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FAddressRef addr, int noLines /* = 10 */)
 {
 	// Bring up snippet in tool tip
 	const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
@@ -156,10 +156,9 @@ void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		const int index = GetItemIndexForAddress(state, addr);
 		if (index != -1)
 		{
-			const int kToolTipNoLines = 10;
 			ImGui::BeginTooltip();
-			const int startIndex = std::max(index - (kToolTipNoLines / 2), 0);
-			for (int line = 0; line < kToolTipNoLines; line++)
+			const int startIndex = std::max(index - (noLines / 2), 0);
+			for (int line = 0; line < noLines; line++)
 			{
 				if (startIndex + line < (int)pBank->ItemList.size())
 					DrawCodeAnalysisItem(state, viewState, pBank->ItemList[startIndex + line]);
