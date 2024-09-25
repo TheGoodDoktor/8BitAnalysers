@@ -46,6 +46,12 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 		FontSizePts = jsonConfigFile["FontSizePts"];
 	if (jsonConfigFile.contains("ImageScale"))
 		ImageScale = jsonConfigFile["ImageScale"];
+	if (jsonConfigFile.contains("GfxScreenScale"))
+		GfxScreenScale = jsonConfigFile["GfxScreenScale"];
+	if (jsonConfigFile.contains("GfxViewerScale"))
+		GfxViewerScale = jsonConfigFile["GfxViewerScale"];
+	if (jsonConfigFile.contains("OverviewScale"))
+		OverviewScale = jsonConfigFile["OverviewScale"];
 	
     if (jsonConfigFile.contains("EnableLua"))
         bEnableLua = jsonConfigFile["EnableLua"];
@@ -85,7 +91,10 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["Font"] = Font;
 	jsonConfigFile["FontSizePts"] = FontSizePts;
 	jsonConfigFile["ImageScale"] = ImageScale;
-    jsonConfigFile["EnableLua"] = bEnableLua;
+	jsonConfigFile["GfxViewerScale"] = GfxViewerScale;
+	jsonConfigFile["GfxScreenScale"] = GfxScreenScale;
+	jsonConfigFile["OverviewScale"] = OverviewScale;
+	jsonConfigFile["EnableLua"] = bEnableLua;
 	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;
 	jsonConfigFile["ExportAssembler"] = ExportAssembler;	
 

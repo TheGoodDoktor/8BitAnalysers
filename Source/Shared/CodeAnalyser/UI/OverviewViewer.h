@@ -65,7 +65,6 @@ private:
 
 	bool		bShowActivity = true;
 	FGraphicsView*	MemoryViewImage = nullptr;
-	int			ViewScale = 1;
 	bool		bShowROM = false;
 	bool		bShowCurrentLocation = true;
 };

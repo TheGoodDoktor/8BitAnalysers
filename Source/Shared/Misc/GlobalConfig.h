@@ -23,7 +23,10 @@ struct FGlobalConfig
 	std::string			Font = "Cousine-Regular.ttf"; // if no font is specified the default font will be used
 	int					FontSizePts = 13;
 	int					ImageScale = 1;
-    
+	int					OverviewScale = 2;
+	int					GfxViewerScale = 1;
+	int					GfxScreenScale = 1;
+
 	// Lua config
     bool                bEnableLua = false;
 	bool				bEditLuaBaseFiles = false;

@@ -243,12 +243,14 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
-	ImGui::InputInt("Scale", &ViewScale, 1, 1);
-	ViewScale = std::max(1, ViewScale);	// clamp
+	FGlobalConfig* pConfig = state.pGlobalConfig;
+
+	ImGui::InputInt("Scale", &pConfig->OverviewScale, 1, 1);
+	pConfig->OverviewScale = std::max(1, pConfig->OverviewScale);	// clamp
 	ImGui::SameLine();
 	ImGui::Checkbox("Include ROM", &bShowROM);
 
-	const float scale = ImGui_GetScaling() * (float)ViewScale;
+	const float scale = ImGui_GetScaling() * (float)pConfig->OverviewScale;
 
 	MemoryViewImage->UpdateTexture();
 

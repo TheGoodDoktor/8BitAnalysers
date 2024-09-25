@@ -1152,6 +1152,9 @@ void FCPCEmu::Shutdown()
 	pGlobalConfig->bShowOpcodeValues = CodeAnalysis.pGlobalConfig->bShowOpcodeValues;
 	pGlobalConfig->BranchLinesDisplayMode = CodeAnalysis.pGlobalConfig->BranchLinesDisplayMode;
 	pGlobalConfig->FontSizePts = CodeAnalysis.pGlobalConfig->FontSizePts;
+	pGlobalConfig->GfxScreenScale = CodeAnalysis.pGlobalConfig->GfxScreenScale;
+	pGlobalConfig->GfxViewerScale = CodeAnalysis.pGlobalConfig->GfxViewerScale;
+	pGlobalConfig->OverviewScale = CodeAnalysis.pGlobalConfig->OverviewScale;
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 

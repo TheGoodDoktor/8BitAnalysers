@@ -17,13 +17,14 @@ void FZXGraphicsViewer::DrawScreenViewer()
 	UpdateScreenPixelImage();
 
 	// View Scale
-	ImGui::InputInt("Scale", &ScreenViewScale, 1, 1);
-	ScreenViewScale = std::max(1, ScreenViewScale);	// clamp
+	FGlobalConfig* pConfig = codeAnalysis.pGlobalConfig;
+	ImGui::InputInt("Scale", &pConfig->GfxScreenScale, 1, 1);
+	pConfig->GfxScreenScale = std::max(1, pConfig->GfxScreenScale);	// clamp
 
-	const float scale = ImGui_GetScaling() * ScreenViewScale;
+	const float scale = ImGui_GetScaling() * pConfig->GfxScreenScale;
 
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	pScreenView->Draw(pScreenView->GetWidth() * (float)ScreenViewScale, pScreenView->GetHeight() * (float)ScreenViewScale, true);
+	pScreenView->Draw(pScreenView->GetWidth() * (float)pConfig->GfxScreenScale, pScreenView->GetHeight() * (float)pConfig->GfxScreenScale, true);
 	if (ImGui::IsItemHovered())
 	{
 		ImGuiIO& io = ImGui::GetIO();
