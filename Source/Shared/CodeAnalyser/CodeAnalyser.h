@@ -81,6 +81,8 @@ enum class EKey
 	StepScreenWrite,
 	Breakpoint,
 
+	GoToAddress,
+
 	Count
 };
 
@@ -164,14 +166,16 @@ struct FCodeAnalysisViewState
 	
 	void FixupAddressRefs(const FCodeAnalysisState& state);
 	
-	bool			Enabled = false;
-	bool			TrackPCFrame = false;
+	bool				Enabled = false;
+	bool				TrackPCFrame = false;
 	FAddressRef		HoverAddress;			// address being hovered over
 	FAddressRef		HighlightAddress;		// address to highlight
 	int				HighlightScanline = -1;	// scanline to highlight
-	bool			GoToLabel = false;
-	uint16_t		JumpAddress = 0;
+	bool				GoToLabel = false;
+	uint16_t			JumpAddress = 0;
 	int16_t			ViewingBankId = -1;
+	bool				bFocusKeyboardOnGotoAddressWidget = false;
+	FItem*			pKeyboardFocusItem = nullptr;
 
 	// for global Filters
 	bool						ShowROMLabels = false;

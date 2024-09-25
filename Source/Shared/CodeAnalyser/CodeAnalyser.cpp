@@ -1246,6 +1246,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	KeyConfig[(int)EKey::StepFrame] = ImGuiKey_F6;
 	KeyConfig[(int)EKey::StepScreenWrite] = ImGuiKey_F7;
 	KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
+	KeyConfig[(int)EKey::GoToAddress] = ImGuiKey_G; // Ctrl + G
 
 	Debugger.Init(this);
 	MemoryAnalyser.Init(this);

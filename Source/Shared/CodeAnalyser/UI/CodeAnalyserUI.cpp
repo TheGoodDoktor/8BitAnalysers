@@ -739,6 +739,10 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				viewState.GoToBookmarkAddress(bookmarkNo);
 		}
 
+		if (io.KeyCtrl && ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::GoToAddress]))
+		{
+			viewState.bFocusKeyboardOnGotoAddressWidget = true;
+		}
 	}
 }
 
@@ -1264,6 +1268,11 @@ void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 	ImGui::Text("Jump To Address:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(glyphWidth * 10.0f);
+	if (viewState.bFocusKeyboardOnGotoAddressWidget)
+	{
+		ImGui::SetKeyboardFocusHere();
+		viewState.bFocusKeyboardOnGotoAddressWidget = false;
+	}
 	ImGui::InputScalar("##jumpaddressinput", ImGuiDataType_U16, &viewState.JumpAddress, nullptr, nullptr, format, inputFlags);
 	const bool bEnteredJumpAddress = ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter, false);
 	
@@ -1281,6 +1290,41 @@ void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 			else
 				viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
 		}
+	}
+}
+
+void DrawHelpButton()
+{
+	ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetFrameHeight());
+	ImGui::Button("?");
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("Keyboard shortcuts");
+		ImGui::SeparatorText("Item Type");
+		ImGui::BulletText("c : Set as Code");
+		ImGui::BulletText("d : Set as Data");
+		ImGui::BulletText("t : Set as Text");
+		ImGui::SeparatorText("Display Mode & Operand Type");
+		ImGui::BulletText("a : Set as Ascii");
+		ImGui::BulletText("b : Set as Binary");
+		ImGui::BulletText("j : Set as Jump Address");
+		ImGui::BulletText("n : Set as Number");
+		ImGui::BulletText("p : Set as Pointer");
+		ImGui::BulletText("u : Set as Unknown");
+		ImGui::SeparatorText("Labels");
+		ImGui::BulletText("l : Add label");
+		ImGui::BulletText("r : Rename label");
+		ImGui::SeparatorText("Comments");
+		ImGui::BulletText("; : Add inline comment");
+		ImGui::BulletText("Shift + ; : Add multi-line comment");
+		ImGui::SeparatorText("Bookmarks");
+		ImGui::BulletText("Ctrl + 1..5 : Store bookmark");
+		ImGui::BulletText("Shift + 1..5 : Goto bookmark");
+		ImGui::SeparatorText("Navigation");
+		ImGui::BulletText("Ctrl + g : Jump to address");
+		ImGui::EndTooltip();
 	}
 }
 
@@ -1340,10 +1384,39 @@ void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& view
 
 void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const std::vector<FCodeAnalysisItem>&	itemList)
 {
+	// draw clipped list
 	const float lineHeight = ImGui::GetTextLineHeight();
+	ImGuiListClipper clipper;
+	clipper.Begin((int)itemList.size(), lineHeight);
+	std::vector<FAddressCoord> newList;
+
+	while (clipper.Step())
+	{
+		viewState.JumpLineIndent = 0;
+
+		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+		{
+			const ImVec2 coord = ImGui::GetCursorScreenPos();
+			if (itemList[i].Item->Type == EItemType::Code || itemList[i].Item->Type == EItemType::Data)
+			{
+				newList.push_back({ itemList[i].AddressRef,coord.y });
+			}
+
+			if (viewState.pKeyboardFocusItem == itemList[i].Item)
+			{
+				ImGui::SetKeyboardFocusHere();
+				viewState.pKeyboardFocusItem = nullptr;
+			}
+
+			DrawCodeAnalysisItem(state, viewState, itemList[i]);
+		}
+
+	}
+
 	FAddressRef& gotoAddress = viewState.GetGotoAddress();
 
 	// jump to address
+	// note: this will not take effect until next frame due to the way ImGui works.
 	if (gotoAddress.IsValid())
 	{
 		const float currScrollY = ImGui::GetScrollY();
@@ -1355,6 +1428,9 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 			{
 				// set cursor
 				viewState.SetCursorItem(itemList[item]);
+
+				// We want the keyboard focus to be set on this item next frame.
+				viewState.pKeyboardFocusItem = itemList[item].Item;
 
 				const float itemY = item * lineHeight;
 				const float margin = kJumpViewOffset * lineHeight;
@@ -1381,24 +1457,6 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		viewState.GoToLabel = false;
 	}
 
-	// draw clipped list
-	ImGuiListClipper clipper;
-	clipper.Begin((int)itemList.size(), lineHeight);
-	std::vector<FAddressCoord> newList;
-
-	while (clipper.Step())
-	{
-		viewState.JumpLineIndent = 0;
-
-		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-		{
-			const ImVec2 coord = ImGui::GetCursorScreenPos();
-			if(itemList[i].Item->Type == EItemType::Code || itemList[i].Item->Type == EItemType::Data)
-				newList.push_back({ itemList[i].AddressRef,coord.y });
-			DrawCodeAnalysisItem(state, viewState, itemList[i]);
-		}
-
-	}
 	viewState.AddressCoords = newList;
 }
 
@@ -1558,36 +1616,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::SameLine();
 	DrawNavigationButtons(state,viewState);
 
-	// TODO: Put this into a separate function
-	ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetFrameHeight());
-	ImGui::Button("?");
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		ImGui::Text(      "Keyboard shortcuts");
-		ImGui::SeparatorText("Item Type");
-		ImGui::BulletText("c : Set as Code");
-		ImGui::BulletText("d : Set as Data");
-		ImGui::BulletText("t : Set as Text");
-		ImGui::SeparatorText("Display Mode & Operand Type");
-		ImGui::BulletText("a : Set as Ascii");
-		ImGui::BulletText("b : Set as Binary");
-		ImGui::BulletText("j : Set as Jump Address");
-		ImGui::BulletText("n : Set as Number");
-		ImGui::BulletText("p : Set as Pointer");
-		ImGui::BulletText("u : Set as Unknown");
-		ImGui::SeparatorText("Labels");
-		ImGui::BulletText("l : Add label");
-		ImGui::BulletText("r : Rename label");
-		ImGui::SeparatorText("Comments");
-		ImGui::BulletText("; : Add inline comment");
-		ImGui::BulletText("Shift + ; : Add multi-line comment");
-		ImGui::SeparatorText("Bookmarks");
-		ImGui::BulletText("Ctrl + 1..5 : Store bookmark");
-		ImGui::BulletText("Shift + 1..5 : Goto bookmark");
-		ImGui::EndTooltip();
-	}
+	DrawHelpButton();
 
 	if (viewState.TrackPCFrame == true)
 	{
