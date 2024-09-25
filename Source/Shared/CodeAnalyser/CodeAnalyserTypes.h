@@ -312,6 +312,7 @@ struct FLabelInfo : FItem
 	bool					Edited = false;	// has the name been changed since generation?
 	ELabelType				LabelType = ELabelType::Data;
 	FItemReferenceTracker	References;
+	uint16_t				MemoryRange = 1;	// range for this label in bytes
 	//std::map<uint16_t, int>	References;
 private:
 	FLabelInfo() { Type = EItemType::Label; }

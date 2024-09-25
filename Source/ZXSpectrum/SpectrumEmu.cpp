@@ -14,6 +14,7 @@
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/ZXGraphicsView.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
+#include "CodeAnalyser/UI/Z80/RegisterViewZ80.h"
 #include "Util/FileUtil.h"
 
 //#include "ui/ui_dbg.h"
@@ -1736,7 +1737,6 @@ static void UpdateMemmap(ui_zx_t* ui)
 	}
 }
 #endif
-void StoreRegisters_Z80(FCodeAnalysisState& state);
 
 bool GetIOInputFunc(uint16_t port, uint8_t* pInVal, void* pUserData)
 {
