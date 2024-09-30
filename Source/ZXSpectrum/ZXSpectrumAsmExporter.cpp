@@ -48,8 +48,20 @@ public:
 	{
 		Output("\tdevice zxspectrum48\n");	// only 48k spectrum asm dumps are supported atm
 	}
+};
 
+class FSpectrumNextExporter : public FSJasmPlusExporter
+{
+public:
+	FSpectrumNextExporter() : FSJasmPlusExporter()
+	{
 
+	}
+
+	void AddHeader(void) override
+	{
+		Output("\tDEVICE SPECNEXT\n");	
+	}
 };
 
 class FSpasmExporter : public FSpeccyAsmExporterBase
@@ -96,5 +108,6 @@ bool InitZXSpectrumAsmExporters(FSpectrumEmu *pZXEmu)
 	AddAssemblerExporter("SJasmPlus", new FSJasmPlusExporter);
 	AddAssemblerExporter("Spasm", new FSpasmExporter);
 	AddAssemblerExporter("Agon", new FAgonAsmExporter);
+	AddAssemblerExporter("SpectrumNext", new FSpectrumNextExporter);
 	return true;
 }
