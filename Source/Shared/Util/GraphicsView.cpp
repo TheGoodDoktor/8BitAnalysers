@@ -70,7 +70,7 @@ void FGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint32_t inkC
 	{
 		const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
 		const uint32_t col = bSet ? inkCol : paperCol;
-		if (col != 0xFF000000)
+		//if (col != 0xFF000000)
 			*(pBase + xpix) = col;
 	}
 }
@@ -84,7 +84,7 @@ void FGraphicsView::DrawMaskedCharLine(uint8_t charLine, uint8_t maskLine, int x
 		const bool bPixelSet = (charLine & (1 << (7 - xpix))) != 0;
 		const bool bMaskSet = (maskLine & (1 << (7 - xpix))) != 0;
 		const uint32_t col = bMaskSet ? 0xffff00ff : (bPixelSet ? inkCol : paperCol);
-		if (col != 0x00000000)
+		//if (col != 0x00000000)
 			*(pBase + xpix) = col;
 	}
 }
@@ -107,7 +107,7 @@ void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 			{
 				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
 				const uint32_t col = bSet ? cols[1] : cols[0];
-				if (col != 0xFF000000)
+				//if (col != 0xFF000000)
 					*(pBase + xpix + (x * 8)) = col;
 			}
 		}

@@ -1060,7 +1060,7 @@ void FGraphicsViewer::DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* 
 				case EBitmapFormat::Bitmap_1Bpp:
 				{
 					const uint8_t charLine = state.ReadByte(itemAddress);
-					pView->DrawCharLine(charLine, x + (xp * 8), y + yp, 0xffffffff, 0);
+					pView->DrawCharLine(charLine, x + (xp * 8), y + yp, 0xffffffff, 0xff000000);
 					state.AdvanceAddressRef(itemAddress, 1);
 					break;
 				}
@@ -1088,7 +1088,7 @@ bool FGraphicsViewer::ExportGraphicSet(const FGraphicsSet& set)
 {
 	const int maxImageXSize = 256;
 	const int maxImagesX = maxImageXSize / set.XSizePixels;
-	const int noImagesX = set.Count % maxImagesX;
+	const int noImagesX = maxImagesX;
 	const int noImagesY = (set.Count / maxImagesX) + 1;
 
 	FGraphicsView* pSaveImage = new FGraphicsView(set.XSizePixels * noImagesX, set.YSizePixels * noImagesY);
@@ -1099,7 +1099,7 @@ bool FGraphicsViewer::ExportGraphicSet(const FGraphicsSet& set)
 	for (int imageNo = 0; imageNo < set.Count; imageNo++)
 	{
 		const int x = (imageNo % noImagesX) * set.XSizePixels;
-		const int y = (imageNo / noImagesX) / set.YSizePixels;
+		const int y = (imageNo / noImagesX) * set.YSizePixels;
 
 		DrawGraphicToView(set, pSaveImage, imageNo, x, y);
 	}
