@@ -701,6 +701,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
             }
 
             snprintf(label, kLabelSize, "%s%s", pPrefix, labelString.c_str());
+			pLabel->Global = true;
         }
         break;
         default:
