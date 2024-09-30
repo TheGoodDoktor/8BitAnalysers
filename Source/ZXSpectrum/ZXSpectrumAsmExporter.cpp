@@ -39,14 +39,14 @@ public:
 	{
 		Config.DataBytePrefix = "db";
 		Config.DataWordPrefix = "dw";
-		Config.DataTextPrefix = "ascii";
+		Config.DataTextPrefix = "db";
 		Config.ORGText = "\torg";
 		Config.EQUText = "equ";
 	}
 
 	void AddHeader(void) override
 	{
-		Output("\tdevice zxspectrum48\n");	// only 48k spectrum asm dumps are supported atm
+		Output("\tDEVICE ZXSPECTRUM48\n");	// only 48k spectrum asm dumps are supported atm
 	}
 };
 
@@ -60,7 +60,7 @@ public:
 
 	void AddHeader(void) override
 	{
-		Output("\tDEVICE SPECNEXT\n");	
+		Output("\tDEVICE ZXSPECTRUMNEXT\n");	
 	}
 };
 
