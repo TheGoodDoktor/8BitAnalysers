@@ -1,3 +1,5 @@
+#include "RegisterViewZ80.h"
+
 #include "../../CodeAnalyser.h"
 #include "../CodeAnalyserUI.h"
 
@@ -51,73 +53,55 @@ uint8_t InputU8(const char* label, uint8_t val)
 	return val;
 }
 
-// structure to hold registers for display purposes
-struct FZ80DisplayRegisters
+FZ80DisplayRegisters::FZ80DisplayRegisters(z80_t* pCPU)
 {
-	FZ80DisplayRegisters() {}
-	FZ80DisplayRegisters(z80_t* pCPU)
-	{
-		A = pCPU->a;
-		F = pCPU->f;
-		B = pCPU->b;
-		C = pCPU->c;
-		D = pCPU->d;
-		E = pCPU->e;
-		H = pCPU->h;
-		L = pCPU->l;
-		A2 = pCPU->af2 >> 8;
-		F2 = pCPU->af2 & 0xff;
-		BC = pCPU->bc;
-		DE = pCPU->de;
-		HL = pCPU->hl;
-		BC2 = pCPU->bc2;
-		DE2 = pCPU->de2;
-		HL2 = pCPU->hl2;
-		IX = pCPU->ix;
-		IY = pCPU->iy;
-		SP = pCPU->sp;
-		PC = pCPU->pc;
-		I = pCPU->i;
-		R = pCPU->r;
-		IM = pCPU->im;
-
-		// Flags
-		const uint8_t f = pCPU->f;
-		CarryFlag = !!(f & Z80_CF);
-		AddSubtractFlag = !!(f & Z80_NF);
-		ParityOverflowFlag = !!(f & Z80_VF);
-		HalfCarryFlag = !!(f & Z80_HF);
-		ZeroFlag = !!(f & Z80_ZF);
-		SignFlag = !!(f & Z80_SF);
-
-		IFF1 = pCPU->iff1;
-		IFF2 = pCPU->iff2;
-	}
-
-	uint8_t	A = 0, F = 0, B = 0, C = 0, D = 0, E = 0, H = 0, L = 0;
-	uint8_t	A2 = 0, F2 = 0, B2 = 0, C2 = 0, D2 = 0, E2 = 0, H2 = 0, L2 = 0;
-	uint8_t I = 0, R = 0, IM = 0;
-	uint16_t BC = 0, DE = 0, HL = 0, IX = 0, IY = 0;
-	uint16_t BC2 = 0, DE2 = 0, HL2 = 0;
-	uint16_t SP = 0, PC = 0;
+	A = pCPU->a;
+	F = pCPU->f;
+	B = pCPU->b;
+	C = pCPU->c;
+	D = pCPU->d;
+	E = pCPU->e;
+	H = pCPU->h;
+	L = pCPU->l;
+	A2 = pCPU->af2 >> 8;
+	F2 = pCPU->af2 & 0xff;
+	BC = pCPU->bc;
+	DE = pCPU->de;
+	HL = pCPU->hl;
+	BC2 = pCPU->bc2;
+	DE2 = pCPU->de2;
+	HL2 = pCPU->hl2;
+	IX = pCPU->ix;
+	IY = pCPU->iy;
+	SP = pCPU->sp;
+	PC = pCPU->pc;
+	I = pCPU->i;
+	R = pCPU->r;
+	IM = pCPU->im;
 
 	// Flags
-	bool	CarryFlag = false;
-	bool	AddSubtractFlag = false;
-	bool	ParityOverflowFlag = false;
-	bool	HalfCarryFlag = false;
-	bool	ZeroFlag = false;
-	bool	SignFlag = false;
+	const uint8_t f = pCPU->f;
+	CarryFlag = !!(f & Z80_CF);
+	AddSubtractFlag = !!(f & Z80_NF);
+	ParityOverflowFlag = !!(f & Z80_VF);
+	HalfCarryFlag = !!(f & Z80_HF);
+	ZeroFlag = !!(f & Z80_ZF);
+	SignFlag = !!(f & Z80_SF);
 
-	bool	IFF1 = false;
-	bool	IFF2 = false;
-};
+	IFF1 = pCPU->iff1;
+	IFF2 = pCPU->iff2;
+}
 
 FZ80DisplayRegisters g_OldRegs;
 
 void StoreRegisters_Z80(FCodeAnalysisState& state)
 {
 	g_OldRegs = FZ80DisplayRegisters((z80_t*)state.CPUInterface->GetCPUEmulator());
+}
+
+const FZ80DisplayRegisters& GetStoredRegisters_Z80(void)
+{
+	return g_OldRegs;
 }
 
 void DoByteRegisterTooltip(uint8_t byteValue)

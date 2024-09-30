@@ -82,8 +82,6 @@ protected:
 	uint32_t		MemorySize = 0x10000;	// size of area being viewed
 	FAddressRef		ClickedAddress;
 	EGraphicsViewMode	ViewMode = EGraphicsViewMode::Bitmap;
-	int				ViewScale = 1;
-	int				ScreenViewScale = 1;
 	int				HeatmapThreshold = 4;
 
 	int				XSizePixels = 8;			// Image X Size in pixels

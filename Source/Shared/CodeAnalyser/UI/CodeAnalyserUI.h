@@ -53,7 +53,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 void DrawPalette(const uint32_t* palette, int numColours, float height = 0.f);
 EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat);
 
-void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FAddressRef addr);
+void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FAddressRef addr, int noLines = 10);
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId);
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
