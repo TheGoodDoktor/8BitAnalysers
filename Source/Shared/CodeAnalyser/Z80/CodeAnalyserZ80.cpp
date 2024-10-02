@@ -481,12 +481,20 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 		case 0xE9:
 			return EInstructionType::JumpToPointer;
 
+		case 0x31:	// LD SP,<addr>
 		case 0xF9:	// LD SP,HL
 			return EInstructionType::SetStackPointer;
 
 		// Halt
 		case 0x76:
 			return EInstructionType::Halt;
+
+		// Enable interrupts
+		case 0xFB:
+			return EInstructionType::EnableInterrupts;
+		// Disable interrupts
+		case 0xF3:
+			return EInstructionType::DisableInterrupts;
 
 		// extended instructions
 		case 0xED:

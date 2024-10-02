@@ -52,7 +52,7 @@ public:
 	{
 		const EInstructionType instType = GetInstructionType(state, addrRef);
 
-		switch (instType)
+		switch (instType)	// myabe switch to a map?
 		{
 			case EInstructionType::PortInput:
 				return new FStaticAnalysisItem(addrRef, "Port Input");
@@ -64,6 +64,10 @@ public:
 				return new FStaticAnalysisItem(addrRef, "Jump to Pointer");
 			case EInstructionType::Halt:
 				return new FStaticAnalysisItem(addrRef, "Halt");
+			case EInstructionType::EnableInterrupts:
+				return new FStaticAnalysisItem(addrRef, "Enable Interrupts");
+			case EInstructionType::DisableInterrupts:
+				return new FStaticAnalysisItem(addrRef, "Disable Interrupts");
 			case EInstructionType::SetStackPointer:
 				return new FStaticAnalysisItem(addrRef, "Set Stack Pointer");
 			default:

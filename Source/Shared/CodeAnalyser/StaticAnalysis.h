@@ -10,6 +10,8 @@ enum class EInstructionType
 	LoopBack,
 	PortInput,
 	PortOutput,
+	EnableInterrupts,
+	DisableInterrupts,
 	ChangeInterruptMode,
 	JumpToPointer,
 	Halt,
