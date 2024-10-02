@@ -306,7 +306,7 @@ static int AddDataLabel(lua_State* pState)
 		size_t length = 0;
 		const char* pText = luaL_tolstring(pState, 2, &length);
 
-		const int memoryRange = luaL_optinteger(pState,3,1);
+		const int memoryRange = (int)luaL_optinteger(pState,3,1);
 
 		FLabelInfo* pLabel = AddLabel(state, addrRef, pText, ELabelType::Data,(uint16_t)memoryRange);
 		pLabel->Global = true;
