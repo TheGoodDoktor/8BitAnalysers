@@ -257,6 +257,8 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 
 	Output("%s %s\n", Config.ORGText, NumStr(startAddr));
 
+	uint16_t nextAddr = state.ItemList[0].AddressRef.Address;
+
 	for (const FCodeAnalysisItem &item : state.ItemList)
 	{
 		const uint16_t addr = item.AddressRef.Address;
@@ -266,6 +268,14 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 
 		if (addr > endAddr)
 			break;
+
+		if (addr != nextAddr)
+		{
+			LOGERROR("Asm Export - Overlap. Addr = 0x%04X, Expecting  0x%04X",addr,nextAddr);
+		}
+
+		//Output("; 0x%04X\n", addr);
+		nextAddr = addr + item.Item->ByteSize;
 
 		switch (item.Item->Type)
 		{
@@ -364,53 +374,62 @@ bool ExportAssembler(FEmuBase* pEmu, const char* pTextFileName, uint16_t startAd
 // There's probably a better way of doing this
 void AppendCharToString(char ch, std::string& outString)
 {
-	switch (ch)
+	bool bOutputEscapeCodes = false;
+
+	if(bOutputEscapeCodes)
 	{
-	case '\'':
-		outString+= "\\'";
-		break;
+		switch (ch)
+		{
+		case '\'':
+			outString+= "\\'";
+			break;
 
-	case '\"':
-		outString += "\\\"";
-		break;
+		case '\"':
+			outString += "\\\"";
+			break;
 
-	case '\?':
-		outString += "\\?";
-		break;
+		case '\?':
+			outString += "\\?";
+			break;
 
-	case '\\':
-		outString += "\\\\";
-		break;
+		case '\\':
+			outString += "\\\\";
+			break;
 
-	case '\a':
-		outString += "\\a";
-		break;
+		case '\a':
+			outString += "\\a";
+			break;
 
-	case '\b':
-		outString += "\\b";
-		break;
+		case '\b':
+			outString += "\\b";
+			break;
 
-	case '\f':
-		outString += "\\f";
-		break;
+		case '\f':
+			outString += "\\f";
+			break;
 
-	case '\n':
-		outString += "\\n";
-		break;
+		case '\n':
+			outString += "\\n";
+			break;
 
-	case '\r':
-		outString += "\\r";
-		break;
+		case '\r':
+			outString += "\\r";
+			break;
 
-	case '\t':
-		outString += "\\t";
-		break;
+		case '\t':
+			outString += "\\t";
+			break;
 
-	case '\v':
-		outString += "\\v";
-		break;
+		case '\v':
+			outString += "\\v";
+			break;
 
-	default:
+		default:
+			outString += ch;
+		}
+	}
+	else
+	{
 		outString += ch;
 	}
 }

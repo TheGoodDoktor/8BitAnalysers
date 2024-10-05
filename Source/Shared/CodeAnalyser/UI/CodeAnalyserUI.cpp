@@ -857,7 +857,7 @@ void ExpandCommentBlock(FCodeAnalysisState& state, FItemListBuilder& builder, FC
 	}
 }
 
-void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
+void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, int startOffset)
 {
 	bank.ItemList.clear();
 	bank.CommentLineAllocator.FreeAll();
@@ -869,8 +869,8 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
 	int nextItemAddress = 0;
 
 	// This bank might start in the middle of an instruction from the previous bank
-	int bankStart = 0;
-	{
+	int bankStart = startOffset;
+	/* {
 		FDataInfo* pDataInfo = &bank.Pages[0].DataInfo[bankStart];
 		FCodeInfo* pCodeInfo = bank.Pages[0].CodeInfo[bankStart];
 		while(pCodeInfo == nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
@@ -879,7 +879,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank)
 			pDataInfo = &bank.Pages[0].DataInfo[bankStart];
 			pCodeInfo = bank.Pages[0].CodeInfo[bankStart];
 		}
-	}
+	}*/
 	
 	for (int bankAddr = bankStart; bankAddr < bank.NoPages * FCodeAnalysisPage::kPageSize; bankAddr++)
 	{
@@ -936,13 +936,20 @@ void UpdateItemList(FCodeAnalysisState &state)
 		//int nextItemAddress = 0;
 
 		auto& banks = state.GetBanks();
+		int startOffset = 0;
 		for (auto& bank : banks)
 		{
 			if (bank.bIsDirty || bank.ItemList.empty())
 			{
-				UpdateItemListForBank(state, bank);
+				UpdateItemListForBank(state, bank, startOffset);
 				bank.bIsDirty = false;
 			}
+
+			// calculate start offset for next bank
+			const FCodeAnalysisItem& lastItem = bank.ItemList.back();
+			const int itemEndAddr = lastItem.AddressRef.Address + lastItem.Item->ByteSize;
+			const int bankEndAddr = (bank.PrimaryMappedPage + bank.NoPages) * FCodeAnalysisPage::kPageSize;
+			startOffset = itemEndAddr - bankEndAddr;
 		}
 		int pageNo = 0;
 
@@ -953,12 +960,6 @@ void UpdateItemList(FCodeAnalysisState &state)
 			if (pBank != nullptr)
 			{
 				state.ItemList.insert(state.ItemList.end(), pBank->ItemList.begin(), pBank->ItemList.end());
-				/*const uint16_t bankAddrStart = pageNo * FCodeAnalysisPage::kPageSize;
-				for (const auto& bankItem : pBank->ItemList)
-				{
-					FCodeAnalysisItem& item = state.ItemList.emplace_back(bankItem);
-					item.AddressRef.Address += bankAddrStart;
-				}*/
 				pageNo += pBank->NoPages;
 			}
 			else
