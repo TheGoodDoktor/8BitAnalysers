@@ -1351,21 +1351,23 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		const float currScrollY = ImGui::GetScrollY();
 		const float currWindowHeight = ImGui::GetWindowHeight();
 		const int kJumpViewOffset = 5;
-		for (int item = 0; item < (int)itemList.size(); item++)
+		for (int itemNo = 0; itemNo < (int)itemList.size(); itemNo++)
 		{
-			if ((itemList[item].AddressRef.Address >= gotoAddress.Address) && (viewState.GoToLabel || itemList[item].Item->Type != EItemType::Label))
+			const FCodeAnalysisItem& item = itemList[itemNo];
+
+			if ((item.AddressRef.Address >= gotoAddress.Address) && (viewState.GoToLabel || item.Item->Type != EItemType::Label) && item.Item->Type != EItemType::CommentLine)
 			{
 				// set cursor
-				viewState.SetCursorItem(itemList[item]);
+				viewState.SetCursorItem(item);
 
-				const float itemY = item * lineHeight;
+				const float itemY = itemNo * lineHeight;
 				const float margin = kJumpViewOffset * lineHeight;
 
 				const float moveDist = itemY - currScrollY;
 
 				if (moveDist > currWindowHeight)
 				{
-					const int gotoItem = std::max(item - kJumpViewOffset, 0);
+					const int gotoItem = std::max(itemNo - kJumpViewOffset, 0);
 					ImGui::SetScrollY(gotoItem * lineHeight);
 				}
 				else
