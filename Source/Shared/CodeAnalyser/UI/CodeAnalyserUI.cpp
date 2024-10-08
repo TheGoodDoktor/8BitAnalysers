@@ -1118,14 +1118,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 	}
 	DoItemContextMenu(state, item);
 
-	// double click to toggle breakpoints
-	if (ImGui::IsItemHovered() && viewState.HighlightAddress.IsValid() == false &&  ImGui::IsMouseDoubleClicked(0))
-	{
-		if (item.Item->Type == EItemType::Code)
-			state.ToggleExecBreakpointAtAddress(item.AddressRef);
-		else if (item.Item->Type == EItemType::Data)
-			state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize);
-	}
+	const bool bDoubleClickOnItem = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0);	// this will be used later for breakpoint toggling
 
 	ImGui::SetItemAllowOverlap();	// allow buttons
 	ImGui::SameLine();
@@ -1155,6 +1148,15 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		break;
     default:
         break;
+	}
+
+	// double click to toggle breakpoints
+	if (bDoubleClickOnItem && viewState.HighlightAddress.IsValid() == false)
+	{
+		if (item.Item->Type == EItemType::Code)
+			state.ToggleExecBreakpointAtAddress(item.AddressRef);
+		else if (item.Item->Type == EItemType::Data)
+			state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize);
 	}
 
 	ImGui::PopID();

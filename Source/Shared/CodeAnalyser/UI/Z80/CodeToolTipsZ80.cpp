@@ -1517,12 +1517,16 @@ void DrawWordOperand(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 			viewState.HighlightAddress = regAddr;
 			ImGui::Spacing();
 			DrawSnippetToolTip(state, viewState, regAddr, 5);
+			if (ImGui::IsMouseDoubleClicked(0))
+			{
+				viewState.GoToAddress(regAddr);
+			}
 		}
 	}
 	ImGui::EndTable();
 }
 
-void DrawByteOperandList(FCodeAnalysisState& state, FCodeAnalysisViewState viewState, const TOperandList& operandList)
+void DrawByteOperandList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const TOperandList& operandList)
 {
 	static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame;
 
@@ -1537,7 +1541,7 @@ void DrawByteOperandList(FCodeAnalysisState& state, FCodeAnalysisViewState viewS
 	}
 }
 
-void DrawWordOperandList(FCodeAnalysisState& state, FCodeAnalysisViewState viewState, const TOperandList& operandList)
+void DrawWordOperandList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const TOperandList& operandList)
 {
 	static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame;
 
