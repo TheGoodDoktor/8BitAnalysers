@@ -62,8 +62,9 @@ static int DrawZXBitImage(lua_State *pState)
 	else
     {
 		const uint8_t attrib = (uint8_t)luaL_optinteger(pState,7,0x47);
-		const int stride = (int)luaL_optinteger(pState, 8, 1);
-		pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib, stride);
+		const int stride = (int)luaL_optinteger(pState, 8, widthChars);
+		const bool bMask = luaL_optinteger(pState, 9, 0);
+		pGraphicsView->DrawBitImage(pImageData, xp, yp, widthChars, heightChars, attrib, stride, bMask);
 	}
 
     return 0;

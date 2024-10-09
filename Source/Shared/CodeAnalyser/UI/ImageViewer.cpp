@@ -17,7 +17,7 @@ public:
 	void DrawImageToView(uint16_t addr, int widthChars, int heightChars, FGraphicsView* pView, const ICPUInterface* pCPUIF) const override
 	{
 		const uint32_t cols[] = { 0, 0xffffffff };
-		pView->Draw1BppImageAt(pCPUIF->GetMemPtr(addr), 0, 0, widthChars * 8, heightChars * 8, cols);
+		pView->Draw1BppImageAt(pCPUIF->GetMemPtr(addr), 0, 0, widthChars * 8, heightChars * 8, cols, widthChars);
 	}
 
 };

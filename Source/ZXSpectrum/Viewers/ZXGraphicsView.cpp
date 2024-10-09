@@ -31,11 +31,11 @@ void FZXGraphicsView::DrawCharLine(uint8_t charLine, int xp, int yp, uint8_t col
 	FGraphicsView::DrawCharLine(charLine, xp, yp, inkCol, paperCol);
 }
 
-void FZXGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr,int stride)
+void FZXGraphicsView::DrawBitImage(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr,int stride, bool bMask)
 {
 	const bool bBright = !!(colAttr & (1 << 6));
 	const uint32_t cols[] = { GetColFromAttr(colAttr >> 3, bBright), GetColFromAttr(colAttr & 7, bBright) };
-	FGraphicsView::Draw1BppImageAt(pSrc, xp, yp, widthChars * 8, heightChars * 8, cols, stride);
+	FGraphicsView::Draw1BppImageAt(pSrc, xp, yp, widthChars * 8, heightChars * 8, cols, stride, bMask);
 }
 
 void FZXGraphicsView::DrawBitImageMask(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, uint8_t colAttr, int stride)

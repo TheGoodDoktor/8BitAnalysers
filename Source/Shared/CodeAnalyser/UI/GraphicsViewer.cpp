@@ -265,7 +265,7 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumnChars(uint16_t memAddr, 
 					const FCodeAnalysisPage* pPage = state.GetReadPage(memAddr);
 					const uint32_t col = GetHeatmapColourForMemoryAddress(*pPage, memAddr, state.CurrentFrameNo, HeatmapThreshold);
 					const uint32_t cols[] = { 0, col };
-					pGraphicsView->Draw1BppImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, cols);
+					pGraphicsView->Draw1BppImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, cols,1);
 					memAddr += 8;
 				}
 				break;
@@ -386,7 +386,7 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16
 				FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
 				const uint32_t col = GetHeatmapColourForMemoryAddress(page, memAddr, state.CurrentFrameNo, HeatmapThreshold);
 				const uint32_t cols[] = { 0, col};
-				pGraphicsView->Draw1BppImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, cols);
+				pGraphicsView->Draw1BppImageAt(pPixels, xPos + (xChar * 8), y * 8, 8, 8, cols,1);
 				memAddr+=8;
 			}
 			break;

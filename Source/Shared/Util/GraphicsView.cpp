@@ -90,7 +90,7 @@ void FGraphicsView::DrawMaskedCharLine(uint8_t charLine, uint8_t maskLine, int x
 }
 
 
-void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride)
+void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride, bool bMask)
 {
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
 	int widthChars = widthPixels / 8;
@@ -98,20 +98,22 @@ void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 
 	for (int y = 0; y < heightPixels; y++)
 	{
+		const uint8_t* pLine = pSrc;
 		for (int x = 0; x < widthChars; x++)
 		{
-			const uint8_t charLine = *pSrc;
-			pSrc+=stride;
+			const uint8_t charLine = *pLine++;
 
 			for (int xpix = 0; xpix < 8; xpix++)
 			{
 				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
 				const uint32_t col = bSet ? cols[1] : cols[0];
 				//if (col != 0xFF000000)
+				if(bSet || bMask == false)
 					*(pBase + xpix + (x * 8)) = col;
 			}
 		}
 
+		pSrc += stride;
 		pBase += Width;
 	}
 }
@@ -249,7 +251,7 @@ void FGraphicsView::Draw1BppImageFromCharsAt(const uint8_t* pSrc, int xp, int yp
 	{
 		for (int x = 0; x < widthChars; x++)
 		{
-			Draw1BppImageAt(pSrc, xp + (x * 8), yp + (y * 8), 8, 8, cols);
+			Draw1BppImageAt(pSrc, xp + (x * 8), yp + (y * 8), 8, 8, cols,1);
 			pSrc+=8;
 		}
 	}
@@ -522,7 +524,7 @@ void DrawCharacterSetImage1Bpp(FCodeAnalysisState& state, FCharacterSet& charact
 			cols[1] = GetColFromAttr((colAttr >> inkShift) & inkMask, characterSet.Params.ColourLUT, bBright);
 		}
 
-		characterSet.Image->Draw1BppImageAt(charPix, xp, yp, 8, 8, cols);
+		characterSet.Image->Draw1BppImageAt(charPix, xp, yp, 8, 8, cols,1);
 	}
 }
 
