@@ -96,6 +96,9 @@ void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 	int widthChars = widthPixels / 8;
 	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
 
+	if(stride == -1)
+		stride = widthPixels / 8;
+
 	for (int y = 0; y < heightPixels; y++)
 	{
 		const uint8_t* pLine = pSrc;
