@@ -24,7 +24,7 @@ public:
 
 	// Draw image from a bitmap
 	// Size is given in (8x8) chars
-	void Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride, bool bMask = false);
+	void Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride = -1, bool bMask = false);
 	void Draw1BppImageAtMask(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride = 1);
 
 	// Draw image from a 2Bpp colour map
