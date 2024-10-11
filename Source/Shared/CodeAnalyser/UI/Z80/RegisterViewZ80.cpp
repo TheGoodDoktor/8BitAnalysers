@@ -69,8 +69,14 @@ FZ80DisplayRegisters::FZ80DisplayRegisters(z80_t* pCPU)
 	DE = pCPU->de;
 	HL = pCPU->hl;
 	BC2 = pCPU->bc2;
+	B2 = pCPU->bc2 >> 8;
+	C2 = pCPU->bc2 & 0xff;
 	DE2 = pCPU->de2;
+	D2 = pCPU->de2 >> 8;
+	E2 = pCPU->de2 & 0xff;
 	HL2 = pCPU->hl2;
+	H2 = pCPU->hl2 >> 8;
+	L2 = pCPU->hl2 & 0xff;
 	IX = pCPU->ix;
 	IY = pCPU->iy;
 	SP = pCPU->sp;
@@ -93,6 +99,9 @@ FZ80DisplayRegisters::FZ80DisplayRegisters(z80_t* pCPU)
 }
 
 FZ80DisplayRegisters g_OldRegs;
+
+const ImVec4 g_RegNormalCol(1.0f, 1.0f, 1.0f, 1.0f);
+const ImVec4 g_RegChangedCol(1.0f, 1.0f, 0.0f, 1.0f);
 
 void StoreRegisters_Z80(FCodeAnalysisState& state)
 {
@@ -120,9 +129,133 @@ ImGuiTableFlags GetRegisterViewTableFlags()
 	return ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_PreciseWidths | ImGuiTableFlags_SizingStretchSame;
 }
 
-void DrawRegisterPair(FCodeAnalysisState& state, uint8_t curLowByte, uint8_t curHighByte, uint16_t curWord, uint8_t oldLowByte, uint8_t oldHighByte, uint16_t oldWord, ImVec4 regNormalCol, ImVec4 regChangedCol, const char* tableName, const char* fmtLowByte, const char* fmtHighByte, const char* fmtWord)
+void EditByte(uint8_t* pByteData)
 {
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	const ENumberDisplayMode numMode = GetNumberDisplayMode();
+	const float glyphWidth = ImGui::CalcTextSize("0").x;
+	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
+	float width = glyphWidth * 2.0f;
+	const char* format = "%02X";
+
+	switch (numMode)
+	{
+	case ENumberDisplayMode::Decimal:
+		width += glyphWidth;
+		format = "%d";
+		break;
+	case ENumberDisplayMode::HexAitch:
+	case ENumberDisplayMode::HexDollar:
+		flags |= ImGuiInputTextFlags_CharsHexadecimal;
+		break;
+	default:
+		break;
+	}
+	ImGui::PushID(pByteData);
+	if (numMode == ENumberDisplayMode::HexDollar)
+	{
+		ImGui::Text("$");
+		ImGui::SameLine(0, 0);
+	}
+	ImGui::SetNextItemWidth((float)width);
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+	ImGui::SetItemAllowOverlap();	// allow controls
+	ImGui::InputScalar("##byteinput", ImGuiDataType_U8, pByteData, NULL, NULL, format, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EnterReturnsTrue);
+	if (numMode == ENumberDisplayMode::HexAitch)
+	{
+		ImGui::SameLine(0, 0);
+		ImGui::Text("h");
+	}
+	ImGui::PopStyleVar();
+	ImGui::PopID();
+}
+
+void EditWord(uint16_t* pWordData)
+{
+	const ENumberDisplayMode numMode = GetNumberDisplayMode();
+	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
+	const float glyphWidth = ImGui::CalcTextSize("0").x;
+	float width = glyphWidth * 4.0f;
+	const char* format = "%04X";
+
+	switch (numMode)
+	{
+	case ENumberDisplayMode::Decimal:
+		width += glyphWidth;
+		format = "%d";
+		break;
+	case ENumberDisplayMode::HexAitch:
+	case ENumberDisplayMode::HexDollar:
+		flags |= ImGuiInputTextFlags_CharsHexadecimal;
+		break;
+	default:
+		break;
+	}
+
+	ImGui::PushID(pWordData);
+	if (numMode == ENumberDisplayMode::HexDollar)
+	{
+		ImGui::Text("$");
+		ImGui::SameLine(0, 0);
+	}
+	ImGui::SetNextItemWidth((float)width);
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+	ImGui::SetItemAllowOverlap();	// allow controls
+	ImGui::InputScalar("##wordinput", ImGuiDataType_U16, pWordData, NULL, NULL, format, flags);
+	
+	if (numMode == ENumberDisplayMode::HexAitch)
+	{
+		ImGui::SameLine(0, 0);
+		ImGui::Text("h");
+	}
+	ImGui::PopStyleVar();
+
+	ImGui::PopID();
+}
+
+void DrawByteRegister(FCodeAnalysisState& state, uint8_t* curByte, uint8_t oldByte, const char* fmt)
+{
+	const ImVec4 col = *curByte != oldByte ? g_RegChangedCol : g_RegNormalCol;
+	ImGui::BeginGroup();
+	if (state.bAllowEditing)
+	{
+		ImGui::TextColored(col, fmt, "");
+		ImGui::SameLine();
+		ImGui::PushStyleColor(ImGuiCol_Text, col);
+		EditByte(curByte);
+		ImGui::PopStyleColor();
+	}
+	else
+	{
+		ImGui::TextColored(col, fmt, NumStr(*curByte));
+	}
+	ImGui::EndGroup();
+
+	DoByteRegisterTooltip(*curByte);
+}
+
+void DrawWordRegister(FCodeAnalysisState& state, uint16_t* curWord, uint16_t oldWord, const char* fmt)
+{
+	const ImVec4 col = *curWord != oldWord ? g_RegChangedCol : g_RegNormalCol;
+
+	ImGui::BeginGroup();
+	if (state.bAllowEditing)
+	{
+		ImGui::Text(fmt, "");
+		ImGui::SameLine();
+		ImGui::PushStyleColor(ImGuiCol_Text, col);
+		EditWord(curWord);
+		ImGui::PopStyleColor();
+	}
+	else
+	{
+		ImGui::TextColored(col, fmt, NumStr(*curWord));
+	}
+	DrawAddressLabel(state, state.GetFocussedViewState(), *curWord);
+	ImGui::EndGroup();
+}
+
+void DrawRegisterPair(FCodeAnalysisState& state, uint8_t* curLowByte, uint8_t* curHighByte, uint16_t* curWord, uint8_t oldLowByte, uint8_t oldHighByte, uint16_t oldWord, const char* tableName, const char* fmtLowByte, const char* fmtHighByte, const char* fmtWord)
+{
 	ImGuiTableFlags tableFlags = GetRegisterViewTableFlags();
 
 	ImGui::BeginTable(tableName, 3, tableFlags);
@@ -132,29 +265,48 @@ void DrawRegisterPair(FCodeAnalysisState& state, uint8_t curLowByte, uint8_t cur
 	ImGui::TableSetupColumn("RegHighByte", ImGuiTableColumnFlags_WidthStretch, 1.0f);
 	ImGui::TableSetupColumn("RegWord", ImGuiTableColumnFlags_WidthStretch, 2.0f);
 
+	// Low byte
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curLowByte != oldLowByte ? regChangedCol : regNormalCol, fmtLowByte, NumStr(curLowByte));
-	DoByteRegisterTooltip(curLowByte);
 
+	DrawByteRegister(state, curLowByte, oldLowByte, fmtLowByte);
+	
+	// High byte
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curHighByte != oldHighByte ? regChangedCol : regNormalCol, fmtHighByte, NumStr(curHighByte));
-	DoByteRegisterTooltip(curHighByte);
+	
+	DrawByteRegister(state, curHighByte, oldHighByte, fmtHighByte);
 
+	// Word register
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curWord != oldWord ? regChangedCol : regNormalCol, fmtWord, NumStr(curWord));
-	DrawAddressLabel(state, viewState, curWord);
+
+	DrawWordRegister(state, curWord, oldWord, fmtWord);
+	
 	ImGui::EndTable();
+}
+
+void DrawFlag(FCodeAnalysisState& state, bool* curFlag, bool oldFlag)
+{
+	const ImVec4 col = *curFlag != oldFlag ? g_RegChangedCol : g_RegNormalCol;
+	ImGui::PushID(curFlag);
+	if (state.bAllowEditing)
+	{
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, col);
+		ImGui::Checkbox("##flag", curFlag);
+		ImGui::PopStyleColor();
+	}
+	else
+	{
+		ImGui::TextColored(col, "%s", *curFlag ? "Y" : "N");
+	}
+	ImGui::PopID();
 }
 
 void DrawRegisters_Z80(FCodeAnalysisState& state)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
-	const ImVec4 regNormalCol(1.0f, 1.0f, 1.0f, 1.0f);
-	const ImVec4 regChangedCol(1.0f, 1.0f, 0.0f, 1.0f);
-	ImVec4 regColour = regNormalCol;
 
 	FZ80DisplayRegisters curRegs(pCPU);
+	FZ80DisplayRegisters curRegsCopy = curRegs;
 	const FZ80DisplayRegisters& oldRegs = g_OldRegs;
 
 	ImGuiTableFlags tableFlags = GetRegisterViewTableFlags();
@@ -162,14 +314,12 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 	// A
 	ImGui::BeginTable("AFRegPair", 2, tableFlags);
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.A != oldRegs.A ? regChangedCol : regNormalCol, "A:%s", NumStr(curRegs.A));
-	DoByteRegisterTooltip(curRegs.A);
+	DrawByteRegister(state, &curRegs.A, oldRegs.A, "A:%s");
 	ImGui::SameLine();
 
 	// F
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.F != oldRegs.F ? regChangedCol : regNormalCol, "F:%s", NumStr(curRegs.F));
-	DoByteRegisterTooltip(curRegs.F);
+	DrawByteRegister(state, &curRegs.F, oldRegs.F, "F:%s");
 	ImGui::EndTable();
 
 	
@@ -187,27 +337,32 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
-		ImGui::TextColored(curRegs.CarryFlag != oldRegs.CarryFlag ? regChangedCol : regNormalCol, "%s", curRegs.CarryFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.CarryFlag, oldRegs.CarryFlag);
+
 		ImGui::TableSetColumnIndex(1);
-		ImGui::TextColored(curRegs.AddSubtractFlag != oldRegs.AddSubtractFlag ? regChangedCol : regNormalCol, "%s", curRegs.AddSubtractFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.AddSubtractFlag, oldRegs.AddSubtractFlag);
+
 		ImGui::TableSetColumnIndex(2);
-		ImGui::TextColored(curRegs.ParityOverflowFlag != oldRegs.ParityOverflowFlag ? regChangedCol : regNormalCol, "%s", curRegs.ParityOverflowFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.ParityOverflowFlag, oldRegs.ParityOverflowFlag);
+
 		ImGui::TableSetColumnIndex(3);
-		ImGui::TextColored(curRegs.HalfCarryFlag != oldRegs.HalfCarryFlag ? regChangedCol : regNormalCol, "%s", curRegs.HalfCarryFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.HalfCarryFlag, oldRegs.HalfCarryFlag);
+
 		ImGui::TableSetColumnIndex(4);
-		ImGui::TextColored(curRegs.ZeroFlag != oldRegs.ZeroFlag ? regChangedCol : regNormalCol, "%s", curRegs.ZeroFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.ZeroFlag, oldRegs.ZeroFlag);
+
 		ImGui::TableSetColumnIndex(5);
-		ImGui::TextColored(curRegs.SignFlag != oldRegs.SignFlag ? regChangedCol : regNormalCol, "%s", curRegs.SignFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.SignFlag, oldRegs.SignFlag);
 
 		ImGui::EndTable();
 	}
 
 	// B & C
-	DrawRegisterPair(state, curRegs.B, curRegs.C, curRegs.BC, oldRegs.B, oldRegs.C, oldRegs.BC, regNormalCol, regChangedCol, "BCRegPair", "B:%s", "C:%s", "BC:%s");
+	DrawRegisterPair(state, &curRegs.B, &curRegs.C, &curRegs.BC, oldRegs.B, oldRegs.C, oldRegs.BC, "BCRegPair", "B:%s", "C:%s", "BC:%s");
 	// D & E
-	DrawRegisterPair(state, curRegs.D, curRegs.E, curRegs.DE, oldRegs.D, oldRegs.E, oldRegs.DE, regNormalCol, regChangedCol, "DERegPair", "D:%s", "E:%s", "DE:%s");
+	DrawRegisterPair(state, &curRegs.D, &curRegs.E, &curRegs.DE, oldRegs.D, oldRegs.E, oldRegs.DE, "DERegPair", "D:%s", "E:%s", "DE:%s");
 	// H & L
-	DrawRegisterPair(state, curRegs.H, curRegs.L, curRegs.HL, oldRegs.H, oldRegs.L, oldRegs.HL, regNormalCol, regChangedCol, "HLRegPair", "H:%s", "L:%s", "HL:%s");
+	DrawRegisterPair(state, &curRegs.H, &curRegs.L, &curRegs.HL, oldRegs.H, oldRegs.L, oldRegs.HL, "HLRegPair", "H:%s", "L:%s", "HL:%s");
 
 
 	// IX & IY
@@ -215,23 +370,20 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 	// IX
 	ImGui::BeginTable("IXIYRegs", 2, tableFlags);
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.IX != oldRegs.IX ? regChangedCol : regNormalCol, "IX:%s", NumStr(curRegs.IX));
-	DrawAddressLabel(state, viewState, curRegs.IX);
+	DrawWordRegister(state, &curRegs.IX, oldRegs.IX, "IX:%s");
+
 	// IY
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.IY != oldRegs.IY ? regChangedCol : regNormalCol, "IY:%s", NumStr(curRegs.IY));
-	DrawAddressLabel(state, viewState, curRegs.IY);
+	DrawWordRegister(state, &curRegs.IY, oldRegs.IY, "IY:%s");
 	ImGui::EndTable();
 
 	// SP & PC
 	ImGui::BeginTable("SPPCRegs", 2, tableFlags);
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.SP != oldRegs.SP ? regChangedCol : regNormalCol, "SP:%s", NumStr(curRegs.SP));
-	DrawAddressLabel(state, viewState, curRegs.SP);
+	DrawWordRegister(state, &curRegs.SP, oldRegs.SP, "SP:%s");
 	
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.PC != oldRegs.PC ? regChangedCol : regNormalCol, "PC:%s", NumStr(curRegs.PC));
-	DrawAddressLabel(state, viewState, curRegs.PC);
+	DrawWordRegister(state, &curRegs.PC, oldRegs.PC, "PC:%s");
 	ImGui::EndTable();
 
 
@@ -240,27 +392,26 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 	// A'
 	ImGui::BeginTable("AF2RegPair", 2, tableFlags);
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.A2 != oldRegs.A2 ? regChangedCol : regNormalCol, "A':%s", NumStr(curRegs.A2));
-	DoByteRegisterTooltip(curRegs.A2);
+	DrawByteRegister(state, &curRegs.A2, oldRegs.A2, "A':%s");
+
 
 	// F'
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.F2 != oldRegs.F2 ? regChangedCol : regNormalCol, "F':%s", NumStr(curRegs.F2));
-	DoByteRegisterTooltip(curRegs.F2);
+	DrawByteRegister(state, &curRegs.F2, oldRegs.F2, "F':%s");
 	ImGui::EndTable();
 
 
 	// B' & C'
-	DrawRegisterPair(state, curRegs.B2, curRegs.C2, curRegs.BC2, oldRegs.B2, curRegs.C2, curRegs.BC2, regNormalCol, regChangedCol, "BC2RegPair", "B':%s", "C':%s", "BC':%s");
+	DrawRegisterPair(state, &curRegs.B2, &curRegs.C2, &curRegs.BC2, oldRegs.B2, curRegs.C2, curRegs.BC2, "BC2RegPair", "B':%s", "C':%s", "BC':%s");
 	// D' & E'
-	DrawRegisterPair(state, curRegs.D2, curRegs.E2, curRegs.DE2, oldRegs.D2, curRegs.E2, curRegs.DE2, regNormalCol, regChangedCol, "DE2RegPair", "D':%s", "E':%s", "DE':%s");
+	DrawRegisterPair(state, &curRegs.D2, &curRegs.E2, &curRegs.DE2, oldRegs.D2, curRegs.E2, curRegs.DE2, "DE2RegPair", "D':%s", "E':%s", "DE':%s");
 	// H' & L'
-	DrawRegisterPair(state, curRegs.H2, curRegs.L2, curRegs.HL2, oldRegs.H2, curRegs.L2, curRegs.HL2, regNormalCol, regChangedCol, "HL2RegPair", "H':%s", "L':%s", "HL':%s");
+	DrawRegisterPair(state, &curRegs.H2, &curRegs.L2, &curRegs.HL2, oldRegs.H2, curRegs.L2, curRegs.HL2, "HL2RegPair", "H':%s", "L':%s", "HL':%s");
 
 	// R
 	ImGui::BeginTable("RReg", 1, tableFlags);
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.R != oldRegs.R ? regChangedCol : regNormalCol, "R:%s", NumStr(curRegs.R));
+	DrawByteRegister(state, &curRegs.R, oldRegs.R, "R:%s");
 	ImGui::EndTable();
 
 
@@ -268,19 +419,126 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 	// I
 	ImGui::BeginTable("IRegs", 4, tableFlags);
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.I != oldRegs.I ? regChangedCol : regNormalCol, "I:%s", NumStr(curRegs.I));
+	DrawByteRegister(state, &curRegs.I, oldRegs.I, "I:%s");
 
 	// IM
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.IM != oldRegs.IM ? regChangedCol : regNormalCol, "IM:%s", NumStr(curRegs.IM));
+	DrawByteRegister(state, &curRegs.IM, oldRegs.IM, "IM:%s");
 
 	// IFF 1 & 2
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.IFF1 != oldRegs.IFF1 ? regChangedCol : regNormalCol, "IFF1:%s", curRegs.IFF1 ? "Y " : "N ");
+	ImGui::TextColored(curRegs.IFF1 != oldRegs.IFF1 ? g_RegChangedCol : g_RegNormalCol, "IFF1:%s", curRegs.IFF1 ? "Y " : "N ");
 
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.IFF2 != oldRegs.IFF2 ? regChangedCol : regNormalCol, "IFF 2:%s", curRegs.IFF2 ? "Y" : "N");
+	ImGui::TextColored(curRegs.IFF2 != oldRegs.IFF2 ? g_RegChangedCol : g_RegNormalCol, "IFF 2:%s", curRegs.IFF2 ? "Y" : "N");
 	ImGui::EndTable();
+
+	// If we've edited any of the registers, write them back to the CPU.
+	if (state.bAllowEditing)
+	{
+		// A
+		if (curRegs.A != curRegsCopy.A)
+			pCPU->a = curRegs.A;
+
+		// F
+		if (curRegs.F != curRegsCopy.F)
+			pCPU->f = curRegs.F;
+
+		// BC
+		if (curRegs.B != curRegsCopy.B)
+			pCPU->b = curRegs.B;
+
+		if (curRegs.C != curRegsCopy.C)
+			pCPU->c = curRegs.C;
+
+		if (curRegs.BC != curRegsCopy.BC)
+			pCPU->bc = curRegs.BC;
+
+		// DE
+		if (curRegs.D != curRegsCopy.D)
+			pCPU->d = curRegs.D;
+
+		if (curRegs.E != curRegsCopy.E)
+			pCPU->e = curRegs.E;
+
+		if (curRegs.DE != curRegsCopy.DE)
+			pCPU->de = curRegs.DE;
+
+		// HL
+		if (curRegs.H != curRegsCopy.H)
+			pCPU->h = curRegs.H;
+
+		if (curRegs.L != curRegsCopy.L)
+			pCPU->l = curRegs.L;
+
+		if (curRegs.HL != curRegsCopy.HL)
+			pCPU->hl = curRegs.HL;
+
+		// BC'
+		if (curRegs.B2 != curRegsCopy.B2)
+			pCPU->bc2 = (curRegs.B2 << 8) | pCPU->bc2 & 0xff;
+
+		if (curRegs.C2 != curRegsCopy.C2)
+			pCPU->bc2 = pCPU->bc2 & 0xff00 | curRegs.C2;
+
+		if (curRegs.BC2 != curRegsCopy.BC2)
+			pCPU->bc2 = curRegs.BC2;
+
+		// DE'
+		if (curRegs.D2 != curRegsCopy.D2)
+			pCPU->de2 = (curRegs.D2 << 8) | pCPU->de2 & 0xff;
+
+		if (curRegs.E2 != curRegsCopy.E2)
+			pCPU->de2 = pCPU->de2 & 0xff00 | curRegs.E2;
+
+		if (curRegs.DE2 != curRegsCopy.DE2)
+			pCPU->de2 = curRegs.DE2;
+
+		// HL'
+		if (curRegs.H2 != curRegsCopy.H2)
+			pCPU->hl2 = (curRegs.H2 << 8) | pCPU->hl2 & 0xff;
+
+		if (curRegs.L2 != curRegsCopy.L2)
+			pCPU->hl2 = pCPU->hl2 & 0xff00 | curRegs.L2;
+
+		if (curRegs.HL2 != curRegsCopy.HL2)
+			pCPU->hl2 = curRegs.HL2;
+
+		// IX
+		if (curRegs.IX != curRegsCopy.IX)
+			pCPU->ix = curRegs.IX;
+
+		// IY
+		if (curRegs.IY != curRegsCopy.IY)
+			pCPU->iy = curRegs.IY;
+
+		// SP
+		if (curRegs.SP != curRegsCopy.SP)
+			pCPU->sp = curRegs.SP;
+
+		// PC
+		if (curRegs.PC != curRegsCopy.PC)
+			pCPU->pc = curRegs.PC;
+
+		// Flags
+		if (curRegs.CarryFlag != curRegsCopy.CarryFlag)
+			pCPU->f = (pCPU->f & ~Z80_CF) | (curRegs.CarryFlag ? Z80_CF : 0);
+
+		if (curRegs.AddSubtractFlag != curRegsCopy.AddSubtractFlag)
+			pCPU->f = (pCPU->f & ~Z80_NF) | (curRegs.AddSubtractFlag ? Z80_NF : 0);
+
+		if (curRegs.ParityOverflowFlag != curRegsCopy.ParityOverflowFlag)
+			pCPU->f = (pCPU->f & ~Z80_VF) | (curRegs.ParityOverflowFlag ? Z80_VF : 0);
+
+		if (curRegs.HalfCarryFlag != curRegsCopy.HalfCarryFlag)
+			pCPU->f = (pCPU->f & ~Z80_HF) | (curRegs.HalfCarryFlag ? Z80_HF : 0);
+
+		if (curRegs.ZeroFlag != curRegsCopy.ZeroFlag)
+			pCPU->f = (pCPU->f & ~Z80_ZF) | (curRegs.ZeroFlag ? Z80_ZF : 0);
+
+		if (curRegs.SignFlag != curRegsCopy.SignFlag)
+			pCPU->f = (pCPU->f & ~Z80_SF) | (curRegs.SignFlag ? Z80_SF : 0);
+	}
 }
 
 void DrawMachineStateZ80(const FMachineState* pMachineStateBase, FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
