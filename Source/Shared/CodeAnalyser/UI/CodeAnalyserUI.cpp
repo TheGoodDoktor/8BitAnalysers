@@ -1058,6 +1058,8 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 		{
 			if (ImGui::Selectable("Toggle Exec Breakpoint"))
 				state.ToggleExecBreakpointAtAddress(item.AddressRef);
+			if (ImGui::Selectable("Run until here")) 
+				state.Debugger.Continue(item.AddressRef);
 		}
 				
 		if (ImGui::Selectable("View in graphics viewer"))
@@ -1069,6 +1071,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 		{
 			state.GetEmulator()->CharacterMapViewerSetView(item.AddressRef);
 		}
+
 
 		ImGui::EndPopup();
 	}
