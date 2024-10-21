@@ -214,10 +214,13 @@ void FC64Emulator::SetupCodeAnalysisLabels()
 {
 	// Add IO Labels to code analysis
 	FCodeAnalysisBank* pIOBank = CodeAnalysis.GetBank(BankIds.IOArea);
-	AddVICRegisterLabels(pIOBank->Pages[0]);  // Page $D000-$D3ff
-	AddSIDRegisterLabels(pIOBank->Pages[1]);  // Page $D400-$D7ff
-	pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000,true);    // Colour RAM $D800
-	AddCIARegisterLabels(pIOBank->Pages[3]);  // Page $DC00-$Dfff
+	AddVICRegisterLabels(this);  // Page $D000-$D3ff
+	AddSIDRegisterLabels(this);  // Page $D400-$D7ff
+	//old pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000,true);    // Colour RAM $D800
+	FAddressRef colourRAMAddress(BankIds.IOArea, 0xD800);
+	FLabelInfo* pColourRAMLabel = GenerateLabelForAddress(CodeAnalysis, colourRAMAddress, ELabelType::Data);
+	pColourRAMLabel->ChangeName("ColourRAM", colourRAMAddress);
+	AddCIARegisterLabels(this);  // Page $DC00-$Dfff
 
 	// Add Stack??
 }
