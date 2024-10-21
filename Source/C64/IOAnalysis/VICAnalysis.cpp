@@ -658,11 +658,16 @@ std::string GetVICLabelName(int reg)
 	return labelName;
 }
 
-void AddVICRegisterLabels(FCodeAnalysisPage& IOPage)
+void AddVICRegisterLabels(FC64Emulator* pEmulator)
 {
 	for(int reg=0;reg< (int)g_VICRegDrawInfo.size();reg++)
 	{
-		IOPage.SetLabelAtAddress(GetVICLabelName(reg).c_str(), ELabelType::Data, reg, true);
-		IOPage.DataInfo[reg].DisplayType = g_VICRegDrawInfo[reg].DisplayType;
+		const FAddressRef regAddr(pEmulator->GetBankIds().IOArea, 0xD000 + reg);
+		FLabelInfo* pLabelInfo = GenerateLabelForAddress(pEmulator->GetCodeAnalysis(), regAddr, ELabelType::Data);
+		pLabelInfo->ChangeName(GetVICLabelName(reg).c_str(), regAddr);
+		pEmulator->GetCodeAnalysis().GetDataInfoForAddress(regAddr)->DisplayType = g_VICRegDrawInfo[reg].DisplayType;
+
+		//IOPage.SetLabelAtAddress(GetVICLabelName(reg).c_str(), ELabelType::Data, reg, true);
+		//IOPage.DataInfo[reg].DisplayType = g_VICRegDrawInfo[reg].DisplayType;
 	}
 }

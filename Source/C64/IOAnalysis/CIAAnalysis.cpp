@@ -312,18 +312,29 @@ std::string GetCIALabelName(int ciaNo, int reg)
 	return labelName;
 }
 
-void AddCIARegisterLabels(FCodeAnalysisPage& IOPage)
+void AddCIARegisterLabels(FC64Emulator* pEmulator)
 {
 	// CIA 1 -$DC00 - $DC0F
 	std::vector<FRegDisplayConfig>& CIA1RegList = g_CIA1RegDrawInfo;
 
 	for (int reg = 0; reg < (int)CIA1RegList.size(); reg++)
-		IOPage.SetLabelAtAddress(GetCIALabelName(1,reg).c_str(), ELabelType::Data, reg, true);
+	{
+		FAddressRef regAddress(pEmulator->GetBankIds().IOArea, 0xDC00 + reg);
+		FLabelInfo* pRegLabel = GenerateLabelForAddress(pEmulator->GetCodeAnalysis(),regAddress, ELabelType::Data);
+		pRegLabel->ChangeName(GetCIALabelName(1, reg).c_str(),regAddress);
+		//IOPage.SetLabelAtAddress(GetCIALabelName(1,reg).c_str(), ELabelType::Data, reg, true);
+	}
 
 	// CIA 2 -$DD00 - $DD0F
 	std::vector<FRegDisplayConfig>& CIA2RegList = g_CIA1RegDrawInfo;
 
 	for (int reg = 0; reg < (int)CIA2RegList.size(); reg++)
-		IOPage.SetLabelAtAddress(GetCIALabelName(2, reg).c_str(), ELabelType::Data, reg + 0x100, true);	// offset by 256 bytes
+	{
+		FAddressRef regAddress(pEmulator->GetBankIds().IOArea, 0xDD00 + reg);
+		FLabelInfo* pRegLabel = GenerateLabelForAddress(pEmulator->GetCodeAnalysis(), regAddress, ELabelType::Data);
+		pRegLabel->ChangeName(GetCIALabelName(2, reg).c_str(), regAddress);
+		//IOPage.SetLabelAtAddress(GetCIALabelName(2, reg).c_str(), ELabelType::Data, reg + 0x100, true);	// offset by 256 bytes
+	}
+
 
 }

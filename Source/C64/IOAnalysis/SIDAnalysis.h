@@ -23,4 +23,4 @@ private:
 	int		SelectedRegister = -1;
 };
 
-void AddSIDRegisterLabels(FCodeAnalysisPage& IOPage);
+void AddSIDRegisterLabels(FC64Emulator* pEmulator);

@@ -7,6 +7,7 @@
 
 class FCodeAnalysisState;
 struct FCodeAnalysisPage;
+class FC64Emulator;
 
 class FCIAAnalysis : public FC64IODevice
 {
@@ -48,4 +49,4 @@ public:
 
 };
 
-void AddCIARegisterLabels(FCodeAnalysisPage& IOPage);
+void AddCIARegisterLabels(FC64Emulator* pEmulator);

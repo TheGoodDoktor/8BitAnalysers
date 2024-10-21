@@ -124,4 +124,4 @@ private:
 
 };
 
-void AddVICRegisterLabels(FCodeAnalysisPage& IOPage);
+void AddVICRegisterLabels(FC64Emulator* pEmulator);
