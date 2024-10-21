@@ -683,7 +683,8 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 			if (state.CPUInterface->CPUType == ECPUType::M6502 && address.Address < 256)
 				snprintf(label, kLabelSize, "zp_%02X", address.Address);
 
-			//pLabel->Global = true;	// operand labels should be local
+			if (bLabelOnOperand == false)
+				pLabel->Global = true;	// operand labels should be local
 		}
 		break;
         case ELabelType::Text:

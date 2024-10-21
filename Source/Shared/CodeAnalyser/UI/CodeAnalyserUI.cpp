@@ -166,6 +166,8 @@ void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 			ImGui::EndTooltip();
 		}
 	}
+
+	viewState.pLabelScope = nullptr;
 }
 
 // TODO: phase this out
