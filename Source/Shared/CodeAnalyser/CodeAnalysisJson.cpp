@@ -559,8 +559,6 @@ void ReadPageFromJson(FCodeAnalysisState &state, FCodeAnalysisPage& page, const 
 		{
 			const uint16_t pageAddr = labelInfoJson["Address"];
 			FLabelInfo* pLabelInfo = CreateLabelInfoFromJson(labelInfoJson);
-			pLabelInfo->EnsureUniqueName();
-			pLabelInfo->SanitizeName();
 			page.Labels[pageAddr] = pLabelInfo;
 		}
 	}
@@ -599,8 +597,8 @@ void FixupPostLoad(FCodeAnalysisState& state)
 
 			for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 			{
-				const FDataInfo& dataInfo = page.DataInfo[addr];
-				FAddressRef dataRef = FAddressRef(bank.Id,addr + (bank.PrimaryMappedPage + pageNo) * FCodeAnalysisPage::kPageSize);
+				FDataInfo& dataInfo = page.DataInfo[addr];
+				FAddressRef addrRef = FAddressRef(bank.Id,addr + (bank.PrimaryMappedPage + pageNo) * FCodeAnalysisPage::kPageSize);
 				
 				for (int readRef = 0; readRef < dataInfo.Reads.NumReferences(); readRef++)
 				{
@@ -608,9 +606,9 @@ void FixupPostLoad(FCodeAnalysisState& state)
 					FCodeInfo*pCodeInfo = state.GetCodeInfoForAddress(ref);
 					//assert(pCodeInfo!=nullptr);
 					if (pCodeInfo != nullptr)
-						pCodeInfo->Reads.RegisterAccess(dataRef);
+						pCodeInfo->Reads.RegisterAccess(addrRef);
 					else
-						LOGWARNING("Code at 0x%04X reading from 0x%04X not found", ref.Address, dataRef.Address);
+						LOGWARNING("Code at 0x%04X reading from 0x%04X not found", ref.Address, addrRef.Address);
 				}
 
 				for (int writeRef = 0; writeRef < dataInfo.Writes.NumReferences(); writeRef++)
@@ -619,19 +617,29 @@ void FixupPostLoad(FCodeAnalysisState& state)
 					FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(ref);
 					//assert(pCodeInfo != nullptr);
 					if(pCodeInfo != nullptr)
-						pCodeInfo->Writes.RegisterAccess(dataRef);
+						pCodeInfo->Writes.RegisterAccess(addrRef);
 					else
-						LOGWARNING("Code at 0x%04X writing to 0x%04X not found",ref.Address,dataRef.Address);
+						LOGWARNING("Code at 0x%04X writing to 0x%04X not found",ref.Address, addrRef.Address);
 				}
 
 				// Fix up labels on instruction operands
 				FLabelInfo* pLabel = page.Labels[addr];
-				if (pLabel != nullptr && dataInfo.DataType == EDataType::InstructionOperand)
+
+				if (pLabel != nullptr)
 				{
-					if(dataInfo.InstructionAddress != dataRef)	// is label inside instruction?
+					if (pLabel->LabelType == ELabelType::Function)	// All functions should be global
+						pLabel->Global = true;
+
+					pLabel->EnsureUniqueName(addrRef);
+					pLabel->SanitizeName();
+
+					if (dataInfo.DataType == EDataType::InstructionOperand)
 					{
-						FLabelInfo::RemoveLabelName(pLabel->GetName());
-						page.Labels[addr] = nullptr;
+						if(dataInfo.InstructionAddress != addrRef)	// is label inside instruction?
+						{
+							FLabelInfo::RemoveLabelName(pLabel->GetName());
+							page.Labels[addr] = nullptr;
+						}
 					}
 				}
 			}

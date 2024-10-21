@@ -312,7 +312,12 @@ void FEmuBase::FileMenu()
 
 	if (ImGui::MenuItem("Export ASM File"))
 	{
-		// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
+		std::string outputFname = pCurrentProjectConfig->AsmExportPath + pCurrentProjectConfig->Name + ".asm";
+		ExportAssembler(this, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
+	}
+
+	if (ImGui::MenuItem("Export ASM Range"))
+	{
 		bExportAsm = true;
 	}
 

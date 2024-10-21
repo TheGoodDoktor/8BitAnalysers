@@ -132,6 +132,7 @@ void FProjectConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 		jsonConfigFile["StubOutFunctions"].push_back(funcName);
 	}
 	
+	jsonConfigFile["AsmExportPath"] = AsmExportPath;
 }
 
 void FProjectConfig::FixupAddressRefs(FCodeAnalysisState& state)
@@ -232,6 +233,9 @@ void FProjectConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 			StubOutFunctions.push_back(funcName);
 		}
 	}
+
+	if (jsonConfigFile.contains("AsmExportPath"))
+		AsmExportPath = jsonConfigFile["AsmExportPath"];
 	
 }
 

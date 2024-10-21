@@ -17,6 +17,7 @@ struct FAssemblerConfig
 	const char* DataTextPrefix = nullptr;
 	const char* ORGText = nullptr;
 	const char* EQUText = nullptr;
+	const char* LocalLabelPrefix = nullptr;
 };
 
 // Class to encapsulate ASM exporting
@@ -34,11 +35,13 @@ public:
 
 	//std::string		GenerateAddressLabelString(FAddressRef addr);
 	void			ExportDataInfoASM(FAddressRef addr);
+	const FAssemblerConfig&	GetConfig() const { return	Config;}
+
+	bool			IsLabelStubbed(const char* pLabelName) const;
 
 protected:
 	void				OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo);
 	ENumberDisplayMode	GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo);
-	bool			IsLabelStubbed(const char* pLabelName) const;
 
 	bool			bInitialised = false;
 	ENumberDisplayMode HexMode = ENumberDisplayMode::HexDollar;

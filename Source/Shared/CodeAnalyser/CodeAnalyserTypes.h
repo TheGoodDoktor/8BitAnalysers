@@ -250,18 +250,25 @@ struct FLabelInfo : FItem
 	static FLabelInfo* Duplicate(const FLabelInfo* pSourceLabel);
 	static void FreeAll();
 
-	bool EnsureUniqueName(void)
+	bool EnsureUniqueName(FAddressRef addr)
 	{
-		auto labelIt = LabelUsage.find(Name);
-		if (labelIt == LabelUsage.end())
+		if(Global == false)	// local labels don't need to be unique
+			return false;
+
+		auto labelIt = GlobalLabelAddress.find(Name);
+		if (labelIt == GlobalLabelAddress.end())
 		{
-			LabelUsage[Name] = 0;
+			GlobalLabelAddress[Name] = addr;
 			return false;
 		}
 
-		char postFix[32];
-		snprintf(postFix, 32, "_%d", ++LabelUsage[Name]);
-		Name += std::string(postFix);
+		if (labelIt->second != addr)
+		{
+			char postFix[32];
+			snprintf(postFix, 32, "_%X", addr.Address);
+			Name += std::string(postFix);
+			GlobalLabelAddress[Name] = addr;
+		}	
 
 		return true;
 	}
@@ -278,32 +285,28 @@ struct FLabelInfo : FItem
 
 	static bool RemoveLabelName(const std::string& labelName)
 	{
-		auto labelIt = LabelUsage.find(labelName);
+		auto labelIt = GlobalLabelAddress.find(labelName);
 		//assert(labelIt != LabelUsage.end());	// shouldn't happen - it does though - investigate
-		if (labelIt == LabelUsage.end())
+		if (labelIt == GlobalLabelAddress.end())
 			return false;
 
-		if (labelIt->second == 0)	// only a single use so we can remove from the map
-		{
-			LabelUsage.erase(labelIt);
-			return true;
-		}
-
-		return false;
+		GlobalLabelAddress.erase(labelIt);
+		return true;
 	}
 
-	static void	ResetLabelNames() { LabelUsage.clear(); }
+	static void	ResetLabelNames() { GlobalLabelAddress.clear(); }
 
 
 	void			InitialiseName(const char* pNewName) { Name = pNewName; }
-	void			ChangeName(const char* pNewName) 
+	void			ChangeName(const char* pNewName, FAddressRef addr) 
 	{
 		if (strlen(pNewName) == 0)	// don't let a label be empty
 			return;
 
-		RemoveLabelName(Name);
+		if(Global)
+			RemoveLabelName(Name);
 		Name = pNewName;
-		EnsureUniqueName();
+		EnsureUniqueName(addr);
 		Edited = true;
 	}
 	const char*		GetName() const {return Name.c_str(); }
@@ -321,7 +324,8 @@ private:
 	std::string				Name;
 
 	static std::vector<FLabelInfo*>	AllocatedList;
-	static std::unordered_map<std::string, int>	LabelUsage;
+	//static std::unordered_map<std::string, int>	LabelUsage;
+	static std::unordered_map<std::string, FAddressRef>	GlobalLabelAddress;
 
 };
 

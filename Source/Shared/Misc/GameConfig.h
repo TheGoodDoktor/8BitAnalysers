@@ -36,6 +36,8 @@ struct FProjectConfig
 	std::vector<std::string>	LuaSourceFiles;
 	std::vector<std::string>	StubOutFunctions;
 
+	std::string		AsmExportPath;
+
 	FCodeAnalysisViewConfig	ViewConfigs[FCodeAnalysisState::kNoViewStates];
 };
 

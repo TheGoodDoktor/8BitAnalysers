@@ -251,7 +251,8 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 
 	DasmState.ExportMin = startAddr;
 	DasmState.ExportMax = endAddr;
-	
+	DasmState.pExporter = this;
+
 	// place an 'org' at the start
 	SetOutputToBody();
 
@@ -282,6 +283,9 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		case EItemType::Label:
 		{
 			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
+			if(pLabelInfo->Global == false)
+				Output("%s",Config.LocalLabelPrefix);
+			
 			if(IsLabelStubbed(pLabelInfo->GetName()))
 				Output("%s_Stubbed:", pLabelInfo->GetName());
 			else
@@ -299,6 +303,7 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 			DasmState.CurrentAddress = addr;
 			DasmState.pCodeInfoItem = pCodeInfo;
 			DasmState.Text.clear();
+			DasmState.pCurrentScope = state.GetScopeForAddress(item.AddressRef);
 
 			GenerateDasmExportString(DasmState);
 			//const std::string dasmString = GenerateDasmStringForAddress(state, addr, HexMode);

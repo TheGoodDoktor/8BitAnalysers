@@ -4,7 +4,7 @@
 #include "6502/M6502Disassembler.h"
 #include "Z80/Z80Disassembler.h"
 
-
+#include "AssemblerExport.h"
 
 void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback) 
 {
@@ -153,10 +153,34 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 			for (int addrVal = val; addrVal >= 0; addrVal--)
 			{
 				const FLabelInfo* pLabel = CodeAnalysisState->GetLabelForPhysicalAddress(addrVal);
+				const FLabelInfo* pScopeLabel = CodeAnalysisState->GetScopeLabelForPhysicalAddress(addrVal);
 				if (pLabel != nullptr)
 				{
 					std::string labelName = pLabel->GetName();
 					labelAddress = addrVal;
+
+					// Local prefix
+					if (pLabel->Global == false)
+					{
+						if (pScopeLabel != pCurrentScope)
+						{
+							std::string scopeLabelName = pScopeLabel->GetName();
+
+							for (int i = 0; i < scopeLabelName.size(); i++)
+								outputCallback(scopeLabelName[i], this);
+							/* **>> Not sure if we want this
+							if (pExporter->IsLabelStubbed(scopeLabelName.c_str()))
+							{
+								const char* pStubbed = "_Stubbed";
+								for (int i = 0; i < strlen(pStubbed); i++)
+									outputCallback(pStubbed[i], this);
+							}*/
+						}
+						const char* pLocalPrefix = pExporter->GetConfig().LocalLabelPrefix;
+						for(int i=0;i<strlen(pLocalPrefix);i++)
+							outputCallback(pLocalPrefix[i], this);
+					}
+						
 
 					for (int i = 0; i < labelName.size(); i++)
 					{

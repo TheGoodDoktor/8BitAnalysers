@@ -154,7 +154,7 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 		if (pLabel == nullptr)
 			pLabel = AddLabel(state, firstAddress, labelText.c_str(), ELabelType::Data);
 		else
-			pLabel->ChangeName(labelText.c_str());
+			pLabel->ChangeName(labelText.c_str(), firstAddress);
 
 		if(pLabel)
 			pLabel->Global = true;

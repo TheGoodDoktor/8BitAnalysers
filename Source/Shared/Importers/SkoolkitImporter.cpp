@@ -197,11 +197,11 @@ bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 				{
 					addressStr = addressStr.substr(1, 4);
 					uint16_t address = static_cast<uint16_t>(std::stoul(addressStr, nullptr, 16));
-
-					AddLabelAtAddress(state, state.AddressRefFromPhysicalAddress(address));
-					if (FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(address))
+					const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(address);
+					AddLabelAtAddress(state, addrRef);
+					if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrRef))
 					{
-						pLabelInfo->ChangeName(labelStr.c_str());
+						pLabelInfo->ChangeName(labelStr.c_str(), addrRef);
 					}
 				}
 				// todo: decimal and 0x notation
@@ -559,11 +559,11 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		if (!label.empty())
 		{
 			ELabelType labelType = ELabelType::Data;
-			
-			AddLabelAtAddress(state, state.AddressRefFromPhysicalAddress(instruction.Address));
-			if (FLabelInfo* pLabelInfo = state.GetLabelForPhysicalAddress(instruction.Address))
+			FAddressRef addrRef = state.AddressRefFromPhysicalAddress(instruction.Address);
+			AddLabelAtAddress(state, addrRef);
+			if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrRef))
 			{
-				pLabelInfo->ChangeName(label.c_str());
+				pLabelInfo->ChangeName(label.c_str(), addrRef);
 			}
 			
 			label.clear();

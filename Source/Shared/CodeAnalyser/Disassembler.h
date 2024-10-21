@@ -58,8 +58,10 @@ public:
 	void OutputU16(uint16_t val, dasm_output_t outputCallback) override;
 	void OutputD8(int8_t val, dasm_output_t outputCallback) override;
 
+	class FASMExporter* pExporter = nullptr;
 	const FCodeInfo* pCodeInfoItem = nullptr;
 	ENumberDisplayMode	HexDisplayMode = ENumberDisplayMode::HexDollar;
+	struct FLabelInfo*	pCurrentScope = nullptr;
 
 	uint16_t	ExportMin = 0;
 	uint16_t	ExportMax = 0xffff;

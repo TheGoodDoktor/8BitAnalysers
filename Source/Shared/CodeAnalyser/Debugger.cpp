@@ -1225,7 +1225,6 @@ void FDebugger::DrawBreakpoints(void)
 {
 	FCodeAnalysisState& state = *pCodeAnalysis;
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit;
 	if (ImGui::BeginTable("Breakpoints", 4, flags))
 	{

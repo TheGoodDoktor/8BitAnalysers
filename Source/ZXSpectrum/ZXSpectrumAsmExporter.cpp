@@ -42,6 +42,7 @@ public:
 		Config.DataTextPrefix = "db";
 		Config.ORGText = "\torg";
 		Config.EQUText = "equ";
+		Config.LocalLabelPrefix = ".";
 	}
 
 	void AddHeader(void) override
@@ -74,6 +75,7 @@ public:
 		Config.DataTextPrefix = ".text";
 		Config.ORGText = ".org";
 		Config.EQUText = ".equ";
+		Config.LocalLabelPrefix = "@";
 	}
 };
 
@@ -87,6 +89,8 @@ public:
 		Config.DataTextPrefix = ".db";
 		Config.ORGText = ".org";
 		Config.EQUText = ".equ";
+		Config.LocalLabelPrefix = "@";
+
 	}
 };
 

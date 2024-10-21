@@ -172,6 +172,7 @@ struct FCodeAnalysisViewState
 	bool			GoToLabel = false;
 	uint16_t		JumpAddress = 0;
 	int16_t			ViewingBankId = -1;
+	const FLabelInfo*		pLabelScope = nullptr;
 
 	// for global Filters
 	bool						ShowROMLabels = false;
@@ -526,6 +527,7 @@ public:
 	const FCodeAnalysisPage* GetWritePage(uint16_t addr) const { return ((FCodeAnalysisState*)this)->GetWritePage(addr); }
 
 	const FLabelInfo* GetLabelForPhysicalAddress(uint16_t addr) const { return GetReadPage(addr)->Labels[addr & kPageMask]; }
+	const FLabelInfo* GetScopeLabelForPhysicalAddress(uint16_t addr) const { return GetReadPage(addr)->ScopeLabel[addr & kPageMask]; }
 	FLabelInfo* GetLabelForPhysicalAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
 	FLabelInfo* GetLabelForAddress(FAddressRef addrRef)
 	{
@@ -541,16 +543,30 @@ public:
 			return nullptr;
 		}
 	}
+	FLabelInfo* GetScopeForAddress(FAddressRef addrRef)
+	{
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		if (pBank != nullptr)
+		{
+			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
+			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].ScopeLabel[bankAddr & FCodeAnalysisPage::kPageMask];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 	void SetLabelForPhysicalAddress(uint16_t addr, FLabelInfo* pLabel)
 	{
 		if(pLabel != nullptr)	// ensure no name clashes
-			pLabel->EnsureUniqueName();
+			pLabel->EnsureUniqueName(AddressRefFromPhysicalAddress(addr));
 		GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; 
 	}
 	void SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLabel)
 	{
 		if (pLabel != nullptr)	// ensure no name clashes
-			pLabel->EnsureUniqueName();
+			pLabel->EnsureUniqueName(addrRef);
 
 		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
 		if (pBank != nullptr)
@@ -560,6 +576,7 @@ public:
 			pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].Labels[bankAddr & FCodeAnalysisPage::kPageMask] = pLabel;
 		}
 	}
+
 
 	//FCommentBlock* GetCommentBlockForAddress(uint16_t addr) const { return GetReadPage(addr)->CommentBlocks[addr & kPageMask]; }
 	FCommentBlock* GetCommentBlockForAddress(FAddressRef addrRef)

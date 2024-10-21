@@ -579,7 +579,7 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 		const int kLabelSize = 32;
 		char label[kLabelSize] = { 0 };
 		snprintf(label, kLabelSize, "charset_%04X", params.Address.Address);
-		pLabel->ChangeName(label);
+		pLabel->ChangeName(label,params.Address);
 	}
 
 	g_CharacterSets.push_back(pNewCharSet);

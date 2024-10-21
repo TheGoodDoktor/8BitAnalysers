@@ -9,7 +9,7 @@
 //#include "json.hpp"
 std::vector<FCodeInfo*>		FCodeInfo::AllocatedList;
 std::vector<FLabelInfo*>				FLabelInfo::AllocatedList;
-std::unordered_map<std::string, int>	FLabelInfo::LabelUsage;
+std::unordered_map<std::string, FAddressRef>	FLabelInfo::GlobalLabelAddress;
 std::vector<FCommentBlock*>	FCommentBlock::AllocatedList;
 
 FImageData::~FImageData() 
@@ -290,6 +290,7 @@ bool FCodeAnalysisPage::ReadFromBuffer(FMemoryBuffer& buffer)
 }
 #endif
 
+#if 0
 void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, ELabelType type, uint16_t addr, bool bGlobal)
 {
 	FLabelInfo* pLabel = Labels[addr];
@@ -307,6 +308,7 @@ void FCodeAnalysisPage::SetLabelAtAddress(const char* pLabelName, ELabelType typ
 
 	pLabel->Global = bGlobal;
 }
+#endif
 
 #if 0
 void FCodeAnalysisPage::WriteToJSon(nlohmann::json& jsonOutput)
