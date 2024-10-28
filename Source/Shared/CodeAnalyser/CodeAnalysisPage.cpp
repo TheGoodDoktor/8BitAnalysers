@@ -89,6 +89,8 @@ void FCodeAnalysisPage::Initialise()
 	memset(Labels, 0, sizeof(Labels));
 	memset(CodeInfo, 0, sizeof(CodeInfo));
 	memset(CommentBlocks, 0, sizeof(CommentBlocks));
+	memset(ScopeLabel, 0, sizeof(ScopeLabel));
+	memset(MachineState, 0, sizeof(MachineState));
 
 	for (int addr = 0; addr < FCodeAnalysisPage::kPageSize; addr++)
 	{
@@ -109,6 +111,7 @@ void FCodeAnalysisPage::Reset(void)
 		CodeInfo[addr] = nullptr;
 		DataInfo[addr].Reset();
 		MachineState[addr] = nullptr;
+		ScopeLabel[addr] = nullptr;
 	}
 
 	Initialise();
