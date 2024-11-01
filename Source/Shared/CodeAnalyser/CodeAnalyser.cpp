@@ -667,6 +667,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	{
 		case ELabelType::Function:
 			snprintf(label, kLabelSize,"function_%04X", address.Address);
+			pLabel->Global = true;
 			break;
 		case ELabelType::Code:
 			snprintf(label, kLabelSize, "label_%04X", address.Address);
