@@ -24,6 +24,13 @@ enum class EGraphicsViewMode : int
 	Count
 };
 
+enum class EOffScreenBufferFormat
+{
+	Linear,
+
+	Count
+};
+
 struct FGraphicsSet
 {
 	std::string	Name;
@@ -31,6 +38,16 @@ struct FGraphicsSet
 	int			XSizePixels;	// width in pixels
 	int			YSizePixels;	// height in pixels
 	int			Count;	// number of images
+};
+
+struct FOffScreenBuffer
+{
+	std::string	Name;
+	FAddressRef	Address;
+	int			XSizePixels = 0;	// width in pixels
+	int			YSizePixels = 0;	// height in pixels
+
+	EOffScreenBufferFormat	Format = EOffScreenBufferFormat::Linear;
 };
 
 // Graphics Viewer
@@ -60,6 +77,8 @@ protected:
 	FCodeAnalysisState& GetCodeAnalysis() { return *pCodeAnalysis; }
 	const FCodeAnalysisState& GetCodeAnalysis() const { return *pCodeAnalysis; }
 	void			DrawCharacterGraphicsViewer(void);
+	void			DrawOffScreenBufferViewer(void);
+
 	virtual void	DrawScreenViewer(void) = 0;
 
 	uint16_t		GetAddressOffsetFromPositionInView(int x, int y) const;
@@ -94,7 +113,9 @@ protected:
 	std::string		ImageSetName;
 
 	std::map<FAddressRef, FGraphicsSet>		GraphicsSets;
+	std::vector<FOffScreenBuffer>			OffScreenBuffers;
 	FAddressRef		SelectedGraphicSet;
+	std::string		SelectedOffscreenBuffer;
 
 	EBitmapFormat	BitmapFormat = EBitmapFormat::Bitmap_1Bpp;
 	int				PaletteNo = -1;
@@ -104,6 +125,7 @@ protected:
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
 	FGraphicsView* pGraphicsView = nullptr;
 	FGraphicsView* pScreenView = nullptr;
+	FGraphicsView* pBufferView = nullptr;
 
 	int				ItemNo = 0;
 	FAddressRef		ImageGraphicSet;

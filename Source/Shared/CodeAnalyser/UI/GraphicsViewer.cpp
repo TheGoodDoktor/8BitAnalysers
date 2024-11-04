@@ -32,6 +32,7 @@ bool FGraphicsViewer::Init()
 	pGraphicsView = new FGraphicsView(kGraphicsViewerWidth, kGraphicsViewerHeight);
 	pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
 	pItemView = new FGraphicsView(kMaxImageSize, kMaxImageSize);
+	pBufferView = new FGraphicsView(kMaxImageSize, kMaxImageSize);
 	return true;
 }
 
@@ -43,6 +44,8 @@ void FGraphicsViewer::Shutdown(void)
 	pScreenView = nullptr;
 	delete pItemView;
 	pItemView = nullptr;
+	delete pBufferView;
+	pBufferView = nullptr;
 }
 
 void FGraphicsViewer::Reset(void)
@@ -444,6 +447,11 @@ void FGraphicsViewer::DrawUI()
 			if (ImGui::BeginTabItem("Screen"))
 			{
 				DrawScreenViewer();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Off Screen Buffers"))
+			{
+				DrawOffScreenBufferViewer();
 				ImGui::EndTabItem();
 			}
 		}
@@ -981,7 +989,44 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 }
 
+void FGraphicsViewer::DrawOffScreenBufferViewer(void)
+{
+	FCodeAnalysisState& state = GetCodeAnalysis();
+	const float scale = ImGui_GetScaling();
 
+	if (ImGui::BeginChild("OffScreenBufferList", ImVec2(100 * scale, 0), true))
+	{
+		for (const auto& buffer : OffScreenBuffers)
+		{
+			bool bSelected = buffer.Name == SelectedOffscreenBuffer;
+			ImGui::PushID(buffer.Address.Val);
+			if (ImGui::Selectable(buffer.Name.c_str(), &bSelected))
+			{
+				//ImageSetName = set.Name;
+				SelectedOffscreenBuffer = buffer.Name;
+				//GoToAddress(buffer.Address);
+				//state.GetFocussedViewState().GoToAddress(buffer.Address);
+			}
+			ImGui::PopID();
+		}
+	}
+	ImGui::EndChild();
+	ImGui::SameLine();
+	if (ImGui::BeginChild("OffScreenBufferDisplay", ImVec2(0, 0), true))
+	{
+		// View Scale
+		int& viewScale = state.pGlobalConfig->GfxViewerScale;
+		ImGui::InputInt("Scale", &viewScale, 1, 1);
+		viewScale = std::max(1, viewScale);	// clamp
+
+		const ImVec2 uv0(0, 0);
+		const ImVec2 uv1(1.0f / (float)viewScale, 1.0f / (float)viewScale);
+		const ImVec2 size((float)kMaxImageSize * scale, (float)kMaxImageSize * scale);
+		pBufferView->UpdateTexture();
+		ImGui::Image((void*)pBufferView->GetTexture(), size, uv0, uv1);
+	}
+	ImGui::EndChild();
+}
 
 // Save/Load Graphics sets to json
 #include <iomanip>
