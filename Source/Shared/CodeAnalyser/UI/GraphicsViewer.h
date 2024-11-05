@@ -77,6 +77,8 @@ protected:
 	FCodeAnalysisState& GetCodeAnalysis() { return *pCodeAnalysis; }
 	const FCodeAnalysisState& GetCodeAnalysis() const { return *pCodeAnalysis; }
 	void			DrawCharacterGraphicsViewer(void);
+	bool			AddOffScreenBuffer(const FOffScreenBuffer& buffer);
+	FOffScreenBuffer*	GetOffscreenBuffer(const char *pName);
 	void			DrawOffScreenBufferViewer(void);
 
 	virtual void	DrawScreenViewer(void) = 0;
@@ -111,6 +113,7 @@ protected:
 	int				GraphicColumnSizeBytes = 0;
 
 	std::string		ImageSetName;
+	std::string		OffScreenBufferName;
 
 	std::map<FAddressRef, FGraphicsSet>		GraphicsSets;
 	std::vector<FOffScreenBuffer>			OffScreenBuffers;

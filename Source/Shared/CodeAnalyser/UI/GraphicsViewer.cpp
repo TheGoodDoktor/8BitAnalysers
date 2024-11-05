@@ -793,6 +793,20 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	// clamp sizes
 	XSizePixels = std::min(std::max(8, XSizePixels), kMaxImageSize);
 	YSizePixels = std::min(std::max(1, YSizePixels), kMaxImageSize);
+
+	// Options to add off screen buffer
+	ImGui::InputText("Off-Screen Buffer",&OffScreenBufferName);
+	ImGui::SameLine();
+	if (ImGui::Button("Add"))
+	{
+		// Add off-screen buffer
+		FOffScreenBuffer newBuffer;
+		newBuffer.Name = OffScreenBufferName;
+		newBuffer.XSizePixels = XSizePixels;
+		newBuffer.YSizePixels = YSizePixels;
+		newBuffer.Address = state.AddressRefFromPhysicalAddress(addrInput);
+		AddOffScreenBuffer(newBuffer);
+	}
 	
 	ImGui::InputInt("Count", &ImageCount, 1, 1);
 
@@ -989,6 +1003,29 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 }
 
+bool FGraphicsViewer::AddOffScreenBuffer(const FOffScreenBuffer& newBuffer)
+{
+	// make sure one of the same name doesn't already exist
+	for (const auto& buffer : OffScreenBuffers)
+	{
+		if(buffer.Name == newBuffer.Name)
+			return false;
+	}
+
+	OffScreenBuffers.push_back(newBuffer);
+	return true;
+}
+
+FOffScreenBuffer* FGraphicsViewer::GetOffscreenBuffer(const char* pName)
+{
+	for (auto& buffer : OffScreenBuffers)
+	{
+		if (buffer.Name == pName)
+			return &buffer;
+	}
+
+	return nullptr;
+}
 void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
@@ -1014,16 +1051,25 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 	ImGui::SameLine();
 	if (ImGui::BeginChild("OffScreenBufferDisplay", ImVec2(0, 0), true))
 	{
-		// View Scale
-		int& viewScale = state.pGlobalConfig->GfxViewerScale;
-		ImGui::InputInt("Scale", &viewScale, 1, 1);
-		viewScale = std::max(1, viewScale);	// clamp
+		FOffScreenBuffer* pBuffer = GetOffscreenBuffer(SelectedOffscreenBuffer.c_str());
 
-		const ImVec2 uv0(0, 0);
-		const ImVec2 uv1(1.0f / (float)viewScale, 1.0f / (float)viewScale);
-		const ImVec2 size((float)kMaxImageSize * scale, (float)kMaxImageSize * scale);
-		pBufferView->UpdateTexture();
-		ImGui::Image((void*)pBufferView->GetTexture(), size, uv0, uv1);
+		if(pBuffer != nullptr)
+		{
+			// View Scale
+			int& viewScale = state.pGlobalConfig->GfxViewerScale;
+			ImGui::InputInt("Scale", &viewScale, 1, 1);
+			viewScale = std::max(1, viewScale);	// clamp
+
+			const ImVec2 uv0(0, 0);
+			const ImVec2 uv1(1.0f / (float)viewScale, 1.0f / (float)viewScale);
+			const ImVec2 size((float)kMaxImageSize * scale, (float)kMaxImageSize * scale);
+			pBufferView->UpdateTexture();
+			ImGui::Image((void*)pBufferView->GetTexture(), size, uv0, uv1);
+			ImGui::InputInt("Width Pixels", &pBuffer->XSizePixels);
+			ImGui::SameLine();
+			ImGui::InputInt("Height Pixels", &pBuffer->YSizePixels);
+			DrawAddressLabel(state,state.GetFocussedViewState(),pBuffer->Address);
+		}
 	}
 	ImGui::EndChild();
 }
@@ -1052,6 +1098,18 @@ bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 		graphicsSetJson["ImageCount"] = set.Count;
 
 		jsonGraphicsSets["GraphicsSets"].push_back(graphicsSetJson);
+	}
+
+	for (const auto& offscreenBuffer : OffScreenBuffers)
+	{
+		json offscreenBufferJson;
+		offscreenBufferJson["Name"] = offscreenBuffer.Name;
+		offscreenBufferJson["AddressRef"] = offscreenBuffer.Address.Val;
+		offscreenBufferJson["XSizePixels"] = offscreenBuffer.XSizePixels;
+		offscreenBufferJson["YSizePixels"] = offscreenBuffer.YSizePixels;
+		offscreenBufferJson["Format"] = (int)offscreenBuffer.Format;
+
+		jsonGraphicsSets["OffScreenBuffers"].push_back(offscreenBufferJson);
 	}
 
 	// Write file out
@@ -1091,6 +1149,23 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 			set.YSizePixels = graphicsSetJson["YSizePixels"];
 			set.Count = graphicsSetJson["ImageCount"];
 			GraphicsSets[set.Address] = set;
+		}
+	}
+
+	if (jsonGraphicsSets.contains("OffScreenBuffers"))
+	{
+		OffScreenBuffers.clear();
+
+		for (const auto& offscreenBuffersJson : jsonGraphicsSets["OffScreenBuffers"])
+		{
+			FOffScreenBuffer offscreenBuffer;
+			offscreenBuffer.Name = offscreenBuffersJson["Name"];
+			offscreenBuffer.Address.Val = offscreenBuffersJson["AddressRef"];
+			offscreenBuffer.XSizePixels = offscreenBuffersJson["XSizePixels"];
+			offscreenBuffer.YSizePixels = offscreenBuffersJson["YSizePixels"];
+			offscreenBuffer.Format = (EOffScreenBufferFormat)offscreenBuffersJson["Format"];
+
+			OffScreenBuffers.push_back(offscreenBuffer);
 		}
 	}
 
