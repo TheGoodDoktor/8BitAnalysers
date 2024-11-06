@@ -145,6 +145,8 @@ uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInView(int x, int y) const
 	return (addrInput + (column * columnSize * (bpp / widthFactor)) + (scaledY * xSizeChars * bpp)) % MemorySize;
 }
 
+
+
 uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold)
 {
 	const uint16_t pageAddress = addr & FCodeAnalysisPage::kPageMask;
@@ -174,6 +176,16 @@ uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_
 	}
 
 	return 0xFFFFFFFF;
+}
+
+uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisState& state, FAddressRef addr, int currentFrameNo, int frameThreshold)
+{
+	const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	const uint16_t bankSizeMask = pBank->SizeMask;
+	const uint16_t bankAddr = addr.Address & bankSizeMask;
+	FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
+
+	return GetHeatmapColourForMemoryAddress(page, bankAddr, currentFrameNo, frameThreshold);
 }
 
 void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int xPos, int columnWidth)
@@ -1063,12 +1075,84 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 			const ImVec2 uv0(0, 0);
 			const ImVec2 uv1(1.0f / (float)viewScale, 1.0f / (float)viewScale);
 			const ImVec2 size((float)kMaxImageSize * scale, (float)kMaxImageSize * scale);
+			ImGuiIO& io = ImGui::GetIO();
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			int viewSizeX = 8;
+			int viewSizeY = 8;
+			const int widthFactor = IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
+
 			pBufferView->UpdateTexture();
 			ImGui::Image((void*)pBufferView->GetTexture(), size, uv0, uv1);
+
+			// TODO: hover behaviour
+			if (ImGui::IsItemHovered())
+			{
+				const int xp = (int)((io.MousePos.x - pos.x) / scale);
+				const int yp = std::max((int)((io.MousePos.y - pos.y - (YSizePixels / 2)) / scale), 0);
+
+				ImDrawList* dl = ImGui::GetWindowDrawList();
+				const int rx = (xp / viewSizeX) * viewSizeX;
+				const int ry = (yp / viewScale) * viewScale;
+				const float rxp = pos.x + (float)rx * scale;
+				const float ryp = pos.y + (float)ry * scale;
+				dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewSizeX * scale, ryp + (float)viewSizeY * scale), 0xff00ffff);
+				ImGui::BeginTooltip();
+				const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInView(rx, ry);
+				FAddressRef ptrAddress = pBuffer->Address;
+				state.AdvanceAddressRef(ptrAddress, gfxAddressOffset);
+
+				if (ImGui::IsMouseClicked(0))
+					ClickedAddress = ptrAddress;
+
+				ImGui::Text("%s", NumStr(ptrAddress.Address));
+				ImGui::SameLine();
+				DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
+
+				// show magnifier
+				const float magAmount = 8.0f;
+				const int magXP = rx / viewScale;// ((int)(io.MousePos.x - pos.x) / viewSizeX)* viewSizeX;
+				const int magYP = ry / viewScale;//std::max((int)(io.MousePos.y - pos.y - (viewSizeY / 2)), 0);
+				const ImVec2 magSize(XSizePixels * magAmount * widthFactor, YSizePixels * magAmount);
+				const ImVec2 magUV0(magXP * (1.0f / kMaxImageSize), magYP * (1.0f / kMaxImageSize));
+				const ImVec2 magUV1(magUV0.x + XSizePixels * widthFactor * (1.0f / kMaxImageSize), magUV0.y + YSizePixels * (1.0f / kMaxImageSize));
+				ImGui::Image((void*)pBufferView->GetTexture(), magSize, magUV0, magUV1);
+
+				ImGui::EndTooltip();
+			}
+
+			if (ClickedAddress.IsValid())
+			{
+				DrawAddressLabel(state, state.GetFocussedViewState(), ClickedAddress);
+				if (ImGui::CollapsingHeader("Details"))
+				{
+					const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(ClickedAddress.Address) : Bank;
+					const FCodeAnalysisItem item(state.GetDataInfoForAddress(ClickedAddress), ClickedAddress);
+					DrawDataDetails(state, state.GetFocussedViewState(), item);
+				}
+			}
+
 			ImGui::InputInt("Width Pixels", &pBuffer->XSizePixels);
 			ImGui::SameLine();
 			ImGui::InputInt("Height Pixels", &pBuffer->YSizePixels);
 			DrawAddressLabel(state,state.GetFocussedViewState(),pBuffer->Address);
+
+			FAddressRef itemAddress = pBuffer->Address;
+
+			pBufferView->Clear();
+
+			// Update image
+			// TODO: support other modes
+			for (int y = 0; y < pBuffer->YSizePixels; y++)
+			{
+				for (int x = 0; x < pBuffer->XSizePixels; x += 8)
+				{
+					const uint8_t charLine = state.ReadByte(itemAddress);
+					const uint32_t col = GetHeatmapColourForMemoryAddress(state,itemAddress, state.CurrentFrameNo, HeatmapThreshold);
+					pBufferView->DrawCharLine(charLine, x, y, col, 0);
+					state.AdvanceAddressRef(itemAddress, 1);
+				}
+			}
+			
 		}
 	}
 	ImGui::EndChild();
