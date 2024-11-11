@@ -48,6 +48,9 @@ struct FOffScreenBuffer
 	int			YSizePixels = 0;	// height in pixels
 
 	EOffScreenBufferFormat	Format = EOffScreenBufferFormat::Linear;
+
+	// TODO: this needs to support other pixel formats
+	uint16_t	GetByteSize() const { return (XSizePixels/8) * YSizePixels;}
 };
 
 // Graphics Viewer
@@ -83,6 +86,7 @@ protected:
 
 	virtual void	DrawScreenViewer(void) = 0;
 
+	uint16_t		GetAddressOffsetFromPositionInBuffer(const FOffScreenBuffer& buffer, int x, int y) const;
 	uint16_t		GetAddressOffsetFromPositionInView(int x, int y) const;
 
 	void			DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int xPos, int columnWidth);

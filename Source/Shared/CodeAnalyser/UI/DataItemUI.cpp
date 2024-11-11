@@ -771,7 +771,7 @@ void DrawDataValueGraphWord(FCodeAnalysisState& state, FAddressRef addressRef)
 }
 
 
-void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FDataInfo* pDataInfo)
+void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FDataInfo* pDataInfo)
 {
 	// List Data accesses
 	if (pDataInfo->Reads.IsEmpty() == false)

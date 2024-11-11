@@ -114,6 +114,34 @@ void FGraphicsViewer::GoToAddress(FAddressRef address)
 	}
 }
 
+uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInBuffer(const FOffScreenBuffer& buffer, int x, int y) const
+{
+	const FCodeAnalysisState& state = GetCodeAnalysis();
+	FGlobalConfig* pConfig = state.pGlobalConfig;
+	const int scaledX = x / pConfig->GfxViewerScale;
+	const int scaledY = y / pConfig->GfxViewerScale;
+	const int xSizeChars = buffer.XSizePixels >> 3;
+
+	return (scaledX / 8) + (scaledY * xSizeChars);
+}
+
+bool GetPositionInBufferFromAddress(const FOffScreenBuffer& buffer, FAddressRef address, int& x, int& y)
+{
+	if(address.BankId != buffer.Address.BankId)
+		return false;
+	if(address.Address < buffer.Address.Address)
+		return false;
+	if(address.Address >= buffer.Address.Address + buffer.GetByteSize())
+		return false;
+
+	// TODO: this only works for linear bitmap modes
+	const uint16_t byteOffset = address.Address - buffer.Address.Address;
+	const uint16_t bufferStride = buffer.XSizePixels / 8;
+	x = (byteOffset % bufferStride) * 8;
+	y = byteOffset / bufferStride;
+	return true;
+}
+
 uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInView(int x, int y) const
 {
 	const FCodeAnalysisState& state = GetCodeAnalysis();
@@ -1077,9 +1105,9 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 			const ImVec2 size((float)kMaxImageSize * scale, (float)kMaxImageSize * scale);
 			ImGuiIO& io = ImGui::GetIO();
 			ImVec2 pos = ImGui::GetCursorScreenPos();
-			int viewSizeX = 8;
-			int viewSizeY = 8;
-			const int widthFactor = IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
+			//int viewSizeX = 8;
+			//int viewSizeY = 8;
+			const int widthFactor = 1;//IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
 
 			pBufferView->UpdateTexture();
 			ImGui::Image((void*)pBufferView->GetTexture(), size, uv0, uv1);
@@ -1088,16 +1116,21 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 			if (ImGui::IsItemHovered())
 			{
 				const int xp = (int)((io.MousePos.x - pos.x) / scale);
-				const int yp = std::max((int)((io.MousePos.y - pos.y - (YSizePixels / 2)) / scale), 0);
+				const int yp = (int)((io.MousePos.y - pos.y) / scale);
 
 				ImDrawList* dl = ImGui::GetWindowDrawList();
-				const int rx = (xp / viewSizeX) * viewSizeX;
+
+				// TODO: draw axis line instead?
+				const int rx = (xp / viewScale) * viewScale;
 				const int ry = (yp / viewScale) * viewScale;
 				const float rxp = pos.x + (float)rx * scale;
 				const float ryp = pos.y + (float)ry * scale;
-				dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewSizeX * scale, ryp + (float)viewSizeY * scale), 0xff00ffff);
+				//dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewSizeX * scale, ryp + (float)viewSizeY * scale), 0xff00ffff);
+				dl->AddLine(ImVec2(rxp, pos.y), ImVec2(rxp, pos.y + (float)pBuffer->YSizePixels * scale), 0xff00ffff, 2.0f);
+				dl->AddLine(ImVec2(pos.x, ryp), ImVec2(pos.x + (float)pBuffer->XSizePixels * scale, ryp), 0xff00ffff, 2.0f);
+
 				ImGui::BeginTooltip();
-				const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInView(rx, ry);
+				const uint16_t gfxAddressOffset = GetAddressOffsetFromPositionInBuffer(*pBuffer, rx, ry);
 				FAddressRef ptrAddress = pBuffer->Address;
 				state.AdvanceAddressRef(ptrAddress, gfxAddressOffset);
 
@@ -1109,12 +1142,13 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 				DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
 
 				// show magnifier
-				const float magAmount = 8.0f;
+				const int magnifierSize = 64 * viewScale;
+				const float magAmount = 4.0f;
 				const int magXP = rx / viewScale;// ((int)(io.MousePos.x - pos.x) / viewSizeX)* viewSizeX;
 				const int magYP = ry / viewScale;//std::max((int)(io.MousePos.y - pos.y - (viewSizeY / 2)), 0);
-				const ImVec2 magSize(XSizePixels * magAmount * widthFactor, YSizePixels * magAmount);
+				const ImVec2 magSize(magnifierSize * magAmount * widthFactor, magnifierSize * magAmount);
 				const ImVec2 magUV0(magXP * (1.0f / kMaxImageSize), magYP * (1.0f / kMaxImageSize));
-				const ImVec2 magUV1(magUV0.x + XSizePixels * widthFactor * (1.0f / kMaxImageSize), magUV0.y + YSizePixels * (1.0f / kMaxImageSize));
+				const ImVec2 magUV1(magUV0.x + magnifierSize * widthFactor * (1.0f / kMaxImageSize), magUV0.y + magnifierSize * (1.0f / kMaxImageSize));
 				ImGui::Image((void*)pBufferView->GetTexture(), magSize, magUV0, magUV1);
 
 				ImGui::EndTooltip();
@@ -1122,18 +1156,33 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 
 			if (ClickedAddress.IsValid())
 			{
-				DrawAddressLabel(state, state.GetFocussedViewState(), ClickedAddress);
-				if (ImGui::CollapsingHeader("Details"))
+				FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+				const FDataInfo* pDataInfo = state.GetDataInfoForAddress(ClickedAddress);
+				DrawAddressLabel(state, viewState, ClickedAddress);
+				DrawDataAccesses(state, viewState, pDataInfo);
+
+				// TODO: draw clicked location with axis lines?
+				int xPos = 0;
+				int yPos = 0;
+				if (GetPositionInBufferFromAddress(*pBuffer, ClickedAddress, xPos, yPos))
 				{
-					const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(ClickedAddress.Address) : Bank;
-					const FCodeAnalysisItem item(state.GetDataInfoForAddress(ClickedAddress), ClickedAddress);
-					DrawDataDetails(state, state.GetFocussedViewState(), item);
+					ImDrawList* dl = ImGui::GetWindowDrawList();
+					const int rx = xPos * viewScale;
+					const int ry = yPos * viewScale;
+					const float rxp = pos.x + (float)rx * scale;
+					const float ryp = pos.y + (float)ry * scale;
+					//dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewSizeX * scale, ryp + (float)viewSizeY * scale), 0xff00ffff);
+					dl->AddLine(ImVec2(rxp, pos.y), ImVec2(rxp, pos.y + (float)pBuffer->YSizePixels * scale), 0xff00ff00, 2.0f);
+					dl->AddLine(ImVec2(pos.x, ryp), ImVec2(pos.x + (float)pBuffer->XSizePixels * scale, ryp), 0xff00ff00, 2.0f);
 				}
 			}
 
-			ImGui::InputInt("Width Pixels", &pBuffer->XSizePixels);
-			ImGui::SameLine();
-			ImGui::InputInt("Height Pixels", &pBuffer->YSizePixels);
+			const float kNumSize = 80.0f * scale;	// size for number GUI widget
+			ImGui::SetNextItemWidth(kNumSize);
+			ImGui::InputInt("XSize", &pBuffer->XSizePixels, 8, 8);
+			ImGui::SetNextItemWidth(kNumSize);
+			ImGui::InputInt("YSize", &pBuffer->YSizePixels, 8, 8);
+
 			DrawAddressLabel(state,state.GetFocussedViewState(),pBuffer->Address);
 
 			FAddressRef itemAddress = pBuffer->Address;
