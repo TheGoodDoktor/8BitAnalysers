@@ -210,7 +210,8 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
     g_AppState.pEmulator = pEmulator;
 
     int lastFontSize = pEmulator->GetCodeAnalysis().pGlobalConfig->FontSizePts;
-    
+    bool bLastDefaultFont = pEmulator->GetCodeAnalysis().pGlobalConfig->bBuiltInFont;
+
     // Main loop
     while (!glfwWindowShouldClose(appState.MainWindow))
     {
@@ -223,12 +224,14 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
         ImGui_InitScaling();
 
         const int curFontSize = pEmulator->GetCodeAnalysis().pGlobalConfig->FontSizePts;
-        if (lastFontSize != curFontSize)
+        const bool bDefaultFont = pEmulator->GetCodeAnalysis().pGlobalConfig->bBuiltInFont;
+        if (lastFontSize != curFontSize || bLastDefaultFont != bDefaultFont)
         {
             pEmulator->LoadFont();
             ImGui_ImplOpenGL3_DestroyDeviceObjects();
             ImGui_ImplOpenGL3_CreateDeviceObjects();
             lastFontSize = curFontSize;
+            bLastDefaultFont = bDefaultFont;
         }
 
         // Start the Dear ImGui frame

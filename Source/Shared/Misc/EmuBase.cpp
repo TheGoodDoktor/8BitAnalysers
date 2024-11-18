@@ -412,40 +412,48 @@ void FEmuBase::OptionsMenu()
 	}
 	if (ImGui::BeginMenu("Font"))
 	{
-		const ImFont* pCurFont = ImGui::GetFont();
-		ImGui::Text("Current Font: %s", pCurFont ? pCurFont->GetDebugName() : "None");
-		ImGui::Separator();
-
-		FGlobalConfig* pConfig = CodeAnalysis.pGlobalConfig;
-		if (!pConfig->Font.empty())
+		if (const ImFont* pCurFont = ImGui::GetFont())
 		{
-			if (pCurFont && !strncmp(pConfig->Font.c_str(), pCurFont->GetDebugName(), pConfig->Font.length()))
-			{
-				if (ImGui::Button("Decrease Font Size"))
-				{
-					pConfig->FontSizePts--;
-				}
-				ImGui::SameLine();
-				ImGui::Dummy(ImGui::CalcTextSize("FF"));
-				ImGui::SameLine();
-				if (ImGui::Button("Increase Font Size"))
-				{
-					pConfig->FontSizePts++;
-				}
+			FGlobalConfig* pConfig = CodeAnalysis.pGlobalConfig;
+			const bool bConfigFontIsLoaded = !strncmp(pConfig->Font.c_str(), pCurFont->GetDebugName(), pConfig->Font.length());
 
-				ImGui::InputInt("Size (Pt)", &pConfig->FontSizePts, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue);
-				pConfig->FontSizePts = std::min(std::max(pConfig->FontSizePts, 8), 72);
-			}
-			else
+			ImGui::Checkbox("Use Built-In Font", &pConfig->bBuiltInFont);
+
+			ImGui::Text("Current Font: %s", pCurFont->GetDebugName());
+			if (!pConfig->bBuiltInFont)
 			{
-				ImGui::Text("Font %s could not be loaded.", pConfig->Font.c_str());
+				ImGui::Separator();
+
+				if (!pConfig->Font.empty())
+				{
+					if (bConfigFontIsLoaded)
+					{
+						if (ImGui::Button("Decrease Font Size"))
+						{
+							pConfig->FontSizePts--;
+						}
+						ImGui::SameLine();
+						ImGui::Dummy(ImGui::CalcTextSize("FF"));
+						ImGui::SameLine();
+						if (ImGui::Button("Increase Font Size"))
+						{
+							pConfig->FontSizePts++;
+						}
+
+						ImGui::InputInt("Size (Pt)", &pConfig->FontSizePts, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue);
+						pConfig->FontSizePts = std::min(std::max(pConfig->FontSizePts, 8), 72);
+					}
+					else
+					{
+						ImGui::Text("Font '%s' could not be loaded.", pConfig->Font.c_str());
+					}
+				}
+				else
+				{
+					ImGui::Text("No font defined in GlobalConfig.json.");
+				}
 			}
 		}
-		else
-		{
-			ImGui::Text("No font defined in GlobalConfig.json.");
-		}
-
 		ImGui::EndMenu();
 	}
 
@@ -757,7 +765,14 @@ void FEmuBase::LoadFont()
 {
 	if (FGlobalConfig* pGlobalConfig = CodeAnalysis.pGlobalConfig)
 	{
-		if (!pGlobalConfig->Font.empty())
+		ImGuiIO& io = ImGui::GetIO();
+		if (pGlobalConfig->bBuiltInFont)
+		{
+			io.Fonts->Clear();
+			io.Fonts->AddFontDefault();
+			io.Fonts->Build();
+		}
+		else if (!pGlobalConfig->Font.empty())
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			io.Fonts->Clear();
