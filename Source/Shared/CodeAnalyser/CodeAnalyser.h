@@ -318,7 +318,8 @@ public:
 	const ICPUInterface* GetCPUInterface() const { return CPUInterface; }
 
 	ICPUInterface* CPUInterface = nullptr;	// Make private
-	int						CurrentFrameNo = 0;
+	int			CurrentFrameNo = 0;
+	int			ExecutionCounter = 0;
 
 	void	SetGlobalConfig(FGlobalConfig *pConfig) { pGlobalConfig = pConfig; }
 

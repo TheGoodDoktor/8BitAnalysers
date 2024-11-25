@@ -904,6 +904,7 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 			state.Debugger.Break();
 
 		pCodeInfo->FrameLastExecuted = state.CurrentFrameNo;
+		pCodeInfo->LastExecuted = state.ExecutionCounter;
 		pCodeInfo->ExecutionCount++;
 	}
 
@@ -912,6 +913,7 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 	else if (state.CPUInterface->CPUType == ECPUType::M6502)
 		return RegisterCodeExecuted6502(state, pc, oldpc);
 
+	state.ExecutionCounter++;
 	return false;
 }
 
@@ -936,6 +938,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 		{
 			pDataInfo->ReadCount++;
 			pDataInfo->LastFrameRead = state.CurrentFrameNo;
+			pDataInfo->LastRead = state.ExecutionCounter;
 			pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(state.AddressRefFromPhysicalAddress(pc));
@@ -951,6 +954,7 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
 	pDataInfo->WriteCount++;
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
+	pDataInfo->LastWritten = state.ExecutionCounter;
 	pDataInfo->Writes.RegisterAccess(pcAddr);
 
 	// check for SMC

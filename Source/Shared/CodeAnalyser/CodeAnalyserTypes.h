@@ -339,6 +339,7 @@ struct FCodeInfo : FItem
 	std::string		Text;				// Disassembly text
 	FAddressRef		OperandAddress;	// optional operand address
 	int				FrameLastExecuted = -1;
+	int				LastExecuted = -1;
 	int				ExecutionCount = 0;
 
 	union
@@ -456,11 +457,13 @@ struct FDataInfo : FItem
 	// Reads
 	int						ReadCount = 0;
 	int						LastFrameRead = -1;
+	int						LastRead = -1;
 	FItemReferenceTracker	Reads;	// address and counts of data access instructions
 
 	// Writes
 	int						WriteCount = 0;
 	int						LastFrameWritten = -1;
+	int						LastWritten = -1;
 	FItemReferenceTracker	Writes;	// address and counts of data access instructions
 	FAddressRef				LastWriter;
 };

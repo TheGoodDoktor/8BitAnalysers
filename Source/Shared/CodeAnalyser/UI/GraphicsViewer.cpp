@@ -68,6 +68,9 @@ void FGraphicsViewer::Reset(void)
 	GraphicsSets.clear();
 	SelectedGraphicSet = FAddressRef();
 
+	OffScreenBuffers.clear();
+	SelectedOffscreenBuffer = std::string();
+
 	ItemNo = 0;
 	ImageGraphicSet = FAddressRef();
 }
@@ -1066,9 +1069,30 @@ FOffScreenBuffer* FGraphicsViewer::GetOffscreenBuffer(const char* pName)
 
 	return nullptr;
 }
+
+void DrawBitmapLine(ImVec2 pos, uint8_t val)
+{
+	const float line_height = ImGui::GetTextLineHeight();
+	float rectSize = line_height + 4;
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	for (int bit = 7; bit >= 0; bit--)
+	{
+		const ImVec2 rectMin(pos.x, pos.y);
+		const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+		if (val & (1 << bit))
+			dl->AddRectFilled(rectMin, rectMax, 0xffffffff);
+		else if (rectSize > 4)
+			dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+		pos.x += rectSize;
+	}
+}
+
 void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
 	const float scale = ImGui_GetScaling();
 
 	if (ImGui::BeginChild("OffScreenBufferList", ImVec2(100 * scale, 0), true))
@@ -1107,7 +1131,7 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 			//int viewSizeX = 8;
 			//int viewSizeY = 8;
-			const int widthFactor = 1;//IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
+			//const int widthFactor = 1;//IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
 
 			pBufferView->UpdateTexture();
 			ImGui::Image((void*)pBufferView->GetTexture(), size, uv0, uv1);
@@ -1144,24 +1168,38 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 				// show magnifier
 				const int magnifierSize = 64 * viewScale;
 				const float magAmount = 4.0f;
-				const int magXP = rx / viewScale;// ((int)(io.MousePos.x - pos.x) / viewSizeX)* viewSizeX;
-				const int magYP = ry / viewScale;//std::max((int)(io.MousePos.y - pos.y - (viewSizeY / 2)), 0);
-				const ImVec2 magSize(magnifierSize * magAmount * widthFactor, magnifierSize * magAmount);
+				const int magXP = rx / viewScale;
+				const int magYP = ry / viewScale;
+				const ImVec2 magSize(magnifierSize * magAmount, magnifierSize * magAmount);
 				const ImVec2 magUV0(magXP * (1.0f / kMaxImageSize), magYP * (1.0f / kMaxImageSize));
-				const ImVec2 magUV1(magUV0.x + magnifierSize * widthFactor * (1.0f / kMaxImageSize), magUV0.y + magnifierSize * (1.0f / kMaxImageSize));
+				const ImVec2 magUV1(magUV0.x + magnifierSize * (1.0f / kMaxImageSize), magUV0.y + magnifierSize * (1.0f / kMaxImageSize));
+				const ImVec2 magPos = ImGui::GetCursorScreenPos();
+				const ImVec2 magHighlightPos = ImVec2(magPos.x,magPos.y);
 				ImGui::Image((void*)pBufferView->GetTexture(), magSize, magUV0, magUV1);
+				dl->AddRect(ImVec2(magHighlightPos.x, magHighlightPos.y),ImVec2(magHighlightPos.x + (8 * magAmount * viewScale), magHighlightPos.y + (1 * magAmount * viewScale)),0xff0000ff);
+				DrawBitmapLine(ImGui::GetCursorScreenPos(), state.ReadByte(ptrAddress));
+				ImGui::Text("\n");	// bodge
 
 				ImGui::EndTooltip();
 			}
 
+			const float kNumSize = 80.0f * scale;	// size for number GUI widget
+			ImGui::SetNextItemWidth(kNumSize);
+			ImGui::InputInt("XSize", &pBuffer->XSizePixels, 8, 8);
+			ImGui::SetNextItemWidth(kNumSize);
+			ImGui::InputInt("YSize", &pBuffer->YSizePixels, 8, 8);
+
+			DrawAddressLabel(state, state.GetFocussedViewState(), pBuffer->Address);
+
 			if (ClickedAddress.IsValid())
 			{
-				FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 				const FDataInfo* pDataInfo = state.GetDataInfoForAddress(ClickedAddress);
+				DrawBitmapLine(ImGui::GetCursorScreenPos(),state.ReadByte(ClickedAddress));
+				
 				DrawAddressLabel(state, viewState, ClickedAddress);
 				DrawDataAccesses(state, viewState, pDataInfo);
 
-				// TODO: draw clicked location with axis lines?
+				// Draw clicked location with axis lines
 				int xPos = 0;
 				int yPos = 0;
 				if (GetPositionInBufferFromAddress(*pBuffer, ClickedAddress, xPos, yPos))
@@ -1171,20 +1209,12 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 					const int ry = yPos * viewScale;
 					const float rxp = pos.x + (float)rx * scale;
 					const float ryp = pos.y + (float)ry * scale;
-					//dl->AddRect(ImVec2(rxp, ryp), ImVec2(rxp + (float)viewSizeX * scale, ryp + (float)viewSizeY * scale), 0xff00ffff);
 					dl->AddLine(ImVec2(rxp, pos.y), ImVec2(rxp, pos.y + (float)pBuffer->YSizePixels * scale), 0xff00ff00, 2.0f);
+					dl->AddLine(ImVec2(rxp + 8 * scale, pos.y), ImVec2(rxp + 8 * scale, pos.y + (float)pBuffer->YSizePixels * scale), 0xff00ff00, 2.0f);
 					dl->AddLine(ImVec2(pos.x, ryp), ImVec2(pos.x + (float)pBuffer->XSizePixels * scale, ryp), 0xff00ff00, 2.0f);
 				}
 			}
-
-			const float kNumSize = 80.0f * scale;	// size for number GUI widget
-			ImGui::SetNextItemWidth(kNumSize);
-			ImGui::InputInt("XSize", &pBuffer->XSizePixels, 8, 8);
-			ImGui::SetNextItemWidth(kNumSize);
-			ImGui::InputInt("YSize", &pBuffer->YSizePixels, 8, 8);
-
-			DrawAddressLabel(state,state.GetFocussedViewState(),pBuffer->Address);
-
+			
 			FAddressRef itemAddress = pBuffer->Address;
 
 			pBufferView->Clear();
@@ -1196,7 +1226,10 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 				for (int x = 0; x < pBuffer->XSizePixels; x += 8)
 				{
 					const uint8_t charLine = state.ReadByte(itemAddress);
-					const uint32_t col = GetHeatmapColourForMemoryAddress(state,itemAddress, state.CurrentFrameNo, HeatmapThreshold);
+					uint32_t col = GetHeatmapColourForMemoryAddress(state,itemAddress, state.CurrentFrameNo, HeatmapThreshold);
+					if (viewState.HighlightAddress == itemAddress)
+						col = 0xff00ff00;
+
 					pBufferView->DrawCharLine(charLine, x, y, col, 0);
 					state.AdvanceAddressRef(itemAddress, 1);
 				}

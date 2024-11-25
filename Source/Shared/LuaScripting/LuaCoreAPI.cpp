@@ -450,7 +450,7 @@ static int DrawGraphicsView(lua_State *pState)
 	return 0;
 }
 
-static int SaveGraphicsViewPNG(lua_State *pState)
+static int LoadGraphicsViewPNG(lua_State *pState)
 {
 	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
 	if (pGraphicsView == nullptr)
@@ -460,9 +460,24 @@ static int SaveGraphicsViewPNG(lua_State *pState)
 	const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetProjectConfig()->Name + "/";
 	const std::string fname = gameRoot + luaL_optstring(pState, 2, "temp.png");
 	
+	pGraphicsView->LoadPNG(fname.c_str());
+	return 0;
+}
+
+static int SaveGraphicsViewPNG(lua_State* pState)
+{
+	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1);
+	if (pGraphicsView == nullptr)
+		return 0;
+
+	FEmuBase* pEmulator = LuaSys::GetEmulator();
+	const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetProjectConfig()->Name + "/";
+	const std::string fname = gameRoot + luaL_optstring(pState, 2, "temp.png");
+
 	pGraphicsView->SavePNG(fname.c_str());
 	return 0;
 }
+
 
 static int SaveGraphicsView2222(lua_State* pState)
 {
@@ -541,6 +556,7 @@ static const luaL_Reg corelib[] =
 	{"GetImageScale", GetImageScale},
 	{"ClearGraphicsView", ClearGraphicsView},
 	{"DrawGraphicsView", DrawGraphicsView},
+	{"LoadGraphicsViewPNG", LoadGraphicsViewPNG},
 	{"SaveGraphicsViewPNG", SaveGraphicsViewPNG},
 	{"SaveGraphicsView2222", SaveGraphicsView2222},
 	{"SaveGraphicsViewBitmap", SaveGraphicsViewBitmap},

@@ -7,6 +7,8 @@
 #include <vector>
 
 // TODO: should probably have a separate file with all the STB impls in
+//#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -270,6 +272,28 @@ void FGraphicsView::DrawOtherGraphicsViewScaled(const FGraphicsView* pView, int 
                        destAddress, xsize, ysize, Width * 4, (stbir_pixel_layout)4);
 }
 
+bool FGraphicsView::LoadPNG(const char* pFName)
+{
+	int x, y, n;
+
+	if (stbi_info(pFName, &x, &y, &n))
+	{
+		if(x != Width || y > Height || n != 4)
+			return false;
+
+		unsigned char* data = stbi_load(pFName, &x, &y, &n, 0);
+		if(data == nullptr)
+			return false;
+
+		memcpy(PixelBuffer,data,x*y*n);
+		stbi_image_free(data);
+		return true;
+	}
+
+	return false;
+}
+
+
 bool FGraphicsView::SavePNG(const char* pFName)
 {
 	// TODO: we might need to flip the bytes
@@ -279,6 +303,7 @@ bool FGraphicsView::SavePNG(const char* pFName)
 	return ret == 1;
 }
 
+
 uint8_t ConvertTo2Bpp(uint8_t val)
 {
 	if(val == 0)	
@@ -286,7 +311,7 @@ uint8_t ConvertTo2Bpp(uint8_t val)
 	if(val == 0xff)
 		return 3;	// full bright
 	else
-		return 2;	// half bright
+		return val >= 0x80 ? 2 : 1;	// half bright
 }
 
 bool FGraphicsView::Save2222(const char* pFName,bool bUseAlpha)
