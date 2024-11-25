@@ -123,6 +123,7 @@ uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInBuffer(const FOffScreenB
 	FGlobalConfig* pConfig = state.pGlobalConfig;
 	const int scaledX = x / pConfig->GfxViewerScale;
 	const int scaledY = y / pConfig->GfxViewerScale;
+
 	const int xSizeChars = buffer.XSizePixels >> 3;
 
 	return (scaledX / 8) + (scaledY * xSizeChars);
@@ -1129,8 +1130,6 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 			const ImVec2 size((float)kMaxImageSize * scale, (float)kMaxImageSize * scale);
 			ImGuiIO& io = ImGui::GetIO();
 			ImVec2 pos = ImGui::GetCursorScreenPos();
-			//int viewSizeX = 8;
-			//int viewSizeY = 8;
 			//const int widthFactor = 1;//IsBitmapFormatDoubleWidth(BitmapFormat) ? 2 : 1;
 
 			pBufferView->UpdateTexture();

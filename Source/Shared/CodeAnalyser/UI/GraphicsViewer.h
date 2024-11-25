@@ -47,6 +47,7 @@ struct FOffScreenBuffer
 	int			XSizePixels = 0;	// width in pixels
 	int			YSizePixels = 0;	// height in pixels
 
+	std::string	LuaHandlerName;
 	EOffScreenBufferFormat	Format = EOffScreenBufferFormat::Linear;
 
 	// TODO: this needs to support other pixel formats

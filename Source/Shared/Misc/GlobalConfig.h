@@ -20,7 +20,8 @@ struct FGlobalConfig
 	std::string			WorkspaceRoot = "./Workspace/";
 	std::string			SnapshotFolder = "./Games/";
 
-	std::string			Font = "Cousine-Regular.ttf"; // if no font is specified the default font will be used
+	std::string			Font = "Cousine-Regular.ttf";
+	bool				bBuiltInFont = false;
 	int					FontSizePts = 13;
 	int					ImageScale = 1;
 	int					OverviewScale = 2;

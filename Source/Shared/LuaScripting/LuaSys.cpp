@@ -21,6 +21,8 @@ extern "C"
 #include <Misc/GlobalConfig.h>
 #include <Misc/GameConfig.h>
 
+#include <CodeAnalyser/UI/GraphicsViewer.h>
+
 // For the imgui bindings
 extern lua_State* lState;
 extern void LoadImguiBindings();
@@ -264,6 +266,99 @@ bool OnInstructionExecuted(uint16_t pc)
 		}
 	}
 
+	return false;
+}
+
+// Offscreen Buffers
+static const char* kDrawFunctionName = "Draw";
+static const char* kGetAddressOffsetFunctionName = "GetAddressOffsetFromPos";
+
+bool DrawOffScreenBuffer(const FOffScreenBuffer& buffer, FGraphicsView* pView)
+{
+	lua_State* pState = GlobalState;
+
+	if (buffer.LuaHandlerName.empty())
+		return false;
+
+	lua_getglobal(pState, buffer.LuaHandlerName.c_str());
+
+	// check if we have a handler
+	if (lua_istable(pState, -1) == false)
+	{
+		lua_pop(pState,1);	// balance stack
+		return false;
+	}
+	
+	// Get handler function from table
+	lua_pushstring(pState, kDrawFunctionName);
+	lua_gettable(pState, -2);
+	if (lua_isfunction(pState, -1) == false)
+	{
+		lua_pop(pState, 1);	// balance stack
+		return false;
+	}
+
+	// call draw function
+	lua_pushlightuserdata(pState, pView);
+	lua_pushinteger(pState, buffer.Address.Address);
+	lua_pushnumber(pState, buffer.XSizePixels);
+	lua_pushnumber(pState, buffer.YSizePixels);
+	if (lua_pcall(pState, 4, 0, 0) == LUA_OK)
+	{
+		return true;
+	}
+	return false;
+}
+
+uint16_t GetAddressOffsetFromPositionInBuffer(const FOffScreenBuffer& buffer, int x, int y)
+{
+	lua_State* pState = GlobalState;
+
+	if(buffer.LuaHandlerName.empty())
+		return 0xffff;
+
+	lua_getglobal(pState, buffer.LuaHandlerName.c_str());
+
+	// check if we have a handler
+	if (lua_istable(pState, -1) == false)
+	{
+		lua_pop(pState, 1);	// balance stack
+		return 0xffff;
+	}
+
+	// Get handler function from table
+	lua_pushstring(pState, kGetAddressOffsetFunctionName);
+	lua_gettable(pState, -2);
+	if (lua_isfunction(pState, -1) == false)
+	{
+		lua_pop(pState, 1);	// balance stack
+		return 0xffff;
+	}
+
+	// Call function
+	lua_pushnumber(pState, x);
+	lua_pushnumber(pState, y);
+	lua_pushnumber(pState, buffer.XSizePixels);
+	lua_pushnumber(pState, buffer.YSizePixels);
+
+	if (lua_pcall(pState, 4, 1, 0) == LUA_OK)
+	{
+		if (!lua_isinteger(pState, -1))
+			return 0xffff;
+		else
+			return lua_isinteger(pState, -1);
+	}
+
+	return 0xffff;
+}
+
+
+bool GetPositionInBufferFromAddress(const FOffScreenBuffer& buffer, FAddressRef address, int& x, int& y)
+{
+	if (buffer.LuaHandlerName.empty())
+		return false;
+
+	// TODO:
 	return false;
 }
 
