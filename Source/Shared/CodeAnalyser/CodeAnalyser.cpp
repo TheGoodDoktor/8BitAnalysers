@@ -1012,6 +1012,18 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 	}
 }
 
+void ResetExecutionCounts(FCodeAnalysisState& state)
+{
+	for (int i = 0; i < (1 << 16); i++)
+	{
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(i);
+		if (pCodeInfo != nullptr)
+		{
+			pCodeInfo->ExecutionCount = 0;
+		}
+	}
+}
+
 // Do we want to do this with every page?
 void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites)
 {

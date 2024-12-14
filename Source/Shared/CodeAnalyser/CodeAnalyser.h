@@ -180,6 +180,7 @@ struct FCodeAnalysisViewState
 	EDataTypeFilter						DataTypeFilter = EDataTypeFilter::All;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
+	EDataSortMode				DataSortMode = EDataSortMode::Location;
 	FLabelListFilter				GlobalFunctionsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
 	EFunctionSortMode				FunctionSortMode = EFunctionSortMode::Location;
@@ -743,7 +744,8 @@ void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, uint8_t value);
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
-void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites);
+void ResetReferenceInfo(FCodeAnalysisState& state, bool bReads, bool bWrites);
+void ResetExecutionCounts(FCodeAnalysisState &state);
 
 std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address);
 

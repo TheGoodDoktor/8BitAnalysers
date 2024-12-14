@@ -515,6 +515,11 @@ void FEmuBase::ActionsMenu()
 		ImGui::EndMenu();
 	}
 
+	if (ImGui::MenuItem("Reset Execution Counts"))
+	{
+		ResetExecutionCounts(CodeAnalysis);
+	}
+
 	if (ImGui::MenuItem("Run Static Analysis"))
 	{
 		CodeAnalysis.RunStaticAnalysis();
@@ -774,7 +779,6 @@ void FEmuBase::LoadFont()
 		}
 		else if (!pGlobalConfig->Font.empty())
 		{
-			ImGuiIO& io = ImGui::GetIO();
 			io.Fonts->Clear();
 			const std::string fontPath = "./Fonts/" + pGlobalConfig->Font;
 
