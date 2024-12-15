@@ -1179,8 +1179,11 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 		
 	}*/
 
-	state.bRebuildFilteredGlobalDataItems = true;
-	state.bRebuildFilteredGlobalFunctions = true;
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		state.ViewState[i].bRebuildFilteredGlobalDataItems = true;
+		state.ViewState[i].bRebuildFilteredGlobalFunctions = true;
+	}
 }
 
 FCodeAnalysisState::FCodeAnalysisState()

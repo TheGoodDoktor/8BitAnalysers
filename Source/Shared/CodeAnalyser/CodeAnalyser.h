@@ -180,9 +180,11 @@ struct FCodeAnalysisViewState
 	EDataTypeFilter						DataTypeFilter = EDataTypeFilter::All;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
+	bool										bRebuildFilteredGlobalDataItems = true;
 	EDataSortMode				DataSortMode = EDataSortMode::Location;
 	FLabelListFilter				GlobalFunctionsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
+	bool										bRebuildFilteredGlobalFunctions = true;
 	EFunctionSortMode				FunctionSortMode = EFunctionSortMode::Location;
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
@@ -473,10 +475,7 @@ public:
 	std::vector<FCodeAnalysisItem>	ItemList;
 
 	std::vector<FCodeAnalysisItem>	GlobalDataItems;
-	bool						bRebuildFilteredGlobalDataItems = true;	// should this be in the view 
-	
 	std::vector<FCodeAnalysisItem>	GlobalFunctions;
-	bool						bRebuildFilteredGlobalFunctions = true;
 
 	static const int kNoViewStates = 4;
 	FCodeAnalysisViewState	ViewState[kNoViewStates];	// new multiple view states

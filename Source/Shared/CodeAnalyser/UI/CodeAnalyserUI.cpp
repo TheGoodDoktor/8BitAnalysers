@@ -1906,36 +1906,36 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 }
 
 // todo 
-// define more space for name compared to othe columns
 // bottom row cut off
 // side border weird
 // stretch columns when resize right panel?
 // reset counts for all banks instead of just address range?
 // address sort direction wrong
 // list sometimes being empty
-void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FCodeAnalysisItem>& labelList, bool bFunctions, bool bSortNow)
+void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FCodeAnalysisItem>& labelList, bool bIsFunctionList, bool bSortNow)
 {
 	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false))
 	{
-		static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | /*ImGuiTableFlags_ScrollX |*/ ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
+		static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
 		
 		ImVec2 outer_size = ImVec2(0.0f, 0.0f);
-		if (ImGui::BeginTable("GlobalLabelTable", bFunctions ? 4 : 5, flags, outer_size))
+		if (ImGui::BeginTable("GlobalLabelTable", bIsFunctionList ? 4 : 5, flags, outer_size))
 		{
-			const int columnFlags = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending;
+			const int columnFlagsAsc = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortAscending;
+			const int columnFlagsDes = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending;
 			const float w = ImGui_GetFontCharWidth();
 			ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
-			ImGui::TableSetupColumn("Name", columnFlags, w * 32.0f, EGlobalsColumnID::Name);
-			ImGui::TableSetupColumn("Refs", columnFlags, w * 4.0f, EGlobalsColumnID::References);
-			ImGui::TableSetupColumn("Addr.", columnFlags | ImGuiTableColumnFlags_DefaultSort , w * 5.0f, EGlobalsColumnID::Location);
-			if (bFunctions)
+			ImGui::TableSetupColumn("Name", columnFlagsDes, w * 32.0f, EGlobalsColumnID::Name);
+			ImGui::TableSetupColumn("Refs", columnFlagsDes, w * 5.0f, EGlobalsColumnID::References);
+			ImGui::TableSetupColumn("Addr.", columnFlagsAsc | ImGuiTableColumnFlags_DefaultSort , w * 6.0f, EGlobalsColumnID::Location);
+			if (bIsFunctionList)
 			{
-				ImGui::TableSetupColumn("Calls", columnFlags, w * 6.0f, EGlobalsColumnID::CallFrequency);
+				ImGui::TableSetupColumn("Calls", columnFlagsDes, w * 6.0f, EGlobalsColumnID::CallFrequency);
 			}
 			else
 			{
-				ImGui::TableSetupColumn("Reads", columnFlags, w * 6.0f, EGlobalsColumnID::ReadCount);
-				ImGui::TableSetupColumn("Writes", columnFlags, w * 6.0f, EGlobalsColumnID::WriteCount);
+				ImGui::TableSetupColumn("Reads", columnFlagsDes, w * 6.0f, EGlobalsColumnID::ReadCount);
+				ImGui::TableSetupColumn("Writes", columnFlagsDes, w * 6.0f, EGlobalsColumnID::WriteCount);
 			}
 			ImGui::TableHeadersRow();
 
@@ -2005,7 +2005,7 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 					ImGui::TableNextColumn();
 					ImGui::Text("%s", NumStr(item.AddressRef.Address));
 
-					if (bFunctions)
+					if (bIsFunctionList)
 					{
 						ImGui::TableNextColumn();
 						const int count = pCodeInfo != nullptr ? pCodeInfo->ExecutionCount : 0;
@@ -2292,16 +2292,16 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 	{
 		viewState.GlobalFunctionsFilter.FilterText = viewState.FilterText;
 		viewState.GlobalDataItemsFilter.FilterText = viewState.FilterText;
-		state.bRebuildFilteredGlobalFunctions = true;
-		state.bRebuildFilteredGlobalDataItems = true;
+		viewState.bRebuildFilteredGlobalFunctions = true;
+		viewState.bRebuildFilteredGlobalDataItems = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
 	{
 		viewState.GlobalFunctionsFilter.bNoMachineRoms = !viewState.ShowROMLabels;
 		viewState.GlobalDataItemsFilter.bNoMachineRoms = !viewState.ShowROMLabels;
-		state.bRebuildFilteredGlobalFunctions = true;
-		state.bRebuildFilteredGlobalDataItems = true;
+		viewState.bRebuildFilteredGlobalFunctions = true;
+		viewState.bRebuildFilteredGlobalDataItems = true;
 	}
 
 	if(ImGui::BeginTabBar("GlobalsTabBar"))
@@ -2309,11 +2309,11 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 		if(ImGui::BeginTabItem("Functions"))
 		{	
 			bool bSort = false;
-			if (state.bRebuildFilteredGlobalFunctions)
+			if (viewState.bRebuildFilteredGlobalFunctions)
 			{
 				GenerateFilteredLabelList(state, viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
 				bSort = true;
-				state.bRebuildFilteredGlobalFunctions = false;
+				viewState.bRebuildFilteredGlobalFunctions = false;
 			}
 
 			DrawLabelList(state, viewState, viewState.FilteredGlobalFunctions, true, bSort);
@@ -2323,10 +2323,10 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 		if (ImGui::BeginTabItem("Data"))
 		{
 			bool bSort = false;
-			if (state.bRebuildFilteredGlobalDataItems)
+			if (viewState.bRebuildFilteredGlobalDataItems)
 			{
 				GenerateFilteredLabelList(state, viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
-				state.bRebuildFilteredGlobalDataItems = false;
+				viewState.bRebuildFilteredGlobalDataItems = false;
 				bSort = true;
 			}
 
