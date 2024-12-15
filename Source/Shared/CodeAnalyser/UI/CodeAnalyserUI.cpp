@@ -1817,9 +1817,12 @@ enum EGlobalsColumnID
 	Location,
 	
 	// Used by code items
-	CallFrequency,
+	CallFrequencyIndicator,
+	CallFrequencyCount,
 
 	// Used by data items
+	ReadIndicator,
+	WriteIndicator,
 	ReadCount,
 	WriteCount,
 };
@@ -1837,10 +1840,16 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 			{
 				const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
 				const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
+
+				std::string labelALower = pLabelA->GetName();
+				std::transform(labelALower.begin(), labelALower.end(), labelALower.begin(), [](unsigned char c) { return std::tolower(c); });
+				std::string labelBLower = pLabelB->GetName();
+				std::transform(labelBLower.begin(), labelBLower.end(), labelBLower.begin(), [](unsigned char c) { return std::tolower(c); });
+
 				if (pColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending)
-					return std::string(pLabelA->GetName()) < std::string(pLabelB->GetName());	// dodgy!
+					return labelALower < labelBLower;	// dodgy!
 				else
-					return std::string(pLabelA->GetName()) > std::string(pLabelB->GetName());	// dodgy!
+					return labelALower > labelBLower;	// dodgy!
 			});
 		break;
 	case EGlobalsColumnID::References:
@@ -1863,7 +1872,8 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 					return a.AddressRef.Address < b.AddressRef.Address;
 			});
 		break;
-	case EGlobalsColumnID::CallFrequency:
+	case EGlobalsColumnID::CallFrequencyIndicator:
+	case EGlobalsColumnID::CallFrequencyCount:
 		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
 			{
 				const FCodeInfo* pCodeInfoA = state.GetCodeInfoForAddress(a.AddressRef);
@@ -1879,6 +1889,7 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 			});
 		break;
 	case EGlobalsColumnID::ReadCount:
+	case EGlobalsColumnID::ReadIndicator:
 		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
 			{
 				const FDataInfo* pDataInfoA = state.GetDataInfoForAddress(a.AddressRef);
@@ -1891,6 +1902,7 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 			});
 		break;
 	case EGlobalsColumnID::WriteCount:
+	case EGlobalsColumnID::WriteIndicator:
 		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
 			{
 				const FDataInfo* pDataInfoA = state.GetDataInfoForAddress(a.AddressRef);
@@ -1906,11 +1918,11 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 }
 
 // todo 
-// side border weird
-// sort case insensitive
+// side border weird?
 // stretch columns when resize right panel?
 // reset counts for all banks instead of just address range?
 // show indicators in their own column
+// hidable count columns - default to hidden
 void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FCodeAnalysisItem>& labelList, bool bIsFunctionList, bool bSortNow)
 {
 	// this beginchild doesnt seem to make a difference
@@ -1919,21 +1931,32 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 		static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
 		
 		const ImVec2 outer_size = ImVec2(0.0f, 0.0f);
-		if (ImGui::BeginTable("GlobalLabelTable", bIsFunctionList ? 4 : 5, flags, outer_size))
+		if (ImGui::BeginTable("GlobalLabelTable", bIsFunctionList ? 5 : 5, flags, outer_size))
 		{
 			const int columnFlagsAsc = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortAscending;
 			const int columnFlagsDes = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending;
 			const float w = ImGui_GetFontCharWidth();
 			ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
-			ImGui::TableSetupColumn("Name", columnFlagsDes, w * 32.0f, EGlobalsColumnID::Name);
-			ImGui::TableSetupColumn("Refs", columnFlagsDes, w * 5.0f, EGlobalsColumnID::References);
-			ImGui::TableSetupColumn("Addr.", columnFlagsAsc | ImGuiTableColumnFlags_DefaultSort , w * 6.0f, EGlobalsColumnID::Location);
 			if (bIsFunctionList)
 			{
-				ImGui::TableSetupColumn("Calls", columnFlagsDes, w * 6.0f, EGlobalsColumnID::CallFrequency);
+				ImGui::TableSetupColumn("C", columnFlagsDes, w * 2.0f, EGlobalsColumnID::CallFrequencyIndicator);
 			}
 			else
 			{
+				//ImGui::TableSetupColumn("R", columnFlagsDes, w * 2.0f, EGlobalsColumnID::CallFrequencyIndicator);
+				//ImGui::TableSetupColumn("W", columnFlagsDes, w * 2.0f, EGlobalsColumnID::CallFrequencyIndicator);
+			}
+			ImGui::TableSetupColumn("Name", columnFlagsDes, w * 32.0f, EGlobalsColumnID::Name);
+			ImGui::TableSetupColumn("Refs", columnFlagsDes, w * 5.0f, EGlobalsColumnID::References);
+			ImGui::TableSetupColumn("Addr", columnFlagsAsc | ImGuiTableColumnFlags_DefaultSort , w * 6.0f, EGlobalsColumnID::Location);
+			if (bIsFunctionList)
+			{
+				ImGui::TableSetupColumn("Calls", columnFlagsDes, w * 6.0f, EGlobalsColumnID::CallFrequencyCount);
+				//ImGuiTableColumnFlags_NoResize?
+			}
+			else
+			{
+				//ImGui::GetTextLineHeight()
 				ImGui::TableSetupColumn("Reads", columnFlagsDes, w * 6.0f, EGlobalsColumnID::ReadCount);
 				ImGui::TableSetupColumn("Writes", columnFlagsDes, w * 6.0f, EGlobalsColumnID::WriteCount);
 			}
@@ -1945,7 +1968,7 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 				{
 					const ImGuiID columnID = pSortSpecs->Specs[0].ColumnUserID;
 					bool bSort = bSortNow 
-						|| columnID == EGlobalsColumnID::CallFrequency 
+						|| columnID == EGlobalsColumnID::CallFrequencyCount 
 						|| columnID == EGlobalsColumnID::ReadCount 
 						|| columnID == EGlobalsColumnID::WriteCount;
 
@@ -1977,21 +2000,32 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 					ImGui::TableSetColumnIndex(0);
 
 					const FCodeAnalysisItem& item = labelList[i];
-					const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
-
 					const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.AddressRef);
-
-					ImGui::PushID(item.AddressRef.Val);
-					if (pCodeInfo && pCodeInfo->bDisabled == false)
-						ShowCodeAccessorActivity(state, item.AddressRef);
+					if (bIsFunctionList)
+					{
+						if (pCodeInfo && pCodeInfo->bDisabled == false)
+							ShowCodeAccessorActivity(state, item.AddressRef);
+						ImGui::TableNextColumn();
+					}
 					else
-						ShowDataItemActivity(state, item.AddressRef);
+					{
+						//ShowDataItemActivity(state, item.AddressRef);
+					}
+					const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
+					
+					// where should this go?
+					ImGui::PushID(item.AddressRef.Val);
+					//if (pCodeInfo && pCodeInfo->bDisabled == false)
+					//	ShowCodeAccessorActivity(state, item.AddressRef);
+					//else
+					//	ShowDataItemActivity(state, item.AddressRef);
 
 					if (ImGui::Selectable("##labellistitem", viewState.GetCursorItem().Item == pLabelInfo))
 					{
 						viewState.GoToAddress(item.AddressRef, true);
 					}
-					ImGui::SameLine(30);
+					ImGui::SameLine();
+					//ImGui::SameLine(30);
 					//if(state.Config.bShowBanks)
 					//	ImGui::Text("[%s]%s", item.AddressRef.BankId,pLabelInfo->Name.c_str());
 					//else
