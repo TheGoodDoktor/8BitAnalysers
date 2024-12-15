@@ -1906,19 +1906,19 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 }
 
 // todo 
-// bottom row cut off
 // side border weird
+// sort case insensitive
 // stretch columns when resize right panel?
 // reset counts for all banks instead of just address range?
-// address sort direction wrong
-// list sometimes being empty
+// show indicators in their own column
 void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FCodeAnalysisItem>& labelList, bool bIsFunctionList, bool bSortNow)
 {
-	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false))
+	// this beginchild doesnt seem to make a difference
+	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false)) 
 	{
 		static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
 		
-		ImVec2 outer_size = ImVec2(0.0f, 0.0f);
+		const ImVec2 outer_size = ImVec2(0.0f, 0.0f);
 		if (ImGui::BeginTable("GlobalLabelTable", bIsFunctionList ? 4 : 5, flags, outer_size))
 		{
 			const int columnFlagsAsc = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortAscending;
@@ -1961,9 +1961,13 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 				}
 			}
 
-			const float lineHeight = ImGui::GetTextLineHeight();
+			// if I specify line height it cuts off the last few rows
+			//const float lineHeight = ImGui::GetTextLineHeight();
+			//ImGuiListClipper clipper;
+			//clipper.Begin((int)labelList.size(), lineHeight);
+	
 			ImGuiListClipper clipper;
-			clipper.Begin((int)labelList.size(), lineHeight);
+			clipper.Begin((int)labelList.size());
 
 			while (clipper.Step())
 			{
