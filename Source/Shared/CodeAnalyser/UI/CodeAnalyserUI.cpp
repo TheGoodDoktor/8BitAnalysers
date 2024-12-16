@@ -1812,7 +1812,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 enum EGlobalsColumnID
 {
 	// Used by code and data items
-	Name,
+	Name = 0,
 	References,
 	Location,
 	
@@ -1825,7 +1825,25 @@ enum EGlobalsColumnID
 	WriteIndicator,
 	ReadCount,
 	WriteCount,
+
+	Count,
 };
+
+bool gbGlobalsColumnSortAlways[EGlobalsColumnID::Count] =
+{
+	false,
+	false,
+	false,
+
+	true,
+	true,
+
+	true,
+	true,
+	true,
+	true,
+};
+
 
 void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& globals, const ImGuiTableSortSpecs* pSortSpecs)
 {
@@ -1931,11 +1949,12 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 		static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
 		
 		const ImVec2 outer_size = ImVec2(0.0f, 0.0f);
-		if (ImGui::BeginTable("GlobalLabelTable", bIsFunctionList ? 5 : 5, flags, outer_size))
+		if (ImGui::BeginTable("GlobalLabelTable", bIsFunctionList ? 5 : 7, flags, outer_size))
 		{
 			const int columnFlagsAsc = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortAscending;
 			const int columnFlagsDes = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending;
 			const float w = ImGui_GetFontCharWidth();
+			const float rwIndicatorColWidth = w * 2.0f;
 			ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
 			if (bIsFunctionList)
 			{
@@ -1943,8 +1962,8 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 			}
 			else
 			{
-				//ImGui::TableSetupColumn("R", columnFlagsDes, w * 2.0f, EGlobalsColumnID::CallFrequencyIndicator);
-				//ImGui::TableSetupColumn("W", columnFlagsDes, w * 2.0f, EGlobalsColumnID::CallFrequencyIndicator);
+				ImGui::TableSetupColumn("W", columnFlagsDes, rwIndicatorColWidth, EGlobalsColumnID::WriteIndicator);
+				ImGui::TableSetupColumn("R", columnFlagsDes, rwIndicatorColWidth, EGlobalsColumnID::ReadIndicator);
 			}
 			ImGui::TableSetupColumn("Name", columnFlagsDes, w * 32.0f, EGlobalsColumnID::Name);
 			ImGui::TableSetupColumn("Refs", columnFlagsDes, w * 5.0f, EGlobalsColumnID::References);
@@ -1967,10 +1986,11 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 				if (pSortSpecs->SpecsCount == 1)
 				{
 					const ImGuiID columnID = pSortSpecs->Specs[0].ColumnUserID;
-					bool bSort = bSortNow 
-						|| columnID == EGlobalsColumnID::CallFrequencyCount 
+					bool bSort = bSortNow || gbGlobalsColumnSortAlways[columnID];
+
+						/*|| columnID == EGlobalsColumnID::CallFrequencyCount 
 						|| columnID == EGlobalsColumnID::ReadCount 
-						|| columnID == EGlobalsColumnID::WriteCount;
+						|| columnID == EGlobalsColumnID::WriteCount;*/
 
 					if (pSortSpecs->SpecsDirty)
 					{
@@ -2009,16 +2029,17 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 					}
 					else
 					{
-						//ShowDataItemActivity(state, item.AddressRef);
+						//ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (rwIndicatorColWidth / 2.0f) - 6.f);
+						ShowDataItemWriteActivity(state, item.AddressRef);
+						ImGui::TableNextColumn();
+						
+						ShowDataItemReadActivity(state, item.AddressRef);
+						ImGui::TableNextColumn();
 					}
 					const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
 					
 					// where should this go?
 					ImGui::PushID(item.AddressRef.Val);
-					//if (pCodeInfo && pCodeInfo->bDisabled == false)
-					//	ShowCodeAccessorActivity(state, item.AddressRef);
-					//else
-					//	ShowDataItemActivity(state, item.AddressRef);
 
 					if (ImGui::Selectable("##labellistitem", viewState.GetCursorItem().Item == pLabelInfo))
 					{

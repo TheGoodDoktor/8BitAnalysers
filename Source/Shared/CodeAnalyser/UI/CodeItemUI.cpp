@@ -302,6 +302,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		state.GetDataTypes()->DrawStructMember(pCodeInfo->StructId, GetInstructionByteOffset(state, item.AddressRef));
 
 	if (bShownTooltip == false && ImGui::IsItemHovered())
+	//if (bShownTooltip == false && state.GetFocussedViewState().GetCursorItem().AddressRef.Address == physAddress)
 	{
 		ShowCodeToolTip(state, physAddress);
 	}
