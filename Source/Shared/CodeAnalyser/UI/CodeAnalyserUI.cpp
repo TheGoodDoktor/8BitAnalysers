@@ -1936,48 +1936,47 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 }
 
 // todo 
-// side border weird?
-// stretch columns when resize right panel?
 // reset counts for all banks instead of just address range?
-// show indicators in their own column
-// hidable count columns - default to hidden
+// split DrawLabelist into 2 functions?
+// reset read/write counts
 void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FCodeAnalysisItem>& labelList, bool bIsFunctionList, bool bSortNow)
 {
 	// this beginchild doesnt seem to make a difference
 	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false)) 
 	{
-		static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
-		
+		static ImGuiTableFlags flags = ImGuiTableFlags_Hideable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
+#ifndef _NDEBUG
+		flags |= ImGuiTableFlags_NoSavedSettings;
+#endif
 		const ImVec2 outer_size = ImVec2(0.0f, 0.0f);
 		if (ImGui::BeginTable("GlobalLabelTable", bIsFunctionList ? 5 : 7, flags, outer_size))
 		{
 			const int columnFlagsAsc = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortAscending;
 			const int columnFlagsDes = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending;
+			const int indicatorColumnFlags = columnFlagsDes | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoHeaderLabel;
 			const float w = ImGui_GetFontCharWidth();
-			const float rwIndicatorColWidth = w * 2.0f;
+			const float rwIndicatorColWidth = w * 2.1f;
 			ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
 			if (bIsFunctionList)
 			{
-				ImGui::TableSetupColumn("C", columnFlagsDes, w * 2.0f, EGlobalsColumnID::CallFrequencyIndicator);
+				ImGui::TableSetupColumn("Call Frequency", indicatorColumnFlags, w * 2.0f, EGlobalsColumnID::CallFrequencyIndicator);
 			}
 			else
 			{
-				ImGui::TableSetupColumn("W", columnFlagsDes, rwIndicatorColWidth, EGlobalsColumnID::WriteIndicator);
-				ImGui::TableSetupColumn("R", columnFlagsDes, rwIndicatorColWidth, EGlobalsColumnID::ReadIndicator);
+				ImGui::TableSetupColumn("Writes", indicatorColumnFlags, rwIndicatorColWidth, EGlobalsColumnID::WriteIndicator);
+				ImGui::TableSetupColumn("Reads", indicatorColumnFlags, rwIndicatorColWidth, EGlobalsColumnID::ReadIndicator);
 			}
-			ImGui::TableSetupColumn("Name", columnFlagsDes, w * 32.0f, EGlobalsColumnID::Name);
+			ImGui::TableSetupColumn("Name", columnFlagsDes | ImGuiTableColumnFlags_NoHide, w * 32.0f, EGlobalsColumnID::Name);
 			ImGui::TableSetupColumn("Refs", columnFlagsDes, w * 5.0f, EGlobalsColumnID::References);
 			ImGui::TableSetupColumn("Addr", columnFlagsAsc | ImGuiTableColumnFlags_DefaultSort , w * 6.0f, EGlobalsColumnID::Location);
 			if (bIsFunctionList)
 			{
-				ImGui::TableSetupColumn("Calls", columnFlagsDes, w * 6.0f, EGlobalsColumnID::CallFrequencyCount);
-				//ImGuiTableColumnFlags_NoResize?
+				ImGui::TableSetupColumn("Calls", columnFlagsDes | ImGuiTableColumnFlags_DefaultHide, w * 8.0f, EGlobalsColumnID::CallFrequencyCount);
 			}
 			else
 			{
-				//ImGui::GetTextLineHeight()
-				ImGui::TableSetupColumn("Reads", columnFlagsDes, w * 6.0f, EGlobalsColumnID::ReadCount);
-				ImGui::TableSetupColumn("Writes", columnFlagsDes, w * 6.0f, EGlobalsColumnID::WriteCount);
+				ImGui::TableSetupColumn("R.Count", columnFlagsDes | ImGuiTableColumnFlags_DefaultHide, w * 8.0f, EGlobalsColumnID::ReadCount);
+				ImGui::TableSetupColumn("W.Count", columnFlagsDes | ImGuiTableColumnFlags_DefaultHide, w * 8.0f, EGlobalsColumnID::WriteCount);
 			}
 			ImGui::TableHeadersRow();
 
@@ -1987,10 +1986,6 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 				{
 					const ImGuiID columnID = pSortSpecs->Specs[0].ColumnUserID;
 					bool bSort = bSortNow || gbGlobalsColumnSortAlways[columnID];
-
-						/*|| columnID == EGlobalsColumnID::CallFrequencyCount 
-						|| columnID == EGlobalsColumnID::ReadCount 
-						|| columnID == EGlobalsColumnID::WriteCount;*/
 
 					if (pSortSpecs->SpecsDirty)
 					{
@@ -2046,7 +2041,6 @@ void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 						viewState.GoToAddress(item.AddressRef, true);
 					}
 					ImGui::SameLine();
-					//ImGui::SameLine(30);
 					//if(state.Config.bShowBanks)
 					//	ImGui::Text("[%s]%s", item.AddressRef.BankId,pLabelInfo->Name.c_str());
 					//else
