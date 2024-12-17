@@ -406,8 +406,10 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 	ImGui::PopID();
 }
 
-void DrawDataAcessIndicator(ImDrawList* dl, int brightVal, const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2)
+void DrawDataAcessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2)
 {
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+
 	const ImVec2 a(pos.x + 2, pos.y);
 	const ImVec2 b(pos.x + 12, pos.y + lh2);
 	const ImVec2 c(pos.x + 2, pos.y + lineHeight);
@@ -431,14 +433,7 @@ void ShowDataItemReadActivity(FCodeAnalysisState& state, FAddressRef addr)
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 
-		DrawDataAcessIndicator(dl, rBrightVal, pos, 0xff000000 | (rBrightVal << 8), brd_color, lineHeight, lh2);
-		/*const ImVec2 a(pos.x + 2, pos.y);
-		const ImVec2 b(pos.x + 12, pos.y + lh2);
-		const ImVec2 c(pos.x + 2, pos.y + lineHeight);
-
-		const ImU32 col = 0xff000000 | (rBrightVal << 8);
-		dl->AddTriangleFilled(a, b, c, col);
-		dl->AddTriangle(a, b, c, brd_color);*/
+		DrawDataAcessIndicator(pos, 0xff000000 | (rBrightVal << 8), brd_color, lineHeight, lh2);
 	}
 }
 
@@ -457,15 +452,7 @@ void ShowDataItemWriteActivity(FCodeAnalysisState& state, FAddressRef addr)
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 
-		DrawDataAcessIndicator(dl, wBrightVal, pos, 0xff000000 | (wBrightVal << 0), brd_color, lineHeight, lh2);
-
-		//const ImVec2 a(pos.x + 2, pos.y);
-		//const ImVec2 b(pos.x + 12, pos.y + lh2);
-		//const ImVec2 c(pos.x + 2, pos.y + lineHeight);
-
-		//const ImU32 col = 0xff000000 | (wBrightVal << 0);
-		//dl->AddTriangleFilled(a, b, c, col);
-		//dl->AddTriangle(a, b, c, brd_color);
+		DrawDataAcessIndicator(pos, 0xff000000 | (wBrightVal << 0), brd_color, lineHeight, lh2);
 	}
 }
 
@@ -482,39 +469,22 @@ void ShowDataItemActivity(FCodeAnalysisState& state, FAddressRef addr)
 	if (rBrightVal > 0 || wBrightVal > 0)
 	{
 		const float lineHeight = ImGui::GetTextLineHeight();
+		const float lh2 = (float)(int)(lineHeight / 2);
 		//const ImU32 pc_color = 0xFF00FFFF;
 		const ImU32 brd_color = 0xFF000000;
 
 		ImVec2 pos = ImGui::GetCursorScreenPos();
-		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const float lh2 = (float)(int)(lineHeight / 2);
 
 		if (wBrightVal > 0)
 		{
-			DrawDataAcessIndicator(dl, wBrightVal, pos, 0xff000000 | (wBrightVal << 0), brd_color, lineHeight, lh2);
-
-			/*const ImVec2 a(pos.x + 2, pos.y);
-			const ImVec2 b(pos.x + 12, pos.y + lh2);
-			const ImVec2 c(pos.x + 2, pos.y + lineHeight);
-
-			const ImU32 col = 0xff000000 | (wBrightVal << 0);
-			dl->AddTriangleFilled(a, b, c, col);
-			dl->AddTriangle(a, b, c, brd_color);*/
+			DrawDataAcessIndicator(pos, 0xff000000 | (wBrightVal << 0), brd_color, lineHeight, lh2);
 		}
 
 		pos.x += 10;
 
 		if (rBrightVal > 0)
 		{
-			DrawDataAcessIndicator(dl, rBrightVal, pos, 0xff000000 | (rBrightVal << 8), brd_color, lineHeight, lh2);
-
-			/*const ImVec2 a(pos.x + 2, pos.y);
-			const ImVec2 b(pos.x + 12, pos.y + lh2);
-			const ImVec2 c(pos.x + 2, pos.y + lineHeight);
-
-			const ImU32 col = 0xff000000 | (rBrightVal << 8);
-			dl->AddTriangleFilled(a, b, c, col);
-			dl->AddTriangle(a, b, c, brd_color);*/
+			DrawDataAcessIndicator(pos, 0xff000000 | (rBrightVal << 8), brd_color, lineHeight, lh2);
 		}
 	}
 }
