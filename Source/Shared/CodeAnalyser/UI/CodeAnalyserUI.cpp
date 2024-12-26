@@ -502,13 +502,13 @@ void DrawCommentBlockDetails(FCodeAnalysisState& state, const FCodeAnalysisItem&
 	if (pCommentBlock == nullptr)
 		return;
 
-	if (ImGui::InputTextMultiline("Comment Text", &pCommentBlock->Comment))
+	ImGui::Text("Comment Text");
+	if (ImGui::InputTextMultiline("##detailscomment", &pCommentBlock->Comment, ImGui::GetContentRegionAvail()))
 	{
 		if (pCommentBlock->Comment.empty() == true)
 			state.SetCommentBlockForAddress(item.AddressRef, nullptr);
 		state.SetCodeAnalysisDirty(item.AddressRef);
 	}
-
 }
 
 int CommentInputCallback(ImGuiInputTextCallbackData *pData)
