@@ -142,3 +142,4 @@ protected:
 };
 
 uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold);
+uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisState& state, FAddressRef addr, int currentFrameNo, int frameThreshold);
