@@ -1061,7 +1061,7 @@ bool FGraphicsViewer::AddOffScreenBuffer(FOffScreenBuffer& newBuffer)
 		if(buffer.Id == newBuffer.Id)
 			return false;
 	}
-	newBuffer.Id = OffScreenBuffers.size();
+	newBuffer.Id = (int)OffScreenBuffers.size();
 	OffScreenBuffers.push_back(newBuffer);
 	return true;
 }
@@ -1337,7 +1337,7 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 			offscreenBuffer.XSizePixels = offscreenBuffersJson["XSizePixels"];
 			offscreenBuffer.YSizePixels = offscreenBuffersJson["YSizePixels"];
 			offscreenBuffer.Format = (EOffScreenBufferFormat)offscreenBuffersJson["Format"];
-			offscreenBuffer.Id = OffScreenBuffers.size();
+			offscreenBuffer.Id = (int)OffScreenBuffers.size();
 			OffScreenBuffers.push_back(offscreenBuffer);
 		}
 	}

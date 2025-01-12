@@ -64,9 +64,6 @@ bool Init(FEmuBase* pEmulator)
 	if(GlobalState != nullptr)  // shutdown old instance
 		Shutdown();
 	
-	if (pEmulator->GetGlobalConfig()->bEnableLua == false)
-		return false;
-
 	InitTextEditors();
 
 	for (int i = 0; i < GetNumLuaDocLibs(); i++)
