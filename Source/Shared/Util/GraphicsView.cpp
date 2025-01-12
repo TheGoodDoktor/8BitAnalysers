@@ -484,6 +484,17 @@ FCharacterSet* GetCharacterSetFromAddress(FAddressRef address)
 	return nullptr;
 }
 
+FCharacterSet* GetCharacterSetFromId(int id)
+{
+	for (auto& it : g_CharacterSets)
+	{
+		if (it->Id == id)
+			return it;
+	}
+
+	return nullptr;
+}
+
 void DrawCharacterSetImage2BppCPC(FCodeAnalysisState& state, FCharacterSet& characterSet, uint16_t addr)
 {
 	for (int charNo = 0; charNo < 256; charNo++)
@@ -619,6 +630,9 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 		pLabel->ChangeName(label,params.Address);
 	}
 
+	if (pNewCharSet->Params.Name.empty())
+		pNewCharSet->Params.Name = state.GetLabelForAddress(params.Address)->GetName();
+	pNewCharSet->Id = (int)g_CharacterSets.size();
 	g_CharacterSets.push_back(pNewCharSet);
 	return true;
 }
