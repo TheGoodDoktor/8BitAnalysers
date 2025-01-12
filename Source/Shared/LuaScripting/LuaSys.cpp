@@ -267,39 +267,9 @@ bool OnInstructionExecuted(uint16_t pc)
 }
 
 // Offscreen Buffers
-static const char* kUpdateFunctionName = "Update";
 static const char* kDrawFunctionName = "Draw";
 static const char* kGetAddressOffsetFunctionName = "GetAddressOffsetFromPos";
 
-void UpdateOffsecreenBuffer(FOffScreenBuffer& buffer)
-{
-	lua_State* pState = GlobalState;
-	if (buffer.LuaHandlerName.empty())
-		return;
-	lua_getglobal(pState, buffer.LuaHandlerName.c_str());
-	// check if we have a handler
-	if (lua_istable(pState, -1) == false)
-	{
-		lua_pop(pState, 1);	// balance stack
-		return;
-	}
-	// Get handler function from table
-	lua_pushstring(pState, kUpdateFunctionName);
-	lua_gettable(pState, -2);
-	if (lua_isfunction(pState, -1) == false)
-	{
-		lua_pop(pState, 1);	// balance stack
-		return;
-	}
-
-	// call update function
-	lua_pushlightuserdata(pState, &buffer);	// pointer to buffer
-	if (lua_pcall(pState, 1, 0, 0) != LUA_OK)
-	{
-		OutputDebugString("[error] %s", lua_tostring(pState, -1));
-		lua_pop(pState, 1); // pop error message
-	}
-}
 bool DrawOffScreenBuffer(const FOffScreenBuffer& buffer, FGraphicsView* pView)
 {
 	lua_State* pState = GlobalState;
