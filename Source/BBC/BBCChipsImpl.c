@@ -156,6 +156,20 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 {
 	CHIPS_ASSERT(sys && sys->valid);
 	pins = m6502_tick(&sys->cpu, pins);
+	const uint16_t addr = M6502_GET_ADDR(pins);
+	
+	// TODO: HW memory access
+	{
+		// regular memory access
+		if (pins & M6502_RW) {
+			// memory read
+			M6502_SET_DATA(pins, mem_rd(&sys->mem_cpu, addr));
+		}
+		else {
+			// memory access
+			mem_wr(&sys->mem_cpu, addr, M6502_GET_DATA(pins));
+		}
+	}
 
 	// TODO: implement the rest of the tick
 

@@ -3,6 +3,7 @@
 #include "Misc/EmuBase.h"
 #include "BBCChipsImpl.h"
 #include <chips/mem.h>
+#include <set>
 
 struct FBBCLaunchConfig : public FEmulatorLaunchConfig
 {
@@ -83,11 +84,18 @@ public:
 	bool	NewProjectFromEmulatorFile(const FEmulatorFile& emuFile) override;
 	bool	LoadProject(FProjectConfig* pConfig, bool bLoadGame) override;
 	bool	SaveProject(void) override;
+
+
+	uint64_t	OnCPUTick(uint64_t pins);
 private:
 	bbc_t				BBCEmu;
 	FBBCLaunchConfig	LaunchConfig;
 
 	FBBCBankIds			BankIds;	
+
+	std::set<FAddressRef>	InterruptHandlers;
+	uint16_t				PreviousPC = 0;
+
 
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment
