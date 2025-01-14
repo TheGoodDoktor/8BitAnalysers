@@ -31,4 +31,5 @@ struct FBBCProjectConfig : public FProjectConfig
 
 bool LoadBBCProjectConfigs(FBBCEmulator* pC64Emu);
 
-FBBCProjectConfig* CreateNewC64ProjectFromEmuFile(const FEmulatorFile& emuFile);
+FBBCProjectConfig* CreateNewBBCProjectFromEmuFile(const FEmulatorFile& emuFile);
+FBBCProjectConfig* CreateNewBBCBasicConfig(void);

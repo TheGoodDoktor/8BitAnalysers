@@ -175,3 +175,35 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 
 	return pins;
 }
+
+// Snapshots
+// TODO: Add to as functionality gets added
+
+uint32_t bbc_save_snapshot(bbc_t* sys, bbc_t* dst)
+{
+	CHIPS_ASSERT(sys && dst);
+	*dst = *sys;
+	chips_debug_snapshot_onsave(&dst->debug);
+	//chips_audio_callback_snapshot_onsave(&dst->audio.callback);
+	m6502_snapshot_onsave(&dst->cpu);
+	//m6569_snapshot_onsave(&dst->vic);
+	mem_snapshot_onsave(&dst->mem_cpu, sys);
+	return BBC_SNAPSHOT_VERSION;
+}
+
+bool bbc_load_snapshot(bbc_t* sys, uint32_t version, bbc_t* src) 
+{
+	CHIPS_ASSERT(sys && src);
+	if (version != BBC_SNAPSHOT_VERSION) 
+	{
+		return false;
+	}
+	static bbc_t im;
+	im = *src;
+	chips_debug_snapshot_onload(&im.debug, &sys->debug);
+	//chips_audio_callback_snapshot_onload(&im.audio.callback, &sys->audio.callback);
+	m6502_snapshot_onload(&im.cpu, &sys->cpu);
+	mem_snapshot_onload(&im.mem_cpu, sys);
+	*sys = im;
+	return true;
+}

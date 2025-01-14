@@ -2,7 +2,10 @@
 
 #include "BBCConfig.h"
 #include <Util/FileUtil.h>
+#include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <imgui.h>
+#include <CodeAnalyser/CodeAnalysisJson.h>
+#include <CodeAnalyser/CodeAnalysisState.h>
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "BBC Analyser";
@@ -18,6 +21,33 @@ void DebugCB(void* user_data, uint64_t pins)
 	FBBCEmulator* pBBCEmu = (FBBCEmulator*)user_data;
 	pBBCEmu->OnCPUTick(pins);
 }
+
+class F6502MemDescGenerator : public FMemoryRegionDescGenerator
+{
+public:
+	F6502MemDescGenerator()
+	{
+		RegionMin = 0x100;
+		RegionMax = 0x1ff;	// 16K after
+		RegionBankId = -1;
+	}
+
+	const char* GenerateAddressString(FAddressRef addr) override
+	{
+		if (addr.Address == 0x100)
+			snprintf(DescStr, sizeof(DescStr), "StackBottom");
+		else if (addr.Address == 0x1FF)
+			snprintf(DescStr, sizeof(DescStr), "StackTop");
+		else
+			snprintf(DescStr, sizeof(DescStr), "Stack + $%04X", addr.Address - 0x100);
+
+		return DescStr;
+	}
+private:
+	char DescStr[32] = { 0 };
+
+};
+
 
 FBBCEmulator::FBBCEmulator()
 {
@@ -81,14 +111,51 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	CodeAnalysis.Init(this);
 	CodeAnalysis.Config.bShowBanks = true;
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
+	SetupCodeAnalysisLabels();
+	AddMemoryRegionDescGenerator(new F6502MemDescGenerator());
 
 	CodeAnalysis.Debugger.Break();
+
+	FBBCProjectConfig* pBasicConfig = (FBBCProjectConfig*)GetGameConfigForName("BBCBasic");
+
+	if (pBasicConfig == nullptr)
+		pBasicConfig = CreateNewBBCBasicConfig();
+
+	LoadProject(pBasicConfig, false);	// reset code analysis
 
 	return true;
 }
 
+void FBBCEmulator::SetupCodeAnalysisLabels()
+{
+	// TODO: Add labels for BBC HW addresses
+#if 0
+	// Add IO Labels to code analysis
+	FCodeAnalysisBank* pIOBank = CodeAnalysis.GetBank(BankIds.IOArea);
+	AddVICRegisterLabels(this);  // Page $D000-$D3ff
+	AddSIDRegisterLabels(this);  // Page $D400-$D7ff
+	//old pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000,true);    // Colour RAM $D800
+	FAddressRef colourRAMAddress(BankIds.IOArea, 0xD800);
+	FLabelInfo* pColourRAMLabel = GenerateLabelForAddress(CodeAnalysis, colourRAMAddress, ELabelType::Data);
+	pColourRAMLabel->ChangeName("ColourRAM", colourRAMAddress);
+	AddCIARegisterLabels(this);  // Page $DC00-$Dfff
+#endif
+	// Add Stack??
+}
+
 void FBBCEmulator::Shutdown()
 {
+	if (pCurrentProjectConfig != nullptr)
+	{
+		// Save Global Config - move to function?
+		pGlobalConfig->LastGame = pCurrentProjectConfig->Name;
+		SaveProject();
+	}
+
+	pGlobalConfig->Save(kGlobalConfigFilename);
+
+	bbc_discard(&BBCEmu);
+
 	FEmuBase::Shutdown();
 }
 
@@ -175,13 +242,192 @@ bool FBBCEmulator::NewProjectFromEmulatorFile(const FEmulatorFile& gameSnapshot)
 	return false;
 }
 
-bool FBBCEmulator::LoadProject(FProjectConfig* pConfig, bool bLoadGame)
+
+static const uint32_t kMachineStateMagic = 0xFaceCafe;
+static bbc_t g_SaveSlot;
+
+bool FBBCEmulator::SaveMachineState(const char* fname)
 {
+	// save game snapshot
+	FILE* fp = fopen(fname, "wb");
+	if (fp != nullptr)
+	{
+		const uint32_t versionNo = bbc_save_snapshot(&BBCEmu, &g_SaveSlot);
+		fwrite(&kMachineStateMagic, sizeof(uint32_t), 1, fp);
+		fwrite(&versionNo, sizeof(uint32_t), 1, fp);
+		fwrite(&g_SaveSlot, sizeof(bbc_t), 1, fp);
+
+		fclose(fp);
+		return true;
+	}
+
 	return false;
+}
+
+bool FBBCEmulator::LoadMachineState(const char* fname)
+{
+	FILE* fp = fopen(fname, "rb");
+	if (fp == nullptr)
+		return false;
+
+	bool bSuccess = false;
+	uint32_t magic;
+	uint32_t versionNo;
+	fread(&magic, sizeof(uint32_t), 1, fp);
+	if (magic == kMachineStateMagic)
+	{
+		fread(&versionNo, sizeof(uint32_t), 1, fp);
+		fread(&g_SaveSlot, sizeof(bbc_t), 1, fp);
+
+		bSuccess = bbc_load_snapshot(&BBCEmu, versionNo, &g_SaveSlot);
+	}
+	fclose(fp);
+	return bSuccess;
+}
+
+
+bool FBBCEmulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
+{
+	const std::string windowTitle = pProjectConfig != nullptr ? kAppTitle + " - " + pProjectConfig->Name : kAppTitle;
+	SetWindowTitle(windowTitle.c_str());
+
+	pCurrentProjectConfig = pProjectConfig;
+
+	// Initialise code analysis
+	CodeAnalysis.Init(this);
+
+	//IOAnalysis.Reset();
+	bool bLoadSnapshot = false;
+
+	// Set options from config
+	if (pProjectConfig)
+	{
+		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+		{
+			CodeAnalysis.ViewState[i].Enabled = pProjectConfig->ViewConfigs[i].bEnabled;
+			CodeAnalysis.ViewState[i].GoToAddress(pProjectConfig->ViewConfigs[i].ViewAddress);
+		}
+
+		bLoadSnapshot = pProjectConfig->EmulatorFile.FileName.empty() == false;
+	}
+
+	if (bLoadGameData)
+	{
+		const std::string root = pGlobalConfig->WorkspaceRoot;
+		const std::string dataFName = root + "GameData/" + pProjectConfig->Name + ".bin";
+
+		std::string analysisJsonFName = root + "AnalysisJson/" + pProjectConfig->Name + ".json";
+		std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pProjectConfig->Name + ".json";
+		std::string analysisStateFName = root + "AnalysisState/" + pProjectConfig->Name + ".astate";
+		std::string saveStateFName = root + "SaveStates/" + pProjectConfig->Name + ".state";
+
+		// check for new location & adjust paths accordingly
+		const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pProjectConfig->Name + "/";
+		if (FileExists((gameRoot + "Config.json").c_str()))
+		{
+			analysisJsonFName = gameRoot + "Analysis.json";
+			graphicsSetsJsonFName = gameRoot + "GraphicsSets.json";
+			analysisStateFName = gameRoot + "AnalysisState.bin";
+			saveStateFName = gameRoot + "SaveState.bin";
+		}
+
+		// Load machine state, if it fails, reload the prg file
+		if (LoadMachineState(saveStateFName.c_str()))
+		{
+			bLoadSnapshot = false;
+		}
+
+
+		if (FileExists(analysisJsonFName.c_str()))
+		{
+			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+		}
+
+		// Set memory banks
+		//UpdateCodeAnalysisPages(C64Emu.cpu_port);
+
+		FixupAddressRefs();
+
+		// where do we want pokes to live?
+		//LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
+	}
+
+	if (FileExists(kROMAnalysisFilename))
+		ImportAnalysisJson(CodeAnalysis, kROMAnalysisFilename);
+
+
+	/*if (bLoadSnapshot)
+	{
+		// if the game state didn't load then reload the snapshot
+		const FGameSnapshot* snapshot = GamesList.GetGame(RemoveFileExtension(pGameConfig->SnapshotFile.c_str()).c_str());
+		if (snapshot == nullptr)
+		{
+			SetLastError("Could not find '%s%s'", pGlobalConfig->SnapshotFolder.c_str(), pGameConfig->SnapshotFile.c_str());
+			return false;
+		}
+		if (!GameLoader.LoadSnapshot(*snapshot))
+		{
+			return false;
+		}
+	}*/
+	ReAnalyseCode(CodeAnalysis);
+	GenerateGlobalInfo(CodeAnalysis);
+	CodeAnalysis.SetAddressRangeDirty();
+
+	// Start in break mode so the memory will be in its initial state. 
+	CodeAnalysis.Debugger.Break();
+
+	CodeAnalysis.Debugger.RegisterNewStackPointer(BBCEmu.cpu.S, FAddressRef());
+
+	// some extra initialisation for creating new analysis from snapshot
+	if (bLoadGameData == false)
+	{
+		FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(BBCEmu.cpu.PC);
+		SetItemCode(CodeAnalysis, initialPC);
+		CodeAnalysis.Debugger.SetPC(initialPC);
+	}
+
+	SetupCodeAnalysisLabels();
+
+	//GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
+
+	return true;
 }
 
 bool FBBCEmulator::SaveProject(void)
 {
+	if (pCurrentProjectConfig == nullptr)
+		return false;
+
+	// save analysis
+	const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
+	const std::string configFName = root + "Config.json";
+	const std::string analysisJsonFName = root + "Analysis.json";
+	const std::string graphicsSetsJsonFName = root + "GraphicsSets.json";
+	const std::string analysisStateFName = root + "AnalysisState.bin";
+	const std::string saveStateFName = root + "SaveState.bin";
+	EnsureDirectoryExists(root.c_str());
+
+	// set config values
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		const FCodeAnalysisViewState& viewState = CodeAnalysis.ViewState[i];
+		FCodeAnalysisViewConfig& viewConfig = pCurrentProjectConfig->ViewConfigs[i];
+
+		viewConfig.bEnabled = viewState.Enabled;
+		viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
+	}
+
+	AddGameConfig(pCurrentProjectConfig);
+	SaveGameConfigToFile(*pCurrentProjectConfig, configFName.c_str());
+
+	SaveMachineState(saveStateFName.c_str());
+	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+
+	ExportAnalysisJson(CodeAnalysis, kROMAnalysisFilename, true);	// Do this on a config?
+
 	return false;
 }
 

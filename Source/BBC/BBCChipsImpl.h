@@ -22,6 +22,8 @@ extern "C" {
 #define BBC_FRAMEBUFFER_SIZE_BYTES (BBC_FRAMEBUFFER_WIDTH * BBC_FRAMEBUFFER_HEIGHT)
 #define BBC_NUM_HWCOLORS (32 + 32)  // 32 colors plus pure black plus debug visualization colors
 
+#define BBC_SNAPSHOT_VERSION (1)
+
 // configuration parameters for bbc_init()
 typedef struct 
 {
@@ -75,6 +77,11 @@ uint32_t bbc_exec(bbc_t* bbc, uint32_t micro_seconds);
 void bbc_key_down(bbc_t* bbc, int key_code);
 // send a key up event
 void bbc_key_up(bbc_t* bbc, int key_code);
+
+// save a snapshot, patches pointers to zero and offsets, returns snapshot version
+uint32_t bbc_save_snapshot(bbc_t* sys, bbc_t* dst);
+// load a snapshot, returns false if snapshot versions don't match
+bool bbc_load_snapshot(bbc_t* sys, uint32_t version, bbc_t* src);
 
 #ifdef __cplusplus
 } // extern "C"

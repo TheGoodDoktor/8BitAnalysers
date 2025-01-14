@@ -80,6 +80,12 @@ public:
 
 	// End ICPUInterface interface implementation
 
+	void	SetupCodeAnalysisLabels();
+
+	bool	SaveMachineState(const char* fname);
+	bool	LoadMachineState(const char* fname);
+
+
 	bool	LoadEmulatorFile(const FEmulatorFile* pEmuFile) override;
 	bool	NewProjectFromEmulatorFile(const FEmulatorFile& emuFile) override;
 	bool	LoadProject(FProjectConfig* pConfig, bool bLoadGame) override;

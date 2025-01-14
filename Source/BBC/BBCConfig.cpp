@@ -119,12 +119,23 @@ bool LoadBBCProjectConfigs(FBBCEmulator* pBBCEmu)
 	return true;
 }
 
-FBBCProjectConfig* CreateNewC64ProjectFromEmuFile(const FEmulatorFile& emuFile)
+FBBCProjectConfig* CreateNewBBCProjectFromEmuFile(const FEmulatorFile& emuFile)
 {
 	FBBCProjectConfig* pNewConfig = new FBBCProjectConfig;
 
 	pNewConfig->Name = emuFile.DisplayName;
 	pNewConfig->EmulatorFile = emuFile;
+
+	return pNewConfig;
+}
+
+FBBCProjectConfig* CreateNewBBCBasicConfig(void)
+{
+	FBBCProjectConfig* pNewConfig = new FBBCProjectConfig;
+
+	pNewConfig->Name = "BBCBasic";
+	//pNewConfig->SnapshotFile = "";
+	//pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
 
 	return pNewConfig;
 }
