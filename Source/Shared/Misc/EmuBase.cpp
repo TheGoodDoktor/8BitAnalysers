@@ -59,11 +59,13 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 		void *pFileData = LoadBinaryFile(GetBundlePath(pImGuiConfigFile), byteCount);
 		if(pFileData == nullptr)
 		{
-			LOGERROR("Can't find imgui.ini file in bundle");
-			return false;
+			LOGWARNING("Can't find imgui.ini file in bundle");
+			//return false;
 		}
-		
-		SaveBinaryFile(GetAppSupportPath(pImGuiConfigFile), pFileData, byteCount);
+		else
+		{		
+			SaveBinaryFile(GetAppSupportPath(pImGuiConfigFile), pFileData, byteCount);
+		}
 	}
 	
 	static std::string iniFile = GetAppSupportPath(pImGuiConfigFile);
