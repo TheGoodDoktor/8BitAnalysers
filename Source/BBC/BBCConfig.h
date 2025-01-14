@@ -12,11 +12,10 @@ struct FBBCConfig : public FGlobalConfig
 {
 	std::string			TapesFolder = "./Tapes/";
 	std::string			DisksFolder = "./Disks/";
-	std::string			PrgFolder = "./Prg/";
-	std::string			CrtFolder = "./Crt/";
+	std::string			RomFolder = "./Roms/";
 
-	bool		bShowHCounter = false;
-	bool		bShowVICOverlay = false;
+	std::string			OSRom = "OS-1.2.rom";
+	std::string			BasicRom = "BASIC2.rom";
 
 protected:
 

@@ -12,6 +12,13 @@ struct FBBCLaunchConfig : public FEmulatorLaunchConfig
 	};
 };
 
+struct FBBCBankIds
+{
+	int16_t RAM = -1;
+	int16_t OSROM = -1;
+	int16_t BasicROM = -1;
+};
+
 class FBBCEmulator : public FEmuBase
 {
 public:
@@ -79,6 +86,8 @@ public:
 private:
 	bbc_t				BBCEmu;
 	FBBCLaunchConfig	LaunchConfig;
+
+	FBBCBankIds			BankIds;	
 
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment

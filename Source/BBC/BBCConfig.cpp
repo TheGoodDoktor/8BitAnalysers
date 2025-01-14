@@ -13,24 +13,21 @@ void FBBCConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 		TapesFolder = jsonConfigFile["TapesFolder"];
 	if (jsonConfigFile.contains("DisksFolder"))
 		DisksFolder = jsonConfigFile["DisksFolder"];
-	if (jsonConfigFile.contains("PrgFolder"))
-		PrgFolder = jsonConfigFile["PrgFolder"];
-	if (jsonConfigFile.contains("CrtFolder"))
-		CrtFolder = jsonConfigFile["CrtFolder"];
-	if (jsonConfigFile.contains("ShowHCounter"))
-		bShowHCounter = jsonConfigFile["ShowHCounter"];
-	if (jsonConfigFile.contains("ShowVICOverlay"))
-		bShowVICOverlay = jsonConfigFile["ShowVICOverlay"];
+	
+	if (jsonConfigFile.contains("RomFolder"))
+		RomFolder = jsonConfigFile["RomFolder"];	
+
+	if (jsonConfigFile.contains("OSRom"))
+		OSRom = jsonConfigFile["OSRom"];
+
+	if (jsonConfigFile.contains("BasicRom"))
+		BasicRom = jsonConfigFile["BasicRom"];
 
 	// fixup paths
 	if (TapesFolder.back() != '/')
 		TapesFolder += "/";
 	if (DisksFolder.back() != '/')
 		DisksFolder += "/";
-	if (PrgFolder.back() != '/')
-		PrgFolder += "/";
-	if (CrtFolder.back() != '/')
-		CrtFolder += "/";
 }
 
 void FBBCConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
@@ -38,10 +35,9 @@ void FBBCConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 	FGlobalConfig::WriteToJson(jsonConfigFile);
 	jsonConfigFile["TapesFolder"] = TapesFolder;
 	jsonConfigFile["DisksFolder"] = DisksFolder;
-	jsonConfigFile["PrgFolder"] = PrgFolder;
-	jsonConfigFile["CrtFolder"] = CrtFolder;
-	jsonConfigFile["ShowHCounter"] = bShowHCounter;
-	jsonConfigFile["ShowVICOverlay"] = bShowVICOverlay;
+	jsonConfigFile["RomFolder"] = RomFolder;
+	jsonConfigFile["OSRom"] = OSRom;
+	jsonConfigFile["BasicRom"] = BasicRom;
 }
 
 void FBBCProjectConfig::LoadFromJson(const nlohmann::json& jsonConfig)
