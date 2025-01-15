@@ -2,8 +2,10 @@
 
 #include "Misc/EmuBase.h"
 #include "BBCChipsImpl.h"
+#include "IOAnalysis/BBCIOAnalysis.h"
 #include <chips/mem.h>
 #include <set>
+#include <array>
 
 struct FBBCLaunchConfig : public FEmulatorLaunchConfig
 {
@@ -91,6 +93,7 @@ public:
 	bool	LoadProject(FProjectConfig* pConfig, bool bLoadGame) override;
 	bool	SaveProject(void) override;
 
+	const FBBCBankIds&	GetBankIds() const { return BankIds; }
 
 	uint64_t	OnCPUTick(uint64_t pins);
 private:
@@ -101,7 +104,8 @@ private:
 
 	std::set<FAddressRef>	InterruptHandlers;
 	uint16_t				PreviousPC = 0;
-
+	FBBCIOAnalysis			IOAnalysis;
+	std::array<uint8_t, 3 * 256> IOMemBuffer;	// 3 pages
 
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment

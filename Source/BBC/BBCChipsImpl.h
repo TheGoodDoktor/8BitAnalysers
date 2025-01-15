@@ -45,6 +45,8 @@ typedef struct
 	m6502_t		cpu;
 	mc6845_t	crtc;	
 	uint64_t	pins;
+	m6522_t		via_system;
+	m6522_t		via_user;
 
 	kbd_t		kbd;		// keyboard matrix state
 	mem_t		mem_cpu;	// cpu memory

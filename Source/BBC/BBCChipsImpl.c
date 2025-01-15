@@ -158,20 +158,109 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 	pins = m6502_tick(&sys->cpu, pins);
 	const uint16_t addr = M6502_GET_ADDR(pins);
 	
-	// TODO: HW memory access
+	uint64_t system_via_pins = pins & M6502_PIN_MASK;
+	uint64_t user_via_pins = pins & M6502_PIN_MASK;
+
+	if (addr >= 0xFC00 && addr < 0xFF00)	// IO Registers
+	{
+		// Read IO
+
+		// System VIA
+		if ((addr & ~0xf) == 0xfe40 || (addr & ~0xf) == 0xfe50)
+		{
+			system_via_pins |= M6522_CS1;
+		}
+
+		// User VIA
+		if ((addr & ~0xf) == 0xfe60 || (addr & ~0xf) == 0xfe70)
+		{
+			user_via_pins |= M6522_CS1;
+		}
+
+		// CRTC
+		if ((addr & ~7) == 0xfe00)
+		{
+			//data = mc6845_rd(&sys->crtc, addr & 7);
+		}
+
+		// ACIA read status
+		if (addr == 0xfe08)
+		{
+			//LOGINFO("ACIA read status at pc:0x%x", sys->cpu.PC);
+			//data = acia_rd(&sys->acia, addr & 0xf);
+		}
+
+		// ACIA read data
+		if (addr == 0xfe09)
+		{
+			//LOGINFO("ACIA read data at pc:0x%x", sys->cpu.PC);
+			//data = acia_rd(&sys->acia, addr & 0xf);
+		}
+
+		// Serial ULA read
+		if (addr == 0xfe10)
+		{
+			//LOGINFO("Serial ULA read reg:%d at pc:0x%x", addr & 0xf, sys->cpu.PC);
+			//data = serial_ula_rd(&sys->serial_ula, addr & 0xf);
+		}
+
+		// Video ULA read
+		if ((addr & ~3) == 0xfe20)
+		{
+			//LOGINFO("Video ULA read reg:%d at pc:0x%x", addr & 0x3, sys->cpu.PC);
+			//data = video_ula_rd(&sys->video_ula, addr & 0x3);
+		}
+
+		// Tube read
+		if ((addr & ~0x1f) == 0xfee0)
+		{
+			//LOGINFO("Tube read reg:%d at pc:0x%x", addr & 0x7, sys->cpu.PC);
+			//return ReadTubeFromHostSide(Address & 7); // Read From Tube
+		}
+
+		// teletext
+		if ((addr & ~0x3) == 0xfc10)
+		{
+			//LOGINFO("Teletext read reg:%d at pc:0x%x",addr&3,sys->cpu.PC);
+			//return(TeletextRead(Address & 0x3));
+		}
+	}
+	else
 	{
 		// regular memory access
-		if (pins & M6502_RW) {
-			// memory read
+		if (pins & M6502_RW)
+		{
 			M6502_SET_DATA(pins, mem_rd(&sys->mem_cpu, addr));
 		}
-		else {
-			// memory access
+		else
+		{
 			mem_wr(&sys->mem_cpu, addr, M6502_GET_DATA(pins));
 		}
 	}
 
+	// Tick System VIA
+	system_via_pins = m6522_tick(&sys->via_system, system_via_pins);
+	if (system_via_pins & M6522_IRQ) 
+		pins |= M6502_NMI;
+		
+	if ((system_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW)) 
+		pins = M6502_COPY_DATA(pins, system_via_pins);
+		
+
+	// Tick User VIA
+	user_via_pins = m6522_tick(&sys->via_user, user_via_pins);
+	if (user_via_pins & M6522_IRQ) 
+		pins |= M6502_NMI;
+		
+	if ((user_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW)) 
+		pins = M6502_COPY_DATA(pins, user_via_pins);
+
+	// Tick CRTC
+	uint64_t crtc_pins = mc6845_tick(&sys->crtc);
+
 	// TODO: implement the rest of the tick
+
+	
 
 	return pins;
 }

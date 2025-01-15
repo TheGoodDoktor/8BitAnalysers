@@ -99,8 +99,8 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	// Set up memory banks
 	BankIds.RAM = CodeAnalysis.CreateBank("RAM", 32, BBCEmu.ram, false, 0x0000, true);					// RAM - $0000 - $7FFF - pages 0-31 - 32K
-	BankIds.BasicROM = CodeAnalysis.CreateBank("Basic ROM", 16, BBCEmu.rom_basic, false, 0x8000, true);	// Basic ROM - $8000 - $BFFF - pages 32-47 - 16K
-	BankIds.OSROM = CodeAnalysis.CreateBank("OS ROM", 16, BBCEmu.rom_os, false, 0xC000, true);			// OS ROM - $C000 - $FFFF - pages 48-63 - 16K
+	BankIds.BasicROM = CodeAnalysis.CreateBank("Basic ROM", 16, BBCEmu.rom_basic, true, 0x8000, true);	// Basic ROM - $8000 - $BFFF - pages 32-47 - 16K
+	BankIds.OSROM = CodeAnalysis.CreateBank("OS ROM", 16, BBCEmu.rom_os, true, 0xC000, true);			// OS ROM - $C000 - $FFFF - pages 48-63 - 16K
 
 	// map in banks
 	CodeAnalysis.MapBank(BankIds.RAM, 0, EBankAccess::ReadWrite);
@@ -128,18 +128,11 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 void FBBCEmulator::SetupCodeAnalysisLabels()
 {
-	// TODO: Add labels for BBC HW addresses
-#if 0
-	// Add IO Labels to code analysis
-	FCodeAnalysisBank* pIOBank = CodeAnalysis.GetBank(BankIds.IOArea);
-	AddVICRegisterLabels(this);  // Page $D000-$D3ff
-	AddSIDRegisterLabels(this);  // Page $D400-$D7ff
-	//old pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000,true);    // Colour RAM $D800
-	FAddressRef colourRAMAddress(BankIds.IOArea, 0xD800);
-	FLabelInfo* pColourRAMLabel = GenerateLabelForAddress(CodeAnalysis, colourRAMAddress, ELabelType::Data);
-	pColourRAMLabel->ChangeName("ColourRAM", colourRAMAddress);
-	AddCIARegisterLabels(this);  // Page $DC00-$Dfff
-#endif
+	// Add labels for BBC HW addresses
+	AddFredRegisterLabels(this);
+	AddJimRegisterLabels(this);
+	AddSheilaRegisterLabels(this);
+
 	// Add Stack??
 }
 
@@ -480,15 +473,12 @@ uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)
 			if (state.bRegisterDataAccesses)
 				RegisterDataRead(CodeAnalysis, pc, addr);   // this gives false positives on indirect addressing e.g. STA ($0a),y
 
-			/*if (bIOMapped && (addr >> 12) == 0xd)
+			const uint32_t page = addr >> 8;
+
+			if (page == kFredPage || page == kJimPage || page == kSheilaPage)
 			{
 				IOAnalysis.RegisterIORead(addr, GetPC());
-				uint8_t readVal = 0;
-				if (CartridgeManager.HandleIORead(addr, readVal))
-				{
-					M6502_SET_DATA(pins, readVal);
-				}
-			}*/
+			}
 		}
 		else
 		{
@@ -501,14 +491,14 @@ uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)
 			FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
 			state.SetLastWriterForAddress(addr, pcRef);
 
-			/*if (bIOMapped && (addr >> 12) == 0xd)
+			const uint32_t page = addr >> 8;
+
+			if (page == kFredPage || page == kJimPage || page == kSheilaPage)
 			{
 				IOAnalysis.RegisterIOWrite(addr, val, GetPC());
-				IOMemBuffer[addr & 0xfff] = val;
-
-				CartridgeManager.HandleIOWrite(addr, val);
-			}*/
-
+				IOMemBuffer[addr - (kFredPage<<8)] = val;
+			}
+		
 			FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);
 			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
 				pCodeWrittenTo->bSelfModifyingCode = true;
