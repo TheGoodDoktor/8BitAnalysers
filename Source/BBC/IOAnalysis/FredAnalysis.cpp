@@ -3,7 +3,11 @@
 
 void FFredAnalysis::Init(FBBCEmulator* pEmulator)
 {
+	Name = "Fred";
+	SetAnalyser(&pEmulator->GetCodeAnalysis());
+
 	pBBCEmu = pEmulator;
+	pCodeAnalyser->IOAnalyser.AddDevice(this);
 }
 
 void FFredAnalysis::Reset()

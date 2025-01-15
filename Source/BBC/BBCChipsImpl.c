@@ -178,9 +178,16 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 		}
 
 		// CRTC
-		if ((addr & ~7) == 0xfe00)
+		if ((addr & ~7) == 0xFE00)
 		{
-			//data = mc6845_rd(&sys->crtc, addr & 7);
+			// 6845 in/out
+			uint64_t crtc_pins = (pins & M6502_PIN_MASK) | MC6845_CS;
+			if (pins & M6502_RW)
+				crtc_pins |= MC6845_RW; 
+			if ((addr &1) == 0)	
+				crtc_pins |= MC6845_RS;	// register select
+
+			pins = mc6845_iorq(&sys->crtc, crtc_pins) & M6502_PIN_MASK;
 		}
 
 		// ACIA read status

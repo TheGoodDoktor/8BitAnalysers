@@ -5,11 +5,15 @@
 void	FBBCIOAnalysis::Init(FBBCEmulator* pEmulator)
 {
 	FredAnalysis.Init(pEmulator);
+	JimAnalysis.Init(pEmulator);
+	SheilaAnalysis.Init(pEmulator);
 }
 
 void	FBBCIOAnalysis::Reset()
 {
 	FredAnalysis.Reset();
+	JimAnalysis.Reset();
+	SheilaAnalysis.Reset();
 }
 
 

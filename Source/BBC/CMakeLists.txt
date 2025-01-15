@@ -51,6 +51,7 @@ endif ()
 # program source
 file ( GLOB program_src 
 	./*.cpp ./*.c ./*.h
+	./IOAnalysis/*.cpp ./IOAnalysis/*.h
 	)
 
 add_executable ( ${PROJECT_NAME} MACOSX_BUNDLE ${shared_src} ${program_src} ${vendor_src} )

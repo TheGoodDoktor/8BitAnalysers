@@ -3,7 +3,11 @@
 
 void FSheilaAnalysis::Init(FBBCEmulator* pEmulator)
 {
+	Name = "Sheila";
+	SetAnalyser(&pEmulator->GetCodeAnalysis());
+
 	pBBCEmu = pEmulator;
+	pCodeAnalyser->IOAnalyser.AddDevice(this);
 }
 
 void FSheilaAnalysis::Reset()

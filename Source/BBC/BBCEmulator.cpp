@@ -114,6 +114,8 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	SetupCodeAnalysisLabels();
 	AddMemoryRegionDescGenerator(new F6502MemDescGenerator());
 
+	IOAnalysis.Init(this);
+
 	CodeAnalysis.Debugger.Break();
 
 	FBBCProjectConfig* pBasicConfig = (FBBCProjectConfig*)GetGameConfigForName("BBCBasic");

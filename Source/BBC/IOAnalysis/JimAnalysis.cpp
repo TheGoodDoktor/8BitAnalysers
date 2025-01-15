@@ -3,7 +3,11 @@
 
 void FJimAnalysis::Init(FBBCEmulator* pEmulator)
 {
+	Name = "Jim";
+	SetAnalyser(&pEmulator->GetCodeAnalysis());
+
 	pBBCEmu = pEmulator;
+	pCodeAnalyser->IOAnalyser.AddDevice(this);
 }
 
 void FJimAnalysis::Reset()
