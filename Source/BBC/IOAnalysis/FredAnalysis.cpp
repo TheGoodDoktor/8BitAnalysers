@@ -1,30 +1,7 @@
 #include "FredAnalysis.h"
 #include "../BBCEmulator.h"
 
-void FFredAnalysis::Init(FBBCEmulator* pEmulator)
-{
-	Name = "Fred";
-	SetAnalyser(&pEmulator->GetCodeAnalysis());
 
-	pBBCEmu = pEmulator;
-	pCodeAnalyser->IOAnalyser.AddDevice(this);
-}
-
-void FFredAnalysis::Reset()
-{
-}
-
-void FFredAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
-{
-}
-
-void FFredAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
-{
-}
-
-void FFredAnalysis::DrawDetailsUI(void)
-{
-}
 
 static std::vector <FRegDisplayConfig>	g_FredRegDrawInfo = 
 {
@@ -40,6 +17,20 @@ static std::vector <FRegDisplayConfig>	g_FredRegDrawInfo =
 	{0xFCFE, "Jim_Paging_Register_MSB"},
 	{0xFCFF, "Jim_Paging_Register_LSB"}
 };
+
+void FFredAnalysis::Init(FBBCEmulator* pEmulator)
+{
+	Name = "Fred";
+	SetAnalyser(&pEmulator->GetCodeAnalysis());
+
+	pBBCEmu = pEmulator;
+	pCodeAnalyser->IOAnalyser.AddDevice(this);
+	pRegConfig = &g_FredRegDrawInfo;
+}
+
+void FFredAnalysis::Reset()
+{
+}
 
 void AddFredRegisterLabels(FBBCEmulator* pEmulator)
 {

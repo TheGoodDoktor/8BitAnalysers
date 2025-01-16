@@ -7,6 +7,8 @@
 #include <CodeAnalyser/CodeAnalysisJson.h>
 #include <CodeAnalyser/CodeAnalysisState.h>
 
+#include "Graphics/BBCGraphicsViewer.h"
+
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "BBC Analyser";
 
@@ -116,6 +118,9 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	IOAnalysis.Init(this);
 
+	pGraphicsViewer = new FBBCGraphicsViewer(this);
+	AddViewer(pGraphicsViewer);
+
 	CodeAnalysis.Debugger.Break();
 
 	FBBCProjectConfig* pBasicConfig = (FBBCProjectConfig*)GetGameConfigForName("BBCBasic");
@@ -165,18 +170,21 @@ void FBBCEmulator::Tick()
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
 
+
 	//TODO: Display.Tick();
 
 	if (debugger.IsStopped() == false)
 	{
 		const float frameTime = (float)std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
 
+		CodeAnalysis.OnMachineFrameStart();	// TODO: tie to raster 
 		CodeAnalysis.OnFrameStart();
 		//StoreRegisters_6502(CodeAnalysis);
 
 		bbc_exec(&BBCEmu, (uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 
 		CodeAnalysis.OnFrameEnd();
+		CodeAnalysis.OnMachineFrameEnd();	// TODO: tie to raster 
 	}
 	// Draw UI
 	DrawDockingView();

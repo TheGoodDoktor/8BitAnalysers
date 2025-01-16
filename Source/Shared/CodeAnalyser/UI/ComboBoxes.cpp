@@ -61,6 +61,7 @@ static const std::vector<std::pair<const char*, ENumberDisplayMode>> g_NumberTyp
 	{ "Decimal",    ENumberDisplayMode::Decimal },
 	{ "$ Hex",      ENumberDisplayMode::HexDollar },
 	{ "Hex h",      ENumberDisplayMode::HexAitch },
+	{ "& Hex",      ENumberDisplayMode::HexAmpersand },
 };
 
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode)

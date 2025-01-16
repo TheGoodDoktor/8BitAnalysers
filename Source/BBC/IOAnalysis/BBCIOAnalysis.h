@@ -24,8 +24,6 @@ public:
 	void	RegisterIORead(uint16_t addr, FAddressRef pc);
 	void	RegisterIOWrite(uint16_t addr, uint8_t val, FAddressRef pc);
 
-	void	DrawIOAnalysisUI(void);
-
 	const FFredAnalysis&	GetFredAnalysis() const { return FredAnalysis;}
 	const FJimAnalysis&		GetJimAnalysis() const { return JimAnalysis; }
 	const FSheilaAnalysis&	GetSheilaAnalysis() const { return SheilaAnalysis; }

@@ -11,7 +11,8 @@ enum class ENumberDisplayMode
 	HexDollar,
 	HexAitch,
 	Binary,
-	Ascii
+	Ascii,
+	HexAmpersand,
 };
 
 void SetNumberDisplayMode(ENumberDisplayMode mode);
