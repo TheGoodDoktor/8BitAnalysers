@@ -67,6 +67,9 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	pGlobalConfig = new FBBCConfig();
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
+
+	LoadFont();
+
 	LoadBBCProjectConfigs(this);
 
 	// set supported bitmap format
