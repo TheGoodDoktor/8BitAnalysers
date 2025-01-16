@@ -140,6 +140,9 @@ uint32_t bbc_exec(bbc_t* sys, uint32_t micro_seconds)
 	return num_ticks;
 }
 
+// keybaord ref
+// https://beebwiki.mdfs.net/Keyboard
+
 // send a key down event
 void bbc_key_down(bbc_t* sys, int key_code)
 {
