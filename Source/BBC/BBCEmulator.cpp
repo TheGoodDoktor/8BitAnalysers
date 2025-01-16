@@ -211,10 +211,12 @@ void FBBCEmulator::WindowsMenuAdditions()
 
 void FBBCEmulator::OnKeyUp(int keyCode)
 {
+	bbc_key_up(&BBCEmu, keyCode);
 }	
 
 void FBBCEmulator::OnKeyDown(int keyCode)
 {
+	bbc_key_down(&BBCEmu, keyCode);
 }
 
 void FBBCEmulator::OnChar(int charCode)

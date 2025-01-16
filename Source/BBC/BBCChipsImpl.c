@@ -141,15 +141,15 @@ uint32_t bbc_exec(bbc_t* sys, uint32_t micro_seconds)
 }
 
 // send a key down event
-void bbc_key_down(bbc_t* bbc, int key_code)
+void bbc_key_down(bbc_t* sys, int key_code)
 {
-
+	kbd_key_down(&sys->kbd, key_code);
 }
 
 // send a key up event
-void bbc_key_up(bbc_t* bbc, int key_code)
+void bbc_key_up(bbc_t* sys, int key_code)
 {
-
+	kbd_key_up(&sys->kbd, key_code);
 }
 
 uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
