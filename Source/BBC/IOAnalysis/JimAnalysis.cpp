@@ -1,6 +1,13 @@
 #include "JimAnalysis.h"
 #include "../BBCEmulator.h"
 
+static std::vector <FRegDisplayConfig>	g_JimRegDrawInfo =
+{
+	{0xFD00, "PageStart" },
+	{0xFDFE, "EntryPoint" },
+	{0xFDFF, "PageEnd" }
+};
+
 void FJimAnalysis::Init(FBBCEmulator* pEmulator)
 {
 	Name = "Jim";
@@ -8,30 +15,14 @@ void FJimAnalysis::Init(FBBCEmulator* pEmulator)
 
 	pBBCEmu = pEmulator;
 	pCodeAnalyser->IOAnalyser.AddDevice(this);
+	pRegConfig = &g_JimRegDrawInfo;
 }
 
 void FJimAnalysis::Reset()
 {
 }
 
-void FJimAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
-{
-}
 
-void FJimAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
-{
-}
-
-void FJimAnalysis::DrawDetailsUI(void)
-{
-}
-
-static std::vector <FRegDisplayConfig>	g_JimRegDrawInfo =
-{
-	{0xFD00, "PageStart" },
-	{0xFDFE, "EntryPoint" },
-	{0xFDFF, "PageEnd" }
-};
 
 void AddJimRegisterLabels(FBBCEmulator* pEmulator)
 {

@@ -365,6 +365,13 @@ void FEmuBase::OptionsMenu()
 			CodeAnalysis.SetAllBanksDirty();
 			bClearCode = true;
 		}
+		if (ImGui::MenuItem("Hex - &FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAmpersand))
+		{
+			SetNumberDisplayMode(ENumberDisplayMode::HexAmpersand);
+			SetHexNumberDisplayMode(ENumberDisplayMode::HexAmpersand);
+			CodeAnalysis.SetAllBanksDirty();
+			bClearCode = true;
+		}
 
 		// clear code text so it can be written again
 		// TODO: this needs to work for banks

@@ -327,6 +327,7 @@ void EditByteDataItem(FCodeAnalysisState& state, uint16_t address)
 		break;
 	case ENumberDisplayMode::HexAitch:
 	case ENumberDisplayMode::HexDollar:
+	case ENumberDisplayMode::HexAmpersand:
 		flags |= ImGuiInputTextFlags_CharsHexadecimal;
 		break;
     default:
@@ -375,6 +376,7 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 		break;
 	case ENumberDisplayMode::HexAitch:
 	case ENumberDisplayMode::HexDollar:
+	case ENumberDisplayMode::HexAmpersand:
 		flags |= ImGuiInputTextFlags_CharsHexadecimal;
 		break;
     default:

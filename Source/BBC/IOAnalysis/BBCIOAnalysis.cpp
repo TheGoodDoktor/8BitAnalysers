@@ -54,39 +54,3 @@ void	FBBCIOAnalysis::RegisterIOWrite(uint16_t addr, uint8_t val, FAddressRef pc)
 		SheilaAnalysis.OnRegisterWrite(reg, val, pc);
 	}
 }
-
-
-
-void	FBBCIOAnalysis::DrawIOAnalysisUI(void)
-{
-#if 0
-	if (ImGui::BeginTabBar("IO Tab Bar"))
-	{
-		if (ImGui::BeginTabItem("VIC"))
-		{
-			//VICAnalysis.DrawUI();
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("SID"))
-		{
-			//SIDAnalysis.DrawUI();
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("CIA1"))
-		{
-			//CIA1Analysis.DrawUI();
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("CIA2"))
-		{
-			//CIA2Analysis.DrawUI();
-			ImGui::EndTabItem();
-		}
-
-		ImGui::EndTabBar();
-	}
-#endif
-}

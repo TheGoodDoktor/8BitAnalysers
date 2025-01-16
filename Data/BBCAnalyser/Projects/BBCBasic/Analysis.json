@@ -16,7 +16,9 @@
             "CodeInfo": [
                 {
                     "Address": 0,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
                 }
             ],
             "LabelInfo": [
@@ -27,131 +29,68 @@
                     "Name": "zp_D0"
                 },
                 {
-                    "Address": 218,
+                    "Address": 250,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_DA"
+                    "Name": "zp_FA"
                 },
                 {
-                    "Address": 520,
+                    "Address": 554,
                     "LabelType": 2,
-                    "Name": "label_0208"
+                    "Name": "label_022A"
                 },
                 {
-                    "Address": 522,
+                    "Address": 556,
                     "LabelType": 2,
-                    "Name": "label_020A"
+                    "Name": "label_022C"
                 },
                 {
-                    "Address": 524,
-                    "LabelType": 2,
-                    "Name": "label_020C"
-                },
-                {
-                    "Address": 526,
-                    "LabelType": 2,
-                    "Name": "label_020E"
-                },
-                {
-                    "Address": 528,
-                    "LabelType": 2,
-                    "Name": "label_0210"
-                },
-                {
-                    "Address": 776,
+                    "Address": 581,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0308"
+                    "Name": "data_0245"
                 },
                 {
-                    "Address": 777,
+                    "Address": 600,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0309"
+                    "Name": "data_0258"
                 },
                 {
-                    "Address": 778,
+                    "Address": 613,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_030A"
+                    "Name": "data_0265"
                 },
                 {
-                    "Address": 792,
+                    "Address": 620,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0318"
+                    "Name": "data_026C"
                 },
                 {
-                    "Address": 793,
+                    "Address": 629,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0319"
+                    "Name": "data_0275"
                 },
                 {
-                    "Address": 797,
+                    "Address": 728,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_031D"
+                    "Name": "data_02D8"
                 },
                 {
-                    "Address": 799,
+                    "Address": 737,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_031F"
+                    "Name": "data_02E1"
                 },
                 {
-                    "Address": 800,
+                    "Address": 767,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0320"
-                },
-                {
-                    "Address": 801,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_0321"
-                },
-                {
-                    "Address": 803,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_0323"
-                },
-                {
-                    "Address": 813,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_032D"
-                },
-                {
-                    "Address": 842,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_034A"
-                },
-                {
-                    "Address": 843,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_034B"
-                },
-                {
-                    "Address": 846,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_034E"
-                },
-                {
-                    "Address": 847,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_034F"
-                },
-                {
-                    "Address": 853,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_0355"
+                    "Name": "data_02FF"
                 }
             ],
             "PageId": 0
@@ -163,6 +102,12 @@
             "PageId": 2
         },
         {
+            "CodeInfo": [
+                {
+                    "Address": 256,
+                    "ByteSize": 1
+                }
+            ],
             "PageId": 3
         },
         {

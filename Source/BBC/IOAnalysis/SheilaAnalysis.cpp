@@ -1,39 +1,13 @@
 #include "SheilaAnalysis.h"
 #include "../BBCEmulator.h"
 
-void FSheilaAnalysis::Init(FBBCEmulator* pEmulator)
-{
-	Name = "Sheila";
-	SetAnalyser(&pEmulator->GetCodeAnalysis());
-
-	pBBCEmu = pEmulator;
-	pCodeAnalyser->IOAnalyser.AddDevice(this);
-}
-
-void FSheilaAnalysis::Reset()
-{
-}
-
-void FSheilaAnalysis::OnRegisterRead(uint8_t reg, FAddressRef pc)
-{
-}
-
-void FSheilaAnalysis::OnRegisterWrite(uint8_t reg, uint8_t val, FAddressRef pc)
-{
-}
-
-void FSheilaAnalysis::DrawDetailsUI(void)
-{
-}
-
-
 static std::vector <FRegDisplayConfig>	g_SheilaRegDrawInfo =
 {
 	{0xFE00, "CRTC_AddrRegister"},
 	{0xFE01, "CRTC_AddrWrite"},
-	
+
 	{0xFE08, "ACIA6850_CtrlStatusReg"},
-	
+
 	{0xFE10, "SerialULA_CtrlReg"},
 	{0xFE20, "VideoULA_CtrlReg"},
 	{0xFE21, "VideoULA_PaletteReg"},
@@ -78,6 +52,20 @@ static std::vector <FRegDisplayConfig>	g_SheilaRegDrawInfo =
 	{0xFEE0, "TubeULAStatusRegister"},
 	{0xFEE1, "TubeULADataRegister"},
 };
+
+void FSheilaAnalysis::Init(FBBCEmulator* pEmulator)
+{
+	Name = "Sheila";
+	SetAnalyser(&pEmulator->GetCodeAnalysis());
+
+	pBBCEmu = pEmulator;
+	pCodeAnalyser->IOAnalyser.AddDevice(this);
+	pRegConfig = &g_SheilaRegDrawInfo;
+}
+
+void FSheilaAnalysis::Reset()
+{
+}
 
 void AddSheilaRegisterLabels(FBBCEmulator* pEmulator)
 {
