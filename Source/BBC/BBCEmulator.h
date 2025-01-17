@@ -96,6 +96,9 @@ public:
 	const FBBCBankIds&	GetBankIds() const { return BankIds; }
 
 	uint64_t	OnCPUTick(uint64_t pins);
+
+	bbc_t& GetBBC() { return BBCEmu; }
+
 private:
 	bbc_t				BBCEmu;
 	FBBCLaunchConfig	LaunchConfig;
