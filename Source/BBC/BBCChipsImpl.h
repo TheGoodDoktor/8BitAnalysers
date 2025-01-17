@@ -39,6 +39,13 @@ typedef struct
 
 } bbc_desc_t;
 
+typedef struct
+{
+	uint8_t		ula_reg;
+	int			screen_mode;
+	bool		teletext;
+} bbc_video_ula_t;
+
 // struct to hold the state of the BBC
 typedef struct 
 {
@@ -47,7 +54,7 @@ typedef struct
 	uint64_t	pins;
 	m6522_t		via_system;
 	m6522_t		via_user;
-
+	bbc_video_ula_t video_ula;
 	kbd_t		kbd;		// keyboard matrix state
 	mem_t		mem_cpu;	// cpu memory
 	bool		valid;
@@ -57,11 +64,6 @@ typedef struct
 	uint8_t		ram[0x8000];		// 32K RAM
 	uint8_t		rom_basic[0x4000];	// 16K BASIC ROM
 	uint8_t		rom_os[0x4000];		// 16K OS ROM
-
-	// video ULA
-	uint8_t		video_ula_reg;
-	int 		screen_mode;
-	bool		teletext;
 
 	//alignas(64) 
 	uint8_t fb[BBC_FRAMEBUFFER_SIZE_BYTES];
@@ -88,6 +90,11 @@ void bbc_key_up(bbc_t* bbc, int key_code);
 uint32_t bbc_save_snapshot(bbc_t* sys, bbc_t* dst);
 // load a snapshot, returns false if snapshot versions don't match
 bool bbc_load_snapshot(bbc_t* sys, uint32_t version, bbc_t* src);
+
+
+// video ULA
+void bbc_video_ula_init(bbc_video_ula_t* ula);
+void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data);
 
 #ifdef __cplusplus
 } // extern "C"

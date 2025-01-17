@@ -35,6 +35,7 @@ uint32_t BBCExecEmu(bbc_t * sys, uint32_t micro_seconds)
 }
 
 // BBC Implementation
+void bbc_init_key_map(bbc_t* sys);
 
 
 void bbc_init(bbc_t* sys, const bbc_desc_t* desc) 
@@ -60,6 +61,10 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 
 	mc6845_init(&sys->crtc, MC6845_TYPE_UM6845R);
 	mem_init(&sys->mem_cpu);
+
+	bbc_video_ula_init(&sys->video_ula);
+
+	bbc_init_key_map(sys);
 
 	// initial memory mapping
 	mem_map_ram(&sys->mem_cpu, 0, 0x0000, 0x8000, sys->ram);
@@ -226,32 +231,7 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 			}
 			else
 			{
-				sys->video_ula_reg = M6502_GET_DATA(pins);
-				sys->teletext = false;
-
-				switch (sys->video_ula_reg)
-				{
-					case 0x9C:
-						sys->screen_mode = 0;
-						break;
-					case 0xD8:
-						sys->screen_mode = 1;
-						break;
-					case 0xF4:
-						sys->screen_mode = 2;
-						break;
-					case 0x88:
-						sys->screen_mode = 4;
-						break;
-					case 0xC4:
-						sys->screen_mode = 5;
-						break;
-					case 0x4B:
-						sys->screen_mode = 7;
-						sys->teletext = true;
-						break;
-						
-				}
+				bbc_video_ula_io_write(&sys->video_ula, addr & 0x3, M6502_GET_DATA(pins));
 			}
 		}
 
@@ -339,4 +319,55 @@ bool bbc_load_snapshot(bbc_t* sys, uint32_t version, bbc_t* src)
 	mem_snapshot_onload(&im.mem_cpu, sys);
 	*sys = im;
 	return true;
+}
+
+// Keyboard
+
+void bbc_init_key_map(bbc_t* sys)
+{
+	kbd_init(&sys->kbd, 1);
+	kbd_register_key(&sys->kbd, '1', 0, 0, 0); // 1
+}
+
+// Video ULA
+
+void bbc_video_ula_init(bbc_video_ula_t* ula)
+{
+	ula->ula_reg = 0;
+	ula->screen_mode = 0;
+	ula->teletext = false;
+}
+
+void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data)
+{
+	if(reg == 0)	// write to UL reg
+	{
+		ula->ula_reg = data;
+		switch (data)
+		{
+		case 0x9C:
+			ula->screen_mode = 0;
+			break;
+		case 0xD8:
+			ula->screen_mode = 1;
+			break;
+		case 0xF4:
+			ula->screen_mode = 2;
+			break;
+		case 0x88:
+			ula->screen_mode = 4;
+			break;
+		case 0xC4:
+			ula->screen_mode = 5;
+			break;
+		case 0x4B:
+			ula->screen_mode = 7;
+			ula->teletext = true;
+			break;
+		}
+	}
+	else if(reg == 1)
+	{ 
+		// TODO: write palette
+	}
 }

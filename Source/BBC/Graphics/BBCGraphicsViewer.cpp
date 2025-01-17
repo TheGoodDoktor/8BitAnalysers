@@ -29,6 +29,8 @@ void FBBCGraphicsViewer::DrawUI()
 	FGraphicsViewer::DrawUI();
 }
 
+int BBCKeyFromImGuiKey(ImGuiKey key);
+
 void FBBCGraphicsViewer::DrawScreenViewer()
 {
 	const bbc_t& bbc = pBBCEmu->GetBBC();
@@ -38,20 +40,38 @@ void FBBCGraphicsViewer::DrawScreenViewer()
 	WidthChars = crtc.h_displayed;
 	HeightChars = crtc.v_displayed;
 	CharacterHeight = crtc.max_scanline_addr + 1;
-	ScreenMode = bbc.screen_mode;
+	ScreenMode = bbc.video_ula.screen_mode;
 
 	ImGui::Text("Screen width chars: %d x %d", WidthChars, HeightChars);
 	ImGui::Text("Character height: %d", CharacterHeight);
 	ImGui::Text("Screen mode: %d", ScreenMode);
 	ImGui::Text("Display address: 0x%04x", DisplayAddress);
-	ImGui::Text("Teletext: %s", bbc.teletext ? "Yes" : "No");
+	ImGui::Text("Teletext: %s", bbc.video_ula.teletext ? "Yes" : "No");
 
 	//UpdateScreenPixelImage();
-	if (bbc.teletext)
+	if (bbc.video_ula.teletext)
 		UpdateScreenTeletextImage();
 	else
 		UpdateScreenPixelImage();
 	pScreenView->Draw();
+
+	// big hack (tm)
+	// Check keys - not event driven, hopefully perf isn't too bad
+	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
+	{
+		if (ImGui::IsKeyPressed((ImGuiKey)key, false))
+		{
+			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
+			if (bbcKey != 0)// && bWindowFocused)
+				bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
+		}
+		else if (ImGui::IsKeyReleased((ImGuiKey)key))
+		{
+			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
+			if (bbcKey != 0)
+				bbc_key_up(&pBBCEmu->GetBBC(), bbcKey);
+		}
+	}
 }
 
 int GetHWColourIndexForPixel(uint8_t val, int pixelIndex, int scrMode);
@@ -213,17 +233,21 @@ void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 		pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
 	}
 
+	const bbc_t& bbc = pBBCEmu->GetBBC();
+
+	uint16_t ttxScreenAddress = 0x7C00;//(bbc.crtc.ma & 0x800) << 3 | 0x3C00 | (bbc.crtc.ma & 0x3FF);
+
 	for (int y = 0; y < HeightChars; y++)
 	{
 		for (int x = 0; x < WidthChars; x++)
 		{
-			int charCode = 0x41; // 'A' - TODO : get the actual character code
+			int charCode = pBBCEmu->ReadByte(ttxScreenAddress++);//.0x41; // 'A' - TODO : get the actual character code
 
 			if (charCode < 0x20)
 			{
 				// TODO: process control character
 			}
-			else
+			else if (charCode < 0x20 + 96)
 			{
 				const uint16_t* pChar = mode7font[charCode - 0x20];
 
@@ -243,4 +267,43 @@ void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 
 		}
 	}
+}
+
+
+int BBCKeyFromImGuiKey(ImGuiKey key)
+{
+	int bbcKey = 0;
+
+	if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
+	{
+		bbcKey = '0' + (key - ImGuiKey_0);
+	}
+	else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
+	{
+		bbcKey = 'A' + (key - ImGuiKey_A) + 0x20;
+	}
+	else if (key == ImGuiKey_Space)
+	{
+		bbcKey = ' ';
+	}
+	else if (key == ImGuiKey_Enter)
+	{
+		bbcKey = 0xd;
+	}
+	else if (key == ImGuiKey_LeftCtrl)
+	{
+		// symbol-shift
+		bbcKey = 0xf;
+	}
+	else if (key == ImGuiKey_LeftShift)
+	{
+		// caps-shift
+		bbcKey = 0xe;
+	}
+	else if (key == ImGuiKey_Backspace)
+	{
+		// delete (shift and 0)
+		bbcKey = 0xc;
+	}
+	return bbcKey;
 }

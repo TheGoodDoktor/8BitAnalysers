@@ -23,33 +23,52 @@
             ],
             "LabelInfo": [
                 {
-                    "Address": 250,
+                    "Address": 218,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_FA"
+                    "Name": "zp_DA"
                 },
                 {
-                    "Address": 556,
-                    "LabelType": 2,
-                    "Name": "label_022C"
-                },
-                {
-                    "Address": 703,
+                    "Address": 797,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_02BF"
+                    "Name": "data_031D"
                 },
                 {
-                    "Address": 728,
+                    "Address": 799,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_02D8"
+                    "Name": "data_031F"
                 },
                 {
-                    "Address": 737,
+                    "Address": 800,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_02E1"
+                    "Name": "data_0320"
+                },
+                {
+                    "Address": 801,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0321"
+                },
+                {
+                    "Address": 803,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0323"
+                },
+                {
+                    "Address": 813,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_032D"
+                },
+                {
+                    "Address": 853,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0355"
                 }
             ],
             "PageId": 0
