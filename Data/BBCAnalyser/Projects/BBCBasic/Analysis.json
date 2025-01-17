@@ -16,7 +16,9 @@
             "CodeInfo": [
                 {
                     "Address": 0,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
                 }
             ],
             "LabelInfo": [
@@ -59,6 +61,12 @@
             "PageId": 2
         },
         {
+            "CodeInfo": [
+                {
+                    "Address": 256,
+                    "ByteSize": 1
+                }
+            ],
             "PageId": 3
         },
         {

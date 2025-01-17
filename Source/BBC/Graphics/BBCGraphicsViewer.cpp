@@ -31,21 +31,26 @@ void FBBCGraphicsViewer::DrawUI()
 
 void FBBCGraphicsViewer::DrawScreenViewer()
 {
-	ImGui::Text("TODO: Screen Viewer");
-
-	const mc6845_t& crtc = pBBCEmu->GetBBC().crtc;
+	const bbc_t& bbc = pBBCEmu->GetBBC();
+	const mc6845_t& crtc = bbc.crtc;
 
 	//DisplayAddress = pCPCEmu->Screen.GetScreenAddrStart();
-	int widthChars = crtc.h_displayed;
-	int heightChars = crtc.v_displayed;
-	//ScreenMode = pCPCEmu->CPCEmuState.ga.video.mode;
-	int characterHeight = crtc.max_scanline_addr + 1;
+	WidthChars = crtc.h_displayed;
+	HeightChars = crtc.v_displayed;
+	CharacterHeight = crtc.max_scanline_addr + 1;
+	ScreenMode = bbc.screen_mode;
 
-	ImGui::Text("Screen width chars: %d x %d", widthChars, heightChars);
-	ImGui::Text("Character height: %d", characterHeight);
+	ImGui::Text("Screen width chars: %d x %d", WidthChars, HeightChars);
+	ImGui::Text("Character height: %d", CharacterHeight);
+	ImGui::Text("Screen mode: %d", ScreenMode);
+	ImGui::Text("Display address: 0x%04x", DisplayAddress);
+	ImGui::Text("Teletext: %s", bbc.teletext ? "Yes" : "No");
 
 	//UpdateScreenPixelImage();
-	UpdateScreenTeletextImage();
+	if (bbc.teletext)
+		UpdateScreenTeletextImage();
+	else
+		UpdateScreenPixelImage();
 	pScreenView->Draw();
 }
 
@@ -212,23 +217,30 @@ void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 	{
 		for (int x = 0; x < WidthChars; x++)
 		{
-			int charCode = 0x41 - 0x20; // 'A' - TODO : get the actual character code
+			int charCode = 0x41; // 'A' - TODO : get the actual character code
 
-			// TODO: check for control character
-			const uint16_t* pChar = mode7font[charCode];
-
-			for (int l = 0; l < 20; l++)
+			if (charCode < 0x20)
 			{
-				uint32_t* pCurPixBufAddr = pScreenView->GetPixelBuffer() + (ScreenWidth * (y * 20 + l)) + (x * 16);
-				uint16_t characterLine = pChar[l];
-				for (int c = 0; c < 16; c++)
+				// TODO: process control character
+			}
+			else
+			{
+				const uint16_t* pChar = mode7font[charCode - 0x20];
+
+				for (int l = 0; l < 20; l++)
 				{
-					ImU32 pixelColour = characterLine & 0x8000 ? 0xffffffff : 0xff000000;
-					*pCurPixBufAddr = pixelColour;
-					pCurPixBufAddr++;
-					characterLine <<= 1;
+					uint32_t* pCurPixBufAddr = pScreenView->GetPixelBuffer() + (ScreenWidth * (y * 20 + l)) + (x * 16);
+					uint16_t characterLine = pChar[l];
+					for (int c = 0; c < 16; c++)
+					{
+						ImU32 pixelColour = characterLine & 0x8000 ? 0xffffffff : 0xff000000;
+						*pCurPixBufAddr = pixelColour;
+						pCurPixBufAddr++;
+						characterLine <<= 1;
+					}
 				}
 			}
+
 		}
 	}
 }

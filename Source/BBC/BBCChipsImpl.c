@@ -207,18 +207,52 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 			//data = acia_rd(&sys->acia, addr & 0xf);
 		}
 
-		// Serial ULA read
+		// Serial ULA 
 		if (addr == 0xfe10)
 		{
 			//LOGINFO("Serial ULA read reg:%d at pc:0x%x", addr & 0xf, sys->cpu.PC);
 			//data = serial_ula_rd(&sys->serial_ula, addr & 0xf);
 		}
 
-		// Video ULA read
+		// Video ULA 
+		// https://beebwiki.mdfs.net/Video_ULA
 		if ((addr & ~3) == 0xfe20)
 		{
 			//LOGINFO("Video ULA read reg:%d at pc:0x%x", addr & 0x3, sys->cpu.PC);
 			//data = video_ula_rd(&sys->video_ula, addr & 0x3);
+			if (pins & M6502_RW)
+			{
+				//data = video_ula_rd(&sys->video_ula, addr & 0x3);
+			}
+			else
+			{
+				sys->video_ula_reg = M6502_GET_DATA(pins);
+				sys->teletext = false;
+
+				switch (sys->video_ula_reg)
+				{
+					case 0x9C:
+						sys->screen_mode = 0;
+						break;
+					case 0xD8:
+						sys->screen_mode = 1;
+						break;
+					case 0xF4:
+						sys->screen_mode = 2;
+						break;
+					case 0x88:
+						sys->screen_mode = 4;
+						break;
+					case 0xC4:
+						sys->screen_mode = 5;
+						break;
+					case 0x4B:
+						sys->screen_mode = 7;
+						sys->teletext = true;
+						break;
+						
+				}
+			}
 		}
 
 		// Tube read

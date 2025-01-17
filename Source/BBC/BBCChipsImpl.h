@@ -58,6 +58,10 @@ typedef struct
 	uint8_t		rom_basic[0x4000];	// 16K BASIC ROM
 	uint8_t		rom_os[0x4000];		// 16K OS ROM
 
+	// video ULA
+	uint8_t		video_ula_reg;
+	int 		screen_mode;
+	bool		teletext;
 
 	//alignas(64) 
 	uint8_t fb[BBC_FRAMEBUFFER_SIZE_BYTES];
