@@ -94,6 +94,9 @@ void FGraphicsView::DrawMaskedCharLine(uint8_t charLine, uint8_t maskLine, int x
 
 void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride, bool bMask)
 {
+	if (xp + widthPixels > Width || yp + heightPixels > Height)
+		return;
+	
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
 	int widthChars = widthPixels / 8;
 	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
@@ -125,6 +128,9 @@ void FGraphicsView::Draw1BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 
 void FGraphicsView::Draw1BppImageAtMask(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols, int stride)
 {
+	if (xp + widthPixels > Width || yp + heightPixels > Height)
+		return;
+
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
 	int widthChars = widthPixels / 8;
 	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
@@ -153,6 +159,9 @@ void FGraphicsView::Draw1BppImageAtMask(const uint8_t* pSrc, int xp, int yp, int
 
 void FGraphicsView::Draw2BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
 {
+	if (xp + widthPixels > Width || yp + heightPixels > Height)
+		return;
+
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
 	const int bytesPerLine = widthPixels / 4;
 	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
@@ -192,6 +201,9 @@ void FGraphicsView::Draw2BppImageAt(const uint8_t* pSrc, int xp, int yp, int wid
 
 void FGraphicsView::Draw2BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
 {
+	if (xp + (widthPixels * 2) > Width || yp + heightPixels > Height)
+		return;
+
 	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
 	int widthChars = widthPixels / 8;
 	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
@@ -472,6 +484,17 @@ FCharacterSet* GetCharacterSetFromAddress(FAddressRef address)
 	return nullptr;
 }
 
+FCharacterSet* GetCharacterSetFromId(int id)
+{
+	for (auto& it : g_CharacterSets)
+	{
+		if (it->Id == id)
+			return it;
+	}
+
+	return nullptr;
+}
+
 void DrawCharacterSetImage2BppCPC(FCodeAnalysisState& state, FCharacterSet& characterSet, uint16_t addr)
 {
 	for (int charNo = 0; charNo < 256; charNo++)
@@ -607,6 +630,9 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 		pLabel->ChangeName(label,params.Address);
 	}
 
+	if (pNewCharSet->Params.Name.empty())
+		pNewCharSet->Params.Name = state.GetLabelForAddress(params.Address)->GetName();
+	pNewCharSet->Id = (int)g_CharacterSets.size();
 	g_CharacterSets.push_back(pNewCharSet);
 	return true;
 }

@@ -17,6 +17,7 @@ extern "C"
 #include "Util/GraphicsView.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include <CodeAnalyser/UI/GraphicsViewer.h>
 
 
 static int print(lua_State* pState)
@@ -450,6 +451,31 @@ static int DrawGraphicsView(lua_State *pState)
 	return 0;
 }
 
+static int DrawPixelLineHeatmap(lua_State* pState)
+{
+	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1);
+	if (pGraphicsView == nullptr)
+		return 0;
+
+	const uint16_t itemAddress = (uint16_t)luaL_optinteger(pState, 2, 0);
+
+	const int xp = (int)luaL_optinteger(pState, 3, 0);
+	const int yp = (int)luaL_optinteger(pState, 4, 0);
+	
+	FEmuBase* pEmu = LuaSys::GetEmulator();
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+
+	const uint8_t charLine = state.ReadByte(itemAddress);
+	int	HeatmapThreshold = 4;
+	uint32_t col = GetHeatmapColourForMemoryAddress(state, state.AddressRefFromPhysicalReadAddress(itemAddress), state.CurrentFrameNo, HeatmapThreshold);
+	if (state.GetFocussedViewState().HighlightAddress.Address == itemAddress)
+		col = 0xff00ff00;
+
+	pGraphicsView->DrawCharLine(charLine, xp, yp, col, 0);
+
+	return 0;
+}
+
 static int LoadGraphicsViewPNG(lua_State *pState)
 {
 	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1 );
@@ -556,6 +582,7 @@ static const luaL_Reg corelib[] =
 	{"GetImageScale", GetImageScale},
 	{"ClearGraphicsView", ClearGraphicsView},
 	{"DrawGraphicsView", DrawGraphicsView},
+	{"DrawPixelLineHeatmap", DrawPixelLineHeatmap},
 	{"LoadGraphicsViewPNG", LoadGraphicsViewPNG},
 	{"SaveGraphicsViewPNG", SaveGraphicsViewPNG},
 	{"SaveGraphicsView2222", SaveGraphicsView2222},

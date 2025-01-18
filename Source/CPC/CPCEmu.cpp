@@ -1333,12 +1333,9 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 
 bool FCPCEmu::LoadLua()
 {
-	if (GetGlobalConfig()->bEnableLua == true)
-	{
-		ClearLuaDocs();
-		AddCoreLibLuaDoc();
-		AddCPCLibLuaDocs();
-	}
+	ClearLuaDocs();
+	AddCoreLibLuaDoc();
+	AddCPCLibLuaDocs();
 
 	// Setup Lua - reinitialised for each game
 	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";

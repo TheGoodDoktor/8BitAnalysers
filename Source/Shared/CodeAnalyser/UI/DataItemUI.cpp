@@ -733,7 +733,10 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 	{
-		DrawDataItemRegisterPtrsZ80(state, physAddr);
+		if (DrawDataItemRegisterPtrsZ80(state, physAddr, pDataInfo->ByteSize))
+		{
+			offset = 0.f;
+		}
 	}
 	else
 	{
@@ -741,6 +744,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		{
 			ImGui::SameLine();
 			ImGui::Text("<- SP");
+			offset = 0.f;
 		}
 	}
 

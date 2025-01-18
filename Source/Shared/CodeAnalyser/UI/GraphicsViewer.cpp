@@ -16,6 +16,7 @@
 
 #include <misc/cpp/imgui_stdlib.h>
 #include <ImGuiSupport/ImGuiScaling.h>
+#include <LuaScripting/LuaSys.h>
 
 // Graphics Viewer
 static int kMaxImageSize = 256;
@@ -69,7 +70,7 @@ void FGraphicsViewer::Reset(void)
 	SelectedGraphicSet = FAddressRef();
 
 	OffScreenBuffers.clear();
-	SelectedOffscreenBuffer = std::string();
+	SelectedOffscreenBufferId = -1;
 
 	ItemNo = 0;
 	ImageGraphicSet = FAddressRef();
@@ -123,6 +124,11 @@ uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInBuffer(const FOffScreenB
 	FGlobalConfig* pConfig = state.pGlobalConfig;
 	const int scaledX = x / pConfig->GfxViewerScale;
 	const int scaledY = y / pConfig->GfxViewerScale;
+
+	// try the lua handler first
+	const uint16_t addr = LuaSys::GetAddressOffsetFromPositionInBuffer(buffer, scaledX, scaledY);
+	if (addr != 0xffff)
+		return addr;
 
 	const int xSizeChars = buffer.XSizePixels >> 3;
 
@@ -1047,24 +1053,24 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 }
 
-bool FGraphicsViewer::AddOffScreenBuffer(const FOffScreenBuffer& newBuffer)
+bool FGraphicsViewer::AddOffScreenBuffer(FOffScreenBuffer& newBuffer)
 {
 	// make sure one of the same name doesn't already exist
 	for (const auto& buffer : OffScreenBuffers)
 	{
-		if(buffer.Name == newBuffer.Name)
+		if(buffer.Id == newBuffer.Id)
 			return false;
 	}
-
+	newBuffer.Id = (int)OffScreenBuffers.size();
 	OffScreenBuffers.push_back(newBuffer);
 	return true;
 }
 
-FOffScreenBuffer* FGraphicsViewer::GetOffscreenBuffer(const char* pName)
+FOffScreenBuffer* FGraphicsViewer::GetOffscreenBuffer(int id)
 {
 	for (auto& buffer : OffScreenBuffers)
 	{
-		if (buffer.Name == pName)
+		if (buffer.Id == id)
 			return &buffer;
 	}
 
@@ -1100,12 +1106,12 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 	{
 		for (const auto& buffer : OffScreenBuffers)
 		{
-			bool bSelected = buffer.Name == SelectedOffscreenBuffer;
+			bool bSelected = buffer.Id == SelectedOffscreenBufferId;
 			ImGui::PushID(buffer.Address.Val);
 			if (ImGui::Selectable(buffer.Name.c_str(), &bSelected))
 			{
 				//ImageSetName = set.Name;
-				SelectedOffscreenBuffer = buffer.Name;
+				SelectedOffscreenBufferId = buffer.Id;
 				//GoToAddress(buffer.Address);
 				//state.GetFocussedViewState().GoToAddress(buffer.Address);
 			}
@@ -1116,7 +1122,7 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 	ImGui::SameLine();
 	if (ImGui::BeginChild("OffScreenBufferDisplay", ImVec2(0, 0), true))
 	{
-		FOffScreenBuffer* pBuffer = GetOffscreenBuffer(SelectedOffscreenBuffer.c_str());
+		FOffScreenBuffer* pBuffer = GetOffscreenBuffer(SelectedOffscreenBufferId);
 
 		if(pBuffer != nullptr)
 		{
@@ -1183,12 +1189,15 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 			}
 
 			const float kNumSize = 80.0f * scale;	// size for number GUI widget
+			ImGui::InputText("Name", &pBuffer->Name);
 			ImGui::SetNextItemWidth(kNumSize);
 			ImGui::InputInt("XSize", &pBuffer->XSizePixels, 8, 8);
 			ImGui::SetNextItemWidth(kNumSize);
 			ImGui::InputInt("YSize", &pBuffer->YSizePixels, 8, 8);
-
+			ImGui::Text("Buffer Address:");
 			DrawAddressLabel(state, state.GetFocussedViewState(), pBuffer->Address);
+			ImGui::InputText("Lua Handler Name", &pBuffer->LuaHandlerName);
+
 
 			if (ClickedAddress.IsValid())
 			{
@@ -1218,22 +1227,23 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 
 			pBufferView->Clear();
 
-			// Update image
-			// TODO: support other modes
-			for (int y = 0; y < pBuffer->YSizePixels; y++)
-			{
-				for (int x = 0; x < pBuffer->XSizePixels; x += 8)
+			// Update image - try Lua handler first
+			if(LuaSys::DrawOffScreenBuffer(*pBuffer,pBufferView) == false)
+			{ 
+				for (int y = 0; y < pBuffer->YSizePixels; y++)
 				{
-					const uint8_t charLine = state.ReadByte(itemAddress);
-					uint32_t col = GetHeatmapColourForMemoryAddress(state,itemAddress, state.CurrentFrameNo, HeatmapThreshold);
-					if (viewState.HighlightAddress == itemAddress)
-						col = 0xff00ff00;
+					for (int x = 0; x < pBuffer->XSizePixels; x += 8)
+					{
+						const uint8_t charLine = state.ReadByte(itemAddress);
+						uint32_t col = GetHeatmapColourForMemoryAddress(state,itemAddress, state.CurrentFrameNo, HeatmapThreshold);
+						if (viewState.HighlightAddress == itemAddress)
+							col = 0xff00ff00;
 
-					pBufferView->DrawCharLine(charLine, x, y, col, 0);
-					state.AdvanceAddressRef(itemAddress, 1);
+						pBufferView->DrawCharLine(charLine, x, y, col, 0);
+						state.AdvanceAddressRef(itemAddress, 1);
+					}
 				}
 			}
-			
 		}
 	}
 	ImGui::EndChild();
@@ -1269,6 +1279,7 @@ bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 	{
 		json offscreenBufferJson;
 		offscreenBufferJson["Name"] = offscreenBuffer.Name;
+		offscreenBufferJson["LuaHandlerName"] = offscreenBuffer.LuaHandlerName;
 		offscreenBufferJson["AddressRef"] = offscreenBuffer.Address.Val;
 		offscreenBufferJson["XSizePixels"] = offscreenBuffer.XSizePixels;
 		offscreenBufferJson["YSizePixels"] = offscreenBuffer.YSizePixels;
@@ -1325,11 +1336,13 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 		{
 			FOffScreenBuffer offscreenBuffer;
 			offscreenBuffer.Name = offscreenBuffersJson["Name"];
+			if (offscreenBuffersJson.contains("LuaHandlerName"))
+				offscreenBuffer.LuaHandlerName = offscreenBuffersJson["LuaHandlerName"];
 			offscreenBuffer.Address.Val = offscreenBuffersJson["AddressRef"];
 			offscreenBuffer.XSizePixels = offscreenBuffersJson["XSizePixels"];
 			offscreenBuffer.YSizePixels = offscreenBuffersJson["YSizePixels"];
 			offscreenBuffer.Format = (EOffScreenBufferFormat)offscreenBuffersJson["Format"];
-
+			offscreenBuffer.Id = (int)OffScreenBuffers.size();
 			OffScreenBuffers.push_back(offscreenBuffer);
 		}
 	}

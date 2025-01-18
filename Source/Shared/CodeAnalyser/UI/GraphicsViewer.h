@@ -42,6 +42,7 @@ struct FGraphicsSet
 
 struct FOffScreenBuffer
 {
+	int			Id;
 	std::string	Name;
 	FAddressRef	Address;
 	int			XSizePixels = 0;	// width in pixels
@@ -81,8 +82,8 @@ protected:
 	FCodeAnalysisState& GetCodeAnalysis() { return *pCodeAnalysis; }
 	const FCodeAnalysisState& GetCodeAnalysis() const { return *pCodeAnalysis; }
 	void			DrawCharacterGraphicsViewer(void);
-	bool			AddOffScreenBuffer(const FOffScreenBuffer& buffer);
-	FOffScreenBuffer*	GetOffscreenBuffer(const char *pName);
+	bool			AddOffScreenBuffer(FOffScreenBuffer& buffer);
+	FOffScreenBuffer*	GetOffscreenBuffer(int id);
 	void			DrawOffScreenBufferViewer(void);
 
 	virtual void	DrawScreenViewer(void) = 0;
@@ -123,7 +124,7 @@ protected:
 	std::map<FAddressRef, FGraphicsSet>		GraphicsSets;
 	std::vector<FOffScreenBuffer>			OffScreenBuffers;
 	FAddressRef		SelectedGraphicSet;
-	std::string		SelectedOffscreenBuffer;
+	int				SelectedOffscreenBufferId;
 
 	EBitmapFormat	BitmapFormat = EBitmapFormat::Bitmap_1Bpp;
 	int				PaletteNo = -1;
@@ -141,3 +142,4 @@ protected:
 };
 
 uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_t addr, int currentFrameNo, int frameThreshold);
+uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisState& state, FAddressRef addr, int currentFrameNo, int frameThreshold);

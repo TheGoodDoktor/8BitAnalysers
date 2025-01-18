@@ -312,8 +312,16 @@ void FEmuBase::FileMenu()
 
 	if (ImGui::MenuItem("Export ASM File"))
 	{
-		std::string outputFname = pCurrentProjectConfig->AsmExportPath + pCurrentProjectConfig->Name + ".asm";
-		ExportAssembler(this, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
+		if (pCurrentProjectConfig->AsmExportPath.empty())
+		{
+			std::string outputFname = GetGameWorkspaceRoot() + pCurrentProjectConfig->Name + ".asm";
+			ExportAssembler(this, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
+		}
+		else
+		{
+			std::string outputFname = pCurrentProjectConfig->AsmExportPath + pCurrentProjectConfig->Name + ".asm";
+			ExportAssembler(this, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
+		}
 	}
 
 	if (ImGui::MenuItem("Export ASM Range"))
