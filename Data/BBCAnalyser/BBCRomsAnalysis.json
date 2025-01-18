@@ -23529,7 +23529,9 @@
                 },
                 {
                     "Address": 512,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "SMC": true
                 },
                 {
                     "Address": 974,
@@ -23638,6 +23640,18 @@
                 {
                     "Address": 256,
                     "DisplayType": 4
+                },
+                {
+                    "Address": 512,
+                    "DataType": 11,
+                    "DisplayType": 4,
+                    "InstructionAddressRef": 4261412866
+                },
+                {
+                    "Address": 513,
+                    "DataType": 11,
+                    "DisplayType": 4,
+                    "InstructionAddressRef": 4261412866
                 },
                 {
                     "Address": 520,

@@ -8,6 +8,8 @@
 #include "JIMAnalysis.h"
 #include "SheilaAnalysis.h"
 #include <CodeAnalyser/CodeAnalyserTypes.h>
+#include <CodeAnalyser/IODevices/VIAIODevice.h>
+#include <CodeAnalyser/IODevices/MC6845Device.h>
 
 const uint8_t	kFredPage	= 0xFC;
 const uint8_t	kJimPage	= 0xFD;
@@ -32,4 +34,7 @@ private:
 	FFredAnalysis	FredAnalysis;
 	FJimAnalysis	JimAnalysis;
 	FSheilaAnalysis	SheilaAnalysis;
+	FVIAIODevice	SystemVIAIODevice;
+	FVIAIODevice	UserVIAIODevice;
+	FMC6845Device	CRTCDevice;
 };

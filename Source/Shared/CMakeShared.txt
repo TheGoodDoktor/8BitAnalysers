@@ -12,6 +12,7 @@ file ( GLOB shared_base_src
 	../Shared/Exporters/*.cpp ../Shared/Exporters/*.h
 	../Shared/ImGuiSupport/*.cpp ../Shared/ImGuiSupport/*.h
 	../Shared/Importers/*.cpp ../Shared/Importers/*.h
+	../Shared/IODevices/*.cpp ../Shared/IODevices/*.h
 	../Shared/LuaScripting/*.cpp ../Shared/LuaScripting/*.h
 	../Shared/Misc/*.cpp ../Shared/Misc/*.h
 	../Shared/Util/*.cpp ../Shared/Util/*.h

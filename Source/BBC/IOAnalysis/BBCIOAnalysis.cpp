@@ -1,4 +1,5 @@
 #include "BBCIOAnalysis.h"
+#include "../BBCEmulator.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include <imgui.h>
 
@@ -7,6 +8,10 @@ void	FBBCIOAnalysis::Init(FBBCEmulator* pEmulator)
 	FredAnalysis.Init(pEmulator);
 	JimAnalysis.Init(pEmulator);
 	SheilaAnalysis.Init(pEmulator);
+
+	SystemVIAIODevice.Init("System VIA", pEmulator, &pEmulator->GetBBC().via_system);
+	UserVIAIODevice.Init("User VIA",pEmulator, &pEmulator->GetBBC().via_user);
+	CRTCDevice.Init("CRTC", pEmulator, &pEmulator->GetBBC().crtc);
 }
 
 void	FBBCIOAnalysis::Reset()
