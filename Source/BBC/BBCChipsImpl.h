@@ -44,6 +44,7 @@ typedef struct
 	uint8_t		ula_reg;
 	int			screen_mode;
 	bool		teletext;
+	uint8_t		palette[16];
 } bbc_video_ula_t;
 
 // struct to hold the state of the BBC

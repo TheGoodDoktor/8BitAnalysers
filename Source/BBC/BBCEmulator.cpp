@@ -131,7 +131,7 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	if (pBasicConfig == nullptr)
 		pBasicConfig = CreateNewBBCBasicConfig();
 
-	LoadProject(pBasicConfig, false);	// reset code analysis
+	LoadProject(pBasicConfig, true);	// load basic config initially
 
 	return true;
 }
@@ -339,11 +339,10 @@ bool FBBCEmulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 			saveStateFName = gameRoot + "SaveState.bin";
 		}
 
-		// Load machine state, if it fails, reload the prg file
-		if (LoadMachineState(saveStateFName.c_str()))
-		{
-			bLoadSnapshot = false;
-		}
+		//if (LoadMachineState(saveStateFName.c_str()))
+		//{
+		//	bLoadSnapshot = false;
+		//}
 
 
 		if (FileExists(analysisJsonFName.c_str()))
@@ -430,7 +429,7 @@ bool FBBCEmulator::SaveProject(void)
 	AddGameConfig(pCurrentProjectConfig);
 	SaveGameConfigToFile(*pCurrentProjectConfig, configFName.c_str());
 
-	SaveMachineState(saveStateFName.c_str());
+	//SaveMachineState(saveStateFName.c_str());
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 

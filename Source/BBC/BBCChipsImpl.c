@@ -59,6 +59,8 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	// initialize the hardware
 	sys->pins = m6502_init(&sys->cpu,&desc->cpu);
 
+	m6522_init(&sys->via_system);
+	m6522_init(&sys->via_user);
 	mc6845_init(&sys->crtc, MC6845_TYPE_UM6845R);
 	mem_init(&sys->mem_cpu);
 
@@ -263,10 +265,18 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 	}
 
 	// Tick System VIA
+	// Set CA1 on vsync from 6845
+	if (sys->crtc.vs)
+		system_via_pins |= M6522_CA1;
+	// TODO: set CA2 if any key pressed
+	//if (sys->kbd.) 
+	//	system_via_pins |= M6522_CA2;
+	
 	system_via_pins = m6522_tick(&sys->via_system, system_via_pins);
-	if (system_via_pins & M6522_IRQ) 
-		pins |= M6502_NMI;
+	//if (system_via_pins & M6522_IRQ) 
+	//	pins |= M6502_IRQ;
 		
+	// read?
 	if ((system_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW)) 
 		pins = M6502_COPY_DATA(pins, system_via_pins);
 		
@@ -368,6 +378,7 @@ void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data)
 	}
 	else if(reg == 1)
 	{ 
-		// TODO: write palette
+		// Write palette
+		ula->palette[data >> 4] = data & 0xf;
 	}
 }

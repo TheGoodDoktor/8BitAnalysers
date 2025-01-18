@@ -11,6 +11,7 @@ static std::vector <FRegDisplayConfig>	g_SheilaRegDrawInfo =
 	{0xFE10, "SerialULA_CtrlReg"},
 	{0xFE20, "VideoULA_CtrlReg"},
 	{0xFE21, "VideoULA_PaletteReg"},
+	{0xFE30, "ROMSelect"},
 
 	{0xFE40, "SystemVIA_RegB"},
 	{0xFE41, "SystemVIA_RegA"},
