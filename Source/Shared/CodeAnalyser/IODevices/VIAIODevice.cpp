@@ -73,7 +73,7 @@ FVIAIODevice::FVIAIODevice()
 	Name = "VIA";
 }
 
-bool FVIAIODevice::Init(const char* pName, FEmuBase* pEmulator, m6522_t* pVIA)
+bool FVIAIODevice::Init(const char* pName, uint16_t addressBase, FEmuBase* pEmulator, m6522_t* pVIA)
 {
 	Name = pName;
 	pViaState = pVIA;
@@ -84,7 +84,7 @@ bool FVIAIODevice::Init(const char* pName, FEmuBase* pEmulator, m6522_t* pVIA)
 	ui_m6522_desc_t desc = { 0 };
 	desc.title = Name.c_str();
 	desc.via = pVIA;
-	desc.regs_base = 0x9110;
+	desc.regs_base = addressBase;
 	desc.x = 0;
 	desc.y = 0;
 	UI_CHIP_INIT_DESC(&desc.chip_desc, "6522", 40, _ui_via_pins);

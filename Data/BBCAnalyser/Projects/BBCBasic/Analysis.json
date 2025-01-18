@@ -21,14 +21,91 @@
                     "SMC": true
                 }
             ],
+            "CommentBlocks": [
+                {
+                    "Address": 602,
+                    "Comment": "bit 3 = 1 means SHIFT pressed\nbit 4 = 0 means CAPS LOCK engaged\nbit 5 = 0 means SHIFT LOCK engaged\nbit 6 = 1 means CTRL pressed\nbit 7 = 1 means SHIFT enabled"
+                }
+            ],
             "DataInfo": [
                 {
                     "Address": 0,
                     "DataType": 11,
                     "InstructionAddressRef": 0
+                },
+                {
+                    "Address": 252,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 516,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 600,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 602,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 644,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 653,
+                    "Comment": "0 - soft reset (Break), 1 - Power On, 2 - Hard Reset (Ctrl-Break)",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 654,
+                    "Comment": "$40 - 16K, $80 - 32K",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 713,
+                    "DisplayType": 11
                 }
             ],
             "LabelInfo": [
+                {
+                    "Address": 0,
+                    "LabelType": 0,
+                    "Name": "zp_00"
+                },
+                {
+                    "Address": 1,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_01"
+                },
+                {
+                    "Address": 6,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_06"
+                },
+                {
+                    "Address": 7,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_07"
+                },
+                {
+                    "Address": 24,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_18"
+                },
+                {
+                    "Address": 31,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_1F"
+                },
                 {
                     "Address": 208,
                     "Global": true,
@@ -36,10 +113,34 @@
                     "Name": "zp_D0"
                 },
                 {
+                    "Address": 218,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_DA"
+                },
+                {
+                    "Address": 219,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_DB"
+                },
+                {
+                    "Address": 220,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_DC"
+                },
+                {
                     "Address": 230,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_E6"
+                    "Name": "ReadCharacterTimedFlag"
+                },
+                {
+                    "Address": 231,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_E7"
                 },
                 {
                     "Address": 232,
@@ -141,7 +242,7 @@
                     "Address": 252,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_FC"
+                    "Name": "InterruptAccumulator"
                 },
                 {
                     "Address": 253,
@@ -159,7 +260,7 @@
                     "Address": 255,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_FF"
+                    "Name": "EscapeFlag"
                 },
                 {
                     "Address": 259,
@@ -174,14 +275,27 @@
                     "Name": "data_0104"
                 },
                 {
+                    "Address": 511,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_01FF"
+                },
+                {
+                    "Address": 512,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0200"
+                },
+                {
                     "Address": 514,
                     "LabelType": 2,
                     "Name": "label_0202"
                 },
                 {
                     "Address": 516,
-                    "LabelType": 2,
-                    "Name": "label_0204"
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "IRQ1Vector"
                 },
                 {
                     "Address": 518,
@@ -214,9 +328,34 @@
                     "Name": "label_0210"
                 },
                 {
+                    "Address": 530,
+                    "LabelType": 2,
+                    "Name": "label_0212"
+                },
+                {
+                    "Address": 532,
+                    "LabelType": 2,
+                    "Name": "label_0214"
+                },
+                {
+                    "Address": 534,
+                    "LabelType": 2,
+                    "Name": "label_0216"
+                },
+                {
                     "Address": 536,
                     "LabelType": 2,
                     "Name": "label_0218"
+                },
+                {
+                    "Address": 538,
+                    "LabelType": 2,
+                    "Name": "label_021A"
+                },
+                {
+                    "Address": 540,
+                    "LabelType": 2,
+                    "Name": "label_021C"
                 },
                 {
                     "Address": 542,
@@ -258,7 +397,7 @@
                     "Address": 577,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0241"
+                    "Name": "CurrentInputBuffer"
                 },
                 {
                     "Address": 578,
@@ -333,6 +472,12 @@
                     "Name": "data_0253"
                 },
                 {
+                    "Address": 596,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0254"
+                },
+                {
                     "Address": 598,
                     "Global": true,
                     "LabelType": 0,
@@ -348,7 +493,13 @@
                     "Address": 600,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0258"
+                    "Name": "EscapeAndBreakEffect"
+                },
+                {
+                    "Address": 602,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "KeyboardStatusFlags"
                 },
                 {
                     "Address": 603,
@@ -414,7 +565,7 @@
                     "Address": 616,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0268"
+                    "Name": "SoftKeyStringLength"
                 },
                 {
                     "Address": 617,
@@ -498,7 +649,7 @@
                     "Address": 644,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0284"
+                    "Name": "SoftKeyCensistencyFlag"
                 },
                 {
                     "Address": 645,
@@ -519,6 +670,24 @@
                     "Name": "data_028C"
                 },
                 {
+                    "Address": 653,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "LastResetType"
+                },
+                {
+                    "Address": 654,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "AvailableRAM"
+                },
+                {
+                    "Address": 655,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_028F"
+                },
+                {
                     "Address": 657,
                     "Global": true,
                     "LabelType": 0,
@@ -534,13 +703,13 @@
                     "Address": 689,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_02B1"
+                    "Name": "InkeyTimeoutCounterLow"
                 },
                 {
                     "Address": 690,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_02B2"
+                    "Name": "InkeyTimeoutCounterHigh"
                 },
                 {
                     "Address": 691,
@@ -582,7 +751,13 @@
                     "Address": 713,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_02C9"
+                    "Name": "SoftKeyExpansionPointer"
+                },
+                {
+                    "Address": 714,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02CA"
                 },
                 {
                     "Address": 718,
@@ -619,12 +794,35 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_02E1"
+                },
+                {
+                    "Address": 794,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_031A"
+                },
+                {
+                    "Address": 852,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0354"
                 }
             ],
             "PageId": 0
         },
         {
             "LabelInfo": [
+                {
+                    "Address": 0,
+                    "LabelType": 2,
+                    "Name": "label_0400"
+                },
+                {
+                    "Address": 2,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0402"
+                },
                 {
                     "Address": 3,
                     "LabelType": 2,
@@ -634,12 +832,96 @@
             "PageId": 1
         },
         {
+            "DataInfo": [
+                {
+                    "Address": 769,
+                    "DisplayType": 11
+                }
+            ],
             "LabelInfo": [
                 {
                     "Address": 0,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0800"
+                },
+                {
+                    "Address": 8,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0808"
+                },
+                {
+                    "Address": 12,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_080C"
+                },
+                {
+                    "Address": 16,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0810"
+                },
+                {
+                    "Address": 20,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0814"
+                },
+                {
+                    "Address": 24,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0818"
+                },
+                {
+                    "Address": 28,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_081C"
+                },
+                {
+                    "Address": 32,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0820"
+                },
+                {
+                    "Address": 36,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0824"
+                },
+                {
+                    "Address": 40,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0828"
+                },
+                {
+                    "Address": 44,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_082C"
+                },
+                {
+                    "Address": 48,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0830"
+                },
+                {
+                    "Address": 56,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0838"
+                },
+                {
+                    "Address": 59,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_083B"
                 },
                 {
                     "Address": 768,
@@ -651,7 +933,7 @@
                     "Address": 769,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0B01"
+                    "Name": "SoftKeyPage"
                 },
                 {
                     "Address": 784,
@@ -676,6 +958,14 @@
                     "Address": 256,
                     "DataType": 11,
                     "InstructionAddressRef": 218103808
+                }
+            ],
+            "LabelInfo": [
+                {
+                    "Address": 256,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "NMIEntryPoint"
                 }
             ],
             "PageId": 3

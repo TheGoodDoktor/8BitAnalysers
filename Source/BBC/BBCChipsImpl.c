@@ -62,6 +62,7 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	m6522_init(&sys->via_system);
 	m6522_init(&sys->via_user);
 	mc6845_init(&sys->crtc, MC6845_TYPE_UM6845R);
+	mc6850_init(&sys->acia);
 	mem_init(&sys->mem_cpu);
 
 	bbc_video_ula_init(&sys->video_ula);
@@ -86,6 +87,7 @@ void bbc_reset(bbc_t* sys)
 
 	sys->pins |= M6502_RES;
 	mc6845_reset(&sys->crtc);
+	mc6850_reset(&sys->acia);
 }
 
 // get display requirements and framebuffer content, may be called with nullptr
@@ -166,10 +168,15 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 {
 	CHIPS_ASSERT(sys && sys->valid);
 	pins = m6502_tick(&sys->cpu, pins);
+
+	// the IRQ and NMI pins will be set by the HW each tick
+	pins &= ~(M6502_IRQ | M6502_NMI);
+
 	const uint16_t addr = M6502_GET_ADDR(pins);
 	
 	uint64_t system_via_pins = pins & M6502_PIN_MASK;
 	uint64_t user_via_pins = pins & M6502_PIN_MASK;
+	uint64_t acia_pins = pins & M6502_PIN_MASK;
 
 	if (addr >= 0xFC00 && addr < 0xFF00)	// IO Registers
 	{
@@ -177,15 +184,11 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 
 		// System VIA
 		if ((addr & ~0xf) == 0xfe40 || (addr & ~0xf) == 0xfe50)
-		{
 			system_via_pins |= M6522_CS1;
-		}
 
 		// User VIA
 		if ((addr & ~0xf) == 0xfe60 || (addr & ~0xf) == 0xfe70)
-		{
 			user_via_pins |= M6522_CS1;
-		}
 
 		// CRTC
 		if ((addr & ~7) == 0xFE00)
@@ -201,18 +204,8 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 		}
 
 		// ACIA read status
-		if (addr == 0xfe08)
-		{
-			//LOGINFO("ACIA read status at pc:0x%x", sys->cpu.PC);
-			//data = acia_rd(&sys->acia, addr & 0xf);
-		}
-
-		// ACIA read data
-		if (addr == 0xfe09)
-		{
-			//LOGINFO("ACIA read data at pc:0x%x", sys->cpu.PC);
-			//data = acia_rd(&sys->acia, addr & 0xf);
-		}
+		if (addr == 0xfe08 || addr == 0xfe09)
+			acia_pins |= M6850_CS1;
 
 		// Serial ULA 
 		if (addr == 0xfe10)
@@ -266,15 +259,15 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 
 	// Tick System VIA
 	// Set CA1 on vsync from 6845
-	if (sys->crtc.vs)
-		system_via_pins |= M6522_CA1;
+	//if (sys->crtc.vs)
+	//	system_via_pins |= M6522_CA1;
 	// TODO: set CA2 if any key pressed
 	//if (sys->kbd.) 
 	//	system_via_pins |= M6522_CA2;
 	
 	system_via_pins = m6522_tick(&sys->via_system, system_via_pins);
-	//if (system_via_pins & M6522_IRQ) 
-	//	pins |= M6502_IRQ;
+	if (system_via_pins & M6522_IRQ) 
+		pins |= M6502_IRQ;
 		
 	// read?
 	if ((system_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW)) 
@@ -284,13 +277,18 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 	// Tick User VIA
 	user_via_pins = m6522_tick(&sys->via_user, user_via_pins);
 	if (user_via_pins & M6522_IRQ) 
-		pins |= M6502_NMI;
+		pins |= M6502_IRQ;
 		
 	if ((user_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW)) 
 		pins = M6502_COPY_DATA(pins, user_via_pins);
 
 	// Tick CRTC
 	uint64_t crtc_pins = mc6845_tick(&sys->crtc);
+
+	// Tick ACIA
+	acia_pins = mc6850_tick(&sys->acia, acia_pins);
+	if ((acia_pins & (M6850_CS1 | M6522_RW)) == (M6850_CS1 | M6522_RW))
+		pins = M6502_COPY_DATA(pins, acia_pins);
 
 	// TODO: implement the rest of the tick
 
@@ -381,4 +379,49 @@ void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data)
 		// Write palette
 		ula->palette[data >> 4] = data & 0xf;
 	}
+}
+
+// ACIA
+void mc6850_init(mc6850_t* acia)
+{
+	acia->controlreg = 0;
+}
+
+void mc6850_reset(mc6850_t* acia)
+{
+	acia->controlreg = 0;
+}
+
+uint64_t mc6850_tick(mc6850_t* acia, uint64_t pins)
+{
+	if (pins & M6850_CS1)
+	{
+		if ((pins & M6502_A0) == 0)	// Control/Status register
+		{
+			if (pins & M6502_RW)
+			{
+				M6502_SET_DATA(pins, acia->statusreg);
+			}
+			else
+			{
+				acia->controlreg = M6502_GET_DATA(pins);
+			}
+		}
+		else	// data register
+		{
+			if (pins & M6502_RW)
+			{
+				// Read data
+				M6502_SET_DATA(pins, acia->data);
+			}
+			else
+			{
+				// Write data
+				acia->data = M6502_GET_DATA(pins);
+			}
+		}
+	}
+
+	// TODO: tick behaviour
+
 }

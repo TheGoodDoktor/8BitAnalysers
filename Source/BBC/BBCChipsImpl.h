@@ -47,6 +47,19 @@ typedef struct
 	uint8_t		palette[16];
 } bbc_video_ula_t;
 
+// struct to hold the state of the 6850 ACIA
+#define M6850_PIN_RW	(24)
+#define M6850_PIN_CS1	(40)
+#define M6850_CS1       (1ULL<<M6850_PIN_CS1)
+#define M6850_RW        (1ULL<<M6850_PIN_RW)
+
+typedef struct
+{
+	uint8_t		controlreg;
+	uint8_t		statusreg;
+	uint16_t	data;
+} mc6850_t;
+
 // struct to hold the state of the BBC
 typedef struct 
 {
@@ -55,6 +68,7 @@ typedef struct
 	uint64_t	pins;
 	m6522_t		via_system;
 	m6522_t		via_user;
+	mc6850_t	acia;
 	bbc_video_ula_t video_ula;
 	kbd_t		kbd;		// keyboard matrix state
 	mem_t		mem_cpu;	// cpu memory
@@ -96,6 +110,12 @@ bool bbc_load_snapshot(bbc_t* sys, uint32_t version, bbc_t* src);
 // video ULA
 void bbc_video_ula_init(bbc_video_ula_t* ula);
 void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data);
+
+// 6805 ACIA
+void mc6850_init(mc6850_t* acia);
+void mc6850_reset(mc6850_t* acia);
+uint64_t mc6850_tick(mc6850_t* acia, uint64_t pins);
+
 
 #ifdef __cplusplus
 } // extern "C"

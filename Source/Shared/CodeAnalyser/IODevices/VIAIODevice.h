@@ -24,7 +24,7 @@ class FVIAIODevice : public FIODevice
 {
 public:
 	FVIAIODevice();
-	bool	Init(const char* pName, FEmuBase* pEmulator, m6522_t* pVIA);
+	bool	Init(const char* pName,uint16_t addressBase, FEmuBase* pEmulator, m6522_t* pVIA);
 
 	void	OnFrameTick() override;
 	void	OnMachineFrameEnd() override;
