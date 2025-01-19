@@ -28,6 +28,7 @@ static std::vector <FRegDisplayConfig>	g_SheilaRegDrawInfo =
 	{0xFE4C, "SystemVIA_PCR"},
 	{0xFE4D, "SystemVIA_IFR"},
 	{0xFE4E, "SystemVIA_IER"},
+	{0xFE4F, "SystemVIA_RegA_NoHandshake"},
 
 	{0xFE60, "UserVIA_RegB"},
 	{0xFE61, "UserVIA_RegA"},

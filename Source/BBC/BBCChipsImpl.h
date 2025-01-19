@@ -24,6 +24,17 @@ extern "C" {
 
 #define BBC_SNAPSHOT_VERSION (1)
 
+// IC32 Latch pins
+#define IC32_LATCH_SOUNDGEN_WR		(1<<0)
+#define IC32_LATCH_READ_SPEECH		(1<<1)
+#define IC32_LATCH_WRITE_SPEECH		(1<<2)
+#define IC32_LATCH_KEYBOARD_WR		(1<<3)
+#define IC32_LATCH_SCREENADDR_B0	(1<<4)
+#define IC32_LATCH_SCREENADDR_B1	(1<<5)
+#define IC32_LATCH_CAPSLOCK_LED		(1<<6)
+#define IC32_LATCH_SHIFT_LOCK_LED	(1<<7)
+
+
 // configuration parameters for bbc_init()
 typedef struct 
 {
@@ -70,10 +81,15 @@ typedef struct
 	m6522_t		via_user;
 	mc6850_t	acia;
 	bbc_video_ula_t video_ula;
+	uint8_t		ic32;		// IC32 Latch
 	kbd_t		kbd;		// keyboard matrix state
+	bool		key_pressed;	// to trigger interrupt
+	int			key_scan_column;
 	mem_t		mem_cpu;	// cpu memory
+	uint8_t		rom_select;
 	bool		valid;
 	chips_debug_t debug;
+
 
 	// memory
 	uint8_t		ram[0x8000];		// 32K RAM

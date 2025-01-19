@@ -5,6 +5,7 @@ file ( GLOB shared_base_src
 	../Shared/CodeAnalyser/Commands/*.cpp ../Shared/CodeAnalyser/Commands/*.h
 	../Shared/CodeAnalyser/6502/*.cpp ../Shared/CodeAnalyser/6502/*.h
 	../Shared/CodeAnalyser/Z80/*.cpp ../Shared/CodeAnalyser/Z80/*.h
+	../Shared/CodeAnalyser/IODevices/*.cpp ../Shared/CodeAnalyser/IODevices/*.h
 	../Shared/CodeAnalyser/UI/*.cpp ../Shared/CodeAnalyser/UI/*.h
 	../Shared/CodeAnalyser/UI/6502/*.cpp ../Shared/CodeAnalyser/UI/6502/*.h
 	../Shared/CodeAnalyser/UI/Z80/*.cpp ../Shared/CodeAnalyser/UI/Z80/*.h
@@ -12,7 +13,6 @@ file ( GLOB shared_base_src
 	../Shared/Exporters/*.cpp ../Shared/Exporters/*.h
 	../Shared/ImGuiSupport/*.cpp ../Shared/ImGuiSupport/*.h
 	../Shared/Importers/*.cpp ../Shared/Importers/*.h
-	../Shared/IODevices/*.cpp ../Shared/IODevices/*.h
 	../Shared/LuaScripting/*.cpp ../Shared/LuaScripting/*.h
 	../Shared/Misc/*.cpp ../Shared/Misc/*.h
 	../Shared/Util/*.cpp ../Shared/Util/*.h

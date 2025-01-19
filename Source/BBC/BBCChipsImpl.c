@@ -46,6 +46,7 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	memset(sys, 0, sizeof(bbc_t));
 	sys->valid = true;
 	sys->debug = desc->debug;
+	sys->rom_select = 0;
 	//sys->audio.callback = desc->audio.callback;
 	//sys->audio.num_samples = _CPC_DEFAULT(desc->audio.num_samples, CPC_DEFAULT_AUDIO_SAMPLES);
 	//CHIPS_ASSERT(sys->audio.num_samples <= CPC_MAX_AUDIO_SAMPLES);
@@ -64,6 +65,7 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	mc6845_init(&sys->crtc, MC6845_TYPE_UM6845R);
 	mc6850_init(&sys->acia);
 	mem_init(&sys->mem_cpu);
+	sys->ic32 = 0x00;	// TODO: determiine initial value
 
 	bbc_video_ula_init(&sys->video_ula);
 
@@ -155,6 +157,7 @@ uint32_t bbc_exec(bbc_t* sys, uint32_t micro_seconds)
 // send a key down event
 void bbc_key_down(bbc_t* sys, int key_code)
 {
+	sys->key_pressed = true;
 	kbd_key_down(&sys->kbd, key_code);
 }
 
@@ -203,7 +206,7 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 			pins = mc6845_iorq(&sys->crtc, crtc_pins) & M6502_PIN_MASK;
 		}
 
-		// ACIA read status
+		// ACIA
 		if (addr == 0xfe08 || addr == 0xfe09)
 			acia_pins |= M6850_CS1;
 
@@ -227,6 +230,19 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 			else
 			{
 				bbc_video_ula_io_write(&sys->video_ula, addr & 0x3, M6502_GET_DATA(pins));
+			}
+		}
+
+		// ROM Select
+		if (addr == 0xfe30)
+		{
+			if (pins & M6502_RW)
+			{
+				M6502_SET_DATA(pins, sys->rom_select);
+			}
+			else
+			{
+				sys->rom_select = M6502_GET_DATA(pins);
 			}
 		}
 
@@ -259,13 +275,57 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 
 	// Tick System VIA
 	// Set CA1 on vsync from 6845
-	//if (sys->crtc.vs)
-	//	system_via_pins |= M6522_CA1;
-	// TODO: set CA2 if any key pressed
-	//if (sys->kbd.) 
-	//	system_via_pins |= M6522_CA2;
-	
+	if (sys->crtc.vs)
+		system_via_pins |= M6522_CA1;
+
+	// Read keyboard
+	// TODO: move this to a separate function?
+
+	if ((sys->ic32 & IC32_LATCH_KEYBOARD_WR) == 0)	// auto scan mode disabled
+	{
+		uint8_t sys_port_a = sys->via_system.pa.pins;
+
+		// bits 0-6 are key we want to read
+		// bit 7 should be set if key is down
+		uint8_t key_code = sys_port_a & 0x7f;
+		uint8_t key_row = (key_code >> 4) & 7;
+		uint8_t key_col = key_code & 0xf;
+		
+		sys->key_scan_column = key_col;
+
+		kbd_set_active_columns(&sys->kbd, 1 << key_col);
+		if (kbd_scan_lines(&sys->kbd) & 1 << key_row)
+			sys_port_a |= 0x80;	// set bit 7
+		else
+			sys_port_a &= 0x7f;	// clear bit 7
+
+		// update port A
+		M6522_SET_PA(system_via_pins, sys_port_a);
+	}
+	else
+	{
+		sys->key_scan_column = (sys->key_scan_column + 1) & 0x15;
+	}
+
+	kbd_set_active_columns(&sys->kbd, 1 << sys->key_scan_column);
+	if (kbd_scan_lines(&sys->kbd))
+	{
+		system_via_pins |= M6522_CA2;
+	}
+	// end keyboard read
+
 	system_via_pins = m6522_tick(&sys->via_system, system_via_pins);
+
+	if((system_via_pins & (M6522_CS1 | M6522_RW)) == M6522_CS1)
+	{ 
+		// Update IC32 Latch
+		uint8_t sys_port_b = M6522_GET_PB(system_via_pins);
+		if (sys_port_b & (1<<3))
+			sys->ic32 |= 1 << (sys_port_b & 0x7);	// set latch bit
+		else
+			sys->ic32 &= ~(1 << (sys_port_b & 0x7));	// clear latch bit
+	}
+
 	if (system_via_pins & M6522_IRQ) 
 		pins |= M6502_IRQ;
 		
@@ -334,7 +394,33 @@ bool bbc_load_snapshot(bbc_t* sys, uint32_t version, bbc_t* src)
 void bbc_init_key_map(bbc_t* sys)
 {
 	kbd_init(&sys->kbd, 1);
-	kbd_register_key(&sys->kbd, '1', 0, 0, 0); // 1
+
+	// TODO: modify this to match the BBC keyboard
+
+	/* shift key is entire line 7 */
+	const int shift = (1 << 0); kbd_register_modifier_line(&sys->kbd, 0, 7);
+	/* ctrl key is entire line 6 */
+	const int ctrl = (1 << 1); kbd_register_modifier_line(&sys->kbd, 1, 6);
+
+	/* alpha-numeric keys */
+	// each string is a row of the keyboard matrix
+	const char* keymap =
+		/* no shift */
+		"     ^]\\[ "/**/"3210      "/* */"-,;:987654"/**/"GFEDCBA@/."/**/"QPONMLKJIH"/**/" ZYXWVUTSR"
+		/* shift */
+		"          "/* */"#\"!       "/**/"=<+*)('&%$"/**/"gfedcba ?>"/**/"qponmlkjih"/**/" zyxwvutsr";
+	for (int layer = 0; layer < 2; layer++) {
+		for (int column = 0; column < 10; column++) {
+			for (int line = 0; line < 6; line++) {
+				int c = keymap[layer * 60 + line * 10 + column];
+				if (c != 0x20) {
+					kbd_register_key(&sys->kbd, c, column, line, layer ? shift : 0);
+				}
+			}
+		}
+	}
+
+	//kbd_register_key(&sys->kbd, '1', 0, 3, 0); // 1
 }
 
 // Video ULA
@@ -424,4 +510,5 @@ uint64_t mc6850_tick(mc6850_t* acia, uint64_t pins)
 
 	// TODO: tick behaviour
 
+	return pins;
 }
