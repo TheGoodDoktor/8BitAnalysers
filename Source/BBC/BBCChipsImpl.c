@@ -426,11 +426,15 @@ void bbc_init_key_map(bbc_t* sys)
 
 	CHIPS_ASSERT(strlen(keymap) == (kRows * kColumns * 2));
 
-	for (int shift = 0; shift < 2; shift++) {
-		for (int column = 0; column < kColumns; column++) {
-			for (int row = 0; row < kRows; row++) {
+	for (int shift = 0; shift < 2; shift++) 
+	{
+		for (int column = 0; column < kColumns; column++) 
+		{
+			for (int row = 0; row < kRows; row++) 
+			{
 				int c = keymap[(shift * (kColumns * kRows)) + (row * kColumns) + column];
-				if (c != 0x20) {
+				if (c != 0x20) 
+				{
 					kbd_register_key(&sys->kbd, c, column, row, shift ? (1<<0) : 0);
 				}
 			}
@@ -438,28 +442,13 @@ void bbc_init_key_map(bbc_t* sys)
 	}
 
 	// special keys
-	kbd_register_key(&sys->kbd, 0x20, 2, 6, 0);    // space
+	kbd_register_key(&sys->kbd, ' ', 2, 6, 0);    // space
 	//kbd_register_key(&sys->kbd, 0x08, 2, 7, 1);    // cursor left
 	//kbd_register_key(&sys->kbd, 0x09, 2, 7, 0);    // cursor right
 	//kbd_register_key(&sys->kbd, 0x0A, 3, 7, 0);    // cursor down
 	//kbd_register_key(&sys->kbd, 0x0B, 3, 7, 1);    // cursor up
 	//kbd_register_key(&sys->kbd, 0x01, 0, 7, 0);    // delete
 	kbd_register_key(&sys->kbd, 0x0D, 9, 4, 0);    // return
-
-	/*
-	kbd_register_key(&sys->kbd, '1', 0, 3, 0); // 1
-	kbd_register_key(&sys->kbd, '2', 1, 3, 0); // 2
-	kbd_register_key(&sys->kbd, '3', 1, 1, 0); // 3
-
-	kbd_register_key(&sys->kbd, '4', 2, 1, 0); // 4
-	kbd_register_key(&sys->kbd, '5', 3, 1, 0); // 5
-	kbd_register_key(&sys->kbd, '6', 4, 3, 0); // 6
-	kbd_register_key(&sys->kbd, '7', 4, 2, 0); // 7
-	kbd_register_key(&sys->kbd, '8', 5, 1, 0); // 8
-	kbd_register_key(&sys->kbd, '9', 6, 2, 0); // 9
-
-	kbd_register_key(&sys->kbd, 'w', 1, 2, 0); // 9
-	*/
 }
 
 // send a key down event

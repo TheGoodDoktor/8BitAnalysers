@@ -295,6 +295,8 @@ int BBCKeyFromImGuiKey(ImGuiKey key)
 {
 	int bbcKey = 0;
 
+	// TODO: handle shift
+
 	if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
 	{
 		bbcKey = '0' + (key - ImGuiKey_0);
