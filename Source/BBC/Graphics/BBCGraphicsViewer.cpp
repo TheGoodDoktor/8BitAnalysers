@@ -269,6 +269,27 @@ void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 	}
 }
 
+std::map<ImGuiKey, int> g_BBCKeysLUT = 
+{
+	{ImGuiKey_Space,		' '},
+	{ImGuiKey_Enter,		0xd},
+	{ImGuiKey_LeftCtrl,		0xf},
+	{ImGuiKey_RightCtrl,	0xf},
+	{ImGuiKey_LeftShift,	0xe},
+	{ImGuiKey_RightShift,	0xe},
+	{ImGuiKey_Backspace,	0xc},
+	{ImGuiKey_Apostrophe,	'\''},
+	{ImGuiKey_Comma,		','},
+	{ImGuiKey_Minus,        '-'},
+	{ImGuiKey_Period,       '.'},
+	{ImGuiKey_Slash,        '/'},
+	{ImGuiKey_Semicolon,    ';'},
+	{ImGuiKey_Equal,        '='},
+	{ImGuiKey_LeftBracket,  '['},
+	{ImGuiKey_Backslash,    '\\'}, 
+	{ImGuiKey_RightBracket, ']'},
+	{ImGuiKey_GraveAccent,  '`'},
+};
 
 int BBCKeyFromImGuiKey(ImGuiKey key)
 {
@@ -282,28 +303,11 @@ int BBCKeyFromImGuiKey(ImGuiKey key)
 	{
 		bbcKey = 'A' + (key - ImGuiKey_A) + 0x20;
 	}
-	else if (key == ImGuiKey_Space)
+	else
 	{
-		bbcKey = ' ';
-	}
-	else if (key == ImGuiKey_Enter)
-	{
-		bbcKey = 0xd;
-	}
-	else if (key == ImGuiKey_LeftCtrl)
-	{
-		// symbol-shift
-		bbcKey = 0xf;
-	}
-	else if (key == ImGuiKey_LeftShift)
-	{
-		// caps-shift
-		bbcKey = 0xe;
-	}
-	else if (key == ImGuiKey_Backspace)
-	{
-		// delete (shift and 0)
-		bbcKey = 0xc;
+		auto keyIt = g_BBCKeysLUT.find(key);
+		if(keyIt != g_BBCKeysLUT.end())
+			return keyIt->second;
 	}
 	return bbcKey;
 }

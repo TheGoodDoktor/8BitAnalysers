@@ -266,6 +266,7 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 
 	// Read keyboard
 	// TODO: move this to a separate function?
+	uint16_t row_mask = 0xff;
 
 	if ((sys->ic32 & IC32_LATCH_KEYBOARD_WR) == 0)	// auto scan mode disabled
 	{
@@ -280,7 +281,7 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 		sys->key_scan_column = key_col;
 
 		kbd_set_active_columns(&sys->kbd, 1 << key_col);
-		if (kbd_scan_lines(&sys->kbd) & 1 << key_row)
+		if (kbd_scan_lines(&sys->kbd) & (1 << key_row))
 			sys_port_a |= 0x80;	// set bit 7
 		else
 			sys_port_a &= 0x7f;	// clear bit 7
@@ -290,7 +291,7 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 	}
 	else
 	{
-		sys->key_scan_column = (sys->key_scan_column + 1) & 0x15;
+		sys->key_scan_column = (sys->key_scan_column + 1) & 0xf;
 	}
 
 	kbd_set_active_columns(&sys->kbd, 1 << sys->key_scan_column);
@@ -393,39 +394,42 @@ void bbc_init_key_map(bbc_t* sys)
 	// shift is column 0, line 0
 	kbd_register_modifier(&sys->kbd, 0, 0, 0);
 	// ctrl is column 1, line 0
-	kbd_register_modifier(&sys->kbd, 1, 1, 0);
+	//kbd_register_modifier(&sys->kbd, 1, 1, 0);
+
+	const int kColumns = 10;
+	const int kRows = 8;
 
 	/* alpha-numeric keys */
 	// each string is a row of the keyboard matrix
 	const char* keymap =
 		/* no shift */
-	//   0123456789AB (col)
-		"            "	// row 0
-		"q345 8 -^   "	// row 1
-		" wet7|90_   "	// row 2
-		"12dr6uop[ +-"	// row 3
-		" axfyjk@: / "	// row 4
-		" scghnl;] #*"	// row 5
-		" z vbm,./   "	// row 6
-		"            "	// row 7
+	//   0123456789 (col)
+		"          "	// row 0
+		"q345 8 -^ "	// row 1
+		" wet7i90_ "	// row 2
+		"12dr6uop[ "	// row 3
+		" axfyjk@: "	// row 4
+		" scghnl;] "	// row 5
+		" z vbm,./ "	// row 6
+		"          "	// row 7
 		
 		/* shift */
-	//   0123456789AB (col)
-		"            "	// row 0
-		"Q#$% ( =~ 67"	// row 1
-		" WET        "	// row 2
-		"!\"DR&UOP{   "	// row 3
-		" AXFYJK     "	// row 4
-		" SCGHNL+}   "	// row 5
-		" Z VBM<>?   "	// row 6
-		"            ";	// row 7
+	//   0123456789 (col)
+		"          "	// row 0
+		"Q#$% ( =~ "	// row 1
+		" WET I    "	// row 2
+		"!\"DR&UOP{ "	// row 3
+		" AXFYJK   "	// row 4
+		" SCGHNL+} "	// row 5
+		" Z VBM<>? "	// row 6
+		"          ";	// row 7
 
-	CHIPS_ASSERT(strlen(keymap) == (8*12*2));
+	CHIPS_ASSERT(strlen(keymap) == (kRows * kColumns * 2));
 
 	for (int shift = 0; shift < 2; shift++) {
-		for (int column = 0; column < 12; column++) {
-			for (int row = 0; row < 8; row++) {
-				int c = keymap[(shift * 96) + (row * 16) + column];
+		for (int column = 0; column < kColumns; column++) {
+			for (int row = 0; row < kRows; row++) {
+				int c = keymap[(shift * (kColumns * kRows)) + (row * kColumns) + column];
 				if (c != 0x20) {
 					kbd_register_key(&sys->kbd, c, column, row, shift ? (1<<0) : 0);
 				}
@@ -433,7 +437,29 @@ void bbc_init_key_map(bbc_t* sys)
 		}
 	}
 
-	//kbd_register_key(&sys->kbd, '1', 0, 3, 0); // 1
+	// special keys
+	kbd_register_key(&sys->kbd, 0x20, 2, 6, 0);    // space
+	//kbd_register_key(&sys->kbd, 0x08, 2, 7, 1);    // cursor left
+	//kbd_register_key(&sys->kbd, 0x09, 2, 7, 0);    // cursor right
+	//kbd_register_key(&sys->kbd, 0x0A, 3, 7, 0);    // cursor down
+	//kbd_register_key(&sys->kbd, 0x0B, 3, 7, 1);    // cursor up
+	//kbd_register_key(&sys->kbd, 0x01, 0, 7, 0);    // delete
+	kbd_register_key(&sys->kbd, 0x0D, 9, 4, 0);    // return
+
+	/*
+	kbd_register_key(&sys->kbd, '1', 0, 3, 0); // 1
+	kbd_register_key(&sys->kbd, '2', 1, 3, 0); // 2
+	kbd_register_key(&sys->kbd, '3', 1, 1, 0); // 3
+
+	kbd_register_key(&sys->kbd, '4', 2, 1, 0); // 4
+	kbd_register_key(&sys->kbd, '5', 3, 1, 0); // 5
+	kbd_register_key(&sys->kbd, '6', 4, 3, 0); // 6
+	kbd_register_key(&sys->kbd, '7', 4, 2, 0); // 7
+	kbd_register_key(&sys->kbd, '8', 5, 1, 0); // 8
+	kbd_register_key(&sys->kbd, '9', 6, 2, 0); // 9
+
+	kbd_register_key(&sys->kbd, 'w', 1, 2, 0); // 9
+	*/
 }
 
 // send a key down event
