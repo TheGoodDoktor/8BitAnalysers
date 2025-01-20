@@ -151,21 +151,7 @@ uint32_t bbc_exec(bbc_t* sys, uint32_t micro_seconds)
 	return num_ticks;
 }
 
-// keybaord ref
-// https://beebwiki.mdfs.net/Keyboard
 
-// send a key down event
-void bbc_key_down(bbc_t* sys, int key_code)
-{
-	sys->key_pressed = true;
-	kbd_key_down(&sys->kbd, key_code);
-}
-
-// send a key up event
-void bbc_key_up(bbc_t* sys, int key_code)
-{
-	kbd_key_up(&sys->kbd, key_code);
-}
 
 uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 {
@@ -390,6 +376,8 @@ bool bbc_load_snapshot(bbc_t* sys, uint32_t version, bbc_t* src)
 }
 
 // Keyboard
+// keyboard ref: https://beebwiki.mdfs.net/Keyboard
+
 
 void bbc_init_key_map(bbc_t* sys)
 {
@@ -398,23 +386,48 @@ void bbc_init_key_map(bbc_t* sys)
 	// TODO: modify this to match the BBC keyboard
 
 	/* shift key is entire line 7 */
-	const int shift = (1 << 0); kbd_register_modifier_line(&sys->kbd, 0, 7);
+	//const int shift = (1 << 0); kbd_register_modifier_line(&sys->kbd, 0, 7);
 	/* ctrl key is entire line 6 */
-	const int ctrl = (1 << 1); kbd_register_modifier_line(&sys->kbd, 1, 6);
+	//const int ctrl = (1 << 1); kbd_register_modifier_line(&sys->kbd, 1, 6);
+
+	// shift is column 0, line 0
+	kbd_register_modifier(&sys->kbd, 0, 0, 0);
+	// ctrl is column 1, line 0
+	kbd_register_modifier(&sys->kbd, 1, 1, 0);
 
 	/* alpha-numeric keys */
 	// each string is a row of the keyboard matrix
 	const char* keymap =
 		/* no shift */
-		"     ^]\\[ "/**/"3210      "/* */"-,;:987654"/**/"GFEDCBA@/."/**/"QPONMLKJIH"/**/" ZYXWVUTSR"
+	//   0123456789ABCDEF (col)
+		"                "	// row 0
+		"q345 8 -^ 67    "	// row 1
+		"                "	// row 2
+		"                "	// row 3
+		"                "	// row 4
+		"                "	// row 5
+		"                "	// row 6
+		"                "	// row 7
+		
 		/* shift */
-		"          "/* */"#\"!       "/**/"=<+*)('&%$"/**/"gfedcba ?>"/**/"qponmlkjih"/**/" zyxwvutsr";
-	for (int layer = 0; layer < 2; layer++) {
-		for (int column = 0; column < 10; column++) {
-			for (int line = 0; line < 6; line++) {
-				int c = keymap[layer * 60 + line * 10 + column];
+	//   0123456789ABCDEF (col)
+		"                "	// row 0
+		"Q#$% ( =~ 67    "	// row 1
+		"                "	// row 2
+		"                "	// row 3
+		"                "	// row 4
+		"                "	// row 5
+		"                "	// row 6
+		"                ";	// row 7
+
+	CHIPS_ASSERT(strlen(keymap) == 256);
+
+	for (int shift = 0; shift < 2; shift++) {
+		for (int column = 0; column < 16; column++) {
+			for (int row = 0; row < 8; row++) {
+				int c = keymap[(shift * 128) + (row * 16) + column];
 				if (c != 0x20) {
-					kbd_register_key(&sys->kbd, c, column, line, layer ? shift : 0);
+					kbd_register_key(&sys->kbd, c, column, row, shift ? (1<<0) : 0);
 				}
 			}
 		}
@@ -422,6 +435,20 @@ void bbc_init_key_map(bbc_t* sys)
 
 	//kbd_register_key(&sys->kbd, '1', 0, 3, 0); // 1
 }
+
+// send a key down event
+void bbc_key_down(bbc_t* sys, int key_code)
+{
+	sys->key_pressed = true;
+	kbd_key_down(&sys->kbd, key_code);
+}
+
+// send a key up event
+void bbc_key_up(bbc_t* sys, int key_code)
+{
+	kbd_key_up(&sys->kbd, key_code);
+}
+
 
 // Video ULA
 
