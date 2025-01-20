@@ -399,33 +399,33 @@ void bbc_init_key_map(bbc_t* sys)
 	// each string is a row of the keyboard matrix
 	const char* keymap =
 		/* no shift */
-	//   0123456789ABCDEF (col)
-		"                "	// row 0
-		"q345 8 -^ 67    "	// row 1
-		"                "	// row 2
-		"                "	// row 3
-		"                "	// row 4
-		"                "	// row 5
-		"                "	// row 6
-		"                "	// row 7
+	//   0123456789AB (col)
+		"            "	// row 0
+		"q345 8 -^   "	// row 1
+		" wet7|90_   "	// row 2
+		"12dr6uop[ +-"	// row 3
+		" axfyjk@: / "	// row 4
+		" scghnl;] #*"	// row 5
+		" z vbm,./   "	// row 6
+		"            "	// row 7
 		
 		/* shift */
-	//   0123456789ABCDEF (col)
-		"                "	// row 0
-		"Q#$% ( =~ 67    "	// row 1
-		"                "	// row 2
-		"                "	// row 3
-		"                "	// row 4
-		"                "	// row 5
-		"                "	// row 6
-		"                ";	// row 7
+	//   0123456789AB (col)
+		"            "	// row 0
+		"Q#$% ( =~ 67"	// row 1
+		" WET        "	// row 2
+		"!\"DR&UOP{   "	// row 3
+		" AXFYJK     "	// row 4
+		" SCGHNL+}   "	// row 5
+		" Z VBM<>?   "	// row 6
+		"            ";	// row 7
 
-	CHIPS_ASSERT(strlen(keymap) == 256);
+	CHIPS_ASSERT(strlen(keymap) == (8*12*2));
 
 	for (int shift = 0; shift < 2; shift++) {
-		for (int column = 0; column < 16; column++) {
+		for (int column = 0; column < 12; column++) {
 			for (int row = 0; row < 8; row++) {
-				int c = keymap[(shift * 128) + (row * 16) + column];
+				int c = keymap[(shift * 96) + (row * 16) + column];
 				if (c != 0x20) {
 					kbd_register_key(&sys->kbd, c, column, row, shift ? (1<<0) : 0);
 				}
