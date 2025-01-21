@@ -1412,6 +1412,11 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 833,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 864,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -1454,6 +1459,29 @@
                 },
                 {
                     "Address": 881,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 903,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 905,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 907,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 909,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 911,
                     "ByteSize": 2,
                     "OperandType": 2
                 },
@@ -1817,6 +1845,11 @@
                     "Name": "label_8B38"
                 },
                 {
+                    "Address": 833,
+                    "LabelType": 2,
+                    "Name": "label_8B41"
+                },
+                {
                     "Address": 836,
                     "LabelType": 2,
                     "Name": "label_8B44"
@@ -1835,6 +1868,11 @@
                     "Address": 883,
                     "LabelType": 2,
                     "Name": "label_8B73"
+                },
+                {
+                    "Address": 893,
+                    "LabelType": 2,
+                    "Name": "label_8B7D"
                 },
                 {
                     "Address": 903,
@@ -10184,6 +10222,17 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 603,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 606,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
                     "Address": 612,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -10787,6 +10836,11 @@
                     "Name": "label_C5EE"
                 },
                 {
+                    "Address": 500,
+                    "LabelType": 2,
+                    "Name": "label_C5F4"
+                },
+                {
                     "Address": 508,
                     "LabelType": 2,
                     "Name": "label_C5FC"
@@ -11301,6 +11355,11 @@
                 {
                     "Address": 223,
                     "ByteSize": 1
+                },
+                {
+                    "Address": 337,
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 340,

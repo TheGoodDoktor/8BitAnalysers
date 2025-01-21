@@ -47,6 +47,9 @@ void FBBCGraphicsViewer::DrawScreenViewer()
 	ImGui::Text("Screen mode: %d", ScreenMode);
 	ImGui::Text("Display address: 0x%04x", DisplayAddress);
 	ImGui::Text("Teletext: %s", bbc.video_ula.teletext ? "Yes" : "No");
+	ImGui::Text("Caps Lock: %s", (bbc.ic32 & IC32_LATCH_CAPS_LOCK_LED) == 0 ? "On" : "Off");
+	ImGui::Text("Shift Lock: %s", (bbc.ic32 & IC32_LATCH_SHIFT_LOCK_LED) == 0 ? "On" : "Off");
+
 
 	//UpdateScreenPixelImage();
 	if (bbc.video_ula.teletext)
@@ -269,47 +272,79 @@ void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 	}
 }
 
-std::map<ImGuiKey, int> g_BBCKeysLUT = 
+struct FKeyVal
 {
-	{ImGuiKey_Space,		' '},
-	{ImGuiKey_Enter,		0xd},
-	{ImGuiKey_LeftCtrl,		0xf},
-	{ImGuiKey_RightCtrl,	0xf},
-	{ImGuiKey_LeftShift,	0xe},
-	{ImGuiKey_RightShift,	0xe},
-	{ImGuiKey_Backspace,	0xc},
-	{ImGuiKey_Apostrophe,	'\''},
-	{ImGuiKey_Comma,		','},
-	{ImGuiKey_Minus,        '-'},
-	{ImGuiKey_Period,       '.'},
-	{ImGuiKey_Slash,        '/'},
-	{ImGuiKey_Semicolon,    ';'},
-	{ImGuiKey_Equal,        '='},
-	{ImGuiKey_LeftBracket,  '['},
-	{ImGuiKey_Backslash,    '\\'}, 
-	{ImGuiKey_RightBracket, ']'},
-	{ImGuiKey_GraveAccent,  '`'},
+    int NoShift;
+    int Shifted;
+};
+
+static std::map<ImGuiKey, FKeyVal> g_BBCKeysLUT = 
+{
+	{ImGuiKey_Space,		{BBC_KEYCODE_SPACE, BBC_KEYCODE_SPACE}},
+	{ImGuiKey_Enter,		{BBC_KEYCODE_ENTER, BBC_KEYCODE_ENTER}},
+	{ImGuiKey_LeftCtrl,		{BBC_KEYCODE_CTRL, BBC_KEYCODE_CTRL}},
+	{ImGuiKey_RightCtrl,	{BBC_KEYCODE_CTRL, BBC_KEYCODE_CTRL}},
+	{ImGuiKey_LeftShift,	{BBC_KEYCODE_SHIFT, BBC_KEYCODE_SHIFT}},
+	{ImGuiKey_RightShift,	{BBC_KEYCODE_SHIFT, BBC_KEYCODE_SHIFT}},
+	{ImGuiKey_Backspace,	{BBC_KEYCODE_BACKSPACE, BBC_KEYCODE_BACKSPACE}},
+	{ImGuiKey_LeftArrow,	{BBC_KEYCODE_CURSOR_LEFT, BBC_KEYCODE_CURSOR_LEFT}},
+	{ImGuiKey_RightArrow,	{BBC_KEYCODE_CURSOR_RIGHT, BBC_KEYCODE_CURSOR_RIGHT}},
+	{ImGuiKey_UpArrow,		{BBC_KEYCODE_CURSOR_UP, BBC_KEYCODE_CURSOR_UP}},
+	{ImGuiKey_DownArrow,	{BBC_KEYCODE_CURSOR_DOWN, BBC_KEYCODE_CURSOR_DOWN}},
+	{ImGuiKey_CapsLock,		{BBC_KEYCODE_CAPS_LOCK, BBC_KEYCODE_CAPS_LOCK}},
+	{ImGuiKey_Apostrophe,	{'\'', '@'}},
+	{ImGuiKey_Comma,		{',', '<'}},
+	{ImGuiKey_Minus,		{'-', '_'}},
+	{ImGuiKey_Period,		{'.', '>'}},
+	{ImGuiKey_Slash,		{'/', '?'}},
+	{ImGuiKey_Semicolon,	{';', ':'}},
+	{ImGuiKey_Equal,		{'=', '+'}},
+	{ImGuiKey_LeftBracket,	{'[', '{'}},
+	{ImGuiKey_Backslash,	{'\\', '|'}},
+	{ImGuiKey_RightBracket,	{']', '}'}},
+	{ImGuiKey_GraveAccent,	{'`', '~'}},
 };
 
 int BBCKeyFromImGuiKey(ImGuiKey key)
 {
-	int bbcKey = 0;
+    uint32_t bbcKey = 0;
+    bool isShifted = ImGui::GetIO().KeyShift;
 
-	// TODO: handle shift
-
-	if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
-	{
-		bbcKey = '0' + (key - ImGuiKey_0);
-	}
-	else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
-	{
-		bbcKey = 'A' + (key - ImGuiKey_A) + 0x20;
-	}
-	else
-	{
-		auto keyIt = g_BBCKeysLUT.find(key);
-		if(keyIt != g_BBCKeysLUT.end())
-			return keyIt->second;
-	}
-	return bbcKey;
+    if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
+    {
+        if (isShifted)
+        {
+            // Handle shifted number keys (e.g., '!' for '1')
+            switch (key)
+            {
+                case ImGuiKey_1: bbcKey = (uint8_t)'!'; break;
+                case ImGuiKey_2: bbcKey = (uint8_t)'"'; break;
+                case ImGuiKey_3: bbcKey = (uint8_t)'£'; break;
+                case ImGuiKey_4: bbcKey = (uint8_t)'$'; break;
+                case ImGuiKey_5: bbcKey = (uint8_t)'%'; break;
+                case ImGuiKey_6: bbcKey = (uint8_t)'^'; break;
+                case ImGuiKey_7: bbcKey = (uint8_t)'&'; break;
+                case ImGuiKey_8: bbcKey = (uint8_t)'*'; break;
+                case ImGuiKey_9: bbcKey = (uint8_t)'('; break;
+                case ImGuiKey_0: bbcKey = (uint8_t)')'; break;
+            }
+        }
+        else
+        {
+            bbcKey = '0' + (key - ImGuiKey_0);
+        }
+    }
+    else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
+    {
+        bbcKey = isShifted ? 'A' + (key - ImGuiKey_A) : 'a' + (key - ImGuiKey_A);
+    }
+    else
+    {
+        auto keyIt = g_BBCKeysLUT.find(key);
+        if (keyIt != g_BBCKeysLUT.end())
+        {
+            bbcKey = isShifted ? keyIt->second.Shifted : keyIt->second.NoShift;
+        }
+    }
+    return bbcKey;
 }

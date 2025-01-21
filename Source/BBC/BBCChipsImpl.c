@@ -292,8 +292,12 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 	else
 	{
 		sys->key_scan_column = (sys->key_scan_column + 1) & 0xf;
+		// skip scanning column 0
+		//if (sys->key_scan_column == 0)
+		//	sys->key_scan_column = 1;
 	}
 
+	
 	kbd_set_active_columns(&sys->kbd, 1 << sys->key_scan_column);
 	if (kbd_scan_lines(&sys->kbd))
 	{
@@ -401,7 +405,7 @@ void bbc_init_key_map(bbc_t* sys)
 
 	/* alpha-numeric keys */
 	// each string is a row of the keyboard matrix
-	const char* keymap =
+	const uint8_t* keymap =
 		/* no shift */
 	//   0123456789 (col)
 		"          "	// row 0
@@ -417,9 +421,9 @@ void bbc_init_key_map(bbc_t* sys)
 	//   0123456789 (col)
 		"          "	// row 0
 		"Q#$% ( =~ "	// row 1
-		" WET I    "	// row 2
+		" WET&I) £ "	// row 2
 		"!\"DR&UOP{ "	// row 3
-		" AXFYJK   "	// row 4
+		" AXFYJK * "	// row 4
 		" SCGHNL+} "	// row 5
 		" Z VBM<>? "	// row 6
 		"          ";	// row 7
@@ -435,20 +439,23 @@ void bbc_init_key_map(bbc_t* sys)
 				int c = keymap[(shift * (kColumns * kRows)) + (row * kColumns) + column];
 				if (c != 0x20) 
 				{
-					kbd_register_key(&sys->kbd, c, column, row, shift ? (1<<0) : 0);
+					kbd_register_key(&sys->kbd, (int)c, column, row, shift ? (1<<0) : 0);
 				}
 			}
 		}
 	}
 
 	// special keys
-	kbd_register_key(&sys->kbd, ' ', 2, 6, 0);    // space
-	//kbd_register_key(&sys->kbd, 0x08, 2, 7, 1);    // cursor left
-	//kbd_register_key(&sys->kbd, 0x09, 2, 7, 0);    // cursor right
-	//kbd_register_key(&sys->kbd, 0x0A, 3, 7, 0);    // cursor down
-	//kbd_register_key(&sys->kbd, 0x0B, 3, 7, 1);    // cursor up
-	//kbd_register_key(&sys->kbd, 0x01, 0, 7, 0);    // delete
-	kbd_register_key(&sys->kbd, 0x0D, 9, 4, 0);    // return
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_SPACE, 2, 6, 0);    // space
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_CURSOR_LEFT, 9, 1, 1);    // cursor left
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_CURSOR_RIGHT, 9, 7, 0);    // cursor right
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_CURSOR_DOWN, 9, 2, 0);    // cursor down
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_CURSOR_UP, 9, 3, 1);    // cursor up
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_BACKSPACE, 9, 5, 0);    // backspace -> delete
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_ENTER, 9, 4, 0);    // return
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_SHIFT, 0, 0, 0);    // shift
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_CTRL, 1, 0, 0);    // ctrl
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_CAPS_LOCK, 0, 4, 0);    // caps lock
 }
 
 // send a key down event

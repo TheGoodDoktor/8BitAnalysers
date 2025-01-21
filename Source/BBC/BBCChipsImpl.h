@@ -31,8 +31,32 @@ extern "C" {
 #define IC32_LATCH_KEYBOARD_WR		(1<<3)
 #define IC32_LATCH_SCREENADDR_B0	(1<<4)
 #define IC32_LATCH_SCREENADDR_B1	(1<<5)
-#define IC32_LATCH_CAPSLOCK_LED		(1<<6)
+#define IC32_LATCH_CAPS_LOCK_LED	(1<<6)
 #define IC32_LATCH_SHIFT_LOCK_LED	(1<<7)
+
+// Key Codes
+#define BBC_KEYCODE_CURSOR_LEFT	0x08
+#define BBC_KEYCODE_CURSOR_RIGHT	0x09
+#define BBC_KEYCODE_CURSOR_DOWN	0x0A
+#define BBC_KEYCODE_CURSOR_UP	0x0B
+
+#define BBC_KEYCODE_BACKSPACE	0x0C
+#define BBC_KEYCODE_ENTER		0x0D
+#define BBC_KEYCODE_SHIFT		0x0E
+#define BBC_KEYCODE_CTRL		0x0F
+#define BBC_KEYCODE_CAPS_LOCK	0x10
+#define BBC_KEYCODE_SHIFT_LOCK	0x11
+#define BBC_KEYCODE_SPACE		0x20
+#define BBC_KEYCODE_F0			0xF0
+#define BBC_KEYCODE_F1			0xF1
+#define BBC_KEYCODE_F2			0xF2
+#define BBC_KEYCODE_F3			0xF3
+#define BBC_KEYCODE_F4			0xF4
+#define BBC_KEYCODE_F5			0xF5
+#define BBC_KEYCODE_F6			0xF6
+#define BBC_KEYCODE_F7			0xF7
+#define BBC_KEYCODE_F8			0xF8
+#define BBC_KEYCODE_F9			0xF9
 
 
 // configuration parameters for bbc_init()
