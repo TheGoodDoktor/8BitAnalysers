@@ -11357,6 +11357,16 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 235,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 238,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 337,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -11473,6 +11483,7 @@
                 {
                     "Address": 389,
                     "ByteSize": 3,
+                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -11794,6 +11805,7 @@
                 {
                     "Address": 555,
                     "ByteSize": 3,
+                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -12574,7 +12586,8 @@
                 },
                 {
                     "Address": 975,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "CRTC register 12 - Start Address"
                 },
                 {
                     "Address": 977,
@@ -12634,6 +12647,12 @@
                     "Address": 1008,
                     "ByteSize": 3,
                     "OperandType": 2
+                }
+            ],
+            "CommentBlocks": [
+                {
+                    "Address": 555,
+                    "Comment": "Y : First Register\nA : First Value\nX : Second Value"
                 }
             ],
             "LabelInfo": [
@@ -12752,13 +12771,13 @@
                     "Address": 404,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_C994"
+                    "Name": "HardwareScrollDown"
                 },
                 {
                     "Address": 420,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_C9A4"
+                    "Name": "HardwareScrollUp"
                 },
                 {
                     "Address": 435,
@@ -12769,7 +12788,7 @@
                     "Address": 445,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_C9BD"
+                    "Name": "VDU26EntryPoint"
                 },
                 {
                     "Address": 449,
@@ -12780,28 +12799,28 @@
                     "Address": 502,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_C9F6"
+                    "Name": "SetTextCursorCRTCAddress"
                 },
                 {
                     "Address": 514,
                     "LabelType": 2,
-                    "Name": "label_CA02"
+                    "Name": "setHardwareCursorAddress"
                 },
                 {
                     "Address": 526,
                     "LabelType": 2,
-                    "Name": "label_CA0E"
+                    "Name": "setHardwareScreenOrCursorAddress"
                 },
                 {
                     "Address": 551,
                     "LabelType": 2,
-                    "Name": "label_CA27"
+                    "Name": "setCursorPositionMode7"
                 },
                 {
                     "Address": 555,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_CA2B"
+                    "Name": "SetTwoCRTCRegisters"
                 },
                 {
                     "Address": 569,
@@ -12890,6 +12909,11 @@
                     "Name": "label_CB24"
                 },
                 {
+                    "Address": 819,
+                    "LabelType": 2,
+                    "Name": "label_CB33"
+                },
+                {
                     "Address": 826,
                     "LabelType": 2,
                     "Name": "label_CB3A"
@@ -12908,6 +12932,11 @@
                     "Address": 944,
                     "LabelType": 2,
                     "Name": "label_CBB0"
+                },
+                {
+                    "Address": 961,
+                    "LabelType": 2,
+                    "Name": "initializeDisplayAndHomeCursor"
                 }
             ],
             "PageId": 50
@@ -25156,6 +25185,46 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 703,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 705,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 707,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 709,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 711,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 715,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 717,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 719,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 721,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 729,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -25684,6 +25753,11 @@
                     "Name": "function_EA9C"
                 },
                 {
+                    "Address": 684,
+                    "LabelType": 2,
+                    "Name": "label_EAAC"
+                },
+                {
                     "Address": 694,
                     "LabelType": 2,
                     "Name": "label_EAB6"
@@ -25708,6 +25782,16 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_EABF"
+                },
+                {
+                    "Address": 715,
+                    "LabelType": 2,
+                    "Name": "label_EACB"
+                },
+                {
+                    "Address": 721,
+                    "LabelType": 2,
+                    "Name": "label_EAD1"
                 },
                 {
                     "Address": 729,
@@ -29765,12 +29849,13 @@
             "CodeInfo": [
                 {
                     "Address": 509,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Flags": 1
                 },
                 {
                     "Address": 512,
                     "ByteSize": 2,
-                    "Flags": 2,
+                    "Flags": 3,
                     "SMC": true
                 },
                 {

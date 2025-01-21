@@ -186,7 +186,7 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 			uint64_t crtc_pins = (pins & M6502_PIN_MASK) | MC6845_CS;
 			if (pins & M6502_RW)
 				crtc_pins |= MC6845_RW; 
-			if ((addr &1) == 0)	
+			if ((addr &1) == 1)	
 				crtc_pins |= MC6845_RS;	// register select
 
 			pins = mc6845_iorq(&sys->crtc, crtc_pins) & M6502_PIN_MASK;

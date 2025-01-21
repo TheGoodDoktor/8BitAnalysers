@@ -36,7 +36,9 @@ void FBBCGraphicsViewer::DrawScreenViewer()
 	const bbc_t& bbc = pBBCEmu->GetBBC();
 	const mc6845_t& crtc = bbc.crtc;
 
-	//DisplayAddress = pCPCEmu->Screen.GetScreenAddrStart();
+	uint16_t crtcStartAddress = (crtc.start_addr_hi << 8) | crtc.start_addr_lo;
+
+	DisplayAddress = (crtcStartAddress & 0x800) << 3 | 0x3C00 | (crtcStartAddress & 0x3FF);
 	WidthChars = crtc.h_displayed;
 	HeightChars = crtc.v_displayed;
 	CharacterHeight = crtc.max_scanline_addr + 1;
@@ -238,7 +240,7 @@ void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 
 	const bbc_t& bbc = pBBCEmu->GetBBC();
 
-	uint16_t ttxScreenAddress = 0x7C00;//(bbc.crtc.ma & 0x800) << 3 | 0x3C00 | (bbc.crtc.ma & 0x3FF);
+	uint16_t ttxScreenAddress = DisplayAddress;//(bbc.crtc.ma & 0x800) << 3 | 0x3C00 | (bbc.crtc.ma & 0x3FF);
 
 	for (int y = 0; y < HeightChars; y++)
 	{

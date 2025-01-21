@@ -86,6 +86,30 @@
                 {
                     "Address": 713,
                     "DisplayType": 11
+                },
+                {
+                    "Address": 842,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 843,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 846,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 848,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 849,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 852,
+                    "DisplayType": 11
                 }
             ],
             "LabelInfo": [
@@ -1596,13 +1620,13 @@
                     "Address": 842,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_034A"
+                    "Name": "VDUTextCursorCRTCAddressLow"
                 },
                 {
                     "Address": 843,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_034B"
+                    "Name": "VDUTextCursorCRTCAddressHigh"
                 },
                 {
                     "Address": 844,
@@ -1620,7 +1644,7 @@
                     "Address": 846,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_034E"
+                    "Name": "VDUStartScreenAddressHighByte"
                 },
                 {
                     "Address": 847,
@@ -1632,13 +1656,13 @@
                     "Address": 848,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0350"
+                    "Name": "VDUScreenTopLeftAddressLow"
                 },
                 {
                     "Address": 849,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0351"
+                    "Name": "VDUScreenTopLeftAddressHigh"
                 },
                 {
                     "Address": 850,
@@ -1656,7 +1680,7 @@
                     "Address": 852,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0354"
+                    "Name": "VDUScreenSizeHighByte"
                 },
                 {
                     "Address": 853,
