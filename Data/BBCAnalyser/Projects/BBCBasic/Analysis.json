@@ -371,6 +371,42 @@
                     "Name": "zp_2D"
                 },
                 {
+                    "Address": 49,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_31"
+                },
+                {
+                    "Address": 50,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_32"
+                },
+                {
+                    "Address": 51,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_33"
+                },
+                {
+                    "Address": 52,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_34"
+                },
+                {
+                    "Address": 53,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_35"
+                },
+                {
+                    "Address": 54,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_36"
+                },
+                {
                     "Address": 55,
                     "Global": true,
                     "LabelType": 0,
@@ -417,6 +453,24 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_3E"
+                },
+                {
+                    "Address": 63,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_3F"
+                },
+                {
+                    "Address": 72,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_48"
+                },
+                {
+                    "Address": 73,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_49"
                 },
                 {
                     "Address": 180,
@@ -1840,6 +1894,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_047F"
+                },
+                {
+                    "Address": 512,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0600"
                 }
             ],
             "PageId": 1

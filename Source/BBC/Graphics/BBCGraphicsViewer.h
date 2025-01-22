@@ -19,8 +19,16 @@ public:
 	void	UpdateScreenPixelImage();
 	void	UpdateScreenTeletextImage();
 
+	void	UpdateMode0Screen();
+	void	UpdateMode1Screen();
+	void	UpdateMode2Screen();
+	void	UpdateMode3Screen();
+	void	UpdateMode4Screen();
+	void	UpdateMode5Screen();
+	void	UpdateMode6Screen();
+
 private:
-	FGraphicsView* ScreenView = nullptr;
+	//FGraphicsView* ScreenView = nullptr;
 	FBBCEmulator* pBBCEmu = nullptr;
 
 

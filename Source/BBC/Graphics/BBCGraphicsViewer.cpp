@@ -1,7 +1,7 @@
 #include "BBCGraphicsViewer.h"
 #include "../BBCEmulator.h"
 #include "../BBCChipsImpl.h"
-#include <Util/GraphicsView.h>
+#include "BBCGraphicsView.h"
 
 #include <imgui.h>
 #include <CodeAnalyser/UI/UIColours.h>
@@ -36,9 +36,9 @@ void FBBCGraphicsViewer::DrawScreenViewer()
 	const bbc_t& bbc = pBBCEmu->GetBBC();
 	const mc6845_t& crtc = bbc.crtc;
 
-	uint16_t crtcStartAddress = (crtc.start_addr_hi << 8) | crtc.start_addr_lo;
+	//uint16_t crtcStartAddress = (crtc.start_addr_hi << 8) | crtc.start_addr_lo;
 
-	DisplayAddress = (crtcStartAddress & 0x800) << 3 | 0x3C00 | (crtcStartAddress & 0x3FF);
+	DisplayAddress = (crtc.start_addr_hi << 8) | crtc.start_addr_lo;
 	WidthChars = crtc.h_displayed;
 	HeightChars = crtc.v_displayed;
 	CharacterHeight = crtc.max_scanline_addr + 1;
@@ -99,18 +99,124 @@ uint32_t FBBCGraphicsViewer::GetRGBValueForPixel(int colourIndex, uint32_t heatM
 	return finalColour;
 }
 
+//Graphics 640 x 256
+//Colours 2
+//Text 80 x 32
+void FBBCGraphicsViewer::UpdateMode0Screen()
+{
+	const uint32_t cols[] = { 0x00000000,0xffffffff };
+	uint16_t currentScreenAddress = DisplayAddress * 8;//0x3000;
+	const int charByteSize = 8;
+	const int charLineByteSize = charByteSize * WidthChars;
+	for (int y = 0; y < HeightChars; y++)
+	{
+		for (int x = 0; x < WidthChars; x++)
+		{
+			const uint16_t charAddress = currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize));
+			const uint8_t* pChar = pBBCEmu->GetMemPtr(charAddress);
+			pScreenView->Draw1BppImageAt(pChar, x * CharacterWidth, y * CharacterHeight, CharacterWidth, CharacterHeight, cols);
+		}
+	}
+}
+
+//Mode 1
+//Graphics 320 x 256
+//Colours 4
+//Text 40 x 32
+void FBBCGraphicsViewer::UpdateMode1Screen()
+{
+	const uint32_t cols[] = { 0xff000000,0xff0000ff,0xff00ff00,0xffff0000,0xffffffff };	// TODO: get colours from palette
+	uint16_t currentScreenAddress = DisplayAddress * 8;//0x3000;
+	const int charByteSize = 8;
+	const int charLineByteSize = charByteSize * WidthChars;
+
+	for (int y = 0; y < HeightChars; y++)
+	{
+		for (int x = 0; x < WidthChars; x++)
+		{
+			int xp = x * CharacterWidth;
+			int yp = y * CharacterHeight;
+			uint32_t* pBase = pScreenView->GetPixelBuffer() + (xp + (yp * pScreenView->GetWidth()));
+
+			const uint16_t charAddress = currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize));
+			const uint8_t* pChar = pBBCEmu->GetMemPtr(charAddress);
+
+			for (int l = 0; l < CharacterHeight; l++)
+			{
+				uint8_t charLine = pChar[0];
+
+				for (int c = 0; c < CharacterWidth / 2; c++)
+				{
+					const int shift = ((CharacterWidth / 2) -1) - c;
+					const uint8_t pixelVal = ((charLine >> shift) & 1) | ((charLine & (1 << (4+ shift))) >> (3+ shift));
+
+					*pBase++ = cols[pixelVal];
+					*pBase++ = cols[pixelVal];
+				}
+				pChar ++;
+				pBase += pScreenView->GetWidth() - CharacterWidth;
+			}
+			//pScreenView->Draw2BppImageAt(pChar, x * CharacterWidth, y * CharacterHeight, CharacterWidth, CharacterHeight, cols);
+		}
+	}
+}
+
+//Mode 2
+//Graphics 160 x 256
+//Colours 16
+//Text 20 x 32
+void FBBCGraphicsViewer::UpdateMode2Screen()
+{
+
+}
+
+//Mode 3
+//Graphics Not available
+//Colours 2
+//Text 80 x 25
+void FBBCGraphicsViewer::UpdateMode3Screen()
+{
+
+}
+
+//Mode 4
+//Graphics 320 x 256
+//Colours 2
+//Text 40 x 32
+void FBBCGraphicsViewer::UpdateMode4Screen()
+{
+
+}
+
+//Mode 5
+//Graphics 160 x 256
+//Colours 4
+//Text 20 x 32
+void FBBCGraphicsViewer::UpdateMode5Screen()
+{
+
+}
+
+//Mode 6
+//Graphics Not available
+//Colours 2
+//Text 40 x 25
+void FBBCGraphicsViewer::UpdateMode6Screen()
+{
+
+}
 
 void FBBCGraphicsViewer::UpdateScreenPixelImage(void)
 {
 	const FCodeAnalysisState& state = GetCodeAnalysis();
-
-	const int16_t startOffset = DisplayAddress & 0x3fff;
-	const int16_t startBankId = Bank == -1 ? state.GetBankFromAddress(DisplayAddress) : Bank;
-	const FCodeAnalysisBank* pBank = state.GetBank(startBankId);
-
+	
 	const int lastScreenWidth = ScreenWidth;
 	const int lastScreenHeight = ScreenHeight;
-	ScreenWidth = WidthChars * 8;
+
+	CharacterWidth = 8;
+	CharacterHeight = 8;
+
+	ScreenWidth = WidthChars * CharacterWidth;
 	ScreenHeight = HeightChars * CharacterHeight;
 
 	if (ScreenWidth != lastScreenWidth || ScreenHeight != lastScreenHeight)
@@ -121,6 +227,32 @@ void FBBCGraphicsViewer::UpdateScreenPixelImage(void)
 		pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
 	}
 
+	switch (ScreenMode)
+	{
+	case 0:
+		UpdateMode0Screen();
+		break;
+	case 1:
+		UpdateMode1Screen();
+		break;
+	case 2:
+		UpdateMode2Screen();
+		break;
+	case 3:
+		UpdateMode3Screen();
+		break;
+	case 4:
+		UpdateMode4Screen();
+		break;
+	case 5:
+		UpdateMode5Screen();
+		break;
+	case 6:
+		UpdateMode6Screen();
+		break;
+	}
+
+#if 0
 	const FCodeAnalysisViewState& viewState = pBBCEmu->GetCodeAnalysis().GetFocussedViewState();
 	const uint32_t* pEnd = pScreenView->GetPixelBuffer() + (ScreenWidth * ScreenHeight);
 	const int bitShift = ScreenMode == 0 ? 0x1 : 0x0;
@@ -174,6 +306,7 @@ void FBBCGraphicsViewer::UpdateScreenPixelImage(void)
 			pCurPixBufAddr += ScreenWidth * (CharacterHeight - 1);
 		}
 	}
+#endif
 }
 
 
@@ -240,13 +373,15 @@ void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 
 	const bbc_t& bbc = pBBCEmu->GetBBC();
 
-	uint16_t ttxScreenAddress = DisplayAddress;//(bbc.crtc.ma & 0x800) << 3 | 0x3C00 | (bbc.crtc.ma & 0x3FF);
+	uint16_t currentScreenAddress = DisplayAddress;//(bbc.crtc.ma & 0x800) << 3 | 0x3C00 | (bbc.crtc.ma & 0x3FF);
 
 	for (int y = 0; y < HeightChars; y++)
 	{
 		for (int x = 0; x < WidthChars; x++)
 		{
-			int charCode = pBBCEmu->ReadByte(ttxScreenAddress++);//.0x41; // 'A' - TODO : get the actual character code
+			const uint16_t ttxScreenAddress = (currentScreenAddress & 0x800) << 3 | 0x3C00 | (currentScreenAddress & 0x3FF);
+			const int charCode = pBBCEmu->ReadByte(ttxScreenAddress);
+			currentScreenAddress++;
 
 			if (charCode < 0x20)
 			{

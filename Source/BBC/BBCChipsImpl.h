@@ -118,6 +118,7 @@ typedef struct
 	// memory
 	uint8_t		ram[0x8000];		// 32K RAM
 	uint8_t		rom_basic[0x4000];	// 16K BASIC ROM
+	uint8_t*	rom_slot_ptr;		// pointer to selected ROM slot
 	uint8_t		rom_os[0x4000];		// 16K OS ROM
 
 	//alignas(64) 

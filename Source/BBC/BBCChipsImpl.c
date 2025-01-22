@@ -486,6 +486,7 @@ void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data)
 	if(reg == 0)	// write to UL reg
 	{
 		ula->ula_reg = data;
+		ula->teletext = (data & 0x2) != 0;
 		switch (data)
 		{
 		case 0x9C:
@@ -505,7 +506,6 @@ void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data)
 			break;
 		case 0x4B:
 			ula->screen_mode = 7;
-			ula->teletext = true;
 			break;
 		}
 	}
