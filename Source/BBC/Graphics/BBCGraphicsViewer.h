@@ -19,13 +19,13 @@ public:
 	void	UpdateScreenPixelImage();
 	void	UpdateScreenTeletextImage();
 
-	void	UpdateMode0Screen();
-	void	UpdateMode1Screen();
-	void	UpdateMode2Screen();
-	void	UpdateMode3Screen();
-	void	UpdateMode4Screen();
-	void	UpdateMode5Screen();
-	void	UpdateMode6Screen();
+	void	UpdateGraphicsScreen1bpp();
+	void	UpdateGraphicsScreen2bpp();
+	void	UpdateGraphicsScreen4bpp();
+	//void	UpdateMode3Screen();
+	//void	UpdateMode4Screen();
+	//void	UpdateMode5Screen();
+	//void	UpdateMode6Screen();
 
 private:
 	//FGraphicsView* ScreenView = nullptr;

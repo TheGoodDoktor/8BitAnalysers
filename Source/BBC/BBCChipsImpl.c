@@ -485,8 +485,15 @@ void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data)
 {
 	if(reg == 0)	// write to UL reg
 	{
+		int noCharsPerLine[] = {10,20,40,80};
+
 		ula->ula_reg = data;
+		ula->flash = (data & 0x1) != 0;
 		ula->teletext = (data & 0x2) != 0;
+		ula->num_chars_per_line = noCharsPerLine[(data >> 2) & 0x3];
+		ula->mc6845_high_freq = (data & 0x10) != 0;
+		ula->cursor_width_bytes = (data >> 5);
+
 		switch (data)
 		{
 		case 0x9C:

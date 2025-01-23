@@ -99,6 +99,14 @@ public:
 
 	bbc_t& GetBBC() { return BBCEmu; }
 
+	uint32_t GetColour(uint8_t ulaIndex) const
+	{
+		// invert the RGB bits
+		const uint8_t ulaVal = BBCEmu.video_ula.palette[ulaIndex];
+		const uint8_t colourIndex = ((~(ulaVal & 7)) & 7) | (ulaVal & 8);
+		return ColourPalette[colourIndex];
+	}
+
 private:
 	bbc_t				BBCEmu;
 	FBBCLaunchConfig	LaunchConfig;
@@ -109,6 +117,8 @@ private:
 	uint16_t				PreviousPC = 0;
 	FBBCIOAnalysis			IOAnalysis;
 	std::array<uint8_t, 3 * 256> IOMemBuffer;	// 3 pages
+
+	static uint32_t		ColourPalette[16];
 
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment

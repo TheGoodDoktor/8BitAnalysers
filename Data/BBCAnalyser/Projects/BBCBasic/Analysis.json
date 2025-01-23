@@ -62,6 +62,10 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 585,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 600,
                     "DisplayType": 11
                 },
@@ -1050,7 +1054,7 @@
                     "Address": 585,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0249"
+                    "Name": "VideoULAPaletteValue"
                 },
                 {
                     "Address": 586,

@@ -6,6 +6,9 @@
 #include <imgui.h>
 #include <CodeAnalyser/UI/UIColours.h>
 
+// TODO: move this to the emulator class
+
+
 FBBCGraphicsViewer::FBBCGraphicsViewer(FBBCEmulator* pEmu)
 	: FGraphicsViewer(pEmu)
 {
@@ -58,7 +61,7 @@ void FBBCGraphicsViewer::DrawScreenViewer()
 		UpdateScreenTeletextImage();
 	else
 		UpdateScreenPixelImage();
-	pScreenView->Draw();
+	pScreenView->Draw(320,256);
 
 	// big hack (tm)
 	// Check keys - not event driven, hopefully perf isn't too bad
@@ -99,12 +102,9 @@ uint32_t FBBCGraphicsViewer::GetRGBValueForPixel(int colourIndex, uint32_t heatM
 	return finalColour;
 }
 
-//Graphics 640 x 256
-//Colours 2
-//Text 80 x 32
-void FBBCGraphicsViewer::UpdateMode0Screen()
+void FBBCGraphicsViewer::UpdateGraphicsScreen1bpp()
 {
-	const uint32_t cols[] = { 0x00000000,0xffffffff };
+	const uint32_t cols[] = { pBBCEmu->GetColour(0),pBBCEmu->GetColour(8) };	// this is because of the way the ULA works
 	uint16_t currentScreenAddress = DisplayAddress * 8;//0x3000;
 	const int charByteSize = 8;
 	const int charLineByteSize = charByteSize * WidthChars;
@@ -119,13 +119,10 @@ void FBBCGraphicsViewer::UpdateMode0Screen()
 	}
 }
 
-//Mode 1
-//Graphics 320 x 256
-//Colours 4
-//Text 40 x 32
-void FBBCGraphicsViewer::UpdateMode1Screen()
+void FBBCGraphicsViewer::UpdateGraphicsScreen2bpp()
 {
-	const uint32_t cols[] = { 0xff000000,0xff0000ff,0xff00ff00,0xffff0000,0xffffffff };	// TODO: get colours from palette
+	// 0 2 8 10
+	const uint32_t cols[] = { pBBCEmu->GetColour(0),pBBCEmu->GetColour(2),pBBCEmu->GetColour(8),pBBCEmu->GetColour(10) };	// TODO: get colours from palette
 	uint16_t currentScreenAddress = DisplayAddress * 8;//0x3000;
 	const int charByteSize = 8;
 	const int charLineByteSize = charByteSize * WidthChars;
@@ -156,59 +153,56 @@ void FBBCGraphicsViewer::UpdateMode1Screen()
 				pChar ++;
 				pBase += pScreenView->GetWidth() - CharacterWidth;
 			}
-			//pScreenView->Draw2BppImageAt(pChar, x * CharacterWidth, y * CharacterHeight, CharacterWidth, CharacterHeight, cols);
 		}
 	}
 }
 
-//Mode 2
-//Graphics 160 x 256
-//Colours 16
-//Text 20 x 32
-void FBBCGraphicsViewer::UpdateMode2Screen()
+void FBBCGraphicsViewer::UpdateGraphicsScreen4bpp()
 {
+	uint16_t currentScreenAddress = DisplayAddress * 8;//0x3000;
+	const int charByteSize = 8;
+	const int charLineByteSize = charByteSize * WidthChars;
 
-}
+	for (int y = 0; y < HeightChars; y++)
+	{
+		for (int x = 0; x < WidthChars; x++)
+		{
+			int xp = x * CharacterWidth;
+			int yp = y * CharacterHeight;
+			uint32_t* pBase = pScreenView->GetPixelBuffer() + (xp + (yp * pScreenView->GetWidth()));
 
-//Mode 3
-//Graphics Not available
-//Colours 2
-//Text 80 x 25
-void FBBCGraphicsViewer::UpdateMode3Screen()
-{
+			const uint16_t charAddress = currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize));
+			const uint8_t* pChar = pBBCEmu->GetMemPtr(charAddress);
 
-}
+			for (int l = 0; l < CharacterHeight; l++)
+			{
+				uint8_t charLine = pChar[0];
+				const uint8_t col0 = ((charLine & 2) >> 1) | ((charLine & 8) >> 2) | ((charLine & 0x20) >> 3) | ((charLine & 0x80) >> 4);
+				const uint8_t col1 = ((charLine & 1) >> 0) | ((charLine & 4) >> 1) | ((charLine & 0x10) >> 2) | ((charLine & 0x40) >> 3);
 
-//Mode 4
-//Graphics 320 x 256
-//Colours 2
-//Text 40 x 32
-void FBBCGraphicsViewer::UpdateMode4Screen()
-{
+				for (int c = 0; c < CharacterWidth / 4; c++)
+				{
+					const int shift = ((CharacterWidth / 4) - 1) - c;
 
-}
-
-//Mode 5
-//Graphics 160 x 256
-//Colours 4
-//Text 20 x 32
-void FBBCGraphicsViewer::UpdateMode5Screen()
-{
-
-}
-
-//Mode 6
-//Graphics Not available
-//Colours 2
-//Text 40 x 25
-void FBBCGraphicsViewer::UpdateMode6Screen()
-{
-
+					uint32_t pixelCol = pBBCEmu->GetColour(c == 0 ? col0 : col1);
+					*pBase++ = pixelCol;
+					*pBase++ = pixelCol;
+					*pBase++ = pixelCol;
+					*pBase++ = pixelCol;
+				}
+				pChar++;
+				pBase += pScreenView->GetWidth() - CharacterWidth;
+			}
+		}
+	}
 }
 
 void FBBCGraphicsViewer::UpdateScreenPixelImage(void)
 {
 	const FCodeAnalysisState& state = GetCodeAnalysis();
+
+	const bbc_t& bbc = pBBCEmu->GetBBC();
+	const mc6845_t& crtc = bbc.crtc;
 	
 	const int lastScreenWidth = ScreenWidth;
 	const int lastScreenHeight = ScreenHeight;
@@ -221,92 +215,25 @@ void FBBCGraphicsViewer::UpdateScreenPixelImage(void)
 
 	if (ScreenWidth != lastScreenWidth || ScreenHeight != lastScreenHeight)
 	{
-		// temp. recreate the screen view
-		// todo: need to create this up front. 
 		delete pScreenView;
 		pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
 	}
 
-	switch (ScreenMode)
+	const int bpp = crtc.h_displayed / bbc.video_ula.num_chars_per_line;
+
+	switch (bpp)
 	{
-	case 0:
-		UpdateMode0Screen();
-		break;
 	case 1:
-		UpdateMode1Screen();
+		UpdateGraphicsScreen1bpp();
 		break;
 	case 2:
-		UpdateMode2Screen();
-		break;
-	case 3:
-		UpdateMode3Screen();
+		UpdateGraphicsScreen2bpp();
 		break;
 	case 4:
-		UpdateMode4Screen();
-		break;
-	case 5:
-		UpdateMode5Screen();
-		break;
-	case 6:
-		UpdateMode6Screen();
+		UpdateGraphicsScreen4bpp();
 		break;
 	}
 
-#if 0
-	const FCodeAnalysisViewState& viewState = pBBCEmu->GetCodeAnalysis().GetFocussedViewState();
-	const uint32_t* pEnd = pScreenView->GetPixelBuffer() + (ScreenWidth * ScreenHeight);
-	const int bitShift = ScreenMode == 0 ? 0x1 : 0x0;
-
-	for (int l = 0; l < CharacterHeight; l++)
-	{
-		uint32_t* pCurPixBufAddr = pScreenView->GetPixelBuffer() + (ScreenWidth * l);
-		int16_t curBnkOffset = startOffset + l * 2048;
-
-		for (int c = 0; c < HeightChars; c++)
-		{
-			uint8_t screenByte = 0;
-			uint32_t heatMapCol = 0;
-
-			// Draw a single pixel row
-			for (int x = 0; x < ScreenWidth; x++)
-			{
-				const int p = (x & 0x3);
-				if ((p & 0x3) == 0)
-				{
-					screenByte = pBank->Memory[curBnkOffset];
-					const FCodeAnalysisPage& page = pBank->Pages[curBnkOffset >> FCodeAnalysisPage::kPageShift];
-					heatMapCol = GetHeatmapColourForMemoryAddress(page, curBnkOffset, state.CurrentFrameNo, HeatmapThreshold);
-
-					curBnkOffset++;
-
-					// Deal with crossing a 2k page boundary. 
-					if ((curBnkOffset % 2048) == 0)
-						curBnkOffset -= 2048;
-				}
-
-				ImU32 pixelColour = 0;
-				if (viewState.HighlightAddress.IsValid())
-				{
-					if (viewState.HighlightAddress.Address == pBank->GetMappedAddress() + curBnkOffset)
-					{
-						// Flash this pixel if the address is highlighted in the code analysis view 
-						pixelColour = Colours::GetFlashColour();
-					}
-				}
-				if (!pixelColour)
-				{
-					const int colourIndex = GetHWColourIndexForPixel(screenByte, p >> bitShift, ScreenMode);
-					pixelColour = GetRGBValueForPixel(colourIndex, heatMapCol);
-				}
-				assert(pCurPixBufAddr < pEnd);
-				*pCurPixBufAddr = pixelColour;
-				pCurPixBufAddr++;
-			}
-
-			pCurPixBufAddr += ScreenWidth * (CharacterHeight - 1);
-		}
-	}
-#endif
 }
 
 

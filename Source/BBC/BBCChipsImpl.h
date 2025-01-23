@@ -78,7 +78,11 @@ typedef struct
 {
 	uint8_t		ula_reg;
 	int			screen_mode;
+	bool		flash;
 	bool		teletext;
+	int			num_chars_per_line;
+	bool		mc6845_high_freq;
+	int			cursor_width_bytes;
 	uint8_t		palette[16];
 } bbc_video_ula_t;
 

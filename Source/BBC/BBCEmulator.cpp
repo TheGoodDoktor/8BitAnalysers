@@ -15,6 +15,28 @@ const std::string kAppTitle = "BBC Analyser";
 
 const char* kROMAnalysisFilename = "BBCRomsAnalysis.json";
 
+uint32_t FBBCEmulator::ColourPalette[] =
+{
+	0xff000000,	// Black
+	0xffff0000,	// Red
+	0xff00ff00,	// Green
+	0xffffff00,	// Yellow
+	0xff0000ff,	// Blue
+	0xffff00ff,	// Magenta
+	0xff00ffff,	// Cyan
+	0xffffffff,	// White
+
+	// colours 8-15 are flashing, values here are the initial colour
+	0xff000000,	// Black/White
+	0xffff0000,	// Red/Cyan
+	0xff00ff00,	// Green/Magenta
+	0xffffff00,	// Yellow/Blue
+	0xff0000ff,	// Blue/Yellow
+	0xffff00ff,	// Magenta/Green
+	0xff00ffff,	// Cyan/Red
+	0xffffffff,	// White/Black
+};
+
 void SetWindowTitle(const char* pTitle);
 
 
