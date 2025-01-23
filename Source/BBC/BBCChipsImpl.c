@@ -477,8 +477,8 @@ void bbc_key_up(bbc_t* sys, int key_code)
 void bbc_video_ula_init(bbc_video_ula_t* ula)
 {
 	ula->ula_reg = 0;
-	ula->screen_mode = 0;
 	ula->teletext = false;
+	ula->num_chars_per_line = 80;
 }
 
 void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data)
@@ -493,28 +493,6 @@ void bbc_video_ula_io_write(bbc_video_ula_t* ula, uint8_t reg, uint8_t data)
 		ula->num_chars_per_line = noCharsPerLine[(data >> 2) & 0x3];
 		ula->mc6845_high_freq = (data & 0x10) != 0;
 		ula->cursor_width_bytes = (data >> 5);
-
-		switch (data)
-		{
-		case 0x9C:
-			ula->screen_mode = 0;
-			break;
-		case 0xD8:
-			ula->screen_mode = 1;
-			break;
-		case 0xF4:
-			ula->screen_mode = 2;
-			break;
-		case 0x88:
-			ula->screen_mode = 4;
-			break;
-		case 0xC4:
-			ula->screen_mode = 5;
-			break;
-		case 0x4B:
-			ula->screen_mode = 7;
-			break;
-		}
 	}
 	else if(reg == 1)
 	{ 

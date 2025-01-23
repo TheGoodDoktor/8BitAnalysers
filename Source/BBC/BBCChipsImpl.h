@@ -31,6 +31,7 @@ extern "C" {
 #define IC32_LATCH_KEYBOARD_WR		(1<<3)
 #define IC32_LATCH_SCREENADDR_B0	(1<<4)
 #define IC32_LATCH_SCREENADDR_B1	(1<<5)
+#define IC32_LATCH_SCREENADDR_MASK	(0x30)
 #define IC32_LATCH_CAPS_LOCK_LED	(1<<6)
 #define IC32_LATCH_SHIFT_LOCK_LED	(1<<7)
 
@@ -76,13 +77,13 @@ typedef struct
 
 typedef struct
 {
-	uint8_t		ula_reg;
-	int			screen_mode;
+	uint8_t		ula_reg;	// raw register value
 	bool		flash;
 	bool		teletext;
 	int			num_chars_per_line;
 	bool		mc6845_high_freq;
 	int			cursor_width_bytes;
+
 	uint8_t		palette[16];
 } bbc_video_ula_t;
 

@@ -22,10 +22,8 @@ public:
 	void	UpdateGraphicsScreen1bpp();
 	void	UpdateGraphicsScreen2bpp();
 	void	UpdateGraphicsScreen4bpp();
-	//void	UpdateMode3Screen();
-	//void	UpdateMode4Screen();
-	//void	UpdateMode5Screen();
-	//void	UpdateMode6Screen();
+
+	uint16_t WrapAddress(uint16_t addr) const;
 
 private:
 	//FGraphicsView* ScreenView = nullptr;
@@ -35,7 +33,6 @@ private:
 	int			DisplayAddress = 0x0000;
 	int			WidthChars = 40;
 	int			HeightChars = 25;
-	int			ScreenMode = 1;
 	int			CharacterHeight = 8;
 	int 		CharacterWidth = 8;
 

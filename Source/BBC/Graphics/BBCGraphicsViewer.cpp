@@ -45,11 +45,9 @@ void FBBCGraphicsViewer::DrawScreenViewer()
 	WidthChars = crtc.h_displayed;
 	HeightChars = crtc.v_displayed;
 	CharacterHeight = crtc.max_scanline_addr + 1;
-	ScreenMode = bbc.video_ula.screen_mode;
 
 	ImGui::Text("Screen width chars: %d x %d", WidthChars, HeightChars);
 	ImGui::Text("Character height: %d", CharacterHeight);
-	ImGui::Text("Screen mode: %d", ScreenMode);
 	ImGui::Text("Display address: 0x%04x", DisplayAddress);
 	ImGui::Text("Teletext: %s", bbc.video_ula.teletext ? "Yes" : "No");
 	ImGui::Text("Caps Lock: %s", (bbc.ic32 & IC32_LATCH_CAPS_LOCK_LED) == 0 ? "On" : "Off");
@@ -102,19 +100,38 @@ uint32_t FBBCGraphicsViewer::GetRGBValueForPixel(int colourIndex, uint32_t heatM
 	return finalColour;
 }
 
+uint16_t FBBCGraphicsViewer::WrapAddress(uint16_t addr) const
+{
+	const uint16_t offsets[] = {0x4000,0x6000,0x3000,0x5800};
+	if (addr < 0x8000)
+		return addr;
+
+	addr += offsets[(pBBCEmu->GetBBC().ic32 & IC32_LATCH_SCREENADDR_MASK)>>4];
+	return addr & 0x7fff;
+}
+
 void FBBCGraphicsViewer::UpdateGraphicsScreen1bpp()
 {
 	const uint32_t cols[] = { pBBCEmu->GetColour(0),pBBCEmu->GetColour(8) };	// this is because of the way the ULA works
-	uint16_t currentScreenAddress = DisplayAddress * 8;//0x3000;
+	uint16_t currentScreenAddress = DisplayAddress * 8;
+	mc6845_t& crtc = pBBCEmu->GetBBC().crtc;
+	const uint16_t cursorAddress = WrapAddress(((crtc.cursor_hi << 8) | crtc.cursor_lo) * 8);
 	const int charByteSize = 8;
 	const int charLineByteSize = charByteSize * WidthChars;
+
 	for (int y = 0; y < HeightChars; y++)
 	{
 		for (int x = 0; x < WidthChars; x++)
 		{
-			const uint16_t charAddress = currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize));
-			const uint8_t* pChar = pBBCEmu->GetMemPtr(charAddress);
-			pScreenView->Draw1BppImageAt(pChar, x * CharacterWidth, y * CharacterHeight, CharacterWidth, CharacterHeight, cols);
+			const uint16_t charAddress = WrapAddress(currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize)));
+			for (int line = 0; line < CharacterHeight; line++)
+			{
+				const uint8_t charLine = pBBCEmu->ReadByte(WrapAddress(charAddress + line));
+				pScreenView->DrawCharLine(charLine, x * CharacterWidth, (y * CharacterHeight) + line, cols[1], cols[0]);
+			}
+			// Draw cursor
+			if (charAddress == cursorAddress)
+				pScreenView->DrawCharLine(0xff, x * CharacterWidth, (y * CharacterHeight) + CharacterHeight-1, cols[1], cols[0]);
 		}
 	}
 }
@@ -123,9 +140,11 @@ void FBBCGraphicsViewer::UpdateGraphicsScreen2bpp()
 {
 	// 0 2 8 10
 	const uint32_t cols[] = { pBBCEmu->GetColour(0),pBBCEmu->GetColour(2),pBBCEmu->GetColour(8),pBBCEmu->GetColour(10) };	// TODO: get colours from palette
-	uint16_t currentScreenAddress = DisplayAddress * 8;//0x3000;
+	uint16_t currentScreenAddress = DisplayAddress * 8;
 	const int charByteSize = 8;
 	const int charLineByteSize = charByteSize * WidthChars;
+	mc6845_t& crtc = pBBCEmu->GetBBC().crtc;
+	const uint16_t cursorAddress = WrapAddress(((crtc.cursor_hi << 8) | crtc.cursor_lo) * 8);
 
 	for (int y = 0; y < HeightChars; y++)
 	{
@@ -135,12 +154,12 @@ void FBBCGraphicsViewer::UpdateGraphicsScreen2bpp()
 			int yp = y * CharacterHeight;
 			uint32_t* pBase = pScreenView->GetPixelBuffer() + (xp + (yp * pScreenView->GetWidth()));
 
-			const uint16_t charAddress = currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize));
+			const uint16_t charAddress = WrapAddress(currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize)));
 			const uint8_t* pChar = pBBCEmu->GetMemPtr(charAddress);
 
 			for (int l = 0; l < CharacterHeight; l++)
 			{
-				uint8_t charLine = pChar[0];
+				const uint8_t charLine = pBBCEmu->ReadByte(WrapAddress(charAddress + l));
 
 				for (int c = 0; c < CharacterWidth / 2; c++)
 				{
@@ -153,15 +172,22 @@ void FBBCGraphicsViewer::UpdateGraphicsScreen2bpp()
 				pChar ++;
 				pBase += pScreenView->GetWidth() - CharacterWidth;
 			}
+
+			// Draw cursor
+			if (charAddress == cursorAddress)
+				pScreenView->DrawCharLine(0xff, x * CharacterWidth, (y * CharacterHeight) + CharacterHeight - 1, cols[3], cols[0]);
+
 		}
 	}
 }
 
 void FBBCGraphicsViewer::UpdateGraphicsScreen4bpp()
 {
-	uint16_t currentScreenAddress = DisplayAddress * 8;//0x3000;
+	uint16_t currentScreenAddress = DisplayAddress * 8;
 	const int charByteSize = 8;
 	const int charLineByteSize = charByteSize * WidthChars;
+	mc6845_t& crtc = pBBCEmu->GetBBC().crtc;
+	const uint16_t cursorAddress = WrapAddress(((crtc.cursor_hi << 8) | crtc.cursor_lo) * 8);
 
 	for (int y = 0; y < HeightChars; y++)
 	{
@@ -171,28 +197,28 @@ void FBBCGraphicsViewer::UpdateGraphicsScreen4bpp()
 			int yp = y * CharacterHeight;
 			uint32_t* pBase = pScreenView->GetPixelBuffer() + (xp + (yp * pScreenView->GetWidth()));
 
-			const uint16_t charAddress = currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize));
-			const uint8_t* pChar = pBBCEmu->GetMemPtr(charAddress);
+			const uint16_t charAddress = WrapAddress(currentScreenAddress + ((y * charLineByteSize) + (x * charByteSize)));
 
 			for (int l = 0; l < CharacterHeight; l++)
 			{
-				uint8_t charLine = pChar[0];
+				const uint8_t charLine = pBBCEmu->ReadByte(WrapAddress(charAddress + l));
 				const uint8_t col0 = ((charLine & 2) >> 1) | ((charLine & 8) >> 2) | ((charLine & 0x20) >> 3) | ((charLine & 0x80) >> 4);
 				const uint8_t col1 = ((charLine & 1) >> 0) | ((charLine & 4) >> 1) | ((charLine & 0x10) >> 2) | ((charLine & 0x40) >> 3);
 
 				for (int c = 0; c < CharacterWidth / 4; c++)
 				{
-					const int shift = ((CharacterWidth / 4) - 1) - c;
-
 					uint32_t pixelCol = pBBCEmu->GetColour(c == 0 ? col0 : col1);
 					*pBase++ = pixelCol;
 					*pBase++ = pixelCol;
 					*pBase++ = pixelCol;
 					*pBase++ = pixelCol;
 				}
-				pChar++;
 				pBase += pScreenView->GetWidth() - CharacterWidth;
 			}
+
+			// Draw cursor
+			if (charAddress == cursorAddress)
+				pScreenView->DrawCharLine(0xff, x * CharacterWidth, (y * CharacterHeight) + CharacterHeight - 1, pBBCEmu->GetColour(7), pBBCEmu->GetColour(0));
 		}
 	}
 }
