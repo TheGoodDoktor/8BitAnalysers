@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#define BBC_FREQUENCY (985248)              // clock frequency in Hz
+#define BBC_FREQUENCY (4000000)	// clock frequency in Hz 
 #define BBC_DISPLAY_WIDTH (768)
 #define BBC_DISPLAY_HEIGHT (272)
 #define BBC_FRAMEBUFFER_WIDTH (1024)
@@ -118,7 +118,7 @@ typedef struct
 	uint8_t		rom_select;
 	bool		valid;
 	chips_debug_t debug;
-
+	uint32_t	tick_counter;
 
 	// memory
 	uint8_t		ram[0x8000];		// 32K RAM

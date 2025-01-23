@@ -375,6 +375,24 @@
                     "Name": "zp_2D"
                 },
                 {
+                    "Address": 46,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_2E"
+                },
+                {
+                    "Address": 47,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_2F"
+                },
+                {
+                    "Address": 48,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_30"
+                },
+                {
                     "Address": 49,
                     "Global": true,
                     "LabelType": 0,
@@ -465,6 +483,24 @@
                     "Name": "zp_3F"
                 },
                 {
+                    "Address": 64,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_40"
+                },
+                {
+                    "Address": 65,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_41"
+                },
+                {
+                    "Address": 66,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_42"
+                },
+                {
                     "Address": 72,
                     "Global": true,
                     "LabelType": 0,
@@ -475,6 +511,24 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_49"
+                },
+                {
+                    "Address": 75,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_4B"
+                },
+                {
+                    "Address": 76,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_4C"
+                },
+                {
+                    "Address": 78,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_4E"
                 },
                 {
                     "Address": 180,

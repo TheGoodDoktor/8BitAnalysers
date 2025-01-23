@@ -151,18 +151,15 @@ uint32_t bbc_exec(bbc_t* sys, uint32_t micro_seconds)
 	return num_ticks;
 }
 
-
-
-uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
+uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 {
-	CHIPS_ASSERT(sys && sys->valid);
 	pins = m6502_tick(&sys->cpu, pins);
 
 	// the IRQ and NMI pins will be set by the HW each tick
 	pins &= ~(M6502_IRQ | M6502_NMI);
 
 	const uint16_t addr = M6502_GET_ADDR(pins);
-	
+
 	uint64_t system_via_pins = pins & M6502_PIN_MASK;
 	uint64_t user_via_pins = pins & M6502_PIN_MASK;
 	uint64_t acia_pins = pins & M6502_PIN_MASK;
@@ -185,8 +182,8 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 			// 6845 in/out
 			uint64_t crtc_pins = (pins & M6502_PIN_MASK) | MC6845_CS;
 			if (pins & M6502_RW)
-				crtc_pins |= MC6845_RW; 
-			if ((addr &1) == 1)	
+				crtc_pins |= MC6845_RW;
+			if ((addr & 1) == 1)
 				crtc_pins |= MC6845_RS;	// register select
 
 			pins = mc6845_iorq(&sys->crtc, crtc_pins) & M6502_PIN_MASK;
@@ -277,7 +274,7 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 		uint8_t key_code = sys_port_a & 0x7f;
 		uint8_t key_row = (key_code >> 4) & 7;
 		uint8_t key_col = key_code & 0xf;
-		
+
 		sys->key_scan_column = key_col;
 
 		kbd_set_active_columns(&sys->kbd, 1 << key_col);
@@ -297,7 +294,7 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 		//	sys->key_scan_column = 1;
 	}
 
-	
+
 	kbd_set_active_columns(&sys->kbd, 1 << sys->key_scan_column);
 	if (kbd_scan_lines(&sys->kbd))
 	{
@@ -307,34 +304,33 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 
 	system_via_pins = m6522_tick(&sys->via_system, system_via_pins);
 
-	if((system_via_pins & (M6522_CS1 | M6522_RW)) == M6522_CS1)
-	{ 
+	if ((system_via_pins & (M6522_CS1 | M6522_RW)) == M6522_CS1)
+	{
 		// Update IC32 Latch
 		uint8_t sys_port_b = M6522_GET_PB(system_via_pins);
-		if (sys_port_b & (1<<3))
+		if (sys_port_b & (1 << 3))
 			sys->ic32 |= 1 << (sys_port_b & 0x7);	// set latch bit
 		else
 			sys->ic32 &= ~(1 << (sys_port_b & 0x7));	// clear latch bit
 	}
 
-	if (system_via_pins & M6522_IRQ) 
+	if (system_via_pins & M6522_IRQ)
 		pins |= M6502_IRQ;
-		
+
 	// read?
-	if ((system_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW)) 
+	if ((system_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW))
 		pins = M6502_COPY_DATA(pins, system_via_pins);
-		
+
 
 	// Tick User VIA
 	user_via_pins = m6522_tick(&sys->via_user, user_via_pins);
-	if (user_via_pins & M6522_IRQ) 
+	if (user_via_pins & M6522_IRQ)
 		pins |= M6502_IRQ;
-		
-	if ((user_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW)) 
+
+	if ((user_via_pins & (M6522_CS1 | M6522_RW)) == (M6522_CS1 | M6522_RW))
 		pins = M6502_COPY_DATA(pins, user_via_pins);
 
-	// Tick CRTC
-	uint64_t crtc_pins = mc6845_tick(&sys->crtc);
+	
 
 	// Tick ACIA
 	acia_pins = mc6850_tick(&sys->acia, acia_pins);
@@ -343,8 +339,32 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 
 	// TODO: implement the rest of the tick
 
-	
 
+
+	return pins;
+}
+
+void _bbc_tick_crtc(bbc_t* sys)
+{
+	// Tick CRTC
+	uint64_t crtc_pins = mc6845_tick(&sys->crtc);
+}
+
+uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
+{
+	CHIPS_ASSERT(sys && sys->valid);
+
+	// tick the CPU & CRTC at alternate cycles
+	if ((sys->tick_counter & 1) == 0)
+	{
+		pins = _bbc_tick_cpu(sys, pins);
+	}
+	if ((sys->tick_counter & 1) == 1)
+	{
+		_bbc_tick_crtc(sys);
+	}
+
+	sys->tick_counter++;
 	return pins;
 }
 
