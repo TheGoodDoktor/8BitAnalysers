@@ -52,10 +52,8 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	//CHIPS_ASSERT(sys->audio.num_samples <= CPC_MAX_AUDIO_SAMPLES);
 	
 	// initialize ROMS
-	CHIPS_ASSERT(desc->roms.os.ptr && (desc->roms.os.size == 0x4000));
-	CHIPS_ASSERT(desc->roms.basic.ptr && (desc->roms.basic.size == 0x4000));
-	memcpy(sys->rom_os, desc->roms.os.ptr, 0x4000);
-	memcpy(sys->rom_basic, desc->roms.basic.ptr, 0x4000);
+	CHIPS_ASSERT(desc->os_rom.ptr && (desc->os_rom.size == 0x4000));
+	memcpy(sys->rom_os, desc->os_rom.ptr, 0x4000);
 	
 	// initialize the hardware
 	sys->pins = m6502_init(&sys->cpu,&desc->cpu);
@@ -72,8 +70,17 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	bbc_init_key_map(sys);
 
 	// initial memory mapping
+
+	// 32K RAM
 	mem_map_ram(&sys->mem_cpu, 0, 0x0000, 0x8000, sys->ram);
-	mem_map_rom(&sys->mem_cpu, 0, 0x8000, 0x4000, sys->rom_basic);
+
+	// Map in first ROM slot
+	for (int slot = 0; slot < BBC_NUM_ROM_SLOTS; slot++)
+		sys->rom_slots[slot] = desc->roms[slot];
+	sys->rom_select = 0xf;
+	mem_map_rom(&sys->mem_cpu, 0, 0x8000, 0x4000, sys->rom_slots[sys->rom_select]);
+	
+	// map in OS rom
 	mem_map_rom(&sys->mem_cpu, 0, 0xC000, 0x4000, sys->rom_os);
 }
 

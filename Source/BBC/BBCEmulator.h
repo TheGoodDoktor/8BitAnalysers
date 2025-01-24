@@ -19,13 +19,14 @@ struct FBBCBankIds
 {
 	int16_t RAM = -1;
 	int16_t OSROM = -1;
-	int16_t BasicROM = -1;
+	//int16_t BasicROM = -1;
 };
 
 struct FBBCConfig;
 
 struct FROMSlot
 {
+	bool bPresent = false;
 	int16_t BankId = -1;
 	uint8_t ROMData[0x4000];
 };
@@ -131,7 +132,7 @@ private:
 
 	static uint32_t		ColourPalette[16];
 
-	FROMSlot			ROMSlots[16];
+	FROMSlot			ROMSlots[BBC_NUM_ROM_SLOTS];
 
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment

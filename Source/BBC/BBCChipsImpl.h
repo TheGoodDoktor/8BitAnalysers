@@ -21,7 +21,7 @@ extern "C" {
 #define BBC_FRAMEBUFFER_HEIGHT (312)
 #define BBC_FRAMEBUFFER_SIZE_BYTES (BBC_FRAMEBUFFER_WIDTH * BBC_FRAMEBUFFER_HEIGHT)
 #define BBC_NUM_HWCOLORS (32 + 32)  // 32 colors plus pure black plus debug visualization colors
-
+#define BBC_NUM_ROM_SLOTS (16)
 #define BBC_SNAPSHOT_VERSION (1)
 
 // IC32 Latch pins
@@ -66,12 +66,8 @@ typedef struct
 	m6502_desc_t		cpu;
 	chips_debug_t		debug;
 	chips_audio_desc_t	audio;
-
-	// ROM images
-	struct {
-		chips_range_t os;
-		chips_range_t basic;
-	} roms;
+	chips_range_t os_rom;
+	void* roms[16];
 
 } bbc_desc_t;
 
@@ -122,8 +118,7 @@ typedef struct
 
 	// memory
 	uint8_t		ram[0x8000];		// 32K RAM
-	uint8_t		rom_basic[0x4000];	// 16K BASIC ROM
-	uint8_t*	rom_slot_ptr;		// pointer to selected ROM slot
+	uint8_t*	rom_slots[16];		// pointer to selected ROM slot
 	uint8_t		rom_os[0x4000];		// 16K OS ROM
 
 	//alignas(64) 

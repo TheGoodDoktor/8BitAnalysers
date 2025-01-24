@@ -112,28 +112,35 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
 
 	// Load ROM images
-	pBBCConfig->RomFolder;
-	desc.roms.os.ptr = LoadBinaryFile("Roms/OS-1.2.rom", desc.roms.os.size);
-	desc.roms.basic.ptr = LoadBinaryFile("Roms/BASIC2.rom", desc.roms.basic.size);
+	desc.os_rom.ptr = LoadBinaryFile("Roms/OS-1.2.rom", desc.os_rom.size);
+
+	for (int slot = 0; slot < BBC_NUM_ROM_SLOTS; slot++)
+	{
+		desc.roms[slot] = ROMSlots[slot].ROMData;
+	}
 
 	bbc_init(&BBCEmu, &desc);
 
-	if (desc.roms.os.ptr)
-		free(desc.roms.os.ptr);
-	if (desc.roms.basic.ptr)
-		free(desc.roms.basic.ptr);
+	if (desc.os_rom.ptr)
+		free(desc.os_rom.ptr);
 
 	CPUType = ECPUType::M6502;
 	SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 
 	// Set up memory banks
 	BankIds.RAM = CodeAnalysis.CreateBank("RAM", 32, BBCEmu.ram, false, 0x0000, true);					// RAM - $0000 - $7FFF - pages 0-31 - 32K
-	BankIds.BasicROM = CodeAnalysis.CreateBank("Basic ROM", 16, BBCEmu.rom_basic, true, 0x8000, true);	// Basic ROM - $8000 - $BFFF - pages 32-47 - 16K
+	LoadROM(pBBCConfig->BasicRom.c_str(), 0xf);	// top slot for Basic ROM
 	BankIds.OSROM = CodeAnalysis.CreateBank("OS ROM", 16, BBCEmu.rom_os, true, 0xC000, true);			// OS ROM - $C000 - $FFFF - pages 48-63 - 16K
+
+	int slot = 0xE;
+	for (const auto& rom : pBBCConfig->AdditionalRoms)
+	{
+		LoadROM(rom.c_str(), slot--);
+	}
 
 	// map in banks
 	CodeAnalysis.MapBank(BankIds.RAM, 0, EBankAccess::ReadWrite);
-	CodeAnalysis.MapBank(BankIds.BasicROM, 32, EBankAccess::ReadWrite);
+	CodeAnalysis.MapBank(ROMSlots[0xf].BankId, 32, EBankAccess::ReadWrite);
 	CodeAnalysis.MapBank(BankIds.OSROM, 48, EBankAccess::ReadWrite);
 
 	// setup code analysis
@@ -159,6 +166,29 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	return true;
 }
+
+// TODO: implement
+bool FBBCEmulator::LoadROM(const char* pFileName, int slot)
+{
+	size_t romSize = 0;
+	const std::string fname =	pBBCConfig->RomFolder + pFileName;
+
+	void* pROMData = LoadBinaryFile(fname.c_str(), romSize);
+	if (pROMData == nullptr)
+		return false;
+
+	if (romSize > 0x4000)
+	{
+		// error
+		free(pROMData);
+		return false;
+	}
+
+	memcpy(ROMSlots[slot].ROMData, pROMData, romSize);
+	ROMSlots[slot].BankId = CodeAnalysis.CreateBank(pFileName, 16, ROMSlots[slot].ROMData, true, 0x8000, true);
+	return true;
+}
+
 
 void FBBCEmulator::SetupCodeAnalysisLabels()
 {
@@ -462,13 +492,6 @@ bool FBBCEmulator::SaveProject(void)
 	return false;
 }
 
-// TODO: implement
-bool FBBCEmulator::LoadROM(const char* pFileName, int slot)
-{
-	pBBCConfig->RomFolder;
-	void* ROMData = LoadBinaryFile("Roms/OS-1.2.rom", desc.roms.os.size);
-
-}
 
 
 
