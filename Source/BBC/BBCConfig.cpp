@@ -23,6 +23,15 @@ void FBBCConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 	if (jsonConfigFile.contains("BasicRom"))
 		BasicRom = jsonConfigFile["BasicRom"];
 
+	if (jsonConfigFile.contains("AdditionalRoms"))
+	{
+		AdditionalRoms.clear();
+		for (const auto& rom : jsonConfigFile["AdditionalRoms"])
+		{
+			AdditionalRoms.push_back(rom);
+		}
+	}
+
 	// fixup paths
 	if (TapesFolder.back() != '/')
 		TapesFolder += "/";
@@ -38,6 +47,7 @@ void FBBCConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 	jsonConfigFile["RomFolder"] = RomFolder;
 	jsonConfigFile["OSRom"] = OSRom;
 	jsonConfigFile["BasicRom"] = BasicRom;
+	jsonConfigFile["AdditionalRoms"] = AdditionalRoms;
 }
 
 void FBBCProjectConfig::LoadFromJson(const nlohmann::json& jsonConfig)

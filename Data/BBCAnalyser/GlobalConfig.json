@@ -1,4 +1,5 @@
 {
+    "AdditionalRoms": [ "DFS v2.10.rom" ],
     "BasicRom": "BASIC2.rom",
     "BranchLinesDisplayMode": 1,
     "DisksFolder": "C:/Dev/BBCMicro/Games/Disks/",

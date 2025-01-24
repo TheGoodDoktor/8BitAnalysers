@@ -86,7 +86,8 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	//SetWindowIcon("SALogo.png");
 
 	// Initialise Emulator
-	pGlobalConfig = new FBBCConfig();
+	pBBCConfig = new FBBCConfig();
+	pGlobalConfig = pBBCConfig;
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 
@@ -111,6 +112,7 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
 
 	// Load ROM images
+	pBBCConfig->RomFolder;
 	desc.roms.os.ptr = LoadBinaryFile("Roms/OS-1.2.rom", desc.roms.os.size);
 	desc.roms.basic.ptr = LoadBinaryFile("Roms/BASIC2.rom", desc.roms.basic.size);
 
@@ -459,6 +461,15 @@ bool FBBCEmulator::SaveProject(void)
 
 	return false;
 }
+
+// TODO: implement
+bool FBBCEmulator::LoadROM(const char* pFileName, int slot)
+{
+	pBBCConfig->RomFolder;
+	void* ROMData = LoadBinaryFile("Roms/OS-1.2.rom", desc.roms.os.size);
+
+}
+
 
 
 uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)

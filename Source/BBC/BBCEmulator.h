@@ -22,6 +22,14 @@ struct FBBCBankIds
 	int16_t BasicROM = -1;
 };
 
+struct FBBCConfig;
+
+struct FROMSlot
+{
+	int16_t BankId = -1;
+	uint8_t ROMData[0x4000];
+};
+
 class FBBCEmulator : public FEmuBase
 {
 public:
@@ -93,6 +101,8 @@ public:
 	bool	LoadProject(FProjectConfig* pConfig, bool bLoadGame) override;
 	bool	SaveProject(void) override;
 
+	bool	LoadROM(const char* pFileName, int slot);
+
 	const FBBCBankIds&	GetBankIds() const { return BankIds; }
 
 	uint64_t	OnCPUTick(uint64_t pins);
@@ -110,6 +120,7 @@ public:
 private:
 	bbc_t				BBCEmu;
 	FBBCLaunchConfig	LaunchConfig;
+	FBBCConfig*			pBBCConfig = nullptr;
 
 	FBBCBankIds			BankIds;	
 
@@ -119,6 +130,8 @@ private:
 	std::array<uint8_t, 3 * 256> IOMemBuffer;	// 3 pages
 
 	static uint32_t		ColourPalette[16];
+
+	FROMSlot			ROMSlots[16];
 
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment

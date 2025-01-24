@@ -17,6 +17,7 @@ struct FBBCConfig : public FGlobalConfig
 	std::string			OSRom = "OS-1.2.rom";
 	std::string			BasicRom = "BASIC2.rom";
 
+	std::vector<std::string>		AdditionalRoms;
 protected:
 
 	void ReadFromJson(const nlohmann::json& jsonConfigFile) override;
