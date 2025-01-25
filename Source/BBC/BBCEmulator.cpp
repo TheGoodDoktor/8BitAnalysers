@@ -129,19 +129,26 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	// Set up memory banks
 	BankIds.RAM = CodeAnalysis.CreateBank("RAM", 32, BBCEmu.ram, false, 0x0000, true);					// RAM - $0000 - $7FFF - pages 0-31 - 32K
-	LoadROM(pBBCConfig->BasicRom.c_str(), 0xf);	// top slot for Basic ROM
+	LoadROM(pBBCConfig->BasicRom.c_str(), BasicROMSlot);	// top slot for Basic ROM
 	BankIds.OSROM = CodeAnalysis.CreateBank("OS ROM", 16, BBCEmu.rom_os, true, 0xC000, true);			// OS ROM - $C000 - $FFFF - pages 48-63 - 16K
 
-	int slot = 0xE;
+	// Setup ROMs
+
+	int slot = 0;
 	for (const auto& rom : pBBCConfig->AdditionalRoms)
 	{
-		LoadROM(rom.c_str(), slot--);
+		if(slot == BasicROMSlot)	// don't write over the basic slot
+			slot++;
+
+		LoadROM(rom.c_str(), slot++);
+		if (slot >= BBC_NUM_ROM_SLOTS)
+			break;
 	}
 
 	// map in banks
 	CodeAnalysis.MapBank(BankIds.RAM, 0, EBankAccess::ReadWrite);
-	CodeAnalysis.MapBank(ROMSlots[0xf].BankId, 32, EBankAccess::ReadWrite);
 	CodeAnalysis.MapBank(BankIds.OSROM, 48, EBankAccess::ReadWrite);
+	SetROMSlot(BasicROMSlot);
 
 	// setup code analysis
 	CodeAnalysis.Init(this);
@@ -187,6 +194,16 @@ bool FBBCEmulator::LoadROM(const char* pFileName, int slot)
 	memcpy(ROMSlots[slot].ROMData, pROMData, romSize);
 	ROMSlots[slot].BankId = CodeAnalysis.CreateBank(pFileName, 16, ROMSlots[slot].ROMData, true, 0x8000, true);
 	return true;
+}
+
+void FBBCEmulator::SetROMSlot(int slotNo)
+{
+	const int16_t bankId = ROMSlots[slotNo].BankId;
+	if (CurrentROMBank != bankId)
+	{
+		CodeAnalysis.MapBank(bankId, 32, EBankAccess::ReadWrite);
+		CurrentROMBank = bankId;
+	}
 }
 
 
@@ -567,6 +584,11 @@ uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)
 			{
 				IOAnalysis.RegisterIOWrite(addr, val, GetPC());
 				IOMemBuffer[addr - (kFredPage<<8)] = val;
+			}
+
+			if (addr == 0xfe30)
+			{
+				SetROMSlot(val);
 			}
 		
 			FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);

@@ -232,7 +232,12 @@ uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 			}
 			else
 			{
-				sys->rom_select = M6502_GET_DATA(pins);
+				const uint8_t newRomSelect = M6502_GET_DATA(pins);
+				if (sys->rom_select != newRomSelect)
+				{
+					sys->rom_select = newRomSelect;
+					mem_map_rom(&sys->mem_cpu, 0, 0x8000, 0x4000, sys->rom_slots[sys->rom_select]);
+				}
 			}
 		}
 

@@ -38,7 +38,15 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 244,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 250,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 251,
                     "DisplayType": 11
                 },
                 {
@@ -63,6 +71,10 @@
                 },
                 {
                     "Address": 585,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 587,
                     "DisplayType": 11
                 },
                 {
@@ -822,7 +834,7 @@
                     "Address": 244,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_F4"
+                    "Name": "CurrentlySelectedROM"
                 },
                 {
                     "Address": 245,
@@ -858,7 +870,7 @@
                     "Address": 251,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_FB"
+                    "Name": "TempStore_FB"
                 },
                 {
                     "Address": 252,
@@ -895,6 +907,30 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0104"
+                },
+                {
+                    "Address": 261,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0105"
+                },
+                {
+                    "Address": 263,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0107"
+                },
+                {
+                    "Address": 265,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0109"
+                },
+                {
+                    "Address": 267,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_010B"
                 },
                 {
                     "Address": 400,
@@ -1120,7 +1156,7 @@
                     "Address": 587,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_024B"
+                    "Name": "BasicROMNumber"
                 },
                 {
                     "Address": 588,
@@ -1438,7 +1474,7 @@
                     "Address": 673,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_02A1"
+                    "Name": "ROMTypeTable"
                 },
                 {
                     "Address": 689,
@@ -2127,6 +2163,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "NMIEntryPoint"
+                },
+                {
+                    "Address": 496,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0DF0"
                 }
             ],
             "PageId": 3

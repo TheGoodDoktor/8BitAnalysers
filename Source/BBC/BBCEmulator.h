@@ -103,6 +103,7 @@ public:
 	bool	SaveProject(void) override;
 
 	bool	LoadROM(const char* pFileName, int slot);
+	void	SetROMSlot(int slotNo);
 
 	const FBBCBankIds&	GetBankIds() const { return BankIds; }
 
@@ -132,7 +133,9 @@ private:
 
 	static uint32_t		ColourPalette[16];
 
+	const int			BasicROMSlot = 0;
 	FROMSlot			ROMSlots[BBC_NUM_ROM_SLOTS];
+	int16_t				CurrentROMBank = -1;
 
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment
