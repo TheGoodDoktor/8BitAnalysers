@@ -37045,6 +37045,18 @@
                     "DisplayType": 4
                 },
                 {
+                    "Address": 640,
+                    "DisplayType": 4
+                },
+                {
+                    "Address": 641,
+                    "DisplayType": 4
+                },
+                {
+                    "Address": 644,
+                    "DisplayType": 4
+                },
+                {
                     "Address": 704,
                     "DisplayType": 4
                 },
@@ -37394,6 +37406,24 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "Sheila_UserVIA_RegB_NoHandshake"
+                },
+                {
+                    "Address": 640,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "Sheila_8271 FDD - Command/Status"
+                },
+                {
+                    "Address": 641,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "Sheila_8271 FDD - Param/Result"
+                },
+                {
+                    "Address": 644,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "Sheila_8271 FDD - Data Register"
                 },
                 {
                     "Address": 645,

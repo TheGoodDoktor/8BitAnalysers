@@ -47,6 +47,10 @@ static std::vector <FRegDisplayConfig>	g_SheilaRegDrawInfo =
 	{0xFE6E, "UserVIA_IER"},
 	{0xFE6F, "UserVIA_RegB_NoHandshake"},
 
+	{0xFE80, "8271 FDD - Command/Status"},
+	{0xFE81, "8271 FDD - Param/Result"},
+	{0xFE84, "8271 FDD - Data Register"},
+
 	{0xFEC0, "ADC_DSR_SCR"},
 	{0xFEC1, "ADC_Data_H"},
 	{0xFEC2, "ADC_Data_L"},
