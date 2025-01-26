@@ -2606,6 +2606,11 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 		if (ch == '\\')	// escape char
 		{
 			str[strPos++] = *pTxtPtr++;
+			if (strPos == kMaxStringSize)
+			{
+				str[strPos] = 0;
+				strPos = 0;
+			}
 			continue;
 		}
 

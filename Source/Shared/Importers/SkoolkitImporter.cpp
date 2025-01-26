@@ -10,6 +10,10 @@
 const std::string kWhiteSpace = " \n\r\t\f\v";
 const char kSkoolkitDirectiveNone = '-';
 
+// Set this to true to strip carriage returns from inline comments.
+// This won't affect block comments.
+const bool bStripCarriageReturnsFromComments = true;
+
 struct FSkoolkitInstruction
 {
 	char BlockDirective = kSkoolkitDirectiveNone;
@@ -31,7 +35,7 @@ std::string TrimLeadingWhitespace(const std::string& str)
 	return TrimLeadingChars(str, kWhiteSpace);
 }
 
-void RemoveCarriageReturn(std::string& str)
+void RemoveTrailingCarriageReturn(std::string& str)
 {
 	if (str.empty())
 		return;
@@ -61,6 +65,149 @@ char GetDirectiveFromAsm(const std::string& str)
 	return 'c';
 }
 
+bool IsNumeric(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
+// https://skoolkit.ca/docs/skoolkit/skool-macros.html
+std::string ProcessMacro(const char** pInText)
+{
+	const char* pInTxtPtr = *pInText;
+	if (!strncmp(pInTxtPtr, "REG", 3))
+	{
+		pInTxtPtr += 3;
+
+		static const int numEntries = 35;
+		static const char* map[numEntries][2] =
+		{
+			{"ixh", "#REG:IXH#"},
+			{"ixl", "#REG:IXL#"},
+			{"iyl", "#REG:IYL#"},
+			{"iyh", "#REG:IYH#"},
+			{"ix", "#REG:IX#"},
+			{"iy", "#REG:IY#"},
+
+			{"af'", ""},
+			{"bc'", ""},
+			{"de'", ""},
+			{"hl'", ""},
+
+			{"a'", ""},
+			{"f'", ""},
+			{"b'", ""},
+			{"c'", ""},
+			{"d'", ""},
+			{"e'", ""},
+			{"h'", ""},
+			{"l'", ""},
+
+			{"af", "#REG:AF#"},
+			{"bc", "#REG:BC#"},
+			{"de", "#REG:DE#"},
+			{"hl", "#REG:HL#"},
+			{"pc", "#REG:PC#"},
+			{"sp", "#REG:SP#"},
+			{"ir", "#REG:IR#"},
+
+			{"a", "#REG:A#"},
+			{"f", "#REG:F#"},
+			{"b", "#REG:B#"},
+			{"c", "#REG:C#"},
+			{"d", "#REG:D#"},
+			{"e", "#REG:E#"},
+			{"h", "#REG:H#"},
+			{"l", "#REG:L#"},
+			{"i", "#REG:I#"},
+			{"r", "#REG:R#"},
+		};
+
+		for (int i = 0; i < numEntries; i++)
+		{
+			const char* pSrc = map[i][0];
+			const size_t srcLen = strlen(pSrc);
+			if (!strncmp(pInTxtPtr, pSrc, srcLen))
+			{
+				const char* pDst = map[i][1];
+				if (pDst[0] != 0)
+					*pInText = pInTxtPtr + srcLen;
+				return map[i][1];
+			}
+		}
+
+		return "";
+	}
+
+	if (*pInTxtPtr == 'R')
+	{
+		static const int kBufSize = 32;
+		static char buf[kBufSize] = { 0 };
+
+		pInTxtPtr++;
+
+		const bool bHex = *pInTxtPtr == '$';
+		if (bHex)
+			pInTxtPtr++;
+
+		char* pNumEnd;
+		const int address = static_cast<uint16_t>(strtol(pInTxtPtr, &pNumEnd, bHex ? 16 : 10));
+		if (pInTxtPtr != pNumEnd)
+		{
+			snprintf(buf, kBufSize, "#ADDR:0x%04X#", address);
+			*pInText = pNumEnd;
+			return buf;
+		}
+		return "";
+	}
+	return "";
+}
+
+
+std::string ProcessComment(const char* pText)
+{
+	const char* pTxtPtr = pText;
+	std::string outString;
+
+	while (*pTxtPtr != 0)
+	{
+		const char ch = *pTxtPtr++;
+
+		if (ch == '#')
+		{
+			// See if we've hit a supported skoolkit macro.
+			// If so, convert it to SA markup.
+			std::string markupTxt = ProcessMacro(&pTxtPtr);
+			if (markupTxt.empty())
+			{
+				// add escape character so SA doesn't try to treat this macro as SA markup.
+				outString += "\\#";
+			}
+			else
+			{
+				outString += markupTxt;
+			}
+		}
+		else
+		{
+			outString += ch;	// add to string
+		}
+	}
+
+	LOGINFO("REPLACED '%s' with '%s'", pText, outString.c_str());
+
+	return outString;
+}
+
+std::string ProcessBlockComment(const char* pText)
+{
+	return ProcessComment(pText);
+}
+
+std::string ProcessInlineComment(const char* pText)
+{
+	return ProcessComment(pText);
+}
+
 bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 {
 	if (strLine.length() < 6)
@@ -74,37 +221,23 @@ bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 	if (strLine[1] == '$')
 	{
 		// hexadecimal address
+		char* pNumEnd;
 		std::string numStr = strLine.substr(2, 4);
-		instruction.Address = static_cast<uint16_t>(strtol(numStr.c_str(), nullptr, 16));
-		if (instruction.Address == 0)
+		instruction.Address = static_cast<uint16_t>(strtol(numStr.c_str(), &pNumEnd, 16));
+		if (pNumEnd == numStr.c_str())
 		{
-			if (numStr == "0000")
-			{
-				// Deal with the special case of the address being 0.
-				// We do this because strtol will return 0 if it fails.
-				// We want to differentiate between a valid address of 0 and a failure.
-			}
-			else
-			{
-				return false;
-			}
+			return false;
 		}
 	}
 	else
 	{
 		// decimal address
+		char* pNumEnd;
 		std::string numStr = strLine.substr(1, 5);
-		instruction.Address = static_cast<uint16_t>(strtol(numStr.c_str(), nullptr, 10));
-		if (instruction.Address == 0)
+		instruction.Address = static_cast<uint16_t>(strtol(numStr.c_str(), &pNumEnd, 10));
+		if (pNumEnd == numStr.c_str())
 		{
-			if (numStr == "00000")
-			{
-				// do nothing
-			}
-			else
-			{
-				return false;
-			}
+			return false;
 		}
 	}
 
@@ -135,9 +268,10 @@ bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 		}
 		else if (commentStart < strLen)
 		{
-			instruction.Comment = strLine.substr(commentStart);
+			const char* pCommentTxt = strLine.c_str() + commentStart;
+			instruction.Comment = ProcessInlineComment(pCommentTxt);
 
-			RemoveCarriageReturn(instruction.Comment); // do I need to do this?
+			RemoveTrailingCarriageReturn(instruction.Comment); // do I need to do this?
 		}
 	}
 	
@@ -152,7 +286,7 @@ bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 	// get the disassembly text inbetween the address and the comment
 	instruction.Operation = strLine.substr(opStart, opLen);
 
-	RemoveCarriageReturn(instruction.Operation);
+	RemoveTrailingCarriageReturn(instruction.Operation);
 
 	instruction.SubBlockDirective = GetDirectiveFromAsm(instruction.Operation);
 
@@ -290,14 +424,13 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 	char pchLine[65536];
 	// note: "rt" = text mode, which means Windows line endings \r\n will be converted into \n
 	
-
 	if (fp == nullptr)
 		return false;
 
 	char blockDirective = kSkoolkitDirectiveNone;
 	char subBlockDirective = kSkoolkitDirectiveNone;
 
-	std::string comments;
+	std::string commentBlock;
 	std::string label;
 	FCodeAnalysisItem LastItem;
 
@@ -327,7 +460,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		if (strLine[0] == '@')
 		{
 			if (!ParseAsmDirective(state, strLine, label))
-				comments += strLine;
+				commentBlock += strLine;
 
 			if (StringStartsWith(strLine, "@rsub+begin"))
 			{
@@ -337,9 +470,10 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			continue;
 		}
 
+		// Is this a comment block?
 		if (strLine[0] == ';')
 		{
-			comments += TrimLeadingChars(strLine, "; ");
+			commentBlock += TrimLeadingChars(strLine, "; ");
 			continue;
 		}
 
@@ -347,14 +481,22 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		if (trimmed[0] == ';')
 		{
 			// instruction comment continuation
-			if (LastItem.IsValid())
+			if (LastItem.IsValid() && !LastItem.Item->Comment.empty())
 			{
-				if (!LastItem.Item->Comment.empty() && LastItem.Item->Comment.back() != '\n')
+				if (bStripCarriageReturnsFromComments)
 				{
-					LastItem.Item->Comment += "\n";
+					LastItem.Item->Comment += " ";
 				}
-				LastItem.Item->Comment += trimmed.substr(2);
-				RemoveCarriageReturn(LastItem.Item->Comment);
+				else
+				{
+					if (LastItem.Item->Comment.back() != '\n')
+					{
+						LastItem.Item->Comment += "\n";
+					}
+				}
+				
+				LastItem.Item->Comment += ProcessInlineComment(trimmed.c_str() + 2);
+				RemoveTrailingCarriageReturn(LastItem.Item->Comment);
 			}
 			continue;
 		}
@@ -365,13 +507,13 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			continue;
 		}
 		
-		// we've got an instruction.
-		// get directive, address and comment 
+		// We've got an instruction.
+		// Get directive, address and comment 
 		FItem* pItem = nullptr;
 		FSkoolkitInstruction instruction;
 		if (!ParseInstruction(strLine, instruction))
 		{
-			RemoveCarriageReturn(strLine);
+			RemoveTrailingCarriageReturn(strLine);
 			LOGWARNING("Parse error on line %d. Could not parse instruction: '%s'", lineNum, strLine.c_str());
 			fclose(fp);
 			return false;
@@ -535,11 +677,11 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		{
 			if (pItem)
 			{
-				pItem->Comment = instruction.Comment;
+				pItem->Comment = instruction.Comment.c_str();
 			}
 		}
 
-		if (!comments.empty())
+		if (!commentBlock.empty())
 		{
 			FCommentBlock* pBlock = state.GetCommentBlockForAddress(state.AddressRefFromPhysicalAddress(instruction.Address));
 			
@@ -548,12 +690,12 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			else
 			{
 				std::string commentExcerpt = pBlock->Comment.substr(0, 1024);
-				RemoveCarriageReturn(commentExcerpt);
+				RemoveTrailingCarriageReturn(commentExcerpt);
 				LOGWARNING("SkoolkitImporter: Replacing existing comment block: '%s'", commentExcerpt.c_str());
 			}
 
-			pBlock->Comment = comments;
-			comments.clear();
+			pBlock->Comment = ProcessBlockComment(commentBlock.c_str());
+			commentBlock.clear();
 		}
 
 		if (!label.empty())
