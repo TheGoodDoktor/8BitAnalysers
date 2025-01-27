@@ -72,6 +72,9 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 
 	if (jsonConfigFile.contains("ExportAssembler"))
 		ExportAssembler = jsonConfigFile["ExportAssembler"];
+
+	if (jsonConfigFile.contains("ROMAnalysisPath"))	
+		ROMAnalysisPath = jsonConfigFile["ROMAnalysisPath"];
 	
 	// fixup paths
 	if (WorkspaceRoot.back() != '/')
@@ -100,6 +103,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["EnableExperimentalFeatures"] = bEnableExperimentalFeatures;
 	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;
 	jsonConfigFile["ExportAssembler"] = ExportAssembler;	
+	jsonConfigFile["ROMAnalysisPath"] = ROMAnalysisPath;
 
 	for (const auto& luaSrc : LuaBaseFiles)
 	{

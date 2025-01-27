@@ -23,6 +23,10 @@
             ],
             "CommentBlocks": [
                 {
+                    "Address": 512,
+                    "Comment": "OS Vector Table"
+                },
+                {
                     "Address": 602,
                     "Comment": "bit 3 = 1 means SHIFT pressed\nbit 4 = 0 means CAPS LOCK engaged\nbit 5 = 0 means SHIFT LOCK engaged\nbit 6 = 1 means CTRL pressed\nbit 7 = 1 means SHIFT enabled"
                 }
@@ -54,7 +58,121 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 512,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 514,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
                     "Address": 516,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 518,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 520,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 522,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 524,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 526,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 528,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 530,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 532,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 534,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 536,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 538,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 540,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 542,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 544,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
+                    "Address": 546,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 548,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 550,
                     "ByteSize": 2,
                     "DataType": 2,
                     "DisplayType": 2
@@ -64,6 +182,42 @@
                     "ByteSize": 2,
                     "DataType": 2,
                     "DisplayType": 1
+                },
+                {
+                    "Address": 554,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 556,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 558,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 560,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 562,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
+                },
+                {
+                    "Address": 564,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 2
                 },
                 {
                     "Address": 576,
@@ -543,6 +697,12 @@
                     "Name": "zp_4E"
                 },
                 {
+                    "Address": 174,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_AE"
+                },
+                {
                     "Address": 180,
                     "Global": true,
                     "LabelType": 0,
@@ -603,6 +763,12 @@
                     "Name": "zp_C2"
                 },
                 {
+                    "Address": 196,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_C4"
+                },
+                {
                     "Address": 198,
                     "Global": true,
                     "LabelType": 0,
@@ -613,6 +779,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_C7"
+                },
+                {
+                    "Address": 200,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_C8"
+                },
+                {
+                    "Address": 201,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_C9"
                 },
                 {
                     "Address": 202,
@@ -960,131 +1138,163 @@
                     "Address": 512,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0200"
+                    "Name": "VectorUSERV"
                 },
                 {
                     "Address": 514,
-                    "LabelType": 2,
-                    "Name": "label_0202"
-                },
-                {
-                    "Address": 515,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0203"
+                    "Name": "VectorBRKV"
                 },
                 {
                     "Address": 516,
                     "Global": true,
-                    "LabelType": 1,
-                    "Name": "IRQ1Vector"
+                    "LabelType": 0,
+                    "Name": "VectorIRQ1V"
                 },
                 {
                     "Address": 518,
-                    "LabelType": 2,
-                    "Name": "label_0206"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "VectorIRQ2V"
                 },
                 {
                     "Address": 520,
-                    "LabelType": 2,
-                    "Name": "label_0208"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "VectorCLIV"
                 },
                 {
                     "Address": 522,
-                    "LabelType": 2,
-                    "Name": "label_020A"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_020A"
                 },
                 {
                     "Address": 524,
-                    "LabelType": 2,
-                    "Name": "label_020C"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_020C"
                 },
                 {
                     "Address": 526,
-                    "LabelType": 2,
-                    "Name": "label_020E"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_020E"
                 },
                 {
                     "Address": 528,
-                    "LabelType": 2,
-                    "Name": "label_0210"
-                },
-                {
-                    "Address": 529,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0211"
+                    "Name": "data_0210"
                 },
                 {
                     "Address": 530,
-                    "LabelType": 2,
-                    "Name": "label_0212"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0212"
                 },
                 {
                     "Address": 532,
-                    "LabelType": 2,
-                    "Name": "label_0214"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0214"
                 },
                 {
                     "Address": 534,
-                    "LabelType": 2,
-                    "Name": "label_0216"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0216"
                 },
                 {
                     "Address": 536,
-                    "LabelType": 2,
-                    "Name": "label_0218"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0218"
                 },
                 {
                     "Address": 538,
-                    "LabelType": 2,
-                    "Name": "label_021A"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_021A"
                 },
                 {
                     "Address": 540,
-                    "LabelType": 2,
-                    "Name": "label_021C"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_021C"
                 },
                 {
                     "Address": 542,
-                    "LabelType": 2,
-                    "Name": "label_021E"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_021E"
                 },
                 {
                     "Address": 544,
-                    "LabelType": 2,
-                    "Name": "label_0220"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "VectorEVNTV"
                 },
                 {
                     "Address": 546,
-                    "LabelType": 2,
-                    "Name": "label_0222"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "VectorUPTV"
                 },
                 {
                     "Address": 548,
-                    "LabelType": 2,
-                    "Name": "label_0224"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "VectorNETV"
+                },
+                {
+                    "Address": 550,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0226"
                 },
                 {
                     "Address": 552,
                     "Global": true,
-                    "LabelType": 1,
+                    "LabelType": 0,
                     "Name": "Vector_KeyV"
                 },
                 {
                     "Address": 554,
-                    "LabelType": 2,
-                    "Name": "label_022A"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_022A"
                 },
                 {
                     "Address": 556,
-                    "LabelType": 2,
-                    "Name": "label_022C"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_022C"
                 },
                 {
                     "Address": 558,
-                    "LabelType": 2,
-                    "Name": "label_022E"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_022E"
+                },
+                {
+                    "Address": 560,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0230"
+                },
+                {
+                    "Address": 562,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0232"
+                },
+                {
+                    "Address": 564,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0234"
                 },
                 {
                     "Address": 576,
@@ -1573,6 +1783,30 @@
                     "Name": "data_02E1"
                 },
                 {
+                    "Address": 746,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02EA"
+                },
+                {
+                    "Address": 747,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02EB"
+                },
+                {
+                    "Address": 748,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02EC"
+                },
+                {
+                    "Address": 749,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02ED"
+                },
+                {
                     "Address": 767,
                     "Global": true,
                     "LabelType": 0,
@@ -1939,6 +2173,24 @@
                     "Name": "data_036F"
                 },
                 {
+                    "Address": 925,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_039D"
+                },
+                {
+                    "Address": 926,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_039E"
+                },
+                {
+                    "Address": 956,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_03BC"
+                },
+                {
                     "Address": 962,
                     "Global": true,
                     "LabelType": 0,
@@ -2119,6 +2371,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_083F"
+                },
+                {
+                    "Address": 256,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0900"
+                },
+                {
+                    "Address": 512,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0A00"
                 },
                 {
                     "Address": 768,
