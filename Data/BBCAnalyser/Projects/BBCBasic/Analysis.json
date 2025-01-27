@@ -982,19 +982,19 @@
                     "Address": 239,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_EF"
+                    "Name": "OSBYTE_A"
                 },
                 {
                     "Address": 240,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_F0"
+                    "Name": "OSBYTE_X"
                 },
                 {
                     "Address": 241,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_F1"
+                    "Name": "OSBYTE_Y"
                 },
                 {
                     "Address": 242,
@@ -1168,7 +1168,7 @@
                     "Address": 522,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_020A"
+                    "Name": "VectorBYTEV"
                 },
                 {
                     "Address": 524,
@@ -2236,10 +2236,22 @@
                     "Name": "label_0403"
                 },
                 {
+                    "Address": 33,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_0421"
+                },
+                {
                     "Address": 127,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_047F"
+                },
+                {
+                    "Address": 256,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0500"
                 },
                 {
                     "Address": 512,
@@ -2419,6 +2431,10 @@
                     "Address": 256,
                     "DataType": 11,
                     "InstructionAddressRef": 218103808
+                },
+                {
+                    "Address": 497,
+                    "DisplayType": 11
                 }
             ],
             "LabelInfo": [
