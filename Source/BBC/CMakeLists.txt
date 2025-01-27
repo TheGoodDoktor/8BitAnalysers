@@ -143,6 +143,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/BBCAnalyser/Fonts
             $<TARGET_FILE_DIR:${APP_NAME}>/Fonts
             )
+
+	add_custom_command(TARGET ${APP_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/BBCAnalyser/Roms
+            $<TARGET_FILE_DIR:${APP_NAME}>/Roms
+            )
             
     add_custom_command(TARGET ${APP_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
