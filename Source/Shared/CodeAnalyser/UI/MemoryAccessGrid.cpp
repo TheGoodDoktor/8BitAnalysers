@@ -119,7 +119,7 @@ void FMemoryAccessGrid::DrawGrid(float x, float y)
 		const int yChar = (int)floor(mousePosY / rectSize);
 
 		const FAddressRef charAddress = GetGridSquareAddress(xChar, yChar);
-		if(charAddress.IsValid())
+		if(ImGui::IsWindowHovered() && charAddress.IsValid())
 		{
 			const uint8_t charVal = state.ReadByte(charAddress);
 
