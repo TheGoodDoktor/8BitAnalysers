@@ -18,6 +18,7 @@
     "NumberMode": 2,
     "OSRom": "OS-1.2.rom",
     "OverviewScale": 2,
+    "ROMAnalysisPath": "",
     "RomFolder": "./Roms/",
     "ShowOpcodeValues": false,
     "ShowScanlineIndicator": false,

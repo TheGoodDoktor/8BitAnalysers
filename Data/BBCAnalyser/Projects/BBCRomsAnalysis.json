@@ -2,15 +2,18 @@
     "Banks": [
         {
             "Description": "",
-            "Id": 1
+            "Id": 1,
+            "Name": "BASIC2.rom"
         },
         {
             "Description": "",
-            "Id": 2
+            "Id": 2,
+            "Name": "OS ROM"
         },
         {
             "Description": "",
-            "Id": 3
+            "Id": 3,
+            "Name": "DFS v2.10.rom"
         }
     ],
     "DataTypes": {
@@ -24,12 +27,8 @@
             "CodeInfo": [
                 {
                     "Address": 0,
-                    "ByteSize": 2
-                },
-                {
-                    "Address": 2,
-                    "ByteSize": 2,
-                    "OperandType": 2
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 35,
@@ -203,9 +202,14 @@
             ],
             "DataInfo": [
                 {
+                    "Address": 3,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2147614721
+                },
+                {
                     "Address": 4,
                     "DataType": 11,
-                    "InstructionAddressRef": 2147680257
+                    "InstructionAddressRef": 2147614721
                 },
                 {
                     "Address": 5,
@@ -281,15 +285,7 @@
                 },
                 {
                     "Address": 71,
-                    "ByteSize": 1
-                },
-                {
-                    "Address": 72,
-                    "ByteSize": 1
-                },
-                {
-                    "Address": 73,
-                    "ByteSize": 2
+                    "ByteSize": 3
                 },
                 {
                     "Address": 75,
@@ -387,6 +383,13 @@
                 {
                     "Address": 108,
                     "ByteSize": 1
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 74,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2219376641
                 }
             ],
             "LabelInfo": [
@@ -5019,41 +5022,28 @@
                 },
                 {
                     "Address": 916,
-                    "ByteSize": 3,
+                    "ByteSize": 2,
                     "Flags": 8,
                     "OperandType": 2
                 },
                 {
                     "Address": 919,
-                    "ByteSize": 1
-                },
-                {
-                    "Address": 920,
                     "ByteSize": 3,
                     "OperandType": 1
                 },
                 {
                     "Address": 923,
-                    "ByteSize": 2,
+                    "ByteSize": 3,
                     "OperandType": 2
-                },
-                {
-                    "Address": 925,
-                    "ByteSize": 1
                 },
                 {
                     "Address": 926,
-                    "ByteSize": 2
+                    "ByteSize": 1,
+                    "OperandType": 1
                 },
                 {
                     "Address": 928,
-                    "ByteSize": 2,
-                    "OperandType": 2
-                },
-                {
-                    "Address": 930,
                     "ByteSize": 3,
-                    "Flags": 8,
                     "OperandType": 2
                 },
                 {
@@ -5077,20 +5067,22 @@
                 },
                 {
                     "Address": 940,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 2
                 },
                 {
                     "Address": 942,
-                    "ByteSize": 3,
+                    "ByteSize": 1,
                     "OperandType": 1
                 },
                 {
                     "Address": 945,
-                    "ByteSize": 2
+                    "ByteSize": 1
                 },
                 {
                     "Address": 947,
-                    "ByteSize": 1
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 957,
@@ -5098,22 +5090,69 @@
                 },
                 {
                     "Address": 959,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "OperandType": 2
                 },
                 {
                     "Address": 1019,
-                    "ByteSize": 1
+                    "ByteSize": 3
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 918,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2610167809
                 },
                 {
-                    "Address": 1020,
-                    "ByteSize": 1
+                    "Address": 922,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2610429953
                 },
                 {
-                    "Address": 1021,
-                    "ByteSize": 3,
-                    "Flags": 8,
-                    "OperandType": 2
+                    "Address": 927,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2610823169
+                },
+                {
+                    "Address": 931,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2611085313
+                },
+                {
+                    "Address": 932,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2611085313
+                },
+                {
+                    "Address": 943,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2611871745
+                },
+                {
+                    "Address": 944,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2611871745
+                },
+                {
+                    "Address": 946,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2612068353
+                },
+                {
+                    "Address": 960,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2612985857
+                },
+                {
+                    "Address": 1022,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2617049089
+                },
+                {
+                    "Address": 1023,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2617049089
                 }
             ],
             "LabelInfo": [
@@ -5263,6 +5302,12 @@
                     "Name": "label_99A4"
                 },
                 {
+                    "Address": 669,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_9A9D"
+                },
+                {
                     "Address": 797,
                     "Global": true,
                     "LabelType": 1,
@@ -5301,11 +5346,6 @@
                     "Name": "label_9B94"
                 },
                 {
-                    "Address": 930,
-                    "LabelType": 2,
-                    "Name": "label_9BA2"
-                },
-                {
                     "Address": 935,
                     "LabelType": 2,
                     "Name": "label_9BA7"
@@ -5316,24 +5356,19 @@
                     "Name": "label_9BA8"
                 },
                 {
-                    "Address": 948,
-                    "LabelType": 2,
-                    "Name": "label_9BB4"
-                },
-                {
                     "Address": 957,
                     "LabelType": 2,
                     "Name": "label_9BBD"
                 },
                 {
+                    "Address": 1000,
+                    "LabelType": 2,
+                    "Name": "label_9BE8"
+                },
+                {
                     "Address": 1019,
                     "LabelType": 2,
                     "Name": "label_9BFB"
-                },
-                {
-                    "Address": 1021,
-                    "LabelType": 2,
-                    "Name": "label_9BFD"
                 }
             ],
             "PageId": 38
@@ -5346,12 +5381,13 @@
                 },
                 {
                     "Address": 2,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "OperandType": 2
                 },
                 {
                     "Address": 26,
-                    "ByteSize": 2
+                    "ByteSize": 1,
+                    "OperandType": 1
                 },
                 {
                     "Address": 28,
@@ -5360,7 +5396,8 @@
                 },
                 {
                     "Address": 35,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 37,
@@ -5369,12 +5406,7 @@
                 },
                 {
                     "Address": 46,
-                    "ByteSize": 2
-                },
-                {
-                    "Address": 48,
-                    "ByteSize": 2,
-                    "OperandType": 2
+                    "ByteSize": 3
                 },
                 {
                     "Address": 66,
@@ -5406,11 +5438,7 @@
                 },
                 {
                     "Address": 102,
-                    "ByteSize": 1
-                },
-                {
-                    "Address": 103,
-                    "ByteSize": 3,
+                    "ByteSize": 2,
                     "OperandType": 1
                 },
                 {
@@ -5419,7 +5447,7 @@
                 },
                 {
                     "Address": 107,
-                    "ByteSize": 2
+                    "ByteSize": 1
                 },
                 {
                     "Address": 109,
@@ -5990,6 +6018,43 @@
                     "OperandType": 2
                 }
             ],
+            "DataInfo": [
+                {
+                    "Address": 3,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2617376769
+                },
+                {
+                    "Address": 27,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2618949633
+                },
+                {
+                    "Address": 49,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2620391425
+                },
+                {
+                    "Address": 50,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2620391425
+                },
+                {
+                    "Address": 104,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2623995905
+                },
+                {
+                    "Address": 105,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2623995905
+                },
+                {
+                    "Address": 108,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2624258049
+                }
+            ],
             "LabelInfo": [
                 {
                     "Address": 26,
@@ -6021,6 +6086,11 @@
                     "Address": 102,
                     "LabelType": 2,
                     "Name": "label_9C66"
+                },
+                {
+                    "Address": 136,
+                    "LabelType": 2,
+                    "Name": "label_9C88"
                 },
                 {
                     "Address": 181,
@@ -8864,6 +8934,12 @@
                 }
             ],
             "LabelInfo": [
+                {
+                    "Address": 154,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_B09A"
+                },
                 {
                     "Address": 965,
                     "Global": true,
@@ -21687,6 +21763,11 @@
                     "Name": "label_CDC6"
                 },
                 {
+                    "Address": 459,
+                    "LabelType": 0,
+                    "Name": "operand_CDCB"
+                },
+                {
                     "Address": 462,
                     "LabelType": 2,
                     "Name": "label_CDCE"
@@ -22841,6 +22922,12 @@
                     "Address": 87,
                     "LabelType": 2,
                     "Name": "label_D057"
+                },
+                {
+                    "Address": 168,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_D0A8"
                 },
                 {
                     "Address": 179,
@@ -35440,6 +35527,7 @@
                 {
                     "Address": 360,
                     "ByteSize": 2,
+                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -35468,6 +35556,7 @@
                 {
                     "Address": 372,
                     "ByteSize": 2,
+                    "Comment": "high bit not set",
                     "OperandType": 2
                 },
                 {
@@ -35483,7 +35572,7 @@
                 {
                     "Address": 379,
                     "ByteSize": 3,
-                    "Flags": 8,
+                    "Flags": 40,
                     "OperandType": 2
                 },
                 {
@@ -35762,7 +35851,7 @@
                 },
                 {
                     "Address": 360,
-                    "Comment": "Pass service commands to sideways ROMs\nX : Command Number\nReturns:\nA = X = 0 if a ROM chooses to handle the call; or 255 otherwise\nY = result from ROM"
+                    "Comment": "Pass service commands to sideways ROMs\nX : Command Number\nReturns:\nA = X = 0 if a ROM chooses to handle the call; or 255 otherwise\nY = result from ROM\nCommands:\n.romServiceCallAbsoluteWorkspaceClaim          = $01    memory used only when ROM is paged in\n.romServiceCallPrivateWorkspaceClaim           = $02    memory used even when ROM is not\n                                                        paged in\n.romServiceCallAutoBoot                        = $03    \n.romServiceCallUnrecognisedCommand             = $04    star command not recognised\n.romServiceCallUnrecognisedInterrupt           = $05    \n.romServiceCallBreakInstruction                = $06    \n.romServiceCallUnrecognisedOSBYTE              = $07    \n.romServiceCallUnrecognisedOSWORD              = $08    \n.romServiceCallHelp                            = $09    \n.romServiceCallClaimStaticWorkspace            = $0A    (Issued by paged ROMs, not the OS)\n.romServiceCallNMIRelease                      = $0B    (Issued by paged ROMs, not the OS)\n.romServiceCallNMIClaim                        = $0C    (Issued by paged ROMs, not the OS)\n.romServiceCallROMFilingSystemInitialize       = $0D    \n.romServiceCallROMFilingSystemByteGet          = $0E    \n.romServiceCallVectorsClaimed                  = $0F    Used when a filing system starts\n.romServiceCallSpoolExecClosureWarning         = $10    \n.romServiceCallFontImplosionExplosionWarning   = $11    \n.romServiceCallInitialiseFilingSystem          = $12    (Issued from paged ROMs, not the OS)\n.romServiceCallTubeSystemPostInitialisation    = $FE    \n.romServiceCallTubeMainInitialisation          = $FF    \n"
                 }
             ],
             "DataInfo": [
@@ -36708,8 +36797,7 @@
                 {
                     "Address": 512,
                     "ByteSize": 2,
-                    "Flags": 3,
-                    "SMC": true
+                    "Flags": 1
                 },
                 {
                     "Address": 934,
@@ -36883,18 +36971,6 @@
                 {
                     "Address": 256,
                     "DisplayType": 4
-                },
-                {
-                    "Address": 512,
-                    "DataType": 11,
-                    "DisplayType": 4,
-                    "InstructionAddressRef": 4261412866
-                },
-                {
-                    "Address": 513,
-                    "DataType": 11,
-                    "DisplayType": 4,
-                    "InstructionAddressRef": 4261412866
                 },
                 {
                     "Address": 520,
@@ -37610,6 +37686,20 @@
                     "OperandType": 2
                 }
             ],
+            "CommentBlocks": [
+                {
+                    "Address": 3,
+                    "Comment": "X contains command number"
+                }
+            ],
+            "LabelInfo": [
+                {
+                    "Address": 3,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "ROM_ServiceEntryPoint"
+                }
+            ],
             "PageId": 64
         },
         {
@@ -37871,7 +37961,8 @@
                 },
                 {
                     "Address": 919,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "OperandType": 1
                 },
                 {
                     "Address": 920,
@@ -37885,7 +37976,8 @@
                 },
                 {
                     "Address": 925,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "OperandType": 1
                 },
                 {
                     "Address": 926,
@@ -37965,8 +38057,9 @@
             "LabelInfo": [
                 {
                     "Address": 916,
-                    "LabelType": 2,
-                    "Name": "label_9B94"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "ROMServiceRoutine"
                 },
                 {
                     "Address": 930,

@@ -2,7 +2,8 @@
     "Banks": [
         {
             "Description": "",
-            "Id": 0
+            "Id": 0,
+            "Name": "RAM"
         }
     ],
     "DataTypes": {
@@ -29,6 +30,10 @@
                 {
                     "Address": 602,
                     "Comment": "bit 3 = 1 means SHIFT pressed\nbit 4 = 0 means CAPS LOCK engaged\nbit 5 = 0 means SHIFT LOCK engaged\nbit 6 = 1 means CTRL pressed\nbit 7 = 1 means SHIFT enabled"
+                },
+                {
+                    "Address": 673,
+                    "Comment": "ROM type byte:\nb7 = ROM contains a service entry\nb6 = ROM contains a language entry\nb5 = ROM contains Tube transfer address and any other addresses after the copyright string\nb4 = ROM contains Electron key expansions\nb3-b0 = ROM CPU type:\n0 6502 BASIC           8 Z80\n 1 Turbo6502            9 32016\n 2 6502                10 -\n 3 68000               11 80186\n 4 -                   12 80286\n 5 -                   13 ARM\n 6 -                   14 -\n 7 PDP-11              15 - "
                 }
             ],
             "DataInfo": [
@@ -252,6 +257,74 @@
                     "Address": 654,
                     "Comment": "$40 - 16K, $80 - 32K",
                     "DisplayType": 11
+                },
+                {
+                    "Address": 673,
+                    "Comment": "ROM 0",
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 674,
+                    "Comment": "ROM 1",
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 675,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 676,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 677,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 678,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 679,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 680,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 681,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 682,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 683,
+                    "Comment": "ROM A",
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 684,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 685,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 686,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 687,
+                    "DisplayType": 5
+                },
+                {
+                    "Address": 688,
+                    "Comment": "ROM F",
+                    "DisplayType": 5
                 },
                 {
                     "Address": 713,
@@ -695,6 +768,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_4E"
+                },
+                {
+                    "Address": 101,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_65"
+                },
+                {
+                    "Address": 136,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_88"
                 },
                 {
                     "Address": 174,
@@ -2254,6 +2339,12 @@
                     "Name": "data_0500"
                 },
                 {
+                    "Address": 511,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05FF"
+                },
+                {
                     "Address": 512,
                     "Global": true,
                     "LabelType": 0,
@@ -2469,6 +2560,12 @@
             "PageId": 8
         },
         {
+            "DataInfo": [
+                {
+                    "Address": 175,
+                    "DisplayType": 11
+                }
+            ],
             "PageId": 9
         },
         {
@@ -2589,6 +2686,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_3F00"
+                },
+                {
+                    "Address": 992,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_3FE0"
                 }
             ],
             "PageId": 15
@@ -2602,6 +2705,12 @@
                     "Name": "data_4000"
                 },
                 {
+                    "Address": 169,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_40A9"
+                },
+                {
                     "Address": 256,
                     "Global": true,
                     "LabelType": 0,
@@ -2612,6 +2721,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_4200"
+                },
+                {
+                    "Address": 544,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_4220"
                 },
                 {
                     "Address": 768,
