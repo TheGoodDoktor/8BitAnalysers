@@ -251,14 +251,14 @@ void FBBCEmulator::Tick()
 	{
 		const float frameTime = (float)std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
 
-		CodeAnalysis.OnMachineFrameStart();	// TODO: tie to raster 
+		//CodeAnalysis.OnMachineFrameStart();	// TODO: tie to raster 
 		CodeAnalysis.OnFrameStart();
 		//StoreRegisters_6502(CodeAnalysis);
 
 		bbc_exec(&BBCEmu, (uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 
 		CodeAnalysis.OnFrameEnd();
-		CodeAnalysis.OnMachineFrameEnd();	// TODO: tie to raster 
+		//CodeAnalysis.OnMachineFrameEnd();	// TODO: tie to raster 
 	}
 	// Draw UI
 	DrawDockingView();
@@ -535,17 +535,17 @@ uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)
 	}
 
 	// TODO:
-#if 0
+#if 1
 	// trigger frame events on scanline pos
 	static uint16_t lastScanlinePos = 0;
-	const uint16_t scanlinePos = BBCEmu.vic.rs.v_count;
+	const uint16_t scanlinePos = BBCEmu.crtc.v_ctr;
 	if (scanlinePos != lastScanlinePos)
 	{
 		CodeAnalysis.Debugger.OnScanlineStart(scanlinePos);
 
 		if (scanlinePos == 0)
 			CodeAnalysis.OnMachineFrameStart();
-		else if (scanlinePos == M6569_VTOTAL - 1)    // last scanline
+		else if (scanlinePos == BBCEmu.crtc.v_total)    // last scanline
 			CodeAnalysis.OnMachineFrameEnd();
 
 		lastScanlinePos = scanlinePos;
