@@ -30,6 +30,8 @@ struct FGlobalConfig
 
 	bool				bEnableExperimentalFeatures = false;	// for WIP & experimental features
 
+	std::string 	ROMAnalysisPath;
+
 	// Lua config
 	bool				bEditLuaBaseFiles = false;
 	std::vector<std::string>	LuaBaseFiles;

@@ -431,8 +431,15 @@ bool FBBCEmulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 		//LoadPOKFile(*pGameConfig, std::string(pGlobalConfig->PokesFolder + pGameConfig->Name + ".pok").c_str());
 	}
 
-	if (FileExists(kROMAnalysisFilename))
-		ImportAnalysisJson(CodeAnalysis, kROMAnalysisFilename);
+	std::string romAnalysisFName;
+
+	if(pGlobalConfig->ROMAnalysisPath.empty() == false)
+		romAnalysisFName = pGlobalConfig->ROMAnalysisPath + kROMAnalysisFilename;
+	else
+		romAnalysisFName = pGlobalConfig->WorkspaceRoot + kROMAnalysisFilename;
+
+	if (FileExists(romAnalysisFName.c_str()))
+		ImportAnalysisJson(CodeAnalysis, romAnalysisFName.c_str());
 
 
 	/*if (bLoadSnapshot)
@@ -504,7 +511,12 @@ bool FBBCEmulator::SaveProject(void)
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
-	ExportAnalysisJson(CodeAnalysis, kROMAnalysisFilename, true);	// Do this on a config?
+	std::string romAnalysisFName;
+	if(pGlobalConfig->ROMAnalysisPath.empty() == false)
+		romAnalysisFName = pGlobalConfig->ROMAnalysisPath + kROMAnalysisFilename;
+	else
+		romAnalysisFName = pGlobalConfig->WorkspaceRoot + kROMAnalysisFilename;
+	ExportAnalysisJson(CodeAnalysis, romAnalysisFName.c_str(), true);	// Do this on a config?
 
 	return false;
 }
