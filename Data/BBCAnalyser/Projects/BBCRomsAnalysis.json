@@ -27,7 +27,8 @@
             "CodeInfo": [
                 {
                     "Address": 0,
-                    "ByteSize": 3,
+                    "ByteSize": 1,
+                    "Flags": 1,
                     "OperandType": 1
                 },
                 {
@@ -202,6 +203,16 @@
             ],
             "DataInfo": [
                 {
+                    "Address": 1,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2147483649
+                },
+                {
+                    "Address": 2,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2147483649
+                },
+                {
                     "Address": 3,
                     "DataType": 11,
                     "InstructionAddressRef": 2147614721
@@ -231,6 +242,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "ROMStart"
+                },
+                {
+                    "Address": 3,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_8003"
                 },
                 {
                     "Address": 6,
@@ -24917,7 +24934,8 @@
                 },
                 {
                     "Address": 824,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 5
                 },
                 {
                     "Address": 826,
@@ -24964,7 +24982,8 @@
                 },
                 {
                     "Address": 847,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "romServiceCallAbsoluteWorkspaceClaim "
                 },
                 {
                     "Address": 849,
@@ -24974,7 +24993,8 @@
                 },
                 {
                     "Address": 852,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "romServiceCallPrivateWorkspaceClaim"
                 },
                 {
                     "Address": 854,
@@ -25341,6 +25361,14 @@
                 {
                     "Address": 785,
                     "Comment": "check for speech system"
+                },
+                {
+                    "Address": 824,
+                    "Comment": "Initialise Tube."
+                },
+                {
+                    "Address": 845,
+                    "Comment": "Initialize ROMs, claim memory from OSHWM."
                 }
             ],
             "DataInfo": [
@@ -28923,8 +28951,13 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 615,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 629,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "ROM service routine $10"
                 },
                 {
                     "Address": 631,
@@ -29132,11 +29165,25 @@
                     "ByteSize": 1
                 }
             ],
+            "CommentBlocks": [
+                {
+                    "Address": 641,
+                    "Comment": "*SPOOL.\n\n On Entry:\n       A = 0 (and carry clear) to close the currently SPOOLed file, OR\n       A = file handle to start SPOOLing\n On Exit:\n       if closing a spooled file:\n           A, X and Y are preserved\n       if opening a spooled file:\n          A = Y = file handle for spooled file"
+                }
+            ],
             "DataInfo": [
+                {
+                    "Address": 616,
+                    "DisplayType": 11
+                },
                 {
                     "Address": 617,
                     "ByteSize": 11,
                     "DataType": 4
+                },
+                {
+                    "Address": 628,
+                    "DisplayType": 11
                 },
                 {
                     "Address": 786,
@@ -29337,6 +29384,24 @@
                     "Address": 525,
                     "LabelType": 2,
                     "Name": "label_E20D"
+                },
+                {
+                    "Address": 615,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "BRK_BadAddress"
+                },
+                {
+                    "Address": 629,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "OSBYTE_119_EntryPoint"
+                },
+                {
+                    "Address": 641,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "StarSPOOL"
                 },
                 {
                     "Address": 655,
@@ -35541,7 +35606,8 @@
                 },
                 {
                     "Address": 364,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "start with last item in ROM table"
                 },
                 {
                     "Address": 366,
@@ -35572,6 +35638,7 @@
                 {
                     "Address": 379,
                     "ByteSize": 3,
+                    "Comment": "call ROM service routine",
                     "Flags": 40,
                     "OperandType": 2
                 },
@@ -36375,7 +36442,7 @@
                     "Address": 651,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_F68B"
+                    "Name": "CloseSpoolOrExecFile"
                 },
                 {
                     "Address": 667,
@@ -36797,7 +36864,8 @@
                 {
                     "Address": 512,
                     "ByteSize": 2,
-                    "Flags": 1
+                    "Flags": 3,
+                    "SMC": true
                 },
                 {
                     "Address": 934,
@@ -36971,6 +37039,18 @@
                 {
                     "Address": 256,
                     "DisplayType": 4
+                },
+                {
+                    "Address": 512,
+                    "DataType": 11,
+                    "DisplayType": 4,
+                    "InstructionAddressRef": 4261412866
+                },
+                {
+                    "Address": 513,
+                    "DataType": 11,
+                    "DisplayType": 4,
+                    "InstructionAddressRef": 4261412866
                 },
                 {
                     "Address": 520,
@@ -37706,7 +37786,8 @@
             "CodeInfo": [
                 {
                     "Address": 68,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "push A"
                 },
                 {
                     "Address": 69,
@@ -37714,7 +37795,8 @@
                 },
                 {
                     "Address": 70,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "push X"
                 },
                 {
                     "Address": 71,
@@ -37722,7 +37804,8 @@
                 },
                 {
                     "Address": 72,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "push Y"
                 },
                 {
                     "Address": 73,
@@ -37746,7 +37829,8 @@
                 },
                 {
                     "Address": 81,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "put stack pointer in X"
                 },
                 {
                     "Address": 82,
@@ -37962,6 +38046,7 @@
                 {
                     "Address": 919,
                     "ByteSize": 1,
+                    "Comment": "put service routine no on stack",
                     "OperandType": 1
                 },
                 {
@@ -37972,16 +38057,19 @@
                 {
                     "Address": 923,
                     "ByteSize": 2,
+                    "Comment": "check high bit",
                     "OperandType": 2
                 },
                 {
                     "Address": 925,
                     "ByteSize": 1,
+                    "Comment": "get service routine",
                     "OperandType": 1
                 },
                 {
                     "Address": 926,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "check for service routine 1"
                 },
                 {
                     "Address": 928,
@@ -38032,7 +38120,8 @@
                 },
                 {
                     "Address": 957,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "check for service routine 2"
                 },
                 {
                     "Address": 959,
@@ -38074,7 +38163,7 @@
                 {
                     "Address": 957,
                     "LabelType": 2,
-                    "Name": "label_9BBD"
+                    "Name": "check_service_routine_2"
                 },
                 {
                     "Address": 1019,
@@ -38084,7 +38173,7 @@
                 {
                     "Address": 1021,
                     "LabelType": 2,
-                    "Name": "label_9BFD"
+                    "Name": "check_service_routine_3"
                 }
             ],
             "PageId": 70
@@ -38169,22 +38258,22 @@
                 {
                     "Address": 26,
                     "LabelType": 2,
-                    "Name": "label_9C1A"
+                    "Name": "check_service_routine_4"
                 },
                 {
                     "Address": 35,
                     "LabelType": 2,
-                    "Name": "label_9C23"
+                    "Name": "check_service_routine_12"
                 },
                 {
                     "Address": 46,
                     "LabelType": 2,
-                    "Name": "label_9C2E"
+                    "Name": "check_service_routine_9"
                 },
                 {
                     "Address": 66,
                     "LabelType": 2,
-                    "Name": "label_9C42"
+                    "Name": "check_service_routine_A"
                 },
                 {
                     "Address": 102,
@@ -38194,7 +38283,7 @@
                 {
                     "Address": 107,
                     "LabelType": 2,
-                    "Name": "label_9C6B"
+                    "Name": "check_service_routine_9"
                 }
             ],
             "PageId": 71
@@ -38229,13 +38318,22 @@
             "PageId": 73
         },
         {
+            "LabelInfo": [
+                {
+                    "Address": 1000,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_ABE8"
+                }
+            ],
             "PageId": 74
         },
         {
             "CodeInfo": [
                 {
                     "Address": 438,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "check for service routine 9 - help command"
                 },
                 {
                     "Address": 440,
@@ -38293,6 +38391,7 @@
                 {
                     "Address": 480,
                     "ByteSize": 2,
+                    "Comment": "less than $FE - jump",
                     "OperandType": 2
                 },
                 {
@@ -38302,7 +38401,8 @@
                 },
                 {
                     "Address": 484,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "$FE"
                 },
                 {
                     "Address": 486,
@@ -38310,11 +38410,183 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 488,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 490,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 492,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 495,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 498,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 500,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 503,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 505,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 508,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 511,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 513,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 516,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 518,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 521,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 523,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 526,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 528,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 531,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 533,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 536,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 538,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 541,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 544,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 547,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 550,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 553,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 556,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 557,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 559,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 562,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 564,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 567,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 569,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 570,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 572,
+                    "ByteSize": 2
+                },
+                {
                     "Address": 574,
                     "ByteSize": 1
                 }
             ],
             "LabelInfo": [
+                {
+                    "Address": 232,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_ACE8"
+                },
                 {
                     "Address": 438,
                     "Global": true,
@@ -38329,7 +38601,12 @@
                 {
                     "Address": 478,
                     "LabelType": 2,
-                    "Name": "label_ADDE"
+                    "Name": "not_help_command"
+                },
+                {
+                    "Address": 495,
+                    "LabelType": 2,
+                    "Name": "label_ADEF"
                 },
                 {
                     "Address": 511,
@@ -38337,9 +38614,36 @@
                     "Name": "label_ADFF"
                 },
                 {
+                    "Address": 538,
+                    "LabelType": 2,
+                    "Name": "label_AE1A"
+                },
+                {
+                    "Address": 564,
+                    "LabelType": 2,
+                    "Name": "label_AE34"
+                },
+                {
+                    "Address": 572,
+                    "LabelType": 2,
+                    "Name": "label_AE3C"
+                },
+                {
                     "Address": 574,
                     "LabelType": 2,
-                    "Name": "label_AE3E"
+                    "Name": "exit_func"
+                },
+                {
+                    "Address": 575,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AE3F"
+                },
+                {
+                    "Address": 640,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AE80"
                 }
             ],
             "PageId": 75

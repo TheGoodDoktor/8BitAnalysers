@@ -327,6 +327,14 @@
                     "DisplayType": 5
                 },
                 {
+                    "Address": 689,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 690,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 713,
                     "DisplayType": 11
                 },
@@ -1403,13 +1411,13 @@
                     "Address": 579,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0243"
+                    "Name": "DefaultOSHWM"
                 },
                 {
                     "Address": 580,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0244"
+                    "Name": "CurrentOSHWM"
                 },
                 {
                     "Address": 581,
