@@ -251,14 +251,12 @@ void FBBCEmulator::Tick()
 	{
 		const float frameTime = (float)std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) * 1.0f;// speccyInstance.ExecSpeedScale;
 
-		//CodeAnalysis.OnMachineFrameStart();	// TODO: tie to raster 
 		CodeAnalysis.OnFrameStart();
 		//StoreRegisters_6502(CodeAnalysis);
 
 		bbc_exec(&BBCEmu, (uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 
 		CodeAnalysis.OnFrameEnd();
-		//CodeAnalysis.OnMachineFrameEnd();	// TODO: tie to raster 
 	}
 	// Draw UI
 	DrawDockingView();

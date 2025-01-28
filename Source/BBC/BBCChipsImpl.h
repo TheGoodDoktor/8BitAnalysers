@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#define BBC_FREQUENCY (4000000)	// clock frequency in Hz 
+#define BBC_FREQUENCY (2000000)	// clock frequency in Hz 
 #define BBC_DISPLAY_WIDTH (768)
 #define BBC_DISPLAY_HEIGHT (272)
 #define BBC_FRAMEBUFFER_WIDTH (1024)

@@ -367,11 +367,12 @@ uint64_t _bbc_tick(bbc_t* sys, uint64_t pins)
 	CHIPS_ASSERT(sys && sys->valid);
 
 	// tick the CPU & CRTC at alternate cycles
-	if ((sys->tick_counter & 1) == 0)
+	// not sure if we need this and it causes problems with stepping in the debugger
+	//if ((sys->tick_counter & 1) == 0)
 	{
 		pins = _bbc_tick_cpu(sys, pins);
 	}
-	if ((sys->tick_counter & 1) == 1)
+	//if ((sys->tick_counter & 1) == 1)
 	{
 		_bbc_tick_crtc(sys);
 	}
