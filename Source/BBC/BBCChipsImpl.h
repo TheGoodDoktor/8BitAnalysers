@@ -96,6 +96,11 @@ typedef struct
 	uint16_t	data;
 } mc6850_t;
 
+typedef struct  
+{
+	uint8_t		regs[8];
+} fddc8271_t;
+
 // struct to hold the state of the BBC
 typedef struct 
 {
@@ -105,6 +110,7 @@ typedef struct
 	m6522_t		via_system;
 	m6522_t		via_user;
 	mc6850_t	acia;
+	fddc8271_t	fdc8271;
 	bbc_video_ula_t video_ula;
 	uint8_t		ic32;		// IC32 Latch
 	kbd_t		kbd;		// keyboard matrix state
@@ -157,6 +163,51 @@ void mc6850_init(mc6850_t* acia);
 void mc6850_reset(mc6850_t* acia);
 uint64_t mc6850_tick(mc6850_t* acia, uint64_t pins);
 
+// 8271 FDC
+// 8271 Status register
+const unsigned char STATUS_REG_COMMAND_BUSY = 0x80;
+const unsigned char STATUS_REG_COMMAND_FULL = 0x40;
+const unsigned char STATUS_REG_PARAMETER_FULL = 0x20;
+const unsigned char STATUS_REG_RESULT_FULL = 0x10;
+const unsigned char STATUS_REG_INTERRUPT_REQUEST = 0x08;
+const unsigned char STATUS_REG_NON_DMA_MODE = 0x04;
+
+// 8271 Result register
+const unsigned char RESULT_REG_SUCCESS = 0x00;
+const unsigned char RESULT_REG_SCAN_NOT_MET = 0x00;
+const unsigned char RESULT_REG_SCAN_MET_EQUAL = 0x02;
+const unsigned char RESULT_REG_SCAN_MET_NOT_EQUAL = 0x04;
+const unsigned char RESULT_REG_CLOCK_ERROR = 0x08;
+const unsigned char RESULT_REG_LATE_DMA = 0x0A;
+const unsigned char RESULT_REG_ID_CRC_ERROR = 0x0C;
+const unsigned char RESULT_REG_DATA_CRC_ERROR = 0x0E;
+const unsigned char RESULT_REG_DRIVE_NOT_READY = 0x10;
+const unsigned char RESULT_REG_WRITE_PROTECT = 0x12;
+const unsigned char RESULT_REG_TRACK_0_NOT_FOUND = 0x14;
+const unsigned char RESULT_REG_WRITE_FAULT = 0x16;
+const unsigned char RESULT_REG_SECTOR_NOT_FOUND = 0x18;
+const unsigned char RESULT_REG_DRIVE_NOT_PRESENT = 0x1E; // Undocumented, see http://beebwiki.mdfs.net/OSWORD_%267F
+const unsigned char RESULT_REG_DELETED_DATA_FOUND = 0x20;
+const unsigned char RESULT_REG_DELETED_DATA_CRC_ERROR = 0x2E;
+
+// 8271 special registers
+const unsigned char SPECIAL_REG_SCAN_SECTOR_NUMBER = 0x06;
+const unsigned char SPECIAL_REG_SCAN_COUNT_MSB = 0x14;
+const unsigned char SPECIAL_REG_SCAN_COUNT_LSB = 0x13;
+const unsigned char SPECIAL_REG_SURFACE_0_CURRENT_TRACK = 0x12;
+const unsigned char SPECIAL_REG_SURFACE_1_CURRENT_TRACK = 0x1A;
+const unsigned char SPECIAL_REG_MODE_REGISTER = 0x17;
+const unsigned char SPECIAL_REG_DRIVE_CONTROL_OUTPUT_PORT = 0x23;
+const unsigned char SPECIAL_REG_DRIVE_CONTROL_INPUT_PORT = 0x22;
+const unsigned char SPECIAL_REG_SURFACE_0_BAD_TRACK_1 = 0x10;
+const unsigned char SPECIAL_REG_SURFACE_0_BAD_TRACK_2 = 0x11;
+const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_1 = 0x18;
+const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_2 = 0x19;
+
+void fdc8271_init(fddc8271_t* fdc);
+void fdc8271_reset(fddc8271_t* fdc);
+uint8_t fdc8271_read(fddc8271_t* fdc, uint8_t reg);
+void fdc8271_write(fddc8271_t* fdc, uint8_t reg, uint8_t data);
 
 #ifdef __cplusplus
 } // extern "C"

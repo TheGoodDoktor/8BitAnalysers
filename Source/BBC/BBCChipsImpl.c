@@ -62,6 +62,7 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	m6522_init(&sys->via_user);
 	mc6845_init(&sys->crtc, MC6845_TYPE_UM6845R);
 	mc6850_init(&sys->acia);
+	fdc8271_init(&sys->fdc8271);
 	mem_init(&sys->mem_cpu);
 	sys->ic32 = 0x00;	// TODO: determiine initial value
 
@@ -97,6 +98,7 @@ void bbc_reset(bbc_t* sys)
 	sys->pins |= M6502_RES;
 	mc6845_reset(&sys->crtc);
 	mc6850_reset(&sys->acia);
+	m6522_reset(&sys->via_system);
 }
 
 // get display requirements and framebuffer content, may be called with nullptr
@@ -238,6 +240,19 @@ uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 					sys->rom_select = newRomSelect;
 					mem_map_rom(&sys->mem_cpu, 0, 0x8000, 0x4000, sys->rom_slots[sys->rom_select]);
 				}
+			}
+		}
+
+		// FDD
+		if ((addr & ~7) == 0xFE80)
+		{
+			if (pins & M6502_RW)	// read
+			{
+				M6502_SET_DATA(pins, fdc8271_read(&sys->fdc8271, addr & 7));
+			}
+			else // write
+			{
+				fdc8271_write(&sys->fdc8271, addr & 7, M6502_GET_DATA(pins));
 			}
 		}
 
@@ -578,4 +593,26 @@ uint64_t mc6850_tick(mc6850_t* acia, uint64_t pins)
 	// TODO: tick behaviour
 
 	return pins;
+}
+
+
+// 8271 FDC
+void fdc8271_init(fddc8271_t* fdc)
+{
+
+}
+
+void fdc8271_reset(fddc8271_t* fdc)
+{
+
+}
+
+uint8_t fdc8271_read(fddc8271_t* fdc, uint8_t reg)
+{
+	return fdc->regs[reg];
+}
+
+void fdc8271_write(fddc8271_t* fdc, uint8_t reg, uint8_t data)
+{
+	fdc->regs[reg] = data;
 }
