@@ -47,6 +47,18 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 239,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 240,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 241,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 244,
                     "DisplayType": 11
                 },
@@ -778,16 +790,34 @@
                     "Name": "zp_4E"
                 },
                 {
+                    "Address": 100,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_64"
+                },
+                {
                     "Address": 101,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_65"
                 },
                 {
+                    "Address": 121,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_79"
+                },
+                {
                     "Address": 136,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_88"
+                },
+                {
+                    "Address": 138,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_8A"
                 },
                 {
                     "Address": 174,
@@ -841,7 +871,7 @@
                     "Address": 188,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_BC"
+                    "Name": "FS_TempStorage"
                 },
                 {
                     "Address": 193,
@@ -1075,19 +1105,19 @@
                     "Address": 239,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "OSBYTE_A"
+                    "Name": "OSBYTEWORD_A"
                 },
                 {
                     "Address": 240,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "OSBYTE_X"
+                    "Name": "OSBYTEWORD_X"
                 },
                 {
                     "Address": 241,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "OSBYTE_Y"
+                    "Name": "OSBYTEWORD_Y"
                 },
                 {
                     "Address": 242,
@@ -1556,6 +1586,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_025B"
+                },
+                {
+                    "Address": 605,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_025D"
                 },
                 {
                     "Address": 606,
@@ -2484,6 +2520,12 @@
                     "Name": "data_083F"
                 },
                 {
+                    "Address": 192,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_08C0"
+                },
+                {
                     "Address": 256,
                     "Global": true,
                     "LabelType": 0,
@@ -2961,6 +3003,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_6100"
+                },
+                {
+                    "Address": 322,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_6142"
+                },
+                {
+                    "Address": 365,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_616D"
                 },
                 {
                     "Address": 512,
