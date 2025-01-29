@@ -826,6 +826,30 @@
                     "Name": "zp_AE"
                 },
                 {
+                    "Address": 175,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_AF"
+                },
+                {
+                    "Address": 176,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_B0"
+                },
+                {
+                    "Address": 177,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_B1"
+                },
+                {
+                    "Address": 179,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_B3"
+                },
+                {
                     "Address": 180,
                     "Global": true,
                     "LabelType": 0,
@@ -862,6 +886,12 @@
                     "Name": "zp_B9"
                 },
                 {
+                    "Address": 186,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_BA"
+                },
+                {
                     "Address": 187,
                     "Global": true,
                     "LabelType": 0,
@@ -874,6 +904,18 @@
                     "Name": "FS_TempStorage"
                 },
                 {
+                    "Address": 191,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_BF"
+                },
+                {
+                    "Address": 192,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_C0"
+                },
+                {
                     "Address": 193,
                     "Global": true,
                     "LabelType": 0,
@@ -884,6 +926,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_C2"
+                },
+                {
+                    "Address": 195,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_C3"
                 },
                 {
                     "Address": 196,
@@ -920,6 +968,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_CA"
+                },
+                {
+                    "Address": 205,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_CD"
                 },
                 {
                     "Address": 208,
@@ -1237,7 +1291,7 @@
                     "Address": 400,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0190"
+                    "Name": "MOSVariablesMinus166"
                 },
                 {
                     "Address": 401,
@@ -2574,7 +2628,16 @@
                     "InstructionAddressRef": 218103808
                 },
                 {
+                    "Address": 496,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 497,
+                    "DisplayType": 11,
+                    "Flags": 128
+                },
+                {
+                    "Address": 498,
                     "DisplayType": 11
                 }
             ],
@@ -2590,11 +2653,37 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0DF0"
+                },
+                {
+                    "Address": 772,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0F04"
+                },
+                {
+                    "Address": 774,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0F06"
+                },
+                {
+                    "Address": 775,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0F07"
                 }
             ],
             "PageId": 3
         },
         {
+            "LabelInfo": [
+                {
+                    "Address": 222,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10DE"
+                }
+            ],
             "PageId": 4
         },
         {
@@ -2622,6 +2711,14 @@
             "PageId": 10
         },
         {
+            "LabelInfo": [
+                {
+                    "Address": 562,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_2E32"
+                }
+            ],
             "PageId": 11
         },
         {
@@ -2918,6 +3015,12 @@
                     "Name": "data_5500"
                 },
                 {
+                    "Address": 340,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_5554"
+                },
+                {
                     "Address": 512,
                     "Global": true,
                     "LabelType": 0,
@@ -3067,6 +3170,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_6800"
+                },
+                {
+                    "Address": 234,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_68EA"
                 },
                 {
                     "Address": 256,
