@@ -24,7 +24,7 @@ Boston, MA  02110-1301, USA.
 // Mike Wyatt - Mar 2009
 //
 
-#include <windows.h>
+//#include <windows.h>
 
 #include <ctype.h>
 #include <stdio.h>
@@ -336,6 +336,8 @@ static void dfs_write_files_to_cat(unsigned char *sect0,
 		sect1[offset + 6] = c;
 	}
 }
+
+#define MAX_PATH 260
 
 bool dfs_import_file(const char *szDiscFile,
                      int numSides,
