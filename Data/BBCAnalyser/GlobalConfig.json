@@ -1,6 +1,6 @@
 {
     "AdditionalRoms": [
-        "DFS v2.10.rom"
+        "DFS-0.9.rom"
     ],
     "BasicRom": "BASIC2.rom",
     "BranchLinesDisplayMode": 1,
