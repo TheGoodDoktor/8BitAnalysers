@@ -50,6 +50,7 @@ endif ()
 # program source
 file ( GLOB program_src 
 	./*.cpp ./*.c ./*.h
+	./BBCEmu/*.cpp ./BBCEmu/*.h
 	./IOAnalysis/*.cpp ./IOAnalysis/*.h
 	./Graphics/*.cpp ./Graphics/*.h
 	)

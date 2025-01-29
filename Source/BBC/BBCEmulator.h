@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Misc/EmuBase.h"
-#include "BBCChipsImpl.h"
+#include "BBCEmu/BBCEmu.h"
 #include "IOAnalysis/BBCIOAnalysis.h"
 #include <chips/mem.h>
 #include <set>
