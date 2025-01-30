@@ -9,6 +9,10 @@
 
 #include "Graphics/BBCGraphicsViewer.h"
 
+#include "BBCEmu/Disc8271.h"
+#include <Debug/DebugLog.h>
+#include <algorithm>
+
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "BBC Analyser";
 
@@ -171,6 +175,7 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	LoadProject(pBasicConfig, true);	// load basic config initially
 
+	LoadDiscImage("KillerGorilla.ssd");
 	return true;
 }
 
@@ -615,4 +620,81 @@ uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)
 	CodeAnalysis.OnCPUTick(pins);
 
 	return pins;
+}
+
+bool Load8271DiscImage(const char* FileName, int Drive, int Tracks, DiscType Type)
+{
+	Disc8271Result Result;
+
+	if (Type == DiscType::SSD)
+	{
+		Result = LoadSimpleDiscImage(FileName, Drive, 0, Tracks);
+	}
+	else if (Type == DiscType::DSD)
+	{
+		Result = LoadSimpleDSDiscImage(FileName, Drive, Tracks);
+	}
+	else
+	{
+		assert(Type == DiscType::FSD);
+		Result = LoadFSDDiscImage(FileName, Drive);
+	}
+
+	if (Result == Disc8271Result::Success)
+	{
+		//SetImageName(FileName, Drive, Type);
+
+		return true;
+	}
+	else if (Result == Disc8271Result::InvalidFSD)
+	{
+		LOGERROR( "Not a valid FSD file:\n  %s", FileName);
+	}
+	else if (Result == Disc8271Result::InvalidTracks)
+	{
+		LOGERROR(
+			"Could not open disc file:\n  %s\n\nInvalid number of tracks",
+			FileName);
+
+		LOGERROR("Not a valid FSD file:\n  %s", FileName);
+	}
+	else
+	{
+		LOGERROR("Could not open disc file:\n  %s", FileName);
+	}
+
+	return false;
+}
+
+std::unordered_map<std::string, DiscType> g_ExtensionDiscType =
+{
+	{"ssd", DiscType::SSD},
+	{"dsd", DiscType::DSD},
+	{"fsd", DiscType::FSD},
+};
+
+DiscType GetDiscTypeFromFileName(const std::string& filename)
+{
+	std::string extension = filename.substr(filename.find_last_of(".") + 1);;
+	std::transform(extension.begin(), extension.end(), extension.begin(),
+		[](unsigned char c) { return std::tolower(c); });
+
+	const auto& extIt = g_ExtensionDiscType.find(extension);
+	if (extIt == g_ExtensionDiscType.end())
+		return DiscType::SSD;
+
+	return extIt->second;
+}
+
+bool	FBBCEmulator::LoadDiscImage(const char* pFileName)
+{
+	const DiscType discType = GetDiscTypeFromFileName(pFileName);
+	const std::string fname = pBBCConfig->DisksFolder + pFileName;
+
+	if (Load8271DiscImage(fname.c_str(), 0, 80, discType) == true)
+	{
+		return true;
+	}
+
+	return false;
 }

@@ -3,6 +3,7 @@
 #include "Misc/EmuBase.h"
 #include "BBCEmu/BBCEmu.h"
 #include "IOAnalysis/BBCIOAnalysis.h"
+
 #include <chips/mem.h>
 #include <set>
 #include <array>
@@ -104,6 +105,8 @@ public:
 
 	bool	LoadROM(const char* pFileName, int slot);
 	void	SetROMSlot(int slotNo);
+
+	bool	LoadDiscImage(const char* pFileName);
 
 	const FBBCBankIds&	GetBankIds() const { return BankIds; }
 

@@ -4,7 +4,7 @@
     ],
     "BasicRom": "BASIC2.rom",
     "BranchLinesDisplayMode": 1,
-    "DisksFolder": "C:/Dev/BBCMicro/Games/Disks/",
+    "DisksFolder": "./Disks/",
     "EditLuaBaseFiles": false,
     "EnableAudio": false,
     "EnableExperimentalFeatures": false,

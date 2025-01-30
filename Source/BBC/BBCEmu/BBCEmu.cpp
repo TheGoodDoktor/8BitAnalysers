@@ -2,6 +2,9 @@
 
 #include <string.h>
 #include <assert.h>
+
+#include "Disc8271.h"
+
 #define CHIPS_ASSERT(c) assert(c)
 
 uint64_t _bbc_tick(bbc_t* sys, uint64_t pins);
@@ -248,11 +251,11 @@ uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 		{
 			if (pins & M6502_RW)	// read
 			{
-				M6502_SET_DATA(pins, fdc8271_read(&sys->fdc8271, addr & 7));
+				M6502_SET_DATA(pins, Disc8271Read( addr & 7));
 			}
 			else // write
 			{
-				fdc8271_write(&sys->fdc8271, addr & 7, M6502_GET_DATA(pins));
+				Disc8271Write( addr & 7, M6502_GET_DATA(pins));
 			}
 		}
 
@@ -366,7 +369,15 @@ uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 
 	// TODO: implement the rest of the tick
 
+	// Tick FDC
+	Disc8271Poll();
 
+	if (NMIStatus != 0)
+	{
+		pins |= M6502_NMI;
+	}
+
+	TotalCycles++;
 
 	return pins;
 }
