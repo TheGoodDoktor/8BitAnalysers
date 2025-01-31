@@ -65,6 +65,7 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	mc6845_init(&sys->crtc, MC6845_TYPE_UM6845R);
 	mc6850_init(&sys->acia);
 	fdc8271_init(&sys->fdc8271);
+	ClearTrigger(Disc8271Trigger);
 	mem_init(&sys->mem_cpu);
 	sys->ic32 = 0x00;	// TODO: determiine initial value
 

@@ -176,6 +176,7 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	LoadProject(pBasicConfig, true);	// load basic config initially
 
 	//LoadDiscImage("KillerGorilla.ssd");
+	LoadDiscImage("Acornsoft Arcade Games.ssd");
 	return true;
 }
 

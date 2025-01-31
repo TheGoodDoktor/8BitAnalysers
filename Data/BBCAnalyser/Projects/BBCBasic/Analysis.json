@@ -29,13 +29,6 @@
                     "SMC": true
                 },
                 {
-                    "Address": 3,
-                    "ByteSize": 2,
-                    "Flags": 2,
-                    "OperandType": 1,
-                    "SMC": true
-                },
-                {
                     "Address": 256,
                     "ByteSize": 1,
                     "Flags": 2,
@@ -436,24 +429,6 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_02"
-                },
-                {
-                    "Address": 3,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_03"
-                },
-                {
-                    "Address": 4,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_04"
-                },
-                {
-                    "Address": 5,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_05"
                 },
                 {
                     "Address": 6,
@@ -4283,7 +4258,16 @@
             "CodeInfo": [
                 {
                     "Address": 7,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 7,
+                    "DataType": 11,
+                    "InstructionAddressRef": 939982848
                 }
             ],
             "LabelInfo": [
@@ -4458,7 +4442,16 @@
             "CodeInfo": [
                 {
                     "Address": 800,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 800,
+                    "DataType": 11,
+                    "InstructionAddressRef": 1327497216
                 }
             ],
             "LabelInfo": [
