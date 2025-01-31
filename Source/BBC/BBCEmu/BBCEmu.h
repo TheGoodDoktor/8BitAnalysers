@@ -173,6 +173,7 @@ extern int TotalCycles;
 extern unsigned char NMIStatus;
 
 #define CycleCountTMax INT_MAX
+#define CycleCountWrap (INT_MAX / 2)
 
 #define SetTrigger(after, var) var = TotalCycles + (after)
 #define IncTrigger(after, var) var += (after)

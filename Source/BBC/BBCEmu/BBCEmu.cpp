@@ -378,6 +378,11 @@ uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 	}
 
 	TotalCycles++;
+	if (TotalCycles > CycleCountWrap)
+	{
+		TotalCycles -= CycleCountWrap;
+		AdjustTrigger(Disc8271Trigger);
+	}
 
 	return pins;
 }
