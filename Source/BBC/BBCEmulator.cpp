@@ -603,7 +603,7 @@ uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)
 
 			if (addr == 0xfe30)
 			{
-				SetROMSlot(val);
+				SetROMSlot(val & 0xf);
 			}
 		
 			FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);
