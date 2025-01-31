@@ -372,10 +372,16 @@ uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 	// Tick FDC
 	Disc8271Poll();
 
-	if (NMIStatus != 0)
+	static uint8_t OldNMIStatus = 0;
+	if ((NMIStatus && !OldNMIStatus) || (NMIStatus & 1 << nmi_econet))
 	{
-		pins |= M6502_NMI;
+		if (NMIStatus != 0)
+			pins |= M6502_NMI;
+		NMIStatus &= ~(1 << nmi_econet);
 	}
+	OldNMIStatus = NMIStatus;
+
+	
 
 	TotalCycles++;
 	if (TotalCycles > CycleCountWrap)
