@@ -526,6 +526,7 @@ void bbc_init_key_map(bbc_t* sys)
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_CURSOR_UP, 9, 3, 1);    // cursor up
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_BACKSPACE, 9, 5, 0);    // backspace -> delete
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_ENTER, 9, 4, 0);    // return
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_ESCAPE, 0, 7, 0);    // escape
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_SHIFT, 0, 0, 0);    // shift
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_CTRL, 1, 0, 0);    // ctrl
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_CAPS_LOCK, 0, 4, 0);    // caps lock
