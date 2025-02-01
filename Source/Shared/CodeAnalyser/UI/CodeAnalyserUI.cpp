@@ -2591,6 +2591,7 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 	const char* pTxtPtr = pText;
 	bool bInTag = false;
 	bool bToolTipshown = false;
+	bool bCarriageReturn = false;
 
 	// temp string on stack
 	const int kMaxStringSize = 64;
@@ -2621,8 +2622,12 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 				bInTag = true;
 				tag.clear();
 			}
+			else if (ch == '\n')
+			{
+				bCarriageReturn = true;
+			}
 			else
-			{ 
+			{
 				str[strPos++] = ch;	// add to string
 			}
 		}
@@ -2639,12 +2644,17 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 			}
 		}
 
-		if (strPos == kMaxStringSize || (bInTag && strPos != 0) || *pTxtPtr == 0)
+		if (strPos == kMaxStringSize || (bInTag && strPos != 0) || *pTxtPtr == 0 || bCarriageReturn)
 		{
 			str[strPos] = 0;
 			strPos = 0;
 			ImGui::SameLine(0,0);
 			ImGui::Text("%s", str);
+			if (bCarriageReturn)
+			{
+				ImGui::NewLine();
+				bCarriageReturn = false;
+			}
 		}
 	}
 

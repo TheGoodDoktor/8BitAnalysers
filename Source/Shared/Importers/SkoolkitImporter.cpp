@@ -12,7 +12,8 @@ const char kSkoolkitDirectiveNone = '-';
 
 // Set this to true to strip carriage returns from inline comments.
 // This won't affect block comments.
-const bool bStripCarriageReturnsFromComments = true;
+const bool bStripCarriageReturnsFromComments = false;
+const bool bStripBracesFromComments = false;
 
 struct FSkoolkitInstruction
 {
@@ -35,12 +36,23 @@ std::string TrimLeadingWhitespace(const std::string& str)
 	return TrimLeadingChars(str, kWhiteSpace);
 }
 
+void RemoveTrailingChar(std::string& str, char ch)
+{
+	if (!str.empty() && str.back() == ch)
+		str.pop_back();
+}
 void RemoveTrailingCarriageReturn(std::string& str)
 {
-	if (str.empty())
-		return;
-	if (str.back() == '\n' || str.back() == '\r')
-		str.pop_back();
+	RemoveTrailingChar(str, '\n');
+	RemoveTrailingChar(str, '\r');
+}
+
+void AddTrailingCarriageReturn(std::string& str)
+{
+	if (!str.empty() && str.back() != '\n')
+	{
+		str += "\n";
+	}
 }
 
 bool StringStartsWith(const std::string& str, const std::string& substring)
@@ -70,10 +82,41 @@ bool IsNumeric(char c)
 	return c >= '0' && c <= '9';
 }
 
+// macros to strip or deal with
+// #UDGTABLE
+// #TABLE
+// #SPRITE
+// #AUDIO
+// #DEF
+// #FACT
+// #FOR
+// #GBUF
+
 // https://skoolkit.ca/docs/skoolkit/skool-macros.html
-std::string ProcessMacro(const char** pInText)
+std::string ProcessMacro(const char** pMacroText, const char* pTxtStart)
 {
-	const char* pInTxtPtr = *pInText;
+	const char* pInTxtPtr = *pMacroText;
+
+	/*
+	static bool bInTable = false;
+	if (bInTable == false)
+	{
+		if (!strncmp(pInTxtPtr, "UDGTABLE", 8) || !strncmp(pInTxtPtr, "TABLE", 5))
+		{
+			bInTable = true;
+			return "";
+		}
+	}
+	else
+	{
+		// todo check we're not going off start of string
+		if (!strncmp(pInTxtPtr - 6, "TABLE", 5))
+		{
+			bInTable = false;
+		}
+		return "";
+	}*/
+
 	if (!strncmp(pInTxtPtr, "REG", 3))
 	{
 		pInTxtPtr += 3;
@@ -130,7 +173,7 @@ std::string ProcessMacro(const char** pInText)
 			{
 				const char* pDst = map[i][1];
 				if (pDst[0] != 0)
-					*pInText = pInTxtPtr + srcLen;
+					*pMacroText = pInTxtPtr + srcLen;
 				return map[i][1];
 			}
 		}
@@ -154,20 +197,49 @@ std::string ProcessMacro(const char** pInText)
 		if (pInTxtPtr != pNumEnd)
 		{
 			snprintf(buf, kBufSize, "#ADDR:0x%04X#", address);
-			*pInText = pNumEnd;
+			*pMacroText = pNumEnd;
+			return buf;
+		}
+
+		return "";
+	}
+
+	if (*pInTxtPtr == 'b')
+	{
+		static const int kBufSize = 32;
+		static char buf[kBufSize] = { 0 };
+
+		pInTxtPtr++;
+
+		char* pNumEnd;
+		const int num = static_cast<uint16_t>(strtol(pInTxtPtr, &pNumEnd, 10));
+		if (pInTxtPtr != pNumEnd)
+		{
+			snprintf(buf, kBufSize, "%d", num);
+			*pMacroText = pNumEnd;
 			return buf;
 		}
 		return "";
 	}
+
+#ifndef NDEBUG
+	//LOGINFO("[MACRO] %s", pInTxtPtr);
+#endif
 	return "";
 }
-
 
 std::string ProcessComment(const char* pText)
 {
 	const char* pTxtPtr = pText;
 	std::string outString;
 
+	if (bStripBracesFromComments)
+	{
+		// skip leading brace
+		if (*pTxtPtr == '{')
+			pTxtPtr++;
+	}
+	
 	while (*pTxtPtr != 0)
 	{
 		const char ch = *pTxtPtr++;
@@ -176,7 +248,7 @@ std::string ProcessComment(const char* pText)
 		{
 			// See if we've hit a supported skoolkit macro.
 			// If so, convert it to SA markup.
-			std::string markupTxt = ProcessMacro(&pTxtPtr);
+			std::string markupTxt = ProcessMacro(&pTxtPtr, pText);
 			if (markupTxt.empty())
 			{
 				// add escape character so SA doesn't try to treat this macro as SA markup.
@@ -193,7 +265,16 @@ std::string ProcessComment(const char* pText)
 		}
 	}
 
-	LOGINFO("REPLACED '%s' with '%s'", pText, outString.c_str());
+	RemoveTrailingCarriageReturn(outString);
+	
+	if (bStripBracesFromComments)
+	{
+		RemoveTrailingChar(outString, '}');
+	}
+
+#ifndef NDEBUG
+	//LOGINFO("REPLACED '%s' with '%s'", pText, outString.c_str());
+#endif
 
 	return outString;
 }
@@ -270,8 +351,6 @@ bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 		{
 			const char* pCommentTxt = strLine.c_str() + commentStart;
 			instruction.Comment = ProcessInlineComment(pCommentTxt);
-
-			RemoveTrailingCarriageReturn(instruction.Comment); // do I need to do this?
 		}
 	}
 	
@@ -285,9 +364,7 @@ bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 
 	// get the disassembly text inbetween the address and the comment
 	instruction.Operation = strLine.substr(opStart, opLen);
-
 	RemoveTrailingCarriageReturn(instruction.Operation);
-
 	instruction.SubBlockDirective = GetDirectiveFromAsm(instruction.Operation);
 
 	return true;
@@ -442,6 +519,11 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 	const FSkoolFileLocation kSkoolLocationDefault;
 	bool bInRsubSection = false;
 
+#ifndef NDEBUG
+	FCodeAnalysisItem longestCommentItem;
+	int longestCommentLineNum = -1;
+#endif
+
 	unsigned int lineNum = 0;
 	while (fgets(pchLine, 65536, fp))
 	{
@@ -489,14 +571,19 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 				}
 				else
 				{
-					if (LastItem.Item->Comment.back() != '\n')
-					{
-						LastItem.Item->Comment += "\n";
-					}
+					AddTrailingCarriageReturn(LastItem.Item->Comment);
 				}
 				
 				LastItem.Item->Comment += ProcessInlineComment(trimmed.c_str() + 2);
 				RemoveTrailingCarriageReturn(LastItem.Item->Comment);
+
+#ifndef NDEBUG
+				if (!longestCommentItem.Item || LastItem.Item->Comment.size() > longestCommentItem.Item->Comment.size())
+				{
+					longestCommentItem = LastItem;
+					longestCommentLineNum = lineNum;
+				}
+#endif
 			}
 			continue;
 		}
@@ -725,6 +812,18 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 
 		LastItem = FCodeAnalysisItem(pItem, state.GetBankFromAddress(instruction.Address), instruction.Address);
 	}
+
+#ifndef NDEBUG
+	if (longestCommentItem.Item)
+	{
+		LOGINFO("Longest comment: line %d. %d chars. address %d 0x%x", 
+			longestCommentLineNum,
+			longestCommentItem.Item->Comment.size(), 
+			longestCommentItem.AddressRef.Address,
+			longestCommentItem.AddressRef.Address);
+		LOGINFO("Comment is '%s'", longestCommentItem.Item->Comment.c_str());
+	}
+#endif
 
 	if (pSkoolInfo)
 	{
