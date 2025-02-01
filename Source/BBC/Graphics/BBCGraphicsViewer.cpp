@@ -5,6 +5,8 @@
 
 #include <imgui.h>
 #include <CodeAnalyser/UI/UIColours.h>
+#include "Mode7Screen.h"
+#include "BitmapScreen.h"
 
 // TODO: move this to the emulator class
 
@@ -60,24 +62,6 @@ void FBBCGraphicsViewer::DrawScreenViewer()
 	else
 		UpdateScreenPixelImage();
 	pScreenView->Draw(320,256);
-
-	// big hack (tm)
-	// Check keys - not event driven, hopefully perf isn't too bad
-	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
-	{
-		if (ImGui::IsKeyPressed((ImGuiKey)key, false))
-		{
-			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
-			if (bbcKey != 0)// && bWindowFocused)
-				bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
-		}
-		else if (ImGui::IsKeyReleased((ImGuiKey)key))
-		{
-			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
-			if (bbcKey != 0)
-				bbc_key_up(&pBBCEmu->GetBBC(), bbcKey);
-		}
-	}
 }
 
 int GetHWColourIndexForPixel(uint8_t val, int pixelIndex, int scrMode);
@@ -100,6 +84,7 @@ uint32_t FBBCGraphicsViewer::GetRGBValueForPixel(int colourIndex, uint32_t heatM
 	return finalColour;
 }
 
+#if 0
 uint16_t FBBCGraphicsViewer::WrapAddress(uint16_t addr) const
 {
 	const uint16_t offsets[] = {0x4000,0x6000,0x3000,0x5800};
@@ -222,6 +207,7 @@ void FBBCGraphicsViewer::UpdateGraphicsScreen4bpp()
 		}
 	}
 }
+#endif
 
 void FBBCGraphicsViewer::UpdateScreenPixelImage(void)
 {
@@ -247,22 +233,10 @@ void FBBCGraphicsViewer::UpdateScreenPixelImage(void)
 
 	const int bpp = crtc.h_displayed / bbc.video_ula.num_chars_per_line;
 
-	switch (bpp)
-	{
-	case 1:
-		UpdateGraphicsScreen1bpp();
-		break;
-	case 2:
-		UpdateGraphicsScreen2bpp();
-		break;
-	case 4:
-		UpdateGraphicsScreen4bpp();
-		break;
-	}
-
+	::UpdateScreenPixelImage(pBBCEmu, pScreenView);
 }
 
-
+#if 0
 // Given a byte containing multiple pixels, decode the colour index for a specified pixel.
 // For screen mode 0 pixel index can be [0-1]. For mode 1 pixel index can be [0-3]
 // This returns a colour index into the 32 hardware colours. It does not return an RGB value.
@@ -297,10 +271,10 @@ int GetHWColourIndexForPixel(uint8_t val, int pixelIndex, int scrMode)
 	}
 	return colourIndex;
 }
+#endif
 
 // Teletext
 
-#include "ttxfont.h"
 
 void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 {
@@ -324,118 +298,6 @@ void	FBBCGraphicsViewer::UpdateScreenTeletextImage()
 		pScreenView = new FGraphicsView(ScreenWidth, ScreenHeight);
 	}
 
-	const bbc_t& bbc = pBBCEmu->GetBBC();
-
-	uint16_t currentScreenAddress = DisplayAddress;//(bbc.crtc.ma & 0x800) << 3 | 0x3C00 | (bbc.crtc.ma & 0x3FF);
-
-	for (int y = 0; y < HeightChars; y++)
-	{
-		for (int x = 0; x < WidthChars; x++)
-		{
-			const uint16_t ttxScreenAddress = (currentScreenAddress & 0x800) << 3 | 0x3C00 | (currentScreenAddress & 0x3FF);
-			const int charCode = pBBCEmu->ReadByte(ttxScreenAddress);
-			currentScreenAddress++;
-
-			if (charCode < 0x20)
-			{
-				// TODO: process control character
-			}
-			else if (charCode < 0x20 + 96)
-			{
-				const uint16_t* pChar = mode7font[charCode - 0x20];
-
-				for (int l = 0; l < 20; l++)
-				{
-					uint32_t* pCurPixBufAddr = pScreenView->GetPixelBuffer() + (ScreenWidth * (y * 20 + l)) + (x * 16);
-					uint16_t characterLine = pChar[l];
-					for (int c = 0; c < 16; c++)
-					{
-						ImU32 pixelColour = characterLine & 0x8000 ? 0xffffffff : 0xff000000;
-						*pCurPixBufAddr = pixelColour;
-						pCurPixBufAddr++;
-						characterLine <<= 1;
-					}
-				}
-			}
-
-		}
-	}
+	DrawMode7ScreenToGraphicsView(pBBCEmu,pScreenView);
 }
 
-struct FKeyVal
-{
-    int NoShift;
-    int Shifted;
-};
-
-static std::map<ImGuiKey, FKeyVal> g_BBCKeysLUT = 
-{
-	{ImGuiKey_Space,		{BBC_KEYCODE_SPACE, BBC_KEYCODE_SPACE}},
-	{ImGuiKey_Enter,		{BBC_KEYCODE_ENTER, BBC_KEYCODE_ENTER}},
-	{ImGuiKey_Escape,		{BBC_KEYCODE_ESCAPE, BBC_KEYCODE_ESCAPE}},
-	{ImGuiKey_LeftCtrl,		{BBC_KEYCODE_CTRL, BBC_KEYCODE_CTRL}},
-	{ImGuiKey_RightCtrl,	{BBC_KEYCODE_CTRL, BBC_KEYCODE_CTRL}},
-	{ImGuiKey_LeftShift,	{BBC_KEYCODE_SHIFT, BBC_KEYCODE_SHIFT}},
-	{ImGuiKey_RightShift,	{BBC_KEYCODE_SHIFT, BBC_KEYCODE_SHIFT}},
-	{ImGuiKey_Backspace,	{BBC_KEYCODE_BACKSPACE, BBC_KEYCODE_BACKSPACE}},
-	{ImGuiKey_LeftArrow,	{BBC_KEYCODE_CURSOR_LEFT, BBC_KEYCODE_CURSOR_LEFT}},
-	{ImGuiKey_RightArrow,	{BBC_KEYCODE_CURSOR_RIGHT, BBC_KEYCODE_CURSOR_RIGHT}},
-	{ImGuiKey_UpArrow,		{BBC_KEYCODE_CURSOR_UP, BBC_KEYCODE_CURSOR_UP}},
-	{ImGuiKey_DownArrow,	{BBC_KEYCODE_CURSOR_DOWN, BBC_KEYCODE_CURSOR_DOWN}},
-	{ImGuiKey_CapsLock,		{BBC_KEYCODE_CAPS_LOCK, BBC_KEYCODE_CAPS_LOCK}},
-	{ImGuiKey_Apostrophe,	{'\'', '@'}},
-	{ImGuiKey_Comma,		{',', '<'}},
-	{ImGuiKey_Minus,		{'-', '_'}},
-	{ImGuiKey_Period,		{'.', '>'}},
-	{ImGuiKey_Slash,		{'/', '?'}},
-	{ImGuiKey_Semicolon,	{';', ':'}},
-	{ImGuiKey_Equal,		{'=', '+'}},
-	{ImGuiKey_LeftBracket,	{'[', '{'}},
-	{ImGuiKey_Backslash,	{'\\', '|'}},
-	{ImGuiKey_RightBracket,	{']', '}'}},
-	{ImGuiKey_GraveAccent,	{'`', '~'}},
-};
-
-int BBCKeyFromImGuiKey(ImGuiKey key)
-{
-    uint32_t bbcKey = 0;
-    bool isShifted = ImGui::GetIO().KeyShift;
-
-    if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
-    {
-        if (isShifted)
-        {
-            // Handle shifted number keys (e.g., '!' for '1')
-            switch (key)
-            {
-                case ImGuiKey_1: bbcKey = (uint8_t)'!'; break;
-                case ImGuiKey_2: bbcKey = (uint8_t)'"'; break;
-                case ImGuiKey_3: bbcKey = (uint8_t)'£'; break;
-                case ImGuiKey_4: bbcKey = (uint8_t)'$'; break;
-                case ImGuiKey_5: bbcKey = (uint8_t)'%'; break;
-                case ImGuiKey_6: bbcKey = (uint8_t)'^'; break;
-                case ImGuiKey_7: bbcKey = (uint8_t)'&'; break;
-                case ImGuiKey_8: bbcKey = (uint8_t)'*'; break;
-                case ImGuiKey_9: bbcKey = (uint8_t)'('; break;
-                case ImGuiKey_0: bbcKey = (uint8_t)')'; break;
-            }
-        }
-        else
-        {
-            bbcKey = '0' + (key - ImGuiKey_0);
-        }
-    }
-    else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
-    {
-        bbcKey = isShifted ? 'A' + (key - ImGuiKey_A) : 'a' + (key - ImGuiKey_A);
-    }
-    else
-    {
-        auto keyIt = g_BBCKeysLUT.find(key);
-        if (keyIt != g_BBCKeysLUT.end())
-        {
-            bbcKey = isShifted ? keyIt->second.Shifted : keyIt->second.NoShift;
-        }
-    }
-    return bbcKey;
-}

@@ -7,6 +7,7 @@
 #include <chips/mem.h>
 #include <set>
 #include <array>
+#include "Graphics/BBCViewer.h"
 
 struct FBBCLaunchConfig : public FEmulatorLaunchConfig
 {
@@ -129,6 +130,8 @@ private:
 
 	FBBCBankIds			BankIds;	
 
+	FBBCDisplay			Display;
+
 	std::set<FAddressRef>	InterruptHandlers;
 	uint16_t				PreviousPC = 0;
 	FBBCIOAnalysis			IOAnalysis;
@@ -143,3 +146,5 @@ private:
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment
 };
+
+int BBCKeyFromImGuiKey(ImGuiKey key);
