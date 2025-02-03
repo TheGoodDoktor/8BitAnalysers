@@ -989,6 +989,12 @@
                     "Name": "zp_A8"
                 },
                 {
+                    "Address": 169,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A9"
+                },
+                {
                     "Address": 170,
                     "Global": true,
                     "LabelType": 0,
@@ -2805,6 +2811,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_03D2"
+                },
+                {
+                    "Address": 989,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_03DD"
+                },
+                {
+                    "Address": 990,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_03DE"
                 }
             ],
             "PageId": 0
@@ -3349,55 +3367,55 @@
                 },
                 {
                     "Address": 259,
-                    "ByteSize": 1,
+                    "ByteSize": 3,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 262,
-                    "ByteSize": 1,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "SMC": true
                 },
                 {
                     "Address": 264,
-                    "ByteSize": 1,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
                 },
                 {
                     "Address": 266,
-                    "ByteSize": 1,
+                    "ByteSize": 3,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 269,
-                    "ByteSize": 1,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 271,
-                    "ByteSize": 1,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
                 },
                 {
                     "Address": 273,
-                    "ByteSize": 1,
+                    "ByteSize": 3,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 276,
-                    "ByteSize": 1,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
