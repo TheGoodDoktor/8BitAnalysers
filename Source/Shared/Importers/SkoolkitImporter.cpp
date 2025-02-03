@@ -25,6 +25,37 @@ struct FSkoolkitInstruction
 	std::string Operation; // the disassembly text
 };
 
+class FSkoolKitImporter
+{
+public:
+	FSkoolKitImporter(FCodeAnalysisState& state, FSkoolFileInfo* pSkoolInfo = nullptr)
+		: State(state)
+		, pSkoolInfo(pSkoolInfo)
+	{
+		pchLine = new char[65536];
+	}
+	~FSkoolKitImporter()
+	{
+		delete[] pchLine;
+	}
+
+	bool Import(const char* pTextFileName);
+
+protected:
+	void ProcessTableMacro(const char** pMacroText, const char* pTxtStart);
+	std::string ProcessMacro(const char** pMacroText);
+	std::string ProcessBlockComment(const char* pText);
+	std::string ProcessInlineComment(const char* pText);
+	std::string ProcessComment(const char* pText);
+	bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction);
+
+	bool bInTable = false;
+	char* pchLine = nullptr;
+	FCodeAnalysisState& State;
+	FSkoolFileInfo* pSkoolInfo = nullptr;
+};
+
+
 std::string TrimLeadingChars(const std::string& str, const std::string& charsToTrim)
 {
 	size_t start = str.find_first_not_of(charsToTrim);
@@ -82,6 +113,17 @@ bool IsNumeric(char c)
 	return c >= '0' && c <= '9';
 }
 
+void FSkoolKitImporter::ProcessTableMacro(const char** pMacroText, const char* pTxtStart)
+{
+	if (*pMacroText - pTxtStart >= 6)
+	{
+		if (!strncmp(*pMacroText - 6, "TABLE", 5))
+		{
+			bInTable = false;
+		}
+	}
+}
+
 // macros to strip or deal with
 // #UDGTABLE
 // #TABLE
@@ -93,29 +135,9 @@ bool IsNumeric(char c)
 // #GBUF
 
 // https://skoolkit.ca/docs/skoolkit/skool-macros.html
-std::string ProcessMacro(const char** pMacroText, const char* pTxtStart)
+std::string FSkoolKitImporter::ProcessMacro(const char** pMacroText)
 {
 	const char* pInTxtPtr = *pMacroText;
-
-	/*
-	static bool bInTable = false;
-	if (bInTable == false)
-	{
-		if (!strncmp(pInTxtPtr, "UDGTABLE", 8) || !strncmp(pInTxtPtr, "TABLE", 5))
-		{
-			bInTable = true;
-			return "";
-		}
-	}
-	else
-	{
-		// todo check we're not going off start of string
-		if (!strncmp(pInTxtPtr - 6, "TABLE", 5))
-		{
-			bInTable = false;
-		}
-		return "";
-	}*/
 
 	if (!strncmp(pInTxtPtr, "REG", 3))
 	{
@@ -222,13 +244,32 @@ std::string ProcessMacro(const char** pMacroText, const char* pTxtStart)
 		return "";
 	}
 
+	if (!strncmp(pInTxtPtr, "UDGTABLE", 8) || !strncmp(pInTxtPtr, "TABLE", 5))
+	{
+		bInTable = true;
+		return "";
+	}
+
+	if (!strncmp(pInTxtPtr, "AUDIO", 5))
+	{
+		pInTxtPtr += 5;
+		while (*pInTxtPtr != 0 && *pInTxtPtr != '\n')
+			pInTxtPtr++;
+
+		*pMacroText = pInTxtPtr;
+		// Return space to prevent adding an #.
+		// TODO this in a better way.
+		return " ";
+	}
+
 #ifndef NDEBUG
-	//LOGINFO("[MACRO] %s", pInTxtPtr);
+	// log unhandled macro
+	LOGINFO("[MACRO] %s", pInTxtPtr);
 #endif
 	return "";
 }
 
-std::string ProcessComment(const char* pText)
+std::string FSkoolKitImporter::ProcessComment(const char* pText)
 {
 	const char* pTxtPtr = pText;
 	std::string outString;
@@ -244,24 +285,34 @@ std::string ProcessComment(const char* pText)
 	{
 		const char ch = *pTxtPtr++;
 
-		if (ch == '#')
+		if (bInTable)
 		{
-			// See if we've hit a supported skoolkit macro.
-			// If so, convert it to SA markup.
-			std::string markupTxt = ProcessMacro(&pTxtPtr, pText);
-			if (markupTxt.empty())
+			if (ch == '#')
 			{
-				// add escape character so SA doesn't try to treat this macro as SA markup.
-				outString += "\\#";
-			}
-			else
-			{
-				outString += markupTxt;
+				ProcessTableMacro(&pTxtPtr, pText);
 			}
 		}
 		else
 		{
-			outString += ch;	// add to string
+			if (ch == '#')
+			{
+				// See if we've hit a supported skoolkit macro.
+				// If so, convert it to SA markup.
+				std::string markupTxt = ProcessMacro(&pTxtPtr);
+				if (markupTxt.empty())
+				{
+					// add escape character so SA doesn't try to treat this macro as SA markup.
+					outString += "\\#";
+				}
+				else
+				{
+					outString += markupTxt;
+				}
+			}
+			else
+			{
+				outString += ch;	// add to string
+			}
 		}
 	}
 
@@ -279,17 +330,17 @@ std::string ProcessComment(const char* pText)
 	return outString;
 }
 
-std::string ProcessBlockComment(const char* pText)
+std::string FSkoolKitImporter::ProcessBlockComment(const char* pText)
 {
 	return ProcessComment(pText);
 }
 
-std::string ProcessInlineComment(const char* pText)
+std::string FSkoolKitImporter::ProcessInlineComment(const char* pText)
 {
 	return ProcessComment(pText);
 }
 
-bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
+bool FSkoolKitImporter::ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 {
 	if (strLine.length() < 6)
 		return false;
@@ -343,9 +394,9 @@ bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
 			// Special case. We have an empty comment.
 			// Empty comments occur in the skool file on data lines when we're between lines that contain 
 			// a comment with an open and close brace. i.e. { and }
-			// To preserve these we set the comment to be a carriage return. This forces an empty comment 
+			// To preserve these we set the comment to be a single space. This forces an empty comment 
 			// to be written out when exporting.
-			instruction.Comment = "\n";
+			instruction.Comment = " ";
 		}
 		else if (commentStart < strLen)
 		{
@@ -495,12 +546,11 @@ uint16_t CountDataBytes(std::string str)
 	return size;
 }
 
-bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FSkoolFileInfo* pSkoolInfo /*=nullptr*/)
+bool FSkoolKitImporter::Import(const char* pTextFileName)
 {
-	FILE* fp = fopen(pTextFileName, "rt");
-	char pchLine[65536];
 	// note: "rt" = text mode, which means Windows line endings \r\n will be converted into \n
-	
+	FILE* fp = fopen(pTextFileName, "rt");
+
 	if (fp == nullptr)
 		return false;
 
@@ -511,8 +561,8 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 	std::string label;
 	FCodeAnalysisItem LastItem;
 
-	uint16_t minAddr=0xffff;
-	uint16_t maxAddr=0;
+	uint16_t minAddr = 0xffff;
+	uint16_t maxAddr = 0;
 
 	// only used if pSkoolInfo is set
 	FSkoolFileLocation skoolLocation;
@@ -541,14 +591,14 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 
 		if (strLine[0] == '@')
 		{
-			if (!ParseAsmDirective(state, strLine, label))
+			if (!ParseAsmDirective(State, strLine, label))
 				commentBlock += strLine;
 
 			if (StringStartsWith(strLine, "@rsub+begin"))
 			{
 				bInRsubSection = true;
 			}
-			
+
 			continue;
 		}
 
@@ -573,7 +623,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 				{
 					AddTrailingCarriageReturn(LastItem.Item->Comment);
 				}
-				
+
 				LastItem.Item->Comment += ProcessInlineComment(trimmed.c_str() + 2);
 				RemoveTrailingCarriageReturn(LastItem.Item->Comment);
 
@@ -593,7 +643,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 			// skip blank lines
 			continue;
 		}
-		
+
 		// We've got an instruction.
 		// Get directive, address and comment 
 		FItem* pItem = nullptr;
@@ -625,7 +675,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		{
 			// we've encountered a new block
 			blockDirective = instruction.BlockDirective;
-			subBlockDirective = instruction.SubBlockDirective; 
+			subBlockDirective = instruction.SubBlockDirective;
 			if (pSkoolInfo)
 				skoolLocation.BlockDirective = GetDirectiveFromChar(blockDirective);// is this needed? we're doing it above
 		}
@@ -645,16 +695,16 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		{
 			// Address is code
 
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(instruction.Address);
+			FCodeInfo* pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
 			if (!pCodeInfo)
 			{
-				WriteCodeInfoForAddress(state, instruction.Address);
-				pCodeInfo = state.GetCodeInfoForPhysicalAddress(instruction.Address);
+				WriteCodeInfoForAddress(State, instruction.Address);
+				pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
 
 			}
 			pItem = pCodeInfo;
 
-			
+
 			if (blockDirective == 'u')
 				pCodeInfo->bUnused = true;
 		}
@@ -663,15 +713,15 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		case 'w':
 		{
 			// Address is data
-			
-			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(instruction.Address);
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(instruction.Address);
+
+			FDataInfo* pDataInfo = State.GetReadDataInfoForAddress(instruction.Address);
+			FCodeInfo* pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
 			if (pCodeInfo)
 			{
-				LOGWARNING("Item at $%02X was set to code: %s",instruction.Address, pCodeInfo->Text.c_str());
+				LOGWARNING("Item at $%02X was set to code: %s", instruction.Address, pCodeInfo->Text.c_str());
 				LOGWARNING("Code item removed and replace as data");
 				// remove the code item
-				state.SetCodeInfoForAddress(instruction.Address, nullptr);	// memory will get cleared up 
+				State.SetCodeInfoForAddress(instruction.Address, nullptr);	// memory will get cleared up 
 			}
 			if (pDataInfo)
 			{
@@ -680,7 +730,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 				// count how many entries we have
 				const uint16_t numItems = static_cast<uint16_t>(std::count(instruction.Operation.begin(), instruction.Operation.end(), ',') + 1);
 				std::string defStatement = instruction.Operation.substr(0, 4);
-				
+
 				if (defStatement == "DEFB" || defStatement == "defb")
 				{
 					if (numItems == 1)
@@ -708,7 +758,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		case 't':
 		{
 			// Address is text
-			FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(instruction.Address);
+			FDataInfo* pDataInfo = State.GetReadDataInfoForAddress(instruction.Address);
 			if (pDataInfo)
 			{
 				// If this is set to true it will parse the DEFM statement and calculate
@@ -752,7 +802,7 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 					// force to byte type otherwise SetItemText() does nothing
 					pDataInfo->DataType = EDataType::Byte;
 
-					SetItemText(state, FCodeAnalysisItem(pDataInfo,state.GetBankFromAddress(instruction.Address), instruction.Address));
+					SetItemText(State, FCodeAnalysisItem(pDataInfo, State.GetBankFromAddress(instruction.Address), instruction.Address));
 				}
 				pItem = pDataInfo;
 			}
@@ -770,10 +820,10 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 
 		if (!commentBlock.empty())
 		{
-			FCommentBlock* pBlock = state.GetCommentBlockForAddress(state.AddressRefFromPhysicalAddress(instruction.Address));
-			
+			FCommentBlock* pBlock = State.GetCommentBlockForAddress(State.AddressRefFromPhysicalAddress(instruction.Address));
+
 			if (pBlock == nullptr)
-				pBlock = AddCommentBlock(state, state.AddressRefFromPhysicalAddress(instruction.Address));
+				pBlock = AddCommentBlock(State, State.AddressRefFromPhysicalAddress(instruction.Address));
 			else
 			{
 				std::string commentExcerpt = pBlock->Comment.substr(0, 1024);
@@ -788,13 +838,13 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		if (!label.empty())
 		{
 			ELabelType labelType = ELabelType::Data;
-			FAddressRef addrRef = state.AddressRefFromPhysicalAddress(instruction.Address);
-			AddLabelAtAddress(state, addrRef);
-			if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrRef))
+			FAddressRef addrRef = State.AddressRefFromPhysicalAddress(instruction.Address);
+			AddLabelAtAddress(State, addrRef);
+			if (FLabelInfo* pLabelInfo = State.GetLabelForAddress(addrRef))
 			{
 				pLabelInfo->ChangeName(label.c_str(), addrRef);
 			}
-			
+
 			label.clear();
 		}
 
@@ -810,15 +860,15 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		minAddr = std::min(instruction.Address, minAddr);
 		maxAddr = std::max(instruction.Address, maxAddr);
 
-		LastItem = FCodeAnalysisItem(pItem, state.GetBankFromAddress(instruction.Address), instruction.Address);
+		LastItem = FCodeAnalysisItem(pItem, State.GetBankFromAddress(instruction.Address), instruction.Address);
 	}
 
 #ifndef NDEBUG
 	if (longestCommentItem.Item)
 	{
-		LOGINFO("Longest comment: line %d. %d chars. address %d 0x%x", 
+		LOGINFO("Longest comment: line %d. %d chars. address %d 0x%x",
 			longestCommentLineNum,
-			longestCommentItem.Item->Comment.size(), 
+			longestCommentItem.Item->Comment.size(),
 			longestCommentItem.AddressRef.Address,
 			longestCommentItem.AddressRef.Address);
 		LOGINFO("Comment is '%s'", longestCommentItem.Item->Comment.c_str());
@@ -831,7 +881,14 @@ bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FS
 		pSkoolInfo->EndAddr = maxAddr;
 	}
 
-	state.SetAddressRangeDirty();	
+	State.SetAddressRangeDirty();
 	fclose(fp);
+
 	return true;
+}
+
+bool ImportSkoolKitFile(FCodeAnalysisState& state, const char* pTextFileName, FSkoolFileInfo* pSkoolInfo /*=nullptr*/)
+{
+	FSkoolKitImporter importer = FSkoolKitImporter(state, pSkoolInfo);
+	return importer.Import(pTextFileName);
 }
