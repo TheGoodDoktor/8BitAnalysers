@@ -9,6 +9,10 @@
 
 #include "Graphics/BBCGraphicsViewer.h"
 
+#include "BBCEmu/Disc8271.h"
+#include <Debug/DebugLog.h>
+#include <algorithm>
+
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "BBC Analyser";
 
@@ -162,6 +166,8 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	pGraphicsViewer = new FBBCGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
+	Display.Init(&CodeAnalysis, this);
+
 	CodeAnalysis.Debugger.Break();
 
 	FBBCProjectConfig* pBasicConfig = (FBBCProjectConfig*)GetGameConfigForName("BBCBasic");
@@ -171,6 +177,8 @@ bool FBBCEmulator::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	LoadProject(pBasicConfig, true);	// load basic config initially
 
+	//LoadDiscImage("KillerGorilla.ssd");
+	LoadDiscImage("Welcome.ssd");
 	return true;
 }
 
@@ -236,6 +244,11 @@ void FBBCEmulator::Shutdown()
 
 void FBBCEmulator::DrawEmulatorUI()
 {
+	if (ImGui::Begin("BBC Viewer"))
+	{
+		Display.DrawUI();
+	}
+	ImGui::End();
 }
 
 void FBBCEmulator::Tick()
@@ -245,7 +258,7 @@ void FBBCEmulator::Tick()
 	FDebugger& debugger = CodeAnalysis.Debugger;
 
 
-	//TODO: Display.Tick();
+	Display.Tick();
 
 	if (debugger.IsStopped() == false)
 	{
@@ -598,7 +611,7 @@ uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)
 
 			if (addr == 0xfe30)
 			{
-				SetROMSlot(val);
+				SetROMSlot(val & 0xf);
 			}
 		
 			FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);
@@ -615,4 +628,161 @@ uint64_t FBBCEmulator::OnCPUTick(uint64_t pins)
 	CodeAnalysis.OnCPUTick(pins);
 
 	return pins;
+}
+
+bool Load8271DiscImage(const char* FileName, int Drive, int Tracks, DiscType Type)
+{
+	Disc8271Result Result;
+
+	if (Type == DiscType::SSD)
+	{
+		Result = LoadSimpleDiscImage(FileName, Drive, 0, Tracks);
+	}
+	else if (Type == DiscType::DSD)
+	{
+		Result = LoadSimpleDSDiscImage(FileName, Drive, Tracks);
+	}
+	else
+	{
+		assert(Type == DiscType::FSD);
+		Result = LoadFSDDiscImage(FileName, Drive);
+	}
+
+	if (Result == Disc8271Result::Success)
+	{
+		//SetImageName(FileName, Drive, Type);
+
+		return true;
+	}
+	else if (Result == Disc8271Result::InvalidFSD)
+	{
+		LOGERROR( "Not a valid FSD file:\n  %s", FileName);
+	}
+	else if (Result == Disc8271Result::InvalidTracks)
+	{
+		LOGERROR(
+			"Could not open disc file:\n  %s\n\nInvalid number of tracks",
+			FileName);
+
+		LOGERROR("Not a valid FSD file:\n  %s", FileName);
+	}
+	else
+	{
+		LOGERROR("Could not open disc file:\n  %s", FileName);
+	}
+
+	return false;
+}
+
+std::unordered_map<std::string, DiscType> g_ExtensionDiscType =
+{
+	{"ssd", DiscType::SSD},
+	{"dsd", DiscType::DSD},
+	{"fsd", DiscType::FSD},
+};
+
+DiscType GetDiscTypeFromFileName(const std::string& filename)
+{
+	std::string extension = filename.substr(filename.find_last_of(".") + 1);;
+	std::transform(extension.begin(), extension.end(), extension.begin(),
+		[](unsigned char c) { return std::tolower(c); });
+
+	const auto& extIt = g_ExtensionDiscType.find(extension);
+	if (extIt == g_ExtensionDiscType.end())
+		return DiscType::SSD;
+
+	return extIt->second;
+}
+
+bool	FBBCEmulator::LoadDiscImage(const char* pFileName)
+{
+	const DiscType discType = GetDiscTypeFromFileName(pFileName);
+	const std::string fname = pBBCConfig->DisksFolder + pFileName;
+
+	if (Load8271DiscImage(fname.c_str(), 0, 80, discType) == true)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+// Keyboard stuff - move to a separate file?
+
+struct FKeyVal
+{
+	int NoShift;
+	int Shifted;
+};
+
+static std::map<ImGuiKey, FKeyVal> g_BBCKeysLUT =
+{
+	{ImGuiKey_Space,		{BBC_KEYCODE_SPACE, BBC_KEYCODE_SPACE}},
+	{ImGuiKey_Enter,		{BBC_KEYCODE_ENTER, BBC_KEYCODE_ENTER}},
+	{ImGuiKey_Escape,		{BBC_KEYCODE_ESCAPE, BBC_KEYCODE_ESCAPE}},
+	{ImGuiKey_LeftCtrl,		{BBC_KEYCODE_CTRL, BBC_KEYCODE_CTRL}},
+	{ImGuiKey_RightCtrl,	{BBC_KEYCODE_CTRL, BBC_KEYCODE_CTRL}},
+	{ImGuiKey_LeftShift,	{BBC_KEYCODE_SHIFT, BBC_KEYCODE_SHIFT}},
+	{ImGuiKey_RightShift,	{BBC_KEYCODE_SHIFT, BBC_KEYCODE_SHIFT}},
+	{ImGuiKey_Backspace,	{BBC_KEYCODE_BACKSPACE, BBC_KEYCODE_BACKSPACE}},
+	{ImGuiKey_LeftArrow,	{BBC_KEYCODE_CURSOR_LEFT, BBC_KEYCODE_CURSOR_LEFT}},
+	{ImGuiKey_RightArrow,	{BBC_KEYCODE_CURSOR_RIGHT, BBC_KEYCODE_CURSOR_RIGHT}},
+	{ImGuiKey_UpArrow,		{BBC_KEYCODE_CURSOR_UP, BBC_KEYCODE_CURSOR_UP}},
+	{ImGuiKey_DownArrow,	{BBC_KEYCODE_CURSOR_DOWN, BBC_KEYCODE_CURSOR_DOWN}},
+	{ImGuiKey_CapsLock,		{BBC_KEYCODE_CAPS_LOCK, BBC_KEYCODE_CAPS_LOCK}},
+	{ImGuiKey_Apostrophe,	{'\'', '@'}},
+	{ImGuiKey_Comma,		{',', '<'}},
+	{ImGuiKey_Minus,		{'-', '_'}},
+	{ImGuiKey_Period,		{'.', '>'}},
+	{ImGuiKey_Slash,		{'/', '?'}},
+	{ImGuiKey_Semicolon,	{';', ':'}},
+	{ImGuiKey_Equal,		{'=', '+'}},
+	{ImGuiKey_LeftBracket,	{'[', '{'}},
+	{ImGuiKey_Backslash,	{'\\', '|'}},
+	{ImGuiKey_RightBracket,	{']', '}'}},
+	{ImGuiKey_GraveAccent,	{'`', '~'}},
+};
+
+int BBCKeyFromImGuiKey(ImGuiKey key)
+{
+	uint32_t bbcKey = 0;
+	bool isShifted = ImGui::GetIO().KeyShift;
+
+	if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
+	{
+		if (isShifted)
+		{
+			// Handle shifted number keys (e.g., '!' for '1')
+			switch (key)
+			{
+			case ImGuiKey_1: bbcKey = (uint8_t)'!'; break;
+			case ImGuiKey_2: bbcKey = (uint8_t)'"'; break;
+			case ImGuiKey_3: bbcKey = (uint8_t)'£'; break;
+			case ImGuiKey_4: bbcKey = (uint8_t)'$'; break;
+			case ImGuiKey_5: bbcKey = (uint8_t)'%'; break;
+			case ImGuiKey_6: bbcKey = (uint8_t)'^'; break;
+			case ImGuiKey_7: bbcKey = (uint8_t)'&'; break;
+			case ImGuiKey_8: bbcKey = (uint8_t)'*'; break;
+			case ImGuiKey_9: bbcKey = (uint8_t)'('; break;
+			case ImGuiKey_0: bbcKey = (uint8_t)')'; break;
+			}
+		}
+		else
+		{
+			bbcKey = '0' + (key - ImGuiKey_0);
+		}
+	}
+	else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
+	{
+		bbcKey = isShifted ? 'A' + (key - ImGuiKey_A) : 'a' + (key - ImGuiKey_A);
+	}
+	else
+	{
+		auto keyIt = g_BBCKeysLUT.find(key);
+		if (keyIt != g_BBCKeysLUT.end())
+		{
+			bbcKey = isShifted ? keyIt->second.Shifted : keyIt->second.NoShift;
+		}
+	}
+	return bbcKey;
 }

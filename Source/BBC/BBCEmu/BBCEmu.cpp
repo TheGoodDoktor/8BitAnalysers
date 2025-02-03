@@ -2,6 +2,9 @@
 
 #include <string.h>
 #include <assert.h>
+
+#include "Disc8271.h"
+
 #define CHIPS_ASSERT(c) assert(c)
 
 uint64_t _bbc_tick(bbc_t* sys, uint64_t pins);
@@ -62,6 +65,7 @@ void bbc_init(bbc_t* sys, const bbc_desc_t* desc)
 	mc6845_init(&sys->crtc, MC6845_TYPE_UM6845R);
 	mc6850_init(&sys->acia);
 	fdc8271_init(&sys->fdc8271);
+	ClearTrigger(Disc8271Trigger);
 	mem_init(&sys->mem_cpu);
 	sys->ic32 = 0x00;	// TODO: determiine initial value
 
@@ -248,11 +252,11 @@ uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 		{
 			if (pins & M6502_RW)	// read
 			{
-				M6502_SET_DATA(pins, fdc8271_read(&sys->fdc8271, addr & 7));
+				M6502_SET_DATA(pins, Disc8271Read( addr & 7));
 			}
 			else // write
 			{
-				fdc8271_write(&sys->fdc8271, addr & 7, M6502_GET_DATA(pins));
+				Disc8271Write( addr & 7, M6502_GET_DATA(pins));
 			}
 		}
 
@@ -366,7 +370,26 @@ uint64_t _bbc_tick_cpu(bbc_t* sys, uint64_t pins)
 
 	// TODO: implement the rest of the tick
 
+	// Tick FDC
+	Disc8271Poll();
 
+	static uint8_t OldNMIStatus = 0;
+	if ((NMIStatus && !OldNMIStatus) || (NMIStatus & 1 << nmi_econet))
+	{
+		if (NMIStatus != 0)
+			pins |= M6502_NMI;
+		NMIStatus &= ~(1 << nmi_econet);
+	}
+	OldNMIStatus = NMIStatus;
+
+	
+
+	TotalCycles++;
+	if (TotalCycles > CycleCountWrap)
+	{
+		TotalCycles -= CycleCountWrap;
+		AdjustTrigger(Disc8271Trigger);
+	}
 
 	return pins;
 }
@@ -503,6 +526,7 @@ void bbc_init_key_map(bbc_t* sys)
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_CURSOR_UP, 9, 3, 1);    // cursor up
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_BACKSPACE, 9, 5, 0);    // backspace -> delete
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_ENTER, 9, 4, 0);    // return
+	kbd_register_key(&sys->kbd, BBC_KEYCODE_ESCAPE, 0, 7, 0);    // escape
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_SHIFT, 0, 0, 0);    // shift
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_CTRL, 1, 0, 0);    // ctrl
 	kbd_register_key(&sys->kbd, BBC_KEYCODE_CAPS_LOCK, 0, 4, 0);    // caps lock

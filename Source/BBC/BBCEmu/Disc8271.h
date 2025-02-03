@@ -53,7 +53,7 @@ void Disc8271_poll_real();
 
 void Disc8271Reset();
 
-void Save8271UEF(FILE *SUEF);
-void Load8271UEF(FILE *SUEF, int Version);
+//void Save8271UEF(FILE *SUEF);
+//void Load8271UEF(FILE *SUEF, int Version);
 
 #endif

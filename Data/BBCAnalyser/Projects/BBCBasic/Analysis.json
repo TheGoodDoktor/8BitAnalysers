@@ -20,6 +20,19 @@
                     "ByteSize": 1,
                     "Flags": 3,
                     "SMC": true
+                },
+                {
+                    "Address": 2,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 256,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
                 }
             ],
             "CommentBlocks": [
@@ -41,6 +54,31 @@
                     "Address": 0,
                     "DataType": 11,
                     "InstructionAddressRef": 0
+                },
+                {
+                    "Address": 1,
+                    "DataType": 11,
+                    "InstructionAddressRef": 4294901762
+                },
+                {
+                    "Address": 2,
+                    "DataType": 11,
+                    "InstructionAddressRef": 131072
+                },
+                {
+                    "Address": 3,
+                    "DataType": 11,
+                    "InstructionAddressRef": 131072
+                },
+                {
+                    "Address": 4,
+                    "DataType": 11,
+                    "InstructionAddressRef": 131072
+                },
+                {
+                    "Address": 5,
+                    "DataType": 11,
+                    "InstructionAddressRef": 196608
                 },
                 {
                     "Address": 236,
@@ -73,6 +111,11 @@
                 {
                     "Address": 252,
                     "DisplayType": 11
+                },
+                {
+                    "Address": 256,
+                    "DataType": 11,
+                    "InstructionAddressRef": 16777216
                 },
                 {
                     "Address": 512,
@@ -382,34 +425,10 @@
                     "Name": "zp_00"
                 },
                 {
-                    "Address": 1,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_01"
-                },
-                {
                     "Address": 2,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_02"
-                },
-                {
-                    "Address": 3,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_03"
-                },
-                {
-                    "Address": 4,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_04"
-                },
-                {
-                    "Address": 5,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_05"
                 },
                 {
                     "Address": 6,
@@ -610,6 +629,12 @@
                     "Name": "zp_28"
                 },
                 {
+                    "Address": 41,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_29"
+                },
+                {
                     "Address": 42,
                     "Global": true,
                     "LabelType": 0,
@@ -760,6 +785,30 @@
                     "Name": "zp_42"
                 },
                 {
+                    "Address": 67,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_43"
+                },
+                {
+                    "Address": 68,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_44"
+                },
+                {
+                    "Address": 69,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_45"
+                },
+                {
+                    "Address": 70,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_46"
+                },
+                {
                     "Address": 72,
                     "Global": true,
                     "LabelType": 0,
@@ -772,6 +821,12 @@
                     "Name": "zp_49"
                 },
                 {
+                    "Address": 74,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_4A"
+                },
+                {
                     "Address": 75,
                     "Global": true,
                     "LabelType": 0,
@@ -782,6 +837,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_4C"
+                },
+                {
+                    "Address": 77,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_4D"
                 },
                 {
                     "Address": 78,
@@ -826,6 +887,12 @@
                     "Name": "zp_6C"
                 },
                 {
+                    "Address": 112,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_70"
+                },
+                {
                     "Address": 121,
                     "Global": true,
                     "LabelType": 0,
@@ -868,6 +935,72 @@
                     "Name": "zp_8A"
                 },
                 {
+                    "Address": 160,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A0"
+                },
+                {
+                    "Address": 161,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A1"
+                },
+                {
+                    "Address": 162,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A2"
+                },
+                {
+                    "Address": 163,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A3"
+                },
+                {
+                    "Address": 164,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A4"
+                },
+                {
+                    "Address": 165,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A5"
+                },
+                {
+                    "Address": 166,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A6"
+                },
+                {
+                    "Address": 167,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A7"
+                },
+                {
+                    "Address": 168,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_A8"
+                },
+                {
+                    "Address": 170,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_AA"
+                },
+                {
+                    "Address": 171,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_AB"
+                },
+                {
                     "Address": 174,
                     "Global": true,
                     "LabelType": 0,
@@ -890,6 +1023,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_B1"
+                },
+                {
+                    "Address": 178,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_B2"
                 },
                 {
                     "Address": 179,
@@ -952,6 +1091,18 @@
                     "Name": "FS_TempStorage"
                 },
                 {
+                    "Address": 189,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_BD"
+                },
+                {
+                    "Address": 190,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_BE"
+                },
+                {
                     "Address": 191,
                     "Global": true,
                     "LabelType": 0,
@@ -988,6 +1139,12 @@
                     "Name": "zp_C4"
                 },
                 {
+                    "Address": 197,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_C5"
+                },
+                {
                     "Address": 198,
                     "Global": true,
                     "LabelType": 0,
@@ -1022,6 +1179,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_CD"
+                },
+                {
+                    "Address": 206,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_CE"
                 },
                 {
                     "Address": 207,
@@ -1306,6 +1469,24 @@
                     "Name": "EscapeFlag"
                 },
                 {
+                    "Address": 256,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0100"
+                },
+                {
+                    "Address": 257,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0101"
+                },
+                {
+                    "Address": 258,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0102"
+                },
+                {
                     "Address": 259,
                     "Global": true,
                     "LabelType": 0,
@@ -1336,10 +1517,22 @@
                     "Name": "data_0107"
                 },
                 {
+                    "Address": 264,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0108"
+                },
+                {
                     "Address": 265,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0109"
+                },
+                {
+                    "Address": 266,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_010A"
                 },
                 {
                     "Address": 267,
@@ -1804,6 +1997,12 @@
                     "Name": "data_0275"
                 },
                 {
+                    "Address": 630,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0276"
+                },
+                {
                     "Address": 631,
                     "Global": true,
                     "LabelType": 0,
@@ -2050,6 +2249,36 @@
                     "Name": "data_02ED"
                 },
                 {
+                    "Address": 750,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02EE"
+                },
+                {
+                    "Address": 751,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02EF"
+                },
+                {
+                    "Address": 752,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02F0"
+                },
+                {
+                    "Address": 753,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02F1"
+                },
+                {
+                    "Address": 756,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_02F4"
+                },
+                {
                     "Address": 767,
                     "Global": true,
                     "LabelType": 0,
@@ -2090,6 +2319,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0305"
+                },
+                {
+                    "Address": 774,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0306"
                 },
                 {
                     "Address": 776,
@@ -2156,6 +2391,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_031A"
+                },
+                {
+                    "Address": 795,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_031B"
                 },
                 {
                     "Address": 796,
@@ -2230,16 +2471,118 @@
                     "Name": "data_0328"
                 },
                 {
+                    "Address": 809,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0329"
+                },
+                {
+                    "Address": 810,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_032A"
+                },
+                {
+                    "Address": 811,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_032B"
+                },
+                {
+                    "Address": 812,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_032C"
+                },
+                {
                     "Address": 813,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_032D"
                 },
                 {
+                    "Address": 814,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_032E"
+                },
+                {
+                    "Address": 815,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_032F"
+                },
+                {
+                    "Address": 816,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0330"
+                },
+                {
+                    "Address": 817,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0331"
+                },
+                {
+                    "Address": 818,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0332"
+                },
+                {
+                    "Address": 819,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0333"
+                },
+                {
+                    "Address": 820,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0334"
+                },
+                {
+                    "Address": 821,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0335"
+                },
+                {
+                    "Address": 822,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0336"
+                },
+                {
+                    "Address": 823,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0337"
+                },
+                {
                     "Address": 824,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0338"
+                },
+                {
+                    "Address": 825,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0339"
+                },
+                {
+                    "Address": 826,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_033A"
+                },
+                {
+                    "Address": 829,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_033D"
                 },
                 {
                     "Address": 842,
@@ -2338,10 +2681,22 @@
                     "Name": "data_0359"
                 },
                 {
+                    "Address": 858,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_035A"
+                },
+                {
                     "Address": 859,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_035B"
+                },
+                {
+                    "Address": 860,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_035C"
                 },
                 {
                     "Address": 861,
@@ -2479,10 +2834,46 @@
                     "Name": "label_0403"
                 },
                 {
+                    "Address": 4,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0404"
+                },
+                {
+                    "Address": 12,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_040C"
+                },
+                {
                     "Address": 33,
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_0421"
+                },
+                {
+                    "Address": 64,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0440"
+                },
+                {
+                    "Address": 65,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0441"
+                },
+                {
+                    "Address": 96,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0460"
+                },
+                {
+                    "Address": 100,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0464"
                 },
                 {
                     "Address": 127,
@@ -2491,10 +2882,214 @@
                     "Name": "data_047F"
                 },
                 {
+                    "Address": 240,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F0"
+                },
+                {
+                    "Address": 241,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F1"
+                },
+                {
+                    "Address": 242,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F2"
+                },
+                {
+                    "Address": 243,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F3"
+                },
+                {
+                    "Address": 244,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F4"
+                },
+                {
+                    "Address": 245,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F5"
+                },
+                {
+                    "Address": 246,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F6"
+                },
+                {
+                    "Address": 247,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F7"
+                },
+                {
+                    "Address": 249,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04F9"
+                },
+                {
+                    "Address": 250,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04FA"
+                },
+                {
+                    "Address": 251,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04FB"
+                },
+                {
+                    "Address": 252,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04FC"
+                },
+                {
+                    "Address": 254,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04FE"
+                },
+                {
+                    "Address": 255,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_04FF"
+                },
+                {
                     "Address": 256,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0500"
+                },
+                {
+                    "Address": 257,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0501"
+                },
+                {
+                    "Address": 258,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0502"
+                },
+                {
+                    "Address": 259,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0503"
+                },
+                {
+                    "Address": 260,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0504"
+                },
+                {
+                    "Address": 261,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0505"
+                },
+                {
+                    "Address": 262,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0506"
+                },
+                {
+                    "Address": 264,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0508"
+                },
+                {
+                    "Address": 265,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0509"
+                },
+                {
+                    "Address": 266,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_050A"
+                },
+                {
+                    "Address": 267,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_050B"
+                },
+                {
+                    "Address": 269,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_050D"
+                },
+                {
+                    "Address": 270,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_050E"
+                },
+                {
+                    "Address": 419,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05A3"
+                },
+                {
+                    "Address": 420,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05A4"
+                },
+                {
+                    "Address": 439,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05B7"
+                },
+                {
+                    "Address": 440,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05B8"
+                },
+                {
+                    "Address": 459,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05CB"
+                },
+                {
+                    "Address": 460,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05CC"
+                },
+                {
+                    "Address": 485,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05E5"
+                },
+                {
+                    "Address": 486,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_05E6"
                 },
                 {
                     "Address": 511,
@@ -2513,6 +3108,12 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_06AD"
+                },
+                {
+                    "Address": 767,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_06FF"
                 }
             ],
             "PageId": 1
@@ -2592,6 +3193,12 @@
                     "Name": "data_0828"
                 },
                 {
+                    "Address": 43,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_082B"
+                },
+                {
                     "Address": 44,
                     "Global": true,
                     "LabelType": 0,
@@ -2608,6 +3215,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0838"
+                },
+                {
+                    "Address": 57,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0839"
+                },
+                {
+                    "Address": 58,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_083A"
                 },
                 {
                     "Address": 59,
@@ -2646,6 +3265,30 @@
                     "Name": "data_08C0"
                 },
                 {
+                    "Address": 193,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_08C1"
+                },
+                {
+                    "Address": 196,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_08C4"
+                },
+                {
+                    "Address": 199,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_08C7"
+                },
+                {
+                    "Address": 203,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_08CB"
+                },
+                {
                     "Address": 256,
                     "Global": true,
                     "LabelType": 0,
@@ -2674,6 +3317,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0B10"
+                },
+                {
+                    "Address": 1008,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0BF0"
                 }
             ],
             "PageId": 2
@@ -2683,7 +3332,254 @@
                 {
                     "Address": 256,
                     "ByteSize": 1,
+                    "Flags": 34,
+                    "SMC": true
+                },
+                {
+                    "Address": 257,
+                    "ByteSize": 1,
                     "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 258,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 259,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 262,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 264,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 266,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 269,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 271,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 273,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 276,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 278,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 280,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 282,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 284,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 286,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 288,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 290,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 292,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 294,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 296,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 297,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 298,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 299,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 306,
+                    "ByteSize": 3,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 309,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 311,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 319,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 321,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 322,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 324,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 326,
+                    "ByteSize": 3,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 329,
+                    "ByteSize": 3,
+                    "Flags": 10,
+                    "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 332,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 333,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 335,
+                    "ByteSize": 3,
+                    "Flags": 2,
+                    "OperandType": 1,
+                    "SMC": true
+                },
+                {
+                    "Address": 338,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 339,
+                    "ByteSize": 2,
+                    "Flags": 2,
+                    "OperandType": 2,
                     "SMC": true
                 }
             ],
@@ -2692,6 +3588,366 @@
                     "Address": 256,
                     "DataType": 11,
                     "InstructionAddressRef": 218103808
+                },
+                {
+                    "Address": 257,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218169344
+                },
+                {
+                    "Address": 258,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218234880
+                },
+                {
+                    "Address": 259,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218300416
+                },
+                {
+                    "Address": 260,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218300416
+                },
+                {
+                    "Address": 261,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218300416
+                },
+                {
+                    "Address": 262,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218497024
+                },
+                {
+                    "Address": 263,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218497024
+                },
+                {
+                    "Address": 264,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218628096
+                },
+                {
+                    "Address": 265,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218628096
+                },
+                {
+                    "Address": 266,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218759168
+                },
+                {
+                    "Address": 267,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218759168
+                },
+                {
+                    "Address": 268,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218759168
+                },
+                {
+                    "Address": 269,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218955776
+                },
+                {
+                    "Address": 270,
+                    "DataType": 11,
+                    "InstructionAddressRef": 218955776
+                },
+                {
+                    "Address": 271,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219086848
+                },
+                {
+                    "Address": 272,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219086848
+                },
+                {
+                    "Address": 273,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219217920
+                },
+                {
+                    "Address": 274,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219217920
+                },
+                {
+                    "Address": 275,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219217920
+                },
+                {
+                    "Address": 276,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219414528
+                },
+                {
+                    "Address": 277,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219414528
+                },
+                {
+                    "Address": 278,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219545600
+                },
+                {
+                    "Address": 279,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219545600
+                },
+                {
+                    "Address": 280,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219676672
+                },
+                {
+                    "Address": 281,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219676672
+                },
+                {
+                    "Address": 282,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219807744
+                },
+                {
+                    "Address": 283,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219807744
+                },
+                {
+                    "Address": 284,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219938816
+                },
+                {
+                    "Address": 285,
+                    "DataType": 11,
+                    "InstructionAddressRef": 219938816
+                },
+                {
+                    "Address": 286,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220069888
+                },
+                {
+                    "Address": 287,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220069888
+                },
+                {
+                    "Address": 288,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220200960
+                },
+                {
+                    "Address": 289,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220200960
+                },
+                {
+                    "Address": 290,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220332032
+                },
+                {
+                    "Address": 291,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220332032
+                },
+                {
+                    "Address": 292,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220463104
+                },
+                {
+                    "Address": 293,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220463104
+                },
+                {
+                    "Address": 294,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220594176
+                },
+                {
+                    "Address": 295,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220594176
+                },
+                {
+                    "Address": 296,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220725248
+                },
+                {
+                    "Address": 297,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220790784
+                },
+                {
+                    "Address": 298,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220856320
+                },
+                {
+                    "Address": 299,
+                    "DataType": 11,
+                    "InstructionAddressRef": 220921856
+                },
+                {
+                    "Address": 306,
+                    "DataType": 11,
+                    "InstructionAddressRef": 221380608
+                },
+                {
+                    "Address": 307,
+                    "DataType": 11,
+                    "InstructionAddressRef": 221380608
+                },
+                {
+                    "Address": 308,
+                    "DataType": 11,
+                    "InstructionAddressRef": 221380608
+                },
+                {
+                    "Address": 309,
+                    "DataType": 11,
+                    "InstructionAddressRef": 221577216
+                },
+                {
+                    "Address": 310,
+                    "DataType": 11,
+                    "InstructionAddressRef": 221577216
+                },
+                {
+                    "Address": 311,
+                    "DataType": 11,
+                    "InstructionAddressRef": 221708288
+                },
+                {
+                    "Address": 312,
+                    "DataType": 11,
+                    "InstructionAddressRef": 221708288
+                },
+                {
+                    "Address": 319,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222232576
+                },
+                {
+                    "Address": 320,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222232576
+                },
+                {
+                    "Address": 321,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222363648
+                },
+                {
+                    "Address": 322,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222429184
+                },
+                {
+                    "Address": 323,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222429184
+                },
+                {
+                    "Address": 324,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222560256
+                },
+                {
+                    "Address": 325,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222560256
+                },
+                {
+                    "Address": 326,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222691328
+                },
+                {
+                    "Address": 327,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222691328
+                },
+                {
+                    "Address": 328,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222691328
+                },
+                {
+                    "Address": 329,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222887936
+                },
+                {
+                    "Address": 330,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222887936
+                },
+                {
+                    "Address": 331,
+                    "DataType": 11,
+                    "InstructionAddressRef": 222887936
+                },
+                {
+                    "Address": 332,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223084544
+                },
+                {
+                    "Address": 333,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223150080
+                },
+                {
+                    "Address": 334,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223150080
+                },
+                {
+                    "Address": 335,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223281152
+                },
+                {
+                    "Address": 336,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223281152
+                },
+                {
+                    "Address": 337,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223281152
+                },
+                {
+                    "Address": 338,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223477760
+                },
+                {
+                    "Address": 339,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223543296
+                },
+                {
+                    "Address": 340,
+                    "DataType": 11,
+                    "InstructionAddressRef": 223543296
                 },
                 {
                     "Address": 496,
@@ -2715,16 +3971,101 @@
                     "Name": "NMIEntryPoint"
                 },
                 {
+                    "Address": 286,
+                    "LabelType": 2,
+                    "Name": "label_0D1E"
+                },
+                {
+                    "Address": 296,
+                    "LabelType": 2,
+                    "Name": "label_0D28"
+                },
+                {
+                    "Address": 300,
+                    "LabelType": 2,
+                    "Name": "label_0D2C"
+                },
+                {
+                    "Address": 306,
+                    "LabelType": 2,
+                    "Name": "label_0D32"
+                },
+                {
+                    "Address": 319,
+                    "LabelType": 2,
+                    "Name": "label_0D3F"
+                },
+                {
+                    "Address": 413,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0D9D"
+                },
+                {
+                    "Address": 414,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0D9E"
+                },
+                {
+                    "Address": 415,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0D9F"
+                },
+                {
                     "Address": 496,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0DF0"
                 },
                 {
+                    "Address": 512,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0E00"
+                },
+                {
+                    "Address": 519,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0E07"
+                },
+                {
+                    "Address": 520,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0E08"
+                },
+                {
+                    "Address": 526,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0E0E"
+                },
+                {
+                    "Address": 527,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0E0F"
+                },
+                {
+                    "Address": 760,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0EF8"
+                },
+                {
                     "Address": 772,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0F04"
+                },
+                {
+                    "Address": 773,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0F05"
                 },
                 {
                     "Address": 774,
@@ -2737,6 +4078,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0F07"
+                },
+                {
+                    "Address": 776,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0F08"
+                },
+                {
+                    "Address": 782,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0F0E"
                 }
             ],
             "PageId": 3
@@ -2744,10 +4097,70 @@
         {
             "LabelInfo": [
                 {
+                    "Address": 64,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1040"
+                },
+                {
+                    "Address": 96,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1060"
+                },
+                {
+                    "Address": 103,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1067"
+                },
+                {
                     "Address": 114,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_1072"
+                },
+                {
+                    "Address": 115,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1073"
+                },
+                {
+                    "Address": 116,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1074"
+                },
+                {
+                    "Address": 117,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1075"
+                },
+                {
+                    "Address": 118,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1076"
+                },
+                {
+                    "Address": 119,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1077"
+                },
+                {
+                    "Address": 124,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_107C"
+                },
+                {
+                    "Address": 128,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1080"
                 },
                 {
                     "Address": 130,
@@ -2760,6 +4173,30 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_10C0"
+                },
+                {
+                    "Address": 193,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10C1"
+                },
+                {
+                    "Address": 194,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10C2"
+                },
+                {
+                    "Address": 197,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10C5"
+                },
+                {
+                    "Address": 198,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10C6"
                 },
                 {
                     "Address": 199,
@@ -2804,10 +4241,28 @@
                     "Name": "data_10CD"
                 },
                 {
+                    "Address": 206,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10CE"
+                },
+                {
+                    "Address": 207,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10CF"
+                },
+                {
                     "Address": 212,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_10D4"
+                },
+                {
+                    "Address": 214,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10D6"
                 },
                 {
                     "Address": 215,
@@ -2816,16 +4271,148 @@
                     "Name": "data_10D7"
                 },
                 {
+                    "Address": 218,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10DA"
+                },
+                {
+                    "Address": 219,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10DB"
+                },
+                {
+                    "Address": 220,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10DC"
+                },
+                {
+                    "Address": 221,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_10DD"
+                },
+                {
                     "Address": 222,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_10DE"
                 },
                 {
+                    "Address": 256,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1100"
+                },
+                {
+                    "Address": 265,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1109"
+                },
+                {
+                    "Address": 267,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_110B"
+                },
+                {
+                    "Address": 268,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_110C"
+                },
+                {
+                    "Address": 269,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_110D"
+                },
+                {
+                    "Address": 270,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_110E"
+                },
+                {
+                    "Address": 272,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1110"
+                },
+                {
+                    "Address": 273,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1111"
+                },
+                {
+                    "Address": 274,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1112"
+                },
+                {
+                    "Address": 275,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1113"
+                },
+                {
+                    "Address": 276,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1114"
+                },
+                {
+                    "Address": 277,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1115"
+                },
+                {
+                    "Address": 278,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1116"
+                },
+                {
                     "Address": 279,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_1117"
+                },
+                {
+                    "Address": 281,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1119"
+                },
+                {
+                    "Address": 282,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_111A"
+                },
+                {
+                    "Address": 283,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_111B"
+                },
+                {
+                    "Address": 284,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_111C"
+                },
+                {
+                    "Address": 285,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_111D"
                 }
             ],
             "PageId": 4
@@ -2932,6 +4519,21 @@
             "PageId": 13
         },
         {
+            "CodeInfo": [
+                {
+                    "Address": 7,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 7,
+                    "DataType": 11,
+                    "InstructionAddressRef": 939982848
+                }
+            ],
             "LabelInfo": [
                 {
                     "Address": 0,
@@ -3057,6 +4659,12 @@
                     "Name": "data_4600"
                 },
                 {
+                    "Address": 554,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_462A"
+                },
+                {
                     "Address": 768,
                     "Global": true,
                     "LabelType": 0,
@@ -3095,6 +4703,21 @@
             "PageId": 18
         },
         {
+            "CodeInfo": [
+                {
+                    "Address": 800,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "SMC": true
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 800,
+                    "DataType": 11,
+                    "InstructionAddressRef": 1327497216
+                }
+            ],
             "LabelInfo": [
                 {
                     "Address": 0,

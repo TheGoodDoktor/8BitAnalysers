@@ -3,9 +3,11 @@
 #include "Misc/EmuBase.h"
 #include "BBCEmu/BBCEmu.h"
 #include "IOAnalysis/BBCIOAnalysis.h"
+
 #include <chips/mem.h>
 #include <set>
 #include <array>
+#include "Graphics/BBCViewer.h"
 
 struct FBBCLaunchConfig : public FEmulatorLaunchConfig
 {
@@ -105,6 +107,8 @@ public:
 	bool	LoadROM(const char* pFileName, int slot);
 	void	SetROMSlot(int slotNo);
 
+	bool	LoadDiscImage(const char* pFileName);
+
 	const FBBCBankIds&	GetBankIds() const { return BankIds; }
 
 	uint64_t	OnCPUTick(uint64_t pins);
@@ -126,6 +130,8 @@ private:
 
 	FBBCBankIds			BankIds;	
 
+	FBBCDisplay			Display;
+
 	std::set<FAddressRef>	InterruptHandlers;
 	uint16_t				PreviousPC = 0;
 	FBBCIOAnalysis			IOAnalysis;
@@ -140,3 +146,5 @@ private:
 	FBBCEmulator(const FBBCEmulator&) = delete;				// Prevent copy-construction
 	FBBCEmulator& operator=(const FBBCEmulator&) = delete;	// Prevent assignment
 };
+
+int BBCKeyFromImGuiKey(ImGuiKey key);
