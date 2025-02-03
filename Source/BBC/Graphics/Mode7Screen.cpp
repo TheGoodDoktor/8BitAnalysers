@@ -19,6 +19,9 @@ void DrawMode7ScreenToGraphicsView(FBBCEmulator* pBBCEmu, FGraphicsView* pScreen
 	const mc6845_t& crtc = bbc.crtc;
 	const uint16_t displayAddress = (crtc.start_addr_hi << 8) | crtc.start_addr_lo;
 
+	uint32_t backgroundColour = 0xff000000;
+	uint32_t foregroundColour = 0xffffffff;
+
 	uint16_t currentScreenAddress = displayAddress;//(bbc.crtc.ma & 0x800) << 3 | 0x3C00 | (bbc.crtc.ma & 0x3FF);
 
 	for (int y = 0; y < heightChars; y++)
@@ -33,17 +36,17 @@ void DrawMode7ScreenToGraphicsView(FBBCEmulator* pBBCEmu, FGraphicsView* pScreen
 			{
 				// TODO: process control character
 			}
-			else if (charCode < 0x20 + 96)
+			else if (charCode < 128)
 			{
 				const uint16_t* pChar = mode7font[charCode - 0x20];
 
-				for (int l = 0; l < 20; l++)
+				for (int l = 0; l < characterHeight; l++)
 				{
 					uint32_t* pCurPixBufAddr = pScreenView->GetPixelBuffer() + (screenWidth * (y * 20 + l)) + (x * 16);
 					uint16_t characterLine = pChar[l];
-					for (int c = 0; c < 16; c++)
+					for (int c = 0; c < characterWidth; c++)
 					{
-						const uint32_t pixelColour = characterLine & 0x8000 ? 0xffffffff : 0xff000000;
+						const uint32_t pixelColour = characterLine & 0x8000 ? foregroundColour : backgroundColour;
 						*pCurPixBufAddr = pixelColour;
 						pCurPixBufAddr++;
 						characterLine <<= 1;

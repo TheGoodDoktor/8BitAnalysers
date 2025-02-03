@@ -215,7 +215,7 @@
                 {
                     "Address": 4,
                     "DataType": 11,
-                    "InstructionAddressRef": 2147614721
+                    "InstructionAddressRef": 2147680257
                 },
                 {
                     "Address": 5,
@@ -2797,6 +2797,12 @@
                 {
                     "Address": 718,
                     "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 730,
+                    "ByteSize": 3,
+                    "Flags": 8,
                     "OperandType": 2
                 },
                 {
@@ -12447,10 +12453,6 @@
         {
             "CodeInfo": [
                 {
-                    "Address": 0,
-                    "ByteSize": 2
-                },
-                {
                     "Address": 2,
                     "ByteSize": 1,
                     "OperandType": 2
@@ -14416,17 +14418,17 @@
             ],
             "DataInfo": [
                 {
+                    "Address": 0,
+                    "DataType": 11,
+                    "InstructionAddressRef": 2617180161
+                },
+                {
                     "Address": 3,
                     "DataType": 11,
                     "InstructionAddressRef": 2617376769
                 }
             ],
             "LabelInfo": [
-                {
-                    "Address": 3,
-                    "LabelType": 2,
-                    "Name": "label_9C03"
-                },
                 {
                     "Address": 21,
                     "LabelType": 2,

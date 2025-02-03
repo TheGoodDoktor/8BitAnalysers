@@ -23,7 +23,7 @@
                 },
                 {
                     "Address": 2,
-                    "ByteSize": 3,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -429,11 +429,6 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_02"
-                },
-                {
-                    "Address": 3,
-                    "LabelType": 0,
-                    "Name": "zp_03"
                 },
                 {
                     "Address": 6,
@@ -3354,90 +3349,90 @@
                 },
                 {
                     "Address": 259,
-                    "ByteSize": 3,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 262,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "SMC": true
                 },
                 {
                     "Address": 264,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
                 },
                 {
                     "Address": 266,
-                    "ByteSize": 3,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 269,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 271,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
                 },
                 {
                     "Address": 273,
-                    "ByteSize": 3,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 276,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
                 },
                 {
                     "Address": 278,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 280,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 282,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
                 },
                 {
                     "Address": 284,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 286,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
