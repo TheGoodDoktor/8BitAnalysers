@@ -112,7 +112,7 @@ protected:
 	virtual void	ActionMenuAdditions(void) {}	// system specific additions
 	virtual void	WindowsMenuAdditions(void) {}	// system specific additions
 
-
+	void			DrawEditGlobalConfigModalPopup(void);
 	void			DrawExportAsmModalPopup(void);
 	void			DrawReplaceGameModalPopup(void);
 	void			DrawErrorMessageModalPopup(void);
@@ -144,6 +144,7 @@ protected:
 	bool		bReplaceGamePopup = false;
 	bool		bExportAsm = false;
 	bool		bExportBinary = false;
+	bool 		bEditGlobalConfig = false;
 
 	FEmulatorFile EmulatorFileToLoad;	// for 'are you sure?' popup
 

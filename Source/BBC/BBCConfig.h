@@ -22,6 +22,8 @@ protected:
 
 	void ReadFromJson(const nlohmann::json& jsonConfigFile) override;
 	void WriteToJson(nlohmann::json& jsonConfigFile) const override;
+
+	void DrawUI(void) override;
 };
 
 struct FBBCProjectConfig : public FProjectConfig

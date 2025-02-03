@@ -5,6 +5,8 @@
 #include "BBCEmulator.h"
 #include <Util/FileUtil.h>
 
+#include <misc/cpp/imgui_stdlib.h>
+
 void FBBCConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 {
 	FGlobalConfig::ReadFromJson(jsonConfigFile);
@@ -48,6 +50,20 @@ void FBBCConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 	jsonConfigFile["OSRom"] = OSRom;
 	jsonConfigFile["BasicRom"] = BasicRom;
 	jsonConfigFile["AdditionalRoms"] = AdditionalRoms;
+}
+
+void FBBCConfig::DrawUI()
+{
+	FGlobalConfig::DrawUI();
+
+	ImGui::InputText("Tapes Folder", &TapesFolder);
+	ImGui::InputText("Disks Folder", &DisksFolder);
+	ImGui::InputText("ROM Folder", &RomFolder);
+	ImGui::InputText("OS ROM", &OSRom);
+	ImGui::InputText("Basic ROM", &BasicRom);
+
+	//ImGui::Text("Additional ROMs:");
+	
 }
 
 void FBBCProjectConfig::LoadFromJson(const nlohmann::json& jsonConfig)

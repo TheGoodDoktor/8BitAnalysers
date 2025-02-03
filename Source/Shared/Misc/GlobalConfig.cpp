@@ -3,6 +3,7 @@
 #include "Util/FileUtil.h"
 #include "json.hpp"
 #include <imgui.h>
+#include <misc/cpp/imgui_stdlib.h>
 
 #include <iomanip>
 #include <fstream>
@@ -15,6 +16,11 @@ bool FGlobalConfig::Init(void)
 	LuaBaseFiles.push_back("Lua/LuaBase.lua");
 	LuaBaseFiles.push_back("Lua/ViewerBase.lua");
 	return true;
+}
+
+void FGlobalConfig::DrawUI()
+{
+	ImGui::InputText("Workspace Root", &WorkspaceRoot);
 }
 
 void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)

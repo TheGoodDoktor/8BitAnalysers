@@ -37,6 +37,7 @@ struct FGlobalConfig
 	std::vector<std::string>	LuaBaseFiles;
 
     virtual bool    Init(void);
+	virtual void    DrawUI(void);
 	bool	Load(const char* filename);
 	bool	Save(const char* filename);
 protected:
