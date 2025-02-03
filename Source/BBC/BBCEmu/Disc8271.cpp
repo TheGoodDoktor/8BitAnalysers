@@ -23,7 +23,7 @@ Boston, MA  02110-1301, USA.
 // 30/08/1997 Mike Wyatt: Added disc write and format support
 // 27/12/2011 J.G.Harston: Double-sided SSD supported
 
-#include <windows.h>
+//#include <windows.h>
 
 #include <fstream>
 
