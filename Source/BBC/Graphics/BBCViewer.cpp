@@ -11,6 +11,8 @@ void FBBCDisplay::Init(FCodeAnalysisState* pAnalysis, FBBCEmulator* pEmu)
 	pCodeAnalysis = pAnalysis;
 	pBBCEmu = pEmu;
 
+	InitMode7ScreenViewer(pBBCEmu);
+
 	pScreenView = new FGraphicsView(320, 256);
 }
 
