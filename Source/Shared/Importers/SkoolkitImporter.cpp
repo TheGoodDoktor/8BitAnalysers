@@ -42,14 +42,47 @@ public:
 	bool Import(const char* pTextFileName);
 
 protected:
+	// Skoolkit file parsing
+	bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction);
+	bool ParseSubDirective(std::string& strLine);
+	bool ParseCommentBlock(std::string& strLine);
+	bool UpdateCommentContinuation(std::string& strLine);
+	void ProcessBlockDirectives(char blockDirective, char subBlockDirective);
+	FItem* SetOrCreateItemFromInstruction(FSkoolkitInstruction& instruction);
+
+	// Text processing
 	void ProcessTableMacro(const char** pMacroText, const char* pTxtStart);
 	std::string ProcessMacro(const char** pMacroText);
 	std::string ProcessBlockComment(const char* pText);
 	std::string ProcessInlineComment(const char* pText);
 	std::string ProcessComment(const char* pText);
-	bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction);
+	
+	// Code analysis related
+	void CreateCommentBlock(uint16_t address);
+	void CreateLabel(uint16_t address);
 
+protected:
 	bool bInTable = false;
+	bool bInSubDirective = false;
+
+	char BlockDirective = kSkoolkitDirectiveNone;
+	char SubBlockDirective = kSkoolkitDirectiveNone;
+	
+	std::string CommentBlock;
+	std::string Label;
+
+	FCodeAnalysisItem LastItem;
+	
+	// only used if pSkoolInfo is set
+	FSkoolFileLocation SkoolLocation;
+
+	unsigned int LineNum = 0;
+
+#ifndef NDEBUG
+	FCodeAnalysisItem longestCommentItem;
+	int longestCommentLineNum = -1;
+#endif
+
 	char* pchLine = nullptr;
 	FCodeAnalysisState& State;
 	FSkoolFileInfo* pSkoolInfo = nullptr;
@@ -546,98 +579,299 @@ uint16_t CountDataBytes(std::string str)
 	return size;
 }
 
+bool FSkoolKitImporter::ParseSubDirective(std::string& strLine)
+{
+	if (bInSubDirective)
+	{
+		if (StringStartsWith(strLine, "@rsub+end"))
+			bInSubDirective = false;
+		else
+			LOGINFO("Skipping @rsub text '%s' on line %d", pchLine, LineNum);
+		return true;
+	}
+
+	if (strLine[0] == '@')
+	{
+		if (!ParseAsmDirective(State, strLine, Label))
+			CommentBlock += strLine;
+
+		if (StringStartsWith(strLine, "@rsub+begin"))
+		{
+			bInSubDirective = true;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool FSkoolKitImporter::ParseCommentBlock(std::string& strLine)
+{
+	// Is this a comment block?
+	if (strLine[0] == ';')
+	{
+		CommentBlock += TrimLeadingChars(strLine, "; ");
+		return true;
+	}
+	
+	return false;
+}
+
+bool FSkoolKitImporter::UpdateCommentContinuation(std::string& strLine)
+{
+	if (strLine[0] == ';')
+	{
+		// instruction comment continuation
+		if (LastItem.IsValid() && !LastItem.Item->Comment.empty())
+		{
+			if (bStripCarriageReturnsFromComments)
+			{
+				LastItem.Item->Comment += " ";
+			}
+			else
+			{
+				AddTrailingCarriageReturn(LastItem.Item->Comment);
+			}
+
+			LastItem.Item->Comment += ProcessInlineComment(strLine.c_str() + 2);
+			RemoveTrailingCarriageReturn(LastItem.Item->Comment);
+
+#ifndef NDEBUG
+			if (!longestCommentItem.Item || LastItem.Item->Comment.size() > longestCommentItem.Item->Comment.size())
+			{
+				longestCommentItem = LastItem;
+				longestCommentLineNum = LineNum;
+			}
+#endif
+		}
+		return true;
+	}
+	return false;
+}
+
+void FSkoolKitImporter::ProcessBlockDirectives(char blockDirective, char subBlockDirective)
+{
+	if (blockDirective != kSkoolkitDirectiveNone && BlockDirective != blockDirective)
+	{
+		// we've encountered a new block
+		BlockDirective = blockDirective;
+		SubBlockDirective = subBlockDirective;
+		if (pSkoolInfo)
+			SkoolLocation.BlockDirective = GetDirectiveFromChar(BlockDirective);// is this needed? we're doing it above
+	}
+
+	if (subBlockDirective != SubBlockDirective)
+	{
+		// we've encountered a new sub-block
+		SubBlockDirective = subBlockDirective;
+
+		if (pSkoolInfo)
+			SkoolLocation.SubBlockDirective = GetDirectiveFromChar(SubBlockDirective);
+	}
+}
+
+FItem* FSkoolKitImporter::SetOrCreateItemFromInstruction(FSkoolkitInstruction& instruction)
+{
+	FItem* pItem = nullptr;
+	switch (instruction.SubBlockDirective)
+	{
+	case 'c':
+	{
+		// Address is code
+
+		FCodeInfo* pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
+		if (!pCodeInfo)
+		{
+			WriteCodeInfoForAddress(State, instruction.Address);
+			pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
+
+		}
+		pItem = pCodeInfo;
+
+		if (BlockDirective == 'u')
+			pCodeInfo->bUnused = true;
+	}
+	break;
+	case 'b':
+	case 'w':
+	{
+		// Address is data
+
+		FDataInfo* pDataInfo = State.GetReadDataInfoForAddress(instruction.Address);
+		FCodeInfo* pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
+		if (pCodeInfo)
+		{
+			LOGWARNING("Item at $%02X was set to code: %s", instruction.Address, pCodeInfo->Text.c_str());
+			LOGWARNING("Code item removed and replace as data");
+			// remove the code item
+			State.SetCodeInfoForAddress(instruction.Address, nullptr);	// memory will get cleared up 
+		}
+		if (pDataInfo)
+		{
+			pItem = pDataInfo;
+
+			// count how many entries we have
+			const uint16_t numItems = static_cast<uint16_t>(std::count(instruction.Operation.begin(), instruction.Operation.end(), ',') + 1);
+			std::string defStatement = instruction.Operation.substr(0, 4);
+
+			if (defStatement == "DEFB" || defStatement == "defb")
+			{
+				if (numItems == 1)
+					pDataInfo->DataType = EDataType::Byte;
+				else
+					pDataInfo->DataType = EDataType::ByteArray;
+				pDataInfo->ByteSize = numItems;
+			}
+			else if (defStatement == "DEFW" || defStatement == "defw")
+			{
+				if (numItems == 1)
+					pDataInfo->DataType = EDataType::Word;
+				else
+					pDataInfo->DataType = EDataType::WordArray;
+				pDataInfo->ByteSize = numItems * 2;
+			}
+
+			if (BlockDirective == 'g')
+				pDataInfo->bGameState = true;
+			else if (BlockDirective == 'u')
+				pDataInfo->bUnused2 = true;	// What is this?
+		}
+	}
+	break;
+	case 't':
+	{
+		// Address is text
+		FDataInfo* pDataInfo = State.GetReadDataInfoForAddress(instruction.Address);
+		if (pDataInfo)
+		{
+			// If this is set to true it will parse the DEFM statement and calculate
+			// how many bytes the text needs to be. This DEFM statement could contain
+			// non-ascii byte values mixed in with the text.
+			// This means when the DEFM statement is exported it will match exactly 
+			// the DEFM statement that was imported.
+			// This will bypass SetItemText() so may not display correctly in the tool.
+			const bool bSkoolKitCompatibleText = false;
+
+			if (bSkoolKitCompatibleText)
+			{
+				std::string defStatement = instruction.Operation.substr(0, 4);
+
+				std::vector<std::string> elements;
+				SplitCommaDelimitedItems(instruction.Operation.substr(5), elements);
+
+				// This loop counts the number of bytes declared in the DEFM instruction.
+				// It can deal with byte values in addition to text strings.
+				// eg DEFM "One",2,"Three"
+				uint16_t byteSize = 0;
+				for (std::string& str : elements)
+				{
+					byteSize += CountDataBytes(str);
+				}
+
+				if (byteSize > 0)
+				{
+					pDataInfo->DataType = EDataType::Text;
+
+					// SetItemText doesnt set the number of bytes correctly (compared to how skoolkit does it),
+					// so we set the byte size manually based on how many bytes we counted in the statement.
+					pDataInfo->ByteSize = byteSize;
+
+					// todo set bBit7Terminator flag on the FDataItem
+					// todo check we're not overlapping items.
+				}
+			}
+			else
+			{
+				// force to byte type otherwise SetItemText() does nothing
+				pDataInfo->DataType = EDataType::Byte;
+
+				SetItemText(State, FCodeAnalysisItem(pDataInfo, State.GetBankFromAddress(instruction.Address), instruction.Address));
+			}
+			pItem = pDataInfo;
+		}
+	}
+	break;
+	}
+	return pItem;
+}
+
+void FSkoolKitImporter::CreateCommentBlock(uint16_t address)
+{
+	FCommentBlock* pBlock = State.GetCommentBlockForAddress(State.AddressRefFromPhysicalAddress(address));
+
+	if (pBlock == nullptr)
+		pBlock = AddCommentBlock(State, State.AddressRefFromPhysicalAddress(address));
+	else
+	{
+		std::string commentExcerpt = pBlock->Comment.substr(0, 1024);
+		RemoveTrailingCarriageReturn(commentExcerpt);
+		LOGWARNING("SkoolkitImporter: Replacing existing comment block: '%s'", commentExcerpt.c_str());
+	}
+
+	pBlock->Comment = ProcessBlockComment(CommentBlock.c_str());
+	CommentBlock.clear();
+}
+
+void FSkoolKitImporter::CreateLabel(uint16_t address)
+{
+	ELabelType labelType = ELabelType::Data;
+	FAddressRef addrRef = State.AddressRefFromPhysicalAddress(address);
+	AddLabelAtAddress(State, addrRef);
+	if (FLabelInfo* pLabelInfo = State.GetLabelForAddress(addrRef))
+	{
+		pLabelInfo->ChangeName(Label.c_str(), addrRef);
+	}
+
+	Label.clear();
+}
+
+extern void UpdateItemList(FCodeAnalysisState& state);
+
 bool FSkoolKitImporter::Import(const char* pTextFileName)
 {
+
+	// temp. remove all comments 
+	UpdateItemList(State);
+	for (const FCodeAnalysisItem& item : State.ItemList)
+	{
+		item.Item->Comment = "";
+	}
+	//return false;
+
+
 	// note: "rt" = text mode, which means Windows line endings \r\n will be converted into \n
 	FILE* fp = fopen(pTextFileName, "rt");
 
 	if (fp == nullptr)
 		return false;
 
-	char blockDirective = kSkoolkitDirectiveNone;
-	char subBlockDirective = kSkoolkitDirectiveNone;
-
-	std::string commentBlock;
-	std::string label;
-	FCodeAnalysisItem LastItem;
-
 	uint16_t minAddr = 0xffff;
 	uint16_t maxAddr = 0;
 
-	// only used if pSkoolInfo is set
-	FSkoolFileLocation skoolLocation;
 	const FSkoolFileLocation kSkoolLocationDefault;
-	bool bInRsubSection = false;
 
-#ifndef NDEBUG
-	FCodeAnalysisItem longestCommentItem;
-	int longestCommentLineNum = -1;
-#endif
-
-	unsigned int lineNum = 0;
 	while (fgets(pchLine, 65536, fp))
 	{
 		std::string strLine = pchLine;
-		lineNum++;
+		LineNum++;
 
-		if (bInRsubSection)
+		if (ParseSubDirective(strLine))
 		{
-			if (StringStartsWith(strLine, "@rsub+end"))
-				bInRsubSection = false;
-			else
-				LOGINFO("Skipping @rsub text '%s' on line %d", pchLine, lineNum);
 			continue;
 		}
 
-		if (strLine[0] == '@')
+		if (ParseCommentBlock(strLine))
 		{
-			if (!ParseAsmDirective(State, strLine, label))
-				commentBlock += strLine;
-
-			if (StringStartsWith(strLine, "@rsub+begin"))
-			{
-				bInRsubSection = true;
-			}
-
-			continue;
-		}
-
-		// Is this a comment block?
-		if (strLine[0] == ';')
-		{
-			commentBlock += TrimLeadingChars(strLine, "; ");
 			continue;
 		}
 
 		std::string trimmed = TrimLeadingWhitespace(strLine);
-		if (trimmed[0] == ';')
+		if (UpdateCommentContinuation(trimmed))
 		{
-			// instruction comment continuation
-			if (LastItem.IsValid() && !LastItem.Item->Comment.empty())
-			{
-				if (bStripCarriageReturnsFromComments)
-				{
-					LastItem.Item->Comment += " ";
-				}
-				else
-				{
-					AddTrailingCarriageReturn(LastItem.Item->Comment);
-				}
-
-				LastItem.Item->Comment += ProcessInlineComment(trimmed.c_str() + 2);
-				RemoveTrailingCarriageReturn(LastItem.Item->Comment);
-
-#ifndef NDEBUG
-				if (!longestCommentItem.Item || LastItem.Item->Comment.size() > longestCommentItem.Item->Comment.size())
-				{
-					longestCommentItem = LastItem;
-					longestCommentLineNum = lineNum;
-				}
-#endif
-			}
 			continue;
 		}
-
+		
 		if (trimmed.empty())
 		{
 			// skip blank lines
@@ -645,13 +879,12 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 		}
 
 		// We've got an instruction.
-		// Get directive, address and comment 
-		FItem* pItem = nullptr;
+		// Get directive, address, disassembly text and comment 
 		FSkoolkitInstruction instruction;
 		if (!ParseInstruction(strLine, instruction))
 		{
 			RemoveTrailingCarriageReturn(strLine);
-			LOGWARNING("Parse error on line %d. Could not parse instruction: '%s'", lineNum, strLine.c_str());
+			LOGWARNING("Parse error on line %d. Could not parse instruction: '%s'", LineNum, strLine.c_str());
 			fclose(fp);
 			return false;
 		}
@@ -659,157 +892,22 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 		if (LastItem.IsValid() && instruction.Address < LastItem.AddressRef.Address)
 		{
 			// if this address is lower than the last one we saw then something has gone wrong, so abort
-			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", lineNum, instruction.Address, instruction.Address, LastItem.AddressRef.Address, LastItem.AddressRef.Address);
+			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", LineNum, instruction.Address, instruction.Address, LastItem.AddressRef.Address, LastItem.AddressRef.Address);
 			fclose(fp);
 			return false;
 		}
 
 		if (pSkoolInfo)
 		{
-			skoolLocation = FSkoolFileLocation();
-			skoolLocation.bBranchDestination = instruction.bBranchDestination;
-			skoolLocation.BlockDirective = GetDirectiveFromChar(instruction.BlockDirective);
+			SkoolLocation = FSkoolFileLocation();
+			SkoolLocation.bBranchDestination = instruction.bBranchDestination;
+			SkoolLocation.BlockDirective = GetDirectiveFromChar(instruction.BlockDirective);
 		}
 
-		if (instruction.BlockDirective != kSkoolkitDirectiveNone && blockDirective != instruction.BlockDirective)
-		{
-			// we've encountered a new block
-			blockDirective = instruction.BlockDirective;
-			subBlockDirective = instruction.SubBlockDirective;
-			if (pSkoolInfo)
-				skoolLocation.BlockDirective = GetDirectiveFromChar(blockDirective);// is this needed? we're doing it above
-		}
+		ProcessBlockDirectives(instruction.BlockDirective, instruction.SubBlockDirective);
 
-		if (instruction.SubBlockDirective != subBlockDirective)
-		{
-			// we've encountered a new sub-block
-			subBlockDirective = instruction.SubBlockDirective;
-
-			if (pSkoolInfo)
-				skoolLocation.SubBlockDirective = GetDirectiveFromChar(subBlockDirective);
-		}
-
-		switch (instruction.SubBlockDirective)
-		{
-		case 'c':
-		{
-			// Address is code
-
-			FCodeInfo* pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
-			if (!pCodeInfo)
-			{
-				WriteCodeInfoForAddress(State, instruction.Address);
-				pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
-
-			}
-			pItem = pCodeInfo;
-
-
-			if (blockDirective == 'u')
-				pCodeInfo->bUnused = true;
-		}
-		break;
-		case 'b':
-		case 'w':
-		{
-			// Address is data
-
-			FDataInfo* pDataInfo = State.GetReadDataInfoForAddress(instruction.Address);
-			FCodeInfo* pCodeInfo = State.GetCodeInfoForPhysicalAddress(instruction.Address);
-			if (pCodeInfo)
-			{
-				LOGWARNING("Item at $%02X was set to code: %s", instruction.Address, pCodeInfo->Text.c_str());
-				LOGWARNING("Code item removed and replace as data");
-				// remove the code item
-				State.SetCodeInfoForAddress(instruction.Address, nullptr);	// memory will get cleared up 
-			}
-			if (pDataInfo)
-			{
-				pItem = pDataInfo;
-
-				// count how many entries we have
-				const uint16_t numItems = static_cast<uint16_t>(std::count(instruction.Operation.begin(), instruction.Operation.end(), ',') + 1);
-				std::string defStatement = instruction.Operation.substr(0, 4);
-
-				if (defStatement == "DEFB" || defStatement == "defb")
-				{
-					if (numItems == 1)
-						pDataInfo->DataType = EDataType::Byte;
-					else
-						pDataInfo->DataType = EDataType::ByteArray;
-					pDataInfo->ByteSize = numItems;
-				}
-				else if (defStatement == "DEFW" || defStatement == "defw")
-				{
-					if (numItems == 1)
-						pDataInfo->DataType = EDataType::Word;
-					else
-						pDataInfo->DataType = EDataType::WordArray;
-					pDataInfo->ByteSize = numItems * 2;
-				}
-
-				if (blockDirective == 'g')
-					pDataInfo->bGameState = true;
-				else if (blockDirective == 'u')
-					pDataInfo->bUnused2 = true;	// What is this?
-			}
-		}
-		break;
-		case 't':
-		{
-			// Address is text
-			FDataInfo* pDataInfo = State.GetReadDataInfoForAddress(instruction.Address);
-			if (pDataInfo)
-			{
-				// If this is set to true it will parse the DEFM statement and calculate
-				// how many bytes the text needs to be. This DEFM statement could contain
-				// non-ascii byte values mixed in with the text.
-				// This means when the DEFM statement is exported it will match exactly 
-				// the DEFM statement that was imported.
-				// This will bypass SetItemText() so may not display correctly in the tool.
-				const bool bSkoolKitCompatibleText = false;
-
-				if (bSkoolKitCompatibleText)
-				{
-					std::string defStatement = instruction.Operation.substr(0, 4);
-
-					std::vector<std::string> elements;
-					SplitCommaDelimitedItems(instruction.Operation.substr(5), elements);
-
-					// This loop counts the number of bytes declared in the DEFM instruction.
-					// It can deal with byte values in addition to text strings.
-					// eg DEFM "One",2,"Three"
-					uint16_t byteSize = 0;
-					for (std::string& str : elements)
-					{
-						byteSize += CountDataBytes(str);
-					}
-
-					if (byteSize > 0)
-					{
-						pDataInfo->DataType = EDataType::Text;
-
-						// SetItemText doesnt set the number of bytes correctly (compared to how skoolkit does it),
-						// so we set the byte size manually based on how many bytes we counted in the statement.
-						pDataInfo->ByteSize = byteSize;
-
-						// todo set bBit7Terminator flag on the FDataItem
-						// todo check we're not overlapping items.
-					}
-				}
-				else
-				{
-					// force to byte type otherwise SetItemText() does nothing
-					pDataInfo->DataType = EDataType::Byte;
-
-					SetItemText(State, FCodeAnalysisItem(pDataInfo, State.GetBankFromAddress(instruction.Address), instruction.Address));
-				}
-				pItem = pDataInfo;
-			}
-		}
-		break;
-		}
-
+		FItem* pItem = SetOrCreateItemFromInstruction(instruction);
+		
 		if (!instruction.Comment.empty())
 		{
 			if (pItem)
@@ -818,42 +916,22 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 			}
 		}
 
-		if (!commentBlock.empty())
+		if (!CommentBlock.empty())
 		{
-			FCommentBlock* pBlock = State.GetCommentBlockForAddress(State.AddressRefFromPhysicalAddress(instruction.Address));
-
-			if (pBlock == nullptr)
-				pBlock = AddCommentBlock(State, State.AddressRefFromPhysicalAddress(instruction.Address));
-			else
-			{
-				std::string commentExcerpt = pBlock->Comment.substr(0, 1024);
-				RemoveTrailingCarriageReturn(commentExcerpt);
-				LOGWARNING("SkoolkitImporter: Replacing existing comment block: '%s'", commentExcerpt.c_str());
-			}
-
-			pBlock->Comment = ProcessBlockComment(commentBlock.c_str());
-			commentBlock.clear();
+			CreateCommentBlock(instruction.Address);
 		}
-
-		if (!label.empty())
+		
+		if (!Label.empty())
 		{
-			ELabelType labelType = ELabelType::Data;
-			FAddressRef addrRef = State.AddressRefFromPhysicalAddress(instruction.Address);
-			AddLabelAtAddress(State, addrRef);
-			if (FLabelInfo* pLabelInfo = State.GetLabelForAddress(addrRef))
-			{
-				pLabelInfo->ChangeName(label.c_str(), addrRef);
-			}
-
-			label.clear();
+			CreateLabel(instruction.Address);
 		}
 
 		if (pSkoolInfo)
 		{
 			if (instruction.BlockDirective != 's') // todo: repeated data
 			{
-				if (!(skoolLocation == kSkoolLocationDefault))
-					pSkoolInfo->Locations[instruction.Address] = skoolLocation;
+				if (!(SkoolLocation == kSkoolLocationDefault))
+					pSkoolInfo->Locations[instruction.Address] = SkoolLocation;
 			}
 		}
 
