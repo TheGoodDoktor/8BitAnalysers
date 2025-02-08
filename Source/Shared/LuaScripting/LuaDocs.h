@@ -6,25 +6,20 @@
 
 struct luaL_Reg;
 
-/*struct FLuaDocArg
-{
-	std::string name;
-	std::string description;
-	std::string defaultValue; // if the argument has a default value then this argument is optional
-};*/
-
 struct FLuaDocFunc
 {
-	FLuaDocFunc(const char* pName, const char* pSummary, const char* pDescription, std::vector<std::string> args, const char* pReturns, const char * pUsage)
+	FLuaDocFunc(int id, const char* pName, const char* pSummary, const char* pDescription, std::vector<std::string> args, const char* pReturns, const char * pUsage)
 		: Name(pName)
 		, Summary(pSummary)
 		, Description(pDescription) 
 		, Args(args)
 		, Returns(pReturns)
 		, Usage(pUsage)
+		, Id(id)
 	{
 		MakeDefinition(); 
 	}
+
 	void MakeDefinition();
 
 	std::string Name;
@@ -35,6 +30,13 @@ struct FLuaDocFunc
 	std::vector<std::string> Args;
 
 	std::string Definition;
+
+	int Id;
+};
+
+struct FLuaDocFuncGroup
+{
+	std::vector<FLuaDocFunc*> Funcs;
 };
 
 struct FLuaDocLib
@@ -46,7 +48,8 @@ struct FLuaDocLib
 	void LoadFromJson(const nlohmann::json& jsonDoc);
 
 	std::string Name;
-	std::vector<FLuaDocFunc> Funcs;
+	std::vector<FLuaDocFunc*> Funcs;
+	std::map<std::string, FLuaDocFuncGroup> FuncGroups;
 };
 
 void ClearLuaDocs(void);

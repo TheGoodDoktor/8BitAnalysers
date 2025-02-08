@@ -9,7 +9,8 @@
             "Name": "CreateZXGraphicsView",
             "Returns": "GraphicsView",
             "Summary": "Create a graphics view for drawing ZX Spectrum graphics.",
-            "Usage": "view = CreateGraphicsView(128, 128)"
+            "Usage": "view = CreateGraphicsView(128, 128)",
+            "Group": "Graphics"
         },
         {
             "Args": [
@@ -25,7 +26,8 @@
             "Name": "DrawZXBitImage",
             "Returns": "",
             "Summary": "Draw ZX Spectrum pixels to a graphics view. Height and width are specified in characters.",
-            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)"
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)",
+            "Group": "Graphics"
         },
         {
             "Args": [
@@ -42,7 +44,8 @@
             "Name": "DrawZXBitImageMask",
             "Returns": "",
             "Summary": "Draws an image with a byte intervleaved mask.",
-            "Usage": "gfxData = GetMemPtr(0x8000)\nimage = CreateZXGraphicsView(128, 128)\nDrawZXBitImageMask(image, gfxData, 0, 0, 2, 2)"
+            "Usage": "gfxData = GetMemPtr(0x8000)\nimage = CreateZXGraphicsView(128, 128)\nDrawZXBitImageMask(image, gfxData, 0, 0, 2, 2)",
+            "Group": "Graphics"
         },
         {
             "Args": [
@@ -59,7 +62,8 @@
             "Name": "DrawZXBitImageFineY",
             "Returns": "",
             "Summary": "Draw ZX Spectrum pixels to a graphics view. Height is specified in pixels. Width is specified in characters.",
-            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImageFineY(image, glyphData, 0, 0, 1, 4)"
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImageFineY(image, glyphData, 0, 0, 1, 4)",
+            "Group": "Graphics"
         }
     ]
 }
