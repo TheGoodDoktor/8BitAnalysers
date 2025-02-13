@@ -8,7 +8,8 @@
             "Name": "print",
             "Returns": "",
             "Summary": "Log text to the debug log.",
-            "Usage": "answer = 42\nprint(\"The answer is \" .. answer)"
+            "Usage": "answer = 42\nprint(\"The answer is \" .. answer)",
+            "Group": "Misc"
         },
         {
             "Args": [
@@ -18,7 +19,8 @@
             "Name": "ReadByte",
             "Returns": "uint8_t",
             "Summary": "Read a byte from memory.",
-            "Usage": "print(\"The byte value at memory address 0 is \" .. ReadByte(0))"
+            "Usage": "print(\"The byte value at memory address 0 is \" .. ReadByte(0))",
+            "Group": "Memory/Machine State"
         },
         {
             "Args": [
@@ -28,7 +30,19 @@
             "Name": "ReadWord",
             "Returns": "uint16_t",
             "Summary": "Read a word from memory.",
-            "Usage": "print(\"The word value at memory address 0 is \" .. ReadWord(0))"
+            "Usage": "print(\"The word value at memory address 0 is \" .. ReadWord(0))",
+            "Group": "Memory/Machine State"
+        },
+        {
+            "Args": [
+                "string regName"
+            ],
+            "Description": "For 8-bit registers, use arguments:\n\n  \"A\", \"F\", \"B\", \"C\", \"D\", \"E\", \"H\", \"L\", \"I\", \"R\"\n\nFor 16-bit register pairs, use arguments:\n\n  \"AF\", \"BC\", \"DE\", \"HL\", \"IX\", \"IY\", \"SP\", \"PC\"",
+            "Name": "GetRegValue",
+            "Returns": "uint8_t|uint16_t",
+            "Summary": "Get the value of a register or register pair.",
+            "Usage": "print(\"The register value of HL is \" .. GetRegValue(\"HL\"))",
+            "Group": "Memory/Machine State"
         },
         {
             "Args": [
@@ -49,7 +63,8 @@
             "Name": "WriteByte",
             "Returns": "",
             "Summary": "Write a byte to memory.",
-            "Usage": "SetEditMode(true)\nWriteByte(0x8000, 0xff)"
+            "Usage": "SetEditMode(true)\nWriteByte(0x8000, 0xff)",
+            "Group": "Memory/Machine State"
         },
         {
             "Args": [
@@ -60,7 +75,8 @@
             "Name": "WriteWord",
             "Returns": "",
             "Summary": "Write a word to memory.",
-            "Usage": "SetEditMode(true)\nWriteWord(0x8000, 0xffff)"
+            "Usage": "SetEditMode(true)\nWriteWord(0x8000, 0xffff)",
+            "Group": "Memory/Machine State"
         },
         {
             "Args": [
@@ -70,7 +86,8 @@
             "Name": "GetMemPtr",
             "Returns": "uint8_t*",
             "Summary": "Get pointer at memory address.",
-            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)"
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)",
+            "Group": "Memory/Machine State"
         },
         {
             "Args": [
@@ -80,7 +97,8 @@
             "Name": "SetEditMode",
             "Returns": "",
             "Summary": "Enable or disable Edit Mode.",
-            "Usage": "SetEditMode(true)\nWriteWord(0x8000, 0xffff)"
+            "Usage": "SetEditMode(true)\nWriteWord(0x8000, 0xffff)",
+            "Group": "Analysis"
         },
         {
             "Args": [
@@ -91,7 +109,8 @@
             "Name": "SetDataItemComment",
             "Returns": "",
             "Summary": "Set the comment of a data item at address.",
-            "Usage": "SetDataItemComment(0x8000, \"This data is interesting.\")"
+            "Usage": "SetDataItemComment(0x8000, \"This data is interesting.\")",
+            "Group": "Analysis"
         },
         {
             "Args": [
@@ -102,7 +121,8 @@
             "Name": "SetCodeItemComment",
             "Returns": "",
             "Summary": "Set the comment of a code item at address.",
-            "Usage": "SetCodeItemComment(0, \"This code is interesting.\")"
+            "Usage": "SetCodeItemComment(0, \"This code is interesting.\")",
+            "Group": "Analysis"
         },
         {
             "Args": [
@@ -113,7 +133,8 @@
             "Name": "AddCommentBlock",
             "Returns": "",
             "Summary": "Set the comment block at address.",
-            "Usage": "AddCommentBlock(0x8000, \"This is a comment block\")"
+            "Usage": "AddCommentBlock(0x8000, \"This is a comment block\")",
+            "Group": "Analysis"
         },
         {
             "Args": [
@@ -124,7 +145,44 @@
             "Name": "SetDataItemDisplayType",
             "Returns": "",
             "Summary": "Set the display type of the item at address.",
-            "Usage": "SetDataItemDisplayType(0x4001, EDataItemDisplayType.Binary)"
+            "Usage": "SetDataItemDisplayType(0x4001, EDataItemDisplayType.Binary)",
+            "Group": "Analysis"
+        },
+        {
+            "Args": [
+                "uint16_t address",
+                "string label",
+                "uint16_t memoryRange"
+            ],
+            "Description": "",
+            "Name": "AddDataLabel",
+            "Returns": "",
+            "Summary": "Add label for a data item at address.",
+            "Usage": "AddDataLabel(0x8000, \"Level data\")",
+            "Group": "Analysis"
+        },
+        {
+            "Args": [
+                "uint16_t address",
+                "string function"
+            ],
+            "Description": "",
+            "Name": "RegisterExecutionHandler",
+            "Returns": "",
+            "Summary": "Registers a lua function to be called every time a given memory address is executed.",
+            "Usage": "function OnExecuted\n  print(\"Tick\")\nend\n\nRegisterExecutionHandler(0xee9d, \"OnExecuted\")",
+            "Group": "Memory/Machine State"
+        },
+        {
+            "Args": [
+                "uint16_t address"
+            ],
+            "Description": "",
+            "Name": "RemoveExecutionHandler",
+            "Returns": "",
+            "Summary": "Removes a previously registered execution handler.",
+            "Usage": "RemoveExecutionHandler(0xee9d)",
+            "Group": "Memory/Machine State"
         },
         {
             "Args": [
@@ -157,7 +215,8 @@
             "Name": "FormatMemory",
             "Returns": "",
             "Summary": "Format memory at address, using a table to specify formatting options",
-            "Usage": "FormatMemory({ StartAddress = 0x3ff8, DataType = EDataType.Byte, ItemSize = 1, NoItems = 8, DisplayType = EDataItemDisplayType.Binary })"
+            "Usage": "FormatMemory({ StartAddress = 0x3ff8, DataType = EDataType.Byte, ItemSize = 1, NoItems = 8, DisplayType = EDataItemDisplayType.Binary })",
+            "Group": "Formatting"
         },
         {
             "Args": [
@@ -170,7 +229,8 @@
             "Name": "FormatMemoryAsBitmap",
             "Returns": "",
             "Summary": "Format a region of memory as a bitmap.",
-            "Usage": "FormatMemoryAsBitmap(0x5000, 16, 16, 1)"
+            "Usage": "FormatMemoryAsBitmap(0x5000, 16, 16, 1)",
+            "Group": "Formatting"
         },
         {
             "Args": [
@@ -182,7 +242,8 @@
             "Name": "FormatMemoryAsCharMap",
             "Returns": "",
             "Summary": "Format a region of memory as a character map.",
-            "Usage": "FormatMemoryAsCharMap(0x5000, 32, 20)"
+            "Usage": "FormatMemoryAsCharMap(0x5000, 32, 20)",
+            "Group": "Formatting"
         },
         {
             "Args": [
@@ -192,14 +253,16 @@
             "Name": "DrawAddressLabel",
             "Returns": "",
             "Summary": "Draw a summary of a given address.",
-            "Usage": "DrawAddressLabel(0)"
+            "Usage": "DrawAddressLabel(0)",
+            "Group": "Graphics"
         },
         {
             "Description": "This gets the internal scaling value that is used to scale various graphical elements. This value is derived from the current font size.",
             "Name": "GetImageScale",
             "Returns": "float",
             "Summary": "Get the internal scaling value.",
-            "Usage": "print(\"The current scaling value is \" .. GetImageScale())"
+            "Usage": "print(\"The current scaling value is \" .. GetImageScale())",
+            "Group": "Graphics"
         },
         {
             "Args": [
@@ -210,7 +273,8 @@
             "Name": "ClearGraphicsView",
             "Returns": "",
             "Summary": "Fill a graphics view with a single colour.",
-            "Usage": "image = CreateZXGraphicsView(256, 192)\nClearGraphicsView(image, 0xffff0000)"
+            "Usage": "image = CreateZXGraphicsView(256, 192)\nClearGraphicsView(image, 0xffff0000)",
+            "Group": "Graphics"
         },
         {
             "Args": [
@@ -220,7 +284,8 @@
             "Name": "DrawGraphicsView",
             "Returns": "",
             "Summary": "Draw the contents of a graphics view.",
-            "Usage": "SampleViewer =\n{\n\tname = \"Sample Viewer\",\n\tgraphicsView = nil,\n\tonAdd = function(self)\n\t\tself.graphicsView = CreateZXGraphicsView(128,128)\n\t\tClearGraphicsView(self.graphicsView, 0xffff0000)\n\tend,\n\tonDrawUI = function(self)\n\t\tDrawGraphicsView(self.graphicsView)\n\tend\n}\nAddViewer(SampleViewer);"
+            "Usage": "SampleViewer =\n{\n\tname = \"Sample Viewer\",\n\tgraphicsView = nil,\n\tonAdd = function(self)\n\t\tself.graphicsView = CreateZXGraphicsView(128,128)\n\t\tClearGraphicsView(self.graphicsView, 0xffff0000)\n\tend,\n\tonDrawUI = function(self)\n\t\tDrawGraphicsView(self.graphicsView)\n\tend\n}\nAddViewer(SampleViewer);",
+            "Group": "Graphics"
         },
         {
             "Args": [
@@ -231,7 +296,8 @@
             "Name": "SaveGraphicsViewPNG",
             "Returns": "",
             "Summary": "Save a graphics view to a PNG file.",
-            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)\nSaveGraphicsViewPNG(image, \"Glyph.png\")"
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)\nSaveGraphicsViewPNG(image, \"Glyph.png\")",
+            "Group": "Graphics"
         },
         {
             "Args": [
@@ -246,7 +312,8 @@
             "Name": "DrawOtherGraphicsViewScaled",
             "Returns": "",
             "Summary": "Draw the contents of one graphics view onto another graphics view.",
-            "Usage": "glyphData = GetMemPtr(0x3ff8)\nglyphImage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(glyphImage, glyphData, 0, 0, 1, 1)\ndestImage = CreateZXGraphicsView(128, 128)\nDrawOtherGraphicsViewScaled(destImage, glyphImage, 0, 0, 64, 64)\n"
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nglyphImage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(glyphImage, glyphData, 0, 0, 1, 1)\ndestImage = CreateZXGraphicsView(128, 128)\nDrawOtherGraphicsViewScaled(destImage, glyphImage, 0, 0, 64, 64)\n",
+            "Group": "Graphics"
         }
     ]
 }
