@@ -1252,11 +1252,23 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 				pCurrItem = item.Item;
 			}
 
+			//if (ImGui::InputTextMultiline("##detailscomment", &pCommentBlock->Comment, ImGui::GetContentRegionAvail()))
+
 			//ImGui::Text("Comments");
 			if (ImGui::InputTextWithHint("Comments", "Comments", &commentString))
 			{
 				SetItemCommentText(state, item, commentString.c_str());
 			}
+			ImGui::Separator();
+			ImGui::Text(commentString.c_str());
+			ImGui::Separator();
+
+			ImGui::Text("[");
+			ImGui::SameLine();
+			Markup::DrawText(state, viewState, commentString.c_str());
+			ImGui::SameLine();
+			ImGui::Text("]");
+
 		}
 
 	}
@@ -1622,7 +1634,10 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::SameLine();
 	DrawDebuggerButtons(state, viewState);
 	
-	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
+
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar;
+	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), /*true*/ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX, windowFlags))
+	//if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
 	{
 		// Determine if we want to switch tabs
 		const FAddressRef& goToAddress = viewState.GetGotoAddress();
@@ -2679,6 +2694,18 @@ std::string ExpandString(FCodeAnalysisState& state, const char* pText)
 	while (*pTxtPtr != 0)
 	{
 		const char ch = *pTxtPtr++;
+
+		// dont write escape character
+		/*if (ch == '\\')	
+		{
+			*pTxtPtr++;
+			if (strPos == kMaxStringSize)
+			{
+				str[strPos] = 0;
+				strPos = 0;
+			}
+			continue;
+		}*/
 
 		if (bInTag == false)
 		{

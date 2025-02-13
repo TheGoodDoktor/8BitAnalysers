@@ -32,6 +32,16 @@
         },
         {
             "Args": [
+                "string regName"
+            ],
+            "Description": "For 8-bit registers, use arguments:\n\n  \"A\", \"F\", \"B\", \"C\", \"D\", \"E\", \"H\", \"L\", \"I\", \"R\"\n\nFor 16-bit register pairs, use arguments:\n\n  \"AF\", \"BC\", \"DE\", \"HL\", \"IX\", \"IY\", \"SP\", \"PC\"",
+            "Name": "GetRegValue",
+            "Returns": "uint8_t|uint16_t",
+            "Summary": "Get the value of a register or register pair.",
+            "Usage": "print(\"The register value of HL is \" .. GetRegValue(\"HL\"))"
+        },
+        {
+            "Args": [
                 "uint16_t address",
                 "uint8_t value"
             ],
@@ -115,6 +125,29 @@
             "Returns": "",
             "Summary": "Set the display type of the item at address.",
             "Usage": "SetDataItemDisplayType(0x4001, EDataItemDisplayType.Binary)"
+        },
+        {
+            "Args": [
+                "uint16_t address",
+                "string label",
+                "uint16_t memoryRange"
+            ],
+            "Description": "TODO",
+            "Name": "AddDataLabel",
+            "Returns": "",
+            "Summary": "Add label for a data item at address.",
+            "Usage": "AddDataLabel(0x8000, \"Level data\")"
+        },
+        {
+            "Args": [
+                "uint16_t address",
+                "string function"
+            ],
+            "Description": "TODO",
+            "Name": "RegisterExecutionHandler",
+            "Returns": "",
+            "Summary": "Registers a lua function to be called every time a given memory address is executed.",
+            "Usage": "function OnExecuted\n  print(\"Tick\")\nend\n\nRegisterExecutionHandler(0xee9d, \"OnExecuted\")"
         },
         {
             "Args": [

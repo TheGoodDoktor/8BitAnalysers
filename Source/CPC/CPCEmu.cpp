@@ -1611,7 +1611,8 @@ void FCPCEmu::OnExitEditMode(void)
 // These functions are used to add to the bottom of the menus
 void	FCPCEmu::FileMenuAdditions(void)
 {
-	if (ImGui::MenuItem("Export Binary File"))
+	//if (ImGui::MenuItem("Export Binary File"))
+	if (0)
 	{
 		if (pActiveGame != nullptr)
 		{

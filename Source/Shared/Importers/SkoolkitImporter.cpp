@@ -13,7 +13,15 @@ const char kSkoolkitDirectiveNone = '-';
 // Set this to true to strip carriage returns from inline comments.
 // This won't affect block comments.
 const bool bStripCarriageReturnsFromComments = false;
+
+// strip { and } from comments at the start and end of lines.
 const bool bStripBracesFromComments = false;
+
+// Set this to true if you intend to export the Skoolkit file and you want to preserve the original markup.
+// Set to false if you don't intend to output the Skoolkit file and you want the best viewing experience.
+// When set to false, it will attempt to convert Skoolkit macros to 8BA markup where possible.
+// It will also strip out any unsupported Skoolkit markup.
+const bool bPreserveSkoolkitMarkup = false;
 
 struct FSkoolkitInstruction
 {
@@ -88,7 +96,6 @@ protected:
 	FSkoolFileInfo* pSkoolInfo = nullptr;
 };
 
-
 std::string TrimLeadingChars(const std::string& str, const std::string& charsToTrim)
 {
 	size_t start = str.find_first_not_of(charsToTrim);
@@ -141,11 +148,6 @@ char GetDirectiveFromAsm(const std::string& str)
 	return 'c';
 }
 
-bool IsNumeric(char c)
-{
-	return c >= '0' && c <= '9';
-}
-
 void FSkoolKitImporter::ProcessTableMacro(const char** pMacroText, const char* pTxtStart)
 {
 	if (*pMacroText - pTxtStart >= 6)
@@ -158,14 +160,10 @@ void FSkoolKitImporter::ProcessTableMacro(const char** pMacroText, const char* p
 }
 
 // macros to strip or deal with
-// #UDGTABLE
-// #TABLE
 // #SPRITE
-// #AUDIO
 // #DEF
 // #FACT
 // #FOR
-// #GBUF
 
 // https://skoolkit.ca/docs/skoolkit/skool-macros.html
 std::string FSkoolKitImporter::ProcessMacro(const char** pMacroText)
@@ -236,7 +234,7 @@ std::string FSkoolKitImporter::ProcessMacro(const char** pMacroText)
 		return "";
 	}
 
-	if (*pInTxtPtr == 'R')
+	if (*pInTxtPtr == 'R' || *pInTxtPtr == 'N')
 	{
 		static const int kBufSize = 32;
 		static char buf[kBufSize] = { 0 };
@@ -257,6 +255,42 @@ std::string FSkoolKitImporter::ProcessMacro(const char** pMacroText)
 		}
 
 		return "";
+	}
+
+	if (!strncmp(pInTxtPtr, "GBUF", 4))
+	{
+		static const int kBufSize = 32;
+		static char buf[kBufSize] = { 0 };
+
+		pInTxtPtr += 4;
+
+		const bool bHex = *pInTxtPtr == '$';
+		if (bHex)
+			pInTxtPtr++;
+
+		std::string ret;
+		char* pNumEnd = nullptr;
+		do
+		{
+			if (pNumEnd)
+				ret += " ";
+			const int address = static_cast<uint16_t>(strtol(pInTxtPtr, &pNumEnd, bHex ? 16 : 10));
+			if (pInTxtPtr != pNumEnd)
+			{
+				snprintf(buf, kBufSize, "#ADDR:0x%04X#", address);
+				ret += buf;
+				pInTxtPtr = pNumEnd;
+			}
+			else
+			{
+				*pMacroText = pInTxtPtr;
+				return ret;
+			}
+
+		} while (*pInTxtPtr++ == ',');
+		*pMacroText = pNumEnd;
+
+		return ret;
 	}
 
 	if (*pInTxtPtr == 'b')
@@ -286,11 +320,14 @@ std::string FSkoolKitImporter::ProcessMacro(const char** pMacroText)
 	if (!strncmp(pInTxtPtr, "AUDIO", 5))
 	{
 		pInTxtPtr += 5;
+
+		// Skip the rest of the line
 		while (*pInTxtPtr != 0 && *pInTxtPtr != '\n')
 			pInTxtPtr++;
 
 		*pMacroText = pInTxtPtr;
-		// Return space to prevent adding an #.
+		
+		// Return a space to prevent adding the # prefix.
 		// TODO this in a better way.
 		return " ";
 	}
@@ -307,44 +344,51 @@ std::string FSkoolKitImporter::ProcessComment(const char* pText)
 	const char* pTxtPtr = pText;
 	std::string outString;
 
-	if (bStripBracesFromComments)
+	if (bPreserveSkoolkitMarkup)
 	{
-		// skip leading brace
-		if (*pTxtPtr == '{')
-			pTxtPtr++;
+		outString = pText;
 	}
-	
-	while (*pTxtPtr != 0)
+	else
 	{
-		const char ch = *pTxtPtr++;
-
-		if (bInTable)
+		if (bStripBracesFromComments)
 		{
-			if (ch == '#')
-			{
-				ProcessTableMacro(&pTxtPtr, pText);
-			}
+			// skip leading brace
+			if (*pTxtPtr == '{')
+				pTxtPtr++;
 		}
-		else
+
+		while (*pTxtPtr != 0)
 		{
-			if (ch == '#')
+			const char ch = *pTxtPtr++;
+			
+			if (bInTable)
 			{
-				// See if we've hit a supported skoolkit macro.
-				// If so, convert it to SA markup.
-				std::string markupTxt = ProcessMacro(&pTxtPtr);
-				if (markupTxt.empty())
+				if (ch == '#')
 				{
-					// add escape character so SA doesn't try to treat this macro as SA markup.
-					outString += "\\#";
-				}
-				else
-				{
-					outString += markupTxt;
+					ProcessTableMacro(&pTxtPtr, pText);
 				}
 			}
 			else
 			{
-				outString += ch;	// add to string
+				if (ch == '#')
+				{
+					// See if we've hit a supported skoolkit macro.
+					// If so, convert it to SA markup.
+					std::string markupTxt = ProcessMacro(&pTxtPtr);
+					if (markupTxt.empty())
+					{
+						// add escape character so SA doesn't try to treat this macro as SA markup.
+						outString += "\\#";
+					}
+					else
+					{
+						outString += markupTxt;
+					}
+				}
+				else
+				{
+					outString += ch;	// add to string
+				}
 			}
 		}
 	}
@@ -501,7 +545,7 @@ bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 				}
 				// todo: decimal and 0x notation
 
-				return false;
+				return true;
 			}
 		}
 	}
@@ -587,13 +631,17 @@ bool FSkoolKitImporter::ParseSubDirective(std::string& strLine)
 			bInSubDirective = false;
 		else
 			LOGINFO("Skipping @rsub text '%s' on line %d", pchLine, LineNum);
+		// todo: add string to CommentBlock?
 		return true;
 	}
 
 	if (strLine[0] == '@')
 	{
 		if (!ParseAsmDirective(State, strLine, Label))
-			CommentBlock += strLine;
+		{
+			if (bPreserveSkoolkitMarkup)
+				CommentBlock += strLine;
+		}
 
 		if (StringStartsWith(strLine, "@rsub+begin"))
 		{
@@ -751,7 +799,7 @@ FItem* FSkoolKitImporter::SetOrCreateItemFromInstruction(FSkoolkitInstruction& i
 			// This means when the DEFM statement is exported it will match exactly 
 			// the DEFM statement that was imported.
 			// This will bypass SetItemText() so may not display correctly in the tool.
-			const bool bSkoolKitCompatibleText = false;
+			const bool bSkoolKitCompatibleText = true;
 
 			if (bSkoolKitCompatibleText)
 			{
@@ -786,6 +834,8 @@ FItem* FSkoolKitImporter::SetOrCreateItemFromInstruction(FSkoolkitInstruction& i
 				// force to byte type otherwise SetItemText() does nothing
 				pDataInfo->DataType = EDataType::Byte;
 
+				// Note: this will only identify text properly if the text is bit 7 terminated or terminated with $ff.
+				// TODO: advance to the next non-text block to identify where this text ends?
 				SetItemText(State, FCodeAnalysisItem(pDataInfo, State.GetBankFromAddress(instruction.Address), instruction.Address));
 			}
 			pItem = pDataInfo;

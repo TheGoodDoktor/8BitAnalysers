@@ -87,7 +87,7 @@ void FASMExporter::Output(const char* pFormat, ...)
 
 	if (OutputString != nullptr)
 	{
-		const int kStringBufferSize = 256;
+		const int kStringBufferSize = 1024;
 		char stringBuffer[kStringBufferSize];
 		int ret = vsnprintf(stringBuffer, kStringBufferSize, pFormat, ap);
 		assert(ret < kStringBufferSize);	// increase kStrignBufferSize if this gets hit
