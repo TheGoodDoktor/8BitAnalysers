@@ -356,6 +356,18 @@ void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	DrawCodeAddress(state, viewState, {state.GetBankFromAddress(addr), addr});
 }
 
+void DrawInlineComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem)
+{
+	if (pItem != nullptr && pItem->Comment.empty() == false)
+	{
+		// Go back to the previous line to get the cursor pos of the last item.
+		// I couldn't see a better way to do this.
+		ImGui::SameLine();
+
+		DrawComment(state, viewState, pItem, std::max(state.Config.CommentLinePos, ImGui::GetCursorPosX()));
+	}
+}
+
 void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem *pItem, float offset)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
@@ -2551,7 +2563,8 @@ void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state)
 	FCodeAnalysisConfig& config = state.Config;
 
 	ImGui::SliderFloat("Label Pos", &config.LabelPos, 0, 200.0f);
-	ImGui::SliderFloat("Comment Pos", &config.CommentLinePos, 0, 200.0f);
+	ImGui::SliderFloat("Block Comment Pos", &config.CommentLinePos, 0, 200.0f);
+	ImGui::SliderFloat("Inline Comment Pos", &config.InlineCommentPos, 0, 2000.0f);
 	ImGui::SliderFloat("Address Pos", &config.AddressPos, 0, 200.0f);
 	ImGui::SliderFloat("Address Space", &config.AddressSpace, 0, 200.0f);
 

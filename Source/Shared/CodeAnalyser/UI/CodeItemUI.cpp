@@ -318,8 +318,8 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		DrawAddressLabel(state, viewState, pCodeInfo->PointerAddress);
 	}
 	#endif
-	DrawComment(state, viewState, pCodeInfo);
-
+	
+	DrawInlineComment(state, viewState, pCodeInfo);
 }
 
 // this code assumes the item is in physical address space

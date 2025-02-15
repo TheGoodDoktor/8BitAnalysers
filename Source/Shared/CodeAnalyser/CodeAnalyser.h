@@ -223,6 +223,7 @@ struct FCodeAnalysisConfig
 	bool	bShowConfigWindow = false;
 	float	LabelPos = 42.0f;
 	float	CommentLinePos = 42.0f;
+	float	InlineCommentPos = 500.0f;
 	float	AddressPos = 48.0f;
 	float	AddressSpace = 70.0f;
 	float	BranchLineIndentStart = 0;

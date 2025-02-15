@@ -66,6 +66,7 @@ void ShowDataItemReadActivity(FCodeAnalysisState& state, FAddressRef addr);
 void ShowDataItemWriteActivity(FCodeAnalysisState& state, FAddressRef addr);
 void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FDataInfo* pDataInfo);
 
+void DrawInlineComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem);
 void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem, float offset = 0.0f);
 
 // util functions - move?

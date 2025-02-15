@@ -733,10 +733,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 	{
-		if (DrawDataItemRegisterPtrsZ80(state, physAddr, pDataInfo->ByteSize))
-		{
-			offset = 0.f;
-		}
+		DrawDataItemRegisterPtrsZ80(state, physAddr, pDataInfo->ByteSize);
 	}
 	else
 	{
@@ -744,13 +741,12 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		{
 			ImGui::SameLine();
 			ImGui::Text("<- SP");
-			offset = 0.f;
 		}
 	}
 
 	SetNumberDisplayMode(trueNumberDisplayMode);
 
-	DrawComment(state, viewState, pDataInfo, offset);
+	DrawInlineComment(state, viewState, pDataInfo);
 }
 
 struct FDataValueGraphState
