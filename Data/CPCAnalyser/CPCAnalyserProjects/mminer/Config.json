@@ -1,0 +1,35 @@
+{
+    "128KGame": true,
+    "Machine": "",
+    "Name": "mminer",
+    "Options": {
+        "ViewConfigs": [
+            {
+                "Enabled": true,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            }
+        ]
+    },
+    "Snapshot": {
+        "DisplayName": "mminer",
+        "FileName": "mminer.sna",
+        "ListName": "Snapshot File",
+        "Type": 1
+    }
+}

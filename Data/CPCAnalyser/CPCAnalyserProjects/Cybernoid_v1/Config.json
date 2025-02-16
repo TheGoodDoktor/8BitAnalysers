@@ -1,0 +1,35 @@
+{
+    "128KGame": false,
+    "Machine": "",
+    "Name": "Cybernoid_v1",
+    "Options": {
+        "ViewConfigs": [
+            {
+                "Enabled": true,
+                "ViewAddress": 1876,
+                "ViewAddressBank": 0
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            },
+            {
+                "Enabled": false,
+                "ViewAddress": 0,
+                "ViewAddressBank": -1
+            }
+        ]
+    },
+    "Snapshot": {
+        "DisplayName": "Cybernoid_v1",
+        "FileName": "Cybernoid_v1.sna",
+        "ListName": "Snapshot File",
+        "Type": 1
+    }
+}

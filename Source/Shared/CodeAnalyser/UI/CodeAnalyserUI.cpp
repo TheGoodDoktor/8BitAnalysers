@@ -1264,11 +1264,23 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 				pCurrItem = item.Item;
 			}
 
+			//if (ImGui::InputTextMultiline("##detailscomment", &pCommentBlock->Comment, ImGui::GetContentRegionAvail()))
+
 			//ImGui::Text("Comments");
 			if (ImGui::InputTextWithHint("Comments", "Comments", &commentString))
 			{
 				SetItemCommentText(state, item, commentString.c_str());
 			}
+			ImGui::Separator();
+			ImGui::Text(commentString.c_str());
+			ImGui::Separator();
+
+			ImGui::Text("[");
+			ImGui::SameLine();
+			Markup::DrawText(state, viewState, commentString.c_str());
+			ImGui::SameLine();
+			ImGui::Text("]");
+
 		}
 
 	}
@@ -1634,6 +1646,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::SameLine();
 	DrawDebuggerButtons(state, viewState);
 	
+
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), /*true*/ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
 	{
 		//ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(500, 200));
@@ -2785,6 +2798,7 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 	const char* pTxtPtr = pText;
 	bool bInTag = false;
 	bool bToolTipshown = false;
+	bool bCarriageReturn = false;
 
 	// temp string on stack
 	const int kMaxStringSize = 64;
@@ -2800,6 +2814,11 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 		if (ch == '\\')	// escape char
 		{
 			str[strPos++] = *pTxtPtr++;
+			if (strPos == kMaxStringSize)
+			{
+				str[strPos] = 0;
+				strPos = 0;
+			}
 			continue;
 		}
 
@@ -2810,8 +2829,12 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 				bInTag = true;
 				tag.clear();
 			}
+			else if (ch == '\n')
+			{
+				bCarriageReturn = true;
+			}
 			else
-			{ 
+			{
 				str[strPos++] = ch;	// add to string
 			}
 		}
@@ -2828,12 +2851,17 @@ bool DrawText(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,const
 			}
 		}
 
-		if (strPos == kMaxStringSize || (bInTag && strPos != 0) || *pTxtPtr == 0)
+		if (strPos == kMaxStringSize || (bInTag && strPos != 0) || *pTxtPtr == 0 || bCarriageReturn)
 		{
 			str[strPos] = 0;
 			strPos = 0;
 			ImGui::SameLine(0,0);
 			ImGui::Text("%s", str);
+			if (bCarriageReturn)
+			{
+				ImGui::NewLine();
+				bCarriageReturn = false;
+			}
 		}
 	}
 
@@ -2858,6 +2886,18 @@ std::string ExpandString(FCodeAnalysisState& state, const char* pText)
 	while (*pTxtPtr != 0)
 	{
 		const char ch = *pTxtPtr++;
+
+		// dont write escape character
+		/*if (ch == '\\')	
+		{
+			*pTxtPtr++;
+			if (strPos == kMaxStringSize)
+			{
+				str[strPos] = 0;
+				strPos = 0;
+			}
+			continue;
+		}*/
 
 		if (bInTag == false)
 		{
