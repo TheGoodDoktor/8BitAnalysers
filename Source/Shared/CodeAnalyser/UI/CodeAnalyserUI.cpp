@@ -364,7 +364,7 @@ void DrawInlineComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 		// I couldn't see a better way to do this.
 		ImGui::SameLine();
 
-		DrawComment(state, viewState, pItem, std::max(state.Config.CommentLinePos, ImGui::GetCursorPosX()));
+		DrawComment(state, viewState, pItem, std::max(state.Config.InlineCommentPos, ImGui::GetCursorPosX()));
 	}
 }
 
