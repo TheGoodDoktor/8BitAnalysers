@@ -152,9 +152,14 @@ void FSkoolKitImporter::ProcessTableMacro(const char** pMacroText, const char* p
 {
 	if (*pMacroText - pTxtStart >= 6)
 	{
+		// If the # is preceded by "TABLE" then this marks the end of the table.
 		if (!strncmp(*pMacroText - 6, "TABLE", 5))
 		{
 			bInTable = false;
+
+			// Skip following carriage return so we don't end up with an empty line.
+			if (*pMacroText[0] == '\n' || *pMacroText[0] == '\r')
+				(*pMacroText)++;
 		}
 	}
 }
@@ -334,7 +339,7 @@ std::string FSkoolKitImporter::ProcessMacro(const char** pMacroText)
 
 #ifndef NDEBUG
 	// log unhandled macro
-	LOGINFO("[MACRO] %s", pInTxtPtr);
+	//LOGINFO("[MACRO] #%s", pInTxtPtr);
 #endif
 	return "";
 }
@@ -357,6 +362,8 @@ std::string FSkoolKitImporter::ProcessComment(const char* pText)
 				pTxtPtr++;
 		}
 
+		// todo: add ability to skip a line.
+
 		while (*pTxtPtr != 0)
 		{
 			const char ch = *pTxtPtr++;
@@ -377,8 +384,11 @@ std::string FSkoolKitImporter::ProcessComment(const char* pText)
 					std::string markupTxt = ProcessMacro(&pTxtPtr);
 					if (markupTxt.empty())
 					{
-						// add escape character so SA doesn't try to treat this macro as SA markup.
-						outString += "\\#";
+						if (!bInTable)
+						{
+							// add escape character so SA doesn't try to treat this macro as SA markup.
+							outString += "\\#";
+						}
 					}
 					else
 					{
@@ -659,7 +669,20 @@ bool FSkoolKitImporter::ParseCommentBlock(std::string& strLine)
 	// Is this a comment block?
 	if (strLine[0] == ';')
 	{
-		CommentBlock += TrimLeadingChars(strLine, "; ");
+		// Special case(s). 
+		// Convert '; .\n' to '; \n'
+		// Convert ';\n' to '; \n'
+		std::string str;
+		if (strLine == "; .\n" || strLine == ";\n")
+		{
+			// Add a single space, otherwise SA will not display the comment line.
+			str = " \n";
+		}
+		else
+		{
+			str = TrimLeadingChars(strLine, "; ");
+		}
+		CommentBlock += str;
 		return true;
 	}
 	
@@ -880,15 +903,12 @@ extern void UpdateItemList(FCodeAnalysisState& state);
 
 bool FSkoolKitImporter::Import(const char* pTextFileName)
 {
-
 	// temp. remove all comments 
-	UpdateItemList(State);
+	/*UpdateItemList(State);
 	for (const FCodeAnalysisItem& item : State.ItemList)
 	{
 		item.Item->Comment = "";
-	}
-	//return false;
-
+	}*/
 
 	// note: "rt" = text mode, which means Windows line endings \r\n will be converted into \n
 	FILE* fp = fopen(pTextFileName, "rt");
