@@ -64,17 +64,17 @@ bool Init(FEmuBase* pEmulator)
 	if(GlobalState != nullptr)  // shutdown old instance
 		Shutdown();
 	
-	if (pEmulator->GetGlobalConfig()->bEnableLua == false)
-		return false;
-
 	InitTextEditors();
 
 	for (int i = 0; i < GetNumLuaDocLibs(); i++)
 	{
-		for (const FLuaDocFunc& func : GetLuaDocLibFromIndex(i)->Funcs)
+		for (const FLuaDocFunc* pFunc : GetLuaDocLibFromIndex(i)->Funcs)
 		{
-			std::string toolTip = func.Definition +"\n\n" + func.Summary;
-			RegisterLuaFunctionToolTip(func.Name.c_str(), toolTip.c_str());
+			if (pFunc)
+			{
+				std::string toolTip = pFunc->Definition + "\n\n" + pFunc->Summary;
+				RegisterLuaFunctionToolTip(pFunc->Name.c_str(), toolTip.c_str());
+			}
 		}
 	}
 

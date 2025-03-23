@@ -14,7 +14,8 @@
 using json = nlohmann::json;
 
 std::vector<FLuaDocLib> gLuaDocLibs;
-int gSelectedFunctionIndex = 0;
+int gSelectedFunctionId = 0;
+int gCurFunctionId = 0;
 
 void FLuaDocFunc::MakeDefinition()
 {
@@ -43,6 +44,13 @@ void FLuaDocLib::LoadFromJson(const nlohmann::json& jsonDoc)
 		std::string description = funcJson["Description"].get<std::string>();
 		std::string returns = funcJson["Returns"].get<std::string>();
 		std::string usage = funcJson["Usage"].get<std::string>();
+
+		std::string group;
+		if (funcJson.contains("Group"))
+		{
+			group = funcJson["Group"].get<std::string>();
+		}
+		
 		std::vector<std::string> args;
 
 		if (funcJson.contains("Args"))
@@ -53,16 +61,34 @@ void FLuaDocLib::LoadFromJson(const nlohmann::json& jsonDoc)
 			}
 		}
 
-		Funcs.emplace_back(FLuaDocFunc(name.c_str(), summary.c_str(), description.c_str(), args, returns.c_str(), usage.c_str()));
+		FLuaDocFunc* pFunc = new FLuaDocFunc(gCurFunctionId, name.c_str(), summary.c_str(), description.c_str(), args, returns.c_str(), usage.c_str());
+		Funcs.push_back(pFunc);
+		FuncGroups[group].Funcs.push_back(pFunc);
+		gCurFunctionId++;
+	}
+
+	std::sort(Funcs.begin(), Funcs.end(), [](FLuaDocFunc* pFuncA, FLuaDocFunc* pFuncB)
+		{
+			return pFuncA->Name < pFuncB->Name;
+		});
+
+	// Sort functions in each group
+	std::map<std::string, FLuaDocFuncGroup>::iterator it;
+	for (it = FuncGroups.begin(); it != FuncGroups.end(); ++it)
+	{
+		std::sort(it->second.Funcs.begin(), it->second.Funcs.end(), [](FLuaDocFunc* pFuncA, FLuaDocFunc* pFuncB)
+			{
+				return pFuncA->Name < pFuncB->Name;
+			});
 	}
 }
 
 const FLuaDocFunc* FLuaDocLib::GetFunctionByName(const char* pName) const
 {
-	for (const FLuaDocFunc& func : Funcs)
+	for (const FLuaDocFunc* pFunc : Funcs)
 	{
-		if (func.Name == pName)
-			return &func;
+		if (pFunc->Name == pName)
+			return pFunc;
 	}
 	return nullptr;
 }
@@ -98,7 +124,8 @@ bool LoadLuaDocLibFromJson(FLuaDocLib& luaDocLib, const char* fname)
 // This is for development purposes only.
 bool SaveLuaDocLibToJson(const FLuaDocLib& luaDocLib, const char* fname)
 {
-#ifndef NDEBUG
+//#ifndef NDEBUG
+#if 0
 	json jsonFile;
 
 	for (const FLuaDocFunc& func : luaDocLib.Funcs)
@@ -155,19 +182,38 @@ void DrawLuaDocs(void)
 {
 	if (ImGui::Begin("Lua API Docs"))
 	{
+		static bool bFlatList = false;
 		const float glyphWidth = ImGui_GetFontCharWidth();
 		ImGui::BeginChild("##LuaDocsFunctionList", ImVec2(glyphWidth * 30.f, 0), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX);
+		ImGui::Checkbox("Flat List", &bFlatList);
 		
 		int curIndex = 0;
 		for (const FLuaDocLib& lib : gLuaDocLibs)
 		{
 			if (ImGui::CollapsingHeader(lib.Name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				for (const FLuaDocFunc& func : lib.Funcs)
+				if (bFlatList)
 				{
-					if (ImGui::Selectable(func.Name.c_str(), gSelectedFunctionIndex == curIndex))
-						gSelectedFunctionIndex = curIndex;
-					curIndex++;
+					for (const FLuaDocFunc* pFunc : lib.Funcs)
+					{
+						if (ImGui::Selectable(pFunc->Name.c_str(), gSelectedFunctionId == pFunc->Id))
+							gSelectedFunctionId = pFunc->Id;
+					}
+				}
+				else
+				{
+					std::map<std::string, FLuaDocFuncGroup>::const_iterator it;
+					for (it = lib.FuncGroups.begin(); it != lib.FuncGroups.end(); ++it)
+					{
+						ImGui::SeparatorText(it->first.c_str());
+						{
+							for (const FLuaDocFunc* pFunc : it->second.Funcs)
+							{
+								if (ImGui::Selectable(pFunc->Name.c_str(), gSelectedFunctionId == pFunc->Id))
+									gSelectedFunctionId = pFunc->Id;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -177,29 +223,27 @@ void DrawLuaDocs(void)
 
 		if (ImGui::BeginChild("##LuaDocsFunctionDetails"))
 		{
-			curIndex = 0;
-
 			for (const FLuaDocLib& lib : gLuaDocLibs)
 			{
 				static ImGuiTableFlags flags = ImGuiTableFlags_Borders;
-
-				for (const FLuaDocFunc& func : lib.Funcs)
+				
+				for (const FLuaDocFunc* pFunc : lib.Funcs)
 				{
-					if (curIndex == gSelectedFunctionIndex)
+					if (pFunc->Id == gSelectedFunctionId)
 					{
 						if (ImGui::BeginTable("luadoctable", 1, flags))
 						{
-							ImGui::TableSetupColumn(func.Definition.c_str());
+							ImGui::TableSetupColumn(pFunc->Definition.c_str());
 							ImGui::TableHeadersRow();
 
 							// Summary & Description
 							ImGui::TableNextRow();
 							ImGui::TableSetColumnIndex(0);
-							ImGui::TextWrapped(func.Summary.c_str());
-							if (!func.Description.empty())
+							ImGui::TextWrapped(pFunc->Summary.c_str());
+							if (!pFunc->Description.empty())
 							{
 								ImGui::Text("");
-								ImGui::TextWrapped(func.Description.c_str());
+								ImGui::TextWrapped(pFunc->Description.c_str());
 							}
 							ImGui::Spacing();
 
@@ -207,13 +251,13 @@ void DrawLuaDocs(void)
 							ImGui::TableNextRow();
 							ImGui::TableSetColumnIndex(0);
 							ImGui::Text("Arguments");
-							if (func.Args.empty())
+							if (pFunc->Args.empty())
 							{
 								ImGui::BulletText("None");
 							}
 							else
 							{
-								for (const std::string& arg : func.Args)
+								for (const std::string& arg : pFunc->Args)
 								{
 									ImGui::BulletText(arg.c_str());
 								}
@@ -225,13 +269,13 @@ void DrawLuaDocs(void)
 							ImGui::TableSetColumnIndex(0);
 							ImGui::Text("Returns");
 
-							if (func.Returns.empty())
+							if (pFunc->Returns.empty())
 							{
 								ImGui::BulletText("Nothing");
 							}
 							else
 							{
-								ImGui::BulletText(func.Returns.c_str());
+								ImGui::BulletText(pFunc->Returns.c_str());
 							}
 							ImGui::Spacing();
 
@@ -241,13 +285,13 @@ void DrawLuaDocs(void)
 							ImGui::Text("Usage");
 							ImGui::Spacing();
 							ImGui::Indent();
-							ImGui::TextWrapped(func.Usage.c_str());
+							ImGui::TextWrapped(pFunc->Usage.c_str());
 
 							if (ImGui::BeginPopupContextItem("doc usage menu"))
 							{
 								if (ImGui::Selectable("Copy Text"))
 								{
-									ImGui::SetClipboardText(func.Usage.c_str());
+									ImGui::SetClipboardText(pFunc->Usage.c_str());
 								}
 								ImGui::EndPopup();
 							}
@@ -258,8 +302,8 @@ void DrawLuaDocs(void)
 							ImGui::EndTable();
 						}
 					}
-					curIndex++;
 				}
+				
 			}
 		}
 		ImGui::EndChild();
@@ -270,18 +314,16 @@ void DrawLuaDocs(void)
 void GoToLuaFunctionDoc(const char* pName)
 {
 	ImGui::SetWindowFocus("Lua API Docs");
-
-	int curIndex = 0;
+	
 	for (const FLuaDocLib& lib : gLuaDocLibs)
 	{
-		for (const FLuaDocFunc& func : lib.Funcs)
+		for (const FLuaDocFunc* pFunc : lib.Funcs)
 		{
-			if (func.Name == pName)
+			if (pFunc->Name == pName)
 			{
-				gSelectedFunctionIndex = curIndex;
+				gSelectedFunctionId = pFunc->Id;
 				return;
 			}
-			curIndex++;
 		}
 	}
 }

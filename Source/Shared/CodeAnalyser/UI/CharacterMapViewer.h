@@ -50,7 +50,8 @@ private:
 	// Viewer setup
 	FCharacterMapGrid*	ViewerGrid = nullptr;
 
-	FAddressRef SelectedCharSetAddr;
+	//FAddressRef SelectedCharSetAddr;
+	int			SelectedCharSetId = -1;
 	FCharSetCreateParams CharSetParams;
 	FCharacterMapViewerUIState UIState;
 };

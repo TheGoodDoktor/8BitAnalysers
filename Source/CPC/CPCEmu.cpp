@@ -1333,12 +1333,9 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 
 bool FCPCEmu::LoadLua()
 {
-	if (GetGlobalConfig()->bEnableLua == true)
-	{
-		ClearLuaDocs();
-		AddCoreLibLuaDoc();
-		AddCPCLibLuaDocs();
-	}
+	ClearLuaDocs();
+	AddCoreLibLuaDoc();
+	AddCPCLibLuaDocs();
 
 	// Setup Lua - reinitialised for each game
 	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
@@ -1614,7 +1611,8 @@ void FCPCEmu::OnExitEditMode(void)
 // These functions are used to add to the bottom of the menus
 void	FCPCEmu::FileMenuAdditions(void)
 {
-	if (ImGui::MenuItem("Export Binary File"))
+	//if (ImGui::MenuItem("Export Binary File"))
+	if (0)
 	{
 		if (pActiveGame != nullptr)
 		{

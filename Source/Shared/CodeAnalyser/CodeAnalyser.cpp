@@ -167,7 +167,7 @@ bool FCodeAnalysisState::IsAddressValid(FAddressRef addr) const
 	if (pBank == nullptr)
 		return false;
 
-	if(addr.Address < pBank->GetMappedAddress() || addr.Address > (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
+	if(addr.Address < pBank->GetMappedAddress() || addr.Address >= (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
 		return false;
 
 	return true;

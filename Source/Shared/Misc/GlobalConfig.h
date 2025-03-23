@@ -28,8 +28,9 @@ struct FGlobalConfig
 	int					GfxViewerScale = 1;
 	int					GfxScreenScale = 1;
 
+	bool				bEnableExperimentalFeatures = false;	// for WIP & experimental features
+
 	// Lua config
-    bool                bEnableLua = false;
 	bool				bEditLuaBaseFiles = false;
 	std::vector<std::string>	LuaBaseFiles;
 

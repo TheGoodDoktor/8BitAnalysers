@@ -120,15 +120,15 @@ void FGraphicsViewer::GoToAddress(FAddressRef address)
 
 uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInBuffer(const FOffScreenBuffer& buffer, int x, int y) const
 {
-	// try the lua handler first
-	const uint16_t addr = LuaSys::GetAddressOffsetFromPositionInBuffer(buffer, x, y);
-	if (addr != 0xffff)
-		return addr;
-
 	const FCodeAnalysisState& state = GetCodeAnalysis();
 	FGlobalConfig* pConfig = state.pGlobalConfig;
 	const int scaledX = x / pConfig->GfxViewerScale;
 	const int scaledY = y / pConfig->GfxViewerScale;
+
+	// try the lua handler first
+	const uint16_t addr = LuaSys::GetAddressOffsetFromPositionInBuffer(buffer, scaledX, scaledY);
+	if (addr != 0xffff)
+		return addr;
 
 	const int xSizeChars = buffer.XSizePixels >> 3;
 
@@ -1061,7 +1061,7 @@ bool FGraphicsViewer::AddOffScreenBuffer(FOffScreenBuffer& newBuffer)
 		if(buffer.Id == newBuffer.Id)
 			return false;
 	}
-	newBuffer.Id = OffScreenBuffers.size();
+	newBuffer.Id = (int)OffScreenBuffers.size();
 	OffScreenBuffers.push_back(newBuffer);
 	return true;
 }
@@ -1196,6 +1196,8 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 			ImGui::InputInt("YSize", &pBuffer->YSizePixels, 8, 8);
 			ImGui::Text("Buffer Address:");
 			DrawAddressLabel(state, state.GetFocussedViewState(), pBuffer->Address);
+			ImGui::InputText("Lua Handler Name", &pBuffer->LuaHandlerName);
+
 
 			if (ClickedAddress.IsValid())
 			{
@@ -1277,6 +1279,7 @@ bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 	{
 		json offscreenBufferJson;
 		offscreenBufferJson["Name"] = offscreenBuffer.Name;
+		offscreenBufferJson["LuaHandlerName"] = offscreenBuffer.LuaHandlerName;
 		offscreenBufferJson["AddressRef"] = offscreenBuffer.Address.Val;
 		offscreenBufferJson["XSizePixels"] = offscreenBuffer.XSizePixels;
 		offscreenBufferJson["YSizePixels"] = offscreenBuffer.YSizePixels;
@@ -1333,11 +1336,13 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 		{
 			FOffScreenBuffer offscreenBuffer;
 			offscreenBuffer.Name = offscreenBuffersJson["Name"];
+			if (offscreenBuffersJson.contains("LuaHandlerName"))
+				offscreenBuffer.LuaHandlerName = offscreenBuffersJson["LuaHandlerName"];
 			offscreenBuffer.Address.Val = offscreenBuffersJson["AddressRef"];
 			offscreenBuffer.XSizePixels = offscreenBuffersJson["XSizePixels"];
 			offscreenBuffer.YSizePixels = offscreenBuffersJson["YSizePixels"];
 			offscreenBuffer.Format = (EOffScreenBufferFormat)offscreenBuffersJson["Format"];
-			offscreenBuffer.Id = OffScreenBuffers.size();
+			offscreenBuffer.Id = (int)OffScreenBuffers.size();
 			OffScreenBuffers.push_back(offscreenBuffer);
 		}
 	}

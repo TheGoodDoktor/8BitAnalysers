@@ -93,6 +93,7 @@ struct FCharUVS
 
 struct FCharSetCreateParams
 {
+	std::string		Name;
 	FAddressRef		Address;
 	FAddressRef		AttribsAddress;
 	EMaskInfo		MaskInfo = EMaskInfo::None;
@@ -115,6 +116,7 @@ struct FCharacterSet
 		return FCharUVS((float)xp * (1.0f / 128.0f), (float)yp * (1.0f / 128.0f), 8.0f / 128.0f);
 	}
 
+	int						Id = -1;
 	FCharSetCreateParams	Params;
 
 	FGraphicsView*	Image = nullptr;	
@@ -147,6 +149,7 @@ void UpdateCharacterSets(FCodeAnalysisState& state);
 int GetNoCharacterSets();
 void DeleteCharacterSet(int index);
 FCharacterSet* GetCharacterSetFromIndex(int index);
+FCharacterSet* GetCharacterSetFromId(int id);
 FCharacterSet* GetCharacterSetFromAddress(FAddressRef address);
 void UpdateCharacterSet(FCodeAnalysisState& state, FCharacterSet& characterSet, const FCharSetCreateParams& params);
 bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams& params);

@@ -4,6 +4,8 @@
 #include "MemoryAccessGrid.h"
 
 #include <imgui.h>
+#include "misc/cpp/imgui_stdlib.h"
+
 #include "CodeAnalyserUI.h"
 
 #include <cmath>
@@ -84,9 +86,9 @@ void DrawColourInfoComboBox(EColourInfo* pValue)
 void DrawCharacterSetComboBox(FCodeAnalysisState& state, FAddressRef& addr)
 {
 	const FCharacterSet* pCharSet = addr.IsValid() ? GetCharacterSetFromAddress(addr) : nullptr;
-	const FLabelInfo* pLabel = pCharSet != nullptr ? state.GetLabelForAddress(addr) : nullptr;
+	//const FLabelInfo* pLabel = pCharSet != nullptr ? state.GetLabelForAddress(addr) : nullptr;
 
-	const char* pCharSetName = pLabel != nullptr ? pLabel->GetName() : "None";
+	const char* pCharSetName = pCharSet != nullptr ? pCharSet->Params.Name.c_str() : "None";
 
 	if (ImGui::BeginCombo("CharacterSet", pCharSetName))
 	{
@@ -98,10 +100,10 @@ void DrawCharacterSetComboBox(FCodeAnalysisState& state, FAddressRef& addr)
 		for (int i=0;i< GetNoCharacterSets();i++)
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
-			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
-			if (pSetLabel == nullptr)
-				continue;
-			if (ImGui::Selectable(pSetLabel->GetName(), addr == pCharSet->Params.Address))
+			//const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
+			//if (pSetLabel == nullptr)
+			//	continue;
+			if (ImGui::Selectable(pCharSet->Params.Name.c_str(), addr == pCharSet->Params.Address))
 			{
 				addr = pCharSet->Params.Address;
 			}
@@ -122,21 +124,21 @@ void FCharacterMapViewer::DrawCharacterSetViewer()
 		for (int i = 0; i < GetNoCharacterSets(); i++)
 		{
 			const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
-			const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
-			const bool bSelected = CharSetParams.Address == pCharSet->Params.Address;
+			//const FLabelInfo* pSetLabel = state.GetLabelForAddress(pCharSet->Params.Address);
+			const bool bSelected = SelectedCharSetId == pCharSet->Id;
 
-			if (pSetLabel == nullptr)
-				continue;
+			//if (pSetLabel == nullptr)
+			//	continue;
 
 			ImGui::PushID(i);
 
-			if (ImGui::Selectable(pSetLabel->GetName(), bSelected))
+			if (ImGui::Selectable(pCharSet->Params.Name.c_str(), bSelected))
 			{
-				SelectedCharSetAddr = pCharSet->Params.Address;
-				if (CharSetParams.Address != pCharSet->Params.Address)
+				if (SelectedCharSetId != pCharSet->Id)
 				{
 					CharSetParams = pCharSet->Params;
 				}
+				SelectedCharSetId = pCharSet->Id;
 			}
 
 			if (ImGui::BeginPopupContextItem("char set context menu"))
@@ -159,9 +161,10 @@ void FCharacterMapViewer::DrawCharacterSetViewer()
 	ImGui::SameLine();
 	if (ImGui::BeginChild("##charsetdetails", ImVec2(0, 0), true))
 	{
-		FCharacterSet* pCharSet = GetCharacterSetFromAddress(SelectedCharSetAddr);
+		FCharacterSet* pCharSet = GetCharacterSetFromId(SelectedCharSetId);
 		if (pCharSet)
 		{
+			ImGui::InputText("Name", &CharSetParams.Name);
 			if (DrawAddressInput(state, "Address", CharSetParams.Address))
 			{
 				//UpdateCharacterSet(state, *pCharSet, params);
@@ -185,7 +188,6 @@ void FCharacterMapViewer::DrawCharacterSetViewer()
 			ImGui::Checkbox("Dynamic", &CharSetParams.bDynamic);
 			if (ImGui::Button("Update Character Set"))
 			{
-				SelectedCharSetAddr = CharSetParams.Address;
 				UpdateCharacterSet(state, *pCharSet, CharSetParams);
 			}
 			pCharSet->Image->Draw();
@@ -695,7 +697,7 @@ void FCharacterMapViewer::FixupAddressRefs()
 
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
-	FixupAddressRef(state, SelectedCharSetAddr);
+	//FixupAddressRef(state, SelectedCharSetAddr);
 	FixupAddressRef(state, CharSetParams.Address);
 	FixupAddressRef(state, CharSetParams.AttribsAddress);
 

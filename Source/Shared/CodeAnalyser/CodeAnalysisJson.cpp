@@ -64,6 +64,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		const FCharacterSet* pCharSet = GetCharacterSetFromIndex(i);
 		json jsonCharacterSet;
 
+		jsonCharacterSet["Name"] = pCharSet->Params.Name;
 		jsonCharacterSet["AddressRef"] = pCharSet->Params.Address.Val;
 		jsonCharacterSet["AttribsAddressRef"] = pCharSet->Params.AttribsAddress.Val;
 		jsonCharacterSet["MaskInfo"] = pCharSet->Params.MaskInfo;
@@ -236,6 +237,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			FCharSetCreateParams params;
 			if(charSet.contains("Address"))	// legacy
 				params.Address = state.AddressRefFromPhysicalAddress(charSet["Address"]);
+			if (charSet.contains("Name"))
+				params.Name = charSet["Name"];
 			if (charSet.contains("AddressRef"))
 				params.Address.Val = charSet["AddressRef"];
 			FixupAddressRef(state, params.Address);
@@ -590,7 +593,7 @@ void FixupPostLoad(FCodeAnalysisState& state)
 	auto& banks = state.GetBanks();
 	for (FCodeAnalysisBank& bank : banks)
 	{
-		assert(bank.PrimaryMappedPage !=-1);
+		//assert(bank.PrimaryMappedPage !=-1);
 		for(int pageNo=0;pageNo < bank.NoPages;pageNo++)
 		{
 			FCodeAnalysisPage& page = bank.Pages[pageNo];

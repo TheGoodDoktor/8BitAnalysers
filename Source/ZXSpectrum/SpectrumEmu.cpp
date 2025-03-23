@@ -968,12 +968,9 @@ bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /
 
 bool FSpectrumEmu::LoadLua()
 {
-	if (GetGlobalConfig()->bEnableLua == true)
-	{
-		ClearLuaDocs();
-		AddCoreLibLuaDoc();
-		AddZXLibLuaDocs();
-	}
+	ClearLuaDocs();
+	AddCoreLibLuaDoc();
+	AddZXLibLuaDocs();
 
 	// Setup Lua - reinitialised for each game
 	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
