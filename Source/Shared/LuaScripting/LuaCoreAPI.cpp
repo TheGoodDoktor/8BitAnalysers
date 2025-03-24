@@ -588,7 +588,7 @@ static const luaL_Reg corelib[] =
 	{"SaveGraphicsView2222", SaveGraphicsView2222},
 	{"SaveGraphicsViewBitmap", SaveGraphicsViewBitmap},
 	{"DrawOtherGraphicsViewScaled", DrawOtherGraphicsViewScaled},
-
+	
 	{NULL, NULL}    // terminator
 };
 

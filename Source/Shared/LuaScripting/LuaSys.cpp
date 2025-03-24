@@ -270,8 +270,79 @@ bool OnInstructionExecuted(uint16_t pc)
 }
 
 // Offscreen Buffers
+static const char* kOSBHandlersTable = "OffScreenBufferHandlers";
 static const char* kDrawFunctionName = "Draw";
 static const char* kGetAddressOffsetFunctionName = "GetAddressOffsetFromPos";
+
+// Draw ImGui Combo Box for all entries in kOSBHandlersTable
+void DrawOSBHandlersComboBox(std::string& HandlerName)
+{
+	const char* kDefaultHandler = "Default";
+	lua_State* pState = GlobalState;
+
+	FLuaScopeCheck StackCheck(pState);
+
+	lua_getglobal(pState, kOSBHandlersTable);
+	if (lua_istable(pState, -1) == false)
+		return;
+
+	if(ImGui::BeginCombo("OSB Handlers", HandlerName.c_str()))
+	{
+		if (ImGui::Selectable(kDefaultHandler, HandlerName == kDefaultHandler))	// default Handler
+			HandlerName = kDefaultHandler;
+		// iterate through each key in table
+
+		// Push the first key
+		lua_pushnil(pState);
+
+		// Iterate through the table
+		while (lua_next(pState, -2) != 0)
+		{
+			// Key is at index -2 and value is at index -1
+			// Do something with the key and value
+			if (lua_isstring(pState, -2))
+			{
+				const char* key = lua_tostring(pState, -2);
+				if (ImGui::Selectable(key, HandlerName == key))
+					HandlerName = key;
+				//printf("Key: %s\n", key);
+			}
+
+			// Remove the value, keep the key for the next iteration
+			lua_pop(pState, 1);
+		}
+
+		ImGui::EndCombo();
+	}
+
+	lua_pop(pState, 1);	// pop table
+}
+
+// Get OSB hanndler from OSB handlers table with name pHandlerTableName
+bool GetOSBHandlerTable(const char* pHandlerTableName)
+{
+	lua_State* pState = GlobalState;
+
+	lua_getglobal(pState, kOSBHandlersTable);
+
+	// check if we have the handler table
+	if (lua_istable(pState, -1) == false)
+	{
+		lua_pop(pState, 1);	// balance stack
+		return false;
+	}
+
+	// Get the handler entry in the table with the name in buffer.LuaHandlerName
+	lua_pushstring(pState, pHandlerTableName);
+	lua_gettable(pState, -2);
+	if (lua_istable(pState, -1) == false)
+	{
+		lua_pop(pState, 1);	// balance stack
+		return false;
+	}
+
+	return true;
+}
 
 bool DrawOffScreenBuffer(const FOffScreenBuffer& buffer, FGraphicsView* pView)
 {
@@ -280,16 +351,10 @@ bool DrawOffScreenBuffer(const FOffScreenBuffer& buffer, FGraphicsView* pView)
 	if (buffer.LuaHandlerName.empty())
 		return false;
 
-	lua_getglobal(pState, buffer.LuaHandlerName.c_str());
-
-	// check if we have a handler
-	if (lua_istable(pState, -1) == false)
-	{
-		lua_pop(pState,1);	// balance stack
+	if (GetOSBHandlerTable(buffer.LuaHandlerName.c_str()) == false)
 		return false;
-	}
 	
-	// Get handler function from table
+	// Get 'Draw' function from table
 	lua_pushstring(pState, kDrawFunctionName);
 	lua_gettable(pState, -2);
 	if (lua_isfunction(pState, -1) == false)
@@ -298,7 +363,7 @@ bool DrawOffScreenBuffer(const FOffScreenBuffer& buffer, FGraphicsView* pView)
 		return false;
 	}
 
-	// call draw function
+	// call 'Draw' function
 	lua_pushlightuserdata(pState, pView);
 	lua_pushinteger(pState, buffer.Address.Address);
 	lua_pushnumber(pState, buffer.XSizePixels);
@@ -317,16 +382,10 @@ uint16_t GetAddressOffsetFromPositionInBuffer(const FOffScreenBuffer& buffer, in
 	if(buffer.LuaHandlerName.empty())
 		return 0xffff;
 
-	lua_getglobal(pState, buffer.LuaHandlerName.c_str());
-
-	// check if we have a handler
-	if (lua_istable(pState, -1) == false)
-	{
-		lua_pop(pState, 1);	// balance stack
+	if (GetOSBHandlerTable(buffer.LuaHandlerName.c_str()) == false)
 		return 0xffff;
-	}
 
-	// Get handler function from table
+	// Get 'GetAddressOffset' function from table
 	lua_pushstring(pState, kGetAddressOffsetFunctionName);
 	lua_gettable(pState, -2);
 	if (lua_isfunction(pState, -1) == false)

@@ -1196,7 +1196,8 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 			ImGui::InputInt("YSize", &pBuffer->YSizePixels, 8, 8);
 			ImGui::Text("Buffer Address:");
 			DrawAddressLabel(state, state.GetFocussedViewState(), pBuffer->Address);
-			ImGui::InputText("Lua Handler Name", &pBuffer->LuaHandlerName);
+			LuaSys::DrawOSBHandlersComboBox(pBuffer->LuaHandlerName);
+			//ImGui::InputText("Lua Handler Name", &pBuffer->LuaHandlerName);
 
 
 			if (ClickedAddress.IsValid())

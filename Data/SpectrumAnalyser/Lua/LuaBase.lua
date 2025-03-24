@@ -75,6 +75,15 @@ function dumpFunc(o)
     print(dumpFunc(o))
  end
 
+-- Off screen buffers
+OffScreenBufferHandlers = {}
+
+function RegisterOffscreenBufferHandler(handler)
+   print("Offscreen buffer handler " .. handler.name .. " added")
+   --table.insert(OffScreenBufferHandlers, handler)
+   OffScreenBufferHandlers[handler.name] = handler
+end
+
 -- CPU access tables
 Z80 = {}
 Z80Meta = {}

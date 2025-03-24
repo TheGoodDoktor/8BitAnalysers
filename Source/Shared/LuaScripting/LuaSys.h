@@ -36,6 +36,7 @@ namespace LuaSys
     void OutputDebugString(const char* fmt, ...);
 
 	// Off screen buffers
+	void DrawOSBHandlersComboBox(std::string& HandlerName);
 	bool DrawOffScreenBuffer(const FOffScreenBuffer& buffer, FGraphicsView* pView);
 	uint16_t GetAddressOffsetFromPositionInBuffer(const FOffScreenBuffer& buffer, int x, int y);
 	bool GetPositionInBufferFromAddress(const FOffScreenBuffer& buffer, FAddressRef address, int& x, int& y);
