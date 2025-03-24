@@ -73,6 +73,8 @@ enum class EKey
 	Comment,
 	CommentLegacy,
 
+	GoToAddress,
+
 	// Debugger
 	BreakContinue,
 	StepOver,
@@ -173,6 +175,7 @@ struct FCodeAnalysisViewState
 	uint16_t		JumpAddress = 0;
 	int16_t			ViewingBankId = -1;
 	const FLabelInfo*		pLabelScope = nullptr;
+	FItem*		pKeyboardFocusItem = nullptr; // item to set keyboard focus on
 
 	// for global Filters
 	bool						ShowROMLabels = false;

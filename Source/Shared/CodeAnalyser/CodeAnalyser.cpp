@@ -1254,6 +1254,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	KeyConfig[(int)EKey::SetItemUnknown] = ImGuiKey_U;
 	KeyConfig[(int)EKey::AddLabel] = ImGuiKey_L;
 	KeyConfig[(int)EKey::Rename] = ImGuiKey_R;
+	KeyConfig[(int)EKey::GoToAddress] = ImGuiKey_G;
 	KeyConfig[(int)EKey::Comment] = ImGuiKey_Semicolon; 
 	KeyConfig[(int)EKey::CommentLegacy] = ImGuiKey_Slash; // '/'
 	KeyConfig[(int)EKey::BreakContinue] = ImGuiKey_F5;

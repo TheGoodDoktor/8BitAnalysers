@@ -110,7 +110,19 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, FAddressRef addr)
 	return -1;
 }
 
-
+void GotoJumpAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+{
+	if (viewState.ViewingBankId == -1)
+		viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
+	else
+	{
+		FAddressRef jumpAddr(viewState.ViewingBankId, viewState.JumpAddress);
+		if (state.IsAddressValid(jumpAddr))
+			viewState.GoToAddress(jumpAddr);
+		else
+			viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
+	}
+}
 
 std::vector<FMemoryRegionDescGenerator*>	g_RegionDescHandlers;
 
@@ -750,6 +762,10 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				viewState.GoToBookmarkAddress(bookmarkNo);
 		}
 
+		if (io.KeyCtrl && ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::GoToAddress]))
+		{
+			ImGui::OpenPopup("Goto Address");
+		}
 	}
 }
 
@@ -825,6 +841,25 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
+		ImGui::EndPopup();
+	}
+
+	if (ImGui::BeginPopupModal("Goto Address", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::SetKeyboardFocusHere();
+		const ImGuiInputTextFlags inputFlags = ((GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal);
+		const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
+		ImGui::InputScalar("##gotoaddresspopup", ImGuiDataType_U16, &viewState.JumpAddress, nullptr, nullptr, format, inputFlags);
+
+		if (ImGui::IsKeyPressed(ImGuiKey_Enter))
+		{
+			GotoJumpAddress(state, viewState);
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+			ImGui::CloseCurrentPopup();
+
 		ImGui::EndPopup();
 	}
 }
@@ -1302,16 +1337,42 @@ void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 	
 	if (ImGui::Button("Go") || bEnteredJumpAddress)
 	{
-		if (viewState.ViewingBankId == -1)
-			viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
-		else
-		{
-			FAddressRef jumpAddr(viewState.ViewingBankId, viewState.JumpAddress);
-			if(state.IsAddressValid(jumpAddr))
-				viewState.GoToAddress(jumpAddr);
-			else
-				viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
-		}
+		GotoJumpAddress(state, viewState);
+	}
+}
+
+void DrawHelpButton()
+{
+	ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetFrameHeight());
+	ImGui::Button("?");
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("Keyboard shortcuts");
+		ImGui::SeparatorText("Item Type");
+		ImGui::BulletText("c : Set as Code");
+		ImGui::BulletText("d : Set as Data");
+		ImGui::BulletText("t : Set as Text");
+		ImGui::SeparatorText("Display Mode & Operand Type");
+		ImGui::BulletText("a : Set as Ascii");
+		ImGui::BulletText("b : Set as Binary");
+		ImGui::BulletText("j : Set as Jump Address");
+		ImGui::BulletText("n : Set as Number");
+		ImGui::BulletText("p : Set as Pointer");
+		ImGui::BulletText("u : Set as Unknown");
+		ImGui::SeparatorText("Labels");
+		ImGui::BulletText("l : Add label");
+		ImGui::BulletText("r : Rename label");
+		ImGui::SeparatorText("Comments");
+		ImGui::BulletText("; : Add inline comment");
+		ImGui::BulletText("Shift + ; : Add multi-line comment");
+		ImGui::SeparatorText("Bookmarks");
+		ImGui::BulletText("Ctrl + 1..5 : Store bookmark");
+		ImGui::BulletText("Shift + 1..5 : Goto bookmark");
+		ImGui::SeparatorText("Navigation");
+		ImGui::BulletText("Ctrl + g : Jump to address");
+		ImGui::EndTooltip();
 	}
 }
 
@@ -1375,43 +1436,50 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	FAddressRef& gotoAddress = viewState.GetGotoAddress();
 
 	// jump to address
+	// note: this will not take effect until next frame due to the way ImGui works.
 	if (gotoAddress.IsValid())
 	{
-		const float currScrollY = ImGui::GetScrollY();
-		const float currWindowHeight = ImGui::GetWindowHeight();
-		const int kJumpViewOffset = 5;
-		for (int itemNo = 0; itemNo < (int)itemList.size(); itemNo++)
+		if (viewState.ViewingBankId == -1 || viewState.ViewingBankId == gotoAddress.BankId)
 		{
-			const FCodeAnalysisItem& item = itemList[itemNo];
-
-			if ((item.AddressRef.Address >= gotoAddress.Address) && (viewState.GoToLabel || item.Item->Type != EItemType::Label) && item.Item->Type != EItemType::CommentLine)
+			const float currScrollY = ImGui::GetScrollY();
+			const float currWindowHeight = ImGui::GetWindowHeight();
+			const int kJumpViewOffset = 5;
+			for (int itemNo = 0; itemNo < (int)itemList.size(); itemNo++)
 			{
-				// set cursor
-				viewState.SetCursorItem(item);
+				const FCodeAnalysisItem& item = itemList[itemNo];
 
-				const float itemY = itemNo * lineHeight;
-				const float margin = kJumpViewOffset * lineHeight;
-
-				const float moveDist = itemY - currScrollY;
-
-				if (moveDist > currWindowHeight)
+				if ((item.AddressRef.Address >= gotoAddress.Address) && (viewState.GoToLabel || item.Item->Type != EItemType::Label) && item.Item->Type != EItemType::CommentLine)
 				{
-					const int gotoItem = std::max(itemNo - kJumpViewOffset, 0);
-					ImGui::SetScrollY(gotoItem * lineHeight);
+					// set cursor
+					viewState.SetCursorItem(item);
+
+					// we want the keyboard focus to be set on this item next frame.
+					viewState.pKeyboardFocusItem = itemList[itemNo].Item;
+
+					const float itemY = itemNo * lineHeight;
+					const float margin = kJumpViewOffset * lineHeight;
+
+					const float moveDist = itemY - currScrollY;
+
+					if (moveDist > currWindowHeight)
+					{
+						const int gotoItem = std::max(itemNo - kJumpViewOffset, 0);
+						ImGui::SetScrollY(gotoItem * lineHeight);
+					}
+					else
+					{
+						if (itemY < currScrollY + margin)
+							ImGui::SetScrollY(itemY - margin);
+						if (itemY > currScrollY + currWindowHeight - margin * 2)
+							ImGui::SetScrollY((itemY - currWindowHeight) + margin * 2);
+					}
+					break;	// exit loop as we've found the address
 				}
-				else
-				{
-					if (itemY < currScrollY + margin)
-						ImGui::SetScrollY(itemY - margin);
-					if (itemY > currScrollY + currWindowHeight - margin * 2)
-						ImGui::SetScrollY((itemY - currWindowHeight) + margin * 2);
-				}
-				break;	// exit loop as we've found the address
 			}
-		}
 
-		gotoAddress.SetInvalid();
-		viewState.GoToLabel = false;
+			gotoAddress.SetInvalid();
+			viewState.GoToLabel = false;
+		}
 	}
 
 	// draw clipped list
@@ -1426,12 +1494,19 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
 			const ImVec2 coord = ImGui::GetCursorScreenPos();
-			if(itemList[i].Item->Type == EItemType::Code || itemList[i].Item->Type == EItemType::Data)
+			if (itemList[i].Item->Type == EItemType::Code || itemList[i].Item->Type == EItemType::Data)
 				newList.push_back({ itemList[i].AddressRef,coord.y });
+
+			if (viewState.pKeyboardFocusItem == itemList[i].Item)
+			{
+				ImGui::SetKeyboardFocusHere();
+				viewState.pKeyboardFocusItem = nullptr;
+			}
+
 			DrawCodeAnalysisItem(state, viewState, itemList[i]);
 		}
-
 	}
+
 	viewState.AddressCoords = newList;
 	viewState.pLabelScope = nullptr;
 }
@@ -1592,36 +1667,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::SameLine();
 	DrawNavigationButtons(state,viewState);
 
-	// TODO: Put this into a separate function
-	ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetFrameHeight());
-	ImGui::Button("?");
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		ImGui::Text(      "Keyboard shortcuts");
-		ImGui::SeparatorText("Item Type");
-		ImGui::BulletText("c : Set as Code");
-		ImGui::BulletText("d : Set as Data");
-		ImGui::BulletText("t : Set as Text");
-		ImGui::SeparatorText("Display Mode & Operand Type");
-		ImGui::BulletText("a : Set as Ascii");
-		ImGui::BulletText("b : Set as Binary");
-		ImGui::BulletText("j : Set as Jump Address");
-		ImGui::BulletText("n : Set as Number");
-		ImGui::BulletText("p : Set as Pointer");
-		ImGui::BulletText("u : Set as Unknown");
-		ImGui::SeparatorText("Labels");
-		ImGui::BulletText("l : Add label");
-		ImGui::BulletText("r : Rename label");
-		ImGui::SeparatorText("Comments");
-		ImGui::BulletText("; : Add inline comment");
-		ImGui::BulletText("Shift + ; : Add multi-line comment");
-		ImGui::SeparatorText("Bookmarks");
-		ImGui::BulletText("Ctrl + 1..5 : Store bookmark");
-		ImGui::BulletText("Shift + 1..5 : Goto bookmark");
-		ImGui::EndTooltip();
-	}
+	DrawHelpButton();
 
 	if (viewState.TrackPCFrame == true)
 	{
