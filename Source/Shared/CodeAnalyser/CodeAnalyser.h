@@ -167,6 +167,16 @@ public:
 		return nullptr;
 	}
 
+	FFunctionInfo* GetFunctionAtAddress(FAddressRef startAddress)
+	{
+		auto it = Functions.find(startAddress);
+		if (it != Functions.end())
+		{
+			return &it->second;
+		}
+		return nullptr;
+	}
+
 	const FFunctionInfo* FindFunction(FAddressRef address) const
 	{
 		auto it = Functions.upper_bound(address);
