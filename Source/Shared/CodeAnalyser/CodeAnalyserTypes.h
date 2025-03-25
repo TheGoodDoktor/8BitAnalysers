@@ -140,6 +140,7 @@ enum class EBankAccess
 
 // Structures
 
+// This holds a reference to a memory address in a bank based memory architecture
 struct FAddressRef
 {
 	FAddressRef() :BankId(-1), Address(0) {}
@@ -147,7 +148,9 @@ struct FAddressRef
 
 	bool IsValid() const { return BankId != -1; }
 	void SetInvalid() { BankId = -1; }
-	bool operator<(const FAddressRef& other) const { return Val < other.Val; }
+	bool operator<(const FAddressRef& other) const { return CompVal() < other.CompVal(); }
+	bool operator<=(const FAddressRef& other) const { return CompVal() <= other.CompVal(); }
+	bool operator>=(const FAddressRef & other) const { return CompVal() >= other.CompVal(); }
 	bool operator==(const FAddressRef& other) const { return Val == other.Val; }
 	bool operator!=(const FAddressRef& other) const { return Val != other.Val; }
 	FAddressRef operator++(int) { Address++; return *this; }
@@ -160,6 +163,12 @@ struct FAddressRef
 		};
 		uint32_t	Val;
 	};
+
+private:
+	// this is for the comparison operator overloads - we can't use Val because we'd have to re-order the union
+	// too much code relies on the order of BankId and Address, e.g. load/save json
+	uint32_t CompVal() const { return (BankId << 16) | Address; }
+
 };
 
 

@@ -6,6 +6,7 @@
 class FEmuBase;
 class FGraphicsViewer;
 class FCharacterMapViewer;
+class FFunctionViewer;
 
 struct FProjectConfig;
 struct FEmulatorFile;
@@ -125,6 +126,7 @@ protected:
 	std::unordered_map<std::string, FGamesList>	GamesLists;
 	FGraphicsViewer*	pGraphicsViewer = nullptr;
 	FCharacterMapViewer* pCharacterMapViewer = nullptr;
+	FFunctionViewer*	pFunctionViewer = nullptr;
 
 	// Highligthing
 	int					HighlightXPos = -1;

@@ -107,7 +107,84 @@ struct FCodeAnalysisItem
 	
 	FItem*		Item = nullptr;
 	FAddressRef	AddressRef;
+};
 
+// This contains information on a function in the code
+// It stores the address range of the function and any exit points
+struct FFunctionInfo
+{
+	FAddressRef		StartAddress;
+	FAddressRef		EndAddress;
+	std::vector<FAddressRef>	ExitPoints;
+	std::string		Name;
+	std::string		Comment;
+
+	bool AddExitPoint(FAddressRef exitPoint)
+	{
+		if (std::find(ExitPoints.begin(), ExitPoints.end(), exitPoint) == ExitPoints.end())
+		{
+			ExitPoints.push_back(exitPoint);
+			return true;
+		}
+		return false;
+	}
+};
+
+// This class holds a collection of functions
+// It also contains methods to find functions based on an address
+class FFunctionInfoCollection
+{
+public:
+
+	bool DoesFunctionExist(FAddressRef address) const
+	{
+		return Functions.find(address) != Functions.end();
+	}
+
+	bool CreateNewFunctionAtAddress(FAddressRef address, const char* pName)
+	{
+		if (DoesFunctionExist(address))
+			return false;
+		FFunctionInfo newFunction;
+		newFunction.StartAddress = address;
+		newFunction.EndAddress = address;
+		newFunction.Name = pName;
+		Functions[address] = newFunction;
+		return true;
+	}
+
+	FFunctionInfo* GetFunctionBeforeAddress(FAddressRef address)
+	{
+		auto it = Functions.upper_bound(address);
+		if (it != Functions.begin())
+		{
+			--it;
+			if (address >= it->second.StartAddress)// && address <= it->second.EndAddress)
+			{
+				return &it->second;
+			}
+		}
+		return nullptr;
+	}
+
+	const FFunctionInfo* FindFunction(FAddressRef address) const
+	{
+		auto it = Functions.upper_bound(address);
+		if (it != Functions.begin())
+		{
+			--it;
+			if (address >= it->second.StartAddress && address <= it->second.EndAddress)
+			{
+				return &it->second;
+			}
+		}
+		return nullptr;
+	}
+
+	const std::map<FAddressRef, FFunctionInfo>& GetFunctions() const { return Functions; }
+
+private:
+	std::map<FAddressRef, FFunctionInfo> Functions;
 };
 
 struct FAddressCoord
@@ -479,6 +556,7 @@ public:
 	
 	std::vector<FCodeAnalysisItem>	GlobalFunctions;
 	bool						bRebuildFilteredGlobalFunctions = true;
+	FFunctionInfoCollection		Functions;
 
 	static const int kNoViewStates = 4;
 	FCodeAnalysisViewState	ViewState[kNoViewStates];	// new multiple view states

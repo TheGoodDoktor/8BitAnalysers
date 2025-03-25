@@ -1136,13 +1136,18 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 				FLabelInfo* pLabel = page.Labels[pageAddr];
 				if (pLabel != nullptr)
 				{
+					FAddressRef addrRef(bank.Id, pageBaseAddr + pageAddr);
+
 					if (pLabel->Global == true)
 						pCurrentScope = pLabel;
 
 					if (pLabel->LabelType == ELabelType::Data && pLabel->Global)
-						state.GlobalDataItems.emplace_back(pLabel, FAddressRef(bank.Id, pageBaseAddr + pageAddr));
+						state.GlobalDataItems.emplace_back(pLabel, addrRef);
 					if (pLabel->LabelType == ELabelType::Function)
-						state.GlobalFunctions.emplace_back(pLabel, FAddressRef(bank.Id, pageBaseAddr + pageAddr));
+					{
+						state.GlobalFunctions.emplace_back(pLabel, addrRef);
+						state.Functions.CreateNewFunctionAtAddress(addrRef,pLabel->GetName());
+					}
 				}
 
 				page.ScopeLabel[pageAddr] = pCurrentScope;	// set scope
@@ -1150,22 +1155,6 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 
 		}
 	}
-
-	/*for (int addr = 0; addr < (1 << 16); addr++)
-	{
-		FLabelInfo *pLabel = state.GetLabelForAddress(addr);
-		
-		if (pLabel != nullptr)
-		{
-			const int16_t bankId = state.GetBankFromAddress(addr);
-		
-			if (pLabel->LabelType == ELabelType::Data && pLabel->Global)
-				state.GlobalDataItems.emplace_back(pLabel,bankId, addr);
-			if (pLabel->LabelType == ELabelType::Function)
-				state.GlobalFunctions.emplace_back(pLabel, bankId, addr);
-		}
-		
-	}*/
 
 	state.bRebuildFilteredGlobalDataItems = true;
 	state.bRebuildFilteredGlobalFunctions = true;

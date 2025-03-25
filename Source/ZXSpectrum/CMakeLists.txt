@@ -21,7 +21,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(APP_NAME SpectrumAnalyser)
-set( with_tests true )
+set( with_tests false )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	find_package(OpenGL REQUIRED)
@@ -45,7 +45,7 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	#set( gfxapi "DX11")
 	set( gfxapi "GLFWApi")	
-	set( with_tests true )
+	set( with_tests false )
 endif()
 
 # Put binary and configuration files to /bin subfolder

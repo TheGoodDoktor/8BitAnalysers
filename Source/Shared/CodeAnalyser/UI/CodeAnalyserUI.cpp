@@ -1166,6 +1166,12 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 					viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().AddressRef;
 				}
 			}
+
+			FFunctionInfo* pFunctionInfo = state.Functions.GetFunctionBeforeAddress(item.AddressRef);
+			if (pFunctionInfo)
+			{
+				ImGui::Text("Function: %s", pFunctionInfo->Name.c_str()); 
+			}
 		}
 	}
 	DoItemContextMenu(state, item);
