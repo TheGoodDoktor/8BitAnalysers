@@ -4,7 +4,7 @@
 #include <map>
 #include <unordered_set>
 #include <vector>
-//#include <algorithm>
+#include <algorithm>
 #include <assert.h>
 
 #include "CodeAnalyserTypes.h"
