@@ -171,16 +171,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		${X11_LIBRARIES}
 		${CMAKE_DL_LIBS}
 		)
-
-	target_link_libraries(SpectrumAnalyserTest
-		glfw
-		asound
-		${OPENGL_LIBRARIES} 
-		${CMAKE_THREAD_LIBS_INIT}
-		${X11_LIBRARIES}
-		${CMAKE_DL_LIBS}
-		)
-
+	if(${with_tests})
+		target_link_libraries(SpectrumAnalyserTest
+			glfw
+			asound
+			${OPENGL_LIBRARIES} 
+			${CMAKE_THREAD_LIBS_INIT}
+			${X11_LIBRARIES}
+			${CMAKE_DL_LIBS}
+			)
+	endif()
 	# Copy ini file to /bin
 	add_custom_command(TARGET ${APP_NAME} POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different
