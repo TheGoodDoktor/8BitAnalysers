@@ -566,6 +566,7 @@ public:
 	
 	std::vector<FCodeAnalysisItem>	GlobalFunctions;
 	bool						bRebuildFilteredGlobalFunctions = true;
+	bool						bTraceFunctionExecution = false;
 	FFunctionInfoCollection		Functions;
 
 	static const int kNoViewStates = 4;

@@ -1,6 +1,7 @@
 #include "FunctionViewer.h"
 
 #include <imgui.h>
+#include "CodeAnalyserUI.h"
 
 bool FFunctionViewer::Init()
 {
@@ -51,13 +52,51 @@ void FFunctionViewer::DrawFunctionList()
 
 void FFunctionViewer::DrawFunctionDetails(FFunctionInfo* pFunctionInfo)
 {
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	FLabelInfo* pLabelInfo = state.GetLabelForAddress(pFunctionInfo->StartAddress);
+	ImGui::Text("%s", pFunctionInfo->Name.c_str());
+	ImGui::Text("Start Address");
+	DrawAddressLabel(state,viewState,pFunctionInfo->StartAddress);
+	ImGui::Text("End Address");
+	DrawAddressLabel(state, viewState, pFunctionInfo->EndAddress);
+
+	if(pLabelInfo != nullptr)
+	{
+		ImGui::Text("Callers:");
+		for (const auto& ref : pLabelInfo->References.GetReferences())
+		{
+			ImGui::PushID(ref.Val);
+			ShowCodeAccessorActivity(state, ref);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, ref);
+			
+			ImGui::PopID();
+		}
+	}
+
+	// TODO: draw list of callers
+	ImGui::Text("Called Functions:");
+	// TODO: draw list of called functions
+	ImGui::Text("Exit points:");
+	// Draw list of exit points
+	for (auto& exitPoint : pFunctionInfo->ExitPoints)
+	{
+		ImGui::Text("Exit Point:");
+		DrawAddressLabel(state, viewState, exitPoint);
+	}
 
 }
 
 
 void FFunctionViewer::DrawUI()
 {
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	ImGui::Text("Functions");
+	ImGui::SameLine();
+	ImGui::Checkbox("Trace Execution", &state.bTraceFunctionExecution);
 	DrawFunctionList();
 }
 
