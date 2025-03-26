@@ -79,6 +79,11 @@ void FFunctionViewer::DrawFunctionDetails(FFunctionInfo* pFunctionInfo)
 
 	// TODO: draw list of callers
 	ImGui::Text("Called Functions:");
+	for (const auto& calledFunction : pFunctionInfo->CallPoints)
+	{
+		ImGui::Text("Called Function:");
+		DrawAddressLabel(state, viewState, calledFunction.FunctionAddr);
+	}
 	// TODO: draw list of called functions
 	ImGui::Text("Exit points:");
 	// Draw list of exit points

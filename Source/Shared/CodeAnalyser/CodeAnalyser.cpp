@@ -917,6 +917,30 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 	return false;
 }
 
+void RegisterCall(FCodeAnalysisState& state, const FCPUFunctionCall& callInfo)
+{
+	if (state.bTraceFunctionExecution)
+	{
+		FFunctionInfo* pFunctionInfo = state.Functions.FindFunction(callInfo.CallAddr);
+		if(pFunctionInfo != nullptr)
+		{
+			pFunctionInfo->AddCallPoint(callInfo);
+		}
+	}
+}
+
+void RegisterReturn(FCodeAnalysisState& state, FAddressRef returnAddress)
+{
+	if (state.bTraceFunctionExecution)
+	{
+		FFunctionInfo* pFunctionInfo = state.Functions.GetFunctionBeforeAddress(returnAddress);
+		if (pFunctionInfo != nullptr)
+		{
+			pFunctionInfo->AddExitPoint(returnAddress);
+		}
+	}
+}
+
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 {
 	AnalyseFromPC(state, pc);

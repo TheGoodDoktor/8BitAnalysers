@@ -115,14 +115,28 @@ struct FFunctionInfo
 {
 	FAddressRef		StartAddress;
 	FAddressRef		EndAddress;
-	std::vector<FAddressRef>	ExitPoints;
+	std::vector<FCPUFunctionCall>	CallPoints;	// points in the function where a call is made
+	std::vector<FAddressRef>	ExitPoints;	// points in the function where a return is made
 	std::string		Name;
 	std::string		Comment;
+
+	bool AddCallPoint(FCPUFunctionCall callPoint)
+	{
+		// check if call point already exists
+		if (std::find(CallPoints.begin(), CallPoints.end(), callPoint) != CallPoints.end())
+			return false;
+
+		CallPoints.push_back(callPoint);
+		return true;
+	}
 
 	bool AddExitPoint(FAddressRef exitPoint)
 	{
 		if (std::find(ExitPoints.begin(), ExitPoints.end(), exitPoint) == ExitPoints.end())
 		{
+			if(exitPoint.Address > EndAddress.Address && exitPoint.BankId == EndAddress.BankId)
+				EndAddress = exitPoint;
+
 			ExitPoints.push_back(exitPoint);
 			return true;
 		}
@@ -177,7 +191,7 @@ public:
 		return nullptr;
 	}
 
-	const FFunctionInfo* FindFunction(FAddressRef address) const
+	FFunctionInfo* FindFunction(FAddressRef address) 
 	{
 		auto it = Functions.upper_bound(address);
 		if (it != Functions.begin())
@@ -829,6 +843,8 @@ private:
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addrRef, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc);
+void RegisterCall(FCodeAnalysisState& state, const FCPUFunctionCall& callInfo);
+void RegisterReturn(FCodeAnalysisState& state, FAddressRef returnAddress);
 void ReAnalyseCode(FCodeAnalysisState &state);
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState& state, uint16_t pc);
 void GenerateGlobalInfo(FCodeAnalysisState &state);

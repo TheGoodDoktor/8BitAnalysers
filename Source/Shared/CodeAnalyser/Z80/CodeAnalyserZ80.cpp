@@ -333,6 +333,9 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 			callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(pc);
 			callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(oldpc + 3);
 			callStack.push_back(callInfo);
+
+			// register call
+			RegisterCall(state, callInfo);
 		}
 
 		break;
@@ -362,6 +365,9 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 				}*/
 
 			}
+
+			// register return
+			RegisterReturn(state, state.AddressRefFromPhysicalAddress(oldpc));
 		}
 		break;
 	}
