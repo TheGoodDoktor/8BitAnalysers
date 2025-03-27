@@ -119,6 +119,7 @@ struct FFunctionInfo
 	std::vector<FAddressRef>	ExitPoints;	// points in the function where a return is made
 	std::string		Name;
 	std::string		Comment;
+	bool bManualEdit = false;
 
 	bool AddCallPoint(FCPUFunctionCall callPoint)
 	{
@@ -130,13 +131,20 @@ struct FFunctionInfo
 		return true;
 	}
 
+	void RegisterExecutionPoint(FAddressRef address)
+	{
+		if(bManualEdit)
+			return;
+
+		if (address.Address > EndAddress.Address && address.BankId == EndAddress.BankId)
+			EndAddress = address;
+	}
+
 	bool AddExitPoint(FAddressRef exitPoint)
 	{
 		if (std::find(ExitPoints.begin(), ExitPoints.end(), exitPoint) == ExitPoints.end())
 		{
-			if(exitPoint.Address > EndAddress.Address && exitPoint.BankId == EndAddress.BankId)
-				EndAddress = exitPoint;
-
+			//RegisterExecutionPoint(exitPoint);
 			ExitPoints.push_back(exitPoint);
 			return true;
 		}
@@ -150,9 +158,19 @@ class FFunctionInfoCollection
 {
 public:
 
+	void Clear()
+	{
+		Functions.clear();
+	}
+
 	bool DoesFunctionExist(FAddressRef address) const
 	{
 		return Functions.find(address) != Functions.end();
+	}
+
+	void AddFunction(const FFunctionInfo& function)
+	{
+		Functions[function.StartAddress] = function;
 	}
 
 	bool CreateNewFunctionAtAddress(FAddressRef address, const char* pName)

@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 #include "CodeAnalyserUI.h"
+#include "ImGuiSupport/ImGuiScaling.h"
 
 bool FFunctionViewer::Init()
 {
@@ -56,14 +57,26 @@ void FFunctionViewer::DrawFunctionDetails(FFunctionInfo* pFunctionInfo)
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	FLabelInfo* pLabelInfo = state.GetLabelForAddress(pFunctionInfo->StartAddress);
 	ImGui::Text("%s", pFunctionInfo->Name.c_str());
-	ImGui::Text("Start Address");
+	ImGui::Text("Address range:");
 	DrawAddressLabel(state,viewState,pFunctionInfo->StartAddress);
-	ImGui::Text("End Address");
+	ImGui::SameLine();
+	ImGui::Text("-> ");
 	DrawAddressLabel(state, viewState, pFunctionInfo->EndAddress);
+	ImGui::Checkbox("Manual Edit", &pFunctionInfo->bManualEdit);
+	if (pFunctionInfo->bManualEdit)
+	{
+		ImGui::SameLine();
+
+		const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+		const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
+		const float glyphWidth = ImGui_GetFontCharWidth();
+		ImGui::SetNextItemWidth(glyphWidth * 10.0f);
+		ImGui::InputScalar("End Address", ImGuiDataType_U16, &pFunctionInfo->EndAddress.Address, nullptr, nullptr, format, inputFlags);
+	}
 
 	if(pLabelInfo != nullptr)
 	{
-		ImGui::Text("Callers:");
+		ImGui::Text("Called By:");
 		for (const auto& ref : pLabelInfo->References.GetReferences())
 		{
 			ImGui::PushID(ref.Val);
@@ -77,22 +90,31 @@ void FFunctionViewer::DrawFunctionDetails(FFunctionInfo* pFunctionInfo)
 		}
 	}
 
-	// TODO: draw list of callers
-	ImGui::Text("Called Functions:");
-	for (const auto& calledFunction : pFunctionInfo->CallPoints)
+	// Draw list of callers
+	if(pFunctionInfo->CallPoints.size() != 0)
 	{
-		ImGui::Text("Called Function:");
-		DrawAddressLabel(state, viewState, calledFunction.FunctionAddr);
-	}
-	// TODO: draw list of called functions
-	ImGui::Text("Exit points:");
-	// Draw list of exit points
-	for (auto& exitPoint : pFunctionInfo->ExitPoints)
-	{
-		ImGui::Text("Exit Point:");
-		DrawAddressLabel(state, viewState, exitPoint);
+		ImGui::Text("Called Functions:");
+		for (const auto& calledFunction : pFunctionInfo->CallPoints)
+		{
+			ImGui::Text("\t");
+			DrawAddressLabel(state, viewState, calledFunction.FunctionAddr);
+			ImGui::SameLine();
+			ImGui::Text(" at ");
+			DrawAddressLabel(state, viewState, calledFunction.CallAddr);
+		}
 	}
 
+	// Draw list of called functions
+	if(pFunctionInfo->ExitPoints.size() != 0)
+	{
+		ImGui::Text("Exit points:");
+		// Draw list of exit points
+		for (auto& exitPoint : pFunctionInfo->ExitPoints)
+		{
+			ImGui::Text("\t");
+			DrawAddressLabel(state, viewState, exitPoint);
+		}
+	}
 }
 
 
