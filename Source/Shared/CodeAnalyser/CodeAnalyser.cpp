@@ -1292,6 +1292,8 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	MemoryAnalyser.Init(this);
 	IOAnalyser.Init(this);
 	StaticAnalysis.Init(this);
+
+	Functions.Clear();
     
     pDataTypes->Reset();
 }
