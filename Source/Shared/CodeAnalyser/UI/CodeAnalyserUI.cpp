@@ -368,6 +368,18 @@ void DrawCodeAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	DrawCodeAddress(state, viewState, {state.GetBankFromAddress(addr), addr});
 }
 
+void DrawInlineComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem)
+{
+	if (pItem != nullptr && pItem->Comment.empty() == false)
+	{
+		// Go back to the previous line to get the cursor pos of the last item.
+		// I couldn't see a better way to do this.
+		ImGui::SameLine();
+
+		DrawComment(state, viewState, pItem, std::max(state.Config.InlineCommentPos, ImGui::GetCursorPosX()));
+	}
+}
+
 void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem *pItem, float offset)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
@@ -514,13 +526,13 @@ void DrawCommentBlockDetails(FCodeAnalysisState& state, const FCodeAnalysisItem&
 	if (pCommentBlock == nullptr)
 		return;
 
-	if (ImGui::InputTextMultiline("Comment Text", &pCommentBlock->Comment))
+	ImGui::Text("Comment Text");
+	if (ImGui::InputTextMultiline("##detailscomment", &pCommentBlock->Comment, ImGui::GetContentRegionAvail()))
 	{
 		if (pCommentBlock->Comment.empty() == true)
 			state.SetCommentBlockForAddress(item.AddressRef, nullptr);
 		state.SetCodeAnalysisDirty(item.AddressRef);
 	}
-
 }
 
 int CommentInputCallback(ImGuiInputTextCallbackData *pData)
@@ -1686,9 +1698,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::SameLine();
 	DrawDebuggerButtons(state, viewState);
 	
-
-	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar;
-	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), /*true*/ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX, windowFlags))
+	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), /*true*/ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
 	//if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
 	{
 		// Determine if we want to switch tabs
@@ -1821,6 +1831,7 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();
+
 	if(ImGui::BeginChild("##rightpanel", ImVec2(0, 0), true))
 	{
 		//float height = ImGui::GetWindowContentRegionMax().y - ImGui::GetWindowContentRegionMin().y;
@@ -1869,45 +1880,262 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	ImGui::EndChild(); // right panel
 }
 
-void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const std::vector<FCodeAnalysisItem>& labelList)
+enum EGlobalsColumnID
 {
-	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false))
-	{		
-		const float lineHeight = ImGui::GetTextLineHeight();
-		ImGuiListClipper clipper;
-		clipper.Begin((int)labelList.size(), lineHeight);
+	// Used by code and data items
+	Name = 0,
+	References,
+	Location,
+	
+	// Used by code items
+	CallFrequencyIndicator,
+	CallFrequencyCount,
 
-		while (clipper.Step())
-		{
-			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+	// Used by data items
+	ReadIndicator,
+	WriteIndicator,
+	ReadCount,
+	WriteCount,
+
+	Count,
+};
+
+bool gbGlobalsColumnSortAlways[EGlobalsColumnID::Count] =
+{
+	false,
+	false,
+	false,
+
+	true,
+	true,
+
+	true,
+	true,
+	true,
+	true,
+};
+
+
+void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& globals, const ImGuiTableSortSpecs* pSortSpecs)
+{
+	if (pSortSpecs->SpecsCount != 1)
+		return;
+
+	const ImGuiTableColumnSortSpecs* pColumnSortSpecs = &pSortSpecs->Specs[0];
+	switch (pColumnSortSpecs->ColumnUserID)
+	{
+	case EGlobalsColumnID::Name:
+		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
 			{
-				const FCodeAnalysisItem& item = labelList[i];
-				const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
+				const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
+				const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
 
-				const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.AddressRef);
+				std::string labelALower = pLabelA->GetName();
+				std::transform(labelALower.begin(), labelALower.end(), labelALower.begin(), [](unsigned char c) { return std::tolower(c); });
+				std::string labelBLower = pLabelB->GetName();
+				std::transform(labelBLower.begin(), labelBLower.end(), labelBLower.begin(), [](unsigned char c) { return std::tolower(c); });
 
-				ImGui::PushID(item.AddressRef.Val);
-				if (pCodeInfo && pCodeInfo->bDisabled == false)
-					ShowCodeAccessorActivity(state, item.AddressRef);
+				if (pColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending)
+					return labelALower < labelBLower;	// dodgy!
 				else
-					ShowDataItemActivity(state, item.AddressRef);
-								
-				if (ImGui::Selectable("##labellistitem", viewState.GetCursorItem().Item == pLabelInfo))
-				{
-					viewState.GoToAddress(item.AddressRef, true);
-				}
-				ImGui::SameLine(30);
-				//if(state.Config.bShowBanks)
-				//	ImGui::Text("[%s]%s", item.AddressRef.BankId,pLabelInfo->Name.c_str());
-				//else
-					ImGui::Text("%s", pLabelInfo->GetName());
-				ImGui::PopID();
+					return labelALower > labelBLower;	// dodgy!
+			});
+		break;
+	case EGlobalsColumnID::References:
+		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+			{
+				const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
+				const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
+				if (pColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending)
+					return pLabelA->References.NumReferences() > pLabelB->References.NumReferences();
+				else
+					return pLabelA->References.NumReferences() < pLabelB->References.NumReferences();
+			});
+		break;
+	case EGlobalsColumnID::Location:
+		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+			{
+				if (pColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending)
+					return a.AddressRef.Address > b.AddressRef.Address;
+				else
+					return a.AddressRef.Address < b.AddressRef.Address;
+			});
+		break;
+	case EGlobalsColumnID::CallFrequencyIndicator:
+	case EGlobalsColumnID::CallFrequencyCount:
+		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+			{
+				const FCodeInfo* pCodeInfoA = state.GetCodeInfoForAddress(a.AddressRef);
+				const FCodeInfo* pCodeInfoB = state.GetCodeInfoForAddress(b.AddressRef);
 
-				if (ImGui::IsItemHovered())
+				const int countA = pCodeInfoA != nullptr ? pCodeInfoA->ExecutionCount : 0;
+				const int countB = pCodeInfoB != nullptr ? pCodeInfoB->ExecutionCount : 0;
+
+				if (pColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending)
+					return countA > countB;
+				else
+					return countA < countB;
+			});
+		break;
+	case EGlobalsColumnID::ReadCount:
+	case EGlobalsColumnID::ReadIndicator:
+		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+			{
+				const FDataInfo* pDataInfoA = state.GetDataInfoForAddress(a.AddressRef);
+				const FDataInfo* pDataInfoB = state.GetDataInfoForAddress(b.AddressRef);
+
+				if (pColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending)
+					return pDataInfoA->ReadCount > pDataInfoB->ReadCount;
+				else
+					return pDataInfoA->ReadCount < pDataInfoB->ReadCount;
+			});
+		break;
+	case EGlobalsColumnID::WriteCount:
+	case EGlobalsColumnID::WriteIndicator:
+		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
+			{
+				const FDataInfo* pDataInfoA = state.GetDataInfoForAddress(a.AddressRef);
+				const FDataInfo* pDataInfoB = state.GetDataInfoForAddress(b.AddressRef);
+
+				if (pColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending)
+					return pDataInfoA->WriteCount > pDataInfoB->WriteCount;
+				else
+					return pDataInfoA->WriteCount < pDataInfoB->WriteCount;
+			});
+		break;
+	}
+}
+
+void DrawLabelList(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, std::vector<FCodeAnalysisItem>& labelList, bool bIsFunctionList, bool bSortNow)
+{
+	if (ImGui::BeginChild("GlobalLabelList", ImVec2(0, 0), false)) 
+	{
+		static ImGuiTableFlags flags = ImGuiTableFlags_Hideable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersV | ImGuiTableFlags_Resizable | ImGuiTableFlags_Sortable;
+#ifndef _NDEBUG
+		flags |= ImGuiTableFlags_NoSavedSettings;
+#endif
+		const ImVec2 outer_size = ImVec2(0.0f, 0.0f);
+		if (ImGui::BeginTable("GlobalLabelTable", bIsFunctionList ? 5 : 7, flags, outer_size))
+		{
+			const int columnFlagsAsc = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortAscending;
+			const int columnFlagsDes = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_PreferSortDescending;
+			const int indicatorColumnFlags = columnFlagsDes | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoHeaderLabel;
+			const float w = ImGui_GetFontCharWidth();
+			const float rwIndicatorColWidth = w * 2.1f;
+			ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
+			if (bIsFunctionList)
+			{
+				ImGui::TableSetupColumn("Call Frequency", indicatorColumnFlags, w * 2.0f, EGlobalsColumnID::CallFrequencyIndicator);
+			}
+			else
+			{
+				ImGui::TableSetupColumn("Writes", indicatorColumnFlags, rwIndicatorColWidth, EGlobalsColumnID::WriteIndicator);
+				ImGui::TableSetupColumn("Reads", indicatorColumnFlags, rwIndicatorColWidth, EGlobalsColumnID::ReadIndicator);
+			}
+			ImGui::TableSetupColumn("Name", columnFlagsDes | ImGuiTableColumnFlags_NoHide, w * 32.0f, EGlobalsColumnID::Name);
+			ImGui::TableSetupColumn("Refs", columnFlagsDes, w * 5.0f, EGlobalsColumnID::References);
+			ImGui::TableSetupColumn("Addr", columnFlagsAsc | ImGuiTableColumnFlags_DefaultSort , w * 6.0f, EGlobalsColumnID::Location);
+			if (bIsFunctionList)
+			{
+				ImGui::TableSetupColumn("Calls", columnFlagsDes | ImGuiTableColumnFlags_DefaultHide, w * 8.0f, EGlobalsColumnID::CallFrequencyCount);
+			}
+			else
+			{
+				ImGui::TableSetupColumn("R.Count", columnFlagsDes | ImGuiTableColumnFlags_DefaultHide, w * 8.0f, EGlobalsColumnID::ReadCount);
+				ImGui::TableSetupColumn("W.Count", columnFlagsDes | ImGuiTableColumnFlags_DefaultHide, w * 8.0f, EGlobalsColumnID::WriteCount);
+			}
+			ImGui::TableHeadersRow();
+
+			if (ImGuiTableSortSpecs* pSortSpecs = ImGui::TableGetSortSpecs())
+			{
+				if (pSortSpecs->SpecsCount == 1)
 				{
-					DrawSnippetToolTip(state, viewState, item.AddressRef);
+					const ImGuiID columnID = pSortSpecs->Specs[0].ColumnUserID;
+					bool bSort = bSortNow || gbGlobalsColumnSortAlways[columnID];
+
+					if (pSortSpecs->SpecsDirty)
+					{
+						bSort = true;
+						pSortSpecs->SpecsDirty = false;
+					}
+					if (bSort)
+					{
+						SortGlobals(state, labelList, pSortSpecs);
+					}
 				}
 			}
+
+			ImGuiListClipper clipper;
+			clipper.Begin((int)labelList.size());
+
+			while (clipper.Step())
+			{
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+
+					const FCodeAnalysisItem& item = labelList[i];
+					const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(item.AddressRef);
+					if (bIsFunctionList)
+					{
+						if (pCodeInfo && pCodeInfo->bDisabled == false)
+							ShowCodeAccessorActivity(state, item.AddressRef);
+						ImGui::TableNextColumn();
+					}
+					else
+					{
+						ShowDataItemWriteActivity(state, item.AddressRef);
+						ImGui::TableNextColumn();
+						
+						ShowDataItemReadActivity(state, item.AddressRef);
+						ImGui::TableNextColumn();
+					}
+					const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
+					
+					// where should this go?
+					ImGui::PushID(item.AddressRef.Val);
+
+					if (ImGui::Selectable("##labellistitem", viewState.GetCursorItem().Item == pLabelInfo))
+					{
+						viewState.GoToAddress(item.AddressRef, true);
+					}
+					ImGui::SameLine();
+					//if(state.Config.bShowBanks)
+					//	ImGui::Text("[%s]%s", item.AddressRef.BankId,pLabelInfo->Name.c_str());
+					//else
+						ImGui::Text("%s", pLabelInfo->GetName());
+					ImGui::PopID();
+
+					if (ImGui::IsItemHovered())
+					{
+						DrawSnippetToolTip(state, viewState, item.AddressRef);
+					}
+
+					ImGui::TableNextColumn();
+					ImGui::Text("%d", pLabelInfo->References.NumReferences());
+
+					ImGui::TableNextColumn();
+					ImGui::Text("%s", NumStr(item.AddressRef.Address));
+
+					if (bIsFunctionList)
+					{
+						ImGui::TableNextColumn();
+						const int count = pCodeInfo != nullptr ? pCodeInfo->ExecutionCount : 0;
+						ImGui::Text("%d", count);
+					}
+					else
+					{
+						const FDataInfo* pDataInfo = state.GetDataInfoForAddress(item.AddressRef);
+						ImGui::TableNextColumn();
+						ImGui::Text("%d", pDataInfo->ReadCount);
+
+						ImGui::TableNextColumn();
+						ImGui::Text("%d", pDataInfo->WriteCount);
+					}
+				}
+			}
+			ImGui::EndTable();
 		}
 	}
 	ImGui::EndChild();
@@ -2177,101 +2405,47 @@ void DrawGlobals(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState)
 	{
 		viewState.GlobalFunctionsFilter.FilterText = viewState.FilterText;
 		viewState.GlobalDataItemsFilter.FilterText = viewState.FilterText;
-		state.bRebuildFilteredGlobalFunctions = true;
-		state.bRebuildFilteredGlobalDataItems = true;
+		viewState.bRebuildFilteredGlobalFunctions = true;
+		viewState.bRebuildFilteredGlobalDataItems = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Checkbox("ROM", &viewState.ShowROMLabels))
 	{
 		viewState.GlobalFunctionsFilter.bNoMachineRoms = !viewState.ShowROMLabels;
 		viewState.GlobalDataItemsFilter.bNoMachineRoms = !viewState.ShowROMLabels;
-		state.bRebuildFilteredGlobalFunctions = true;
-		state.bRebuildFilteredGlobalDataItems = true;
+		viewState.bRebuildFilteredGlobalFunctions = true;
+		viewState.bRebuildFilteredGlobalDataItems = true;
 	}
 
 	if(ImGui::BeginTabBar("GlobalsTabBar"))
 	{
 		if(ImGui::BeginTabItem("Functions"))
 		{	
-			// only constantly sort call frequency
-			bool bSort = viewState.FunctionSortMode == EFunctionSortMode::CallFrequency;	
-			if (ImGui::Combo("Sort Mode", (int*)&viewState.FunctionSortMode, "Location\0Alphabetical\0Call Frequency\0Num References"))
-				bSort = true;
-
-			if (state.bRebuildFilteredGlobalFunctions)
+			bool bSort = false;
+			if (viewState.bRebuildFilteredGlobalFunctions)
 			{
 				GenerateFilteredLabelList(state, viewState.GlobalFunctionsFilter, state.GlobalFunctions, viewState.FilteredGlobalFunctions);
 				bSort = true;
-				state.bRebuildFilteredGlobalFunctions = false;
+				viewState.bRebuildFilteredGlobalFunctions = false;
 			}
 
-			// sort by execution count
-			if (bSort)
-			{
-				switch (viewState.FunctionSortMode)
-				{
-				case EFunctionSortMode::Location:	
-					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
-						{
-							return a.AddressRef.Address < b.AddressRef.Address;
-						});
-					break;
-				case EFunctionSortMode::Alphabetical:	
-					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
-						{
-							const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
-							const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
-							return std::string(pLabelA->GetName()) < std::string(pLabelB->GetName());	// dodgy!
-						});
-					break;
-				case EFunctionSortMode::CallFrequency:	
-					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
-						{
-							const FCodeInfo* pCodeInfoA = state.GetCodeInfoForAddress(a.AddressRef);
-							const FCodeInfo* pCodeInfoB = state.GetCodeInfoForAddress(b.AddressRef);
-
-							const int countA = pCodeInfoA != nullptr ? pCodeInfoA->ExecutionCount : 0;
-							const int countB = pCodeInfoB != nullptr ? pCodeInfoB->ExecutionCount : 0;
-
-							return countA > countB;
-						});
-					break;
-				case EFunctionSortMode::NoReferences:
-					std::sort(viewState.FilteredGlobalFunctions.begin(), viewState.FilteredGlobalFunctions.end(), [&state](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
-						{
-							const FLabelInfo* pLabelA = state.GetLabelForAddress(a.AddressRef);
-							const FLabelInfo* pLabelB = state.GetLabelForAddress(b.AddressRef);
-							return pLabelA->References.NumReferences() > pLabelB->References.NumReferences();
-						});
-					break;
-				default:
-					break;
-				}
-			}
-
-			DrawLabelList(state, viewState, viewState.FilteredGlobalFunctions);
+			DrawLabelList(state, viewState, viewState.FilteredGlobalFunctions, true, bSort);
 			ImGui::EndTabItem();
 		}
 
 		if (ImGui::BeginTabItem("Data"))
 		{
-			if (DrawDataTypeFilterCombo("Data Type", viewState.DataTypeFilter))
-			{
-				viewState.GlobalDataItemsFilter.DataType = viewState.DataTypeFilter;
-				state.bRebuildFilteredGlobalDataItems = true;
-			}
-
-			if (state.bRebuildFilteredGlobalDataItems)
+			bool bSort = false;
+			if (viewState.bRebuildFilteredGlobalDataItems)
 			{
 				GenerateFilteredLabelList(state, viewState.GlobalDataItemsFilter, state.GlobalDataItems, viewState.FilteredGlobalDataItems);
-				state.bRebuildFilteredGlobalDataItems = false;
+				viewState.bRebuildFilteredGlobalDataItems = false;
+				bSort = true;
 			}
 
-			DrawLabelList(state, viewState, viewState.FilteredGlobalDataItems);
+			DrawLabelList(state, viewState, viewState.FilteredGlobalDataItems, false, bSort);
 			ImGui::EndTabItem();
 		}
-
-		
 
 		ImGui::EndTabBar();
 	}
@@ -2437,7 +2611,8 @@ void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state)
 	FCodeAnalysisConfig& config = state.Config;
 
 	ImGui::SliderFloat("Label Pos", &config.LabelPos, 0, 200.0f);
-	ImGui::SliderFloat("Comment Pos", &config.CommentLinePos, 0, 200.0f);
+	ImGui::SliderFloat("Block Comment Pos", &config.CommentLinePos, 0, 200.0f);
+	ImGui::SliderFloat("Inline Comment Pos", &config.InlineCommentPos, 0, 2000.0f);
 	ImGui::SliderFloat("Address Pos", &config.AddressPos, 0, 200.0f);
 	ImGui::SliderFloat("Address Space", &config.AddressSpace, 0, 200.0f);
 

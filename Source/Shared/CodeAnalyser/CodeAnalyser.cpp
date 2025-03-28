@@ -1036,6 +1036,37 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 	}
 }
 
+void ResetExecutionCounts(FCodeAnalysisState& state)
+{
+	for (int i = 0; i < (1 << 16); i++)
+	{
+		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(i);
+		if (pCodeInfo != nullptr)
+		{
+			pCodeInfo->ExecutionCount = 0;
+		}
+	}
+}
+
+void ResetReadWriteCounts(FCodeAnalysisState& state, bool bReads, bool bWrites)
+{
+	for (int i = 0; i < (1 << 16); i++)
+	{
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(i);
+		if (pDataInfo != nullptr)
+		{
+			if (bReads)
+			{
+				pDataInfo->ReadCount = 0;
+			}
+			if (bWrites)
+			{
+				pDataInfo->WriteCount = 0;
+			}
+		}
+	}
+}
+
 // Do we want to do this with every page?
 void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites)
 {
@@ -1180,8 +1211,11 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 		}
 	}
 
-	state.bRebuildFilteredGlobalDataItems = true;
-	state.bRebuildFilteredGlobalFunctions = true;
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		state.ViewState[i].bRebuildFilteredGlobalDataItems = true;
+		state.ViewState[i].bRebuildFilteredGlobalFunctions = true;
+	}
 }
 
 FCodeAnalysisState::FCodeAnalysisState()

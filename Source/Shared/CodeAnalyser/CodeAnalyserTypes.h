@@ -118,6 +118,22 @@ enum class EFunctionSortMode : int
 	NoReferences
 };
 
+// don't change order! loose references!
+enum class EDataSortMode : int
+{
+	Location = 0,
+	Alphabetical,
+	NoReferences
+};
+
+enum class EGlobalSortMode : int
+{
+	Location = 0,
+	Alphabetical,
+	CallFrequency,
+	NoReferences
+};
+
 // Entries for the data type filter drop-down
 enum class EDataTypeFilter : int
 {
