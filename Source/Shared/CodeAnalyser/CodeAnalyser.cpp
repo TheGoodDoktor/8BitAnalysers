@@ -908,6 +908,17 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 		pCodeInfo->ExecutionCount++;
 	}
 
+	// register instruction in function executed
+	if (state.bTraceFunctionExecution)
+	{
+		const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+		FFunctionInfo* pFunctionInfo = state.Functions.GetFunctionBeforeAddress(pcAddrRef);
+		if (pFunctionInfo != nullptr)
+		{
+			pFunctionInfo->RegisterExecutionPoint(pcAddrRef);
+		}
+	}
+
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		return RegisterCodeExecutedZ80(state, pc, oldpc);
 	else if (state.CPUInterface->CPUType == ECPUType::M6502)
@@ -1315,6 +1326,8 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	MemoryAnalyser.Init(this);
 	IOAnalyser.Init(this);
 	StaticAnalysis.Init(this);
+
+	Functions.Clear();
     
     pDataTypes->Reset();
 }

@@ -105,6 +105,19 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
         pDataTypes->WriteToJson(dataTypesJson);
         jsonGameData["DataTypes"] = dataTypesJson;
     }
+
+	// Write out function info
+	for (const auto& functionIt : state.Functions.GetFunctions())
+	{
+		const FFunctionInfo& function = functionIt.second;
+
+		json functionJson;
+		functionJson["StartAddress"] = function.StartAddress.Address;
+		functionJson["EndAddress"] = function.EndAddress.Address;
+		functionJson["Name"] = function.Name;
+		functionJson["bManualEdit"] = function.bManualEdit;
+		jsonGameData["Functions"].push_back(functionJson);
+	}
     
 	// Write file out
 	std::ofstream outFileStream(pJsonFileName);
@@ -299,6 +312,24 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
     {
         pDataTypes->ReadFromJson(jsonGameData["DataTypes"]);
     }
+
+	if (jsonGameData.contains("Functions"))
+	{
+		state.Functions.Clear();
+
+		for (const auto& functionJson : jsonGameData["Functions"])
+		{
+			FFunctionInfo function;
+			function.StartAddress = state.AddressRefFromPhysicalAddress(functionJson["StartAddress"]);
+			function.EndAddress = state.AddressRefFromPhysicalAddress(functionJson["EndAddress"]);
+			function.Name = functionJson["Name"];
+			function.bManualEdit = functionJson["bManualEdit"];
+
+			// Create function
+			state.Functions.AddFunction(function);
+
+		}
+	}
 
 	FixupPostLoad(state);
 
