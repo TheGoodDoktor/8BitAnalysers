@@ -1213,7 +1213,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 			ImGui::PopStyleColor();
 		break;
 	case EItemType::CommentLine:
-		DrawComment(state,viewState,item.Item);
+		DrawComment(state,viewState,item.Item,state.Config.CommentLinePos);
 		//DrawCommentLine(state, static_cast<const FCommentLine*>(item.Item));
 		break;
     default:
@@ -2611,8 +2611,8 @@ void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state)
 	FCodeAnalysisConfig& config = state.Config;
 
 	ImGui::SliderFloat("Label Pos", &config.LabelPos, 0, 200.0f);
-	ImGui::SliderFloat("Block Comment Pos", &config.CommentLinePos, 0, 200.0f);
-	ImGui::SliderFloat("Inline Comment Pos", &config.InlineCommentPos, 0, 2000.0f);
+	ImGui::SliderFloat("Block Comment Offset", &config.CommentLinePos, 0, 200.0f);
+	ImGui::SliderFloat("Inline Comment Offset", &config.InlineCommentPos, 0, 2000.0f);
 	ImGui::SliderFloat("Address Pos", &config.AddressPos, 0, 200.0f);
 	ImGui::SliderFloat("Address Space", &config.AddressSpace, 0, 200.0f);
 
