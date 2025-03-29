@@ -120,6 +120,7 @@ struct FFunctionInfo
 	std::string		Name;
 	std::string		Comment;
 	bool bManualEdit = false;
+	bool bROMFunction = false;
 
 	bool AddCallPoint(FCPUFunctionCall callPoint)
 	{
@@ -208,6 +209,17 @@ public:
 		}
 		return nullptr;
 	}
+
+	const FFunctionInfo* GetFunctionAtAddress(FAddressRef startAddress) const
+	{
+		auto it = Functions.find(startAddress);
+		if (it != Functions.end())
+		{
+			return &it->second;
+		}
+		return nullptr;
+	}
+
 
 	FFunctionInfo* FindFunction(FAddressRef address) 
 	{
