@@ -17,5 +17,6 @@ public:
 	void	DrawFunctionDetails(FFunctionInfo* pFunctionInfo);
 private:
 	FAddressRef		SelectedFunction;
+	bool			bOnlyShowVisitedFunctions = false;
 };
 

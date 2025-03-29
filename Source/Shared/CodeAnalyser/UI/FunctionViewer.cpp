@@ -25,6 +25,9 @@ void FFunctionViewer::DrawFunctionList()
 		{
 			const FFunctionInfo& function = functionIt.second;
 
+			if(bOnlyShowVisitedFunctions && function.IsVisited() == false)
+				continue;
+
 			ImGui::PushID(function.StartAddress.Address);
 			if (ImGui::Selectable(function.Name.c_str(), SelectedFunction == function.StartAddress))
 			{
@@ -124,6 +127,7 @@ void FFunctionViewer::DrawUI()
 	ImGui::Text("Functions");
 	ImGui::SameLine();
 	ImGui::Checkbox("Trace Execution", &state.bTraceFunctionExecution);
+	ImGui::Checkbox("Visited Functions Only", &bOnlyShowVisitedFunctions);
 	DrawFunctionList();
 }
 

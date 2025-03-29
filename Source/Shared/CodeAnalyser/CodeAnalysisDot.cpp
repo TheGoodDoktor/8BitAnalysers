@@ -13,7 +13,7 @@ bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilenam
 
 	// TODO: output functions as nodes
 	
-	// TODO: join nodes
+	// Join nodes
 	for (const auto functionIt : state.Functions.GetFunctions())
 	{
 		const FFunctionInfo& function = functionIt.second;

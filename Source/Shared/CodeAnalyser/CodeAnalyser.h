@@ -122,6 +122,8 @@ struct FFunctionInfo
 	bool bManualEdit = false;
 	bool bROMFunction = false;
 
+	bool IsVisited() const { return StartAddress != EndAddress;}
+
 	bool AddCallPoint(FCPUFunctionCall callPoint)
 	{
 		// check if call point already exists
