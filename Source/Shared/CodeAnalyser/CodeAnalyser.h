@@ -316,8 +316,11 @@ struct FCodeAnalysisViewState
 	EDataTypeFilter						DataTypeFilter = EDataTypeFilter::All;
 	FLabelListFilter			GlobalDataItemsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
+	bool										bRebuildFilteredGlobalDataItems = true;
+	EDataSortMode				DataSortMode = EDataSortMode::Location;
 	FLabelListFilter				GlobalFunctionsFilter;
 	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
+	bool										bRebuildFilteredGlobalFunctions = true;
 	EFunctionSortMode				FunctionSortMode = EFunctionSortMode::Location;
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
@@ -356,6 +359,7 @@ struct FCodeAnalysisConfig
 	bool	bShowConfigWindow = false;
 	float	LabelPos = 42.0f;
 	float	CommentLinePos = 42.0f;
+	float	InlineCommentPos = 0.0f;
 	float	AddressPos = 48.0f;
 	float	AddressSpace = 70.0f;
 	float	BranchLineIndentStart = 0;
@@ -608,10 +612,8 @@ public:
 	std::vector<FCodeAnalysisItem>	ItemList;
 
 	std::vector<FCodeAnalysisItem>	GlobalDataItems;
-	bool						bRebuildFilteredGlobalDataItems = true;	// should this be in the view 
-	
 	std::vector<FCodeAnalysisItem>	GlobalFunctions;
-	bool						bRebuildFilteredGlobalFunctions = true;
+
 	bool						bTraceFunctionExecution = false;
 	FFunctionInfoCollection		Functions;
 
@@ -883,7 +885,9 @@ void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, uint8_t value);
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc);
-void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites);
+void ResetReferenceInfo(FCodeAnalysisState& state, bool bReads, bool bWrites);
+void ResetReadWriteCounts(FCodeAnalysisState& state, bool bReads, bool bWrites);
+void ResetExecutionCounts(FCodeAnalysisState &state);
 
 std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address);
 
