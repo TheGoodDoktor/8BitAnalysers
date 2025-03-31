@@ -11,13 +11,12 @@ bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilenam
 
 	fprintf(fp, "digraph Functions {\n");
 
-	/* TODO: stick this in!
-	  fontname="Helvetica,Arial,sans-serif"
-	  node [fontname="Helvetica,Arial,sans-serif"]
-	  edge [fontname="Helvetica,Arial,sans-serif"]
-	  graph [fontsize=30 labelloc="t" label="" splines=true overlap=false rankdir = "LR"];
-	  ratio = auto;
-	  */
+	// Set up formatting
+	fprintf(fp, "\tfontname=\"Helvetica,Arial,sans-serif\" \n");
+	fprintf(fp, "\tnode [fontname=\"Helvetica,Arial,sans-serif\"] \n");
+	fprintf(fp, "\tedge [fontname=\"Helvetica,Arial,sans-serif\"] \n");
+	fprintf(fp, "\tgraph [fontsize=30 labelloc=\"t\" label=\"\" splines=true overlap=false rankdir = \"LR\"]; \n");
+	fprintf(fp, "\tratio = auto; \n");
 
 	// TODO: output functions as nodes
 	
