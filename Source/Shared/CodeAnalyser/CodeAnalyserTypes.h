@@ -160,6 +160,7 @@ enum class EBankAccess
 struct FAddressRef
 {
 	FAddressRef() :BankId(-1), Address(0) {}
+	FAddressRef(uint32_t val) :Val(val) {}
 	FAddressRef(int16_t bankId, uint16_t address) :BankId(bankId), Address(address) {}
 
 	bool IsValid() const { return BankId != -1; }

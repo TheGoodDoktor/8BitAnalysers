@@ -109,16 +109,24 @@ struct FCodeAnalysisItem
 	FAddressRef	AddressRef;
 };
 
+// structure to hold function parameters
+struct FFunctionParam
+{
+	std::string 	Name;
+	// TODO: maybe enum type?
+};
+
 // This contains information on a function in the code
 // It stores the address range of the function and any exit points
 struct FFunctionInfo
 {
 	FAddressRef		StartAddress;
 	FAddressRef		EndAddress;
+	std::vector<FFunctionParam>	Params;
 	std::vector<FCPUFunctionCall>	CallPoints;	// points in the function where a call is made
 	std::vector<FAddressRef>	ExitPoints;	// points in the function where a return is made
 	std::string		Name;
-	std::string		Comment;
+	std::string		Description;
 	bool bManualEdit = false;
 	bool bROMFunction = false;
 
@@ -171,11 +179,15 @@ public:
 		return Functions.find(address) != Functions.end();
 	}
 
-	void AddFunction(const FFunctionInfo& function)
+	bool AddFunction(const FFunctionInfo& function)
 	{
-		Functions[function.StartAddress] = function;
-	}
+		if (DoesFunctionExist(function.StartAddress))
+			return false;
 
+		Functions[function.StartAddress] = function;
+		return true;
+	}
+	/*
 	bool CreateNewFunctionAtAddress(FAddressRef address, const char* pName)
 	{
 		if (DoesFunctionExist(address))
@@ -186,7 +198,7 @@ public:
 		newFunction.Name = pName;
 		Functions[address] = newFunction;
 		return true;
-	}
+	}*/
 
 	FFunctionInfo* GetFunctionBeforeAddress(FAddressRef address)
 	{

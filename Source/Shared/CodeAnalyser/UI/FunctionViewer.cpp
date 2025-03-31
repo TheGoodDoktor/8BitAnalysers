@@ -44,7 +44,7 @@ void FFunctionViewer::DrawFunctionList()
 		auto pFunctionInfo = state.Functions.GetFunctionAtAddress(SelectedFunction);
 		if (pFunctionInfo)
 		{
-			DrawFunctionDetails(pFunctionInfo);
+			DrawFunctionDetails(pEmulator->GetCodeAnalysis(),pFunctionInfo);
 		}
 		else
 		{
@@ -54,9 +54,9 @@ void FFunctionViewer::DrawFunctionList()
 	ImGui::EndChild();
 }
 
-void FFunctionViewer::DrawFunctionDetails(FFunctionInfo* pFunctionInfo)
+void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo)
 {
-	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	//FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	FLabelInfo* pLabelInfo = state.GetLabelForAddress(pFunctionInfo->StartAddress);
 	ImGui::Text("%s", pFunctionInfo->Name.c_str());
@@ -87,7 +87,7 @@ void FFunctionViewer::DrawFunctionDetails(FFunctionInfo* pFunctionInfo)
 
 			ImGui::Text("   ");
 			ImGui::SameLine();
-			DrawCodeAddress(state, viewState, ref);
+			DrawAddressLabel(state, viewState, ref);
 			
 			ImGui::PopID();
 		}
@@ -99,11 +99,15 @@ void FFunctionViewer::DrawFunctionDetails(FFunctionInfo* pFunctionInfo)
 		ImGui::Text("Called Functions:");
 		for (const auto& calledFunction : pFunctionInfo->CallPoints)
 		{
-			ImGui::Text("\t");
-			DrawAddressLabel(state, viewState, calledFunction.FunctionAddr);
+			//ImGui::Text("\t");
+			//ImGui::SameLine();
+			ShowCodeAccessorActivity(state, calledFunction.CallAddr);
+			ImGui::Text("   ");
 			ImGui::SameLine();
-			ImGui::Text(" at ");
 			DrawAddressLabel(state, viewState, calledFunction.CallAddr);
+			ImGui::SameLine();
+			ImGui::Text(" calls ");
+			DrawAddressLabel(state, viewState, calledFunction.FunctionAddr);
 		}
 	}
 
@@ -114,7 +118,11 @@ void FFunctionViewer::DrawFunctionDetails(FFunctionInfo* pFunctionInfo)
 		// Draw list of exit points
 		for (auto& exitPoint : pFunctionInfo->ExitPoints)
 		{
-			ImGui::Text("\t");
+			//ImGui::Text("\t");
+			//ImGui::SameLine();
+			ShowCodeAccessorActivity(state, exitPoint);
+			ImGui::Text("   ");
+			ImGui::SameLine();
 			DrawAddressLabel(state, viewState, exitPoint);
 		}
 	}

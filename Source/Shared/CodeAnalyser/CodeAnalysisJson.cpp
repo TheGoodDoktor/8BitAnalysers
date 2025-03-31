@@ -112,11 +112,38 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		const FFunctionInfo& function = functionIt.second;
 
 		json functionJson;
-		functionJson["StartAddress"] = function.StartAddress.Address;
-		functionJson["EndAddress"] = function.EndAddress.Address;
+		functionJson["StartAddress"] = function.StartAddress.Val;
+		functionJson["EndAddress"] = function.EndAddress.Val;
 		functionJson["Name"] = function.Name;
+		functionJson["Description"] = function.Description;
+		functionJson["bROMFunction"] = function.bROMFunction;
 		functionJson["bManualEdit"] = function.bManualEdit;
-		jsonGameData["Functions"].push_back(functionJson);
+
+		// output params
+		for (const auto& param : function.Params)
+		{
+			json paramJson;
+			paramJson["Name"] = param.Name;
+			functionJson["Params"].push_back(paramJson);
+		}
+
+		// output call points
+		for (const auto& callPoint : function.CallPoints)
+		{
+			json callPointJson;
+			callPointJson["FunctionAddr"] = callPoint.FunctionAddr.Val;
+			callPointJson["CallAddr"] = callPoint.CallAddr.Val;
+			callPointJson["ReturnAddr"] = callPoint.ReturnAddr.Val;
+			functionJson["CallPoints"].push_back(callPointJson);
+		}
+
+		// output exit points
+		for (const auto& exitPoint : function.ExitPoints)
+		{
+			functionJson["ExitPoints"].push_back(exitPoint.Val);
+		}
+
+		jsonGameData["FunctionInfo"].push_back(functionJson);
 	}
     
 	// Write file out
@@ -313,21 +340,56 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
         pDataTypes->ReadFromJson(jsonGameData["DataTypes"]);
     }
 
-	if (jsonGameData.contains("Functions"))
+	// Read in function info
+	if (jsonGameData.contains("FunctionInfo"))
 	{
 		state.Functions.Clear();
 
-		for (const auto& functionJson : jsonGameData["Functions"])
+		for (const auto& functionJson : jsonGameData["FunctionInfo"])
 		{
 			FFunctionInfo function;
-			function.StartAddress = state.AddressRefFromPhysicalAddress(functionJson["StartAddress"]);
-			function.EndAddress = state.AddressRefFromPhysicalAddress(functionJson["EndAddress"]);
+			function.StartAddress.Val = functionJson["StartAddress"];
+			function.EndAddress.Val = functionJson["EndAddress"];
 			function.Name = functionJson["Name"];
+			function.Description = functionJson["Description"];
+			function.bROMFunction = functionJson["bROMFunction"];
 			function.bManualEdit = functionJson["bManualEdit"];
+
+			// read params
+			if(functionJson.contains("Params"))
+			{
+				for (const auto& paramJson : functionJson["Params"])
+				{
+					FFunctionParam param;
+					param.Name = paramJson["Name"];
+					function.Params.push_back(param);
+				}
+			}
+
+			// read call points
+			if (functionJson.contains("CallPoints"))
+			{
+				for (const auto& callPointJson : functionJson["CallPoints"])
+				{
+					FCPUFunctionCall callPoint;
+					callPoint.FunctionAddr.Val = callPointJson["FunctionAddr"];
+					callPoint.CallAddr.Val = callPointJson["CallAddr"];
+					callPoint.ReturnAddr.Val = callPointJson["ReturnAddr"];
+					function.CallPoints.push_back(callPoint);
+				}
+			}
+
+			// read exit points
+			if (functionJson.contains("ExitPoints"))
+			{
+				for (const auto& exitPointJson : functionJson["ExitPoints"])
+				{
+					function.ExitPoints.push_back(FAddressRef((uint32_t)exitPointJson));
+				}
+			}
 
 			// Create function
 			state.Functions.AddFunction(function);
-
 		}
 	}
 

@@ -1212,7 +1212,14 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 					if (pLabel->LabelType == ELabelType::Function)
 					{
 						state.GlobalFunctions.emplace_back(pLabel, addrRef);
-						state.Functions.CreateNewFunctionAtAddress(addrRef,pLabel->GetName());
+
+						// Create Function info
+						FFunctionInfo newFunction;
+						newFunction.StartAddress = addrRef;
+						newFunction.EndAddress = addrRef;
+						newFunction.Name = pLabel->GetName();
+						newFunction.bROMFunction = bank.bMachineROM;
+						state.Functions.AddFunction(newFunction);
 					}
 				}
 

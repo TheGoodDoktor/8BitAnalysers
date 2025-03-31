@@ -20,6 +20,7 @@
 
 #include "UIColours.h"
 #include <ImGuiSupport/ImGuiScaling.h>
+#include "FunctionViewer.h"
 
 // UI
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
@@ -503,6 +504,17 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	if (ImGui::Button("Clear References"))
 	{
 		pLabelInfo->References.Reset();
+	}
+
+	if (pLabelInfo->LabelType == ELabelType::Function)
+	{
+		FFunctionInfo* pFunctionInfo = state.Functions.GetFunctionAtAddress(item.AddressRef);
+		if(pFunctionInfo != nullptr)
+		{
+			ImGui::Separator();
+			ImGui::Text("Function Details");
+			DrawFunctionDetails(state, pFunctionInfo);
+		}
 	}
 }
 
@@ -1308,6 +1320,7 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			//if (ImGui::InputTextMultiline("##detailscomment", &pCommentBlock->Comment, ImGui::GetContentRegionAvail()))
 
 			//ImGui::Text("Comments");
+			ImGui::Separator();
 			if (ImGui::InputTextWithHint("Comments", "Comments", &commentString))
 			{
 				SetItemCommentText(state, item, commentString.c_str());
@@ -1444,6 +1457,8 @@ void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& view
 	{
 		state.Debugger.TraceForward(viewState);
 	}
+	ImGui::SameLine();
+	ImGui::Checkbox("Trace Functions",&state.bTraceFunctionExecution);
 	//ImGui::SameLine();
 	//ImGui::Checkbox("Jump to PC on break", &bJumpToPCOnBreak);
 }

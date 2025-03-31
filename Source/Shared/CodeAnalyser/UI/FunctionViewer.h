@@ -14,9 +14,11 @@ public:
 	void	DrawUI() override;
 
 	void	DrawFunctionList();
-	void	DrawFunctionDetails(FFunctionInfo* pFunctionInfo);
+	//void	DrawFunctionDetails(FFunctionInfo* pFunctionInfo);
 private:
 	FAddressRef		SelectedFunction;
 	bool			bOnlyShowVisitedFunctions = false;
 };
+
+void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo);
 
