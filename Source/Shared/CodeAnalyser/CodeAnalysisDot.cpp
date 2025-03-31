@@ -11,6 +11,14 @@ bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilenam
 
 	fprintf(fp, "digraph Functions {\n");
 
+	/* TODO: stick this in!
+	  fontname="Helvetica,Arial,sans-serif"
+	  node [fontname="Helvetica,Arial,sans-serif"]
+	  edge [fontname="Helvetica,Arial,sans-serif"]
+	  graph [fontsize=30 labelloc="t" label="" splines=true overlap=false rankdir = "LR"];
+	  ratio = auto;
+	  */
+
 	// TODO: output functions as nodes
 	
 	// Join nodes
@@ -24,7 +32,7 @@ bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilenam
 				const FFunctionInfo* calledFunc = state.Functions.GetFunctionAtAddress(calledPoint.FunctionAddr);
 				if(calledFunc)
 				{
-					fprintf(fp, "%s -> %s\n", function.Name.c_str(), calledFunc->Name.c_str());
+					fprintf(fp, "\t%s -> %s\n", function.Name.c_str(), calledFunc->Name.c_str());
 				}
 			}
 		}

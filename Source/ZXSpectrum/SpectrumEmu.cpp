@@ -48,7 +48,6 @@
 #include "SnapshotLoaders/TAPLoader.h"
 #include "SnapshotLoaders/TZXLoader.h"
 #include "CodeAnalyser/UI/FunctionViewer.h"
-#include "CodeAnalyser/CodeAnalysisDot.h"
 
 bool InitZXSpectrumAsmExporters(FSpectrumEmu* pZXEmu);
 
@@ -1044,7 +1043,6 @@ bool FSpectrumEmu::SaveProject()
 		// The Future
 		SaveGameState(this, saveStateFName.c_str());
 		ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-		ExportCodeAnalysisDot(CodeAnalysis, (root + pGameConfig->Name + ".dot").c_str());
 		ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		pGraphicsViewer->SaveGraphicsSets(graphicsSetsJsonFName.c_str());
 	}

@@ -14,6 +14,7 @@
 #include "Util/FileUtil.h"
 #include "LuaScripting/LuaSys.h"
 #include <CodeAnalyser/UI/UIColours.h>
+#include "CodeAnalyser/CodeAnalysisDot.h"
 
 void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 {
@@ -334,7 +335,14 @@ void FEmuBase::FileMenu()
 		// ImGui popup windows can't be activated from within a Menu so we set a flag to act on outside of the menu code.
 		bExportBinary = true;
 	}
-	
+
+	if (ImGui::MenuItem("Export Dot File"))
+	{
+		const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
+
+		ExportCodeAnalysisDot(CodeAnalysis, (root + pCurrentProjectConfig->Name + ".dot").c_str());
+	}
+
 	FileMenuAdditions();
 }
 
