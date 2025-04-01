@@ -1,5 +1,6 @@
 #include "CodeAnalysisDot.h"
 #include "CodeAnalyser.h"
+#include "FunctionAnalyser.h"
 
 bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilename, bool bROMS)
 {
@@ -8,6 +9,8 @@ bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilenam
 	{
 		return false;
 	}
+
+	FFunctionInfoCollection& functions = *state.pFunctions;
 
 	fprintf(fp, "digraph Functions {\n");
 
@@ -21,14 +24,14 @@ bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilenam
 	// TODO: output functions as nodes
 	
 	// Join nodes
-	for (const auto functionIt : state.Functions.GetFunctions())
+	for (const auto functionIt : functions.GetFunctions())
 	{
 		const FFunctionInfo& function = functionIt.second;
 		if (function.bROMFunction == bROMS)
 		{
 			for(const auto& calledPoint : function.CallPoints)
 			{
-				const FFunctionInfo* calledFunc = state.Functions.GetFunctionAtAddress(calledPoint.FunctionAddr);
+				const FFunctionInfo* calledFunc = functions.GetFunctionAtAddress(calledPoint.FunctionAddr);
 				if(calledFunc)
 				{
 					fprintf(fp, "\t%s -> %s\n", function.Name.c_str(), calledFunc->Name.c_str());

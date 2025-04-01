@@ -21,6 +21,7 @@
 #include "UIColours.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 #include "FunctionViewer.h"
+#include "../FunctionAnalyser.h"
 
 // UI
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
@@ -466,56 +467,58 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		GenerateGlobalInfo(state);
 	}
 
-	ImGui::Text("References:");
-	FAddressRef removeRef;
-	for (const auto & ref : pLabelInfo->References.GetReferences())
-	{
-		ImGui::PushID(ref.Val);
-		ShowCodeAccessorActivity(state, ref);
-
-		ImGui::Text("   ");
-		ImGui::SameLine();
-		DrawCodeAddress(state, viewState, ref);
-		ImGui::SameLine();
-		if(ImGui::Button("Remove"))
-		{
-			removeRef = ref;
-		}
-		ImGui::PopID();
-	}
-	if(removeRef.IsValid())
-		pLabelInfo->References.RemoveReference(removeRef);
-
-	if(ImGui::Button("Find References"))
-	{
-		std::vector<FAddressRef> results = state.FindAllMemoryPatterns((const uint8_t*)&item.AddressRef.Address,2,false,false);
-
-		for(const auto& result : results)
-		{
-			FDataInfo* pDataInfo = state.GetDataInfoForAddress(result);
-
-			if(pDataInfo->DataType == EDataType::InstructionOperand)	// handle instructions differently
-				pLabelInfo->References.RegisterAccess(pDataInfo->InstructionAddress);
-			else
-				pLabelInfo->References.RegisterAccess(result);
-		}
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Clear References"))
-	{
-		pLabelInfo->References.Reset();
-	}
-
 	if (pLabelInfo->LabelType == ELabelType::Function)
 	{
-		FFunctionInfo* pFunctionInfo = state.Functions.GetFunctionAtAddress(item.AddressRef);
-		if(pFunctionInfo != nullptr)
+		FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(item.AddressRef);
+		if (pFunctionInfo != nullptr)
 		{
-			ImGui::Separator();
-			ImGui::Text("Function Details");
 			DrawFunctionDetails(state, pFunctionInfo);
 		}
 	}
+	else
+	{
+
+		ImGui::Text("References:");
+		FAddressRef removeRef;
+		for (const auto & ref : pLabelInfo->References.GetReferences())
+		{
+			ImGui::PushID(ref.Val);
+			ShowCodeAccessorActivity(state, ref);
+
+			ImGui::Text("   ");
+			ImGui::SameLine();
+			DrawCodeAddress(state, viewState, ref);
+			ImGui::SameLine();
+			if(ImGui::Button("Remove"))
+			{
+				removeRef = ref;
+			}
+			ImGui::PopID();
+		}
+		if(removeRef.IsValid())
+			pLabelInfo->References.RemoveReference(removeRef);
+
+		if(ImGui::Button("Find References"))
+		{
+			std::vector<FAddressRef> results = state.FindAllMemoryPatterns((const uint8_t*)&item.AddressRef.Address,2,false,false);
+
+			for(const auto& result : results)
+			{
+				FDataInfo* pDataInfo = state.GetDataInfoForAddress(result);
+
+				if(pDataInfo->DataType == EDataType::InstructionOperand)	// handle instructions differently
+					pLabelInfo->References.RegisterAccess(pDataInfo->InstructionAddress);
+				else
+					pLabelInfo->References.RegisterAccess(result);
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Clear References"))
+		{
+			pLabelInfo->References.Reset();
+		}
+	}
+	
 }
 
 
@@ -1191,7 +1194,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 				}
 			}
 
-			FFunctionInfo* pFunctionInfo = state.Functions.GetFunctionBeforeAddress(item.AddressRef);
+			FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionBeforeAddress(item.AddressRef);
 			if (pFunctionInfo)
 			{
 				ImGui::Text("Function: %s", pFunctionInfo->Name.c_str()); 

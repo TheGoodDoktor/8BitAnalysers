@@ -12,6 +12,7 @@
 #include "Debug/DebugLog.h"
 #include <iostream>
 #include <json.hpp>
+#include "FunctionAnalyser.h"
 using json = nlohmann::json;
 
 void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc);
@@ -107,7 +108,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
     }
 
 	// Write out function info
-	for (const auto& functionIt : state.Functions.GetFunctions())
+	for (const auto& functionIt : state.pFunctions->GetFunctions())
 	{
 		const FFunctionInfo& function = functionIt.second;
 
@@ -124,6 +125,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		{
 			json paramJson;
 			paramJson["Name"] = param.Name;
+			paramJson["Type"] = param.TypeIntValue;
+			paramJson["LastValue"] = param.LastValue;
 			functionJson["Params"].push_back(paramJson);
 		}
 
@@ -343,7 +346,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	// Read in function info
 	if (jsonGameData.contains("FunctionInfo"))
 	{
-		state.Functions.Clear();
+		FFunctionInfoCollection& functions = *state.pFunctions;
+		functions.Clear();
 
 		for (const auto& functionJson : jsonGameData["FunctionInfo"])
 		{
@@ -362,6 +366,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 				{
 					FFunctionParam param;
 					param.Name = paramJson["Name"];
+					param.TypeIntValue = paramJson["Type"];
+					param.LastValue = paramJson["LastValue"];
 					function.Params.push_back(param);
 				}
 			}
@@ -389,7 +395,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			}
 
 			// Create function
-			state.Functions.AddFunction(function);
+			functions.AddFunction(function);
 		}
 	}
 

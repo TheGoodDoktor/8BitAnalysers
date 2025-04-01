@@ -541,3 +541,14 @@ private:
 };
 
 
+struct FCPUFunctionCall
+{
+	FAddressRef		FunctionAddr;
+	FAddressRef		CallAddr;
+	FAddressRef		ReturnAddr;
+
+	bool operator==(const FCPUFunctionCall& other) const
+	{
+		return FunctionAddr == other.FunctionAddr && CallAddr == other.CallAddr && ReturnAddr == other.ReturnAddr;
+	}
+};

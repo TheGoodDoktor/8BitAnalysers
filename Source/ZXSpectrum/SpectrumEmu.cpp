@@ -690,7 +690,7 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 
 	// This is where we add the viewers we want
 	AddViewer(new FOverviewViewer(this));	// TODO: put in base class?
-	AddViewer(new FFunctionViewer(this));
+	//AddViewer(new FFunctionViewer(this));
 	pCharacterMapViewer = new FCharacterMapViewer(this);
 	AddViewer(pCharacterMapViewer);
 	pCharacterMapViewer->SetGridSize(32,24);

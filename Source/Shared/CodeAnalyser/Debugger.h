@@ -67,17 +67,7 @@ struct FWatch : public FAddressRef
 	FWatch(int16_t bankId, uint16_t address) : FAddressRef(bankId, address) {}
 };
 
-struct FCPUFunctionCall
-{
-	FAddressRef		FunctionAddr;
-	FAddressRef		CallAddr;
-	FAddressRef		ReturnAddr;
 
-	bool operator==(const FCPUFunctionCall& other) const
-	{
-		return FunctionAddr == other.FunctionAddr && CallAddr == other.CallAddr && ReturnAddr == other.ReturnAddr;
-	}
-};
 
 /*struct FStackInfo
 {

@@ -25,6 +25,7 @@
 
 #include "Misc/EmuBase.h"
 #include <LuaScripting/LuaSys.h>
+#include "FunctionAnalyser.h"
 
 // memory bank code
 
@@ -912,7 +913,7 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 	if (state.bTraceFunctionExecution)
 	{
 		const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
-		FFunctionInfo* pFunctionInfo = state.Functions.GetFunctionBeforeAddress(pcAddrRef);
+		FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionBeforeAddress(pcAddrRef);
 		if (pFunctionInfo != nullptr)
 		{
 			pFunctionInfo->RegisterExecutionPoint(pcAddrRef);
@@ -932,10 +933,17 @@ void RegisterCall(FCodeAnalysisState& state, const FCPUFunctionCall& callInfo)
 {
 	if (state.bTraceFunctionExecution)
 	{
-		FFunctionInfo* pFunctionInfo = state.Functions.FindFunction(callInfo.CallAddr);
+		FFunctionInfo* pFunctionInfo = state.pFunctions->FindFunction(callInfo.CallAddr);
 		if(pFunctionInfo != nullptr)
 		{
 			pFunctionInfo->AddCallPoint(callInfo);
+
+			FFunctionInfo* pCalledFunctionInfo = state.pFunctions->FindFunction(callInfo.FunctionAddr);
+			if (pCalledFunctionInfo != nullptr)
+			{
+				pCalledFunctionInfo->OnCalled(state);
+			}
+
 		}
 	}
 }
@@ -944,7 +952,7 @@ void RegisterReturn(FCodeAnalysisState& state, FAddressRef returnAddress)
 {
 	if (state.bTraceFunctionExecution)
 	{
-		FFunctionInfo* pFunctionInfo = state.Functions.GetFunctionBeforeAddress(returnAddress);
+		FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionBeforeAddress(returnAddress);
 		if (pFunctionInfo != nullptr)
 		{
 			pFunctionInfo->AddExitPoint(returnAddress);
@@ -1219,7 +1227,7 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 						newFunction.EndAddress = addrRef;
 						newFunction.Name = pLabel->GetName();
 						newFunction.bROMFunction = bank.bMachineROM;
-						state.Functions.AddFunction(newFunction);
+						state.pFunctions->AddFunction(newFunction);
 					}
 				}
 
@@ -1250,6 +1258,7 @@ FCodeAnalysisState::FCodeAnalysisState()
 	}
 
     pDataTypes = new FDataTypes;
+	pFunctions = new FFunctionInfoCollection;
 }
 
 // Called each time a new game is loaded up
@@ -1334,7 +1343,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	IOAnalyser.Init(this);
 	StaticAnalysis.Init(this);
 
-	Functions.Clear();
+	pFunctions->Clear();
     
     pDataTypes->Reset();
 }
