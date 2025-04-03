@@ -920,12 +920,13 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 		}
 	}
 
+	state.ExecutionCounter++;
+
 	if (state.CPUInterface->CPUType == ECPUType::Z80)
 		return RegisterCodeExecutedZ80(state, pc, oldpc);
 	else if (state.CPUInterface->CPUType == ECPUType::M6502)
 		return RegisterCodeExecuted6502(state, pc, oldpc);
 
-	state.ExecutionCounter++;
 	return false;
 }
 

@@ -132,7 +132,7 @@ void DrawValue(FCodeAnalysisState& state, EFunctionParamType type, uint16_t valu
 		ImGui::Text("%04X", value);
 		break;
 	case EFunctionParamType::Address:
-		DrawAddressLabel(state, state.GetFocussedViewState(), FAddressRef(value));
+		DrawAddressLabel(state, state.GetFocussedViewState(), state.AddressRefFromPhysicalAddress(value));
 		break;
 	case EFunctionParamType::XPos:
 		ImGui::Text("%d", value);
