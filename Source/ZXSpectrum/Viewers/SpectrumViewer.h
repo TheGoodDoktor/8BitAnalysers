@@ -24,7 +24,7 @@ public:
 
 private:
 	// private methods
-	void	DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos);
+	void	DrawCoordinatePositions( const ImVec2& imguiPos, int xp, int yp);
 	void	DrawSelectedCharUI(const ImVec2& pos);
 	bool	OnHovered(const ImVec2& pos, FCodeAnalysisState& codeAnalysis, FCodeAnalysisViewState& viewState);
 	ImU32	GetFlashColour() const;

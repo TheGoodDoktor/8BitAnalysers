@@ -499,6 +499,9 @@ public:
 
 	FAddressRef				CopiedAddress;
 
+	int				XPosHighlight = -1;
+	int				YPosHighlight = -1;
+
 	int				KeyConfig[(int)EKey::Count] = { 0 };
 
 	std::vector< class FCommand *>	CommandStack;

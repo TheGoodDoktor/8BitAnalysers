@@ -11,42 +11,42 @@ void FFunctionInfo::OnCalled(FCodeAnalysisState& state)
 		{
 			const z80_t* pZ80 = (const z80_t*)state.GetCPUInterface()->GetCPUEmulator();
 
-			switch (param.Z80Type)
+			switch (param.Z80Source)
 			{
-			case EFunctionParamTypeZ80::RegA:
+			case EFunctionParamSourceZ80::RegA:
 				param.LastValue = pZ80->a;
 				break;
-			case EFunctionParamTypeZ80::RegB:
+			case EFunctionParamSourceZ80::RegB:
 				param.LastValue = pZ80->b;
 				break;
-			case EFunctionParamTypeZ80::RegC:
+			case EFunctionParamSourceZ80::RegC:
 				param.LastValue = pZ80->c;
 				break;
-			case EFunctionParamTypeZ80::RegD:
+			case EFunctionParamSourceZ80::RegD:
 				param.LastValue = pZ80->d;
 				break;
-			case EFunctionParamTypeZ80::RegE:
+			case EFunctionParamSourceZ80::RegE:
 				param.LastValue = pZ80->e;
 				break;
-			case EFunctionParamTypeZ80::RegH:
+			case EFunctionParamSourceZ80::RegH:
 				param.LastValue = pZ80->h;
 				break;
-			case EFunctionParamTypeZ80::RegL:
+			case EFunctionParamSourceZ80::RegL:
 				param.LastValue = pZ80->l;
 				break;
-			case EFunctionParamTypeZ80::RegBC:
+			case EFunctionParamSourceZ80::RegBC:
 				param.LastValue = pZ80->bc;
 				break;
-			case EFunctionParamTypeZ80::RegDE:
+			case EFunctionParamSourceZ80::RegDE:
 				param.LastValue = pZ80->de;
 				break;
-			case EFunctionParamTypeZ80::RegHL:
+			case EFunctionParamSourceZ80::RegHL:
 				param.LastValue = pZ80->hl;
 				break;
-			case EFunctionParamTypeZ80::RegIX:
+			case EFunctionParamSourceZ80::RegIX:
 				param.LastValue = pZ80->ix;
 				break;
-			case EFunctionParamTypeZ80::RegIY:
+			case EFunctionParamSourceZ80::RegIY:
 				param.LastValue = pZ80->iy;
 				break;
 			}
@@ -54,15 +54,15 @@ void FFunctionInfo::OnCalled(FCodeAnalysisState& state)
 		else if (state.GetCPUInterface()->CPUType == ECPUType::M6502)
 		{
 			const m6502_t* pM6502 = (const m6502_t*)state.GetCPUInterface()->GetCPUEmulator();
-			switch (param.M6502Type)
+			switch (param.M6502Source)
 			{
-			case EFuctionParamTypeM6502::RegA:
+			case EFuctionParamSourceM6502::RegA:
 				param.LastValue = pM6502->A;
 				break;
-			case EFuctionParamTypeM6502::RegX:
+			case EFuctionParamSourceM6502::RegX:
 				param.LastValue = pM6502->X;
 				break;
-			case EFuctionParamTypeM6502::RegY:
+			case EFuctionParamSourceM6502::RegY:
 				param.LastValue = pM6502->Y;
 				break;
 			}

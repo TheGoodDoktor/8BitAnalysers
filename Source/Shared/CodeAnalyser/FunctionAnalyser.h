@@ -11,7 +11,7 @@ class FCodeAnalysisState;
 
 // we use int type so it can work with ImGui::Combo
 
-enum class EFunctionParamTypeZ80 : int
+enum class EFunctionParamSourceZ80 : int
 {
 	RegA,
 	RegB,
@@ -27,11 +27,25 @@ enum class EFunctionParamTypeZ80 : int
 	RegIY,
 };
 
-enum class EFuctionParamTypeM6502 : int
+enum class EFuctionParamSourceM6502 : int
 {
 	RegA,
 	RegX,
 	RegY,
+};
+
+enum class EFunctionParamType : int
+{
+	Unknown = 0,
+	Number,
+	HexNumber,
+	Address,
+	XPos,
+	YPos,
+	XCharPos,
+	YCharPos,
+	XYPos,		// x/y pair
+	XYCharPos,	// x/y pair
 };
 
 // structure to hold function parameters
@@ -40,12 +54,13 @@ struct FFunctionParam
 	std::string 	Name;
 	// Union to cover z80 and m6502 + int value for loading/saving
 	union {
-		EFunctionParamTypeZ80	Z80Type;
-		EFuctionParamTypeM6502	M6502Type;
-		int						TypeIntValue = 0;
+		EFunctionParamSourceZ80		Z80Source;
+		EFuctionParamSourceM6502	M6502Source;
+		int							SourceIntValue = 0;
 	};
 
-	uint16_t	LastValue = 0;
+	EFunctionParamType		Type = EFunctionParamType::Unknown;
+	uint16_t				LastValue = 0;
 };
 
 // This contains information on a function in the code

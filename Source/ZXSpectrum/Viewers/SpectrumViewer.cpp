@@ -96,10 +96,39 @@ void FSpectrumViewer::Draw()
 		}
 	}
 
-	if (bShowCoordinates)
-		DrawCoordinatePositions(codeAnalysis, pos);
+	// draw coordinate highlights
+	{
+		int xp = -1, yp = -1;
 
-	
+		if (bShowCoordinates)
+		{
+			if (XCoordAddress.IsValid())
+			{
+				xp = codeAnalysis.ReadByte(XCoordAddress);
+				if (bInvertXCoord)
+					xp = 255 - xp;
+			}
+
+			if (YCoordAddress.IsValid())
+			{
+				yp = codeAnalysis.ReadByte(YCoordAddress);
+				if (bInvertYCoord)
+					yp = 191 - yp;
+			}
+		}
+
+		if (codeAnalysis.XPosHighlight != -1)
+			xp = codeAnalysis.XPosHighlight;
+
+		if (codeAnalysis.YPosHighlight != -1)
+			yp = codeAnalysis.YPosHighlight;
+
+		DrawCoordinatePositions(pos, xp, yp);
+
+		codeAnalysis.XPosHighlight = -1;
+		codeAnalysis.YPosHighlight = -1;
+	}
+
 	// draw hovered address
 	if (viewState.HighlightAddress.IsValid())
 	{
@@ -218,27 +247,29 @@ void FSpectrumViewer::Draw()
 	bWindowFocused = ImGui::IsWindowFocused();
 }
 
-void FSpectrumViewer::DrawCoordinatePositions(FCodeAnalysisState& codeAnalysis, const ImVec2& pos)
+void FSpectrumViewer::DrawCoordinatePositions(const ImVec2& pos, int xp, int yp)
 {
 	const FZXSpectrumConfig& config = *pSpectrumEmu->GetZXSpectrumGlobalConfig();
 	const float scale = (float)config.ImageScale;//ImGui_GetScaling();
 
 	// draw coordinate position
-	if (XCoordAddress.IsValid())
+	if (xp != -1)
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const uint8_t xVal = codeAnalysis.ReadByte(XCoordAddress);
-		const float xLinePos = (float)(bInvertXCoord ? 255 - xVal : xVal);
+		//const uint8_t xVal = codeAnalysis.ReadByte(XCoordAddress);
+		//const float xLinePos = (float)(bInvertXCoord ? 255 - xVal : xVal);
+		const float xLinePos = (float)(xp);
 		const ImVec2 lineStart(pos.x + (kBorderOffsetX + xLinePos) * scale, pos.y + kBorderOffsetY * scale);
 		const ImVec2 lineEnd(pos.x + (kBorderOffsetX + xLinePos) * scale, pos.y + (kBorderOffsetY + 192.0f) * scale);
 
 		dl->AddLine(lineStart, lineEnd, 0xffffffff);
 	}
-	if (YCoordAddress.IsValid())
+	if (yp != -1)
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		const uint8_t yVal = codeAnalysis.ReadByte(YCoordAddress);
-		const float yLinePos = (float)(bInvertYCoord ? 192 - yVal : yVal);
+		//const uint8_t yVal = codeAnalysis.ReadByte(YCoordAddress);
+		//const float yLinePos = (float)(bInvertYCoord ? 192 - yVal : yVal);
+		const float yLinePos = (float)(yp);
 		const ImVec2 lineStart(pos.x + kBorderOffsetX * scale, pos.y + (kBorderOffsetY + yLinePos) * scale);
 		const ImVec2 lineEnd(pos.x + (kBorderOffsetX + 256.0f) * scale, pos.y + (kBorderOffsetY + yLinePos) * scale);
 

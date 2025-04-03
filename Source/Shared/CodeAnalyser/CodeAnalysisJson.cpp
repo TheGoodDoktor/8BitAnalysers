@@ -112,6 +112,9 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 	{
 		const FFunctionInfo& function = functionIt.second;
 
+		if (function.bROMFunction != bExportMachineROM)	// skip machine ROM functions
+			continue;
+
 		json functionJson;
 		functionJson["StartAddress"] = function.StartAddress.Val;
 		functionJson["EndAddress"] = function.EndAddress.Val;
@@ -125,7 +128,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		{
 			json paramJson;
 			paramJson["Name"] = param.Name;
-			paramJson["Type"] = param.TypeIntValue;
+			paramJson["Source"] = param.SourceIntValue;
+			paramJson["Type"] = (int)param.Type;
 			paramJson["LastValue"] = param.LastValue;
 			functionJson["Params"].push_back(paramJson);
 		}
@@ -366,7 +370,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 				{
 					FFunctionParam param;
 					param.Name = paramJson["Name"];
-					param.TypeIntValue = paramJson["Type"];
+					param.SourceIntValue = paramJson.contains("Source") ? (int)paramJson["Source"] : 0;
+					param.Type = paramJson.contains("Type") ? (EFunctionParamType)paramJson["Type"] : EFunctionParamType::Unknown;
 					param.LastValue = paramJson["LastValue"];
 					function.Params.push_back(param);
 				}
