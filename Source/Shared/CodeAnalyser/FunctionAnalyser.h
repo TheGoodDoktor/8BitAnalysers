@@ -8,6 +8,7 @@
 #include "CodeAnalyserTypes.h"
 
 class FCodeAnalysisState;
+class FDisplayTypeBase;
 
 // we use int type so it can work with ImGui::Combo
 
@@ -51,6 +52,8 @@ enum class EFunctionParamType : int
 // structure to hold function parameters
 struct FFunctionParam
 {
+	FFunctionParam();
+
 	std::string 	Name;
 	// Union to cover z80 and m6502 + int value for loading/saving
 	union {
@@ -59,7 +62,8 @@ struct FFunctionParam
 		int							SourceIntValue = 0;
 	};
 
-	EFunctionParamType		Type = EFunctionParamType::Unknown;
+	//EFunctionParamType		Type = EFunctionParamType::Unknown;
+	const FDisplayTypeBase*	pDisplayType = nullptr;	// display type for this parameter
 	uint16_t				LastValue = 0;
 };
 
@@ -110,6 +114,7 @@ struct FFunctionInfo
 	}
 
 	void OnCalled(FCodeAnalysisState& state);
+	void OnReturned(FCodeAnalysisState& state);
 };
 
 // This class holds a collection of functions

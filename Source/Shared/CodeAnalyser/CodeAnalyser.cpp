@@ -939,14 +939,14 @@ void RegisterCall(FCodeAnalysisState& state, const FCPUFunctionCall& callInfo)
 		{
 			pFunctionInfo->AddCallPoint(callInfo);
 
-			FFunctionInfo* pCalledFunctionInfo = state.pFunctions->FindFunction(callInfo.FunctionAddr);
-			if (pCalledFunctionInfo != nullptr)
-			{
-				pCalledFunctionInfo->OnCalled(state);
-			}
+			
 
 		}
 	}
+
+	FFunctionInfo* pCalledFunctionInfo = state.pFunctions->FindFunction(callInfo.FunctionAddr);
+	if (pCalledFunctionInfo != nullptr)
+		pCalledFunctionInfo->OnCalled(state);
 }
 
 void RegisterReturn(FCodeAnalysisState& state, FAddressRef returnAddress)
@@ -959,6 +959,10 @@ void RegisterReturn(FCodeAnalysisState& state, FAddressRef returnAddress)
 			pFunctionInfo->AddExitPoint(returnAddress);
 		}
 	}
+
+	FFunctionInfo* pReturnedFunctionInfo = state.pFunctions->GetFunctionBeforeAddress(returnAddress);
+	if (pReturnedFunctionInfo != nullptr)
+		pReturnedFunctionInfo->OnReturned(state);
 }
 
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)

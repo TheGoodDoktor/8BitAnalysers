@@ -6,6 +6,8 @@
 #include "../FunctionAnalyser.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include "DisplayTypes.h"
+
 bool FFunctionViewer::Init()
 {
 	return true;
@@ -90,6 +92,8 @@ static const char* g_ParamSourceM6502[] =
 	"RegX",
 	"RegY",
 };
+
+
 
 // type string for EFunctionParamType
 static const char* g_ParamSourceType[] =
@@ -244,12 +248,12 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 			// Type
 			ImGui::TableSetColumnIndex(3);
 			ImGui::SetNextItemWidth(-1);
-			DrawParameterTypeComboBox(param.Type);
+			DrawDisplayTypeComboBox(&param.pDisplayType);
 
 			// Last Value
 			ImGui::TableSetColumnIndex(4);
-			DrawValue(state, param.Type, param.LastValue);
-			//ImGui::Text("%s", NumStr(param.LastValue));
+			if (param.pDisplayType != nullptr)
+				param.pDisplayType->DrawValue(state, param.LastValue);
 
 			// Delete
 			ImGui::TableSetColumnIndex(5);

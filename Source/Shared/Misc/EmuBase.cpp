@@ -6,6 +6,7 @@
 #include <CodeAnalyser/AssemblerExport.h>
 #include <CodeAnalyser/UI/GraphicsViewer.h>
 #include <CodeAnalyser/UI/CharacterMapViewer.h>
+#include <CodeAnalyser/UI/DisplayTypes.h>
 #include <CodeAnalyser/DataTypes.h>
 #include "GameConfig.h"
 
@@ -71,6 +72,7 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 	ImGuiIO& io = ImGui::GetIO();
 	io.IniFilename = iniFile.c_str();
 	
+	RegisterBasicDisplayTypes();
     AddViewer(new FDataTypesViewer(this));
 	return true;
 }

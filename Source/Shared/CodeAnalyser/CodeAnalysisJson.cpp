@@ -2,6 +2,7 @@
 #include "CodeAnalyser.h"
 #include "CodeAnalysisPage.h"
 #include "DataTypes.h"
+#include "UI/DisplayTypes.h"
 
 #include <stdint.h>
 #include <iomanip>
@@ -13,6 +14,7 @@
 #include <iostream>
 #include <json.hpp>
 #include "FunctionAnalyser.h"
+
 using json = nlohmann::json;
 
 void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc);
@@ -129,7 +131,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 			json paramJson;
 			paramJson["Name"] = param.Name;
 			paramJson["Source"] = param.SourceIntValue;
-			paramJson["Type"] = (int)param.Type;
+			if (param.pDisplayType != nullptr)
+				paramJson["DisplayType"] = param.pDisplayType->GetTypeName();
 			paramJson["LastValue"] = param.LastValue;
 			functionJson["Params"].push_back(paramJson);
 		}
@@ -371,7 +374,9 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 					FFunctionParam param;
 					param.Name = paramJson["Name"];
 					param.SourceIntValue = paramJson.contains("Source") ? (int)paramJson["Source"] : 0;
-					param.Type = paramJson.contains("Type") ? (EFunctionParamType)paramJson["Type"] : EFunctionParamType::Unknown;
+					const std::string displayTypeStr = paramJson.contains("DisplayType") ? (std::string)paramJson["DisplayType"] : "Unknown";
+					param.pDisplayType = GetDisplayType(displayTypeStr.c_str());
+					//param.Type = paramJson.contains("Type") ? (EFunctionParamType)paramJson["Type"] : EFunctionParamType::Unknown;
 					param.LastValue = paramJson["LastValue"];
 					function.Params.push_back(param);
 				}

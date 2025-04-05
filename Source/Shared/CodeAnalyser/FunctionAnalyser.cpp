@@ -1,6 +1,14 @@
 #include "FunctionAnalyser.h"
 
 #include "CodeAnalyser.h"
+#include "UI/DisplayTypes.h"
+
+FFunctionParam::FFunctionParam()
+{
+	Name = "Param";
+	pDisplayType = GetDisplayType("Unknown");
+	LastValue = 0;
+}
 
 void FFunctionInfo::OnCalled(FCodeAnalysisState& state)
 {
@@ -69,4 +77,9 @@ void FFunctionInfo::OnCalled(FCodeAnalysisState& state)
 		}
 	}
 	
+}
+
+void FFunctionInfo::OnReturned(FCodeAnalysisState& state)
+{
+
 }
