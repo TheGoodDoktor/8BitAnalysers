@@ -133,8 +133,20 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 			paramJson["Source"] = param.SourceIntValue;
 			if (param.pDisplayType != nullptr)
 				paramJson["DisplayType"] = param.pDisplayType->GetTypeName();
-			paramJson["LastValue"] = param.LastValue;
+			//paramJson["LastValue"] = param.LastValue;
 			functionJson["Params"].push_back(paramJson);
+		}
+
+		// output return values
+		for (const auto& returnValue : function.ReturnValues)
+		{
+			json returnValueJson;
+			returnValueJson["Name"] = returnValue.Name;
+			returnValueJson["Source"] = returnValue.SourceIntValue;
+			if (returnValue.pDisplayType != nullptr)
+				returnValueJson["DisplayType"] = returnValue.pDisplayType->GetTypeName();
+			//returnValueJson["LastValue"] = returnValue.LastValue;
+			functionJson["ReturnValues"].push_back(returnValueJson);
 		}
 
 		// output call points
@@ -376,9 +388,23 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 					param.SourceIntValue = paramJson.contains("Source") ? (int)paramJson["Source"] : 0;
 					const std::string displayTypeStr = paramJson.contains("DisplayType") ? (std::string)paramJson["DisplayType"] : "Unknown";
 					param.pDisplayType = GetDisplayType(displayTypeStr.c_str());
-					//param.Type = paramJson.contains("Type") ? (EFunctionParamType)paramJson["Type"] : EFunctionParamType::Unknown;
-					param.LastValue = paramJson["LastValue"];
+					//param.LastValue = paramJson["LastValue"];
 					function.Params.push_back(param);
+				}
+			}
+
+			// read return values
+			if (functionJson.contains("ReturnValues"))
+			{
+				for (const auto& returnValueJson : functionJson["ReturnValues"])
+				{
+					FFunctionParam returnValue;
+					returnValue.Name = returnValueJson["Name"];
+					returnValue.SourceIntValue = returnValueJson.contains("Source") ? (int)returnValueJson["Source"] : 0;
+					const std::string displayTypeStr = returnValueJson.contains("DisplayType") ? (std::string)returnValueJson["DisplayType"] : "Unknown";
+					returnValue.pDisplayType = GetDisplayType(displayTypeStr.c_str());
+					//returnValue.LastValue = returnValueJson["LastValue"];
+					function.ReturnValues.push_back(returnValue);
 				}
 			}
 

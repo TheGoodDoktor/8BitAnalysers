@@ -54,6 +54,19 @@ struct FFunctionParam
 {
 	FFunctionParam();
 
+	void StoreValue(uint16_t value)
+	{
+		History[HistoryIndex % kMaxHistory] = value;
+		HistoryIndex++;
+	}
+
+	uint16_t GetLastValue(int offset) const
+	{
+		if (HistoryIndex == 0)
+			return 0;
+		return History[(HistoryIndex - offset - 1) % kMaxHistory];
+	}
+
 	std::string 	Name;
 	// Union to cover z80 and m6502 + int value for loading/saving
 	union {
@@ -62,9 +75,12 @@ struct FFunctionParam
 		int							SourceIntValue = 0;
 	};
 
-	//EFunctionParamType		Type = EFunctionParamType::Unknown;
 	const FDisplayTypeBase*	pDisplayType = nullptr;	// display type for this parameter
-	uint16_t				LastValue = 0;
+	//uint16_t				LastValue = 0;
+
+	uint16_t 				HistoryIndex = 0;	// index of last value in history
+	static const int		kMaxHistory = 16;	// max history size
+	uint16_t				History[kMaxHistory];	// list of values for this parameter
 };
 
 // This contains information on a function in the code
@@ -74,6 +90,7 @@ struct FFunctionInfo
 	FAddressRef		StartAddress;
 	FAddressRef		EndAddress;
 	std::vector<FFunctionParam>	Params;
+	std::vector<FFunctionParam>	ReturnValues;
 	std::vector<FCPUFunctionCall>	CallPoints;	// points in the function where a call is made
 	std::vector<FAddressRef>	ExitPoints;	// points in the function where a return is made
 	std::string		Name;

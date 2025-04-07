@@ -3,11 +3,13 @@
 #include <imgui.h>
 #include "CodeAnalyserUI.h"
 #include "ImGuiSupport/ImGuiScaling.h"
+#include "../CodeAnalyser.h"
 #include "../FunctionAnalyser.h"
 #include "misc/cpp/imgui_stdlib.h"
 
 #include "DisplayTypes.h"
 
+#if 0
 bool FFunctionViewer::Init()
 {
 	return true;
@@ -67,7 +69,7 @@ void FFunctionViewer::DrawUI()
 	ImGui::Checkbox("Visited Functions Only", &bOnlyShowVisitedFunctions);
 	DrawFunctionList();
 }
-
+#endif
 // type string for EFunctionParamTypeZ80
 static const char* g_ParamSourceZ80[] = 
 {
@@ -120,113 +122,32 @@ void DrawParameterSourceComboBox_M6502(EFuctionParamSourceM6502& val)
 	ImGui::Combo("##Source", (int*)&val, g_ParamSourceM6502, IM_ARRAYSIZE(g_ParamSourceM6502));
 }
 
-void DrawParameterTypeComboBox(EFunctionParamType& val)
+void DrawFunctionParamTable(FCodeAnalysisState& state, const char *pTableName, std::vector<FFunctionParam>& params, int historyOffset)
 {
-	ImGui::Combo("##Type", (int*)&val, g_ParamSourceType, IM_ARRAYSIZE(g_ParamSourceType));
-}
-
-void DrawValue(FCodeAnalysisState& state, EFunctionParamType type, uint16_t value)
-{
-	switch (type)
-	{
-	case EFunctionParamType::Number:
-		ImGui::Text("%d", value);
-		break;
-	case EFunctionParamType::HexNumber:
-		ImGui::Text("%04X", value);
-		break;
-	case EFunctionParamType::Address:
-		DrawAddressLabel(state, state.GetFocussedViewState(), state.AddressRefFromPhysicalAddress(value));
-		break;
-	case EFunctionParamType::XPos:
-		ImGui::Text("%d", value);
-		if(ImGui::IsItemHovered())
-			state.XPosHighlight = value;
-		break;
-	case EFunctionParamType::YPos:
-		ImGui::Text("%d", value);
-		if (ImGui::IsItemHovered())
-			state.YPosHighlight = value;
-		break;
-	case EFunctionParamType::XCharPos:
-		ImGui::Text("%d", value);
-		if (ImGui::IsItemHovered())
-			state.XPosHighlight = value * 8;
-		break;
-	case EFunctionParamType::YCharPos:
-		ImGui::Text("%d", value);
-		if (ImGui::IsItemHovered())
-			state.YPosHighlight = value * 8;
-		break;
-	case EFunctionParamType::XYPos:
-		ImGui::Text("%d,%d", value & 0xFF, (value >> 8) & 0xFF);
-		if (ImGui::IsItemHovered())
-		{
-			state.XPosHighlight = value & 0xFF;
-			state.YPosHighlight = (value >> 8) & 0xFF;
-		}
-		break;
-	case EFunctionParamType::XYCharPos:
-		ImGui::Text("%d,%d", value & 0xFF, (value >> 8) & 0xFF);
-		if (ImGui::IsItemHovered())
-		{
-			state.XPosHighlight = (value & 0xFF) * 8;
-			state.YPosHighlight = ((value >> 8) & 0xFF) * 8;
-		}
-		break;
-	default:
-		ImGui::Text("%s",NumStr(value));
-		break;
-	}
-}
-
-void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo)
-{
-	//FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-	FLabelInfo* pLabelInfo = state.GetLabelForAddress(pFunctionInfo->StartAddress);
-	const float glyphWidth = ImGui_GetFontCharWidth();
-	//ImGui::Text("%s", pFunctionInfo->Name.c_str());
-	ImGui::Text("Address range:");
-	DrawAddressLabel(state,viewState,pFunctionInfo->StartAddress);
-	ImGui::SameLine();
-	ImGui::Text("-> ");
-	DrawAddressLabel(state, viewState, pFunctionInfo->EndAddress);
-	ImGui::Checkbox("Manual Edit", &pFunctionInfo->bManualEdit);
-	if (pFunctionInfo->bManualEdit)
-	{
-		ImGui::SameLine();
-
-		const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
-		const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
-		ImGui::SetNextItemWidth(glyphWidth * 10.0f);
-		ImGui::InputScalar("End Address", ImGuiDataType_U16, &pFunctionInfo->EndAddress.Address, nullptr, nullptr, format, inputFlags);
-	}
-
-	// List Parameters - name, type, last value
-	// maybe table would be better?
-	ImGui::Text("Parameters:");
 	int deleteIndex = -1;
 
+	ImGui::PushID(pTableName);
+
+	ImGui::Text("%s:", pTableName);
 	static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit;
-	if (ImGui::BeginTable("Parameters", 6, flags))
+	if (ImGui::BeginTable(pTableName, 6, flags))
 	{
 		const float charWidth = ImGui_GetFontCharWidth();
 		ImGui::TableSetupColumn("No", ImGuiTableColumnFlags_WidthFixed, 4 * charWidth);
 		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 20 * charWidth);
 		ImGui::TableSetupColumn("Source", ImGuiTableColumnFlags_WidthFixed, 10 * charWidth);
 		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 10 * charWidth);
-		ImGui::TableSetupColumn("Last Value", ImGuiTableColumnFlags_WidthFixed, 10 * charWidth);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 10 * charWidth);
 		ImGui::TableHeadersRow();
-		for (int paramNo = 0; paramNo < pFunctionInfo->Params.size(); paramNo++)
+		for (int paramNo = 0; paramNo < params.size(); paramNo++)
 		{
-			FFunctionParam& param = pFunctionInfo->Params[paramNo];
+			FFunctionParam& param = params[paramNo];
 			ImGui::PushID(paramNo);
 			ImGui::TableNextRow();
 
 			// No
 			ImGui::TableSetColumnIndex(0);
-			ImGui::Text("%d",paramNo);
+			ImGui::Text("%d", paramNo);
 			// Name
 			ImGui::TableSetColumnIndex(1);
 			//ImGui::SetNextItemWidth(glyphWidth * 20.0f);
@@ -253,7 +174,7 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 			// Last Value
 			ImGui::TableSetColumnIndex(4);
 			if (param.pDisplayType != nullptr)
-				param.pDisplayType->DrawValue(state, param.LastValue);
+				param.pDisplayType->DrawValue(state, param.GetLastValue(historyOffset));
 
 			// Delete
 			ImGui::TableSetColumnIndex(5);
@@ -269,16 +190,56 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 	// Delete selected parameter
 	if (deleteIndex != -1)
 	{
-		pFunctionInfo->Params.erase(pFunctionInfo->Params.begin() + deleteIndex);
+		params.erase(params.begin() + deleteIndex);
 	}
 
 	// Add Parameter
-	if (ImGui::Button("Add Parameter"))
+	if (ImGui::Button("Add"))
 	{
 		FFunctionParam newParam;
 		newParam.Name = "NewParam";
-		pFunctionInfo->Params.push_back(newParam);
+		params.push_back(newParam);
 	}
+
+	ImGui::PopID();
+}
+
+void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo)
+{
+	//FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	FLabelInfo* pLabelInfo = state.GetLabelForAddress(pFunctionInfo->StartAddress);
+	const float glyphWidth = ImGui_GetFontCharWidth();
+	//ImGui::Text("%s", pFunctionInfo->Name.c_str());
+	ImGui::Text("Address range:");
+	DrawAddressLabel(state,viewState,pFunctionInfo->StartAddress);
+	ImGui::SameLine();
+	ImGui::Text("-> ");
+	DrawAddressLabel(state, viewState, pFunctionInfo->EndAddress);
+	ImGui::Checkbox("Manual Edit", &pFunctionInfo->bManualEdit);
+	if (pFunctionInfo->bManualEdit)
+	{
+		ImGui::SameLine();
+
+		const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
+		const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
+		ImGui::SetNextItemWidth(glyphWidth * 10.0f);
+		ImGui::InputScalar("End Address", ImGuiDataType_U16, &pFunctionInfo->EndAddress.Address, nullptr, nullptr, format, inputFlags);
+	}
+
+	// Temp hack for history offset, should really be somewhere global
+	static int historyOffset = 0;
+	static const FFunctionInfo* pLastFunctionInfo = nullptr;
+	if (pLastFunctionInfo != pFunctionInfo)
+	{
+		historyOffset = 0;
+		pLastFunctionInfo = pFunctionInfo;
+	}
+	
+	DrawFunctionParamTable(state,"Parameters", pFunctionInfo->Params, historyOffset);
+	DrawFunctionParamTable(state, "Return Values", pFunctionInfo->ReturnValues, historyOffset);
+
+	ImGui::SliderInt("History Offset", &historyOffset, 0, FFunctionParam::kMaxHistory - 1);
 
 	if(pLabelInfo != nullptr)
 	{

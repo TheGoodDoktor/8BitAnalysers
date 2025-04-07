@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Misc/EmuBase.h>
-
 struct FFunctionInfo;
+class FCodeAnalysisState;
 
+#if 0
 class FFunctionViewer : public FViewerBase
 {
 public:
@@ -19,6 +19,6 @@ private:
 	FAddressRef		SelectedFunction;
 	bool			bOnlyShowVisitedFunctions = false;
 };
-
+#endif
 void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo);
 
