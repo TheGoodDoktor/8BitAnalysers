@@ -1469,6 +1469,25 @@ void FCodeAnalysisState::FixupAddressRefs()
 #endif
 }
 
+void FCodeAnalysisState::UpdateFocussedViewState()
+{
+	if (!ViewState[FocussedWindowId].Enabled)
+	{
+		for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+		{
+			if (FocussedWindowId != i)
+			{
+				if (ViewState[i].Enabled)
+				{
+					FocussedWindowId = i;
+					return;
+				}
+			}
+		}
+	}
+}
+
+
 void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
 {
 	DoCommand(state, new FSetItemCodeCommand(address));

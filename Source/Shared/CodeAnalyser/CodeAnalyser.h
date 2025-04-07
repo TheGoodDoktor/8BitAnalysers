@@ -473,6 +473,7 @@ public:
 	//bool	RemoveLabelName(const std::string& labelName);	// for changing label names
 
 	void FixupAddressRefs();
+	void UpdateFocussedViewState();
 
 public:
 
