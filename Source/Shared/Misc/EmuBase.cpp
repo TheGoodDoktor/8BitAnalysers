@@ -17,6 +17,28 @@
 #include <CodeAnalyser/UI/UIColours.h>
 #include "CodeAnalyser/CodeAnalysisDot.h"
 
+// Separate viewer for Globals - put in its own file
+class FGlobalsViewer : public FViewerBase
+{
+public:
+	FGlobalsViewer(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Globals"; }
+	bool	Init(void) override
+	{
+		return true;
+	}
+	void	Shutdown(void) override
+	{
+
+	}
+
+	void	DrawUI() override
+	{
+		FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+		DrawGlobals(state, state.GetFocussedViewState());
+	}
+};
+
+
 void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 {
 	std::vector<std::string> argList;
@@ -74,6 +96,7 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 	
 	RegisterBasicDisplayTypes();
     AddViewer(new FDataTypesViewer(this));
+	AddViewer(new FGlobalsViewer(this));
 	return true;
 }
 

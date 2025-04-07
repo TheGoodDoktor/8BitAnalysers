@@ -1870,11 +1870,11 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 				{
 					viewState.DataFormattingTabOpen = false;
 				}
-				if (ImGui::BeginTabItem("Globals"))
+				/*if (ImGui::BeginTabItem("Globals"))
 				{
 					DrawGlobals(state, viewState);
 					ImGui::EndTabItem();
-				}
+				}*/
 				if (ImGui::BeginTabItem("Find"))
 				{
 					DrawFindTab(state, viewState);
