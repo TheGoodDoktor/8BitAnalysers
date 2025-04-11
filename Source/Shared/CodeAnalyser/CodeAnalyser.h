@@ -179,18 +179,7 @@ struct FCodeAnalysisViewState
 	const FLabelInfo*		pLabelScope = nullptr;
 	FItem*		pKeyboardFocusItem = nullptr; // item to set keyboard focus on
 
-	// for global Filters
-	bool						ShowROMLabels = false;
-	std::string					FilterText;
-	EDataTypeFilter						DataTypeFilter = EDataTypeFilter::All;
-	FLabelListFilter			GlobalDataItemsFilter;
-	std::vector<FCodeAnalysisItem>	FilteredGlobalDataItems;
-	bool										bRebuildFilteredGlobalDataItems = true;
-	EDataSortMode				DataSortMode = EDataSortMode::Location;
-	FLabelListFilter				GlobalFunctionsFilter;
-	std::vector<FCodeAnalysisItem>	FilteredGlobalFunctions;
-	bool										bRebuildFilteredGlobalFunctions = true;
-	EFunctionSortMode				FunctionSortMode = EFunctionSortMode::Location;
+	
 	std::vector< FAddressCoord>		AddressCoords;
 	int								JumpLineIndent;
 

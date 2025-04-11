@@ -7,6 +7,7 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "CodeAnalyser/UI/ComboBoxes.h"
+#include "Misc/EmuBase.h"
 
 #include <Util/Misc.h>
 

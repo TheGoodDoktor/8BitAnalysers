@@ -1,8 +1,10 @@
 #pragma once
 
-#include "Misc/EmuBase.h"
+#include "ViewerBase.h"
 
 class FSpectrumEmu;
+class FCodeAnalysisState;
+class FGraphicsView;
 
 struct FOverviewStats
 {

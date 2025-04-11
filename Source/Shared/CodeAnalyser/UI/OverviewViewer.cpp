@@ -7,6 +7,8 @@
 #include "ImGuiSupport/ImGuiScaling.h"
 #include "UIColours.h"
 
+#include "Misc/EmuBase.h"
+
 static const int kMemoryViewImageWidth = 128;
 static const int kMemoryViewImageHeight = 512;
 

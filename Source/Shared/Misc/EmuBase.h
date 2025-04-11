@@ -7,6 +7,8 @@ class FEmuBase;
 class FGraphicsViewer;
 class FCharacterMapViewer;
 class FFunctionViewer;
+class FViewerBase;
+class FGlobalsViewer;
 
 struct FProjectConfig;
 struct FEmulatorFile;
@@ -21,20 +23,6 @@ struct FEmulatorLaunchConfig
 	bool		bMultiWindow = true;
 };
 
-class FViewerBase
-{
-public:
-	FViewerBase(FEmuBase* pEmu) : pEmulator(pEmu) {}
-	virtual bool	Init() = 0;
-	virtual void	Shutdown() = 0;
-	virtual void	DrawUI() = 0;
-	const char* GetName() const { return Name.c_str(); }
-protected:
-	FEmuBase*		pEmulator = nullptr;
-	std::string		Name;
-public:
-	bool		bOpen = true;
-};
 
 // Base class for emulators
 class FEmuBase : public ICPUInterface
@@ -91,6 +79,8 @@ public:
     void			SetLastError(const char* fmt, ...);
 	void			DisplayErrorMessage(const char *fmt, ...);
 
+	FGlobalsViewer* GetGlobalsViewer() { return pGlobalsViewer; }
+
 	// Games List
 	bool	AddGamesList(const char* pFileType, const char* pRootDir);
 	
@@ -127,6 +117,7 @@ protected:
 	FGraphicsViewer*	pGraphicsViewer = nullptr;
 	FCharacterMapViewer* pCharacterMapViewer = nullptr;
 	FFunctionViewer*	pFunctionViewer = nullptr;
+	FGlobalsViewer*		pGlobalsViewer = nullptr;
 
 	// Highligthing
 	int					HighlightXPos = -1;

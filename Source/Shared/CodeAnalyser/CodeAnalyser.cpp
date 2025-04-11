@@ -26,6 +26,7 @@
 #include "Misc/EmuBase.h"
 #include <LuaScripting/LuaSys.h>
 #include "FunctionAnalyser.h"
+#include "UI/GlobalsViewer.h"
 
 // memory bank code
 
@@ -1242,11 +1243,9 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 		}
 	}
 
-	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-	{
-		state.ViewState[i].bRebuildFilteredGlobalDataItems = true;
-		state.ViewState[i].bRebuildFilteredGlobalFunctions = true;
-	}
+	// rebuild viewers lists
+	FEmuBase* pEmu = state.GetEmulator();
+	pEmu->GetGlobalsViewer()->ToggleRebuild();
 }
 
 FCodeAnalysisState::FCodeAnalysisState()

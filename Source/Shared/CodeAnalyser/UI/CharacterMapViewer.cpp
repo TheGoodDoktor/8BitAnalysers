@@ -2,7 +2,7 @@
 #include "../CodeAnalyser.h"
 #include "../DataTypes.h"
 #include "MemoryAccessGrid.h"
-
+#include "Misc/EmuBase.h"
 #include <imgui.h>
 #include "misc/cpp/imgui_stdlib.h"
 

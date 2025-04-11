@@ -5,6 +5,7 @@
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "CodeAnalyser/UI/UIColours.h"
 #include "CodeAnalyser/UI/ComboBoxes.h"
+#include "Misc/EmuBase.h"
 
 #include <json.hpp>
 using json = nlohmann::json;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CodeAnalyserTypes.h"
-#include "Misc/EmuBase.h"
+#include "UI/ViewerBase.h"
 #include <json_fwd.hpp>
 
 struct FDataType

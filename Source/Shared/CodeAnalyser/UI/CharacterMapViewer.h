@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../Util/GraphicsView.h"
-#include "Misc/EmuBase.h"
+#include "Util/GraphicsView.h"
+#include "ViewerBase.h"
 
 class FCharacterMapGrid;
 struct FCodeAnalysisViewState;

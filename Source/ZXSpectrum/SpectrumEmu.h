@@ -36,7 +36,6 @@
 //#include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/IOAnalyser.h"
-#include "Viewers/ViewerBase.h"
 #include "Viewers/ZXGraphicsViewer.h"
 #include "Viewers/SpectrumViewer.h"
 #include "Viewers/FrameTraceViewer.h"

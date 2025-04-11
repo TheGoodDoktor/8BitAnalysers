@@ -4,7 +4,8 @@
 #include <map>
 #include <string>
 #include <CodeAnalyser/CodeAnalyserTypes.h>
-#include <Misc/EmuBase.h>
+//#include <Misc/EmuBase.h>
+#include "ViewerBase.h"
 
 class FGraphicsView;
 class FCodeAnalysisState;
