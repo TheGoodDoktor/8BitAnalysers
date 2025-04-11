@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Misc/EmuBase.h"
+#include "CodeAnalyser/UI/ViewerBase.h"
 
 class FCPCEmu;
+class FEmuBase;
 
 class FCrtcViewer : public FViewerBase
 {
