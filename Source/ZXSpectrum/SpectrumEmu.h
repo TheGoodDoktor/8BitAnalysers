@@ -14,26 +14,10 @@
 #include "chips/clk.h"
 #include "systems/zx.h"
 #include "chips/mem.h"
-/*
-#include "ui/ui_util.h"
-#include "ui/ui_chip.h"
-#include "ui/ui_z80.h"
-#include "ui/ui_ay38910.h"
-#include "ui/ui_audio.h"
-#include "ui/ui_kbd.h"
-#include "ui/ui_dasm.h"
-#include "ui/ui_dbg.h"
-#include "ui/ui_memedit.h"
-#include "ui/ui_memmap.h"
-#include "ui/ui_snapshot.h"
-#include "ui/ui_zx.h"
-*/
-//#include <map>
+
 #include <string>
 #include "Viewers/SpriteViewer.h"
 #include "MemoryHandlers.h"
-//#include "Disassembler.h"
-//#include "FunctionHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/IOAnalyser.h"
 #include "Viewers/ZXGraphicsViewer.h"
@@ -120,9 +104,6 @@ public:
 	void	ActionMenuAdditions(void) override;
 	void	WindowsMenuAdditions(void)  override;
 
-
-	//void	DrawExportAsmModalPopup();
-	//void	DrawReplaceGameModalPopup();
 	void	DrawCheatsUI();
 	void	AppFocusCallback(int focused) override;
 
@@ -131,7 +112,6 @@ public:
 
 	void	DrawMemoryTools();
 	void	DrawEmulatorUI() override;
-	//bool	DrawDockingView();
 
 	// disable copy & assign because this class is big!
 	FSpectrumEmu(const FSpectrumEmu&) = delete;
@@ -181,19 +161,11 @@ public:
 
 	float			ExecSpeedScale = 1.0f;
 
-	// Chips UI
-	//ui_zx_t			UIZX;
-
 	FGame *			pActiveGame = nullptr;
-
-	//FGamesList		GamesList;
-	//FGamesList		RZXGamesList;
 
 	//Viewers
 	FSpectrumViewer			SpectrumViewer;
 	FFrameTraceViewer		FrameTraceViewer;
-	//FZXGraphicsViewer		GraphicsViewer;
-	//FCodeAnalysisState		CodeAnalysis;
 
 	// IO Devices
 	FSpectrumKeyboard	Keyboard;
@@ -232,14 +204,7 @@ public:
 	int				RZXFetchesRemaining = 0;
 
 private:
-	//std::vector<FViewerBase*>	Viewers;
 
-	//bool	bReplaceGamePopup = false;
-	//bool	bExportAsm = false;
-
-	//int		ReplaceGameSnapshotIndex = 0;
-
-	//bool	bShowDebugLog = false;
 	bool	bInitialised = false;
 };
 
