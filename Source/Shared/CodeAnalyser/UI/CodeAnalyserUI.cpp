@@ -167,6 +167,7 @@ void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		if (index != -1)
 		{
 			ImGui::BeginTooltip();
+			DrawAddressLabel(state,viewState,addr);
 			const int startIndex = std::max(index - (noLines / 2), 0);
 			for (int line = 0; line < noLines; line++)
 			{
