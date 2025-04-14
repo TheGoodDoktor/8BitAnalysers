@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ViewerBase.h"
+#include <cstdint>
 
 class FSpectrumEmu;
 class FCodeAnalysisState;
