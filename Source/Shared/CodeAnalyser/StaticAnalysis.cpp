@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include "CodeAnalyser.h"
 #include "UI/CodeAnalyserUI.h"
+#include "Misc/EmuBase.h"
 
 // check for multiplies using adds
 class FMultByAddCheck : public FStaticAnalysisCheck
@@ -44,6 +45,41 @@ private:
 	int				AddRunLength = 0;
 };
 
+// check for multiple function calls
+class FFunctionCallCheck : public FStaticAnalysisCheck
+{
+public:
+	void Reset() override
+	{
+		Start = FAddressRef();
+		CallCount = 0;
+	}
+	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override
+	{
+		const EInstructionType instType = GetInstructionType(state, addrRef);
+		if (instType == EInstructionType::FunctionCall)
+		{
+			if (CallCount == 0)
+				Start = addrRef;
+			CallCount++;
+		}
+		else
+		{
+			if (CallCount >= kCallCountThreshold)
+			{
+				CallCount = 0;
+				return new FStaticAnalysisItem(Start, "Multiple Calls");
+			}
+			CallCount = 0;
+		}
+		return nullptr;
+	}
+private:
+	const int		kCallCountThreshold = 4;
+	FAddressRef		Start;
+	int				CallCount = 0;
+};
+
 // generic checks for simple Items
 class FSimpleChecks : public FStaticAnalysisCheck
 {
@@ -78,19 +114,35 @@ public:
 };
 
 
-bool FStaticAnalyser::Init(FCodeAnalysisState* pState)
+bool FStaticAnalyser::Init(void)
 {
-	pCodeAnalysis = pState;
-
 	for (auto check : Checks)
 		delete check;
 	Checks.clear();
 	Checks.push_back(new FMultByAddCheck);
+	Checks.push_back(new FFunctionCallCheck);
 	Checks.push_back(new FSimpleChecks);
 	return true;
 }
 
-void FStaticAnalyser::Reset()
+void FStaticAnalyser::Shutdown(void)
+{
+	// delete checks
+	for (auto check : Checks)
+		delete check;
+	Checks.clear();
+	// delete items
+	for (auto item : Items)
+		delete item;
+	Items.clear();
+}
+
+void FStaticAnalyser::ResetForGame(void)
+{
+	ResetAnalysis();
+}
+
+void FStaticAnalyser::ResetAnalysis()
 {
 	// reset item list
 	for (auto item : Items)
@@ -110,10 +162,10 @@ void FStaticAnalyser::Reset()
 
 bool FStaticAnalyser::RunAnalysis(void)
 {
-	FCodeAnalysisState& state = *pCodeAnalysis;
-	const auto& banks = pCodeAnalysis->GetBanks();
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	const auto& banks = state.GetBanks();
 
-	Reset();
+	ResetAnalysis();
 
 	// iterate through all registered banks
 	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
@@ -131,7 +183,7 @@ bool FStaticAnalyser::RunAnalysis(void)
 		while (addr < bank.GetMappedAddress() + bank.GetSizeBytes())
 		{
 			FAddressRef addrRef(bank.Id,addr);
-			const FCodeInfo* pCodeInfoItem = pCodeAnalysis->GetCodeInfoForAddress(addrRef);
+			const FCodeInfo* pCodeInfoItem = state.GetCodeInfoForAddress(addrRef);
 			if (pCodeInfoItem)
 			{
 				for (auto check : Checks)	// perform each check
@@ -156,14 +208,50 @@ bool FStaticAnalyser::RunAnalysis(void)
 
 void FStaticAnalyser::DrawUI(void)
 {
-	for (auto item : Items)
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	if(ImGui::Button("RunAnalysis"))
 	{
-		item->DrawUi(*pCodeAnalysis,pCodeAnalysis->GetFocussedViewState());
+		RunAnalysis();
 	}
+
+	if (ImGui::BeginChild("StaticAnalysisList", ImVec2(0, 0), false))
+	{
+		static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
+
+		const ImVec2 outer_size = ImVec2(0.0f, 0.0f);
+		if (ImGui::BeginTable("StaticAnalysis", 2, flags, outer_size))
+		{
+			ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
+			ImGui::TableSetupColumn("Item");
+			ImGui::TableSetupColumn("Address");
+			ImGui::TableHeadersRow();
+			ImGuiListClipper clipper;
+			clipper.Begin((int)Items.size());
+
+			while (clipper.Step())
+			{
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					const FStaticAnalysisItem* item = Items[i];
+
+					if (item)
+						item->DrawUI(state,viewState);
+				}
+			}
+			ImGui::EndTable();
+		}
+	}
+	ImGui::EndChild();
 }
 
-void FStaticAnalysisItem::DrawUi(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
+void FStaticAnalysisItem::DrawUI(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState) const
 {
-	ImGui::Text("%s : ",Name.c_str());
+	ImGui::TableSetColumnIndex(0);
+	ImGui::Text("%s", Name.c_str());
+	ImGui::TableNextColumn();
 	DrawAddressLabel(state, viewState, AddressRef);
 }
+

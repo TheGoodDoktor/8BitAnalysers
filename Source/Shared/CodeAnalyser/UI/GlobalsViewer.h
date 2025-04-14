@@ -16,7 +16,7 @@ public:
 	void	Shutdown(void) override;
 	void	DrawUI() override;
 
-	void	FixupAddressRefs(const FCodeAnalysisState& state);
+	void	FixupAddressRefs() override;
 
 	void	ToggleRebuild()
 	{

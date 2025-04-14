@@ -1,6 +1,7 @@
 #include "Debugger.h"
 
 #include <CodeAnalyser/CodeAnalyser.h>
+#include <CodeAnalyser/MemoryAnalyser.h>
 
 #include <chips/z80.h>
 
@@ -100,7 +101,7 @@ void FDebugger::CPUTick(uint64_t pins)
         case EDebugStepMode::ScreenWrite:
         {
             // break on screen memory write
-            if (bWrite && pCodeAnalysis->MemoryAnalyser.IsAddressInScreenMemory(addr))
+            if (bWrite && pCodeAnalysis->pMemoryAnalyser->IsAddressInScreenMemory(addr))
                 trapId = kTrapId_Step;            
         }
         break;
@@ -1469,14 +1470,59 @@ void FDebugger::DrawEvents(void)
 	}
 }
 
+#define DOCKABLE_DEBUGGER 1
+
 void FDebugger::DrawUI(void)
 {
-	if (ImGui::Button("Step IO Read"))
+	/*if (ImGui::Button("Step IO Read"))
 		StepIORead();
 	ImGui::SameLine();
 	if (ImGui::Button("Step IO Write"))
 		StepIOWrite();
+		*/
+#if DOCKABLE_DEBUGGER
+	if (ImGui::Begin("Breakpoints"))
+	{
+		DrawBreakpoints();
+	}
+	ImGui::End();
 
+	if (ImGui::Begin("Watches"))
+	{
+		DrawWatches();
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Registers"))
+	{
+		DrawRegisters(*pCodeAnalysis);
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Stack"))
+	{
+		DrawStack();
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Call Stack"))
+	{
+		DrawCallStack();
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Trace"))
+	{
+		DrawTrace();
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Events"))
+	{
+		DrawEvents();
+	}
+	ImGui::End();
+#else
     if (ImGui::BeginTabBar("DebuggerTabBar"))
     {
         if (ImGui::BeginTabItem("Breakpoints"))
@@ -1523,6 +1569,7 @@ void FDebugger::DrawUI(void)
 
 		ImGui::EndTabBar();
 	}
+#endif
 }
 
 void FDebugger::FixupAddresRefs(void)

@@ -1,6 +1,7 @@
 #include "FindTool.h"
 
 #include "CodeAnalyser.h"
+#include "MemoryAnalyser.h"
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
 
@@ -424,7 +425,7 @@ void FFinder::ProcessMatch(FAddressRef addr, const FSearchOptions& opt)
 	{
 		if (!opt.bSearchGraphicsMem)
 		{
-			if (pCodeAnalysis->MemoryAnalyser.IsAddressInScreenMemory(addr.Address))
+			if (pCodeAnalysis->pMemoryAnalyser->IsAddressInScreenMemory(addr.Address))
 				bAddResult = false;
 		}
 	}

@@ -1343,9 +1343,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	KeyConfig[(int)EKey::Breakpoint] = ImGuiKey_F9;
 
 	Debugger.Init(this);
-	MemoryAnalyser.Init(this);
 	IOAnalyser.Init(this);
-	StaticAnalysis.Init(this);
 
 	pFunctions->Clear();
     
@@ -1361,7 +1359,7 @@ void FCodeAnalysisState::OnFrameStart()
 void FCodeAnalysisState::OnFrameEnd()
 {
 	UpdateRegionDescs();
-	MemoryAnalyser.FrameTick();
+	//MemoryAnalyser.FrameTick();
 	IOAnalyser.FrameTick();
 	if (Debugger.FrameTick())
 	{
@@ -1428,7 +1426,9 @@ void FCodeAnalysisState::FixupAddressRefs()
 
 	FixupAddressRef(*this, CopiedAddress);
 	Debugger.FixupAddresRefs();
-	MemoryAnalyser.FixupAddressRefs();
+
+	GetEmulator()->FixupAddressRefs();
+
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		ViewState[i].FixupAddressRefs(*this);

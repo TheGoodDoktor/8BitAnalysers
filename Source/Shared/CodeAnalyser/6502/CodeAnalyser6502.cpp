@@ -310,7 +310,25 @@ bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t o
 
 EInstructionType GetInstructionType6502(FCodeAnalysisState& state, FAddressRef addr)
 {
-	// TODO:
-	return EInstructionType::Unknown;
+	const uint8_t instByte = state.ReadByte(addr);
+
+	switch (instByte)
+	{
+		// Enable interrupts
+		case 0x78:	// SEI
+			return EInstructionType::EnableInterrupts;
+		
+		// Disable interrupts
+		case 0x58:	// CLI
+			return EInstructionType::DisableInterrupts;
+
+		// JSR
+		case 0x20:	
+			return EInstructionType::FunctionCall;
+
+		default:
+			return EInstructionType::Unknown;
+	}
+
 }
 

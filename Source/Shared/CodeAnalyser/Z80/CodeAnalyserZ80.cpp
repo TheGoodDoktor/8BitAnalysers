@@ -487,6 +487,7 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 		case 0xE9:
 			return EInstructionType::JumpToPointer;
 
+		// set stack pointer
 		case 0x31:	// LD SP,<addr>
 		case 0xF9:	// LD SP,HL
 			return EInstructionType::SetStackPointer;
@@ -494,6 +495,12 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 		// Halt
 		case 0x76:
 			return EInstructionType::Halt;
+
+		// Call
+		case 0xCD:	// CALL
+		case 0xDC: case 0xFC: case 0xD4: case 0xC4:
+		case 0xF4: case 0xEC: case 0xE4: case 0xCC:
+			return EInstructionType::FunctionCall;
 
 		// Enable interrupts
 		case 0xFB:

@@ -6,6 +6,7 @@
 
 #include "CodeAnalyserTypes.h"
 #include "FindTool.h"
+#include "UI/ViewerBase.h"
 
 class FCodeAnalysisState;
 
@@ -27,13 +28,18 @@ struct FBankMemory
 	uint8_t* pMemory = nullptr;
 };
 
-class FMemoryAnalyser
+class FMemoryAnalyser : public FViewerBase
 {
 public:
-	void	Init(FCodeAnalysisState* pCodeAnalysis);
-	void	Shutdown();
+	FMemoryAnalyser(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Memory Analyser"; }
+
+	bool	Init(void) override;
+	void	ResetForGame() override;
+	void	Shutdown(void) override;
+	void	DrawUI() override;
+	void	FixupAddressRefs() override;
+
 	void	FrameTick(void);
-	void	DrawUI(void);
 
 	void	ClearROMAreas(void) { ROMAreas.clear(); }
 	void	AddROMArea(uint16_t start, uint16_t end) { ROMAreas.emplace_back(start,end); }
@@ -41,15 +47,13 @@ public:
 	void	SetScreenMemoryArea(uint16_t start, uint16_t end) { ScreenMemory = { start,end }; }
 	bool	IsAddressInScreenMemory(uint16_t addr) const { return ScreenMemory.InRange(addr); }
 
-	void FixupAddressRefs();
-
 private:
 	void	DrawMemoryDiffUI(void);
 	void	DrawStringSearchUI(void);
 
 
 private:
-	FCodeAnalysisState*		pCodeAnalysis = nullptr;
+	//FCodeAnalysisState*		pCodeAnalysis = nullptr;
 
 	// Physical region identifiers
 	std::vector<FPhysicalMemoryRange>	ROMAreas;

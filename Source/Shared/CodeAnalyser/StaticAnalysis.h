@@ -3,22 +3,8 @@
 #include <vector>
 #include <string>
 #include "CodeAnalyserTypes.h"
+#include "UI/ViewerBase.h"
 
-enum class EInstructionType
-{
-	AddToSelf,
-	LoopBack,
-	PortInput,
-	PortOutput,
-	EnableInterrupts,
-	DisableInterrupts,
-	ChangeInterruptMode,
-	JumpToPointer,
-	Halt,
-	SetStackPointer,
-
-	Unknown,
-};
 
 class FCodeAnalysisState;
 struct FCodeAnalysisViewState;
@@ -30,7 +16,7 @@ struct FStaticAnalysisItem
 	FAddressRef		AddressRef;
 	std::string		Name;
 
-	virtual void	DrawUi(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
+	virtual void	DrawUI(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState) const;
 };
 
 class FStaticAnalysisCheck
@@ -42,20 +28,26 @@ public:
 	virtual FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) = 0;
 };
 
-class FStaticAnalyser
+class FStaticAnalyser : public FViewerBase
 {
 public:
-	bool	Init(FCodeAnalysisState* pState);
+	FStaticAnalyser(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Static Analysis"; }
 
-	void	Reset();
+	bool	Init(void) override;
+	void	ResetForGame() override;
+	void	Shutdown(void) override;
+	void	DrawUI() override;
+
+	//bool	Init(FCodeAnalysisState* pState);
+
 	bool	RunAnalysis(void);
-
-	void	DrawUI(void);
 private:
-
-	FCodeAnalysisState*	pCodeAnalysis = nullptr;
+	void	ResetAnalysis();
 
 	std::vector<FStaticAnalysisCheck*>	Checks;
 
 	std::vector<FStaticAnalysisItem*> Items;
 };
+
+// static analysis functions
+EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr);

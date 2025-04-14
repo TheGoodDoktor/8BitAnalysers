@@ -1,17 +1,16 @@
 #include "MemoryAnalyser.h"
 
 #include "CodeAnalyser.h"
+#include "Misc/EmuBase.h"
 
 #include <imgui.h>
 #include "UI/CodeAnalyserUI.h"
 
-
-
-void FMemoryAnalyser::Init(FCodeAnalysisState* ptrCodeAnalysis)
+bool FMemoryAnalyser::Init(void)
 {
-	pCodeAnalysis = ptrCodeAnalysis;
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
-	const auto& banks = pCodeAnalysis->GetBanks();
+	const auto& banks = state.GetBanks();
 	for(const FCodeAnalysisBank& bank : banks)
 	{
 		FBankMemory& bankMem = DiffSnapshotMemoryBanks[bank.Id];
@@ -20,8 +19,15 @@ void FMemoryAnalyser::Init(FCodeAnalysisState* ptrCodeAnalysis)
 		bankMem.pMemory = new uint8_t[bankMem.SizeBytes];
 	}
 
-	FindTool.Init(ptrCodeAnalysis);
+	FindTool.Init(&state);
+	return true;
 }
+
+void FMemoryAnalyser::ResetForGame()
+{
+
+}
+
 
 void FMemoryAnalyser::Shutdown()
 {
@@ -65,15 +71,16 @@ void FMemoryAnalyser::DrawUI(void)
 
 void FMemoryAnalyser::DrawMemoryDiffUI(void)
 {
-	FCodeAnalysisViewState& viewState = pCodeAnalysis->GetFocussedViewState();
-	
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
 	if (ImGui::Button("SnapShot"))
 	{
 		// Capture banks
 		for (auto& memBankIt : DiffSnapshotMemoryBanks)
 		{
 			FBankMemory& memBank = memBankIt.second;
-			const FCodeAnalysisBank* pBank = pCodeAnalysis->GetBank(memBank.BankId);
+			const FCodeAnalysisBank* pBank = state.GetBank(memBank.BankId);
 
 			if (pBank->bMachineROM)	// skip machine ROM banks
 				continue;
@@ -102,7 +109,7 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 			for (auto& memBankIt : DiffSnapshotMemoryBanks)
 			{
 				FBankMemory& memBank = memBankIt.second;
-				const FCodeAnalysisBank* pBank = pCodeAnalysis->GetBank(memBank.BankId);
+				const FCodeAnalysisBank* pBank = state.GetBank(memBank.BankId);
 
 				if (bDiffPhysicalMemory == false || pBank->IsMapped())
 				{
@@ -154,14 +161,14 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 				for (int rowNum = clipper.DisplayStart; rowNum < clipper.DisplayEnd; rowNum++)
 				{
 					FAddressRef changedAddr = DiffChangedLocations[rowNum];
-					const FDataInfo* pDataInfo = pCodeAnalysis->GetDataInfoForAddress(changedAddr);
+					const FDataInfo* pDataInfo = state.GetDataInfoForAddress(changedAddr);
 					ImGui::TableNextRow();
 					ImGui::PushID(changedAddr.Val);
 
 					// Address
 					ImGui::TableSetColumnIndex(0);
 					ImGui::Text("%s", NumStr(changedAddr.Address));
-					DrawAddressLabel(*pCodeAnalysis, viewState, changedAddr);
+					DrawAddressLabel(state, viewState, changedAddr);
 
 					// Snapshot value
 					ImGui::TableSetColumnIndex(1);
@@ -170,12 +177,12 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 
 					// Current value
 					ImGui::TableSetColumnIndex(2);
-					ImGui::Text("%s", NumStr(pCodeAnalysis->ReadByte(changedAddr)));
+					ImGui::Text("%s", NumStr(state.ReadByte(changedAddr)));
 
 					// Code address that last wrote to value
 					ImGui::TableSetColumnIndex(3);
 					ImGui::Text("");
-					DrawAddressLabel(*pCodeAnalysis, viewState, pDataInfo->LastWriter);
+					DrawAddressLabel(state, viewState, pDataInfo->LastWriter);
 
 					ImGui::PopID();
 				}
@@ -188,7 +195,8 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 
 void FMemoryAnalyser::DrawStringSearchUI()
 {
-	FCodeAnalysisState& state = *pCodeAnalysis;
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+
 	if (ImGui::Button("Search"))
 	{
 		FoundStrings = state.FindAllStrings(bSearchStringsInROM, bSearchStringsPhysicalMemOnly);
@@ -253,12 +261,13 @@ void FMemoryAnalyser::DrawStringSearchUI()
 
 void FMemoryAnalyser::FixupAddressRefs()
 {
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	FindTool.FixupAddressRefs();
 
 	for (FFoundString& foundStr : FoundStrings)
 	{
-		FixupAddressRef(*pCodeAnalysis, foundStr.Address);
+		FixupAddressRef(state, foundStr.Address);
 	}
 
-	FixupAddressRefList(*pCodeAnalysis, DiffChangedLocations);
+	FixupAddressRefList(state, DiffChangedLocations);
 }

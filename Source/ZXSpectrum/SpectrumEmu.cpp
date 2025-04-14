@@ -20,6 +20,7 @@
 //#include "ui/ui_dbg.h"
 #include "MemoryHandlers.h"
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "CodeAnalyser/MemoryAnalyser.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
 #include "zx-roms.h"
@@ -778,8 +779,8 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 	debugger.RegisterEventType((int)EEventType::OutputMic, "Output Mic", 0xff0000ff, IOPortEventShowAddress, IOPortEventShowValue);
 
 	// Setup Memory Analyser
-	CodeAnalysis.MemoryAnalyser.AddROMArea(kROMStart, kROMEnd);
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
+	pMemoryAnalyser->AddROMArea(kROMStart, kROMEnd);
+	pMemoryAnalyser->SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
 
 	// Setup IO analyser
 	Keyboard.Init(&ZXEmuState.kbd);

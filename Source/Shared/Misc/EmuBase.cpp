@@ -8,7 +8,9 @@
 #include <CodeAnalyser/UI/CharacterMapViewer.h>
 #include <CodeAnalyser/UI/DisplayTypes.h>
 #include <CodeAnalyser/UI/GlobalsViewer.h>
+#include <CodeAnalyser/StaticAnalysis.h>
 #include <CodeAnalyser/DataTypes.h>
+#include <CodeAnalyser/MemoryAnalyser.h>
 #include "GameConfig.h"
 
 #include "Debug/DebugLog.h"
@@ -79,6 +81,14 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	pGlobalsViewer = new FGlobalsViewer(this);
 	AddViewer(pGlobalsViewer);
+
+	pMemoryAnalyser = new FMemoryAnalyser(this);
+	AddViewer(pMemoryAnalyser);
+	CodeAnalysis.pMemoryAnalyser = pMemoryAnalyser;
+
+	pStaticAnalysis = new FStaticAnalyser(this);
+	AddViewer(pStaticAnalysis);
+
 	return true;
 }
 
@@ -96,7 +106,8 @@ void FEmuBase::Tick()
 
 void FEmuBase::Reset()
 {
-
+	for(FViewerBase* pViewer : Viewers)
+		pViewer->ResetForGame();
 }
 
 bool FEmuBase::DrawDockingView()
@@ -168,38 +179,35 @@ bool FEmuBase::DrawDockingView()
 void FEmuBase::DrawUI()
 {
 	// TODO: Make these viewers
-	if (ImGui::Begin("Debugger"))
+	//if (ImGui::Begin("Debugger"))
 	{
 		CodeAnalysis.Debugger.DrawUI();
 	}
-	ImGui::End();
+	//ImGui::End();
 
-	if (ImGui::Begin("Memory Analyser"))
-	{
-		CodeAnalysis.MemoryAnalyser.DrawUI();
-	}
-	ImGui::End();
 
 	if (ImGui::Begin("IO Analyser"))
 	{
 		CodeAnalysis.IOAnalyser.DrawUI();
 	}
 	ImGui::End();
-
-	if (ImGui::Begin("Static Analysis"))
-	{
-		CodeAnalysis.StaticAnalysis.DrawUI();
-	}
-	ImGui::End();
-
+		
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
 	{
 		if (Viewer->bOpen)
 		{
-			if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen))
+			if (Viewer->bCreateImGuiWindow)
+			{
+				if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen))
+					Viewer->DrawUI();
+				ImGui::End();
+			}
+			else
+			{
 				Viewer->DrawUI();
-			ImGui::End();
+			}
+			
 		}
 	}
 
@@ -555,12 +563,7 @@ void FEmuBase::ActionsMenu()
 	{
 		ResetExecutionCounts(CodeAnalysis);
 	}
-
-	if (ImGui::MenuItem("Run Static Analysis"))
-	{
-		CodeAnalysis.RunStaticAnalysis();
-	}
-
+		
 	ActionMenuAdditions();
 }
 
@@ -924,7 +927,11 @@ bool	FEmuBase::AddGamesList(const char* pFileType, const char* pRootDir)
 	return true;
 }
 
-
+void FEmuBase::FixupAddressRefs()
+{
+	for (auto Viewer : Viewers)
+		Viewer->FixupAddressRefs();
+}
 
 // Util
 

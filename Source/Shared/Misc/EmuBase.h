@@ -3,12 +3,15 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "GamesList.h"
 
+// forward decs
 class FEmuBase;
 class FGraphicsViewer;
 class FCharacterMapViewer;
 class FFunctionViewer;
 class FViewerBase;
 class FGlobalsViewer;
+class FMemoryAnalyser;
+class FStaticAnalyser;
 
 struct FProjectConfig;
 struct FEmulatorFile;
@@ -81,6 +84,8 @@ public:
 
 	FGlobalsViewer* GetGlobalsViewer() { return pGlobalsViewer; }
 
+	void		FixupAddressRefs();
+
 	// Games List
 	bool	AddGamesList(const char* pFileType, const char* pRootDir);
 	
@@ -118,6 +123,8 @@ protected:
 	FCharacterMapViewer* pCharacterMapViewer = nullptr;
 	FFunctionViewer*	pFunctionViewer = nullptr;
 	FGlobalsViewer*		pGlobalsViewer = nullptr;
+	FMemoryAnalyser*	pMemoryAnalyser = nullptr;	
+	FStaticAnalyser*	pStaticAnalysis = nullptr;
 
 	// Highligthing
 	int					HighlightXPos = -1;

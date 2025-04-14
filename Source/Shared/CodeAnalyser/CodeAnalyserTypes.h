@@ -154,6 +154,23 @@ enum class EBankAccess
 
 };
 
+enum class EInstructionType
+{
+	AddToSelf,
+	LoopBack,
+	PortInput,
+	PortOutput,
+	EnableInterrupts,
+	DisableInterrupts,
+	ChangeInterruptMode,
+	JumpToPointer,
+	Halt,
+	SetStackPointer,
+	FunctionCall,
+
+	Unknown,
+};
+
 // Structures
 
 // This holds a reference to a memory address in a bank based memory architecture

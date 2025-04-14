@@ -461,8 +461,10 @@ void	FGlobalsViewer::DrawUI()
 	DrawGlobals();
 }
 
-void FGlobalsViewer::FixupAddressRefs(const FCodeAnalysisState& state)
+void FGlobalsViewer::FixupAddressRefs(void)
 {
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+
 	for (FCodeAnalysisItem& item : FilteredGlobalDataItems)
 		FixupAddressRef(state, item.AddressRef);
 	for (FCodeAnalysisItem& item : FilteredGlobalFunctions)

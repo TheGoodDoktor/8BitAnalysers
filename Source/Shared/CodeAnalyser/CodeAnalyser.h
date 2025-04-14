@@ -10,9 +10,7 @@
 #include "CodeAnalyserTypes.h"
 #include "CodeAnalysisPage.h"
 #include "Debugger.h"
-#include "MemoryAnalyser.h"
 #include "IOAnalyser.h"
-#include "StaticAnalysis.h"
 #include <Misc/GlobalConfig.h>
 #include "Commands/FormatDataCommand.h"
 
@@ -22,6 +20,7 @@ class FCodeAnalysisState;
 class FEmuBase;
 class FDataTypes;
 class FFunctionInfoCollection;
+class FMemoryAnalyser;
 
 enum class ELabelType;
 
@@ -455,12 +454,6 @@ public:
 	void ClearRemappings() { bMemoryRemapped = false; }
 	bool HasMemoryBeenRemapped() const { return bMemoryRemapped; }
 
-	bool RunStaticAnalysis() { return StaticAnalysis.RunAnalysis();}
-	//const std::vector<int16_t>& GetDirtyBanks() const { return RemappedBanks; }
-
-	//bool	EnsureUniqueLabelName(std::string& lableName);
-	//bool	RemoveLabelName(const std::string& labelName);	// for changing label names
-
 	void FixupAddressRefs();
 	void UpdateFocussedViewState();
 
@@ -483,9 +476,8 @@ public:
 	FCodeAnalysisViewState& GetAltViewState() { return ViewState[FocussedWindowId ^ 1]; }
 	
 	FDebugger				Debugger;
-	FMemoryAnalyser			MemoryAnalyser;
+	FMemoryAnalyser	*		pMemoryAnalyser = nullptr;
 	FIOAnalyser				IOAnalyser;
-	FStaticAnalyser			StaticAnalysis;
 
 	FAddressRef				CopiedAddress;
 
