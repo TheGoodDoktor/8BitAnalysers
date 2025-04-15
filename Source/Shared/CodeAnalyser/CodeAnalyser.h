@@ -88,26 +88,9 @@ enum class EKey
 
 
 
-struct FLabelListFilter
-{
-	std::string		FilterText;
-	uint16_t		MinAddress = 0x0000;
-	uint16_t		MaxAddress = 0xffff;
-	bool			bNoMachineRoms = true;
-	EDataTypeFilter DataType = EDataTypeFilter::All;
-};
 
-struct FCodeAnalysisItem
-{
-	FCodeAnalysisItem() {}
-	FCodeAnalysisItem(FItem* pItem, int16_t bankId, uint16_t addr) :Item(pItem), AddressRef(bankId,addr) {}
-	FCodeAnalysisItem(FItem* pItem, FAddressRef addr) :Item(pItem), AddressRef(addr) {}
 
-	bool IsValid() const { return Item != nullptr; }
-	
-	FItem*		Item = nullptr;
-	FAddressRef	AddressRef;
-};
+
 
 
 

@@ -4,7 +4,8 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "ImGuiSupport/ImGuiScaling.h"
 #include "CodeAnalyserUI.h"
-
+#include "../CodeAnalyser.h"
+#include "Misc/EmuBase.h"
 
 
 enum EGlobalsColumnID

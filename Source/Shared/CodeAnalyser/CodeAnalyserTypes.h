@@ -557,6 +557,18 @@ private:
 
 };
 
+struct FCodeAnalysisItem
+{
+	FCodeAnalysisItem() {}
+	FCodeAnalysisItem(FItem* pItem, int16_t bankId, uint16_t addr) :Item(pItem), AddressRef(bankId, addr) {}
+	FCodeAnalysisItem(FItem* pItem, FAddressRef addr) :Item(pItem), AddressRef(addr) {}
+
+	bool IsValid() const { return Item != nullptr; }
+
+	FItem* Item = nullptr;
+	FAddressRef	AddressRef;
+};
+
 
 struct FCPUFunctionCall
 {

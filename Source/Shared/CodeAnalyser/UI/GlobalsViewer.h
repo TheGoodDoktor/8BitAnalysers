@@ -1,11 +1,20 @@
 #pragma once
 
 #include "ViewerBase.h"
-#include "Misc/EmuBase.h"
+//#include "Misc/EmuBase.h"
 #include "../CodeAnalyserTypes.h"
 
 class FCodeAnalysisState;
 class FEmuBase;
+
+struct FLabelListFilter
+{
+	std::string		FilterText;
+	uint16_t		MinAddress = 0x0000;
+	uint16_t		MaxAddress = 0xffff;
+	bool			bNoMachineRoms = true;
+	EDataTypeFilter DataType = EDataTypeFilter::All;
+};
 
 // Separate viewer for Globals - put in its own file
 class FGlobalsViewer : public FViewerBase
