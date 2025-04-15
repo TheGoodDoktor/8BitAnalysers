@@ -17,6 +17,7 @@
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include <CodeAnalyser/AssemblerExport.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
+#include "CodeAnalyser/MemoryAnalyser.h"
 #include "CPCGameConfig.h"
 #include "Debug/DebugLog.h"
 #include "CPCChipsImpl.h"
@@ -995,7 +996,7 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::ROMBankSwitch, "ROM Bank Switch", 0xff3357ff, IOPortEventShowAddress, ROMBankSwitchShowValue);
 	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xff3f0c90, IOPortEventShowAddress, UpperROMSelectShowValue);
 
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
+	pMemoryAnalyser->SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
 
 #ifndef NDEBUG
 	LOGINFO("Init CPCEmu...Done");
@@ -1290,7 +1291,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
 
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
+	pMemoryAnalyser->SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
 	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
 
 #if RUN_AHEAD_TO_GENERATE_SCREEN
@@ -1779,7 +1780,7 @@ void FCPCEmu::UpdatePalette()
 
 void FCPCEmu::OnScreenRAMAddressChanged()
 {
-	CodeAnalysis.MemoryAnalyser.SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
+	pMemoryAnalyser->SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
 	pScreenMemDescGenerator->UpdateScreenMemoryLocation();
 
 	((FCPCGraphicsViewer*)pGraphicsViewer)->OnScreenAddressChanged(Screen.GetScreenAddrStart());
