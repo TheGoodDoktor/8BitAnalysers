@@ -203,6 +203,7 @@ private:
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;
 	std::vector<FAddressRef>	FrameTrace;
+	int							FrameTraceItemIndex = -1;
 	std::vector<FEvent>			EventTrace;
 	int							SelectedEventIndex = -1;
 	uint8_t						ScanlineEvents[320] = {0};
@@ -211,7 +212,6 @@ private:
 
 	//bool						bInterruptTriggered = false;
 
-	int							FrameTraceItemIndex = -1;
 	std::vector<FCPUFunctionCall>	CallStack;
 	int														SelectedCallstackNo = -1;
 
