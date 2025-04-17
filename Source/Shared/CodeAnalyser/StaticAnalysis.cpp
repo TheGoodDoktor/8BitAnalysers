@@ -80,6 +80,24 @@ private:
 	int				CallCount = 0;
 };
 
+class FROMLabelReferenceCheck : public FStaticAnalysisCheck
+{
+public:
+	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override
+	{
+		const FCodeInfo* pCodeInfoItem = state.GetCodeInfoForAddress(addrRef);
+		if (pCodeInfoItem && (pCodeInfoItem->OperandType == EOperandType::JumpAddress || pCodeInfoItem->OperandType == EOperandType::Pointer))
+		{
+			const FCodeAnalysisBank* pBank = state.GetBank(pCodeInfoItem->OperandAddress.BankId);
+			if (pBank != nullptr && pBank->bMachineROM)
+			{
+				return new FStaticAnalysisItem(addrRef, "ROM Label Ref");
+			}
+		}
+		return nullptr;
+	}
+};
+
 // generic checks for simple Items
 class FSimpleChecks : public FStaticAnalysisCheck
 {
@@ -121,6 +139,7 @@ bool FStaticAnalyser::Init(void)
 	Checks.clear();
 	Checks.push_back(new FMultByAddCheck);
 	Checks.push_back(new FFunctionCallCheck);
+	Checks.push_back(new FROMLabelReferenceCheck);
 	Checks.push_back(new FSimpleChecks);
 	return true;
 }

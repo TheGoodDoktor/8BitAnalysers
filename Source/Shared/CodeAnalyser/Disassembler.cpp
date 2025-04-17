@@ -162,7 +162,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 					// Local prefix
 					if (pLabel->Global == false)
 					{
-						if (pScopeLabel != pCurrentScope)
+						if (pScopeLabel != nullptr && pScopeLabel != pCurrentScope)
 						{
 							std::string scopeLabelName = pScopeLabel->GetName();
 

@@ -44,6 +44,7 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 	Breakpoints.clear();
 	CallStack.clear();
 	FrameTrace.clear();
+	FrameTraceItemIndex = -1;
 }
 
 void FDebugger::CPUTick(uint64_t pins)
@@ -338,6 +339,7 @@ void FDebugger::OnMachineFrameEnd()
 void FDebugger::StartFrame() 
 { 
 	FrameTrace.clear();
+	FrameTraceItemIndex = -1;
 
 	// Setup breakpoint mask 
 	BreakpointMask = 0;
@@ -438,6 +440,7 @@ void	FDebugger::LoadFromFile(FILE* fp)
 	if (versionNo > 1)
 	{
 		FrameTrace.clear();
+		FrameTraceItemIndex = -1;
 		fread(&num, sizeof(uint32_t), 1, fp);
 		for (int i = 0; i < (int)num; i++)
 		{
