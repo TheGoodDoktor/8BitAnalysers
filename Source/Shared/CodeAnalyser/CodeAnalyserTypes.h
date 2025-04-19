@@ -6,6 +6,9 @@
 #include <vector>
 #include <unordered_map>
 
+// forward declarations
+class FDisplayTypeBase;
+
 // Enums
 
 // CPU abstraction
@@ -71,7 +74,11 @@ enum class EDataItemDisplayType
 	ColMapMulticolour_C64,	// C64 Multicolour format
 	UnsignedNumber,
 	SignedNumber,
-	Ascii
+	Ascii,
+	XPos,
+	YPos,
+	XCharPos,
+	YCharPos,
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
@@ -439,6 +446,7 @@ struct FDataInfo : FItem
 		ByteSize = 1;
 		DataType = EDataType::Byte;
 		DisplayType = EDataItemDisplayType::Unknown;
+		pDisplayType = nullptr;
 		Comment.clear();
 		ReadCount = 0;
 		LastFrameRead = -1;
@@ -458,6 +466,7 @@ struct FDataInfo : FItem
 
 	EDataType				DataType = EDataType::Byte;
 	EDataItemDisplayType	DisplayType = EDataItemDisplayType::Unknown;
+	FDisplayTypeBase*		pDisplayType = nullptr;	// display type for this data item
 
 	// Flags
 	union

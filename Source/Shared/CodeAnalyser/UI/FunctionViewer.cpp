@@ -98,7 +98,7 @@ static const char* g_ParamSourceM6502[] =
 
 
 // type string for EFunctionParamType
-static const char* g_ParamSourceType[] =
+/*static const char* g_ParamSourceType[] =
 {
 	"Unknown",
 	"Number",
@@ -110,7 +110,7 @@ static const char* g_ParamSourceType[] =
 	"YCharPos",
 	"XYPos",
 	"XYCharPos",
-};
+};*/
 
 void DrawParameterSourceComboBox_Z80(EFunctionParamSourceZ80& val)
 {

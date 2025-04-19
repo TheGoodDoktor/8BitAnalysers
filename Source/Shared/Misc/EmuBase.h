@@ -132,6 +132,8 @@ protected:
 	int					HighlightScanline = -1;
 	uint32_t			HighlightScanlineCol = 0x50ffffff;
 
+	
+
 	// Assembler Export
 	uint16_t			ExportStartAddress = 0x0000;
 	uint16_t			ExportEndAddress = 0xffff;
@@ -139,6 +141,15 @@ protected:
 public:
 	bool		bShowImGuiDemo = false;
 	bool		bShowImPlotDemo = false;
+
+	// Coord viewer
+	FAddressRef	XCoordAddress;	// for debugging
+	FAddressRef	YCoordAddress;
+	bool		bInvertXCoord = false;
+	bool		bInvertYCoord = false;
+	bool		bXCoordChars = false;
+	bool		bYCoordChars = false;
+	bool		bShowCoordinates = false;
 protected:
 	bool		bShowDebugLog = false;
 	bool		bReplaceGamePopup = false;

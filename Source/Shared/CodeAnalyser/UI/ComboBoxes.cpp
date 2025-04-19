@@ -131,6 +131,10 @@ static const std::vector<std::pair<const char*, EDataItemDisplayType>> g_Display
 	{ "ColMap2Bpp CPC",			EDataItemDisplayType::ColMap2Bpp_CPC},
 	{ "ColMap4Bpp CPC",			EDataItemDisplayType::ColMap4Bpp_CPC},
 	{ "Multicolour C64",			EDataItemDisplayType::ColMapMulticolour_C64},
+	{ "XPos",			EDataItemDisplayType::XPos},
+	{ "YPos",			EDataItemDisplayType::YPos},
+	{ "XCharPos",		EDataItemDisplayType::XCharPos},
+	{ "YCharPos",		EDataItemDisplayType::YCharPos},
 
 };
 

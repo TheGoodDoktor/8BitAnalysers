@@ -192,3 +192,19 @@ void RegisterBasicDisplayTypes()
 	RegisterDisplayType(new FXYCharPosType());
 	RegisterDisplayType(new FX2YPosType());
 }
+
+
+// util 
+const FDisplayTypeBase* GetDisplayTypeFromEnum(EDataItemDisplayType type)
+{
+	switch (type)
+	{
+	case EDataItemDisplayType::Unknown: 
+		return GetDisplayType("Unknown");
+	case EDataItemDisplayType::Decimal:
+		return GetDisplayType("Decimal");
+	case EDataItemDisplayType::Hex:
+		return GetDisplayType("Hex");
+	}
+	return nullptr;
+}

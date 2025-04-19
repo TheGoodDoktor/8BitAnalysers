@@ -76,7 +76,6 @@ struct FFunctionParam
 	};
 
 	const FDisplayTypeBase*	pDisplayType = nullptr;	// display type for this parameter
-	//uint16_t				LastValue = 0;
 
 	uint16_t 				HistoryIndex = 0;	// index of last value in history
 	static const int		kMaxHistory = 16;	// max history size

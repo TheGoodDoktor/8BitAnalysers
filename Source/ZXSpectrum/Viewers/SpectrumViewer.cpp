@@ -100,19 +100,23 @@ void FSpectrumViewer::Draw()
 	{
 		int xp = -1, yp = -1;
 
-		if (bShowCoordinates)
+		if (pSpectrumEmu->bShowCoordinates)
 		{
-			if (XCoordAddress.IsValid())
+			if (pSpectrumEmu->XCoordAddress.IsValid())
 			{
-				xp = codeAnalysis.ReadByte(XCoordAddress);
-				if (bInvertXCoord)
+				xp = codeAnalysis.ReadByte(pSpectrumEmu->XCoordAddress);
+				if(pSpectrumEmu->bXCoordChars)
+					xp = xp * 8;	// convert to pixel address
+				if (pSpectrumEmu->bInvertXCoord)
 					xp = 255 - xp;
 			}
 
-			if (YCoordAddress.IsValid())
+			if (pSpectrumEmu->YCoordAddress.IsValid())
 			{
-				yp = codeAnalysis.ReadByte(YCoordAddress);
-				if (bInvertYCoord)
+				yp = codeAnalysis.ReadByte(pSpectrumEmu->YCoordAddress);
+				if (pSpectrumEmu->bYCoordChars)
+					yp = yp * 8;	// convert to pixel address
+				if (pSpectrumEmu->bInvertYCoord)
 					yp = 191 - yp;
 			}
 		}
@@ -221,25 +225,33 @@ void FSpectrumViewer::Draw()
 
 	if (ImGui::CollapsingHeader("Screen Coordinates"))
 	{
-		DrawAddressInput(codeAnalysis, "X Coord", XCoordAddress);
+		ImGui::PushID("XCoordinates");
+		DrawAddressInput(codeAnalysis, "X Coord", pSpectrumEmu->XCoordAddress);
 		ImGui::SameLine();
-		ImGui::Checkbox("Invert X", &bInvertXCoord);
+		ImGui::Checkbox("Invert", &pSpectrumEmu->bInvertXCoord);
+		ImGui::SameLine();
+		ImGui::Checkbox("Chars", &pSpectrumEmu->bXCoordChars);
+		ImGui::PopID();
 
 		//ImGui::SameLine();
-		DrawAddressInput(codeAnalysis, "Y Coord", YCoordAddress);
+		ImGui::PushID("YCoordinates");
+		DrawAddressInput(codeAnalysis, "Y Coord", pSpectrumEmu->YCoordAddress);
 		ImGui::SameLine();
-		ImGui::Checkbox("Invert Y", &bInvertYCoord);
+		ImGui::Checkbox("Invert", &pSpectrumEmu->bInvertYCoord);
+		ImGui::SameLine();
+		ImGui::Checkbox("Chars", &pSpectrumEmu->bXCoordChars);
 		ImGui::SameLine();
 		if (ImGui::Button("Set to X+1"))
 		{
-			YCoordAddress = XCoordAddress;
-			YCoordAddress.Address++;
+			pSpectrumEmu->YCoordAddress = pSpectrumEmu->XCoordAddress;
+			pSpectrumEmu->YCoordAddress.Address++;
 		}
-		bShowCoordinates = true;
+		ImGui::PopID();
+		pSpectrumEmu->bShowCoordinates = true;
 	}
 	else
 	{
-		bShowCoordinates = false;
+		pSpectrumEmu->bShowCoordinates = false;
 	}
 	
 	LuaSys::OnEmulatorScreenDrawn(pos.x, pos.y, scale);	// Call Lua handler

@@ -13,6 +13,7 @@
 #include "ComboBoxes.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 #include "Z80/DataItemZ80.h"
+#include "Misc/EmuBase.h"
 
 float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, const FDataInfo* pDataInfo)
 {
@@ -597,6 +598,26 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		else
 			ImGui::Text("%s", NumStr(val));
 
+		// hover behaviour
+		if (ImGui::IsItemHovered())
+		{
+			switch (pDataInfo->DisplayType)
+			{
+			case EDataItemDisplayType::XPos:
+				state.XPosHighlight = val;
+				break;
+			case EDataItemDisplayType::YPos:
+				state.YPosHighlight = val;
+				break;
+			case EDataItemDisplayType::XCharPos:
+				state.XPosHighlight = val * 8;
+				break;
+			case EDataItemDisplayType::YCharPos:
+				state.YPosHighlight = val * 8;
+				break;
+			}
+		}
+
 		if(bShowASCII)
 		{
 			ImGui::SameLine();
@@ -1006,6 +1027,43 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		break;
 	}
 
+	FEmuBase& emu = *state.GetEmulator();
+
+	switch (pDataInfo->DisplayType)
+	{
+	case EDataItemDisplayType::XPos:
+		if (ImGui::Button("Set as X Coord Address"))
+		{
+			emu.XCoordAddress = item.AddressRef;
+			emu.bXCoordChars = false;
+		}
+		break;
+	case EDataItemDisplayType::YPos:
+		if (ImGui::Button("Set as Y Coord Address"))
+		{
+			emu.YCoordAddress = item.AddressRef;
+			emu.bYCoordChars = false;
+		}
+		break;
+	case EDataItemDisplayType::XCharPos:
+		if (ImGui::Button("Set as X Coord Address"))
+		{
+			emu.XCoordAddress = item.AddressRef;
+			emu.bXCoordChars = true;
+		}
+		break;
+	case EDataItemDisplayType::YCharPos:
+		if (ImGui::Button("Set as Y Coord Address"))
+		{
+			emu.YCoordAddress = item.AddressRef;
+			emu.bYCoordChars = true;
+		}
+		break;
+
+	}
+
 	DrawDataAccesses(state, viewState, pDataInfo);
+
+	
 }
 

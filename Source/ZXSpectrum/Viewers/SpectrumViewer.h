@@ -52,12 +52,5 @@ private:
 	bool		bBreakOnCharAttrWrite = false;
 	FAddressRef	CharacterAttrBPAddress;
 
-	FAddressRef	XCoordAddress;	// for debugging
-	FAddressRef	YCoordAddress;
-	bool		bInvertXCoord = false;
-	bool		bInvertYCoord = false;
-	bool		bShowCoordinates = false;
-
-	//int			FrameCounter = 0;
-	//int			Scale = 0;
+	
 };
