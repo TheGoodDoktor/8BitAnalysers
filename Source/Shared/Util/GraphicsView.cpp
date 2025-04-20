@@ -13,6 +13,7 @@
 #include "stb/stb_image_write.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb/stb_image_resize2.h"
+#include "CodeAnalyser/FunctionAnalyser.h"
 
 void DisplayTextureInspector(const ImTextureID texture, float width, float height, bool bMagnifier = true);
 
@@ -708,6 +709,13 @@ bool CreateCharacterMap(FCodeAnalysisState& state, const FCharMapCreateParams& p
 	pNewCharMap->Params = params;
 
 	g_CharacterMaps.push_back(pNewCharMap);
+
+	// set up data region
+	FDataRegion dataRegion;
+	dataRegion.StartAddress = dataRegion.EndAddress = params.Address;
+	state.AdvanceAddressRef(dataRegion.EndAddress, (params.Width * params.Height) - 1);
+	state.pDataRegions->AddRegion(dataRegion);
+
 	return true;
 }
 

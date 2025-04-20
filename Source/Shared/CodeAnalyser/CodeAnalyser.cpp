@@ -239,6 +239,8 @@ bool FCodeAnalysisState::ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_
 }
 
 
+
+
 std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(const uint8_t* pData, size_t dataSize, bool bCheckMachineROM, bool bPhysicalOnly)
 {
 	std::vector<FAddressRef> results;
@@ -715,9 +717,37 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	pLabel->InitialiseName(label);
 	if (pLabel->Global)
 		GenerateGlobalInfo(state);
-	state.SetLabelForAddress(address, pLabel);
-	state.SetCodeAnalysisDirty(address);
-	return pLabel;	
+	if(state.SetLabelForAddress(address, pLabel))
+	{
+		state.SetCodeAnalysisDirty(address);
+		return pLabel;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+bool FCodeAnalysisState::SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLabel)
+{
+	if (addrRef.IsValid() == false)
+		return false;
+
+	if (pDataRegions->FindRegion(addrRef))
+		return false;
+
+	if (pLabel != nullptr)	// ensure no name clashes
+		pLabel->EnsureUniqueName(addrRef);
+
+	FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+	if (pBank != nullptr)
+	{
+		const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+		assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
+		pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].Labels[bankAddr & FCodeAnalysisPage::kPageMask] = pLabel;
+		return true;
+	}
+	return false;
 }
 
 void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
@@ -1140,25 +1170,6 @@ void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites)
 	}
 }
 
-// TODO: Phase this out
-FLabelInfo* AddLabel(FCodeAnalysisState &state, uint16_t address,const char *name,ELabelType type, uint16_t memoryRange)
-{
-	FLabelInfo *pLabel = FLabelInfo::Allocate();
-	pLabel->InitialiseName(name);
-	pLabel->LabelType = type;
-	//pLabel->Address = address;
-	pLabel->ByteSize = 1;
-	pLabel->Global = type == ELabelType::Function;
-	pLabel->MemoryRange = memoryRange;
-	pLabel->EnsureUniqueName(state.AddressRefFromPhysicalAddress(address));
-	state.SetLabelForPhysicalAddress(address, pLabel);
-
-	if (pLabel->Global)
-		GenerateGlobalInfo(state);
-
-	return pLabel;
-}
-
 FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char* name, ELabelType type, uint16_t memoryRange)
 {
 	FLabelInfo* pLabel = FLabelInfo::Allocate();
@@ -1168,12 +1179,22 @@ FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char*
 	pLabel->ByteSize = 1;
 	pLabel->Global = type == ELabelType::Function;
 	pLabel->MemoryRange = memoryRange;
-	state.SetLabelForAddress(address, pLabel);
+	if(state.SetLabelForAddress(address, pLabel))
+	{ 
+		if (pLabel->Global)
+			GenerateGlobalInfo(state);
 
-	if (pLabel->Global)
-		GenerateGlobalInfo(state);
-
-	return pLabel;
+		if (memoryRange != 0)
+		{
+			FDataRegion newRegion;
+			newRegion.StartAddress = address;
+			newRegion.EndAddress = address;
+			state.AdvanceAddressRef(newRegion.EndAddress, memoryRange - 1);
+			state.pDataRegions->AddRegion(newRegion);
+		}
+		return pLabel;
+	}
+	return nullptr;
 }
 
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef addressRef)
@@ -1263,6 +1284,7 @@ FCodeAnalysisState::FCodeAnalysisState()
 
     pDataTypes = new FDataTypes;
 	pFunctions = new FFunctionInfoCollection;
+	pDataRegions = new FDataRegionList;
 }
 
 // Called each time a new game is loaded up
@@ -1346,6 +1368,7 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	IOAnalyser.Init(this);
 
 	pFunctions->Clear();
+	pDataRegions->Clear();
     
     pDataTypes->Reset();
 }

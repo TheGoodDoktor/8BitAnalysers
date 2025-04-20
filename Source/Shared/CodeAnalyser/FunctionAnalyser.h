@@ -82,12 +82,19 @@ struct FFunctionParam
 	uint16_t				History[kMaxHistory];	// list of values for this parameter
 };
 
+struct FMemoryRegion
+{
+	FMemoryRegion() = default;
+	FMemoryRegion(FAddressRef start, FAddressRef end):StartAddress(start),EndAddress(end){}
+
+	FAddressRef	StartAddress;
+	FAddressRef	EndAddress;
+};
+
 // This contains information on a function in the code
 // It stores the address range of the function and any exit points
-struct FFunctionInfo
+struct FFunctionInfo : FMemoryRegion
 {
-	FAddressRef		StartAddress;
-	FAddressRef		EndAddress;
 	std::vector<FFunctionParam>	Params;
 	std::vector<FFunctionParam>	ReturnValues;
 	std::vector<FCPUFunctionCall>	CallPoints;	// points in the function where a call is made
@@ -184,6 +191,7 @@ public:
 		return nullptr;
 	}
 
+	// get a function that starts at this address
 	FFunctionInfo* GetFunctionAtAddress(FAddressRef startAddress)
 	{
 		auto it = Functions.find(startAddress);
@@ -223,4 +231,70 @@ public:
 
 private:
 	std::map<FAddressRef, FFunctionInfo> Functions;
+};
+
+// Data regions
+struct FDataRegion : FMemoryRegion
+{
+};
+
+// This class holds a collection of data regions
+class FDataRegionList
+{
+public:
+	// clear the list
+	void Clear()
+	{
+		Regions.clear();
+	}
+
+	bool AddRegion(const FDataRegion& region)
+	{
+		// check if region overlaps with existing regions
+		if (DoesRegionOverlap(region))
+			return false;
+
+		Regions[region.StartAddress] = region;
+		return true;
+	}
+
+	bool DoesRegionOverlap(const FDataRegion& region) const
+	{
+		auto it = Regions.lower_bound(region.StartAddress);
+		if (it != Regions.end())
+		{
+			if (region.EndAddress >= it->second.StartAddress)
+				return true;
+		}
+		return false;
+	}
+
+	// find a region that starts at this address
+	FDataRegion* FindRegionThatStartsAt(FAddressRef startAddress)
+	{
+		auto it = Regions.find(startAddress);
+		if (it != Regions.end())
+		{
+			return &it->second;
+		}
+		return nullptr;
+	}
+
+	// find a region that contains this address
+	FDataRegion* FindRegion(FAddressRef address)
+	{
+		auto it = Regions.upper_bound(address);
+		if (it != Regions.begin())
+		{
+			--it;
+			if (address >= it->second.StartAddress && address <= it->second.EndAddress)
+			{
+				return &it->second;
+			}
+		}
+		return nullptr;
+	}
+	const std::map< FAddressRef, FDataRegion>& GetRegions() const { return Regions; };
+private:
+	std::map<FAddressRef, FDataRegion> Regions;
 };

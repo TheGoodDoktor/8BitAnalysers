@@ -20,6 +20,7 @@ class FCodeAnalysisState;
 class FEmuBase;
 class FDataTypes;
 class FFunctionInfoCollection;
+class FDataRegionList;
 class FMemoryAnalyser;
 
 enum class ELabelType;
@@ -451,6 +452,7 @@ public:
 
 	bool						bTraceFunctionExecution = false;
 	FFunctionInfoCollection*	pFunctions = nullptr;
+	FDataRegionList*			pDataRegions = nullptr;
 
 	static const int kNoViewStates = 4;
 	FCodeAnalysisViewState	ViewState[kNoViewStates];	// new multiple view states
@@ -541,19 +543,7 @@ public:
 			pLabel->EnsureUniqueName(AddressRefFromPhysicalAddress(addr));
 		GetReadPage(addr)->Labels[addr & kPageMask] = pLabel; 
 	}
-	void SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLabel)
-	{
-		if (pLabel != nullptr)	// ensure no name clashes
-			pLabel->EnsureUniqueName(addrRef);
-
-		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
-		if (pBank != nullptr)
-		{
-			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
-			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
-			pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].Labels[bankAddr & FCodeAnalysisPage::kPageMask] = pLabel;
-		}
-	}
+	bool SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLabel);
 
 
 	//FCommentBlock* GetCommentBlockForAddress(uint16_t addr) const { return GetReadPage(addr)->CommentBlocks[addr & kPageMask]; }
@@ -729,10 +719,7 @@ void ResetExecutionCounts(FCodeAnalysisState &state);
 std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address);
 
 // Commands
-//void Undo(FCodeAnalysisState &state);
-
-FLabelInfo* AddLabel(FCodeAnalysisState& state, uint16_t address, const char* name, ELabelType type, uint16_t memoryRange = 1);
-FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char* name, ELabelType type, uint16_t memoryRange = 1);
+FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char* name, ELabelType type, uint16_t memoryRange = 0);
 FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef address);
 FLabelInfo* AddLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);
 void RemoveLabelAtAddress(FCodeAnalysisState &state, FAddressRef address);

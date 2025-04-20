@@ -1002,9 +1002,7 @@ void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		{
 			if (ImGui::Button("Create Character Set"))
 			{
-				FLabelInfo* pLabel = state.GetLabelForAddress(item.AddressRef);
-				if (pLabel == nullptr)
-					AddLabelAtAddress(state, item.AddressRef);
+				AddLabelAtAddress(state, item.AddressRef);
 				params.Address = item.AddressRef;
 				params.ColourLUT = state.Config.CharacterColourLUT;
 

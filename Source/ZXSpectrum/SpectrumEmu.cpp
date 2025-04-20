@@ -49,6 +49,7 @@
 #include "SnapshotLoaders/TAPLoader.h"
 #include "SnapshotLoaders/TZXLoader.h"
 #include "CodeAnalyser/UI/FunctionViewer.h"
+#include "CodeAnalyser/FunctionAnalyser.h"
 
 bool InitZXSpectrumAsmExporters(FSpectrumEmu* pZXEmu);
 
@@ -140,7 +141,7 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 	// Format screen pixel memory if it hasn't already been
 	if (state.GetLabelForPhysicalAddress(kScreenPixMemStart) == nullptr)
 	{
-		AddLabel(state, 0x4000, "ScreenPixels", ELabelType::Data);
+		AddLabel(state, kScreenPixMemStart, "ScreenPixels", ELabelType::Data, kScreenPixMemSize);
 
 		FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(kScreenPixMemStart);
 		pScreenPixData->DataType = EDataType::ScreenPixels;
@@ -160,6 +161,18 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 		format.NoItems = 24;
 		FormatData(state, format);
 	}
+
+	// Add data regions for screen memory
+	FDataRegion screenPixRegion;
+	screenPixRegion.StartAddress = state.AddressRefFromPhysicalAddress(kScreenPixMemStart);
+	screenPixRegion.EndAddress = state.AddressRefFromPhysicalAddress(kScreenPixMemEnd);
+	state.pDataRegions->AddRegion(screenPixRegion);
+
+	FDataRegion screenAttrRegion;
+	screenAttrRegion.StartAddress = state.AddressRefFromPhysicalAddress(kScreenAttrMemStart);
+	screenAttrRegion.EndAddress = state.AddressRefFromPhysicalAddress(kScreenAttrMemEnd);
+	state.pDataRegions->AddRegion(screenAttrRegion);
+
 }
 
 
