@@ -11,6 +11,49 @@ FFunctionParam::FFunctionParam()
 		History[i] = 0;
 }
 
+std::map< EFunctionParamSourceZ80, const char*> g_Z80RegNames =
+{
+	{ EFunctionParamSourceZ80::RegA, "A" },
+	{ EFunctionParamSourceZ80::RegB, "B" },
+	{ EFunctionParamSourceZ80::RegC, "C" },
+	{ EFunctionParamSourceZ80::RegD, "D" },
+	{ EFunctionParamSourceZ80::RegE, "E" },
+	{ EFunctionParamSourceZ80::RegH, "H" },
+	{ EFunctionParamSourceZ80::RegL, "L" },
+	{ EFunctionParamSourceZ80::RegBC, "BC" },
+	{ EFunctionParamSourceZ80::RegDE, "DE" },
+	{ EFunctionParamSourceZ80::RegHL, "HL" },
+	{ EFunctionParamSourceZ80::RegIX, "IX" },
+	{ EFunctionParamSourceZ80::RegIY, "IY" },
+};
+
+std::map< EFuctionParamSourceM6502, const char*> g_M6502RegNames =
+{
+	{ EFuctionParamSourceM6502::RegA, "A" },
+	{ EFuctionParamSourceM6502::RegX, "X" },
+	{ EFuctionParamSourceM6502::RegY, "Y" },
+};
+
+std::string FFunctionParam::GenerateDescription(FCodeAnalysisState& state) const
+{
+	std::string regName;
+	if (state.GetCPUInterface()->CPUType == ECPUType::Z80)
+	{
+		auto findIt = g_Z80RegNames.find(Z80Source);
+		if(findIt != g_Z80RegNames.end())
+			regName = findIt->second;
+	}
+	else if (state.GetCPUInterface()->CPUType == ECPUType::M6502)
+	{
+		auto findIt = g_M6502RegNames.find(M6502Source);
+		if (findIt != g_M6502RegNames.end())
+			regName = findIt->second;
+	}
+
+	return regName + " : " + Name;
+}
+
+
 void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 {
 	uint16_t value = 0;

@@ -24,6 +24,6 @@ private:
 
 bool RegisterDisplayType(const FDisplayTypeBase* pType);
 const FDisplayTypeBase* GetDisplayType(const char* name);
-void DrawDisplayTypeComboBox(const FDisplayTypeBase** pType);
+bool DrawDisplayTypeComboBox(const FDisplayTypeBase** pType);
 
 void RegisterBasicDisplayTypes();

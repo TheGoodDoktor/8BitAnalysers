@@ -231,6 +231,7 @@ struct FCodeAnalysisBank
 	std::vector<FCodeAnalysisItem>		ItemList;
 
 	FCommentLine::FAllocator	CommentLineAllocator;
+	FFunctionDescLine::FAllocator	FunctionDescLineAllocator;
 
 	EBankAccess			Mapping = EBankAccess::None;
 

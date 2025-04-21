@@ -120,7 +120,7 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		json functionJson;
 		functionJson["StartAddress"] = function.StartAddress.Val;
 		functionJson["EndAddress"] = function.EndAddress.Val;
-		functionJson["Name"] = function.Name;
+		//functionJson["Name"] = function.Name;
 		functionJson["Description"] = function.Description;
 		functionJson["bROMFunction"] = function.bROMFunction;
 		functionJson["bManualEdit"] = function.bManualEdit;
@@ -373,7 +373,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			FFunctionInfo function;
 			function.StartAddress.Val = functionJson["StartAddress"];
 			function.EndAddress.Val = functionJson["EndAddress"];
-			function.Name = functionJson["Name"];
+			//function.Name = functionJson["Name"];
 			function.Description = functionJson["Description"];
 			function.bROMFunction = functionJson["bROMFunction"];
 			function.bManualEdit = functionJson["bManualEdit"];
@@ -765,6 +765,7 @@ void FixupPostLoad(FCodeAnalysisState& state)
 
 				if (pLabel != nullptr)
 				{
+					bool bRemoveLabel = false;
 					if (pLabel->LabelType == ELabelType::Function)	// All functions should be global
 						pLabel->Global = true;
 
@@ -774,10 +775,18 @@ void FixupPostLoad(FCodeAnalysisState& state)
 					if (dataInfo.DataType == EDataType::InstructionOperand)
 					{
 						if(dataInfo.InstructionAddress != addrRef)	// is label inside instruction?
-						{
-							FLabelInfo::RemoveLabelName(pLabel->GetName());
-							page.Labels[addr] = nullptr;
-						}
+							bRemoveLabel = true;
+					}
+
+					// remove label if it's in data region
+					FDataRegion* pDataRegion = state.pDataRegions->FindRegion(addrRef);
+					if (pDataRegion != nullptr && pDataRegion->StartAddress != addrRef)
+						bRemoveLabel = true;
+
+					if(bRemoveLabel)
+					{
+						FLabelInfo::RemoveLabelName(pLabel->GetName());
+						page.Labels[addr] = nullptr;
 					}
 				}
 			}

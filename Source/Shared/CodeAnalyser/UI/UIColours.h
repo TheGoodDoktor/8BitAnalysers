@@ -12,6 +12,7 @@ namespace Colours
 	extern uint32_t localLabel;	// local label
 	extern uint32_t globalLabel;		// global label
 	extern uint32_t function;		// function
+	extern uint32_t functionDesc;		// function desc
 	extern uint32_t comment;			// comment
 	extern uint32_t reg;			// registers
 	extern uint32_t address;			// addresses

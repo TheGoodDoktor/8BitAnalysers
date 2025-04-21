@@ -733,7 +733,9 @@ bool FCodeAnalysisState::SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLa
 	if (addrRef.IsValid() == false)
 		return false;
 
-	if (pDataRegions->FindRegion(addrRef))
+	const FDataRegion* pRegion = pDataRegions->FindRegion(addrRef);
+
+	if(pRegion != nullptr && pRegion->StartAddress != addrRef)	// allow labels at start of regions but that's it
 		return false;
 
 	if (pLabel != nullptr)	// ensure no name clashes
@@ -1177,7 +1179,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char*
 	pLabel->LabelType = type;
 	//pLabel->Address = address;
 	pLabel->ByteSize = 1;
-	pLabel->Global = type == ELabelType::Function;
+	pLabel->Global = type == ELabelType::Function || type == ELabelType::Data;
 	pLabel->MemoryRange = memoryRange;
 	if(state.SetLabelForAddress(address, pLabel))
 	{ 
@@ -1252,7 +1254,7 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 						FFunctionInfo newFunction;
 						newFunction.StartAddress = addrRef;
 						newFunction.EndAddress = addrRef;
-						newFunction.Name = pLabel->GetName();
+						//newFunction.Name = pLabel->GetName();
 						newFunction.bROMFunction = bank.bMachineROM;
 						state.pFunctions->AddFunction(newFunction);
 					}

@@ -67,6 +67,8 @@ struct FFunctionParam
 		return History[(HistoryIndex - offset - 1) % kMaxHistory];
 	}
 
+	std::string GenerateDescription(FCodeAnalysisState& state) const;
+
 	std::string 	Name;
 	// Union to cover z80 and m6502 + int value for loading/saving
 	union {
@@ -99,7 +101,7 @@ struct FFunctionInfo : FMemoryRegion
 	std::vector<FFunctionParam>	ReturnValues;
 	std::vector<FCPUFunctionCall>	CallPoints;	// points in the function where a call is made
 	std::vector<FAddressRef>	ExitPoints;	// points in the function where a return is made
-	std::string		Name;
+	//std::string		Name;
 	std::string		Description;
 	bool bManualEdit = false;
 	bool bROMFunction = false;

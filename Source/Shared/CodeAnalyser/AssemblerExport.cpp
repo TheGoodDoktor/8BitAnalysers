@@ -229,6 +229,11 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 		for (int i = 0; i < pDataInfo->ByteSize; i++)
 		{
 			const char ch = state.ReadByte(charAddress);
+
+			// handle chars that need to be escaped
+			if(ch == '\"')
+				AppendCharToString('\\', textString);
+
 			AppendCharToString(ch,textString);
 			state.AdvanceAddressRef(charAddress,1);
 		}
@@ -328,6 +333,7 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		}
 		break;
 		case EItemType::CommentLine:
+		case EItemType::FunctionDescLine:
 		{
 			const std::string expString = Markup::ExpandString(state, item.Item->Comment.c_str());
 
@@ -340,7 +346,7 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		}
 
 		// put comment on the end - not for comment lines
-		if (item.Item->Type != EItemType::CommentLine && item.Item->Comment.empty() == false)
+		if (item.Item->Type != EItemType::CommentLine && item.Item->Type != EItemType::FunctionDescLine && item.Item->Comment.empty() == false)
 		{
 			const std::string expString = Markup::ExpandString(state, item.Item->Comment.c_str());
 			Output("\t\t\t; %s", expString.c_str());

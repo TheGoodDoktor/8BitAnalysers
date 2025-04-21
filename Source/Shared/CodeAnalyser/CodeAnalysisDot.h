@@ -2,4 +2,4 @@
 
 class FCodeAnalysisState;
 
-bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilename, bool bROMS = false);
+bool ExportCodeAnalysisDot(FCodeAnalysisState& state, const char* pFilename, bool bROMS = false);

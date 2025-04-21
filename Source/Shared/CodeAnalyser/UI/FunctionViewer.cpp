@@ -112,19 +112,20 @@ static const char* g_ParamSourceM6502[] =
 	"XYCharPos",
 };*/
 
-void DrawParameterSourceComboBox_Z80(EFunctionParamSourceZ80& val)
+bool DrawParameterSourceComboBox_Z80(EFunctionParamSourceZ80& val)
 {
-	ImGui::Combo("##Source", (int*)&val, g_ParamSourceZ80, IM_ARRAYSIZE(g_ParamSourceZ80));
+	return ImGui::Combo("##Source", (int*)&val, g_ParamSourceZ80, IM_ARRAYSIZE(g_ParamSourceZ80));
 }
 
-void DrawParameterSourceComboBox_M6502(EFuctionParamSourceM6502& val)
+bool DrawParameterSourceComboBox_M6502(EFuctionParamSourceM6502& val)
 {
-	ImGui::Combo("##Source", (int*)&val, g_ParamSourceM6502, IM_ARRAYSIZE(g_ParamSourceM6502));
+	return ImGui::Combo("##Source", (int*)&val, g_ParamSourceM6502, IM_ARRAYSIZE(g_ParamSourceM6502));
 }
 
-void DrawFunctionParamTable(FCodeAnalysisState& state, const char *pTableName, std::vector<FFunctionParam>& params, int historyOffset)
+bool DrawFunctionParamTable(FCodeAnalysisState& state, const char *pTableName, std::vector<FFunctionParam>& params, int historyOffset)
 {
 	int deleteIndex = -1;
+	bool bChanged = false;
 
 	ImGui::PushID(pTableName);
 
@@ -152,7 +153,7 @@ void DrawFunctionParamTable(FCodeAnalysisState& state, const char *pTableName, s
 			ImGui::TableSetColumnIndex(1);
 			//ImGui::SetNextItemWidth(glyphWidth * 20.0f);
 			ImGui::SetNextItemWidth(-1);
-			ImGui::InputText("##Name", &param.Name);
+			bChanged |= ImGui::InputText("##Name", &param.Name);
 
 			// Source
 			ImGui::TableSetColumnIndex(2);
@@ -160,16 +161,16 @@ void DrawFunctionParamTable(FCodeAnalysisState& state, const char *pTableName, s
 			//ImGui::SetNextItemWidth(glyphWidth * 10.0f);
 			if (state.CPUInterface->CPUType == ECPUType::Z80)
 			{
-				DrawParameterSourceComboBox_Z80(param.Z80Source);
+				bChanged |= DrawParameterSourceComboBox_Z80(param.Z80Source);
 			}
 			else if (state.CPUInterface->CPUType == ECPUType::M6502)
 			{
-				DrawParameterSourceComboBox_M6502(param.M6502Source);
+				bChanged |= DrawParameterSourceComboBox_M6502(param.M6502Source);
 			}
 			// Type
 			ImGui::TableSetColumnIndex(3);
 			ImGui::SetNextItemWidth(-1);
-			DrawDisplayTypeComboBox(&param.pDisplayType);
+			bChanged |= DrawDisplayTypeComboBox(&param.pDisplayType);
 
 			// Last Value
 			ImGui::TableSetColumnIndex(4);
@@ -191,6 +192,7 @@ void DrawFunctionParamTable(FCodeAnalysisState& state, const char *pTableName, s
 	if (deleteIndex != -1)
 	{
 		params.erase(params.begin() + deleteIndex);
+		bChanged = true;
 	}
 
 	// Add Parameter
@@ -199,18 +201,21 @@ void DrawFunctionParamTable(FCodeAnalysisState& state, const char *pTableName, s
 		FFunctionParam newParam;
 		newParam.Name = "NewParam";
 		params.push_back(newParam);
+		bChanged = true;
 	}
 
 	ImGui::PopID();
+
+	return bChanged;
 }
 
 void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo)
 {
-	//FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	bool bChanged = false;
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	FLabelInfo* pLabelInfo = state.GetLabelForAddress(pFunctionInfo->StartAddress);
 	const float glyphWidth = ImGui_GetFontCharWidth();
-	//ImGui::Text("%s", pFunctionInfo->Name.c_str());
+	bChanged |= ImGui::InputText("Description", &pFunctionInfo->Description, ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::Text("Address range:");
 	DrawAddressLabel(state,viewState,pFunctionInfo->StartAddress);
 	ImGui::SameLine();
@@ -236,8 +241,8 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 		pLastFunctionInfo = pFunctionInfo;
 	}
 	
-	DrawFunctionParamTable(state,"Parameters", pFunctionInfo->Params, historyOffset);
-	DrawFunctionParamTable(state, "Return Values", pFunctionInfo->ReturnValues, historyOffset);
+	bChanged |= DrawFunctionParamTable(state,"Parameters", pFunctionInfo->Params, historyOffset);
+	bChanged |= DrawFunctionParamTable(state, "Return Values", pFunctionInfo->ReturnValues, historyOffset);
 
 	ImGui::SliderInt("History Offset", &historyOffset, 0, FFunctionParam::kMaxHistory - 1);
 
@@ -289,6 +294,11 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 			ImGui::SameLine();
 			DrawAddressLabel(state, viewState, exitPoint);
 		}
+	}
+
+	if (bChanged)
+	{
+		state.SetCodeAnalysisDirty(pFunctionInfo->StartAddress);
 	}
 }
 

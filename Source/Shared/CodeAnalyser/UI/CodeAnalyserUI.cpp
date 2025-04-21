@@ -393,6 +393,19 @@ void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, c
 	}
 }
 
+void DrawFunctionDescLine(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem, float offset)
+{
+	if (pItem != nullptr && pItem->Comment.empty() == false)
+	{
+		ImGui::SameLine(offset);
+		ImGui::PushStyleColor(ImGuiCol_Text, Colours::functionDesc);
+		ImGui::Text("; ");
+		ImGui::SameLine();
+		Markup::DrawText(state, viewState, pItem->Comment.c_str());
+		ImGui::PopStyleColor();
+	}
+}
+
 void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
@@ -519,17 +532,17 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 }
 
 
-void DrawCommentLine(FCodeAnalysisState& state, const FCommentLine* pCommentLine)
-{
-	ImGui::SameLine();
-	ImGui::PushStyleColor(ImGuiCol_Text, Colours::comment);
-	ImGui::SameLine(state.Config.CommentLinePos);
-	//ImGui::Text("; %s", pCommentLine->Comment.c_str());
-	ImGui::Text("\t; ");
-	ImGui::SameLine();
-	//Markup::DrawText(state, viewState, pItem->Comment.c_str());
-	ImGui::PopStyleColor();
-}
+// void DrawCommentLine(FCodeAnalysisState& state, const FCommentLine* pCommentLine)
+// {
+// 	ImGui::SameLine();
+// 	ImGui::PushStyleColor(ImGuiCol_Text, Colours::comment);
+// 	ImGui::SameLine(state.Config.CommentLinePos);
+// 	//ImGui::Text("; %s", pCommentLine->Comment.c_str());
+// 	ImGui::Text("\t; ");
+// 	ImGui::SameLine();
+// 	//Markup::DrawText(state, viewState, pItem->Comment.c_str());
+// 	ImGui::PopStyleColor();
+// }
 
 void DrawCommentBlockDetails(FCodeAnalysisState& state, const FCodeAnalysisItem& item)
 {
@@ -928,6 +941,54 @@ void ExpandCommentBlock(FCodeAnalysisState& state, FItemListBuilder& builder, FC
 	}
 }
 
+void AddFunctionDescriptionLine(FCodeAnalysisState& state, FItemListBuilder& builder, const char* pFormat, ...)
+{
+	FCodeAnalysisBank* pBank = state.GetBank(builder.BankId);
+	FFunctionDescLine* pFunctionDescLine = pBank->FunctionDescLineAllocator.Allocate();
+
+	va_list args;
+	va_start(args, pFormat);
+	char textBuffer[256];
+	vsnprintf(textBuffer, sizeof(textBuffer), pFormat, args);
+	va_end(args);
+	
+	pFunctionDescLine->Comment = textBuffer;
+	builder.ItemList.emplace_back(pFunctionDescLine, builder.BankId, builder.CurrAddr);
+}
+
+void ExpandFunctionDesc(FCodeAnalysisState& state, FItemListBuilder& builder, const FFunctionInfo* pFunctionInfo)
+{
+	FLabelInfo* pLabelInfo = state.GetLabelForAddress(pFunctionInfo->StartAddress);
+
+	if (pLabelInfo != nullptr)
+	{
+		AddFunctionDescriptionLine(state, builder, "Function Name: %s", pLabelInfo->GetName());
+	}
+
+	if (pFunctionInfo->Description.empty() == false)
+	{
+		AddFunctionDescriptionLine(state, builder, "Description: %s", pFunctionInfo->Description.c_str());
+	}
+
+	if (pFunctionInfo->Params.empty() == false)
+	{
+		AddFunctionDescriptionLine(state, builder, "Parameters:");
+		for (const auto& param : pFunctionInfo->Params)
+		{
+			AddFunctionDescriptionLine(state, builder, "\t%s", param.GenerateDescription(state).c_str());
+		}
+	}
+
+	if (pFunctionInfo->ReturnValues.empty() == false)
+	{
+		AddFunctionDescriptionLine(state, builder, "Returns:");
+		for (const auto& retVal : pFunctionInfo->ReturnValues)
+		{
+			AddFunctionDescriptionLine(state, builder, "\t%s", retVal.GenerateDescription(state).c_str());
+		}
+	}
+}
+
 void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, int startOffset)
 {
 	bank.ItemList.clear();
@@ -958,13 +1019,21 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 		const uint16_t pageAddr = bankAddr & FCodeAnalysisPage::kPageMask;
 		listBuilder.CurrAddr = bankPhysAddr + bankAddr;
 
+		const FAddressRef addrRef(bank.Id, bankPhysAddr + bankAddr);
+
 		FCommentBlock* pCommentBlock = page.CommentBlocks[pageAddr];
 		if (pCommentBlock != nullptr)
 			ExpandCommentBlock(state, listBuilder, pCommentBlock);
 
 		FLabelInfo* pLabelInfo = page.Labels[pageAddr];
 		if (pLabelInfo != nullptr)
+		{
+			FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(addrRef);
+			if (pFunctionInfo != nullptr)
+				ExpandFunctionDesc(state, listBuilder, pFunctionInfo);
+
 			listBuilder.ItemList.emplace_back(pLabelInfo, listBuilder.BankId, listBuilder.CurrAddr);
+		}
 
 		// check if we have gone past this item
 		if (bankAddr >= nextItemAddress)
@@ -1220,7 +1289,10 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		break;
 	case EItemType::CommentLine:
 		DrawComment(state,viewState,item.Item,state.Config.CommentLinePos);
-		//DrawCommentLine(state, static_cast<const FCommentLine*>(item.Item));
+		break;
+	case EItemType::FunctionDescLine:
+		// Like Comment line but different colour
+		DrawFunctionDescLine(state, viewState, item.Item, state.Config.CommentLinePos);
 		break;
     default:
         break;
@@ -1297,11 +1369,20 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 					DrawCommentBlockDetails(state, item);
 			}
 			break;
+		case EItemType::FunctionDescLine:
+			{
+				FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(item.AddressRef);
+				if (pFunctionInfo != nullptr)
+				{
+					DrawFunctionDetails(state, pFunctionInfo);
+				}
+			}
+			break;
         default:
             break;
 		}
-
-		if(item.Item->Type != EItemType::CommentLine)
+#if 0
+		if(item.Item->Type != EItemType::CommentLine && item.Item->Type != EItemType::FunctionDescLine)
 		{
 			static std::string commentString;
 			static FItem *pCurrItem = nullptr;
@@ -1330,7 +1411,7 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			ImGui::Text("]");
 
 		}
-
+#endif
 	}
 }
 

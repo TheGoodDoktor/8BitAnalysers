@@ -2,7 +2,7 @@
 #include "CodeAnalyser.h"
 #include "FunctionAnalyser.h"
 
-bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilename, bool bROMS)
+bool ExportCodeAnalysisDot(FCodeAnalysisState& state, const char* pFilename, bool bROMS)
 {
 	FILE* fp = fopen(pFilename, "wt");
 	if (!fp)
@@ -27,14 +27,17 @@ bool ExportCodeAnalysisDot(const FCodeAnalysisState& state, const char* pFilenam
 	for (const auto functionIt : functions.GetFunctions())
 	{
 		const FFunctionInfo& function = functionIt.second;
+		const FLabelInfo* functionLabel = state.GetLabelForAddress(function.StartAddress);
+
 		if (function.bROMFunction == bROMS)
 		{
 			for(const auto& calledPoint : function.CallPoints)
 			{
 				const FFunctionInfo* calledFunc = functions.GetFunctionAtAddress(calledPoint.FunctionAddr);
-				if(calledFunc)
+				const FLabelInfo* calledLabel = state.GetLabelForAddress(calledPoint.FunctionAddr);
+				if(calledFunc && calledLabel)
 				{
-					fprintf(fp, "\t%s -> %s\n", function.Name.c_str(), calledFunc->Name.c_str());
+					fprintf(fp, "\t%s -> %s\n", functionLabel->GetName(), calledLabel->GetName());
 				}
 			}
 		}

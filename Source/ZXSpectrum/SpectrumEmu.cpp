@@ -141,7 +141,7 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 	// Format screen pixel memory if it hasn't already been
 	if (state.GetLabelForPhysicalAddress(kScreenPixMemStart) == nullptr)
 	{
-		AddLabel(state, kScreenPixMemStart, "ScreenPixels", ELabelType::Data, kScreenPixMemSize);
+		AddLabel(state, state.AddressRefFromPhysicalAddress(kScreenPixMemStart), "ScreenPixels", ELabelType::Data, kScreenPixMemSize);
 
 		FDataInfo* pScreenPixData = state.GetReadDataInfoForAddress(kScreenPixMemStart);
 		pScreenPixData->DataType = EDataType::ScreenPixels;
@@ -152,7 +152,7 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 	// Format attribute memory if it hasn't already
 	if (state.GetLabelForPhysicalAddress(kScreenAttrMemStart) == nullptr)
 	{
-		AddLabel(state, 0x5800, "ScreenAttributes", ELabelType::Data);
+		AddLabel(state, state.AddressRefFromPhysicalAddress(kScreenAttrMemStart), "ScreenAttributes", ELabelType::Data);
 
 		FDataFormattingOptions format;
 		format.StartAddress = state.AddressRefFromPhysicalAddress(kScreenAttrMemStart);
@@ -875,8 +875,20 @@ bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /
 	GenerateSpriteListsFromConfig(*(FZXGraphicsViewer*)pGraphicsViewer, pSpectrumGameConfig);
 
     InitForModel(pSpectrumGameConfig->Spectrum128KGame ? ESpectrumModel::Spectrum128K : ESpectrumModel::Spectrum48K);
+
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
+
+	// Add data regions for screen memory
+	FDataRegion screenPixRegion;
+	screenPixRegion.StartAddress = CodeAnalysis.AddressRefFromPhysicalAddress(kScreenPixMemStart);
+	screenPixRegion.EndAddress = CodeAnalysis.AddressRefFromPhysicalAddress(kScreenPixMemEnd);
+	CodeAnalysis.pDataRegions->AddRegion(screenPixRegion);
+
+	FDataRegion screenAttrRegion;
+	screenAttrRegion.StartAddress = CodeAnalysis.AddressRefFromPhysicalAddress(kScreenAttrMemStart);
+	screenAttrRegion.EndAddress = CodeAnalysis.AddressRefFromPhysicalAddress(kScreenAttrMemEnd);
+	CodeAnalysis.pDataRegions->AddRegion(screenAttrRegion);
 
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)

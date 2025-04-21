@@ -38,6 +38,7 @@ enum class EItemType
 	Data,
 	CommentBlock,
 	CommentLine,
+	FunctionDescLine,
 
 	Unknown
 };
@@ -564,6 +565,38 @@ private:
 	FCommentLine() : FItem() { Type = EItemType::CommentLine; }
 	~FCommentLine() = default;
 
+};
+
+struct FFunctionDescLine : FItem
+{
+	class FAllocator
+	{
+	public:
+		FFunctionDescLine* Allocate()
+		{
+			if (FreeList.size() == 0)
+				FreeList.push_back(new FFunctionDescLine);
+
+			FFunctionDescLine* pLine = FreeList.back();
+			AllocatedList.push_back(pLine);
+			FreeList.pop_back();
+
+			return pLine;
+		}
+		void FreeAll()
+		{
+			for (auto it : AllocatedList)
+				FreeList.push_back(it);
+
+			AllocatedList.clear();
+		}
+	private:
+		std::vector<FFunctionDescLine*>	AllocatedList;
+		std::vector<FFunctionDescLine*>	FreeList;
+	};
+private:
+	FFunctionDescLine() : FItem() { Type = EItemType::FunctionDescLine; }
+	~FFunctionDescLine() = default;
 };
 
 struct FCodeAnalysisItem

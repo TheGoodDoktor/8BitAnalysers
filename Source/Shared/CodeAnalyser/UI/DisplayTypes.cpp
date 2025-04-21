@@ -163,8 +163,10 @@ const FDisplayTypeBase* GetDisplayType(const char* name)
 }
 
 // combo box of types
-void DrawDisplayTypeComboBox(const FDisplayTypeBase** pChangeType)
+bool DrawDisplayTypeComboBox(const FDisplayTypeBase** pChangeType)
 {
+	bool bChanged = false;
+
 	if (ImGui::BeginCombo("##DisplayType", (*pChangeType)->GetTypeName()))
 	{
 		for (const FDisplayTypeBase* pType : g_DisplayTypeList)
@@ -172,10 +174,13 @@ void DrawDisplayTypeComboBox(const FDisplayTypeBase** pChangeType)
 			if (ImGui::Selectable(pType->GetTypeName(), pType == pType))
 			{
 				*pChangeType = pType;
+				bChanged = true;
 			}
 		}
 		ImGui::EndCombo();
 	}
+
+	return bChanged;
 }
 
 void RegisterBasicDisplayTypes()
