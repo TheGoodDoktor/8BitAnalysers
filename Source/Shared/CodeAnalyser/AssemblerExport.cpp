@@ -193,9 +193,21 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 		const uint16_t val = state.ReadWord(addr);
 
 		const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForPhysicalAddress(val) : nullptr;
+
 		if (pLabel != nullptr)
 		{
-			Output("%s %s", Config.DataWordPrefix, pLabel->GetName());
+			const FLabelInfo* pScopeLabel = pLabel->Global == false ? state.GetScopeLabelForPhysicalAddress(val) : nullptr;
+			const FLabelInfo* pCurrentScope = state.GetScopeForAddress(addr);
+
+			if (pScopeLabel != nullptr && pScopeLabel != pCurrentScope)
+			{
+				std::string scopeLabelName = pScopeLabel->GetName();
+				Output("%s %s.%s", Config.DataWordPrefix, pScopeLabel->GetName(),pLabel->GetName());
+			}
+			else
+			{
+				Output("%s %s", Config.DataWordPrefix, pLabel->GetName());
+			}
 		}
 		else
 		{

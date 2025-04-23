@@ -168,13 +168,13 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 
 							for (int i = 0; i < scopeLabelName.size(); i++)
 								outputCallback(scopeLabelName[i], this);
-							/* **>> Not sure if we want this
+							
 							if (pExporter->IsLabelStubbed(scopeLabelName.c_str()))
 							{
 								const char* pStubbed = "_Stubbed";
 								for (int i = 0; i < strlen(pStubbed); i++)
 									outputCallback(pStubbed[i], this);
-							}*/
+							}
 						}
 						const char* pLocalPrefix = pExporter->GetConfig().LocalLabelPrefix;
 						for(int i=0;i<strlen(pLocalPrefix);i++)
