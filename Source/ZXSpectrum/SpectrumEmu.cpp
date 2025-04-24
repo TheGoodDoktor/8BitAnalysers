@@ -139,7 +139,8 @@ void* FSpectrumEmu::GetCPUEmulator(void) const
 void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
 {
 	// Format screen pixel memory if it hasn't already been
-	if (state.GetLabelForPhysicalAddress(kScreenPixMemStart) == nullptr)
+	FLabelInfo* pScreenPixelsLabel = state.GetLabelForPhysicalAddress(kScreenPixMemStart);
+	if (pScreenPixelsLabel == nullptr)
 	{
 		AddLabel(state, state.AddressRefFromPhysicalAddress(kScreenPixMemStart), "ScreenPixels", ELabelType::Data, kScreenPixMemSize);
 
@@ -148,9 +149,14 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 		//pScreenPixData->Address = kScreenPixMemStart;
 		pScreenPixData->ByteSize = kScreenPixMemSize;
 	}
+	else
+	{
+		pScreenPixelsLabel->Global = true;	// ensure global
+	}
 
 	// Format attribute memory if it hasn't already
-	if (state.GetLabelForPhysicalAddress(kScreenAttrMemStart) == nullptr)
+	FLabelInfo* pScreenAttrMemLabel = state.GetLabelForPhysicalAddress(kScreenAttrMemStart);
+	if (pScreenAttrMemLabel == nullptr)
 	{
 		AddLabel(state, state.AddressRefFromPhysicalAddress(kScreenAttrMemStart), "ScreenAttributes", ELabelType::Data);
 
@@ -160,6 +166,10 @@ void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state)
 		format.ItemSize = 32;
 		format.NoItems = 24;
 		FormatData(state, format);
+	}
+	else
+	{
+		pScreenAttrMemLabel->Global = true;	// ensure global
 	}
 
 	// Add data regions for screen memory
