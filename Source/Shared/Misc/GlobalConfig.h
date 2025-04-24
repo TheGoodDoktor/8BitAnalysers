@@ -16,6 +16,7 @@ struct FGlobalConfig
 	std::string			LastGame;
 
 	std::string			ExportAssembler;	// which assembler to exort to
+	std::string			DefaultAsmExportPath;	// default path for assembler export
 
 	std::string			WorkspaceRoot = "./Workspace/";
 	std::string			SnapshotFolder = "./Games/";

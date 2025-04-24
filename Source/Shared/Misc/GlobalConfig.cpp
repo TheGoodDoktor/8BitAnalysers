@@ -72,6 +72,8 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 
 	if (jsonConfigFile.contains("ExportAssembler"))
 		ExportAssembler = jsonConfigFile["ExportAssembler"];
+	if (jsonConfigFile.contains("DefaultAsmExportPath"))
+		DefaultAsmExportPath = jsonConfigFile["DefaultAsmExportPath"];
 	
 	// fixup paths
 	if (WorkspaceRoot.back() != '/')
@@ -100,6 +102,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["EnableExperimentalFeatures"] = bEnableExperimentalFeatures;
 	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;
 	jsonConfigFile["ExportAssembler"] = ExportAssembler;	
+	jsonConfigFile["DefaultAsmExportPath"] = DefaultAsmExportPath;
 
 	for (const auto& luaSrc : LuaBaseFiles)
 	{
