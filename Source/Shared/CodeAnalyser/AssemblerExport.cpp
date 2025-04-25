@@ -192,7 +192,7 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	{
 		const uint16_t val = state.ReadWord(addr);
 
-		const FLabelInfo* pLabel = bOperandIsAddress ? state.GetLabelForPhysicalAddress(val) : nullptr;
+		const FLabelInfo* pLabel = (bOperandIsAddress && val != 0) ? state.GetLabelForPhysicalAddress(val) : nullptr;
 
 		if (pLabel != nullptr)
 		{

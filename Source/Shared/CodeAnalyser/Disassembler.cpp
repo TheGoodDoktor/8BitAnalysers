@@ -152,6 +152,14 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 			
 			for (int addrVal = val; addrVal >= 0; addrVal--)
 			{
+				if (addrVal == 0)	// no label found
+				{
+					const char* outStr = NumStr(val, GetNumberDisplayMode());
+					for (int i = 0; i < strlen(outStr); i++)
+						outputCallback(outStr[i], this);
+					break;
+				}
+
 				const FLabelInfo* pLabel = CodeAnalysisState->GetLabelForPhysicalAddress(addrVal);
 				const FLabelInfo* pScopeLabel = CodeAnalysisState->GetScopeLabelForPhysicalAddress(addrVal);
 				if (pLabel != nullptr)
@@ -198,19 +206,13 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 					}
 					break;
 				}
-				else if (addrVal == 0)	// no label found
-				{
-					const char* outStr = NumStr(val, GetNumberDisplayMode());
-					for (int i = 0; i < strlen(outStr); i++)
-						outputCallback(outStr[i], this);
-				}
-
+			
 				labelOffset++;
 			}
 
-			if (labelAddress < ExportMin || labelAddress > ExportMax)
+			// referencing an address not in the disassembly but not null
+			if (labelAddress != 0 && (labelAddress < ExportMin || labelAddress > ExportMax))
 			{
-				// referencing an address not in the disassembly
 				LabelsOutsideRange.insert(labelAddress);
 			}
 		}
