@@ -249,6 +249,7 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 	if(pLabelInfo != nullptr)
 	{
 		ImGui::Text("Called By:");
+		FAddressRef removeRef;
 		for (const auto& ref : pLabelInfo->References.GetReferences())
 		{
 			ImGui::PushID(ref.Val);
@@ -257,9 +258,16 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 			ImGui::Text("   ");
 			ImGui::SameLine();
 			DrawAddressLabel(state, viewState, ref);
-			
+			if (ImGui::Button("Remove"))
+			{
+				removeRef = ref;
+			}
 			ImGui::PopID();
 		}
+		if (removeRef.IsValid())
+			pLabelInfo->References.RemoveReference(removeRef);
+			//ImGui::PopID();
+		
 	}
 
 	// Draw list of callers

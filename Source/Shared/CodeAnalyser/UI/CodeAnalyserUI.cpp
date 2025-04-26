@@ -507,27 +507,28 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		}
 		if(removeRef.IsValid())
 			pLabelInfo->References.RemoveReference(removeRef);
+	}
 
-		if(ImGui::Button("Find References"))
+	if(ImGui::Button("Find References"))
+	{
+		std::vector<FAddressRef> results = state.FindAllMemoryPatterns((const uint8_t*)&item.AddressRef.Address,2,false,false);
+
+		for(const auto& result : results)
 		{
-			std::vector<FAddressRef> results = state.FindAllMemoryPatterns((const uint8_t*)&item.AddressRef.Address,2,false,false);
+			FDataInfo* pDataInfo = state.GetDataInfoForAddress(result);
 
-			for(const auto& result : results)
-			{
-				FDataInfo* pDataInfo = state.GetDataInfoForAddress(result);
-
-				if(pDataInfo->DataType == EDataType::InstructionOperand)	// handle instructions differently
-					pLabelInfo->References.RegisterAccess(pDataInfo->InstructionAddress);
-				else
-					pLabelInfo->References.RegisterAccess(result);
-			}
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Clear References"))
-		{
-			pLabelInfo->References.Reset();
+			if(pDataInfo->DataType == EDataType::InstructionOperand)	// handle instructions differently
+				pLabelInfo->References.RegisterAccess(pDataInfo->InstructionAddress);
+			else
+				pLabelInfo->References.RegisterAccess(result);
 		}
 	}
+	ImGui::SameLine();
+	if (ImGui::Button("Clear References"))
+	{
+		pLabelInfo->References.Reset();
+	}
+	
 	
 }
 
