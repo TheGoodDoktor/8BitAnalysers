@@ -170,23 +170,27 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 					// Local prefix
 					if (pLabel->Global == false)
 					{
-						if (pScopeLabel != nullptr && pScopeLabel != pCurrentScope)
+						if (pScopeLabel != nullptr)
 						{
-							std::string scopeLabelName = pScopeLabel->GetName();
-
-							for (int i = 0; i < scopeLabelName.size(); i++)
-								outputCallback(scopeLabelName[i], this);
-							
-							if (pExporter->IsLabelStubbed(scopeLabelName.c_str()))
+							if(pScopeLabel != pCurrentScope)
 							{
-								const char* pStubbed = "_Stubbed";
-								for (int i = 0; i < strlen(pStubbed); i++)
-									outputCallback(pStubbed[i], this);
+								std::string scopeLabelName = pScopeLabel->GetName();
+
+								for (int i = 0; i < scopeLabelName.size(); i++)
+									outputCallback(scopeLabelName[i], this);
+							
+								if (pExporter->IsLabelStubbed(scopeLabelName.c_str()))
+								{
+									const char* pStubbed = "_Stubbed";
+									for (int i = 0; i < strlen(pStubbed); i++)
+										outputCallback(pStubbed[i], this);
+								}
 							}
+
+							const char* pLocalPrefix = pExporter->GetConfig().LocalLabelPrefix;
+							for (int i = 0; i < strlen(pLocalPrefix); i++)
+								outputCallback(pLocalPrefix[i], this);
 						}
-						const char* pLocalPrefix = pExporter->GetConfig().LocalLabelPrefix;
-						for(int i=0;i<strlen(pLocalPrefix);i++)
-							outputCallback(pLocalPrefix[i], this);
 					}
 						
 
