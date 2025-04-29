@@ -329,11 +329,11 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(item.Item);
 	const uint16_t physAddress = item.AddressRef.Address;
 
-	FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(item.AddressRef);
+	/*FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(item.AddressRef);
 	if (pFunctionInfo != nullptr)
 	{
 		DrawFunctionDetails(state, pFunctionInfo);
-	}
+	}*/
 
 	if (DrawOperandTypeCombo("Operand Type", pCodeInfo))
 		pCodeInfo->Text.clear();	// clear for a rewrite

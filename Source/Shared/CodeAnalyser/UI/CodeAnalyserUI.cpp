@@ -477,7 +477,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		GenerateGlobalInfo(state);
 	}
 
-	if (pLabelInfo->LabelType == ELabelType::Function)
+	/*if (pLabelInfo->LabelType == ELabelType::Function)
 	{
 		FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(item.AddressRef);
 		if (pFunctionInfo != nullptr)
@@ -485,7 +485,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 			DrawFunctionDetails(state, pFunctionInfo);
 		}
 	}
-	else
+	else*/
 	{
 
 		ImGui::Text("References:");
@@ -1029,9 +1029,9 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 		FLabelInfo* pLabelInfo = page.Labels[pageAddr];
 		if (pLabelInfo != nullptr)
 		{
-			FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(addrRef);
+			/*FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(addrRef);
 			if (pFunctionInfo != nullptr)
-				ExpandFunctionDesc(state, listBuilder, pFunctionInfo);
+				ExpandFunctionDesc(state, listBuilder, pFunctionInfo);*/
 
 			listBuilder.ItemList.emplace_back(pLabelInfo, listBuilder.BankId, listBuilder.CurrAddr);
 		}
@@ -1370,7 +1370,7 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 					DrawCommentBlockDetails(state, item);
 			}
 			break;
-		case EItemType::FunctionDescLine:
+		/*case EItemType::FunctionDescLine:
 			{
 				FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(item.AddressRef);
 				if (pFunctionInfo != nullptr)
@@ -1378,7 +1378,7 @@ void DrawDetailsPanel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 					DrawFunctionDetails(state, pFunctionInfo);
 				}
 			}
-			break;
+			break;*/
         default:
             break;
 		}
