@@ -53,6 +53,7 @@ protected:
 	// Skoolkit file parsing
 	bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction);
 	bool ParseSubDirective(std::string& strLine);
+	bool ParseAsmDirective(const std::string& strLine, std::string& label);
 	bool ParseCommentBlock(std::string& strLine);
 	bool UpdateCommentContinuation(std::string& strLine);
 	void ProcessBlockDirectives(char blockDirective, char subBlockDirective);
@@ -67,7 +68,7 @@ protected:
 	
 	// Code analysis related
 	void CreateCommentBlock(uint16_t address);
-	void CreateLabel(uint16_t address);
+	void CreateLabel(FSkoolkitInstruction& instruction);
 
 protected:
 	bool bInTable = false;
@@ -508,7 +509,7 @@ bool FSkoolKitImporter::ParseInstruction(std::string strLine, FSkoolkitInstructi
 	return true;
 }
 
-bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, std::string& label)
+bool FSkoolKitImporter::ParseAsmDirective(const std::string& strLine, std::string& label)
 {
 	if (StringStartsWith(strLine, "@label="))
 	{
@@ -544,11 +545,12 @@ bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 				std::string addressStr = str.substr(eqLoc + 1);
 				if (addressStr[0] == '$')
 				{
+					// Note: We don't know if this label is data, code or a function so we don't set a label type.
 					addressStr = addressStr.substr(1, 4);
 					uint16_t address = static_cast<uint16_t>(std::stoul(addressStr, nullptr, 16));
-					const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(address);
-					AddLabelAtAddress(state, addrRef);
-					if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrRef))
+					const FAddressRef addrRef = State.AddressRefFromPhysicalAddress(address);
+					AddLabelAtAddress(State, addrRef);
+					if (FLabelInfo* pLabelInfo = State.GetLabelForAddress(addrRef))
 					{
 						pLabelInfo->ChangeName(labelStr.c_str(), addrRef);
 					}
@@ -647,7 +649,7 @@ bool FSkoolKitImporter::ParseSubDirective(std::string& strLine)
 
 	if (strLine[0] == '@')
 	{
-		if (!ParseAsmDirective(State, strLine, Label))
+		if (!ParseAsmDirective(strLine, Label))
 		{
 			if (bPreserveSkoolkitMarkup)
 				CommentBlock += strLine;
@@ -886,14 +888,27 @@ void FSkoolKitImporter::CreateCommentBlock(uint16_t address)
 	CommentBlock.clear();
 }
 
-void FSkoolKitImporter::CreateLabel(uint16_t address)
+void FSkoolKitImporter::CreateLabel(FSkoolkitInstruction& instruction)
 {
-	ELabelType labelType = ELabelType::Data;
-	FAddressRef addrRef = State.AddressRefFromPhysicalAddress(address);
+	FAddressRef addrRef = State.AddressRefFromPhysicalAddress(instruction.Address);
 	AddLabelAtAddress(State, addrRef);
 	if (FLabelInfo* pLabelInfo = State.GetLabelForAddress(addrRef))
 	{
 		pLabelInfo->ChangeName(Label.c_str(), addrRef);
+
+		if (instruction.BlockDirective != kSkoolkitDirectiveNone)
+		{
+			if (BlockDirective == 'c')
+			{
+				pLabelInfo->LabelType = ELabelType::Function;
+				pLabelInfo->Global = true;
+			}
+		}
+		else if (instruction.SubBlockDirective == 'c')
+		{
+			pLabelInfo->LabelType = ELabelType::Code;
+		}
+		// todo text label
 	}
 
 	Label.clear();
@@ -993,7 +1008,7 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 		
 		if (!Label.empty())
 		{
-			CreateLabel(instruction.Address);
+			CreateLabel(instruction);
 		}
 
 		if (pSkoolInfo)
