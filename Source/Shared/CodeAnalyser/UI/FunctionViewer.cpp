@@ -258,6 +258,7 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 			ImGui::Text("   ");
 			ImGui::SameLine();
 			DrawAddressLabel(state, viewState, ref);
+			ImGui::SameLine();
 			if (ImGui::Button("Remove"))
 			{
 				removeRef = ref;
