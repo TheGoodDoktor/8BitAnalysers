@@ -202,8 +202,8 @@ struct FCodeAnalysisConfig
 	float	CommentLinePos = 42.0f;
 	float	InlineCommentPos = 0.0f;
 	float	AddressPos = 48.0f;
-	float	AddressSpace = 70.0f;
-	float	BranchLineIndentStart = 0;
+	float	AddressSpaceRatio = 6.0f;
+	//float	BranchLineIndentStart = 0;
 	float	BranchSpacing = 4.0f;
 	int		BranchMaxIndent = 8;
 	int		BranchLinesPerIndent = 5;
