@@ -5,6 +5,7 @@
 #include "CodeAnalyser/DataTypes.h"
 #include "ComboBoxes.h"
 
+#include <ImGuiSupport/ImGuiScaling.h>
 #include <math.h>
 
 #include "imgui.h"
@@ -243,7 +244,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	ImGui::PushStyleColor(ImGuiCol_Text, bHighlight ? Colours::highlight : Colours::address);
 	ImGui::Text("%s  ", NumStr(physAddress));
 	ImGui::PopStyleColor();
-	ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpace);
+	ImGui::SameLine(lineStartX + state.Config.AddressPos + (state.Config.AddressSpaceRatio * ImGui_GetFontCharWidth()));
 
 	if (state.pGlobalConfig->bShowOpcodeValues)
 	{
@@ -287,10 +288,11 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 			
 			ImGui::SameLine();
 		}
-
-		ImGui::Text(" ");
-		ImGui::SameLine();
 	}
+
+	// This is a bit of a hack but it is needed so we can control the offset of the disassembly text.
+	ImGui::Text(" ");
+	ImGui::SameLine();
 
 	Markup::SetCodeInfo(pCodeInfo);
     const bool bNOPed = state.bAllowEditing && pCodeInfo->bNOPped;

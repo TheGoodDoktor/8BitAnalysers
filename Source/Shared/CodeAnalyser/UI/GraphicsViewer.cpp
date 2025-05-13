@@ -1105,10 +1105,10 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 
 	if (ImGui::BeginChild("OffScreenBufferList", ImVec2(100 * scale, 0), true))
 	{
-		for (const auto& buffer : OffScreenBuffers)
+		for (const FOffScreenBuffer& buffer : OffScreenBuffers)
 		{
 			bool bSelected = buffer.Id == SelectedOffscreenBufferId;
-			ImGui::PushID(buffer.Address.Val);
+			ImGui::PushID(buffer.Id);
 			if (ImGui::Selectable(buffer.Name.c_str(), &bSelected))
 			{
 				//ImageSetName = set.Name;
@@ -1117,6 +1117,13 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 				//state.GetFocussedViewState().GoToAddress(buffer.Address);
 			}
 			ImGui::PopID();
+		}
+
+		if (ImGui::Button("Delete"))
+		{
+			auto delIt = std::find_if(OffScreenBuffers.begin(), OffScreenBuffers.end(), [this](const FOffScreenBuffer& buffer) { return buffer.Id == SelectedOffscreenBufferId; });
+			if (delIt != OffScreenBuffers.end())
+				OffScreenBuffers.erase(delIt);
 		}
 	}
 	ImGui::EndChild();

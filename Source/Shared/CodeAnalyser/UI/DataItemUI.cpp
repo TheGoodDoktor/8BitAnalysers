@@ -19,9 +19,10 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 {
 	const float line_height = ImGui::GetTextLineHeight();
 	const float rectSize = line_height + 4;
+	const float charWidth = ImGui_GetFontCharWidth();
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	pos.x += state.Config.AddressPos + state.Config.AddressSpace + 100.0f;// 150.0f;
+	pos.x += state.Config.AddressPos + (state.Config.AddressSpaceRatio * charWidth) + (charWidth * 9.f);// 150.0f;
 	const float startPos = pos.x;
 	pos.y -= rectSize + 2;
 
@@ -77,10 +78,11 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataInfo* pDataInfo, bool bEditMode)
 {
 	const float line_height = ImGui::GetTextLineHeight();
-	float rectSize = line_height + 4;
+	const float rectSize = line_height + 4;
+	const float charWidth = ImGui_GetFontCharWidth();
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	pos.x += state.Config.AddressPos + state.Config.AddressSpace + 100.0f;
+	pos.x += state.Config.AddressPos + (state.Config.AddressSpaceRatio * charWidth) + (charWidth * 8);
 	pos.y -= rectSize + 2;
 	const ImVec2 startPos = pos;
 
@@ -494,7 +496,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 {
 	const FDataInfo* const pDataInfo = static_cast<const FDataInfo*>(item.Item);
 	const float line_height = ImGui::GetTextLineHeight();
-	const float glyph_width = ImGui::CalcTextSize("F").x;
+	const float glyph_width = ImGui_GetFontCharWidth();
 	const float cell_width = 3 * glyph_width;
 	const uint16_t physAddr = item.AddressRef.Address;
 	const bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.Address >= physAddr && viewState.HighlightAddress.Address < physAddr + item.Item->ByteSize);
@@ -581,7 +583,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	}
 	else
 	{
-		ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpace);
+		ImGui::SameLine(lineStartX + state.Config.AddressPos + state.Config.AddressSpaceRatio * ImGui_GetFontCharWidth());
 	}
 
 	switch (pDataInfo->DataType)

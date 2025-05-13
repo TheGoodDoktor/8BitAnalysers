@@ -2333,9 +2333,9 @@ void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state)
 	ImGui::SliderFloat("Block Comment Offset", &config.CommentLinePos, 0, 200.0f);
 	ImGui::SliderFloat("Inline Comment Offset", &config.InlineCommentPos, 0, 2000.0f);
 	ImGui::SliderFloat("Address Pos", &config.AddressPos, 0, 200.0f);
-	ImGui::SliderFloat("Address Space", &config.AddressSpace, 0, 200.0f);
+	ImGui::SliderFloat("Address Space Ratio", &config.AddressSpaceRatio, 0, 20.0f);
 
-	ImGui::SliderFloat("Branch Line Start", &config.BranchLineIndentStart, 0, 200.0f);
+	//ImGui::SliderFloat("Branch Line Start", &config.BranchLineIndentStart, 0, 200.0f);
 	ImGui::SliderFloat("Branch Line Spacing", &config.BranchSpacing, 0, 20.0f);
 	ImGui::SliderInt("Branch Line No Indents", &config.BranchMaxIndent,1,10);
 }
