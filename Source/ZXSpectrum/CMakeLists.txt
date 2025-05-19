@@ -71,7 +71,7 @@ endif ()
 
 
 # program source
-file ( GLOB program_src 
+file ( GLOB program_src CONFIGURE_DEPENDS
 	./*.cpp ./*.c ./*.h
 	Exporters/*.cpp Exporters/*.h
 	GameViewers/*.cpp GameViewers/*.h
