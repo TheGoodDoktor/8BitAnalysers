@@ -2002,7 +2002,8 @@ void FSpectrumEmu::DrawEmulatorUI()
 	ImGui::End();
 
 	// game viewer
-	if (ImGui::Begin("Game Viewer"))
+	
+	/*if (ImGui::Begin("Game Viewer"))
 	{
 		if (pActiveGame != nullptr)
 		{
@@ -2011,7 +2012,7 @@ void FSpectrumEmu::DrawEmulatorUI()
 		}
 		
 	}
-	ImGui::End();
+	ImGui::End();*/
 
 #ifndef NDEBUG
 	// config
