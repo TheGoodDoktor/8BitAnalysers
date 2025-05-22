@@ -67,7 +67,7 @@ void ShowDataItemWriteActivity(FCodeAnalysisState& state, FAddressRef addr);
 void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FDataInfo* pDataInfo);
 
 void DrawInlineComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem);
-void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem, float offset = 0.0f);
+void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem* pItem, float offset = 0.0f, bool bIsInline = true);
 
 // util functions - move?
 bool DrawU8Input(const char* label, uint8_t* value);
