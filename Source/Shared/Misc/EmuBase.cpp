@@ -327,7 +327,7 @@ void FEmuBase::FileMenu()
 		SaveProject();
 	}
 
-	if (ImGui::MenuItem("Export ASM File"))
+	if (pCurrentProjectConfig && ImGui::MenuItem("Export ASM File"))
 	{
 		std::string exportPath;
 
@@ -362,7 +362,7 @@ void FEmuBase::FileMenu()
 		bExportBinary = true;
 	}
 
-	if (ImGui::MenuItem("Export Dot File"))
+	if (pCurrentProjectConfig && ImGui::MenuItem("Export Dot File"))
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
 
