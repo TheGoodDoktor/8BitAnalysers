@@ -70,6 +70,14 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 		}
 	}
 
+	{
+		RecentProjects.clear();
+		for (const auto& projName : jsonConfigFile["RecentProjects"])
+		{
+			RecentProjects.push_back(projName);
+		}
+	}
+
 	if (jsonConfigFile.contains("ExportAssembler"))
 		ExportAssembler = jsonConfigFile["ExportAssembler"];
 	if (jsonConfigFile.contains("DefaultAsmExportPath"))
@@ -109,6 +117,10 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 		jsonConfigFile["LuaBaseFiles"].push_back(luaSrc);
 	}
 
+	for (const auto& projName : RecentProjects)
+	{
+		jsonConfigFile["RecentProjects"].push_back(projName);
+	}
 }
 
 
@@ -143,6 +155,15 @@ bool	FGlobalConfig::Save(const char* filename)
 	return false;
 }
 
+void FGlobalConfig::AddProjectToRecents(const std::string& name)
+{
+	// If already in the list, remove it, so we can add it to the front of the list.
+	RecentProjects.remove(name);
+
+	RecentProjects.push_front(name);
+	if (RecentProjects.size() > kNumRecentProjects)
+		RecentProjects.pop_back();
+}
 
 #if 0
 FGlobalConfig& GetGlobalConfig()
