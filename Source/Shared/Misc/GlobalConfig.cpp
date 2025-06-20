@@ -70,6 +70,7 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 		}
 	}
 
+	if (jsonConfigFile.contains("RecentProjects"))
 	{
 		RecentProjects.clear();
 		for (const auto& projName : jsonConfigFile["RecentProjects"])
