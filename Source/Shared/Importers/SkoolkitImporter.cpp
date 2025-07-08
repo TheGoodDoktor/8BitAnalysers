@@ -6,6 +6,17 @@
 #include "Util/Misc.h"
 
 #include <algorithm> // for std::count
+#include <set>
+
+#ifndef NDEBUG
+#define SKOOLKIT_DEBUG_LOG(...) { LOGINFO("" __VA_ARGS__); }
+#else
+#define SKOOLKIT_DEBUG_LOG(...)
+#endif
+
+// This is for experimental. It enables code to process the functions after we've imported the file.
+// Currently the only feature offered is the ability to make global entry points a global label.
+#define FUNCTION_ANALYSIS 1
 
 const std::string kWhiteSpace = " \n\r\t\f\v";
 const char kSkoolkitDirectiveNone = '-';
@@ -20,8 +31,31 @@ const bool bStripBracesFromComments = false;
 // Set this to true if you intend to export the Skoolkit file and you want to preserve the original markup.
 // Set to false if you don't intend to output the Skoolkit file and you want the best viewing experience.
 // When set to false, it will attempt to convert Skoolkit macros to 8BA markup where possible.
-// It will also strip out any unsupported Skoolkit markup.
+// It will also strip out any unsupported Skoolkit markup but this is WIP.
 const bool bPreserveSkoolkitMarkup = false;
+
+#if FUNCTION_ANALYSIS
+struct FSkoolkitFunction
+{
+	bool IsAddressLocal(uint16_t address) const
+	{
+		return address >= Start && address < End;
+	}
+	bool IsValid() const 
+	{
+		return End != 0;
+	}
+#ifndef NDEBUG
+	std::string Name;
+#endif
+	uint16_t Start = 0;
+	uint16_t End = 0;
+	std::set<uint16_t> BranchDest; // All the branch destinations in this function. Skoolkit calls them entry points
+#ifndef NDEBUG
+	std::map<uint16_t, std::string> EntryPointNames;
+#endif
+};
+#endif
 
 struct FSkoolkitInstruction
 {
@@ -31,6 +65,9 @@ struct FSkoolkitInstruction
 	uint16_t Address = 0;
 	std::string Comment;
 	std::string Operation; // the disassembly text
+
+	bool bBranchInstruction = false; // Is this a jump to another location? i.e. JP or JR
+	uint16_t BranchAddr = 0;
 };
 
 class FSkoolKitImporter
@@ -53,9 +90,10 @@ protected:
 	// Skoolkit file parsing
 	bool ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction);
 	bool ParseSubDirective(std::string& strLine);
+	bool ParseAsmDirective(const std::string& strLine, std::string& label);
 	bool ParseCommentBlock(std::string& strLine);
 	bool UpdateCommentContinuation(std::string& strLine);
-	void ProcessBlockDirectives(char blockDirective, char subBlockDirective);
+	void ProcessBlockDirectives(char blockDirective, char subBlockDirective, uint16_t address);
 	FItem* SetOrCreateItemFromInstruction(FSkoolkitInstruction& instruction);
 
 	// Text processing
@@ -64,10 +102,15 @@ protected:
 	std::string ProcessBlockComment(const char* pText);
 	std::string ProcessInlineComment(const char* pText);
 	std::string ProcessComment(const char* pText);
-	
+
+#if FUNCTION_ANALYSIS
+	void ProcessBranchInstruction(FSkoolkitInstruction& instruction);
+	void ProcessFunctions();
+#endif
+
 	// Code analysis related
 	void CreateCommentBlock(uint16_t address);
-	void CreateLabel(uint16_t address);
+	void CreateLabel(FSkoolkitInstruction& instruction);
 
 protected:
 	bool bInTable = false;
@@ -94,6 +137,14 @@ protected:
 	char* pchLine = nullptr;
 	FCodeAnalysisState& State;
 	FSkoolFileInfo* pSkoolInfo = nullptr;
+
+#if FUNCTION_ANALYSIS
+	std::vector<FSkoolkitFunction> Functions;
+
+	// List of code references for each skoolkit entry point (branch destination).
+	// Maps an entry point address to a list of addresses that branch to that address.
+	std::map<uint16_t, std::vector<uint16_t>> BranchDestRefs;
+#endif
 };
 
 std::string TrimLeadingChars(const std::string& str, const std::string& charsToTrim)
@@ -169,6 +220,7 @@ void FSkoolKitImporter::ProcessTableMacro(const char** pMacroText, const char* p
 // #DEF
 // #FACT
 // #FOR
+// #SYSVAR
 
 // https://skoolkit.ca/docs/skoolkit/skool-macros.html
 std::string FSkoolKitImporter::ProcessMacro(const char** pMacroText)
@@ -339,7 +391,7 @@ std::string FSkoolKitImporter::ProcessMacro(const char** pMacroText)
 
 #ifndef NDEBUG
 	// log unhandled macro
-	//LOGINFO("[MACRO] #%s", pInTxtPtr);
+	//SKOOLKIT_DEBUG_LOG("[MACRO] #%s", pInTxtPtr);
 #endif
 	return "";
 }
@@ -417,6 +469,84 @@ std::string FSkoolKitImporter::ProcessComment(const char* pText)
 	return outString;
 }
 
+#if FUNCTION_ANALYSIS
+// Iterate through all functions to see if an entry points need to be made global.
+// It does this by looking at the list of addresses that references an entry point
+// and if any of those addresses are not local to the function the label is marked as global.
+void FSkoolKitImporter::ProcessFunctions()
+{
+	// todo: deal with 'u' for unused code
+	// see RESET function in Spectrum ROM
+
+	SKOOLKIT_DEBUG_LOG("Function list.");
+	SKOOLKIT_DEBUG_LOG("Found %d functions.\n", Functions.size());
+	int failureCount = 0;
+	int numGlobals = 0;
+	for (FSkoolkitFunction& func : Functions)
+	{
+//#ifndef NDEBUG
+		SKOOLKIT_DEBUG_LOG("%04x - %04x: %s", func.Start, func.End, func.Name.c_str());
+//#endif
+		if (!func.IsValid())
+		{
+//#ifndef NDEBUG
+			SKOOLKIT_DEBUG_LOG("%04x Function '%s' is not valid", func.Start, func.Name.c_str());
+//#endif
+			continue;
+		}
+
+		for (uint16_t destAddr : func.BranchDest)
+		{
+			bool bGlobal = false;
+			if (BranchDestRefs.find(destAddr) != BranchDestRefs.end())
+			{
+				for (uint16_t sourceAddr : BranchDestRefs[destAddr])
+				{
+					if (!func.IsAddressLocal(sourceAddr))
+					{
+						bGlobal = true;
+						numGlobals++;
+
+						// Make the code label global
+						FAddressRef addrRef = State.AddressRefFromPhysicalAddress(destAddr);
+						if (FLabelInfo* pLabelInfo = State.GetLabelForAddress(addrRef))
+						{
+#ifndef NDEBUG
+							if (pLabelInfo->Global)
+								SKOOLKIT_DEBUG_LOG(" %04x %s is already global", destAddr, func.EntryPointNames[destAddr].c_str());
+
+							if (pLabelInfo->LabelType != ELabelType::Code)
+								SKOOLKIT_DEBUG_LOG(" %04x %s is not code!", destAddr, func.EntryPointNames[destAddr].c_str());
+#endif
+							pLabelInfo->Global = true;
+						}
+
+//#ifndef NDEBUG
+						SKOOLKIT_DEBUG_LOG(" %04x %s should be global", destAddr, func.EntryPointNames[destAddr].c_str());
+//#endif
+						break;
+					}
+				}
+			}
+			else
+			{
+//#ifndef NDEBUG
+				SKOOLKIT_DEBUG_LOG("  No calling code found for %04x %s", destAddr, func.EntryPointNames[destAddr].c_str());
+//#endif
+				failureCount++;
+			}
+//#ifndef NDEBUG
+			SKOOLKIT_DEBUG_LOG("  %04x %s %s", destAddr, func.EntryPointNames[destAddr].c_str(), bGlobal ? " [GLOBAL]" : "");
+//#endif
+		}
+	}
+
+	SKOOLKIT_DEBUG_LOG("\nFound %d cases where no calling code found", failureCount);
+	SKOOLKIT_DEBUG_LOG("Found %d globals", numGlobals);
+}
+#endif // #if FUNCTION_ANALYSIS
+
+
 std::string FSkoolKitImporter::ProcessBlockComment(const char* pText)
 {
 	return ProcessComment(pText);
@@ -427,23 +557,14 @@ std::string FSkoolKitImporter::ProcessInlineComment(const char* pText)
 	return ProcessComment(pText);
 }
 
-bool FSkoolKitImporter::ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
+bool GetAddressFromText(const char* str, uint16_t& addr)
 {
-	if (strLine.length() < 6)
-		return false;
-
-	if (strLine[0] == '*')
-		instruction.bBranchDestination = true;
-	else if (strLine[0] != ' ')
-		instruction.BlockDirective = strLine[0];
-	
-	if (strLine[1] == '$')
+	char* pNumEnd;
+	if (str[0] == '$')
 	{
 		// hexadecimal address
-		char* pNumEnd;
-		std::string numStr = strLine.substr(2, 4);
-		instruction.Address = static_cast<uint16_t>(strtol(numStr.c_str(), &pNumEnd, 16));
-		if (pNumEnd == numStr.c_str())
+		addr = static_cast<uint16_t>(strtol(str + 1, &pNumEnd, 16));
+		if (pNumEnd == str)
 		{
 			return false;
 		}
@@ -451,20 +572,130 @@ bool FSkoolKitImporter::ParseInstruction(std::string strLine, FSkoolkitInstructi
 	else
 	{
 		// decimal address
-		char* pNumEnd;
-		std::string numStr = strLine.substr(1, 5);
-		instruction.Address = static_cast<uint16_t>(strtol(numStr.c_str(), &pNumEnd, 10));
-		if (pNumEnd == numStr.c_str())
+		addr = static_cast<uint16_t>(strtol(str, &pNumEnd, 10));
+		if (pNumEnd == str)
 		{
 			return false;
 		}
 	}
+	return true;
+}
+
+#if FUNCTION_ANALYSIS
+// Detect if instruction is a JP, JR, CALL or DJNZ instruction and if so
+// remember the instruction's address in a map.
+// 
+// We don't technically need to deal with CALL instructions. The static analysis
+// code will set those labels to global anyway.
+// 
+// It doesn't deal with JP (IX), JP (IY) or JP (HL).
+// 
+// This function is a bit clunky and could maybe simpler.
+void FSkoolKitImporter::ProcessBranchInstruction(FSkoolkitInstruction& instruction)
+{
+	size_t txtOffset = 0;
+	if (StringStartsWith(instruction.Operation, "DJNZ"))
+	{
+		txtOffset = 5;
+	}
+	else if (StringStartsWith(instruction.Operation, "CALL"))
+	{
+		txtOffset = 5;
+		
+		if (instruction.Operation[5] == 'N')
+		{
+			// NZ, NC
+			if (instruction.Operation[6] == 'Z' || instruction.Operation[6] == 'C')
+			{
+				txtOffset = 8;
+			}
+		}
+		else if (instruction.Operation[5] == 'P')
+		{
+			txtOffset = 7;
+			// PO, PE 
+			if (instruction.Operation[6] == 'O' || instruction.Operation[6] == 'E')
+			{
+				txtOffset++;
+			}
+		}
+		else
+		{
+			// Z, C, M, P
+			if (instruction.Operation[5] == 'Z' || instruction.Operation[5] == 'C' || instruction.Operation[5] == 'M' || instruction.Operation[5] == 'P')
+			{
+				txtOffset = 7;
+			}
+		}
+	}
+	else if (StringStartsWith(instruction.Operation, "JR") || StringStartsWith(instruction.Operation, "JP"))
+	{
+		txtOffset = 3;
+		if (instruction.Operation[3] == 'N')
+		{
+			// NZ, NC, 
+			if (instruction.Operation[4] == 'Z' || instruction.Operation[4] == 'C')
+			{
+				txtOffset = 6;
+			}
+
+		}
+		else if (instruction.Operation[3] == 'P')
+		{
+			txtOffset = 5;
+			// PO, PE 
+			if (instruction.Operation[4] == 'O' || instruction.Operation[4] == 'E')
+			{
+				txtOffset++;
+			}
+		}
+		else
+		{
+			// Z, C, M, P
+			if (instruction.Operation[3] == 'Z' || instruction.Operation[3] == 'C' || instruction.Operation[3] == 'M' || instruction.Operation[3] == 'P')
+			{
+				txtOffset = 5;
+			}
+		}
+	}
+
+	if (txtOffset)
+	{
+		if (GetAddressFromText(instruction.Operation.c_str() + txtOffset, instruction.BranchAddr))
+		{
+			// Add this instruction's address to the list of address for the branch address.
+			// The branch address is the address the instruction branches to).
+			instruction.bBranchInstruction = true;
+			BranchDestRefs[instruction.BranchAddr].push_back(instruction.Address);
+		}
+		else
+		{
+			SKOOLKIT_DEBUG_LOG("Could not get branch at address %x '%s'", instruction.Address, instruction.Operation.c_str());
+		}
+	}
+}
+#endif // #if FUNCTION_ANALYSIS
+
+bool FSkoolKitImporter::ParseInstruction(std::string strLine, FSkoolkitInstruction& instruction)
+{
+	if (strLine.length() < 6)
+		return false;
+
+	if (strLine[0] == '*')
+	{
+		instruction.bBranchDestination = true;
+	}
+	else if (strLine[0] != ' ')
+		instruction.BlockDirective = strLine[0];
+	
+	if (!GetAddressFromText(strLine.c_str() + 1, instruction.Address))
+		return false;
 
 	const size_t opStart = 7;
 	size_t opLen = std::string::npos;
 
-	// get the comment string
-	// todo deal with semicolons in strings
+	// Get the comment string
+	// todo: deal with semicolons in strings
 	const size_t semicolonPos = strLine.find_first_of(';');
 	if (semicolonPos != std::string::npos)
 	{
@@ -505,10 +736,14 @@ bool FSkoolKitImporter::ParseInstruction(std::string strLine, FSkoolkitInstructi
 	RemoveTrailingCarriageReturn(instruction.Operation);
 	instruction.SubBlockDirective = GetDirectiveFromAsm(instruction.Operation);
 
+#if FUNCTION_ANALYSIS
+	ProcessBranchInstruction(instruction);
+#endif
+	
 	return true;
 }
 
-bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, std::string& label)
+bool FSkoolKitImporter::ParseAsmDirective(const std::string& strLine, std::string& label)
 {
 	if (StringStartsWith(strLine, "@label="))
 	{
@@ -544,11 +779,12 @@ bool ParseAsmDirective(FCodeAnalysisState& state, const std::string& strLine, st
 				std::string addressStr = str.substr(eqLoc + 1);
 				if (addressStr[0] == '$')
 				{
+					// Note: We don't know if this label is data, code or a function so we don't set a label type.
 					addressStr = addressStr.substr(1, 4);
 					uint16_t address = static_cast<uint16_t>(std::stoul(addressStr, nullptr, 16));
-					const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(address);
-					AddLabelAtAddress(state, addrRef);
-					if (FLabelInfo* pLabelInfo = state.GetLabelForAddress(addrRef))
+					const FAddressRef addrRef = State.AddressRefFromPhysicalAddress(address);
+					AddLabelAtAddress(State, addrRef);
+					if (FLabelInfo* pLabelInfo = State.GetLabelForAddress(addrRef))
 					{
 						pLabelInfo->ChangeName(labelStr.c_str(), addrRef);
 					}
@@ -640,14 +876,14 @@ bool FSkoolKitImporter::ParseSubDirective(std::string& strLine)
 		if (StringStartsWith(strLine, "@rsub+end"))
 			bInSubDirective = false;
 		else
-			LOGINFO("Skipping @rsub text '%s' on line %d", pchLine, LineNum);
+			SKOOLKIT_DEBUG_LOG("Skipping @rsub text '%s' on line %d", pchLine, LineNum);
 		// todo: add string to CommentBlock?
 		return true;
 	}
 
 	if (strLine[0] == '@')
 	{
-		if (!ParseAsmDirective(State, strLine, Label))
+		if (!ParseAsmDirective(strLine, Label))
 		{
 			if (bPreserveSkoolkitMarkup)
 				CommentBlock += strLine;
@@ -721,11 +957,20 @@ bool FSkoolKitImporter::UpdateCommentContinuation(std::string& strLine)
 	return false;
 }
 
-void FSkoolKitImporter::ProcessBlockDirectives(char blockDirective, char subBlockDirective)
+void FSkoolKitImporter::ProcessBlockDirectives(char blockDirective, char subBlockDirective, uint16_t address)
 {
+#if FUNCTION_ANALYSIS
+	if (blockDirective != kSkoolkitDirectiveNone && BlockDirective == 'c')
+	{
+		// We've ended a function
+		if (!Functions.empty())
+			Functions.back().End = address;
+	}
+#endif
+
 	if (blockDirective != kSkoolkitDirectiveNone && BlockDirective != blockDirective)
 	{
-		// we've encountered a new block
+		// we've encountered a new block type
 		BlockDirective = blockDirective;
 		SubBlockDirective = subBlockDirective;
 		if (pSkoolInfo)
@@ -886,14 +1131,46 @@ void FSkoolKitImporter::CreateCommentBlock(uint16_t address)
 	CommentBlock.clear();
 }
 
-void FSkoolKitImporter::CreateLabel(uint16_t address)
+void FSkoolKitImporter::CreateLabel(FSkoolkitInstruction& instruction)
 {
-	ELabelType labelType = ELabelType::Data;
-	FAddressRef addrRef = State.AddressRefFromPhysicalAddress(address);
+	FAddressRef addrRef = State.AddressRefFromPhysicalAddress(instruction.Address);
 	AddLabelAtAddress(State, addrRef);
 	if (FLabelInfo* pLabelInfo = State.GetLabelForAddress(addrRef))
 	{
 		pLabelInfo->ChangeName(Label.c_str(), addrRef);
+
+		if (instruction.BlockDirective != kSkoolkitDirectiveNone)
+		{
+			if (BlockDirective == 'c')
+			{
+				pLabelInfo->LabelType = ELabelType::Function;
+				pLabelInfo->Global = true;
+
+#if FUNCTION_ANALYSIS
+				FSkoolkitFunction func;
+#ifndef NDEBUG
+				func.Name = Label;
+#endif
+				func.Start = instruction.Address;
+				Functions.emplace_back(func);
+#endif
+			}
+		}
+		else if (instruction.SubBlockDirective == 'c')
+		{
+			pLabelInfo->LabelType = ELabelType::Code;
+
+#if FUNCTION_ANALYSIS
+			if (instruction.bBranchDestination)
+			{
+				Functions.back().BranchDest.insert(instruction.Address);
+#ifndef NDEBUG
+				Functions.back().EntryPointNames[instruction.Address] = Label;
+#endif
+			}
+#endif
+		}
+		// todo text label
 	}
 
 	Label.clear();
@@ -974,7 +1251,7 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 			SkoolLocation.BlockDirective = GetDirectiveFromChar(instruction.BlockDirective);
 		}
 
-		ProcessBlockDirectives(instruction.BlockDirective, instruction.SubBlockDirective);
+		ProcessBlockDirectives(instruction.BlockDirective, instruction.SubBlockDirective, instruction.Address);
 
 		FItem* pItem = SetOrCreateItemFromInstruction(instruction);
 		
@@ -993,7 +1270,7 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 		
 		if (!Label.empty())
 		{
-			CreateLabel(instruction.Address);
+			CreateLabel(instruction);
 		}
 
 		if (pSkoolInfo)
@@ -1014,12 +1291,12 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 #ifndef NDEBUG
 	if (longestCommentItem.Item)
 	{
-		LOGINFO("Longest comment: line %d. %d chars. address %d 0x%x",
+		SKOOLKIT_DEBUG_LOG("Longest comment: line %d. %d chars. address %d 0x%x",
 			longestCommentLineNum,
 			longestCommentItem.Item->Comment.size(),
 			longestCommentItem.AddressRef.Address,
 			longestCommentItem.AddressRef.Address);
-		LOGINFO("Comment is '%s'", longestCommentItem.Item->Comment.c_str());
+		SKOOLKIT_DEBUG_LOG("Comment is '%s'", longestCommentItem.Item->Comment.c_str());
 	}
 #endif
 
@@ -1028,6 +1305,10 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 		pSkoolInfo->StartAddr = minAddr;
 		pSkoolInfo->EndAddr = maxAddr;
 	}
+
+#if FUNCTION_ANALYSIS
+	ProcessFunctions();
+#endif
 
 	State.SetAddressRangeDirty();
 	fclose(fp);

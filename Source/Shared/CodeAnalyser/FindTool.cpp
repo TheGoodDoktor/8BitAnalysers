@@ -317,7 +317,7 @@ void FFindTool::DrawUI()
 						if (const FDataInfo* pWriteDataInfo = pCodeAnalysis->GetDataInfoForAddress(resultAddr))
 						{
 							// what if this is code?
-							DrawComment(*pCodeAnalysis,viewState,pWriteDataInfo);
+							DrawComment(*pCodeAnalysis,viewState,pWriteDataInfo, 0.f, false);
 						}
 
 						if (bValueChanged)

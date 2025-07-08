@@ -1001,6 +1001,9 @@ bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /
 	pCurrentProjectConfig = pGameConfig;
 
 	LoadLua();
+	
+	pGlobalConfig->AddProjectToRecents(GetProjectConfig()->Name);
+	
 	return true;
 }
 

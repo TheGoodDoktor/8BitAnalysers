@@ -375,18 +375,21 @@ void DrawInlineComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSt
 		// I couldn't see a better way to do this.
 		ImGui::SameLine();
 
-		DrawComment(state, viewState, pItem, std::max(state.Config.InlineCommentPos, ImGui::GetCursorPosX()));
+		DrawComment(state, viewState, pItem, std::max(state.Config.InlineCommentPos, ImGui::GetCursorPosX()), true);
 	}
 }
 
-void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem *pItem, float offset)
+void DrawComment(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FItem *pItem, float offset, bool bIsInline)
 {
 	if(pItem != nullptr && pItem->Comment.empty() == false)
 	{
 		ImGui::SameLine(offset);
 		ImGui::PushStyleColor(ImGuiCol_Text, Colours::comment);
 		//old ImGui::Text("\t; %s", pItem->Comment.c_str());
-		ImGui::Text("\t; ");
+		if (bIsInline)
+			ImGui::Text("\t; ");
+		else
+			ImGui::Text("; ");
 		ImGui::SameLine();
 		Markup::DrawText(state,viewState,pItem->Comment.c_str());
 		ImGui::PopStyleColor();
@@ -1289,7 +1292,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 			ImGui::PopStyleColor();
 		break;
 	case EItemType::CommentLine:
-		DrawComment(state,viewState,item.Item,state.Config.CommentLinePos);
+		DrawComment(state,viewState,item.Item,state.Config.CommentLinePos, false);
 		break;
 	case EItemType::FunctionDescLine:
 		// Like Comment line but different colour
@@ -2333,9 +2336,9 @@ void DrawCodeAnalysisConfigWindow(FCodeAnalysisState& state)
 	ImGui::SliderFloat("Block Comment Offset", &config.CommentLinePos, 0, 200.0f);
 	ImGui::SliderFloat("Inline Comment Offset", &config.InlineCommentPos, 0, 2000.0f);
 	ImGui::SliderFloat("Address Pos", &config.AddressPos, 0, 200.0f);
-	ImGui::SliderFloat("Address Space", &config.AddressSpace, 0, 200.0f);
+	ImGui::SliderFloat("Address Space Ratio", &config.AddressSpaceRatio, 0, 20.0f);
 
-	ImGui::SliderFloat("Branch Line Start", &config.BranchLineIndentStart, 0, 200.0f);
+	//ImGui::SliderFloat("Branch Line Start", &config.BranchLineIndentStart, 0, 200.0f);
 	ImGui::SliderFloat("Branch Line Spacing", &config.BranchSpacing, 0, 20.0f);
 	ImGui::SliderInt("Branch Line No Indents", &config.BranchMaxIndent,1,10);
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <list>
 #include "Util/Misc.h"
 #include <json_fwd.hpp>
 
@@ -8,12 +9,16 @@
 // Individual machine configs will derive from this
 struct FGlobalConfig
 {
+	static const int kNumRecentProjects = 10;
+
 	bool				bEnableAudio;
 	bool				bShowScanLineIndicator = false;
 	bool				bShowOpcodeValues = false;
 	ENumberDisplayMode	NumberDisplayMode = ENumberDisplayMode::HexAitch;
 	int					BranchLinesDisplayMode = 1;
 	std::string			LastGame;
+
+	std::list<std::string>	RecentProjects;
 
 	std::string			ExportAssembler;	// which assembler to exort to
 	std::string			DefaultAsmExportPath;	// default path for assembler export
@@ -35,9 +40,10 @@ struct FGlobalConfig
 	bool				bEditLuaBaseFiles = false;
 	std::vector<std::string>	LuaBaseFiles;
 
-    virtual bool    Init(void);
+	virtual bool    Init(void);
 	bool	Load(const char* filename);
 	bool	Save(const char* filename);
+	void	AddProjectToRecents(const std::string& name);
 protected:
 	virtual void ReadFromJson(const nlohmann::json& jsonConfigFile);
 	virtual void WriteToJson(nlohmann::json& jsonConfigFile) const;

@@ -322,12 +322,41 @@ void FEmuBase::FileMenu()
 		ImGui::EndMenu();
 	}
 
+	if (ImGui::BeginMenu("Recent Projects"))
+	{
+		if (pGlobalConfig->RecentProjects.empty())
+		{
+			ImGui::Text("No recent projects found.");
+		}
+		else
+		{
+			for (const std::string& projName : pGlobalConfig->RecentProjects)
+			{
+				if (ImGui::MenuItem(projName.c_str()))
+				{
+					SaveProject();  // save previous game
+					FProjectConfig* pGameConfig = GetGameConfigForName(projName.c_str());
+					if (pGameConfig)
+					{
+						if (LoadProject(pGameConfig, true) == false)
+						{
+							Reset();
+							DisplayErrorMessage("Could not start project '%s'", pGameConfig->Name.c_str());
+						}
+						break;
+					}
+				}
+			}
+		}
+		ImGui::EndMenu();
+	}
+
 	if (ImGui::MenuItem("Save Project"))
 	{
 		SaveProject();
 	}
 
-	if (ImGui::MenuItem("Export ASM File"))
+	if (pCurrentProjectConfig && ImGui::MenuItem("Export ASM File"))
 	{
 		std::string exportPath;
 
@@ -362,7 +391,7 @@ void FEmuBase::FileMenu()
 		bExportBinary = true;
 	}
 
-	if (ImGui::MenuItem("Export Dot File"))
+	if (pCurrentProjectConfig && ImGui::MenuItem("Export Dot File"))
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
 

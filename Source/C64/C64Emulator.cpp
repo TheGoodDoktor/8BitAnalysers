@@ -394,6 +394,8 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 
 	//GraphicsViewer.SetImagesRoot((pGlobalConfig->WorkspaceRoot + "GraphicsSets/" + pGameConfig->Name + "/").c_str());
 
+	pGlobalConfig->AddProjectToRecents(GetProjectConfig()->Name);
+
 	return true;
 }
 

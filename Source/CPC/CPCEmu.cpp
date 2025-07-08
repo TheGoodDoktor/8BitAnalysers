@@ -1329,6 +1329,9 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	pCurrentProjectConfig = pProjectConfig;
 
 	LoadLua();
+
+	pGlobalConfig->AddProjectToRecents(GetProjectConfig()->Name);
+
 	return true;
 }
 
