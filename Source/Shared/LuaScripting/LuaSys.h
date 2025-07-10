@@ -23,6 +23,7 @@ namespace LuaSys
     };
 
 	bool Init(FEmuBase* pEmulator);
+	bool LoadGlobals(FEmuBase* pEmulator);
 	void Shutdown(void);
 
 	void RegisterExecutionHandler(uint16_t address, const char* functionName);
