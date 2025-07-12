@@ -65,6 +65,7 @@ void FDebugger::CPUTick(uint64_t pins)
 
     if (CPUType == ECPUType::Z80)
     {
+		 /*
         addr = Z80_GET_ADDR(pins);
 
         bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
@@ -74,7 +75,7 @@ void FDebugger::CPUTick(uint64_t pins)
 		bIORead = (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD);
 		bIOWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR);
 		bIrq = (pins & Z80_INT) && pZ80->iff1;
-		bNMI = risingPins & Z80_NMI;
+		bNMI = risingPins & Z80_NMI;*/
     }
     else if (CPUType == ECPUType::M6502)
     {
