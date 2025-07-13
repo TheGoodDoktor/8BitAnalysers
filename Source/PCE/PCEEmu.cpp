@@ -8,6 +8,7 @@
 //#include <ImGuiSupport/ImGuiTexture.h>
 #include "Util/FileUtil.h"
 
+#include <geargrafx_core.h>
 //#include "CodeAnalyser/CodeAnalyser.h"
 //#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
@@ -88,13 +89,22 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	FEmuBase::Init(config);
 	
 	const FPCELaunchConfig& PCELaunchConfig = (const FPCELaunchConfig&)config;
-    
+ 
 	SetWindowTitle(kAppTitle.c_str());
 	SetWindowIcon(GetBundlePath("PCELogo.png"));
 
 	// Initialise Emulator
+	pCore = new GeargrafxCore();
+	pCore->Init();
+	
+	// temp
+	pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
+
+	pFrameBuffer = new uint8_t[2048 * 512 * 4];
+	pAudioBuf = new int16_t[GG_AUDIO_BUFFER_SIZE];;
+
 	pGlobalConfig = new FPCEConfig();
-    pGlobalConfig->Init();
+	pGlobalConfig->Init();
 	pGlobalConfig->Load(kGlobalConfigFilename);
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
@@ -456,13 +466,14 @@ void FPCEEmu::Tick()
 
 	if (debugger.IsStopped() == false)
 	{
-		const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) /* * ExecSpeedScale*/;
-		const uint32_t microSeconds = std::max(static_cast<uint32_t>(frameTime), uint32_t(1));
+		//const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) /* * ExecSpeedScale*/;
+		//const uint32_t microSeconds = std::max(static_cast<uint32_t>(frameTime), uint32_t(1));
 
 		CodeAnalysis.OnFrameStart();
 		//StoreRegisters_Z80(CodeAnalysis);
 
-		//ZXExeEmu(&ZXEmuState, microSeconds);
+		int audioSampleCount = 0;
+		pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
 		
 		CodeAnalysis.OnFrameEnd();
 	}

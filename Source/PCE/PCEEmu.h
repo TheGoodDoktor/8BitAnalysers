@@ -2,6 +2,7 @@
 
 #include "Misc/EmuBase.h"
 
+class GeargrafxCore;
 struct FPCEConfig;
 struct FPCEGameConfig;
 
@@ -58,4 +59,9 @@ public:
 protected:
 	bool LoadMachineState(const char* fname);
 	bool SaveMachineState(const char* fname);
+	
+protected:
+	GeargrafxCore* pCore = nullptr;
+	uint8_t* pFrameBuffer = nullptr;
+	int16_t* pAudioBuf = nullptr;
 };
