@@ -9,6 +9,8 @@ include_directories( ${vendor_dir}/magic_enum/include )
 include_directories( ${vendor_dir}/zlib )
 include_directories( ${vendor_dir}/implot )
 include_directories( ${vendor_dir}/json/single_include/nlohmann )
+include_directories( ${vendor_dir}/geargfx )
+include_directories( ${vendor_dir}/geargfx/shared/dependencies/miniz )
 
 # vendor source
 
@@ -107,6 +109,33 @@ set ( imguiextras
 		${vendor_dir}/ImGuiColorTextEdit/TextEditor.cpp 
 		${vendor_dir}/ImGuiColorTextEdit/TextEditor.h )
 
+# geargfx
+set( geargfx_src ${vendor_dir}/geargfx/adpcm.cpp
+	${vendor_dir}/geargfx/arcade_card_mapper.cpp
+	${vendor_dir}/geargfx/audio.cpp
+	${vendor_dir}/geargfx/cdrom.cpp
+	${vendor_dir}/geargfx/cdrom_audio.cpp
+	${vendor_dir}/geargfx/cdrom_chd_image.cpp
+	${vendor_dir}/geargfx/cdrom_cuebin_image.cpp
+	${vendor_dir}/geargfx/cdrom_image.cpp
+	${vendor_dir}/geargfx/cdrom_media.cpp
+	${vendor_dir}/geargfx/geargrafx_core.cpp
+	${vendor_dir}/geargfx/huc6202.cpp
+	${vendor_dir}/geargfx/huc6260.cpp
+	${vendor_dir}/geargfx/huc6270.cpp
+	${vendor_dir}/geargfx/huc6280.cpp
+	${vendor_dir}/geargfx/huc6280_functors.cpp
+	${vendor_dir}/geargfx/huc6280_opcodes.cpp
+	${vendor_dir}/geargfx/huc6280_psg.cpp
+	${vendor_dir}/geargfx/input.cpp
+	${vendor_dir}/geargfx/mapper.cpp
+	${vendor_dir}/geargfx/media.cpp
+	${vendor_dir}/geargfx/memory.cpp
+	${vendor_dir}/geargfx/scsi_controller.cpp
+	${vendor_dir}/geargfx/sf2_mapper.cpp)
+
+set( geargfx_miniz_src ${vendor_dir}/geargfx/shared/dependencies/miniz/miniz.c)
+
 set ( vendor_src 
 	${imgui_src} 
 	${imgui_backend_src} 
@@ -116,4 +145,6 @@ set ( vendor_src
 	${zlib_src} 
 	${lua_src}
 	${imguiextras} 
+	${geargfx_src} 
+	${geargfx_miniz_src}
 	${vendor_dir}/CMakeVendor.txt)

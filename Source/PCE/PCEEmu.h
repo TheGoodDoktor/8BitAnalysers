@@ -36,7 +36,7 @@ public:
 	void	WindowsMenuAdditions(void)  override;
 	void	AppFocusCallback(int focused) override;
 	void	DrawEmulatorUI() override;
-	// FEmuBase
+	// FEmuBase End
 
 	// disable copy & assign because this class is big!
 	FPCEEmu(const FPCEEmu&) = delete;
