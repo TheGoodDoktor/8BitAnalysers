@@ -10,6 +10,10 @@
 #include <Debug/DebugLog.h>
 #include <algorithm>
 
+// TODO: Load Elite binaries
+// use this a a guide: https://elite.bbcelite.com/6502sp/all/bcfs.html
+
+
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "Tube Elite";
 
