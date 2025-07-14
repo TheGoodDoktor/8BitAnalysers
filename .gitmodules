@@ -30,3 +30,6 @@
 [submodule "Source/Vendor/implot"]
 	path = Source/Vendor/implot
 	url = https://github.com/epezent/implot
+[submodule "Info/TubeElite/elite-source-code-6502-second-processor"]
+	path = Info/TubeElite/elite-source-code-6502-second-processor
+	url = https://github.com/markmoxon/elite-source-code-6502-second-processor
