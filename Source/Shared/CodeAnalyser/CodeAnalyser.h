@@ -269,7 +269,7 @@ struct FCodeAnalysisBank
 	bool		IsMapped() const { return Mapping!= EBankAccess::None; }
 	EBankAccess	GetBankMapping() const { return Mapping;}
 	uint16_t	GetMappedAddress() const { return PrimaryMappedPage * FCodeAnalysisPage::kPageSize; }
-	uint16_t	GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
+	int			GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
 };
 
 

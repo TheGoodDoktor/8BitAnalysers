@@ -79,6 +79,9 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 		return false;
 	}
 
+	FTubeEliteProjectConfig* pTubeEliteConfig = CreateNewTubeEliteConfig();
+	LoadProject(pTubeEliteConfig, true);
+
 	return true;
 }
 
@@ -123,7 +126,19 @@ bool FTubeElite::LoadBinaries(void)
 
 		free(pData);
 	}
-	
+
+	// Load Tube ROM
+	pData = LoadBinaryFile("6502Tube.rom", size);
+	if (pData == nullptr || size == 0)
+	{
+		LOGERROR("Failed to load Tube ROM.");
+		return false;
+	}
+
+	assert((0xf800 + size) <= 0x10000); // Ensure we don't overflow the RAM
+	memcpy(Machine.ram + 0xf800, pData, size);
+	free(pData);
+
 	return true;
 }
 

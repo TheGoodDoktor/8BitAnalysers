@@ -16,3 +16,5 @@ struct FTubeEliteProjectConfig : public FProjectConfig
 	void	LoadFromJson(const nlohmann::json& jsonConfig) override;
 	void	SaveToJson(nlohmann::json& jsonConfig) const override;
 };
+
+FTubeEliteProjectConfig* CreateNewTubeEliteConfig(void);
