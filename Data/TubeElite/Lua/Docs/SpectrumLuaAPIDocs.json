@@ -1,0 +1,69 @@
+{
+    "Functions": [
+        {
+            "Args": [
+                "int width",
+                "int height"
+            ],
+            "Description": "",
+            "Name": "CreateZXGraphicsView",
+            "Returns": "GraphicsView",
+            "Summary": "Create a graphics view for drawing ZX Spectrum graphics.",
+            "Usage": "view = CreateGraphicsView(128, 128)",
+            "Group": "Graphics"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "uint8_t* pixels",
+                "int xPos",
+                "int yPos",
+                "int widthChars",
+                "int heightChars",
+                "uint8_t attrib or uint8_t* attribs"
+            ],
+            "Description": "For the attributes, a single byte attribute value can be passed, or optionally an uint8_t* attribute map can be passed. An attribute map should hold an attribute for each character of the image.",
+            "Name": "DrawZXBitImage",
+            "Returns": "",
+            "Summary": "Draw ZX Spectrum pixels to a graphics view. Height and width are specified in characters.",
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImage(image, glyphData, 0, 0, 1, 1)",
+            "Group": "Graphics"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "uint8_t* pixels",
+                "int xPos",
+                "int yPos",
+                "int widthChars",
+                "int heightChars",
+                "uint8_t attrib",
+                "int stride"
+            ],
+            "Description": "This is experimental.",
+            "Name": "DrawZXBitImageMask",
+            "Returns": "",
+            "Summary": "Draws an image with a byte intervleaved mask.",
+            "Usage": "gfxData = GetMemPtr(0x8000)\nimage = CreateZXGraphicsView(128, 128)\nDrawZXBitImageMask(image, gfxData, 0, 0, 2, 2)",
+            "Group": "Graphics"
+        },
+        {
+            "Args": [
+                "GraphicsView view",
+                "uint8_t* pixels",
+                "int xPos",
+                "int yPos",
+                "int widthChars",
+                "int heightPixels",
+                "uint8_t attrib",
+                "int stride"
+            ],
+            "Description": "",
+            "Name": "DrawZXBitImageFineY",
+            "Returns": "",
+            "Summary": "Draw ZX Spectrum pixels to a graphics view. Height is specified in pixels. Width is specified in characters.",
+            "Usage": "glyphData = GetMemPtr(0x3ff8)\nimage = CreateZXGraphicsView(8, 8)\nDrawZXBitImageFineY(image, glyphData, 0, 0, 1, 4)",
+            "Group": "Graphics"
+        }
+    ]
+}

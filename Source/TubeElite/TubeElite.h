@@ -4,6 +4,11 @@
 
 #include <chips/mem.h>
 
+#include "TubeEliteConfig.h"
+#include "TubeEliteMachine.h"
+#include <set>
+#include <array>
+
 struct FTubeEliteLaunchConfig : public FEmulatorLaunchConfig
 {
     void ParseCommandline(int argc, char** argv) override
@@ -39,20 +44,20 @@ public:
     // Begin ICPUInterface interface implementation
     uint8_t        ReadByte(uint16_t address) const override
     {
-        return mem_rd(const_cast<mem_t*>(&BBCEmu.mem_cpu), address);
+        return mem_rd(const_cast<mem_t*>(&Machine.mem_cpu), address);
     }
     uint16_t    ReadWord(uint16_t address) const override
     {
-        return mem_rd16(const_cast<mem_t*>(&BBCEmu.mem_cpu), address);
+        return mem_rd16(const_cast<mem_t*>(&Machine.mem_cpu), address);
     }
     const uint8_t* GetMemPtr(uint16_t address) const override
     {
-        return mem_readptr(const_cast<mem_t*>(&BBCEmu.mem_cpu), address);
+        return mem_readptr(const_cast<mem_t*>(&Machine.mem_cpu), address);
     }
 
     void WriteByte(uint16_t address, uint8_t value) override
     {
-        mem_wr(&BBCEmu.mem_cpu, address, value);
+        mem_wr(&Machine.mem_cpu, address, value);
     }
 
     FAddressRef GetPC() override
@@ -62,12 +67,12 @@ public:
 
     uint16_t    GetSP(void) override
     {
-        return m6502_s(&BBCEmu.cpu) + 0x100;    // stack begins at 0x100
+        return m6502_s(&Machine.cpu) + 0x100;    // stack begins at 0x100
     }
 
     void* GetCPUEmulator(void) const override
     {
-        return (void*)&BBCEmu.cpu;
+        return (void*)&Machine.cpu;
     }
 
     // End ICPUInterface interface implementation
@@ -92,22 +97,15 @@ public:
 
     uint64_t    OnCPUTick(uint64_t pins);
 
-    bbc_t& GetBBC() { return BBCEmu; }
-
-    uint32_t GetColour(uint8_t ulaIndex) const
-    {
-        // invert the RGB bits
-        const uint8_t ulaVal = BBCEmu.video_ula.palette[ulaIndex];
-        const uint8_t colourIndex = ((~(ulaVal & 7)) & 7) | (ulaVal & 8);
-        return ColourPalette[colourIndex];
-    }
+	tube_elite_t& GetMachine() { return Machine; }
 
 private:
-    bbc_t                BBCEmu;
-    FTubeEliteLaunchConfig    LaunchConfig;
-    FBBCConfig*            pBBCConfig = nullptr;
+	tube_elite_t				Machine;
+    FTubeEliteLaunchConfig		LaunchConfig;
+	FTubeEliteConfig*			pConfig = nullptr;
 
     //FBBCBankIds            BankIds;
+	int16_t						RamBankId = -1;    // RAM bank ID
 
     //FBBCDisplay            Display;
 
