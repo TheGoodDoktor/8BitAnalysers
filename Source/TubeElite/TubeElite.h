@@ -100,6 +100,8 @@ public:
 	tube_elite_t& GetMachine() { return Machine; }
 
 private:
+
+	bool	LoadBinaries(void);
 	tube_elite_t				Machine;
     FTubeEliteLaunchConfig		LaunchConfig;
 	FTubeEliteConfig*			pConfig = nullptr;

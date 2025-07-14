@@ -78,4 +78,4 @@
 /Data/CPCAnalyser/GlobalConfig.json
 .vscode
 build
-*.bin
+#*.bin

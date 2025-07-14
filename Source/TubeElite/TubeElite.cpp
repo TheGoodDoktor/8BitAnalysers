@@ -73,12 +73,58 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	CodeAnalysis.Debugger.Break();
 
 	// TODO: load in RAM image
+	if (LoadBinaries() == false)
+	{
+		LOGERROR("Failed to load Tube Elite binaries.");
+		return false;
+	}
 
 	return true;
 }
 
 void FTubeElite::SetupCodeAnalysisLabels()
 {
+}
+
+std::vector<std::string> g_BinaryFiles = 
+{
+	"Bin/ELTA.bin",
+	"Bin/ELTB.bin",
+	"Bin/ELTC.bin",
+	"Bin/ELTD.bin",
+	"Bin/ELTE.bin",
+	"Bin/ELTF.bin",
+	"Bin/ELTG.bin",
+	"Bin/ELTH.bin",
+	"Bin/ELTI.bin",
+	"Bin/ELTJ.bin",
+};
+
+bool FTubeElite::LoadBinaries(void)
+{
+	uint16_t loadAddress = 0x1000; // default load address for Tube Elite binaries
+	size_t size = 0;
+	void* pData = nullptr;
+
+	for (const std::string& fname : g_BinaryFiles)
+	{
+		pData = LoadBinaryFile(fname.c_str(), size);
+		if (pData == nullptr || size == 0)
+		{
+			LOGERROR("Failed to load Tube Elite binary: %s", fname.c_str());
+			return false;
+		}
+		
+		if (size > 0)
+		{
+			memcpy(Machine.ram + loadAddress, pData, size); // copy binary data to RAM
+			loadAddress += (uint16_t)size; // increment load address for next binary
+		}
+
+		free(pData);
+	}
+	
+	return true;
 }
 
 void FTubeElite::Shutdown()
