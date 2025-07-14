@@ -1,21 +1,15 @@
 #include <imgui.h>
 
 #include "PCEEmu.h"
-//#include <cstdint>
 
 #include "PCEConfig.h"
 //#include "GameData.h"
-//#include <ImGuiSupport/ImGuiTexture.h>
 #include "Util/FileUtil.h"
-
+#include "Viewers/PCEViewer.h"
 #include <geargrafx_core.h>
 //#include "CodeAnalyser/CodeAnalyser.h"
 //#include "CodeAnalyser/UI/CodeAnalyserUI.h"
-
 //#include "Debug/DebugLog.h"
-//#include "Debug/ImGuiLog.h"
-//#include <cassert>
-//#include <Util/Misc.h>
 
 #include "App.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
@@ -99,6 +93,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	
 	// temp
 	pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
+	pCore->LoadMedia("c:\\temp\\Bonk.pce");
 
 	pFrameBuffer = new uint8_t[2048 * 512 * 4];
 	pAudioBuf = new int16_t[GG_AUDIO_BUFFER_SIZE];;
@@ -125,11 +120,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	LoadFont();
 
 	// This is where we add the viewers we want
-	//AddViewer(new FOverviewViewer(this));	
-	//pGraphicsViewer = new FZXGraphicsViewer(this);
-	//AddViewer(pGraphicsViewer);
-
-	//PCEViewer.Init(this);
+	AddViewer(new FPCEViewer(this));
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
@@ -462,7 +453,6 @@ void FPCEEmu::Tick()
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
 
-	//SpectrumViewer.Tick();
 
 	if (debugger.IsStopped() == false)
 	{
@@ -470,7 +460,6 @@ void FPCEEmu::Tick()
 		//const uint32_t microSeconds = std::max(static_cast<uint32_t>(frameTime), uint32_t(1));
 
 		CodeAnalysis.OnFrameStart();
-		//StoreRegisters_Z80(CodeAnalysis);
 
 		int audioSampleCount = 0;
 		pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
@@ -498,14 +487,6 @@ void FPCEEmu::OnExitEditMode(void)
 
 void FPCEEmu::DrawEmulatorUI()
 {
-	const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
-	
-	// show PCE window
-	if (ImGui::Begin("PCE View"))
-	{
-		//SpectrumViewer.Draw();
-	}
-	ImGui::End();
 }
 
 
@@ -519,19 +500,6 @@ void FPCEEmu::AppFocusCallback(int focused)
 		}
 	}
 }
-
-/*ImTextureID	FPCEEmu::GetMachineSnapshotThumbnail(int snapshotNo) const
-{
-	if (snapshotNo > 0 && snapshotNo < kNoSnapshots)
-	{
-		const FSnapshot& snapshot = Snapshots[snapshotNo];
-		if (snapshot.bValid == true)
-			return snapshot.Thumbnail;
-	}
-
-	return 0;
-}*/
-
 
 void FPCELaunchConfig::ParseCommandline(int argc, char** argv)
 {

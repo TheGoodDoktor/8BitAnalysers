@@ -56,6 +56,9 @@ public:
 
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
 
+	GeargrafxCore* GetCore() const { return pCore; }
+	uint8_t* GetFrameBuffer() const { return pFrameBuffer; }
+
 protected:
 	bool LoadMachineState(const char* fname);
 	bool SaveMachineState(const char* fname);

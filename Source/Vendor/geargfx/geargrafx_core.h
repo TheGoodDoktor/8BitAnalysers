@@ -80,10 +80,10 @@ public:
     Memory* GetMemory();
     Media* GetMedia();
     HuC6202* GetHuC6202();
-    HuC6260* GetHuC6260();
-    HuC6270* GetHuC6270_1();
+    HuC6260* GetHuC6260(); // graphics
+    HuC6270* GetHuC6270_1(); // video display controller
     HuC6270* GetHuC6270_2();
-    HuC6280* GetHuC6280();
+    HuC6280* GetHuC6280(); // 65C02 CPU
     CdRom* GetCDROM();
     CdRomMedia* GetCDROMMedia();
     CdRomAudio* GetCDROMAudio();
