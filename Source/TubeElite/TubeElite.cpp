@@ -79,14 +79,19 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 		return false;
 	}
 
-	// Execute from 0x10D4
-	const uint16_t startAddress = 0x10D4; // start address for Tube Elite
-	Machine.cpu.PC = startAddress; // set the program counter to the start address
-	CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(startAddress));
+	
 
 	FTubeEliteProjectConfig* pTubeEliteConfig = CreateNewTubeEliteConfig();
 	LoadProject(pTubeEliteConfig, true);
 
+	// Execute from 0x10D4
+	const uint16_t startAddress = 0x10D4; // start address for Tube Elite
+	//Machine.cpu.PC = startAddress; // set the program counter to the start address
+	//CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(startAddress));
+
+	// hack the reset vector
+	Machine.ram[0xFFFC] = startAddress & 255; 
+	Machine.ram[0xFFFD] = startAddress >> 8;
 	return true;
 }
 
