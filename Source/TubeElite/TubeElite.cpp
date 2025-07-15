@@ -89,6 +89,8 @@ void FTubeElite::SetupCodeAnalysisLabels()
 {
 }
 
+#define LOAD_BIG_BINARY 1
+
 std::vector<std::string> g_BinaryFiles = 
 {
 	"Bin/ELTA.bin",
@@ -101,14 +103,44 @@ std::vector<std::string> g_BinaryFiles =
 	"Bin/ELTH.bin",
 	"Bin/ELTI.bin",
 	"Bin/ELTJ.bin",
+	"Bin/WORDS.bin",
+	"Bin/SHIPS.bin",
 };
 
 bool FTubeElite::LoadBinaries(void)
 {
 	uint16_t loadAddress = 0x1000; // default load address for Tube Elite binaries
+	uint16_t shipsAddress = 0xd000; // default load address for Ships binary
 	size_t size = 0;
 	void* pData = nullptr;
 
+#if LOAD_BIG_BINARY
+	// Load a single big binary file
+	const char* bigBinaryFile = "Bin/P.CODE.unprot.bin";
+	const char* shipsBinaryFile = "Bin/SHIPS.bin";
+	pData = LoadBinaryFile(bigBinaryFile, size);
+	if (pData == nullptr || size == 0)
+	{
+		LOGERROR("Failed to load Tube Elite binary.");
+		return false;
+	}
+	assert((loadAddress + size) <= 0x10000); // Ensure we don't overflow the RAM
+	memcpy(Machine.ram + loadAddress, pData, size); // copy binary data to RAM
+	LOGINFO("Loaded Tube Elite binary: %s, size: %zu bytes, load address: $%04X - $%04X", bigBinaryFile,  size, loadAddress, loadAddress + size - 1);
+	free(pData);
+
+	// Load Ships binary
+	pData = LoadBinaryFile(shipsBinaryFile, size);
+	if (pData == nullptr || size == 0)
+	{
+		LOGERROR("Failed to load Tube Elite Ships binary.");
+		return false;
+	}
+	assert((shipsAddress + size) <= 0x10000); // Ensure we don't overflow the RAM
+	memcpy(Machine.ram + shipsAddress, pData, size); // copy Ships binary data to RAM
+	LOGINFO("Loaded Tube Ships binary: %s, size: %zu bytes, load address: $%04X - $%04X", shipsBinaryFile, size, shipsAddress, shipsAddress + size - 1);
+	//loadAddress += (uint16_t)size; // increment load address for next binary
+#else
 	for (const std::string& fname : g_BinaryFiles)
 	{
 		pData = LoadBinaryFile(fname.c_str(), size);
@@ -121,12 +153,13 @@ bool FTubeElite::LoadBinaries(void)
 		if (size > 0)
 		{
 			memcpy(Machine.ram + loadAddress, pData, size); // copy binary data to RAM
+			LOGINFO("Loaded Tube Elite binary: %s, size: %zu bytes, load address: $%04X - $%04X", fname.c_str(), size, loadAddress, loadAddress + size - 1);
 			loadAddress += (uint16_t)size; // increment load address for next binary
 		}
 
 		free(pData);
 	}
-
+#endif
 	// Load Tube ROM
 	pData = LoadBinaryFile("6502Tube.rom", size);
 	if (pData == nullptr || size == 0)
