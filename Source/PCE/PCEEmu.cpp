@@ -21,8 +21,7 @@ const std::string kAppTitle = "PCE Analyser";
 
 uint8_t		FPCEEmu::ReadByte(uint16_t address) const
 {
-	return 0;
-	//return mem_rd(const_cast<mem_t*>(&ZXEmuState.mem), address);
+	return pCore->GetMemory()->Read(address);
 }
 
 uint16_t	FPCEEmu::ReadWord(uint16_t address) const 
@@ -34,20 +33,18 @@ const uint8_t* FPCEEmu::GetMemPtr(uint16_t address) const
 {
 	static uint8_t zeroByte = 0;
 	return &zeroByte;
-	//return mem_readptr(const_cast<mem_t*>(&ZXEmuState.mem), address);
 }
 
 
 void FPCEEmu::WriteByte(uint16_t address, uint8_t value)
 {
-	//mem_wr(&ZXEmuState.mem, address, value);
+	return pCore->GetMemory()->Write(address, value);
 }
 
 
 FAddressRef	FPCEEmu::GetPC(void) 
 {
-	return 0;
-	//return CodeAnalysis.Debugger.GetPC();
+	return CodeAnalysis.AddressRefFromPhysicalAddress(pCore->GetHuC6280()->GetState()->PC->GetValue());
 } 
 
 uint16_t	FPCEEmu::GetSP(void)
@@ -61,22 +58,6 @@ void* FPCEEmu::GetCPUEmulator(void) const
 	return 0;
 	//return (void *)&ZXEmuState.cpu;
 }
-
-/*void* gfx_create_texture(int w, int h)
-{
-	return ImGui_CreateTextureRGBA(nullptr, w, h);
-}
-
-void gfx_update_texture(void* h, void* data, int data_byte_size)
-{
-	ImGui_UpdateTextureRGBA(h, (unsigned char *)data);
-}
-
-void gfx_destroy_texture(void* h)
-{
-	
-}*/
-
 
 bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 {
@@ -92,11 +73,13 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pCore->Init();
 	
 	// temp
-	pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
+	//pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
 	pCore->LoadMedia("c:\\temp\\Bonk.pce");
 
 	pFrameBuffer = new uint8_t[2048 * 512 * 4];
 	pAudioBuf = new int16_t[GG_AUDIO_BUFFER_SIZE];;
+
+	CPUType = ECPUType::M6502;
 
 	pGlobalConfig = new FPCEConfig();
 	pGlobalConfig->Init();

@@ -33,7 +33,7 @@ void FPCEViewer::DrawUI()
 
 	ImGui::Image(ScreenTexture, ImVec2((float)TextureWidth/* * scale*/, (float)TextureHeight/* * scale*/));
 
-	//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
 	bWindowFocused = ImGui::IsWindowHovered() || ImGui::IsWindowFocused();
 }

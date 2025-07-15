@@ -34,12 +34,15 @@ struct F6502DisplayRegisters
 	F6502DisplayRegisters() {}
 	F6502DisplayRegisters(m6502_t* pCPU)
 	{
-		A = pCPU->A;
-		X = pCPU->X;
-		Y = pCPU->Y;
-		S = pCPU->S;
-		P = pCPU->P;
-		PC = pCPU->PC;
+		if (pCPU)
+		{
+			A = pCPU->A;
+			X = pCPU->X;
+			Y = pCPU->Y;
+			S = pCPU->S;
+			P = pCPU->P;
+			PC = pCPU->PC;
+		}
 
 		// set flags
 		CarryFlag				= P & M6502_CF;

@@ -274,7 +274,7 @@ bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t o
 	FDebugger& debugger = state.Debugger;
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
 	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
-	const m6502_t* pCPU = static_cast<m6502_t*>(state.CPUInterface->GetCPUEmulator());
+	//const m6502_t* pCPU = static_cast<m6502_t*>(state.CPUInterface->GetCPUEmulator());
 
 	std::vector<FCPUFunctionCall>& callStack = state.Debugger.GetCallstack();
 
