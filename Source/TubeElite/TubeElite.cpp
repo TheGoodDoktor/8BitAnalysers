@@ -79,7 +79,10 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 		return false;
 	}
 
-	// TODO: Execute from 0x10D4
+	// Execute from 0x10D4
+	const uint16_t startAddress = 0x10D4; // start address for Tube Elite
+	Machine.cpu.PC = startAddress; // set the program counter to the start address
+	CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(startAddress));
 
 	FTubeEliteProjectConfig* pTubeEliteConfig = CreateNewTubeEliteConfig();
 	LoadProject(pTubeEliteConfig, true);
