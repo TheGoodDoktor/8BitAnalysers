@@ -79,6 +79,8 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 		return false;
 	}
 
+	// TODO: Execute from 0x10D4
+
 	FTubeEliteProjectConfig* pTubeEliteConfig = CreateNewTubeEliteConfig();
 	LoadProject(pTubeEliteConfig, true);
 

@@ -126,6 +126,20 @@
         },
         {
             "Description": "",
+            "EndAddress": 1809514496,
+            "StartAddress": 1809514496,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 2169962496,
+            "StartAddress": 2169962496,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 2172518400,
             "StartAddress": 2172518400,
             "bManualEdit": false,
@@ -598,6 +612,112 @@
             "PageId": 3
         },
         {
+            "CodeInfo": [
+                {
+                    "Address": 209,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 212,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 215,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 218,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 222,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 224,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 226,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 228,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 230,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 231,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 233,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 235,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 237,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 238,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 240,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 241,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 243,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 245,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                }
+            ],
+            "LabelInfo": [
+                {
+                    "Address": 222,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_10DE"
+                },
+                {
+                    "Address": 228,
+                    "LabelType": 2,
+                    "Name": "label_10E4"
+                },
+                {
+                    "Address": 379,
+                    "LabelType": 2,
+                    "Name": "label_117B"
+                }
+            ],
             "PageId": 4
         },
         {
@@ -2422,6 +2542,13 @@
             "PageId": 19
         },
         {
+            "LabelInfo": [
+                {
+                    "Address": 142,
+                    "LabelType": 2,
+                    "Name": "label_508E"
+                }
+            ],
             "PageId": 20
         },
         {
@@ -2448,6 +2575,14 @@
             "PageId": 25
         },
         {
+            "LabelInfo": [
+                {
+                    "Address": 987,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_6BDB"
+                }
+            ],
             "PageId": 26
         },
         {
@@ -2601,6 +2736,12 @@
                 }
             ],
             "LabelInfo": [
+                {
+                    "Address": 343,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_8157"
+                },
                 {
                     "Address": 382,
                     "Global": true,
