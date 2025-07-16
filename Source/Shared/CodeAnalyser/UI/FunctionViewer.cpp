@@ -159,14 +159,17 @@ bool DrawFunctionParamTable(FCodeAnalysisState& state, const char *pTableName, s
 			ImGui::TableSetColumnIndex(2);
 			ImGui::SetNextItemWidth(-1);
 			//ImGui::SetNextItemWidth(glyphWidth * 10.0f);
-			if (state.CPUInterface->CPUType == ECPUType::Z80)
+			switch (state.CPUInterface->CPUType)
 			{
+			case ECPUType::Z80:
 				bChanged |= DrawParameterSourceComboBox_Z80(param.Z80Source);
-			}
-			else if (state.CPUInterface->CPUType == ECPUType::M6502)
-			{
+				break;
+			case ECPUType::M65C02:
+			case ECPUType::M6502:
 				bChanged |= DrawParameterSourceComboBox_M6502(param.M6502Source);
+				break;
 			}
+			
 			// Type
 			ImGui::TableSetColumnIndex(3);
 			ImGui::SetNextItemWidth(-1);

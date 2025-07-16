@@ -5,6 +5,7 @@
 #include "Z80/Z80Disassembler.h"
 
 #include "AssemblerExport.h"
+#include "6502/M65C02Disassembler.h"
 
 void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback) 
 {
@@ -312,19 +313,18 @@ void DasmOutputD8(int8_t val, dasm_output_t out_cb, void* user_data)
 	if (pNumberOutput)
 		pNumberOutput->OutputD8(val, out_cb);
 }
-/*
-std::string GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode)
-{
-	if(state.CPUInterface->CPUType == ECPUType::Z80)
-		return Z80GenerateDasmStringForAddress(state,pc,hexMode);
-	else
-		return M6502GenerateDasmStringForAddress(state, pc, hexMode);
-}*/
 
 bool GenerateDasmExportString(FExportDasmState& exportState)
 {
-	if (exportState.CodeAnalysisState->CPUInterface->CPUType == ECPUType::Z80)
+	switch (exportState.CodeAnalysisState->CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return Z80GenerateDasmExportString(exportState);
-	else
+	case ECPUType::M6502:
 		return M6502GenerateDasmExportString(exportState);
+	case ECPUType::M65C02:
+		return M65C02GenerateDasmExportString(exportState);
+	default:
+		return false;
+	}
 }

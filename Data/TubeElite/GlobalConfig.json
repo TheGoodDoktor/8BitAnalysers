@@ -13,7 +13,7 @@
     "LastGame": "TubeElite",
     "NumberMode": 2,
     "OverviewScale": 2,
-    "ShowOpcodeValues": false,
+    "ShowOpcodeValues": true,
     "ShowScanlineIndicator": false,
     "SnapshotFolder": "./Games/",
     "UseBuiltInFont": false,

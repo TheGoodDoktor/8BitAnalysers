@@ -37,17 +37,23 @@ std::map< EFuctionParamSourceM6502, const char*> g_M6502RegNames =
 std::string FFunctionParam::GenerateDescription(FCodeAnalysisState& state) const
 {
 	std::string regName;
-	if (state.GetCPUInterface()->CPUType == ECPUType::Z80)
+	switch(state.GetCPUInterface()->CPUType)
+	{
+	case ECPUType::Z80:
 	{
 		auto findIt = g_Z80RegNames.find(Z80Source);
-		if(findIt != g_Z80RegNames.end())
+		if (findIt != g_Z80RegNames.end())
 			regName = findIt->second;
 	}
-	else if (state.GetCPUInterface()->CPUType == ECPUType::M6502)
+	break;
+	case ECPUType::M6502:
+	case ECPUType::M65C02:
 	{
 		auto findIt = g_M6502RegNames.find(M6502Source);
 		if (findIt != g_M6502RegNames.end())
 			regName = findIt->second;
+	}
+	break;
 	}
 
 	return regName + " : " + Name;
@@ -58,7 +64,9 @@ void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 {
 	uint16_t value = 0;
 
-	if (state.GetCPUInterface()->CPUType == ECPUType::Z80)
+	switch (state.GetCPUInterface()->CPUType)
+	{
+	case ECPUType::Z80:
 	{
 		const z80_t* pZ80 = (const z80_t*)state.GetCPUInterface()->GetCPUEmulator();
 
@@ -102,7 +110,9 @@ void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 			break;
 		}
 	}
-	else if (state.GetCPUInterface()->CPUType == ECPUType::M6502)
+	break;
+	case ECPUType::M6502:
+	case ECPUType::M65C02:
 	{
 		const m6502_t* pM6502 = (const m6502_t*)state.GetCPUInterface()->GetCPUEmulator();
 		switch (param.M6502Source)
@@ -117,6 +127,8 @@ void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 			value = pM6502->Y;
 			break;
 		}
+	}
+	break;
 	}
 
 	param.StoreValue(value);

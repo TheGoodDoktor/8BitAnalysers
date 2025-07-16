@@ -1,6 +1,6 @@
 
 # shared source
-file ( GLOB shared_base_src 
+file ( GLOB shared_base_src  DEPENDS
 	../Shared/CodeAnalyser/*.cpp ../Shared/CodeAnalyser/*.h
 	../Shared/CodeAnalyser/Commands/*.cpp ../Shared/CodeAnalyser/Commands/*.h
 	../Shared/CodeAnalyser/6502/*.cpp ../Shared/CodeAnalyser/6502/*.h
@@ -20,7 +20,7 @@ file ( GLOB shared_base_src
 	
 # DX11 files
 if(${gfxapi} STREQUAL "DX11")
-	file ( GLOB shared_gfxapi_src
+	file ( GLOB shared_gfxapi_src  DEPENDS
 		../Shared/ImGuiSupport/Windows/*.cpp ../Shared/ImGuiSupport/Windows/*.h
 		)
 endif()

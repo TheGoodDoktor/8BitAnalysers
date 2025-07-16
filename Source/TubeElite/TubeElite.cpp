@@ -92,6 +92,12 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	// hack the reset vector
 	Machine.ram[0xFFFC] = startAddress & 255; 
 	Machine.ram[0xFFFD] = startAddress >> 8;
+
+	// hack checksum routine
+	Machine.ram[0x6BE2] = 0xEA;
+	Machine.ram[0x6BE3] = 0xEA;
+	Machine.ram[0x6BFA] = 0xEA;
+	Machine.ram[0x6BFB] = 0xEA;
 	return true;
 }
 
