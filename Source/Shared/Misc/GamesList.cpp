@@ -12,6 +12,7 @@ std::unordered_map<std::string, EEmuFileType> g_ExtensionEmuFileType =
 	{"rzx", EEmuFileType::RZX},
 	{"prg", EEmuFileType::PRG},
 	{"crt", EEmuFileType::CRT},
+	{"pce", EEmuFileType::PCE},
 };
 
 EEmuFileType GetEmuFileTypeFromFileName(const std::string& filename)

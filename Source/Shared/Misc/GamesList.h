@@ -15,6 +15,7 @@ enum class EEmuFileType
 	PRG,
 	D64,
 	CRT,
+	PCE,
 
 	Unknown
 };

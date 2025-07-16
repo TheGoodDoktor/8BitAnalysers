@@ -31,8 +31,9 @@ uint16_t	FPCEEmu::ReadWord(uint16_t address) const
 
 const uint8_t* FPCEEmu::GetMemPtr(uint16_t address) const 
 {
-	static uint8_t zeroByte = 0;
-	return &zeroByte;
+	// this is needed for graphic related functionality.
+	static uint8_t byteArray[65535] = { 0 };
+	return byteArray;
 }
 
 
@@ -367,21 +368,14 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 		return false;
 
 	const std::string fileName = findIt->second.GetRootDir() + pSnapshot->FileName;
-	const char* pFileName = fileName.c_str();
 
-	/*switch (pSnapshot->Type)
+	switch (pSnapshot->Type)
 	{
-	case EEmuFileType::Z80:
-		return LoadZ80File(this, pFileName);
-	case EEmuFileType::SNA:
-		return LoadSNAFile(this, pFileName);
-	case EEmuFileType::TAP:
-		return LoadTAPFile(this, pFileName);
-	case EEmuFileType::TZX:
-		return LoadTZXFile(this, pFileName);
+	case EEmuFileType::PCE:
+		return pCore->LoadMedia(fileName.c_str());
 	default:
 		return false;
-	}*/
+	}
 	return false;
 }
 
@@ -439,9 +433,6 @@ void FPCEEmu::Tick()
 
 	if (debugger.IsStopped() == false)
 	{
-		//const float frameTime = std::min(1000000.0f / ImGui::GetIO().Framerate, 32000.0f) /* * ExecSpeedScale*/;
-		//const uint32_t microSeconds = std::max(static_cast<uint32_t>(frameTime), uint32_t(1));
-
 		CodeAnalysis.OnFrameStart();
 
 		int audioSampleCount = 0;
