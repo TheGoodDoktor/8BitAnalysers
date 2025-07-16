@@ -122,6 +122,7 @@
 #define A_JSR    (11)    /* special JSR abs */
 #define A_BRA    (12)    /* special relative branch */
 #define A_INV    (13)    /* this is an invalid instruction */
+#define A_ZPI    (14)	 /* (zp) new 65C02 addressing mode
 
 /* opcode descriptions */
 static uint8_t _m6502dasm_ops[4][8][8] = {
@@ -152,14 +153,14 @@ static uint8_t _m6502dasm_ops[4][8][8] = {
     /* cc = 02 */
     {
         //ASL  ROL   LSR   ROR   STX   LDX   DEC   INC
-        {A_INV,A_INV,A_INV,A_INV,A_IMM,A_IMM,A_IMM,A_IMM},
-        {A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER},
-        {A____,A____,A____,A____,A____,A____,A____,A____},
-        {A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS},
-        {A_INV,A_INV,A_INV,A_INV,A_INV,A_INV,A_INV,A_INV},
-        {A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPY,A_ZPY,A_ZPX,A_ZPX},
-        {A____,A____,A____,A____,A____,A____,A____,A____},
-        {A_ABX,A_ABX,A_ABX,A_ABX,A_INV,A_ABY,A_ABX,A_ABX},
+        {A_INV,A_INV,A_INV,A_INV,A_IMM,A_IMM,A_IMM,A_IMM},	// 0
+        {A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER},	// 1
+        {A____,A____,A____,A____,A____,A____,A____,A____},	// 2
+        {A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS},	// 3
+        {A_INV,A_INV,A_INV,A_INV,A_INV,A_ZPI,A_INV,A_INV},	// 4
+        {A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPY,A_ZPY,A_ZPX,A_ZPX},	// 5
+        {A____,A____,A____,A____,A____,A____,A____,A____},	// 6
+        {A_ABX,A_ABX,A_ABX,A_ABX,A_INV,A_ABY,A_ABX,A_ABX},	// 7
     },
     /* cc = 03 */
     {
@@ -355,6 +356,7 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
         case 5:
             switch (bbb) {
             case 2:  n = "TAX"; break;
+			case 4:  n = "LDA"; break;
             case 6:  n = "TSX"; break;
             default: n = "LDX"; break;
             }
@@ -437,7 +439,9 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
     case A_BRA: /* relative branch, compute target address */
         _CHR(' '); _FETCH_I8(i8); _STR_U16(pc + i8);
         break;
-
+	case A_ZPI:
+		_CHR(' '); _FETCH_U8(u8); _CHR('('); _STR_U8(u8); _STR(")");
+		break;
     }
     return pc;
 }
