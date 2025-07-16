@@ -1,7 +1,7 @@
 #define CHIPS_IMPL
 #include "chips/chips_common.h"
 #include "chips/z80.h"
-#include "chips/m6502.h"
+#include "chips/m65C02.h"
 #include "chips/mc6845.h"
 #include "chips/beeper.h"
 #include "chips/kbd.h"

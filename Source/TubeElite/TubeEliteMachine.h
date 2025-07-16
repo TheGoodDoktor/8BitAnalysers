@@ -2,7 +2,7 @@
 
 #include "chips/chips_common.h"
 #include "chips/z80.h"
-#include "chips/m6502.h"
+#include "chips/m65C02.h"
 #include "chips/mc6845.h"
 #include "chips/beeper.h"
 #include "chips/kbd.h"
@@ -11,7 +11,7 @@
 
 typedef struct
 {
-	m6502_desc_t		cpu;
+	m65C02_desc_t		cpu;
 	chips_debug_t		debug;
 	chips_audio_desc_t	audio;
 
@@ -19,7 +19,7 @@ typedef struct
 
 typedef struct
 {
-	m6502_t		cpu;
+	m65C02_t		cpu;
 	uint64_t	pins;
 	mem_t		mem_cpu;	// cpu memory
 	chips_debug_t	debug;

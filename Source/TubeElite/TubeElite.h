@@ -67,7 +67,7 @@ public:
 
     uint16_t    GetSP(void) override
     {
-        return m6502_s(&Machine.cpu) + 0x100;    // stack begins at 0x100
+        return m65C02_s(&Machine.cpu) + 0x100;    // stack begins at 0x100
     }
 
     void* GetCPUEmulator(void) const override

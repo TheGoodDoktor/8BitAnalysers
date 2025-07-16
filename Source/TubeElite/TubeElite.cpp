@@ -492,7 +492,7 @@ uint64_t FTubeElite::OnCPUTick(uint64_t pins)
 		lastScanlinePos = scanlinePos;
 	}
 #endif
-	const bool bReadingInstruction = addr == m6502_pc(&Machine.cpu) - 1;
+	const bool bReadingInstruction = addr == m65C02_pc(&Machine.cpu) - 1;
 
 	if ((pins & M6502_SYNC) == 0) // not for instruction fetch
 	{

@@ -20,7 +20,7 @@ void tube_elite_init(tube_elite_t* sys, const tube_elite_desc_t* desc)
 	sys->debug = desc->debug;
 
 	// initialize the hardware
-	sys->pins = m6502_init(&sys->cpu, &desc->cpu);
+	sys->pins = m65C02_init(&sys->cpu, &desc->cpu);
 	mem_init(&sys->mem_cpu);
 
 	// 64K RAM
@@ -44,7 +44,7 @@ void tube_elite_reset(tube_elite_t* sys)
 
 uint64_t _tube_elite_tick_cpu(tube_elite_t* sys, uint64_t pins)
 {
-	pins = m6502_tick(&sys->cpu, pins);
+	pins = m65C02_tick(&sys->cpu, pins);
 
 	// the IRQ and NMI pins will be set by the HW each tick
 	pins &= ~(M6502_IRQ | M6502_NMI);
@@ -114,7 +114,7 @@ uint32_t tube_elite_save_snapshot(tube_elite_t* sys, tube_elite_t* dst)
 	CHIPS_ASSERT(sys && dst);
 	*dst = *sys;
 	chips_debug_snapshot_onsave(&dst->debug);
-	m6502_snapshot_onsave(&dst->cpu);
+	m65C02_snapshot_onsave(&dst->cpu);
 	mem_snapshot_onsave(&dst->mem_cpu, sys);
 	return TUBE_ELITE_SNAPSHOT_VERSION;
 }
@@ -130,7 +130,7 @@ bool tube_elite_load_snapshot(tube_elite_t* sys, uint32_t version, tube_elite_t*
 	static tube_elite_t im;
 	im = *src;
 	chips_debug_snapshot_onload(&im.debug, &sys->debug);
-	m6502_snapshot_onload(&im.cpu, &sys->cpu);
+	m65C02_snapshot_onload(&im.cpu, &sys->cpu);
 	mem_snapshot_onload(&im.mem_cpu, sys);
 	*sys = im;
 	return true;
