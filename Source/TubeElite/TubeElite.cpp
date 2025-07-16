@@ -56,7 +56,7 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	tube_elite_init(&Machine, &desc);
 
-	CPUType = ECPUType::M6502;
+	CPUType = ECPUType::M65C02;
 	SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 
 	// Set up memory banks
