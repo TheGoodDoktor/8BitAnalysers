@@ -1,6 +1,6 @@
 #define CHIPS_UI_IMPL	// there's probably a better place to put this
 #include <imgui.h>
-
+#include <imgui_internal.h>
 #include "VIAIODevice.h"
 
 
