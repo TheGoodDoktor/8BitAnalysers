@@ -3,7 +3,7 @@
 #define SAVE_NEW_DIRS 1
 
 #ifndef NDEBUG
-#define CHIPS_UI_IMPL
+//#define CHIPS_UI_IMPL
 #endif
 
 #include <imgui.h>
