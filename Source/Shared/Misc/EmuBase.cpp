@@ -65,11 +65,13 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 		void *pFileData = LoadBinaryFile(GetBundlePath(pImGuiConfigFile), byteCount);
 		if(pFileData == nullptr)
 		{
-			LOGERROR("Can't find imgui.ini file in bundle");
-			return false;
+			LOGWARNING("Can't find imgui.ini file in bundle");
+			//return false;
 		}
-		
-		SaveBinaryFile(GetAppSupportPath(pImGuiConfigFile), pFileData, byteCount);
+		else
+		{		
+			SaveBinaryFile(GetAppSupportPath(pImGuiConfigFile), pFileData, byteCount);
+		}
 	}
 	
 	static std::string iniFile = GetAppSupportPath(pImGuiConfigFile);
@@ -426,6 +428,13 @@ void FEmuBase::OptionsMenu()
 			CodeAnalysis.SetAllBanksDirty();
 			bClearCode = true;
 		}
+		if (ImGui::MenuItem("Hex - &FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAmpersand))
+		{
+			SetNumberDisplayMode(ENumberDisplayMode::HexAmpersand);
+			SetHexNumberDisplayMode(ENumberDisplayMode::HexAmpersand);
+			CodeAnalysis.SetAllBanksDirty();
+			bClearCode = true;
+		}
 
 		// clear code text so it can be written again
 		// TODO: this needs to work for banks
@@ -552,6 +561,11 @@ void FEmuBase::OptionsMenu()
 #endif // NDEBUG
 
 	OptionsMenuAdditions();
+	ImGui::Separator();
+	if (ImGui::MenuItem("Edit Global Config"))
+	{
+		bEditGlobalConfig = true;
+	}
 }
 
 void FEmuBase::SystemMenu()
@@ -681,6 +695,29 @@ void FEmuBase::DrawMainMenu()
 	DrawExportAsmModalPopup();
 	DrawReplaceGameModalPopup();
 	DrawErrorMessageModalPopup();
+	DrawEditGlobalConfigModalPopup();
+}
+
+void FEmuBase::DrawEditGlobalConfigModalPopup()
+{
+	if (bEditGlobalConfig)
+	{
+		ImGui::OpenPopup("Edit Global Config");
+	}
+	if (ImGui::BeginPopupModal("Edit Global Config", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Global Config");
+		CodeAnalysis.pGlobalConfig->DrawUI();
+
+		if (ImGui::Button("Ok", ImVec2(120, 0)))
+		{
+			CodeAnalysis.pGlobalConfig->Save("GlobalConfig.json");
+
+			ImGui::CloseCurrentPopup();
+			bEditGlobalConfig = false;
+		}
+		ImGui::EndPopup();
+	}
 }
 
 void FEmuBase::DrawExportAsmModalPopup()

@@ -1,0 +1,29 @@
+{
+    "AdditionalRoms": [
+        "DFS-0.9.rom"
+    ],
+    "BasicRom": "BASIC2.rom",
+    "BranchLinesDisplayMode": 1,
+    "DisksFolder": "./Disks/",
+    "EditLuaBaseFiles": false,
+    "EnableAudio": false,
+    "EnableExperimentalFeatures": false,
+    "ExportAssembler": "",
+    "Font": "Cousine-Regular.ttf",
+    "FontSizePts": 16,
+    "GfxScreenScale": 1,
+    "GfxViewerScale": 1,
+    "ImageScale": 2,
+    "LastGame": "BBCBasic",
+    "NumberMode": 2,
+    "OSRom": "OS-1.2.rom",
+    "OverviewScale": 2,
+    "ROMAnalysisPath": "",
+    "RomFolder": "./Roms/",
+    "ShowOpcodeValues": false,
+    "ShowScanlineIndicator": false,
+    "SnapshotFolder": "C:/Dev/BBCMicro/Games/Snapshots/",
+    "TapesFolder": "C:/Dev/BBCMicro/Games/Tapes/",
+    "UseBuiltInFont": false,
+    "WorkspaceRoot": "./Projects/"
+}
