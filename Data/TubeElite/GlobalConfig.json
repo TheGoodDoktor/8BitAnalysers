@@ -13,6 +13,7 @@
     "LastGame": "TubeElite",
     "NumberMode": 2,
     "OverviewScale": 2,
+    "ROMAnalysisPath": "",
     "ShowOpcodeValues": true,
     "ShowScanlineIndicator": false,
     "SnapshotFolder": "./Games/",

@@ -2,7 +2,8 @@
     "Banks": [
         {
             "Description": "",
-            "Id": 0
+            "Id": 0,
+            "Name": "RAM"
         }
     ],
     "DataTypes": {
@@ -350,8 +351,43 @@
         },
         {
             "Description": "",
+            "EndAddress": 4167041024,
+            "StartAddress": 4167041024,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4169990144,
+            "StartAddress": 4169990144,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 4172611584,
             "StartAddress": 4172611584,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "Send character to output stream",
+            "EndAddress": 4183949312,
+            "Params": [
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "Character",
+                    "Source": 0
+                }
+            ],
+            "StartAddress": 4183949312,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4184604672,
+            "StartAddress": 4184604672,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -359,6 +395,81 @@
             "Description": "",
             "EndAddress": 4185194496,
             "StartAddress": 4185194496,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4185784320,
+            "StartAddress": 4185784320,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4185849856,
+            "StartAddress": 4185849856,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4189192192,
+            "StartAddress": 4189192192,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4189454336,
+            "StartAddress": 4189454336,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4190765056,
+            "Params": [
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "Command String L",
+                    "Source": 1
+                },
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "Command String H",
+                    "Source": 2
+                }
+            ],
+            "StartAddress": 4190765056,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4195811328,
+            "StartAddress": 4195811328,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4197253120,
+            "StartAddress": 4197253120,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4198367232,
+            "StartAddress": 4198367232,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 4232708096,
+            "StartAddress": 4232708096,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -569,6 +680,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "XC"
+                },
+                {
+                    "Address": 46,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_2E"
                 },
                 {
                     "Address": 48,
@@ -4788,6 +4905,7 @@
                 {
                     "Address": 93,
                     "ByteSize": 3,
+                    "Comment": "jump back to OS area",
                     "OperandType": 2
                 },
                 {
@@ -4867,7 +4985,8 @@
                 },
                 {
                     "Address": 124,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "modify jump to point to [ADDR:0xF88D]"
                 },
                 {
                     "Address": 126,
@@ -4900,7 +5019,8 @@
                 },
                 {
                     "Address": 141,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 11
                 },
                 {
                     "Address": 143,
@@ -4910,7 +5030,8 @@
                 },
                 {
                     "Address": 146,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "0xF95D"
                 },
                 {
                     "Address": 148,
@@ -4923,6 +5044,7 @@
                 {
                     "Address": 152,
                     "ByteSize": 3,
+                    "Comment": "Read line to INPBUF",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -4942,42 +5064,70 @@
                 {
                     "Address": 161,
                     "ByteSize": 3,
+                    "Comment": "execute command",
                     "Flags": 8,
                     "OperandType": 2
                 },
                 {
                     "Address": 164,
                     "ByteSize": 3,
+                    "Comment": "loop back",
                     "OperandType": 2
+                },
+                {
+                    "Address": 167,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 169,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 172,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 180,
+                    "ByteSize": 1
                 },
                 {
                     "Address": 181,
                     "ByteSize": 2,
+                    "Comment": "Set current program and memtop",
                     "OperandType": 1
                 },
                 {
                     "Address": 183,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "to address being entered",
+                    "OperandType": 1
                 },
                 {
                     "Address": 185,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 187,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 189,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 191,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 193,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "get copyright message"
                 },
                 {
                     "Address": 195,
@@ -4994,11 +5144,13 @@
                 },
                 {
                     "Address": 199,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 201,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 203,
@@ -5006,11 +5158,14 @@
                 },
                 {
                     "Address": 205,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 207,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "FD/FE - copyright message",
+                    "OperandType": 1
                 },
                 {
                     "Address": 209,
@@ -5033,11 +5188,13 @@
                 {
                     "Address": 216,
                     "ByteSize": 2,
+                    "Comment": "check for (C)",
                     "OperandType": 1
                 },
                 {
                     "Address": 218,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 11
                 },
                 {
                     "Address": 220,
@@ -5055,7 +5212,8 @@
                 },
                 {
                     "Address": 225,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 11
                 },
                 {
                     "Address": 227,
@@ -5073,7 +5231,8 @@
                 },
                 {
                     "Address": 232,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 11
                 },
                 {
                     "Address": 234,
@@ -5121,6 +5280,155 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 255,
+                    "ByteSize": 2,
+                    "Comment": "0xF945"
+                },
+                {
+                    "Address": 257,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 260,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 262,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 265,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 290,
+                    "ByteSize": 2,
+                    "Comment": "0xF945"
+                },
+                {
+                    "Address": 292,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 295,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 297,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 300,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 325,
+                    "ByteSize": 2,
+                    "Comment": "clear stack"
+                },
+                {
+                    "Address": 327,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 328,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 331,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 333,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 335,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 337,
+                    "ByteSize": 3,
+                    "Comment": "print error string",
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 340,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 341,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 343,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 346,
+                    "ByteSize": 3,
+                    "Comment": "jump to command prompt",
+                    "OperandType": 2
+                },
+                {
+                    "Address": 354,
+                    "ByteSize": 3,
+                    "Comment": "read Tube R1 Status",
+                    "OperandType": 1
+                },
+                {
+                    "Address": 357,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 358,
+                    "ByteSize": 2,
+                    "Comment": "loop until bit 6 set",
+                    "OperandType": 2
+                },
+                {
+                    "Address": 360,
+                    "ByteSize": 3,
+                    "Comment": "send character",
+                    "OperandType": 1
+                },
+                {
+                    "Address": 363,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 364,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 366,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 369,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 372,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 373,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -5128,15 +5436,492 @@
                 {
                     "Address": 376,
                     "ByteSize": 2,
+                    "Comment": "loop until Tube R2 has data",
                     "OperandType": 2
                 },
                 {
                     "Address": 378,
                     "ByteSize": 3,
+                    "Comment": "fetch char",
                     "OperandType": 1
                 },
                 {
                     "Address": 381,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 382,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 383,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 385,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 387,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 389,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 390,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 392,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 394,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 396,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 398,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 400,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 402,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 404,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 406,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 408,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 410,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 412,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 414,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 416,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 417,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 418,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 419,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 420,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 422,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 423,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 425,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 427,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 428,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 430,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 431,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 433,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 434,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 436,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 438,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 440,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 443,
+                    "ByteSize": 2,
+                    "Comment": "Wait for R2 to be free",
+                    "OperandType": 2
+                },
+                {
+                    "Address": 445,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 447,
+                    "ByteSize": 3,
+                    "Comment": "send char",
+                    "OperandType": 1
+                },
+                {
+                    "Address": 450,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 451,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 453,
+                    "ByteSize": 2,
+                    "Comment": "loop until <cr> sent",
+                    "OperandType": 2
+                },
+                {
+                    "Address": 455,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 457,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 458,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 459,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 461,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 463,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 465,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 468,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 469,
+                    "ByteSize": 2,
+                    "OperandType": 11
+                },
+                {
+                    "Address": 471,
+                    "ByteSize": 2,
+                    "Comment": "skip spaces and stars",
+                    "OperandType": 2
+                },
+                {
+                    "Address": 473,
+                    "ByteSize": 2,
+                    "Comment": "ignore case and save in X"
+                },
+                {
+                    "Address": 475,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 476,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 478,
+                    "ByteSize": 2,
+                    "OperandType": 11
+                },
+                {
+                    "Address": 480,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 482,
+                    "ByteSize": 2,
+                    "OperandType": 11
+                },
+                {
+                    "Address": 484,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 486,
+                    "ByteSize": 2,
+                    "OperandType": 11
+                },
+                {
+                    "Address": 488,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 490,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 492,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 494,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 496,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 497,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 499,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 501,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 503,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 505,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 507,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 509,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 510,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 512,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 514,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 516,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 518,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 520,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 522,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 523,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 525,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 527,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 529,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 531,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 533,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 535,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 538,
+                    "ByteSize": 1,
+                    "Flags": 1
+                },
+                {
+                    "Address": 539,
+                    "ByteSize": 3,
+                    "Flags": 1
+                },
+                {
+                    "Address": 542,
+                    "ByteSize": 2,
+                    "Flags": 1,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 544,
+                    "ByteSize": 3,
+                    "Flags": 9,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 547,
+                    "ByteSize": 1,
+                    "Flags": 1
+                },
+                {
+                    "Address": 548,
+                    "ByteSize": 2,
+                    "Flags": 1
+                },
+                {
+                    "Address": 550,
+                    "ByteSize": 2,
+                    "Flags": 1,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 552,
+                    "ByteSize": 2,
+                    "Flags": 1,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 554,
+                    "ByteSize": 1,
+                    "Flags": 1
+                },
+                {
+                    "Address": 555,
+                    "ByteSize": 3,
+                    "Flags": 1
+                },
+                {
+                    "Address": 558,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 559,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 562,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 565,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 568,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 570,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 572,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 573,
                     "ByteSize": 1
                 }
             ],
@@ -5144,18 +5929,85 @@
                 {
                     "Address": 0,
                     "Comment": "TUBE ROM Starts here"
+                },
+                {
+                    "Address": 89,
+                    "Comment": "Code below is copied and executed in low memory"
+                },
+                {
+                    "Address": 349,
+                    "Comment": "Control block for command prompt input"
+                },
+                {
+                    "Address": 354,
+                    "Comment": "MOS Interface"
+                },
+                {
+                    "Address": 382,
+                    "Comment": "Skip Spaces"
+                },
+                {
+                    "Address": 390,
+                    "Comment": "Scan Hex"
                 }
             ],
             "DataInfo": [
+                {
+                    "Address": 173,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 174,
+                    "ByteSize": 6,
+                    "DataType": 4
+                },
+                {
+                    "Address": 266,
+                    "DisplayType": 11
+                },
                 {
                     "Address": 267,
                     "ByteSize": 22,
                     "DataType": 4
                 },
                 {
+                    "Address": 289,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 301,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 302,
                     "ByteSize": 22,
                     "DataType": 4
+                },
+                {
+                    "Address": 324,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 349,
+                    "ByteSize": 2,
+                    "Comment": "Input text to INPBUF at &236",
+                    "DataType": 2,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 351,
+                    "Comment": "Size of inoput buffer",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 352,
+                    "Comment": "Min",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 353,
+                    "Comment": "Max",
+                    "DisplayType": 11
                 }
             ],
             "LabelInfo": [
@@ -5203,18 +6055,20 @@
                 },
                 {
                     "Address": 96,
-                    "LabelType": 0,
-                    "Name": "label_F860"
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "InitIOWithBanner"
                 },
                 {
                     "Address": 141,
-                    "LabelType": 2,
-                    "Name": "label_F88D"
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "OSLoop"
                 },
                 {
                     "Address": 167,
                     "LabelType": 2,
-                    "Name": "label_F8A7"
+                    "Name": "CMDOSEscape"
                 },
                 {
                     "Address": 181,
@@ -5230,29 +6084,162 @@
                 {
                     "Address": 255,
                     "LabelType": 2,
-                    "Name": "label_F8FF"
+                    "Name": "NotALanguage"
                 },
                 {
                     "Address": 290,
                     "LabelType": 2,
-                    "Name": "label_F922"
+                    "Name": "Not6502Code"
+                },
+                {
+                    "Address": 325,
+                    "LabelType": 2,
+                    "Name": "ErrorHandler"
+                },
+                {
+                    "Address": 333,
+                    "LabelType": 2,
+                    "Name": "label_F94D"
+                },
+                {
+                    "Address": 343,
+                    "LabelType": 2,
+                    "Name": "label_F957"
                 },
                 {
                     "Address": 354,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "TubeROM_OSWRCH_Impl"
+                },
+                {
+                    "Address": 364,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "TubeROM_OSRDCH_Impl"
+                },
+                {
+                    "Address": 369,
                     "LabelType": 2,
-                    "Name": "label_F962"
+                    "Name": "WaitCarryChar"
                 },
                 {
                     "Address": 373,
                     "Global": true,
                     "LabelType": 1,
                     "Name": "TubeROM_WaitByte"
+                },
+                {
+                    "Address": 382,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "SkipSpaces1"
+                },
+                {
+                    "Address": 383,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "SkipSpaces"
+                },
+                {
+                    "Address": 390,
+                    "LabelType": 2,
+                    "Name": "ScanHex"
+                },
+                {
+                    "Address": 396,
+                    "LabelType": 2,
+                    "Name": "label_F98C"
+                },
+                {
+                    "Address": 416,
+                    "LabelType": 2,
+                    "Name": "label_F9A0"
+                },
+                {
+                    "Address": 422,
+                    "LabelType": 2,
+                    "Name": "label_F9A6"
+                },
+                {
+                    "Address": 433,
+                    "LabelType": 2,
+                    "Name": "label_F9B1"
+                },
+                {
+                    "Address": 434,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "TubeRom_SendString"
+                },
+                {
+                    "Address": 438,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "TubeROM_SendStringF8"
+                },
+                {
+                    "Address": 440,
+                    "LabelType": 2,
+                    "Name": "SendStringLoop"
+                },
+                {
+                    "Address": 458,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "TubeROM_OSCLI_Impl"
+                },
+                {
+                    "Address": 465,
+                    "LabelType": 2,
+                    "Name": "label_F9D1"
+                },
+                {
+                    "Address": 535,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "CmdHelp"
+                },
+                {
+                    "Address": 574,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "CmdGO"
+                },
+                {
+                    "Address": 594,
+                    "LabelType": 2,
+                    "Name": "label_FA52"
+                },
+                {
+                    "Address": 604,
+                    "LabelType": 2,
+                    "Name": "label_FA5C"
                 }
             ],
             "PageId": 62
         },
         {
             "CodeInfo": [
+                {
+                    "Address": 74,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 77,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 79,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 82,
+                    "ByteSize": 1
+                },
                 {
                     "Address": 229,
                     "ByteSize": 2,
@@ -5602,6 +6589,12 @@
                 }
             ],
             "LabelInfo": [
+                {
+                    "Address": 74,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "TubeROM_SendCommand"
+                },
                 {
                     "Address": 229,
                     "Global": true,
