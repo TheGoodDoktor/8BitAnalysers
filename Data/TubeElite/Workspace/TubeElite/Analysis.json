@@ -481,7 +481,7 @@
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Text is on stack after call",
             "EndAddress": 4271374336,
             "StartAddress": 4271374336,
             "bManualEdit": false,
@@ -600,6 +600,27 @@
                     "Address": 0,
                     "ByteSize": 1,
                     "Flags": 1
+                },
+                {
+                    "Address": 256,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 259,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 260,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 526,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
                 }
             ],
             "LabelInfo": [
@@ -4891,6 +4912,7 @@
                 {
                     "Address": 86,
                     "ByteSize": 3,
+                    "Flags": 32,
                     "OperandType": 2
                 },
                 {
@@ -6040,7 +6062,7 @@
                 {
                     "Address": 59,
                     "LabelType": 2,
-                    "Name": "label_F83B"
+                    "Name": "copyJumpCodeLoop"
                 },
                 {
                     "Address": 89,
@@ -6269,11 +6291,13 @@
                 },
                 {
                     "Address": 664,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "pop return address"
                 },
                 {
                     "Address": 665,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 667,
@@ -6281,7 +6305,8 @@
                 },
                 {
                     "Address": 668,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 670,
@@ -6289,20 +6314,26 @@
                 },
                 {
                     "Address": 672,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "inc low byte",
+                    "OperandType": 1
                 },
                 {
                     "Address": 674,
                     "ByteSize": 2,
+                    "Comment": "skip if low byte not wrapped around to 0",
                     "OperandType": 2
                 },
                 {
                     "Address": 676,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "inc high byte",
+                    "OperandType": 1
                 },
                 {
                     "Address": 678,
                     "ByteSize": 2,
+                    "Comment": "fetch character pointed to by 0xFA",
                     "OperandType": 1
                 },
                 {
@@ -6319,6 +6350,13 @@
                 {
                     "Address": 685,
                     "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 688,
+                    "ByteSize": 3,
+                    "Comment": "jump to point after text",
+                    "Flags": 32,
                     "OperandType": 2
                 },
                 {
@@ -6621,17 +6659,17 @@
                 {
                     "Address": 672,
                     "LabelType": 2,
-                    "Name": "label_FEA0"
+                    "Name": "string_loop"
                 },
                 {
                     "Address": 678,
                     "LabelType": 2,
-                    "Name": "label_FEA6"
+                    "Name": "skip_inc_high_byte"
                 },
                 {
                     "Address": 688,
                     "LabelType": 2,
-                    "Name": "label_FEB0"
+                    "Name": "exit_func"
                 },
                 {
                     "Address": 760,

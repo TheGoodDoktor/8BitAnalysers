@@ -90,8 +90,8 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	//CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(startAddress));
 
 	// hack the reset vector
-	Machine.ram[0xFFFC] = startAddress & 255; 
-	Machine.ram[0xFFFD] = startAddress >> 8;
+	//Machine.ram[0xFFFC] = startAddress & 255; 
+	//Machine.ram[0xFFFD] = startAddress >> 8;
 
 	// hack checksum routine
 	Machine.ram[0x6BFA] = 0xEA;
@@ -500,7 +500,11 @@ uint64_t FTubeElite::OnCPUTick(uint64_t pins)
 				RegisterDataRead(CodeAnalysis, pc, addr);   // this gives false positives on indirect addressing e.g. STA ($0a),y
 
 			const uint32_t page = addr >> 8;
-
+			// Tube registers
+			if (addr >= 0xFEF8 && addr <= 0xFEFF)
+			{
+				// TODO: Register read	
+			}
 		}
 		else
 		{
@@ -518,6 +522,12 @@ uint64_t FTubeElite::OnCPUTick(uint64_t pins)
 			FCodeInfo* pCodeWrittenTo = CodeAnalysis.GetCodeInfoForAddress(addrRef);
 			if (pCodeWrittenTo != nullptr && pCodeWrittenTo->bSelfModifyingCode == false)
 				pCodeWrittenTo->bSelfModifyingCode = true;
+
+			// Tube registers
+			if (addr >= 0xFEF8 && addr <= 0xFEFF)
+			{
+				// TODO: Register write	
+			}
 		}
 	}
 	else

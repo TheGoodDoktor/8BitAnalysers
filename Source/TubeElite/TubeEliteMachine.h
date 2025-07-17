@@ -17,6 +17,26 @@ typedef struct
 
 } tube_elite_desc_t;
 
+typedef struct 
+{
+	union
+	{
+		struct
+		{
+			uint8_t	s1;		// Tube status register 1
+			uint8_t r1;		// Tube register 1
+			uint8_t	s2;		// Tube status register 2
+			uint8_t r2;		// Tube register 2
+			uint8_t	s3;		// Tube status register 3
+			uint8_t r3;		// Tube register 3
+			uint8_t	s4;		// Tube status register 4
+			uint8_t r4;		// Tube register 4
+		};
+		uint8_t reg[8]; // 8 tube registers
+	};
+	
+} tube_registers_t;
+
 typedef struct
 {
 	m65C02_t		cpu;
@@ -26,6 +46,8 @@ typedef struct
 	uint32_t	tick_counter;
 
 	bool		valid;
+	tube_registers_t	tube_regs;	// Tube registers
+
 	// memory
 	uint8_t		ram[0x10000];		// 64K RAM
 }tube_elite_t;

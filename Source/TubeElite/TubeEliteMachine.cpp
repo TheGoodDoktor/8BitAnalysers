@@ -51,16 +51,30 @@ uint64_t _tube_elite_tick_cpu(tube_elite_t* sys, uint64_t pins)
 
 	const uint16_t addr = M6502_GET_ADDR(pins);
 
-	// regular memory access
-	if (pins & M6502_RW)
+	// Tube registers
+	if (addr >= 0xFEF8 && addr <= 0xFEFF)
 	{
-		M6502_SET_DATA(pins, mem_rd(&sys->mem_cpu, addr));
+		if (pins & M6502_RW)	// read
+		{
+			M6502_SET_DATA(pins, sys->tube_regs.reg[addr - 0xFEF8]);
+		}
+		else // write
+		{
+			sys->tube_regs.reg[addr - 0xFEF8] = M6502_GET_DATA(pins);	
+		}
 	}
 	else
-	{
-		mem_wr(&sys->mem_cpu, addr, M6502_GET_DATA(pins));
+	{ 
+		// regular memory access
+		if (pins & M6502_RW)
+		{
+			M6502_SET_DATA(pins, mem_rd(&sys->mem_cpu, addr));
+		}
+		else
+		{
+			mem_wr(&sys->mem_cpu, addr, M6502_GET_DATA(pins));
+		}
 	}
-
 	return pins;
 }
 
