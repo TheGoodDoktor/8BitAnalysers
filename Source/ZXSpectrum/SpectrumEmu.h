@@ -29,6 +29,7 @@
 #include "Util/Misc.h"
 #include "SpectrumDevices.h"
 #include "Misc/EmuBase.h"
+#include "CodeAnalyser/IODevices/AYAudioDevice.h"
 
 struct FGame;
 struct FGameViewer;

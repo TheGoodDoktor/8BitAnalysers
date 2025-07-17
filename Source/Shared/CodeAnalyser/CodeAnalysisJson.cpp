@@ -42,9 +42,9 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		json bankJson;
 		bankJson["Id"] = bank.Id;
 		bankJson["Description"] = bank.Description;
+		bankJson["Name"] = bank.Name;
 
 		//bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
-		jsonGameData["Banks"].push_back(bankJson);
 
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
@@ -54,10 +54,14 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 				json pageData;
 
 				WritePageToJson(page, pageData);
+				// TODO: write this to the bank instead
 				jsonGameData["Pages"].push_back(pageData);
 				pagesWritten++;
 			}
 		}
+
+		jsonGameData["Banks"].push_back(bankJson);
+
 	}
 	//LOGINFO("%d pages written", pagesWritten);
 
@@ -199,6 +203,36 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			{
 				if (bankJson.contains("Description"))
 					pBank->Description = bankJson["Description"];
+
+				if (bankJson.contains("Name"))
+				{
+					const std::string name = bankJson["Name"];
+					// TODO: check name against existing bank name
+					if (name != pBank->Name)
+					{
+						LOGERROR("Bank name mismatch, %s != %s", name.c_str(),pBank->Name.c_str());
+						//pBank->Name = bankJson["Name"];
+						// TODO: we could skip to the next bank here
+					}
+				}
+
+				// New: store pages in bank
+				if (bankJson.contains("Pages"))
+				{
+					for (const auto& pageJson : bankJson["Pages"])
+					{
+						const int pageId = pageJson["PageId"];
+						if (state.IsValidPageId(pageId) == false)
+							continue;
+						FCodeAnalysisPage* pPage = state.GetPage(pageId);
+						// TODO: check if this page belongs to the bank
+						if (pPage != nullptr)
+						{
+							ReadPageFromJson(state, *pPage, pageJson);
+							pPage->bUsed = true;
+						}
+					}
+				}
 				//if (bankJson.contains("Used"))
 				//	pBank-> = bankJson["Used"];
 				//pBank->PrimaryMappedPage = bankJson["PrimaryMappedPage"];

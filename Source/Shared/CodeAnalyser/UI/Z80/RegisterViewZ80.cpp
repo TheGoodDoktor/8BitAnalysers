@@ -145,6 +145,7 @@ void EditByte(uint8_t* pByteData)
 		break;
 	case ENumberDisplayMode::HexAitch:
 	case ENumberDisplayMode::HexDollar:
+	case ENumberDisplayMode::HexAmpersand:
 		flags |= ImGuiInputTextFlags_CharsHexadecimal;
 		break;
 	default:
@@ -154,6 +155,11 @@ void EditByte(uint8_t* pByteData)
 	if (numMode == ENumberDisplayMode::HexDollar)
 	{
 		ImGui::Text("$");
+		ImGui::SameLine(0, 0);
+	}
+	else if (numMode == ENumberDisplayMode::HexAmpersand)
+	{
+		ImGui::Text("&");
 		ImGui::SameLine(0, 0);
 	}
 	ImGui::SetNextItemWidth((float)width);
@@ -185,6 +191,7 @@ void EditWord(uint16_t* pWordData)
 		break;
 	case ENumberDisplayMode::HexAitch:
 	case ENumberDisplayMode::HexDollar:
+	case ENumberDisplayMode::HexAmpersand:
 		flags |= ImGuiInputTextFlags_CharsHexadecimal;
 		break;
 	default:

@@ -235,8 +235,7 @@ void FProjectConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 	}
 
 	if (jsonConfigFile.contains("AsmExportPath"))
-		AsmExportPath = jsonConfigFile["AsmExportPath"];
-	
+		AsmExportPath = jsonConfigFile["AsmExportPath"];	
 }
 
 bool FProjectConfig::AddLuaSourceFile(const char* pFilename)

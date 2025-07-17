@@ -762,6 +762,8 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		strncpy(format, "%02Xh", 6);
 	else if (GetNumberDisplayMode() == ENumberDisplayMode::HexDollar)
 		strncpy(format, "$%02X", 6);
+	else if (GetNumberDisplayMode() == ENumberDisplayMode::HexAmpersand)
+		strncpy(format, "&%02X", 6);
 	else 
 		strncpy(format, "%d", 6);
 

@@ -36,11 +36,14 @@ struct FGlobalConfig
 
 	bool				bEnableExperimentalFeatures = false;	// for WIP & experimental features
 
+	std::string 	ROMAnalysisPath;
+
 	// Lua config
 	bool				bEditLuaBaseFiles = false;
 	std::vector<std::string>	LuaBaseFiles;
 
-	virtual bool    Init(void);
+    virtual bool    Init(void);
+	virtual void    DrawUI(void);
 	bool	Load(const char* filename);
 	bool	Save(const char* filename);
 	void	AddProjectToRecents(const std::string& name);
