@@ -6,6 +6,7 @@
 
 #include "TubeEliteConfig.h"
 #include "TubeEliteMachine.h"
+#include "TubeEliteDisplay.h"
 #include <set>
 #include <array>
 
@@ -79,6 +80,7 @@ public:
 
 	// Begin ITubeDataHandler interface implementation
 	bool HandleIncomingR1Data(FTubeQueue& r1Queue) override;
+	bool HandleIncomingR2Data(uint8_t val) override;
 
 	// End ITubeDataHandler interface implementation
 
@@ -108,6 +110,7 @@ private:
 
 	bool	LoadBinaries(void);
 	FTubeEliteMachine			Machine;
+	FTubeEliteDisplay			Display;
     FTubeEliteLaunchConfig		LaunchConfig;
 	FTubeEliteConfig*			pConfig = nullptr;
 

@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include "Debug/DebugLog.h"
 
 #define CHIPS_ASSERT(c) assert(c)
 
@@ -79,7 +80,32 @@ void FTubeEliteMachine::TickCPU()
 				case ETubeRegister::R1:
 					// read from incoming R1 data
 					val = Tube.R1InLatch;
-					break;					
+					break;	
+				case ETubeRegister::S2:
+					if (Tube.bR2InReady)
+					{
+						val |= 0x80; // set bit 7 if R2 input is ready
+					}
+					if (Tube.bR2OutLatchFull == false)
+					{
+						val |= 0x40; // set bit 6 if R2 output is ready
+					}
+					break;
+				case ETubeRegister::R2:
+					// read from R2 input latch
+					val = Tube.R2InLatch;
+					Tube.bR2InReady = false; // clear R2 input ready flag
+					break;
+				case ETubeRegister::S3:
+					// S3 is not implemented
+					val = 0;
+					break;
+				case ETubeRegister::S4:
+					// S4 is not implemented
+					val = 0;
+					break;
+				default:
+					LOGWARNING("Reading from unimplemented Tube Reg: %d",reg);
 			}
 
 			M6502_SET_DATA(Pins, val);
@@ -99,6 +125,12 @@ void FTubeEliteMachine::TickCPU()
 					Tube.R1OutQueue.Enqueue(data);
 				}
 				break;
+			case ETubeRegister::R2:
+				Tube.R2OutLatch = data;	// set R2 output latch
+				Tube.bR2OutLatchFull = true;	// latch is full
+				break;
+			default:
+				LOGWARNING("Writing to unimplemented Tube Reg: %d", reg);
 			}
 
 		}
@@ -135,9 +167,16 @@ void FTubeEliteMachine::Tick()
 	{
 		if (Tube.R1OutQueue.IsEmpty() == false)
 		{
-			// TODO: push data
+			// push data
 			if(pTubeDataHandler)
 				pTubeDataHandler->HandleIncomingR1Data(Tube.R1OutQueue);
+		}
+
+		uint8_t r2OutByte = 0;
+		if (Tube.GetR2Output(r2OutByte))
+		{
+			if (pTubeDataHandler)
+				pTubeDataHandler->HandleIncomingR2Data(r2OutByte);
 		}
 		TubePollCounter = 0;
 	}

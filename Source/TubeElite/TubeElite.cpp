@@ -97,6 +97,9 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	// hack checksum routine
 	Machine.RAM[0x6BFA] = 0xEA;
 	Machine.RAM[0x6BFB] = 0xEA;
+
+	Machine.Tube.SetR2Input(0x00);	// don't set high bit - language
+	//Machine.Tube.SetR2Input(0x80);	// set high bit - code
 	return true;
 }
 
@@ -214,6 +217,8 @@ void FTubeElite::DrawEmulatorUI()
 		
 	}
 	ImGui::End();
+
+	Display.DrawUI();
 }
 
 void FTubeElite::Tick()
@@ -249,11 +254,17 @@ bool FTubeElite::HandleIncomingR1Data(FTubeQueue& r1Queue)
 	{
 		const uint8_t queueVal = pQueue[i];
 
-		LOGINFO("%c",queueVal);
+		Display.ProcessVDUChar(queueVal); // process the character for display
 	}
 
 	// empty queue	
 	r1Queue.Empty();
+	return true;
+}
+
+bool FTubeElite::HandleIncomingR2Data(uint8_t val)
+{
+	LOGINFO("Received R2 data: 0x%02X", val);
 	return true;
 }
 

@@ -88,13 +88,35 @@ class FTube
 public:
 	FTubeQueue		R1OutQueue;	
 	uint8_t			R1InLatch = 0;
-	
+
+	bool			bR2OutLatchFull = false;	// R2 input ready flag
+	uint8_t			R2OutLatch = 0;	// latch for R1 output
+	bool GetR2Output(uint8_t &outByte) 
+	{
+		if (bR2OutLatchFull)
+		{
+			outByte = R2OutLatch;	// get the R2 output latch value
+			bR2OutLatchFull = false;	// clear R2 output ready flag
+			return true;	// return true if R2 output is ready
+		}
+		return false;
+	}
+
+	void SetR2Input(uint8_t val)
+	{
+		R2InLatch = val;
+		bR2InReady = true;	// set R2 input ready flag
+	}
+	bool			bR2InReady = false;	// R2 input ready flag
+	uint8_t			R2InLatch = 0;	// latch for R2 input
 };
 
 class ITubeDataHandler
 {
 public:
 	virtual bool HandleIncomingR1Data(FTubeQueue& r1Queue) = 0;
+	virtual bool HandleIncomingR2Data(uint8_t val) = 0;
+
 };
 
 struct FTubeEliteMachineDesc
