@@ -9,59 +9,130 @@
 #include "chips/mem.h"
 #include "chips/clk.h"
 
-typedef struct
-{
-	m65C02_desc_t		cpu;
-	chips_debug_t		debug;
-	chips_audio_desc_t	audio;
+#include <cstring>
+#include <stdio.h>
 
-} tube_elite_desc_t;
+#define TUBE_ELITE_SNAPSHOT_VERSION (1)
 
-typedef struct 
+
+enum class ETubeRegister : uint8_t
 {
-	union
+	S1 = 0,	// Tube status register 1
+	R1,		// Tube register 1
+	S2,		// Tube status register 2
+	R2,		// Tube register 2
+	S3,		// Tube status register 3
+	R3,		// Tube register 3
+	S4,		// Tube status register 4
+	R4,		// Tube register 4
+};
+
+class FTubeQueue
+{
+public:
+	FTubeQueue()
+		: QueuePos(0)
 	{
-		struct
+		memset(Queue, 0, kQueueSize);
+	}
+
+	void Reset()
+	{
+		QueuePos = 0;
+		memset(Queue, 0, kQueueSize);
+	}
+
+	void Empty()
+	{
+		QueuePos = 0;
+	}
+
+	bool HasSpace() const
+	{
+		return QueuePos < kQueueSize;
+	}
+
+	bool IsEmpty() const
+	{
+		return QueuePos == 0;
+	}
+
+	bool Enqueue(uint8_t value)
+	{
+		if (HasSpace())
 		{
-			uint8_t	s1;		// Tube status register 1
-			uint8_t r1;		// Tube register 1
-			uint8_t	s2;		// Tube status register 2
-			uint8_t r2;		// Tube register 2
-			uint8_t	s3;		// Tube status register 3
-			uint8_t r3;		// Tube register 3
-			uint8_t	s4;		// Tube status register 4
-			uint8_t r4;		// Tube register 4
-		};
-		uint8_t reg[8]; // 8 tube registers
-	};
-	
-} tube_registers_t;
+			Queue[QueuePos++] = value;
+			return true;
+		}
+		return false;
+	}
 
-typedef struct
+	const uint8_t* GetQueue() const
+	{
+		return Queue;
+	}
+
+	int GetQueueSize() const
+	{
+		return QueuePos;
+	}
+
+private:
+	static const int	kQueueSize = 16;	
+	uint8_t		Queue[kQueueSize];	
+	int			QueuePos = 0;		
+};
+
+class FTube 
 {
-	m65C02_t		cpu;
-	uint64_t	pins;
-	mem_t		mem_cpu;	// cpu memory
-	chips_debug_t	debug;
-	uint32_t	tick_counter;
+public:
+	FTubeQueue		R1OutQueue;	
+	uint8_t			R1InLatch = 0;
+	
+};
 
-	bool		valid;
-	tube_registers_t	tube_regs;	// Tube registers
+class ITubeDataHandler
+{
+public:
+	virtual bool HandleIncomingR1Data(FTubeQueue& r1Queue) = 0;
+};
+
+struct FTubeEliteMachineDesc
+{
+	m65C02_desc_t		CPU;
+	chips_debug_t		Debug;
+	ITubeDataHandler*	pTubeDataHandler = nullptr;	// optional, can be used to handle incoming Tube data
+};
+
+class FTubeEliteMachine
+{
+public:
+	bool Init(const FTubeEliteMachineDesc& desc);
+	void Shutdown();
+	void Reset();
+	uint32_t Exec(uint32_t microSeconds);
+
+	uint32_t SaveSnapshot(FILE* fp) const;
+	bool LoadSnapshot(FILE* fp, uint32_t version);
+private:
+	void TickCPU();
+	void Tick();
+
+public:
+	m65C02_t		CPU;
+	uint64_t		Pins = 0;
+	mem_t			Memory;	// cpu memory
+	chips_debug_t	Debug;
+	uint32_t		TickCounter;
+
+	static const int kTubePollInterval = 100;	
+	uint32_t		TubePollCounter = 0;
+
+	bool		bValid = false;
+	FTube		Tube;	// Tube registers
 
 	// memory
-	uint8_t		ram[0x10000];		// 64K RAM
-}tube_elite_t;
+	uint8_t		RAM[0x10000];		// 64K RAM
 
-// initialize a new tube elite instance
-void tube_elite_init(tube_elite_t* sys, const tube_elite_desc_t* desc);
-// discard a tube elite instance
-void tube_elite_discard(tube_elite_t* sys);
-// reset a tube elite instance
-void tube_elite_reset(tube_elite_t* sys);
-// run tube elite instance for given amount of micro_seconds, returns number of ticks executed
-uint32_t tube_elite_exec(tube_elite_t* sys, uint32_t micro_seconds);
-
-// save a snapshot, patches pointers to zero and offsets, returns snapshot version
-uint32_t tube_elite_save_snapshot(tube_elite_t* sys, tube_elite_t* dst);
-// load a snapshot, returns false if snapshot versions don't match
-bool tube_elite_load_snapshot(tube_elite_t* sys, uint32_t version, tube_elite_t* src);
+	ITubeDataHandler* pTubeDataHandler = nullptr;
+};

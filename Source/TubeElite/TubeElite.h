@@ -17,7 +17,7 @@ struct FTubeEliteLaunchConfig : public FEmulatorLaunchConfig
     };
 };
 
-class FTubeElite : public FEmuBase
+class FTubeElite : public FEmuBase, public ITubeDataHandler
 {
 public:
     FTubeElite();
@@ -44,20 +44,20 @@ public:
     // Begin ICPUInterface interface implementation
     uint8_t        ReadByte(uint16_t address) const override
     {
-        return mem_rd(const_cast<mem_t*>(&Machine.mem_cpu), address);
+        return mem_rd(const_cast<mem_t*>(&Machine.Memory), address);
     }
     uint16_t    ReadWord(uint16_t address) const override
     {
-        return mem_rd16(const_cast<mem_t*>(&Machine.mem_cpu), address);
+        return mem_rd16(const_cast<mem_t*>(&Machine.Memory), address);
     }
     const uint8_t* GetMemPtr(uint16_t address) const override
     {
-        return mem_readptr(const_cast<mem_t*>(&Machine.mem_cpu), address);
+        return mem_readptr(const_cast<mem_t*>(&Machine.Memory), address);
     }
 
     void WriteByte(uint16_t address, uint8_t value) override
     {
-        mem_wr(&Machine.mem_cpu, address, value);
+        mem_wr(&Machine.Memory, address, value);
     }
 
     FAddressRef GetPC() override
@@ -67,15 +67,20 @@ public:
 
     uint16_t    GetSP(void) override
     {
-        return m65C02_s(&Machine.cpu) + 0x100;    // stack begins at 0x100
+        return m65C02_s(&Machine.CPU) + 0x100;    // stack begins at 0x100
     }
 
     void* GetCPUEmulator(void) const override
     {
-        return (void*)&Machine.cpu;
+        return (void*)&Machine.CPU;
     }
 
     // End ICPUInterface interface implementation
+
+	// Begin ITubeDataHandler interface implementation
+	bool HandleIncomingR1Data(FTubeQueue& r1Queue) override;
+
+	// End ITubeDataHandler interface implementation
 
     void    SetupCodeAnalysisLabels();
 
@@ -97,12 +102,12 @@ public:
 
     uint64_t    OnCPUTick(uint64_t pins);
 
-	tube_elite_t& GetMachine() { return Machine; }
+	FTubeEliteMachine& GetMachine() { return Machine; }
 
 private:
 
 	bool	LoadBinaries(void);
-	tube_elite_t				Machine;
+	FTubeEliteMachine			Machine;
     FTubeEliteLaunchConfig		LaunchConfig;
 	FTubeEliteConfig*			pConfig = nullptr;
 

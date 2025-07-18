@@ -47,20 +47,21 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	LoadFont();
 
 	// setup machine
-	tube_elite_desc_t desc = {};
+	FTubeEliteMachineDesc desc = {};
 
 	// setup debug hook
-	desc.debug.callback.func = DebugCB;
-	desc.debug.callback.user_data = this;
-	desc.debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
+	desc.Debug.callback.func = DebugCB;
+	desc.Debug.callback.user_data = this;
+	desc.Debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
+	desc.pTubeDataHandler = this;
 
-	tube_elite_init(&Machine, &desc);
+	Machine.Init(desc);
 
 	CPUType = ECPUType::M65C02;
 	SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 
 	// Set up memory banks
-	RamBankId = CodeAnalysis.CreateBank("RAM", 64, Machine.ram, false, 0x0000, true);					// RAM - $0000 - $FFFF - pages 0-63 - 64K
+	RamBankId = CodeAnalysis.CreateBank("RAM", 64, Machine.RAM, false, 0x0000, true);					// RAM - $0000 - $FFFF - pages 0-63 - 64K
 
 	// map in banks
 	CodeAnalysis.MapBank(RamBankId, 0, EBankAccess::ReadWrite);
@@ -90,12 +91,12 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	//CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(startAddress));
 
 	// hack the reset vector
-	//Machine.ram[0xFFFC] = startAddress & 255; 
-	//Machine.ram[0xFFFD] = startAddress >> 8;
+	//Machine.RAM[0xFFFC] = startAddress & 255; 
+	//Machine.RAM[0xFFFD] = startAddress >> 8;
 
 	// hack checksum routine
-	Machine.ram[0x6BFA] = 0xEA;
-	Machine.ram[0x6BFB] = 0xEA;
+	Machine.RAM[0x6BFA] = 0xEA;
+	Machine.RAM[0x6BFB] = 0xEA;
 	return true;
 }
 
@@ -139,7 +140,7 @@ bool FTubeElite::LoadBinaries(void)
 		return false;
 	}
 	assert((loadAddress + size) <= 0x10000); // Ensure we don't overflow the RAM
-	memcpy(Machine.ram + loadAddress, pData, size); // copy binary data to RAM
+	memcpy(Machine.RAM + loadAddress, pData, size); // copy binary data to RAM
 	LOGINFO("Loaded Tube Elite binary: %s, size: %zu bytes, load address: $%04X - $%04X", bigBinaryFile,  size, loadAddress, loadAddress + size - 1);
 	free(pData);
 
@@ -151,7 +152,7 @@ bool FTubeElite::LoadBinaries(void)
 		return false;
 	}
 	assert((shipsAddress + size) <= 0x10000); // Ensure we don't overflow the RAM
-	memcpy(Machine.ram + shipsAddress, pData, size); // copy Ships binary data to RAM
+	memcpy(Machine.RAM + shipsAddress, pData, size); // copy Ships binary data to RAM
 	LOGINFO("Loaded Tube Ships binary: %s, size: %zu bytes, load address: $%04X - $%04X", shipsBinaryFile, size, shipsAddress, shipsAddress + size - 1);
 	//loadAddress += (uint16_t)size; // increment load address for next binary
 #else
@@ -183,7 +184,7 @@ bool FTubeElite::LoadBinaries(void)
 	}
 
 	assert((0xf800 + size) <= 0x10000); // Ensure we don't overflow the RAM
-	memcpy(Machine.ram + 0xf800, pData, size);
+	memcpy(Machine.RAM + 0xf800, pData, size);
 	free(pData);
 
 	return true;
@@ -200,7 +201,7 @@ void FTubeElite::Shutdown()
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 
-	tube_elite_discard(&Machine);
+	Machine.Shutdown();
 
 	FEmuBase::Shutdown();
 }
@@ -228,7 +229,7 @@ void FTubeElite::Tick()
 		CodeAnalysis.OnFrameStart();
 		//StoreRegisters_6502(CodeAnalysis);
 
-		tube_elite_exec(&Machine, (uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
+		Machine.Exec((uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 
 		CodeAnalysis.OnFrameEnd();
 	}
@@ -236,11 +237,31 @@ void FTubeElite::Tick()
 	DrawDockingView();
 }
 
+bool FTubeElite::HandleIncomingR1Data(FTubeQueue& r1Queue)
+{
+	// TODO: process incoming data from Tube R1
+	if (r1Queue.IsEmpty())
+		return false;
+
+	// Process the data in the queue
+	const uint8_t* pQueue = r1Queue.GetQueue();
+	for (int i = 0; i < r1Queue.GetQueueSize(); i++)
+	{
+		const uint8_t queueVal = pQueue[i];
+
+		LOGINFO("%c",queueVal);
+	}
+
+	// empty queue	
+	r1Queue.Empty();
+	return true;
+}
+
 void FTubeElite::Reset()
 {
 	FEmuBase::Reset();
 
-	tube_elite_reset(&Machine);
+	Machine.Reset();
 }
 
 void FTubeElite::FixupAddressRefs()
@@ -292,9 +313,9 @@ bool FTubeElite::NewProjectFromEmulatorFile(const FEmulatorFile& gameSnapshot)
 {
 	return false;
 }
+#if 1
 
 static const uint32_t kMachineStateMagic = 0xFaceCafe;
-static tube_elite_t g_SaveSlot;
 
 bool FTubeElite::SaveMachineState(const char* fname)
 {
@@ -302,10 +323,11 @@ bool FTubeElite::SaveMachineState(const char* fname)
 	FILE* fp = fopen(fname, "wb");
 	if (fp != nullptr)
 	{
-		const uint32_t versionNo = tube_elite_save_snapshot(&Machine, &g_SaveSlot);
+		const uint32_t versionNo = TUBE_ELITE_SNAPSHOT_VERSION;
 		fwrite(&kMachineStateMagic, sizeof(uint32_t), 1, fp);
 		fwrite(&versionNo, sizeof(uint32_t), 1, fp);
-		fwrite(&g_SaveSlot, sizeof(tube_elite_t), 1, fp);
+		Machine.SaveSnapshot(fp); // save the machine state
+		//fwrite(&g_SaveSlot, sizeof(tube_elite_t), 1, fp);
 
 		fclose(fp);
 		return true;
@@ -327,13 +349,12 @@ bool FTubeElite::LoadMachineState(const char* fname)
 	if (magic == kMachineStateMagic)
 	{
 		fread(&versionNo, sizeof(uint32_t), 1, fp);
-		fread(&g_SaveSlot, sizeof(tube_elite_t), 1, fp);
-
-		bSuccess = tube_elite_load_snapshot(&Machine, versionNo, &g_SaveSlot);
+		bSuccess = Machine.LoadSnapshot(fp, versionNo); // load the machine state
 	}
 	fclose(fp);
 	return bSuccess;
 }
+#endif
 
 bool FTubeElite::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 {
@@ -402,12 +423,12 @@ bool FTubeElite::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	// Start in break mode so the memory will be in its initial state. 
 	CodeAnalysis.Debugger.Break();
 
-	CodeAnalysis.Debugger.RegisterNewStackPointer(Machine.cpu.S, FAddressRef());
+	CodeAnalysis.Debugger.RegisterNewStackPointer(Machine.CPU.S, FAddressRef());
 
 	// some extra initialisation for creating new analysis from snapshot
 	if (bLoadGameData == false)
 	{
-		FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(Machine.cpu.PC);
+		FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(Machine.CPU.PC);
 		SetItemCode(CodeAnalysis, initialPC);
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
@@ -490,7 +511,7 @@ uint64_t FTubeElite::OnCPUTick(uint64_t pins)
 		lastScanlinePos = scanlinePos;
 	}
 #endif
-	const bool bReadingInstruction = addr == m65C02_pc(&Machine.cpu) - 1;
+	const bool bReadingInstruction = addr == m65C02_pc(&Machine.CPU) - 1;
 
 	if ((pins & M6502_SYNC) == 0) // not for instruction fetch
 	{

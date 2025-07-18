@@ -6,122 +6,217 @@
 #define CHIPS_ASSERT(c) assert(c)
 
 #define TUBE_FREQUENCY (3000000)	// clock frequency in Hz 
-#define TUBE_ELITE_SNAPSHOT_VERSION (1)
 
 
 // initialize a new tube elite instance
-void tube_elite_init(tube_elite_t* sys, const tube_elite_desc_t* desc)
+bool FTubeEliteMachine::Init(const FTubeEliteMachineDesc& desc)
 {
-	CHIPS_ASSERT(sys && desc);
-	if (desc->debug.callback.func) { CHIPS_ASSERT(desc->debug.stopped); }
+	if (desc.Debug.callback.func) 
+	{ 
+		CHIPS_ASSERT(desc.Debug.stopped); 
+	}
 
-	memset(sys, 0, sizeof(tube_elite_t));
-	sys->valid = true;
-	sys->debug = desc->debug;
+	memset(&CPU, 0, sizeof(CPU));
+
+	bValid = true;
+	Debug = desc.Debug;
 
 	// initialize the hardware
-	sys->pins = m65C02_init(&sys->cpu, &desc->cpu);
-	mem_init(&sys->mem_cpu);
+	Pins = m65C02_init(&CPU, &desc.CPU);
+	mem_init(&Memory);
 
 	// 64K RAM
-	mem_map_ram(&sys->mem_cpu, 0, 0x0000, 0x10000, sys->ram);
+	mem_map_ram(&Memory, 0, 0x0000, 0x10000, RAM);
+
+	// Tube Handler
+	pTubeDataHandler = desc.pTubeDataHandler;
+
+	return true;
 }
 
 // discard a tube elite instance
-void tube_elite_discard(tube_elite_t* sys)
+void FTubeEliteMachine::Shutdown()
 {
-	CHIPS_ASSERT(sys && sys->valid);
-	sys->valid = false;
+	CHIPS_ASSERT(bValid);
+	bValid = false;
 }
 
 // reset a tube elite instance
-void tube_elite_reset(tube_elite_t* sys)
+void FTubeEliteMachine::Reset()
 {
-	CHIPS_ASSERT(sys && sys->valid);
+	CHIPS_ASSERT(bValid);
 
-	sys->pins |= M6502_RES;
+	Pins |= M6502_RES;
 }
 
-uint64_t _tube_elite_tick_cpu(tube_elite_t* sys, uint64_t pins)
+//uint64_t _tube_elite_tick_cpu(tube_elite_t* sys, uint64_t pins)
+void FTubeEliteMachine::TickCPU()
 {
-	pins = m65C02_tick(&sys->cpu, pins);
+	Pins = m65C02_tick(&CPU, Pins);
 
 	// the IRQ and NMI pins will be set by the HW each tick
-	pins &= ~(M6502_IRQ | M6502_NMI);
+	Pins &= ~(M6502_IRQ | M6502_NMI);
 
-	const uint16_t addr = M6502_GET_ADDR(pins);
+	const uint16_t addr = M6502_GET_ADDR(Pins);
 
 	// Tube registers
 	if (addr >= 0xFEF8 && addr <= 0xFEFF)
 	{
-		if (pins & M6502_RW)	// read
+		const ETubeRegister reg = (ETubeRegister)(addr - 0xFEF8);
+		if (Pins & M6502_RW)	// read
 		{
-			M6502_SET_DATA(pins, sys->tube_regs.reg[addr - 0xFEF8]);
+			uint8_t val = 0;
+
+			switch (reg)
+			{
+				case ETubeRegister::S1:
+					// set bit 6 if queue is not empty
+					if (Tube.R1OutQueue.HasSpace())
+					{
+						val |= 0x40; // set bit 6
+					}
+					break;
+				case ETubeRegister::R1:
+					// read from incoming R1 data
+					val = Tube.R1InLatch;
+					break;					
+			}
+
+			M6502_SET_DATA(Pins, val);
 		}
 		else // write
 		{
-			sys->tube_regs.reg[addr - 0xFEF8] = M6502_GET_DATA(pins);	
+			const uint8_t data = M6502_GET_DATA(Pins);
+			switch (reg)
+			{
+			case ETubeRegister::S1:
+				// TODO: what do we do?
+				break;
+			case ETubeRegister::R1:
+				// write to R1 queue
+				if (Tube.R1OutQueue.HasSpace())
+				{
+					Tube.R1OutQueue.Enqueue(data);
+				}
+				break;
+			}
+
 		}
 	}
 	else
 	{ 
 		// regular memory access
-		if (pins & M6502_RW)
+		if (Pins & M6502_RW)
 		{
-			M6502_SET_DATA(pins, mem_rd(&sys->mem_cpu, addr));
+			M6502_SET_DATA(Pins, mem_rd(&Memory, addr));
 		}
 		else
 		{
-			mem_wr(&sys->mem_cpu, addr, M6502_GET_DATA(pins));
+			mem_wr(&Memory, addr, M6502_GET_DATA(Pins));
 		}
 	}
-	return pins;
 }
 
-uint64_t _tube_elite_tick(tube_elite_t* sys, uint64_t pins)
+//uint64_t _tube_elite_tick(tube_elite_t* sys, uint64_t pins)
+void FTubeEliteMachine::Tick()
 {
-	CHIPS_ASSERT(sys && sys->valid);
+	CHIPS_ASSERT(bValid);
 
 	// tick the CPU & CRTC at alternate cycles
 	// not sure if we need this and it causes problems with stepping in the debugger
 	//if ((sys->tick_counter & 1) == 0)
 	{
-		pins = _tube_elite_tick_cpu(sys, pins);
+		//pins = _tube_elite_tick_cpu(sys, pins);
+		TickCPU();
+	}
+
+	TubePollCounter++;
+	if (TubePollCounter == kTubePollInterval)
+	{
+		if (Tube.R1OutQueue.IsEmpty() == false)
+		{
+			// TODO: push data
+			if(pTubeDataHandler)
+				pTubeDataHandler->HandleIncomingR1Data(Tube.R1OutQueue);
+		}
+		TubePollCounter = 0;
 	}
 	
-	sys->tick_counter++;
-	return pins;
+	TickCounter++;
 }
 
 // run tube elite instance for given amount of micro_seconds, returns number of ticks executed
-uint32_t tube_elite_exec(tube_elite_t* sys, uint32_t micro_seconds)
+uint32_t FTubeEliteMachine::Exec(uint32_t microSeconds)
 {
-	CHIPS_ASSERT(sys && sys->valid);
-	const uint32_t num_ticks = clk_us_to_ticks(TUBE_FREQUENCY, micro_seconds);
-	uint64_t pins = sys->pins;
-	if (0 == sys->debug.callback.func)
+	CHIPS_ASSERT(bValid);
+	const uint32_t numTicks = clk_us_to_ticks(TUBE_FREQUENCY, microSeconds);
+	if (Debug.callback.func == nullptr)
 	{
 		// run without debug hook
-		for (uint32_t tick = 0; tick < num_ticks; tick++)
+		for (uint32_t tick = 0; tick < numTicks; tick++)
 		{
-			pins = _tube_elite_tick(sys, pins);
+			Tick();
+			//pins = _tube_elite_tick(sys, pins);
 		}
 	}
 	else
 	{
 		// run with debug hook
-		for (uint32_t tick = 0; (tick < num_ticks) && !(*sys->debug.stopped); tick++)
+		for (uint32_t tick = 0; (tick < numTicks) && !(*Debug.stopped); tick++)
 		{
-			pins = _tube_elite_tick(sys, pins);
-			sys->debug.callback.func(sys->debug.callback.user_data, pins);
+			//pins = _tube_elite_tick(sys, pins);
+			Tick();
+			Debug.callback.func(Debug.callback.user_data, Pins);
 		}
 	}
-	sys->pins = pins;
+	//sys->pins = pins;
 
-	return num_ticks;
+	return numTicks;
 }
 
+uint32_t FTubeEliteMachine::SaveSnapshot(FILE* fp) const
+{
+	CHIPS_ASSERT(fp != nullptr);
+	// save a snapshot, patches pointers to zero and offsets, returns snapshot version
+	chips_debug_t saveDebug = Debug;
+	m65C02_t saveCPU = CPU;
+	mem_t saveMemory = Memory;
 
+	chips_debug_snapshot_onsave(&saveDebug);
+	m65C02_snapshot_onsave(&saveCPU);
+	mem_snapshot_onsave(&saveMemory, (void*)this);
+
+	fwrite(&saveDebug, sizeof(chips_debug_t), 1, fp);
+	fwrite(&saveCPU, sizeof(m65C02_t), 1, fp);
+	fwrite(&saveMemory, sizeof(mem_t), 1, fp);
+
+	return TUBE_ELITE_SNAPSHOT_VERSION;
+}
+
+bool FTubeEliteMachine::LoadSnapshot(FILE* fp, uint32_t version)
+{
+	CHIPS_ASSERT(fp != nullptr);
+	if (version != TUBE_ELITE_SNAPSHOT_VERSION)
+	{
+		return false;
+	}
+
+	chips_debug_t loadDebug;
+	m65C02_t loadCPU;
+	mem_t loadMemory;
+	fread(&loadDebug, sizeof(chips_debug_t), 1, fp);
+	fread(&loadCPU, sizeof(m65C02_t), 1, fp);
+	fread(&loadMemory, sizeof(mem_t), 1, fp);
+	chips_debug_snapshot_onload(&loadDebug, &Debug);
+	m65C02_snapshot_onload(&loadCPU, &CPU);
+	mem_snapshot_onload(&loadMemory, this);
+	Debug = loadDebug;
+	CPU = loadCPU;
+	Memory = loadMemory;
+
+	return true;
+}
+#if 0
 // save a snapshot, patches pointers to zero and offsets, returns snapshot version
 uint32_t tube_elite_save_snapshot(tube_elite_t* sys, tube_elite_t* dst)
 {
@@ -130,6 +225,7 @@ uint32_t tube_elite_save_snapshot(tube_elite_t* sys, tube_elite_t* dst)
 	chips_debug_snapshot_onsave(&dst->debug);
 	m65C02_snapshot_onsave(&dst->cpu);
 	mem_snapshot_onsave(&dst->mem_cpu, sys);
+
 	return TUBE_ELITE_SNAPSHOT_VERSION;
 }
 
@@ -149,3 +245,5 @@ bool tube_elite_load_snapshot(tube_elite_t* sys, uint32_t version, tube_elite_t*
 	*sys = im;
 	return true;
 }
+
+#endif
