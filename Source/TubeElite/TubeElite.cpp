@@ -38,6 +38,8 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	SetWindowTitle(kAppTitle.c_str());
 
+	LaunchConfig = *((FTubeEliteLaunchConfig *)&launchConfig);
+
 	// Initialise Emulator
 	pConfig = new FTubeEliteConfig();
 	pGlobalConfig = pConfig;
@@ -58,7 +60,7 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	Machine.Init(desc);
 
 	CPUType = ECPUType::M65C02;
-	SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
+	SetNumberDisplayMode(ENumberDisplayMode::HexAmpersand);
 
 	// Set up memory banks
 	RamBankId = CodeAnalysis.CreateBank("RAM", 64, Machine.RAM, false, 0x0000, true);					// RAM - $0000 - $FFFF - pages 0-63 - 64K
@@ -72,17 +74,24 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
 	CodeAnalysis.Debugger.Break();
+	FTubeEliteProjectConfig* pTubeEliteConfig = nullptr;
 
-	// TODO: load in RAM image
-	if (LoadBinaries() == false)
+	if (LaunchConfig.bBBCBasic)
 	{
-		LOGERROR("Failed to load Tube Elite binaries.");
-		return false;
+		// TODO: load BBC basic ROM binaries
+		pTubeEliteConfig = CreateNewBBCBasicConfig();
+	}
+	else
+	{
+		// TODO: load in RAM image
+		if (LoadBinaries() == false)
+		{
+			LOGERROR("Failed to load Tube Elite binaries.");
+			return false;
+		}
+		pTubeEliteConfig = CreateNewTubeEliteConfig();
 	}
 
-	
-
-	FTubeEliteProjectConfig* pTubeEliteConfig = CreateNewTubeEliteConfig();
 	LoadProject(pTubeEliteConfig, true);
 
 	// Execute from 0x10D4
@@ -98,8 +107,8 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	Machine.RAM[0x6BFA] = 0xEA;
 	Machine.RAM[0x6BFB] = 0xEA;
 
-	Machine.Tube.SetR2Input(0x00);	// don't set high bit - language
-	//Machine.Tube.SetR2Input(0x80);	// set high bit - code
+	Machine.Tube.HostWriteRegister(ETubeRegister::R2, 0x00);	// don't set high bit - language
+	//Machine.Tube.HostWriteRegister(ETubeRegister::R2,0x80);	// set high bit - code
 	return true;
 }
 
@@ -242,29 +251,25 @@ void FTubeElite::Tick()
 	DrawDockingView();
 }
 
-bool FTubeElite::HandleIncomingR1Data(FTubeQueue& r1Queue)
+bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 {
-	// TODO: process incoming data from Tube R1
-	if (r1Queue.IsEmpty())
-		return false;
-
-	// Process the data in the queue
-	const uint8_t* pQueue = r1Queue.GetQueue();
-	for (int i = 0; i < r1Queue.GetQueueSize(); i++)
+	switch (reg)
 	{
-		const uint8_t queueVal = pQueue[i];
+		case ETubeRegister::R1:
+			Display.ProcessVDUChar(val); // process the character for display
+			break;
+		case ETubeRegister::R2:
+			LOGINFO("Received R2 data: 0x%02X", val);
+			break;
 
-		Display.ProcessVDUChar(queueVal); // process the character for display
+		case ETubeRegister::R3:
+			LOGINFO("Received R3 data: 0x%02X", val);
+			break;
+		case ETubeRegister::R4:
+			LOGINFO("Received R4 data: 0x%02X", val);
+			break;
 	}
-
-	// empty queue	
-	r1Queue.Empty();
-	return true;
-}
-
-bool FTubeElite::HandleIncomingR2Data(uint8_t val)
-{
-	LOGINFO("Received R2 data: 0x%02X", val);
+	
 	return true;
 }
 
@@ -571,4 +576,85 @@ uint64_t FTubeElite::OnCPUTick(uint64_t pins)
 	CodeAnalysis.OnCPUTick(pins);
 
 	return pins;
+}
+
+
+// Keyboard stuff - move to a separate file?
+
+struct FKeyVal
+{
+	int NoShift;
+	int Shifted;
+};
+
+static std::map<ImGuiKey, FKeyVal> g_BBCKeysLUT =
+{
+	{ImGuiKey_Space,		{BBC_KEYCODE_SPACE, BBC_KEYCODE_SPACE}},
+	{ImGuiKey_Enter,		{BBC_KEYCODE_ENTER, BBC_KEYCODE_ENTER}},
+	{ImGuiKey_Escape,		{BBC_KEYCODE_ESCAPE, BBC_KEYCODE_ESCAPE}},
+	{ImGuiKey_LeftCtrl,		{BBC_KEYCODE_CTRL, BBC_KEYCODE_CTRL}},
+	{ImGuiKey_RightCtrl,	{BBC_KEYCODE_CTRL, BBC_KEYCODE_CTRL}},
+	{ImGuiKey_LeftShift,	{BBC_KEYCODE_SHIFT, BBC_KEYCODE_SHIFT}},
+	{ImGuiKey_RightShift,	{BBC_KEYCODE_SHIFT, BBC_KEYCODE_SHIFT}},
+	{ImGuiKey_Backspace,	{BBC_KEYCODE_BACKSPACE, BBC_KEYCODE_BACKSPACE}},
+	{ImGuiKey_LeftArrow,	{BBC_KEYCODE_CURSOR_LEFT, BBC_KEYCODE_CURSOR_LEFT}},
+	{ImGuiKey_RightArrow,	{BBC_KEYCODE_CURSOR_RIGHT, BBC_KEYCODE_CURSOR_RIGHT}},
+	{ImGuiKey_UpArrow,		{BBC_KEYCODE_CURSOR_UP, BBC_KEYCODE_CURSOR_UP}},
+	{ImGuiKey_DownArrow,	{BBC_KEYCODE_CURSOR_DOWN, BBC_KEYCODE_CURSOR_DOWN}},
+	{ImGuiKey_CapsLock,		{BBC_KEYCODE_CAPS_LOCK, BBC_KEYCODE_CAPS_LOCK}},
+	{ImGuiKey_Apostrophe,	{'\'', '@'}},
+	{ImGuiKey_Comma,		{',', '<'}},
+	{ImGuiKey_Minus,		{'-', '_'}},
+	{ImGuiKey_Period,		{'.', '>'}},
+	{ImGuiKey_Slash,		{'/', '?'}},
+	{ImGuiKey_Semicolon,	{';', ':'}},
+	{ImGuiKey_Equal,		{'=', '+'}},
+	{ImGuiKey_LeftBracket,	{'[', '{'}},
+	{ImGuiKey_Backslash,	{'\\', '|'}},
+	{ImGuiKey_RightBracket,	{']', '}'}},
+	{ImGuiKey_GraveAccent,	{'`', '~'}},
+};
+
+int BBCKeyFromImGuiKey(ImGuiKey key)
+{
+	uint32_t bbcKey = 0;
+	bool isShifted = ImGui::GetIO().KeyShift;
+
+	if (key >= ImGuiKey_0 && key <= ImGuiKey_9)
+	{
+		if (isShifted)
+		{
+			// Handle shifted number keys (e.g., '!' for '1')
+			switch (key)
+			{
+			case ImGuiKey_1: bbcKey = (uint8_t)'!'; break;
+			case ImGuiKey_2: bbcKey = (uint8_t)'"'; break;
+			case ImGuiKey_3: bbcKey = (uint8_t)'£'; break;
+			case ImGuiKey_4: bbcKey = (uint8_t)'$'; break;
+			case ImGuiKey_5: bbcKey = (uint8_t)'%'; break;
+			case ImGuiKey_6: bbcKey = (uint8_t)'^'; break;
+			case ImGuiKey_7: bbcKey = (uint8_t)'&'; break;
+			case ImGuiKey_8: bbcKey = (uint8_t)'*'; break;
+			case ImGuiKey_9: bbcKey = (uint8_t)'('; break;
+			case ImGuiKey_0: bbcKey = (uint8_t)')'; break;
+			}
+		}
+		else
+		{
+			bbcKey = '0' + (key - ImGuiKey_0);
+		}
+	}
+	else if (key >= ImGuiKey_A && key <= ImGuiKey_Z)
+	{
+		bbcKey = isShifted ? 'A' + (key - ImGuiKey_A) : 'a' + (key - ImGuiKey_A);
+	}
+	else
+	{
+		auto keyIt = g_BBCKeysLUT.find(key);
+		if (keyIt != g_BBCKeysLUT.end())
+		{
+			bbcKey = isShifted ? keyIt->second.Shifted : keyIt->second.NoShift;
+		}
+	}
+	return bbcKey;
 }

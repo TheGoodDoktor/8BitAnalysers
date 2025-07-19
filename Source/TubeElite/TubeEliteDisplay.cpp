@@ -1,5 +1,7 @@
 #include "TubeEliteDisplay.h"
 
+#include "TubeElite.h"
+
 #include <imgui.h>
 #include "Debug/DebugLog.h"
 #include <string>
@@ -46,6 +48,30 @@ bool FTubeEliteDisplay::ProcessVDUChar(uint8_t ch)
 	return true;
 }
 
+void FTubeEliteDisplay::Tick(float dT)
+{
+	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
+	{
+		if (ImGui::IsKeyPressed((ImGuiKey)key, false))
+		{
+			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
+			if (bbcKey != 0 && bWindowFocused)
+			{
+				//bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
+				//TODO: send to key buffer
+			}
+		}
+		else if (ImGui::IsKeyReleased((ImGuiKey)key))
+		{
+			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
+			if (bbcKey != 0)
+			{
+				//bbc_key_up(&pBBCEmu->GetBBC(), bbcKey);
+			}
+		}
+	}
+}
+
 void FTubeEliteDisplay::DrawUI(void)
 {
 	ImGui::Begin("Tube Elite Display");
@@ -74,4 +100,7 @@ void FTubeEliteDisplay::DrawUI(void)
 		ImGui::NewLine();
 	}
 	ImGui::End();
+
+	bWindowFocused = ImGui::IsWindowFocused();
+
 }

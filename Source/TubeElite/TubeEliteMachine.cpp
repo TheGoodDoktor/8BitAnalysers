@@ -2,12 +2,136 @@
 
 #include <string.h>
 #include <assert.h>
+#include <vector>
 #include "Debug/DebugLog.h"
 
 #define CHIPS_ASSERT(c) assert(c)
 
 #define TUBE_FREQUENCY (3000000)	// clock frequency in Hz 
 
+void FTube::ParasiteWriteRegister(ETubeRegister reg, uint8_t val)
+{
+	switch (reg)
+	{
+	case ETubeRegister::R1:
+		R1OutQueue.Enqueue(val); // write to R1 output queue
+		break;
+	case ETubeRegister::R2:
+		R2OutLatch.SetValue(val); // set R2 output latch
+		break;
+	case ETubeRegister::R3:
+		R3OutQueue.Enqueue(val); // write to R3 output queue
+		break;
+	case ETubeRegister::R4:
+		R4OutLatch.SetValue(val); // set R4 output latch
+		break;
+	default:
+		LOGWARNING("Writing to unimplemented Tube Reg: %d", reg);
+		return; // unimplemented register
+	}
+}
+
+bool FTube::ParasiteReadRegister(ETubeRegister reg, uint8_t& outVal)
+{
+	outVal = 0; // default value
+
+	switch (reg)
+	{
+	// Status Registers
+	case ETubeRegister::S1:
+		outVal |= R1InLatch.HasData() ? 0x80 : 0; // set bit 7 if R1 input is ready
+		outVal |= R1OutQueue.HasSpace() ? 0x40 : 0;
+		// TODO: other flags
+		return true;
+	case ETubeRegister::S2:
+		outVal |= R2InLatch.HasData() ? 0x80 : 0;
+		outVal |= R2OutLatch.HasSpace() ? 0x40 : 0;
+		return true;
+	case ETubeRegister::S3:
+		outVal |= R3InQueue.HasData() ? 0x80 : 0;
+		outVal |= R3OutQueue.HasSpace() ? 0x40 : 0;
+		return true;
+	case ETubeRegister::S4:
+		outVal |= R4InLatch.HasData() ? 0x80 : 0;
+		outVal |= R4OutLatch.HasSpace() ? 0x40 : 0;
+		return true;
+
+	// Data Registers
+	case ETubeRegister::R1:
+		return R1InLatch.GetValue(outVal); // read from R1 input latch
+	case ETubeRegister::R2:
+		return R2InLatch.GetValue(outVal); // read from R2 input latch
+	case ETubeRegister::R3:
+		return R3InQueue.Dequeue(outVal); // read from R3 input queue
+	case ETubeRegister::R4:
+		return R4InLatch.GetValue(outVal); // read from R4 input latch
+	default:
+		LOGWARNING("Reading from unimplemented Tube Reg: %d", reg);
+		return false; // unimplemented register
+	}
+}
+
+void FTube::HostWriteRegister(ETubeRegister reg, uint8_t val)
+{
+	switch (reg)
+	{
+	case ETubeRegister::R1:
+		R1InLatch.SetValue(val); // write to R1 input latch
+		break;
+	case ETubeRegister::R2:
+		R2InLatch.SetValue(val); // set R2 input latch
+		break;
+	case ETubeRegister::R3:
+		R3InQueue.Enqueue(val); // write to R3 input queue
+		break;
+	case ETubeRegister::R4:
+		R4InLatch.SetValue(val); // set R4 input latch
+		break;
+	default:
+		LOGWARNING("Writing to unimplemented Tube Reg: %d", reg);
+		return; // unimplemented register
+	}
+}
+
+bool FTube::HostReadRegister(ETubeRegister reg, uint8_t& outVal)
+{
+	outVal = 0; // default value
+
+	switch (reg)
+	{
+		// Status Registers
+	case ETubeRegister::S1:
+		outVal |= R1OutQueue.HasData() ? 0x80 : 0; // set bit 7 if R1 input is ready
+		outVal |= R1InLatch.HasSpace() ? 0x40 : 0;
+		// TODO: other flags
+		return true;
+	case ETubeRegister::S2:
+		outVal |= R2OutLatch.HasData() ? 0x80 : 0;
+		outVal |= R2InLatch.HasSpace() ? 0x40 : 0;
+		return true;
+	case ETubeRegister::S3:
+		outVal |= R3OutQueue.HasData() ? 0x80 : 0;
+		outVal |= R3InQueue.HasSpace() ? 0x40 : 0;
+		return true;
+	case ETubeRegister::S4:
+		outVal |= R4OutLatch.HasData() ? 0x80 : 0;
+		outVal |= R4InLatch.HasSpace() ? 0x40 : 0;
+		return true;
+
+		// Data Registers
+	case ETubeRegister::R1:
+		return R1OutQueue.Dequeue(outVal); // read from R1 output queue
+	case ETubeRegister::R2:
+		return R2OutLatch.GetValue(outVal); // read from R2 output latch
+	case ETubeRegister::R3:
+		return R3OutQueue.Dequeue(outVal); // read from R3 output queue
+	case ETubeRegister::R4:
+		return R4OutLatch.GetValue(outVal); // read from R4 output latch
+	default:
+		LOGWARNING("Reading from unimplemented Tube Reg: %d", reg);
+		return false; // unimplemented register
+	}
+}
 
 // initialize a new tube elite instance
 bool FTubeEliteMachine::Init(const FTubeEliteMachineDesc& desc)
@@ -67,72 +191,13 @@ void FTubeEliteMachine::TickCPU()
 		if (Pins & M6502_RW)	// read
 		{
 			uint8_t val = 0;
-
-			switch (reg)
-			{
-				case ETubeRegister::S1:
-					// set bit 6 if queue is not empty
-					if (Tube.R1OutQueue.HasSpace())
-					{
-						val |= 0x40; // set bit 6
-					}
-					break;
-				case ETubeRegister::R1:
-					// read from incoming R1 data
-					val = Tube.R1InLatch;
-					break;	
-				case ETubeRegister::S2:
-					if (Tube.bR2InReady)
-					{
-						val |= 0x80; // set bit 7 if R2 input is ready
-					}
-					if (Tube.bR2OutLatchFull == false)
-					{
-						val |= 0x40; // set bit 6 if R2 output is ready
-					}
-					break;
-				case ETubeRegister::R2:
-					// read from R2 input latch
-					val = Tube.R2InLatch;
-					Tube.bR2InReady = false; // clear R2 input ready flag
-					break;
-				case ETubeRegister::S3:
-					// S3 is not implemented
-					val = 0;
-					break;
-				case ETubeRegister::S4:
-					// S4 is not implemented
-					val = 0;
-					break;
-				default:
-					LOGWARNING("Reading from unimplemented Tube Reg: %d",reg);
-			}
-
+			Tube.ParasiteReadRegister(reg,val);
 			M6502_SET_DATA(Pins, val);
 		}
 		else // write
 		{
 			const uint8_t data = M6502_GET_DATA(Pins);
-			switch (reg)
-			{
-			case ETubeRegister::S1:
-				// TODO: what do we do?
-				break;
-			case ETubeRegister::R1:
-				// write to R1 queue
-				if (Tube.R1OutQueue.HasSpace())
-				{
-					Tube.R1OutQueue.Enqueue(data);
-				}
-				break;
-			case ETubeRegister::R2:
-				Tube.R2OutLatch = data;	// set R2 output latch
-				Tube.bR2OutLatchFull = true;	// latch is full
-				break;
-			default:
-				LOGWARNING("Writing to unimplemented Tube Reg: %d", reg);
-			}
-
+			Tube.ParasiteWriteRegister(reg,data);
 		}
 	}
 	else
@@ -148,6 +213,21 @@ void FTubeEliteMachine::TickCPU()
 		}
 	}
 }
+
+void FTubeEliteMachine::FlushTube()
+{
+	uint8_t inByte = 0;
+	std::vector<ETubeRegister> dataRegs = {ETubeRegister::R1, ETubeRegister::R2, ETubeRegister::R3, ETubeRegister::R4};
+	for(auto reg : dataRegs)
+	{
+		while (Tube.HostReadRegister(reg, inByte))	// while is for flushing queues
+		{
+			if(pTubeDataHandler)
+				pTubeDataHandler->HandleIncomingByte(reg, inByte);
+		}
+	}
+}
+
 
 //uint64_t _tube_elite_tick(tube_elite_t* sys, uint64_t pins)
 void FTubeEliteMachine::Tick()
@@ -165,19 +245,7 @@ void FTubeEliteMachine::Tick()
 	TubePollCounter++;
 	if (TubePollCounter == kTubePollInterval)
 	{
-		if (Tube.R1OutQueue.IsEmpty() == false)
-		{
-			// push data
-			if(pTubeDataHandler)
-				pTubeDataHandler->HandleIncomingR1Data(Tube.R1OutQueue);
-		}
-
-		uint8_t r2OutByte = 0;
-		if (Tube.GetR2Output(r2OutByte))
-		{
-			if (pTubeDataHandler)
-				pTubeDataHandler->HandleIncomingR2Data(r2OutByte);
-		}
+		FlushTube();	// flush the Tube data
 		TubePollCounter = 0;
 	}
 	
@@ -208,6 +276,8 @@ uint32_t FTubeEliteMachine::Exec(uint32_t microSeconds)
 			Debug.callback.func(Debug.callback.user_data, Pins);
 		}
 	}
+
+	FlushTube();	// flush the Tube data
 	//sys->pins = pins;
 
 	return numTicks;

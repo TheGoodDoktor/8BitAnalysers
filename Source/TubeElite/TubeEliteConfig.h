@@ -18,3 +18,4 @@ struct FTubeEliteProjectConfig : public FProjectConfig
 };
 
 FTubeEliteProjectConfig* CreateNewTubeEliteConfig(void);
+FTubeEliteProjectConfig* CreateNewBBCBasicConfig(void);

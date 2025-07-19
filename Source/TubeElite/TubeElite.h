@@ -10,12 +10,21 @@
 #include <set>
 #include <array>
 
+#include <imgui.h>
+
 struct FTubeEliteLaunchConfig : public FEmulatorLaunchConfig
 {
     void ParseCommandline(int argc, char** argv) override
     {
         // Parse commandline arguments
+		if (argc > 1)
+		{
+			if(strcmp(argv[1],"-bbcbasic"))
+				bBBCBasic = true;
+		}
     };
+
+	bool	bBBCBasic = false;
 };
 
 class FTubeElite : public FEmuBase, public ITubeDataHandler
@@ -79,9 +88,7 @@ public:
     // End ICPUInterface interface implementation
 
 	// Begin ITubeDataHandler interface implementation
-	bool HandleIncomingR1Data(FTubeQueue& r1Queue) override;
-	bool HandleIncomingR2Data(uint8_t val) override;
-
+	bool HandleIncomingByte(ETubeRegister reg, uint8_t val) override;
 	// End ITubeDataHandler interface implementation
 
     void    SetupCodeAnalysisLabels();
@@ -133,3 +140,6 @@ private:
     FTubeElite(const FTubeElite&) = delete;                // Prevent copy-construction
     FTubeElite& operator=(const FTubeElite&) = delete;    // Prevent assignment
 };
+
+
+int BBCKeyFromImGuiKey(ImGuiKey key);

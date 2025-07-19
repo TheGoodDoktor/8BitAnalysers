@@ -33,3 +33,14 @@ FTubeEliteProjectConfig* CreateNewTubeEliteConfig(void)
 
 	return pNewConfig;
 }
+
+FTubeEliteProjectConfig* CreateNewBBCBasicConfig(void)
+{
+	FTubeEliteProjectConfig* pNewConfig = new FTubeEliteProjectConfig;
+
+	pNewConfig->Name = "BBCBasic";
+	//pNewConfig->SnapshotFile = "";
+	//pNewConfig->pViewerConfig = GetViewConfigForGame(pNewConfig->Name.c_str());
+
+	return pNewConfig;
+}
