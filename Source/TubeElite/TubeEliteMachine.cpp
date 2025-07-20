@@ -226,6 +226,9 @@ void FTubeEliteMachine::FlushTube()
 				pTubeDataHandler->HandleIncomingByte(reg, inByte);
 		}
 	}
+
+	if(pTubeDataHandler)
+		pTubeDataHandler->PollTubeCommand();	// poll for any pending commands
 }
 
 

@@ -59,6 +59,8 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	Machine.Init(desc);
 
+	Display.Init(this);
+
 	CPUType = ECPUType::M65C02;
 	SetNumberDisplayMode(ENumberDisplayMode::HexAmpersand);
 
@@ -247,6 +249,9 @@ void FTubeElite::Tick()
 
 		CodeAnalysis.OnFrameEnd();
 	}
+
+	Display.Tick();
+
 	// Draw UI
 	DrawDockingView();
 }
@@ -260,6 +265,7 @@ bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 			break;
 		case ETubeRegister::R2:
 			LOGINFO("Received R2 data: 0x%02X", val);
+			ProcessTubeCommandByte(val);
 			break;
 
 		case ETubeRegister::R3:
@@ -272,6 +278,129 @@ bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 	
 	return true;
 }
+
+
+class FReadInputLineCommand : public FTubeCommand
+{
+public:
+	FReadInputLineCommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+
+	bool ReceiveParamByte(uint8_t byte) override
+	{
+		ParamBytes.push_back(byte);
+		if (ParamBytes.size() == 5)
+		{
+			// Send ack 0x7f or escape 0xff
+			pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, 0x7f); // acknowledge the command
+			
+			// Set up parameters
+			MaxChar = ParamBytes[0];	// maximum character
+			MinChar = ParamBytes[1];	// minimum character
+			LineLength = ParamBytes[2];	// line length
+			Address = (ParamBytes[3] << 8) | ParamBytes[4];	// address to read from
+			bIsReady = true;
+			return true;
+		}
+
+		return false;
+	}
+
+	void Execute()
+	{
+		uint8_t inputByte = 0;
+		if (pTubeSys->PopInputByte(inputByte))
+		{
+			//if (inputByte >= MinChar && inputByte <= MaxChar)
+			{
+				pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2,inputByte);
+				if (inputByte == 0x0D)
+				{
+					bIsComplete = true; // command complete on CR
+				}
+			}
+		}
+	}
+private:
+
+	uint8_t	MaxChar;
+	uint8_t MinChar;
+	uint8_t LineLength;
+	uint16_t Address;
+};
+
+class FOSCLICommand : public FTubeCommand
+{
+	public:
+		FOSCLICommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+
+		bool ReceiveParamByte(uint8_t byte) override
+		{
+			if (byte == 0x0D)
+			{
+				bIsReady = true;
+			}
+			else
+			{
+				CommandLine.push_back(byte);
+			}
+
+			return bIsReady; // return true when ready to execute
+		}
+
+		void Execute(void) override
+		{
+			LOGINFO("OSCLI: %s",CommandLine.c_str());
+			bIsComplete = true;
+		}
+private:
+	std::string		CommandLine;
+};
+
+void FTubeElite::ProcessTubeCommandByte(uint8_t cmdByte)
+{
+	if (pCurrentCommand == nullptr)
+	{
+		delete pCurrentCommand;
+		
+		switch (cmdByte)
+		{
+			case 0x02:
+				pCurrentCommand = new FOSCLICommand(this);
+				break;
+			case 0x0A:
+				pCurrentCommand = new FReadInputLineCommand(this);
+				break;
+
+			default:
+				pCurrentCommand = nullptr;
+				LOGWARNING("Unknown Tube command: 0x%02X", cmdByte);
+				break;
+		}
+	}
+	else
+	{
+		pCurrentCommand->ReceiveParamByte(cmdByte);
+	}
+}
+
+void FTubeElite::PollTubeCommand(void)
+{
+	if (pCurrentCommand != nullptr)
+	{
+		if (pCurrentCommand->IsReady())
+		{
+			pCurrentCommand->Execute();
+		}
+
+		if (pCurrentCommand->IsComplete())
+		{
+			delete pCurrentCommand;
+			pCurrentCommand = nullptr;
+		}
+	}
+
+}
+
 
 void FTubeElite::Reset()
 {

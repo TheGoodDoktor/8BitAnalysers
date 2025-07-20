@@ -2,17 +2,21 @@
 
 #include <cstdint>
 
+class FTubeElite;
+
 class FTubeEliteDisplay
 {
 public:
+	bool Init(FTubeElite* pSys);
 	bool ProcessVDUChar(uint8_t ch);
 
-	void Tick(float dT);
+	void Tick(void);
 	void DrawUI(void);
 private:
 	static const int kCharMapSizeX = 40;
 	static const int kCharMapSizeY = 24;
 
+	FTubeElite*	pTubeSys = nullptr;
 	uint8_t CharMap[kCharMapSizeX][kCharMapSizeY] = { 0 };
 	int		CursorX = 0;
 	int		CursorY = 0;

@@ -212,6 +212,7 @@ class ITubeDataHandler
 {
 public:
 	virtual bool HandleIncomingByte(ETubeRegister reg, uint8_t val) = 0;
+	virtual void PollTubeCommand(void) = 0;
 
 };
 

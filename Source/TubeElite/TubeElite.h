@@ -9,8 +9,33 @@
 #include "TubeEliteDisplay.h"
 #include <set>
 #include <array>
+#include <deque>
 
 #include <imgui.h>
+
+class FTubeElite;
+
+class FTubeCommand
+{
+public:
+	FTubeCommand(FTubeElite* pSys) : pTubeSys(pSys)
+	{
+		ParamBytes.reserve(16); // reserve space for parameters
+	}
+	
+	bool IsReady() const { return bIsReady; }
+	bool IsComplete() const	{ return bIsComplete; }
+
+	virtual bool ReceiveParamByte(uint8_t byte) = 0;	// returns if all params received
+	virtual void Execute() = 0;	// execute the command
+
+	std::vector<uint8_t> ParamBytes;	// received parameters
+	FTubeElite* pTubeSys = nullptr;	// pointer to Tube Elite system
+	bool bIsReady = false;
+	bool bIsComplete = false;
+};
+
+
 
 struct FTubeEliteLaunchConfig : public FEmulatorLaunchConfig
 {
@@ -89,7 +114,10 @@ public:
 
 	// Begin ITubeDataHandler interface implementation
 	bool HandleIncomingByte(ETubeRegister reg, uint8_t val) override;
+	void PollTubeCommand(void) override;
 	// End ITubeDataHandler interface implementation
+
+	void	ProcessTubeCommandByte(uint8_t cmd);
 
     void    SetupCodeAnalysisLabels();
 
@@ -113,6 +141,20 @@ public:
 
 	FTubeEliteMachine& GetMachine() { return Machine; }
 
+	void AddInputByte(uint8_t byte)
+	{
+		InputBuffer.push_back(byte);
+	}
+
+	bool PopInputByte(uint8_t& outByte)
+	{
+		if(InputBuffer.empty())
+			return false;
+		outByte = InputBuffer.front();
+		InputBuffer.pop_front();
+		return true;
+	}
+
 private:
 
 	bool	LoadBinaries(void);
@@ -121,6 +163,9 @@ private:
     FTubeEliteLaunchConfig		LaunchConfig;
 	FTubeEliteConfig*			pConfig = nullptr;
 
+	FTubeCommand*				pCurrentCommand = nullptr; // current Tube command being processed
+
+	std::deque<uint8_t>			InputBuffer;    
     //FBBCBankIds            BankIds;
 	int16_t						RamBankId = -1;    // RAM bank ID
 

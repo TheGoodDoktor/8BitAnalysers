@@ -6,6 +6,12 @@
 #include "Debug/DebugLog.h"
 #include <string>
 
+bool FTubeEliteDisplay::Init(FTubeElite* pSys)
+{
+	pTubeSys = pSys;
+	return true;
+}
+
 bool FTubeEliteDisplay::ProcessVDUChar(uint8_t ch)
 {
 	if (CursorX < 0 || CursorX >= kCharMapSizeX || CursorY < 0 || CursorY >= kCharMapSizeY)
@@ -48,7 +54,7 @@ bool FTubeEliteDisplay::ProcessVDUChar(uint8_t ch)
 	return true;
 }
 
-void FTubeEliteDisplay::Tick(float dT)
+void FTubeEliteDisplay::Tick(void)
 {
 	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
 	{
@@ -59,6 +65,8 @@ void FTubeEliteDisplay::Tick(float dT)
 			{
 				//bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
 				//TODO: send to key buffer
+				pTubeSys->AddInputByte(bbcKey);
+
 			}
 		}
 		else if (ImGui::IsKeyReleased((ImGuiKey)key))
@@ -99,8 +107,10 @@ void FTubeEliteDisplay::DrawUI(void)
 		}
 		ImGui::NewLine();
 	}
+	
+	bWindowFocused = ImGui::IsWindowFocused();
+
 	ImGui::End();
 
-	bWindowFocused = ImGui::IsWindowFocused();
 
 }
