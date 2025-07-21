@@ -677,6 +677,7 @@ int BBCKeyFromImGuiKey(ImGuiKey key)
 			case ImGuiKey_8: bbcKey = (uint8_t)'*'; break;
 			case ImGuiKey_9: bbcKey = (uint8_t)'('; break;
 			case ImGuiKey_0: bbcKey = (uint8_t)')'; break;
+            default: break;
 			}
 		}
 		else

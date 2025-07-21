@@ -639,7 +639,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 
 		// TODO: add edit support
 
-		ImGui::Text("db", NumStr(val));
+		ImGui::Text("db");
 		ImGui::SameLine();
 		if (bShowASCII)
 		{
@@ -657,7 +657,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		{
 			val = state.ReadByte(physAddr + i);
 			ImGui::SameLine(0,0);
-			ImGui::Text(",", NumStr(val));
+			ImGui::Text(",");
 			ImGui::SameLine(0,0);
 
 			if (bShowASCII)

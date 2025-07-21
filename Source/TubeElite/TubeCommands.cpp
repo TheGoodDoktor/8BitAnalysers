@@ -28,7 +28,7 @@ public:
 		return false;
 	}
 
-	void Execute()
+	void Execute() override
 	{
 		uint8_t inputByte = 0;
 		if (pTubeSys->PopInputByte(inputByte))
@@ -74,7 +74,7 @@ public:
 		return false;
 	}
 
-	void Execute()
+	void Execute() override
 	{
 		bIsComplete = true;
 	}
@@ -101,7 +101,7 @@ public:
 		return false;
 	}
 
-	void Execute()
+	void Execute() override
 	{
 		bIsComplete = true;
 	}

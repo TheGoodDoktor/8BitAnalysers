@@ -1424,6 +1424,8 @@ bool GetPreviousWordRegValue(EOperand op, uint16_t& value)
 	case EOperand::Indirect_Immediate_Word:
 	case EOperand::Indirect_Immediate_Byte:
 		return false;
+    default:
+        break;
 	}
 
 	return true;

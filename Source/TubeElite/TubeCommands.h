@@ -12,6 +12,8 @@ public:
 	{
 		ParamBytes.reserve(16); // reserve space for parameters
 	}
+    
+    virtual ~FTubeCommand(){}
 
 	bool IsReady() const { return bIsReady; }
 	bool IsComplete() const { return bIsComplete; }

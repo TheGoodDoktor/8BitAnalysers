@@ -171,7 +171,7 @@ bool DrawDisplayTypeComboBox(const FDisplayTypeBase** pChangeType)
 	{
 		for (const FDisplayTypeBase* pType : g_DisplayTypeList)
 		{
-			if (ImGui::Selectable(pType->GetTypeName(), pType == pType))
+			if (ImGui::Selectable(pType->GetTypeName(), *pChangeType == pType))
 			{
 				*pChangeType = pType;
 				bChanged = true;

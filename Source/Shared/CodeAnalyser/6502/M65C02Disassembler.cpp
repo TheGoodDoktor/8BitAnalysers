@@ -122,7 +122,7 @@
 #define A_JSR    (11)    /* special JSR abs */
 #define A_BRA    (12)    /* special relative branch */
 #define A_INV    (13)    /* this is an invalid instruction */
-#define A_ZPI    (14)	 /* (zp) new 65C02 addressing mode
+#define A_ZPI    (14)	 /* (zp) new 65C02 addressing mode */
 
 /* opcode descriptions */
 static uint8_t _m6502dasm_ops[4][8][8] = {

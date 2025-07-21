@@ -4,6 +4,7 @@
 #include "CodeToolTips.h"
 #include "CodeAnalyser/DataTypes.h"
 #include "ComboBoxes.h"
+#include "Debug/DebugLog.h"
 
 #include <ImGuiSupport/ImGuiScaling.h>
 #include <math.h>
@@ -372,6 +373,9 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 					case ECPUType::M65C02:
 						state.WriteByte(physAddress + i, 0xEA);	// NOP
 						break;
+                    default:
+                        LOGERROR("Unknow CPU type");
+                        break;
 				}
 			}
 		}
