@@ -57,6 +57,60 @@ private:
 	uint16_t Address;
 };
 
+class FOSBYTELowCommand : public FTubeCommand
+{
+public:
+	FOSBYTELowCommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+	bool ReceiveParamByte(uint8_t byte) override
+	{
+		ParamBytes.push_back(byte);
+		if (ParamBytes.size() == 2)
+		{
+			ParamX = ParamBytes[0];	// OSBYTE parameter X
+			ParamA = ParamBytes[1];	// OSBYTE parameter A
+			bIsReady = true;
+			return true; // ready to execute
+		}
+		return false;
+	}
+
+	void Execute()
+	{
+		bIsComplete = true;
+	}
+private:
+	uint8_t		ParamA;
+	uint8_t		ParamX;
+};
+
+class FOSBYTEHiCommand : public FTubeCommand
+{
+public:
+	FOSBYTEHiCommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+	bool ReceiveParamByte(uint8_t byte) override
+	{
+		ParamBytes.push_back(byte);
+		if (ParamBytes.size() == 3)
+		{
+			ParamX = ParamBytes[0];	// OSBYTE parameter X
+			ParamY = ParamBytes[1];	// OSBYTE parameter Y
+			ParamA = ParamBytes[2];	// OSBYTE parameter A
+			bIsReady = true;
+			return true; // ready to execute
+		}
+		return false;
+	}
+
+	void Execute()
+	{
+		bIsComplete = true;
+	}
+private:
+	uint8_t		ParamA;
+	uint8_t		ParamX;
+	uint8_t		ParamY;
+};
+
 class FOSCLICommand : public FTubeCommand
 {
 public:
@@ -93,15 +147,43 @@ FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId)
 
 	switch (commandId)
 	{
-	case 0x02:
+	case 0x00:	//RDCH
+		LOGINFO("Tube command: RDCH (Read Character) - not implemented");
+		break;
+	case 0x02: //CLI
 		pCommand = new FOSCLICommand(pSys);
 		break;
-	case 0x0A:
+	case 0x04: // OSBYTE LO - &00-&7F
+		pCommand = new FOSBYTELowCommand(pSys);
+		break;
+	case 0x06: // OSBYTE HI - &80-&FF
+		pCommand = new FOSBYTEHiCommand(pSys);
+		break;
+	case 0x08:	// OSWORD
+		LOGINFO("Tube command: OSWORD - not implemented");
+		break;
+	case 0x0A:	// OSWORD 0
 		pCommand = new FReadInputLineCommand(pSys);
 		break;
-
+	case 0x0C:	// OSARGS
+		LOGINFO("Tube command: OSARGS - not implemented");
+		break;
+	case 0x0E:	// BGET
+		LOGINFO("Tube command: BGET (Byte Get) - not implemented");
+		break;
+	case 0x10:	// BPUT
+		LOGINFO("Tube command: BPUT (Byte Put) - not implemented");
+		break;
+	case 0x12:	// OSFIND
+		LOGINFO("Tube command: OSFIND - not implemented");
+		break;
+	case 0x014:	// OSFILE
+		LOGINFO("Tube command: OSFILE - not implemented");
+		break;
+	case 0x16:	// OSGBPB
+		LOGINFO("Tube command: OSGBPB - not implemented");
+		break;
 	default:
-		pCommand = nullptr;
 		LOGWARNING("Unknown Tube command: 0x%02X", commandId);
 		break;
 	}
