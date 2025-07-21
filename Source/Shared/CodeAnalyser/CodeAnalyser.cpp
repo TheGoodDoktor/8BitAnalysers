@@ -1107,7 +1107,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 	while ( addr < (1 << 16))
 	{
 		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(addr);
-		if (pCodeInfo != nullptr)
+		if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 		{
 			pCodeInfo->bSelfModifyingCode = false;
 
