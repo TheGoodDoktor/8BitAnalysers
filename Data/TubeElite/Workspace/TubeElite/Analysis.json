@@ -488,6 +488,13 @@
             "bROMFunction": false
         },
         {
+            "Description": "",
+            "EndAddress": 4211015680,
+            "StartAddress": 4211015680,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
             "Description": "Read a line of text",
             "EndAddress": 4218880000,
             "Params": [
@@ -729,17 +736,43 @@
                 },
                 {
                     "Address": 259,
-                    "ByteSize": 3,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "SMC": true
                 },
                 {
                     "Address": 260,
                     "ByteSize": 3,
-                    "OperandType": 2
+                    "Flags": 2,
+                    "OperandType": 2,
+                    "SMC": true
                 }
             ],
             "DataInfo": [
+                {
+                    "Address": 238,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
+                    "Address": 240,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 242,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
+                    "Address": 246,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
                 {
                     "Address": 248,
                     "ByteSize": 2,
@@ -765,6 +798,21 @@
                     "Address": 259,
                     "DataType": 11,
                     "InstructionAddressRef": 16973824
+                },
+                {
+                    "Address": 260,
+                    "DataType": 11,
+                    "InstructionAddressRef": 17039360
+                },
+                {
+                    "Address": 261,
+                    "DataType": 11,
+                    "InstructionAddressRef": 17039360
+                },
+                {
+                    "Address": 262,
+                    "DataType": 11,
+                    "InstructionAddressRef": 17039360
                 },
                 {
                     "Address": 526,
@@ -1141,22 +1189,16 @@
                     "Name": "zp_EE"
                 },
                 {
-                    "Address": 239,
+                    "Address": 240,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_EF"
+                    "Name": "zp_F0"
                 },
                 {
                     "Address": 242,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_F2"
-                },
-                {
-                    "Address": 243,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_F3"
                 },
                 {
                     "Address": 244,
@@ -1169,12 +1211,6 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_F6"
-                },
-                {
-                    "Address": 247,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_F7"
                 },
                 {
                     "Address": 248,
@@ -1473,6 +1509,10 @@
                     "Address": 218,
                     "ByteSize": 3,
                     "OperandType": 2
+                },
+                {
+                    "Address": 221,
+                    "ByteSize": 1
                 },
                 {
                     "Address": 222,
@@ -3924,7 +3964,8 @@
             "CodeInfo": [
                 {
                     "Address": 142,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Flags": 32
                 },
                 {
                     "Address": 144,
@@ -5414,6 +5455,7 @@
                 {
                     "Address": 195,
                     "ByteSize": 2,
+                    "Comment": "get value from offset",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5433,6 +5475,7 @@
                 {
                     "Address": 199,
                     "ByteSize": 2,
+                    "Comment": "add to low byte of pointer",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5440,6 +5483,7 @@
                 {
                     "Address": 201,
                     "ByteSize": 2,
+                    "Comment": "store",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5453,6 +5497,7 @@
                 {
                     "Address": 205,
                     "ByteSize": 2,
+                    "Comment": "add carry to high byte",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5474,6 +5519,7 @@
                 {
                     "Address": 211,
                     "ByteSize": 2,
+                    "Comment": "fetch char",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5481,6 +5527,7 @@
                 {
                     "Address": 213,
                     "ByteSize": 2,
+                    "Comment": "jump if no initial 0",
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -5494,7 +5541,7 @@
                 {
                     "Address": 216,
                     "ByteSize": 2,
-                    "Comment": "check for (C)",
+                    "Comment": "fetch char",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5509,6 +5556,7 @@
                 {
                     "Address": 220,
                     "ByteSize": 2,
+                    "Comment": "jump if no '('",
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -5522,6 +5570,7 @@
                 {
                     "Address": 223,
                     "ByteSize": 2,
+                    "Comment": "fetch char",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5536,6 +5585,7 @@
                 {
                     "Address": 227,
                     "ByteSize": 2,
+                    "Comment": "jump if no 'C'",
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -5549,6 +5599,7 @@
                 {
                     "Address": 230,
                     "ByteSize": 2,
+                    "Comment": "fetch char",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5563,6 +5614,7 @@
                 {
                     "Address": 234,
                     "ByteSize": 2,
+                    "Comment": "jump if no ')'",
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -5576,6 +5628,7 @@
                 {
                     "Address": 238,
                     "ByteSize": 2,
+                    "Comment": "fetch char",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -5590,6 +5643,7 @@
                     "Address": 242,
                     "ByteSize": 2,
                     "Flags": 2,
+                    "OperandType": 11,
                     "SMC": true
                 },
                 {
@@ -5621,7 +5675,7 @@
                 {
                     "Address": 252,
                     "ByteSize": 3,
-                    "Flags": 2,
+                    "Flags": 34,
                     "OperandType": 2,
                     "SMC": true
                 },
@@ -5900,12 +5954,14 @@
                     "Address": 392,
                     "ByteSize": 2,
                     "Flags": 2,
+                    "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 394,
                     "ByteSize": 2,
                     "Flags": 2,
+                    "OperandType": 1,
                     "SMC": true
                 },
                 {
@@ -5919,11 +5975,13 @@
                     "Address": 398,
                     "ByteSize": 2,
                     "Flags": 2,
+                    "OperandType": 11,
                     "SMC": true
                 },
                 {
                     "Address": 400,
                     "ByteSize": 2,
+                    "Comment": "exit if less than 0",
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -5932,11 +5990,13 @@
                     "Address": 402,
                     "ByteSize": 2,
                     "Flags": 2,
+                    "OperandType": 11,
                     "SMC": true
                 },
                 {
                     "Address": 404,
                     "ByteSize": 2,
+                    "Comment": "0-9 - add to accumulator",
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -5944,6 +6004,7 @@
                 {
                     "Address": 406,
                     "ByteSize": 2,
+                    "Comment": "ignore case",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -5964,6 +6025,7 @@
                     "Address": 412,
                     "ByteSize": 2,
                     "Flags": 2,
+                    "OperandType": 11,
                     "SMC": true
                 },
                 {
@@ -5976,6 +6038,7 @@
                 {
                     "Address": 416,
                     "ByteSize": 1,
+                    "Comment": "* 16",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -6013,12 +6076,14 @@
                     "Address": 423,
                     "ByteSize": 2,
                     "Flags": 2,
+                    "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 425,
                     "ByteSize": 2,
                     "Flags": 2,
+                    "OperandType": 1,
                     "SMC": true
                 },
                 {
@@ -6050,7 +6115,7 @@
                 {
                     "Address": 433,
                     "ByteSize": 1,
-                    "Flags": 2,
+                    "Flags": 34,
                     "SMC": true
                 },
                 {
@@ -6526,7 +6591,7 @@
                     "Address": 580,
                     "ByteSize": 3,
                     "Comment": "skip spaces after 'GO'",
-                    "Flags": 10,
+                    "Flags": 42,
                     "OperandType": 2,
                     "SMC": true
                 },
@@ -12857,22 +12922,22 @@
                 {
                     "Address": 396,
                     "LabelType": 2,
-                    "Name": "label_F98C"
+                    "Name": "character_loop"
                 },
                 {
                     "Address": 416,
                     "LabelType": 2,
-                    "Name": "label_F9A0"
+                    "Name": "add_to_accumulator"
                 },
                 {
                     "Address": 422,
                     "LabelType": 2,
-                    "Name": "label_F9A6"
+                    "Name": "accumulate_bits_loop"
                 },
                 {
                     "Address": 433,
                     "LabelType": 2,
-                    "Name": "label_F9B1"
+                    "Name": "exit_func"
                 },
                 {
                     "Address": 434,
@@ -13029,7 +13094,8 @@
                 },
                 {
                     "Address": 767,
-                    "LabelType": 2,
+                    "Global": true,
+                    "LabelType": 1,
                     "Name": "TubeROM_OSWORD_Impl"
                 },
                 {
