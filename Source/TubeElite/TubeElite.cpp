@@ -312,6 +312,20 @@ void FTubeElite::PollTubeCommand(void)
 
 }
 
+void FTubeElite::OSWORD(uint8_t command, const uint8_t* pParamBlock, std::vector<uint8_t> outBlock)
+{
+	switch (command)
+	{
+		case 245:
+			LOGINFO("OSWORD - DOT X = %d, Y = %d, Col = %d",pParamBlock[2], pParamBlock[3], pParamBlock[4]);
+			break;
+		default:
+			LOGINFO("Unhandled OSWORD %d",command);
+			break;
+	}
+}
+
+
 
 void FTubeElite::Reset()
 {

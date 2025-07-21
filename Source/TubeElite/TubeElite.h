@@ -97,6 +97,8 @@ public:
 
 	void	ProcessTubeCommandByte(uint8_t cmd);
 
+	void	OSWORD(uint8_t command,const uint8_t* pParamBlock,std::vector<uint8_t> outBlock);
+
     void    SetupCodeAnalysisLabels();
 
     bool    SaveMachineState(const char* fname);

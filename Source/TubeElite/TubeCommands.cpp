@@ -76,6 +76,7 @@ public:
 
 	void Execute() override
 	{
+		LOGINFO("OSBYTE LO: A=%d, X=%d", ParamA, ParamX);
 		bIsComplete = true;
 	}
 private:
@@ -103,12 +104,49 @@ public:
 
 	void Execute() override
 	{
+		LOGINFO("OSBYTE HI: A=%d, X=%d, Y=%d", ParamA, ParamX, ParamY);
 		bIsComplete = true;
 	}
 private:
 	uint8_t		ParamA;
 	uint8_t		ParamX;
 	uint8_t		ParamY;
+};
+
+class FOSWORDCommand : public FTubeCommand
+{
+public:
+	FOSWORDCommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+	bool ReceiveParamByte(uint8_t byte) override
+	{
+		ParamBytes.push_back(byte);
+		if (ParamBytes.size() == 2)
+		{
+			Action = ParamBytes[0];	// OSWORD parameter Y
+			NumInputBytes = ParamBytes[1];	// OSWORD parameter X
+
+			//bIsReady = true;
+			//return true; // ready to execute
+		}
+		else if (ParamBytes.size() == 2 + NumInputBytes + 1)
+		{
+			NumOutputBytes = ParamBytes.back(); // last byte is the number of output bytes
+			bIsReady = true; // ready to execute
+			return true;
+		}
+		return false;
+	}
+	void Execute() override
+	{
+		LOGINFO("OSWORD: %d, inBytes: %d, outBytes: %d", Action, NumInputBytes, NumOutputBytes);
+		pTubeSys->OSWORD(Action,ParamBytes.data() + 2, OutBytes);
+		bIsComplete = true;
+	}
+private:
+	uint8_t		Action = 0; 
+	uint8_t		NumInputBytes = 0; 
+	uint8_t		NumOutputBytes = 0; // number of bytes to return
+	std::vector<uint8_t>	OutBytes;
 };
 
 class FOSCLICommand : public FTubeCommand
@@ -160,7 +198,7 @@ FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId)
 		pCommand = new FOSBYTEHiCommand(pSys);
 		break;
 	case 0x08:	// OSWORD
-		LOGINFO("Tube command: OSWORD - not implemented");
+		pCommand = new FOSWORDCommand(pSys);
 		break;
 	case 0x0A:	// OSWORD 0
 		pCommand = new FReadInputLineCommand(pSys);
