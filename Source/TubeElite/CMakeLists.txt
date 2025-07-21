@@ -138,6 +138,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 		)
   
     add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/TubeElite/6502Tube.rom
+        $<TARGET_FILE_DIR:${APP_NAME}>
+        )
+  
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/TubeElite/Fonts
             $<TARGET_FILE_DIR:${APP_NAME}>/Fonts
@@ -147,6 +153,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/TubeElite/Lua
             $<TARGET_FILE_DIR:${APP_NAME}>/Lua
+            )
+            
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/TubeElite/Bin
+            $<TARGET_FILE_DIR:${APP_NAME}>/Bin
             )
         
     set_target_properties( TubeElite PROPERTIES

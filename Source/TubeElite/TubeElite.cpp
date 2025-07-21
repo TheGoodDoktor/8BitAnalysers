@@ -148,7 +148,7 @@ bool FTubeElite::LoadBinaries(void)
 	// Load a single big binary file
 	const char* bigBinaryFile = "Bin/P.CODE.unprot.bin";
 	const char* shipsBinaryFile = "Bin/SHIPS.bin";
-	pData = LoadBinaryFile(bigBinaryFile, size);
+	pData = LoadBinaryFile(GetBundlePath(bigBinaryFile), size);
 	if (pData == nullptr || size == 0)
 	{
 		LOGERROR("Failed to load Tube Elite binary.");
@@ -160,7 +160,7 @@ bool FTubeElite::LoadBinaries(void)
 	free(pData);
 
 	// Load Ships binary
-	pData = LoadBinaryFile(shipsBinaryFile, size);
+	pData = LoadBinaryFile(GetBundlePath(shipsBinaryFile), size);
 	if (pData == nullptr || size == 0)
 	{
 		LOGERROR("Failed to load Tube Elite Ships binary.");
@@ -191,7 +191,7 @@ bool FTubeElite::LoadBinaries(void)
 	}
 #endif
 	// Load Tube ROM
-	pData = LoadBinaryFile("6502Tube.rom", size);
+	pData = LoadBinaryFile(GetBundlePath("6502Tube.rom"), size);
 	if (pData == nullptr || size == 0)
 	{
 		LOGERROR("Failed to load Tube ROM.");
