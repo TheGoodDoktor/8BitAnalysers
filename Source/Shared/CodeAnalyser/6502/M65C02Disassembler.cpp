@@ -154,11 +154,11 @@ static uint8_t _m6502dasm_ops[4][8][8] = {
     /* cc = 02 */
     {
         //ASL  ROL   LSR   ROR   STX   LDX   DEC   INC
-        {A_INV,A_INV,A_INV,A_INV,A_IMM,A_IMM,A_IMM,A_IMM},	// 0
+        {A_INV,A_INV,A_INV,A_INV,A_IMM,A_IMM,A_IMM,A_IMM},	// 0 - bbb
         {A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER},	// 1
         {A____,A____,A____,A____,A____,A____,A____,A____},	// 2
         {A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS},	// 3
-        {A_INV,A_INV,A_INV,A_INV,A_INV,A_ZPI,A_INV,A_INV},	// 4
+        {A_ZPI,A_ZPI,A_ZPI,A_ZPI,A_ZPI,A_ZPI,A_ZPI,A_ZPI},	// 4
         {A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPY,A_ZPY,A_ZPX,A_ZPX},	// 5
         {A____,A____,A____,A____,A____,A____,A____,A____},	// 6
         {A_ABX,A_ABX,A_ABX,A_ABX,A_INV,A_ABY,A_ABX,A_ABX},	// 7
@@ -324,24 +324,28 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
         switch (aaa) {
         case 0:
             switch (bbb) {
+			case 4:  n = "ORA"; break;	// 65C02
             case 6:  n = "*NOP"; break;
             default: n = "ASL"; break;
             }
             break;
         case 1:
             switch (bbb) {
+			case 4:  n = "AND"; break;
             case 6:  n = "*NOP"; break;
             default: n = "ROL"; break;
             }
             break;
         case 2:
             switch (bbb) {
+			case 4:  n = "EOR"; break;	// 65C02
             case 6:  n = "PHY"; break;	// 65C02
             default: n = "LSR"; break;
             }
             break;
         case 3:
             switch (bbb) {
+			case 4:	 n = "ADC"; break;	// 65C02
             case 6:  n = "PLY"; break;	// 65C02
             default: n = "ROR"; break;
             }
@@ -350,6 +354,7 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
             switch (bbb) {
             case 0:  n = "*NOP"; break;
             case 2:  n = "TXA"; break;
+			case 4:  n = "STA"; break;	// 65C02
             case 6:  n = "TXS"; break;
             default: n = "STX"; break;
             }
@@ -366,6 +371,7 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
             switch (bbb) {
             case 0:  n = "*NOP"; break;
             case 2:  n = "DEX"; break;
+			case 4:  n = "CMP";	break;	// 65C02
             case 6:  n = "PHX"; break;	// 65C02
             default: n = "DEC"; break;
             }
@@ -374,6 +380,7 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
             switch (bbb) {
             case 0:  n = "*NOP"; break;
             case 2:  n = "NOP"; break;
+			case 4:  n = "SBC"; break;	// 65C02
             case 6:  n = "PLX"; break;	// 65C02
             default: n = "INC"; break;
             }
@@ -590,6 +597,13 @@ void DoM65C02Test()
 	{
 		FTestDasmState testState;
 		testState.OpCodes = inst;
+		
+		const uint8_t op = inst[0];
+		const uint8_t cc = op & 0x03;
+		const uint8_t bbb = (op >> 2) & 0x07;
+		const uint8_t aaa = (op >> 5) & 0x07;
+		LOGINFO("Opcode $%02X, cc=%d, bbb=%d, aaa=%d",op,cc,bbb,aaa);
+
 		SetNumberOutput(&testState);
 		m65C02dasm_op(0, TestDasmInputCB, TestOutputCB, &testState);
 		SetNumberOutput(nullptr);
