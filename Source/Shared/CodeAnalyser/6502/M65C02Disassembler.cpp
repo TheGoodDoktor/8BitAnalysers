@@ -124,32 +124,33 @@
 #define A_BRA    (12)    /* special relative branch */
 #define A_INV    (13)    /* this is an invalid instruction */
 #define A_ZPI    (14)	 /* (zp) new 65C02 addressing mode */
+#define A_AXI    (15)	 /* (abs,x) new 65C02 addressing mode */
 
 /* opcode descriptions */
 static uint8_t _m6502dasm_ops[4][8][8] = {
     /* cc = 00 */
     {
         //---  BIT   JMP   JMP() STY   LDY   CPY   CPX
-        {A____,A_JSR,A____,A____,A_IMM,A_IMM,A_IMM,A_IMM},
-        {A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER},
-        {A____,A____,A____,A____,A____,A____,A____,A____},
-        {A_ABS,A_ABS,A_JMP,A_JMP,A_ABS,A_ABS,A_ABS,A_ABS},
-        {A_BRA,A_BRA,A_BRA,A_BRA,A_BRA,A_BRA,A_BRA,A_BRA},  /* relative branches */
-        {A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX},
-        {A____,A____,A____,A____,A____,A____,A____,A____},
-        {A_ABX,A_ABX,A_ABS,A_ABS,A_INV,A_ABX,A_ABX,A_ABX}
+        {A____,A_JSR,A____,A____,A_IMM,A_IMM,A_IMM,A_IMM},	// 0 - bbb
+        {A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER},	// 1 - bbb
+        {A____,A____,A____,A____,A____,A____,A____,A____},	// 2 - bbb
+        {A_ABS,A_ABS,A_JMP,A_JMP,A_ABS,A_ABS,A_ABS,A_ABS},	// 3 - bbb
+        {A_BRA,A_BRA,A_BRA,A_BRA,A_BRA,A_BRA,A_BRA,A_BRA},	// 4 - bbb  /* relative branches */
+        {A_ZER,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX},	// 5 - bbb
+        {A____,A____,A____,A____,A____,A____,A____,A____},	// 6 - bbb
+        {A_ABS,A_ABX,A_ABS,A_AXI,A_ABS,A_ABX,A_ABX,A_ABX}	// 7 - bbb
     },
     /* cc = 01 */
     {
         //ORA  AND   EOR   ADC   STA   LDA   CMP   SBC
-        {A_IDX,A_IDX,A_IDX,A_IDX,A_IDX,A_IDX,A_IDX,A_IDX},
-        {A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER},
-        {A_IMM,A_IMM,A_IMM,A_IMM,A_IMM,A_IMM,A_IMM,A_IMM},
-        {A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS},
-        {A_IDY,A_IDY,A_IDY,A_IDY,A_IDY,A_IDY,A_IDY,A_IDY},
-        {A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX},
-        {A_ABY,A_ABY,A_ABY,A_ABY,A_ABY,A_ABY,A_ABY,A_ABY},
-        {A_ABX,A_ABX,A_ABX,A_ABX,A_ABX,A_ABX,A_ABX,A_ABX},
+        {A_IDX,A_IDX,A_IDX,A_IDX,A_IDX,A_IDX,A_IDX,A_IDX},	// 0 - bbb
+		{A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER,A_ZER},	// 1
+		{A_IMM,A_IMM,A_IMM,A_IMM,A_IMM,A_IMM,A_IMM,A_IMM},	// 2
+		{A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS,A_ABS},	// 3
+		{A_IDY,A_IDY,A_IDY,A_IDY,A_IDY,A_IDY,A_IDY,A_IDY},	// 4
+		{A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPX},	// 5
+		{A_ABY,A_ABY,A_ABY,A_ABY,A_ABY,A_ABY,A_ABY,A_ABY},	// 6
+		{A_ABX,A_ABX,A_ABX,A_ABX,A_ABX,A_ABX,A_ABX,A_ABX},	// 7
     },
     /* cc = 02 */
     {
@@ -161,7 +162,7 @@ static uint8_t _m6502dasm_ops[4][8][8] = {
         {A_ZPI,A_ZPI,A_ZPI,A_ZPI,A_ZPI,A_ZPI,A_ZPI,A_ZPI},	// 4
         {A_ZPX,A_ZPX,A_ZPX,A_ZPX,A_ZPY,A_ZPY,A_ZPX,A_ZPX},	// 5
         {A____,A____,A____,A____,A____,A____,A____,A____},	// 6
-        {A_ABX,A_ABX,A_ABX,A_ABX,A_INV,A_ABY,A_ABX,A_ABX},	// 7
+        {A_ABX,A_ABX,A_ABX,A_ABX,A_ABX,A_ABY,A_ABX,A_ABX},	// 7
     },
     /* cc = 03 */
     {
@@ -226,8 +227,10 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
             switch (bbb) {
             case 0:  n = "BRK"; break;
             case 2:  n = "PHP"; break;
-            case 4:  n = "BPL"; break;
+			case 4:  n = "BPL"; break;
+			case 5:  n = "TRB"; break;
             case 6:  n = "CLC"; break;
+			case 7:  n = "TRB"; break;
             default: n = "*NOP"; break;
             }
             break;
@@ -236,9 +239,9 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
             case 0:  n = "JSR"; break;
             case 2:  n = "PLP"; break;
             case 4:  n = "BMI"; break;
-            case 5:  n = "*NOP"; break;
+            case 5:  n = "BIT"; break;	// 65C02
             case 6:  n = "SEC"; break;
-            case 7:  n = "*NOP"; break;
+            case 7:  n = "BIT"; break;	// 65C02
             default: n = "BIT"; break;
             }
             break;
@@ -254,21 +257,25 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
             break;
         case 3:
             switch (bbb) {
-            case 0:  n = "RTS"; break;
+			case 0:  n = "RTS"; break;
+			case 1:  n = "STZ"; break;	// 65C02
             case 2:  n = "PLA"; break;
             case 3:  n = "JMP"; indirect = true; break;  /* jmp () */
             case 4:  n = "BVS"; break;
-            case 6:  n = "SEI"; break;
+			case 5:  n = "STZ"; break;	// 65C02
+			case 6:  n = "SEI"; break;
+			case 7:  n = "JMP"; break;	// 65C02
             default: n = "*NOP"; break;
             }
             break;
         case 4:
             switch (bbb) {
-            case 0:  n = "*NOP"; break;
+            case 0:  n = "BRA"; break;
             case 2:  n = "DEY"; break;
             case 4:  n = "BCC"; break;
             case 6:  n = "TYA"; break;
-            default: n = "STY"; break;
+			case 7:  n = "STZ"; break;	// 65C02
+			default: n = "STY"; break;
             }
             break;
         case 5:
@@ -310,7 +317,7 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
         case 3: n = "ADC"; break;
         case 4:
             switch (bbb) {
-            case 2:  n = "*NOP"; break;
+            case 2:  n = "BIT"; break;	// 65C02
             default: n = "STA"; break;
             }
             break;
@@ -325,14 +332,14 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
         case 0:
             switch (bbb) {
 			case 4:  n = "ORA"; break;	// 65C02
-            case 6:  n = "*NOP"; break;
+            case 6:  n = "INC"; break;	// 65C02
             default: n = "ASL"; break;
             }
             break;
         case 1:
             switch (bbb) {
 			case 4:  n = "AND"; break;
-            case 6:  n = "*NOP"; break;
+            case 6:  n = "DEC"; break;	// 65C02
             default: n = "ROL"; break;
             }
             break;
@@ -356,7 +363,8 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
             case 2:  n = "TXA"; break;
 			case 4:  n = "STA"; break;	// 65C02
             case 6:  n = "TXS"; break;
-            default: n = "STX"; break;
+			case 7:  n = "STZ"; break;	// 65C02
+			default: n = "STX"; break;
             }
             break;
         case 5:
@@ -450,7 +458,10 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
 	case A_ZPI:
 		_CHR(' '); _FETCH_U8(u8); _CHR('('); _STR_U8(u8); _STR(")");
 		break;
-    }
+	case A_AXI:
+		_CHR(' '); _FETCH_U16(u16); _CHR('('); _STR_U16(u16); _STR(",X"); _STR(")");
+		break;
+	}
     return pc;
 }
 
@@ -579,14 +590,41 @@ void TestOutputCB(char c, void* pUserData)
 
 static const std::vector< std::vector<uint8_t>> g_TestOpCodes
 {
-	{ 0x72, 0x12 },	// ADC($12)
-	{ 0x32, 0x12 }, // AND($12)
-	{ 0xD2, 0x12 }, // CMP($12)
-	{ 0x52, 0x12 }, // EOR($12)
-	{ 0xB2, 0x12 }, // LDA($12)
-	{ 0x12, 0x12 }, // ORA($12)
-	{ 0xF2, 0x12 }, // SBC($12)
-	{ 0x92, 0x12 }, // STA($12)
+	// (zp) address mode
+	//{ 0x72, 0x12 },	// ADC($12)
+	//{ 0x32, 0x12 }, // AND($12)
+	//{ 0xD2, 0x12 }, // CMP($12)
+	//{ 0x52, 0x12 }, // EOR($12)
+	//{ 0xB2, 0x12 }, // LDA($12)
+	//{ 0x12, 0x12 }, // ORA($12)
+	//{ 0xF2, 0x12 }, // SBC($12)
+	//{ 0x92, 0x12 }, // STA($12)
+
+	// BIT
+	//{ 0x89, 0x12 }, // BIT #$12
+	//{ 0x34, 0x34 }, // BIT $34,X
+	//{ 0x3C, 0x78, 0x56 }, // BIT $5678,X
+
+	//{ 0x3A }, // DEC 
+	//{ 0x1A }, // INC 
+
+	//{ 0x7C, 0x34, 0x12 }, // JMP ($1234,X)
+	//{ 0x80, 0x12 },	// BRA
+
+	//{ 0xDA }, // PHX
+	//{ 0x5A }, // PHY
+	//{ 0xFA }, // PLX
+	//{ 0x7A }, // PLY
+
+	// STZ
+	//{ 0x64, 0x12 }, // STZ $12
+	//{ 0x74, 0x12 }, // STZ $34,X
+	//{ 0x9C, 0x56, 0x34 }, // STZ 3456
+	//{ 0x9E, 0x56, 0x34 }, // STZ 3456,X
+
+	// TRB
+	//{ 0x14, 0x12 }, // TRB $12
+	//{ 0x1C, 0x34, 0x56 }, // TRB $5634,X
 };
 
 void DoM65C02Test()
