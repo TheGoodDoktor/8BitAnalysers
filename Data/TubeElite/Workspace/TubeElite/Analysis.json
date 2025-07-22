@@ -71,6 +71,13 @@
         },
         {
             "Description": "",
+            "EndAddress": 742588416,
+            "StartAddress": 742588416,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 779485184,
             "StartAddress": 779485184,
             "bManualEdit": false,
@@ -141,6 +148,13 @@
         },
         {
             "Description": "",
+            "EndAddress": 813236224,
+            "StartAddress": 813236224,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 864747520,
             "StartAddress": 864747520,
             "bManualEdit": false,
@@ -168,9 +182,23 @@
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Wipe all ships from the scanner",
             "EndAddress": 1128792064,
             "StartAddress": 1128792064,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "Reset the sun line heap at LSO by zero-filling it and setting the first byte to &FF.",
+            "EndAddress": 1131806720,
+            "StartAddress": 1131806720,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1134428160,
+            "StartAddress": 1134428160,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -190,8 +218,29 @@
         },
         {
             "Description": "",
+            "EndAddress": 1147928576,
+            "StartAddress": 1147928576,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1165492224,
+            "StartAddress": 1165492224,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "Light up the space station bulb on the dashboard",
             "EndAddress": 1166147584,
             "StartAddress": 1166147584,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1167130624,
+            "StartAddress": 1167130624,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -322,9 +371,30 @@
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Turn off ECM sound",
             "EndAddress": 1433075712,
             "StartAddress": 1433075712,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1439039488,
+            "StartAddress": 1439039488,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1439956992,
+            "StartAddress": 1439956992,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1472659456,
+            "StartAddress": 1472659456,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -353,6 +423,13 @@
             "Description": "Checksum the code from &1000 to &9FFF and check against S%-1",
             "EndAddress": 1809514496,
             "StartAddress": 1809514496,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1837891584,
+            "StartAddress": 1837891584,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -889,6 +966,12 @@
                     "Name": "zp_19"
                 },
                 {
+                    "Address": 31,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "zp_1F"
+                },
+                {
                     "Address": 33,
                     "Global": true,
                     "LabelType": 0,
@@ -947,6 +1030,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "zp_2E"
+                },
+                {
+                    "Address": 47,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "ECMA"
                 },
                 {
                     "Address": 48,
@@ -1398,6 +1487,18 @@
             "PageId": 1
         },
         {
+            "DataInfo": [
+                {
+                    "Address": 243,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 252,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                }
+            ],
             "LabelInfo": [
                 {
                     "Address": 82,
@@ -1436,6 +1537,12 @@
                     "Name": "FSH"
                 },
                 {
+                    "Address": 243,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "ENERGY"
+                },
+                {
                     "Address": 248,
                     "Global": true,
                     "LabelType": 0,
@@ -1452,6 +1559,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_08FB"
+                },
+                {
+                    "Address": 252,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "SLSP"
                 },
                 {
                     "Address": 254,
@@ -1488,6 +1601,12 @@
         },
         {
             "LabelInfo": [
+                {
+                    "Address": 256,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "LSO"
+                },
                 {
                     "Address": 448,
                     "Global": true,
@@ -3373,7 +3492,8 @@
             "CodeInfo": [
                 {
                     "Address": 394,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "Send a RDPARAMS command to the I/O processor"
                 },
                 {
                     "Address": 396,
@@ -3389,7 +3509,9 @@
                 },
                 {
                     "Address": 402,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "Send Energy bank status",
+                    "OperandType": 1
                 },
                 {
                     "Address": 405,
@@ -3399,7 +3521,9 @@
                 },
                 {
                     "Address": 408,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "Magnitude roll angle",
+                    "OperandType": 1
                 },
                 {
                     "Address": 410,
@@ -3409,7 +3533,9 @@
                 },
                 {
                     "Address": 413,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "sign of the roll angle",
+                    "OperandType": 1
                 },
                 {
                     "Address": 415,
@@ -3419,7 +3545,9 @@
                 },
                 {
                     "Address": 418,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "signed pitch angle",
+                    "OperandType": 1
                 },
                 {
                     "Address": 420,
@@ -3429,7 +3557,8 @@
                 },
                 {
                     "Address": 423,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 425,
@@ -3439,7 +3568,8 @@
                 },
                 {
                     "Address": 428,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 430,
@@ -3449,7 +3579,8 @@
                 },
                 {
                     "Address": 433,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 436,
@@ -3459,7 +3590,8 @@
                 },
                 {
                     "Address": 439,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 441,
@@ -3469,7 +3601,8 @@
                 },
                 {
                     "Address": 444,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 447,
@@ -3479,7 +3612,8 @@
                 },
                 {
                     "Address": 450,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 453,
@@ -3489,7 +3623,8 @@
                 },
                 {
                     "Address": 456,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 459,
@@ -3499,7 +3634,8 @@
                 },
                 {
                     "Address": 462,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 465,
@@ -3509,7 +3645,8 @@
                 },
                 {
                     "Address": 468,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 471,
@@ -3519,7 +3656,8 @@
                 },
                 {
                     "Address": 474,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 477,
@@ -3529,7 +3667,8 @@
                 },
                 {
                     "Address": 480,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 483,
@@ -3539,7 +3678,8 @@
                 },
                 {
                     "Address": 486,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 488,
@@ -3549,6 +3689,10 @@
                     "Address": 490,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 492,
+                    "ByteSize": 1
                 },
                 {
                     "Address": 493,
@@ -3573,7 +3717,7 @@
                     "Address": 394,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_258A"
+                    "Name": "DIALS"
                 },
                 {
                     "Address": 493,
@@ -3763,6 +3907,12 @@
                 }
             ],
             "LabelInfo": [
+                {
+                    "Address": 67,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_2C43"
+                },
                 {
                     "Address": 305,
                     "LabelType": 2,
@@ -4259,7 +4409,9 @@
                 },
                 {
                     "Address": 842,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "fetch ship type in slot X",
+                    "OperandType": 1
                 },
                 {
                     "Address": 845,
@@ -4267,8 +4419,87 @@
                     "OperandType": 2
                 },
                 {
-                    "Address": 882,
+                    "Address": 847,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 849,
                     "ByteSize": 2
+                },
+                {
+                    "Address": 851,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 854,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 856,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 858,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 861,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 862,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 864,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 866,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 869,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 871,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 873,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 875,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 877,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 879,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 880,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 882,
+                    "ByteSize": 2,
+                    "Comment": "STZ - implement"
                 },
                 {
                     "Address": 884,
@@ -4284,7 +4515,8 @@
                 },
                 {
                     "Address": 890,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 893,
@@ -4301,7 +4533,8 @@
                 },
                 {
                     "Address": 897,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 900,
@@ -4315,7 +4548,8 @@
                 },
                 {
                     "Address": 929,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 932,
@@ -4384,6 +4618,14 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 958,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 960,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 961,
                     "ByteSize": 2
                 },
@@ -4417,22 +4659,44 @@
                     "Address": 840,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_4348"
+                    "Name": "WPSHPS"
+                },
+                {
+                    "Address": 842,
+                    "LabelType": 2,
+                    "Name": "WSL1"
+                },
+                {
+                    "Address": 856,
+                    "LabelType": 2,
+                    "Name": "label_4358"
+                },
+                {
+                    "Address": 879,
+                    "LabelType": 2,
+                    "Name": "WS1"
                 },
                 {
                     "Address": 882,
                     "LabelType": 2,
-                    "Name": "label_4372"
+                    "Name": "WS2"
+                },
+                {
+                    "Address": 886,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "FLFLLS"
                 },
                 {
                     "Address": 890,
                     "LabelType": 2,
-                    "Name": "label_437A"
+                    "Name": "SAL6"
                 },
                 {
                     "Address": 926,
-                    "LabelType": 2,
-                    "Name": "label_439E"
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "COMPAS"
                 },
                 {
                     "Address": 961,
@@ -4534,11 +4798,13 @@
                 },
                 {
                     "Address": 386,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Flags": 32
                 },
                 {
                     "Address": 388,
                     "ByteSize": 3,
+                    "Comment": "send a 'DOBULB 0' command to IO processor",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -4560,10 +4826,28 @@
                     "Name": "function_4459"
                 },
                 {
+                    "Address": 108,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_446C"
+                },
+                {
+                    "Address": 376,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_4578"
+                },
+                {
                     "Address": 386,
                     "Global": true,
                     "LabelType": 1,
                     "Name": "SPBLB"
+                },
+                {
+                    "Address": 401,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_4591"
                 }
             ],
             "PageId": 17
@@ -4730,22 +5014,28 @@
                 {
                     "Address": 164,
                     "ByteSize": 3,
+                    "Comment": "fetch 'space station present' flag",
+                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
                     "Address": 167,
                     "ByteSize": 2,
+                    "Comment": "not inside safe zone - jump",
                     "OperandType": 2
                 },
                 {
                     "Address": 169,
                     "ByteSize": 3,
-                    "Flags": 8,
+                    "Flags": 40,
                     "OperandType": 2
                 },
                 {
                     "Address": 172,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "fetch ECM status flag",
+                    "Flags": 32,
+                    "OperandType": 1
                 },
                 {
                     "Address": 174,
@@ -4839,6 +5129,65 @@
                     "Address": 218,
                     "ByteSize": 1,
                     "Flags": 32
+                },
+                {
+                    "Address": 219,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 221,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 224,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 226,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 228,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 231,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 232,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 234,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 235,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 237,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 240,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 241,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 243,
+                    "ByteSize": 1
                 }
             ],
             "LabelInfo": [
@@ -4867,12 +5216,12 @@
                 {
                     "Address": 172,
                     "LabelType": 2,
-                    "Name": "label_4CAC"
+                    "Name": "not_inside_safe_zone"
                 },
                 {
                     "Address": 179,
                     "LabelType": 2,
-                    "Name": "label_4CB3"
+                    "Name": "ecm_off"
                 },
                 {
                     "Address": 202,
@@ -4884,6 +5233,16 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "msblob"
+                },
+                {
+                    "Address": 221,
+                    "LabelType": 2,
+                    "Name": "label_4CDD"
+                },
+                {
+                    "Address": 235,
+                    "LabelType": 2,
+                    "Name": "label_4CEB"
                 },
                 {
                     "Address": 292,
@@ -5641,6 +6000,219 @@
                 {
                     "Address": 261,
                     "ByteSize": 1
+                },
+                {
+                    "Address": 363,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 365,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 367,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 370,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 373,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 375,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 377,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 379,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 382,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 384,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 386,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 388,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 390,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 392,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 395,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 397,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 399,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 402,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 404,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 406,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 409,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 411,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 414,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 416,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 419,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 421,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 423,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 425,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 428,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 430,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 431,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 433,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 435,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 438,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 439,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 440,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 442,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 444,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 446,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 449,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 451,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 454,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 457,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 459,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 461,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 463,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 465,
+                    "ByteSize": 3,
+                    "OperandType": 2
                 }
             ],
             "LabelInfo": [
@@ -5687,7 +6259,40 @@
                     "Address": 363,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_556B"
+                    "Name": "ECMOF"
+                },
+                {
+                    "Address": 419,
+                    "LabelType": 2,
+                    "Name": "label_55A3"
+                },
+                {
+                    "Address": 451,
+                    "LabelType": 2,
+                    "Name": "label_55C3"
+                },
+                {
+                    "Address": 454,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_55C6"
+                },
+                {
+                    "Address": 468,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_55D4"
+                },
+                {
+                    "Address": 488,
+                    "LabelType": 2,
+                    "Name": "label_55E8"
+                },
+                {
+                    "Address": 967,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_57C7"
                 }
             ],
             "PageId": 21
@@ -6220,6 +6825,12 @@
         },
         {
             "LabelInfo": [
+                {
+                    "Address": 396,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_6D8C"
+                },
                 {
                     "Address": 578,
                     "Global": true,
