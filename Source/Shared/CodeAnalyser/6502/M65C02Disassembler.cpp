@@ -5,6 +5,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include "Debug/DebugLog.h"
 
 // This is a modified version of the Chips 6502 Disassembler by Andre Weissflog
 // I have kept the original comments from the header below
@@ -454,64 +455,6 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
 // number output abstraction
 
 
-#if 0
-static IDasmNumberOutput* g_pNumberOutputObj = nullptr;
-static IDasmNumberOutput* GetNumberOutput()
-{
-	return g_pNumberOutputObj;
-}
-
-static void SetNumberOutput(IDasmNumberOutput* pNumberOutputObj)
-{
-	g_pNumberOutputObj = pNumberOutputObj;
-}
-
-// output an unsigned 8-bit value as hex string 
-static void DasmOutputU8(uint8_t val, dasm_output_t out_cb, void* user_data)
-{
-	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-	if (pNumberOutput)
-		pNumberOutput->OutputU8(val, out_cb);
-
-}
-
-// output an unsigned 16-bit value as hex string 
-static void DasmOutputU16(uint16_t val, dasm_output_t out_cb, void* user_data)
-{
-	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-	if (pNumberOutput)
-		pNumberOutput->OutputU16(val, out_cb);
-}
-
-// output a signed 8-bit offset as hex string 
-static void DasmOutputD8(int8_t val, dasm_output_t out_cb, void* user_data)
-{
-	IDasmNumberOutput* pNumberOutput = GetNumberOutput();
-	if (pNumberOutput)
-		pNumberOutput->OutputD8(val, out_cb);
-}
-// helper functions
-
-
-
-// disassembler callback to fetch the next instruction byte 
-static uint8_t AnalysisDasmInputCB(void* pUserData)
-{
-	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
-
-	return pDasmState->CodeAnalysisState->ReadByte(pDasmState->CurrentAddress++);
-}
-
-// disassembler callback to output a character 
-static void AnalysisOutputCB(char c, void* pUserData)
-{
-	FAnalysisDasmState* pDasmState = (FAnalysisDasmState*)pUserData;
-
-	// add character to string
-	pDasmState->Text += c;
-}
-#endif
-
 // Helper function to generate the disassembly for a code info item
 uint16_t M65C02DisassembleCodeInfoItem(uint16_t pc, FCodeAnalysisState& state, FCodeInfo* pCodeInfo)
 {
@@ -559,38 +502,6 @@ uint16_t M65C02DisassembleGetNextPC(uint16_t pc, FCodeAnalysisState& state, std:
 	opcodes = dasmData.Data;
 	return nextPC;
 }
-#if 0
-/* disassembler callback to fetch the next instruction byte */
-static uint8_t ExportDasmInputCB(void* pUserData)
-{
-	FExportDasmState* pDasmState = (FExportDasmState*)pUserData;
-
-	return pDasmState->CodeAnalysisState->CPUInterface->ReadByte(pDasmState->CurrentAddress++);
-}
-
-/* disassembler callback to output a character */
-static void ExportOutputCB(char c, void* pUserData)
-{
-	FExportDasmState* pDasmState = (FExportDasmState*)pUserData;
-
-	// add character to string
-	pDasmState->Text += c;
-}
-#endif
-/*
-std::string M6502GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc, ENumberDisplayMode hexMode)
-{
-	FExportDasmState dasmState;
-	dasmState.CodeAnalysisState = &state;
-	dasmState.CurrentAddress = pc;
-	dasmState.HexDisplayMode = hexMode;
-	dasmState.pCodeInfoItem = state.GetCodeInfoForPhysicalAddress(pc);
-	SetNumberOutput(&dasmState);
-	m6502dasm_op(pc, ExportDasmInputCB, ExportOutputCB, &dasmState);
-	SetNumberOutput(nullptr);
-
-	return dasmState.Text;
-}*/
 
 bool M65C02GenerateDasmExportString(FExportDasmState& exportState)
 {
@@ -600,4 +511,98 @@ bool M65C02GenerateDasmExportString(FExportDasmState& exportState)
 	return true;
 }
 
+// Test function to disassemble new M65C02 instruction set
+struct FTestDasmState : public IDasmNumberOutput
+{
+	std::vector<uint8_t> OpCodes; // vector to hold the opcodes
+	std::string Text; // output text for the disassembly
+	int CurrentAddress = 0; // current address in the disassembly
+
+	void OutputU8(uint8_t val, dasm_output_t outputCallback) override
+	{
+		// output the value as an unsigned 8-bit integer in hex format
+		char buffer[16];
+		snprintf(buffer, sizeof(buffer), "$%02X", val);
+		for (char c : std::string(buffer))
+		{
+			outputCallback(c, this);
+		}
+	}
+
+	void OutputU16(uint16_t val, dasm_output_t outputCallback) override
+	{
+		// output the value as an unsigned 16-bit integer in hex format
+		char buffer[16];
+		snprintf(buffer, sizeof(buffer), "$%04X", val);
+		for (char c : std::string(buffer))
+		{
+			outputCallback(c, this);
+		}
+	}
+
+	void OutputD8(int8_t val, dasm_output_t outputCallback) override
+	{
+		// output the value as a signed 8-bit integer
+		char buffer[16];
+		snprintf(buffer, sizeof(buffer), "%d", val);
+		for (char c : std::string(buffer))
+		{
+			outputCallback(c, this);
+		}
+	}
+};
+
+
+/* disassembler callback to fetch the next instruction byte */
+uint8_t TestDasmInputCB(void* pUserData)
+{
+	FTestDasmState* pDasmState = (FTestDasmState*)pUserData;
+
+	return pDasmState->OpCodes[pDasmState->CurrentAddress++];
+}
+
+/* disassembler callback to output a character */
+void TestOutputCB(char c, void* pUserData)
+{
+	FTestDasmState* pDasmState = (FTestDasmState*)pUserData;
+
+	// add character to string
+	pDasmState->Text += c;
+}
+
+static const std::vector< std::vector<uint8_t>> g_TestOpCodes
+{
+	{ 0x72, 0x12 },	// ADC($12)
+	{ 0x32, 0x12 }, // AND($12)
+	{ 0xD2, 0x12 }, // CMP($12)
+	{ 0x52, 0x12 }, // EOR($12)
+	{ 0xB2, 0x12 }, // LDA($12)
+	{ 0x12, 0x12 }, // ORA($12)
+	{ 0xF2, 0x12 }, // SBC($12)
+	{ 0x92, 0x12 }, // STA($12)
+};
+
+void DoM65C02Test()
+{
+	// Test the M65C02 disassembler with a set of opcodes
+	// This is a simple test to ensure the disassembler works as expected
+	for (const auto& inst : g_TestOpCodes)
+	{
+		FTestDasmState testState;
+		testState.OpCodes = inst;
+		SetNumberOutput(&testState);
+		m65C02dasm_op(0, TestDasmInputCB, TestOutputCB, &testState);
+		SetNumberOutput(nullptr);
+		// Output the disassembled instruction
+		std::string opcodeStr;
+		for(const auto& op : inst)
+		{ 
+			char opStr[8];
+			snprintf(opStr,8,"0x%02X ", op);
+			opcodeStr += opStr;
+		}
+		LOGINFO("Disassembled instruction: %s opcodes : {%s}", testState.Text.c_str(), opcodeStr.c_str());
+	}
+	
+}
 

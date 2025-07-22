@@ -14,6 +14,7 @@
 // TODO: Load Elite binaries
 // use this a a guide: https://elite.bbcelite.com/6502sp/all/bcfs.html
 
+extern void DoM65C02Test();	// bit of a hack to run the M65C02 test suite
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "Tube Elite";
@@ -98,7 +99,6 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	LoadProject(pTubeEliteConfig, true);
 
 	// Execute from 0x10D4
-	const uint16_t startAddress = 0x10D4; // start address for Tube Elite
 	//Machine.cpu.PC = startAddress; // set the program counter to the start address
 	//CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(startAddress));
 
@@ -110,8 +110,15 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	Machine.RAM[0x6BFA] = 0xEA;
 	Machine.RAM[0x6BFB] = 0xEA;
 
-	Machine.Tube.HostWriteRegister(ETubeRegister::R2, 0x00);	// don't set high bit - language
-	//Machine.Tube.HostWriteRegister(ETubeRegister::R2,0x80);	// set high bit - code
+	//Machine.Tube.HostWriteRegister(ETubeRegister::R2, 0x00);	// don't set high bit - language
+
+	// start from specific address
+	const uint16_t startAddress = 0x10D4; // start address for Tube Elite
+	Machine.Tube.HostWriteRegister(ETubeRegister::R2,0x80);	// set high bit - code
+	Machine.RAM[0x00EE] = startAddress & 255; 
+	Machine.RAM[0x00EF] = startAddress >> 8;
+
+	DoM65C02Test();	// run the M65C02 test suite
 	return true;
 }
 

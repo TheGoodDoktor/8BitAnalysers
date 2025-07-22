@@ -21,21 +21,25 @@ bool FTubeEliteDisplay::ProcessVDUChar(uint8_t ch)
 	{
 		switch (ch)
 		{
-		case 0x0D: // CR
-			CursorX = 0; // move to start of line
+		case 0x08: // BS
+			if (CursorX > 0)
+				CursorX--; // move cursor back one position
+			break;
+		case 0x09: // FS
+			if (CursorX < kCharMapSizeX-1)
+				CursorX++; // move cursor forward one position
 			break;
 		case 0x0A: // LF
 			CursorY++;
 			if (CursorY >= kCharMapSizeY)
 				CursorY = 0; // wrap around
 			break;
-		case 0x08: // BS
-			if (CursorX > 0)
-				CursorX--; // move cursor back one position
+		case 0x0D: // CR
+			CursorX = 0; // move to start of line
 			break;
 		default:
 			// ignore other control characters
-			LOGWARNING("Tube Elite Display: Ignoring non-printable character 0x%02X", ch);
+			LOGWARNING("Tube Elite Display: Ignoring non-printable character %d(0x%02X)",ch, ch);
 			return false;
 		}
 	}
