@@ -2,7 +2,7 @@
 
 #include "chips/chips_common.h"
 #include "chips/z80.h"
-#include "chips/m65C02.h"
+#include "chips_extra/m65C02.h"
 #include "chips/mc6845.h"
 #include "chips/beeper.h"
 #include "chips/kbd.h"
