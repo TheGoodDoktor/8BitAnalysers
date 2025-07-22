@@ -51,6 +51,7 @@ endif ()
 # program source
 file ( GLOB program_src CONFIGURE_DEPENDS
 	./*.cpp ./*.c ./*.h
+	chips_extra/*.h
 	)
 
 add_executable ( ${PROJECT_NAME} MACOSX_BUNDLE ${shared_src} ${program_src} ${vendor_src} )
