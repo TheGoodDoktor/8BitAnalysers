@@ -274,7 +274,7 @@ bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 			ProcessTubeChar(val); // process the character for display
 			break;
 		case ETubeRegister::R2:
-			LOGINFO("Received R2 data: 0x%02X", val);
+			//LOGINFO("Received R2 data: 0x%02X", val);
 			ProcessTubeCommandByte(val);
 			break;
 
@@ -375,6 +375,8 @@ void FTubeElite::OSWORD(uint8_t command, const uint8_t* pParamBlock, std::deque<
 {
 	switch (command)
 	{
+		case 240:	// scan the keyboard see https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/keyboard.html
+			break;
 		case 245:
 			LOGINFO("OSWORD - DOT X = %d, Y = %d, Col = %d",pParamBlock[2], pParamBlock[3], pParamBlock[4]);
 			break;

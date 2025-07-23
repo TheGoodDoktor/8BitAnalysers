@@ -98,6 +98,30 @@ protected:
 	uint8_t Param = 0;	// single parameter
 };
 
+class FShowEnergyBombEffectCommand : public FSingleParamCommand
+{
+public:
+	FShowEnergyBombEffectCommand(FTubeElite* pSys) :FSingleParamCommand(pSys) {}
+	void Execute(void) override
+	{
+		LOGINFO("Show Energy Bomb Effect with parameter %d", Param);
+		//pTubeSys->GetDisplay().ShowEnergyBombEffect(Param);
+		bIsComplete = true;
+	}
+};
+
+class FShowHyperspaceColoursCommand : public FSingleParamCommand
+{
+public:
+	FShowHyperspaceColoursCommand(FTubeElite* pSys) :FSingleParamCommand(pSys) {}
+	void Execute(void) override
+	{
+		LOGINFO("Show Hyperspace Colours with parameter %d", Param);
+		//pTubeSys->GetDisplay().ShowHyperspaceColours(Param);
+		bIsComplete = true;
+	}
+};
+
 class FSetCursorXCommand : public FSingleParamCommand
 {
 public:
@@ -122,6 +146,42 @@ public:
 	}
 };
 
+class FChangeColourPaletteCommand : public FSingleParamCommand
+{
+public:
+	FChangeColourPaletteCommand(FTubeElite* pSys) :FSingleParamCommand(pSys) {}
+	void Execute(void) override
+	{
+		LOGINFO("Change colour palette to %d", Param);
+		//pTubeSys->GetDisplay().ChangeColourPalette(Param);
+		bIsComplete = true;
+	}
+};
+
+class FToggleDashboardBulbCommand : public FSingleParamCommand
+{
+public:
+	FToggleDashboardBulbCommand(FTubeElite* pSys) :FSingleParamCommand(pSys) {}
+	void Execute(void) override
+	{
+		LOGINFO("Toggle dashboard bulb with parameter %d", Param);
+		//pTubeSys->GetDisplay().ToggleDashboardBulb(Param);
+		bIsComplete = true;
+	}
+};
+
+class FSetCurrentColourCommand : public FSingleParamCommand
+{
+public:
+	FSetCurrentColourCommand(FTubeElite* pSys) :FSingleParamCommand(pSys) {}
+	void Execute(void) override
+	{
+		LOGINFO("Set current colour to %d", Param);
+		//pTubeSys->GetDisplay().SetCurrentColour(Param);
+		bIsComplete = true;
+	}
+};
+
 FTubeCommand* CreateTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
 {
 	FTubeCommand* pCommand = nullptr;
@@ -131,10 +191,10 @@ FTubeCommand* CreateTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
 		pCommand = new FDrawLinesCommand(pSys);
 		break;
 	case kCharCommand_ShowEnergyBombEffect:
-		LOGINFO("Tube char command: Show Energy Bomb Effect - not implemented");
+		pCommand = new FShowEnergyBombEffectCommand(pSys);
 		break;
 	case kCharCommand_ShowHyperspaceColours:
-		LOGINFO("Tube char command: Show Hyperspace Colours - not implemented");
+		pCommand = new FShowHyperspaceColoursCommand(pSys);
 		break;
 
 	case kCharCommand_SetCursorX:
@@ -160,16 +220,16 @@ FTubeCommand* CreateTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
 		LOGINFO("Tube char command: Set 6522 System VIA IER - not implemented");
 		break;
 	case kCharCommand_ToggleDashboardBulb:
-		LOGINFO("Tube char command: Toggle Dashboard Bulb - not implemented");
+		pCommand = new FToggleDashboardBulbCommand(pSys);
 		break;
 	case kCharCommand_SetDiscCatalogueFlag:
 		LOGINFO("Tube char command: Set Disc Catalogue Flag - not implemented");
 		break;
 	case kCharCommand_SetCurrentColour:
-		LOGINFO("Tube char command: Set Current Colour - not implemented");
+		pCommand = new FSetCurrentColourCommand(pSys);
 		break;
 	case kCharCommand_ChangeColourPalette:
-		LOGINFO("Tube char command: Change Colour Palette - not implemented");
+		pCommand = new FChangeColourPaletteCommand(pSys);
 		break;
 	case kCharCommand_SetFileSavingFlag:
 		LOGINFO("Tube char command: Set File Saving Flag - not implemented");
