@@ -204,6 +204,13 @@
         },
         {
             "Description": "",
+            "EndAddress": 1135280128,
+            "StartAddress": 1135280128,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 1140654080,
             "StartAddress": 1140654080,
             "bManualEdit": false,
@@ -855,7 +862,7 @@
                 },
                 {
                     "Address": 259,
-                    "ByteSize": 1,
+                    "ByteSize": 3,
                     "Flags": 2,
                     "SMC": true
                 },
@@ -868,6 +875,10 @@
                 }
             ],
             "DataInfo": [
+                {
+                    "Address": 209,
+                    "DisplayType": 11
+                },
                 {
                     "Address": 238,
                     "ByteSize": 2,
@@ -921,7 +932,7 @@
                 {
                     "Address": 260,
                     "DataType": 11,
-                    "InstructionAddressRef": 17039360
+                    "InstructionAddressRef": 16973824
                 },
                 {
                     "Address": 261,
@@ -1053,19 +1064,7 @@
                     "Address": 51,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_33"
-                },
-                {
-                    "Address": 52,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_34"
-                },
-                {
-                    "Address": 53,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "zp_35"
+                    "Name": "XX15"
                 },
                 {
                     "Address": 54,
@@ -1297,9 +1296,10 @@
                 },
                 {
                     "Address": 209,
+                    "Comment": "Temp storage - used all over the place",
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "zp_D1"
+                    "Name": "T"
                 },
                 {
                     "Address": 224,
@@ -1493,6 +1493,14 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 244,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 245,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 252,
                     "ByteSize": 2,
                     "DataType": 2,
@@ -1541,6 +1549,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "ENERGY"
+                },
+                {
+                    "Address": 244,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "COMX"
+                },
+                {
+                    "Address": 245,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "COMY"
                 },
                 {
                     "Address": 248,
@@ -3493,7 +3513,8 @@
                 {
                     "Address": 394,
                     "ByteSize": 2,
-                    "Comment": "Send a RDPARAMS command to the I/O processor"
+                    "Comment": "Send a RDPARAMS command to the I/O processor",
+                    "Flags": 32
                 },
                 {
                     "Address": 396,
@@ -4127,6 +4148,10 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 176,
+                    "ByteSize": 2
+                },
+                {
                     "Address": 178,
                     "ByteSize": 2
                 },
@@ -4144,6 +4169,10 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 185,
+                    "ByteSize": 2
+                },
+                {
                     "Address": 187,
                     "ByteSize": 2
                 },
@@ -4159,6 +4188,10 @@
                     "Address": 192,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 194,
+                    "ByteSize": 2
                 },
                 {
                     "Address": 196,
@@ -4650,8 +4683,86 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 985,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 987,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 990,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 991,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 993,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 996,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 998,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 1001,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1003,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 1005,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1007,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1010,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 1012,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1014,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 1016,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 1018,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
                     "Address": 1021,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 }
             ],
             "LabelInfo": [
@@ -4699,6 +4810,12 @@
                     "Name": "COMPAS"
                 },
                 {
+                    "Address": 939,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "SPS2"
+                },
+                {
                     "Address": 961,
                     "LabelType": 2,
                     "Name": "label_43C1"
@@ -4709,10 +4826,20 @@
                     "Name": "label_43D6"
                 },
                 {
+                    "Address": 985,
+                    "LabelType": 2,
+                    "Name": "SP2"
+                },
+                {
+                    "Address": 1018,
+                    "LabelType": 2,
+                    "Name": "label_43FA"
+                },
+                {
                     "Address": 1021,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_43FD"
+                    "Name": "DOT"
                 }
             ],
             "PageId": 16
@@ -4721,27 +4848,34 @@
             "CodeInfo": [
                 {
                     "Address": 0,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 3,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 6,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 9,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 12,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 15,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "#ADDR:0x4418#",
+                    "OperandType": 1
                 },
                 {
                     "Address": 17,
@@ -4818,7 +4952,58 @@
                     "OperandType": 2
                 }
             ],
+            "DataInfo": [
+                {
+                    "Address": 24,
+                    "Comment": "number of bytes to transmit",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 25,
+                    "Comment": "number of bytes to receive",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 26,
+                    "Comment": "X coord",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 27,
+                    "Comment": "Y Coord",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 28,
+                    "Comment": "Colour",
+                    "DisplayType": 11
+                }
+            ],
             "LabelInfo": [
+                {
+                    "Address": 24,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "DORpars"
+                },
+                {
+                    "Address": 26,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "DOTX1"
+                },
+                {
+                    "Address": 27,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "DOTY1"
+                },
+                {
+                    "Address": 28,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "DOTCOL"
+                },
                 {
                     "Address": 89,
                     "Global": true,
@@ -5015,7 +5200,6 @@
                     "Address": 164,
                     "ByteSize": 3,
                     "Comment": "fetch 'space station present' flag",
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -5027,14 +5211,13 @@
                 {
                     "Address": 169,
                     "ByteSize": 3,
-                    "Flags": 40,
+                    "Flags": 8,
                     "OperandType": 2
                 },
                 {
                     "Address": 172,
                     "ByteSize": 2,
                     "Comment": "fetch ECM status flag",
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -6609,6 +6792,14 @@
                     "Address": 911,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 929,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 931,
+                    "ByteSize": 1
                 },
                 {
                     "Address": 932,
