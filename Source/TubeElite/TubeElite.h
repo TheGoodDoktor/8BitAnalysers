@@ -15,6 +15,7 @@
 
 class FTubeCommand;
 
+
 struct FTubeEliteLaunchConfig : public FEmulatorLaunchConfig
 {
     void ParseCommandline(int argc, char** argv) override
@@ -95,6 +96,7 @@ public:
 	void PollTubeCommand(void) override;
 	// End ITubeDataHandler interface implementation
 
+	void	ProcessTubeChar(uint8_t charVal);
 	void	ProcessTubeCommandByte(uint8_t cmd);
 
 	void	OSWORD(uint8_t command,const uint8_t* pParamBlock,std::vector<uint8_t> outBlock);
@@ -144,6 +146,7 @@ private:
     FTubeEliteLaunchConfig		LaunchConfig;
 	FTubeEliteConfig*			pConfig = nullptr;
 
+	FTubeCommand*				pCharHandler = nullptr;
 	FTubeCommand*				pCurrentCommand = nullptr; // current Tube command being processed
 
 	std::deque<uint8_t>			InputBuffer;    

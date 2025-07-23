@@ -228,3 +228,52 @@ FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId)
 
 	return pCommand;
 }
+
+// Char commands
+// https://elite.bbcelite.com/deep_dives/6502sp_tube_communication.html
+
+const uint8_t kCharCommand_DrawLines			= 129;
+const uint8_t kCharCommand_SetCursorX			= 133;
+const uint8_t kCharCommand_SetCursorY			= 134;
+const uint8_t kCharCommand_ClearScreenBottom	= 135;
+const uint8_t kCharCommand_RDPARAMS				= 136;
+
+class FRDPARAMSCommand : public FTubeCommand
+{
+public:
+	FRDPARAMSCommand(FTubeElite* pSys):FTubeCommand(pSys){}
+
+	bool ReceiveParamByte(uint8_t byte) override
+	{
+		ParamBytes.push_back(byte);
+		if (ParamBytes.size() == 16)
+		{
+			// TODO: Unpack parameters and send to TubeSys
+			return true;
+		}
+
+		return false;
+	}
+
+	void Execute(void) override
+	{
+	}
+
+};
+
+FTubeCommand* CreateTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
+{
+	FTubeCommand* pCommand = nullptr;
+	switch (commandId)
+	{
+	case kCharCommand_DrawLines:
+		LOGINFO("Tube char command: Draw Lines - not implemented");
+		break;
+	case kCharCommand_RDPARAMS:
+		pCommand = new FRDPARAMSCommand(pSys);
+		break;
+	default:
+		break;
+	}
+	return pCommand;
+}

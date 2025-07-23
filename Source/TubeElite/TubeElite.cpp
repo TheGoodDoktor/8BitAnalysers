@@ -271,7 +271,7 @@ bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 	switch (reg)
 	{
 		case ETubeRegister::R1:
-			Display.ProcessVDUChar(val); // process the character for display
+			ProcessTubeChar(val); // process the character for display
 			break;
 		case ETubeRegister::R2:
 			LOGINFO("Received R2 data: 0x%02X", val);
@@ -288,6 +288,29 @@ bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 	
 	return true;
 }
+
+void FTubeElite::ProcessTubeChar(uint8_t charVal)
+{
+	if (pCharHandler != nullptr)
+	{
+		if(pCharHandler->ReceiveParamByte(charVal))
+		{
+			pCharHandler->Execute();
+			delete pCharHandler;
+			pCharHandler = nullptr;
+		}
+	}
+	else
+	{
+		pCharHandler = CreateTubeCharCommand(this, charVal);	// try and create a char command handler
+
+		if (pCharHandler == nullptr)	// no special handler? Pass to VDU
+		{
+			Display.ProcessVDUChar(charVal);
+		}
+	}
+}
+
 
 void FTubeElite::ProcessTubeCommandByte(uint8_t cmdByte)
 {
