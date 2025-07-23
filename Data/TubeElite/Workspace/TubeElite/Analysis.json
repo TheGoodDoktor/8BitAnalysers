@@ -869,9 +869,7 @@
                 {
                     "Address": 260,
                     "ByteSize": 3,
-                    "Flags": 2,
-                    "OperandType": 2,
-                    "SMC": true
+                    "OperandType": 2
                 }
             ],
             "DataInfo": [
@@ -928,21 +926,6 @@
                     "Address": 259,
                     "DataType": 11,
                     "InstructionAddressRef": 16973824
-                },
-                {
-                    "Address": 260,
-                    "DataType": 11,
-                    "InstructionAddressRef": 16973824
-                },
-                {
-                    "Address": 261,
-                    "DataType": 11,
-                    "InstructionAddressRef": 17039360
-                },
-                {
-                    "Address": 262,
-                    "DataType": 11,
-                    "InstructionAddressRef": 17039360
                 },
                 {
                     "Address": 526,
@@ -5534,11 +5517,13 @@
                 },
                 {
                     "Address": 184,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "disable escape & make break clear memory"
                 },
                 {
                     "Address": 186,
                     "ByteSize": 3,
+                    "Comment": "disable escape key",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -5856,6 +5841,19 @@
         },
         {
             "CodeInfo": [
+                {
+                    "Address": 45,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 47,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 49,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
                 {
                     "Address": 105,
                     "ByteSize": 2
@@ -9242,6 +9240,7 @@
                 {
                     "Address": 639,
                     "ByteSize": 3,
+                    "Comment": "send low byte OSBYTE command - 4",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9263,6 +9262,7 @@
                 {
                     "Address": 647,
                     "ByteSize": 3,
+                    "Comment": "send X",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9270,6 +9270,7 @@
                 {
                     "Address": 650,
                     "ByteSize": 1,
+                    "Comment": "pull OSByte Command",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9290,6 +9291,7 @@
                 {
                     "Address": 656,
                     "ByteSize": 3,
+                    "Comment": "send OSByte Command",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9297,6 +9299,7 @@
                 {
                     "Address": 659,
                     "ByteSize": 3,
+                    "Comment": "wait for return val",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9311,6 +9314,7 @@
                 {
                     "Address": 664,
                     "ByteSize": 3,
+                    "Comment": "get return value",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9324,6 +9328,7 @@
                 {
                     "Address": 668,
                     "ByteSize": 2,
+                    "Comment": "read high order address",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9337,6 +9342,7 @@
                 {
                     "Address": 672,
                     "ByteSize": 2,
+                    "Comment": "read OSHWM",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9350,6 +9356,7 @@
                 {
                     "Address": 676,
                     "ByteSize": 2,
+                    "Comment": "read HIMEM",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9363,6 +9370,7 @@
                 {
                     "Address": 680,
                     "ByteSize": 1,
+                    "Comment": "push OSByte command no",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9389,6 +9397,7 @@
                 {
                     "Address": 688,
                     "ByteSize": 3,
+                    "Comment": "send command 6 - OSBYTE Hi",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9410,6 +9419,7 @@
                 {
                     "Address": 696,
                     "ByteSize": 3,
+                    "Comment": "send X",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9431,6 +9441,7 @@
                 {
                     "Address": 704,
                     "ByteSize": 3,
+                    "Comment": " send Y",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9438,6 +9449,7 @@
                 {
                     "Address": 707,
                     "ByteSize": 1,
+                    "Comment": "pull osbyte command no",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9458,6 +9470,7 @@
                 {
                     "Address": 713,
                     "ByteSize": 3,
+                    "Comment": "send OSByte Command",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9465,6 +9478,7 @@
                 {
                     "Address": 716,
                     "ByteSize": 2,
+                    "Comment": "select language?",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9478,6 +9492,7 @@
                 {
                     "Address": 720,
                     "ByteSize": 2,
+                    "Comment": "fast bput",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9491,12 +9506,14 @@
                 {
                     "Address": 724,
                     "ByteSize": 1,
+                    "Comment": "push command",
                     "Flags": 2,
                     "SMC": true
                 },
                 {
                     "Address": 725,
                     "ByteSize": 3,
+                    "Comment": "wait for response",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9511,6 +9528,7 @@
                 {
                     "Address": 730,
                     "ByteSize": 3,
+                    "Comment": "get carry flag",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9524,12 +9542,14 @@
                 {
                     "Address": 734,
                     "ByteSize": 1,
+                    "Comment": "pull command",
                     "Flags": 2,
                     "SMC": true
                 },
                 {
                     "Address": 735,
                     "ByteSize": 3,
+                    "Comment": "wait for reponse",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9544,6 +9564,7 @@
                 {
                     "Address": 740,
                     "ByteSize": 3,
+                    "Comment": "get return high byte",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9551,6 +9572,7 @@
                 {
                     "Address": 743,
                     "ByteSize": 3,
+                    "Comment": "wait for response",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9565,6 +9587,7 @@
                 {
                     "Address": 748,
                     "ByteSize": 3,
+                    "Comment": "get return low byte",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9578,6 +9601,7 @@
                 {
                     "Address": 752,
                     "ByteSize": 2,
+                    "Comment": "read top of memory",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -9598,6 +9622,7 @@
                 {
                     "Address": 757,
                     "ByteSize": 2,
+                    "Comment": "read bottom of memory",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -9616,6 +9641,7 @@
                 {
                     "Address": 762,
                     "ByteSize": 2,
+                    "Comment": "return 0 for high memory word",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -15456,47 +15482,47 @@
                 {
                     "Address": 634,
                     "LabelType": 2,
-                    "Name": "label_FA7A"
+                    "Name": "wait_send_osbytelow"
                 },
                 {
                     "Address": 642,
                     "LabelType": 2,
-                    "Name": "label_FA82"
+                    "Name": "wait_send_osbytelow_x"
                 },
                 {
                     "Address": 651,
                     "LabelType": 2,
-                    "Name": "label_FA8B"
+                    "Name": "wait_send_osbytelow_a"
                 },
                 {
                     "Address": 659,
                     "LabelType": 2,
-                    "Name": "label_FA93"
+                    "Name": "wait_receive_osbytelow_res"
                 },
                 {
                     "Address": 668,
                     "LabelType": 2,
-                    "Name": "label_FA9C"
+                    "Name": "TwoParamOSBYTE"
                 },
                 {
                     "Address": 683,
                     "LabelType": 2,
-                    "Name": "label_FAAB"
+                    "Name": "wait_send_osbytehi"
                 },
                 {
                     "Address": 691,
                     "LabelType": 2,
-                    "Name": "label_FAB3"
+                    "Name": "wait_send_osbytehi_x"
                 },
                 {
                     "Address": 699,
                     "LabelType": 2,
-                    "Name": "label_FABB"
+                    "Name": "wait_send_osbytehi_y"
                 },
                 {
                     "Address": 708,
                     "LabelType": 2,
-                    "Name": "label_FAC4"
+                    "Name": "wait_send_osbytehi_a"
                 },
                 {
                     "Address": 725,
