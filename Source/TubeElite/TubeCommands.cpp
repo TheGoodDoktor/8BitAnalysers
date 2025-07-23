@@ -31,21 +31,21 @@ public:
 	void Execute() override
 	{
 		uint8_t inputByte = 0;
-		if (pTubeSys->PopInputByte(inputByte))
+		if (pTubeSys->GetInputByte(inputByte))
 		{
-			pTubeSys->GetDisplay().ProcessVDUChar(inputByte); // process the character for display
-
-			if (inputByte >= MinChar && inputByte <= MaxChar)
+			if ((inputByte >= MinChar && inputByte <= MaxChar) || inputByte == 0x0D)
 			{
-				pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, inputByte);
-				
-			}
+				if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, inputByte))
+				{
+					if (inputByte == 0x0D)	// <cr> pressed
+					{
+						pTubeSys->GetDisplay().ProcessVDUChar(0x0A); // process line feed
+						bIsComplete = true; // command complete on CR
+					}
 
-			if (inputByte == 0x0D)	// <cr> pressed
-			{
-				pTubeSys->GetDisplay().ProcessVDUChar(0x0A); // process line feed
-				pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, 0x0D); // send CR to acknowledge the end of input line
-				bIsComplete = true; // command complete on CR
+					pTubeSys->GetDisplay().ProcessVDUChar(inputByte); // process the character for display
+					pTubeSys->PopInputByte(); // remove the byte from the input buffer
+				}
 			}
 		}
 	}
@@ -57,10 +57,48 @@ private:
 	uint16_t Address;
 };
 
-class FOSBYTELowCommand : public FTubeCommand
+class FR2Command : public FTubeCommand
 {
 public:
-	FOSBYTELowCommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+	FR2Command(FTubeElite* pSys) :FTubeCommand(pSys) {}
+
+	virtual void RunCommand(std::deque<uint8_t>& returnBytes) = 0;
+
+	void Execute() override
+	{
+		if (bReturningData == false)
+		{
+			RunCommand(ReturnBytes);
+			if (ReturnBytes.empty())
+			{
+				bIsComplete = true; // command complete if no return bytes
+			}
+			else
+			{
+				bReturningData = true; // we have data to return
+			}
+		}
+		else
+		{
+			uint8_t returnByte = ReturnBytes.front(); // get the first byte from the return bytes
+			if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, returnByte))
+			{
+				ReturnBytes.pop_front(); // remove the byte from the return bytes
+			}
+
+			if (ReturnBytes.empty())
+				bIsComplete = true;
+		}
+	}
+private:
+	bool bReturningData = false; // true if returning data
+	std::deque<uint8_t>	ReturnBytes;
+};
+
+class FOSBYTELowCommand : public FR2Command
+{
+public:
+	FOSBYTELowCommand(FTubeElite* pSys) :FR2Command(pSys) {}
 	bool ReceiveParamByte(uint8_t byte) override
 	{
 		ParamBytes.push_back(byte);
@@ -74,20 +112,20 @@ public:
 		return false;
 	}
 
-	void Execute() override
+	void RunCommand(std::deque<uint8_t>& returnBytes) override
 	{
-		LOGINFO("OSBYTE LO: A=%d, X=%d", ParamA, ParamX);
-		bIsComplete = true;
+		LOGINFO("OSBYTE LO: A=0x%02X(%d), X=%d", ParamA,ParamA, ParamX);
+		returnBytes.push_back(pTubeSys->OSBYTE(ParamA, ParamX)); // call OSBYTE with parameters
 	}
 private:
 	uint8_t		ParamA;
 	uint8_t		ParamX;
 };
 
-class FOSBYTEHiCommand : public FTubeCommand
+class FOSBYTEHiCommand : public FR2Command
 {
 public:
-	FOSBYTEHiCommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+	FOSBYTEHiCommand(FTubeElite* pSys) :FR2Command(pSys) {}
 	bool ReceiveParamByte(uint8_t byte) override
 	{
 		ParamBytes.push_back(byte);
@@ -102,10 +140,16 @@ public:
 		return false;
 	}
 
-	void Execute() override
+	void RunCommand(std::deque<uint8_t>& returnBytes) override
 	{
-		LOGINFO("OSBYTE HI: A=%d, X=%d, Y=%d", ParamA, ParamX, ParamY);
-		bIsComplete = true;
+		LOGINFO("OSBYTE HI: A=0x%02X(%d), X=%d, Y=%d", ParamA, ParamA, ParamX, ParamY);
+		uint8_t	retBytes[3] = {0,0,0};
+		pTubeSys->OSBYTE(ParamA, ParamX, ParamY, retBytes); // call OSBYTE with parameters
+
+		// push the return bytes to the deque
+		returnBytes.push_back(retBytes[0]);
+		returnBytes.push_back(retBytes[1]);
+		returnBytes.push_back(retBytes[2]);
 	}
 private:
 	uint8_t		ParamA;
@@ -113,10 +157,10 @@ private:
 	uint8_t		ParamY;
 };
 
-class FOSWORDCommand : public FTubeCommand
+class FOSWORDCommand : public FR2Command
 {
 public:
-	FOSWORDCommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+	FOSWORDCommand(FTubeElite* pSys) :FR2Command(pSys) {}
 	bool ReceiveParamByte(uint8_t byte) override
 	{
 		ParamBytes.push_back(byte);
@@ -136,17 +180,15 @@ public:
 		}
 		return false;
 	}
-	void Execute() override
+	void RunCommand(std::deque<uint8_t>& returnBytes) override
 	{
 		LOGINFO("OSWORD: %d, inBytes: %d, outBytes: %d", Action, NumInputBytes, NumOutputBytes);
-		pTubeSys->OSWORD(Action,ParamBytes.data() + 2, OutBytes);
-		bIsComplete = true;
+		pTubeSys->OSWORD(Action,ParamBytes.data() + 2, returnBytes);
 	}
 private:
 	uint8_t		Action = 0; 
 	uint8_t		NumInputBytes = 0; 
 	uint8_t		NumOutputBytes = 0; // number of bytes to return
-	std::vector<uint8_t>	OutBytes;
 };
 
 class FOSCLICommand : public FTubeCommand
@@ -178,6 +220,8 @@ public:
 private:
 	std::string		CommandLine;
 };
+
+// https://elite.bbcelite.com/deep_dives/6502sp_tube_communication.html
 
 FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId)
 {
@@ -229,51 +273,3 @@ FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId)
 	return pCommand;
 }
 
-// Char commands
-// https://elite.bbcelite.com/deep_dives/6502sp_tube_communication.html
-
-const uint8_t kCharCommand_DrawLines			= 129;
-const uint8_t kCharCommand_SetCursorX			= 133;
-const uint8_t kCharCommand_SetCursorY			= 134;
-const uint8_t kCharCommand_ClearScreenBottom	= 135;
-const uint8_t kCharCommand_RDPARAMS				= 136;
-
-class FRDPARAMSCommand : public FTubeCommand
-{
-public:
-	FRDPARAMSCommand(FTubeElite* pSys):FTubeCommand(pSys){}
-
-	bool ReceiveParamByte(uint8_t byte) override
-	{
-		ParamBytes.push_back(byte);
-		if (ParamBytes.size() == 16)
-		{
-			// TODO: Unpack parameters and send to TubeSys
-			return true;
-		}
-
-		return false;
-	}
-
-	void Execute(void) override
-	{
-	}
-
-};
-
-FTubeCommand* CreateTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
-{
-	FTubeCommand* pCommand = nullptr;
-	switch (commandId)
-	{
-	case kCharCommand_DrawLines:
-		LOGINFO("Tube char command: Draw Lines - not implemented");
-		break;
-	case kCharCommand_RDPARAMS:
-		pCommand = new FRDPARAMSCommand(pSys);
-		break;
-	default:
-		break;
-	}
-	return pCommand;
-}

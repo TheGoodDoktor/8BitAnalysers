@@ -71,25 +71,37 @@ bool FTube::ParasiteReadRegister(ETubeRegister reg, uint8_t& outVal)
 	}
 }
 
-void FTube::HostWriteRegister(ETubeRegister reg, uint8_t val)
+bool FTube::HostWriteRegister(ETubeRegister reg, uint8_t val)
 {
 	switch (reg)
 	{
 	case ETubeRegister::R1:
+		if(R1InLatch.HasSpace() == false)
+			return false;
 		R1InLatch.SetValue(val); // write to R1 input latch
+		return true;
 		break;
 	case ETubeRegister::R2:
+		if (R2InLatch.HasSpace() == false)
+			return false;
 		R2InLatch.SetValue(val); // set R2 input latch
+		return true;
 		break;
 	case ETubeRegister::R3:
+		if (R3InQueue.HasSpace() == false)
+			return false; // no space in R3 input queue
 		R3InQueue.Enqueue(val); // write to R3 input queue
+		return true;
 		break;
 	case ETubeRegister::R4:
+		if (R4InLatch.HasSpace() == false)
+			return false; // no space in R4 input latch
 		R4InLatch.SetValue(val); // set R4 input latch
+		return true;
 		break;
 	default:
 		LOGWARNING("Writing to unimplemented Tube Reg: %d", reg);
-		return; // unimplemented register
+		return false; // unimplemented register
 	}
 }
 

@@ -342,7 +342,36 @@ void FTubeElite::PollTubeCommand(void)
 
 }
 
-void FTubeElite::OSWORD(uint8_t command, const uint8_t* pParamBlock, std::vector<uint8_t> outBlock)
+void FTubeElite::OSBYTE(uint8_t command, uint8_t paramX, uint8_t paramY,uint8_t* pReturnBytes)
+{
+	assert(command >= 0x80);
+	switch (command)
+	{
+		case 0xC8:	// enable/disable Escape key
+			LOGINFO("Enable/Disable Escape & Break. X = 0x%02X,  Y = 0x%02X",paramX, paramY);
+			// new val = (oldVal and Y) eor X
+			// return old val
+			//pCurrentCommand
+			break;
+		default:
+			LOGINFO("Unhandled OSBYTE 0x%02X(%d)", command, command);
+	}
+}
+
+uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
+{
+	assert(command < 0x80);
+	switch (command)
+	{
+	default:
+		LOGINFO("Unhandled OSBYTE 0x%02X(%d)", command, command);
+		return 0;
+	}
+
+}
+
+
+void FTubeElite::OSWORD(uint8_t command, const uint8_t* pParamBlock, std::deque<uint8_t> outBlock)
 {
 	switch (command)
 	{

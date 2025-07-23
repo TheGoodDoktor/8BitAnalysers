@@ -187,7 +187,7 @@ public:
 	void	ParasiteWriteRegister(ETubeRegister reg, uint8_t val);
 	bool	ParasiteReadRegister(ETubeRegister reg, uint8_t& outVal);
 
-	void	HostWriteRegister(ETubeRegister reg, uint8_t val);
+	bool	HostWriteRegister(ETubeRegister reg, uint8_t val);
 	bool	HostReadRegister(ETubeRegister reg, uint8_t& outVal);
 
 

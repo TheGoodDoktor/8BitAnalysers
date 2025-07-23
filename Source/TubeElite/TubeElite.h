@@ -99,7 +99,9 @@ public:
 	void	ProcessTubeChar(uint8_t charVal);
 	void	ProcessTubeCommandByte(uint8_t cmd);
 
-	void	OSWORD(uint8_t command,const uint8_t* pParamBlock,std::vector<uint8_t> outBlock);
+	void	OSBYTE(uint8_t command, uint8_t paramX, uint8_t paramY, uint8_t* pReturnBytes);
+	uint8_t OSBYTE(uint8_t command, uint8_t param);
+	void	OSWORD(uint8_t command,const uint8_t* pParamBlock, std::deque<uint8_t> returnBytes);
 
     void    SetupCodeAnalysisLabels();
 
@@ -129,11 +131,19 @@ public:
 		InputBuffer.push_back(byte);
 	}
 
-	bool PopInputByte(uint8_t& outByte)
+	bool GetInputByte(uint8_t& outByte)
 	{
 		if(InputBuffer.empty())
 			return false;
 		outByte = InputBuffer.front();
+		InputBuffer.pop_front();
+		return true;
+	}
+
+	bool PopInputByte()
+	{
+		if (InputBuffer.empty())
+			return false;
 		InputBuffer.pop_front();
 		return true;
 	}

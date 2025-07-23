@@ -9,6 +9,9 @@ class FTubeEliteDisplay
 public:
 	bool Init(FTubeElite* pSys);
 	bool ProcessVDUChar(uint8_t ch);
+	
+	void SetCursorX(int x) { CursorX = x; }
+	void SetCursorY(int y) { CursorY = y; }
 
 	void Tick(void);
 	void DrawUI(void);
