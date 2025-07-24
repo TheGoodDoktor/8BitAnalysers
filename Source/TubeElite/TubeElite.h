@@ -31,6 +31,15 @@ struct FTubeEliteLaunchConfig : public FEmulatorLaunchConfig
 	bool	bBBCBasic = false;
 };
 
+struct FOSWORDControlBlock
+{
+	uint8_t Action = 0;        // OSWORD action
+	uint8_t NumInputBytes = 0; // number of input bytes
+	uint8_t NumOutputBytes = 0; // number of output bytes
+	uint8_t* pInputBytes = nullptr; // pointer to the input bytes
+	uint8_t* pOutputBytes = nullptr; // pointer to the output bytes
+};
+
 class FTubeElite : public FEmuBase, public ITubeDataHandler
 {
 public:
@@ -101,7 +110,7 @@ public:
 
 	void	OSBYTE(uint8_t command, uint8_t paramX, uint8_t paramY, uint8_t* pReturnBytes);
 	uint8_t OSBYTE(uint8_t command, uint8_t param);
-	void	OSWORD(uint8_t command,const uint8_t* pParamBlock, std::deque<uint8_t>& returnBytes);
+	void	OSWORD(const FOSWORDControlBlock& controlBlock);
 
     void    SetupCodeAnalysisLabels();
 

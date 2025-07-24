@@ -157,38 +157,117 @@ private:
 	uint8_t		ParamY;
 };
 
-class FOSWORDCommand : public FR2Command
+class FOSWORDCommand : public FTubeCommand
 {
 public:
-	FOSWORDCommand(FTubeElite* pSys) :FR2Command(pSys) {}
+	enum class EState
+	{
+		WaitingForAction,			// waiting for the OSWORD action byte
+		WaitingForNumInputBytes,	// waiting for the number of input bytes
+		ReceivingInputBytes,		// receiving input bytes
+		WaitingForNumOutputBytes,	// waiting for the number of output bytes
+		RunOSWORD,					// running the OSWORD command
+		WritingOutputBytes			// writing output bytes
+	};
+	FOSWORDCommand(FTubeElite* pSys) :FTubeCommand(pSys) {}
+	~FOSWORDCommand()
+	{
+		// clean up input and output byte pointers if allocated
+		delete[] ControlBlock.pInputBytes;
+		delete[] ControlBlock.pOutputBytes;
+	}
+
 	bool ReceiveParamByte(uint8_t byte) override
 	{
-		ParamBytes.push_back(byte);
-		if (ParamBytes.size() == 2)
+		switch (State)
 		{
-			Action = ParamBytes[0];	// OSWORD parameter Y
-			NumInputBytes = ParamBytes[1];	// OSWORD parameter X
-
-			//bIsReady = true;
-			//return true; // ready to execute
-		}
-		else if (ParamBytes.size() == 2 + NumInputBytes + 1)
-		{
-			NumOutputBytes = ParamBytes.back(); // last byte is the number of output bytes
+		case EState::WaitingForAction:
+			ControlBlock.Action = byte; // OSWORD action
+			State = EState::WaitingForNumInputBytes;
+			break;
+		case EState::WaitingForNumInputBytes:
+			ControlBlock.NumInputBytes = byte; // number of input bytes
+			if (ControlBlock.NumInputBytes == 0) // no input bytes
+			{
+				State = EState::WaitingForNumOutputBytes; // skip to output bytes
+				return false; // not ready yet
+			}
+			ControlBlock.pInputBytes = new uint8_t[ControlBlock.NumInputBytes]; // allocate memory for input bytes
+			InputByteIndex = ControlBlock.NumInputBytes - 1;	// write backwards
+			State = EState::ReceivingInputBytes;			
+			break;
+		case EState::ReceivingInputBytes:
+			if (InputByteIndex >= 0)
+			{
+				ControlBlock.pInputBytes[InputByteIndex--] = byte; // store the input byte
+				if (InputByteIndex < 0) // all input bytes received
+				{
+					State = EState::WaitingForNumOutputBytes;
+				}
+			}
+			break;
+		case EState::WaitingForNumOutputBytes:
+			ControlBlock.NumOutputBytes = byte; // number of output bytes
+			if (ControlBlock.NumOutputBytes > 0)
+				ControlBlock.pOutputBytes = new uint8_t[ControlBlock.NumOutputBytes]; // allocate memory for output bytes
+			State = EState::RunOSWORD;
 			bIsReady = true; // ready to execute
 			return true;
+			break;
+		default:
+			LOGERROR("Unhandled OSWORD state: %d", static_cast<int>(State));
+			break;
 		}
+		
 		return false;
 	}
-	void RunCommand(std::deque<uint8_t>& returnBytes) override
+
+	void Execute() override
 	{
-		LOGINFO("OSWORD: %d, inBytes: %d, outBytes: %d", Action, NumInputBytes, NumOutputBytes);
-		pTubeSys->OSWORD(Action,ParamBytes.data() + 2, returnBytes);
+		switch (State)
+		{
+		case EState::RunOSWORD:
+		{
+			// run the OSWORD command
+			LOGINFO("OSWORD: %d, inBytes: %d, outBytes: %d", ControlBlock.Action, ControlBlock.NumInputBytes, ControlBlock.NumOutputBytes);
+			pTubeSys->OSWORD(ControlBlock);
+			if (ControlBlock.NumOutputBytes == 0) // no output bytes
+			{
+				bIsComplete = true; // command complete
+			}
+			else
+			{
+				OutputByteIndex = ControlBlock.NumOutputBytes - 1;	// write backwards
+				State = EState::WritingOutputBytes; // move to writing output bytes
+			}
+		}
+		break;
+		
+		case EState::WritingOutputBytes:
+		{
+			// write the output bytes
+			const uint8_t returnByte = ControlBlock.pOutputBytes[OutputByteIndex]; // get the output byte
+			if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, returnByte))
+			{
+				if (--OutputByteIndex < 0) // all output bytes written
+				{
+					bIsComplete = true; // command complete
+				}
+			}
+		}
+			break;
+		default:
+			LOGERROR("Unhandled OSWORD state: %d", static_cast<int>(State));
+			break;
+		}
 	}
 private:
-	uint8_t		Action = 0; 
-	uint8_t		NumInputBytes = 0; 
-	uint8_t		NumOutputBytes = 0; // number of bytes to return
+	EState		State = EState::WaitingForAction; // current state of the command
+
+	FOSWORDControlBlock ControlBlock; // control block for OSWORD command
+
+	int			InputByteIndex = 0; // index of the current input byte
+	int			OutputByteIndex = 0; // index of the current output byte
 };
 
 class FOSCLICommand : public FTubeCommand

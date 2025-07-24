@@ -274,7 +274,7 @@ bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 			ProcessTubeChar(val); // process the character for display
 			break;
 		case ETubeRegister::R2:
-			//LOGINFO("Received R2 data: 0x%02X", val);
+			LOGINFO("Received R2 data: 0x%02X", val);
 			ProcessTubeCommandByte(val);
 			break;
 
@@ -371,46 +371,54 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 }
 
 
-void FTubeElite::OSWORD(uint8_t command, const uint8_t* pParamBlock, std::deque<uint8_t>& outBlock)
+void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 {
-	switch (command)
+	switch (controlBlock.Action)
 	{
 		case 240:	// scan the keyboard see https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/keyboard.html
 			LOGINFO("OSWORD - SCAN KEYBOARD");
-			for(int i =0;i<16;i++)
-				outBlock.push_back(0x00);	// return 16 bytes of key states - TODO: fetch from somewhere
 			break;
 		case 241:	// Draw space view pixels
-			LOGINFO("OSWORD - DRAW SPACE VIEW PIXELS X = %d, Y = %d", pParamBlock[2], pParamBlock[3]);
+			LOGINFO("OSWORD - DRAW SPACE VIEW PIXELS");
 			break;
 		case 242:	// Update missile indicators
-			LOGINFO("OSWORD - UPDATE MISSILE INDICATORS X = %d, Y = %d", pParamBlock[2], pParamBlock[3]);
+			LOGINFO("OSWORD - UPDATE MISSILE INDICATORS");
 			break;
 		case 243:	// wait for VSync
-			LOGINFO("OSWORD - WAIT FOR VSYNC X = %d, Y = %d", pParamBlock[2], pParamBlock[3]);
+			LOGINFO("OSWORD - WAIT FOR VSYNC");
 			break;
 		case 244:	// Draw the ship on the 3D scanner
-			LOGINFO("OSWORD - DRAW SHIP ON 3D SCANNER X = %d, Y = %d", pParamBlock[2], pParamBlock[3]);
+			LOGINFO("OSWORD - DRAW SHIP ON 3D SCANNER X");
 			break;
 		case 245:
-			LOGINFO("OSWORD - DOT X = %d, Y = %d, Col = %d",pParamBlock[2], pParamBlock[3], pParamBlock[4]);
+			LOGINFO("OSWORD - DOT");
 			break;
 		case 246:	// OSWORD 246 - scan for a specific key
-			LOGINFO("OSWORD - SCAN KEY X = %d, Y = %d", pParamBlock[2], pParamBlock[3]);
+			LOGINFO("OSWORD - SCAN KEY");
 			break;
 		case 247:	// OSWORD 247 - Draw orange sun lines
-			LOGINFO("OSWORD - DRAW ORANGE SUN LINES X = %d, Y = %d", pParamBlock[2], pParamBlock[3]);
+			LOGINFO("OSWORD - DRAW ORANGE SUN LINES");
 			break;
 		case 248:	// OSWORD 248 - Draw the ship hangar
-			LOGINFO("OSWORD - DRAW SHIP HANGAR X = %d, Y = %d", pParamBlock[2], pParamBlock[3]);
+			LOGINFO("OSWORD - DRAW SHIP HANGAR X");
 			break;
 		case 249:	// OSWORD 249 - Copy protection
-			LOGINFO("OSWORD - COPY PROTECTION X = %d, Y = %d", pParamBlock[2], pParamBlock[3]);
+			LOGINFO("OSWORD - COPY PROTECTION X");
 			break;
 
 		default:
-			LOGINFO("Unhandled OSWORD %d",command);
+			LOGINFO("Unhandled OSWORD %d", controlBlock.Action);
 			break;
+	}
+
+	for (int i = 0; i < controlBlock.NumInputBytes; i++)
+	{
+		LOGINFO("OSWORD Input Byte %d: 0x%02X", i, controlBlock.pInputBytes[i]);
+	}
+
+	for (int i = 0; i < controlBlock.NumOutputBytes; i++)
+	{
+		LOGINFO("OSWORD Output Byte %d: 0x%02X", i, controlBlock.pOutputBytes[i]);
 	}
 }
 
