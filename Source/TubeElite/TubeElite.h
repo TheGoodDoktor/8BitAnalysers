@@ -105,9 +105,14 @@ public:
 	void PollTubeCommand(void) override;
 	// End ITubeDataHandler interface implementation
 
+	void	DebugBreak() { CodeAnalysis.Debugger.Break(); }
 	void	ProcessTubeChar(uint8_t charVal);
 	void	ProcessTubeCommandByte(uint8_t cmd);
 
+	void SetTubeCharCommandHandler(FTubeCommand* pHandler)
+	{
+		pCharHandler = pHandler;
+	}
 	void	OSBYTE(uint8_t command, uint8_t paramX, uint8_t paramY, uint8_t* pReturnBytes);
 	uint8_t OSBYTE(uint8_t command, uint8_t param);
 	void	OSWORD(const FOSWORDControlBlock& controlBlock);

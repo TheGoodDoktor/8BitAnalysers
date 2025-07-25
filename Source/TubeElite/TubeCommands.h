@@ -31,4 +31,4 @@ FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId);
 
 // Char Commands
 
-FTubeCommand* CreateTubeCharCommand(FTubeElite* pSys, uint8_t commandId);
+bool ProcessTubeCharCommand(FTubeElite* pSys, uint8_t commandId);

@@ -21,25 +21,36 @@ bool FTubeEliteDisplay::ProcessVDUChar(uint8_t ch)
 	{
 		switch (ch)
 		{
-		case 0x08: // BS
+		case 0:	// nothing
+			break;
+		case 8: // BS
 			if (CursorX > 0)
 				CursorX--; // move cursor back one position
 			break;
-		case 0x09: // FS
+		case 9: // FS
 			if (CursorX < kCharMapSizeX-1)
 				CursorX++; // move cursor forward one position
 			break;
-		case 0x0A: // LF
+		case 10: // move text cursor down 1 line
 			CursorY++;
 			if (CursorY >= kCharMapSizeY)
 				CursorY = 0; // wrap around
 			break;
-		case 0x0D: // CR
+		case 11: // move text cursor up one line
+			CursorY--;
+			if(CursorY<0)
+				CursorY = kCharMapSizeY - 1; //wrap around
+			break;
+		case 12:	// CLS
+			ClearTextScreen();
+			break;
+		case 13: // CR
 			CursorX = 0; // move to start of line
 			break;
 		default:
 			// ignore other control characters
 			LOGWARNING("Tube Elite Display: Ignoring non-printable character %d(0x%02X)",ch, ch);
+			pTubeSys->DebugBreak(); // break the execution
 			return false;
 		}
 	}
@@ -57,6 +68,24 @@ bool FTubeEliteDisplay::ProcessVDUChar(uint8_t ch)
 	}
 	return true;
 }
+
+void FTubeEliteDisplay::ClearTextScreen(uint8_t clearChar)
+{
+	for (int i = 0; i < kCharMapSizeX * kCharMapSizeY; i++)
+	{
+		CharMap[i % kCharMapSizeX][i / kCharMapSizeX] = clearChar;
+	}
+}
+
+void FTubeEliteDisplay::ClearTextScreenFromRow(uint8_t rowNo, uint8_t clearChar)
+{
+	for (int clearY = rowNo; clearY < kCharMapSizeY; clearY++)
+	{
+		for(int x=0;x<kCharMapSizeX;x++)
+			CharMap[x][rowNo] = clearChar;
+	}
+}
+
 
 void FTubeEliteDisplay::Tick(void)
 {

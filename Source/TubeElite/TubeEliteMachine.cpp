@@ -258,7 +258,7 @@ void FTubeEliteMachine::Tick()
 	}
 
 	TubePollCounter++;
-	if (TubePollCounter == kTubePollInterval)
+	//if (TubePollCounter == kTubePollInterval)
 	{
 		FlushTube();	// flush the Tube data
 		TubePollCounter = 0;

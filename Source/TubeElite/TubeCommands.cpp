@@ -209,13 +209,19 @@ public:
 		case EState::WaitingForNumOutputBytes:
 			ControlBlock.NumOutputBytes = byte; // number of output bytes
 			if (ControlBlock.NumOutputBytes > 0)
+			{
 				ControlBlock.pOutputBytes = new uint8_t[ControlBlock.NumOutputBytes]; // allocate memory for output bytes
+				// clear the output bytes
+				for (int i = 0; i < ControlBlock.NumOutputBytes; ++i)
+					ControlBlock.pOutputBytes[i] = 0;
+			}
 			State = EState::RunOSWORD;
 			bIsReady = true; // ready to execute
 			return true;
 			break;
 		default:
 			LOGERROR("Unhandled OSWORD state: %d", static_cast<int>(State));
+			pTubeSys->DebugBreak(); // break the execution if we hit an unhandled state
 			break;
 		}
 		

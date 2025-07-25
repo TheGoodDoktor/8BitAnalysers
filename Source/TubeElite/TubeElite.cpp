@@ -302,9 +302,7 @@ void FTubeElite::ProcessTubeChar(uint8_t charVal)
 	}
 	else
 	{
-		pCharHandler = CreateTubeCharCommand(this, charVal);	// try and create a char command handler
-
-		if (pCharHandler == nullptr)	// no special handler? Pass to VDU
+		if (ProcessTubeCharCommand(this, charVal) == false)	// no special handler? Pass to VDU
 		{
 			Display.ProcessVDUChar(charVal);
 		}
@@ -408,6 +406,7 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 
 		default:
 			LOGINFO("Unhandled OSWORD %d", controlBlock.Action);
+			DebugBreak(); // break the execution
 			break;
 	}
 

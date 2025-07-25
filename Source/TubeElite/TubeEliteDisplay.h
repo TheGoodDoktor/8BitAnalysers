@@ -13,6 +13,9 @@ public:
 	void SetCursorX(int x) { CursorX = x; }
 	void SetCursorY(int y) { CursorY = y; }
 
+	void ClearTextScreen(uint8_t clearChar = 0);
+	void ClearTextScreenFromRow(uint8_t rowNo,uint8_t claerChar=0);
+
 	void Tick(void);
 	void DrawUI(void);
 private:

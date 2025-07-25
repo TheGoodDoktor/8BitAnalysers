@@ -182,70 +182,78 @@ public:
 	}
 };
 
-FTubeCommand* CreateTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
+bool ProcessTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
 {
-	FTubeCommand* pCommand = nullptr;
 	switch (commandId)
 	{
 	case kCharCommand_DrawLines:
-		pCommand = new FDrawLinesCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FDrawLinesCommand(pSys));
+		return true; // command processed
 	case kCharCommand_ShowEnergyBombEffect:
-		pCommand = new FShowEnergyBombEffectCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FShowEnergyBombEffectCommand(pSys));
+		return true; // command processed
 	case kCharCommand_ShowHyperspaceColours:
-		pCommand = new FShowHyperspaceColoursCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FShowHyperspaceColoursCommand(pSys));
+		return true; // command processed
 
 	case kCharCommand_SetCursorX:
-		pCommand = new FSetCursorXCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FSetCursorXCommand(pSys));
+		return true; // command processed
 
 	case kCharCommand_SetCursorY:
-		pCommand = new FSetCursorYCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FSetCursorYCommand(pSys));
+		return true; // command processed
 
 	case kCharCommand_ClearScreenBottom:
-		LOGINFO("Tube char command: Clear Screen Bottom - not implemented");
-		break;
+		pSys->GetDisplay().ClearTextScreenFromRow(20,0);
+		return true; // command processed
 
 	case kCharCommand_UpdateDashboard:
-		pCommand = new FUpdateDashboardCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FUpdateDashboardCommand(pSys));
+		return true; // command processed
 
 	case kCharCommand_ShowHideDashboard:
 		LOGINFO("Tube char command: Show/Hide Dashboard - not implemented");
+		pSys->DebugBreak(); // break the execution
 		break;
 	case kCharCommand_Set6522SystemVIAIER:
 		LOGINFO("Tube char command: Set 6522 System VIA IER - not implemented");
+		pSys->DebugBreak(); // break the execution
 		break;
 	case kCharCommand_ToggleDashboardBulb:
-		pCommand = new FToggleDashboardBulbCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FToggleDashboardBulbCommand(pSys));
+		return true; // command processed
 	case kCharCommand_SetDiscCatalogueFlag:
 		LOGINFO("Tube char command: Set Disc Catalogue Flag - not implemented");
+		pSys->DebugBreak(); // break the execution
 		break;
 	case kCharCommand_SetCurrentColour:
-		pCommand = new FSetCurrentColourCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FSetCurrentColourCommand(pSys));
+		return true; // command processed
 	case kCharCommand_ChangeColourPalette:
-		pCommand = new FChangeColourPaletteCommand(pSys);
-		break;
+		pSys->SetTubeCharCommandHandler(new FChangeColourPaletteCommand(pSys));
+		return true; // command processed
 	case kCharCommand_SetFileSavingFlag:
 		LOGINFO("Tube char command: Set File Saving Flag - not implemented");
+		pSys->DebugBreak(); // break the execution
 		break;
 	case kCharCommand_ExecuteBRKInstruction:
 		LOGINFO("Tube char command: Execute BRK Instruction - not implemented");
+		pSys->DebugBreak(); // break the execution
 		break;
 	case kCharCommand_WriteToPrinterScreen:
 		LOGINFO("Tube char command: Write to Printer Screen - not implemented");
+		pSys->DebugBreak(); // break the execution
 		break;
 	case kCharCommand_BlankLineOnPrinter:
 		LOGINFO("Tube char command: Blank Line on Printer - not implemented");
+		pSys->DebugBreak(); // break the execution
 		break;
 
 	default:
 		break;
 	}
-	return pCommand;
+
+	
+	return false;
 }
