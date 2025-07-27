@@ -68,6 +68,7 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 			case 11: // Clear the top part of the screen and draw a border
 				ClearTextScreen();
 				g_VDULog.AddLog("<cls>");
+				NoLines = 0;	// clear line heap
 				return true;
 			case 12: // Carriage Return
 			case 13:
