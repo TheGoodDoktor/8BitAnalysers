@@ -283,6 +283,7 @@ void FTubeEliteDisplay::Tick(void)
 			if (bbcKey != 0 && bWindowFocused)
 			{
 				//bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
+				BBCKeyDown[bbcKey] = true; // mark the key as pressed
 				//TODO: send to key buffer
 				LastKeyCode = bbcKey; // store the last key code pressed
 				pTubeSys->AddInputByte(bbcKey);
@@ -294,6 +295,7 @@ void FTubeEliteDisplay::Tick(void)
 			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
 			if (bbcKey != 0)
 			{
+				BBCKeyDown[bbcKey] = false; // mark the key as released
 				//bbc_key_up(&pBBCEmu->GetBBC(), bbcKey);
 			}
 		}

@@ -400,7 +400,8 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 		}
 		break;
 		case 240:	// scan the keyboard see https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/keyboard.html
-			LOGINFO("OSWORD - SCAN KEYBOARD");
+			if(Debug.bOSWORDDebug)
+				LOGINFO("OSWORD - SCAN KEYBOARD");
 			if (controlBlock.NumOutputBytes == 0)
 			{
 				LOGERROR("OSWORD 240 - No output bytes specified");
@@ -426,7 +427,15 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			LOGINFO("OSWORD - DOT");
 			break;
 		case 246:	// OSWORD 246 - scan for a specific key
-			LOGINFO("OSWORD - SCAN KEY");
+			{
+				if (Debug.bOSWORDDebug)
+					LOGINFO("OSWORD - SCAN KEY");
+				const uint8_t keyCode = controlBlock.pInputBytes[2];
+				// TODO: check if key pressed and set high bit if it is
+				bool bPressed = Display.IsKeyDown(keyCode);
+				if(bPressed)
+					controlBlock.pOutputBytes[2] |= 1<<7;
+			}
 			break;
 		case 247:	// OSWORD 247 - Draw orange sun lines
 			LOGINFO("OSWORD - DRAW ORANGE SUN LINES");
@@ -802,9 +811,9 @@ static std::map<ImGuiKey, FKeyVal> g_BBCKeysLUT =
 	{ImGuiKey_GraveAccent,	{'`', '~'}},
 };
 
-int BBCKeyFromImGuiKey(ImGuiKey key)
+uint8_t BBCKeyFromImGuiKey(ImGuiKey key)
 {
-	uint32_t bbcKey = 0;
+	uint8_t bbcKey = 0;
 	bool isShifted = ImGui::GetIO().KeyShift;
 
 	if (key >= ImGuiKey_0 && key <= ImGuiKey_9)

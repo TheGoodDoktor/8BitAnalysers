@@ -203,4 +203,4 @@ private:
 };
 
 
-int BBCKeyFromImGuiKey(ImGuiKey key);
+uint8_t BBCKeyFromImGuiKey(ImGuiKey key);

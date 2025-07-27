@@ -75,7 +75,7 @@ public:
 	}
 	void Execute(void) override
 	{
-		const int noOfPoints = (ParamBytes.size() - 1) / 2; // number of points is (total bytes - 1) / 2
+		const int noOfPoints = ((int)ParamBytes.size() - 1) / 2; // number of points is (total bytes - 1) / 2
 		const uint8_t* pPoints = ParamBytes.data() + 1; // skip the first byte which is the number of bytes
 		for (int i = 0; i < noOfPoints / 2; i++)
 		{

@@ -38,7 +38,10 @@ public:
 	}
 
 	bool UpdateKeyboardBuffer(uint8_t* pBuffer);
-
+	bool IsKeyDown(uint8_t key)
+	{
+		return BBCKeyDown[key];
+	}
 	void Tick(void);
 	void DrawUI(void);
 private:
@@ -60,4 +63,6 @@ private:
 
 	bool	bShowLog = true;
 	bool	bLastCharCtrl = false;	// last char was a control char
+
+	bool	BBCKeyDown[256] = { false };	// BBC key down state
 };
