@@ -19,6 +19,8 @@ public:
 	void ClearTextScreen(uint8_t clearChar = 0);
 	void ClearTextScreenFromRow(uint8_t rowNo,uint8_t claerChar=0);
 
+	bool UpdateKeyboardBuffer(uint8_t* pBuffer);
+
 	void Tick(void);
 	void DrawUI(void);
 private:
@@ -29,6 +31,8 @@ private:
 	uint8_t CharMap[kCharMapSizeX][kCharMapSizeY] = { 0 };
 	int		CursorX = 0;
 	int		CursorY = 0;
+
+	uint8_t		LastKeyCode = 0;	// last key code processed
 
 	bool	bWindowFocused = false;	// true if the display window is focused
 

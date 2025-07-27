@@ -206,12 +206,13 @@ bool ProcessTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
 
 	case kCharCommand_SetCursorY:
 		pSys->SetTubeCharCommandHandler(new FSetCursorYCommand(pSys));
-		pSys->DebugBreak(); // break the execution
+		//pSys->DebugBreak(); // break the execution
 		return true; // command processed
 
 	case kCharCommand_ClearScreenBottom:
 		LOGINFO("Tube char command: ClearScreenBottom");
 		pSys->GetDisplay().ClearTextScreenFromRow(20, 0);
+		pSys->GetDisplay().SetCursorY(20);
 		return true; // command processed
 
 	case kCharCommand_UpdateDashboard:

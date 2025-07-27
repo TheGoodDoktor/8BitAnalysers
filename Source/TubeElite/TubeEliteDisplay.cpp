@@ -216,9 +216,64 @@ void FTubeEliteDisplay::ClearTextScreenFromRow(uint8_t rowNo, uint8_t clearChar)
 	}
 }
 
+bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
+{
+	if (bWindowFocused = false)
+	{
+		for (int i = 0; i < 14; i++)
+			pBuffer[i] = 0; // clear the buffer
+
+		pBuffer[14] = 0x10; // Joystick 1 fire button not pressed
+		return false;
+	}
+		
+
+	// 	*Byte #2: If a non - primary flight control key is
+	// 		being pressed, its internal key number is put here
+	pBuffer[2] = LastKeyCode; // no non-primary flight control key pressed
+
+	// * Byte #3: "?" is being pressed(0 = no, &FF = yes)
+	pBuffer[3] = ImGui::IsKeyPressed(ImGuiKey_Slash) ? 0xff : 0xff; // "?" key pressed ?
+
+	// * Byte #4: Space is being pressed(0 = no, &FF = yes)
+	pBuffer[4] = ImGui::IsKeyPressed(ImGuiKey_Space) ? 0xff : 0x00; // Space key pressed
+
+	// * Byte #5: "<" is being pressed(0 = no, &FF = yes)
+	pBuffer[5] = ImGui::IsKeyPressed(ImGuiKey_Comma) ? 0xff : 0x00; // "<" key pressed
+
+	// * Byte #6: ">" is being pressed(0 = no, &FF = yes)
+	pBuffer[6] = ImGui::IsKeyPressed(ImGuiKey_Period) ? 0xff : 0x00; // ">" key pressed
+
+	// * Byte #7: "X" is being pressed(0 = no, &FF = yes)
+	pBuffer[7] = ImGui::IsKeyPressed(ImGuiKey_X) ? 0xff : 0x00; // "X" key pressed
+
+	// * Byte #8: "S" is being pressed(0 = no, &FF = yes)
+	pBuffer[8] = ImGui::IsKeyPressed(ImGuiKey_S) ? 0xff : 0x00; // "S" key pressed
+
+	// * Byte #9: "A" is being pressed(0 = no, &FF = yes)
+	pBuffer[9] = ImGui::IsKeyPressed(ImGuiKey_A) ? 0xff : 0x00; // "A" key pressed
+
+	// * Byte #10: Joystick X value(high byte)
+	pBuffer[10] = 0; // Joystick X value not pressed, set to 0
+
+	// * Byte #11: Joystick Y value(high byte)
+	pBuffer[11] = 0; // Joystick Y value not pressed, set to 0
+
+	// * Byte #12: Bitstik rotation value(high byte)
+	pBuffer[12] = 0; // Bitstik rotation value not pressed, set to 0
+
+	// * Byte #14: Joystick 1 fire button is being pressed
+	// (Bit 4 set = no, Bit 4 clear = yes)
+	pBuffer[14] = 0x10; // Joystick 1 fire button not pressed, set to 0x10
+
+	return true;
+}
+
 
 void FTubeEliteDisplay::Tick(void)
 {
+	LastKeyCode = 0; // reset last key code
+
 	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
 	{
 		if (ImGui::IsKeyPressed((ImGuiKey)key, false))
@@ -228,6 +283,7 @@ void FTubeEliteDisplay::Tick(void)
 			{
 				//bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
 				//TODO: send to key buffer
+				LastKeyCode = bbcKey; // store the last key code pressed
 				pTubeSys->AddInputByte(bbcKey);
 
 			}

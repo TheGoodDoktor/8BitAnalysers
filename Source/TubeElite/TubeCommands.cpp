@@ -214,6 +214,8 @@ public:
 				// clear the output bytes
 				for (int i = 0; i < ControlBlock.NumOutputBytes; ++i)
 					ControlBlock.pOutputBytes[i] = 0;
+				for(int i = 0;i<ControlBlock.NumInputBytes;i++)	// start of output block is input block
+					ControlBlock.pOutputBytes[i] = ControlBlock.pInputBytes[i];
 			}
 			State = EState::RunOSWORD;
 			bIsReady = true; // ready to execute

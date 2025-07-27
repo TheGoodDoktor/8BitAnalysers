@@ -31,6 +31,12 @@ struct FTubeEliteLaunchConfig : public FEmulatorLaunchConfig
 	bool	bBBCBasic = false;
 };
 
+struct FTubeEliteDebug
+{
+	bool	bDebugTubeComms = false;
+	bool	bOSWORDDebug = false;
+};
+
 struct FOSWORDControlBlock
 {
 	uint8_t Action = 0;        // OSWORD action
@@ -139,6 +145,7 @@ public:
 
 	FTubeEliteMachine& GetMachine() { return Machine; }
 	FTubeEliteDisplay& GetDisplay() { return Display; }
+	const FTubeEliteDebug& GetDebug() { return Debug;}
 
 	void AddInputByte(uint8_t byte)
 	{
@@ -169,6 +176,7 @@ private:
 	FTubeEliteDisplay			Display;
     FTubeEliteLaunchConfig		LaunchConfig;
 	FTubeEliteConfig*			pConfig = nullptr;
+	FTubeEliteDebug				Debug;
 
 	FTubeCommand*				pCharHandler = nullptr;
 	FTubeCommand*				pCurrentCommand = nullptr; // current Tube command being processed

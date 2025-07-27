@@ -278,15 +278,24 @@ bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 			ProcessTubeChar(val); // process the character for display
 			break;
 		case ETubeRegister::R2:
-			LOGINFO("Received R2 data: 0x%02X", val);
+			if(Debug.bDebugTubeComms)
+			{
+				LOGINFO("Received R2 data: 0x%02X", val);
+			}
 			ProcessTubeCommandByte(val);
 			break;
 
 		case ETubeRegister::R3:
-			LOGINFO("Received R3 data: 0x%02X", val);
+			if (Debug.bDebugTubeComms)
+			{
+				LOGINFO("Received R3 data: 0x%02X", val);
+			}
 			break;
 		case ETubeRegister::R4:
-			LOGINFO("Received R4 data: 0x%02X", val);
+			if (Debug.bDebugTubeComms)
+			{
+				LOGINFO("Received R4 data: 0x%02X", val);
+			}
 			break;
 	}
 	
@@ -383,6 +392,14 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 	{
 		case 240:	// scan the keyboard see https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/keyboard.html
 			LOGINFO("OSWORD - SCAN KEYBOARD");
+			if (controlBlock.NumOutputBytes == 0)
+			{
+				LOGERROR("OSWORD 240 - No output bytes specified");
+				DebugBreak(); // break the execution
+				return;
+			}
+			assert(controlBlock.NumOutputBytes == 15);
+			Display.UpdateKeyboardBuffer(controlBlock.pOutputBytes);			
 			break;
 		case 241:	// Draw space view pixels
 			LOGINFO("OSWORD - DRAW SPACE VIEW PIXELS");
@@ -418,14 +435,17 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			break;
 	}
 
-	for (int i = 0; i < controlBlock.NumInputBytes; i++)
+	if(Debug.bOSWORDDebug)
 	{
-		LOGINFO("OSWORD Input Byte %d: 0x%02X", i, controlBlock.pInputBytes[i]);
-	}
+		for (int i = 0; i < controlBlock.NumInputBytes; i++)
+		{
+			LOGINFO("OSWORD Input Byte %d: 0x%02X", i, controlBlock.pInputBytes[i]);
+		}
 
-	for (int i = 0; i < controlBlock.NumOutputBytes; i++)
-	{
-		LOGINFO("OSWORD Output Byte %d: 0x%02X", i, controlBlock.pOutputBytes[i]);
+		for (int i = 0; i < controlBlock.NumOutputBytes; i++)
+		{
+			LOGINFO("OSWORD Output Byte %d: 0x%02X", i, controlBlock.pOutputBytes[i]);
+		}
 	}
 }
 
