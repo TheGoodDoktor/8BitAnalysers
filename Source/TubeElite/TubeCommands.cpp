@@ -237,7 +237,8 @@ public:
 		case EState::RunOSWORD:
 		{
 			// run the OSWORD command
-			LOGINFO("OSWORD: %d, inBytes: %d, outBytes: %d", ControlBlock.Action, ControlBlock.NumInputBytes, ControlBlock.NumOutputBytes);
+			if(pTubeSys->GetDebug().bOSWORDDebug)
+				LOGINFO("OSWORD: %d, inBytes: %d, outBytes: %d", ControlBlock.Action, ControlBlock.NumInputBytes, ControlBlock.NumOutputBytes);
 			pTubeSys->OSWORD(ControlBlock);
 			if (ControlBlock.NumOutputBytes == 0) // no output bytes
 			{

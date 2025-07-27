@@ -390,6 +390,15 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 {
 	switch (controlBlock.Action)
 	{
+		case 7: // Generate a sound
+		{
+			const uint16_t channel = controlBlock.pInputBytes[0] << 8 | controlBlock.pInputBytes[1];	// channel number
+			const uint16_t volume = controlBlock.pInputBytes[2] << 8 | controlBlock.pInputBytes[3];	// volume
+			const uint16_t pitch = controlBlock.pInputBytes[4] << 8 | controlBlock.pInputBytes[5];	// pitch
+			const uint16_t duration = controlBlock.pInputBytes[6] << 8 | controlBlock.pInputBytes[7];	// duration
+			LOGINFO("OSWORD 7 - Generate Sound on channel %04X, volume: %d, pitch: %d, duration: %d", channel, volume, pitch, duration);
+		}
+		break;
 		case 240:	// scan the keyboard see https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/keyboard.html
 			LOGINFO("OSWORD - SCAN KEYBOARD");
 			if (controlBlock.NumOutputBytes == 0)

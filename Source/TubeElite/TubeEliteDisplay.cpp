@@ -68,6 +68,7 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 			case 11: // Clear the top part of the screen and draw a border
 				ClearTextScreen();
 				g_VDULog.AddLog("<cls>");
+				NoLines = 0;
 				return true;
 			case 12: // Carriage Return
 			case 13:
@@ -305,8 +306,8 @@ void FTubeEliteDisplay::DrawUI(void)
 	ImGui::Text("Tube Elite Display");
 
 	// Draw the character map
-	float charWidth = ImGui::GetFontSize() * 0.6f; // approximate character width
-	float charHeight = ImGui::GetFontSize(); // approximate character height
+	float charWidth = 8;//ImGui::GetFontSize() * 0.6f; // approximate character width
+	float charHeight = 8;//ImGui::GetFontSize(); // approximate character height
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	ImVec2 startPos = ImGui::GetCursorScreenPos();
 	for (int y = 0; y < kCharMapSizeY; y++)
@@ -325,6 +326,14 @@ void FTubeEliteDisplay::DrawUI(void)
 			}
 		}
 		ImGui::NewLine();
+	}
+
+	// Draw Line Heap
+	for (int i = 0; i < NoLines; i++)
+	{
+		const FLine& line = LineHeap[i];
+		drawList->AddLine(ImVec2(startPos.x + line.x1, startPos.y + line.y1),
+			ImVec2(startPos.x + line.x2, startPos.y + line.y2), IM_COL32(255, 255, 255, 255));
 	}
 
 	drawList->AddRect(startPos, ImVec2(startPos.x + (kCharMapSizeX * charWidth),startPos.y + (kCharMapSizeY * charHeight)), IM_COL32(255, 255, 255, 128));

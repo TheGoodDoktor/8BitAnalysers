@@ -75,8 +75,19 @@ public:
 	}
 	void Execute(void) override
 	{
-		LOGINFO("Draw Lines command with %d points", (ParamBytes.size()-1)/2);
+		const int noOfPoints = (ParamBytes.size() - 1) / 2; // number of points is (total bytes - 1) / 2
+		const uint8_t* pPoints = ParamBytes.data() + 1; // skip the first byte which is the number of bytes
+		for (int i = 0; i < noOfPoints / 2; i++)
+		{
+			uint8_t x1 = pPoints[i * 4];     // X1 coordinate
+			uint8_t y1 = pPoints[i * 4 + 1]; // Y1 coordinate
+			uint8_t x2 = pPoints[i * 4 + 2]; // X2 coordinate
+			uint8_t y2 = pPoints[i * 4 + 3]; // Y2 coordinate
+			pTubeSys->GetDisplay().AddLine(x1, y1, x2, y2); // add the line to the display
+		}
+		//LOGINFO("Draw Lines command with %d points", noOfPoints);
 		//pTubeSys->GetDisplay().DrawLines(ParamBytes.data(), ParamBytes.size());
+
 		bIsComplete = true;
 	}
 private:
