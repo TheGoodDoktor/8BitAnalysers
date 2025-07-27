@@ -14,6 +14,10 @@
 // TODO: Load Elite binaries
 // use this a a guide: https://elite.bbcelite.com/6502sp/all/bcfs.html
 
+// play in a browser here:
+// https://bbc.xania.org/?model=Master&coProcessor=true&autoboot&disc=https://elite.bbcelite.com/versions/elite_compendium/elite-compendium-bbc-master.dsd
+
+
 extern void DoM65C02Test();	// bit of a hack to run the M65C02 test suite
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
@@ -361,6 +365,10 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 	assert(command < 0x80);
 	switch (command)
 	{
+	case 15:
+		LOGINFO("OSBYTE 15 : Flush Buffer");
+		return 0;
+		break;
 	default:
 		LOGINFO("Unhandled OSBYTE 0x%02X(%d)", command, command);
 		return 0;

@@ -9,9 +9,12 @@ class FTubeEliteDisplay
 public:
 	bool Init(FTubeElite* pSys);
 	bool ProcessVDUChar(uint8_t ch);
+	bool ProcessMOSVDUChar(uint8_t ch);
+	bool ProcessEliteChar(uint8_t ch);
+	void DrawCharAtCursor(uint8_t ch);
 	
-	void SetCursorX(int x) { CursorX = x; }
-	void SetCursorY(int y) { CursorY = y; }
+	void SetCursorX(int x);
+	void SetCursorY(int y);
 
 	void ClearTextScreen(uint8_t clearChar = 0);
 	void ClearTextScreenFromRow(uint8_t rowNo,uint8_t claerChar=0);
@@ -28,4 +31,7 @@ private:
 	int		CursorY = 0;
 
 	bool	bWindowFocused = false;	// true if the display window is focused
+
+	bool	bShowLog = true;
+	bool	bLastCharCtrl = false;	// last char was a control char
 };

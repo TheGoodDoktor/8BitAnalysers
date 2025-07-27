@@ -668,6 +668,9 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	if(labelType == ELabelType::Data)
 	{
 		FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
+		if(pDataInfo->bLabelNA)
+			return nullptr;	// no labels allowed for this data item
+
 		if (pDataInfo->DataType == EDataType::InstructionOperand)
 		{
 			address = pDataInfo->InstructionAddress;

@@ -476,7 +476,7 @@ struct FDataInfo : FItem
 		struct
 		{
 			bool			bGameState : 1;
-			bool			bUnused1 : 1;
+			bool			bLabelNA : 1;		// labels not allowed 
 			bool			bUnused2 : 1;
 			bool			bBit7Terminator : 1;	// for bit 7 terminated strings
 			bool			bShowBinary : 1;	// display the value(s) as binary

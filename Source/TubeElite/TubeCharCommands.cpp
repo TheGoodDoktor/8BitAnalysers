@@ -46,6 +46,7 @@ public:
 
 	void Execute(void) override
 	{
+		LOGINFO("Update Dashboard");
 	}
 
 };
@@ -59,13 +60,13 @@ public:
 		ParamBytes.push_back(byte);
 		if (ParamBytes.size() == 1)	// First byte
 		{
-			NoPoints = byte; // first byte is the number of points to draw
-			if (NoPoints > 0)
+			NoBytes = byte; // first byte is the number of points to draw
+			if (NoBytes > 0)
 			{
-				ParamBytes.reserve(NoPoints * 2 + 1); // reserve space for points
+				ParamBytes.reserve(NoBytes); // reserve space for points
 			}
 		}
-		else if (ParamBytes.size() == NoPoints * 2 + 1)
+		else if (ParamBytes.size() == NoBytes)
 		{
 			bIsReady = true; // ready to execute
 			return true;
@@ -74,12 +75,13 @@ public:
 	}
 	void Execute(void) override
 	{
-		LOGINFO("Draw Lines command with %d parameters", ParamBytes.size());
+		LOGINFO("Draw Lines command with %d points", (ParamBytes.size()-1)/2);
 		//pTubeSys->GetDisplay().DrawLines(ParamBytes.data(), ParamBytes.size());
 		bIsComplete = true;
 	}
 private:
-	uint8_t		NoPoints = 0;	// number of points to draw
+	uint8_t		NoBytes = 0;	// number of bytes in the line heap
+
 };
 
 class FSingleParamCommand : public FTubeCommand
@@ -188,6 +190,7 @@ bool ProcessTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
 	{
 	case kCharCommand_DrawLines:
 		pSys->SetTubeCharCommandHandler(new FDrawLinesCommand(pSys));
+		//pSys->DebugBreak(); // break the execution
 		return true; // command processed
 	case kCharCommand_ShowEnergyBombEffect:
 		pSys->SetTubeCharCommandHandler(new FShowEnergyBombEffectCommand(pSys));
@@ -198,14 +201,17 @@ bool ProcessTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
 
 	case kCharCommand_SetCursorX:
 		pSys->SetTubeCharCommandHandler(new FSetCursorXCommand(pSys));
+		//pSys->DebugBreak(); // break the execution
 		return true; // command processed
 
 	case kCharCommand_SetCursorY:
 		pSys->SetTubeCharCommandHandler(new FSetCursorYCommand(pSys));
+		pSys->DebugBreak(); // break the execution
 		return true; // command processed
 
 	case kCharCommand_ClearScreenBottom:
-		pSys->GetDisplay().ClearTextScreenFromRow(20,0);
+		LOGINFO("Tube char command: ClearScreenBottom");
+		pSys->GetDisplay().ClearTextScreenFromRow(20, 0);
 		return true; // command processed
 
 	case kCharCommand_UpdateDashboard:

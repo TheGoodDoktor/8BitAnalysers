@@ -1162,6 +1162,12 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			if (ImGui::Selectable("Add Watch"))
 				state.Debugger.AddWatch(item.AddressRef);
 
+			// disallow labels toggle
+			FDataInfo* pData = static_cast<FDataInfo*>(item.Item);
+			bool bDisallowLabels = pData->bLabelNA;
+			if(ImGui::Checkbox("Disallow Labels",&bDisallowLabels))
+				pData->bLabelNA = bDisallowLabels;
+
 		}
 
 		if (item.Item->Type == EItemType::Label)
