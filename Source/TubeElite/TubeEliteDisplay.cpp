@@ -68,7 +68,6 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 			case 11: // Clear the top part of the screen and draw a border
 				ClearTextScreen();
 				g_VDULog.AddLog("<cls>");
-				NoLines = 0;
 				return true;
 			case 12: // Carriage Return
 			case 13:
@@ -208,6 +207,12 @@ void FTubeEliteDisplay::ClearTextScreen(uint8_t clearChar)
 	}
 }
 
+void FTubeEliteDisplay::ClearScreenBottom(void)
+{
+	ClearTextScreenFromRow(20, 0);
+	SetCursorY(20);
+}
+
 void FTubeEliteDisplay::ClearTextScreenFromRow(uint8_t rowNo, uint8_t clearChar)
 {
 	for (int clearY = rowNo; clearY < kCharMapSizeY; clearY++)
@@ -215,6 +220,38 @@ void FTubeEliteDisplay::ClearTextScreenFromRow(uint8_t rowNo, uint8_t clearChar)
 		for(int x=0;x<kCharMapSizeX;x++)
 			CharMap[x][rowNo] = clearChar;
 	}
+}
+
+bool FTubeEliteDisplay::AddLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
+{
+	if (NoLines == kMaxLines)
+		NoLines = 0;//hack
+	//return false;
+	FLine newLine;// = LineHeap[NoLines++];
+	newLine.x1 = x1;
+	newLine.y1 = y1;
+	newLine.x2 = x2;
+	newLine.y2 = y2;
+
+	// check if the line already exists in the heap
+	// this is because they were drawn using EOR on the BBC so adding the same line twice is removing it
+	for (int i = 0; i < NoLines; i++)
+	{
+		if (LineHeap[i].val == newLine.val)
+		{
+			// line already exists, remove it
+			for (int j = i; j < NoLines - 1; j++)
+			{
+				LineHeap[j] = LineHeap[j + 1]; // shift the lines down
+			}
+			NoLines--; // reduce the number of lines
+			return true; // line removed
+		}
+	}
+
+	// it's a new line so add it
+	LineHeap[NoLines++] = newLine;
+	return true;
 }
 
 bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)

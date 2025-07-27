@@ -222,8 +222,8 @@ bool ProcessTubeCharCommand(FTubeElite* pSys, uint8_t commandId)
 
 	case kCharCommand_ClearScreenBottom:
 		LOGINFO("Tube char command: ClearScreenBottom");
-		pSys->GetDisplay().ClearTextScreenFromRow(20, 0);
-		pSys->GetDisplay().SetCursorY(20);
+		pSys->GetDisplay().ClearScreenBottom(); // clear the screen bottom
+		
 		return true; // command processed
 
 	case kCharCommand_UpdateDashboard:

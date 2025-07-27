@@ -413,6 +413,7 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			break;
 		case 241:	// Draw space view pixels
 			LOGINFO("OSWORD - DRAW SPACE VIEW PIXELS");
+			// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/pixel.html
 			break;
 		case 242:	// Update missile indicators
 			LOGINFO("OSWORD - UPDATE MISSILE INDICATORS");

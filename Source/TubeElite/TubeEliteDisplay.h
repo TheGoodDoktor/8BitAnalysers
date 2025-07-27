@@ -6,7 +6,14 @@ class FTubeElite;
 
 struct FLine
 {
-	uint8_t x1,y1,x2,y2;
+	union 
+	{
+		struct
+		{
+			uint8_t x1, y1, x2, y2;
+		};
+		uint32_t val;	// packed x1,y1,x2,y2
+	};
 };
 
 class FTubeEliteDisplay
@@ -22,20 +29,10 @@ public:
 	void SetCursorY(int y);
 
 	void ClearTextScreen(uint8_t clearChar = 0);
+	void ClearScreenBottom(void);
 	void ClearTextScreenFromRow(uint8_t rowNo,uint8_t claerChar=0);
 
-	bool AddLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
-	{
-		if(NoLines == kMaxLines)
-			NoLines = 0;//hack
-			//return false;
-		FLine& newLine = LineHeap[NoLines++];
-		newLine.x1 = x1;
-		newLine.y1 = y1;
-		newLine.x2 = x2;
-		newLine.y2 = y2;
-		return true;
-	}
+	bool AddLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 
 	bool UpdateKeyboardBuffer(uint8_t* pBuffer);
 	bool IsKeyDown(uint8_t key)
