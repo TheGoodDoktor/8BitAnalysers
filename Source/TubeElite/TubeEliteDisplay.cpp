@@ -69,6 +69,7 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 				ClearTextScreen();
 				g_VDULog.AddLog("<cls>");
 				NoLines = 0;	// clear line heap
+				NoPixels = 0;	// clear pixel heap
 				return true;
 			case 12: // Carriage Return
 			case 13:
@@ -148,6 +149,8 @@ bool FTubeEliteDisplay::ProcessMOSVDUChar(uint8_t ch)
 			ClearTextScreen();
 			pTubeSys->DebugBreak(); // break the execution
 			g_VDULog.AddLog("<cls>");
+			NoLines = 0;
+			NoPixels = 0; // clear line and pixel heaps
 			break;
 		case 13: // CR
 			CursorX = 0; // move to start of line
@@ -261,7 +264,7 @@ void FTubeEliteDisplay::ReceivePixelData(const uint8_t* pPixelData)
 	const uint8_t noPixelBytes = pPixelData[0];
 	const int noPixels = (noPixelBytes - 2) / 3; // each pixel is 3 bytes (dist, x, y)
 	const uint8_t* pData = pPixelData + 2; // skip the first two bytes
-	NoPixels = 0;	// Hack - there seems to be a problem with removing old pixels, so we reset the pixel count here
+	//NoPixels = 0;	// Hack - there seems to be a problem with removing old pixels, so we reset the pixel count here
 
 	for (int i = 0; i < noPixels && NoPixels < kMaxPixels; i++)
 	{
@@ -289,7 +292,8 @@ void FTubeEliteDisplay::ReceivePixelData(const uint8_t* pPixelData)
 		}
 
 		// it's a new pixel so add it
-		PixelHeap[NoPixels++] = pixel;
+		if(bAddPixel)
+			PixelHeap[NoPixels++] = pixel;
 	}
 }
 
