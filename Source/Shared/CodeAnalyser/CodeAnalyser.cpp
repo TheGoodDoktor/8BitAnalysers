@@ -831,12 +831,12 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	else
 	{
 		uint16_t ptr;
-		if (CheckPointerRefInstruction(state, pc, &ptr))	// this is just a 16 bit number so don't assume a pointer
+		if (CheckPointerRefInstruction(state, pc, &ptr))	// this is just a 16 bit number so don't assume a pointer - we should be able to identify pointer reference functions
 		{
 			const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
 			pCodeInfo->OperandAddress = ptrAddr;
-			//if(pCodeInfo->OperandType == EOperandType::Unknown)
-			//	pCodeInfo->OperandType = EOperandType::Pointer;
+			if(pCodeInfo->OperandType == EOperandType::Unknown)
+				pCodeInfo->OperandType = EOperandType::Pointer;
 
 			//FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
 			//if (pLabel)
