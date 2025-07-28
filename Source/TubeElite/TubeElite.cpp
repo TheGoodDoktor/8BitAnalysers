@@ -412,8 +412,7 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			Display.UpdateKeyboardBuffer(controlBlock.pOutputBytes);			
 			break;
 		case 241:	// Draw space view pixels
-			LOGINFO("OSWORD - DRAW SPACE VIEW PIXELS");
-			// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/pixel.html
+			Display.ReceivePixelData(controlBlock.pInputBytes);
 			break;
 		case 242:	// Update missile indicators
 			LOGINFO("OSWORD - UPDATE MISSILE INDICATORS");

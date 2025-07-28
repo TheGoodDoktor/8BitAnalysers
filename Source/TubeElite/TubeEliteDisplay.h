@@ -16,6 +16,19 @@ struct FLine
 	};
 };
 
+struct FPixel
+{
+	union 
+	{
+		struct  
+		{
+			uint8_t dist;
+			uint8_t x, y;
+		};
+		uint32_t val = 0;	// packed dist,x,y
+	};
+};
+
 class FTubeEliteDisplay
 {
 public:
@@ -33,6 +46,7 @@ public:
 	void ClearTextScreenFromRow(uint8_t rowNo,uint8_t claerChar=0);
 
 	bool AddLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
+	void ReceivePixelData(const uint8_t* pPixelData);
 
 	bool UpdateKeyboardBuffer(uint8_t* pBuffer);
 	bool IsKeyDown(uint8_t key)
@@ -53,6 +67,10 @@ private:
 	static const int kMaxLines = 256;
 	FLine	LineHeap[kMaxLines];
 	int		NoLines = 0;
+
+	static const int kMaxPixels = 256;
+	FPixel	PixelHeap[kMaxPixels];
+	int		NoPixels = 0;
 
 	uint8_t		LastKeyCode = 0;	// last key code processed
 

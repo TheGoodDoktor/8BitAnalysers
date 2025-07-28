@@ -255,6 +255,44 @@ bool FTubeEliteDisplay::AddLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
 	return true;
 }
 
+// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/pixel.html
+void FTubeEliteDisplay::ReceivePixelData(const uint8_t* pPixelData)
+{
+	const uint8_t noPixelBytes = pPixelData[0];
+	const int noPixels = (noPixelBytes - 2) / 3; // each pixel is 3 bytes (dist, x, y)
+	const uint8_t* pData = pPixelData + 2; // skip the first two bytes
+	NoPixels = 0;	// Hack - there seems to be a problem with removing old pixels, so we reset the pixel count here
+
+	for (int i = 0; i < noPixels && NoPixels < kMaxPixels; i++)
+	{
+		bool bAddPixel = true;
+		FPixel pixel;
+		pixel.dist = pData[0];
+		pixel.x = pData[1];
+		pixel.y = pData[2];
+		pData += 3; // move to the next pixel
+
+		// check if pixel already exists in the heap
+		for (int j = 0; j < NoPixels; j++)
+		{
+			if (PixelHeap[j].val == pixel.val)
+			{
+				// pixel already exists, remove it
+				for (int k = j; k < NoPixels - 1; k++)
+				{
+					PixelHeap[k] = PixelHeap[k + 1]; // shift the pixels down
+				}
+				NoPixels--; // reduce the number of pixels
+				bAddPixel = false; // don't add the pixel, it was removed
+				break; // jump of the pixel check loop
+			}
+		}
+
+		// it's a new pixel so add it
+		PixelHeap[NoPixels++] = pixel;
+	}
+}
+
 bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 {
 	if (bWindowFocused = false)
@@ -374,6 +412,15 @@ void FTubeEliteDisplay::DrawUI(void)
 		const FLine& line = LineHeap[i];
 		drawList->AddLine(ImVec2(startPos.x + line.x1, startPos.y + line.y1),
 			ImVec2(startPos.x + line.x2, startPos.y + line.y2), IM_COL32(255, 255, 255, 255));
+	}
+
+	// Draw Pixel Heap
+	for (int i = 0; i < NoPixels; i++)
+	{
+		const FPixel& pixel = PixelHeap[i];
+		const float pixelsize = 2.0f; // size of the pixel circle, TODO: calculate based on dist
+		const ImColor pixelColor = ImColor(255, 255, 255, 255); // TODO: use pixel.dist for color
+		drawList->AddCircleFilled(ImVec2(startPos.x + pixel.x, startPos.y + pixel.y), pixelsize, pixelColor);
 	}
 
 	drawList->AddRect(startPos, ImVec2(startPos.x + (kCharMapSizeX * charWidth),startPos.y + (kCharMapSizeY * charHeight)), IM_COL32(255, 255, 255, 128));
