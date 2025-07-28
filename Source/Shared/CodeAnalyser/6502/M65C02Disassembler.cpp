@@ -226,11 +226,13 @@ uint16_t m65C02dasm_op(uint16_t pc, dasm_input_t in_cb, dasm_output_t out_cb, vo
         case 0:
             switch (bbb) {
             case 0:  n = "BRK"; break;
+			case 1:  n = "TSB"; break;	// 65C02	
             case 2:  n = "PHP"; break;
+			case 3:  n = "TSB"; break;	// 65C02	
 			case 4:  n = "BPL"; break;
-			case 5:  n = "TRB"; break;
+			case 5:  n = "TRB"; break;	// 65C02
             case 6:  n = "CLC"; break;
-			case 7:  n = "TRB"; break;
+			case 7:  n = "TRB"; break;	// 65C02
             default: n = "*NOP"; break;
             }
             break;
@@ -625,6 +627,10 @@ static const std::vector< std::vector<uint8_t>> g_TestOpCodes
 	// TRB
 	//{ 0x14, 0x12 }, // TRB $12
 	//{ 0x1C, 0x34, 0x56 }, // TRB $5634,X
+
+	// TSB
+	{ 0x04, 0x12 }, // TSB $12
+	{ 0x0C, 0x34, 0x56 }, // TSB $5634,X
 };
 
 void DoM65C02Test()

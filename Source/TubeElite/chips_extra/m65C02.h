@@ -42,8 +42,8 @@
 	$14 TRB zp
 	$1C TRB abs
 
-	$04 TSB zp
-	$0C TSB abs
+	*$04 TSB zp
+	*$0C TSB abs
 
     Project repo: https://github.com/floooh/chips/
 
@@ -845,12 +845,12 @@ uint64_t m65C02_tick(m65C02_t* c, uint64_t pins) {
         case (0x03<<3)|5: c->AD=_GD();_WR();break;
         case (0x03<<3)|6: c->AD=_m65C02_asl(c,c->AD);_SD(c->AD);c->A|=c->AD;_NZ(c->A);_WR();break;
         case (0x03<<3)|7: _FETCH();break;
-    /* NOP zp (undoc) */
-        case (0x04<<3)|0: _SA(c->PC++);break;
-        case (0x04<<3)|1: _SA(_GD());break;
-        case (0x04<<3)|2: _FETCH();break;
-        case (0x04<<3)|3: assert(false);break;
-        case (0x04<<3)|4: assert(false);break;
+    /* TSB zp - 65C02 instruction */
+		case (0x04<<3)|0: _SA(c->PC++); break;
+		case (0x04<<3)|1: _SA(_GD()); break;
+		case (0x04<<3)|2: _m65C02_bit(c, _GD()); break;
+        case (0x04<<3)|3: _SD(_GD() | c->A); _WR(); break;
+        case (0x04<<3)|4: _FETCH();break;
         case (0x04<<3)|5: assert(false);break;
         case (0x04<<3)|6: assert(false);break;
         case (0x04<<3)|7: assert(false);break;
@@ -917,13 +917,13 @@ uint64_t m65C02_tick(m65C02_t* c, uint64_t pins) {
         case (0x0B<<3)|5: assert(false);break;
         case (0x0B<<3)|6: assert(false);break;
         case (0x0B<<3)|7: assert(false);break;
-    /* NOP abs (undoc) */
-        case (0x0C<<3)|0: _SA(c->PC++);break;
-        case (0x0C<<3)|1: _SA(c->PC++);c->AD=_GD();break;
-        case (0x0C<<3)|2: _SA((_GD()<<8)|c->AD);break;
-        case (0x0C<<3)|3: _FETCH();break;
-        case (0x0C<<3)|4: assert(false);break;
-        case (0x0C<<3)|5: assert(false);break;
+    /* TSB abs - 65C02 instruction */
+		case (0x0C<<3)|0: _SA(c->PC++); break;
+		case (0x0C<<3)|1: _SA(c->PC++); c->AD = _GD(); break;
+		case (0x0C<<3)|2: _SA((_GD() << 8) | c->AD); break;
+		case (0x0C<<3)|3: _m65C02_bit(c, _GD()); break;
+        case (0x0C<<3)|4: _SD(_GD() | c->A); _WR(); break;
+        case (0x0C<<3)|5:  _FETCH();break;
         case (0x0C<<3)|6: assert(false);break;
         case (0x0C<<3)|7: assert(false);break;
     /* ORA abs */
