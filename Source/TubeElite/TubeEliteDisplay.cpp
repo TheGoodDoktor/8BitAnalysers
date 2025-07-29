@@ -38,8 +38,214 @@ bool FTubeEliteDisplay::ProcessVDUChar(uint8_t ch)
 	* 127 (delete the character to the left of the text
 	cursor and move the cursor to the left)
 */
+const uint8_t kEliteVDUCode_Null = 0;	// null character
+const uint8_t kEliteVDUCode_Beep = 7;	// beep
+const uint8_t kEliteVDUCode_LF = 10;	// line feed
+const uint8_t kEliteVDUCode_CLS = 11;	// clear the top part of the screen and draw a border
+const uint8_t kEliteVDUCode_CR = 12;	// carriage return
+const uint8_t kEliteVDUCode_CR2 = 13;	// carriage return (alternate code, same as 12)
+const uint8_t kEliteVDUCode_Delete = 127;	// delete the character to the left of the text cursor and move the cursor to the left
+
+// special commands
+const uint8_t kEliteVDUCode_DrawLines = 129;	// draw lines command
+const uint8_t kEliteVDUCode_ShowEnergyBombEffect = 131;	// show energy bomb effect
+const uint8_t kEliteVDUCode_ShowHyperspaceColours = 132;	// show hyperspace colours
+const uint8_t kEliteVDUCode_SetCursorX = 133;	// set cursor X position
+const uint8_t kEliteVDUCode_SetCursorY = 134;	// set cursor Y position
+const uint8_t kEliteVDUCode_ClearScreenBottom = 135;	// clear the bottom part of the screen
+const uint8_t kEliteVDUCode_UpdateDashboard = 136;	// update dashboard
+const uint8_t kEliteVDUCode_ShowHideDashboard = 138;	// show/hide dashboard
+const uint8_t kEliteVDUCode_Set6522SystemVIAIER = 139;	// set 6522 system VIA IER
+const uint8_t kEliteVDUCode_ToggleDashboardBulb = 140;	// toggle dashboard bulb
+const uint8_t kEliteVDUCode_SetDiscCatalogueFlag = 141;	// set disc catalogue flag
+const uint8_t kEliteVDUCode_SetCurrentColour = 142;	// set current colour
+const uint8_t kEliteVDUCode_ChangeColourPalette = 143;	// change colour palette
+const uint8_t kEliteVDUCode_SetFileSavingFlag = 144;	// set file saving flag
+const uint8_t kEliteVDUCode_ExecuteBRKInstruction = 145;	// execute BRK instruction
+const uint8_t kEliteVDUCode_WriteToPrinterScreen = 146;	// write to printer screen
+const uint8_t kEliteVDUCode_BlankLineOnPrinter = 147;	// blank line on printer
+
+bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
+{
+	const FTubeEliteDebug& debug = pTubeSys->GetDebug();
+
+	switch (ProcessingCommand)
+	{
+	case kEliteVDUCode_DrawLines: // Draw Lines command
+		if (NumLineBytesToRead == -1)
+		{
+			NumLineBytesToRead = cmdByte; // first byte is the number of bytes to read
+		}
+		else
+		{
+			const uint8_t lineByteNo = NoCommandBytesRead & 3;
+			NewLine.bytes[lineByteNo] = cmdByte; // store the byte in the line
+			if (lineByteNo == 3)
+			{
+				AddLine(NewLine); // add the line to the heap
+			}
+			NoCommandBytesRead++;
+			if (NoCommandBytesRead == NumLineBytesToRead - 1)
+				ProcessingCommand = 0; // command completed
+		}
+		return true;
+		break;
+
+	case kEliteVDUCode_ShowEnergyBombEffect: // Show energy bomb effect
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<energy bomb %d>", cmdByte);
+		}
+		// TODO: Implement the energy bomb effect
+		ProcessingCommand = 0; // command completed
+		return true;
+
+	case kEliteVDUCode_ShowHyperspaceColours: // Show hyperspace colours
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<hyperspace colours %d>", cmdByte);
+		}
+		// TODO: Implement the hyperspace colours effect
+		ProcessingCommand = 0; // command completed
+		return true;
+
+	case kEliteVDUCode_SetCursorX: // Set cursor X position
+		SetCursorX(cmdByte); // set the cursor X position
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<cursorX X %d>", cmdByte);
+		}
+		ProcessingCommand = 0; // command completed
+		return true;
+
+	case kEliteVDUCode_SetCursorY: // Set cursor Y position
+		SetCursorY(cmdByte); // set the cursor Y position
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<cursorY %d>", cmdByte);
+		}
+		ProcessingCommand = 0; // command completed
+		return true;
+
+	case kEliteVDUCode_UpdateDashboard:
+		if (NoCommandBytesRead == 15)
+		{
+			ProcessingCommand = 0; // command completed
+		}
+		else
+		{
+			DashboardParams.Bytes[NoCommandBytesRead] = cmdByte; // store the byte in the dashboard parameters
+			NoCommandBytesRead++;
+		}
+		return true;
+
+	case kEliteVDUCode_ShowHideDashboard:
+		ProcessingCommand = 0; // command completed
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<show/hide dashboard %d>", cmdByte);
+		}
+		return true; // show/hide dashboard command, not implemented yet
+
+	case kEliteVDUCode_Set6522SystemVIAIER:
+		ProcessingCommand = 0; // command completed
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<set 6522 system VIA IER %d>", cmdByte);
+		}
+		return true;
+
+	case kEliteVDUCode_ToggleDashboardBulb:
+		ProcessingCommand = 0; // command completed
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<toggle dashboard bulb %d>", cmdByte);
+		}
+		break;
+
+	case kEliteVDUCode_SetDiscCatalogueFlag:
+		ProcessingCommand = 0; // command completed
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<set disc catalogue flag %d>", cmdByte);
+		}
+		return true;
+
+	case kEliteVDUCode_SetCurrentColour:
+		CurrentColour = cmdByte; // set the current colour
+		ProcessingCommand = 0; // command completed
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<set current colour %d>", cmdByte);
+		}
+		return true;
+	case kEliteVDUCode_ChangeColourPalette:
+		ColourPalette = cmdByte; // change the colour palette
+		ProcessingCommand = 0; // command completed
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<change colour palette %d>", cmdByte);
+		}
+		return true;
+
+	case kEliteVDUCode_SetFileSavingFlag:
+		ProcessingCommand = 0; // command completed
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<set file saving flag %d>", cmdByte);
+		}
+		return true;
+
+	case kEliteVDUCode_WriteToPrinterScreen:
+		if (debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+			g_VDULog.AddLog("<write to printer screen %d>", cmdByte);
+		}
+		DrawCharAtCursor(cmdByte); // write the character to the printer screen
+		return true;
+		
+	default:
+		LOGERROR("Unhandled Elite command: 0x%02X(%d)", ProcessingCommand, ProcessingCommand);
+		assert(0); // unhandled command
+		return false;
+		break;
+	}
+}
+
 bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 {
+	const FTubeEliteDebug& debug = pTubeSys->GetDebug();
+
+	// are we already processing a command?
+	if (ProcessingCommand != 0)
+	{
+		return ProcessEliteCommandByte(ch); // process the command
+	}
+
 	if(ch >=32 && ch < 127)
 	{
 		// printable character
@@ -48,55 +254,118 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 	}
 	else
 	{
-		g_VDULog.AddLog("\n");
-		bLastCharCtrl = true;
+		if(debug.bLogVDUChars)
+		{
+			g_VDULog.AddLog("\n");
+			bLastCharCtrl = true;
+		}
 
 		switch (ch)
 		{
-			case 0:	// nothing
-				g_VDULog.AddLog("<null>");
+			case kEliteVDUCode_Null:	// nothing
+				if (debug.bLogVDUChars)
+					g_VDULog.AddLog("<null>");
 				return true;
-			case 7:	// BEEP
-				g_VDULog.AddLog("<beep>");
+			case kEliteVDUCode_Beep:	// BEEP
+				if (debug.bLogVDUChars)
+					g_VDULog.AddLog("<beep>");
 				return true;
-			case 10:	// Line Feed
+			case kEliteVDUCode_LF:	// Line Feed
 				CursorY++;
 				if (CursorY >= kCharMapSizeY)
 					CursorY = 0; // wrap around
-				g_VDULog.AddLog("<lf>");
+				if (debug.bLogVDUChars)
+					g_VDULog.AddLog("<lf>");
 				return true;
-			case 11: // Clear the top part of the screen and draw a border
+			case kEliteVDUCode_CLS: // Clear the top part of the screen and draw a border
 				ClearTextScreen();
-				g_VDULog.AddLog("<cls>");
+				if (debug.bLogVDUChars)
+					g_VDULog.AddLog("<cls>");
 				NoLines = 0;	// clear line heap
 				NoPixels = 0;	// clear pixel heap
 				return true;
-			case 12: // Carriage Return
-			case 13:
+			case kEliteVDUCode_CR: // Carriage Return
+			case kEliteVDUCode_CR2:
 				CursorX = 0; // move to start of line
 				CursorY++;
 				if (CursorY >= kCharMapSizeY)
 					CursorY = 0; // wrap around
-				g_VDULog.AddLog("<cr>");
+				if (debug.bLogVDUChars)
+					g_VDULog.AddLog("<cr>");
 				return true;
-			case 127: // Delete the character to the left of the text cursor and move the cursor to the left
+			case kEliteVDUCode_Delete: // Delete the character to the left of the text cursor and move the cursor to the left
 				if (CursorX > 0)
 				{
 					CursorX--; // move cursor back one position
 					CharMap[CursorX][CursorY] = ' '; // clear the character at the cursor position
-					g_VDULog.AddLog("<delete>");
+					if (debug.bLogVDUChars)
+						g_VDULog.AddLog("<delete>");
 					return true;
 				}
 				else
 				{
-					g_VDULog.AddLog("<delete at start of line>");
+					if (debug.bLogVDUChars)
+						g_VDULog.AddLog("<delete at start of line>");
 					return false; // nothing to delete
 				}
+
+				// Elite specific commands
+			case kEliteVDUCode_DrawLines: // Draw Lines command
+				ProcessingCommand = kEliteVDUCode_DrawLines;
+				NumLineBytesToRead = -1; // to indicate we are waiting for the amount
+				NoCommandBytesRead = 0; // reset the number of bytes read
+				return true; // command processed
+
+			// single param commands can go under the same case
+			case kEliteVDUCode_ShowEnergyBombEffect: // Show energy bomb effect
+			case kEliteVDUCode_ShowHyperspaceColours: // Show hyperspace colours
+			case kEliteVDUCode_SetCursorX: // Set cursor X position
+			case kEliteVDUCode_SetCursorY: // Set cursor Y position
+			case kEliteVDUCode_ShowHideDashboard: // Show/Hide dashboard
+			case kEliteVDUCode_Set6522SystemVIAIER: // Set 6522 system VIA IER
+			case kEliteVDUCode_ToggleDashboardBulb: // Toggle dashboard bulb
+			case kEliteVDUCode_SetDiscCatalogueFlag: // Set disc catalogue flag
+			case kEliteVDUCode_SetCurrentColour: // Set current colour
+			case kEliteVDUCode_ChangeColourPalette: // Change colour palette
+			case kEliteVDUCode_SetFileSavingFlag: // Set file saving flag
+			case kEliteVDUCode_WriteToPrinterScreen: // Write to printer screen
+				ProcessingCommand = ch;
+				return true; // command processed
+
+			case kEliteVDUCode_ClearScreenBottom: // Clear the bottom part of the screen
+				ClearScreenBottom();
+				if (debug.bLogVDUChars)
+					g_VDULog.AddLog("<clear screen bottom>");
+				return true; // command processed
+
+			case kEliteVDUCode_UpdateDashboard: // Update dashboard
+				ProcessingCommand = kEliteVDUCode_UpdateDashboard;
+				NoCommandBytesRead = 0; // reset the number of bytes read
+				return true; // command processed
+
+			case kEliteVDUCode_BlankLineOnPrinter: // Blank line on printer
+				if (debug.bLogVDUChars)
+				{
+					g_VDULog.AddLog("\n");
+					bLastCharCtrl = true;
+					g_VDULog.AddLog("<blank line on printer>");
+				}
+				return true; // command processed
+
+			case kEliteVDUCode_ExecuteBRKInstruction: // Execute BRK instruction - not used
+				if (debug.bLogVDUChars)
+				{
+					g_VDULog.AddLog("\n");
+					bLastCharCtrl = true;
+					g_VDULog.AddLog("<execute BRK instruction>");
+				}
+				return true; // command processed
+
 			default:
 				// ignore other control characters
-				LOGWARNING("Tube Elite Display: Ignoring non-printable character %d(0x%02X)", ch, ch);
-				pTubeSys->DebugBreak(); // break the execution
-				g_VDULog.AddLog("<unhandled %d>", ch);
+				//LOGWARNING("Tube Elite Display: Ignoring non-printable character %d(0x%02X)", ch, ch);
+				//pTubeSys->DebugBreak(); // break the execution
+				//g_VDULog.AddLog("<unhandled %d>", ch);
 				return false; // unhandled character
 		}
 	}
@@ -184,23 +453,24 @@ void FTubeEliteDisplay::DrawCharAtCursor(uint8_t ch)
 			CursorY = 0; // wrap around
 	}
 
-	if (bLastCharCtrl)
-		g_VDULog.AddLog("\n");
-	g_VDULog.AddLog("%c", ch); // log the character
-	bLastCharCtrl = false;
+	const FTubeEliteDebug& debug = pTubeSys->GetDebug();
+	if (debug.bLogVDUChars)
+	{
+		if (bLastCharCtrl)
+			g_VDULog.AddLog("\n");
+		g_VDULog.AddLog("%c", ch); // log the character
+		bLastCharCtrl = false;
+	}
 }
 
 void FTubeEliteDisplay::SetCursorX(int x) 
 { 
-	g_VDULog.AddLog("\n<cursorX = %d>",x);
-	bLastCharCtrl = true;
 	CursorX = x; 
 }
 
 void FTubeEliteDisplay::SetCursorY(int y) 
 { 
-	CursorY = y; g_VDULog.AddLog("\n<cursorY = %d>", y);
-	bLastCharCtrl = true;
+	CursorY = y; 
 }
 
 void FTubeEliteDisplay::ClearTextScreen(uint8_t clearChar)
@@ -226,16 +496,10 @@ void FTubeEliteDisplay::ClearTextScreenFromRow(uint8_t rowNo, uint8_t clearChar)
 	}
 }
 
-bool FTubeEliteDisplay::AddLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
+bool FTubeEliteDisplay::AddLine(const FLine& newLine)
 {
 	if (NoLines == kMaxLines)
 		NoLines = 0;//hack
-	//return false;
-	FLine newLine;// = LineHeap[NoLines++];
-	newLine.x1 = x1;
-	newLine.y1 = y1;
-	newLine.x2 = x2;
-	newLine.y2 = y2;
 
 	// check if the line already exists in the heap
 	// this is because they were drawn using EOR on the BBC so adding the same line twice is removing it

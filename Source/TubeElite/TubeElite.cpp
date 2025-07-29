@@ -315,9 +315,9 @@ void FTubeElite::ProcessTubeChar(uint8_t charVal)
 	}
 	else
 	{
-		if (ProcessTubeCharCommand(this, charVal) == false)	// no special handler? Pass to VDU
-		{
-			Display.ProcessVDUChar(charVal);
+		if(Display.ProcessVDUChar(charVal) == false)
+		{ 
+			LOGWARNING("Unhandled Tube character: 0x%02X", charVal);
 		}
 	}
 }
@@ -415,16 +415,20 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			Display.ReceivePixelData(controlBlock.pInputBytes);
 			break;
 		case 242:	// Update missile indicators
-			LOGINFO("OSWORD - UPDATE MISSILE INDICATORS");
+			if (Debug.bOSWORDDebug)
+				LOGINFO("OSWORD - UPDATE MISSILE INDICATORS");
 			break;
 		case 243:	// wait for VSync
-			LOGINFO("OSWORD - WAIT FOR VSYNC");
+			if (Debug.bOSWORDDebug)
+				LOGINFO("OSWORD - WAIT FOR VSYNC");
 			break;
 		case 244:	// Draw the ship on the 3D scanner
-			LOGINFO("OSWORD - DRAW SHIP ON 3D SCANNER X");
+			if (Debug.bOSWORDDebug)
+				LOGINFO("OSWORD - DRAW SHIP ON 3D SCANNER X");
 			break;
 		case 245:
-			LOGINFO("OSWORD - DOT");
+			if (Debug.bOSWORDDebug)
+				LOGINFO("OSWORD - DOT");
 			break;
 		case 246:	// OSWORD 246 - scan for a specific key
 			{
@@ -438,13 +442,16 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			}
 			break;
 		case 247:	// OSWORD 247 - Draw orange sun lines
-			LOGINFO("OSWORD - DRAW ORANGE SUN LINES");
+			if (Debug.bOSWORDDebug)
+				LOGINFO("OSWORD - DRAW ORANGE SUN LINES");
 			break;
 		case 248:	// OSWORD 248 - Draw the ship hangar
-			LOGINFO("OSWORD - DRAW SHIP HANGAR X");
+			if (Debug.bOSWORDDebug)
+				LOGINFO("OSWORD - DRAW SHIP HANGAR X");
 			break;
 		case 249:	// OSWORD 249 - Copy protection
-			LOGINFO("OSWORD - COPY PROTECTION X");
+			if (Debug.bOSWORDDebug)
+				LOGINFO("OSWORD - COPY PROTECTION X");
 			break;
 
 		default:
@@ -525,7 +532,6 @@ bool FTubeElite::NewProjectFromEmulatorFile(const FEmulatorFile& gameSnapshot)
 {
 	return false;
 }
-#if 1
 
 static const uint32_t kMachineStateMagic = 0xFaceCafe;
 
@@ -566,7 +572,6 @@ bool FTubeElite::LoadMachineState(const char* fname)
 	fclose(fp);
 	return bSuccess;
 }
-#endif
 
 bool FTubeElite::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 {

@@ -35,6 +35,7 @@ struct FTubeEliteDebug
 {
 	bool	bDebugTubeComms = false;
 	bool	bOSWORDDebug = false;
+	bool	bLogVDUChars = false;
 };
 
 struct FOSWORDControlBlock
