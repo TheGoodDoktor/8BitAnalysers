@@ -421,8 +421,22 @@
         },
         {
             "Description": "",
+            "EndAddress": 751828992,
+            "StartAddress": 751828992,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 753795072,
             "StartAddress": 753795072,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 754253824,
+            "StartAddress": 754253824,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -953,6 +967,13 @@
         },
         {
             "Description": "",
+            "EndAddress": 1019215872,
+            "StartAddress": 1019215872,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 1025703936,
             "StartAddress": 1025703936,
             "bManualEdit": false,
@@ -1100,6 +1121,13 @@
         },
         {
             "Description": "",
+            "EndAddress": 1122828288,
+            "StartAddress": 1122828288,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 1126301696,
             "StartAddress": 1126301696,
             "bManualEdit": false,
@@ -1116,6 +1144,13 @@
             "Description": "Reset the sun line heap at LSO by zero-filling it and setting the first byte to &FF.",
             "EndAddress": 1131806720,
             "StartAddress": 1131806720,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1132789760,
+            "StartAddress": 1132789760,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -1898,6 +1933,27 @@
         },
         {
             "Description": "",
+            "EndAddress": 1831927808,
+            "StartAddress": 1831927808,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1833893888,
+            "StartAddress": 1833893888,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1834090496,
+            "StartAddress": 1834090496,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 1835073536,
             "StartAddress": 1835073536,
             "bManualEdit": false,
@@ -1991,6 +2047,13 @@
             "Description": "",
             "EndAddress": 1904934912,
             "StartAddress": 1904934912,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1908867072,
+            "StartAddress": 1908867072,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -6637,6 +6700,11 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 566,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
                     "Address": 568,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -6933,6 +7001,100 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 704,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 706,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 707,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 708,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 710,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 711,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 713,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 714,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 717,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 718,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 720,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 722,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 724,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 726,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 728,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 730,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 732,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 734,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 736,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 739,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 742,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 745,
                     "ByteSize": 2
                 },
@@ -6957,6 +7119,124 @@
                 },
                 {
                     "Address": 758,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 778,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 780,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 783,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 785,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 788,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 802,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 804,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 807,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 810,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 811,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 814,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 845,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 848,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 851,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 853,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 854,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 857,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 859,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 860,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 863,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 866,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 869,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 872,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 873,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 875,
                     "ByteSize": 1
                 },
                 {
@@ -7221,6 +7501,11 @@
                     "Name": "label_169A"
                 },
                 {
+                    "Address": 695,
+                    "LabelType": 2,
+                    "Name": "label_16B7"
+                },
+                {
                     "Address": 704,
                     "LabelType": 2,
                     "Name": "label_16C0"
@@ -7232,10 +7517,9 @@
                     "Name": "function_1722"
                 },
                 {
-                    "Address": 805,
-                    "Global": true,
-                    "LabelType": 1,
-                    "Name": "function_1725"
+                    "Address": 854,
+                    "LabelType": 2,
+                    "Name": "label_1756"
                 },
                 {
                     "Address": 876,
@@ -7554,6 +7838,16 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 37,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 39,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
                     "Address": 42,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -7605,6 +7899,132 @@
                     "Address": 64,
                     "ByteSize": 3,
                     "OperandType": 2
+                },
+                {
+                    "Address": 77,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 79,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 81,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 83,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 86,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 88,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 91,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 93,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 96,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 97,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 98,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 100,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 102,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 104,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 106,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 107,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 109,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 112,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 114,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 116,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 118,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 120,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 122,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 124,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 126,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 129,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 131,
+                    "ByteSize": 1
                 },
                 {
                     "Address": 132,
@@ -8497,6 +8917,11 @@
                     "Address": 107,
                     "LabelType": 2,
                     "Name": "label_1C6B"
+                },
+                {
+                    "Address": 129,
+                    "LabelType": 2,
+                    "Name": "label_1C81"
                 },
                 {
                     "Address": 132,
@@ -16424,6 +16849,12 @@
                     "Name": "function_2BBB"
                 },
                 {
+                    "Address": 976,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_2BD0"
+                },
+                {
                     "Address": 993,
                     "Global": true,
                     "LabelType": 1,
@@ -16940,6 +17371,65 @@
                 },
                 {
                     "Address": 205,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 208,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 210,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 213,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 215,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 218,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 220,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 223,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 225,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 228,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 230,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 233,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 235,
                     "ByteSize": 3,
                     "OperandType": 2
                 },
@@ -18951,10 +19441,22 @@
                     "Name": "function_2CC7"
                 },
                 {
+                    "Address": 208,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_2CD0"
+                },
+                {
                     "Address": 238,
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_2CEE"
+                },
+                {
+                    "Address": 245,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_2CF5"
                 },
                 {
                     "Address": 250,
@@ -20669,6 +21171,53 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 558,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 561,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 564,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 622,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 624,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 626,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 628,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 629,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 631,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 633,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 636,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -21632,6 +22181,16 @@
                     "Address": 558,
                     "LabelType": 2,
                     "Name": "label_322E"
+                },
+                {
+                    "Address": 622,
+                    "LabelType": 2,
+                    "Name": "label_326E"
+                },
+                {
+                    "Address": 624,
+                    "LabelType": 2,
+                    "Name": "label_3270"
                 },
                 {
                     "Address": 636,
@@ -23031,6 +23590,10 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 569,
+                    "ByteSize": 2
+                },
+                {
                     "Address": 571,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -23214,6 +23777,54 @@
                 },
                 {
                     "Address": 646,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 649,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 651,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 653,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 655,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 657,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 659,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 661,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 664,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 667,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 669,
                     "ByteSize": 3,
                     "OperandType": 2
                 },
@@ -24148,6 +24759,11 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_36A0"
+                },
+                {
+                    "Address": 713,
+                    "LabelType": 2,
+                    "Name": "label_36C9"
                 },
                 {
                     "Address": 742,
@@ -27126,6 +27742,223 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 192,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 195,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 197,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 199,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 202,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 203,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 205,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 206,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 209,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 212,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 215,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 218,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 221,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 224,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 227,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 230,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 233,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 235,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 237,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 240,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 242,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 245,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 248,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 251,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 252,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 255,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 257,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 259,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 260,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 262,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 265,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 266,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 268,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 270,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 272,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 274,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 276,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 279,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 280,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 281,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 283,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 284,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 285,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 286,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 288,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 290,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 291,
                     "ByteSize": 3,
                     "Flags": 8,
@@ -27158,6 +27991,136 @@
                     "Address": 305,
                     "ByteSize": 3,
                     "OperandType": 2
+                },
+                {
+                    "Address": 356,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 359,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 360,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 363,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 367,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 370,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 372,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 374,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 377,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 380,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 383,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 386,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 388,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 391,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 393,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 395,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 398,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 401,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 404,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 406,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 408,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 410,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 413,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 415,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 417,
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 419,
@@ -28515,15 +29478,71 @@
                     "Name": "label_3CBA"
                 },
                 {
+                    "Address": 192,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_3CC0"
+                },
+                {
+                    "Address": 197,
+                    "LabelType": 2,
+                    "Name": "label_3CC5"
+                },
+                {
+                    "Address": 237,
+                    "LabelType": 2,
+                    "Name": "label_3CED"
+                },
+                {
+                    "Address": 265,
+                    "LabelType": 2,
+                    "Name": "label_3D09"
+                },
+                {
+                    "Address": 268,
+                    "LabelType": 2,
+                    "Name": "label_3D0C"
+                },
+                {
+                    "Address": 272,
+                    "LabelType": 2,
+                    "Name": "label_3D10"
+                },
+                {
                     "Address": 291,
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_3D23"
                 },
                 {
+                    "Address": 308,
+                    "LabelType": 2,
+                    "Name": "label_3D34"
+                },
+                {
+                    "Address": 315,
+                    "LabelType": 2,
+                    "Name": "label_3D3B"
+                },
+                {
+                    "Address": 355,
+                    "LabelType": 2,
+                    "Name": "label_3D63"
+                },
+                {
                     "Address": 356,
                     "LabelType": 2,
                     "Name": "label_3D64"
+                },
+                {
+                    "Address": 367,
+                    "LabelType": 2,
+                    "Name": "label_3D6F"
+                },
+                {
+                    "Address": 380,
+                    "LabelType": 2,
+                    "Name": "label_3D7C"
                 },
                 {
                     "Address": 419,
@@ -28534,6 +29553,11 @@
                     "Address": 466,
                     "LabelType": 2,
                     "Name": "label_3DD2"
+                },
+                {
+                    "Address": 473,
+                    "LabelType": 2,
+                    "Name": "label_3DD9"
                 },
                 {
                     "Address": 481,
@@ -30458,6 +31482,116 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 749,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 752,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 755,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 757,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 759,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 761,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 763,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 764,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 766,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 768,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 771,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 773,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 775,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 777,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 779,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 781,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 783,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 785,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 787,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 789,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 791,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 793,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 795,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
                     "Address": 798,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -30686,6 +31820,25 @@
                 {
                     "Address": 900,
                     "ByteSize": 1
+                },
+                {
+                    "Address": 901,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 903,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 906,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 907,
+                    "ByteSize": 3,
+                    "OperandType": 2
                 },
                 {
                     "Address": 910,
@@ -31306,6 +32459,12 @@
                     "Name": "function_42DA"
                 },
                 {
+                    "Address": 749,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_42ED"
+                },
+                {
                     "Address": 798,
                     "LabelType": 2,
                     "Name": "label_431E"
@@ -31357,6 +32516,12 @@
                     "Address": 890,
                     "LabelType": 2,
                     "Name": "SAL6"
+                },
+                {
+                    "Address": 901,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_4385"
                 },
                 {
                     "Address": 910,
@@ -34461,6 +35626,135 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 154,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 156,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 158,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 160,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 162,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 165,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 174,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 176,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 177,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 179,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 181,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 183,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 185,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 187,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 189,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 191,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 193,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 196,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 201,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 202,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 204,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 205,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 207,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 209,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 211,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 213,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
                     "Address": 216,
                     "ByteSize": 1
                 },
@@ -34903,6 +36197,95 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 404,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 407,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 437,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 439,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 440,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 442,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 444,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 446,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 448,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 450,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 456,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 458,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 459,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 461,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 463,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 465,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 467,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 469,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 470,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 486,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -35052,6 +36435,85 @@
                 },
                 {
                     "Address": 543,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 544,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 547,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 549,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 551,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 553,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 555,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 558,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 560,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 562,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 564,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 566,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 567,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 569,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 571,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 573,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 574,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 576,
                     "ByteSize": 1
                 },
                 {
@@ -36123,6 +37585,16 @@
                     "Name": "label_487F"
                 },
                 {
+                    "Address": 135,
+                    "LabelType": 2,
+                    "Name": "label_4887"
+                },
+                {
+                    "Address": 151,
+                    "LabelType": 2,
+                    "Name": "label_4897"
+                },
+                {
                     "Address": 154,
                     "LabelType": 2,
                     "Name": "label_489A"
@@ -36131,6 +37603,16 @@
                     "Address": 174,
                     "LabelType": 2,
                     "Name": "label_48AE"
+                },
+                {
+                    "Address": 193,
+                    "LabelType": 2,
+                    "Name": "label_48C1"
+                },
+                {
+                    "Address": 201,
+                    "LabelType": 2,
+                    "Name": "label_48C9"
                 },
                 {
                     "Address": 204,
@@ -36224,6 +37706,21 @@
                     "Name": "function_49B5"
                 },
                 {
+                    "Address": 456,
+                    "LabelType": 2,
+                    "Name": "label_49C8"
+                },
+                {
+                    "Address": 471,
+                    "LabelType": 2,
+                    "Name": "label_49D7"
+                },
+                {
+                    "Address": 479,
+                    "LabelType": 2,
+                    "Name": "label_49DF"
+                },
+                {
                     "Address": 486,
                     "Global": true,
                     "LabelType": 1,
@@ -36244,6 +37741,11 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_4A20"
+                },
+                {
+                    "Address": 574,
+                    "LabelType": 2,
+                    "Name": "label_4A3E"
                 },
                 {
                     "Address": 577,
@@ -38970,6 +40472,303 @@
         {
             "CodeInfo": [
                 {
+                    "Address": 4,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 7,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 10,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 12,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 14,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 16,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 19,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 22,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 25,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 28,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 30,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 33,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 36,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 38,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 41,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 43,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 46,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 49,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 50,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 51,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 53,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 55,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 57,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 59,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 61,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 63,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 65,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 66,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 68,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 70,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 72,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 74,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 76,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 77,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 79,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 81,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 84,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 87,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 88,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 90,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 92,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 94,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 97,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 99,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 101,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 102,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 105,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 108,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 110,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 112,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 114,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 117,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 119,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 122,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 124,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 127,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 130,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 132,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 134,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 137,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 142,
                     "ByteSize": 2,
                     "Flags": 32
@@ -39863,6 +41662,21 @@
                     "Name": "label_5004"
                 },
                 {
+                    "Address": 46,
+                    "LabelType": 2,
+                    "Name": "label_502E"
+                },
+                {
+                    "Address": 102,
+                    "LabelType": 2,
+                    "Name": "label_5066"
+                },
+                {
+                    "Address": 124,
+                    "LabelType": 2,
+                    "Name": "label_507C"
+                },
+                {
                     "Address": 140,
                     "Global": true,
                     "LabelType": 0,
@@ -40448,6 +42262,40 @@
                 {
                     "Address": 275,
                     "ByteSize": 1
+                },
+                {
+                    "Address": 276,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 279,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 282,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 285,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 288,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 359,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 361,
+                    "ByteSize": 2,
+                    "OperandType": 2
                 },
                 {
                     "Address": 363,
@@ -41125,6 +42973,11 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 891,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
                     "Address": 894,
                     "ByteSize": 1
                 },
@@ -41142,8 +42995,186 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 931,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 933,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 935,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 938,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 941,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 943,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 946,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 948,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 949,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 952,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 954,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 955,
                     "ByteSize": 1
+                },
+                {
+                    "Address": 967,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 968,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 970,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 973,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 974,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 976,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 978,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 979,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 981,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 984,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 986,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 987,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 990,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 991,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 994,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 996,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 999,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1002,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 1004,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1007,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1010,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 1011,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 1013,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 1017,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1020,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 1023,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
                 }
             ],
             "DataInfo": [
@@ -41215,6 +43246,11 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_5554"
+                },
+                {
+                    "Address": 359,
+                    "LabelType": 2,
+                    "Name": "label_5567"
                 },
                 {
                     "Address": 363,
@@ -41396,21 +43432,116 @@
                     "Name": "function_57A3"
                 },
                 {
+                    "Address": 933,
+                    "LabelType": 2,
+                    "Name": "label_57A5"
+                },
+                {
+                    "Address": 943,
+                    "LabelType": 2,
+                    "Name": "label_57AF"
+                },
+                {
                     "Address": 955,
                     "LabelType": 2,
                     "Name": "label_57BB"
+                },
+                {
+                    "Address": 956,
+                    "LabelType": 2,
+                    "Name": "label_57BC"
                 },
                 {
                     "Address": 967,
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_57C7"
+                },
+                {
+                    "Address": 1017,
+                    "LabelType": 2,
+                    "Name": "label_57F9"
                 }
             ],
             "PageId": 21
         },
         {
             "CodeInfo": [
+                {
+                    "Address": 2,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 4,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 5,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 8,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 9,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 11,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 14,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 17,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 20,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 23,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 26,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 33,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 36,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 38,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 40,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
                 {
                     "Address": 208,
                     "ByteSize": 1
@@ -42083,6 +44214,16 @@
                 }
             ],
             "DataInfo": [
+                {
+                    "Address": 0,
+                    "DataType": 11,
+                    "InstructionAddressRef": 1476329472
+                },
+                {
+                    "Address": 1,
+                    "DataType": 11,
+                    "InstructionAddressRef": 1476329472
+                },
                 {
                     "Address": 487,
                     "DisplayType": 11
@@ -45878,6 +48019,24 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 73,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 75,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 77,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 79,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
                     "Address": 81,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -48858,6 +51017,10 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 226,
+                    "ByteSize": 2
+                },
+                {
                     "Address": 228,
                     "ByteSize": 2
                 },
@@ -49318,6 +51481,10 @@
                     "Address": 423,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 425,
+                    "ByteSize": 1
                 },
                 {
                     "Address": 426,
@@ -50943,6 +53110,118 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 5,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 7,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 9,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 11,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 13,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 15,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 17,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 19,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 21,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 23,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 25,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 27,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 29,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 31,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 33,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 35,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 37,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 39,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 41,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 43,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 45,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 47,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 49,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 51,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
                     "Address": 53,
                     "ByteSize": 1
                 },
@@ -51481,6 +53760,114 @@
                 {
                     "Address": 304,
                     "ByteSize": 1
+                },
+                {
+                    "Address": 305,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 307,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 310,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 312,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 314,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 316,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 318,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 320,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 321,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 323,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 326,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 328,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 330,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 332,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 335,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 338,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 340,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 342,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 344,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 346,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 348,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 350,
+                    "ByteSize": 3,
+                    "OperandType": 2
                 },
                 {
                     "Address": 353,
@@ -52995,6 +55382,24 @@
                     "Address": 292,
                     "LabelType": 2,
                     "Name": "label_6D24"
+                },
+                {
+                    "Address": 305,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_6D31"
+                },
+                {
+                    "Address": 335,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_6D4F"
+                },
+                {
+                    "Address": 338,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_6D52"
                 },
                 {
                     "Address": 353,
