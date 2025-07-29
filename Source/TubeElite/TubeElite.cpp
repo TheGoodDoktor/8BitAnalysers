@@ -816,6 +816,45 @@ static std::map<ImGuiKey, FKeyVal> g_BBCKeysLUT =
 	{ImGuiKey_GraveAccent,	{'`', '~'}},
 };
 
+// Advanced user guide page 142
+static std::map<ImGuiKey, uint8_t> g_InternalKeyLUT =
+{
+	{ImGuiKey_LeftShift, 0x00 },	{ImGuiKey_RightShift, 0x00 }, // Shift key
+	{ImGuiKey_LeftCtrl, 0x01 },	{ImGuiKey_RightCtrl, 0x01 }, // Ctrl key
+	{ImGuiKey_Q, 0x10},
+	{ImGuiKey_3, 0x11},
+	{ImGuiKey_4, 0x12},
+	{ImGuiKey_5, 0x13},
+	{ImGuiKey_F4, 0x14},
+	{ImGuiKey_8, 0x15},
+	{ImGuiKey_F7, 0x16},
+	{ImGuiKey_Minus, 0x17},
+	{ImGuiKey_LeftArrow, 0x19},
+	{ImGuiKey_F10, 0x20},
+	{ImGuiKey_W, 0x21},
+	{ImGuiKey_E, 0x22},
+	{ImGuiKey_T, 0x23},
+
+	{ImGuiKey_N, 0x55},
+	{ImGuiKey_L, 0x56},
+};
+
+uint8_t IntenalBBCKeyFromImGuiKey(ImGuiKey key)
+{
+	uint8_t bbcKey = 0;
+	// Check if the key is in the internal key LUT
+	auto keyIt = g_InternalKeyLUT.find(key);
+	if (keyIt != g_InternalKeyLUT.end())
+	{
+		bbcKey = keyIt->second;
+	}
+	else
+	{
+		bbcKey = 0xff;
+	}
+	return bbcKey;
+}
+
 uint8_t BBCKeyFromImGuiKey(ImGuiKey key)
 {
 	uint8_t bbcKey = 0;

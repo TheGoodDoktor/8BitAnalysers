@@ -205,3 +205,4 @@ private:
 
 
 uint8_t BBCKeyFromImGuiKey(ImGuiKey key);
+uint8_t IntenalBBCKeyFromImGuiKey(ImGuiKey key);

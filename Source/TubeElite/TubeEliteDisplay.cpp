@@ -89,7 +89,6 @@ bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
 				ProcessingCommand = 0; // command completed
 		}
 		return true;
-		break;
 
 	case kEliteVDUCode_ShowEnergyBombEffect: // Show energy bomb effect
 		if (debug.bLogVDUChars)
@@ -175,7 +174,7 @@ bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
 			bLastCharCtrl = true;
 			g_VDULog.AddLog("<toggle dashboard bulb %d>", cmdByte);
 		}
-		break;
+		return true;
 
 	case kEliteVDUCode_SetDiscCatalogueFlag:
 		ProcessingCommand = 0; // command completed
@@ -575,7 +574,7 @@ bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 
 	// 	*Byte #2: If a non - primary flight control key is
 	// 		being pressed, its internal key number is put here
-	pBuffer[2] = LastKeyCode; // no non-primary flight control key pressed
+	pBuffer[2] = LastInternalKeyCode; // no non-primary flight control key pressed
 
 	// * Byte #3: "?" is being pressed(0 = no, &FF = yes)
 	pBuffer[3] = ImGui::IsKeyPressed(ImGuiKey_Slash) ? 0xff : 0xff; // "?" key pressed ?
@@ -617,22 +616,29 @@ bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 
 void FTubeEliteDisplay::Tick(void)
 {
-	LastKeyCode = 0; // reset last key code
+	LastInternalKeyCode = 0; // reset last key code
 
 	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
 	{
 		if (ImGui::IsKeyPressed((ImGuiKey)key, false))
 		{
-			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
-			if (bbcKey != 0 && bWindowFocused)
+			if (bWindowFocused)
 			{
-				//bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
-				BBCKeyDown[bbcKey] = true; // mark the key as pressed
-				//TODO: send to key buffer
-				LastKeyCode = bbcKey; // store the last key code pressed
-				pTubeSys->AddInputByte(bbcKey);
+				const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
+				if (bbcKey != 0 && bWindowFocused)
+				{
+					//bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
+					BBCKeyDown[bbcKey] = true; // mark the key as pressed
+					//TODO: send to key buffer
+					pTubeSys->AddInputByte(bbcKey);
 
+				}
+
+				const uint8_t internalKey = IntenalBBCKeyFromImGuiKey((ImGuiKey)key);
+				if(internalKey != 0xff)
+					LastInternalKeyCode = internalKey; // store the last key code pressed
 			}
+			
 		}
 		else if (ImGui::IsKeyReleased((ImGuiKey)key))
 		{
