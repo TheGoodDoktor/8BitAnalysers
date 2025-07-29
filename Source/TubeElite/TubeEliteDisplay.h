@@ -15,6 +15,7 @@ struct FLine
 		uint32_t val;	// packed x1,y1,x2,y2
 		uint8_t bytes[4] = { 0, 0, 0, 0 };
 	};
+	uint32_t colour = 0;	// line colour
 };
 
 struct FPixel
@@ -29,6 +30,7 @@ struct FPixel
 		uint32_t val;	// packed dist,x,y
 		uint8_t bytes[4] = { 0, 0, 0, 0 };
 	};
+	uint32_t colour = 0;	// line colour
 };
 
 // https://elite.bbcelite.com/6502sp/i_o_processor/workspace/i_o_variables.html#params
@@ -122,7 +124,6 @@ private:
 	bool	bLastCharCtrl = false;	// last char was a control char
 
 	// Input handling
-	//uint8_t		LastInternalKeyCode = 0;	// last internal key code processed
 	bool	BBCKeyDown[256] = { false };	// BBC key down state
 	bool	bWindowFocused = false;	// true if the display window is focused
 };

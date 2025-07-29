@@ -10,6 +10,39 @@
 
 ImGuiLog g_VDULog;
 
+
+uint32_t g_Palette[4][4] =
+{
+	// palette 0 = Yellow, red, cyan palette (space view)
+	{
+		IM_COL32(0, 0, 0, 255),	// black
+		IM_COL32(255, 255, 0, 255),	// yellow
+		IM_COL32(255, 0, 0, 255),	// red
+		IM_COL32(0, 255, 255, 255),	// cyan
+	},
+	// palette 1 = Yellow, red, white palette (charts)
+	{
+		IM_COL32(0, 0, 0, 255),			// black
+		IM_COL32(255, 255, 0, 255),		// yellow
+		IM_COL32(255, 0, 0, 255),		// red
+		IM_COL32(255, 255, 255, 255),	// white
+	},
+	// palette 2 = Yellow, white, cyan palette (title screen)
+	{
+		IM_COL32(0, 0, 0, 255),			// black
+		IM_COL32(255, 255, 0, 255),		// yellow
+		IM_COL32(255, 255, 255, 255),	// white
+		IM_COL32(0, 255, 255, 255),		// cyan
+	},
+	// palette 3 = Yellow, magenta, white palette (trading)
+	{
+		IM_COL32(0, 0, 0, 255),			// black
+		IM_COL32(255, 255, 0, 255),		// yellow
+		IM_COL32(255, 0, 255, 255),		// magenta
+		IM_COL32(255, 255, 255, 255),	// white
+	}
+};
+
 bool FTubeEliteDisplay::Init(FTubeElite* pSys)
 {
 	pTubeSys = pSys;
@@ -187,7 +220,7 @@ bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
 		return true;
 
 	case kEliteVDUCode_SetCurrentColour:
-		CurrentColour = cmdByte; // set the current colour
+		CurrentColour = ((cmdByte >> 3) & 2)  | (cmdByte & 1); // set the current colour
 		ProcessingCommand = 0; // command completed
 		if (debug.bLogVDUChars)
 		{
@@ -196,8 +229,9 @@ bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
 			g_VDULog.AddLog("<set current colour %d>", cmdByte);
 		}
 		return true;
+	// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/setvdu19.html
 	case kEliteVDUCode_ChangeColourPalette:
-		ColourPalette = cmdByte; // change the colour palette
+		ColourPalette = cmdByte >> 4; // change the colour palette
 		ProcessingCommand = 0; // command completed
 		if (debug.bLogVDUChars)
 		{
@@ -313,6 +347,7 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 				ProcessingCommand = kEliteVDUCode_DrawLines;
 				NumLineBytesToRead = -1; // to indicate we are waiting for the amount
 				NoCommandBytesRead = 0; // reset the number of bytes read
+				NewLine.colour = g_Palette[ColourPalette][CurrentColour];	// get from palette & line colour
 				return true; // command processed
 
 			// single param commands can go under the same case
@@ -680,9 +715,9 @@ void FTubeEliteDisplay::DrawUI(void)
 	for (int i = 0; i < NoLines; i++)
 	{
 		const FLine& line = LineHeap[i];
-		const ImColor lineColor = ImColor(255, 255, 255, 255); 
+		//const ImColor lineColor = ImColor(255, 255, 255, 255); 
 		drawList->AddLine(ImVec2(startPos.x + (line.x1 * scale), startPos.y + (line.y1 * scale)),
-			ImVec2(startPos.x + (line.x2 * scale), startPos.y + (line.y2 * scale)), lineColor);
+			ImVec2(startPos.x + (line.x2 * scale), startPos.y + (line.y2 * scale)), line.colour);
 	}
 
 	// Draw Pixel Heap
