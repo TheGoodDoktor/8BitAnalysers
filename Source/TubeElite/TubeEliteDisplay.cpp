@@ -574,7 +574,7 @@ bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 
 	// 	*Byte #2: If a non - primary flight control key is
 	// 		being pressed, its internal key number is put here
-	pBuffer[2] = LastInternalKeyCode; // no non-primary flight control key pressed
+	pBuffer[2] = GetPressedInternalKeyCode(); // no non-primary flight control key pressed
 
 	// * Byte #3: "?" is being pressed(0 = no, &FF = yes)
 	pBuffer[3] = ImGui::IsKeyPressed(ImGuiKey_Slash) ? 0xff : 0xff; // "?" key pressed ?
@@ -616,8 +616,6 @@ bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 
 void FTubeEliteDisplay::Tick(void)
 {
-	LastInternalKeyCode = 0; // reset last key code
-
 	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
 	{
 		if (ImGui::IsKeyPressed((ImGuiKey)key, false))
@@ -633,10 +631,6 @@ void FTubeEliteDisplay::Tick(void)
 					pTubeSys->AddInputByte(bbcKey);
 
 				}
-
-				const uint8_t internalKey = IntenalBBCKeyFromImGuiKey((ImGuiKey)key);
-				if(internalKey != 0xff)
-					LastInternalKeyCode = internalKey; // store the last key code pressed
 			}
 			
 		}

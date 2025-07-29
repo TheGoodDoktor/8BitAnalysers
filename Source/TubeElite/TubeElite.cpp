@@ -304,21 +304,9 @@ bool FTubeElite::HandleIncomingByte(ETubeRegister reg, uint8_t val)
 
 void FTubeElite::ProcessTubeChar(uint8_t charVal)
 {
-	if (pCharHandler != nullptr)
-	{
-		if(pCharHandler->ReceiveParamByte(charVal))
-		{
-			pCharHandler->Execute();
-			delete pCharHandler;
-			pCharHandler = nullptr;
-		}
-	}
-	else
-	{
-		if(Display.ProcessVDUChar(charVal) == false)
-		{ 
-			LOGWARNING("Unhandled Tube character: 0x%02X", charVal);
-		}
+	if(Display.ProcessVDUChar(charVal) == false)
+	{ 
+		LOGWARNING("Unhandled Tube character: 0x%02X", charVal);
 	}
 }
 
@@ -817,42 +805,93 @@ static std::map<ImGuiKey, FKeyVal> g_BBCKeysLUT =
 };
 
 // Advanced user guide page 142
-static std::map<ImGuiKey, uint8_t> g_InternalKeyLUT =
+// Also https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/keyboard.html
+static std::vector<std::pair<ImGuiKey, uint8_t>> g_InternalKeyLUT =
 {
-	{ImGuiKey_LeftShift, 0x00 },	{ImGuiKey_RightShift, 0x00 }, // Shift key
-	{ImGuiKey_LeftCtrl, 0x01 },	{ImGuiKey_RightCtrl, 0x01 }, // Ctrl key
-	{ImGuiKey_Q, 0x10},
-	{ImGuiKey_3, 0x11},
-	{ImGuiKey_4, 0x12},
-	{ImGuiKey_5, 0x13},
-	{ImGuiKey_F4, 0x14},
-	{ImGuiKey_8, 0x15},
-	{ImGuiKey_F7, 0x16},
-	{ImGuiKey_Minus, 0x17},
-	{ImGuiKey_LeftArrow, 0x19},
-	{ImGuiKey_F10, 0x20},
-	{ImGuiKey_W, 0x21},
-	{ImGuiKey_E, 0x22},
-	{ImGuiKey_T, 0x23},
-
-	{ImGuiKey_N, 0x55},
-	{ImGuiKey_L, 0x56},
+	{ImGuiKey_Q,			0x10},
+	{ImGuiKey_3,			0x11},
+	{ImGuiKey_4,			0x12},
+	{ImGuiKey_5,			0x13},
+	{ImGuiKey_F4,			0x14},
+	{ImGuiKey_8,			0x15},
+	{ImGuiKey_F7,			0x16},
+	{ImGuiKey_Minus,		0x17},
+	{ImGuiKey_LeftArrow,	0x19},
+	{ImGuiKey_F10,			0x20},
+	{ImGuiKey_W,			0x21},
+	{ImGuiKey_E,			0x22},
+	{ImGuiKey_T,			0x23},
+	{ImGuiKey_7,			0x24},
+	{ImGuiKey_9,			0x25},
+	{ImGuiKey_I,			0x26},
+	{ImGuiKey_0,			0x27},
+	//{ImGuiKey_Underscore,			0x28},
+	{ImGuiKey_DownArrow,			0x29},
+	{ImGuiKey_1,			0x30},
+	{ImGuiKey_2,			0x31},
+	{ImGuiKey_D,			0x32},
+	{ImGuiKey_R,			0x33},
+	{ImGuiKey_6,			0x34},
+	{ImGuiKey_U,			0x35},
+	{ImGuiKey_O,			0x36},
+	{ImGuiKey_U,			0x37},
+	{ImGuiKey_LeftBracket,	0x38},
+	{ImGuiKey_UpArrow,		0x39},
+	{ImGuiKey_CapsLock,		0x40},
+	{ImGuiKey_A,			0x41},
+	{ImGuiKey_X,			0x42},
+	{ImGuiKey_F,			0x43},
+	{ImGuiKey_Y,			0x44},
+	{ImGuiKey_J,			0x45},
+	{ImGuiKey_K,			0x46},
+	//{ImGuiKey_@,			0x47},
+	//{ImGuiKey_Colon,		0x48},
+	{ImGuiKey_Enter,		0x49},
+	//{ImGuiKey_ShiftLock,	0x50},
+	{ImGuiKey_S,			0x51},
+	{ImGuiKey_C,			0x52},
+	{ImGuiKey_G,			0x53},
+	{ImGuiKey_H,			0x54},
+	{ImGuiKey_N,			0x55},
+	{ImGuiKey_L,			0x56},
+	{ImGuiKey_Semicolon,	0x57},
+	{ImGuiKey_RightBracket,	0x58},
+	{ImGuiKey_Delete,		0x59},
+	{ImGuiKey_Tab,			0x60},
+	{ImGuiKey_Z,			0x61},
+	{ImGuiKey_Space,		0x62},
+	{ImGuiKey_V,			0x63},
+	{ImGuiKey_B,			0x64},
+	{ImGuiKey_M,			0x65},
+	{ImGuiKey_Comma,		0x66},
+	{ImGuiKey_Period,		0x67},
+	{ImGuiKey_Backslash,	0x68},
+	//{ImGuiKey_Copy,		0x69},
+	{ImGuiKey_Escape,		0x70},
+	{ImGuiKey_F1,			0x71},
+	{ImGuiKey_F2,			0x72},
+	{ImGuiKey_F3,			0x73},
+	{ImGuiKey_F5,			0x74},
+	{ImGuiKey_F6,			0x75},
+	{ImGuiKey_F8,			0x76},
+	{ImGuiKey_F9,			0x77},
+	//{ImGuiKey_Diagonal,		0x78},
+	{ImGuiKey_RightArrow,	0x79},
 };
 
-uint8_t IntenalBBCKeyFromImGuiKey(ImGuiKey key)
+uint8_t GetPressedInternalKeyCode(void)
 {
-	uint8_t bbcKey = 0;
-	// Check if the key is in the internal key LUT
-	auto keyIt = g_InternalKeyLUT.find(key);
-	if (keyIt != g_InternalKeyLUT.end())
+	uint8_t keyCode = 0xff; // default to no key pressed
+	const ImGuiIO& io = ImGui::GetIO();
+	// Check if any of the internal keys are pressed
+	for (const auto& keyPair : g_InternalKeyLUT)
 	{
-		bbcKey = keyIt->second;
+		if (ImGui::IsKeyPressed(keyPair.first))
+		{
+			return keyPair.second;
+		}
 	}
-	else
-	{
-		bbcKey = 0xff;
-	}
-	return bbcKey;
+	return 0x00;
 }
 
 uint8_t BBCKeyFromImGuiKey(ImGuiKey key)

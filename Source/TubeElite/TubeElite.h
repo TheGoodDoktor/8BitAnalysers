@@ -116,10 +116,6 @@ public:
 	void	ProcessTubeChar(uint8_t charVal);
 	void	ProcessTubeCommandByte(uint8_t cmd);
 
-	void SetTubeCharCommandHandler(FTubeCommand* pHandler)
-	{
-		pCharHandler = pHandler;
-	}
 	void	OSBYTE(uint8_t command, uint8_t paramX, uint8_t paramY, uint8_t* pReturnBytes);
 	uint8_t OSBYTE(uint8_t command, uint8_t param);
 	void	OSWORD(const FOSWORDControlBlock& controlBlock);
@@ -179,7 +175,7 @@ private:
 	FTubeEliteConfig*			pConfig = nullptr;
 	FTubeEliteDebug				Debug;
 
-	FTubeCommand*				pCharHandler = nullptr;
+	//FTubeCommand*				pCharHandler = nullptr;
 	FTubeCommand*				pCurrentCommand = nullptr; // current Tube command being processed
 
 	std::deque<uint8_t>			InputBuffer;    
@@ -205,4 +201,4 @@ private:
 
 
 uint8_t BBCKeyFromImGuiKey(ImGuiKey key);
-uint8_t IntenalBBCKeyFromImGuiKey(ImGuiKey key);
+uint8_t GetPressedInternalKeyCode(void);

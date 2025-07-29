@@ -122,7 +122,7 @@ private:
 	bool	bLastCharCtrl = false;	// last char was a control char
 
 	// Input handling
-	uint8_t		LastInternalKeyCode = 0;	// last internal key code processed
+	//uint8_t		LastInternalKeyCode = 0;	// last internal key code processed
 	bool	BBCKeyDown[256] = { false };	// BBC key down state
 	bool	bWindowFocused = false;	// true if the display window is focused
 };
