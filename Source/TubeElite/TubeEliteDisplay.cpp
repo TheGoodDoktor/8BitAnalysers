@@ -657,9 +657,11 @@ void FTubeEliteDisplay::DrawUI(void)
 	ImGui::Begin("Tube Elite Display");
 	ImGui::Text("Tube Elite Display");
 
+	float scale = ImGui::GetFontSize() / 8.0f; // scale based on font size, assuming 8x8 characters
+
 	// Draw the character map
-	float charWidth = 8;//ImGui::GetFontSize() * 0.6f; // approximate character width
-	float charHeight = 8;//ImGui::GetFontSize(); // approximate character height
+	float charWidth = 8 * scale;//ImGui::GetFontSize() * 0.6f; // approximate character width
+	float charHeight = 8 * scale;//ImGui::GetFontSize(); // approximate character height
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	ImVec2 startPos = ImGui::GetCursorScreenPos();
 	for (int y = 0; y < kCharMapSizeY; y++)
@@ -684,8 +686,9 @@ void FTubeEliteDisplay::DrawUI(void)
 	for (int i = 0; i < NoLines; i++)
 	{
 		const FLine& line = LineHeap[i];
-		drawList->AddLine(ImVec2(startPos.x + line.x1, startPos.y + line.y1),
-			ImVec2(startPos.x + line.x2, startPos.y + line.y2), IM_COL32(255, 255, 255, 255));
+		const ImColor lineColor = ImColor(255, 255, 255, 255); 
+		drawList->AddLine(ImVec2(startPos.x + (line.x1 * scale), startPos.y + (line.y1 * scale)),
+			ImVec2(startPos.x + (line.x2 * scale), startPos.y + (line.y2 * scale)), lineColor);
 	}
 
 	// Draw Pixel Heap
@@ -694,9 +697,10 @@ void FTubeEliteDisplay::DrawUI(void)
 		const FPixel& pixel = PixelHeap[i];
 		const float pixelsize = 2.0f; // size of the pixel circle, TODO: calculate based on dist
 		const ImColor pixelColor = ImColor(255, 255, 255, 255); // TODO: use pixel.dist for color
-		drawList->AddCircleFilled(ImVec2(startPos.x + pixel.x, startPos.y + pixel.y), pixelsize, pixelColor);
+		drawList->AddCircleFilled(ImVec2(startPos.x + (pixel.x * scale), startPos.y + (pixel.y * scale)), pixelsize, pixelColor);
 	}
 
+	// bounding rect
 	drawList->AddRect(startPos, ImVec2(startPos.x + (kCharMapSizeX * charWidth),startPos.y + (kCharMapSizeY * charHeight)), IM_COL32(255, 255, 255, 128));
 	
 	bWindowFocused = ImGui::IsWindowFocused();
