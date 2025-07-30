@@ -612,25 +612,25 @@ bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 	pBuffer[2] = GetPressedInternalKeyCode(); // no non-primary flight control key pressed
 
 	// * Byte #3: "?" is being pressed(0 = no, &FF = yes)
-	pBuffer[3] = ImGui::IsKeyPressed(ImGuiKey_Slash) ? 0xff : 0xff; // "?" key pressed ?
+	pBuffer[3] = ImGui::IsKeyDown(ImGuiKey_Slash) ? 0xff : 0xff; // "?" key pressed ?
 
 	// * Byte #4: Space is being pressed(0 = no, &FF = yes)
-	pBuffer[4] = ImGui::IsKeyPressed(ImGuiKey_Space) ? 0xff : 0x00; // Space key pressed
+	pBuffer[4] = ImGui::IsKeyDown(ImGuiKey_Space) ? 0xff : 0x00; // Space key pressed
 
 	// * Byte #5: "<" is being pressed(0 = no, &FF = yes)
-	pBuffer[5] = ImGui::IsKeyPressed(ImGuiKey_Comma) ? 0xff : 0x00; // "<" key pressed
+	pBuffer[5] = ImGui::IsKeyDown(ImGuiKey_Comma) ? 0xff : 0x00; // "<" key pressed
 
 	// * Byte #6: ">" is being pressed(0 = no, &FF = yes)
-	pBuffer[6] = ImGui::IsKeyPressed(ImGuiKey_Period) ? 0xff : 0x00; // ">" key pressed
+	pBuffer[6] = ImGui::IsKeyDown(ImGuiKey_Period) ? 0xff : 0x00; // ">" key pressed
 
 	// * Byte #7: "X" is being pressed(0 = no, &FF = yes)
-	pBuffer[7] = ImGui::IsKeyPressed(ImGuiKey_X) ? 0xff : 0x00; // "X" key pressed
+	pBuffer[7] = ImGui::IsKeyDown(ImGuiKey_X) ? 0xff : 0x00; // "X" key pressed
 
 	// * Byte #8: "S" is being pressed(0 = no, &FF = yes)
-	pBuffer[8] = ImGui::IsKeyPressed(ImGuiKey_S) ? 0xff : 0x00; // "S" key pressed
+	pBuffer[8] = ImGui::IsKeyDown(ImGuiKey_S) ? 0xff : 0x00; // "S" key pressed
 
 	// * Byte #9: "A" is being pressed(0 = no, &FF = yes)
-	pBuffer[9] = ImGui::IsKeyPressed(ImGuiKey_A) ? 0xff : 0x00; // "A" key pressed
+	pBuffer[9] = ImGui::IsKeyDown(ImGuiKey_A) ? 0xff : 0x00; // "A" key pressed
 
 	// * Byte #10: Joystick X value(high byte)
 	pBuffer[10] = 0; // Joystick X value not pressed, set to 0
@@ -653,7 +653,7 @@ void FTubeEliteDisplay::Tick(void)
 {
 	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
 	{
-		if (ImGui::IsKeyPressed((ImGuiKey)key, false))
+		if (ImGui::IsKeyPressed((ImGuiKey)key))
 		{
 			if (bWindowFocused)
 			{
@@ -661,7 +661,7 @@ void FTubeEliteDisplay::Tick(void)
 				if (bbcKey != 0 && bWindowFocused)
 				{
 					//bbc_key_down(&pBBCEmu->GetBBC(), bbcKey);
-					BBCKeyDown[bbcKey] = true; // mark the key as pressed
+					//BBCKeyDown[bbcKey] = true; // mark the key as pressed
 					//TODO: send to key buffer
 					pTubeSys->AddInputByte(bbcKey);
 
@@ -674,7 +674,7 @@ void FTubeEliteDisplay::Tick(void)
 			const int bbcKey = BBCKeyFromImGuiKey((ImGuiKey)key);
 			if (bbcKey != 0)
 			{
-				BBCKeyDown[bbcKey] = false; // mark the key as released
+				//BBCKeyDown[bbcKey] = false; // mark the key as released
 				//bbc_key_up(&pBBCEmu->GetBBC(), bbcKey);
 			}
 		}

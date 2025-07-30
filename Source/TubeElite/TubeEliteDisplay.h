@@ -81,10 +81,10 @@ public:
 	void ReceivePixelData(const uint8_t* pPixelData);
 
 	bool UpdateKeyboardBuffer(uint8_t* pBuffer);
-	bool IsKeyDown(uint8_t key)
-	{
-		return BBCKeyDown[key];
-	}
+	//bool IsKeyDown(uint8_t key)
+	//{
+	//	return BBCKeyDown[key];
+	//}
 	void Tick(void);
 	void DrawUI(void);
 private:
@@ -124,6 +124,6 @@ private:
 	bool	bLastCharCtrl = false;	// last char was a control char
 
 	// Input handling
-	bool	BBCKeyDown[256] = { false };	// BBC key down state
+	//bool	BBCKeyDown[256] = { false };	// BBC key down state
 	bool	bWindowFocused = false;	// true if the display window is focused
 };

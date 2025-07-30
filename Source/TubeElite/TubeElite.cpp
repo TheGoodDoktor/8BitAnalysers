@@ -424,7 +424,7 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 					LOGINFO("OSWORD - SCAN KEY");
 				const uint8_t keyCode = controlBlock.pInputBytes[2];
 				// TODO: check if key pressed and set high bit if it is
-				bool bPressed = Display.IsKeyDown(keyCode);
+				bool bPressed = IsInternalKeyDown(keyCode);
 				if(bPressed)
 					controlBlock.pOutputBytes[2] |= 1<<7;
 			}
@@ -879,6 +879,18 @@ static std::vector<std::pair<ImGuiKey, uint8_t>> g_InternalKeyLUT =
 	{ImGuiKey_RightArrow,	0x79},
 };
 
+bool IsInternalKeyDown(uint8_t internalKeyCode)
+{
+	for (const auto& keyPair : g_InternalKeyLUT)
+	{
+		if (keyPair.second == internalKeyCode)
+		{
+			return ImGui::IsKeyDown(keyPair.first);
+		}
+	}
+	return false;
+}
+
 uint8_t GetPressedInternalKeyCode(void)
 {
 	uint8_t keyCode = 0xff; // default to no key pressed
@@ -886,7 +898,7 @@ uint8_t GetPressedInternalKeyCode(void)
 	// Check if any of the internal keys are pressed
 	for (const auto& keyPair : g_InternalKeyLUT)
 	{
-		if (ImGui::IsKeyPressed(keyPair.first))
+		if (ImGui::IsKeyDown(keyPair.first))
 		{
 			return keyPair.second;
 		}

@@ -202,3 +202,4 @@ private:
 
 uint8_t BBCKeyFromImGuiKey(ImGuiKey key);
 uint8_t GetPressedInternalKeyCode(void);
+bool IsInternalKeyDown(uint8_t internalKeyCode);
