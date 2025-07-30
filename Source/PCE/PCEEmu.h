@@ -5,6 +5,7 @@
 class GeargrafxCore;
 struct FPCEConfig;
 struct FPCEGameConfig;
+class FPCECPUEmulator6502;
 
 struct FPCELaunchConfig : public FEmulatorLaunchConfig
 {
@@ -51,7 +52,7 @@ public:
 
 	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	void*		GetCPUEmulator(void) const override;
+	ICPUEmulator*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
@@ -67,4 +68,5 @@ protected:
 	GeargrafxCore* pCore = nullptr;
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
+	FPCECPUEmulator6502* pPCE6502CPU;
 };

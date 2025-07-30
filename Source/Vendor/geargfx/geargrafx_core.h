@@ -50,12 +50,15 @@ public:
         bool stop_on_irq;
     };
 
-    typedef void (*GG_Debug_Callback)(void);
+    typedef void (*GG_Debug_Callback)();
+    // sam. added function typedef for an "on instruction executed" callback.
+    typedef bool (*GG_Instruction_Executed_Callback)(void* context);
 
 public:
     GeargrafxCore();
     ~GeargrafxCore();
-    void Init(GG_Pixel_Format pixel_format = GG_PIXEL_RGBA8888);
+    // sam. added bool* to control emulation paused state.
+    void Init(bool* bCorePausedPtr, GG_Pixel_Format pixel_format = GG_PIXEL_RGBA8888);
     bool RunToVBlank(u8* frame_buffer, s16* sample_buffer, int* sample_count, GG_Debug_Run* debug = NULL);
     bool LoadMedia(const char* file_path);
     bool LoadHuCardFromBuffer(const u8* buffer, int size, const char* path = NULL);
@@ -63,8 +66,9 @@ public:
     void ResetMedia(bool preserve_ram);
     void KeyPressed(GG_Controllers controller, GG_Keys key);
     void KeyReleased(GG_Controllers controller, GG_Keys key);
-    void Pause(bool paused);
-    bool IsPaused();
+    // sam. removed these. 8BA now controls the emulation paused state 
+    /*void Pause(bool paused);
+    bool IsPaused();*/
     void SaveRam();
     void SaveRam(const char* path, bool full_path = false);
     void LoadRam();
@@ -93,6 +97,8 @@ public:
     Input* GetInput();
     u64 GetMasterClockCycles();
     void SetDebugCallback(GG_Debug_Callback callback);
+    // sam. added this.
+    void SetInstructionExecutedCallback(GG_Instruction_Executed_Callback callback, void* context = nullptr);
 
 private:
     void Reset();
@@ -117,8 +123,14 @@ private:
     CdRomAudio* m_cdrom_audio;
     Adpcm* m_adpcm;
     ScsiController* m_scsi_controller;
-    bool m_paused;
-    GG_Debug_Callback m_debug_callback;
+    // sam. changed this to a pointer so we could control it from 8BA
+    bool* m_paused; 
+    GG_Debug_Callback m_debug_callback; 
+    
+    // sam. added callback for every time an instruction is executed.
+    GG_Instruction_Executed_Callback m_instruction_executed_callback;
+    void* m_instruction_executed_context;
+
     u64 m_master_clock_cycles;
 };
 

@@ -19,6 +19,47 @@
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "PCE Analyser";
 
+class FPCECPUEmulator6502 : public ICPUEmulator6502
+{
+public:
+	FPCECPUEmulator6502(FPCEEmu* pEmu)
+		: pPCEEmu(pEmu)
+	{
+		p6280State = pEmu->GetCore()->GetHuC6280()->GetState();
+	}
+	virtual void* GetImpl() const 
+	{
+		// should this be returning the p6280State?
+		return (void*)pPCEEmu->GetCore();
+	}
+	virtual uint16_t GetPC() const
+	{
+		return p6280State->PC->GetValue();
+	}
+	virtual uint8_t GetA() const
+	{
+		return p6280State->A->GetValue();
+	}
+	virtual uint8_t GetX() const
+	{
+		return p6280State->X->GetValue();
+	}
+	virtual uint8_t GetY() const
+	{
+		return p6280State->Y->GetValue();
+	}
+	virtual uint8_t GetS() const
+	{
+		return p6280State->S->GetValue();
+	}
+	virtual uint8_t GetP() const
+	{
+		return p6280State->P->GetValue();
+	}
+	HuC6280::HuC6280_State* p6280State = nullptr;
+	FPCEEmu* pPCEEmu = nullptr;
+};
+
 uint8_t		FPCEEmu::ReadByte(uint16_t address) const
 {
 	return pCore->GetMemory()->Read(address);
@@ -54,10 +95,30 @@ uint16_t	FPCEEmu::GetSP(void)
 	//return ZXEmuState.cpu.sp;
 }
 
-void* FPCEEmu::GetCPUEmulator(void) const
+ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
 {
-	return 0;
-	//return (void *)&ZXEmuState.cpu;
+	return pPCE6502CPU;
+}
+
+// This is a geargfx specific version of FDebugger::Tick()
+bool GearGfxOnInstructionExecuted(void* pContext)
+{
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+
+	pEmu->GetCodeAnalysis().Debugger.SetPC(pEmu->GetPC());
+
+	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
+	const uint64_t dummyPins = 0;
+	const int trapId = pEmu->GetCodeAnalysis().Debugger.OnInstructionExecuted(dummyPins);
+
+	if (trapId != kTrapId_None)
+	{
+		pEmu->GetCodeAnalysis().Debugger.Break();
+		
+		// Tell geargfx to stop exection
+		return true;
+	}
+	return false;
 }
 
 bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
@@ -69,13 +130,17 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetWindowTitle(kAppTitle.c_str());
 	SetWindowIcon(GetBundlePath("PCELogo.png"));
 
+
 	// Initialise Emulator
 	pCore = new GeargrafxCore();
-	pCore->Init();
-	
-	// temp
-	//pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
-	pCore->LoadMedia("c:\\temp\\Bonk.pce");
+	pCore->Init(CodeAnalysis.Debugger.GetDebuggerStoppedPtr());
+	pCore->SetInstructionExecutedCallback(GearGfxOnInstructionExecuted, this);
+
+	// temp DELETE ME
+	pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
+	//pCore->LoadMedia("c:\\temp\\Bonk.pce");
+
+	pPCE6502CPU = new FPCECPUEmulator6502(this);
 
 	pFrameBuffer = new uint8_t[2048 * 512 * 4];
 	pAudioBuf = new int16_t[GG_AUDIO_BUFFER_SIZE];;
@@ -90,6 +155,27 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	//CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 	
+	// Temp bank setup. hardcoded for rabio lepus
+
+	const int16_t testRomId0 = CodeAnalysis.CreateBank("ROM 0", 8, pCore->GetMedia()->GetROMMap()[0], false /*bMachineROM*/, 0xe000);
+	const int16_t testRomId1 = CodeAnalysis.CreateBank("ROM 1", 8, pCore->GetMedia()->GetROMMap()[1], false /*bMachineROM*/, 0x2000);
+	const int16_t testRomId2 = CodeAnalysis.CreateBank("ROM 2", 8, pCore->GetMedia()->GetROMMap()[2], false /*bMachineROM*/, 0x4000);
+	const int16_t testRomId3 = CodeAnalysis.CreateBank("ROM 3", 8, pCore->GetMedia()->GetROMMap()[3], false /*bMachineROM*/, 0x6000);
+	const int16_t testRomId4 = CodeAnalysis.CreateBank("ROM 4", 8, pCore->GetMedia()->GetROMMap()[4], false /*bMachineROM*/, 0x8000);
+	const int16_t testRomId5 = CodeAnalysis.CreateBank("ROM 5", 8, pCore->GetMedia()->GetROMMap()[5], false /*bMachineROM*/, 0xa000);
+	const int16_t testRomId6 = CodeAnalysis.CreateBank("ROM 6", 8, pCore->GetMedia()->GetROMMap()[6], false /*bMachineROM*/, 0xc000);
+	const int16_t testRomId7 = CodeAnalysis.CreateBank("ROM 7", 8, pCore->GetMedia()->GetROMMap()[7], false /*bMachineROM*/, 0x0);
+	CodeAnalysis.MapBank(testRomId0, 56, EBankAccess::Read);
+	CodeAnalysis.MapBank(testRomId1, 8, EBankAccess::Read);
+	CodeAnalysis.MapBank(testRomId2, 16, EBankAccess::Read);
+	CodeAnalysis.MapBank(testRomId3, 24, EBankAccess::Read);
+	CodeAnalysis.MapBank(testRomId4, 32, EBankAccess::Read);
+	CodeAnalysis.MapBank(testRomId5, 40, EBankAccess::Read);
+	CodeAnalysis.MapBank(testRomId6, 48, EBankAccess::Read);
+	CodeAnalysis.MapBank(testRomId7, 0, EBankAccess::Read);
+	CodeAnalysis.Config.bShowBanks = true;
+	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
+
 	// set supported bitmap format
 	/*CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -124,8 +210,15 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	else
 	{
 		CodeAnalysis.Init(this);
+		
+		// temp. DELETE ME
+		const FAddressRef initialPC = GetPC();
+		SetItemCode(CodeAnalysis, initialPC);
+		CodeAnalysis.Debugger.SetPC(initialPC);
+		CodeAnalysis.Debugger.Break();
 	}
 	
+
 	// Setup Debugger
 	//FDebugger& debugger = CodeAnalysis.Debugger;
 	//debugger.RegisterEventType((int)EEventType::ScreenPixWrite, "Screen Pixel Write", 0xff0000ff, nullptr, EventShowPixValue);
@@ -249,7 +342,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	// some extra initialisation for creating new analysis from snapshot
 	if(bLoadGameData == false)
 	{
-		FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(0/*ZXEmuState.cpu.pc*/);
+		FAddressRef initialPC = GetPC();
 		SetItemCode(CodeAnalysis, initialPC);
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
@@ -423,6 +516,7 @@ void FPCEEmu::WindowsMenuAdditions(void)
 {
 }
 
+GeargrafxCore::GG_Debug_Run gDummyDebugRun = { false, false, false, false};
 
 void FPCEEmu::Tick()
 {
@@ -436,7 +530,7 @@ void FPCEEmu::Tick()
 		CodeAnalysis.OnFrameStart();
 
 		int audioSampleCount = 0;
-		pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
+		pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount, &gDummyDebugRun);
 		
 		CodeAnalysis.OnFrameEnd();
 	}

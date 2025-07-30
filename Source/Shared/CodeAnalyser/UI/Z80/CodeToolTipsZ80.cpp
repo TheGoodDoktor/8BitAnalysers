@@ -307,7 +307,7 @@ void DoCBPrefix(uint8_t prefix, EOperand* r, uint16_t pc, const FCodeAnalysisSta
 
 void DoEDPrefix(uint8_t prefix, EOperand* r, EOperand* rp, uint16_t pc, const FCodeAnalysisState& state, FInstruction& inst)
 {
-	z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator();
+	const z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
 	const uint8_t op = state.ReadByte(pc++);
 	const uint8_t x = (op >> 6) & 3;
 	const uint8_t y = (op >> 3) & 7;
@@ -577,7 +577,7 @@ void GetInstructionInfo(uint16_t pc, const FCodeAnalysisState& state, FInstructi
 	EOperand* rp = g_TTOperandPairs;
 	EOperand* rp2 = g_TTOperandPairs2;
 
-	z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator();
+	const z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
 
 	g_TTZ80DescBuf[0] = 0;
 	g_TTZ80TitleBuf[0] = 0;
@@ -1214,7 +1214,7 @@ std::string GetOperandName(EOperand operand, int8_t displacement /* = 0*/, uint1
 
 bool GetOperandWordValue(FCodeAnalysisState& state, FOperand operand, uint16_t& value)
 {
-	z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator();
+	const z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
 
 	switch (operand.Type)
 	{
@@ -1588,7 +1588,7 @@ void ShowCodeToolTipZ80(FCodeAnalysisState& state, uint16_t addr)
 		ImGui::PopTextWrapPos();
 	}
 
-	z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator();
+	const z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	

@@ -30,6 +30,41 @@ typedef uint8_t(*FDasmInput)(void* user_data);
 /* the output callback type */
 typedef void (*FDasmOutput)(char c, void* user_data);
 
+class ICPUEmulator
+{
+public:
+	virtual void* GetImpl() const = 0;
+};
+
+class ICPUEmulator6502 : public ICPUEmulator
+{
+public:
+	static const uint8_t kFlagCarry		= 1 << 0;
+	static const uint8_t kFlagZero		= 1 << 1;
+	static const uint8_t kFlagInterrupt = 1 << 2;
+	static const uint8_t kFlagDecimal	= 1 << 3;
+	static const uint8_t kFlagBreak		= 1 << 4;
+	static const uint8_t kFlagTransfer	= 1 << 5;
+	static const uint8_t kFlagOverflow	= 1 << 6;
+	static const uint8_t kFlagNegative	= 1 << 7;
+
+	virtual uint16_t GetPC() const = 0;
+	virtual uint8_t GetA() const = 0;
+	virtual uint8_t GetX() const = 0;
+	virtual uint8_t GetY() const = 0;
+	virtual uint8_t GetS() const = 0;
+	virtual uint8_t GetP() const = 0;
+};
+
+class ICPUEmulatorZ80 : public ICPUEmulator
+{
+public:
+	virtual uint8_t GetA() const = 0;
+	virtual uint8_t GetB() const = 0;
+	virtual uint8_t GetC() const = 0;
+	// etc
+};
+
 class ICPUInterface
 {
 public:
@@ -44,7 +79,7 @@ public:
 
     //virtual void	GraphicsViewerSetView(FAddressRef address) {};
 
-	virtual void*	GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
+	virtual ICPUEmulator*	GetCPUEmulator(void) const { return nullptr; }	// get pointer to emulator - a bit of a hack
 
 	ECPUType	CPUType = ECPUType::Unknown;
 };

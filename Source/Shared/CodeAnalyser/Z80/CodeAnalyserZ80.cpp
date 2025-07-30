@@ -233,11 +233,12 @@ bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 
 bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc)
 {
+
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
 	FDebugger& debugger = state.Debugger;
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
 	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
-	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator());
+	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator()->GetImpl());
 
 	std::vector<FCPUFunctionCall>&	callStack = state.Debugger.GetCallstack();
 
@@ -397,7 +398,6 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 			}
 		}
 	}
-
 	return false;
 }
 
@@ -434,7 +434,7 @@ void FreeMachineStatesZ80()
 
 void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInterface)
 {
-	z80_t* pCPU = (z80_t*)pCPUInterface->GetCPUEmulator();
+	const z80_t* pCPU = static_cast<z80_t*>(pCPUInterface->GetCPUEmulator()->GetImpl());
 	FMachineStateZ80* pMachineStateZ80 = static_cast<FMachineStateZ80 *>(pMachineState);
 
 	pMachineStateZ80->AF = pCPU->af;

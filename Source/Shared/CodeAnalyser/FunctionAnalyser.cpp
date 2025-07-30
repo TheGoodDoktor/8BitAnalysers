@@ -57,10 +57,10 @@ std::string FFunctionParam::GenerateDescription(FCodeAnalysisState& state) const
 void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 {
 	uint16_t value = 0;
-
+	
 	if (state.GetCPUInterface()->CPUType == ECPUType::Z80)
 	{
-		const z80_t* pZ80 = (const z80_t*)state.GetCPUInterface()->GetCPUEmulator();
+		const z80_t* pZ80 = (const z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
 
 		switch (param.Z80Source)
 		{
@@ -104,17 +104,17 @@ void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 	}
 	else if (state.GetCPUInterface()->CPUType == ECPUType::M6502)
 	{
-		const m6502_t* pM6502 = (const m6502_t*)state.GetCPUInterface()->GetCPUEmulator();
+		const ICPUEmulator6502* p6502CPU = (ICPUEmulator6502*)state.CPUInterface->GetCPUEmulator();
 		switch (param.M6502Source)
 		{
 		case EFuctionParamSourceM6502::RegA:
-			value = pM6502->A;
+			value = p6502CPU->GetA();
 			break;
 		case EFuctionParamSourceM6502::RegX:
-			value = pM6502->X;
+			value = p6502CPU->GetX();
 			break;
 		case EFuctionParamSourceM6502::RegY:
-			value = pM6502->Y;
+			value = p6502CPU->GetY();
 			break;
 		}
 	}

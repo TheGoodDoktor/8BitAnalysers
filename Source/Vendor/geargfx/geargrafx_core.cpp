@@ -57,7 +57,11 @@ GeargrafxCore::GeargrafxCore()
     InitPointer(m_input);
     InitPointer(m_media);
     InitPointer(m_debug_callback);
-    m_paused = true;
+    // sam
+    InitPointer(m_instruction_executed_callback);
+    InitPointer(m_instruction_executed_context);
+    // sam. let 8BA control this
+    //m_paused = true;
     m_master_clock_cycles = 0;
 }
 
@@ -79,11 +83,13 @@ GeargrafxCore::~GeargrafxCore()
     SafeDelete(m_memory);
 }
 
-void GeargrafxCore::Init(GG_Pixel_Format pixel_format)
+void GeargrafxCore::Init(bool* bCorePausedPtr, GG_Pixel_Format pixel_format)
 {
     Log("Loading %s core %s by Ignacio Sanchez", GG_TITLE, GG_VERSION);
 
     srand((unsigned int)time(NULL));
+
+    m_paused = bCorePausedPtr;
 
     m_cdrom_media = new CdRomMedia();
     m_media = new Media(m_cdrom_media);
@@ -159,6 +165,12 @@ void GeargrafxCore::SetDebugCallback(GG_Debug_Callback callback)
     m_debug_callback = callback;
 }
 
+void GeargrafxCore::SetInstructionExecutedCallback(GG_Instruction_Executed_Callback callback, void* context)
+{
+   m_instruction_executed_callback = callback;
+   m_instruction_executed_context = context;
+}
+
 void GeargrafxCore::KeyPressed(GG_Controllers controller, GG_Keys key)
 {
     m_input->KeyPressed(controller, key);
@@ -169,7 +181,8 @@ void GeargrafxCore::KeyReleased(GG_Controllers controller, GG_Keys key)
     m_input->KeyReleased(controller, key);
 }
 
-void GeargrafxCore::Pause(bool paused)
+// sam. removed these. 8BA now controls the emulation paused state 
+/*void GeargrafxCore::Pause(bool paused)
 {
     if (!m_paused && paused)
     {
@@ -186,7 +199,7 @@ void GeargrafxCore::Pause(bool paused)
 bool GeargrafxCore::IsPaused()
 {
     return m_paused;
-}
+}*/
 
 void GeargrafxCore::ResetMedia(bool preserve_ram)
 {
@@ -732,7 +745,7 @@ bool GeargrafxCore::GetSaveStateScreenshot(int index, const char* path, GG_SaveS
 void GeargrafxCore::Reset()
 {
     m_master_clock_cycles = 0;
-    m_paused = false;
+    //m_paused = false;
 
     m_media->GatherMediaInfo();
 

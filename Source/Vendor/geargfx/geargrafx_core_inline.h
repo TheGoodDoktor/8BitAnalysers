@@ -31,7 +31,7 @@
 
 INLINE bool GeargrafxCore::RunToVBlank(u8* frame_buffer, s16* sample_buffer, int* sample_count, GG_Debug_Run* debug)
 {
-    if (m_paused || !m_media->IsReady())
+    if (*m_paused || !m_media->IsReady())
         return false;
 
     const bool is_cdrom = m_media->IsCDROM();
@@ -106,6 +106,10 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
 
                 if (instruction_completed)
                 {
+                   // sam. added callback for after an instruction is executed
+                   if (debug_enable && (IsValidPointer(m_instruction_executed_callback)))
+                      stop = m_instruction_executed_callback(m_instruction_executed_context);
+ 
                     if (m_huc6280->BreakpointHit())
                         stop = true;
 

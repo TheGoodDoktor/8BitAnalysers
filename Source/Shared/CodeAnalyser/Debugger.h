@@ -13,6 +13,9 @@ class FSpectrumEmu;
 class FCodeAnalysisState;
 struct FCodeAnalysisViewState;
 
+class ICPUEmulator6502;
+class ICPUEmulatorZ80;
+
 // TODO: figure out how to forward dec these
 //struct z80_t;
 //struct m6502_t;
@@ -221,6 +224,9 @@ private:
 
 	uint16_t				StackMin = 0xffff;
 	uint16_t				StackMax = 0;
+
+	ICPUEmulator6502* pPCE6502CPU = nullptr;
+	ICPUEmulatorZ80* pICPUZ80 = nullptr;
 };
 
 void EventShowPixValue(FCodeAnalysisState& state, const FEvent& event);

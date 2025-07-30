@@ -105,7 +105,7 @@ const ImVec4 g_RegChangedCol(1.0f, 1.0f, 0.0f, 1.0f);
 
 void StoreRegisters_Z80(FCodeAnalysisState& state)
 {
-	g_OldRegs = FZ80DisplayRegisters((z80_t*)state.CPUInterface->GetCPUEmulator());
+	g_OldRegs = FZ80DisplayRegisters((z80_t*)state.CPUInterface->GetCPUEmulator()->GetImpl());
 }
 
 const FZ80DisplayRegisters& GetStoredRegisters_Z80(void)
@@ -303,7 +303,7 @@ void DrawFlag(FCodeAnalysisState& state, bool* curFlag, bool oldFlag)
 void DrawRegisters_Z80(FCodeAnalysisState& state)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-	z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator();
+	z80_t* pCPU = (z80_t*)state.CPUInterface->GetCPUEmulator()->GetImpl();
 
 	FZ80DisplayRegisters curRegs(pCPU);
 	FZ80DisplayRegisters curRegsCopy = curRegs;

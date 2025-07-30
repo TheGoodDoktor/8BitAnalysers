@@ -14,7 +14,7 @@ bool DrawDataItemRegisterPtrsZ80(FCodeAnalysisState& state, uint16_t physAddr, u
 		str += "SP";
 	}
 
-	z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator();
+	const z80_t* pCPU = (z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
 
 	if (pCPU->bc >= physAddr && pCPU->bc < addrMax)
 	{

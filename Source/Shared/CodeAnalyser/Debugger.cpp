@@ -24,17 +24,19 @@ static const uint32_t	BPMask_NMI			= 0x0040;
 void FDebugger::Init(FCodeAnalysisState* pCA)
 {
 	pCodeAnalysis = pCA;
-    CPUType = pCodeAnalysis->GetCPUInterface()->CPUType;
+	CPUType = pCodeAnalysis->GetCPUInterface()->CPUType;
 
-    if(CPUType == ECPUType::Z80)
+	if(CPUType == ECPUType::Z80)
 	{
-        pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+		pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator()->GetImpl();
+		pICPUZ80 = (ICPUEmulatorZ80*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 		StackMin = 0xffff;
 		StackMax = 0;
 	}
 	else if (CPUType == ECPUType::M6502)
 	{ 
-        pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+		pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator()->GetImpl();
+		pPCE6502CPU = (ICPUEmulator6502*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 		// Stack in 6502 is hard coded between 0x100-0x1ff
 		StackMin = 0x1ff;
 		StackMax = 0x1ff;
@@ -49,10 +51,10 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 
 void FDebugger::CPUTick(uint64_t pins)
 {
-    const uint64_t risingPins = pins & (pins ^ LastTickPins);
-    int trapId = kTrapId_None;
+	const uint64_t risingPins = pins & (pins ^ LastTickPins);
+	int trapId = kTrapId_None;
 
-    uint16_t addr = 0;
+	uint16_t addr = 0;
 	bool bMemAccess = false;
 	bool bWrite = false;
 	bool bRead = false;
@@ -63,22 +65,24 @@ void FDebugger::CPUTick(uint64_t pins)
 	bool bNMI = false;
 	uint32_t bpMaskCheck = 0;
 
-    if (CPUType == ECPUType::Z80)
-    {
-		 /*
-        addr = Z80_GET_ADDR(pins);
+	if (CPUType == ECPUType::Z80)
+	{ 
+		// this fails to build with a linker error: z80_opdone
+		/*
+		addr = Z80_GET_ADDR(pins);
 
-        bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
+		bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
 		bWrite = (risingPins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_WR);
 		bRead = (risingPins & Z80_CTRL_PIN_MASK) == (Z80_MREQ | Z80_RD);
-        bNewOp = z80_opdone(pZ80);
+		bNewOp = z80_opdone(pZ80);
 		bIORead = (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_RD);
 		bIOWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR);
 		bIrq = (pins & Z80_INT) && pZ80->iff1;
-		bNMI = risingPins & Z80_NMI;*/
-    }
-    else if (CPUType == ECPUType::M6502)
-    {
+		bNMI = risingPins & Z80_NMI;
+		*/
+	}
+	else if (CPUType == ECPUType::M6502)
+	{
 		addr = M6502_GET_ADDR(pins);
 		bMemAccess = (pins & M6502_SYNC) == 0;
 		bRead = pins & M6502_RW;
@@ -90,23 +94,23 @@ void FDebugger::CPUTick(uint64_t pins)
 	
     const FAddressRef addrRef = pCodeAnalysis->AddressRefFromPhysicalAddress(addr);
 
-    if (bNewOp)
-    {
-        PC = pCodeAnalysis->AddressRefFromPhysicalAddress(pins & 0xffff);
+	if (bNewOp)
+	{
+		PC = pCodeAnalysis->AddressRefFromPhysicalAddress(pins & 0xffff);
 		trapId = OnInstructionExecuted(pins);
 	}
 
-    // tick based stepping
-    switch (StepMode)
-    {
-        // This is ZX Spectrum specific - need to think of a generic way of doing it - large memory breakpoint?
-        case EDebugStepMode::ScreenWrite:
-        {
-            // break on screen memory write
-            if (bWrite && pCodeAnalysis->pMemoryAnalyser->IsAddressInScreenMemory(addr))
-                trapId = kTrapId_Step;            
-        }
-        break;
+	// tick based stepping
+	switch (StepMode)
+	{
+		// This is ZX Spectrum specific - need to think of a generic way of doing it - large memory breakpoint?
+		case EDebugStepMode::ScreenWrite:
+		{
+			// break on screen memory write
+			if (bWrite && pCodeAnalysis->pMemoryAnalyser->IsAddressInScreenMemory(addr))
+				trapId = kTrapId_Step;
+		}
+		break;
 
 		case EDebugStepMode::IORead:
 		{
@@ -133,10 +137,10 @@ void FDebugger::CPUTick(uint64_t pins)
 		{
 		}
 		break;
-        
-        default:
-            break;
-    }
+
+		default:
+			break;
+	}
 
 	// only set the mask if we know we're on an address that's breakpointed
 	if (bRead || bWrite)
@@ -150,7 +154,7 @@ void FDebugger::CPUTick(uint64_t pins)
 		}
 	}
 
-    // iterate through data breakpoints
+	// iterate through data breakpoints
 	// this can slow down if there are a lot of BPs
 	// Do a mask check
 	if (bpMaskCheck & BreakpointMask)
@@ -201,19 +205,19 @@ void FDebugger::CPUTick(uint64_t pins)
 							trapId = kTrapId_BpBase + i;
 					}
 					break;
-                default:
-                    break;
+					default:
+						break;
 				}
 			}
 		}
 	}
 
-    if (trapId != kTrapId_None)
-    {
-        Break();
-    }
+	if (trapId != kTrapId_None)
+	{
+		Break();
+	}
 
-    LastTickPins = pins;
+	LastTickPins = pins;
 }
 
 int FDebugger::OnInstructionExecuted(uint64_t pins)
@@ -239,8 +243,8 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 			if (PC == StepOverPC)
 				trapId = kTrapId_Step;
 			break;
-        default:
-            break;
+		default:
+			break;
 		}
 	}
 	
@@ -263,7 +267,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	}
 
 	// Handle IRQ
-	const uint64_t risingPins = pins & (pins ^ LastTickPins);
+	//const uint64_t risingPins = pins & (pins ^ LastTickPins);
 	bool bIRQ = false;
 	
 	//  Note: This is Z80 specific
@@ -299,7 +303,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	}
 	else if (CPUType == ECPUType::M6502)
 	{
-		const uint16_t sp = pM6502->S + 0x100;
+		const uint16_t sp = pPCE6502CPU->GetS() + 0x100;
 		StackMin = std::min(sp, StackMin);
 		StackMax = 0x1ff;	// always starts here on 6502
 	}
@@ -911,15 +915,15 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 	else if (CPUType == ECPUType::M6502)
 	{
 		if (strcmp(regName, "A") == 0)
-			return outVal = pM6502->A, true;
+			return outVal = pPCE6502CPU->GetA(), true;
 		else if (strcmp(regName, "X") == 0)
-			return outVal = pM6502->X, true;
+			return outVal = pPCE6502CPU->GetX(), true;
 		else if (strcmp(regName, "Y") == 0)
-			return outVal = pM6502->Y, true;
+			return outVal = pPCE6502CPU->GetY(), true;
 		else if (strcmp(regName, "S") == 0)
-			return outVal = pM6502->S, true;
+			return outVal = pPCE6502CPU->GetS(), true;
 		else if (strcmp(regName, "P") == 0)
-			return outVal = pM6502->P, true;
+			return outVal = pPCE6502CPU->GetP(), true;
 	}
 
 	return false;
@@ -949,7 +953,7 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 	else if (CPUType == ECPUType::M6502)
 	{
 		if (strcmp(regName, "PC") == 0)
-			return outVal = pM6502->PC, true;
+			return outVal = pPCE6502CPU->GetPC(), true;
 	}
 	return false;
 }

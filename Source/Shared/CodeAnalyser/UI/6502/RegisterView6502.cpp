@@ -2,7 +2,6 @@
 #include "../CodeAnalyserUI.h"
 
 #include <Util/Misc.h>
-#include <chips/m6502.h>
 #include <imgui.h>
 #include <CodeAnalyser/6502/CodeAnalyser6502.h>
 #include <CodeAnalyser/UI/MemoryAccessGrid.h>
@@ -32,26 +31,26 @@ class FZeroPageGrid : public FMemoryAccessGrid
 struct F6502DisplayRegisters
 {
 	F6502DisplayRegisters() {}
-	F6502DisplayRegisters(m6502_t* pCPU)
+	F6502DisplayRegisters(ICPUEmulator6502* pCPU)
 	{
 		if (pCPU)
 		{
-			A = pCPU->A;
-			X = pCPU->X;
-			Y = pCPU->Y;
-			S = pCPU->S;
-			P = pCPU->P;
-			PC = pCPU->PC;
+			A = pCPU->GetA();
+			X = pCPU->GetX();
+			Y = pCPU->GetY();
+			S = pCPU->GetS();
+			P = pCPU->GetP();
+			PC = pCPU->GetPC();
 		}
 
 		// set flags
-		CarryFlag				= P & M6502_CF;
-		ZeroFlag				= P & M6502_ZF;
-		InterruptDisableFlag	= P & M6502_IF;
-		DecimalModeFlag			= P & M6502_DF;
-		BreakFlag				= P & M6502_BF;
-		OverflowFlag			= P & M6502_VF;
-		NegativeFlag			= P & M6502_NF;
+		CarryFlag					= P & ICPUEmulator6502::kFlagCarry;
+		ZeroFlag						= P & ICPUEmulator6502::kFlagZero;
+		InterruptDisableFlag		= P & ICPUEmulator6502::kFlagInterrupt;
+		DecimalModeFlag			= P & ICPUEmulator6502::kFlagDecimal;
+		BreakFlag					= P & ICPUEmulator6502::kFlagBreak;
+		OverflowFlag				= P & ICPUEmulator6502::kFlagOverflow;
+		NegativeFlag				= P & ICPUEmulator6502::kFlagNegative;
 	}
 
 	uint8_t		A = 0;
@@ -59,7 +58,7 @@ struct F6502DisplayRegisters
 	uint8_t		Y = 0;
 	uint8_t		S = 0;
 	uint8_t		P = 0;
-	uint16_t	PC = 0;
+	uint16_t		PC = 0;
 
 	// flags
 	bool	CarryFlag = false;
@@ -75,20 +74,21 @@ static F6502DisplayRegisters g_OldRegs;
 
 void StoreRegisters_6502(FCodeAnalysisState& state)
 {
-	g_OldRegs = F6502DisplayRegisters((m6502_t*)state.CPUInterface->GetCPUEmulator());
+	g_OldRegs = F6502DisplayRegisters((ICPUEmulator6502*)state.CPUInterface->GetCPUEmulator());
 }
 
 void DrawRegisters_6502(FCodeAnalysisState& state)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-	m6502_t* pCPU = (m6502_t*)state.CPUInterface->GetCPUEmulator();
+	ICPUEmulator6502* p6502CPU = (ICPUEmulator6502*)state.CPUInterface->GetCPUEmulator();
+
 	const ImVec4 regNormalCol(1.0f, 1.0f, 1.0f, 1.0f);
 	const ImVec4 regChangedCol(1.0f, 1.0f, 0.0f, 1.0f);
 	ImVec4 regColour = regNormalCol;
 	static FZeroPageGrid zeroPageGrid(&state);
 
 
-	F6502DisplayRegisters curRegs(pCPU);
+	F6502DisplayRegisters curRegs(p6502CPU);
 	const F6502DisplayRegisters& oldRegs = g_OldRegs;
 
 	// CPU flags
