@@ -1560,6 +1560,12 @@ void FCodeAnalysisState::UpdateFocussedViewState()
 	}
 }
 
+bool FCodeAnalysisState::IsKeyPressed(EKey key) const
+{
+	return ImGui::IsKeyPressed((ImGuiKey)KeyConfig[(int)key]);
+}
+
+
 
 void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
 {

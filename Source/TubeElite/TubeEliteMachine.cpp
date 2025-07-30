@@ -229,13 +229,13 @@ void FTubeEliteMachine::TickCPU()
 void FTubeEliteMachine::FlushTube()
 {
 	uint8_t inByte = 0;
-	std::vector<ETubeRegister> dataRegs = {ETubeRegister::R1, ETubeRegister::R2, ETubeRegister::R3, ETubeRegister::R4};
-	for(auto reg : dataRegs)
+	const ETubeRegister dataRegs[] = {ETubeRegister::R1, ETubeRegister::R2, ETubeRegister::R3, ETubeRegister::R4};
+	for(int i=0;i<4;i++)
 	{
-		while (Tube.HostReadRegister(reg, inByte))	// while is for flushing queues
+		while (Tube.HostReadRegister(dataRegs[i], inByte))	// while is for flushing queues
 		{
 			if(pTubeDataHandler)
-				pTubeDataHandler->HandleIncomingByte(reg, inByte);
+				pTubeDataHandler->HandleIncomingByte(dataRegs[i], inByte);
 		}
 	}
 
@@ -258,7 +258,7 @@ void FTubeEliteMachine::Tick()
 	}
 
 	TubePollCounter++;
-	if (TubePollCounter == kTubePollInterval)
+	//if (TubePollCounter == kTubePollInterval)
 	{
 		FlushTube();	// flush the Tube data
 		TubePollCounter = 0;

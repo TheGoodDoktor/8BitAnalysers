@@ -442,6 +442,8 @@ public:
 	void FixupAddressRefs();
 	void UpdateFocussedViewState();
 
+	bool IsKeyPressed(EKey key) const;
+
 public:
 
 	bool					bRegisterDataAccesses = true;

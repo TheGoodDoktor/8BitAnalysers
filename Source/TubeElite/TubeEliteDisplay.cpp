@@ -597,9 +597,9 @@ void FTubeEliteDisplay::ReceivePixelData(const uint8_t* pPixelData)
 
 bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 {
-	if (bWindowFocused = false)
+	if (bWindowFocused == false)
 	{
-		for (int i = 0; i < 14; i++)
+		for (int i = 2; i < 14; i++)
 			pBuffer[i] = 0; // clear the buffer
 
 		pBuffer[14] = 0x10; // Joystick 1 fire button not pressed
@@ -679,6 +679,8 @@ void FTubeEliteDisplay::Tick(void)
 			}
 		}
 	}
+
+	pTubeSys->GetCodeAnalysis().Debugger.SetDebugKeysEnabled(!bWindowFocused);
 }
 
 void FTubeEliteDisplay::DrawUI(void)
