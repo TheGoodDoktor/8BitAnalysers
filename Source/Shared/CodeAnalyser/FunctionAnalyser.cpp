@@ -37,84 +37,95 @@ std::map< EFuctionParamSourceM6502, const char*> g_M6502RegNames =
 std::string FFunctionParam::GenerateDescription(FCodeAnalysisState& state) const
 {
 	std::string regName;
-	if (state.GetCPUInterface()->CPUType == ECPUType::Z80)
+	switch (state.GetCPUInterface()->CPUType)
 	{
-		auto findIt = g_Z80RegNames.find(Z80Source);
-		if(findIt != g_Z80RegNames.end())
-			regName = findIt->second;
-	}
-	else if (state.GetCPUInterface()->CPUType == ECPUType::M6502)
-	{
-		auto findIt = g_M6502RegNames.find(M6502Source);
-		if (findIt != g_M6502RegNames.end())
-			regName = findIt->second;
+		case ECPUType::Z80:
+		{
+			auto findIt = g_Z80RegNames.find(Z80Source);
+			if (findIt != g_Z80RegNames.end())
+				regName = findIt->second;
+		}
+		break;
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
+		{
+			auto findIt = g_M6502RegNames.find(M6502Source);
+			if (findIt != g_M6502RegNames.end())
+				regName = findIt->second;
+		}
+		break;
 	}
 
 	return regName + " : " + Name;
 }
 
-
 void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 {
 	uint16_t value = 0;
 	
-	if (state.GetCPUInterface()->CPUType == ECPUType::Z80)
+	switch (state.GetCPUInterface()->CPUType)
 	{
-		const z80_t* pZ80 = (const z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
-
-		switch (param.Z80Source)
+		case ECPUType::Z80:
 		{
-		case EFunctionParamSourceZ80::RegA:
-			value = pZ80->a;
-			break;
-		case EFunctionParamSourceZ80::RegB:
-			value = pZ80->b;
-			break;
-		case EFunctionParamSourceZ80::RegC:
-			value = pZ80->c;
-			break;
-		case EFunctionParamSourceZ80::RegD:
-			value = pZ80->d;
-			break;
-		case EFunctionParamSourceZ80::RegE:
-			value = pZ80->e;
-			break;
-		case EFunctionParamSourceZ80::RegH:
-			value = pZ80->h;
-			break;
-		case EFunctionParamSourceZ80::RegL:
-			value = pZ80->l;
-			break;
-		case EFunctionParamSourceZ80::RegBC:
-			value = pZ80->bc;
-			break;
-		case EFunctionParamSourceZ80::RegDE:
-			value = pZ80->de;
-			break;
-		case EFunctionParamSourceZ80::RegHL:
-			value = pZ80->hl;
-			break;
-		case EFunctionParamSourceZ80::RegIX:
-			value = pZ80->ix;
-			break;
-		case EFunctionParamSourceZ80::RegIY:
-			value = pZ80->iy;
+			const z80_t* pZ80 = (const z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
+
+			switch (param.Z80Source)
+			{
+			case EFunctionParamSourceZ80::RegA:
+				value = pZ80->a;
+				break;
+			case EFunctionParamSourceZ80::RegB:
+				value = pZ80->b;
+				break;
+			case EFunctionParamSourceZ80::RegC:
+				value = pZ80->c;
+				break;
+			case EFunctionParamSourceZ80::RegD:
+				value = pZ80->d;
+				break;
+			case EFunctionParamSourceZ80::RegE:
+				value = pZ80->e;
+				break;
+			case EFunctionParamSourceZ80::RegH:
+				value = pZ80->h;
+				break;
+			case EFunctionParamSourceZ80::RegL:
+				value = pZ80->l;
+				break;
+			case EFunctionParamSourceZ80::RegBC:
+				value = pZ80->bc;
+				break;
+			case EFunctionParamSourceZ80::RegDE:
+				value = pZ80->de;
+				break;
+			case EFunctionParamSourceZ80::RegHL:
+				value = pZ80->hl;
+				break;
+			case EFunctionParamSourceZ80::RegIX:
+				value = pZ80->ix;
+				break;
+			case EFunctionParamSourceZ80::RegIY:
+				value = pZ80->iy;
+				break;
+			}
 			break;
 		}
-	}
-	else if (state.GetCPUInterface()->CPUType == ECPUType::M6502)
-	{
-		const ICPUEmulator6502* p6502CPU = (ICPUEmulator6502*)state.CPUInterface->GetCPUEmulator();
-		switch (param.M6502Source)
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
 		{
-		case EFuctionParamSourceM6502::RegA:
-			value = p6502CPU->GetA();
-			break;
-		case EFuctionParamSourceM6502::RegX:
-			value = p6502CPU->GetX();
-			break;
-		case EFuctionParamSourceM6502::RegY:
-			value = p6502CPU->GetY();
+			const ICPUEmulator6502* p6502CPU = (ICPUEmulator6502*)state.CPUInterface->GetCPUEmulator();
+			switch (param.M6502Source)
+			{
+				case EFuctionParamSourceM6502::RegA:
+					value = p6502CPU->GetA();
+					break;
+				case EFuctionParamSourceM6502::RegX:
+					value = p6502CPU->GetX();
+					break;
+				case EFuctionParamSourceM6502::RegY:
+					value = p6502CPU->GetY();
+					break;
+			}
 			break;
 		}
 	}

@@ -9,6 +9,7 @@
 #include "UI/CodeAnalyserUI.h"
 #include "Z80/Z80Disassembler.h"
 #include "6502/M6502Disassembler.h"
+#include "6502/HuC6280Disassembler.h"
 #include <Util/GraphicsView.h>
 #include "Misc/EmuBase.h"
 #include <ImGuiSupport/ImGuiScaling.h>
@@ -26,22 +27,26 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 	pCodeAnalysis = pCA;
 	CPUType = pCodeAnalysis->GetCPUInterface()->CPUType;
 
-	if(CPUType == ECPUType::Z80)
+	switch (CPUType)
 	{
-		pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator()->GetImpl();
-		pICPUZ80 = (ICPUEmulatorZ80*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
-		StackMin = 0xffff;
-		StackMax = 0;
+		case ECPUType::Z80:
+			pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+			StackMin = 0xffff;
+			StackMax = 0;
+			break;
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
+			pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+			// Stack in 6502 is hard coded between 0x100-0x1ff
+			StackMin = 0x1ff;
+			StackMax = 0x1ff;
+			break;
+		default:
+			assert(false && "Unknown CPU type");
+			break;
 	}
-	else if (CPUType == ECPUType::M6502)
-	{ 
-		pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator()->GetImpl();
-		pPCE6502CPU = (ICPUEmulator6502*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
-		// Stack in 6502 is hard coded between 0x100-0x1ff
-		StackMin = 0x1ff;
-		StackMax = 0x1ff;
-	}
-    Watches.clear();
+
+	Watches.clear();
 	//Stacks.clear();
 	Breakpoints.clear();
 	CallStack.clear();
@@ -49,6 +54,7 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 	FrameTraceItemIndex = -1;
 }
 
+// sam. this is only used for chips. not for geargfx.
 void FDebugger::CPUTick(uint64_t pins)
 {
 	const uint64_t risingPins = pins & (pins ^ LastTickPins);
@@ -270,20 +276,32 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	//const uint64_t risingPins = pins & (pins ^ LastTickPins);
 	bool bIRQ = false;
 	
-	//  Note: This is Z80 specific
-	if (CPUType == ECPUType::Z80)
+	// Check for IRQ 
+	switch (CPUType)
+	{
+	case ECPUType::Z80:
 		bIRQ = (pins & Z80_INT) && pZ80->iff1;
-	else if(CPUType == ECPUType::M6502)
+		break;
+	case ECPUType::M6502:
+	case ECPUType::HuC6280:	// M65C02 is a superset of M6502
 		bIRQ = pM6502->brk_flags & M6502_BRK_IRQ;
+	}
 
 	if (bIRQ)
 	{
 		FCPUFunctionCall callInfo;
 		callInfo.CallAddr = PC;
-		if (CPUType == ECPUType::Z80)
-			callInfo.FunctionAddr = PC;	// Z80TODO: get interrupt handler address
-		else if (CPUType == ECPUType::M6502)
-			callInfo.FunctionAddr = pCodeAnalysis->AddressRefFromPhysicalAddress(pCodeAnalysis->ReadWord(0xfffe));
+
+		switch (CPUType)
+		{
+			case ECPUType::Z80:
+				callInfo.FunctionAddr = PC;	// Z80TODO: get interrupt handler address
+				break;
+			case ECPUType::M6502:
+			case ECPUType::HuC6280:
+				callInfo.FunctionAddr = pCodeAnalysis->AddressRefFromPhysicalAddress(pCodeAnalysis->ReadWord(0xfffe));
+				break;
+		}
 	
 		callInfo.ReturnAddr = PC;
 		CallStack.push_back(callInfo);
@@ -293,20 +311,28 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	FrameTrace.push_back(PC);
 
 	// update stack size
-	if (CPUType == ECPUType::Z80)
+	switch (CPUType)
 	{
-		const uint16_t sp = pZ80->sp;
-		if (sp == StackMin - 2 || StackMin == 0xffff)
-			StackMin = sp;
-		if (sp == StackMax + 2 || StackMax == 0)
-			StackMax = sp;
+		case ECPUType::Z80:
+		{
+			const uint16_t sp = pZ80->sp;
+			if (sp == StackMin - 2 || StackMin == 0xffff)
+				StackMin = sp;
+			if (sp == StackMax + 2 || StackMax == 0)
+				StackMax = sp;
+		}
+		break;
+
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:	// HuC6280 is a superset of M65C02
+		{
+			const uint16_t sp = pM6502->S + 0x100;
+			StackMin = std::min(sp, StackMin);
+			StackMax = 0x1ff;	// always starts here on 6502
+		}
+		break;
 	}
-	else if (CPUType == ECPUType::M6502)
-	{
-		const uint16_t sp = pPCE6502CPU->GetS() + 0x100;
-		StackMin = std::min(sp, StackMin);
-		StackMax = 0x1ff;	// always starts here on 6502
-	}
+
 	return trapId;
 }
 
@@ -566,6 +592,19 @@ static bool IsStepOverOpcode(ECPUType cpuType, const std::vector<uint8_t>& opcod
         // on 6502, only JSR qualifies 
         return opcodes[0] == 0x20;
     }
+	 else if (cpuType == ECPUType::HuC6280)
+	 {
+		 switch (opcodes[0])
+		 {
+			case 0x20: // JSR
+				return true;
+			case 0x44: // BSR
+				return true;
+			default:
+				return false;
+		 }
+		 return false;
+	 }
     else
     {
         return false;
@@ -576,22 +615,31 @@ void	FDebugger::StepOver()
 {
 	std::vector<uint8_t> stepOpcodes;
    
-    bDebuggerStopped = false;
-    uint16_t nextPC = 0;
-	if (CPUType == ECPUType::Z80)
-		nextPC = Z80DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
-    else if (CPUType == ECPUType::M6502)
-		nextPC = M6502DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
+	bDebuggerStopped = false;
+	uint16_t nextPC = 0;
 
-    if (IsStepOverOpcode(CPUType, stepOpcodes))
-    {
-        StepMode = EDebugStepMode::StepOver;
-        StepOverPC = pCodeAnalysis->AddressRefFromPhysicalAddress(nextPC);
-    }
-    else 
-    {
-        StepMode = EDebugStepMode::StepInto;
-    }
+	switch (CPUType)
+	{
+		case ECPUType::Z80:
+			nextPC = Z80DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
+			break;
+		case ECPUType::M6502:
+			nextPC = M6502DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
+			break;
+		case ECPUType::HuC6280:
+			nextPC = HuC6280DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
+			break;
+	}
+
+	if (IsStepOverOpcode(CPUType, stepOpcodes))
+	{
+		StepMode = EDebugStepMode::StepOver;
+		StepOverPC = pCodeAnalysis->AddressRefFromPhysicalAddress(nextPC);
+	}
+	else 
+	{
+		StepMode = EDebugStepMode::StepInto;
+	}
 }
 
 void	FDebugger::StepFrame()
@@ -912,7 +960,7 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 		else if (strcmp(regName, "I") == 0)
 			return outVal = pZ80->i, true;
 	}
-	else if (CPUType == ECPUType::M6502)
+	else if (CPUType == ECPUType::M6502 || CPUType == ECPUType::HuC6280)
 	{
 		if (strcmp(regName, "A") == 0)
 			return outVal = pPCE6502CPU->GetA(), true;
@@ -950,7 +998,7 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 		else if (strcmp(regName, "PC") == 0)
 			return outVal = pZ80->pc, true;
 	}
-	else if (CPUType == ECPUType::M6502)
+	else if (CPUType == ECPUType::M6502 || CPUType == ECPUType::HuC6280)
 	{
 		if (strcmp(regName, "PC") == 0)
 			return outVal = pPCE6502CPU->GetPC(), true;
@@ -1171,10 +1219,16 @@ void DrawRegisters_6502(FCodeAnalysisState& state);
 
 void DrawRegisters(FCodeAnalysisState& state)
 {
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		DrawRegisters_Z80(state);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		DrawRegisters_6502(state);
+	switch (state.CPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			DrawRegisters_Z80(state);
+			break;
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
+			DrawRegisters_6502(state);
+			break;
+	}
 }
 
 void FDebugger::DrawWatches(void)

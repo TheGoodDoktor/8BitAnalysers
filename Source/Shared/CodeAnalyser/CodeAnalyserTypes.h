@@ -16,7 +16,8 @@ enum class ECPUType
 {
 	Unknown,
 	Z80,
-	M6502
+	M6502,
+	HuC6280,
 };
 
 // don't change order or you'll mess up the load/save

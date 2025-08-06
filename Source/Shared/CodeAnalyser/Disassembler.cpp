@@ -2,6 +2,7 @@
 
 #include "CodeAnalyser.h"
 #include "6502/M6502Disassembler.h"
+#include "6502/HuC6280Disassembler.h"
 #include "Z80/Z80Disassembler.h"
 
 #include "AssemblerExport.h"
@@ -323,8 +324,16 @@ std::string GenerateDasmStringForAddress(FCodeAnalysisState& state, uint16_t pc,
 
 bool GenerateDasmExportString(FExportDasmState& exportState)
 {
-	if (exportState.CodeAnalysisState->CPUInterface->CPUType == ECPUType::Z80)
+
+	switch (exportState.CodeAnalysisState->CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return Z80GenerateDasmExportString(exportState);
-	else
+	case ECPUType::M6502:
 		return M6502GenerateDasmExportString(exportState);
+	case ECPUType::HuC6280:
+		return HuC6280GenerateDasmExportString(exportState);
+	default:
+		return false;
+	}
 }

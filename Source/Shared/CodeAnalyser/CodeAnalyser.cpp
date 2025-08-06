@@ -20,6 +20,7 @@
 #include "Commands/SetCommentCommand.h"
 #include "Z80/Z80Disassembler.h"
 #include "6502/M6502Disassembler.h"
+#include "6502/HuC6280Disassembler.h"
 #include "UI/CodeAnalyserUI.h"
 #include "DataTypes.h"
 
@@ -545,63 +546,78 @@ bool CheckPointerIndirectionInstruction(FCodeAnalysisState& state, uint16_t pc, 
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
 
-	if (pCPUInterface->CPUType == ECPUType::Z80)
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return CheckPointerIndirectionInstructionZ80(state, pc, out_addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::HuC6280:
 		return CheckPointerIndirectionInstruction6502(state, pc, out_addr);
-	else
-		return false;
+	default:
+		return false;	// unsupported CPU type
+	}
 }
 
 bool CheckPointerRefInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return CheckPointerRefInstructionZ80(state, pc, out_addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::HuC6280:
 		return CheckPointerRefInstruction6502(state, pc, out_addr);
-	else
-		return false;
+	default:
+		return false;	// unsupported CPU type
+	}
 }
 
 
 bool CheckJumpInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckJumpInstructionZ80(state, pc, out_addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckJumpInstruction6502(state, pc, out_addr);
-	else
-		return false;
+	switch (pCPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			return CheckJumpInstructionZ80(state, pc, out_addr);
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
+			return CheckJumpInstruction6502(state, pc, out_addr);
+		default:
+			return false;	// unsupported CPU type
+	}
 }
 
 EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr)
 {
-
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return GetInstructionTypeZ80(state, addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return GetInstructionType6502(state, addr);
-	else
-		return EInstructionType::Unknown;
+	switch (pCPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			return GetInstructionTypeZ80(state, addr);
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
+			return GetInstructionType6502(state, addr);
+		default:
+			return EInstructionType::Unknown;	// unsupported CPU type
+	}
 }
 
 
 bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckCallInstructionZ80(state, pc);
-	else if(pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckCallInstruction6502(state, pc);
-	else
-		return false;
+	switch (pCPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			return CheckCallInstructionZ80(state, pc);
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
+			return CheckCallInstruction6502(state, pc);
+		default:
+			return false;	// unsupported CPU type
+	}
 }
 
 // check if function should stop static analysis
@@ -609,13 +625,16 @@ bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
 bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return CheckStopInstructionZ80(state, pc);
-	else if(pCPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::HuC6280:
 		return CheckStopInstruction6502(state, pc);
-	else
-		return false;
+	default:
+		return false;	// unsupported CPU type
+	}
 }
 
 // this function assumes the text is mapped in
@@ -685,7 +704,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 				snprintf(label, kLabelSize, "data_%04X", address.Address);
 
 			// zero page labels for 6502
-			if (state.CPUInterface->CPUType == ECPUType::M6502 && address.Address < 256)
+			if ((state.CPUInterface->CPUType == ECPUType::M6502 || state.CPUInterface->CPUType == ECPUType::HuC6280) && address.Address < 256)
 				snprintf(label, kLabelSize, "zp_%02X", address.Address);
 
 			if (bLabelOnOperand == false)
@@ -760,10 +779,20 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	pCodeInfo->bIsCall = CheckCallInstruction(state, pc);
 
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		M6502DisassembleCodeInfoItem(pc, state, pCodeInfo);
+	switch (state.CPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
+			break;
+		case ECPUType::M6502:
+			M6502DisassembleCodeInfoItem(pc, state, pCodeInfo);
+			break;
+		case ECPUType::HuC6280:
+			HuC6280DisassembleCodeInfoItem(pc, state, pCodeInfo);
+			break;
+		default:
+			break;
+	}
 }
 
 // This assumes that the address passed in is mapped to physical memory
@@ -821,10 +850,18 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	// generate disassembly
 	uint16_t newPC = pc;
 
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		newPC = Z80DisassembleCodeInfoItem(pc,state,pCodeInfo);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+	switch (state.CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
+		newPC = Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
+		break;
+	case ECPUType::M6502:
 		newPC = M6502DisassembleCodeInfoItem(pc, state, pCodeInfo);
+		break;
+	case ECPUType::HuC6280:
+		newPC = HuC6280DisassembleCodeInfoItem(pc, state, pCodeInfo);
+		break;
+	}
 
 	state.SetCodeInfoForAddress(pc, pCodeInfo);	
 
@@ -955,10 +992,16 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 
 	state.ExecutionCounter++;
 
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		return RegisterCodeExecutedZ80(state, pc, oldpc);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		return RegisterCodeExecuted6502(state, pc, oldpc);
+	switch (state.CPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			return RegisterCodeExecutedZ80(state, pc, oldpc);
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
+			return RegisterCodeExecuted6502(state, pc, oldpc);
+		default:
+			return false;	// unsupported CPU type
+	}
 
 	return false;
 }

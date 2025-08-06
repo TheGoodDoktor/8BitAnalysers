@@ -6,8 +6,14 @@
 
 void ShowCodeToolTip(FCodeAnalysisState& state, uint16_t addr)
 {
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		ShowCodeToolTipZ80(state, addr);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		ShowCodeToolTip6502(state, addr);
+	switch (state.CPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			ShowCodeToolTipZ80(state, addr);
+			break;
+		case ECPUType::M6502:
+		case ECPUType::HuC6280:
+			ShowCodeToolTip6502(state, addr);
+			break;
+	}
 }
