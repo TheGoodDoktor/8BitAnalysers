@@ -101,11 +101,13 @@ ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
 }
 
 // This is a geargfx specific version of FDebugger::Tick()
-bool GearGfxOnInstructionExecuted(void* pContext)
+void GearGfxOnInstructionExecuted(void* pContext)
 {
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 
 	pEmu->GetCodeAnalysis().Debugger.SetPC(pEmu->GetPC());
+
+	RegisterCodeExecuted(pEmu->GetCodeAnalysis(), pEmu->GetPC().Address, pEmu->GetPC().Address);
 
 	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
 	const uint64_t dummyPins = 0;
@@ -113,12 +115,9 @@ bool GearGfxOnInstructionExecuted(void* pContext)
 
 	if (trapId != kTrapId_None)
 	{
+		// This signals to geargfx to stop exection
 		pEmu->GetCodeAnalysis().Debugger.Break();
-		
-		// Tell geargfx to stop exection
-		return true;
 	}
-	return false;
 }
 
 bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
@@ -516,8 +515,6 @@ void FPCEEmu::WindowsMenuAdditions(void)
 {
 }
 
-GeargrafxCore::GG_Debug_Run gDummyDebugRun = { false, false, false, false};
-
 void FPCEEmu::Tick()
 {
 	FEmuBase::Tick();
@@ -530,7 +527,7 @@ void FPCEEmu::Tick()
 		CodeAnalysis.OnFrameStart();
 
 		int audioSampleCount = 0;
-		pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount, &gDummyDebugRun);
+		pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
 		
 		CodeAnalysis.OnFrameEnd();
 	}

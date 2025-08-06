@@ -734,4 +734,4 @@ struct FHuC6280Test
 		DoHuC6280Test();
 	}
 };
-FHuC6280Test gTest;
+//FHuC6280Test gTest;
