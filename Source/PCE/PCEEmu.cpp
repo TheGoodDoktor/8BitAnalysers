@@ -62,7 +62,7 @@ public:
 
 uint8_t		FPCEEmu::ReadByte(uint16_t address) const
 {
-	return pCore->GetMemory()->Read(address);
+	return pCore->GetMemory()->Read(address, /* internal */ true);
 }
 
 uint16_t	FPCEEmu::ReadWord(uint16_t address) const 
@@ -120,6 +120,19 @@ void GearGfxOnInstructionExecuted(void* pContext)
 	}
 }
 
+void OnMemoryRead(void* pContext, u16 pc, u16 dataAddr)
+{
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	RegisterDataRead(pEmu->GetCodeAnalysis(), pc, dataAddr);
+}
+
+void OnMemoryWritten(void* pContext, u16 pc, u16 dataAddr, u8 value)
+{
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	RegisterDataWrite(pEmu->GetCodeAnalysis(), pc, dataAddr, value);
+}
+
+
 bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 {
 	FEmuBase::Init(config);
@@ -133,7 +146,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	// Initialise Emulator
 	pCore = new GeargrafxCore();
 	pCore->Init(CodeAnalysis.Debugger.GetDebuggerStoppedPtr());
+	
 	pCore->SetInstructionExecutedCallback(GearGfxOnInstructionExecuted, this);
+	pCore->GetMemory()->SetMemoryAccessCallbacks(OnMemoryRead, OnMemoryWritten, this);
 
 	// temp DELETE ME
 	pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
@@ -156,12 +171,13 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	
 	// Temp bank setup. hardcoded for rabio lepus
 
+	const int16_t ramId = CodeAnalysis.CreateBank("RAM", 8, pCore->GetMemory()->GetWorkingRAM(), false /*bMachineROM*/, 0x2000);
 	const int16_t testRomId0 = CodeAnalysis.CreateBank("ROM 0", 8, pCore->GetMedia()->GetROMMap()[0], false /*bMachineROM*/, 0xe000);
 	const int16_t testRomId1 = CodeAnalysis.CreateBank("ROM 1", 8, pCore->GetMedia()->GetROMMap()[1], false /*bMachineROM*/, 0xa000);
 	const int16_t testRomId2 = CodeAnalysis.CreateBank("ROM 2", 8, pCore->GetMedia()->GetROMMap()[2], false /*bMachineROM*/, 0xc000);
 	const int16_t testRomId3 = CodeAnalysis.CreateBank("ROM 3", 8, pCore->GetMedia()->GetROMMap()[3], false /*bMachineROM*/, 0x6000);
 	const int16_t testRomId4 = CodeAnalysis.CreateBank("ROM 4", 8, pCore->GetMedia()->GetROMMap()[4], false /*bMachineROM*/, 0x8000);
-	const int16_t testRomId5 = CodeAnalysis.CreateBank("ROM 5", 8, pCore->GetMedia()->GetROMMap()[5], false /*bMachineROM*/, 0x2000);
+	//const int16_t testRomId5 = CodeAnalysis.CreateBank("ROM 5", 8, pCore->GetMedia()->GetROMMap()[5], false /*bMachineROM*/, 0x2000);
 	const int16_t testRomId6 = CodeAnalysis.CreateBank("ROM 6", 8, pCore->GetMedia()->GetROMMap()[6], false /*bMachineROM*/, 0x4000);
 	const int16_t testRomId7 = CodeAnalysis.CreateBank("ROM 7", 8, pCore->GetMedia()->GetROMMap()[7], false /*bMachineROM*/, 0x0);
 	CodeAnalysis.MapBank(testRomId0, 56, EBankAccess::Read);
@@ -169,7 +185,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	CodeAnalysis.MapBank(testRomId2, 48, EBankAccess::Read);
 	CodeAnalysis.MapBank(testRomId3, 24, EBankAccess::Read);
 	CodeAnalysis.MapBank(testRomId4, 32, EBankAccess::Read);
-	CodeAnalysis.MapBank(testRomId5, 8, EBankAccess::Read);
+	CodeAnalysis.MapBank(ramId, 8, EBankAccess::ReadWrite);
 	CodeAnalysis.MapBank(testRomId6, 16, EBankAccess::Read);
 	CodeAnalysis.MapBank(testRomId7, 0, EBankAccess::Read);
 	CodeAnalysis.Config.bShowBanks = true;

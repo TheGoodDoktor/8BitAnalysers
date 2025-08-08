@@ -51,6 +51,8 @@ Memory::Memory(HuC6260* huc6260, HuC6202* huc6202, HuC6280* huc6280, Media* medi
     m_card_ram_size = 0;
     m_card_ram_start = 0;
     m_card_ram_end = 0;
+
+    InitPointer(m_callback_context);
 }
 
 Memory::~Memory()
@@ -88,6 +90,14 @@ void Memory::Init()
     m_arcade_card_mapper = new ArcadeCardMapper(m_media, this);
 
     Reset();
+}
+
+// sam. added memory access callbacks.
+void Memory::SetMemoryAccessCallbacks(GG_Memory_Read_Callback read_callback, GG_Memory_Write_Callback write_callback, void* context)
+{
+   m_memory_read_callback = read_callback;
+   m_memory_write_callback = write_callback;
+   m_callback_context = context;
 }
 
 void Memory::Reset()

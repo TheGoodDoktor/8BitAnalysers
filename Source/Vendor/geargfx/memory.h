@@ -49,12 +49,17 @@ public:
         MEMORY_BANK_TYPE_UNUSED
     };
 
+    // sam. added memory access callbacks.
+    typedef void (*GG_Memory_Read_Callback)(void* context, u16 pc, u16 dataAddr);
+    typedef void (*GG_Memory_Write_Callback)(void* context, u16 pc, u16 dataAddr, u8 value);
+
 public:
     Memory(HuC6260* huc6260, HuC6202* huc6202, HuC6280* huc6280, Media* media, Input* input, Audio* audio, CdRom* cdrom);
     ~Memory();
     void Init();
     void Reset();
-    u8 Read(u16 address, bool block_transfer = false);
+    // sam. added internal flag.
+    u8 Read(u16 address, bool callback = true, bool block_transfer = false);
     void Write(u16 address, u8 value, bool block_transfer = false);
     void SetMpr(u8 index, u8 value);
     u8 GetMpr(u8 index);
@@ -92,6 +97,9 @@ public:
     void SaveState(std::ostream& stream);
     void LoadState(std::istream& stream);
 
+    // sam. added this
+    void SetMemoryAccessCallbacks(GG_Memory_Read_Callback read_callback, GG_Memory_Write_Callback write_callback, void* context);
+
 private:
     void ReloadMemoryMap();
 
@@ -127,6 +135,11 @@ private:
     int m_wram_reset_value;
     int m_card_ram_reset_value;
     int m_arcade_card_reset_value;
+
+    // sam. added memory access callbacks.
+    void* m_callback_context;
+    GG_Memory_Read_Callback m_memory_read_callback;
+    GG_Memory_Write_Callback m_memory_write_callback;
 };
 
 static const u8 k_backup_ram_init_string[8] = { 'H', 'U', 'B', 'M', 0x00, 0xA0, 0x10, 0x80 };

@@ -43,12 +43,13 @@ INLINE u32 HuC6280::RunInstruction(bool* instruction_completed)
     CheckIRQs();
     (this->*m_opcodes[opcode])();
 
-#if !defined(GG_DISABLE_DISASSEMBLER)
+// sam. restore instruction completed functionality when disassembler is disabled.
+//#if !defined(GG_DISABLE_DISASSEMBLER)
     if (IsValidPointer(instruction_completed))
         *instruction_completed = (m_transfer_state == 0);
-#else
-    UNUSED(instruction_completed);
-#endif
+//#else
+//    UNUSED(instruction_completed);
+//#endif
 
     if((m_irq_pending || IS_SET_BIT(m_interrupt_request_register, 2)) && (m_transfer_state == 0))
         HandleIRQ();

@@ -64,6 +64,9 @@ include( ../Shared/CMakeShared.txt )
 add_compile_definitions( _CRT_SECURE_NO_WARNINGS )
 add_compile_definitions( _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS )
 
+## geargfx
+add_compile_definitions( GG_DISABLE_DISASSEMBLER )
+
 # compiler options
 if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE Release)

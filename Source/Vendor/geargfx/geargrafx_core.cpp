@@ -59,7 +59,7 @@ GeargrafxCore::GeargrafxCore()
     InitPointer(m_debug_callback);
     // sam
     InitPointer(m_instruction_executed_callback);
-    InitPointer(m_instruction_executed_context);
+    InitPointer(m_callback_context);
     // sam. let 8BA control this
     //m_paused = true;
     m_master_clock_cycles = 0;
@@ -168,7 +168,7 @@ void GeargrafxCore::SetDebugCallback(GG_Debug_Callback callback)
 void GeargrafxCore::SetInstructionExecutedCallback(GG_Instruction_Executed_Callback callback, void* context)
 {
    m_instruction_executed_callback = callback;
-   m_instruction_executed_context = context;
+   m_callback_context = context;
 }
 
 void GeargrafxCore::KeyPressed(GG_Controllers controller, GG_Keys key)

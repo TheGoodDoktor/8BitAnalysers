@@ -98,7 +98,7 @@ public:
     u64 GetMasterClockCycles();
     void SetDebugCallback(GG_Debug_Callback callback);
     // sam. added this.
-    void SetInstructionExecutedCallback(GG_Instruction_Executed_Callback callback, void* context = nullptr);
+    void SetInstructionExecutedCallback(GG_Instruction_Executed_Callback callback, void* context);
 
 private:
     void Reset();
@@ -129,7 +129,7 @@ private:
     
     // sam. added callback for every time an instruction is executed.
     GG_Instruction_Executed_Callback m_instruction_executed_callback;
-    void* m_instruction_executed_context;
+    void* m_callback_context;
 
     u64 m_master_clock_cycles;
 };

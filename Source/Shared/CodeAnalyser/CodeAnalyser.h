@@ -13,6 +13,7 @@
 #include "IOAnalyser.h"
 #include <Misc/GlobalConfig.h>
 #include "Commands/FormatDataCommand.h"
+#include "Debug/DebugLog.h"
 
 // forward dec
 class FGraphicsView;
@@ -522,7 +523,7 @@ public:
 		FCodeAnalysisPage* pPage = ReadPageTable[pageNo];
 		if (pPage == nullptr)
 		{
-			printf("Read page %d NOT mapped", pageNo);
+			LOGERROR("Read page %d NOT mapped", pageNo);
 		}
 
 		return pPage;
@@ -535,7 +536,7 @@ public:
 		FCodeAnalysisPage* pPage = WritePageTable[pageNo];
 		if (pPage == nullptr)
 		{
-			printf("Write page %d NOT mapped", pageNo);
+			LOGERROR("Write page %d NOT mapped", pageNo);
 		}
 
 		return pPage;

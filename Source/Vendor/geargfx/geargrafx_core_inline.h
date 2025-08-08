@@ -99,17 +99,6 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
             }
             m_audio->Clock(cycles);
 
-            // sam. added callback for after an instruction is executed
-            if (instruction_completed)
-            {
-               if (IsValidPointer(m_instruction_executed_callback))
-                  m_instruction_executed_callback(m_instruction_executed_context);
-
-               if (*m_paused)
-                  stop = true;
-            }
-
-#if 0
             if (debug_enable)
             {
                 if (debug->step_debugger)
@@ -124,7 +113,6 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
                         stop = true;
                 }
             }
-#endif
         }
         while (!stop);
 
@@ -141,7 +129,8 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
 
         do
         {
-            u32 cycles = m_huc6280->RunInstruction();
+            bool instruction_completed = false;
+            u32 cycles = m_huc6280->RunInstruction(&instruction_completed);
             m_master_clock_cycles += cycles;
             m_huc6280->ClockTimer(cycles);
             stop = m_huc6260->Clock<is_sgx>(cycles);
@@ -152,6 +141,16 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
                 m_cdrom_audio->Clock(cycles);
             }
             m_audio->Clock(cycles);
+
+            // sam. added callback after an instruction is executed
+            if (instruction_completed)
+            {
+               if (IsValidPointer(m_instruction_executed_callback))
+                  m_instruction_executed_callback(m_callback_context);
+
+               if (*m_paused)
+                  stop = true;
+            }
         }
         while (!stop);
 

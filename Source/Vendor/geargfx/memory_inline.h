@@ -33,7 +33,7 @@
 #include "sf2_mapper.h"
 #include "arcade_card_mapper.h"
 
-INLINE u8 Memory::Read(u16 address, bool block_transfer)
+INLINE u8 Memory::Read(u16 address, bool internal, bool block_transfer)
 {
 #if defined(GG_TESTING)
     return m_test_memory[address];
@@ -46,6 +46,10 @@ INLINE u8 Memory::Read(u16 address, bool block_transfer)
     u8 mpr_index = address >> 13;
     u8 bank = m_mpr[mpr_index];
     u16 offset = address & 0x1FFF;
+
+    // sam. add callback for memory reads
+    if (!internal && bank != 0xff) // todo: hardware page
+      m_memory_read_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address);
 
     if (bank != 0xFF)
     {
@@ -153,11 +157,14 @@ INLINE void Memory::Write(u16 address, u8 value, bool block_transfer)
     u8 bank = m_mpr[mpr_index];
     u16 offset = address & 0x1FFF;
 
+    if (bank != 0xff) // todo: hardware page
+      m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
+
     if (IsValidPointer(m_current_mapper) && bank < 0x80)
     {
         m_current_mapper->Write(bank, offset, value);
     }
-    else if (bank == 0xF7)
+    else if (bank == 0xF7) // savegame ram
     {
         if (m_memory_map_write[bank] && (offset < 0x800))
             m_memory_map[bank][offset] = value;
