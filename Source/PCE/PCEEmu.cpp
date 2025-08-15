@@ -9,7 +9,7 @@
 #include <geargrafx_core.h>
 //#include "CodeAnalyser/CodeAnalyser.h"
 //#include "CodeAnalyser/UI/CodeAnalyserUI.h"
-//#include "Debug/DebugLog.h"
+#include "Debug/DebugLog.h"
 
 #include "App.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
@@ -18,6 +18,17 @@
 
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "PCE Analyser";
+
+#ifndef NDEBUG
+#define BANK_SWITCH_DEBUG
+#endif
+#ifdef BANK_SWITCH_DEBUG
+#define BANK_LOG(...)  { LOGINFO("[BNK] " __VA_ARGS__); }
+#define BANK_ERROR(...)  { LOGERROR("[BNK] " __VA_ARGS__); }
+#else
+#define BANK_LOG(...)
+#define BANK_ERROR(...)
+#endif
 
 class FPCECPUEmulator6502 : public ICPUEmulator6502
 {
@@ -60,7 +71,7 @@ public:
 	FPCEEmu* pPCEEmu = nullptr;
 };
 
-uint8_t		FPCEEmu::ReadByte(uint16_t address) const
+uint8_t FPCEEmu::ReadByte(uint16_t address) const
 {
 	return pCore->GetMemory()->Read(address, /* internal */ true);
 }
@@ -132,6 +143,114 @@ void OnMemoryWritten(void* pContext, u16 pc, u16 dataAddr, u8 value)
 	RegisterDataWrite(pEmu->GetCodeAnalysis(), pc, dataAddr, value);
 }
 
+void OnBankChange(void* pContext, u8 mprIndex, u8 value)
+{
+	//return;
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	Memory* pMemory = pEmu->GetCore()->GetMemory();
+		
+	const uint16_t bankId = pEmu->Banks[value];
+	const EBankAccess bankAccess = pMemory->GetMemoryMapWrite()[value] ? EBankAccess::ReadWrite : EBankAccess::Read;
+	pEmu->GetCodeAnalysis().MapBank(bankId, mprIndex * 8, bankAccess);
+	pEmu->GetCodeAnalysis().SetBankPrimaryPage(bankId, mprIndex * 8);
+
+	FCodeAnalysisBank* pOldBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[mprIndex]);
+
+	pEmu->MprBankId[mprIndex] = pEmu->Banks[value];
+	
+	FCodeAnalysisBank* pNewBank = pEmu->GetCodeAnalysis().GetBank(bankId);
+
+#ifdef BANK_SWITCH_DEBUG
+	for (int i = 0; i < 8; i++)
+	{
+		if (pMemory->GetMpr(i) != 0xff)
+		{
+			FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[i]);
+			if (pBank)
+			{
+				if (pBank->Memory != pMemory->GetMemoryMap()[pMemory->GetMpr(i)])
+					BANK_ERROR("mpr slot %d memory does not match geargfx", i);
+			}
+			else
+			{
+				BANK_ERROR("Could not find bank");
+			}
+		}
+	}
+
+	LOGINFO("Map bank 0x%x to slot %d. IN: %s 0x%x OUT: %s", value, mprIndex, pNewBank->Name.c_str(), pNewBank->GetMappedAddress(), pOldBank->Name.c_str());
+
+	int b = 0;
+	for (int addrVal = 0; addrVal < 0xffff; addrVal += 0x2000)
+	{
+		FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->GetCodeAnalysis().GetBankFromAddress(addrVal));
+		if (pBank)
+		{
+			LOGINFO("%d Address 0x%04x: Bank Id %03d '%7s'. %d%s", b++, addrVal, pBank->Id, pBank->Name.c_str(), pBank->PrimaryMappedPage, b==mprIndex?" <---":"");
+		}
+		else
+		{
+			LOGINFO("Address 0x%x is not mapped", addrVal);
+		}
+	}
+
+	for (int i = 0; i < 8; i++)
+	{
+		for (int j = 0; j < 8; j++)
+		{
+			if (i != j)
+			{
+				if (pEmu->MprBankId[i] == pEmu->MprBankId[j])
+				{
+					FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[i]);
+					if (!pBank)
+						LOGERROR("no bank");
+					else
+						LOGERROR("Dupe bank %d '%s' found in slots %d and %d", value, pBank->Name.c_str(), i, j);
+				}
+			}
+		}
+	}
+#endif // BANK_SWITCH_DEBUG 
+
+	pEmu->GetCodeAnalysis().FixupAddressRefs();
+
+	// Force all banks to update their item list.
+	// Also force the code analysis state to update it's ItemList too
+	// think this is causing perf issues
+	//pEmu->GetCodeAnalysis().SetAllBanksDirty();
+
+	// should we use SetAddressRangeDirty() instead?
+	// or set the bank we mapped to dirty and set bCodeAnalysisDataDirty to true?
+	pEmu->GetCodeAnalysis().SetAddressRangeDirty();
+}
+
+uint8_t gDummyMemory[0x2000];
+//uint8_t gUnusedROM[0x2000];
+
+std::string GetBankType(Memory* pMemory, uint8_t bankIndex)
+{
+	Memory::MemoryBankType bankType = pMemory->GetBankType(bankIndex);
+
+	switch (bankType)
+	{
+	case Memory::MEMORY_BANK_TYPE_ROM:
+		return "ROM";
+	case Memory::MEMORY_BANK_TYPE_BIOS:
+		return "BIOS";
+	case Memory::MEMORY_BANK_TYPE_CARD_RAM:
+		return "CARD RAM";
+	case Memory::MEMORY_BANK_TYPE_BACKUP_RAM:
+		return "BACKUP RAM";
+	case Memory::MEMORY_BANK_TYPE_WRAM:
+		return "WORK RAM";
+	case Memory::MEMORY_BANK_TYPE_CDROM_RAM:
+		return "CD RAM";
+	default:
+		return "UNKNOWN";
+	}
+	return "UNKNOWN";
+}
 
 bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 {
@@ -142,13 +261,13 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetWindowTitle(kAppTitle.c_str());
 	SetWindowIcon(GetBundlePath("PCELogo.png"));
 
-
 	// Initialise Emulator
 	pCore = new GeargrafxCore();
 	pCore->Init(CodeAnalysis.Debugger.GetDebuggerStoppedPtr());
 	
+	Memory* pMemory = pCore->GetMemory();
 	pCore->SetInstructionExecutedCallback(GearGfxOnInstructionExecuted, this);
-	pCore->GetMemory()->SetMemoryAccessCallbacks(OnMemoryRead, OnMemoryWritten, this);
+	pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, OnBankChange, this);
 
 	// temp DELETE ME
 	pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
@@ -169,8 +288,102 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	//CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 	
-	// Temp bank setup. hardcoded for rabio lepus
+	for (int i = 0; i < kNumBanks; i++)
+	{
+		Banks[i] = -1;
+	}
 
+	const int romBankCount = pCore->GetMedia()->GetROMBankCount();
+	std::vector<uint16_t> romBanks;
+	for (int bankNo = 0; bankNo < romBankCount; bankNo++)
+	{
+		char bankName[32];
+		sprintf(bankName, "ROM %02d", bankNo);
+		// GetROMMap does not return sequential values so we need to use GetROM()
+		romBanks.push_back(CodeAnalysis.CreateBank(bankName, 8, pCore->GetMedia()->GetROM() + bankNo * 0x2000, false /*bMachineROM*/, 0x0000));
+	}
+
+	for (int bankNo = 0; bankNo < 128; bankNo++)
+	{
+		const int bankIndex = pCore->GetMedia()->GetBankIndex(bankNo);
+		Banks[bankNo] = romBanks[bankIndex];
+	}
+
+	for (int bankNo = 128; bankNo < 256; bankNo++)
+	{
+		if (Banks[bankNo] == -1)
+		{
+			//Banks[bankNo] = CodeAnalysis.CreateBank("UNUSED", 8, gUnusedROM, false /*bMachineROM*/, 0x0000);
+			Banks[bankNo] = CodeAnalysis.CreateBank("UNUSED", 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, 0x0000);
+		}
+	}
+
+	// todo: hardware page is mpr slot 0xff. for now map some dummy memory until we figure out how to do it.
+	Banks[0xff] = CodeAnalysis.CreateBank("HW PAGE", 8, gDummyMemory, false /*bMachineROM*/, 0x0);
+	MprBankId[0] = Banks[0xff];
+
+	// RAM
+	Banks[0xf8] = CodeAnalysis.CreateBank("WRAM", 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000);
+	Banks[0xf9] = Banks[0xfa] = Banks[0xfb] = Banks[0xf8];
+	MprBankId[1] = Banks[0xf8];
+
+	// todo call the same code here as we do in OnBankChange()?
+	for (int mprNum = 0; mprNum < 8; mprNum++)
+	{
+		const uint16_t bankNum = pMemory->GetMpr(mprNum);
+		FCodeAnalysisBank* pBank = GetCodeAnalysis().GetBank(Banks[bankNum]);
+		const EBankAccess bankAccess = pMemory->GetMemoryMapWrite()[bankNum] ? EBankAccess::ReadWrite : EBankAccess::Read;
+		CodeAnalysis.MapBank(Banks[bankNum], mprNum * 8, EBankAccess::Read);
+		CodeAnalysis.SetBankPrimaryPage(Banks[bankNum], mprNum * 8);
+		MprBankId[mprNum] = Banks[bankNum];
+	}
+
+	LOGINFO("Checking memory map");
+	for (int i = 0; i <= 0xff; i++)
+	{
+		FCodeAnalysisBank* pBank = GetCodeAnalysis().GetBank(Banks[i]);
+		const int romIndex = i < 128 ? pCore->GetMedia()->GetBankIndex(i) : -1;
+		if (pBank->Memory == pMemory->GetMemoryMap()[i])
+		{
+			BANK_LOG("Mpr %03d: %8s '%7s'. id %03d. rom index %03d. %llx Memory matches OK",
+				i, 
+				GetBankType(pMemory, i).c_str(), 
+				pBank->Name.c_str(), 
+				pBank->Id, 
+				romIndex,
+				pBank->Memory
+			);
+		}
+		else
+		{
+			LOGERROR("Mpr %03d: %8s '%7s'. id %03d. rom index %03d. %llx %llx Memory DOES NOT MATCH",
+				i, 
+				GetBankType(pMemory, i).c_str(), 
+				pBank->Name.c_str(), 
+				pBank->Id, 
+				romIndex,
+				pBank->Memory,
+				pMemory->GetMemoryMap()[i]
+			);
+		}
+	}
+	BANK_LOG("Done");
+
+	// check entire physical address range is mapped
+	for (int addrVal = 0; addrVal < 0xffff; addrVal+=0x2000)
+	{
+		FCodeAnalysisBank* pBank = GetCodeAnalysis().GetBank(GetCodeAnalysis().GetBankFromAddress(addrVal));
+		if (!pBank)
+		{
+			BANK_ERROR("Address 0x%x is not mapped", addrVal);
+		}
+		else
+		{
+			BANK_LOG("Bank %s is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
+		}
+	}
+#if 0
+	// Temp bank setup. hardcoded for rabio lepus
 	const int16_t ramId = CodeAnalysis.CreateBank("RAM", 8, pCore->GetMemory()->GetWorkingRAM(), false /*bMachineROM*/, 0x2000);
 	const int16_t testRomId0 = CodeAnalysis.CreateBank("ROM 0", 8, pCore->GetMedia()->GetROMMap()[0], false /*bMachineROM*/, 0xe000);
 	const int16_t testRomId1 = CodeAnalysis.CreateBank("ROM 1", 8, pCore->GetMedia()->GetROMMap()[1], false /*bMachineROM*/, 0xa000);
@@ -188,9 +401,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	CodeAnalysis.MapBank(ramId, 8, EBankAccess::ReadWrite);
 	CodeAnalysis.MapBank(testRomId6, 16, EBankAccess::Read);
 	CodeAnalysis.MapBank(testRomId7, 0, EBankAccess::Read);
+#endif
 	CodeAnalysis.Config.bShowBanks = true;
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
-
 	// set supported bitmap format
 	/*CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -536,8 +749,6 @@ void FPCEEmu::Tick()
 	FEmuBase::Tick();
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
-
-
 	if (debugger.IsStopped() == false)
 	{
 		CodeAnalysis.OnFrameStart();

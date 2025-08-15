@@ -60,6 +60,9 @@ public:
 	GeargrafxCore* GetCore() const { return pCore; }
 	uint8_t* GetFrameBuffer() const { return pFrameBuffer; }
 
+	static const int kNumBanks = 256;
+	int16_t Banks[kNumBanks];
+	int16_t MprBankId[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 protected:
 	bool LoadMachineState(const char* fname);
 	bool SaveMachineState(const char* fname);

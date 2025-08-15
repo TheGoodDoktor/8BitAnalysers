@@ -58,7 +58,7 @@ void HuC6280::Init(Memory* memory, HuC6202* huc6202)
 
 void HuC6280::Reset()
 {
-   // sam. changed this to not trigger callback because the banks are not created at this point.
+    // sam. changed this to not trigger a callback because the banks are not created at this point.
     bool internal = true;
     m_PC.SetLow(m_memory->Read(0xFFFE, internal));
     m_PC.SetHigh(m_memory->Read(0xFFFF, internal));

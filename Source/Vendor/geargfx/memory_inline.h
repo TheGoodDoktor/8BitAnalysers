@@ -249,6 +249,7 @@ INLINE void Memory::SetMpr(u8 index, u8 value)
 {
     assert(index < 8);
     m_mpr[index] = value;
+    Debug("SetMpr %d $%x", index, value);
 }
 
 INLINE u8 Memory::GetMpr(u8 index)
@@ -295,6 +296,11 @@ INLINE u8* Memory::GetCDROMRAM()
 INLINE u8* Memory::GetArcadeRAM()
 {
     return m_arcade_card_mapper->GetRAM();
+}
+
+INLINE u8* Memory::GetUnusedMemory()
+{
+   return m_unused_memory;
 }
 
 INLINE int Memory::GetWorkingRAMSize()

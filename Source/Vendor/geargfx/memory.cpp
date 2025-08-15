@@ -93,10 +93,11 @@ void Memory::Init()
 }
 
 // sam. added memory access callbacks.
-void Memory::SetMemoryAccessCallbacks(GG_Memory_Read_Callback read_callback, GG_Memory_Write_Callback write_callback, void* context)
+void Memory::SetMemoryCallbacks(GG_Memory_Read_Callback read_callback, GG_Memory_Write_Callback write_callback, GG_Mpr_Callback mpr_callback, void* context)
 {
    m_memory_read_callback = read_callback;
    m_memory_write_callback = write_callback;
+   m_mpr_callback = mpr_callback;
    m_callback_context = context;
 }
 
@@ -112,7 +113,11 @@ void Memory::Reset()
         {
             do
             {
-                m_mpr[i] = rand() & 0xFF;
+               do
+               {
+                  m_mpr[i] = rand() & 0xFF;
+               }
+               while (i != 0 && m_mpr[i] == m_mpr[i-1]); // sam. prevent dupe mpr values
             }
             while (m_mpr[i] == 0x00);
         }
@@ -296,6 +301,8 @@ void Memory::SetMprTAM(u8 bits, u8 value)
         if ((bits & (0x01 << i)) != 0)
         {
             m_mpr[i] = value;
+
+            m_mpr_callback(m_callback_context, i, value);
         }
     }
 }

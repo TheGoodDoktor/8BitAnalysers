@@ -113,6 +113,12 @@ inline int Media::GetROMSize()
     return m_rom_size;
 }
 
+// sam.
+inline int Media::GetROMBankCount()
+{
+   return m_rom_bank_count;
+}
+
 inline int Media::GetCardRAMSize()
 {
     return m_card_ram_size;
@@ -157,5 +163,12 @@ inline u8** Media::GetROMMap()
 {
     return m_rom_map;
 }
+
+// sam. 
+inline int Media::GetBankIndex(u8 index)
+{
+   return m_rom_map_bank_index[index];
+}
+
 
 #endif /* MEDIA_INLINE_H */

@@ -626,11 +626,11 @@ void Media::GatherDataFromPath(const char* path)
 void Media::InitRomMAP()
 {
     int rom_size = m_is_cdrom ? GG_BIOS_SYSCARD_SIZE : m_rom_size;
-    int rom_bank_count = (rom_size / 0x2000) + (rom_size % 0x2000 ? 1 : 0);
+    m_rom_bank_count = (rom_size / 0x2000) + (rom_size % 0x2000 ? 1 : 0);
     u8* bios_ptr = m_is_gameexpress ? m_gameexpress_bios : m_syscard_bios;
     u8* rom_ptr = m_is_cdrom ? bios_ptr : m_rom;
 
-    if (rom_bank_count == 0x30)
+    if (m_rom_bank_count == 0x30)
     {
         Debug("Mapping 384KB ROM");
 
@@ -639,6 +639,8 @@ void Media::InitRomMAP()
             int bank = x & 0x1F;
             int bank_address = bank * 0x2000;
             m_rom_map[x] = &rom_ptr[bank_address];
+            m_rom_map_bank_index[x] = bank; // sam
+
         }
 
         for(int x = 64; x < 128; x++)
@@ -646,9 +648,10 @@ void Media::InitRomMAP()
             int bank = (x & 0x0F) + 0x20;
             int bank_address = bank * 0x2000;
             m_rom_map[x] = &rom_ptr[bank_address];
+            m_rom_map_bank_index[x] = bank; // sam
         }
     }
-    else if (rom_bank_count == 0x40)
+    else if (m_rom_bank_count == 0x40)
     {
         Debug("Mapping 512KB ROM");
 
@@ -657,6 +660,7 @@ void Media::InitRomMAP()
             int bank = x & 0x3F;
             int bank_address = bank * 0x2000;
             m_rom_map[x] = &rom_ptr[bank_address];
+            m_rom_map_bank_index[x] = bank; // sam
         }
 
         for(int x = 64; x < 128; x++)
@@ -664,9 +668,10 @@ void Media::InitRomMAP()
             int bank = (x & 0x1F) + 0x20;
             int bank_address = bank * 0x2000;
             m_rom_map[x] = &rom_ptr[bank_address];
+            m_rom_map_bank_index[x] = bank; // sam
         }
     }
-    else if (rom_bank_count == 0x60)
+    else if (m_rom_bank_count == 0x60)
     {
         Debug("Mapping 768KB ROM");
 
@@ -675,6 +680,7 @@ void Media::InitRomMAP()
             int bank = x & 0x3F;
             int bank_address = bank * 0x2000;
             m_rom_map[x] = &rom_ptr[bank_address];
+            m_rom_map_bank_index[x] = bank; // sam
         }
 
         for(int x = 64; x < 128; x++)
@@ -682,6 +688,7 @@ void Media::InitRomMAP()
             int bank = (x & 0x1F) + 0x40;
             int bank_address = bank * 0x2000;
             m_rom_map[x] = &rom_ptr[bank_address];
+            m_rom_map_bank_index[x] = bank; // sam
         }
     }
     else
@@ -690,9 +697,10 @@ void Media::InitRomMAP()
 
         for(int x = 0; x < 128; x++)
         {
-            int bank = x % rom_bank_count;
+            int bank = x % m_rom_bank_count;
             int bank_address = bank * 0x2000;
             m_rom_map[x] = &rom_ptr[bank_address];
+            m_rom_map_bank_index[x] = bank; // sam
         }
     }
 }
