@@ -23,8 +23,8 @@ const std::string kAppTitle = "PCE Analyser";
 #define BANK_SWITCH_DEBUG
 #endif
 #ifdef BANK_SWITCH_DEBUG
-#define BANK_LOG(...)  { LOGINFO("[BNK] " __VA_ARGS__); }
-#define BANK_ERROR(...)  { LOGERROR("[BNK] " __VA_ARGS__); }
+#define BANK_LOG(...)  LOGINFO("[BNK] " __VA_ARGS__)
+#define BANK_ERROR(...)  LOGERROR("[BNK] " __VA_ARGS__)
 #else
 #define BANK_LOG(...)
 #define BANK_ERROR(...)
@@ -112,8 +112,10 @@ ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
 }
 
 // This is a geargfx specific version of FDebugger::Tick()
-void GearGfxOnInstructionExecuted(void* pContext)
+void OnGearGfxInstructionExecuted(void* pContext)
 {
+	OPTICK_EVENT();
+
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 
 	pEmu->GetCodeAnalysis().Debugger.SetPC(pEmu->GetPC());
@@ -146,54 +148,51 @@ void OnMemoryWritten(void* pContext, u16 pc, u16 dataAddr, u8 value)
 void OnBankChange(void* pContext, u8 mprIndex, u8 value)
 {
 	//return;
+
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	Memory* pMemory = pEmu->GetCore()->GetMemory();
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 		
+#ifdef BANK_SWITCH_DEBUG
+	const FCodeAnalysisBank* pOutBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[mprIndex]);
+#endif
+
 	const uint16_t bankId = pEmu->Banks[value];
+	FCodeAnalysisBank* pInBank = pEmu->GetCodeAnalysis().GetBank(bankId);
+	assert(pInBank);
+	const uint16_t oldMappedAddress = pInBank->GetMappedAddress();
+	const int oldPrimaryPage = pInBank->PrimaryMappedPage;
 	const EBankAccess bankAccess = pMemory->GetMemoryMapWrite()[value] ? EBankAccess::ReadWrite : EBankAccess::Read;
-	pEmu->GetCodeAnalysis().MapBank(bankId, mprIndex * 8, bankAccess);
-	pEmu->GetCodeAnalysis().SetBankPrimaryPage(bankId, mprIndex * 8);
-
-	FCodeAnalysisBank* pOldBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[mprIndex]);
-
+	state.MapBank(bankId, mprIndex * 8, bankAccess);
+	pInBank->PrimaryMappedPage = mprIndex * 8;
 	pEmu->MprBankId[mprIndex] = pEmu->Banks[value];
-	
-	FCodeAnalysisBank* pNewBank = pEmu->GetCodeAnalysis().GetBank(bankId);
 
 #ifdef BANK_SWITCH_DEBUG
 	for (int i = 0; i < 8; i++)
 	{
 		if (pMemory->GetMpr(i) != 0xff)
 		{
-			FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[i]);
-			if (pBank)
-			{
-				if (pBank->Memory != pMemory->GetMemoryMap()[pMemory->GetMpr(i)])
-					BANK_ERROR("mpr slot %d memory does not match geargfx", i);
-			}
-			else
-			{
-				BANK_ERROR("Could not find bank");
-			}
+			const FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[i]);
+			assert(pBank);
+			if (pBank->Memory != pMemory->GetMemoryMap()[pMemory->GetMpr(i)])
+				BANK_ERROR("Mpr slot %d bank memory does not match geargfx", i);
 		}
 	}
 
-	LOGINFO("Map bank 0x%x to slot %d. IN: %s 0x%x OUT: %s", value, mprIndex, pNewBank->Name.c_str(), pNewBank->GetMappedAddress(), pOldBank->Name.c_str());
+	if (oldPrimaryPage == -1)
+		BANK_LOG("Map bank 0x%x to slot %d. IN: '%s' Unmapped->0x%x OUT: '%s'", value, mprIndex, pInBank->Name.c_str(), pInBank->GetMappedAddress(), pOutBank->Name.c_str());
+	else
+		BANK_LOG("Map bank 0x%x to slot %d. IN: '%s' 0x%x->0x%x OUT: '%s'", value, mprIndex, pInBank->Name.c_str(), oldMappedAddress, pInBank->GetMappedAddress(), pOutBank->Name.c_str());
 
 	int b = 0;
 	for (int addrVal = 0; addrVal < 0xffff; addrVal += 0x2000)
 	{
 		FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->GetCodeAnalysis().GetBankFromAddress(addrVal));
-		if (pBank)
-		{
-			LOGINFO("%d Address 0x%04x: Bank Id %03d '%7s'. %d%s", b++, addrVal, pBank->Id, pBank->Name.c_str(), pBank->PrimaryMappedPage, b==mprIndex?" <---":"");
-		}
-		else
-		{
-			LOGINFO("Address 0x%x is not mapped", addrVal);
-		}
+		assert(pBank);
+		BANK_LOG("%d Address 0x%04x: Bank Id %03d '%7s'. %d%s", b++, addrVal, pBank->Id, pBank->Name.c_str(), pBank->PrimaryMappedPage, b==mprIndex?" <---":"");
 	}
 
+	bool bDupe[8] = { 0, 0, 0, 0, 0, 0, 0, 0};
 	for (int i = 0; i < 8; i++)
 	{
 		for (int j = 0; j < 8; j++)
@@ -202,27 +201,30 @@ void OnBankChange(void* pContext, u8 mprIndex, u8 value)
 			{
 				if (pEmu->MprBankId[i] == pEmu->MprBankId[j])
 				{
-					FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[i]);
-					if (!pBank)
-						LOGERROR("no bank");
-					else
-						LOGERROR("Dupe bank %d '%s' found in slots %d and %d", value, pBank->Name.c_str(), i, j);
+					if (!bDupe[j])
+					{
+						FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[i]);
+						assert(pBank);
+						BANK_ERROR("Dupe bank %d '%s' found in slots %d and %d", value, pBank->Name.c_str(), i, j);
+					}
+					bDupe[i] = true;
 				}
 			}
 		}
 	}
 #endif // BANK_SWITCH_DEBUG 
 
-	pEmu->GetCodeAnalysis().FixupAddressRefs();
+	if (pInBank->PrimaryMappedPage != oldPrimaryPage)
+	{
+		BANK_LOG("Physical address modifed for '%s'. 0x%x->0x%x. Fixing address refs.", pInBank->Name.c_str(), oldMappedAddress, pInBank->GetMappedAddress());
+		state.FixupAddressRefs();
+	}
 
 	// Force all banks to update their item list.
 	// Also force the code analysis state to update it's ItemList too
 	// think this is causing perf issues
-	//pEmu->GetCodeAnalysis().SetAllBanksDirty();
-
-	// should we use SetAddressRangeDirty() instead?
-	// or set the bank we mapped to dirty and set bCodeAnalysisDataDirty to true?
-	pEmu->GetCodeAnalysis().SetAddressRangeDirty();
+	pEmu->GetCodeAnalysis().SetAllBanksDirty();
+	//state.SetAddressRangeDirty();
 }
 
 uint8_t gDummyMemory[0x2000];
@@ -266,7 +268,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pCore->Init(CodeAnalysis.Debugger.GetDebuggerStoppedPtr());
 	
 	Memory* pMemory = pCore->GetMemory();
-	pCore->SetInstructionExecutedCallback(GearGfxOnInstructionExecuted, this);
+	pCore->SetInstructionExecutedCallback(OnGearGfxInstructionExecuted, this);
 	pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, OnBankChange, this);
 
 	// temp DELETE ME
@@ -293,7 +295,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 		Banks[i] = -1;
 	}
 
-	const int romBankCount = pCore->GetMedia()->GetROMBankCount();
+	const int romSize = pCore->GetMedia()->GetROMSize();
+	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 	std::vector<uint16_t> romBanks;
 	for (int bankNo = 0; bankNo < romBankCount; bankNo++)
 	{
@@ -339,32 +342,20 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	}
 
 	LOGINFO("Checking memory map");
-	for (int i = 0; i <= 0xff; i++)
+	for (int i = 0; i <= 255; i++)
 	{
 		FCodeAnalysisBank* pBank = GetCodeAnalysis().GetBank(Banks[i]);
 		const int romIndex = i < 128 ? pCore->GetMedia()->GetBankIndex(i) : -1;
 		if (pBank->Memory == pMemory->GetMemoryMap()[i])
 		{
-			BANK_LOG("Mpr %03d: %8s '%7s'. id %03d. rom index %03d. %llx Memory matches OK",
-				i, 
-				GetBankType(pMemory, i).c_str(), 
-				pBank->Name.c_str(), 
-				pBank->Id, 
-				romIndex,
-				pBank->Memory
-			);
+			if (i < 128)
+				BANK_LOG("0x%02x: '%-7s' '%-8s'. id %03d. rom index %03d. Memory matches OK", i, pBank->Name.c_str(), GetBankType(pMemory, i).c_str(), pBank->Id, romIndex);
+			else
+				BANK_LOG("0x%02x: '%-7s' '%-8s'. id %03d. Memory matches OK", i, pBank->Name.c_str(), GetBankType(pMemory, i).c_str(), pBank->Id);
 		}
 		else
 		{
-			LOGERROR("Mpr %03d: %8s '%7s'. id %03d. rom index %03d. %llx %llx Memory DOES NOT MATCH",
-				i, 
-				GetBankType(pMemory, i).c_str(), 
-				pBank->Name.c_str(), 
-				pBank->Id, 
-				romIndex,
-				pBank->Memory,
-				pMemory->GetMemoryMap()[i]
-			);
+			BANK_ERROR("0x%02x: '%-7s' '%-8s'. id %03d. rom index %03d. 0x%llx 0x%llx Memory DOES NOT MATCH", i, pBank->Name.c_str(), GetBankType(pMemory, i).c_str(), pBank->Id, romIndex, pBank->Memory, pMemory->GetMemoryMap()[i]);
 		}
 	}
 	BANK_LOG("Done");
@@ -379,7 +370,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 		}
 		else
 		{
-			BANK_LOG("Bank %s is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
+			BANK_LOG("Bank '%s' is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
 		}
 	}
 #if 0

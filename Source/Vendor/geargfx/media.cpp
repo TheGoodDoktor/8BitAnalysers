@@ -626,11 +626,11 @@ void Media::GatherDataFromPath(const char* path)
 void Media::InitRomMAP()
 {
     int rom_size = m_is_cdrom ? GG_BIOS_SYSCARD_SIZE : m_rom_size;
-    m_rom_bank_count = (rom_size / 0x2000) + (rom_size % 0x2000 ? 1 : 0);
+    int rom_bank_count = (rom_size / 0x2000) + (rom_size % 0x2000 ? 1 : 0);
     u8* bios_ptr = m_is_gameexpress ? m_gameexpress_bios : m_syscard_bios;
     u8* rom_ptr = m_is_cdrom ? bios_ptr : m_rom;
 
-    if (m_rom_bank_count == 0x30)
+    if (rom_bank_count == 0x30)
     {
         Debug("Mapping 384KB ROM");
 
@@ -651,7 +651,7 @@ void Media::InitRomMAP()
             m_rom_map_bank_index[x] = bank; // sam
         }
     }
-    else if (m_rom_bank_count == 0x40)
+    else if (rom_bank_count == 0x40)
     {
         Debug("Mapping 512KB ROM");
 
@@ -671,7 +671,7 @@ void Media::InitRomMAP()
             m_rom_map_bank_index[x] = bank; // sam
         }
     }
-    else if (m_rom_bank_count == 0x60)
+    else if (rom_bank_count == 0x60)
     {
         Debug("Mapping 768KB ROM");
 

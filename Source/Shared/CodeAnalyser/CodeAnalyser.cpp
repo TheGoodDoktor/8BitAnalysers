@@ -29,6 +29,12 @@
 #include "FunctionAnalyser.h"
 #include "UI/GlobalsViewer.h"
 
+
+void LogInvalidAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef addrRef)
+{
+	const uint16_t mappedAddr = pBank->GetMappedAddress();
+	LOGERROR("Invalid AddressRef: $%x. Bank %d '%s': $%x-$%x.", addrRef.Address, addrRef.BankId, pBank->Name.c_str(), mappedAddr, mappedAddr + pBank->GetSizeBytes());
+}
 // memory bank code
 
 // create a bank
@@ -168,10 +174,16 @@ bool FCodeAnalysisState::IsAddressValid(FAddressRef addr) const
 {
 	const FCodeAnalysisBank* pBank = GetBank(addr.BankId);
 	if (pBank == nullptr)
+	{
+		LOGWARNING("Could not get bank %d for FAddressRef with address $%x", addr.BankId, addr.Address);
 		return false;
+	}
 
 	if(addr.Address < pBank->GetMappedAddress() || addr.Address >= (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
+	{
+		LogInvalidAddressRefForBank(pBank, addr);
 		return false;
+	}
 
 	return true;
 }
@@ -764,6 +776,7 @@ bool FCodeAnalysisState::SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLa
 	if (pBank != nullptr)
 	{
 		const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+		CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 		assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 		pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].Labels[bankAddr & FCodeAnalysisPage::kPageMask] = pLabel;
 		return true;
@@ -1487,29 +1500,16 @@ void FixupCodeInfoAddressRefs(const FCodeAnalysisState& state, FCodeInfo* pCodeI
 }
 
 int gAddressRefsFixed = 0;
+int gAddressRefsProcessed = 0;
+int gBanksProcessed = 0;
 
-void FCodeAnalysisState::FixupAddressRefs()
+void FCodeAnalysisState::FixupBankAddressRefs()
 {
-	gAddressRefsFixed = 0;
-
-	FixupAddressRef(*this, CopiedAddress);
-	Debugger.FixupAddresRefs();
-
-	GetEmulator()->FixupAddressRefs();
-
-	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
-	{
-		ViewState[i].FixupAddressRefs(*this);
-	}
-
-	for (FCommand* pCommand : CommandStack)
-	{
-		pCommand->FixupAddressRefs(*this);
-	}
-
 	// Go through all banks to fix up labels, code and data items.
 	for (FCodeAnalysisBank& bank : Banks)
 	{
+		gBanksProcessed++;
+
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
 			FCodeAnalysisPage& page = bank.Pages[pageNo];
@@ -1530,9 +1530,35 @@ void FCodeAnalysisState::FixupAddressRefs()
 			}
 		}
 	}
+}
+
+void FCodeAnalysisState::FixupAddressRefs()
+{
+	OPTICK_EVENT();
+
+	gAddressRefsFixed = 0;
+	gAddressRefsProcessed = 0;
+	gBanksProcessed = 0;
+
+	FixupAddressRef(*this, CopiedAddress);
+	Debugger.FixupAddresRefs();
+
+	GetEmulator()->FixupAddressRefs();
+
+	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
+	{
+		ViewState[i].FixupAddressRefs(*this);
+	}
+
+	for (FCommand* pCommand : CommandStack)
+	{
+		pCommand->FixupAddressRefs(*this);
+	}
+
+	FixupBankAddressRefs();
 
 #ifndef NDEBUG
-	LOGINFO("Fixed %d refs", gAddressRefsFixed);
+	LOGINFO("Processed %d refs across %d banks. Fixed %d", gAddressRefsProcessed, gBanksProcessed, gAddressRefsFixed);
 #endif
 }
 
@@ -1743,6 +1769,7 @@ void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr)
 		{
 			gAddressRefsFixed++;
 		}
+		gAddressRefsProcessed++;
 #endif
 		const uint16_t bankOffset = (addr.Address & pBank->SizeMask);
 		addr.Address = pBank->GetMappedAddress() + bankOffset;

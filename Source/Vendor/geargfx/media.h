@@ -58,7 +58,6 @@ public:
     bool IsPreloadCdRomEnabled();
     int GetROMSize();
     // sam. added this
-    int GetROMBankCount();
     int GetCardRAMSize();
     GG_Keys GetAvenuePad3Button();
     const char* GetFilePath();
