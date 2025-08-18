@@ -16,6 +16,8 @@
 #include "CodeAnalyser/CodeAnalysisJson.h"
 #include "PCEGameConfig.h"
 
+#include "optick/optick.h"
+
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "PCE Analyser";
 
@@ -147,7 +149,7 @@ void OnMemoryWritten(void* pContext, u16 pc, u16 dataAddr, u8 value)
 
 void OnBankChange(void* pContext, u8 mprIndex, u8 value)
 {
-	//return;
+	OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	Memory* pMemory = pEmu->GetCore()->GetMemory();
@@ -189,7 +191,7 @@ void OnBankChange(void* pContext, u8 mprIndex, u8 value)
 	{
 		FCodeAnalysisBank* pBank = pEmu->GetCodeAnalysis().GetBank(pEmu->GetCodeAnalysis().GetBankFromAddress(addrVal));
 		assert(pBank);
-		BANK_LOG("%d Address 0x%04x: Bank Id %03d '%7s'. %d%s", b++, addrVal, pBank->Id, pBank->Name.c_str(), pBank->PrimaryMappedPage, b==mprIndex?" <---":"");
+		BANK_LOG("%d Address 0x%04x: Bank Id %03d '%-7s'. %d%s", b++, addrVal, pBank->Id, pBank->Name.c_str(), pBank->PrimaryMappedPage, b==mprIndex?" <---":"");
 	}
 
 	bool bDupe[8] = { 0, 0, 0, 0, 0, 0, 0, 0};

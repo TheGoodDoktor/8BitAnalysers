@@ -20,6 +20,7 @@
 #include <CodeAnalyser/UI/UIColours.h>
 #include "CodeAnalyser/CodeAnalysisDot.h"
 
+#include "optick/optick.h"
 
 void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 {
@@ -112,6 +113,8 @@ void FEmuBase::Reset()
 
 bool FEmuBase::DrawDockingView()
 {
+	OPTICK_EVENT();
+
 	//SCOPE_PROFILE_CPU("UI", "DrawUI", ProfCols::UI);
 
 	static bool opt_fullscreen_persistant = true;

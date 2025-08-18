@@ -5,6 +5,7 @@
 
 #include "imgui.h"
 #include <implot.h>
+#include "optick/optick.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <stdio.h>
@@ -215,6 +216,8 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
     // Main loop
     while (!glfwWindowShouldClose(appState.MainWindow))
     {
+        OPTICK_FRAME("MainThread");
+
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
@@ -279,6 +282,8 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
 
     glfwDestroyWindow(appState.MainWindow);
     glfwTerminate();
+
+    OPTICK_SHUTDOWN();
 
     return 0;
 }

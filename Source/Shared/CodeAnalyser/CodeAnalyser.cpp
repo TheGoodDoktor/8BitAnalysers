@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <imgui.h>
+#include "optick/optick.h"
 
 #include "Util/Misc.h"
 #include "Util/GraphicsView.h"

@@ -1,5 +1,7 @@
 #include "Debugger.h"
 
+#include "optick/optick.h"
+
 #include <CodeAnalyser/CodeAnalyser.h>
 #include <CodeAnalyser/MemoryAnalyser.h>
 
@@ -1636,6 +1638,8 @@ void FDebugger::DrawUI(void)
 
 void FDebugger::FixupAddresRefs(void)
 {
+	OPTICK_EVENT();
+
 	for (auto& watch : Watches)
 	{
 		FixupAddressRef(*pCodeAnalysis, watch);

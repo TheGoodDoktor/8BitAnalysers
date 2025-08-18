@@ -11,6 +11,7 @@ include_directories( ${vendor_dir}/implot )
 include_directories( ${vendor_dir}/json/single_include/nlohmann )
 include_directories( ${vendor_dir}/geargfx )
 include_directories( ${vendor_dir}/geargfx/shared/dependencies/miniz )
+include_directories( ${vendor_dir}/optick )
 
 # vendor source
 
@@ -188,6 +189,31 @@ set( geargfx_src ${vendor_dir}/geargfx/adpcm.cpp
 
 set( geargfx_miniz_src ${vendor_dir}/geargfx/shared/dependencies/miniz/miniz.c)
 
+# optick
+set ( optick_src ${vendor_dir}/optick/optick.config.h
+	${vendor_dir}/optick/optick.h
+	${vendor_dir}/optick/optick_capi.cpp
+	${vendor_dir}/optick/optick_capi.h
+	${vendor_dir}/optick/optick_common.h
+	${vendor_dir}/optick/optick_core.cpp
+	${vendor_dir}/optick/optick_core.freebsd.h
+	${vendor_dir}/optick/optick_core.h
+	${vendor_dir}/optick/optick_core.linux.h
+	${vendor_dir}/optick/optick_core.macos.h
+	${vendor_dir}/optick/optick_core.platform.h
+	${vendor_dir}/optick/optick_core.win.h
+	${vendor_dir}/optick/optick_gpu.cpp
+	${vendor_dir}/optick/optick_gpu.h
+	${vendor_dir}/optick/optick_memory.h
+	${vendor_dir}/optick/optick_message.cpp
+	${vendor_dir}/optick/optick_message.h
+	${vendor_dir}/optick/optick_miniz.cpp
+	${vendor_dir}/optick/optick_miniz.h
+	${vendor_dir}/optick/optick_serialization.cpp
+	${vendor_dir}/optick/optick_serialization.h
+	${vendor_dir}/optick/optick_server.cpp
+	${vendor_dir}/optick/optick_server.h)
+
 set ( vendor_src 
 	${imgui_src} 
 	${imgui_backend_src} 
@@ -199,4 +225,5 @@ set ( vendor_src
 	${imguiextras} 
 	${geargfx_src} 
 	${geargfx_miniz_src}
+	${optick_src}
 	${vendor_dir}/CMakeVendor.txt)

@@ -18,6 +18,7 @@
 #include "chips/z80.h"
 #include "CodeToolTips.h"
 #include <functional>
+#include "optick/optick.h"
 
 #include "UIColours.h"
 #include <ImGuiSupport/ImGuiScaling.h>
@@ -1069,6 +1070,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 
 void UpdateItemList(FCodeAnalysisState &state)
 {
+	OPTICK_EVENT();
 	// build item list - not every frame please!
 	if (state.IsCodeAnalysisDataDirty() )
 	{

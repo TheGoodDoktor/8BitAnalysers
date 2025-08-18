@@ -29,8 +29,12 @@
 #include "cdrom_audio.h"
 #include "adpcm.h"
 
+#include "optick/optick.h"
+
 INLINE bool GeargrafxCore::RunToVBlank(u8* frame_buffer, s16* sample_buffer, int* sample_count, GG_Debug_Run* debug)
 {
+   OPTICK_EVENT();
+
     if (*m_paused || !m_media->IsReady())
         return false;
 
