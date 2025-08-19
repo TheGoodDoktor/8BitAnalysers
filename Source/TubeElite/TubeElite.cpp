@@ -373,7 +373,7 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 
 }
 
-
+// https://elite.bbcelite.com/6502sp/i_o_processor/variable/oswvecs.html
 void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 {
 	switch (controlBlock.Action)
@@ -414,7 +414,7 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			if (Debug.bOSWORDDebug)
 				LOGINFO("OSWORD - DRAW SHIP ON 3D SCANNER X");
 			break;
-		case 245:
+		case 245:	// OSWORD 245 - Draw a dot on the compass
 			if (Debug.bOSWORDDebug)
 				LOGINFO("OSWORD - DOT");
 			break;
@@ -430,8 +430,7 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			}
 			break;
 		case 247:	// OSWORD 247 - Draw orange sun lines
-			if (Debug.bOSWORDDebug)
-				LOGINFO("OSWORD - DRAW ORANGE SUN LINES");
+			Display.ReceiveSunLineData(controlBlock.pInputBytes);
 			break;
 		case 248:	// OSWORD 248 - Draw the ship hangar
 			if (Debug.bOSWORDDebug)

@@ -79,6 +79,7 @@ public:
 
 	bool AddLine(const FLine& line);
 	void ReceivePixelData(const uint8_t* pPixelData);
+	void ReceiveSunLineData(const uint8_t* pLineData);
 
 	bool UpdateKeyboardBuffer(uint8_t* pBuffer);
 	//bool IsKeyDown(uint8_t key)
@@ -106,16 +107,8 @@ private:
 	uint8_t ColourPalette = 0;
 
 	// Line related
-	static const int kMaxLines = 256;
-	FLine	LineHeap[kMaxLines];
-	int		NoLines = 0;
 	FLine	NewLine;
 	int		NumLineBytesToRead = 0;	// number of bytes to read for the next line
-
-	// pixel related
-	static const int kMaxPixels = 256;
-	FPixel	PixelHeap[kMaxPixels];
-	int		NoPixels = 0;
 
 	FDashboardParams	DashboardParams;	// dashboard parameters
 
