@@ -53,7 +53,7 @@ struct FDashboardParams
 			uint8_t		Fuel;		// fuel level
 			uint8_t		LaserTemp;	// laser temperature
 			uint8_t		CabinTemp;	// cabin temperature
-			uint8_t		FlashingCOnsoleBarsConfig;		// flashing console bars configuration
+			uint8_t		FlashingConsoleBarsConfig;		// flashing console bars configuration
 			uint8_t		EscapePod;
 		};
 		uint8_t Bytes[15];
@@ -73,9 +73,7 @@ public:
 	void SetCursorX(int x);
 	void SetCursorY(int y);
 
-	void ClearTextScreen(uint8_t clearChar = 0);
 	void ClearScreenBottom(void);
-	void ClearTextScreenFromRow(uint8_t rowNo,uint8_t claerChar=0);
 
 	bool AddLine(const FLine& line);
 	void ReceivePixelData(const uint8_t* pPixelData);
@@ -98,8 +96,6 @@ private:
 	uint8_t ProcessingCommand = 0;	// currently processing command ID
 	int		NoCommandBytesRead = 0;	// number of bytes read for the current command
 
-	// Character map related
-	uint8_t CharMap[kCharMapSizeX][kCharMapSizeY] = { 0 };
 	int		CursorX = 0;
 	int		CursorY = 0;
 

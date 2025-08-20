@@ -232,12 +232,18 @@ void FTubeElite::Shutdown()
 	FEmuBase::Shutdown();
 }
 
+void DrawDebugUI(FTubeEliteDebug& debugInfo)
+{
+	ImGui::Checkbox("Debug Tube Comms", &debugInfo.bDebugTubeComms);
+	ImGui::Checkbox("OSWORD Debug", &debugInfo.bOSWORDDebug);
+	ImGui::Checkbox("Log VDU Characters", &debugInfo.bLogVDUChars);
+}
 
 void FTubeElite::DrawEmulatorUI()
 {
 	if (ImGui::Begin("Tube Elite Viewer"))
 	{
-		
+		DrawDebugUI(Debug);
 	}
 	ImGui::End();
 
