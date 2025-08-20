@@ -192,7 +192,7 @@ void DrawChar8x8(uint16_t x, uint16_t y, uint8_t ch, uint8_t colour)
 		{
 			if (bits & (0x80 >> col))
 			{
-				DrawPixel(x + col, y + row, colour);
+				DrawPixelEOR(x + col, y + row, colour);
 			}
 		}
 	}

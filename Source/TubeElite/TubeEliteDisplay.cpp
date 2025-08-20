@@ -322,7 +322,7 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 	{
 		if(debug.bLogVDUChars)
 		{
-			g_VDULog.AddLog("\n");
+			//g_VDULog.AddLog("\n");
 			bLastCharCtrl = true;
 		}
 
@@ -330,47 +330,61 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 		{
 			case kEliteVDUCode_Null:	// nothing
 				if (debug.bLogVDUChars)
-					g_VDULog.AddLog("<null>");
+					g_VDULog.AddLog("\n<null>");
 				return true;
 			case kEliteVDUCode_Beep:	// BEEP
 				if (debug.bLogVDUChars)
-					g_VDULog.AddLog("<beep>");
+					g_VDULog.AddLog("\n<beep>");
 				return true;
 			case kEliteVDUCode_LF:	// Line Feed
 				CursorY++;
 				if (CursorY >= kCharMapSizeY)
 					CursorY = 0; // wrap around
 				if (debug.bLogVDUChars)
-					g_VDULog.AddLog("<lf>");
+					g_VDULog.AddLog("\n<lf>");
 				return true;
 			case kEliteVDUCode_CLS: // Clear the top part of the screen and draw a border
-				ClearTextScreen();
+			{
 				Display::ClearScreen(0); // clear the display
+				// draw the border
+				uint8_t borderCol = 1;
+				Display::DrawLine(0, 0, 255, 0, borderCol);
+				Display::DrawLine(1,0,1,191,borderCol);
+				Display::DrawLine(0, 0, 0, 191, borderCol);
+				Display::DrawLine(255, 0, 255, 191, borderCol);
+				Display::DrawLine(254, 0, 254, 191, borderCol);
 				if (debug.bLogVDUChars)
-					g_VDULog.AddLog("<cls>");
+					g_VDULog.AddLog("\n<cls>");
 				return true;
+			}
 			case kEliteVDUCode_CR: // Carriage Return
-			case kEliteVDUCode_CR2:
-				CursorX = 0; // move to start of line
+				CursorX = 1; // move to start of line as x = 1 see https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/tt26.html
+
 				CursorY++;
 				if (CursorY >= kCharMapSizeY)
 					CursorY = 0; // wrap around
 				if (debug.bLogVDUChars)
-					g_VDULog.AddLog("<cr>");
+					g_VDULog.AddLog("\n<crlf>");
+				return true;
+			case kEliteVDUCode_CR2: // Carriage Rturn - no line feed?
+				CursorX = 1; // move to start of line as x = 1 see https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/tt26.html
+				
+				if (debug.bLogVDUChars)
+					g_VDULog.AddLog("\n<cr>");
 				return true;
 			case kEliteVDUCode_Delete: // Delete the character to the left of the text cursor and move the cursor to the left
 				if (CursorX > 0)
 				{
 					CursorX--; // move cursor back one position
-					CharMap[CursorX][CursorY] = ' '; // clear the character at the cursor position
+					Display::DrawChar8x8(CursorX, CursorY, ' ', CurrentColour); // draw a space character
 					if (debug.bLogVDUChars)
-						g_VDULog.AddLog("<delete>");
+						g_VDULog.AddLog("\n<delete>");
 					return true;
 				}
 				else
 				{
 					if (debug.bLogVDUChars)
-						g_VDULog.AddLog("<delete at start of line>");
+						g_VDULog.AddLog("\n<delete at start of line>");
 					return false; // nothing to delete
 				}
 
@@ -482,7 +496,6 @@ bool FTubeEliteDisplay::ProcessMOSVDUChar(uint8_t ch)
 			break;
 		case 12:	// CLS
 			Display::ClearScreen();
-			ClearTextScreen();
 			pTubeSys->DebugBreak(); // break the execution
 			g_VDULog.AddLog("<cls>");
 			break;
@@ -508,7 +521,6 @@ bool FTubeEliteDisplay::ProcessMOSVDUChar(uint8_t ch)
 void FTubeEliteDisplay::DrawCharAtCursor(uint8_t ch)
 {
 	// printable character
-	CharMap[CursorX][CursorY] = ch;
 	Display::DrawChar8x8(CursorX * 8, CursorY * 8, ch, CurrentColour);
 
 	CursorX++;
@@ -540,28 +552,11 @@ void FTubeEliteDisplay::SetCursorY(int y)
 	CursorY = y; 
 }
 
-void FTubeEliteDisplay::ClearTextScreen(uint8_t clearChar)
-{
-	for (int i = 0; i < kCharMapSizeX * kCharMapSizeY; i++)
-	{
-		CharMap[i % kCharMapSizeX][i / kCharMapSizeX] = clearChar;
-	}
-
-}
-
 void FTubeEliteDisplay::ClearScreenBottom(void)
 {
-	ClearTextScreenFromRow(20, 0);
+	//Display::ClearScreenFromYpos(20 * 8, 0);
+	SetCursorX(1);
 	SetCursorY(20);
-}
-
-void FTubeEliteDisplay::ClearTextScreenFromRow(uint8_t rowNo, uint8_t clearChar)
-{
-	for (int clearY = rowNo; clearY < kCharMapSizeY; clearY++)
-	{
-		for(int x=0;x<kCharMapSizeX;x++)
-			CharMap[x][rowNo] = clearChar;
-	}
 }
 
 bool FTubeEliteDisplay::AddLine(const FLine& newLine)
@@ -626,8 +621,8 @@ void FTubeEliteDisplay::ReceiveSunLineData(const uint8_t* pLineData)
 
 	for (int i = 0; i < noLines; i++)
 	{
-		const uint8_t x1 = std::min(pData[0], pData[1]); // x1 is the minimum of the two x values
-		const uint8_t x2 = std::max(pData[0], pData[1]); // x2 is the maximum of the two x values
+		const uint8_t x1 = pData[0];
+		const uint8_t x2 = pData[1];
 		const uint8_t y = pData[2];
 		pData += 3; // move to the next line
 		// TODO: draw sun in orange
@@ -735,7 +730,16 @@ void FTubeEliteDisplay::DrawUI(void)
 	// bounding rect
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	//drawList->AddRect(startPos, ImVec2(startPos.x + (kCharMapSizeX * charWidth), startPos.y + (kCharMapSizeY * charHeight)), IM_COL32(255, 255, 255, 128));
-	
+	// Show DashboardParams
+	ImGui::Text("Dashboard Params:");
+	ImGui::Text("Speed: %d", DashboardParams.Speed);
+	ImGui::Text("Altitude: %d", DashboardParams.Altitude);
+	ImGui::Text("Fuel: %d", DashboardParams.Fuel);
+	ImGui::Text("Energy: %d", DashboardParams.Energy);
+	ImGui::Text("For Shield: %d", DashboardParams.ForwardShield);
+	ImGui::Text("Aft Shield: %d", DashboardParams.AftShield);
+	ImGui::Text("Laser Temp: %d", DashboardParams.LaserTemp);
+	ImGui::Text("Cabin Temp: %d", DashboardParams.CabinTemp);
 	bWindowFocused = ImGui::IsWindowFocused();
 
 	ImGui::End();
