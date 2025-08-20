@@ -403,7 +403,9 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 				return;
 			}
 			assert(controlBlock.NumOutputBytes == 15);
-			Display.UpdateKeyboardBuffer(controlBlock.pOutputBytes);			
+			Display.UpdateKeyboardBuffer(controlBlock.pOutputBytes);	
+			//DebugBreak(); // break the execution
+
 			break;
 		case 241:	// Draw space view pixels
 			Display.ReceivePixelData(controlBlock.pInputBytes);

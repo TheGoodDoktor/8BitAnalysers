@@ -206,7 +206,8 @@ bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
 		}
 		else
 		{
-			DashboardParams.Bytes[NoCommandBytesRead] = cmdByte; // store the byte in the dashboard parameters
+			if(NoCommandBytesRead > 0)	// skip first byte as it's the VDU command sent again
+				DashboardParams.Bytes[NoCommandBytesRead-1] = cmdByte; // store the byte in the dashboard parameters
 			NoCommandBytesRead++;
 		}
 		return true;
@@ -421,6 +422,7 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 			case kEliteVDUCode_UpdateDashboard: // Update dashboard
 				ProcessingCommand = kEliteVDUCode_UpdateDashboard;
 				NoCommandBytesRead = 0; // reset the number of bytes read
+				//pTubeSys->DebugBreak();
 				return true; // command processed
 
 			case kEliteVDUCode_BlankLineOnPrinter: // Blank line on printer
@@ -650,7 +652,7 @@ bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 	pBuffer[2] = GetPressedInternalKeyCode(); // no non-primary flight control key pressed
 
 	// * Byte #3: "?" is being pressed(0 = no, &FF = yes)
-	pBuffer[3] = ImGui::IsKeyDown(ImGuiKey_Slash) ? 0xff : 0xff; // "?" key pressed ?
+	pBuffer[3] = ImGui::IsKeyDown(ImGuiKey_Slash) ? 0xff : 0x00; // "?" key pressed ?
 
 	// * Byte #4: Space is being pressed(0 = no, &FF = yes)
 	pBuffer[4] = ImGui::IsKeyDown(ImGuiKey_Space) ? 0xff : 0x00; // Space key pressed
