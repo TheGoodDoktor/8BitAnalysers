@@ -78,6 +78,9 @@ public:
 	bool AddLine(const FLine& line);
 	void ReceivePixelData(const uint8_t* pPixelData);
 	void ReceiveSunLineData(const uint8_t* pLineData);
+	void ReceiveScannerShipData(const uint8_t* pShipData);
+	void ReceiveCompassDotData(const uint8_t* pDotData);
+	void ReceiveMissileIndicatorData(const uint8_t* pMissileData);
 
 	bool UpdateKeyboardBuffer(uint8_t* pBuffer);
 	//bool IsKeyDown(uint8_t key)

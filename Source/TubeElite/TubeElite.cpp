@@ -411,20 +411,17 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			Display.ReceivePixelData(controlBlock.pInputBytes);
 			break;
 		case 242:	// Update missile indicators
-			if (Debug.bOSWORDDebug)
-				LOGINFO("OSWORD - UPDATE MISSILE INDICATORS");
+			Display.ReceiveMissileIndicatorData(controlBlock.pInputBytes);
 			break;
 		case 243:	// wait for VSync
 			if (Debug.bOSWORDDebug)
 				LOGINFO("OSWORD - WAIT FOR VSYNC");
 			break;
 		case 244:	// Draw the ship on the 3D scanner
-			if (Debug.bOSWORDDebug)
-				LOGINFO("OSWORD - DRAW SHIP ON 3D SCANNER X");
+			Display.ReceiveScannerShipData(controlBlock.pInputBytes);
 			break;
 		case 245:	// OSWORD 245 - Draw a dot on the compass
-			if (Debug.bOSWORDDebug)
-				LOGINFO("OSWORD - DOT");
+			Display.ReceiveCompassDotData(controlBlock.pInputBytes);
 			break;
 		case 246:	// OSWORD 246 - scan for a specific key
 			{
@@ -441,6 +438,7 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			Display.ReceiveSunLineData(controlBlock.pInputBytes);
 			break;
 		case 248:	// OSWORD 248 - Draw the ship hangar
+			// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/hanger.html
 			if (Debug.bOSWORDDebug)
 				LOGINFO("OSWORD - DRAW SHIP HANGAR X");
 			break;

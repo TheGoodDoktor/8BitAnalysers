@@ -200,16 +200,14 @@ bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
 		return true;
 
 	case kEliteVDUCode_UpdateDashboard:
+
+		if(NoCommandBytesRead > 0)	// skip first byte as it's the VDU command sent again
+			DashboardParams.Bytes[NoCommandBytesRead-1] = cmdByte; // store the byte in the dashboard parameters
+		
 		if (NoCommandBytesRead == 15)
-		{
 			ProcessingCommand = 0; // command completed
-		}
 		else
-		{
-			if(NoCommandBytesRead > 0)	// skip first byte as it's the VDU command sent again
-				DashboardParams.Bytes[NoCommandBytesRead-1] = cmdByte; // store the byte in the dashboard parameters
 			NoCommandBytesRead++;
-		}
 		return true;
 
 	case kEliteVDUCode_ShowHideDashboard:
@@ -354,6 +352,8 @@ bool FTubeEliteDisplay::ProcessEliteChar(uint8_t ch)
 				Display::DrawLine(0, 0, 0, 191, borderCol);
 				Display::DrawLine(255, 0, 255, 191, borderCol);
 				Display::DrawLine(254, 0, 254, 191, borderCol);
+				Display::DrawLine(0, 192, 255, 192, borderCol);
+
 				if (debug.bLogVDUChars)
 					g_VDULog.AddLog("\n<cls>");
 				return true;
@@ -634,6 +634,29 @@ void FTubeEliteDisplay::ReceiveSunLineData(const uint8_t* pLineData)
 
 }
 
+// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/sc48.html
+void FTubeEliteDisplay::ReceiveScannerShipData(const uint8_t* pShipData)
+{
+	uint8_t heightSign = pShipData[2]; // get the height sign
+	const int height = (heightSign & (1<<7)) ? -pShipData[3] : pShipData[3]; // get the height value
+	uint8_t colour = 7;//pShipData[4]; // get the colour
+	uint8_t x = pShipData[5]; // get the x position
+	uint8_t y = pShipData[6]; // get the y position
+
+	Display::DrawLineEOR(x, y, x, y + height, colour); // draw the ship line
+	Display::DrawLineEOR(x, y + height, x + 5, y + height, colour); // draw the ship line
+}
+
+// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/dot.html
+void FTubeEliteDisplay::ReceiveCompassDotData(const uint8_t* pDotData)
+{
+
+}
+// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/msbar.html
+void FTubeEliteDisplay::ReceiveMissileIndicatorData(const uint8_t* pMissileData)
+{
+
+}
 
 bool FTubeEliteDisplay::UpdateKeyboardBuffer(uint8_t* pBuffer)
 {
@@ -742,6 +765,17 @@ void FTubeEliteDisplay::DrawUI(void)
 	ImGui::Text("Aft Shield: %d", DashboardParams.AftShield);
 	ImGui::Text("Laser Temp: %d", DashboardParams.LaserTemp);
 	ImGui::Text("Cabin Temp: %d", DashboardParams.CabinTemp);
+
+	int roll = DashboardParams.Apl2 & (1 << 7) ? -DashboardParams.Apl1 : DashboardParams.Apl1; // roll is negative if Apl2 bit 7 is set
+	ImGui::SliderInt("Roll", &roll, -31, 31); // slider for roll
+	//ImGui::Text("Roll: %d", roll);
+	//ImGui::Text("Roll Sign: %d", DashboardParams.Apl2);
+	int pitch = DashboardParams.Beta & (1 << 7) ? -DashboardParams.Bet1 : DashboardParams.Bet1; // pitch is negative if Beta bit 7 is set
+	ImGui::SliderInt("Pitch", &pitch, -8, 8); // slider for pitch
+	//ImGui::Text("Pitch: %d", pitch);
+	//ImGui::Text("Beta2: %d", DashboardParams.Bet1);
+	ImGui::Text("Flash: %d", DashboardParams.FlashingConsoleBarsConfig);
+	ImGui::Text("Escape Pod: %d", DashboardParams.EscapePod);
 	bWindowFocused = ImGui::IsWindowFocused();
 
 	ImGui::End();
