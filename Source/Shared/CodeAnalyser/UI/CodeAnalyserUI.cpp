@@ -1071,6 +1071,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 void UpdateItemList(FCodeAnalysisState &state)
 {
 	OPTICK_EVENT();
+
 	// build item list - not every frame please!
 	if (state.IsCodeAnalysisDataDirty() )
 	{
@@ -1761,6 +1762,8 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 {
+	OPTICK_EVENT();
+
 	FCodeAnalysisViewState& viewState = state.ViewState[windowId];
 	const float lineHeight = ImGui::GetTextLineHeight();
 	//const float cellWidth = 3 * glyph_width;

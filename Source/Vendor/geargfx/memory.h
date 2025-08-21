@@ -52,7 +52,7 @@ public:
     // sam. added memory callbacks.
     typedef void (*GG_Memory_Read_Callback)(void* context, u16 pc, u16 dataAddr);
     typedef void (*GG_Memory_Write_Callback)(void* context, u16 pc, u16 dataAddr, u8 value);
-    typedef void (*GG_Mpr_Callback)(void* context, u8 mprIndex, u8 value);
+    typedef void (*GG_Mpr_Callback)(void* context, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex);
 
 public:
     Memory(HuC6260* huc6260, HuC6202* huc6202, HuC6280* huc6280, Media* media, Input* input, Audio* audio, CdRom* cdrom);
@@ -66,6 +66,7 @@ public:
     u8 GetMpr(u8 index);
     void SetMprTAM(u8 bits, u8 value);
     u8 GetMprTMA(u8 bits);
+    bool MprRomBanksHaveDupes(u8 index);
     u32 GetPhysicalAddress(u16 address);
     u8 GetBank(u16 address);
     void SetResetValues(int mpr, int wram, int card_ram, int arcade_card);

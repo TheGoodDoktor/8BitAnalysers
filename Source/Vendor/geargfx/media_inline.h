@@ -159,7 +159,7 @@ inline u8** Media::GetROMMap()
 }
 
 // sam. 
-inline int Media::GetBankIndex(u8 index)
+inline int Media::GetRomBankIndex(u8 index)
 {
    return m_rom_map_bank_index[index];
 }

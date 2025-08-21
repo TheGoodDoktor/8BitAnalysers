@@ -57,7 +57,6 @@ public:
     void PreloadCdRom(bool enable);
     bool IsPreloadCdRomEnabled();
     int GetROMSize();
-    // sam. added this
     int GetCardRAMSize();
     GG_Keys GetAvenuePad3Button();
     const char* GetFilePath();
@@ -68,7 +67,7 @@ public:
     u8* GetROM();
     u8** GetROMMap();
     // sam. added this to lookup the rom bank index for each entry of the rom map
-    int GetBankIndex(u8 index);
+    int GetRomBankIndex(u8 index);
     bool LoadMedia(const char* path);
     bool LoadHuCardFromBuffer(const u8* buffer, int size, const char* path);
     bool LoadCueFromFile(const char* path);
@@ -92,8 +91,6 @@ private:
     // sam. added this
     u8 m_rom_map_bank_index[128];
     int m_rom_size;
-    // sam. added this
-    int m_rom_bank_count;
     int m_card_ram_size;
     bool m_ready;
     char m_file_path[512];

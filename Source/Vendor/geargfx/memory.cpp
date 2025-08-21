@@ -95,10 +95,32 @@ void Memory::Init()
 // sam. added memory access callbacks.
 void Memory::SetMemoryCallbacks(GG_Memory_Read_Callback read_callback, GG_Memory_Write_Callback write_callback, GG_Mpr_Callback mpr_callback, void* context)
 {
-   m_memory_read_callback = read_callback;
-   m_memory_write_callback = write_callback;
-   m_mpr_callback = mpr_callback;
-   m_callback_context = context;
+    m_memory_read_callback = read_callback;
+    m_memory_write_callback = write_callback;
+    m_mpr_callback = mpr_callback;
+    m_callback_context = context;
+}
+
+// sam. Special case function to check if there are any duplicate rom banks in all of the mpr slots 
+// This assumes all m_mpr values are rom banks.
+bool Memory::MprRomBanksHaveDupes(u8 index)
+{
+    assert(GetBankType(m_mpr[index]) == MEMORY_BANK_TYPE_ROM);
+
+    int romBankIndex = m_media->GetRomBankIndex(m_mpr[index]);
+    for (int i = 0; i < 8; i++)
+    {
+        if (i != index)
+        {
+           assert(GetBankType(m_mpr[i]) == MEMORY_BANK_TYPE_ROM);
+
+           if (romBankIndex == m_media->GetRomBankIndex(m_mpr[i]))
+           {
+              return true;
+           }
+        }
+    }
+    return false;
 }
 
 void Memory::Reset()
@@ -107,22 +129,29 @@ void Memory::Reset()
     m_mpr_buffer = 0x00;
     m_mpr[7] = 0x00;
 
+    int rom_bank_count = (m_media->GetROMSize() / 0x2000) + (m_media->GetROMSize() % 0x2000 ? 1 : 0);
+
     for (int i = 0; i < 7; i++)
     {
-        if (m_mpr_reset_value < 0)
-        {
-            do
-            {
-               do
-               {
-                  m_mpr[i] = rand() & 0xFF;
-               }
-               while (i != 0 && m_mpr[i] == m_mpr[i-1]); // sam. prevent dupe mpr values
-            }
-            while (m_mpr[i] == 0x00);
-        }
-        else
-            m_mpr[i] = m_mpr_reset_value & 0xFF;
+       m_mpr[i] = 0;
+    }
+
+    for (int i = 0; i < 7; i++)
+    {
+       if (m_mpr_reset_value < 0)
+       {
+          do
+          {
+             do
+             {
+                m_mpr[i] = rom_bank_count ? rand() % rom_bank_count : rand() & 0xff; // sam. limit initial random banks to rom banks
+             }
+             while (rom_bank_count && MprRomBanksHaveDupes(i)); // sam. prevent dupe mpr values
+          }
+          while (m_mpr[i] == 0x00);
+       }
+       else
+          m_mpr[i] = m_mpr_reset_value & 0xFF;
     }
 
     for (int i = 0; i < 0x8000; i++)
@@ -300,9 +329,10 @@ void Memory::SetMprTAM(u8 bits, u8 value)
     {
         if ((bits & (0x01 << i)) != 0)
         {
-            m_mpr[i] = value;
+           u8 oldValue = m_mpr[i];
+           m_mpr[i] = value;
 
-            m_mpr_callback(m_callback_context, i, value);
+           m_mpr_callback(m_callback_context, i, oldValue, value);
         }
     }
 }

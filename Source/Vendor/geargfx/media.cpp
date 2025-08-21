@@ -58,7 +58,10 @@ Media::Media(CdRomMedia* cdrom_media)
 
     m_rom_map = new u8*[128];
     for (int i = 0; i < 128; i++)
+    {
         InitPointer(m_rom_map[i]);
+        m_rom_map_bank_index[i] = 0;
+    }
 }
 
 Media::~Media()
@@ -697,7 +700,7 @@ void Media::InitRomMAP()
 
         for(int x = 0; x < 128; x++)
         {
-            int bank = x % m_rom_bank_count;
+            int bank = x % rom_bank_count;
             int bank_address = bank * 0x2000;
             m_rom_map[x] = &rom_ptr[bank_address];
             m_rom_map_bank_index[x] = bank; // sam
