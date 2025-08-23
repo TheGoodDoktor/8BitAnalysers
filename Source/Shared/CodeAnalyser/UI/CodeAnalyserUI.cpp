@@ -25,6 +25,9 @@
 #include "FunctionViewer.h"
 #include "../FunctionAnalyser.h"
 
+#include <chrono>
+#include "Debug/DebugLog.h"
+
 // UI
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
@@ -906,15 +909,58 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	}
 }
 
+#define LISTBUILDER_REUSE_VECTOR 1
+
 struct FItemListBuilder
 {
-	FItemListBuilder(std::vector<FCodeAnalysisItem>& itemList) :ItemList(itemList) {}
+	FItemListBuilder(std::vector<FCodeAnalysisItem>& itemList) :ItemList(itemList)
+	{
+#if LISTBUILDER_REUSE_VECTOR
+		CurIndex = 0;
+#else
+		itemList.clear();
+#endif
+	}
 
-	std::vector<FCodeAnalysisItem>&	ItemList;
+	void AddItem(FItem* pItem, int16_t bankId, uint16_t addr)
+	{
+#if LISTBUILDER_REUSE_VECTOR
+		if (CurIndex < ItemList.size())
+		{
+			ItemList[CurIndex].Item = pItem;
+			ItemList[CurIndex].AddressRef = FAddressRef(bankId, addr);
+		}
+		else
+			ItemList.emplace_back(pItem, bankId, addr);
+		CurIndex++;
+#else
+		ItemList.emplace_back(pItem, bankId, addr);
+#endif
+	}
+	void Done()
+	{
+#if LISTBUILDER_REUSE_VECTOR
+		if (CurIndex < ItemList.size())
+			ItemList.resize(CurIndex);
+#endif
+	}
+	size_t GetNumItems() const
+	{
+#if LISTBUILDER_REUSE_VECTOR
+		return CurIndex;
+#else
+		return ItemList.size();
+#endif
+	}
 	int16_t				BankId = -1;
 	int					CurrAddr = 0;
-	FCommentBlock*		ViewStateCommentBlocks[FCodeAnalysisState::kNoViewStates] = { nullptr };
+	FCommentBlock* ViewStateCommentBlocks[FCodeAnalysisState::kNoViewStates] = { nullptr };
 
+private:
+	std::vector<FCodeAnalysisItem>& ItemList;
+#if LISTBUILDER_REUSE_VECTOR
+	size_t CurIndex = 0;
+#endif
 };
 
 void ExpandCommentBlock(FCodeAnalysisState& state, FItemListBuilder& builder, FCommentBlock* pCommentBlock)
@@ -933,7 +979,7 @@ void ExpandCommentBlock(FCodeAnalysisState& state, FItemListBuilder& builder, FC
 		FCommentLine* pLine = pBank->CommentLineAllocator.Allocate();
 		pLine->Comment = line;
 		//pLine->Address = addr;
-		builder.ItemList.emplace_back(pLine, builder.BankId, builder.CurrAddr);
+		builder.AddItem(pLine, builder.BankId, builder.CurrAddr);
 		if (pFirstLine == nullptr)
 			pFirstLine = pLine;
 	}
@@ -958,7 +1004,7 @@ void AddFunctionDescriptionLine(FCodeAnalysisState& state, FItemListBuilder& bui
 	va_end(args);
 	
 	pFunctionDescLine->Comment = textBuffer;
-	builder.ItemList.emplace_back(pFunctionDescLine, builder.BankId, builder.CurrAddr);
+	builder.AddItem(pFunctionDescLine, builder.BankId, builder.CurrAddr);
 }
 
 void ExpandFunctionDesc(FCodeAnalysisState& state, FItemListBuilder& builder, const FFunctionInfo* pFunctionInfo)
@@ -994,9 +1040,17 @@ void ExpandFunctionDesc(FCodeAnalysisState& state, FItemListBuilder& builder, co
 	}
 }
 
+#define PROFILE_UPDATEITEMLIST 0
+
 void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, int startOffset)
 {
-	bank.ItemList.clear();
+	OPTICK_EVENT();
+
+#if PROFILE_UPDATEITEMLIST
+	auto t1 = std::chrono::high_resolution_clock::now();
+	size_t oldSize = bank.ItemList.size();
+#endif
+
 	bank.CommentLineAllocator.FreeAll();
 	FItemListBuilder listBuilder(bank.ItemList);
 	listBuilder.BankId = bank.Id;
@@ -1037,7 +1091,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 			if (pFunctionInfo != nullptr)
 				ExpandFunctionDesc(state, listBuilder, pFunctionInfo);
 
-			listBuilder.ItemList.emplace_back(pLabelInfo, listBuilder.BankId, listBuilder.CurrAddr);
+			listBuilder.AddItem(pLabelInfo, listBuilder.BankId, listBuilder.CurrAddr);
 		}
 
 		// check if we have gone past this item
@@ -1048,7 +1102,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 			if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 			{
 				nextItemAddress = bankAddr + pCodeInfo->ByteSize;
-				listBuilder.ItemList.emplace_back(pCodeInfo, listBuilder.BankId, listBuilder.CurrAddr);
+				listBuilder.AddItem(pCodeInfo, listBuilder.BankId, listBuilder.CurrAddr);
 			}
 			else // code and data are mutually exclusive
 			{
@@ -1061,21 +1115,30 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 					else
 						nextItemAddress = bankAddr + 1;
 
-					listBuilder.ItemList.emplace_back(pDataInfo, listBuilder.BankId, listBuilder.CurrAddr);
+					listBuilder.AddItem(pDataInfo, listBuilder.BankId, listBuilder.CurrAddr);
 				}
 			}
 		}
 	}
+
+	listBuilder.Done();
+
+#if PROFILE_UPDATEITEMLIST
+	std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
+	LOGINFO("UpdateItemListForBank took %.2f ms [%d->%d]", ms_double, oldSize, listBuilder.GetNumItems());
+#endif
 }
 
 void UpdateItemList(FCodeAnalysisState &state)
 {
-	OPTICK_EVENT();
-
 	// build item list - not every frame please!
 	if (state.IsCodeAnalysisDataDirty() )
 	{
+		OPTICK_EVENT();
+#if PROFILE_UPDATEITEMLIST
+		auto t1 = std::chrono::high_resolution_clock::now();
 		const float line_height = ImGui::GetTextLineHeight();
+#endif
 		
 		state.ItemList.clear();
 		//FCommentLine::FreeAll();	// recycle comment lines
@@ -1124,8 +1187,12 @@ void UpdateItemList(FCodeAnalysisState &state)
 			GenerateGlobalInfo(state);
 			state.ClearRemappings();
 		}
-	}
 
+#if PROFILE_UPDATEITEMLIST
+		std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
+		LOGINFO("UpdateItemList took %.2f ms", ms_double);
+#endif
+	}
 }
 
 void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)

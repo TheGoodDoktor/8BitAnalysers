@@ -22,7 +22,7 @@ const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "PCE Analyser";
 
 #ifndef NDEBUG
-#define BANK_SWITCH_DEBUG
+//#define BANK_SWITCH_DEBUG
 #endif
 #ifdef BANK_SWITCH_DEBUG
 #define BANK_LOG(...)  LOGINFO("[BNK] " __VA_ARGS__)
@@ -116,33 +116,38 @@ ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
 // This is a geargfx specific version of FDebugger::Tick()
 void OnGearGfxInstructionExecuted(void* pContext)
 {
-	OPTICK_EVENT();
+	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 
-	pEmu->GetCodeAnalysis().Debugger.SetPC(pEmu->GetPC());
+	state.Debugger.SetPC(pEmu->GetPC());
 
-	RegisterCodeExecuted(pEmu->GetCodeAnalysis(), pEmu->GetPC().Address, pEmu->GetPC().Address);
+	RegisterCodeExecuted(state, pEmu->GetPC().Address, pEmu->GetPC().Address);
 
 	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
 	const uint64_t dummyPins = 0;
-	const int trapId = pEmu->GetCodeAnalysis().Debugger.OnInstructionExecuted(dummyPins);
+	const int trapId = state.Debugger.OnInstructionExecuted(dummyPins);
 
 	if (trapId != kTrapId_None)
 	{
 		// This signals to geargfx to stop exection
-		pEmu->GetCodeAnalysis().Debugger.Break();
+		state.Debugger.Break();
 	}
 }
 
 void OnMemoryRead(void* pContext, u16 pc, u16 dataAddr)
 {
+	//OPTICK_EVENT();
+
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	RegisterDataRead(pEmu->GetCodeAnalysis(), pc, dataAddr);
 }
 
 void OnMemoryWritten(void* pContext, u16 pc, u16 dataAddr, u8 value)
 {
+	//OPTICK_EVENT();
+
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	RegisterDataWrite(pEmu->GetCodeAnalysis(), pc, dataAddr, value);
 }
