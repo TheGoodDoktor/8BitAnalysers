@@ -37,11 +37,18 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 			StackMax = 0;
 			break;
 		case ECPUType::M6502:
-		case ECPUType::HuC6280:
 			pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 			// Stack in 6502 is hard coded between 0x100-0x1ff
 			StackMin = 0x1ff;
 			StackMax = 0x1ff;
+			break;
+		case ECPUType::HuC6280:
+			pM6502 = nullptr;
+			pPCE6502CPU = (ICPUEmulator6502*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+
+			// Stack in 6502 is hard coded between 0x2100-0x21ff
+			StackMin = 0x21ff;
+			StackMax = 0x21ff;
 			break;
 		default:
 			assert(false && "Unknown CPU type");
@@ -285,8 +292,11 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		bIRQ = (pins & Z80_INT) && pZ80->iff1;
 		break;
 	case ECPUType::M6502:
-	case ECPUType::HuC6280:	// M65C02 is a superset of M6502
 		bIRQ = pM6502->brk_flags & M6502_BRK_IRQ;
+		break;
+	case ECPUType::HuC6280:	// M65C02 is a superset of M6502
+		// todo
+		break;
 	}
 
 	if (bIRQ)
@@ -307,6 +317,13 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	
 		callInfo.ReturnAddr = PC;
 		CallStack.push_back(callInfo);
+
+#ifndef NDEBUG
+		if (CallStack.size() > 256)
+		{
+			LOGERROR("Callstack too big");
+		}
+#endif
 		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
 	}
 
@@ -326,13 +343,17 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		break;
 
 		case ECPUType::M6502:
-		case ECPUType::HuC6280:	// HuC6280 is a superset of M65C02
 		{
 			const uint16_t sp = pM6502->S + 0x100;
 			StackMin = std::min(sp, StackMin);
 			StackMax = 0x1ff;	// always starts here on 6502
 		}
 		break;
+		case ECPUType::HuC6280:	// HuC6280 is a superset of M65C02
+			const uint16_t sp = pPCE6502CPU->GetS() + 0x2100;
+			StackMin = std::min(sp, StackMin);
+			StackMax = 0x21ff;	// always starts here on HuC6280
+			break;
 	}
 
 	return trapId;
