@@ -789,8 +789,10 @@ FMachineState* AllocateMachineState(FCodeAnalysisState& state);
 void FreeMachineStates(FCodeAnalysisState& state);
 void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterface);
 
+void FixupAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef& addr);
 void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr);
 void FixupAddressRefList(const FCodeAnalysisState& state, std::vector<FAddressRef>& addrList);
+void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAddressRef>& addrList);
 
 // static analysis functions
 EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr);

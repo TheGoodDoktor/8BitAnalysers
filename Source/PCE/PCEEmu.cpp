@@ -160,10 +160,6 @@ void OnBankChange(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex)
 	Memory* pMemory = pEmu->GetCore()->GetMemory();
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 		
-#ifdef BANK_SWITCH_DEBUG
-	const FCodeAnalysisBank* pOutBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[mprIndex]);
-#endif
-
 	BANK_LOG("Map bank index 0x%x in mpr slot %d. [0x%x->0x%x]", newBankIndex, mprIndex, oldBankIndex, newBankIndex);
 
 	if (oldBankIndex == newBankIndex)
@@ -176,7 +172,15 @@ void OnBankChange(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex)
 	// Get the bank id of the bank we are about to map in.
 	const uint16_t bankId = pEmu->GetNextAvailableBank(newBankIndex);
 	FCodeAnalysisBank* pInBank = pEmu->GetCodeAnalysis().GetBank(bankId);
+#ifdef BANK_SWITCH_DEBUG
+	const FCodeAnalysisBank* pOutBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[mprIndex]);
+	BANK_LOG("Outbank %s %d %d.", pOutBank->Name.c_str(), pOutBank->Id, pEmu->MprBankId[mprIndex]);
+#endif
+
 	assert(pInBank);
+	if (!pInBank)
+		return;
+
 	const uint16_t oldMappedAddress = pInBank->GetMappedAddress();
 	const int oldPrimaryPage = pInBank->PrimaryMappedPage;
 	const EBankAccess bankAccess = pMemory->GetMemoryMapWrite()[newBankIndex] ? EBankAccess::ReadWrite : EBankAccess::Read;
@@ -219,8 +223,8 @@ void OnBankChange(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex)
 
 	// Force all banks to update their item list.
 	// Also force the code analysis state to update it's ItemList too
-	// This is causing perf issues. Replaced with SetAddressRangeDirty(). 
 	//state.SetAllBanksDirty();
+	// This was causing perf issues. Replaced with SetAddressRangeDirty(). 
 	state.SetAddressRangeDirty();
 }
 
@@ -270,11 +274,22 @@ bool HasDupeMprValues(Memory* memory)
 // should this return bank ptr?
 int16_t FPCEEmu::GetNextAvailableBank(uint8_t index)
 {
-	// todo: create a new bank for an unused bank index? 
-	// Bank[index] will be -1
-	
-	// this will fire if we try to map in an unused bank >$80 and <$f8, ie $c3
+	// This shouldn't be possible as every bank should have a bank id or -1.
 	assert(!Banks[index].empty());
+
+	// Does this slot have a bank created for it?
+	if (Banks[index][0] == -1)
+	{
+		// We presume a bank without an existing entry is an unused/unknown type.
+		assert(pCore->GetMemory()->GetBankType(index) == Memory::MEMORY_BANK_TYPE_UNUSED);
+
+		char newBankName[32];
+		sprintf(newBankName, "Unused (0x%0x)", index);
+		const uint16_t newBankId = CodeAnalysis.CreateBank("Unused", 8, pCore->GetMemory()->GetUnusedMemory(), false /*bMachineROM*/, 0);
+		BANK_LOG("Created unused bank '%s' id %d for bank index 0x%x", newBankName, newBankId, index);
+		Banks[index][0] = newBankId;
+		return newBankId;
+	}
 	assert(Banks[index][0] != -1);
 
 	FCodeAnalysisBank* pBank = nullptr;
@@ -296,11 +311,12 @@ int16_t FPCEEmu::GetNextAvailableBank(uint8_t index)
 
 	// We did not find an available bank, so create a new one that has the same properties as the other(s) in the list.
 	// It will be pointing to the same memory as the other bank(s).
-	const std::string newBankName = pBank->Name + " #2";
-	const uint16_t newBankId = CodeAnalysis.CreateBank(newBankName.c_str(), 8, pBank->Memory, false /*bMachineROM*/, pBank->GetMappedAddress());
+	char newBankName[32];
+	sprintf(newBankName, "%s #%d", pBank->Name.c_str(), (int)Banks[index].size() + 1);
+	const uint16_t newBankId = CodeAnalysis.CreateBank(newBankName, 8, pBank->Memory, false /*bMachineROM*/, pBank->GetMappedAddress());
 	Banks[index].push_back(newBankId);
 	
-	BANK_LOG("Created dupe bank '%s' id %d for bank index 0x%x", newBankName.c_str(), newBankId, index);
+	BANK_LOG("Created dupe bank '%s' id %d for bank index 0x%x", newBankName, newBankId, index);
 	return newBankId;
 }
 
@@ -346,8 +362,24 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, OnBankChange, this);
 
 	// temp DELETE ME
-	pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
-	//pCore->LoadMedia("c:\\temp\\Bonk.pce");
+
+	// WORKS
+	//pCore->LoadMedia("c:\\temp\\Bonk.pce"); // 48 banks. Invalid AddressRef: $9a09. Bank 13 'ROM 10': $4000-$6000.
+	//pCore->LoadMedia("c:\\temp\\RabioLepus.pce"); // 384kb. 48 banks. Runs ok
+	//pCore->LoadMedia("c:\\temp\\Toilet Kids.pce"); // 512kb. 64 banks. runs ok. 60fps
+	//pCore->LoadMedia("c:\\temp\\Bubblegum Crash.pce"); // 768kb. 96 banks. works ok. 60fps pages in save ram
+	//pCore->LoadMedia("c:\\temp\\Neutopia II.pce"); // 768kb. 96 banks. 50fps ish
+	//pCore->LoadMedia("c:\\temp\\Parodius.pce"); // 1024kb. 128 banks. very slow in intro due to FixupBankAddressRefs. 3fps
+	//pCore->LoadMedia("c:\\temp\\Lady Sword.pce"); // 1024kb. 128 banks. needs pad input to get past initilal screen.
+	//pCore->LoadMedia("c:\\temp\\Strip Fighter II.pce"); // 1024kb. 128 banks. 60fps. 
+	//pCore->LoadMedia("c:\\temp\\Bonk II.pce"); // 512kb. 64 banks. runs ok
+	//pCore->LoadMedia("c:\\temp\\Magical Chase.pce"); // 512kb. 64 banks. runs ok
+
+	// DOESNT WORK
+	//pCore->LoadMedia("c:\\temp\\R Type.pce"); // 512kb. 64 banks. Invalid AddressRef: $7800. Bank 10 'ROM 07': $8000-$a000.
+	//pCore->LoadMedia("c:\\temp\\Raiden.pce"); // 768kb. 96 banks. asserts with invalid address ref
+	//pCore->LoadMedia("c:\\temp\\Bonk III.pce"); // 1024kb. 128 banks. Invalid AddressRef: $581a. Bank 31 'ROM 28': $a000-$c000
+	//pCore->LoadMedia("c:\\temp\\Power League 5.pce"); // 768kb. 96 banks. asserts with invalid address ref
 
 	pPCE6502CPU = new FPCECPUEmulator6502(this);
 
@@ -374,14 +406,16 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 		Banks[i].push_back(-1);
 	}
 
+	// Hardware page. (IO)
 	// todo: hardware page is mpr slot 0xff. for now map some dummy memory until we figure out how to do it.
 	Banks[0xff][0] = CodeAnalysis.CreateBank("HW PAGE", 8, gDummyMemory, false /*bMachineROM*/, 0x0);
-	MprBankId[0] = Banks[0xff][0];
 
-	// RAM
+	// Working RAM
 	Banks[0xf8][0] = CodeAnalysis.CreateBank("WRAM", 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000);
 	Banks[0xf9][0] = Banks[0xfa][0] = Banks[0xfb][0] = Banks[0xf8][0];
-	MprBankId[1] = Banks[0xf8][0];
+
+	// Save RAM
+	Banks[0xf7][0] = CodeAnalysis.CreateBank("SAVE RAM", pMemory->GetBackupRAMSize() / 1024, pMemory->GetBackupRAM(), false /*bMachineROM*/, 0x0);
 
 	const int romSize = pCore->GetMedia()->GetROMSize();
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);

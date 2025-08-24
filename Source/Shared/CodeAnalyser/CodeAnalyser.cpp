@@ -1275,6 +1275,8 @@ FCommentBlock* AddCommentBlock(FCodeAnalysisState& state, FAddressRef addressRef
 // Generate Global Info for items in address space
 void GenerateGlobalInfo(FCodeAnalysisState &state)
 {
+	OPTICK_EVENT();
+
 	state.GlobalDataItems.clear();
 	state.GlobalFunctions.clear();
 
@@ -1484,28 +1486,71 @@ void FCodeAnalysisState::OnCPUTick(uint64_t pins)
 	Debugger.CPUTick(pins);
 }
 
-void FixupDataInfoAddressRefs(const FCodeAnalysisState& state, FDataInfo* pDataInfo)
-{
-	// Because this is a union, it will also fixup GraphicsSetRef and CharSetAddress
-	FixupAddressRef(state, pDataInfo->InstructionAddress);
-	FixupAddressRef(state, pDataInfo->LastWriter);
-	FixupAddressRefList(state, pDataInfo->Reads.GetReferences());
-	FixupAddressRefList(state, pDataInfo->Writes.GetReferences());
-}
-
-void FixupCodeInfoAddressRefs(const FCodeAnalysisState& state, FCodeInfo* pCodeInfo)
-{
-	FixupAddressRef(state, pCodeInfo->OperandAddress);
-	FixupAddressRefList(state, pCodeInfo->Reads.GetReferences());
-	FixupAddressRefList(state, pCodeInfo->Writes.GetReferences());
-}
-
 int gAddressRefsFixed = 0;
 int gAddressRefsProcessed = 0;
 int gBanksProcessed = 0;
 
+#define NEW_FIXUP_CODE 1
+#define PROFILE_FIXUPBANKADDRESSREFS 0
+
+#if NEW_FIXUP_CODE
 void FCodeAnalysisState::FixupBankAddressRefs()
 {
+#if PROFILE_FIXUPBANKADDRESSREFS
+	auto t1 = std::chrono::high_resolution_clock::now();
+#endif
+
+	// Go through all banks to fix up labels, code and data items.
+	for (FCodeAnalysisBank& bank : Banks)
+	{
+		gBanksProcessed++;
+		
+		FAddressRef ref;
+		ref.BankId = bank.Id;
+
+		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
+		{
+			FCodeAnalysisPage& page = bank.Pages[pageNo];
+			const uint16_t pageBase = (bank.PrimaryMappedPage + pageNo) * FCodeAnalysisPage::kPageSize;
+
+			for (int pageOffset = 0; pageOffset < FCodeAnalysisPage::kPageSize; pageOffset++)
+			{
+				const FDataInfo& dataInfo = page.DataInfo[pageOffset];
+				ref.Address = pageOffset + pageBase;
+
+				FDataInfo* pDataInfo = &page.DataInfo[pageOffset];
+
+				// Because this is a union, it will also fixup GraphicsSetRef and CharSetAddress
+				FixupAddressRefForBank(&bank, pDataInfo->InstructionAddress);
+				FixupAddressRefForBank(&bank, pDataInfo->LastWriter);
+				FixupAddressRefListForBank(&bank, pDataInfo->Reads.GetReferences());
+				FixupAddressRefListForBank(&bank, pDataInfo->Writes.GetReferences());
+
+				if (FCodeInfo* pCodeInfo = page.CodeInfo[pageOffset])
+				{
+					FixupAddressRefForBank(&bank, pCodeInfo->OperandAddress);
+
+					FixupAddressRefListForBank(&bank, pCodeInfo->Reads.GetReferences());
+					FixupAddressRefListForBank(&bank, pCodeInfo->Writes.GetReferences());
+				}
+
+				if (FLabelInfo* pLabelInfo = page.Labels[pageOffset])
+				{
+					FixupAddressRefListForBank(&bank, pLabelInfo->References.GetReferences());
+				}
+			}
+		}
+	}
+#if PROFILE_FIXUPBANKADDRESSREFS
+	std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
+	LOGINFO("FixupBankAddressRefs took %.2f ms", ms_double);
+#endif
+}
+#else
+void FCodeAnalysisState::FixupBankAddressRefs()
+{
+	auto t1 = std::chrono::high_resolution_clock::now();
+
 	// Go through all banks to fix up labels, code and data items.
 	for (FCodeAnalysisBank& bank : Banks)
 	{
@@ -1531,7 +1576,10 @@ void FCodeAnalysisState::FixupBankAddressRefs()
 			}
 		}
 	}
+	std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
+	LOGINFO("FixupBankAddressRefs took %.2f ms", ms_double);
 }
+#endif
 
 void FCodeAnalysisState::FixupAddressRefs()
 {
@@ -1761,20 +1809,25 @@ void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterf
 	}
 }
 
+void FixupAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef& addr)
+{
+#ifndef NDEBUG
+	if (!pBank->AddressValid(addr.Address))
+	{
+		gAddressRefsFixed++;
+	}
+	gAddressRefsProcessed++;
+#endif
+	const uint16_t bankOffset = (addr.Address & pBank->SizeMask);
+	addr.Address = pBank->GetMappedAddress() + bankOffset;
+	assert(pBank->AddressValid(addr.Address));
+}
+
 void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr)
 {
 	if (const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId))
 	{
-#ifndef NDEBUG
-		if (!pBank->AddressValid(addr.Address))
-		{
-			gAddressRefsFixed++;
-		}
-		gAddressRefsProcessed++;
-#endif
-		const uint16_t bankOffset = (addr.Address & pBank->SizeMask);
-		addr.Address = pBank->GetMappedAddress() + bankOffset;
-		assert(pBank->AddressValid(addr.Address));
+		FixupAddressRefForBank(pBank, addr);
 	}
 }
 
@@ -1783,5 +1836,13 @@ void FixupAddressRefList(const FCodeAnalysisState& state, std::vector<FAddressRe
 	for (FAddressRef& addr : addrList)
 	{
 		FixupAddressRef(state, addr);
+	}
+}
+
+void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAddressRef>& addrList)
+{
+	for (FAddressRef& addr : addrList)
+	{
+		FixupAddressRefForBank(pBank, addr);
 	}
 }

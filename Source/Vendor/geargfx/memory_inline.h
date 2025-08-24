@@ -157,22 +157,29 @@ INLINE void Memory::Write(u16 address, u8 value, bool block_transfer)
     u8 bank = m_mpr[mpr_index];
     u16 offset = address & 0x1FFF;
 
-    if (bank != 0xff) // todo: hardware page
-      m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
+    //if (bank != 0xff && bank != 0xf7) // todo: hardware page
+    //  m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
 
     if (IsValidPointer(m_current_mapper) && bank < 0x80)
     {
+        assert(0); // todo
         m_current_mapper->Write(bank, offset, value);
     }
     else if (bank == 0xF7) // savegame ram
     {
         if (m_memory_map_write[bank] && (offset < 0x800))
+        {
             m_memory_map[bank][offset] = value;
+            m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
+        }
     }
     else if (bank != 0xFF)
     {
         if (m_memory_map_write[bank])
+        {
             m_memory_map[bank][offset] = value;
+            m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
+        }
     }
     else
     {
