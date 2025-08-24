@@ -86,7 +86,7 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 	const ImVec4 regChangedCol(1.0f, 1.0f, 0.0f, 1.0f);
 	ImVec4 regColour = regNormalCol;
 	static FZeroPageGrid zeroPageGrid(&state);
-
+	zeroPageGrid.FixupAddressRefs(); // hack
 
 	F6502DisplayRegisters curRegs(p6502CPU);
 	const F6502DisplayRegisters& oldRegs = g_OldRegs;

@@ -206,6 +206,9 @@ struct FAddressRef
 		};
 		uint32_t	Val;
 	};
+#ifndef NDEBUG
+	uint32_t FixupCount = 0;
+#endif
 
 private:
 	// this is for the comparison operator overloads - we can't use Val because we'd have to re-order the union

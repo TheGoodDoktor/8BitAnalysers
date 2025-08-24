@@ -167,14 +167,12 @@ void OnBankChange(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex)
 		BANK_LOG("Bank index has not changed. Doing nothing.");
 		return;
 	}
-	// todo: deal with an unused bank being mapped in
 
 	// Get the bank id of the bank we are about to map in.
 	const uint16_t bankId = pEmu->GetNextAvailableBank(newBankIndex);
 	FCodeAnalysisBank* pInBank = pEmu->GetCodeAnalysis().GetBank(bankId);
 #ifdef BANK_SWITCH_DEBUG
 	const FCodeAnalysisBank* pOutBank = pEmu->GetCodeAnalysis().GetBank(pEmu->MprBankId[mprIndex]);
-	BANK_LOG("Outbank %s %d %d.", pOutBank->Name.c_str(), pOutBank->Id, pEmu->MprBankId[mprIndex]);
 #endif
 
 	assert(pInBank);
@@ -364,22 +362,53 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	// temp DELETE ME
 
 	// WORKS
-	//pCore->LoadMedia("c:\\temp\\Bonk.pce"); // 48 banks. Invalid AddressRef: $9a09. Bank 13 'ROM 10': $4000-$6000.
-	//pCore->LoadMedia("c:\\temp\\RabioLepus.pce"); // 384kb. 48 banks. Runs ok
-	//pCore->LoadMedia("c:\\temp\\Toilet Kids.pce"); // 512kb. 64 banks. runs ok. 60fps
-	//pCore->LoadMedia("c:\\temp\\Bubblegum Crash.pce"); // 768kb. 96 banks. works ok. 60fps pages in save ram
-	//pCore->LoadMedia("c:\\temp\\Neutopia II.pce"); // 768kb. 96 banks. 50fps ish
-	//pCore->LoadMedia("c:\\temp\\Parodius.pce"); // 1024kb. 128 banks. very slow in intro due to FixupBankAddressRefs. 3fps
-	//pCore->LoadMedia("c:\\temp\\Lady Sword.pce"); // 1024kb. 128 banks. needs pad input to get past initilal screen.
-	//pCore->LoadMedia("c:\\temp\\Strip Fighter II.pce"); // 1024kb. 128 banks. 60fps. 
-	//pCore->LoadMedia("c:\\temp\\Bonk II.pce"); // 512kb. 64 banks. runs ok
-	//pCore->LoadMedia("c:\\temp\\Magical Chase.pce"); // 512kb. 64 banks. runs ok
+	// -----
+	
+	// 48 banks. Invalid AddressRef: $9a09. Bank 13 'ROM 10': $4000-$6000.
+	//pCore->LoadMedia("c:\\temp\\Bonk.pce");
+	
+	// 384kb. 48 banks. Runs ok
+	//pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
+	
+	// 512kb. 64 banks. runs ok. 60fps
+	//pCore->LoadMedia("c:\\temp\\Toilet Kids.pce");
+	
+	// 768kb. 96 banks. works ok. 60fps pages in save ram
+	//pCore->LoadMedia("c:\\temp\\Bubblegum Crash.pce");
+	
+	// 768kb. 96 banks. 50fps ish
+	//pCore->LoadMedia("c:\\temp\\Neutopia II.pce");
+	
+	// 1024kb. 128 banks. very slow in intro due to FixupBankAddressRefs. 3fps
+	//pCore->LoadMedia("c:\\temp\\Parodius.pce");
+	
+	// 1024kb. 128 banks. needs pad input to get past initial screen.
+	//pCore->LoadMedia("c:\\temp\\Lady Sword.pce");
+	
+	// 1024kb. 128 banks. 60fps. 
+	//pCore->LoadMedia("c:\\temp\\Strip Fighter II.pce");
+	
+	// 512kb. 64 banks. runs ok
+	//pCore->LoadMedia("c:\\temp\\Bonk II.pce");
+	
+	// 512kb. 64 banks. runs ok
+	//pCore->LoadMedia("c:\\temp\\Magical Chase.pce");
+	
+	// 768kb. 96 banks. runs but really slow
+	//pCore->LoadMedia("c:\\temp\\Raiden.pce");
+
+	// 1024kb. 128 banks. boots but is slow. 8fps.
+	//pCore->LoadMedia("c:\\temp\\Bonk III.pce");
+
+	// 768kb. 96 banks. boots but doesnt seem to do much. displays big V
+	//pCore->LoadMedia("c:\\temp\\Power League 5.pce");
 
 	// DOESNT WORK
-	//pCore->LoadMedia("c:\\temp\\R Type.pce"); // 512kb. 64 banks. Invalid AddressRef: $7800. Bank 10 'ROM 07': $8000-$a000.
-	//pCore->LoadMedia("c:\\temp\\Raiden.pce"); // 768kb. 96 banks. asserts with invalid address ref
-	//pCore->LoadMedia("c:\\temp\\Bonk III.pce"); // 1024kb. 128 banks. Invalid AddressRef: $581a. Bank 31 'ROM 28': $a000-$c000
-	//pCore->LoadMedia("c:\\temp\\Power League 5.pce"); // 768kb. 96 banks. asserts with invalid address ref
+	// -----------
+	
+	// 512kb. 64 banks. runs but display garbled
+	//pCore->LoadMedia("c:\\temp\\R Type.pce");
+
 
 	pPCE6502CPU = new FPCECPUEmulator6502(this);
 
