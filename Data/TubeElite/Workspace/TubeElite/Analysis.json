@@ -2489,14 +2489,14 @@
             "CodeInfo": [
                 {
                     "Address": 256,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 259,
-                    "ByteSize": 1,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -2609,7 +2609,7 @@
                 {
                     "Address": 260,
                     "DataType": 11,
-                    "InstructionAddressRef": 17039360
+                    "InstructionAddressRef": 16973824
                 },
                 {
                     "Address": 261,
@@ -28302,6 +28302,16 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 473,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 478,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 481,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -29624,6 +29634,11 @@
                     "Address": 473,
                     "LabelType": 2,
                     "Name": "label_3DD9"
+                },
+                {
+                    "Address": 478,
+                    "LabelType": 2,
+                    "Name": "label_3DDE"
                 },
                 {
                     "Address": 481,
@@ -36428,6 +36443,15 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 452,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 454,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
                     "Address": 456,
                     "ByteSize": 2,
                     "OperandType": 1
@@ -42471,11 +42495,14 @@
                 },
                 {
                     "Address": 262,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "OSWORD 240 - Read keyboard",
+                    "OperandType": 3
                 },
                 {
                     "Address": 264,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "#ADDR:0x59E5#"
                 },
                 {
                     "Address": 266,
@@ -42523,6 +42550,129 @@
                 {
                     "Address": 288,
                     "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 290,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 293,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 295,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 296,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 299,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 301,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 303,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 306,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 317,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 319,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 321,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 323,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 325,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 328,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 331,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 334,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 337,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 340,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 343,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 345,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 347,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 349,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 350,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 353,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 356,
+                    "ByteSize": 3,
                     "OperandType": 2
                 },
                 {
@@ -43477,6 +43627,16 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_5514"
+                },
+                {
+                    "Address": 303,
+                    "LabelType": 2,
+                    "Name": "label_552F"
+                },
+                {
+                    "Address": 317,
+                    "LabelType": 2,
+                    "Name": "label_553D"
                 },
                 {
                     "Address": 340,
@@ -44462,6 +44622,14 @@
                     "InstructionAddressRef": 1476329472
                 },
                 {
+                    "Address": 485,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 486,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 487,
                     "DisplayType": 11
                 },
@@ -44582,6 +44750,12 @@
                     "Address": 473,
                     "LabelType": 2,
                     "Name": "label_59D9"
+                },
+                {
+                    "Address": 485,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_59E5"
                 },
                 {
                     "Address": 487,
@@ -54460,6 +54634,10 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 475,
+                    "ByteSize": 2
+                },
+                {
                     "Address": 477,
                     "ByteSize": 2
                 },
@@ -54467,6 +54645,10 @@
                     "Address": 479,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 481,
+                    "ByteSize": 2
                 },
                 {
                     "Address": 483,
