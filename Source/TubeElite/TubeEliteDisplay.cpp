@@ -650,11 +650,16 @@ void FTubeEliteDisplay::ReceiveScannerShipData(const uint8_t* pShipData)
 // https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/dot.html
 void FTubeEliteDisplay::ReceiveCompassDotData(const uint8_t* pDotData)
 {
-
+	uint8_t x = pDotData[2]; // get the x position
+	uint8_t y = pDotData[3]; // get the y position
+	uint8_t colour = 7;//pDotData[4]; // get the colour
+	Display::DrawPixelEOR(x, y, colour); // draw the dot
 }
 // https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/msbar.html
 void FTubeEliteDisplay::ReceiveMissileIndicatorData(const uint8_t* pMissileData)
 {
+	uint8_t missileNo = pMissileData[2]; // get the missile no - from right to left
+	uint8_t colour = pMissileData[3]; // get the colour
 
 }
 
