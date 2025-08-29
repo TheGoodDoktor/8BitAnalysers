@@ -638,13 +638,21 @@ void FTubeEliteDisplay::ReceiveSunLineData(const uint8_t* pLineData)
 void FTubeEliteDisplay::ReceiveScannerShipData(const uint8_t* pShipData)
 {
 	uint8_t heightSign = pShipData[2]; // get the height sign
-	const int height = (heightSign & (1<<7)) ? -pShipData[3] : pShipData[3]; // get the height value
+	const bool bNegative = (heightSign & (1 << 7)) != 0; // check if the height is negative
+	//const int height = (heightSign & (1<<7)) ? -pShipData[3] : pShipData[3]; // get the height value
 	uint8_t colour = 7;//pShipData[4]; // get the colour
 	uint8_t x = pShipData[5]; // get the x position
 	uint8_t y = pShipData[6]; // get the y position
 
-	Display::DrawLineEOR(x, y, x, y + height, colour); // draw the ship line
-	Display::DrawLineEOR(x, y + height, x + 5, y + height, colour); // draw the ship line
+	Display::DrawLineEOR(x, y , x + 5, y , colour); // draw the ship dot
+	if (bNegative)
+	{
+		Display::DrawLineEOR(x, y, x, y - pShipData[3], colour); // draw the ship line
+	}
+	else // positive, draw stick upwards
+	{
+		Display::DrawLineEOR(x, y, x, y + (255-pShipData[3]), colour); // draw the ship line
+	}
 }
 
 // https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/dot.html
