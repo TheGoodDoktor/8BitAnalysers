@@ -114,7 +114,7 @@ public:
 
 	void RunCommand(std::deque<uint8_t>& returnBytes) override
 	{
-		LOGINFO("OSBYTE LO: A=0x%02X(%d), X=%d", ParamA,ParamA, ParamX);
+		//LOGINFO("OSBYTE LO: A=0x%02X(%d), X=%d", ParamA,ParamA, ParamX);
 		returnBytes.push_back(pTubeSys->OSBYTE(ParamA, ParamX)); // call OSBYTE with parameters
 	}
 private:
@@ -142,7 +142,7 @@ public:
 
 	void RunCommand(std::deque<uint8_t>& returnBytes) override
 	{
-		LOGINFO("OSBYTE HI: A=0x%02X(%d), X=%d, Y=%d", ParamA, ParamA, ParamX, ParamY);
+		//LOGINFO("OSBYTE HI: A=0x%02X(%d), X=%d, Y=%d", ParamA, ParamA, ParamX, ParamY);
 		uint8_t	retBytes[3] = {0,0,0};
 		pTubeSys->OSBYTE(ParamA, ParamX, ParamY, retBytes); // call OSBYTE with parameters
 
@@ -301,12 +301,64 @@ public:
 	void Execute(void) override
 	{
 		LOGINFO("OSCLI: %s", CommandLine.c_str());
+		// ".1" gets sent to catalogue drive 1, ".2" for drive 2 etc.
 		const uint8_t returnCode = 0x00; // 0x80 make parasite run code - investigate
 		pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, returnCode); // acknowledge the command
 		bIsComplete = true;
 	}
 private:
 	std::string		CommandLine;
+};
+
+class FOSFILECommand : public FTubeCommand
+{
+public:
+	enum class EState
+	{
+		ReceivingControlBlock,
+		ReceivingFilename,
+	};
+	FOSFILECommand(FTubeElite* pSys) :FTubeCommand(pSys) 
+	{
+		State = EState::ReceivingControlBlock;
+	}
+
+	bool ReceiveParamByte(uint8_t byte) override
+	{
+		switch (State)
+		{
+		case EState::ReceivingControlBlock:
+			ControlBlockIndex--;
+			ControlBlock[ControlBlockIndex] = byte;
+			if (ControlBlockIndex == 0)
+			{
+				// Control block received, now receive filename
+				State = EState::ReceivingFilename;
+			}
+			break;
+		case EState::ReceivingFilename:
+			if (byte == 0x0D) // null terminator
+			{
+			}
+			else
+			{
+				Filename.push_back(static_cast<char>(byte));
+			}
+			break;
+		}
+
+		return false;
+	}
+
+	void Execute(void) override
+	{
+	}
+private:
+	EState	State;
+	const static int kOSFILEControlBlockSize = 16;
+	uint8_t		ControlBlock[kOSFILEControlBlockSize];
+	int			ControlBlockIndex = kOSFILEControlBlockSize;
+	std::string Filename;
 };
 
 // https://elite.bbcelite.com/deep_dives/6502sp_tube_communication.html
@@ -318,6 +370,7 @@ FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId)
 	switch (commandId)
 	{
 	case 0x00:	//RDCH
+		// Elite seems to use this for saving a game
 		LOGINFO("Tube command: RDCH (Read Character) - not implemented");
 		break;
 	case 0x02: //CLI
@@ -347,8 +400,10 @@ FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId)
 	case 0x12:	// OSFIND
 		LOGINFO("Tube command: OSFIND - not implemented");
 		break;
-	case 0x014:	// OSFILE
-		LOGINFO("Tube command: OSFILE - not implemented");
+	case 0x14:	// OSFILE
+		// Elite uses OSFILE a lot for loading and saving
+		pCommand = new FOSFILECommand(pSys);
+		//LOGINFO("Tube command: OSFILE - not implemented");
 		break;
 	case 0x16:	// OSGBPB
 		LOGINFO("Tube command: OSGBPB - not implemented");

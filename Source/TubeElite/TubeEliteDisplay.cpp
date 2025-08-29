@@ -244,6 +244,7 @@ bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
 		}
 		return true;
 
+	// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/docatf.html
 	case kEliteVDUCode_SetDiscCatalogueFlag:
 		ProcessingCommand = 0; // command completed
 		if (debug.bLogVDUChars)
@@ -277,6 +278,7 @@ bool FTubeEliteDisplay::ProcessEliteCommandByte(uint8_t cmdByte)
 		}
 		return true;
 
+	// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/dosvn.html
 	case kEliteVDUCode_SetFileSavingFlag:
 		ProcessingCommand = 0; // command completed
 		if (debug.bLogVDUChars)
@@ -733,7 +735,7 @@ void FTubeEliteDisplay::Tick(void)
 {
 	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_COUNT; key++)
 	{
-		if (ImGui::IsKeyPressed((ImGuiKey)key))
+		if (ImGui::IsKeyPressed((ImGuiKey)key,false))
 		{
 			if (bWindowFocused)
 			{

@@ -253,7 +253,9 @@ void FTubeElite::DrawEmulatorUI()
 void FTubeElite::Tick()
 {
 	FEmuBase::Tick();
-
+		
+	Display.Tick();
+	
 	FDebugger& debugger = CodeAnalysis.Debugger;
 	
 	if (debugger.IsStopped() == false)
@@ -268,7 +270,7 @@ void FTubeElite::Tick()
 		CodeAnalysis.OnFrameEnd();
 	}
 
-	Display.Tick();
+
 
 	// Draw UI
 	DrawDockingView();
@@ -369,7 +371,8 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 	switch (command)
 	{
 	case 15:
-		LOGINFO("OSBYTE 15 : Flush Buffer");
+		//LOGINFO("OSBYTE 15 : Flush Buffer");
+		FlushInputBuffer();
 		return 0;
 		break;
 	default:

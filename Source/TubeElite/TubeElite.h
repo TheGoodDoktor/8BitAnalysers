@@ -12,6 +12,7 @@
 #include <deque>
 
 #include <imgui.h>
+#include "Debug/DebugLog.h"
 
 class FTubeCommand;
 
@@ -147,6 +148,7 @@ public:
 	void AddInputByte(uint8_t byte)
 	{
 		InputBuffer.push_back(byte);
+		//LOGINFO("Added input byte: 0x%02X", byte);
 	}
 
 	bool GetInputByte(uint8_t& outByte)
@@ -154,8 +156,15 @@ public:
 		if(InputBuffer.empty())
 			return false;
 		outByte = InputBuffer.front();
+		//LOGINFO("Got input byte: 0x%02X", outByte);
 		InputBuffer.pop_front();
 		return true;
+	}
+
+	void FlushInputBuffer()
+	{
+		InputBuffer.clear();
+		//LOGINFO("Input buffer flushed");
 	}
 
 	bool PopInputByte()
