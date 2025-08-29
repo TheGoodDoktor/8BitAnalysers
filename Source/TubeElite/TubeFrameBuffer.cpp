@@ -171,7 +171,7 @@ void DrawHLineEOR(uint16_t x1, uint16_t x2, uint16_t y, uint8_t colour)
 	// Clamp x1 and x2 to screen width
 	if (x1 < 0) x1 = 0;
 	if (x2 >= FRAME_WIDTH) x2 = FRAME_WIDTH - 1;
-	for (uint16_t x = x1; x <= x2; ++x)
+	for (uint16_t x = x1; x < x2; ++x)
 	{
 		DrawPixelEOR(x, y, colour); // Draw each pixel in the horizontal line
 	}

@@ -10,6 +10,8 @@
 
 ImGuiLog g_VDULog;
 
+// special palette entries
+const uint8_t kPaletteOrange = 8;	// orange (for sun)
 
 uint32_t g_Palette[4][4] =
 {
@@ -78,6 +80,8 @@ bool FTubeEliteDisplay::Init(FTubeElite* pSys)
 {
 	pTubeSys = pSys;
 	Display::Init(); // Initialize the display system
+
+	Display::SetPalette(kPaletteOrange, 255, 165, 0); // set orange palette entry
 	return true;
 }
 
@@ -629,7 +633,7 @@ void FTubeEliteDisplay::ReceiveSunLineData(const uint8_t* pLineData)
 		pData += 3; // move to the next line
 		// TODO: draw sun in orange
 
-		Display::DrawHLineEOR(x1,x2, y, 7); // draw the line in white
+		Display::DrawHLineEOR(x1,x2, y, kPaletteOrange); // draw the line in white
 	}
 
 }
