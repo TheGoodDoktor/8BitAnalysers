@@ -37,6 +37,7 @@ struct FProjectConfig;
 struct FViewerConfig;
 struct FZXSpectrumConfig;
 struct FZXSpectrumGameConfig;
+class FZXCPUEmulatorZ80;
 
 enum class ESpectrumModel
 {
@@ -125,7 +126,8 @@ public:
 
 	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	void*		GetCPUEmulator(void) const override;
+	ICPUEmulator* GetCPUEmulator(void) const override;
+
 	//ICPUInterface End
 
 	void		FormatSpectrumMemory(FCodeAnalysisState& state);
@@ -202,6 +204,8 @@ public:
 
 	FRZXManager		RZXManager;
 	int				RZXFetchesRemaining = 0;
+
+	FZXCPUEmulatorZ80* pZXZ80CPU = nullptr;
 
 private:
 

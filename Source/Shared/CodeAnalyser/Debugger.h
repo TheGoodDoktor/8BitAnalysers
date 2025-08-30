@@ -225,7 +225,7 @@ private:
 	uint16_t				StackMin = 0xffff;
 	uint16_t				StackMax = 0;
 
-	ICPUEmulator6502* pPCE6502CPU = nullptr;
+	ICPUEmulator6502* pICPU6502 = nullptr;
 	ICPUEmulatorZ80* pICPUZ80 = nullptr;
 };
 

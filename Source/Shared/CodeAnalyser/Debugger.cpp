@@ -33,6 +33,8 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 	{
 		case ECPUType::Z80:
 			pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+			pICPUZ80 = (ICPUEmulatorZ80*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+
 			StackMin = 0xffff;
 			StackMax = 0;
 			break;
@@ -44,9 +46,9 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 			break;
 		case ECPUType::HuC6280:
 			pM6502 = nullptr;
-			pPCE6502CPU = (ICPUEmulator6502*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
+			pICPU6502 = (ICPUEmulator6502*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 
-			// Stack in 6502 is hard coded between 0x2100-0x21ff
+			// Stack in HuC6280 is hard coded between 0x2100-0x21ff
 			StackMin = 0x21ff;
 			StackMax = 0x21ff;
 			break;
@@ -82,8 +84,7 @@ void FDebugger::CPUTick(uint64_t pins)
 
 	if (CPUType == ECPUType::Z80)
 	{ 
-		// this fails to build with a linker error: z80_opdone
-		/*
+		// this fails on PCEA to build with a linker error: z80_opdone
 		addr = Z80_GET_ADDR(pins);
 
 		bMemAccess = !!((pins & Z80_CTRL_PIN_MASK) & Z80_MREQ);
@@ -94,7 +95,6 @@ void FDebugger::CPUTick(uint64_t pins)
 		bIOWrite = (pins & Z80_CTRL_PIN_MASK) == (Z80_IORQ | Z80_WR);
 		bIrq = (pins & Z80_INT) && pZ80->iff1;
 		bNMI = risingPins & Z80_NMI;
-		*/
 	}
 	else if (CPUType == ECPUType::M6502)
 	{
@@ -350,7 +350,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		}
 		break;
 		case ECPUType::HuC6280:	// HuC6280 is a superset of M65C02
-			const uint16_t sp = pPCE6502CPU->GetS() + 0x2100;
+			const uint16_t sp = pICPU6502->GetS() + 0x2100;
 			StackMin = std::min(sp, StackMin);
 			StackMax = 0x21ff;	// always starts here on HuC6280
 			break;
@@ -986,15 +986,15 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 	else if (CPUType == ECPUType::M6502 || CPUType == ECPUType::HuC6280)
 	{
 		if (strcmp(regName, "A") == 0)
-			return outVal = pPCE6502CPU->GetA(), true;
+			return outVal = pICPU6502->GetA(), true;
 		else if (strcmp(regName, "X") == 0)
-			return outVal = pPCE6502CPU->GetX(), true;
+			return outVal = pICPU6502->GetX(), true;
 		else if (strcmp(regName, "Y") == 0)
-			return outVal = pPCE6502CPU->GetY(), true;
+			return outVal = pICPU6502->GetY(), true;
 		else if (strcmp(regName, "S") == 0)
-			return outVal = pPCE6502CPU->GetS(), true;
+			return outVal = pICPU6502->GetS(), true;
 		else if (strcmp(regName, "P") == 0)
-			return outVal = pPCE6502CPU->GetP(), true;
+			return outVal = pICPU6502->GetP(), true;
 	}
 
 	return false;
@@ -1024,7 +1024,7 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 	else if (CPUType == ECPUType::M6502 || CPUType == ECPUType::HuC6280)
 	{
 		if (strcmp(regName, "PC") == 0)
-			return outVal = pPCE6502CPU->GetPC(), true;
+			return outVal = pICPU6502->GetPC(), true;
 	}
 	return false;
 }

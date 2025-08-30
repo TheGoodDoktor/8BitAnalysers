@@ -60,9 +60,9 @@ public:
 class ICPUEmulatorZ80 : public ICPUEmulator
 {
 public:
-	virtual uint8_t GetA() const = 0;
-	virtual uint8_t GetB() const = 0;
-	virtual uint8_t GetC() const = 0;
+	//virtual uint8_t GetA() const = 0;
+	//virtual uint8_t GetB() const = 0;
+	//virtual uint8_t GetC() const = 0;
 	// etc
 };
 
