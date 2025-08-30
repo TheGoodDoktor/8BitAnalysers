@@ -382,6 +382,52 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 
 }
 
+uint8_t FTubeElite::OSFILE(const char* pFilename, FOSFILEControlBlock& controlBlock, uint8_t transferType)
+{
+	LOGINFO("OSFILE: %s, Transfer Type: %d", pFilename, transferType);
+	switch (transferType)
+	{
+		case 0:	// Save a block of memory returning file length and attributes
+			LOGINFO("OSFILE Save Memory Block - Not Implemented");
+			break;
+		case 1: // Write catalogue information for named file
+			LOGINFO("OSFILE Write Catalogue Info - Not Implemented");
+			break;
+		case 2: // Write load address for named file
+			LOGINFO("OSFILE Write Load Address - Not Implemented");
+			break;
+		case 3: // Write execution address for named file
+			LOGINFO("OSFILE Write Execution Address - Not Implemented");
+			break;
+		case 4: // Write attributes for named file
+			LOGINFO("OSFILE Write Attributes - Not Implemented");
+			break;
+		case 5: // Read catalogue information
+			LOGINFO("OSFILE Read Catalogue Info - Not Implemented");
+			break;
+		case 6: // Delete named file
+			LOGINFO("OSFILE Delete Named File - Not Implemented");
+			break;
+		case 7: // Create an empty file of defined size
+			LOGINFO("OSFILE Create Empty File - Not Implemented");
+			break;
+		case 255:	// Load named file, if file execution address is 0, use specified addess
+			LOGINFO("OSFILE Load Named File - Not Implemented");
+			break;
+		default:
+			LOGINFO("Unhandled OSFILE transfer type: %d", transferType);
+			break;
+	}
+	return 0;
+}
+
+uint8_t FTubeElite::OSCLI(const char* pCmdLine)
+{
+	LOGINFO("OSCLI: %s", pCmdLine);
+	return 0;
+}
+
+
 // https://elite.bbcelite.com/6502sp/i_o_processor/variable/oswvecs.html
 void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 {

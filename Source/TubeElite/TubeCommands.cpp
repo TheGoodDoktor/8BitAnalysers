@@ -300,15 +300,16 @@ public:
 
 	void Execute(void) override
 	{
-		LOGINFO("OSCLI: %s", CommandLine.c_str());
 		// ".1" gets sent to catalogue drive 1, ".2" for drive 2 etc.
-		const uint8_t returnCode = 0x00; // 0x80 make parasite run code - investigate
+		const uint8_t returnCode = pTubeSys->OSCLI(CommandLine.c_str()); // 0x80 make parasite run code - investigate
 		pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, returnCode); // acknowledge the command
 		bIsComplete = true;
 	}
 private:
 	std::string		CommandLine;
 };
+
+
 
 class FOSFILECommand : public FTubeCommand
 {
@@ -317,6 +318,10 @@ public:
 	{
 		ReceivingControlBlock,
 		ReceivingFilename,
+		ReceivingTransferType,
+		ExecuteCommand,
+		ReturningStatus,
+		ReturningControlBlock
 	};
 	FOSFILECommand(FTubeElite* pSys) :FTubeCommand(pSys) 
 	{
@@ -329,7 +334,7 @@ public:
 		{
 		case EState::ReceivingControlBlock:
 			ControlBlockIndex--;
-			ControlBlock[ControlBlockIndex] = byte;
+			ControlBlock.Bytes[ControlBlockIndex] = byte;
 			if (ControlBlockIndex == 0)
 			{
 				// Control block received, now receive filename
@@ -339,11 +344,19 @@ public:
 		case EState::ReceivingFilename:
 			if (byte == 0x0D) // null terminator
 			{
+				State = EState::ReceivingTransferType;
 			}
 			else
 			{
 				Filename.push_back(static_cast<char>(byte));
 			}
+			break;
+		case EState::ReceivingTransferType:
+			TransferType = byte; // 0=load, 1=save, 2=verify
+			State = EState::ExecuteCommand;
+			ControlBlockIndex = kOSFILEControlBlockSize - 1;
+			bIsReady = true; // ready to execute
+			return true;
 			break;
 		}
 
@@ -352,13 +365,46 @@ public:
 
 	void Execute(void) override
 	{
+		switch (State)
+		{
+		case EState::ExecuteCommand:
+			// Execute the OSFILE command
+			ReturnStatus = pTubeSys->OSFILE(Filename.c_str(), ControlBlock, TransferType);
+			State = EState::ReturningStatus;
+			break;
+		case EState::ReturningStatus:
+		{
+			// Execute the OSFILE command
+			uint8_t status = 0;//pTubeSys->OSFILE(Filename, ControlBlock, TransferType);
+			if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, ReturnStatus))
+			{
+				State = EState::ReturningControlBlock;
+			}
+		}
+		break;
+		case EState::ReturningControlBlock:
+		{
+			const uint8_t returnByte = ControlBlock.Bytes[ControlBlockIndex]; // get the output byte
+			if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, returnByte))
+			{
+				ControlBlockIndex--;
+				if (ControlBlockIndex < 0) // all output bytes written
+				{
+					bIsComplete = true; // command complete
+				}
+			}
+		}
+		break;
+		}
 	}
 private:
-	EState	State;
-	const static int kOSFILEControlBlockSize = 16;
-	uint8_t		ControlBlock[kOSFILEControlBlockSize];
-	int			ControlBlockIndex = kOSFILEControlBlockSize;
-	std::string Filename;
+	EState				State;
+	const static int	kOSFILEControlBlockSize = 16;
+	FOSFILEControlBlock	ControlBlock;
+	int					ControlBlockIndex = kOSFILEControlBlockSize;
+	std::string			Filename;
+	uint8_t				TransferType = 0; // 0=load, 1=save, 2=verify
+	uint8_t 			ReturnStatus = 0;
 };
 
 // https://elite.bbcelite.com/deep_dives/6502sp_tube_communication.html
@@ -403,6 +449,7 @@ FTubeCommand* CreateTubeCommand(FTubeElite* pSys, uint8_t commandId)
 	case 0x14:	// OSFILE
 		// Elite uses OSFILE a lot for loading and saving
 		pCommand = new FOSFILECommand(pSys);
+		//pSys->DebugBreak(); // break here to investigate OSFILE usage
 		//LOGINFO("Tube command: OSFILE - not implemented");
 		break;
 	case 0x16:	// OSGBPB

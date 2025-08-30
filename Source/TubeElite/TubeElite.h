@@ -48,6 +48,31 @@ struct FOSWORDControlBlock
 	uint8_t* pOutputBytes = nullptr; // pointer to the output bytes
 };
 
+struct FOSFILEControlBlock
+{
+	union
+	{
+		struct
+		{
+			uint32_t	LoadAddress;
+			uint32_t	ExecAddress;
+			union
+			{
+				uint32_t	StartAddress;
+				uint32_t	Length;
+			};
+			union
+			{
+				uint32_t	EndAddress;
+				uint32_t	Attributes;
+			};
+		};
+		uint8_t		Bytes[16]; // access as bytes
+	};
+};
+
+static_assert(sizeof(FOSFILEControlBlock) == 16, "FOSFILEControlBlock size is not 16 bytes");
+
 class FTubeElite : public FEmuBase, public ITubeDataHandler
 {
 public:
@@ -120,6 +145,8 @@ public:
 	void	OSBYTE(uint8_t command, uint8_t paramX, uint8_t paramY, uint8_t* pReturnBytes);
 	uint8_t OSBYTE(uint8_t command, uint8_t param);
 	void	OSWORD(const FOSWORDControlBlock& controlBlock);
+	uint8_t OSFILE(const char* pFilename, FOSFILEControlBlock& controlBlock, uint8_t transferType);
+	uint8_t OSCLI(const char* pCmdLine);
 
     void    SetupCodeAnalysisLabels();
 
