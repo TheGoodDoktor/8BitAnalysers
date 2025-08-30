@@ -244,10 +244,15 @@ void FTubeElite::DrawEmulatorUI()
 	if (ImGui::Begin("Tube Elite Viewer"))
 	{
 		DrawDebugUI(Debug);
+		const uint16_t kLastSaveAddr = 0x1019; // last save game address
+		const uint16_t kCurrentStatusAddr = 0x08A4;
+
+		EditSaveGameUI(Machine.RAM + kCurrentStatusAddr);
 	}
 	ImGui::End();
 
 	Display.DrawUI();
+
 }
 
 void FTubeElite::Tick()
@@ -1009,4 +1014,74 @@ uint8_t BBCKeyFromImGuiKey(ImGuiKey key)
 		}
 	}
 	return bbcKey;
+}
+
+// ImGui Save Game Editor
+// https://elite.bbcelite.com/deep_dives/commander_save_files.html
+
+bool InputU8(const char* label, uint8_t* val)
+{
+	return ImGui::InputScalar(label, ImGuiDataType_U8, val);
+
+}
+
+bool InputU16(const char* label, uint16_t* val)
+{
+	return ImGui::InputScalar(label, ImGuiDataType_U16, val);
+
+}
+
+bool InputToggle(const char* label, uint8_t* val, uint8_t onVal = 0xff)
+{
+	bool bState = (*val == onVal);
+	if (ImGui::Checkbox(label, &bState))
+	{
+		*val = bState ? onVal : 0;
+		return true;
+	}
+	return false;
+}
+
+bool EditSaveGameUI(uint8_t* pSaveData)
+{
+	bool bModified = false;
+
+	uint32_t cash = (pSaveData[9]<<24) | (pSaveData[10] << 16) | (pSaveData[11] << 8) | pSaveData[12];
+
+	if (ImGui::InputScalar("Cash", ImGuiDataType_U32, &cash))
+	{
+		pSaveData[9] = (cash >> 24) & 0xFF;
+		pSaveData[10] = (cash >> 16) & 0xFF;
+		pSaveData[11] = (cash >> 8) & 0xFF;
+		pSaveData[12] = cash & 0xFF;
+		bModified = true;
+	}
+	bModified |= InputU8("Fuel",pSaveData + 13);
+
+	// bits 0-6 : power
+	// bit 7 : beam (or pulse)
+	bModified |= InputU8("Front Laser", pSaveData + 16);
+	bModified |= InputU8("Rear Laser", pSaveData + 17);
+	bModified |= InputU8("Left Laser", pSaveData + 18);
+	bModified |= InputU8("Right Laser", pSaveData + 19);
+
+	// 22 - normal, 37 - extended
+	bModified |= InputU8("Cargo Capacity", pSaveData + 22);
+
+	// Cargo
+	bModified |= InputU8("Food", pSaveData + 23);
+	bModified |= InputU8("Textiles", pSaveData + 23);
+	// TODO: finish the rest of the cargo items
+
+	bModified |= InputToggle("ECM", pSaveData + 40);
+	bModified |= InputToggle("Fuel Scoops", pSaveData + 41);
+	bModified |= InputToggle("Energy Bomb", pSaveData + 42, 0x7F);
+	bModified |= InputToggle("Energy Unit", pSaveData + 43, 1);
+	bModified |= InputToggle("Docking Computer", pSaveData + 44);
+	bModified |= InputToggle("Galactic Hyperdrive", pSaveData + 45);
+	bModified |= InputToggle("Escape Pod", pSaveData + 46);
+
+	bModified |= InputU8("Legal Status", pSaveData + 52);
+	bModified |= InputU16("Kills", (uint16_t*)(pSaveData + 71));
+	return bModified;
 }
