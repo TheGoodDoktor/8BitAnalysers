@@ -382,13 +382,17 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 
 }
 
+// Return values
+// 0 : File not found
+// 1 : File found
+// 2 : Directory found
 uint8_t FTubeElite::OSFILE(const char* pFilename, FOSFILEControlBlock& controlBlock, uint8_t transferType)
 {
 	LOGINFO("OSFILE: %s, Transfer Type: %d", pFilename, transferType);
 	switch (transferType)
 	{
 		case 0:	// Save a block of memory returning file length and attributes
-			LOGINFO("OSFILE Save Memory Block - Not Implemented");
+			LOGINFO("OSFILE Save: \"%s\" Memory Block at &%04X - &%04X <Not Implemented>", pFilename,controlBlock.StartAddress,controlBlock.EndAddress);
 			break;
 		case 1: // Write catalogue information for named file
 			LOGINFO("OSFILE Write Catalogue Info - Not Implemented");
@@ -412,13 +416,15 @@ uint8_t FTubeElite::OSFILE(const char* pFilename, FOSFILEControlBlock& controlBl
 			LOGINFO("OSFILE Create Empty File - Not Implemented");
 			break;
 		case 255:	// Load named file, if file execution address is 0, use specified addess
-			LOGINFO("OSFILE Load Named File - Not Implemented");
+			LOGINFO("OSFILE Load File \"%s\" at &%04X, length: &%04X <Not Implemented>",pFilename,controlBlock.LoadAddress,controlBlock.Length);
+
 			break;
 		default:
 			LOGINFO("Unhandled OSFILE transfer type: %d", transferType);
 			break;
 	}
-	return 0;
+
+	return 0; // file not found
 }
 
 uint8_t FTubeElite::OSCLI(const char* pCmdLine)
