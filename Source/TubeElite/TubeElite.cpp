@@ -904,7 +904,7 @@ static std::vector<std::pair<ImGuiKey, uint8_t>> g_InternalKeyLUT =
 	{ImGuiKey_Y,			0x44},
 	{ImGuiKey_J,			0x45},
 	{ImGuiKey_K,			0x46},
-	//{ImGuiKey_@,			0x47},
+	{ImGuiKey_Apostrophe,	0x47},
 	//{ImGuiKey_Colon,		0x48},
 	{ImGuiKey_Enter,		0x49},
 	//{ImGuiKey_ShiftLock,	0x50},
