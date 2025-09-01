@@ -354,7 +354,6 @@ public:
 		case EState::ReceivingTransferType:
 			TransferType = byte; // 0=load, 1=save, 2=verify
 			State = EState::ExecuteCommand;
-			ControlBlockIndex = kOSFILEControlBlockSize - 1;
 			bIsReady = true; // ready to execute
 			return true;
 			break;
@@ -367,34 +366,35 @@ public:
 	{
 		switch (State)
 		{
-		case EState::ExecuteCommand:
-			// Execute the OSFILE command
-			ReturnStatus = pTubeSys->OSFILE(Filename.c_str(), ControlBlock, TransferType);
-			State = EState::ReturningStatus;
-			break;
-		case EState::ReturningStatus:
-		{
-			// Execute the OSFILE command
-			uint8_t status = 0;//pTubeSys->OSFILE(Filename, ControlBlock, TransferType);
-			if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, ReturnStatus))
+			case EState::ExecuteCommand:
 			{
-				State = EState::ReturningControlBlock;
+				// Execute the OSFILE command
+				ReturnStatus = pTubeSys->OSFILE(Filename.c_str(), ControlBlock, TransferType);
+				State = EState::ReturningStatus;
 			}
-		}
-		break;
-		case EState::ReturningControlBlock:
-		{
-			const uint8_t returnByte = ControlBlock.Bytes[ControlBlockIndex]; // get the output byte
-			if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, returnByte))
+			break;
+			case EState::ReturningStatus:
 			{
-				ControlBlockIndex--;
-				if (ControlBlockIndex < 0) // all output bytes written
+				if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, ReturnStatus))
 				{
-					bIsComplete = true; // command complete
+					ControlBlockIndex = kOSFILEControlBlockSize - 1;
+					State = EState::ReturningControlBlock;
 				}
 			}
-		}
-		break;
+			break;
+			case EState::ReturningControlBlock:
+			{
+				const uint8_t returnByte = ControlBlock.Bytes[ControlBlockIndex]; // get the output byte
+				if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, returnByte))
+				{
+					ControlBlockIndex--;
+					if (ControlBlockIndex < 0) // all output bytes written
+					{
+						bIsComplete = true; // command complete
+					}
+				}
+			}
+			break;
 		}
 	}
 private:

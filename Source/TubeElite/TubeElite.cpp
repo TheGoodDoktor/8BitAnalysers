@@ -10,6 +10,7 @@
 
 #include <Debug/DebugLog.h>
 #include <algorithm>
+#include "SaveGame.h"
 
 // TODO: Load Elite binaries
 // use this a a guide: https://elite.bbcelite.com/6502sp/all/bcfs.html
@@ -111,8 +112,11 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	//Machine.RAM[0xFFFD] = startAddress >> 8;
 
 	// hack checksum routine
-	Machine.RAM[0x6BFA] = 0xEA;
+	Machine.RAM[0x6BFA] = 0xEA;	// in Checksum
 	Machine.RAM[0x6BFB] = 0xEA;
+	Machine.RAM[0x5127] = 0xEA;	// in DFAULT
+	Machine.RAM[0x5128] = 0xEA;
+
 
 	//Machine.Tube.HostWriteRegister(ETubeRegister::R2, 0x00);	// don't set high bit - language
 
@@ -397,7 +401,9 @@ uint8_t FTubeElite::OSFILE(const char* pFilename, FOSFILEControlBlock& controlBl
 	switch (transferType)
 	{
 		case 0:	// Save a block of memory returning file length and attributes
-			LOGINFO("OSFILE Save: \"%s\" Memory Block at &%04X - &%04X <Not Implemented>", pFilename,controlBlock.StartAddress,controlBlock.EndAddress);
+			LOGINFO("OSFILE Save: \"%s\" Memory Block at &%04X - &%04X", pFilename,controlBlock.StartAddress,controlBlock.EndAddress);
+			if(SaveGame(pFilename,&Machine.RAM[controlBlock.StartAddress]))
+				return 1;
 			break;
 		case 1: // Write catalogue information for named file
 			LOGINFO("OSFILE Write Catalogue Info - Not Implemented");
@@ -421,8 +427,9 @@ uint8_t FTubeElite::OSFILE(const char* pFilename, FOSFILEControlBlock& controlBl
 			LOGINFO("OSFILE Create Empty File - Not Implemented");
 			break;
 		case 255:	// Load named file, if file execution address is 0, use specified addess
-			LOGINFO("OSFILE Load File \"%s\" at &%04X, length: &%04X <Not Implemented>",pFilename,controlBlock.LoadAddress,controlBlock.Length);
-
+			LOGINFO("OSFILE Load File \"%s\" at &%04X, length: &%04X",pFilename,controlBlock.LoadAddress,controlBlock.Length);
+			if(LoadGame(pFilename,&Machine.RAM[controlBlock.StartAddress]))
+				return 1;
 			break;
 		default:
 			LOGINFO("Unhandled OSFILE transfer type: %d", transferType);
