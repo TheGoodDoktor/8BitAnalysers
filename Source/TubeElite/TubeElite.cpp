@@ -10,6 +10,7 @@
 
 #include <Debug/DebugLog.h>
 #include <algorithm>
+#include "SaveGame.h"
 
 // TODO: Load Elite binaries
 // use this a a guide: https://elite.bbcelite.com/6502sp/all/bcfs.html
@@ -111,8 +112,11 @@ bool FTubeElite::Init(const FEmulatorLaunchConfig& launchConfig)
 	//Machine.RAM[0xFFFD] = startAddress >> 8;
 
 	// hack checksum routine
-	Machine.RAM[0x6BFA] = 0xEA;
+	Machine.RAM[0x6BFA] = 0xEA;	// in Checksum
 	Machine.RAM[0x6BFB] = 0xEA;
+	Machine.RAM[0x5127] = 0xEA;	// in DFAULT
+	Machine.RAM[0x5128] = 0xEA;
+
 
 	//Machine.Tube.HostWriteRegister(ETubeRegister::R2, 0x00);	// don't set high bit - language
 
@@ -232,22 +236,35 @@ void FTubeElite::Shutdown()
 	FEmuBase::Shutdown();
 }
 
+void DrawDebugUI(FTubeEliteDebug& debugInfo)
+{
+	ImGui::Checkbox("Debug Tube Comms", &debugInfo.bDebugTubeComms);
+	ImGui::Checkbox("OSWORD Debug", &debugInfo.bOSWORDDebug);
+	ImGui::Checkbox("Log VDU Characters", &debugInfo.bLogVDUChars);
+}
 
 void FTubeElite::DrawEmulatorUI()
 {
 	if (ImGui::Begin("Tube Elite Viewer"))
 	{
-		
+		DrawDebugUI(Debug);
+		const uint16_t kLastSaveAddr = 0x1019; // last save game address
+		const uint16_t kCurrentStatusAddr = 0x08A4;
+
+		EditSaveGameUI(Machine.RAM + kCurrentStatusAddr);
 	}
 	ImGui::End();
 
 	Display.DrawUI();
+
 }
 
 void FTubeElite::Tick()
 {
 	FEmuBase::Tick();
-
+		
+	Display.Tick();
+	
 	FDebugger& debugger = CodeAnalysis.Debugger;
 	
 	if (debugger.IsStopped() == false)
@@ -262,7 +279,7 @@ void FTubeElite::Tick()
 		CodeAnalysis.OnFrameEnd();
 	}
 
-	Display.Tick();
+
 
 	// Draw UI
 	DrawDockingView();
@@ -363,7 +380,8 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 	switch (command)
 	{
 	case 15:
-		LOGINFO("OSBYTE 15 : Flush Buffer");
+		//LOGINFO("OSBYTE 15 : Flush Buffer");
+		FlushInputBuffer();
 		return 0;
 		break;
 	default:
@@ -373,7 +391,62 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 
 }
 
+// Return values
+// 0 : File not found
+// 1 : File found
+// 2 : Directory found
+uint8_t FTubeElite::OSFILE(const char* pFilename, FOSFILEControlBlock& controlBlock, uint8_t transferType)
+{
+	LOGINFO("OSFILE: %s, Transfer Type: %d", pFilename, transferType);
+	switch (transferType)
+	{
+		case 0:	// Save a block of memory returning file length and attributes
+			LOGINFO("OSFILE Save: \"%s\" Memory Block at &%04X - &%04X", pFilename,controlBlock.StartAddress,controlBlock.EndAddress);
+			if(SaveGame(pFilename,&Machine.RAM[controlBlock.StartAddress]))
+				return 1;
+			break;
+		case 1: // Write catalogue information for named file
+			LOGINFO("OSFILE Write Catalogue Info - Not Implemented");
+			break;
+		case 2: // Write load address for named file
+			LOGINFO("OSFILE Write Load Address - Not Implemented");
+			break;
+		case 3: // Write execution address for named file
+			LOGINFO("OSFILE Write Execution Address - Not Implemented");
+			break;
+		case 4: // Write attributes for named file
+			LOGINFO("OSFILE Write Attributes - Not Implemented");
+			break;
+		case 5: // Read catalogue information
+			LOGINFO("OSFILE Read Catalogue Info - Not Implemented");
+			break;
+		case 6: // Delete named file
+			LOGINFO("OSFILE Delete Named File - Not Implemented");
+			break;
+		case 7: // Create an empty file of defined size
+			LOGINFO("OSFILE Create Empty File - Not Implemented");
+			break;
+		case 255:	// Load named file, if file execution address is 0, use specified addess
+			LOGINFO("OSFILE Load File \"%s\" at &%04X, length: &%04X",pFilename,controlBlock.LoadAddress,controlBlock.Length);
+			if(LoadGame(pFilename,&Machine.RAM[controlBlock.StartAddress]))
+				return 1;
+			break;
+		default:
+			LOGINFO("Unhandled OSFILE transfer type: %d", transferType);
+			break;
+	}
 
+	return 0; // file not found
+}
+
+uint8_t FTubeElite::OSCLI(const char* pCmdLine)
+{
+	LOGINFO("OSCLI: %s", pCmdLine);
+	return 0;
+}
+
+
+// https://elite.bbcelite.com/6502sp/i_o_processor/variable/oswvecs.html
 void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 {
 	switch (controlBlock.Action)
@@ -397,26 +470,25 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 				return;
 			}
 			assert(controlBlock.NumOutputBytes == 15);
-			Display.UpdateKeyboardBuffer(controlBlock.pOutputBytes);			
+			Display.UpdateKeyboardBuffer(controlBlock.pOutputBytes);	
+			//DebugBreak(); // break the execution
+
 			break;
 		case 241:	// Draw space view pixels
 			Display.ReceivePixelData(controlBlock.pInputBytes);
 			break;
 		case 242:	// Update missile indicators
-			if (Debug.bOSWORDDebug)
-				LOGINFO("OSWORD - UPDATE MISSILE INDICATORS");
+			Display.ReceiveMissileIndicatorData(controlBlock.pInputBytes);
 			break;
 		case 243:	// wait for VSync
 			if (Debug.bOSWORDDebug)
 				LOGINFO("OSWORD - WAIT FOR VSYNC");
 			break;
 		case 244:	// Draw the ship on the 3D scanner
-			if (Debug.bOSWORDDebug)
-				LOGINFO("OSWORD - DRAW SHIP ON 3D SCANNER X");
+			Display.ReceiveScannerShipData(controlBlock.pInputBytes);
 			break;
-		case 245:
-			if (Debug.bOSWORDDebug)
-				LOGINFO("OSWORD - DOT");
+		case 245:	// OSWORD 245 - Draw a dot on the compass
+			Display.ReceiveCompassDotData(controlBlock.pInputBytes);
 			break;
 		case 246:	// OSWORD 246 - scan for a specific key
 			{
@@ -430,10 +502,10 @@ void FTubeElite::OSWORD(const FOSWORDControlBlock& controlBlock)
 			}
 			break;
 		case 247:	// OSWORD 247 - Draw orange sun lines
-			if (Debug.bOSWORDDebug)
-				LOGINFO("OSWORD - DRAW ORANGE SUN LINES");
+			Display.ReceiveSunLineData(controlBlock.pInputBytes);
 			break;
 		case 248:	// OSWORD 248 - Draw the ship hangar
+			// https://elite.bbcelite.com/6502sp/i_o_processor/subroutine/hanger.html
 			if (Debug.bOSWORDDebug)
 				LOGINFO("OSWORD - DRAW SHIP HANGAR X");
 			break;
@@ -844,7 +916,7 @@ static std::vector<std::pair<ImGuiKey, uint8_t>> g_InternalKeyLUT =
 	{ImGuiKey_Y,			0x44},
 	{ImGuiKey_J,			0x45},
 	{ImGuiKey_K,			0x46},
-	//{ImGuiKey_@,			0x47},
+	{ImGuiKey_Apostrophe,	0x47},
 	//{ImGuiKey_Colon,		0x48},
 	{ImGuiKey_Enter,		0x49},
 	//{ImGuiKey_ShiftLock,	0x50},
@@ -949,4 +1021,74 @@ uint8_t BBCKeyFromImGuiKey(ImGuiKey key)
 		}
 	}
 	return bbcKey;
+}
+
+// ImGui Save Game Editor
+// https://elite.bbcelite.com/deep_dives/commander_save_files.html
+
+bool InputU8(const char* label, uint8_t* val)
+{
+	return ImGui::InputScalar(label, ImGuiDataType_U8, val);
+
+}
+
+bool InputU16(const char* label, uint16_t* val)
+{
+	return ImGui::InputScalar(label, ImGuiDataType_U16, val);
+
+}
+
+bool InputToggle(const char* label, uint8_t* val, uint8_t onVal = 0xff)
+{
+	bool bState = (*val == onVal);
+	if (ImGui::Checkbox(label, &bState))
+	{
+		*val = bState ? onVal : 0;
+		return true;
+	}
+	return false;
+}
+
+bool EditSaveGameUI(uint8_t* pSaveData)
+{
+	bool bModified = false;
+
+	uint32_t cash = (pSaveData[9]<<24) | (pSaveData[10] << 16) | (pSaveData[11] << 8) | pSaveData[12];
+
+	if (ImGui::InputScalar("Cash", ImGuiDataType_U32, &cash))
+	{
+		pSaveData[9] = (cash >> 24) & 0xFF;
+		pSaveData[10] = (cash >> 16) & 0xFF;
+		pSaveData[11] = (cash >> 8) & 0xFF;
+		pSaveData[12] = cash & 0xFF;
+		bModified = true;
+	}
+	bModified |= InputU8("Fuel",pSaveData + 13);
+
+	// bits 0-6 : power
+	// bit 7 : beam (or pulse)
+	bModified |= InputU8("Front Laser", pSaveData + 16);
+	bModified |= InputU8("Rear Laser", pSaveData + 17);
+	bModified |= InputU8("Left Laser", pSaveData + 18);
+	bModified |= InputU8("Right Laser", pSaveData + 19);
+
+	// 22 - normal, 37 - extended
+	bModified |= InputU8("Cargo Capacity", pSaveData + 22);
+
+	// Cargo
+	bModified |= InputU8("Food", pSaveData + 23);
+	bModified |= InputU8("Textiles", pSaveData + 23);
+	// TODO: finish the rest of the cargo items
+
+	bModified |= InputToggle("ECM", pSaveData + 40);
+	bModified |= InputToggle("Fuel Scoops", pSaveData + 41);
+	bModified |= InputToggle("Energy Bomb", pSaveData + 42, 0x7F);
+	bModified |= InputToggle("Energy Unit", pSaveData + 43, 1);
+	bModified |= InputToggle("Docking Computer", pSaveData + 44);
+	bModified |= InputToggle("Galactic Hyperdrive", pSaveData + 45);
+	bModified |= InputToggle("Escape Pod", pSaveData + 46);
+
+	bModified |= InputU8("Legal Status", pSaveData + 52);
+	bModified |= InputU16("Kills", (uint16_t*)(pSaveData + 71));
+	return bModified;
 }

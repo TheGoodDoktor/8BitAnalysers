@@ -1052,11 +1052,12 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 	AnalyseFromPC(state, pc);
 }
 
+bool g_DbgAddressEnabled = false;
 uint16_t g_DbgReadAddress = 0xddf8;
 
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 {
-	if (dataAddr == g_DbgReadAddress)
+	if (g_DbgAddressEnabled && dataAddr == g_DbgReadAddress)
 	{
 		LOGINFO("Access 0x%04X at PC:", g_DbgReadAddress, pc);
 	}

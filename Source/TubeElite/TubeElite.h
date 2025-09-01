@@ -12,6 +12,7 @@
 #include <deque>
 
 #include <imgui.h>
+#include "Debug/DebugLog.h"
 
 class FTubeCommand;
 
@@ -46,6 +47,31 @@ struct FOSWORDControlBlock
 	uint8_t* pInputBytes = nullptr; // pointer to the input bytes
 	uint8_t* pOutputBytes = nullptr; // pointer to the output bytes
 };
+
+struct FOSFILEControlBlock
+{
+	union
+	{
+		struct
+		{
+			uint32_t	LoadAddress;
+			uint32_t	ExecAddress;
+			union
+			{
+				uint32_t	StartAddress;
+				uint32_t	Length;
+			};
+			union
+			{
+				uint32_t	EndAddress;
+				uint32_t	Attributes;
+			};
+		};
+		uint8_t		Bytes[16]; // access as bytes
+	};
+};
+
+static_assert(sizeof(FOSFILEControlBlock) == 16, "FOSFILEControlBlock size is not 16 bytes");
 
 class FTubeElite : public FEmuBase, public ITubeDataHandler
 {
@@ -119,6 +145,8 @@ public:
 	void	OSBYTE(uint8_t command, uint8_t paramX, uint8_t paramY, uint8_t* pReturnBytes);
 	uint8_t OSBYTE(uint8_t command, uint8_t param);
 	void	OSWORD(const FOSWORDControlBlock& controlBlock);
+	uint8_t OSFILE(const char* pFilename, FOSFILEControlBlock& controlBlock, uint8_t transferType);
+	uint8_t OSCLI(const char* pCmdLine);
 
     void    SetupCodeAnalysisLabels();
 
@@ -147,6 +175,7 @@ public:
 	void AddInputByte(uint8_t byte)
 	{
 		InputBuffer.push_back(byte);
+		//LOGINFO("Added input byte: 0x%02X", byte);
 	}
 
 	bool GetInputByte(uint8_t& outByte)
@@ -154,8 +183,15 @@ public:
 		if(InputBuffer.empty())
 			return false;
 		outByte = InputBuffer.front();
+		//LOGINFO("Got input byte: 0x%02X", outByte);
 		InputBuffer.pop_front();
 		return true;
+	}
+
+	void FlushInputBuffer()
+	{
+		InputBuffer.clear();
+		//LOGINFO("Input buffer flushed");
 	}
 
 	bool PopInputByte()
@@ -203,3 +239,5 @@ private:
 uint8_t BBCKeyFromImGuiKey(ImGuiKey key);
 uint8_t GetPressedInternalKeyCode(void);
 bool IsInternalKeyDown(uint8_t internalKeyCode);
+
+bool EditSaveGameUI(uint8_t* pSaveData);
