@@ -2720,7 +2720,7 @@
                 {
                     "Address": 260,
                     "DataType": 11,
-                    "InstructionAddressRef": 16973824
+                    "InstructionAddressRef": 17039360
                 },
                 {
                     "Address": 261,
@@ -41581,7 +41581,7 @@
                 {
                     "Address": 216,
                     "ByteSize": 3,
-                    "Flags": 40,
+                    "Flags": 8,
                     "OperandType": 2
                 },
                 {
@@ -42917,11 +42917,13 @@
                 {
                     "Address": 962,
                     "ByteSize": 2,
+                    "Comment": "point to filename in zero page",
                     "OperandType": 1
                 },
                 {
                     "Address": 964,
                     "ByteSize": 3,
+                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -43414,8 +43416,7 @@
                 },
                 {
                     "Address": 19,
-                    "ByteSize": 1,
-                    "Flags": 32
+                    "ByteSize": 1
                 },
                 {
                     "Address": 20,
@@ -43484,11 +43485,13 @@
                 },
                 {
                     "Address": 91,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "5 *"
                 },
                 {
                     "Address": 93,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "256 = 1280 iterations"
                 },
                 {
                     "Address": 95,
@@ -45021,7 +45024,7 @@
                 {
                     "Address": 95,
                     "LabelType": 2,
-                    "Name": "label_545F"
+                    "Name": "delay_loop"
                 },
                 {
                     "Address": 105,
