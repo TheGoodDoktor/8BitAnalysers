@@ -14,6 +14,13 @@
     },
     "FunctionInfo": [
         {
+            "Description": "BRK Vector",
+            "EndAddress": 33685504,
+            "StartAddress": 33685504,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
             "Description": "",
             "EndAddress": 34734080,
             "StartAddress": 34734080,
@@ -1603,7 +1610,7 @@
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Fetch name of commander",
             "EndAddress": 1377763328,
             "StartAddress": 1377763328,
             "bManualEdit": false,
@@ -1641,6 +1648,34 @@
                 }
             ],
             "StartAddress": 1384185856,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1386545152,
+            "StartAddress": 1386545152,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "Delete File",
+            "EndAddress": 1389625344,
+            "StartAddress": 1389625344,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "Break handler for save game menu",
+            "EndAddress": 1392443392,
+            "StartAddress": 1392443392,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1393885184,
+            "StartAddress": 1393885184,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -1690,6 +1725,20 @@
             "Description": "",
             "EndAddress": 1412235264,
             "StartAddress": 1412235264,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1412694016,
+            "StartAddress": 1412694016,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1413611520,
+            "StartAddress": 1413611520,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -1834,8 +1883,20 @@
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Scan keyboard until key is pressed",
             "EndAddress": 1470300160,
+            "ReturnValues": [
+                {
+                    "DisplayType": "Hex",
+                    "Name": "AsciiKeyA",
+                    "Source": 0
+                },
+                {
+                    "DisplayType": "Hex",
+                    "Name": "AsciiKeyX",
+                    "Source": 1
+                }
+            ],
             "StartAddress": 1470300160,
             "bManualEdit": false,
             "bROMFunction": false
@@ -2720,7 +2781,7 @@
                 {
                     "Address": 260,
                     "DataType": 11,
-                    "InstructionAddressRef": 16973824
+                    "InstructionAddressRef": 17039360
                 },
                 {
                     "Address": 261,
@@ -2731,6 +2792,18 @@
                     "Address": 262,
                     "DataType": 11,
                     "InstructionAddressRef": 17039360
+                },
+                {
+                    "Address": 514,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
+                    "Address": 516,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
                 },
                 {
                     "Address": 526,
@@ -3248,8 +3321,9 @@
                 },
                 {
                     "Address": 514,
-                    "LabelType": 2,
-                    "Name": "label_0202"
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "BRKV"
                 },
                 {
                     "Address": 516,
@@ -3356,6 +3430,10 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 237,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 243,
                     "DisplayType": 11
                 },
@@ -3450,6 +3528,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_08B2"
+                },
+                {
+                    "Address": 237,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "SVC"
                 },
                 {
                     "Address": 241,
@@ -42555,6 +42639,159 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 724,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 727,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 729,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 732,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 735,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 737,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 740,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 743,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 744,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 746,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 748,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 750,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 753,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 754,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 756,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 758,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 760,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 763,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 767,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 770,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 771,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 774,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 775,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 777,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 780,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 781,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 783,
+                    "ByteSize": 2,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 785,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 787,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 789,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 792,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
                     "Address": 795,
                     "ByteSize": 3,
                     "Flags": 8,
@@ -42562,7 +42799,8 @@
                 },
                 {
                     "Address": 798,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "backup stack"
                 },
                 {
                     "Address": 799,
@@ -42580,6 +42818,8 @@
                 {
                     "Address": 805,
                     "ByteSize": 3,
+                    "Comment": "point BRKV to #ADDR:0x52FF#",
+                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -42597,7 +42837,8 @@
                 },
                 {
                     "Address": 814,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "string token for disc access menu"
                 },
                 {
                     "Address": 816,
@@ -42613,16 +42854,20 @@
                 },
                 {
                     "Address": 822,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 11
                 },
                 {
                     "Address": 824,
                     "ByteSize": 2,
+                    "Comment": "less than 1 - key not valid",
                     "OperandType": 2
                 },
                 {
                     "Address": 826,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "Delete",
+                    "OperandType": 11
                 },
                 {
                     "Address": 828,
@@ -42636,11 +42881,14 @@
                 },
                 {
                     "Address": 832,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "Save",
+                    "OperandType": 11
                 },
                 {
                     "Address": 834,
                     "ByteSize": 2,
+                    "Comment": "Save or catalogue - jump",
                     "OperandType": 2
                 },
                 {
@@ -42658,6 +42906,7 @@
                 {
                     "Address": 842,
                     "ByteSize": 3,
+                    "Comment": "transfer commander",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -42694,7 +42943,8 @@
                 },
                 {
                     "Address": 859,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "Print extended token 3 (\"COMPETITION NUMBER:\")"
                 },
                 {
                     "Address": 861,
@@ -43072,6 +43322,10 @@
                     "ByteSize": 2,
                     "DataType": 2,
                     "DisplayType": 1
+                },
+                {
+                    "Address": 766,
+                    "DisplayType": 11
                 }
             ],
             "LabelInfo": [
@@ -43243,7 +43497,7 @@
                     "Address": 522,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_520A"
+                    "Name": "TRNME"
                 },
                 {
                     "Address": 524,
@@ -43264,7 +43518,7 @@
                     "Address": 543,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_521F"
+                    "Name": "GTNMEW"
                 },
                 {
                     "Address": 545,
@@ -43311,14 +43565,49 @@
                     "Name": "page_clear_loop"
                 },
                 {
+                    "Address": 677,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_52A5"
+                },
+                {
                     "Address": 724,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "DELT"
+                },
+                {
+                    "Address": 748,
                     "LabelType": 2,
-                    "Name": "label_52D4"
+                    "Name": "label_52EC"
+                },
+                {
+                    "Address": 766,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "Stack"
+                },
+                {
+                    "Address": 767,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "MEBRK"
+                },
+                {
+                    "Address": 777,
+                    "LabelType": 2,
+                    "Name": "label_5309"
                 },
                 {
                     "Address": 789,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "CAT"
+                },
+                {
+                    "Address": 792,
                     "LabelType": 2,
-                    "Name": "label_5315"
+                    "Name": "label_5318"
                 },
                 {
                     "Address": 795,
@@ -43329,7 +43618,7 @@
                 {
                     "Address": 848,
                     "LabelType": 2,
-                    "Name": "SV"
+                    "Name": "SV1"
                 },
                 {
                     "Address": 866,
@@ -43339,12 +43628,12 @@
                 {
                     "Address": 942,
                     "LabelType": 2,
-                    "Name": "label_53AE"
+                    "Name": "SVEX"
                 },
                 {
                     "Address": 943,
                     "LabelType": 2,
-                    "Name": "label_53AF"
+                    "Name": "exit_func"
                 },
                 {
                     "Address": 946,
@@ -45007,6 +45296,18 @@
                     "Name": "FX200"
                 },
                 {
+                    "Address": 52,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_5434"
+                },
+                {
+                    "Address": 66,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_5442"
+                },
+                {
                     "Address": 76,
                     "Global": true,
                     "LabelType": 1,
@@ -45271,7 +45572,7 @@
                     "Address": 931,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_57A3"
+                    "Name": "WaitKeypress"
                 },
                 {
                     "Address": 933,
