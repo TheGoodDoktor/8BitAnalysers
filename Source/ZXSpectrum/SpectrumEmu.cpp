@@ -66,6 +66,30 @@ const char* kRomInfo48JsonFile = "RomInfo.json";
 const char* kRomInfo128JsonFile = "RomInfo128.json";
 const std::string kAppTitle = "Spectrum Analyser";
 
+class FZXCPUEmulatorZ80 : public ICPUEmulatorZ80
+{
+public:
+	FZXCPUEmulatorZ80(FSpectrumEmu* pEmu)
+		: pPCEEmu(pEmu)
+	{
+		pZXState = &pEmu->ZXEmuState;
+	}
+	virtual void* GetImpl() const 
+	{
+		return (void*)&pPCEEmu->ZXEmuState;
+	}
+	virtual uint16_t GetPC() const
+	{
+		return pZXState->cpu.pc;
+	}
+	/*virtual uint8_t GetA() const
+	{
+		return pZXState->cpu.a;
+	}*/
+	zx_t* pZXState = nullptr;
+	FSpectrumEmu* pPCEEmu = nullptr;
+};
+
 uint8_t		FSpectrumEmu::ReadByte(uint16_t address) const
 {
 	return mem_rd(const_cast<mem_t*>(&ZXEmuState.mem), address);
@@ -131,9 +155,9 @@ uint16_t	FSpectrumEmu::GetSP(void)
 	return ZXEmuState.cpu.sp;
 }
 
-void* FSpectrumEmu::GetCPUEmulator(void) const
+ICPUEmulator* FSpectrumEmu::GetCPUEmulator(void) const
 {
-	return (void *)&ZXEmuState.cpu;
+	return pZXZ80CPU;
 }
 
 void FSpectrumEmu::FormatSpectrumMemory(FCodeAnalysisState& state) 
@@ -679,6 +703,8 @@ bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
     
 	SetWindowTitle(kAppTitle.c_str());
 	SetWindowIcon(GetBundlePath("SALogo.png"));
+
+	pZXZ80CPU = new FZXCPUEmulatorZ80(this);
 
 	// Initialise Emulator
 	pGlobalConfig = new FZXSpectrumConfig();

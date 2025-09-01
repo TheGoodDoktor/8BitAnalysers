@@ -7,8 +7,6 @@
 #include "Util/FileUtil.h"
 #include "Viewers/PCEViewer.h"
 #include <geargrafx_core.h>
-//#include "CodeAnalyser/CodeAnalyser.h"
-//#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "Debug/DebugLog.h"
 
 #include "App.h"
@@ -72,6 +70,13 @@ public:
 	HuC6280::HuC6280_State* p6280State = nullptr;
 	FPCEEmu* pPCEEmu = nullptr;
 };
+
+// Hack to fix undefined symbol linker error.
+// This function is used in Debugger.cpp
+bool z80_opdone(z80_t* cpu) 
+{
+	return false;
+}
 
 uint8_t FPCEEmu::ReadByte(uint16_t address) const
 {
