@@ -256,7 +256,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 	//uint16_t byte = 0;
 	const FCharacterSet* pCharSet = GetCharacterSetFromAddress(params.CharacterSet);
 	static bool bShowReadWrites = true;
-	const uint16_t physAddress = params.Address.Address;
+	const uint16_t physAddress = params.Address.GetAddress();
 	const float rectSize = 12.0f * scale * UIState.Scale;
 
 	for (int y = 0; y < params.Height; y++)
@@ -323,7 +323,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 	{
 		const int xChar = (int)floor(mousePosX / rectSize);
 		const int yChar = (int)floor(mousePosY / rectSize);
-		const uint16_t charAddress = pCharMap->Params.Address.Address + (xChar + UIState.OffsetX + ((yChar + UIState.OffsetY)* pCharMap->Params.Stride));
+		const uint16_t charAddress = pCharMap->Params.Address.GetAddress() + (xChar + UIState.OffsetX + ((yChar + UIState.OffsetY)* pCharMap->Params.Stride));
 		const uint8_t charVal = state.ReadByte(charAddress);
 
 		const float xp = pos.x + (xChar * rectSize);
@@ -334,7 +334,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 
 		if (ImGui::IsMouseClicked(0))
 		{
-			UIState.SelectedCharAddress = FAddressRef(pCharMap->Params.Address.BankId,charAddress);
+			UIState.SelectedCharAddress = FAddressRef(pCharMap->Params.Address.GetBankId(),charAddress);
 			UIState.SelectedCharX = xChar;
 			UIState.SelectedCharY = yChar;
 		}
@@ -364,11 +364,11 @@ void FCharacterMapViewer::DrawCharacterMap()
 	if (viewState.HighlightAddress.IsValid())
 	{
 		//const uint16_t charMapStartAddr = params.Address;
-		const uint16_t charMapEndAddr = params.Address.Address + (params.Stride * params.Height) - 1;
+		const uint16_t charMapEndAddr = params.Address.GetAddress() + (params.Stride * params.Height) - 1;
 		// TODO: this needs to use banks
-		if (viewState.HighlightAddress.Address >= params.Address.Address && viewState.HighlightAddress.Address <= charMapEndAddr)	// pixel
+		if (viewState.HighlightAddress.GetAddress() >= params.Address.GetAddress() && viewState.HighlightAddress.GetAddress() <= charMapEndAddr)	// pixel
 		{
-			const uint16_t addrOffset = viewState.HighlightAddress.Address - params.Address.Address;
+			const uint16_t addrOffset = viewState.HighlightAddress.GetAddress() - params.Address.GetAddress();
 			const int charX = addrOffset % params.Stride;
 			const int charY = addrOffset / params.Stride;
 			const float xp = pos.x + (charX * rectSize);
@@ -387,7 +387,7 @@ void FCharacterMapViewer::DrawCharacterMap()
 	{
 		// Show data reads & writes
 		// 
-		ImGui::Text("Address: %s", NumStr(UIState.SelectedCharAddress.Address));
+		ImGui::Text("Address: %s", NumStr(UIState.SelectedCharAddress.GetAddress()));
 		DrawAddressLabel(state, state.GetFocussedViewState(), UIState.SelectedCharAddress);
 		FDataInfo* pDataInfo = state.GetDataInfoForAddress(UIState.SelectedCharAddress);
 
@@ -476,7 +476,7 @@ void FCharacterMapViewer::DrawCharacterMaps()
 	{
 		if (UIState.SelectedCharMapAddr.IsValid())
 		{
-			FCodeAnalysisBank* pBank = state.GetBank(UIState.SelectedCharMapAddr.BankId);
+			FCodeAnalysisBank* pBank = state.GetBank(UIState.SelectedCharMapAddr.GetBankId());
 			assert(pBank != nullptr);
 			state.MapBankForAnalysis(*pBank);	// map bank in so it can be read ok
 			DrawCharacterMap();
@@ -615,7 +615,7 @@ public:
 	void SetAddress(FAddressRef addr) 
 	{ 
 		Address = addr; 
-		PhysicalAddress = addr.Address;
+		PhysicalAddress = addr.GetAddress();
 	}
 
 	void FixupAddressRefs() override

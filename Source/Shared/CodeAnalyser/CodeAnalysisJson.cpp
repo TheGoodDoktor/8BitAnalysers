@@ -68,8 +68,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		json jsonCharacterSet;
 
 		jsonCharacterSet["Name"] = pCharSet->Params.Name;
-		jsonCharacterSet["AddressRef"] = pCharSet->Params.Address.Val;
-		jsonCharacterSet["AttribsAddressRef"] = pCharSet->Params.AttribsAddress.Val;
+		jsonCharacterSet["AddressRef"] = pCharSet->Params.Address.GetVal();
+		jsonCharacterSet["AttribsAddressRef"] = pCharSet->Params.AttribsAddress.GetVal();
 		jsonCharacterSet["MaskInfo"] = pCharSet->Params.MaskInfo;
 		jsonCharacterSet["ColourInfo"] = pCharSet->Params.ColourInfo;
 		jsonCharacterSet["Dynamic"] = pCharSet->Params.bDynamic;
@@ -85,11 +85,11 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		const FCharacterMap* pCharMap = GetCharacterMapFromIndex(i);
 		json jsonCharacterMap;
 
-		jsonCharacterMap["AddressRef"] = pCharMap->Params.Address.Val;
+		jsonCharacterMap["AddressRef"] = pCharMap->Params.Address.GetVal();
 		jsonCharacterMap["Width"] = pCharMap->Params.Width;
 		jsonCharacterMap["Height"] = pCharMap->Params.Height;
 		jsonCharacterMap["Stride"] = pCharMap->Params.Stride;
-		jsonCharacterMap["CharacterSetRef"] = pCharMap->Params.CharacterSet.Val;
+		jsonCharacterMap["CharacterSetRef"] = pCharMap->Params.CharacterSet.GetVal();
 		jsonCharacterMap["IgnoreCharacter"] = pCharMap->Params.IgnoreCharacter;
 		jsonCharacterMap["FlagSet"] = pCharMap->Params.FlagSet;
 
@@ -118,8 +118,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 			continue;
 
 		json functionJson;
-		functionJson["StartAddress"] = function.StartAddress.Val;
-		functionJson["EndAddress"] = function.EndAddress.Val;
+		functionJson["StartAddress"] = function.StartAddress.GetVal();
+		functionJson["EndAddress"] = function.EndAddress.GetVal();
 		//functionJson["Name"] = function.Name;
 		functionJson["Description"] = function.Description;
 		functionJson["bROMFunction"] = function.bROMFunction;
@@ -153,16 +153,16 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		for (const auto& callPoint : function.CallPoints)
 		{
 			json callPointJson;
-			callPointJson["FunctionAddr"] = callPoint.FunctionAddr.Val;
-			callPointJson["CallAddr"] = callPoint.CallAddr.Val;
-			callPointJson["ReturnAddr"] = callPoint.ReturnAddr.Val;
+			callPointJson["FunctionAddr"] = callPoint.FunctionAddr.GetVal();
+			callPointJson["CallAddr"] = callPoint.CallAddr.GetVal();
+			callPointJson["ReturnAddr"] = callPoint.ReturnAddr.GetVal();
 			functionJson["CallPoints"].push_back(callPointJson);
 		}
 
 		// output exit points
 		for (const auto& exitPoint : function.ExitPoints)
 		{
-			functionJson["ExitPoints"].push_back(exitPoint.Val);
+			functionJson["ExitPoints"].push_back(exitPoint.GetVal());
 		}
 
 		jsonGameData["FunctionInfo"].push_back(functionJson);
@@ -302,13 +302,13 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			if (charSet.contains("Name"))
 				params.Name = charSet["Name"];
 			if (charSet.contains("AddressRef"))
-				params.Address.Val = charSet["AddressRef"];
+				params.Address.SetVal(charSet["AddressRef"]);
 			FixupAddressRef(state, params.Address);
 
 			if (charSet.contains("AttribsAddress"))	// legacy
 				params.AttribsAddress = state.AddressRefFromPhysicalAddress(charSet["AttribsAddress"]);
 			if (charSet.contains("AttribsAddressRef"))
-				params.AttribsAddress.Val = charSet["AttribsAddressRef"];
+				params.AttribsAddress.SetVal(charSet["AttribsAddressRef"]);
 
 			if (charSet.contains("BitmapFormat"))
 				params.BitmapFormat = (EBitmapFormat)(int)charSet["BitmapFormat"];
@@ -332,7 +332,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			if (charMap.contains("Address"))	// legacy
 				params.Address = state.AddressRefFromPhysicalAddress(charMap["Address"]);
 			if (charMap.contains("AddressRef"))
-				params.Address.Val = charMap["AddressRef"];
+				params.Address.SetVal(charMap["AddressRef"]);
 			FixupAddressRef(state, params.Address);
 
 			params.Width = charMap["Width"];
@@ -345,7 +345,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			if (charMap.contains("CharacterSet"))	// legacy
 				params.CharacterSet = state.AddressRefFromPhysicalAddress(charMap["CharacterSet"]);
 			if (charMap.contains("CharacterSetRef"))	
-				params.CharacterSet.Val = charMap["CharacterSetRef"];
+				params.CharacterSet.SetVal(charMap["CharacterSetRef"]);
 
 			params.IgnoreCharacter = charMap["IgnoreCharacter"];
 
@@ -371,8 +371,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		for (const auto& functionJson : jsonGameData["FunctionInfo"])
 		{
 			FFunctionInfo function;
-			function.StartAddress.Val = functionJson["StartAddress"];
-			function.EndAddress.Val = functionJson["EndAddress"];
+			function.StartAddress.SetVal(functionJson["StartAddress"]);
+			function.EndAddress.SetVal(functionJson["EndAddress"]);
 			//function.Name = functionJson["Name"];
 			function.Description = functionJson["Description"];
 			function.bROMFunction = functionJson["bROMFunction"];
@@ -414,9 +414,9 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 				for (const auto& callPointJson : functionJson["CallPoints"])
 				{
 					FCPUFunctionCall callPoint;
-					callPoint.FunctionAddr.Val = callPointJson["FunctionAddr"];
-					callPoint.CallAddr.Val = callPointJson["CallAddr"];
-					callPoint.ReturnAddr.Val = callPointJson["ReturnAddr"];
+					callPoint.FunctionAddr.SetVal(callPointJson["FunctionAddr"]);
+					callPoint.CallAddr.SetVal(callPointJson["CallAddr"]);
+					callPoint.ReturnAddr.SetVal(callPointJson["ReturnAddr"]);
 					function.CallPoints.push_back(callPoint);
 				}
 			}
@@ -448,7 +448,7 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 	if (pDataInfo->DataType != EDataType::Byte)
 		dataInfoJson["DataType"] = (int)pDataInfo->DataType;
 	if (pDataInfo->DataType == EDataType::InstructionOperand)
-		dataInfoJson["InstructionAddressRef"] = pDataInfo->InstructionAddress.Val;
+		dataInfoJson["InstructionAddressRef"] = pDataInfo->InstructionAddress.GetVal();
 	if (pDataInfo->DisplayType != EDataItemDisplayType::Unknown)
 		dataInfoJson["DisplayType"] = pDataInfo->DisplayType;
 	if (pDataInfo->ByteSize != 1)
@@ -465,12 +465,12 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
 	{
-		dataInfoJson["CharSetAddressRef"] = pDataInfo->CharSetAddress.Val;
+		dataInfoJson["CharSetAddressRef"] = pDataInfo->CharSetAddress.GetVal();
 		dataInfoJson["EmptyCharNo"] = pDataInfo->EmptyCharNo;
 	}
 	else if (pDataInfo->DataType == EDataType::Bitmap)
 	{
-		dataInfoJson["GraphicsSetRef"] = pDataInfo->GraphicsSetRef.Val;
+		dataInfoJson["GraphicsSetRef"] = pDataInfo->GraphicsSetRef.GetVal();
 	}
 
 	if (dataInfoJson.size() != 0)	// only write it if it deviates from the normal
@@ -604,7 +604,7 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 	if (dataInfoJson.contains("InstructionAddress"))
 		pDataInfo->InstructionAddress = state.AddressRefFromPhysicalAddress(dataInfoJson["InstructionAddress"]);
 	if (dataInfoJson.contains("InstructionAddressRef"))
-		pDataInfo->InstructionAddress.Val = dataInfoJson["InstructionAddressRef"];
+		pDataInfo->InstructionAddress.SetVal(dataInfoJson["InstructionAddressRef"]);
 	if (dataInfoJson.contains("ByteSize"))
 		pDataInfo->ByteSize = dataInfoJson["ByteSize"];
 	if (dataInfoJson.contains("Flags"))
@@ -622,14 +622,14 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 		if (dataInfoJson.contains("CharSetAddress"))
 			pDataInfo->CharSetAddress = state.AddressRefFromPhysicalAddress(dataInfoJson["CharSetAddress"]);	// legacy
 		if (dataInfoJson.contains("CharSetAddressRef"))
-			pDataInfo->CharSetAddress.Val = dataInfoJson["CharSetAddressRef"];
+			pDataInfo->CharSetAddress.SetVal(dataInfoJson["CharSetAddressRef"]);
 		if (dataInfoJson.contains("EmptyCharNo"))
 			pDataInfo->EmptyCharNo = dataInfoJson["EmptyCharNo"];
 	}
 	else if (pDataInfo->DataType == EDataType::Bitmap)
 	{
 		if (dataInfoJson.contains("GraphicsSetRef"))
-			pDataInfo->GraphicsSetRef.Val = dataInfoJson["GraphicsSetRef"];
+			pDataInfo->GraphicsSetRef.SetVal(dataInfoJson["GraphicsSetRef"]);
 
 		if (pDataInfo->DisplayType == EDataItemDisplayType::Unknown)	// load fixup
 			pDataInfo->DisplayType = EDataItemDisplayType::Bitmap;
@@ -746,7 +746,7 @@ void FixupPostLoad(FCodeAnalysisState& state)
 					if (pCodeInfo != nullptr)
 						pCodeInfo->Reads.RegisterAccess(addrRef);
 					else
-						LOGWARNING("Code at 0x%04X reading from 0x%04X not found", ref.Address, addrRef.Address);
+						LOGWARNING("Code at 0x%04X reading from 0x%04X not found", ref.GetAddress(), addrRef.GetAddress());
 				}
 
 				for (int writeRef = 0; writeRef < dataInfo.Writes.NumReferences(); writeRef++)
@@ -757,7 +757,7 @@ void FixupPostLoad(FCodeAnalysisState& state)
 					if(pCodeInfo != nullptr)
 						pCodeInfo->Writes.RegisterAccess(addrRef);
 					else
-						LOGWARNING("Code at 0x%04X writing to 0x%04X not found",ref.Address, addrRef.Address);
+						LOGWARNING("Code at 0x%04X writing to 0x%04X not found",ref.GetAddress(), addrRef.GetAddress());
 				}
 
 				// Fix up labels on instruction operands

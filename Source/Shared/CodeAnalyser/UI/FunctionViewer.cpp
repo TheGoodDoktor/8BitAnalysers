@@ -233,7 +233,10 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 		const ImGuiInputTextFlags inputFlags = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsHexadecimal;
 		const char* format = (GetNumberDisplayMode() == ENumberDisplayMode::Decimal) ? "%d" : "%04X";
 		ImGui::SetNextItemWidth(glyphWidth * 10.0f);
-		ImGui::InputScalar("End Address", ImGuiDataType_U16, &pFunctionInfo->EndAddress.Address, nullptr, nullptr, format, inputFlags);
+		static uint16_t addr;
+		addr = pFunctionInfo->EndAddress.GetAddress();
+		ImGui::InputScalar("End Address", ImGuiDataType_U16, &addr, nullptr, nullptr, format, inputFlags);
+		pFunctionInfo->EndAddress = state.AddressRefFromPhysicalAddress(addr);
 	}
 
 	// Temp hack for history offset, should really be somewhere global
@@ -256,7 +259,7 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 		FAddressRef removeRef;
 		for (const auto& ref : pLabelInfo->References.GetReferences())
 		{
-			ImGui::PushID(ref.Val);
+			ImGui::PushID(ref.GetVal());
 			ShowCodeAccessorActivity(state, ref);
 
 			ImGui::Text("   ");

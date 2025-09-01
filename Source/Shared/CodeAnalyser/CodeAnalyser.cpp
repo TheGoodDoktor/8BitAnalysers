@@ -30,11 +30,14 @@
 #include "FunctionAnalyser.h"
 #include "UI/GlobalsViewer.h"
 
+#if NEWADDRESSREF
+std::vector<FCodeAnalysisBank> Banks;
+#endif
 
 void LogInvalidAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef addrRef)
 {
 	const uint16_t mappedAddr = pBank->GetMappedAddress();
-	LOGERROR("Invalid AddressRef: $%x. Bank %d '%s': $%x-$%x.", addrRef.Address, addrRef.BankId, pBank->Name.c_str(), mappedAddr, mappedAddr + pBank->GetSizeBytes());
+	LOGERROR("Invalid AddressRef: $%x. Bank %d '%s': $%x-$%x.", addrRef.GetAddress(), addrRef.GetBankId(), pBank->Name.c_str(), mappedAddr, mappedAddr + pBank->GetSizeBytes());
 }
 // memory bank code
 
@@ -173,14 +176,14 @@ bool FCodeAnalysisState::IsBankIdMapped(int16_t bankId) const
 
 bool FCodeAnalysisState::IsAddressValid(FAddressRef addr) const
 {
-	const FCodeAnalysisBank* pBank = GetBank(addr.BankId);
+	const FCodeAnalysisBank* pBank = GetBank(addr.GetBankId());
 	if (pBank == nullptr)
 	{
-		LOGWARNING("Could not get bank %d for FAddressRef with address $%x", addr.BankId, addr.Address);
+		LOGWARNING("Could not get bank %d for FAddressRef with address $%x", addr.GetBankId(), addr.GetAddress());
 		return false;
 	}
 
-	if(addr.Address < pBank->GetMappedAddress() || addr.Address >= (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
+	if(addr.GetAddress() < pBank->GetMappedAddress() || addr.GetAddress() >= (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
 	{
 		LogInvalidAddressRefForBank(pBank, addr);
 		return false;
@@ -661,7 +664,7 @@ std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address)
 
 	for (int i = 0; i < pDataInfo->ByteSize; i++)
 	{
-		const char ch = state.ReadByte(address.Address + i);
+		const char ch = state.ReadByte(address.GetAddress() + i);
 		if (ch == '\n')
 			textString += "<cr>";
 		if (pDataInfo->bBit7Terminator && ch & (1 << 7))	// check bit 7 terminator flag
@@ -702,23 +705,23 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	switch (labelType)
 	{
 		case ELabelType::Function:
-			snprintf(label, kLabelSize,"function_%04X", address.Address);
+			snprintf(label, kLabelSize,"function_%04X", address.GetAddress());
 			pLabel->Global = true;
 			break;
 		case ELabelType::Code:
-			snprintf(label, kLabelSize, "label_%04X", address.Address);
+			snprintf(label, kLabelSize, "label_%04X", address.GetAddress());
 			break;
 		case ELabelType::Data:
 		{
 			FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
 			if(bLabelOnOperand)
-				snprintf(label, kLabelSize, "operand_%04X", address.Address);
+				snprintf(label, kLabelSize, "operand_%04X", address.GetAddress());
 			else
-				snprintf(label, kLabelSize, "data_%04X", address.Address);
+				snprintf(label, kLabelSize, "data_%04X", address.GetAddress());
 
 			// zero page labels for 6502
-			if ((state.CPUInterface->CPUType == ECPUType::M6502 || state.CPUInterface->CPUType == ECPUType::HuC6280) && address.Address < 256)
-				snprintf(label, kLabelSize, "zp_%02X", address.Address);
+			if ((state.CPUInterface->CPUType == ECPUType::M6502 || state.CPUInterface->CPUType == ECPUType::HuC6280) && address.GetAddress() < 256)
+				snprintf(label, kLabelSize, "zp_%02X", address.GetAddress());
 
 			if (bLabelOnOperand == false)
 				pLabel->Global = true;	// operand labels should be local
@@ -773,10 +776,10 @@ bool FCodeAnalysisState::SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLa
 	if (pLabel != nullptr)	// ensure no name clashes
 		pLabel->EnsureUniqueName(addrRef);
 
-	FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+	FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 	if (pBank != nullptr)
 	{
-		const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+		const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 		CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 		assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 		pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].Labels[bankAddr & FCodeAnalysisPage::kPageMask] = pLabel;
@@ -1595,6 +1598,9 @@ void FCodeAnalysisState::FixupBankAddressRefs()
 
 void FCodeAnalysisState::FixupAddressRefs()
 {
+#if NEWADDRESSREF
+	return;
+#endif
 	OPTICK_EVENT();
 
 	gAddressRefsFixed = 0;
@@ -1630,7 +1636,7 @@ void FCodeAnalysisState::FixupAddressRefs()
 	FixupBankAddressRefs();
 
 #ifndef NDEBUG
-	LOGINFO("Processed %d refs across %d banks. Fixed %d", gAddressRefsProcessed, gBanksProcessed, gAddressRefsFixed);
+	//LOGINFO("Processed %d refs across %d banks. Fixed %d", gAddressRefsProcessed, gBanksProcessed, gAddressRefsFixed);
 #endif
 }
 
@@ -1696,7 +1702,8 @@ void SetItemText(FCodeAnalysisState &state, const FCodeAnalysisItem& item)
 					pDataItem->bBit7Terminator = true;
 					break;
 				}
-				charAddr.Address++;
+				const uint16_t addr = charAddr.GetAddress();
+				charAddr.SetAddress(addr + 1);
 			}
 
 			// did the operation fail? -revert to byte
@@ -1835,15 +1842,15 @@ void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterf
 void FixupAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef& addr)
 {
 #ifndef NDEBUG
-	if (!pBank->AddressValid(addr.Address))
+	if (!pBank->AddressValid(addr.GetAddress()))
 	{
 		gAddressRefsFixed++;
 	}
 	gAddressRefsProcessed++;
 #endif
-	const uint16_t bankOffset = (addr.Address & pBank->SizeMask);
-	addr.Address = pBank->GetMappedAddress() + bankOffset;
-	assert(pBank->AddressValid(addr.Address));
+	const uint16_t bankOffset = (addr.GetAddress() & pBank->SizeMask);
+	addr.SetAddress(pBank->GetMappedAddress() + bankOffset);
+	assert(pBank->AddressValid(addr.GetAddress()));
 #ifndef NDEBUG
 	addr.FixupCount++;
 #endif
@@ -1851,7 +1858,7 @@ void FixupAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef& addr)
 
 void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr)
 {
-	if (const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId))
+	if (const FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId()))
 	{
 		FixupAddressRefForBank(pBank, addr);
 	}
@@ -1871,4 +1878,81 @@ void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAdd
 	{
 		FixupAddressRefForBank(pBank, addr);
 	}
+}
+
+// I wanted to put the member function code in CodeAnalyserTypes.h for performance reasons
+// but I ran into cyclic dependency issues that prevented me from doing that.
+FAddressRef::FAddressRef(int16_t bankId, uint16_t address) :BankId(bankId)
+{
+#if NEWADDRESSREF
+	SetAddress(address);
+#else
+	Address = address;
+#endif
+}
+
+#if NEWADDRESSREF
+FCodeAnalysisBank* FAddressRef::GetBank() const
+{
+	assert(Banks.size());
+	return (BankId >= 0 && BankId < Banks.size()) ? &Banks[BankId] : nullptr;
+}
+#endif
+
+uint16_t FAddressRef::GetAddress() const
+{
+#if NEWADDRESSREF
+	if (FCodeAnalysisBank* pBank = GetBank())
+	{
+		return pBank->GetMappedAddress() + BankOffset;
+	}
+	//LOGERROR("Trying to use address of invalid address ref");
+	return 0;
+#else
+	return Address;
+#endif
+}
+
+uint32_t FAddressRef::GetVal() const
+{
+#if NEWADDRESSREF
+	return (BankId << 16) | GetAddress();
+#else
+	return Val;
+#endif
+}
+
+void FAddressRef::SetAddress(uint16_t address)
+{
+#if NEWADDRESSREF
+	// Convert absolute address to relative bank address 
+	if (FCodeAnalysisBank* pBank = GetBank())
+	{
+		assert(pBank->AddressValid(address));
+		// could we do some masking with size mask here?
+		BankOffset = address - pBank->GetMappedAddress();
+	}
+	AbsoluteAddr = address;
+#else
+	Address = address;
+#endif
+}
+
+void FAddressRef::SetVal(uint32_t val)
+{
+#if NEWADDRESSREF
+	BankId = val >> 16;
+	SetAddress(val & 0xffff);
+#else
+	Val = val;
+#endif
+}
+
+uint32_t FAddressRef::CompVal() const
+{
+#if NEWADDRESSREF
+	return GetVal();
+#else
+	return (BankId << 16) | Address;
+#endif
 }

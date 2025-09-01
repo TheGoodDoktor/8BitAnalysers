@@ -20,7 +20,7 @@ class FMemoryRegionDescGenerator
 public:
 	bool	InRegion(FAddressRef addr) const
 	{
-		return (addr.BankId == RegionBankId || RegionBankId == -1) && addr.Address >= RegionMin && addr.Address <= RegionMax;
+		return (addr.GetBankId() == RegionBankId || RegionBankId == -1) && addr.GetAddress() >= RegionMin && addr.GetAddress() <= RegionMax;
 	}
     void SetRegionBankId(int16_t bankId) { RegionBankId = bankId; }
 

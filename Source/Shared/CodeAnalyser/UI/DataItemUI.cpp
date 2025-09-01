@@ -498,8 +498,8 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui_GetFontCharWidth();
 	const float cell_width = 3 * glyph_width;
-	const uint16_t physAddr = item.AddressRef.Address;
-	const bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.Address >= physAddr && viewState.HighlightAddress.Address < physAddr + item.Item->ByteSize);
+	const uint16_t physAddr = item.AddressRef.GetAddress();
+	const bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.GetAddress() >= physAddr && viewState.HighlightAddress.GetAddress() < physAddr + item.Item->ByteSize);
 	const FDebugger& debugger = state.Debugger;
 
 	ShowDataItemActivity(state, item.AddressRef);
@@ -525,7 +525,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const float lineStartX = ImGui::GetCursorPosX();
 	ImGui::SameLine(lineStartX + state.Config.AddressPos);
 	ImGui::PushStyleColor(ImGuiCol_Text, bHighlight ? Colours::highlight : Colours::address);
-	ImGui::Text("%s", NumStr(item.AddressRef.Address));
+	ImGui::Text("%s", NumStr(item.AddressRef.GetAddress()));
 	ImGui::PopStyleColor();
 
 	ENumberDisplayMode trueNumberDisplayMode = GetNumberDisplayMode();
@@ -783,7 +783,7 @@ std::map<uint32_t, FDataValueGraphState>	g_DataValueGraphs;
 
 void DrawDataValueGraph(FCodeAnalysisState& state, FAddressRef addressRef, float val)
 {
-	FDataValueGraphState& graphState = g_DataValueGraphs[addressRef.Val];
+	FDataValueGraphState& graphState = g_DataValueGraphs[addressRef.GetVal()];
 	graphState.Min = std::min(graphState.Min, val);
 	graphState.Max = std::max(graphState.Max, val);
 	// Create a dummy array of contiguous float values to plot
@@ -925,7 +925,7 @@ void DrawDataAccesses(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 void DrawDataDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
-	const uint16_t physAddr = item.AddressRef.Address;
+	const uint16_t physAddr = item.AddressRef.GetAddress();
 	ImGui::Text("Display Mode:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120.0f);

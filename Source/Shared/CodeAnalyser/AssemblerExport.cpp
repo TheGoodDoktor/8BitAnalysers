@@ -275,11 +275,11 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 
 	Output("%s %s\n", Config.ORGText, NumStr(startAddr));
 
-	uint16_t nextAddr = state.ItemList[0].AddressRef.Address;
+	uint16_t nextAddr = state.ItemList[0].AddressRef.GetAddress();
 
 	for (const FCodeAnalysisItem &item : state.ItemList)
 	{
-		const uint16_t addr = item.AddressRef.Address;
+		const uint16_t addr = item.AddressRef.GetAddress();
 
 		if (addr < startAddr)
 			continue;

@@ -106,7 +106,7 @@ void DrawBranchLines(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		const int maxIndent = state.Config.BranchMaxIndent;
 		const int indentAmount = maxIndent - std::min(noLines / 5, maxIndent);
 
-		const bool bDirectionUp = pCodeInfo->OperandAddress.Address < item.AddressRef.Address;
+		const bool bDirectionUp = pCodeInfo->OperandAddress.GetAddress() < item.AddressRef.GetAddress();
 		ImVec2 lineStart = pos;
 		lineStart.x += indentAmount * state.Config.BranchSpacing;
 		lineStart.y += lineHeight * 0.5f;// middle
@@ -177,8 +177,8 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui::CalcTextSize("F").x;
 	const float cell_width = 3 * glyph_width;
-	const uint16_t physAddress = item.AddressRef.Address;
-	const bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.Address >= physAddress && viewState.HighlightAddress.Address < physAddress + item.Item->ByteSize);
+	const uint16_t physAddress = item.AddressRef.GetAddress();
+	const bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.GetAddress() >= physAddress && viewState.HighlightAddress.GetAddress() < physAddress + item.Item->ByteSize);
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -256,7 +256,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		for (int i = 0; i < 4; i++)
 		{
 			if (i < pCodeInfo->ByteSize)
-				snprintf(tmp, 16, "%02X", state.ReadByte(item.AddressRef.Address + i));
+				snprintf(tmp, 16, "%02X", state.ReadByte(item.AddressRef.GetAddress() + i));
 			else
 				snprintf(tmp, 16, "  ");
 
@@ -329,7 +329,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	FCodeInfo* pCodeInfo = static_cast<FCodeInfo*>(item.Item);
-	const uint16_t physAddress = item.AddressRef.Address;
+	const uint16_t physAddress = item.AddressRef.GetAddress();
 
 	FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(item.AddressRef);
 	if (pFunctionInfo != nullptr)
@@ -348,7 +348,7 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 
 	if (state.Config.bShowBanks && pCodeInfo->OperandType == EOperandType::Pointer)
 	{
-		DrawBankInput(state, "Bank", pCodeInfo->OperandAddress.BankId);
+		DrawBankInput(state, "Bank", pCodeInfo->OperandAddress.GetBankId());
 	}
 
 	if (state.bAllowEditing && ImGui::Checkbox("NOP out instruction", &pCodeInfo->bNOPped))

@@ -184,9 +184,9 @@ void FDebugger::CPUTick(uint64_t pins)
 				{
 				case EBreakpointType::Data:
 					if ((bWrite || bRead) &&
-						addrRef.BankId == bp.Address.BankId &&
-						addrRef.Address >= bp.Address.Address &&
-						addrRef.Address < bp.Address.Address + bp.Size)
+						addrRef.GetBankId() == bp.Address.GetBankId() &&
+						addrRef.GetAddress() >= bp.Address.GetAddress() &&
+						addrRef.GetAddress() < bp.Address.GetAddress() + bp.Size)
 					{
 						trapId = kTrapId_BpBase + i;
 					}
@@ -207,7 +207,7 @@ void FDebugger::CPUTick(uint64_t pins)
 					if (bIORead)
 					{
 						const uint16_t mask = bp.Val;
-						if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
+						if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.GetAddress() & mask))
 							trapId = kTrapId_BpBase + i;
 					}
 					break;
@@ -216,7 +216,7 @@ void FDebugger::CPUTick(uint64_t pins)
 					if (bIOWrite)
 					{
 						const uint16_t mask = bp.Val;
-						if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.Address & mask))
+						if ((Z80_GET_ADDR(pins) & mask) == (bp.Address.GetAddress() & mask))
 							trapId = kTrapId_BpBase + i;
 					}
 					break;
@@ -446,6 +446,7 @@ void	FDebugger::LoadFromFile(FILE* fp)
 {
 	uint32_t versionNo = 0;
 	fread(&versionNo, sizeof(uint32_t), 1, fp);
+	uint32_t tempU32;
 
 	// watches
 	Watches.clear();
@@ -455,7 +456,8 @@ void	FDebugger::LoadFromFile(FILE* fp)
 	for (int i = 0; i < (int)num; i++)
 	{
 		FWatch& watch = Watches.emplace_back();
-		fread(&watch.Val, sizeof(uint32_t), 1, fp);
+		fread(&tempU32, sizeof(uint32_t), 1, fp);
+		watch.SetVal(tempU32);
 	}
 
 	// breakpoints
@@ -464,7 +466,8 @@ void	FDebugger::LoadFromFile(FILE* fp)
 	for (int i = 0; i < (int)num; i++)
 	{
 		FBreakpoint& bp = Breakpoints.emplace_back();
-		fread(&bp.Address.Val, sizeof(uint32_t), 1, fp);	// address
+		fread(&tempU32, sizeof(uint32_t), 1, fp);	// address
+		bp.Address = tempU32;
 		fread(&bp.bEnabled, sizeof(bp.bEnabled), 1, fp);	// enabled
 		fread(&bp.Type, sizeof(bp.Type), 1, fp);	// Type
 		fread(&bp.Size, sizeof(bp.Size), 1, fp);	// Size
@@ -499,13 +502,17 @@ void	FDebugger::LoadFromFile(FILE* fp)
 		for (int i = 0; i < (int)num; i++)
 		{
 			FAddressRef& address = FrameTrace.emplace_back();
-			fread(&address.Val, sizeof(uint32_t), 1, fp);	// address
+			fread(&tempU32, sizeof(uint32_t), 1, fp);	// address
+			address.SetVal(tempU32);
 		}
 	}
 
 	// PC
 	if (versionNo > 2)
-		fread(&PC.Val, sizeof(uint32_t), 1, fp);	
+	{
+		fread(&tempU32, sizeof(uint32_t), 1, fp);
+		PC.SetVal(tempU32);
+	}
 
 	if (versionNo > 3)
 		fread(&ScanlineBreakpoint, sizeof(int), 1, fp);
@@ -514,6 +521,8 @@ void	FDebugger::LoadFromFile(FILE* fp)
 // Save state - breakpoints, watches etc.
 void	FDebugger::SaveToFile(FILE* fp)
 {
+	uint32_t tempU32;
+
 	fwrite(&kVersionNo, sizeof(uint32_t), 1, fp);
 
 	// watches
@@ -523,7 +532,8 @@ void	FDebugger::SaveToFile(FILE* fp)
 	for (int i = 0; i < (int)num; i++)
 	{
 		const FWatch& watch = Watches[i];
-		fwrite(&watch.Val, sizeof(uint32_t), 1, fp);
+		tempU32 = watch.GetVal();
+		fwrite(&tempU32, sizeof(uint32_t), 1, fp);
 	}
 
 	// breakpoints
@@ -532,7 +542,8 @@ void	FDebugger::SaveToFile(FILE* fp)
 	for (int i = 0; i < (int)num; i++)
 	{
 		const FBreakpoint& bp = Breakpoints[i];
-		fwrite(&bp.Address.Val, sizeof(uint32_t), 1, fp);	// address
+		tempU32 = bp.Address.GetVal();
+		fwrite(&tempU32, sizeof(uint32_t), 1, fp);	// address
 		fwrite(&bp.bEnabled, sizeof(bp.bEnabled), 1, fp);	// enabled
 		fwrite(&bp.Type, sizeof(bp.Type), 1, fp);	// Type
 		fwrite(&bp.Size, sizeof(bp.Size), 1, fp);	// Size
@@ -544,11 +555,13 @@ void	FDebugger::SaveToFile(FILE* fp)
 	fwrite(&num, sizeof(uint32_t), 1, fp);
 	for (int i = 0; i < (int)num; i++)
 	{
-		fwrite(&FrameTrace[i].Val,sizeof(uint32_t), 1, fp);	// address
+		tempU32 = FrameTrace[i].GetVal();
+		fwrite(&tempU32, sizeof(uint32_t), 1, fp);	// address
 	}
 
 	// PC
-	fwrite(&PC.Val,sizeof(uint32_t), 1, fp);
+	tempU32 = PC.GetVal();
+	fwrite(&tempU32, sizeof(uint32_t), 1, fp);
 
 	// Scanline BP
 	fwrite(&ScanlineBreakpoint, sizeof(int), 1, fp);
@@ -644,13 +657,13 @@ void	FDebugger::StepOver()
 	switch (CPUType)
 	{
 		case ECPUType::Z80:
-			nextPC = Z80DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
+			nextPC = Z80DisassembleGetNextPC(PC.GetAddress(), *pCodeAnalysis, stepOpcodes);
 			break;
 		case ECPUType::M6502:
-			nextPC = M6502DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
+			nextPC = M6502DisassembleGetNextPC(PC.GetAddress(), *pCodeAnalysis, stepOpcodes);
 			break;
 		case ECPUType::HuC6280:
-			nextPC = HuC6280DisassembleGetNextPC(PC.Address, *pCodeAnalysis, stepOpcodes);
+			nextPC = HuC6280DisassembleGetNextPC(PC.GetAddress(), *pCodeAnalysis, stepOpcodes);
 			break;
 	}
 
@@ -1223,7 +1236,7 @@ void FDebugger::DrawStack(void)
 			ImGui::TableSetColumnIndex(3);
 			if (writerAddr.IsValid())
 			{
-				ImGui::Text("%s :", NumStr(writerAddr.Address));
+				ImGui::Text("%s :", NumStr(writerAddr.GetAddress()));
 				DrawAddressLabel(state, viewState, writerAddr);
 			}
 			else
@@ -1263,7 +1276,7 @@ void FDebugger::DrawWatches(void)
 	for (const auto& watch : Watches)
 	{
 		FDataInfo* pDataInfo = state.GetDataInfoForAddress(watch);
-		ImGui::PushID(watch.Val);
+		ImGui::PushID(watch.GetVal());
 		if (ImGui::Selectable("##watchselect", watch == SelectedWatch, 0))
 		{
 			SelectedWatch = watch;
@@ -1284,7 +1297,7 @@ void FDebugger::DrawWatches(void)
 		}
 		ImGui::SetItemAllowOverlap();	// allow buttons
 		ImGui::SameLine();
-		DrawDataInfo(state, viewState, FCodeAnalysisItem(pDataInfo, watch.BankId, watch.Address), true, state.bAllowEditing);
+		DrawDataInfo(state, viewState, FCodeAnalysisItem(pDataInfo, watch.GetBankId(), watch.GetAddress()), true, state.bAllowEditing);
 
 		// TODO: Edit Watch
 		ImGui::PopID();
@@ -1323,7 +1336,7 @@ void FDebugger::DrawBreakpoints(void)
 		FAddressRef deleteRef;
 		for (auto& bp : Breakpoints)
 		{
-			ImGui::PushID(bp.Address.Val);
+			ImGui::PushID(bp.Address.GetVal());
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::Checkbox("##Enabled", &bp.bEnabled);
@@ -1333,7 +1346,7 @@ void FDebugger::DrawBreakpoints(void)
 				deleteRef = bp.Address;
 			}
 			ImGui::TableSetColumnIndex(1);
-			ImGui::Text("%s:", NumStr(bp.Address.Address));
+			ImGui::Text("%s:", NumStr(bp.Address.GetAddress()));
 			DrawAddressLabel(state, viewState, bp.Address);
 			ImGui::TableSetColumnIndex(2);
 			ImGui::Text("%s", GetBreakpointTypeText(bp.Type));
@@ -1521,7 +1534,7 @@ void FDebugger::DrawEvents(void)
 
 				// PC
 				ImGui::TableSetColumnIndex(2);
-				ImGui::Text("%s:", NumStr(event.PC.Address));
+				ImGui::Text("%s:", NumStr(event.PC.GetAddress()));
 				DrawAddressLabel(state, viewState, event.PC);
 
 				// Address

@@ -307,7 +307,7 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 		if (viewState.GetCursorItem().IsValid())
 		{
 			const FAddressRef cursorAddr = viewState.GetCursorItem().AddressRef;
-			const int address = cursorAddr.Address - (bShowROM ? 0 : 0x4000);
+			const int address = cursorAddr.GetAddress() - (bShowROM ? 0 : 0x4000);
 			if (address >= 0)
 			{
 				float barMargin = std::max(scale, 8.0f);
@@ -398,7 +398,7 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 		if (viewState.GetCursorItem().IsValid())
 		{
 			pSelectedItemCodeInfo = state.GetCodeInfoForAddress(viewState.GetCursorItem().AddressRef);
-			selectedItemAddr = viewState.GetCursorItem().AddressRef.Address;
+			selectedItemAddr = viewState.GetCursorItem().AddressRef.GetAddress();
 		}
 	}
 

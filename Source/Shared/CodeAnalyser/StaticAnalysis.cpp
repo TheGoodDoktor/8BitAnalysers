@@ -88,7 +88,7 @@ public:
 		const FCodeInfo* pCodeInfoItem = state.GetCodeInfoForAddress(addrRef);
 		if (pCodeInfoItem && (pCodeInfoItem->OperandType == EOperandType::JumpAddress || pCodeInfoItem->OperandType == EOperandType::Pointer))
 		{
-			const FCodeAnalysisBank* pBank = state.GetBank(pCodeInfoItem->OperandAddress.BankId);
+			const FCodeAnalysisBank* pBank = state.GetBank(pCodeInfoItem->OperandAddress.GetBankId());
 			if (pBank != nullptr && pBank->bMachineROM)
 			{
 				return new FStaticAnalysisItem(addrRef, "ROM Label Ref");

@@ -163,16 +163,16 @@ void FMemoryAnalyser::DrawMemoryDiffUI(void)
 					FAddressRef changedAddr = DiffChangedLocations[rowNum];
 					const FDataInfo* pDataInfo = state.GetDataInfoForAddress(changedAddr);
 					ImGui::TableNextRow();
-					ImGui::PushID(changedAddr.Val);
+					ImGui::PushID(changedAddr.GetVal());
 
 					// Address
 					ImGui::TableSetColumnIndex(0);
-					ImGui::Text("%s", NumStr(changedAddr.Address));
+					ImGui::Text("%s", NumStr(changedAddr.GetAddress()));
 					DrawAddressLabel(state, viewState, changedAddr);
 
 					// Snapshot value
 					ImGui::TableSetColumnIndex(1);
-					const uint8_t oldValue = DiffSnapshotMemoryBanks[changedAddr.BankId].pMemory[changedAddr.Address];
+					const uint8_t oldValue = DiffSnapshotMemoryBanks[changedAddr.GetBankId()].pMemory[changedAddr.GetAddress()];
 					ImGui::Text("%s", NumStr(oldValue));
 
 					// Current value
@@ -228,13 +228,13 @@ void FMemoryAnalyser::DrawStringSearchUI()
 			{
 				const FFoundString& foundString = FoundStrings[rowNum];
 				ImGui::TableNextRow();
-				ImGui::PushID(foundString.Address.Val);
+				ImGui::PushID(foundString.Address.GetVal());
 
 				ImGui::TableSetColumnIndex(0);
 				ImGui::Text("%s", foundString.String.c_str());
 
 				ImGui::TableSetColumnIndex(1);
-				ImGui::Text("%s", NumStr(foundString.Address.Address));
+				ImGui::Text("%s", NumStr(foundString.Address.GetAddress()));
 				DrawAddressLabel(state, state.GetFocussedViewState(), foundString.Address);
 
 				ImGui::TableSetColumnIndex(2);
@@ -242,7 +242,7 @@ void FMemoryAnalyser::DrawStringSearchUI()
 				{
 					// Set string at address
 					FAddressRef addr = foundString.Address;
-					const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+					const FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
 					int itemIndex = GetItemIndexForAddress(state, addr);
 					if (itemIndex != -1)
 					{

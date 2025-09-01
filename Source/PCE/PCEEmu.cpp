@@ -123,7 +123,8 @@ void OnGearGfxInstructionExecuted(void* pContext)
 
 	state.Debugger.SetPC(pEmu->GetPC());
 
-	RegisterCodeExecuted(state, pEmu->GetPC().Address, pEmu->GetPC().Address);
+	const uint16_t pcAddr = pEmu->GetPC().GetAddress();
+	RegisterCodeExecuted(state, pcAddr, pcAddr);
 
 	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
 	const uint64_t dummyPins = 0;
