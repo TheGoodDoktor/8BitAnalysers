@@ -15,6 +15,13 @@
     "FunctionInfo": [
         {
             "Description": "",
+            "EndAddress": 34734080,
+            "StartAddress": 34734080,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
             "EndAddress": 282984448,
             "StartAddress": 282984448,
             "bManualEdit": false,
@@ -87,6 +94,13 @@
             "Description": "",
             "EndAddress": 392953856,
             "StartAddress": 392953856,
+            "bManualEdit": false,
+            "bROMFunction": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 393347072,
+            "StartAddress": 393347072,
             "bManualEdit": false,
             "bROMFunction": false
         },
@@ -1610,15 +1624,22 @@
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Zero fill pages B & C",
             "EndAddress": 1383792640,
             "StartAddress": 1383792640,
             "bManualEdit": false,
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Zero fill page",
             "EndAddress": 1384185856,
+            "Params": [
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "PageNo",
+                    "Source": 1
+                }
+            ],
             "StartAddress": 1384185856,
             "bManualEdit": false,
             "bROMFunction": false
@@ -1631,15 +1652,29 @@
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Save or load the commander file",
             "EndAddress": 1404174336,
+            "Params": [
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "Operation (0-save, 255-load)",
+                    "Source": 0
+                }
+            ],
             "StartAddress": 1404174336,
             "bManualEdit": false,
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Get an ASCII disc drive number from the keyboard",
             "EndAddress": 1406664704,
+            "ReturnValues": [
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "DriveNo",
+                    "Source": 0
+                }
+            ],
             "StartAddress": 1406664704,
             "bManualEdit": false,
             "bROMFunction": false
@@ -1666,7 +1701,7 @@
             "bROMFunction": false
         },
         {
-            "Description": "",
+            "Description": "Pause for 1280 empty loops",
             "EndAddress": 1415053312,
             "StartAddress": 1415053312,
             "bManualEdit": false,
@@ -2566,14 +2601,14 @@
                 },
                 {
                     "Address": 259,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
                 },
                 {
                     "Address": 260,
-                    "ByteSize": 3,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -2657,6 +2692,12 @@
                     "DisplayType": 1
                 },
                 {
+                    "Address": 250,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
                     "Address": 256,
                     "DataType": 11,
                     "InstructionAddressRef": 16777216
@@ -2693,6 +2734,18 @@
                 },
                 {
                     "Address": 526,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
+                    "Address": 530,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
+                    "Address": 532,
                     "ByteSize": 2,
                     "DataType": 2,
                     "DisplayType": 1
@@ -3235,8 +3288,9 @@
                 },
                 {
                     "Address": 530,
-                    "LabelType": 2,
-                    "Name": "label_0212"
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "OSFILE_Vector"
                 },
                 {
                     "Address": 532,
@@ -3479,13 +3533,19 @@
                     "Address": 768,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0B00"
+                    "Name": "LoadedCommander"
                 }
             ],
             "PageId": 2
         },
         {
             "LabelInfo": [
+                {
+                    "Address": 0,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "OSFILEControlBlock"
+                },
                 {
                     "Address": 256,
                     "Global": true,
@@ -5359,10 +5419,16 @@
                     "Name": "BSTK"
                 },
                 {
-                    "Address": 25,
+                    "Address": 17,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_1019"
+                    "Name": "NA"
+                },
+                {
+                    "Address": 100,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "CHK"
                 },
                 {
                     "Address": 105,
@@ -41515,7 +41581,7 @@
                 {
                     "Address": 216,
                     "ByteSize": 3,
-                    "Flags": 8,
+                    "Flags": 40,
                     "OperandType": 2
                 },
                 {
@@ -41671,8 +41737,12 @@
                 },
                 {
                     "Address": 295,
-                    "ByteSize": 2,
+                    "ByteSize": 1,
                     "OperandType": 2
+                },
+                {
+                    "Address": 296,
+                    "ByteSize": 1
                 },
                 {
                     "Address": 297,
@@ -41696,6 +41766,10 @@
                     "Address": 306,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 308,
+                    "ByteSize": 2
                 },
                 {
                     "Address": 310,
@@ -42196,7 +42270,8 @@
                 },
                 {
                     "Address": 521,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 32
                 },
                 {
                     "Address": 522,
@@ -42458,6 +42533,7 @@
                 {
                     "Address": 647,
                     "ByteSize": 2,
+                    "Comment": "set page",
                     "OperandType": 1
                 },
                 {
@@ -42816,6 +42892,7 @@
                 {
                     "Address": 953,
                     "ByteSize": 2,
+                    "Comment": "invalid drive - exit",
                     "OperandType": 2
                 },
                 {
@@ -42829,6 +42906,7 @@
                 {
                     "Address": 958,
                     "ByteSize": 3,
+                    "Comment": "indicate disc access has started",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -42838,7 +42916,8 @@
                 },
                 {
                     "Address": 962,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 1
                 },
                 {
                     "Address": 964,
@@ -42847,7 +42926,8 @@
                 },
                 {
                     "Address": 967,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "point X&Y at file block at #ADDR:0xC00#"
                 },
                 {
                     "Address": 969,
@@ -42856,6 +42936,7 @@
                 {
                     "Address": 971,
                     "ByteSize": 3,
+                    "Comment": "call OSFILE",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -42872,6 +42953,7 @@
                 {
                     "Address": 979,
                     "ByteSize": 3,
+                    "Comment": "indicate disk access has finished",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -42943,6 +43025,7 @@
                 {
                     "Address": 1009,
                     "ByteSize": 3,
+                    "Comment": "clear pages B & C",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -42953,11 +43036,13 @@
                 {
                     "Address": 1014,
                     "ByteSize": 3,
+                    "Comment": "Set load address #ADDR:0x0B00#",
                     "OperandType": 1
                 },
                 {
                     "Address": 1017,
                     "ByteSize": 3,
+                    "Comment": "set file size - 256 bytes",
                     "OperandType": 1
                 },
                 {
@@ -43080,12 +43165,12 @@
                     "Address": 276,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "DEFAULT"
+                    "Name": "DFAULT"
                 },
                 {
                     "Address": 278,
                     "LabelType": 2,
-                    "Name": "label_5116"
+                    "Name": "QUL1"
                 },
                 {
                     "Address": 289,
@@ -43147,7 +43232,7 @@
                     "Address": 508,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_51FC"
+                    "Name": "CHECK"
                 },
                 {
                     "Address": 512,
@@ -43212,7 +43297,7 @@
                     "Address": 635,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_527B"
+                    "Name": "ZEBC"
                 },
                 {
                     "Address": 641,
@@ -43223,7 +43308,7 @@
                 {
                     "Address": 649,
                     "LabelType": 2,
-                    "Name": "label_5289"
+                    "Name": "page_clear_loop"
                 },
                 {
                     "Address": 724,
@@ -43265,24 +43350,24 @@
                     "Address": 946,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_53B2"
+                    "Name": "QUS1"
                 },
                 {
                     "Address": 983,
                     "LabelType": 2,
-                    "Name": "label_53D7"
+                    "Name": "exit_func"
                 },
                 {
                     "Address": 984,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_53D8"
+                    "Name": "GTDRV"
                 },
                 {
                     "Address": 1009,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_53F1"
+                    "Name": "LOD"
                 }
             ],
             "PageId": 20
@@ -43329,10 +43414,15 @@
                 },
                 {
                     "Address": 19,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 32
                 },
                 {
                     "Address": 20,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 21,
                     "ByteSize": 1
                 },
                 {
@@ -44898,17 +44988,17 @@
                 {
                     "Address": 10,
                     "LabelType": 2,
-                    "Name": "label_540A"
+                    "Name": "copy_commander_loop"
                 },
                 {
                     "Address": 19,
                     "LabelType": 2,
-                    "Name": "label_5413"
+                    "Name": "LOR"
                 },
                 {
                     "Address": 21,
                     "LabelType": 2,
-                    "Name": "label_5415"
+                    "Name": "ELT2F"
                 },
                 {
                     "Address": 45,
@@ -44920,13 +45010,13 @@
                     "Address": 76,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_544C"
+                    "Name": "DODOSVN"
                 },
                 {
                     "Address": 88,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_5458"
+                    "Name": "CLDELAY"
                 },
                 {
                     "Address": 95,
@@ -67503,12 +67593,14 @@
                 {
                     "Address": 87,
                     "ByteSize": 1,
+                    "Comment": "push function (load,save, etc.)",
                     "Flags": 2,
                     "SMC": true
                 },
                 {
                     "Address": 88,
                     "ByteSize": 2,
+                    "Comment": "OSFILE command",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -67599,6 +67691,7 @@
                 {
                     "Address": 113,
                     "ByteSize": 3,
+                    "Comment": "send filename",
                     "Flags": 10,
                     "OperandType": 2,
                     "SMC": true
@@ -67606,6 +67699,7 @@
                 {
                     "Address": 116,
                     "ByteSize": 1,
+                    "Comment": "pop function",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -67626,6 +67720,7 @@
                 {
                     "Address": 123,
                     "ByteSize": 1,
+                    "Comment": "push result",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -67638,6 +67733,7 @@
                 {
                     "Address": 126,
                     "ByteSize": 3,
+                    "Comment": "fetch command block byte",
                     "Flags": 10,
                     "OperandType": 2,
                     "SMC": true
@@ -67645,6 +67741,7 @@
                 {
                     "Address": 129,
                     "ByteSize": 2,
+                    "Comment": "store",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -67671,6 +67768,7 @@
                 {
                     "Address": 136,
                     "ByteSize": 2,
+                    "Comment": "restore X & Y",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -67685,6 +67783,7 @@
                 {
                     "Address": 140,
                     "ByteSize": 1,
+                    "Comment": "pop result",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -68994,7 +69093,7 @@
                 {
                     "Address": 989,
                     "ByteSize": 3,
-                    "Flags": 2,
+                    "Flags": 34,
                     "OperandType": 2,
                     "SMC": true
                 },
@@ -72201,17 +72300,17 @@
                     "Address": 83,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "label_FC53"
+                    "Name": "TubeROM_OSFILE_Impl"
                 },
                 {
                     "Address": 95,
                     "LabelType": 2,
-                    "Name": "label_FC5F"
+                    "Name": "send_command_block_loop"
                 },
                 {
                     "Address": 126,
                     "LabelType": 2,
-                    "Name": "label_FC7E"
+                    "Name": "receive_command_block_loop"
                 },
                 {
                     "Address": 142,
@@ -72485,7 +72584,7 @@
                     "Address": 989,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "TubeROM_OSARGS_FFDD"
+                    "Name": "TubeROM_OSFILE"
                 },
                 {
                     "Address": 992,
