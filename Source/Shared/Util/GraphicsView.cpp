@@ -559,7 +559,7 @@ void DrawCharacterSetImage1Bpp(FCodeAnalysisState& state, FCharacterSet& charact
 		switch (characterSet.Params.ColourInfo)
 		{
             case EColourInfo::MemoryLUT:
-                colAttr = state.ReadByte(characterSet.Params.AttribsAddress.Address + charNo);
+                colAttr = state.ReadByte(characterSet.Params.AttribsAddress.GetAddress() + charNo);
                 break;
             case EColourInfo::InterleavedPost:
                 colAttr = state.ReadByte(addr++);
@@ -583,7 +583,7 @@ void DrawCharacterSetImage1Bpp(FCodeAnalysisState& state, FCharacterSet& charact
 // This function assumes the data is mapped in memory
 void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& characterSet)
 {
-	const uint16_t addr = characterSet.Params.Address.Address;
+	const uint16_t addr = characterSet.Params.Address.GetAddress();
 
 	characterSet.Image->Clear(0);	// clear first
 
@@ -627,7 +627,7 @@ bool CreateCharacterSetAt(FCodeAnalysisState& state, const FCharSetCreateParams&
 		FLabelInfo* pLabel = AddLabelAtAddress(state,params.Address);
 		const int kLabelSize = 32;
 		char label[kLabelSize] = { 0 };
-		snprintf(label, kLabelSize, "charset_%04X", params.Address.Address);
+		snprintf(label, kLabelSize, "charset_%04X", params.Address.GetAddress());
 		pLabel->ChangeName(label,params.Address);
 	}
 
