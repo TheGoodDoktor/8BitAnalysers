@@ -180,92 +180,68 @@ enum class EInstructionType
 	Unknown,
 };
 
-// Structures
+// The original FAddressRef needs fixing up when the bank it refers to changes physical address range.
+// The new address ref doesn't need fixing up, as it looks up the bank's mapped address directly.
+// This convenience does have a performance cost. It's roughly 30% slower than the original one.
 #define NEWADDRESSREF 1
 
+// Structures
 #if NEWADDRESSREF
 #include <assert.h>
 struct FCodeAnalysisBank;
-#endif
+struct FAddressRef
+{
+	FAddressRef() :BankId(-1), BankOffset(0) {}
+	FAddressRef(uint32_t val)	{	SetVal(val); }
+	FAddressRef(int16_t bankId, uint16_t address) : BankId(bankId) { SetAddress(address); };
+	uint16_t GetAddress() const;
+	uint32_t GetVal() const;
+	int16_t& GetBankId() { return BankId;	}
+	int16_t GetBankId() const	{	return BankId; }
+	void SetAddress(uint16_t address);
+	void SetVal(uint32_t val);
+	void SetBankId(int16_t bankId) { BankId = bankId;	}
+	bool IsValid() const { return BankId != -1; }
+	void SetInvalid() { BankId = -1; }
+	bool operator<(const FAddressRef& other) const { return GetVal() < other.GetVal(); }
+	bool operator<=(const FAddressRef& other) const { return GetVal() <= other.GetVal(); }
+	bool operator>=(const FAddressRef& other) const { return GetVal() >= other.GetVal(); }
+	bool operator==(const FAddressRef& other) const { return GetVal() == other.GetVal(); }
+	bool operator!=(const FAddressRef& other) const { return GetVal() != other.GetVal(); }
+
+private:
+	int16_t		BankId;
+	uint16_t	BankOffset;
+//#ifndef NDEBUG
+//	uint16_t AbsoluteAddr = 0;
+//#endif
+};
+
+#else
 
 // This holds a reference to a memory address in a bank based memory architecture
 struct FAddressRef
 {
-	FAddressRef() :BankId(-1)
-	{
-#if NEWADDRESSREF
-		BankOffset = 0;
-#else
-		Address = 0;
-#endif
-	}
-	FAddressRef(uint32_t val)
-	{
-#if NEWADDRESSREF
-		SetVal(val);
-#else
-		Val = val;
-#endif
-	}
-	FAddressRef(int16_t bankId, uint16_t address);
-#if NEWADDRESSREF
-	FCodeAnalysisBank* GetBank() const;
-#endif
-	uint16_t GetAddress() const;
-	uint32_t GetVal() const;
-	
-	int16_t& GetBankId()
-	{ 
-		return BankId;
-	}
+	FAddressRef() :BankId(-1), Address(0) {}
+	FAddressRef(uint32_t val) :Val(val) {}
+	FAddressRef(int16_t bankId, uint16_t address) :BankId(bankId), Address(address) {}
 
-	int16_t GetBankId() const
-	{
-		return BankId;
-	}
-
-	void SetAddress(uint16_t address);
-	void SetVal(uint32_t val);
-	void SetBankId(int16_t bankId) 
-	{ 
-		BankId = bankId; 
-	}
+	uint16_t GetAddress() const { return Address; }
+	uint32_t GetVal() const { return Val; }
+	int16_t& GetBankId() { return BankId;	}
+	int16_t GetBankId() const {	return BankId; }
+	void SetAddress(uint16_t address) { Address = address; }
+	void SetVal(uint32_t val) { Val = val; }
+	void SetBankId(int16_t bankId) { BankId = bankId;	}
 
 	bool IsValid() const { return BankId != -1; }
 	void SetInvalid() { BankId = -1; }
 	bool operator<(const FAddressRef& other) const { return CompVal() < other.CompVal(); }
 	bool operator<=(const FAddressRef& other) const { return CompVal() <= other.CompVal(); }
-	bool operator>=(const FAddressRef & other) const { return CompVal() >= other.CompVal(); }
-	bool operator==(const FAddressRef& other) const { return GetVal() == other.GetVal(); }
-	bool operator!=(const FAddressRef& other) const { return GetVal() != other.GetVal(); }
-	
-#if 0
-	// does this operator make sense? 
-	// we could increment and create an invalid address ref if the address is outside of the bank's mapped address range.
-	FAddressRef operator++(int) 
-	{ 
-#if NEWADDRESSREF
-		assert(0);
-#else
-		Address++; return *this; 
-#endif
-	}
-#endif
-#ifndef NDEBUG
-	uint32_t FixupCount = 0;
-#endif
-
-private:
-	// this is for the comparison operator overloads - we can't use Val because we'd have to re-order the union
-	// too much code relies on the order of BankId and Address, e.g. load/save json
-	uint32_t CompVal() const;
-	
-#if NEWADDRESSREF
-	int16_t		BankId;
-	uint16_t	BankOffset;
-	// TODO DEBUG ONLY
-	uint16_t AbsoluteAddr = 0;
-#else
+	bool operator>=(const FAddressRef& other) const { return CompVal() >= other.CompVal(); }
+	bool operator==(const FAddressRef& other) const { return Val == other.Val; }
+	bool operator!=(const FAddressRef& other) const { return Val != other.Val; }
+	FAddressRef operator++(int) { Address++; return *this; }
 	union
 	{
 		struct
@@ -275,9 +251,13 @@ private:
 		};
 		uint32_t	Val;
 	};
-#endif
-};
 
+private:
+	// this is for the comparison operator overloads - we can't use Val because we'd have to re-order the union
+	// too much code relies on the order of BankId and Address, e.g. load/save json
+	uint32_t CompVal() const { return (BankId << 16) | Address; }
+};
+#endif
 
 // Hash function for FAddresRef so we can use unordered sets/maps
 template <>
@@ -288,6 +268,7 @@ struct std::hash<FAddressRef>
 		return k.GetVal();
 	}
 };
+
 
 struct FFoundString
 {

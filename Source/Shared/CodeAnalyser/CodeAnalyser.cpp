@@ -1851,9 +1851,6 @@ void FixupAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef& addr)
 	const uint16_t bankOffset = (addr.GetAddress() & pBank->SizeMask);
 	addr.SetAddress(pBank->GetMappedAddress() + bankOffset);
 	assert(pBank->AddressValid(addr.GetAddress()));
-#ifndef NDEBUG
-	addr.FixupCount++;
-#endif
 }
 
 void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr)
@@ -1882,77 +1879,46 @@ void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAdd
 
 // I wanted to put the member function code in CodeAnalyserTypes.h for performance reasons
 // but I ran into cyclic dependency issues that prevented me from doing that.
-FAddressRef::FAddressRef(int16_t bankId, uint16_t address) :BankId(bankId)
-{
 #if NEWADDRESSREF
-	SetAddress(address);
-#else
-	Address = address;
-#endif
-}
-
-#if NEWADDRESSREF
-FCodeAnalysisBank* FAddressRef::GetBank() const
-{
-	assert(Banks.size());
-	return (BankId >= 0 && BankId < Banks.size()) ? &Banks[BankId] : nullptr;
-}
-#endif
-
 uint16_t FAddressRef::GetAddress() const
 {
-#if NEWADDRESSREF
-	if (FCodeAnalysisBank* pBank = GetBank())
+	const size_t size = Banks.size();
+	FCodeAnalysisBank* pBank = (BankId >= 0 && BankId < size) ? &Banks[BankId] : nullptr;
+	assert(size);
+	if (pBank)
 	{
-		return pBank->GetMappedAddress() + BankOffset;
+		return pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize + BankOffset;
 	}
 	//LOGERROR("Trying to use address of invalid address ref");
 	return 0;
-#else
-	return Address;
-#endif
 }
 
 uint32_t FAddressRef::GetVal() const
 {
-#if NEWADDRESSREF
 	return (BankId << 16) | GetAddress();
-#else
-	return Val;
-#endif
 }
 
 void FAddressRef::SetAddress(uint16_t address)
 {
-#if NEWADDRESSREF
-	// Convert absolute address to relative bank address 
-	if (FCodeAnalysisBank* pBank = GetBank())
+	const size_t size = Banks.size();
+	FCodeAnalysisBank* pBank = (BankId >= 0 && BankId < size) ? &Banks[BankId] : nullptr;
+	assert(size);
+	if (pBank)
 	{
-		assert(pBank->AddressValid(address));
-		// could we do some masking with size mask here?
-		BankOffset = address - pBank->GetMappedAddress();
+		const uint16_t mappedAddress = (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+		// Check address is valid
+		assert(address >= mappedAddress && (address < mappedAddress + (pBank->NoPages * FCodeAnalysisPage::kPageSize)));
+		// Convert absolute address to relative bank address 
+		BankOffset = address - mappedAddress;
 	}
-	AbsoluteAddr = address;
-#else
-	Address = address;
-#endif
+//#ifndef NDEBUG
+//	AbsoluteAddr = address;
+//#endif
 }
 
 void FAddressRef::SetVal(uint32_t val)
 {
-#if NEWADDRESSREF
 	BankId = val >> 16;
 	SetAddress(val & 0xffff);
-#else
-	Val = val;
-#endif
 }
-
-uint32_t FAddressRef::CompVal() const
-{
-#if NEWADDRESSREF
-	return GetVal();
-#else
-	return (BankId << 16) | Address;
 #endif
-}
