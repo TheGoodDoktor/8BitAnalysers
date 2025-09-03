@@ -197,7 +197,7 @@ public:
 			
 			if (pCodeInfo != nullptr)
 			{
-				WriteCodeInfoForAddress(State, addr.Address); // what does this do again?
+				WriteCodeInfoForAddress(State, addr.GetAddress()); // what does this do again?
 				Markup::SetCodeInfo(pCodeInfo);
 				operationText = Markup::ExpandString(State,pCodeInfo->Text.c_str());
 				pItem = pCodeInfo;
@@ -215,7 +215,7 @@ public:
 			}
 
 			std::string commentLines;
-			if (FCommentBlock* pCommentBlock = State.GetCommentBlockForAddress(State.AddressRefFromPhysicalAddress(addr.Address)))
+			if (FCommentBlock* pCommentBlock = State.GetCommentBlockForAddress(State.AddressRefFromPhysicalAddress(addr.GetAddress())))
 			{
 				commentLines = pCommentBlock->Comment;
 			}
@@ -230,7 +230,7 @@ public:
 			{
 				if (pSkoolInfo)
 				{
-					if (const FSkoolFileLocation* pLocation = pSkoolInfo->GetLocation(addr.Address))
+					if (const FSkoolFileLocation* pLocation = pSkoolInfo->GetLocation(addr.GetAddress()))
 					{
 						if (pLocation->bBranchDestination)
 							bIsBranchDestination = true;
@@ -244,7 +244,7 @@ public:
 			}
 
 			assert(pItem);
-			pEntry->AddInstruction(addr.Address, pItem->Comment, operationText, prefix, commentLines);
+			pEntry->AddInstruction(addr.GetAddress(), pItem->Comment, operationText, prefix, commentLines);
 			return true;
 		}
 		return false;
@@ -271,7 +271,7 @@ public:
 	{
 		std::string asmText;
 		char tmp[16] = { 0 };
-		const uint16_t addr = item.AddressRef.Address;
+		const uint16_t addr = item.AddressRef.GetAddress();
 		
 		ENumberDisplayMode numMode = ENumberDisplayMode::None;
 		if (pDataInfo->DisplayType == EDataItemDisplayType::Unknown)

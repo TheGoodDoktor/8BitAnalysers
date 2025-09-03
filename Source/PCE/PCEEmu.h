@@ -77,6 +77,7 @@ protected:
 	GeargrafxCore* pCore = nullptr;
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
+
 	FPCECPUEmulator6502* pPCE6502CPU;
 
 	FPCEViewer* pPCEViewer = nullptr;

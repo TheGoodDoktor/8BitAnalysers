@@ -114,8 +114,8 @@ void FProjectConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 		const FCodeAnalysisViewConfig& viewConfig = ViewConfigs[i];
 		json viewConfigJson;
 		viewConfigJson["Enabled"] = viewConfig.bEnabled;
-		viewConfigJson["ViewAddress"] = viewConfig.ViewAddress.Address;
-		viewConfigJson["ViewAddressBank"] = viewConfig.ViewAddress.BankId;
+		viewConfigJson["ViewAddress"] = viewConfig.ViewAddress.GetAddress();
+		viewConfigJson["ViewAddressBank"] = viewConfig.ViewAddress.GetBankId();
 
 		optionsJson["ViewConfigs"].push_back(viewConfigJson);
 	}
@@ -205,11 +205,11 @@ void FProjectConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 				FCodeAnalysisViewConfig& viewConfig = ViewConfigs[i];
 				const json& viewConfigJson = optionsJson["ViewConfigs"][i];
 				viewConfig.bEnabled = viewConfigJson["Enabled"];
-				viewConfig.ViewAddress.Address = viewConfigJson["ViewAddress"];
+				viewConfig.ViewAddress.SetAddress(viewConfigJson["ViewAddress"]);
 				if (viewConfigJson.contains("ViewAddressBank"))
-					viewConfig.ViewAddress.BankId = viewConfigJson["ViewAddressBank"];
+					viewConfig.ViewAddress.SetBankId(viewConfigJson["ViewAddressBank"]);
 				else
-					viewConfig.ViewAddress.BankId = -1;
+					viewConfig.ViewAddress.SetBankId(-1);
 			}
 		}
 	}

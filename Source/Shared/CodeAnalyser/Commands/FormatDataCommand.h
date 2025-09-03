@@ -27,7 +27,7 @@ struct FDataFormattingOptions
 	std::string				CommentText;
 
 	bool					IsValid() const { return NoItems > 0 && ItemSize > 0; }
-	uint16_t				CalcEndAddress() const { return StartAddress.Address + (NoItems * ItemSize) - 1; }
+	uint16_t				CalcEndAddress() const { return StartAddress.GetAddress() + (NoItems * ItemSize) - 1; }
 	void					SetupForBitmap(FAddressRef address, int xSizePixels, int ySizePixels, int bpp)
 	{
 		DataType = EDataType::Bitmap;

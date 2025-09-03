@@ -7,8 +7,6 @@
 #include "Util/FileUtil.h"
 #include "Viewers/PCEViewer.h"
 #include <geargrafx_core.h>
-//#include "CodeAnalyser/CodeAnalyser.h"
-//#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "Debug/DebugLog.h"
 
 #include "App.h"
@@ -73,6 +71,13 @@ public:
 	FPCEEmu* pPCEEmu = nullptr;
 };
 
+// Hack to fix undefined symbol linker error.
+// This function is used in Debugger.cpp
+bool z80_opdone(z80_t* cpu) 
+{
+	return false;
+}
+
 uint8_t FPCEEmu::ReadByte(uint16_t address) const
 {
 	return pCore->GetMemory()->Read(address, /* internal */ true);
@@ -123,7 +128,8 @@ void OnGearGfxInstructionExecuted(void* pContext)
 
 	state.Debugger.SetPC(pEmu->GetPC());
 
-	RegisterCodeExecuted(state, pEmu->GetPC().Address, pEmu->GetPC().Address);
+	const uint16_t pcAddr = pEmu->GetPC().GetAddress();
+	RegisterCodeExecuted(state, pcAddr, pcAddr);
 
 	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
 	const uint64_t dummyPins = 0;

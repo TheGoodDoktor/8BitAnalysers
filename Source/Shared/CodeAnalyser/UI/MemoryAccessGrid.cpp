@@ -24,14 +24,14 @@ bool FMemoryAccessGrid::GetAddressGridPosition(FAddressRef address, int& outX, i
 		const FAddressRef startAddr = GetGridSquareAddress(0, 0);
 		const FAddressRef endAddr = GetGridSquareAddress(GridSizeX - 1, GridSizeY - 1);
 
-		const uint16_t charMapEndAddr = endAddr.Address;//charMapAddress + (noCharsX * noCharsY) - 1;
+		const uint16_t charMapEndAddr = endAddr.GetAddress();//charMapAddress + (noCharsX * noCharsY) - 1;
 
 		// is checking bank ID enough?
-		if (address.BankId == endAddr.BankId &&
-			address.Address >= startAddr.Address &&
-			address.Address <= endAddr.Address)
+		if (address.GetBankId() == endAddr.GetBankId() &&
+			address.GetAddress() >= startAddr.GetAddress() &&
+			address.GetAddress() <= endAddr.GetAddress())
 		{
-			const uint16_t addrOffset = address.Address - startAddr.Address;
+			const uint16_t addrOffset = address.GetAddress() - startAddr.GetAddress();
 			outX = addrOffset % GridStride;
 			outY = addrOffset / GridStride;
 			return true;
@@ -178,7 +178,7 @@ void FMemoryAccessGrid::DrawGrid(float x, float y)
 	ImGui::Checkbox("Show Reads & Writes", &bShowReadWrites);
 	if (SelectedCharAddress.IsValid())
 	{
-		ImGui::Text("Address: %s", NumStr(SelectedCharAddress.Address));
+		ImGui::Text("Address: %s", NumStr(SelectedCharAddress.GetAddress()));
 		DrawAddressLabel(state,state.GetFocussedViewState(),SelectedCharAddress);
 		// Show data reads & writes
 		FDataInfo* pDataInfo = state.GetDataInfoForAddress(SelectedCharAddress);

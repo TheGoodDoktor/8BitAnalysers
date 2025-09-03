@@ -104,17 +104,17 @@ void FGraphicsViewer::GoToAddress(FAddressRef address)
 		}
 	}
 
-	const FCodeAnalysisBank* pBank = state.GetBank(address.BankId);
+	const FCodeAnalysisBank* pBank = state.GetBank(address.GetBankId());
 
 	if (pBank == nullptr || pBank->IsMapped())	// default to physical memory view
 	{
-		AddressOffset = address.Address;
+		AddressOffset = address.GetAddress();
 		bShowPhysicalMemory = true;
 	}
 	else
 	{
-		AddressOffset = address.Address - pBank->GetMappedAddress();
-		Bank = address.BankId;
+		AddressOffset = address.GetAddress() - pBank->GetMappedAddress();
+		Bank = address.GetBankId();
 		bShowPhysicalMemory = false;
 	}
 }
@@ -138,15 +138,15 @@ uint16_t FGraphicsViewer::GetAddressOffsetFromPositionInBuffer(const FOffScreenB
 
 bool GetPositionInBufferFromAddress(const FOffScreenBuffer& buffer, FAddressRef address, int& x, int& y)
 {
-	if(address.BankId != buffer.Address.BankId)
+	if(address.GetBankId() != buffer.Address.GetBankId())
 		return false;
-	if(address.Address < buffer.Address.Address)
+	if(address.GetAddress() < buffer.Address.GetAddress())
 		return false;
-	if(address.Address >= buffer.Address.Address + buffer.GetByteSize())
+	if(address.GetAddress() >= buffer.Address.GetAddress() + buffer.GetByteSize())
 		return false;
 
 	// TODO: this only works for linear bitmap modes
-	const uint16_t byteOffset = address.Address - buffer.Address.Address;
+	const uint16_t byteOffset = address.GetAddress() - buffer.Address.GetAddress();
 	const uint16_t bufferStride = buffer.XSizePixels / 8;
 	x = (byteOffset % bufferStride) * 8;
 	y = byteOffset / bufferStride;
@@ -219,9 +219,9 @@ uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisPage& page, uint16_
 
 uint32_t GetHeatmapColourForMemoryAddress(const FCodeAnalysisState& state, FAddressRef addr, int currentFrameNo, int frameThreshold)
 {
-	const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	const FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
 	const uint16_t bankSizeMask = pBank->SizeMask;
-	const uint16_t bankAddr = addr.Address & bankSizeMask;
+	const uint16_t bankAddr = addr.GetAddress() & bankSizeMask;
 	FCodeAnalysisPage& page = pBank->Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
 
 	return GetHeatmapColourForMemoryAddress(page, bankAddr, currentFrameNo, frameThreshold);
@@ -741,7 +741,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		if (ImGui::IsMouseClicked(0))
 			ClickedAddress = ptrAddress;
 
-		ImGui::Text("%s", NumStr(ptrAddress.Address));
+		ImGui::Text("%s", NumStr(ptrAddress.GetAddress()));
 		ImGui::SameLine();
 		DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
 		
@@ -809,18 +809,18 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	//ImGui::SliderInt("Heatmap frame threshold", &viewerState.HeatmapThreshold, 0, 60);
 	pGraphicsView->Clear(0xff000000);
 
-	FCodeAnalysisBank* pClickedBank = state.GetBank(ClickedAddress.BankId);
+	FCodeAnalysisBank* pClickedBank = state.GetBank(ClickedAddress.GetBankId());
 	if (pClickedBank != nullptr && state.Config.bShowBanks)
-		ImGui::Text("Clicked Address: [%s]%s", pClickedBank->Name.c_str(), NumStr(ClickedAddress.Address));
+		ImGui::Text("Clicked Address: [%s]%s", pClickedBank->Name.c_str(), NumStr(ClickedAddress.GetAddress()));
 	else
-		ImGui::Text("Clicked Address: %s", NumStr(ClickedAddress.Address));
+		ImGui::Text("Clicked Address: %s", NumStr(ClickedAddress.GetAddress()));
 	//ImGui::SameLine();
 	if (ClickedAddress.IsValid())
 	{
 		DrawAddressLabel(state, state.GetFocussedViewState(), ClickedAddress);
 		if (ImGui::CollapsingHeader("Details"))
 		{
-			const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(ClickedAddress.Address) : Bank;
+			const int16_t bankId = bShowPhysicalMemory ? state.GetBankFromAddress(ClickedAddress.GetAddress()) : Bank;
 			const FCodeAnalysisItem item(state.GetDataInfoForAddress(ClickedAddress), ClickedAddress);
 			DrawDataDetails(state, state.GetFocussedViewState(), item);
 		}
@@ -1027,7 +1027,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 		{
 			const FGraphicsSet& set = graphicsSetIt.second;
 			bool bSelected = set.Address == SelectedGraphicSet;
-			ImGui::PushID(set.Address.Val);
+			ImGui::PushID(set.Address.GetVal());
 			if (ImGui::Selectable(set.Name.c_str(), &bSelected))
 			{
 				ImageSetName = set.Name;
@@ -1174,7 +1174,7 @@ void FGraphicsViewer::DrawOffScreenBufferViewer(void)
 				if (ImGui::IsMouseClicked(0))
 					ClickedAddress = ptrAddress;
 
-				ImGui::Text("%s", NumStr(ptrAddress.Address));
+				ImGui::Text("%s", NumStr(ptrAddress.GetAddress()));
 				ImGui::SameLine();
 				DrawAddressLabel(state, state.GetFocussedViewState(), ptrAddress);
 
@@ -1276,7 +1276,7 @@ bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 		const FGraphicsSet& set = graphicsSetIt.second;
 		json graphicsSetJson;
 		graphicsSetJson["Name"] = set.Name;
-		graphicsSetJson["AddressRef"] = set.Address.Val;
+		graphicsSetJson["AddressRef"] = set.Address.GetVal();
 		graphicsSetJson["XSizePixels"] = set.XSizePixels;
 		graphicsSetJson["YSizePixels"] = set.YSizePixels;
 		graphicsSetJson["ImageCount"] = set.Count;
@@ -1289,7 +1289,7 @@ bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 		json offscreenBufferJson;
 		offscreenBufferJson["Name"] = offscreenBuffer.Name;
 		offscreenBufferJson["LuaHandlerName"] = offscreenBuffer.LuaHandlerName;
-		offscreenBufferJson["AddressRef"] = offscreenBuffer.Address.Val;
+		offscreenBufferJson["AddressRef"] = offscreenBuffer.Address.GetVal();
 		offscreenBufferJson["XSizePixels"] = offscreenBuffer.XSizePixels;
 		offscreenBufferJson["YSizePixels"] = offscreenBuffer.YSizePixels;
 		offscreenBufferJson["Format"] = (int)offscreenBuffer.Format;
@@ -1329,7 +1329,7 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 		{
 			FGraphicsSet set;
 			set.Name = graphicsSetJson["Name"];
-			set.Address.Val = graphicsSetJson["AddressRef"];
+			set.Address.SetVal(graphicsSetJson["AddressRef"]);
 			set.XSizePixels = graphicsSetJson["XSizePixels"];
 			set.YSizePixels = graphicsSetJson["YSizePixels"];
 			set.Count = graphicsSetJson["ImageCount"];
@@ -1347,7 +1347,7 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 			offscreenBuffer.Name = offscreenBuffersJson["Name"];
 			if (offscreenBuffersJson.contains("LuaHandlerName"))
 				offscreenBuffer.LuaHandlerName = offscreenBuffersJson["LuaHandlerName"];
-			offscreenBuffer.Address.Val = offscreenBuffersJson["AddressRef"];
+			offscreenBuffer.Address.SetVal(offscreenBuffersJson["AddressRef"]);
 			offscreenBuffer.XSizePixels = offscreenBuffersJson["XSizePixels"];
 			offscreenBuffer.YSizePixels = offscreenBuffersJson["YSizePixels"];
 			offscreenBuffer.Format = (EOffScreenBufferFormat)offscreenBuffersJson["Format"];

@@ -97,7 +97,7 @@ void FCodeAnalysisViewState::FixupAddressRefs(const FCodeAnalysisState& state)
 
 int GetItemIndexForAddress(const FCodeAnalysisState &state, FAddressRef addr)
 {
-	const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	const FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
 
 	int index = -1;
 
@@ -105,7 +105,7 @@ int GetItemIndexForAddress(const FCodeAnalysisState &state, FAddressRef addr)
 	
 	for (int i = 0; i < (int)pBank->ItemList.size(); i++)
 	{
-		if (pBank->ItemList[i].IsValid() && pBank->ItemList[i].AddressRef.Address > addr.Address)
+		if (pBank->ItemList[i].IsValid() && pBank->ItemList[i].AddressRef.GetAddress() > addr.GetAddress())
 			return index;
 		index = i;
 	}
@@ -164,7 +164,7 @@ bool AddMemoryRegionDescGenerator(FMemoryRegionDescGenerator* pGen)
 void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FAddressRef addr, int noLines /* = 10 */)
 {
 	// Bring up snippet in tool tip
-	const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	const FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
 	if (pBank != nullptr)
 	{
 		const int index = GetItemIndexForAddress(state, addr);
@@ -198,12 +198,12 @@ std::string GenerateAddressLabelString(FCodeAnalysisState& state, FAddressRef ad
 	int labelOffset = 0;
 	std::string labelOut;
 
-	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
 	if (pBank == nullptr)
 		return labelOut;
 
 	// find a label for this address
-	for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
+	for (int addrVal = addr.GetAddress(); addrVal >= 0; addrVal--)
 	{
 		if (pBank->AddressValid(addrVal) == false)
 		{
@@ -247,7 +247,7 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	int labelOffset = 0;
 	const char *pLabelString = GetRegionDesc(addr);
 	const FLabelInfo* pAddressScope = state.GetScopeForAddress(addr);
-	FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+	FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
 	if(pBank == nullptr)
 		return false;
 
@@ -258,7 +258,7 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	if (pLabelString == nullptr)	// get a label
 	{
 		// find a label for this address
-		for (int addrVal = addr.Address; addrVal >= 0; addrVal--)
+		for (int addrVal = addr.GetAddress(); addrVal >= 0; addrVal--)
 		{
 			if (pBank->AddressValid(addrVal) == false)
 			{
@@ -305,7 +305,7 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		else
 			ImGui::PushStyleColor(ImGuiCol_Text, Colours::localLabel);
 
-		const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId);
+		const FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
 
 		if (pBank->bFixed == false && state.Config.bShowBanks && (displayFlags & kAddressLabelFlag_NoBank) == 0)
 		{
@@ -359,7 +359,7 @@ bool DrawAddressLabel(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 void DrawCodeAddress(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, FAddressRef addr, uint32_t displayFlags)
 {
 	//ImGui::PushStyleColor(ImGuiCol_Text, 0xff00ffff);
-	ImGui::Text("%s", NumStr(addr.Address));
+	ImGui::Text("%s", NumStr(addr.GetAddress()));
 	//ImGui::PopStyleColor();
 	ImGui::SameLine();
 	DrawAddressLabel(state, viewState, addr, displayFlags);
@@ -432,7 +432,7 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	// draw SMC fixups differently
 	if (pCodeInfo == nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 	{
-		ImGui::Text( "\t\tOperand Fixup(%s) :",NumStr(item.AddressRef.Address));
+		ImGui::Text( "\t\tOperand Fixup(%s) :",NumStr(item.AddressRef.GetAddress()));
 		ImGui::SameLine();
 		ImGui::Text("%s", pLabelInfo->GetName());
 	}
@@ -499,7 +499,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 		FAddressRef removeRef;
 		for (const auto & ref : pLabelInfo->References.GetReferences())
 		{
-			ImGui::PushID(ref.Val);
+			ImGui::PushID(ref.GetVal());
 			ShowCodeAccessorActivity(state, ref);
 
 			ImGui::Text("   ");
@@ -518,7 +518,8 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 
 	if(ImGui::Button("Find References"))
 	{
-		std::vector<FAddressRef> results = state.FindAllMemoryPatterns((const uint8_t*)&item.AddressRef.Address,2,false,false);
+		const uint16_t addr = item.AddressRef.GetAddress();
+		std::vector<FAddressRef> results = state.FindAllMemoryPatterns((const uint8_t*)&addr,2,false,false);
 
 		for(const auto& result : results)
 		{
@@ -1157,7 +1158,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 			// calculate start offset for next bank
 			const FCodeAnalysisItem& lastItem = bank.ItemList.back();
-			const int itemEndAddr = lastItem.AddressRef.Address + lastItem.Item->ByteSize;
+			const int itemEndAddr = lastItem.AddressRef.GetAddress() + lastItem.Item->ByteSize;
 			const int bankEndAddr = (bank.PrimaryMappedPage + bank.NoPages) * FCodeAnalysisPage::kPageSize;
 			startOffset = itemEndAddr - bankEndAddr;
 		}
@@ -1293,7 +1294,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
-	const uint16_t physAddr = item.AddressRef.Address;
+	const uint16_t physAddr = item.AddressRef.GetAddress();
 
 	if (item.IsValid() == false)
 		return;
@@ -1301,16 +1302,16 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 	viewState.pLabelScope = state.GetScopeForAddress(item.AddressRef);
 
 	// TODO: item below might need bank check
-	bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.Address >= physAddr && viewState.HighlightAddress.Address < physAddr + item.Item->ByteSize);
+	bool bHighlight = (viewState.HighlightAddress.IsValid() && viewState.HighlightAddress.GetAddress() >= physAddr && viewState.HighlightAddress.GetAddress() < physAddr + item.Item->ByteSize);
 	ImGui::PushID(item.Item);
 
 	// selectable
 	const uint16_t endAddress = viewState.DataFormattingOptions.CalcEndAddress();
 	const bool bSelected = (item.Item == viewState.GetCursorItem().Item) || 
 		(viewState.DataFormattingTabOpen && 
-			item.AddressRef.BankId == viewState.DataFormattingOptions.StartAddress.BankId && 
-			item.AddressRef.Address >= viewState.DataFormattingOptions.StartAddress.Address && 
-			item.AddressRef.Address <= endAddress);
+			item.AddressRef.GetBankId() == viewState.DataFormattingOptions.StartAddress.GetBankId() && 
+			item.AddressRef.GetAddress() >= viewState.DataFormattingOptions.StartAddress.GetAddress() && 
+			item.AddressRef.GetAddress() <= endAddress);
 
 	if (ImGui::Selectable("##codeanalysisline", bSelected, ImGuiSelectableFlags_SelectOnNav))
 	{
@@ -1326,7 +1327,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 				if (io.KeyShift)
 				{
 					if (viewState.DataFormattingOptions.ItemSize > 0)
-						viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress.Address - viewState.GetCursorItem().AddressRef.Address) / viewState.DataFormattingOptions.ItemSize;
+						viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress.GetAddress() - viewState.GetCursorItem().AddressRef.GetAddress()) / viewState.DataFormattingOptions.ItemSize;
 				}
 				else
 				{
@@ -1621,7 +1622,7 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 	// note: this will not take effect until next frame due to the way ImGui works.
 	if (gotoAddress.IsValid())
 	{
-		if (viewState.ViewingBankId == -1 || viewState.ViewingBankId == gotoAddress.BankId)
+		if (viewState.ViewingBankId == -1 || viewState.ViewingBankId == gotoAddress.GetBankId())
 		{
 			const float currScrollY = ImGui::GetScrollY();
 			const float currWindowHeight = ImGui::GetWindowHeight();
@@ -1630,7 +1631,7 @@ void DrawItemList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 			{
 				const FCodeAnalysisItem& item = itemList[itemNo];
 
-				if ((item.AddressRef.Address >= gotoAddress.Address) && (viewState.GoToLabel || item.Item->Type != EItemType::Label) && item.Item->Type != EItemType::CommentLine)
+				if ((item.AddressRef.GetAddress() >= gotoAddress.GetAddress()) && (viewState.GoToLabel || item.Item->Type != EItemType::Label) && item.Item->Type != EItemType::CommentLine)
 				{
 					// set cursor
 					viewState.SetCursorItem(item);
@@ -1874,13 +1875,13 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 		if (goToAddress.IsValid())
 		{
 			// check if we can just jump in the address view
-			//if (viewState.ViewingBankId != goToAddress.BankId && state.IsBankIdMapped(goToAddress.BankId))
+			//if (viewState.ViewingBankId != goToAddress.GetBankId() && state.IsBankIdMapped(goToAddress.GetBankId()))
 			//	showBank = -1;
 			//else
 			if (state.Config.bShowBanks == false)
 				showBank = -1;
 			else
-				showBank = goToAddress.BankId;
+				showBank = goToAddress.GetBankId();
 
 			bSwitchViewBank = showBank != viewState.ViewingBankId;
 		}
@@ -2066,7 +2067,7 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 
 	// Set Start address of region to format
 	ImGui::PushID("Start");
-	ImGui::Text("Start Address: %s", NumStr(formattingOptions.StartAddress.Address));
+	ImGui::Text("Start Address: %s", NumStr(formattingOptions.StartAddress.GetAddress()));
 	//ImGui::InputInt("Start Address", &formattingOptions.StartAddress.Address, 1, 100, inputFlags);
 	ImGui::PopID();
 
@@ -2254,7 +2255,7 @@ void DrawCaptureTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState
 	if (item.IsValid() == false)
 		return;
 
-	const uint16_t physAddress = item.AddressRef.Address;
+	const uint16_t physAddress = item.AddressRef.GetAddress();
 	const FMachineState* pMachineState = state.GetMachineState(physAddress);
 	if (pMachineState == nullptr)
 		return;
@@ -2286,7 +2287,7 @@ void DrawFindTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
 				const auto& result = viewState.FindResults[i];
-				ImGui::Text("%s ",NumStr(result.Address));
+				ImGui::Text("%s ",NumStr(result.GetAddress()));
 				DrawAddressLabel(state,viewState,result);
 			}
 		}
@@ -2316,7 +2317,7 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 	if (state.Config.bShowBanks)
 	{
 		ImGui::SetNextItemWidth(60.0f);
-		DrawBankInput(state, "Bank", address.BankId);
+		DrawBankInput(state, "Bank", address.GetBankId());
 		ImGui::SameLine();
 	}*/
 
@@ -2327,9 +2328,14 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 	ImGui::Text("%s", label);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 3.f);
-	if (ImGui::InputScalar("##addronput", ImGuiDataType_U16, &address.Address, 0, 0, format, inputFlags))
+	
+	static std::map<FAddressRef*, uint16_t> u16Lookup;
+	uint16_t& addr = u16Lookup[&address];
+	addr = address.GetAddress();
+	
+	if (ImGui::InputScalar("##addronput", ImGuiDataType_U16, &addr, 0, 0, format, inputFlags))
 	{
-		address = state.AddressRefFromPhysicalAddress(address.Address);
+		address = state.AddressRefFromPhysicalAddress(addr);
 		bValueInput = true;
 	}
 
@@ -2346,7 +2352,7 @@ bool DrawAddressInput(FCodeAnalysisState& state, const char* label, FAddressRef&
 
 	//if (state.Config.bShowBanks)
 	{
-		const FCodeAnalysisBank* pBank = state.GetBank(address.BankId);
+		const FCodeAnalysisBank* pBank = state.GetBank(address.GetBankId());
 		ImGui::SameLine();
 		if (pBank != nullptr)
 			ImGui::Text("(%s)", pBank->Name.c_str());

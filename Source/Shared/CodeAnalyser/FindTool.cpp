@@ -284,7 +284,7 @@ void FFindTool::DrawUI()
 						{
 							// Bank
 							std::string bankName = "Unknown";
-							if (FCodeAnalysisBank* pBank = pCodeAnalysis->GetBank(resultAddr.BankId))
+							if (FCodeAnalysisBank* pBank = pCodeAnalysis->GetBank(resultAddr.GetBankId()))
 							{
 								bankName = pBank->Name;
 							}
@@ -298,7 +298,7 @@ void FFindTool::DrawUI()
 							ShowDataItemActivity(*pCodeAnalysis, resultAddr);
 						}
 
-						ImGui::Text("    %s", NumStr(resultAddr.Address));
+						ImGui::Text("    %s", NumStr(resultAddr.GetAddress()));
 						ImGui::SameLine();
 						DrawAddressLabel(*pCodeAnalysis, viewState, resultAddr);
 
@@ -425,7 +425,7 @@ void FFinder::ProcessMatch(FAddressRef addr, const FSearchOptions& opt)
 	{
 		if (!opt.bSearchGraphicsMem)
 		{
-			if (pCodeAnalysis->pMemoryAnalyser->IsAddressInScreenMemory(addr.Address))
+			if (pCodeAnalysis->pMemoryAnalyser->IsAddressInScreenMemory(addr.GetAddress()))
 				bAddResult = false;
 		}
 	}

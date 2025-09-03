@@ -1236,10 +1236,10 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 			return false;
 		}
 
-		if (LastItem.IsValid() && instruction.Address < LastItem.AddressRef.Address)
+		if (LastItem.IsValid() && instruction.Address < LastItem.AddressRef.GetAddress())
 		{
 			// if this address is lower than the last one we saw then something has gone wrong, so abort
-			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", LineNum, instruction.Address, instruction.Address, LastItem.AddressRef.Address, LastItem.AddressRef.Address);
+			LOGWARNING("Parse error on line %d. Address $%x (%d) is lower than previous read address: $%x (%d)", LineNum, instruction.Address, instruction.Address, LastItem.AddressRef.GetAddress(), LastItem.AddressRef.GetAddress());
 			fclose(fp);
 			return false;
 		}
@@ -1294,8 +1294,8 @@ bool FSkoolKitImporter::Import(const char* pTextFileName)
 		SKOOLKIT_DEBUG_LOG("Longest comment: line %d. %d chars. address %d 0x%x",
 			longestCommentLineNum,
 			longestCommentItem.Item->Comment.size(),
-			longestCommentItem.AddressRef.Address,
-			longestCommentItem.AddressRef.Address);
+			longestCommentItem.AddressRef.GetAddress(),
+			longestCommentItem.AddressRef.GetAddress());
 		SKOOLKIT_DEBUG_LOG("Comment is '%s'", longestCommentItem.Item->Comment.c_str());
 	}
 #endif

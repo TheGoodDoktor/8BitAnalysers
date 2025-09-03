@@ -123,7 +123,7 @@ struct FFunctionInfo : FMemoryRegion
 		if (bManualEdit)
 			return;
 
-		if (address.Address > EndAddress.Address && address.BankId == EndAddress.BankId)
+		if (address.GetAddress() > EndAddress.GetAddress() && address.GetBankId() == EndAddress.GetBankId())
 			EndAddress = address;
 	}
 

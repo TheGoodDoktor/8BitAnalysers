@@ -19,6 +19,7 @@ void WritePageState(const FCodeAnalysisPage& page, FILE* fp)
 
 	uint16_t pageAddr = 0;
 	uint16_t tempU16;
+	uint32_t tempU32;
 
 	while (pageAddr < FCodeAnalysisPage::kPageSize)
 	{
@@ -30,7 +31,10 @@ void WritePageState(const FCodeAnalysisPage& page, FILE* fp)
 			tempU16 = (uint16_t)pLabelInfo->References.GetReferences().size();
 			fwrite(&tempU16, sizeof(tempU16), 1, fp);
 			for (auto& reference : pLabelInfo->References.GetReferences())
-				fwrite(&reference.Val, sizeof(reference.Val), 1, fp);
+			{
+				tempU32 = reference.GetVal();
+				fwrite(&tempU32, sizeof(reference.GetVal()), 1, fp);
+			}
 		}
 
 		const FCodeInfo* pCodeInfoItem = page.CodeInfo[pageAddr];
@@ -52,16 +56,23 @@ void WritePageState(const FCodeAnalysisPage& page, FILE* fp)
 				tempU16 = (uint16_t)pDataInfo->Reads.GetReferences().size();
 				fwrite(&tempU16, sizeof(tempU16), 1, fp);
 				for (const auto& read : pDataInfo->Reads.GetReferences())
-					fwrite(&read.Val, sizeof(read.Val), 1, fp);
+				{
+					tempU32 = read.GetVal();
+					fwrite(&tempU32, sizeof(read.GetVal()), 1, fp);
+				}
 
 				// Writes
 				tempU16 = (uint16_t)pDataInfo->Writes.GetReferences().size();
 				fwrite(&tempU16, sizeof(tempU16), 1, fp);
 				for (const auto& write : pDataInfo->Writes.GetReferences())
-					fwrite(&write.Val, sizeof(write.Val), 1, fp);
+				{
+					tempU32 = write.GetVal();
+					fwrite(&tempU32, sizeof(write.GetVal()), 1, fp);
+				}
 
 				// Last Writer
-				fwrite(&pDataInfo->LastWriter.Val, sizeof(pDataInfo->LastWriter), 1, fp);
+				tempU32 = pDataInfo->LastWriter.GetVal();
+				fwrite(&tempU32, sizeof(pDataInfo->LastWriter), 1, fp);
 			}
 
 			//pageAddr += pDataInfo->ByteSize;
@@ -81,6 +92,7 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 {
 	uint16_t itemId;
 	fread(&itemId, sizeof(itemId), 1, fp);
+	uint32_t tempU32;
 
 	while (itemId != kTerminatorId)
 	{
@@ -99,7 +111,8 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 			for (int i = 0; i < count; i++)
 			{
 				FAddressRef ref;
-				fread(&ref.Val, sizeof(ref.Val), 1, fp);
+				fread(&tempU32, sizeof(ref.GetVal()), 1, fp);
+				ref.SetVal(tempU32);
 				if (pLabelInfo != nullptr)
 					pLabelInfo->References.RegisterAccess(ref);
 			}
@@ -115,7 +128,8 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 			for (int i = 0; i < count; i++)
 			{
 				FAddressRef ref;
-				fread(&ref.Val, sizeof(ref.Val), 1, fp);
+				fread(&tempU32, sizeof(ref.GetVal()), 1, fp);
+				ref.SetVal(tempU32);
 				dataItem.Reads.RegisterAccess(ref);
 			}
 
@@ -125,12 +139,14 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 			for (int i = 0; i < count; i++)
 			{
 				FAddressRef ref;
-				fread(&ref.Val, sizeof(ref.Val), 1, fp);
+				fread(&tempU32, sizeof(ref.GetVal()), 1, fp);
+				ref.SetVal(tempU32);
 				dataItem.Writes.RegisterAccess(ref);
 			}
 
 			// Last Writer
-			fread(&dataItem.LastWriter.Val, sizeof(dataItem.LastWriter.Val), 1, fp);
+			fread(&tempU32, sizeof(dataItem.LastWriter.GetVal()), 1, fp);
+			dataItem.LastWriter.SetVal(tempU32);
 		}
 
 		fread(&itemId, sizeof(itemId), 1, fp);

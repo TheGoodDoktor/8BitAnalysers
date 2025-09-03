@@ -468,7 +468,7 @@ static int DrawPixelLineHeatmap(lua_State* pState)
 	const uint8_t charLine = state.ReadByte(itemAddress);
 	int	HeatmapThreshold = 4;
 	uint32_t col = GetHeatmapColourForMemoryAddress(state, state.AddressRefFromPhysicalReadAddress(itemAddress), state.CurrentFrameNo, HeatmapThreshold);
-	if (state.GetFocussedViewState().HighlightAddress.Address == itemAddress)
+	if (state.GetFocussedViewState().HighlightAddress.GetAddress() == itemAddress)
 		col = 0xff00ff00;
 
 	pGraphicsView->DrawCharLine(charLine, xp, yp, col, 0);

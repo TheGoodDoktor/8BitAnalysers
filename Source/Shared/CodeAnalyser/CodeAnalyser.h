@@ -26,6 +26,10 @@ class FMemoryAnalyser;
 
 enum class ELabelType;
 
+#if NEWADDRESSREF
+extern std::vector<FCodeAnalysisBank> Banks;
+#endif
+
 /* the input callback type */
 typedef uint8_t(*FDasmInput)(void* user_data);
 /* the output callback type */
@@ -60,9 +64,9 @@ public:
 class ICPUEmulatorZ80 : public ICPUEmulator
 {
 public:
-	virtual uint8_t GetA() const = 0;
-	virtual uint8_t GetB() const = 0;
-	virtual uint8_t GetC() const = 0;
+	//virtual uint8_t GetA() const = 0;
+	//virtual uint8_t GetB() const = 0;
+	//virtual uint8_t GetC() const = 0;
 	// etc
 };
 
@@ -385,9 +389,10 @@ public:
 
 	uint8_t		ReadByte(FAddressRef address) const
 	{
-		const FCodeAnalysisBank* pBank = GetBank(address.BankId);
+		const FCodeAnalysisBank* pBank = GetBank(address.GetBankId());
 		assert(pBank != nullptr);
-		return pBank->Memory[address.Address - pBank->GetMappedAddress()];
+		// this is silly
+		return pBank->Memory[address.GetAddress() - pBank->GetMappedAddress()];
 	}
 
 	uint16_t	ReadWord(uint16_t address) const
@@ -400,9 +405,9 @@ public:
 
 	uint16_t		ReadWord(FAddressRef address) const
 	{
-		const FCodeAnalysisBank* pBank = GetBank(address.BankId);
+		const FCodeAnalysisBank* pBank = GetBank(address.GetBankId());
 		assert(pBank != nullptr);
-		return *(uint16_t*)(&pBank->Memory[address.Address - pBank->GetMappedAddress()]);
+		return *(uint16_t*)(&pBank->Memory[address.GetAddress() - pBank->GetMappedAddress()]);
 	}
 
 	void		WriteByte(uint16_t address, uint8_t value) 
@@ -423,23 +428,24 @@ public:
 		if(addressRef.IsValid() == false)
 			return false;
 
-		const FCodeAnalysisBank* pBank = GetBank(addressRef.BankId);
-		if (addressRef.Address + amount < pBank->GetMappedAddress() + pBank->GetSizeBytes())
+		const FCodeAnalysisBank* pBank = GetBank(addressRef.GetBankId());
+		if (addressRef.GetAddress() + amount < pBank->GetMappedAddress() + pBank->GetSizeBytes())
 		{
-			addressRef.Address += amount;
+			const uint16_t addr = addressRef.GetAddress();
+			addressRef.SetAddress(addr + amount);
 			return true;
 		}
 		else
 		{
 			// we might come of the end here, find the bank that's physically mapped after?
-			addressRef = AddressRefFromPhysicalAddress(addressRef.Address + amount);
+			addressRef = AddressRefFromPhysicalAddress(addressRef.GetAddress() + amount);
 		}
 		return addressRef.IsValid();
 	}
 
 	void	SetCodeAnalysisDirty(FAddressRef addrRef)
 	{
-		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 			pBank->bIsDirty = true;
 		bCodeAnalysisDataDirty = true;
@@ -554,10 +560,10 @@ public:
 	FLabelInfo* GetLabelForPhysicalAddress(uint16_t addr) { return GetReadPage(addr)->Labels[addr & kPageMask]; }
 	FLabelInfo* GetLabelForAddress(FAddressRef addrRef)
 	{
-		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
-			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].Labels[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -569,10 +575,10 @@ public:
 	}
 	FLabelInfo* GetScopeForAddress(FAddressRef addrRef)
 	{
-		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
-			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].ScopeLabel[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -594,10 +600,10 @@ public:
 	//FCommentBlock* GetCommentBlockForAddress(uint16_t addr) const { return GetReadPage(addr)->CommentBlocks[addr & kPageMask]; }
 	FCommentBlock* GetCommentBlockForAddress(FAddressRef addrRef)
 	{
-		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
-			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].CommentBlocks[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -609,10 +615,10 @@ public:
 	}
 	void SetCommentBlockForAddress(FAddressRef addrRef, FCommentBlock* pCommentBlock)
 	{
-		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
-			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].CommentBlocks[bankAddr & FCodeAnalysisPage::kPageMask] = pCommentBlock;
@@ -624,10 +630,10 @@ public:
 	FCodeInfo* GetCodeInfoForPhysicalAddress(uint16_t addr) { return GetReadPage(addr)->CodeInfo[addr & kPageMask]; }
 	FCodeInfo* GetCodeInfoForAddress(FAddressRef addrRef)
 	{
-		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
-			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].CodeInfo[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -641,10 +647,10 @@ public:
 	void SetCodeInfoForAddress(uint16_t addr, FCodeInfo* pCodeInfo) { GetReadPage(addr)->CodeInfo[addr & kPageMask] = pCodeInfo; }
 	void SetCodeInfoForAddress(FAddressRef addrRef, FCodeInfo* pCodeInfo)
 	{ 
-		FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
-			const uint16_t bankAddr = addrRef.Address - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].CodeInfo[bankAddr & FCodeAnalysisPage::kPageMask] = pCodeInfo;
@@ -653,10 +659,10 @@ public:
 
 	FDataInfo* GetDataInfoForAddress(FAddressRef addrRef) const
 	{
-		const FCodeAnalysisBank* pBank = GetBank(addrRef.BankId);
+		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
-			const uint16_t bankAddr = addrRef.Address - pBank->GetMappedAddress();
+			const uint16_t bankAddr = addrRef.GetAddress() - pBank->GetMappedAddress();
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return &pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].DataInfo[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -728,8 +734,9 @@ private:
 
 	FCodeAnalysisPage*				ReadPageTable[kNoPagesInAddressSpace];
 	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];
-
+#if !NEWADDRESSREF
 	std::vector<FCodeAnalysisBank>	Banks;
+#endif
 	int16_t							MappedReadBanks[kNoPagesInAddressSpace];	// banks mapped into address space
 	int16_t							MappedWriteBanks[kNoPagesInAddressSpace];	// banks mapped into address space
 	int16_t							MappedReadBanksBackup[kNoPagesInAddressSpace];	// banks mapped into address space

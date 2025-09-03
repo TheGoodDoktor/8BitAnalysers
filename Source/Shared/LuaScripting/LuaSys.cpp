@@ -370,7 +370,7 @@ bool DrawOffScreenBuffer(const FOffScreenBuffer& buffer, FGraphicsView* pView)
 
 	// call 'Draw' function
 	lua_pushlightuserdata(pState, pView);
-	lua_pushinteger(pState, buffer.Address.Address);
+	lua_pushinteger(pState, buffer.Address.GetAddress());
 	lua_pushnumber(pState, buffer.XSizePixels);
 	lua_pushnumber(pState, buffer.YSizePixels);
 	if (lua_pcall(pState, 4, 0, 0) == LUA_OK)
@@ -600,7 +600,7 @@ bool ExportGlobalLabels()
 	for (const auto& global : state.GlobalDataItems)
 	{
 		// Skip Machine ROM labels
-		const FCodeAnalysisBank* pBank = state.GetBank(global.AddressRef.BankId);
+		const FCodeAnalysisBank* pBank = state.GetBank(global.AddressRef.GetBankId());
 		if (pBank)
 		{
 			if (pBank->bMachineROM)
@@ -610,7 +610,7 @@ bool ExportGlobalLabels()
 		const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(global.Item);
 		const int kLabelStringLength = 128;
 		char labelString[kLabelStringLength];
-		snprintf(labelString,kLabelStringLength,"\t%s = 0x%X, \n", pLabelInfo->GetName(),global.AddressRef.Address);
+		snprintf(labelString,kLabelStringLength,"\t%s = 0x%X, \n", pLabelInfo->GetName(),global.AddressRef.GetAddress());
 
 		outputStr+=std::string(labelString);
 	}

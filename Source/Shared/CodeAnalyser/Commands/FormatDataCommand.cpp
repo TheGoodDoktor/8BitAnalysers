@@ -141,7 +141,7 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			else if (FormatOptions.DataType == EDataType::Text)
 				pPrefix = "text";
 
-			snprintf(labelName, 16, "%s_%s", pPrefix, NumStr(firstAddress.Address));
+			snprintf(labelName, 16, "%s_%s", pPrefix, NumStr(firstAddress.GetAddress()));
 			labelText = labelName;
 		}
 

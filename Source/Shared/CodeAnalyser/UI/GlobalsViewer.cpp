@@ -84,9 +84,9 @@ void SortGlobals(FCodeAnalysisState& state, std::vector<FCodeAnalysisItem>& glob
 		std::sort(globals.begin(), globals.end(), [&state, &pColumnSortSpecs](const FCodeAnalysisItem& a, const FCodeAnalysisItem& b)
 			{
 				if (pColumnSortSpecs->SortDirection == ImGuiSortDirection_Descending)
-					return a.AddressRef.Address > b.AddressRef.Address;
+					return a.AddressRef.GetAddress() > b.AddressRef.GetAddress();
 				else
-					return a.AddressRef.Address < b.AddressRef.Address;
+					return a.AddressRef.GetAddress() < b.AddressRef.GetAddress();
 			});
 		break;
 	case EGlobalsColumnID::CallFrequencyIndicator:
@@ -144,10 +144,10 @@ void GenerateFilteredLabelList(FCodeAnalysisState& state, const FLabelListFilter
 
 	for (const FCodeAnalysisItem& labelItem : sourceLabelList)
 	{
-		if (labelItem.AddressRef.Address < filter.MinAddress || labelItem.AddressRef.Address > filter.MaxAddress)	// skip min address
+		if (labelItem.AddressRef.GetAddress() < filter.MinAddress || labelItem.AddressRef.GetAddress() > filter.MaxAddress)	// skip min address
 			continue;
 
-		const FCodeAnalysisBank* pBank = state.GetBank(labelItem.AddressRef.BankId);
+		const FCodeAnalysisBank* pBank = state.GetBank(labelItem.AddressRef.GetBankId());
 		if (pBank)
 		{
 			if (filter.bNoMachineRoms && pBank->bMachineROM)
@@ -256,7 +256,7 @@ void DrawFunctionList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 					const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
 
 					// where should this go?
-					ImGui::PushID(item.AddressRef.Val);
+					ImGui::PushID(item.AddressRef.GetVal());
 
 					if (ImGui::Selectable("##labellistitem", viewState.GetCursorItem().Item == pLabelInfo))
 					{
@@ -275,7 +275,7 @@ void DrawFunctionList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 					ImGui::Text("%d", pLabelInfo->References.NumReferences());
 
 					ImGui::TableNextColumn();
-					ImGui::Text("%s", NumStr(item.AddressRef.Address));
+					ImGui::Text("%s", NumStr(item.AddressRef.GetAddress()));
 
 					ImGui::TableNextColumn();
 					const int count = pCodeInfo != nullptr ? pCodeInfo->ExecutionCount : 0;
@@ -354,7 +354,7 @@ void DrawGlobalDataList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 					const FLabelInfo* pLabelInfo = static_cast<const FLabelInfo*>(item.Item);
 
 					// where should this go?
-					ImGui::PushID(item.AddressRef.Val);
+					ImGui::PushID(item.AddressRef.GetVal());
 
 					if (ImGui::Selectable("##labellistitem", viewState.GetCursorItem().Item == pLabelInfo))
 					{
@@ -373,7 +373,7 @@ void DrawGlobalDataList(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 					ImGui::Text("%d", pLabelInfo->References.NumReferences());
 
 					ImGui::TableNextColumn();
-					ImGui::Text("%s", NumStr(item.AddressRef.Address));
+					ImGui::Text("%s", NumStr(item.AddressRef.GetAddress()));
 
 					
 					const FDataInfo* pDataInfo = state.GetDataInfoForAddress(item.AddressRef);

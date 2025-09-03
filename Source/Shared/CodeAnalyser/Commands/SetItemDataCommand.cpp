@@ -44,7 +44,7 @@ void FSetItemDataCommand::Do(FCodeAnalysisState& state)
 			// set all bytes to be data
 			for (int i = 0; i < pCodeItem->ByteSize; i++)
 			{
-				FDataInfo* pOperandData = state.GetDataInfoForAddress(FAddressRef(Item.AddressRef.BankId,Item.AddressRef.Address + i));
+				FDataInfo* pOperandData = state.GetDataInfoForAddress(FAddressRef(Item.AddressRef.GetBankId(),Item.AddressRef.GetAddress() + i));
 				pOperandData->DataType = EDataType::Byte;
 				pOperandData->ByteSize = 1;
 			}
@@ -109,12 +109,12 @@ void FSetItemCodeCommand::Do(FCodeAnalysisState& state)
 	if (pCodeInfo != nullptr && pCodeInfo->bDisabled == true)
 	{
 		pCodeInfo->bDisabled = false;
-		WriteCodeInfoForAddress(state, Addr.Address);
+		WriteCodeInfoForAddress(state, Addr.GetAddress());
 	}
 	else
 	{
-		RunStaticCodeAnalysis(state, Addr.Address);		// TODO: this needs to fill an undo buffer
-		UpdateCodeInfoForAddress(state, Addr.Address);
+		RunStaticCodeAnalysis(state, Addr.GetAddress());		// TODO: this needs to fill an undo buffer
+		UpdateCodeInfoForAddress(state, Addr.GetAddress());
 	}
 	state.SetCodeAnalysisDirty(Addr);
 }
