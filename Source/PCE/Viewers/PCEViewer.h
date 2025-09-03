@@ -13,6 +13,8 @@ public:
 	virtual bool Init() override;
 	virtual void Shutdown() override {}
 	virtual void DrawUI() override;
+	
+	void Tick();
 
 private:
 	FPCEEmu* pPCEEmu = nullptr;

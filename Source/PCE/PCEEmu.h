@@ -55,6 +55,8 @@ public:
 	ICPUEmulator*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
+	const std::unordered_map<std::string, FGamesList> GetGamesLists() const { return	GamesLists; }
+
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
 
 	GeargrafxCore* GetCore() const { return pCore; }
@@ -76,4 +78,6 @@ protected:
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
 	FPCECPUEmulator6502* pPCE6502CPU;
+
+	FPCEViewer* pPCEViewer = nullptr;
 };

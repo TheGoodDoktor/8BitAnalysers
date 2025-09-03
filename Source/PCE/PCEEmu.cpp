@@ -559,7 +559,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	LoadFont();
 
 	// This is where we add the viewers we want
-	AddViewer(new FPCEViewer(this));
+	pPCEViewer = new FPCEViewer(this);
+	AddViewer(pPCEViewer);
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
@@ -890,6 +891,8 @@ void FPCEEmu::Tick()
 	OPTICK_EVENT();
 
 	FEmuBase::Tick();
+
+	pPCEViewer->Tick();
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
 	if (debugger.IsStopped() == false)

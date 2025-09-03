@@ -1489,6 +1489,7 @@ void FCodeAnalysisState::OnCPUTick(uint64_t pins)
 int gAddressRefsFixed = 0;
 int gAddressRefsProcessed = 0;
 int gBanksProcessed = 0;
+int gTotalBanksProcessed = 0;
 
 #define NEW_FIXUP_CODE 1
 #define PROFILE_FIXUPBANKADDRESSREFS 0
@@ -1503,8 +1504,12 @@ void FCodeAnalysisState::FixupBankAddressRefs()
 	// Go through all banks to fix up labels, code and data items.
 	for (FCodeAnalysisBank& bank : Banks)
 	{
+		if (bank.PrimaryMappedPage == -1)
+			continue;
+
 		gBanksProcessed++;
-		
+		gTotalBanksProcessed++;
+
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
 			FCodeAnalysisPage& page = bank.Pages[pageNo];
