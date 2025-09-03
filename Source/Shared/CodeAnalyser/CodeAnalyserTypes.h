@@ -182,7 +182,7 @@ enum class EInstructionType
 
 // The original FAddressRef needs fixing up when the bank it refers to changes physical address range.
 // The new address ref doesn't need fixing up, as it looks up the bank's mapped address directly.
-// This convenience does have a performance cost. It's roughly 30% slower than the original one.
+// This convenience does have a performance cost. It's roughly 25% slower than the original one.
 #define NEWADDRESSREF 1
 
 // Structures

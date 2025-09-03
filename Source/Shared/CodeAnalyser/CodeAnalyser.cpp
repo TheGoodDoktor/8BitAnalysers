@@ -176,14 +176,15 @@ bool FCodeAnalysisState::IsBankIdMapped(int16_t bankId) const
 
 bool FCodeAnalysisState::IsAddressValid(FAddressRef addr) const
 {
+	const uint16_t address = addr.GetAddress();
 	const FCodeAnalysisBank* pBank = GetBank(addr.GetBankId());
 	if (pBank == nullptr)
 	{
-		LOGWARNING("Could not get bank %d for FAddressRef with address $%x", addr.GetBankId(), addr.GetAddress());
+		LOGWARNING("Could not get bank %d for FAddressRef with address $%x", addr.GetBankId(), address);
 		return false;
 	}
 
-	if(addr.GetAddress() < pBank->GetMappedAddress() || addr.GetAddress() >= (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
+	if(address < pBank->GetMappedAddress() || address >= (pBank->GetMappedAddress() + pBank->GetSizeBytes()))
 	{
 		LogInvalidAddressRefForBank(pBank, addr);
 		return false;
@@ -1883,14 +1884,15 @@ void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAdd
 uint16_t FAddressRef::GetAddress() const
 {
 	const size_t size = Banks.size();
-	FCodeAnalysisBank* pBank = (BankId >= 0 && BankId < size) ? &Banks[BankId] : nullptr;
 	assert(size);
-	if (pBank)
+	if (BankId < 0 || BankId >= size)
 	{
-		return pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize + BankOffset;
+		//LOGERROR("Trying to use address of invalid address ref");
+		return 0;
 	}
-	//LOGERROR("Trying to use address of invalid address ref");
-	return 0;
+
+	FCodeAnalysisBank* pBank = &Banks[BankId];
+	return pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize + BankOffset;
 }
 
 uint32_t FAddressRef::GetVal() const
@@ -1901,16 +1903,18 @@ uint32_t FAddressRef::GetVal() const
 void FAddressRef::SetAddress(uint16_t address)
 {
 	const size_t size = Banks.size();
-	FCodeAnalysisBank* pBank = (BankId >= 0 && BankId < size) ? &Banks[BankId] : nullptr;
 	assert(size);
-	if (pBank)
-	{
-		const uint16_t mappedAddress = (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
-		// Check address is valid
-		assert(address >= mappedAddress && (address < mappedAddress + (pBank->NoPages * FCodeAnalysisPage::kPageSize)));
-		// Convert absolute address to relative bank address 
-		BankOffset = address - mappedAddress;
-	}
+
+	if (BankId < 0 || BankId >= size)
+		return;
+
+	FCodeAnalysisBank* pBank = &Banks[BankId];
+	const uint16_t mappedAddress = (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+	// Check address is valid
+	assert(address >= mappedAddress && (address < mappedAddress + (pBank->NoPages * FCodeAnalysisPage::kPageSize)));
+	// Convert absolute address to relative bank address 
+	BankOffset = address - mappedAddress;
+	
 //#ifndef NDEBUG
 //	AbsoluteAddr = address;
 //#endif
