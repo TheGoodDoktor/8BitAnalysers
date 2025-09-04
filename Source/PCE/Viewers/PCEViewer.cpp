@@ -6,8 +6,6 @@
 
 #include <ImGuiSupport/ImGuiTexture.h>
 
-void DrawSnapLoadButtons(FPCEEmu* pPCEEmu);
-
 FPCEViewer::FPCEViewer(FEmuBase* pEmu)
 : FViewerBase(pEmu) 
 { 
@@ -36,8 +34,6 @@ void FPCEViewer::DrawUI()
 	ImGui::Image(ScreenTexture, ImVec2((float)TextureWidth/* * scale*/, (float)TextureHeight/* * scale*/));
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-	DrawSnapLoadButtons(pPCEEmu);
 
 	bWindowFocused = ImGui::IsWindowHovered() || ImGui::IsWindowFocused();
 }
@@ -124,54 +120,3 @@ void FPCEViewer::Tick()
 		pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_II);
 	}
 }
-
-//#ifndef NDEBUG
-//#if 0
-extern int gTotalBanksProcessed;
-
-void DrawSnapLoadButtons(FPCEEmu* pPCEEmu)
-{
-	ImGui::Text("Banks fixed up %d", gTotalBanksProcessed);
-
-	auto findIt = pPCEEmu->GetGamesLists().find("Snapshot File");
-	if (findIt == pPCEEmu->GetGamesLists().end())
-		return;
-
-	const FGamesList& gamesList = findIt->second;
-	if (gamesList.GetNoGames())
-	{
-		static int gGameIndex = 0;
-		bool bLoadSnap = false;
-		if (ImGui::Button("Prev snap") || ImGui::IsKeyPressed(ImGuiKey_F1))
-		{
-			if (gGameIndex > 0)
-				gGameIndex--;
-			bLoadSnap = true;
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Next snap") || ImGui::IsKeyPressed(ImGuiKey_F2))
-		{
-			if (gGameIndex < gamesList.GetNoGames() - 1)
-				gGameIndex++;
-			bLoadSnap = true;
-		}
-		ImGui::SameLine();
-		const FEmulatorFile& game = gamesList.GetGame(gGameIndex);
-		ImGui::Text("(%d/%d) %s", gGameIndex + 1, gamesList.GetNoGames(), game.DisplayName.c_str());
-		if (ImGui::IsKeyPressed(ImGuiKey_F3))
-			bLoadSnap = true;
-
-		if (bLoadSnap)
-		{
-			gTotalBanksProcessed = 0;
-			LOGINFO("Load game '%s'", game.DisplayName.c_str());
-			const FEmulatorFile& game = gamesList.GetGame(gGameIndex);
-			if (!pPCEEmu->NewProjectFromEmulatorFile(game))
-			{
-				pPCEEmu->Reset();
-				pPCEEmu->DisplayErrorMessage("Could not create game '%s'", game.DisplayName.c_str());
-			}
-		}
-	}
-}
-//#endif

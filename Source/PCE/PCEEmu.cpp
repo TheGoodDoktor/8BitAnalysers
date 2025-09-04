@@ -6,6 +6,7 @@
 //#include "GameData.h"
 #include "Util/FileUtil.h"
 #include "Viewers/PCEViewer.h"
+#include "Viewers/BatchGameLoadViewer.h"
 #include <geargrafx_core.h>
 #include "Debug/DebugLog.h"
 
@@ -316,10 +317,20 @@ int16_t FPCEEmu::GetNextAvailableBank(uint8_t index)
 	// We did not find an available bank, so create a new one that has the same properties as the other(s) in the list.
 	// It will be pointing to the same memory as the other bank(s).
 	char newBankName[32];
-	sprintf(newBankName, "%s #%d", pBank->Name.c_str(), (int)Banks[index].size() + 1);
+	const int bankCount = (int)Banks[index].size();
+	sprintf(newBankName, "%s #%d", pBank->Name.c_str(), bankCount + 1);
 	const uint16_t newBankId = CodeAnalysis.CreateBank(newBankName, 8, pBank->Memory, false /*bMachineROM*/, pBank->GetMappedAddress());
 	Banks[index].push_back(newBankId);
 	
+#ifndef NDEBUG
+	if (bankCount > DebugStats.MaxDupeMprBanks)
+	{
+		DebugStats.MaxDupeMprBanks = bankCount;
+		if (pCurrentProjectConfig)
+			DebugStats.GameWithMaxDupeMprBanks = pCurrentProjectConfig->Name;
+	}
+#endif
+
 	BANK_LOG("Created dupe bank '%s' id %d for bank index 0x%x", newBankName, newBankId, index);
 	return newBankId;
 }
@@ -374,7 +385,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	//pCore->LoadMedia("c:\\temp\\Bonk.pce");
 	
 	// 384kb. 48 banks. Runs ok
-	//pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
+	pCore->LoadMedia("c:\\temp\\RabioLepus.pce");
 	
 	// 512kb. 64 banks. runs ok. 60fps
 	//pCore->LoadMedia("c:\\temp\\Toilet Kids.pce");
@@ -567,6 +578,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	// This is where we add the viewers we want
 	pPCEViewer = new FPCEViewer(this);
 	AddViewer(pPCEViewer);
+#ifndef NDEBUG
+	AddViewer(new FBatchGameLoadViewer(this));
+#endif
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 

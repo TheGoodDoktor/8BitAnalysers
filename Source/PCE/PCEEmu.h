@@ -6,6 +6,13 @@ class GeargrafxCore;
 struct FPCEConfig;
 struct FPCEGameConfig;
 class FPCECPUEmulator6502;
+class FPCEViewer;
+
+struct FEmuDebugStats
+{
+	int MaxDupeMprBanks = 0;
+	std::string GameWithMaxDupeMprBanks;
+};
 
 struct FPCELaunchConfig : public FEmulatorLaunchConfig
 {
@@ -55,7 +62,7 @@ public:
 	ICPUEmulator*		GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
-	const std::unordered_map<std::string, FGamesList> GetGamesLists() const { return	GamesLists; }
+	const std::unordered_map<std::string, FGamesList>& GetGamesLists() const { return	GamesLists; }
 
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
 
@@ -68,6 +75,8 @@ public:
 	static const int kNumBanks = 256;
 	std::vector<int16_t> Banks[kNumBanks];
 	int16_t MprBankId[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+
+	FEmuDebugStats DebugStats;
 
 protected:
 	bool LoadMachineState(const char* fname);
