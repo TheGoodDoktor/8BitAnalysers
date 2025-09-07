@@ -34,6 +34,15 @@ FPCEGameConfig* CreateNewPCEGameConfigFromSnapshot(const FEmulatorFile& snapshot
 	return pNewConfig;
 }
 
+FPCEGameConfig* CreateNewEmptyConfig(void)
+{
+	FPCEGameConfig* pNewConfig = new FPCEGameConfig;
+
+	pNewConfig->Name = "No Project";
+
+	return pNewConfig;
+}
+
 bool LoadPCEGameConfigs(FPCEEmu* pEmu)
 {
 	FDirFileList listing;

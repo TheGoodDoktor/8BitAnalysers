@@ -3,7 +3,9 @@
 #include <algorithm>
 
 #include <imgui.h>
+
 #include "../PCEEmu.h"
+#include <geargrafx_core.h>
 
 #if !NEWADDRESSREF
 extern int gTotalBanksProcessed;
@@ -27,15 +29,20 @@ void FBatchGameLoadViewer::DrawUI()
 	ImGui::Text("Banks fixed up %d", gTotalBanksProcessed);
 #endif
 
+	ImGui::SeparatorText("Automation");
+	ImGui::Text("Automation is %s", bAutomationActive ? "active." : "not active.");
+
+	bool bLoadGame = false;
 	const double time = ImGui::GetTime();
 	if (!bAutomationActive)
 	{
 		if (ImGui::Button("Start automation"))
 		{
 			bAutomationActive = true;
-			NextGameTime = ImGui::GetTime();
-		}
-		
+			bLoadGame = true;
+			if (bPressRandomButtons)
+				NextButtonPressTime = GetNextButtonPressTime();
+		}	
 	}
 	else
 	{
@@ -45,12 +52,17 @@ void FBatchGameLoadViewer::DrawUI()
 
 	ImGui::InputInt("Game run time", &GameRunTime);
 
-	ImGui::Text("Automation is %s", bAutomationActive ? "active." : "not active.");
+	if (ImGui::Checkbox("Press random buttons", &bPressRandomButtons))
+	{
+		NextButtonPressTime = GetNextButtonPressTime();
+	}
+	ImGui::InputFloat("Input delay", &InputDelay);
+
+	float fGameTimeRemaining = 0;
 	if (bAutomationActive)
 	{
-		//ImGui::SameLine();
-		const float fTimeRemaining = (float)(NextGameTime - time);
-		ImGui::Text("Game run time remaining %.1f", std::max(fTimeRemaining, 0.f));
+		fGameTimeRemaining = (float)(NextGameTime - time);
+		ImGui::Text("Game time remaining: %.1fs", MAX(fGameTimeRemaining, 0.f));
 	}
 
 	auto findIt = pPCEEmu->GetGamesLists().find("Snapshot File");
@@ -58,41 +70,96 @@ void FBatchGameLoadViewer::DrawUI()
 		return;
 
 	const FGamesList& gamesList = findIt->second;
-	if (gamesList.GetNoGames())
+	const int numGamesInList = gamesList.GetNoGames();
+	if (numGamesInList)
 	{
-		static int gGameIndex = 0;
-		bool bLoadGame = false;
 		bool bNextGame = false;
-		const bool bIsLastGameInList = gGameIndex == gamesList.GetNoGames() - 1;
+		const bool bIsLastGameInList = GameIndex == numGamesInList - 1;
 
 		if (bAutomationActive)
 		{
-			if (ImGui::GetTime() >= NextGameTime)
+			if (time >= NextGameTime)
 			{
-				if (!bIsLastGameInList)
-					bNextGame = true;
-				else
+				if (bIsLastGameInList)
+				{
 					bAutomationActive = false;
+					GameIndex = 0;
+				}
+				else
+					bNextGame = true;
+			}
+
+			if (bPressRandomButtons)
+			{
+				if (time >= NextButtonPressTime)
+				{
+					pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_RUN);
+					pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_SELECT);
+					pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_I);
+					pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_II);
+					pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_UP);
+					pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_DOWN);
+					pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_LEFT);
+					pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_RIGHT);
+
+					switch (rand() % 8)
+					{
+					case 0:
+						pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_RUN);
+						break;
+					case 1:
+						pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_SELECT);
+						break;
+					case 2:
+						pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_I);
+						break;
+					case 3:
+						pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_II);
+						break;
+					case 4:
+						pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_UP);
+						break;
+					case 5:
+						pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_DOWN);
+						break;
+					case 6:
+						pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_LEFT);
+						break;
+					case 7:
+						pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_RIGHT);
+						break;
+					}
+
+					NextButtonPressTime = GetNextButtonPressTime();
+				}
 			}
 		}
+		const int numGamesToLoad = numGamesInList - GameIndex;
+		const int totSecs = (numGamesToLoad * GameRunTime) + (int)fGameTimeRemaining;
+		const int totMins = totSecs / 60;
+		const int totHours = totMins / 60;
+		ImGui::Text("Total time remaining: %dh %dm %ds", (int)totHours, totMins % 60, totSecs % 60);
 
-		const FEmulatorFile& game = gamesList.GetGame(gGameIndex);
-		ImGui::Text("(%d/%d) %s", gGameIndex + 1, gamesList.GetNoGames(), game.DisplayName.c_str());
+		ImGui::SeparatorText("File list");
 
-		if (ImGui::Button("Prev snap") || ImGui::IsKeyPressed(ImGuiKey_F1))
+		const FEmulatorFile& game = gamesList.GetGame(GameIndex);
+		ImGui::Text("(%d/%d) %s", GameIndex + 1, numGamesInList, game.DisplayName.c_str());
+		ImGui::InputInt("Game index", &GameIndex);
+
+		if (ImGui::Button("Prev game") || ImGui::IsKeyPressed(ImGuiKey_F1))
 		{
-			if (gGameIndex > 0)
+			if (GameIndex > 0)
 			{
-				gGameIndex--;
+				GameIndex--;
 				bLoadGame = true;
 			}
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Next snap") || ImGui::IsKeyPressed(ImGuiKey_F2) || bNextGame)
+		if (ImGui::Button("Next game") || ImGui::IsKeyPressed(ImGuiKey_F2) || bNextGame)
 		{
 			if (!bIsLastGameInList)
 			{
-				gGameIndex++;
+				GameIndex++;
 				bLoadGame = true;
 			}
 		}
@@ -105,7 +172,7 @@ void FBatchGameLoadViewer::DrawUI()
 			gTotalBanksProcessed = 0;
 #endif
 			LOGINFO("Load game '%s'", game.DisplayName.c_str());
-			const FEmulatorFile& game = gamesList.GetGame(gGameIndex);
+			const FEmulatorFile& game = gamesList.GetGame(GameIndex);
 			if (!pPCEEmu->NewProjectFromEmulatorFile(game))
 			{
 				pPCEEmu->Reset();
@@ -113,10 +180,12 @@ void FBatchGameLoadViewer::DrawUI()
 			}
 			else
 			{
+				pPCEEmu->GetCodeAnalysis().Debugger.Continue();
 				NextGameTime = time + GameRunTime;
 			}
 		}
 	}
 
+	ImGui::SeparatorText("Debug info");
 	ImGui::Text("Max dupe banks %d '%s'", pPCEEmu->DebugStats.MaxDupeMprBanks, pPCEEmu->DebugStats.GameWithMaxDupeMprBanks.c_str());
 }

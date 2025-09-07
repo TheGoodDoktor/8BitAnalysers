@@ -7,6 +7,7 @@ struct FPCEConfig;
 struct FPCEGameConfig;
 class FPCECPUEmulator6502;
 class FPCEViewer;
+class FBatchGameLoadViewer;
 
 struct FEmuDebugStats
 {
@@ -90,4 +91,5 @@ protected:
 	FPCECPUEmulator6502* pPCE6502CPU;
 
 	FPCEViewer* pPCEViewer = nullptr;
+	FBatchGameLoadViewer* pBatchGameLoadViewer = nullptr;
 };

@@ -579,7 +579,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pPCEViewer = new FPCEViewer(this);
 	AddViewer(pPCEViewer);
 #ifndef NDEBUG
-	AddViewer(new FBatchGameLoadViewer(this));
+	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
+	AddViewer(pBatchGameLoadViewer);
 #endif
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled

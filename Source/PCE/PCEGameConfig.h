@@ -16,4 +16,5 @@ struct FPCEGameConfig : FProjectConfig
 };
 
 FPCEGameConfig* CreateNewPCEGameConfigFromSnapshot(const FEmulatorFile& snapshot);
+FPCEGameConfig* CreateNewEmptyConfig(void);
 bool LoadPCEGameConfigs(FPCEEmu* pUI);

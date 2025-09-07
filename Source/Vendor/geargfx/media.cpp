@@ -215,6 +215,13 @@ bool Media::LoadHuCardFromBuffer(const u8* buffer, int size, const char* path)
         Log("ERROR: Invalid size found: %d (0x%X) bytes", size, size);
     }
 
+    // sam. hucards bigger than 1mb are not supported.
+    if (size > 1048576)
+    {
+      Log("ERROR: unsupported rom size of %d bytes.", size);
+      return false;
+    }
+
     m_rom_size = size;
     m_rom = new u8[m_rom_size];
     memcpy(m_rom, buffer, m_rom_size);
