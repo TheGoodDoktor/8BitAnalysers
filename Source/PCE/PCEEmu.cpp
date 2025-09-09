@@ -7,6 +7,7 @@
 #include "Util/FileUtil.h"
 #include "Viewers/PCEViewer.h"
 #include "Viewers/BatchGameLoadViewer.h"
+#include "Viewers/PCERegistersViewer.h"
 #include <geargrafx_core.h>
 #include "Debug/DebugLog.h"
 
@@ -582,6 +583,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
 	AddViewer(pBatchGameLoadViewer);
 #endif
+	AddViewer(new FPCERegistersViewer(this));
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
