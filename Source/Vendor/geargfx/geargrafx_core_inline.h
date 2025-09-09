@@ -150,7 +150,7 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
             if (instruction_completed)
             {
                if (IsValidPointer(m_instruction_executed_callback))
-                  m_instruction_executed_callback(m_callback_context);
+                  m_instruction_executed_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue());
 
                if (*m_paused)
                   stop = true;

@@ -52,7 +52,7 @@ public:
 
     typedef void (*GG_Debug_Callback)();
     // sam. added function typedef for an "on instruction executed" callback.
-    typedef void (*GG_Instruction_Executed_Callback)(void* context);
+    typedef void (*GG_Instruction_Executed_Callback)(void* context, uint16_t pc);
 
 public:
     GeargrafxCore();

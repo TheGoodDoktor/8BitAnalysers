@@ -121,17 +121,17 @@ ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
 }
 
 // This is a geargfx specific version of FDebugger::Tick()
-void OnGearGfxInstructionExecuted(void* pContext)
+void OnGearGfxInstructionExecuted(void* pContext, uint16_t pc)
 {
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 
-	state.Debugger.SetPC(pEmu->GetPC());
+	FAddressRef pcAddr = state.AddressRefFromPhysicalAddress(pc);
+	state.Debugger.SetPC(pcAddr);
 
-	const uint16_t pcAddr = pEmu->GetPC().GetAddress();
-	RegisterCodeExecuted(state, pcAddr, pcAddr);
+	RegisterCodeExecuted(state, pc, pc);
 
 	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
 	const uint64_t dummyPins = 0;
