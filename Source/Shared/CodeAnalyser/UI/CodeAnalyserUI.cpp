@@ -1150,6 +1150,9 @@ void UpdateItemList(FCodeAnalysisState &state)
 		int startOffset = 0;
 		for (auto& bank : banks)
 		{
+			if (bank.PrimaryMappedPage == -1)
+				continue;
+
 			if (bank.bIsDirty || bank.ItemList.empty())
 			{
 				UpdateItemListForBank(state, bank, startOffset);

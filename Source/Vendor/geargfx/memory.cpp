@@ -140,15 +140,8 @@ void Memory::Reset()
     {
        if (m_mpr_reset_value < 0)
        {
-          do
-          {
-             do
-             {
-                m_mpr[i] = rom_bank_count ? rand() % rom_bank_count : rand() & 0xff; // sam. limit initial random banks to rom banks
-             }
-             while (rom_bank_count && MprRomBanksHaveDupes(i)); // sam. prevent dupe mpr values
-          }
-          while (m_mpr[i] == 0x00);
+				 // Sam. Made initial banks deterministic.
+         m_mpr[i] = i + 1;
        }
        else
           m_mpr[i] = m_mpr_reset_value & 0xFF;

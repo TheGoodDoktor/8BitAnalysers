@@ -41,6 +41,37 @@ void LogInvalidAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef add
 }
 // memory bank code
 
+// Allocator for code analysis page memory.
+// Creating many banks be very slow due to allocating the memory for the pages.
+// It was taking almost 5 seconds to create all the banks for the PCE.
+// This speeds it up a lot.
+#define USE_PAGE_ALLOCATOR 1
+#if USE_PAGE_ALLOCATOR
+struct FPageAllocator
+{
+	// Currently tuned for PCE Analyser.
+	static const int kNumPages = 9216;
+	FPageAllocator()
+	{
+		pPages = new FCodeAnalysisPage[kNumPages];
+		pCurPage = pPages;
+	}
+	FCodeAnalysisPage* AllocatePages(int numPages)
+	{
+		CurPageIndex += numPages;
+		assert(CurPageIndex < kNumPages);
+		FCodeAnalysisPage* pReturnPage = pCurPage;
+		pCurPage += numPages;
+		return pReturnPage;
+	}
+	int CurPageIndex = 0;
+	FCodeAnalysisPage* pPages = nullptr;
+	FCodeAnalysisPage* pCurPage = nullptr;
+};
+
+FPageAllocator gPageAllocator;
+#endif
+
 // create a bank
 // a bank is a list of memory pages
 int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bMachineROM, uint16_t initialAddress, bool bFixed)
@@ -54,7 +85,11 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	newBank.NoPages = noPages;
 	newBank.SizeMask = (noPages * FCodeAnalysisPage::kPageSize) - 1;
 	newBank.Memory = pBankMem;
+#if USE_PAGE_ALLOCATOR
+	newBank.Pages = gPageAllocator.AllocatePages(noPages);
+#else
 	newBank.Pages = new FCodeAnalysisPage[noPages];
+#endif
 	newBank.Name = bankName;
 	newBank.bMachineROM = bMachineROM;
 	newBank.bFixed = bFixed;
@@ -1916,6 +1951,7 @@ void FAddressRef::SetAddress(uint16_t address)
 	FCodeAnalysisBank* pBank = &Banks[BankId];
 	const uint16_t mappedAddress = (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 	// Check address is valid
+	assert(pBank->PrimaryMappedPage != -1);
 	assert(address >= mappedAddress && (address < mappedAddress + (pBank->NoPages * FCodeAnalysisPage::kPageSize)));
 	// Convert absolute address to relative bank address 
 	BankOffset = address - mappedAddress;

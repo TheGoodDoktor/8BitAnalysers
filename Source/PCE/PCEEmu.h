@@ -1,8 +1,11 @@
+
 #pragma once
 
 #include "Misc/EmuBase.h"
 
 class GeargrafxCore;
+class Media;
+class Memory;
 struct FPCEConfig;
 struct FPCEGameConfig;
 class FPCECPUEmulator6502;
@@ -55,12 +58,12 @@ public:
 	//ICPUInterface Begin
 	uint8_t		ReadByte(uint16_t address) const override;
 	uint16_t	ReadWord(uint16_t address) const override;
-	const uint8_t*	GetMemPtr(uint16_t address) const override;
+	const uint8_t* GetMemPtr(uint16_t address) const override;
 	void		WriteByte(uint16_t address, uint8_t value) override;
 
 	FAddressRef	GetPC(void) override;
 	uint16_t	GetSP(void) override;
-	ICPUEmulator*		GetCPUEmulator(void) const override;
+	ICPUEmulator* GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
 	const std::unordered_map<std::string, FGamesList>& GetGamesLists() const { return	GamesLists; }
@@ -68,23 +71,53 @@ public:
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
 
 	GeargrafxCore* GetCore() const { return pCore; }
+	Memory* GetMemory() const { return pMemory; }
+	Media* GetMedia() const { return pMedia; }
+
 	uint8_t* GetFrameBuffer() const { return pFrameBuffer; }
 
-	int16_t GetNextAvailableBank(uint8_t index);
+	int16_t GetBankForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
+	void MapMprBank(uint8_t mprIndex, uint8_t newBankIndex);
+
 	void LogDupeMprBankIds();
 
 	static const int kNumBanks = 256;
-	std::vector<int16_t> Banks[kNumBanks];
+	static const int kNumRomBanks = 128;
+	static const int kNumMprSlots = 8;
+
+	// A set of bank ids that all represent the same logical memory.
+	// PCE games can map the same bank to different physical memory ranges.
+	// Eg. ROM1 being mapped to 0x4000-0x6000 and 0x8000-0xa000.
+	// This happens when the same bank index is present in >1 mpr slot.
+	// It is technically possible to map the same bank across the entire physical memory range.
+	// 8BA doesn't support a bank being mapped into >1 memory location at the same time, so 
+	// we need a set of banks that all point to the same memory.
+	struct FBankSet
+	{
+		uint8_t NumBanksInUse = 0;
+		int16_t BankIds[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	};
+
+	FBankSet* Banks[kNumBanks] = { nullptr };
 	int16_t MprBankId[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+
+	FBankSet BankSets[kNumBanks];
 
 	FEmuDebugStats DebugStats;
 
 protected:
 	bool LoadMachineState(const char* fname);
 	bool SaveMachineState(const char* fname);
-	
+
+
+	void CheckPhysicalMemoryRangeIsMapped();
+	void CheckMemoryMap();
+	void ResetBanks();
+
 protected:
 	GeargrafxCore* pCore = nullptr;
+	Media* pMedia = nullptr;
+	Memory* pMemory = nullptr;
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
 
