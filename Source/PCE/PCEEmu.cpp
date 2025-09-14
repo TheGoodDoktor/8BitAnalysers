@@ -23,6 +23,19 @@
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "PCE Analyser";
 
+// Bank constants
+const uint8_t kBankSaveRAM = 0xf7;
+const uint8_t kBankWRAM0 = 0xf8;
+const uint8_t kBankWRAM1 = 0xf9;
+const uint8_t kBankWRAM2 = 0xfa;
+const uint8_t kBankWRAM3 = 0xfb;
+const uint8_t kBankHWPage = 0xff;
+
+// The default initial address when creating a bank.
+// This will get overwritten later when the bank gets mapped so this is just an arbitrary number.
+const uint16_t kDefaultPrimaryMappedPage = 8;
+const uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAnalysisPage::kPageSize;
+
 #ifndef NDEBUG
 //#define BANK_SWITCH_DEBUG
 #endif
@@ -90,7 +103,7 @@ uint8_t FPCEEmu::ReadByte(uint16_t address) const
 	if (!pMedia->IsReady())
 		return 0;
 
-	return pCore->GetMemory()->Read(address, /* internal */ true);
+	return pMemory->Read(address, /* internal */ true);
 }
 
 uint16_t	FPCEEmu::ReadWord(uint16_t address) const 
@@ -113,7 +126,7 @@ void FPCEEmu::WriteByte(uint16_t address, uint8_t value)
 	if (!pMedia->IsReady())
 		return;
 
-	return pCore->GetMemory()->Write(address, value);
+	return pMemory->Write(address, value);
 }
 
 FAddressRef	FPCEEmu::GetPC(void) 
@@ -237,9 +250,9 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 
 	// Get the bank id of the bank we are about to map in.
 	const uint16_t bankId = GetBankForMprSlot(newBankIndex, mprIndex);
-	FCodeAnalysisBank* pInBank = GetCodeAnalysis().GetBank(bankId);
+	FCodeAnalysisBank* pInBank = CodeAnalysis.GetBank(bankId);
 #ifdef BANK_SWITCH_DEBUG
-	const FCodeAnalysisBank* pOutBank = GetCodeAnalysis().GetBank(MprBankId[mprIndex]);
+	const FCodeAnalysisBank* pOutBank = CodeAnalysis.GetBank(MprBankId[mprIndex]);
 #endif
 
 	assert(pInBank);
@@ -258,7 +271,7 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	{
 		if (pMemory->GetMpr(i) != 0xff)
 		{
-			const FCodeAnalysisBank* pBank = GetCodeAnalysis().GetBank(MprBankId[i]);
+			const FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(MprBankId[i]);
 			//assert(pBank);
 			if (pBank)
 			{
@@ -424,33 +437,33 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	//CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
-	
+
 	// Hardware page. (IO)
 	// todo: hardware page is mpr slot 0xff. for now map some dummy memory until we figure out how to do it.
 	for (int d = 0; d < kNumMprSlots; d++)
-		BankSets[0xff].BankIds[d] = CodeAnalysis.CreateBank("HW PAGE", 8, gDummyMemory, false /*bMachineROM*/, 0x0);
-
-	// Unused banks
-	for (int d = 0; d < kNumMprSlots; d++)
-		BankSets[0x80].BankIds[d] = CodeAnalysis.CreateBank("UNUSED", 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, 0x0);
+		BankSets[kBankHWPage].BankIds[d] = CodeAnalysis.CreateBank("HW PAGE", 8, gDummyMemory, false /*bMachineROM*/, 0x0);
 	
 	// Working RAM
 	for (int d = 0; d < kNumMprSlots; d++)
-		BankSets[0xf8].BankIds[d] = CodeAnalysis.CreateBank("WRAM", 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000);
+		BankSets[kBankWRAM0].BankIds[d] = CodeAnalysis.CreateBank("WRAM", 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000);
 	
 	// Save RAM
 	for (int d = 0; d < kNumMprSlots; d++)
-		BankSets[0xf7].BankIds[d] = CodeAnalysis.CreateBank("SAVE RAM", pMemory->GetBackupRAMSize() / 1024, pMemory->GetBackupRAM(), false /*bMachineROM*/, 0x0);
+		BankSets[kBankSaveRAM].BankIds[d] = CodeAnalysis.CreateBank("SAVE RAM", pMemory->GetBackupRAMSize() / 1024, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr);
+
+	// Unused banks
+	for (int d = 0; d < kNumMprSlots; d++)
+		BankSets[0x80].BankIds[d] = CodeAnalysis.CreateBank("UNUSED", 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr);
 	
 	for (int d = 0x80; d < kNumBanks; d++)
 		Banks[d] = &BankSets[0x80];
 
-	Banks[0xff] = &BankSets[0xff];
-	Banks[0xf7] = &BankSets[0xf7];
-	Banks[0xf8] = &BankSets[0xf8];
-	Banks[0xf9] = &BankSets[0xf8];
-	Banks[0xfa] = &BankSets[0xf8];
-	Banks[0xfb] = &BankSets[0xf8];
+	Banks[kBankHWPage] = &BankSets[kBankHWPage];
+	Banks[kBankSaveRAM] = &BankSets[kBankSaveRAM];
+	Banks[kBankWRAM0] = &BankSets[kBankWRAM0];
+	Banks[kBankWRAM1] = &BankSets[kBankWRAM0];
+	Banks[kBankWRAM2] = &BankSets[kBankWRAM0];
+	Banks[kBankWRAM3] = &BankSets[kBankWRAM0];
 
 	char bankName[32];
 	u8* pUnusedMem = pMemory->GetUnusedMemory();
@@ -460,7 +473,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 		for (int d = 0; d < kNumMprSlots; d++)
 		{
 			sprintf(bankName, "ROM %02d", b);
-			BankSets[b].BankIds[d] = CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, 0x0000);
+			BankSets[b].BankIds[d] = CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr);
 		}
 	}
 
@@ -547,17 +560,6 @@ void FPCEEmu::ResetBanks()
 	const int romSize = pMedia->GetROMSize();
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 
-	// Patch in the rom memory into the rom banks
-	for (int bankNo = 0; bankNo < romBankCount; bankNo++)
-	{
-		uint8_t* pMemory = pMedia->GetROMMap()[bankNo];
-		for (int d = 0; d < 8; d++)
-		{
-			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[bankNo].BankIds[d]);
-			pBank->Memory = pMemory;
-		}
-	}
-
 	// Set initial rom banks.
 	// todo: explain non sequential nature of rom banks.
 	for (int bankNo = 0; bankNo < 128; bankNo++)
@@ -567,11 +569,34 @@ void FPCEEmu::ResetBanks()
 		Banks[bankNo] = &BankSets[bankIndex];
 	}
 
-	for (auto& bank : CodeAnalysis.GetBanks())
+	// Reset banks for re-use.
+	// I am using PrimaryMappedPage being -1 as a way to mark a bank as unused.
+	// I know this is not great but it's the best I could do without changing the code analysis code.
+	std::vector<FCodeAnalysisBank>& banks = CodeAnalysis.GetBanks();
+	for (auto& bank : banks)
 	{
 		bank.PrimaryMappedPage = -1;
 		bank.Mapping = EBankAccess::None;
 		bank.bEverBeenMapped = false;
+	}
+
+	// Set banks primary mapped page to mark them as in use.
+	// They will get their actual mapped address set when they are mapped in.
+	// We do this because we can't have any banks in use with PrimaryMappedPage of -1.
+	BankSets[kBankHWPage].SetPrimaryMappedPage(CodeAnalysis, kDefaultPrimaryMappedPage);
+	BankSets[kBankWRAM0].SetPrimaryMappedPage(CodeAnalysis, kDefaultPrimaryMappedPage);
+	BankSets[kBankSaveRAM].SetPrimaryMappedPage(CodeAnalysis, kDefaultPrimaryMappedPage);
+
+	// Patch in the rom memory into the rom banks.
+	for (int bankNo = 0; bankNo < romBankCount; bankNo++)
+	{
+		uint8_t* pMemory = pMedia->GetROMMap()[bankNo];
+		for (int d = 0; d < 8; d++)
+		{
+			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[bankNo].BankIds[d]);
+			pBank->Memory = pMemory;
+			pBank->PrimaryMappedPage = kDefaultPrimaryMappedPage;
+		}
 	}
 
 	// Go through each mpr slot and map a bank for each one
@@ -620,33 +645,27 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		CodeAnalysis.ViewState[i].GoToAddress(pGameConfig->ViewConfigs[i].ViewAddress);
 	}
 
-	bool bLoadSnapshot = pGameConfig->EmulatorFile.FileName.empty() == false;
-
 	// Are we loading a previously saved game
 	if (bLoadGameData)
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot;
+		const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pGameConfig->Name;
+		std::string analysisJsonFName = gameRoot + "/Analysis.json";
+		std::string graphicsSetsJsonFName = gameRoot + "/GraphicsSets.json";
+		std::string analysisStateFName = gameRoot + "/AnalysisState.bin";
 
-		std::string analysisJsonFName = root + "AnalysisJson/" + pGameConfig->Name + ".json";
-		std::string graphicsSetsJsonFName = root + "GraphicsSets/" + pGameConfig->Name + ".json";
-		std::string analysisStateFName = root + "AnalysisState/" + pGameConfig->Name + ".astate";
-		std::string saveStateFName = root + "SaveStates/" + pGameConfig->Name + ".state";
-
-		// check for new location & adjust paths accordingly
-		const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pGameConfig->Name + "/";
-		if (FileExists((gameRoot + "Config.json").c_str()))	
+		if (!LoadEmulatorFile(&pGameConfig->EmulatorFile))
 		{
-			analysisJsonFName = gameRoot + "Analysis.json";
-			graphicsSetsJsonFName = gameRoot + "GraphicsSets.json";
-			analysisStateFName = gameRoot + "AnalysisState.bin";
-			saveStateFName = gameRoot + "SaveState.bin";
+			return false;
 		}
 
-		if (LoadMachineState(saveStateFName.c_str()))
+		if (!LoadMachineState(gameRoot.c_str()))
 		{
-			// if the game state loaded then we don't need the snapshot
-			bLoadSnapshot = false;
+			return false;
 		}
+
+		// do i need to call resetbanks() here?
+		ResetBanks();
 
 		if (FileExists(analysisJsonFName.c_str()))
 		{
@@ -656,23 +675,30 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 		//pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 	}
-
-	if (bLoadSnapshot)
+	else
 	{
-		// if the game state didn't load then reload the snapshot
-		/*/const FGameSnapshot* snapshot = &CurrentGameSnapshot;//GamesList.GetGame(RemoveFileExtension(pGameConfig->SnapshotFile.c_str()).c_str());
-		if (snapshot == nullptr)
+		const bool bHasSnapshot = pGameConfig->EmulatorFile.FileName.empty() == false;
+		if (bHasSnapshot)
 		{
-			SetLastError("Could not find '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pGameConfig->SnapshotFile.c_str());
-			return false;
-		}*/
-		if (!LoadEmulatorFile(&pGameConfig->EmulatorFile))
+			/*/const FGameSnapshot* snapshot = &CurrentGameSnapshot;//GamesList.GetGame(RemoveFileExtension(pGameConfig->SnapshotFile.c_str()).c_str());
+			if (snapshot == nullptr)
+			{
+				SetLastError("Could not find '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pGameConfig->SnapshotFile.c_str());
+				return false;
+			}*/
+			if (!LoadEmulatorFile(&pGameConfig->EmulatorFile))
+			{
+				return false;
+			}
+		}
+		else
 		{
+			// do we ever get here?
 			return false;
 		}
-	}
 
-	ResetBanks();
+		ResetBanks();
+	}
 
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
@@ -708,59 +734,12 @@ static const uint32_t kMachineStateMagic = 0xFaceCafe;
 
 bool FPCEEmu::SaveMachineState(const char* fname)
 {
-	/*
-	// save game snapshot
-	FILE* fp = fopen(fname, "wb");
-	if (fp != nullptr)
-	{
-		const uint32_t versionNo = c64_save_snapshot(&C64Emu, &g_SaveSlot);
-		fwrite(&kMachineStateMagic, sizeof(uint32_t), 1, fp);
-		fwrite(&versionNo, sizeof(uint32_t), 1, fp);
-		fwrite(&g_SaveSlot, sizeof(c64_t), 1, fp);
-
-		// Cartridges
-		CartridgeManager.SaveData(fp);
-
-		fclose(fp);
-		return true;
-	}*/
-
-	return false;
+	return pCore->SaveState(fname);
 }
 
 bool FPCEEmu::LoadMachineState(const char* fname)
 {
-	bool bSuccess = false;
-	/*
-	FILE* fp = fopen(fname, "rb");
-	if (fp == nullptr)
-		return false;
-
-	uint32_t magic;
-	uint32_t versionNo;
-	fread(&magic, sizeof(uint32_t), 1, fp);
-	if (magic == kMachineStateMagic)
-	{
-		fread(&versionNo, sizeof(uint32_t), 1, fp);
-		fread(&g_SaveSlot, sizeof(c64_t), 1, fp);
-
-		bSuccess = c64_load_snapshot(&C64Emu, versionNo, &g_SaveSlot);
-
-		const ELoadDataResult res = CartridgeManager.LoadData(fp);
-		switch (res)
-		{
-		case ELoadDataResult::OK:
-			LoadedFileType = EC64FileType::Cartridge;
-			break;
-		case ELoadDataResult::NotFound:
-			break;
-		case ELoadDataResult::InvalidData:
-			bSuccess = false;
-			break;
-		}
-	}
-	fclose(fp);*/
-	return bSuccess;
+	return pCore->LoadState(fname);
 }
 
 // save config & data
@@ -769,12 +748,12 @@ bool FPCEEmu::SaveProject()
 	if (pCurrentProjectConfig == nullptr)
 		return false;
 
-	const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
-	const std::string configFName = root + "Config.json";
-	const std::string analysisJsonFName = root + "Analysis.json";
-	const std::string graphicsSetsJsonFName = root + "GraphicsSets.json";
-	const std::string analysisStateFName = root + "AnalysisState.bin";
-	const std::string saveStateFName = root + "SaveState.bin";
+	const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name;
+	const std::string configFName = root + "/Config.json";
+	const std::string analysisJsonFName = root + "/Analysis.json";
+	const std::string graphicsSetsJsonFName = root + "/GraphicsSets.json";
+	const std::string analysisStateFName = root + "/AnalysisState.bin";
+	const std::string saveStateFName = root + "/SaveState.bin";
 	EnsureDirectoryExists(root.c_str());
 
 	// set config values
@@ -790,8 +769,7 @@ bool FPCEEmu::SaveProject()
 	AddGameConfig(pCurrentProjectConfig);
 	SaveGameConfigToFile(*pCurrentProjectConfig, configFName.c_str());
 
-	// The Future
-	SaveMachineState(saveStateFName.c_str());
+	SaveMachineState(root.c_str()/*saveStateFName.c_str()*/);
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 	//pGraphicsViewer->SaveGraphicsSets(graphicsSetsJsonFName.c_str());

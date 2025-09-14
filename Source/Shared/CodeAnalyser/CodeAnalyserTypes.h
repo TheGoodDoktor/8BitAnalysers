@@ -212,9 +212,6 @@ struct FAddressRef
 private:
 	int16_t		BankId;
 	uint16_t	BankOffset;
-//#ifndef NDEBUG
-//	uint16_t AbsoluteAddr = 0;
-//#endif
 };
 
 #else

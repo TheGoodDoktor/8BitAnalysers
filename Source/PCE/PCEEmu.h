@@ -94,12 +94,23 @@ public:
 	// we need a set of banks that all point to the same memory.
 	struct FBankSet
 	{
+		void SetPrimaryMappedPage(FCodeAnalysisState& state, uint16_t pageAddr)
+		{
+			FCodeAnalysisBank* pBank = nullptr;
+			for (int b = 0; b < kNumMprSlots; b++)
+			{
+				pBank = state.GetBank(BankIds[b]);
+				assert(pBank);
+				pBank->PrimaryMappedPage = pageAddr;
+			}
+		}
+
 		uint8_t NumBanksInUse = 0;
-		int16_t BankIds[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+		int16_t BankIds[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	};
 
 	FBankSet* Banks[kNumBanks] = { nullptr };
-	int16_t MprBankId[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	int16_t MprBankId[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
 	FBankSet BankSets[kNumBanks];
 

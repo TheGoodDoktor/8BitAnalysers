@@ -729,6 +729,9 @@ void FixupPostLoad(FCodeAnalysisState& state)
 	for (FCodeAnalysisBank& bank : banks)
 	{
 		//assert(bank.PrimaryMappedPage !=-1);
+		if (bank.PrimaryMappedPage == -1)
+			continue;
+
 		for(int pageNo=0;pageNo < bank.NoPages;pageNo++)
 		{
 			FCodeAnalysisPage& page = bank.Pages[pageNo];
