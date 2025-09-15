@@ -1,9 +1,12 @@
 # This is for the features that allow the creating of filter folders in Visual Studio (source_group)
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 4.0)
 
 project (SpectrumAnalyser)
 
+set( with_tests false )
+
 # for Google test
+if(${with_tests})
 set(CMAKE_CXX_STANDARD 14)
 
 include(FetchContent)
@@ -19,9 +22,9 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+endif()
 
 set(APP_NAME SpectrumAnalyser)
-set( with_tests false )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	find_package(OpenGL REQUIRED)
