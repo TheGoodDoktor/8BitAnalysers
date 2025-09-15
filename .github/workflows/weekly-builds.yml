@@ -110,6 +110,45 @@ jobs:
             cp -r Docs/* package/8BitAnalysers-${{ matrix.release_suffix }}/Docs/ 2>/dev/null || true
           fi
           
+          # Create a release-specific README
+          cat > package/8BitAnalysers-${{ matrix.release_suffix }}/README-RELEASE.txt << 'EOF'
+          8BitAnalysers - Weekly Build Release
+          ====================================
+          
+          Thank you for downloading 8BitAnalysers!
+          
+          This is an automated weekly build containing the latest stable versions 
+          of all analyser tools for retro gaming enthusiasts and developers.
+          
+          WHAT'S INCLUDED:
+          ================
+          
+          🎮 SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering
+          🎮 C64Analyser - Commodore 64 game analysis and reverse engineering  
+          🎮 CPCAnalyser - Amstrad CPC game analysis and reverse engineering
+          
+          📁 Sample configuration files
+          📄 Complete documentation
+          📋 Installation instructions (see INSTALL.txt)
+          
+          GETTING STARTED:
+          ===============
+          
+          1. Read INSTALL.txt for setup instructions
+          2. Run the analyser for your system of interest
+          3. Check out the included PDF documentation
+          4. Visit the wiki for tutorials: https://github.com/TheGoodDoktor/8BitAnalysers/wiki
+          
+          SUPPORT & COMMUNITY:
+          ===================
+          
+          • Report issues: https://github.com/TheGoodDoktor/8BitAnalysers/issues
+          • Source code: https://github.com/TheGoodDoktor/8BitAnalysers
+          • Discussions: https://github.com/TheGoodDoktor/8BitAnalysers/discussions
+          
+          Happy analysing! 🔍
+          EOF
+          
           # Copy built executables and required files
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             # Windows executables (in Release directory)
@@ -217,33 +256,53 @@ jobs:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_NAME }}
           body: |
-            Automated weekly build of 8BitAnalysers
+            # 🎮 8BitAnalysers Weekly Build
             
-            Build Date: ${{ env.RELEASE_NAME }}
-            Git Commit: ${{ github.sha }}
+            Automated weekly build containing the latest stable versions of all analyser tools.
             
-            ## What's Included
+            **Build Information:**
+            - 📅 Build Date: ${{ env.RELEASE_NAME }}
+            - 🔗 Git Commit: `${{ github.sha }}`
+            - ⚡ Automatically built and tested
             
-            This release contains pre-built binaries for all supported platforms:
+            ## 📦 Downloads
             
-            - **Linux**: `8BitAnalysers-linux.tar.gz`
-            - **macOS**: `8BitAnalysers-macos.tar.gz`  
-            - **Windows**: `8BitAnalysers-windows.zip`
+            Choose the appropriate package for your operating system:
             
-            ## Analysers Included
+            | Platform | Download | Size |
+            |----------|----------|------|
+            | 🐧 **Linux** | `8BitAnalysers-linux.tar.gz` | ~8MB |
+            | 🍎 **macOS** | `8BitAnalysers-macos.tar.gz` | ~8MB |
+            | 🪟 **Windows** | `8BitAnalysers-windows.zip` | ~8MB |
             
-            - **SpectrumAnalyser**: ZX Spectrum game analysis tool
-            - **C64Analyser**: Commodore 64 game analysis tool  
-            - **CPCAnalyser**: Amstrad CPC game analysis tool
+            ## 🎯 What's Included
             
-            ## Installation
+            Each package contains:
             
-            1. Download the appropriate archive for your platform
-            2. Extract the archive to your desired location
-            3. Run the analyser executable(s) you want to use
-            4. See the included documentation for configuration instructions
+            - **SpectrumAnalyser** - ZX Spectrum game analysis and reverse engineering
+            - **C64Analyser** - Commodore 64 game analysis and reverse engineering  
+            - **CPCAnalyser** - Amstrad CPC game analysis and reverse engineering
+            - Complete documentation and installation instructions
+            - Sample configuration files
             
-            For source code and development information, visit the [main repository](https://github.com/TheGoodDoktor/8BitAnalysers).
+            ## 🚀 Quick Start
+            
+            1. **Download** the package for your OS
+            2. **Extract** to your preferred location
+            3. **Read** `INSTALL.txt` and `README-RELEASE.txt`
+            4. **Run** the analyser you need
+            5. **Configure** paths on first run
+            
+            ## 📚 Resources
+            
+            - 📖 [Wiki & Tutorials](https://github.com/TheGoodDoktor/8BitAnalysers/wiki)
+            - 🐛 [Report Issues](https://github.com/TheGoodDoktor/8BitAnalysers/issues)
+            - 💬 [Discussions](https://github.com/TheGoodDoktor/8BitAnalysers/discussions)
+            - 🔧 [Source Code](https://github.com/TheGoodDoktor/8BitAnalysers)
+            
+            ---
+            
+            > These builds are automatically generated every Sunday. For the absolute latest changes, check the development branch or build from source.
           draft: false
           prerelease: false
           files: |
