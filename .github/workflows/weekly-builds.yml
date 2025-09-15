@@ -55,12 +55,13 @@ jobs:
       - name: Build ZX Spectrum Analyser
         run: |
           cd Source/ZXSpectrum
-          mkdir build
+          mkdir -p build
           cd build
-          cmake ..
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cmake .. -DBUILD_SHARED_LIBS=OFF
             msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} SpectrumAnalyser.sln
           else
+            cmake ..
             make -j$(nproc)
           fi
         shell: bash
@@ -69,12 +70,13 @@ jobs:
       - name: Build C64 Analyser
         run: |
           cd Source/C64
-          mkdir build
+          mkdir -p build
           cd build
-          cmake ..
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cmake .. -DBUILD_SHARED_LIBS=OFF
             msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} C64Analyser.sln
           else
+            cmake ..
             make -j$(nproc)
           fi
         shell: bash
@@ -83,12 +85,13 @@ jobs:
       - name: Build CPC Analyser
         run: |
           cd Source/CPC
-          mkdir build
+          mkdir -p build
           cd build
-          cmake ..
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cmake .. -DBUILD_SHARED_LIBS=OFF
             msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} CPCAnalyser.sln
           else
+            cmake ..
             make -j$(nproc)
           fi
         shell: bash
@@ -103,28 +106,71 @@ jobs:
           # Copy documentation
           cp README.md package/8BitAnalysers-${{ matrix.release_suffix }}/
           cp LICENSE package/8BitAnalysers-${{ matrix.release_suffix }}/
-          cp -r Docs/* package/8BitAnalysers-${{ matrix.release_suffix }}/Docs/ 2>/dev/null || true
+          if [ -d "Docs" ]; then
+            cp -r Docs/* package/8BitAnalysers-${{ matrix.release_suffix }}/Docs/ 2>/dev/null || true
+          fi
           
           # Copy built executables and required files
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Windows executables
-            find Source/ZXSpectrum/build -name "SpectrumAnalyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
-            find Source/C64/build -name "C64Analyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true  
-            find Source/CPC/build -name "CPCAnalyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
+            # Windows executables (in Release directory)
+            find Source/ZXSpectrum/build -name "SpectrumAnalyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || echo "SpectrumAnalyser.exe not found"
+            find Source/C64/build -name "C64Analyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || echo "C64Analyser.exe not found"
+            find Source/CPC/build -name "CPCAnalyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || echo "CPCAnalyser.exe not found"
           else
             # Linux/macOS executables
-            find Source/ZXSpectrum/build -name "SpectrumAnalyser" -type f -executable -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
-            find Source/C64/build -name "C64Analyser" -type f -executable -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
-            find Source/CPC/build -name "CPCAnalyser" -type f -executable -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
+            if [ -f "Source/ZXSpectrum/build/bin/SpectrumAnalyser" ]; then
+              cp Source/ZXSpectrum/build/bin/SpectrumAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            fi
+            if [ -f "Source/C64/build/bin/C64Analyser" ]; then
+              cp Source/C64/build/bin/C64Analyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            fi
+            if [ -f "Source/CPC/build/CPCAnalyser" ]; then
+              cp Source/CPC/build/CPCAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            fi
           fi
           
           # Copy configuration files
-          cp Data/SpectrumAnalyser/imgui.ini package/8BitAnalysers-${{ matrix.release_suffix }}/ 2>/dev/null || true
+          if [ -f "Data/SpectrumAnalyser/imgui.ini" ]; then
+            cp Data/SpectrumAnalyser/imgui.ini package/8BitAnalysers-${{ matrix.release_suffix }}/
+          fi
+          
+          # Create installation guide
+          cat > package/8BitAnalysers-${{ matrix.release_suffix }}/INSTALL.txt << 'EOF'
+          8BitAnalysers Installation Guide
+          ================================
+          
+          This package contains pre-built binaries for the 8BitAnalysers suite.
+          
+          INCLUDED ANALYSERS:
+          - SpectrumAnalyser: ZX Spectrum game analysis tool
+          - C64Analyser: Commodore 64 game analysis tool
+          - CPCAnalyser: Amstrad CPC game analysis tool
+          
+          QUICK START:
+          1. Extract this archive to your desired location
+          2. Run the analyser executable(s) you want to use
+          3. On first run, a configuration file will be created
+          4. Edit the configuration to point to your game files
+          
+          CONFIGURATION:
+          Each analyser creates a GlobalConfig.json file on first run.
+          Edit this file to set paths for:
+          - WorkspaceRoot: Where analysis files are stored
+          - SnapshotFolder: Where your game files are located
+          - PokesFolder: Where cheat/poke files are stored
+          
+          For detailed documentation, visit:
+          https://github.com/TheGoodDoktor/8BitAnalysers/wiki
+          EOF
           
           # Create version file
           echo "8BitAnalysers Weekly Build - ${{ matrix.platform_name }}" > package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
           echo "Build Date: $(date)" >> package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
           echo "Git Commit: ${{ github.sha }}" >> package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
+          
+          # List what was packaged
+          echo "Packaged files:"
+          ls -la package/8BitAnalysers-${{ matrix.release_suffix }}/
           
           # Create archive
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
@@ -173,7 +219,7 @@ jobs:
           body: |
             Automated weekly build of 8BitAnalysers
             
-            Build Date: $(date)
+            Build Date: ${{ env.RELEASE_NAME }}
             Git Commit: ${{ github.sha }}
             
             ## What's Included
