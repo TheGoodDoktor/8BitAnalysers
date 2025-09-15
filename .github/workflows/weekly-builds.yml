@@ -253,70 +253,86 @@ jobs:
       # Package builds (Windows)
       - name: Package builds (Windows)
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
           # Create package directory
-          mkdir package\8BitAnalysers-${{ matrix.release_suffix }}
-          mkdir package\8BitAnalysers-${{ matrix.release_suffix }}\Docs
+          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}" -Force
+          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\Docs" -Force
           
           # Copy documentation
-          copy README.md package\8BitAnalysers-${{ matrix.release_suffix }}\
-          copy LICENSE package\8BitAnalysers-${{ matrix.release_suffix }}\
+          Copy-Item "README.md" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+          Copy-Item "LICENSE" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
           
           # Create a release-specific README (Windows)
-          echo 8BitAnalysers - Weekly Build Release > package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo ===================================== >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo Thank you for downloading 8BitAnalysers! >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo This is an automated weekly build containing the latest stable versions >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo of all analyser tools for retro gaming enthusiasts and developers. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo WHATS INCLUDED: >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo ================ >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo - SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo - C64Analyser - Commodore 64 game analysis and reverse engineering >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo - CPCAnalyser - Amstrad CPC game analysis and reverse engineering >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo - BBCAnalyser - BBC Micro game analysis and reverse engineering (if available) >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo For full documentation visit: https://github.com/TheGoodDoktor/8BitAnalysers/wiki >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
+          @"
+8BitAnalysers - Weekly Build Release
+=====================================
+
+Thank you for downloading 8BitAnalysers!
+
+This is an automated weekly build containing the latest stable versions
+of all analyser tools for retro gaming enthusiasts and developers.
+
+WHATS INCLUDED:
+================
+
+- SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering
+- C64Analyser - Commodore 64 game analysis and reverse engineering
+- CPCAnalyser - Amstrad CPC game analysis and reverse engineering
+- BBCAnalyser - BBC Micro game analysis and reverse engineering (if available)
+
+For full documentation visit: https://github.com/TheGoodDoktor/8BitAnalysers/wiki
+"@ | Out-File -FilePath "package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt" -Encoding utf8
           
-          # Copy built executables (Windows)
-          if exist "Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe" copy "Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe" package\8BitAnalysers-${{ matrix.release_suffix }}\
-          if exist "Source\C64\build\bin\Release\C64Analyser.exe" copy "Source\C64\build\bin\Release\C64Analyser.exe" package\8BitAnalysers-${{ matrix.release_suffix }}\
-          if exist "Source\CPC\build\Release\CPCAnalyser.exe" copy "Source\CPC\build\Release\CPCAnalyser.exe" package\8BitAnalysers-${{ matrix.release_suffix }}\
-          if exist "Source\BBC\build\bin\Release\BBCAnalyser.exe" copy "Source\BBC\build\bin\Release\BBCAnalyser.exe" package\8BitAnalysers-${{ matrix.release_suffix }}\
+          # Copy built executables (Windows) - using PowerShell Test-Path and Copy-Item
+          if (Test-Path "Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe") {
+            Copy-Item "Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+          }
+          if (Test-Path "Source\C64\build\bin\Release\C64Analyser.exe") {
+            Copy-Item "Source\C64\build\bin\Release\C64Analyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+          }
+          if (Test-Path "Source\CPC\build\Release\CPCAnalyser.exe") {
+            Copy-Item "Source\CPC\build\Release\CPCAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+          }
+          if (Test-Path "Source\BBC\build\bin\Release\BBCAnalyser.exe") {
+            Copy-Item "Source\BBC\build\bin\Release\BBCAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+          }
           
           # Copy configuration files (Windows)
-          if exist "Data\SpectrumAnalyser\imgui.ini" copy "Data\SpectrumAnalyser\imgui.ini" package\8BitAnalysers-${{ matrix.release_suffix }}\
+          if (Test-Path "Data\SpectrumAnalyser\imgui.ini") {
+            Copy-Item "Data\SpectrumAnalyser\imgui.ini" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+          }
           
           # Create installation guide (Windows)
-          echo 8BitAnalysers Installation Guide > package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo ================================ >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo This package contains pre-built binaries for the 8BitAnalysers suite. >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo INCLUDED ANALYSERS: >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo - SpectrumAnalyser: ZX Spectrum game analysis tool >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo - C64Analyser: Commodore 64 game analysis tool >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo - CPCAnalyser: Amstrad CPC game analysis tool >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt  
-          echo - BBCAnalyser: BBC Micro game analysis tool (if available) >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
-          echo Visit https://github.com/TheGoodDoktor/8BitAnalysers/wiki for full documentation >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
+          @"
+8BitAnalysers Installation Guide
+================================
+
+This package contains pre-built binaries for the 8BitAnalysers suite.
+
+INCLUDED ANALYSERS:
+- SpectrumAnalyser: ZX Spectrum game analysis tool
+- C64Analyser: Commodore 64 game analysis tool
+- CPCAnalyser: Amstrad CPC game analysis tool
+- BBCAnalyser: BBC Micro game analysis tool (if available)
+
+Visit https://github.com/TheGoodDoktor/8BitAnalysers/wiki for full documentation
+"@ | Out-File -FilePath "package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt" -Encoding utf8
           
           # Create version file (Windows)
-          echo 8BitAnalysers Weekly Build - ${{ matrix.platform_name }} > package\8BitAnalysers-${{ matrix.release_suffix }}\VERSION.txt
-          echo Build Date: >> package\8BitAnalysers-${{ matrix.release_suffix }}\VERSION.txt
-          date /t >> package\8BitAnalysers-${{ matrix.release_suffix }}\VERSION.txt
-          echo Git Commit: ${{ github.sha }} >> package\8BitAnalysers-${{ matrix.release_suffix }}\VERSION.txt
+          @"
+8BitAnalysers Weekly Build - ${{ matrix.platform_name }}
+Build Date: $(Get-Date)
+Git Commit: ${{ github.sha }}
+"@ | Out-File -FilePath "package\8BitAnalysers-${{ matrix.release_suffix }}\VERSION.txt" -Encoding utf8
           
           # List what was packaged (Windows)
-          echo Packaged files:
-          dir package\8BitAnalysers-${{ matrix.release_suffix }}
+          Write-Host "Packaged files:"
+          Get-ChildItem "package\8BitAnalysers-${{ matrix.release_suffix }}"
           
           # Create archive (Windows)
-          cd package
-          powershell Compress-Archive -Path "8BitAnalysers-${{ matrix.release_suffix }}" -DestinationPath "8BitAnalysers-${{ matrix.release_suffix }}.zip"
+          Set-Location package
+          Compress-Archive -Path "8BitAnalysers-${{ matrix.release_suffix }}" -DestinationPath "8BitAnalysers-${{ matrix.release_suffix }}.zip"
 
       # Upload artifacts
       - name: Upload build artifacts
