@@ -161,14 +161,14 @@ jobs:
           WHAT'S INCLUDED:
           ================
           
-          🎮 SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering
-          🎮 C64Analyser - Commodore 64 game analysis and reverse engineering  
-          🎮 CPCAnalyser - Amstrad CPC game analysis and reverse engineering
-          🎮 BBCAnalyser - BBC Micro game analysis and reverse engineering
+          - SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering
+          - C64Analyser - Commodore 64 game analysis and reverse engineering  
+          - CPCAnalyser - Amstrad CPC game analysis and reverse engineering
+          - BBCAnalyser - BBC Micro game analysis and reverse engineering (if available)
           
-          📁 Sample configuration files
-          📄 Complete documentation
-          📋 Installation instructions (see INSTALL.txt)
+          Sample configuration files
+          Complete documentation
+          Installation instructions (see INSTALL.txt)
           
           GETTING STARTED:
           ===============
@@ -181,11 +181,11 @@ jobs:
           SUPPORT & COMMUNITY:
           ===================
           
-          • Report issues: https://github.com/TheGoodDoktor/8BitAnalysers/issues
-          • Source code: https://github.com/TheGoodDoktor/8BitAnalysers
-          • Discussions: https://github.com/TheGoodDoktor/8BitAnalysers/discussions
+          - Report issues: https://github.com/TheGoodDoktor/8BitAnalysers/issues
+          - Source code: https://github.com/TheGoodDoktor/8BitAnalysers
+          - Discussions: https://github.com/TheGoodDoktor/8BitAnalysers/discussions
           
-          Happy analysing! 🔍
+          Happy analysing!
           EOF
           
           # Copy built executables and required files (Linux/macOS)
@@ -218,7 +218,7 @@ jobs:
           - SpectrumAnalyser: ZX Spectrum game analysis tool
           - C64Analyser: Commodore 64 game analysis tool
           - CPCAnalyser: Amstrad CPC game analysis tool
-          - BBCAnalyser: BBC Micro game analysis tool
+          - BBCAnalyser: BBC Micro game analysis tool (if available)
           
           QUICK START:
           1. Extract this archive to your desired location
@@ -277,7 +277,7 @@ jobs:
           echo - SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo - C64Analyser - Commodore 64 game analysis and reverse engineering >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo - CPCAnalyser - Amstrad CPC game analysis and reverse engineering >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo - BBCAnalyser - BBC Micro game analysis and reverse engineering >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
+          echo - BBCAnalyser - BBC Micro game analysis and reverse engineering (if available) >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo For full documentation visit: https://github.com/TheGoodDoktor/8BitAnalysers/wiki >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           
@@ -300,7 +300,7 @@ jobs:
           echo - SpectrumAnalyser: ZX Spectrum game analysis tool >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
           echo - C64Analyser: Commodore 64 game analysis tool >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
           echo - CPCAnalyser: Amstrad CPC game analysis tool >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt  
-          echo - BBCAnalyser: BBC Micro game analysis tool >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
+          echo - BBCAnalyser: BBC Micro game analysis tool (if available) >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
           echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
           echo Visit https://github.com/TheGoodDoktor/8BitAnalysers/wiki for full documentation >> package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt
           
@@ -381,7 +381,7 @@ jobs:
             - **SpectrumAnalyser** - ZX Spectrum game analysis and reverse engineering
             - **C64Analyser** - Commodore 64 game analysis and reverse engineering  
             - **CPCAnalyser** - Amstrad CPC game analysis and reverse engineering
-            - **BBCAnalyser** - BBC Micro game analysis and reverse engineering
+            - **BBCAnalyser** - BBC Micro game analysis and reverse engineering (if available)
             - Complete documentation and installation instructions
             - Sample configuration files
             
