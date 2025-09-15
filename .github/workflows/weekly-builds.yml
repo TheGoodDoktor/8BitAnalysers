@@ -158,7 +158,7 @@ jobs:
           This is an automated weekly build containing the latest stable versions 
           of all analyser tools for retro gaming enthusiasts and developers.
           
-          WHAT'S INCLUDED:
+          WHATS INCLUDED:
           ================
           
           - SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering
@@ -271,7 +271,7 @@ jobs:
           echo This is an automated weekly build containing the latest stable versions >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo of all analyser tools for retro gaming enthusiasts and developers. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
-          echo WHAT'S INCLUDED: >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
+          echo WHATS INCLUDED: >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo ================ >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo. >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
           echo - SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering >> package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt
@@ -374,7 +374,7 @@ jobs:
             | 🍎 **macOS** | `8BitAnalysers-macos.tar.gz` | ~8MB |
             | 🪟 **Windows** | `8BitAnalysers-windows.zip` | ~8MB |
             
-            ## 🎯 What's Included
+            ## 🎯 Whats Included
             
             Each package contains:
             
