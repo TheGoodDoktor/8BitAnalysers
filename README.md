@@ -1,5 +1,18 @@
 # 8-Bit Analysers
 A set of tools that assist the analysis & annotation of 8-bit games running on a selection of 8-bit systems.
+
+## Download Latest Build
+[![Weekly Builds](https://github.com/TheGoodDoktor/8BitAnalysers/actions/workflows/weekly-builds.yml/badge.svg)](https://github.com/TheGoodDoktor/8BitAnalysers/actions/workflows/weekly-builds.yml)
+[![Latest Release](https://img.shields.io/github/v/release/TheGoodDoktor/8BitAnalysers?include_prereleases&label=latest%20build)](https://github.com/TheGoodDoktor/8BitAnalysers/releases/latest)
+
+**[⬇️ Download Latest Windows Build](https://github.com/TheGoodDoktor/8BitAnalysers/releases/latest/download/8BitAnalysers-windows.zip)**
+
+**[⬇️ Download Latest Linux Build](https://github.com/TheGoodDoktor/8BitAnalysers/releases/latest/download/8BitAnalysers-linux.tar.gz)**
+
+**[⬇️ Download Latest macOS Build](https://github.com/TheGoodDoktor/8BitAnalysers/releases/latest/download/8BitAnalysers-macos.tar.gz)**
+
+Builds are automatically generated every week and include pre-compiled binaries for all supported analysers.
+
 ## Wiki
 https://github.com/TheGoodDoktor/8BitAnalysers/wiki
 ## Getting Started

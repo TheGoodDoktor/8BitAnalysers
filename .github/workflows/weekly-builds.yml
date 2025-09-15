@@ -1,0 +1,309 @@
+name: Weekly Builds
+
+on:
+  schedule:
+    # Run every Sunday at 2:00 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch: # Allow manual triggering for testing
+
+env:
+  BUILD_CONFIGURATION: Release
+
+permissions:
+  contents: write # Required for creating releases
+
+jobs:
+  build_and_release:
+    name: Build All Analysers
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            release_suffix: linux
+            platform_name: Linux
+          - os: macos-latest
+            release_suffix: macos
+            platform_name: macOS
+          - os: windows-latest
+            release_suffix: windows
+            platform_name: Windows
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Linux dependencies
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl-mesa0 libgl1-mesa-dev libx11-dev libxcursor-dev \
+            libxrandr-dev libxinerama-dev libxi-dev libxext-dev \
+            libxfixes-dev libasound2-dev
+
+      # Windows dependencies
+      - name: Setup Windows Build Environment
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v2
+
+      # Build ZX Spectrum Analyser
+      - name: Build ZX Spectrum Analyser
+        run: |
+          cd Source/ZXSpectrum
+          mkdir -p build
+          cd build
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cmake .. -DBUILD_SHARED_LIBS=OFF
+            msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} SpectrumAnalyser.sln
+          else
+            cmake ..
+            make -j$(nproc)
+          fi
+        shell: bash
+
+      # Build C64 Analyser
+      - name: Build C64 Analyser
+        run: |
+          cd Source/C64
+          mkdir -p build
+          cd build
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cmake .. -DBUILD_SHARED_LIBS=OFF
+            msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} C64Analyser.sln
+          else
+            cmake ..
+            make -j$(nproc)
+          fi
+        shell: bash
+
+      # Build CPC Analyser
+      - name: Build CPC Analyser
+        run: |
+          cd Source/CPC
+          mkdir -p build
+          cd build
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cmake .. -DBUILD_SHARED_LIBS=OFF
+            msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} CPCAnalyser.sln
+          else
+            cmake ..
+            make -j$(nproc)
+          fi
+        shell: bash
+
+      # Package builds
+      - name: Package builds
+        run: |
+          # Create package directory
+          mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}
+          mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}/Docs
+          
+          # Copy documentation
+          cp README.md package/8BitAnalysers-${{ matrix.release_suffix }}/
+          cp LICENSE package/8BitAnalysers-${{ matrix.release_suffix }}/
+          if [ -d "Docs" ]; then
+            cp -r Docs/* package/8BitAnalysers-${{ matrix.release_suffix }}/Docs/ 2>/dev/null || true
+          fi
+          
+          # Create a release-specific README
+          cat > package/8BitAnalysers-${{ matrix.release_suffix }}/README-RELEASE.txt << 'EOF'
+          8BitAnalysers - Weekly Build Release
+          ====================================
+          
+          Thank you for downloading 8BitAnalysers!
+          
+          This is an automated weekly build containing the latest stable versions 
+          of all analyser tools for retro gaming enthusiasts and developers.
+          
+          WHAT'S INCLUDED:
+          ================
+          
+          🎮 SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering
+          🎮 C64Analyser - Commodore 64 game analysis and reverse engineering  
+          🎮 CPCAnalyser - Amstrad CPC game analysis and reverse engineering
+          
+          📁 Sample configuration files
+          📄 Complete documentation
+          📋 Installation instructions (see INSTALL.txt)
+          
+          GETTING STARTED:
+          ===============
+          
+          1. Read INSTALL.txt for setup instructions
+          2. Run the analyser for your system of interest
+          3. Check out the included PDF documentation
+          4. Visit the wiki for tutorials: https://github.com/TheGoodDoktor/8BitAnalysers/wiki
+          
+          SUPPORT & COMMUNITY:
+          ===================
+          
+          • Report issues: https://github.com/TheGoodDoktor/8BitAnalysers/issues
+          • Source code: https://github.com/TheGoodDoktor/8BitAnalysers
+          • Discussions: https://github.com/TheGoodDoktor/8BitAnalysers/discussions
+          
+          Happy analysing! 🔍
+          EOF
+          
+          # Copy built executables and required files
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            # Windows executables (in Release directory)
+            find Source/ZXSpectrum/build -name "SpectrumAnalyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || echo "SpectrumAnalyser.exe not found"
+            find Source/C64/build -name "C64Analyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || echo "C64Analyser.exe not found"
+            find Source/CPC/build -name "CPCAnalyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || echo "CPCAnalyser.exe not found"
+          else
+            # Linux/macOS executables
+            if [ -f "Source/ZXSpectrum/build/bin/SpectrumAnalyser" ]; then
+              cp Source/ZXSpectrum/build/bin/SpectrumAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            fi
+            if [ -f "Source/C64/build/bin/C64Analyser" ]; then
+              cp Source/C64/build/bin/C64Analyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            fi
+            if [ -f "Source/CPC/build/CPCAnalyser" ]; then
+              cp Source/CPC/build/CPCAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            fi
+          fi
+          
+          # Copy configuration files
+          if [ -f "Data/SpectrumAnalyser/imgui.ini" ]; then
+            cp Data/SpectrumAnalyser/imgui.ini package/8BitAnalysers-${{ matrix.release_suffix }}/
+          fi
+          
+          # Create installation guide
+          cat > package/8BitAnalysers-${{ matrix.release_suffix }}/INSTALL.txt << 'EOF'
+          8BitAnalysers Installation Guide
+          ================================
+          
+          This package contains pre-built binaries for the 8BitAnalysers suite.
+          
+          INCLUDED ANALYSERS:
+          - SpectrumAnalyser: ZX Spectrum game analysis tool
+          - C64Analyser: Commodore 64 game analysis tool
+          - CPCAnalyser: Amstrad CPC game analysis tool
+          
+          QUICK START:
+          1. Extract this archive to your desired location
+          2. Run the analyser executable(s) you want to use
+          3. On first run, a configuration file will be created
+          4. Edit the configuration to point to your game files
+          
+          CONFIGURATION:
+          Each analyser creates a GlobalConfig.json file on first run.
+          Edit this file to set paths for:
+          - WorkspaceRoot: Where analysis files are stored
+          - SnapshotFolder: Where your game files are located
+          - PokesFolder: Where cheat/poke files are stored
+          
+          For detailed documentation, visit:
+          https://github.com/TheGoodDoktor/8BitAnalysers/wiki
+          EOF
+          
+          # Create version file
+          echo "8BitAnalysers Weekly Build - ${{ matrix.platform_name }}" > package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
+          echo "Build Date: $(date)" >> package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
+          echo "Git Commit: ${{ github.sha }}" >> package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
+          
+          # List what was packaged
+          echo "Packaged files:"
+          ls -la package/8BitAnalysers-${{ matrix.release_suffix }}/
+          
+          # Create archive
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cd package && 7z a -tzip 8BitAnalysers-${{ matrix.release_suffix }}.zip 8BitAnalysers-${{ matrix.release_suffix }}/
+          else
+            cd package && tar -czf 8BitAnalysers-${{ matrix.release_suffix }}.tar.gz 8BitAnalysers-${{ matrix.release_suffix }}/
+          fi
+        shell: bash
+
+      # Upload artifacts
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 8BitAnalysers-${{ matrix.release_suffix }}
+          path: package/8BitAnalysers-${{ matrix.release_suffix }}.*
+          retention-days: 90
+
+  create_release:
+    name: Create Weekly Release
+    needs: build_and_release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release tag
+        run: |
+          # Generate a unique tag for weekly builds
+          WEEK_TAG="weekly-$(date +%Y-%m-%d)"
+          echo "RELEASE_TAG=$WEEK_TAG" >> $GITHUB_ENV
+          
+          # Set release name
+          echo "RELEASE_NAME=Weekly Build - $(date +%Y-%m-%d)" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          body: |
+            # 🎮 8BitAnalysers Weekly Build
+            
+            Automated weekly build containing the latest stable versions of all analyser tools.
+            
+            **Build Information:**
+            - 📅 Build Date: ${{ env.RELEASE_NAME }}
+            - 🔗 Git Commit: `${{ github.sha }}`
+            - ⚡ Automatically built and tested
+            
+            ## 📦 Downloads
+            
+            Choose the appropriate package for your operating system:
+            
+            | Platform | Download | Size |
+            |----------|----------|------|
+            | 🐧 **Linux** | `8BitAnalysers-linux.tar.gz` | ~8MB |
+            | 🍎 **macOS** | `8BitAnalysers-macos.tar.gz` | ~8MB |
+            | 🪟 **Windows** | `8BitAnalysers-windows.zip` | ~8MB |
+            
+            ## 🎯 What's Included
+            
+            Each package contains:
+            
+            - **SpectrumAnalyser** - ZX Spectrum game analysis and reverse engineering
+            - **C64Analyser** - Commodore 64 game analysis and reverse engineering  
+            - **CPCAnalyser** - Amstrad CPC game analysis and reverse engineering
+            - Complete documentation and installation instructions
+            - Sample configuration files
+            
+            ## 🚀 Quick Start
+            
+            1. **Download** the package for your OS
+            2. **Extract** to your preferred location
+            3. **Read** `INSTALL.txt` and `README-RELEASE.txt`
+            4. **Run** the analyser you need
+            5. **Configure** paths on first run
+            
+            ## 📚 Resources
+            
+            - 📖 [Wiki & Tutorials](https://github.com/TheGoodDoktor/8BitAnalysers/wiki)
+            - 🐛 [Report Issues](https://github.com/TheGoodDoktor/8BitAnalysers/issues)
+            - 💬 [Discussions](https://github.com/TheGoodDoktor/8BitAnalysers/discussions)
+            - 🔧 [Source Code](https://github.com/TheGoodDoktor/8BitAnalysers)
+            
+            ---
+            
+            > These builds are automatically generated every Sunday. For the absolute latest changes, check the development branch or build from source.
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*
