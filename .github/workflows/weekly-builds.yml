@@ -1,0 +1,204 @@
+name: Weekly Builds
+
+on:
+  schedule:
+    # Run every Sunday at 2:00 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch: # Allow manual triggering for testing
+
+env:
+  BUILD_CONFIGURATION: Release
+
+permissions:
+  contents: write # Required for creating releases
+
+jobs:
+  build_and_release:
+    name: Build All Analysers
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            release_suffix: linux
+            platform_name: Linux
+          - os: macos-latest
+            release_suffix: macos
+            platform_name: macOS
+          - os: windows-latest
+            release_suffix: windows
+            platform_name: Windows
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Linux dependencies
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl-mesa0 libgl1-mesa-dev libx11-dev libxcursor-dev \
+            libxrandr-dev libxinerama-dev libxi-dev libxext-dev \
+            libxfixes-dev libasound2-dev
+
+      # Windows dependencies
+      - name: Setup Windows Build Environment
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v2
+
+      # Build ZX Spectrum Analyser
+      - name: Build ZX Spectrum Analyser
+        run: |
+          cd Source/ZXSpectrum
+          mkdir build
+          cd build
+          cmake ..
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} SpectrumAnalyser.sln
+          else
+            make -j$(nproc)
+          fi
+        shell: bash
+
+      # Build C64 Analyser
+      - name: Build C64 Analyser
+        run: |
+          cd Source/C64
+          mkdir build
+          cd build
+          cmake ..
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} C64Analyser.sln
+          else
+            make -j$(nproc)
+          fi
+        shell: bash
+
+      # Build CPC Analyser
+      - name: Build CPC Analyser
+        run: |
+          cd Source/CPC
+          mkdir build
+          cd build
+          cmake ..
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} CPCAnalyser.sln
+          else
+            make -j$(nproc)
+          fi
+        shell: bash
+
+      # Package builds
+      - name: Package builds
+        run: |
+          # Create package directory
+          mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}
+          mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}/Docs
+          
+          # Copy documentation
+          cp README.md package/8BitAnalysers-${{ matrix.release_suffix }}/
+          cp LICENSE package/8BitAnalysers-${{ matrix.release_suffix }}/
+          cp -r Docs/* package/8BitAnalysers-${{ matrix.release_suffix }}/Docs/ 2>/dev/null || true
+          
+          # Copy built executables and required files
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            # Windows executables
+            find Source/ZXSpectrum/build -name "SpectrumAnalyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
+            find Source/C64/build -name "C64Analyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true  
+            find Source/CPC/build -name "CPCAnalyser.exe" -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
+          else
+            # Linux/macOS executables
+            find Source/ZXSpectrum/build -name "SpectrumAnalyser" -type f -executable -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
+            find Source/C64/build -name "C64Analyser" -type f -executable -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
+            find Source/CPC/build -name "CPCAnalyser" -type f -executable -exec cp {} package/8BitAnalysers-${{ matrix.release_suffix }}/ \; 2>/dev/null || true
+          fi
+          
+          # Copy configuration files
+          cp Data/SpectrumAnalyser/imgui.ini package/8BitAnalysers-${{ matrix.release_suffix }}/ 2>/dev/null || true
+          
+          # Create version file
+          echo "8BitAnalysers Weekly Build - ${{ matrix.platform_name }}" > package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
+          echo "Build Date: $(date)" >> package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
+          echo "Git Commit: ${{ github.sha }}" >> package/8BitAnalysers-${{ matrix.release_suffix }}/VERSION.txt
+          
+          # Create archive
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cd package && 7z a -tzip 8BitAnalysers-${{ matrix.release_suffix }}.zip 8BitAnalysers-${{ matrix.release_suffix }}/
+          else
+            cd package && tar -czf 8BitAnalysers-${{ matrix.release_suffix }}.tar.gz 8BitAnalysers-${{ matrix.release_suffix }}/
+          fi
+        shell: bash
+
+      # Upload artifacts
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 8BitAnalysers-${{ matrix.release_suffix }}
+          path: package/8BitAnalysers-${{ matrix.release_suffix }}.*
+          retention-days: 90
+
+  create_release:
+    name: Create Weekly Release
+    needs: build_and_release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release tag
+        run: |
+          # Generate a unique tag for weekly builds
+          WEEK_TAG="weekly-$(date +%Y-%m-%d)"
+          echo "RELEASE_TAG=$WEEK_TAG" >> $GITHUB_ENV
+          
+          # Set release name
+          echo "RELEASE_NAME=Weekly Build - $(date +%Y-%m-%d)" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          body: |
+            Automated weekly build of 8BitAnalysers
+            
+            Build Date: $(date)
+            Git Commit: ${{ github.sha }}
+            
+            ## What's Included
+            
+            This release contains pre-built binaries for all supported platforms:
+            
+            - **Linux**: `8BitAnalysers-linux.tar.gz`
+            - **macOS**: `8BitAnalysers-macos.tar.gz`  
+            - **Windows**: `8BitAnalysers-windows.zip`
+            
+            ## Analysers Included
+            
+            - **SpectrumAnalyser**: ZX Spectrum game analysis tool
+            - **C64Analyser**: Commodore 64 game analysis tool  
+            - **CPCAnalyser**: Amstrad CPC game analysis tool
+            
+            ## Installation
+            
+            1. Download the appropriate archive for your platform
+            2. Extract the archive to your desired location
+            3. Run the analyser executable(s) you want to use
+            4. See the included documentation for configuration instructions
+            
+            For source code and development information, visit the [main repository](https://github.com/TheGoodDoktor/8BitAnalysers).
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*
