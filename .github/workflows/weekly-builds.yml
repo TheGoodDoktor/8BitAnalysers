@@ -259,7 +259,7 @@ jobs:
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}" -Force
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\Docs" -Force
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\SpectrumAnalyser" -Force
-          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser" - Force
+          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser" -Force
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\C64Analyser" -Force
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\BBCAnalyser" -Force
           
