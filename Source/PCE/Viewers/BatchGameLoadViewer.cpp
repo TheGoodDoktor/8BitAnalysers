@@ -189,3 +189,9 @@ void FBatchGameLoadViewer::DrawUI()
 	ImGui::SeparatorText("Debug info");
 	ImGui::Text("Max dupe banks %d '%s'", pPCEEmu->DebugStats.MaxDupeMprBanks, pPCEEmu->DebugStats.GameWithMaxDupeMprBanks.c_str());
 }
+
+double FBatchGameLoadViewer::GetNextButtonPressTime() const 
+{ 
+	return ImGui::GetTime() + ((double)(rand() / RAND_MAX) * InputDelay); 
+}
+

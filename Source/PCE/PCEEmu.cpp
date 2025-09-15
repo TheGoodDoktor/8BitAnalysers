@@ -9,6 +9,7 @@
 #include "Util/FileUtil.h"
 #include "Viewers/PCEViewer.h"
 #include "Viewers/BatchGameLoadViewer.h"
+#include "Viewers/DebugStatsViewer.h"
 #include "Viewers/PCERegistersViewer.h"
 #include <geargrafx_core.h>
 #include "Debug/DebugLog.h"
@@ -503,6 +504,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 #ifndef NDEBUG
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
 	AddViewer(pBatchGameLoadViewer);
+	AddViewer(new FDebugStatsViewer(this));
 #endif
 	AddViewer(new FPCERegistersViewer(this));
 

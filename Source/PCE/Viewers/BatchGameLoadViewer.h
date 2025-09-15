@@ -1,6 +1,5 @@
 #pragma once
 
-#include "imgui.h"
 #include "CodeAnalyser/UI/ViewerBase.h"
 
 class FPCEEmu;
@@ -17,7 +16,7 @@ public:
 	bool IsAutomationActive() const { return bAutomationActive; }
 
 private:
-	double GetNextButtonPressTime() const { return ImGui::GetTime() + ((double)(rand() / RAND_MAX) * InputDelay); }
+	double GetNextButtonPressTime() const;
 
 private:
 	bool bAutomationActive = false;
