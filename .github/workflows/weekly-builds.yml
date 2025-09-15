@@ -258,6 +258,10 @@ jobs:
           # Create package directory
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}" -Force
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\Docs" -Force
+          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\SpectrumAnalyser" -Force
+          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser" - Force
+          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\C64Analyser" -Force
+          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\BBCAnalyser" -Force
           
           # Copy documentation
           Copy-Item "README.md" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
@@ -286,23 +290,24 @@ jobs:
           
           # Copy built executables (Windows) - using PowerShell Test-Path and Copy-Item
           if (Test-Path "Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe") {
-            Copy-Item "Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+            Copy-Item "Source\ZXSpectrum\build\bin\Release\SpectrumAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\SpectrumAnalyser\"
           }
           if (Test-Path "Source\C64\build\bin\Release\C64Analyser.exe") {
-            Copy-Item "Source\C64\build\bin\Release\C64Analyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+            Copy-Item "Source\C64\build\bin\Release\C64Analyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\C64Analyser\"
           }
           if (Test-Path "Source\CPC\build\Release\CPCAnalyser.exe") {
-            Copy-Item "Source\CPC\build\Release\CPCAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+            Copy-Item "Source\CPC\build\Release\CPCAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser\"
           }
           if (Test-Path "Source\BBC\build\bin\Release\BBCAnalyser.exe") {
-            Copy-Item "Source\BBC\build\bin\Release\BBCAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
+            Copy-Item "Source\BBC\build\bin\Release\BBCAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\BBCAnalyser\"
           }
           
-          # Copy configuration files (Windows)
-          if (Test-Path "Data\SpectrumAnalyser\imgui.ini") {
-            Copy-Item "Data\SpectrumAnalyser\imgui.ini" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
-          }
-          
+          # Copy data files (Windows)
+          Copy-Item "Data\SpectrumAnalyser" "package\8BitAnalysers-${{ matrix.release_suffix }}\SpectrumAnalyser\Data" -Recurse
+          Copy-Item "Data\C64Analyser" "package\8BitAnalysers-${{ matrix.release_suffix }}\C64Analyser\Data" -Recurse
+          Copy-Item "Data\CPCAnalyser" "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser\Data" -Recurse
+          Copy-Item "Data\BBCAnalyser" "package\8BitAnalysers-${{ matrix.release_suffix }}\BBCAnalyser\Data" -Recurse
+
           # Create installation guide (Windows)
           @"
           8BitAnalysers Installation Guide
