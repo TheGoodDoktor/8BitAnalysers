@@ -47,6 +47,17 @@ void FDebugStatsViewer::DrawUI()
 			pagesInUse++;
 	}
 
+	int maxDupeBanks = 0;
+	std::string gameWithMaxDupes;
+	for (auto pair : pPCEEmu->DebugStats.GamesWithDupeBanks)
+	{
+		if (pair.second > maxDupeBanks)
+		{
+			maxDupeBanks = pair.second;
+			gameWithMaxDupes = pair.first;
+		}
+	}
+
 	ImGui::SeparatorText("Banks");
 	ImGui::Text("Total banks: %d", Banks.size());
 	ImGui::Text("Mapped banks: %d", mappedBanks);
@@ -54,9 +65,12 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("Used banks: %d", usedBanks);
 	ImGui::Text("Total pages: %d", state.GetNoPages());
 	ImGui::Text("Pages in use: %d", pagesInUse);
+	ImGui::Text("Game with most dupe banks: %s", gameWithMaxDupes.c_str());
+	ImGui::Text("Max dupe banks: %d", maxDupeBanks);
 
 	ImGui::SeparatorText("Items");
 	ImGui::Text("Itemlist size: %d", state.ItemList.size());
 	ImGui::Text("Global data items size: %d", state.GlobalDataItems.size());
 	ImGui::Text("Global functions items size: %d", state.GlobalFunctions.size());
+
 }

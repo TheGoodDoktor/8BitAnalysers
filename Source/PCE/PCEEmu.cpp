@@ -250,8 +250,8 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	FCodeAnalysisState& state = CodeAnalysis;
 
 	// Get the bank id of the bank we are about to map in.
-	const uint16_t bankId = GetBankForMprSlot(newBankIndex, mprIndex);
-	FCodeAnalysisBank* pInBank = CodeAnalysis.GetBank(bankId);
+	const uint16_t newBankId = GetBankForMprSlot(newBankIndex, mprIndex);
+	FCodeAnalysisBank* pInBank = CodeAnalysis.GetBank(newBankId);
 #ifdef BANK_SWITCH_DEBUG
 	const FCodeAnalysisBank* pOutBank = CodeAnalysis.GetBank(MprBankId[mprIndex]);
 #endif
@@ -263,12 +263,29 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	const uint16_t oldMappedAddress = pInBank->GetMappedAddress();
 	const int oldPrimaryPage = pInBank->PrimaryMappedPage;
 	const EBankAccess bankAccess = pMemory->GetMemoryMapWrite()[newBankIndex] ? EBankAccess::ReadWrite : EBankAccess::Read;
-	state.MapBank(bankId, mprIndex * 8, bankAccess);
+	state.MapBank(newBankId, mprIndex * 8, bankAccess);
 	pInBank->PrimaryMappedPage = mprIndex * 8;
-	MprBankId[mprIndex] = bankId;
+	MprBankId[mprIndex] = newBankId;
 
+#ifndef NDEBUG
+	int slotCount = 0;
+	for (int i = 0; i < kNumMprSlots; i++)
+	{
+		if (pMemory->GetMpr(i) == newBankIndex)
+			slotCount++;
+	}
+	if (slotCount > 1)
+	{
+		if (pCurrentProjectConfig)
+		{
+			std::string& projectName = pCurrentProjectConfig->Name;
+			int& count = DebugStats.GamesWithDupeBanks[projectName];
+			count = MAX(count, slotCount);
+		}
+	}
+#endif
 #ifdef BANK_SWITCH_DEBUG
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < kNumMprSlots; i++)
 	{
 		if (pMemory->GetMpr(i) != 0xff)
 		{

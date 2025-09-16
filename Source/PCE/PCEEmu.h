@@ -14,8 +14,7 @@ class FBatchGameLoadViewer;
 
 struct FEmuDebugStats
 {
-	int MaxDupeMprBanks = 0;
-	std::string GameWithMaxDupeMprBanks;
+	std::map<std::string, int> GamesWithDupeBanks;
 };
 
 struct FPCELaunchConfig : public FEmulatorLaunchConfig
