@@ -111,28 +111,6 @@ jobs:
           cmake .. -DBUILD_SHARED_LIBS=OFF
           msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} CPCAnalyser.sln
 
-      # Build BBC Analyser (optional - may fail)
-      - name: Build BBC Analyser (Linux/macOS) 
-        if: matrix.os != 'windows-latest'
-        run: |
-          cd Source/BBC
-          mkdir -p build
-          cd build
-          cmake ..
-          make -j$(nproc) || echo "BBC build failed - continuing without it"
-        shell: bash
-        continue-on-error: true
-
-      - name: Build BBC Analyser (Windows) 
-        if: matrix.os == 'windows-latest'
-        run: |
-          cd Source/BBC
-          mkdir build
-          cd build
-          cmake .. -DBUILD_SHARED_LIBS=OFF
-          msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} BBCAnalyser.sln || echo "BBC build failed - continuing without it"
-        continue-on-error: true
-
       # Package builds (Linux/macOS)
       - name: Package builds (Linux/macOS)
         if: matrix.os != 'windows-latest'
@@ -140,6 +118,9 @@ jobs:
           # Create package directory
           mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}
           mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}/Docs
+          mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}/SpectrumAnalyser
+          mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}/C64Analyser
+          mkdir -p package/8BitAnalysers-${{ matrix.release_suffix }}/CPCAnalyser
           
           # Copy documentation
           cp README.md package/8BitAnalysers-${{ matrix.release_suffix }}/
@@ -164,7 +145,6 @@ jobs:
           - SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering
           - C64Analyser - Commodore 64 game analysis and reverse engineering  
           - CPCAnalyser - Amstrad CPC game analysis and reverse engineering
-          - BBCAnalyser - BBC Micro game analysis and reverse engineering (if available)
           
           Sample configuration files
           Complete documentation
@@ -190,22 +170,19 @@ jobs:
           
           # Copy built executables and required files (Linux/macOS)
           if [ -f "Source/ZXSpectrum/build/bin/SpectrumAnalyser" ]; then
-            cp Source/ZXSpectrum/build/bin/SpectrumAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            cp Source/ZXSpectrum/build/bin/SpectrumAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/SpectrumAnalyser/
           fi
           if [ -f "Source/C64/build/bin/C64Analyser" ]; then
-            cp Source/C64/build/bin/C64Analyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            cp Source/C64/build/bin/C64Analyser package/8BitAnalysers-${{ matrix.release_suffix }}/C64Analyser/
           fi
           if [ -f "Source/CPC/build/CPCAnalyser" ]; then
-            cp Source/CPC/build/CPCAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/
-          fi
-          if [ -f "Source/BBC/build/bin/BBCAnalyser" ]; then
-            cp Source/BBC/build/bin/BBCAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/
+            cp Source/CPC/build/CPCAnalyser package/8BitAnalysers-${{ matrix.release_suffix }}/CPCAnalyser/
           fi
           
-          # Copy configuration files
-          if [ -f "Data/SpectrumAnalyser/imgui.ini" ]; then
-            cp Data/SpectrumAnalyser/imgui.ini package/8BitAnalysers-${{ matrix.release_suffix }}/
-          fi
+          # Copy Data files recursively
+          cp Data/SpectrumAnalyser/ package/8BitAnalysers-${{ matrix.release_suffix }}/SpectrumAnalyser/ -r
+          cp Data/C64Analyser/ package/8BitAnalysers-${{ matrix.release_suffix }}/C64Analyser/ -r
+          cp Data/CPCAnalyser/ package/8BitAnalysers-${{ matrix.release_suffix }}/CPCAnalyser/ -r
           
           # Create installation guide
           cat > package/8BitAnalysers-${{ matrix.release_suffix }}/INSTALL.txt << 'EOF'
@@ -218,7 +195,6 @@ jobs:
           - SpectrumAnalyser: ZX Spectrum game analysis tool
           - C64Analyser: Commodore 64 game analysis tool
           - CPCAnalyser: Amstrad CPC game analysis tool
-          - BBCAnalyser: BBC Micro game analysis tool (if available)
           
           QUICK START:
           1. Extract this archive to your desired location
@@ -261,7 +237,6 @@ jobs:
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\SpectrumAnalyser" -Force
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser" -Force
           New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\C64Analyser" -Force
-          New-Item -ItemType Directory -Path "package\8BitAnalysers-${{ matrix.release_suffix }}\BBCAnalyser" -Force
           
           # Copy documentation
           Copy-Item "README.md" "package\8BitAnalysers-${{ matrix.release_suffix }}\"
@@ -283,7 +258,6 @@ jobs:
           - SpectrumAnalyser - ZX Spectrum game analysis and reverse engineering
           - C64Analyser - Commodore 64 game analysis and reverse engineering
           - CPCAnalyser - Amstrad CPC game analysis and reverse engineering
-          - BBCAnalyser - BBC Micro game analysis and reverse engineering (if available)
           
           For full documentation visit: https://github.com/TheGoodDoktor/8BitAnalysers/wiki
           "@ | Out-File -FilePath "package\8BitAnalysers-${{ matrix.release_suffix }}\README-RELEASE.txt" -Encoding utf8
@@ -298,15 +272,11 @@ jobs:
           if (Test-Path "Source\CPC\build\Release\CPCAnalyser.exe") {
             Copy-Item "Source\CPC\build\Release\CPCAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser\"
           }
-          if (Test-Path "Source\BBC\build\bin\Release\BBCAnalyser.exe") {
-            Copy-Item "Source\BBC\build\bin\Release\BBCAnalyser.exe" "package\8BitAnalysers-${{ matrix.release_suffix }}\BBCAnalyser\"
-          }
-          
+                 
           # Copy data files (Windows)
           Copy-Item "Data\SpectrumAnalyser" "package\8BitAnalysers-${{ matrix.release_suffix }}\SpectrumAnalyser\" -Recurse
           Copy-Item "Data\C64Analyser" "package\8BitAnalysers-${{ matrix.release_suffix }}\C64Analyser\" -Recurse
           Copy-Item "Data\CPCAnalyser" "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser\" -Recurse
-          Copy-Item "Data\BBCAnalyser" "package\8BitAnalysers-${{ matrix.release_suffix }}\BBCAnalyser\" -Recurse
 
           # Create installation guide (Windows)
           @"
@@ -319,7 +289,6 @@ jobs:
           - SpectrumAnalyser: ZX Spectrum game analysis tool
           - C64Analyser: Commodore 64 game analysis tool
           - CPCAnalyser: Amstrad CPC game analysis tool
-          - BBCAnalyser: BBC Micro game analysis tool (if available)
           
           Visit https://github.com/TheGoodDoktor/8BitAnalysers/wiki for full documentation
           "@ | Out-File -FilePath "package\8BitAnalysers-${{ matrix.release_suffix }}\INSTALL.txt" -Encoding utf8
@@ -402,7 +371,6 @@ jobs:
             - **SpectrumAnalyser** - ZX Spectrum game analysis and reverse engineering
             - **C64Analyser** - Commodore 64 game analysis and reverse engineering  
             - **CPCAnalyser** - Amstrad CPC game analysis and reverse engineering
-            - **BBCAnalyser** - BBC Micro game analysis and reverse engineering (if available)
             - Complete documentation and installation instructions
             - Sample configuration files
             
