@@ -17,7 +17,7 @@ jobs:
     name: Build All Analysers
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
         include:
           - os: ubuntu-latest
             release_suffix: linux
@@ -180,9 +180,9 @@ jobs:
           fi
           
           # Copy Data files recursively
-          cp Data/SpectrumAnalyser/ package/8BitAnalysers-${{ matrix.release_suffix }}/SpectrumAnalyser/ -r
-          cp Data/C64Analyser/ package/8BitAnalysers-${{ matrix.release_suffix }}/C64Analyser/ -r
-          cp Data/CPCAnalyser/ package/8BitAnalysers-${{ matrix.release_suffix }}/CPCAnalyser/ -r
+          cp -r Data/SpectrumAnalyser/* package/8BitAnalysers-${{ matrix.release_suffix }}/SpectrumAnalyser/ 
+          cp -r Data/C64Analyser/* package/8BitAnalysers-${{ matrix.release_suffix }}/C64Analyser/ 
+          cp -r Data/CPCAnalyser/* package/8BitAnalysers-${{ matrix.release_suffix }}/CPCAnalyser/ 
           
           # Create installation guide
           cat > package/8BitAnalysers-${{ matrix.release_suffix }}/INSTALL.txt << 'EOF'
@@ -274,9 +274,9 @@ jobs:
           }
                  
           # Copy data files (Windows)
-          Copy-Item "Data\SpectrumAnalyser\" "package\8BitAnalysers-${{ matrix.release_suffix }}\SpectrumAnalyser\" -Recurse
-          Copy-Item "Data\C64Analyser\" "package\8BitAnalysers-${{ matrix.release_suffix }}\C64Analyser\" -Recurse
-          Copy-Item "Data\CPCAnalyser\" "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser\" -Recurse
+          Copy-Item "Data\SpectrumAnalyser\*" "package\8BitAnalysers-${{ matrix.release_suffix }}\SpectrumAnalyser\" -Recurse
+          Copy-Item "Data\C64Analyser\*" "package\8BitAnalysers-${{ matrix.release_suffix }}\C64Analyser\" -Recurse
+          Copy-Item "Data\CPCAnalyser\*" "package\8BitAnalysers-${{ matrix.release_suffix }}\CPCAnalyser\" -Recurse
 
           # Create installation guide (Windows)
           @"
