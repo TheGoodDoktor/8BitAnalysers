@@ -142,9 +142,11 @@ void FBatchGameLoadViewer::DrawUI()
 
 		ImGui::SeparatorText("File list");
 
-		const FEmulatorFile& game = gamesList.GetGame(GameIndex);
-		ImGui::Text("(%d/%d) %s", GameIndex + 1, numGamesInList, game.DisplayName.c_str());
-		ImGui::InputInt("Game index", &GameIndex);
+		{
+			const FEmulatorFile& game = gamesList.GetGame(GameIndex);
+			ImGui::Text("(%d/%d) %s", GameIndex + 1, numGamesInList, game.DisplayName.c_str());
+			ImGui::InputInt("Game index", &GameIndex);
+		}
 
 		if (ImGui::Button("Prev game") || ImGui::IsKeyPressed(ImGuiKey_F1))
 		{
@@ -171,8 +173,8 @@ void FBatchGameLoadViewer::DrawUI()
 #if !NEWADDRESSREF
 			gTotalBanksProcessed = 0;
 #endif
-			LOGINFO("Load game '%s'", game.DisplayName.c_str());
 			const FEmulatorFile& game = gamesList.GetGame(GameIndex);
+			LOGINFO("%d Load game '%s'", GameIndex, game.DisplayName.c_str());
 			if (!pPCEEmu->NewProjectFromEmulatorFile(game))
 			{
 				pPCEEmu->Reset();

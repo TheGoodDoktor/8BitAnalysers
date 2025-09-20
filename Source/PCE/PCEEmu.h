@@ -78,7 +78,7 @@ public:
 	int16_t GetBankForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
 	void MapMprBank(uint8_t mprIndex, uint8_t newBankIndex);
 
-	void LogDupeMprBankIds();
+	void CheckDupeMprBankIds();
 
 	static const int kNumBanks = 256;
 	static const int kNumRomBanks = 128;
@@ -160,9 +160,6 @@ public:
 	};
 
 	FBankSet* Banks[kNumBanks] = { nullptr };
-	int16_t MprBankId[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-
-	FBankSet BankSets[kNumBanks];
 
 	FEmuDebugStats DebugStats;
 
@@ -186,4 +183,11 @@ protected:
 
 	FPCEViewer* pPCEViewer = nullptr;
 	FBatchGameLoadViewer* pBatchGameLoadViewer = nullptr;
+
+	bool bDoneInitialBankMapping = false;
+
+	int16_t MprBankId[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+
+	FBankSet BankSets[kNumBanks];
+	int16_t NullBankId = -1;
 };

@@ -5,7 +5,7 @@
 #include <imgui.h>
 
 #include "../PCEEmu.h"
-//#include <geargrafx_core.h>
+#include <geargrafx_core.h>
 
 
 FDebugStatsViewer::FDebugStatsViewer(FEmuBase* pEmu)
@@ -23,7 +23,8 @@ bool FDebugStatsViewer::Init()
 void FDebugStatsViewer::DrawUI()
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
-	
+	//Memory pMemory = pCE
+
 	int mappedBanks = 0;
 	int banksWithPrimaryMappedPage = 0;
 	int usedBanks = 0;
@@ -58,6 +59,9 @@ void FDebugStatsViewer::DrawUI()
 		}
 	}
 
+	const int romSize = pPCEEmu->GetMedia()->GetROMSize();
+	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
+
 	ImGui::SeparatorText("Banks");
 	ImGui::Text("Total banks: %d", Banks.size());
 	ImGui::Text("Mapped banks: %d", mappedBanks);
@@ -72,5 +76,9 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("Itemlist size: %d", state.ItemList.size());
 	ImGui::Text("Global data items size: %d", state.GlobalDataItems.size());
 	ImGui::Text("Global functions items size: %d", state.GlobalFunctions.size());
+
+	ImGui::SeparatorText("Rom");
+	ImGui::Text("Size: %d", romSize);
+	ImGui::Text("Bank count : %d", romBankCount);
 
 }

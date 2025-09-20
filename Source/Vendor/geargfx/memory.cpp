@@ -133,19 +133,18 @@ void Memory::Reset()
 
     for (int i = 0; i < 7; i++)
     {
-       m_mpr[i] = 0;
-    }
-
-    for (int i = 0; i < 7; i++)
-    {
        if (m_mpr_reset_value < 0)
        {
-				 // Sam. Made initial banks deterministic.
-         m_mpr[i] = i + 1;
+         // Sam. Made initial banks deterministic.
+         // Set to unused memory because setting to roms causes issues with bank mapping code.
+         m_mpr[i] = 0x80 + i;
        }
        else
           m_mpr[i] = m_mpr_reset_value & 0xFF;
     }
+
+    if (!rom_bank_count)
+       m_mpr[7] = 0x80 + 7;
 
     for (int i = 0; i < 0x8000; i++)
     {

@@ -356,6 +356,8 @@ public:
 	bool		FreeBanksFrom(int16_t bankId);
 	bool		SetBankPrimaryPage(int16_t bankId, int startPageNo);
 	bool		MapBank(int16_t bankId, int startPageNo, EBankAccess access = EBankAccess::ReadWrite);
+	// sam. reinstated this.
+	bool		UnMapBank(int16_t bankId, int startPageNo, EBankAccess access);
 
 	bool		IsBankIdMapped(int16_t bankId) const;
 	bool		IsAddressValid(FAddressRef addr) const;

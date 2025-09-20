@@ -174,13 +174,16 @@ bool FCodeAnalysisState::MapBank(int16_t bankId, int startPageNo, EBankAccess ac
 	return true;
 }
 
-#if 0
+//#if 0
 bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo, EBankAccess access)
 {
 	FCodeAnalysisBank* pBank = GetBank(bankId);
 
 	// TODO: this needs proper logic
-	if (pBank == nullptr || MappedReadBanks[startPageNo] != bankId)
+	if (pBank == nullptr)
+		return false;
+
+	if (MappedReadBanks[startPageNo] != bankId && MappedWriteBanks[startPageNo] != bankId)
 		return false;
 
 	for (int bankPage = 0; bankPage < pBank->NoPages; bankPage++)
@@ -195,7 +198,7 @@ bool FCodeAnalysisState::UnMapBank(int16_t bankId, int startPageNo, EBankAccess 
 
 	return true;
 }
-#endif
+//#endif
 bool FCodeAnalysisState::IsBankIdMapped(int16_t bankId) const
 {
 	for (int bankIdx = 0; bankIdx < kNoPagesInAddressSpace; bankIdx++)
