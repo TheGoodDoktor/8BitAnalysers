@@ -38,7 +38,7 @@ const uint16_t kDefaultPrimaryMappedPage = 8;
 const uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAnalysisPage::kPageSize;
 
 #ifndef NDEBUG
-//#define BANK_SWITCH_DEBUG
+#define BANK_SWITCH_DEBUG
 #endif
 #ifdef BANK_SWITCH_DEBUG
 #define BANK_LOG(...)  LOGINFO("[BNK] " __VA_ARGS__)
@@ -199,6 +199,9 @@ void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBank
 		return;
 	}
 
+	// this should probably be moved to MapMprBank()
+	pEmu->Banks[oldBankIndex]->UnmapCurrentBank(mprIndex);
+
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
 
@@ -284,7 +287,25 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 		}
 	}
 #endif
+
 #ifdef BANK_SWITCH_DEBUG
+	int mappedBanks = 0;
+	auto& banks = state.GetBanks();
+	for (auto& bank : banks)
+	{
+		if (bank.IsMapped())
+			mappedBanks++;
+	}
+	if (mappedBanks > kNumMprSlots)
+	{
+		for (auto& bank : banks)
+		{
+			if (bank.IsMapped())
+				BANK_LOG("Mapped: %d %s", bank.Id, bank.Name.c_str());
+		}
+	}
+	assert(mappedBanks <= kNumMprSlots);
+
 	for (int i = 0; i < kNumMprSlots; i++)
 	{
 		if (pMemory->GetMpr(i) != 0xff)
@@ -336,12 +357,7 @@ int16_t FPCEEmu::GetBankForMprSlot(uint8_t bankIndex, uint8_t mprIndex)
 	if (Banks[bankIndex] == nullptr)
 		return -1;
 
-	// todo get this working
-	// we need to decrement it somewhere.
-	//Banks[bankIndex]->NumBanksInUse++;
-	 
-	// rename banks to #1 #2...?
-	return Banks[bankIndex]->BankIds[mprIndex];
+	return Banks[bankIndex]->GetNextFreeBank(mprIndex);
 }
 
 void FPCEEmu::LogDupeMprBankIds()
@@ -363,6 +379,7 @@ void FPCEEmu::LogDupeMprBankIds()
 						FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(MprBankId[i]);
 						assert(pBank);
 						LOGERROR("Dupe bank '%s' found in slots %d and %d", pBank->Name.c_str(), i, j);
+						assert(0);
 					}
 					bDupe[i] = true;
 				}
@@ -458,20 +475,20 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	// Hardware page. (IO)
 	// todo: hardware page is mpr slot 0xff. for now map some dummy memory until we figure out how to do it.
-	for (int d = 0; d < kNumMprSlots; d++)
-		BankSets[kBankHWPage].BankIds[d] = CodeAnalysis.CreateBank("HW PAGE", 8, gDummyMemory, false /*bMachineROM*/, 0x0);
+	for (int d = 0; d < kNumBankSetIds; d++)
+		BankSets[kBankHWPage].AddBankId(CodeAnalysis.CreateBank("HW PAGE", 8, gDummyMemory, false /*bMachineROM*/, 0x0));
 	
 	// Working RAM
-	for (int d = 0; d < kNumMprSlots; d++)
-		BankSets[kBankWRAM0].BankIds[d] = CodeAnalysis.CreateBank("WRAM", 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000);
+	for (int d = 0; d < kNumBankSetIds; d++)
+		BankSets[kBankWRAM0].AddBankId(CodeAnalysis.CreateBank("WRAM", 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000));
 	
 	// Save RAM
-	for (int d = 0; d < kNumMprSlots; d++)
-		BankSets[kBankSaveRAM].BankIds[d] = CodeAnalysis.CreateBank("SAVE RAM", pMemory->GetBackupRAMSize() / 1024, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr);
+	for (int d = 0; d < kNumBankSetIds; d++)
+		BankSets[kBankSaveRAM].AddBankId(CodeAnalysis.CreateBank("SAVE RAM", pMemory->GetBackupRAMSize() / 1024, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 
-	// Unused banks
+	// Unused banks. Intentionally adding 1 for each mpr slot.
 	for (int d = 0; d < kNumMprSlots; d++)
-		BankSets[0x80].BankIds[d] = CodeAnalysis.CreateBank("UNUSED", 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr);
+		BankSets[0x80].AddBankId(CodeAnalysis.CreateBank("UNUSED", 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	
 	for (int d = 0x80; d < kNumBanks; d++)
 		Banks[d] = &BankSets[0x80];
@@ -488,10 +505,10 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	for (int b = 0; b < kNumRomBanks; b++)
 	{
-		for (int d = 0; d < kNumMprSlots; d++)
+		for (int d = 0; d < kNumBankSetIds; d++)
 		{
 			sprintf(bankName, "ROM %02d", b);
-			BankSets[b].BankIds[d] = CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr);
+			BankSets[b].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
 		}
 	}
 
@@ -579,12 +596,16 @@ void FPCEEmu::ResetBanks()
 	const int romSize = pMedia->GetROMSize();
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 
+	for (int bankNo = 0; bankNo < kNumBanks; bankNo++)
+	{
+		BankSets[bankNo].Reset();
+	}
+
 	// Set initial rom banks.
 	// todo: explain non sequential nature of rom banks.
 	for (int bankNo = 0; bankNo < 128; bankNo++)
 	{
 		const int bankIndex = romBankCount ? pCore->GetMedia()->GetRomBankIndex(bankNo) : bankNo;
-		BankSets[bankNo].NumBanksInUse = 0;
 		Banks[bankNo] = &BankSets[bankIndex];
 	}
 
@@ -599,23 +620,32 @@ void FPCEEmu::ResetBanks()
 		bank.bEverBeenMapped = false;
 	}
 
+	// todo: if any code analysis banks are marked as in use then set their primarymappedpage to the default
+	
+	// what do we do here?
 	// Set banks primary mapped page to mark them as in use.
 	// They will get their actual mapped address set when they are mapped in.
 	// We do this because we can't have any banks in use with PrimaryMappedPage of -1.
-	BankSets[kBankHWPage].SetPrimaryMappedPage(CodeAnalysis, kDefaultPrimaryMappedPage);
-	BankSets[kBankWRAM0].SetPrimaryMappedPage(CodeAnalysis, kDefaultPrimaryMappedPage);
-	BankSets[kBankSaveRAM].SetPrimaryMappedPage(CodeAnalysis, kDefaultPrimaryMappedPage);
+	BankSets[kBankHWPage].SetupPrimaryBank(CodeAnalysis, kDefaultPrimaryMappedPage);
+	BankSets[kBankWRAM0].SetupPrimaryBank(CodeAnalysis, kDefaultPrimaryMappedPage);
+	BankSets[kBankSaveRAM].SetupPrimaryBank(CodeAnalysis, kDefaultPrimaryMappedPage);
 
 	// Patch in the rom memory into the rom banks.
 	for (int bankNo = 0; bankNo < romBankCount; bankNo++)
 	{
+		BankSets[bankNo].SetupPrimaryBank(CodeAnalysis, kDefaultPrimaryMappedPage);
+
 		uint8_t* pMemory = pMedia->GetROMMap()[bankNo];
-		for (int d = 0; d < 8; d++)
+		for (int d = 0; d < kNumBankSetIds; d++)
 		{
-			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[bankNo].BankIds[d]);
+			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[bankNo].GetBankId(d));
 			pBank->Memory = pMemory;
-			pBank->PrimaryMappedPage = kDefaultPrimaryMappedPage;
 		}
+	}
+
+	for (int mprNum = 0; mprNum < 8; mprNum++)
+	{
+		MprBankId[mprNum] = -1;
 	}
 
 	// Go through each mpr slot and map a bank for each one
@@ -683,7 +713,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 			return false;
 		}
 
-		// do i need to call resetbanks() here?
 		ResetBanks();
 
 		if (FileExists(analysisJsonFName.c_str()))

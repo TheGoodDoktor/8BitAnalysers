@@ -83,6 +83,7 @@ public:
 	static const int kNumBanks = 256;
 	static const int kNumRomBanks = 128;
 	static const int kNumMprSlots = 8;
+	static const int kNumBankSetIds = 4;
 
 	// A set of bank ids that all represent the same logical memory.
 	// PCE games can map the same bank to different physical memory ranges.
@@ -93,19 +94,69 @@ public:
 	// we need a set of banks that all point to the same memory.
 	struct FBankSet
 	{
-		void SetPrimaryMappedPage(FCodeAnalysisState& state, uint16_t pageAddr)
+		void SetupPrimaryBank(FCodeAnalysisState& state, uint16_t pageAddr)
 		{
-			FCodeAnalysisBank* pBank = nullptr;
-			for (int b = 0; b < kNumMprSlots; b++)
+			FCodeAnalysisBank* pBank = state.GetBank(Banks[0].BankId);
+			assert(pBank);
+			pBank->PrimaryMappedPage = pageAddr;
+		}
+		int16_t GetNextFreeBank(uint8_t mprSlot)
+		{
+			for (int i = 0; i < Banks.size(); i++)
 			{
-				pBank = state.GetBank(BankIds[b]);
-				assert(pBank);
-				pBank->PrimaryMappedPage = pageAddr;
+				FBankSetEntry& entry = Banks[i];
+				if (!entry.bMapped)
+				{
+					entry.bMapped = true;
+					assert(SlotBankId[mprSlot] == -1);
+					SlotBankId[mprSlot] = i;
+					return entry.BankId;
+				}
 			}
+			
+			// todo return unused bank if we run out of banks
+			return -1;
+		}
+		// todo: think of better name
+		void UnmapCurrentBank(uint8_t mprSlot)
+		{
+			assert(SlotBankId[mprSlot] != -1);
+			Banks[SlotBankId[mprSlot]].bMapped = false; 
+			SlotBankId[mprSlot] = -1;
+		}
+		void Reset()
+		{
+			for (int i = 0; i < kNumMprSlots; i++)
+				SlotBankId[i] = -1;
+			for (int i = 0; i < Banks.size(); i++)
+				Banks[i].bMapped = false;
+		}
+		void AddBankId(int16_t bankId)
+		{
+			Banks.push_back(FBankSetEntry({bankId, false}));
+		}
+		int16_t GetBankId(int index)
+		{
+			assert(!Banks.empty());
+			if (index >= Banks.size())
+				return -1;
+
+			return Banks[index].BankId;
 		}
 
-		uint8_t NumBanksInUse = 0;
-		int16_t BankIds[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+		struct FBankSetEntry
+		{
+			int16_t BankId = -1;
+			bool bMapped = false;
+		};
+		
+		// Bank set index for each mpr slot. Only will be set to a bank id when a bank gets mapped.
+		int SlotBankId[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	
+		// List of all bank ids.
+		// Entry 0 is the primary bank. It should always have a primary mapped page.
+		// Entries >1 are the dupe banks and will get a primary mapped page if they get mapped in.
+		std::vector<FBankSetEntry> Banks;
 	};
 
 	FBankSet* Banks[kNumBanks] = { nullptr };
