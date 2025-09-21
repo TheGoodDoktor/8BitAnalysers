@@ -39,7 +39,7 @@ const uint16_t kDefaultPrimaryMappedPage = 8;
 const uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAnalysisPage::kPageSize;
 
 #ifndef NDEBUG
-#define BANK_SWITCH_DEBUG
+//#define BANK_SWITCH_DEBUG
 #endif
 #ifdef BANK_SWITCH_DEBUG
 #define BANK_LOG(...)  LOGINFO("[BNK] " __VA_ARGS__)
@@ -201,7 +201,7 @@ void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBank
 	}
 
 	// this should probably be moved to MapMprBank()
-	pEmu->Banks[oldBankIndex]->UnmapCurrentBank(mprIndex);
+	pEmu->Banks[oldBankIndex]->SetBankFreed(mprIndex);
 
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
@@ -264,7 +264,14 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	if (!pInBank)
 		return;
 
-	assert(pInBank != pOutBank);
+	// It's possible for the in bank to be the same as the outbank.
+	// This can happen because the same rom bank can be in the rom map multiple times.
+	// For example a game with 64 rom banks, bank indices 32 & 64 will represent the same rom bank.
+	// A game that does this is Dragon Saber.
+	if (pInBank == pOutBank)
+	{
+		BANK_LOG("In bank is the same as the out bank.");
+	}
 
 	const uint16_t oldMappedAddress = pInBank->GetMappedAddress();
 	const int oldPrimaryPage = pInBank->PrimaryMappedPage;
@@ -277,12 +284,15 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	// Deal with the case where a RW bank is getting replaced by a Read only bank.
 	// MapBank() won't remove the Write mapping of the RW bank, so the RW bank will remain
 	// mapped Write only.
-	if (pOutBank && pOutBank->IsMapped())
+	if (pOutBank != pInBank)
 	{
-		assert(pOutBank->Mapping == EBankAccess::Write);
-		BANK_LOG("Unmapping %d %s because it was still mapped after MapBank()", outBankId, pOutBank->Name.c_str());
-		bool bUnMappedOk = state.UnMapBank(outBankId, pageNo, pOutBank->Mapping);
-		assert(bUnMappedOk);
+		if (pOutBank && pOutBank->IsMapped())
+		{
+			assert(pOutBank->Mapping == EBankAccess::Write);
+			BANK_LOG("Unmapping %d %s because it was still mapped after MapBank()", outBankId, pOutBank->Name.c_str());
+			bool bUnMappedOk = state.UnMapBank(outBankId, pageNo, pOutBank->Mapping);
+			assert(bUnMappedOk);
+		}
 	}
 
 #ifndef NDEBUG
@@ -302,7 +312,10 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	}
 #endif
 
+
 #ifdef BANK_SWITCH_DEBUG
+	// Check we only have 8 banks mapped.
+	// If we have any other number then something has gone wrong.
 	int mappedBanks = 0;
 	auto& banks = state.GetBanks();
 	for (auto& bank : banks)
@@ -320,11 +333,13 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	}
 	
 	if (bDoneInitialBankMapping)
-		assert(mappedBanks <= kNumMprSlots);
+	{
+		assert(mappedBanks == kNumMprSlots);
+	}
 	else
 	{
 		if (mappedBanks > kNumMprSlots)
-			BANK_LOG("%d Banks mapped.", mappedBanks);
+			BANK_ERROR("%d Banks mapped.", mappedBanks);
 	}
 
 	for (int i = 0; i < kNumMprSlots; i++)
@@ -341,7 +356,7 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 		}
 	}
 
-	BANK_LOG("IN: '%s' 0x%x->0x%x OUT: '%s'", pInBank->Name.c_str(), oldMappedAddress, pInBank->GetMappedAddress(), pOutBank ? pOutBank->Name.c_str() : "None");
+	BANK_LOG("IN: '%s' OUT: '%s' 0x%x->0x%x", pInBank->Name.c_str(), pOutBank ? pOutBank->Name.c_str() : "None", oldMappedAddress, pInBank->GetMappedAddress());
 
 	int b = 0;
 	for (int addrVal = 0; addrVal < 0xffff; addrVal += 0x2000, b++)
@@ -373,20 +388,19 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	state.SetAddressRangeDirty();
 }
 
-// should this return bank ptr?
 int16_t FPCEEmu::GetBankForMprSlot(uint8_t bankIndex, uint8_t mprIndex)
 {
 	if (Banks[bankIndex] == nullptr)
 		return -1;
 
-	int16_t freeBank = Banks[bankIndex]->GetNextFreeBank(mprIndex);
+	int16_t freeBank = Banks[bankIndex]->GetFreeBank(mprIndex);
 	if (freeBank != -1)
 	{
 		return freeBank;
 	}
 
 	// If we couldnt find a free bank return an unused bank
-	freeBank = Banks[kBankFirstUnused]->GetNextFreeBank(mprIndex);
+	freeBank = Banks[kBankFirstUnused]->GetFreeBank(mprIndex);
 	assert(freeBank != -1);
 	return freeBank;
 }
@@ -650,8 +664,8 @@ void FPCEEmu::ResetBanks()
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 
 #ifdef BANK_SWITCH_DEBUG
-	LOGINFO("ResetBanks()");
-	LOGINFO("Rom size is %d bytes. Bank count is %d", romSize, romBankCount);
+	BANK_LOG("ResetBanks()");
+	BANK_LOG("Rom size is %d bytes. Bank count is %d", romSize, romBankCount);
 #endif
 
 	for (int bankNo = 0; bankNo < kNumBanks; bankNo++)
@@ -667,6 +681,7 @@ void FPCEEmu::ResetBanks()
 		Banks[bankNo] = &BankSets[bankIndex];
 	}
 
+	// Unmap the banks from the mpr slots.
 	for (int mprNum = 0; mprNum < 8; mprNum++)
 	{
 		const int16_t bankId = MprBankId[mprNum];
@@ -695,14 +710,14 @@ void FPCEEmu::ResetBanks()
 	// Set banks primary mapped page to mark them as in use.
 	// They will get their actual mapped address set when they are mapped in.
 	// We do this because we can't have any banks in use with PrimaryMappedPage of -1.
-	BankSets[kBankHWPage].SetupPrimaryBank(CodeAnalysis, kDefaultPrimaryMappedPage);
-	BankSets[kBankWRAM0].SetupPrimaryBank(CodeAnalysis, kDefaultPrimaryMappedPage);
-	BankSets[kBankSaveRAM].SetupPrimaryBank(CodeAnalysis, kDefaultPrimaryMappedPage);
+	BankSets[kBankHWPage].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
+	BankSets[kBankWRAM0].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
+	BankSets[kBankSaveRAM].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
 	// Patch in the rom memory into the rom banks.
 	for (int bankNo = 0; bankNo < romBankCount; bankNo++)
 	{
-		BankSets[bankNo].SetupPrimaryBank(CodeAnalysis, kDefaultPrimaryMappedPage);
+		BankSets[bankNo].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
 		uint8_t* pMemory = pMedia->GetROMMap()[bankNo];
 		for (int d = 0; d < kNumBankSetIds; d++)
@@ -1076,4 +1091,58 @@ void FPCELaunchConfig::ParseCommandline(int argc, char** argv)
 
 		++argIt;
 	}*/
+}
+
+// move this to it's own file?
+void FPCEEmu::FBankSet::SetPrimaryMappedPage(FCodeAnalysisState& state, int bankSetIndex, uint16_t pageAddr)
+{
+	FCodeAnalysisBank* pBank = state.GetBank(Banks[bankSetIndex].BankId);
+	assert(pBank);
+	pBank->PrimaryMappedPage = pageAddr;
+}
+
+int16_t FPCEEmu::FBankSet::GetFreeBank(uint8_t mprSlot)
+{
+	for (int i = 0; i < Banks.size(); i++)
+	{
+		FBankSetEntry& entry = Banks[i];
+		if (!entry.bMapped)
+		{
+			entry.bMapped = true;
+			assert(SlotBankId[mprSlot] == -1);
+			SlotBankId[mprSlot] = i;
+			return entry.BankId;
+		}
+	}
+
+	return -1;
+}
+	
+void FPCEEmu::FBankSet::SetBankFreed(uint8_t mprSlot)
+{
+	assert(SlotBankId[mprSlot] != -1);
+	Banks[SlotBankId[mprSlot]].bMapped = false;
+	SlotBankId[mprSlot] = -1;
+}
+	
+void FPCEEmu::FBankSet::Reset()
+{
+	for (int i = 0; i < kNumMprSlots; i++)
+		SlotBankId[i] = -1;
+	for (int i = 0; i < Banks.size(); i++)
+		Banks[i].bMapped = false;
+}
+	
+void FPCEEmu::FBankSet::AddBankId(int16_t bankId)
+{
+	Banks.push_back(FBankSetEntry({ bankId, false }));
+}
+	
+int16_t FPCEEmu::FBankSet::GetBankId(int index) const
+{
+	assert(!Banks.empty());
+	if (index >= Banks.size())
+		return -1;
+
+	return Banks[index].BankId;
 }
