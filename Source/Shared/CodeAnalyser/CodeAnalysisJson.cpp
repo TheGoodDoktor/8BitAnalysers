@@ -39,9 +39,13 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
 			continue;
 
+		if (bank.PrimaryMappedPage == -1)
+			continue;
+
 		json bankJson;
 		bankJson["Id"] = bank.Id;
 		bankJson["Description"] = bank.Description;
+		bankJson["MappedPage"] = bank.PrimaryMappedPage;
 
 		//bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
 		jsonGameData["Banks"].push_back(bankJson);
@@ -199,6 +203,8 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			{
 				if (bankJson.contains("Description"))
 					pBank->Description = bankJson["Description"];
+				if (bankJson.contains("MappedPage"))
+					pBank->PrimaryMappedPage = bankJson["MappedPage"];
 				//if (bankJson.contains("Used"))
 				//	pBank-> = bankJson["Used"];
 				//pBank->PrimaryMappedPage = bankJson["PrimaryMappedPage"];
