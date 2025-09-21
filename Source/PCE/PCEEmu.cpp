@@ -810,6 +810,14 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		{
 			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+
+
+			std::vector<FCodeAnalysisBank>& banks = CodeAnalysis.GetBanks();
+			for (auto& bank : banks)
+			{
+				if (bank.IsUsed() && bank.PrimaryMappedPage == -1)
+					bank.PrimaryMappedPage = kDefaultPrimaryMappedPage;
+			}
 		}
 
 		//pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());

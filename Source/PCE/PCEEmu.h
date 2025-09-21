@@ -96,7 +96,7 @@ public:
 	// The number includes the primary bank and any extra banks for duplicates.
 	// For example, a value of 4 means 1 primary and 3 duplicates.
 	// todo: work out why a value of 2 asserts in SetBankFreed().
-	static const int kNumBankSetIds = 3;
+	static const int kNumBankSetIds = 4;
 
 	struct FBankSet
 	{
