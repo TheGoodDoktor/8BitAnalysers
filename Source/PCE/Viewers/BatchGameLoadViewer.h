@@ -21,6 +21,7 @@ private:
 private:
 	bool bAutomationActive = false;
 	bool bPressRandomButtons = false;
+	bool bLoadExistingProject = false;
 	double NextButtonPressTime = DBL_MAX;
 	float InputDelay = 0.5f;
 	int GameIndex = 0;

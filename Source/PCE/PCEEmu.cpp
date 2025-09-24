@@ -200,8 +200,9 @@ void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBank
 		return;
 	}
 
-	// this should probably be moved to MapMprBank()
-	pEmu->Banks[oldBankIndex]->SetBankFreed(mprIndex);
+	const int bankSetIndex = pEmu->MprBankSet[mprIndex];
+	if (bankSetIndex != -1)
+		pEmu->Banks[bankSetIndex]->SetBankFreed(mprIndex);
 
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
@@ -396,11 +397,13 @@ int16_t FPCEEmu::GetBankForMprSlot(uint8_t bankIndex, uint8_t mprIndex)
 	int16_t freeBank = Banks[bankIndex]->GetFreeBank(mprIndex);
 	if (freeBank != -1)
 	{
+		MprBankSet[mprIndex] = bankIndex;
 		return freeBank;
 	}
 
 	// If we couldnt find a free bank return an unused bank
 	freeBank = Banks[kBankFirstUnused]->GetFreeBank(mprIndex);
+	MprBankSet[mprIndex] = kBankFirstUnused;
 	assert(freeBank != -1);
 	return freeBank;
 }
@@ -690,6 +693,7 @@ void FPCEEmu::ResetBanks()
 			CodeAnalysis.UnMapBank(bankId, mprNum * 8, pBank->Mapping);
 		}
 		MprBankId[mprNum] = -1;
+		MprBankSet[mprNum] = -1;
 	}
 
 	// Reset banks for re-use.

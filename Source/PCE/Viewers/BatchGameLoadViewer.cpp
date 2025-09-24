@@ -5,6 +5,8 @@
 #include <imgui.h>
 
 #include "../PCEEmu.h"
+#include "Misc/GameConfig.h"
+
 #include <geargrafx_core.h>
 
 #if !NEWADDRESSREF
@@ -57,6 +59,8 @@ void FBatchGameLoadViewer::DrawUI()
 		NextButtonPressTime = GetNextButtonPressTime();
 	}
 	ImGui::InputFloat("Input delay", &InputDelay);
+	
+	ImGui::Checkbox("Load existing project", &bLoadExistingProject);
 
 	float fGameTimeRemaining = 0;
 	if (bAutomationActive)
@@ -174,16 +178,32 @@ void FBatchGameLoadViewer::DrawUI()
 			gTotalBanksProcessed = 0;
 #endif
 			const FEmulatorFile& game = gamesList.GetGame(GameIndex);
-			LOGINFO("%d Load game '%s'", GameIndex, game.DisplayName.c_str());
-			if (!pPCEEmu->NewProjectFromEmulatorFile(game))
+			bool bOk = false;
+			FProjectConfig* pConfig = nullptr;
+
+			if (bLoadExistingProject)
+				pConfig = GetGameConfigForName(game.DisplayName.c_str());
+			
+			if (pConfig)
 			{
-				pPCEEmu->Reset();
-				pPCEEmu->DisplayErrorMessage("Could not create project '%s'", game.DisplayName.c_str());
+				bOk = pPCEEmu->LoadProject(pConfig, true);
+				LOGINFO("%d Loading existing project '%s'", GameIndex, game.DisplayName.c_str());
 			}
 			else
 			{
+				LOGINFO("%d Creating new project for '%s'", GameIndex, game.DisplayName.c_str());
+				bOk = pPCEEmu->NewProjectFromEmulatorFile(game);
+			}
+			
+			if (bOk)
+			{
 				pPCEEmu->GetCodeAnalysis().Debugger.Continue();
 				NextGameTime = time + GameRunTime;
+			}
+			else
+			{
+				pPCEEmu->Reset();
+				pPCEEmu->DisplayErrorMessage("Could not %s project '%s'", bLoadExistingProject ? "load" : "create", game.DisplayName.c_str());
 			}
 		}
 	}

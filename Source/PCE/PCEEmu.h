@@ -84,6 +84,12 @@ public:
 	static const int kNumRomBanks = 128;
 	static const int kNumMprSlots = 8;
 	
+	// The default number of banks in a bank set.
+	// The number includes the primary bank and any extra banks for duplicates.
+	// For example, a value of 4 means 1 primary and 3 duplicates.
+	// todo: work out why a value of 2 asserts in SetBankFreed().
+	static const int kNumBankSetIds = 2;
+
 	// A set of bank ids that all represent the same logical memory.
 	// PCE games can map the same bank to different physical memory ranges.
 	// Eg. ROM1 being mapped to 0x4000-0x6000 and 0x8000-0xa000.
@@ -91,13 +97,6 @@ public:
 	// It is technically possible to map the same bank across the entire physical memory range.
 	// 8BA doesn't support a bank being mapped into >1 memory location at the same time, so 
 	// we need a set of banks that all point to the same memory.
-	
-	// The default number of banks in a bank set.
-	// The number includes the primary bank and any extra banks for duplicates.
-	// For example, a value of 4 means 1 primary and 3 duplicates.
-	// todo: work out why a value of 2 asserts in SetBankFreed().
-	static const int kNumBankSetIds = 4;
-
 	struct FBankSet
 	{
 		void SetPrimaryMappedPage(FCodeAnalysisState& state, int bankSetIndex, uint16_t pageAddr);
@@ -123,6 +122,7 @@ public:
 	};
 
 	FBankSet* Banks[kNumBanks] = { nullptr };
+	int MprBankSet[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
 	FEmuDebugStats DebugStats;
 
