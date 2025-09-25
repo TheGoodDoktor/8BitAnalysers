@@ -33,243 +33,220 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
-	set(MACOSX_BUNDLE_BUNDLE_NAME PCE Analyser)
-	find_package(OpenGL REQUIRED)
-	find_package(Threads REQUIRED)
-	find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
-	set( gfxapi "GLFWApi")
-	set( with_tests false )
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
+    set(MACOSX_BUNDLE_BUNDLE_NAME PCE Analyser)
+    find_package(OpenGL REQUIRED)
+    find_package(Threads REQUIRED)
+    find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
+    set(gfxapi "GLFWApi")
+    set(with_tests false)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	#set( gfxapi "DX11")
-	set( gfxapi "GLFWApi")	
-	set( with_tests false )
+    #set(gfxapi "DX11")
+    set(gfxapi "GLFWApi")
+    set(with_tests false)
 endif()
 
 # Put binary and configuration files to /bin subfolder
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-
-
+# Vendor and shared includes
 include( ../Vendor/CMakeVendor.txt )
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../Vendor/geargfx
+                 ${CMAKE_CURRENT_BINARY_DIR}/Vendor/geargfx)
 
-# other includes
 include_directories( ../Shared )
-
 include( ../Shared/CMakeShared.txt )
 
 # compiler defines
-add_compile_definitions( _CRT_SECURE_NO_WARNINGS )
-add_compile_definitions( _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS )
-
-## geargfx
-add_compile_definitions( GG_DISABLE_DISASSEMBLER )
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+add_compile_definitions(_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS)
+add_compile_definitions(GG_DISABLE_DISASSEMBLER) # geargfx define
 
 # compiler options
 if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE Release)
 endif ()
 
-
 # program source
-file ( GLOB program_src CONFIGURE_DEPENDS
-	./*.cpp ./*.c ./*.h
-	Viewers/*.cpp Viewers/*.h)
+file (GLOB program_src CONFIGURE_DEPENDS
+    ./*.cpp ./*.c ./*.h
+    Viewers/*.cpp Viewers/*.h)
 
-add_executable (PCEAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
+# Main executable
+add_executable(PCEAnalyser MACOSX_BUNDLE
+    ${shared_src} ${program_src} ${platform_main} ${vendor_src})
+
+target_link_libraries(PCEAnalyser PRIVATE geargfx)
 
 # set up test
 if(${with_tests})
+    file (GLOB test_src Tests/*.cpp Tests/*.h)
+    file (GLOB shared_test_src
+        ../Shared/CodeAnalyser/Tests/*.cpp
+        ../Shared/CodeAnalyser/Tests/*.h)
 
-file ( GLOB test_src
-	Tests/*.cpp Tests/*.h)
-file ( GLOB shared_test_src
-	../Shared/CodeAnalyser/Tests/*.cpp ../Shared/CodeAnalyser/Tests/*.h)
+    add_executable(PCEAnalyserTest MACOSX_BUNDLE
+        ${test_src} ${shared_test_src} ${shared_src} ${program_src} ${vendor_src})
 
-add_executable (PCEAnalyserTest MACOSX_BUNDLE ${test_src} ${shared_test_src} ${shared_src} ${program_src} ${vendor_src} )
+    set_target_properties(PCEAnalyserTest PROPERTIES CXX_STANDARD 20 C_STANDARD 11)
+    target_compile_definitions(PCEAnalyserTest PRIVATE TEST)
 
-set_target_properties( PCEAnalyserTest PROPERTIES CXX_STANDARD 20 )
-set_target_properties( PCEAnalyserTest PROPERTIES C_STANDARD 11 )
-target_compile_definitions( PCEAnalyserTest PRIVATE TEST )
-target_link_libraries( PCEAnalyserTest GTest::gtest_main )
+    target_link_libraries(PCEAnalyserTest PRIVATE geargfx GTest::gtest_main)
 
-include(GoogleTest)
-gtest_discover_tests(PCEAnalyserTest)
-
+    include(GoogleTest)
+    gtest_discover_tests(PCEAnalyserTest)
 endif()
 
-# This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} ${shared_test_src})
-source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX PCE FILES ${program_src} ${platform_main} ${test_src})
+# This is to make the filter folders in Visual Studio
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/../Shared PREFIX Shared FILES ${shared_src} ${shared_test_src})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX PCE FILES ${program_src} ${platform_main} ${test_src})
 
-set_target_properties( PCEAnalyser PROPERTIES CXX_STANDARD 20 )
-set_target_properties( PCEAnalyser PROPERTIES C_STANDARD 11 )
+set_target_properties(PCEAnalyser PROPERTIES CXX_STANDARD 20 C_STANDARD 11)
 
-#windows specific
+# Platform-specific link libraries
 if(${gfxapi} STREQUAL "DX11")
-
-	# libraries
-	target_link_libraries(${PROJECT_NAME} PRIVATE
-		d3d11.lib dxgi.lib dxguid.lib uuid.lib
-		kernel32.lib user32.lib
-		comdlg32.lib advapi32.lib shell32.lib
-		ole32.lib oleaut32.lib)
+    target_link_libraries(PCEAnalyser PRIVATE
+        d3d11.lib dxgi.lib dxguid.lib uuid.lib
+        kernel32.lib user32.lib
+        comdlg32.lib advapi32.lib shell32.lib
+        ole32.lib oleaut32.lib
+    )
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	# debugger working dir
-	set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/PCEAnalyser")
-	if(${with_tests})
-		set_property(TARGET PCEAnalyserTest PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/PCEAnalyser")
-	endif()
-	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
-	
-	if(${gfxapi} STREQUAL "GLFWApi")
-		target_link_libraries(${PROJECT_NAME}
-			glfw 
-			${OPENGL_LIBRARIES} 
-			${CMAKE_THREAD_LIBS_INIT}
-			${X11_LIBRARIES}
-			${CMAKE_DL_LIBS}
-			)
-		if(${with_tests})
-			target_link_libraries(PCEAnalyserTest
-				glfw 
-				${OPENGL_LIBRARIES} 
-				${CMAKE_THREAD_LIBS_INIT}
-				${X11_LIBRARIES}
-				${CMAKE_DL_LIBS}
-				)
-		endif()
-	endif()
+    set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/PCEAnalyser")
+    if(${with_tests})
+        set_property(TARGET PCEAnalyserTest PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/PCEAnalyser")
+    endif()
+    set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
-	# Copy ini file to /bin
-	add_custom_command(TARGET ${APP_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/imgui.ini
-			$<TARGET_FILE_DIR:${APP_NAME}>
-			)
+    if(${gfxapi} STREQUAL "GLFWApi")
+        target_link_libraries(PCEAnalyser PRIVATE
+            glfw
+            ${OPENGL_LIBRARIES}
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${X11_LIBRARIES}
+            ${CMAKE_DL_LIBS}
+        )
+        if(${with_tests})
+            target_link_libraries(PCEAnalyserTest PRIVATE
+                glfw
+                ${OPENGL_LIBRARIES}
+                ${CMAKE_THREAD_LIBS_INIT}
+                ${X11_LIBRARIES}
+                ${CMAKE_DL_LIBS}
+            )
+        endif()
+    endif()
 
-	# Copy icon file to /bin
-	add_custom_command(TARGET ${APP_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/PCELogo.png
-			$<TARGET_FILE_DIR:${APP_NAME}>
-			)
+    # Copy data files
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/imgui.ini
+        $<TARGET_FILE_DIR:${APP_NAME}>)
+
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/PCELogo.png
+        $<TARGET_FILE_DIR:${APP_NAME}>)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-	target_link_libraries(${PROJECT_NAME}
-		glfw
-		asound
-		${OPENGL_LIBRARIES} 
-		${CMAKE_THREAD_LIBS_INIT}
-		${X11_LIBRARIES}
-		${CMAKE_DL_LIBS}
-		)
-	if(${with_tests})
-		target_link_libraries(PCEAnalyserTest
-			glfw
-			asound
-			${OPENGL_LIBRARIES} 
-			${CMAKE_THREAD_LIBS_INIT}
-			${X11_LIBRARIES}
-			${CMAKE_DL_LIBS}
-			)
-	endif()
-	# Copy ini file to /bin
-	add_custom_command(TARGET ${APP_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/imgui.ini
-			$<TARGET_FILE_DIR:${APP_NAME}>
-			)
+    target_link_libraries(PCEAnalyser PRIVATE
+        glfw
+        asound
+        ${OPENGL_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${X11_LIBRARIES}
+        ${CMAKE_DL_LIBS}
+    )
+    if(${with_tests})
+        target_link_libraries(PCEAnalyserTest PRIVATE
+            glfw
+            asound
+            ${OPENGL_LIBRARIES}
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${X11_LIBRARIES}
+            ${CMAKE_DL_LIBS}
+        )
+    endif()
 
-	# Copy icon file to /bin
-	add_custom_command(TARGET ${APP_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/PCELogo.png
-			$<TARGET_FILE_DIR:${APP_NAME}>
-			)
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/imgui.ini
+        $<TARGET_FILE_DIR:${APP_NAME}>)
+
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/PCELogo.png
+        $<TARGET_FILE_DIR:${APP_NAME}>)
 endif()
 
-#
-# MacOS Version
-#
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-
-    # This little macro lets you set any XCode specific property
-    macro (set_xcode_property TARGET XCODE_PROPERTY XCODE_VALUE)
-        set_property (TARGET ${TARGET} PROPERTY XCODE_ATTRIBUTE_${XCODE_PROPERTY} ${XCODE_VALUE})
-    endmacro (set_xcode_property)
+    macro(set_xcode_property TARGET XCODE_PROPERTY XCODE_VALUE)
+        set_property(TARGET ${TARGET} PROPERTY XCODE_ATTRIBUTE_${XCODE_PROPERTY} ${XCODE_VALUE})
+    endmacro()
 
     set(APP_BUNDLE_IDENTIFIER "org.colourclash.PCEAnalyser")
 
-	target_link_libraries(${PROJECT_NAME}
-		glfw
-		${OPENGL_LIBRARIES} 
-		${CMAKE_THREAD_LIBS_INIT}
-		${CMAKE_DL_LIBS}
-		${AUDIOTOOLBOX_LIBRARY}
-		)
-	if(${with_tests})
-		target_link_libraries(PCEAnalyserTest
-			glfw
-			${OPENGL_LIBRARIES} 
-			${CMAKE_THREAD_LIBS_INIT}
-			${CMAKE_DL_LIBS}
-			${AUDIOTOOLBOX_LIBRARY}
-			)
-	endif()
-	install(TARGETS ${APP_NAME}
-		BUNDLE DESTINATION . COMPONENT RunTime
-		RUNTIME DESTINATION bin COMPONENT RunTime
-		)
-    
-    # Resource Files
+    target_link_libraries(PCEAnalyser PRIVATE
+        glfw
+        ${OPENGL_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${CMAKE_DL_LIBS}
+        ${AUDIOTOOLBOX_LIBRARY}
+    )
+    if(${with_tests})
+        target_link_libraries(PCEAnalyserTest PRIVATE
+            glfw
+            ${OPENGL_LIBRARIES}
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${CMAKE_DL_LIBS}
+            ${AUDIOTOOLBOX_LIBRARY}
+        )
+    endif()
+
+    install(TARGETS ${APP_NAME}
+        BUNDLE DESTINATION . COMPONENT RunTime
+        RUNTIME DESTINATION bin COMPONENT RunTime)
+
+    # Resource files
     set(RESOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/imgui.ini
         ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/SALogo.png
         ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/RomInfo.json
         ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/Fonts/Cousine-Regular.ttf
     )
-    
-	# Copy ini file to /bin
-	add_custom_command(TARGET ${APP_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/imgui.ini
-			$<TARGET_FILE_DIR:${APP_NAME}>
-			)
 
-	# Copy icon file to /bin
-	add_custom_command(TARGET ${APP_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/SALogo.png
-			$<TARGET_FILE_DIR:${APP_NAME}>
-			)
-   
-       # Copy icon file to /bin
     add_custom_command(TARGET ${APP_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/RomInfo.json
-            $<TARGET_FILE_DIR:${APP_NAME}>
-            )
-            
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/imgui.ini
+        $<TARGET_FILE_DIR:${APP_NAME}>)
+
     add_custom_command(TARGET ${APP_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/Fonts
-            $<TARGET_FILE_DIR:${APP_NAME}>/Fonts
-            )
-            
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/SALogo.png
+        $<TARGET_FILE_DIR:${APP_NAME}>)
+
     add_custom_command(TARGET ${APP_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/Lua
-            $<TARGET_FILE_DIR:${APP_NAME}>/Lua
-            )
-    
-    set_target_properties( PCEAnalyser PROPERTIES
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/RomInfo.json
+        $<TARGET_FILE_DIR:${APP_NAME}>)
+
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/Fonts
+        $<TARGET_FILE_DIR:${APP_NAME}>/Fonts)
+
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../Data/PCEAnalyser/Lua
+        $<TARGET_FILE_DIR:${APP_NAME}>/Lua)
+
+    set_target_properties(PCEAnalyser PROPERTIES
         XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep"
         BUNDLE True
         MACOSX_BUNDLE_INFO_STRING ${APP_BUNDLE_IDENTIFIER}
@@ -279,16 +256,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         MACOSX_BUNDLE_BUNDLE_VERSION "0.1"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
         OUTPUT_NAME "Spectrum Analyser"
-        RESOURCE "${RESOURCE_FILES}")
- 
+        RESOURCE "${RESOURCE_FILES}"
+    )
+
     set_xcode_property(${APP_NAME} PRODUCT_BUNDLE_IDENTIFIER ${APP_BUNDLE_IDENTIFIER})
-	
-    #set(APPS "\${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
-	#set(LIBS )
-	#set(DIRS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-	#install(CODE "include(BundleUtilities)
-	#fixup_bundle(\"${APPS}\" \"${LIBS}\" \"${DIRS}\")")
-	#set(CPACK_GENERATOR "DRAGNDROP")
-	#sinclude(CPack)
- 
 endif()
