@@ -166,9 +166,9 @@ bool ExportAnalysisState(FCodeAnalysisState& state, const char* pAnalysisBinFile
 	int pagesWritten = 0;
 
 	// iterate through all registered banks
-	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
+	for (int bankNo = 0; bankNo < FCodeAnalysisState::BankCount; bankNo++)
 	{
-		const FCodeAnalysisBank& bank = banks[bankNo];
+		const FCodeAnalysisBank& bank = state.GetBanks()[bankNo];
 		if (bank.bMachineROM)	// skip machine ROM banks
 			continue;
 

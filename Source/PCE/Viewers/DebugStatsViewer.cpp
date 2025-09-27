@@ -29,9 +29,10 @@ void FDebugStatsViewer::DrawUI()
 	int banksWithPrimaryMappedPage = 0;
 	int usedBanks = 0;
 
-	auto& banks = state.GetBanks();
-	for (auto& bank : banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = state.GetBanks()[b];
+	
 		if (bank.PrimaryMappedPage != -1)
 			banksWithPrimaryMappedPage++;
 		if (bank.IsMapped())
@@ -63,7 +64,7 @@ void FDebugStatsViewer::DrawUI()
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 
 	ImGui::SeparatorText("Banks");
-	ImGui::Text("Total banks: %d", Banks.size());
+	ImGui::Text("Total banks: %d", FCodeAnalysisState::BankCount);
 	ImGui::Text("Mapped banks: %d", mappedBanks);
 	ImGui::Text("Banks with primary mapped page: %d", banksWithPrimaryMappedPage);
 	ImGui::Text("Used banks: %d", usedBanks);
@@ -81,4 +82,7 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("Size: %d", romSize);
 	ImGui::Text("Bank count : %d", romBankCount);
 
+	ImGui::SeparatorText("Misc");
+	ImGui::Text("Frame trace size: %d", state.Debugger.GetFrameTrace().size());
+	ImGui::Text("Call stack size : %d", state.Debugger.GetCallstack().size());
 }

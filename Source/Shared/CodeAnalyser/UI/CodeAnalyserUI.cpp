@@ -1079,8 +1079,6 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 		const uint16_t pageAddr = bankAddr & FCodeAnalysisPage::kPageMask;
 		listBuilder.CurrAddr = bankPhysAddr + bankAddr;
 
-		const FAddressRef addrRef(bank.Id, bankPhysAddr + bankAddr);
-
 		FCommentBlock* pCommentBlock = page.CommentBlocks[pageAddr];
 		if (pCommentBlock != nullptr)
 			ExpandCommentBlock(state, listBuilder, pCommentBlock);
@@ -1088,6 +1086,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 		FLabelInfo* pLabelInfo = page.Labels[pageAddr];
 		if (pLabelInfo != nullptr)
 		{
+			const FAddressRef addrRef(bank.Id, listBuilder.CurrAddr);
 			FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionAtAddress(addrRef);
 			if (pFunctionInfo != nullptr)
 				ExpandFunctionDesc(state, listBuilder, pFunctionInfo);
@@ -1146,10 +1145,11 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 		//int nextItemAddress = 0;
 
-		auto& banks = state.GetBanks();
 		int startOffset = 0;
-		for (auto& bank : banks)
+		for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 		{
+			FCodeAnalysisBank& bank = state.GetBanks()[b];
+		
 			if (bank.PrimaryMappedPage == -1)
 				continue;
 
@@ -1718,9 +1718,9 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		ImGui::SameLine(lineStartX + 20);
 		ImGui::Text(" Address Space");
 
-		auto& banks = state.GetBanks();
-		for (auto& bank : banks)
+		for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 		{
+			FCodeAnalysisBank& bank = state.GetBanks()[b];
 			if (bank.PrimaryMappedPage == -1)
 				continue;
 			
@@ -2390,9 +2390,10 @@ bool DrawBankInput(const FCodeAnalysisState& state, const char* label, int16_t& 
 			}
 		}
 
-		const auto& banks = state.GetBanks();
-		for (const auto& bank : banks)
+		for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 		{
+			const FCodeAnalysisBank& bank = state.GetBanks()[b];
+		
 			if (ImGui::Selectable(GetBankText(state, bank.Id), bankId == bank.Id))
 			{
 				//const FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);

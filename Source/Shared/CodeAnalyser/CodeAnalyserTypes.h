@@ -188,7 +188,6 @@ enum class EInstructionType
 // Structures
 #if NEWADDRESSREF
 #include <assert.h>
-struct FCodeAnalysisBank;
 struct FAddressRef
 {
 	FAddressRef() :BankId(-1), BankOffset(0) {}

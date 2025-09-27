@@ -30,9 +30,8 @@
 #include "FunctionAnalyser.h"
 #include "UI/GlobalsViewer.h"
 
-#if NEWADDRESSREF
-std::vector<FCodeAnalysisBank> Banks;
-#endif
+int16_t FCodeAnalysisState::BankCount = 0;
+FCodeAnalysisBank Banks[FCodeAnalysisState::kMaxBanks];
 
 void LogInvalidAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef addrRef)
 {
@@ -77,10 +76,10 @@ FPageAllocator gPageAllocator;
 int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* pBankMem, bool bMachineROM, uint16_t initialAddress, bool bFixed)
 {
 	const int16_t bankId = GetNextBankId();
-	assert(bankId == (int16_t)Banks.size());
+	assert(bankId < FCodeAnalysisState::kMaxBanks);
 	const int noPages = noKb;
 
-	FCodeAnalysisBank& newBank = Banks.emplace_back();
+	FCodeAnalysisBank& newBank = Banks[bankId]; //Banks.emplace_back();
 	newBank.Id = bankId;
 	newBank.NoPages = noPages;
 	newBank.SizeMask = (noPages * FCodeAnalysisPage::kPageSize) - 1;
@@ -106,7 +105,8 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 
 bool FCodeAnalysisState::FreeBanksFrom(int16_t bankId)
 {
-	Banks.resize(bankId);
+	// this is not used
+	//Banks.resize(bankId);
 	return true;
 }
 
@@ -1325,8 +1325,10 @@ void GenerateGlobalInfo(FCodeAnalysisState &state)
 	FLabelInfo* pCurrentScope = nullptr;
 
 	// Make global list from what's in all banks
-	for (auto& bank : state.GetBanks())
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = state.GetBanks()[b];
+
 		if (bank.PrimaryMappedPage == -1)
 			continue;
 
@@ -1926,16 +1928,14 @@ void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAdd
 #if NEWADDRESSREF
 uint16_t FAddressRef::GetAddress() const
 {
-	const size_t size = Banks.size();
-	assert(size);
-	if (BankId < 0 || BankId >= size)
+	if (BankId < 0 || BankId >= FCodeAnalysisState::BankCount)
 	{
 		//LOGERROR("Trying to use address of invalid address ref");
 		return 0;
 	}
 
-	FCodeAnalysisBank* pBank = &Banks[BankId];
-	return pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize + BankOffset;
+	const FCodeAnalysisBank& bank = Banks[BankId];
+	return bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize + BankOffset;
 }
 
 uint32_t FAddressRef::GetVal() const
@@ -1945,26 +1945,26 @@ uint32_t FAddressRef::GetVal() const
 
 void FAddressRef::SetAddress(uint16_t address)
 {
-	if (BankId >= 0 && BankId < Banks.size())
+	if (BankId >= 0 && BankId < FCodeAnalysisState::BankCount)
 	{
-		FCodeAnalysisBank* pBank = &Banks[BankId];
-		assert(pBank->PrimaryMappedPage != -1);
-		const uint16_t mappedAddress = (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+		const FCodeAnalysisBank& bank = Banks[BankId];
+		assert(bank.PrimaryMappedPage != -1);
+		const uint16_t mappedAddress = (bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 		// Convert absolute address to relative bank address 
 		BankOffset = address - mappedAddress;
 		// Check address is valid
-		assert(address >= mappedAddress && (address < mappedAddress + (pBank->NoPages * FCodeAnalysisPage::kPageSize)));
+		assert(address >= mappedAddress && (address < mappedAddress + (bank.NoPages * FCodeAnalysisPage::kPageSize)));
 	}
 }
 
 void FAddressRef::SetVal(uint32_t val)
 {
 	BankId = val >> 16;
-	if (BankId >= 0 && BankId < Banks.size())
+	if (BankId >= 0 && BankId < FCodeAnalysisState::BankCount)
 	{
-		FCodeAnalysisBank* pBank = &Banks[BankId];
-		assert(pBank->PrimaryMappedPage != -1);
-		const uint16_t mappedAddress = (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+		const FCodeAnalysisBank& bank = Banks[BankId];
+		assert(bank.PrimaryMappedPage != -1);
+		const uint16_t mappedAddress = (bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 		// Convert absolute address to relative bank address 
 		const uint16_t addr = val & 0xffff;
 		BankOffset = addr - mappedAddress;

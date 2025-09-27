@@ -26,9 +26,8 @@ class FMemoryAnalyser;
 
 enum class ELabelType;
 
-#if NEWADDRESSREF
-extern std::vector<FCodeAnalysisBank> Banks;
-#endif
+struct FCodeAnalysisBank;
+extern FCodeAnalysisBank Banks[];
 
 /* the input callback type */
 typedef uint8_t(*FDasmInput)(void* user_data);
@@ -329,6 +328,9 @@ public:
 	static const int kPageMask = 1023;
 	static const int kNoPagesInAddressSpace = kAddressSize / FCodeAnalysisPage::kPageSize;
 
+	static const int kMaxBanks = 1024;
+	static int16_t BankCount;
+
 	FCodeAnalysisState();
 	void	Init(FEmuBase* pEmu);
 	void	OnFrameStart();
@@ -351,7 +353,7 @@ public:
 	void	SetGlobalConfig(FGlobalConfig *pConfig) { pGlobalConfig = pConfig; }
 
 	// Memory Banks & Pages
-	int16_t		GetNextBankId() const { return (int16_t)Banks.size(); }
+	int16_t		GetNextBankId() const { return FCodeAnalysisState::BankCount++; }
 	int16_t		CreateBank(const char* name, int noKb, uint8_t* pMemory, bool bReadOnly, uint16_t initialAddress, bool bFixed = false);
 	bool		FreeBanksFrom(int16_t bankId);
 	bool		SetBankPrimaryPage(int16_t bankId, int startPageNo);
@@ -369,13 +371,13 @@ public:
 	bool		ToggleExecBreakpointAtAddress(FAddressRef addr);
 	bool		ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize);
 
-	FCodeAnalysisBank* GetBank(int16_t bankId) { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr; }
-	const FCodeAnalysisBank* GetBank(int16_t bankId) const { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr;	}
+	FCodeAnalysisBank* GetBank(int16_t bankId) { return (bankId >= 0 && bankId < FCodeAnalysisState::BankCount) ? &Banks[bankId] : nullptr; }
+	const FCodeAnalysisBank* GetBank(int16_t bankId) const { return (bankId >= 0 && bankId < FCodeAnalysisState::BankCount) ? &Banks[bankId] : nullptr;	}
 	int16_t		GetBankFromAddress(uint16_t address) const { return MappedReadBanks[address >> kPageShift]; }
 	int16_t		GetReadBankFromAddress(uint16_t address) const { return MappedReadBanks[address >> kPageShift]; }
 	int16_t		GetWriteBankFromAddress(uint16_t address) const { return MappedWriteBanks[address >> kPageShift]; }
-	const std::vector<FCodeAnalysisBank>& GetBanks() const { return Banks; }
-	std::vector<FCodeAnalysisBank>& GetBanks() { return Banks; }
+	const FCodeAnalysisBank* GetBanks() const { return Banks; }
+	FCodeAnalysisBank* GetBanks() { return Banks; }
 
 	FAddressRef	AddressRefFromPhysicalAddress(uint16_t physAddr) const { return FAddressRef(GetBankFromAddress(physAddr), physAddr); }
 	FAddressRef	AddressRefFromPhysicalReadAddress(uint16_t physAddr) const { return FAddressRef(GetReadBankFromAddress(physAddr), physAddr); }
@@ -474,8 +476,10 @@ public:
 
 	void	SetAllBanksDirty()
 	{
-		for (auto& bank : Banks)
-			bank.bIsDirty = true;
+		for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
+		{
+			Banks[b].bIsDirty;
+		}
 		bCodeAnalysisDataDirty = true;
 	}
 
@@ -736,9 +740,9 @@ private:
 
 	FCodeAnalysisPage*				ReadPageTable[kNoPagesInAddressSpace];
 	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];
-#if !NEWADDRESSREF
-	std::vector<FCodeAnalysisBank>	Banks;
-#endif
+
+//	std::vector<FCodeAnalysisBank>	Banks;
+
 	int16_t							MappedReadBanks[kNoPagesInAddressSpace];	// banks mapped into address space
 	int16_t							MappedWriteBanks[kNoPagesInAddressSpace];	// banks mapped into address space
 	int16_t							MappedReadBanksBackup[kNoPagesInAddressSpace];	// banks mapped into address space

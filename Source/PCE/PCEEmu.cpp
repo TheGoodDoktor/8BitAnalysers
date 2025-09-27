@@ -318,16 +318,17 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	// Check we only have 8 banks mapped.
 	// If we have any other number then something has gone wrong.
 	int mappedBanks = 0;
-	auto& banks = state.GetBanks();
-	for (auto& bank : banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = state.GetBanks()[b];
 		if (bank.IsMapped())
 			mappedBanks++;
 	}
 	if (mappedBanks > kNumMprSlots)
 	{
-		for (auto& bank : banks)
+		for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 		{
+			FCodeAnalysisBank& bank = state.GetBanks()[b];
 			if (bank.IsMapped())
 				BANK_LOG("Mapped: %d %s. Mapping %d [0=None,1=R,2=W,3=RW]", bank.Id, bank.Name.c_str(), bank.Mapping);
 		}
@@ -699,9 +700,10 @@ void FPCEEmu::ResetBanks()
 	// Reset banks for re-use.
 	// I am using PrimaryMappedPage being -1 as a way to mark a bank as unused.
 	// I know this is not great but it's the best I could do without changing the code analysis code.
-	std::vector<FCodeAnalysisBank>& banks = CodeAnalysis.GetBanks();
-	for (auto& bank : banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = CodeAnalysis.GetBanks()[b];
+	
 		// do i need to call UnmapFromPage() here? the MappedReadPages and MappedWritePages wont get reset
 
 		bank.PrimaryMappedPage = -1;
@@ -815,13 +817,18 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
-
-			std::vector<FCodeAnalysisBank>& banks = CodeAnalysis.GetBanks();
-			for (auto& bank : banks)
+			// this was to deal with banks that were in use the last time we saved.
+			// they need to get their primary mapped page set.
+			// do we still need to do this?
+			//std::vector<FCodeAnalysisBank>& banks = CodeAnalysis.GetBanks();
+			//for (auto& bank : banks)
+			/*for (int b = 0; b < FCodeAnalysisState::CurBankId; b++)
 			{
+				FCodeAnalysisBank& bank = Banks[b];
+			
 				if (bank.IsUsed() && bank.PrimaryMappedPage == -1)
 					bank.PrimaryMappedPage = kDefaultPrimaryMappedPage;
-			}
+			}*/
 		}
 
 		//pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());

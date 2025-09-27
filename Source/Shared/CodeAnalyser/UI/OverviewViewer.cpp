@@ -52,13 +52,14 @@ void FOverviewViewer::DrawStats()
 void FOverviewViewer::CalculateStats()
 {
 	FCodeAnalysisState& codeAnalysis = pEmulator->GetCodeAnalysis();
-	const std::vector<FCodeAnalysisBank>& banks =codeAnalysis.GetBanks();
 
 	Stats = FOverviewStats();	// reset
 
 
-	for (const FCodeAnalysisBank& bank : banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = codeAnalysis.GetBanks()[b];
+	
 		// Skip unused banks
 		if(bank.bEverBeenMapped == false)
 			continue;

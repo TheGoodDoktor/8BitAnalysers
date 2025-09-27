@@ -10,9 +10,10 @@ bool FMemoryAnalyser::Init(void)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
-	const auto& banks = state.GetBanks();
-	for(const FCodeAnalysisBank& bank : banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = state.GetBanks()[b];
+	
 		FBankMemory& bankMem = DiffSnapshotMemoryBanks[bank.Id];
 		bankMem.BankId = bank.Id;
 		bankMem.SizeBytes = bank.GetSizeBytes();

@@ -30,12 +30,11 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 	json jsonGameData;
 
 	int pagesWritten = 0;
-	const auto& banks = state.GetBanks();
 
 	// iterate through all registered banks
-	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
+	for (int bankNo = 0; bankNo < FCodeAnalysisState::BankCount; bankNo++)
 	{
-		const FCodeAnalysisBank& bank = banks[bankNo];
+		const FCodeAnalysisBank& bank = state.GetBanks()[bankNo];
 		if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
 			continue;
 
@@ -731,9 +730,10 @@ void ReadPageFromJson(FCodeAnalysisState &state, FCodeAnalysisPage& page, const 
 // This is called after all the json is loaded to fix up any data referencing
 void FixupPostLoad(FCodeAnalysisState& state)
 {
-	auto& banks = state.GetBanks();
-	for (FCodeAnalysisBank& bank : banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = state.GetBanks()[b];
+	
 		//assert(bank.PrimaryMappedPage !=-1);
 		if (bank.PrimaryMappedPage == -1)
 			continue;
