@@ -244,8 +244,14 @@ void FTubeEliteMachine::FlushTube()
 	if (Tube.ParasiteReadRegister(ETubeRegister::R4, val))
 	{
 		if (val & 0x80)	// if bit 7 is set, request an IRQ
-			Pins |= M6502_IRQ;
+			R4IRQ = true;
 	}
+
+	if (R4IRQ)
+		Pins |= M6502_IRQ;
+
+	if(CPU.brk_flags & M6502_BRK_IRQ)
+		R4IRQ = false;
 
 	if(pTubeDataHandler)
 		pTubeDataHandler->PollTubeCommand();	// poll for any pending commands

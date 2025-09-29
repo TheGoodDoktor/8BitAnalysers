@@ -2655,7 +2655,7 @@
             "CodeInfo": [
                 {
                     "Address": 256,
-                    "ByteSize": 1,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -68236,7 +68236,7 @@
                 {
                     "Address": 229,
                     "ByteSize": 2,
-                    "Flags": 2,
+                    "Flags": 34,
                     "OperandType": 1,
                     "SMC": true
                 },

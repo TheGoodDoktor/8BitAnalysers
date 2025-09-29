@@ -396,41 +396,7 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 // 1 : File found
 // 2 : Directory found
 
-// Errors in the Host OS were send to the coprocessor via the BRK handler
-/*
-BRK handler
------------
-0016	LDA #&FF
-0018	JSR send_byte_to_R4         Send &FF to R4 to interupt CoPro
-001B	LDA &FEE3         Get ACK byte from CoPro via R2
-001E	LDA #&00
-0020	JSR send_byte_to_R2         Send &00 to R2 to specify ERROR
-0023	TAY               Point Y to start of error block
-0024	LDA (&FD),Y       Get error number
-0026	JSR send_byte_to_R2         Send via R2
-char_loop:
-0029	INY               Point to next character
-002A	LDA (&FD),Y       Get error string character
-002C	JSR send_byte_to_R2         Send via R2
-002F	TAX
-0030	BNE char_loop         Loop until terminating &00 sent
 
-Send byte in A via R2
----------------------
-send_byte_to_R2
-0695	BIT &FEE2         Check R2 status
-0698	BVC &0695         Loop until port free
-069A	STA &FEE3         Send byte
-069D	RTS
-
-Send byte in A via R4
----------------------
-send_byte_to_R4
-069E	BIT &FEE6         Check R4 status
-06A1	BVC &069E         Loop until port free
-06A3	STA &FEE7         Send byte
-06A6	RTS
-*/
 uint8_t FTubeElite::OSFILE(const char* pFilename, FOSFILEControlBlock& controlBlock, uint8_t transferType)
 {
 	LOGINFO("OSFILE: %s, Transfer Type: %d", pFilename, transferType);
