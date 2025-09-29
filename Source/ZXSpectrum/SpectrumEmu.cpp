@@ -865,6 +865,9 @@ bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /
 	FrameTraceViewer.Reset();
 	pGraphicsViewer->Reset();
 
+
+
+
 	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
 	SetWindowTitle(windowTitle.c_str());
 	
@@ -944,6 +947,8 @@ bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /
 		{
 			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+
+			
 		}
 
 		pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
@@ -1003,6 +1008,17 @@ bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /
 	LoadLua();
 	
 	pGlobalConfig->AddProjectToRecents(GetProjectConfig()->Name);
+
+	// Mark functions as stubbed out from the config
+	// TODO: phase this out
+	for (auto& stub : pGameConfig->StubOutFunctions)
+	{
+		FFunctionInfo* pFunc = CodeAnalysis.pFunctions->FindFunctionByName(stub.c_str());
+		if (pFunc != nullptr)
+			pFunc->bStubbedOut = true;
+		else 
+			LOGWARNING("Could not find function '%s' to stub out", stub.c_str());
+	}
 	
 	return true;
 }
