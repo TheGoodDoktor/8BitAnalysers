@@ -1285,7 +1285,7 @@ FCodeAnalysisState::FCodeAnalysisState()
 	}
 
     pDataTypes = new FDataTypes;
-	pFunctions = new FFunctionInfoCollection;
+	pFunctions = new FFunctionInfoCollection(this);
 	pDataRegions = new FDataRegionList;
 }
 
@@ -1297,6 +1297,8 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	
 	FLabelInfo::ResetLabelNames();
 	ItemList.clear();
+
+	pFunctions->Clear();
 
 	// reset registered pages
 	for (FCodeAnalysisPage* pPage : GetRegisteredPages())

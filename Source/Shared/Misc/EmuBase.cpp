@@ -65,11 +65,13 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 		void *pFileData = LoadBinaryFile(GetBundlePath(pImGuiConfigFile), byteCount);
 		if(pFileData == nullptr)
 		{
-			LOGERROR("Can't find imgui.ini file in bundle");
-			return false;
+			LOGWARNING("Can't find imgui.ini file in bundle");
+			//return false;
 		}
-		
-		SaveBinaryFile(GetAppSupportPath(pImGuiConfigFile), pFileData, byteCount);
+		else
+		{		
+			SaveBinaryFile(GetAppSupportPath(pImGuiConfigFile), pFileData, byteCount);
+		}
 	}
 	
 	static std::string iniFile = GetAppSupportPath(pImGuiConfigFile);
@@ -378,6 +380,8 @@ void FEmuBase::FileMenu()
 
 		const std::string outputFname = exportPath + pCurrentProjectConfig->Name + ".asm";
 		ExportAssembler(this, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
+
+		ExportFunctionStubs(this, (exportPath + pCurrentProjectConfig->Name + "_Stubs.asm").c_str());
 	}
 
 	if (ImGui::MenuItem("Export ASM Range"))
@@ -423,6 +427,13 @@ void FEmuBase::OptionsMenu()
 		{
 			SetNumberDisplayMode(ENumberDisplayMode::HexDollar);
 			SetHexNumberDisplayMode(ENumberDisplayMode::HexDollar);
+			CodeAnalysis.SetAllBanksDirty();
+			bClearCode = true;
+		}
+		if (ImGui::MenuItem("Hex - &FE", 0, GetNumberDisplayMode() == ENumberDisplayMode::HexAmpersand))
+		{
+			SetNumberDisplayMode(ENumberDisplayMode::HexAmpersand);
+			SetHexNumberDisplayMode(ENumberDisplayMode::HexAmpersand);
 			CodeAnalysis.SetAllBanksDirty();
 			bClearCode = true;
 		}
@@ -552,6 +563,11 @@ void FEmuBase::OptionsMenu()
 #endif // NDEBUG
 
 	OptionsMenuAdditions();
+	ImGui::Separator();
+	if (ImGui::MenuItem("Edit Global Config"))
+	{
+		bEditGlobalConfig = true;
+	}
 }
 
 void FEmuBase::SystemMenu()
@@ -681,6 +697,29 @@ void FEmuBase::DrawMainMenu()
 	DrawExportAsmModalPopup();
 	DrawReplaceGameModalPopup();
 	DrawErrorMessageModalPopup();
+	DrawEditGlobalConfigModalPopup();
+}
+
+void FEmuBase::DrawEditGlobalConfigModalPopup()
+{
+	if (bEditGlobalConfig)
+	{
+		ImGui::OpenPopup("Edit Global Config");
+	}
+	if (ImGui::BeginPopupModal("Edit Global Config", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Global Config");
+		CodeAnalysis.pGlobalConfig->DrawUI();
+
+		if (ImGui::Button("Ok", ImVec2(120, 0)))
+		{
+			CodeAnalysis.pGlobalConfig->Save("GlobalConfig.json");
+
+			ImGui::CloseCurrentPopup();
+			bEditGlobalConfig = false;
+		}
+		ImGui::EndPopup();
+	}
 }
 
 void FEmuBase::DrawExportAsmModalPopup()
@@ -872,7 +911,7 @@ void FEmuBase::LoadFont()
 		}
 	}
 }
-
+#if 0
 bool	FEmuBase::IsLabelStubbed(const char* pLabelName)
 {
 	if(pCurrentProjectConfig == nullptr)
@@ -916,7 +955,7 @@ bool	FEmuBase::RemoveStubbedLabel(const char* pLabelName)
 
 	return false;
 }
-
+#endif
 // Viewers
 void FEmuBase::AddViewer(FViewerBase* pViewer)
 {

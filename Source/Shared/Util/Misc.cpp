@@ -62,9 +62,11 @@ const char* NumStr(uint8_t num, ENumberDisplayMode numDispMode)
 	case ENumberDisplayMode::HexAitch:
 		snprintf(pStrAddress,kTextLength, "%02Xh", num);
 		return pStrAddress;
-
 	case ENumberDisplayMode::HexDollar:
 		snprintf(pStrAddress,kTextLength, "$%02X", num);
+		return pStrAddress;
+	case ENumberDisplayMode::HexAmpersand:
+		snprintf(pStrAddress, kTextLength, "&%02X", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::Binary:
@@ -101,6 +103,10 @@ const char* NumStr(uint16_t num, ENumberDisplayMode numDispMode)
 
 	case ENumberDisplayMode::HexDollar:
 		snprintf(pStrAddress,kTextLength, "$%04X", num);
+		return pStrAddress;
+
+	case ENumberDisplayMode::HexAmpersand:
+		snprintf(pStrAddress, kTextLength, "&%04X", num);
 		return pStrAddress;
 
 	case ENumberDisplayMode::Binary:

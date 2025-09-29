@@ -9,6 +9,7 @@
 #include "Util/Misc.h"
 
 class FCodeAnalysisState;
+struct FFunctionInfo;
 
 struct FAssemblerConfig
 {
@@ -31,6 +32,7 @@ public:
 	void		Output(const char* pFormat, ...);
 	virtual void	AddHeader(void){}
 	virtual void	ProcessLabelsOutsideExportedRange(void){}
+	void		OutputFunctionDescription(const FFunctionInfo* pFunctionInfo);
 	bool		ExportAddressRange(uint16_t startAddr, uint16_t endAddr);
 
 	//std::string		GenerateAddressLabelString(FAddressRef addr);
@@ -66,3 +68,4 @@ bool AddAssemblerExporter(const char* pName, FASMExporter* pExporter);
 
 // TODO: we should have a bank based approach?
 bool ExportAssembler(class FEmuBase* pEmu, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr);
+bool ExportFunctionStubs(FEmuBase* pEmu, const char* pTextFileName);

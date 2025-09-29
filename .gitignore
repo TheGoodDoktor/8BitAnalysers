@@ -79,3 +79,4 @@
 .vscode
 build
 *.bin
+test-package/

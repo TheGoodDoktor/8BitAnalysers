@@ -99,11 +99,16 @@ bool Init(FEmuBase* pEmulator)
 
 	//ExportGlobalLabels();	// might have this on a button if frequently updating proves to be problematic
 
+	LoadGlobals(pEmulator);
+	return true;
+}
+
+bool LoadGlobals(FEmuBase* pEmulator)
+{
 	// Load globals
 	const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetProjectConfig()->Name + "/";
 	std::string globalsFName = gameRoot + "Globals.lua";
-	LoadFile(globalsFName.c_str(),true);
-	return true;
+	return LoadFile(globalsFName.c_str(), true);
 }
 
 void Shutdown(void)
@@ -614,7 +619,14 @@ bool ExportGlobalLabels()
 	const std::string gameRoot = EmuBase->GetGlobalConfig()->WorkspaceRoot + EmuBase->GetProjectConfig()->Name + "/";
 	std::string luaScriptFName = gameRoot + "Globals.lua";
 
-	return SaveTextFile(luaScriptFName.c_str(),outputStr.c_str());
+	if( SaveTextFile(luaScriptFName.c_str(),outputStr.c_str()) == true)
+	{
+		LoadGlobals(EmuBase);	// reload globals file
+		return true;
+	}
+
+	LOGERROR("Failed to save globals file %s", luaScriptFName.c_str());
+	return false;
 }
 
 }//namespace LuaSys

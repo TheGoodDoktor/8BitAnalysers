@@ -327,6 +327,11 @@ uint8_t ConvertTo2Bpp(uint8_t val)
 		return val >= 0x80 ? 2 : 1;	// half bright
 }
 
+uint8_t ConvertTo3Bpp(uint8_t val)
+{
+	return (val >> 5) & 7;
+}
+
 bool FGraphicsView::Save2222(const char* pFName,bool bUseAlpha)
 {
 	FILE* fp = fopen(pFName,"wb");
@@ -350,6 +355,33 @@ bool FGraphicsView::Save2222(const char* pFName,bool bUseAlpha)
 			(ConvertTo2Bpp(r) << 0);	// R
 
 		fwrite(&pix2222,1,1,fp);
+	}
+
+	fclose(fp);
+	return true;
+}
+
+bool FGraphicsView::Save332(const char* pFName)
+{
+	FILE* fp = fopen(pFName, "wb");
+	if (fp == nullptr)
+		return false;
+
+	const uint32_t* pPixel = PixelBuffer;	//ABGR
+
+	for (int i = 0; i < Width * Height; i++)
+	{
+		const uint32_t pix8888 = *pPixel++;
+		const uint8_t b = (pix8888 >> 16) & 255;
+		const uint8_t g = (pix8888 >> 8) & 255;
+		const uint8_t r = (pix8888 >> 0) & 255;
+
+		const uint8_t pix332 =
+			(ConvertTo2Bpp(b) << 0) |	// B
+			(ConvertTo3Bpp(g) << 2) |	// G
+			(ConvertTo3Bpp(r) << 5);	// R
+
+		fwrite(&pix332, 1, 1, fp);
 	}
 
 	fclose(fp);

@@ -1172,7 +1172,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			{
 				RemoveLabelAtAddress(state, item.AddressRef);
 			}
-
+#if 0
 			if(pLabel)
 			{
 				FEmuBase* pEmu = state.GetEmulator();
@@ -1188,6 +1188,7 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 						state.GetEmulator()->RemoveStubbedLabel(pLabel->GetName());
 				}
 			}
+#endif
 		}
 		else
 		{
