@@ -241,7 +241,7 @@ void FTubeEliteMachine::FlushTube()
 
 	// TODO: handle IRQs from Tube HW
 	uint8_t val = 0;
-	if (Tube.ParasiteReadRegister(ETubeRegister::R4, val))
+	if (Tube.ParasiteReadRegister(ETubeRegister::S4, val))
 	{
 		if (val & 0x80)	// if bit 7 is set, request an IRQ
 			R4IRQ = true;
