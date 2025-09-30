@@ -146,7 +146,7 @@ FFunctionInfo* FFunctionInfoCollection::FindFunctionByName(const char* name)
 	for (auto& funcPair : Functions)
 	{
 		FLabelInfo* pLabel = pAnalyser->GetLabelForAddress(funcPair.second.StartAddress);
-		if (pLabel != nullptr && _stricmp(pLabel->GetName(), name) == 0)
+		if (pLabel != nullptr && strcmp(pLabel->GetName(), name) == 0)
 			return &funcPair.second;
 	}
 	return nullptr;

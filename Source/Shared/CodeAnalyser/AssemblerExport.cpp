@@ -335,12 +335,6 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		{
 		case EItemType::Label:
 		{
-			// Look for function info
-			/*const FFunctionInfo* pFunc = state.pFunctions->GetFunctionAtAddress(item.AddressRef);
-			if (pFunc != nullptr)
-			{
-				OutputFunctionDescription(pFunc);
-			}*/
 			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
 			if(pLabelInfo->Global == false)
 				Output("%s",Config.LocalLabelPrefix);
