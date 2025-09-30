@@ -239,8 +239,22 @@ void FTubeEliteMachine::FlushTube()
 		}
 	}
 
-	// TODO: handle IRQs from Tube HW
+	// Handle IRQs from Tube HW
 	uint8_t val = 0;
+
+	// Check the R1 status register
+	if (Tube.ParasiteReadRegister(ETubeRegister::S1, val))
+	{
+		if (val & 0x80)	// if bit 7 is set, request an IRQ
+			Pins |= M6502_IRQ;
+	}
+
+	// Check the R3 status register
+	if (Tube.ParasiteReadRegister(ETubeRegister::S3, val))
+	{
+		if (val & 0x80)	// if bit 7 is set, request an NMI
+			Pins |= M6502_NMI;
+	}
 
 	// Check the R4 status register
 	if (Tube.ParasiteReadRegister(ETubeRegister::S4, val))
