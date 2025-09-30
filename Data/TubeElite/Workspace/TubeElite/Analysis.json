@@ -2683,7 +2683,7 @@
             "CodeInfo": [
                 {
                     "Address": 256,
-                    "ByteSize": 1,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -2697,9 +2697,16 @@
                 },
                 {
                     "Address": 260,
-                    "ByteSize": 3,
+                    "ByteSize": 2,
                     "Flags": 2,
                     "OperandType": 2,
+                    "SMC": true
+                },
+                {
+                    "Address": 566,
+                    "ByteSize": 1,
+                    "Flags": 2,
+                    "OperandType": 1,
                     "SMC": true
                 }
             ],
@@ -2787,6 +2794,12 @@
                     "DisplayType": 1
                 },
                 {
+                    "Address": 253,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
                     "Address": 256,
                     "DataType": 11,
                     "InstructionAddressRef": 16777216
@@ -2856,6 +2869,16 @@
                     "ByteSize": 2,
                     "DataType": 2,
                     "DisplayType": 1
+                },
+                {
+                    "Address": 566,
+                    "DataType": 11,
+                    "InstructionAddressRef": 37093376
+                },
+                {
+                    "Address": 567,
+                    "DataType": 11,
+                    "InstructionAddressRef": 37093376
                 }
             ],
             "LabelInfo": [
@@ -3436,7 +3459,7 @@
                     "Address": 566,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_0236"
+                    "Name": "ErrorBuffer"
                 }
             ],
             "PageId": 0
@@ -41701,7 +41724,7 @@
                 {
                     "Address": 216,
                     "ByteSize": 3,
-                    "Flags": 40,
+                    "Flags": 8,
                     "OperandType": 2
                 },
                 {
@@ -43761,6 +43784,35 @@
                 {
                     "Address": 49,
                     "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 52,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 54,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 57,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 59,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 62,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 64,
+                    "ByteSize": 2,
                     "OperandType": 2
                 },
                 {
@@ -68351,6 +68403,7 @@
                 {
                     "Address": 253,
                     "ByteSize": 1,
+                    "Comment": "Save X",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -68363,6 +68416,7 @@
                 {
                     "Address": 255,
                     "ByteSize": 1,
+                    "Comment": "Get address from stack",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -68394,6 +68448,7 @@
                 {
                     "Address": 263,
                     "ByteSize": 2,
+                    "Comment": "Make FD point to error data",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -68440,12 +68495,14 @@
                 {
                     "Address": 276,
                     "ByteSize": 1,
+                    "Comment": "restore interrupts",
                     "Flags": 2,
                     "SMC": true
                 },
                 {
                     "Address": 277,
                     "ByteSize": 3,
+                    "Comment": "jump to error handler",
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -68616,12 +68673,14 @@
                 {
                     "Address": 324,
                     "ByteSize": 1,
+                    "Comment": "re-enable IRQs so other interrupts can happen",
                     "Flags": 2,
                     "SMC": true
                 },
                 {
                     "Address": 325,
                     "ByteSize": 3,
+                    "Comment": "wait for data in Tube R2",
                     "Flags": 2,
                     "OperandType": 1,
                     "SMC": true
@@ -68643,6 +68702,7 @@
                 {
                     "Address": 333,
                     "ByteSize": 2,
+                    "Comment": "store break code in error buffer",
                     "Flags": 2,
                     "SMC": true
                 },
@@ -68662,6 +68722,7 @@
                 {
                     "Address": 339,
                     "ByteSize": 3,
+                    "Comment": "Get error number",
                     "Flags": 10,
                     "OperandType": 2,
                     "SMC": true
@@ -68682,6 +68743,7 @@
                 {
                     "Address": 346,
                     "ByteSize": 3,
+                    "Comment": "get error text byte",
                     "Flags": 10,
                     "OperandType": 2,
                     "SMC": true
@@ -68696,6 +68758,7 @@
                 {
                     "Address": 352,
                     "ByteSize": 2,
+                    "Comment": "loop until null terminator",
                     "Flags": 2,
                     "OperandType": 2,
                     "SMC": true
@@ -68703,7 +68766,8 @@
                 {
                     "Address": 354,
                     "ByteSize": 3,
-                    "Flags": 2,
+                    "Comment": "call break handler",
+                    "Flags": 34,
                     "OperandType": 2,
                     "SMC": true
                 },
@@ -72737,7 +72801,7 @@
                 {
                     "Address": 345,
                     "LabelType": 2,
-                    "Name": "label_FD59"
+                    "Name": "fetch_error_text_loop"
                 },
                 {
                     "Address": 357,

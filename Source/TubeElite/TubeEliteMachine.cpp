@@ -241,17 +241,13 @@ void FTubeEliteMachine::FlushTube()
 
 	// TODO: handle IRQs from Tube HW
 	uint8_t val = 0;
+
+	// Check the R4 status register
 	if (Tube.ParasiteReadRegister(ETubeRegister::S4, val))
 	{
 		if (val & 0x80)	// if bit 7 is set, request an IRQ
-			R4IRQ = true;
+			Pins |= M6502_IRQ;
 	}
-
-	if (R4IRQ)
-		Pins |= M6502_IRQ;
-
-	if(CPU.brk_flags & M6502_BRK_IRQ)
-		R4IRQ = false;
 
 	if(pTubeDataHandler)
 		pTubeDataHandler->PollTubeCommand();	// poll for any pending commands

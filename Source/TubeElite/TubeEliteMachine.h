@@ -251,8 +251,6 @@ public:
 	bool		bValid = false;
 	FTube		Tube;	// Tube registers
 
-	bool		R4IRQ = false;	
-
 	// memory
 	uint8_t		RAM[0x10000];		// 64K RAM
 
