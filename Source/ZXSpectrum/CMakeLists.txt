@@ -1,5 +1,5 @@
 # This is for the features that allow the creating of filter folders in Visual Studio (source_group)
-cmake_minimum_required (VERSION 4.0)
+cmake_minimum_required (VERSION 3.30)
 
 project (SpectrumAnalyser)
 
