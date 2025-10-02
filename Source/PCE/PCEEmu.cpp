@@ -169,6 +169,8 @@ void OnGearGfxInstructionExecuted(void* pContext, uint16_t pc)
 		// This signals to geargfx to stop exection
 		state.Debugger.Break();
 	}
+
+	pEmu->PostInstructionTick();
 }
 
 void OnMemoryRead(void* pContext, u16 pc, u16 dataAddr)
@@ -506,6 +508,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, BankChangeCallback, this);
 
 	pMedia = pCore->GetMedia();
+	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
 
 	pPCE6502CPU = new FPCECPUEmulator6502(this);
 
@@ -864,6 +867,8 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
 
+	DebugStats.Reset();
+
 	// decode whole screen
 	//ZXDecodeScreen(&ZXEmuState);
 	CodeAnalysis.Debugger.Break();
@@ -977,6 +982,23 @@ bool FPCEEmu::NewProjectFromEmulatorFile(const FEmulatorFile& snapshot)
 	return false;
 }
 
+void FPCEEmu::PostInstructionTick()
+{
+	FCodeAnalysisState& state = CodeAnalysis;
+
+	static int lastVpos = -1;
+	const int vpos = GetVPos();
+	if (lastVpos != vpos)
+	{
+		if (vpos == 0)
+			state.OnMachineFrameStart();
+		// todo: Improve this. I think this won't be right at the end of the frame, but on the scanline before it.
+		// Maybe I need to use HuC6270::m_raster_line?
+		else if (vpos == pCore->GetHuC6260()->GetTotalLines()-1) 
+			state.OnMachineFrameEnd();
+	}
+	lastVpos = vpos;
+}
 
 void FPCEEmu::FileMenuAdditions(void)	
 {
@@ -1011,11 +1033,13 @@ void FPCEEmu::Tick()
 	if (debugger.IsStopped() == false)
 	{
 		CodeAnalysis.OnFrameStart();
+		//CodeAnalysis.OnMachineFrameStart();
 
 		int audioSampleCount = 0;
 		pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
 		
 		CodeAnalysis.OnFrameEnd();
+		//CodeAnalysis.OnMachineFrameStart();
 	}
 
 	// Draw UI

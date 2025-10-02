@@ -14,6 +14,9 @@ class FBatchGameLoadViewer;
 
 struct FEmuDebugStats
 {
+	void Reset()
+	{
+	}
 	std::map<std::string, int> GamesWithDupeBanks;
 };
 
@@ -65,6 +68,8 @@ public:
 	ICPUEmulator* GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
+	void PostInstructionTick();
+
 	const std::unordered_map<std::string, FGamesList>& GetGamesLists() const { return	GamesLists; }
 
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
@@ -72,6 +77,7 @@ public:
 	GeargrafxCore* GetCore() const { return pCore; }
 	Memory* GetMemory() const { return pMemory; }
 	Media* GetMedia() const { return pMedia; }
+	int GetVPos() const { return *pVPos; }
 
 	uint8_t* GetFrameBuffer() const { return pFrameBuffer; }
 
@@ -87,8 +93,7 @@ public:
 	// The default number of banks in a bank set.
 	// The number includes the primary bank and any extra banks for duplicates.
 	// For example, a value of 4 means 1 primary and 3 duplicates.
-	// todo: work out why a value of 2 asserts in SetBankFreed().
-	static const int kNumBankSetIds = 2;
+	static const int kNumBankSetIds = 5;
 
 	// A set of bank ids that all represent the same logical memory.
 	// PCE games can map the same bank to different physical memory ranges.
@@ -141,6 +146,7 @@ protected:
 	Memory* pMemory = nullptr;
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
+	int* pVPos = nullptr; // HuC6270 vertical position, cached for speed.
 
 	FPCECPUEmulator6502* pPCE6502CPU;
 

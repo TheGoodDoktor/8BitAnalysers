@@ -5,6 +5,7 @@
 #include <geargrafx_core.h>
 
 #include <ImGuiSupport/ImGuiTexture.h>
+#include <ImGuiSupport/ImGuiDrawing.h>
 
 FPCEViewer::FPCEViewer(FEmuBase* pEmu)
 : FViewerBase(pEmu) 
@@ -15,23 +16,39 @@ FPCEViewer::FPCEViewer(FEmuBase* pEmu)
 
 bool FPCEViewer::Init()
 {
-	GG_Runtime_Info info;
-	pPCEEmu->GetCore()->GetRuntimeInfo(info);
-
-	TextureWidth = info.screen_width;
-	TextureHeight = info.screen_height;
-
-	ScreenTexture = ImGui_CreateTextureRGBA(pPCEEmu->GetFrameBuffer(), TextureWidth, TextureHeight);
+	ResetScreenTexture();
 
 	return true;
 }
 
+
 void FPCEViewer::DrawUI()
 {		
+	ResetScreenTexture();
+
+	const FGlobalConfig* pConfig = pPCEEmu->GetGlobalConfig();
+	const float scale = (float)pConfig->ImageScale;
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+
 	ImGui_UpdateTextureRGBA(ScreenTexture, pPCEEmu->GetFrameBuffer());
 	ImGui::Text("Screen Size = %d x %d", TextureWidth, TextureHeight);
 
-	ImGui::Image(ScreenTexture, ImVec2((float)TextureWidth/* * scale*/, (float)TextureHeight/* * scale*/));
+	const ImVec2 pos = ImGui::GetCursorScreenPos();
+
+	ImGui::Image(ScreenTexture, ImVec2((float)TextureWidth * scale, (float)TextureHeight * scale));
+
+	// Draw an indicator to show which scanline is being drawn
+	// I couldn't get this working properly.
+	/*if (pConfig->bShowScanLineIndicator && state.Debugger.IsStopped())
+	{
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+
+		const int scanlineY = MIN(MAX(pPCEEmu->GetCore()->GetHuC6270_1()->m_raster_line, 0), TextureHeight);
+		
+		dl->AddLine(ImVec2(pos.x + (4 * scale), pos.y + (scanlineY * scale)), ImVec2(pos.x + (TextureWidth - 8) * scale, pos.y + (scanlineY * scale)), 0x50ffffff);
+		DrawArrow(dl, ImVec2(pos.x - 2, pos.y + (scanlineY * scale) - 6), false);
+		DrawArrow(dl, ImVec2(pos.x + (TextureWidth - 11) * scale, pos.y + (scanlineY * scale) - 6), true);
+	}*/
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
@@ -119,4 +136,21 @@ void FPCEViewer::Tick()
 	{
 		pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_II);
 	}
+}
+
+void FPCEViewer::ResetScreenTexture()
+{
+	GG_Runtime_Info info;
+	pPCEEmu->GetCore()->GetRuntimeInfo(info);
+
+	if (ScreenTexture && info.screen_height == TextureHeight && info.screen_width == TextureWidth)
+		return;
+
+	TextureWidth = info.screen_width;
+	TextureHeight = info.screen_height;
+
+	if (ScreenTexture != nullptr)
+		ImGui_FreeTexture(ScreenTexture);
+	
+	ScreenTexture = ImGui_CreateTextureRGBA(pPCEEmu->GetFrameBuffer(), TextureWidth, TextureHeight);
 }

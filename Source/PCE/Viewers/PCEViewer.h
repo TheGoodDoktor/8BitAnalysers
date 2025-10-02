@@ -17,6 +17,9 @@ public:
 	void Tick();
 
 private:
+	void ResetScreenTexture();
+
+private:
 	FPCEEmu* pPCEEmu = nullptr;
 
 	ImTextureID	ScreenTexture = 0;		// texture

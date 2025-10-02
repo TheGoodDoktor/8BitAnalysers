@@ -72,6 +72,7 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("Pages in use: %d", pagesInUse);
 	ImGui::Text("Game with most dupe banks: %s", gameWithMaxDupes.c_str());
 	ImGui::Text("Max dupe banks: %d", maxDupeBanks);
+	ImGui::Text("Num bank sets: %d", pPCEEmu->kNumBankSetIds);
 
 	ImGui::SeparatorText("Items");
 	ImGui::Text("Itemlist size: %d", state.ItemList.size());
@@ -82,7 +83,16 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("Size: %d", romSize);
 	ImGui::Text("Bank count : %d", romBankCount);
 
-	ImGui::SeparatorText("Misc");
+	ImGui::SeparatorText("Debugger");
 	ImGui::Text("Frame trace size: %d", state.Debugger.GetFrameTrace().size());
 	ImGui::Text("Call stack size : %d", state.Debugger.GetCallstack().size());
+	
+	ImGui::SeparatorText("Analysis State");
+	ImGui::Text("Current frame : %d", state.CurrentFrameNo);
+	ImGui::Text("Execution counter : %d", state.ExecutionCounter);
+
+	ImGui::SeparatorText("Video");
+	ImGui::Text("6270 Hpos: %d", *pPCEEmu->GetCore()->GetHuC6270_1()->GetState()->HPOS);
+	ImGui::Text("6270 Vpos: %d", pPCEEmu->GetVPos());
+	//ImGui::Text("Raster line: %d", pPCEEmu->GetCore()->GetHuC6270_1()->m_raster_line);
 }
