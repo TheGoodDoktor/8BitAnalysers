@@ -62,12 +62,19 @@ public:
 	
 	void	DrawLegend(void);
 
+	void	SetRomOptionEnabled(bool bEnabled)
+	{
+		bShowROMCheckBox = bEnabled;
+		bShowROM = true;
+	}
+
 private:
 	FOverviewStats	Stats;
 	int16_t		OverviewBankId = -1;
 
 	bool		bShowActivity = true;
 	FGraphicsView*	MemoryViewImage = nullptr;
+	bool		bShowROMCheckBox = true;
 	bool		bShowROM = false;
 	bool		bShowCurrentLocation = true;
 };

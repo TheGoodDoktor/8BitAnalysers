@@ -250,8 +250,12 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 
 	ImGui::InputInt("Scale", &pConfig->OverviewScale, 1, 1);
 	pConfig->OverviewScale = std::max(1, pConfig->OverviewScale);	// clamp
-	ImGui::SameLine();
-	ImGui::Checkbox("Include ROM", &bShowROM);
+	
+	if (bShowROMCheckBox)
+	{
+		ImGui::SameLine();
+		ImGui::Checkbox("Include ROM", &bShowROM);
+	}
 
 	const float scale = ImGui_GetScaling() * (float)pConfig->OverviewScale;
 
@@ -470,11 +474,11 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 					uint32_t drawCol = dataCol;
 
 					// show unknowns that have been read
-					if(dataCol == kUnknownDataCol && pWriteDataInfo->Reads.IsEmpty() == false)
+					if(dataCol == kUnknownDataCol && pReadDataInfo->Reads.IsEmpty() == false)
 						drawCol = kDataReadCol;
 
 					// show unknowns that have been written to
-					if (dataCol == kUnknownDataCol && pWriteDataInfo->Writes.IsEmpty() == false)
+					if (dataCol == kUnknownDataCol && pWriteDataInfo && pWriteDataInfo->Writes.IsEmpty() == false)
 						drawCol = kDataWriteCol;
 
 					if (pWriteDataInfo != nullptr && pWriteDataInfo->LastFrameWritten != -1)	// Show write
