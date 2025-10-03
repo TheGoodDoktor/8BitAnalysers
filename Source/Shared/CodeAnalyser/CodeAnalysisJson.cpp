@@ -30,6 +30,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 	json jsonGameData;
 
 	int pagesWritten = 0;
+	
+	jsonGameData["BankCount"] = FCodeAnalysisState::BankCount;
 
 	// iterate through all registered banks
 	for (int bankNo = 0; bankNo < FCodeAnalysisState::BankCount; bankNo++)
@@ -192,6 +194,14 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 
 	inFileStream >> jsonGameData;
 	inFileStream.close();
+
+	if (jsonGameData.contains("BankCount"))
+	{
+		if (jsonGameData["BankCount"] != FCodeAnalysisState::BankCount)
+		{
+			return false;
+		}
+	}
 
 	if (jsonGameData.contains("Banks"))
 	{

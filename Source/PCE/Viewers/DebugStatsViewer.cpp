@@ -95,4 +95,8 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("6270 Hpos: %d", *pPCEEmu->GetCore()->GetHuC6270_1()->GetState()->HPOS);
 	ImGui::Text("6270 Vpos: %d", pPCEEmu->GetVPos());
 	//ImGui::Text("Raster line: %d", pPCEEmu->GetCore()->GetHuC6270_1()->m_raster_line);
+
+	ImGui::SeparatorText("IO");
+	const u8 ioReg = pPCEEmu->GetCore()->GetInput()->GetIORegister();
+	ImGui::Text("Register: 0x%x %s", ioReg, NumStr(ioReg, ENumberDisplayMode::Binary));
 }

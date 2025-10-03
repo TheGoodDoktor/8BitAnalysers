@@ -779,6 +779,12 @@ void FPCEEmu::Shutdown()
 	FEmuBase::Shutdown();
 }
 
+// todo: deal with resetting state when this function fails.
+// if the project fails to load we need to reset all state (memory, analysis info, globals etc).
+// eg we need to call GenerateGlobalInfo() otherwise the global info is left in a bad state.
+// there is a crash that happens if you load a project and then load a project that fails directly after it.
+// also, if ImportAnalysisState() fails when booting up, the game save state will still load instead
+// of the memory being reset. 
 bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  true*/)
 {
 	LOGINFO("Load Project '%s'. bLoadGameData = %s", pGameConfig->Name.c_str(), bLoadGameData ? "True" : "False");
@@ -822,8 +828,11 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 		if (FileExists(analysisJsonFName.c_str()))
 		{
-			ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
-			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+			if (!ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str()))
+				return false;
+
+			if (!ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str()))
+				return false;
 
 			// this was to deal with banks that were in use the last time we saved.
 			// they need to get their primary mapped page set.
