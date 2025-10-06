@@ -79,7 +79,7 @@ int16_t	FCodeAnalysisState::CreateBank(const char* bankName, int noKb,uint8_t* p
 	assert(bankId < FCodeAnalysisState::kMaxBanks);
 	const int noPages = noKb;
 
-	FCodeAnalysisBank& newBank = Banks[bankId]; //Banks.emplace_back();
+	FCodeAnalysisBank& newBank = Banks[bankId]; 
 	newBank.Id = bankId;
 	newBank.NoPages = noPages;
 	newBank.SizeMask = (noPages * FCodeAnalysisPage::kPageSize) - 1;
@@ -301,9 +301,15 @@ std::vector<FAddressRef> FCodeAnalysisState::FindAllMemoryPatterns(const uint8_t
 {
 	std::vector<FAddressRef> results;
 	// iterate through banks
-	for (auto& bank : Banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = Banks[b];
+
 		if (bank.bMachineROM && bCheckMachineROM == false)
+			continue;
+
+		// sam. this means we cant search in banks that have never been mapped in.
+		if (bank.PrimaryMappedPage == -1)
 			continue;
 
 		if (bank.IsMapped() == false && bPhysicalOnly)
@@ -352,8 +358,10 @@ std::vector<FAddressRef> FCodeAnalysisState::FindInAnalysis(const char* pString,
 	std::transform(searchTextLower.begin(), searchTextLower.end(), searchTextLower.begin(), [](unsigned char c) { return std::tolower(c); });
 
 	// iterate through banks
-	for (auto& bank : Banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = Banks[b];
+
 		if (bank.bMachineROM && bSearchROM == false)
 			continue;
 
@@ -470,9 +478,15 @@ std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bCheckMachineR
 {
 	std::vector<FFoundString> results;
 
-	for (auto& bank : Banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = Banks[b];
+
 		if (bank.bMachineROM && bCheckMachineROM == false)
+			continue;
+
+		// sam. this means we cant search in banks that have never been mapped in.
+		if (bank.PrimaryMappedPage == -1)
 			continue;
 
 		if (bank.IsMapped() == false && bPhysicalOnly)
@@ -759,9 +773,11 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 				snprintf(label, kLabelSize, "data_%04X", address.GetAddress());
 
 			// zero page labels for 6502
-			if ((state.CPUInterface->CPUType == ECPUType::M6502 || state.CPUInterface->CPUType == ECPUType::HuC6280) && address.GetAddress() < 256)
+			if ((state.CPUInterface->CPUType == ECPUType::M6502 && address.GetAddress() < 256) ||
+			   (state.CPUInterface->CPUType == ECPUType::HuC6280 && address.GetAddress() >= 0x2000 && address.GetAddress() < 0x2100))
+			{
 				snprintf(label, kLabelSize, "zp_%02X", address.GetAddress());
-
+			}
 			if (bLabelOnOperand == false)
 				pLabel->Global = true;	// operand labels should be local
 		}
@@ -1435,8 +1451,10 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	}
 
 	// reset banks
-	for (FCodeAnalysisBank& bank : Banks)
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
+		FCodeAnalysisBank& bank = Banks[b];
+
 		bank.Description.clear();
 		bank.ItemList.clear();
 	}

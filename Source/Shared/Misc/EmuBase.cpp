@@ -189,11 +189,11 @@ void FEmuBase::DrawUI()
 	//ImGui::End();
 
 
-	if (ImGui::Begin("IO Analyser"))
+	/*if (ImGui::Begin("IO Analyser"))
 	{
 		CodeAnalysis.IOAnalyser.DrawUI();
 	}
-	ImGui::End();
+	ImGui::End();*/
 		
 	// Draw registered viewers
 	for (auto Viewer : Viewers)

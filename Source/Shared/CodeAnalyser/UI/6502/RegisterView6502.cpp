@@ -15,17 +15,19 @@ class FZeroPageGrid : public FMemoryAccessGrid
 			//bDetailsToSide = true;
 			bShowValues = true;
 			bOutlineAllSquares = true;
+			ZeroPageAddr = pCodeAnalysis->CPUInterface->CPUType == ECPUType::HuC6280 ? 0x2000 : 0; 
 		}
 
 		FAddressRef GetGridSquareAddress(int x, int y) override
 		{
-			return CodeAnalysis->AddressRefFromPhysicalAddress(x + (y * 16));
+			return CodeAnalysis->AddressRefFromPhysicalAddress(ZeroPageAddr + x + (y * 16));
 		}
 		void OnDraw() override
 		{
 			const float imgScale = ImGui_GetScaling();
 			GridSquareSize = 20.0f * imgScale;	// to fit an 8x8 square on a scaling screen image
 		}
+		uint16_t ZeroPageAddr = 0;
 };
 
 struct F6502DisplayRegisters
@@ -138,7 +140,7 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 
 	// Stack pointer
 	// Add 0x100 to give physical address
-	const uint16_t StackPtr = curRegs.S + 0x100;
+	const uint16_t StackPtr = state.CPUInterface->CPUType == ECPUType::HuC6280 ? 0x2000 : 0 + curRegs.S + 0x100;
 	ImGui::TextColored(curRegs.S != oldRegs.S ? regChangedCol : regNormalCol, "SP:%s", NumStr(StackPtr));
 	DrawAddressLabel(state, viewState, StackPtr);
 

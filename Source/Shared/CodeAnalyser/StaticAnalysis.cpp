@@ -194,6 +194,9 @@ bool FStaticAnalyser::RunAnalysis(void)
 		if(bank.bMachineROM)
 			continue;
 
+		if (bank.PrimaryMappedPage == -1)
+			continue;
+
 		int addToSelfRun = 0;
 		FAddressRef addToSelfRunStart;
 

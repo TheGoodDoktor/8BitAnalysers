@@ -10,6 +10,7 @@
 #include "Viewers/PCEViewer.h"
 #include "Viewers/BatchGameLoadViewer.h"
 #include "Viewers/DebugStatsViewer.h"
+#include "Viewers/JoypadViewer.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "Viewers/PCERegistersViewer.h"
 #include <geargrafx_core.h>
@@ -106,7 +107,7 @@ uint8_t FPCEEmu::ReadByte(uint16_t address) const
 	if (!pMedia->IsReady())
 		return 0;
 
-	return pMemory->Read(address, /* internal */ true);
+	return pMemory->Read(address, /* is_cpu */ false);
 }
 
 uint16_t	FPCEEmu::ReadWord(uint16_t address) const 
@@ -279,7 +280,7 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 
 	const uint16_t oldMappedAddress = pInBank->GetMappedAddress();
 	const int oldPrimaryPage = pInBank->PrimaryMappedPage;
-	const EBankAccess bankAccess = pMemory->GetMemoryMapWrite()[newBankIndex] ? EBankAccess::ReadWrite : EBankAccess::Read;
+	const EBankAccess bankAccess = newBankIndex == kBankHWPage ? EBankAccess::ReadWrite : pMemory->GetMemoryMapWrite()[newBankIndex] ? EBankAccess::ReadWrite : EBankAccess::Read;
 	const int pageNo = mprIndex * 8;
 	state.MapBank(newBankId, pageNo, bankAccess);
 	pInBank->PrimaryMappedPage = pageNo;
@@ -349,7 +350,7 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 
 	for (int i = 0; i < kNumMprSlots; i++)
 	{
-		if (pMemory->GetMpr(i) != 0xff)
+		if (pMemory->GetMpr(i) != kBankHWPage)
 		{
 			const FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(MprBankId[i]);
 			//assert(pBank);
@@ -526,33 +527,28 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	//CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
 
+	std::string bankPostFix[8] = { "", " #2", " #3", " #4", " #5", " #6", " #7", " #8" };
 	char bankName[32];
+
 	// Hardware page. (IO)
-	// todo: hardware page is mpr slot 0xff. for now map some dummy memory until we figure out how to do it.
+	// This is a bit of a hack. We use memory owned by Geargfx.
+	// We write values to it every time a hw page location is read or written to.
+	// To the user, it looks like a normal memory location in the code analysis view.
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
-		if (d == 0)
-			sprintf(bankName, "HW PAGE");
-		else
-			sprintf(bankName, "HW PAGE #%d", d + 1);
-		BankSets[kBankHWPage].AddBankId(CodeAnalysis.CreateBank(bankName, 8, gDummyMemory, false /*bMachineROM*/, 0x0));
+		sprintf(bankName, "HW PAGE%s", bankPostFix[d].c_str());
+		BankSets[kBankHWPage].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pCore->GetMemory()->GetHWPageMemory(), false /*bMachineROM*/, 0x0));
 	}
 	// Working RAM
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
-		if (d == 0)
-			sprintf(bankName, "WRAM");
-		else
-			sprintf(bankName, "WRAM #%d", d + 1);
+		sprintf(bankName, "WRAM%s", bankPostFix[d].c_str());
 		BankSets[kBankWRAM0].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000));
 	}
 	// Save RAM
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
-		if (d == 0)
-			sprintf(bankName, "SAVE RAM");
-		else
-			sprintf(bankName, "SAVE RAM #%d", d + 1);
+		sprintf(bankName, "SAVE RAM%s", bankPostFix[d].c_str());
 		BankSets[kBankSaveRAM].AddBankId(CodeAnalysis.CreateBank(bankName, pMemory->GetBackupRAMSize() / 1024, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 	
@@ -572,11 +568,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	{
 		for (int d = 0; d < kNumBankSetIds; d++)
 		{
-			if (d == 0)
-				sprintf(bankName, "ROM %02d", b);
-			else
-				sprintf(bankName, "ROM %02d #%d", b, d+1);
-
+			sprintf(bankName, "ROM %02d%s", b, bankPostFix[d].c_str());
 			BankSets[b].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
 		}
 	}
@@ -620,6 +612,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FDebugStatsViewer(this));
 #endif
 	AddViewer(new FPCERegistersViewer(this));
+	AddViewer(new FJoypadViewer(this));
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
@@ -724,7 +717,7 @@ void FPCEEmu::ResetBanks()
 	// Set banks primary mapped page to mark them as in use.
 	// They will get their actual mapped address set when they are mapped in.
 	// We do this because we can't have any banks in use with PrimaryMappedPage of -1.
-	BankSets[kBankHWPage].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
+	BankSets[kBankHWPage].SetPrimaryMappedPage(CodeAnalysis, 0, 0);
 	BankSets[kBankWRAM0].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 	BankSets[kBankSaveRAM].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
@@ -880,6 +873,9 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
+
+	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1000), "JoyPad_1000", ELabelType::Data);
 
 	DebugStats.Reset();
 

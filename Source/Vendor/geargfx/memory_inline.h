@@ -33,7 +33,7 @@
 #include "sf2_mapper.h"
 #include "arcade_card_mapper.h"
 
-INLINE u8 Memory::Read(u16 address, bool internal, bool block_transfer)
+INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
 {
 #if defined(GG_TESTING)
     return m_test_memory[address];
@@ -47,8 +47,12 @@ INLINE u8 Memory::Read(u16 address, bool internal, bool block_transfer)
     u8 bank = m_mpr[mpr_index];
     u16 offset = address & 0x1FFF;
 
-    // sam. add callback for memory reads
-    if (!internal && bank != 0xff) // todo: hardware page
+    // sam. add callback for memory reads.
+    // we want this to fire every time the cpu reads memory in order for the
+    // analyser to register the read has happened.
+    // Memory::Read() is also called from the code analysis UI code to display the memory.
+    // we dont want this callback to fire in this case.
+    if (is_cpu) 
       m_memory_read_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address);
 
     if (bank != 0xFF)
@@ -73,23 +77,32 @@ INLINE u8 Memory::Read(u16 address, bool internal, bool block_transfer)
                 return m_huc6260->ReadRegister(offset);
             case 0x0800:
                 // PSG
+                m_hwpage_memory[0x0800] = m_io_buffer;
                 return block_transfer ? 0x00 : m_io_buffer;
             case 0x0C00:
                 // Timer Counter
                 if (block_transfer)
+                {
+                    m_hwpage_memory[0x0C00] = 0;
                     return 0x00;
+                }
                 else
                 {
                     m_io_buffer = (m_huc6280->ReadTimerRegister() & 0x7F) | (m_io_buffer & 0x80);
+                    m_hwpage_memory[0x0C00] = m_io_buffer;
                     return m_io_buffer;
                 }
             case 0x1000:
                 // I/O
                 if (block_transfer)
-                    return 0x00;
+                {
+                   m_hwpage_memory[0x1000] = 0;
+                   return 0x00;
+                }
                 else
                 {
                     m_io_buffer = m_input->ReadK();
+                    m_hwpage_memory[0x1000] = m_io_buffer;
                     return m_io_buffer;
                 }
             case 0x1400:
@@ -114,6 +127,7 @@ INLINE u8 Memory::Read(u16 address, bool internal, bool block_transfer)
                             break;
                         }
                     }
+                    m_hwpage_memory[0x1400] = m_io_buffer;
                     return m_io_buffer;
                 }
             }
@@ -183,6 +197,8 @@ INLINE void Memory::Write(u16 address, u8 value, bool block_transfer)
     }
     else
     {
+       m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
+
         // Hardware Page
         switch (offset & 0x1C00)
         {
@@ -200,16 +216,19 @@ INLINE void Memory::Write(u16 address, u8 value, bool block_transfer)
                 // PSG
                 m_audio->WritePSG(offset, value);
                 m_io_buffer = value;
+                m_hwpage_memory[0x0800] = value;
                 break;
             case 0x0C00:
                 // Timer
                 m_huc6280->WriteTimerRegister(offset, value);
                 m_io_buffer = value;
+                m_hwpage_memory[0x0C00] = value;
                 break;
             case 0x1000:
                 // I/O
                 m_input->WriteO(value);
                 m_io_buffer = value;
+                m_hwpage_memory[0x1000] = value;
                 break;
             case 0x1400:
             {
@@ -229,6 +248,7 @@ INLINE void Memory::Write(u16 address, u8 value, bool block_transfer)
                     }
                 }
                 m_io_buffer = value;
+                m_hwpage_memory[0x1400] = value;
                 break;
             }
             case 0x1800:
@@ -308,6 +328,11 @@ INLINE u8* Memory::GetArcadeRAM()
 INLINE u8* Memory::GetUnusedMemory()
 {
    return m_unused_memory;
+}
+
+INLINE u8* Memory::GetHWPageMemory()
+{
+   return m_hwpage_memory;
 }
 
 INLINE int Memory::GetWorkingRAMSize()

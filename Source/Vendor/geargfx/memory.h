@@ -59,8 +59,8 @@ public:
     ~Memory();
     void Init();
     void Reset();
-    // sam. added internal flag for non-CPU reads.
-    u8 Read(u16 address, bool internal = true, bool block_transfer = false);
+    // sam. added flag for CPU read.
+    u8 Read(u16 address, bool is_cpu = true, bool block_transfer = false);
     void Write(u16 address, u8 value, bool block_transfer = false);
     void SetMpr(u8 index, u8 value);
     u8 GetMpr(u8 index);
@@ -79,6 +79,8 @@ public:
     u8* GetCDROMRAM();
     u8* GetArcadeRAM();
     u8* GetUnusedMemory();
+    // sam.
+    u8* GetHWPageMemory();
     int GetWorkingRAMSize();
     int GetCardRAMSize();
     int GetCardRAMStart();
@@ -120,6 +122,8 @@ private:
     u8* m_memory_map[0x100] = {};
     bool m_memory_map_write[0x100] = {};
     u8 m_unused_memory[0x2000];
+    // sam. added some memory to represent the hw page.
+    u8 m_hwpage_memory[0x2000];
     u8 m_wram[0x8000] = {};
     u8 m_card_ram[0x30000] = {};
     u8 m_cdrom_ram[0x10000] = {};
