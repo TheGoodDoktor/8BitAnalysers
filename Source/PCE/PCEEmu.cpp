@@ -10,6 +10,7 @@
 #include "Viewers/PCEViewer.h"
 #include "Viewers/BatchGameLoadViewer.h"
 #include "Viewers/DebugStatsViewer.h"
+#include "Viewers/PaletteViewer.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "Viewers/PCERegistersViewer.h"
 #include <geargrafx_core.h>
@@ -614,12 +615,13 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	FOverviewViewer* pOverviewViewer = new FOverviewViewer(this);
 	pOverviewViewer->SetRomOptionEnabled(false); // this enables showing the entire physical address range.
 	AddViewer(pOverviewViewer);
+	AddViewer(new FPCERegistersViewer(this));
+	AddViewer(new FPaletteViewer(this));
 #ifndef NDEBUG
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
 	AddViewer(pBatchGameLoadViewer);
 	AddViewer(new FDebugStatsViewer(this));
 #endif
-	AddViewer(new FPCERegistersViewer(this));
 
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 
