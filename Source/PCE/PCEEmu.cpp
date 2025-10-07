@@ -12,6 +12,7 @@
 #include "Viewers/DebugStatsViewer.h"
 #include "Viewers/JoypadViewer.h"
 #include "Viewers/PaletteViewer.h"
+#include "Viewers/SpriteViewer.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "Viewers/PCERegistersViewer.h"
 #include <geargrafx_core.h>
@@ -610,6 +611,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FPCERegistersViewer(this));
 	AddViewer(new FPaletteViewer(this));
 	AddViewer(new FJoypadViewer(this));
+	AddViewer(new FSpriteViewer(this));
 #ifndef NDEBUG
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
 	AddViewer(pBatchGameLoadViewer);
