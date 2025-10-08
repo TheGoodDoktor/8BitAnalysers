@@ -5,6 +5,8 @@
 #include "../PCEEmu.h"
 #include <geargrafx_core.h>
 
+#include <ImGuiSupport/ImGuiTexture.h>
+
 FSpriteViewer::FSpriteViewer(FEmuBase* pEmu)
 : FViewerBase(pEmu) 
 { 
@@ -14,12 +16,126 @@ FSpriteViewer::FSpriteViewer(FEmuBase* pEmu)
 
 bool FSpriteViewer::Init()
 {
+	ResetScreenTexture();
+
+	for (int s = 0; s < kNumSprites; s++)
+	{
+		SpriteWidths[s] = 16;
+		SpriteHeights[s] = 16;
+		SpriteBuffers[s] = new u8[HUC6270_MAX_SPRITE_WIDTH * HUC6270_MAX_SPRITE_HEIGHT * 4];
+
+		for (int j = 0; j < HUC6270_MAX_SPRITE_WIDTH * HUC6270_MAX_SPRITE_HEIGHT * 4; j++)
+			SpriteBuffers[s][j] = 0;
+	}
+
 	return true;
+}
+
+void FSpriteViewer::ResetScreenTexture()
+{
+	GG_Runtime_Info info;
+	pPCEEmu->GetCore()->GetRuntimeInfo(info);
+
+	if (ScreenTexture && info.screen_height == TextureHeight && info.screen_width == TextureWidth)
+		return;
+
+	TextureWidth = info.screen_width;
+	TextureHeight = info.screen_height;
+
+	if (ScreenTexture != nullptr)
+		ImGui_FreeTexture(ScreenTexture);
+
+	ScreenTexture = ImGui_CreateTextureRGBA(pPCEEmu->GetFrameBuffer(), TextureWidth, TextureHeight);
+
+	for (int s = 0; s < 64; s++)
+	{
+		SpriteTextures[s] = ImGui_CreateTextureRGBA(pPCEEmu->GetFrameBuffer(), 32, 64);
+	}
+}
+
+void FSpriteViewer::UpdateSprites()
+{
+	GeargrafxCore* pCore = pPCEEmu->GetCore();
+
+	HuC6260* huc6260 = pCore->GetHuC6260();
+	HuC6270* huc6270 = pCore->GetHuC6270_1();
+	u16* vram = huc6270->GetVRAM();
+	u16* sat = huc6270->GetSAT();
+	u16* color_table = huc6260->GetColorTable();
+
+	for (int i = 0; i < 64; i++)
+	{
+		int sprite_offset = i << 2;
+		u16 flags = sat[sprite_offset + 3] & 0xB98F;
+		bool x_flip = (flags & 0x0800);
+		bool y_flip = (flags & 0x8000);
+		int palette = flags & 0x0F;
+		int cgx = (flags >> 8) & 0x01;
+		int cgy = (flags >> 12) & 0x03;
+		int width = k_huc6270_sprite_width[cgx];
+		int height = k_huc6270_sprite_height[cgy];
+		u16 pattern = (sat[sprite_offset + 2] >> 1) & 0x3FF;
+		pattern &= k_huc6270_sprite_mask_width[cgx];
+		pattern &= k_huc6270_sprite_mask_height[cgy];
+		u16 sprite_address = pattern << 6;
+		bool mode1 = ((huc6270->GetState()->R[HUC6270_REG_MWR] >> 2) & 0x03) == 1;
+		int mode1_offset = mode1 ? (sat[sprite_offset + 2] & 1) << 5 : 0;
+
+		SpriteWidths[i] = width;
+		SpriteHeights[i] = height;
+
+		for (int y = 0; y < height; y++)
+		{
+			int flipped_y = y_flip ? (height - 1 - y) : y;
+			int tile_y = flipped_y >> 4;
+			int tile_line_offset = tile_y * 2 * 64;
+			int offset_y = flipped_y & 0xF;
+			u16 line_start = sprite_address + tile_line_offset + offset_y;
+
+			for (int x = 0; x < width; x++)
+			{
+				int flipped_x = x_flip ? (width - 1 - x) : x;
+				int tile_x = flipped_x >> 4;
+				int tile_x_offset = tile_x * 64;
+				int line = line_start + tile_x_offset + mode1_offset;
+
+				u16 plane1 = vram[line + 0];
+				u16 plane2 = vram[line + 16];
+				u16 plane3 = mode1 ? 0 : vram[line + 32];
+				u16 plane4 = mode1 ? 0 : vram[line + 48];
+
+				int pixel_x = 15 - (flipped_x & 0xF);
+				u16 pixel = ((plane1 >> pixel_x) & 0x01) | (((plane2 >> pixel_x) & 0x01) << 1) | (((plane3 >> pixel_x) & 0x01) << 2) | (((plane4 >> pixel_x) & 0x01) << 3);
+				pixel |= (palette << 4);
+				pixel |= 0x100;
+
+				int color = color_table[pixel & 0x1FF];
+				u8 green = ((color >> 6) & 0x07) * 255 / 7;
+				u8 red = ((color >> 3) & 0x07) * 255 / 7;
+				u8 blue = (color & 0x07) * 255 / 7;
+
+				if (!(pixel & 0x0F))
+				{
+					red = 255;
+					green = 0;
+					blue = 255;
+				}
+
+				int pixel_index = ((y * width) + x) << 2;
+				SpriteBuffers[i][pixel_index + 0] = red;
+				SpriteBuffers[i][pixel_index + 1] = green;
+				SpriteBuffers[i][pixel_index + 2] = blue;
+				SpriteBuffers[i][pixel_index + 3] = 255;
+			}
+		}
+	}
 }
 
 void FSpriteViewer::DrawUI()
 {
-#if 0
+	ResetScreenTexture();
+	UpdateSprites();
+	
 	GeargrafxCore* core = pPCEEmu->GetCore();
 	HuC6270* huc6270 = core->GetHuC6270_1();
 	u16* sat = huc6270->GetSAT();
@@ -28,10 +144,7 @@ void FSpriteViewer::DrawUI()
 
 	ImVec4 cyan = ImVec4(0.0f, 1.0f, 1.0f, 1.0f);
 	float scale = 4.0f;
-
-	//ImGui::SetNextWindowPos(ImVec2(78.0f + ((vdc == 1) ? 0 : 64), 56.0f + ((vdc == 1) ? 0 : 34)), ImGuiCond_FirstUseEver);
-	//ImGui::SetNextWindowSize(ImVec2(546, 500), ImGuiCond_FirstUseEver);
-
+	
 	ImGuiIO& io = ImGui::GetIO();
 
 	ImGui::Columns(2, "spr", false);
@@ -44,24 +157,26 @@ void FSpriteViewer::DrawUI()
 
 	for (int s = 0; s < 64; s++)
 	{
-			p[s] = ImGui::GetCursorScreenPos();
+		p[s] = ImGui::GetCursorScreenPos();
 
-			u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
-			float fwidth = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01] * scale;
-			float fheight = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03] * scale;
-			float tex_h = fwidth / 32.0f / scale;
-			float tex_v = fheight / 64.0f / scale;
+		u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
+		float fwidth = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01] * scale;
+		float fheight = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03] * scale;
+		float tex_h = fwidth / 32.0f / scale;
+		float tex_v = fheight / 64.0f / scale;
 
-			ImGui::Image((ImTextureID)(intptr_t)renderer_emu_debug_huc6270_sprites[vdc - 1][s], ImVec2(fwidth, fheight), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
+		ImGui_UpdateTextureRGBA(SpriteTextures[s], SpriteBuffers[s]);
 
-			float mouse_x = io.MousePos.x - p[s].x;
-			float mouse_y = io.MousePos.y - p[s].y;
+		ImGui::Image(SpriteTextures[s], ImVec2(fwidth, fheight), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
 
-			if (window_hovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight))
-			{
-					ImDrawList* draw_list = ImGui::GetWindowDrawList();
-					draw_list->AddRect(ImVec2(p[s].x, p[s].y), ImVec2(p[s].x + fwidth, p[s].y + fheight), ImColor(cyan), 2.0f, ImDrawFlags_RoundCornersAll, 3.0f);
-			}
+		float mouse_x = io.MousePos.x - p[s].x;
+		float mouse_y = io.MousePos.y - p[s].y;
+
+		if (window_hovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight))
+		{
+			ImDrawList* draw_list = ImGui::GetWindowDrawList();
+			draw_list->AddRect(ImVec2(p[s].x, p[s].y), ImVec2(p[s].x + fwidth, p[s].y + fheight), ImColor(cyan), 2.0f, ImDrawFlags_RoundCornersAll, 3.0f);
+		}
 	}
 
 	ImGui::EndChild();
@@ -71,90 +186,91 @@ void FSpriteViewer::DrawUI()
 	ImVec2 p_screen = ImGui::GetCursorScreenPos();
 
 	float screen_scale = 1.0f;
-	float tex_h = (float)runtime.screen_width / (float)(SYSTEM_TEXTURE_WIDTH);
-	float tex_v = (float)runtime.screen_height / (float)(SYSTEM_TEXTURE_HEIGHT);
+	//float tex_h = (float)runtime.screen_width / (float)(SYSTEM_TEXTURE_WIDTH);
+	//float tex_v = (float)runtime.screen_height / (float)(SYSTEM_TEXTURE_HEIGHT);
 
-	ImGui::Image((ImTextureID)(intptr_t)renderer_emu_texture, ImVec2(runtime.screen_width * screen_scale, runtime.screen_height * screen_scale), ImVec2(0, 0), ImVec2(tex_h, tex_v));
+	ImGui_UpdateTextureRGBA(ScreenTexture, pPCEEmu->GetFrameBuffer());
+
+	ImGui::Image(ScreenTexture, ImVec2(TextureWidth * screen_scale, TextureHeight * screen_scale), ImVec2(0, 0)/*, ImVec2(tex_h, tex_v)*/);
 
 	for (int s = 0; s < 64; s++)
 	{
-			float mouse_x = io.MousePos.x - p[s].x;
-			float mouse_y = io.MousePos.y - p[s].y;
-			u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
-			int width = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01];
-			int height = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03];
-			float fwidth = width * scale;
-			float fheight = height * scale;
+		float mouse_x = io.MousePos.x - p[s].x;
+		float mouse_y = io.MousePos.y - p[s].y;
+		u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
+		int width = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01];
+		int height = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03];
+		float fwidth = width * scale;
+		float fheight = height * scale;
 
-			if (window_hovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight))
+		if (window_hovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight))
+		{
+			int sprite_y = (sat[s * 4] & 0x03FF) + 3;
+			int sprite_x = sat[(s * 4) + 1] & 0x03FF;
+			u16 pattern = (sat[(s * 4) + 2] >> 1) & 0x03FF;
+
+			bool h_flip = (sprite_flags & 0x0800) != 0;
+			bool v_flip = (sprite_flags & 0x8000) != 0;
+
+			int palette = sprite_flags & 0x0F;
+			bool priority = (sprite_flags & 0x0080) != 0;
+
+			float real_x = (float)(sprite_x - 32);
+			float real_y = (float)(sprite_y - 64);
+
+			float rectx_min = p_screen.x + (real_x * screen_scale);
+			float rectx_max = p_screen.x + ((real_x + width) * screen_scale);
+			float recty_min = p_screen.y + (real_y * screen_scale);
+			float recty_max = p_screen.y + ((real_y + height) * screen_scale);
+
+			rectx_min = fminf(fmaxf(rectx_min, p_screen.x), p_screen.x + (TextureWidth * screen_scale));
+			rectx_max = fminf(fmaxf(rectx_max, p_screen.x), p_screen.x + (TextureWidth * screen_scale));
+			recty_min = fminf(fmaxf(recty_min, p_screen.y), p_screen.y + (TextureHeight * screen_scale));
+			recty_max = fminf(fmaxf(recty_max, p_screen.y), p_screen.y + (TextureHeight * screen_scale));
+
+			ImDrawList* draw_list = ImGui::GetWindowDrawList();
+			draw_list->AddRect(ImVec2(rectx_min, recty_min), ImVec2(rectx_max, recty_max), ImColor(cyan), 2.0f, ImDrawFlags_RoundCornersAll, 2.0f);
+
+			ImGui::NewLine();
+
+			ImGui::TextColored(cyan, "DETAILS:");
+			ImGui::Separator();
+			ImGui::Text(" SAT ENTRY:"); ImGui::SameLine();
+			ImGui::Text("%d", s);
+
+			ImGui::Text(" SPRITE X: "); ImGui::SameLine();
+			ImGui::Text("%03X (%d)", sprite_x, sprite_x);
+
+			ImGui::Text(" SPRITE Y: "); ImGui::SameLine();
+			ImGui::Text("%03X (%d)", sprite_y, sprite_y);
+
+			ImGui::Text(" SIZE:     "); ImGui::SameLine();
+			ImGui::Text("%dx%d", width, height);
+
+			ImGui::Text(" PATTERN:  "); ImGui::SameLine();
+			ImGui::Text("%03X (%d)", pattern, pattern);
+
+			ImGui::Text(" VRAM ADDR:"); ImGui::SameLine();
+			ImGui::Text("$%04X", pattern << 6);
+
+			ImGui::Text(" PALETTE:  "); ImGui::SameLine();
+			ImGui::Text("%01X (%d)", palette, palette);
+
+			ImGui::Text(" H FLIP:   "); ImGui::SameLine();
+			ImGui::Text("%s", h_flip ? "YES" : "NO ");
+
+			ImGui::Text(" V FLIP:   "); ImGui::SameLine();
+			ImGui::Text("%s", v_flip ? "YES" : "NO ");
+
+			ImGui::Text(" PRIORITY: "); ImGui::SameLine();
+			ImGui::Text("%s", priority ? "YES" : "NO ");
+
+			/*if (ImGui::IsMouseClicked(0))
 			{
-					int sprite_y = (sat[s * 4] & 0x03FF) + 3;
-					int sprite_x = sat[(s * 4) + 1] & 0x03FF;
-					u16 pattern = (sat[(s * 4) + 2] >> 1) & 0x03FF;
-
-					bool h_flip = (sprite_flags & 0x0800) != 0;
-					bool v_flip = (sprite_flags & 0x8000) != 0;
-
-					int palette = sprite_flags & 0x0F;
-					bool priority = (sprite_flags & 0x0080) != 0;
-
-					float real_x = (float)(sprite_x - 32);
-					float real_y = (float)(sprite_y - 64);
-
-					float rectx_min = p_screen.x + (real_x * screen_scale);
-					float rectx_max = p_screen.x + ((real_x + width) * screen_scale);
-					float recty_min = p_screen.y + (real_y * screen_scale);
-					float recty_max = p_screen.y + ((real_y + height) * screen_scale);
-
-					rectx_min = fminf(fmaxf(rectx_min, p_screen.x), p_screen.x + (runtime.screen_width * screen_scale));
-					rectx_max = fminf(fmaxf(rectx_max, p_screen.x), p_screen.x + (runtime.screen_width * screen_scale));
-					recty_min = fminf(fmaxf(recty_min, p_screen.y), p_screen.y + (runtime.screen_height * screen_scale));
-					recty_max = fminf(fmaxf(recty_max, p_screen.y), p_screen.y + (runtime.screen_height * screen_scale));
-
-					ImDrawList* draw_list = ImGui::GetWindowDrawList();
-					draw_list->AddRect(ImVec2(rectx_min, recty_min), ImVec2(rectx_max, recty_max), ImColor(cyan), 2.0f, ImDrawFlags_RoundCornersAll, 2.0f);
-
-					ImGui::NewLine();
-
-					ImGui::TextColored(cyan, "DETAILS:");
-					ImGui::Separator();
-					ImGui::TextColored(violet, " SAT ENTRY:"); ImGui::SameLine();
-					ImGui::Text("%d", s);
-
-					ImGui::TextColored(violet, " SPRITE X: "); ImGui::SameLine();
-					ImGui::Text("%03X (%d)", sprite_x, sprite_x);
-
-					ImGui::TextColored(violet, " SPRITE Y: "); ImGui::SameLine();
-					ImGui::Text("%03X (%d)", sprite_y, sprite_y);
-
-					ImGui::TextColored(violet, " SIZE:     "); ImGui::SameLine();
-					ImGui::Text("%dx%d", width, height);
-
-					ImGui::TextColored(violet, " PATTERN:  "); ImGui::SameLine();
-					ImGui::Text("%03X (%d)", pattern, pattern);
-
-					ImGui::TextColored(violet, " VRAM ADDR:"); ImGui::SameLine();
-					ImGui::Text("$%04X", pattern << 6);
-
-					ImGui::TextColored(violet, " PALETTE:  "); ImGui::SameLine();
-					ImGui::Text("%01X (%d)", palette, palette);
-
-					ImGui::TextColored(violet, " H FLIP:   "); ImGui::SameLine();
-					ImGui::TextColored(h_flip ? green : gray, "%s", h_flip ? "YES" : "NO ");
-
-					ImGui::TextColored(violet, " V FLIP:   "); ImGui::SameLine();
-					ImGui::TextColored(v_flip ? green : gray, "%s", v_flip ? "YES" : "NO ");
-
-					ImGui::TextColored(violet, " PRIORITY: "); ImGui::SameLine();
-					ImGui::TextColored(priority ? green : gray, "%s", priority ? "YES" : "NO ");
-
-					if (ImGui::IsMouseClicked(0))
-					{
-							gui_debug_memory_goto((vdc == 1) ? MEMORY_EDITOR_VRAM_1 : MEMORY_EDITOR_VRAM_2, pattern << 6);
-					}
-			}
+					gui_debug_memory_goto((vdc == 1) ? MEMORY_EDITOR_VRAM_1 : MEMORY_EDITOR_VRAM_2, pattern << 6);
+			}*/
+		}
 	}
 
 	ImGui::Columns(1);
-#endif
 }
