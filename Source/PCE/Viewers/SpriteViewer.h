@@ -19,7 +19,7 @@ public:
 
 private:
 	void ResetScreenTexture();
-	void UpdateSprites();
+	void UpdateSpriteBuffers();
 
 private:
 	static const int kNumSprites = 64;

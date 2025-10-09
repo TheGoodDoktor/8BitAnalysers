@@ -77,6 +77,20 @@ void ImGui_UpdateTextureRGBA(ImTextureID texture,const void* pixels)
 	glBindTexture(GL_TEXTURE_2D, lastTexture);
 }
 
+// This requires the texture has already been created with glTexImage2D.
+void ImGui_UpdateTextureSubImageRGBA(ImTextureID texture, const void* pixels, int width, int height)
+{
+	GLint lastTexture;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTexture);
+
+	glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)texture);
+	
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+	// Restore state
+	glBindTexture(GL_TEXTURE_2D, lastTexture);
+}
+
 static std::vector<uint32_t>	g_UploadBuffer;
 
 void ImGui_UpdateTextureRGBA(ImTextureID texture,const void* pixels, int srcWidth, int srcHeight)

@@ -49,11 +49,11 @@ void FSpriteViewer::ResetScreenTexture()
 
 	for (int s = 0; s < 64; s++)
 	{
-		SpriteTextures[s] = ImGui_CreateTextureRGBA(pPCEEmu->GetFrameBuffer(), 32, 64);
+		SpriteTextures[s] = ImGui_CreateTextureRGBA(pPCEEmu->GetFrameBuffer(), HUC6270_MAX_SPRITE_WIDTH, HUC6270_MAX_SPRITE_HEIGHT);
 	}
 }
 
-void FSpriteViewer::UpdateSprites()
+void FSpriteViewer::UpdateSpriteBuffers()
 {
 	GeargrafxCore* pCore = pPCEEmu->GetCore();
 
@@ -134,7 +134,7 @@ void FSpriteViewer::UpdateSprites()
 void FSpriteViewer::DrawUI()
 {
 	ResetScreenTexture();
-	UpdateSprites();
+	UpdateSpriteBuffers();
 	
 	GeargrafxCore* core = pPCEEmu->GetCore();
 	HuC6270* huc6270 = core->GetHuC6270_1();
@@ -165,7 +165,7 @@ void FSpriteViewer::DrawUI()
 		float tex_h = fwidth / 32.0f / scale;
 		float tex_v = fheight / 64.0f / scale;
 
-		ImGui_UpdateTextureRGBA(SpriteTextures[s], SpriteBuffers[s]);
+		ImGui_UpdateTextureSubImageRGBA(SpriteTextures[s], SpriteBuffers[s], SpriteWidths[s], SpriteHeights[s]);
 
 		ImGui::Image(SpriteTextures[s], ImVec2(fwidth, fheight), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
 
