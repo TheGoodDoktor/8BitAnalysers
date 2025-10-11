@@ -18,6 +18,7 @@ public:
 
 private:
 	void ResetScreenTexture();
+	void DrawHighlightedSprite(ImVec2 cursorPos, float scale);
 
 private:
 	FPCEEmu* pPCEEmu = nullptr;

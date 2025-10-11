@@ -16,6 +16,8 @@ public:
 	virtual void DrawUI() override;
 
 	FPCEEmu* pPCEEmu = nullptr;
+public:
+	int HighlightSprite = -1;
 
 private:
 	void ResetScreenTexture();
@@ -31,4 +33,6 @@ private:
 	ImTextureID	ScreenTexture = 0;
 	int TextureWidth = 0;
 	int TextureHeight = 0;
+
+	bool bShowMagnifier = true;
 };
