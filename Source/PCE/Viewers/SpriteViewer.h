@@ -35,4 +35,5 @@ private:
 	int TextureHeight = 0;
 
 	bool bShowMagnifier = true;
+	int BackgroundColour = 0;
 };

@@ -117,9 +117,27 @@ void FSpriteViewer::UpdateSpriteBuffers()
 
 				if (!(pixel & 0x0F))
 				{
-					red = 255;
-					green = 0;
-					blue = 255;
+					if (BackgroundColour == 0)
+					{
+						// Grey
+						red = 128;
+						green = 128;
+						blue = 128;
+					}
+					else if (BackgroundColour == 1)
+					{
+						// Black
+						red = 0;
+						green = 0;
+						blue = 0;
+					}
+					else
+					{
+						// Magenta
+						red = 255;
+						green = 0;
+						blue = 255;
+					}
 				}
 
 				int pixel_index = ((y * width) + x) << 2;
@@ -197,6 +215,9 @@ void FSpriteViewer::DrawUI()
 		ImGui::EndTable();
 	}
 
+	const char* colours[] = { "Grey", "Black", "Magenta" };
+	ImGui::Combo("Background", &BackgroundColour, colours, IM_ARRAYSIZE(colours));
+
 	ImGui::Checkbox("Show Magnifier", &bShowMagnifier);
 
 	HighlightSprite = -1;
@@ -263,5 +284,4 @@ void FSpriteViewer::DrawUI()
 		}
 	}
 
-	//ImGui::Columns(1);
 }
