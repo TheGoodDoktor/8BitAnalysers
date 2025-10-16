@@ -15,5 +15,12 @@ public:
 
 	FPCEEmu* pPCEEmu = nullptr;
 
+	bool bUpPressed = false;
+	bool bDownPressed = false;
+	bool bLeftPressed = false;
+	bool bRightPressed = false;
+	bool bSelectPressed = false;
 	bool bRunPressed = false;
+	bool bIPressed = false;
+	bool bIIPressed = false;
 };
