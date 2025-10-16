@@ -456,6 +456,13 @@ void FPCEEmu::CheckPhysicalMemoryRangeIsMapped()
 		}
 		else
 		{
+			const uint16_t mappedAddrFromBank = pBank->GetMappedAddress();
+			if (mappedAddrFromBank != addrVal)
+			{
+				BANK_ERROR("Bank '%s' is mapped to a different address than the code analysis. It's 0x%x but should be 0x%x", mappedAddrFromBank, addrVal);
+			}
+			assert(mappedAddrFromBank == addrVal);
+
 			BANK_LOG("Bank '%s' is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
 		}
 	}
@@ -635,7 +642,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	{
 		bLoadedGame = StartGameFromName(pGlobalConfig->LastGame.c_str(), true);
 	}
-	else
+
+	if (!bLoadedGame)
 	{
 		CodeAnalysis.Init(this);
 		
