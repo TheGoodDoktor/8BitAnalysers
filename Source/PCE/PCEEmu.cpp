@@ -619,7 +619,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FPCERegistersViewer(this));
 	AddViewer(new FPaletteViewer(this));
 	AddViewer(new FJoypadViewer(this));
-	AddViewer(new FSpriteViewer(this));
+	pSpriteViewer = new FSpriteViewer(this);
+	AddViewer(pSpriteViewer);
 	AddViewer(new FBackgroundViewer(this));
 #ifndef NDEBUG
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);

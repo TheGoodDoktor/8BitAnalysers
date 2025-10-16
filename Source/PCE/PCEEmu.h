@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Misc/EmuBase.h"
+#include "huc6280.h"
 
 class GeargrafxCore;
 class Media;
@@ -11,6 +12,8 @@ struct FPCEGameConfig;
 class FPCECPUEmulator6502;
 class FPCEViewer;
 class FBatchGameLoadViewer;
+class FSpriteViewer;
+//class HuC6280_State;
 
 struct FEmuDebugStats
 {
@@ -78,8 +81,11 @@ public:
 	Memory* GetMemory() const { return pMemory; }
 	Media* GetMedia() const { return pMedia; }
 	int GetVPos() const { return *pVPos; }
+	HuC6280::HuC6280_State* Get6280State() const { return p6280State; }
 
 	uint8_t* GetFrameBuffer() const { return pFrameBuffer; }
+
+	FSpriteViewer* GetSpriteViewer() const { return pSpriteViewer; }
 
 	int16_t GetBankForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
 	void MapMprBank(uint8_t mprIndex, uint8_t newBankIndex);
@@ -147,11 +153,13 @@ protected:
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
 	int* pVPos = nullptr; // HuC6270 vertical position, cached for speed.
+	HuC6280::HuC6280_State* p6280State = nullptr;
 
 	FPCECPUEmulator6502* pPCE6502CPU;
 
 	FPCEViewer* pPCEViewer = nullptr;
 	FBatchGameLoadViewer* pBatchGameLoadViewer = nullptr;
+	FSpriteViewer* pSpriteViewer = nullptr;
 
 	bool bDoneInitialBankMapping = false;
 
