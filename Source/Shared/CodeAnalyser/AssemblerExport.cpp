@@ -13,6 +13,7 @@
 #include <CodeAnalyser/Z80/Z80Disassembler.h>
 #include "UI/CodeAnalyserUI.h"
 #include "Disassembler.h"
+#include "FunctionAnalyser.h"
 
 
 FAssemblerConfig g_DefaultConfig = {
@@ -98,13 +99,18 @@ void FASMExporter::Output(const char* pFormat, ...)
 
 bool FASMExporter::IsLabelStubbed(const char* pLabelName) const
 {
+#if 0
 	const FProjectConfig* pConfig = pEmulator->GetProjectConfig();
 	const std::string labelName(pLabelName);
 	for (const auto& stub : pConfig->StubOutFunctions)
 	{
 		if(stub == labelName)
 			return true;
-	}
+	} 
+#endif
+	FFunctionInfo* pFunc = pEmulator->GetCodeAnalysis().pFunctions->FindFunctionByName(pLabelName);
+	if (pFunc != nullptr && pFunc->bStubbedOut)
+		return true;
 
 	return false;
 }
@@ -262,6 +268,35 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	}
 }
 
+void FASMExporter::OutputFunctionDescription(const FFunctionInfo* pFunctionInfo)
+{
+	assert(pFunctionInfo != nullptr);
+	const FLabelInfo* pLabelInfo = pEmulator->GetCodeAnalysis().GetLabelForAddress(pFunctionInfo->StartAddress);
+	assert(pLabelInfo != nullptr);
+
+	Output("; Function: %s\n", pLabelInfo->GetName());
+	if (pFunctionInfo->Description.empty() == false)
+	{
+		Output("; Description: %s\n", pFunctionInfo->Description.c_str());
+	}
+	if (pFunctionInfo->Params.size() > 0)
+	{
+		Output("; Parameters:\n");
+		for (const FFunctionParam& param : pFunctionInfo->Params)
+		{
+			Output(";   %s\n", param.GenerateDescription(pEmulator->GetCodeAnalysis()).c_str());
+		}
+	}
+	if (pFunctionInfo->ReturnValues.size() > 0)
+	{
+		Output("; Returns:\n");
+		for (const FFunctionParam& retVal : pFunctionInfo->ReturnValues)
+		{
+			Output(";   %s\n", retVal.GenerateDescription(pEmulator->GetCodeAnalysis()).c_str());
+		}
+	}
+}
+
 bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
@@ -275,6 +310,7 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 
 	Output("%s %s\n", Config.ORGText, NumStr(startAddr));
 
+	// TODO: Set to start Addr?
 	uint16_t nextAddr = state.ItemList[0].AddressRef.Address;
 
 	for (const FCodeAnalysisItem &item : state.ItemList)
@@ -390,6 +426,41 @@ bool ExportAssembler(FEmuBase* pEmu, const char* pTextFileName, uint16_t startAd
 
 	pExporter->Finish();
 	return bSuccess;
+}
+
+bool ExportFunctionStubs(FEmuBase* pEmu, const char* pTextFileName)
+{
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	FASMExporter* pExporter = GetAssemblerExporter(state.pGlobalConfig->ExportAssembler.c_str());
+	if (pExporter == nullptr)
+		return false;
+	if (pExporter->Init(pTextFileName, pEmu) == false)
+		return false;
+	pExporter->SetOutputToHeader();
+	pExporter->Output("; Function stubs\n");
+	pExporter->Output("; Functions marked as 'Stubbed out' in the function analyser\n");
+	pExporter->Output("; To implement the stub function, move to another file and mark function as 'Stub Implemented'\n");
+	pExporter->Output("; This file is machine generated and should NOT be edited.\n\n");
+	pExporter->AddHeader();
+	pExporter->SetOutputToBody();
+
+	// Export stubbed functions
+	for (const auto& funcIt : state.pFunctions->GetFunctions())
+	{
+		const FFunctionInfo& func = funcIt.second;
+		if (func.bStubbedOut && func.bStubImplemented == false)
+		{
+			const FLabelInfo* pLabelInfo = state.GetLabelForAddress(func.StartAddress);
+			assert(pLabelInfo != nullptr);
+			pExporter->Output("\n");
+			pExporter->OutputFunctionDescription(&func);
+			pExporter->Output("%s:\n", pLabelInfo->GetName());
+			pExporter->Output("\tJP %s_Stubbed ; Call original function\n", pLabelInfo->GetName());
+			//pExporter->Output("\t%s 0\n\n", pExporter->GetConfig().EQUText); // equ 0
+		}
+	}
+	pExporter->Finish();
+	return true;
 }
 
 // Util functions

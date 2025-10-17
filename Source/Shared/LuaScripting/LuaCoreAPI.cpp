@@ -520,6 +520,20 @@ static int SaveGraphicsView2222(lua_State* pState)
 	return 0;
 }
 
+static int SaveGraphicsView332(lua_State* pState)
+{
+	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1);
+	if (pGraphicsView == nullptr)
+		return 0;
+
+	FEmuBase* pEmulator = LuaSys::GetEmulator();
+	const std::string gameRoot = pEmulator->GetGlobalConfig()->WorkspaceRoot + pEmulator->GetProjectConfig()->Name + "/";
+	const std::string fname = gameRoot + luaL_optstring(pState, 2, "temp332.img");
+
+	pGraphicsView->Save332(fname.c_str());
+	return 0;
+}
+
 static int SaveGraphicsViewBitmap(lua_State* pState)
 {
 	FGraphicsView* pGraphicsView = (FGraphicsView*)lua_touserdata(pState, 1);
@@ -586,6 +600,7 @@ static const luaL_Reg corelib[] =
 	{"LoadGraphicsViewPNG", LoadGraphicsViewPNG},
 	{"SaveGraphicsViewPNG", SaveGraphicsViewPNG},
 	{"SaveGraphicsView2222", SaveGraphicsView2222},
+	{"SaveGraphicsView332", SaveGraphicsView332},
 	{"SaveGraphicsViewBitmap", SaveGraphicsViewBitmap},
 	{"DrawOtherGraphicsViewScaled", DrawOtherGraphicsViewScaled},
 	

@@ -380,6 +380,8 @@ void FEmuBase::FileMenu()
 
 		const std::string outputFname = exportPath + pCurrentProjectConfig->Name + ".asm";
 		ExportAssembler(this, outputFname.c_str(), ExportStartAddress, ExportEndAddress);
+
+		ExportFunctionStubs(this, (exportPath + pCurrentProjectConfig->Name + "_Stubs.asm").c_str());
 	}
 
 	if (ImGui::MenuItem("Export ASM Range"))
@@ -909,7 +911,7 @@ void FEmuBase::LoadFont()
 		}
 	}
 }
-
+#if 0
 bool	FEmuBase::IsLabelStubbed(const char* pLabelName)
 {
 	if(pCurrentProjectConfig == nullptr)
@@ -953,7 +955,7 @@ bool	FEmuBase::RemoveStubbedLabel(const char* pLabelName)
 
 	return false;
 }
-
+#endif
 // Viewers
 void FEmuBase::AddViewer(FViewerBase* pViewer)
 {
