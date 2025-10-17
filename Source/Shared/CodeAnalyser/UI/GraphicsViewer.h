@@ -39,6 +39,7 @@ struct FGraphicsSet
 	int			XSizePixels;	// width in pixels
 	int			YSizePixels;	// height in pixels
 	int			Count;	// number of images
+	bool		bHasMask = false;
 };
 
 struct FOffScreenBuffer
