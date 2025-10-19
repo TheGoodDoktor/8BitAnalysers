@@ -5,7 +5,6 @@
 #include <chrono>
 
 #include "PCEConfig.h"
-//#include "GameData.h"
 #include "Util/FileUtil.h"
 #include "Viewers/PCEViewer.h"
 #include "Viewers/BatchGameLoadViewer.h"
@@ -138,11 +137,12 @@ void FPCEEmu::WriteByte(uint16_t address, uint8_t value)
 
 FAddressRef	FPCEEmu::GetPC(void) 
 {
-	return CodeAnalysis.AddressRefFromPhysicalAddress(pCore->GetHuC6280()->GetState()->PC->GetValue());
+	return CodeAnalysis.AddressRefFromPhysicalAddress(p6280State->PC->GetValue());
 } 
 
 uint16_t	FPCEEmu::GetSP(void)
 {
+	return 0x2000 + p6280State->S->GetValue();
 }
 
 ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
@@ -454,7 +454,11 @@ void FPCEEmu::CheckPhysicalMemoryRangeIsMapped()
 		}
 		else
 		{
-			BANK_LOG("Bank '%s' is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
+			const uint16_t mappedAddrFromBank = pBank->GetMappedAddress();
+			if (mappedAddrFromBank == addrVal)
+				BANK_LOG("Bank '%s' is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
+			else
+				BANK_LOG("Bank '%s' bank's mapped address doesn't match. From bank = 0x%x, via GetBankFromAddress() = 0x%x", pBank->Name.c_str(), mappedAddrFromBank, addrVal);
 			//assert(addrVal == pBank->GetMappedAddress());
 		}
 	}
@@ -513,6 +517,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	pMedia = pCore->GetMedia();
 	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
+
+	p6280State = pCore->GetHuC6280()->GetState();
 
 	pPCE6502CPU = new FPCECPUEmulator6502(this);
 
@@ -578,7 +584,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	// Unused banks. Intentionally adding one for each mpr slot.
 	for (int d = 0; d < kNumMprSlots; d++)
 	{
-		BankSets[kBankFirstUnused].AddBankId(CodeAnalysis.CreateBank("UNUSED", 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
+		sprintf(bankName, "UNUSED %02d", d);
+		BankSets[kBankFirstUnused].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 
 	ResetBanks();
@@ -833,6 +840,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 			if (!ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str()))
 				return false;
 
+			CheckPhysicalMemoryRangeIsMapped();
 			// this was to deal with banks that were in use the last time we saved.
 			// they need to get their primary mapped page set.
 			// do we still need to do this?
@@ -881,7 +889,11 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	CodeAnalysis.SetAddressRangeDirty();
 
 	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1000), "JoyPad_1000", ELabelType::Data);
+	// this is crashing
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0), "VDC_AR_0000", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x2), "VDC_DATA_LO_0002", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x3), "VDC_DATA_HI_0002", ELabelType::Data);
+	
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x400), "VCE_CONTROL_0400", ELabelType::Data);
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x402), "VCE_ADDR_LO_0402", ELabelType::Data);
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x403), "VCE_ADDR_HI_0403", ELabelType::Data);
