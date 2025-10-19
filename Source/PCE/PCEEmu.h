@@ -161,6 +161,7 @@ protected:
 	FBatchGameLoadViewer* pBatchGameLoadViewer = nullptr;
 	FSpriteViewer* pSpriteViewer = nullptr;
 
+	// used for #ifdef BANK_SWITCH_DEBUG
 	bool bDoneInitialBankMapping = false;
 
 	int16_t MprBankId[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };

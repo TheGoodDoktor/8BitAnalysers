@@ -143,8 +143,6 @@ FAddressRef	FPCEEmu::GetPC(void)
 
 uint16_t	FPCEEmu::GetSP(void)
 {
-	return 0;
-	//return ZXEmuState.cpu.sp;
 }
 
 ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
@@ -457,6 +455,7 @@ void FPCEEmu::CheckPhysicalMemoryRangeIsMapped()
 		else
 		{
 			BANK_LOG("Bank '%s' is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
+			//assert(addrVal == pBank->GetMappedAddress());
 		}
 	}
 }
@@ -883,6 +882,30 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1000), "JoyPad_1000", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x400), "VCE_CONTROL_0400", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x402), "VCE_ADDR_LO_0402", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x403), "VCE_ADDR_HI_0403", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x404), "VCE_DATA_LO_0404", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x405), "VCE_DATA_HI_0405", ELabelType::Data);
+
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x800), "PSG_CHANSEL_0800", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x801), "PSG_GLOBALVOL_0801", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x802), "PSG_FREQLO_0802", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x803), "PSG_FREQHI_0803", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x804), "PSG_CHANCTRL_0804", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x805), "PSG_CHANPAN_0805", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x806), "PSG_CHANDATA_0806", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x807), "PSG_NOISE_0807", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x808), "PSG_LFOFREQ_0808", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x809), "PSG_LFOCTRL_0809", ELabelType::Data);
+
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0C00), "TIMER_COUNTER_0C00", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0C01), "TIMER_CONTROL_0C01", ELabelType::Data);
+
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1402), "IRQ_DISABLE_1402", ELabelType::Data);
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1403), "IRQ_STATUS_1403", ELabelType::Data);
+
+	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1000), "JOYPAD_1000", ELabelType::Data);
 
 	DebugStats.Reset();
 
