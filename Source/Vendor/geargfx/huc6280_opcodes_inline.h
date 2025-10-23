@@ -525,7 +525,7 @@ INLINE void HuC6280::OPCodes_TAI()
 
     if (m_transfer_state == 2)
     {
-        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* internal */ false, /* block_transfer */ true), true);
+        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* is_cpu */ true, /* block_transfer */ true), /* is_cpu */true, true);
         m_transfer_source += (m_transfer_count & 1) ? -1 : 1;
         m_transfer_dest++;
         m_transfer_count++;
@@ -556,7 +556,7 @@ INLINE void HuC6280::OPCodes_TDD()
 
     if (m_transfer_state == 2)
     {
-        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* internal */ false, /* block_transfer */ true), true);
+        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* internal */ true, /* block_transfer */ true), true, true);
         m_transfer_source--;
         m_transfer_dest--;
         m_transfer_length--;
@@ -586,7 +586,7 @@ INLINE void HuC6280::OPCodes_TIA()
 
     if (m_transfer_state == 2)
     {
-        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* internal */ false, /* block_transfer */ true), true);
+        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* is_cpu */ true, /* block_transfer */ true), true, true);
         m_transfer_source++;
         m_transfer_dest += (m_transfer_count & 1) ? -1 : 1;
         m_transfer_count++;
@@ -617,7 +617,7 @@ INLINE void HuC6280::OPCodes_TII()
 
     if (m_transfer_state == 2)
     {
-        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* internal */ false, /* block_transfer */ true), true);
+        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* is_cpu */ true, /* block_transfer */ true), true, true);
         m_transfer_source++;
         m_transfer_dest++;
         m_transfer_length--;
@@ -647,7 +647,7 @@ INLINE void HuC6280::OPCodes_TIN()
 
     if (m_transfer_state == 2)
     {
-        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* internal */ false, /* block_transfer */ true), true);
+        m_memory->Write(m_transfer_dest, m_memory->Read(m_transfer_source, /* is_cpu */ true, /* block_transfer */ true), true, true);
         m_transfer_source++;
         m_transfer_length--;
         m_cycles += 6;

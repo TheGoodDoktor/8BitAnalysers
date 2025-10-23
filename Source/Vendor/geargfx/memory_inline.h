@@ -51,9 +51,9 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
     // we want this to fire every time the cpu reads memory in order for the
     // analyser to register the read has happened.
     // Memory::Read() is also called from the code analysis UI code to display the memory.
-    // we dont want this callback to fire in this case.
+    // we dont want this callback to fire in this case
     if (is_cpu) 
-      m_memory_read_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address);
+      m_memory_read_callback(m_callback_context, PC->GetValue(), address);
 
     if (bank != 0xFF)
     {
@@ -156,7 +156,7 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
     return 0xFF;
 }
 
-INLINE void Memory::Write(u16 address, u8 value, bool block_transfer)
+INLINE void Memory::Write(u16 address, u8 value, bool is_cpu, bool block_transfer)
 {
 #if defined(GG_TESTING)
     m_test_memory[address] = value;
@@ -181,23 +181,28 @@ INLINE void Memory::Write(u16 address, u8 value, bool block_transfer)
     }
     else if (bank == 0xF7) // savegame ram
     {
-        if (m_memory_map_write[bank] && (offset < 0x800))
+        // sam. allow writing to rom if not cpu
+        bool can_write = m_memory_map_write[bank] || !is_cpu;
+        if (can_write && (offset < 0x800))
         {
             m_memory_map[bank][offset] = value;
-            m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
+            if (is_cpu)
+               m_memory_write_callback(m_callback_context, PC->GetValue(), address, value);
         }
     }
     else if (bank != 0xFF)
     {
-        if (m_memory_map_write[bank])
+        if (m_memory_map_write[bank] || !is_cpu)
         {
             m_memory_map[bank][offset] = value;
-            m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
+            if (is_cpu)
+               m_memory_write_callback(m_callback_context, PC->GetValue(), address, value);
         }
     }
     else
     {
-       m_memory_write_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue(), address, value);
+       if (is_cpu)
+          m_memory_write_callback(m_callback_context, PC->GetValue(), address, value);
 
         // Hardware Page
         switch (offset & 0x1C00)

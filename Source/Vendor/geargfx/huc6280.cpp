@@ -58,8 +58,10 @@ void HuC6280::Init(Memory* memory, HuC6202* huc6202)
 
 void HuC6280::Reset()
 {
-    m_PC.SetLow(m_memory->Read(0xFFFE));
-    m_PC.SetHigh(m_memory->Read(0xFFFF));
+    // sam. make this memory read an external memory read because we don't want any memory read callbacks.
+    // this is because the banks are not setup at this point.
+    m_PC.SetLow(m_memory->Read(0xFFFE, false));
+    m_PC.SetHigh(m_memory->Read(0xFFFF, false));
     m_debug_next_irq = 1;
     DisassembleNextOPCode();
 

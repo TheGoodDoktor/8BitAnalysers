@@ -1120,10 +1120,13 @@ void FPCEEmu::Reset()
 
 void FPCEEmu::OnEnterEditMode(void)
 {
+	// todo call SaveState here with a buffer
+	//pCore->SaveState(
 }
 
 void FPCEEmu::OnExitEditMode(void)
 {
+	// todo call LoadState here
 }
 
 
