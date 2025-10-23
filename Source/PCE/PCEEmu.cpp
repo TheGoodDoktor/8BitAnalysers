@@ -13,6 +13,7 @@
 #include "Viewers/JoypadViewer.h"
 #include "Viewers/PaletteViewer.h"
 #include "Viewers/SpriteViewer.h"
+#include "Viewers/VRAMViewer.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "Viewers/PCERegistersViewer.h"
 #include <geargrafx_core.h>
@@ -132,7 +133,7 @@ void FPCEEmu::WriteByte(uint16_t address, uint8_t value)
 	if (!pMedia->IsReady())
 		return;
 
-	return pMemory->Write(address, value);
+	return pMemory->Write(address, value, false, false);
 }
 
 FAddressRef	FPCEEmu::GetPC(void) 
@@ -210,6 +211,22 @@ void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBank
 		pEmu->Banks[bankSetIndex]->SetBankFreed(mprIndex);
 
 	pEmu->MapMprBank(mprIndex, newBankIndex);
+}
+
+void OnVRAMWritten(void* pContext, u16 pc, u16 vramAddr, u16 value)
+{
+	//OPTICK_EVENT();
+
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	pEmu->GetVRAMViewer()->RegisterAccess(vramAddr);
+
+	//LOGINFO("[VRAM] Write $%04x to $%04x", value, vramAddr);
+	// pc will be wrong. it's giving the address after the last instruction 
+	// 
+	// this wont work because the data size is 16 bits and the memory address is not in physical memory.
+	//pEmu->GetCodeAnalysis().Debugger.RegisterEvent(EEventType::VRAMWrite, pc, 
+	//pEmu->GetCodeAnalysis()->Debugger
+	//RegisterDataWrite(pEmu->GetCodeAnalysis(), pc, dataAddr, value);
 }
 
 uint8_t gDummyMemory[0x2000];
@@ -457,7 +474,7 @@ void FPCEEmu::CheckPhysicalMemoryRangeIsMapped()
 			const uint16_t mappedAddrFromBank = pBank->GetMappedAddress();
 			if (mappedAddrFromBank != addrVal)
 			{
-				BANK_ERROR("Bank '%s' is mapped to a different address than the code analysis. It's 0x%x but should be 0x%x", mappedAddrFromBank, addrVal);
+				BANK_ERROR("Bank '%s' is mapped to a different address than the code analysis. It's 0x%x but should be 0x%x", pBank->Name.c_str(), mappedAddrFromBank, addrVal);
 			}
 			assert(mappedAddrFromBank == addrVal);
 
@@ -516,11 +533,13 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pMemory = pCore->GetMemory();
 	pCore->SetInstructionExecutedCallback(OnGearGfxInstructionExecuted, this);
 	pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, BankChangeCallback, this);
+	pCore->GetHuC6270_1()->SetCallback(OnVRAMWritten, this);
 
 	pMedia = pCore->GetMedia();
 	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
 
 	p6280State = pCore->GetHuC6280()->GetState();
+	p6270State = pCore->GetHuC6270_1()->GetState();
 
 	pPCE6502CPU = new FPCECPUEmulator6502(this);
 
@@ -623,7 +642,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pSpriteViewer = new FSpriteViewer(this);
 	AddViewer(pSpriteViewer);
 	AddViewer(new FBackgroundViewer(this));
-#ifndef NDEBUG
+	pVRAMViewer = new FVRAMViewer(this);
+	AddViewer(pVRAMViewer);
+//#ifndef NDEBUG
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
 	AddViewer(pBatchGameLoadViewer);
 	AddViewer(new FDebugStatsViewer(this));
