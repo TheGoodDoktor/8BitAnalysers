@@ -212,8 +212,22 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			{
 				if (bankJson.contains("Description"))
 					pBank->Description = bankJson["Description"];
+
 				if (bankJson.contains("MappedPage"))
-					pBank->PrimaryMappedPage = bankJson["MappedPage"];
+				{
+					// sam. PCE specific hack.
+					// Only set the primary mapped page if the bank is not mapped.
+					// This is because we shouldn't modify the address of a bank that is already mapped
+					// to a certain address.
+					// We use the primary mapped page to control if the bank is visible in the code analyser view.
+					// I am setting the pmp here because we can end up with dupe banks that get mapped in
+					// at arbitrary points and we want to make sure these banks are visible in the code analysis
+					// view next time the user loads their project. Also, if there are references to these dupe
+					// banks then we need to make sure those dupe banks don't have a pmp of -1 because that
+					// can cause crashes.
+					if (!pBank->IsMapped())
+						pBank->PrimaryMappedPage = bankJson["MappedPage"];
+				}
 				//if (bankJson.contains("Used"))
 				//	pBank-> = bankJson["Used"];
 				//pBank->PrimaryMappedPage = bankJson["PrimaryMappedPage"];
