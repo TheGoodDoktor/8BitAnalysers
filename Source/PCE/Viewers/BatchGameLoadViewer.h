@@ -18,8 +18,11 @@ public:
 private:
 	double GetNextButtonPressTime() const;
 
+	void StartAutomation();
+
 private:
 	bool bAutomationActive = false;
+	bool bLoadGame = false;
 	bool bPressRandomButtons = false;
 	bool bLoadExistingProject = false;
 	double NextButtonPressTime = DBL_MAX;

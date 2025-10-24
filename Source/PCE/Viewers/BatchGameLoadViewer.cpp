@@ -22,7 +22,19 @@ FBatchGameLoadViewer::FBatchGameLoadViewer(FEmuBase* pEmu)
 
 bool FBatchGameLoadViewer::Init()
 {
+	// uncomment to make automation begin when tool boots up.
+	//bLoadExistingProject = true;
+	//StartAutomation();
+
 	return true;
+}
+
+void FBatchGameLoadViewer::StartAutomation()
+{
+	bAutomationActive = true;
+	bLoadGame = true;
+	if (bPressRandomButtons)
+		NextButtonPressTime = GetNextButtonPressTime();
 }
 
 void FBatchGameLoadViewer::DrawUI()
@@ -34,16 +46,12 @@ void FBatchGameLoadViewer::DrawUI()
 	ImGui::SeparatorText("Automation");
 	ImGui::Text("Automation is %s", bAutomationActive ? "active." : "not active.");
 
-	bool bLoadGame = false;
 	const double time = ImGui::GetTime();
 	if (!bAutomationActive)
 	{
 		if (ImGui::Button("Start automation"))
 		{
-			bAutomationActive = true;
-			bLoadGame = true;
-			if (bPressRandomButtons)
-				NextButtonPressTime = GetNextButtonPressTime();
+			StartAutomation();
 		}	
 	}
 	else
@@ -186,8 +194,8 @@ void FBatchGameLoadViewer::DrawUI()
 			
 			if (pConfig)
 			{
-				bOk = pPCEEmu->LoadProject(pConfig, true);
 				LOGINFO("%d Loading existing project '%s'", GameIndex, game.DisplayName.c_str());
+				bOk = pPCEEmu->LoadProject(pConfig, true);
 			}
 			else
 			{
@@ -205,6 +213,7 @@ void FBatchGameLoadViewer::DrawUI()
 				pPCEEmu->Reset();
 				pPCEEmu->DisplayErrorMessage("Could not %s project '%s'", bLoadExistingProject ? "load" : "create", game.DisplayName.c_str());
 			}
+			bLoadGame = false;
 		}
 	}
 }
