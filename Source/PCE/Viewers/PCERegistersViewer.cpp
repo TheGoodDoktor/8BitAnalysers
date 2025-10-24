@@ -19,6 +19,13 @@ bool FPCERegistersViewer::Init()
 	return true;
 }
 
+static const char* const gRegisterNamesAligned[20] = 
+{
+	 "MAWR ", "MARR ", "VWR  ", "???  ", "???  ", "CR   ", "RCR  ", "BXR  ",
+	 "BYR  ", "MWR  ", "HSR  ", "HDR  ", "VSR  ", "VDR  ", "VCR  ", "DCR  ",
+	 "SOUR ", "DESR ", "LENR ", "DVSSR" 
+};
+
 void FPCERegistersViewer::DrawUI()
 {
 	Memory* pMemory = pPCEEmu->GetCore()->GetMemory();
@@ -31,6 +38,28 @@ void FPCERegistersViewer::DrawUI()
 		const uint8_t mprVal = pMemory->GetMpr(i);
 		GetBankName(pPCEEmu->GetCore(), i, mprVal, bankName);
 		ImGui::Text("MPR%d: %s '%s'", i, NumStr(mprVal), bankName);
+	}
+
+	ImGui::SeparatorText("6270 Registers");
+
+	for (int i = 0; i < 20; i++)
+	{
+		if (i == 3 || i == 4)
+			continue;
+
+		ImGui::Text("R%02X ", i); 
+		ImGui::SameLine();
+		ImGui::Text("%s", gRegisterNamesAligned[i]); 
+		ImGui::SameLine();
+		ImGui::Text("%s", NumStr(pPCEEmu->Get6270State()->R[i]));
+		//ImGui::Text("$%04X (" BYTE_TO_BINARY_PATTERN_SPACED " " BYTE_TO_BINARY_PATTERN_SPACED ")", huc6270_state->R[i], BYTE_TO_BINARY(huc6270_state->R[i] >> 8), BYTE_TO_BINARY(huc6270_state->R[i] & 0xFF));
+
+		/*if (i == 2)
+		{
+			ImGui::TextColored(cyan, "R%02X ", i); ImGui::SameLine();
+			ImGui::TextColored(violet, "VRR  "); ImGui::SameLine();
+			ImGui::Text("$%04X (" BYTE_TO_BINARY_PATTERN_SPACED " " BYTE_TO_BINARY_PATTERN_SPACED ")", *huc6270_state->READ_BUFFER, BYTE_TO_BINARY(*huc6270_state->READ_BUFFER >> 8), BYTE_TO_BINARY(*huc6270_state->READ_BUFFER & 0xFF));
+		}*/
 	}
 }
 

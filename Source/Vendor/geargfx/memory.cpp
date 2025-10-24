@@ -53,6 +53,10 @@ Memory::Memory(HuC6260* huc6260, HuC6202* huc6202, HuC6280* huc6280, Media* medi
     m_card_ram_end = 0;
 
     InitPointer(m_callback_context);
+    InitPointer(m_memory_read_callback);
+    InitPointer(m_memory_write_callback);
+    InitPointer(m_mpr_callback);
+    PC = huc6280->GetState()->PC;
 }
 
 Memory::~Memory()
@@ -99,28 +103,6 @@ void Memory::SetMemoryCallbacks(GG_Memory_Read_Callback read_callback, GG_Memory
     m_memory_write_callback = write_callback;
     m_mpr_callback = mpr_callback;
     m_callback_context = context;
-}
-
-// sam. Special case function to check if there are any duplicate rom banks in all of the mpr slots 
-// This assumes all m_mpr values are rom banks.
-bool Memory::MprRomBanksHaveDupes(u8 index)
-{
-    assert(GetBankType(m_mpr[index]) == MEMORY_BANK_TYPE_ROM);
-
-    int romBankIndex = m_media->GetRomBankIndex(m_mpr[index]);
-    for (int i = 0; i < 8; i++)
-    {
-        if (i != index)
-        {
-           assert(GetBankType(m_mpr[i]) == MEMORY_BANK_TYPE_ROM);
-
-           if (romBankIndex == m_media->GetRomBankIndex(m_mpr[i]))
-           {
-              return true;
-           }
-        }
-    }
-    return false;
 }
 
 void Memory::Reset()
