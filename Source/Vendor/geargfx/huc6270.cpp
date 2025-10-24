@@ -33,6 +33,10 @@ HuC6270::HuC6270(HuC6280* huC6280)
     m_state.VPOS = &m_vpos;
     m_state.V_STATE = &m_v_state;
     m_state.H_STATE = &m_h_state;
+
+    InitPointer(m_callback_context);
+    InitPointer(m_vram_write_callback);
+    PC = m_huc6280->GetState()->PC;
 }
 
 HuC6270::~HuC6270()
@@ -234,7 +238,12 @@ void HuC6270::WriteRegister(u16 address, u8 value)
 #if !defined(GG_DISABLE_DISASSEMBLER)
                             m_huc6280->CheckMemoryBreakpoints(HuC6280::HuC6280_BREAKPOINT_TYPE_VRAM, m_register[HUC6270_REG_MAWR], false);
 #endif
-                            m_vram[m_register[HUC6270_REG_MAWR] & 0x7FFF] = m_register[HUC6270_REG_VWR];
+                            // sam. add vram write callback
+                            u16 vram_addr = m_register[HUC6270_REG_MAWR] & 0x7FFF;
+                            u16 value = m_register[HUC6270_REG_VWR];
+
+                            m_vram_write_callback(m_callback_context, PC->GetValue(), vram_addr, value); 
+                            m_vram[vram_addr] = value;
                         }
 
                         m_register[HUC6270_REG_MAWR] += k_huc6270_read_write_increment[(m_register[HUC6270_REG_CR] >> 11) & 0x03];
@@ -879,4 +888,10 @@ void HuC6270::LoadState(std::istream& stream)
         stream.read(reinterpret_cast<char*> (&m_sprites[i].palette), sizeof(m_sprites[i].palette));
         stream.read(reinterpret_cast<char*> (m_sprites[i].data), sizeof(m_sprites[i].data));
     }
+}
+
+void HuC6270::SetCallback(GG_VRAM_Write_Callback callback, void* context)
+{
+   m_vram_write_callback = callback;
+   m_callback_context = context;
 }

@@ -28,6 +28,7 @@
 class HuC6202;
 class HuC6260;
 class HuC6280;
+class SixteenBitRegister;
 
 class HuC6270
 {
@@ -71,6 +72,9 @@ public:
         s32* H_STATE;
     };
 
+    // sam
+    typedef void (*GG_VRAM_Write_Callback)(void* context, u16 pc, u16 vramAddr, u16 value);
+
 public:
     HuC6270(HuC6280* huC6280);
     ~HuC6270();
@@ -87,6 +91,9 @@ public:
     void SetNoSpriteLimit(bool no_sprite_limit);
     void SaveState(std::ostream& stream);
     void LoadState(std::istream& stream);
+
+    // sam
+    void SetCallback(GG_VRAM_Write_Callback write_callback, void* context);
 
 private:
     struct HuC6270_Sprite_Data
@@ -149,6 +156,11 @@ private:
     s32 m_sprite_count;
     bool m_sprite_overflow;
     HuC6270_Sprite_Data m_sprites[HUC6270_SPRITES * 2] = {};
+
+    // sam
+    GG_VRAM_Write_Callback m_vram_write_callback;
+    void* m_callback_context;
+    SixteenBitRegister* PC;
 
 private:
     void EndOfLine();
