@@ -312,8 +312,10 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	{
 		if (pCurrentProjectConfig)
 		{
-			int& count = DebugStats.GamesWithDupeBanks[pCurrentProjectConfig->Name];
-			count = MAX(count, slotCount);
+			int& perGameCount = DebugStats.GamesWithDupeBanks[pCurrentProjectConfig->Name];
+			perGameCount = MAX(perGameCount, slotCount);
+			int& perBankCount = DebugStats.BankIdsWithDupes[Banks[newBankIndex]->GetBankId(0)];
+			perBankCount = MAX(perBankCount, slotCount);
 		}
 	}
 #endif
@@ -444,6 +446,8 @@ void FPCEEmu::CheckDupeMprBankIds()
 
 void FPCEEmu::CheckPhysicalMemoryRangeIsMapped()
 {
+	BANK_LOG("Checking physical memory range bank mappings...");
+
 	// check entire physical address range is mapped
 	for (int addrVal = 0; addrVal < 0xffff; addrVal += 0x2000)
 	{
@@ -454,14 +458,14 @@ void FPCEEmu::CheckPhysicalMemoryRangeIsMapped()
 		}
 		else
 		{
+			BANK_LOG("Bank '%s' is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
+
 			const uint16_t mappedAddrFromBank = pBank->GetMappedAddress();
 			if (mappedAddrFromBank != addrVal)
 			{
-				BANK_ERROR("Bank '%s' is mapped to a different address than the code analysis. It's 0x%x but should be 0x%x", mappedAddrFromBank, addrVal);
+				BANK_ERROR("Bank '%s' is mapped to a different address than the code analysis. Bank mapped address = 0x%x. Code analysis = 0x%x", pBank->Name.c_str(), mappedAddrFromBank, addrVal);
 			}
 			assert(mappedAddrFromBank == addrVal);
-
-			BANK_LOG("Bank '%s' is mapped to address 0x%x", pBank->Name.c_str(), addrVal);
 		}
 	}
 }

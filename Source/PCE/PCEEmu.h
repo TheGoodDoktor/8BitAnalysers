@@ -21,6 +21,7 @@ struct FEmuDebugStats
 	{
 	}
 	std::map<std::string, int> GamesWithDupeBanks;
+	std::map<uint16_t, int> BankIdsWithDupes;
 };
 
 struct FPCELaunchConfig : public FEmulatorLaunchConfig
@@ -99,6 +100,7 @@ public:
 	// The default number of banks in a bank set.
 	// The number includes the primary bank and any extra banks for duplicates.
 	// For example, a value of 4 means 1 primary and 3 duplicates.
+	// If this value is set to 1 then any duplicates will use UNUSED banks.
 	static const int kNumBankSetIds = 5;
 
 	// A set of bank ids that all represent the same logical memory.

@@ -74,6 +74,19 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("Max dupe banks: %d", maxDupeBanks);
 	ImGui::Text("Num bank sets: %d", pPCEEmu->kNumBankSetIds);
 
+	if (ImGui::TreeNode("Dupe Banks"))
+	{
+		ImGui::Text("Bank ids with dupes:", maxDupeBanks);
+
+		for (auto it : pPCEEmu->DebugStats.BankIdsWithDupes)
+		{
+			const FCodeAnalysisBank* pBank = state.GetBank(it.first);
+			ImGui::Text("  %d '%s': %d", it.first, pBank ? pBank->Name.c_str() : "null", it.second);
+		}
+		ImGui::TreePop();
+	}
+
+
 	ImGui::SeparatorText("Items");
 	ImGui::Text("Itemlist size: %d", state.ItemList.size());
 	ImGui::Text("Global data items size: %d", state.GlobalDataItems.size());
