@@ -15,6 +15,7 @@
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
+#include "CodeAnalyser/UI/GlobalsViewer.h"
 #include "Viewers/PCERegistersViewer.h"
 #include <geargrafx_core.h>
 #include "Debug/DebugLog.h"
@@ -831,6 +832,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
+	GetGlobalsViewer()->Reset();
 
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
