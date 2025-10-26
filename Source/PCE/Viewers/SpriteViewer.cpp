@@ -3,10 +3,12 @@
 #include <imgui.h>
 
 #include "../PCEEmu.h"
+#include "VRAMViewer.h"
 
 #include <geargrafx_core.h>
 
 #include <ImGuiSupport/ImGuiTexture.h>
+#include "CodeAnalyser/UI/UIColours.h"
 
 FSpriteViewer::FSpriteViewer(FEmuBase* pEmu)
 : FViewerBase(pEmu) 
@@ -21,8 +23,6 @@ bool FSpriteViewer::Init()
 
 	for (int s = 0; s < kNumSprites; s++)
 	{
-		SpriteWidths[s] = 16;
-		SpriteHeights[s] = 16;
 		SpriteBuffers[s] = new u8[HUC6270_MAX_SPRITE_WIDTH * HUC6270_MAX_SPRITE_HEIGHT * 4];
 
 		for (int j = 0; j < HUC6270_MAX_SPRITE_WIDTH * HUC6270_MAX_SPRITE_HEIGHT * 4; j++)
@@ -64,53 +64,47 @@ void FSpriteViewer::UpdateSpriteBuffers()
 	u16* sat = huc6270->GetSAT();
 	u16* color_table = huc6260->GetColorTable();
 
-	for (int i = 0; i < 64; i++)
+	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMViewer()->GetSpriteInfo();
+	for (int i = 0; i < HUC6270_SPRITES; i++)
 	{
-		int sprite_offset = i << 2;
-		u16 flags = sat[sprite_offset + 3] & 0xB98F;
-		bool x_flip = (flags & 0x0800);
-		bool y_flip = (flags & 0x8000);
-		int palette = flags & 0x0F;
-		int cgx = (flags >> 8) & 0x01;
-		int cgy = (flags >> 12) & 0x03;
-		int width = k_huc6270_sprite_width[cgx];
-		int height = k_huc6270_sprite_height[cgy];
-		u16 pattern = (sat[sprite_offset + 2] >> 1) & 0x3FF;
-		pattern &= k_huc6270_sprite_mask_width[cgx];
-		pattern &= k_huc6270_sprite_mask_height[cgy];
-		u16 sprite_address = pattern << 6;
-		bool mode1 = ((huc6270->GetState()->R[HUC6270_REG_MWR] >> 2) & 0x03) == 1;
-		int mode1_offset = mode1 ? (sat[sprite_offset + 2] & 1) << 5 : 0;
+		const int sprite_offset = i << 2;
+		const u16 flags = sat[sprite_offset + 3] & 0xB98F;
+		const bool x_flip = (flags & 0x0800);
+		const bool y_flip = (flags & 0x8000);
+		const int palette = flags & 0x0F;
+		const bool mode1 = ((huc6270->GetState()->R[HUC6270_REG_MWR] >> 2) & 0x03) == 1;
+		const int mode1_offset = mode1 ? (sat[sprite_offset + 2] & 1) << 5 : 0;
 
-		SpriteWidths[i] = width;
-		SpriteHeights[i] = height;
+		const int height = spriteInfo[i].Height;
+		const int width = spriteInfo[i].Width;
+		const uint16_t sprite_address = spriteInfo[i].Address;
 
 		for (int y = 0; y < height; y++)
 		{
-			int flipped_y = y_flip ? (height - 1 - y) : y;
-			int tile_y = flipped_y >> 4;
-			int tile_line_offset = tile_y * 2 * 64;
-			int offset_y = flipped_y & 0xF;
-			u16 line_start = sprite_address + tile_line_offset + offset_y;
+			const int flipped_y = y_flip ? (height - 1 - y) : y;
+			const int tile_y = flipped_y >> 4;
+			const int tile_line_offset = tile_y * 2 * 64;
+			const int offset_y = flipped_y & 0xF;
+			const u16 line_start = sprite_address + tile_line_offset + offset_y;
 
 			for (int x = 0; x < width; x++)
 			{
-				int flipped_x = x_flip ? (width - 1 - x) : x;
-				int tile_x = flipped_x >> 4;
-				int tile_x_offset = tile_x * 64;
-				int line = line_start + tile_x_offset + mode1_offset;
+				const int flipped_x = x_flip ? (width - 1 - x) : x;
+				const int tile_x = flipped_x >> 4;
+				const int tile_x_offset = tile_x * 64;
+				const int line = line_start + tile_x_offset + mode1_offset;
 
-				u16 plane1 = vram[line + 0];
-				u16 plane2 = vram[line + 16];
-				u16 plane3 = mode1 ? 0 : vram[line + 32];
-				u16 plane4 = mode1 ? 0 : vram[line + 48];
+				const u16 plane1 = vram[line + 0];
+				const u16 plane2 = vram[line + 16];
+				const u16 plane3 = mode1 ? 0 : vram[line + 32];
+				const u16 plane4 = mode1 ? 0 : vram[line + 48];
 
-				int pixel_x = 15 - (flipped_x & 0xF);
+				const int pixel_x = 15 - (flipped_x & 0xF);
 				u16 pixel = ((plane1 >> pixel_x) & 0x01) | (((plane2 >> pixel_x) & 0x01) << 1) | (((plane3 >> pixel_x) & 0x01) << 2) | (((plane4 >> pixel_x) & 0x01) << 3);
 				pixel |= (palette << 4);
 				pixel |= 0x100;
 
-				int color = color_table[pixel & 0x1FF];
+				const int color = color_table[pixel & 0x1FF];
 				u8 green = ((color >> 6) & 0x07) * 255 / 7;
 				u8 red = ((color >> 3) & 0x07) * 255 / 7;
 				u8 blue = (color & 0x07) * 255 / 7;
@@ -174,9 +168,11 @@ void FSpriteViewer::DrawUI()
 	ImGuiStyle& style = ImGui::GetStyle();
 	const float cellMinHeight = ((float)(HUC6270_MAX_SPRITE_HEIGHT>>1) * scale) + style.CellPadding.y * 2.0f;
 
+	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMViewer()->GetSpriteInfo();
+
 	if (ImGui::BeginTable("spritetable", 8, flags))
 	{
-		for (int s = 0; s < 64; s++)
+		for (int s = 0; s < HUC6270_SPRITES; s++)
 		{
 			if (s % 8 == 0)
 				ImGui::TableNextRow(ImGuiTableRowFlags_None, cellMinHeight);
@@ -191,7 +187,7 @@ void FSpriteViewer::DrawUI()
 			float tex_h = fwidth / 32.0f / scale;
 			float tex_v = fheight / 64.0f / scale;
 
-			ImGui_UpdateTextureSubImageRGBA(SpriteTextures[s], SpriteBuffers[s], SpriteWidths[s], SpriteHeights[s]);
+			ImGui_UpdateTextureSubImageRGBA(SpriteTextures[s], SpriteBuffers[s], spriteInfo[s].Width, spriteInfo[s].Height);
 
 			ImGui::Image(SpriteTextures[s], ImVec2(fwidth, fheight), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
 
@@ -206,10 +202,11 @@ void FSpriteViewer::DrawUI()
 			float mouse_x = io.MousePos.x - p[s].x;
 			float mouse_y = io.MousePos.y - p[s].y;
 
-			if (window_hovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight))
+			const bool bHighlight = pPCEEmu->GetVRAMViewer()->GetSpriteHighlight() == s;
+			if ((bHighlight) || (window_hovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight)))
 			{
 				ImDrawList* draw_list = ImGui::GetWindowDrawList();
-				draw_list->AddRect(ImVec2(p[s].x, p[s].y), ImVec2(p[s].x + fwidth, p[s].y + fheight), ImColor(cyan), 0.f, 0, 2.f);
+				draw_list->AddRect(ImVec2(p[s].x, p[s].y), ImVec2(p[s].x + fwidth, p[s].y + fheight), bHighlight ? ImColor(Colours::GetFlashColour()) : ImColor(cyan), 0.f, 0, 2.f);
 			}
 		}
 		ImGui::EndTable();

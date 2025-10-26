@@ -28,6 +28,15 @@ bool FVRAMViewer::Init(void)
 	return true;
 }
 
+void FVRAMViewer::Reset(void)
+{
+	for (FVRAMAccess& access : Access)
+	{
+		access.FrameLastWritten = -1;
+		access.LastWriter = FAddressRef();
+	}
+}
+
 void FVRAMViewer::DrawUI(void)
 {
 	OPTICK_EVENT();
@@ -39,25 +48,28 @@ void	FVRAMViewer::DrawLegend()
 {
 	ImGui::BeginTooltip();
 
-	ImGui::ColorButton("Data Read", ImGui::ColorConvertU32ToFloat4(kDataReadCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::ColorButton("Unwritten", ImGui::ColorConvertU32ToFloat4(kUnwrittenCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
-	ImGui::Text("Data Read");
+	ImGui::Text("Unwritten");
 
-	ImGui::ColorButton("Data Read Active", ImGui::ColorConvertU32ToFloat4(kDataReadActiveCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::ColorButton("Write", ImGui::ColorConvertU32ToFloat4(kUnknownWriteCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
-	ImGui::Text("Data Read Active");
+	ImGui::Text("Write");
 
-	ImGui::ColorButton("Data Write", ImGui::ColorConvertU32ToFloat4(kDataWriteCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::ColorButton("Active Write", ImGui::ColorConvertU32ToFloat4(kUnknownWriteActiveCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
-	ImGui::Text("Data Write");
+	ImGui::Text("Active Write");
 
-	ImGui::ColorButton("Data Write Active", ImGui::ColorConvertU32ToFloat4(kDataWriteActiveCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::ColorButton("SpriteWrite", ImGui::ColorConvertU32ToFloat4(kSpriteWriteCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
-	ImGui::Text("Data Write Active");
+	ImGui::Text("Sprite Write");
+
+	ImGui::ColorButton("Active Sprite Write", ImGui::ColorConvertU32ToFloat4(kSpriteWriteActiveCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::SameLine();
+	ImGui::Text("Active Sprite Write");
 
 	ImGui::EndTooltip();
 }
-
 
 void	FVRAMViewer::DrawPhysicalMemoryOverview()
 {
@@ -69,8 +81,6 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 	uint32_t* pPix = pViewImagePixels;
 
 	DrawUtilisationMap(state,pPix);
-
-	//FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	FGlobalConfig* pConfig = state.pGlobalConfig;
 
@@ -92,6 +102,7 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 	ImGui::Image((void*)MemoryViewImage->GetTexture(), size,uv0,uv1);
 
 	const bool bMapIsHovered = ImGui::IsItemHovered();
+	SpriteHighlight = -1;
 
 	ImGui::SameLine();
 	ImGui::Button("?");
@@ -105,26 +116,38 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 
 	if (bMapIsHovered)
 	{
-		/*const int xp = (int)((io.MousePos.x - pos.x) / scale);
+		FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
+		const int xp = (int)((io.MousePos.x - pos.x) / scale);
 		const int yp = (int)((io.MousePos.y - pos.y) / scale);
 
-		const uint16_t addr = (xp + yp * kMemoryViewImageWidth) + (bShowROM ? 0 : 0x4000);	// add offset if we're not showing ROM
-		const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
-		ImGui::Text("Location:");
-		DrawAddressLabel(state, viewState, addrRef);
-		DrawSnippetToolTip(state, viewState, addrRef);
-
-		if (ImGui::IsMouseDoubleClicked(0))
+		const uint16_t addr = xp + yp * kMemoryViewImageWidth;
+		ImGui::Text("VRAM Address: %s", NumStr(addr));
+		if (Access[addr].FrameLastWritten != -1)
 		{
-			viewState.GoToAddress(addrRef, false);
-		}*/
+			const FAddressRef& lastWriter = Access[addr].LastWriter;
+			const int spriteIndex = GetSpriteIndexForAddress(addr);
+			if (spriteIndex != -1)
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text("Sprite %d", spriteIndex);
+				ImGui::Text("Last Writer ");
+				DrawAddressLabel(state, viewState, lastWriter);
+				ImGui::EndTooltip();
+				SpriteHighlight = spriteIndex;
+			}
+
+			if (ImGui::IsMouseDoubleClicked(0))
+			{
+				viewState.GoToAddress(lastWriter, false);
+			}
+		}
 	}
 	else
 	{
 		ImGui::NewLine();
 	}
 }
-
 
 void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 {
@@ -134,21 +157,94 @@ void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 	int selectedItemAddr = -1;
 	for (uint16_t addr = 0; addr < HUC6270_VRAM_SIZE; addr++)
 	{
-		uint32_t drawCol = kDefaultDataCol;
+		uint32_t drawCol = kUnwrittenCol;
 
 		if (Access[addr].FrameLastWritten != -1)
 		{
 			const int framesSinceWritten = currentFrameNo - Access[addr].FrameLastWritten;
-			if (framesSinceWritten < frameThreshold)
-				drawCol = kDataWriteActiveCol;
+
+			// this will be slow.
+			// todo: a better way
+			const int spriteIndex = GetSpriteIndexForAddress(addr);
+			const bool bIsSprite = spriteIndex != -1;
+
+			if (bIsSprite)
+			{
+				if (SpriteHighlight == spriteIndex)
+					drawCol = Colours::GetFlashColour();
+				else
+				{
+					if (framesSinceWritten < frameThreshold)
+					{
+						drawCol = kSpriteWriteActiveCol;
+					}
+					else
+					{
+						drawCol = kSpriteWriteCol;
+					}
+				}
+			}
 			else
-				drawCol = kDataWriteCol;
+			{
+				if (framesSinceWritten < frameThreshold)
+				{
+					drawCol = kUnknownWriteActiveCol;
+				}
+				else
+				{
+					drawCol = kUnknownWriteCol;
+				}
+			}
 		}
 		*pPix++ = drawCol;
 	}
 }
 
-void FVRAMViewer::RegisterAccess(uint16_t address)
+void FVRAMViewer::RegisterAccess(uint16_t vramAddress, FAddressRef writer)
 {
-	Access[address].FrameLastWritten = pPCEEmu->GetCodeAnalysis().CurrentFrameNo;
+	if (vramAddress < HUC6270_VRAM_SIZE)
+	{
+		FVRAMAccess& access = Access[vramAddress];
+		access.FrameLastWritten = pPCEEmu->GetCodeAnalysis().CurrentFrameNo;
+		access.LastWriter = writer;
+	}
+}
+
+// Cache sprite info, such as dimensions and vram address. 
+void FVRAMViewer::Tick()
+{
+	GeargrafxCore* pCore = pPCEEmu->GetCore();
+
+	HuC6270* huc6270 = pCore->GetHuC6270_1();
+	u16* vram = huc6270->GetVRAM();
+	u16* sat = huc6270->GetSAT();
+
+	for (int i = 0; i < HUC6270_SPRITES; i++)
+	{
+		const int sprite_offset = i << 2;
+		const u16 flags = sat[sprite_offset + 3] & 0xB98F;
+		const int cgx = (flags >> 8) & 0x01;
+		const int cgy = (flags >> 12) & 0x03;
+		SpriteInfo[i].Width = k_huc6270_sprite_width[cgx];
+		SpriteInfo[i].Height = k_huc6270_sprite_height[cgy];
+		SpriteInfo[i].SizeInBytes = (SpriteInfo[i].Width * SpriteInfo[i].Height) >> 2;
+
+		u16 pattern = (sat[sprite_offset + 2] >> 1) & 0x3FF;
+		pattern &= k_huc6270_sprite_mask_width[cgx];
+		pattern &= k_huc6270_sprite_mask_height[cgy];
+		SpriteInfo[i].Address = pattern << 6;
+	}
+}
+
+int FVRAMViewer::GetSpriteIndexForAddress(uint16_t addr) const
+{
+	for (int i = 0; i < HUC6270_SPRITES; i++)
+	{
+		const uint16_t addrEnd = SpriteInfo[i].Address + SpriteInfo[i].SizeInBytes;
+		if (addr > SpriteInfo[i].Address && addr < addrEnd)
+		{
+			return i;
+		}
+	}
+	return -1;
 }

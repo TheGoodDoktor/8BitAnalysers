@@ -26,8 +26,6 @@ private:
 private:
 	static const int kNumSprites = 64;
 	ImTextureID	SpriteTextures[kNumSprites] = { 0 };
-	int SpriteWidths[kNumSprites];
-	int SpriteHeights[kNumSprites];
 	uint8_t* SpriteBuffers[kNumSprites];
 
 	ImTextureID	ScreenTexture = 0;

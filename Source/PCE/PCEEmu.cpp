@@ -219,7 +219,7 @@ void OnVRAMWritten(void* pContext, u16 pc, u16 vramAddr, u16 value)
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	pEmu->GetVRAMViewer()->RegisterAccess(vramAddr);
+	pEmu->GetVRAMViewer()->RegisterAccess(vramAddr, pEmu->GetCodeAnalysis().AddressRefFromPhysicalAddress(pc));
 
 	//LOGINFO("[VRAM] Write $%04x to $%04x", value, vramAddr);
 	// pc will be wrong. it's giving the address after the last instruction 
@@ -649,7 +649,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FBackgroundViewer(this));
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
-//#ifndef NDEBUG
+#ifndef NDEBUG
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
 	AddViewer(pBatchGameLoadViewer);
 	AddViewer(new FDebugStatsViewer(this));
@@ -815,10 +815,7 @@ void FPCEEmu::Shutdown()
 }
 
 // todo: deal with resetting state when this function fails.
-// if the project fails to load we need to reset all state (memory, analysis info, globals etc).
-// eg we need to call GenerateGlobalInfo() otherwise the global info is left in a bad state.
-// there is a crash that happens if you load a project and then load a project that fails directly after it.
-// also, if ImportAnalysisState() fails when booting up, the game save state will still load instead
+// if ImportAnalysisState() fails when booting up, the game save state will still load instead
 // of the memory being reset. 
 bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  true*/)
 {
@@ -832,7 +829,9 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
+	
 	GetGlobalsViewer()->Reset();
+	pVRAMViewer->Reset();
 
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -871,18 +870,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 				return false;
 
 			CheckPhysicalMemoryRangeIsMapped();
-			// this was to deal with banks that were in use the last time we saved.
-			// they need to get their primary mapped page set.
-			// do we still need to do this?
-			//std::vector<FCodeAnalysisBank>& banks = CodeAnalysis.GetBanks();
-			//for (auto& bank : banks)
-			/*for (int b = 0; b < FCodeAnalysisState::CurBankId; b++)
-			{
-				FCodeAnalysisBank& bank = Banks[b];
-			
-				if (bank.IsUsed() && bank.PrimaryMappedPage == -1)
-					bank.PrimaryMappedPage = kDefaultPrimaryMappedPage;
-			}*/
 		}
 
 		//pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
@@ -907,7 +894,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		}
 		else
 		{
-			// do we ever get here?
 			return false;
 		}
 
@@ -919,7 +905,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	CodeAnalysis.SetAddressRangeDirty();
 
 	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
-	// this is crashing
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0), "VDC_AR_0000", ELabelType::Data);
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x2), "VDC_DATA_LO_0002", ELabelType::Data);
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x3), "VDC_DATA_HI_0002", ELabelType::Data);
@@ -1110,6 +1095,7 @@ void FPCEEmu::Tick()
 	FEmuBase::Tick();
 
 	pPCEViewer->Tick();
+	pVRAMViewer->Tick();
 
 	FDebugger& debugger = CodeAnalysis.Debugger;
 	if (debugger.IsStopped() == false)
