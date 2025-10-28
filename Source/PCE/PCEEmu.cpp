@@ -161,6 +161,7 @@ void OnGearGfxInstructionExecuted(void* pContext, uint16_t pc)
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 
 	FAddressRef pcAddr = state.AddressRefFromPhysicalAddress(pc);
+	// Set the PC to the address of the instruction just executed
 	state.Debugger.SetPC(pcAddr);
 
 	RegisterCodeExecuted(state, pc, pc);

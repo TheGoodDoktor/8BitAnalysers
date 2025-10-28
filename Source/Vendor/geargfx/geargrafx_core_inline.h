@@ -73,6 +73,8 @@ INLINE bool GeargrafxCore::RunToVBlank(u8* frame_buffer, s16* sample_buffer, int
 template<bool debugger, bool is_cdrom, bool is_sgx>
 bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, int* sample_count, GG_Debug_Run* debug)
 {
+//sam
+#if 0
     if (debugger)
     {
         bool debug_enable = false;
@@ -126,6 +128,7 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
         return m_huc6280->BreakpointHit() || m_huc6280->RunToBreakpointHit();
     }
     else
+#endif
     {
         UNUSED(debug);
         m_huc6260->SetBuffer(frame_buffer);
@@ -134,6 +137,7 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
         do
         {
             bool instruction_completed = false;
+            u16 pc = m_huc6280->GetState()->PC->GetValue();
             u32 cycles = m_huc6280->RunInstruction(&instruction_completed);
             m_master_clock_cycles += cycles;
             m_huc6280->ClockTimer(cycles);
@@ -150,7 +154,7 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
             if (instruction_completed)
             {
                if (IsValidPointer(m_instruction_executed_callback))
-                  m_instruction_executed_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue());
+                  m_instruction_executed_callback(m_callback_context, pc);
 
                if (*m_paused)
                   stop = true;
