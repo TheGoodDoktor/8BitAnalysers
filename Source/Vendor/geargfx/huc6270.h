@@ -73,7 +73,7 @@ public:
     };
 
     // sam
-    typedef void (*GG_VRAM_Write_Callback)(void* context, u16 pc, u16 vramAddr, u16 value);
+    typedef void (*GG_VRAM_Write_Callback)(void* context, u16 vramAddr, u16 value);
 
 public:
     HuC6270(HuC6280* huC6280);
@@ -160,7 +160,6 @@ private:
     // sam
     GG_VRAM_Write_Callback m_vram_write_callback;
     void* m_callback_context;
-    SixteenBitRegister* PC;
 
 private:
     void EndOfLine();

@@ -36,7 +36,6 @@ HuC6270::HuC6270(HuC6280* huC6280)
 
     InitPointer(m_callback_context);
     InitPointer(m_vram_write_callback);
-    PC = m_huc6280->GetState()->PC;
 }
 
 HuC6270::~HuC6270()
@@ -242,7 +241,7 @@ void HuC6270::WriteRegister(u16 address, u8 value)
                             u16 vram_addr = m_register[HUC6270_REG_MAWR] & 0x7FFF;
                             u16 value = m_register[HUC6270_REG_VWR];
 
-                            m_vram_write_callback(m_callback_context, PC->GetValue(), vram_addr, value); 
+                            m_vram_write_callback(m_callback_context, vram_addr, value); 
                             m_vram[vram_addr] = value;
                         }
 

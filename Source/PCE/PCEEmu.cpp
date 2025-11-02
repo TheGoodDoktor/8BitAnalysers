@@ -153,46 +153,28 @@ ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
 }
 
 // This is a geargfx specific version of FDebugger::Tick()
-void OnGearGfxInstructionExecuted(void* pContext, uint16_t pc)
+void OnInstructionExecuted(void* pContext, uint16_t pc)
 {
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
-
-	FAddressRef pcAddr = state.AddressRefFromPhysicalAddress(pc);
-	// Set the PC to the address of the instruction just executed
-	state.Debugger.SetPC(pcAddr);
-
-	RegisterCodeExecuted(state, pc, pc);
-
-	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
-	const uint64_t dummyPins = 0;
-	const int trapId = state.Debugger.OnInstructionExecuted(dummyPins);
-
-	if (trapId != kTrapId_None)
-	{
-		// This signals to geargfx to stop exection
-		state.Debugger.Break();
-	}
-
-	pEmu->PostInstructionTick();
+	pEmu->OnInstructionExecuted(pc);
 }
 
-void OnMemoryRead(void* pContext, u16 pc, u16 dataAddr)
+void OnMemoryRead(void* pContext, u16 dataAddr)
 {
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	RegisterDataRead(pEmu->GetCodeAnalysis(), pc, dataAddr);
+	RegisterDataRead(pEmu->GetCodeAnalysis(), pEmu->PrevPC, dataAddr);
 }
 
-void OnMemoryWritten(void* pContext, u16 pc, u16 dataAddr, u8 value)
+void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 {
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	RegisterDataWrite(pEmu->GetCodeAnalysis(), pc, dataAddr, value);
+	RegisterDataWrite(pEmu->GetCodeAnalysis(), pEmu->PrevPC, dataAddr, value);
 }
 
 void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex)
@@ -215,23 +197,25 @@ void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBank
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
 
-void OnVRAMWritten(void* pContext, u16 pc, u16 vramAddr, u16 value)
+void OnVRAMWritten(void* pContext, u16 vramAddr, u16 value)
 {
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	pEmu->GetVRAMViewer()->RegisterAccess(vramAddr, pEmu->GetCodeAnalysis().AddressRefFromPhysicalAddress(pc));
+	pEmu->OnVRAMWritten(vramAddr, value);
 
-	//LOGINFO("[VRAM] Write $%04x to $%04x", value, vramAddr);
-	// pc will be wrong. it's giving the address after the last instruction 
-	// 
-	// this wont work because the data size is 16 bits and the memory address is not in physical memory.
-	//pEmu->GetCodeAnalysis().Debugger.RegisterEvent(EEventType::VRAMWrite, pc, 
-	//pEmu->GetCodeAnalysis()->Debugger
-	//RegisterDataWrite(pEmu->GetCodeAnalysis(), pc, dataAddr, value);
 }
 
-uint8_t gDummyMemory[0x2000];
+void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
+{
+	const uint16_t curInstructionAddr = PrevPC;
+	GetVRAMViewer()->RegisterAccess(vramAddr, GetCodeAnalysis().AddressRefFromPhysicalAddress(curInstructionAddr));
+
+	if (GetCodeAnalysis().Debugger.GetStepMode() == EDebugStepMode::ScreenWrite)
+	{
+		GetCodeAnalysis().Debugger.Break();
+	}
+}
 
 std::string GetBankType(Memory* pMemory, uint8_t bankIndex)
 {
@@ -273,6 +257,43 @@ std::string GetBankType(Memory* pMemory, uint8_t bankIndex)
 	}
 	return false;
 }*/
+
+// The PC passed in here is the address _after_ the instruction just executed.
+void FPCEEmu::OnInstructionExecuted(uint16_t pc)
+{
+	FCodeAnalysisState& state = GetCodeAnalysis();
+
+	const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(PrevPC);
+	// Set the PC to the address of the instruction just executed
+	state.Debugger.SetPC(instrAddr);
+
+	RegisterCodeExecuted(state, pc, pc);
+
+	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
+	const uint64_t dummyPins = 0;
+	const int trapId = state.Debugger.OnInstructionExecuted(dummyPins);
+
+	if (trapId != kTrapId_None)
+	{
+		// This signals to geargfx to stop exection
+		state.Debugger.Break();
+	}
+
+	static int lastVpos = -1;
+	const int vpos = GetVPos();
+	if (lastVpos != vpos)
+	{
+		if (vpos == 0)
+			state.OnMachineFrameStart();
+		// todo: Improve this. I think this won't be right at the end of the frame, but on the scanline before it.
+		// Maybe I need to use HuC6270::m_raster_line?
+		else if (vpos == pCore->GetHuC6260()->GetTotalLines() - 1)
+			state.OnMachineFrameEnd();
+	}
+	lastVpos = vpos;
+
+	PrevPC = pc;
+}
 
 void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 {
@@ -537,9 +558,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pCore->Init(CodeAnalysis.Debugger.GetDebuggerStoppedPtr());
 	
 	pMemory = pCore->GetMemory();
-	pCore->SetInstructionExecutedCallback(OnGearGfxInstructionExecuted, this);
+	pCore->SetInstructionExecutedCallback(::OnInstructionExecuted, this);
 	pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, BankChangeCallback, this);
-	pCore->GetHuC6270_1()->SetCallback(OnVRAMWritten, this);
+	pCore->GetHuC6270_1()->SetCallback(::OnVRAMWritten, this);
 
 	pMedia = pCore->GetMedia();
 	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
@@ -937,11 +958,8 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 	DebugStats.Reset();
 
-	// decode whole screen
-	//ZXDecodeScreen(&ZXEmuState);
 	CodeAnalysis.Debugger.Break();
-
-	//CodeAnalysis.Debugger.RegisterNewStackPointer(ZXEmuState.cpu.sp, FAddressRef());
+	PrevPC = p6280State->PC->GetValue();
 
 	// some extra initialisation for creating new analysis from snapshot
 	if(bLoadGameData == false)
@@ -963,7 +981,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 }
 
 static const uint32_t kMachineStateMagic = 0xFaceCafe;
-//static c64_t g_SaveSlot;
 
 bool FPCEEmu::SaveMachineState(const char* fname)
 {
@@ -1048,24 +1065,6 @@ bool FPCEEmu::NewProjectFromEmulatorFile(const FEmulatorFile& snapshot)
 		return true;
 	}
 	return false;
-}
-
-void FPCEEmu::PostInstructionTick()
-{
-	FCodeAnalysisState& state = CodeAnalysis;
-
-	static int lastVpos = -1;
-	const int vpos = GetVPos();
-	if (lastVpos != vpos)
-	{
-		if (vpos == 0)
-			state.OnMachineFrameStart();
-		// todo: Improve this. I think this won't be right at the end of the frame, but on the scanline before it.
-		// Maybe I need to use HuC6270::m_raster_line?
-		else if (vpos == pCore->GetHuC6260()->GetTotalLines()-1) 
-			state.OnMachineFrameEnd();
-	}
-	lastVpos = vpos;
 }
 
 void FPCEEmu::FileMenuAdditions(void)	

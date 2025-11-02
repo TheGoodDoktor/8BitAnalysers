@@ -56,7 +56,6 @@ Memory::Memory(HuC6260* huc6260, HuC6202* huc6202, HuC6280* huc6280, Media* medi
     InitPointer(m_memory_read_callback);
     InitPointer(m_memory_write_callback);
     InitPointer(m_mpr_callback);
-    PC = huc6280->GetState()->PC;
 }
 
 Memory::~Memory()

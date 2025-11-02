@@ -73,18 +73,20 @@ public:
 	ICPUEmulator* GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
-	void PostInstructionTick();
-
 	const std::unordered_map<std::string, FGamesList>& GetGamesLists() const { return	GamesLists; }
 
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
 
+	// Geargrafx helpers
 	GeargrafxCore* GetCore() const { return pCore; }
 	Memory* GetMemory() const { return pMemory; }
 	Media* GetMedia() const { return pMedia; }
 	int GetVPos() const { return *pVPos; }
 	HuC6280::HuC6280_State* Get6280State() const { return p6280State; }
 	HuC6270::HuC6270_State* Get6270State() const { return p6270State; }
+
+	void OnInstructionExecuted(uint16_t pc);
+	void OnVRAMWritten(uint16_t vramAddr, uint16_t value);
 
 	uint8_t* GetFrameBuffer() const { return pFrameBuffer; }
 
@@ -141,6 +143,8 @@ public:
 	int MprBankSet[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
 	FEmuDebugStats DebugStats;
+
+	uint16_t PrevPC = 0;
 
 protected:
 	bool LoadMachineState(const char* fname);

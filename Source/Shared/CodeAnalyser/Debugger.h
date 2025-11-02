@@ -173,6 +173,7 @@ public:
 	bool GetRegisterWordValue(const char* regName, uint16_t& outVal) const;
 
 	bool* GetDebuggerStoppedPtr() { return &bDebuggerStopped; }
+	EDebugStepMode	GetStepMode() { return StepMode; }
 
 	// UI
 	void	DrawTrace(void);

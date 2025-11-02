@@ -137,7 +137,7 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
         do
         {
             bool instruction_completed = false;
-            u16 pc = m_huc6280->GetState()->PC->GetValue();
+
             u32 cycles = m_huc6280->RunInstruction(&instruction_completed);
             m_master_clock_cycles += cycles;
             m_huc6280->ClockTimer(cycles);
@@ -154,7 +154,7 @@ bool GeargrafxCore::RunToVBlankTemplate(u8* frame_buffer, s16* sample_buffer, in
             if (instruction_completed)
             {
                if (IsValidPointer(m_instruction_executed_callback))
-                  m_instruction_executed_callback(m_callback_context, pc);
+                  m_instruction_executed_callback(m_callback_context, m_huc6280->GetState()->PC->GetValue());
 
                if (*m_paused)
                   stop = true;
