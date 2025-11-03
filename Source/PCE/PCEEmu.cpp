@@ -14,6 +14,7 @@
 #include "Viewers/PaletteViewer.h"
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
+#include "Viewers/PCEGraphicsViewer.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "CodeAnalyser/UI/GlobalsViewer.h"
 #include "Viewers/PCERegistersViewer.h"
@@ -671,6 +672,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FBackgroundViewer(this));
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
+	pGraphicsViewer = new FPCEGraphicsViewer(this);
+	AddViewer(pGraphicsViewer);
 #ifndef NDEBUG
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
 	AddViewer(pBatchGameLoadViewer);
