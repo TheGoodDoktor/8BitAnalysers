@@ -5,6 +5,7 @@
 #include <CodeAnalyser/CodeAnalyser.h>
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include <ImGuiSupport/ImGuiScaling.h>
+#include "PCEGraphicsView.h"
 
 #include "../PCEEmu.h"
 
@@ -15,8 +16,8 @@ bool FPCEGraphicsViewer::Init()
 
 //#if 0
 	// test view - REMOVE
-	pTestGraphicsView = new FGraphicsView(128, 128);
-	pTestGraphicsView->Clear(0xfffff00);
+	pTestPCEGraphicsView = new FPCEGraphicsView(pPCEEmu, 128, 128);
+	pTestPCEGraphicsView->Clear(0xfffff00);
 //#endif
 
 	return true;
@@ -51,7 +52,7 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 		const uint16_t spriteAddress = 0x585f;
 		const uint8_t* ptr = pPCEEmu->GetMemPtr(spriteAddress);
 		//pTestGraphicsView->Draw4BppWideImageAt(ptr, 32, 32, 14, 21, pPalette);
-		pTestGraphicsView->Draw();
+		pTestPCEGraphicsView->Draw();
 	}
 //#endif
 }

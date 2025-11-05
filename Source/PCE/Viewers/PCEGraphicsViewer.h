@@ -8,6 +8,7 @@
 
 class FPCEEmu;
 struct FGame;
+class FPCEGraphicsView;
 
 class FPCEGraphicsViewer : public FGraphicsViewer
 {
@@ -26,7 +27,7 @@ private:
 	FPCEEmu*	pPCEEmu = nullptr;
 
 //#if 0
-	FGraphicsView* pTestGraphicsView = 0;
+	FPCEGraphicsView* pTestPCEGraphicsView = 0;
 	//FCPCGraphicsView* pTestCPCGraphicsView = 0;
 //#endif
 };

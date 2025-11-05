@@ -1,5 +1,19 @@
 #include "PCEGraphicsView.h"
 
+#include <geargrafx_core.h>
+#include "../PCEEmu.h"
+
+void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, int paletteIndex)
+{
+	GeargrafxCore* pCore = pPCEEmu->GetCore();
+
+	HuC6260* huc6260 = pCore->GetHuC6260();
+	HuC6270* huc6270 = pCore->GetHuC6270_1();
+	u16* vram = huc6270->GetVRAM();
+	u16* sat = huc6270->GetSAT();
+	u16* color_table = huc6260->GetColorTable();
+}
+
 #if 0
 void FPCEGraphicsView::DrawMode1Image(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, int paletteIndex)
 {
