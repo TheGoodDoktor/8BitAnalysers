@@ -52,6 +52,7 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 		const uint16_t spriteAddress = 0x585f;
 		const uint8_t* ptr = pPCEEmu->GetMemPtr(spriteAddress);
 		//pTestGraphicsView->Draw4BppWideImageAt(ptr, 32, 32, 14, 21, pPalette);
+		pTestPCEGraphicsView->Draw4bppSpriteImage(ptr, 16, 16, 32, 32);
 		pTestPCEGraphicsView->Draw();
 	}
 //#endif
