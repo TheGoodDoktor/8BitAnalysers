@@ -3,21 +3,17 @@
 #include <geargrafx_core.h>
 #include "../PCEEmu.h"
 
+int gSegWidth = 16;
+int gSegHeight = 16;
+
 void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, int paletteIndex)
 {
 	GeargrafxCore* pCore = pPCEEmu->GetCore();
 
 	HuC6260* huc6260 = pCore->GetHuC6260();
 	HuC6270* huc6270 = pCore->GetHuC6270_1();
-	//u16* vram = huc6270->GetVRAM();
 	u16* sat = huc6270->GetSAT();
 	u16* color_table = huc6260->GetColorTable();
-
-	//const int height = heightPixels;
-	//const int width = widthPixels;
-	
-	uint32_t* pBase = GetPixelBuffer() + (xp + (yp * GetWidth()));
-	uint32_t* pCur = pBase;
 
 	// 16x16
 	// $80 = 128
@@ -28,23 +24,52 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 	const uint8_t* pPlane3 = pPlane2 + 8;
 	const uint8_t* pPlane4 = pPlane3 + 8;
 
-	//uint32_t cols[4] = { 0xffff0000, 0xff00ff00, 0xff0000ff, 0xffff00ff };
-	//uint32_t* pCol = cols;
+	const uint32_t segCols[5] = { 0xffff0000, 0xff00ff00, 0xff0000ff, 0xffff00ff, 0xffffff00 };
+	int curSeg = 0;
 
-	for (int y = 0; y < heightPixels; y++)
+	// Split up into segments.
+	const int segWidth = gSegWidth;
+	const int segHeight = gSegHeight;
+	const int vertSegCount = widthPixels / segWidth;
+	const int horizSegCount = heightPixels / segHeight;
+
+	int curXPos = xp;
+	int curYPos = yp;
+
+	int width = GetWidth();
+	uint32_t* pPixBuf = GetPixelBuffer();
+
+	for (int segY = 0; segY < vertSegCount; segY++)
 	{
-		for (int x = 0; x < widthPixels; x++)
+		for (int segX = 0; segX < horizSegCount; segX++)
 		{
-			//*(pBase + x + (x * 8)) = 0xFFFF0000;
-			*pCur = 0xffff0000;
-			pCur++;
-			pPlane1++;
-			pPlane2++;
-			pPlane3++;
-			pPlane4++;
+			uint32_t* pCur = pPixBuf + (curXPos + (curYPos * width));
+
+			for (int y = 0; y < segHeight; y++)
+			{
+				for (int x = 0; x < segWidth; x++)
+				{
+					//*(pBase + x + (x * 8)) = 0xFFFF0000;
+					//*pCur = 0xffff0000;
+					//assert(curSeg < 4);
+					*pCur = segCols[curSeg % 5];
+					//pCol++;
+					pCur++;
+					//pPlane1++;
+					//pPlane2++;
+					//pPlane3++;
+					//pPlane4++;
+				}
+				// calculate this before?
+				pCur += width - segWidth;
+			}
+			curXPos += segWidth;
+			curSeg++;
 		}
-		pCur += GetWidth() - widthPixels;
+		curYPos += segHeight;
+		curXPos = xp;
 	}
+
 #if 0
 	for (int y = 0; y < height; y++)
 	{
