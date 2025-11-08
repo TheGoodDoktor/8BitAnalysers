@@ -3,9 +3,6 @@
 #include <geargrafx_core.h>
 #include "../PCEEmu.h"
 
-int gSegHeight = 16;
-int gStride = 32;
-
 void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, int paletteIndex)
 {
 	GeargrafxCore* pCore = pPCEEmu->GetCore();
@@ -15,56 +12,39 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 	u16* sat = huc6270->GetSAT();
 	u16* color_table = huc6260->GetColorTable();
 
-	// 16x16
-	// $80 = 128
-	// 1 byte = 2 pixels
-	// num bytes = widthPixels / 2
-	/*const uint8_t* pPlane0 = pSrc;
-	const uint8_t* pPlane1 = pPlane0 + 8;
-	const uint8_t* pPlane2 = pPlane1 + 8;
-	const uint8_t* pPlane3 = pPlane2 + 8;*/
-	const uint8_t* pCurSrc = pSrc;
-
 	const uint32_t segCols[5] = { 0xffff0000, 0xff00ff00, 0xff0000ff, 0xffff00ff, 0xffffff00 };
-	int curSeg = 0;
 
 	// Split up into segments.
 	const int segWidth = 16;
-	const int segHeight = gSegHeight;
-	const int vertSegCount = widthPixels / segWidth;
-	const int horizSegCount = heightPixels / segHeight;
+	const int segHeight = 16;
+	const int segCountV = widthPixels / segWidth;
+	const int segCountH = heightPixels / segHeight;
 
 	int curXPos = xp;
 	int curYPos = yp;
 
-	int width = GetWidth();
+	const int width = GetWidth();
 	uint32_t* pPixBuf = GetPixelBuffer();
 
-	const uint16_t* pPlane0 = (uint16_t*)pCurSrc;
+	const uint16_t* pPlane0 = (uint16_t*)pSrc;
 
-	for (int segY = 0; segY < vertSegCount; segY++)
+	for (int segY = 0; segY < segCountV; segY++)
 	{
-		for (int segX = 0; segX < horizSegCount; segX++)
+		for (int segX = 0; segX < segCountH; segX++)
 		{
 			uint32_t* pCurPixBuf = pPixBuf + (curXPos + (curYPos * width));
+			const uint16_t* pPlane1 = pPlane0 + 16;
+			const uint16_t* pPlane2 = pPlane1 + 16;
+			const uint16_t* pPlane3 = pPlane2 + 16;
 
+			// Draw 16x16 pixel square
 			for (int y = 0; y < segHeight; y++)
 			{
-				//const uint8_t* pPlane0 = pCurSrc;
-				//const uint8_t* pPlane1 = pPlane0 + 4;
-				//const uint8_t* pPlane2 = pPlane1 + 4;
-				//const uint8_t* pPlane3 = pPlane2 + 4;
-				
-				// Draw 16 pixels
+				// Draw 16 pixel horiz line
 				for (int x = 0; x < segWidth; x++)
 				{
-					// this will only work if segwidth is 8
-					int bit = 15 - x;  // MSB = leftmost pixel
-					int color = ((*pPlane0 >> bit) & 1);
-					/*int color = ((*pPlane3 >> bit) & 1) << 3 |
-						((*pPlane2 >> bit) & 1) << 2 |
-						((*pPlane1 >> bit) & 1) << 1 |
-						((*pPlane0 >> bit) & 1);*/
+					const int bit = 15 - x;  
+					int color = ((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1);
 
 					if (color != 0) // 0 is transparent
 						*pCurPixBuf = 0xffffffff;
@@ -75,16 +55,14 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 				}
 
 				pPlane0++;
-				//pPlane1++;
-				//pPlane2++;
-				//pPlane3++;
+				pPlane1++;
+				pPlane2++;
+				pPlane3++;
 
-				// calculate this before?
 				pCurPixBuf += width - segWidth;
 			}
-			return;
 			curXPos += segWidth;
-			curSeg++;
+			pPlane0 = pPlane3;
 		}
 		curYPos += segHeight;
 		curXPos = xp;
@@ -155,28 +133,3 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 	}
 #endif
 }
-
-#if 0
-void FPCEGraphicsView::DrawMode1Image(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, int paletteIndex)
-{
-	if (const uint32_t* pPalette = GetPaletteFromPaletteNo(paletteIndex))
-	{
-		FGraphicsView::Draw2BppImageAt(pSrc, xp, yp, widthPixels, heightPixels, pPalette);
-	}
-}
-
-void FPCEGraphicsView::DrawMode0Image(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, int paletteIndex)
-{
-	if (const FPaletteEntry* pPaletteEntry = GetPaletteEntry(paletteIndex))
-	{
-		if (pPaletteEntry->NoColours < 16)
-			return;
-
-		const uint32_t* pPalette = GetPaletteFromPaletteNo(paletteIndex);
-		if (pPalette)
-		{
-			FGraphicsView::Draw4BppWideImageAt(pSrc, xp, yp, widthPixels, heightPixels, pPalette);
-		}
-	}
-}
-#endif
