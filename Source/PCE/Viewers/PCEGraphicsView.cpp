@@ -3,8 +3,8 @@
 #include <geargrafx_core.h>
 #include "../PCEEmu.h"
 
-int gSegWidth = 16;
 int gSegHeight = 16;
+int gStride = 32;
 
 void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, int paletteIndex)
 {
@@ -19,16 +19,17 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 	// $80 = 128
 	// 1 byte = 2 pixels
 	// num bytes = widthPixels / 2
-	const uint8_t* pPlane1 = pSrc;
+	/*const uint8_t* pPlane0 = pSrc;
+	const uint8_t* pPlane1 = pPlane0 + 8;
 	const uint8_t* pPlane2 = pPlane1 + 8;
-	const uint8_t* pPlane3 = pPlane2 + 8;
-	const uint8_t* pPlane4 = pPlane3 + 8;
+	const uint8_t* pPlane3 = pPlane2 + 8;*/
+	const uint8_t* pCurSrc = pSrc;
 
 	const uint32_t segCols[5] = { 0xffff0000, 0xff00ff00, 0xff0000ff, 0xffff00ff, 0xffffff00 };
 	int curSeg = 0;
 
 	// Split up into segments.
-	const int segWidth = gSegWidth;
+	const int segWidth = 16;
 	const int segHeight = gSegHeight;
 	const int vertSegCount = widthPixels / segWidth;
 	const int horizSegCount = heightPixels / segHeight;
@@ -39,30 +40,49 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 	int width = GetWidth();
 	uint32_t* pPixBuf = GetPixelBuffer();
 
+	const uint16_t* pPlane0 = (uint16_t*)pCurSrc;
+
 	for (int segY = 0; segY < vertSegCount; segY++)
 	{
 		for (int segX = 0; segX < horizSegCount; segX++)
 		{
-			uint32_t* pCur = pPixBuf + (curXPos + (curYPos * width));
+			uint32_t* pCurPixBuf = pPixBuf + (curXPos + (curYPos * width));
 
 			for (int y = 0; y < segHeight; y++)
 			{
+				//const uint8_t* pPlane0 = pCurSrc;
+				//const uint8_t* pPlane1 = pPlane0 + 4;
+				//const uint8_t* pPlane2 = pPlane1 + 4;
+				//const uint8_t* pPlane3 = pPlane2 + 4;
+				
+				// Draw 16 pixels
 				for (int x = 0; x < segWidth; x++)
 				{
-					//*(pBase + x + (x * 8)) = 0xFFFF0000;
-					//*pCur = 0xffff0000;
-					//assert(curSeg < 4);
-					*pCur = segCols[curSeg % 5];
-					//pCol++;
-					pCur++;
-					//pPlane1++;
-					//pPlane2++;
-					//pPlane3++;
-					//pPlane4++;
+					// this will only work if segwidth is 8
+					int bit = 15 - x;  // MSB = leftmost pixel
+					int color = ((*pPlane0 >> bit) & 1);
+					/*int color = ((*pPlane3 >> bit) & 1) << 3 |
+						((*pPlane2 >> bit) & 1) << 2 |
+						((*pPlane1 >> bit) & 1) << 1 |
+						((*pPlane0 >> bit) & 1);*/
+
+					if (color != 0) // 0 is transparent
+						*pCurPixBuf = 0xffffffff;
+					else
+						*pCurPixBuf = 0xff000000;
+
+					pCurPixBuf++;
 				}
+
+				pPlane0++;
+				//pPlane1++;
+				//pPlane2++;
+				//pPlane3++;
+
 				// calculate this before?
-				pCur += width - segWidth;
+				pCurPixBuf += width - segWidth;
 			}
+			return;
 			curXPos += segWidth;
 			curSeg++;
 		}

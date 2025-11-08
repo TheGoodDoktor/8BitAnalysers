@@ -42,8 +42,8 @@ void FPCEGraphicsViewer::DrawUI(void)
 	ImGui::EndTabBar();
 }
 
-extern int gSegWidth;
 extern int gSegHeight;
+extern int gStride;
 
 int gPosX = 16;
 int gPosY = 16;
@@ -52,26 +52,31 @@ int gSegCountY = 2;
 
 void FPCEGraphicsViewer::DrawScreenViewer()
 {
-	ImGui::SliderInt("seg width", &gSegWidth, 8, 64);
 	ImGui::SliderInt("seg height", &gSegHeight, 8, 64);
 	ImGui::SliderInt("seg count X", &gSegCountX, 8, 256);
 	ImGui::SliderInt("seg count Y", &gSegCountY, 8, 256);
-	int width = gSegWidth * gSegCountX;
 	int height = gSegHeight * gSegCountY;
-	ImGui::SliderInt("x", &gPosX, 0, 256 - width);
+	ImGui::SliderInt("x", &gPosX, 0, 256 - 16);
 	ImGui::SliderInt("y", &gPosY, 0, 256 - height);
-	ImGui::Text("width %d", width);
+	ImGui::InputInt("stride", &gStride);
 	ImGui::Text("height %d", height);
 //#if 0
 	//const uint32_t* pPalette = pCPCEmu->Screen.GetCurrentPalette().GetData();
 	if (1)
 	{
 		const uint16_t spriteAddress = 0x585f;
-		const uint8_t* ptr = pPCEEmu->GetMemPtr(spriteAddress);
-		//pTestGraphicsView->Draw4BppWideImageAt(ptr, 32, 32, 14, 21, pPalette);
-		pTestPCEGraphicsView->Clear(0xfffff00);
-		pTestPCEGraphicsView->Draw4bppSpriteImage(ptr, gPosX, gPosY, width, height);
-		pTestPCEGraphicsView->Draw();
+		//const uint8_t* ptr = pPCEEmu->GetMemPtr(spriteAddress);
+		// rabio lepus rom 17 offset 0x1200
+		FCodeAnalysisBank* pBank = pPCEEmu->GetCodeAnalysis().GetBank(100);	
+		if (pBank)
+		{
+			//const uint8_t* ptr = pBank->Memory + 0x1200; // rabbit.32x32 bank 100
+			//const uint8_t* ptr = pBank->Memory + 0x1600; // bowtie. 16x16 bank 100
+			const uint8_t* ptr = pBank->Memory + 0x1980; // circle. 16x16 bank 100
+			pTestPCEGraphicsView->Clear(0xfffff00);
+			pTestPCEGraphicsView->Draw4bppSpriteImage(ptr, gPosX, gPosY, 16, height);
+			pTestPCEGraphicsView->Draw();
+		}
 	}
 //#endif
 }
