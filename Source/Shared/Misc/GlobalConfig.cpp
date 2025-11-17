@@ -54,6 +54,8 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 		GfxViewerScale = jsonConfigFile["GfxViewerScale"];
 	if (jsonConfigFile.contains("OverviewScale"))
 		OverviewScale = jsonConfigFile["OverviewScale"];
+	if (jsonConfigFile.contains("VRAMViewerScale"))
+		VRAMViewerScale = jsonConfigFile["VRAMViewerScale"];
 	
     if (jsonConfigFile.contains("EnableExperimentalFeatures"))
         bEnableExperimentalFeatures = jsonConfigFile["EnableExperimentalFeatures"];
@@ -108,6 +110,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["GfxViewerScale"] = GfxViewerScale;
 	jsonConfigFile["GfxScreenScale"] = GfxScreenScale;
 	jsonConfigFile["OverviewScale"] = OverviewScale;
+	jsonConfigFile["VRAMViewerScale"] = VRAMViewerScale;
 	jsonConfigFile["EnableExperimentalFeatures"] = bEnableExperimentalFeatures;
 	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;
 	jsonConfigFile["ExportAssembler"] = ExportAssembler;	

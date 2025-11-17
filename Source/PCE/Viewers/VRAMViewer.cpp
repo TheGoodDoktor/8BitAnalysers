@@ -84,10 +84,10 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 
 	FGlobalConfig* pConfig = state.pGlobalConfig;
 
-	ImGui::InputInt("Scale", &pConfig->OverviewScale, 1, 1);
-	pConfig->OverviewScale = MAX(1, pConfig->OverviewScale);	// clamp
+	ImGui::InputInt("Scale", &pConfig->VRAMViewerScale, 1, 1);
+	pConfig->VRAMViewerScale = MAX(1, pConfig->VRAMViewerScale);	// clamp
 	
-	const float scale = ImGui_GetScaling() * (float)pConfig->OverviewScale;
+	const float scale = ImGui_GetScaling() * (float)pConfig->VRAMViewerScale;
 
 	MemoryViewImage->UpdateTexture();
 

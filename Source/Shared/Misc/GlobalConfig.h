@@ -31,6 +31,7 @@ struct FGlobalConfig
 	int					FontSizePts = 13;
 	int					ImageScale = 1;
 	int					OverviewScale = 2;
+	int					VRAMViewerScale = 2;
 	int					GfxViewerScale = 1;
 	int					GfxScreenScale = 1;
 
