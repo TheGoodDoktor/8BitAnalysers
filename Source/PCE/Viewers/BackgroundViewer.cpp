@@ -15,6 +15,9 @@ FBackgroundViewer::FBackgroundViewer(FEmuBase* pEmu)
 
 bool FBackgroundViewer::Init()
 {
+	BackgroundBuffer = new u8[HUC6270_MAX_BACKGROUND_WIDTH * HUC6270_MAX_BACKGROUND_HEIGHT * 4];
+	
+	// todo use above numbers?
 	BackgroundTexture = ImGui_CreateTextureRGBA(pPCEEmu->GetFrameBuffer(), 512, 512);
 
 	return true;
@@ -26,6 +29,8 @@ static const float k_scale_levels[3] = { 1.0f, 1.5f, 2.0f };
 
 void FBackgroundViewer::DrawUI()
 {
+	UpdateBackground();
+
 	GeargrafxCore* core = pPCEEmu->GetCore();
 	HuC6270* huc6270 = core->GetHuC6270_1();
 	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
@@ -94,7 +99,9 @@ void FBackgroundViewer::DrawUI()
 		ImVec2 p = ImGui::GetCursorScreenPos();
 		ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
-		ImGui::Image(BackgroundTexture, ImVec2(size_h, size_v), ImVec2(0.0f, 0.0f), ImVec2(32.f / texture_size_h, 32.f / texture_size_v));
+		ImGui_UpdateTextureRGBA(BackgroundTexture, BackgroundBuffer);
+
+		ImGui::Image(BackgroundTexture, ImVec2(size_h, size_v), ImVec2(0.0f, 0.0f), ImVec2(BufferWidth / texture_size_h, BufferHeight / texture_size_v));
 
 		if (show_grid)
 		{
@@ -163,4 +170,62 @@ void FBackgroundViewer::DrawUI()
 	}
 
 	ImGui::EndChild();
+}
+
+void FBackgroundViewer::UpdateBackground()
+{
+	GeargrafxCore* pCore = pPCEEmu->GetCore();
+	HuC6270* huc6270 = pCore->GetHuC6270_1();
+	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
+	HuC6260* huc6260 = pCore->GetHuC6260();
+
+	u16* vram = huc6270->GetVRAM();
+	int screen_reg = (huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07;
+	int screen_size_x = k_huc6270_screen_size_x[screen_reg];
+	int screen_size_y = k_huc6270_screen_size_y[screen_reg];
+	BufferWidth= screen_size_x * 8;
+	BufferHeight = screen_size_y * 8;
+	int bat_size = screen_size_x * screen_size_y;
+	int pixels = bat_size * 8 * 8;
+
+	for (int pixel = 0; pixel < pixels; pixel++)
+	{
+		int x = pixel % BufferWidth;
+		int y = pixel / BufferHeight;
+
+		int bat_entry_index = (x / 8) + ((y / 8) * screen_size_x);
+		u16 bat_entry = vram[bat_entry_index];
+		int tile_index = bat_entry & 0x07FF;
+		int color_table = (bat_entry >> 12) & 0x0F;
+
+		int tile_data = tile_index * 16;
+		int tile_y = (y % 8);
+		int tile_x = (pixel % 8);
+
+		int line_start_a = (tile_data + tile_y);
+		int line_start_b = (tile_data + tile_y + 8);
+
+		u8 byte1 = vram[line_start_a] & 0xFF;
+		u8 byte2 = vram[line_start_a] >> 8;
+		u8 byte3 = vram[line_start_b] & 0xFF;
+		u8 byte4 = vram[line_start_b] >> 8;
+
+		int color = ((byte1 >> (7 - tile_x)) & 0x01) | (((byte2 >> (7 - tile_x)) & 0x01) << 1) | (((byte3 >> (7 - tile_x)) & 0x01) << 2) | (((byte4 >> (7 - tile_x)) & 0x01) << 3);
+
+		if (color == 0)
+			color_table = 0;
+
+		u16 color_value = huc6260->GetColorTable()[(color_table * 16) + color];
+
+		// convert to 8 bit color
+		int blue = (color_value & 0x07) * 255 / 7;
+		int red = ((color_value >> 3) & 0x07) * 255 / 7;
+		int green = ((color_value >> 6) & 0x07) * 255 / 7;
+
+		int index = (pixel * 4);
+		BackgroundBuffer[index + 0] = red;
+		BackgroundBuffer[index + 1] = green;
+		BackgroundBuffer[index + 2] = blue;
+		BackgroundBuffer[index + 3] = 255;
+	}
 }

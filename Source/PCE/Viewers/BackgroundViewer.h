@@ -16,5 +16,12 @@ public:
 
 	FPCEEmu* pPCEEmu = nullptr;
 private:
+	void UpdateBackground();
+
+private:
+	uint8_t* BackgroundBuffer = nullptr;
+
+	int BufferWidth = 32;
+	int BufferHeight = 32;
 	ImTextureID BackgroundTexture = 0;
 };
