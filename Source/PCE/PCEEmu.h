@@ -154,6 +154,8 @@ protected:
 	void CheckPhysicalMemoryRangeIsMapped();
 	void CheckMemoryMap();
 	void ResetBanks();
+	
+	void UpdatePalettes();
 
 protected:
 	GeargrafxCore* pCore = nullptr;

@@ -651,9 +651,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::Bitmap_1Bpp;
-	}*/
+	}
 
-	
 	const FPCEConfig* pPCEConfig = GetPCEGlobalConfig();
 	AddGamesList("Snapshot File", GetPCEGlobalConfig()->SnapshotFolder.c_str());
 
