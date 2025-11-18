@@ -236,6 +236,8 @@ void FVRAMViewer::Tick()
 	}
 }
 
+// todo: deal with the fact there can be multiple sprites sharing the same adddress.
+// they can have the same address but different palettes
 int FVRAMViewer::GetSpriteIndexForAddress(uint16_t addr) const
 {
 	for (int i = 0; i < HUC6270_SPRITES; i++)

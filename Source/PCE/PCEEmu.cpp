@@ -1184,18 +1184,25 @@ void FPCEEmu::AppFocusCallback(int focused)
 void FPCEEmu::UpdatePalettes()
 {
 	HuC6260* huc6260 = pCore->GetHuC6260();
-	// This colour table are 333 colours
+	// This colour table has 333 colours
 	u16* colorTable = huc6260->GetColorTable();
-	//constexpr int paletteBaseIndex = 0x100;
-	//const u16* pPalette = &colorTable[paletteBaseIndex + (paletteIndex * 16)];
 	
 	for (int p = 0; p < 32; p++)
 	{
+		const u16* pPalette = &colorTable[p * 16];
+
 		uint32_t* pColours = GetPaletteFromPaletteNo(p);
-		for (int c = 0; c < 16; c++)
+		if (pColours)
 		{
-			// convert from 333 to u32 RGBA
-			//const u16* pPalette = &colorTable[paletteBaseIndex + (paletteIndex * 16)];
+			for (int c = 0; c < 16; c++)
+			{
+				// convert from 333 to u32 RGBA
+				const int colour333 = pPalette[c];
+				const uint8_t g = ((colour333 >> 6) & 0x07) * 255 / 7;
+				const uint8_t r = ((colour333 >> 3) & 0x07) * 255 / 7;
+				const uint8_t b = (colour333 & 0x07) * 255 / 7;
+				pColours[c] = (0xff << 24) | (b << 16) | (g << 8) | r;
+			}
 		}
 	}
 }
