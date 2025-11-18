@@ -6,6 +6,7 @@
 
 #include "PCEConfig.h"
 #include "Util/FileUtil.h"
+#include "Util/GraphicsView.h"
 #include "Viewers/PCEViewer.h"
 #include "Viewers/BatchGameLoadViewer.h"
 #include "Viewers/BackgroundViewer.h"
@@ -645,7 +646,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	CodeAnalysis.Config.bShowBanks = true;
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 	// set supported bitmap format
-	/*CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
+	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
+	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Sprite4Bpp_PCE] = true;
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::Bitmap_1Bpp;
@@ -923,6 +925,22 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		}
 
 		ResetBanks();
+
+		// we only want to do this once when create the project
+		
+		uint32_t palette[32] = { 0 };
+		// Create a palette entry for all the HW palettes
+		for (int i = 0; i < 32; i++)
+		{
+			for (int c = 0; c < 16; c++)
+			{
+				palette[c] = i; 
+			}
+			// this wont create a new palette if the colours are the same.
+			const int p = GetPaletteNo(palette, 16);
+			LOGINFO("created palette %d", p);
+		}
+		LOGINFO("done");
 	}
 
 	ReAnalyseCode(CodeAnalysis);
@@ -1113,6 +1131,8 @@ void FPCEEmu::Tick()
 		//CodeAnalysis.OnMachineFrameStart();
 	}
 
+	UpdatePalettes();
+
 	// Draw UI
 	DrawDockingView();
 }
@@ -1158,6 +1178,25 @@ void FPCEEmu::AppFocusCallback(int focused)
 		for(auto& listIt : GamesLists)
 		{ 
 			listIt.second.EnumerateGames();
+		}
+	}
+}
+
+void FPCEEmu::UpdatePalettes()
+{
+	HuC6260* huc6260 = pCore->GetHuC6260();
+	// This colour table are 333 colours
+	u16* colorTable = huc6260->GetColorTable();
+	//constexpr int paletteBaseIndex = 0x100;
+	//const u16* pPalette = &colorTable[paletteBaseIndex + (paletteIndex * 16)];
+	
+	for (int p = 0; p < 32; p++)
+	{
+		uint32_t* pColours = GetPaletteFromPaletteNo(p);
+		for (int c = 0; c < 16; c++)
+		{
+			// convert from 333 to u32 RGBA
+			//const u16* pPalette = &colorTable[paletteBaseIndex + (paletteIndex * 16)];
 		}
 	}
 }
