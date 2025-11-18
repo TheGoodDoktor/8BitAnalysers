@@ -4,6 +4,9 @@
 
 #include "../PCEEmu.h"
 #include <geargrafx_core.h>
+#include <ImGuiSupport/ImGuiScaling.h>
+#include "Util/GraphicsView.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
 ImVec4 Convert333PaletteToFloat(u16 color)
 {
@@ -129,6 +132,30 @@ void FPaletteViewer::DrawUI()
 			}
 
 			ImGui::NewLine();
+
+			ImGui::EndChild();
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("All Palettes", NULL, ImGuiTabItemFlags_None))
+		{
+			ImGui::BeginChild("all_palettes", ImVec2(0, 0.0f), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+
+			const float scale = ImGui_GetScaling();
+
+			int numPalettes = GetNoPaletteEntries();
+			ImGui::Text("Palettes Stored: %d", GetNoPaletteEntries());
+
+			for (int p = 0; p < numPalettes; p++)
+			{
+				if (const FPaletteEntry* pEntry = GetPaletteEntry(p))
+				{
+					const uint32_t* palette = GetPaletteFromPaletteNo(p);
+					ImGui::Text("%02d: ", p);
+					ImGui::SameLine();
+					DrawPalette(palette, pEntry->NoColours, ImGui::GetTextLineHeight());
+				}
+			}
 
 			ImGui::EndChild();
 			ImGui::EndTabItem();
