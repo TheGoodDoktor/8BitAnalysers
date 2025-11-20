@@ -148,12 +148,17 @@ void FPaletteViewer::DrawUI()
 
 			for (int p = 0; p < numPalettes; p++)
 			{
+				if (p == 0)
+					ImGui::SeparatorText("Background");
+				if (p == 16)
+					ImGui::SeparatorText("Sprites");
+
 				if (const FPaletteEntry* pEntry = GetPaletteEntry(p))
 				{
 					const uint32_t* palette = GetPaletteFromPaletteNo(p);
 					ImGui::Text("%02d: ", p);
 					ImGui::SameLine();
-					DrawPalette(palette, pEntry->NoColours, ImGui::GetTextLineHeight());
+					DrawPalette(palette, pEntry->NoColours, ImGui::GetFrameHeight());
 				}
 			}
 
