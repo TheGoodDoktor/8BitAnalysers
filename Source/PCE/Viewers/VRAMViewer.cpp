@@ -200,7 +200,17 @@ void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 	}
 }
 
-void FVRAMViewer::RegisterAccess(uint16_t vramAddress, FAddressRef writer)
+void FVRAMViewer::RegisterRead(uint16_t vramAddress, FAddressRef reader)
+{
+	if (vramAddress < HUC6270_VRAM_SIZE)
+	{
+		FVRAMAccess& access = Access[vramAddress];
+		access.FrameLastRead = pPCEEmu->GetCodeAnalysis().CurrentFrameNo;
+		access.LastReader = reader;
+	}
+}
+
+void FVRAMViewer::RegisterWrite(uint16_t vramAddress, FAddressRef writer)
 {
 	if (vramAddress < HUC6270_VRAM_SIZE)
 	{

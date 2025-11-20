@@ -211,7 +211,7 @@ void OnVRAMWritten(void* pContext, u16 vramAddr, u16 value)
 void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 {
 	const uint16_t curInstructionAddr = PrevPC;
-	GetVRAMViewer()->RegisterAccess(vramAddr, GetCodeAnalysis().AddressRefFromPhysicalAddress(curInstructionAddr));
+	GetVRAMViewer()->RegisterWrite  (vramAddr, GetCodeAnalysis().AddressRefFromPhysicalAddress(curInstructionAddr));
 
 	if (GetCodeAnalysis().Debugger.GetStepMode() == EDebugStepMode::ScreenWrite)
 	{
@@ -647,7 +647,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	CodeAnalysis.ViewState[0].Enabled = true;	// always have first view enabled
 	// set supported bitmap format
 	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
-	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Sprite4Bpp_PCE] = true;
+	//CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Sprite4Bpp_PCE] = true;
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{
 		CodeAnalysis.ViewState[i].CurBitmapFormat = EBitmapFormat::Bitmap_1Bpp;

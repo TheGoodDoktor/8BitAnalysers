@@ -12,6 +12,8 @@ struct FVRAMAccess
 {
 	FAddressRef LastWriter;
 	int FrameLastWritten = -1;
+	FAddressRef LastReader;
+	int FrameLastRead = -1;
 };
 
 struct FSpriteInfo
@@ -47,7 +49,8 @@ public:
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
 	void	DrawLegend(void);
 
-	void	RegisterAccess(uint16_t vramAddress, FAddressRef writer);
+	void	RegisterRead(uint16_t vramAddress, FAddressRef reader);
+	void	RegisterWrite(uint16_t vramAddress, FAddressRef writer);
 
 	const FSpriteInfo* GetSpriteInfo() const { return SpriteInfo; }
 	int GetSpriteIndexForAddress(uint16_t addr) const;
