@@ -111,6 +111,8 @@ bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysi
 		return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMap4Bpp_CPC];
 	case EDataItemDisplayType::ColMapMulticolour_C64:
 		return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMapMulticolour_C64];
+	case EDataItemDisplayType::Sprite4Bpp_PCE:
+		return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Sprite4Bpp_PCE];
 	default:
 		return true;
 	}
@@ -135,6 +137,7 @@ static const std::vector<std::pair<const char*, EDataItemDisplayType>> g_Display
 	{ "YPos",			EDataItemDisplayType::YPos},
 	{ "XCharPos",		EDataItemDisplayType::XCharPos},
 	{ "YCharPos",		EDataItemDisplayType::YCharPos},
+	{ "Sprite PCE",	EDataItemDisplayType::Sprite4Bpp_PCE},
 
 };
 
@@ -192,7 +195,7 @@ bool DrawBitmapFormatCombo(EBitmapFormat& bitmapFormat, const FCodeAnalysisState
 	}
 
 	const int index = (int)bitmapFormat;
-	const char* bitmapFormats[] = { "1bpp", "2bpp (CPC Mode 1)", "4bpp (CPC Mode 0)", "C64 Multicolour" };
+	const char* bitmapFormats[] = { "1bpp", "2bpp (CPC Mode 1)", "4bpp (CPC Mode 0)", "C64 Multicolour", "4bpp PCE Sprite" };
 
 	bool bChanged = false;
 

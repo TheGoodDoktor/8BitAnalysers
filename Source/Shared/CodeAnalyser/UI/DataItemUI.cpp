@@ -215,6 +215,39 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 			}
 		}
 		break;
+	case EDataItemDisplayType::Sprite4Bpp_PCE:
+		// this needs rewriting
+		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
+		{
+			const uint8_t val = state.ReadByte(addr + byte);
+
+			for (int pixel = 0; pixel < 2; pixel++)
+			{
+				const ImVec2 rectMin(pos.x, pos.y);
+				const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+
+				int colourIndex = 0;
+
+				switch (pixel)
+				{
+				case 0:
+					colourIndex = (val & 0x80 ? 1 : 0) | (val & 0x8 ? 2 : 0) | (val & 0x20 ? 4 : 0) | (val & 0x2 ? 8 : 0);
+					break;
+				case 1:
+					colourIndex = (val & 0x40 ? 1 : 0) | (val & 0x4 ? 2 : 0) | (val & 0x10 ? 4 : 0) | (val & 0x1 ? 8 : 0);
+					break;
+				}
+
+				const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
+				const uint32_t pixelCol = pPalette ? pPalette[colourIndex] : colourIndex == 0 ? 0 : 0xffffffff;
+
+				dl->AddRectFilled(rectMin, rectMax, pixelCol);
+				dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+				pos.x += rectSize;
+			}
+		}
+		break;
     default:
         break;
 	}

@@ -81,6 +81,7 @@ enum class EDataItemDisplayType
 	YPos,
 	XCharPos,
 	YCharPos,
+	Sprite4Bpp_PCE, // rename?
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
@@ -92,6 +93,8 @@ enum class EBitmapFormat
 	ColMap4Bpp_CPC,	// Amstrad CPC mode 0 format
 
 	ColMapMulticolour_C64,	// C64 Multicolour format
+
+	Sprite4Bpp_PCE,	// PCE 4bpp planar sprite format
 
 	Max,
 	None = Max
@@ -295,6 +298,8 @@ public:
 
 	void	RegisterAccess(const FAddressRef& addrRef)
 	{
+		assert(addrRef.IsValid());
+
 		if(HasReferenceTo(addrRef))	// already has reference
 			return;
 

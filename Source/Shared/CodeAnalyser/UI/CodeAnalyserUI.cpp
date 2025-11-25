@@ -1418,6 +1418,8 @@ EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat)
 		return  EDataItemDisplayType::ColMap4Bpp_CPC;
 	case EBitmapFormat::ColMapMulticolour_C64:
 		return  EDataItemDisplayType::ColMapMulticolour_C64;
+	case EBitmapFormat::Sprite4Bpp_PCE:
+		return EDataItemDisplayType::Sprite4Bpp_PCE;
 	default:
 		return EDataItemDisplayType::Unknown;
 	}
@@ -2437,7 +2439,9 @@ EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType)
 		return EBitmapFormat::ColMap4Bpp_CPC;
 	case  EDataItemDisplayType::ColMapMulticolour_C64:
 		return EBitmapFormat::ColMapMulticolour_C64;
-    default:
+	case  EDataItemDisplayType::Sprite4Bpp_PCE:
+		return EBitmapFormat::Sprite4Bpp_PCE;
+	default:
         return EBitmapFormat::None;
 	}
 }
@@ -2454,7 +2458,9 @@ int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
 		return 4;
 	case EBitmapFormat::ColMapMulticolour_C64:
 		return 1;	// it's a bit of a bodge because they're wide
-    default:
+	case EBitmapFormat::Sprite4Bpp_PCE:
+		return 4;
+	default:
         return 1;
 	}
 	
@@ -2469,7 +2475,8 @@ bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat)
 	case EBitmapFormat::ColMap2Bpp_CPC:
 	case EBitmapFormat::ColMap4Bpp_CPC:
 	case EBitmapFormat::ColMapMulticolour_C64:
-		return true;	
+	case EBitmapFormat::Sprite4Bpp_PCE:
+		return true;
     default:
         return false;
 	}
@@ -2490,6 +2497,7 @@ bool IsBitmapFormatDoubleWidth(EBitmapFormat bitmapFormat)
 	case EBitmapFormat::Bitmap_1Bpp:
 	case EBitmapFormat::ColMap2Bpp_CPC:
 	case EBitmapFormat::ColMapMulticolour_C64:
+	case EBitmapFormat::Sprite4Bpp_PCE:
 		return false;
 	case EBitmapFormat::ColMap4Bpp_CPC:
 		return true;
