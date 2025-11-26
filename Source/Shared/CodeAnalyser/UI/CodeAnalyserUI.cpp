@@ -2394,11 +2394,14 @@ bool DrawBankInput(const FCodeAnalysisState& state, const char* label, int16_t& 
 		{
 			const FCodeAnalysisBank& bank = state.GetBanks()[b];
 		
-			if (ImGui::Selectable(GetBankText(state, bank.Id), bankId == bank.Id))
+			if (bank.PrimaryMappedPage != -1)
 			{
-				//const FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
-				bankId = bank.Id;
-				bBankChanged = true;
+				if (ImGui::Selectable(GetBankText(state, bank.Id), bankId == bank.Id))
+				{
+					//const FCodeAnalysisBank* pNewBank = state.GetBank(bank.Id);
+					bankId = bank.Id;
+					bBankChanged = true;
+				}
 			}
 		}
 
