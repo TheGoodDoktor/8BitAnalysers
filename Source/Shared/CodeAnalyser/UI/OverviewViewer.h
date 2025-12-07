@@ -35,9 +35,9 @@ public:
 	static const uint32_t kCodeColActive = 0xff00ffff;
 	static const uint32_t kDataReadActiveCol = 0xff00ff00;
 	static const uint32_t kDataReadCol = 0xff008000;
-	static const uint32_t kDataWriteActiveCol = 0xff0000ff;
-	static const uint32_t kDataWriteCol = 0xff000080;
-	static const uint32_t kDefaultDataCol = 0xffff0000;
+	static const uint32_t kUnknownWriteActiveCol = 0xff0000ff;
+	static const uint32_t kUnknownWriteCol = 0xff000080;
+	static const uint32_t kUnwrittenCol = 0xffff0000;
 	static const uint32_t kBitmapDataCol = 0xffffffff;
 	static const uint32_t kCharMapDataCol = 0xff00ff00;
 	static const uint32_t kTextDataCol = 0xffff00ff;

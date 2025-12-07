@@ -6,6 +6,7 @@
 #include "Util/GraphicsView.h"
 #include "ImGuiSupport/ImGuiScaling.h"
 #include "UIColours.h"
+#include "optick/optick.h"
 
 #include "Misc/EmuBase.h"
 
@@ -24,6 +25,8 @@ bool FOverviewViewer::Init(void)
 
 void FOverviewViewer::DrawUI(void)
 {
+	OPTICK_EVENT();
+
     //DrawStats();
 	//DrawBankOverview();
 	DrawPhysicalMemoryOverview();
@@ -200,11 +203,11 @@ void	FOverviewViewer::DrawLegend()
 	ImGui::SameLine();
 	ImGui::Text("Data Read Active");
 
-	ImGui::ColorButton("Data Write", ImGui::ColorConvertU32ToFloat4(kDataWriteCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::ColorButton("Data Write", ImGui::ColorConvertU32ToFloat4(kUnknownWriteCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
 	ImGui::Text("Data Write");
 
-	ImGui::ColorButton("Data Write Active", ImGui::ColorConvertU32ToFloat4(kDataWriteActiveCol), ImGuiColorEditFlags_NoTooltip);
+	ImGui::ColorButton("Data Write Active", ImGui::ColorConvertU32ToFloat4(kUnknownWriteActiveCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
 	ImGui::Text("Data Write Active");
 
@@ -331,62 +334,6 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	}
 }
 
-#if 0
-void FOverviewViewer::DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix)
-{
-	const int frameThreshold = 8;
-	const int currentFrameNo = state.CurrentFrameNo;
-
-	uint32_t addr = 0;
-
-	while (addr < (1 << 16))
-	{
-		const FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(addr);
-
-		if (pCodeInfo)
-		{
-			const int framesSinceExecuted = currentFrameNo - pCodeInfo->FrameLastExecuted;
-			const uint32_t codeCol = (pCodeInfo->FrameLastExecuted != -1 && framesSinceExecuted < frameThreshold) ? 0xFF00FFFF : 0xFF008080;
-			for (int i = 0; i < pCodeInfo->ByteSize; i++)
-			{
-				addr++;
-				*pPix++ = codeCol;
-			}
-		}
-		else
-		{
-			const FDataInfo* pReadDataInfo = state.GetReadDataInfoForAddress(addr);
-			const FDataInfo* pWriteDataInfo = state.GetWriteDataInfoForAddress(addr);
-			const bool bRead = pReadDataInfo->Reads.IsEmpty() == false;
-			const bool bWrite = pWriteDataInfo->Writes.IsEmpty() == false;
-			const bool bUsed = (bRead || bWrite);
-
-			uint32_t dataCol = bUsed ? 0xffff0000 : 0xff000000;
-
-
-			if (pReadDataInfo != nullptr && pReadDataInfo->LastFrameRead != -1)
-			{
-				const int framesSinceRead = currentFrameNo - pReadDataInfo->LastFrameRead;
-				if (framesSinceRead < frameThreshold)
-					dataCol = 0xFF00FF00;
-			}
-
-			if (pWriteDataInfo != nullptr && pWriteDataInfo->LastFrameWritten != -1)
-			{
-				const int framesSinceWritten = currentFrameNo - pWriteDataInfo->LastFrameWritten;
-				if (framesSinceWritten < frameThreshold)
-					dataCol = 0xFF0000FF;
-			}
-
-
-			addr++;
-			*pPix++ = dataCol;
-		}
-	}	
-}
-#endif
-
-
 void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
@@ -439,7 +386,7 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 
 			const bool bIsSelectedItem = selectedItemAddr >= (int)physicalAddress && selectedItemAddr < (int)(physicalAddress + pDataInfo->ByteSize);
 
-			uint32_t dataCol = kDefaultDataCol;
+			uint32_t dataCol = kUnwrittenCol;
 
 			switch (pDataInfo->DataType)
 			{
@@ -479,13 +426,13 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 
 					// show unknowns that have been written to
 					if (dataCol == kUnknownDataCol && pWriteDataInfo && pWriteDataInfo->Writes.IsEmpty() == false)
-						drawCol = kDataWriteCol;
+						drawCol = kUnknownWriteCol;
 
 					if (pWriteDataInfo != nullptr && pWriteDataInfo->LastFrameWritten != -1)	// Show write
 					{
 						const int framesSinceWritten = currentFrameNo - pWriteDataInfo->LastFrameWritten;
 						if (framesSinceWritten < frameThreshold)
-							drawCol = kDataWriteActiveCol;
+							drawCol = kUnknownWriteActiveCol;
 					}
 					else if (pReadDataInfo != nullptr && pReadDataInfo->LastFrameRead != -1)	// Show read
 					{
