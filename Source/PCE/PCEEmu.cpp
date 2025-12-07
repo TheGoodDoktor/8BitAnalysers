@@ -124,11 +124,17 @@ uint16_t	FPCEEmu::ReadWord(uint16_t address) const
 	return ReadByte(address) | (ReadByte(address + 1) << 8);
 }
 
+// this gets the mem ptr of physical memory.
 const uint8_t* FPCEEmu::GetMemPtr(uint16_t address) const 
 {
-	// this is needed for graphic related functionality.
-	static uint8_t byteArray[65535] = { 0 };
-	return byteArray;
+	const uint8_t mprIndex = address >> 13;
+	const uint8_t bankIndex = pMemory->GetMpr(mprIndex);
+	const uint16_t offset = address & 0x1FFF;
+	// todo deal with hardware page properly. add it to the memory map
+	if (bankIndex == kBankHWPage)
+		return pMemory->GetHWPageMemory();
+
+	return pMemory->GetMemoryMap()[bankIndex] + offset;
 }
 
 void FPCEEmu::WriteByte(uint16_t address, uint8_t value)
