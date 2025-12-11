@@ -540,6 +540,9 @@ struct FDataInfo : FItem
 		FAddressRef	GraphicsSetRef;	// for bitmap data
 		FAddressRef	InstructionAddress;	// for operand data types
 	};
+	
+	// sam. This is a hack. For PCE planar sprite data, we need to know the address of the first item we are part of.
+	FAddressRef				FirstItemAddress;
 
 	union 
 	{

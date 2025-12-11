@@ -53,6 +53,8 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			pDataInfo->DataType = FormatOptions.DataType;
 			pDataInfo->DisplayType = FormatOptions.DisplayType;
 
+			pDataInfo->FirstItemAddress = firstAddress;
+
 			if (FormatOptions.DataType == EDataType::Byte)
 			{
 				pDataInfo->ByteSize = 1;

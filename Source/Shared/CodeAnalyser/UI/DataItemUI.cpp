@@ -73,9 +73,8 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 }
 
 
-
 // returns how much space it took
-float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataInfo* pDataInfo, bool bEditMode)
+float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDataInfo* pDataInfo, bool bEditMode)
 {
 	const float line_height = ImGui::GetTextLineHeight();
 	const float rectSize = line_height + 4;
@@ -85,7 +84,6 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 	pos.x += state.Config.AddressPos + (state.Config.AddressSpaceRatio * charWidth) + (charWidth * 8);
 	pos.y -= rectSize + 2;
 	const ImVec2 startPos = pos;
-
 	const float areaWidth = ImGui::GetWindowWidth() - startPos.x;
 	const float itemWidth = pDataInfo->ByteSize * 8 * rectSize;
 
@@ -93,13 +91,19 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 	{
 		rectSize *= areaWidth / itemWidth;
 	}*/
+	const FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
+	if (!pBank)
+		return 0;
+	
+	const uint16_t mappedAddr = pBank->GetMappedAddress();
+	const uint16_t bnkOffset = addr.GetAddress() - mappedAddr;
 
 	switch (pDataInfo->DisplayType)
 	{
 	case EDataItemDisplayType::Bitmap:	// 1 bit per pixel
 		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 		{
-			const uint8_t val = state.ReadByte(addr + byte);
+			const uint8_t val = pBank->Memory[bnkOffset + byte];
 
 			for (int bit = 7; bit >= 0; bit--)
 			{
@@ -121,7 +125,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 
 		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 		{
-			const uint8_t val = state.ReadByte(addr + byte);
+			const uint8_t val = pBank->Memory[bnkOffset + byte];
 
 			for (int pixel = 0; pixel < 4; pixel++)
 			{
@@ -163,7 +167,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 
 		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 		{
-			const uint8_t val = state.ReadByte(addr + byte);
+			const uint8_t val = pBank->Memory[bnkOffset + byte];
 
 			for (int pixel = 0; pixel < 2; pixel++)
 			{
@@ -196,7 +200,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 	case EDataItemDisplayType::ColMapMulticolour_C64:	// 2 bits per pixel - wide pixels
 		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 		{
-			const uint8_t val = state.ReadByte(addr + byte);
+			const uint8_t val = pBank->Memory[bnkOffset + byte];
 
 			for (int xpix = 0; xpix < 4; xpix++)
 			{
@@ -216,30 +220,41 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 		}
 		break;
 	case EDataItemDisplayType::Sprite4Bpp_PCE:
-		// this needs rewriting
-		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
+	{
+		if (pDataInfo->FirstItemAddress.IsValid())
 		{
-			const uint8_t val = state.ReadByte(addr + byte);
+			const int blockWidth = 16;
 
-			for (int pixel = 0; pixel < 2; pixel++)
+			const uint16_t firstItemAddr = pDataInfo->FirstItemAddress.GetAddress();
+			const uint16_t thisItemAddr = addr.GetAddress();
+			const int index = (thisItemAddr - firstItemAddr) / pDataInfo->ByteSize;
+			const uint16_t offset = (firstItemAddr - mappedAddr) + (index * 2);
+			const uint16_t* pPlane0 = (uint16_t*)(pBank->Memory + offset);
+			const uint16_t* pPlane1 = pPlane0 + 16;
+			const uint16_t* pPlane2 = pPlane1 + 16;
+			const uint16_t* pPlane3 = pPlane2 + 16;
+
+			const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
+
+			// this needs to take into account pDataInfo->byteSize
+
+			for (int x = 0; x < blockWidth; x++)
 			{
+				const int bit = (blockWidth - 1) - x;
+			
+				// get pixel colour 0-15
+				const int colIndex = ((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1) & 0xf;
+
 				const ImVec2 rectMin(pos.x, pos.y);
 				const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
 
-				int colourIndex = 0;
-
-				switch (pixel)
+				uint32_t pixelCol;
+				if (colIndex != 0) // 0 is transparent
 				{
-				case 0:
-					colourIndex = (val & 0x80 ? 1 : 0) | (val & 0x8 ? 2 : 0) | (val & 0x20 ? 4 : 0) | (val & 0x2 ? 8 : 0);
-					break;
-				case 1:
-					colourIndex = (val & 0x40 ? 1 : 0) | (val & 0x4 ? 2 : 0) | (val & 0x10 ? 4 : 0) | (val & 0x1 ? 8 : 0);
-					break;
+					pixelCol = pPalette ? pPalette[colIndex] : 0xffffffff;
 				}
-
-				const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
-				const uint32_t pixelCol = pPalette ? pPalette[colourIndex] : colourIndex == 0 ? 0 : 0xffffffff;
+				else
+					pixelCol = 0xff000000;
 
 				dl->AddRectFilled(rectMin, rectMax, pixelCol);
 				dl->AddRect(rectMin, rectMax, 0xffffffff);
@@ -247,7 +262,15 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 				pos.x += rectSize;
 			}
 		}
-		break;
+
+		//pPlane0++;
+		//pPlane1++;
+		//pPlane2++;
+		//pPlane3++;
+
+		//}
+
+	break;
     default:
         break;
 	}
@@ -271,9 +294,11 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 				const ImVec2 rectMax(startPos.x + rectSize, startPos.y + rectSize);
 				dl->AddRect(rectMin, rectMax, 0xffff00ff);
 
-				uint8_t val = state.ReadByte(addr + byteNo);
+				uint8_t val = pBank->Memory[bnkOffset + byteNo];
 				val = val ^ (1 << (7 - bitNo));
-				state.WriteByte(addr + byteNo, val);
+				
+				// todo
+				//state.WriteByte(addr + byteNo, val);
 			}
 		}
 	}
@@ -758,7 +783,7 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::PushStyleColor(ImGuiCol_Text, Colours::defaultValue);
 		ImGui::Text("Bitmap");
 		ImGui::PopStyleColor();
-		offset = DrawDataBitmapLine(state, physAddr, pDataInfo, state.bAllowEditing);
+		offset = DrawDataBitmapLine(state, item.AddressRef, pDataInfo, state.bAllowEditing);
 		break;
 	case EDataType::CharacterMap:
 		ImGui::PushStyleColor(ImGuiCol_Text, Colours::defaultValue);
