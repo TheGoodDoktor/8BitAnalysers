@@ -75,6 +75,7 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 }
 
 // shouldnt this be 256?
+// I think this will only work with sprites 32x32.
 int gTest = 224;
 
 // returns how much space it took
@@ -240,14 +241,15 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 			const int blockIndex = offsetFromStart / kBlockSizeBytes;
 			
 			const int blockGroupIndex = blockIndex / widthBlocks;
+			const uint16_t blockGroupOffset = blockGroupIndex * gTest; 
 
 			const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
 
-			const uint8_t* pMemory = pBank->Memory + bnkOffset;
+			const uint8_t* pMemory = pBank->Memory + bnkOffset + blockGroupOffset;
 
 			for (int b = 0; b < widthBlocks; b++)
 			{
-				const uint16_t* pPlane0 = (uint16_t*)(pMemory + (b  * kBlockSizeBytes + (blockGroupIndex * gTest)));
+				const uint16_t* pPlane0 = (uint16_t*)(pMemory + (b  * kBlockSizeBytes));
 				const uint16_t* pPlane1 = pPlane0 + 16;
 				const uint16_t* pPlane2 = pPlane1 + 16;
 				const uint16_t* pPlane3 = pPlane2 + 16;
