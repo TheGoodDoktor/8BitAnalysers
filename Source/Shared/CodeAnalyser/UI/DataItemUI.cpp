@@ -15,6 +15,8 @@
 #include "Z80/DataItemZ80.h"
 #include "Misc/EmuBase.h"
 
+bool bLog2 = false;
+
 float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, const FDataInfo* pDataInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
@@ -72,6 +74,8 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 
 }
 
+// shouldnt this be 256?
+int gTest = 224;
 
 // returns how much space it took
 float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDataInfo* pDataInfo, bool bEditMode)
@@ -223,52 +227,60 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 	{
 		if (pDataInfo->FirstItemAddress.IsValid())
 		{
-			const int blockWidth = 16;
+			constexpr int kBlockWidth = 16;
+			constexpr int kBlockSizeBytes = 128;
 
 			const uint16_t firstItemAddr = pDataInfo->FirstItemAddress.GetAddress();
 			const uint16_t thisItemAddr = addr.GetAddress();
-			const int index = (thisItemAddr - firstItemAddr) / pDataInfo->ByteSize;
-			const uint16_t offset = (firstItemAddr - mappedAddr) + (index * 2);
-			const uint16_t* pPlane0 = (uint16_t*)(pBank->Memory + offset);
-			const uint16_t* pPlane1 = pPlane0 + 16;
-			const uint16_t* pPlane2 = pPlane1 + 16;
-			const uint16_t* pPlane3 = pPlane2 + 16;
+			const uint16_t offsetFromStart = thisItemAddr - firstItemAddr;
+			const int lineIndex = offsetFromStart / pDataInfo->ByteSize;
+			const uint16_t bnkOffset = (firstItemAddr - mappedAddr) + (lineIndex * 2);
+
+			const int widthBlocks = pDataInfo->ByteSize / (kBlockWidth >> 1);
+			const int blockIndex = offsetFromStart / kBlockSizeBytes;
+			
+			const int blockGroupIndex = blockIndex / widthBlocks;
 
 			const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
 
-			// this needs to take into account pDataInfo->byteSize
+			const uint8_t* pMemory = pBank->Memory + bnkOffset;
 
-			for (int x = 0; x < blockWidth; x++)
+			for (int b = 0; b < widthBlocks; b++)
 			{
-				const int bit = (blockWidth - 1) - x;
-			
-				// get pixel colour 0-15
-				const int colIndex = ((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1) & 0xf;
+				const uint16_t* pPlane0 = (uint16_t*)(pMemory + (b  * kBlockSizeBytes + (blockGroupIndex * gTest)));
+				const uint16_t* pPlane1 = pPlane0 + 16;
+				const uint16_t* pPlane2 = pPlane1 + 16;
+				const uint16_t* pPlane3 = pPlane2 + 16;
 
-				const ImVec2 rectMin(pos.x, pos.y);
-				const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+				if (bLog2)
+					LOGINFO("x %d y %d %x", b, lineIndex, pPlane0);
 
-				uint32_t pixelCol;
-				if (colIndex != 0) // 0 is transparent
+				for (int x = 0; x < kBlockWidth; x++)
 				{
-					pixelCol = pPalette ? pPalette[colIndex] : 0xffffffff;
+					const int bit = (kBlockWidth - 1) - x;
+			
+					// get pixel colour 0-15
+					const int colIndex = ((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1) & 0xf;
+
+					const ImVec2 rectMin(pos.x, pos.y);
+					const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+
+					uint32_t pixelCol;
+					if (colIndex != 0) // 0 is transparent
+					{
+						pixelCol = pPalette ? pPalette[colIndex] : 0xffffffff;
+					}
+					else
+						pixelCol = 0xff000000;
+
+					dl->AddRectFilled(rectMin, rectMax, pixelCol);
+					dl->AddRect(rectMin, rectMax, 0xffffffff);
+
+					pos.x += rectSize;
 				}
-				else
-					pixelCol = 0xff000000;
-
-				dl->AddRectFilled(rectMin, rectMax, pixelCol);
-				dl->AddRect(rectMin, rectMax, 0xffffffff);
-
-				pos.x += rectSize;
 			}
 		}
-
-		//pPlane0++;
-		//pPlane1++;
-		//pPlane2++;
-		//pPlane3++;
-
-		//}
+	}
 
 	break;
     default:
@@ -297,7 +309,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 				uint8_t val = pBank->Memory[bnkOffset + byteNo];
 				val = val ^ (1 << (7 - bitNo));
 				
-				// todo
+				// sam. todo
 				//state.WriteByte(addr + byteNo, val);
 			}
 		}
