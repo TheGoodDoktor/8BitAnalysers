@@ -53,7 +53,9 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			pDataInfo->DataType = FormatOptions.DataType;
 			pDataInfo->DisplayType = FormatOptions.DisplayType;
 
-			pDataInfo->FirstItemAddress = firstAddress;
+			// sam. hacky solution to deal with planar sprite data.
+			if (pDataInfo->DisplayType == EDataItemDisplayType::Sprite4Bpp_PCE)
+				pDataInfo->FirstItemAddress = firstAddress;
 
 			if (FormatOptions.DataType == EDataType::Byte)
 			{
