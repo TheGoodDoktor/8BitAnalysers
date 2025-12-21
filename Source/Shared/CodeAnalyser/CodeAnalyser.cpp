@@ -1135,6 +1135,9 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 			pDataInfo->ReadCount++;
 			pDataInfo->LastFrameRead = state.CurrentFrameNo;
 			pDataInfo->LastRead = state.ExecutionCounter;
+
+			// create addressref for pc here?
+
 			pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(state.AddressRefFromPhysicalAddress(pc));
@@ -1494,6 +1497,9 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	pDataRegions->Clear();
     
     pDataTypes->Reset();
+
+	GlobalDataItems.clear();
+	GlobalFunctions.clear();
 }
 
 // Start/End handlers for host (imgui) frame
