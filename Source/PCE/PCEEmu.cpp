@@ -1066,6 +1066,7 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 	switch (pSnapshot->Type)
 	{
 	case EEmuFileType::PCE:
+	case EEmuFileType::CUE:
 		return pCore->LoadMedia(fileName.c_str());
 	default:
 		return false;

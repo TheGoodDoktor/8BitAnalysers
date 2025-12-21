@@ -16,6 +16,7 @@ enum class EEmuFileType
 	D64,
 	CRT,
 	PCE,
+	CUE,
 
 	Unknown
 };
