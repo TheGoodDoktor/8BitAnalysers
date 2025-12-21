@@ -12,8 +12,9 @@ public:
 		, pPCEEmu(pEmu)
 	{}
 
-	void Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols);
 	void Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, int paletteIndex = 0);
+	void Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols);
+
 protected:
 	FPCEEmu* pPCEEmu = nullptr;
 };
