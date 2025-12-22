@@ -126,7 +126,9 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
                         case 1:
                         {
                             if (is_cpu)
+                            {
                                Debug("Invalid interrupt register read at %04X", address);
+                            }
                                break;
                         }
                         case 2:
@@ -154,11 +156,15 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
             case 0x1C00:
                 // Unused
                 if (is_cpu)
+                {
                    Debug("Unused hardware read at %04X", address);
+                }
                 return 0xFF;
             default:
                   if (is_cpu)
+                  {
                      Debug("Invalid hardware read at %04X", address);
+                  }
                 return 0xFF;
         }
     }

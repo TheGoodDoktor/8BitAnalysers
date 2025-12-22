@@ -7,6 +7,9 @@ struct FPCEConfig : public FGlobalConfig
 {
     bool Init(void) override;
 
+	 std::string BiosPath = "./Bios/";
+	 std::string BiosFilename = "Bios.pce";
+
 protected:
 
 	void ReadFromJson(const nlohmann::json& jsonConfigFile) override;
@@ -15,9 +18,5 @@ protected:
 private:
 
 	// Ensure that paths have a trailing slash.
-	void FixupPaths(void)
-	{
-		FGlobalConfig::FixupPaths();
-	}
-
+	void FixupPaths(void);
 };

@@ -111,21 +111,25 @@ void Memory::Reset()
     m_mpr[7] = 0x00;
 
     int rom_bank_count = (m_media->GetROMSize() / 0x2000) + (m_media->GetROMSize() % 0x2000 ? 1 : 0);
+    
+    // sam. Using the first bank after the cd rom ram as unused memory.
+    const int unused_banks_start = 0x88;
 
     for (int i = 0; i < 7; i++)
     {
        if (m_mpr_reset_value < 0)
        {
-         // Sam. Made initial banks deterministic.
+         // sam. Made initial banks deterministic.
          // Set to unused memory because setting to roms causes issues with bank mapping code.
-         m_mpr[i] = 0x80 + i;
+         m_mpr[i] = unused_banks_start + i;
        }
        else
           m_mpr[i] = m_mpr_reset_value & 0xFF;
     }
 
-    if (!rom_bank_count)
-       m_mpr[7] = 0x80 + 7;
+    // sam. If no rom/cd is loaded then set the last mpr slot to unused memory too. 
+    if (!rom_bank_count && !m_media->IsCDROM())
+       m_mpr[7] = unused_banks_start + 7;
 
     for (int i = 0; i < 0x8000; i++)
     {
