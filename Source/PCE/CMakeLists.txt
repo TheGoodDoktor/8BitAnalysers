@@ -69,6 +69,11 @@ if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE Release)
 endif ()
 
+# MSVC: enable Edit and Continue in Debug builds
+if (MSVC)
+    add_compile_options($<$<CONFIG:Debug>:/ZI>)
+endif()
+
 # program source
 file (GLOB program_src CONFIGURE_DEPENDS
     ./*.cpp ./*.c ./*.h
