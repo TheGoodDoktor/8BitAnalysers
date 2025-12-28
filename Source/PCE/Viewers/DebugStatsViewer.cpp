@@ -20,10 +20,31 @@ bool FDebugStatsViewer::Init()
 	return true;
 }
 
+std::string GetBankType(Memory* pMemory, int bankIndex)
+{
+	switch (pMemory->GetBankType(bankIndex))
+	{
+	case Memory::MEMORY_BANK_TYPE_ROM:
+		return "ROM";
+	case Memory::MEMORY_BANK_TYPE_BIOS:
+		return "BIOS";
+	case Memory::MEMORY_BANK_TYPE_CARD_RAM:
+		return "CARD RAM";
+	case Memory::MEMORY_BANK_TYPE_BACKUP_RAM:
+		return "BACKUP RAM";
+	case Memory::MEMORY_BANK_TYPE_WRAM:
+		return "WORK RAM";
+	case Memory::MEMORY_BANK_TYPE_CDROM_RAM:
+		return "CD ROM RAM";
+	case Memory::MEMORY_BANK_TYPE_UNUSED:
+		return "UNUSED RAM";
+	}
+	return "UNKNOWN";
+}
+
 void FDebugStatsViewer::DrawUI()
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
-	//Memory pMemory = pCE
 
 	int mappedBanks = 0;
 	int banksWithPrimaryMappedPage = 0;
@@ -60,7 +81,7 @@ void FDebugStatsViewer::DrawUI()
 		}
 	}
 
-	const int romSize = pPCEEmu->GetMedia()->GetROMSize();
+	const int romSize = pPCEEmu->GetMedia()->IsCDROM() ? GG_BIOS_SYSCARD_SIZE : pPCEEmu->GetMedia()->GetROMSize();
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 
 	ImGui::SeparatorText("Banks");
@@ -86,14 +107,53 @@ void FDebugStatsViewer::DrawUI()
 		ImGui::TreePop();
 	}
 
+	if (ImGui::TreeNode("Bank list"))
+	{
+		constexpr ImVec4 redColour(1.0f, 0.0f, 0.0f, 1.0f);
+		constexpr ImVec4 whiteColour(1.0f, 1.0f, 1.0f, 1.0f);
+		constexpr ImVec4 yellowColour(1.0f, 1.0f, 0.0f, 1.0f);
+		for (int i = 0; i < 256; i++)
+		{
+			if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->Banks[i]->GetBankId(0)))
+			{
+				const uint8_t* gearGfxMem = pPCEEmu->GetMemory()->GetMemoryMap()[i];
+
+				int index = -1;
+				const Memory::MemoryBankType bankType = pPCEEmu->GetMemory()->GetBankType(i);
+				if (bankType == Memory::MEMORY_BANK_TYPE_ROM || bankType == Memory::MEMORY_BANK_TYPE_BIOS)
+					index = pPCEEmu->GetMedia()->GetRomBankIndex(i);
+				else if (bankType == Memory::MEMORY_BANK_TYPE_CARD_RAM)
+					index = i - pPCEEmu->GetMemory()->GetCardRAMStart();
+
+				const bool bRam = pPCEEmu->GetMemory()->GetMemoryMapWrite()[i];
+				
+				ImVec4 colour;
+				if (gearGfxMem != pBank->Memory)
+					colour = redColour;
+				else if ((bRam && pBank->Mapping != EBankAccess::ReadWrite) || (!bRam && pBank->Mapping != EBankAccess::Read))
+					colour = yellowColour;
+				else
+					colour = whiteColour;
+
+				ImGui::TextColored(colour, "%02x '%s' %02d %s '%s' %s",
+					i, 
+					GetBankType(pPCEEmu->GetMemory(), i).c_str(), 
+					index, 
+					bRam ? "RW" : "R",
+					pBank->Name.c_str(),
+					pBank->Mapping == EBankAccess::Read ? "R" : pBank->Mapping == EBankAccess::ReadWrite ? "RW" : "?");
+			}
+		}
+		ImGui::TreePop();
+	}
 
 	ImGui::SeparatorText("Items");
 	ImGui::Text("Itemlist size: %d", state.ItemList.size());
 	ImGui::Text("Global data items size: %d", state.GlobalDataItems.size());
 	ImGui::Text("Global functions items size: %d", state.GlobalFunctions.size());
 
-	ImGui::SeparatorText("Rom");
-	ImGui::Text("Size: %d", romSize);
+	ImGui::SeparatorText("Rom/Bios");
+	ImGui::Text("Type : %s", pPCEEmu->GetMedia()->IsCDROM() ? "BIOS" : "ROM");
 	ImGui::Text("Bank count : %d", romBankCount);
 
 	ImGui::SeparatorText("Debugger");

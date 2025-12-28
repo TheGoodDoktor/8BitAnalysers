@@ -33,18 +33,21 @@ const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "PCE Analyser";
 
 // Bank constants
-const uint8_t kBankFirstUnused = 0x80;
-const uint8_t kBankSaveRAM = 0xf7;
-const uint8_t kBankWRAM0 = 0xf8;
-const uint8_t kBankWRAM1 = 0xf9;
-const uint8_t kBankWRAM2 = 0xfa;
-const uint8_t kBankWRAM3 = 0xfb;
-const uint8_t kBankHWPage = 0xff;
+constexpr uint8_t kNumCdRomRamBanks = 8;
+
+constexpr uint8_t kBankCdRomRamStart = 0x80;
+constexpr uint8_t kBankUnusedStart = 0x88;
+constexpr uint8_t kBankSaveRAM = 0xf7;
+constexpr uint8_t kBankWRAM0 = 0xf8;
+constexpr uint8_t kBankWRAM1 = 0xf9;
+constexpr uint8_t kBankWRAM2 = 0xfa;
+constexpr uint8_t kBankWRAM3 = 0xfb;
+constexpr uint8_t kBankHWPage = 0xff;
 
 // The default initial address when creating a bank.
 // This will get overwritten later when the bank gets mapped so this is just an arbitrary number.
-const uint16_t kDefaultPrimaryMappedPage = 8;
-const uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAnalysisPage::kPageSize;
+constexpr uint16_t kDefaultPrimaryMappedPage = 8;
+constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAnalysisPage::kPageSize;
 
 #ifndef NDEBUG
 //#define BANK_SWITCH_DEBUG
@@ -225,7 +228,7 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 	}
 }
 
-std::string GetBankType(Memory* pMemory, uint8_t bankIndex)
+/*std::string GetBankType(Memory* pMemory, uint8_t bankIndex)
 {
 	Memory::MemoryBankType bankType = pMemory->GetBankType(bankIndex);
 
@@ -247,7 +250,7 @@ std::string GetBankType(Memory* pMemory, uint8_t bankIndex)
 		return "UNKNOWN";
 	}
 	return "UNKNOWN";
-}
+}*/
 
 // Have we got the same bank index in 2 mpr slots?
 // Note: this wont take into account dupe rom banks that could have a different bank index.
@@ -458,8 +461,8 @@ int16_t FPCEEmu::GetBankForMprSlot(uint8_t bankIndex, uint8_t mprIndex)
 	}
 
 	// If we couldnt find a free bank return an unused bank
-	freeBank = Banks[kBankFirstUnused]->GetFreeBank(mprIndex);
-	MprBankSet[mprIndex] = kBankFirstUnused;
+	freeBank = Banks[kBankUnusedStart]->GetFreeBank(mprIndex);
+	MprBankSet[mprIndex] = kBankUnusedStart;
 	assert(freeBank != -1);
 	return freeBank;
 }
@@ -589,7 +592,10 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
-	//CodeAnalysis.Config.CharacterColourLUT = FZXGraphicsView::GetColourLUT();
+	
+	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
+	const bool bLoadedBios = pCore->LoadBios(fullBiosPath.c_str(), true);
+	LOGINFO("%s Bios '%s'", bLoadedBios ? "Loaded" : "Failed to load", fullBiosPath.c_str());
 
 	std::string bankPostFix[8] = { "", " #2", " #3", " #4", " #5", " #6", " #7", " #8" };
 	char bankName[32];
@@ -597,37 +603,45 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	// Hardware page. (IO)
 	// This is a bit of a hack. We use memory owned by Geargfx.
 	// We write values to it every time a hw page location is read or written to.
-	// To the user, it looks like a normal memory location in the code analysis view.
+	// To the user, it should look like a normal memory location in the code analysis view.
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
 		sprintf(bankName, "HW PAGE%s", bankPostFix[d].c_str());
 		BankSets[kBankHWPage].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pCore->GetMemory()->GetHWPageMemory(), false /*bMachineROM*/, 0x0));
 	}
+
 	// Working RAM
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
 		sprintf(bankName, "WRAM%s", bankPostFix[d].c_str());
 		BankSets[kBankWRAM0].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000));
 	}
+
 	// Save RAM
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
 		sprintf(bankName, "SAVE RAM%s", bankPostFix[d].c_str());
 		BankSets[kBankSaveRAM].AddBankId(CodeAnalysis.CreateBank(bankName, pMemory->GetBackupRAMSize() / 1024, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
-	
-	for (int d = kBankFirstUnused; d < kNumBanks; d++)
-		Banks[d] = &BankSets[kBankFirstUnused];
 
-	Banks[kBankHWPage] = &BankSets[kBankHWPage];
-	Banks[kBankSaveRAM] = &BankSets[kBankSaveRAM];
-	Banks[kBankWRAM0] = &BankSets[kBankWRAM0];
-	Banks[kBankWRAM1] = &BankSets[kBankWRAM0];
-	Banks[kBankWRAM2] = &BankSets[kBankWRAM0];
-	Banks[kBankWRAM3] = &BankSets[kBankWRAM0];
-
+	// CD ROM RAM
 	u8* pUnusedMem = pMemory->GetUnusedMemory();
+	for (int i = 0, b = kBankCdRomRamStart; i < kNumCdRomRamBanks; i++, b++)
+	{
+		for (int d = 0; d < kNumBankSetIds; d++)
+		{
+			sprintf(bankName, "CD RAM %d%s", i, bankPostFix[d].c_str());
+			BankSets[b].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
+		}
+	}
 
+	// move this to reset banks?
+	// do I need this any more?
+	for (int d = kBankUnusedStart; d < kNumBanks; d++)
+		Banks[d] = &BankSets[kBankUnusedStart];
+
+	// ROMs. Create with unused ram initially because the rom memory doesn't exist yet. 
+	// The real memory gets set later after the game gets loaded. 
 	for (int b = 0; b < kNumRomBanks; b++)
 	{
 		for (int d = 0; d < kNumBankSetIds; d++)
@@ -641,7 +655,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	for (int d = 0; d < kNumMprSlots; d++)
 	{
 		sprintf(bankName, "UNUSED %02d", d);
-		BankSets[kBankFirstUnused].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
+		BankSets[kBankUnusedStart].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 
 	ResetBanks();
@@ -741,7 +755,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 void FPCEEmu::ResetBanks()
 {
-	const int romSize = pMedia->GetROMSize();
+	const int romSize = pMedia->IsCDROM() ? GG_BIOS_SYSCARD_SIZE : pMedia->GetROMSize();
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 
 #ifdef BANK_SWITCH_DEBUG
@@ -752,14 +766,65 @@ void FPCEEmu::ResetBanks()
 	for (int bankNo = 0; bankNo < kNumBanks; bankNo++)
 	{
 		BankSets[bankNo].Reset();
+		Banks[bankNo] = &BankSets[kBankUnusedStart];
 	}
 
+	if (pMemory->IsBackupRamEnabled())
+	{
+		Banks[kBankSaveRAM] = &BankSets[kBankSaveRAM];
+	}
+	
+	std::string bankPostFix[8] = { "", " #2", " #3", " #4", " #5", " #6", " #7", " #8" };
+	char bankName[32];
+	
+	if (pMedia->IsCDROM())
+	{
+		// Set cd rom ram banks
+		constexpr int kNumCdRomRamEnd = kBankCdRomRamStart + kNumCdRomRamBanks;
+		for (int i = 0, b = kBankCdRomRamStart; i < kNumCdRomRamBanks; i++, b++)
+		{
+			Banks[b] = &BankSets[b];
+			uint8_t* pBankMemory = pMemory->GetCDROMRAM() + i * 0x2000;
+
+			for (int d = 0; d < kNumBankSetIds; d++)
+			{
+				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId(d));
+				pBank->Memory = pBankMemory;
+			}
+		}
+	}
+
+	Banks[kBankHWPage] = &BankSets[kBankHWPage];
+	Banks[kBankWRAM0] = &BankSets[kBankWRAM0];
+	Banks[kBankWRAM1] = &BankSets[kBankWRAM0];
+	Banks[kBankWRAM2] = &BankSets[kBankWRAM0];
+	Banks[kBankWRAM3] = &BankSets[kBankWRAM0];
+
 	// Set initial rom banks.
-	// todo: explain non sequential nature of rom banks.
 	for (int bankNo = 0; bankNo < 128; bankNo++)
 	{
 		const int bankIndex = romBankCount ? pCore->GetMedia()->GetRomBankIndex(bankNo) : bankNo;
 		Banks[bankNo] = &BankSets[bankIndex];
+	}
+
+	if (pMemory->GetCardRAMSize())
+	{
+		// Set card ram banks
+		const uint8_t cardRamStart = pMemory->GetCardRAMStart();
+		const uint8_t cardRamEnd = pMemory->GetCardRAMEnd();
+		for (uint8_t r = cardRamStart; r <= cardRamEnd; r++)
+		{
+			uint8_t* pBankMemory = pMemory->GetMemoryMap()[r];
+			for (int d = 0; d < kNumBankSetIds; d++)
+			{
+				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[r].GetBankId(d));
+				pBank->Memory = pBankMemory;
+				
+				sprintf(bankName, "CARD RAM %02d%s", r - cardRamStart, bankPostFix[d].c_str());
+				pBank->Name = bankName;
+			}
+			Banks[r] = &BankSets[r];
+		}
 	}
 
 	// Unmap the banks from the mpr slots.
@@ -798,15 +863,19 @@ void FPCEEmu::ResetBanks()
 	BankSets[kBankSaveRAM].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
 	// Patch in the rom memory into the rom banks.
-	for (int bankNo = 0; bankNo < romBankCount; bankNo++)
+	for (int b = 0; b < romBankCount; b++)
 	{
-		BankSets[bankNo].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
+		BankSets[b].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
-		uint8_t* pMemory = pMedia->GetROMMap()[bankNo];
+		uint8_t* pBytes = pMedia->IsCDROM() ? pMedia->GetSysCardBios() : pMedia->GetROM();
+		uint8_t* pBankMemory = pBytes + b * 0x2000;
 		for (int d = 0; d < kNumBankSetIds; d++)
 		{
-			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[bankNo].GetBankId(d));
-			pBank->Memory = pMemory;
+			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId(d));
+			pBank->Memory = pBankMemory;
+
+			sprintf(bankName, "%s %02d%s", pMedia->IsCDROM() ? "BIOS" : "ROM", b, bankPostFix[d].c_str());
+			pBank->Name = bankName;
 		}
 	}
 
