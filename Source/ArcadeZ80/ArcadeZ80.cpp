@@ -384,12 +384,99 @@ bool FArcadeZ80::SaveProject(void)
 uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 {
 	FCodeAnalysisState& state = CodeAnalysis;
-
+	FDebugger& debugger = CodeAnalysis.Debugger;
+	z80_t& cpu = Machine.CPU;
 	const uint16_t pc = GetPC().Address;
+	static uint64_t lastTickPins = 0;
+	const uint64_t risingPins = pins & (pins ^ lastTickPins);
+	lastTickPins = pins;
+	static uint16_t lastScanlinePos = 0;
 
-	// TODO: Z80 instruction analysis
+	/*
+	const uint16_t scanlinePos = (uint16_t)ZXEmuState.scanline_y;
 
-	CodeAnalysis.OnCPUTick(pins);
+	// trigger frame events on scanline pos
+	if (scanlinePos != lastScanlinePos)
+	{
+		if (scanlinePos == 0)	// first scanline
+			CodeAnalysis.OnMachineFrameStart();
+		if (scanlinePos == ZXEmuState.frame_scan_lines)	// last scanline
+			CodeAnalysis.OnMachineFrameEnd();
+	}
+	lastScanlinePos = scanlinePos;
+	*/
+
+	/* memory and IO requests */
+	if (pins & Z80_MREQ)
+	{
+		/* a memory request machine cycle
+			FIXME: 'contended memory' accesses should inject wait states
+		*/
+		const uint16_t addr = Z80_GET_ADDR(pins);
+		const uint8_t value = Z80_GET_DATA(pins);
+		if (pins & Z80_RD)
+		{
+			if (risingPins & Z80_INT)	// check if in interrupt - could this be done in the shared code analysis?
+			{
+				// TODO: read is to fetch interrupt handler address
+				//LOGINFO("Interrupt Handler at: %x", value);
+				const uint8_t im = cpu.im;
+
+				if (im == 2)
+				{
+					const uint8_t i = cpu.i;	// I register has high byte of interrupt vector
+					const uint16_t interruptVector = (i << 8) | 0xff;//value;
+					const uint16_t interruptHandler = state.CPUInterface->ReadWord(interruptVector);
+					bHasInterruptHandler = true;
+					InterruptHandlerAddress = interruptHandler;
+				}
+
+			}
+			else
+			{
+				if (state.bRegisterDataAccesses)
+					RegisterDataRead(state, pc, addr);
+			}
+		}
+		else if (pins & Z80_WR)
+		{
+			if (state.bRegisterDataAccesses)
+				RegisterDataWrite(state, pc, addr, value);
+			const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
+			const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+			state.SetLastWriterForAddress(addr, pcAddrRef);
+
+			/*
+			if (addr >= kScreenPixMemStart && addr <= kScreenPixMemEnd)
+			{
+				debugger.RegisterEvent((uint8_t)EEventType::ScreenPixWrite, pcAddrRef, addr, value, scanlinePos);
+			}
+			else if (addr >= kScreenAttrMemStart && addr < kScreenAttrMemEnd)
+			{
+				debugger.RegisterEvent((uint8_t)EEventType::ScreenAttrWrite, pcAddrRef, addr, value, scanlinePos);
+			}*/
+		}
+	}
+
+	// Handle IO operations
+	if (pins & Z80_IORQ)
+	{
+		const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+		const uint8_t data = Z80_GET_DATA(pins);
+		const uint16_t addr = Z80_GET_ADDR(pins);
+
+		//IOAnalysis.IOHandler(pc, pins);
+
+		if (pins & Z80_RD)
+		{
+			// TODO: Port reads
+		}
+		else if (pins & Z80_WR)
+		{
+			// TODO: Port writes
+			
+		}
+	}
 
 	return pins;
 }

@@ -168,6 +168,8 @@ private:
 	std::deque<uint8_t>			InputBuffer;    
 	int16_t						RamBankId = -1;    // RAM bank ID
 
+	bool						bHasInterruptHandler = false;
+	uint16_t					InterruptHandlerAddress = 0;
     std::set<FAddressRef>    InterruptHandlers;
     uint16_t                PreviousPC = 0;
     std::array<uint8_t, 3 * 256> IOMemBuffer;    // 3 pages
