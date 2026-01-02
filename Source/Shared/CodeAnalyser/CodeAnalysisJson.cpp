@@ -37,8 +37,9 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 	for (int bankNo = 0; bankNo < FCodeAnalysisState::BankCount; bankNo++)
 	{
 		const FCodeAnalysisBank& bank = state.GetBanks()[bankNo];
-		if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
-			continue;
+		
+		//if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
+		//	continue;
 
 		if (bank.PrimaryMappedPage == -1)
 			continue;
@@ -50,6 +51,10 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 
 		//bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
 		jsonGameData["Banks"].push_back(bankJson);
+
+		// sam. moved this from above so BIOS banks get their PMP set
+		if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
+			continue;
 
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
