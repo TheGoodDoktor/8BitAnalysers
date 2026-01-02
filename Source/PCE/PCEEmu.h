@@ -77,6 +77,8 @@ public:
 
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
 
+	void AddBiosLabels();
+
 	// Geargrafx helpers
 	GeargrafxCore* GetCore() const { return pCore; }
 	Memory* GetMemory() const { return pMemory; }

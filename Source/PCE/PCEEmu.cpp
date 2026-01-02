@@ -29,8 +29,16 @@
 
 #include "optick/optick.h"
 
+// I couldn't get this working.
+#define IMPORT_BIOS_ANALYSIS_JSON 0
+#define EXPORT_BIOS_ANALYSIS_JSON 0
+
 const char* kGlobalConfigFilename = "GlobalConfig.json";
 const std::string kAppTitle = "PCE Analyser";
+
+#if IMPORT_BIOS_ANALYSIS_JSON
+const char* kBiosInfoJsonFile = "SysCard3Info.json";
+#endif
 
 // Bank constants
 constexpr uint8_t kNumCdRomRamBanks = 8;
@@ -59,6 +67,7 @@ constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAn
 #define BANK_LOG(...)
 #define BANK_ERROR(...)
 #endif
+
 
 class FPCECPUEmulator6502 : public ICPUEmulator6502
 {
@@ -277,6 +286,30 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 	const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(PrevPC);
 	// Set the PC to the address of the instruction just executed
 	state.Debugger.SetPC(instrAddr);
+
+// Break when code execution flow moves to a bank of a different type.
+// eg going from BIOS to RAM
+#if 0
+	static int prevBank = -1;
+	const int curBank = pc >> 13;
+	const int prevBank = PrevPC >> 13;
+	if (curBank != prevBank)
+	{
+		const Memory::MemoryBankType curBankType = pMemory->GetBankType(pMemory->GetMpr(curBank));
+		const Memory::MemoryBankType prevBankType = pMemory->GetBankType(pMemory->GetMpr(prevBank));
+		if (curBankType != prevBankType)
+		{
+			const FAddressRef curAddr = state.AddressRefFromPhysicalAddress(pc);
+			const uint16_t prevBankId = state.GetBankFromAddress(PrevPC);
+			const uint16_t curBankId = curAddr.GetBankId();
+			FCodeAnalysisBank* pPrevBank = state.GetBank(prevBankId);
+			FCodeAnalysisBank* pCurBank = state.GetBank(curBankId);
+
+			LOGINFO("%s -> %s", pPrevBank->Name.c_str(), pCurBank->Name.c_str());
+			state.Debugger.Break();
+		}
+	}
+#endif
 
 	RegisterCodeExecuted(state, pc, pc);
 
@@ -593,6 +626,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	
+	// todo: check this is system card 3.0.
 	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
 	const bool bLoadedBios = pCore->LoadBios(fullBiosPath.c_str(), true);
 	LOGINFO("%s Bios '%s'", bLoadedBios ? "Loaded" : "Failed to load", fullBiosPath.c_str());
@@ -755,7 +789,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 void FPCEEmu::ResetBanks()
 {
-	const int romSize = pMedia->IsCDROM() ? GG_BIOS_SYSCARD_SIZE : pMedia->GetROMSize();
+	const bool bIsCdRom = pMedia->IsCDROM();
+	const int romSize = bIsCdRom ? GG_BIOS_SYSCARD_SIZE : pMedia->GetROMSize();
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 
 #ifdef BANK_SWITCH_DEBUG
@@ -777,7 +812,7 @@ void FPCEEmu::ResetBanks()
 	std::string bankPostFix[8] = { "", " #2", " #3", " #4", " #5", " #6", " #7", " #8" };
 	char bankName[32];
 	
-	if (pMedia->IsCDROM())
+	if (bIsCdRom)
 	{
 		// Set cd rom ram banks
 		constexpr int kNumCdRomRamEnd = kBankCdRomRamStart + kNumCdRomRamBanks;
@@ -867,15 +902,17 @@ void FPCEEmu::ResetBanks()
 	{
 		BankSets[b].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
-		uint8_t* pBytes = pMedia->IsCDROM() ? pMedia->GetSysCardBios() : pMedia->GetROM();
+		uint8_t* pBytes = bIsCdRom ? pMedia->GetSysCardBios() : pMedia->GetROM();
 		uint8_t* pBankMemory = pBytes + b * 0x2000;
 		for (int d = 0; d < kNumBankSetIds; d++)
 		{
 			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId(d));
 			pBank->Memory = pBankMemory;
 
-			sprintf(bankName, "%s %02d%s", pMedia->IsCDROM() ? "BIOS" : "ROM", b, bankPostFix[d].c_str());
+			sprintf(bankName, "%s %02d%s", bIsCdRom ? "BIOS" : "ROM", b, bankPostFix[d].c_str());
 			pBank->Name = bankName;
+
+			pBank->bMachineROM = bIsCdRom;
 		}
 	}
 
@@ -1019,9 +1056,20 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		LOGINFO("done");
 	}
 
+#if IMPORT_BIOS_ANALYSIS_JSON
+	if (pMedia->IsCDROM())
+	{
+		if (FileExists(GetBundlePath(kBiosInfoJsonFile)))
+			ImportAnalysisJson(CodeAnalysis, GetBundlePath(kBiosInfoJsonFile));
+	}
+#else
+	AddBiosLabels();
+#endif
+
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
+
 
 	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0), "VDC_AR_0000", ELabelType::Data);
@@ -1077,6 +1125,58 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	return true;
 }
 
+void FPCEEmu::AddBiosLabels()
+{
+	FCodeAnalysisState& state = GetCodeAnalysis();
+	constexpr int kNumBiosFuncs = 77;
+	const char* funcNames[kNumBiosFuncs] = {
+		"CD_BOOT",		"CD_RESET",		"CD_BASE",		"CD_READ",		"CD_SEEK",		"CD_EXEC",		"CD_PLAY",		"CD_SEARCH",
+		"CD_PAUSE",		"CD_STAT",		"CD_SUBQ",		"CD_DINFO",		"CD_CONTNTS",	"CD_SUBRD",		"CD_PCMRD",		"CD_FADE",
+		"AD_RESET",		"AD_TRANS",		"AD_READ",		"AD_WRITE",		"AD_PLAY",		"AD_CPLAY",		"AD_STOP",		"AD_STAT",
+		"BM_FORMAT",	"BM_FREE",		"BM_READ",		"BM_WRITE",		"BM_DELETE",	"BM_FILES",		"EX_GETVER",	"EX_SETVEC",
+		"EX_GETFNT",	"EX_JOYSNS",	"EX_JOYREP",	"EX_SCRSIZ",	"EX_DOTMOD",	"EX_SCRMOD",	"EX_IMODE",		"EX_VMODE",
+		"EX_HMODE",		"EX_VSYNC",		"EX_RCRON",		"EX_RCROFF",	"EX_IRQON",		"EX_IRQOFF",	"EX_BGON",		"EX_BGOFF",
+		"EX_SPRON",		"EX_SPROFF",	"EX_DSPON",		"EX_DSPOFF",	"EX_DMAMOD",	"EX_SPRDMA",	"EX_SATCLR",	"EX_SPRPUT",
+		"EX_SETRCR",	"EX_SETRED",	"EX_SETWRT",	"EX_SETDMA",	"EX_BINBCD",	"EX_BCDBIN",	"EX_RND",		"MA_MUL8U",
+		"MA_MUL8S",		"MA_MUL16U",	"MA_DIV16S",	"MA_DIV16U",	"MA_SQRT",		"MA_SIN",		"MA_COS",		"MA_ATNI",
+		"PSG_BIOS",		"GRP_BIOS",		"EX_MEMOPEN",	"PSG_DRIVER",	"EX_COLORCMD"
+	};
+
+	// Add labels for the jump table. This will be the same for all system card revisions.
+	uint16_t baseAddr = 0xe000;
+	for (int i = 0; i < kNumBiosFuncs; i++)
+	{
+		const FAddressRef addr = state.AddressRefFromPhysicalAddress(baseAddr + i * 3);
+		SetItemCode(state, addr);
+		AddLabel(state, addr, funcNames[i], ELabelType::Function);
+	}
+
+	// System Card 3.0 routine addresses.
+	// Info taken from https://www.stum.de/2025/pcenginebiosoffsets/
+	const uint16_t funcAddrs[kNumBiosFuncs] = {
+		0xE0F3, 0xE8E3, 0xEB8F, 0xEC05, 0xEDCB, 0xEBEC, 0xEE10, 0xEF34,
+		0xEF94, 0xF347, 0xEFBF, 0xEFF1, 0xF0A9, 0xF354, 0xF364, 0xF379,
+		0xF37F, 0xF393, 0xF407, 0xF4D8, 0xF5C6, 0xF61F, 0xF6C1, 0xF6DB,
+		0xF858, 0xF8B8, 0xF8E3, 0xF955, 0xFA1A, 0xFA72, 0xF02D, 0xF034,
+		0xF124, 0xE49A, 0xE175, 0xE267, 0xE272, 0xE29D, 0xE382, 0xE391,
+		0xE3A4, 0xE3B5, 0xE3C7, 0xE3CB, 0xE3CF, 0xE3D3, 0xE3E2, 0xE3E5,
+		0xE3E8, 0xE3EB, 0xE3EE, 0xE3F3, 0xE3F8, 0xE40B, 0xE5DA, 0xE63C,
+		0xE41F, 0xE42F, 0xE446, 0xE45D, 0xE621, 0xE600, 0xE67E, 0xFDC6,
+		0xFDBF, 0xFDD4, 0xFDE2, 0xFDE9, 0xFDF0, 0xFDFE, 0xFDF7, 0xFE05,
+		0xFE0C, 0xFE57, 0xFE92, 0xE6CF, 0xE509 
+	};
+
+	// Add labels for the routines themselves.
+	// Games shouldn't call these directly.
+	for (int i = 0; i < kNumBiosFuncs; i++)
+	{
+		const FAddressRef addr = state.AddressRefFromPhysicalAddress(funcAddrs[i]);
+		SetItemCode(state, addr);
+		const std::string name = std::string("_") + funcNames[i];
+		AddLabel(state, addr, name.c_str(), ELabelType::Function);
+	}
+}
+
 static const uint32_t kMachineStateMagic = 0xFaceCafe;
 
 bool FPCEEmu::SaveMachineState(const char* fname)
@@ -1120,6 +1220,11 @@ bool FPCEEmu::SaveProject()
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 	//pGraphicsViewer->SaveGraphicsSets(graphicsSetsJsonFName.c_str());
+
+#if EXPORT_BIOS_ANALYSIS_JSON
+	const std::string romJsonFName = GetBundlePath(kBiosInfoJsonFile);
+	ExportAnalysisJson(CodeAnalysis, romJsonFName.c_str(), true);	// export ROMS only
+#endif
 
 	return true;
 }

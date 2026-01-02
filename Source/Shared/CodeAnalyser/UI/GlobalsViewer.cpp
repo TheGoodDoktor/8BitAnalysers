@@ -415,7 +415,7 @@ void FGlobalsViewer::DrawGlobals()
 		bRebuildFilteredGlobalDataItems = true;
 	}
 	ImGui::SameLine();
-	if (ImGui::Checkbox("ROM", &ShowROMLabels))
+	if (ImGui::Checkbox("BIOS", &ShowROMLabels))
 	{
 		GlobalFunctionsFilter.bNoMachineRoms = !ShowROMLabels;
 		GlobalDataItemsFilter.bNoMachineRoms = !ShowROMLabels;
