@@ -125,6 +125,17 @@ void *LoadBinaryFile(const char *pFilename, size_t &byteCount)
 	return pFileData;
 }
 
+bool LoadBinaryFileToMem(const char* pFilename, void* pMem, size_t size)
+{
+	FILE* fp = fopen(pFilename, "rb");
+	if (fp == nullptr)
+		return false;
+
+	fread(pMem, size, 1, fp);
+	fclose(fp);
+	return true;
+}
+
 bool SaveTextFile(const char* pFilename, const char* pText)
 {
     FILE* fp = fopen(pFilename, "wt");

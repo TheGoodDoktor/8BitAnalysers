@@ -57,7 +57,9 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	desc.Debug.callback.user_data = this;
 	desc.Debug.stopped = CodeAnalysis.Debugger.GetDebuggerStoppedPtr();
 
-	Machine.Init(desc);
+	pMachine = new FTimePilotMachine;
+	pMachine->Init(desc);
+	pMachine->SetupCodeAnalysisForMachine(CodeAnalysis);
 
 	//Display.Init(this);
 
@@ -65,10 +67,10 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
 
 	// Set up memory banks
-	RamBankId = CodeAnalysis.CreateBank("RAM", 64, Machine.RAM, false, 0x0000, true);					// RAM - $0000 - $FFFF - pages 0-63 - 64K
+	//RamBankId = CodeAnalysis.CreateBank("RAM", 62, pMachine->RAM, false, 0x0000, true);					// RAM - $0000 - $DFFF - pages 0-61 - 62K
 
 	// map in banks
-	CodeAnalysis.MapBank(RamBankId, 0, EBankAccess::ReadWrite);
+	//CodeAnalysis.MapBank(RamBankId, 0, EBankAccess::ReadWrite);
 
 	// setup code analysis
 	CodeAnalysis.Init(this);
@@ -104,7 +106,7 @@ bool FArcadeZ80::LoadBinaries(void)
 {
 	// TODO: load ROM binaries
 
-	return false;
+	return true;
 }
 
 void FArcadeZ80::Shutdown()
@@ -118,7 +120,8 @@ void FArcadeZ80::Shutdown()
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 
-	Machine.Shutdown();
+	pMachine->Shutdown();
+	delete pMachine;
 
 	FEmuBase::Shutdown();
 }
@@ -156,7 +159,7 @@ void FArcadeZ80::Tick()
 		CodeAnalysis.OnFrameStart();
 		//StoreRegisters_6502(CodeAnalysis);
 
-		Machine.Exec((uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
+		pMachine->Exec((uint32_t)std::max(static_cast<uint32_t>(frameTime), uint32_t(1)));
 
 		CodeAnalysis.OnFrameEnd();
 	}
@@ -173,7 +176,7 @@ void FArcadeZ80::Reset()
 {
 	FEmuBase::Reset();
 
-	Machine.Reset();
+	pMachine->Reset();
 }
 
 void FArcadeZ80::FixupAddressRefs()
@@ -237,7 +240,7 @@ bool FArcadeZ80::SaveMachineState(const char* fname)
 		const uint32_t versionNo = ARCADEZ80_SNAPSHOT_VERSION;
 		fwrite(&kMachineStateMagic, sizeof(uint32_t), 1, fp);
 		fwrite(&versionNo, sizeof(uint32_t), 1, fp);
-		Machine.SaveSnapshot(fp); // save the machine state
+		pMachine->SaveSnapshot(fp); // save the machine state
 
 		fclose(fp);
 		return true;
@@ -259,7 +262,7 @@ bool FArcadeZ80::LoadMachineState(const char* fname)
 	if (magic == kMachineStateMagic)
 	{
 		fread(&versionNo, sizeof(uint32_t), 1, fp);
-		bSuccess = Machine.LoadSnapshot(fp, versionNo); // load the machine state
+		bSuccess = pMachine->LoadSnapshot(fp, versionNo); // load the machine state
 	}
 	fclose(fp);
 	return bSuccess;
@@ -332,12 +335,12 @@ bool FArcadeZ80::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	// Start in break mode so the memory will be in its initial state. 
 	CodeAnalysis.Debugger.Break();
 
-	CodeAnalysis.Debugger.RegisterNewStackPointer(Machine.CPU.sp, FAddressRef());
+	CodeAnalysis.Debugger.RegisterNewStackPointer(pMachine->CPU.sp, FAddressRef());
 
 	// some extra initialisation for creating new analysis from snapshot
 	if (bLoadGameData == false)
 	{
-		FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(Machine.CPU.pc);
+		FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(pMachine->CPU.pc);
 		SetItemCode(CodeAnalysis, initialPC);
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
@@ -385,7 +388,7 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 {
 	FCodeAnalysisState& state = CodeAnalysis;
 	FDebugger& debugger = CodeAnalysis.Debugger;
-	z80_t& cpu = Machine.CPU;
+	z80_t& cpu = pMachine->CPU;
 	const uint16_t pc = GetPC().Address;
 	static uint64_t lastTickPins = 0;
 	const uint64_t risingPins = pins & (pins ^ lastTickPins);

@@ -1,0 +1,165 @@
+{
+    "Banks": [
+        {
+            "Description": "",
+            "Id": 3,
+            "Name": "RAM"
+        }
+    ],
+    "DataTypes": {
+        "Enums": null,
+        "Flags": null,
+        "NextItemId": 0,
+        "Structs": null
+    },
+    "Pages": [
+        {
+            "LabelInfo": [
+                {
+                    "Address": 0,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_6000"
+                }
+            ],
+            "PageId": 24
+        },
+        {
+            "PageId": 25
+        },
+        {
+            "PageId": 26
+        },
+        {
+            "PageId": 27
+        },
+        {
+            "PageId": 28
+        },
+        {
+            "PageId": 29
+        },
+        {
+            "PageId": 30
+        },
+        {
+            "PageId": 31
+        },
+        {
+            "PageId": 32
+        },
+        {
+            "PageId": 33
+        },
+        {
+            "PageId": 34
+        },
+        {
+            "PageId": 35
+        },
+        {
+            "PageId": 36
+        },
+        {
+            "PageId": 37
+        },
+        {
+            "PageId": 38
+        },
+        {
+            "PageId": 39
+        },
+        {
+            "PageId": 40
+        },
+        {
+            "PageId": 41
+        },
+        {
+            "PageId": 42
+        },
+        {
+            "PageId": 43
+        },
+        {
+            "PageId": 44
+        },
+        {
+            "PageId": 45
+        },
+        {
+            "PageId": 46
+        },
+        {
+            "PageId": 47
+        },
+        {
+            "LabelInfo": [
+                {
+                    "Address": 512,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_C200"
+                },
+                {
+                    "Address": 768,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_C300"
+                },
+                {
+                    "Address": 776,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_C308"
+                }
+            ],
+            "PageId": 48
+        },
+        {
+            "PageId": 49
+        },
+        {
+            "PageId": 50
+        },
+        {
+            "PageId": 51
+        },
+        {
+            "PageId": 52
+        },
+        {
+            "PageId": 53
+        },
+        {
+            "PageId": 54
+        },
+        {
+            "PageId": 55
+        },
+        {
+            "PageId": 56
+        },
+        {
+            "PageId": 57
+        },
+        {
+            "PageId": 58
+        },
+        {
+            "PageId": 59
+        },
+        {
+            "PageId": 60
+        },
+        {
+            "PageId": 61
+        },
+        {
+            "PageId": 62
+        },
+        {
+            "PageId": 63
+        }
+    ]
+}

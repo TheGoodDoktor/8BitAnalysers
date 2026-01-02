@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <vector>
 #include "Debug/DebugLog.h"
+#include "Util/FileUtil.h"
+#include "CodeAnalyser/CodeAnalyser.h"
 
 #define CHIPS_ASSERT(c) assert(c)
 
@@ -28,7 +30,13 @@ bool FArcadeZ80Machine::Init(const FArcadeZ80MachineDesc& desc)
 	mem_init(&Memory);
 
 	// 64K RAM
-	mem_map_ram(&Memory, 0, 0x0000, 0x10000, RAM);
+	//mem_map_ram(&Memory, 0, 0x0000, 0x10000, RAM);
+	
+	if (InitMachine(desc) == false)
+	{
+		LOGERROR("Unable to init specific machine");
+		return false;
+	}
 
 	return true;
 }
@@ -145,4 +153,40 @@ bool FArcadeZ80Machine::LoadSnapshot(FILE* fp, uint32_t version)
 	Memory = loadMemory;
 
 	return true;
+}
+
+
+// Time Pilot Specifics
+bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
+{
+	// TODO: Load ROMS etc.
+
+	LoadBinaryFileToMem("Roms/TimePilot/tm1", ROM1, 0x2000);
+	LoadBinaryFileToMem("Roms/TimePilot/tm2", ROM2, 0x2000);
+	LoadBinaryFileToMem("Roms/TimePilot/tm3", ROM3, 0x2000);
+
+	
+
+	return true;
+}
+
+void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis)
+{
+	// Set up memory banks
+	ROM1BankId = codeAnalysis.CreateBank("ROM1", 8, ROM1, true, 0x0000, true);
+	ROM2BankId = codeAnalysis.CreateBank("ROM2", 8, ROM2, true, 0x2000, true);
+	ROM3BankId = codeAnalysis.CreateBank("ROM3", 8, ROM3, true, 0x4000, true);
+
+	// map in banks
+	codeAnalysis.MapBank(ROM1BankId, 0, EBankAccess::ReadWrite);
+	codeAnalysis.MapBank(ROM2BankId, 8, EBankAccess::ReadWrite);
+	codeAnalysis.MapBank(ROM3BankId, 16, EBankAccess::ReadWrite);
+	mem_map_rom(&Memory, 0, 0x0000, 0x2000, ROM1);
+	mem_map_rom(&Memory, 0, 0x2000, 0x2000, ROM2);
+	mem_map_rom(&Memory, 0, 0x4000, 0x2000, ROM3);
+
+	// RAM
+	RAMBankId = codeAnalysis.CreateBank("RAM", 40, RAM, false, 0x6000, true);					// RAM - $6000 - $FFFF - pages 24-63 - 40K
+	codeAnalysis.MapBank(RAMBankId, 24, EBankAccess::ReadWrite);
+	mem_map_ram(&Memory, 0, 0x6000, 40 * 1024, RAM);
 }

@@ -12,6 +12,7 @@
 
 #define ARCADEZ80_SNAPSHOT_VERSION (1)
 
+class FCodeAnalysisState;
 
 struct FArcadeZ80MachineDesc
 {
@@ -22,6 +23,8 @@ class FArcadeZ80Machine
 {
 public:
 	bool Init(const FArcadeZ80MachineDesc& desc);
+	virtual bool InitMachine(const FArcadeZ80MachineDesc& desc) = 0;
+	virtual void SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis) = 0;
 	void Shutdown();
 	void Reset();
 	uint32_t Exec(uint32_t microSeconds);
@@ -46,4 +49,48 @@ public:
 
 	// memory
 	uint8_t		RAM[0x10000];		// 64K RAM
+
+};
+
+class FTimePilotMachine : public FArcadeZ80Machine
+{
+public:
+	bool InitMachine(const FArcadeZ80MachineDesc& desc) override;
+	void SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis) override;
+
+	// Game ROMS
+	uint8_t		ROM1[0x2000];	// 0x0000 - 0x1FFF
+	uint8_t		ROM2[0x2000];	// 0x2000 - 0x3FFF
+	uint8_t		ROM3[0x2000];	// 0x4000 - 0x5FFF
+
+	uint8_t		AudioROM[0x1000];	
+
+	// GFX ROMS
+	uint8_t		TilesROM[0x2000];
+	uint8_t		SpriteROM1[0x2000];
+	uint8_t		SpriteROM2[0x2000];
+
+	// PROMS
+	uint8_t		Palette1PROM[0x20];
+	uint8_t		Palette2PROM[0x20];
+	uint8_t		SpriteLUTPROM[0x0100];
+	uint8_t		CharLUTPROM[0x0140];
+
+	// RAM
+	uint8_t		VideoRAM[0x800];
+	uint8_t		ColourRAM[0x400];
+	uint8_t		SpriteRAM[0x800];
+
+	// Bank Ids
+	int16_t		ROM1BankId;
+	int16_t		ROM2BankId;
+	int16_t		ROM3BankId;
+	int16_t		RAMBankId;
+
+	//int16_t		TileROMBankId;
+	//int16_t		SpriteROM1BankId;
+	//int16_t		SpriteROM2BankId;
+
+	//int16_t		VideoRAMBankId;
+	//int16_t		SpriteRAMBankId;
 };

@@ -65,20 +65,20 @@ public:
     // Begin ICPUInterface interface implementation
     uint8_t        ReadByte(uint16_t address) const override
     {
-        return mem_rd(const_cast<mem_t*>(&Machine.Memory), address);
+        return mem_rd(const_cast<mem_t*>(&pMachine->Memory), address);
     }
     uint16_t    ReadWord(uint16_t address) const override
     {
-        return mem_rd16(const_cast<mem_t*>(&Machine.Memory), address);
+        return mem_rd16(const_cast<mem_t*>(&pMachine->Memory), address);
     }
     const uint8_t* GetMemPtr(uint16_t address) const override
     {
-        return mem_readptr(const_cast<mem_t*>(&Machine.Memory), address);
+        return mem_readptr(const_cast<mem_t*>(&pMachine->Memory), address);
     }
 
     void WriteByte(uint16_t address, uint8_t value) override
     {
-        mem_wr(&Machine.Memory, address, value);
+        mem_wr(&pMachine->Memory, address, value);
     }
 
     FAddressRef GetPC() override
@@ -88,12 +88,12 @@ public:
 
     uint16_t    GetSP(void) override
     {
-		return Machine.CPU.sp;
+		return pMachine->CPU.sp;
     }
 
     void* GetCPUEmulator(void) const override
     {
-        return (void*)&Machine.CPU;
+        return (void*)&pMachine->CPU;
     }
 
     // End ICPUInterface interface implementation
@@ -122,7 +122,7 @@ public:
 
     uint64_t    OnCPUTick(uint64_t pins);
 
-	FArcadeZ80Machine& GetMachine() { return Machine; }
+	FArcadeZ80Machine& GetMachine() { return *pMachine; }
 	const FArcadeZ80Debug& GetDebug() { return Debug;}
 
 	void AddInputByte(uint8_t byte)
@@ -155,10 +155,10 @@ public:
 		return true;
 	}
 
-private:
+protected:
 
 	bool	LoadBinaries(void);
-	FArcadeZ80Machine			Machine;
+	FArcadeZ80Machine*			pMachine = nullptr;
 	FArcadeZ80LaunchConfig		LaunchConfig;
 	FArcadeZ80Config*			pConfig = nullptr;
 	FArcadeZ80Debug				Debug;
@@ -172,7 +172,6 @@ private:
 	uint16_t					InterruptHandlerAddress = 0;
     std::set<FAddressRef>    InterruptHandlers;
     uint16_t                PreviousPC = 0;
-    std::array<uint8_t, 3 * 256> IOMemBuffer;    // 3 pages
 
     static uint32_t        ColourPalette[16];
 

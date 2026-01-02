@@ -37,6 +37,7 @@ bool FileExists(const char *pFilename);
 char *LoadTextFile(const char *pFilename);
 bool SaveTextFile(const char* pFileName, const char* pText);
 void *LoadBinaryFile(const char *pFilename, size_t &byteCount);
+bool LoadBinaryFileToMem(const char* pFilename, void* pMem, size_t size);
 bool SaveBinaryFile(const char *pFilename, const void * pData, size_t byteCount);
 
 void WriteStringToFile(const std::string& str, FILE* fp);
