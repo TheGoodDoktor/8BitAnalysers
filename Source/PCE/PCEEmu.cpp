@@ -994,6 +994,12 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 			return false;
 		}
 
+		if (pMedia->IsCDROM() && !pMedia->IsLoadedBios())
+		{
+			LOGERROR("A bios is required to load this rom");
+			return false;
+		}
+
 		if (!LoadMachineState(gameRoot.c_str()))
 		{
 			return false;
