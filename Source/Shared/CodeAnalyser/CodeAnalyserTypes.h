@@ -203,7 +203,7 @@ struct FAddressRef
 	void SetAddress(uint16_t address);
 	void SetVal(uint32_t val);
 	void SetBankId(int16_t bankId) { BankId = bankId;	}
-	bool IsValid() const { return BankId != -1; }
+	bool IsValid() const;
 	void SetInvalid() { BankId = -1; }
 	bool operator<(const FAddressRef& other) const { return GetVal() < other.GetVal(); }
 	bool operator<=(const FAddressRef& other) const { return GetVal() <= other.GetVal(); }
