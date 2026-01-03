@@ -1994,4 +1994,24 @@ void FAddressRef::SetVal(uint32_t val)
 		BankOffset = addr - mappedAddress;
 	}
 }
+bool FAddressRef::IsValid() const 
+{ 
+	if (BankId < 0)
+		return false;
+
+#ifndef NDEBUG
+	if (BankId >= FCodeAnalysisState::BankCount)
+		return false;
+
+	const FCodeAnalysisBank& bank = Banks[BankId];
+	
+	if (bank.PrimaryMappedPage == -1)
+		return false;
+	
+	if (BankOffset >= (bank.NoPages * FCodeAnalysisPage::kPageSize))
+		return false;
+#endif
+
+	return true;
+}
 #endif
