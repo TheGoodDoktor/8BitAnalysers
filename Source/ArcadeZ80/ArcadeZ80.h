@@ -15,6 +15,30 @@
 
 class FTubeCommand;
 
+enum class EEventType : uint8_t
+{
+	None = 0,
+	WriteVideoRAM,
+	WriteColorRAM,
+
+	ReadVideoScanline,
+	ReadDSW2,
+	ReadIN0,
+	ReadIN1,
+	ReadIN2,
+	ReadDSW1,
+
+	SendAudioCommand,
+	WatchdogReset,
+	InterruptEnable,
+	FlipScreen,
+	TriggerAudioInterrupt,
+	VideoEnable,
+	CoinCounter1,
+	CoinCounter2,
+
+};
+
 
 struct FArcadeZ80LaunchConfig : public FEmulatorLaunchConfig
 {
@@ -121,6 +145,8 @@ public:
     //const FBBCBankIds&    GetBankIds() const { return BankIds; }
 
     uint64_t    OnCPUTick(uint64_t pins);
+	void		OnInstructionExecuted(int ticks, uint64_t pins);
+
 
 	FArcadeZ80Machine& GetMachine() { return *pMachine; }
 	const FArcadeZ80Debug& GetDebug() { return Debug;}
@@ -170,8 +196,9 @@ protected:
 
 	bool						bHasInterruptHandler = false;
 	uint16_t					InterruptHandlerAddress = 0;
-    std::set<FAddressRef>    InterruptHandlers;
-    uint16_t                PreviousPC = 0;
+    std::set<FAddressRef>		InterruptHandlers;
+    uint16_t					PreviousPC = 0;
+	int							InstructionsTicks = 0;
 
     static uint32_t        ColourPalette[16];
 

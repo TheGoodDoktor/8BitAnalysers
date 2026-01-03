@@ -1,13 +1,13 @@
 {
     "AsmExportPath": "",
     "Machine": "",
-    "Name": "ArcadeZ80",
+    "Name": "TimePilot",
     "Options": {
         "ViewConfigs": [
             {
                 "Enabled": true,
-                "ViewAddress": 0,
-                "ViewAddressBank": -1
+                "ViewAddress": 22017,
+                "ViewAddressBank": 2
             },
             {
                 "Enabled": false,

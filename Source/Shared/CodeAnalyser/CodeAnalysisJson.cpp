@@ -27,6 +27,11 @@ void FixupPostLoad(FCodeAnalysisState& state);
 
 bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bool bExportMachineROM)
 {
+	return ExportAnalysisJson(state, pJsonFileName, bExportMachineROM ? EExportAnalysis::ROM : EExportAnalysis::RAM);
+}
+
+bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, EExportAnalysis exportType)
+{
 	json jsonGameData;
 
 	int pagesWritten = 0;
@@ -36,7 +41,10 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
 	{
 		const FCodeAnalysisBank& bank = banks[bankNo];
-		if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
+		// skip banks we don't want to export
+		if (exportType == EExportAnalysis::RAM && bank.bMachineROM == true)
+			continue;
+		if (exportType == EExportAnalysis::ROM && bank.bMachineROM == false)
 			continue;
 
 		json bankJson;
@@ -118,7 +126,10 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 	{
 		const FFunctionInfo& function = functionIt.second;
 
-		if (function.bROMFunction != bExportMachineROM)	// skip machine ROM functions
+		// filter out functions 
+		if (exportType == EExportAnalysis::RAM && function.bROMFunction == true)
+			continue;
+		if (exportType == EExportAnalysis::ROM && function.bROMFunction == false)
 			continue;
 
 		json functionJson;

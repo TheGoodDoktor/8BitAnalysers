@@ -2,8 +2,18 @@
     "Banks": [
         {
             "Description": "",
-            "Id": 3,
-            "Name": "RAM"
+            "Id": 0,
+            "Name": "ROM1"
+        },
+        {
+            "Description": "",
+            "Id": 1,
+            "Name": "ROM2"
+        },
+        {
+            "Description": "",
+            "Id": 2,
+            "Name": "ROM3"
         }
     ],
     "DataTypes": {
@@ -14,152 +24,90 @@
     },
     "Pages": [
         {
-            "LabelInfo": [
+            "CodeInfo": [
                 {
                     "Address": 0,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_6000"
+                    "ByteSize": 3,
+                    "OperandType": 2
                 }
             ],
-            "PageId": 24
-        },
-        {
-            "PageId": 25
-        },
-        {
-            "PageId": 26
-        },
-        {
-            "PageId": 27
-        },
-        {
-            "PageId": 28
-        },
-        {
-            "PageId": 29
-        },
-        {
-            "PageId": 30
-        },
-        {
-            "PageId": 31
-        },
-        {
-            "PageId": 32
-        },
-        {
-            "PageId": 33
-        },
-        {
-            "PageId": 34
-        },
-        {
-            "PageId": 35
-        },
-        {
-            "PageId": 36
-        },
-        {
-            "PageId": 37
-        },
-        {
-            "PageId": 38
-        },
-        {
-            "PageId": 39
-        },
-        {
-            "PageId": 40
-        },
-        {
-            "PageId": 41
-        },
-        {
-            "PageId": 42
-        },
-        {
-            "PageId": 43
-        },
-        {
-            "PageId": 44
-        },
-        {
-            "PageId": 45
-        },
-        {
-            "PageId": 46
-        },
-        {
-            "PageId": 47
+            "PageId": 0
         },
         {
             "LabelInfo": [
                 {
-                    "Address": 512,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_C200"
-                },
-                {
-                    "Address": 768,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_C300"
-                },
-                {
-                    "Address": 776,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_C308"
+                    "Address": 945,
+                    "LabelType": 2,
+                    "Name": "label_07B1"
                 }
             ],
-            "PageId": 48
+            "PageId": 1
         },
         {
-            "PageId": 49
+            "PageId": 2
         },
         {
-            "PageId": 50
+            "PageId": 3
         },
         {
-            "PageId": 51
+            "PageId": 4
         },
         {
-            "PageId": 52
+            "PageId": 5
         },
         {
-            "PageId": 53
+            "PageId": 6
         },
         {
-            "PageId": 54
+            "PageId": 7
         },
         {
-            "PageId": 55
+            "PageId": 8
         },
         {
-            "PageId": 56
+            "PageId": 9
         },
         {
-            "PageId": 57
+            "PageId": 10
         },
         {
-            "PageId": 58
+            "PageId": 11
         },
         {
-            "PageId": 59
+            "PageId": 12
         },
         {
-            "PageId": 60
+            "PageId": 13
         },
         {
-            "PageId": 61
+            "PageId": 14
         },
         {
-            "PageId": 62
+            "PageId": 15
         },
         {
-            "PageId": 63
+            "PageId": 16
+        },
+        {
+            "PageId": 17
+        },
+        {
+            "PageId": 18
+        },
+        {
+            "PageId": 19
+        },
+        {
+            "PageId": 20
+        },
+        {
+            "PageId": 21
+        },
+        {
+            "PageId": 22
+        },
+        {
+            "PageId": 23
         }
     ]
 }

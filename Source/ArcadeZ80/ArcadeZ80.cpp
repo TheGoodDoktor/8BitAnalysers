@@ -10,6 +10,8 @@
 #include <Debug/DebugLog.h>
 #include <algorithm>
 #include "SaveGame.h"
+#include "CodeAnalyser/UI/OverviewViewer.h"
+#include "CodeAnalyser/UI/CharacterMapViewer.h"
 
 // TODO: Load Arcade Z80 binaries
 
@@ -48,6 +50,13 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 
 	LoadFont();
+
+	// This is where we add the viewers we want
+	AddViewer(new FOverviewViewer(this));	// TODO: put in base class?
+	pCharacterMapViewer = new FCharacterMapViewer(this);
+	AddViewer(pCharacterMapViewer);
+	pCharacterMapViewer->SetGridSize(32, 32);
+	pCharacterMapViewer->SetGridStride(32);
 
 	// setup machine
 	FArcadeZ80MachineDesc desc = {};
@@ -88,9 +97,33 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 			return false;
 		}
 		pArcadeZ80Config = CreateNewArcadeZ80Config();
+
+		pArcadeZ80Config = new FArcadeZ80ProjectConfig;
+
+		pArcadeZ80Config->Name = "TimePilot";
 	}
 
 	LoadProject(pArcadeZ80Config, true);
+
+	// Setup Debugger
+	FDebugger& debugger = CodeAnalysis.Debugger;
+	//debugger.RegisterEventType((int)EEventType::None, "None", 0);
+	debugger.RegisterEventType((int)EEventType::WriteVideoRAM, "Video RAM Write", 0xff0000ff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::WriteColorRAM, "Color RAM Write", 0xff00ffff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::ReadVideoScanline, "Video Scanline Read", 0xffffff00, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::ReadDSW2, "DSW2 Read", 0xffff00ff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::ReadIN0, "IN0 Read", 0xff00ff00, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::ReadIN1, "IN1 Read", 0xff0000ff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::ReadIN2, "IN2 Read", 0xff00ffff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::ReadDSW1, "DSW1 Read", 0xffffff00, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::SendAudioCommand, "Send Audio Command", 0xffff00ff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::WatchdogReset, "Watchdog Reset", 0xff00ff00, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::InterruptEnable, "Interrupt Enable", 0xff0000ff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::FlipScreen, "Flip Screen", 0xff00ffff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::TriggerAudioInterrupt, "Trigger Audio Interrupt", 0xffffff00, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::VideoEnable, "Video Enable", 0xffff00ff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::CoinCounter1, "Coin Counter 1", 0xff00ff00, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::CoinCounter2, "Coin Counter 2", 0xff0000ff, nullptr, nullptr);
 
 
 	return true;
@@ -149,6 +182,7 @@ void FArcadeZ80::Tick()
 	FEmuBase::Tick();
 		
 	//Display.Tick();
+	CodeAnalysis.OnMachineFrameStart();
 	
 	FDebugger& debugger = CodeAnalysis.Debugger;
 	
@@ -164,7 +198,7 @@ void FArcadeZ80::Tick()
 		CodeAnalysis.OnFrameEnd();
 	}
 
-
+	CodeAnalysis.OnMachineFrameEnd();
 
 	// Draw UI
 	DrawDockingView();
@@ -338,7 +372,7 @@ bool FArcadeZ80::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	CodeAnalysis.Debugger.RegisterNewStackPointer(pMachine->CPU.sp, FAddressRef());
 
 	// some extra initialisation for creating new analysis from snapshot
-	if (bLoadGameData == false)
+	//if (bLoadGameData == false)
 	{
 		FAddressRef initialPC = CodeAnalysis.AddressRefFromPhysicalAddress(pMachine->CPU.pc);
 		SetItemCode(CodeAnalysis, initialPC);
@@ -378,7 +412,7 @@ bool FArcadeZ80::SaveProject(void)
 	SaveGameConfigToFile(*pCurrentProjectConfig, configFName.c_str());
 
 	//SaveMachineState(saveStateFName.c_str());
-	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
+	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str(), EExportAnalysis::Both);
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 
 	return false;
@@ -439,6 +473,20 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 			{
 				if (state.bRegisterDataAccesses)
 					RegisterDataRead(state, pc, addr);
+
+				if(addr == 0xC000)
+					debugger.RegisterEvent((uint8_t)EEventType::ReadVideoScanline, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+				else if (addr == 0xC200)
+					debugger.RegisterEvent((uint8_t)EEventType::ReadDSW2, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+				else if (addr == 0xC300)
+					debugger.RegisterEvent((uint8_t)EEventType::ReadIN0, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+				else if (addr == 0xC320)
+					debugger.RegisterEvent((uint8_t)EEventType::ReadIN1, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+				else if (addr == 0xC340)
+					debugger.RegisterEvent((uint8_t)EEventType::ReadIN2, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+				else if (addr == 0xC360)
+					debugger.RegisterEvent((uint8_t)EEventType::ReadDSW1, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+
 			}
 		}
 		else if (pins & Z80_WR)
@@ -449,15 +497,26 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 			const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
 			state.SetLastWriterForAddress(addr, pcAddrRef);
 
-			/*
-			if (addr >= kScreenPixMemStart && addr <= kScreenPixMemEnd)
-			{
-				debugger.RegisterEvent((uint8_t)EEventType::ScreenPixWrite, pcAddrRef, addr, value, scanlinePos);
-			}
-			else if (addr >= kScreenAttrMemStart && addr < kScreenAttrMemEnd)
-			{
-				debugger.RegisterEvent((uint8_t)EEventType::ScreenAttrWrite, pcAddrRef, addr, value, scanlinePos);
-			}*/
+			if (addr >= 0xA400 && addr <= 0xA7FF)
+				debugger.RegisterEvent((uint8_t)EEventType::WriteVideoRAM, pcAddrRef, addr, value, 0);
+			else if (addr >= 0xA000 && addr < 0xA3FF)
+				debugger.RegisterEvent((uint8_t)EEventType::WriteColorRAM, pcAddrRef, addr, value, 0);
+			else if(addr == 0xC000)
+				debugger.RegisterEvent((uint8_t)EEventType::SendAudioCommand, pcAddrRef, addr, value, 0);
+			else if (addr == 0xC200)
+				debugger.RegisterEvent((uint8_t)EEventType::WatchdogReset, pcAddrRef, addr, value, 0);
+			else if (addr == 0xC300)
+				debugger.RegisterEvent((uint8_t)EEventType::InterruptEnable, pcAddrRef, addr, value, 0);
+			else if (addr == 0xC302)
+				debugger.RegisterEvent((uint8_t)EEventType::FlipScreen, pcAddrRef, addr, value, 0);
+			else if (addr == 0xC304)
+				debugger.RegisterEvent((uint8_t)EEventType::TriggerAudioInterrupt, pcAddrRef, addr, value, 0);
+			else if (addr == 0xC308)
+				debugger.RegisterEvent((uint8_t)EEventType::VideoEnable, pcAddrRef, addr, value, 0);
+			else if (addr == 0xC30A)
+				debugger.RegisterEvent((uint8_t)EEventType::CoinCounter1, pcAddrRef, addr, value, 0);
+			else if (addr == 0xC30C)
+				debugger.RegisterEvent((uint8_t)EEventType::CoinCounter2, pcAddrRef, addr, value, 0);
 		}
 	}
 
@@ -481,7 +540,30 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 		}
 	}
 
+	InstructionsTicks++;
+
+	const bool bNewOp = z80_opdone(&pMachine->CPU);
+
+	if (bNewOp)
+	{
+		OnInstructionExecuted(InstructionsTicks, pins);
+		InstructionsTicks = 0;
+	}
+
+	CodeAnalysis.OnCPUTick(pins);
+
 	return pins;
+}
+
+void	FArcadeZ80::OnInstructionExecuted(int ticks, uint64_t pins)
+{
+	FCodeAnalysisState& state = CodeAnalysis;
+	const uint16_t pc = pins & 0xffff;	// set PC to pc of instruction just executed
+
+	RegisterCodeExecuted(state, pc, PreviousPC);
+	//MemoryHandlerTrapFunction(pc, ticks, pins, this);
+
+	PreviousPC = pc;
 }
 
 

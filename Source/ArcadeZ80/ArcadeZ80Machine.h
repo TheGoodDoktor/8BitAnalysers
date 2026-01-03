@@ -41,6 +41,9 @@ public:
 	mem_t			Memory;	// cpu memory
 	chips_debug_t	Debug;
 	uint32_t		TickCounter;
+	int			VSyncCount = 0;
+	int			VBlankCount = 0;
+	bool		NMIMask = false;
 
 	static const int kTubePollInterval = 100;	
 	uint32_t		TubePollCounter = 0;
@@ -49,6 +52,8 @@ public:
 
 	// memory
 	uint8_t		RAM[0x10000];		// 64K RAM
+
+
 
 };
 
@@ -67,14 +72,14 @@ public:
 
 	// GFX ROMS
 	uint8_t		TilesROM[0x2000];
-	uint8_t		SpriteROM1[0x2000];
-	uint8_t		SpriteROM2[0x2000];
+	uint8_t		SpriteROM[0x4000];
 
 	// PROMS
-	uint8_t		Palette1PROM[0x20];
-	uint8_t		Palette2PROM[0x20];
-	uint8_t		SpriteLUTPROM[0x0100];
-	uint8_t		CharLUTPROM[0x0140];
+	uint8_t		PROMs[0x0240];
+	//uint8_t		Palette1PROM[0x20];
+	//uint8_t		Palette2PROM[0x20];
+	//uint8_t		SpriteLUTPROM[0x0040];
+	//uint8_t		CharLUTPROM[0x0140];
 
 	// RAM
 	uint8_t		VideoRAM[0x800];
@@ -93,4 +98,9 @@ public:
 
 	//int16_t		VideoRAMBankId;
 	//int16_t		SpriteRAMBankId;
+
+	int32_t		TicksPerFrame = 0;
+	int32_t		FrameTicks = 0;
+
+
 };

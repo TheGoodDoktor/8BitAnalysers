@@ -9,8 +9,9 @@
 
 #define CHIPS_ASSERT(c) assert(c)
 
-#define TUBE_FREQUENCY (3000000)	// clock frequency in Hz 
-
+#define CPU_FREQUENCY (3000000)	// clock frequency in Hz 
+#define VSYNC_PERIOD_4MHZ (CPU_FREQUENCY/60)
+#define VBLANK_DURATION_4MHZ (((CPU_FREQUENCY/60)/525)*(525-483))
 
 // initialize a new tube elite instance
 bool FArcadeZ80Machine::Init(const FArcadeZ80MachineDesc& desc)
@@ -31,6 +32,10 @@ bool FArcadeZ80Machine::Init(const FArcadeZ80MachineDesc& desc)
 
 	// 64K RAM
 	//mem_map_ram(&Memory, 0, 0x0000, 0x10000, RAM);
+
+	// calculate number of ticks for VBlank (60Hz)
+	//TicksPerFrame = clk_us_to_ticks(CPU_FREQUENCY, 16 * 1000);
+	//FrameTicks = 0;
 	
 	if (InitMachine(desc) == false)
 	{
@@ -62,23 +67,55 @@ void FArcadeZ80Machine::TickCPU()
 	Pins = z80_tick(&CPU, Pins);
 
 	// TODOL: handle memory accesses
-	
+	if (Pins & Z80_MREQ)
+	{
+		// TODO: Handle memory mapped ports
+		
+		// a memory request
+		const uint16_t addr = Z80_GET_ADDR(Pins);
+		if (Pins & Z80_RD) 
+		{
+			Z80_SET_DATA(Pins, mem_rd(&Memory, addr));
+		}
+		else if (Pins & Z80_WR) 
+		{
+			mem_wr(&Memory, addr, Z80_GET_DATA(Pins));
+		}
+	}
 
 	
 }
+
+
 
 void FArcadeZ80Machine::Tick()
 {
 	CHIPS_ASSERT(bValid);
 
-	// tick the CPU & CRTC at alternate cycles
-	// not sure if we need this and it causes problems with stepping in the debugger
-	//if ((sys->tick_counter & 1) == 0)
+	// activate NMI pin during VBLANK
+	VSyncCount--;
+	if (VSyncCount < 0) 
 	{
-		//pins = _tube_elite_tick_cpu(sys, pins);
-		TickCPU();
+		VSyncCount += VSYNC_PERIOD_4MHZ;
+		VBlankCount = VBLANK_DURATION_4MHZ;
 	}
-	
+	if (VBlankCount != 0) 
+	{
+		VBlankCount--;
+		if (VBlankCount < 0) 
+			VBlankCount = 0;
+	}
+	if (NMIMask && (VBlankCount > 0))
+	{		
+		Pins |= Z80_NMI;
+	}
+	else 
+	{		
+		Pins &= ~Z80_NMI;
+	}
+
+	TickCPU();
+
 	TickCounter++;
 }
 
@@ -86,7 +123,7 @@ void FArcadeZ80Machine::Tick()
 uint32_t FArcadeZ80Machine::Exec(uint32_t microSeconds)
 {
 	CHIPS_ASSERT(bValid);
-	const uint32_t numTicks = clk_us_to_ticks(TUBE_FREQUENCY, microSeconds);
+	const uint32_t numTicks = clk_us_to_ticks(CPU_FREQUENCY, microSeconds);
 	if (Debug.callback.func == nullptr)
 	{
 		// run without debug hook
@@ -165,8 +202,19 @@ bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
 	LoadBinaryFileToMem("Roms/TimePilot/tm2", ROM2, 0x2000);
 	LoadBinaryFileToMem("Roms/TimePilot/tm3", ROM3, 0x2000);
 
-	
+	LoadBinaryFileToMem("Roms/TimePilot/tm4", SpriteROM, 0x2000);
+	LoadBinaryFileToMem("Roms/TimePilot/tm5", SpriteROM + 0x2000, 0x2000);
 
+	LoadBinaryFileToMem("Roms/TimePilot/tm6", TilesROM, 0x2000);
+
+	// Code for Audio CPU
+	LoadBinaryFileToMem("Roms/TimePilot/tm7", AudioROM, 0x1000);
+
+	// PROMS
+	LoadBinaryFileToMem("Roms/TimePilot/timeplt.b4", PROMs + 0x0000, 0x0020);
+	LoadBinaryFileToMem("Roms/TimePilot/timeplt.b5", PROMs + 0x0020, 0x0020);
+	LoadBinaryFileToMem("Roms/TimePilot/timeplt.e9", PROMs + 0x0040, 0x0100);
+	LoadBinaryFileToMem("Roms/TimePilot/timeplt.e12", PROMs + 0x0140, 0x0100);
 	return true;
 }
 
