@@ -1062,20 +1062,19 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		LOGINFO("done");
 	}
 
-#if IMPORT_BIOS_ANALYSIS_JSON
 	if (pMedia->IsCDROM())
 	{
+#if IMPORT_BIOS_ANALYSIS_JSON
 		if (FileExists(GetBundlePath(kBiosInfoJsonFile)))
 			ImportAnalysisJson(CodeAnalysis, GetBundlePath(kBiosInfoJsonFile));
-	}
 #else
-	AddBiosLabels();
+		AddBiosLabels();
 #endif
+	}
 
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
-
 
 	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
 	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0), "VDC_AR_0000", ELabelType::Data);
@@ -1181,6 +1180,11 @@ void FPCEEmu::AddBiosLabels()
 		const std::string name = std::string("_") + funcNames[i];
 		AddLabel(state, addr, name.c_str(), ELabelType::Function);
 	}
+
+	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(0), 0x2227), "joyena", ELabelType::Data, 1);
+	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(0), 0x2228), "joy", ELabelType::Data, 5);
+	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(0), 0x222d), "joytrg", ELabelType::Data, 5);
+	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(0), 0x2232), "joyold", ELabelType::Data, 5);
 }
 
 static const uint32_t kMachineStateMagic = 0xFaceCafe;
