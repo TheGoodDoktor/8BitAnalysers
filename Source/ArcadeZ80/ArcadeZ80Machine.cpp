@@ -6,6 +6,9 @@
 #include "Debug/DebugLog.h"
 #include "Util/FileUtil.h"
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "Util/GraphicsView.h"
+#include "imgui.h"
+#include "ImGuiSupport/ImGuiScaling.h"
 
 #define CHIPS_ASSERT(c) assert(c)
 
@@ -59,6 +62,21 @@ void FArcadeZ80Machine::Reset()
 	CHIPS_ASSERT(bValid);
 
 	Pins |= Z80_RES;
+}
+
+void FArcadeZ80Machine::Update()
+{
+	UpdateScreen();
+}
+
+void FArcadeZ80Machine::DrawUI()
+{
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	if (pScreen != nullptr)
+	{
+		pScreen->Draw();
+	}
+	DrawDebugOverlays(pos.x,pos.y);
 }
 
 //uint64_t _tube_elite_tick_cpu(tube_elite_t* sys, uint64_t pins)
@@ -288,6 +306,17 @@ bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
 	LoadBinaryFileToMem("Roms/TimePilot/timeplt.b5", PROMs + 0x0020, 0x0020);
 	LoadBinaryFileToMem("Roms/TimePilot/timeplt.e9", PROMs + 0x0040, 0x0100);
 	LoadBinaryFileToMem("Roms/TimePilot/timeplt.e12", PROMs + 0x0140, 0x0100);
+	
+	
+	// Graphics
+	pScreen = new FGraphicsView(256,256);
+
+	pVideoRAM = &RAM[0xa400];
+	pColourRAM = &RAM[0xa000];
+	pSpriteRAM[0] = &RAM[0xB000];
+	pSpriteRAM[1] = &RAM[0xB400];
+
+	
 	return true;
 }
 
@@ -310,4 +339,85 @@ void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnal
 	RAMBankId = codeAnalysis.CreateBank("RAM", 40, RAM, false, 0x6000, true);					// RAM - $6000 - $FFFF - pages 24-63 - 40K
 	codeAnalysis.MapBank(RAMBankId, 24, EBankAccess::ReadWrite);
 	mem_map_ram(&Memory, 0, 0x6000, 40 * 1024, RAM);
+
+
+}
+
+void FTimePilotMachine::DrawCharMap(bool bPriority)
+{
+	// TODO: update the screen image using the VideoRAM & ColourRAM
+	for (int yc = 0; yc < 32; yc++)
+	{
+		for (int xc = 0; xc < 32; xc++)
+		{
+			const int charIndex = xc + (yc * 32);
+			const uint8_t attr = ColourRAM[charIndex];
+			const uint8_t vidChar = VideoRAM[charIndex] + 8 * (attr & 0x20);
+			const uint8_t colour = attr & 0x01f;
+			const bool bFlipX = (attr & 0x40) != 0;
+			const bool bFlipY = (attr & 0x80) != 0;
+			const uint8_t category = (attr & 0x10) >> 4;	// ??
+
+			// TODO: draw char at (xc*8, yc*8)
+			//pScreen->DrawCharacter8x8(xc * 8, yc * 8, vidChar, colour, bFlipX, bFlipY);
+		}
+	}
+}
+
+void FTimePilotMachine::DrawSprites()
+{
+	for (int offs = 0x3e; offs >= 0x10; offs -= 2)
+	{
+		int const sx = pSpriteRAM[0][offs];
+		int const sy = 241 - pSpriteRAM[1][offs + 1];
+
+		int const code = pSpriteRAM[0][offs + 1];
+		int const color = pSpriteRAM[1][offs] & 0x3f;
+		int const flipx = ~pSpriteRAM[1][offs] & 0x40;
+		int const flipy = pSpriteRAM[1][offs] & 0x80;
+
+		/*m_gfxdecode->gfx(1)->transpen(bitmap, cliprect,
+			code,
+			color,
+			flipx, flipy,
+			sx, sy, 0);
+			*/
+	}
+}
+
+void FTimePilotMachine::DrawDebugOverlays(float x, float y)
+{
+	const ImVec2 pos(x,y);
+	const float scale = ImGui_GetScaling();
+	ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+	for (int offs = 0x3e; offs >= 0x10; offs -= 2)
+	{
+		int const sx = pSpriteRAM[0][offs];
+		int const sy = 241 - pSpriteRAM[1][offs + 1];
+
+		int const code = pSpriteRAM[0][offs + 1];
+		int const color = pSpriteRAM[1][offs] & 0x3f;
+		int const flipx = ~pSpriteRAM[1][offs] & 0x40;
+		int const flipy = pSpriteRAM[1][offs] & 0x80;
+
+
+		pDrawList->AddRect(
+			ImVec2(pos.x + sx * scale, pos.y + sy * scale),
+			ImVec2(pos.x + (sx + 16) * scale, pos.y + (sy + 16) * scale),
+			IM_COL32(255, 0, 0, 255));
+		/*m_gfxdecode->gfx(1)->transpen(bitmap, cliprect,
+			code,
+			color,
+			flipx, flipy,
+			sx, sy, 0);
+			*/
+	}
+}
+
+void FTimePilotMachine::UpdateScreen()
+{
+	DrawCharMap(false);
+	DrawSprites();
+	DrawCharMap(true);
 }

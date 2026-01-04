@@ -167,9 +167,8 @@ void FArcadeZ80::DrawEmulatorUI()
 {
 	if (ImGui::Begin("ArcadeZ80 Viewer"))
 	{
+		pMachine->DrawUI();
 		DrawDebugUI(Debug);
-		const uint16_t kLastSaveAddr = 0x1019; // last save game address
-		const uint16_t kCurrentStatusAddr = 0x08A4;
 	}
 	ImGui::End();
 
@@ -182,6 +181,8 @@ void FArcadeZ80::Tick()
 	FEmuBase::Tick();
 		
 	//Display.Tick();
+	pMachine->Update();
+
 	CodeAnalysis.OnMachineFrameStart();
 	
 	FDebugger& debugger = CodeAnalysis.Debugger;

@@ -13,6 +13,7 @@
 #define ARCADEZ80_SNAPSHOT_VERSION (1)
 
 class FCodeAnalysisState;
+class FGraphicsView;
 
 struct FArcadeZ80MachineDesc
 {
@@ -25,6 +26,10 @@ public:
 	bool Init(const FArcadeZ80MachineDesc& desc);
 	virtual bool InitMachine(const FArcadeZ80MachineDesc& desc) = 0;
 	virtual void SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis) = 0;
+	virtual void UpdateScreen() {}
+	virtual void DrawDebugOverlays(float x, float y) {}
+	void Update();
+	void DrawUI();
 	void Shutdown();
 	void Reset();
 	uint32_t Exec(uint32_t microSeconds);
@@ -53,7 +58,7 @@ public:
 	// memory
 	uint8_t		RAM[0x10000];		// 64K RAM
 
-
+	FGraphicsView*	pScreen = nullptr;
 
 };
 
@@ -62,6 +67,11 @@ class FTimePilotMachine : public FArcadeZ80Machine
 public:
 	bool InitMachine(const FArcadeZ80MachineDesc& desc) override;
 	void SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis) override;
+	void UpdateScreen() override;
+
+	void DrawDebugOverlays(float x,float y) override;
+	void DrawCharMap(bool bPriority);
+	void DrawSprites();
 
 	// Game ROMS
 	uint8_t		ROM1[0x2000];	// 0x0000 - 0x1FFF
@@ -102,5 +112,7 @@ public:
 	int32_t		TicksPerFrame = 0;
 	int32_t		FrameTicks = 0;
 
-
+	uint8_t*	pVideoRAM = nullptr;
+	uint8_t*	pColourRAM = nullptr;
+	uint8_t*	pSpriteRAM[2] = {nullptr, nullptr};
 };

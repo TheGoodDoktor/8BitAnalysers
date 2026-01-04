@@ -680,6 +680,15 @@
         },
         {
             "Description": "",
+            "EndAddress": 757923841,
+            "StartAddress": 757923841,
+            "bManualEdit": false,
+            "bROMFunction": true,
+            "bStubImplemented": false,
+            "bStubbedOut": false
+        },
+        {
+            "Description": "",
             "EndAddress": 758513665,
             "StartAddress": 758513665,
             "bManualEdit": false,
@@ -33208,6 +33217,12 @@
                     "Name": "data_A9AC"
                 },
                 {
+                    "Address": 429,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A9AD"
+                },
+                {
                     "Address": 430,
                     "Global": true,
                     "LabelType": 0,
@@ -34040,6 +34055,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "VideoEnable"
+                },
+                {
+                    "Address": 800,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_C320"
                 },
                 {
                     "Address": 864,
