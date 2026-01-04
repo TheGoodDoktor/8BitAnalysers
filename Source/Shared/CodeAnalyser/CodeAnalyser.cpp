@@ -1695,6 +1695,8 @@ void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterf
 
 void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr)
 {
+	FAddressRef oldAddr = addr;
+
 	if (const FCodeAnalysisBank* pBank = state.GetBank(addr.BankId))
 	{
 #ifndef NDEBUG
@@ -1706,6 +1708,11 @@ void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr)
 		const uint16_t bankOffset = (addr.Address & pBank->SizeMask);
 		addr.Address = pBank->GetMappedAddress() + bankOffset;
 		assert(pBank->AddressValid(addr.Address));
+	}
+
+	if (oldAddr.Val != addr.Val)
+	{
+		LOGINFO("Fixed AddressRef 0x%08X to 0x%08X", oldAddr.Val, addr.Val);
 	}
 }
 

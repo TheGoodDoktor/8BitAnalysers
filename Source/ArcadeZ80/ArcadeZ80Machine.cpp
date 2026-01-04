@@ -75,11 +75,84 @@ void FArcadeZ80Machine::TickCPU()
 		const uint16_t addr = Z80_GET_ADDR(Pins);
 		if (Pins & Z80_RD) 
 		{
-			Z80_SET_DATA(Pins, mem_rd(&Memory, addr));
-		}
+			uint8_t value = 0;
+
+			if (addr == 0xC000)	// video scan line
+			{ 
+				value = 0;	// TODO:
+			}
+			
+			else if (addr == 0xC300)	// IN0
+			{
+				value = 0xff;
+			}
+			else if (addr == 0xC320)	// IN1
+			{
+				value = 0xff;
+			}
+			else if (addr == 0xC340)	// IN2
+			{
+				value = 0xff;
+			}
+			else if (addr == 0xC360)	// DSW0
+			{
+				// Dip switch 0 - freeplay
+				value = 0;
+			}
+			else if (addr == 0xC200)	// DSW1
+			{
+				// Dip switch 1
+					// bits 0-1 : lives
+					// bit	2	: Cocktail / Upright
+					// bit  3	: Bonus life at 10k/50k or 20k/60k
+					// bits 4-6 : difficulty 0-7, 0 = most difficult
+					// bit	7	: Demo sounds on/off
+
+				value = (3 << 0) |	// lives
+					(0 << 2) |	// upright
+					(0 << 3) |	// bonus life 10k/50k
+					(4 << 4) |	// medium difficulty
+					(1 << 7);	// demo sounds on 
+			}
+			else
+			{ 
+				value = mem_rd(&Memory, addr);
+			}
+
+			Z80_SET_DATA(Pins, value);
+		}	
 		else if (Pins & Z80_WR) 
 		{
-			mem_wr(&Memory, addr, Z80_GET_DATA(Pins));
+			if (addr == 0xC000)	// write audio command
+			{
+
+			}
+			else if (addr == 0xC200)	// watchdog reset
+			{
+			}
+			else if (addr == 0xC300)	// interrupt enable
+			{
+				NMIMask = (Z80_GET_DATA(Pins) & 0x01) ? true : false;
+			}
+			else if (addr == 0xC302)	// flip screen
+			{
+			}
+			else if (addr == 0xC304)	// trigger audio interrupt
+			{
+			}
+			else if (addr == 0xC308)	// video enable
+			{
+			}
+			else if (addr == 0xC30A)	// coin counter 1
+			{
+			}
+			else if (addr == 0xC30C)	// coin counter 2
+			{
+			}
+			else
+			{
+				mem_wr(&Memory, addr, Z80_GET_DATA(Pins));
+			}
 		}
 	}
 

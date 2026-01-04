@@ -376,11 +376,12 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 		{
 			FCharMapCreateParams params;
 			
+			params.bAddLabel = true;
 			if (charMap.contains("Address"))	// legacy
 				params.Address = state.AddressRefFromPhysicalAddress(charMap["Address"]);
 			if (charMap.contains("AddressRef"))
 				params.Address.Val = charMap["AddressRef"];
-			FixupAddressRef(state, params.Address);
+			//FixupAddressRef(state, params.Address);
 
 			params.Width = charMap["Width"];
 			params.Height = charMap["Height"];
