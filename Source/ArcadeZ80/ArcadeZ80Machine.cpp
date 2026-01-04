@@ -97,7 +97,7 @@ void FArcadeZ80Machine::TickCPU()
 
 			if (addr == 0xC000)	// video scan line
 			{ 
-				value = 0;	// TODO:
+				value = VCounter;	// Update value with VCounter for video scan line
 			}
 			
 			else if (addr == 0xC300)	// IN0
@@ -183,6 +183,17 @@ void FArcadeZ80Machine::Tick()
 {
 	CHIPS_ASSERT(bValid);
 
+	HCounter++;
+	if (HCounter >= 342) 
+	{
+		HCounter = 0;
+		VCounter++;
+		if (VCounter >= 525) 
+		{
+			VCounter = 0;
+		}
+	}
+
 	// activate NMI pin during VBLANK
 	VSyncCount--;
 	if (VSyncCount < 0) 
@@ -190,11 +201,12 @@ void FArcadeZ80Machine::Tick()
 		VSyncCount += VSYNC_PERIOD_4MHZ;
 		VBlankCount = VBLANK_DURATION_4MHZ;
 	}
-	if (VBlankCount != 0) 
+	if (VBlankCount != 0) // in VBLANK
 	{
 		VBlankCount--;
 		if (VBlankCount < 0) 
 			VBlankCount = 0;
+		VCounter = 0;
 	}
 	if (NMIMask && (VBlankCount > 0))
 	{		
@@ -311,10 +323,10 @@ bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
 	// Graphics
 	pScreen = new FGraphicsView(256,256);
 
-	pVideoRAM = &RAM[0xa400];
-	pColourRAM = &RAM[0xa000];
-	pSpriteRAM[0] = &RAM[0xB000];
-	pSpriteRAM[1] = &RAM[0xB400];
+	pVideoRAM = &RAM[0xa400 - 0x6000];
+	pColourRAM = &RAM[0xa000 - 0x6000];
+	pSpriteRAM[0] = &RAM[0xB000 - 0x6000];
+	pSpriteRAM[1] = &RAM[0xB400 - 0x6000];
 
 	
 	return true;

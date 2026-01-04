@@ -48,6 +48,8 @@ public:
 	uint32_t		TickCounter;
 	int			VSyncCount = 0;
 	int			VBlankCount = 0;
+	int			VCounter = 0;
+	int			HCounter = 0;
 	bool		NMIMask = false;
 
 	static const int kTubePollInterval = 100;	
