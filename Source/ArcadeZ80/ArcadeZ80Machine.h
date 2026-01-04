@@ -69,6 +69,7 @@ class FTimePilotMachine : public FArcadeZ80Machine
 public:
 	bool InitMachine(const FArcadeZ80MachineDesc& desc) override;
 	void SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis) override;
+	void SetupPalette();
 	void UpdateScreen() override;
 
 	void DrawDebugOverlays(float x,float y) override;
@@ -87,16 +88,16 @@ public:
 	uint8_t		SpriteROM[0x4000];
 
 	// PROMS
-	uint8_t		PROMs[0x0240];
-	//uint8_t		Palette1PROM[0x20];
+	//uint8_t		PROMs[0x0240];
+	uint8_t		PalettePROM[0x40];
 	//uint8_t		Palette2PROM[0x20];
-	//uint8_t		SpriteLUTPROM[0x0040];
-	//uint8_t		CharLUTPROM[0x0140];
+	uint8_t		SpriteLUTPROM[0x0100];
+	uint8_t		CharLUTPROM[0x0100];
 
 	// RAM
-	uint8_t		VideoRAM[0x800];
-	uint8_t		ColourRAM[0x400];
-	uint8_t		SpriteRAM[0x800];
+	//uint8_t		VideoRAM[0x800];
+	//uint8_t		ColourRAM[0x400];
+	//uint8_t		SpriteRAM[0x800];
 
 	// Bank Ids
 	int16_t		ROM1BankId;
@@ -117,4 +118,8 @@ public:
 	uint8_t*	pVideoRAM = nullptr;
 	uint8_t*	pColourRAM = nullptr;
 	uint8_t*	pSpriteRAM[2] = {nullptr, nullptr};
+
+	uint32_t	Palette[32];
+	uint32_t    TileColours[32][4];
+	uint32_t	SpriteColours[64][4];
 };

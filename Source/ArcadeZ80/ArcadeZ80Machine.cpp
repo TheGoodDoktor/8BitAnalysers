@@ -314,11 +314,12 @@ bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
 	LoadBinaryFileToMem("Roms/TimePilot/tm7", AudioROM, 0x1000);
 
 	// PROMS
-	LoadBinaryFileToMem("Roms/TimePilot/timeplt.b4", PROMs + 0x0000, 0x0020);
-	LoadBinaryFileToMem("Roms/TimePilot/timeplt.b5", PROMs + 0x0020, 0x0020);
-	LoadBinaryFileToMem("Roms/TimePilot/timeplt.e9", PROMs + 0x0040, 0x0100);
-	LoadBinaryFileToMem("Roms/TimePilot/timeplt.e12", PROMs + 0x0140, 0x0100);
+	LoadBinaryFileToMem("Roms/TimePilot/timeplt.b4", PalettePROM + 0x0000, 0x0020);
+	LoadBinaryFileToMem("Roms/TimePilot/timeplt.b5", PalettePROM + 0x0020, 0x0020);
+	LoadBinaryFileToMem("Roms/TimePilot/timeplt.e9", SpriteLUTPROM, 0x0100);
+	LoadBinaryFileToMem("Roms/TimePilot/timeplt.e12", CharLUTPROM, 0x0100);
 	
+	SetupPalette();
 	
 	// Graphics
 	pScreen = new FGraphicsView(256,256);
@@ -331,6 +332,93 @@ bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
 	
 	return true;
 }
+
+/***************************************************************************
+
+  Convert the color PROMs into a more useable format.
+
+  Time Pilot has two 32x8 palette PROMs and two 256x4 lookup table PROMs
+  (one for characters, one for sprites).
+  The palette PROMs are connected to the RGB output this way:
+
+  bit 7 -- 390 ohm resistor  -- BLUE
+		-- 470 ohm resistor  -- BLUE
+		-- 560 ohm resistor  -- BLUE
+		-- 820 ohm resistor  -- BLUE
+		-- 1.2kohm resistor  -- BLUE
+		-- 390 ohm resistor  -- GREEN
+		-- 470 ohm resistor  -- GREEN
+  bit 0 -- 560 ohm resistor  -- GREEN
+
+  bit 7 -- 820 ohm resistor  -- GREEN
+		-- 1.2kohm resistor  -- GREEN
+		-- 390 ohm resistor  -- RED
+		-- 470 ohm resistor  -- RED
+		-- 560 ohm resistor  -- RED
+		-- 820 ohm resistor  -- RED
+		-- 1.2kohm resistor  -- RED
+  bit 0 -- not connected
+
+***************************************************************************/
+#define BIT(x,n) ((x)>>n) & 1
+#define RGB(r,g,b) ((0xff<<24) | ((b)<<16) | ((g)<<8) | (r))
+
+void FTimePilotMachine::SetupPalette()
+{
+	for (int i = 0; i < 32; i++)
+	{
+		int bit0, bit1, bit2, bit3, bit4;
+
+		bit0 = BIT(PalettePROM[i + 1 * 32], 1);
+		bit1 = BIT(PalettePROM[i + 1 * 32], 2);
+		bit2 = BIT(PalettePROM[i + 1 * 32], 3);
+		bit3 = BIT(PalettePROM[i + 1 * 32], 4);
+		bit4 = BIT(PalettePROM[i + 1 * 32], 5);
+		int const r = 0x19 * bit0 + 0x24 * bit1 + 0x35 * bit2 + 0x40 * bit3 + 0x4d * bit4;
+		bit0 = BIT(PalettePROM[i + 1 * 32], 6);
+		bit1 = BIT(PalettePROM[i + 1 * 32], 7);
+		bit2 = BIT(PalettePROM[i + 0 * 32], 0);
+		bit3 = BIT(PalettePROM[i + 0 * 32], 1);
+		bit4 = BIT(PalettePROM[i + 0 * 32], 2);
+		int const g = 0x19 * bit0 + 0x24 * bit1 + 0x35 * bit2 + 0x40 * bit3 + 0x4d * bit4;
+		bit0 = BIT(PalettePROM[i + 0 * 32], 3);
+		bit1 = BIT(PalettePROM[i + 0 * 32], 4);
+		bit2 = BIT(PalettePROM[i + 0 * 32], 5);
+		bit3 = BIT(PalettePROM[i + 0 * 32], 6);
+		bit4 = BIT(PalettePROM[i + 0 * 32], 7);
+		int const b = 0x19 * bit0 + 0x24 * bit1 + 0x35 * bit2 + 0x40 * bit3 + 0x4d * bit4;
+
+		Palette[i] = RGB(r, g, b);
+	}
+
+	//colourPROM += 2 * 32;
+	// color_prom now points to the beginning of the lookup table
+
+
+	// sprites
+	for (int i = 0; i < 64; i++)
+	{
+		SpriteColours[i][0] = Palette[SpriteLUTPROM[(i * 4) + 0] & 0x0f];
+		SpriteColours[i][1] = Palette[SpriteLUTPROM[(i * 4) + 1] & 0x0f];
+		SpriteColours[i][2] = Palette[SpriteLUTPROM[(i * 4) + 2] & 0x0f];
+		SpriteColours[i][3] = Palette[SpriteLUTPROM[(i * 4) + 3] & 0x0f];
+	}
+
+	// characters
+	for (int i = 0; i < 32; i++)
+	{
+		TileColours[i][0] = Palette[CharLUTPROM[(i * 4) + 0] & 0x0f];
+		TileColours[i][1] = Palette[CharLUTPROM[(i * 4) + 1] & 0x0f];
+		TileColours[i][2] = Palette[CharLUTPROM[(i * 4) + 2] & 0x0f];
+		TileColours[i][3] = Palette[CharLUTPROM[(i * 4) + 3] & 0x0f];
+	}
+	//	palette.set_pen_color(32 * 4 + i, palette_val[*colourPROM++ & 0x0f]);
+
+	// characters
+	//for (int i = 0; i < 32 * 4; i++)
+	//	palette.set_pen_color(i, palette_val[(*colourPROM++ & 0x0f) + 0x10]);
+}
+
 
 void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis)
 {
@@ -355,6 +443,73 @@ void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnal
 
 }
 
+// byte 0, bits 7-4 : plane 0 for pixels 7-4
+// byte 0, bits 3-0 : plane 1 for pixels 7-4
+
+// byte 8, bits 7-4 : plane 0 for pixels 3-0
+// byte 8, bits 3-0 : plane 1 for pixels 3-0
+
+void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY)
+{
+	uint32_t* pPixelBuffer = pView->GetPixelBuffer();
+	uint32_t* pBase = pPixelBuffer + (xp + (yp * pView->GetWidth()));
+	for (int y = 0; y < 8; y++)
+	{
+		const uint8_t charLine0 = pSrc[y];
+		const uint8_t charLine1 = pSrc[y+8];
+
+		const uint8_t plane0 = (charLine0 & 0xf0) | (charLine1 & 0x0f);
+		const uint8_t plane1 = ((charLine0 & 0x0f)<<4) | ((charLine1 & 0xf0)>>4);
+
+		for (int xpix = 0; xpix < 8; xpix++)
+		{
+			const int drawX = bFlipX ? (7 - xpix) : xpix;
+			const int drawY = bFlipY ? (7 - y) : y;
+			const bool bSet0 = (plane0 & (1 << (7 - xpix))) != 0;
+			const bool bSet1 = (plane1 & (1 << (7 - xpix))) != 0;
+			const int bBit0 = bSet0 ? 1 : 0;
+			const int bBit1 = bSet1 ? 1 : 0;
+			const uint32_t col = cols[bBit0 + (bBit1<<1)];
+			*(pBase + drawX + (drawY * pView->GetWidth())) = col;
+		}
+	}
+}
+
+void DrawImage(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
+{
+	//if (xp + widthPixels > Width || yp + heightPixels > Height)
+	//	return;
+
+	uint32_t* pPixelBuffer = pView->GetPixelBuffer();
+	uint32_t* pBase = pPixelBuffer + (xp + (yp * pView->GetWidth()));
+	const int widthChars = widthPixels / 8;
+	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
+
+	//if (stride == -1)
+	int stride = widthPixels / 8;
+
+	for (int y = 0; y < heightPixels; y++)
+	{
+		const uint8_t* pLine = pSrc;
+		for (int x = 0; x < widthChars; x++)
+		{
+			const uint8_t charLine = *pLine++;
+
+			for (int xpix = 0; xpix < 8; xpix++)
+			{
+				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
+				const uint32_t col = bSet ? cols[1] : cols[0];
+				
+				*(pBase + xpix + (x * 8)) = col;
+			}
+		}
+
+		pSrc += stride;
+		pBase += pView->GetWidth();
+	}
+}
+
+
 void FTimePilotMachine::DrawCharMap(bool bPriority)
 {
 	// TODO: update the screen image using the VideoRAM & ColourRAM
@@ -363,13 +518,17 @@ void FTimePilotMachine::DrawCharMap(bool bPriority)
 		for (int xc = 0; xc < 32; xc++)
 		{
 			const int charIndex = xc + (yc * 32);
-			const uint8_t attr = ColourRAM[charIndex];
-			const uint8_t vidChar = VideoRAM[charIndex] + 8 * (attr & 0x20);
+			const uint8_t attr = pColourRAM[charIndex];
+			const int vidChar = pVideoRAM[charIndex] + 8 * (attr & 0x20);
 			const uint8_t colour = attr & 0x01f;
 			const bool bFlipX = (attr & 0x40) != 0;
 			const bool bFlipY = (attr & 0x80) != 0;
 			const uint8_t category = (attr & 0x10) >> 4;	// ??
-
+			const uint32_t* pColours = TileColours[colour];
+			const uint8_t* pTile = &TilesROM[vidChar * 16];
+			DrawCharacter8x8(pScreen, pTile, xc * 8, yc * 8, pColours, bFlipX, bFlipY);
+			//DrawImage(pScreen, pTile, xc * 8, yc * 8, 8, 8, pColours);
+			//pScreen->Draw2BppImageAt(pTile,xc * 8,yc * 8,8,8,pColours);
 			// TODO: draw char at (xc*8, yc*8)
 			//pScreen->DrawCharacter8x8(xc * 8, yc * 8, vidChar, colour, bFlipX, bFlipY);
 		}
@@ -384,10 +543,11 @@ void FTimePilotMachine::DrawSprites()
 		int const sy = 241 - pSpriteRAM[1][offs + 1];
 
 		int const code = pSpriteRAM[0][offs + 1];
-		int const color = pSpriteRAM[1][offs] & 0x3f;
+		int const colour = pSpriteRAM[1][offs] & 0x3f;
 		int const flipx = ~pSpriteRAM[1][offs] & 0x40;
 		int const flipy = pSpriteRAM[1][offs] & 0x80;
 
+		const uint32_t* pSpriteColours = SpriteColours[colour];
 		/*m_gfxdecode->gfx(1)->transpen(bitmap, cliprect,
 			code,
 			color,

@@ -29,6 +29,8 @@ public:
 
 	// Draw image from a 2Bpp colour map
 	void Draw2BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
+	void Draw2BppPlaneImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
+	void Draw2BppChunkImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);
 
 	// Draw image from a 2Bpp colour map - wide pixels
 	void Draw2BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols);

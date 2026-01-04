@@ -158,6 +158,39 @@ void FGraphicsView::Draw1BppImageAtMask(const uint8_t* pSrc, int xp, int yp, int
 	}
 }
 
+// Draw 2bpp image where each pixel is a 2 bits next to each other in a byte - 4 pixels per byte
+void FGraphicsView::Draw2BppChunkImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
+{
+	if (xp + widthPixels > Width || yp + heightPixels > Height)
+		return;
+
+	uint32_t* pBase = PixelBuffer + (xp + (yp * Width));
+	const int bytesPerLine = (widthPixels + 3) / 4;
+	assert((widthPixels & 3) == 0);
+
+	for (int y = 0; y < heightPixels; y++)
+	{
+		for (int x = 0; x < bytesPerLine; x++)
+		{
+			const uint8_t val = *pSrc++;
+			for (int xpix = 0; xpix < 4; xpix++)
+			{
+				const uint8_t colNo = (val >> (6 - (xpix * 2))) & 3;
+				const uint32_t pixelCol = cols ? cols[colNo] : 0xffffffff;
+				*(pBase + xpix + (x * 4)) = pixelCol;
+			}
+		}
+		pBase += Width;
+	}
+}
+
+// draw a 2bpp image where image is stored as 2 bit planes
+void Draw2BppPlaneImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
+{
+
+
+}
+
 void FGraphicsView::Draw2BppImageAt(const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
 {
 	if (xp + widthPixels > Width || yp + heightPixels > Height)
