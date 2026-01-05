@@ -2074,7 +2074,8 @@
                 },
                 {
                     "Address": 209,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 4
                 },
                 {
                     "Address": 211,
@@ -2082,7 +2083,8 @@
                 },
                 {
                     "Address": 212,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "OperandType": 4
                 },
                 {
                     "Address": 214,
@@ -3152,11 +3154,13 @@
                 },
                 {
                     "Address": 869,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 872,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 875,
@@ -3174,11 +3178,13 @@
                 },
                 {
                     "Address": 882,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "X position"
                 },
                 {
                     "Address": 884,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "Sprite No"
                 },
                 {
                     "Address": 886,
@@ -3198,7 +3204,8 @@
                 },
                 {
                     "Address": 894,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 897,
@@ -3330,7 +3337,8 @@
                 },
                 {
                     "Address": 961,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 964,
@@ -3374,11 +3382,13 @@
                 },
                 {
                     "Address": 984,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 987,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 990,
@@ -7405,8 +7415,14 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 1008,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
                     "Address": 1010,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 1013,
@@ -7444,7 +7460,8 @@
                 },
                 {
                     "Address": 1023,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "fetch character"
                 }
             ],
             "DataInfo": [
@@ -7640,6 +7657,11 @@
                     "Name": "label_0BDD"
                 },
                 {
+                    "Address": 1001,
+                    "LabelType": 2,
+                    "Name": "label_0BE9"
+                },
+                {
                     "Address": 1010,
                     "LabelType": 2,
                     "Name": "label_0BF2"
@@ -7656,15 +7678,19 @@
             "CodeInfo": [
                 {
                     "Address": 0,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "check for terminator?"
                 },
                 {
                     "Address": 2,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "terminator"
                 },
                 {
                     "Address": 3,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "write character",
+                    "Flags": 32
                 },
                 {
                     "Address": 4,
@@ -7689,6 +7715,7 @@
                 {
                     "Address": 11,
                     "ByteSize": 1,
+                    "Comment": "next line",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -34656,6 +34683,18 @@
                     "Name": "data_AA2A"
                 },
                 {
+                    "Address": 560,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AA30"
+                },
+                {
+                    "Address": 566,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AA36"
+                },
+                {
                     "Address": 575,
                     "Global": true,
                     "LabelType": 0,
@@ -34690,6 +34729,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_AA5B"
+                },
+                {
+                    "Address": 608,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AA60"
                 },
                 {
                     "Address": 623,
@@ -35138,12 +35183,18 @@
             "PageId": 43
         },
         {
+            "CommentBlocks": [
+                {
+                    "Address": 16,
+                    "Comment": "First half of sprite RAM\n24 sprites, 2 bytes per sprite\n\nFor each sprite:\nbyte 0: XPos\nbyte 1: Sprite definition"
+                }
+            ],
             "LabelInfo": [
                 {
                     "Address": 16,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_B010"
+                    "Name": "SpriteRam1"
                 },
                 {
                     "Address": 18,
@@ -35191,6 +35242,12 @@
             "PageId": 44
         },
         {
+            "CommentBlocks": [
+                {
+                    "Address": 16,
+                    "Comment": "Second half of sprite RAM\n24 sprites, 2 bytes per sprite\n\nFor each sprite:\nbyte 0 : Attributes\n   bits 0-5 : Colour Scheme\n   bit 6 : Flip X\n   bit 7 : Flip Y\nbyte 1: Y Position"
+                }
+            ],
             "DataInfo": [
                 {
                     "Address": 16,
@@ -35206,7 +35263,7 @@
                     "Address": 16,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "SpriteRAM"
+                    "Name": "SpriteRAM2"
                 },
                 {
                     "Address": 17,
