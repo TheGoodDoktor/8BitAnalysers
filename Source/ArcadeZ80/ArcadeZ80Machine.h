@@ -88,29 +88,15 @@ public:
 	uint8_t		SpriteROM[0x4000];
 
 	// PROMS
-	//uint8_t		PROMs[0x0240];
 	uint8_t		PalettePROM[0x40];
-	//uint8_t		Palette2PROM[0x20];
 	uint8_t		SpriteLUTPROM[0x0100];
 	uint8_t		CharLUTPROM[0x0100];
-
-	// RAM
-	//uint8_t		VideoRAM[0x800];
-	//uint8_t		ColourRAM[0x400];
-	//uint8_t		SpriteRAM[0x800];
 
 	// Bank Ids
 	int16_t		ROM1BankId;
 	int16_t		ROM2BankId;
 	int16_t		ROM3BankId;
 	int16_t		RAMBankId;
-
-	//int16_t		TileROMBankId;
-	//int16_t		SpriteROM1BankId;
-	//int16_t		SpriteROM2BankId;
-
-	//int16_t		VideoRAMBankId;
-	//int16_t		SpriteRAMBankId;
 
 	int32_t		TicksPerFrame = 0;
 	int32_t		FrameTicks = 0;
@@ -125,4 +111,5 @@ public:
 
 
 	FGraphicsView* pSpriteView = nullptr;
+	bool		bRotateScreen = false;
 };

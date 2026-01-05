@@ -453,6 +453,9 @@ void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnal
 
 void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY, bool bRot90)
 {
+	if(xp < 0 || yp < 0 || xp > (pView->GetWidth() - 8) || yp > (pView->GetHeight() - 8))	// primitive clipping
+		return;
+
 	uint32_t* pPixelBuffer = pView->GetPixelBuffer();
 	uint32_t* pBase = pPixelBuffer + (xp + (yp * pView->GetWidth()));
 	for (int y = 0; y < 8; y++)
@@ -483,70 +486,36 @@ void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp,
 // draw 16*16 sprite using 2 bit planes
 void DrawSprite(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY, bool bRot90)
 {
-	uint32_t* pPixelBuffer = pView->GetPixelBuffer();
-	uint32_t* pBase = pPixelBuffer + (xp + (yp * pView->GetWidth()));
-
-	for (int y = 0; y < 16; y++)
+	for (int y = 0; y < 2; y++)
 	{
-		const uint8_t charLine0 = pSrc[y];
-		const uint8_t charLine1 = pSrc[y + 16];
-		const uint8_t plane0 = (charLine0 & 0xf0) | (charLine1 & 0x0f);
-		const uint8_t plane1 = ((charLine0 & 0x0f) << 4) | ((charLine1 & 0xf0) >> 4);
-		for (int xpix = 0; xpix < 16; xpix++)
+		for (int x = 0; x < 2; x++)
 		{
-			const int drawX = bFlipX ? (15 - xpix) : xpix;
-			const int drawY = bFlipY ? (15 - y) : y;
-			const bool bSet0 = (plane0 & (1 << (7 - (xpix % 8)))) != 0;
-			const bool bSet1 = (plane1 & (1 << (7 - (xpix % 8)))) != 0;
-			const int bBit0 = bSet0 ? 1 : 0;
-			const int bBit1 = bSet1 ? 1 : 0;
-			const uint32_t col = cols[bBit0 + (bBit1 << 1)];
+			const uint8_t* pChar = pSrc + (16 * (x + (y * 2)));
+
+			int fx = bFlipX ? (1 - x) : x;
+			int fy = bFlipY ? (1 - y) : y;
+
+			int rx = bRot90 ? (1 - fy) : fx;
+			int ry = bRot90 ? fx : fy;
+						
+			int drawX = xp + (rx * 8);
+			int drawY = yp + (ry * 8);
+			/*if (bFlipX)
+				drawX = xp + ((1 - rx) * 8);
+			if (bFlipY)
+				drawY = yp + ((1 - ry) * 8);
+				*/
 			if (bRot90)
-				*(pBase + drawY + (drawX * pView->GetWidth())) = col;
+				DrawCharacter8x8(pView, pChar, drawX, drawY, cols, bFlipY, !bFlipX, bRot90);
 			else
-				*(pBase + drawX + (drawY * pView->GetWidth())) = col;
+				DrawCharacter8x8(pView, pChar, drawX, drawY, cols, bFlipX, bFlipY, bRot90);
 		}
 	}
 }
-
-void DrawImage(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, int widthPixels, int heightPixels, const uint32_t* cols)
-{
-	//if (xp + widthPixels > Width || yp + heightPixels > Height)
-	//	return;
-
-	uint32_t* pPixelBuffer = pView->GetPixelBuffer();
-	uint32_t* pBase = pPixelBuffer + (xp + (yp * pView->GetWidth()));
-	const int widthChars = widthPixels / 8;
-	assert((widthPixels & 7) == 0);	// we don't currently support sub character widths - maybe you should implement it?
-
-	//if (stride == -1)
-	int stride = widthPixels / 8;
-
-	for (int y = 0; y < heightPixels; y++)
-	{
-		const uint8_t* pLine = pSrc;
-		for (int x = 0; x < widthChars; x++)
-		{
-			const uint8_t charLine = *pLine++;
-
-			for (int xpix = 0; xpix < 8; xpix++)
-			{
-				const bool bSet = (charLine & (1 << (7 - xpix))) != 0;
-				const uint32_t col = bSet ? cols[1] : cols[0];
-				
-				*(pBase + xpix + (x * 8)) = col;
-			}
-		}
-
-		pSrc += stride;
-		pBase += pView->GetWidth();
-	}
-}
-
 
 void FTimePilotMachine::DrawCharMap(int priority)
 {
-	bool bRot = false;	// Rotation so screen is facing correct direction
+	bool bRot = bRotateScreen;	// Rotation so screen is facing correct direction
 
 	// TODO: update the screen image using the VideoRAM & ColourRAM
 	for (int yc = 0; yc < 32; yc++)
@@ -576,7 +545,7 @@ void FTimePilotMachine::DrawCharMap(int priority)
 
 void FTimePilotMachine::DrawSprites()
 {
-	bool bRot = false;	// Rotation so screen is facing correct direction
+	bool bRot = bRotateScreen;	// Rotation so screen is facing correct direction
 
 	for (int offs = 0x3e; offs >= 0x10; offs -= 2)
 	{
@@ -592,7 +561,10 @@ void FTimePilotMachine::DrawSprites()
 
 		const int spriteByteSize = (4 * 16);
 		const uint8_t* pSprite = &SpriteROM[code * spriteByteSize];
-		DrawSprite(pScreen, pSprite, sx, sy, pSpriteColours, bFlipx, bFlipy, bRot);
+		if(bRot)
+			DrawSprite(pScreen, pSprite, sy, sx, pSpriteColours, bFlipx, bFlipy, true);
+		else
+			DrawSprite(pScreen, pSprite, sx, sy, pSpriteColours, bFlipx, bFlipy, false);
 
 		/*m_gfxdecode->gfx(1)->transpen(bitmap, cliprect,
 			code,
@@ -632,6 +604,8 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 			*/
 	}
 
+	ImGui::Checkbox("Rotate Screen", &bRotateScreen);
+
 	// Sprite Viewer
 	static int SpriteNo = 0;
 	static int SpriteColour = 0;
@@ -640,7 +614,7 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 	static bool bRot = false;
 
 	ImGui::InputInt("SpriteNo", &SpriteNo);
-	ImGui::SameLine();
+	//ImGui::SameLine();
 	ImGui::InputInt("SpriteColour", &SpriteColour);
 	ImGui::Checkbox("Flip X", &bFlipx);
 	ImGui::SameLine();
@@ -653,9 +627,15 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 	const uint8_t* pSprite = &SpriteROM[SpriteNo * spriteByteSize];
 	DrawSprite(pSpriteView, pSprite, 0, 0, pSpriteColours, bFlipx, bFlipy, bRot);
 
-	uint32_t monoColours[2] = { 0xff000000, 0xffffffff };
+	/*uint32_t monoColours[2] = {0xff000000, 0xffffffff};
 	pSpriteView->Draw1BppImageAt(pSprite, 0, 16, 32, 16, monoColours);
 	pSpriteView->Draw1BppImageAt(pSprite, 0, 32, 16, 32, monoColours);
+
+	DrawCharacter8x8(pSpriteView, pSprite, 16, 0, pSpriteColours, bFlipx, bFlipy, bRot);
+	DrawCharacter8x8(pSpriteView, pSprite + 16, 16 + 8, 0, pSpriteColours, bFlipx, bFlipy, bRot);
+	DrawCharacter8x8(pSpriteView, pSprite + 32, 16 + 0, 8, pSpriteColours, bFlipx, bFlipy, bRot);
+	DrawCharacter8x8(pSpriteView, pSprite + 48, 16 + 8, 8, pSpriteColours, bFlipx, bFlipy, bRot);*/
+
 	pSpriteView->Draw(true);
 }
 
