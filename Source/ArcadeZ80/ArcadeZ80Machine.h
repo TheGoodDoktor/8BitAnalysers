@@ -111,5 +111,6 @@ public:
 
 
 	FGraphicsView* pSpriteView = nullptr;
+	bool		bSpriteDebug = false;
 	bool		bRotateScreen = false;
 };

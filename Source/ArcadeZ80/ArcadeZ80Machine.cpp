@@ -451,7 +451,7 @@ void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnal
 // byte 8, bits 7-4 : plane 0 for pixels 3-0
 // byte 8, bits 3-0 : plane 1 for pixels 3-0
 
-void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY, bool bRot90)
+void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY, bool bRot90, bool bMask)
 {
 	if(xp < 0 || yp < 0 || xp > (pView->GetWidth() - 8) || yp > (pView->GetHeight() - 8))	// primitive clipping
 		return;
@@ -475,6 +475,8 @@ void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp,
 			const int bBit0 = bSet0 ? 1 : 0;
 			const int bBit1 = bSet1 ? 1 : 0;
 			const uint32_t col = cols[bBit0 + (bBit1<<1)];
+			if (bMask && (col == cols[0]))
+				continue;
 			if(bRot90)
 				*(pBase + drawY + (drawX * pView->GetWidth())) = col;
 			else
@@ -506,9 +508,9 @@ void DrawSprite(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const
 				drawY = yp + ((1 - ry) * 8);
 				*/
 			if (bRot90)
-				DrawCharacter8x8(pView, pChar, drawX, drawY, cols, bFlipY, !bFlipX, bRot90);
+				DrawCharacter8x8(pView, pChar, drawX, drawY, cols, bFlipX, !bFlipY, bRot90, true);
 			else
-				DrawCharacter8x8(pView, pChar, drawX, drawY, cols, bFlipX, bFlipY, bRot90);
+				DrawCharacter8x8(pView, pChar, drawX, drawY, cols, bFlipX, bFlipY, bRot90, true);
 		}
 	}
 }
@@ -534,9 +536,9 @@ void FTimePilotMachine::DrawCharMap(int priority)
 				const uint32_t* pColours = TileColours[colour];
 				const uint8_t* pTile = &TilesROM[vidChar * 16];
 				if (bRot)
-					DrawCharacter8x8(pScreen, pTile, (31 - yc) * 8, xc * 8, pColours, bFlipX, !bFlipY, true);
+					DrawCharacter8x8(pScreen, pTile, (31 - yc) * 8, xc * 8, pColours, bFlipX, !bFlipY, true, false);
 				else
-					DrawCharacter8x8(pScreen, pTile, xc * 8, yc * 8, pColours, bFlipX, bFlipY, false);
+					DrawCharacter8x8(pScreen, pTile, xc * 8, yc * 8, pColours, bFlipX, bFlipY, false, false);
 			}
 
 		}
@@ -562,7 +564,7 @@ void FTimePilotMachine::DrawSprites()
 		const int spriteByteSize = (4 * 16);
 		const uint8_t* pSprite = &SpriteROM[code * spriteByteSize];
 		if(bRot)
-			DrawSprite(pScreen, pSprite, sy, sx, pSpriteColours, bFlipx, bFlipy, true);
+			DrawSprite(pScreen, pSprite, (256 - sy), sx, pSpriteColours, bFlipx, bFlipy, true);
 		else
 			DrawSprite(pScreen, pSprite, sx, sy, pSpriteColours, bFlipx, bFlipy, false);
 
@@ -581,30 +583,39 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 	const float scale = ImGui_GetScaling();
 	ImDrawList* pDrawList = ImGui::GetWindowDrawList();
 
-	for (int offs = 0x3e; offs >= 0x10; offs -= 2)
+	if(bSpriteDebug)
 	{
-		int const sx = pSpriteRAM[0][offs];
-		int const sy = 241 - pSpriteRAM[1][offs + 1];
+		for (int offs = 0x3e; offs >= 0x10; offs -= 2)
+		{
+			int const sx = pSpriteRAM[0][offs];
+			int const sy = 241 - pSpriteRAM[1][offs + 1];
 
-		int const code = pSpriteRAM[0][offs + 1];
-		int const color = pSpriteRAM[1][offs] & 0x3f;
-		int const flipx = ~pSpriteRAM[1][offs] & 0x40;
-		int const flipy = pSpriteRAM[1][offs] & 0x80;
+			int const code = pSpriteRAM[0][offs + 1];
+			int const color = pSpriteRAM[1][offs] & 0x3f;
+			int const flipx = ~pSpriteRAM[1][offs] & 0x40;
+			int const flipy = pSpriteRAM[1][offs] & 0x80;
 
 
-		pDrawList->AddRect(
-			ImVec2(pos.x + sx * scale, pos.y + sy * scale),
-			ImVec2(pos.x + (sx + 16) * scale, pos.y + (sy + 16) * scale),
-			IM_COL32(255, 0, 0, 255));
-		/*m_gfxdecode->gfx(1)->transpen(bitmap, cliprect,
-			code,
-			color,
-			flipx, flipy,
-			sx, sy, 0);
-			*/
+			if (bRotateScreen)
+			{
+				pDrawList->AddRect(
+					ImVec2(pos.x + (256 - sy) * scale, pos.y + sx * scale),
+					ImVec2(pos.x + ((256 - sy) + 16) * scale, pos.y + (sx + 16) * scale),
+					IM_COL32(255, 0, 0, 255));
+			}
+			else
+			{
+				pDrawList->AddRect(
+					ImVec2(pos.x + sx * scale, pos.y + sy * scale),
+					ImVec2(pos.x + (sx + 16) * scale, pos.y + (sy + 16) * scale),
+					IM_COL32(255, 0, 0, 255));
+			}
+		}
 	}
 
 	ImGui::Checkbox("Rotate Screen", &bRotateScreen);
+	ImGui::SameLine();
+	ImGui::Checkbox("Sprite Debug", &bSpriteDebug);
 
 	// Sprite Viewer
 	static int SpriteNo = 0;
