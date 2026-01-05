@@ -203,7 +203,7 @@ struct FAddressRef
 	void SetAddress(uint16_t address);
 	void SetVal(uint32_t val);
 	void SetBankId(int16_t bankId) { BankId = bankId;	}
-	bool IsValid() const { return BankId != -1; }
+	bool IsValid() const;
 	void SetInvalid() { BankId = -1; }
 	bool operator<(const FAddressRef& other) const { return GetVal() < other.GetVal(); }
 	bool operator<=(const FAddressRef& other) const { return GetVal() <= other.GetVal(); }
@@ -540,6 +540,9 @@ struct FDataInfo : FItem
 		FAddressRef	GraphicsSetRef;	// for bitmap data
 		FAddressRef	InstructionAddress;	// for operand data types
 	};
+	
+	// sam. This is a hack. For PCE planar sprite data, we need to know the address of the first item we are part of.
+	FAddressRef				FirstItemAddress;
 
 	union 
 	{

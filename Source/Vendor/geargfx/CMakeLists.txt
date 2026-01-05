@@ -85,6 +85,8 @@ set( geargfx_src
     ${vendor_dir}/geargfx/shared/dependencies/miniz/miniz.c
 )
 
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+
 # Create static library
 add_library(geargfx STATIC ${geargfx_src})
 

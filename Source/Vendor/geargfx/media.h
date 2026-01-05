@@ -68,6 +68,8 @@ public:
     u8** GetROMMap();
     // sam. added this to lookup the rom bank index for each entry of the rom map
     int GetRomBankIndex(u8 index);
+    // sam. 
+    u8* GetSysCardBios();
     bool LoadMedia(const char* path);
     bool LoadHuCardFromBuffer(const u8* buffer, int size, const char* path);
     bool LoadCueFromFile(const char* path);

@@ -138,20 +138,20 @@ void FSpectrumViewer::Draw()
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		const ImU32 flashCol = Colours::GetFlashColour();
-		if (viewState.HighlightAddress.Address >= kScreenPixMemStart && viewState.HighlightAddress.Address <= kScreenPixMemEnd)	// pixel
+		if (viewState.HighlightAddress.GetAddress() >= kScreenPixMemStart && viewState.HighlightAddress.GetAddress() <= kScreenPixMemEnd)	// pixel
 		{
 			int xp, yp;
-			GetScreenAddressCoords(viewState.HighlightAddress.Address, xp, yp);
+			GetScreenAddressCoords(viewState.HighlightAddress.GetAddress(), xp, yp);
 
 			const int rx = static_cast<int>(pos.x + (kBorderOffsetX + xp) * scale);
 			const int ry = static_cast<int>(pos.y + (kBorderOffsetY + yp) * scale);
 			dl->AddRect(ImVec2((float)rx, (float)ry), ImVec2((float)rx + (8 * scale), (float)ry + (1 * scale)), flashCol);	// TODO: flash?
 		}
 
-		if (viewState.HighlightAddress.Address >= kScreenAttrMemStart && viewState.HighlightAddress.Address <= kScreenAttrMemEnd)	// attributes
+		if (viewState.HighlightAddress.GetAddress() >= kScreenAttrMemStart && viewState.HighlightAddress.GetAddress() <= kScreenAttrMemEnd)	// attributes
 		{
 			int xp, yp;
-			GetAttribAddressCoords(viewState.HighlightAddress.Address, xp, yp);
+			GetAttribAddressCoords(viewState.HighlightAddress.GetAddress(), xp, yp);
 
 			const int rx = static_cast<int>(pos.x + (kBorderOffsetX + xp) * scale);
 			const int ry = static_cast<int>(pos.y + (kBorderOffsetY + yp) * scale);
@@ -244,7 +244,9 @@ void FSpectrumViewer::Draw()
 		if (ImGui::Button("Set to X+1"))
 		{
 			pSpectrumEmu->YCoordAddress = pSpectrumEmu->XCoordAddress;
-			pSpectrumEmu->YCoordAddress.Address++;
+
+			const uint16_t addr = pSpectrumEmu->YCoordAddress.GetAddress();
+			pSpectrumEmu->YCoordAddress.SetAddress(addr + 1);
 		}
 		ImGui::PopID();
 		pSpectrumEmu->bShowCoordinates = true;
@@ -301,10 +303,10 @@ void FSpectrumViewer::DrawSelectedCharUI(const ImVec2& pos)
 	const ImU32 col = Colours::GetFlashColour();
 	dl->AddRect(ImVec2(pos.x + ((float)SelectedCharX * scale), pos.y + (float)SelectedCharY * scale), ImVec2(pos.x + ((float)SelectedCharX + 8) * scale, pos.y + ((float)SelectedCharY + 8) * scale), col);
 
-	ImGui::Text("Pixel Char Address: %s", NumStr(SelectPixAddr.Address));
+	ImGui::Text("Pixel Char Address: %s", NumStr(SelectPixAddr.GetAddress()));
 	//ImGui::SameLine();
 	DrawAddressLabel(codeAnalysis, viewState, SelectPixAddr);
-	ImGui::Text("Attribute Address: %s", NumStr(SelectAttrAddr.Address));
+	ImGui::Text("Attribute Address: %s", NumStr(SelectAttrAddr.GetAddress()));
 	//ImGui::SameLine();
 	DrawAddressLabel(codeAnalysis, viewState, SelectAttrAddr);
 
@@ -354,7 +356,7 @@ void FSpectrumViewer::DrawSelectedCharUI(const ImVec2& pos)
 	{
 		// list?
 		const FAddressRef& foundCharAddress = FoundCharAddresses[FoundCharIndex];
-		ImGui::Text("Found at: %s", NumStr(foundCharAddress.Address));
+		ImGui::Text("Found at: %s", NumStr(foundCharAddress.GetAddress()));
 		DrawAddressLabel(codeAnalysis, viewState, foundCharAddress);
 		if (FoundCharAddresses.size() > 1)
 		{

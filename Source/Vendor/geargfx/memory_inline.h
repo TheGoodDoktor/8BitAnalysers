@@ -48,10 +48,10 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
     u16 offset = address & 0x1FFF;
 
     // sam. add callback for memory reads.
-    // we want this to fire every time the cpu reads memory in order for the
+    // we want this to fire every time the cpu reads memory for the
     // analyser to register the read has happened.
     // Memory::Read() is also called from the code analysis UI code to display the memory.
-    // we dont want this callback to fire in this case
+    // we dont want this callback to fire in that case.
     if (is_cpu) 
       m_memory_read_callback(m_callback_context, address);
 
@@ -64,6 +64,14 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
     }
     else
     {
+        // sam. reading of HW page memory can inject cyles and assert IRQs etc.
+        // we dont want to do any emulation operations here if we are reading memory for the UI.
+        // todo: deal with this better.
+        if (!is_cpu)
+        {
+           return 0;
+        }
+ 
         // Hardware Page
         switch (offset & 0x1C00)
         {
@@ -117,8 +125,11 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
                         case 0:
                         case 1:
                         {
-                            Debug("Invalid interrupt register read at %04X", address);
-                            break;
+                            if (is_cpu)
+                            {
+                               Debug("Invalid interrupt register read at %04X", address);
+                            }
+                               break;
                         }
                         case 2:
                         case 3:
@@ -144,10 +155,16 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
                     return 0xFF;
             case 0x1C00:
                 // Unused
-                Debug("Unused hardware read at %04X", address);
+                if (is_cpu)
+                {
+                   Debug("Unused hardware read at %04X", address);
+                }
                 return 0xFF;
             default:
-                Debug("Invalid hardware read at %04X", address);
+                  if (is_cpu)
+                  {
+                     Debug("Invalid hardware read at %04X", address);
+                  }
                 return 0xFF;
         }
     }

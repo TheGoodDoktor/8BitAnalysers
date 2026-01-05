@@ -1135,6 +1135,9 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 			pDataInfo->ReadCount++;
 			pDataInfo->LastFrameRead = state.CurrentFrameNo;
 			pDataInfo->LastRead = state.ExecutionCounter;
+
+			// create addressref for pc here?
+
 			pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
 		
 			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(state.AddressRefFromPhysicalAddress(pc));
@@ -1494,6 +1497,9 @@ void FCodeAnalysisState::Init(FEmuBase* pEmu)
 	pDataRegions->Clear();
     
     pDataTypes->Reset();
+
+	GlobalDataItems.clear();
+	GlobalFunctions.clear();
 }
 
 // Start/End handlers for host (imgui) frame
@@ -1987,5 +1993,25 @@ void FAddressRef::SetVal(uint32_t val)
 		const uint16_t addr = val & 0xffff;
 		BankOffset = addr - mappedAddress;
 	}
+}
+bool FAddressRef::IsValid() const 
+{ 
+	if (BankId < 0)
+		return false;
+
+#ifndef NDEBUG
+	if (BankId >= FCodeAnalysisState::BankCount)
+		return false;
+
+	const FCodeAnalysisBank& bank = Banks[BankId];
+	
+	if (bank.PrimaryMappedPage == -1)
+		return false;
+	
+	if (BankOffset >= (bank.NoPages * FCodeAnalysisPage::kPageSize))
+		return false;
+#endif
+
+	return true;
 }
 #endif

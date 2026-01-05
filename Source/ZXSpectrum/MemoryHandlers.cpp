@@ -186,7 +186,7 @@ void DrawMemoryHandlers(FSpectrumEmu* pSpectrumEmu)
 		ImGui::Text("Callers");
 		for (const auto &accessPC : pSelectedHandler->Callers.GetReferences())
 		{
-			ImGui::PushID(accessPC.Val);
+			ImGui::PushID(accessPC.GetVal());
 			DrawCodeAddress(codeAnalysis, viewState, accessPC);
 			//ImGui::SameLine();
 			//ImGui::Text(" - %d accesses",accessPC.second);

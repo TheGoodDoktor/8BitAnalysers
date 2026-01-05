@@ -108,7 +108,7 @@ void FSpectrum128MemoryCtrl::RegisterMemoryConfigWrite(FAddressRef pc, uint8_t v
 const char* FScreenPixMemDescGenerator::GenerateAddressString(FAddressRef addr) 
 {
     int xp = 0, yp = 0;
-    GetScreenAddressCoords(addr.Address, xp, yp);
+    GetScreenAddressCoords(addr.GetAddress(), xp, yp);
     snprintf(DescStr,32, "Screen Pix: %d,%d", xp, yp);
     return DescStr;
 }
@@ -116,7 +116,7 @@ const char* FScreenPixMemDescGenerator::GenerateAddressString(FAddressRef addr)
 const char* FScreenAttrMemDescGenerator::GenerateAddressString(FAddressRef addr) 
 {
     int xp = 0, yp = 0;
-    GetAttribAddressCoords(addr.Address, xp, yp);
+    GetAttribAddressCoords(addr.GetAddress(), xp, yp);
     snprintf(DescStr, 32, "Screen Attr: %d,%d", xp/8, yp/8);
     return DescStr;
 }

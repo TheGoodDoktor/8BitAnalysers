@@ -447,7 +447,7 @@ static void OutputPortDebug(FSpectrumEmu* pEmu,uint16_t port, uint8_t val)
 	for (int i = 0; i < 5; i++)
 	{
 		if ((val & (1 << i)) == 0)
-			LOGINFO("0x%04X : Key %s pressed", pEmu->GetPC().Address, row[i].c_str());
+			LOGINFO("0x%04X : Key %s pressed", pEmu->GetPC().GetAddress(), row[i].c_str());
 	}
 
 }

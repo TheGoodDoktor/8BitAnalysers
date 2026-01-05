@@ -263,6 +263,65 @@ void FGraphicsView::Draw4BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int
 	}
 }
 
+void FGraphicsView::Draw4bpp16x16PlanarSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols)
+{
+	constexpr int blockWidth = 16;
+	constexpr int blockHeight = 16;
+
+	int curXPos = xp;
+	int curYPos = yp;
+
+	const int viewWidth = Width;
+	uint32_t* pPixBuf = PixelBuffer;
+
+	const uint16_t* pPlane0 = (uint16_t*)pSrc;
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			uint32_t* pCurPixBuf = pPixBuf + (curXPos + (curYPos * viewWidth));
+			const uint16_t* pPlane1 = pPlane0 + 16;
+			const uint16_t* pPlane2 = pPlane1 + 16;
+			const uint16_t* pPlane3 = pPlane2 + 16;
+
+			// Draw 16x16 pixel square
+			for (int y = 0; y < blockHeight; y++)
+			{
+				// Draw 16 pixel horiz line
+				for (int x = 0; x < blockWidth; x++)
+				{
+					const int bit = (blockWidth - 1) - x;
+					// Get the 4 bit pixel colour index (0-15)
+					const int colour = (((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1)) & 0xf;
+
+					if (colour != 0) // 0 is transparent
+					{
+						*pCurPixBuf = cols[colour];
+					}
+					else
+						*pCurPixBuf = 0xff000000;
+
+					pCurPixBuf++;
+				}
+
+				pPlane0++;
+				pPlane1++;
+				pPlane2++;
+				pPlane3++;
+
+				pCurPixBuf += viewWidth - blockWidth;
+			}
+
+			curXPos += blockWidth;
+			pPlane0 = pPlane3;
+		}
+
+		curYPos += blockHeight;
+		curXPos = xp;
+	}
+}
+
 void FGraphicsView::Draw1BppImageFromCharsAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, const uint32_t* cols)
 {
 	for (int y = 0; y < heightChars; y++)
@@ -597,6 +656,9 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 		break;
 	case EBitmapFormat::ColMapMulticolour_C64:
 		DrawCharacterSetImageMultiColourC64(state, characterSet, addr);
+		break;
+	case EBitmapFormat::Sprite4Bpp_PCE:
+		// todo
 		break;
     default:
         break;

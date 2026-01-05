@@ -118,10 +118,11 @@ void GotoJumpAddress(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
 	else
 	{
-		FAddressRef jumpAddr(viewState.ViewingBankId, viewState.JumpAddress);
-		if (state.IsAddressValid(jumpAddr))
-			viewState.GoToAddress(jumpAddr);
-		else
+		// sam. The new FAdressRef asserts if you create invalid address refs.
+		//FAddressRef jumpAddr(viewState.ViewingBankId, viewState.JumpAddress);
+		//if (state.IsAddressValid(jumpAddr))
+		//	viewState.GoToAddress(jumpAddr);
+		//else
 			viewState.GoToAddress(state.AddressRefFromPhysicalAddress(viewState.JumpAddress));
 	}
 }

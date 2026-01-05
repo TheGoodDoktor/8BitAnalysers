@@ -63,6 +63,8 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 	}
 }
 
+bool bLog = false;
+
 // height and width are in 16x16 sprite character blocks.
 // paletteIndex is sprite palette index 0-15
 void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, int paletteIndex)
@@ -97,6 +99,9 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 			// Draw 16x16 pixel square
 			for (int y = 0; y < blockHeight; y++)
 			{
+				if (bLog)
+					LOGINFO("x %d y %d %x", x, y, pPlane0);
+
 				// Draw 16 pixel horiz line
 				for (int x = 0; x < blockWidth; x++)
 				{
@@ -140,4 +145,5 @@ void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, 
 		curYPos += blockHeight;
 		curXPos = xp;
 	}
+	bLog = false;
 }

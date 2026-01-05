@@ -18,43 +18,44 @@
  */
 
 // sam. Disable chd support for now
-//#ifdef CHD_SUPPORT
-//#ifndef CDROM_CHD_IMAGE_H
-//#define CDROM_CHD_IMAGE_H
-//
-//#include <libchdr/chd.h>
-//#include "cdrom_image.h"
-//
-//class CdRomChdImage : public CdRomImage
-//{
-//public:
-//    CdRomChdImage();
-//    virtual ~CdRomChdImage();
-//    virtual void Init() override;
-//    virtual void Reset() override;
-//    virtual bool LoadFromFile(const char* path, bool preload) override;
-//    virtual bool ReadSector(u32 lba, u8* buffer) override;
-//    virtual bool ReadSamples(u32 lba, u32 offset, s16* buffer, u32 count) override;
-//    virtual bool PreloadDisc() override;
-//    virtual bool PreloadTrack(u32 track_number) override;
-//
-//private:
-//    bool ReadTOC();
-//    void CalculateCRC();
-//    void InitHunkCache();
-//    void DestroyHunkCache();
-//    bool LoadHunk(u32 hunk_index);
-//    GG_CdRomTrackType GetTrackType(const char* type_str);
-//
-//private:
-//    chd_file* m_chd_file;
-//    u8** m_hunk_cache;
-//    u32 m_hunk_bytes;
-//    u32 m_hunk_count;
-//    u32 m_sectors_per_hunk;
-//
-//private:
-//
-//};
-//
-//#endif /* CDROM_CHD_IMAGE_H */
+#if 0
+#ifndef CDROM_CHD_IMAGE_H
+#define CDROM_CHD_IMAGE_H
+
+#include <libchdr/chd.h>
+#include "cdrom_image.h"
+
+class CdRomChdImage : public CdRomImage
+{
+public:
+    CdRomChdImage();
+    virtual ~CdRomChdImage();
+    virtual void Init() override;
+    virtual void Reset() override;
+    virtual bool LoadFromFile(const char* path, bool preload) override;
+    virtual bool ReadSector(u32 lba, u8* buffer) override;
+    virtual bool ReadSamples(u32 lba, u32 offset, s16* buffer, u32 count) override;
+    virtual bool PreloadDisc() override;
+    virtual bool PreloadTrack(u32 track_number) override;
+
+private:
+    bool ReadTOC();
+    void CalculateCRC();
+    void InitHunkCache();
+    void DestroyHunkCache();
+    bool LoadHunk(u32 hunk_index);
+    GG_CdRomTrackType GetTrackType(const char* type_str);
+
+private:
+    chd_file* m_chd_file;
+    u8** m_hunk_cache;
+    u32 m_hunk_bytes;
+    u32 m_hunk_count;
+    u32 m_sectors_per_hunk;
+
+private:
+
+};
+
+#endif /* CDROM_CHD_IMAGE_H */
+#endif // sam. disable CHD support

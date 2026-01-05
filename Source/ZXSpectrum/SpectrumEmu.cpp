@@ -273,7 +273,7 @@ uint64_t FSpectrumEmu::Z80Tick(int num, uint64_t pins)
 	FCodeAnalysisState &state = CodeAnalysis;
 	FDebugger& debugger = CodeAnalysis.Debugger;
 	z80_t& cpu = ZXEmuState.cpu;
-	const uint16_t pc = GetPC().Address;
+	const uint16_t pc = GetPC().GetAddress();
 	static uint64_t lastTickPins = 0;
 	const uint64_t risingPins = pins & (pins ^ lastTickPins);
 	lastTickPins = pins;

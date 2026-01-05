@@ -37,8 +37,9 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 	for (int bankNo = 0; bankNo < FCodeAnalysisState::BankCount; bankNo++)
 	{
 		const FCodeAnalysisBank& bank = state.GetBanks()[bankNo];
-		if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
-			continue;
+		
+		//if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
+		//	continue;
 
 		if (bank.PrimaryMappedPage == -1)
 			continue;
@@ -50,6 +51,10 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 
 		//bankJson["PrimaryMappedPage"] = bank.PrimaryMappedPage;
 		jsonGameData["Banks"].push_back(bankJson);
+
+		// sam. moved this from above so BIOS banks get their PMP set
+		if (bank.bMachineROM != bExportMachineROM)	// skip machine ROM banks
+			continue;
 
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)
 		{
@@ -490,6 +495,8 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 		dataInfoJson["PaletteNo"] = pDataInfo->PaletteNo;
 	if(pDataInfo->StructByteOffset!=0)
 		dataInfoJson["StructByteOffset"] = pDataInfo->StructByteOffset;
+	if (pDataInfo->FirstItemAddress.IsValid())
+		dataInfoJson["FirstItemAddress"] = pDataInfo->FirstItemAddress.GetVal();
 
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
@@ -644,6 +651,8 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 		pDataInfo->PaletteNo = dataInfoJson["PaletteNo"];
 	if(dataInfoJson.contains("StructByteOffset"))
 		pDataInfo->StructByteOffset = dataInfoJson["StructByteOffset"];
+	if (dataInfoJson.contains("FirstItemAddress"))
+		pDataInfo->FirstItemAddress.SetVal(dataInfoJson["FirstItemAddress"]);
 
 // Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)

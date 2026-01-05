@@ -36,6 +36,9 @@ void FPCEViewer::DrawUI()
 	ImGui_UpdateTextureRGBA(ScreenTexture, pPCEEmu->GetFrameBuffer());
 	ImGui::Text("Screen Size = %d x %d", TextureWidth, TextureHeight);
 
+	if (pPCEEmu->GetCore()->GetMedia()->IsCDROM())
+		ImGui::Text("CD state: %s", *pPCEEmu->GetCore()->GetScsiController()->GetState()->NEXT_LOAD_CYCLES > 0 ? "Loading" : "Idle");
+
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	ImGui::Image(ScreenTexture, ImVec2((float)TextureWidth * scale, (float)TextureHeight * scale));

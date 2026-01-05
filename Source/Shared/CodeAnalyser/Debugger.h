@@ -189,6 +189,7 @@ private:
 	int		GetFrameTraceItemIndex(FAddressRef address);
 
 private:
+public:
 	FCodeAnalysisState*	pCodeAnalysis = nullptr;
 
 	ECPUType		CPUType = ECPUType::Unknown;
