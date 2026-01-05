@@ -219,6 +219,9 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, uint16_t addr, const FDataIn
 		// this needs rewriting
 		for (int byte = 0; byte < pDataInfo->ByteSize; byte++)
 		{
+			// dont we need to know the dimensions of the sprite?
+			// number of pixels are byteSize / 2.
+			// this gives us our width in pixels but we don't know the height?
 			const uint8_t val = state.ReadByte(addr + byte);
 
 			for (int pixel = 0; pixel < 2; pixel++)
