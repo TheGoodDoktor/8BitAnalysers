@@ -73,7 +73,7 @@ public:
 	void UpdateScreen() override;
 
 	void DrawDebugOverlays(float x,float y) override;
-	void DrawCharMap(bool bPriority);
+	void DrawCharMap(int priority);
 	void DrawSprites();
 
 	// Game ROMS
@@ -122,4 +122,7 @@ public:
 	uint32_t	Palette[32];
 	uint32_t    TileColours[32][4];
 	uint32_t	SpriteColours[64][4];
+
+
+	FGraphicsView* pSpriteView = nullptr;
 };

@@ -329,6 +329,8 @@ bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
 	pSpriteRAM[0] = &RAM[0xB000 - 0x6000];
 	pSpriteRAM[1] = &RAM[0xB400 - 0x6000];
 
+	pSpriteView = new FGraphicsView(64, 64);
+
 	
 	return true;
 }
@@ -449,7 +451,7 @@ void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnal
 // byte 8, bits 7-4 : plane 0 for pixels 3-0
 // byte 8, bits 3-0 : plane 1 for pixels 3-0
 
-void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY)
+void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY, bool bRot90)
 {
 	uint32_t* pPixelBuffer = pView->GetPixelBuffer();
 	uint32_t* pBase = pPixelBuffer + (xp + (yp * pView->GetWidth()));
@@ -470,7 +472,39 @@ void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp,
 			const int bBit0 = bSet0 ? 1 : 0;
 			const int bBit1 = bSet1 ? 1 : 0;
 			const uint32_t col = cols[bBit0 + (bBit1<<1)];
-			*(pBase + drawX + (drawY * pView->GetWidth())) = col;
+			if(bRot90)
+				*(pBase + drawY + (drawX * pView->GetWidth())) = col;
+			else
+				*(pBase + drawX + (drawY * pView->GetWidth())) = col;
+		}
+	}
+}
+
+// draw 16*16 sprite using 2 bit planes
+void DrawSprite(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY, bool bRot90)
+{
+	uint32_t* pPixelBuffer = pView->GetPixelBuffer();
+	uint32_t* pBase = pPixelBuffer + (xp + (yp * pView->GetWidth()));
+
+	for (int y = 0; y < 16; y++)
+	{
+		const uint8_t charLine0 = pSrc[y];
+		const uint8_t charLine1 = pSrc[y + 16];
+		const uint8_t plane0 = (charLine0 & 0xf0) | (charLine1 & 0x0f);
+		const uint8_t plane1 = ((charLine0 & 0x0f) << 4) | ((charLine1 & 0xf0) >> 4);
+		for (int xpix = 0; xpix < 16; xpix++)
+		{
+			const int drawX = bFlipX ? (15 - xpix) : xpix;
+			const int drawY = bFlipY ? (15 - y) : y;
+			const bool bSet0 = (plane0 & (1 << (7 - (xpix % 8)))) != 0;
+			const bool bSet1 = (plane1 & (1 << (7 - (xpix % 8)))) != 0;
+			const int bBit0 = bSet0 ? 1 : 0;
+			const int bBit1 = bSet1 ? 1 : 0;
+			const uint32_t col = cols[bBit0 + (bBit1 << 1)];
+			if (bRot90)
+				*(pBase + drawY + (drawX * pView->GetWidth())) = col;
+			else
+				*(pBase + drawX + (drawY * pView->GetWidth())) = col;
 		}
 	}
 }
@@ -510,8 +544,10 @@ void DrawImage(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, int wi
 }
 
 
-void FTimePilotMachine::DrawCharMap(bool bPriority)
+void FTimePilotMachine::DrawCharMap(int priority)
 {
+	bool bRot = false;	// Rotation so screen is facing correct direction
+
 	// TODO: update the screen image using the VideoRAM & ColourRAM
 	for (int yc = 0; yc < 32; yc++)
 	{
@@ -524,19 +560,24 @@ void FTimePilotMachine::DrawCharMap(bool bPriority)
 			const bool bFlipX = (attr & 0x40) != 0;
 			const bool bFlipY = (attr & 0x80) != 0;
 			const uint8_t category = (attr & 0x10) >> 4;	// ??
-			const uint32_t* pColours = TileColours[colour];
-			const uint8_t* pTile = &TilesROM[vidChar * 16];
-			DrawCharacter8x8(pScreen, pTile, xc * 8, yc * 8, pColours, bFlipX, bFlipY);
-			//DrawImage(pScreen, pTile, xc * 8, yc * 8, 8, 8, pColours);
-			//pScreen->Draw2BppImageAt(pTile,xc * 8,yc * 8,8,8,pColours);
-			// TODO: draw char at (xc*8, yc*8)
-			//pScreen->DrawCharacter8x8(xc * 8, yc * 8, vidChar, colour, bFlipX, bFlipY);
+			if(priority == category)
+			{
+				const uint32_t* pColours = TileColours[colour];
+				const uint8_t* pTile = &TilesROM[vidChar * 16];
+				if (bRot)
+					DrawCharacter8x8(pScreen, pTile, (31 - yc) * 8, xc * 8, pColours, bFlipX, !bFlipY, true);
+				else
+					DrawCharacter8x8(pScreen, pTile, xc * 8, yc * 8, pColours, bFlipX, bFlipY, false);
+			}
+
 		}
 	}
 }
 
 void FTimePilotMachine::DrawSprites()
 {
+	bool bRot = false;	// Rotation so screen is facing correct direction
+
 	for (int offs = 0x3e; offs >= 0x10; offs -= 2)
 	{
 		int const sx = pSpriteRAM[0][offs];
@@ -544,10 +585,15 @@ void FTimePilotMachine::DrawSprites()
 
 		int const code = pSpriteRAM[0][offs + 1];
 		int const colour = pSpriteRAM[1][offs] & 0x3f;
-		int const flipx = ~pSpriteRAM[1][offs] & 0x40;
-		int const flipy = pSpriteRAM[1][offs] & 0x80;
+		const bool bFlipx = (~pSpriteRAM[1][offs] & 0x40) != 0;
+		const bool bFlipy = (pSpriteRAM[1][offs] & 0x80) != 0;
 
 		const uint32_t* pSpriteColours = SpriteColours[colour];
+
+		const int spriteByteSize = (4 * 16);
+		const uint8_t* pSprite = &SpriteROM[code * spriteByteSize];
+		DrawSprite(pScreen, pSprite, sx, sy, pSpriteColours, bFlipx, bFlipy, bRot);
+
 		/*m_gfxdecode->gfx(1)->transpen(bitmap, cliprect,
 			code,
 			color,
@@ -585,11 +631,37 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 			sx, sy, 0);
 			*/
 	}
+
+	// Sprite Viewer
+	static int SpriteNo = 0;
+	static int SpriteColour = 0;
+	static bool bFlipx = false;
+	static bool bFlipy = false;
+	static bool bRot = false;
+
+	ImGui::InputInt("SpriteNo", &SpriteNo);
+	ImGui::SameLine();
+	ImGui::InputInt("SpriteColour", &SpriteColour);
+	ImGui::Checkbox("Flip X", &bFlipx);
+	ImGui::SameLine();
+	ImGui::Checkbox("Flip Y", &bFlipy);
+	ImGui::SameLine();
+	ImGui::Checkbox("Rotate 90", &bRot);
+
+	const uint32_t* pSpriteColours = SpriteColours[SpriteColour];
+	const int spriteByteSize = (4 * 16);
+	const uint8_t* pSprite = &SpriteROM[SpriteNo * spriteByteSize];
+	DrawSprite(pSpriteView, pSprite, 0, 0, pSpriteColours, bFlipx, bFlipy, bRot);
+
+	uint32_t monoColours[2] = { 0xff000000, 0xffffffff };
+	pSpriteView->Draw1BppImageAt(pSprite, 0, 16, 32, 16, monoColours);
+	pSpriteView->Draw1BppImageAt(pSprite, 0, 32, 16, 32, monoColours);
+	pSpriteView->Draw(true);
 }
 
 void FTimePilotMachine::UpdateScreen()
 {
-	DrawCharMap(false);
+	DrawCharMap(0);
 	DrawSprites();
-	DrawCharMap(true);
+	DrawCharMap(1);
 }
