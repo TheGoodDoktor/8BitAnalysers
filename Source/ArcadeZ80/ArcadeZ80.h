@@ -20,6 +20,7 @@ enum class EEventType : uint8_t
 	None = 0,
 	WriteVideoRAM,
 	WriteColorRAM,
+	WriteSpriteRAM,
 
 	ReadVideoScanline,
 	ReadDSW2,

@@ -110,6 +110,7 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	//debugger.RegisterEventType((int)EEventType::None, "None", 0);
 	debugger.RegisterEventType((int)EEventType::WriteVideoRAM, "Video RAM Write", 0xff0000ff, nullptr, nullptr);
 	debugger.RegisterEventType((int)EEventType::WriteColorRAM, "Color RAM Write", 0xff00ffff, nullptr, nullptr);
+	debugger.RegisterEventType((int)EEventType::WriteSpriteRAM, "Sprite RAM Write", 0xffff00ff, nullptr, nullptr);
 	debugger.RegisterEventType((int)EEventType::ReadVideoScanline, "Video Scanline Read", 0xffffff00, nullptr, nullptr);
 	debugger.RegisterEventType((int)EEventType::ReadDSW2, "DSW2 Read", 0xffff00ff, nullptr, nullptr);
 	debugger.RegisterEventType((int)EEventType::ReadIN0, "IN0 Read", 0xff00ff00, nullptr, nullptr);
@@ -183,7 +184,7 @@ void FArcadeZ80::Tick()
 	//Display.Tick();
 	pMachine->Update();
 
-	CodeAnalysis.OnMachineFrameStart();
+	//CodeAnalysis.OnMachineFrameStart();
 	
 	FDebugger& debugger = CodeAnalysis.Debugger;
 	
@@ -199,7 +200,7 @@ void FArcadeZ80::Tick()
 		CodeAnalysis.OnFrameEnd();
 	}
 
-	CodeAnalysis.OnMachineFrameEnd();
+	//CodeAnalysis.OnMachineFrameEnd();
 
 	// Draw UI
 	DrawDockingView();
@@ -430,19 +431,20 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 	lastTickPins = pins;
 	static uint16_t lastScanlinePos = 0;
 
-	/*
-	const uint16_t scanlinePos = (uint16_t)ZXEmuState.scanline_y;
-
+	const uint16_t scanlinePos = (uint16_t)pMachine->VCounter;
+	
+	
 	// trigger frame events on scanline pos
 	if (scanlinePos != lastScanlinePos)
 	{
 		if (scanlinePos == 0)	// first scanline
 			CodeAnalysis.OnMachineFrameStart();
-		if (scanlinePos == ZXEmuState.frame_scan_lines)	// last scanline
+		if (scanlinePos == 525)	// last scanline
 			CodeAnalysis.OnMachineFrameEnd();
 	}
+	
+
 	lastScanlinePos = scanlinePos;
-	*/
 
 	/* memory and IO requests */
 	if (pins & Z80_MREQ)
@@ -476,17 +478,17 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 					RegisterDataRead(state, pc, addr);
 
 				if(addr == 0xC000)
-					debugger.RegisterEvent((uint8_t)EEventType::ReadVideoScanline, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+					debugger.RegisterEvent((uint8_t)EEventType::ReadVideoScanline, state.AddressRefFromPhysicalAddress(pc), addr, value, scanlinePos);
 				else if (addr == 0xC200)
-					debugger.RegisterEvent((uint8_t)EEventType::ReadDSW2, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+					debugger.RegisterEvent((uint8_t)EEventType::ReadDSW2, state.AddressRefFromPhysicalAddress(pc), addr, value, scanlinePos);
 				else if (addr == 0xC300)
-					debugger.RegisterEvent((uint8_t)EEventType::ReadIN0, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+					debugger.RegisterEvent((uint8_t)EEventType::ReadIN0, state.AddressRefFromPhysicalAddress(pc), addr, value, scanlinePos);
 				else if (addr == 0xC320)
-					debugger.RegisterEvent((uint8_t)EEventType::ReadIN1, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+					debugger.RegisterEvent((uint8_t)EEventType::ReadIN1, state.AddressRefFromPhysicalAddress(pc), addr, value, scanlinePos);
 				else if (addr == 0xC340)
-					debugger.RegisterEvent((uint8_t)EEventType::ReadIN2, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+					debugger.RegisterEvent((uint8_t)EEventType::ReadIN2, state.AddressRefFromPhysicalAddress(pc), addr, value, scanlinePos);
 				else if (addr == 0xC360)
-					debugger.RegisterEvent((uint8_t)EEventType::ReadDSW1, state.AddressRefFromPhysicalAddress(pc), addr, value, 0);
+					debugger.RegisterEvent((uint8_t)EEventType::ReadDSW1, state.AddressRefFromPhysicalAddress(pc), addr, value, scanlinePos);
 
 			}
 		}
@@ -499,25 +501,29 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 			state.SetLastWriterForAddress(addr, pcAddrRef);
 
 			if (addr >= 0xA400 && addr <= 0xA7FF)
-				debugger.RegisterEvent((uint8_t)EEventType::WriteVideoRAM, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::WriteVideoRAM, pcAddrRef, addr, value, scanlinePos);
 			else if (addr >= 0xA000 && addr < 0xA3FF)
-				debugger.RegisterEvent((uint8_t)EEventType::WriteColorRAM, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::WriteColorRAM, pcAddrRef, addr, value, scanlinePos);
+			else if (addr >= 0xB000 && addr < 0xB100)
+				debugger.RegisterEvent((uint8_t)EEventType::WriteSpriteRAM, pcAddrRef, addr, value, scanlinePos);
+			else if (addr >= 0xB400 && addr < 0xB500)
+				debugger.RegisterEvent((uint8_t)EEventType::WriteSpriteRAM, pcAddrRef, addr, value, scanlinePos);
 			else if(addr == 0xC000)
-				debugger.RegisterEvent((uint8_t)EEventType::SendAudioCommand, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::SendAudioCommand, pcAddrRef, addr, value, scanlinePos);
 			else if (addr == 0xC200)
-				debugger.RegisterEvent((uint8_t)EEventType::WatchdogReset, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::WatchdogReset, pcAddrRef, addr, value, scanlinePos);
 			else if (addr == 0xC300)
-				debugger.RegisterEvent((uint8_t)EEventType::InterruptEnable, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::InterruptEnable, pcAddrRef, addr, value, scanlinePos);
 			else if (addr == 0xC302)
-				debugger.RegisterEvent((uint8_t)EEventType::FlipScreen, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::FlipScreen, pcAddrRef, addr, value, scanlinePos);
 			else if (addr == 0xC304)
-				debugger.RegisterEvent((uint8_t)EEventType::TriggerAudioInterrupt, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::TriggerAudioInterrupt, pcAddrRef, addr, value, scanlinePos);
 			else if (addr == 0xC308)
-				debugger.RegisterEvent((uint8_t)EEventType::VideoEnable, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::VideoEnable, pcAddrRef, addr, value, scanlinePos);
 			else if (addr == 0xC30A)
-				debugger.RegisterEvent((uint8_t)EEventType::CoinCounter1, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::CoinCounter1, pcAddrRef, addr, value, scanlinePos);
 			else if (addr == 0xC30C)
-				debugger.RegisterEvent((uint8_t)EEventType::CoinCounter2, pcAddrRef, addr, value, 0);
+				debugger.RegisterEvent((uint8_t)EEventType::CoinCounter2, pcAddrRef, addr, value, scanlinePos);
 		}
 	}
 
