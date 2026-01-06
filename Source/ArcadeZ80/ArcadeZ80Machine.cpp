@@ -750,9 +750,12 @@ void FTimePilotMachine::DebugDrawString(uint16_t stringAddress)
 
 	while (true)
 	{
-		uint8_t ch = pCodeAnalysis->ReadByte(stringAddress++);
+		int ch = pCodeAnalysis->ReadByte(stringAddress++);
 		if(ch == 0xB9)
 			break;
+
+		if(attr & 0x20)	// character set 2
+			ch += 256;
 
 		const uint8_t* pCharacter = &TilesROM[ch * 16];
 		DrawCharacter8x8(pStringView,pCharacter,x * 8,y * 8, pColours,bFlipX,bFlipY,false,false);
