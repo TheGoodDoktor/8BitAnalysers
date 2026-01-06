@@ -348,7 +348,7 @@
             "bStubbedOut": false
         },
         {
-            "Description": "",
+            "Description": "This sets the sprites to draw the Konami copyright",
             "EndAddress": 184942592,
             "StartAddress": 184942592,
             "bManualEdit": false,
@@ -366,7 +366,7 @@
             "bStubbedOut": false
         },
         {
-            "Description": "",
+            "Description": "This queues different commands on alternate frames",
             "EndAddress": 188284928,
             "StartAddress": 188284928,
             "bManualEdit": false,
@@ -1727,6 +1727,15 @@
         },
         {
             "Description": "",
+            "EndAddress": 1259929602,
+            "StartAddress": 1259929602,
+            "bManualEdit": false,
+            "bROMFunction": true,
+            "bStubImplemented": false,
+            "bStubbedOut": false
+        },
+        {
+            "Description": "",
             "EndAddress": 1261436930,
             "StartAddress": 1261436930,
             "bManualEdit": false,
@@ -2451,7 +2460,8 @@
                 },
                 {
                     "Address": 56,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 32
                 },
                 {
                     "Address": 57,
@@ -7945,43 +7955,57 @@
                 },
                 {
                     "Address": 774,
-                    "ByteSize": 4
+                    "ByteSize": 4,
+                    "OperandType": 1
                 },
                 {
                     "Address": 778,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "4 sprites"
                 },
                 {
                     "Address": 780,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "sprite no of first (C)Konami sprites"
                 },
                 {
                     "Address": 782,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "y coord",
+                    "OperandType": 7
                 },
                 {
                     "Address": 784,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "x coord",
+                    "OperandType": 7
                 },
                 {
                     "Address": 786,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "y",
+                    "Flags": 32
                 },
                 {
                     "Address": 789,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "x"
                 },
                 {
                     "Address": 792,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "sprite no"
                 },
                 {
                     "Address": 795,
-                    "ByteSize": 4
+                    "ByteSize": 4,
+                    "Comment": "flip & colour",
+                    "OperandType": 4
                 },
                 {
                     "Address": 799,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "next sprite"
                 },
                 {
                     "Address": 801,
@@ -7993,7 +8017,8 @@
                 },
                 {
                     "Address": 804,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "subtract 16 pixels from Y"
                 },
                 {
                     "Address": 805,
@@ -8014,7 +8039,8 @@
                 },
                 {
                     "Address": 811,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 814,
@@ -8061,20 +8087,24 @@
                 },
                 {
                     "Address": 832,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "command 1, param 0"
                 },
                 {
                     "Address": 835,
                     "ByteSize": 3,
+                    "Comment": "tail call",
                     "OperandType": 2
                 },
                 {
                     "Address": 838,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "command 1, param 1F"
                 },
                 {
                     "Address": 841,
                     "ByteSize": 3,
+                    "Comment": "tail call",
                     "OperandType": 2
                 },
                 {
@@ -8191,7 +8221,7 @@
                 {
                     "Address": 941,
                     "ByteSize": 2,
-                    "OperandType": 5
+                    "OperandType": 7
                 },
                 {
                     "Address": 943,
@@ -8302,6 +8332,7 @@
                 {
                     "Address": 1010,
                     "ByteSize": 3,
+                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -8561,12 +8592,12 @@
                     "Address": 774,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_0B06"
+                    "Name": "SetKonamicSpriteParams"
                 },
                 {
                     "Address": 786,
                     "LabelType": 2,
-                    "Name": "label_0B12"
+                    "Name": "konami_sprite_loop"
                 },
                 {
                     "Address": 811,
@@ -8599,7 +8630,7 @@
                 {
                     "Address": 838,
                     "LabelType": 2,
-                    "Name": "label_0B46"
+                    "Name": "alt_frame"
                 },
                 {
                     "Address": 844,
@@ -13312,11 +13343,13 @@
                 },
                 {
                     "Address": 846,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 849,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "dec timer?"
                 },
                 {
                     "Address": 850,
@@ -13324,23 +13357,28 @@
                 },
                 {
                     "Address": 851,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 854,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 857,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "read video ram char"
                 },
                 {
                     "Address": 858,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "store"
                 },
                 {
                     "Address": 859,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "inc dest"
                 },
                 {
                     "Address": 860,
@@ -13348,7 +13386,8 @@
                 },
                 {
                     "Address": 862,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "read colour RAM"
                 },
                 {
                     "Address": 863,
@@ -13356,7 +13395,8 @@
                 },
                 {
                     "Address": 864,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "command 3 param 3"
                 },
                 {
                     "Address": 867,
@@ -13763,6 +13803,12 @@
                 },
                 {
                     "Address": 619,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
+                    "Address": 621,
                     "ByteSize": 2,
                     "DataType": 2,
                     "DisplayType": 1
@@ -29755,6 +29801,11 @@
                     "Name": "label_4A3B"
                 },
                 {
+                    "Address": 575,
+                    "LabelType": 0,
+                    "Name": "operand_4A3F"
+                },
+                {
                     "Address": 578,
                     "LabelType": 2,
                     "Name": "label_4A42"
@@ -29796,6 +29847,12 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_4AFB"
+                },
+                {
+                    "Address": 793,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "label_4B19"
                 },
                 {
                     "Address": 803,
@@ -37176,7 +37233,7 @@
                 },
                 {
                     "Address": 577,
-                    "Comment": "x pos",
+                    "Comment": "y",
                     "DisplayType": 11
                 },
                 {
@@ -37926,6 +37983,7 @@
                 {
                     "Address": 996,
                     "ByteSize": 2,
+                    "Comment": "return address for below?",
                     "DataType": 2
                 },
                 {
@@ -38073,6 +38131,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_ACC6"
+                },
+                {
+                    "Address": 199,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_ACC7"
                 },
                 {
                     "Address": 256,
