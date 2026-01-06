@@ -14,7 +14,7 @@
     "NumberMode": 2,
     "OverviewScale": 2,
     "ROMAnalysisPath": "",
-    "ShowOpcodeValues": false,
+    "ShowOpcodeValues": true,
     "ShowScanlineIndicator": false,
     "SnapshotFolder": "./Games/",
     "UseBuiltInFont": false,
