@@ -12,6 +12,7 @@
 #include "SaveGame.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
+#include "CodeAnalyser/UI/GlobalsViewer.h"
 
 // TODO: Load Arcade Z80 binaries
 
@@ -126,6 +127,8 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::CoinCounter1, "Coin Counter 1", 0xff00ff00, nullptr, nullptr);
 	debugger.RegisterEventType((int)EEventType::CoinCounter2, "Coin Counter 2", 0xff0000ff, nullptr, nullptr);
 
+	// Because all Arcade games are ROM based, enable ROM-based globals by default
+	pGlobalsViewer->ShowROMLabels(true);
 
 	return true;
 }
@@ -415,7 +418,7 @@ bool FArcadeZ80::SaveProject(void)
 
 	//SaveMachineState(saveStateFName.c_str());
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str(), EExportAnalysis::Both);
-	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
+	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str(), true);
 
 	return false;
 }

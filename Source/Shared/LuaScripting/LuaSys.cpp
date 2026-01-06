@@ -603,7 +603,7 @@ bool ExportGlobalLabels()
 		const FCodeAnalysisBank* pBank = state.GetBank(global.AddressRef.BankId);
 		if (pBank)
 		{
-			if (pBank->bMachineROM)
+			if (pBank->bMachineROM)	// TODO: this should be optional
 				continue;
 		}
 

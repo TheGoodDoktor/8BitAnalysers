@@ -191,7 +191,7 @@ bool FStaticAnalyser::RunAnalysis(void)
 	{
 		const FCodeAnalysisBank& bank = banks[bankNo];
 
-		if(bank.bMachineROM)
+		if(bank.bMachineROM)	// TODO: this should be optional
 			continue;
 
 		int addToSelfRun = 0;

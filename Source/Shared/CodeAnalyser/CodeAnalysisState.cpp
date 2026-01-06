@@ -137,7 +137,7 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 	}
 }
 
-bool ExportAnalysisState(FCodeAnalysisState& state, const char* pAnalysisBinFile)
+bool ExportAnalysisState(FCodeAnalysisState& state, const char* pAnalysisBinFile, bool bExportROMInfo)
 {
 	FILE* fp = fopen(pAnalysisBinFile, "wb");
 	if (fp == nullptr)
@@ -153,7 +153,7 @@ bool ExportAnalysisState(FCodeAnalysisState& state, const char* pAnalysisBinFile
 	for (int bankNo = 0; bankNo < banks.size(); bankNo++)
 	{
 		const FCodeAnalysisBank& bank = banks[bankNo];
-		if (bank.bMachineROM)	// skip machine ROM banks
+		if (bank.bMachineROM && bExportROMInfo == false)	// skip machine ROM banks if not wanted
 			continue;
 
 		for (int pageNo = 0; pageNo < bank.NoPages; pageNo++)

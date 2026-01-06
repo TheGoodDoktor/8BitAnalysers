@@ -34,7 +34,7 @@ public:
 	}
 	void	Reset()
 	{
-		ShowROMLabels = false;
+		bShowROMLabels = false;
 		FilterText.clear();
 		DataTypeFilter = EDataTypeFilter::All;
 		//GlobalDataItemsFilter.Reset();
@@ -44,12 +44,21 @@ public:
 		DataSortMode = EDataSortMode::Location;
 		FunctionSortMode = EFunctionSortMode::Location;
 	}
+
+	void ShowROMLabels(bool bShow)
+	{
+		bShowROMLabels = bShow;
+		GlobalFunctionsFilter.bNoMachineRoms = !bShowROMLabels;
+		GlobalDataItemsFilter.bNoMachineRoms = !bShowROMLabels;
+		bRebuildFilteredGlobalFunctions = true;
+		bRebuildFilteredGlobalDataItems = true;
+	}
 private:
 	void	DrawGlobals();
 
 
 	// for global Filters
-	bool						ShowROMLabels = false;
+	bool						bShowROMLabels = false;
 	std::string					FilterText;
 	EDataTypeFilter						DataTypeFilter = EDataTypeFilter::All;
 	FLabelListFilter			GlobalDataItemsFilter;
