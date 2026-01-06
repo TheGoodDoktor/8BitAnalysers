@@ -27,6 +27,8 @@ bool FArcadeZ80Machine::Init(const FArcadeZ80MachineDesc& desc)
 	memset(&CPU, 0, sizeof(CPU));
 
 	bValid = true;
+
+	pCodeAnalysis = desc.pCodeAnalysis;	
 	Debug = desc.Debug;
 
 	// initialize the hardware
@@ -330,7 +332,7 @@ bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
 	pSpriteRAM[1] = &RAM[0xB400 - 0x6000];
 
 	pSpriteView = new FGraphicsView(64, 64);
-
+	pStringView = new FGraphicsView(256, 256);
 	
 	return true;
 }
@@ -422,8 +424,10 @@ void FTimePilotMachine::SetupPalette()
 }
 
 
-void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis)
+void FTimePilotMachine::SetupCodeAnalysisForMachine()
 {
+	FCodeAnalysisState& codeAnalysis = *pCodeAnalysis;
+
 	// Set up memory banks
 	ROM1BankId = codeAnalysis.CreateBank("ROM1", 8, ROM1, true, 0x0000, true);
 	ROM2BankId = codeAnalysis.CreateBank("ROM2", 8, ROM2, true, 0x2000, true);
@@ -438,11 +442,10 @@ void FTimePilotMachine::SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnal
 	mem_map_rom(&Memory, 0, 0x4000, 0x2000, ROM3);
 
 	// RAM
+	memset(&RAM,0,sizeof(RAM));
 	RAMBankId = codeAnalysis.CreateBank("RAM", 40, RAM, false, 0x6000, true);					// RAM - $6000 - $FFFF - pages 24-63 - 40K
 	codeAnalysis.MapBank(RAMBankId, 24, EBankAccess::ReadWrite);
 	mem_map_ram(&Memory, 0, 0x6000, 40 * 1024, RAM);
-
-
 }
 
 // byte 0, bits 7-4 : plane 0 for pixels 7-4
@@ -577,6 +580,64 @@ void FTimePilotMachine::DrawSprites()
 	}
 }
 
+// Debug Command Queue
+// Queue at 0xAC00
+// Read index at 0xA9B3
+// Write index at 0xA9B2
+
+// string for all 15 commands
+static const char* kCommandNames[] = 
+{
+	"Command 00",
+	"Output String",
+	"Command 02",
+	"Command 03",
+	"Command 04",
+	"Command 05",
+	"Command 06",
+	"Command 07",
+	"Command 08",
+	"Command 09",
+	"Command 0A",
+	"Command 0B",
+	"Command 0C",
+	"Command 0D",
+	"Command 0E",
+	"Command 0F"		
+};
+
+void FTimePilotMachine::DebugDrawCommandQueue()
+{
+	FCodeAnalysisState& analysis = *pCodeAnalysis;
+	const uint16_t kCommandQueueAddr = 0xAC00;
+	const uint16_t kReadIndexAddr = 0xA9B3;
+	const uint16_t kWriteIndexAddr = 0xA9B2;
+
+	uint16_t readIndex = analysis.ReadByte(kReadIndexAddr);
+	uint8_t command = analysis.ReadByte(kCommandQueueAddr + readIndex);
+
+	ImGui::Text("Command Queue:");
+
+	int bailout = 0;
+	while (command != 0xff)
+	{
+		uint8_t param = analysis.ReadByte(kCommandQueueAddr + readIndex + 1);
+		
+		ImGui::Text("Command: %s, Param: %02x", kCommandNames[command], param);
+
+		// advance read index
+		readIndex = (readIndex + 2) & 0x3f;
+		command = analysis.ReadByte(kCommandQueueAddr + readIndex);
+
+		bailout++;
+		if (bailout > 32)
+			break;
+	}
+
+}
+
+
+
 void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 {
 	const ImVec2 pos(x,y);
@@ -617,6 +678,8 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 	ImGui::SameLine();
 	ImGui::Checkbox("Sprite Debug", &bSpriteDebug);
 
+	bool bRedrawSprite = false;
+
 	// Sprite Viewer
 	static int SpriteNo = 0;
 	static int SpriteColour = 0;
@@ -624,19 +687,23 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 	static bool bFlipy = false;
 	static bool bRot = false;
 
-	ImGui::InputInt("SpriteNo", &SpriteNo);
+	bRedrawSprite |= ImGui::InputInt("SpriteNo", &SpriteNo);
 	//ImGui::SameLine();
-	ImGui::InputInt("SpriteColour", &SpriteColour);
-	ImGui::Checkbox("Flip X", &bFlipx);
+	bRedrawSprite |= ImGui::InputInt("SpriteColour", &SpriteColour);
+	bRedrawSprite |= ImGui::Checkbox("Flip X", &bFlipx);
 	ImGui::SameLine();
-	ImGui::Checkbox("Flip Y", &bFlipy);
+	bRedrawSprite |= ImGui::Checkbox("Flip Y", &bFlipy);
 	ImGui::SameLine();
-	ImGui::Checkbox("Rotate 90", &bRot);
+	bRedrawSprite |= ImGui::Checkbox("Rotate 90", &bRot);
 
-	const uint32_t* pSpriteColours = SpriteColours[SpriteColour];
-	const int spriteByteSize = (4 * 16);
-	const uint8_t* pSprite = &SpriteROM[SpriteNo * spriteByteSize];
-	DrawSprite(pSpriteView, pSprite, 0, 0, pSpriteColours, bFlipx, bFlipy, bRot);
+	if(bRedrawSprite)
+	{
+		pSpriteView->Clear(0xff000000);
+		const uint32_t* pSpriteColours = SpriteColours[SpriteColour];
+		const int spriteByteSize = (4 * 16);
+		const uint8_t* pSprite = &SpriteROM[SpriteNo * spriteByteSize];
+		DrawSprite(pSpriteView, pSprite, 0, 0, pSpriteColours, bFlipx, bFlipy, bRot);
+	}
 
 	/*uint32_t monoColours[2] = {0xff000000, 0xffffffff};
 	pSpriteView->Draw1BppImageAt(pSprite, 0, 16, 32, 16, monoColours);
@@ -648,6 +715,50 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 	DrawCharacter8x8(pSpriteView, pSprite + 48, 16 + 8, 8, pSpriteColours, bFlipx, bFlipy, bRot);*/
 
 	pSpriteView->Draw(true);
+
+	DebugDrawCommandQueue();
+	
+	
+	ImGui::Text("Output Strings");
+	static int stringNo=0;
+	if (ImGui::InputInt("String No", &stringNo))
+	{
+		const uint16_t kStringTableAddr = 0x0C50;
+
+		uint16_t stringAddress = pCodeAnalysis->ReadWord(kStringTableAddr + (stringNo*2));
+		DebugDrawString(stringAddress);		
+	}
+	pStringView->Draw();
+}
+
+void FTimePilotMachine::DebugDrawString(uint16_t stringAddress)
+{
+	pStringView->Clear(0xff000000);
+
+	uint16_t videoRAMAddress = pCodeAnalysis->ReadWord(stringAddress);
+	uint16_t videoRAMOffset = videoRAMAddress - 0xA400;
+	int x = videoRAMOffset & 31;
+	int y = videoRAMOffset / 32;
+
+	stringAddress += 2;
+	const uint8_t attr = pCodeAnalysis->ReadByte(stringAddress++);
+	const uint8_t colour = attr & 0x01f;
+	const bool bFlipX = (attr & 0x40) != 0;
+	const bool bFlipY = (attr & 0x80) != 0;
+	const uint8_t category = (attr & 0x10) >> 4;	// ??
+	const uint32_t* pColours = TileColours[colour];
+
+	while (true)
+	{
+		uint8_t ch = pCodeAnalysis->ReadByte(stringAddress++);
+		if(ch == 0xB9)
+			break;
+
+		const uint8_t* pCharacter = &TilesROM[ch * 16];
+		DrawCharacter8x8(pStringView,pCharacter,x * 8,y * 8, pColours,bFlipX,bFlipY,false,false);
+		y--;
+	}
+
 }
 
 void FTimePilotMachine::UpdateScreen()

@@ -62,6 +62,8 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	// setup machine
 	FArcadeZ80MachineDesc desc = {};
 
+	desc.pCodeAnalysis = &CodeAnalysis;
+
 	// setup debug hook
 	desc.Debug.callback.func = DebugCB;
 	desc.Debug.callback.user_data = this;
@@ -69,7 +71,7 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	pMachine = new FTimePilotMachine;
 	pMachine->Init(desc);
-	pMachine->SetupCodeAnalysisForMachine(CodeAnalysis);
+	pMachine->SetupCodeAnalysisForMachine();
 
 	//Display.Init(this);
 

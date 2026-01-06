@@ -17,6 +17,7 @@ class FGraphicsView;
 
 struct FArcadeZ80MachineDesc
 {
+	FCodeAnalysisState* pCodeAnalysis = nullptr;
 	chips_debug_t	Debug;
 };
 
@@ -25,7 +26,7 @@ class FArcadeZ80Machine
 public:
 	bool Init(const FArcadeZ80MachineDesc& desc);
 	virtual bool InitMachine(const FArcadeZ80MachineDesc& desc) = 0;
-	virtual void SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis) = 0;
+	virtual void SetupCodeAnalysisForMachine() = 0;
 	virtual void UpdateScreen() {}
 	virtual void DrawDebugOverlays(float x, float y) {}
 	void Update();
@@ -62,19 +63,24 @@ public:
 
 	FGraphicsView*	pScreen = nullptr;
 
+	FCodeAnalysisState* pCodeAnalysis = nullptr;
+
 };
 
 class FTimePilotMachine : public FArcadeZ80Machine
 {
 public:
 	bool InitMachine(const FArcadeZ80MachineDesc& desc) override;
-	void SetupCodeAnalysisForMachine(FCodeAnalysisState& codeAnalysis) override;
+	void SetupCodeAnalysisForMachine() override;
 	void SetupPalette();
 	void UpdateScreen() override;
 
 	void DrawDebugOverlays(float x,float y) override;
 	void DrawCharMap(int priority);
 	void DrawSprites();
+
+	void DebugDrawCommandQueue();
+	void DebugDrawString(uint16_t stringAddress);
 
 	// Game ROMS
 	uint8_t		ROM1[0x2000];	// 0x0000 - 0x1FFF
@@ -109,8 +115,8 @@ public:
 	uint32_t    TileColours[32][4];
 	uint32_t	SpriteColours[64][4];
 
-
 	FGraphicsView* pSpriteView = nullptr;
+	FGraphicsView* pStringView = nullptr;
 	bool		bSpriteDebug = false;
 	bool		bRotateScreen = false;
 };
