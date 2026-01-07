@@ -185,6 +185,8 @@ private:
 	int		GetFrameTraceItemIndex(FAddressRef address);
 
 private:
+	static const int kMaxScanlineEvents = 320;
+
 	FCodeAnalysisState*	pCodeAnalysis = nullptr;
 
 	ECPUType		CPUType = ECPUType::Unknown;
@@ -206,7 +208,7 @@ private:
 	int							FrameTraceItemIndex = -1;
 	std::vector<FEvent>			EventTrace;
 	int							SelectedEventIndex = -1;
-	uint8_t						ScanlineEvents[320] = {0};
+	uint8_t						ScanlineEvents[kMaxScanlineEvents] = {0};
 	bool						bClearEventsEveryFrame = true;
 	bool						bWriteEventComments = false;
 

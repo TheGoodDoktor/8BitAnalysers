@@ -51,6 +51,7 @@ endif ()
 # program source
 file ( GLOB program_src CONFIGURE_DEPENDS
 	./*.cpp ./*.c ./*.h
+	./TimePilot/*.cpp ./TimePilot/*.c ./TimePilot/*.h
 	chips_extra/*.h
 	)
 

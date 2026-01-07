@@ -13,6 +13,7 @@
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "CodeAnalyser/UI/GlobalsViewer.h"
+#include "TimePilot/TimePilotMachine.h"
 
 // TODO: Load Arcade Z80 binaries
 
@@ -178,7 +179,11 @@ void FArcadeZ80::DrawEmulatorUI()
 	}
 	ImGui::End();
 
-	//Display.DrawUI();
+	if (ImGui::Begin("ArcadeZ80 Debug"))
+	{
+		pMachine->DrawDebugUI();
+	}
+	ImGui::End();
 
 }
 
@@ -444,7 +449,7 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 	{
 		if (scanlinePos == 0)	// first scanline
 			CodeAnalysis.OnMachineFrameStart();
-		if (scanlinePos == 525)	// last scanline
+		if (scanlinePos == 320)	// last scanline
 			CodeAnalysis.OnMachineFrameEnd();
 	}
 	

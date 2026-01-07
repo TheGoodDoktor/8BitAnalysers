@@ -12,6 +12,7 @@
 #include <Util/GraphicsView.h>
 #include "Misc/EmuBase.h"
 #include <ImGuiSupport/ImGuiScaling.h>
+#include "Debug/DebugLog.h"
 
 static const uint32_t	BPMask_Exec			= 0x0001;
 static const uint32_t	BPMask_DataWrite	= 0x0002;
@@ -822,6 +823,12 @@ void FDebugger::RegisterEvent(uint8_t type, FAddressRef pc, uint16_t address, ui
 
 	if (!eventTypeInfo[type].bEnabled)
 		return;
+
+	if (scanlinePos >= kMaxScanlineEvents)
+	{
+		LOGWARNING("FDebugger::RegisterEvent: scanlinePos %d out of range", scanlinePos);
+		return;
+	}
 
 	ScanlineEvents[scanlinePos] = type;
 	EventTrace.emplace_back(type, pc, address, value, scanlinePos);
