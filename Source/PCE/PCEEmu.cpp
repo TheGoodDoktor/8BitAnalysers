@@ -195,6 +195,59 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	RegisterDataWrite(pEmu->GetCodeAnalysis(), pEmu->PrevPC, dataAddr, value);
+
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	FDebugger& debugger = state.Debugger;
+	
+	const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(dataAddr);
+
+	uint32_t bpMaskCheck = 0;
+	int trapId = kTrapId_None;
+
+	// only set the mask if we know we're on an address that's breakpointed
+	if (FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr))
+	{
+		if (pDataInfo->bHasBreakpoint)
+		{
+			// setup breakpoint mask to check
+			bpMaskCheck |= BPMask_DataWrite;
+		}
+	}
+
+	// iterate through data breakpoints
+	// this can slow down if there are a lot of BPs
+	// Do a mask check
+	if (bpMaskCheck & debugger.GetBreakpointMask())
+	{
+		const std::vector<FBreakpoint> breakpoints = debugger.GetBreakpoints();
+		for (int i = 0; i < breakpoints.size(); i++)
+		{
+			const FBreakpoint& bp = breakpoints[i];
+
+			if (bp.bEnabled)
+			{
+				switch (bp.Type)
+				{
+				case EBreakpointType::Data:
+					if (addrRef.GetBankId() == bp.Address.GetBankId() &&
+						addrRef.GetAddress() >= bp.Address.GetAddress() &&
+						addrRef.GetAddress() < bp.Address.GetAddress() + bp.Size)
+					{
+						trapId = kTrapId_BpBase + i;
+					}
+					break;
+
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	if (trapId != kTrapId_None)
+	{
+		debugger.Break();
+	}
 }
 
 void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex)
