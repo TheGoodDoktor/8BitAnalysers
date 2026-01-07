@@ -5369,11 +5369,13 @@
                 },
                 {
                     "Address": 197,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 200,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "compare to 5"
                 },
                 {
                     "Address": 201,
@@ -5408,7 +5410,8 @@
                 },
                 {
                     "Address": 215,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 218,
@@ -5443,7 +5446,8 @@
                 },
                 {
                     "Address": 232,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 235,
@@ -5478,7 +5482,8 @@
                 },
                 {
                     "Address": 249,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 252,
@@ -5513,7 +5518,8 @@
                 },
                 {
                     "Address": 266,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 269,
@@ -5548,7 +5554,8 @@
                 },
                 {
                     "Address": 283,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 286,
@@ -5583,7 +5590,8 @@
                 },
                 {
                     "Address": 300,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 303,
@@ -11497,6 +11505,12 @@
                     "Name": "OutputStringTable"
                 },
                 {
+                    "Address": 120,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_0C78"
+                },
+                {
                     "Address": 144,
                     "Global": true,
                     "LabelType": 1,
@@ -11772,7 +11786,7 @@
                     "Address": 794,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "label_0F1A"
+                    "Name": "AdvancePhase"
                 },
                 {
                     "Address": 799,
@@ -13633,11 +13647,13 @@
                 {
                     "Address": 485,
                     "ByteSize": 3,
+                    "Comment": "set phase 6",
                     "OperandType": 1
                 },
                 {
                     "Address": 488,
                     "ByteSize": 3,
+                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -15217,7 +15233,8 @@
                 },
                 {
                     "Address": 54,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "output string 'PLAY'"
                 },
                 {
                     "Address": 57,
@@ -15227,7 +15244,8 @@
                 },
                 {
                     "Address": 58,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "Time Pilot Logo - top"
                 },
                 {
                     "Address": 60,
@@ -15237,7 +15255,8 @@
                 },
                 {
                     "Address": 61,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "Time Pilot Logo - bottom"
                 },
                 {
                     "Address": 62,
@@ -15247,7 +15266,8 @@
                 },
                 {
                     "Address": 63,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "1st bonus text"
                 },
                 {
                     "Address": 65,
@@ -15265,7 +15285,8 @@
                 },
                 {
                     "Address": 71,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "advance to harder bonus strings"
                 },
                 {
                     "Address": 72,
@@ -15274,6 +15295,7 @@
                 {
                     "Address": 73,
                     "ByteSize": 1,
+                    "Comment": "1st bonus points",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -15284,6 +15306,7 @@
                 {
                     "Address": 75,
                     "ByteSize": 1,
+                    "Comment": "subsequent bonus points",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -15294,6 +15317,7 @@
                 {
                     "Address": 78,
                     "ByteSize": 1,
+                    "Comment": "'PUSH START BUTTON'",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -15304,6 +15328,7 @@
                 {
                     "Address": 81,
                     "ByteSize": 1,
+                    "Comment": "Konami (C)",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -15314,7 +15339,8 @@
                 },
                 {
                     "Address": 85,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "2 credits or more to allow 2 players"
                 },
                 {
                     "Address": 87,
@@ -15323,7 +15349,8 @@
                 },
                 {
                     "Address": 89,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "one player only"
                 },
                 {
                     "Address": 92,
@@ -15333,6 +15360,29 @@
                 },
                 {
                     "Address": 93,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 96,
+                    "ByteSize": 3,
+                    "Comment": "one or two players"
+                },
+                {
+                    "Address": 99,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 100,
+                    "ByteSize": 3,
+                    "Comment": "advance phase twice?",
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 103,
                     "ByteSize": 3,
                     "OperandType": 2
                 },
@@ -16064,12 +16114,12 @@
                 {
                     "Address": 73,
                     "LabelType": 2,
-                    "Name": "label_1849"
+                    "Name": "skip_harderbonus"
                 },
                 {
                     "Address": 96,
                     "LabelType": 2,
-                    "Name": "label_1860"
+                    "Name": "two_player_available"
                 },
                 {
                     "Address": 138,
@@ -39311,7 +39361,8 @@
                 {
                     "Address": 428,
                     "Comment": "this appears to get incremented on function tail calls",
-                    "DisplayType": 11
+                    "DisplayType": 11,
+                    "Flags": 128
                 },
                 {
                     "Address": 430,
@@ -39339,6 +39390,11 @@
                 },
                 {
                     "Address": 448,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 451,
+                    "Comment": "0: 10,000, 50,000 1: 20,000, 60,000 - Set by DIP switch",
                     "DisplayType": 11
                 },
                 {
@@ -39852,7 +39908,7 @@
                     "Address": 390,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A986"
+                    "Name": "Credits"
                 },
                 {
                     "Address": 391,
@@ -39912,7 +39968,7 @@
                     "Address": 428,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A9AC"
+                    "Name": "ProgramPhase"
                 },
                 {
                     "Address": 429,
@@ -39978,7 +40034,7 @@
                     "Address": 451,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A9C3"
+                    "Name": "BonusScheme"
                 },
                 {
                     "Address": 452,
@@ -40388,7 +40444,7 @@
                 {
                     "Address": 1022,
                     "ByteSize": 2,
-                    "Comment": "push return address",
+                    "Comment": "send 0",
                     "DataType": 2
                 }
             ],
