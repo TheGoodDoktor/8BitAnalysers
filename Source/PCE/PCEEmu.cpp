@@ -365,7 +365,8 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 
 	const uint16_t oldMappedAddress = pInBank->GetMappedAddress();
 	const int oldPrimaryPage = pInBank->PrimaryMappedPage;
-	const EBankAccess bankAccess = newBankIndex == kBankHWPage ? EBankAccess::ReadWrite : pMemory->GetMemoryMapWrite()[newBankIndex] ? EBankAccess::ReadWrite : EBankAccess::Read;
+	// Hardcoding save ram to be RW. This is to work around the situation where save ram can be paged in but gg reports the memory as read only.
+	const EBankAccess bankAccess = (newBankIndex == kBankHWPage || newBankIndex == kBankSaveRAM) ? EBankAccess::ReadWrite : pMemory->GetMemoryMapWrite()[newBankIndex] ? EBankAccess::ReadWrite : EBankAccess::Read;
 	const int pageNo = mprIndex * 8;
 	state.MapBank(newBankId, pageNo, bankAccess);
 	pInBank->PrimaryMappedPage = pageNo;
