@@ -449,7 +449,7 @@ uint64_t FArcadeZ80::OnCPUTick(uint64_t pins)
 	{
 		if (scanlinePos == 0)	// first scanline
 			CodeAnalysis.OnMachineFrameStart();
-		if (scanlinePos == 320)	// last scanline
+		if (scanlinePos == 256)	// last scanline
 			CodeAnalysis.OnMachineFrameEnd();
 	}
 	

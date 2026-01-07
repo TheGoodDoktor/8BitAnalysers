@@ -193,7 +193,7 @@ void FArcadeZ80Machine::Tick()
 	CHIPS_ASSERT(bValid);
 
 	HCounter++;
-	if (HCounter >= 342) 
+	if (HCounter >= 170) 
 	{
 		HCounter = 0;
 		VCounter++;
