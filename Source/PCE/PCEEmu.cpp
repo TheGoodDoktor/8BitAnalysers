@@ -336,13 +336,18 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
 
-	const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(PrevPC);
-	// Set the PC to the address of the instruction just executed
-	state.Debugger.SetPC(instrAddr);
+	// This caused breakpoints to fire on the next instruction after the breakpoint address.
+	//const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(PrevPC);
+	const FAddressRef nextInstrAddr = state.AddressRefFromPhysicalAddress(pc);
+	
+	// Set the PC to the next instruction to be executed
+	// This is so evaluating breakpoints in FDebugger::OnInstructionExecuted()
+	// breaks _before_ the instruction is executed.
+	state.Debugger.SetPC(nextInstrAddr);
 
-// Break when code execution flow moves to a bank of a different type.
-// eg going from BIOS to RAM
 #if 0
+	// Break when code execution flow moves to a bank of a different type.
+	// eg going from BIOS to RAM
 	static int prevBank = -1;
 	const int curBank = pc >> 13;
 	const int prevBank = PrevPC >> 13;
@@ -366,7 +371,9 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 
 	RegisterCodeExecuted(state, pc, pc);
 
-	// this is a hack. OnInstructionExecuted() is chips specific so we pass in a dummy pins value. 
+	// do i need to call MemoryHandlerTrapFunction() here?
+	
+	// This is a hack. The pins value is chips specific so we pass in a dummy value.
 	const uint64_t dummyPins = 0;
 	const int trapId = state.Debugger.OnInstructionExecuted(dummyPins);
 
