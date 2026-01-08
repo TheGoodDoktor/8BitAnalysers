@@ -309,7 +309,41 @@ private:
 	std::string		CommandLine;
 };
 
+// Errors in the Host OS were send to the coprocessor via the BRK handler
+/*
+BRK handler
+-----------
+0016	LDA #&FF
+0018	JSR send_byte_to_R4         Send &FF to R4 to interupt CoPro
+001B	LDA &FEE3         Get ACK byte from CoPro via R2
+001E	LDA #&00
+0020	JSR send_byte_to_R2         Send &00 to R2 to specify ERROR
+0023	TAY               Point Y to start of error block
+0024	LDA (&FD),Y       Get error number
+0026	JSR send_byte_to_R2         Send via R2
+char_loop:
+0029	INY               Point to next character
+002A	LDA (&FD),Y       Get error string character
+002C	JSR send_byte_to_R2         Send via R2
+002F	TAX
+0030	BNE char_loop         Loop until terminating &00 sent
 
+Send byte in A via R2
+---------------------
+send_byte_to_R2
+0695	BIT &FEE2         Check R2 status
+0698	BVC &0695         Loop until port free
+069A	STA &FEE3         Send byte
+069D	RTS
+
+Send byte in A via R4
+---------------------
+send_byte_to_R4
+069E	BIT &FEE6         Check R4 status
+06A1	BVC &069E         Loop until port free
+06A3	STA &FEE7         Send byte
+06A6	RTS
+*/
 
 class FOSFILECommand : public FTubeCommand
 {
@@ -321,7 +355,11 @@ public:
 		ReceivingTransferType,
 		ExecuteCommand,
 		ReturningStatus,
-		ReturningControlBlock
+		ReturningControlBlock,
+		ErrorSendIRQ,
+		ErrorSendError,
+		ErrorSendCode,
+		ErrorSendString
 	};
 	FOSFILECommand(FTubeElite* pSys) :FTubeCommand(pSys) 
 	{
@@ -364,18 +402,30 @@ public:
 
 	void Execute(void) override
 	{
+		FTube& tube = pTubeSys->GetMachine().Tube;
+
 		switch (State)
 		{
 			case EState::ExecuteCommand:
 			{
 				// Execute the OSFILE command
 				ReturnStatus = pTubeSys->OSFILE(Filename.c_str(), ControlBlock, TransferType);
-				State = EState::ReturningStatus;
+				if (ReturnStatus == 0)
+				{
+					// File not found or error
+					ErrorCode = 1; // example error code
+					ErrorString = "File not found"; // example error string
+					State = EState::ErrorSendIRQ;
+				}
+				else
+				{ 
+					State = EState::ReturningStatus;
+				}
 			}
 			break;
 			case EState::ReturningStatus:
 			{
-				if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, ReturnStatus))
+				if (tube.HostWriteRegister(ETubeRegister::R2, ReturnStatus))
 				{
 					ControlBlockIndex = kOSFILEControlBlockSize - 1;
 					State = EState::ReturningControlBlock;
@@ -385,7 +435,7 @@ public:
 			case EState::ReturningControlBlock:
 			{
 				const uint8_t returnByte = ControlBlock.Bytes[ControlBlockIndex]; // get the output byte
-				if (pTubeSys->GetMachine().Tube.HostWriteRegister(ETubeRegister::R2, returnByte))
+				if (tube.HostWriteRegister(ETubeRegister::R2, returnByte))
 				{
 					ControlBlockIndex--;
 					if (ControlBlockIndex < 0) // all output bytes written
@@ -395,6 +445,52 @@ public:
 				}
 			}
 			break;
+			case EState::ErrorSendIRQ:
+			{
+				if (tube.HostWriteRegister(ETubeRegister::R4, 0xFF)) // send &FF to R4 to interrupt CoPro
+				{
+					State = EState::ErrorSendError;
+					uint8_t val = 0;
+					tube.HostReadRegister(ETubeRegister::R2, val);
+				}
+			}
+			break;
+			case EState::ErrorSendError:
+			{
+				if (tube.HostWriteRegister(ETubeRegister::R2, 0x00)) // send &00 to R2 to specify ERROR
+				{
+					State = EState::ErrorSendCode;
+				}
+			}
+			break;
+			case EState::ErrorSendCode:
+			{
+				if (tube.HostWriteRegister(ETubeRegister::R2, ErrorCode)) // send error code via R2
+				{
+					ErrorStringIndex = 0;
+					State = EState::ErrorSendString;
+				}
+			}
+			break;
+			case EState::ErrorSendString:
+			{
+				uint8_t charToSend = 0;
+				if (ErrorStringIndex < ErrorString.size())
+				{
+					charToSend = static_cast<uint8_t>(ErrorString[ErrorStringIndex]);
+				}
+				if (tube.HostWriteRegister(ETubeRegister::R2, charToSend)) // send error string character via R2
+				{
+					if (charToSend == 0) // null terminator sent
+					{
+						bIsComplete = true; // command complete
+					}
+					else
+					{
+						ErrorStringIndex++;
+					}
+				}
+			}
 		}
 	}
 private:
@@ -405,6 +501,9 @@ private:
 	std::string			Filename;
 	uint8_t				TransferType = 0; // 0=load, 1=save, 2=verify
 	uint8_t 			ReturnStatus = 0;
+	uint8_t				ErrorCode = 0;
+	std::string			ErrorString;
+	int					ErrorStringIndex = 0;
 };
 
 // https://elite.bbcelite.com/deep_dives/6502sp_tube_communication.html

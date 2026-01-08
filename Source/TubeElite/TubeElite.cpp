@@ -1,4 +1,4 @@
-#include "TubeElite.h"
+﻿#include "TubeElite.h"
 
 #include "TubeEliteConfig.h"
 #include "TubeCommands.h"
@@ -395,6 +395,8 @@ uint8_t FTubeElite::OSBYTE(uint8_t command, uint8_t param)
 // 0 : File not found
 // 1 : File found
 // 2 : Directory found
+
+
 uint8_t FTubeElite::OSFILE(const char* pFilename, FOSFILEControlBlock& controlBlock, uint8_t transferType)
 {
 	LOGINFO("OSFILE: %s, Transfer Type: %d", pFilename, transferType);
@@ -992,7 +994,7 @@ uint8_t BBCKeyFromImGuiKey(ImGuiKey key)
 			{
 			case ImGuiKey_1: bbcKey = (uint8_t)'!'; break;
 			case ImGuiKey_2: bbcKey = (uint8_t)'"'; break;
-			case ImGuiKey_3: bbcKey = (uint8_t)'�'; break;
+			case ImGuiKey_3: bbcKey = (uint8_t)'£'; break;
 			case ImGuiKey_4: bbcKey = (uint8_t)'$'; break;
 			case ImGuiKey_5: bbcKey = (uint8_t)'%'; break;
 			case ImGuiKey_6: bbcKey = (uint8_t)'^'; break;

@@ -31,7 +31,7 @@ void FTube::ParasiteWriteRegister(ETubeRegister reg, uint8_t val)
 	}
 }
 
-bool FTube::ParasiteReadRegister(ETubeRegister reg, uint8_t& outVal)
+bool FTube::ParasiteReadRegister(ETubeRegister reg, uint8_t& outVal) 
 {
 	outVal = 0; // default value
 
@@ -237,6 +237,30 @@ void FTubeEliteMachine::FlushTube()
 			if(pTubeDataHandler)
 				pTubeDataHandler->HandleIncomingByte(dataRegs[i], inByte);
 		}
+	}
+
+	// Handle IRQs from Tube HW
+	uint8_t val = 0;
+
+	// Check the R1 status register
+	if (Tube.ParasiteReadRegister(ETubeRegister::S1, val))
+	{
+		if (val & 0x80)	// if bit 7 is set, request an IRQ
+			Pins |= M6502_IRQ;
+	}
+
+	// Check the R3 status register
+	if (Tube.ParasiteReadRegister(ETubeRegister::S3, val))
+	{
+		if (val & 0x80)	// if bit 7 is set, request an NMI
+			Pins |= M6502_NMI;
+	}
+
+	// Check the R4 status register
+	if (Tube.ParasiteReadRegister(ETubeRegister::S4, val))
+	{
+		if (val & 0x80)	// if bit 7 is set, request an IRQ
+			Pins |= M6502_IRQ;
 	}
 
 	if(pTubeDataHandler)
