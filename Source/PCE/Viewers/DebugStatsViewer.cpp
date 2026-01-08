@@ -172,4 +172,8 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::SeparatorText("IO");
 	const u8 ioReg = pPCEEmu->GetCore()->GetInput()->GetIORegister();
 	ImGui::Text("Register: 0x%x %s", ioReg, NumStr(ioReg, ENumberDisplayMode::Binary));
+
+	ImGui::SeparatorText("Save RAM");
+	ImGui::Text("Enabled: %s", pPCEEmu->GetMemory()->IsBackupRamEnabled() ? "Yes" : "No");
+	ImGui::Text("In Use: %s", pPCEEmu->GetMemory()->IsBackupRamUsed() ? "Yes" : "No");
 }

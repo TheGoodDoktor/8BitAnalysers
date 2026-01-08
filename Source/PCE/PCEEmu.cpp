@@ -713,11 +713,12 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 		BankSets[kBankWRAM0].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000));
 	}
 
-	// Save RAM
+	// Save RAM.
+	// Note: pMemory->GetBackupRAMSize() will report 2048 bytes but Geargfx actually has a 8192 bytes buffer.
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
 		sprintf(bankName, "SAVE RAM%s", bankPostFix[d].c_str());
-		BankSets[kBankSaveRAM].AddBankId(CodeAnalysis.CreateBank(bankName, pMemory->GetBackupRAMSize() / 1024, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
+		BankSets[kBankSaveRAM].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 
 	// CD ROM RAM
