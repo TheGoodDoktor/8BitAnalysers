@@ -91,9 +91,9 @@ public:
 	
 	void	LoadFont();
 
-	bool	IsLabelStubbed(const char* pLabelName);
-	bool	AddStubbedLabel(const char* pLabelName);
-	bool	RemoveStubbedLabel(const char* pLabelName);
+	//bool	IsLabelStubbed(const char* pLabelName);
+	//bool	AddStubbedLabel(const char* pLabelName);
+	//bool	RemoveStubbedLabel(const char* pLabelName);
 
 protected:
 	void			FileMenu();

@@ -144,9 +144,9 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
 #      include <unix.h> /* for fdopen */
 #    else
-#      ifndef fdopen
-#        define fdopen(fd,mode) NULL /* No fdopen() */
-#      endif
+//#      ifndef fdopen
+//#        define fdopen(fd,mode) NULL /* No fdopen() */
+//#      endif
 #    endif
 #  endif
 #endif

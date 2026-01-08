@@ -1282,6 +1282,7 @@ bool FGraphicsViewer::SaveGraphicsSets(const char* pJsonFileName)
 		graphicsSetJson["XSizePixels"] = set.XSizePixels;
 		graphicsSetJson["YSizePixels"] = set.YSizePixels;
 		graphicsSetJson["ImageCount"] = set.Count;
+		graphicsSetJson["HasMask"] = set.bHasMask;
 
 		jsonGraphicsSets["GraphicsSets"].push_back(graphicsSetJson);
 	}
@@ -1335,6 +1336,8 @@ bool FGraphicsViewer::LoadGraphicsSets(const char* pJsonFileName)
 			set.XSizePixels = graphicsSetJson["XSizePixels"];
 			set.YSizePixels = graphicsSetJson["YSizePixels"];
 			set.Count = graphicsSetJson["ImageCount"];
+			if (graphicsSetJson.contains("HasMask"))
+				set.bHasMask = graphicsSetJson["HasMask"];
 			GraphicsSets[set.Address] = set;
 		}
 	}

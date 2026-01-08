@@ -128,6 +128,8 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		functionJson["Description"] = function.Description;
 		functionJson["bROMFunction"] = function.bROMFunction;
 		functionJson["bManualEdit"] = function.bManualEdit;
+		functionJson["bStubbedOut"] = function.bStubbedOut;
+		functionJson["bStubImplemented"] = function.bStubImplemented;
 
 		// output params
 		for (const auto& param : function.Params)
@@ -400,7 +402,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	if (jsonGameData.contains("FunctionInfo"))
 	{
 		FFunctionInfoCollection& functions = *state.pFunctions;
-		functions.Clear();
+		//functions.Clear();
 
 		for (const auto& functionJson : jsonGameData["FunctionInfo"])
 		{
@@ -411,6 +413,10 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			function.Description = functionJson["Description"];
 			function.bROMFunction = functionJson["bROMFunction"];
 			function.bManualEdit = functionJson["bManualEdit"];
+			if(functionJson.contains("bStubbed"))
+				function.bStubbedOut = functionJson["bStubbedOut"];
+			if (functionJson.contains("bStubImplemented"))
+				function.bStubImplemented = functionJson["bStubImplemented"];
 
 			// read params
 			if(functionJson.contains("Params"))
@@ -833,4 +839,5 @@ void FixupPostLoad(FCodeAnalysisState& state)
 		}
 	}
 
+	
 }

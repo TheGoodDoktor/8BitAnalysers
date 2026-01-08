@@ -53,6 +53,7 @@ public:
 	bool LoadPNG(const char* pFName);
 	bool SavePNG(const char* pFName);
 	bool Save2222(const char* pFName, bool bUseAlpha);
+	bool Save332(const char* pFName);
 	bool SaveBitmap(const char* pFName);
 
 private:

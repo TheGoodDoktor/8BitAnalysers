@@ -224,6 +224,7 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 	ImGui::SameLine();
 	ImGui::Text("-> ");
 	DrawAddressLabel(state, viewState, pFunctionInfo->EndAddress);
+
 	ImGui::Checkbox("Manual Edit", &pFunctionInfo->bManualEdit);
 	if (pFunctionInfo->bManualEdit)
 	{
@@ -244,6 +245,14 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 		pLastFunctionInfo = pFunctionInfo;
 	}
 	
+	// ASM Generation options
+	ImGui::Checkbox("Stubbed Out", &pFunctionInfo->bStubbedOut);
+	if (pFunctionInfo->bStubbedOut)
+	{
+		ImGui::SameLine();
+		ImGui::Checkbox("Stub Implemented", &pFunctionInfo->bStubImplemented);
+	}
+
 	bChanged |= DrawFunctionParamTable(state,"Parameters", pFunctionInfo->Params, historyOffset);
 	bChanged |= DrawFunctionParamTable(state, "Return Values", pFunctionInfo->ReturnValues, historyOffset);
 
@@ -307,6 +316,8 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 			DrawAddressLabel(state, viewState, exitPoint);
 		}
 	}
+
+	
 
 	if (bChanged)
 	{
