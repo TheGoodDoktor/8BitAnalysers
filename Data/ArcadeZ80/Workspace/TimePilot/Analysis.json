@@ -49,8 +49,30 @@
     },
     "FunctionInfo": [
         {
-            "Description": "",
-            "EndAddress": 524288,
+            "Description": "Adds A to HL and puts contents of address in A",
+            "EndAddress": 917504,
+            "ExitPoints": [
+                917504
+            ],
+            "Params": [
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "index",
+                    "Source": 0
+                },
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "Byte Table",
+                    "Source": 9
+                }
+            ],
+            "ReturnValues": [
+                {
+                    "DisplayType": "Unknown",
+                    "Name": "Table Value",
+                    "Source": 0
+                }
+            ],
             "StartAddress": 524288,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -59,7 +81,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1048576,
+            "EndAddress": 1441792,
+            "ExitPoints": [
+                1441792
+            ],
             "StartAddress": 1048576,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -68,7 +93,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1572864,
+            "EndAddress": 1835008,
+            "ExitPoints": [
+                1703936,
+                1835008
+            ],
             "StartAddress": 1572864,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -77,7 +106,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 2097152,
+            "EndAddress": 2490368,
+            "ExitPoints": [
+                2359296,
+                2490368
+            ],
             "StartAddress": 2097152,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -86,7 +119,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 2621440,
+            "EndAddress": 3014656,
+            "ExitPoints": [
+                2883584,
+                3014656
+            ],
             "StartAddress": 2621440,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -95,7 +132,7 @@
         },
         {
             "Description": "Use A to index a function pointer proceeding the call, execute function",
-            "EndAddress": 3145728,
+            "EndAddress": 3342336,
             "Params": [
                 {
                     "DisplayType": "Unknown",
@@ -111,7 +148,10 @@
         },
         {
             "Description": "Queue command to be processed",
-            "EndAddress": 3670016,
+            "EndAddress": 5111808,
+            "ExitPoints": [
+                5111808
+            ],
             "Params": [
                 {
                     "DisplayType": "Unknown",
@@ -141,7 +181,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 6881280,
+            "EndAddress": 10813440,
             "StartAddress": 6881280,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -150,7 +190,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 11010048,
+            "EndAddress": 11403264,
             "StartAddress": 11010048,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -158,8 +198,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 12320768,
+                    "FunctionAddr": 13041664,
+                    "ReturnAddr": 12517376
+                }
+            ],
             "Description": "",
-            "EndAddress": 11599872,
+            "EndAddress": 12976128,
+            "ExitPoints": [
+                12976128
+            ],
             "StartAddress": 11599872,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -168,7 +218,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 13041664,
+            "EndAddress": 14090240,
+            "ExitPoints": [
+                14090240
+            ],
             "StartAddress": 13041664,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -176,8 +229,25 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 15073280,
+                    "FunctionAddr": 56950784,
+                    "ReturnAddr": 15269888
+                },
+                {
+                    "CallAddr": 15269888,
+                    "FunctionAddr": 1384513538,
+                    "ReturnAddr": 15466496
+                },
+                {
+                    "CallAddr": 22151168,
+                    "FunctionAddr": 1220411394,
+                    "ReturnAddr": 22347776
+                }
+            ],
             "Description": "This is called by the NMI hadler (caused by VBLank) starts after initial tests are done",
-            "EndAddress": 14155776,
+            "EndAddress": 22937600,
             "StartAddress": 14155776,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -194,8 +264,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 24379392,
+                    "FunctionAddr": 1439956994,
+                    "ReturnAddr": 24576000
+                }
+            ],
             "Description": "",
-            "EndAddress": 24379392,
+            "EndAddress": 25886720,
+            "ExitPoints": [
+                25886720
+            ],
             "StartAddress": 24379392,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -204,7 +284,10 @@
         },
         {
             "Description": "Index pointer table at HL  with A and fetch pointer, return in DE",
-            "EndAddress": 25952256,
+            "EndAddress": 26804224,
+            "ExitPoints": [
+                26804224
+            ],
             "Params": [
                 {
                     "DisplayType": "Decimal",
@@ -232,7 +315,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 26869760,
+            "EndAddress": 28573696,
+            "ExitPoints": [
+                28573696
+            ],
             "StartAddress": 26869760,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -250,7 +336,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 29491200,
+            "EndAddress": 31457280,
+            "ExitPoints": [
+                31457280
+            ],
             "StartAddress": 29491200,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -259,7 +348,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 31522816,
+            "EndAddress": 33554432,
+            "ExitPoints": [
+                33554432
+            ],
             "StartAddress": 31522816,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -267,8 +359,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 33619968,
+                    "FunctionAddr": 40828928,
+                    "ReturnAddr": 33816576
+                },
+                {
+                    "CallAddr": 38273024,
+                    "FunctionAddr": 40828928,
+                    "ReturnAddr": 38469632
+                }
+            ],
             "Description": "",
-            "EndAddress": 33619968,
+            "EndAddress": 40763392,
+            "ExitPoints": [
+                40763392
+            ],
             "StartAddress": 33619968,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -277,7 +384,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 40828928,
+            "EndAddress": 42926080,
+            "ExitPoints": [
+                42926080
+            ],
             "StartAddress": 40828928,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -286,7 +396,12 @@
         },
         {
             "Description": "",
-            "EndAddress": 56950784,
+            "EndAddress": 122159104,
+            "ExitPoints": [
+                79757312,
+                80281600,
+                89456640
+            ],
             "StartAddress": 56950784,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -303,8 +418,20 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 128188416,
+                    "FunctionAddr": 134807552,
+                    "ReturnAddr": 128385024
+                },
+                {
+                    "CallAddr": 128385024,
+                    "FunctionAddr": 435159040,
+                    "ReturnAddr": 128581632
+                }
+            ],
             "Description": "",
-            "EndAddress": 125042688,
+            "EndAddress": 128581632,
             "StartAddress": 125042688,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -313,7 +440,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 129040384,
+            "EndAddress": 131006464,
             "StartAddress": 129040384,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -322,7 +449,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 131203072,
+            "EndAddress": 132448256,
+            "ExitPoints": [
+                132448256
+            ],
             "StartAddress": 131203072,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -340,7 +470,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 134807552,
+            "EndAddress": 138215424,
+            "ExitPoints": [
+                138215424
+            ],
             "StartAddress": 134807552,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -348,8 +481,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 138280960,
+                    "FunctionAddr": 188284928,
+                    "ReturnAddr": 138477568
+                },
+                {
+                    "CallAddr": 138477568,
+                    "FunctionAddr": 184942592,
+                    "ReturnAddr": 138674176
+                }
+            ],
             "Description": "",
-            "EndAddress": 138280960,
+            "EndAddress": 145948672,
+            "ExitPoints": [
+                145948672
+            ],
             "StartAddress": 138280960,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -367,7 +515,10 @@
         },
         {
             "Description": "This sets the sprites to draw the Konami copyright",
-            "EndAddress": 184942592,
+            "EndAddress": 187301888,
+            "ExitPoints": [
+                187301888
+            ],
             "StartAddress": 184942592,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -376,7 +527,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 187367424,
+            "EndAddress": 188219392,
+            "ExitPoints": [
+                188219392
+            ],
             "StartAddress": 187367424,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -385,7 +539,7 @@
         },
         {
             "Description": "This queues different commands on alternate frames",
-            "EndAddress": 188284928,
+            "EndAddress": 189333504,
             "StartAddress": 188284928,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -394,7 +548,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 189530112,
+            "EndAddress": 189923328,
+            "ExitPoints": [
+                189923328
+            ],
             "StartAddress": 189530112,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -411,8 +568,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 196214784,
+                    "FunctionAddr": 25952256,
+                    "ReturnAddr": 196411392
+                }
+            ],
             "Description": "",
-            "EndAddress": 194183168,
+            "EndAddress": 196804608,
             "StartAddress": 194183168,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -438,8 +602,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 200605696,
+                    "FunctionAddr": 25952256,
+                    "ReturnAddr": 200802304
+                }
+            ],
             "Description": "",
-            "EndAddress": 200409088,
+            "EndAddress": 202113024,
+            "ExitPoints": [
+                201457664
+            ],
             "Params": [
                 {
                     "DisplayType": "Decimal",
@@ -454,8 +628,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 202506240,
+                    "FunctionAddr": 25952256,
+                    "ReturnAddr": 202702848
+                }
+            ],
             "Description": "",
-            "EndAddress": 202309632,
+            "EndAddress": 203489280,
             "StartAddress": 202309632,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -463,8 +644,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 203816960,
+                    "FunctionAddr": 25952256,
+                    "ReturnAddr": 204013568
+                }
+            ],
             "Description": "",
-            "EndAddress": 203620352,
+            "EndAddress": 204931072,
             "StartAddress": 203620352,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -472,8 +660,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 205258752,
+                    "FunctionAddr": 25952256,
+                    "ReturnAddr": 205455360
+                }
+            ],
             "Description": "Erase a string from view",
-            "EndAddress": 205062144,
+            "EndAddress": 206438400,
+            "ExitPoints": [
+                206045184
+            ],
             "StartAddress": 205062144,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -482,7 +680,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 210763776,
+            "EndAddress": 216530944,
+            "ExitPoints": [
+                216530944
+            ],
             "StartAddress": 210763776,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -508,8 +709,28 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 225771520,
+                    "FunctionAddr": 228589568,
+                    "ReturnAddr": 225968128
+                },
+                {
+                    "CallAddr": 226033664,
+                    "FunctionAddr": 228589568,
+                    "ReturnAddr": 226230272
+                },
+                {
+                    "CallAddr": 226295808,
+                    "FunctionAddr": 226557952,
+                    "ReturnAddr": 226492416
+                }
+            ],
             "Description": "",
-            "EndAddress": 225116160,
+            "EndAddress": 226492416,
+            "ExitPoints": [
+                226492416
+            ],
             "StartAddress": 225116160,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -517,8 +738,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 226885632,
+                    "FunctionAddr": 227540992,
+                    "ReturnAddr": 227082240
+                },
+                {
+                    "CallAddr": 227213312,
+                    "FunctionAddr": 227540992,
+                    "ReturnAddr": 227409920
+                }
+            ],
             "Description": "",
-            "EndAddress": 226557952,
+            "EndAddress": 227475456,
+            "ExitPoints": [
+                227475456
+            ],
             "StartAddress": 226557952,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -527,7 +763,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 227540992,
+            "EndAddress": 228524032,
+            "ExitPoints": [
+                228524032
+            ],
             "StartAddress": 227540992,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -535,8 +774,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 228917248,
+                    "FunctionAddr": 229572608,
+                    "ReturnAddr": 229113856
+                },
+                {
+                    "CallAddr": 229244928,
+                    "FunctionAddr": 229572608,
+                    "ReturnAddr": 229441536
+                }
+            ],
             "Description": "",
-            "EndAddress": 228589568,
+            "EndAddress": 229507072,
+            "ExitPoints": [
+                229507072
+            ],
             "StartAddress": 228589568,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -545,7 +799,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 229572608,
+            "EndAddress": 231407616,
+            "ExitPoints": [
+                231407616
+            ],
             "StartAddress": 229572608,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -553,8 +810,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 235864064,
+                    "FunctionAddr": 244121600,
+                    "ReturnAddr": 236060672
+                },
+                {
+                    "CallAddr": 240451584,
+                    "FunctionAddr": 244121600,
+                    "ReturnAddr": 240648192
+                }
+            ],
             "Description": "",
-            "EndAddress": 232194048,
+            "EndAddress": 242155520,
+            "ExitPoints": [
+                242155520
+            ],
             "StartAddress": 232194048,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -572,7 +844,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 244121600,
+            "EndAddress": 245039104,
+            "ExitPoints": [
+                245039104
+            ],
             "Params": [
                 {
                     "DisplayType": "Address",
@@ -625,7 +900,19 @@
         },
         {
             "Description": "",
-            "EndAddress": 253362176,
+            "EndAddress": 252772352,
+            "StartAddress": 252772352,
+            "bManualEdit": false,
+            "bROMFunction": true,
+            "bStubImplemented": false,
+            "bStubbedOut": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 253624320,
+            "ExitPoints": [
+                253624320
+            ],
             "StartAddress": 253362176,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -634,7 +921,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 253689856,
+            "EndAddress": 254279680,
             "StartAddress": 253689856,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -643,7 +930,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 257163264,
+            "EndAddress": 258539520,
+            "ExitPoints": [
+                258539520
+            ],
             "StartAddress": 257163264,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -652,7 +942,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 259719168,
+            "EndAddress": 260833280,
+            "ExitPoints": [
+                260833280
+            ],
             "StartAddress": 259719168,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -661,7 +954,19 @@
         },
         {
             "Description": "",
-            "EndAddress": 261554176,
+            "EndAddress": 260898816,
+            "StartAddress": 260898816,
+            "bManualEdit": false,
+            "bROMFunction": true,
+            "bStubImplemented": false,
+            "bStubbedOut": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 278331392,
+            "ExitPoints": [
+                278331392
+            ],
             "StartAddress": 261554176,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -670,7 +975,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 278396928,
+            "EndAddress": 295174144,
+            "ExitPoints": [
+                295174144
+            ],
             "StartAddress": 278396928,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -678,8 +986,138 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 295239680,
+                    "FunctionAddr": 833880065,
+                    "ReturnAddr": 295436288
+                },
+                {
+                    "CallAddr": 295436288,
+                    "FunctionAddr": 517931008,
+                    "ReturnAddr": 295632896
+                },
+                {
+                    "CallAddr": 295632896,
+                    "FunctionAddr": 602079233,
+                    "ReturnAddr": 295829504
+                },
+                {
+                    "CallAddr": 295829504,
+                    "FunctionAddr": 917438465,
+                    "ReturnAddr": 296026112
+                },
+                {
+                    "CallAddr": 296026112,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 296222720
+                },
+                {
+                    "CallAddr": 296222720,
+                    "FunctionAddr": 1202913282,
+                    "ReturnAddr": 296419328
+                },
+                {
+                    "CallAddr": 296419328,
+                    "FunctionAddr": 1136066562,
+                    "ReturnAddr": 296615936
+                },
+                {
+                    "CallAddr": 296615936,
+                    "FunctionAddr": 681639937,
+                    "ReturnAddr": 296812544
+                },
+                {
+                    "CallAddr": 296812544,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 297009152
+                },
+                {
+                    "CallAddr": 297009152,
+                    "FunctionAddr": 750518273,
+                    "ReturnAddr": 297205760
+                },
+                {
+                    "CallAddr": 297205760,
+                    "FunctionAddr": 1087766530,
+                    "ReturnAddr": 297402368
+                },
+                {
+                    "CallAddr": 297402368,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 297598976
+                },
+                {
+                    "CallAddr": 297598976,
+                    "FunctionAddr": 996081665,
+                    "ReturnAddr": 297795584
+                },
+                {
+                    "CallAddr": 297795584,
+                    "FunctionAddr": 1037697025,
+                    "ReturnAddr": 297992192
+                },
+                {
+                    "CallAddr": 297992192,
+                    "FunctionAddr": 1043726337,
+                    "ReturnAddr": 298188800
+                },
+                {
+                    "CallAddr": 298188800,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 298385408
+                },
+                {
+                    "CallAddr": 298385408,
+                    "FunctionAddr": 1072300033,
+                    "ReturnAddr": 298582016
+                },
+                {
+                    "CallAddr": 298582016,
+                    "FunctionAddr": 1313800194,
+                    "ReturnAddr": 298778624
+                },
+                {
+                    "CallAddr": 298778624,
+                    "FunctionAddr": 1085800450,
+                    "ReturnAddr": 298975232
+                },
+                {
+                    "CallAddr": 298975232,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 299171840
+                },
+                {
+                    "CallAddr": 299171840,
+                    "FunctionAddr": 1306394626,
+                    "ReturnAddr": 299368448
+                },
+                {
+                    "CallAddr": 299368448,
+                    "FunctionAddr": 1376059394,
+                    "ReturnAddr": 299565056
+                },
+                {
+                    "CallAddr": 299565056,
+                    "FunctionAddr": 1295646722,
+                    "ReturnAddr": 299761664
+                },
+                {
+                    "CallAddr": 299761664,
+                    "FunctionAddr": 134807552,
+                    "ReturnAddr": 299958272
+                },
+                {
+                    "CallAddr": 299958272,
+                    "FunctionAddr": 278396928,
+                    "ReturnAddr": 300154880
+                }
+            ],
             "Description": "",
-            "EndAddress": 295239680,
+            "EndAddress": 309657600,
+            "ExitPoints": [
+                309657600
+            ],
             "StartAddress": 295239680,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -751,7 +1189,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 365035520,
+            "EndAddress": 365363200,
             "StartAddress": 365035520,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -759,8 +1197,30 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 367132672,
+                    "FunctionAddr": 26869760,
+                    "ReturnAddr": 367329280
+                },
+                {
+                    "CallAddr": 368967680,
+                    "FunctionAddr": 29491200,
+                    "ReturnAddr": 369164288
+                },
+                {
+                    "CallAddr": 371785728,
+                    "FunctionAddr": 225116160,
+                    "ReturnAddr": 371982336
+                }
+            ],
             "Description": "",
-            "EndAddress": 367132672,
+            "EndAddress": 373161984,
+            "ExitPoints": [
+                368902144,
+                369164288,
+                373161984
+            ],
             "StartAddress": 367132672,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -769,7 +1229,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 374407168,
+            "EndAddress": 374865920,
             "StartAddress": 374407168,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -778,7 +1238,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 377159680,
+            "EndAddress": 378273792,
+            "ExitPoints": [
+                378273792
+            ],
             "StartAddress": 377159680,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -786,8 +1249,39 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 381681664,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 381878272
+                },
+                {
+                    "CallAddr": 381878272,
+                    "FunctionAddr": 517931008,
+                    "ReturnAddr": 382074880
+                },
+                {
+                    "CallAddr": 382074880,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 382271488
+                },
+                {
+                    "CallAddr": 382271488,
+                    "FunctionAddr": 750518273,
+                    "ReturnAddr": 382468096
+                },
+                {
+                    "CallAddr": 382468096,
+                    "FunctionAddr": 278396928,
+                    "ReturnAddr": 382664704
+                }
+            ],
             "Description": "",
-            "EndAddress": 380567552,
+            "EndAddress": 387448832,
+            "ExitPoints": [
+                386269184,
+                387448832
+            ],
             "StartAddress": 380567552,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -813,8 +1307,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 390594560,
+                    "FunctionAddr": 184942592,
+                    "ReturnAddr": 390791168
+                },
+                {
+                    "CallAddr": 390791168,
+                    "FunctionAddr": 188284928,
+                    "ReturnAddr": 390987776
+                }
+            ],
             "Description": "",
-            "EndAddress": 390594560,
+            "EndAddress": 392560640,
+            "ExitPoints": [
+                391249920
+            ],
             "StartAddress": 390594560,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -822,8 +1331,20 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 392822784,
+                    "FunctionAddr": 433717248,
+                    "ReturnAddr": 393019392
+                },
+                {
+                    "CallAddr": 393805824,
+                    "FunctionAddr": 1272709122,
+                    "ReturnAddr": 394002432
+                }
+            ],
             "Description": "",
-            "EndAddress": 392822784,
+            "EndAddress": 394854400,
             "StartAddress": 392822784,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -831,8 +1352,28 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 395051008,
+                    "FunctionAddr": 184942592,
+                    "ReturnAddr": 395247616
+                },
+                {
+                    "CallAddr": 395247616,
+                    "FunctionAddr": 188284928,
+                    "ReturnAddr": 395444224
+                },
+                {
+                    "CallAddr": 395771904,
+                    "FunctionAddr": 433717248,
+                    "ReturnAddr": 395968512
+                }
+            ],
             "Description": "",
-            "EndAddress": 395051008,
+            "EndAddress": 397803520,
+            "ExitPoints": [
+                395706368
+            ],
             "StartAddress": 395051008,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -841,7 +1382,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 398000128,
+            "EndAddress": 399179776,
             "StartAddress": 398000128,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -849,8 +1390,20 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 401342464,
+                    "FunctionAddr": 1272512514,
+                    "ReturnAddr": 401539072
+                },
+                {
+                    "CallAddr": 401735680,
+                    "FunctionAddr": 689831937,
+                    "ReturnAddr": 401932288
+                }
+            ],
             "Description": "",
-            "EndAddress": 400687104,
+            "EndAddress": 402128896,
             "StartAddress": 400687104,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -913,7 +1466,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 433717248,
+            "EndAddress": 435093504,
+            "ExitPoints": [
+                435093504
+            ],
             "StartAddress": 433717248,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -921,8 +1477,53 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 439418880,
+                    "FunctionAddr": 548339713,
+                    "ReturnAddr": 439615488
+                },
+                {
+                    "CallAddr": 439615488,
+                    "FunctionAddr": 659881985,
+                    "ReturnAddr": 439812096
+                },
+                {
+                    "CallAddr": 440336384,
+                    "FunctionAddr": 1007484929,
+                    "ReturnAddr": 440532992
+                },
+                {
+                    "CallAddr": 441712640,
+                    "FunctionAddr": 1039859713,
+                    "ReturnAddr": 441909248
+                },
+                {
+                    "CallAddr": 442433536,
+                    "FunctionAddr": 1219297282,
+                    "ReturnAddr": 442630144
+                },
+                {
+                    "CallAddr": 442630144,
+                    "FunctionAddr": 735969281,
+                    "ReturnAddr": 442826752
+                },
+                {
+                    "CallAddr": 443547648,
+                    "FunctionAddr": 451149824,
+                    "ReturnAddr": 443744256
+                },
+                {
+                    "CallAddr": 446103552,
+                    "FunctionAddr": 816119809,
+                    "ReturnAddr": 446300160
+                }
+            ],
             "Description": "",
-            "EndAddress": 435159040,
+            "EndAddress": 451084288,
+            "ExitPoints": [
+                451084288
+            ],
             "StartAddress": 435159040,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -931,7 +1532,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 451149824,
+            "EndAddress": 452657152,
+            "ExitPoints": [
+                452657152
+            ],
             "StartAddress": 451149824,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -949,7 +1553,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 517013504,
+            "EndAddress": 517865472,
+            "ExitPoints": [
+                517865472
+            ],
             "StartAddress": 517013504,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -958,7 +1565,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 517931008,
+            "EndAddress": 526712832,
             "StartAddress": 517931008,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -976,7 +1583,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 548339713,
+            "EndAddress": 550305793,
+            "ExitPoints": [
+                550305793
+            ],
             "StartAddress": 548339713,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -985,7 +1595,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 554565633,
+            "EndAddress": 562626561,
+            "ExitPoints": [
+                557383681
+            ],
             "StartAddress": 554565633,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -993,8 +1606,33 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 602996737,
+                    "FunctionAddr": 517013504,
+                    "ReturnAddr": 603193345
+                },
+                {
+                    "CallAddr": 608763905,
+                    "FunctionAddr": 1451098114,
+                    "ReturnAddr": 608960513
+                },
+                {
+                    "CallAddr": 612040705,
+                    "FunctionAddr": 25952256,
+                    "ReturnAddr": 612237313
+                },
+                {
+                    "CallAddr": 619708417,
+                    "FunctionAddr": 1396113410,
+                    "ReturnAddr": 619905025
+                }
+            ],
             "Description": "",
-            "EndAddress": 602079233,
+            "EndAddress": 621150209,
+            "ExitPoints": [
+                620429313
+            ],
             "StartAddress": 602079233,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1002,8 +1640,38 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 622526465,
+                    "FunctionAddr": 1265041410,
+                    "ReturnAddr": 622723073
+                },
+                {
+                    "CallAddr": 622919681,
+                    "FunctionAddr": 1269104642,
+                    "ReturnAddr": 623116289
+                },
+                {
+                    "CallAddr": 623312897,
+                    "FunctionAddr": 1382678530,
+                    "ReturnAddr": 623509505
+                },
+                {
+                    "CallAddr": 657981441,
+                    "FunctionAddr": 187367424,
+                    "ReturnAddr": 658178049
+                },
+                {
+                    "CallAddr": 658178049,
+                    "FunctionAddr": 554565633,
+                    "ReturnAddr": 658374657
+                }
+            ],
             "Description": "",
-            "EndAddress": 621871105,
+            "EndAddress": 659816449,
+            "ExitPoints": [
+                659816449
+            ],
             "StartAddress": 621871105,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1012,7 +1680,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 659881985,
+            "EndAddress": 661651457,
+            "ExitPoints": [
+                661651457
+            ],
             "StartAddress": 659881985,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1020,8 +1691,25 @@
             "bStubbedOut": false
         },
         {
-            "Description": "",
-            "EndAddress": 665911297,
+            "CallPoints": [
+                {
+                    "CallAddr": 665911297,
+                    "FunctionAddr": 1479802882,
+                    "ReturnAddr": 666107905
+                },
+                {
+                    "CallAddr": 676462593,
+                    "FunctionAddr": 1265041410,
+                    "ReturnAddr": 676659201
+                },
+                {
+                    "CallAddr": 678494209,
+                    "FunctionAddr": 259719168,
+                    "ReturnAddr": 678690817
+                }
+            ],
+            "Description": "This appears to reset a lot of things",
+            "EndAddress": 681443329,
             "StartAddress": 665911297,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1029,8 +1717,48 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 681639937,
+                    "FunctionAddr": 683081729,
+                    "ReturnAddr": 681836545
+                },
+                {
+                    "CallAddr": 681836545,
+                    "FunctionAddr": 683802625,
+                    "ReturnAddr": 682033153
+                },
+                {
+                    "CallAddr": 682033153,
+                    "FunctionAddr": 684523521,
+                    "ReturnAddr": 682229761
+                },
+                {
+                    "CallAddr": 682229761,
+                    "FunctionAddr": 685244417,
+                    "ReturnAddr": 682426369
+                },
+                {
+                    "CallAddr": 682426369,
+                    "FunctionAddr": 685965313,
+                    "ReturnAddr": 682622977
+                },
+                {
+                    "CallAddr": 682622977,
+                    "FunctionAddr": 686686209,
+                    "ReturnAddr": 682819585
+                },
+                {
+                    "CallAddr": 682819585,
+                    "FunctionAddr": 687734785,
+                    "ReturnAddr": 683016193
+                }
+            ],
             "Description": "",
-            "EndAddress": 681639937,
+            "EndAddress": 683016193,
+            "ExitPoints": [
+                683016193
+            ],
             "StartAddress": 681639937,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1039,7 +1767,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 683081729,
+            "EndAddress": 683606017,
             "StartAddress": 683081729,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1048,7 +1776,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 683802625,
+            "EndAddress": 684326913,
             "StartAddress": 683802625,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1057,7 +1785,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 684523521,
+            "EndAddress": 685047809,
             "StartAddress": 684523521,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1066,7 +1794,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 685244417,
+            "EndAddress": 685768705,
             "StartAddress": 685244417,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1075,7 +1803,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 685965313,
+            "EndAddress": 686489601,
             "StartAddress": 685965313,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1084,7 +1812,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 686686209,
+            "EndAddress": 687538177,
             "StartAddress": 686686209,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1093,7 +1821,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 687734785,
+            "EndAddress": 688586753,
             "StartAddress": 687734785,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1102,7 +1830,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 688783361,
+            "EndAddress": 689111041,
             "Params": [
                 {
                     "DisplayType": "Unknown",
@@ -1123,7 +1851,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 689831937,
+            "EndAddress": 690356225,
+            "ExitPoints": [
+                690356225
+            ],
             "StartAddress": 689831937,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1140,8 +1871,39 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 693829633,
+                    "FunctionAddr": 737083393,
+                    "ReturnAddr": 694026241
+                },
+                {
+                    "CallAddr": 694026241,
+                    "FunctionAddr": 1481900034,
+                    "ReturnAddr": 694222849
+                },
+                {
+                    "CallAddr": 694222849,
+                    "FunctionAddr": 730005505,
+                    "ReturnAddr": 694419457
+                },
+                {
+                    "CallAddr": 694616065,
+                    "FunctionAddr": 1054212097,
+                    "ReturnAddr": 694812673
+                },
+                {
+                    "CallAddr": 694812673,
+                    "FunctionAddr": 709296129,
+                    "ReturnAddr": 695009281
+                }
+            ],
             "Description": "",
-            "EndAddress": 692846593,
+            "EndAddress": 695009281,
+            "ExitPoints": [
+                693108737,
+                695009281
+            ],
             "StartAddress": 692846593,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1194,8 +1956,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 709296129,
+                    "FunctionAddr": 710344705,
+                    "ReturnAddr": 709492737
+                }
+            ],
             "Description": "",
-            "EndAddress": 709296129,
+            "EndAddress": 710279169,
+            "ExitPoints": [
+                710279169
+            ],
             "StartAddress": 709296129,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1204,7 +1976,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 710344705,
+            "EndAddress": 712376321,
+            "ExitPoints": [
+                712048641,
+                712376321
+            ],
             "StartAddress": 710344705,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1222,7 +1998,12 @@
         },
         {
             "Description": "",
-            "EndAddress": 726794241,
+            "EndAddress": 729939969,
+            "ExitPoints": [
+                729939969,
+                727646209,
+                727121921
+            ],
             "StartAddress": 726794241,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1231,7 +2012,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 730005505,
+            "EndAddress": 730988545,
+            "ExitPoints": [
+                730988545,
+                730464257
+            ],
             "StartAddress": 730005505,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1239,8 +2024,24 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 732954625,
+                    "FunctionAddr": 733609985,
+                    "ReturnAddr": 733151233
+                },
+                {
+                    "CallAddr": 732430337,
+                    "FunctionAddr": 740425729,
+                    "ReturnAddr": 732626945
+                }
+            ],
             "Description": "",
-            "EndAddress": 731054081,
+            "EndAddress": 733413377,
+            "ExitPoints": [
+                733151233,
+                732626945
+            ],
             "StartAddress": 731054081,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1248,8 +2049,19 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 733609985,
+                    "FunctionAddr": 1451425794,
+                    "ReturnAddr": 733806593
+                }
+            ],
             "Description": "",
-            "EndAddress": 733609985,
+            "EndAddress": 735313921,
+            "ExitPoints": [
+                734658561,
+                735313921
+            ],
             "StartAddress": 733609985,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1258,7 +2070,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 735969281,
+            "EndAddress": 737017857,
+            "ExitPoints": [
+                737017857
+            ],
             "StartAddress": 735969281,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1267,7 +2082,12 @@
         },
         {
             "Description": "",
-            "EndAddress": 737083393,
+            "EndAddress": 740032513,
+            "ExitPoints": [
+                737804289,
+                739115009,
+                740032513
+            ],
             "StartAddress": 737083393,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1276,7 +2096,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 740425729,
+            "EndAddress": 741212161,
             "StartAddress": 740425729,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1285,7 +2105,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 741408769,
+            "EndAddress": 747831297,
+            "ExitPoints": [
+                746651649,
+                747831297
+            ],
             "StartAddress": 741408769,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1293,8 +2117,33 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 751697921,
+                    "FunctionAddr": 757137409,
+                    "ReturnAddr": 751894529
+                },
+                {
+                    "CallAddr": 751894529,
+                    "FunctionAddr": 758513665,
+                    "ReturnAddr": 752091137
+                },
+                {
+                    "CallAddr": 752091137,
+                    "FunctionAddr": 758513665,
+                    "ReturnAddr": 752287745
+                },
+                {
+                    "CallAddr": 752287745,
+                    "FunctionAddr": 761790465,
+                    "ReturnAddr": 752484353
+                }
+            ],
             "Description": "",
-            "EndAddress": 750518273,
+            "EndAddress": 752484353,
+            "ExitPoints": [
+                752484353
+            ],
             "StartAddress": 750518273,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1320,8 +2169,25 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 757137409,
+                    "FunctionAddr": 762183681,
+                    "ReturnAddr": 757334017
+                },
+                {
+                    "CallAddr": 757334017,
+                    "FunctionAddr": 811073537,
+                    "ReturnAddr": 757530625
+                },
+                {
+                    "CallAddr": 757530625,
+                    "FunctionAddr": 814350337,
+                    "ReturnAddr": 757727233
+                }
+            ],
             "Description": "",
-            "EndAddress": 757137409,
+            "EndAddress": 757727233,
             "StartAddress": 757137409,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1338,8 +2204,20 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 758513665,
+                    "FunctionAddr": 764608513,
+                    "ReturnAddr": 758710273
+                },
+                {
+                    "CallAddr": 758710273,
+                    "FunctionAddr": 811073537,
+                    "ReturnAddr": 758906881
+                }
+            ],
             "Description": "",
-            "EndAddress": 758513665,
+            "EndAddress": 758906881,
             "StartAddress": 758513665,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1348,7 +2226,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 759103489,
+            "EndAddress": 759365633,
             "StartAddress": 759103489,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1356,8 +2234,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 761790465,
+                    "FunctionAddr": 770965505,
+                    "ReturnAddr": 761987073
+                }
+            ],
             "Description": "",
-            "EndAddress": 761790465,
+            "EndAddress": 761987073,
             "StartAddress": 761790465,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1365,8 +2250,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 762773505,
+                    "FunctionAddr": 774963201,
+                    "ReturnAddr": 762970113
+                },
+                {
+                    "CallAddr": 763953153,
+                    "FunctionAddr": 774963201,
+                    "ReturnAddr": 764149761
+                }
+            ],
             "Description": "",
-            "EndAddress": 762183681,
+            "EndAddress": 764542977,
+            "ExitPoints": [
+                764542977
+            ],
             "StartAddress": 762183681,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1374,8 +2274,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 765198337,
+                    "FunctionAddr": 809369601,
+                    "ReturnAddr": 765394945
+                },
+                {
+                    "CallAddr": 766377985,
+                    "FunctionAddr": 809369601,
+                    "ReturnAddr": 766574593
+                }
+            ],
             "Description": "",
-            "EndAddress": 764608513,
+            "EndAddress": 766967809,
+            "ExitPoints": [
+                766967809
+            ],
             "StartAddress": 764608513,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1392,8 +2307,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 771555329,
+                    "FunctionAddr": 810352641,
+                    "ReturnAddr": 771751937
+                },
+                {
+                    "CallAddr": 772734977,
+                    "FunctionAddr": 810352641,
+                    "ReturnAddr": 772931585
+                }
+            ],
             "Description": "",
-            "EndAddress": 770965505,
+            "EndAddress": 774766593,
+            "ExitPoints": [
+                773324801
+            ],
             "StartAddress": 770965505,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1402,7 +2332,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 774963201,
+            "EndAddress": 775749633,
+            "ExitPoints": [
+                775749633
+            ],
             "StartAddress": 774963201,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1411,7 +2344,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 809369601,
+            "EndAddress": 810287105,
+            "ExitPoints": [
+                810287105
+            ],
             "StartAddress": 809369601,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1420,7 +2356,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 810352641,
+            "EndAddress": 811008001,
+            "ExitPoints": [
+                811008001
+            ],
             "StartAddress": 810352641,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1429,7 +2368,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 811073537,
+            "EndAddress": 812056577,
             "StartAddress": 811073537,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1438,7 +2377,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 814350337,
+            "EndAddress": 816054273,
+            "ExitPoints": [
+                816054273
+            ],
             "StartAddress": 814350337,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1446,8 +2388,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 816578561,
+                    "FunctionAddr": 189530112,
+                    "ReturnAddr": 816775169
+                }
+            ],
             "Description": "",
-            "EndAddress": 816119809,
+            "EndAddress": 827523073,
             "StartAddress": 816119809,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1455,8 +2404,32 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 837287937,
+                    "FunctionAddr": 842661889,
+                    "ReturnAddr": 837484545
+                },
+                {
+                    "CallAddr": 838467585,
+                    "FunctionAddr": 867696641,
+                    "ReturnAddr": 838664193
+                },
+                {
+                    "CallAddr": 839122945,
+                    "FunctionAddr": 867696641,
+                    "ReturnAddr": 839319553
+                }
+            ],
             "Description": "",
-            "EndAddress": 833880065,
+            "EndAddress": 840171521,
+            "ExitPoints": [
+                837222401,
+                838860801,
+                835584001,
+                837812225,
+                840171521
+            ],
             "StartAddress": 833880065,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1465,7 +2438,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 842661889,
+            "EndAddress": 844169217,
+            "ExitPoints": [
+                844169217,
+                842924033
+            ],
             "StartAddress": 842661889,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1473,8 +2450,24 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 846921729,
+                    "FunctionAddr": 1506869250,
+                    "ReturnAddr": 847118337
+                },
+                {
+                    "CallAddr": 851705857,
+                    "FunctionAddr": 1506869250,
+                    "ReturnAddr": 851902465
+                }
+            ],
             "Description": "",
-            "EndAddress": 844234753,
+            "EndAddress": 854196225,
+            "ExitPoints": [
+                846266369,
+                854196225
+            ],
             "StartAddress": 844234753,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1482,8 +2475,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 855769089,
+                    "FunctionAddr": 1442316290,
+                    "ReturnAddr": 855965697
+                }
+            ],
             "Description": "",
-            "EndAddress": 854261761,
+            "EndAddress": 856162305,
             "StartAddress": 854261761,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1500,8 +2500,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 865468417,
+                    "FunctionAddr": 31522816,
+                    "ReturnAddr": 865665025
+                }
+            ],
             "Description": "",
-            "EndAddress": 861798401,
+            "EndAddress": 865665025,
             "StartAddress": 861798401,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1519,7 +2526,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 867696641,
+            "EndAddress": 873725953,
+            "ExitPoints": [
+                873332737,
+                873725953
+            ],
             "StartAddress": 867696641,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1527,8 +2538,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 874774529,
+                    "FunctionAddr": 25952256,
+                    "ReturnAddr": 874971137
+                }
+            ],
             "Description": "",
-            "EndAddress": 874577921,
+            "EndAddress": 875888641,
             "StartAddress": 874577921,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1536,8 +2554,48 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 937951233,
+                    "FunctionAddr": 1263206402,
+                    "ReturnAddr": 938147841
+                },
+                {
+                    "CallAddr": 940507137,
+                    "FunctionAddr": 942473217,
+                    "ReturnAddr": 940703745
+                },
+                {
+                    "CallAddr": 941948929,
+                    "FunctionAddr": 842661889,
+                    "ReturnAddr": 942145537
+                },
+                {
+                    "CallAddr": 919863297,
+                    "FunctionAddr": 1263206402,
+                    "ReturnAddr": 920059905
+                },
+                {
+                    "CallAddr": 926416897,
+                    "FunctionAddr": 942473217,
+                    "ReturnAddr": 926613505
+                },
+                {
+                    "CallAddr": 928186369,
+                    "FunctionAddr": 842661889,
+                    "ReturnAddr": 928382977
+                }
+            ],
             "Description": "",
-            "EndAddress": 917438465,
+            "EndAddress": 942407681,
+            "ExitPoints": [
+                942407681,
+                935526401,
+                934936577,
+                933560321,
+                932315137,
+                919797761
+            ],
             "StartAddress": 917438465,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1545,8 +2603,22 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 942473217,
+                    "FunctionAddr": 1263206402,
+                    "ReturnAddr": 942669825
+                }
+            ],
             "Description": "",
-            "EndAddress": 942473217,
+            "EndAddress": 946667521,
+            "ExitPoints": [
+                944111617,
+                943783937,
+                945029121,
+                946667521,
+                945225729
+            ],
             "StartAddress": 942473217,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1554,8 +2626,46 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 997654529,
+                    "FunctionAddr": 1040515073,
+                    "ReturnAddr": 997851137
+                },
+                {
+                    "CallAddr": 998768641,
+                    "FunctionAddr": 1019478017,
+                    "ReturnAddr": 998965249
+                },
+                {
+                    "CallAddr": 999161857,
+                    "FunctionAddr": 1021902849,
+                    "ReturnAddr": 999358465
+                },
+                {
+                    "CallAddr": 1000538113,
+                    "FunctionAddr": 1451425794,
+                    "ReturnAddr": 1000734721
+                },
+                {
+                    "CallAddr": 1001521153,
+                    "FunctionAddr": 1451425794,
+                    "ReturnAddr": 1001717761
+                },
+                {
+                    "CallAddr": 1002569729,
+                    "FunctionAddr": 727711745,
+                    "ReturnAddr": 1002766337
+                }
+            ],
             "Description": "",
-            "EndAddress": 996081665,
+            "EndAddress": 1007157249,
+            "ExitPoints": [
+                1005584385,
+                1004470273,
+                1007157249,
+                1004208129
+            ],
             "StartAddress": 996081665,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1563,8 +2673,21 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1012662273,
+                    "FunctionAddr": 1497497602,
+                    "ReturnAddr": 1012858881
+                }
+            ],
             "Description": "",
-            "EndAddress": 1007484929,
+            "EndAddress": 1014235137,
+            "ExitPoints": [
+                1008992257,
+                1009844225,
+                1009385473,
+                1014235137
+            ],
             "StartAddress": 1007484929,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1573,7 +2696,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1019478017,
+            "EndAddress": 1021837313,
+            "ExitPoints": [
+                1021837313
+            ],
             "StartAddress": 1019478017,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1581,8 +2707,31 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1030684673,
+                    "FunctionAddr": 1449066498,
+                    "ReturnAddr": 1030881281
+                },
+                {
+                    "CallAddr": 1031077889,
+                    "FunctionAddr": 867696641,
+                    "ReturnAddr": 1031274497
+                },
+                {
+                    "CallAddr": 1034813441,
+                    "FunctionAddr": 1506082818,
+                    "ReturnAddr": 1035010049
+                }
+            ],
             "Description": "",
-            "EndAddress": 1021902849,
+            "EndAddress": 1036910593,
+            "ExitPoints": [
+                1025769473,
+                1036910593,
+                1026424833,
+                1027866625
+            ],
             "StartAddress": 1021902849,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1590,8 +2739,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1038548993,
+                    "FunctionAddr": 1038811137,
+                    "ReturnAddr": 1038745601
+                }
+            ],
             "Description": "",
-            "EndAddress": 1037697025,
+            "EndAddress": 1038745601,
+            "ExitPoints": [
+                1038745601
+            ],
             "StartAddress": 1037697025,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1600,7 +2759,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1038811137,
+            "EndAddress": 1039073281,
+            "ExitPoints": [
+                1039073281
+            ],
             "StartAddress": 1038811137,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1608,8 +2770,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1039859713,
+                    "FunctionAddr": 1084948482,
+                    "ReturnAddr": 1040056321
+                }
+            ],
             "Description": "",
-            "EndAddress": 1039859713,
+            "EndAddress": 1040449537,
+            "ExitPoints": [
+                1040449537
+            ],
             "StartAddress": 1039859713,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1618,7 +2790,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1040515073,
+            "EndAddress": 1043660801,
+            "ExitPoints": [
+                1043660801
+            ],
             "StartAddress": 1040515073,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1626,8 +2801,33 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1044250625,
+                    "FunctionAddr": 1046675457,
+                    "ReturnAddr": 1044447233
+                },
+                {
+                    "CallAddr": 1044971521,
+                    "FunctionAddr": 1046675457,
+                    "ReturnAddr": 1045168129
+                },
+                {
+                    "CallAddr": 1045692417,
+                    "FunctionAddr": 1046675457,
+                    "ReturnAddr": 1045889025
+                },
+                {
+                    "CallAddr": 1046413313,
+                    "FunctionAddr": 1046675457,
+                    "ReturnAddr": 1046609921
+                }
+            ],
             "Description": "",
-            "EndAddress": 1043726337,
+            "EndAddress": 1046609921,
+            "ExitPoints": [
+                1046609921
+            ],
             "StartAddress": 1043726337,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1635,8 +2835,24 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1047789569,
+                    "FunctionAddr": 1040515073,
+                    "ReturnAddr": 1047986177
+                },
+                {
+                    "CallAddr": 1047986177,
+                    "FunctionAddr": 730005505,
+                    "ReturnAddr": 1048182785
+                }
+            ],
             "Description": "",
-            "EndAddress": 1046675457,
+            "EndAddress": 1048248321,
+            "ExitPoints": [
+                1046937601,
+                1048182785
+            ],
             "StartAddress": 1046675457,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1653,8 +2869,34 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1060438017,
+                    "FunctionAddr": 867696641,
+                    "ReturnAddr": 1060634625
+                },
+                {
+                    "CallAddr": 1061224449,
+                    "FunctionAddr": 1066598401,
+                    "ReturnAddr": 1061421057
+                },
+                {
+                    "CallAddr": 1063780353,
+                    "FunctionAddr": 1506869250,
+                    "ReturnAddr": 1063976961
+                }
+            ],
             "Description": "",
-            "EndAddress": 1054212097,
+            "EndAddress": 1066532865,
+            "ExitPoints": [
+                1054867457,
+                1059782657,
+                1058799617,
+                1061158913,
+                1066532865,
+                1055195137,
+                1056833537
+            ],
             "StartAddress": 1054212097,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1663,7 +2905,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1066598401,
+            "EndAddress": 1066926081,
             "StartAddress": 1066598401,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1681,7 +2923,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1072300033,
+            "EndAddress": 1072562177,
+            "ExitPoints": [
+                1072562177
+            ],
             "StartAddress": 1072300033,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1717,7 +2962,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1084948482,
+            "EndAddress": 1085734914,
+            "ExitPoints": [
+                1085734914
+            ],
             "StartAddress": 1084948482,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1726,7 +2974,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1085800450,
+            "EndAddress": 1086128130,
+            "ExitPoints": [
+                1086128130
+            ],
             "StartAddress": 1085800450,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1735,7 +2986,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1087766530,
+            "EndAddress": 1088094210,
+            "ExitPoints": [
+                1088094210
+            ],
             "StartAddress": 1087766530,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1780,7 +3034,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1136066562,
+            "EndAddress": 1138425858,
+            "ExitPoints": [
+                1137246210,
+                1138425858
+            ],
             "StartAddress": 1136066562,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1815,8 +3073,26 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1204551682,
+                    "FunctionAddr": 1040515073,
+                    "ReturnAddr": 1204748290
+                },
+                {
+                    "CallAddr": 1204748290,
+                    "FunctionAddr": 730005505,
+                    "ReturnAddr": 1204944898
+                }
+            ],
             "Description": "",
-            "EndAddress": 1202913282,
+            "EndAddress": 1217134594,
+            "ExitPoints": [
+                1214054402,
+                1214316546,
+                1217134594,
+                1206452226
+            ],
             "StartAddress": 1202913282,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1825,7 +3101,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1219297282,
+            "EndAddress": 1220345858,
+            "ExitPoints": [
+                1220345858
+            ],
             "StartAddress": 1219297282,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1833,8 +3112,38 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1220411394,
+                    "FunctionAddr": 1223098370,
+                    "ReturnAddr": 1220608002
+                },
+                {
+                    "CallAddr": 1220608002,
+                    "FunctionAddr": 1228996610,
+                    "ReturnAddr": 1220804610
+                },
+                {
+                    "CallAddr": 1220804610,
+                    "FunctionAddr": 1225850882,
+                    "ReturnAddr": 1221001218
+                },
+                {
+                    "CallAddr": 1221001218,
+                    "FunctionAddr": 1233387522,
+                    "ReturnAddr": 1221197826
+                },
+                {
+                    "CallAddr": 1221197826,
+                    "FunctionAddr": 1238761474,
+                    "ReturnAddr": 1221394434
+                }
+            ],
             "Description": "",
-            "EndAddress": 1220411394,
+            "EndAddress": 1221394434,
+            "ExitPoints": [
+                1221394434
+            ],
             "StartAddress": 1220411394,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1843,7 +3152,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1223098370,
+            "EndAddress": 1224146946,
+            "ExitPoints": [
+                1224146946
+            ],
             "StartAddress": 1223098370,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1852,7 +3164,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1225850882,
+            "EndAddress": 1226833922,
+            "ExitPoints": [
+                1226833922
+            ],
             "StartAddress": 1225850882,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1861,7 +3176,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1228996610,
+            "EndAddress": 1229914114,
+            "ExitPoints": [
+                1229914114
+            ],
             "StartAddress": 1228996610,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1870,7 +3188,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1233387522,
+            "EndAddress": 1233649666,
+            "ExitPoints": [
+                1233649666
+            ],
             "StartAddress": 1233387522,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1878,8 +3199,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1237385218,
+                    "FunctionAddr": 11599872,
+                    "ReturnAddr": 1237581826
+                }
+            ],
             "Description": "",
-            "EndAddress": 1235746818,
+            "EndAddress": 1238564866,
             "StartAddress": 1235746818,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1888,7 +3216,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1238761474,
+            "EndAddress": 1239023618,
+            "ExitPoints": [
+                1239023618
+            ],
             "StartAddress": 1238761474,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1906,7 +3237,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1254883330,
+            "EndAddress": 1257897986,
+            "ExitPoints": [
+                1257897986
+            ],
             "StartAddress": 1254883330,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1924,7 +3258,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1259929602,
+            "EndAddress": 1261240322,
             "StartAddress": 1259929602,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1942,7 +3276,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1263206402,
+            "EndAddress": 1264975874,
+            "ExitPoints": [
+                1264975874
+            ],
             "StartAddress": 1263206402,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1951,7 +3288,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1265041410,
+            "EndAddress": 1266876418,
+            "ExitPoints": [
+                1266876418
+            ],
             "StartAddress": 1265041410,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1960,7 +3300,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1269104642,
+            "EndAddress": 1269825538,
+            "ExitPoints": [
+                1269825538
+            ],
             "StartAddress": 1269104642,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1977,8 +3320,38 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1273233410,
+                    "FunctionAddr": 1277100034,
+                    "ReturnAddr": 1273430018
+                },
+                {
+                    "CallAddr": 1273954306,
+                    "FunctionAddr": 1277100034,
+                    "ReturnAddr": 1274150914
+                },
+                {
+                    "CallAddr": 1274675202,
+                    "FunctionAddr": 1277100034,
+                    "ReturnAddr": 1274871810
+                },
+                {
+                    "CallAddr": 1275396098,
+                    "FunctionAddr": 1277100034,
+                    "ReturnAddr": 1275592706
+                },
+                {
+                    "CallAddr": 1276116994,
+                    "FunctionAddr": 1277100034,
+                    "ReturnAddr": 1276313602
+                }
+            ],
             "Description": "",
-            "EndAddress": 1272709122,
+            "EndAddress": 1276313602,
+            "ExitPoints": [
+                1276313602
+            ],
             "StartAddress": 1272709122,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1986,8 +3359,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1279983618,
+                    "FunctionAddr": 225640448,
+                    "ReturnAddr": 1280180226
+                }
+            ],
             "Description": "",
-            "EndAddress": 1277100034,
+            "EndAddress": 1282670594,
+            "ExitPoints": [
+                1282670594
+            ],
             "StartAddress": 1277100034,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1995,8 +3378,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1282736130,
+                    "FunctionAddr": 131203072,
+                    "ReturnAddr": 1282932738
+                }
+            ],
             "Description": "",
-            "EndAddress": 1282736130,
+            "EndAddress": 1284505602,
             "StartAddress": 1282736130,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2022,8 +3412,24 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1295843330,
+                    "FunctionAddr": 1298595842,
+                    "ReturnAddr": 1296039938
+                },
+                {
+                    "CallAddr": 1296171010,
+                    "FunctionAddr": 1298595842,
+                    "ReturnAddr": 1296367618
+                }
+            ],
             "Description": "",
-            "EndAddress": 1295646722,
+            "EndAddress": 1298399234,
+            "ExitPoints": [
+                1296039938,
+                1297219586
+            ],
             "StartAddress": 1295646722,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2032,7 +3438,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1298595842,
+            "EndAddress": 1299251202,
+            "ExitPoints": [
+                1299054594,
+                1299251202
+            ],
             "StartAddress": 1298595842,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2068,7 +3478,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1306394626,
+            "EndAddress": 1306656770,
+            "ExitPoints": [
+                1306656770
+            ],
             "StartAddress": 1306394626,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2076,8 +3489,35 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1321467906,
+                    "FunctionAddr": 1333657602,
+                    "ReturnAddr": 1321664514
+                },
+                {
+                    "CallAddr": 1322516482,
+                    "FunctionAddr": 1367670786,
+                    "ReturnAddr": 1322713090
+                },
+                {
+                    "CallAddr": 1323499522,
+                    "FunctionAddr": 1364328450,
+                    "ReturnAddr": 1323696130
+                },
+                {
+                    "CallAddr": 1323696130,
+                    "FunctionAddr": 1350434818,
+                    "ReturnAddr": 1323892738
+                },
+                {
+                    "CallAddr": 1324744706,
+                    "FunctionAddr": 1367670786,
+                    "ReturnAddr": 1324941314
+                }
+            ],
             "Description": "",
-            "EndAddress": 1313800194,
+            "EndAddress": 1331298306,
             "StartAddress": 1313800194,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2094,8 +3534,19 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1337131010,
+                    "FunctionAddr": 1373503490,
+                    "ReturnAddr": 1337327618
+                }
+            ],
             "Description": "",
-            "EndAddress": 1333657602,
+            "EndAddress": 1337851906,
+            "ExitPoints": [
+                1334837250,
+                1337851906
+            ],
             "StartAddress": 1333657602,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2104,7 +3555,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1350434818,
+            "EndAddress": 1352007682,
+            "ExitPoints": [
+                1351286786,
+                1352007682
+            ],
             "StartAddress": 1350434818,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2131,7 +3586,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1364328450,
+            "EndAddress": 1367605250,
+            "ExitPoints": [
+                1367605250
+            ],
             "StartAddress": 1364328450,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2140,7 +3598,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1367670786,
+            "EndAddress": 1373437954,
+            "ExitPoints": [
+                1370619906,
+                1373437954
+            ],
             "StartAddress": 1367670786,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2149,7 +3611,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1373503490,
+            "EndAddress": 1375993858,
+            "ExitPoints": [
+                1375993858,
+                1375272962
+            ],
             "StartAddress": 1373503490,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2157,8 +3623,20 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1380384770,
+                    "FunctionAddr": 1373503490,
+                    "ReturnAddr": 1380581378
+                }
+            ],
             "Description": "",
-            "EndAddress": 1376059394,
+            "EndAddress": 1382612994,
+            "ExitPoints": [
+                1376780290,
+                1382612994,
+                1376583682
+            ],
             "StartAddress": 1376059394,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2167,7 +3645,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1382678530,
+            "EndAddress": 1383464962,
+            "ExitPoints": [
+                1383464962
+            ],
             "StartAddress": 1382678530,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2175,8 +3656,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1384513538,
+                    "FunctionAddr": 1393426434,
+                    "ReturnAddr": 1384710146
+                },
+                {
+                    "CallAddr": 1384710146,
+                    "FunctionAddr": 1389494274,
+                    "ReturnAddr": 1384906754
+                }
+            ],
             "Description": "",
-            "EndAddress": 1384513538,
+            "EndAddress": 1386807298,
+            "ExitPoints": [
+                1386807298
+            ],
             "StartAddress": 1384513538,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2184,8 +3680,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1388118018,
+                    "FunctionAddr": 1254883330,
+                    "ReturnAddr": 1388314626
+                }
+            ],
             "Description": "",
-            "EndAddress": 1386872834,
+            "EndAddress": 1389297666,
             "StartAddress": 1386872834,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2194,7 +3697,12 @@
         },
         {
             "Description": "",
-            "EndAddress": 1389494274,
+            "EndAddress": 1392640002,
+            "ExitPoints": [
+                1390280706,
+                1392312322,
+                1392640002
+            ],
             "StartAddress": 1389494274,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2203,7 +3711,12 @@
         },
         {
             "Description": "",
-            "EndAddress": 1393426434,
+            "EndAddress": 1396047874,
+            "ExitPoints": [
+                1393950722,
+                1395720194,
+                1396047874
+            ],
             "StartAddress": 1393426434,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2212,7 +3725,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1396113410,
+            "EndAddress": 1406337026,
+            "ExitPoints": [
+                1406337026
+            ],
             "StartAddress": 1396113410,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2221,7 +3737,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1439956994,
+            "EndAddress": 1440284674,
+            "ExitPoints": [
+                1440284674
+            ],
             "StartAddress": 1439956994,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2230,7 +3749,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1442316290,
+            "EndAddress": 1443561474,
+            "ExitPoints": [
+                1443561474
+            ],
             "StartAddress": 1442316290,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2239,7 +3761,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1443627010,
+            "EndAddress": 1444282370,
+            "ExitPoints": [
+                1444282370
+            ],
             "StartAddress": 1443627010,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2248,7 +3773,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1444347906,
+            "EndAddress": 1445396482,
+            "ExitPoints": [
+                1445396482
+            ],
             "StartAddress": 1444347906,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2266,7 +3794,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1446248450,
+            "EndAddress": 1449263106,
             "StartAddress": 1446248450,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2284,7 +3812,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1451098114,
+            "EndAddress": 1451294722,
             "StartAddress": 1451098114,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2292,8 +3820,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1451622402,
+                    "FunctionAddr": 1444347906,
+                    "ReturnAddr": 1451819010
+                }
+            ],
             "Description": "",
-            "EndAddress": 1451425794,
+            "EndAddress": 1452015618,
             "StartAddress": 1451425794,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2301,8 +3836,43 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1453719554,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 1453916162
+                },
+                {
+                    "CallAddr": 1453916162,
+                    "FunctionAddr": 517931008,
+                    "ReturnAddr": 1454112770
+                },
+                {
+                    "CallAddr": 1454112770,
+                    "FunctionAddr": 261554176,
+                    "ReturnAddr": 1454309378
+                },
+                {
+                    "CallAddr": 1454309378,
+                    "FunctionAddr": 750518273,
+                    "ReturnAddr": 1454505986
+                },
+                {
+                    "CallAddr": 1454505986,
+                    "FunctionAddr": 602079233,
+                    "ReturnAddr": 1454702594
+                },
+                {
+                    "CallAddr": 1454702594,
+                    "FunctionAddr": 278396928,
+                    "ReturnAddr": 1454899202
+                }
+            ],
             "Description": "",
-            "EndAddress": 1452539906,
+            "EndAddress": 1456406530,
+            "ExitPoints": [
+                1455161346
+            ],
             "StartAddress": 1452539906,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2347,7 +3917,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1479802882,
+            "EndAddress": 1479999490,
             "StartAddress": 1479802882,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2356,7 +3926,16 @@
         },
         {
             "Description": "",
-            "EndAddress": 1480589314,
+            "EndAddress": 1480196098,
+            "StartAddress": 1480196098,
+            "bManualEdit": false,
+            "bROMFunction": true,
+            "bStubImplemented": false,
+            "bStubbedOut": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 1480785922,
             "StartAddress": 1480589314,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2365,7 +3944,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1481900034,
+            "EndAddress": 1482096642,
             "StartAddress": 1481900034,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2374,7 +3953,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1483079682,
+            "EndAddress": 1486946306,
             "StartAddress": 1483079682,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2392,7 +3971,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1488715778,
+            "EndAddress": 1492975618,
+            "ExitPoints": [
+                1492975618
+            ],
             "StartAddress": 1488715778,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2401,7 +3983,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1497497602,
+            "EndAddress": 1499987970,
             "StartAddress": 1497497602,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2410,7 +3992,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1500381186,
+            "EndAddress": 1506017282,
+            "ExitPoints": [
+                1502412802,
+                1506017282
+            ],
             "StartAddress": 1500381186,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2419,7 +4005,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1506082818,
+            "EndAddress": 1506279426,
             "StartAddress": 1506082818,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2437,7 +4023,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1506869250,
+            "EndAddress": 1507065858,
             "StartAddress": 1506869250,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2454,8 +4040,23 @@
             "bStubbedOut": false
         },
         {
-            "Description": "",
-            "EndAddress": 1540816898,
+            "CallPoints": [
+                {
+                    "CallAddr": 1540816898,
+                    "FunctionAddr": 131203072,
+                    "ReturnAddr": 1541013506
+                },
+                {
+                    "CallAddr": 1541013506,
+                    "FunctionAddr": 33619968,
+                    "ReturnAddr": 1541210114
+                }
+            ],
+            "Description": "This phase does the radial wipe and then some integrity checks",
+            "EndAddress": 1543307266,
+            "ExitPoints": [
+                1541210114
+            ],
             "StartAddress": 1540816898,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -4082,13 +5683,13 @@
                 {
                     "Address": 649,
                     "ByteSize": 3,
-                    "Comment": "fetch colour",
+                    "Comment": "fetch attrib",
                     "OperandType": 1
                 },
                 {
                     "Address": 652,
                     "ByteSize": 1,
-                    "Comment": "write colour"
+                    "Comment": "write attrib"
                 },
                 {
                     "Address": 653,
@@ -4735,6 +6336,11 @@
                     "Name": "InterruptRoutine"
                 },
                 {
+                    "Address": 217,
+                    "LabelType": 2,
+                    "Name": "label_00D9"
+                },
+                {
                     "Address": 262,
                     "LabelType": 2,
                     "Name": "label_0106"
@@ -4825,12 +6431,12 @@
                     "Address": 513,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_0201"
+                    "Name": "PerformRadialWipeStep"
                 },
                 {
                     "Address": 562,
                     "LabelType": 2,
-                    "Name": "label_0232"
+                    "Name": "radial_line_loop"
                 },
                 {
                     "Address": 623,
@@ -7755,15 +9361,19 @@
                 },
                 {
                     "Address": 981,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "offset to previous line"
                 },
                 {
                     "Address": 984,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "14 characters",
+                    "OperandType": 7
                 },
                 {
                     "Address": 986,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "clear char"
                 },
                 {
                     "Address": 988,
@@ -7771,7 +9381,8 @@
                 },
                 {
                     "Address": 990,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "set attrib"
                 },
                 {
                     "Address": 992,
@@ -7906,7 +9517,7 @@
                     "Address": 884,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_0774"
+                    "Name": "Phase4Function"
                 },
                 {
                     "Address": 890,
@@ -7958,17 +9569,12 @@
                     "Address": 978,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_07D2"
-                },
-                {
-                    "Address": 984,
-                    "LabelType": 0,
-                    "Name": "operand_07D8"
+                    "Name": "ClearChars_07D2"
                 },
                 {
                     "Address": 986,
                     "LabelType": 2,
-                    "Name": "label_07DA"
+                    "Name": "char_loop"
                 },
                 {
                     "Address": 998,
@@ -8286,6 +9892,178 @@
                     "Address": 180,
                     "ByteSize": 3,
                     "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 183,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 184,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 186,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 189,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 190,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 191,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 192,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 194,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 196,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 199,
+                    "ByteSize": 3,
+                    "Comment": "Output string 'Score Ranking Table'"
+                },
+                {
+                    "Address": 202,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 203,
+                    "ByteSize": 2,
+                    "Comment": "(C) Konami"
+                },
+                {
+                    "Address": 205,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 206,
+                    "ByteSize": 2,
+                    "Comment": "Time Pilot Logo Top"
+                },
+                {
+                    "Address": 208,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 209,
+                    "ByteSize": 1,
+                    "Comment": "Logo bottom"
+                },
+                {
+                    "Address": 210,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 211,
+                    "ByteSize": 2,
+                    "Comment": "Input your initials"
+                },
+                {
+                    "Address": 213,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 214,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 217,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 220,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 221,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 223,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 224,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 225,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 227,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 229,
+                    "ByteSize": 4,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 233,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 236,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 239,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 240,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 241,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 243,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 244,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 247,
+                    "ByteSize": 3,
                     "OperandType": 2
                 },
                 {
@@ -9175,6 +10953,11 @@
                     "Name": "QueueTitleScreenDraw"
                 },
                 {
+                    "Address": 65,
+                    "LabelType": 0,
+                    "Name": "operand_0841"
+                },
+                {
                     "Address": 73,
                     "LabelType": 2,
                     "Name": "label_0849"
@@ -9227,13 +11010,17 @@
                     "Address": 180,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_08B4"
+                    "Name": "Phase9Function"
                 },
                 {
-                    "Address": 201,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_08C9"
+                    "Address": 190,
+                    "LabelType": 2,
+                    "Name": "label_08BE"
+                },
+                {
+                    "Address": 223,
+                    "LabelType": 2,
+                    "Name": "label_08DF"
                 },
                 {
                     "Address": 250,
@@ -12000,8 +13787,9 @@
                 },
                 {
                     "Address": 785,
-                    "LabelType": 2,
-                    "Name": "label_0F11"
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_0F11"
                 },
                 {
                     "Address": 794,
@@ -12040,7 +13828,8 @@
                 },
                 {
                     "Address": 909,
-                    "LabelType": 2,
+                    "Global": true,
+                    "LabelType": 1,
                     "Name": "label_0F8D"
                 },
                 {
@@ -13750,7 +15539,7 @@
                     "Address": 409,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_1199"
+                    "Name": "Phase7Function"
                 },
                 {
                     "Address": 523,
@@ -13809,10 +15598,16 @@
                     "Name": "label_12BB"
                 },
                 {
+                    "Address": 711,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_12C7"
+                },
+                {
                     "Address": 738,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_12E2"
+                    "Name": "PhaseBFunction"
                 },
                 {
                     "Address": 743,
@@ -13828,7 +15623,7 @@
                     "Address": 763,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "label_12FB"
+                    "Name": "PhaseCFunction"
                 },
                 {
                     "Address": 793,
@@ -13840,7 +15635,7 @@
                     "Address": 803,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_1323"
+                    "Name": "PhaseEFunction"
                 },
                 {
                     "Address": 819,
@@ -14620,7 +16415,8 @@
                 },
                 {
                     "Address": 824,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 827,
@@ -15288,10 +17084,16 @@
                     "Name": "data_14B2"
                 },
                 {
+                    "Address": 336,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1550"
+                },
+                {
                     "Address": 437,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_15B5"
+                    "Name": "PhaseFFunction"
                 },
                 {
                     "Address": 438,
@@ -15332,6 +17134,11 @@
                     "Address": 499,
                     "LabelType": 2,
                     "Name": "label_15F3"
+                },
+                {
+                    "Address": 510,
+                    "LabelType": 0,
+                    "Name": "operand_15FE"
                 },
                 {
                     "Address": 539,
@@ -15376,7 +17183,7 @@
                     "Address": 687,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_16AF"
+                    "Name": "Phase5Function"
                 },
                 {
                     "Address": 695,
@@ -16491,7 +18298,7 @@
                     "Address": 195,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_18C3"
+                    "Name": "PhaseAFunction"
                 },
                 {
                     "Address": 388,
@@ -18782,22 +20589,7 @@
                     "Address": 945,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_27B1"
-                },
-                {
-                    "Address": 958,
-                    "LabelType": 0,
-                    "Name": "operand_27BE"
-                },
-                {
-                    "Address": 970,
-                    "LabelType": 0,
-                    "Name": "operand_27CA"
-                },
-                {
-                    "Address": 992,
-                    "LabelType": 2,
-                    "Name": "label_27E0"
+                    "Name": "Phase0Function"
                 }
             ],
             "PageId": 9
@@ -18846,7 +20638,8 @@
                 },
                 {
                     "Address": 23,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 26,
@@ -22913,13 +24706,84 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 806,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 809,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 811,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 814,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 816,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 819,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 822,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 824,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 827,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 828,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 829,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 830,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 832,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 834,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 837,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 862,
                     "ByteSize": 3,
                     "OperandType": 1
                 },
                 {
                     "Address": 865,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 868,
@@ -22958,7 +24822,8 @@
                 },
                 {
                     "Address": 883,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 886,
@@ -22971,12 +24836,23 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 891,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 894,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
                     "Address": 897,
                     "ByteSize": 1
                 },
                 {
                     "Address": 898,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 901,
@@ -22986,7 +24862,8 @@
                 },
                 {
                     "Address": 902,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "get character code"
                 },
                 {
                     "Address": 903,
@@ -23007,15 +24884,18 @@
                 },
                 {
                     "Address": 909,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "get attrib"
                 },
                 {
                     "Address": 910,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 913,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "compare to current"
                 },
                 {
                     "Address": 914,
@@ -23024,6 +24904,7 @@
                 {
                     "Address": 915,
                     "ByteSize": 3,
+                    "Comment": "advance to next phase if they are the same",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -23620,12 +25501,17 @@
                     "Address": 779,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_330B"
+                    "Name": "Phase8Function"
                 },
                 {
                     "Address": 806,
                     "LabelType": 2,
                     "Name": "label_3326"
+                },
+                {
+                    "Address": 828,
+                    "LabelType": 2,
+                    "Name": "label_333C"
                 },
                 {
                     "Address": 840,
@@ -23637,17 +25523,12 @@
                     "Address": 862,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_335E"
+                    "Name": "Phase1Function"
                 },
                 {
                     "Address": 870,
                     "LabelType": 2,
                     "Name": "label_3366"
-                },
-                {
-                    "Address": 889,
-                    "LabelType": 0,
-                    "Name": "operand_3379"
                 },
                 {
                     "Address": 897,
@@ -31189,30 +33070,25 @@
                 {
                     "Address": 527,
                     "ByteSize": 3,
-                    "Flags": 1,
                     "OperandType": 1
                 },
                 {
                     "Address": 530,
                     "ByteSize": 3,
-                    "Flags": 1,
                     "OperandType": 1
                 },
                 {
                     "Address": 533,
-                    "ByteSize": 2,
-                    "Flags": 1
+                    "ByteSize": 2
                 },
                 {
                     "Address": 535,
                     "ByteSize": 3,
-                    "Flags": 1,
                     "OperandType": 1
                 },
                 {
                     "Address": 538,
-                    "ByteSize": 2,
-                    "Flags": 1
+                    "ByteSize": 2
                 },
                 {
                     "Address": 540,
@@ -31261,7 +33137,8 @@
                 },
                 {
                     "Address": 566,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 569,
@@ -31340,7 +33217,8 @@
                 },
                 {
                     "Address": 595,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 598,
@@ -32316,7 +34194,7 @@
                     "Address": 527,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_4A0F"
+                    "Name": "PhaseDFunction"
                 },
                 {
                     "Address": 571,
@@ -32781,7 +34659,8 @@
                 },
                 {
                     "Address": 124,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 127,
@@ -32789,8 +34668,14 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 129,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
                     "Address": 132,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 135,
@@ -32821,7 +34706,8 @@
                 },
                 {
                     "Address": 150,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "command 6 - ??"
                 },
                 {
                     "Address": 152,
@@ -32844,7 +34730,8 @@
                 },
                 {
                     "Address": 158,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "command 5"
                 },
                 {
                     "Address": 160,
@@ -32862,7 +34749,8 @@
                 },
                 {
                     "Address": 164,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 167,
@@ -34419,7 +36307,7 @@
                     "Address": 117,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_4C75"
+                    "Name": "Phase3Function"
                 },
                 {
                     "Address": 132,
@@ -37650,7 +39538,7 @@
                     "Address": 660,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_5694"
+                    "Name": "Phase6Function"
                 },
                 {
                     "Address": 668,
@@ -38676,7 +40564,7 @@
                 {
                     "Address": 983,
                     "ByteSize": 3,
-                    "Flags": 8,
+                    "Flags": 40,
                     "OperandType": 2
                 },
                 {
@@ -38687,11 +40575,15 @@
                 },
                 {
                     "Address": 989,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "return if not finished"
                 },
                 {
                     "Address": 990,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "function to check",
+                    "Flags": 32,
+                    "OperandType": 1
                 },
                 {
                     "Address": 993,
@@ -38716,11 +40608,13 @@
                 },
                 {
                     "Address": 999,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "check value"
                 },
                 {
                     "Address": 1001,
                     "ByteSize": 3,
+                    "Comment": "call if function has been tampered with",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -38731,7 +40625,9 @@
                 },
                 {
                     "Address": 1007,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "function to check",
+                    "OperandType": 1
                 },
                 {
                     "Address": 1010,
@@ -38757,6 +40653,7 @@
                 {
                     "Address": 1018,
                     "ByteSize": 3,
+                    "Comment": "store checksum",
                     "OperandType": 1
                 },
                 {
@@ -38892,6 +40789,12 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_5834"
+                },
+                {
+                    "Address": 58,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_583A"
                 },
                 {
                     "Address": 64,
@@ -39089,20 +40992,26 @@
                     "Name": "data_59DD"
                 },
                 {
+                    "Address": 848,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_5B50"
+                },
+                {
                     "Address": 983,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_5BD7"
+                    "Name": "Phase2Function_RadialWipe"
                 },
                 {
                     "Address": 995,
                     "LabelType": 2,
-                    "Name": "label_5BE3"
+                    "Name": "func_xor_loop"
                 },
                 {
                     "Address": 1012,
                     "LabelType": 2,
-                    "Name": "label_5BF4"
+                    "Name": "func_checksum_loop"
                 }
             ],
             "PageId": 22
@@ -39702,6 +41611,10 @@
                     "Comment": "These are bit-inverted copies of the HW regs"
                 },
                 {
+                    "Address": 483,
+                    "Comment": "these are fixed point char coords used for the radial line wipe"
+                },
+                {
                     "Address": 528,
                     "Comment": "Buffered sprite data - sent to HW in interrupt"
                 },
@@ -39744,14 +41657,19 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 403,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 1
+                },
+                {
                     "Address": 427,
                     "DisplayType": 11
                 },
                 {
                     "Address": 428,
                     "Comment": "this appears to get incremented on function tail calls",
-                    "DisplayType": 11,
-                    "Flags": 128
+                    "DisplayType": 11
                 },
                 {
                     "Address": 430,
@@ -39791,11 +41709,27 @@
                     "DisplayType": 11
                 },
                 {
-                    "Address": 484,
+                    "Address": 483,
+                    "ByteSize": 2,
+                    "DataType": 2,
                     "DisplayType": 11
                 },
                 {
-                    "Address": 486,
+                    "Address": 485,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 487,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 489,
+                    "ByteSize": 2,
+                    "DataType": 2,
                     "DisplayType": 11
                 },
                 {
@@ -40332,6 +42266,12 @@
                     "Name": "data_A98D"
                 },
                 {
+                    "Address": 400,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A990"
+                },
+                {
                     "Address": 401,
                     "Global": true,
                     "LabelType": 0,
@@ -40342,6 +42282,18 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_A993"
+                },
+                {
+                    "Address": 405,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A995"
+                },
+                {
+                    "Address": 409,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A999"
                 },
                 {
                     "Address": 413,
@@ -40359,7 +42311,7 @@
                     "Address": 427,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A9AB"
+                    "Name": "FunctionChecksum"
                 },
                 {
                     "Address": 428,
@@ -40509,37 +42461,25 @@
                     "Address": 483,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A9E3"
-                },
-                {
-                    "Address": 484,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "CharYPos"
+                    "Name": "FPCharYPos"
                 },
                 {
                     "Address": 485,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A9E5"
-                },
-                {
-                    "Address": 486,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "CharXPos"
+                    "Name": "FPCharXPos"
                 },
                 {
                     "Address": 487,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A9E7"
+                    "Name": "FPCharLineYStep"
                 },
                 {
                     "Address": 489,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A9E9"
+                    "Name": "FPCharLineXStep"
                 },
                 {
                     "Address": 491,
@@ -40737,6 +42677,18 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 278,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 294,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 304,
                     "DisplayType": 11
                 },
@@ -40792,6 +42744,7 @@
                 {
                     "Address": 994,
                     "ByteSize": 2,
+                    "Comment": "return address?",
                     "DataType": 2
                 },
                 {
@@ -40996,15 +42949,17 @@
                 },
                 {
                     "Address": 267,
+                    "Comment": "used by #ADDR:0x026F#",
                     "Global": true,
                     "LabelType": 0,
                     "Name": "CharacterCode"
                 },
                 {
                     "Address": 268,
+                    "Comment": "used by #ADDR:0x026F#",
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "TextColour"
+                    "Name": "CharacterAttrib"
                 },
                 {
                     "Address": 269,
@@ -41061,6 +43016,12 @@
                     "Name": "data_AD1A"
                 },
                 {
+                    "Address": 283,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AD1B"
+                },
+                {
                     "Address": 285,
                     "Global": true,
                     "LabelType": 0,
@@ -41113,6 +43074,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_AD2A"
+                },
+                {
+                    "Address": 299,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AD2B"
                 },
                 {
                     "Address": 301,
