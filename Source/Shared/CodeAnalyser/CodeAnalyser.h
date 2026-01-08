@@ -320,7 +320,7 @@ public:
 
 	bool		IsAddressBreakpointed(FAddressRef addr) const;
 	bool		ToggleExecBreakpointAtAddress(FAddressRef addr);
-	bool		ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize);
+	bool		ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bRead);
 
 	FCodeAnalysisBank* GetBank(int16_t bankId) { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr; }
 	const FCodeAnalysisBank* GetBank(int16_t bankId) const { return (bankId >= 0 && bankId < Banks.size()) ? &Banks[bankId] : nullptr;	}

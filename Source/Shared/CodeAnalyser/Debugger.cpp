@@ -172,8 +172,17 @@ void FDebugger::CPUTick(uint64_t pins)
 			{
 				switch (bp.Type)
 				{
-				case EBreakpointType::Data:
-					if ((bWrite || bRead) &&
+				case EBreakpointType::DataRead:
+					if (bRead &&
+						addrRef.BankId == bp.Address.BankId &&
+						addrRef.Address >= bp.Address.Address &&
+						addrRef.Address < bp.Address.Address + bp.Size)
+					{
+						trapId = kTrapId_BpBase + i;
+					}
+					break;
+				case EBreakpointType::DataWrite:
+					if (bWrite &&
 						addrRef.BankId == bp.Address.BankId &&
 						addrRef.Address >= bp.Address.Address &&
 						addrRef.Address < bp.Address.Address + bp.Size)
@@ -383,9 +392,11 @@ void FDebugger::StartFrame()
 			case EBreakpointType::Exec:
 				BreakpointMask |= BPMask_Exec;
 				break;
-			case EBreakpointType::Data:
-				BreakpointMask |= BPMask_DataWrite;
+			case EBreakpointType::DataRead:
 				BreakpointMask |= BPMask_DataRead;
+				break;
+			case EBreakpointType::DataWrite:
+				BreakpointMask |= BPMask_DataWrite;
 				break;
 			case EBreakpointType::In:
 				BreakpointMask |= BPMask_IORead;
@@ -452,7 +463,7 @@ void	FDebugger::LoadFromFile(FILE* fp)
 			if(pCodeInfo != nullptr)
 				pCodeInfo->bHasBreakpoint = true;
 		}
-		else if (bp.Type == EBreakpointType::Data)
+		else if (bp.Type == EBreakpointType::DataRead || bp.Type == EBreakpointType::DataWrite)
 		{
 			FAddressRef bpAddr = bp.Address;
 			for (int i = 0; i < bp.Size; i++)
@@ -661,7 +672,7 @@ bool FDebugger::AddExecBreakpoint(FAddressRef addr)
 	return true;
 }
 
-bool FDebugger::AddDataBreakpoint(FAddressRef addr, uint16_t size)
+bool FDebugger::AddDataBreakpoint(FAddressRef addr, uint16_t size, bool bRead)
 {
 	if (IsAddressBreakpointed(addr))
 		return false;
@@ -674,7 +685,11 @@ bool FDebugger::AddDataBreakpoint(FAddressRef addr, uint16_t size)
 		pCodeAnalysis->AdvanceAddressRef(bpAddr);
 	}
 
-	Breakpoints.emplace_back(addr, EBreakpointType::Data,size);
+	if(bRead)
+		Breakpoints.emplace_back(addr, EBreakpointType::DataRead, size);
+	else
+		Breakpoints.emplace_back(addr, EBreakpointType::DataWrite, size);
+
 	return true;
 }
 
@@ -692,7 +707,7 @@ bool FDebugger::RemoveBreakpoint(FAddressRef addr)
 				assert(pCodeInfo);
 				pCodeInfo->bHasBreakpoint = false;
 			}
-			else if (bp.Type == EBreakpointType::Data)
+			else if (bp.Type == EBreakpointType::DataRead || bp.Type == EBreakpointType::DataWrite)
 			{
 				FAddressRef bpAddr = addr;
 				for (int i = 0; i < bp.Size; i++)
@@ -1238,10 +1253,15 @@ void FDebugger::DrawWatches(void)
 			{
 				bDeleteSelectedWatch = true;
 			}
-			if (ImGui::Selectable("Toggle Breakpoint"))
+			if (ImGui::Selectable("Read Breakpoint"))
 			{
 				FDataInfo* pInfo = state.GetDataInfoForAddress(SelectedWatch);
-				state.ToggleDataBreakpointAtAddress(SelectedWatch, pInfo->ByteSize);
+				state.ToggleDataBreakpointAtAddress(SelectedWatch, pInfo->ByteSize, true);
+			}
+			if (ImGui::Selectable("Write Breakpoint"))
+			{
+				FDataInfo* pInfo = state.GetDataInfoForAddress(SelectedWatch);
+				state.ToggleDataBreakpointAtAddress(SelectedWatch, pInfo->ByteSize, false);
 			}
 
 			ImGui::EndPopup();
@@ -1264,8 +1284,10 @@ const char* GetBreakpointTypeText(EBreakpointType type)
 	{
 	case EBreakpointType::Exec:
 		return "Exec";
-	case EBreakpointType::Data:
-		return "Data";
+	case EBreakpointType::DataRead:
+		return "DataR";
+	case EBreakpointType::DataWrite:
+		return "DataW";
     default:
         return "Unknown";
 	}

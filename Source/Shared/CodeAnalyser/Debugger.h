@@ -36,7 +36,8 @@ enum class EBreakpointType
 {
 	None,
 	Exec,
-	Data,
+	DataRead,
+	DataWrite,
 	Irq,
 	NMI,
 	In,
@@ -126,7 +127,7 @@ public:
 
 	// Breakpoints
 	bool	AddExecBreakpoint(FAddressRef addr);
-	bool	AddDataBreakpoint(FAddressRef addr, uint16_t size);
+	bool	AddDataBreakpoint(FAddressRef addr, uint16_t size, bool bRead);
 	bool	RemoveBreakpoint(FAddressRef addr);
 	bool	ChangeBreakpointAddress(FAddressRef oldAddress,FAddressRef newAddress);
 	const FBreakpoint* GetBreakpointForAddress(FAddressRef addr) const;

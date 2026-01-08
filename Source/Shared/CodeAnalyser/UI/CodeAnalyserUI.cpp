@@ -750,7 +750,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::Breakpoint]))
 		{
 			if (cursorItem.Item->Type == EItemType::Data)
-				state.ToggleDataBreakpointAtAddress(cursorItem.AddressRef, cursorItem.Item->ByteSize);
+				state.ToggleDataBreakpointAtAddress(cursorItem.AddressRef, cursorItem.Item->ByteSize, false);
 			else if (cursorItem.Item->Type == EItemType::Code)
 				state.ToggleExecBreakpointAtAddress(cursorItem.AddressRef);
 		}
@@ -1165,8 +1165,10 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 				SetItemImage(state, pItem);
 			}
 #endif
-			if (ImGui::Selectable("Toggle Data Breakpoint"))
-				state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize);
+			if (ImGui::Selectable("Toggle Read Data Breakpoint"))
+				state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize, true);
+			if (ImGui::Selectable("Toggle Write Data Breakpoint"))
+				state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize, false);
 			if (ImGui::Selectable("Add Watch"))
 				state.Debugger.AddWatch(item.AddressRef);
 
@@ -1323,7 +1325,7 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		if (item.Item->Type == EItemType::Code)
 			state.ToggleExecBreakpointAtAddress(item.AddressRef);
 		else if (item.Item->Type == EItemType::Data)
-			state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize);
+			state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize, false);
 	}
 
 	ImGui::PopID();

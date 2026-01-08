@@ -231,12 +231,12 @@ bool FCodeAnalysisState::ToggleExecBreakpointAtAddress(FAddressRef addr)
 		return Debugger.AddExecBreakpoint(addr);
 }
 
-bool FCodeAnalysisState::ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize)
+bool FCodeAnalysisState::ToggleDataBreakpointAtAddress(FAddressRef addr, uint16_t dataSize, bool bRead)
 {
 	if (Debugger.IsAddressBreakpointed(addr))
 		return Debugger.RemoveBreakpoint(addr);
 	else
-		return Debugger.AddDataBreakpoint(addr, dataSize);
+		return Debugger.AddDataBreakpoint(addr, dataSize, bRead);
 }
 
 
