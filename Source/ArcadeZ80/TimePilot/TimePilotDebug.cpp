@@ -17,6 +17,7 @@ static const uint16_t kReadIndexAddr		= 0xA9B3;
 static const uint16_t kWriteIndexAddr		= 0xA9B2;
 
 static const uint16_t kProgramPhase			= 0xA9AC;
+static const uint16_t kPhaseExecution		= 0x0F1F;
 
 
 class FTimePilotDebug : public FMachineDebug
@@ -139,12 +140,12 @@ static const char* g_pProgramPhases[] =
 {
 	"Phase 0",
 	"Phase 1",
-	"Phase 2",
+	"Game - Radial Clear",
 	"Phase 3",
-	"Phase 4",
-	"Phase 5",
-	"Phase 6",
-	"Phase 7",
+	"Title - Deposit Coin",
+	"Game - Era Intro",
+	"Title - Show Hi Scores",	// Game does this too - could it be a pause?
+	"Game - Gameplay",
 	"Phase 8",
 	"Phase 9",
 	"Phase A",
@@ -158,8 +159,11 @@ static const char* g_pProgramPhases[] =
 void FTimePilotDebug::GameStateViewer()
 {
 	const uint8_t phase = pCodeAnalysis->ReadByte(kProgramPhase);
-	ImGui::Text("Program Phase: %02X - %s", phase, g_pProgramPhases[phase]);
+	ImGui::Text("Program Phase %02X: %s", phase, g_pProgramPhases[phase]);
+	ImGui::Text("Variable Address: ");
 	DrawAddressLabel(*pCodeAnalysis,pCodeAnalysis->GetFocussedViewState(),pCodeAnalysis->AddressRefFromPhysicalAddress(kProgramPhase));
+	ImGui::Text("Phase execution Function: "); 
+	DrawAddressLabel(*pCodeAnalysis, pCodeAnalysis->GetFocussedViewState(), pCodeAnalysis->AddressRefFromPhysicalAddress(kPhaseExecution));
 }
 
 // Debug Command Queue
