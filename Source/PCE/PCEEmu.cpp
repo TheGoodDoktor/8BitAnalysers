@@ -4,6 +4,7 @@
 
 #include <chrono>
 
+#include "Constants.h"
 #include "PCEConfig.h"
 #include "Util/FileUtil.h"
 #include "Util/GraphicsView.h"
@@ -1128,44 +1129,14 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 #if IMPORT_BIOS_ANALYSIS_JSON
 		if (FileExists(GetBundlePath(kBiosInfoJsonFile)))
 			ImportAnalysisJson(CodeAnalysis, GetBundlePath(kBiosInfoJsonFile));
-#else
-		AddBiosLabels();
 #endif
 	}
+
+	AddLabels();
 
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
-
-	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0), "VDC_AR_0000", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x2), "VDC_DATA_LO_0002", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x3), "VDC_DATA_HI_0002", ELabelType::Data);
-	
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x400), "VCE_CONTROL_0400", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x402), "VCE_ADDR_LO_0402", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x403), "VCE_ADDR_HI_0403", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x404), "VCE_DATA_LO_0404", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x405), "VCE_DATA_HI_0405", ELabelType::Data);
-
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x800), "PSG_CHANSEL_0800", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x801), "PSG_GLOBALVOL_0801", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x802), "PSG_FREQLO_0802", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x803), "PSG_FREQHI_0803", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x804), "PSG_CHANCTRL_0804", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x805), "PSG_CHANPAN_0805", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x806), "PSG_CHANDATA_0806", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x807), "PSG_NOISE_0807", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x808), "PSG_LFOFREQ_0808", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x809), "PSG_LFOCTRL_0809", ELabelType::Data);
-
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0C00), "TIMER_COUNTER_0C00", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x0C01), "TIMER_CONTROL_0C01", ELabelType::Data);
-
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1402), "IRQ_DISABLE_1402", ELabelType::Data);
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1403), "IRQ_STATUS_1403", ELabelType::Data);
-
-	AddLabel(CodeAnalysis, FAddressRef(BankSets[kBankHWPage].GetBankId(0), 0x1000), "JOYPAD_1000", ELabelType::Data);
 
 	DebugStats.Reset();
 
@@ -1191,61 +1162,46 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	return true;
 }
 
-void FPCEEmu::AddBiosLabels()
+void FPCEEmu::AddLabels()
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
-	constexpr int kNumBiosFuncs = 77;
-	const char* funcNames[kNumBiosFuncs] = {
-		"CD_BOOT",		"CD_RESET",		"CD_BASE",		"CD_READ",		"CD_SEEK",		"CD_EXEC",		"CD_PLAY",		"CD_SEARCH",
-		"CD_PAUSE",		"CD_STAT",		"CD_SUBQ",		"CD_DINFO",		"CD_CONTNTS",	"CD_SUBRD",		"CD_PCMRD",		"CD_FADE",
-		"AD_RESET",		"AD_TRANS",		"AD_READ",		"AD_WRITE",		"AD_PLAY",		"AD_CPLAY",		"AD_STOP",		"AD_STAT",
-		"BM_FORMAT",	"BM_FREE",		"BM_READ",		"BM_WRITE",		"BM_DELETE",	"BM_FILES",		"EX_GETVER",	"EX_SETVEC",
-		"EX_GETFNT",	"EX_JOYSNS",	"EX_JOYREP",	"EX_SCRSIZ",	"EX_DOTMOD",	"EX_SCRMOD",	"EX_IMODE",		"EX_VMODE",
-		"EX_HMODE",		"EX_VSYNC",		"EX_RCRON",		"EX_RCROFF",	"EX_IRQON",		"EX_IRQOFF",	"EX_BGON",		"EX_BGOFF",
-		"EX_SPRON",		"EX_SPROFF",	"EX_DSPON",		"EX_DSPOFF",	"EX_DMAMOD",	"EX_SPRDMA",	"EX_SATCLR",	"EX_SPRPUT",
-		"EX_SETRCR",	"EX_SETRED",	"EX_SETWRT",	"EX_SETDMA",	"EX_BINBCD",	"EX_BCDBIN",	"EX_RND",		"MA_MUL8U",
-		"MA_MUL8S",		"MA_MUL16U",	"MA_DIV16S",	"MA_DIV16U",	"MA_SQRT",		"MA_SIN",		"MA_COS",		"MA_ATNI",
-		"PSG_BIOS",		"GRP_BIOS",		"EX_MEMOPEN",	"PSG_DRIVER",	"EX_COLORCMD"
-	};
 
-	// Add labels for the jump table. This will be the same for all system card revisions.
-	uint16_t baseAddr = 0xe000;
-	for (int i = 0; i < kNumBiosFuncs; i++)
+#if !IMPORT_BIOS_ANALYSIS_JSON
+	if (pMedia->IsCDROM())
 	{
-		const FAddressRef addr = state.AddressRefFromPhysicalAddress(baseAddr + i * 3);
-		SetItemCode(state, addr);
-		AddLabel(state, addr, funcNames[i], ELabelType::Function);
-	}
+		// Add labels for the jump table. This will be the same for all system card revisions.
+		for (int i = 0; i < kBiosSymbolCount; i++)
+		{
+			const FAddressRef addr = state.AddressRefFromPhysicalAddress(kBiosJmpSymbols[i].Address);
+			SetItemCode(state, addr);
+			AddLabel(state, addr, kBiosJmpSymbols[i].Label, ELabelType::Function);
+		}
 
-	// System Card 3.0 routine addresses.
-	// Info taken from https://www.stum.de/2025/pcenginebiosoffsets/
-	const uint16_t funcAddrs[kNumBiosFuncs] = {
-		0xE0F3, 0xE8E3, 0xEB8F, 0xEC05, 0xEDCB, 0xEBEC, 0xEE10, 0xEF34,
-		0xEF94, 0xF347, 0xEFBF, 0xEFF1, 0xF0A9, 0xF354, 0xF364, 0xF379,
-		0xF37F, 0xF393, 0xF407, 0xF4D8, 0xF5C6, 0xF61F, 0xF6C1, 0xF6DB,
-		0xF858, 0xF8B8, 0xF8E3, 0xF955, 0xFA1A, 0xFA72, 0xF02D, 0xF034,
-		0xF124, 0xE49A, 0xE175, 0xE267, 0xE272, 0xE29D, 0xE382, 0xE391,
-		0xE3A4, 0xE3B5, 0xE3C7, 0xE3CB, 0xE3CF, 0xE3D3, 0xE3E2, 0xE3E5,
-		0xE3E8, 0xE3EB, 0xE3EE, 0xE3F3, 0xE3F8, 0xE40B, 0xE5DA, 0xE63C,
-		0xE41F, 0xE42F, 0xE446, 0xE45D, 0xE621, 0xE600, 0xE67E, 0xFDC6,
-		0xFDBF, 0xFDD4, 0xFDE2, 0xFDE9, 0xFDF0, 0xFDFE, 0xFDF7, 0xFE05,
-		0xFE0C, 0xFE57, 0xFE92, 0xE6CF, 0xE509 
-	};
-
-	// Add labels for the routines themselves.
-	// Games shouldn't call these directly.
-	for (int i = 0; i < kNumBiosFuncs; i++)
-	{
-		const FAddressRef addr = state.AddressRefFromPhysicalAddress(funcAddrs[i]);
-		SetItemCode(state, addr);
-		const std::string name = std::string("_") + funcNames[i];
-		AddLabel(state, addr, name.c_str(), ELabelType::Function);
+		// Add labels for the routines themselves.
+		// Games shouldn't call these directly.
+		for (int i = 0; i < kBiosSymbolCount; i++)
+		{
+			const FAddressRef addr = state.AddressRefFromPhysicalAddress(kBiosRoutineSymbols[i].Address);
+			SetItemCode(state, addr);
+			const std::string name = std::string("_") + kBiosRoutineSymbols[i].Label;
+			AddLabel(state, addr, name.c_str(), ELabelType::Function);
+		}
 	}
 
 	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(0), 0x2227), "joyena", ELabelType::Data, 1);
 	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(0), 0x2228), "joy", ELabelType::Data, 5);
 	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(0), 0x222d), "joytrg", ELabelType::Data, 5);
 	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(0), 0x2232), "joyold", ELabelType::Data, 5);
+#endif
+
+	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
+	for (int i = 0; i < kDebugLabelCount; i++)
+	{
+		const FAddressRef addr = FAddressRef(BankSets[kBankHWPage].GetBankId(0), kDebugLabels[i].Address);
+		SetItemCode(state, addr);
+		const std::string name = std::string("_") + kDebugLabels[i].Label;
+		AddLabel(state, addr, kDebugLabels[i].Label, ELabelType::Data);
+	}
 }
 
 static const uint32_t kMachineStateMagic = 0xFaceCafe;
