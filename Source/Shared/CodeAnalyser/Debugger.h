@@ -107,6 +107,8 @@ public:
 	void	OnMachineFrameEnd();
 	void	StartFrame();
 	bool	FrameTick(void);
+	bool	AreDebugKeysEnabled() const { return bDebugKeysEnabled;}
+	void	SetDebugKeysEnabled(bool bEnabled) { bDebugKeysEnabled = bEnabled; }
 
 	void	LoadFromFile(FILE* fp);
 	void	SaveToFile(FILE* fp);
@@ -195,6 +197,7 @@ private:
 	uint64_t		LastTickPins = 0;
 	FAddressRef		PC;
 	bool			bDebuggerStopped = false;
+	bool			bDebugKeysEnabled = true;	// enable debug keys (F5, F10, F11 etc)
 	EDebugStepMode	StepMode = EDebugStepMode::None;
 	FAddressRef		StepOverPC;
 

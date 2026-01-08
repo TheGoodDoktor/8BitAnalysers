@@ -483,30 +483,30 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 
 		// BC'
 		if (curRegs.B2 != curRegsCopy.B2)
-			pCPU->bc2 = (curRegs.B2 << 8) | pCPU->bc2 & 0xff;
+			pCPU->bc2 = (curRegs.B2 << 8) | (pCPU->bc2 & 0xff);
 
 		if (curRegs.C2 != curRegsCopy.C2)
-			pCPU->bc2 = pCPU->bc2 & 0xff00 | curRegs.C2;
+			pCPU->bc2 = (pCPU->bc2 & 0xff00) | curRegs.C2;
 
 		if (curRegs.BC2 != curRegsCopy.BC2)
 			pCPU->bc2 = curRegs.BC2;
 
 		// DE'
 		if (curRegs.D2 != curRegsCopy.D2)
-			pCPU->de2 = (curRegs.D2 << 8) | pCPU->de2 & 0xff;
+			pCPU->de2 = (curRegs.D2 << 8) | (pCPU->de2 & 0xff);
 
 		if (curRegs.E2 != curRegsCopy.E2)
-			pCPU->de2 = pCPU->de2 & 0xff00 | curRegs.E2;
+			pCPU->de2 = (pCPU->de2 & 0xff00) | curRegs.E2;
 
 		if (curRegs.DE2 != curRegsCopy.DE2)
 			pCPU->de2 = curRegs.DE2;
 
 		// HL'
 		if (curRegs.H2 != curRegsCopy.H2)
-			pCPU->hl2 = (curRegs.H2 << 8) | pCPU->hl2 & 0xff;
+			pCPU->hl2 = (curRegs.H2 << 8) | (pCPU->hl2 & 0xff);
 
 		if (curRegs.L2 != curRegsCopy.L2)
-			pCPU->hl2 = pCPU->hl2 & 0xff00 | curRegs.L2;
+			pCPU->hl2 = (pCPU->hl2 & 0xff00) | curRegs.L2;
 
 		if (curRegs.HL2 != curRegsCopy.HL2)
 			pCPU->hl2 = curRegs.HL2;

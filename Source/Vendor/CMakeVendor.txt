@@ -13,7 +13,7 @@ include_directories( ${vendor_dir}/json/single_include/nlohmann )
 # vendor source
 
 # chips
-file ( GLOB_RECURSE chips_src 
+file ( GLOB_RECURSE chips_src DEPENDS
 	${vendor_dir}/chips/*.h)
 
 # imgui

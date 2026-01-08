@@ -710,17 +710,23 @@ void WritePageToJson(const FCodeAnalysisPage& page, json& jsonDoc)
 			WriteLabelInfoToJson(pageAddr, pLabelInfo, jsonDoc);
 
 		const FCodeInfo* pCodeInfoItem = page.CodeInfo[pageAddr];
-		if (pCodeInfoItem)
+		const bool bValidCodeItem = pCodeInfoItem && pCodeInfoItem->bDisabled == false;
+		bool bSMC = false;
+		if (bValidCodeItem)
 		{
 			WriteCodeInfoToJson(pageAddr, pCodeInfoItem, jsonDoc);
 			if (pCodeInfoItem->bSelfModifyingCode == false)
 			{
 				pageAddr += pCodeInfoItem->ByteSize;
 			}
+			else
+			{
+				bSMC = true;
+			}
 		}
 
 		// we do want data info for SMC operands
-		if (pCodeInfoItem == nullptr || pCodeInfoItem->bSelfModifyingCode == true)
+		if (bValidCodeItem == false || bSMC)
 		{
 			const FDataInfo* pDataInfo = &page.DataInfo[pageAddr];
 			WriteDataInfoToJson(pageAddr, pDataInfo, jsonDoc);

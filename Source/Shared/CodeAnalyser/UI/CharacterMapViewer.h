@@ -39,7 +39,7 @@ public:
 	void	SetGridSize(int x, int y);
 	void	SetGridStride(int stride);
 
-	void	FixupAddressRefs();
+	void	FixupAddressRefs() override;
 
 private:
 	void	DrawCharacterMapViewer(void);

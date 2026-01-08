@@ -4,6 +4,7 @@
 #include "CodeToolTips.h"
 #include "CodeAnalyser/DataTypes.h"
 #include "ComboBoxes.h"
+#include "Debug/DebugLog.h"
 
 #include <ImGuiSupport/ImGuiScaling.h>
 #include <math.h>
@@ -363,10 +364,19 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 
 				// NOP it out
 				// Note: This is not going to work with ROM
-				if (state.CPUInterface->CPUType == ECPUType::Z80)
-					state.WriteByte(physAddress + i, 0);
-				else if (state.CPUInterface->CPUType == ECPUType::M6502)
-					state.WriteByte(physAddress + i, 0xEA);
+				switch (state.CPUInterface->CPUType)
+				{
+					case ECPUType::Z80:
+						state.WriteByte(physAddress + i, 0x00);	// NOP
+						break;
+					case ECPUType::M6502:
+					case ECPUType::M65C02:
+						state.WriteByte(physAddress + i, 0xEA);	// NOP
+						break;
+                    default:
+                        LOGERROR("Unknow CPU type");
+                        break;
+				}
 			}
 		}
 		else

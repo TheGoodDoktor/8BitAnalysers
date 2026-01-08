@@ -27,6 +27,7 @@
 #include <LuaScripting/LuaSys.h>
 #include "FunctionAnalyser.h"
 #include "UI/GlobalsViewer.h"
+#include "6502/M65C02Disassembler.h"
 
 // memory bank code
 
@@ -544,64 +545,78 @@ void FCodeAnalysisState::FindAsciiStrings(uint16_t startAddress)
 bool CheckPointerIndirectionInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
-		return CheckPointerIndirectionInstructionZ80(state, pc, out_addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
-		return CheckPointerIndirectionInstruction6502(state, pc, out_addr);
-	else
-		return false;
+	switch (pCPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			return CheckPointerIndirectionInstructionZ80(state, pc, out_addr);
+		case ECPUType::M6502:
+		case ECPUType::M65C02:
+			return CheckPointerIndirectionInstruction6502(state, pc, out_addr);
+		default:
+			return false;	// unsupported CPU type
+	}
 }
 
 bool CheckPointerRefInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return CheckPointerRefInstructionZ80(state, pc, out_addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::M65C02:
 		return CheckPointerRefInstruction6502(state, pc, out_addr);
-	else
-		return false;
+	default:
+		return false;	// unsupported CPU type
+	}
 }
 
 
 bool CheckJumpInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return CheckJumpInstructionZ80(state, pc, out_addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::M65C02:
 		return CheckJumpInstruction6502(state, pc, out_addr);
-	else
-		return false;
+	default:
+		return false;	// unsupported CPU type
+	}
 }
 
 EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr)
 {
-
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return GetInstructionTypeZ80(state, addr);
-	else if (pCPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::M65C02:
 		return GetInstructionType6502(state, addr);
-	else
-		return EInstructionType::Unknown;
+	default:
+		return EInstructionType::Unknown;	// unsupported CPU type
+	}
 }
 
 
 bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return CheckCallInstructionZ80(state, pc);
-	else if(pCPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::M65C02:
 		return CheckCallInstruction6502(state, pc);
-	else
-		return false;
+	default:
+		return false;	// unsupported CPU type
+	}
 }
 
 // check if function should stop static analysis
@@ -609,13 +624,17 @@ bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
 bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-
-	if (pCPUInterface->CPUType == ECPUType::Z80)
+	switch (pCPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return CheckStopInstructionZ80(state, pc);
-	else if(pCPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::M65C02:
 		return CheckStopInstruction6502(state, pc);
-	else
+	default:
+		// unsupported CPU type
 		return false;
+	}
 }
 
 // this function assumes the text is mapped in
@@ -649,6 +668,9 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	if(labelType == ELabelType::Data)
 	{
 		FDataInfo* pDataInfo = state.GetDataInfoForAddress(address);
+		if(pDataInfo->bLabelNA)
+			return nullptr;	// no labels allowed for this data item
+
 		if (pDataInfo->DataType == EDataType::InstructionOperand)
 		{
 			address = pDataInfo->InstructionAddress;
@@ -659,6 +681,9 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 	FLabelInfo* pLabel = state.GetLabelForAddress(address);
 	if (pLabel != nullptr)
 		return pLabel;
+
+	// TODO: have some logic to determine if a label should be created here
+	// See if the address is within a previous label's range?
 				
 	pLabel = FLabelInfo::Allocate();
 	pLabel->LabelType = labelType;
@@ -685,7 +710,9 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 				snprintf(label, kLabelSize, "data_%04X", address.Address);
 
 			// zero page labels for 6502
-			if (state.CPUInterface->CPUType == ECPUType::M6502 && address.Address < 256)
+			if (
+				(state.CPUInterface->CPUType == ECPUType::M6502 || state.CPUInterface->CPUType == ECPUType::M65C02)
+				&& address.Address < 256)
 				snprintf(label, kLabelSize, "zp_%02X", address.Address);
 
 			if (bLabelOnOperand == false)
@@ -760,10 +787,20 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 
 	pCodeInfo->bIsCall = CheckCallInstruction(state, pc);
 
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
+	switch (state.CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+		break;
+	case ECPUType::M6502:
 		M6502DisassembleCodeInfoItem(pc, state, pCodeInfo);
+		break;
+	case ECPUType::M65C02:
+		M65C02DisassembleCodeInfoItem(pc, state, pCodeInfo);
+		break;
+	default:
+		break;
+	}
 }
 
 // This assumes that the address passed in is mapped to physical memory
@@ -794,12 +831,12 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	else
 	{
 		uint16_t ptr;
-		if (CheckPointerRefInstruction(state, pc, &ptr))	// this is just a 16 bit number so don't assume a pointer
+		if (CheckPointerRefInstruction(state, pc, &ptr))	// this is just a 16 bit number so don't assume a pointer - we should be able to identify pointer reference functions
 		{
 			const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
 			pCodeInfo->OperandAddress = ptrAddr;
-			//if(pCodeInfo->OperandType == EOperandType::Unknown)
-			//	pCodeInfo->OperandType = EOperandType::Pointer;
+			if(pCodeInfo->OperandType == EOperandType::Unknown)
+				pCodeInfo->OperandType = EOperandType::Pointer;
 
 			//FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
 			//if (pLabel)
@@ -821,10 +858,18 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	// generate disassembly
 	uint16_t newPC = pc;
 
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
-		newPC = Z80DisassembleCodeInfoItem(pc,state,pCodeInfo);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
-		newPC = M6502DisassembleCodeInfoItem(pc, state, pCodeInfo);
+	switch (state.CPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			newPC = Z80DisassembleCodeInfoItem(pc, state, pCodeInfo);
+			break;
+		case ECPUType::M6502:
+			newPC = M6502DisassembleCodeInfoItem(pc, state, pCodeInfo);
+			break;
+		case ECPUType::M65C02:
+			newPC = M65C02DisassembleCodeInfoItem(pc, state, pCodeInfo);
+			break;
+	}
 
 	state.SetCodeInfoForAddress(pc, pCodeInfo);	
 
@@ -955,12 +1000,16 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 
 	state.ExecutionCounter++;
 
-	if (state.CPUInterface->CPUType == ECPUType::Z80)
+	switch (state.CPUInterface->CPUType)
+	{
+	case ECPUType::Z80:
 		return RegisterCodeExecutedZ80(state, pc, oldpc);
-	else if (state.CPUInterface->CPUType == ECPUType::M6502)
+	case ECPUType::M6502:
+	case ECPUType::M65C02:
 		return RegisterCodeExecuted6502(state, pc, oldpc);
-
-	return false;
+	default:
+		return false;	// unsupported CPU type
+	}
 }
 
 void RegisterCall(FCodeAnalysisState& state, const FCPUFunctionCall& callInfo)
@@ -1003,11 +1052,12 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 	AnalyseFromPC(state, pc);
 }
 
+bool g_DbgAddressEnabled = false;
 uint16_t g_DbgReadAddress = 0xddf8;
 
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 {
-	if (dataAddr == g_DbgReadAddress)
+	if (g_DbgAddressEnabled && dataAddr == g_DbgReadAddress)
 	{
 		LOGINFO("Access 0x%04X at PC:", g_DbgReadAddress, pc);
 	}
@@ -1061,7 +1111,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 	while ( addr < (1 << 16))
 	{
 		FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(addr);
-		if (pCodeInfo != nullptr)
+		if (pCodeInfo != nullptr && pCodeInfo->bDisabled == false)
 		{
 			pCodeInfo->bSelfModifyingCode = false;
 
@@ -1512,6 +1562,12 @@ void FCodeAnalysisState::UpdateFocussedViewState()
 		}
 	}
 }
+
+bool FCodeAnalysisState::IsKeyPressed(EKey key) const
+{
+	return ImGui::IsKeyPressed((ImGuiKey)KeyConfig[(int)key]);
+}
+
 
 
 void SetItemCode(FCodeAnalysisState &state, FAddressRef address)

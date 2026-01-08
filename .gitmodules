@@ -9,7 +9,8 @@
 	url = https://github.com/nothings/stb
 [submodule "Source/Vendor/chips"]
 	path = Source/Vendor/chips
-	url = https://github.com/floooh/chips
+	url = https://github.com/TheGoodDoktor/chips
+	update = merge
 [submodule "Source/Vendor/chips-test"]
 	path = Source/Vendor/chips-test
 	url = https://github.com/floooh/chips-test
@@ -30,3 +31,6 @@
 [submodule "Source/Vendor/implot"]
 	path = Source/Vendor/implot
 	url = https://github.com/epezent/implot
+[submodule "Info/TubeElite/elite-source-code-6502-second-processor"]
+	path = Info/TubeElite/elite-source-code-6502-second-processor
+	url = https://github.com/markmoxon/elite-source-code-6502-second-processor

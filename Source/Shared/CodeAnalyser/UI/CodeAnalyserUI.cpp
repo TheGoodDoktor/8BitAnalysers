@@ -580,6 +580,7 @@ void AddLabelAtAddressUI(FCodeAnalysisState& state,FAddressRef address)
 	}
 }
 
+
 void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -755,33 +756,40 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 	}
 
-	if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::BreakContinue]))
+	if(state.Debugger.AreDebugKeysEnabled())
 	{
-		if (state.Debugger.IsStopped())
+		if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::BreakContinue]))
 		{
-			state.Debugger.Continue();
-			//viewState.TrackPCFrame = true;
+			if (state.Debugger.IsStopped())
+			{
+				state.Debugger.Continue();
+				//viewState.TrackPCFrame = true;
+			}
+			else
+			{
+				state.Debugger.Break();
+			}
 		}
-		else
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepOver]))
 		{
-			state.Debugger.Break();
+			if (state.Debugger.IsStopped())
+				state.Debugger.StepOver();
 		}
-	}
-	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepOver]))
-	{
-		state.Debugger.StepOver();
-	}
-	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepInto]))
-	{
-		state.Debugger.StepInto();
-	}
-	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepFrame]))
-	{
-		state.Debugger.StepFrame();
-	}
-	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepScreenWrite]))
-	{
-		state.Debugger.StepScreenWrite();
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepInto]))
+		{
+			if (state.Debugger.IsStopped())
+				state.Debugger.StepInto();
+		}
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepFrame]))
+		{
+			if (state.Debugger.IsStopped())
+				state.Debugger.StepFrame();
+		}
+		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepScreenWrite]))
+		{
+			if (state.Debugger.IsStopped())
+				state.Debugger.StepScreenWrite();
+		}
 	}
 
 	// navigation controls
@@ -1161,6 +1169,12 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 				state.ToggleDataBreakpointAtAddress(item.AddressRef, item.Item->ByteSize);
 			if (ImGui::Selectable("Add Watch"))
 				state.Debugger.AddWatch(item.AddressRef);
+
+			// disallow labels toggle
+			FDataInfo* pData = static_cast<FDataInfo*>(item.Item);
+			bool bDisallowLabels = pData->bLabelNA;
+			if(ImGui::Checkbox("Disallow Labels",&bDisallowLabels))
+				pData->bLabelNA = bDisallowLabels;
 
 		}
 
