@@ -37,6 +37,7 @@ private:
 	FCodeAnalysisState* pCodeAnalysis = nullptr;
 	FGraphicsView* pSpriteView = nullptr;
 	FGraphicsView* pStringView = nullptr;
+	FGraphicsView* pCharacterView = nullptr;
 
 	// Sprite Viewer
 	struct FSpriteDebugState
@@ -60,6 +61,7 @@ FTimePilotDebug::FTimePilotDebug(FArcadeZ80Machine* pTPMachine)
 {
 	pSpriteView = new FGraphicsView(64, 64);
 	pStringView = new FGraphicsView(256, 256);
+	pCharacterView = new FGraphicsView(128, 128);
 }
 
 void FTimePilotDebug::DrawDebugUI()
@@ -130,10 +132,58 @@ void FTimePilotDebug::StringViewer()
 	{
 		const uint16_t stringAddress = pCodeAnalysis->ReadWord(kStringTableAddr + (stringNo * 2));
 		DebugDrawString(stringAddress);
-		bFirstRun = false;
 	}
 	ImGui::Text("%d (%02Xh)", stringNo, stringNo);
 	pStringView->Draw();
+
+	// Character Set Viewer
+	static bool bCharSet2 = false;
+	static int colourSet = 0;
+	bool bUpdate = bFirstRun;
+	ImGui::Separator();
+	ImGui::Text("Character Set Viewer");
+	bUpdate |= ImGui::InputInt("Colour Set", &colourSet);
+	bUpdate |= ImGui::Checkbox("Character Set 2", &bCharSet2);
+	// Draw Character Set
+	if (bUpdate)
+	{
+		pCharacterView->Clear(0xff000000);
+
+		for(int characterNo = 0; characterNo < 256; characterNo++)
+		{
+			bool bFlipX = false;
+			bool bFlipY = false;
+			const int x = (characterNo % 16);
+			const int y = (characterNo / 16);
+
+			const uint8_t* pCharacter = &pMachine->TilesROM[(characterNo + (bCharSet2 ? 256 : 0)) * 16];
+			const uint32_t* pColours = pMachine->TileColours[colourSet];	
+
+			DrawCharacter8x8(pCharacterView, pCharacter, x * 8, y * 8, pColours, bFlipX, bFlipY, false, false);
+		}
+
+	}
+
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+	pCharacterView->Draw();
+
+	// determine which character no is being hovered over
+	if (ImGui::IsItemHovered())
+	{
+		ImVec2 mousePos = ImGui::GetIO().MousePos;
+		int localX = (int)(mousePos.x - pos.x);
+		int localY = (int)(mousePos.y - pos.y);
+		int charX = localX / 8;
+		int charY = localY / 8;
+		int characterNo = charX + (charY * 16);
+		ImGui::BeginTooltip();
+		ImGui::Text("Character No: %d (%02Xh)", characterNo, characterNo);
+		ImGui::EndTooltip();
+		// draw a rectangle round the character
+		pDrawList->AddRect(ImVec2(pos.x + charX * 8, pos.y + charY * 8), ImVec2(pos.x + (charX + 1) * 8, pos.y + (charY + 1) * 8), IM_COL32(255, 255, 0, 255));
+	}
+	bFirstRun = false;
 }
 
 static const char* g_pProgramPhases[] = 
