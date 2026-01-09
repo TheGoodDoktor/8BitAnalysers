@@ -302,6 +302,7 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 	const ImVec2 pos(x, y);
 	const float scale = ImGui_GetScaling();
 	ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+	const float sprSize = 16.0f * scale;
 
 	if (bSpriteDebug)
 	{
@@ -315,20 +316,30 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 			int const flipx = ~pSpriteRAM[1][offs] & 0x40;
 			int const flipy = pSpriteRAM[1][offs] & 0x80;
 
+			int sprNo = (offs - 0x10) / 2;
+			char sprNoText[8];
+			snprintf(sprNoText,8,"%d",sprNo);
 
 			if (bRotateScreen)
 			{
+				ImVec2 scrPos(pos.x + (256 - sy) * scale, pos.y + sx * scale);
+
 				pDrawList->AddRect(
-					ImVec2(pos.x + (256 - sy) * scale, pos.y + sx * scale),
+					scrPos,
 					ImVec2(pos.x + ((256 - sy) + 16) * scale, pos.y + (sx + 16) * scale),
 					IM_COL32(255, 0, 0, 255));
+				pDrawList->AddText(scrPos, 0xffffffff, sprNoText);
 			}
 			else
 			{
+				ImVec2 scrPos(pos.x + sx * scale, pos.y + sy * scale);
+
 				pDrawList->AddRect(
-					ImVec2(pos.x + sx * scale, pos.y + sy * scale),
+					scrPos,
 					ImVec2(pos.x + (sx + 16) * scale, pos.y + (sy + 16) * scale),
 					IM_COL32(255, 0, 0, 255));
+
+				pDrawList->AddText(scrPos,0xffffffff,sprNoText);
 			}
 		}
 	}
