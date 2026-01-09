@@ -5101,7 +5101,8 @@
                 },
                 {
                     "Address": 437,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 440,
@@ -9295,7 +9296,8 @@
                 {
                     "Address": 981,
                     "ByteSize": 3,
-                    "Comment": "offset to previous line"
+                    "Comment": "offset to previous line",
+                    "OperandType": 1
                 },
                 {
                     "Address": 984,
@@ -9529,11 +9531,13 @@
                 {
                     "Address": 9,
                     "ByteSize": 3,
+                    "Comment": "index to ?",
                     "OperandType": 1
                 },
                 {
                     "Address": 12,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "*2"
                 },
                 {
                     "Address": 13,
@@ -9541,29 +9545,36 @@
                 },
                 {
                     "Address": 14,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "*4"
                 },
                 {
                     "Address": 15,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "*8"
                 },
                 {
                     "Address": 16,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "+ *2 = *10"
                 },
                 {
                     "Address": 17,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "base",
+                    "OperandType": 1
                 },
                 {
                     "Address": 20,
                     "ByteSize": 1,
+                    "Comment": "add index * 10",
                     "Flags": 8,
                     "OperandType": 2
                 },
                 {
                     "Address": 21,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "get first 2 bytes into BC"
                 },
                 {
                     "Address": 22,
@@ -9580,15 +9591,19 @@
                 {
                     "Address": 25,
                     "ByteSize": 3,
+                    "Comment": "index to ?",
                     "OperandType": 1
                 },
                 {
                     "Address": 28,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "store unmasked value"
                 },
                 {
                     "Address": 29,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "mask 0-7",
+                    "OperandType": 5
                 },
                 {
                     "Address": 31,
@@ -9602,19 +9617,25 @@
                 },
                 {
                     "Address": 33,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "restore unmasked value"
                 },
                 {
                     "Address": 34,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "start position of wave tally display",
+                    "OperandType": 1
                 },
                 {
                     "Address": 37,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "-32 - up one chat line",
+                    "OperandType": 4
                 },
                 {
                     "Address": 40,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "rotate right twice"
                 },
                 {
                     "Address": 41,
@@ -9622,7 +9643,9 @@
                 },
                 {
                     "Address": 42,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "mask bottom 5 buts",
+                    "OperandType": 5
                 },
                 {
                     "Address": 44,
@@ -9631,7 +9654,8 @@
                 },
                 {
                     "Address": 46,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "write first char"
                 },
                 {
                     "Address": 47,
@@ -9648,7 +9672,8 @@
                 },
                 {
                     "Address": 51,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "write second char"
                 },
                 {
                     "Address": 52,
@@ -9669,7 +9694,8 @@
                 },
                 {
                     "Address": 57,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "draw fraction element"
                 },
                 {
                     "Address": 58,
@@ -9677,7 +9703,8 @@
                 },
                 {
                     "Address": 59,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "draw empty char"
                 },
                 {
                     "Address": 61,
@@ -9698,7 +9725,8 @@
                 {
                     "Address": 68,
                     "ByteSize": 3,
-                    "Comment": "draw copyright info"
+                    "Comment": "draw copyright info",
+                    "OperandType": 1
                 },
                 {
                     "Address": 71,
@@ -10601,6 +10629,10 @@
                     "Comment": "this checks if function at #ADDR:0x176A# has been tampered with"
                 },
                 {
+                    "Address": 124,
+                    "Comment": "Each item is 10 bytes"
+                },
+                {
                     "Address": 956,
                     "Comment": "this tbale has 16 entries\nEach entry points to a function"
                 }
@@ -10611,6 +10643,16 @@
                     "ByteSize": 2,
                     "DataType": 2,
                     "DisplayType": 1
+                },
+                {
+                    "Address": 124,
+                    "Comment": "first wave char",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 125,
+                    "Comment": "second wave char",
+                    "DisplayType": 11
                 },
                 {
                     "Address": 762,
@@ -10849,17 +10891,17 @@
                     "Address": 9,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_0809"
+                    "Name": "DrawRemainingWaveTally"
                 },
                 {
                     "Address": 46,
                     "LabelType": 2,
-                    "Name": "label_082E"
+                    "Name": "wave_char_loop"
                 },
                 {
                     "Address": 56,
                     "LabelType": 2,
-                    "Name": "label_0838"
+                    "Name": "draw_empty_char"
                 },
                 {
                     "Address": 62,
@@ -10915,6 +10957,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_0874"
+                },
+                {
+                    "Address": 124,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "EnemyTallyChars"
                 },
                 {
                     "Address": 174,
@@ -14937,7 +14985,8 @@
                 },
                 {
                     "Address": 506,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 509,
@@ -14958,7 +15007,8 @@
                 },
                 {
                     "Address": 515,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 518,
@@ -14967,11 +15017,13 @@
                 },
                 {
                     "Address": 523,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 526,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 529,
@@ -14997,7 +15049,8 @@
                 },
                 {
                     "Address": 538,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 541,
@@ -39593,7 +39646,8 @@
                 },
                 {
                     "Address": 135,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 138,
@@ -40283,7 +40337,6 @@
                     "Address": 990,
                     "ByteSize": 3,
                     "Comment": "function to check",
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -42375,6 +42428,14 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 258,
+                    "DisplayType": 3
+                },
+                {
+                    "Address": 260,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 267,
                     "DisplayType": 11
                 },
@@ -42460,13 +42521,11 @@
                 {
                     "Address": 998,
                     "ByteSize": 2,
-                    "Comment": "return address?",
                     "DataType": 2
                 },
                 {
                     "Address": 1000,
                     "ByteSize": 2,
-                    "Comment": "return address for below?",
                     "DataType": 2
                 },
                 {
@@ -42627,7 +42686,7 @@
                     "Address": 258,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_AD02"
+                    "Name": "RemainingShipsInWave"
                 },
                 {
                     "Address": 260,
@@ -43253,6 +43312,12 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_FDC4"
+                },
+                {
+                    "Address": 992,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_FFE0"
                 }
             ],
             "PageId": 63
