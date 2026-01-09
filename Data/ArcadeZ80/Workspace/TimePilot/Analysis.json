@@ -7851,7 +7851,8 @@
                 },
                 {
                     "Address": 516,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 519,
@@ -9184,7 +9185,8 @@
                 },
                 {
                     "Address": 928,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 931,
@@ -9804,7 +9806,6 @@
                 {
                     "Address": 104,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 2
                 },
                 {
@@ -10362,8 +10363,7 @@
                 {
                     "Address": 915,
                     "ByteSize": 2,
-                    "Comment": "#ADDR:0xAC00#",
-                    "Flags": 32
+                    "Comment": "#ADDR:0xAC00#"
                 },
                 {
                     "Address": 917,
@@ -10391,8 +10391,7 @@
                 {
                     "Address": 926,
                     "ByteSize": 1,
-                    "Comment": "function",
-                    "Flags": 32
+                    "Comment": "function"
                 },
                 {
                     "Address": 927,
@@ -11639,11 +11638,13 @@
                 },
                 {
                     "Address": 363,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 366,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 369,
@@ -11919,7 +11920,6 @@
                 {
                     "Address": 471,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -12595,7 +12595,6 @@
                 {
                     "Address": 794,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -12610,7 +12609,6 @@
                     "Address": 799,
                     "ByteSize": 3,
                     "Comment": "return point?",
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -14133,7 +14131,6 @@
                 {
                     "Address": 152,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -15059,7 +15056,8 @@
                 },
                 {
                     "Address": 602,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 605,
@@ -15843,6 +15841,7 @@
                 {
                     "Address": 562,
                     "ByteSize": 3,
+                    "Comment": "phase 2",
                     "OperandType": 1
                 },
                 {
@@ -15861,7 +15860,8 @@
                 {
                     "Address": 570,
                     "ByteSize": 3,
-                    "Comment": "draw 'Free Play' string"
+                    "Comment": "draw 'Free Play' string",
+                    "OperandType": 7
                 },
                 {
                     "Address": 573,
@@ -16439,7 +16439,7 @@
                 {
                     "Address": 874,
                     "ByteSize": 3,
-                    "Flags": 40,
+                    "Flags": 8,
                     "OperandType": 2
                 },
                 {
@@ -16461,7 +16461,8 @@
                 {
                     "Address": 885,
                     "ByteSize": 3,
-                    "Comment": "'SCORE RANKING TABLE'"
+                    "Comment": "'SCORE RANKING TABLE'",
+                    "OperandType": 1
                 },
                 {
                     "Address": 888,
@@ -16534,7 +16535,6 @@
                 {
                     "Address": 914,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -16682,7 +16682,8 @@
                 },
                 {
                     "Address": 999,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 1002,
@@ -17085,6 +17086,12 @@
                     "Name": "OutputString_Play"
                 },
                 {
+                    "Address": 629,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_1675"
+                },
+                {
                     "Address": 635,
                     "Global": true,
                     "LabelType": 1,
@@ -17292,7 +17299,8 @@
                 {
                     "Address": 54,
                     "ByteSize": 3,
-                    "Comment": "output string 'PLAY'"
+                    "Comment": "output string 'PLAY'",
+                    "OperandType": 1
                 },
                 {
                     "Address": 57,
@@ -18319,11 +18327,13 @@
                 },
                 {
                     "Address": 735,
-                    "ByteSize": 4
+                    "ByteSize": 4,
+                    "OperandType": 1
                 },
                 {
                     "Address": 739,
-                    "ByteSize": 4
+                    "ByteSize": 4,
+                    "OperandType": 1
                 },
                 {
                     "Address": 743,
@@ -20234,7 +20244,8 @@
                 },
                 {
                     "Address": 958,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 961,
@@ -20511,6 +20522,16 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "Phase0Function"
+                },
+                {
+                    "Address": 958,
+                    "LabelType": 0,
+                    "Name": "operand_27BE"
+                },
+                {
+                    "Address": 970,
+                    "LabelType": 0,
+                    "Name": "operand_27CA"
                 }
             ],
             "PageId": 9
@@ -22587,7 +22608,8 @@
                 },
                 {
                     "Address": 223,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 226,
@@ -31787,11 +31809,13 @@
                 },
                 {
                     "Address": 953,
-                    "ByteSize": 4
+                    "ByteSize": 4,
+                    "OperandType": 1
                 },
                 {
                     "Address": 957,
-                    "ByteSize": 4
+                    "ByteSize": 4,
+                    "OperandType": 1
                 },
                 {
                     "Address": 961,
@@ -33656,11 +33680,13 @@
                 },
                 {
                     "Address": 988,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 991,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 994,
@@ -34527,7 +34553,8 @@
                 },
                 {
                     "Address": 135,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 138,
@@ -39042,7 +39069,8 @@
                 },
                 {
                     "Address": 662,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 665,
@@ -39126,11 +39154,13 @@
                 },
                 {
                     "Address": 701,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "256 loops"
                 },
                 {
                     "Address": 703,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 706,
@@ -41405,6 +41435,10 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 491,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 528,
                     "Comment": "x",
                     "DisplayType": 11
@@ -42416,7 +42450,6 @@
                 {
                     "Address": 994,
                     "ByteSize": 2,
-                    "Comment": "return address?",
                     "DataType": 2
                 },
                 {
@@ -42427,6 +42460,7 @@
                 {
                     "Address": 998,
                     "ByteSize": 2,
+                    "Comment": "return address?",
                     "DataType": 2
                 },
                 {
@@ -42857,6 +42891,18 @@
                 {
                     "Address": 16,
                     "Comment": "First half of sprite RAM\n24 sprites, 2 bytes per sprite\n\nFor each sprite:\nbyte 0: XPos\nbyte 1: Sprite definition"
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 16,
+                    "Comment": "x",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 17,
+                    "Comment": "no",
+                    "DisplayType": 11
                 }
             ],
             "LabelInfo": [
