@@ -40,20 +40,34 @@ void LogInvalidAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef add
 }
 // memory bank code
 
+#include <chrono>
+
 // Allocator for code analysis page memory.
-// Creating many banks be very slow due to allocating the memory for the pages.
+// Creating many banks is very slow due to allocating the memory for the pages.
 // It was taking almost 5 seconds to create all the banks for the PCE.
 // This speeds it up a lot.
-#define USE_PAGE_ALLOCATOR 1
+// Update: I am stupid. All this does is make this page allocator take all the time to execute, instead of the 
+// bank creation.
+#define USE_PAGE_ALLOCATOR 0
 #if USE_PAGE_ALLOCATOR
 struct FPageAllocator
 {
 	// Currently tuned for PCE Analyser.
-	static const int kNumPages = 9216;
+	//static const int kNumPages = 9216;
+	static const int kNumPages = 5600;
 	FPageAllocator()
 	{
+#ifndef NDEBUG
+		auto t1 = std::chrono::high_resolution_clock::now();
+#endif
 		pPages = new FCodeAnalysisPage[kNumPages];
+		//pPages =  (FCodeAnalysisPage*)malloc(sizeof(FCodeAnalysisPage) * kNumPages);
 		pCurPage = pPages;
+
+#ifndef NDEBUG
+		std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
+		LOGINFO("FPageAllocator took %.2f ms", ms_double);
+#endif
 	}
 	FCodeAnalysisPage* AllocatePages(int numPages)
 	{
