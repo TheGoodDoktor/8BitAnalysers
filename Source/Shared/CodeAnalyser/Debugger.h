@@ -50,6 +50,14 @@ static const int kTrapId_None = 0;
 static const int kTrapId_Step = 128;
 static const int kTrapId_BpBase = kTrapId_Step + 1;
 
+static const uint32_t	BPMask_Exec = 0x0001;
+static const uint32_t	BPMask_DataWrite = 0x0002;
+static const uint32_t	BPMask_DataRead = 0x0004;
+static const uint32_t	BPMask_IORead = 0x0008;
+static const uint32_t	BPMask_IOWrite = 0x0010;
+static const uint32_t	BPMask_IRQ = 0x0020;
+static const uint32_t	BPMask_NMI = 0x0040;
+
 struct FBreakpoint
 {
 	FBreakpoint() {}
@@ -135,7 +143,9 @@ public:
 	void	SetScanlineBreakpoint(int scanline) { ScanlineBreakpoint = scanline;}
 	void	ClearScanlineBreakpoint(void) { ScanlineBreakpoint = -1;}
 	int		GetScanlineBreakpoint() const { return ScanlineBreakpoint;}
-	
+	const std::vector<FBreakpoint>	GetBreakpoints() const { return Breakpoints; }
+	uint32_t	GetBreakpointMask() const { return BreakpointMask; }
+
 	// Watches
 	void	AddWatch(FWatch watch);
 	bool	RemoveWatch(FWatch watch);
@@ -189,7 +199,6 @@ private:
 	int		GetFrameTraceItemIndex(FAddressRef address);
 
 private:
-public:
 	FCodeAnalysisState*	pCodeAnalysis = nullptr;
 
 	ECPUType		CPUType = ECPUType::Unknown;

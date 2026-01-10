@@ -16,14 +16,6 @@
 #include "Misc/EmuBase.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 
-static const uint32_t	BPMask_Exec			= 0x0001;
-static const uint32_t	BPMask_DataWrite	= 0x0002;
-static const uint32_t	BPMask_DataRead		= 0x0004;
-static const uint32_t	BPMask_IORead		= 0x0008;
-static const uint32_t	BPMask_IOWrite		= 0x0010;
-static const uint32_t	BPMask_IRQ			= 0x0020;
-static const uint32_t	BPMask_NMI			= 0x0040;
-
 void FDebugger::Init(FCodeAnalysisState* pCA)
 {
 	pCodeAnalysis = pCA;
