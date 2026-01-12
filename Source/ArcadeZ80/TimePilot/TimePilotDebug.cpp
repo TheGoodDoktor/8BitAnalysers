@@ -121,6 +121,11 @@ void FTimePilotDebug::SpriteViewer()
 	}
 
 	pSpriteView->Draw(true);
+
+	if (ImGui::Button("Export Sprites"))
+	{
+		pMachine->ExportZXNSprites();
+	}
 }
 
 void FTimePilotDebug::StringViewer()
@@ -183,6 +188,17 @@ void FTimePilotDebug::StringViewer()
 		// draw a rectangle round the character
 		pDrawList->AddRect(ImVec2(pos.x + charX * 8, pos.y + charY * 8), ImVec2(pos.x + (charX + 1) * 8, pos.y + (charY + 1) * 8), IM_COL32(255, 255, 0, 255));
 	}
+
+	if (ImGui::Button("Export Characters"))
+	{
+		pMachine->ExportZXNChars();
+	}
+
+	if (ImGui::Button("Export Palettes"))
+	{
+		pMachine->ExportZXNPalettes();
+	}
+
 	bFirstRun = false;
 }
 

@@ -24,6 +24,8 @@ const std::string kAppTitle = "Arcade Z80 Analyser";
 
 void SetWindowTitle(const char* pTitle);
 
+bool InitAsmExporters(FArcadeZ80* Emu);
+
 
 void DebugCB(void* user_data, uint64_t pins)
 {
@@ -79,11 +81,10 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	CPUType = ECPUType::Z80;
 	SetNumberDisplayMode(ENumberDisplayMode::HexAitch);
 
-	// Set up memory banks
-	//RamBankId = CodeAnalysis.CreateBank("RAM", 62, pMachine->RAM, false, 0x0000, true);					// RAM - $0000 - $DFFF - pages 0-61 - 62K
-
-	// map in banks
-	//CodeAnalysis.MapBank(RamBankId, 0, EBankAccess::ReadWrite);
+	// For ASM exporting - ROM area of TimePilot
+	InitAsmExporters(this);
+	ExportStartAddress = 0x0000;
+	ExportEndAddress = 0x5FFF;
 
 	// setup code analysis
 	CodeAnalysis.Init(this);
@@ -93,6 +94,7 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	CodeAnalysis.Debugger.Break();
 	FArcadeZ80ProjectConfig* pArcadeZ80Config = nullptr;
 
+
 	{
 		// TODO: load in RAM image
 		if (LoadBinaries() == false)
@@ -100,11 +102,14 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 			LOGERROR("Failed to load Arcade Z80 binaries.");
 			return false;
 		}
-		pArcadeZ80Config = CreateNewArcadeZ80Config();
 
 		pArcadeZ80Config = new FArcadeZ80ProjectConfig;
 
 		pArcadeZ80Config->Name = "TimePilot";
+
+		const std::string root = pGlobalConfig->WorkspaceRoot + pArcadeZ80Config->Name + "/";
+		const std::string configFName = root + "Config.json";
+		LoadGameConfigFromFile(*pArcadeZ80Config, configFName.c_str());
 	}
 
 	LoadProject(pArcadeZ80Config, true);

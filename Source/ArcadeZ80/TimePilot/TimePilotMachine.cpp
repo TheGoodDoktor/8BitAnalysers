@@ -202,6 +202,52 @@ void DrawCharacter8x8(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp,
 	}
 }
 
+// write nybble tp 4bpp ZXM image
+void DrawZXNPixel(uint8_t* pZXNImage, int stride, int xpos, int ypos, uint8_t val)
+{
+	assert(val >= 0x0f);	// be sure it's a nybble
+
+	uint8_t* pDest = pZXNImage + (ypos * stride) + (xpos>>1);
+
+	if ((xpos & 1) == 0)	// even bits are high nybble
+		*pDest = (*pDest & 0x0f) & (val << 4);
+	else
+		*pDest = (*pDest & 0xf0) & val;
+}
+
+void DrawCharacterToZXNImage(uint8_t* pZXNImage, int stride, const uint8_t* pSrc, int xpos,int ypos, bool bFlipX, bool bFlipY, bool bRot90)
+{
+	for (int y = 0; y < 8; y++)
+	{
+		const uint8_t charLine0 = pSrc[y];
+		const uint8_t charLine1 = pSrc[y + 8];
+
+		const uint8_t plane0 = (charLine0 & 0xf0) | (charLine1 & 0x0f);
+		const uint8_t plane1 = ((charLine0 & 0x0f) << 4) | ((charLine1 & 0xf0) >> 4);
+
+		for (int xpix = 0; xpix < 8; xpix++)
+		{
+			const int drawX = bFlipX ? (7 - xpix) : xpix;
+			const int drawY = bFlipY ? (7 - y) : y;
+			const bool bSet0 = (plane0 & (1 << (7 - xpix))) != 0;
+			const bool bSet1 = (plane1 & (1 << (7 - xpix))) != 0;
+			const int bBit0 = bSet0 ? 1 : 0;
+			const int bBit1 = bSet1 ? 1 : 0;
+
+			uint8_t col = bBit0 + (bBit1 << 1);
+
+			/*
+			const uint32_t col = cols[bBit0 + (bBit1 << 1)];
+			if (bMask && (col == cols[0]))
+				continue;*/
+			if (bRot90)
+				DrawZXNPixel(pZXNImage,stride, drawY,drawX,col);
+			else
+				DrawZXNPixel(pZXNImage, stride, drawX, drawY, col);				
+		}
+	}
+}
+
 // draw 16*16 sprite using 2 bit planes
 void DrawSprite(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const uint32_t* cols, bool bFlipX, bool bFlipY, bool bRot90)
 {
@@ -228,6 +274,39 @@ void DrawSprite(FGraphicsView* pView, const uint8_t* pSrc, int xp, int yp, const
 				DrawCharacter8x8(pView, pChar, drawX, drawY, cols, bFlipX, !bFlipY, bRot90, true);
 			else
 				DrawCharacter8x8(pView, pChar, drawX, drawY, cols, bFlipX, bFlipY, bRot90, true);
+		}
+	}
+}
+
+void DrawSpriteToZXNImage(uint8_t* pZXNImage, int stride, const uint8_t* pSrc, int xp, int yp)
+{
+	bool bFlipX = false;
+	bool bFlipY = false;
+	bool bRot90 = true;
+	
+	for (int y = 0; y < 2; y++)
+	{
+		for (int x = 0; x < 2; x++)
+		{
+			const uint8_t* pChar = pSrc + (16 * (x + (y * 2)));
+
+			int fx = bFlipX ? (1 - x) : x;
+			int fy = bFlipY ? (1 - y) : y;
+
+			int rx = bRot90 ? (1 - fy) : fx;
+			int ry = bRot90 ? fx : fy;
+
+			int drawX = xp + (rx * 8);
+			int drawY = yp + (ry * 8);
+			/*if (bFlipX)
+				drawX = xp + ((1 - rx) * 8);
+			if (bFlipY)
+				drawY = yp + ((1 - ry) * 8);
+				*/
+			if (bRot90)
+				DrawCharacterToZXNImage(pZXNImage, stride, pChar, drawX, drawY, bFlipX, !bFlipY, bRot90);
+			else
+				DrawCharacterToZXNImage(pZXNImage, stride, pChar, drawX, drawY, bFlipX, bFlipY, bRot90);
 		}
 	}
 }
@@ -284,13 +363,6 @@ void FTimePilotMachine::DrawSprites()
 			DrawSprite(pScreen, pSprite, (256 - sy), sx, pSpriteColours, bFlipx, bFlipy, true);
 		else
 			DrawSprite(pScreen, pSprite, sx, sy, pSpriteColours, bFlipx, bFlipy, false);
-
-		/*m_gfxdecode->gfx(1)->transpen(bitmap, cliprect,
-			code,
-			color,
-			flipx, flipy,
-			sx, sy, 0);
-			*/
 	}
 }
 
@@ -358,4 +430,20 @@ void FTimePilotMachine::UpdateScreen()
 	DrawCharMap(0);
 	DrawSprites();
 	DrawCharMap(1);
+}
+
+// ZXN Exporting
+void FTimePilotMachine::ExportZXNSprites()
+{
+
+}
+
+void FTimePilotMachine::ExportZXNChars()
+{
+
+}
+
+void FTimePilotMachine::ExportZXNPalettes()
+{
+
 }

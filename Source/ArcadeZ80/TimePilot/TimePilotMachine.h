@@ -18,6 +18,10 @@ public:
 	void DebugDrawCommandQueue();
 	void DebugDrawString(uint16_t stringAddress);
 
+	void ExportZXNSprites();
+	void ExportZXNChars();
+	void ExportZXNPalettes();
+
 	// Game ROMS
 	uint8_t		ROM1[0x2000];	// 0x0000 - 0x1FFF
 	uint8_t		ROM2[0x2000];	// 0x2000 - 0x3FFF
