@@ -400,7 +400,8 @@
             "ExitPoints": [
                 79757312,
                 80281600,
-                89456640
+                89456640,
+                80478208
             ],
             "StartAddress": 56950784,
             "bManualEdit": false,
@@ -409,8 +410,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 124387328,
+                    "FunctionAddr": 31522816,
+                    "ReturnAddr": 124583936
+                }
+            ],
             "Description": "",
-            "EndAddress": 122355712,
+            "EndAddress": 124846080,
             "StartAddress": 122355712,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -505,8 +513,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 146014208,
+                    "FunctionAddr": 33619968,
+                    "ReturnAddr": 146210816
+                },
+                {
+                    "CallAddr": 148242432,
+                    "FunctionAddr": 1272709122,
+                    "ReturnAddr": 148439040
+                }
+            ],
             "Description": "",
-            "EndAddress": 146014208,
+            "EndAddress": 150405120,
+            "ExitPoints": [
+                146210816
+            ],
             "StartAddress": 146014208,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -679,10 +702,38 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 215416832,
+                    "FunctionAddr": 225116160,
+                    "ReturnAddr": 215613440
+                },
+                {
+                    "CallAddr": 216006656,
+                    "FunctionAddr": 223805440,
+                    "ReturnAddr": 216203264
+                },
+                {
+                    "CallAddr": 217186304,
+                    "FunctionAddr": 200409088,
+                    "ReturnAddr": 217382912
+                },
+                {
+                    "CallAddr": 217382912,
+                    "FunctionAddr": 223805440,
+                    "ReturnAddr": 217579520
+                },
+                {
+                    "CallAddr": 217776128,
+                    "FunctionAddr": 205062144,
+                    "ReturnAddr": 217972736
+                }
+            ],
             "Description": "",
-            "EndAddress": 216530944,
+            "EndAddress": 218693632,
             "ExitPoints": [
-                216530944
+                216530944,
+                218693632
             ],
             "StartAddress": 210763776,
             "bManualEdit": false,
@@ -692,7 +743,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 223805440,
+            "EndAddress": 224329728,
             "StartAddress": 223805440,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -881,8 +932,28 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 246677504,
+                    "FunctionAddr": 202309632,
+                    "ReturnAddr": 246874112
+                },
+                {
+                    "CallAddr": 248643584,
+                    "FunctionAddr": 250281984,
+                    "ReturnAddr": 248840192
+                },
+                {
+                    "CallAddr": 248971264,
+                    "FunctionAddr": 250281984,
+                    "ReturnAddr": 249167872
+                }
+            ],
             "Description": "",
-            "EndAddress": 246153216,
+            "EndAddress": 250216448,
+            "ExitPoints": [
+                250216448
+            ],
             "StartAddress": 246153216,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -891,7 +962,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 250281984,
+            "EndAddress": 251985920,
+            "ExitPoints": [
+                251985920,
+                251527168
+            ],
             "StartAddress": 250281984,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -929,10 +1004,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 258605056,
+                    "FunctionAddr": 364249088,
+                    "ReturnAddr": 258801664
+                }
+            ],
             "Description": "",
-            "EndAddress": 258539520,
+            "EndAddress": 258801664,
             "ExitPoints": [
-                258539520
+                258539520,
+                257425408
             ],
             "StartAddress": 257163264,
             "bManualEdit": false,
@@ -1111,12 +1194,30 @@
                     "CallAddr": 299958272,
                     "FunctionAddr": 278396928,
                     "ReturnAddr": 300154880
+                },
+                {
+                    "CallAddr": 300744704,
+                    "FunctionAddr": 364249088,
+                    "ReturnAddr": 300941312
+                },
+                {
+                    "CallAddr": 301400064,
+                    "FunctionAddr": 1446248450,
+                    "ReturnAddr": 301596672
+                },
+                {
+                    "CallAddr": 301203456,
+                    "FunctionAddr": 767033345,
+                    "ReturnAddr": 301400064
                 }
             ],
             "Description": "",
-            "EndAddress": 309657600,
+            "EndAddress": 309985280,
             "ExitPoints": [
-                309657600
+                309657600,
+                300679168,
+                305790976,
+                309985280
             ],
             "StartAddress": 295239680,
             "bManualEdit": false,
@@ -1126,7 +1227,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 316801024,
+            "EndAddress": 318242816,
+            "ExitPoints": [
+                317063168
+            ],
             "StartAddress": 316801024,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1135,7 +1239,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 318439424,
+            "EndAddress": 320339968,
+            "ExitPoints": [
+                320339968
+            ],
             "StartAddress": 318439424,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1180,7 +1287,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 364249088,
+            "EndAddress": 364969984,
+            "ExitPoints": [
+                364969984
+            ],
             "StartAddress": 364249088,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1237,8 +1347,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 378339328,
+                    "FunctionAddr": 364249088,
+                    "ReturnAddr": 378535936
+                }
+            ],
             "Description": "",
-            "EndAddress": 378273792,
+            "EndAddress": 379125760,
             "ExitPoints": [
                 378273792
             ],
@@ -1280,7 +1397,8 @@
             "EndAddress": 387448832,
             "ExitPoints": [
                 386269184,
-                387448832
+                387448832,
+                385220608
             ],
             "StartAddress": 380567552,
             "bManualEdit": false,
@@ -1290,7 +1408,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 387514368,
+            "EndAddress": 389218304,
+            "ExitPoints": [
+                389218304
+            ],
             "StartAddress": 387514368,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1298,8 +1419,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 389283840,
+                    "FunctionAddr": 33619968,
+                    "ReturnAddr": 389480448
+                }
+            ],
             "Description": "",
-            "EndAddress": 389283840,
+            "EndAddress": 390397952,
+            "ExitPoints": [
+                389480448
+            ],
             "StartAddress": 389283840,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1456,9 +1587,47 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 415956992,
+                    "FunctionAddr": 517013504,
+                    "ReturnAddr": 416153600
+                },
+                {
+                    "CallAddr": 418578432,
+                    "FunctionAddr": 418906112,
+                    "ReturnAddr": 418775040
+                },
+                {
+                    "CallAddr": 419364864,
+                    "FunctionAddr": 419692544,
+                    "ReturnAddr": 419561472
+                },
+                {
+                    "CallAddr": 427425792,
+                    "FunctionAddr": 1446248450,
+                    "ReturnAddr": 427622400
+                }
+            ],
             "Description": "",
-            "EndAddress": 415432704,
+            "EndAddress": 433324032,
+            "ExitPoints": [
+                429981696,
+                433258496
+            ],
             "StartAddress": 415432704,
+            "bManualEdit": false,
+            "bROMFunction": true,
+            "bStubImplemented": false,
+            "bStubbedOut": false
+        },
+        {
+            "Description": "",
+            "EndAddress": 433258496,
+            "ExitPoints": [
+                433258496
+            ],
+            "StartAddress": 427819008,
             "bManualEdit": false,
             "bROMFunction": true,
             "bStubImplemented": false,
@@ -1564,8 +1733,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 519503872,
+                    "FunctionAddr": 517013504,
+                    "ReturnAddr": 519700480
+                }
+            ],
             "Description": "",
-            "EndAddress": 526712832,
+            "EndAddress": 527695872,
             "StartAddress": 517931008,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1573,8 +1749,24 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 539426817,
+                    "FunctionAddr": 1456603138,
+                    "ReturnAddr": 539623425
+                },
+                {
+                    "CallAddr": 539230209,
+                    "FunctionAddr": 1450770434,
+                    "ReturnAddr": 539426817
+                }
+            ],
             "Description": "",
-            "EndAddress": 537657345,
+            "EndAddress": 548274177,
+            "ExitPoints": [
+                548274177,
+                543293441
+            ],
             "StartAddress": 537657345,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1597,7 +1789,8 @@
             "Description": "",
             "EndAddress": 562626561,
             "ExitPoints": [
-                557383681
+                557383681,
+                557580289
             ],
             "StartAddress": 554565633,
             "bManualEdit": false,
@@ -1607,7 +1800,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 558563329,
+            "EndAddress": 562626561,
             "StartAddress": 558563329,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1715,6 +1908,11 @@
                     "CallAddr": 678494209,
                     "FunctionAddr": 259719168,
                     "ReturnAddr": 678690817
+                },
+                {
+                    "CallAddr": 672268289,
+                    "FunctionAddr": 259719168,
+                    "ReturnAddr": 672464897
                 }
             ],
             "Description": "This appears to reset a lot of things",
@@ -1822,6 +2020,9 @@
         {
             "Description": "",
             "EndAddress": 687538177,
+            "ExitPoints": [
+                686948353
+            ],
             "StartAddress": 686686209,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1831,6 +2032,9 @@
         {
             "Description": "",
             "EndAddress": 688586753,
+            "ExitPoints": [
+                687996929
+            ],
             "StartAddress": 687734785,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1871,8 +2075,44 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 691404801,
+                    "FunctionAddr": 737083393,
+                    "ReturnAddr": 691601409
+                },
+                {
+                    "CallAddr": 691601409,
+                    "FunctionAddr": 1480589314,
+                    "ReturnAddr": 691798017
+                },
+                {
+                    "CallAddr": 691798017,
+                    "FunctionAddr": 730005505,
+                    "ReturnAddr": 691994625
+                },
+                {
+                    "CallAddr": 692191233,
+                    "FunctionAddr": 1054212097,
+                    "ReturnAddr": 692387841
+                },
+                {
+                    "CallAddr": 692387841,
+                    "FunctionAddr": 708575233,
+                    "ReturnAddr": 692584449
+                },
+                {
+                    "CallAddr": 692584449,
+                    "FunctionAddr": 1111687170,
+                    "ReturnAddr": 692781057
+                }
+            ],
             "Description": "",
-            "EndAddress": 690421761,
+            "EndAddress": 692781057,
+            "ExitPoints": [
+                690683905,
+                692781057
+            ],
             "StartAddress": 690421761,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1920,8 +2160,44 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 697958401,
+                    "FunctionAddr": 737083393,
+                    "ReturnAddr": 698155009
+                },
+                {
+                    "CallAddr": 698155009,
+                    "FunctionAddr": 1480589314,
+                    "ReturnAddr": 698351617
+                },
+                {
+                    "CallAddr": 698351617,
+                    "FunctionAddr": 730005505,
+                    "ReturnAddr": 698548225
+                },
+                {
+                    "CallAddr": 698744833,
+                    "FunctionAddr": 1054212097,
+                    "ReturnAddr": 698941441
+                },
+                {
+                    "CallAddr": 698941441,
+                    "FunctionAddr": 714539009,
+                    "ReturnAddr": 699138049
+                },
+                {
+                    "CallAddr": 699138049,
+                    "FunctionAddr": 1111687170,
+                    "ReturnAddr": 699334657
+                }
+            ],
             "Description": "",
-            "EndAddress": 696516609,
+            "EndAddress": 699334657,
+            "ExitPoints": [
+                696778753,
+                699334657
+            ],
             "StartAddress": 696516609,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1956,8 +2232,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 708575233,
+                    "FunctionAddr": 710344705,
+                    "ReturnAddr": 708771841
+                }
+            ],
             "Description": "",
-            "EndAddress": 708575233,
+            "EndAddress": 709230593,
+            "ExitPoints": [
+                709230593
+            ],
             "StartAddress": 708575233,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -1998,7 +2284,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 714539009,
+            "EndAddress": 716832769,
+            "ExitPoints": [
+                716636161
+            ],
             "StartAddress": 714539009,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2052,6 +2341,11 @@
                     "CallAddr": 732430337,
                     "FunctionAddr": 740425729,
                     "ReturnAddr": 732626945
+                },
+                {
+                    "CallAddr": 731709441,
+                    "FunctionAddr": 733609985,
+                    "ReturnAddr": 731906049
                 }
             ],
             "Description": "",
@@ -2075,10 +2369,11 @@
                 }
             ],
             "Description": "",
-            "EndAddress": 735313921,
+            "EndAddress": 735903745,
             "ExitPoints": [
                 734658561,
-                735313921
+                735313921,
+                735903745
             ],
             "StartAddress": 733609985,
             "bManualEdit": false,
@@ -2126,7 +2421,9 @@
             "EndAddress": 747831297,
             "ExitPoints": [
                 746651649,
-                747831297
+                747831297,
+                744947713,
+                745537537
             ],
             "StartAddress": 741408769,
             "bManualEdit": false,
@@ -2169,8 +2466,33 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 754253825,
+                    "FunctionAddr": 756350977,
+                    "ReturnAddr": 754450433
+                },
+                {
+                    "CallAddr": 754450433,
+                    "FunctionAddr": 758513665,
+                    "ReturnAddr": 754647041
+                },
+                {
+                    "CallAddr": 754647041,
+                    "FunctionAddr": 758513665,
+                    "ReturnAddr": 754843649
+                },
+                {
+                    "CallAddr": 754843649,
+                    "FunctionAddr": 761790465,
+                    "ReturnAddr": 755040257
+                }
+            ],
             "Description": "",
-            "EndAddress": 752549889,
+            "EndAddress": 755040257,
+            "ExitPoints": [
+                755040257
+            ],
             "StartAddress": 752549889,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2178,8 +2500,25 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 756350977,
+                    "FunctionAddr": 762183681,
+                    "ReturnAddr": 756547585
+                },
+                {
+                    "CallAddr": 756547585,
+                    "FunctionAddr": 811073537,
+                    "ReturnAddr": 756744193
+                },
+                {
+                    "CallAddr": 756744193,
+                    "FunctionAddr": 811073537,
+                    "ReturnAddr": 756940801
+                }
+            ],
             "Description": "",
-            "EndAddress": 756350977,
+            "EndAddress": 756940801,
             "StartAddress": 756350977,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2317,7 +2656,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 767033345,
+            "EndAddress": 770899969,
+            "ExitPoints": [
+                770899969
+            ],
             "StartAddress": 767033345,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2509,8 +2851,33 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 856686593,
+                    "FunctionAddr": 1287847938,
+                    "ReturnAddr": 856883201
+                },
+                {
+                    "CallAddr": 858128385,
+                    "FunctionAddr": 1480392706,
+                    "ReturnAddr": 858324993
+                },
+                {
+                    "CallAddr": 858980353,
+                    "FunctionAddr": 31522816,
+                    "ReturnAddr": 859176961
+                },
+                {
+                    "CallAddr": 858128385,
+                    "FunctionAddr": 1480196098,
+                    "ReturnAddr": 858324993
+                }
+            ],
             "Description": "",
-            "EndAddress": 856358913,
+            "EndAddress": 860160001,
+            "ExitPoints": [
+                856621057
+            ],
             "StartAddress": 856358913,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2523,6 +2890,11 @@
                     "CallAddr": 865468417,
                     "FunctionAddr": 31522816,
                     "ReturnAddr": 865665025
+                },
+                {
+                    "CallAddr": 865271809,
+                    "FunctionAddr": 253362176,
+                    "ReturnAddr": 865468417
                 }
             ],
             "Description": "",
@@ -2612,7 +2984,8 @@
                 934936577,
                 933560321,
                 932315137,
-                919797761
+                919797761,
+                917700609
             ],
             "StartAddress": 917438465,
             "bManualEdit": false,
@@ -2682,7 +3055,8 @@
                 1005584385,
                 1004470273,
                 1007157249,
-                1004208129
+                1004208129,
+                996343809
             ],
             "StartAddress": 996081665,
             "bManualEdit": false,
@@ -2699,12 +3073,13 @@
                 }
             ],
             "Description": "",
-            "EndAddress": 1014235137,
+            "EndAddress": 1015152641,
             "ExitPoints": [
                 1008992257,
                 1009844225,
                 1009385473,
-                1014235137
+                1014235137,
+                1010171905
             ],
             "StartAddress": 1007484929,
             "bManualEdit": false,
@@ -2743,12 +3118,14 @@
                 }
             ],
             "Description": "",
-            "EndAddress": 1036910593,
+            "EndAddress": 1037500417,
             "ExitPoints": [
                 1025769473,
                 1036910593,
                 1026424833,
-                1027866625
+                1027866625,
+                1030619137,
+                1024720897
             ],
             "StartAddress": 1021902849,
             "bManualEdit": false,
@@ -2767,7 +3144,8 @@
             "Description": "",
             "EndAddress": 1038745601,
             "ExitPoints": [
-                1038745601
+                1038745601,
+                1037959169
             ],
             "StartAddress": 1037697025,
             "bManualEdit": false,
@@ -2776,10 +3154,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1039400961,
+                    "FunctionAddr": 1040515073,
+                    "ReturnAddr": 1039597569
+                },
+                {
+                    "CallAddr": 1039597569,
+                    "FunctionAddr": 730005505,
+                    "ReturnAddr": 1039794177
+                }
+            ],
             "Description": "",
-            "EndAddress": 1039073281,
+            "EndAddress": 1039794177,
             "ExitPoints": [
-                1039073281
+                1039073281,
+                1039794177
             ],
             "StartAddress": 1038811137,
             "bManualEdit": false,
@@ -2878,8 +3269,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1047789569,
+                    "FunctionAddr": 1040515073,
+                    "ReturnAddr": 1047986177
+                },
+                {
+                    "CallAddr": 1047986177,
+                    "FunctionAddr": 730005505,
+                    "ReturnAddr": 1048182785
+                }
+            ],
             "Description": "",
-            "EndAddress": 1047265281,
+            "EndAddress": 1048248321,
+            "ExitPoints": [
+                1048182785
+            ],
             "StartAddress": 1047265281,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2888,7 +3294,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1048444929,
+            "EndAddress": 1049952257,
             "StartAddress": 1048444929,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2911,6 +3317,11 @@
                     "CallAddr": 1063780353,
                     "FunctionAddr": 1506869250,
                     "ReturnAddr": 1063976961
+                },
+                {
+                    "CallAddr": 1063452673,
+                    "FunctionAddr": 1506476034,
+                    "ReturnAddr": 1063649281
                 }
             ],
             "Description": "",
@@ -2941,7 +3352,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1068433409,
+            "EndAddress": 1070137345,
+            "ExitPoints": [
+                1070137345
+            ],
             "StartAddress": 1068433409,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2950,9 +3364,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1072562177,
+            "EndAddress": 1073545217,
             "ExitPoints": [
-                1072562177
+                1072562177,
+                1075183618
             ],
             "StartAddress": 1072300033,
             "bManualEdit": false,
@@ -2962,7 +3377,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1075249154,
+            "EndAddress": 1080754178,
+            "ExitPoints": [
+                1080754178
+            ],
             "StartAddress": 1075249154,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2970,8 +3388,24 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1081147394,
+                    "FunctionAddr": 1084030978,
+                    "ReturnAddr": 1081344002
+                },
+                {
+                    "CallAddr": 1081671682,
+                    "FunctionAddr": 727711745,
+                    "ReturnAddr": 1081868290
+                }
+            ],
             "Description": "",
-            "EndAddress": 1080819714,
+            "EndAddress": 1083375618,
+            "ExitPoints": [
+                1083375618,
+                1082195970
+            ],
             "StartAddress": 1080819714,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2980,7 +3414,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1084030978,
+            "EndAddress": 1084751874,
             "StartAddress": 1084030978,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3001,9 +3435,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1086128130,
+            "EndAddress": 1087569922,
             "ExitPoints": [
-                1086128130
+                1086128130,
+                1086521346,
+                1086849026
             ],
             "StartAddress": 1085800450,
             "bManualEdit": false,
@@ -3012,10 +3448,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1090715650,
+                    "FunctionAddr": 1092026370,
+                    "ReturnAddr": 1090912258
+                },
+                {
+                    "CallAddr": 1091043330,
+                    "FunctionAddr": 1094451202,
+                    "ReturnAddr": 1091239938
+                }
+            ],
             "Description": "",
-            "EndAddress": 1088094210,
+            "EndAddress": 1091960834,
             "ExitPoints": [
-                1088094210
+                1088094210,
+                1091960834
             ],
             "StartAddress": 1087766530,
             "bManualEdit": false,
@@ -3024,8 +3473,38 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1093337090,
+                    "FunctionAddr": 1107361794,
+                    "ReturnAddr": 1093533698
+                },
+                {
+                    "CallAddr": 1093533698,
+                    "FunctionAddr": 1487536130,
+                    "ReturnAddr": 1093730306
+                },
+                {
+                    "CallAddr": 1093730306,
+                    "FunctionAddr": 1068433409,
+                    "ReturnAddr": 1093926914
+                },
+                {
+                    "CallAddr": 1093992450,
+                    "FunctionAddr": 730005505,
+                    "ReturnAddr": 1094189058
+                },
+                {
+                    "CallAddr": 1092943874,
+                    "FunctionAddr": 867696641,
+                    "ReturnAddr": 1093140482
+                }
+            ],
             "Description": "",
-            "EndAddress": 1092026370,
+            "EndAddress": 1094254594,
+            "ExitPoints": [
+                1094189058
+            ],
             "StartAddress": 1092026370,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3033,8 +3512,24 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1094778882,
+                    "FunctionAddr": 1084030978,
+                    "ReturnAddr": 1094975490
+                },
+                {
+                    "CallAddr": 1094975490,
+                    "FunctionAddr": 727711745,
+                    "ReturnAddr": 1095172098
+                }
+            ],
             "Description": "",
-            "EndAddress": 1094451202,
+            "EndAddress": 1097662466,
+            "ExitPoints": [
+                1097662466,
+                1095892994
+            ],
             "StartAddress": 1094451202,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3043,7 +3538,12 @@
         },
         {
             "Description": "",
-            "EndAddress": 1107361794,
+            "EndAddress": 1109262338,
+            "ExitPoints": [
+                1109262338,
+                1108017154,
+                1108869122
+            ],
             "StartAddress": 1107361794,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3051,8 +3551,27 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1126236162,
+                    "FunctionAddr": 867696641,
+                    "ReturnAddr": 1126432770
+                },
+                {
+                    "CallAddr": 1127546882,
+                    "FunctionAddr": 1068433409,
+                    "ReturnAddr": 1127743490
+                }
+            ],
             "Description": "",
-            "EndAddress": 1111687170,
+            "EndAddress": 1128857602,
+            "ExitPoints": [
+                1112342530,
+                1112932354,
+                1114636290,
+                1116602370,
+                1118371842
+            ],
             "StartAddress": 1111687170,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3060,8 +3579,15 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1145110530,
+                    "FunctionAddr": 1145503746,
+                    "ReturnAddr": 1145307138
+                }
+            ],
             "Description": "",
-            "EndAddress": 1138425858,
+            "EndAddress": 1145307138,
             "ExitPoints": [
                 1137246210,
                 1138425858
@@ -3073,8 +3599,35 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1145503746,
+                    "FunctionAddr": 1019478017,
+                    "ReturnAddr": 1145700354
+                },
+                {
+                    "CallAddr": 1162739714,
+                    "FunctionAddr": 1451425794,
+                    "ReturnAddr": 1162936322
+                },
+                {
+                    "CallAddr": 1163788290,
+                    "FunctionAddr": 1446248450,
+                    "ReturnAddr": 1163984898
+                },
+                {
+                    "CallAddr": 1163984898,
+                    "FunctionAddr": 1456603138,
+                    "ReturnAddr": 1164181506
+                }
+            ],
             "Description": "",
-            "EndAddress": 1145503746,
+            "EndAddress": 1167392770,
+            "ExitPoints": [
+                1161756674,
+                1151401986,
+                1167261698
+            ],
             "StartAddress": 1145503746,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3082,8 +3635,24 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1183907842,
+                    "FunctionAddr": 1186594818,
+                    "ReturnAddr": 1184104450
+                },
+                {
+                    "CallAddr": 1169358850,
+                    "FunctionAddr": 727711745,
+                    "ReturnAddr": 1169555458
+                }
+            ],
             "Description": "",
-            "EndAddress": 1167785986,
+            "EndAddress": 1185087490,
+            "ExitPoints": [
+                1174667266,
+                1175257090
+            ],
             "StartAddress": 1167785986,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3091,8 +3660,27 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1196621826,
+                    "FunctionAddr": 1449066498,
+                    "ReturnAddr": 1196818434
+                },
+                {
+                    "CallAddr": 1197015042,
+                    "FunctionAddr": 867696641,
+                    "ReturnAddr": 1197211650
+                }
+            ],
             "Description": "",
-            "EndAddress": 1186594818,
+            "EndAddress": 1202847746,
+            "ExitPoints": [
+                1190068226,
+                1188691970,
+                1194524674,
+                1202847746,
+                1190723586
+            ],
             "StartAddress": 1186594818,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3110,6 +3698,16 @@
                     "CallAddr": 1204748290,
                     "FunctionAddr": 730005505,
                     "ReturnAddr": 1204944898
+                },
+                {
+                    "CallAddr": 1207042050,
+                    "FunctionAddr": 727711745,
+                    "ReturnAddr": 1207238658
+                },
+                {
+                    "CallAddr": 1208811522,
+                    "FunctionAddr": 1476329474,
+                    "ReturnAddr": 1209008130
                 }
             ],
             "Description": "",
@@ -3118,7 +3716,10 @@
                 1214054402,
                 1214316546,
                 1217134594,
-                1206452226
+                1206452226,
+                1210253314,
+                1208287234,
+                1213661186
             ],
             "StartAddress": 1202913282,
             "bManualEdit": false,
@@ -3413,7 +4014,7 @@
                 }
             ],
             "Description": "",
-            "EndAddress": 1284505602,
+            "EndAddress": 1286668290,
             "StartAddress": 1282736130,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3421,8 +4022,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1289093122,
+                    "FunctionAddr": 1294663682,
+                    "ReturnAddr": 1289289730
+                }
+            ],
             "Description": "",
-            "EndAddress": 1287847938,
+            "EndAddress": 1294270466,
+            "ExitPoints": [
+                1294270466
+            ],
             "StartAddress": 1287847938,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3431,7 +4042,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1294663682,
+            "EndAddress": 1295581186,
+            "ExitPoints": [
+                1295581186,
+                1294925826
+            ],
             "StartAddress": 1294663682,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3477,8 +4092,23 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1300889602,
+                    "FunctionAddr": 1303314434,
+                    "ReturnAddr": 1301086210
+                },
+                {
+                    "CallAddr": 1301938178,
+                    "FunctionAddr": 1305411586,
+                    "ReturnAddr": 1302134786
+                }
+            ],
             "Description": "",
-            "EndAddress": 1299316738,
+            "EndAddress": 1303248898,
+            "ExitPoints": [
+                1303248898
+            ],
             "StartAddress": 1299316738,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3487,7 +4117,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1303314434,
+            "EndAddress": 1305346050,
+            "ExitPoints": [
+                1305346050
+            ],
             "StartAddress": 1303314434,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3496,7 +4129,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1305411586,
+            "EndAddress": 1306329090,
+            "ExitPoints": [
+                1306329090
+            ],
             "StartAddress": 1305411586,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3505,9 +4141,11 @@
         },
         {
             "Description": "",
-            "EndAddress": 1306656770,
+            "EndAddress": 1310326786,
             "ExitPoints": [
-                1306656770
+                1306656770,
+                1309212674,
+                1310326786
             ],
             "StartAddress": 1306394626,
             "bManualEdit": false,
@@ -3541,6 +4179,46 @@
                     "CallAddr": 1324744706,
                     "FunctionAddr": 1367670786,
                     "ReturnAddr": 1324941314
+                },
+                {
+                    "CallAddr": 1325924354,
+                    "FunctionAddr": 1364328450,
+                    "ReturnAddr": 1326120962
+                },
+                {
+                    "CallAddr": 1326120962,
+                    "FunctionAddr": 1353777154,
+                    "ReturnAddr": 1326317570
+                },
+                {
+                    "CallAddr": 1326317570,
+                    "FunctionAddr": 1350434818,
+                    "ReturnAddr": 1326514178
+                },
+                {
+                    "CallAddr": 1327366146,
+                    "FunctionAddr": 1367670786,
+                    "ReturnAddr": 1327562754
+                },
+                {
+                    "CallAddr": 1315110914,
+                    "FunctionAddr": 1331494914,
+                    "ReturnAddr": 1315307522
+                },
+                {
+                    "CallAddr": 1316159490,
+                    "FunctionAddr": 1367670786,
+                    "ReturnAddr": 1316356098
+                },
+                {
+                    "CallAddr": 1317142530,
+                    "FunctionAddr": 1364328450,
+                    "ReturnAddr": 1317339138
+                },
+                {
+                    "CallAddr": 1317732354,
+                    "FunctionAddr": 1361117186,
+                    "ReturnAddr": 1317928962
                 }
             ],
             "Description": "",
@@ -3553,7 +4231,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1331494914,
+            "EndAddress": 1333460994,
             "StartAddress": 1331494914,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3566,13 +4244,25 @@
                     "CallAddr": 1337131010,
                     "FunctionAddr": 1373503490,
                     "ReturnAddr": 1337327618
+                },
+                {
+                    "CallAddr": 1339883522,
+                    "FunctionAddr": 1376845826,
+                    "ReturnAddr": 1340080130
+                },
+                {
+                    "CallAddr": 1344208898,
+                    "FunctionAddr": 1373503490,
+                    "ReturnAddr": 1344405506
                 }
             ],
             "Description": "",
-            "EndAddress": 1337851906,
+            "EndAddress": 1344929794,
             "ExitPoints": [
                 1334837250,
-                1337851906
+                1337851906,
+                1341915138,
+                1344929794
             ],
             "StartAddress": 1333657602,
             "bManualEdit": false,
@@ -3582,10 +4272,12 @@
         },
         {
             "Description": "",
-            "EndAddress": 1352007682,
+            "EndAddress": 1352728578,
             "ExitPoints": [
                 1351286786,
-                1352007682
+                1352007682,
+                1352728578,
+                1350959106
             ],
             "StartAddress": 1350434818,
             "bManualEdit": false,
@@ -3595,7 +4287,13 @@
         },
         {
             "Description": "",
-            "EndAddress": 1353777154,
+            "EndAddress": 1357578242,
+            "ExitPoints": [
+                1355284482,
+                1356005378,
+                1356726274,
+                1354956802
+            ],
             "StartAddress": 1353777154,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3603,8 +4301,19 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1363410946,
+                    "FunctionAddr": 1373503490,
+                    "ReturnAddr": 1363607554
+                }
+            ],
             "Description": "",
-            "EndAddress": 1361117186,
+            "EndAddress": 1364262914,
+            "ExitPoints": [
+                1364262914,
+                1361379330
+            ],
             "StartAddress": 1361117186,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3612,10 +4321,18 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1366753282,
+                    "FunctionAddr": 1373503490,
+                    "ReturnAddr": 1366949890
+                }
+            ],
             "Description": "",
             "EndAddress": 1367605250,
             "ExitPoints": [
-                1367605250
+                1367605250,
+                1364590594
             ],
             "StartAddress": 1364328450,
             "bManualEdit": false,
@@ -3628,7 +4345,9 @@
             "EndAddress": 1373437954,
             "ExitPoints": [
                 1370619906,
-                1373437954
+                1373437954,
+                1367932930,
+                1370947586
             ],
             "StartAddress": 1367670786,
             "bManualEdit": false,
@@ -3763,10 +4482,19 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1440612354,
+                    "FunctionAddr": 1442316290,
+                    "ReturnAddr": 1440808962
+                }
+            ],
             "Description": "",
-            "EndAddress": 1440284674,
+            "EndAddress": 1441529858,
             "ExitPoints": [
-                1440284674
+                1440284674,
+                1440874498,
+                1441529858
             ],
             "StartAddress": 1439956994,
             "bManualEdit": false,
@@ -3812,7 +4540,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1445462018,
+            "EndAddress": 1446182914,
+            "ExitPoints": [
+                1446182914
+            ],
             "StartAddress": 1445462018,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3820,8 +4551,45 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1446445058,
+                    "FunctionAddr": 1445462018,
+                    "ReturnAddr": 1446641666
+                },
+                {
+                    "CallAddr": 1446838274,
+                    "FunctionAddr": 1445462018,
+                    "ReturnAddr": 1447034882
+                },
+                {
+                    "CallAddr": 1447231490,
+                    "FunctionAddr": 1445462018,
+                    "ReturnAddr": 1447428098
+                },
+                {
+                    "CallAddr": 1447624706,
+                    "FunctionAddr": 1445462018,
+                    "ReturnAddr": 1447821314
+                },
+                {
+                    "CallAddr": 1448017922,
+                    "FunctionAddr": 1445462018,
+                    "ReturnAddr": 1448214530
+                },
+                {
+                    "CallAddr": 1448411138,
+                    "FunctionAddr": 1445462018,
+                    "ReturnAddr": 1448607746
+                },
+                {
+                    "CallAddr": 1450246146,
+                    "FunctionAddr": 1443627010,
+                    "ReturnAddr": 1450442754
+                }
+            ],
             "Description": "",
-            "EndAddress": 1449263106,
+            "EndAddress": 1450639362,
             "StartAddress": 1446248450,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3830,7 +4598,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1450770434,
+            "EndAddress": 1450967042,
             "StartAddress": 1450770434,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3855,7 +4623,7 @@
                 }
             ],
             "Description": "",
-            "EndAddress": 1452015618,
+            "EndAddress": 1452343298,
             "StartAddress": 1451425794,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3907,8 +4675,30 @@
             "bStubbedOut": false
         },
         {
+            "CallPoints": [
+                {
+                    "CallAddr": 1456799746,
+                    "FunctionAddr": 1443627010,
+                    "ReturnAddr": 1456996354
+                },
+                {
+                    "CallAddr": 1457192962,
+                    "FunctionAddr": 1443627010,
+                    "ReturnAddr": 1457389570
+                },
+                {
+                    "CallAddr": 1457586178,
+                    "FunctionAddr": 1443627010,
+                    "ReturnAddr": 1457782786
+                },
+                {
+                    "CallAddr": 1457979394,
+                    "FunctionAddr": 1444347906,
+                    "ReturnAddr": 1458176002
+                }
+            ],
             "Description": "",
-            "EndAddress": 1456603138,
+            "EndAddress": 1458372610,
             "StartAddress": 1456603138,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3917,7 +4707,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1475411970,
+            "EndAddress": 1476132866,
             "StartAddress": 1475411970,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3926,7 +4716,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1476329474,
+            "EndAddress": 1476526082,
             "StartAddress": 1476329474,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3935,7 +4725,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1477115906,
+            "EndAddress": 1478098946,
             "StartAddress": 1477115906,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3953,7 +4743,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1480196098,
+            "EndAddress": 1480392706,
             "StartAddress": 1480196098,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -3998,7 +4788,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1487536130,
+            "EndAddress": 1487732738,
             "StartAddress": 1487536130,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -4007,9 +4797,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1492975618,
+            "EndAddress": 1497432066,
             "ExitPoints": [
-                1492975618
+                1492975618,
+                1497432066
             ],
             "StartAddress": 1488715778,
             "bManualEdit": false,
@@ -4041,7 +4832,10 @@
         },
         {
             "Description": "",
-            "EndAddress": 1502478338,
+            "EndAddress": 1506017282,
+            "ExitPoints": [
+                1506017282
+            ],
             "StartAddress": 1502478338,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -4059,7 +4853,7 @@
         },
         {
             "Description": "",
-            "EndAddress": 1506476034,
+            "EndAddress": 1506672642,
             "StartAddress": 1506476034,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -4297,8 +5091,7 @@
                 },
                 {
                     "Address": 56,
-                    "ByteSize": 1,
-                    "Flags": 32
+                    "ByteSize": 1
                 },
                 {
                     "Address": 57,
@@ -4628,8 +5421,7 @@
                 },
                 {
                     "Address": 216,
-                    "ByteSize": 1,
-                    "Flags": 32
+                    "ByteSize": 1
                 },
                 {
                     "Address": 217,
@@ -10113,8 +10905,7 @@
                 {
                     "Address": 786,
                     "ByteSize": 3,
-                    "Comment": "y",
-                    "Flags": 32
+                    "Comment": "y"
                 },
                 {
                     "Address": 789,
@@ -10463,7 +11254,6 @@
                 {
                     "Address": 1010,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -10474,8 +11264,7 @@
                 },
                 {
                     "Address": 1016,
-                    "ByteSize": 1,
-                    "Flags": 32
+                    "ByteSize": 1
                 },
                 {
                     "Address": 1017,
@@ -11019,8 +11808,7 @@
                 {
                     "Address": 2,
                     "ByteSize": 1,
-                    "Comment": "terminator",
-                    "Flags": 32
+                    "Comment": "terminator"
                 },
                 {
                     "Address": 3,
@@ -11567,6 +12355,42 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 266,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 268,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 271,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 274,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 276,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 279,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 282,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 343,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -11582,6 +12406,25 @@
                 },
                 {
                     "Address": 351,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 353,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 356,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 359,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 361,
                     "ByteSize": 2,
                     "OperandType": 2
                 },
@@ -13191,6 +14034,12 @@
                     "DisplayType": 1
                 },
                 {
+                    "Address": 326,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 809,
                     "ByteSize": 2,
                     "Comment": "0",
@@ -14705,7 +15554,7 @@
                 {
                     "Address": 415,
                     "ByteSize": 3,
-                    "Flags": 8,
+                    "Flags": 40,
                     "OperandType": 2
                 },
                 {
@@ -14975,6 +15824,24 @@
                     "Address": 548,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 550,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 553,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 554,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 556,
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 559,
@@ -17448,6 +18315,469 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 206,
+                    "ByteSize": 3,
+                    "Flags": 32,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 209,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 210,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 212,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 213,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 214,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 216,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 217,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 218,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 219,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 220,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 222,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 223,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 224,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 226,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 227,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 229,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 230,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 232,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 233,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 234,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 236,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 237,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 239,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 240,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 241,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 243,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 246,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 248,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 249,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 251,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 252,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 253,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 255,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 258,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 260,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 261,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 263,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 278,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 281,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 282,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 283,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 285,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 291,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 294,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 297,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 298,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 301,
+                    "ByteSize": 4,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 305,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 306,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 307,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 310,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 312,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 313,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 315,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 316,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 317,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 320,
+                    "ByteSize": 4,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 324,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 327,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 328,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 330,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 331,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 334,
+                    "ByteSize": 4,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 338,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 341,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 344,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 345,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 346,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 348,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 350,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 351,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 352,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 355,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 358,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 360,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 362,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 365,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 366,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 373,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 375,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 378,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 381,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 388,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 391,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 392,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 395,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 397,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 400,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 402,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 404,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 406,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 408,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 410,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 413,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 416,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 417,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 418,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 421,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 422,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 462,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 465,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 467,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 474,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -18220,9 +19550,60 @@
                     "Name": "PhaseAFunction"
                 },
                 {
+                    "Address": 265,
+                    "LabelType": 2,
+                    "Name": "label_1909"
+                },
+                {
+                    "Address": 278,
+                    "LabelType": 2,
+                    "Name": "label_1916"
+                },
+                {
+                    "Address": 291,
+                    "LabelType": 2,
+                    "Name": "label_1923"
+                },
+                {
+                    "Address": 334,
+                    "LabelType": 2,
+                    "Name": "label_194E"
+                },
+                {
+                    "Address": 355,
+                    "LabelType": 2,
+                    "Name": "label_1963"
+                },
+                {
+                    "Address": 373,
+                    "LabelType": 2,
+                    "Name": "label_1975"
+                },
+                {
+                    "Address": 384,
+                    "Global": true,
+                    "LabelType": 1,
+                    "Name": "function_1980"
+                },
+                {
                     "Address": 388,
                     "LabelType": 2,
                     "Name": "label_1984"
+                },
+                {
+                    "Address": 408,
+                    "LabelType": 2,
+                    "Name": "label_1998"
+                },
+                {
+                    "Address": 410,
+                    "LabelType": 2,
+                    "Name": "label_199A"
+                },
+                {
+                    "Address": 462,
+                    "LabelType": 2,
+                    "Name": "label_19CE"
                 },
                 {
                     "Address": 474,
@@ -18301,12 +19682,18 @@
                 {
                     "Address": 725,
                     "ByteSize": 3,
+                    "Comment": "read from input 1",
                     "OperandType": 1
                 },
                 {
                     "Address": 728,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 730,
+                    "ByteSize": 3,
+                    "OperandType": 1
                 },
                 {
                     "Address": 733,
@@ -18351,15 +19738,18 @@
                 {
                     "Address": 752,
                     "ByteSize": 3,
+                    "Comment": "are we in attract mode",
                     "OperandType": 1
                 },
                 {
                     "Address": 755,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 32
                 },
                 {
                     "Address": 756,
                     "ByteSize": 3,
+                    "Comment": "yes? read data from attract mode buffer",
                     "OperandType": 2
                 },
                 {
@@ -18370,11 +19760,18 @@
                 },
                 {
                     "Address": 762,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "mask out directional controls"
                 },
                 {
                     "Address": 764,
                     "ByteSize": 2,
+                    "Comment": "directional control down?",
+                    "OperandType": 2
+                },
+                {
+                    "Address": 766,
+                    "ByteSize": 3,
                     "OperandType": 2
                 },
                 {
@@ -18395,15 +19792,18 @@
                 {
                     "Address": 774,
                     "ByteSize": 3,
+                    "Comment": "get current angle",
                     "OperandType": 1
                 },
                 {
                     "Address": 777,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "calc delta"
                 },
                 {
                     "Address": 778,
                     "ByteSize": 3,
+                    "Comment": "no change",
                     "OperandType": 2
                 },
                 {
@@ -18438,6 +19838,10 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 795,
+                    "ByteSize": 2
+                },
+                {
                     "Address": 797,
                     "ByteSize": 1
                 },
@@ -18464,6 +19868,11 @@
                 },
                 {
                     "Address": 808,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 811,
                     "ByteSize": 3,
                     "OperandType": 2
                 },
@@ -18561,6 +19970,24 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 872,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 873,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 874,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 877,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
                     "Address": 879,
                     "ByteSize": 1
                 },
@@ -18579,28 +20006,100 @@
                     "OperandType": 2
                 }
             ],
+            "CommentBlocks": [
+                {
+                    "Address": 814,
+                    "Comment": "This is a LUT for getting an angle from the directional control bits\nNot all combos are used (e.g. up & down together is impossible)"
+                }
+            ],
+            "DataInfo": [
+                {
+                    "Address": 814,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 815,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 816,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 817,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 818,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 819,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 820,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 821,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 822,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 823,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 824,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 825,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 826,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 827,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 828,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 829,
+                    "DisplayType": 11
+                }
+            ],
             "LabelInfo": [
                 {
                     "Address": 721,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_1ED1"
+                    "Name": "ReadControls"
                 },
                 {
                     "Address": 733,
                     "LabelType": 2,
-                    "Name": "label_1EDD"
+                    "Name": "skip_input2"
                 },
                 {
                     "Address": 735,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_1EDF"
+                    "Name": "UpdatePlayerControls"
                 },
                 {
                     "Address": 769,
                     "LabelType": 2,
-                    "Name": "label_1F01"
+                    "Name": "directional_control_down"
                 },
                 {
                     "Address": 795,
@@ -18613,14 +20112,24 @@
                     "Name": "label_1F1D"
                 },
                 {
+                    "Address": 814,
+                    "LabelType": 0,
+                    "Name": "DirectionalControlAngleLUT"
+                },
+                {
                     "Address": 830,
                     "LabelType": 2,
-                    "Name": "label_1F3E"
+                    "Name": "set_player_angle"
                 },
                 {
                     "Address": 834,
                     "LabelType": 2,
                     "Name": "label_1F42"
+                },
+                {
+                    "Address": 872,
+                    "LabelType": 2,
+                    "Name": "label_1F68"
                 },
                 {
                     "Address": 879,
@@ -19419,7 +20928,9 @@
                 },
                 {
                     "Address": 1012,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "shift fire bit into carry",
+                    "Flags": 32
                 },
                 {
                     "Address": 1013,
@@ -19440,7 +20951,8 @@
                 },
                 {
                     "Address": 1019,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "shift carry flag into HL"
                 },
                 {
                     "Address": 1021,
@@ -19896,7 +21408,8 @@
             "CodeInfo": [
                 {
                     "Address": 0,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "has fire been pressed?"
                 },
                 {
                     "Address": 2,
@@ -19910,7 +21423,8 @@
                 },
                 {
                     "Address": 7,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "fire pressed"
                 },
                 {
                     "Address": 9,
@@ -19928,7 +21442,8 @@
                 },
                 {
                     "Address": 15,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "bullet count"
                 },
                 {
                     "Address": 16,
@@ -19945,7 +21460,8 @@
                 },
                 {
                     "Address": 21,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "bullet fire delay"
                 },
                 {
                     "Address": 22,
@@ -19963,7 +21479,8 @@
                 },
                 {
                     "Address": 30,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "6 iterations"
                 },
                 {
                     "Address": 32,
@@ -19976,16 +21493,19 @@
                 {
                     "Address": 36,
                     "ByteSize": 2,
+                    "Flags": 32,
                     "OperandType": 2
                 },
                 {
                     "Address": 38,
                     "ByteSize": 4,
+                    "Comment": "fetch offset (32 bytes)",
                     "OperandType": 1
                 },
                 {
                     "Address": 42,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "add offset (32 bytes)"
                 },
                 {
                     "Address": 44,
@@ -20148,7 +21668,8 @@
                 },
                 {
                     "Address": 148,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "fire delay"
                 },
                 {
                     "Address": 150,
@@ -20166,7 +21687,8 @@
                 },
                 {
                     "Address": 156,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "decrement & write back"
                 },
                 {
                     "Address": 157,
@@ -20714,6 +22236,14 @@
                     "DisplayType": 1
                 },
                 {
+                    "Address": 71,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 72,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 265,
                     "ByteSize": 2,
                     "DataType": 2,
@@ -20775,17 +22305,17 @@
                 {
                     "Address": 73,
                     "LabelType": 2,
-                    "Name": "label_2449"
+                    "Name": "despatch_bullet"
                 },
                 {
                     "Address": 150,
                     "LabelType": 2,
-                    "Name": "label_2496"
+                    "Name": "dont_fire"
                 },
                 {
                     "Address": 160,
                     "LabelType": 2,
-                    "Name": "label_24A0"
+                    "Name": "skip_dec_delay"
                 },
                 {
                     "Address": 166,
@@ -23437,6 +24967,107 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 440,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 443,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 444,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 447,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 448,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 449,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 451,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 454,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 455,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 458,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 460,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 471,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 474,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 479,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 482,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 485,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 488,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 489,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 492,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 495,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 496,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 499,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 500,
                     "ByteSize": 3
                 },
@@ -23826,6 +25457,11 @@
                     "Name": "operand_2D49"
                 },
                 {
+                    "Address": 333,
+                    "LabelType": 0,
+                    "Name": "operand_2D4D"
+                },
+                {
                     "Address": 360,
                     "Global": true,
                     "LabelType": 1,
@@ -23853,6 +25489,21 @@
                     "Global": true,
                     "LabelType": 1,
                     "Name": "function_2DB8"
+                },
+                {
+                    "Address": 454,
+                    "LabelType": 2,
+                    "Name": "label_2DC6"
+                },
+                {
+                    "Address": 471,
+                    "LabelType": 2,
+                    "Name": "label_2DD7"
+                },
+                {
+                    "Address": 479,
+                    "LabelType": 2,
+                    "Name": "label_2DDF"
                 },
                 {
                     "Address": 500,
@@ -27872,6 +29523,37 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 117,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 120,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 121,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 123,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 125,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 129,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 130,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
                     "Address": 196,
                     "ByteSize": 3
                 },
@@ -28104,6 +29786,20 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 313,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 316,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 317,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 320,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -28303,6 +29999,20 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 408,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 411,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 412,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 415,
                     "ByteSize": 4,
                     "OperandType": 1
@@ -28373,6 +30083,21 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 463,
+                    "ByteSize": 4,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 467,
+                    "ByteSize": 4,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 471,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 474,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -28415,6 +30140,31 @@
                 },
                 {
                     "Address": 495,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 496,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 497,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 500,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 503,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 506,
                     "ByteSize": 1
                 },
                 {
@@ -29207,9 +30957,19 @@
                     "Name": "label_3C32"
                 },
                 {
+                    "Address": 68,
+                    "LabelType": 2,
+                    "Name": "label_3C44"
+                },
+                {
                     "Address": 117,
                     "LabelType": 2,
                     "Name": "label_3C75"
+                },
+                {
+                    "Address": 129,
+                    "LabelType": 2,
+                    "Name": "label_3C81"
                 },
                 {
                     "Address": 196,
@@ -29249,6 +31009,11 @@
                     "Name": "label_3D40"
                 },
                 {
+                    "Address": 325,
+                    "LabelType": 2,
+                    "Name": "label_3D45"
+                },
+                {
                     "Address": 333,
                     "LabelType": 2,
                     "Name": "label_3D4D"
@@ -29267,6 +31032,16 @@
                     "Address": 415,
                     "LabelType": 2,
                     "Name": "label_3D9F"
+                },
+                {
+                    "Address": 423,
+                    "LabelType": 2,
+                    "Name": "label_3DA7"
+                },
+                {
+                    "Address": 463,
+                    "LabelType": 2,
+                    "Name": "label_3DCF"
                 },
                 {
                     "Address": 474,
@@ -33308,6 +35083,102 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 289,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 290,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 293,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 296,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 297,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 298,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 299,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 300,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 302,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 303,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 304,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 305,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 306,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 307,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 308,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 309,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 310,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 312,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 314,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 315,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 317,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 318,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 319,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
                     "Address": 321,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -33339,6 +35210,97 @@
                 },
                 {
                     "Address": 335,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 336,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 337,
+                    "ByteSize": 3,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 340,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 343,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 344,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 345,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 346,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 347,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 349,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 350,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 351,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 352,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 353,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 354,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 355,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 356,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 357,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 359,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 361,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 362,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 364,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 365,
                     "ByteSize": 1
                 },
                 {
@@ -35513,6 +37475,182 @@
                     "ByteSize": 1
                 },
                 {
+                    "Address": 228,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 229,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 231,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 234,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 237,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 238,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 239,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 240,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 241,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 242,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 244,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 246,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 247,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 248,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 250,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 251,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 253,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 254,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 256,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 259,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 260,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 261,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 264,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 265,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 267,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 268,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 269,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 272,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 273,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 274,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 277,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 280,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 283,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 285,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 286,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 287,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 288,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 289,
+                    "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 291,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 292,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 293,
+                    "ByteSize": 1
+                },
+                {
                     "Address": 299,
                     "ByteSize": 2
                 },
@@ -35549,6 +37687,18 @@
                     "Address": 309,
                     "ByteSize": 2,
                     "OperandType": 2
+                },
+                {
+                    "Address": 311,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 312,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 313,
+                    "ByteSize": 1
                 },
                 {
                     "Address": 314,
@@ -36055,6 +38205,11 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 509,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
                     "Address": 512,
                     "ByteSize": 2
                 },
@@ -36066,6 +38221,50 @@
                 {
                     "Address": 517,
                     "ByteSize": 2,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 519,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 521,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 522,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 524,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 527,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 528,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 529,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 531,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 532,
+                    "ByteSize": 1,
+                    "Flags": 8,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 533,
+                    "ByteSize": 3,
                     "OperandType": 2
                 },
                 {
@@ -37035,6 +39234,16 @@
                     "Name": "label_4CE4"
                 },
                 {
+                    "Address": 286,
+                    "LabelType": 2,
+                    "Name": "label_4D1E"
+                },
+                {
+                    "Address": 294,
+                    "LabelType": 2,
+                    "Name": "label_4D26"
+                },
+                {
                     "Address": 299,
                     "Global": true,
                     "LabelType": 1,
@@ -37211,6 +39420,11 @@
                     "Name": "label_4FBF"
                 },
                 {
+                    "Address": 1006,
+                    "LabelType": 2,
+                    "Name": "label_4FEE"
+                },
+                {
                     "Address": 1021,
                     "LabelType": 2,
                     "Name": "label_4FFD"
@@ -37312,6 +39526,19 @@
                 {
                     "Address": 42,
                     "ByteSize": 1
+                },
+                {
+                    "Address": 43,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 45,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 47,
+                    "ByteSize": 3,
+                    "OperandType": 2
                 },
                 {
                     "Address": 126,
@@ -37481,6 +39708,135 @@
                 {
                     "Address": 222,
                     "ByteSize": 1
+                },
+                {
+                    "Address": 223,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 225,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 228,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 231,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 232,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 235,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 238,
+                    "ByteSize": 4,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 242,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 245,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 246,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 247,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 250,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 251,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 252,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 255,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 258,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 260,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 262,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 263,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 266,
+                    "ByteSize": 3
+                },
+                {
+                    "Address": 269,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 271,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 273,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 274,
+                    "ByteSize": 2
+                },
+                {
+                    "Address": 276,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 279,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 282,
+                    "ByteSize": 1
+                },
+                {
+                    "Address": 283,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 286,
+                    "ByteSize": 3,
+                    "OperandType": 2
                 },
                 {
                     "Address": 289,
@@ -39328,11 +41684,6 @@
                     "Name": "label_50EE"
                 },
                 {
-                    "Address": 277,
-                    "LabelType": 2,
-                    "Name": "label_5115"
-                },
-                {
                     "Address": 289,
                     "Global": true,
                     "LabelType": 1,
@@ -40452,6 +42803,16 @@
                     "OperandType": 2
                 },
                 {
+                    "Address": 5,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 8,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
                     "Address": 11,
                     "ByteSize": 3,
                     "OperandType": 1
@@ -40478,6 +42839,16 @@
                 },
                 {
                     "Address": 55,
+                    "ByteSize": 3,
+                    "OperandType": 2
+                },
+                {
+                    "Address": 58,
+                    "ByteSize": 3,
+                    "OperandType": 1
+                },
+                {
+                    "Address": 61,
                     "ByteSize": 3,
                     "OperandType": 2
                 },
@@ -41485,6 +43856,11 @@
             ],
             "LabelInfo": [
                 {
+                    "Address": 5,
+                    "LabelType": 2,
+                    "Name": "label_5805"
+                },
+                {
                     "Address": 11,
                     "Global": true,
                     "LabelType": 1,
@@ -42367,6 +44743,12 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 8,
+                    "ByteSize": 2,
+                    "DataType": 2,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 18,
                     "DisplayType": 11
                 },
@@ -42396,6 +44778,10 @@
                 },
                 {
                     "Address": 391,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 398,
                     "DisplayType": 11
                 },
                 {
@@ -42792,6 +45178,14 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 641,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 642,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 644,
                     "Comment": "y",
                     "DisplayType": 11
@@ -42912,6 +45306,12 @@
                     "Name": "data_A8A0"
                 },
                 {
+                    "Address": 164,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A8A4"
+                },
+                {
                     "Address": 192,
                     "Global": true,
                     "LabelType": 0,
@@ -43009,9 +45409,10 @@
                 },
                 {
                     "Address": 391,
+                    "Comment": "flip for cocktail mode?",
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A987"
+                    "Name": "CocktailFlip"
                 },
                 {
                     "Address": 392,
@@ -43030,6 +45431,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_A98D"
+                },
+                {
+                    "Address": 398,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A98E"
                 },
                 {
                     "Address": 400,
@@ -43060,6 +45467,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_A999"
+                },
+                {
+                    "Address": 412,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A99C"
                 },
                 {
                     "Address": 413,
@@ -43401,13 +45814,13 @@
                     "Address": 641,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_AA81"
+                    "Name": "BulletsToFire"
                 },
                 {
                     "Address": 642,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_AA82"
+                    "Name": "BulletFireDelay"
                 },
                 {
                     "Address": 776,
@@ -43492,7 +45905,9 @@
                 },
                 {
                     "Address": 304,
-                    "DisplayType": 11
+                    "Comment": "0 - attract mode, 0xff - gameplay",
+                    "DisplayType": 11,
+                    "Flags": 128
                 },
                 {
                     "Address": 306,
@@ -43880,6 +46295,7 @@
                 {
                     "Address": 1000,
                     "ByteSize": 2,
+                    "Comment": "return address for below?",
                     "DataType": 2
                 },
                 {
@@ -44216,7 +46632,7 @@
                     "Address": 304,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_AD30"
+                    "Name": "AttractMode"
                 },
                 {
                     "Address": 305,
@@ -44259,6 +46675,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_AD37"
+                },
+                {
+                    "Address": 312,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AD38"
                 },
                 {
                     "Address": 498,
