@@ -34,6 +34,7 @@ public:
 	virtual bool InitMachine(const FArcadeZ80MachineDesc& desc) = 0;
 	virtual void SetupCodeAnalysisForMachine() = 0;
 	virtual void UpdateScreen() {}
+	virtual void UpdateInput() {}
 	virtual void DrawDebugOverlays(float x, float y) {}
 	void DrawDebugUI();
 	void Update();
@@ -59,6 +60,13 @@ public:
 	int			VCounter = 0;
 	int			HCounter = 0;
 	bool		NMIMask = false;
+
+	uint8_t		IN0 = 0xff;	// input port 0
+	uint8_t		IN1 = 0xff;	// input port 1
+	uint8_t		IN2 = 0xff;	// input port 2
+
+	uint8_t		DSW0 = 0;	// dip switch 0
+	uint8_t		DSW1 = 0;	// dip switch 1
 
 	static const int kTubePollInterval = 100;	
 	uint32_t		TubePollCounter = 0;

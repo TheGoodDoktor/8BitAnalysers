@@ -44,7 +44,18 @@ bool FTimePilotMachine::InitMachine(const FArcadeZ80MachineDesc& desc)
 	pSpriteRAM[0] = &RAM[0xB000 - 0x6000];
 	pSpriteRAM[1] = &RAM[0xB400 - 0x6000];
 
-
+	// Dip switch 1
+					// bits 0-1 : lives
+					// bit	2	: Cocktail / Upright
+					// bit  3	: Bonus life at 10k/50k or 20k/60k
+					// bits 4-6 : difficulty 0-7, 0 = most difficult
+					// bit	7	: Demo sounds on/off
+	// DIP switches
+	DSW1 = (3 << 0) |	// lives
+		(0 << 2) |	// upright
+		(0 << 3) |	// bonus life 10k/50k
+		(4 << 4) |	// medium difficulty
+		(1 << 7);	// demo sounds on 
 
 	pDebug = CreateTimePilotDebug(this);
 
@@ -360,10 +371,84 @@ void FTimePilotMachine::DrawSprites()
 		const int spriteByteSize = (4 * 16);
 		const uint8_t* pSprite = &SpriteROM[code * spriteByteSize];
 		if (bRot)
-			DrawSprite(pScreen, pSprite, (256 - sy), sx, pSpriteColours, bFlipx, bFlipy, true);
+			DrawSprite(pScreen, pSprite, (256 - sy - 16), sx, pSpriteColours, bFlipx, bFlipy, true);
 		else
 			DrawSprite(pScreen, pSprite, sx, sy, pSpriteColours, bFlipx, bFlipy, false);
 	}
+}
+
+static const char* kIN0Controls[] = {
+	"Coin 1",
+	"Coin 2",
+	"Start 1",
+	"Start 2",
+	"Up",
+	"Down",
+	"Left",
+	"Right"
+}; 
+
+static const char* kIN1Controls[] = {
+	"Button 1",
+	"Button 2",
+	"Unused 2",
+	"Unused 3",
+	"Unused 4",
+	"Unused 5",
+	"Unused 6",
+	"Unused 7"
+};
+
+static const char* kIn2Controls[] = {
+	"Unused 0",
+	"Unused 1",
+	"Unused 2",
+	"Unused 3",
+	"Unused 4",
+	"Unused 5",
+	"Unused 6",
+	"Unused 7"
+};
+
+static const char* kDSW0Controls[] = {
+	"DSW0-0",
+	"DSW0-1",
+	"DSW0-2",
+	"DSW0-3",
+	"DSW0-4",
+	"DSW0-5",
+	"DSW0-6",
+	"DSW0-7"
+};
+
+static const char* kDSW1Controls[] = {
+	"DSW1-0",
+	"DSW1-1",
+	"DSW1-2",
+	"DSW1-3",
+	"DSW1-4",
+	"DSW1-5",
+	"DSW1-6",
+	"DSW1-7"
+};
+
+
+void DrawBitfieldUI(const char* label, uint8_t& portValue, const char** controlNames)
+{
+	ImGui::Text("%s", label);
+	for (int i = 0; i < 8; i++)
+	{
+		bool bSet = (portValue & (1 << i)) == 0;	// active low
+		if (ImGui::Checkbox(controlNames[i], &bSet))
+		{
+			if (bSet)
+				portValue &= ~(1 << i);	// active low
+			else
+				portValue |= (1 << i);
+		}
+		ImGui::SameLine();
+	}
+	ImGui::NewLine();
 }
 
 
@@ -420,10 +505,59 @@ void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 	ImGui::SameLine();
 	ImGui::Checkbox("Sprite Debug", &bSpriteDebug);
 
+	// Inputs
+	DrawBitfieldUI("IN0 Controls", IN0, kIN0Controls);
+	DrawBitfieldUI("IN1 Controls", IN1, kIN1Controls);
+	DrawBitfieldUI("IN2 Controls", IN2, kIn2Controls);
 
+	// DIP Switches
+	DrawBitfieldUI("DSW0", DSW0, kDSW0Controls);
+	DrawBitfieldUI("DSW1", DSW1, kDSW1Controls);
 }
 
+const uint8_t kInputBit_Player1Start = 0x08;
+const uint8_t kInputBit_Player2Start = 0x10;
 
+const uint8_t kInputBit_Coin = 0x01;
+
+// Player Controls
+const uint8_t kInputBit_Down	= 0x01;
+const uint8_t kInputBit_Up		= 0x02;
+const uint8_t kInputBit_Left	= 0x04;
+const uint8_t kInputBit_Right	= 0x08;
+const uint8_t kInputBit_Fire	= 0x10;
+
+void SetInputBit(ImGuiKey key, ImGuiKey padKey, uint8_t& input, uint8_t bit)
+{
+	if (ImGui::IsKeyDown(key) || ImGui::IsKeyDown(padKey))
+		input &= ~bit;	// active low
+	else
+		input |= bit;
+}
+
+void FTimePilotMachine::UpdateInput()
+{
+	SetInputBit(ImGuiKey_1, ImGuiKey_GamepadStart, IN0, kInputBit_Player1Start);	// player 1 start
+	SetInputBit(ImGuiKey_2, ImGuiKey_GamepadL1, IN0, kInputBit_Player2Start);	// player 2 start
+	SetInputBit(ImGuiKey_3, ImGuiKey_GamepadR1, IN0, kInputBit_Coin);			// coin
+
+	if (bRotateScreen)
+	{
+		SetInputBit(ImGuiKey_W, ImGuiKey_GamepadDpadLeft, IN1, kInputBit_Down);
+		SetInputBit(ImGuiKey_S, ImGuiKey_GamepadDpadRight, IN1, kInputBit_Up);
+		SetInputBit(ImGuiKey_A, ImGuiKey_GamepadDpadUp, IN1, kInputBit_Left);
+		SetInputBit(ImGuiKey_D, ImGuiKey_GamepadDpadDown, IN1, kInputBit_Right);
+	}
+	else
+	{
+		SetInputBit(ImGuiKey_W, ImGuiKey_GamepadDpadUp, IN1, kInputBit_Up);
+		SetInputBit(ImGuiKey_S, ImGuiKey_GamepadDpadDown, IN1, kInputBit_Down);
+		SetInputBit(ImGuiKey_A, ImGuiKey_GamepadDpadLeft, IN1, kInputBit_Left);
+		SetInputBit(ImGuiKey_D, ImGuiKey_GamepadDpadRight, IN1, kInputBit_Right);
+	}
+
+	SetInputBit(ImGuiKey_M, ImGuiKey_GamepadFaceDown, IN1, kInputBit_Fire);
+}
 
 void FTimePilotMachine::UpdateScreen()
 {

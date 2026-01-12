@@ -8,6 +8,7 @@ public:
 	bool InitMachine(const FArcadeZ80MachineDesc& desc) override;
 	void SetupCodeAnalysisForMachine() override;
 	void SetupPalette();
+	void UpdateInput() override;
 	void UpdateScreen() override;
 
 	void DrawDebugOverlays(float x, float y) override;

@@ -68,6 +68,7 @@ void FArcadeZ80Machine::Reset()
 
 void FArcadeZ80Machine::Update()
 {
+	UpdateInput();
 	UpdateScreen();
 }
 
@@ -111,35 +112,24 @@ void FArcadeZ80Machine::TickCPU()
 			
 			else if (addr == 0xC300)	// IN0
 			{
-				value = 0xff;
+				value = IN0;
 			}
 			else if (addr == 0xC320)	// IN1
 			{
-				value = 0xff;
+				value = IN1;
 			}
 			else if (addr == 0xC340)	// IN2
 			{
-				value = 0xff;
+				value = IN2;
 			}
 			else if (addr == 0xC360)	// DSW0
 			{
 				// Dip switch 0 - freeplay
-				value = 0;
+				value = DSW0;
 			}
 			else if (addr == 0xC200)	// DSW1
 			{
-				// Dip switch 1
-					// bits 0-1 : lives
-					// bit	2	: Cocktail / Upright
-					// bit  3	: Bonus life at 10k/50k or 20k/60k
-					// bits 4-6 : difficulty 0-7, 0 = most difficult
-					// bit	7	: Demo sounds on/off
-
-				value = (3 << 0) |	// lives
-					(0 << 2) |	// upright
-					(0 << 3) |	// bonus life 10k/50k
-					(4 << 4) |	// medium difficulty
-					(1 << 7);	// demo sounds on 
+				value = DSW1;
 			}
 			else
 			{ 

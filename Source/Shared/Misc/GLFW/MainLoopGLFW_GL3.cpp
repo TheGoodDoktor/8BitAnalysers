@@ -237,7 +237,7 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
-        //ImGui_ImplGlfw_UpdateGamepads();
+        ImGui_ImplGlfw_UpdateGamepads();
         ImGui::NewFrame();
 
         pEmulator->Tick();
