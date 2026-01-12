@@ -1,12 +1,12 @@
 {
-    "AsmExportPath": "",
+    "AsmExportPath": "C:/Dev/SpectrumNext/projects/SpectrumNextPorts/TimePilot/src",
     "Machine": "",
     "Name": "TimePilot",
     "Options": {
         "ViewConfigs": [
             {
                 "Enabled": true,
-                "ViewAddress": 8367,
+                "ViewAddress": 8523,
                 "ViewAddressBank": 1
             },
             {
