@@ -19555,6 +19555,11 @@
                     "Name": "PhaseAFunction"
                 },
                 {
+                    "Address": 249,
+                    "LabelType": 0,
+                    "Name": "operand_18F9"
+                },
+                {
                     "Address": 265,
                     "LabelType": 2,
                     "Name": "label_1909"
@@ -22961,7 +22966,8 @@
                 },
                 {
                     "Address": 295,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "get first enemy data byte"
                 },
                 {
                     "Address": 298,
@@ -22969,7 +22975,8 @@
                 },
                 {
                     "Address": 299,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "return if 0 (inactive)"
                 },
                 {
                     "Address": 300,
@@ -22978,6 +22985,7 @@
                 {
                     "Address": 301,
                     "ByteSize": 2,
+                    "Comment": "jump if it was 0xff",
                     "OperandType": 2
                 },
                 {
@@ -22987,6 +22995,7 @@
                 {
                     "Address": 304,
                     "ByteSize": 3,
+                    "Comment": "jump if it was 0xfe",
                     "OperandType": 2
                 },
                 {
@@ -23058,6 +23067,7 @@
                 {
                     "Address": 338,
                     "ByteSize": 2,
+                    "Comment": "jump if it is 0xff",
                     "OperandType": 2
                 },
                 {
@@ -23067,11 +23077,13 @@
                 {
                     "Address": 341,
                     "ByteSize": 3,
+                    "Comment": "jump if it was 0xfe",
                     "OperandType": 2
                 },
                 {
                     "Address": 344,
                     "ByteSize": 3,
+                    "Comment": "otherwise jump",
                     "OperandType": 2
                 },
                 {
@@ -23790,7 +23802,8 @@
                 },
                 {
                     "Address": 948,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Flags": 32
                 },
                 {
                     "Address": 951,
@@ -24033,7 +24046,7 @@
                     "Address": 161,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_28A1"
+                    "Name": "UpdateEnemyMovement"
                 },
                 {
                     "Address": 183,
@@ -24069,13 +24082,13 @@
                     "Address": 238,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_28EE"
+                    "Name": "ProcessSpecialEnemy1"
                 },
                 {
                     "Address": 254,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_28FE"
+                    "Name": "ProcessSpecialEnemy2"
                 },
                 {
                     "Address": 270,
@@ -44771,6 +44784,391 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 80,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 81,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 82,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 83,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 84,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 85,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 86,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 87,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 88,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 89,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 90,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 91,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 92,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 93,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 94,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 95,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 96,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 97,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 98,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 99,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 100,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 101,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 102,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 103,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 104,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 105,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 106,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 107,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 108,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 109,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 110,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 111,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 112,
+                    "Comment": "state? also does some kind of countdown, on death perhaps?",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 113,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 114,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 115,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 116,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 117,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 118,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 119,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 120,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 121,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 122,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 123,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 124,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 125,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 126,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 127,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 128,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 129,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 130,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 131,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 132,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 133,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 134,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 135,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 136,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 137,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 138,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 139,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 140,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 141,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 142,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 143,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 144,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 145,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 146,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 147,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 148,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 149,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 150,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 151,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 152,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 153,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 154,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 155,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 156,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 157,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 158,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 159,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 160,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 161,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 162,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 163,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 164,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 165,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 166,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 167,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 168,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 169,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 170,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 171,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 172,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 173,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 174,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 175,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 244,
                     "DisplayType": 11
                 },
@@ -44811,7 +45209,8 @@
                 {
                     "Address": 428,
                     "Comment": "this appears to get incremented on function tail calls",
-                    "DisplayType": 11
+                    "DisplayType": 11,
+                    "Flags": 128
                 },
                 {
                     "Address": 430,
@@ -45322,37 +45721,37 @@
                     "Address": 80,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A850"
+                    "Name": "EnemySlot0_data"
                 },
                 {
                     "Address": 96,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A860"
+                    "Name": "EnemySlot2_data"
                 },
                 {
                     "Address": 112,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A870"
+                    "Name": "EnemySlot2_data_A870"
                 },
                 {
                     "Address": 128,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A880"
+                    "Name": "EnemySlot3_data"
                 },
                 {
                     "Address": 144,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A890"
+                    "Name": "EnemySlot4_data"
                 },
                 {
                     "Address": 160,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A8A0"
+                    "Name": "SpecialEnemy1_data"
                 },
                 {
                     "Address": 164,
@@ -45364,7 +45763,7 @@
                     "Address": 176,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_A8B0"
+                    "Name": "SpecialEnemy2_data"
                 },
                 {
                     "Address": 192,
@@ -45809,13 +46208,13 @@
                     "Address": 548,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_AA24"
+                    "Name": "SpecialEnemy1_sprite"
                 },
                 {
                     "Address": 550,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_AA26"
+                    "Name": "SpecialEnemy2_sprite"
                 },
                 {
                     "Address": 552,
@@ -46371,11 +46770,13 @@
                 {
                     "Address": 994,
                     "ByteSize": 2,
+                    "Comment": "enemy slot 4",
                     "DataType": 2
                 },
                 {
                     "Address": 996,
                     "ByteSize": 2,
+                    "Comment": "enemy AI/movement",
                     "DataType": 2
                 },
                 {
@@ -46386,6 +46787,7 @@
                 {
                     "Address": 1000,
                     "ByteSize": 2,
+                    "Comment": "return address for below?",
                     "DataType": 2
                 },
                 {
