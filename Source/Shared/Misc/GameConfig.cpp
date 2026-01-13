@@ -131,6 +131,11 @@ void FProjectConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 	{
 		jsonConfigFile["StubOutFunctions"].push_back(funcName);
 	}
+
+	for (int i = 0; i < kNumSaveStateSlots; i++)
+	{
+		jsonConfigFile["SaveStateSlots"].push_back(SaveStateFiles[i]);
+	}
 	
 	jsonConfigFile["AsmExportPath"] = AsmExportPath;
 }
@@ -231,6 +236,16 @@ void FProjectConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 		for (const auto& funcName : jsonConfigFile["StubOutFunctions"])
 		{
 			StubOutFunctions.push_back(funcName);
+		}
+	}
+
+	if (jsonConfigFile.contains("SaveStateSlots"))
+	{
+		int i = 0;
+		for (const auto& funcName : jsonConfigFile["SaveStateSlots"])
+		{
+			if (i < kNumSaveStateSlots)
+				SaveStateFiles[i++] = funcName;
 		}
 	}
 

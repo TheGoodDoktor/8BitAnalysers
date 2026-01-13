@@ -149,9 +149,8 @@ public:
 	uint16_t PrevPC = 0;
 
 protected:
-	bool LoadMachineState(const char* fname);
-	bool SaveMachineState(const char* fname);
-
+	bool LoadMachineState(const char* path, int index = -1);
+	bool SaveMachineState(const char* path, int index = -1);
 
 	void CheckPhysicalMemoryRangeIsMapped();
 	void CheckMemoryMap();

@@ -669,6 +669,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pCore->GetHuC6270_1()->SetCallback(::OnVRAMWritten, this);
 
 	pMedia = pCore->GetMedia();
+	//pMedia->PreloadCdRom(true);
+
 	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
 
 	p6280State = pCore->GetHuC6280()->GetState();
@@ -1109,7 +1111,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		ResetBanks();
 
 		// we only want to do this once when create the project
-		
+		// todo: put in a function	
 		uint32_t palette[32] = { 0 };
 		// Create a palette entry for all the HW palettes
 		for (int i = 0; i < 32; i++)
@@ -1120,9 +1122,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 			}
 			// this wont create a new palette if the colours are the same.
 			const int p = GetPaletteNo(palette, 16);
-			LOGINFO("created palette %d", p);
 		}
-		LOGINFO("done");
 	}
 
 	if (pMedia->IsCDROM())
@@ -1205,16 +1205,14 @@ void FPCEEmu::AddLabels()
 	}
 }
 
-static const uint32_t kMachineStateMagic = 0xFaceCafe;
-
-bool FPCEEmu::SaveMachineState(const char* fname)
+bool FPCEEmu::SaveMachineState(const char* path, int index /* = -1 */)
 {
-	return pCore->SaveState(fname);
+	return pCore->SaveState(path, index);
 }
 
-bool FPCEEmu::LoadMachineState(const char* fname)
+bool FPCEEmu::LoadMachineState(const char* path, int index /* = -1 */)
 {
-	return pCore->LoadState(fname);
+	return pCore->LoadState(path, index);
 }
 
 // save config & data
@@ -1228,7 +1226,6 @@ bool FPCEEmu::SaveProject()
 	const std::string analysisJsonFName = root + "/Analysis.json";
 	const std::string graphicsSetsJsonFName = root + "/GraphicsSets.json";
 	const std::string analysisStateFName = root + "/AnalysisState.bin";
-	const std::string saveStateFName = root + "/SaveState.bin";
 	EnsureDirectoryExists(root.c_str());
 
 	// set config values
@@ -1244,7 +1241,7 @@ bool FPCEEmu::SaveProject()
 	AddGameConfig(pCurrentProjectConfig);
 	SaveGameConfigToFile(*pCurrentProjectConfig, configFName.c_str());
 
-	SaveMachineState(root.c_str()/*saveStateFName.c_str()*/);
+	SaveMachineState(root.c_str());
 	ExportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str());
 	ExportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 	//pGraphicsViewer->SaveGraphicsSets(graphicsSetsJsonFName.c_str());
@@ -1269,6 +1266,7 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 	{
 	case EEmuFileType::PCE:
 	case EEmuFileType::CUE:
+	case EEmuFileType::ZIP:
 		return pCore->LoadMedia(fileName.c_str());
 	default:
 		return false;
@@ -1287,7 +1285,6 @@ bool FPCEEmu::NewProjectFromEmulatorFile(const FEmulatorFile& snapshot)
 	{
 		if (!LoadProject(pNewConfig, /* bLoadGameData */ false))
 			return false;
-		//pNewConfig->Spectrum128KGame = GetCurrentSpectrumModel() == ESpectrumModel::Spectrum128K;
 		pNewConfig->EmulatorFile = snapshot;
 
 		AddGameConfig(pNewConfig);
@@ -1304,6 +1301,31 @@ void FPCEEmu::FileMenuAdditions(void)
 
 void FPCEEmu::SystemMenuAdditions(void)
 {
+	char buf[32];
+	for (int i = 0; i < FProjectConfig::kNumSaveStateSlots; i++)
+	{
+		sprintf(buf, "Load Slot %d", i);
+		if (ImGui::MenuItem(buf))
+		{
+			const std::string path = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name;
+			LoadMachineState(path.c_str(), i);
+		}
+	}
+
+	for (int i = 0; i < FProjectConfig::kNumSaveStateSlots; i++)
+	{
+		sprintf(buf, "Save Slot %d", i);
+		if (ImGui::MenuItem(buf))
+		{
+			const std::string path = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name;
+			SaveMachineState(path.c_str(), i);
+
+			sprintf(buf, ".state%d", i);
+			std::string slotFname = pCurrentProjectConfig->Name + buf;
+			SetSaveStateSlot(i, slotFname.c_str());
+		}
+	}
+
 }
 
 void FPCEEmu::OptionsMenuAdditions(void)

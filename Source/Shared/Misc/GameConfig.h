@@ -19,6 +19,8 @@ struct FCodeAnalysisViewConfig
 
 struct FProjectConfig
 {
+	static const int kNumSaveStateSlots = 5;
+
 	FProjectConfig()
 	{
 		ViewConfigs[0].bEnabled = true;
@@ -35,6 +37,7 @@ struct FProjectConfig
 
 	std::vector<std::string>	LuaSourceFiles;
 	std::vector<std::string>	StubOutFunctions;
+	std::string	SaveStateFiles[kNumSaveStateSlots];
 
 	std::string		AsmExportPath;
 

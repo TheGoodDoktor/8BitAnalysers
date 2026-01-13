@@ -981,3 +981,12 @@ std::string FEmuBase::GetGameWorkspaceRoot() const
 {
 	return GetGlobalConfig()->WorkspaceRoot + GetProjectConfig()->Name + "/";
 }
+
+bool FEmuBase::SetSaveStateSlot(int slotIndex, const char* pName)
+{
+	if (slotIndex < 0 || slotIndex >= FProjectConfig::kNumSaveStateSlots)
+		return false;
+
+	pCurrentProjectConfig->SaveStateFiles[slotIndex] = pName;
+	return true;
+}

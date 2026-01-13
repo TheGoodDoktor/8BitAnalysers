@@ -95,6 +95,8 @@ public:
 	bool	AddStubbedLabel(const char* pLabelName);
 	bool	RemoveStubbedLabel(const char* pLabelName);
 
+	bool	SetSaveStateSlot(int slotIndex, const char* pName);
+
 protected:
 	void			FileMenu();
 	void			SystemMenu();

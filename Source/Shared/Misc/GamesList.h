@@ -17,6 +17,7 @@ enum class EEmuFileType
 	CRT,
 	PCE,
 	CUE,
+	ZIP,
 
 	Unknown
 };
