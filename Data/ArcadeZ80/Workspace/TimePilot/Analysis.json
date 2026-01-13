@@ -2047,12 +2047,12 @@
             "Params": [
                 {
                     "DisplayType": "Unknown",
-                    "Name": "SpriteXAddr",
+                    "Name": "SpritePtr",
                     "Source": 11
                 },
                 {
                     "DisplayType": "Unknown",
-                    "Name": "NewParam",
+                    "Name": "EnemyData",
                     "Source": 10
                 }
             ],
@@ -15542,6 +15542,7 @@
                 {
                     "Address": 409,
                     "ByteSize": 3,
+                    "Comment": "enemy wave/spawn management?",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -15554,18 +15555,21 @@
                 {
                     "Address": 415,
                     "ByteSize": 3,
+                    "Comment": "player bullet firing?",
                     "Flags": 40,
-                    "OperandType": 2
+                    "OperandType": 1
                 },
                 {
                     "Address": 418,
                     "ByteSize": 3,
+                    "Comment": "enemy spawning logic",
                     "Flags": 8,
                     "OperandType": 2
                 },
                 {
                     "Address": 421,
                     "ByteSize": 3,
+                    "Comment": "timing/sync",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -15584,6 +15588,7 @@
                 {
                     "Address": 430,
                     "ByteSize": 3,
+                    "Comment": "enemy AI/movement",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -21493,7 +21498,6 @@
                 {
                     "Address": 36,
                     "ByteSize": 2,
-                    "Flags": 32,
                     "OperandType": 2
                 },
                 {
@@ -22728,6 +22732,7 @@
                 {
                     "Address": 161,
                     "ByteSize": 3,
+                    "Comment": "enemy slot 0",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -22752,18 +22757,21 @@
                 {
                     "Address": 173,
                     "ByteSize": 3,
+                    "Comment": "enemy slot 4",
                     "Flags": 8,
                     "OperandType": 2
                 },
                 {
                     "Address": 176,
                     "ByteSize": 3,
+                    "Comment": "boss/special enemy",
                     "Flags": 8,
                     "OperandType": 2
                 },
                 {
                     "Address": 179,
                     "ByteSize": 3,
+                    "Comment": "boss/special enemy 2",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -22905,6 +22913,7 @@
                 {
                     "Address": 270,
                     "ByteSize": 3,
+                    "Comment": "get current era",
                     "OperandType": 1
                 },
                 {
@@ -23950,30 +23959,35 @@
                 {
                     "Address": 276,
                     "ByteSize": 2,
+                    "Comment": "1910 - Biplanes",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 278,
                     "ByteSize": 2,
+                    "Comment": "1940 - WWII planes",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 280,
                     "ByteSize": 2,
+                    "Comment": "1970 - Helicopters",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 282,
                     "ByteSize": 2,
+                    "Comment": "1982 - Jets",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 284,
                     "ByteSize": 2,
+                    "Comment": "2001 - UFOs",
                     "DataType": 2,
                     "DisplayType": 2
                 },
@@ -24025,31 +24039,31 @@
                     "Address": 183,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_28B7"
+                    "Name": "ProcessEnemySlot0"
                 },
                 {
                     "Address": 194,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_28C2"
+                    "Name": "ProcessEnemySlot1"
                 },
                 {
                     "Address": 205,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_28CD"
+                    "Name": "ProcessEnemySlot2"
                 },
                 {
                     "Address": 216,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_28D8"
+                    "Name": "ProcessEnemySlot3"
                 },
                 {
                     "Address": 227,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_28E3"
+                    "Name": "ProcessEnemySlot4"
                 },
                 {
                     "Address": 238,
@@ -24067,7 +24081,7 @@
                     "Address": 270,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "label_290E"
+                    "Name": "ProcessEnemy"
                 },
                 {
                     "Address": 286,
@@ -24079,7 +24093,7 @@
                     "Address": 295,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_2927"
+                    "Name": "UpdateBiplane"
                 },
                 {
                     "Address": 310,
@@ -24090,7 +24104,7 @@
                     "Address": 332,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_294C"
+                    "Name": "UpdateWWIIPlane"
                 },
                 {
                     "Address": 347,
@@ -24107,7 +24121,7 @@
                     "Address": 388,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_2984"
+                    "Name": "UpdateHelicopter"
                 },
                 {
                     "Address": 403,
@@ -24118,7 +24132,7 @@
                     "Address": 432,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_29B0"
+                    "Name": "UpdateJet"
                 },
                 {
                     "Address": 447,
@@ -24130,7 +24144,7 @@
                     "Address": 469,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_29D5"
+                    "Name": "UpdateUFO"
                 },
                 {
                     "Address": 484,
@@ -44730,7 +44744,7 @@
                 },
                 {
                     "Address": 560,
-                    "Comment": "This data is sent to the first 3 sprites in the interrupt handler"
+                    "Comment": "This data is sent to the first 3 sprites in the interrupt handler\nMost likely used for the foreground cloud (goes in front of player)"
                 },
                 {
                     "Address": 576,
@@ -44913,6 +44927,7 @@
                 },
                 {
                     "Address": 539,
+                    "Comment": "no",
                     "DisplayType": 11
                 },
                 {
@@ -44922,6 +44937,7 @@
                 },
                 {
                     "Address": 541,
+                    "Comment": "no",
                     "DisplayType": 11
                 },
                 {
@@ -44931,6 +44947,7 @@
                 },
                 {
                     "Address": 543,
+                    "Comment": "no",
                     "DisplayType": 11
                 },
                 {
@@ -44940,6 +44957,7 @@
                 },
                 {
                     "Address": 545,
+                    "Comment": "no",
                     "DisplayType": 11
                 },
                 {
@@ -44949,6 +44967,7 @@
                 },
                 {
                     "Address": 547,
+                    "Comment": "no",
                     "DisplayType": 11
                 },
                 {
@@ -45300,6 +45319,36 @@
                     "Name": "data_A844"
                 },
                 {
+                    "Address": 80,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A850"
+                },
+                {
+                    "Address": 96,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A860"
+                },
+                {
+                    "Address": 112,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A870"
+                },
+                {
+                    "Address": 128,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A880"
+                },
+                {
+                    "Address": 144,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A890"
+                },
+                {
                     "Address": 160,
                     "Global": true,
                     "LabelType": 0,
@@ -45310,6 +45359,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_A8A4"
+                },
+                {
+                    "Address": 176,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_A8B0"
                 },
                 {
                     "Address": 192,
@@ -45721,10 +45776,46 @@
                     "Name": "PlayerSprite_No"
                 },
                 {
+                    "Address": 538,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "EnemySlot0_sprite"
+                },
+                {
+                    "Address": 540,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "EnemySlot1_sprite"
+                },
+                {
+                    "Address": 542,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "EnemySlot2_sprite"
+                },
+                {
+                    "Address": 544,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "EnemySlot3_sprite"
+                },
+                {
+                    "Address": 546,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "EnemySlot4_sprite"
+                },
+                {
                     "Address": 548,
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_AA24"
+                },
+                {
+                    "Address": 550,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_AA26"
                 },
                 {
                     "Address": 552,
@@ -46295,7 +46386,6 @@
                 {
                     "Address": 1000,
                     "ByteSize": 2,
-                    "Comment": "return address for below?",
                     "DataType": 2
                 },
                 {
@@ -46462,7 +46552,7 @@
                     "Address": 260,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_AD04"
+                    "Name": "CurrentEra"
                 },
                 {
                     "Address": 261,
