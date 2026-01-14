@@ -30,6 +30,8 @@
 
 #include "optick/optick.h"
 
+bool InitPCEAsmExporters();
+
 // I couldn't get this working.
 #define IMPORT_BIOS_ANALYSIS_JSON 0
 #define EXPORT_BIOS_ANALYSIS_JSON 0
@@ -843,6 +845,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	// Setup Memory Analyser
 	//pMemoryAnalyser->AddROMArea(kROMStart, kROMEnd);
 	//pMemoryAnalyser->SetScreenMemoryArea(kScreenPixMemStart, kScreenAttrMemEnd);
+
+	InitPCEAsmExporters();
 
 #ifndef NDEBUG
 	std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
