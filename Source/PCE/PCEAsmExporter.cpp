@@ -1,5 +1,4 @@
 #include "CodeAnalyser/AssemblerExport.h"
-//#include "PCEEmu.h"
 
 class FPCEAsmExporterBase : public FASMExporter
 {
@@ -34,10 +33,10 @@ class FPCEAsmExporterBase : public FASMExporter
 		}
 };
 
-class FKickAssemblerExporter : public FPCEAsmExporterBase
+class FPCEASAssemblerExporter : public FPCEAsmExporterBase
 {
 public:
-	FKickAssemblerExporter()
+	FPCEASAssemblerExporter()
 	{
 		Config.DataBytePrefix = "db";
 		Config.DataWordPrefix = "dw";
@@ -53,53 +52,8 @@ public:
 	}
 };
 
-#if 0
-class FSpectrumNextExporter : public FSJasmPlusExporter
-{
-public:
-	FSpectrumNextExporter() : FSJasmPlusExporter()
-	{
-
-	}
-
-	void AddHeader(void) override
-	{
-		Output("\tDEVICE ZXSPECTRUMNEXT\n");	
-	}
-};
-
-class FSpasmExporter : public FSpeccyAsmExporterBase
-{
-public:
-	FSpasmExporter()
-	{
-		Config.DataBytePrefix = ".db";
-		Config.DataWordPrefix = ".dw";
-		Config.DataTextPrefix = ".text";
-		Config.ORGText = ".org";
-		Config.EQUText = ".equ";
-		Config.LocalLabelPrefix = "@";
-	}
-};
-
-class FEZ80AsmExporter : public FSpeccyAsmExporterBase
-{
-public:
-	FEZ80AsmExporter()
-	{
-		Config.DataBytePrefix = ".db";
-		Config.DataWordPrefix = ".dw";
-		Config.DataTextPrefix = ".db";
-		Config.ORGText = ".org";
-		Config.EQUText = ".equ";
-		Config.LocalLabelPrefix = "@";
-
-	}
-};
-#endif
-
 bool InitPCEAsmExporters()
 {
-	AddAssemblerExporter("KickAssembler", new FKickAssemblerExporter);
+	AddAssemblerExporter("PCEAS", new FPCEASAssemblerExporter);
 	return true;
 }
