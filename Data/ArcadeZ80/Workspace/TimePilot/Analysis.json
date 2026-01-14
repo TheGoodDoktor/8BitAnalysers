@@ -20579,7 +20579,6 @@
                 {
                     "Address": 270,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -45727,13 +45726,13 @@
                     "Address": 96,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "EnemySlot2_data"
+                    "Name": "EnemySlot1_data"
                 },
                 {
                     "Address": 112,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "EnemySlot2_data_A870"
+                    "Name": "EnemySlot2_data"
                 },
                 {
                     "Address": 128,
@@ -46770,13 +46769,11 @@
                 {
                     "Address": 994,
                     "ByteSize": 2,
-                    "Comment": "enemy slot 4",
                     "DataType": 2
                 },
                 {
                     "Address": 996,
                     "ByteSize": 2,
-                    "Comment": "enemy AI/movement",
                     "DataType": 2
                 },
                 {
@@ -46787,7 +46784,6 @@
                 {
                     "Address": 1000,
                     "ByteSize": 2,
-                    "Comment": "return address for below?",
                     "DataType": 2
                 },
                 {
