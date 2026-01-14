@@ -456,63 +456,20 @@ void DrawBitfieldUI(const char* label, uint8_t& portValue, const char** controlN
 
 void FTimePilotMachine::DrawDebugOverlays(float x, float y)
 {
-	const ImVec2 pos(x, y);
-	const float scale = ImGui_GetScaling();
-	ImDrawList* pDrawList = ImGui::GetWindowDrawList();
-	const float sprSize = 16.0f * scale;
-
-	if (bSpriteDebug)
-	{
-		for (int offs = 0x3e; offs >= 0x10; offs -= 2)
-		{
-			int const sx = pSpriteRAM[0][offs];
-			int const sy = 241 - pSpriteRAM[1][offs + 1];
-
-			int const code = pSpriteRAM[0][offs + 1];
-			int const color = pSpriteRAM[1][offs] & 0x3f;
-			int const flipx = ~pSpriteRAM[1][offs] & 0x40;
-			int const flipy = pSpriteRAM[1][offs] & 0x80;
-
-			int sprNo = (offs - 0x10) / 2;
-			char sprNoText[8];
-			snprintf(sprNoText,8,"%d",sprNo);
-
-			if (bRotateScreen)
-			{
-				ImVec2 scrPos(pos.x + (256 - sy) * scale, pos.y + sx * scale);
-
-				pDrawList->AddRect(
-					scrPos,
-					ImVec2(pos.x + ((256 - sy) + 16) * scale, pos.y + (sx + 16) * scale),
-					IM_COL32(255, 0, 0, 255));
-				pDrawList->AddText(scrPos, 0xffffffff, sprNoText);
-			}
-			else
-			{
-				ImVec2 scrPos(pos.x + sx * scale, pos.y + sy * scale);
-
-				pDrawList->AddRect(
-					scrPos,
-					ImVec2(pos.x + (sx + 16) * scale, pos.y + (sy + 16) * scale),
-					IM_COL32(255, 0, 0, 255));
-
-				pDrawList->AddText(scrPos,0xffffffff,sprNoText);
-			}
-		}
-	}
-
 	ImGui::Checkbox("Rotate Screen", &bRotateScreen);
-	ImGui::SameLine();
-	ImGui::Checkbox("Sprite Debug", &bSpriteDebug);
+	pDebug->DrawDebugOverlays(x, y);
 
-	// Inputs
-	DrawBitfieldUI("IN0 Controls", IN0, kIN0Controls);
-	DrawBitfieldUI("IN1 Controls", IN1, kIN1Controls);
-	DrawBitfieldUI("IN2 Controls", IN2, kIn2Controls);
+	if (ImGui::CollapsingHeader("Controls/DIPs"))
+	{
+		// Inputs
+		DrawBitfieldUI("IN0 Controls", IN0, kIN0Controls);
+		DrawBitfieldUI("IN1 Controls", IN1, kIN1Controls);
+		DrawBitfieldUI("IN2 Controls", IN2, kIn2Controls);
 
-	// DIP Switches
-	DrawBitfieldUI("DSW0", DSW0, kDSW0Controls);
-	DrawBitfieldUI("DSW1", DSW1, kDSW1Controls);
+		// DIP Switches
+		DrawBitfieldUI("DSW0", DSW0, kDSW0Controls);
+		DrawBitfieldUI("DSW1", DSW1, kDSW1Controls);
+	}
 }
 
 const uint8_t kInputBit_Player1Start = 0x08;

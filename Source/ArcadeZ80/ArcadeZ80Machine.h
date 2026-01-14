@@ -25,6 +25,8 @@ class FMachineDebug
 {
 public:
 	virtual void DrawDebugUI() = 0;
+	virtual void DrawDebugOverlays(float x, float y) = 0;
+
 };
 
 class FArcadeZ80Machine

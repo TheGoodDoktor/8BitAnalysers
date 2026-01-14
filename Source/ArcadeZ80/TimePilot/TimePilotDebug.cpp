@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "ImGuiSupport/ImGuiScaling.h"
 
 // Addresses
 
@@ -19,12 +20,17 @@ static const uint16_t kWriteIndexAddr		= 0xA9B2;
 static const uint16_t kProgramPhase			= 0xA9AC;
 static const uint16_t kPhaseExecution		= 0x0F1F;
 
+static const uint16_t kEnemyData			= 0xA850;
+
 
 class FTimePilotDebug : public FMachineDebug
 {
 public:
 	FTimePilotDebug(FArcadeZ80Machine* pTPMachine);
 	void DrawDebugUI() override;
+	void DrawDebugOverlays(float x, float y) override;
+	void DrawSpriteDebug(ImVec2 pos);
+
 private:
 	void	SpriteViewer();
 	void	StringViewer();
@@ -48,6 +54,8 @@ private:
 		bool	bFlipy = false;
 		bool	bRot = false;
 	} SpriteDebugState;
+
+	bool	bSpriteDebug = false;
 };
 
 FMachineDebug* CreateTimePilotDebug(FArcadeZ80Machine *pMachine)
@@ -93,6 +101,63 @@ void FTimePilotDebug::DrawDebugUI()
 		ImGui::EndTabBar();
 	}
 	
+}
+
+void FTimePilotDebug::DrawDebugOverlays(float x, float y)
+{
+	const ImVec2 pos(x, y);
+	
+	ImGui::Checkbox("Sprite Debug", &bSpriteDebug);
+
+	if (bSpriteDebug)
+	{
+		DrawSpriteDebug(pos);
+	}
+}
+
+void FTimePilotDebug::DrawSpriteDebug(ImVec2 pos)
+{
+	const float scale = ImGui_GetScaling();
+	ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+	const float sprSize = 16.0f * scale;
+	auto pSpriteRAM = pMachine->pSpriteRAM;
+
+	for (int offs = 0x3e; offs >= 0x10; offs -= 2)
+	{
+		int const sx = pSpriteRAM[0][offs];
+		int const sy = 241 - pSpriteRAM[1][offs + 1];
+
+		int const code = pSpriteRAM[0][offs + 1];
+		int const color = pSpriteRAM[1][offs] & 0x3f;
+		int const flipx = ~pSpriteRAM[1][offs] & 0x40;
+		int const flipy = pSpriteRAM[1][offs] & 0x80;
+
+		int sprNo = (offs - 0x10) / 2;
+		char sprNoText[8];
+		snprintf(sprNoText, 8, "%d", sprNo);
+
+		if (pMachine->bRotateScreen)
+		{
+			ImVec2 scrPos(pos.x + (256 - sy - 16) * scale, pos.y + sx * scale);
+
+			pDrawList->AddRect(
+				scrPos,
+				ImVec2(scrPos.x + sprSize, scrPos.y + sprSize),
+				IM_COL32(255, 0, 0, 255));
+			pDrawList->AddText(scrPos, 0xffffffff, sprNoText);
+		}
+		else
+		{
+			ImVec2 scrPos(pos.x + sx * scale, pos.y + sy * scale);
+
+			pDrawList->AddRect(
+				scrPos,
+				ImVec2(pos.x + (sx + 16) * scale, pos.y + (sy + 16) * scale),
+				IM_COL32(255, 0, 0, 255));
+
+			pDrawList->AddText(scrPos, 0xffffffff, sprNoText);
+		}
+	}
 }
 
 void FTimePilotDebug::SpriteViewer()
