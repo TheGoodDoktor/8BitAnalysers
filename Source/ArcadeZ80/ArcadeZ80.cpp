@@ -1,5 +1,7 @@
 ﻿#include "ArcadeZ80.h"
 
+#define NOMINMAX
+
 #include "ArcadeZ80Config.h"
 #include <Util/FileUtil.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
@@ -14,6 +16,8 @@
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "CodeAnalyser/UI/GlobalsViewer.h"
 #include "TimePilot/TimePilotMachine.h"
+#include "ArcadeZ80MCP.h"
+
 
 // TODO: Load Arcade Z80 binaries
 
@@ -36,6 +40,7 @@ void DebugCB(void* user_data, uint64_t pins)
 
 FArcadeZ80::FArcadeZ80()
 {
+	
 }
 
 bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
@@ -138,6 +143,8 @@ bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 	// Because all Arcade games are ROM based, enable ROM-based globals by default
 	pGlobalsViewer->ShowROMLabels(true);
 
+	InitMCPServer();
+
 	return true;
 }
 
@@ -219,6 +226,8 @@ void FArcadeZ80::Tick()
 
 	// Draw UI
 	DrawDockingView();
+
+	UpdateMCPServer();
 }
 
 

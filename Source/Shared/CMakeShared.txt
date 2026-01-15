@@ -14,6 +14,7 @@ file ( GLOB shared_base_src  DEPENDS
 	../Shared/ImGuiSupport/*.cpp ../Shared/ImGuiSupport/*.h
 	../Shared/Importers/*.cpp ../Shared/Importers/*.h
 	../Shared/LuaScripting/*.cpp ../Shared/LuaScripting/*.h
+	../Shared/MCPServer/*.cpp ../Shared/MCPServer/*.h
 	../Shared/Misc/*.cpp ../Shared/Misc/*.h
 	../Shared/Util/*.cpp ../Shared/Util/*.h
 	../Shared/CMakeShared.txt
