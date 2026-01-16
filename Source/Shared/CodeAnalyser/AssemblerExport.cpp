@@ -50,6 +50,7 @@ bool FASMExporter::Init(const char* pFilename, FEmuBase* pEmu)
 {
 	pEmulator = pEmu;
 	FilePtr = fopen(pFilename, "wt");
+	ExportOutputString = nullptr;
 
 	if (FilePtr == nullptr)
 		return false;
@@ -65,6 +66,24 @@ bool FASMExporter::Init(const char* pFilename, FEmuBase* pEmu)
 	return true;
 }
 
+bool FASMExporter::Init(std::string* pOutStr, FEmuBase* pEmu)
+{
+	pEmulator = pEmu;
+	FilePtr = nullptr;
+	ExportOutputString = pOutStr;
+	HeaderText.clear();
+	BodyText.clear();
+	DasmState.CodeAnalysisState = &pEmu->GetCodeAnalysis();
+	DasmState.HexDisplayMode = HexMode;
+
+	OldNumberMode = GetNumberDisplayMode();
+	SetNumberDisplayMode(HexMode);
+	bInitialised = true;
+
+	
+	return true;
+}
+
 bool FASMExporter::Finish()
 {
 	if (FilePtr != nullptr)
@@ -72,6 +91,10 @@ bool FASMExporter::Finish()
 		fwrite(HeaderText.c_str(), HeaderText.size(), 1, FilePtr);
 		fwrite(BodyText.c_str(), BodyText.size(),1,FilePtr);
 		fclose(FilePtr);
+	}
+	else if (ExportOutputString != nullptr)
+	{
+		*ExportOutputString = HeaderText + BodyText;
 	}
 
 	SetNumberDisplayMode(OldNumberMode);
@@ -423,6 +446,25 @@ bool ExportAssembler(FEmuBase* pEmu, const char* pTextFileName, uint16_t startAd
 	pExporter->AddHeader();
 		
 	const bool bSuccess = pExporter->ExportAddressRange(startAddr,endAddr);
+
+	pExporter->Finish();
+	return bSuccess;
+}
+
+bool ExportAssembler(FEmuBase* pEmu, std::string* pOutStr, uint16_t startAddr, uint16_t endAddr)
+{
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	FASMExporter* pExporter = GetAssemblerExporter(state.pGlobalConfig->ExportAssembler.c_str());
+	if (pExporter == nullptr)
+		return false;
+
+	if (pExporter->Init(pOutStr, pEmu) == false)
+		return false;
+
+	pExporter->SetOutputToHeader();
+	pExporter->AddHeader();
+
+	const bool bSuccess = pExporter->ExportAddressRange(startAddr, endAddr);
 
 	pExporter->Finish();
 	return bSuccess;

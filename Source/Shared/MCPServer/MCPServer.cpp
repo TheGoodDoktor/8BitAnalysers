@@ -1,17 +1,19 @@
 #include "MCPServer.h"
 #include "MCPTools.h"
+#include "MCPResources.h"
 
 #include <sstream>
 #include <fstream>
 
 static const std::string kServerName = "arcadez80-mcp-server";
 static const std::string kServerVersion = "1.0";
-static const std::string kServerHttpPrefix = "ArcadeZ80://";
+static const std::string kServerHttpPrefix = "arcadez80://";
 
 
-FMCPServer::FMCPServer(FMCPTransport* pTransport, FMCPToolsRegistry* toolsRegistry, FMCPCommandQueue& commandQueue, FMCPResponseQueue& responseQueue)
+FMCPServer::FMCPServer(FMCPTransport* pTransport, FMCPToolsRegistry* toolsRegistry, FMCPResourceRegistry* resourcesRegistry, FMCPCommandQueue& commandQueue, FMCPResponseQueue& responseQueue)
 	: pTransport(pTransport)
 	, pToolsRegistry(toolsRegistry)
+	, pResourcesRegistry(resourcesRegistry)
 	, CommandQueue(commandQueue)
 	, ResponseQueue(responseQueue)
 {
@@ -30,7 +32,6 @@ void FMCPServer::Start()
 	if (bRunning.load())
 		return;
 
-	LoadResources();
 	bRunning.store(true);
 	Thread = std::thread(&FMCPServer::Run, this);
 }
@@ -327,13 +328,26 @@ void FMCPServer::SendError(int64_t id, int code, const std::string& message, con
 	pTransport->SendData(responseStr);
 }
 
-// Resources
+// Resources - moved to MCPResourceRegistry
+#if 0
 void FMCPServer::LoadResources()
 {
 	// TODO: this might need some wrangling to find the correct path in different environments
-	std::string resourcesPath = "/mcp/resources";
+	//std::string resourcesPath = "/mcp/resources";
 
-	LoadResourcesFromCategory("hardware", resourcesPath + "/hardware/toc.json");
+	//LoadResourcesFromCategory("hardware", resourcesPath + "/hardware/toc.json");
+
+	// Add Disassembly as a resource
+	FResourceInfo resource;
+	resource.Uri = "disassembly";
+	resource.Title = "Disassembly";
+	resource.Description = "Z80 Disassembly of the program currently loaded";
+	resource.MimeType = "text/plain";
+	resource.Category = "code";
+	resource.FilePath = resourcesPath + "/disassembly.md";
+	Resources.push_back(resource);
+
+	ResourceMap[resource.Uri] = resource;
 }
 
 void FMCPServer::LoadResourcesFromCategory(const std::string& category, const std::string& tocPath)
@@ -387,6 +401,7 @@ void FMCPServer::LoadResourcesFromCategory(const std::string& category, const st
 		ResourceMap[resource.Uri] = resource;
 	}
 }
+#endif
 
 std::string FMCPServer::ReadFileContents(const std::string& filePath)
 {
@@ -412,6 +427,9 @@ void FMCPServer::HandleResourcesList(const nlohmann::json& request)
 	}
 	const int64_t id = request["id"].get<int64_t>();
 	nlohmann::json resourcesJson = nlohmann::json::array();
+
+	pResourcesRegistry->GenerateResourcesList(resourcesJson);
+	/*
 	for (const FResourceInfo& resource : Resources)
 	{
 		nlohmann::json resourceJson;
@@ -422,7 +440,7 @@ void FMCPServer::HandleResourcesList(const nlohmann::json& request)
 
 		resourcesJson.push_back(resourceJson);
 	}
-
+	*/
 	nlohmann::json response;
 	response["jsonrpc"] = "2.0";
 	response["id"] = id;
@@ -449,37 +467,34 @@ void FMCPServer::HandleResourcesRead(const nlohmann::json& request)
 	}
 
 	std::string uri = request["params"]["uri"].get<std::string>();
+	nlohmann::json response;
 
-	// Find resource
-	auto resourceIt = ResourceMap.find(uri);
-
-	if (resourceIt == ResourceMap.end())
+	FMCPResource* pResource = pResourcesRegistry->GetResource(uri);
+	if (!pResource)
 	{
 		SendError(id, -32602, "Resource not found: " + uri);
 		return;
 	}
 
-	const FResourceInfo& resource = resourceIt->second;
-	std::string content = ReadFileContents(resource.FilePath);
+	std::string content = pResourcesRegistry->ReadResource(pResource);
 
-	if(content.empty())
+	if (content.empty())
 	{
-		SendError(id, -32602, "Failed to read resource content: " + resource.FilePath);
+		SendError(id, -32602, "Failed to read resource content: " + uri);
 		return;
 	}
 
-	nlohmann::json response;
 	response["jsonrpc"] = "2.0";
 	response["id"] = id;
 	response["result"] = {
 		{"contents", nlohmann::json::array({
 			{
-				{"uri", resource.Uri},
-				{"mimeType", resource.MimeType},
+				{"uri", uri},
+				{"mimeType", pResource->MimeType},
 				{"data", content}
 			}
 		})}
-	};
+	};	
 
 	SendResponse(response);
 }

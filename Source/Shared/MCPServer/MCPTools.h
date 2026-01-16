@@ -2,18 +2,14 @@
 
 #include "json.hpp"
 
-class FProgramInterface
-{
-public:
-
-};
+class FEmuBase;
 
 class FMCPTool
 {
 public:
 	virtual ~FMCPTool() = default;
 
-	virtual nlohmann::json Execute(FProgramInterface* pProgramIF, const nlohmann::json& arguments) = 0;
+	virtual nlohmann::json Execute(FEmuBase* pEmulator, const nlohmann::json& arguments) = 0;
 
 	std::string		Description;
 	nlohmann::json	InputSchema;
@@ -23,8 +19,8 @@ class FMCPToolsRegistry
 {
 public:
 
-	FMCPToolsRegistry(FProgramInterface* pProgramIF)
-		: pProgramInterface(pProgramIF)
+	FMCPToolsRegistry(FEmuBase* pEmu)
+		: pEmulator(pEmu)
 	{
 	}
 
@@ -69,13 +65,13 @@ public:
 		FMCPTool* Tool = GetTool(name);
 		if (Tool)
 		{
-			outResult = Tool->Execute(pProgramInterface, arguments);
+			outResult = Tool->Execute(pEmulator, arguments);
 			return true;
 		}
 		return false;
 	}
 
 private:
-	FProgramInterface* pProgramInterface = nullptr;
+	FEmuBase* pEmulator = nullptr;
 	std::unordered_map<std::string, FMCPTool*>	Tools;
 };

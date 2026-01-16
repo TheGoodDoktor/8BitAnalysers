@@ -1,5 +1,7 @@
 #pragma once
 
-void InitMCPServer(void);
+class FArcadeZ80;
+
+void InitMCPServer(FArcadeZ80* pEmu);
 void ShutdownMCPServer();
 void UpdateMCPServer();

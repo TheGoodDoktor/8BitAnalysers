@@ -26,6 +26,7 @@ class FASMExporter
 {
 public:
 	bool		Init(const char* pFilename, class FEmuBase* pEmu);
+	bool		Init(std::string* pOutStr, class FEmuBase* pEmu);
 	bool		Finish();
 	void		SetOutputToHeader(){OutputString = &HeaderText;}
 	void		SetOutputToBody(){OutputString = &BodyText;}
@@ -58,6 +59,8 @@ protected:
 	std::string		BodyText;
 	std::string*	OutputString = nullptr;
 
+	std::string*	ExportOutputString = nullptr;
+
 	FAssemblerConfig	Config;
 };
 
@@ -68,4 +71,5 @@ bool AddAssemblerExporter(const char* pName, FASMExporter* pExporter);
 
 // TODO: we should have a bank based approach?
 bool ExportAssembler(class FEmuBase* pEmu, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr);
+bool ExportAssembler(FEmuBase* pEmu, std::string* pOutStr, uint16_t startAddr, uint16_t endAddr);
 bool ExportFunctionStubs(FEmuBase* pEmu, const char* pTextFileName);

@@ -14,7 +14,7 @@ enum class EMCPTransportType
 class FMCPManager
 {
 public:
-	FMCPManager(FMCPToolsRegistry* pTools) : pToolsRegistry(pTools) {}
+	FMCPManager(FMCPToolsRegistry* pTools, FMCPResourceRegistry* pResources) : pToolsRegistry(pTools), pResourcesRegistry(pResources) {}
 
 	~FMCPManager()
 	{
@@ -45,7 +45,7 @@ public:
 			pTransport = new FHttpTransport(Port);
 		}
 
-		pMCPServer = new FMCPServer(pTransport, pToolsRegistry, CommandQueue, ResponseQueue);
+		pMCPServer = new FMCPServer(pTransport, pToolsRegistry, pResourcesRegistry, CommandQueue, ResponseQueue);
 		pMCPServer->Start();
 	}
 
@@ -100,6 +100,7 @@ public:
 private:
 	FMCPServer*			pMCPServer = nullptr;
 	FMCPToolsRegistry*	pToolsRegistry = nullptr;
+	FMCPResourceRegistry* pResourcesRegistry = nullptr;
 	FMCPCommandQueue		CommandQueue;
 	FMCPResponseQueue		ResponseQueue;
 	EMCPTransportType	TransportType = EMCPTransportType::Stdio;

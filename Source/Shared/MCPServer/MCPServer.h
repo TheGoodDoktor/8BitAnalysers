@@ -12,6 +12,7 @@
 #include "MCPTransport.h"
 
 class FMCPToolsRegistry;
+class FMCPResourceRegistry;
 
 struct FResourceInfo
 {
@@ -133,6 +134,7 @@ class FMCPServer
 public:
 	FMCPServer(FMCPTransport* pTransport,
 		FMCPToolsRegistry* toolsRegistry,
+		FMCPResourceRegistry* resourcesRegistry,
 		FMCPCommandQueue& commandQueue,
 		FMCPResponseQueue& responseQueue);
 
@@ -163,8 +165,8 @@ private:
 	void HandleResourcesList(const nlohmann::json& request);
 	void HandleResourcesRead(const nlohmann::json& request);
 
-	void LoadResources();
-	void LoadResourcesFromCategory(const std::string& category, const std::string& tocPath);
+	//void LoadResources();
+	//void LoadResourcesFromCategory(const std::string& category, const std::string& tocPath);
 	std::string ReadFileContents(const std::string& filePath);
 
 	void SendResponse(const nlohmann::json& response);
@@ -172,13 +174,13 @@ private:
 private:
 	FMCPTransport*		pTransport = nullptr;
 	FMCPToolsRegistry*	pToolsRegistry = nullptr;
+	FMCPResourceRegistry* pResourcesRegistry = nullptr;
 	FMCPCommandQueue&		CommandQueue;
 	FMCPResponseQueue&		ResponseQueue;
 
 	std::thread			Thread;
 	std::atomic<bool>	bRunning;
 	bool				bInitialized;
-
 
 	std::vector<FResourceInfo>				Resources;
 	std::map<std::string, FResourceInfo>	ResourceMap;
