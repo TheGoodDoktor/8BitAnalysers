@@ -23708,7 +23708,8 @@
                 },
                 {
                     "Address": 899,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "get enbemy sprite X pos"
                 },
                 {
                     "Address": 902,
@@ -23720,11 +23721,13 @@
                 },
                 {
                     "Address": 906,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "return if less than 3"
                 },
                 {
                     "Address": 907,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "get enemy sprite Y pos"
                 },
                 {
                     "Address": 910,
@@ -24223,7 +24226,7 @@
                     "Address": 899,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_2B83"
+                    "Name": "OffScreenCheck_TL"
                 },
                 {
                     "Address": 915,
@@ -40458,7 +40461,8 @@
                 },
                 {
                     "Address": 529,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Flags": 32
                 },
                 {
                     "Address": 532,
@@ -45595,6 +45599,10 @@
                     "DisplayType": 11
                 },
                 {
+                    "Address": 640,
+                    "DisplayType": 11
+                },
+                {
                     "Address": 641,
                     "DisplayType": 11
                 },
@@ -46784,6 +46792,7 @@
                 {
                     "Address": 1000,
                     "ByteSize": 2,
+                    "Comment": "return address for below?",
                     "DataType": 2
                 },
                 {
