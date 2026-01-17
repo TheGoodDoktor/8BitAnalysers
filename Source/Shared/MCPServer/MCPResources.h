@@ -67,3 +67,6 @@ private:
 	FEmuBase* pEmulator = nullptr;
 	std::map<std::string, FMCPResource*> Resources;
 };
+
+
+void RegisterBaseResources(FMCPResourceRegistry& registry);

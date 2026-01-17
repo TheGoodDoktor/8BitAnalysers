@@ -75,3 +75,5 @@ private:
 	FEmuBase* pEmulator = nullptr;
 	std::unordered_map<std::string, FMCPTool*>	Tools;
 };
+
+void RegisterBaseTools(FMCPToolsRegistry& Registry);
