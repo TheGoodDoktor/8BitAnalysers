@@ -2153,6 +2153,13 @@
                 693108737,
                 695009281
             ],
+            "Params": [
+                {
+                    "DisplayType": "Address",
+                    "Name": "EnemyPtr",
+                    "Source": 10
+                }
+            ],
             "StartAddress": 692846593,
             "bManualEdit": false,
             "bROMFunction": true,
@@ -2295,7 +2302,7 @@
             "bStubbedOut": false
         },
         {
-            "Description": "",
+            "Description": "Updates an enemy sprite based on angle",
             "EndAddress": 721158145,
             "StartAddress": 721158145,
             "bManualEdit": false,
@@ -23061,7 +23068,8 @@
                 },
                 {
                     "Address": 337,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Flags": 32
                 },
                 {
                     "Address": 338,
@@ -23562,11 +23570,13 @@
                 {
                     "Address": 764,
                     "ByteSize": 3,
-                    "OperandType": 1
+                    "Flags": 32,
+                    "OperandType": 4
                 },
                 {
                     "Address": 767,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "current angle"
                 },
                 {
                     "Address": 770,
@@ -23613,7 +23623,8 @@
                 },
                 {
                     "Address": 786,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "add 32"
                 },
                 {
                     "Address": 787,
@@ -23925,11 +23936,13 @@
                 },
                 {
                     "Address": 1007,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "target angle?"
                 },
                 {
                     "Address": 1010,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "sub current angle"
                 },
                 {
                     "Address": 1013,
@@ -24151,9 +24164,8 @@
                 },
                 {
                     "Address": 447,
-                    "Global": true,
-                    "LabelType": 0,
-                    "Name": "data_29BF"
+                    "LabelType": 2,
+                    "Name": "label_29BF"
                 },
                 {
                     "Address": 469,
@@ -24204,7 +24216,13 @@
                     "Address": 764,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_2AFC"
+                    "Name": "UpdateEnemySpriteNo"
+                },
+                {
+                    "Address": 792,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_2B18"
                 },
                 {
                     "Address": 850,
@@ -24226,7 +24244,7 @@
                     "Address": 899,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "OffScreenCheck_TL"
+                    "Name": "OffScreenCheck"
                 },
                 {
                     "Address": 915,
@@ -24259,13 +24277,13 @@
                     "Address": 990,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_2BDE"
+                    "Name": "RemoveEnemy"
                 },
                 {
                     "Address": 1007,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_2BEF"
+                    "Name": "UpdateEnemyAngle"
                 },
                 {
                     "Address": 1023,
@@ -24300,11 +24318,13 @@
                 },
                 {
                     "Address": 10,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "add to angle"
                 },
                 {
                     "Address": 11,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "update angle"
                 },
                 {
                     "Address": 14,
@@ -24328,7 +24348,8 @@
                 },
                 {
                     "Address": 22,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "sub angle"
                 },
                 {
                     "Address": 23,
@@ -24336,7 +24357,8 @@
                 },
                 {
                     "Address": 25,
-                    "ByteSize": 3
+                    "ByteSize": 3,
+                    "Comment": "update"
                 },
                 {
                     "Address": 28,
@@ -25251,6 +25273,12 @@
                     "ByteSize": 1
                 }
             ],
+            "CommentBlocks": [
+                {
+                    "Address": 29,
+                    "Comment": "indexed by era\nDifferent enemy types have different angle deltas"
+                }
+            ],
             "DataInfo": [
                 {
                     "Address": 0,
@@ -25382,7 +25410,7 @@
                     "Address": 29,
                     "Global": true,
                     "LabelType": 0,
-                    "Name": "data_2C1D"
+                    "Name": "EnemyAngleDeltaLUT"
                 },
                 {
                     "Address": 34,
@@ -45169,6 +45197,20 @@
                 },
                 {
                     "Address": 175,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 176,
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 177,
+                    "Comment": "target angle?",
+                    "DisplayType": 11
+                },
+                {
+                    "Address": 178,
+                    "Comment": "current angle?",
                     "DisplayType": 11
                 },
                 {
