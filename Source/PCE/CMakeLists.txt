@@ -3,6 +3,44 @@ cmake_minimum_required (VERSION 3.10)
 
 project (PCEAnalyser)
 
+# Git commit hash + date
+find_package(Git QUIET)
+
+if(GIT_FOUND)
+    # Commit hash
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_HASH_RESULT
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+
+    # Commit date (ISO 8601)
+    execute_process(
+				COMMAND ${GIT_EXECUTABLE} show -s --format=%cd --date=format:%d/%m/%Y\ %H:%M HEAD
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_DATE_RESULT
+        OUTPUT_VARIABLE GIT_COMMIT_DATE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+
+    if(NOT GIT_HASH_RESULT EQUAL 0)
+        set(GIT_COMMIT_HASH "Unknown")
+    endif()
+
+    if(NOT GIT_DATE_RESULT EQUAL 0)
+        set(GIT_COMMIT_DATE "Unknown")
+    endif()
+else()
+    set(GIT_COMMIT_HASH "Unknown")
+    set(GIT_COMMIT_DATE "Unknown")
+endif()
+
+message(STATUS "Git commit: ${GIT_COMMIT_HASH} @ ${GIT_COMMIT_DATE}")
+
 # for Google test
 set(CMAKE_CXX_STANDARD 14)
 
@@ -84,6 +122,11 @@ add_executable(PCEAnalyser MACOSX_BUNDLE
     ${shared_src} ${program_src} ${platform_main} ${vendor_src})
 
 target_link_libraries(PCEAnalyser PRIVATE geargfx)
+
+target_compile_definitions(PCEAnalyser PRIVATE
+    GIT_COMMIT_HASH="${GIT_COMMIT_HASH}"
+    GIT_COMMIT_DATE="${GIT_COMMIT_DATE}"
+)
 
 # set up test
 if(${with_tests})

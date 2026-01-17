@@ -667,6 +667,12 @@ void FEmuBase::DrawMainMenu()
 			ImGui::EndMenu();
 		}
 
+		if (ImGui::BeginMenu("About"))
+		{
+			ImGui::Text("Commit: %s\nDate:  %s", GIT_COMMIT_HASH, GIT_COMMIT_DATE);
+			ImGui::EndMenu();
+		}
+
 		// draw emu timings
 		const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 		ImGui::SameLine(ImGui::GetWindowWidth() - 120);
