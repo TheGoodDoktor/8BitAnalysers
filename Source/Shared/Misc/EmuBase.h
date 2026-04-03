@@ -48,6 +48,9 @@ public:
 	virtual void	OnEnterEditMode(void) {}
 	virtual void	OnExitEditMode(void) {}
 
+	// this should probably go somewhere else
+	virtual int16_t GetCanonicalBankId(int16_t bankId) const { return bankId; }
+
 	bool			StartGameFromName(const char* pGameName, bool bLoadGame);
 
 	void			GraphicsViewerSetView(FAddressRef address);

@@ -1780,6 +1780,15 @@ void FCodeAnalysisState::UpdateFocussedViewState()
 	}
 }
 
+bool FCodeAnalysisState::IsBankIdCanonical(int16_t bankId)
+{
+	return pEmulator->GetCanonicalBankId(bankId) == bankId ? true : false;
+}
+
+int16_t FCodeAnalysisState::GetCanonicalBankId(int16_t bankId) const
+{
+	return pEmulator->GetCanonicalBankId(bankId);
+}
 
 void SetItemCode(FCodeAnalysisState &state, FAddressRef address)
 {

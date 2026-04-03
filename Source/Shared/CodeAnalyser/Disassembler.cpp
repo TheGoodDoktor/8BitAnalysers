@@ -140,6 +140,11 @@ void FExportDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 	}
 }
 
+// todo: fallback to the old behaviour if we are just exporting physical memory.
+// When exporting banks that may not be in physical memory we cannot use the same
+// code for exporting physical memory. When we encounter a 16 bit value that is
+// an operand address, it is ambiguous which bank this belongs to. There are potentially
+// multiple banks that share the same physical address range.
 void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback) 
 {
 	if (outputCallback)
@@ -148,6 +153,60 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 
 		if (bOperandIsAddress)
 		{
+			FAddressRef labelAddress;
+
+			const FLabelInfo* pLabel = nullptr;
+			const FLabelInfo* pScopeLabel = nullptr;
+
+			if (pCodeInfoItem->OperandAddress.IsValid())
+			{
+				pLabel = CodeAnalysisState->GetLabelForAddress(pCodeInfoItem->OperandAddress);
+
+				if (pLabel != nullptr)
+				{
+					std::string labelName = pLabel->GetName();
+					labelAddress = pCodeInfoItem->OperandAddress;
+
+					for (int i = 0; i < labelName.size(); i++)
+					{
+						outputCallback(labelName[i], this);
+					}
+				}
+			}
+			else
+			{
+				// what to do here?
+				const FCodeAnalysisBank* pBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
+				LOGWARNING("'%s': 0x%04x. Found invalid operand address 0x%x. %s", pBank->Name.c_str(), CurrentAddress.GetAddress(), pCodeInfoItem->OperandAddress.GetAddress(), pCodeInfoItem->Text.c_str());
+			}
+
+			if (pLabel)
+			{
+				// referencing an address not in the disassembly but not null
+				// sam. changed check for label address 0 to deal with a label at address 0.
+				//if (/*labelAddress != 0 && */(labelAddress < ExportMin || labelAddress > ExportMax))
+				if (labelAddress.GetAddress() < ExportMin || labelAddress.GetAddress() > ExportMax)
+				{
+					LabelsOutsideRange.insert(labelAddress);
+				}
+
+				if (!CodeAnalysisState->IsBankIdCanonical(labelAddress.GetBankId()))
+				{
+					const FCodeAnalysisBank* pBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
+					LOGWARNING("'%s': 0x%04x. Found non canonical bank label '%s' 0x%x. %s", pBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), labelAddress.GetAddress(), pCodeInfoItem->Text.c_str());
+				}
+			}
+			else
+			{
+				//const FCodeAnalysisBank* pBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
+				//LOGWARNING("'%s': 0x%04x. No label found for address 0x%x", pBank->Name.c_str(), CurrentAddress.GetAddress(), pCodeInfoItem->OperandAddress.GetAddress());
+
+				// Just output the address if we couldn't find a label.
+				const char* outStr = NumStr(val, GetNumberDisplayMode());
+				for (int i = 0; i < strlen(outStr); i++)
+					outputCallback(outStr[i], this);
+			}
+#if 0
 			int labelOffset = 0;
 			uint16_t labelAddress = 0;
 			std::vector<std::pair<FCodeAnalysisBank*, FLabelInfo*>> potentialLabels;
@@ -165,10 +224,6 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 						outputCallback(outStr[i], this);
 					break;
 				}*/
-
-				// sam todo: tidy this up. 
-				//pLabel = nullptr;
-				//pScopeLabel = nullptr;
 
 				// This address might not be in physical memory.
 				// Go through all banks with a matching address range and find candidates.
@@ -266,7 +321,6 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 			
 				labelOffset++;
 			}
-
 			// referencing an address not in the disassembly but not null
 			// sam. changed check for label address 0 to deal with a label at address 0.
 			//if (/*labelAddress != 0 && */(labelAddress < ExportMin || labelAddress > ExportMax))
@@ -278,6 +332,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 					LabelsOutsideRange.insert(addrRef);
 				}
 			}
+#endif
 		}
 		else
 		{

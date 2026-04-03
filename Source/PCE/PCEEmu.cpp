@@ -457,6 +457,28 @@ uint8_t FPCEEmu::GetBankIndexForBankId(uint16_t bankId)
 	return 0xff;
 }
 
+// todo: rewrite. use a lookup table instead of walking through banksets
+int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
+{
+	// Walk every BankSet looking for bankId as a non-primary (duplicate) entry.
+	// Duplicates sit at indices 1+ within the Banks vector; index 0 is always primary.
+	// If found as a duplicate, return the primary bank ID so callers always work with
+	// the one bank that appears in the ASM export and holds the user's annotations.
+	for (int i = 0; i < kNumBanks; i++)
+	{
+		const FBankSet& bankSet = BankSets[i];
+		// Skip sets that are too small to have any duplicates
+		if (bankSet.Banks.size() <= 1)
+			continue;
+		for (int d = 1; d < (int)bankSet.Banks.size(); d++)
+		{
+			if (bankSet.Banks[d].BankId == bankId)
+				return bankSet.GetBankId(0);
+		}
+	}
+	return bankId;	// already the primary, or not found in any BankSet
+}
+
 void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 {
 	// todo
