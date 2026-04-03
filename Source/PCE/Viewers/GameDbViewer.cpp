@@ -14,6 +14,7 @@ enum EGameDbColumns
 	Col_RomStatus,
 	//Col_EmulatorTestOk,
 	Col_TestMethodology,
+	Col_MaxDupeBanks,
 	Col_Count
 };
 
@@ -72,6 +73,9 @@ static void SortGameDbTable(std::vector<std::pair<std::string, FGameDbEntry*>>& 
 				result = a - b;
 				break;
 			}
+			case Col_MaxDupeBanks:
+				result = entryA.MaxDupeBanks - entryB.MaxDupeBanks;
+				break;
 
 			/*case Col_EmulatorTestOk:
 				result = (int)entryA.bEmulatorTestOk - (int)entryB.bEmulatorTestOk;
@@ -161,6 +165,7 @@ void FGameDbViewer::DrawGameDbTable()
 		ImGui::TableSetupColumn("ROM");
 		//ImGui::TableSetupColumn("Emu Test");
 		ImGui::TableSetupColumn("Test Method");
+		ImGui::TableSetupColumn("Max Dupe Banks");
 		ImGui::TableHeadersRow();
 
 		ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs();
@@ -236,6 +241,9 @@ void FGameDbViewer::DrawGameDbTable()
 				ImGui::TextUnformatted("-");
 			else
 				ImGui::Text("%d", entry.TestingMethodology);
+
+			ImGui::TableSetColumnIndex(Col_MaxDupeBanks);
+			ImGui::Text("%d", entry.MaxDupeBanks);
 		}
 
 		ImGui::EndTable();

@@ -46,7 +46,8 @@ bool SaveGameDbEntry(const std::string& gameName, const std::string& fname)
 
 	jsonFile["Name"] = gameName;
 	jsonFile["NumBanks"] = entry.Banks.size();
-	
+	jsonFile["MaxDupeBanks"] = entry.MaxDupeBanks;
+
 	jsonFile["Validated"] = entry.bValidated;
 	jsonFile["AssemblesOk"] = entry.bAssemblesOk;
 	jsonFile["RomFilePartialMatch"] = entry.bRomFilePartialMatch;
@@ -98,6 +99,7 @@ bool LoadGameDbEntry(const std::string& gameName, const std::string& fname)
 	entry.bRomFileIdentical = jsonFile["RomFileIdentical"];
 	entry.bEmulatorTestOk = jsonFile["EmulatorTestOk"];
 	entry.TestingMethodology = jsonFile["TestingMethodology"];
+	entry.MaxDupeBanks = jsonFile["MaxDupeBanks"];
 
 	entry.Banks.clear();
 	entry.Banks.resize(numBanks);
@@ -110,8 +112,7 @@ bool LoadGameDbEntry(const std::string& gameName, const std::string& fname)
 	{
 		json& mappingJson = mappingsJson[i];
 		entry.Banks[i].MprSlot = mappingJson["MprSlot"];
-		if (mappingJson.contains("Fixed"))
-			entry.Banks[i].bFixed = mappingJson["Fixed"];
+		entry.Banks[i].bFixed = mappingJson["Fixed"];
 
 		if (entry.Banks[i].MprSlot != -1 && !entry.Banks[i].bFixed)
 			entry.NumDynamicBanks++;
