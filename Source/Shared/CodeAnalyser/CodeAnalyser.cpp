@@ -1348,7 +1348,7 @@ FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char*
 	pLabel->InitialiseName(name);
 	pLabel->LabelType = type;
 	//pLabel->Address = address;
-	pLabel->ByteSize = 1;
+	pLabel->ByteSize = type == ELabelType::Function ? 0 : 1;
 	pLabel->Global = type == ELabelType::Function || type == ELabelType::Data;
 	pLabel->MemoryRange = memoryRange;
 	if(state.SetLabelForAddress(address, pLabel))
