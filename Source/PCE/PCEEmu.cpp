@@ -68,24 +68,13 @@ constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAn
 
 #ifndef NDEBUG
 #define BANK_SWITCH_DEBUG 0
-#define LITE_MODE 0
-#if !LITE_MODE
 #define BATCH_GAME_VIEWER 1
 #define DEBUG_STATS_VIEWER 1
 #define GAME_DB_VIEWER 1
-#endif
 #else
-#define LITE_MODE 0
-#if !LITE_MODE
 #define BATCH_GAME_VIEWER 0
 #define DEBUG_STATS_VIEWER 0
 #define GAME_DB_VIEWER 0
-#endif
-#endif
-
-#if LITE_MODE
-#define BATCH_GAME_VIEWER 1
-#define DEBUG_STATS_VIEWER 1
 #endif
 
 #if BANK_SWITCH_DEBUG
@@ -481,10 +470,6 @@ int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 
 void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 {
-	// todo
-#if LITE_MODE
-	pMemory->SetMemoryCallbacks(nullptr, nullptr, BankChangeCallback, this);
-#else
 	if (bEnabled)
 	{
 		pCore->SetInstructionExecutedCallback(::OnInstructionExecuted, this);
@@ -497,8 +482,6 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 		pMemory->SetMemoryCallbacks(nullptr, nullptr, nullptr, this);
 		pCore->GetHuC6270_1()->SetCallback(nullptr, this);
 	}
-#endif
-
 }
 
 int FPCEEmu::GetBankCount() const
@@ -562,49 +545,6 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 			assert(bUnMappedOk);
 		}
 	}
-
-	// attempt to fix references that stick around to the unused bank.
-	/*if (pOutBank)
-	{
-		if (outBankId >= UnusedBankIdStart && outBankId <= UnusedBankIdEnd)
-		{
-			LOGINFO("Unmapping unused bank %s", pOutBank->Name.c_str());
-			
-			// go through all the labels in the unused bank and find any references.
-			// update the code at those locations to point at this new bank.
-			// what if there are references to this unused bank in other parts of the UI
-			// or code analysis?
-			
-			for (const auto& item : pOutBank->ItemList)
-			{
-				if (item.Item->Type == EItemType::Label)
-				{
-					FLabelInfo * pLabelInfo = static_cast<FLabelInfo*>(item.Item);
-					for (const auto& ref : pLabelInfo->References.GetReferences())
-					{
-						if (FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(ref))
-						{
-							if (pCodeInfo->OperandAddress == item.AddressRef)
-							{
-								LOGINFO("fixing ref");
-								// not sure this is the right thing to do?
-								pCodeInfo->OperandAddress.SetBankId(newBankId);
-							}
-							else
-							{
-								LOGINFO("found invalid ref");
-							}
-							// i wanted to call WriteCodeInfoForAddress() to update the code item but i dont think i can.
-							// what if the code item is not in memory?
-						}
-					}
-					pLabelInfo->References.GetReferences().clear();
-
-					// todo set the pmp of the bank to -1?
-				}
-			}
-		}
-	}*/
 #if DEBUG_STATS_VIEWER
 	// Keep track of bank related debug stats
 	if (pCurrentProjectConfig)
@@ -1010,9 +950,6 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FBanksViewer(this));
 	AddViewer(new FPCERegistersViewer(this));
 
-#if LITE_MODE
-	// do nothing
-#else
 	FOverviewViewer* pOverviewViewer = new FOverviewViewer(this);
 	pOverviewViewer->SetRomOptionEnabled(false); // this enables showing the entire physical address range.
 	AddViewer(pOverviewViewer);
@@ -1025,7 +962,6 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(pVRAMViewer);
 	pGraphicsViewer = new FPCEGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
-#endif
 
 #if BATCH_GAME_VIEWER
 	pBatchGameLoadViewer = new FBatchGameLoadViewer(this);
@@ -1437,8 +1373,8 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 		// Make a label for the entry point.
 		// Without this an exported asm file may not assemble.
-		char labelTxt[32];
-		snprintf(labelTxt, 32, "function_%04X_entry_point", initialPC.GetAddress());
+		char labelTxt[40];
+		snprintf(labelTxt, 40, "function_ROM_00_%04X_entry_point", initialPC.GetAddress());
 		AddLabel(CodeAnalysis, initialPC, labelTxt, ELabelType::Function);
 	}
 
@@ -1765,7 +1701,7 @@ void FPCEEmu::OptionsMenuAdditions(void)
 
 #if ASSEMBLE_AFTER_ASM_EXPORT
 	FPCEConfig* pConfig = (FPCEConfig*)pGlobalConfig;
-	ImGui::MenuItem("Validate After ASM Export", 0, &pConfig->bUseAsmExportValidator);
+	ImGui::MenuItem("Validate ASM After Export", 0, &pConfig->bUseAsmExportValidator);
 #endif
 }
 
@@ -1815,103 +1751,7 @@ void FPCEEmu::Tick()
 	UpdatePalettes();
 
 	// Draw UI
-#if LITE_MODE
-	DrawDockingViewLite();
-#else
 	DrawDockingView();
-#endif
-}
-
-bool FPCEEmu::DrawDockingViewLite()
-{
-#if LITE_MODE
-	OPTICK_EVENT();
-
-	static bool opt_fullscreen_persistant = true;
-	bool opt_fullscreen = opt_fullscreen_persistant;
-	bool bOpen = false;
-	ImGuiDockNodeFlags dockFlags = 0;
-
-	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-	// because it would be confusing to have two docking targets within each others.
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-	if (opt_fullscreen)
-	{
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->Pos);
-		ImGui::SetNextWindowSize(viewport->Size);
-		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-	}
-
-	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
-	if (dockFlags & ImGuiDockNodeFlags_PassthruCentralNode)
-		window_flags |= ImGuiWindowFlags_NoBackground;
-
-	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive, 
-	// all active windows docked into it will lose their parent and become undocked.
-	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise 
-	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-	bool bQuit = false;
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	if (ImGui::Begin("PCE Docking View", &bOpen, window_flags))
-	{
-		ImGui::PopStyleVar();
-
-		if (opt_fullscreen)
-			ImGui::PopStyleVar(2);
-
-		// DockSpace
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		{
-			const ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
-			ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockFlags);
-		}
-
-		DrawMainMenu();
-		DrawUILite();
-		ImGui::End();
-	}
-	else
-	{
-		ImGui::PopStyleVar();
-		bQuit = true;
-	}
-
-	return bQuit;
-#else
-	return false;
-#endif
-}
-
-void FPCEEmu::DrawUILite()
-{
-#if LITE_MODE
-	// Draw registered viewers
-	for (auto Viewer : Viewers)
-	{
-		if (Viewer->bOpen)
-		{
-			if (Viewer->bCreateImGuiWindow)
-			{
-				if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen))
-					Viewer->DrawUI();
-				ImGui::End();
-			}
-			else
-			{
-				Viewer->DrawUI();
-			}
-		}
-	}
-
-	DrawEmulatorUI();
-#endif
 }
 
 void FPCEEmu::Reset()
