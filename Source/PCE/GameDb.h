@@ -27,12 +27,16 @@ struct FGameDbEntry
 	bool bRomFileIdentical = false;
 	bool bEmulatorTestOk = false;
 
+	// Max simultaneous duplicate banks ever seen
+	int MaxDupeBanks = 0;
+
 	// Version 1 Criteria:
 	// Run for 1800 frames (30 seconds) without joypad input
 
 	// If this is set to -1 it means the criteria wasn't valid or automation wasn't active.
 	int TestingMethodology = -1;
 
+	// Number of banks that do not have a fixed physical memory address.
 	// Note: this is not saved in the json file.
 	int NumDynamicBanks = 0;
 };

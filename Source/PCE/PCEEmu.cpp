@@ -563,6 +563,8 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 			{
 				int& perGameCount = pGameDebugStats->NumDupeBanks;
 				perGameCount = MAX(perGameCount, slotCount);
+				if (pGameDbEntry)
+					pGameDbEntry->MaxDupeBanks = perGameCount;
 			}
 		}
 		
