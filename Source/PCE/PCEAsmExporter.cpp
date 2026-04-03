@@ -149,6 +149,11 @@ public:
 	}
 	void AddBankSection(const FCodeAnalysisBank* pBank) override
 	{
+		// todo: if this bank has a dynamic address range then dont use the current mapped address
+		// as the org value because it could be incorrect. try to infer a deterministic address. 
+		// try either:
+		// - using the first address we ever saw this bank mapped to
+		// - the most common address for this bank
 		FASMExporter::AddBankSection(pBank);
 
 		FPCEEmu* pPCEEmu = static_cast<FPCEEmu*>(pEmulator);
