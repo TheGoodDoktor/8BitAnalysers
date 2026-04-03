@@ -40,6 +40,7 @@ public:
 
 	//std::string		GenerateAddressLabelString(FAddressRef addr);
 	void			ExportDataInfoASM(FAddressRef addr);
+	bool			TryExportByteRun(FCodeAnalysisState& state, const std::vector<FCodeAnalysisItem>& itemList, int& itemIdx, uint16_t endAddr, uint16_t& nextAddr);
 	const FAssemblerConfig&	GetConfig() const { return	Config;}
 
 	bool			IsLabelStubbed(const char* pLabelName) const;

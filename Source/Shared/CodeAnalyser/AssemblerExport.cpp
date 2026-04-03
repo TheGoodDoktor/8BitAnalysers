@@ -282,6 +282,51 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	}
 }
 
+bool FASMExporter::TryExportByteRun(FCodeAnalysisState& state, const std::vector<FCodeAnalysisItem>& itemList, int& itemIdx, uint16_t endAddr, uint16_t& nextAddr)
+{
+	const FCodeAnalysisItem& item = itemList[itemIdx];
+	if (item.Item->Type != EItemType::Data || !item.Item->Comment.empty())
+		return false;
+
+	const FDataInfo* pDataInfo = state.GetDataInfoForAddress(item.AddressRef);
+	if (!pDataInfo || pDataInfo->DataType != EDataType::Byte || pDataInfo->ByteSize != 1 || pDataInfo->DisplayType != EDataItemDisplayType::Unknown)
+		return false;
+
+	Output("\t%s ", Config.DataBytePrefix);
+	int batchCount = 0;
+	
+	static constexpr int kMaxBytesPerLine = 16;
+
+	while (itemIdx < (int)itemList.size() && batchCount < kMaxBytesPerLine)
+	{
+		const FCodeAnalysisItem& item = itemList[itemIdx];
+		const uint16_t addr = item.AddressRef.GetAddress();
+
+		if (addr > endAddr) break;
+		if (item.Item->Type != EItemType::Data) break;
+		if (!item.Item->Comment.empty()) break;
+
+		const FDataInfo* pData = state.GetDataInfoForAddress(item.AddressRef);
+		if (!pData || pData->DataType != EDataType::Byte || pData->ByteSize != 1)
+			break;
+
+		if (batchCount > 0) Output(",");
+		Output("%s", NumStr(state.ReadByte(item.AddressRef), GetNumberDisplayModeForDataItem(pData)));
+
+		nextAddr = addr + 1;
+		batchCount++;
+		itemIdx++;
+
+		// Stop before a label so the label appears on its own line
+		if (itemIdx < (int)itemList.size() && itemList[itemIdx].Item->Type == EItemType::Label)
+			break;
+	}
+
+	Output("\n");
+	itemIdx--; // counteract the for-loop increment in the caller
+	return true;
+}
+
 bool FASMExporter::ExportAddressRange(const std::vector<FCodeAnalysisItem>& itemList, uint16_t startAddr , uint16_t endAddr, bool bIsPhysicalMem)
 {
 	if (itemList.empty())
@@ -306,8 +351,9 @@ bool FASMExporter::ExportAddressRange(const std::vector<FCodeAnalysisItem>& item
 
 	uint16_t nextAddr = itemList[0].AddressRef.GetAddress();
 
-	for (const FCodeAnalysisItem &item : itemList)
+	for (int itemIdx = 0; itemIdx < (int)itemList.size(); itemIdx++)
 	{
+		const FCodeAnalysisItem& item = itemList[itemIdx];
 		const uint16_t addr = item.AddressRef.GetAddress();
 
 		if (addr < startAddr)
@@ -318,11 +364,15 @@ bool FASMExporter::ExportAddressRange(const std::vector<FCodeAnalysisItem>& item
 
 		if (addr != nextAddr)
 		{
-			LOGERROR("Asm Export - Overlap. Addr = 0x%04X, Expecting  0x%04X",addr,nextAddr);
+			const FCodeAnalysisBank* pBank = state.GetBank(item.AddressRef.GetBankId());
+			LOGERROR("'%s': 0x%04x. Asm Export - Overlap. Expecting 0x%04X", pBank->Name.c_str(), item.AddressRef.GetAddress(), nextAddr);
 		}
 
 		//Output("; 0x%04X\n", addr);
 		nextAddr = addr + item.Item->ByteSize;
+
+		if (TryExportByteRun(state, itemList, itemIdx, endAddr, nextAddr))
+			continue;
 
 		switch (item.Item->Type)
 		{
@@ -331,7 +381,7 @@ bool FASMExporter::ExportAddressRange(const std::vector<FCodeAnalysisItem>& item
 			const FLabelInfo* pLabelInfo = static_cast<FLabelInfo*>(item.Item);
 			if(pLabelInfo->Global == false)
 				Output("%s",Config.LocalLabelPrefix);
-			
+
 			if(IsLabelStubbed(pLabelInfo->GetName()))
 				Output("%s_Stubbed:", pLabelInfo->GetName());
 			else
