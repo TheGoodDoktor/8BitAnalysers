@@ -435,6 +435,9 @@ public:
 	const FCodeAnalysisBank* GetBanks() const { return Banks; }
 	FCodeAnalysisBank* GetBanks() { return Banks; }
 
+	bool IsBankIdCanonical(int16_t bankId);
+	int16_t GetCanonicalBankId(int16_t bankId) const;
+
 	FAddressRef	AddressRefFromPhysicalAddress(uint16_t physAddr) const { return FAddressRef(GetBankFromAddress(physAddr), physAddr); }
 	FAddressRef	AddressRefFromPhysicalReadAddress(uint16_t physAddr) const { return FAddressRef(GetReadBankFromAddress(physAddr), physAddr); }
 	FAddressRef	AddressRefFromPhysicalWriteAddress(uint16_t physAddr) const { return FAddressRef(GetWriteBankFromAddress(physAddr), physAddr); }
