@@ -56,14 +56,19 @@ int16_t FBankSet::GetBankId(int index /* = 0 */) const
 	return Banks[index].BankId;
 }
 
-bool FBankSet::ClaimSpecificBank(int16_t bankId)
+bool FBankSet::ClaimSpecificBank(int16_t bankId, int mprSlot)
 {
-	for (auto& entry : Banks)
+	for (int i = 0; i < Banks.size(); i++)
 	{
+		FBankSetEntry& entry = Banks[i];
 		if (entry.BankId == bankId)
 		{
+			assert(!entry.bMapped);
 			if (entry.bMapped)
 				return false; // Already mapped (corrupt state)
+
+			assert(SlotBankId[mprSlot] == -1);
+			SlotBankId[mprSlot] = i;
 
 			entry.bMapped = true;
 			return true;

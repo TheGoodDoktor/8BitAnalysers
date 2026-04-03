@@ -1243,7 +1243,8 @@ void FPCEEmu::MapMprBanks()
 void FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 {
 	const int bankIndex = pMemory->GetMpr(mprIndex);
-	Banks[bankIndex]->ClaimSpecificBank(bankId);
+	Banks[bankIndex]->ClaimSpecificBank(bankId, mprIndex);
+	MprBankSet[mprIndex] = bankIndex;
 
 	FCodeAnalysisBank* pInBank = CodeAnalysis.GetBank(bankId);
 

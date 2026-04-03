@@ -128,6 +128,8 @@ public:
 	static constexpr int kFramebufferSize = 2048 * 512 * 4;
 
 	FBankSet* Banks[kNumBanks] = { nullptr };
+	
+	// Lookup for which bank set is in each MPR slot
 	int MprBankSet[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
 	FEmuDebugStats* pDebugStats = nullptr;

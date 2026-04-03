@@ -26,7 +26,7 @@ struct FBankSet
 {
 	void SetPrimaryMappedPage(FCodeAnalysisState& state, int bankSetIndex, uint16_t pageAddr);
 	int16_t GetFreeBank(uint8_t mprSlot);
-	bool ClaimSpecificBank(int16_t bankId);
+	bool ClaimSpecificBank(int16_t bankId, int mprSlot);
 	void SetBankFreed(uint8_t mprSlot);
 	void Reset();
 	void AddBankId(int16_t bankId);
