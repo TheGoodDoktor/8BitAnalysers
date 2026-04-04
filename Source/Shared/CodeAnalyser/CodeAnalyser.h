@@ -529,8 +529,8 @@ public:
 			FCodeAnalysisBank* pWriteBank = GetBank(MappedWriteBanks[i]);
 			if (pWriteBank != nullptr)
 				pWriteBank->bIsDirty = true;
-			bCodeAnalysisDataDirty = true;
 		}
+		bCodeAnalysisDataDirty = true;
 	}
 
 	void	SetAllBanksDirty()

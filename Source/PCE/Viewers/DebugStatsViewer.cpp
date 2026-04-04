@@ -77,13 +77,20 @@ void FDebugStatsViewer::DrawUI()
 
 	int maxDupeBanks = 0;
 	std::string gameWithMaxDupes;
+	float lowestFPS = FLT_MAX;
+	std::string gameWithLowestFPS;
 	for (auto pair : pPCEEmu->pDebugStats->GameDebugStats)
 	{
-		const FGameDebugStats& debugStats = pair.second;
-		if (debugStats.NumDupeBanks > maxDupeBanks)
+		const FGameDebugStats& gameStats = pair.second;
+		if (gameStats.NumDupeBanks > maxDupeBanks)
 		{
-			maxDupeBanks = debugStats.NumDupeBanks;
+			maxDupeBanks = gameStats.NumDupeBanks;
 			gameWithMaxDupes = pair.first;
+		}
+		if (gameStats.AvgFrameRate < lowestFPS)
+		{
+			gameWithLowestFPS = pair.first;
+			lowestFPS = gameStats.AvgFrameRate;
 		}
 	}
 
@@ -97,7 +104,8 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("Used banks: %d", usedBanks);
 	ImGui::Text("Total pages: %d", state.GetNoPages());
 	ImGui::Text("Pages in use: %d", pagesInUse);
-	ImGui::Text("Game with most dupe banks: %s", gameWithMaxDupes.c_str());
+	ImGui::Text("Game with most dupe banks: %s (%d)", gameWithMaxDupes.c_str(), maxDupeBanks);
+	ImGui::Text("Game with lowest FPS: %s (%.1f)", gameWithLowestFPS.c_str(), lowestFPS);
 	ImGui::Text("Max dupe banks: %d", maxDupeBanks);
 	ImGui::Text("Num bank sets: %d", kNumBankSetIds);
 	ImGui::Text("Bank switches per frame: %d", pPCEEmu->pDebugStats->NumBankSwitchesThisFrame);
@@ -130,17 +138,19 @@ void FDebugStatsViewer::DrawUI()
 		{
 			const ImVec4 txtColour = gameStats.NumBanksMapped == gameStats.NumBanks ? ImVec4(0.f, 0.75f, 0.f, 1.0f) : ImVec4(1.f, 1.0f, 1.f, 1.0f);
 			ImGui::Text("%s", pair.first.c_str());
-			ImGui::Text("  Num Banks:        %d", gameStats.NumBanks);
-			ImGui::TextColored(txtColour, "  Num Banks Mapped: %d / %d", gameStats.NumBanksMapped, gameStats.NumBanks);
-			ImGui::Text("  Num Dupe Banks:   %d", gameStats.NumDupeBanks);
-			ImGui::Text("  Max Bank Switches:   %d", gameStats.MaxBankSwitches);
+			ImGui::Text("  Num Banks:         %d", gameStats.NumBanks);
+			ImGui::TextColored(txtColour, "  Num Banks Mapped:  %d/%d", gameStats.NumBanksMapped, gameStats.NumBanks);
+			//ImGui::Text("  Num Dupe Banks:    %d", gameStats.NumDupeBanks);
+			ImGui::Text("  Max Bank Switches: %d", gameStats.MaxBankSwitches);
+			ImGui::Text("  Avg FPS:           %.1f", gameStats.AvgFrameRate);
 
 			if (bDumpBanks)
 			{
 				LOGINFO("%s", pair.first.c_str());
-				LOGINFO("  Num Banks:        %d", gameStats.NumBanks);
+				LOGINFO("  Num Banks: %d", gameStats.NumBanks);
 				LOGINFO("  Num Banks Mapped: %d/%d (%.2f%%)", gameStats.NumBanksMapped, gameStats.NumBanks, ((float)gameStats.NumBanksMapped / (float)gameStats.NumBanks) * 100.f);
-				LOGINFO("  Num Dupe Banks:   %d", gameStats.NumDupeBanks);
+				//LOGINFO("  Num Dupe Banks: %d", gameStats.NumDupeBanks);
+				LOGINFO("  Avg FPS: %1.f", gameStats.AvgFrameRate);
 			}
 		}
 

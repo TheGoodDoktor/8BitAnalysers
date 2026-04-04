@@ -5,6 +5,8 @@
 #include <geargrafx_core.h>
 
 #include "SpriteViewer.h"
+#include "../DebugStats.h"
+
 #include <CodeAnalyser/UI/UIColours.h>
 
 #include <ImGuiSupport/ImGuiTexture.h>
@@ -58,7 +60,7 @@ void FPCEViewer::DrawUI()
 
 	DrawHighlightedSprite(pos, scale);
 
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Avg %.1f ms/frame (%.1f FPS) Avg FPS (session): %.1f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate, pPCEEmu->pDebugStats->GetAverageFrameRate());
 
 	ImGui::InputInt("Fast Fwd Speed", &pPCEEmu->EmuFramesToRun);
 
