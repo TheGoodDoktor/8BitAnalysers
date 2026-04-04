@@ -1693,13 +1693,16 @@ void FPCEEmu::SystemMenuAdditions(void)
 void FPCEEmu::OptionsMenuAdditions(void)
 {
 	// sam. hack to workaround a bug.
-	// bug is asm export won't work due to missing labels.
+	// asm export won't work due to missing labels.
+	// remove this when bug is fixed.
 	ImGui::MenuItem("Write Code Info When Code Executed", 0, &bWriteCodeInfoWhenCodeExecuted);
 
+#ifndef NDEBUG
 	if (ImGui::MenuItem("Callbacks Enabled", 0, &bCallbacksEnabled))
 	{
 		EnableGeargrafxCallbacks(bCallbacksEnabled);
 	}
+#endif
 
 #if ASSEMBLE_AFTER_ASM_EXPORT
 	FPCEConfig* pConfig = (FPCEConfig*)pGlobalConfig;
