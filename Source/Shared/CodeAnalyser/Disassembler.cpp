@@ -158,26 +158,69 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 			const FLabelInfo* pLabel = nullptr;
 			const FLabelInfo* pScopeLabel = nullptr;
 
+			const FCodeAnalysisBank* pCurBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
+
 			if (pCodeInfoItem->OperandAddress.IsValid())
 			{
 				pLabel = CodeAnalysisState->GetLabelForAddress(pCodeInfoItem->OperandAddress);
 
 				if (pLabel != nullptr)
 				{
-					std::string labelName = pLabel->GetName();
-					labelAddress = pCodeInfoItem->OperandAddress;
-
-					for (int i = 0; i < labelName.size(); i++)
+					const uint16_t operandAddr = pCodeInfoItem->OperandAddress.GetAddress();
+					const uint16_t currAddr = CurrentAddress.GetAddress();
+					
+					const FDataInfo* pDataInfo = CodeAnalysisState->GetDataInfoForAddress(pCodeInfoItem->OperandAddress);
+					
+					if (operandAddr != val)
 					{
-						outputCallback(labelName[i], this);
+						// If the label's address doesn't match the operand value, the target
+						// bank is mapped at a different address in this context. Using the label would
+						// assemble to the wrong address, so use the raw value output instead.
+						// Hopefully we can deal with this better in the future if we find a way to get
+						// a deterministic mapped address for each bank.
+						// An example of this happening is Bonk's Adventure ROM 00 e251
+						LOGWARNING("'%s': 0x%04x. Label '%s' address (0x%04x) doesn't match disassembly operand (0x%04x). Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress(), val);
+						pLabel = nullptr;
+					}
+					else if (pDataInfo != nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
+					{
+						
+						// If we encounter a data item inside the instruction bytes, this can cause code that fails
+						// to assemble. This is because, the assembly ends up outputting the label for the operand data byte
+						// _after_ the instruction. 
+						// This can happen for jump table code like this (example taken from Bonk 2):
+						//		7A4A  7C 4B 7A  JMP [data_ROM_02_7A4B,X]
+						// What we should probably do to fix this properly is to get a label
+						// to the start of the code item and make it relative to that.
+						// eg use the label_ROM_02_7A4A label:
+						// 
+						//		label_ROM_02_7A4A:
+						//		  7A4A  7C 4B 7A  JMP [data_ROM_02_7A4B,X]
+						//	
+						// This could produce nicer assembly code like this:
+						// 
+						//		JMP [label_ROM_02_7A4A+1,X]
+						
+						// todo: do we need to verify the data item is exactly in this instruction's bytes? 
+						LOGWARNING("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes. Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress());
+						pLabel = nullptr;
+					}
+					else
+					{
+						std::string labelName = pLabel->GetName();
+						labelAddress = pCodeInfoItem->OperandAddress;
+
+						for (int i = 0; i < labelName.size(); i++)
+						{
+							outputCallback(labelName[i], this);
+						}
 					}
 				}
 			}
 			else
 			{
 				// what to do here?
-				const FCodeAnalysisBank* pBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
-				LOGWARNING("'%s': 0x%04x. Found invalid operand address 0x%x. %s", pBank->Name.c_str(), CurrentAddress.GetAddress(), pCodeInfoItem->OperandAddress.GetAddress(), pCodeInfoItem->Text.c_str());
+				LOGWARNING("'%s': 0x%04x. Found invalid operand address 0x%x. %s", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pCodeInfoItem->OperandAddress.GetAddress(), pCodeInfoItem->Text.c_str());
 			}
 
 			if (pLabel)

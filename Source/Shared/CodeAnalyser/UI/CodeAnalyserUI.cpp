@@ -433,7 +433,7 @@ void DrawLabelInfo(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState,
 	// draw SMC fixups differently
 	if (pCodeInfo == nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 	{
-		ImGui::Text( "\t\tOperand Fixup(%s) :",NumStr(item.AddressRef.GetAddress()));
+		ImGui::Text( "\t\tOperand Data(%s) :",NumStr(item.AddressRef.GetAddress()));
 		ImGui::SameLine();
 		ImGui::Text("%s", pLabelInfo->GetName());
 	}
