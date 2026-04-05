@@ -115,6 +115,7 @@ protected:
 
 	void			DrawEditGlobalConfigModalPopup(void);
 	void			DrawNewProjectModalPopup(void);
+	void			DrawOpenProjectModalPopup(void);
 	void			DrawExportAsmModalPopup(void);
 	void			DrawReplaceGameModalPopup(void);
 	void			DrawErrorMessageModalPopup(void);
@@ -162,6 +163,7 @@ protected:
 	bool		bShowDebugLog = false;
 	bool		bNewProjectPopup = false;
 	std::string	NewProjectListName;
+	bool		bOpenProjectPopup = false;
 	bool		bReplaceGamePopup = false;
 	bool		bExportAsm = false;
 	bool		bExportBinary = false;

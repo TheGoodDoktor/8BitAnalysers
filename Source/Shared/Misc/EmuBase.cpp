@@ -267,30 +267,8 @@ void FEmuBase::FileMenu()
 		}
 	}
 
-	if (ImGui::BeginMenu("Open Project"))
-	{
-		if (GetGameConfigs().empty())
-		{
-			ImGui::Text("No projects found.\n\nFirst, create a project via the 'New Project ..' menu.");
-		}
-		else
-		{
-			for (const auto& pGameConfig : GetGameConfigs())
-			{
-				if (ImGui::MenuItem(pGameConfig->Name.c_str()))
-				{
-					SaveProject();  // save previous game
-					if (LoadProject(pGameConfig, true) == false)
-					{
-						Reset();
-						DisplayErrorMessage("Could not start project '%s'",pGameConfig->Name.c_str());
-					}
-				}
-			}
-		}
-
-		ImGui::EndMenu();
-	}
+	if (ImGui::MenuItem("Open Project", "Ctrl+O"))
+		bOpenProjectPopup = true;
 
 	if (ImGui::BeginMenu("Recent Projects"))
 	{
@@ -660,6 +638,9 @@ void FEmuBase::DrawMainMenu()
 	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S))
 		SaveProject();
 
+	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_O))
+		bOpenProjectPopup = true;
+
 	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_N) && !GamesLists.empty())
 	{
 		bNewProjectPopup = true;
@@ -670,6 +651,7 @@ void FEmuBase::DrawMainMenu()
 	// This is a workaround for an open bug.
 	// https://github.com/ocornut/imgui/issues/331
 	DrawNewProjectModalPopup();
+	DrawOpenProjectModalPopup();
 	DrawExportAsmModalPopup();
 	DrawReplaceGameModalPopup();
 	DrawErrorMessageModalPopup();
@@ -770,6 +752,130 @@ void FEmuBase::DrawExportAsmModalPopup()
 	}
 }
 
+void FEmuBase::DrawOpenProjectModalPopup()
+{
+	static char filterBuf[256] = {};
+	static int  selectedIndex  = 0;
+	static bool justOpened     = false;
+
+	if (bOpenProjectPopup)
+	{
+		ImGui::OpenPopup("Open Project");
+		memset(filterBuf, 0, sizeof(filterBuf));
+		selectedIndex = 0;
+		justOpened = true;
+		bOpenProjectPopup = false;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
+	bool bOpenPopup = true;
+	if (ImGui::BeginPopupModal("Open Project", &bOpenPopup, ImGuiWindowFlags_NoNav))
+	{
+		const auto& gameConfigs = GetGameConfigs();
+
+		if (gameConfigs.empty())
+		{
+			ImGui::TextUnformatted("No projects found.\n\nFirst, create a project via 'New Project'.");
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+			return;
+		}
+
+		if (justOpened)
+		{
+			ImGui::SetKeyboardFocusHere();
+			justOpened = false;
+		}
+
+		ImGui::TextUnformatted("Filter:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		bool filterChanged = ImGui::InputText("##filter", filterBuf, sizeof(filterBuf));
+
+		// Build filtered list
+		std::vector<FProjectConfig*> filtered;
+		filtered.reserve(gameConfigs.size());
+		for (const auto& pConfig : gameConfigs)
+		{
+			const std::string& name = pConfig->Name;
+			if (filterBuf[0] == '\0')
+			{
+				filtered.push_back(pConfig);
+			}
+			else
+			{
+				auto it = std::search(name.begin(), name.end(),
+					filterBuf, filterBuf + strlen(filterBuf),
+					[](char a, char b) { return tolower((unsigned char)a) == tolower((unsigned char)b); });
+				if (it != name.end())
+					filtered.push_back(pConfig);
+			}
+		}
+
+		const int numFiltered = (int)filtered.size();
+
+		if (filterChanged || selectedIndex >= numFiltered)
+			selectedIndex = 0;
+
+		bool bKeyboardNav = false;
+		if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) && selectedIndex < numFiltered - 1)
+		{
+			selectedIndex++;
+			bKeyboardNav = true;
+		}
+		if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && selectedIndex > 0)
+		{
+			selectedIndex--;
+			bKeyboardNav = true;
+		}
+
+		auto loadSelected = [&]()
+		{
+			if (numFiltered == 0)
+				return;
+			FProjectConfig* pConfig = filtered[selectedIndex];
+			SaveProject();
+			if (LoadProject(pConfig, true) == false)
+			{
+				Reset();
+				DisplayErrorMessage("Could not start project '%s'", pConfig->Name.c_str());
+			}
+			ImGui::CloseCurrentPopup();
+		};
+
+		if (ImGui::BeginChild("##projectlist", ImVec2(0, 0), false, ImGuiWindowFlags_NoNav))
+		{
+			if (numFiltered == 0)
+			{
+				ImGui::TextUnformatted("No projects match filter.");
+			}
+			else
+			{
+				for (int i = 0; i < numFiltered; i++)
+				{
+					const bool bSelected = (i == selectedIndex);
+					if (ImGui::Selectable(filtered[i]->Name.c_str(), bSelected))
+					{
+						selectedIndex = i;
+						loadSelected();
+					}
+					if (bSelected && (bKeyboardNav || filterChanged))
+						ImGui::SetScrollHereY(0.5f);
+				}
+			}
+		}
+		ImGui::EndChild();
+
+		if (ImGui::IsKeyPressed(ImGuiKey_Enter))
+			loadSelected();
+		if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+			ImGui::CloseCurrentPopup();
+
+		ImGui::EndPopup();
+	}
+}
+
 void FEmuBase::DrawNewProjectModalPopup()
 {
 	static char filterBuf[256] = {};
@@ -786,7 +892,8 @@ void FEmuBase::DrawNewProjectModalPopup()
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
-	if (ImGui::BeginPopupModal("New Project", nullptr, ImGuiWindowFlags_NoNav))
+	bool bOpenPopup = true;
+	if (ImGui::BeginPopupModal("New Project", &bOpenPopup, ImGuiWindowFlags_NoNav))
 	{
 		const FGamesList* pGamesList = nullptr;
 		auto findIt = GamesLists.find(NewProjectListName);
@@ -804,7 +911,7 @@ void FEmuBase::DrawNewProjectModalPopup()
 		{
 			ImGui::Text("No %s found in directory:\n\n'%s'.\n\nDirectory is set in GlobalConfig.json",
 				pGamesList->GetFileType(), pGamesList->GetRootDir());
-			if (ImGui::Button("Close") || ImGui::IsKeyPressed(ImGuiKey_Escape))
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape))
 				ImGui::CloseCurrentPopup();
 			ImGui::EndPopup();
 			return;
