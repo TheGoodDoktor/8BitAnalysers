@@ -785,7 +785,7 @@ void FEmuBase::DrawNewProjectModalPopup()
 		bNewProjectPopup = false;
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
 	if (ImGui::BeginPopupModal("New Project", nullptr, ImGuiWindowFlags_NoNav))
 	{
 		const FGamesList* pGamesList = nullptr;
