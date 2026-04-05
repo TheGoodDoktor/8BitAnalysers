@@ -23,6 +23,8 @@ bool FPCEViewer::Init()
 {
 	ResetScreenTexture();
 
+	WindowFlags = ImGuiWindowFlags_NoNav;
+
 	return true;
 }
 

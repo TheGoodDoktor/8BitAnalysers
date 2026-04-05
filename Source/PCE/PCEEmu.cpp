@@ -40,11 +40,7 @@ bool InitPCEAsmExporters();
 
 
 // ideas for increasing performance
-// - Only call GenerateGlobalInfo() when we need to (once per frame)
 // - UpdateItemList() less than once per frame
-// - make frame trace a standard array
-// - make itemlist a standard array
-// 
 
 // I couldn't get this working.
 #define IMPORT_BIOS_ANALYSIS_JSON 0
@@ -1579,8 +1575,6 @@ void FPCEEmu::FileMenuAdditions(void)
 	}
 }
 
-// This only exports banks that have previously been mapped.
-// We won't know the correct mapped address otherwise.
 // todo: get this working on CD games
 bool FPCEEmu::ExportAsmForCurrentGame()
 {
@@ -1613,30 +1607,16 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 	for (int i = 0; i < kBankCdRomRamStart; i++)
 	{
 		const int16_t bankId = Banks[i]->GetBankId();
+
+		if (i >= pMemory->GetCardRAMStart() && i <= pMemory->GetCardRAMEnd())
+			continue; // dont export card ram
+
 		if (std::find(banksToExport.begin(), banksToExport.end(), bankId) == banksToExport.end())
 		{
 			if (FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId))
 			{
-#if 0
-				bool bExport = false;
-				if (pBank->bEverBeenMapped)
-				{
-					bExport = true;
-				}
-				else
-				{
-					// this doesnt work.
-					// I was trying to get an exported game to lookup previously mapped bank addresses.
-					/*if (pGameDbEntry && pGameDbEntry->Banks[i].MprSlot != -1)
-					{
-						// hack. set the primary mapped page
-						pBank->PrimaryMappedPage = pGameDbEntry->Banks[i].MprSlot;
-						bExport = true;
-					}*/
-				}
-				if (bExport)
-#endif
-					banksToExport.push_back(Banks[i]->GetBankId());
+				//LOGINFO("%d Adding bank %s %d to export list", i, pBank->Name.c_str(), bankId);
+				banksToExport.push_back(Banks[i]->GetBankId());
 			}
 		}
 	}

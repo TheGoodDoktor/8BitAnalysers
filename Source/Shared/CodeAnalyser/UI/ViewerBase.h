@@ -21,6 +21,7 @@ protected:
 	FEmuBase* pEmulator = nullptr;
 	std::string		Name;
 public:
-	bool		bOpen = true;
-	bool		bCreateImGuiWindow = true;
+	bool				bOpen = true;
+	bool				bCreateImGuiWindow = true;
+	int					WindowFlags = 0;
 };

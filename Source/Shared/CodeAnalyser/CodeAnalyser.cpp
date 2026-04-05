@@ -837,7 +837,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 
 	pLabel->InitialiseName(label);
 	if (pLabel->Global)
-		GenerateGlobalInfo(state);
+		state.SetGlobalInfoDirty();
 	if(state.SetLabelForAddress(address, pLabel))
 	{
 		state.SetCodeAnalysisDirty(address);
@@ -979,6 +979,20 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		pOperandData->InstructionAddress = state.AddressRefFromPhysicalAddress(pc);
 	}
 	pCodeInfo->ByteSize = newPC - pc;
+
+	// If the operand address points inside this instruction's own bytes (e.g. a
+	// jump-table indirect like JMP [addr,X] where addr is byte 2 of the instruction),
+	// the exporter needs a label at the instruction start so it can emit
+	// "instrLabel+offset" instead of a raw value.  Generate one here so it is
+	// always available by the time we export.
+	if (pCodeInfo->OperandAddress.IsValid())
+	{
+		const uint16_t operandPhysAddr = pCodeInfo->OperandAddress.GetAddress();
+		if (operandPhysAddr > pc && operandPhysAddr < newPC)
+		{
+			GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(pc), ELabelType::Code);
+		}
+	}
 
 	return newPC;
 }
@@ -1352,9 +1366,9 @@ FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char*
 	pLabel->Global = type == ELabelType::Function || type == ELabelType::Data;
 	pLabel->MemoryRange = memoryRange;
 	if(state.SetLabelForAddress(address, pLabel))
-	{ 
+	{
 		if (pLabel->Global)
-			GenerateGlobalInfo(state);
+			state.SetGlobalInfoDirty();
 
 		if (memoryRange != 0)
 		{
@@ -1617,6 +1631,7 @@ int gTotalBanksProcessed = 0;
 #if NEW_FIXUP_CODE
 void FCodeAnalysisState::FixupBankAddressRefs()
 {
+#if 0
 #if PROFILE_FIXUPBANKADDRESSREFS
 	auto t1 = std::chrono::high_resolution_clock::now();
 #endif
@@ -1665,6 +1680,7 @@ void FCodeAnalysisState::FixupBankAddressRefs()
 #if PROFILE_FIXUPBANKADDRESSREFS
 	std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
 	LOGINFO("FixupBankAddressRefs took %.2f ms", ms_double);
+#endif
 #endif
 }
 #else

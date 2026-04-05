@@ -1,6 +1,8 @@
 #include "EmuBase.h"
 
 #include <imgui.h>
+#include <algorithm>
+#include <cctype>
 #include <implot.h>
 #include <CodeAnalyser/UI/CodeAnalyserUI.h>
 #include <CodeAnalyser/AssemblerExport.h>
@@ -202,7 +204,7 @@ void FEmuBase::DrawUI()
 		{
 			if (Viewer->bCreateImGuiWindow)
 			{
-				if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen))
+				if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen, Viewer->WindowFlags))
 					Viewer->DrawUI();
 				ImGui::End();
 			}
@@ -245,85 +247,28 @@ void FEmuBase::DrawUI()
     LuaSys::DrawUI();
 }
 
-
 void FEmuBase::FileMenu()
 {
 	// New game from snapshot
 
+	bool bFirstList = true;
 	for (const auto& gamesListIt : GamesLists)
 	{
 		const FGamesList& gamesList = gamesListIt.second;
 		char menuTitle[128];
-		snprintf(menuTitle,128,"New Project from %s",gamesList.GetFileType());
+		snprintf(menuTitle, 128, "New Project from %s", gamesList.GetFileType());
 
-		if (ImGui::BeginMenu(menuTitle))
+		const char* pShortcutHint = bFirstList ? "Ctrl+N" : nullptr;
+		bFirstList = false;
+		if (ImGui::MenuItem(menuTitle, pShortcutHint))
 		{
-			const int numGames = gamesList.GetNoGames();
-			if (!numGames)
-			{
-				ImGui::Text("No %s found in directory:\n\n'%s'.\n\nDirectory is set in GlobalConfig.json", gamesList.GetFileType(), gamesList.GetRootDir());
-			}
-			else
-			{
-				for (int gameNo = 0; gameNo < numGames; gameNo++)
-				{
-					const FEmulatorFile& game = gamesList.GetGame(gameNo);
-
-					if (ImGui::MenuItem(game.DisplayName.c_str()))
-					{
-						bool bGameExists = false;
-
-						for (const auto& pGameConfig : GetGameConfigs())
-						{
-							if (pGameConfig->Name == game.DisplayName)
-								bGameExists = true;
-						}
-						if (bGameExists)
-						{
-							EmulatorFileToLoad = game;
-							bReplaceGamePopup = true;
-							//ReplaceGameSnapshotIndex = gameNo;
-						}
-						else
-						{
-							if (!NewProjectFromEmulatorFile(game))
-							{
-								Reset();
-								DisplayErrorMessage("Could not load emulator file '%s'", game.FileName.c_str());
-							}
-							break;
-						}
-					}
-				}
-			}
-			ImGui::EndMenu();
+			bNewProjectPopup = true;
+			NewProjectListName = gamesListIt.first;
 		}
 	}
 
-	if (ImGui::BeginMenu("Open Project"))
-	{
-		if (GetGameConfigs().empty())
-		{
-			ImGui::Text("No projects found.\n\nFirst, create a project via the 'New Project ..' menu.");
-		}
-		else
-		{
-			for (const auto& pGameConfig : GetGameConfigs())
-			{
-				if (ImGui::MenuItem(pGameConfig->Name.c_str()))
-				{
-					SaveProject();  // save previous game
-					if (LoadProject(pGameConfig, true) == false)
-					{
-						Reset();
-						DisplayErrorMessage("Could not start project '%s'",pGameConfig->Name.c_str());
-					}
-				}
-			}
-		}
-
-		ImGui::EndMenu();
-	}
+	if (ImGui::MenuItem("Open Project", "Ctrl+O"))
+		bOpenProjectPopup = true;
 
 	if (ImGui::BeginMenu("Recent Projects"))
 	{
@@ -354,7 +299,7 @@ void FEmuBase::FileMenu()
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::MenuItem("Save Project"))
+	if (ImGui::MenuItem("Save Project", "Ctrl+S"))
 	{
 		SaveProject();
 	}
@@ -689,9 +634,24 @@ void FEmuBase::DrawMainMenu()
 		ImGui::EndMainMenuBar();
 	}
 
+	// Global keyboard shortcuts
+	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S))
+		SaveProject();
+
+	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_O))
+		bOpenProjectPopup = true;
+
+	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_N) && !GamesLists.empty())
+	{
+		bNewProjectPopup = true;
+		NewProjectListName = GamesLists.begin()->first;
+	}
+
 	// Draw any modal popups that have been requested from clicking on menu items.
 	// This is a workaround for an open bug.
 	// https://github.com/ocornut/imgui/issues/331
+	DrawNewProjectModalPopup();
+	DrawOpenProjectModalPopup();
 	DrawExportAsmModalPopup();
 	DrawReplaceGameModalPopup();
 	DrawErrorMessageModalPopup();
@@ -788,6 +748,286 @@ void FEmuBase::DrawExportAsmModalPopup()
 			bExportAsm = false;
 			ImGui::CloseCurrentPopup();
 		}
+		ImGui::EndPopup();
+	}
+}
+
+void FEmuBase::DrawOpenProjectModalPopup()
+{
+	static char filterBuf[256] = {};
+	static int  selectedIndex  = 0;
+	static bool justOpened     = false;
+
+	if (bOpenProjectPopup)
+	{
+		ImGui::OpenPopup("Open Project");
+		memset(filterBuf, 0, sizeof(filterBuf));
+		selectedIndex = 0;
+		justOpened = true;
+		bOpenProjectPopup = false;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
+	bool bOpenPopup = true;
+	if (ImGui::BeginPopupModal("Open Project", &bOpenPopup, ImGuiWindowFlags_NoNav))
+	{
+		const auto& gameConfigs = GetGameConfigs();
+
+		if (gameConfigs.empty())
+		{
+			ImGui::TextUnformatted("No projects found.\n\nFirst, create a project via 'New Project'.");
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+			return;
+		}
+
+		if (justOpened)
+		{
+			ImGui::SetKeyboardFocusHere();
+			justOpened = false;
+		}
+
+		ImGui::TextUnformatted("Filter:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		bool filterChanged = ImGui::InputText("##filter", filterBuf, sizeof(filterBuf));
+
+		// Build filtered list
+		std::vector<FProjectConfig*> filtered;
+		filtered.reserve(gameConfigs.size());
+		for (const auto& pConfig : gameConfigs)
+		{
+			const std::string& name = pConfig->Name;
+			if (filterBuf[0] == '\0')
+			{
+				filtered.push_back(pConfig);
+			}
+			else
+			{
+				auto it = std::search(name.begin(), name.end(),
+					filterBuf, filterBuf + strlen(filterBuf),
+					[](char a, char b) { return tolower((unsigned char)a) == tolower((unsigned char)b); });
+				if (it != name.end())
+					filtered.push_back(pConfig);
+			}
+		}
+
+		const int numFiltered = (int)filtered.size();
+
+		if (filterChanged || selectedIndex >= numFiltered)
+			selectedIndex = 0;
+
+		bool bKeyboardNav = false;
+		if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) && selectedIndex < numFiltered - 1)
+		{
+			selectedIndex++;
+			bKeyboardNav = true;
+		}
+		if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && selectedIndex > 0)
+		{
+			selectedIndex--;
+			bKeyboardNav = true;
+		}
+
+		auto loadSelected = [&]()
+		{
+			if (numFiltered == 0)
+				return;
+			FProjectConfig* pConfig = filtered[selectedIndex];
+			SaveProject();
+			if (LoadProject(pConfig, true) == false)
+			{
+				Reset();
+				DisplayErrorMessage("Could not start project '%s'", pConfig->Name.c_str());
+			}
+			ImGui::CloseCurrentPopup();
+		};
+
+		if (ImGui::BeginChild("##projectlist", ImVec2(0, 0), false, ImGuiWindowFlags_NoNav))
+		{
+			if (numFiltered == 0)
+			{
+				ImGui::TextUnformatted("No projects match filter.");
+			}
+			else
+			{
+				for (int i = 0; i < numFiltered; i++)
+				{
+					const bool bSelected = (i == selectedIndex);
+					if (ImGui::Selectable(filtered[i]->Name.c_str(), bSelected))
+					{
+						selectedIndex = i;
+						loadSelected();
+					}
+					if (bSelected && (bKeyboardNav || filterChanged))
+						ImGui::SetScrollHereY(0.5f);
+				}
+			}
+		}
+		ImGui::EndChild();
+
+		if (ImGui::IsKeyPressed(ImGuiKey_Enter))
+			loadSelected();
+		if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+			ImGui::CloseCurrentPopup();
+
+		ImGui::EndPopup();
+	}
+}
+
+void FEmuBase::DrawNewProjectModalPopup()
+{
+	static char filterBuf[256] = {};
+	static int  selectedIndex  = 0;
+	static bool justOpened     = false;
+
+	if (bNewProjectPopup)
+	{
+		ImGui::OpenPopup("New Project");
+		memset(filterBuf, 0, sizeof(filterBuf));
+		selectedIndex = 0;
+		justOpened = true;
+		bNewProjectPopup = false;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
+	bool bOpenPopup = true;
+	if (ImGui::BeginPopupModal("New Project", &bOpenPopup, ImGuiWindowFlags_NoNav))
+	{
+		const FGamesList* pGamesList = nullptr;
+		auto findIt = GamesLists.find(NewProjectListName);
+		if (findIt != GamesLists.end())
+			pGamesList = &findIt->second;
+
+		if (pGamesList == nullptr)
+		{
+			ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+			return;
+		}
+
+		if (pGamesList->GetNoGames() == 0)
+		{
+			ImGui::Text("No %s found in directory:\n\n'%s'.\n\nDirectory is set in GlobalConfig.json",
+				pGamesList->GetFileType(), pGamesList->GetRootDir());
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+			return;
+		}
+
+		// Auto-focus filter input when first opened
+		if (justOpened)
+		{
+			ImGui::SetKeyboardFocusHere();
+			justOpened = false;
+		}
+
+		ImGui::TextUnformatted("Filter:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		bool filterChanged = ImGui::InputText("##filter", filterBuf, sizeof(filterBuf));
+
+		// Build filtered index list
+		const int numGames = pGamesList->GetNoGames();
+		std::vector<int> filtered;
+		filtered.reserve(numGames);
+		for (int i = 0; i < numGames; i++)
+		{
+			const std::string& name = pGamesList->GetGame(i).DisplayName;
+			if (filterBuf[0] == '\0')
+			{
+				filtered.push_back(i);
+			}
+			else
+			{
+				auto it = std::search(name.begin(), name.end(), filterBuf, filterBuf + strlen(filterBuf),	[](char a, char b) 
+					{ 
+						return tolower((unsigned char)a) == tolower((unsigned char)b); 
+					});
+				if (it != name.end())
+					filtered.push_back(i);
+			}
+		}
+
+		const int numFiltered = (int)filtered.size();
+
+		// Reset selection when filter changes or selection is out of range
+		if (filterChanged || selectedIndex >= numFiltered)
+			selectedIndex = 0;
+
+		// Keyboard navigation
+		bool bKeyboardNav = false;
+		if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) && selectedIndex < numFiltered - 1)
+		{
+			selectedIndex++;
+			bKeyboardNav = true;
+		}
+		if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) && selectedIndex > 0)
+		{
+			selectedIndex--;
+			bKeyboardNav = true;
+		}
+
+		// Load the currently selected game
+		auto loadSelected = [&]()
+		{
+			if (numFiltered == 0)
+				return;
+			const FEmulatorFile& game = pGamesList->GetGame(filtered[selectedIndex]);
+			bool bGameExists = false;
+			for (const auto& pGameConfig : GetGameConfigs())
+			{
+				if (pGameConfig->Name == game.DisplayName)
+					bGameExists = true;
+			}
+			if (bGameExists)
+			{
+				EmulatorFileToLoad = game;
+				bReplaceGamePopup = true;
+			}
+			else
+			{
+				if (!NewProjectFromEmulatorFile(game))
+				{
+					Reset();
+					DisplayErrorMessage("Could not load emulator file '%s'", game.FileName.c_str());
+				}
+			}
+			ImGui::CloseCurrentPopup();
+		};
+
+		// Scrollable game list
+		if (ImGui::BeginChild("##gamelist", ImVec2(0, 0), false, ImGuiWindowFlags_NoNav))
+		{
+			if (numFiltered == 0)
+			{
+				ImGui::TextUnformatted("No games match filter.");
+			}
+			else
+			{
+				for (int i = 0; i < numFiltered; i++)
+				{
+					const FEmulatorFile& game = pGamesList->GetGame(filtered[i]);
+					const bool bSelected = (i == selectedIndex);
+					if (ImGui::Selectable(game.DisplayName.c_str(), bSelected))
+					{
+						selectedIndex = i;
+						loadSelected();
+					}
+					if (bSelected && (bKeyboardNav || filterChanged))
+						ImGui::SetScrollHereY(0.5f);
+				}
+			}
+		}
+		ImGui::EndChild();
+
+		if (ImGui::IsKeyPressed(ImGuiKey_Enter))
+			loadSelected();
+		if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+			ImGui::CloseCurrentPopup();
+
 		ImGui::EndPopup();
 	}
 }
