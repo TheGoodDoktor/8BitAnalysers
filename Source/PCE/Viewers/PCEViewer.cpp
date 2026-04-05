@@ -60,7 +60,7 @@ void FPCEViewer::DrawUI()
 
 	DrawHighlightedSprite(pos, scale);
 
-	ImGui::Text("Avg %.1f ms/frame (%.1f FPS) Avg FPS (session): %.1f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate, pPCEEmu->pDebugStats->GetAverageFrameRate());
+	ImGui::Text("Avg %.1f ms/frame (%.1f FPS) Avg FPS (session): %.1f", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate, pPCEEmu->pDebugStats ? pPCEEmu->pDebugStats->GetAverageFrameRate() : 0.f);
 
 	ImGui::InputInt("Fast Fwd Speed", &pPCEEmu->EmuFramesToRun);
 
