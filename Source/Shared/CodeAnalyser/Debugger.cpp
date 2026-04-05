@@ -53,7 +53,11 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 	//Stacks.clear();
 	Breakpoints.clear();
 	CallStack.clear();
+	// sam. reserve memory to avoid allocations each frame.
+	CallStack.reserve(256);
 	FrameTrace.clear();
+	// sam. tuned for PCE.
+	FrameTrace.reserve(131072);
 	FrameTraceItemIndex = -1;
 }
 
