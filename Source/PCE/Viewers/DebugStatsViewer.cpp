@@ -44,6 +44,51 @@ std::string GetBankType(Memory* pMemory, int bankIndex)
 	return "UNKNOWN";
 }
 
+enum EGameStatsColumns
+{
+	Col_GS_GameName,
+	Col_GS_NumBanks,
+	Col_GS_BanksMapped,
+	Col_GS_MaxBankSwitches,
+	Col_GS_AvgFPS,
+	Col_GS_Count
+};
+
+static void SortGameStatsTable(std::vector<std::pair<std::string, const FGameDebugStats*>>& entries, ImGuiTableSortSpecs* sortSpecs)
+{
+	if (!sortSpecs || sortSpecs->SpecsCount == 0)
+		return;
+
+	const ImGuiTableColumnSortSpecs& spec = sortSpecs->Specs[0];
+
+	std::sort(entries.begin(), entries.end(),
+		[&](const auto& A, const auto& B)
+		{
+			int result = 0;
+			switch (spec.ColumnIndex)
+			{
+			case Col_GS_GameName:
+				result = A.first.compare(B.first);
+				break;
+			case Col_GS_NumBanks:
+				result = A.second->NumBanks - B.second->NumBanks;
+				break;
+			case Col_GS_BanksMapped:
+				result = A.second->NumBanksMapped - B.second->NumBanksMapped;
+				break;
+			case Col_GS_MaxBankSwitches:
+				result = A.second->MaxBankSwitches - B.second->MaxBankSwitches;
+				break;
+			case Col_GS_AvgFPS:
+				result = (A.second->AvgFrameRate > B.second->AvgFrameRate) ? 1 : (A.second->AvgFrameRate < B.second->AvgFrameRate) ? -1 : 0;
+				break;
+			}
+			if (spec.SortDirection == ImGuiSortDirection_Descending)
+				result = -result;
+			return result < 0;
+		});
+}
+
 void FDebugStatsViewer::DrawUI()
 {
 	if (!pPCEEmu->pDebugStats)
@@ -77,13 +122,20 @@ void FDebugStatsViewer::DrawUI()
 
 	int maxDupeBanks = 0;
 	std::string gameWithMaxDupes;
+	float lowestFPS = FLT_MAX;
+	std::string gameWithLowestFPS;
 	for (auto pair : pPCEEmu->pDebugStats->GameDebugStats)
 	{
-		const FGameDebugStats& debugStats = pair.second;
-		if (debugStats.NumDupeBanks > maxDupeBanks)
+		const FGameDebugStats& gameStats = pair.second;
+		if (gameStats.NumDupeBanks > maxDupeBanks)
 		{
-			maxDupeBanks = debugStats.NumDupeBanks;
+			maxDupeBanks = gameStats.NumDupeBanks;
 			gameWithMaxDupes = pair.first;
+		}
+		if (gameStats.AvgFrameRate < lowestFPS)
+		{
+			gameWithLowestFPS = pair.first;
+			lowestFPS = gameStats.AvgFrameRate;
 		}
 	}
 
@@ -97,7 +149,8 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::Text("Used banks: %d", usedBanks);
 	ImGui::Text("Total pages: %d", state.GetNoPages());
 	ImGui::Text("Pages in use: %d", pagesInUse);
-	ImGui::Text("Game with most dupe banks: %s", gameWithMaxDupes.c_str());
+	ImGui::Text("Game with most dupe banks: %s (%d)", gameWithMaxDupes.c_str(), maxDupeBanks);
+	ImGui::Text("Game with lowest FPS: %s (%.1f)", gameWithLowestFPS.c_str(), lowestFPS);
 	ImGui::Text("Max dupe banks: %d", maxDupeBanks);
 	ImGui::Text("Num bank sets: %d", kNumBankSetIds);
 	ImGui::Text("Bank switches per frame: %d", pPCEEmu->pDebugStats->NumBankSwitchesThisFrame);
@@ -108,54 +161,105 @@ void FDebugStatsViewer::DrawUI()
 	constexpr ImVec4 greenColour(0.0f, 1.0f, 0.0f, 1.0f);
 
 	bool bDumpBanks = false;
-	bool bGameStatsOpen = ImGui::TreeNode("Game Stats");
 
-	if (bGameStatsOpen)
+	if (ImGui::TreeNode("Game Stats"))
 	{
 		if (ImGui::Button("Reset"))
-		{
 			pPCEEmu->pDebugStats->Reset();
+		ImGui::SameLine();
+		if (ImGui::Button("Dump"))
+			bDumpBanks = true;
+
+		static std::vector<std::pair<std::string, const FGameDebugStats*>> SortedGameStats;
+		static size_t LastGameStatsSize = 0;
+
+		const ImGuiTableFlags tableFlags =
+			ImGuiTableFlags_Borders |
+			ImGuiTableFlags_Resizable |
+			ImGuiTableFlags_Reorderable |
+			ImGuiTableFlags_Sortable |
+			ImGuiTableFlags_ScrollY;
+
+		if (ImGui::BeginTable("GameStatsTable", Col_GS_Count, tableFlags))
+		{
+			ImGui::TableSetupScrollFreeze(0, 1);
+			ImGui::TableSetupColumn("Game", ImGuiTableColumnFlags_DefaultSort);
+			ImGui::TableSetupColumn("Num Banks");
+			ImGui::TableSetupColumn("Banks Mapped");
+			ImGui::TableSetupColumn("Max Bank Switches");
+			ImGui::TableSetupColumn("Avg FPS");
+			ImGui::TableHeadersRow();
+
+			const auto& gameDebugStats = pPCEEmu->pDebugStats->GameDebugStats;
+
+			if (gameDebugStats.size() != LastGameStatsSize)
+			{
+				LastGameStatsSize = gameDebugStats.size();
+				SortedGameStats.clear();
+				SortedGameStats.reserve(gameDebugStats.size());
+				for (const auto& pair : gameDebugStats)
+					SortedGameStats.push_back({ pair.first, &pair.second });
+			}
+
+			ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs();
+			if (sortSpecs && sortSpecs->SpecsDirty)
+			{
+				SortGameStatsTable(SortedGameStats, sortSpecs);
+				sortSpecs->SpecsDirty = false;
+			}
+
+			for (const auto& entry : SortedGameStats)
+			{
+				const std::string& gameName = entry.first;
+				const FGameDebugStats& gameStats = *entry.second;
+				const bool bAllMapped = gameStats.NumBanksMapped == gameStats.NumBanks;
+
+				ImGui::TableNextRow();
+
+				if (bAllMapped)
+					ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::ColorConvertFloat4ToU32(ImVec4(0.f, 0.5f, 0.f, 1.0f)));
+
+				ImGui::TableSetColumnIndex(Col_GS_GameName);
+				ImGui::TextUnformatted(gameName.c_str());
+
+				ImGui::TableSetColumnIndex(Col_GS_NumBanks);
+				ImGui::Text("%d", gameStats.NumBanks);
+
+				ImGui::TableSetColumnIndex(Col_GS_BanksMapped);
+				ImGui::Text("%d/%d", gameStats.NumBanksMapped, gameStats.NumBanks);
+
+				ImGui::TableSetColumnIndex(Col_GS_MaxBankSwitches);
+				ImGui::Text("%d", gameStats.MaxBankSwitches);
+
+				ImGui::TableSetColumnIndex(Col_GS_AvgFPS);
+				ImGui::Text("%.1f", gameStats.AvgFrameRate);
+			}
+
+			ImGui::EndTable();
 		}
 
-		if (ImGui::Button("Dump"))
-		{
-			bDumpBanks = true;
-		}
+		ImGui::TreePop();
 	}
 
-	for (auto pair : pPCEEmu->pDebugStats->GameDebugStats)
+	for (const auto& pair : pPCEEmu->pDebugStats->GameDebugStats)
 	{
 		const FGameDebugStats& gameStats = pair.second;
-		if (bGameStatsOpen)
-		{
-			const ImVec4 txtColour = gameStats.NumBanksMapped == gameStats.NumBanks ? ImVec4(0.f, 0.75f, 0.f, 1.0f) : ImVec4(1.f, 1.0f, 1.f, 1.0f);
-			ImGui::Text("%s", pair.first.c_str());
-			ImGui::Text("  Num Banks:        %d", gameStats.NumBanks);
-			ImGui::TextColored(txtColour, "  Num Banks Mapped: %d / %d", gameStats.NumBanksMapped, gameStats.NumBanks);
-			ImGui::Text("  Num Dupe Banks:   %d", gameStats.NumDupeBanks);
-			ImGui::Text("  Max Bank Switches:   %d", gameStats.MaxBankSwitches);
 
-			if (bDumpBanks)
-			{
-				LOGINFO("%s", pair.first.c_str());
-				LOGINFO("  Num Banks:        %d", gameStats.NumBanks);
-				LOGINFO("  Num Banks Mapped: %d/%d (%.2f%%)", gameStats.NumBanksMapped, gameStats.NumBanks, ((float)gameStats.NumBanksMapped / (float)gameStats.NumBanks) * 100.f);
-				LOGINFO("  Num Dupe Banks:   %d", gameStats.NumDupeBanks);
-			}
+		if (bDumpBanks)
+		{
+			LOGINFO("%s", pair.first.c_str());
+			LOGINFO("  Num Banks: %d", gameStats.NumBanks);
+			LOGINFO("  Num Banks Mapped: %d/%d (%.2f%%)", gameStats.NumBanksMapped, gameStats.NumBanks, ((float)gameStats.NumBanksMapped / (float)gameStats.NumBanks) * 100.f);
+			LOGINFO("  Avg FPS: %1.f", gameStats.AvgFrameRate);
 		}
 
 		if (gameStats.NumBanksMapped == gameStats.NumBanks)
 		{
 			std::map<std::string, float>::iterator it = TimeUntilMapped.find(pair.first);
 			if (it == TimeUntilMapped.end())
-			{
 				TimeUntilMapped[pair.first] = pPCEEmu->GetBatchGameLoadViewer()->GetElapsedGameRunTime();
-			}
 		}
 	}
-
-	if (bGameStatsOpen)
-		ImGui::TreePop();
 	
 	if (ImGui::TreeNode("Games Bank mappings"))
 	{

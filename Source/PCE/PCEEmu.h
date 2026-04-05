@@ -157,6 +157,7 @@ protected:
 
 	void InitPalettes();
 	void UpdatePalettes();
+	void DetectDirtyBanks();
 
 	void AddLabels();
 
@@ -181,6 +182,7 @@ protected:
 	bool bDoneInitialBankMapping = false;
 
 	int16_t MprBankId[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	int16_t MprBankIdPrev[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
 	FBankSet BankSets[kNumBanks];
 	int16_t NullBankId = -1;

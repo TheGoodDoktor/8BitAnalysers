@@ -38,6 +38,10 @@
 
 bool InitPCEAsmExporters();
 
+
+// ideas for increasing performance
+// - UpdateItemList() less than once per frame
+
 // I couldn't get this working.
 #define IMPORT_BIOS_ANALYSIS_JSON 0
 #define EXPORT_BIOS_ANALYSIS_JSON 0
@@ -664,7 +668,8 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	// Also force the code analysis state to update it's ItemList too
 	//state.SetAllBanksDirty();
 	// This was causing perf issues. Replaced with SetAddressRangeDirty(). 
-	state.SetAddressRangeDirty();
+	// This is now done in FPCEEmuTick()
+	//state.SetAddressRangeDirty();
 }
 
 int16_t FPCEEmu::GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex)
@@ -758,8 +763,13 @@ void FPCEEmu::UpdateDebugStats()
 					bankIdsPreviouslyMapped.insert(bankId);
 			}
 		}
+		
+		if (!state.Debugger.IsStopped())
+			pDebugStats->Update(ImGui::GetIO().DeltaTime);
+
 		pGameDebugStats->NumBanksMapped = (int)bankIdsPreviouslyMapped.size();
 		pGameDebugStats->MaxBankSwitches = MAX(pGameDebugStats->MaxBankSwitches, pDebugStats->NumBankSwitchesThisFrame);
+		pGameDebugStats->AvgFrameRate = (float)pDebugStats->GetAverageFrameRate();
 	}
 #endif
 }
@@ -1565,8 +1575,6 @@ void FPCEEmu::FileMenuAdditions(void)
 	}
 }
 
-// This only exports banks that have previously been mapped.
-// We won't know the correct mapped address otherwise.
 // todo: get this working on CD games
 bool FPCEEmu::ExportAsmForCurrentGame()
 {
@@ -1599,30 +1607,16 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 	for (int i = 0; i < kBankCdRomRamStart; i++)
 	{
 		const int16_t bankId = Banks[i]->GetBankId();
+
+		if (i >= pMemory->GetCardRAMStart() && i <= pMemory->GetCardRAMEnd())
+			continue; // dont export card ram
+
 		if (std::find(banksToExport.begin(), banksToExport.end(), bankId) == banksToExport.end())
 		{
 			if (FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId))
 			{
-#if 0
-				bool bExport = false;
-				if (pBank->bEverBeenMapped)
-				{
-					bExport = true;
-				}
-				else
-				{
-					// this doesnt work.
-					// I was trying to get an exported game to lookup previously mapped bank addresses.
-					/*if (pGameDbEntry && pGameDbEntry->Banks[i].MprSlot != -1)
-					{
-						// hack. set the primary mapped page
-						pBank->PrimaryMappedPage = pGameDbEntry->Banks[i].MprSlot;
-						bExport = true;
-					}*/
-				}
-				if (bExport)
-#endif
-					banksToExport.push_back(Banks[i]->GetBankId());
+				//LOGINFO("%d Adding bank %s %d to export list", i, pBank->Name.c_str(), bankId);
+				banksToExport.push_back(Banks[i]->GetBankId());
 			}
 		}
 	}
@@ -1755,6 +1749,8 @@ void FPCEEmu::Tick()
 
 	UpdatePalettes();
 
+	DetectDirtyBanks();
+
 	// Draw UI
 	DrawDockingView();
 }
@@ -1843,6 +1839,23 @@ void FPCEEmu::UpdatePalettes()
 			}
 		}
 	}
+}
+
+void FPCEEmu::DetectDirtyBanks()
+{
+	if (!CodeAnalysis.Debugger.IsStopped())
+	{
+		for (int i = 0; i < kNumMprSlots; i++)
+		{
+			if (MprBankId[i] != MprBankIdPrev[i])
+			{
+				CodeAnalysis.SetAddressRangeDirty();
+				break;
+			}
+		}
+	}
+
+	memcpy(MprBankIdPrev, MprBankId, sizeof(MprBankId));
 }
 
 void FPCELaunchConfig::ParseCommandline(int argc, char** argv)

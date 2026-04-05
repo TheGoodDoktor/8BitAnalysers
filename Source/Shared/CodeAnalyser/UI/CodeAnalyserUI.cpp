@@ -1232,8 +1232,14 @@ void UpdateItemList(FCodeAnalysisState &state)
 
 		if (state.HasMemoryBeenRemapped())
 		{
-			GenerateGlobalInfo(state);
+			state.SetGlobalInfoDirty();
 			state.ClearRemappings();
+		}
+
+		if (state.IsGlobalInfoDirty())
+		{
+			GenerateGlobalInfo(state);
+			state.ClearGlobalInfoDirty();
 		}
 
 #if PROFILE_UPDATEITEMLIST

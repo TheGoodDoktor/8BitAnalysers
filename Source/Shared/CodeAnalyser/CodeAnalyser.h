@@ -529,8 +529,8 @@ public:
 			FCodeAnalysisBank* pWriteBank = GetBank(MappedWriteBanks[i]);
 			if (pWriteBank != nullptr)
 				pWriteBank->bIsDirty = true;
-			bCodeAnalysisDataDirty = true;
 		}
+		bCodeAnalysisDataDirty = true;
 	}
 
 	void	SetAllBanksDirty()
@@ -550,6 +550,9 @@ public:
 	bool IsCodeAnalysisDataDirty() const { return bCodeAnalysisDataDirty; }
 	void ClearRemappings() { bMemoryRemapped = false; }
 	bool HasMemoryBeenRemapped() const { return bMemoryRemapped; }
+	void SetGlobalInfoDirty() { bGlobalInfoDirty = true; }
+	bool IsGlobalInfoDirty() const { return bGlobalInfoDirty; }
+	void ClearGlobalInfoDirty() { bGlobalInfoDirty = false; }
 
 	void FixupAddressRefs();
 	void FixupBankAddressRefs();
@@ -815,6 +818,7 @@ private:
 
 	bool						bCodeAnalysisDataDirty = false;
 	bool						bMemoryRemapped = true;
+	bool						bGlobalInfoDirty = true;
 
 	FCodeAnalysisState(const FCodeAnalysisState&) = delete;                 // Prevent copy-construction
 	FCodeAnalysisState& operator=(const FCodeAnalysisState&) = delete;      // Prevent assignment

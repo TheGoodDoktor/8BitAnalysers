@@ -837,7 +837,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 
 	pLabel->InitialiseName(label);
 	if (pLabel->Global)
-		GenerateGlobalInfo(state);
+		state.SetGlobalInfoDirty();
 	if(state.SetLabelForAddress(address, pLabel))
 	{
 		state.SetCodeAnalysisDirty(address);
@@ -1366,9 +1366,9 @@ FLabelInfo* AddLabel(FCodeAnalysisState& state, FAddressRef address, const char*
 	pLabel->Global = type == ELabelType::Function || type == ELabelType::Data;
 	pLabel->MemoryRange = memoryRange;
 	if(state.SetLabelForAddress(address, pLabel))
-	{ 
+	{
 		if (pLabel->Global)
-			GenerateGlobalInfo(state);
+			state.SetGlobalInfoDirty();
 
 		if (memoryRange != 0)
 		{
@@ -1631,6 +1631,7 @@ int gTotalBanksProcessed = 0;
 #if NEW_FIXUP_CODE
 void FCodeAnalysisState::FixupBankAddressRefs()
 {
+#if 0
 #if PROFILE_FIXUPBANKADDRESSREFS
 	auto t1 = std::chrono::high_resolution_clock::now();
 #endif
@@ -1679,6 +1680,7 @@ void FCodeAnalysisState::FixupBankAddressRefs()
 #if PROFILE_FIXUPBANKADDRESSREFS
 	std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
 	LOGINFO("FixupBankAddressRefs took %.2f ms", ms_double);
+#endif
 #endif
 }
 #else
