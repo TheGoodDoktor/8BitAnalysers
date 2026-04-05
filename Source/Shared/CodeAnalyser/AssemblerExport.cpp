@@ -362,6 +362,11 @@ bool FASMExporter::ExportAddressRange(const std::vector<FCodeAnalysisItem>& item
 		if (addr > endAddr)
 			break;
 
+		// Skip labels whose address falls within the byte range of the preceding instruction.
+		// They cannot be placed correctly in the output and the raw value is already used in the operand.
+		if (item.Item->Type == EItemType::Label && addr < nextAddr)
+			continue;
+
 		if (addr != nextAddr)
 		{
 			const FCodeAnalysisBank* pBank = state.GetBank(item.AddressRef.GetBankId());
