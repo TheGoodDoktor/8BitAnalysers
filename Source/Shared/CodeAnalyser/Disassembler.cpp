@@ -211,8 +211,8 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 						else
 						{
 							LOGWARNING("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress());
+							pLabel = nullptr;
 						}
-						pLabel = nullptr;
 					}
 					else
 					{
