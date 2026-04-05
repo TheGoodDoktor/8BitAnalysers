@@ -980,6 +980,20 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	}
 	pCodeInfo->ByteSize = newPC - pc;
 
+	// If the operand address points inside this instruction's own bytes (e.g. a
+	// jump-table indirect like JMP [addr,X] where addr is byte 2 of the instruction),
+	// the exporter needs a label at the instruction start so it can emit
+	// "instrLabel+offset" instead of a raw value.  Generate one here so it is
+	// always available by the time we export.
+	if (pCodeInfo->OperandAddress.IsValid())
+	{
+		const uint16_t operandPhysAddr = pCodeInfo->OperandAddress.GetAddress();
+		if (operandPhysAddr > pc && operandPhysAddr < newPC)
+		{
+			GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(pc), ELabelType::Code);
+		}
+	}
+
 	return newPC;
 }
 

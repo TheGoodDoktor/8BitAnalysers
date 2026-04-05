@@ -185,24 +185,33 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 					else if (pDataInfo != nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 					{
 						
-						// If we encounter a data item inside the instruction bytes, this can cause code that fails
-						// to assemble. This is because, the assembly ends up outputting the label for the operand data byte
-						// _after_ the instruction. 
-						// This can happen for jump table code like this (example taken from Bonk 2):
-						//		7A4A  7C 4B 7A  JMP [data_ROM_02_7A4B,X]
-						// What we should probably do to fix this properly is to get a label
-						// to the start of the code item and make it relative to that.
-						// eg use the label_ROM_02_7A4A label:
-						// 
-						//		label_ROM_02_7A4A:
-						//		  7A4A  7C 4B 7A  JMP [data_ROM_02_7A4B,X]
-						//	
-						// This could produce nicer assembly code like this:
-						// 
-						//		JMP [label_ROM_02_7A4A+1,X]
-						
-						// todo: do we need to verify the data item is exactly in this instruction's bytes? 
-						LOGWARNING("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes. Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress());
+						// The operand address points inside the instruction's own bytes (e.g. a jump
+						// table like JMP [data_ROM_02_7A4B,X] where 7A4B is the 2nd byte of the
+						// instruction at 7A4A). Emitting the label for 7A4B directly would place it
+						// after the instruction in the output, producing unassemblable code.
+						//
+						// Instead, find the label at the start of the parent instruction and emit
+						// it as label+offset, e.g. label_ROM_02_7A4A+1.
+						const FAddressRef instrAddr = pDataInfo->InstructionAddress;
+						const FLabelInfo* pInstrLabel = CodeAnalysisState->GetLabelForAddress(instrAddr);
+						if (pInstrLabel != nullptr)
+						{
+							const int offset = pCodeInfoItem->OperandAddress.GetAddress() - instrAddr.GetAddress();
+							std::string labelExpr = pInstrLabel->GetName();
+							if (offset > 0)
+							{
+								char offsetStr[16];
+								snprintf(offsetStr, sizeof(offsetStr), "+%d", offset);
+								labelExpr += offsetStr;
+							}
+							labelAddress = instrAddr;
+							for (char c : labelExpr)
+								outputCallback(c, this);
+						}
+						else
+						{
+							LOGWARNING("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress());
+						}
 						pLabel = nullptr;
 					}
 					else
