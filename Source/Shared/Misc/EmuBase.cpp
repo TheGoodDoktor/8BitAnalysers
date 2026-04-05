@@ -204,7 +204,7 @@ void FEmuBase::DrawUI()
 		{
 			if (Viewer->bCreateImGuiWindow)
 			{
-				if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen))
+				if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen, Viewer->WindowFlags))
 					Viewer->DrawUI();
 				ImGui::End();
 			}
