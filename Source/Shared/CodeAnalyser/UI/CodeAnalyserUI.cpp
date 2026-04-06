@@ -1199,6 +1199,8 @@ void UpdateItemList(FCodeAnalysisState &state)
 			}
 			pPrevBank = &bank;
 
+#if CODE_ITEMS_CAN_SPAN_BANKS
+
 			// calculate start offset for next bank
 			// sam. this code deals with instructions that span banks.
 			// it presumes that the two banks are next to each other in the bank list.
@@ -1208,6 +1210,7 @@ void UpdateItemList(FCodeAnalysisState &state)
 			const int itemEndAddr = lastItem.AddressRef.GetAddress() + lastItem.Item->ByteSize;
 			const int bankEndAddr = (bank.PrimaryMappedPage + bank.NoPages) * FCodeAnalysisPage::kPageSize;
 			startOffset = itemEndAddr - bankEndAddr;
+#endif
 		}
 		int pageNo = 0;
 
