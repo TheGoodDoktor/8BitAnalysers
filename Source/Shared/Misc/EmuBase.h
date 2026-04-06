@@ -112,6 +112,7 @@ protected:
 	virtual void	OptionsMenuAdditions(void) {}	// system specific additions
 	virtual void	ActionMenuAdditions(void) {}	// system specific additions
 	virtual void	WindowsMenuAdditions(void) {}	// system specific additions
+	virtual void	GlobalShortcuts(void) {}		// system specific global keyboard shortcuts
 
 	void			DrawEditGlobalConfigModalPopup(void);
 	void			DrawNewProjectModalPopup(void);

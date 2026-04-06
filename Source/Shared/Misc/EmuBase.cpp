@@ -635,6 +635,8 @@ void FEmuBase::DrawMainMenu()
 	}
 
 	// Global keyboard shortcuts
+	GlobalShortcuts();
+
 	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S))
 		SaveProject();
 
