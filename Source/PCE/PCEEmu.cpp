@@ -1335,6 +1335,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 			if (!LoadEmulatorFile(&pGameConfig->EmulatorFile))
 			{
+				SetLastError("Could not load '%s'", pGameConfig->EmulatorFile.FileName.c_str());
 				return false;
 			}
 		}
@@ -1530,7 +1531,10 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 {
 	auto findIt = GamesLists.find(pSnapshot->ListName);
 	if(findIt == GamesLists.end())
+	{
+		SetLastError("Games list '%s' not found", pSnapshot->ListName.c_str());
 		return false;
+	}
 
 	const std::string fileName = findIt->second.GetRootDir() + pSnapshot->FileName;
 
@@ -1539,11 +1543,16 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 	case EEmuFileType::PCE:
 	case EEmuFileType::CUE:
 	case EEmuFileType::ZIP:
-		return pCore->LoadMedia(fileName.c_str());
+		if (!pCore->LoadMedia(fileName.c_str()))
+		{
+			SetLastError("Failed to load '%s'", fileName.c_str());
+			return false;
+		}
+		return true;
 	default:
+		SetLastError("Unsupported file type for '%s'", pSnapshot->FileName.c_str());
 		return false;
 	}
-	return false;
 }
 
 bool FPCEEmu::NewProjectFromEmulatorFile(const FEmulatorFile& snapshot)
@@ -1567,12 +1576,18 @@ bool FPCEEmu::NewProjectFromEmulatorFile(const FEmulatorFile& snapshot)
 	return false;
 }
 
-void FPCEEmu::FileMenuAdditions(void)	
-{ 
-	if (ImGui::MenuItem("Export ASM For Banks"))
+void FPCEEmu::FileMenuAdditions(void)
+{
+	if (ImGui::MenuItem("Export ASM For Project", "Ctrl+E"))
 	{
 		ExportAsmForCurrentGame();
 	}
+}
+
+void FPCEEmu::GlobalShortcuts(void)
+{
+	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_E))
+		ExportAsmForCurrentGame();
 }
 
 // todo: get this working on CD games
@@ -1608,15 +1623,15 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 	{
 		const int16_t bankId = Banks[i]->GetBankId();
 
-		if (i >= pMemory->GetCardRAMStart() && i <= pMemory->GetCardRAMEnd())
-			continue; // dont export card ram
-
-		if (std::find(banksToExport.begin(), banksToExport.end(), bankId) == banksToExport.end())
+		if (pMemory->GetBankType(i) == Memory::MemoryBankType::MEMORY_BANK_TYPE_ROM)
 		{
-			if (FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId))
+			if (std::find(banksToExport.begin(), banksToExport.end(), bankId) == banksToExport.end())
 			{
-				//LOGINFO("%d Adding bank %s %d to export list", i, pBank->Name.c_str(), bankId);
-				banksToExport.push_back(Banks[i]->GetBankId());
+				if (FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId))
+				{
+					//LOGINFO("%d Adding bank %s %d to export list", i, pBank->Name.c_str(), bankId);
+					banksToExport.push_back(Banks[i]->GetBankId());
+				}
 			}
 		}
 	}

@@ -58,6 +58,7 @@ public:
 	void	OptionsMenuAdditions(void) override;
 	void	ActionMenuAdditions(void) override;
 	void	WindowsMenuAdditions(void)  override;
+	void	GlobalShortcuts(void) override;
 	void	AppFocusCallback(int focused) override;
 	void	DrawEmulatorUI() override;
 
