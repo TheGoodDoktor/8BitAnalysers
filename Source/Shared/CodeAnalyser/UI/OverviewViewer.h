@@ -57,7 +57,7 @@ public:
 	void	DrawBankOverview();
 	void	DrawPhysicalMemoryOverview();
 
-	void	DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix);
+	//void	DrawAccessMap(FCodeAnalysisState& state, uint32_t* pPix);
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
 	
 	void	DrawLegend(void);
@@ -77,4 +77,9 @@ private:
 	bool		bShowROMCheckBox = true;
 	bool		bShowROM = false;
 	bool		bShowCurrentLocation = true;
+
+	int			LastBuiltFrameNo = -1;
+	uint32_t	LastFlashColour = 0;
+	bool		bLastShowROM = false;
+	bool		bLastShowActivity = false;
 };
