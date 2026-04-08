@@ -4,6 +4,7 @@
 #include "Misc/EmuBase.h"
 #include "huc6280.h"
 #include "BankSet.h"
+#include <vector>
 
 #ifndef NDEBUG
 #define ASSEMBLE_AFTER_ASM_EXPORT 1
@@ -68,6 +69,7 @@ public:
 	// multiple MPR slots. Only the primary (index 0) is exported. This function lets
 	// shared code redirect any duplicate bank ID to the primary for label lookups.
 	int16_t GetCanonicalBankId(int16_t bankId) const override;
+	void    BuildCanonicalBankIdLookup();
 
 	// FEmuBase End
 
@@ -187,6 +189,10 @@ protected:
 
 	FBankSet BankSets[kNumBanks];
 	int16_t NullBankId = -1;
+
+	// Fast lookup: maps each bankId to its canonical (primary) bankId.
+	// Built once after all banks are created. Indexed directly by bankId.
+	std::vector<int16_t> CanonicalBankIdLookup;
 
 	// cached for speed
 	FGameDebugStats* pGameDebugStats = nullptr;
