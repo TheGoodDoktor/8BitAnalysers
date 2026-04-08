@@ -488,6 +488,11 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 	}
 }
 
+const FBankSet& FPCEEmu::GetBankSet(int index)
+{
+	return BankSets[index];
+}
+
 int FPCEEmu::GetBankCount() const
 {
 	// todo cache this?

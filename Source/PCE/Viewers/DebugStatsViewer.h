@@ -15,6 +15,14 @@ public:
 	virtual void DrawUI() override;
 
 protected:
+	void DrawBankSets();
+	void DrawDebugStatsTable();
+	void DrawGeneralStats();
+	void DrawBankList();
+
+protected:
+	bool bDumpBanks = false;
+	bool bOnlyShowProblemLabels = false;
 	
 	std::map<std::string, float> TimeUntilMapped;
 
