@@ -240,12 +240,28 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
-	MemoryViewImage->Clear(0xff808080);
+	const int currentFrameNo = state.CurrentFrameNo;
+	const uint32_t flashCol = Colours::GetFlashColour();
 
-	uint32_t* pViewImagePixels = MemoryViewImage->GetPixelBuffer();
-	uint32_t* pPix = pViewImagePixels;
+	const bool bSettingsChanged = (bShowROM != bLastShowROM) || (bShowActivity != bLastShowActivity);
+	const bool bActivityChanged = bShowActivity && (currentFrameNo != LastBuiltFrameNo);
+	const bool bFlashChanged = bShowCurrentLocation && (flashCol != LastFlashColour);
+	const bool bNeedsRebuild = bSettingsChanged || bActivityChanged || bFlashChanged || state.IsCodeAnalysisDataDirty() || (LastBuiltFrameNo == -1);
 
-	DrawUtilisationMap(state,pPix);
+	if (bNeedsRebuild)
+	{
+		MemoryViewImage->Clear(0xff808080);
+
+		uint32_t* pViewImagePixels = MemoryViewImage->GetPixelBuffer();
+		uint32_t* pPix = pViewImagePixels;
+
+		DrawUtilisationMap(state, pPix);
+
+		LastBuiltFrameNo = currentFrameNo;
+		LastFlashColour = flashCol;
+		bLastShowROM = bShowROM;
+		bLastShowActivity = bShowActivity;
+	}
 
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
@@ -262,7 +278,8 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 
 	const float scale = ImGui_GetScaling() * (float)pConfig->OverviewScale;
 
-	MemoryViewImage->UpdateTexture();
+	if (bNeedsRebuild)
+		MemoryViewImage->UpdateTexture();
 
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -334,6 +351,8 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	}
 }
 
+// sam. Rewrote this for speed.
+// Currently limited to physical memory. 
 void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
@@ -354,35 +373,35 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 		}
 	}
 
+	const uint32_t flashCol = Colours::GetFlashColour();
+
 	while (physicalAddress < (1 << 16))
 	{
-		FAddressRef readAddrRef = state.AddressRefFromPhysicalReadAddress(physicalAddress);
-		FAddressRef writeAddrRef = state.AddressRefFromPhysicalWriteAddress(physicalAddress);
-
-		const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(readAddrRef);
+		const FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress((uint16_t)physicalAddress);
 
 		if (pCodeInfo)
 		{
 			uint32_t codeCol = kCodeCol;
-			
+
 			if (bShowActivity)
 			{
 				const int framesSinceExecuted = currentFrameNo - pCodeInfo->FrameLastExecuted;
-				if(pCodeInfo->FrameLastExecuted != -1 && framesSinceExecuted < frameThreshold) 
+				if(pCodeInfo->FrameLastExecuted != -1 && framesSinceExecuted < frameThreshold)
 					codeCol = kCodeColActive;
 			}
 
 			const bool bIsSelectedItem = pSelectedItemCodeInfo == pCodeInfo;
+			const uint32_t col = bIsSelectedItem ? flashCol : codeCol;
 
 			for (int i = 0; i < pCodeInfo->ByteSize; i++)
 			{
 				physicalAddress++;
-				*pPix++ = bIsSelectedItem ? Colours::GetFlashColour() : codeCol;
+				*pPix++ = col;
 			}
 		}
 		else
 		{
-			const FDataInfo* pDataInfo = state.GetDataInfoForAddress(readAddrRef);
+			const FDataInfo* pDataInfo = state.GetReadDataInfoForAddress((uint16_t)physicalAddress);
 
 			const bool bIsSelectedItem = selectedItemAddr >= (int)physicalAddress && selectedItemAddr < (int)(physicalAddress + pDataInfo->ByteSize);
 
@@ -412,47 +431,44 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 						dataCol = kUnknownDataCol;
 			}
 
-			for (int i = 0; i < pDataInfo->ByteSize; i++)
+			if (bShowActivity)
 			{
-				if (bShowActivity)
+				const FDataInfo* pWriteDataInfo = (state.GetWriteBankFromAddress((uint16_t)physicalAddress) != -1) ? state.GetWriteDataInfoForAddress((uint16_t)physicalAddress) : nullptr;
+				uint32_t drawCol = dataCol;
+
+				// show unknowns that have been read
+				if (dataCol == kUnknownDataCol && pDataInfo->Reads.IsEmpty() == false)
+					drawCol = kDataReadCol;
+
+				// show unknowns that have been written to
+				if (dataCol == kUnknownDataCol && pWriteDataInfo && pWriteDataInfo->Writes.IsEmpty() == false)
+					drawCol = kUnknownWriteCol;
+
+				if (pWriteDataInfo != nullptr && pWriteDataInfo->LastFrameWritten != -1)	// Show write
 				{
-					const FDataInfo* pReadDataInfo = state.GetDataInfoForAddress(readAddrRef);
-					const FDataInfo* pWriteDataInfo = state.GetDataInfoForAddress(writeAddrRef);
-					uint32_t drawCol = dataCol;
-
-					// show unknowns that have been read
-					if(dataCol == kUnknownDataCol && pReadDataInfo->Reads.IsEmpty() == false)
-						drawCol = kDataReadCol;
-
-					// show unknowns that have been written to
-					if (dataCol == kUnknownDataCol && pWriteDataInfo && pWriteDataInfo->Writes.IsEmpty() == false)
-						drawCol = kUnknownWriteCol;
-
-					if (pWriteDataInfo != nullptr && pWriteDataInfo->LastFrameWritten != -1)	// Show write
-					{
-						const int framesSinceWritten = currentFrameNo - pWriteDataInfo->LastFrameWritten;
-						if (framesSinceWritten < frameThreshold)
-							drawCol = kUnknownWriteActiveCol;
-					}
-					else if (pReadDataInfo != nullptr && pReadDataInfo->LastFrameRead != -1)	// Show read
-					{
-						const int framesSinceRead = currentFrameNo - pReadDataInfo->LastFrameRead;
-						if (framesSinceRead < frameThreshold)
-							drawCol = kDataReadActiveCol;
-					}
-
-					*pPix++ = bIsSelectedItem ? Colours::GetFlashColour() : drawCol;
+					const int framesSinceWritten = currentFrameNo - pWriteDataInfo->LastFrameWritten;
+					if (framesSinceWritten < frameThreshold)
+						drawCol = kUnknownWriteActiveCol;
 				}
-				else
+				else if (pDataInfo->LastFrameRead != -1)	// Show read
 				{
-					*pPix++ = bIsSelectedItem ? Colours::GetFlashColour() : dataCol;
+					const int framesSinceRead = currentFrameNo - pDataInfo->LastFrameRead;
+					if (framesSinceRead < frameThreshold)
+						drawCol = kDataReadActiveCol;
 				}
 
-				state.AdvanceAddressRef(readAddrRef);
-				state.AdvanceAddressRef(writeAddrRef);
-
-				physicalAddress++;
+				const uint32_t col = bIsSelectedItem ? flashCol : drawCol;
+				for (int i = 0; i < pDataInfo->ByteSize; i++)
+					*pPix++ = col;
 			}
+			else
+			{
+				const uint32_t col = bIsSelectedItem ? flashCol : dataCol;
+				for (int i = 0; i < pDataInfo->ByteSize; i++)
+					*pPix++ = col;
+			}
+
+			physicalAddress += pDataInfo->ByteSize;
 		}
 	}
 }
