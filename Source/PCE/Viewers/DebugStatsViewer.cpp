@@ -94,6 +94,197 @@ void FDebugStatsViewer::DrawUI()
 	if (!pPCEEmu->pDebugStats)
 		return;
 
+	if (ImGui::BeginTabBar("debugstats_tab_bar"))
+	{
+		if (ImGui::BeginTabItem("General"))
+		{
+			DrawGeneralStats();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Debug Stats Table"))
+		{
+			DrawDebugStatsTable();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Bank List"))
+		{
+			DrawBankList();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Bank Sets"))
+		{
+			DrawBankSets();
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
+}
+
+void FDebugStatsViewer::DrawBankSets()
+{
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+
+	ImGui::Checkbox("Only show problem labels", &bOnlyShowProblemLabels);
+
+	for (int i = 0; i < FPCEEmu::kNumBanks; i++)
+	{
+		const FBankSet& bankSet = pPCEEmu->GetBankSet(i);
+
+		if (!bOnlyShowProblemLabels && !bankSet.Banks.empty())
+		{
+			char tmp[32];
+			sprintf(tmp, "%d", i);
+			ImGui::SeparatorText(tmp);
+		}
+
+		const int16_t canonicalBankId = bankSet.GetBankId();
+		for (auto& entry : bankSet.Banks)
+		{
+			FCodeAnalysisBank* pBank = state.GetBank(entry.BankId);
+			int numLabels = 0;
+			if (pBank)
+			{
+				for (auto item : pBank->ItemList)
+				{
+					if (item.Item->Type == EItemType::Label)
+						numLabels++;
+				}
+			}
+			bool bShowLabel = !bOnlyShowProblemLabels;
+			const bool bIsBankOfInterest = entry.BankId != canonicalBankId || i == 136 /*UNUSED*/;
+			if (bOnlyShowProblemLabels && bIsBankOfInterest && numLabels)
+				bShowLabel = true;
+			if (bShowLabel)
+			{
+				ImGui::Text("  %10s: %d labels", pBank ? pBank->Name.c_str() : "none", numLabels);
+			}
+		}
+	}
+}
+
+void FDebugStatsViewer::DrawDebugStatsTable()
+{
+	if (ImGui::Button("Reset"))
+		pPCEEmu->pDebugStats->Reset();
+	ImGui::SameLine();
+	if (ImGui::Button("Dump"))
+		bDumpBanks = true;
+
+	static std::vector<std::pair<std::string, const FGameDebugStats*>> SortedGameStats;
+	static size_t LastGameStatsSize = 0;
+
+	const ImGuiTableFlags tableFlags =
+		ImGuiTableFlags_Borders |
+		ImGuiTableFlags_Resizable |
+		ImGuiTableFlags_Reorderable |
+		ImGuiTableFlags_Sortable |
+		ImGuiTableFlags_ScrollY;
+
+	if (ImGui::BeginTable("GameStatsTable", Col_GS_Count, tableFlags))
+	{
+		ImGui::TableSetupScrollFreeze(0, 1);
+		ImGui::TableSetupColumn("Game", ImGuiTableColumnFlags_DefaultSort);
+		ImGui::TableSetupColumn("Num Banks");
+		ImGui::TableSetupColumn("Banks Mapped");
+		ImGui::TableSetupColumn("Max Bank Switches");
+		ImGui::TableSetupColumn("Avg FPS");
+		ImGui::TableHeadersRow();
+
+		const auto& gameDebugStats = pPCEEmu->pDebugStats->GameDebugStats;
+
+		if (gameDebugStats.size() != LastGameStatsSize)
+		{
+			LastGameStatsSize = gameDebugStats.size();
+			SortedGameStats.clear();
+			SortedGameStats.reserve(gameDebugStats.size());
+			for (const auto& pair : gameDebugStats)
+				SortedGameStats.push_back({ pair.first, &pair.second });
+		}
+
+		ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs();
+		if (sortSpecs && sortSpecs->SpecsDirty)
+		{
+			SortGameStatsTable(SortedGameStats, sortSpecs);
+			sortSpecs->SpecsDirty = false;
+		}
+
+		for (const auto& entry : SortedGameStats)
+		{
+			const std::string& gameName = entry.first;
+			const FGameDebugStats& gameStats = *entry.second;
+			const bool bAllMapped = gameStats.NumBanksMapped == gameStats.NumBanks;
+
+			ImGui::TableNextRow();
+
+			if (bAllMapped)
+				ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::ColorConvertFloat4ToU32(ImVec4(0.f, 0.5f, 0.f, 1.0f)));
+
+			ImGui::TableSetColumnIndex(Col_GS_GameName);
+			ImGui::TextUnformatted(gameName.c_str());
+
+			ImGui::TableSetColumnIndex(Col_GS_NumBanks);
+			ImGui::Text("%d", gameStats.NumBanks);
+
+			ImGui::TableSetColumnIndex(Col_GS_BanksMapped);
+			ImGui::Text("%d/%d", gameStats.NumBanksMapped, gameStats.NumBanks);
+
+			ImGui::TableSetColumnIndex(Col_GS_MaxBankSwitches);
+			ImGui::Text("%d", gameStats.MaxBankSwitches);
+
+			ImGui::TableSetColumnIndex(Col_GS_AvgFPS);
+			ImGui::Text("%.1f", gameStats.AvgFrameRate);
+		}
+
+		ImGui::EndTable();
+	}
+}
+
+void FDebugStatsViewer::DrawBankList()
+{
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+
+	constexpr ImVec4 redColour(1.0f, 0.0f, 0.0f, 1.0f);
+	constexpr ImVec4 whiteColour(1.0f, 1.0f, 1.0f, 1.0f);
+	constexpr ImVec4 yellowColour(1.0f, 1.0f, 0.0f, 1.0f);
+	constexpr ImVec4 greenColour(0.0f, 1.0f, 0.0f, 1.0f);
+
+	for (int i = 0; i < 256; i++)
+	{
+		if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->Banks[i]->GetBankId(0)))
+		{
+			const uint8_t* gearGfxMem = pPCEEmu->GetMemory()->GetMemoryMap()[i];
+
+			int index = -1;
+			const Memory::MemoryBankType bankType = pPCEEmu->GetMemory()->GetBankType(i);
+			if (bankType == Memory::MEMORY_BANK_TYPE_ROM || bankType == Memory::MEMORY_BANK_TYPE_BIOS)
+				index = pPCEEmu->GetMedia()->GetRomBankIndex(i);
+			else if (bankType == Memory::MEMORY_BANK_TYPE_CARD_RAM)
+				index = i - pPCEEmu->GetMemory()->GetCardRAMStart();
+
+			const bool bRam = pPCEEmu->GetMemory()->GetMemoryMapWrite()[i];
+
+			ImVec4 colour;
+			if (gearGfxMem != pBank->Memory)
+				colour = redColour;
+			else if ((bRam && pBank->Mapping != EBankAccess::ReadWrite) || (!bRam && pBank->Mapping != EBankAccess::Read))
+				colour = yellowColour;
+			else
+				colour = whiteColour;
+
+			ImGui::TextColored(colour, "%02x '%s' %02d %s '%s' %s",
+				i,
+				GetBankType(pPCEEmu->GetMemory(), i).c_str(),
+				index,
+				bRam ? "RW" : "R",
+				pBank->Name.c_str(),
+				pBank->Mapping == EBankAccess::Read ? "R" : pBank->Mapping == EBankAccess::ReadWrite ? "RW" : "?");
+		}
+	}
+}
+
+void FDebugStatsViewer::DrawGeneralStats()
+{
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
 	int mappedBanks = 0;
@@ -103,7 +294,7 @@ void FDebugStatsViewer::DrawUI()
 	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 	{
 		FCodeAnalysisBank& bank = state.GetBanks()[b];
-	
+
 		if (bank.PrimaryMappedPage != -1)
 			banksWithPrimaryMappedPage++;
 		if (bank.IsMapped())
@@ -160,86 +351,7 @@ void FDebugStatsViewer::DrawUI()
 	constexpr ImVec4 yellowColour(1.0f, 1.0f, 0.0f, 1.0f);
 	constexpr ImVec4 greenColour(0.0f, 1.0f, 0.0f, 1.0f);
 
-	bool bDumpBanks = false;
-
-	if (ImGui::TreeNode("Game Stats"))
-	{
-		if (ImGui::Button("Reset"))
-			pPCEEmu->pDebugStats->Reset();
-		ImGui::SameLine();
-		if (ImGui::Button("Dump"))
-			bDumpBanks = true;
-
-		static std::vector<std::pair<std::string, const FGameDebugStats*>> SortedGameStats;
-		static size_t LastGameStatsSize = 0;
-
-		const ImGuiTableFlags tableFlags =
-			ImGuiTableFlags_Borders |
-			ImGuiTableFlags_Resizable |
-			ImGuiTableFlags_Reorderable |
-			ImGuiTableFlags_Sortable |
-			ImGuiTableFlags_ScrollY;
-
-		if (ImGui::BeginTable("GameStatsTable", Col_GS_Count, tableFlags))
-		{
-			ImGui::TableSetupScrollFreeze(0, 1);
-			ImGui::TableSetupColumn("Game", ImGuiTableColumnFlags_DefaultSort);
-			ImGui::TableSetupColumn("Num Banks");
-			ImGui::TableSetupColumn("Banks Mapped");
-			ImGui::TableSetupColumn("Max Bank Switches");
-			ImGui::TableSetupColumn("Avg FPS");
-			ImGui::TableHeadersRow();
-
-			const auto& gameDebugStats = pPCEEmu->pDebugStats->GameDebugStats;
-
-			if (gameDebugStats.size() != LastGameStatsSize)
-			{
-				LastGameStatsSize = gameDebugStats.size();
-				SortedGameStats.clear();
-				SortedGameStats.reserve(gameDebugStats.size());
-				for (const auto& pair : gameDebugStats)
-					SortedGameStats.push_back({ pair.first, &pair.second });
-			}
-
-			ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs();
-			if (sortSpecs && sortSpecs->SpecsDirty)
-			{
-				SortGameStatsTable(SortedGameStats, sortSpecs);
-				sortSpecs->SpecsDirty = false;
-			}
-
-			for (const auto& entry : SortedGameStats)
-			{
-				const std::string& gameName = entry.first;
-				const FGameDebugStats& gameStats = *entry.second;
-				const bool bAllMapped = gameStats.NumBanksMapped == gameStats.NumBanks;
-
-				ImGui::TableNextRow();
-
-				if (bAllMapped)
-					ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::ColorConvertFloat4ToU32(ImVec4(0.f, 0.5f, 0.f, 1.0f)));
-
-				ImGui::TableSetColumnIndex(Col_GS_GameName);
-				ImGui::TextUnformatted(gameName.c_str());
-
-				ImGui::TableSetColumnIndex(Col_GS_NumBanks);
-				ImGui::Text("%d", gameStats.NumBanks);
-
-				ImGui::TableSetColumnIndex(Col_GS_BanksMapped);
-				ImGui::Text("%d/%d", gameStats.NumBanksMapped, gameStats.NumBanks);
-
-				ImGui::TableSetColumnIndex(Col_GS_MaxBankSwitches);
-				ImGui::Text("%d", gameStats.MaxBankSwitches);
-
-				ImGui::TableSetColumnIndex(Col_GS_AvgFPS);
-				ImGui::Text("%.1f", gameStats.AvgFrameRate);
-			}
-
-			ImGui::EndTable();
-		}
-
-		ImGui::TreePop();
-	}
+	bDumpBanks = false;
 
 	for (const auto& pair : pPCEEmu->pDebugStats->GameDebugStats)
 	{
@@ -260,7 +372,7 @@ void FDebugStatsViewer::DrawUI()
 				TimeUntilMapped[pair.first] = pPCEEmu->GetBatchGameLoadViewer()->GetElapsedGameRunTime();
 		}
 	}
-	
+
 	if (ImGui::TreeNode("Games Bank mappings"))
 	{
 		TGameDb& gameDb = GetGameDb();
@@ -323,43 +435,6 @@ void FDebugStatsViewer::DrawUI()
 		ImGui::TreePop();
 	}
 
-	if (ImGui::TreeNode("Bank list"))
-	{
-		for (int i = 0; i < 256; i++)
-		{
-			if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->Banks[i]->GetBankId(0)))
-			{
-				const uint8_t* gearGfxMem = pPCEEmu->GetMemory()->GetMemoryMap()[i];
-
-				int index = -1;
-				const Memory::MemoryBankType bankType = pPCEEmu->GetMemory()->GetBankType(i);
-				if (bankType == Memory::MEMORY_BANK_TYPE_ROM || bankType == Memory::MEMORY_BANK_TYPE_BIOS)
-					index = pPCEEmu->GetMedia()->GetRomBankIndex(i);
-				else if (bankType == Memory::MEMORY_BANK_TYPE_CARD_RAM)
-					index = i - pPCEEmu->GetMemory()->GetCardRAMStart();
-
-				const bool bRam = pPCEEmu->GetMemory()->GetMemoryMapWrite()[i];
-				
-				ImVec4 colour;
-				if (gearGfxMem != pBank->Memory)
-					colour = redColour;
-				else if ((bRam && pBank->Mapping != EBankAccess::ReadWrite) || (!bRam && pBank->Mapping != EBankAccess::Read))
-					colour = yellowColour;
-				else
-					colour = whiteColour;
-
-				ImGui::TextColored(colour, "%02x '%s' %02d %s '%s' %s",
-					i, 
-					GetBankType(pPCEEmu->GetMemory(), i).c_str(), 
-					index, 
-					bRam ? "RW" : "R",
-					pBank->Name.c_str(),
-					pBank->Mapping == EBankAccess::Read ? "R" : pBank->Mapping == EBankAccess::ReadWrite ? "RW" : "?");
-			}
-		}
-		ImGui::TreePop();
-	}
-
 	ImGui::SeparatorText("Items");
 	ImGui::Text("Itemlist size: %d", state.ItemList.size());
 	ImGui::Text("Global data items size: %d", state.GlobalDataItems.size());
@@ -372,7 +447,7 @@ void FDebugStatsViewer::DrawUI()
 	ImGui::SeparatorText("Debugger");
 	ImGui::Text("Frame trace size: %d", state.Debugger.GetFrameTrace().size());
 	ImGui::Text("Call stack size : %d", state.Debugger.GetCallstack().size());
-	
+
 	ImGui::SeparatorText("Analysis State");
 	ImGui::Text("Current frame : %d", state.CurrentFrameNo);
 	ImGui::Text("Execution counter : %d", state.ExecutionCounter);

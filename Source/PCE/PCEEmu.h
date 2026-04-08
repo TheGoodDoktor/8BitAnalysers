@@ -118,6 +118,8 @@ public:
 	
 	void EnableGeargrafxCallbacks(bool bEnabled);
 
+	const FBankSet& GetBankSet(int index);
+
 	// Get the PCE bank index (0-255) for a given bank id.
 	uint8_t GetBankIndexForBankId(uint16_t bankId);
 
@@ -200,8 +202,5 @@ protected:
 
 	bool bCallbacksEnabled = true;
 
-	// todo kick out in release build?
 	FAsmExportValidator* pAsmExportValidator = nullptr;
-	//int16_t UnusedBankIdStart = -1;
-	//int16_t UnusedBankIdEnd = -1;
 };
