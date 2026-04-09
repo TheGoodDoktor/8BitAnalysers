@@ -60,7 +60,8 @@ INLINE bool HuC6260::Clock(u32 cycles)
             if (m_pixel_x == k_huc6260_full_line_width[m_speed])
                 m_pixel_x = 0;
 
-            if (is_sgx)
+#if 0
+						if (is_sgx)
             {
                 u16 pixel_1, pixel_2;
                 m_huc6202->ClockSGX(&pixel_1, &pixel_2);
@@ -83,6 +84,7 @@ INLINE bool HuC6260::Clock(u32 cycles)
                 }
             }
             else
+#endif
             {
                 u16 pixel = m_huc6202->Clock();
                 if (m_active_line && (m_pixel_x >= m_screen_start_x) && (m_pixel_x < m_screen_end_x))
@@ -146,7 +148,8 @@ INLINE bool HuC6260::Clock(u32 cycles)
 template <bool is_sgx>
 INLINE void HuC6260::RenderFrame()
 {
-    if (is_sgx)
+#if 0
+	if (is_sgx)
     {
         if (m_pixel_format == GG_PIXEL_RGB565)
             RenderFrameTemplate<true, 2>();
@@ -154,6 +157,7 @@ INLINE void HuC6260::RenderFrame()
             RenderFrameTemplate<true, 4>();
     }
     else
+#endif
     {
         if (m_pixel_format == GG_PIXEL_RGB565)
             RenderFrameTemplate<false, 2>();
@@ -168,6 +172,7 @@ void HuC6260::RenderFrameTemplate()
     u8* palette = (m_pixel_format == GG_PIXEL_RGB565) ? &m_rgb565_palette[m_palette][0][0] : &m_rgba888_palette[m_palette][0][0];
     int frame_buffer_index = 0;
 
+#if 0
     if (is_sgx)
     {
         HuC6202::HuC6202_Window_Priority* priorities = m_huc6202->GetWindowPriorities();
@@ -239,6 +244,7 @@ void HuC6260::RenderFrameTemplate()
         }
     }
     else
+#endif
     {
         for (int i = 0; i < m_pixel_index; i++)
         {
