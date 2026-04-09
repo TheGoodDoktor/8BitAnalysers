@@ -76,9 +76,9 @@ constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAn
 #define DEBUG_STATS_VIEWER 1
 #define GAME_DB_VIEWER 1
 #else
-#define BATCH_GAME_VIEWER 0
-#define DEBUG_STATS_VIEWER 0
-#define GAME_DB_VIEWER 0
+#define BATCH_GAME_VIEWER 1
+#define DEBUG_STATS_VIEWER 1
+#define GAME_DB_VIEWER 1
 #endif
 
 #if BANK_SWITCH_DEBUG
@@ -791,6 +791,35 @@ void FPCEEmu::UpdateDebugStats()
 		pGameDebugStats->NumBanksMapped = (int)bankIdsPreviouslyMapped.size();
 		pGameDebugStats->MaxBankSwitches = MAX(pGameDebugStats->MaxBankSwitches, pDebugStats->NumBankSwitchesThisFrame);
 		pGameDebugStats->AvgFrameRate = (float)pDebugStats->GetAverageFrameRate();
+	
+		// Keep track of number of non canonical banks that have labels and code.
+		int nonCanonicalBanksWithLabels = 0;
+		int nonCanonicalBanksWithCodeItems = 0;
+		for (int i = 0; i < FPCEEmu::kNumBanks; i++)
+		{
+			const FBankSet& bankSet = BankSets[i];
+			if (bankSet.Banks.empty())
+				continue;
+
+			const int16_t canonicalBankId = bankSet.GetBankId();
+			for (auto& entry : bankSet.Banks)
+			{
+				if (canonicalBankId != entry.BankId)
+				{
+					FCodeAnalysisBank* pBank = state.GetBank(entry.BankId);
+					if (pBank)
+					{
+						if (pBank->NumLabels)
+							nonCanonicalBanksWithLabels++;
+						if (pBank->NumCodeItems)
+							nonCanonicalBanksWithCodeItems++;
+					}
+				}
+			}
+
+			// todo code items
+			pGameDebugStats->NumNonCanonicalBanksWithLabels = nonCanonicalBanksWithLabels;
+		}
 	}
 #endif
 }

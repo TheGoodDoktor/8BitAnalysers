@@ -248,6 +248,9 @@ struct FCodeAnalysisConfig
 	int		BranchLinesPerIndent = 5;
 };
 
+// sam. Refactored to remove memory allocations.
+// Replaced the MappedReadPages and MappedWritePages sets with an array. 
+// Improves performance.
 #define CODE_ANALYSIS_BANK_REWORK 1
 struct FCodeAnalysisBank
 {
@@ -256,13 +259,14 @@ struct FCodeAnalysisBank
 	uint32_t			SizeMask = 0;
 	//std::vector<int>	MappedPages;	// banks can be mapped to multiple pages
 
+	// store if bank is canonical here for convenience?
+
 #if CODE_ANALYSIS_BANK_REWORK
 	FCodeAnalysisBank()
 	{
 		// Number of 1k pages in the 64k physical memory range
 		PageAccessFlags.resize(64, 0);
 	}
-	// sam. Replaced the sets with an array. Improved performance.
 	std::vector<uint8_t> PageAccessFlags;
 #else
 	std::unordered_set<int>	MappedReadPages;
@@ -365,6 +369,14 @@ struct FCodeAnalysisBank
 	EBankAccess	GetBankMapping() const { return Mapping;}
 	uint16_t	GetMappedAddress() const { return PrimaryMappedPage * FCodeAnalysisPage::kPageSize; }
 	uint16_t	GetSizeBytes() const { return NoPages * FCodeAnalysisPage::kPageSize; }
+
+#ifndef NDEBUG
+	// sam. feature to keep track of banks that contain labels or code.
+	// this is used to detect when non canonical banks (dupe banks)
+	// have labels or code. we want to eliminate labels and code from these banks.
+	int NumLabels = 0;
+	int NumCodeItems = 0;
+#endif
 };
 
 #ifdef NDEBUG

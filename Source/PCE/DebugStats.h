@@ -14,7 +14,8 @@ struct FGameDebugStats
 	int NumBanks = 0;
 	int NumBanksMapped = 0;
 	int MaxBankSwitches = 0;
-	
+	int NumNonCanonicalBanksWithLabels = 0;
+
 	float AvgFrameRate = 0.f;
 };
 

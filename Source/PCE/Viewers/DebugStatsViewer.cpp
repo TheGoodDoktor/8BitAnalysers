@@ -51,6 +51,7 @@ enum EGameStatsColumns
 	Col_GS_BanksMapped,
 	Col_GS_MaxBankSwitches,
 	Col_GS_AvgFPS,
+	Col_GS_NumNonCanonicalBanksWithLabels,
 	Col_GS_Count
 };
 
@@ -81,6 +82,9 @@ static void SortGameStatsTable(std::vector<std::pair<std::string, const FGameDeb
 				break;
 			case Col_GS_AvgFPS:
 				result = (A.second->AvgFrameRate > B.second->AvgFrameRate) ? 1 : (A.second->AvgFrameRate < B.second->AvgFrameRate) ? -1 : 0;
+				break;
+			case Col_GS_NumNonCanonicalBanksWithLabels:
+				result = A.second->NumNonCanonicalBanksWithLabels - B.second->NumNonCanonicalBanksWithLabels;
 				break;
 			}
 			if (spec.SortDirection == ImGuiSortDirection_Descending)
@@ -130,8 +134,10 @@ void FDebugStatsViewer::DrawBankSets()
 	for (int i = 0; i < FPCEEmu::kNumBanks; i++)
 	{
 		const FBankSet& bankSet = pPCEEmu->GetBankSet(i);
+		if (bankSet.Banks.empty())
+			continue;
 
-		if (!bOnlyShowProblemLabels && !bankSet.Banks.empty())
+		if (!bOnlyShowProblemLabels)
 		{
 			char tmp[32];
 			sprintf(tmp, "%d", i);
@@ -143,21 +149,20 @@ void FDebugStatsViewer::DrawBankSets()
 		{
 			FCodeAnalysisBank* pBank = state.GetBank(entry.BankId);
 			int numLabels = 0;
+			int numCodeItems = 0;
 			if (pBank)
 			{
-				for (auto item : pBank->ItemList)
-				{
-					if (item.Item->Type == EItemType::Label)
-						numLabels++;
-				}
+				numLabels = pBank->NumLabels;
+				numCodeItems = pBank->NumCodeItems;
 			}
 			bool bShowLabel = !bOnlyShowProblemLabels;
-			const bool bIsBankOfInterest = entry.BankId != canonicalBankId || i == 136 /*UNUSED*/;
+			const bool bIsCanonical = entry.BankId == canonicalBankId;
+			const bool bIsBankOfInterest = !bIsCanonical || i == 136 /*UNUSED*/;
 			if (bOnlyShowProblemLabels && bIsBankOfInterest && numLabels)
 				bShowLabel = true;
 			if (bShowLabel)
 			{
-				ImGui::Text("  %10s: %d labels", pBank ? pBank->Name.c_str() : "none", numLabels);
+				ImGui::Text("  %10s: %d labels %d code items", pBank ? pBank->Name.c_str() : "none", numLabels, numCodeItems);
 			}
 		}
 	}
@@ -189,6 +194,7 @@ void FDebugStatsViewer::DrawDebugStatsTable()
 		ImGui::TableSetupColumn("Banks Mapped");
 		ImGui::TableSetupColumn("Max Bank Switches");
 		ImGui::TableSetupColumn("Avg FPS");
+		ImGui::TableSetupColumn("Num Problem Banks With Labels");
 		ImGui::TableHeadersRow();
 
 		const auto& gameDebugStats = pPCEEmu->pDebugStats->GameDebugStats;
@@ -234,6 +240,9 @@ void FDebugStatsViewer::DrawDebugStatsTable()
 
 			ImGui::TableSetColumnIndex(Col_GS_AvgFPS);
 			ImGui::Text("%.1f", gameStats.AvgFrameRate);
+
+			ImGui::TableSetColumnIndex(Col_GS_NumNonCanonicalBanksWithLabels);
+			ImGui::Text("%d", gameStats.NumNonCanonicalBanksWithLabels);
 		}
 
 		ImGui::EndTable();
