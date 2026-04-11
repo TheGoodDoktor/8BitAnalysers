@@ -4649,8 +4649,8 @@
             "bCommentedOut": false,
             "bManualEdit": false,
             "bROMFunction": true,
-            "bStubImplemented": false,
-            "bStubbedOut": false
+            "bStubImplemented": true,
+            "bStubbedOut": true
         },
         {
             "Description": "",
@@ -12282,54 +12282,63 @@
                 {
                     "Address": 970,
                     "ByteSize": 2,
+                    "Comment": "7",
                     "DataType": 2,
                     "DisplayType": 1
                 },
                 {
                     "Address": 972,
                     "ByteSize": 2,
+                    "Comment": "8",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 974,
                     "ByteSize": 2,
+                    "Comment": "9",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 976,
                     "ByteSize": 2,
+                    "Comment": "10",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 978,
                     "ByteSize": 2,
+                    "Comment": "11",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 980,
                     "ByteSize": 2,
+                    "Comment": "12",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 982,
                     "ByteSize": 2,
+                    "Comment": "13",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 984,
                     "ByteSize": 2,
+                    "Comment": "14",
                     "DataType": 2,
                     "DisplayType": 2
                 },
                 {
                     "Address": 986,
                     "ByteSize": 2,
+                    "Comment": "15",
                     "DataType": 2,
                     "DisplayType": 2
                 }
@@ -15330,7 +15339,7 @@
                     "Address": 471,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_0DD7"
+                    "Name": "Command6_Function"
                 },
                 {
                     "Address": 480,
@@ -15429,7 +15438,7 @@
                     "Address": 684,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_0EAC"
+                    "Name": "Command7_Function"
                 },
                 {
                     "Address": 710,
@@ -20848,7 +20857,7 @@
                 {
                     "Address": 48,
                     "ByteSize": 3,
-                    "Flags": 40,
+                    "Flags": 8,
                     "OperandType": 2
                 },
                 {
@@ -30996,7 +31005,6 @@
                 {
                     "Address": 862,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -31028,7 +31036,6 @@
                 {
                     "Address": 876,
                     "ByteSize": 3,
-                    "Flags": 32,
                     "OperandType": 1
                 },
                 {
@@ -31973,7 +31980,8 @@
                 },
                 {
                     "Address": 40,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "fetch video ram address from table entry"
                 },
                 {
                     "Address": 41,
@@ -31994,15 +32002,18 @@
                 {
                     "Address": 45,
                     "ByteSize": 3,
+                    "Comment": "get current char attrib",
                     "OperandType": 1
                 },
                 {
                     "Address": 48,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "add 5?"
                 },
                 {
                     "Address": 50,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "mask"
                 },
                 {
                     "Address": 52,
@@ -32011,6 +32022,7 @@
                 {
                     "Address": 53,
                     "ByteSize": 3,
+                    "Comment": "jump into print string function",
                     "OperandType": 2
                 },
                 {
@@ -32971,7 +32983,7 @@
                     "Address": 33,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_3421"
+                    "Name": "Command10_Function"
                 },
                 {
                     "Address": 56,
@@ -42613,7 +42625,9 @@
                 },
                 {
                     "Address": 370,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "param",
+                    "Flags": 32
                 },
                 {
                     "Address": 371,
@@ -42640,7 +42654,8 @@
                 },
                 {
                     "Address": 380,
-                    "ByteSize": 2
+                    "ByteSize": 2,
+                    "Comment": "clamp to 0-6 range"
                 },
                 {
                     "Address": 382,
@@ -42658,6 +42673,7 @@
                 {
                     "Address": 387,
                     "ByteSize": 2,
+                    "Comment": "jump if param is 0",
                     "OperandType": 2
                 },
                 {
@@ -42675,6 +42691,7 @@
                 {
                     "Address": 394,
                     "ByteSize": 3,
+                    "Comment": "draw player life",
                     "Flags": 8,
                     "OperandType": 2
                 },
@@ -42770,7 +42787,8 @@
                 },
                 {
                     "Address": 434,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "draw video ram char"
                 },
                 {
                     "Address": 435,
@@ -42782,7 +42800,8 @@
                 },
                 {
                     "Address": 437,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "draw video ram char"
                 },
                 {
                     "Address": 438,
@@ -42813,6 +42832,7 @@
                 {
                     "Address": 444,
                     "ByteSize": 3,
+                    "Comment": "move to color RAM?",
                     "OperandType": 7
                 },
                 {
@@ -42827,7 +42847,8 @@
                 },
                 {
                     "Address": 449,
-                    "ByteSize": 1
+                    "ByteSize": 1,
+                    "Comment": "write attrib"
                 },
                 {
                     "Address": 450,
@@ -44079,12 +44100,12 @@
                     "Address": 370,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_4D72"
+                    "Name": "Command5_Function"
                 },
                 {
                     "Address": 386,
                     "LabelType": 2,
-                    "Name": "label_4D82"
+                    "Name": "no_clamp"
                 },
                 {
                     "Address": 393,
@@ -44115,7 +44136,7 @@
                     "Address": 431,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_4DAF"
+                    "Name": "PlayerPlayerLifeIcon"
                 },
                 {
                     "Address": 459,
@@ -48986,6 +49007,12 @@
                     "Address": 471,
                     "LabelType": 2,
                     "Name": "label_59D7"
+                },
+                {
+                    "Address": 477,
+                    "Global": true,
+                    "LabelType": 0,
+                    "Name": "data_59DD"
                 },
                 {
                     "Address": 848,
