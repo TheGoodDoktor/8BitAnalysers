@@ -260,11 +260,12 @@ std::string g_Instructions =
 "As well as a disassembler, it provides various tools to query the game code and data, recording memory accesses for code and data locations. "
 
 "## Recommended workflow\n"
-"1. Read the 'arcadez80://function-index' resource for a compact overview of all known functions and their descriptions.\n"
-"2. Use get_function_list and get_function_info to understand call relationships between functions.\n"
-"3. Use get_function_disassembly to inspect individual functions in detail.\n"
-"4. Use disassemble_address_range for ad-hoc address ranges not covered by a named function.\n"
-"5. The 'arcadez80://disassembly' resource provides the FULL annotated assembly listing (~280KB). "
+"1. Read 'arcadez80://function-index' for a compact overview of all known functions and their descriptions.\n"
+"2. Read 'arcadez80://labels' for the full symbol table — named RAM variables, I/O ports, data structures, etc.\n"
+"3. Read 'arcadez80://call-graph' to understand which functions call which, without repeated tool calls.\n"
+"4. Use get_function_disassembly to inspect individual functions in detail.\n"
+"5. Use disassemble_address_range for ad-hoc address ranges not covered by a named function.\n"
+"6. The 'arcadez80://disassembly' resource provides the FULL annotated assembly listing (~280KB). "
 "Only request it when you need a broad search across the entire codebase — it is too large to read routinely.\n"
 
 "## Write-back tools\n"
