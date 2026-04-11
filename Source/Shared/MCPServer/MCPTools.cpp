@@ -2,6 +2,7 @@
 #include "Misc/EmuBase.h"
 #include "CodeAnalyser/FunctionAnalyser.h"
 #include "CodeAnalyser/AssemblerExport.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
 class FGetFunctionListTool : public FMCPTool
 {
@@ -373,7 +374,9 @@ class FGetCodeInfoTool : public FMCPTool
 			{
 				// output code info as json
 				nlohmann::json result;
-				result["disassembly"] = pCodeInfo->Text;
+				Markup::SetCodeInfo(pCodeInfo);
+				result["disassembly"] = Markup::ExpandString(codeAnalysis, pCodeInfo->Text.c_str());
+				Markup::SetCodeInfo(nullptr);
 				result["no_times_executed"] = pCodeInfo->ExecutionCount;
 
 				// reads
