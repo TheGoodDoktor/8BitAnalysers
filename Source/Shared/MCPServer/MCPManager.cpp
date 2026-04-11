@@ -55,13 +55,6 @@ void FMCPManager::ProcessCommands()
 		//old pResponse->Result = pMCPServer->ExecuteCommand(pCmd->ToolName, pCmd->Arguments);
 		pResponse->Result = pCmd->Execute(pMCPServer);
 
-		if (pResponse->Result.contains("error"))
-		{
-			pResponse->bIsError = true;
-			pResponse->ErrorCode = -32603;
-			pResponse->ErrorMessage = pResponse->Result["error"];
-		}
-
 		ResponseQueue.Push(pResponse);
 		delete pCmd;
 		pCmd = nullptr;

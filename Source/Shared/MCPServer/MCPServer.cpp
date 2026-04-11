@@ -136,8 +136,17 @@ void FMCPServer::Run()
 			nlohmann::json mcpResult;
 			mcpResult["content"] = nlohmann::json::array();
 
-			// Check is this is image data
-			if(pResponse->Result.contains("__mcp_image") && pResponse->Result["__mcp_image"] == true)
+			// Tool errors: return as successful JSON-RPC response with isError:true in content
+			if(pResponse->Result.contains("error"))
+			{
+				mcpResult["isError"] = true;
+				mcpResult["content"].push_back({
+					{"type", "text"},
+					{"text", pResponse->Result["error"].get<std::string>()}
+					});
+			}
+			// Check if this is image data
+			else if(pResponse->Result.contains("__mcp_image") && pResponse->Result["__mcp_image"] == true)
 			{
 				// Image content type
 				mcpResult["content"].push_back({

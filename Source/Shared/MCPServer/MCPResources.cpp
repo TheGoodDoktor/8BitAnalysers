@@ -21,7 +21,7 @@ public:
 		std::string outStr;
 		//bool ExportAssembler(FEmuBase * pEmu, std::string * pOutStr, uint16_t startAddr, uint16_t endAddr)
 
-		ExportAssembler(pEmulator, &outStr, 0x0000, 0x5FFF);
+		ExportAssembler(pEmulator, &outStr, 0x0000, 0x5FFF);	// just cover the code area of the ROM
 		return outStr;
 
 		// 		std::ostringstream disasmStream;
