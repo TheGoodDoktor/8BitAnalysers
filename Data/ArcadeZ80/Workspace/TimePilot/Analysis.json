@@ -1358,7 +1358,7 @@
                     "ReturnAddr": 301400064
                 }
             ],
-            "Description": "",
+            "Description": "Main per-frame game update called from the NMI interrupt handler. Orchestrates all game subsystems in order: wave spawning, player controls, player firing, enemy spawning, cloud multiplexing (x4 for timing), enemy movement, collision/bullet/score updates, sprite multiplexing, then player death and level-complete checks.",
             "EndAddress": 309985280,
             "ExitPoints": [
                 309657600,
@@ -23815,7 +23815,7 @@
                 {
                     "Address": 42,
                     "ByteSize": 3,
-                    "Comment": "fetch?",
+                    "Comment": "Anti-tamper: checks integrity bytes at ABFE/ABFF, jumps to garbage data to crash if wrong",
                     "OperandType": 1
                 },
                 {
@@ -31707,7 +31707,7 @@
                     "Address": 436,
                     "Global": true,
                     "LabelType": 1,
-                    "Name": "function_31B4"
+                    "Name": "UpdateWaveSpawning"
                 },
                 {
                     "Address": 457,
@@ -54103,6 +54103,12 @@
                     "Global": true,
                     "LabelType": 0,
                     "Name": "data_AD38"
+                },
+                {
+                    "Address": 397,
+                    "Global": true,
+                    "LabelType": 2,
+                    "Name": "HiScore"
                 },
                 {
                     "Address": 498,
