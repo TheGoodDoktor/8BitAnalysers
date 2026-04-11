@@ -4,10 +4,12 @@
 #include <iostream>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
+#include <vector>
+#include <queue>
+#include <atomic>
 #include <cerrno>
 #include "Debug/DebugLog.h"
-
-//#define MCP_HTTP_ENDPOINT_PATH "/mcp"
 
 #ifdef _WIN32
 	#include <winsock2.h>
@@ -36,11 +38,11 @@ public:
 	virtual bool ReceiveData(std::string& jsonLine) = 0;
 	virtual void Close() = 0;
 protected:
-	std::mutex Mutex;
-	bool bIsClosed = false;
+	std::mutex			Mutex;
+	std::atomic<bool>	bIsClosed{false};
 };
 
-// transport that just uses stdin/stdout for communication
+// Transport that uses stdin/stdout for communication
 class FStdioTransport : public FMCPTransport
 {
 public:
@@ -50,7 +52,6 @@ public:
 	bool SendData(const std::string& jsonLine) override;
 	bool ReceiveData(std::string& jsonLine) override;
 	void Close() override;
-
 };
 
 class FHttpTransport : public FMCPTransport
@@ -62,9 +63,52 @@ public:
 	bool ReceiveData(std::string& jsonLine) override;
 	void Close() override;
 
+	// Push an SSE event to all connected SSE clients
+	void SendSseEvent(const std::string& eventType, const std::string& data);
+
 	bool ValidateAndRejectInvalidPath(const std::string& request, socket_t client);
+
 private:
+	// Parsed HTTP request
+	struct FHttpRequest
+	{
+		std::string Method;
+		std::string Path;
+		std::string Body;
+		bool bReadError = false;
+		bool bConnectionClosed = false;
+	};
+
+	// A queued POST request waiting to be processed
+	struct FPendingPost
+	{
+		socket_t	Socket;
+		std::string Body;
+	};
+
+	bool ReadHttpRequest(socket_t client, FHttpRequest& outRequest);
+	void AcceptLoop();
+	void SseKeepaliveLoop();
+	bool HandleGetRequest(socket_t client);
+	void HandleOptionsRequest(socket_t client);
+
+	// Server listen socket
+	socket_t ServerSocket;
+
+	// Current POST client being served (protected by Mutex / ClientCV)
+	socket_t CurrentClientSocket;
 	std::condition_variable ClientCV;
-	socket_t				ServerSocket;
-	socket_t				CurrentClientSocket;
+
+	// Queue of incoming POST requests (AcceptLoop produces, ReceiveData consumes)
+	std::queue<FPendingPost>	PostQueue;
+	std::mutex					PostQueueMutex;
+	std::condition_variable		PostQueueCV;
+
+	// Active SSE client sockets (protected by SseMutex)
+	std::vector<socket_t>	SseClients;
+	std::mutex				SseMutex;
+
+	// Background threads
+	std::thread AcceptThread;
+	std::thread SseThread;
 };

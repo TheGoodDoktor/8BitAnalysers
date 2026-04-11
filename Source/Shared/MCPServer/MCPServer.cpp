@@ -212,11 +212,8 @@ void FMCPServer::HandleLine(const std::string& line)
 	}
 	else if (method == "notifications/initialized")
 	{
-		// Notifications don't need JSON-RPC response, but HTTP needs HTTP response
-		if (dynamic_cast<FHttpTransport*>(pTransport))
-		{
-			pTransport->SendData("{}");
-		}
+		// Notification — no JSON-RPC response needed, but HTTP requires an HTTP response
+		pTransport->SendData("");
 	}
 	else if (method == "tools/list")
 	{
