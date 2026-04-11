@@ -45,7 +45,8 @@ nlohmann::json FMCPResourceCommand::Execute(FMCPServer* pServer)
 		nlohmann::json result;
 		result["data"] = data;
 		result["mimeType"] = pResource->MimeType;
-		result["__mcp_image"] = (pResource->MimeType.find("image/") == 0); // mark as image if mime type starts with image/
+		result["__mcp_resource_uri"] = ResourceUri;	// signals Run() to use resources/read response format
+		result["__mcp_image"] = (pResource->MimeType.find("image/") == 0);
 		return result;
 	}
 	return { {"error", "Unknown resource: " + ResourceUri} };
@@ -134,37 +135,52 @@ void FMCPServer::Run()
 		else
 		{
 			nlohmann::json mcpResult;
-			mcpResult["content"] = nlohmann::json::array();
 
-			// Tool errors: return as successful JSON-RPC response with isError:true in content
-			if(pResponse->Result.contains("error"))
+			// Resource read responses use a different format to tool call responses
+			if(pResponse->Result.contains("__mcp_resource_uri"))
 			{
-				mcpResult["isError"] = true;
-				mcpResult["content"].push_back({
-					{"type", "text"},
-					{"text", pResponse->Result["error"].get<std::string>()}
-					});
-			}
-			// Check if this is image data
-			else if(pResponse->Result.contains("__mcp_image") && pResponse->Result["__mcp_image"] == true)
-			{
-				// Image content type
-				mcpResult["content"].push_back({
-					{"type", "image"},
-					{"data", pResponse->Result["data"]},
-					{"mimeType", pResponse->Result["mimeType"]}
-					});
+				// MCP resources/read format: result.contents = [{uri, mimeType, text|blob}]
+				nlohmann::json contentItem;
+				contentItem["uri"] = pResponse->Result["__mcp_resource_uri"];
+				contentItem["mimeType"] = pResponse->Result["mimeType"];
+				if(pResponse->Result.contains("__mcp_image") && pResponse->Result["__mcp_image"] == true)
+					contentItem["blob"] = pResponse->Result["data"]; // base64 for binary/image
+				else
+					contentItem["text"] = pResponse->Result["data"];
+				mcpResult["contents"] = nlohmann::json::array({contentItem});
 			}
 			else
 			{
-				// Text content type
-				std::ostringstream resultStrStream;
-				resultStrStream << pResponse->Result.dump(2);
+				// Tool call format: result.content = [{type, text|image}]
+				mcpResult["content"] = nlohmann::json::array();
 
-				mcpResult["content"].push_back({
-					{"type", "text"},
-					{"text", resultStrStream.str()}
-					});
+				// Tool errors: return as successful JSON-RPC response with isError:true in content
+				if(pResponse->Result.contains("error"))
+				{
+					mcpResult["isError"] = true;
+					mcpResult["content"].push_back({
+						{"type", "text"},
+						{"text", pResponse->Result["error"].get<std::string>()}
+						});
+				}
+				// Check if this is image data
+				else if(pResponse->Result.contains("__mcp_image") && pResponse->Result["__mcp_image"] == true)
+				{
+					mcpResult["content"].push_back({
+						{"type", "image"},
+						{"data", pResponse->Result["data"]},
+						{"mimeType", pResponse->Result["mimeType"]}
+						});
+				}
+				else
+				{
+					std::ostringstream resultStrStream;
+					resultStrStream << pResponse->Result.dump(2);
+					mcpResult["content"].push_back({
+						{"type", "text"},
+						{"text", resultStrStream.str()}
+						});
+				}
 			}
 
 			nlohmann::json response;
@@ -239,12 +255,23 @@ void FMCPServer::HandleLine(const std::string& line)
 
 }
 
-std::string g_Instructions = 
+std::string g_Instructions =
 "You are connected to a tool which is used to analyse 8-bit games. "
 "As well as a disassembler, it provides various tools to query the game code and data, recording memory accesses for code and data locations. "
-"Annotated disassembly of memory ranges can be provided using disassemble_address_range. "
-"Start by getting a function list using get_function_list and analyse how the functions call each other by analysing the info return by get_function_info. "
-"get_function_disassembly can be used to get a function annotated disassembly. "
+
+"## Recommended workflow\n"
+"1. Read the 'arcadez80://function-index' resource for a compact overview of all known functions and their descriptions.\n"
+"2. Use get_function_list and get_function_info to understand call relationships between functions.\n"
+"3. Use get_function_disassembly to inspect individual functions in detail.\n"
+"4. Use disassemble_address_range for ad-hoc address ranges not covered by a named function.\n"
+"5. The 'arcadez80://disassembly' resource provides the FULL annotated assembly listing (~280KB). "
+"Only request it when you need a broad search across the entire codebase — it is too large to read routinely.\n"
+
+"## Write-back tools\n"
+"When you understand what a function, label, or instruction does, record your findings using: "
+"rename_function, set_function_description, set_label, and add_comment. "
+"These suggestions are queued for the user to review and accept or reject in the GUI - they are NOT applied immediately. "
+"Always provide a rationale argument explaining your reasoning so the user can make an informed decision.\n"
 ;
 
 

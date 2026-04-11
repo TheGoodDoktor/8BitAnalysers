@@ -1,6 +1,7 @@
 #pragma once
 #include "MCPTransport.h"
 #include "MCPServer.h"
+#include "MCPSuggestions.h"
 
 class FEmuBase;
 
@@ -32,12 +33,15 @@ public:
 	bool IsRunning() const { return pMCPServer && pMCPServer->IsRunning(); }
 	int GetTransportType() const { return (int)TransportType; }
 
+	FMCPSuggestionQueue& GetSuggestionQueue() { return SuggestionQueue; }
+
 private:
 	FMCPServer*			pMCPServer = nullptr;
 	FMCPToolsRegistry*	pToolsRegistry = nullptr;
 	FMCPResourceRegistry* pResourcesRegistry = nullptr;
 	FMCPCommandQueue		CommandQueue;
 	FMCPResponseQueue		ResponseQueue;
+	FMCPSuggestionQueue		SuggestionQueue;
 	EMCPTransportType	TransportType = EMCPTransportType::Stdio;
 
 	int			Port = 7777;
@@ -47,3 +51,6 @@ private:
 void InitMCPServer(FEmuBase* pEmu);
 void ShutdownMCPServer();
 void UpdateMCPServer();
+void DrawMCPServerUI(FEmuBase* pEmu);
+
+extern FMCPManager* g_MCPManager;

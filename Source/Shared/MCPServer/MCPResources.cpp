@@ -1,6 +1,9 @@
 #include "MCPResources.h"
 #include "Misc/EmuBase.h"
 #include "CodeAnalyser/AssemblerExport.h"
+#include "CodeAnalyser/FunctionAnalyser.h"
+#include <sstream>
+#include <iomanip>
 
 class FDisassemblyResource : public FMCPResource
 {
@@ -40,7 +43,47 @@ public:
 	}
 };
 
+class FFunctionIndexResource : public FMCPResource
+{
+public:
+	FFunctionIndexResource()
+	{
+		URI = "arcadez80://function-index";
+		Title = "Function Index";
+		Description = "Compact listing of all named functions with addresses and descriptions. Read this first for an overview before diving into individual functions.";
+		MimeType = "text/plain";
+		Category = "code";
+	}
+
+	std::string Read(FEmuBase* pEmulator) override
+	{
+		FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+		std::ostringstream out;
+
+		out << "# Function Index\n";
+		out << "# Format: address  name  [description]\n\n";
+
+		for (const auto& funcIt : state.pFunctions->GetFunctions())
+		{
+			const FFunctionInfo& func = funcIt.second;
+			FLabelInfo* pLabel = state.GetLabelForAddress(func.StartAddress);
+			const std::string name = pLabel ? pLabel->GetName() : "<unnamed>";
+
+			out << "$" << std::hex << std::uppercase << std::setfill('0') << std::setw(4)
+				<< func.StartAddress.Address << "  " << name;
+
+			if (!func.Description.empty())
+				out << "  ; " << func.Description;
+
+			out << "\n";
+		}
+
+		return out.str();
+	}
+};
+
 void RegisterBaseResources(FMCPResourceRegistry& registry)
 {
+	registry.RegisterResource(new FFunctionIndexResource());
 	registry.RegisterResource(new FDisassemblyResource());
 }

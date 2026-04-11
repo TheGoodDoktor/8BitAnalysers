@@ -1,6 +1,7 @@
 #include "MCPManager.h"
 #include "MCPTools.h"
 #include "MCPResources.h"
+#include "MCPSuggestionsUI.h"
 
 FMCPManager* g_MCPManager = nullptr;
 FMCPToolsRegistry* g_MCPToolsRegistry = nullptr;
@@ -106,5 +107,13 @@ void UpdateMCPServer()
 	if (g_MCPManager)
 	{
 		g_MCPManager->ProcessCommands();
+	}
+}
+
+void DrawMCPServerUI(FEmuBase* pEmu)
+{
+	if (g_MCPManager)
+	{
+		DrawMCPSuggestionsUI(pEmu, g_MCPManager->GetSuggestionQueue());
 	}
 }

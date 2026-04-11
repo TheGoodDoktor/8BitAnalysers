@@ -254,6 +254,9 @@ void FEmuBase::DrawUI()
 	DrawEmulatorUI();
     
     LuaSys::DrawUI();
+
+	DrawMCPServerUI(this);
+
 }
 
 

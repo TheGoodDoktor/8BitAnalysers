@@ -1,8 +1,12 @@
 #include "MCPTools.h"
+#include "MCPManager.h"
 #include "Misc/EmuBase.h"
 #include "CodeAnalyser/FunctionAnalyser.h"
 #include "CodeAnalyser/AssemblerExport.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "CodeAnalyser/Z80/Z80Disassembler.h"
+#include "CodeAnalyser/6502/M6502Disassembler.h"
+#include "CodeAnalyser/6502/M65C02Disassembler.h"
 
 class FGetFunctionListTool : public FMCPTool
 {
@@ -310,47 +314,6 @@ public:
 	}
 };
 
-// Add comment tool
-class FAddCommentTool : public FMCPTool
-{
-public:
-	FAddCommentTool()
-	{
-		Description = "Adds a comment to the specified address within a 16-bit address space";
-		InputSchema = {
-			{"type", "object"},
-			{"properties", {
-				{"address", {
-					{"type", "integer"},
-					{"description", "Memory address to add comment to within a 16-bit address space"}
-				}},
-				{"comment", {
-					{"type", "string"},
-					{"description", "The comment text to add"}
-				}}
-			}},
-			{"required", {"address", "comment"}}
-		};
-	}
-
-	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
-	{
-		if (!arguments.contains("comment"))
-			return { {"error", "Missing required argument: comment"} };
-
-		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
-		uint32_t address = GetNumericalArgument("address", arguments);
-		std::string comment = arguments["comment"].get<std::string>();
-		FAddressRef addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
-		FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(addrRef);
-		if (pCodeInfo)
-		{
-			pCodeInfo->Comment = comment;
-			return { {"success", true} };
-		}
-		return { {"success", false}, {"error", "Invalid address"} };
-	}
-};
 
 // Get code info tool
 class FGetCodeInfoTool : public FMCPTool
@@ -379,6 +342,18 @@ class FGetCodeInfoTool : public FMCPTool
 			FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(addrRef);
 			if(pCodeInfo)
 			{
+				// Re-disassemble on the fly if Text wasn't populated during analysis
+				if (pCodeInfo->Text.empty())
+				{
+					switch (codeAnalysis.CPUInterface->CPUType)
+					{
+					case ECPUType::Z80:    Z80DisassembleCodeInfoItem(address, codeAnalysis, pCodeInfo);    break;
+					case ECPUType::M6502:  M6502DisassembleCodeInfoItem(address, codeAnalysis, pCodeInfo);  break;
+					case ECPUType::M65C02: M65C02DisassembleCodeInfoItem(address, codeAnalysis, pCodeInfo); break;
+					default: break;
+					}
+				}
+
 				// output code info as json
 				nlohmann::json result;
 				Markup::SetCodeInfo(pCodeInfo);
@@ -509,6 +484,222 @@ public:
 };
 
 
+// ---- Write-back tools: queue suggestions for user review ----
+
+class FRenameFunctionTool : public FMCPTool
+{
+public:
+	FRenameFunctionTool()
+	{
+		Description = "Suggest renaming a function. The rename will be queued for user review before being applied.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"function_name", {
+					{"type", "string"},
+					{"description", "Current name of the function to rename"}
+				}},
+				{"new_name", {
+					{"type", "string"},
+					{"description", "Proposed new name for the function"}
+				}},
+				{"rationale", {
+					{"type", "string"},
+					{"description", "Reasoning for the rename suggestion"}
+				}}
+			}},
+			{"required", {"function_name", "new_name"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("function_name"))
+			return { {"error", "Missing required argument: function_name"} };
+		if (!arguments.contains("new_name"))
+			return { {"error", "Missing required argument: new_name"} };
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		const std::string functionName = arguments["function_name"].get<std::string>();
+		const std::string newName = arguments["new_name"].get<std::string>();
+
+		const FFunctionInfo* pFuncInfo = codeAnalysis.pFunctions->FindFunctionByName(functionName.c_str());
+		if (!pFuncInfo)
+			return { {"error", "Function not found: " + functionName} };
+
+		FMCPSuggestion suggestion;
+		suggestion.Type = EMCPSuggestionType::RenameFunction;
+		suggestion.AddressRef = pFuncInfo->StartAddress;
+		suggestion.TargetName = functionName;
+		suggestion.OldValue = functionName;
+		suggestion.NewValue = newName;
+		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
+
+		g_MCPManager->GetSuggestionQueue().Add(suggestion);
+		return { {"status", "queued"}, {"message", "Rename suggestion queued for user review"} };
+	}
+};
+
+class FSetFunctionDescriptionTool : public FMCPTool
+{
+public:
+	FSetFunctionDescriptionTool()
+	{
+		Description = "Suggest a description for a function. The change will be queued for user review before being applied.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"function_name", {
+					{"type", "string"},
+					{"description", "Name of the function to describe"}
+				}},
+				{"description", {
+					{"type", "string"},
+					{"description", "Proposed description of what the function does"}
+				}},
+				{"rationale", {
+					{"type", "string"},
+					{"description", "Reasoning behind the description"}
+				}}
+			}},
+			{"required", {"function_name", "description"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("function_name"))
+			return { {"error", "Missing required argument: function_name"} };
+		if (!arguments.contains("description"))
+			return { {"error", "Missing required argument: description"} };
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		const std::string functionName = arguments["function_name"].get<std::string>();
+		const std::string newDescription = arguments["description"].get<std::string>();
+
+		const FFunctionInfo* pFuncInfo = codeAnalysis.pFunctions->FindFunctionByName(functionName.c_str());
+		if (!pFuncInfo)
+			return { {"error", "Function not found: " + functionName} };
+
+		FMCPSuggestion suggestion;
+		suggestion.Type = EMCPSuggestionType::SetFunctionDescription;
+		suggestion.AddressRef = pFuncInfo->StartAddress;
+		suggestion.TargetName = functionName;
+		suggestion.OldValue = pFuncInfo->Description;
+		suggestion.NewValue = newDescription;
+		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
+
+		g_MCPManager->GetSuggestionQueue().Add(suggestion);
+		return { {"status", "queued"}, {"message", "Description suggestion queued for user review"} };
+	}
+};
+
+class FSetLabelTool : public FMCPTool
+{
+public:
+	FSetLabelTool()
+	{
+		Description = "Suggest setting or renaming the label at a specific address. The change will be queued for user review before being applied.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"address", {
+					{"type", "integer"},
+					{"description", "Memory address to set the label at"}
+				}},
+				{"label_name", {
+					{"type", "string"},
+					{"description", "Proposed label name"}
+				}},
+				{"rationale", {
+					{"type", "string"},
+					{"description", "Reasoning for the label name"}
+				}}
+			}},
+			{"required", {"address", "label_name"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("address"))
+			return { {"error", "Missing required argument: address"} };
+		if (!arguments.contains("label_name"))
+			return { {"error", "Missing required argument: label_name"} };
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		const uint32_t address = GetNumericalArgument("address", arguments);
+		const std::string labelName = arguments["label_name"].get<std::string>();
+
+		const FAddressRef addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
+		const FLabelInfo* pLabel = codeAnalysis.GetLabelForAddress(addrRef);
+
+		FMCPSuggestion suggestion;
+		suggestion.Type = EMCPSuggestionType::SetLabel;
+		suggestion.AddressRef = addrRef;
+		suggestion.TargetName = pLabel ? pLabel->GetName() : "(none)";
+		suggestion.OldValue = pLabel ? pLabel->GetName() : "";
+		suggestion.NewValue = labelName;
+		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
+
+		g_MCPManager->GetSuggestionQueue().Add(suggestion);
+		return { {"status", "queued"}, {"message", "Label suggestion queued for user review"} };
+	}
+};
+
+class FAddCommentTool : public FMCPTool
+{
+public:
+	FAddCommentTool()
+	{
+		Description = "Suggest adding a comment to the instruction at a specific address. The change will be queued for user review before being applied.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"address", {
+					{"type", "integer"},
+					{"description", "Memory address of the instruction to comment"}
+				}},
+				{"comment", {
+					{"type", "string"},
+					{"description", "The comment text to add"}
+				}},
+				{"rationale", {
+					{"type", "string"},
+					{"description", "Reasoning for the comment"}
+				}}
+			}},
+			{"required", {"address", "comment"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("address"))
+			return { {"error", "Missing required argument: address"} };
+		if (!arguments.contains("comment"))
+			return { {"error", "Missing required argument: comment"} };
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		const uint32_t address = GetNumericalArgument("address", arguments);
+		const std::string comment = arguments["comment"].get<std::string>();
+
+		const FAddressRef addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
+		const FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(addrRef);
+
+		FMCPSuggestion suggestion;
+		suggestion.Type = EMCPSuggestionType::AddComment;
+		suggestion.AddressRef = addrRef;
+		suggestion.TargetName = pCodeInfo ? pCodeInfo->Text : "";
+		suggestion.OldValue = pCodeInfo ? pCodeInfo->Comment : "";
+		suggestion.NewValue = comment;
+		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
+
+		g_MCPManager->GetSuggestionQueue().Add(suggestion);
+		return { {"status", "queued"}, {"message", "Comment suggestion queued for user review"} };
+	}
+};
+
 void RegisterBaseTools(FMCPToolsRegistry& registry)
 {
 	registry.RegisterTool("get_function_list", new FGetFunctionListTool());
@@ -517,8 +708,13 @@ void RegisterBaseTools(FMCPToolsRegistry& registry)
 	registry.RegisterTool("disassemble_address_range", new FDisassembleAddressRangeTool());
 	registry.RegisterTool("read_memory", new FReadMemoryTool());
 	registry.RegisterTool("go_to_address", new FGoToAddressTool());
-	//registry.RegisterTool("add_comment", new FAddCommentTool());
 	registry.RegisterTool("get_code_info", new FGetCodeInfoTool());
 	registry.RegisterTool("get_data_info", new FGetDataInfoTool());
 	registry.RegisterTool("get_label_address", new FGetLabelAddressTool());
+
+	// Write-back tools — queue suggestions for user review in the GUI
+	registry.RegisterTool("rename_function", new FRenameFunctionTool());
+	registry.RegisterTool("set_function_description", new FSetFunctionDescriptionTool());
+	registry.RegisterTool("set_label", new FSetLabelTool());
+	registry.RegisterTool("add_comment", new FAddCommentTool());
 }
