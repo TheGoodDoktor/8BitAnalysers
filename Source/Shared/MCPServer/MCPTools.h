@@ -9,19 +9,31 @@ class FMCPTool
 public:
 	virtual ~FMCPTool() = default;
 
-	uint32_t GetNumericalArgument(const char* argName, const nlohmann::json& arguments)
+	uint32_t GetNumericalArgument(const char* argName, const nlohmann::json& arguments, uint32_t defaultValue = 0)
 	{
-		if (arguments[argName].is_number())
-			return arguments[argName].get<uint32_t>();
+		if (!arguments.contains(argName))
+			return defaultValue;
 
-		if (arguments[argName].is_string())
+		const auto& arg = arguments[argName];
+
+		if (arg.is_number())
+			return arg.get<uint32_t>();
+
+		if (arg.is_string())
 		{
-			std::string strValue = arguments[argName].get<std::string>();
-			// Convert string to number (assuming hexadecimal format)
-			return std::stoul(strValue, nullptr, 16);
+			try
+			{
+				std::string strValue = arg.get<std::string>();
+				// base 0: auto-detect hex (0x prefix) or decimal
+				return static_cast<uint32_t>(std::stoul(strValue, nullptr, 0));
+			}
+			catch (const std::exception&)
+			{
+				return defaultValue;
+			}
 		}
 
-		throw std::invalid_argument(std::string("Invalid argument type for ") + argName);
+		return defaultValue;
 	}
 
 	virtual nlohmann::json Execute(FEmuBase* pEmulator, const nlohmann::json& arguments) = 0;
@@ -80,7 +92,18 @@ public:
 		FMCPTool* Tool = GetTool(name);
 		if (Tool)
 		{
-			outResult = Tool->Execute(pEmulator, arguments);
+			try
+			{
+				outResult = Tool->Execute(pEmulator, arguments);
+			}
+			catch (const std::exception& e)
+			{
+				outResult = { {"error", std::string("Tool execution error: ") + e.what()} };
+			}
+			catch (...)
+			{
+				outResult = { {"error", "Tool execution error: unknown exception"} };
+			}
 			return true;
 		}
 		return false;

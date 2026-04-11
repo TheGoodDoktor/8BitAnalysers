@@ -27,6 +27,11 @@ void FMCPManager::Start()
 
 	pMCPServer = new FMCPServer(pTransport, pToolsRegistry, pResourcesRegistry, CommandQueue, ResponseQueue);
 	pMCPServer->Start();
+
+	if (TransportType == EMCPTransportType::HTTP)
+		LOGINFO("MCP Server started. Connect at: http://localhost:%d/mcp", Port);
+	else
+		LOGINFO("MCP Server started on stdio");
 }
 
 void FMCPManager::Stop()

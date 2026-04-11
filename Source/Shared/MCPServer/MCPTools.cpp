@@ -11,8 +11,8 @@ public:
 		Description = "Gets a list of all functions in the code analysis";
 		InputSchema = {
 			{"type", "object"},
-			{"properties", {}},
-			{"required", {}}
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
 		};
 	}
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
@@ -57,6 +57,9 @@ public:
 	}
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
+		if (!arguments.contains("function_name"))
+			return { {"error", "Missing required argument: function_name"} };
+
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		std::string functionName = arguments["function_name"].get<std::string>();
 		FAddressRef funcAddress;
@@ -65,7 +68,7 @@ public:
 		{
 			nlohmann::json result;
 			result["name"] = functionName;
-			result["description"] = pFuncInfo->Description; 
+			result["description"] = pFuncInfo->Description;
 			result["address"] = pFuncInfo->StartAddress.Address;
 
 			// parameters
@@ -150,6 +153,9 @@ public:
 
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
+		if (!arguments.contains("function_name"))
+			return { {"error", "Missing required argument: function_name"} };
+
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		std::string functionName = arguments["function_name"].get<std::string>();
 		FAddressRef funcAddress;
@@ -321,6 +327,9 @@ public:
 
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
+		if (!arguments.contains("comment"))
+			return { {"error", "Missing required argument: comment"} };
+
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		uint32_t address = GetNumericalArgument("address", arguments);
 		std::string comment = arguments["comment"].get<std::string>();
