@@ -205,8 +205,17 @@ public:
 
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
+		if (!arguments.contains("start_address"))
+			return { {"error", "Missing required argument: start_address"} };
+		if (!arguments.contains("end_address"))
+			return { {"error", "Missing required argument: end_address"} };
+
 		const uint32_t startAddress = GetNumericalArgument("start_address", arguments);
 		const uint32_t endAddress = GetNumericalArgument("end_address", arguments);
+
+		if (startAddress > endAddress)
+			return { {"error", "start_address must be <= end_address"} };
+
 		nlohmann::json result;
 		std::string outStr;
 		ExportAssembler(pEmu, &outStr, startAddress, endAddress);
@@ -239,33 +248,28 @@ public:
 	}
 
 
-	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments)
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
-		// For demonstration, return dummy data
-		uint32_t address = GetNumericalArgument("address", arguments);
-		uint32_t length = GetNumericalArgument("length", arguments);
+		if (!arguments.contains("address"))
+			return { {"error", "Missing required argument: address"} };
+		if (!arguments.contains("length"))
+			return { {"error", "Missing required argument: length"} };
 
+		const uint32_t address = GetNumericalArgument("address", arguments);
+		const uint32_t length = GetNumericalArgument("length", arguments);
 
-		// In real implementation, read memory from the emulated system
+		// Clamp to valid 16-bit address space
+		const uint32_t clampedLength = (address + length > 0x10000) ? (0x10000 - address) : length;
+
 		std::vector<uint8_t> data;
-		for (uint32_t i = 0; i < length; ++i)
-		{
+		data.reserve(clampedLength);
+		for (uint32_t i = 0; i < clampedLength; ++i)
 			data.push_back(pEmu->ReadByte(address + i));
-		}
-
-		/*
-		std::ostringstream hex_ss;
-		for (size_t i = 0; i < data.size(); i++)
-		{
-			hex_ss << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << (int)data[i];
-			if (i < data.size() - 1)
-				hex_ss << " ";
-		}*/
 
 		nlohmann::json result;
 		result["address"] = address;
-		result["length"] = length;
-		result["data"] = data;//hex_ss.str();
+		result["length"] = clampedLength;
+		result["data"] = data;
 		return result;
 	}
 
@@ -294,8 +298,11 @@ public:
 
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
+		if (!arguments.contains("address"))
+			return { {"error", "Missing required argument: address"} };
+
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
-		uint32_t address = GetNumericalArgument("address", arguments);
+		const uint32_t address = GetNumericalArgument("address", arguments);
 
 		FAddressRef addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
 		codeAnalysis.GetFocussedViewState().GoToAddress(addrRef);
