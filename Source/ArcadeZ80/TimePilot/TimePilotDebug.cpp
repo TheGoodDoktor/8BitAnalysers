@@ -428,8 +428,8 @@ void FTimePilotDebug::StringViewer()
 		float localX = mousePos.x - pos.x;
 		float localY = mousePos.y - pos.y;
 		const float charSize = (8 * scale);
-		const int charX = localX / charSize;
-		const int charY = localY / charSize;
+		const int charX = (int)(localX / charSize);
+		const int charY = (int)(localY / charSize);
 		const int characterNo = charX + (charY * 16);
 		ImGui::BeginTooltip();
 		ImGui::Text("Character No: %d (%02Xh)", characterNo, characterNo);
