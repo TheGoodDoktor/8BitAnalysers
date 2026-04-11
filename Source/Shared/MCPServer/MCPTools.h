@@ -9,6 +9,21 @@ class FMCPTool
 public:
 	virtual ~FMCPTool() = default;
 
+	uint32_t GetNumericalArgument(const char* argName, const nlohmann::json& arguments)
+	{
+		if (arguments[argName].is_number())
+			return arguments[argName].get<uint32_t>();
+
+		if (arguments[argName].is_string())
+		{
+			std::string strValue = arguments[argName].get<std::string>();
+			// Convert string to number (assuming hexadecimal format)
+			return std::stoul(strValue, nullptr, 16);
+		}
+
+		throw std::invalid_argument(std::string("Invalid argument type for ") + argName);
+	}
+
 	virtual nlohmann::json Execute(FEmuBase* pEmulator, const nlohmann::json& arguments) = 0;
 
 	std::string		Description;

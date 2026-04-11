@@ -1,5 +1,212 @@
 #include "MCPTools.h"
 #include "Misc/EmuBase.h"
+#include "CodeAnalyser/FunctionAnalyser.h"
+#include "CodeAnalyser/AssemblerExport.h"
+
+class FGetFunctionListTool : public FMCPTool
+{
+public:
+	FGetFunctionListTool()
+	{
+		Description = "Gets a list of all functions in the code analysis";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {}},
+			{"required", {}}
+		};
+	}
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		nlohmann::json result;
+		nlohmann::json functions = nlohmann::json::array();
+		for (const auto& funcIt : codeAnalysis.pFunctions->GetFunctions())
+		{
+			const auto& func = funcIt.second;
+			FAddressRef funcAddr = funcIt.first;
+			FLabelInfo* pLabel = codeAnalysis.GetLabelForAddress(func.StartAddress);
+			nlohmann::json funcJson;
+			if(pLabel != nullptr)
+			{
+				funcJson["name"] = pLabel->GetName();
+				funcJson["address"] = func.StartAddress.Address;
+				functions.push_back(funcJson);
+			}
+		}
+		result["functions"] = functions;
+		return result;
+	}
+};
+
+class FGetFunctionInfoTool : public FMCPTool
+{
+public:
+	FGetFunctionInfoTool()
+	{
+		Description = "Gets information about a function, such as its start address, description of what it does, and its parameters";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"function_name", {
+					{"type", "string"},
+					{"description", "Name of the function to get info on"}
+				}}
+			}},
+			{"required", {"function_name"}}
+		};
+	}
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		std::string functionName = arguments["function_name"].get<std::string>();
+		FAddressRef funcAddress;
+		const FFunctionInfo* pFuncInfo = codeAnalysis.pFunctions->FindFunctionByName(functionName.c_str());
+		if (pFuncInfo)
+		{
+			nlohmann::json result;
+			result["name"] = functionName;
+			result["description"] = pFuncInfo->Description; 
+			result["address"] = pFuncInfo->StartAddress.Address;
+
+			// parameters
+			if (pFuncInfo->Params.empty() == false)
+			{
+				nlohmann::json params = nlohmann::json::array();
+				for (const auto& param : pFuncInfo->Params)
+				{
+					nlohmann::json paramJson;
+					paramJson["name"] = param.Name;
+					paramJson["description"] = param.GenerateDescription(codeAnalysis);
+					params.push_back(paramJson);
+				}
+				result["parameters"] = params;
+			}
+
+			// return values
+			if(pFuncInfo->ReturnValues.empty() == false)
+			{
+				nlohmann::json returnValues = nlohmann::json::array();
+				for (const auto& returnValue : pFuncInfo->ReturnValues)
+				{
+					nlohmann::json returnValueJson;
+					returnValueJson["name"] = returnValue.Name;
+					returnValueJson["description"] = returnValue.GenerateDescription(codeAnalysis);
+					returnValues.push_back(returnValueJson);
+				}
+				result["return_values"] = returnValues;
+			}
+
+			// call points
+			if (pFuncInfo->CallPoints.empty() == false)
+			{
+				nlohmann::json callPoints = nlohmann::json::array();
+				for (const auto& callPoint : pFuncInfo->CallPoints)
+				{
+					nlohmann::json callPointJson;
+					callPointJson["address"] = callPoint.CallAddr.Address;
+					callPoints.push_back(callPointJson);
+				}
+				result["call_points"] = callPoints;
+			}
+
+			// exit points
+			if (pFuncInfo->ExitPoints.empty() == false)
+			{
+				nlohmann::json exitPoints = nlohmann::json::array();
+				for (const auto& exitPoint : pFuncInfo->ExitPoints)
+				{
+					nlohmann::json exitPointJson;
+					exitPointJson["address"] = exitPoint.Address;
+					exitPoints.push_back(exitPointJson);
+				}
+				result["exit_points"] = exitPoints;
+			}
+
+			return result;
+		}
+		return { {"success", false}, {"error", "Function not found"} };
+	}
+};
+
+// This tool gets the disassembly of a function specified by the user
+class FGetFunctionDisassemblyTool : public FMCPTool
+{
+public:
+
+	FGetFunctionDisassemblyTool()
+	{
+		Description = "Gets the annotated disassembly of a function";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"function_name", {
+					{"type", "string"},
+					{"description", "Name of the function to get disassembly for"}
+				}}
+			}},
+			{"required", {"function_name"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		std::string functionName = arguments["function_name"].get<std::string>();
+		FAddressRef funcAddress;
+		const FFunctionInfo* pFuncInfo = codeAnalysis.pFunctions->FindFunctionByName(functionName.c_str());
+		if (pFuncInfo)
+		{
+			nlohmann::json result;
+			result["name"] = functionName;
+
+			std::string outStr;
+			ExportAssembler(pEmu, &outStr, pFuncInfo->StartAddress.Address, pFuncInfo->EndAddress.Address);
+			result["disassembly"] = outStr;
+
+			return result;
+		}
+		else
+		{
+			return { {"success", false}, {"error", "Function not found"} };
+		}
+	}
+
+};
+
+// This tool gets the disassembly of a range of addresses specified by the user
+class FDisassembleAddressRangeTool : public FMCPTool
+{
+public:
+	FDisassembleAddressRangeTool()
+	{
+		Description = "Gets the annotated disassembly of a memory range within a 16-bit address space, the area cannot go beyond 0xFFFF";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"start_address", {
+					{"type", "integer"},
+					{"description", "Starting address of the range to disassemble within a 16-bit address space"}
+				}},
+				{"end_address", {
+					{"type", "integer"},
+					{"description", "Ending address of the range to disassemble within a 16-bit address space"}
+				}}
+			}},
+			{"required", {"start_address", "end_address"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		const uint32_t startAddress = GetNumericalArgument("start_address", arguments);
+		const uint32_t endAddress = GetNumericalArgument("end_address", arguments);
+		nlohmann::json result;
+		std::string outStr;
+		ExportAssembler(pEmu, &outStr, startAddress, endAddress);
+		result["disassembly"] = outStr;
+		return result;
+	}
+};
 
 class FReadMemoryTool : public FMCPTool
 {
@@ -28,8 +235,8 @@ public:
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments)
 	{
 		// For demonstration, return dummy data
-		uint32_t address = arguments["address"].get<uint32_t>();
-		uint32_t length = arguments["length"].get<uint32_t>();
+		uint32_t address = GetNumericalArgument("address", arguments);
+		uint32_t length = GetNumericalArgument("length", arguments);
 
 
 		// In real implementation, read memory from the emulated system
@@ -81,7 +288,7 @@ public:
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
-		uint32_t address = arguments["address"].get<uint32_t>();
+		uint32_t address = GetNumericalArgument("address", arguments);
 
 		FAddressRef addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
 		codeAnalysis.GetFocussedViewState().GoToAddress(addrRef);
@@ -115,7 +322,7 @@ public:
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
-		uint32_t address = arguments["address"].get<uint32_t>();
+		uint32_t address = GetNumericalArgument("address", arguments);
 		std::string comment = arguments["comment"].get<std::string>();
 		FAddressRef addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
 		FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(addrRef);
@@ -145,12 +352,12 @@ class FGetCodeInfoTool : public FMCPTool
 			}},
 			{"required", {"address"}}
 			};
-		}
+		}		
 
 		nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 		{
 			FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
-			uint32_t address = arguments["address"].get<uint32_t>();
+			uint32_t address = GetNumericalArgument("address", arguments);//arguments["address"].get<uint32_t>();
 			FAddressRef addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
 			FCodeInfo* pCodeInfo = codeAnalysis.GetCodeInfoForAddress(addrRef);
 			if(pCodeInfo)
@@ -210,7 +417,7 @@ public:
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
-		uint32_t address = arguments["address"].get<uint32_t>();
+		uint32_t address = GetNumericalArgument("address", arguments);
 		FAddressRef addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
 		FDataInfo* pDataInfo = codeAnalysis.GetDataInfoForAddress(addrRef);
 		if (pDataInfo)
@@ -224,7 +431,7 @@ public:
 			{
 				reads.push_back(read.Address);
 			}
-			result["read_instrujctions"] = reads;
+			result["read_instructions"] = reads;
 
 			// writes
 			nlohmann::json writes = nlohmann::json::array();
@@ -265,6 +472,9 @@ public:
 	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
 	{
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		if(arguments.contains("label_name") == false)
+			return { {"success", false}, {"error", "No 'label_name' field supplied"} };
+
 		std::string labelName = arguments["label_name"].get<std::string>();
 
 		FAddressRef address;
@@ -282,6 +492,10 @@ public:
 
 void RegisterBaseTools(FMCPToolsRegistry& registry)
 {
+	registry.RegisterTool("get_function_list", new FGetFunctionListTool());
+	registry.RegisterTool("get_function_info", new FGetFunctionInfoTool());
+	registry.RegisterTool("get_function_disassembly", new FGetFunctionDisassemblyTool());
+	registry.RegisterTool("disassemble_address_range", new FDisassembleAddressRangeTool());
 	registry.RegisterTool("read_memory", new FReadMemoryTool());
 	registry.RegisterTool("go_to_address", new FGoToAddressTool());
 	//registry.RegisterTool("add_comment", new FAddCommentTool());

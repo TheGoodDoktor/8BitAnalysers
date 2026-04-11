@@ -172,6 +172,8 @@ public:
 
 	nlohmann::json ExecuteCommand(const std::string& toolName, const nlohmann::json& arguments);
 
+	const char* GetInstructions() const;
+
 	FMCPToolsRegistry* GetToolsRegistry() const
 	{
 		return pToolsRegistry;

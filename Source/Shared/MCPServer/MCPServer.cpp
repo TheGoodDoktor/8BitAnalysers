@@ -233,6 +233,21 @@ void FMCPServer::HandleLine(const std::string& line)
 
 }
 
+std::string g_Instructions = 
+"You are connected to a tool which is used to analyse 8-bit games. "
+"As well as a disassembler, it provides various tools to query the game code and data, recording memory accesses for code and data locations. "
+"Annotated disassembly of memory ranges can be provided using disassemble_address_range. "
+"Start by getting a function list using get_function_list and analyse how the functions call each other by analysing the info return by get_function_info. "
+"get_function_disassembly can be used to get a function annotated disassembly. "
+;
+
+
+
+const char* FMCPServer::GetInstructions() const
+{
+	return g_Instructions.c_str();
+}
+
 void FMCPServer::HandleInitialise(const nlohmann::json& request)
 {
 	if (!request.contains("id"))
@@ -263,7 +278,8 @@ void FMCPServer::HandleInitialise(const nlohmann::json& request)
 		{"serverInfo", {
 			{"name", kServerName},
 			{"version", kServerVersion}
-		}}
+		}},
+		{"instructions", GetInstructions()}
 	};
 
 	bInitialized = true;
@@ -321,30 +337,6 @@ void FMCPServer::HandleToolsCall(const nlohmann::json& request)
 	CommandQueue.Push(cmd);
 }
 
-#if 0
-nlohmann::json FMCPServer::ExecuteCommand(const std::string& toolName, const nlohmann::json& arguments)
-{
-	// Normalize tool name: VS Code converts underscores to dots
-	std::string normalizedTool = toolName;
-	size_t pos = 0;
-	while ((pos = normalizedTool.find('.', pos)) != std::string::npos) 
-	{
-		normalizedTool[pos] = '_';
-		pos++;
-	}
-
-	// Find tool and execute it
-	nlohmann::json result;
-	if (pToolsRegistry->ExecuteTool(normalizedTool, arguments, result))
-	{
-		return result;
-	}
-
-	// Report unknown tool for now
-	return { {"error", "Unknown tool: " + toolName} };
-}
-#endif
-
 void FMCPServer::SendResponse(const nlohmann::json& response)
 {
 	std::string responseStr = response.dump();
@@ -371,81 +363,6 @@ void FMCPServer::SendError(int64_t id, int code, const std::string& message, con
 	std::string responseStr = errorResponse.dump();
 	pTransport->SendData(responseStr);
 }
-
-// Resources - moved to MCPResourceRegistry
-#if 0
-void FMCPServer::LoadResources()
-{
-	// TODO: this might need some wrangling to find the correct path in different environments
-	//std::string resourcesPath = "/mcp/resources";
-
-	//LoadResourcesFromCategory("hardware", resourcesPath + "/hardware/toc.json");
-
-	// Add Disassembly as a resource
-	FResourceInfo resource;
-	resource.Uri = "disassembly";
-	resource.Title = "Disassembly";
-	resource.Description = "Z80 Disassembly of the program currently loaded";
-	resource.MimeType = "text/plain";
-	resource.Category = "code";
-	resource.FilePath = resourcesPath + "/disassembly.md";
-	Resources.push_back(resource);
-
-	ResourceMap[resource.Uri] = resource;
-}
-
-void FMCPServer::LoadResourcesFromCategory(const std::string& category, const std::string& tocPath)
-{
-	// Read toc.json
-	std::ifstream tocFile(tocPath);
-	if (!tocFile.is_open())
-	{
-		LOGERROR("Failed to open resource TOC: %s", tocPath.c_str());
-		return;
-	}
-
-	std::stringstream tocBuffer;
-	tocBuffer << tocFile.rdbuf();
-	tocFile.close();
-
-	std::string tocContent = tocBuffer.str();
-
-	if(!nlohmann::json::accept(tocContent))
-	{
-		LOGERROR("Invalid JSON in resource TOC: %s", tocPath.c_str());
-		return;
-	}
-
-	nlohmann::json tocJson = nlohmann::json::parse(tocContent);
-	if(!tocJson.contains("toc") || !tocJson["toc"].is_array())
-	{
-		LOGERROR("Invalid TOC format in: %s", tocPath.c_str());
-		return;
-	}
-
-	// get the directory containing the TOC file
-	std::string tocDirectory = tocPath.substr(0, tocPath.find_last_of("/\\"));
-
-	for(const nlohmann::json& entry : tocJson["toc"])
-	{
-		if(!entry.contains("uri") || !entry.contains("title") || !entry.contains("filePath"))
-		{
-			LOGERROR("Invalid TOC entry in: %s", tocPath.c_str());
-			continue;
-		}
-		FResourceInfo resource;
-		resource.Uri = kServerHttpPrefix + category + "/" + entry["uri"].get<std::string>();
-		resource.Title = entry["title"].get<std::string>();
-		resource.Description = entry.contains("description") ? entry["description"].get<std::string>() : "";
-		resource.MimeType = entry.contains("mimeType") ? entry["mimeType"].get<std::string>() : "text/plain";
-		resource.Category = category;		
-		resource.FilePath = tocDirectory + "/" + entry["uri"].get<std::string>() + ".md";
-		Resources.push_back(resource);
-
-		ResourceMap[resource.Uri] = resource;
-	}
-}
-#endif
 
 std::string FMCPServer::ReadFileContents(const std::string& filePath)
 {
