@@ -79,7 +79,7 @@ void FBatchGameLoadViewer::DrawUI()
 
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
-	if (state.Debugger.IsStopped())
+	/*if (state.Debugger.IsStopped())
 	{
 		if (ImGui::Button("Continue"))
 		{
@@ -92,7 +92,7 @@ void FBatchGameLoadViewer::DrawUI()
 		{
 			state.Debugger.Break();
 		}
-	}
+	}*/
 
 	ImGui::InputInt("Game run time", &GameRunTime);
 	ImGui::Checkbox("Use exact frames", &bUseFramesForRunTime);
@@ -115,7 +115,7 @@ void FBatchGameLoadViewer::DrawUI()
 	if (ImGui::Checkbox("Export ASM after game has run", &bExportAsm))
 	{
 		// make sure hack for correct asm export is turned on
-		pPCEEmu->bWriteCodeInfoWhenCodeExecuted = bExportAsm;
+		//pPCEEmu->bWriteCodeInfoWhenCodeExecuted = bExportAsm;
 	}
 
 	if (bExportAsm)

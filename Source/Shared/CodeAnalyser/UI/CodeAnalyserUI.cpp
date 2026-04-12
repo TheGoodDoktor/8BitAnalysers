@@ -1790,6 +1790,9 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 			if (bank.PrimaryMappedPage == -1)
 				continue;
 			
+			if (state.Config.bHideDupeBanks && !state.IsBankIdCanonical(bank.Id))
+				continue;
+			
 			const bool bSelected = viewState.ViewingBankId == bank.Id;
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 			ImDrawList* dl = ImGui::GetWindowDrawList();

@@ -197,10 +197,12 @@ struct FAddressRef
 	FAddressRef(uint32_t val)	{	SetVal(val); }
 	FAddressRef(int16_t bankId, uint16_t address) : BankId(bankId) { SetAddress(address); };
 	uint16_t GetAddress() const;
+	uint16_t GetOffset() const { return BankOffset; }
 	uint32_t GetVal() const;
 	int16_t& GetBankId() { return BankId;	}
 	int16_t GetBankId() const	{	return BankId; }
 	void SetAddress(uint16_t address);
+	void SetOffset(uint16_t offset) { BankOffset = offset; }
 	void SetVal(uint32_t val);
 	void SetBankId(int16_t bankId) { BankId = bankId;	}
 	bool IsValid() const;

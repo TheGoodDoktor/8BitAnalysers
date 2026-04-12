@@ -181,6 +181,8 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 						// An example of this happening is Bonk's Adventure ROM 00 e251
 						LOGWARNING("'%s': 0x%04x. Label '%s' address (0x%04x) doesn't match disassembly operand (0x%04x). Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress(), val);
 						pLabel = nullptr;
+
+						NumRawValuesOutput++;
 					}
 					else if (pDataInfo != nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 					{
@@ -212,6 +214,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 						{
 							LOGWARNING("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress());
 							pLabel = nullptr;
+							NumRawValuesOutput++;
 						}
 					}
 					else

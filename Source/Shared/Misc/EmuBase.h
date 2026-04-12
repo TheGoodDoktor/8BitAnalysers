@@ -158,7 +158,11 @@ public:
 	bool		bXCoordChars = false;
 	bool		bYCoordChars = false;
 	bool		bShowCoordinates = false;
+	// remove.
 	bool		bWriteCodeInfoWhenCodeExecuted = false;
+
+	// todo comment
+	bool		bHideDupeBanks = true;
 
 protected:
 	bool		bShowDebugLog = false;

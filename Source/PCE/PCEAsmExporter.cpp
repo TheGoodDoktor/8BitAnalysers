@@ -94,6 +94,9 @@ class FPCEAsmExporterBase : public FASMExporter
 		}
 		void	ExportDidEnd() override
 		{
+			if (DasmState.NumRawValuesOutput)
+				LOGINFO("Output %d raw values instead of labels", DasmState.NumRawValuesOutput);
+
 			// Reset disassembler back to default settings
 			FHuC6280DisassemblerConfig& config = GetHuC6280DisassemblerConfig();
 			config = GetHuC6280DisassemblerDefaultConfig();

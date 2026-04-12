@@ -78,6 +78,9 @@ public:
 	uint16_t	ExportMax = 0xffff;
 
 	std::set<FAddressRef>	LabelsOutsideRange;
+
+	// sam. How many raw 16 bit values did we output instead of a label.
+	int NumRawValuesOutput = 0;
 };
 
 uint8_t ExportDasmInputCB(void* pUserData);

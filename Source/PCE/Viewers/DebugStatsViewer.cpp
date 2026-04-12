@@ -9,6 +9,7 @@
 
 #include <geargrafx_core.h>
 
+// todo knock this out in release build?
 
 FDebugStatsViewer::FDebugStatsViewer(FEmuBase* pEmu)
 : FViewerBase(pEmu) 
@@ -105,7 +106,7 @@ void FDebugStatsViewer::DrawUI()
 			DrawGeneralStats();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Debug Stats Table"))
+		if (ImGui::BeginTabItem("Table"))
 		{
 			DrawDebugStatsTable();
 			ImGui::EndTabItem();
@@ -152,8 +153,11 @@ void FDebugStatsViewer::DrawBankSets()
 			int numCodeItems = 0;
 			if (pBank)
 			{
+#ifndef NDEBUG
+				// todo knock this out in a better way
 				numLabels = pBank->NumLabels;
 				numCodeItems = pBank->NumCodeItems;
+#endif
 			}
 			bool bShowLabel = !bOnlyShowProblemLabels;
 			const bool bIsCanonical = entry.BankId == canonicalBankId;

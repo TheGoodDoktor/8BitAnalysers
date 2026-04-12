@@ -752,6 +752,10 @@ std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address)
 
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef address, ELabelType labelType)
 {
+#ifndef NDEBUG
+	if (state.Config.bHideDupeBanks) assert(state.IsBankIdCanonical(address.GetBankId()));
+#endif
+
 	bool bLabelOnOperand = false;
 
 	// for label to instruction operands, we want to put the label before the instruction
@@ -903,23 +907,27 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	}
 }
 
+// sam. Returns an FAddressRef for physAddr with its bank redirected to the canonical bank.
+// If physAddr is already in a primary bank the SetBankId() will have no effect.
+static FAddressRef CanonicalAddressRef(FCodeAnalysisState& state, uint16_t physAddr)
+{
+	FAddressRef addrRef = state.AddressRefFromPhysicalAddress(physAddr);
+	if (state.Config.bHideDupeBanks)
+		addrRef.SetBankId(state.GetCanonicalBankId(addrRef.GetBankId()));
+	return addrRef;
+}
+
 // This assumes that the address passed in is mapped to physical memory
+// sam. Rewrote this function to deal with redirecting non-canonical banks to canonical ones.
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
-	const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(pc);
-
-	const int16_t exeBankId = instrAddr.GetBankId();
-	if (state.GetCanonicalBankId(exeBankId) != exeBankId)
-	{
-		FCodeAnalysisBank* pExeBank = state.GetBank(exeBankId);
-		LOGINFO("Executing code in %s %x", pExeBank->Name.c_str(), instrAddr.GetAddress());
-	}
+	const FAddressRef pcAddrRef = CanonicalAddressRef(state, pc);
 
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pCodeInfo == nullptr)
 	{
 		pCodeInfo = FCodeInfo::Allocate();
-		state.SetCodeInfoForAddress(pc, pCodeInfo);
+		state.SetCodeInfoForAddress(pcAddrRef, pCodeInfo);
 	}	
 
 	// does this function branch?
@@ -927,11 +935,11 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
 		pCodeInfo->bIsCall = CheckCallInstruction(state, pc);
-		FLabelInfo* pLabel = GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(jumpAddr), pCodeInfo->bIsCall ? ELabelType::Function : ELabelType::Code);
+		const FAddressRef jumpAddrRef = CanonicalAddressRef(state, jumpAddr);
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddrRef, pCodeInfo->bIsCall ? ELabelType::Function : ELabelType::Code);
+		pCodeInfo->OperandAddress = jumpAddrRef;
 		if(pLabel)
-			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
-
-		pCodeInfo->OperandAddress = state.AddressRefFromPhysicalAddress(jumpAddr);
+			pLabel->References.RegisterAccess(pcAddrRef);
 		assert(state.IsAddressValid(pCodeInfo->OperandAddress));
 
 		if (pCodeInfo->OperandType == EOperandType::Unknown)
@@ -942,7 +950,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		uint16_t ptr;
 		if (CheckPointerRefInstruction(state, pc, &ptr))	// this is just a 16 bit number so don't assume a pointer
 		{
-			const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
+			const FAddressRef ptrAddr = CanonicalAddressRef(state, ptr);
 			pCodeInfo->OperandAddress = ptrAddr;
 			
 			// sam. this code is enabled in master but was commented out here. I've enabled it.
@@ -955,14 +963,14 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		}
 		else if (CheckPointerIndirectionInstruction(state, pc, &ptr))
 		{
-			const FAddressRef ptrAddr = state.AddressRefFromPhysicalAddress(ptr);
+			const FAddressRef ptrAddr = CanonicalAddressRef(state, ptr);
 			pCodeInfo->OperandAddress = ptrAddr;
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
 			
 			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
 			if (pLabel)
-				pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+				pLabel->References.RegisterAccess(pcAddrRef);
 		}
 	}
 
@@ -990,11 +998,11 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		FDataInfo* pOperandData = state.GetReadDataInfoForAddress(codeAddr);
 		pOperandData->DataType = EDataType::InstructionOperand;
 		pOperandData->ByteSize = 1;
-		pOperandData->InstructionAddress = state.AddressRefFromPhysicalAddress(pc);
+		pOperandData->InstructionAddress = pcAddrRef;
 	}
 	pCodeInfo->ByteSize = newPC - pc;
 
-	// If the operand address points inside this instruction's own bytes (e.g. a
+	// sam. If the operand address points inside this instruction's own bytes (e.g. a
 	// jump-table indirect like JMP [addr,X] where addr is byte 2 of the instruction),
 	// the exporter needs a label at the instruction start so it can emit
 	// "instrLabel+offset" instead of a raw value.  Generate one here so it is
@@ -1003,9 +1011,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	{
 		const uint16_t operandPhysAddr = pCodeInfo->OperandAddress.GetAddress();
 		if (operandPhysAddr > pc && operandPhysAddr < newPC)
-		{
-			GenerateLabelForAddress(state, state.AddressRefFromPhysicalAddress(pc), ELabelType::Code);
-		}
+			GenerateLabelForAddress(state, pcAddrRef, ELabelType::Code);
 	}
 
 	return newPC;
@@ -1075,6 +1081,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		//
 		// So to workaround this I am calling WriteCodeInfoForAddress every time code is executed.
 		// Note: This has a big performance penalty.
+		// update: this bug _seems_ to have disappeared. remove this eventually.
 		if (state.GetEmulator()->bWriteCodeInfoWhenCodeExecuted)
 		{
 			WriteCodeInfoForAddress(state, pc);

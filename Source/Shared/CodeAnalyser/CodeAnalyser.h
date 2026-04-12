@@ -246,6 +246,7 @@ struct FCodeAnalysisConfig
 	float	BranchSpacing = 4.0f;
 	int		BranchMaxIndent = 8;
 	int		BranchLinesPerIndent = 5;
+	bool	bHideDupeBanks = true;
 };
 
 // sam. Refactored to remove memory allocations.
@@ -466,8 +467,11 @@ public:
 	{
 		const FCodeAnalysisBank* pBank = GetBank(address.GetBankId());
 		assert(pBank != nullptr);
-		// this is silly
+#if NEWADDRESSREF
+		return pBank->Memory[address.GetOffset()];
+#else
 		return pBank->Memory[address.GetAddress() - pBank->GetMappedAddress()];
+#endif
 	}
 
 	uint16_t	ReadWord(uint16_t address) const
@@ -482,7 +486,11 @@ public:
 	{
 		const FCodeAnalysisBank* pBank = GetBank(address.GetBankId());
 		assert(pBank != nullptr);
+#if NEWADDRESSREF
+		return *(uint16_t*)(&pBank->Memory[address.GetOffset()]);
+#else
 		return *(uint16_t*)(&pBank->Memory[address.GetAddress() - pBank->GetMappedAddress()]);
+#endif
 	}
 
 	void		WriteByte(uint16_t address, uint8_t value) 
@@ -643,7 +651,11 @@ public:
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
+#if NEWADDRESSREF
+			const uint16_t bankAddr = addrRef.GetOffset();
+#else
 			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+#endif
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].Labels[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -658,7 +670,11 @@ public:
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
+#if NEWADDRESSREF
+			const uint16_t bankAddr = addrRef.GetOffset();
+#else
 			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+#endif
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].ScopeLabel[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -683,7 +699,11 @@ public:
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
+#if NEWADDRESSREF
+			const uint16_t bankAddr = addrRef.GetOffset();
+#else
 			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+#endif
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].CommentBlocks[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -698,7 +718,11 @@ public:
 		FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
+#if NEWADDRESSREF
+			const uint16_t bankAddr = addrRef.GetOffset();
+#else
 			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+#endif
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].CommentBlocks[bankAddr & FCodeAnalysisPage::kPageMask] = pCommentBlock;
@@ -713,7 +737,11 @@ public:
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
+#if NEWADDRESSREF
+			const uint16_t bankAddr = addrRef.GetOffset();
+#else
 			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+#endif
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].CodeInfo[bankAddr & FCodeAnalysisPage::kPageMask];
@@ -730,7 +758,11 @@ public:
 		FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
+#if NEWADDRESSREF
+			const uint16_t bankAddr = addrRef.GetOffset();
+#else
 			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+#endif
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].CodeInfo[bankAddr & FCodeAnalysisPage::kPageMask] = pCodeInfo;
@@ -742,7 +774,11 @@ public:
 		const FCodeAnalysisBank* pBank = GetBank(addrRef.GetBankId());
 		if (pBank != nullptr)
 		{
-			const uint16_t bankAddr = addrRef.GetAddress() - pBank->GetMappedAddress();
+#if NEWADDRESSREF
+			const uint16_t bankAddr = addrRef.GetOffset();
+#else
+			const uint16_t bankAddr = addrRef.GetAddress() - (pBank->PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
+#endif
 			CHECK_BANK_ADDR_VALID(addrRef, bankAddr, pBank);
 			assert(bankAddr < pBank->NoPages * FCodeAnalysisPage::kPageSize);	// This assert gets caused by banks being mapped into more than one location in physical memory
 			return &pBank->Pages[(bankAddr >> FCodeAnalysisPage::kPageShift) & pBank->SizeMask].DataInfo[bankAddr & FCodeAnalysisPage::kPageMask];

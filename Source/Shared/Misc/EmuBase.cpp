@@ -497,6 +497,7 @@ void FEmuBase::OptionsMenu()
 	ImGui::MenuItem("Show Config", 0, &CodeAnalysis.Config.bShowConfigWindow);
 	ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
 	ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
+	ImGui::MenuItem("Hide Dupe Banks", 0, &CodeAnalysis.Config.bHideDupeBanks);
 #endif // NDEBUG
 
 	OptionsMenuAdditions();
