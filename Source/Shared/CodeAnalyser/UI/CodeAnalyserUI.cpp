@@ -1073,7 +1073,11 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 			pCodeInfo = bank.Pages[0].CodeInfo[bankStart];
 		}
 	}*/
-	
+#ifndef NDEBUG // sam
+	bank.NumLabels = 0;
+	bank.NumCodeItems = 0;
+#endif
+
 	for (int bankAddr = bankStart; bankAddr < bank.NoPages * FCodeAnalysisPage::kPageSize; bankAddr++)
 	{
 		FCodeAnalysisPage& page = bank.Pages[bankAddr >> FCodeAnalysisPage::kPageShift];
@@ -1093,6 +1097,10 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 				ExpandFunctionDesc(state, listBuilder, pFunctionInfo);
 
 			listBuilder.AddItem(pLabelInfo, listBuilder.BankId, listBuilder.CurrAddr);
+
+#ifndef NDEBUG
+			bank.NumLabels++; // sam
+#endif
 		}
 
 		// check if we have gone past this item
@@ -1104,6 +1112,9 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 			{
 				nextItemAddress = bankAddr + pCodeInfo->ByteSize;
 				listBuilder.AddItem(pCodeInfo, listBuilder.BankId, listBuilder.CurrAddr);
+#ifndef NDEBUG
+				bank.NumCodeItems++; // sam
+#endif
 			}
 			else // code and data are mutually exclusive
 			{

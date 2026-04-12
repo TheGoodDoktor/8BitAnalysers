@@ -4,6 +4,7 @@
 #include "Misc/EmuBase.h"
 #include "huc6280.h"
 #include "BankSet.h"
+#include <vector>
 
 #ifndef NDEBUG
 #define ASSEMBLE_AFTER_ASM_EXPORT 1
@@ -68,11 +69,9 @@ public:
 	// multiple MPR slots. Only the primary (index 0) is exported. This function lets
 	// shared code redirect any duplicate bank ID to the primary for label lookups.
 	int16_t GetCanonicalBankId(int16_t bankId) const override;
+	void    BuildCanonicalBankIdLookup();
 
 	// FEmuBase End
-
-	bool DrawDockingViewLite();
-	void DrawUILite();
 
 	// disable copy & assign because this class is big!
 	FPCEEmu(const FPCEEmu&) = delete;
@@ -115,6 +114,8 @@ public:
 	FBatchGameLoadViewer* GetBatchGameLoadViewer() const { return pBatchGameLoadViewer;	}
 	
 	void EnableGeargrafxCallbacks(bool bEnabled);
+
+	const FBankSet& GetBankSet(int index);
 
 	// Get the PCE bank index (0-255) for a given bank id.
 	uint8_t GetBankIndexForBankId(uint16_t bankId);
@@ -188,14 +189,15 @@ protected:
 	FBankSet BankSets[kNumBanks];
 	int16_t NullBankId = -1;
 
+	// Fast lookup: maps each bankId to its canonical (primary) bankId.
+	// Built once after all banks are created. Indexed directly by bankId.
+	std::vector<int16_t> CanonicalBankIdLookup;
+
 	// cached for speed
 	FGameDebugStats* pGameDebugStats = nullptr;
 	FGameDbEntry* pGameDbEntry = nullptr;
 
 	bool bCallbacksEnabled = true;
 
-	// todo kick out in release build?
 	FAsmExportValidator* pAsmExportValidator = nullptr;
-	//int16_t UnusedBankIdStart = -1;
-	//int16_t UnusedBankIdEnd = -1;
 };

@@ -54,6 +54,7 @@ INLINE void HuC6202::SetVSyncLow()
 
 INLINE u8 HuC6202::ReadRegister(u16 address)
 {
+#if 0
     if (m_is_sgx)
     {
         switch(address & 0x1F)
@@ -84,6 +85,7 @@ INLINE u8 HuC6202::ReadRegister(u16 address)
         }
     }
     else
+#endif
     {
         return m_huc6270_1->ReadRegister(address);
     }
@@ -91,6 +93,7 @@ INLINE u8 HuC6202::ReadRegister(u16 address)
 
 INLINE void HuC6202::WriteRegister(u16 address, u8 value)
 {
+#if 0
     if (m_is_sgx)
     {
         switch(address & 0x1F) {
@@ -133,6 +136,7 @@ INLINE void HuC6202::WriteRegister(u16 address, u8 value)
         }
     }
     else
+#endif
     {
         m_huc6270_1->WriteRegister(address, value);
     }

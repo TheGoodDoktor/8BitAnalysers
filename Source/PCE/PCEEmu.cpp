@@ -76,9 +76,9 @@ constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAn
 #define DEBUG_STATS_VIEWER 1
 #define GAME_DB_VIEWER 1
 #else
-#define BATCH_GAME_VIEWER 0
-#define DEBUG_STATS_VIEWER 0
-#define GAME_DB_VIEWER 0
+#define BATCH_GAME_VIEWER 1
+#define DEBUG_STATS_VIEWER 1
+#define GAME_DB_VIEWER 1
 #endif
 
 #if BANK_SWITCH_DEBUG
@@ -370,6 +370,13 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 	//const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(PrevPC);
 	const FAddressRef nextInstrAddr = state.AddressRefFromPhysicalAddress(pc);
 	
+	/*const int16_t exeBankId = nextInstrAddr.GetBankId();
+	if (GetCanonicalBankId(exeBankId) != exeBankId)
+	{
+		FCodeAnalysisBank* pExeBank = state.GetBank(exeBankId);
+		LOGINFO("Executing code in %s %x", pExeBank->Name.c_str(), nextInstrAddr.GetAddress());
+	}*/
+
 	// Set the PC to the next instruction to be executed
 	// This is so evaluating breakpoints in FDebugger::OnInstructionExecuted()
 	// breaks _before_ the instruction is executed.
@@ -450,26 +457,35 @@ uint8_t FPCEEmu::GetBankIndexForBankId(uint16_t bankId)
 	return 0xff;
 }
 
-// todo: rewrite. use a lookup table instead of walking through banksets
-int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
+void FPCEEmu::BuildCanonicalBankIdLookup()
 {
-	// Walk every BankSet looking for bankId as a non-primary (duplicate) entry.
-	// Duplicates sit at indices 1+ within the Banks vector; index 0 is always primary.
-	// If found as a duplicate, return the primary bank ID so callers always work with
-	// the one bank that appears in the ASM export and holds the user's annotations.
+	// Initialise to each bankId mapping to itself.
+	const int numBanks = FCodeAnalysisState::kMaxBanks;
+	CanonicalBankIdLookup.resize(numBanks);
+	for (int i = 0; i < numBanks; i++)
+		CanonicalBankIdLookup[i] = (int16_t)i;
+
+	// Overwrite entries for duplicate bankIds with their primary bankId.
 	for (int i = 0; i < kNumBanks; i++)
 	{
 		const FBankSet& bankSet = BankSets[i];
-		// Skip sets that are too small to have any duplicates
 		if (bankSet.Banks.size() <= 1)
 			continue;
+		const int16_t primaryId = bankSet.GetBankId(0);
 		for (int d = 1; d < (int)bankSet.Banks.size(); d++)
 		{
-			if (bankSet.Banks[d].BankId == bankId)
-				return bankSet.GetBankId(0);
+			const int16_t dupeId = bankSet.Banks[d].BankId;
+			if (dupeId >= 0 && dupeId < numBanks)
+				CanonicalBankIdLookup[dupeId] = primaryId;
 		}
 	}
-	return bankId;	// already the primary, or not found in any BankSet
+}
+
+int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
+{
+	if (bankId >= 0 && bankId < (int16_t)CanonicalBankIdLookup.size())
+		return CanonicalBankIdLookup[bankId];
+	return bankId;
 }
 
 void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
@@ -486,6 +502,11 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 		pMemory->SetMemoryCallbacks(nullptr, nullptr, nullptr, this);
 		pCore->GetHuC6270_1()->SetCallback(nullptr, this);
 	}
+}
+
+const FBankSet& FPCEEmu::GetBankSet(int index)
+{
+	return BankSets[index];
 }
 
 int FPCEEmu::GetBankCount() const
@@ -774,6 +795,35 @@ void FPCEEmu::UpdateDebugStats()
 		pGameDebugStats->NumBanksMapped = (int)bankIdsPreviouslyMapped.size();
 		pGameDebugStats->MaxBankSwitches = MAX(pGameDebugStats->MaxBankSwitches, pDebugStats->NumBankSwitchesThisFrame);
 		pGameDebugStats->AvgFrameRate = (float)pDebugStats->GetAverageFrameRate();
+	
+		// Keep track of number of non canonical banks that have labels and code.
+		int nonCanonicalBanksWithLabels = 0;
+		int nonCanonicalBanksWithCodeItems = 0;
+		for (int i = 0; i < FPCEEmu::kNumBanks; i++)
+		{
+			const FBankSet& bankSet = BankSets[i];
+			if (bankSet.Banks.empty())
+				continue;
+
+			const int16_t canonicalBankId = bankSet.GetBankId();
+			for (auto& entry : bankSet.Banks)
+			{
+				if (canonicalBankId != entry.BankId)
+				{
+					FCodeAnalysisBank* pBank = state.GetBank(entry.BankId);
+					if (pBank)
+					{
+						if (pBank->NumLabels)
+							nonCanonicalBanksWithLabels++;
+						if (pBank->NumCodeItems)
+							nonCanonicalBanksWithCodeItems++;
+					}
+				}
+			}
+
+			// todo code items
+			pGameDebugStats->NumNonCanonicalBanksWithLabels = nonCanonicalBanksWithLabels;
+		}
 	}
 #endif
 }
@@ -937,6 +987,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	//UnusedBankIdStart = BankSets[kBankUnusedStart].GetBankId(0);
 	//UnusedBankIdEnd = BankSets[kBankUnusedStart].GetBankId(7);
 
+	BuildCanonicalBankIdLookup();
 	ResetBanks();
 	MapMprBanks();
 

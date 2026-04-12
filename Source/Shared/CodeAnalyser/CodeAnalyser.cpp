@@ -784,6 +784,11 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 			FCodeAnalysisBank* pBank = state.GetBank(address.GetBankId());
 			snprintf(label, kLabelSize,"function_%s_%04X", pBank ? pBank->Name.c_str() : "unknown", address.GetAddress());
 			pLabel->Global = true;
+
+			/*if (state.GetCanonicalBankId(pBank->Id))
+			{
+				LOGINFO("Generate label for %s %x", pBank->Name.c_str(), address.GetAddress());
+			}*/
 			break;
 		}
 		case ELabelType::Code:
@@ -901,6 +906,15 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 // This assumes that the address passed in is mapped to physical memory
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
+	const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(pc);
+
+	const int16_t exeBankId = instrAddr.GetBankId();
+	if (state.GetCanonicalBankId(exeBankId) != exeBankId)
+	{
+		FCodeAnalysisBank* pExeBank = state.GetBank(exeBankId);
+		LOGINFO("Executing code in %s %x", pExeBank->Name.c_str(), instrAddr.GetAddress());
+	}
+
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pCodeInfo == nullptr)
 	{
