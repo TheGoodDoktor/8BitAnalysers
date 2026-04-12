@@ -5,6 +5,7 @@
 
 // forward decs
 class FEmuBase;
+class FGraphicsView;
 class FGraphicsViewer;
 class FCharacterMapViewer;
 class FFunctionViewer;
@@ -77,6 +78,7 @@ public:
 	FCodeAnalysisState&		GetCodeAnalysis() { return CodeAnalysis; }
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
 	const FProjectConfig*		GetProjectConfig() const { return pCurrentProjectConfig; }
+	virtual FGraphicsView*	GetScreen() const { return nullptr; }
 
 	std::string		GetGameWorkspaceRoot() const;
 	

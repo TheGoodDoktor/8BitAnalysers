@@ -152,6 +152,7 @@ public:
 
 
 	FArcadeZ80Machine& GetMachine() { return *pMachine; }
+	FGraphicsView* GetScreen() const override { return pMachine ? pMachine->pScreen : nullptr; }
 	const FArcadeZ80Debug& GetDebug() { return Debug;}
 
 	void AddInputByte(uint8_t byte)
