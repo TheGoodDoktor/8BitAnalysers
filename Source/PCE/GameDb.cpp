@@ -61,11 +61,11 @@ bool SaveGameDbEntry(const std::string& gameName, const std::string& fname)
 	for (auto dbBank : entry.Banks)
 	{
 		json mappingJson;
-		mappingJson["MprSlot"] = dbBank.MprSlot;
+		mappingJson["MprSlots"] = dbBank.MprSlots;
 		mappingJson["Fixed"] = dbBank.bFixed;
 		jsonFile["Mappings"].push_back(mappingJson);
 
-		if (dbBank.MprSlot != -1 && !dbBank.bFixed)
+		if (!dbBank.MprSlots.empty() && !dbBank.bFixed)
 			entry.NumDynamicBanks++;
 	}
 
@@ -108,13 +108,18 @@ bool LoadGameDbEntry(const std::string& gameName, const std::string& fname)
 
 	entry.NumDynamicBanks = 0;
 
-	for (int i = 0; i< numBanks; i++)
+	for (int i = 0; i < numBanks; i++)
 	{
 		json& mappingJson = mappingsJson[i];
-		entry.Banks[i].MprSlot = mappingJson["MprSlot"];
 		entry.Banks[i].bFixed = mappingJson["Fixed"];
 
-		if (entry.Banks[i].MprSlot != -1 && !entry.Banks[i].bFixed)
+		// Support old files that stored a single MprSlot int
+		if (mappingJson.contains("MprSlots"))
+			entry.Banks[i].MprSlots = mappingJson["MprSlots"].get<std::vector<int>>();
+		else if (mappingJson.contains("MprSlot") && mappingJson["MprSlot"] != -1)
+			entry.Banks[i].MprSlots.push_back(mappingJson["MprSlot"].get<int>());
+
+		if (!entry.Banks[i].MprSlots.empty() && !entry.Banks[i].bFixed)
 			entry.NumDynamicBanks++;
 	}
 	

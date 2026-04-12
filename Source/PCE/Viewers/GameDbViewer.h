@@ -16,8 +16,10 @@ public:
 protected:
 	void DrawGameDbTable();
 	void DrawOverview();
+	void DrawBanksTab();
 
 protected:
-	
+
 	FPCEEmu* pPCEEmu = nullptr;
+	int m_BanksTabSelectedGame = -1;
 };

@@ -6,14 +6,15 @@ class FPCEEmu;
 
 struct FGameDbBank
 {
-	uint16_t GetMappedAddress() const { return MprSlot == -1 ? 0 : MprSlot * 0x2000; }
+	// This returns the first address ever mapped.
+	uint16_t GetMappedAddress() const { return MprSlots.empty() ? 0 : MprSlots[0] * 0x2000; }
 
 	// Is this bank mapped to a fixed mpr slot?
 	// If this is false, the bank is dynamic and can be mapped to multiple mpr slots.
 	bool bFixed = true;
 	
-	// todo make this a bitfield of all slots this banks has been mapped to?
-	int MprSlot = -1;
+	// All MPR slots this bank has been mapped to.
+	std::vector<int> MprSlots;
 };
 
 struct FGameDbEntry
