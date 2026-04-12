@@ -999,6 +999,231 @@ public:
 	}
 };
 
+class FGetFrameTraceTool : public FMCPTool
+{
+public:
+	FGetFrameTraceTool()
+	{
+		Description =
+			"Returns a summary of every function executed during the last emulated frame, "
+			"in the order they were first entered, with per-function instruction hit counts. "
+			"Useful for building a dynamic call graph, identifying hot functions, and finding "
+			"indirect calls (JP HL, RST dispatch) that static analysis misses. "
+			"Run step_frame first to capture a representative frame.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		const std::vector<FAddressRef>& trace = codeAnalysis.Debugger.GetFrameTrace();
+
+		if (trace.empty())
+			return { {"error", "Frame trace is empty. Call step_frame first to capture a frame."} };
+
+		// Walk the trace, mapping each PC to its containing function.
+		// Track: insertion order, total hits per function start address.
+		std::vector<FAddressRef>          order;      // function start addresses, first-seen order
+		std::map<FAddressRef, int>         hitCount;   // start address → hit count
+		std::map<FAddressRef, int>         firstIndex; // start address → order index
+
+		for (const FAddressRef& pc : trace)
+		{
+			FFunctionInfo* pFunc = codeAnalysis.pFunctions->FindFunction(pc);
+			FAddressRef key = pFunc ? pFunc->StartAddress : pc;
+
+			auto it = hitCount.find(key);
+			if (it == hitCount.end())
+			{
+				firstIndex[key] = (int)order.size();
+				order.push_back(key);
+				hitCount[key] = 1;
+			}
+			else
+			{
+				it->second++;
+			}
+		}
+
+		// Build output array in first-seen order
+		nlohmann::json functions = nlohmann::json::array();
+		char addrStr[8];
+		for (const FAddressRef& startAddr : order)
+		{
+			FFunctionInfo* pFunc = codeAnalysis.pFunctions->FindFunction(startAddr);
+			const FLabelInfo* pLabel = codeAnalysis.GetLabelForAddress(startAddr);
+			const std::string name = pLabel ? pLabel->GetName() : "";
+
+			snprintf(addrStr, sizeof(addrStr), "$%04X", startAddr.Address);
+
+			nlohmann::json entry;
+			entry["address"]   = addrStr;
+			entry["hit_count"] = hitCount[startAddr];
+			if (!name.empty())
+				entry["name"] = name;
+			if (pFunc && !pFunc->Description.empty())
+				entry["description"] = pFunc->Description;
+
+			functions.push_back(entry);
+		}
+
+		return {
+			{"total_instructions", (int)trace.size()},
+			{"unique_addresses",   (int)order.size()},
+			{"functions",          functions}
+		};
+	}
+};
+
+// Parse a pattern from a JSON value: integer → single byte; string → space- or run-separated hex bytes
+static std::vector<uint8_t> ParseSearchPattern(const nlohmann::json& arg)
+{
+	if (arg.is_number())
+		return { (uint8_t)(arg.get<uint32_t>() & 0xFF) };
+
+	std::string str = arg.get<std::string>();
+
+	// Remove "0x"/"0X" prefix if present on the whole string
+	if (str.size() >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+		str = str.substr(2);
+
+	// Split on spaces; if no spaces treat as run of hex digits
+	std::vector<uint8_t> pattern;
+	std::istringstream ss(str);
+	std::string token;
+	while (ss >> token)
+	{
+		try { pattern.push_back((uint8_t)std::stoul(token, nullptr, 16)); }
+		catch (...) {}
+	}
+
+	// If still empty try parsing as a run of hex digit pairs
+	if (pattern.empty() && str.size() >= 2 && str.size() % 2 == 0)
+	{
+		for (size_t i = 0; i + 1 < str.size(); i += 2)
+		{
+			try { pattern.push_back((uint8_t)std::stoul(str.substr(i, 2), nullptr, 16)); }
+			catch (...) { pattern.clear(); break; }
+		}
+	}
+
+	return pattern;
+}
+
+class FSearchMemoryTool : public FMCPTool
+{
+public:
+	FSearchMemoryTool()
+	{
+		Description =
+			"Search for a byte value or multi-byte pattern anywhere in the 16-bit address space. "
+			"'pattern' can be a single integer (e.g. 255 or 0xFF) for a single byte, "
+			"or a hex string for a sequence (e.g. \"FF A8 00\" or \"FFA800\"). "
+			"Matches are annotated with any label at that address. "
+			"Typical use: find where a known value is stored in RAM, or locate a data signature.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"pattern", {
+					{"description", "Byte or byte sequence to find. Integer for single byte (e.g. 42), or hex string for multi-byte (e.g. \"FF A8 00\")"}
+				}},
+				{"start_address", {
+					{"type", "integer"},
+					{"description", "Start of search range (default 0)"}
+				}},
+				{"end_address", {
+					{"type", "integer"},
+					{"description", "End of search range inclusive (default 0xFFFF)"}
+				}},
+				{"max_results", {
+					{"type", "integer"},
+					{"description", "Maximum number of matches to return (default 32)"}
+				}}
+			}},
+			{"required", {"pattern"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("pattern"))
+			return { {"error", "Missing required argument: pattern"} };
+
+		const std::vector<uint8_t> pattern = ParseSearchPattern(arguments["pattern"]);
+		if (pattern.empty())
+			return { {"error", "Could not parse pattern. Use an integer or a hex string like \"FF A8 00\"."} };
+
+		const uint32_t startAddr  = arguments.contains("start_address") ? GetNumericalArgument("start_address", arguments) : 0u;
+		const uint32_t endAddr    = arguments.contains("end_address")   ? GetNumericalArgument("end_address",   arguments) : 0xFFFFu;
+		const uint32_t maxResults = arguments.contains("max_results")   ? GetNumericalArgument("max_results",   arguments) : 32u;
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+
+		nlohmann::json matches = nlohmann::json::array();
+		const size_t patLen = pattern.size();
+		const uint32_t searchEnd = (endAddr + 1 >= patLen) ? (endAddr + 1 - (uint32_t)patLen) : 0;
+
+		for (uint32_t addr = startAddr; addr <= searchEnd && (uint32_t)matches.size() < maxResults; addr++)
+		{
+			bool found = true;
+			for (size_t i = 0; i < patLen && found; i++)
+				found = (pEmu->ReadByte((uint16_t)(addr + i)) == pattern[i]);
+
+			if (!found)
+				continue;
+
+			char addrStr[8];
+			snprintf(addrStr, sizeof(addrStr), "$%04X", (uint16_t)addr);
+
+			nlohmann::json match;
+			match["address"] = addrStr;
+
+			// Annotate with label if present
+			const FAddressRef ref = codeAnalysis.AddressRefFromPhysicalAddress((uint16_t)addr);
+			const FLabelInfo* pLabel = codeAnalysis.GetLabelForAddress(ref);
+			if (pLabel)
+				match["label"] = pLabel->GetName();
+
+			// Show a few bytes of context around the match
+			std::ostringstream ctx;
+			const uint32_t ctxStart = (addr >= 2) ? addr - 2 : 0;
+			const uint32_t ctxEnd   = (std::min)(addr + (uint32_t)patLen + 2u, 0x10000u);
+			for (uint32_t c = ctxStart; c < ctxEnd; c++)
+			{
+				if (c == addr) ctx << "[";
+				char byteStr[4];
+				snprintf(byteStr, sizeof(byteStr), "%02X", pEmu->ReadByte((uint16_t)c));
+				ctx << byteStr;
+				if (c == addr + patLen - 1) ctx << "]";
+				if (c + 1 < ctxEnd) ctx << " ";
+			}
+			match["context"] = ctx.str();
+
+			matches.push_back(match);
+		}
+
+		// Format pattern for display
+		std::ostringstream patStr;
+		for (size_t i = 0; i < pattern.size(); i++)
+		{
+			if (i) patStr << " ";
+			char b[4];
+			snprintf(b, sizeof(b), "%02X", pattern[i]);
+			patStr << b;
+		}
+
+		return {
+			{"pattern",     patStr.str()},
+			{"match_count", (int)matches.size()},
+			{"matches",     matches}
+		};
+	}
+};
+
 void RegisterBaseTools(FMCPToolsRegistry& registry)
 {
 	registry.RegisterTool("get_function_list", new FGetFunctionListTool());
@@ -1027,5 +1252,7 @@ void RegisterBaseTools(FMCPToolsRegistry& registry)
 	// Runtime inspection
 	registry.RegisterTool("get_registers",          new FGetRegistersTool());
 	registry.RegisterTool("read_memory_annotated",  new FReadMemoryAnnotatedTool());
+	registry.RegisterTool("get_frame_trace",        new FGetFrameTraceTool());
+	registry.RegisterTool("search_memory",          new FSearchMemoryTool());
 }
 
