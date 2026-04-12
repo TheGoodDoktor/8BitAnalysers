@@ -5,9 +5,12 @@
 #include <sstream>
 #include <iomanip>
 #include <set>
+#include <vector>
 #include "CodeAnalyser/CodeAnalysisPage.h"
 #include "CodeAnalyser/CodeAnalyserTypes.h"
 #include "MCPServer.h"
+#include "Util/GraphicsView.h"
+#include "stb/stb_image_write.h"
 
 class FDisassemblyResource : public FMCPResource
 {
@@ -198,10 +201,70 @@ public:
 };
 
 
+static std::string Base64Encode(const uint8_t* data, size_t length)
+{
+	static const char kTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	std::string out;
+	out.reserve(((length + 2) / 3) * 4);
+	for (size_t i = 0; i < length; i += 3)
+	{
+		const uint32_t b0 = data[i];
+		const uint32_t b1 = (i + 1 < length) ? data[i + 1] : 0;
+		const uint32_t b2 = (i + 2 < length) ? data[i + 2] : 0;
+		out += kTable[(b0 >> 2) & 0x3F];
+		out += kTable[((b0 << 4) | (b1 >> 4)) & 0x3F];
+		out += (i + 1 < length) ? kTable[((b1 << 2) | (b2 >> 6)) & 0x3F] : '=';
+		out += (i + 2 < length) ? kTable[b2 & 0x3F] : '=';
+	}
+	return out;
+}
+
+class FScreenshotResource : public FMCPResource
+{
+public:
+	FScreenshotResource()
+	{
+		URI = std::string(GetMCPServerName()) + "://screenshot";
+		Title = "Screenshot";
+		Description = "Current frame buffer as a PNG image. Use this to visually confirm the game state before diving into analysis — which era is active, what enemies are on screen, etc.";
+		MimeType = "image/png";
+		Category = "display";
+	}
+
+	std::string Read(FEmuBase* pEmulator) override
+	{
+		FGraphicsView* pScreen = pEmulator->GetScreen();
+		if (!pScreen || !pScreen->GetPixelBuffer())
+			return "";
+
+		std::vector<uint8_t> pngData;
+		stbi_write_png_to_func(
+			[](void* context, void* data, int size)
+			{
+				auto* vec = static_cast<std::vector<uint8_t>*>(context);
+				const uint8_t* bytes = static_cast<const uint8_t*>(data);
+				vec->insert(vec->end(), bytes, bytes + size);
+			},
+			&pngData,
+			pScreen->GetWidth(),
+			pScreen->GetHeight(),
+			4,
+			pScreen->GetPixelBuffer(),
+			pScreen->GetWidth() * (int)sizeof(uint32_t)
+		);
+
+		if (pngData.empty())
+			return "";
+
+		return Base64Encode(pngData.data(), pngData.size());
+	}
+};
+
 void RegisterBaseResources(FMCPResourceRegistry& registry)
 {
 	registry.RegisterResource(new FFunctionIndexResource());
 	registry.RegisterResource(new FLabelsResource());
 	registry.RegisterResource(new FCallGraphResource());
 	registry.RegisterResource(new FDisassemblyResource());
+	registry.RegisterResource(new FScreenshotResource());
 }

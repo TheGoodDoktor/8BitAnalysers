@@ -293,12 +293,13 @@ std::string FMCPServer::GetInstructions() const
 		"\n"
 		"## Runtime inspection (emulator control)\n"
 		"The emulator is live and can be paused for dynamic analysis:\n"
-		"1. Call pause_emulator to halt execution and get the current PC.\n"
-		"2. Call get_registers to read all CPU register values.\n"
-		"3. Call read_memory_annotated to dump a memory range with label annotations.\n"
-		"4. Call step_into or step_over to advance by one instruction, then get_registers to observe the result.\n"
-		"5. Call step_frame to advance by a full machine frame.\n"
-		"6. Call resume_emulator to let the game run freely again.\n"
+		"1. Read '" + p + "screenshot' at any time to see the current frame as a PNG image.\n"
+		"2. Call pause_emulator to halt execution and get the current PC.\n"
+		"3. Call get_registers to read all CPU register values.\n"
+		"4. Call read_memory_annotated to dump a memory range with label annotations.\n"
+		"5. Call step_into or step_over to advance by one instruction, then get_registers to observe the result.\n"
+		"6. Call step_frame to advance by a full machine frame.\n"
+		"7. Call resume_emulator to let the game run freely again.\n"
 		"Note: step_into/step_over/step_frame execute asynchronously — the step happens on the next emulator tick after the tool returns. Always follow them with get_registers to confirm the new state.\n";
 }
 
