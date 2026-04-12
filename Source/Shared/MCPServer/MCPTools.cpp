@@ -7,6 +7,14 @@
 #include "CodeAnalyser/Z80/Z80Disassembler.h"
 #include "CodeAnalyser/6502/M6502Disassembler.h"
 #include "CodeAnalyser/6502/M65C02Disassembler.h"
+#include <sstream>
+#include <algorithm>
+
+static void SaveSuggestions(FEmuBase* pEmu)
+{
+	if (pEmu->GetProjectConfig() != nullptr)
+		g_MCPManager->GetSuggestionQueue().Save(pEmu->GetGameWorkspaceRoot() + "Suggestions.json");
+}
 
 class FGetFunctionListTool : public FMCPTool
 {
@@ -536,6 +544,7 @@ public:
 		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
 
 		g_MCPManager->GetSuggestionQueue().Add(suggestion);
+		SaveSuggestions(pEmu);
 		return { {"status", "queued"}, {"message", "Rename suggestion queued for user review"} };
 	}
 };
@@ -590,6 +599,7 @@ public:
 		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
 
 		g_MCPManager->GetSuggestionQueue().Add(suggestion);
+		SaveSuggestions(pEmu);
 		return { {"status", "queued"}, {"message", "Description suggestion queued for user review"} };
 	}
 };
@@ -643,6 +653,7 @@ public:
 		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
 
 		g_MCPManager->GetSuggestionQueue().Add(suggestion);
+		SaveSuggestions(pEmu);
 		return { {"status", "queued"}, {"message", "Label suggestion queued for user review"} };
 	}
 };
@@ -696,7 +707,295 @@ public:
 		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
 
 		g_MCPManager->GetSuggestionQueue().Add(suggestion);
+		SaveSuggestions(pEmu);
 		return { {"status", "queued"}, {"message", "Comment suggestion queued for user review"} };
+	}
+};
+
+// ============================================================================
+// Execution Control Tools
+// ============================================================================
+
+class FPauseEmulatorTool : public FMCPTool
+{
+public:
+	FPauseEmulatorTool()
+	{
+		Description = "Pause the emulator so its state can be inspected. Returns the current PC and stopped status. Must be called before stepping or reading registers for accurate results.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FDebugger& debugger = pEmu->GetCodeAnalysis().Debugger;
+		debugger.Break();
+
+		uint16_t pcVal = 0;
+		debugger.GetRegisterWordValue("PC", pcVal);
+		char pcStr[8];
+		snprintf(pcStr, sizeof(pcStr), "$%04X", pcVal);
+
+		return {
+			{"stopped", debugger.IsStopped()},
+			{"pc", pcStr}
+		};
+	}
+};
+
+class FResumeEmulatorTool : public FMCPTool
+{
+public:
+	FResumeEmulatorTool()
+	{
+		Description = "Resume emulator execution from its current paused state.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FDebugger& debugger = pEmu->GetCodeAnalysis().Debugger;
+		debugger.Continue();
+		return { {"stopped", debugger.IsStopped()} };
+	}
+};
+
+class FStepIntoTool : public FMCPTool
+{
+public:
+	FStepIntoTool()
+	{
+		Description = "Step the emulator into the next single instruction (follows CALL into subroutines). The emulator must be paused first via pause_emulator. After this returns, the step executes on the next emulator tick — call get_registers to read the updated state.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FDebugger& debugger = pEmu->GetCodeAnalysis().Debugger;
+		if (!debugger.IsStopped())
+			return { {"error", "Emulator must be paused before stepping. Call pause_emulator first."} };
+
+		debugger.StepInto();
+		return { {"status", "stepping"} };
+	}
+};
+
+class FStepOverTool : public FMCPTool
+{
+public:
+	FStepOverTool()
+	{
+		Description = "Step the emulator over the next instruction, treating CALL as a single step (runs called subroutine to completion). The emulator must be paused first. Call get_registers to read the updated state after it pauses again.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FDebugger& debugger = pEmu->GetCodeAnalysis().Debugger;
+		if (!debugger.IsStopped())
+			return { {"error", "Emulator must be paused before stepping. Call pause_emulator first."} };
+
+		debugger.StepOver();
+		return { {"status", "stepping"} };
+	}
+};
+
+class FStepFrameTool : public FMCPTool
+{
+public:
+	FStepFrameTool()
+	{
+		Description = "Run the emulator for one full machine frame then pause. Useful for advancing game state by one frame at a time. Call get_registers to read state once the emulator pauses again.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		pEmu->GetCodeAnalysis().Debugger.StepFrame();
+		return { {"status", "stepping"} };
+	}
+};
+
+// ============================================================================
+// Inspection Tools
+// ============================================================================
+
+class FGetRegistersTool : public FMCPTool
+{
+public:
+	FGetRegistersTool()
+	{
+		Description = "Get the current CPU register values and emulator stopped/running status. Pause the emulator first for a stable snapshot.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		FDebugger& debugger = codeAnalysis.Debugger;
+
+		static const char* kByteRegs[] = { "A", "F", "B", "C", "D", "E", "H", "L", "R", "I" };
+		static const char* kWordRegs[] = { "AF", "BC", "DE", "HL", "IX", "IY", "SP", "PC" };
+
+		nlohmann::json regs;
+		char valStr[8];
+		uint8_t byteVal;
+		uint16_t wordVal;
+
+		for (const char* reg : kByteRegs)
+		{
+			if (debugger.GetRegisterByteValue(reg, byteVal))
+			{
+				snprintf(valStr, sizeof(valStr), "$%02X", byteVal);
+				regs[reg] = valStr;
+			}
+		}
+		for (const char* reg : kWordRegs)
+		{
+			if (debugger.GetRegisterWordValue(reg, wordVal))
+			{
+				snprintf(valStr, sizeof(valStr), "$%04X", wordVal);
+				regs[reg] = valStr;
+			}
+		}
+
+		return {
+			{"stopped",   debugger.IsStopped()},
+			{"frame",     codeAnalysis.CurrentFrameNo},
+			{"registers", regs}
+		};
+	}
+};
+
+static const char* GetLabelTypeStr(ELabelType type)
+{
+	switch (type)
+	{
+	case ELabelType::Function: return "function";
+	case ELabelType::Code:     return "code";
+	case ELabelType::Text:     return "text";
+	default:                   return "data";
+	}
+}
+
+class FReadMemoryAnnotatedTool : public FMCPTool
+{
+public:
+	FReadMemoryAnnotatedTool()
+	{
+		Description =
+			"Read a range of memory and return an annotated hex dump. "
+			"Any known labels, types, or comments at addresses in the range are shown inline. "
+			"Use this instead of read_memory when you want to understand what the data means, not just its raw bytes.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"address", {
+					{"type", "integer"},
+					{"description", "Starting address (decimal or 0x hex)"}
+				}},
+				{"length", {
+					{"type", "integer"},
+					{"description", "Number of bytes to read (max 512)"}
+				}}
+			}},
+			{"required", {"address", "length"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("address"))
+			return { {"error", "Missing required argument: address"} };
+		if (!arguments.contains("length"))
+			return { {"error", "Missing required argument: length"} };
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+
+		const uint32_t startAddr  = GetNumericalArgument("address", arguments);
+		const uint32_t rawLength  = GetNumericalArgument("length",  arguments);
+		const uint32_t length     = (std::min)(rawLength, 512u);
+		const uint32_t endAddr    = (std::min)(startAddr + length, 0x10000u);
+		const uint32_t actualLen  = endAddr - startAddr;
+
+		static const int kRowBytes = 16;
+		std::ostringstream out;
+
+		for (uint32_t rowBase = startAddr; rowBase < endAddr; rowBase += kRowBytes)
+		{
+			const uint32_t rowEnd = (std::min)(rowBase + (uint32_t)kRowBytes, endAddr);
+
+			// Emit any labels that fall within this row
+			for (uint32_t a = rowBase; a < rowEnd; a++)
+			{
+				const FAddressRef ref = codeAnalysis.AddressRefFromPhysicalAddress((uint16_t)a);
+				const FLabelInfo* pLabel = codeAnalysis.GetLabelForAddress(ref);
+				if (pLabel)
+				{
+					out << "; " << pLabel->GetName()
+					    << "  [" << GetLabelTypeStr(pLabel->LabelType) << "]";
+					if (!pLabel->Comment.empty())
+						out << "  ; " << pLabel->Comment;
+					out << "\n";
+				}
+			}
+
+			// Hex bytes
+			char buf[8];
+			snprintf(buf, sizeof(buf), "$%04X: ", (uint16_t)rowBase);
+			out << buf;
+
+			for (uint32_t a = rowBase; a < rowBase + kRowBytes; a++)
+			{
+				if (a < rowEnd)
+				{
+					snprintf(buf, sizeof(buf), "%02X ", pEmu->ReadByte((uint16_t)a));
+					out << buf;
+				}
+				else
+				{
+					out << "   ";
+				}
+			}
+
+			// ASCII
+			out << " ";
+			for (uint32_t a = rowBase; a < rowEnd; a++)
+			{
+				const uint8_t byte = pEmu->ReadByte((uint16_t)a);
+				out << (char)(byte >= 0x20 && byte < 0x7F ? byte : '.');
+			}
+			out << "\n";
+		}
+
+		return {
+			{"address",  startAddr},
+			{"length",   actualLen},
+			{"hex_dump", out.str()}
+		};
 	}
 };
 
@@ -717,5 +1016,16 @@ void RegisterBaseTools(FMCPToolsRegistry& registry)
 	registry.RegisterTool("set_function_description", new FSetFunctionDescriptionTool());
 	registry.RegisterTool("set_label", new FSetLabelTool());
 	registry.RegisterTool("add_comment", new FAddCommentTool());
+
+	// Execution control
+	registry.RegisterTool("pause_emulator",  new FPauseEmulatorTool());
+	registry.RegisterTool("resume_emulator", new FResumeEmulatorTool());
+	registry.RegisterTool("step_into",       new FStepIntoTool());
+	registry.RegisterTool("step_over",       new FStepOverTool());
+	registry.RegisterTool("step_frame",      new FStepFrameTool());
+
+	// Runtime inspection
+	registry.RegisterTool("get_registers",          new FGetRegistersTool());
+	registry.RegisterTool("read_memory_annotated",  new FReadMemoryAnnotatedTool());
 }
 

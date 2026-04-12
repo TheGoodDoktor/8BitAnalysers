@@ -23,7 +23,14 @@
       "mcp__arcade-analyser__rename_function",
       "mcp__arcade-analyser__set_function_description",
       "mcp__arcade-analyser__set_label",
-      "mcp__arcade-analyser__add_comment"
+      "mcp__arcade-analyser__add_comment",
+      "mcp__arcade-analyser__pause_emulator",
+      "mcp__arcade-analyser__get_registers",
+      "mcp__arcade-analyser__step_frame",
+      "mcp__arcade-analyser__read_memory_annotated",
+      "mcp__arcade-analyser__step_into",
+      "mcp__arcade-analyser__step_over",
+      "mcp__arcade-analyser__resume_emulator"
     ]
   }
 }

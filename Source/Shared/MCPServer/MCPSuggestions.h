@@ -40,6 +40,9 @@ public:
 	std::vector<FMCPSuggestion> GetAll() const;
 	int Count() const;
 
+	void Save(const std::string& filePath) const;
+	void Load(const std::string& filePath);
+
 private:
 	mutable std::mutex			Mutex;
 	std::vector<FMCPSuggestion>	Suggestions;

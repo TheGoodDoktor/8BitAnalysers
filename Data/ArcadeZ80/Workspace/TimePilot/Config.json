@@ -7,8 +7,8 @@
         "ViewConfigs": [
             {
                 "Enabled": true,
-                "ViewAddress": 4505,
-                "ViewAddressBank": 0
+                "ViewAddress": 8462,
+                "ViewAddressBank": 1
             },
             {
                 "Enabled": false,

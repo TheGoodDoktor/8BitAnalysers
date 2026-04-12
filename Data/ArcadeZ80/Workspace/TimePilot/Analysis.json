@@ -53685,11 +53685,13 @@
                 {
                     "Address": 994,
                     "ByteSize": 2,
+                    "Comment": "return address?",
                     "DataType": 2
                 },
                 {
                     "Address": 996,
                     "ByteSize": 2,
+                    "Comment": "return address for below?",
                     "DataType": 2
                 },
                 {

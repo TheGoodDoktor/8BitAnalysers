@@ -21,8 +21,17 @@ static const char* GetSuggestionTypeLabel(EMCPSuggestionType type)
 
 void DrawMCPSuggestionsUI(FEmuBase* pEmu, FMCPSuggestionQueue& queue)
 {
-	//if (queue.Count() == 0)
-	//	return;
+	// Auto-load suggestions from disk when the active game changes
+	if (pEmu->GetProjectConfig() != nullptr)
+	{
+		static std::string sLastLoadedPath;
+		const std::string suggestionsPath = pEmu->GetGameWorkspaceRoot() + "Suggestions.json";
+		if (suggestionsPath != sLastLoadedPath)
+		{
+			queue.Load(suggestionsPath);
+			sLastLoadedPath = suggestionsPath;
+		}
+	}
 
 	ImGui::SetNextWindowSize(ImVec2(700, 400), ImGuiCond_FirstUseEver);
 	bool bOpen = true;
@@ -115,23 +124,31 @@ void DrawMCPSuggestionsUI(FEmuBase* pEmu, FMCPSuggestionQueue& queue)
 	ImGui::End();
 
 	// Apply decisions outside the table loop to avoid modifying the list while iterating
+	bool bQueueChanged = false;
 	if (acceptAll)
 	{
 		for (const FMCPSuggestion& s : suggestions)
 			ApplySuggestion(pEmu, s);
 		queue.Clear();
+		bQueueChanged = true;
 	}
 	else if (rejectAll)
 	{
 		queue.Clear();
+		bQueueChanged = true;
 	}
 	else if (acceptIndex >= 0)
 	{
 		ApplySuggestion(pEmu, suggestions[acceptIndex]);
 		queue.Remove(acceptIndex);
+		bQueueChanged = true;
 	}
 	else if (rejectIndex >= 0)
 	{
 		queue.Remove(rejectIndex);
+		bQueueChanged = true;
 	}
+
+	if (bQueueChanged && pEmu->GetProjectConfig() != nullptr)
+		queue.Save(pEmu->GetGameWorkspaceRoot() + "Suggestions.json");
 }
