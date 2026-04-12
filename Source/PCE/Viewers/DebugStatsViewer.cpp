@@ -261,7 +261,8 @@ void FDebugStatsViewer::DrawUI()
 		}
 	}
 	
-	if (ImGui::TreeNode("Games Bank mappings"))
+	// dont think we need this now we have the banks view in game db?
+	/*if (ImGui::TreeNode("Games Bank mappings"))
 	{
 		TGameDb& gameDb = GetGameDb();
 		for (const auto it : gameDb)
@@ -289,7 +290,7 @@ void FDebugStatsViewer::DrawUI()
 				//ImGui::Text("%s", it.first.c_str());
 				for (int i = 0; i < entry.Banks.size(); i++)
 				{
-					const int mprSlot = entry.Banks[i].MprSlot;
+					const int mprSlot = entry.Banks[i].MprSlots[0];
 					if (mprSlot == -1)
 						ImGui::Text("  %02d - ----", i);
 					else
@@ -299,7 +300,7 @@ void FDebugStatsViewer::DrawUI()
 			}
 		}
 		ImGui::TreePop();
-	}
+	}*/
 
 	if (ImGui::TreeNode("Games with all banks mapped"))
 	{

@@ -582,12 +582,16 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 					if (romIndex < pGameDbEntry->Banks.size())
 					{
 						FGameDbBank& dbBank = pGameDbEntry->Banks[romIndex];
-						if (dbBank.MprSlot != -1 && mprIndex != dbBank.MprSlot)
+						const bool alreadyMapped = std::find(dbBank.MprSlots.begin(), dbBank.MprSlots.end(), mprIndex) != dbBank.MprSlots.end();
+						if (!alreadyMapped)
 						{
-							CodeAnalysis.Debugger.RegisterEvent((uint8_t)EEventType::BankAddressChange, GetPC(), mprIndex * 0x2000, romIndex, 0);
-							dbBank.bFixed = false;
+							if (!dbBank.MprSlots.empty())
+							{
+								CodeAnalysis.Debugger.RegisterEvent((uint8_t)EEventType::BankAddressChange, GetPC(), mprIndex * 0x2000, romIndex, 0);
+								dbBank.bFixed = false;
+							}
+							dbBank.MprSlots.push_back(mprIndex);
 						}
-						dbBank.MprSlot = mprIndex;
 					}
 				}
 			}
@@ -1404,7 +1408,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		{
 			// Create new bank mappings if no file exists
 			FGameDbEntry& dbEntry = CreateGameDbEntry(pGameConfig->Name, GetBankCount());
-			dbEntry.Banks[0].MprSlot = 7;
+			dbEntry.Banks[0].MprSlots.push_back(7);
 		}
 
 		pGameDbEntry = ::GetGameDbEntry(pGameConfig->Name);

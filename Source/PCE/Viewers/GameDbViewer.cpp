@@ -12,7 +12,6 @@ enum EGameDbColumns
 	Col_Overall,
 	Col_AssemblesOk,
 	Col_RomStatus,
-	//Col_EmulatorTestOk,
 	Col_TestMethodology,
 	Col_MaxDupeBanks,
 	Col_Count
@@ -20,16 +19,13 @@ enum EGameDbColumns
 
 bool GetOverallResult(const FGameDbEntry& entry)
 {
-	return entry.bAssemblesOk && entry.bRomFileIdentical /*&& entry.bEmulatorTestOk*/;
+	return entry.bAssemblesOk && entry.bRomFileIdentical;
 }
 
 const char* GetRomStatus(const FGameDbEntry& entry)
 {
 	if (entry.bRomFileIdentical)
 		return "Identical";
-
-	//if (entry.bRomFilePartialMatch)
-	//	return "Partial";
 
 	return "Fail";
 }
@@ -77,9 +73,6 @@ static void SortGameDbTable(std::vector<std::pair<std::string, FGameDbEntry*>>& 
 				result = entryA.MaxDupeBanks - entryB.MaxDupeBanks;
 				break;
 
-			/*case Col_EmulatorTestOk:
-				result = (int)entryA.bEmulatorTestOk - (int)entryB.bEmulatorTestOk;
-				break;*/
 
 			case Col_TestMethodology:
 				result = entryA.TestingMethodology - entryB.TestingMethodology;
@@ -117,6 +110,11 @@ void FGameDbViewer::DrawUI()
 		if (ImGui::BeginTabItem("Overview"))
 		{
 			DrawOverview();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Banks"))
+		{
+			DrawBanksTab();
 			ImGui::EndTabItem();
 		}
 
@@ -163,7 +161,6 @@ void FGameDbViewer::DrawGameDbTable()
 		ImGui::TableSetupColumn("Overall");
 		ImGui::TableSetupColumn("Assembles");
 		ImGui::TableSetupColumn("ROM");
-		//ImGui::TableSetupColumn("Emu Test");
 		ImGui::TableSetupColumn("Test Method");
 		ImGui::TableSetupColumn("Max Dupe Banks");
 		ImGui::TableHeadersRow();
@@ -232,9 +229,6 @@ void FGameDbViewer::DrawGameDbTable()
 			ImGui::TableSetColumnIndex(Col_RomStatus);
 			ImGui::TextUnformatted(bValid ? GetRomStatus(entry) : "-");
 
-			//ImGui::TableSetColumnIndex(Col_EmulatorTestOk);
-			//ImGui::TextUnformatted(bValid ? entry.bEmulatorTestOk ? "Ok" : "Fail" : "-");
-
 			ImGui::TableSetColumnIndex(Col_TestMethodology);
 
 			if (entry.TestingMethodology == -1)
@@ -255,7 +249,6 @@ void FGameDbViewer::DrawOverview()
 	int numAssembles = 0;
 	int numIdenticalRom = 0;
 	int numPassOverall = 0;
-	//int numEmuTestPassed = 0;
 
 	TGameDb& gameDb = GetGameDb();
 	for (const auto& entry : gameDb)
@@ -266,9 +259,6 @@ void FGameDbViewer::DrawOverview()
 		if (entry.second.bAssemblesOk)
 			numAssembles++;
 
-		//if (entry.second.bEmulatorTestOk)
-		//	numEmuTestPassed++;
-		
 		if (entry.second.bRomFileIdentical)
 			numIdenticalRom++;
 	}
@@ -277,6 +267,88 @@ void FGameDbViewer::DrawOverview()
 
 	ImGui::Text("Assembles:     %3d / %3d", numAssembles, totNum);
 	ImGui::Text("Identical ROM: %3d / %3d", numIdenticalRom, totNum);
-	//ImGui::Text("Emu test ok:   %3d / %3d", numEmuTestPassed, totNum);
+}
+
+void FGameDbViewer::DrawBanksTab()
+{
+	TGameDb& gameDb = GetGameDb();
+	if (gameDb.empty())
+	{
+		ImGui::TextUnformatted("No game database entries loaded.");
+		return;
+	}
+
+	// Selectable game list
+	ImGui::BeginChild("##gamedb_banks_list", ImVec2(200.0f, 0), true);
+	int idx = 0;
+	for (auto& [gameName, entry] : gameDb)
+	{
+		if (ImGui::Selectable(gameName.c_str(), idx == m_BanksTabSelectedGame))
+			m_BanksTabSelectedGame = idx;
+		idx++;
+	}
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	// Table with bank details
+	ImGui::BeginChild("##gamedb_banks_detail", ImVec2(0, 0), true);
+	if (m_BanksTabSelectedGame != -1)
+	{
+		auto it = gameDb.begin();
+		std::advance(it, m_BanksTabSelectedGame);
+		const std::string& selectedGameName = it->first;
+		FGameDbEntry* pEntry = &it->second;
+		if (pEntry)
+		{
+			ImGui::Text("Banks: %s", selectedGameName.c_str());
+			ImGui::Separator();
+
+			const ImGuiTableFlags flags =
+				ImGuiTableFlags_Borders |
+				ImGuiTableFlags_RowBg |
+				ImGuiTableFlags_ScrollY |
+				ImGuiTableFlags_Resizable;
+
+			if (ImGui::BeginTable("##gamedb_bank_detail_table", 2, flags))
+			{
+				ImGui::TableSetupScrollFreeze(0, 1);
+				ImGui::TableSetupColumn("Bank Name");
+				ImGui::TableSetupColumn("MPR Slots");
+				ImGui::TableHeadersRow();
+
+				for (int i = 0; i < (int)pEntry->Banks.size(); i++)
+				{
+					const FGameDbBank& dbBank = pEntry->Banks[i];
+
+					// todo: deal with non rom banks
+					std::string bankName = "ROM Bank " + std::to_string(i);
+
+					std::string slotsStr;
+					if (dbBank.MprSlots.empty())
+					{
+						slotsStr = "-";
+					}
+					else
+					{
+						for (int s = 0; s < (int)dbBank.MprSlots.size(); s++)
+						{
+							if (s > 0) slotsStr += " ";
+							slotsStr += std::to_string(dbBank.MprSlots[s]);
+						}
+					}
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::TextUnformatted(bankName.c_str());
+					ImGui::TableSetColumnIndex(1);
+					ImGui::TextUnformatted(slotsStr.c_str());
+				}
+
+				ImGui::EndTable();
+			}
+		}
+	}
+	ImGui::EndChild();
 }
 
