@@ -30,7 +30,9 @@
       "mcp__arcade-analyser__read_memory_annotated",
       "mcp__arcade-analyser__step_into",
       "mcp__arcade-analyser__step_over",
-      "mcp__arcade-analyser__resume_emulator"
+      "mcp__arcade-analyser__resume_emulator",
+      "mcp__arcade-analyser__get_frame_trace",
+      "mcp__arcade-analyser__search_memory"
     ]
   }
 }
