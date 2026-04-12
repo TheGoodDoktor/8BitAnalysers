@@ -68,5 +68,4 @@ private:
 	std::map<std::string, FMCPResource*> Resources;
 };
 
-
 void RegisterBaseResources(FMCPResourceRegistry& registry);

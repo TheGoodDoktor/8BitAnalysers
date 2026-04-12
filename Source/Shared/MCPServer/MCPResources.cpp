@@ -7,13 +7,14 @@
 #include <set>
 #include "CodeAnalyser/CodeAnalysisPage.h"
 #include "CodeAnalyser/CodeAnalyserTypes.h"
+#include "MCPServer.h"
 
 class FDisassemblyResource : public FMCPResource
 {
 public:
 	FDisassemblyResource()
 	{
-		URI = "arcadez80://disassembly";
+		URI = std::string(GetMCPServerName()) + "://disassembly";
 		Title = "Z80 Disassembly";
 		Description = "Z80 Disassembly of the currently loaded program";
 		MimeType = "text/plain";
@@ -25,24 +26,9 @@ public:
 		// Generate disassembly string
 		FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 		std::string outStr;
-		//bool ExportAssembler(FEmuBase * pEmu, std::string * pOutStr, uint16_t startAddr, uint16_t endAddr)
 
 		ExportAssembler(pEmulator, &outStr, 0x0000, 0x5FFF);	// just cover the code area of the ROM
 		return outStr;
-
-		// 		std::ostringstream disasmStream;
-		// 		// Simple disassembly loop for demonstration
-		// 		for (uint16_t addr = 0x0000; addr <= 0xFFFF; ++addr)
-		// 		{
-		// 			FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(addr);
-		// 			if (pCodeInfo && pCodeInfo->bIsInstruction)
-		// 			{
-		// 				disasmStream << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr << ": ";
-		// 				disasmStream << " ; "; // Placeholder for actual disassembly
-		// 				disasmStream << "\n";
-		// 			}
-		// 		}
-		// 		return disasmStream.str();
 	}
 };
 
@@ -51,7 +37,7 @@ class FFunctionIndexResource : public FMCPResource
 public:
 	FFunctionIndexResource()
 	{
-		URI = "arcadez80://function-index";
+		URI = std::string(GetMCPServerName()) + "://function-index";
 		Title = "Function Index";
 		Description = "Compact listing of all named functions with addresses and descriptions. Read this first for an overview before diving into individual functions.";
 		MimeType = "text/plain";
@@ -90,7 +76,7 @@ class FLabelsResource : public FMCPResource
 public:
 	FLabelsResource()
 	{
-		URI = "arcadez80://labels";
+		URI = std::string(GetMCPServerName()) + "://labels";
 		Title = "Symbol Table";
 		Description = "All named labels (data, code, function, text) with addresses and types. Use this to find named RAM variables, I/O ports, and data structures without reading the full disassembly.";
 		MimeType = "text/plain";
@@ -152,7 +138,7 @@ class FCallGraphResource : public FMCPResource
 public:
 	FCallGraphResource()
 	{
-		URI = "arcadez80://call-graph";
+		URI = std::string(GetMCPServerName()) + "://call-graph";
 		Title = "Function Call Graph";
 		Description = "For each function, lists the functions it calls (outgoing edges). Use this to understand call relationships without repeated get_function_info calls.";
 		MimeType = "text/plain";
@@ -210,6 +196,7 @@ public:
 		return out.str();
 	}
 };
+
 
 void RegisterBaseResources(FMCPResourceRegistry& registry)
 {

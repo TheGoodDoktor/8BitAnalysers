@@ -718,3 +718,4 @@ void RegisterBaseTools(FMCPToolsRegistry& registry)
 	registry.RegisterTool("set_label", new FSetLabelTool());
 	registry.RegisterTool("add_comment", new FAddCommentTool());
 }
+

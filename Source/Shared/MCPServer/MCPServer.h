@@ -172,7 +172,7 @@ public:
 
 	nlohmann::json ExecuteCommand(const std::string& toolName, const nlohmann::json& arguments);
 
-	const char* GetInstructions() const;
+	std::string GetInstructions() const;
 
 	FMCPToolsRegistry* GetToolsRegistry() const
 	{
@@ -213,3 +213,6 @@ private:
 	std::vector<FResourceInfo>				Resources;
 	std::map<std::string, FResourceInfo>	ResourceMap;
 };
+
+void SetMCPServerName(const std::string& name);
+const char* GetMCPServerName();

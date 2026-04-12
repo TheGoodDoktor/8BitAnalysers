@@ -4,6 +4,8 @@
 #include "MCPSuggestions.h"
 
 class FEmuBase;
+class FMCPTool;
+class FMCPResource;
 
 enum class EMCPTransportType
 {
@@ -52,5 +54,9 @@ void InitMCPServer(FEmuBase* pEmu);
 void ShutdownMCPServer();
 void UpdateMCPServer();
 void DrawMCPServerUI(FEmuBase* pEmu);
+
+bool AddMCPTool(const char* toolName, FMCPTool* pTool);
+bool AddMCPResource(FMCPResource* pResource);	
+
 
 extern FMCPManager* g_MCPManager;

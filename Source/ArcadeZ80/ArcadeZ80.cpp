@@ -16,8 +16,7 @@
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include "CodeAnalyser/UI/GlobalsViewer.h"
 #include "TimePilot/TimePilotMachine.h"
-#include "ArcadeZ80MCP.h"
-
+#include "MCPServer/MCPServer.h"
 
 // TODO: Load Arcade Z80 binaries
 
@@ -45,6 +44,8 @@ FArcadeZ80::FArcadeZ80()
 
 bool FArcadeZ80::Init(const FEmulatorLaunchConfig& launchConfig)
 {
+	SetMCPServerName("ArcadeZ80");
+
 	if (FEmuBase::Init(launchConfig) == false)
 		return false;
 

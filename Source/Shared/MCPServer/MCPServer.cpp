@@ -5,9 +5,19 @@
 #include <sstream>
 #include <fstream>
 
-static const std::string kServerName = "arcadez80-mcp-server";
 static const std::string kServerVersion = "1.0";
-static const std::string kServerHttpPrefix = "arcadez80://";
+
+std::string g_ServerName = "analyser";
+
+void SetMCPServerName(const std::string& name)
+{
+	g_ServerName = name;
+}
+
+const char* GetMCPServerName()
+{
+	return g_ServerName.c_str();
+}
 
 
 nlohmann::json	FMCPToolCommand::Execute(FMCPServer* pServer)
@@ -255,31 +265,31 @@ void FMCPServer::HandleLine(const std::string& line)
 
 }
 
-std::string g_Instructions =
-"You are connected to a tool which is used to analyse 8-bit games. "
-"As well as a disassembler, it provides various tools to query the game code and data, recording memory accesses for code and data locations. "
-
-"## Recommended workflow\n"
-"1. Read 'arcadez80://function-index' for a compact overview of all known functions and their descriptions.\n"
-"2. Read 'arcadez80://labels' for the full symbol table — named RAM variables, I/O ports, data structures, etc.\n"
-"3. Read 'arcadez80://call-graph' to understand which functions call which, without repeated tool calls.\n"
-"4. Use get_function_disassembly to inspect individual functions in detail.\n"
-"5. Use disassemble_address_range for ad-hoc address ranges not covered by a named function.\n"
-"6. The 'arcadez80://disassembly' resource provides the FULL annotated assembly listing (~280KB). "
-"Only request it when you need a broad search across the entire codebase — it is too large to read routinely.\n"
-
-"## Write-back tools\n"
-"When you understand what a function, label, or instruction does, record your findings using: "
-"rename_function, set_function_description, set_label, and add_comment. "
-"These suggestions are queued for the user to review and accept or reject in the GUI - they are NOT applied immediately. "
-"Always provide a rationale argument explaining your reasoning so the user can make an informed decision.\n"
-;
 
 
 
-const char* FMCPServer::GetInstructions() const
+std::string FMCPServer::GetInstructions() const
 {
-	return g_Instructions.c_str();
+	const std::string p = std::string(GetMCPServerName()) + "://";
+
+	return
+		"You are connected to a tool which is used to analyse 8-bit games. "
+		"As well as a disassembler, it provides various tools to query the game code and data, recording memory accesses for code and data locations. "
+		"\n"
+		"## Recommended workflow\n"
+		"1. Read '" + p + "function-index' for a compact overview of all known functions and their descriptions.\n"
+		"2. Read '" + p + "labels' for the full symbol table - named RAM variables, I/O ports, data structures, etc.\n"
+		"3. Read '" + p + "call-graph' to understand which functions call which, without repeated tool calls.\n"
+		"4. Use get_function_disassembly to inspect individual functions in detail.\n"
+		"5. Use disassemble_address_range for ad-hoc address ranges not covered by a named function.\n"
+		"6. The '" + p + "disassembly' resource provides the FULL annotated assembly listing (~280KB). "
+		"Only request it when you need a broad search across the entire codebase - it is too large to read routinely.\n"
+		"\n"
+		"## Write-back tools\n"
+		"When you understand what a function, label, or instruction does, record your findings using: "
+		"rename_function, set_function_description, set_label, and add_comment. "
+		"These suggestions are queued for the user to review and accept or reject in the GUI - they are NOT applied immediately. "
+		"Always provide a rationale argument explaining your reasoning so the user can make an informed decision.\n";
 }
 
 void FMCPServer::HandleInitialise(const nlohmann::json& request)
@@ -310,7 +320,7 @@ void FMCPServer::HandleInitialise(const nlohmann::json& request)
 			{"resources", nlohmann::json::object()}
 		}},
 		{"serverInfo", {
-			{"name", kServerName},
+			{"name", g_ServerName},
 			{"version", kServerVersion}
 		}},
 		{"instructions", GetInstructions()}

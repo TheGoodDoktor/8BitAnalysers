@@ -58,7 +58,6 @@ void FMCPManager::ProcessCommands()
 		pResponse->RequestId = pCmd->RequestId;
 		pResponse->bIsError = false;
 
-		//old pResponse->Result = pMCPServer->ExecuteCommand(pCmd->ToolName, pCmd->Arguments);
 		pResponse->Result = pCmd->Execute(pMCPServer);
 
 		ResponseQueue.Push(pResponse);
@@ -83,24 +82,49 @@ void InitMCPServer(FEmuBase* pEmu)
 	g_MCPManager->Start();
 
 	RegisterBaseTools(*g_MCPToolsRegistry);
-	//RegisterArcadeZ80Tools(*g_MCPToolsRegistry);
-
 	RegisterBaseResources(*g_MCPResourceRegistry);
-	//RegisterArcadeZ80Resources(*g_MCPResourceRegistry);
 }
 
 void ShutdownMCPServer()
 {
-	// TODO: stop the mcp server threads safely
-/*
 	if (g_MCPManager)
 	{
 		g_MCPManager->Stop();
 		delete g_MCPManager;
 		g_MCPManager = nullptr;
 	}
-*/
+	if (g_MCPToolsRegistry)
+	{
+		delete g_MCPToolsRegistry;
+		g_MCPToolsRegistry = nullptr;
+	}
+	if (g_MCPResourceRegistry)
+	{
+		delete g_MCPResourceRegistry;
+		g_MCPResourceRegistry = nullptr;
+	}
 }
+
+bool AddMCPTool(const char* toolName, FMCPTool* pTool)
+{
+	if (g_MCPToolsRegistry)
+	{
+		g_MCPToolsRegistry->RegisterTool(toolName, pTool);
+		return true;
+	}
+	return false;
+}
+
+bool AddMCPResource(FMCPResource* pResource)
+{
+	if (g_MCPResourceRegistry)
+	{
+		g_MCPResourceRegistry->RegisterResource(pResource);
+		return true;
+	}
+	return false;
+}
+
 
 void UpdateMCPServer()
 {
