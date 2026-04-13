@@ -10,6 +10,14 @@
 #include <sstream>
 #include <algorithm>
 
+// Global storage for memory snapshots (shared between snapshot_memory and compare_memory tools)
+namespace {
+	int g_SnapshotCounter = 0;
+	std::map<int, std::vector<uint8_t>> g_Snapshots;
+	std::map<int, uint32_t> g_SnapshotStarts;
+	std::map<int, std::string> g_SnapshotNames;
+}
+
 static void SaveSuggestions(FEmuBase* pEmu)
 {
 	if (pEmu->GetProjectConfig() != nullptr)
@@ -1224,6 +1232,170 @@ public:
 	}
 };
 
+class FSnapshotMemoryTool : public FMCPTool
+{
+public:
+	FSnapshotMemoryTool()
+	{
+		Description = "Takes a snapshot of a memory range for later comparison. Returns a snapshot ID that can be used with compare_memory.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"start_address", {
+					{"type", "integer"},
+					{"description", "Starting address to snapshot (default: 0)"}
+				}},
+				{"end_address", {
+					{"type", "integer"},
+					{"description", "Ending address to snapshot inclusive (default: 0xFFFF)"}
+				}},
+				{"name", {
+					{"type", "string"},
+					{"description", "Optional name for this snapshot"}
+				}}
+			}},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		const uint32_t startAddr = GetNumericalArgument("start_address", arguments, 0);
+		const uint32_t endAddr = GetNumericalArgument("end_address", arguments, 0xFFFF);
+		const std::string name = arguments.contains("name") ? arguments["name"].get<std::string>() : "";
+
+		if (startAddr > 0xFFFF || endAddr > 0xFFFF)
+			return { {"error", "Address out of range (must be 0x0000-0xFFFF)"} };
+		if (startAddr > endAddr)
+			return { {"error", "start_address must be <= end_address"} };
+
+		// Generate snapshot ID
+		int snapshotId = ++g_SnapshotCounter;
+
+		const uint32_t length = endAddr - startAddr + 1;
+		std::vector<uint8_t> snapshot;
+		snapshot.reserve(length);
+
+		for (uint32_t addr = startAddr; addr <= endAddr; ++addr)
+			snapshot.push_back(pEmu->ReadByte(static_cast<uint16_t>(addr)));
+
+		g_Snapshots[snapshotId] = std::move(snapshot);
+		g_SnapshotStarts[snapshotId] = startAddr;
+		g_SnapshotNames[snapshotId] = name;
+
+		char startStr[8], endStr[8];
+		snprintf(startStr, sizeof(startStr), "$%04X", static_cast<uint16_t>(startAddr));
+		snprintf(endStr, sizeof(endStr), "$%04X", static_cast<uint16_t>(endAddr));
+
+		return {
+			{"snapshot_id", snapshotId},
+			{"name", name},
+			{"start_address", startStr},
+			{"end_address", endStr},
+			{"length", (int)length}
+		};
+	}
+};
+
+class FCompareMemoryTool : public FMCPTool
+{
+public:
+	FCompareMemoryTool()
+	{
+		Description = "Compares current memory state to a previously taken snapshot and returns all changed addresses.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"snapshot_id", {
+					{"type", "integer"},
+					{"description", "Snapshot ID returned from snapshot_memory"}
+				}},
+				{"max_changes", {
+					{"type", "integer"},
+					{"description", "Maximum number of changes to return (default: 100)"}
+				}},
+				{"show_annotations", {
+					{"type", "boolean"},
+					{"description", "Include labels and comments for changed addresses (default: true)"}
+				}}
+			}},
+			{"required", {"snapshot_id"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("snapshot_id"))
+			return { {"error", "Missing required argument: snapshot_id"} };
+
+		const int snapshotId = arguments["snapshot_id"].get<int>();
+		const uint32_t maxChanges = GetNumericalArgument("max_changes", arguments, 100);
+		const bool showAnnotations = arguments.contains("show_annotations") ? arguments["show_annotations"].get<bool>() : true;
+
+		if (g_Snapshots.find(snapshotId) == g_Snapshots.end())
+			return { {"error", "Invalid snapshot_id. Use snapshot_memory to create a snapshot first."} };
+
+		const std::vector<uint8_t>& snapshot = g_Snapshots[snapshotId];
+		const uint32_t startAddr = g_SnapshotStarts[snapshotId];
+		const std::string& name = g_SnapshotNames[snapshotId];
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		nlohmann::json changes = nlohmann::json::array();
+		uint32_t totalChanges = 0;
+
+		for (size_t i = 0; i < snapshot.size() && (uint32_t)changes.size() < maxChanges; ++i)
+		{
+			const uint16_t addr = static_cast<uint16_t>(startAddr + i);
+			const uint8_t oldVal = snapshot[i];
+			const uint8_t newVal = pEmu->ReadByte(addr);
+
+			if (oldVal != newVal)
+			{
+				totalChanges++;
+
+				char addrStr[8], oldStr[8], newStr[8];
+				snprintf(addrStr, sizeof(addrStr), "$%04X", addr);
+				snprintf(oldStr, sizeof(oldStr), "$%02X", oldVal);
+				snprintf(newStr, sizeof(newStr), "$%02X", newVal);
+
+				nlohmann::json change;
+				change["address"] = addrStr;
+				change["old_value"] = oldStr;
+				change["new_value"] = newStr;
+				change["decimal_old"] = oldVal;
+				change["decimal_new"] = newVal;
+
+				if (showAnnotations)
+				{
+					const FAddressRef ref = codeAnalysis.AddressRefFromPhysicalAddress(addr);
+					const FLabelInfo* pLabel = codeAnalysis.GetLabelForAddress(ref);
+					if (pLabel)
+						change["label"] = pLabel->GetName();
+
+					const FCommentBlock* pComment = codeAnalysis.GetCommentBlockForAddress(ref);
+					if (pComment && !pComment->Comment.empty())
+						change["comment"] = pComment->Comment;
+				}
+
+				changes.push_back(change);
+			}
+		}
+
+		char startStr[8], endStr[8];
+		snprintf(startStr, sizeof(startStr), "$%04X", static_cast<uint16_t>(startAddr));
+		snprintf(endStr, sizeof(endStr), "$%04X", static_cast<uint16_t>(startAddr + snapshot.size() - 1));
+
+		return {
+			{"snapshot_id", snapshotId},
+			{"snapshot_name", name},
+			{"snapshot_range", std::string(startStr) + " - " + std::string(endStr)},
+			{"total_changes", (int)totalChanges},
+			{"changes_returned", (int)changes.size()},
+			{"changes", changes}
+		};
+	}
+};
+
 void RegisterBaseTools(FMCPToolsRegistry& registry)
 {
 	registry.RegisterTool("get_function_list", new FGetFunctionListTool());
@@ -1254,5 +1426,9 @@ void RegisterBaseTools(FMCPToolsRegistry& registry)
 	registry.RegisterTool("read_memory_annotated",  new FReadMemoryAnnotatedTool());
 	registry.RegisterTool("get_frame_trace",        new FGetFrameTraceTool());
 	registry.RegisterTool("search_memory",          new FSearchMemoryTool());
+	
+	// Memory analysis
+	registry.RegisterTool("snapshot_memory",        new FSnapshotMemoryTool());
+	registry.RegisterTool("compare_memory",         new FCompareMemoryTool());
 }
 
