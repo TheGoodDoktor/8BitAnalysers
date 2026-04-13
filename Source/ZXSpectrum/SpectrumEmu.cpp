@@ -1,4 +1,5 @@
 #define CHIPS_UI_IMPL
+#define NOMINMAX
 #include <imgui.h>
 
 #include "SpectrumEmu.h"
@@ -50,6 +51,7 @@
 #include "SnapshotLoaders/TZXLoader.h"
 #include "CodeAnalyser/UI/FunctionViewer.h"
 #include "CodeAnalyser/FunctionAnalyser.h"
+#include "MCPServer/MCPServer.h"
 
 bool InitZXSpectrumAsmExporters(FSpectrumEmu* pZXEmu);
 
@@ -673,6 +675,8 @@ bool FSpectrumEmu::InitForModel(ESpectrumModel model)
 
 bool FSpectrumEmu::Init(const FEmulatorLaunchConfig& config)
 {
+	SetMCPServerName("SpectrumAnalyser");
+
 	FEmuBase::Init(config);
 	
 	const FSpectrumLaunchConfig& spectrumLaunchConfig = (const FSpectrumLaunchConfig&)config;

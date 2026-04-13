@@ -314,7 +314,7 @@ void FSpectrumViewer::DrawSelectedCharUI(const ImVec2& pos)
 		if (bBreakOnCharPixelWrite)
 		{
 			// Add data breakpoint
-			debugger.AddDataBreakpoint(SelectPixAddr, 8);
+			debugger.AddDataBreakpoint(SelectPixAddr, 8, false);
 			CharacterPixelBPAddress = SelectPixAddr;
 		}
 		else
@@ -335,7 +335,7 @@ void FSpectrumViewer::DrawSelectedCharUI(const ImVec2& pos)
 		if (bBreakOnCharAttrWrite)
 		{
 			// Add data breakpoint
-			debugger.AddDataBreakpoint(SelectAttrAddr, 1);
+			debugger.AddDataBreakpoint(SelectAttrAddr, 1, false);
 			CharacterAttrBPAddress = SelectAttrAddr;
 		}
 		else
