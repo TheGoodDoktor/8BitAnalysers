@@ -1396,6 +1396,272 @@ public:
 	}
 };
 
+// -----------------------------------------------------------------------
+// get_xrefs_to: find all code that reads/writes/calls a given address
+// -----------------------------------------------------------------------
+class FGetXRefsToTool : public FMCPTool
+{
+public:
+	FGetXRefsToTool()
+	{
+		Description =
+			"Get all cross-references to an address: instructions that read or write it as data, "
+			"instructions that reference it as an operand, and call sites if it is a function. "
+			"Accepts either a numeric address or a label name. Each reference entry includes the "
+			"instruction address and, where known, the name of the containing function.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"address", {
+					{"type", "integer"},
+					{"description", "Memory address to find references to (hex or decimal)"}
+				}},
+				{"label", {
+					{"type", "string"},
+					{"description", "Label name to find references to (alternative to address)"}
+				}}
+			}},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+
+		// Resolve to an FAddressRef from either label or numeric address
+		FAddressRef addrRef;
+		std::string resolvedLabel;
+
+		if (arguments.contains("label"))
+		{
+			const std::string labelName = arguments["label"].get<std::string>();
+			const FLabelInfo* pLabelInfo = codeAnalysis.FindLabel(labelName.c_str(), addrRef);
+			if (!pLabelInfo || !addrRef.IsValid())
+				return { {"error", "Label not found: " + labelName} };
+			resolvedLabel = labelName;
+		}
+		else if (arguments.contains("address"))
+		{
+			const uint32_t address = GetNumericalArgument("address", arguments);
+			addrRef = codeAnalysis.AddressRefFromPhysicalAddress(address);
+		}
+		else
+		{
+			return { {"error", "Must provide either 'address' or 'label'"} };
+		}
+
+		if (!addrRef.IsValid())
+			return { {"error", "Could not resolve to a valid address"} };
+
+		// Fill in label name if we only had a raw address
+		if (resolvedLabel.empty())
+		{
+			const FLabelInfo* pLabel = codeAnalysis.GetLabelForAddress(addrRef);
+			if (pLabel)
+				resolvedLabel = pLabel->GetName();
+		}
+
+		// Helper: find the name of the function that contains a given instruction address
+		auto containingFuncName = [&](FAddressRef ref) -> std::string
+		{
+			const FFunctionInfo* pFunc = codeAnalysis.pFunctions->FindFunction(ref);
+			if (pFunc)
+			{
+				const FLabelInfo* pFuncLabel = codeAnalysis.GetLabelForAddress(pFunc->StartAddress);
+				if (pFuncLabel)
+					return pFuncLabel->GetName();
+			}
+			return "";
+		};
+
+		// Helper: build a single xref entry JSON object
+		auto makeEntry = [&](FAddressRef ref) -> nlohmann::json
+		{
+			nlohmann::json entry;
+			char addrStr[8];
+			snprintf(addrStr, sizeof(addrStr), "$%04X", ref.Address);
+			entry["address"] = addrStr;
+			const std::string func = containingFuncName(ref);
+			if (!func.empty())
+				entry["in_function"] = func;
+			return entry;
+		};
+
+		nlohmann::json result;
+		char targetStr[8];
+		snprintf(targetStr, sizeof(targetStr), "$%04X", addrRef.Address);
+		result["address"] = targetStr;
+		if (!resolvedLabel.empty())
+			result["label"] = resolvedLabel;
+
+		// ---- 1. Data read/write xrefs ----------------------------------------
+		FDataInfo* pDataInfo = codeAnalysis.GetDataInfoForAddress(addrRef);
+		if (pDataInfo)
+		{
+			nlohmann::json reads = nlohmann::json::array();
+			for (const auto& ref : pDataInfo->Reads.GetReferences())
+				reads.push_back(makeEntry(ref));
+			result["read_by"] = reads;
+
+			nlohmann::json writes = nlohmann::json::array();
+			for (const auto& ref : pDataInfo->Writes.GetReferences())
+				writes.push_back(makeEntry(ref));
+			result["written_by"] = writes;
+		}
+
+		// ---- 2. Operand (label) references ------------------------------------
+		// Instructions that use this address as an immediate / jump operand
+		const FLabelInfo* pLabelInfo = codeAnalysis.GetLabelForAddress(addrRef);
+		if (pLabelInfo && !pLabelInfo->References.IsEmpty())
+		{
+			nlohmann::json operandRefs = nlohmann::json::array();
+			for (const auto& ref : pLabelInfo->References.GetReferences())
+				operandRefs.push_back(makeEntry(ref));
+			result["operand_references"] = operandRefs;
+		}
+
+		// ---- 3. Call xrefs ----------------------------------------------------
+		// Functions whose CallPoints target this address
+		nlohmann::json callSites = nlohmann::json::array();
+		for (const auto& funcIt : codeAnalysis.pFunctions->GetFunctions())
+		{
+			const FFunctionInfo& func = funcIt.second;
+			for (const auto& cp : func.CallPoints)
+			{
+				if (cp.FunctionAddr == addrRef)
+				{
+					nlohmann::json entry;
+					char callStr[8];
+					snprintf(callStr, sizeof(callStr), "$%04X", cp.CallAddr.Address);
+					entry["call_site"] = callStr;
+					const FLabelInfo* pCallerLabel = codeAnalysis.GetLabelForAddress(func.StartAddress);
+					if (pCallerLabel)
+						entry["caller_function"] = pCallerLabel->GetName();
+					else
+					{
+						char funcAddrStr[8];
+						snprintf(funcAddrStr, sizeof(funcAddrStr), "$%04X", func.StartAddress.Address);
+						entry["caller_function_address"] = funcAddrStr;
+					}
+					callSites.push_back(entry);
+				}
+			}
+		}
+		if (!callSites.empty())
+			result["called_from"] = callSites;
+
+		return result;
+	}
+};
+
+// -----------------------------------------------------------------------
+// get_callers: list every function that calls a named function
+// -----------------------------------------------------------------------
+class FGetCallersTool : public FMCPTool
+{
+public:
+	FGetCallersTool()
+	{
+		Description =
+			"Get all functions that call a specified function. "
+			"Returns each caller's name and address together with the address(es) of "
+			"the individual CALL instruction(s) within that caller.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"function_name", {
+					{"type", "string"},
+					{"description", "Name of the function to find callers of"}
+				}}
+			}},
+			{"required", {"function_name"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("function_name"))
+			return { {"error", "Missing required argument: function_name"} };
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		const std::string functionName = arguments["function_name"].get<std::string>();
+
+		// Resolve target function
+		const FFunctionInfo* pTarget = codeAnalysis.pFunctions->FindFunctionByName(functionName.c_str());
+		if (!pTarget)
+			return { {"error", "Function not found: " + functionName} };
+
+		const FAddressRef targetAddr = pTarget->StartAddress;
+
+		char targetStr[8];
+		snprintf(targetStr, sizeof(targetStr), "$%04X", targetAddr.Address);
+
+		nlohmann::json result;
+		result["function"] = functionName;
+		result["address"] = targetStr;
+
+		// Use FLabelInfo::References — populated for every instruction that references
+		// this address as an operand (CALL, JP, LD HL,addr, etc.)
+		const FLabelInfo* pTargetLabel = codeAnalysis.GetLabelForAddress(targetAddr);
+		if (!pTargetLabel || pTargetLabel->References.IsEmpty())
+		{
+			result["callers"] = nlohmann::json::array();
+			result["caller_count"] = 0;
+			return result;
+		}
+
+		// Accumulate one entry per unique containing function, listing all its reference sites
+		std::map<FAddressRef, nlohmann::json> callerMap;
+
+		for (const auto& ref : pTargetLabel->References.GetReferences())
+		{
+			// Find which function this instruction lives in.
+			// Use GetFunctionBeforeAddress (checks start only) rather than FindFunction
+			// (checks start+end) because many functions have unexplored end addresses.
+			const FFunctionInfo* pCallerFunc = codeAnalysis.pFunctions->GetFunctionBeforeAddress(ref);
+			if (!pCallerFunc)
+				continue;	// reference outside any known function — skip
+
+			char refStr[8];
+			snprintf(refStr, sizeof(refStr), "$%04X", ref.Address);
+
+			auto it = callerMap.find(pCallerFunc->StartAddress);
+			if (it == callerMap.end())
+			{
+				nlohmann::json entry;
+				const FLabelInfo* pCallerLabel = codeAnalysis.GetLabelForAddress(pCallerFunc->StartAddress);
+				if (pCallerLabel)
+					entry["caller"] = pCallerLabel->GetName();
+				else
+				{
+					char funcAddrStr[8];
+					snprintf(funcAddrStr, sizeof(funcAddrStr), "$%04X", pCallerFunc->StartAddress.Address);
+					entry["caller"] = funcAddrStr;
+				}
+				char funcStartStr[8];
+				snprintf(funcStartStr, sizeof(funcStartStr), "$%04X", pCallerFunc->StartAddress.Address);
+				entry["caller_address"] = funcStartStr;
+				entry["reference_sites"] = nlohmann::json::array();
+				entry["reference_sites"].push_back(refStr);
+				callerMap[pCallerFunc->StartAddress] = entry;
+			}
+			else
+			{
+				it->second["reference_sites"].push_back(refStr);
+			}
+		}
+
+		nlohmann::json callers = nlohmann::json::array();
+		for (auto& kv : callerMap)
+			callers.push_back(kv.second);
+
+		result["callers"] = callers;
+		result["caller_count"] = (int)callers.size();
+		return result;
+	}
+};
+
 void RegisterBaseTools(FMCPToolsRegistry& registry)
 {
 	registry.RegisterTool("get_function_list", new FGetFunctionListTool());
@@ -1426,9 +1692,13 @@ void RegisterBaseTools(FMCPToolsRegistry& registry)
 	registry.RegisterTool("read_memory_annotated",  new FReadMemoryAnnotatedTool());
 	registry.RegisterTool("get_frame_trace",        new FGetFrameTraceTool());
 	registry.RegisterTool("search_memory",          new FSearchMemoryTool());
-	
+
 	// Memory analysis
 	registry.RegisterTool("snapshot_memory",        new FSnapshotMemoryTool());
 	registry.RegisterTool("compare_memory",         new FCompareMemoryTool());
+
+	// Cross-reference & call analysis
+	registry.RegisterTool("get_xrefs_to",  new FGetXRefsToTool());
+	registry.RegisterTool("get_callers",   new FGetCallersTool());
 }
 
