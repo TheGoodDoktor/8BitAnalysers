@@ -263,7 +263,7 @@ void FGraphicsView::Draw4BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int
 	}
 }
 
-void FGraphicsView::Draw4bpp16x16PlanarSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols)
+/*void FGraphicsView::Draw4bpp16x16PlanarSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols)
 {
 	constexpr int blockWidth = 16;
 	constexpr int blockHeight = 16;
@@ -320,7 +320,7 @@ void FGraphicsView::Draw4bpp16x16PlanarSpriteImage(const uint8_t* pSrc, int xp, 
 		curYPos += blockHeight;
 		curXPos = xp;
 	}
-}
+}*/
 
 void FGraphicsView::Draw1BppImageFromCharsAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, const uint32_t* cols)
 {
