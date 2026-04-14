@@ -7,6 +7,8 @@
 #include <CodeAnalyser/UI/MemoryAccessGrid.h>
 #include <ImGuiSupport/ImGuiScaling.h>
 
+#include "../RegisterViewCommon.h"
+
 class FZeroPageGrid : public FMemoryAccessGrid
 {
 	public:
@@ -108,19 +110,19 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
-		ImGui::TextColored(curRegs.CarryFlag != oldRegs.CarryFlag ? regChangedCol : regNormalCol, "%s", curRegs.CarryFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.CarryFlag, oldRegs.CarryFlag);
 		ImGui::TableSetColumnIndex(1);
-		ImGui::TextColored(curRegs.ZeroFlag != oldRegs.ZeroFlag ? regChangedCol : regNormalCol, "%s", curRegs.ZeroFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.ZeroFlag, oldRegs.ZeroFlag);
 		ImGui::TableSetColumnIndex(2);
-		ImGui::TextColored(curRegs.InterruptDisableFlag != oldRegs.InterruptDisableFlag ? regChangedCol : regNormalCol, "%s", curRegs.InterruptDisableFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.InterruptDisableFlag, oldRegs.InterruptDisableFlag);
 		ImGui::TableSetColumnIndex(3);
-		ImGui::TextColored(curRegs.DecimalModeFlag != oldRegs.DecimalModeFlag ? regChangedCol : regNormalCol, "%s", curRegs.DecimalModeFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.DecimalModeFlag, oldRegs.DecimalModeFlag);
 		ImGui::TableSetColumnIndex(4);
-		ImGui::TextColored(curRegs.BreakFlag != oldRegs.BreakFlag ? regChangedCol : regNormalCol, "%s", curRegs.BreakFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.BreakFlag, oldRegs.BreakFlag);
 		ImGui::TableSetColumnIndex(5);
-		ImGui::TextColored(curRegs.OverflowFlag != oldRegs.OverflowFlag ? regChangedCol : regNormalCol, "%s", curRegs.OverflowFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.OverflowFlag, oldRegs.OverflowFlag);
 		ImGui::TableSetColumnIndex(6);
-		ImGui::TextColored(curRegs.NegativeFlag != oldRegs.NegativeFlag ? regChangedCol : regNormalCol, "%s", curRegs.NegativeFlag ? "Y" : "N");
+		DrawFlag(state, &curRegs.NegativeFlag, oldRegs.NegativeFlag);
 
 		ImGui::EndTable();
 	}
@@ -128,11 +130,16 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 	ImGui::Separator();
 
 	// A
-	ImGui::TextColored(curRegs.A != oldRegs.A ? regChangedCol : regNormalCol, "A:%s", NumStr(curRegs.A));
+	//ImGui::TextColored(curRegs.A != oldRegs.A ? regChangedCol : regNormalCol, "A:%s", NumStr(curRegs.A));
+	DrawByteRegister(state, &curRegs.A, oldRegs.A, "A:%s");
+
 	// X
-	ImGui::TextColored(curRegs.X != oldRegs.X ? regChangedCol : regNormalCol, "X:%s", NumStr(curRegs.X));
+	//ImGui::TextColored(curRegs.X != oldRegs.X ? regChangedCol : regNormalCol, "X:%s", NumStr(curRegs.X));
+	DrawByteRegister(state, &curRegs.X, oldRegs.X, "X:%s");
+
 	// Y
-	ImGui::TextColored(curRegs.Y != oldRegs.Y ? regChangedCol : regNormalCol, "Y:%s", NumStr(curRegs.Y));
+	//ImGui::TextColored(curRegs.Y != oldRegs.Y ? regChangedCol : regNormalCol, "Y:%s", NumStr(curRegs.Y));
+	DrawByteRegister(state, &curRegs.Y, oldRegs.Y, "Y:%s");
 
 	// Program counter
 	ImGui::TextColored(curRegs.PC != oldRegs.PC ? regChangedCol : regNormalCol, "PC:%s", NumStr(curRegs.PC));
@@ -145,9 +152,48 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 	DrawAddressLabel(state, viewState, StackPtr);
 
 	ImGui::Separator();
-	ImGui::Text("Zero Page");
 	const ImVec2 pos = ImGui::GetCursorScreenPos(); 
 	zeroPageGrid.DrawAt(pos.x, pos.y);
 	zeroPageGrid.OnDraw();
-	//StoreRegisters_6502(state);
+	ImGui::Text("Zero Page");
+
+	// If we've edited any of the registers, write them back to the CPU.
+	/*if (state.bAllowEditing)
+	{
+		// A
+		if (curRegs.A != oldRegs.A)
+			pCPU->a = curRegs.A;
+
+		// F
+		if (curRegs.F != curRegsCopy.F)
+			pCPU->f = curRegs.F;
+
+
+		// SP
+		if (curRegs.SP != curRegsCopy.SP)
+			pCPU->sp = curRegs.SP;
+
+		// PC
+		if (curRegs.PC != curRegsCopy.PC)
+			pCPU->pc = curRegs.PC;
+
+		// Flags
+		if (curRegs.CarryFlag != curRegsCopy.CarryFlag)
+			pCPU->f = (pCPU->f & ~Z80_CF) | (curRegs.CarryFlag ? Z80_CF : 0);
+
+		if (curRegs.AddSubtractFlag != curRegsCopy.AddSubtractFlag)
+			pCPU->f = (pCPU->f & ~Z80_NF) | (curRegs.AddSubtractFlag ? Z80_NF : 0);
+
+		if (curRegs.ParityOverflowFlag != curRegsCopy.ParityOverflowFlag)
+			pCPU->f = (pCPU->f & ~Z80_VF) | (curRegs.ParityOverflowFlag ? Z80_VF : 0);
+
+		if (curRegs.HalfCarryFlag != curRegsCopy.HalfCarryFlag)
+			pCPU->f = (pCPU->f & ~Z80_HF) | (curRegs.HalfCarryFlag ? Z80_HF : 0);
+
+		if (curRegs.ZeroFlag != curRegsCopy.ZeroFlag)
+			pCPU->f = (pCPU->f & ~Z80_ZF) | (curRegs.ZeroFlag ? Z80_ZF : 0);
+
+		if (curRegs.SignFlag != curRegsCopy.SignFlag)
+			pCPU->f = (pCPU->f & ~Z80_SF) | (curRegs.SignFlag ? Z80_SF : 0);
+	}*/
 }
