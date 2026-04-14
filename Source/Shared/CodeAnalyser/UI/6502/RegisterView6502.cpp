@@ -149,5 +149,5 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 	const ImVec2 pos = ImGui::GetCursorScreenPos(); 
 	zeroPageGrid.DrawAt(pos.x, pos.y);
 	zeroPageGrid.OnDraw();
-	StoreRegisters_6502(state);
+	//StoreRegisters_6502(state);
 }

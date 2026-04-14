@@ -21,6 +21,7 @@
 #include "Viewers/PCEGraphicsViewer.h"
 #include "Viewers/GameDbViewer.h"
 #include "CodeAnalyser/AssemblerExport.h"
+#include "CodeAnalyser/UI/6502/RegisterView6502.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "CodeAnalyser/UI/GlobalsViewer.h"
 #include "Viewers/PCERegistersViewer.h"
@@ -1804,6 +1805,7 @@ void FPCEEmu::Tick()
 				pDebugStats->NumBankSwitchesThisFrame = 0;
 
 			CodeAnalysis.OnFrameStart();
+			StoreRegisters_6502(CodeAnalysis);
 			//CodeAnalysis.OnMachineFrameStart();
 
 			int audioSampleCount = 0;
