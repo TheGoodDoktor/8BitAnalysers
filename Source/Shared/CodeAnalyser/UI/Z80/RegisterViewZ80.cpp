@@ -8,50 +8,7 @@
 #include <imgui.h>
 #include <CodeAnalyser/Z80/CodeAnalyserZ80.h>
 
-// took these out of the chips debugger
-uint16_t InputU16(const char* label, uint16_t val) 
-{
-	const int bufSize = 5;
-	char buf[bufSize];
-	for (int i = 0; i < 4; i++) {
-		buf[i] = "0123456789ABCDEF"[val >> ((3 - i) * 4) & 0xF];
-	}
-	buf[4] = 0;
-	const int flags = ImGuiInputTextFlags_CharsHexadecimal |
-		ImGuiInputTextFlags_CharsUppercase |
-		ImGuiInputTextFlags_EnterReturnsTrue;
-	ImGui::PushItemWidth(38);
-	if (ImGui::InputText(label, buf, sizeof(buf), flags)) {
-		int res;
-		if (sscanf(buf, "%X", &res) == 1) {
-			val = (uint16_t)res;
-		}
-	}
-	ImGui::PopItemWidth();
-	return val;
-}
-
-uint8_t InputU8(const char* label, uint8_t val)
-{
-	const int bufSize = 3;
-	char buf[bufSize];
-	for (int i = 0; i < 2; i++) {
-		buf[i] = "0123456789ABCDEF"[val >> ((1 - i) * 4) & 0xF];
-	}
-	buf[2] = 0;
-	const int flags = ImGuiInputTextFlags_CharsHexadecimal |
-		ImGuiInputTextFlags_CharsUppercase |
-		ImGuiInputTextFlags_EnterReturnsTrue;
-	ImGui::PushItemWidth(22);
-	if (ImGui::InputText(label, buf, sizeof(buf), flags)) {
-		int res;
-		if (sscanf(buf, "%X", &res) == 1) {
-			val = (uint8_t)res;
-		}
-	}
-	ImGui::PopItemWidth();
-	return val;
-}
+#include "../RegisterViewCommon.h"
 
 FZ80DisplayRegisters::FZ80DisplayRegisters(z80_t* pCPU)
 {
@@ -113,145 +70,9 @@ const FZ80DisplayRegisters& GetStoredRegisters_Z80(void)
 	return g_OldRegs;
 }
 
-void DoByteRegisterTooltip(uint8_t byteValue)
-{
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		ImGui::Text("%s", NumStr(byteValue, ENumberDisplayMode::Decimal));
-		ImGui::Text("%s", NumStr(byteValue, ENumberDisplayMode::Binary));
-		ImGui::EndTooltip();
-	}
-}
-
 ImGuiTableFlags GetRegisterViewTableFlags() 
 {
 	return ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_PreciseWidths | ImGuiTableFlags_SizingStretchSame;
-}
-
-void EditByte(uint8_t* pByteData)
-{
-	const ENumberDisplayMode numMode = GetNumberDisplayMode();
-	const float glyphWidth = ImGui::CalcTextSize("0").x;
-	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
-	float width = glyphWidth * 2.0f;
-	const char* format = "%02X";
-
-	switch (numMode)
-	{
-	case ENumberDisplayMode::Decimal:
-		width += glyphWidth;
-		format = "%d";
-		break;
-	case ENumberDisplayMode::HexAitch:
-	case ENumberDisplayMode::HexDollar:
-		flags |= ImGuiInputTextFlags_CharsHexadecimal;
-		break;
-	default:
-		break;
-	}
-	ImGui::PushID(pByteData);
-	if (numMode == ENumberDisplayMode::HexDollar)
-	{
-		ImGui::Text("$");
-		ImGui::SameLine(0, 0);
-	}
-	ImGui::SetNextItemWidth((float)width);
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-	ImGui::SetItemAllowOverlap();	// allow controls
-	ImGui::InputScalar("##byteinput", ImGuiDataType_U8, pByteData, NULL, NULL, format, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EnterReturnsTrue);
-	if (numMode == ENumberDisplayMode::HexAitch)
-	{
-		ImGui::SameLine(0, 0);
-		ImGui::Text("h");
-	}
-	ImGui::PopStyleVar();
-	ImGui::PopID();
-}
-
-void EditWord(uint16_t* pWordData)
-{
-	const ENumberDisplayMode numMode = GetNumberDisplayMode();
-	int flags = ImGuiInputTextFlags_EnterReturnsTrue;
-	const float glyphWidth = ImGui::CalcTextSize("0").x;
-	float width = glyphWidth * 4.0f;
-	const char* format = "%04X";
-
-	switch (numMode)
-	{
-	case ENumberDisplayMode::Decimal:
-		width += glyphWidth;
-		format = "%d";
-		break;
-	case ENumberDisplayMode::HexAitch:
-	case ENumberDisplayMode::HexDollar:
-		flags |= ImGuiInputTextFlags_CharsHexadecimal;
-		break;
-	default:
-		break;
-	}
-
-	ImGui::PushID(pWordData);
-	if (numMode == ENumberDisplayMode::HexDollar)
-	{
-		ImGui::Text("$");
-		ImGui::SameLine(0, 0);
-	}
-	ImGui::SetNextItemWidth((float)width);
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-	ImGui::SetItemAllowOverlap();	// allow controls
-	ImGui::InputScalar("##wordinput", ImGuiDataType_U16, pWordData, NULL, NULL, format, flags);
-	
-	if (numMode == ENumberDisplayMode::HexAitch)
-	{
-		ImGui::SameLine(0, 0);
-		ImGui::Text("h");
-	}
-	ImGui::PopStyleVar();
-
-	ImGui::PopID();
-}
-
-void DrawByteRegister(FCodeAnalysisState& state, uint8_t* curByte, uint8_t oldByte, const char* fmt)
-{
-	const ImVec4 col = *curByte != oldByte ? g_RegChangedCol : g_RegNormalCol;
-	ImGui::BeginGroup();
-	if (state.bAllowEditing)
-	{
-		ImGui::TextColored(col, fmt, "");
-		ImGui::SameLine();
-		ImGui::PushStyleColor(ImGuiCol_Text, col);
-		EditByte(curByte);
-		ImGui::PopStyleColor();
-	}
-	else
-	{
-		ImGui::TextColored(col, fmt, NumStr(*curByte));
-	}
-	ImGui::EndGroup();
-
-	DoByteRegisterTooltip(*curByte);
-}
-
-void DrawWordRegister(FCodeAnalysisState& state, uint16_t* curWord, uint16_t oldWord, const char* fmt)
-{
-	const ImVec4 col = *curWord != oldWord ? g_RegChangedCol : g_RegNormalCol;
-
-	ImGui::BeginGroup();
-	if (state.bAllowEditing)
-	{
-		ImGui::Text(fmt, "");
-		ImGui::SameLine();
-		ImGui::PushStyleColor(ImGuiCol_Text, col);
-		EditWord(curWord);
-		ImGui::PopStyleColor();
-	}
-	else
-	{
-		ImGui::TextColored(col, fmt, NumStr(*curWord));
-	}
-	DrawAddressLabel(state, state.GetFocussedViewState(), *curWord);
-	ImGui::EndGroup();
 }
 
 void DrawRegisterPair(FCodeAnalysisState& state, uint8_t* curLowByte, uint8_t* curHighByte, uint16_t* curWord, uint8_t oldLowByte, uint8_t oldHighByte, uint16_t oldWord, const char* tableName, const char* fmtLowByte, const char* fmtHighByte, const char* fmtWord)
@@ -281,23 +102,6 @@ void DrawRegisterPair(FCodeAnalysisState& state, uint8_t* curLowByte, uint8_t* c
 	DrawWordRegister(state, curWord, oldWord, fmtWord);
 	
 	ImGui::EndTable();
-}
-
-void DrawFlag(FCodeAnalysisState& state, bool* curFlag, bool oldFlag)
-{
-	const ImVec4 col = *curFlag != oldFlag ? g_RegChangedCol : g_RegNormalCol;
-	ImGui::PushID(curFlag);
-	if (state.bAllowEditing)
-	{
-		ImGui::PushStyleColor(ImGuiCol_CheckMark, col);
-		ImGui::Checkbox("##flag", curFlag);
-		ImGui::PopStyleColor();
-	}
-	else
-	{
-		ImGui::TextColored(col, "%s", *curFlag ? "Y" : "N");
-	}
-	ImGui::PopID();
 }
 
 void DrawRegisters_Z80(FCodeAnalysisState& state)
@@ -427,10 +231,10 @@ void DrawRegisters_Z80(FCodeAnalysisState& state)
 
 	// IFF 1 & 2
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.IFF1 != oldRegs.IFF1 ? g_RegChangedCol : g_RegNormalCol, "IFF1:%s", curRegs.IFF1 ? "Y " : "N ");
+	ImGui::TextColored(curRegs.IFF1 != oldRegs.IFF1 ? GetRegChangedCol() : GetRegNormalCol(), "IFF1:%s", curRegs.IFF1 ? "Y " : "N ");
 
 	ImGui::TableNextColumn();
-	ImGui::TextColored(curRegs.IFF2 != oldRegs.IFF2 ? g_RegChangedCol : g_RegNormalCol, "IFF 2:%s", curRegs.IFF2 ? "Y" : "N");
+	ImGui::TextColored(curRegs.IFF2 != oldRegs.IFF2 ? GetRegChangedCol() : GetRegNormalCol(), "IFF 2:%s", curRegs.IFF2 ? "Y" : "N");
 	ImGui::EndTable();
 
 	// If we've edited any of the registers, write them back to the CPU.
