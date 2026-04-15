@@ -23,6 +23,8 @@ FGameDbEntry& CreateGameDbEntry(const std::string& name, int bankCount)
 
 	FGameDbEntry& dbEntry = gGameDb[name];
 	dbEntry.Banks.resize(bankCount);
+	for (FGameDbBank& bank : dbEntry.Banks)
+		bank.MprSlots.reserve(8);
 	return dbEntry;
 }
 
@@ -103,6 +105,8 @@ bool LoadGameDbEntry(const std::string& gameName, const std::string& fname)
 
 	entry.Banks.clear();
 	entry.Banks.resize(numBanks);
+	for (FGameDbBank& bank : entry.Banks)
+		bank.MprSlots.reserve(8);
 
 	json& mappingsJson = jsonFile["Mappings"];
 
