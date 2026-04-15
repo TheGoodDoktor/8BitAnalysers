@@ -191,7 +191,7 @@ protected:
 
 	// Fast lookup: maps each bankId to its canonical (primary) bankId.
 	// Built once after all banks are created. Indexed directly by bankId.
-	std::vector<int16_t> CanonicalBankIdLookup;
+	int16_t CanonicalBankIdLookup[FCodeAnalysisState::kMaxBanks];
 
 	// cached for speed
 	FGameDebugStats* pGameDebugStats = nullptr;

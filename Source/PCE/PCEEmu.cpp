@@ -461,9 +461,7 @@ uint8_t FPCEEmu::GetBankIndexForBankId(uint16_t bankId)
 void FPCEEmu::BuildCanonicalBankIdLookup()
 {
 	// Initialise to each bankId mapping to itself.
-	const int numBanks = FCodeAnalysisState::kMaxBanks;
-	CanonicalBankIdLookup.resize(numBanks);
-	for (int i = 0; i < numBanks; i++)
+	for (int i = 0; i < FCodeAnalysisState::kMaxBanks; i++)
 		CanonicalBankIdLookup[i] = (int16_t)i;
 
 	// Overwrite entries for duplicate bankIds with their primary bankId.
@@ -476,7 +474,7 @@ void FPCEEmu::BuildCanonicalBankIdLookup()
 		for (int d = 1; d < (int)bankSet.Banks.size(); d++)
 		{
 			const int16_t dupeId = bankSet.Banks[d].BankId;
-			if (dupeId >= 0 && dupeId < numBanks)
+			if (dupeId >= 0 && dupeId < FCodeAnalysisState::kMaxBanks)
 				CanonicalBankIdLookup[dupeId] = primaryId;
 		}
 	}
@@ -484,7 +482,7 @@ void FPCEEmu::BuildCanonicalBankIdLookup()
 
 int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 {
-	if (bankId >= 0 && bankId < (int16_t)CanonicalBankIdLookup.size())
+	if (bankId >= 0 && bankId < (int16_t)FCodeAnalysisState::kMaxBanks)
 		return CanonicalBankIdLookup[bankId];
 	return bankId;
 }
