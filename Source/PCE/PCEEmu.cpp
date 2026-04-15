@@ -246,7 +246,7 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	// Do a mask check
 	if (bpMaskCheck & debugger.GetBreakpointMask())
 	{
-		const std::vector<FBreakpoint> breakpoints = debugger.GetBreakpoints();
+		const std::vector<FBreakpoint>& breakpoints = debugger.GetBreakpoints();
 		for (int i = 0; i < breakpoints.size(); i++)
 		{
 			const FBreakpoint& bp = breakpoints[i];
@@ -476,6 +476,22 @@ void FPCEEmu::BuildCanonicalBankIdLookup()
 			const int16_t dupeId = bankSet.Banks[d].BankId;
 			if (dupeId >= 0 && dupeId < FCodeAnalysisState::kMaxBanks)
 				CanonicalBankIdLookup[dupeId] = primaryId;
+		}
+	}
+}
+
+void FPCEEmu::BuildBankSetLookup()
+{
+	for (int i = 0; i < FCodeAnalysisState::kMaxBanks; i++)
+		BankSetLookup[i] = nullptr;
+
+	for (int i = 0; i < kNumBanks; i++)
+	{
+		FBankSet& bankSet = BankSets[i];
+		for (const FBankSet::FBankSetEntry& entry : bankSet.Banks)
+		{
+			if (entry.BankId >= 0 && entry.BankId < FCodeAnalysisState::kMaxBanks)
+				BankSetLookup[entry.BankId] = &bankSet;
 		}
 	}
 }
@@ -987,6 +1003,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	//UnusedBankIdEnd = BankSets[kBankUnusedStart].GetBankId(7);
 
 	BuildCanonicalBankIdLookup();
+	BuildBankSetLookup();
 	ResetBanks();
 	MapMprBanks();
 
