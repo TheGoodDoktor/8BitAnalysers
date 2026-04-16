@@ -240,7 +240,7 @@ bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t ol
 	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
 	const z80_t* pCPU = static_cast<z80_t*>(state.CPUInterface->GetCPUEmulator()->GetImpl());
 
-	std::vector<FCPUFunctionCall>&	callStack = state.Debugger.GetCallstack();
+	auto& callStack = state.Debugger.GetCallstack();
 
 	//const FZ80InternalState& cpuState = pCPU->internal_state;
 

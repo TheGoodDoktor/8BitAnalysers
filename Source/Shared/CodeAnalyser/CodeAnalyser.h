@@ -227,7 +227,7 @@ private:
 	std::vector<FAddressRef>	PreviousAddressStack;
 	std::vector<FAddressRef>	NextAddressStack;
 	static const int			kNoBookmarks = 5;
-	FAddressRef					Bookmarks[kNoBookmarks];
+	FAddressRef					Bookmarks[kNoBookmarks] = { FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid() };
 };
 
 struct FCodeAnalysisConfig

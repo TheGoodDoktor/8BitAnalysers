@@ -258,7 +258,7 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	// Do a mask check
 	if (bpMaskCheck & debugger.GetBreakpointMask())
 	{
-		const std::vector<FBreakpoint> breakpoints = debugger.GetBreakpoints();
+		const std::vector<FBreakpoint>& breakpoints = debugger.GetBreakpoints();
 		for (int i = 0; i < breakpoints.size(); i++)
 		{
 			const FBreakpoint& bp = breakpoints[i];
@@ -473,9 +473,7 @@ uint8_t FPCEEmu::GetBankIndexForBankId(uint16_t bankId)
 void FPCEEmu::BuildCanonicalBankIdLookup()
 {
 	// Initialise to each bankId mapping to itself.
-	const int numBanks = FCodeAnalysisState::kMaxBanks;
-	CanonicalBankIdLookup.resize(numBanks);
-	for (int i = 0; i < numBanks; i++)
+	for (int i = 0; i < FCodeAnalysisState::kMaxBanks; i++)
 		CanonicalBankIdLookup[i] = (int16_t)i;
 
 	// Overwrite entries for duplicate bankIds with their primary bankId.
@@ -488,15 +486,31 @@ void FPCEEmu::BuildCanonicalBankIdLookup()
 		for (int d = 1; d < (int)bankSet.Banks.size(); d++)
 		{
 			const int16_t dupeId = bankSet.Banks[d].BankId;
-			if (dupeId >= 0 && dupeId < numBanks)
+			if (dupeId >= 0 && dupeId < FCodeAnalysisState::kMaxBanks)
 				CanonicalBankIdLookup[dupeId] = primaryId;
+		}
+	}
+}
+
+void FPCEEmu::BuildBankSetLookup()
+{
+	for (int i = 0; i < FCodeAnalysisState::kMaxBanks; i++)
+		BankSetLookup[i] = nullptr;
+
+	for (int i = 0; i < kNumBanks; i++)
+	{
+		FBankSet& bankSet = BankSets[i];
+		for (const FBankSet::FBankSetEntry& entry : bankSet.Banks)
+		{
+			if (entry.BankId >= 0 && entry.BankId < FCodeAnalysisState::kMaxBanks)
+				BankSetLookup[entry.BankId] = &bankSet;
 		}
 	}
 }
 
 int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 {
-	if (bankId >= 0 && bankId < (int16_t)CanonicalBankIdLookup.size())
+	if (bankId >= 0 && bankId < (int16_t)FCodeAnalysisState::kMaxBanks)
 		return CanonicalBankIdLookup[bankId];
 	return bankId;
 }
@@ -1001,6 +1015,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	//UnusedBankIdEnd = BankSets[kBankUnusedStart].GetBankId(7);
 
 	BuildCanonicalBankIdLookup();
+	BuildBankSetLookup();
 	ResetBanks();
 	MapMprBanks();
 
@@ -1571,7 +1586,7 @@ bool FPCEEmu::SaveProject()
 		FCodeAnalysisViewConfig& viewConfig = pCurrentProjectConfig->ViewConfigs[i];
 
 		viewConfig.bEnabled = viewState.Enabled;
-		viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
+		viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef::Invalid();
 	}
 
 	FPCEGameConfig* pPCEGameConfig = (FPCEGameConfig*)pCurrentProjectConfig;

@@ -8,6 +8,56 @@
 #include <optional>
 
 #include <stdio.h>
+#include <assert.h>
+
+// Set to 1 to use fixed-capacity raw C arrays for FrameTrace and CallStack instead
+// of std::vector. Benefits in MSVC debug builds: no _STL_VERIFY overhead on every
+// operator[], no heap allocation per push_back after the first reserve, and the
+// element type (FAddressRef, FCPUFunctionCall) is trivially constructible so array
+// creation is a no-op.  Set to 0 to fall back to std::vector for comparison.
+#define POD_DEBUGGER_CONTAINERS 1
+
+#if POD_DEBUGGER_CONTAINERS
+// Fixed-capacity buffer backed by a raw C array.
+// Mirrors the std::vector interface used by FrameTrace and CallStack so that
+// call sites need no changes. Raw array indexing has no bounds-check overhead
+// in debug builds, unlike std::array (which routes through _STL_VERIFY) or
+// std::vector (which additionally heap-allocates).
+template<typename T, int N>
+struct FPODBuffer
+{
+	// Append an element. Silently drops the entry if the buffer is full.
+	void push_back(const T& val) { if (Count < N) Data[Count++] = val; }
+	// Append a default element and return a reference to it (mirrors emplace_back).
+	T& emplace_back() { assert(Count < N); return Data[Count++]; }
+	void pop_back() { if (Count > 0) --Count; }
+	void clear() { Count = 0; }
+	void reserve(int) {}	// no-op: capacity is fixed at compile time
+	bool empty() const { return Count == 0; }
+	int  size()  const { return Count; }
+	T&       back()       { return Data[Count - 1]; }
+	const T& back() const { return Data[Count - 1]; }
+	T&       operator[](int i)       { return Data[i]; }
+	const T& operator[](int i) const { return Data[i]; }
+	T*       begin()       { return Data; }
+	T*       end()         { return Data + Count; }
+	const T* begin() const { return Data; }
+	const T* end()   const { return Data + Count; }
+
+	static constexpr int Capacity = N;
+	T   Data[N];
+	int Count = 0;
+};
+
+static constexpr int kFrameTraceCapacity = 131072;
+static constexpr int kCallStackCapacity  = 256;
+
+using FFrameTraceContainer = FPODBuffer<FAddressRef,        kFrameTraceCapacity>;
+using FCallStackContainer  = FPODBuffer<FCPUFunctionCall,   kCallStackCapacity>;
+#else
+using FFrameTraceContainer = std::vector<FAddressRef>;
+using FCallStackContainer  = std::vector<FCPUFunctionCall>;
+#endif
 
 class FSpectrumEmu;
 class FCodeAnalysisState;
@@ -163,7 +213,7 @@ public:
 	void ClearEvents();
 
 	// Frame Trace
-	const std::vector<FAddressRef>& GetFrameTrace() const { return FrameTrace; }
+	const FFrameTraceContainer& GetFrameTrace() const { return FrameTrace; }
 	bool	TraceForward(FCodeAnalysisViewState& viewState);
 	bool	TraceBack(FCodeAnalysisViewState& viewState);
 
@@ -171,7 +221,7 @@ public:
 	void	RegisterNewStackPointer(uint16_t newSP, FAddressRef pc);
 	bool	IsAddressOnStack(uint16_t address);
 
-	std::vector<FCPUFunctionCall>& GetCallstack() { return CallStack; }
+	FCallStackContainer& GetCallstack() { return CallStack; }
 
 	// Queries
 	bool	IsStopped() const { return bDebuggerStopped; }
@@ -216,7 +266,7 @@ private:
 	int							ScanlineBreakpoint = -1;
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;
-	std::vector<FAddressRef>	FrameTrace;
+	FFrameTraceContainer		FrameTrace;
 	int							FrameTraceItemIndex = -1;
 	std::vector<FEvent>			EventTrace;
 	int							SelectedEventIndex = -1;
@@ -226,7 +276,7 @@ private:
 
 	//bool						bInterruptTriggered = false;
 
-	std::vector<FCPUFunctionCall>	CallStack;
+	FCallStackContainer				CallStack;
 	int														SelectedCallstackNo = -1;
 
 	std::vector<FAddressRef>	StackSetLocations;

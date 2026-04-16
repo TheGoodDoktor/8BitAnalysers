@@ -193,9 +193,21 @@ enum class EInstructionType
 #include <assert.h>
 struct FAddressRef
 {
-	FAddressRef() :BankId(-1), BankOffset(0) {}
+	// Intentionally trivial (= default with no member initialisers) so that the type
+	// is trivially constructible. This means:
+	//   - Creating a raw C array of FAddressRef (e.g. a ring buffer) has zero cost in
+	//     all build modes, including MSVC debug which inserts _STL_VERIFY into std
+	//     containers but leaves raw arrays alone.
+	//   - The fields are LEFT UNINITIALISED on default construction. Do NOT rely on
+	//     a default-constructed FAddressRef being invalid — use FAddressRef::Invalid()
+	//     whenever an explicit invalid sentinel is needed.
+	FAddressRef() = default;
 	FAddressRef(uint32_t val)	{	SetVal(val); }
 	FAddressRef(int16_t bankId, uint16_t address) : BankId(bankId) { SetAddress(address); };
+
+	// Explicit named constructor for an invalid address (BankId == -1).
+	// Use this instead of FAddressRef() wherever an "invalid" sentinel is intended.
+	static FAddressRef Invalid() { return FAddressRef(-1, 0); }
 	uint16_t GetAddress() const;
 	uint16_t GetOffset() const { return BankOffset; }
 	uint32_t GetVal() const;
@@ -538,13 +550,13 @@ struct FDataInfo : FItem
 	// Address references
 	union
 	{
-		FAddressRef	CharSetAddress = FAddressRef();	// address of character set
-		FAddressRef	GraphicsSetRef;	// for bitmap data
-		FAddressRef	InstructionAddress;	// for operand data types
+		FAddressRef	CharSetAddress = FAddressRef::Invalid();	// address of character set
+		FAddressRef	GraphicsSetRef;							// for bitmap data
+		FAddressRef	InstructionAddress;						// for operand data types
 	};
 	
 	// sam. This is a hack. For PCE planar sprite data, we need to know the address of the first item we are part of.
-	FAddressRef				FirstItemAddress;
+	FAddressRef				FirstItemAddress = FAddressRef::Invalid();
 
 	union 
 	{
@@ -570,7 +582,7 @@ struct FDataInfo : FItem
 	int						LastFrameWritten = -1;
 	int						LastWritten = -1;
 	FItemReferenceTracker	Writes;	// address and counts of data access instructions
-	FAddressRef				LastWriter;
+	FAddressRef				LastWriter = FAddressRef::Invalid();
 };
 
 struct FCommentBlock : FItem
