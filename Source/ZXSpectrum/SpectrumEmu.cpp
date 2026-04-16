@@ -1012,7 +1012,7 @@ bool FSpectrumEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /
 	ZXDecodeScreen(&ZXEmuState);
 	CodeAnalysis.Debugger.Break();
 
-	CodeAnalysis.Debugger.RegisterNewStackPointer(ZXEmuState.cpu.sp, FAddressRef());
+	CodeAnalysis.Debugger.RegisterNewStackPointer(ZXEmuState.cpu.sp, FAddressRef::Invalid());
 
 	// some extra initialisation for creating new analysis from snnapshot
 	if(bLoadGameData == false)
@@ -1098,7 +1098,7 @@ bool FSpectrumEmu::SaveProject()
 			FCodeAnalysisViewConfig& viewConfig = pGameConfig->ViewConfigs[i];
 
 			viewConfig.bEnabled = viewState.Enabled;
-			viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
+			viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef::Invalid();
 		}
 
 		AddGameConfig(pGameConfig);

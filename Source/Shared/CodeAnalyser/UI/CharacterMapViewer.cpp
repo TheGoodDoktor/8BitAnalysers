@@ -94,7 +94,7 @@ void DrawCharacterSetComboBox(FCodeAnalysisState& state, FAddressRef& addr)
 	{
 		if (ImGui::Selectable("None", addr.IsValid() == false))
 		{
-			addr = FAddressRef();
+			addr = FAddressRef::Invalid();
 		}
 
 		for (int i=0;i< GetNoCharacterSets();i++)
@@ -504,7 +504,7 @@ public:
 		if(CodeAnalysis->AdvanceAddressRef(squareAddress,offset))
 			return squareAddress;
 		else
-		return FAddressRef();
+		return FAddressRef::Invalid();
 	}
 
 	void OnDraw() override

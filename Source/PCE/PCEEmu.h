@@ -187,7 +187,7 @@ protected:
 	int16_t MprBankIdPrev[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
 	FBankSet BankSets[kNumBanks];
-	int16_t NullBankId = -1;
+	//int16_t NullBankId = -1;
 
 	// Fast lookup: maps each bankId to its canonical (primary) bankId.
 	// Built once after all banks are created. Indexed directly by bankId.

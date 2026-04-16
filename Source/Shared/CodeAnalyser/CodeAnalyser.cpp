@@ -1373,7 +1373,7 @@ void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites)
 		}
 
 		if(bWrites)
-			state.SetLastWriterForAddress(i,  FAddressRef());
+			state.SetLastWriterForAddress(i, FAddressRef::Invalid());
 	}
 }
 

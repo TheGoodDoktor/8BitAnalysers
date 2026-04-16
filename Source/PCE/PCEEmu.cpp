@@ -1559,7 +1559,7 @@ bool FPCEEmu::SaveProject()
 		FCodeAnalysisViewConfig& viewConfig = pCurrentProjectConfig->ViewConfigs[i];
 
 		viewConfig.bEnabled = viewState.Enabled;
-		viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
+		viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef::Invalid();
 	}
 
 	FPCEGameConfig* pPCEGameConfig = (FPCEGameConfig*)pCurrentProjectConfig;
