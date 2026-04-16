@@ -158,27 +158,35 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 	ImGui::Text("Zero Page");
 
 	// If we've edited any of the registers, write them back to the CPU.
-	/*if (state.bAllowEditing)
+	if (state.bAllowEditing)
 	{
 		// A
 		if (curRegs.A != oldRegs.A)
-			pCPU->a = curRegs.A;
+			p6502CPU->SetA(curRegs.A);
+
+		// X
+		if (curRegs.X != oldRegs.X)
+			p6502CPU->SetX(curRegs.X);
+
+		// Y
+		if (curRegs.Y != oldRegs.Y)
+			p6502CPU->SetY(curRegs.Y);
 
 		// F
-		if (curRegs.F != curRegsCopy.F)
-			pCPU->f = curRegs.F;
+		//if (curRegs.F != curRegsCopy.F)
+			//p6502CPU->SetA(curRegs.A);
 
 
 		// SP
-		if (curRegs.SP != curRegsCopy.SP)
-			pCPU->sp = curRegs.SP;
+		//if (curRegs.SP != curRegsCopy.SP)
+		//	pCPU->sp = curRegs.SP;
 
 		// PC
-		if (curRegs.PC != curRegsCopy.PC)
-			pCPU->pc = curRegs.PC;
+		//if (curRegs.PC != curRegsCopy.PC)
+		//	pCPU->pc = curRegs.PC;
 
 		// Flags
-		if (curRegs.CarryFlag != curRegsCopy.CarryFlag)
+		/*if (curRegs.CarryFlag != curRegsCopy.CarryFlag)
 			pCPU->f = (pCPU->f & ~Z80_CF) | (curRegs.CarryFlag ? Z80_CF : 0);
 
 		if (curRegs.AddSubtractFlag != curRegsCopy.AddSubtractFlag)
@@ -194,6 +202,6 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 			pCPU->f = (pCPU->f & ~Z80_ZF) | (curRegs.ZeroFlag ? Z80_ZF : 0);
 
 		if (curRegs.SignFlag != curRegsCopy.SignFlag)
-			pCPU->f = (pCPU->f & ~Z80_SF) | (curRegs.SignFlag ? Z80_SF : 0);
-	}*/
+			pCPU->f = (pCPU->f & ~Z80_SF) | (curRegs.SignFlag ? Z80_SF : 0);*/
+	}
 }

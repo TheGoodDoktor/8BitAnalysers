@@ -133,6 +133,18 @@ public:
 	{
 		return p6280State->P->GetValue();
 	}
+	virtual void SetA(uint8_t val)
+	{
+		return p6280State->A->SetValue(val);
+	}
+	virtual void SetX(uint8_t val)
+	{
+		return p6280State->X->SetValue(val);
+	}
+	virtual void SetY(uint8_t val)
+	{
+		return p6280State->Y->SetValue(val);
+	}
 	HuC6280::HuC6280_State* p6280State = nullptr;
 	FPCEEmu* pPCEEmu = nullptr;
 };
