@@ -62,6 +62,7 @@ public:
 	virtual void SetA(uint8_t val) = 0;
 	virtual void SetX(uint8_t val) = 0;
 	virtual void SetY(uint8_t val) = 0;
+	virtual void SetP(uint8_t val) = 0;
 };
 
 class ICPUEmulatorZ80 : public ICPUEmulator
