@@ -68,8 +68,9 @@ public:
 	// plus duplicates) so that the same logical bank can be simultaneously mapped to
 	// multiple MPR slots. Only the primary (index 0) is exported. This function lets
 	// shared code redirect any duplicate bank ID to the primary for label lookups.
-	int16_t GetCanonicalBankId(int16_t bankId) const override;
-	void    BuildCanonicalBankIdLookup();
+	int16_t	GetCanonicalBankId(int16_t bankId) const override;
+	void		BuildCanonicalBankIdLookup();
+	void		BuildBankSetLookup();
 
 	// FEmuBase End
 
@@ -191,7 +192,10 @@ protected:
 
 	// Fast lookup: maps each bankId to its canonical (primary) bankId.
 	// Built once after all banks are created. Indexed directly by bankId.
-	std::vector<int16_t> CanonicalBankIdLookup;
+	int16_t CanonicalBankIdLookup[FCodeAnalysisState::kMaxBanks];
+	
+	// Fast lookup to go from bankid to bankset
+	FBankSet* BankSetLookup[FCodeAnalysisState::kMaxBanks];
 
 	// cached for speed
 	FGameDebugStats* pGameDebugStats = nullptr;
