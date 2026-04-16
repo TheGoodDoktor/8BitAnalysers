@@ -205,12 +205,12 @@ void FEmuBase::DrawUI()
 			if (Viewer->bCreateImGuiWindow)
 			{
 				if (ImGui::Begin(Viewer->GetName(), &Viewer->bOpen, Viewer->WindowFlags))
-					Viewer->DrawUI();
+					Viewer->DrawUIBase();
 				ImGui::End();
 			}
 			else
 			{
-				Viewer->DrawUI();
+				Viewer->DrawUIBase();
 			}
 			
 		}
@@ -264,6 +264,7 @@ void FEmuBase::FileMenu()
 		{
 			bNewProjectPopup = true;
 			NewProjectListName = gamesListIt.first;
+			break;
 		}
 	}
 

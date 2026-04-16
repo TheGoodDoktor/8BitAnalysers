@@ -13,8 +13,10 @@ public:
 	virtual void	ResetForGame() {};
 	virtual void	Shutdown() = 0;
 	virtual void	DrawUI() = 0;
-
 	virtual void	FixupAddressRefs() {}
+
+	// sam. added this base class draw call so we can profile all viewers using optick
+	void					DrawUIBase();
 
 	const char* GetName() const { return Name.c_str(); }
 protected:
