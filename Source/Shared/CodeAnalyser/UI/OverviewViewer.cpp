@@ -25,7 +25,7 @@ bool FOverviewViewer::Init(void)
 
 void FOverviewViewer::DrawUI(void)
 {
-	OPTICK_EVENT();
+	//OPTICK_EVENT();
 
     //DrawStats();
 	//DrawBankOverview();

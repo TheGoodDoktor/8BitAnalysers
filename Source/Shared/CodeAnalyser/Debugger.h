@@ -10,11 +10,10 @@
 #include <stdio.h>
 #include <assert.h>
 
-// Set to 1 to use fixed-capacity raw C arrays for FrameTrace and CallStack instead
+// sam. Set to 1 to use fixed-capacity raw C arrays for FrameTrace and CallStack instead
 // of std::vector. Benefits in MSVC debug builds: no _STL_VERIFY overhead on every
 // operator[], no heap allocation per push_back after the first reserve, and the
-// element type (FAddressRef, FCPUFunctionCall) is trivially constructible so array
-// creation is a no-op.  Set to 0 to fall back to std::vector for comparison.
+// element type (FAddressRef, FCPUFunctionCall) is trivially constructible.
 #define POD_DEBUGGER_CONTAINERS 1
 
 #if POD_DEBUGGER_CONTAINERS
@@ -49,7 +48,8 @@ struct FPODBuffer
 	int Count = 0;
 };
 
-static constexpr int kFrameTraceCapacity = 131072;
+// sam. these values are tuned to the PC Engine
+static constexpr int kFrameTraceCapacity = 65636;
 static constexpr int kCallStackCapacity  = 256;
 
 using FFrameTraceContainer = FPODBuffer<FAddressRef,        kFrameTraceCapacity>;

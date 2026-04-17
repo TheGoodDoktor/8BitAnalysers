@@ -39,7 +39,7 @@ void FVRAMViewer::Reset(void)
 
 void FVRAMViewer::DrawUI(void)
 {
-	OPTICK_EVENT();
+	//OPTICK_EVENT();
 
 	DrawPhysicalMemoryOverview();
 }

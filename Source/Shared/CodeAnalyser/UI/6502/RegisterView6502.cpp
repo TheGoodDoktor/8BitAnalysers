@@ -158,42 +158,23 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 	ImGui::Text("Zero Page");
 
 	// If we've edited any of the registers, write them back to the CPU.
-	/*if (state.bAllowEditing)
+	if (state.bAllowEditing)
 	{
 		// A
 		if (curRegs.A != oldRegs.A)
-			pCPU->a = curRegs.A;
+			p6502CPU->SetA(curRegs.A);
 
-		// F
-		if (curRegs.F != curRegsCopy.F)
-			pCPU->f = curRegs.F;
+		// X
+		if (curRegs.X != oldRegs.X)
+			p6502CPU->SetX(curRegs.X);
 
-
-		// SP
-		if (curRegs.SP != curRegsCopy.SP)
-			pCPU->sp = curRegs.SP;
-
-		// PC
-		if (curRegs.PC != curRegsCopy.PC)
-			pCPU->pc = curRegs.PC;
+		// Y
+		if (curRegs.Y != oldRegs.Y)
+			p6502CPU->SetY(curRegs.Y);
 
 		// Flags
-		if (curRegs.CarryFlag != curRegsCopy.CarryFlag)
-			pCPU->f = (pCPU->f & ~Z80_CF) | (curRegs.CarryFlag ? Z80_CF : 0);
-
-		if (curRegs.AddSubtractFlag != curRegsCopy.AddSubtractFlag)
-			pCPU->f = (pCPU->f & ~Z80_NF) | (curRegs.AddSubtractFlag ? Z80_NF : 0);
-
-		if (curRegs.ParityOverflowFlag != curRegsCopy.ParityOverflowFlag)
-			pCPU->f = (pCPU->f & ~Z80_VF) | (curRegs.ParityOverflowFlag ? Z80_VF : 0);
-
-		if (curRegs.HalfCarryFlag != curRegsCopy.HalfCarryFlag)
-			pCPU->f = (pCPU->f & ~Z80_HF) | (curRegs.HalfCarryFlag ? Z80_HF : 0);
-
-		if (curRegs.ZeroFlag != curRegsCopy.ZeroFlag)
-			pCPU->f = (pCPU->f & ~Z80_ZF) | (curRegs.ZeroFlag ? Z80_ZF : 0);
-
-		if (curRegs.SignFlag != curRegsCopy.SignFlag)
-			pCPU->f = (pCPU->f & ~Z80_SF) | (curRegs.SignFlag ? Z80_SF : 0);
-	}*/
+		//uint8_t p = p6502CPU->GetP();
+		//if (curRegs.CarryFlag != oldRegs.CarryFlag)
+		//	p6502CPU->SetP((p6502CPU->GetP() & ~ICPUEmulator6502::kFlagCarry) | (curRegs.CarryFlag ? ICPUEmulator6502::kFlagCarry : 0));
+	}
 }

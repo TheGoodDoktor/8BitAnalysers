@@ -97,9 +97,9 @@ bool LoadGameDbEntry(const std::string& gameName, const std::string& fname)
 	FGameDbEntry& entry = gGameDb[name];
 	entry.bValidated = jsonFile["Validated"];
 	entry.bAssemblesOk = jsonFile["AssemblesOk"];
-	entry.bRomFilePartialMatch = jsonFile["RomFilePartialMatch"];
+	//entry.bRomFilePartialMatch = jsonFile["RomFilePartialMatch"];
 	entry.bRomFileIdentical = jsonFile["RomFileIdentical"];
-	entry.bEmulatorTestOk = jsonFile["EmulatorTestOk"];
+	//entry.bEmulatorTestOk = jsonFile["EmulatorTestOk"];
 	entry.TestingMethodology = jsonFile["TestingMethodology"];
 	entry.MaxDupeBanks = jsonFile["MaxDupeBanks"];
 
