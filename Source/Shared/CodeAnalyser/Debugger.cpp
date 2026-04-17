@@ -315,9 +315,12 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		CallStack.push_back(callInfo);
 
 #ifndef NDEBUG
-		if (CallStack.size() > 256)
+		if (CPUType == ECPUType::HuC6280)
 		{
-			LOGERROR("Callstack too big");
+			if (CallStack.size() > 256)
+			{
+				LOGERROR("Callstack too big");
+			}
 		}
 #endif
 		//return UI_DBG_BP_BASE_TRAPID + 255;	//hack
