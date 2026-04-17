@@ -504,6 +504,12 @@ int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 	return bankId;
 }
 
+static void NullInstructionExecutedCallback(void*, uint16_t) {}
+static void NullMemoryReadCallback(void*, uint16_t) {}
+static void NullMemoryWriteCallback(void*, uint16_t, uint8_t) {}
+static void NullMprCallback(void*, uint8_t, uint8_t, uint8_t) {}
+static void NullVRAMWriteCallback(void*, uint16_t, uint16_t) {}
+
 void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 {
 	if (bEnabled)
@@ -511,12 +517,14 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 		pCore->SetInstructionExecutedCallback(::OnInstructionExecuted, this);
 		pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, BankChangeCallback, this);
 		pCore->GetHuC6270_1()->SetCallback(::OnVRAMWritten, this);
+		pCore->GetHuC6270_2()->SetCallback(NullVRAMWriteCallback, this);
 	}
 	else
 	{
-		pCore->SetInstructionExecutedCallback(nullptr, this);
-		pMemory->SetMemoryCallbacks(nullptr, nullptr, nullptr, this);
-		pCore->GetHuC6270_1()->SetCallback(nullptr, this);
+		pCore->SetInstructionExecutedCallback(NullInstructionExecutedCallback, this);
+		pMemory->SetMemoryCallbacks(NullMemoryReadCallback, NullMemoryWriteCallback, NullMprCallback, this);
+		pCore->GetHuC6270_1()->SetCallback(NullVRAMWriteCallback, this);
+		pCore->GetHuC6270_2()->SetCallback(NullVRAMWriteCallback, this);
 	}
 }
 

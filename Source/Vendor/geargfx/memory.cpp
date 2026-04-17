@@ -310,8 +310,7 @@ void Memory::SetMprTAM(u8 bits, u8 value)
            u8 oldValue = m_mpr[i];
            m_mpr[i] = value;
 
-					 if (IsValidPointer(m_mpr_callback))
-						m_mpr_callback(m_callback_context, i, oldValue, value);
+					 m_mpr_callback(m_callback_context, i, oldValue, value);
         }
     }
 }
