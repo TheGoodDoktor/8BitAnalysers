@@ -1,5 +1,6 @@
 #include "CodeAnalysisJson.h"
 #include "CodeAnalyser.h"
+#include <Misc/EmuBase.h>
 #include "CodeAnalysisPage.h"
 #include "DataTypes.h"
 #include "UI/DisplayTypes.h"
@@ -178,6 +179,10 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		jsonGameData["FunctionInfo"].push_back(functionJson);
 	}
     
+	// Give the platform emulator a chance to append its own data.
+	if (FEmuBase* pEmu = state.GetEmulator())
+		pEmu->ExportPlatformAnalysisJson(jsonGameData);
+
 	// Write file out
 	std::ofstream outFileStream(pJsonFileName);
 	if (outFileStream.is_open())
@@ -468,6 +473,10 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 			functions.AddFunction(function);
 		}
 	}
+
+	// Give the platform emulator a chance to read back its own data (e.g. bank mappings) before FixupPostLoad.
+	if (FEmuBase* pEmu = state.GetEmulator())
+		pEmu->ImportPlatformAnalysisJson(jsonGameData);
 
 	FixupPostLoad(state);
 

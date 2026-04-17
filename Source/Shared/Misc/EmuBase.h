@@ -2,6 +2,7 @@
 
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "GamesList.h"
+#include <json_fwd.hpp>
 
 // forward decs
 class FEmuBase;
@@ -38,6 +39,13 @@ public:
 	virtual void	AppFocusCallback(int focused){}
 
 	virtual bool	LoadLua(){ return false;}
+
+	// Optional hooks for platform-specific data in the shared analysis JSON file.
+	// Override these in a platform emulator to read/write extra fields inside the
+	// same JSON document without touching any shared code.  The default
+	// implementations are no-ops so platforms that don't need them pay nothing.
+	virtual void	ExportPlatformAnalysisJson(nlohmann::json& jsonDoc) {}
+	virtual void	ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc) {}
 
 	virtual bool	LoadEmulatorFile(const FEmulatorFile* pSnapshot) = 0;
 

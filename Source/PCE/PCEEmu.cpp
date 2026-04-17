@@ -33,6 +33,7 @@
 #include "App.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
+#include <json.hpp>
 #include "PCEGameConfig.h"
 
 #include "optick/optick.h"
@@ -1281,16 +1282,6 @@ void FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 	MprBankId[mprIndex] = bankId;
 }
 
-void FPCEEmu::RestoreMprBankMappings(const FPCEGameConfig* pConfig)
-{
-	if (pConfig == nullptr)
-		return;
-
-	for (int i = 0; i < kNumMprSlots; i++)
-	{
-		MapBankIdToMprSlot(i, pConfig->MprBankId[i]);
-	}
-}
 
 void FPCEEmu::Shutdown()
 {
@@ -1349,8 +1340,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	// Are we loading a previously saved game
 	if (bLoadGameData)
 	{
-		const FPCEGameConfig* pPCEGameConfig = static_cast<FPCEGameConfig*>(pGameConfig);
-
 		const std::string root = pGlobalConfig->WorkspaceRoot;
 		const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pGameConfig->Name;
 		std::string analysisJsonFName = gameRoot + "/Analysis.json";
@@ -1374,9 +1363,9 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		}
 
 		ResetBanks();
-		RestoreMprBankMappings(pPCEGameConfig);
 
-		// BANKS MUST BE MAPPED BY THIS POINT
+		// Banks must be mapped by the point FixupPostLoad() runs in ImportAnalysisJson().
+		// They get mapped in ImportPlatformAnalysisJson _before_ FixupPostLoad()
 
 		if (FileExists(analysisJsonFName.c_str()))
 		{
@@ -1543,6 +1532,25 @@ bool FPCEEmu::LoadMachineState(const char* path, int index /* = -1 */)
 	return pCore->LoadState(path, index);
 }
 
+void FPCEEmu::ExportPlatformAnalysisJson(nlohmann::json& jsonDoc)
+{
+	nlohmann::json mprBankIds = nlohmann::json::array();
+	for (int i = 0; i < kNumMprSlots; i++)
+		mprBankIds.push_back(MprBankId[i]);
+	jsonDoc["MprBankIds"] = mprBankIds;
+}
+
+// Restore the MPR bank mappings to what they were when the project was saved to disk
+void FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
+{
+	if (jsonDoc.contains("MprBankIds"))
+	{
+		const auto& mprBankIds = jsonDoc["MprBankIds"];
+		for (int i = 0; i < kNumMprSlots && i < (int)mprBankIds.size(); i++)
+			MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]);
+	}
+}
+
 void FPCEEmu::SaveGameDbEntry()
 {
 	if (pCurrentProjectConfig && !pMedia->IsCDROM())
@@ -1576,10 +1584,6 @@ bool FPCEEmu::SaveProject()
 		viewConfig.bEnabled = viewState.Enabled;
 		viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef::Invalid();
 	}
-
-	FPCEGameConfig* pPCEGameConfig = (FPCEGameConfig*)pCurrentProjectConfig;
-	for (int i = 0; i < kNumMprSlots; i++)
-		pPCEGameConfig->MprBankId[i] = MprBankId[i];
 
 	AddGameConfig(pCurrentProjectConfig);
 	SaveGameConfigToFile(*pCurrentProjectConfig, configFName.c_str());

@@ -18,7 +18,6 @@ class Media;
 class Memory;
 
 struct FPCEConfig;
-struct FPCEGameConfig;
 class FPCECPUEmulator6502;
 class FPCEViewer;
 class FBatchGameLoadViewer;
@@ -62,6 +61,10 @@ public:
 	void	GlobalShortcuts(void) override;
 	void	AppFocusCallback(int focused) override;
 	void	DrawEmulatorUI() override;
+
+	// Platform-specific analysis JSON hooks (FEmuBase)
+	void	ExportPlatformAnalysisJson(nlohmann::json& jsonDoc) override;
+	void	ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc) override;
 
 	// Returns the primary bank ID for a given bank ID.
 	// Each PCE ROM bank has up to kNumBankSetIds FCodeAnalysisBank entries (one primary
@@ -156,7 +159,6 @@ protected:
 	int16_t GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
 	
 	void MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId);
-	void RestoreMprBankMappings(const FPCEGameConfig* pConfig);
 
 	void InitPalettes();
 	void UpdatePalettes();
