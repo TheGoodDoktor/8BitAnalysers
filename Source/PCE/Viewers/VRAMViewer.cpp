@@ -33,13 +33,13 @@ void FVRAMViewer::Reset(void)
 	for (FVRAMAccess& access : Access)
 	{
 		access.FrameLastWritten = -1;
-		access.LastWriter = FAddressRef();
+		access.LastWriter = FAddressRef::Invalid();
 	}
 }
 
 void FVRAMViewer::DrawUI(void)
 {
-	OPTICK_EVENT();
+	//OPTICK_EVENT();
 
 	DrawPhysicalMemoryOverview();
 }

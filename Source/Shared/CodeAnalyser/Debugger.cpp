@@ -1683,7 +1683,13 @@ void FDebugger::FixupAddresRefs(void)
 		FixupAddressRef(*pCodeAnalysis, Breakpoints[i].Address);
 	}
 
+#if POD_DEBUGGER_CONTAINERS
+	// FixupAddressRefList takes std::vector specifically, so inline the loop here.
+	for (FAddressRef& addr : FrameTrace)
+		FixupAddressRef(*pCodeAnalysis, addr);
+#else
 	FixupAddressRefList(*pCodeAnalysis, FrameTrace);
+#endif
 	FixupAddressRefList(*pCodeAnalysis, StackSetLocations);
 
 	for (FCPUFunctionCall& functionCall : CallStack)

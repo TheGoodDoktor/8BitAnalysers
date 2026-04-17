@@ -1314,7 +1314,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	// Otherwise, if we export an asm file once the game is running the memory will be in an arbitrary state.
 	CodeAnalysis.Debugger.SetPC(CodeAnalysis.AddressRefFromPhysicalAddress(CPCEmuState.cpu.pc - 1));
 	CodeAnalysis.Debugger.Break();
-	CodeAnalysis.Debugger.RegisterNewStackPointer(CPCEmuState.cpu.sp, FAddressRef());
+	CodeAnalysis.Debugger.RegisterNewStackPointer(CPCEmuState.cpu.sp, FAddressRef::Invalid());
 
 	// some extra initialisation for creating new analysis from snnapshot
 	if (bLoadGameData == false)
@@ -1467,7 +1467,7 @@ bool FCPCEmu::SaveProject(void)
 			FCodeAnalysisViewConfig& viewConfig = pProjectConfig->ViewConfigs[i];
 
 			viewConfig.bEnabled = viewState.Enabled;
-			viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
+			viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef::Invalid();
 		}
 
 		SaveGameConfigToFile(*pProjectConfig, configFName.c_str());

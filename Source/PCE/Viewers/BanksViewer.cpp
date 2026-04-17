@@ -35,28 +35,12 @@ static const char* BankAccessToString(EBankAccess access)
 	}
 }
 
-// todo: get ratio of code/data?
-EBankContent GetBankContent(std::vector<FCodeAnalysisItem> items)
+static EBankContent GetBankContent(const FCodeAnalysisBank* pBank)
 {
-	bool bFoundCode = false;
-	bool bFoundData = false;
-
-	for (const FCodeAnalysisItem& item : items)
-	{
-		if (item.Item->Type == EItemType::Code)
-			bFoundCode = true;
-		if (item.Item->Type == EItemType::Data)
-			bFoundData = true;
-	}
-
-	if (bFoundCode || bFoundData)
-	{
-		if (bFoundCode)
-		{
-			return EBankContent::Code;
-		}
+	if (pBank->bHasCode)
+		return EBankContent::Code;
+	if (pBank->bHasData)
 		return EBankContent::Data;
-	}
 	return EBankContent::Unknown;
 }
 
@@ -244,7 +228,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks)
 			// Content
 			// todo figure out why this doesn't work if the code analysis view is not active
 			ImGui::TableSetColumnIndex(4);
-			ImGui::TextColored(colour, pBank->bEverBeenMapped ? BankContentToString(GetBankContent(pBank->ItemList)) : "-");
+			ImGui::TextColored(colour, pBank->bEverBeenMapped ? BankContentToString(GetBankContent(pBank)) : "-");
 		}
 
 		ImGui::EndTable();

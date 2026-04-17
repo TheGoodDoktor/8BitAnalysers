@@ -380,7 +380,7 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 	// Start in break mode so the memory will be in its initial state. 
 	CodeAnalysis.Debugger.Break();
 
-	CodeAnalysis.Debugger.RegisterNewStackPointer(C64Emu.cpu.S, FAddressRef());
+	CodeAnalysis.Debugger.RegisterNewStackPointer(C64Emu.cpu.S, FAddressRef::Invalid());
 
 	// some extra initialisation for creating new analysis from snapshot
 	if (bLoadGameData == false)
@@ -593,7 +593,7 @@ bool FC64Emulator::SaveProject(void)
 		FCodeAnalysisViewConfig& viewConfig = pCurrentProjectConfig->ViewConfigs[i];
 
 		viewConfig.bEnabled = viewState.Enabled;
-		viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef();
+		viewConfig.ViewAddress = viewState.GetCursorItem().IsValid() ? viewState.GetCursorItem().AddressRef : FAddressRef::Invalid();
 	}
 
 	AddGameConfig(pCurrentProjectConfig);

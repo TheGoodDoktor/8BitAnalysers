@@ -190,6 +190,7 @@ void FDebugStatsViewer::DrawDebugStatsTable()
 		ImGuiTableFlags_Sortable |
 		ImGuiTableFlags_ScrollY;
 
+	float avgFrameRate = 0;
 	if (ImGui::BeginTable("GameStatsTable", Col_GS_Count, tableFlags))
 	{
 		ImGui::TableSetupScrollFreeze(0, 1);
@@ -244,6 +245,7 @@ void FDebugStatsViewer::DrawDebugStatsTable()
 
 			ImGui::TableSetColumnIndex(Col_GS_AvgFPS);
 			ImGui::Text("%.1f", gameStats.AvgFrameRate);
+			avgFrameRate += gameStats.AvgFrameRate;
 
 			ImGui::TableSetColumnIndex(Col_GS_NumNonCanonicalBanksWithLabels);
 			ImGui::Text("%d", gameStats.NumNonCanonicalBanksWithLabels);
@@ -251,6 +253,8 @@ void FDebugStatsViewer::DrawDebugStatsTable()
 
 		ImGui::EndTable();
 	}
+
+	ImGui::Text("Avg Framerate %.2f", avgFrameRate / (float)SortedGameStats.size());
 }
 
 void FDebugStatsViewer::DrawBankList()

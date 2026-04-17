@@ -58,6 +58,11 @@ public:
 	virtual uint8_t GetY() const = 0;
 	virtual uint8_t GetS() const = 0;
 	virtual uint8_t GetP() const = 0;
+
+	virtual void SetA(uint8_t val) = 0;
+	virtual void SetX(uint8_t val) = 0;
+	virtual void SetY(uint8_t val) = 0;
+	virtual void SetP(uint8_t val) = 0;
 };
 
 class ICPUEmulatorZ80 : public ICPUEmulator
@@ -223,7 +228,7 @@ private:
 	std::vector<FAddressRef>	PreviousAddressStack;
 	std::vector<FAddressRef>	NextAddressStack;
 	static const int			kNoBookmarks = 5;
-	FAddressRef					Bookmarks[kNoBookmarks];
+	FAddressRef					Bookmarks[kNoBookmarks] = { FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid() };
 };
 
 struct FCodeAnalysisConfig
@@ -284,6 +289,8 @@ struct FCodeAnalysisBank
 	bool				bIsDirty = false;
 	bool				bEverBeenMapped = false;
 	bool				bHidden = false;
+	bool				bHasCode = false; // sam. add flags for if bank contains code or data
+	bool				bHasData = false; // sam.
 	std::vector<FCodeAnalysisItem>		ItemList;
 
 	FCommentLine::FAllocator	CommentLineAllocator;

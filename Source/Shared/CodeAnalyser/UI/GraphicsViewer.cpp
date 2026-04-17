@@ -60,7 +60,7 @@ void FGraphicsViewer::Reset(void)
 	YSizePixels = 8;
 	ImageCount = 0;
 
-	ClickedAddress = FAddressRef();
+	ClickedAddress = FAddressRef::Invalid();
 	ViewMode = EGraphicsViewMode::Bitmap;
 	//ViewScale = 1;
 	bYSizePixelsFineCtrl = false;
@@ -68,13 +68,13 @@ void FGraphicsViewer::Reset(void)
 	ImageSetName = "";
 
 	GraphicsSets.clear();
-	SelectedGraphicSet = FAddressRef();
+	SelectedGraphicSet = FAddressRef::Invalid();
 
 	OffScreenBuffers.clear();
 	SelectedOffscreenBufferId = -1;
 
 	ItemNo = 0;
-	ImageGraphicSet = FAddressRef();
+	ImageGraphicSet = FAddressRef::Invalid();
 }
 
 

@@ -12,7 +12,7 @@ public:
 
 	void Reset() override 
 	{
-		Start = FAddressRef();
+		Start = FAddressRef::Invalid();
 		AddRunLength = 0;
 	}
 
@@ -51,7 +51,7 @@ class FFunctionCallCheck : public FStaticAnalysisCheck
 public:
 	void Reset() override
 	{
-		Start = FAddressRef();
+		Start = FAddressRef::Invalid();
 		CallCount = 0;
 	}
 	FStaticAnalysisItem* RunCheck(FCodeAnalysisState& state, FAddressRef addrRef) override

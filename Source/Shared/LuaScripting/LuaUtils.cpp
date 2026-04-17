@@ -26,7 +26,7 @@ FAddressRef GetAddressRefFromLua(lua_State* pState, int stackPos)
 		return state.AddressRefFromPhysicalAddress((uint16_t)lua_tointeger(pState, stackPos));
 	}
 
-	return FAddressRef();	// return invalid
+	return FAddressRef::Invalid();
 }
 
 // table getting functions

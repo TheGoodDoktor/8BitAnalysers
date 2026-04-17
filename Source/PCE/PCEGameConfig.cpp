@@ -18,28 +18,12 @@ void FPCEGameConfig::LoadFromJson(const nlohmann::json& jsonConfigFile)
 	if(EmulatorFile.ListName.empty())
 		EmulatorFile.ListName = "Snapshot File";
 
-	MprBankId[0] = jsonConfigFile["Mpr0BankId"];
-	MprBankId[1] = jsonConfigFile["Mpr1BankId"];
-	MprBankId[2] = jsonConfigFile["Mpr2BankId"];
-	MprBankId[3] = jsonConfigFile["Mpr3BankId"];
-	MprBankId[4] = jsonConfigFile["Mpr4BankId"];
-	MprBankId[5] = jsonConfigFile["Mpr5BankId"];
-	MprBankId[6] = jsonConfigFile["Mpr6BankId"];
-	MprBankId[7] = jsonConfigFile["Mpr7BankId"];
 }
 
 void FPCEGameConfig::SaveToJson(nlohmann::json& jsonConfigFile) const
 {
 	FProjectConfig::SaveToJson(jsonConfigFile);
 
-	jsonConfigFile["Mpr0BankId"] = MprBankId[0];
-	jsonConfigFile["Mpr1BankId"] = MprBankId[1];
-	jsonConfigFile["Mpr2BankId"] = MprBankId[2];
-	jsonConfigFile["Mpr3BankId"] = MprBankId[3];
-	jsonConfigFile["Mpr4BankId"] = MprBankId[4];
-	jsonConfigFile["Mpr5BankId"] = MprBankId[5];
-	jsonConfigFile["Mpr6BankId"] = MprBankId[6];
-	jsonConfigFile["Mpr7BankId"] = MprBankId[7];
 }
 
 FPCEGameConfig* CreateNewPCEGameConfigFromSnapshot(const FEmulatorFile& snapshot)

@@ -282,7 +282,7 @@ bool RegisterCodeExecutedHuC6280(FCodeAnalysisState& state, uint16_t pc, uint16_
 	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
 	//const m6502_t* pCPU = static_cast<m6502_t*>(state.CPUInterface->GetCPUEmulator());
 
-	std::vector<FCPUFunctionCall>& callStack = state.Debugger.GetCallstack();
+	auto& callStack = state.Debugger.GetCallstack();
 
 	switch (opcode)
 	{

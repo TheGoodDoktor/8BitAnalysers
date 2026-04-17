@@ -16,7 +16,7 @@ TEST(CodeAnalyserTest, BasicAssertions)
 TEST(CodeAnalyserTest, FAddressRef)
 {
 	EXPECT_EQ(sizeof(FAddressRef), 4);			// size
-	EXPECT_EQ(FAddressRef().IsValid(),false);	// default to invalid
+	EXPECT_EQ(FAddressRef::Invalid().IsValid(), false);	// explicit invalid
 }
 
 TEST(CodeAnalyserTest, Enums)

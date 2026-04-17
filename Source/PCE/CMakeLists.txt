@@ -89,6 +89,11 @@ endif()
 # Put binary and configuration files to /bin subfolder
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# compiler defines
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+add_compile_definitions(_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS)
+add_compile_definitions(GG_DISABLE_DISASSEMBLER) # geargfx define
+
 # Vendor and shared includes
 include( ../Vendor/CMakeVendor.txt )
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../Vendor/geargfx
@@ -96,11 +101,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../Vendor/geargfx
 
 include_directories( ../Shared )
 include( ../Shared/CMakeShared.txt )
-
-# compiler defines
-add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-add_compile_definitions(_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS)
-add_compile_definitions(GG_DISABLE_DISASSEMBLER) # geargfx define
 
 # compiler options
 if (NOT CMAKE_BUILD_TYPE)
