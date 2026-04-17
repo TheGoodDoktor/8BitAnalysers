@@ -1053,6 +1053,10 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 	size_t oldSize = bank.ItemList.size();
 #endif
 
+	// sam. 
+	bank.bHasCode = false;
+	bank.bHasData = false;
+
 	bank.CommentLineAllocator.FreeAll();
 	FItemListBuilder listBuilder(bank.ItemList);
 	listBuilder.BankId = bank.Id;
@@ -1112,6 +1116,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 			{
 				nextItemAddress = bankAddr + pCodeInfo->ByteSize;
 				listBuilder.AddItem(pCodeInfo, listBuilder.BankId, listBuilder.CurrAddr);
+				bank.bHasCode = true;
 #ifndef NDEBUG
 				bank.NumCodeItems++; // sam
 #endif
@@ -1128,6 +1133,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 						nextItemAddress = bankAddr + 1;
 
 					listBuilder.AddItem(pDataInfo, listBuilder.BankId, listBuilder.CurrAddr);
+					bank.bHasData;
 				}
 			}
 		}

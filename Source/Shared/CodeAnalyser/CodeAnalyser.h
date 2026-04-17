@@ -284,6 +284,8 @@ struct FCodeAnalysisBank
 	bool				bIsDirty = false;
 	bool				bEverBeenMapped = false;
 	bool				bHidden = false;
+	bool				bHasCode = false; // sam. add flags for if bank contains code or data
+	bool				bHasData = false; // sam.
 	std::vector<FCodeAnalysisItem>		ItemList;
 
 	FCommentLine::FAllocator	CommentLineAllocator;
