@@ -64,7 +64,8 @@ public:
 
 	// Platform-specific analysis JSON hooks (FEmuBase)
 	void	ExportPlatformAnalysisJson(nlohmann::json& jsonDoc) override;
-	void	ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc) override;
+	bool	ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc) override;
+	bool	MprBankIdsAreValid() const;
 
 	// Returns the primary bank ID for a given bank ID.
 	// Each PCE ROM bank has up to kNumBankSetIds FCodeAnalysisBank entries (one primary

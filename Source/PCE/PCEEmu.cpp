@@ -1565,8 +1565,13 @@ void FPCEEmu::ExportPlatformAnalysisJson(nlohmann::json& jsonDoc)
 	jsonDoc["MprBankIds"] = mprBankIds;
 }
 
+bool FPCEEmu::MprBankIdsAreValid() const
+{
+	return MprBankId[0] != -1 && MprBankId[1] != -1 && MprBankId[2] != -1 && MprBankId[3] != -1 && MprBankId[4] != -1 && MprBankId[5] != -1 && MprBankId[6] != -1 && MprBankId[7];
+}
+
 // Restore the MPR bank mappings to what they were when the project was saved to disk
-void FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
+bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 {
 	if (jsonDoc.contains("MprBankIds"))
 	{
@@ -1574,6 +1579,14 @@ void FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 		for (int i = 0; i < kNumMprSlots && i < (int)mprBankIds.size(); i++)
 			MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]);
 	}
+
+	if (!MprBankIdsAreValid())
+	{
+		assert(0);
+		return false;
+	}
+
+	return true;
 }
 
 void FPCEEmu::SaveGameDbEntry()

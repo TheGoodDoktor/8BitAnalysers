@@ -45,7 +45,7 @@ public:
 	// same JSON document without touching any shared code.  The default
 	// implementations are no-ops so platforms that don't need them pay nothing.
 	virtual void	ExportPlatformAnalysisJson(nlohmann::json& jsonDoc) {}
-	virtual void	ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc) {}
+	virtual bool	ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc) { return true; }
 
 	virtual bool	LoadEmulatorFile(const FEmulatorFile* pSnapshot) = 0;
 
