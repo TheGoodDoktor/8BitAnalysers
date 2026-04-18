@@ -1345,7 +1345,9 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
 	SetWindowTitle(windowTitle.c_str());
-	
+
+	memset(pFrameBuffer, 0, kFramebufferSize);
+
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
 	
