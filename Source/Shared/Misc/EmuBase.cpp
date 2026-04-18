@@ -651,6 +651,14 @@ void FEmuBase::DrawMainMenu()
 		NewProjectListName = GamesLists.begin()->first;
 	}
 
+	if (FGlobalConfig* pConfig = CodeAnalysis.pGlobalConfig)
+	{
+		if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_RightBracket))
+			pConfig->FontSizePts = std::min(pConfig->FontSizePts + 1, 72);
+		if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_LeftBracket))
+			pConfig->FontSizePts = std::max(pConfig->FontSizePts - 1, 8);
+	}
+
 	// Draw any modal popups that have been requested from clicking on menu items.
 	// This is a workaround for an open bug.
 	// https://github.com/ocornut/imgui/issues/331
