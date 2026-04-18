@@ -477,7 +477,7 @@ bool ImportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName)
 	// Give the platform emulator a chance to read back its own data (e.g. bank mappings) before FixupPostLoad.
 	if (FEmuBase* pEmu = state.GetEmulator())
 	{
-		if (pEmu->ImportPlatformAnalysisJson(jsonGameData))
+		if (!pEmu->ImportPlatformAnalysisJson(jsonGameData))
 			return false;
 	}
 
