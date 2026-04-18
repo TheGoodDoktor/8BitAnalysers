@@ -2,7 +2,7 @@ TODO
 - Allow you to edit register values.
 - Show register value on tooltips
 - Add tooltips for PCE related instructions
-- Implement
+- add keyboard shortcut for changing font size
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)

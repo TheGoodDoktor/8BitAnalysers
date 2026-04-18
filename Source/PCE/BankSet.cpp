@@ -1,5 +1,6 @@
 #include "BankSet.h"
 
+#include <string.h> // for memset
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include <CodeAnalyser/CodeAnalyser.h>
 
@@ -40,6 +41,20 @@ void FBankSet::Reset()
 		SlotBankId[i] = -1;
 	for (int i = 0; i < Banks.size(); i++)
 		Banks[i].bMapped = false;
+	MappedSlotsMask = 0;
+	memset(SlotMapCount, 0, sizeof(SlotMapCount));
+	memset(SlotFirstUseOrder, 0, sizeof(SlotFirstUseOrder));
+	NextFirstUseOrder = 1;
+}
+
+void FBankSet::RecordSlotMapping(uint8_t mprSlot)
+{
+	SlotMapCount[mprSlot]++;
+	if (!(MappedSlotsMask & (1 << mprSlot)))
+	{
+		MappedSlotsMask |= (1 << mprSlot);
+		SlotFirstUseOrder[mprSlot] = NextFirstUseOrder++;
+	}
 }
 	
 void FBankSet::AddBankId(int16_t bankId)

@@ -41,6 +41,14 @@ struct FBankSet
 	// Bank set index for each mpr slot. Only will be set to a bank id when a bank gets mapped.
 	int SlotBankId[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
+	// MPR slot usage tracking.
+	uint8_t  MappedSlotsMask = 0;        // bitfield: bit i set if slot i has ever been mapped
+	uint32_t SlotMapCount[8] = {};       // how many times each slot has been mapped
+	uint8_t  SlotFirstUseOrder[8] = {};  // order (1-8) of first use per slot, 0 = never used
+	uint8_t  NextFirstUseOrder = 1;      // next order value to assign on first use
+
+	void RecordSlotMapping(uint8_t mprSlot);
+
 	// List of all bank ids.
 	// Entry 0 is the primary bank. It should always have a primary mapped page.
 	// Entries >1 are the dupe banks and will get a primary mapped page if they get mapped in.

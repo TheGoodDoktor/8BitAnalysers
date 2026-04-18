@@ -560,7 +560,7 @@ int FPCEEmu::GetBankCount() const
 }
 
 // Note: this function needs to be fast. 
-// Careful when adding new code - especially debug code that is always running. 
+// Careful when adding new code - especially debug code that uses containers that allocate memory. 
 void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 {
 	FCodeAnalysisState& state = CodeAnalysis;
@@ -593,6 +593,7 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	state.MapBank(newBankId, pageNo, bankAccess);
 	pInBank->PrimaryMappedPage = pageNo;
 	MprBankId[mprIndex] = newBankId;
+	Banks[newBankIndex]->RecordSlotMapping(mprIndex);
 
 #if BANK_SWITCH_DEBUG
 	BANK_LOG("[PC=%04x] IN: '%s' OUT: '%s' 0x%x->0x%x", GetPC().GetAddress(), pInBank->Name.c_str(), pOutBank ? pOutBank->Name.c_str() : "None", oldMappedAddress, pInBank->GetMappedAddress());
@@ -1563,6 +1564,33 @@ void FPCEEmu::ExportPlatformAnalysisJson(nlohmann::json& jsonDoc)
 	for (int i = 0; i < kNumMprSlots; i++)
 		mprBankIds.push_back(MprBankId[i]);
 	jsonDoc["MprBankIds"] = mprBankIds;
+
+	nlohmann::json bankSlotStats = nlohmann::json::array();
+	for (int i = 0; i < kNumBanks; i++)
+	{
+		const FBankSet& bs = BankSets[i];
+		if (bs.MappedSlotsMask == 0)
+			continue;
+		const int16_t primaryBankId = bs.GetBankId(0);
+		if (primaryBankId == -1)
+			continue;
+
+		nlohmann::json entry;
+		entry["BankId"] = primaryBankId;
+		entry["MappedSlotsMask"] = bs.MappedSlotsMask;
+
+		nlohmann::json counts = nlohmann::json::array();
+		nlohmann::json orders = nlohmann::json::array();
+		for (int s = 0; s < kNumMprSlots; s++)
+		{
+			counts.push_back(bs.SlotMapCount[s]);
+			orders.push_back(bs.SlotFirstUseOrder[s]);
+		}
+		entry["SlotMapCount"] = counts;
+		entry["SlotFirstUseOrder"] = orders;
+		bankSlotStats.push_back(entry);
+	}
+	jsonDoc["BankSlotStats"] = bankSlotStats;
 }
 
 bool FPCEEmu::MprBankIdsAreValid() const
@@ -1578,6 +1606,30 @@ bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 		const auto& mprBankIds = jsonDoc["MprBankIds"];
 		for (int i = 0; i < kNumMprSlots && i < (int)mprBankIds.size(); i++)
 			MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]);
+	}
+
+	if (jsonDoc.contains("BankSlotStats"))
+	{
+		for (const auto& entry : jsonDoc["BankSlotStats"])
+		{
+			const int16_t bankId = (int16_t)entry["BankId"];
+			FBankSet* pBankSet = BankSetLookup[bankId];
+			if (pBankSet == nullptr)
+				continue;
+
+			pBankSet->MappedSlotsMask = (uint8_t)entry["MappedSlotsMask"];
+			pBankSet->NextFirstUseOrder = 1;
+
+			const auto& counts = entry["SlotMapCount"];
+			const auto& orders = entry["SlotFirstUseOrder"];
+			for (int s = 0; s < kNumMprSlots && s < (int)counts.size(); s++)
+			{
+				pBankSet->SlotMapCount[s] = (uint32_t)counts[s];
+				pBankSet->SlotFirstUseOrder[s] = (uint8_t)orders[s];
+				if (pBankSet->SlotFirstUseOrder[s] >= pBankSet->NextFirstUseOrder)
+					pBankSet->NextFirstUseOrder = pBankSet->SlotFirstUseOrder[s] + 1;
+			}
+		}
 	}
 
 	if (!MprBankIdsAreValid())
