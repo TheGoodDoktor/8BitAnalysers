@@ -170,12 +170,17 @@ void FSpriteViewer::DrawUI()
 
 	ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
 	ImGuiStyle& style = ImGui::GetStyle();
-	const float cellMinHeight = ((float)(HUC6270_MAX_SPRITE_HEIGHT>>1) * scale) + style.CellPadding.y * 2.0f;
+	const float colHeight = (float)HUC6270_MAX_SPRITE_HEIGHT * scale;
+	const float cellMinHeight = colHeight + style.CellPadding.y * 2.0f;
 
 	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMViewer()->GetSpriteInfo();
 
 	if (ImGui::BeginTable("spritetable", 8, flags))
 	{
+		const float colWidth = (float)HUC6270_MAX_SPRITE_WIDTH * scale;
+		for (int col = 0; col < 8; col++)
+			ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, colWidth);
+
 		for (int s = 0; s < HUC6270_SPRITES; s++)
 		{
 			if (s % 8 == 0)
@@ -183,13 +188,19 @@ void FSpriteViewer::DrawUI()
 
 			ImGui::TableNextColumn();
 
-			p[s] = ImGui::GetCursorScreenPos();
-
 			u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
 			float fwidth = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01] * scale;
 			float fheight = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03] * scale;
 			float tex_h = fwidth / 32.0f / scale;
 			float tex_v = fheight / 64.0f / scale;
+
+			// Center sprites within the fixed-size cell
+			if (fwidth < colWidth)
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (colWidth - fwidth) * 0.5f);
+			if (fheight < colHeight)
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (colHeight - fheight) * 0.5f);
+
+			p[s] = ImGui::GetCursorScreenPos();
 
 			ImGui_UpdateTextureSubImageRGBA(SpriteTextures[s], SpriteBuffers[s], spriteInfo[s].Width, spriteInfo[s].Height);
 
