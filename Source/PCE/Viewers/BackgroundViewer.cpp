@@ -179,53 +179,56 @@ void FBackgroundViewer::UpdateBackground()
 	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
 	HuC6260* huc6260 = pCore->GetHuC6260();
 
-	u16* vram = huc6270->GetVRAM();
-	int screen_reg = (huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07;
-	int screen_size_x = k_huc6270_screen_size_x[screen_reg];
-	int screen_size_y = k_huc6270_screen_size_y[screen_reg];
-	BufferWidth= screen_size_x * 8;
+	const u16* vram = huc6270->GetVRAM();
+	const int screen_reg = (huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07;
+	const int screen_size_x = k_huc6270_screen_size_x[screen_reg];
+	const int screen_size_y = k_huc6270_screen_size_y[screen_reg];
+	BufferWidth  = screen_size_x * 8;
 	BufferHeight = screen_size_y * 8;
-	int bat_size = screen_size_x * screen_size_y;
-	int pixels = bat_size * 8 * 8;
 
-	for (int pixel = 0; pixel < pixels; pixel++)
+	const u16* colorTable = huc6260->GetColorTable();
+
+	// Lookup table: expand 3-bit PCE colour component to 8-bit, avoiding per-pixel multiply/divide.
+	static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
+
+	// Iterate tile-by-tile so BAT and tile data are fetched once per tile/row
+	// rather than being recomputed for every pixel.
+	for (int tile_y = 0; tile_y < screen_size_y; tile_y++)
 	{
-		int x = pixel % BufferWidth;
-		int y = pixel / BufferHeight;
+		for (int tile_x = 0; tile_x < screen_size_x; tile_x++)
+		{
+			const u16 bat_entry      = vram[tile_x + tile_y * screen_size_x];
+			const int tile_data      = (bat_entry & 0x07FF) * 16;
+			const int color_tbl_base = ((bat_entry >> 12) & 0x0F) * 16;
 
-		int bat_entry_index = (x / 8) + ((y / 8) * screen_size_x);
-		u16 bat_entry = vram[bat_entry_index];
-		int tile_index = bat_entry & 0x07FF;
-		int color_table = (bat_entry >> 12) & 0x0F;
+			u8* dst_row = BackgroundBuffer + (tile_y * 8 * BufferWidth + tile_x * 8) * 4;
 
-		int tile_data = tile_index * 16;
-		int tile_y = (y % 8);
-		int tile_x = (pixel % 8);
+			for (int row = 0; row < 8; row++, dst_row += BufferWidth * 4)
+			{
+				// Both VRAM words for this tile row fetched once for all 8 pixels.
+				const u16 word_a = vram[tile_data + row];
+				const u16 word_b = vram[tile_data + row + 8];
+				const u8 byte1 = word_a & 0xFF;
+				const u8 byte2 = word_a >> 8;
+				const u8 byte3 = word_b & 0xFF;
+				const u8 byte4 = word_b >> 8;
 
-		int line_start_a = (tile_data + tile_y);
-		int line_start_b = (tile_data + tile_y + 8);
+				u8* dst = dst_row;
+				for (int col = 0; col < 8; col++, dst += 4)
+				{
+					const int shift = 7 - col;
+					const int color = ((byte1 >> shift) & 1)        |
+					                  (((byte2 >> shift) & 1) << 1) |
+					                  (((byte3 >> shift) & 1) << 2) |
+					                  (((byte4 >> shift) & 1) << 3);
 
-		u8 byte1 = vram[line_start_a] & 0xFF;
-		u8 byte2 = vram[line_start_a] >> 8;
-		u8 byte3 = vram[line_start_b] & 0xFF;
-		u8 byte4 = vram[line_start_b] >> 8;
-
-		int color = ((byte1 >> (7 - tile_x)) & 0x01) | (((byte2 >> (7 - tile_x)) & 0x01) << 1) | (((byte3 >> (7 - tile_x)) & 0x01) << 2) | (((byte4 >> (7 - tile_x)) & 0x01) << 3);
-
-		if (color == 0)
-			color_table = 0;
-
-		u16 color_value = huc6260->GetColorTable()[(color_table * 16) + color];
-
-		// convert to 8 bit color
-		int blue = (color_value & 0x07) * 255 / 7;
-		int red = ((color_value >> 3) & 0x07) * 255 / 7;
-		int green = ((color_value >> 6) & 0x07) * 255 / 7;
-
-		int index = (pixel * 4);
-		BackgroundBuffer[index + 0] = red;
-		BackgroundBuffer[index + 1] = green;
-		BackgroundBuffer[index + 2] = blue;
-		BackgroundBuffer[index + 3] = 255;
+					const u16 cv = colorTable[(color == 0 ? 0 : color_tbl_base) + color];
+					dst[0] = kExpand3to8[(cv >> 3) & 0x07]; // red
+					dst[1] = kExpand3to8[(cv >> 6) & 0x07]; // green
+					dst[2] = kExpand3to8[cv & 0x07];         // blue
+					dst[3] = 255;
+				}
+			}
+		}
 	}
 }
