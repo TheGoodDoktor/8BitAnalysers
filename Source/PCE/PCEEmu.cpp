@@ -78,9 +78,9 @@ constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAn
 #define DEBUG_STATS_VIEWER 1
 #define GAME_DB_VIEWER 1
 #else
-#define BATCH_GAME_VIEWER 1
-#define DEBUG_STATS_VIEWER 1
-#define GAME_DB_VIEWER 1
+#define BATCH_GAME_VIEWER 0
+#define DEBUG_STATS_VIEWER 0
+#define GAME_DB_VIEWER 0
 #endif
 
 #if BANK_SWITCH_DEBUG
@@ -1398,10 +1398,16 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		if (FileExists(analysisJsonFName.c_str()))
 		{
 			if (!ImportAnalysisJson(CodeAnalysis, analysisJsonFName.c_str()))
+			{
+				SetLastError("Failed to import analysis json file %s.", analysisJsonFName.c_str());
 				return false;
+			}
 
 			if (!ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str()))
+			{
+				SetLastError("Failed to import analysis state file %s", analysisStateFName.c_str());
 				return false;
+			}
 
 			CheckPhysicalMemoryRangeIsMapped();
 		}
@@ -1597,7 +1603,13 @@ void FPCEEmu::ExportPlatformAnalysisJson(nlohmann::json& jsonDoc)
 
 bool FPCEEmu::MprBankIdsAreValid() const
 {
-	return MprBankId[0] != -1 && MprBankId[1] != -1 && MprBankId[2] != -1 && MprBankId[3] != -1 && MprBankId[4] != -1 && MprBankId[5] != -1 && MprBankId[6] != -1 && MprBankId[7];
+	for (int i = 0; i < kNumMprSlots; i++)
+	{
+		if (MprBankId[i] == -1)
+			return false;
+	}
+
+	return true;
 }
 
 // Restore the MPR bank mappings to what they were when the project was saved to disk
