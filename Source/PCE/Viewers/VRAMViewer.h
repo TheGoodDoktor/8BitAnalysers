@@ -62,6 +62,7 @@ private:
 
 	FVRAMAccess Access[HUC6270_VRAM_SIZE];
 	FSpriteInfo SpriteInfo[HUC6270_SPRITES];
+	int16_t     SpriteIndexLookup[HUC6270_VRAM_SIZE];
 
 	FPCEEmu* pPCEEmu = nullptr;
 

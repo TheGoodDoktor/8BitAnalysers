@@ -1,5 +1,6 @@
 #include "VRAMViewer.h"
 
+#include <string.h>
 #include <imgui.h>
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "Util/GraphicsView.h"
@@ -35,12 +36,11 @@ void FVRAMViewer::Reset(void)
 		access.FrameLastWritten = -1;
 		access.LastWriter = FAddressRef::Invalid();
 	}
+	memset(SpriteIndexLookup, -1, sizeof(SpriteIndexLookup));
 }
 
 void FVRAMViewer::DrawUI(void)
 {
-	//OPTICK_EVENT();
-
 	DrawPhysicalMemoryOverview();
 }
 
@@ -162,9 +162,6 @@ void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 		if (Access[addr].FrameLastWritten != -1)
 		{
 			const int framesSinceWritten = currentFrameNo - Access[addr].FrameLastWritten;
-
-			// this will be slow.
-			// todo: a better way
 			const int spriteIndex = GetSpriteIndexForAddress(addr);
 			const bool bIsSprite = spriteIndex != -1;
 
@@ -244,19 +241,21 @@ void FVRAMViewer::Tick()
 		pattern &= k_huc6270_sprite_mask_height[cgy];
 		SpriteInfo[i].Address = pattern << 6;
 	}
+
+	// Rebuild address sprite lookup
+	memset(SpriteIndexLookup, -1, sizeof(SpriteIndexLookup));
+	for (int i = 0; i < HUC6270_SPRITES; i++)
+	{
+		const uint16_t start = SpriteInfo[i].Address;
+		const uint16_t end   = start + SpriteInfo[i].SizeInBytes;
+		for (uint16_t addr = start + 1; addr < end && addr < HUC6270_VRAM_SIZE; addr++)
+			SpriteIndexLookup[addr] = (int16_t)i;
+	}
 }
 
 // todo: deal with the fact there can be multiple sprites sharing the same adddress.
 // they can have the same address but different palettes
 int FVRAMViewer::GetSpriteIndexForAddress(uint16_t addr) const
 {
-	for (int i = 0; i < HUC6270_SPRITES; i++)
-	{
-		const uint16_t addrEnd = SpriteInfo[i].Address + SpriteInfo[i].SizeInBytes;
-		if (addr > SpriteInfo[i].Address && addr < addrEnd)
-		{
-			return i;
-		}
-	}
-	return -1;
+	return SpriteIndexLookup[addr];
 }
