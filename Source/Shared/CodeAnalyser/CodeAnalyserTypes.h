@@ -289,35 +289,114 @@ struct FFoundString
 	std::string		String;
 };
 
+// Define to use fixed-size array implementation (better performance, no heap allocation)
+#define FIXED_ITEM_REFERENCE_TRACKER 1
+
+#if FIXED_ITEM_REFERENCE_TRACKER
+// sam. rewrote this to get rid of the std::vector to for extra performance.
 class FItemReferenceTracker
 {
 public:
-	void Reset() 
+	static const int kMaxRefs = 32;
+
+	void Reset()
 	{
-		References.clear(); 
-		WriteCounter =0;	
+		Count = 0;
+		WriteCounter = 0;
 	}
 
-	bool	HasReferenceTo(FAddressRef addrRef)
+	bool HasReferenceTo(FAddressRef addrRef)
 	{
-		const auto size = References.size();
-		for (int i = 0; i < size; i++)
+		for (int i = 0; i < Count; i++)
 		{
 			if (References[i] == addrRef)
 				return true;
 		}
-
 		return false;
 	}
 
-	void	RegisterAccess(const FAddressRef& addrRef)
+	void RegisterAccess(const FAddressRef& addrRef)
+	{
+		assert(addrRef.IsValid());
+
+		if (HasReferenceTo(addrRef))
+			return;
+
+		if (Count < kMaxRefs)
+			References[Count++] = addrRef;
+		else
+			References[WriteCounter % kMaxRefs] = addrRef;
+
+		WriteCounter++;
+	}
+
+	bool RemoveReference(const FAddressRef& addrRef)
+	{
+		for (int i = 0; i < Count; i++)
+		{
+			if (References[i] == addrRef)
+			{
+				for (int j = i; j < Count - 1; j++)
+					References[j] = References[j + 1];
+				Count--;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	FAddressRef*       begin()       { return References; }
+	FAddressRef*       end()         { return References + Count; }
+	const FAddressRef* begin() const { return References; }
+	const FAddressRef* end()   const { return References + Count; }
+	FAddressRef&       operator[](int i)       { return References[i]; }
+	const FAddressRef& operator[](int i) const { return References[i]; }
+
+	bool IsEmpty()        const { return Count == 0; }
+	int  NumReferences()  const { return Count; }
+	int  size()           const { return Count; }
+	bool empty()          const { return Count == 0; }
+
+	FItemReferenceTracker&       GetReferences()       { return *this; }
+	const FItemReferenceTracker& GetReferences() const { return *this; }
+
+private:
+	int Count = 0;
+	int WriteCounter = 0;
+
+	FAddressRef References[kMaxRefs];
+};
+
+#else // FIXED_ITEM_REFERENCE_TRACKER
+
+class FItemReferenceTracker
+{
+public:
+	void Reset()
+	{
+		References.clear();
+		WriteCounter = 0;
+	}
+
+	bool HasReferenceTo(FAddressRef addrRef)
+	{
+		const auto size = References.size();
+		for (int i = 0; i < (int)size; i++)
+		{
+			if (References[i] == addrRef)
+				return true;
+		}
+		return false;
+	}
+
+	void RegisterAccess(const FAddressRef& addrRef)
 	{
 		assert(addrRef.IsValid());
 
 		if(HasReferenceTo(addrRef))	// already has reference
 			return;
 
-		if(WriteCounter < MaxEntryCount)
+		if (WriteCounter < MaxEntryCount)
 			References.emplace_back(addrRef);
 		else
 			References[WriteCounter % MaxEntryCount] = addrRef;
@@ -327,26 +406,32 @@ public:
 
 	bool RemoveReference(const FAddressRef& addrRef)
 	{
-		for(auto it = References.begin();it!=References.end();++it)
+		for (auto it = References.begin(); it != References.end(); ++it)
 		{
-			if(*it == addrRef)
+			if (*it == addrRef)
 			{
 				References.erase(it);
 				return true;
 			}
 		}
-
 		return false;
 	}
-	bool IsEmpty() const { return References.empty(); }
-	int NumReferences() const { return (int)References.size(); }
+
+	bool IsEmpty()       const { return References.empty(); }
+	int  NumReferences() const { return (int)References.size(); }
+	int  size()          const { return (int)References.size(); }
+	bool empty()         const { return References.empty(); }
+
+	std::vector<FAddressRef>&       GetReferences()       { return References; }
 	const std::vector<FAddressRef>& GetReferences() const { return References; }
-	std::vector<FAddressRef>& GetReferences() { return References; }
+
 private:
-	int		MaxEntryCount = 32;
-	int		WriteCounter = 0;
-	std::vector<FAddressRef>	References;
+	int MaxEntryCount = 32;
+	int WriteCounter = 0;
+	std::vector<FAddressRef> References;
 };
+
+#endif // FIXED_ITEM_REFERENCE_TRACKER
 
 
 struct FItem

@@ -2029,21 +2029,33 @@ void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr)
 	}
 }
 
+#if FIXED_ITEM_REFERENCE_TRACKER
+void FixupAddressRefList(const FCodeAnalysisState& state, FItemReferenceTracker& tracker)
+{
+	for (FAddressRef& addr : tracker)
+		FixupAddressRef(state, addr);
+}
+#else
 void FixupAddressRefList(const FCodeAnalysisState& state, std::vector<FAddressRef>& addrList)
 {
 	for (FAddressRef& addr : addrList)
-	{
 		FixupAddressRef(state, addr);
-	}
 }
+#endif
 
+#if FIXED_ITEM_REFERENCE_TRACKER
+void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, FItemReferenceTracker& tracker)
+{
+	for (FAddressRef& addr : tracker)
+		FixupAddressRefForBank(pBank, addr);
+}
+#else
 void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAddressRef>& addrList)
 {
 	for (FAddressRef& addr : addrList)
-	{
 		FixupAddressRefForBank(pBank, addr);
-	}
 }
+#endif
 
 // I wanted to put the member function code in CodeAnalyserTypes.h for performance reasons
 // but I ran into cyclic dependency issues that prevented me from doing that.
