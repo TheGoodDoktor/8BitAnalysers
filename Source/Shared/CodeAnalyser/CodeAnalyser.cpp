@@ -2053,21 +2053,7 @@ void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAdd
 		FixupAddressRefForBank(pBank, addr);
 }
 
-// I wanted to put the member function code in CodeAnalyserTypes.h for performance reasons
-// but I ran into cyclic dependency issues that prevented me from doing that.
 #if NEWADDRESSREF
-uint16_t FAddressRef::GetAddress() const
-{
-	if (BankId < 0 || BankId >= FCodeAnalysisState::BankCount)
-	{
-		//LOGERROR("Trying to use address of invalid address ref");
-		return 0;
-	}
-
-	const FCodeAnalysisBank& bank = Banks[BankId];
-	return bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize + BankOffset;
-}
-
 uint32_t FAddressRef::GetVal() const
 {
 	return (BankId << 16) | GetAddress();

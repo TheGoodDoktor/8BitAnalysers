@@ -883,6 +883,16 @@ private:
 
 };
 
+#if NEWADDRESSREF
+__forceinline uint16_t FAddressRef::GetAddress() const
+{
+	if (BankId < 0 || BankId >= FCodeAnalysisState::BankCount)
+		return 0;
+	const FCodeAnalysisBank& bank = Banks[BankId];
+	return bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize + BankOffset;
+}
+#endif
+
 // Analysis
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addrRef, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
