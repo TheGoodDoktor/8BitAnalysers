@@ -153,6 +153,11 @@ struct FCodeAnalysisViewState
 	{
 		CursorItem = FCodeAnalysisItem();
 		ViewingBankId = -1;
+
+		// sam. reset these vars. 
+		GoToAddressRef = FAddressRef::Invalid(); // fixes a crash. code analysis view can try to draw a bank that is not mapped.
+		PreviousAddressStack.clear();
+		NextAddressStack.clear();
 	}
 	// accessor functions
 	const FCodeAnalysisItem& GetCursorItem() const { return CursorItem; }
