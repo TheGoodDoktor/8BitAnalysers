@@ -924,16 +924,10 @@ void CaptureMachineState(FMachineState* pMachineState, ICPUInterface* pCPUInterf
 
 void FixupAddressRefForBank(const FCodeAnalysisBank* pBank, FAddressRef& addr);
 void FixupAddressRef(const FCodeAnalysisState& state, FAddressRef& addr);
-#if FIXED_ITEM_REFERENCE_TRACKER
 void FixupAddressRefList(const FCodeAnalysisState& state, FItemReferenceTracker& tracker);
-#else
 void FixupAddressRefList(const FCodeAnalysisState& state, std::vector<FAddressRef>& addrList);
-#endif
-#if FIXED_ITEM_REFERENCE_TRACKER
 void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, FItemReferenceTracker& tracker);
-#else
 void FixupAddressRefListForBank(const FCodeAnalysisBank* pBank, std::vector<FAddressRef>& addrList);
-#endif
 
 // static analysis functions
 EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr);
