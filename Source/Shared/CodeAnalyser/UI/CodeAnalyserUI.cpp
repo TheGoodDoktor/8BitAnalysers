@@ -1116,7 +1116,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 			{
 				nextItemAddress = bankAddr + pCodeInfo->ByteSize;
 				listBuilder.AddItem(pCodeInfo, listBuilder.BankId, listBuilder.CurrAddr);
-				bank.bHasCode = true;
+				bank.bHasCode = true; // sam
 #ifndef NDEBUG
 				bank.NumCodeItems++; // sam
 #endif
@@ -1133,7 +1133,7 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 						nextItemAddress = bankAddr + 1;
 
 					listBuilder.AddItem(pDataInfo, listBuilder.BankId, listBuilder.CurrAddr);
-					bank.bHasData;
+					bank.bHasData = true; // sam
 				}
 			}
 		}
@@ -1869,28 +1869,38 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		FCodeAnalysisBank* pBank = state.GetBank(viewState.ViewingBankId);
 		if (pBank != nullptr)
 		{
-			FCodeAnalysisBank&bank = *pBank;
-			const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
-			const uint16_t kBankEnd = kBankStart + (bank.NoPages * FCodeAnalysisPage::kPageSize) - 1;
-			const bool bMapped = bank.IsMapped();
+			const bool bHideBank = state.Config.bHideDupeBanks && !state.IsBankIdCanonical(pBank->Id);
+			if (pBank->PrimaryMappedPage != -1 && !bHideBank) // sam. added this out of paranoia just in case ViewingBankId gets set to the addressref of a bank that shouldn't/can't be displayed
+			{
+				FCodeAnalysisBank&bank = *pBank;
+				const uint16_t kBankStart = bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize;
+				const uint16_t kBankEnd = kBankStart + (bank.NoPages * FCodeAnalysisPage::kPageSize) - 1;
+				const bool bMapped = bank.IsMapped();
 
-			state.MapBankForAnalysis(bank);
+				state.MapBankForAnalysis(bank);
 
-			// Bank header
-			ImGui::Text("%s[%d]: 0x%04X - 0x%X %s", bank.Name.c_str(), bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped" : "");
-			ImGui::InputText("Description", &bank.Description);
+				// Bank header
+				ImGui::Text("%s[%d]: 0x%04X - 0x%X %s", bank.Name.c_str(), bank.Id, kBankStart, kBankEnd, bMapped ? "Mapped" : "");
+				ImGui::InputText("Description", &bank.Description);
 
-			if (ImGui::BeginChild("##itemlist"))
-				DrawItemList(state, viewState, bank.ItemList);
-			// only handle keypresses for focussed window
-			if (state.FocussedWindowId == windowId)
-				ProcessKeyCommands(state, viewState);
-			UpdatePopups(state, viewState);
+				if (ImGui::BeginChild("##itemlist"))
+					DrawItemList(state, viewState, bank.ItemList);
+				// only handle keypresses for focussed window
+				if (state.FocussedWindowId == windowId)
+					ProcessKeyCommands(state, viewState);
+				UpdatePopups(state, viewState);
 
-			ImGui::EndChild();
+				ImGui::EndChild();
 
-			// map bank out
-			state.UnMapAnalysisBanks();
+				// map bank out
+				state.UnMapAnalysisBanks();
+			}
+			else
+			{
+				// sam. not sure this is the right thing to do?
+				// I was unsure about falling back to displaying state.ItemList.
+				ImGui::Text("Bank cannot be displayed");
+			}
 		}
 		else
 		{
