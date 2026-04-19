@@ -36,6 +36,7 @@ void FBatchGameLoadViewer::StartAutomation()
 	bAutomationActive = true;
 	bLoadGame = true;
 	GameFrameCount = 0;
+	AutomationStartTime = ImGui::GetTime();
 
 	if (bPressRandomButtons)
 		NextButtonPressTime = GetNextButtonPressTime();
@@ -245,6 +246,12 @@ void FBatchGameLoadViewer::DrawUI()
 		const int totMins = totSecs / 60;
 		const int totHours = totMins / 60;
 		ImGui::Text("Total time remaining: %dh %dm %ds", (int)totHours, totMins % 60, totSecs % 60);
+		{
+			const int elapsedSecs = bAutomationActive ? (int)(time - AutomationStartTime) : 0;
+			const int elapsedMins = elapsedSecs / 60;
+			const int elapsedHours = elapsedMins / 60;
+			ImGui::Text("Total time elapsed: %dh %dm %ds", elapsedHours, elapsedMins % 60, elapsedSecs % 60);
+		}
 
 		ImGui::SeparatorText("File list");
 

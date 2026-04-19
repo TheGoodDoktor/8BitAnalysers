@@ -1,0 +1,34 @@
+{
+    "BiosFilename": "Bios.pce",
+    "BiosPath": "./Bios/",
+    "BranchLinesDisplayMode": 1,
+    "DefaultAsmExportPath": "",
+    "EditLuaBaseFiles": false,
+    "EnableAudio": false,
+    "EnableExperimentalFeatures": false,
+    "ExportAssembler": "PCEAS",
+    "Font": "Cousine-Regular.ttf",
+    "FontSizePts": 15,
+    "GameDbPath": "d:/dev/PCEAnalyserGameDb/",
+    "GfxScreenScale": 1,
+    "GfxViewerScale": 1,
+    "ImageScale": 1,
+    "LastGame": "",
+    "LuaBaseFiles": [
+        "Lua/LuaBase.lua",
+        "Lua/ViewerBase.lua"
+    ],
+    "NumberMode": 2,
+    "OverviewScale": 2,
+    "RecentProjects": [
+        "1941 - Counter Attack (J) (SGX) [h1] (no SGX)",
+        "15-in-1 Mega Collection - Backtracking Ten Years (J)",
+        "Rabio Lepus Special (Japan)"
+    ],
+    "ShowOpcodeValues": false,
+    "ShowScanlineIndicator": false,
+    "SnapshotFolder": "d:/dev/PCEAnalyserGames/",
+    "UseBuiltInFont": false,
+    "VRAMViewerScale": 2,
+    "WorkspaceRoot": "d:/dev/PCEAnalyserProjects/"
+}
