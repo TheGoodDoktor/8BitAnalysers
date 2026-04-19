@@ -14,6 +14,7 @@ enum class EBankTableColumn : int
 	Name,
 	Address,
 	Content,
+	MprSlots,
 };
 
 enum class EBankContent : int
@@ -98,7 +99,7 @@ static void SortBankTable(const ImGuiTableSortSpecs* sortSpecs,	const std::vecto
 	std::sort(sortedIndices.begin(), sortedIndices.end(), Compare);
 }
 
-void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks)
+void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, const std::vector<FBankSet*>& BankSets)
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	FGameDbEntry* pDbEntry = nullptr;
@@ -115,6 +116,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks)
 		sortedIndices.resize(Banks.size());
 		for (int i = 0; i < (int)Banks.size(); ++i)
 			sortedIndices[i] = i;
+		SelectedBankIdx = -1;
 	}
 
 	ImGuiTableFlags flags =
@@ -127,7 +129,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks)
 		ImGuiTableFlags_Hideable |
 		ImGuiTableFlags_ScrollY;
 
-	if (ImGui::BeginTable("MemoryBanksTable", 5, flags))
+	if (ImGui::BeginTable("MemoryBanksTable", 6, flags))
 	{
 		ImGui::TableSetupScrollFreeze(0, 1);
 
@@ -136,6 +138,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks)
 		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_DefaultSort, 0.0f, (int)EBankTableColumn::Name);
 		ImGui::TableSetupColumn("Mapped Address",	ImGuiTableColumnFlags_PreferSortDescending,	0.0f,	(int)EBankTableColumn::Address);
 		ImGui::TableSetupColumn("Content", ImGuiTableColumnFlags_PreferSortDescending, 0.0f, (int)EBankTableColumn::Content);
+		ImGui::TableSetupColumn("MPR Slots", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, (int)EBankTableColumn::MprSlots);
 		ImGui::TableHeadersRow();
 
 		// Handle sorting
@@ -175,9 +178,12 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks)
 			// Mapping State
 			ImGui::TableSetColumnIndex(0);
 
+			const bool bSelected = (SelectedBankIdx == idx);
 			ImGuiSelectableFlags selectable_flags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_AllowDoubleClick;
-			if (ImGui::Selectable("##mappingstate", false, selectable_flags))
+			ImGui::PushID(idx);
+			if (ImGui::Selectable("##mappingstate", bSelected, selectable_flags))
 			{
+				SelectedBankIdx = idx;
 				if (pBank->bEverBeenMapped)
 				{
 					const FAddressRef bankAddr(pBank->Id, pBank->GetMappedAddress());
@@ -185,6 +191,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks)
 						state.GetFocussedViewState().GoToAddress(bankAddr, false);
 				}
 			}
+			ImGui::PopID();
 
 			// Colour cell to show mapping state
 			{
@@ -229,15 +236,105 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks)
 			// todo figure out why this doesn't work if the code analysis view is not active
 			ImGui::TableSetColumnIndex(4);
 			ImGui::TextColored(colour, pBank->bEverBeenMapped ? BankContentToString(GetBankContent(pBank)) : "-");
+
+			// MPR Slots
+			ImGui::TableSetColumnIndex(5);
+			{
+				const FBankSet* pBankSet = BankSets[idx];
+				const float squareSize = ImGui::GetTextLineHeight() - 2.0f;
+				const float gap = 2.0f;
+				const ImVec2 startPos = ImGui::GetCursorScreenPos();
+				ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+				for (int slot = 0; slot < 8; slot++)
+				{
+					const float x = startPos.x + slot * (squareSize + gap);
+					const float y = startPos.y + 1.0f;
+					const ImVec2 pMin(x, y);
+					const ImVec2 pMax(x + squareSize, y + squareSize);
+
+					if (pBankSet->SlotBankId[slot] != -1)
+						pDrawList->AddRectFilled(pMin, pMax, IM_COL32(0, 192, 0, 255));
+					else if (pBankSet->MappedSlotsMask & (1 << slot))
+						pDrawList->AddRectFilled(pMin, pMax, IM_COL32(255, 255, 255, 255));
+					else
+						pDrawList->AddRect(pMin, pMax, IM_COL32(160, 160, 160, 255));
+
+					if (ImGui::IsMouseHoveringRect(pMin, pMax))
+						ImGui::SetTooltip("MPR %d", slot);
+				}
+
+				ImGui::Dummy(ImVec2(8.0f * squareSize + 7.0f * gap, squareSize));
+			}
 		}
 
 		ImGui::EndTable();
 	}
 }
 
+void FBanksViewer::DrawBankDetail(const FBankSet* pBankSet, const FCodeAnalysisBank* pBank)
+{
+	ImGui::Text("Bank: %s", pBank->Name.c_str());
+	ImGui::Separator();
+
+	// MPR slot map count table
+	ImGui::Text("Times mapped per MPR slot:");
+	ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit;
+	if (ImGui::BeginTable("MPRSlotTable", 8, flags))
+	{
+		for (int slot = 0; slot < 8; slot++)
+		{
+			char label[4];
+			snprintf(label, sizeof(label), "%d", slot);
+			ImGui::TableSetupColumn(label);
+		}
+		ImGui::TableHeadersRow();
+
+		ImGui::TableNextRow();
+		for (int slot = 0; slot < 8; slot++)
+		{
+			ImGui::TableSetColumnIndex(slot);
+			const uint32_t count = pBankSet->SlotMapCount[slot];
+			if (count > 0)
+				ImGui::Text("%u", count);
+			else
+				ImGui::TextDisabled("-");
+		}
+
+		ImGui::EndTable();
+	}
+
+	// First-use mapping order
+	ImGui::Spacing();
+	ImGui::Text("First mapped order:");
+
+	// Collect slots sorted by first-use order
+	int orderToSlot[9] = { -1, -1, -1, -1, -1, -1, -1, -1, -1 }; // index 1..8
+	for (int slot = 0; slot < 8; slot++)
+	{
+		const uint8_t order = pBankSet->SlotFirstUseOrder[slot];
+		if (order > 0 && order <= 8)
+			orderToSlot[order] = slot;
+	}
+
+	bool bAny = false;
+	for (int order = 1; order <= 8; order++)
+	{
+		if (orderToSlot[order] != -1)
+		{
+			if (bAny)
+				ImGui::SameLine();
+			ImGui::Text("MPR%d", orderToSlot[order]);
+			bAny = true;
+		}
+	}
+	if (!bAny)
+		ImGui::TextDisabled("(never mapped)");
+}
+
 FBanksViewer::FBanksViewer(FEmuBase* pEmu)
-: FViewerBase(pEmu) 
-{ 
+: FViewerBase(pEmu)
+{
 	Name = "Banks";
 	pPCEEmu = static_cast<FPCEEmu*>(pEmu);
 }
@@ -252,27 +349,46 @@ void FBanksViewer::DrawUI()
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
 	std::vector<FCodeAnalysisBank*> banksToView;
-	//if (!pMedia->IsCDROM())
-
+	std::vector<FBankSet*> bankSetsToView;
 
 	for (int i = 0; i < 0x80; i++)
 	{
-		const int16_t bankId = pPCEEmu->Banks[i]->GetBankId(0);
+		FBankSet* pBankSet = pPCEEmu->Banks[i];
+		const int16_t bankId = pBankSet->GetBankId(0);
 		if (FCodeAnalysisBank* pBank = state.GetBank(bankId))
 		{
 			if (std::find(banksToView.begin(), banksToView.end(), pBank) == banksToView.end())
 			{
 				banksToView.push_back(pBank);
+				bankSetsToView.push_back(pBankSet);
 			}
 		}
 	}
 
 	// WRAM
-	const int16_t ramBankId = pPCEEmu->Banks[0xf8]->GetBankId(0);
-	if (FCodeAnalysisBank* pBank = state.GetBank(ramBankId))
 	{
-		banksToView.push_back(pBank);
+		FBankSet* pBankSet = pPCEEmu->Banks[0xf8];
+		const int16_t ramBankId = pBankSet->GetBankId(0);
+		if (FCodeAnalysisBank* pBank = state.GetBank(ramBankId))
+		{
+			banksToView.push_back(pBank);
+			bankSetsToView.push_back(pBankSet);
+		}
 	}
 
-	DrawBankTable(banksToView);
+	const float detailWidth = ImGui::GetFontSize() * 28.0f;
+	const float tableWidth = ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x;
+
+	ImGui::BeginChild("##BankTablePane", ImVec2(tableWidth, 0.0f), false);
+	DrawBankTable(banksToView, bankSetsToView);
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	ImGui::BeginChild("##BankDetailPane", ImVec2(detailWidth, 0.0f), false);
+	if (SelectedBankIdx >= 0 && SelectedBankIdx < (int)banksToView.size())
+		DrawBankDetail(bankSetsToView[SelectedBankIdx], banksToView[SelectedBankIdx]);
+	else
+		ImGui::TextDisabled("Select a bank to see details.");
+	ImGui::EndChild();
 }
