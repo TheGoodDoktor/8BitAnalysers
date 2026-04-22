@@ -48,6 +48,7 @@ struct FBankSet
 	uint8_t  NextFirstUseOrder = 1;      // next order value to assign on first use
 
 	void RecordSlotMapping(uint8_t mprSlot);
+	uint16_t GetMappedAddressFromUsage() const;
 
 	// List of all bank ids.
 	// Entry 0 is the primary bank. It should always have a primary mapped page.
