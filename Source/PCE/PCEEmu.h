@@ -207,4 +207,7 @@ protected:
 	bool bCallbacksEnabled = true;
 
 	FAsmExportValidator* pAsmExportValidator = nullptr;
+
+	uint8_t* pEditModeBackupState = nullptr;
+	size_t EditModeBackupStateSize = 0;
 };

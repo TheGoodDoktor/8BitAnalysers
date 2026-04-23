@@ -49,7 +49,8 @@ void FBankSet::Reset()
 
 void FBankSet::RecordSlotMapping(uint8_t mprSlot)
 {
-	SlotMapCount[mprSlot]++;
+	if (SlotMapCount[mprSlot] < UINT32_MAX)
+		SlotMapCount[mprSlot]++;
 	if (!(MappedSlotsMask & (1 << mprSlot)))
 	{
 		MappedSlotsMask |= (1 << mprSlot);
@@ -90,4 +91,19 @@ bool FBankSet::ClaimSpecificBank(int16_t bankId, int mprSlot)
 		}
 	}
 	return false;
+}
+
+uint16_t FBankSet::GetMappedAddressFromUsage() const
+{
+	int bestSlot = -1;
+	uint32_t bestCount = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		if (SlotMapCount[i] > bestCount)
+		{
+			bestCount = SlotMapCount[i];
+			bestSlot = i;
+		}
+	}
+	return bestSlot >= 0 ? (uint16_t)(bestSlot * 0x2000) : 0;
 }

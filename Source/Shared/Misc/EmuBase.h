@@ -123,8 +123,8 @@ protected:
 	virtual void	GlobalShortcuts(void) {}		// system specific global keyboard shortcuts
 
 	void			DrawEditGlobalConfigModalPopup(void);
-	void			DrawNewProjectModalPopup(void);
-	void			DrawOpenProjectModalPopup(void);
+	void			DrawNewProjectPopup(void);
+	void			DrawOpenProjectPopup(void);
 	void			DrawExportAsmModalPopup(void);
 	void			DrawReplaceGameModalPopup(void);
 	void			DrawErrorMessageModalPopup(void);

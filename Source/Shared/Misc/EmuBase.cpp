@@ -21,6 +21,7 @@
 #include "LuaScripting/LuaSys.h"
 #include <CodeAnalyser/UI/UIColours.h>
 #include "CodeAnalyser/CodeAnalysisDot.h"
+#include <ImGuiSupport/ImGuiScaling.h>
 
 #include "optick/optick.h"
 
@@ -662,8 +663,8 @@ void FEmuBase::DrawMainMenu()
 	// Draw any modal popups that have been requested from clicking on menu items.
 	// This is a workaround for an open bug.
 	// https://github.com/ocornut/imgui/issues/331
-	DrawNewProjectModalPopup();
-	DrawOpenProjectModalPopup();
+	DrawNewProjectPopup();
+	DrawOpenProjectPopup();
 	DrawExportAsmModalPopup();
 	DrawReplaceGameModalPopup();
 	DrawErrorMessageModalPopup();
@@ -764,7 +765,7 @@ void FEmuBase::DrawExportAsmModalPopup()
 	}
 }
 
-void FEmuBase::DrawOpenProjectModalPopup()
+void FEmuBase::DrawOpenProjectPopup()
 {
 	static char filterBuf[256] = {};
 	static int  selectedIndex  = 0;
@@ -779,10 +780,12 @@ void FEmuBase::DrawOpenProjectModalPopup()
 		bOpenProjectPopup = false;
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
-	bool bOpenPopup = true;
-	if (ImGui::BeginPopupModal("Open Project", &bOpenPopup, ImGuiWindowFlags_NoNav))
+	const float width = ImGui_GetFontCharWidth() * 80.f;
+	ImGui::SetNextWindowSize(ImVec2(width, ImGui::GetMainViewport()->Size.y), ImGuiCond_Appearing);
+	if (ImGui::BeginPopup("Open Project", ImGuiWindowFlags_NoNav))
 	{
+		ImGui::SeparatorText("Open Project");
+
 		const auto& gameConfigs = GetGameConfigs();
 
 		if (gameConfigs.empty())
@@ -888,7 +891,7 @@ void FEmuBase::DrawOpenProjectModalPopup()
 	}
 }
 
-void FEmuBase::DrawNewProjectModalPopup()
+void FEmuBase::DrawNewProjectPopup()
 {
 	static char filterBuf[256] = {};
 	static int  selectedIndex  = 0;
@@ -903,10 +906,12 @@ void FEmuBase::DrawNewProjectModalPopup()
 		bNewProjectPopup = false;
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
+	const float width = ImGui_GetFontCharWidth() * 80.f;
+	ImGui::SetNextWindowSize(ImVec2(width, ImGui::GetMainViewport()->Size.y), ImGuiCond_Appearing);
 	bool bOpenPopup = true;
-	if (ImGui::BeginPopupModal("New Project", &bOpenPopup, ImGuiWindowFlags_NoNav))
+	if (ImGui::BeginPopup("New Project", ImGuiWindowFlags_NoNav))
 	{
+		ImGui::SeparatorText("New Project");
 		const FGamesList* pGamesList = nullptr;
 		auto findIt = GamesLists.find(NewProjectListName);
 		if (findIt != GamesLists.end())

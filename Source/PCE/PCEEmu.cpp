@@ -1970,13 +1970,16 @@ void FPCEEmu::Reset()
 
 void FPCEEmu::OnEnterEditMode(void)
 {
-	// todo call SaveState here with a buffer
-	//pCore->SaveState(
+	pCore->SaveState(nullptr, EditModeBackupStateSize);
+	free(pEditModeBackupState);
+	pEditModeBackupState = (uint8_t*)malloc(EditModeBackupStateSize);
+	pCore->SaveState(pEditModeBackupState, EditModeBackupStateSize);
 }
 
 void FPCEEmu::OnExitEditMode(void)
 {
-	// todo call LoadState here
+	if (pEditModeBackupState != nullptr)
+		pCore->LoadState(pEditModeBackupState, EditModeBackupStateSize);
 }
 
 
