@@ -1110,14 +1110,17 @@ void FEmuBase::DrawErrorMessageModalPopup()
 
 void FEmuBase::SetLastError(const char *fmt, ...)
 {
-    const int kBufSize = 1024;
-    char buf[kBufSize];
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(buf,kBufSize, fmt, ap);
-    va_end(ap);
-    
-    LastError = buf;
+		const int kBufSize = 1024;
+		char buf[kBufSize];
+		va_list ap;
+		va_start(ap, fmt);
+		vsnprintf(buf,kBufSize, fmt, ap);
+		va_end(ap);
+ 
+		LastError = buf;
+
+		// sam. log error to console
+		LOGERROR("Error: %s", LastError.c_str());
 }
 
 void FEmuBase::DisplayErrorMessage(const char *fmt, ...)
