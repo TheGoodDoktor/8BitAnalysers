@@ -1640,7 +1640,8 @@ bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 
 	if (!MprBankIdsAreValid())
 	{
-		assert(0);
+		LOGERROR("Failed to import platform analysis json. MPR bank ids are invalid: %d %d %d %d %d %d %d %d", MprBankId[0], MprBankId[1], MprBankId[2], MprBankId[3], MprBankId[4], MprBankId[5], MprBankId[6], MprBankId[7]);
+		//assert(0);
 		return false;
 	}
 
