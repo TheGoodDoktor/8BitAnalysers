@@ -906,61 +906,8 @@ void EventShowBankAddressChange(FCodeAnalysisState& state, const FEvent& event)
 	ImGui::Text("ROM %02d", event.Value);
 }
 
-bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
+void FPCEEmu::CreateBanks()
 {
-#ifndef NDEBUG
-	auto t1 = std::chrono::high_resolution_clock::now();
-#endif
-
-	FEmuBase::Init(config);
-	
-	const FPCELaunchConfig& PCELaunchConfig = (const FPCELaunchConfig&)config;
- 
-	SetWindowTitle(kAppTitle.c_str());
-	SetWindowIcon(GetBundlePath("PCELogo.png"));
-
-#if DEBUG_STATS_VIEWER
-	pDebugStats = new FEmuDebugStats;
-#endif
-#if ASSEMBLE_AFTER_ASM_EXPORT
-	pAsmExportValidator = new FAsmExportValidator(this);
-#endif
-
-	// Initialise Emulator
-	pCore = new GeargrafxCore();
-	pCore->Init(CodeAnalysis.Debugger.GetDebuggerStoppedPtr());
-	
-	pMemory = pCore->GetMemory();
-
-	EnableGeargrafxCallbacks(true);
-
-	pMedia = pCore->GetMedia();
-	//pMedia->PreloadCdRom(true);
-
-	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
-
-	p6280State = pCore->GetHuC6280()->GetState();
-	p6270State = pCore->GetHuC6270_1()->GetState();
-
-	pPCE6502CPU = new FPCECPUEmulator6502(this);
-
-	pFrameBuffer = new uint8_t[FPCEEmu::kFramebufferSize];
-	pAudioBuf = new int16_t[GG_AUDIO_BUFFER_SIZE];;
-
-	CPUType = ECPUType::HuC6280;
-
-	pGlobalConfig = new FPCEConfig();
-	pGlobalConfig->Init();
-	pGlobalConfig->Load(kGlobalConfigFilename);
-	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
-	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
-	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
-	
-	// todo: check this is system card 3.0.
-	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
-	const bool bLoadedBios = pCore->LoadBios(fullBiosPath.c_str(), true);
-	LOGINFO("%s Bios '%s'", bLoadedBios ? "Loaded" : "Failed to load", fullBiosPath.c_str());
-
 	std::string bankPostFix[8] = { "", "_2", "_3", "_4", "_5", "_6", "_7", "_8" };
 	char bankName[32];
 
@@ -1012,7 +959,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	{
 		for (int d = 0; d < kNumBankSetIds; d++)
 		{
-			sprintf(bankName, "ROM_%02d%s", b, bankPostFix[d].c_str());
+			sprintf(bankName, "ROM_%03d%s", b, bankPostFix[d].c_str());
 			BankSets[b].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
 		}
 	}
@@ -1023,16 +970,71 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 		sprintf(bankName, "UNUSED_%02d", d);
 		BankSets[kBankUnusedStart].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
+}
 
-	// create x8 dummy banks here?
+bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
+{
+#ifndef NDEBUG
+	auto t1 = std::chrono::high_resolution_clock::now();
+#endif
 
-	//UnusedBankIdStart = BankSets[kBankUnusedStart].GetBankId(0);
-	//UnusedBankIdEnd = BankSets[kBankUnusedStart].GetBankId(7);
+	FEmuBase::Init(config);
+	
+	const FPCELaunchConfig& PCELaunchConfig = (const FPCELaunchConfig&)config;
+ 
+	const std::string windowTitle = kAppTitle + " - " + "No project loaded";
+	SetWindowTitle(windowTitle.c_str());
+	SetWindowIcon(GetBundlePath("PCELogo.png"));
 
+#if DEBUG_STATS_VIEWER
+	pDebugStats = new FEmuDebugStats;
+#endif
+#if ASSEMBLE_AFTER_ASM_EXPORT
+	pAsmExportValidator = new FAsmExportValidator(this);
+#endif
+
+	// Initialise Emulator
+	pCore = new GeargrafxCore();
+	pCore->Init(CodeAnalysis.Debugger.GetDebuggerStoppedPtr());
+	
+	pMemory = pCore->GetMemory();
+
+	EnableGeargrafxCallbacks(true);
+
+	pMedia = pCore->GetMedia();
+	//pMedia->PreloadCdRom(true);
+
+	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
+
+	p6280State = pCore->GetHuC6280()->GetState();
+	p6270State = pCore->GetHuC6270_1()->GetState();
+
+	pPCE6502CPU = new FPCECPUEmulator6502(this);
+
+	pFrameBuffer = new uint8_t[FPCEEmu::kFramebufferSize];
+	pAudioBuf = new int16_t[GG_AUDIO_BUFFER_SIZE];;
+
+	CPUType = ECPUType::HuC6280;
+
+	pGlobalConfig = new FPCEConfig();
+	pGlobalConfig->Init();
+	pGlobalConfig->Load(kGlobalConfigFilename);
+	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
+	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
+	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
+	
+	// todo: check this is system card 3.0.
+	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
+	const bool bLoadedBios = pCore->LoadBios(fullBiosPath.c_str(), true);
+	LOGINFO("%s Bios '%s'", bLoadedBios ? "Loaded" : "Failed to load", fullBiosPath.c_str());
+
+	CreateBanks();
 	BuildCanonicalBankIdLookup();
 	BuildBankSetLookup();
 	ResetBanks();
 	MapMprBanks();
+
+	assert(MprBankIdsAreValid());
 
 	// todo: move to loadproject
 	//CheckMemoryMap();
@@ -1317,10 +1319,15 @@ void FPCEEmu::Shutdown()
 		pGlobalConfig->LastGame = pCurrentProjectConfig->Name;
 		SaveProject();
 	}
+	else
+	{
+		// Is this the right thing to do?
+		pGlobalConfig->LastGame = "";
+	}
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
 
-	// destroy emulator here
+	delete pCore;
 
 	FEmuBase::Shutdown();
 }
@@ -1330,6 +1337,7 @@ void FPCEEmu::Shutdown()
 // of the memory being reset. 
 bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  true*/)
 {
+	assert(pGameConfig);
 	LOGINFO("Load Project '%s'. bLoadGameData = %s", pGameConfig->Name.c_str(), bLoadGameData ? "True" : "False");
 
 	// Save the last game's bank mapping progress
@@ -1338,25 +1346,10 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	// otherwise if we may overwrite a complete validation run when we load a new game.
 	SaveGameDbEntry();
 
-	assert(pGameConfig != nullptr);
-	pCurrentProjectConfig = nullptr;
-	pGameDebugStats = nullptr;
-	pGameDbEntry = nullptr;
+	ResetProject();
 
 	const std::string windowTitle = kAppTitle + " - " + pGameConfig->Name;
 	SetWindowTitle(windowTitle.c_str());
-
-	memset(pFrameBuffer, 0, kFramebufferSize);
-
-	// Initialise code analysis
-	CodeAnalysis.Init(this);
-	
-	if (pAsmExportValidator)
-		pAsmExportValidator->Reset(GetPCEGlobalConfig()->bUseAsmExportValidator);
-
-	GetGlobalsViewer()->Reset();
-	if (pVRAMViewer)
-		pVRAMViewer->Reset();
 
 	// Set options from config
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -1463,7 +1456,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		pDebugStats->InitForGame(this, pGameConfig->Name);
 
 	CodeAnalysis.Debugger.Break();
-	//CodeAnalysis.Debugger.Continue();
 	PrevPC = p6280State->PC->GetValue();
 
 	// some extra initialisation for creating new analysis from snapshot
@@ -1950,21 +1942,73 @@ void FPCEEmu::Tick()
 	DrawDockingView();
 }
 
+void FPCEEmu::ResetProject()
+{
+	LOGINFO("Resetting project");
+
+	pCurrentProjectConfig = nullptr;
+	pGameDebugStats = nullptr;
+	pGameDbEntry = nullptr;
+
+	const std::string windowTitle = kAppTitle + " - " + "No project loaded";
+	SetWindowTitle(windowTitle.c_str());
+
+	memset(pFrameBuffer, 0, kFramebufferSize);
+
+	// Initialise code analysis
+	CodeAnalysis.Init(this);
+
+	if (pAsmExportValidator)
+		pAsmExportValidator->Reset(GetPCEGlobalConfig()->bUseAsmExportValidator);
+
+	GetGlobalsViewer()->Reset();
+	if (pVRAMViewer)
+		pVRAMViewer->Reset();
+
+	CodeAnalysis.ViewState[0].Enabled = true;
+
+	// do we need to reset the palettes?
+	// this creates them
+	//InitPalettes();
+}
+
+// Reset the code analysis to a default state.
+// This will be called if a project fails to load, to prevent the code analysis state
+// being in a volatile or partially setup state.
 void FPCEEmu::Reset()
 {
-	// this does a soft reset. it preserves the loaded rom.
-	pCore->ResetMedia(false);
+	// Reset all the emulator submodules.
+	// I don't know if this is the right thing to do.
+	// I was calling pCore->ResetMedia() but that doesn't reset any of this stuff if the media
+	// is not loaded.
+	
+	// Kick the media out first. Memory::Reset() depends on there being no media loaded.
+	pMedia->Reset();
 
-	// this does a hard reset. it erases the loaded rom
-	// this crashed once so might not be stable.
-	//pCore->GetMedia()->Reset();
+	// Memory::Reset() needs to be called to set the mpr registers to point to UNUSED memory banks.
+	pMemory->Reset();
+	pCore->GetHuC6202()->Reset(false);
+	pCore->GetHuC6260()->Reset();
+	pCore->GetHuC6270_1()->Reset();
+	pCore->GetHuC6270_2()->Reset();
+	pCore->GetHuC6280()->Reset();
+	pCore->GetCDROM()->Reset();
+	pCore->GetScsiController()->Reset();
+	pCore->GetCDROMAudio()->Reset();
+	pCore->GetAdpcm()->Reset();
+	pCore->GetAudio()->Reset(pMedia->IsCDROM());
+	pCore->GetInput()->Reset();
 
-	FPCEGameConfig* pEmptyConfig = (FPCEGameConfig*)GetGameConfigForName("No Project");
+	ResetProject();
 
-	if (pEmptyConfig == nullptr)
-		pEmptyConfig = CreateNewEmptyConfig();
-
-	LoadProject(pEmptyConfig, false);	// reset code analysis
+	// MapMprBanks relies on the mpr registers being setup correctly before it is called.
+	ResetBanks();
+	MapMprBanks();
+	assert(MprBankIdsAreValid());
+	
+	GenerateGlobalInfo(CodeAnalysis);
+	CodeAnalysis.Debugger.Break();
+	CodeAnalysis.Debugger.SetPC(0);
 }
 
 void FPCEEmu::OnEnterEditMode(void)

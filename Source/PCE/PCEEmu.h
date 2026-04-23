@@ -146,11 +146,14 @@ public:
 
 protected:
 
+	void ResetProject();
+
 	bool LoadMachineState(const char* path, int index = -1);
 	bool SaveMachineState(const char* path, int index = -1);
 
 	void SaveGameDbEntry();
 
+	void CreateBanks();
 	void CheckPhysicalMemoryRangeIsMapped();
 	void CheckMemoryMap();
 	void CheckDupeMprBankIds();
