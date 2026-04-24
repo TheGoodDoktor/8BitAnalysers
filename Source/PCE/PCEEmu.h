@@ -170,6 +170,8 @@ protected:
 
 	void AddLabels();
 
+	void SoftResetMachine();
+
 protected:
 	GeargrafxCore* pCore = nullptr;
 	Media* pMedia = nullptr;
