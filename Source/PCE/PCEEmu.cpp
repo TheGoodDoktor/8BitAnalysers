@@ -1844,7 +1844,11 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 
 void FPCEEmu::SystemMenuAdditions(void)
 {
+	if (pCurrentProjectConfig && ImGui::MenuItem("Soft Reset"))
+	{
 		SoftResetMachine();
+	}
+
 	char buf[32];
 	for (int i = 0; i < FProjectConfig::kNumSaveStateSlots; i++)
 	{
@@ -1952,9 +1956,6 @@ void FPCEEmu::ResetProject()
 	pGameDebugStats = nullptr;
 	pGameDbEntry = nullptr;
 
-	const std::string windowTitle = kAppTitle + " - " + "No project loaded";
-	SetWindowTitle(windowTitle.c_str());
-
 	memset(pFrameBuffer, 0, kFramebufferSize);
 
 	// Initialise code analysis
@@ -2011,6 +2012,27 @@ void FPCEEmu::Reset()
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.Debugger.Break();
 	CodeAnalysis.Debugger.SetPC(0);
+
+	const std::string windowTitle = kAppTitle + " - " + "No project loaded";
+	SetWindowTitle(windowTitle.c_str());
+}
+
+void FPCEEmu::SoftResetMachine()
+{
+	assert(pCurrentProjectConfig);
+
+	pCore->ResetMedia(false);
+
+	// todo: reset viewers
+	 
+	memset(pFrameBuffer, 0, kFramebufferSize);
+
+	// MapMprBanks relies on the mpr registers being setup correctly before it is called.
+	ResetBanks();
+	MapMprBanks();
+	assert(MprBankIdsAreValid());
+
+	GenerateGlobalInfo(CodeAnalysis);
 }
 
 void FPCEEmu::OnEnterEditMode(void)
