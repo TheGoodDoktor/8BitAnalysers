@@ -174,6 +174,7 @@ protected:
 
 protected:
 	GeargrafxCore* pCore = nullptr;
+	bool bBiosLoaded = false;
 	Media* pMedia = nullptr;
 	Memory* pMemory = nullptr;
 	uint8_t* pFrameBuffer = nullptr;

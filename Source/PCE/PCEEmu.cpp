@@ -1025,8 +1025,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	
 	// todo: check this is system card 3.0.
 	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
-	const bool bLoadedBios = pCore->LoadBios(fullBiosPath.c_str(), true);
-	LOGINFO("%s Bios '%s'", bLoadedBios ? "Loaded" : "Failed to load", fullBiosPath.c_str());
+	bBiosLoaded = pCore->LoadBios(fullBiosPath.c_str(), true);
+	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", fullBiosPath.c_str());
 
 	CreateBanks();
 	BuildCanonicalBankIdLookup();
@@ -1052,7 +1052,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	}
 
 	const FPCEConfig* pPCEConfig = GetPCEGlobalConfig();
-	AddGamesList("Snapshot File", GetPCEGlobalConfig()->SnapshotFolder.c_str());
+	AddGamesList("PCE ROM File", GetPCEGlobalConfig()->SnapshotFolder.c_str());
+	AddGamesList("CD-ROM Image", GetPCEGlobalConfig()->CdRomFolder.c_str());
 
 	LoadFont();
 
@@ -1710,6 +1711,13 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 	{
 	case EEmuFileType::PCE:
 	case EEmuFileType::CUE:
+		if (!bBiosLoaded)
+		{
+			const std::string biosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
+			SetLastError("Could not load bios '%s'", biosPath.c_str());
+			return false;
+		}
+		[[fallthrough]];
 	case EEmuFileType::ZIP:
 		if (!pCore->LoadMedia(fileName.c_str()))
 		{

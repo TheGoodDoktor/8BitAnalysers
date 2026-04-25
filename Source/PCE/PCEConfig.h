@@ -12,6 +12,7 @@ struct FPCEConfig : public FGlobalConfig
 
 	 bool bUseAsmExportValidator = false;
 
+	 std::string CdRomFolder = "./CdRomGames/";
 	 std::string GameDbPath = "./GameDb/";
 	 
 	 // asm export validator temporary output path

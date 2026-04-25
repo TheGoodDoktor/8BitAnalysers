@@ -151,8 +151,25 @@ void FBatchGameLoadViewer::DrawUI()
 		}
 	}
 
-	auto findIt = pPCEEmu->GetGamesLists().find("Snapshot File");
-	if (findIt == pPCEEmu->GetGamesLists().end())
+	const auto& gamesLists = pPCEEmu->GetGamesLists();
+	if (ImGui::BeginCombo("Game List", ActiveListName.c_str()))
+	{
+		for (const auto& listIt : gamesLists)
+		{
+			const bool bSelected = listIt.first == ActiveListName;
+			if (ImGui::Selectable(listIt.first.c_str(), bSelected))
+			{
+				ActiveListName = listIt.first;
+				GameIndex = 0;
+			}
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	auto findIt = gamesLists.find(ActiveListName);
+	if (findIt == gamesLists.end())
 		return;
 
 	const FGamesList& gamesList = findIt->second;
