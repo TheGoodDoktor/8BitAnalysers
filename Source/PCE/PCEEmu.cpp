@@ -1844,6 +1844,7 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 
 void FPCEEmu::SystemMenuAdditions(void)
 {
+		SoftResetMachine();
 	char buf[32];
 	for (int i = 0; i < FProjectConfig::kNumSaveStateSlots; i++)
 	{
