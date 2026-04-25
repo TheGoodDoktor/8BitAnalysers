@@ -37,6 +37,7 @@ public:
 	virtual void	AddBankSection(const FCodeAnalysisBank* pBank);
 	virtual void	ProcessLabelsOutsideExportedRange(void){}
 	bool		ExportAddressRange(const std::vector<FCodeAnalysisItem>& itemList, uint16_t startAddr, uint16_t endAddr, bool bIsPhysicalMem	);
+	int			GetCurrentLineNumber() const { return CurrentLineNumber; }
 
 	//std::string		GenerateAddressLabelString(FAddressRef addr);
 	void			ExportDataInfoASM(FAddressRef addr);
@@ -53,6 +54,7 @@ protected:
 	ENumberDisplayMode	GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo);
 
 	bool			bInitialised = false;
+	int				CurrentLineNumber = 1;
 	ENumberDisplayMode HexMode = ENumberDisplayMode::HexDollar;
 	ENumberDisplayMode OldNumberMode;
 

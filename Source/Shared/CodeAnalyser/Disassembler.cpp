@@ -179,7 +179,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 						// Hopefully we can deal with this better in the future if we find a way to get
 						// a deterministic mapped address for each bank.
 						// An example of this happening is Bonk's Adventure ROM 00 e251
-						LOGWARNING("'%s': 0x%04x. Label '%s' address (0x%04x) doesn't match disassembly operand (0x%04x). Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress(), val);
+						LOGWARNING("'%s': 0x%04x. Line %d. Label '%s' address (0x%04x) doesn't match disassembly operand (0x%04x). Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pExporter->GetCurrentLineNumber(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress(), val);
 						pLabel = nullptr;
 
 						NumRawValuesOutput++;
@@ -212,7 +212,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 						}
 						else
 						{
-							LOGWARNING("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress());
+							LOGWARNING("'%s': 0x%04x. Line %d. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pExporter->GetCurrentLineNumber(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress());
 							pLabel = nullptr;
 							NumRawValuesOutput++;
 						}
@@ -232,7 +232,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 			else
 			{
 				// what to do here?
-				LOGWARNING("'%s': 0x%04x. Found invalid operand address 0x%x. %s", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pCodeInfoItem->OperandAddress.GetAddress(), pCodeInfoItem->Text.c_str());
+				LOGWARNING("'%s': 0x%04x. Line %d. Found invalid operand address 0x%x. %s", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pExporter->GetCurrentLineNumber(), pCodeInfoItem->OperandAddress.GetAddress(), pCodeInfoItem->Text.c_str());
 			}
 
 			if (pLabel)
@@ -248,7 +248,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 				if (!CodeAnalysisState->IsBankIdCanonical(labelAddress.GetBankId()))
 				{
 					const FCodeAnalysisBank* pBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
-					LOGWARNING("'%s': 0x%04x. Found non canonical bank label '%s' 0x%x. %s", pBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), labelAddress.GetAddress(), pCodeInfoItem->Text.c_str());
+					LOGWARNING("'%s': 0x%04x. Line %d. Found non canonical bank label '%s' 0x%x. %s", pBank->Name.c_str(), CurrentAddress.GetAddress(), pExporter->GetCurrentLineNumber(), pLabel->GetName(), labelAddress.GetAddress(), pCodeInfoItem->Text.c_str());
 				}
 			}
 			else

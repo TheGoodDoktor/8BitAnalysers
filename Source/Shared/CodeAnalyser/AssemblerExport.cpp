@@ -100,6 +100,11 @@ void FASMExporter::Output(const char* pFormat, ...)
 		int ret = vsnprintf(stringBuffer, kStringBufferSize, pFormat, ap);
 		assert(ret < kStringBufferSize);	// increase kStrignBufferSize if this gets hit
 		*OutputString += stringBuffer;
+		for (const char* p = stringBuffer; *p; p++)
+		{
+			if (*p == '\n')
+				CurrentLineNumber++;
+		}
 	}
 	va_end(ap);
 }
