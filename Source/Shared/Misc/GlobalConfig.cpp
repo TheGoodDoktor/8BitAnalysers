@@ -65,6 +65,8 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 	
     if (jsonConfigFile.contains("EnableExperimentalFeatures"))
         bEnableExperimentalFeatures = jsonConfigFile["EnableExperimentalFeatures"];
+	if (jsonConfigFile.contains("ConfirmOnQuit"))
+		bConfirmOnQuit = jsonConfigFile["ConfirmOnQuit"];
 
 	if (jsonConfigFile.contains("EditLuaBaseFiles"))
 		bEditLuaBaseFiles = jsonConfigFile["EditLuaBaseFiles"];
@@ -118,6 +120,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["OverviewScale"] = OverviewScale;
 	jsonConfigFile["VRAMViewerScale"] = VRAMViewerScale;
 	jsonConfigFile["EnableExperimentalFeatures"] = bEnableExperimentalFeatures;
+	jsonConfigFile["ConfirmOnQuit"] = bConfirmOnQuit;
 	jsonConfigFile["EditLuaBaseFiles"] = bEditLuaBaseFiles;
 	jsonConfigFile["ExportAssembler"] = ExportAssembler;	
 	jsonConfigFile["DefaultAsmExportPath"] = DefaultAsmExportPath;

@@ -36,6 +36,7 @@ struct FGlobalConfig
 	int					GfxScreenScale = 1;
 
 	bool				bEnableExperimentalFeatures = false;	// for WIP & experimental features
+	bool				bConfirmOnQuit = true;	// show save prompt when closing the app
 
 	// Lua config
 	bool				bEditLuaBaseFiles = false;

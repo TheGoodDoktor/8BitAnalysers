@@ -86,7 +86,11 @@ public:
 
 	FCodeAnalysisState&		GetCodeAnalysis() { return CodeAnalysis; }
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
-	const FProjectConfig*		GetProjectConfig() const { return pCurrentProjectConfig; }
+	const FProjectConfig*	GetProjectConfig() const { return pCurrentProjectConfig; }
+	bool					HasProjectLoaded() const { return pCurrentProjectConfig != nullptr; }
+
+	void	RequestQuit() { bQuitRequested = true; }
+	bool	IsQuitConfirmed() const { return bQuitConfirmed; }
 
 	std::string		GetGameWorkspaceRoot() const;
 	
@@ -128,6 +132,7 @@ protected:
 	void			DrawExportAsmModalPopup(void);
 	void			DrawReplaceGameModalPopup(void);
 	void			DrawErrorMessageModalPopup(void);
+	void			DrawQuitConfirmPopup(void);
 
 	FGlobalConfig*		pGlobalConfig = nullptr;
 	FProjectConfig*		pCurrentProjectConfig = nullptr;
@@ -174,6 +179,9 @@ public:
 
 protected:
 	bool		bShowDebugLog = false;
+	bool		bQuitRequested = false;
+	bool		bQuitConfirmed = false;
+	bool		bSaveOnShutdown = true;
 	bool		bNewProjectPopup = false;
 	std::string	NewProjectListName;
 	bool		bOpenProjectPopup = false;
