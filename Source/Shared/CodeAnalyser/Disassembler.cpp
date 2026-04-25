@@ -153,7 +153,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 
 		if (bOperandIsAddress)
 		{
-			FAddressRef labelAddress;
+			FAddressRef labelAddress = FAddressRef::Invalid();
 
 			const FLabelInfo* pLabel = nullptr;
 			const FLabelInfo* pScopeLabel = nullptr;

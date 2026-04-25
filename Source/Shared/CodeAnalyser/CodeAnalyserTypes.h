@@ -200,13 +200,13 @@ struct FAddressRef
 	//     containers but leaves raw arrays alone.
 	//   - The fields are LEFT UNINITIALISED on default construction. Do NOT rely on
 	//     a default-constructed FAddressRef being invalid — use FAddressRef::Invalid()
-	//     whenever an explicit invalid sentinel is needed.
+	//     if you want it to be invalid.
 	FAddressRef() = default;
 	FAddressRef(uint32_t val)	{	SetVal(val); }
 	FAddressRef(int16_t bankId, uint16_t address) : BankId(bankId) { SetAddress(address); };
 
 	// Explicit named constructor for an invalid address (BankId == -1).
-	// Use this instead of FAddressRef() wherever an "invalid" sentinel is intended.
+	// Use this instead of FAddressRef() wherever an "invalid" address ref is intended.
 	static FAddressRef Invalid() { return FAddressRef(-1, 0); }
 	uint16_t GetAddress() const;
 	uint16_t GetOffset() const { return BankOffset; }

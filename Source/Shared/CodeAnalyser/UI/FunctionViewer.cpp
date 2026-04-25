@@ -256,7 +256,7 @@ void DrawFunctionDetails(FCodeAnalysisState& state, FFunctionInfo* pFunctionInfo
 	if(pLabelInfo != nullptr)
 	{
 		ImGui::Text("Called By:");
-		FAddressRef removeRef;
+		FAddressRef removeRef = FAddressRef::Invalid();
 		for (const auto& ref : pLabelInfo->References.GetReferences())
 		{
 			ImGui::PushID(ref.GetVal());

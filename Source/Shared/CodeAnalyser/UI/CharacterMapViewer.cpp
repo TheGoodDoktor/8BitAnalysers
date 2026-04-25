@@ -626,10 +626,10 @@ public:
 		FixupAddressRef(*CodeAnalysis, CharacterSet);
 	}
 
-	FAddressRef Address;
+	FAddressRef Address = FAddressRef::Invalid();
 	int PhysicalAddress = 0;
 
-	FAddressRef		CharacterSet;
+	FAddressRef		CharacterSet = FAddressRef::Invalid();
 
 };
 

@@ -198,7 +198,7 @@ bool FStaticAnalyser::RunAnalysis(void)
 			continue;
 
 		int addToSelfRun = 0;
-		FAddressRef addToSelfRunStart;
+		//FAddressRef addToSelfRunStart; // sam. unused
 
 		// iterate through all address in bank
 		int addr = bank.GetMappedAddress();

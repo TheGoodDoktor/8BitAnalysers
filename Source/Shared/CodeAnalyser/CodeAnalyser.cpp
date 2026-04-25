@@ -507,7 +507,7 @@ std::vector<FFoundString> FCodeAnalysisState::FindAllStrings(bool bCheckMachineR
 		if (bank.IsMapped() == false && bPhysicalOnly)
 			continue;
 
-		FAddressRef stringStart;	
+		FAddressRef stringStart = FAddressRef::Invalid();	
 		int stringLength = 0;
 		int vowelCount = 0;
 		std::string foundString;
