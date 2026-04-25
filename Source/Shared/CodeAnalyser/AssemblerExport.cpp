@@ -65,6 +65,13 @@ bool FASMExporter::Init(const char* pFilename, FEmuBase* pEmu)
 	SetNumberDisplayMode(HexMode);
 	bInitialised = true;
 
+	// sam. add deferred warnings so we can display the line number.
+	// we can't track the line number at the point we are outputting the body text
+	// because we don't know how many lines the header text will be.
+	BodyLineNumber = 1;
+	HeaderLineNumber = 1;
+	DeferredWarnings.clear();
+
 	ExportDidBegin();
 
 	return true;
@@ -72,6 +79,11 @@ bool FASMExporter::Init(const char* pFilename, FEmuBase* pEmu)
 
 bool FASMExporter::Finish()
 {
+	// sam. log including line number
+	for (const FDeferredWarning& warning : DeferredWarnings)
+		LOGWARNING("(Line %d) %s", HeaderLineNumber + warning.BodyLineNumber - 1, warning.Message.c_str());
+	DeferredWarnings.clear();
+
 	if (FilePtr != nullptr)
 	{
 		fwrite(HeaderText.c_str(), HeaderText.size(), 1, FilePtr);
@@ -100,13 +112,32 @@ void FASMExporter::Output(const char* pFormat, ...)
 		int ret = vsnprintf(stringBuffer, kStringBufferSize, pFormat, ap);
 		assert(ret < kStringBufferSize);	// increase kStrignBufferSize if this gets hit
 		*OutputString += stringBuffer;
+		
+		// sam. track line number
 		for (const char* p = stringBuffer; *p; p++)
 		{
 			if (*p == '\n')
-				CurrentLineNumber++;
+			{
+				if (OutputString == &BodyText)
+					BodyLineNumber++;
+				else
+					HeaderLineNumber++;
+			}
 		}
 	}
 	va_end(ap);
+}
+
+// sam. 
+void FASMExporter::QueueWarning(const char* pFormat, ...)
+{
+	va_list ap;
+	va_start(ap, pFormat);
+	const int kStringBufferSize = 1024;
+	char stringBuffer[kStringBufferSize];
+	vsnprintf(stringBuffer, kStringBufferSize, pFormat, ap);
+	va_end(ap);
+	DeferredWarnings.push_back({ BodyLineNumber, stringBuffer });
 }
 
 void FASMExporter::AddBankSection(const FCodeAnalysisBank* pBank)
