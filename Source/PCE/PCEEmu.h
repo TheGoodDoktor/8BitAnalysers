@@ -73,9 +73,7 @@ public:
 	// multiple MPR slots. Only the primary (index 0) is exported. This function lets
 	// shared code redirect any duplicate bank ID to the primary for label lookups.
 	int16_t	GetCanonicalBankId(int16_t bankId) const override;
-	void		BuildCanonicalBankIdLookup();
-	void		BuildBankSetLookup();
-
+	
 	// FEmuBase End
 
 	// disable copy & assign because this class is big!
@@ -125,6 +123,8 @@ public:
 	// Get the PCE bank index (0-255) for a given bank id.
 	uint8_t GetBankIndexForBankId(uint16_t bankId);
 
+	FBankSet* GetBankSetFromBankId(int16_t bankId) const { return (bankId >= 0 && bankId < FCodeAnalysisState::BankCount) ? BankSetLookup[bankId] : nullptr; }
+
 	int GetBankCount() const;
 	void MapMprBank(uint8_t mprIndex, uint8_t newBankIndex);
 
@@ -163,6 +163,9 @@ protected:
 	int16_t GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
 	
 	void MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId);
+
+	void BuildCanonicalBankIdLookup();
+	void BuildBankSetLookup();
 
 	void InitPalettes();
 	void UpdatePalettes();
