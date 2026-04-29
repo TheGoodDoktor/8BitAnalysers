@@ -261,7 +261,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 						pDrawList->AddRect(pMin, pMax, IM_COL32(160, 160, 160, 255));
 
 					if (ImGui::IsMouseHoveringRect(pMin, pMax))
-						ImGui::SetTooltip("MPR %d", slot);
+						ImGui::SetTooltip("MPR %d : %s", slot, NumStr((uint16_t)(slot * 0x2000)));
 				}
 
 				ImGui::Dummy(ImVec2(8.0f * squareSize + 7.0f * gap, squareSize));
@@ -328,6 +328,7 @@ void FBanksViewer::DrawBankDetail(const FBankSet* pBankSet, const FCodeAnalysisB
 			bAny = true;
 		}
 	}
+	ImGui::Text("Estimated Mapped Address: %s", NumStr(pBankSet->GetMappedAddressFromUsage()));
 	if (!bAny)
 		ImGui::TextDisabled("(never mapped)");
 }
@@ -376,7 +377,7 @@ void FBanksViewer::DrawUI()
 		}
 	}
 
-	const float detailWidth = ImGui::GetFontSize() * 28.0f;
+	const float detailWidth = ImGui::GetFontSize() * 20.0f;
 	const float tableWidth = ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x;
 
 	ImGui::BeginChild("##BankTablePane", ImVec2(tableWidth, 0.0f), false);
