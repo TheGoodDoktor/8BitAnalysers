@@ -344,7 +344,51 @@ bool FBanksViewer::Init()
 	return true;
 }
 
-void FBanksViewer::DrawUI()
+void FBanksViewer::DrawMappedBanks()
+{
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+
+	std::vector<FCodeAnalysisBank*> banksToView;
+	std::vector<FBankSet*> bankSetsToView;
+
+	for (int addr = 0; addr < 0x10000; addr += 0x2000)
+	{
+		const int bankId = state.GetBankFromAddress(addr);
+		FCodeAnalysisBank* pBank = state.GetBank(bankId);
+		if (!pBank)
+			continue;
+
+		FBankSet* pBankSet = pPCEEmu->GetBankSetFromBankId(bankId);
+		if (!pBankSet)
+			continue;
+
+		// Avoid duplicates (same bank mapped to multiple slots)
+		/*if (std::find(banksToView.begin(), banksToView.end(), pBank) == banksToView.end())
+		{
+			banksToView.push_back(pBank);
+			bankSetsToView.push_back(pBankSet);
+		}*/
+	}
+
+	const float detailWidth = ImGui::GetFontSize() * 28.0f;
+	const float tableWidth = ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x;
+
+	// todo default to sorting by mapped address
+	ImGui::BeginChild("##MappedBankTablePane", ImVec2(tableWidth, 0.0f), false);
+	DrawBankTable(banksToView, bankSetsToView);
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	ImGui::BeginChild("##MappedBankDetailPane", ImVec2(detailWidth, 0.0f), false);
+	if (SelectedBankIdx >= 0 && SelectedBankIdx < (int)banksToView.size())
+		DrawBankDetail(bankSetsToView[SelectedBankIdx], banksToView[SelectedBankIdx]);
+	else
+		ImGui::TextDisabled("Select a bank to see details.");
+	ImGui::EndChild();
+}
+
+void FBanksViewer::DrawAllBanks()
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
@@ -391,4 +435,24 @@ void FBanksViewer::DrawUI()
 	else
 		ImGui::TextDisabled("Select a bank to see details.");
 	ImGui::EndChild();
+}
+
+void FBanksViewer::DrawUI()
+{
+	if (ImGui::BeginTabBar("BanksTabBar"))
+	{
+		if (ImGui::BeginTabItem("All"))
+		{
+			DrawAllBanks();
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Mapped"))
+		{
+			DrawMappedBanks();
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
 }
