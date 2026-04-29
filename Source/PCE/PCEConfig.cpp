@@ -10,6 +10,7 @@ bool FPCEConfig::Init(void)
 
 	//LuaBaseFiles.push_back("Lua/PCEBase.lua");
 	SnapshotFolder = GetDocumentsPath("PCEGames");
+	CdRomFolder = GetDocumentsPath("PCECdRoms");
 	WorkspaceRoot = GetDocumentsPath("PCEAnalyserProjects");
 
 	FixupPaths();
@@ -20,6 +21,9 @@ bool FPCEConfig::Init(void)
 void FPCEConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 {
 	FGlobalConfig::ReadFromJson(jsonConfigFile);
+
+	if (jsonConfigFile.contains("CdRomFolder"))
+		CdRomFolder = jsonConfigFile["CdRomFolder"];
 
 	if (jsonConfigFile.contains("BiosPath"))
 		BiosPath = jsonConfigFile["BiosPath"];
@@ -43,6 +47,7 @@ void FPCEConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 {
 	FGlobalConfig::WriteToJson(jsonConfigFile);
 
+	jsonConfigFile["CdRomFolder"] = CdRomFolder;
 	jsonConfigFile["BiosPath"] = BiosPath;
 	jsonConfigFile["BiosFilename"] = BiosFilename;
 	jsonConfigFile["GameDbPath"] = GameDbPath;
@@ -56,6 +61,9 @@ void FPCEConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 void FPCEConfig::FixupPaths(void)
 {
 	FGlobalConfig::FixupPaths();
+
+	if (CdRomFolder.back() != '/')
+		CdRomFolder += "/";
 
 	if (BiosPath.back() != '/')
 		BiosPath += "/";

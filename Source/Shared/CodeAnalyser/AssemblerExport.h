@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <string>
 #include <map>
+#include <vector>
 
 #include "CodeAnalyserTypes.h"
 #include "Disassembler.h"
@@ -37,6 +38,7 @@ public:
 	virtual void	AddBankSection(const FCodeAnalysisBank* pBank);
 	virtual void	ProcessLabelsOutsideExportedRange(void){}
 	bool		ExportAddressRange(const std::vector<FCodeAnalysisItem>& itemList, uint16_t startAddr, uint16_t endAddr, bool bIsPhysicalMem	);
+	void		QueueWarning(const char* pFormat, ...); // sam
 
 	//std::string		GenerateAddressLabelString(FAddressRef addr);
 	void			ExportDataInfoASM(FAddressRef addr);
@@ -51,6 +53,18 @@ public:
 protected:
 	void				OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo);
 	ENumberDisplayMode	GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo);
+
+	// sam. track line numbers
+	struct FDeferredWarning
+	{
+		int			BodyLineNumber;
+		std::string	Message;
+	};
+
+	int				BodyLineNumber = 1;
+	int				HeaderLineNumber = 1;
+	std::vector<FDeferredWarning> DeferredWarnings;
+	// sam. track line numbers
 
 	bool			bInitialised = false;
 	ENumberDisplayMode HexMode = ENumberDisplayMode::HexDollar;

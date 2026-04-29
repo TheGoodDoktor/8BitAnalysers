@@ -1332,7 +1332,7 @@ void FDebugger::DrawBreakpoints(void)
 		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,6 * charWidth);
 		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,6 * charWidth);
 		ImGui::TableHeadersRow();
-		FAddressRef deleteRef;
+		FAddressRef deleteRef = FAddressRef::Invalid();
 		for (auto& bp : Breakpoints)
 		{
 			ImGui::PushID(bp.Address.GetVal());

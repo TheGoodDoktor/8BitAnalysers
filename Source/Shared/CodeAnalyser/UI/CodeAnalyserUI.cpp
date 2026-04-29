@@ -497,7 +497,7 @@ void DrawLabelDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewSta
 	{
 
 		ImGui::Text("References:");
-		FAddressRef removeRef;
+		FAddressRef removeRef = FAddressRef::Invalid();
 		for (const auto & ref : pLabelInfo->References.GetReferences())
 		{
 			ImGui::PushID(ref.GetVal());
