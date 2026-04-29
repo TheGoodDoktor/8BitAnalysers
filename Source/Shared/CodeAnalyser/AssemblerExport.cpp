@@ -128,18 +128,40 @@ void FASMExporter::Output(const char* pFormat, ...)
 	va_end(ap);
 }
 
-// sam. 
+// sam
+FLabelInfo* FASMExporter::ProcessOperandLabel(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback)
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FLabelInfo* pLabel = state.GetLabelForAddress(DasmState.pCodeInfoItem->OperandAddress);
+
+	if (pLabel != nullptr)
+	{
+		const std::string labelName = pLabel->GetName();
+		labelAddress = DasmState.pCodeInfoItem->OperandAddress;
+
+		for (int i = 0; i < labelName.size(); i++)
+		{
+			outputCallback(labelName[i], &DasmState);
+		}
+	}
+	return pLabel;
+}
+
+// sam
 void FASMExporter::QueueWarning(const char* pFormat, ...)
 {
 	va_list ap;
 	va_start(ap, pFormat);
 	const int kStringBufferSize = 1024;
-	char stringBuffer[kStringBufferSize];
+	static char stringBuffer[kStringBufferSize];
 	vsnprintf(stringBuffer, kStringBufferSize, pFormat, ap);
 	va_end(ap);
+	if (bLogImmediately)
+		LOGWARNING("%s", stringBuffer);
 	DeferredWarnings.push_back({ BodyLineNumber, stringBuffer });
 }
 
+// sam
 void FASMExporter::AddBankSection(const FCodeAnalysisBank* pBank)
 {
 	SetOutputToBody();

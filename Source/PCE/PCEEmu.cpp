@@ -1812,10 +1812,10 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 		}
 	}
 	
-	if (!bWriteCodeInfoWhenCodeExecuted)
+	/*if (!bWriteCodeInfoWhenCodeExecuted)
 	{
 		LOGWARNING("'Write Code Info When Code Executed' option is not turned on. ASM Export may not work!");
-	}
+	}*/
 
 	if (!ExportAssemblerForBanks(this, outputAsmFname.c_str(), banksToExport))
 	{

@@ -154,92 +154,21 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 		if (bOperandIsAddress)
 		{
 			FAddressRef labelAddress = FAddressRef::Invalid();
-
 			const FLabelInfo* pLabel = nullptr;
-			const FLabelInfo* pScopeLabel = nullptr;
-
-			const FCodeAnalysisBank* pCurBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
 
 			if (pCodeInfoItem->OperandAddress.IsValid())
 			{
-				pLabel = CodeAnalysisState->GetLabelForAddress(pCodeInfoItem->OperandAddress);
-
-				if (pLabel != nullptr)
-				{
-					const uint16_t operandAddr = pCodeInfoItem->OperandAddress.GetAddress();
-					const uint16_t currAddr = CurrentAddress.GetAddress();
-					
-					const FDataInfo* pDataInfo = CodeAnalysisState->GetDataInfoForAddress(pCodeInfoItem->OperandAddress);
-					
-					if (operandAddr != val)
-					{
-						// If the label's address doesn't match the operand value, the target
-						// bank is mapped at a different address in this context. Using the label would
-						// assemble to the wrong address, so use the raw value output instead.
-						// Hopefully we can deal with this better in the future if we find a way to get
-						// a deterministic mapped address for each bank.
-						// An example of this happening is Bonk's Adventure ROM 00 e251
-						pExporter->QueueWarning("'%s': 0x%04x. Label '%s' address (0x%04x) doesn't match disassembly operand (0x%04x). Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress(), val);
-						pLabel = nullptr;
-
-						NumRawValuesOutput++;
-					}
-					else if (pDataInfo != nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
-					{
-						
-						// The operand address points inside the instruction's own bytes (e.g. a jump
-						// table like JMP [data_ROM_02_7A4B,X] where 7A4B is the 2nd byte of the
-						// instruction at 7A4A). Emitting the label for 7A4B directly would place it
-						// after the instruction in the output, producing unassemblable code.
-						//
-						// Instead, find the label at the start of the parent instruction and emit
-						// it as label+offset, e.g. label_ROM_02_7A4A+1.
-						const FAddressRef instrAddr = pDataInfo->InstructionAddress;
-						const FLabelInfo* pInstrLabel = CodeAnalysisState->GetLabelForAddress(instrAddr);
-						if (pInstrLabel != nullptr)
-						{
-							const int offset = pCodeInfoItem->OperandAddress.GetAddress() - instrAddr.GetAddress();
-							std::string labelExpr = pInstrLabel->GetName();
-							if (offset > 0)
-							{
-								char offsetStr[16];
-								snprintf(offsetStr, sizeof(offsetStr), "+%d", offset);
-								labelExpr += offsetStr;
-							}
-							labelAddress = instrAddr;
-							for (char c : labelExpr)
-								outputCallback(c, this);
-						}
-						else
-						{
-							pExporter->QueueWarning("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), pCodeInfoItem->OperandAddress.GetAddress());
-							pLabel = nullptr;
-							NumRawValuesOutput++;
-						}
-					}
-					else
-					{
-						std::string labelName = pLabel->GetName();
-						labelAddress = pCodeInfoItem->OperandAddress;
-
-						for (int i = 0; i < labelName.size(); i++)
-						{
-							outputCallback(labelName[i], this);
-						}
-					}
-				}
+				pLabel = pExporter->ProcessOperandLabel(labelAddress, val, outputCallback);
 			}
 			else
 			{
 				// what to do here?
+				const FCodeAnalysisBank* pCurBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
 				pExporter->QueueWarning("'%s': 0x%04x. Found invalid operand address 0x%x. %s", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pCodeInfoItem->OperandAddress.GetAddress(), pCodeInfoItem->Text.c_str());
 			}
 
 			if (pLabel)
 			{
-				// referencing an address not in the disassembly but not null
-				// sam. changed check for label address 0 to deal with a label at address 0.
-				//if (/*labelAddress != 0 && */(labelAddress < ExportMin || labelAddress > ExportMax))
 				if (labelAddress.GetAddress() < ExportMin || labelAddress.GetAddress() > ExportMax)
 				{
 					LabelsOutsideRange.insert(labelAddress);
@@ -247,8 +176,8 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 
 				if (!CodeAnalysisState->IsBankIdCanonical(labelAddress.GetBankId()))
 				{
-					const FCodeAnalysisBank* pBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
-					pExporter->QueueWarning("'%s': 0x%04x. Found non canonical bank label '%s' 0x%x. %s", pBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), labelAddress.GetAddress(), pCodeInfoItem->Text.c_str());
+					const FCodeAnalysisBank* pCurBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
+					pExporter->QueueWarning("'%s': 0x%04x. Found non canonical bank label '%s' 0x%x. %s", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), labelAddress.GetAddress(), pCodeInfoItem->Text.c_str());
 				}
 			}
 			else

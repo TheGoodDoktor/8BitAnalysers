@@ -92,6 +92,114 @@ class FPCEAsmExporterBase : public FASMExporter
 				}
 			}
 		}
+		virtual FLabelInfo* ProcessOperandLabel(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback) override
+		{
+			FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+			FLabelInfo* pLabel = state.GetLabelForAddress(DasmState.pCodeInfoItem->OperandAddress);
+
+			if (pLabel != nullptr)
+			{
+				const uint16_t operandAddr = DasmState.pCodeInfoItem->OperandAddress.GetAddress();
+				const FDataInfo* pDataInfo = state.GetDataInfoForAddress(DasmState.pCodeInfoItem->OperandAddress);
+
+				if (operandAddr != val)
+				{
+					// todo check if bank has been mapped to val
+					// if not return null?
+					// if so, output the label and then the offset below
+
+					const std::string labelName = pLabel->GetName();
+					labelAddress = DasmState.pCodeInfoItem->OperandAddress;
+
+					for (int i = 0; i < labelName.size(); i++)
+					{
+						outputCallback(labelName[i], &DasmState);
+					}
+
+					const int32_t offset = (int32_t)val - (int32_t)operandAddr;
+					char offsetStr[16];
+					if (offset > 0)
+						snprintf(offsetStr, sizeof(offsetStr), "+$%X", offset);
+					else
+						snprintf(offsetStr, sizeof(offsetStr), "-$%X", -offset);
+					for (const char* p = offsetStr; *p; p++)
+						outputCallback(*p, &DasmState);
+
+					QueueWarning("Fixed up label %s with offset %s$%x", pLabel->GetName(), offset > 0 ? "+" : "-", abs(offset));
+				}
+				else if (pDataInfo != nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
+				{
+					// The operand address points inside the instruction's own bytes (e.g. a jump
+					// table like JMP [data_ROM_02_7A4B,X] where 7A4B is the 2nd byte of the
+					// instruction at 7A4A). Emitting the label for 7A4B directly would place it
+					// after the instruction in the output, producing unassemblable code.
+					//
+					// Instead, find the label at the start of the parent instruction and emit
+					// it as label+offset, e.g. label_ROM_02_7A4A+1.
+					const FAddressRef instrAddr = pDataInfo->InstructionAddress;
+					const FLabelInfo* pInstrLabel = state.GetLabelForAddress(instrAddr);
+					if (pInstrLabel != nullptr)
+					{
+						const int offset = DasmState.pCodeInfoItem->OperandAddress.GetAddress() - instrAddr.GetAddress();
+						std::string labelExpr = pInstrLabel->GetName();
+						if (offset > 0)
+						{
+							char offsetStr[16];
+							snprintf(offsetStr, sizeof(offsetStr), "+%d", offset);
+							labelExpr += offsetStr;
+						}
+						labelAddress = instrAddr;
+						for (char c : labelExpr)
+							outputCallback(c, &DasmState);
+					}
+					else
+					{
+						const FCodeAnalysisBank* pCurBank = state.GetBank(DasmState.CurrentAddress.GetBankId());
+						QueueWarning("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), DasmState.CurrentAddress.GetAddress(), pLabel->GetName(), DasmState.pCodeInfoItem->OperandAddress.GetAddress());
+						DasmState.NumRawValuesOutput++;
+						return nullptr;
+					}
+				}
+				else
+				{
+					const std::string labelName = pLabel->GetName();
+					labelAddress = DasmState.pCodeInfoItem->OperandAddress;
+
+					for (int i = 0; i < labelName.size(); i++)
+					{
+						outputCallback(labelName[i], &DasmState);
+					}
+				}
+			}
+			return pLabel;
+		}
+
+		/*const FLabelInfo* ResolveOperandLabel(const FLabelInfo* pLabel, const FAddressRef& operandAddress, uint16_t val, FAddressRef& outResolvedAddress) override
+		{
+			if (operandAddress.GetAddress() == val)
+			{
+				outResolvedAddress = operandAddress;
+				return pLabel;
+			}
+
+			FPCEEmu* pPCEEmu = static_cast<FPCEEmu*>(pEmulator);
+			FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+
+			const FBankSet* pBankSet = pPCEEmu->GetBankSetForBankId(operandAddress.GetBankId());
+			if (pBankSet == nullptr)
+				return nullptr;
+
+			// Check if this bank set has ever been mapped to the slot containing val
+			const int neededSlot = val / 0x2000;
+			if (!(pBankSet->MappedSlotsMask & (1 << neededSlot)))
+				return nullptr;
+
+			// Return the label at its primary address. The caller will emit an offset
+			// (e.g. "label + $2000") so the expression assembles to val correctly.
+			outResolvedAddress = operandAddress;
+			return pLabel;
+		}*/
+
 		void	ExportDidEnd() override
 		{
 			if (DasmState.NumRawValuesOutput)
@@ -159,6 +267,7 @@ public:
 		// - the most common address for this bank
 		FASMExporter::AddBankSection(pBank);
 
+		// todo: output which slots/addresses this bank has been mapped to
 		FPCEEmu* pPCEEmu = static_cast<FPCEEmu*>(pEmulator);
 		const uint8_t bankIndex = pPCEEmu->GetBankIndexForBankId(pBank->Id);
 		if (!pBank->bEverBeenMapped)

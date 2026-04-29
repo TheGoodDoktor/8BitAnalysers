@@ -32,13 +32,16 @@ public:
 	void		SetOutputToHeader(){OutputString = &HeaderText;}
 	void		SetOutputToBody(){OutputString = &BodyText;}
 	void		Output(const char* pFormat, ...);
+
 	virtual void	ExportDidBegin(){}
 	virtual void	ExportDidEnd(){}
 	virtual void	AddHeader(void) {}
 	virtual void	AddBankSection(const FCodeAnalysisBank* pBank);
 	virtual void	ProcessLabelsOutsideExportedRange(void){}
+	virtual FLabelInfo* ProcessOperandLabel(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback); // sam
+
 	bool		ExportAddressRange(const std::vector<FCodeAnalysisItem>& itemList, uint16_t startAddr, uint16_t endAddr, bool bIsPhysicalMem	);
-	void		QueueWarning(const char* pFormat, ...); // sam
+	void		QueueWarning(const char* pFormat, ...);
 
 	//std::string		GenerateAddressLabelString(FAddressRef addr);
 	void			ExportDataInfoASM(FAddressRef addr);
@@ -67,6 +70,7 @@ protected:
 	// sam. track line numbers
 
 	bool			bInitialised = false;
+	bool			bLogImmediately = false;
 	ENumberDisplayMode HexMode = ENumberDisplayMode::HexDollar;
 	ENumberDisplayMode OldNumberMode;
 
