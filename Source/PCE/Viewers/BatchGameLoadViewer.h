@@ -23,7 +23,7 @@ private:
 	void StartAutomation();
 
 private:
-	std::string ActiveListName = "Snapshot File";
+	std::string ActiveListName;
 
 	bool bAutomationActive = false;
 	bool bLoadGame = false;

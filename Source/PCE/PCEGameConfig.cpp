@@ -16,7 +16,7 @@ void FPCEGameConfig::LoadFromJson(const nlohmann::json& jsonConfigFile)
 	FProjectConfig::LoadFromJson(jsonConfigFile);
 
 	if(EmulatorFile.ListName.empty())
-		EmulatorFile.ListName = "Snapshot File";
+		EmulatorFile.ListName = FPCEEmu::kPCERomGameListName;
 
 }
 

@@ -72,6 +72,9 @@ constexpr uint8_t kBankHWPage = 0xff;
 constexpr uint16_t kDefaultPrimaryMappedPage = 8;
 constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAnalysisPage::kPageSize;
 
+const char* FPCEEmu::kPCERomGameListName = "PCE ROM File";
+const char* FPCEEmu::kCDRomGameListName = "CD-ROM Image";
+
 #ifndef NDEBUG
 #define BANK_SWITCH_DEBUG 0
 #define BATCH_GAME_VIEWER 1
@@ -1052,8 +1055,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	}
 
 	const FPCEConfig* pPCEConfig = GetPCEGlobalConfig();
-	AddGamesList("PCE ROM File", GetPCEGlobalConfig()->SnapshotFolder.c_str());
-	AddGamesList("CD-ROM Image", GetPCEGlobalConfig()->CdRomFolder.c_str());
+	AddGamesList(kPCERomGameListName, GetPCEGlobalConfig()->SnapshotFolder.c_str());
+	AddGamesList(kCDRomGameListName, GetPCEGlobalConfig()->CdRomFolder.c_str());
 
 	LoadFont();
 
@@ -1709,15 +1712,14 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 
 	switch (pSnapshot->Type)
 	{
-	case EEmuFileType::PCE:
 	case EEmuFileType::CUE:
 		if (!bBiosLoaded)
 		{
 			const std::string biosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
-			SetLastError("Could not load bios '%s'", biosPath.c_str());
+			SetLastError("Bios not loaded: '%s'", biosPath.c_str());
 			return false;
 		}
-		[[fallthrough]];
+	case EEmuFileType::PCE:
 	case EEmuFileType::ZIP:
 		if (!pCore->LoadMedia(fileName.c_str()))
 		{

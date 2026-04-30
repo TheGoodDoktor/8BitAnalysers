@@ -126,7 +126,7 @@ void FGameDbViewer::DrawGameDbTable()
 {
 	if (ImGui::Button("Load All"))
 	{
-		auto findIt = pPCEEmu->GetGamesLists().find("Snapshot File");
+		auto findIt = pPCEEmu->GetGamesLists().find(FPCEEmu::kPCERomGameListName);
 		if (findIt != pPCEEmu->GetGamesLists().end())
 		{
 			const FGamesList& gamesList = findIt->second;

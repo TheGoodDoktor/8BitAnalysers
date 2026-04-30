@@ -20,6 +20,7 @@ FBatchGameLoadViewer::FBatchGameLoadViewer(FEmuBase* pEmu)
 { 
 	Name = "Batch Game Loader";
 	pPCEEmu = static_cast<FPCEEmu*>(pEmu);
+	ActiveListName = FPCEEmu::kPCERomGameListName;
 }
 
 bool FBatchGameLoadViewer::Init()
@@ -119,8 +120,8 @@ void FBatchGameLoadViewer::DrawUI()
 		//pPCEEmu->bWriteCodeInfoWhenCodeExecuted = bExportAsm;
 	}
 
-	if (bExportAsm)
-		ImGui::Text("THIS WILL AFFECT PERFORMANCE");
+	//if (bExportAsm)
+	//	ImGui::Text("THIS WILL AFFECT PERFORMANCE");
 
 	ImGui::SeparatorText("Bank Mapping");
 	bool bMapped = false;

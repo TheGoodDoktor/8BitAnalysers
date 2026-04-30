@@ -144,6 +144,9 @@ public:
 	uint16_t PrevPC = 0;
 	int EmuFramesToRun = 1;
 
+	static const char* kPCERomGameListName;
+	static const char* kCDRomGameListName;
+
 protected:
 
 	void ResetProject();
