@@ -164,7 +164,7 @@ bool FAsmExportValidator::CompareRomFiles(const std::vector<int16_t>& banksExpor
 
 							if (numDiffsLogged < 4)
 							{
-								LOGINFO("[%s][%04x] %02x -> %02x", pBank->Name.c_str(), pBank->GetMappedAddress() + i, pOriginalBankData[i], pAssembledBankData[i]);
+								LOGINFO("[%s][%04x] Original = %02x. Assembled = %02x", pBank->Name.c_str(), pBank->GetMappedAddress() + i, pOriginalBankData[i], pAssembledBankData[i]);
 								numDiffsLogged++;
 							}
 						}

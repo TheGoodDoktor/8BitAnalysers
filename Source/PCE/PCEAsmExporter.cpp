@@ -92,17 +92,17 @@ class FPCEAsmExporterBase : public FASMExporter
 				}
 			}
 		}
-		virtual FLabelInfo* ProcessOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback) override
+		virtual FLabelInfo* OutputOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t disassemblyValue, dasm_output_t outputCallback) override
 		{
 			FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-			FLabelInfo* pLabel = state.GetLabelForAddress(DasmState.pCodeInfoItem->OperandAddress);
+			FLabelInfo* pLabel = state.GetLabelForAddress(labelAddress);
 
 			if (pLabel != nullptr)
 			{
-				const uint16_t operandAddr = DasmState.pCodeInfoItem->OperandAddress.GetAddress();
-				const FDataInfo* pDataInfo = state.GetDataInfoForAddress(DasmState.pCodeInfoItem->OperandAddress);
+				const uint16_t operandAddr = labelAddress.GetAddress();
+				const FDataInfo* pDataInfo = state.GetDataInfoForAddress(labelAddress);
 
-				const int16_t operandBankId = DasmState.pCodeInfoItem->OperandAddress.GetBankId();
+				const int16_t operandBankId = labelAddress.GetBankId();
 				FPCEEmu* pPCEEmu = static_cast<FPCEEmu*>(pEmulator);
 				if (pPCEEmu->IsUnusedBank(operandBankId))
 				{
@@ -120,21 +120,20 @@ class FPCEAsmExporterBase : public FASMExporter
 					return nullptr;
 				}
 
-				if (operandAddr != val)
+				if (operandAddr != disassemblyValue)
 				{
 					// todo check if bank has been mapped to val
 					// if not return null?
 					// if so, output the label and then the offset below
 
 					const std::string labelName = pLabel->GetName();
-					labelAddress = DasmState.pCodeInfoItem->OperandAddress;
 
 					for (int i = 0; i < labelName.size(); i++)
 					{
 						outputCallback(labelName[i], &DasmState);
 					}
 
-					const int32_t offset = (int32_t)val - (int32_t)operandAddr;
+					const int32_t offset = (int32_t)disassemblyValue - (int32_t)operandAddr;
 					char offsetStr[16];
 					if (offset > 0)
 						snprintf(offsetStr, sizeof(offsetStr), "+$%X", offset);
@@ -158,7 +157,7 @@ class FPCEAsmExporterBase : public FASMExporter
 					const FLabelInfo* pInstrLabel = state.GetLabelForAddress(instrAddr);
 					if (pInstrLabel != nullptr)
 					{
-						const int offset = DasmState.pCodeInfoItem->OperandAddress.GetAddress() - instrAddr.GetAddress();
+						const int offset = operandAddr - instrAddr.GetAddress();
 						std::string labelExpr = pInstrLabel->GetName();
 						if (offset > 0)
 						{
@@ -173,7 +172,7 @@ class FPCEAsmExporterBase : public FASMExporter
 					else
 					{
 						const FCodeAnalysisBank* pCurBank = state.GetBank(DasmState.CurrentAddress.GetBankId());
-						QueueWarning("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), DasmState.CurrentAddress.GetAddress(), pLabel->GetName(), DasmState.pCodeInfoItem->OperandAddress.GetAddress());
+						QueueWarning("'%s': 0x%04x. Label '%s' (0x%04x) is inside the instruction bytes and no instruction label found. Outputting raw value.", pCurBank->Name.c_str(), DasmState.CurrentAddress.GetAddress(), pLabel->GetName(), operandAddr);
 						DasmState.NumRawValuesOutput++;
 						return nullptr;
 					}
@@ -181,8 +180,6 @@ class FPCEAsmExporterBase : public FASMExporter
 				else
 				{
 					const std::string labelName = pLabel->GetName();
-					labelAddress = DasmState.pCodeInfoItem->OperandAddress;
-
 					for (int i = 0; i < labelName.size(); i++)
 					{
 						outputCallback(labelName[i], &DasmState);

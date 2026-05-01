@@ -129,16 +129,14 @@ void FASMExporter::Output(const char* pFormat, ...)
 }
 
 // sam
-FLabelInfo* FASMExporter::ProcessOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback)
+FLabelInfo* FASMExporter::OutputOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t disassemblyValue, dasm_output_t outputCallback)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-	FLabelInfo* pLabel = state.GetLabelForAddress(DasmState.pCodeInfoItem->OperandAddress);
+	FLabelInfo* pLabel = state.GetLabelForAddress(labelAddress);
 
 	if (pLabel != nullptr)
 	{
 		const std::string labelName = pLabel->GetName();
-		labelAddress = DasmState.pCodeInfoItem->OperandAddress;
-
 		for (int i = 0; i < labelName.size(); i++)
 		{
 			outputCallback(labelName[i], &DasmState);

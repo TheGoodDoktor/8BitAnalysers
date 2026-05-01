@@ -153,12 +153,12 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 
 		if (bOperandIsAddress)
 		{
-			FAddressRef labelAddress = FAddressRef::Invalid();
+			FAddressRef labelAddress = pCodeInfoItem->OperandAddress;
 			const FLabelInfo* pLabel = nullptr;
 
-			if (pCodeInfoItem->OperandAddress.IsValid())
+			if (labelAddress.IsValid())
 			{
-				pLabel = pExporter->ProcessOperandLabelAtAddress(labelAddress, val, outputCallback);
+				pLabel = pExporter->OutputOperandLabelAtAddress(labelAddress, val, outputCallback);
 			}
 			else
 			{
