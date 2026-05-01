@@ -99,42 +99,55 @@ bool FAsmExportValidator::CompareRomFiles(const std::vector<int16_t>& banksExpor
 {
 	const std::string outputPceFname = RemoveFileExtension(asmFname.c_str()) + ".pce";
 
-	size_t newFileSize = 0;
-	uint8_t* pOrigData = (uint8_t*)LoadBinaryFile(outputPceFname.c_str(), newFileSize);
-	if (pOrigData == nullptr)
+	size_t assembledFileSize = 0;
+	uint8_t* pAssembledData = (uint8_t*)LoadBinaryFile(outputPceFname.c_str(), assembledFileSize);
+	if (pAssembledData == nullptr)
 	{
 		LOGINFO("Could not load '%s' to verify contents.", outputPceFname.c_str());
 		return false;
 	}
 
-	//LOGINFO("Produced ROM is %d bytes, %.1fKB", newFileSize, (float)newFileSize / 1024.f);
+	size_t originalFileSize = 0;
+	uint8_t* pOriginalData = nullptr;
 
-	size_t origFileSize = 0;
-	uint8_t* pNewData = nullptr;
 	auto findIt = pPCEEmu->GetGamesLists().find(pPCEEmu->GetProjectConfig()->EmulatorFile.ListName);
 	if (findIt != pPCEEmu->GetGamesLists().end())
 	{
 		const int bankCount = pPCEEmu->GetBankCount();
-		const std::string origFname = findIt->second.GetRootDir() + pPCEEmu->GetProjectConfig()->EmulatorFile.FileName;
-		pNewData = (uint8_t*)LoadBinaryFile(origFname.c_str(), origFileSize);
-		if (pNewData != nullptr)
-		{
-			LOGINFO("Produced ROM is %d bytes, %.1fKB. Original ROM is %d bytes, %.1fKB. [%s]", newFileSize, (float)newFileSize / 1024.f, origFileSize, (float)origFileSize / 1024.f, newFileSize == origFileSize ? "MATCH" : "DIFF");
+		const std::string originalFname = findIt->second.GetRootDir() + pPCEEmu->GetProjectConfig()->EmulatorFile.FileName;
 
-			if (newFileSize != origFileSize)
+		pOriginalData = (uint8_t*)LoadBinaryFile(originalFname.c_str(), originalFileSize);
+		if (pOriginalData != nullptr)
+		{
+			size_t originalDataOffset = 0;
+			size_t adjustedOriginalSize = originalFileSize;
+
+			if ((originalFileSize % 0x2000) != 0)
 			{
-				const long diffBytes = abs((long)(newFileSize - origFileSize));
+				if ((originalFileSize - 512) % 0x2000 == 0)
+				{
+					LOGINFO("Detected 512-byte header in original ROM. Skipping header for comparison.");
+					originalDataOffset = 512;
+					adjustedOriginalSize -= 512;
+				}
+			}
+
+			LOGINFO("Produced ROM is %d bytes, %.1fKB. Original ROM is %d bytes, %.1fKB. [%s]", assembledFileSize, (float)assembledFileSize / 1024.f, originalFileSize, (float)originalFileSize / 1024.f, assembledFileSize == adjustedOriginalSize ? "MATCH" : "DIFF");
+
+			if (assembledFileSize != adjustedOriginalSize)
+			{
+				const long diffBytes = abs((long)(assembledFileSize - adjustedOriginalSize));
 				LOGINFO("ROM files size do not match. Difference is %d bytes (0x%x) [%.1fKB]", diffBytes, diffBytes, (float)diffBytes / 1024.0f);
 			}
 
 			int numDiffs = 0;
-			// check the data for the exported ROM file matches the original ROM.
-			// only check the bytes for the banks we exported.
+
 			for (auto bankId : banksExported)
 			{
 				const uint8_t bankIndex = pPCEEmu->GetBankIndexForBankId(bankId);
-				uint8_t* pNewBankData = pNewData + 0x2000 * bankIndex;
-				uint8_t* pOrigBankData = pOrigData + 0x2000 * bankIndex;
+
+				uint8_t* pAssembledBankData = pAssembledData + 0x2000 * bankIndex;
+				uint8_t* pOriginalBankData = pOriginalData + originalDataOffset + 0x2000 * bankIndex;
 
 				const FCodeAnalysisBank* pBank = pPCEEmu->GetCodeAnalysis().GetBank(bankId);
 
@@ -142,15 +155,16 @@ bool FAsmExportValidator::CompareRomFiles(const std::vector<int16_t>& banksExpor
 				{
 					int numBankDiffs = 0;
 					int numDiffsLogged = 0;
+
 					for (int i = 0; i < 0x2000; i++)
 					{
-						if (pNewBankData[i] != pOrigBankData[i])
+						if (pAssembledBankData[i] != pOriginalBankData[i])
 						{
 							numBankDiffs++;
 
 							if (numDiffsLogged < 4)
 							{
-								LOGINFO("[%s][%04x] %02x -> %02x", pBank->Name.c_str(), pBank->GetMappedAddress() + i, pOrigBankData[i], pNewBankData[i]);
+								LOGINFO("[%s][%04x] %02x -> %02x", pBank->Name.c_str(), pBank->GetMappedAddress() + i, pOriginalBankData[i], pAssembledBankData[i]);
 								numDiffsLogged++;
 							}
 						}
@@ -170,7 +184,7 @@ bool FAsmExportValidator::CompareRomFiles(const std::vector<int16_t>& banksExpor
 			if (!numDiffs)
 			{
 				const bool bExportedAllBanks = bankCount == banksExported.size();
-				if (bExportedAllBanks && newFileSize == origFileSize)
+				if (bExportedAllBanks && assembledFileSize == adjustedOriginalSize)
 				{
 					LOGINFO("Files are identical! Exported all banks.");
 					Results.bRomFileIdentical = true;
@@ -186,15 +200,15 @@ bool FAsmExportValidator::CompareRomFiles(const std::vector<int16_t>& banksExpor
 				LOGINFO("Found %d bytes that are different overall.", numDiffs);
 			}
 
-			free(pNewData);
+			free(pOriginalData);
 		}
 		else
 		{
-			LOGINFO("Could not load '%s' to verify contents.", origFname.c_str());
+			LOGINFO("Could not load '%s' to verify contents.", originalFname.c_str());
 		}
 	}
 
-	free(pOrigData);
+	free(pAssembledData);
 
 	return Results.bRomFileIdentical;
 }
