@@ -81,7 +81,7 @@ bool FASMExporter::Finish()
 {
 	// sam. log including line number
 	for (const FDeferredWarning& warning : DeferredWarnings)
-		LOGWARNING("(Line %d) %s", HeaderLineNumber + warning.BodyLineNumber - 1, warning.Message.c_str());
+		LOGWARNING("Line %d: %s", HeaderLineNumber + warning.BodyLineNumber - 1, warning.Message.c_str());
 	DeferredWarnings.clear();
 
 	if (FilePtr != nullptr)
@@ -129,7 +129,7 @@ void FASMExporter::Output(const char* pFormat, ...)
 }
 
 // sam
-FLabelInfo* FASMExporter::ProcessOperandLabel(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback)
+FLabelInfo* FASMExporter::ProcessOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	FLabelInfo* pLabel = state.GetLabelForAddress(DasmState.pCodeInfoItem->OperandAddress);

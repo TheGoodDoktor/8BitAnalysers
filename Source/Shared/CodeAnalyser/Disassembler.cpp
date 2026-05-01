@@ -158,7 +158,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 
 			if (pCodeInfoItem->OperandAddress.IsValid())
 			{
-				pLabel = pExporter->ProcessOperandLabel(labelAddress, val, outputCallback);
+				pLabel = pExporter->ProcessOperandLabelAtAddress(labelAddress, val, outputCallback);
 			}
 			else
 			{
@@ -174,11 +174,11 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 					LabelsOutsideRange.insert(labelAddress);
 				}
 
-				if (!CodeAnalysisState->IsBankIdCanonical(labelAddress.GetBankId()))
+				/*if (!CodeAnalysisState->IsBankIdCanonical(labelAddress.GetBankId()))
 				{
 					const FCodeAnalysisBank* pCurBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
 					pExporter->QueueWarning("'%s': 0x%04x. Found non canonical bank label '%s' 0x%x. %s", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pLabel->GetName(), labelAddress.GetAddress(), pCodeInfoItem->Text.c_str());
-				}
+				}*/
 			}
 			else
 			{

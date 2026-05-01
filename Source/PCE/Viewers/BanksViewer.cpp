@@ -364,11 +364,11 @@ void FBanksViewer::DrawMappedBanks()
 			continue;
 
 		// Avoid duplicates (same bank mapped to multiple slots)
-		/*if (std::find(banksToView.begin(), banksToView.end(), pBank) == banksToView.end())
+		//if (std::find(banksToView.begin(), banksToView.end(), pBank) == banksToView.end())
 		{
 			banksToView.push_back(pBank);
 			bankSetsToView.push_back(pBankSet);
-		}*/
+		}
 	}
 
 	const float detailWidth = ImGui::GetFontSize() * 28.0f;

@@ -458,6 +458,12 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 	PrevPC = pc;
 }
 
+bool FPCEEmu::IsUnusedBank(int16_t bankId) const
+{
+	const FBankSet* pBankSet = GetBankSetFromBankId(bankId);
+	return pBankSet == &BankSets[kBankUnusedStart];
+}
+
 // Bear in mind bankIds can be in multiple bank slots.
 // This will return the lowest bank index that matches the bankId.
 uint8_t FPCEEmu::GetBankIndexForBankId(uint16_t bankId)

@@ -92,7 +92,7 @@ class FPCEAsmExporterBase : public FASMExporter
 				}
 			}
 		}
-		virtual FLabelInfo* ProcessOperandLabel(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback) override
+		virtual FLabelInfo* ProcessOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback) override
 		{
 			FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 			FLabelInfo* pLabel = state.GetLabelForAddress(DasmState.pCodeInfoItem->OperandAddress);
@@ -101,6 +101,24 @@ class FPCEAsmExporterBase : public FASMExporter
 			{
 				const uint16_t operandAddr = DasmState.pCodeInfoItem->OperandAddress.GetAddress();
 				const FDataInfo* pDataInfo = state.GetDataInfoForAddress(DasmState.pCodeInfoItem->OperandAddress);
+
+				const int16_t operandBankId = DasmState.pCodeInfoItem->OperandAddress.GetBankId();
+				FPCEEmu* pPCEEmu = static_cast<FPCEEmu*>(pEmulator);
+				if (pPCEEmu->IsUnusedBank(operandBankId))
+				{
+					// todo increment NumRawValuesOutput?
+					const FCodeAnalysisBank* pCurBank = state.GetBank(DasmState.CurrentAddress.GetBankId());
+					QueueWarning("'%s': 0x%04x. Found unused bank label '%s' 0x%x. %s", pCurBank->Name.c_str(), DasmState.CurrentAddress.GetAddress(), pLabel->GetName(), operandAddr, DasmState.pCodeInfoItem->Text.c_str());
+					return nullptr;
+				}
+
+				if (!state.IsBankIdCanonical(operandBankId))
+				{
+					// todo increment NumRawValuesOutput?
+					const FCodeAnalysisBank* pCurBank = state.GetBank(DasmState.CurrentAddress.GetBankId());
+					QueueWarning("'%s': 0x%04x. Found non canonical bank label '%s' 0x%x. %s", pCurBank->Name.c_str(), DasmState.CurrentAddress.GetAddress(), pLabel->GetName(), operandAddr, DasmState.pCodeInfoItem->Text.c_str());
+					return nullptr;
+				}
 
 				if (operandAddr != val)
 				{

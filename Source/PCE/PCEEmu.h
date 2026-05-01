@@ -124,6 +124,7 @@ public:
 	uint8_t GetBankIndexForBankId(uint16_t bankId);
 
 	FBankSet* GetBankSetFromBankId(int16_t bankId) const { return (bankId >= 0 && bankId < FCodeAnalysisState::BankCount) ? BankSetLookup[bankId] : nullptr; }
+	bool IsUnusedBank(int16_t bankId) const;
 
 	int GetBankCount() const;
 	void MapMprBank(uint8_t mprIndex, uint8_t newBankIndex);

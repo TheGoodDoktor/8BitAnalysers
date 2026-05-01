@@ -38,7 +38,9 @@ public:
 	virtual void	AddHeader(void) {}
 	virtual void	AddBankSection(const FCodeAnalysisBank* pBank);
 	virtual void	ProcessLabelsOutsideExportedRange(void){}
-	virtual FLabelInfo* ProcessOperandLabel(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback); // sam
+	// todo rework this function. the intent isnt clear.
+	// it's confusing it returns label address and it's weird the address of the label isnt passed in
+	virtual FLabelInfo* ProcessOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t val, dasm_output_t outputCallback); // sam
 
 	bool		ExportAddressRange(const std::vector<FCodeAnalysisItem>& itemList, uint16_t startAddr, uint16_t endAddr, bool bIsPhysicalMem	);
 	void		QueueWarning(const char* pFormat, ...);
