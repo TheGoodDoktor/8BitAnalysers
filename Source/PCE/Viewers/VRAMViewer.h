@@ -18,6 +18,8 @@ struct FVRAMAccess
 
 struct FSpriteInfo
 {
+	uint16_t XPos = 0;
+	uint16_t YPos = 0;
 	uint16_t Address = 0;
 	uint16_t SizeInBytes = 0;
 	int Width = 0;
@@ -55,6 +57,7 @@ public:
 	const FSpriteInfo* GetSpriteInfo() const { return SpriteInfo; }
 	int GetSpriteIndexForAddress(uint16_t addr) const;
 	int GetSpriteHighlight() const { return SpriteHighlight; }
+	const FVRAMAccess& GetVRAMAccess(uint16_t vramAddr) const { return Access[vramAddr]; }
 
 private:
 

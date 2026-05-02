@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "imgui.h"
@@ -18,8 +19,10 @@ public:
 	FPCEEmu* pPCEEmu = nullptr;
 public:
 	int HighlightSprite = -1;
+	int SelectedSprite = -1;
 
 private:
+	void DrawSpriteDetails(int spriteIndex);
 	void ResetScreenTexture();
 	void UpdateSpriteBuffers();
 

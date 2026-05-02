@@ -229,14 +229,19 @@ void FVRAMViewer::Tick()
 	for (int i = 0; i < HUC6270_SPRITES; i++)
 	{
 		const int sprite_offset = i << 2;
-		const u16 flags = sat[sprite_offset + 3] & 0xB98F;
+		u16* spriteSat = sat + sprite_offset;
+
+		const u16 flags = spriteSat[3] & 0xB98F;
 		const int cgx = (flags >> 8) & 0x01;
 		const int cgy = (flags >> 12) & 0x03;
 		SpriteInfo[i].Width = k_huc6270_sprite_width[cgx];
 		SpriteInfo[i].Height = k_huc6270_sprite_height[cgy];
 		SpriteInfo[i].SizeInBytes = (SpriteInfo[i].Width * SpriteInfo[i].Height) >> 2;
 
-		u16 pattern = (sat[sprite_offset + 2] >> 1) & 0x3FF;
+		SpriteInfo[i].XPos = spriteSat[0];
+		SpriteInfo[i].YPos = spriteSat[1];
+
+		u16 pattern = (spriteSat[2] >> 1) & 0x3FF;
 		pattern &= k_huc6270_sprite_mask_width[cgx];
 		pattern &= k_huc6270_sprite_mask_height[cgy];
 		SpriteInfo[i].Address = pattern << 6;
