@@ -1,4 +1,4 @@
-#include <imgui.h>
+﻿#include <imgui.h>
 
 #include "PCEEmu.h"
 
@@ -528,6 +528,17 @@ int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 	if (bankId >= 0 && bankId < (int16_t)FCodeAnalysisState::kMaxBanks)
 		return CanonicalBankIdLookup[bankId];
 	return bankId;
+}
+
+const char* FPCEEmu::GetBankName(uint8_t bankIndex) const
+{
+	if (Banks[bankIndex] != nullptr)
+	{
+		const int16_t bankId = Banks[bankIndex]->GetBankId(0);
+		if (const FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId))
+			return pBank->Name.c_str();
+	}
+	return nullptr;
 }
 
 static void NullInstructionExecutedCallback(void*, uint16_t) {}
@@ -1479,7 +1490,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		// Make a label for the entry point.
 		// Without this an exported asm file may not assemble.
 		char labelTxt[40];
-		snprintf(labelTxt, 40, "function_ROM_00_%04X_entry_point", initialPC.GetAddress());
+		snprintf(labelTxt, 40, "func_ROM_00_%04X_entry_point", initialPC.GetAddress());
 		AddLabel(CodeAnalysis, initialPC, labelTxt, ELabelType::Function);
 	}
 

@@ -786,7 +786,7 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 		{
 			// sam. add bank name to label. fixes assemble failures related to duplicate labels across different banks.
 			FCodeAnalysisBank* pBank = state.GetBank(address.GetBankId());
-			snprintf(label, kLabelSize,"function_%s_%04X", pBank ? pBank->Name.c_str() : "unknown", address.GetAddress());
+			snprintf(label, kLabelSize,"func_%s_%04X", pBank ? pBank->Name.c_str() : "unknown", address.GetAddress());
 			pLabel->Global = true;
 
 			/*if (state.GetCanonicalBankId(pBank->Id))
