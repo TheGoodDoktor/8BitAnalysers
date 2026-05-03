@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
 #include "imgui.h"
 #include "CodeAnalyser/UI/ViewerBase.h"
 
@@ -16,12 +18,15 @@ public:
 
 	FPCEEmu* pPCEEmu = nullptr;
 private:
-	void UpdateBackground();
+	bool UpdateBackground();
 
 private:
-	uint8_t* BackgroundBuffer = nullptr;
+	uint8_t*              BackgroundBuffer  = nullptr;
+	int                   BufferWidth       = 0;
+	int                   BufferHeight      = 0;
+	ImTextureID           BackgroundTexture = 0;
 
-	int BufferWidth = 32;
-	int BufferHeight = 32;
-	ImTextureID BackgroundTexture = 0;
+	std::vector<uint16_t> ShadowBAT;
+	int                   LastRenderedFrame = -1;
+	uint16_t              ShadowColorTable[512] = {};
 };
