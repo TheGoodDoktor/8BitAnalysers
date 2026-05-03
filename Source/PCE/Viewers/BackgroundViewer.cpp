@@ -18,7 +18,7 @@ bool FBackgroundViewer::Init()
 	BackgroundBuffer = new u8[HUC6270_MAX_BACKGROUND_WIDTH * HUC6270_MAX_BACKGROUND_HEIGHT * 4];
 	
 	// todo use above numbers?
-	BackgroundTexture = ImGui_CreateTextureRGBA(pPCEEmu->GetFrameBuffer(), 512, 512);
+	BackgroundTexture = ImGui_CreateTextureRGBA(BackgroundBuffer, HUC6270_MAX_BACKGROUND_WIDTH, HUC6270_MAX_BACKGROUND_HEIGHT);
 
 	return true;
 }
@@ -201,9 +201,9 @@ void FBackgroundViewer::UpdateBackground()
 			const int tile_data      = (bat_entry & 0x07FF) * 16;
 			const int color_tbl_base = ((bat_entry >> 12) & 0x0F) * 16;
 
-			u8* dst_row = BackgroundBuffer + (tile_y * 8 * BufferWidth + tile_x * 8) * 4;
+			u8* dst_row = BackgroundBuffer + (tile_y * 8 * HUC6270_MAX_BACKGROUND_WIDTH + tile_x * 8) * 4;
 
-			for (int row = 0; row < 8; row++, dst_row += BufferWidth * 4)
+			for (int row = 0; row < 8; row++, dst_row += HUC6270_MAX_BACKGROUND_WIDTH * 4)
 			{
 				// Both VRAM words for this tile row fetched once for all 8 pixels.
 				const u16 word_a = vram[tile_data + row];
