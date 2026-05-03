@@ -1783,6 +1783,8 @@ void FPCEEmu::GlobalShortcuts(void)
 {
 	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_E))
 		ExportAsmForCurrentGame();
+	if (pCurrentProjectConfig && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_R))
+		SoftResetMachine();
 }
 
 // todo: get this working on CD games
@@ -1867,7 +1869,7 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 
 void FPCEEmu::SystemMenuAdditions(void)
 {
-	if (pCurrentProjectConfig && ImGui::MenuItem("Soft Reset"))
+	if (pCurrentProjectConfig && ImGui::MenuItem("Soft Reset", "Ctrl+R"))
 	{
 		SoftResetMachine();
 	}
