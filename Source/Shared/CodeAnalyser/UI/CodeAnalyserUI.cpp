@@ -581,6 +581,7 @@ void AddLabelAtAddressUI(FCodeAnalysisState& state,FAddressRef address)
 	if (pLabel != nullptr)
 	{
 		state.GetFocussedViewState().SetCursorItem(FCodeAnalysisItem(pLabel,address));
+		state.GetFocussedViewState().LabelEditAddress = address;
 		ImGui::OpenPopup("Enter Label Text");
 		ImGui::SetWindowFocus("Enter Label Text");
 	}
@@ -723,12 +724,38 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 		else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::AddLabel]))
 		{
-			if (cursorItem.Item->Type != EItemType::Label)
+			FAddressRef labelAddress = cursorItem.AddressRef;
+
+			if (io.KeyShift)
 			{
-				AddLabelAtAddressUI(state, cursorItem.AddressRef);
+				// find the address a instruction is referencing
+				if (cursorItem.Item->Type == EItemType::Code)
+				{
+					FCodeInfo* pCodeItem = static_cast<FCodeInfo*>(cursorItem.Item);
+					if (pCodeItem->OperandType == EOperandType::JumpAddress || pCodeItem->OperandType == EOperandType::Pointer)
+					{
+						labelAddress = pCodeItem->OperandAddress;
+					}
+				}
+				else if (cursorItem.Item->Type == EItemType::Data)
+				{
+					FDataInfo* pDataItem = static_cast<FDataInfo*>(cursorItem.Item);
+					if (pDataItem->DisplayType == EDataItemDisplayType::JumpAddress || pDataItem->DisplayType == EDataItemDisplayType::Pointer)
+					{
+						labelAddress = state.AddressRefFromPhysicalAddress(state.ReadWord(cursorItem.AddressRef));
+					}
+				}
+			}
+
+			FLabelInfo* pExistingLabel = state.GetLabelForAddress(labelAddress);
+
+			if (pExistingLabel == nullptr)
+			{
+				AddLabelAtAddressUI(state, labelAddress);
 			}
 			else
 			{
+				viewState.LabelEditAddress = labelAddress;
 				ImGui::OpenPopup("Enter Label Text");
 				ImGui::SetWindowFocus("Enter Label Text");
 			}
@@ -748,6 +775,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		else if (cursorItem.Item->Type == EItemType::Label && ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::Rename]))
 		{
 			//AddLabelAtAddress(state, state.pCursorItem->Address);
+			viewState.LabelEditAddress = cursorItem.AddressRef;
 			ImGui::OpenPopup("Enter Label Text");
 			ImGui::SetWindowFocus("Enter Label Text");
 		}
@@ -878,7 +906,9 @@ void UpdatePopups(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 
 	if (ImGui::BeginPopup("Enter Label Text", ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		FLabelInfo *pLabel = (FLabelInfo *)cursorItem.Item;
+		FLabelInfo* pLabel = state.GetLabelForAddress(viewState.LabelEditAddress);
+		assert(pLabel != nullptr);
+		//FLabelInfo* pLabel = (FLabelInfo*)cursorItem.Item;
 		
 		ImGui::SetKeyboardFocusHere();
 		std::string LabelText = pLabel->GetName();
