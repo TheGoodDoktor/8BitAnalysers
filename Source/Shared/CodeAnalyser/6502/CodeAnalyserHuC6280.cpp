@@ -216,9 +216,10 @@ bool CheckJumpInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, u
 		// to relative address
 		case 0x10:	// BPL
 		case 0x30:	// BMI
-		case 0x44:	// BSR
+		case 0x44:	// BSR HuC6280
 		case 0x50:	// BVC
 		case 0x70:	// BVS
+		case 0x80:	// BRA 65C02
 		case 0x90:	// BCC
 		case 0xB0:	// BCS
 		case 0xD0:	// BNE
