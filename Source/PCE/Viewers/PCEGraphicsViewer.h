@@ -6,9 +6,9 @@
 #include <CodeAnalyser/UI/GraphicsViewer.h>
 #include "imgui.h"
 
+class FPCEGraphicsView;
 class FPCEEmu;
 struct FGame;
-class FPCEGraphicsView;
 
 class FPCEGraphicsViewer : public FGraphicsViewer
 {
@@ -20,14 +20,23 @@ public:
 	}
 
 	void	DrawUI() override;
-	void	DrawScreenViewer(void) override;
 	bool	Init(void) override;
+
+private:
+	void	DrawTest(void);
+	void	DrawScreenViewer(void) override;
 
 private:
 	FPCEEmu*	pPCEEmu = nullptr;
 
-//#if 0
+	uint8_t*	ScreenBuffer = nullptr;
+	ImTextureID	ScreenTexture = nullptr;
+	int			TextureWidth = 0;
+	int			TextureHeight = 0;
+	bool		bDrawBackground = true;
+	bool		bDrawSprites = true;
+
+#ifndef NDEBUG
 	FPCEGraphicsView* pTestPCEGraphicsView = 0;
-	//FCPCGraphicsView* pTestCPCGraphicsView = 0;
-//#endif
+#endif
 };
