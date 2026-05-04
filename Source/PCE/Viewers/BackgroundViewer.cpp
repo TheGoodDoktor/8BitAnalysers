@@ -23,7 +23,6 @@ bool FBackgroundViewer::Init()
 
 static const ImVec4 cyan = ImVec4(0.10f, 0.90f, 0.90f, 1.0f);
 static const ImVec4 dark_gray = ImVec4(0.10f, 0.10f, 0.10f, 1.0f);
-static const float k_scale_levels[3] = { 1.0f, 1.5f, 2.0f };
 
 void FBackgroundViewer::DrawUI()
 {
@@ -44,12 +43,11 @@ void FBackgroundViewer::DrawUI()
 	int screen_size_y = k_huc6270_screen_size_y[screen_reg];
 	int bat_size = screen_size_x * screen_size_y;
 
-	static bool show_grid = true;
+	static bool show_grid = false;
 	static bool show_write_activity = false;
-	static int zoom = 2;
+	static int scale = 2;
 	ImVec4 grid_color = dark_gray;
 	grid_color.w = 0.3f;
-	float scale = k_scale_levels[zoom];
 	float size_h = 8.0f * screen_size_x * scale;
 	float size_v = 8.0f * screen_size_y * scale;
 	float spacing_h = 8.0f * scale;
@@ -64,33 +62,18 @@ void FBackgroundViewer::DrawUI()
 
 		ImGui::TableNextColumn();
 
-		ImGui::PushItemWidth(60.0f);
-		ImGui::Combo("Zoom##zoom_bg", &zoom, "1x\0""1.5x\0""2x\0\0");
+		ImGui::InputInt("Scale", &scale, 1, 1);
+		scale = MAX(scale, 1);
+
 		ImGui::Checkbox("Show Grid##grid_bg", &show_grid);
 		ImGui::Checkbox("Write Activity##writeact_bg", &show_write_activity);
 
 		ImGui::TableNextColumn();
 
-		ImGui::Text("ENABLED  ");
-
-		ImGui::SameLine();
-		ImGui::Text("%s", huc6270_state->R[HUC6270_REG_CR] & 0x0080 ? "YES" : "NO");
-
-		ImGui::SameLine();
-		ImGui::Text("        SCREEN");
-
-		ImGui::SameLine();
-		ImGui::Text("%dx%d", k_huc6270_screen_size_x[(huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07], k_huc6270_screen_size_y[(huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07]);
-
-		ImGui::Text("SCROLL X ");
-
-		ImGui::SameLine();
-		ImGui::Text("%02X (%03d)", huc6270_state->R[HUC6270_REG_BXR], huc6270_state->R[HUC6270_REG_BXR]);
-
-		ImGui::Text("SCROLL Y ");
-
-		ImGui::SameLine();
-		ImGui::Text("%02X (%03d)", huc6270_state->R[HUC6270_REG_BYR], huc6270_state->R[HUC6270_REG_BYR]);
+		ImGui::Text("Enabled: %s", huc6270_state->R[HUC6270_REG_CR] & 0x0080 ? "YES" : "NO");
+		ImGui::Text("Screen: %d x %d", k_huc6270_screen_size_x[(huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07], k_huc6270_screen_size_y[(huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07]);
+		ImGui::Text("Scroll X: %s", NumStr(huc6270_state->R[HUC6270_REG_BXR]));
+		ImGui::Text("Scroll Y: ", NumStr(huc6270_state->R[HUC6270_REG_BYR]));
 
 		ImGui::EndTable();
 	}
