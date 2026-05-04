@@ -275,6 +275,7 @@ bool CheckStopInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc)
 	return false;
 }
 
+// this is not hooked up
 bool RegisterCodeExecutedHuC6280(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
@@ -292,9 +293,9 @@ bool RegisterCodeExecutedHuC6280(FCodeAnalysisState& state, uint16_t pc, uint16_
 		case 0x20:  // JSR
 		{
 			FCPUFunctionCall callInfo;
-			callInfo.CallAddr = state.AddressRefFromPhysicalAddress(pc);
-			callInfo.FunctionAddr = state.AddressRefFromPhysicalAddress(state.ReadWord(pc+1));
-			callInfo.ReturnAddr = state.AddressRefFromPhysicalAddress(pc + 3);
+			callInfo.CallAddr =  state.GetCanonicalAddressRef(pc);
+			callInfo.FunctionAddr = state.GetCanonicalAddressRef(state.ReadWord(pc+1));
+			callInfo.ReturnAddr = state.GetCanonicalAddressRef(pc + 3);
 			callStack.push_back(callInfo);
 		}
 		break;

@@ -354,7 +354,10 @@ void FBanksViewer::DrawMappedBanks()
 
 	for (int addr = 0; addr < 0x10000; addr += 0x2000)
 	{
-		const int bankId = state.GetBankFromAddress(addr);
+		int bankId = state.GetBankFromAddress(addr);
+		if (state.Config.bHideDupeBanks)
+			bankId = state.GetCanonicalBankId(bankId);
+
 		FCodeAnalysisBank* pBank = state.GetBank(bankId);
 		if (!pBank)
 			continue;

@@ -257,7 +257,7 @@ struct FCodeAnalysisConfig
 	float	BranchSpacing = 4.0f;
 	int		BranchMaxIndent = 8;
 	int		BranchLinesPerIndent = 5;
-	bool	bShowDupeBanks = false;
+	bool	bHideDupeBanks = true;
 	bool	bRedirectDupeBankAccess = true;
 };
 

@@ -1826,7 +1826,7 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 			if (bank.PrimaryMappedPage == -1)
 				continue;
 			
-			if (!state.Config.bShowDupeBanks && !state.IsBankIdCanonical(bank.Id))
+			if (state.Config.bHideDupeBanks && !state.IsBankIdCanonical(bank.Id))
 				continue;
 			
 			const bool bSelected = viewState.ViewingBankId == bank.Id;
@@ -1899,7 +1899,7 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 		FCodeAnalysisBank* pBank = state.GetBank(viewState.ViewingBankId);
 		if (pBank != nullptr)
 		{
-			const bool bHideBank = !state.Config.bShowDupeBanks && !state.IsBankIdCanonical(pBank->Id);
+			const bool bHideBank = state.Config.bHideDupeBanks && !state.IsBankIdCanonical(pBank->Id);
 			if (pBank->PrimaryMappedPage != -1 && !bHideBank) // sam. added this out of paranoia just in case ViewingBankId gets set to the addressref of a bank that shouldn't/can't be displayed
 			{
 				FCodeAnalysisBank&bank = *pBank;

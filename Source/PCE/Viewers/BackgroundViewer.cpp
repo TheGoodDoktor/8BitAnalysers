@@ -73,7 +73,7 @@ void FBackgroundViewer::DrawUI()
 		ImGui::Text("Enabled: %s", huc6270_state->R[HUC6270_REG_CR] & 0x0080 ? "YES" : "NO");
 		ImGui::Text("Screen: %d x %d", k_huc6270_screen_size_x[(huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07], k_huc6270_screen_size_y[(huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07]);
 		ImGui::Text("Scroll X: %s", NumStr(huc6270_state->R[HUC6270_REG_BXR]));
-		ImGui::Text("Scroll Y: ", NumStr(huc6270_state->R[HUC6270_REG_BYR]));
+		ImGui::Text("Scroll Y: %s", NumStr(huc6270_state->R[HUC6270_REG_BYR]));
 
 		ImGui::EndTable();
 	}
