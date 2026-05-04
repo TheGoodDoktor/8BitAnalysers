@@ -2058,6 +2058,8 @@ void FPCEEmu::SoftResetMachine()
 	assert(MprBankIdsAreValid());
 
 	GenerateGlobalInfo(CodeAnalysis);
+
+	CodeAnalysis.Debugger.GetCallstack().clear();
 }
 
 void FPCEEmu::OnEnterEditMode(void)
