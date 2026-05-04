@@ -1416,26 +1416,38 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 			item.AddressRef.GetAddress() >= viewState.DataFormattingOptions.StartAddress.GetAddress() && 
 			item.AddressRef.GetAddress() <= endAddress);
 
-	if (ImGui::Selectable("##codeanalysisline", bSelected, ImGuiSelectableFlags_SelectOnNav))
-	{
-		if (bSelected == false)	// item newly selected
-		{
-			viewState.SetCursorItem(item);
-			//viewState.CursorItemIndex = i;
+	// sam. Fixes assert in ImGui::MarkItemEdited() on line 4044
+	// SelectOnNav was removed from Selectable: it calls MarkItemEdited() when nav moves to an item, which asserts
+	// if another widget (e.g. a label input) is currently active (g.ActiveId != 0 && != id).
+	// IsItemFocused() replicates the auto-select-on-nav behaviour without that side effect.
 
-			// Select Data Formatting Range
-			if (viewState.DataFormattingTabOpen && item.Item->Type == EItemType::Data)
+	bool bNewlySelected = false;
+	if (ImGui::Selectable("##codeanalysisline", bSelected))
+	{
+		if (bSelected == false)
+			bNewlySelected = true;
+	}
+	else if (!bSelected && ImGui::IsItemFocused())
+	{
+		bNewlySelected = true;
+	}
+	if (bNewlySelected)
+	{
+		viewState.SetCursorItem(item);
+		//viewState.CursorItemIndex = i;
+
+		// Select Data Formatting Range
+		if (viewState.DataFormattingTabOpen && item.Item->Type == EItemType::Data)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			if (io.KeyShift)
 			{
-				ImGuiIO& io = ImGui::GetIO();
-				if (io.KeyShift)
-				{
-					if (viewState.DataFormattingOptions.ItemSize > 0)
-						viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress.GetAddress() - viewState.GetCursorItem().AddressRef.GetAddress()) / viewState.DataFormattingOptions.ItemSize;
-				}
-				else
-				{
-					viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().AddressRef;
-				}
+				if (viewState.DataFormattingOptions.ItemSize > 0)
+					viewState.DataFormattingOptions.NoItems = (viewState.DataFormattingOptions.StartAddress.GetAddress() - viewState.GetCursorItem().AddressRef.GetAddress()) / viewState.DataFormattingOptions.ItemSize;
+			}
+			else
+			{
+				viewState.DataFormattingOptions.StartAddress = viewState.GetCursorItem().AddressRef;
 			}
 		}
 	}
