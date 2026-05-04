@@ -207,7 +207,7 @@ void FPCEEmu::WriteByte(uint16_t address, uint8_t value)
 
 FAddressRef	FPCEEmu::GetPC(void) 
 {
-	return CodeAnalysis.AddressRefFromPhysicalAddress(p6280State->PC->GetValue());
+	return CodeAnalysis.GetCanonicalAddressRef(p6280State->PC->GetValue());
 } 
 
 uint16_t	FPCEEmu::GetSP(void)
@@ -247,7 +247,7 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	FDebugger& debugger = state.Debugger;
 	
-	const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(dataAddr);
+	const FAddressRef addrRef = state.GetCanonicalAddressRef(dataAddr);
 
 	uint32_t bpMaskCheck = 0;
 	int trapId = kTrapId_None;
@@ -333,7 +333,7 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 	if (pVRAMViewer)
 	{
 		const uint16_t curInstructionAddr = PrevPC;
-		pVRAMViewer->RegisterWrite(vramAddr, CodeAnalysis.AddressRefFromPhysicalAddress(curInstructionAddr));
+		pVRAMViewer->RegisterWrite(vramAddr, CodeAnalysis.GetCanonicalAddressRef(curInstructionAddr));
 
 		if (CodeAnalysis.Debugger.GetStepMode() == EDebugStepMode::ScreenWrite)
 		{
@@ -390,7 +390,7 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 
 	// This caused breakpoints to fire on the next instruction after the breakpoint address.
 	//const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(PrevPC);
-	const FAddressRef nextInstrAddr = state.AddressRefFromPhysicalAddress(pc);
+	const FAddressRef nextInstrAddr = state.GetCanonicalAddressRef(pc);
 	
 	/*const int16_t exeBankId = nextInstrAddr.GetBankId();
 	if (GetCanonicalBankId(exeBankId) != exeBankId)
@@ -416,7 +416,7 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 		const Memory::MemoryBankType prevBankType = pMemory->GetBankType(pMemory->GetMpr(prevBank));
 		if (curBankType != prevBankType)
 		{
-			const FAddressRef curAddr = state.AddressRefFromPhysicalAddress(pc);
+			const FAddressRef curAddr = state.GetCanonicalAddressRef(pc);
 			const uint16_t prevBankId = state.GetBankFromAddress(PrevPC);
 			const uint16_t curBankId = curAddr.GetBankId();
 			FCodeAnalysisBank* pPrevBank = state.GetBank(prevBankId);
