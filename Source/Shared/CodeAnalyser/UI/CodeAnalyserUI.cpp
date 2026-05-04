@@ -1939,13 +1939,15 @@ void DrawBankAnalysis(FCodeAnalysisState& state, FCodeAnalysisViewState& viewSta
 			}
 			else
 			{
-				// sam. not sure this is the right thing to do?
-				// I was unsure about falling back to displaying state.ItemList.
-				ImGui::Text("Bank cannot be displayed");
+				// sam. Force display of physical address space
+				pBank = nullptr;
 			}
 		}
-		else
+		
+		if (pBank == nullptr)
 		{
+			// Display the physical address space
+			
 			//ImGui::Text("No bank selected");
 			DrawItemList(state, viewState, state.ItemList);
 			// only handle keypresses for focussed window
