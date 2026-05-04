@@ -230,7 +230,7 @@ struct FCodeAnalysisViewState
 
 private:
 	FCodeAnalysisItem			CursorItem;
-	FAddressRef					GoToAddressRef;
+	FAddressRef					GoToAddressRef = FAddressRef::Invalid();
 	std::vector<FAddressRef>	PreviousAddressStack;
 	std::vector<FAddressRef>	NextAddressStack;
 	static const int			kNoBookmarks = 5;
