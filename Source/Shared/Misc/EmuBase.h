@@ -57,7 +57,7 @@ public:
 	virtual void	OnExitEditMode(void) {}
 
 	// this should probably go somewhere else
-	virtual int16_t GetCanonicalBankId(int16_t bankId) const { return bankId; }
+	virtual int16_t		GetCanonicalBankId(int16_t bankId) const { return bankId; }
 
 	bool			StartGameFromName(const char* pGameName, bool bLoadGame);
 
@@ -173,9 +173,6 @@ public:
 	bool		bShowCoordinates = false;
 	// remove.
 	bool		bWriteCodeInfoWhenCodeExecuted = false;
-
-	// todo comment
-	bool		bHideDupeBanks = true;
 
 protected:
 	bool		bShowDebugLog = false;

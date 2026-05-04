@@ -753,7 +753,7 @@ std::string GetItemText(const FCodeAnalysisState& state, FAddressRef address)
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef address, ELabelType labelType)
 {
 #ifndef NDEBUG
-	if (state.Config.bHideDupeBanks) assert(state.IsBankIdCanonical(address.GetBankId()));
+	if (state.Config.bRedirectDupeBankAccess) assert(state.IsBankIdCanonical(address.GetBankId()));
 #endif
 
 	bool bLabelOnOperand = false;
@@ -907,21 +907,11 @@ void UpdateCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	}
 }
 
-// sam. Returns an FAddressRef for physAddr with its bank redirected to the canonical bank.
-// If physAddr is already in a primary bank the SetBankId() will have no effect.
-static FAddressRef CanonicalAddressRef(FCodeAnalysisState& state, uint16_t physAddr)
-{
-	FAddressRef addrRef = state.AddressRefFromPhysicalAddress(physAddr);
-	if (state.Config.bHideDupeBanks)
-		addrRef.SetBankId(state.GetCanonicalBankId(addrRef.GetBankId()));
-	return addrRef;
-}
-
 // This assumes that the address passed in is mapped to physical memory
 // sam. Rewrote this function to deal with redirecting non-canonical banks to canonical ones.
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 {
-	const FAddressRef pcAddrRef = CanonicalAddressRef(state, pc);
+	const FAddressRef pcAddrRef = state.GetCanonicalAddressRef(pc);
 
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForPhysicalAddress(pc);
 	if (pCodeInfo == nullptr)
@@ -935,7 +925,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	if (CheckJumpInstruction(state, pc, &jumpAddr))
 	{
 		pCodeInfo->bIsCall = CheckCallInstruction(state, pc);
-		const FAddressRef jumpAddrRef = CanonicalAddressRef(state, jumpAddr);
+		const FAddressRef jumpAddrRef = state.GetCanonicalAddressRef(jumpAddr);
 		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddrRef, pCodeInfo->bIsCall ? ELabelType::Function : ELabelType::Code);
 		pCodeInfo->OperandAddress = jumpAddrRef;
 		if(pLabel)
@@ -950,7 +940,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		uint16_t ptr;
 		if (CheckPointerRefInstruction(state, pc, &ptr))	// this is just a 16 bit number so don't assume a pointer
 		{
-			const FAddressRef ptrAddr = CanonicalAddressRef(state, ptr);
+			const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
 			pCodeInfo->OperandAddress = ptrAddr;
 			
 			// sam. this code is enabled in master but was commented out here. I've enabled it.
@@ -963,7 +953,7 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 		}
 		else if (CheckPointerIndirectionInstruction(state, pc, &ptr))
 		{
-			const FAddressRef ptrAddr = CanonicalAddressRef(state, ptr);
+			const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
 			pCodeInfo->OperandAddress = ptrAddr;
 			if (pCodeInfo->OperandType == EOperandType::Unknown)
 				pCodeInfo->OperandType = EOperandType::Pointer;
@@ -1028,12 +1018,12 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	uint16_t jumpPhysAddr;
 	if (CheckJumpInstruction(state, pc, &jumpPhysAddr))
 	{
-		const FAddressRef jumpAddr = state.AddressRefFromPhysicalAddress(jumpPhysAddr);
+		const FAddressRef jumpAddr = state.GetCanonicalAddressRef(jumpPhysAddr);
 		assert(state.IsAddressValid(jumpAddr));
 
 		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(jumpPhysAddr);
 		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+			pLabel->References.RegisterAccess(state.GetCanonicalAddressRef(pc));
 		if (pCodeInfo != nullptr)
 			pCodeInfo->OperandAddress = jumpAddr;
 
@@ -1045,7 +1035,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 	{
 		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(ptr); // NOTE: we have to use the physical address because of banks mapped twice
 		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
+			pLabel->References.RegisterAccess(state.GetCanonicalAddressRef(pc));
 
 		if (pCodeInfo != nullptr)
 			pCodeInfo->OperandAddress = state.AddressRefFromPhysicalAddress(ptr);
@@ -1141,7 +1131,7 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 	// register instruction in function executed
 	if (state.bTraceFunctionExecution)
 	{
-		const FAddressRef pcAddrRef = state.AddressRefFromPhysicalAddress(pc);
+		const FAddressRef pcAddrRef = state.GetCanonicalAddressRef(pc);
 		FFunctionInfo* pFunctionInfo = state.pFunctions->GetFunctionBeforeAddress(pcAddrRef);
 		if (pFunctionInfo != nullptr)
 		{
@@ -1223,20 +1213,19 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 			pDataInfo->LastFrameRead = state.CurrentFrameNo;
 			pDataInfo->LastRead = state.ExecutionCounter;
 
-			// create addressref for pc here?
+			const FAddressRef canonicalPc = state.GetCanonicalAddressRef(pc);
+			pDataInfo->Reads.RegisterAccess(canonicalPc);
 
-			pDataInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
-		
-			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(state.AddressRefFromPhysicalAddress(pc));
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(canonicalPc);
 			if (pCodeInfo)
-				pCodeInfo->Reads.RegisterAccess(state.AddressRefFromPhysicalReadAddress(dataAddr));
+				pCodeInfo->Reads.RegisterAccess(state.GetCanonicalReadAddressRef(dataAddr));
 		}
 	}
 }
 
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,uint8_t value)
 {
-	const FAddressRef pcAddr = state.AddressRefFromPhysicalAddress(pc);
+	const FAddressRef pcAddr = state.GetCanonicalAddressRef(pc);
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
 	pDataInfo->WriteCount++;
 	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
@@ -1255,7 +1244,7 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pcAddr);
 	if(pCodeInfo)
 	{
-		pCodeInfo->Writes.RegisterAccess(state.AddressRefFromPhysicalWriteAddress(dataAddr));
+		pCodeInfo->Writes.RegisterAccess(state.GetCanonicalWriteAddressRef(dataAddr));
 	}
 }
 
@@ -1817,7 +1806,7 @@ void FCodeAnalysisState::UpdateFocussedViewState()
 	}
 }
 
-bool FCodeAnalysisState::IsBankIdCanonical(int16_t bankId)
+bool FCodeAnalysisState::IsBankIdCanonical(int16_t bankId) const
 {
 	return pEmulator->GetCanonicalBankId(bankId) == bankId ? true : false;
 }
@@ -2079,6 +2068,11 @@ void FAddressRef::SetVal(uint32_t val)
 	if (BankId >= 0 && BankId < FCodeAnalysisState::BankCount)
 	{
 		const FCodeAnalysisBank& bank = Banks[BankId];
+		if (bank.PrimaryMappedPage == -1)
+		{
+			LOGINFO("FAddressRef::SetVal on unmapped bank %d %s. ref will be invalid.", BankId, bank.Name.c_str());
+			return;
+		}
 		assert(bank.PrimaryMappedPage != -1);
 		const uint16_t mappedAddress = (bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 		// Convert absolute address to relative bank address 

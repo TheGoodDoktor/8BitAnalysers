@@ -500,7 +500,8 @@ void FEmuBase::OptionsMenu()
 	ImGui::MenuItem("Show Config", 0, &CodeAnalysis.Config.bShowConfigWindow);
 	ImGui::MenuItem("ImGui Demo", 0, &bShowImGuiDemo);
 	ImGui::MenuItem("ImPlot Demo", 0, &bShowImPlotDemo);
-	ImGui::MenuItem("Hide Dupe Banks", 0, &CodeAnalysis.Config.bHideDupeBanks);
+	ImGui::MenuItem("Show Dupe Banks", 0, &CodeAnalysis.Config.bShowDupeBanks);
+	ImGui::MenuItem("Redirect Dupe Bank Access", 0, &CodeAnalysis.Config.bRedirectDupeBankAccess);
 #endif // NDEBUG
 
 	OptionsMenuAdditions();
@@ -513,18 +514,22 @@ void FEmuBase::OptionsMenu()
 
 void FEmuBase::SystemMenu()
 {
-	if (pCurrentProjectConfig && ImGui::MenuItem("Reload Emulator File"))
+	/*if (pCurrentProjectConfig && ImGui::MenuItem("Reload Emulator File"))
 	{
 		if (!LoadEmulatorFile(&pCurrentProjectConfig->EmulatorFile))
 		{
 			DisplayErrorMessage("Could not load emulator file '%s'", pCurrentProjectConfig->EmulatorFile.FileName.c_str());
 		}
-	}
+	}*/
 
-	if (ImGui::MenuItem("Reset"))
+#ifndef NDEBUG
+	// sam. this doesn't make sense on a console based system.
+	// left it in as a debug feature.
+	if (ImGui::MenuItem("Hard Reset (DEBUG)"))
 	{
 		Reset();
 	}
+#endif
 
 	SystemMenuAdditions();
 }

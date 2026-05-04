@@ -257,7 +257,8 @@ struct FCodeAnalysisConfig
 	float	BranchSpacing = 4.0f;
 	int		BranchMaxIndent = 8;
 	int		BranchLinesPerIndent = 5;
-	bool	bHideDupeBanks = true;
+	bool	bShowDupeBanks = false;
+	bool	bRedirectDupeBankAccess = true;
 };
 
 // sam. Refactored to remove memory allocations.
@@ -461,12 +462,84 @@ public:
 	const FCodeAnalysisBank* GetBanks() const { return Banks; }
 	FCodeAnalysisBank* GetBanks() { return Banks; }
 
-	bool IsBankIdCanonical(int16_t bankId);
+	bool IsBankIdCanonical(int16_t bankId) const;
 	int16_t GetCanonicalBankId(int16_t bankId) const;
 
-	FAddressRef	AddressRefFromPhysicalAddress(uint16_t physAddr) const { return FAddressRef(GetBankFromAddress(physAddr), physAddr); }
-	FAddressRef	AddressRefFromPhysicalReadAddress(uint16_t physAddr) const { return FAddressRef(GetReadBankFromAddress(physAddr), physAddr); }
-	FAddressRef	AddressRefFromPhysicalWriteAddress(uint16_t physAddr) const { return FAddressRef(GetWriteBankFromAddress(physAddr), physAddr); }
+	FAddressRef	AddressRefFromPhysicalAddress(uint16_t physAddr) const 
+	{
+#ifndef NDEBUG
+		const int16_t bankId = GetBankFromAddress(physAddr);
+		if (!IsBankIdCanonical(bankId))
+		{
+			const FCodeAnalysisBank* pBank = GetBank(bankId);
+			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+		}
+		return FAddressRef(bankId, physAddr);
+#else
+		return FAddressRef(GetBankFromAddress(physAddr), physAddr);
+#endif
+	}
+	FAddressRef	AddressRefFromPhysicalReadAddress(uint16_t physAddr) const 
+	{ 
+#ifndef NDEBUG
+		const int16_t bankId = GetReadBankFromAddress(physAddr);
+		if (!IsBankIdCanonical(bankId))
+		{
+			const FCodeAnalysisBank* pBank = GetBank(bankId);
+			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+		}
+		return FAddressRef(bankId, physAddr);
+#else
+		return FAddressRef(GetReadBankFromAddress(physAddr), physAddr);
+#endif
+	}
+	FAddressRef	AddressRefFromPhysicalWriteAddress(uint16_t physAddr) const
+	{
+#ifndef NDEBUG
+		const int16_t bankId = GetWriteBankFromAddress(physAddr);
+		if (!IsBankIdCanonical(bankId))
+		{
+			const FCodeAnalysisBank* pBank = GetBank(bankId);
+			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+		}
+		return FAddressRef(bankId, physAddr);
+#else
+		return FAddressRef(GetWriteBankFromAddress(physAddr), physAddr);
+#endif
+	}
+	bool ShouldRedirectDupeBankAccess() const
+	{
+#ifdef NDEBUG
+		return true;
+#else
+		return Config.bRedirectDupeBankAccess;
+#endif
+	}
+
+	// Returns an FAddressRef for physAddr with its bank redirected to the canonical bank.
+	// If physAddr is already in a canonical bank the SetBankId() will have no effect,
+	// and this call is identical to calling AddressRefFromPhysicalAddress.
+	FAddressRef	GetCanonicalAddressRef(uint16_t physAddr) const
+	{
+		FAddressRef addrRef = FAddressRef(GetBankFromAddress(physAddr), physAddr);
+		if (ShouldRedirectDupeBankAccess())
+			addrRef.SetBankId(GetCanonicalBankId(addrRef.GetBankId()));
+		return addrRef;
+	}
+	FAddressRef	GetCanonicalReadAddressRef(uint16_t physAddr) const
+	{
+		FAddressRef addrRef = FAddressRef(GetReadBankFromAddress(physAddr), physAddr);
+		if (ShouldRedirectDupeBankAccess())
+			addrRef.SetBankId(GetCanonicalBankId(addrRef.GetBankId()));
+		return addrRef;
+	}
+	FAddressRef	GetCanonicalWriteAddressRef(uint16_t physAddr) const
+	{
+		FAddressRef addrRef = FAddressRef(GetWriteBankFromAddress(physAddr), physAddr);
+		if (ShouldRedirectDupeBankAccess())
+			addrRef.SetBankId(GetCanonicalBankId(addrRef.GetBankId()));
+		return addrRef;
+	}
 
 	uint8_t		ReadByte(uint16_t address) const
 	{
