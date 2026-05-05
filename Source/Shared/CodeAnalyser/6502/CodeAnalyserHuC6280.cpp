@@ -82,10 +82,17 @@ bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, 
 		return true;
 	}*/
 
+	// Implied HuC6280-specific instructions that the address mode table misidentifies
+	switch (instrByte)
+	{
+	case 0x54:	// CSL - implied
+	case 0xD4:	// CSH - implied
+	case 0xF4:	// SET - implied
+		return false;
+	}
+
 	// otherwise decode addressing mode
 	const EAddressMode addrMode = GetInstructionAddressModeHuC6280(instrByte);
-
-	// need to add BSR here
 
 	switch (addrMode)
 	{
@@ -211,15 +218,24 @@ bool CheckJumpInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, u
 {
 	const uint8_t instrByte = state.ReadByte(pc);
 
+	// BBR/BBS: all 16 opcodes have low nibble 0xF (cc=3, bbb∈{3,7})
+	// Format: opcode, zp_addr, rel_offset — 3-byte instruction
+	if ((instrByte & 0x0F) == 0x0F)
+	{
+		const int8_t relJump = (int8_t)state.ReadByte(pc + 2);
+		*out_addr = pc + 3 + relJump;
+		return true;
+	}
+
 	switch (instrByte)
 	{
-		// to relative address
+		// relative branches (2-byte: opcode, rel_offset)
 		case 0x10:	// BPL
 		case 0x30:	// BMI
 		case 0x44:	// BSR HuC6280
 		case 0x50:	// BVC
 		case 0x70:	// BVS
-		case 0x80:	// BRA 65C02
+		case 0x80:	// BRA
 		case 0x90:	// BCC
 		case 0xB0:	// BCS
 		case 0xD0:	// BNE
@@ -229,18 +245,13 @@ bool CheckJumpInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, u
 			*out_addr = pc + 2 + relJump;	// +2 because it's relative to the next instruction
 			return true;
 		}
-			
-		// todo add BSR
-		
-		// to absolute 16 address
+
+		// absolute address (3-byte: opcode, addr_lo, addr_hi)
 		case 0x20:	// JSR
 		case 0x4C:	// JMP abs
-		case 0x6C:	// JMP indirect
+		case 0x6C:	// JMP (ind)
 			*out_addr = state.ReadWord(pc + 1);
 			return true;
-		//case 0x6C:	// JMP indirect
-		//	*out_addr = state.ReadWord(state.ReadWord(pc + 1));
-		return true;
 	}
 	return false;
 }
@@ -265,55 +276,53 @@ bool CheckStopInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc)
 	switch (instrByte)
 	{
 	case 0x00:	// BRK
-	//case 0x20:	// JSR
 	case 0x40:	// RTI
 	case 0x60:	// RTS
-	case 0x4C:	// JMP ind
-	case 0x6C:	// JMP abs
+	case 0x4C:	// JMP abs
+	case 0x6C:	// JMP (ind)
+	case 0x7C:	// JMP (abs,X) - computed jump, target not statically known
+	case 0x80:	// BRA - unconditional relative branch
 		return true;
 	}
 	return false;
 }
 
-// this is not hooked up
 bool RegisterCodeExecutedHuC6280(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
-	FDebugger& debugger = state.Debugger;
 	const uint8_t opcode = pCPUInterface->ReadByte(pc);
-	const uint8_t oldOpcode = pCPUInterface->ReadByte(oldpc);
-	//const m6502_t* pCPU = static_cast<m6502_t*>(state.CPUInterface->GetCPUEmulator());
 
 	auto& callStack = state.Debugger.GetCallstack();
 
 	switch (opcode)
 	{
-		// todo add BSR
-
 		case 0x20:  // JSR
 		{
 			FCPUFunctionCall callInfo;
-			callInfo.CallAddr =  state.GetCanonicalAddressRef(pc);
-			callInfo.FunctionAddr = state.GetCanonicalAddressRef(state.ReadWord(pc+1));
+			callInfo.CallAddr = state.GetCanonicalAddressRef(pc);
+			callInfo.FunctionAddr = state.GetCanonicalAddressRef(state.ReadWord(pc + 1));
 			callInfo.ReturnAddr = state.GetCanonicalAddressRef(pc + 3);
 			callStack.push_back(callInfo);
 		}
 		break;
 
-		// TODO: ret
+		case 0x44:  // BSR - branch to subroutine (relative, 2-byte instruction)
+		{
+			FCPUFunctionCall callInfo;
+			callInfo.CallAddr = state.GetCanonicalAddressRef(pc);
+			const int8_t relJump = (int8_t)pCPUInterface->ReadByte(pc + 1);
+			callInfo.FunctionAddr = state.GetCanonicalAddressRef(pc + 2 + relJump);
+			callInfo.ReturnAddr = state.GetCanonicalAddressRef(pc + 2);
+			callStack.push_back(callInfo);
+		}
+		break;
+
 		case 0x40:	// RTI
-			//LOGINFO("RTI at $%04X", pc);
 		case 0x60:	// RTS
 			if (callStack.empty() == false)
-			{
-				FCPUFunctionCall& callInfo = callStack.back();
-				//assert(callInfo.ReturnAddr == nextpc);
-
 				callStack.pop_back();
-			}
 		break;
 	}
-	bool bPushInstruction = false;
 
 	return false;
 }
