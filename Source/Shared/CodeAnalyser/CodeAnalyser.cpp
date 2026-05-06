@@ -1362,7 +1362,7 @@ void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites)
 			}
 		}
 
-		if(bWrites)
+		if(bWrites && state.GetWriteBankFromAddress(i) != -1)
 			state.SetLastWriterForAddress(i, FAddressRef::Invalid());
 	}
 }
