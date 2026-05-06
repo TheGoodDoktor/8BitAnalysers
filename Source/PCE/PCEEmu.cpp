@@ -2048,9 +2048,12 @@ void FPCEEmu::SoftResetMachine()
 
 	pCore->ResetMedia(false);
 
-	// todo: reset viewers
+	// todo: reset all viewers
+	pVRAMViewer->Reset();
 	 
 	memset(pFrameBuffer, 0, kFramebufferSize);
+
+	ResetReferenceInfo(CodeAnalysis, true, true);
 
 	// MapMprBanks relies on the mpr registers being setup correctly before it is called.
 	ResetBanks();
