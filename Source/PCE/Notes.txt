@@ -2,11 +2,12 @@ TODO
 - Show register value on tooltips
 - Add tooltips for PCE related instructions
 - Restore asm export for physical memory
-- make sure export memory range works
+- get asm export for memory range working again
 - OnEnterEditMode() get working
 - make bank label be an offset instead of address
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
+- add way to understand/visualise if interrupts are active?
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
@@ -14,6 +15,7 @@ BUGS
 IDEAS
 - [perf] Create code analysis pages on demand. would make creating banks trivial
 - [perf] reserve bank id instead of creating all the banks up front.
+- override assert with our own that lets you recover
 
 DONE
 - Allow you to edit register values.
