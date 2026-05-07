@@ -1,20 +1,34 @@
 TODO
 - Show register value on tooltips
-- Add tooltips for PCE related instructions
+- fix first code byte always being data
+- tidy tooltips for PCE related instructions
 - Restore asm export for physical memory
 - make sure export memory range works
 - OnEnterEditMode() get working
 - make bank label be an offset instead of address
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
+- hookup RegisterCodeExecutedHuC6280
+- Implement CodeAnalyserHuC6280.cpp
+- reset viewers on soft reset
+- trace button doesnt seem to work in code analysis view
+- make screen appear when loading a saved project
+- dupe bank issues in hello.pce project. "FAddressRef::SetVal on unmapped bank 62 ROM_01_3. ref will be invalid." followed by assert in FItemRefernceTracker::RegisterAccess
 
 BUGS
-- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
+- empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
+- edit mode doesnt restore properly. emulation bugs afer restoring
 
 IDEAS
 - [perf] Create code analysis pages on demand. would make creating banks trivial
 - [perf] reserve bank id instead of creating all the banks up front.
+- when hovering over PCE memory mapped registers, give a description what they do. or add comments for the memory location
+- lazily create dupe banks. it's possible now we redirect code analysis to primary bank. reduces banks from 700->150 banks 
 
 DONE
+- dont display dupe banks in banks mapped view 
+- BRA instruction doesn't show label or branch lines
+- fail to load cd game if no bios was loaded
+- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - Allow you to edit register values.
 - add keyboard shortcut for changing font size
