@@ -530,7 +530,7 @@ int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 	return bankId;
 }
 
-const char* FPCEEmu::GetBankName(uint8_t bankIndex) const
+/*const char* FPCEEmu::GetBankName(uint8_t bankIndex) const
 {
 	if (Banks[bankIndex] != nullptr)
 	{
@@ -539,7 +539,7 @@ const char* FPCEEmu::GetBankName(uint8_t bankIndex) const
 			return pBank->Name.c_str();
 	}
 	return nullptr;
-}
+}*/
 
 static void NullInstructionExecutedCallback(void*, uint16_t) {}
 static void NullMemoryReadCallback(void*, uint16_t) {}
@@ -2054,6 +2054,8 @@ void FPCEEmu::SoftResetMachine()
 	memset(pFrameBuffer, 0, kFramebufferSize);
 
 	ResetReferenceInfo(CodeAnalysis, true, true);
+	ResetReadWriteCounts(CodeAnalysis, true, true);
+	ResetExecutionCounts(CodeAnalysis);
 
 	// MapMprBanks relies on the mpr registers being setup correctly before it is called.
 	ResetBanks();
