@@ -1146,8 +1146,9 @@ bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc
 		case ECPUType::Z80:
 			return RegisterCodeExecutedZ80(state, pc, oldpc);
 		case ECPUType::M6502:
-		case ECPUType::HuC6280:
 			return RegisterCodeExecuted6502(state, pc, oldpc);
+		case ECPUType::HuC6280:
+			return RegisterCodeExecutedHuC6280(state, pc, oldpc);
 		default:
 			return false;	// unsupported CPU type
 	}
@@ -1361,7 +1362,7 @@ void ResetReferenceInfo(FCodeAnalysisState &state, bool bReads, bool bWrites)
 			}
 		}
 
-		if(bWrites)
+		if(bWrites && state.GetWriteBankFromAddress(i) != -1)
 			state.SetLastWriterForAddress(i, FAddressRef::Invalid());
 	}
 }
