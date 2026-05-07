@@ -459,8 +459,17 @@ void FPCEEmu::BuildCanonicalBankIdLookup()
 	for (int i = 0; i < kNumBanks; i++)
 	{
 		const FBankSet& bankSet = BankSets[i];
+
+		// Treat unused banks as canonical.
+		// Not 100% sure if this is the right thing to do.
+		// It stops the spam from AddressRefFromPhysicalAddress() when unused banks are mapped in the initial state 
+		// after a project is loaded (or we have just booted up without a game loaded).
+		if (i == kBankUnusedStart)
+			continue;
+
 		if (bankSet.Banks.size() <= 1)
 			continue;
+
 		const int16_t primaryId = bankSet.GetBankId(0);
 		for (int d = 1; d < (int)bankSet.Banks.size(); d++)
 		{

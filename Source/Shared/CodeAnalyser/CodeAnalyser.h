@@ -472,7 +472,7 @@ public:
 		if (!IsBankIdCanonical(bankId))
 		{
 			const FCodeAnalysisBank* pBank = GetBank(bankId);
-			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+			LOGERROR("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
 		}
 		return FAddressRef(bankId, physAddr);
 #else
@@ -486,7 +486,7 @@ public:
 		if (!IsBankIdCanonical(bankId))
 		{
 			const FCodeAnalysisBank* pBank = GetBank(bankId);
-			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+			LOGERROR("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
 		}
 		return FAddressRef(bankId, physAddr);
 #else
@@ -500,7 +500,7 @@ public:
 		if (!IsBankIdCanonical(bankId))
 		{
 			const FCodeAnalysisBank* pBank = GetBank(bankId);
-			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+			LOGERROR("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
 		}
 		return FAddressRef(bankId, physAddr);
 #else
