@@ -253,7 +253,7 @@ void DrawCodeInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		const ImVec4 byteChangedCol(1.0f, 1.0f, 0.0f, 1.0f);
 		const ImVec4 byteNormalCol(1.0f, 1.0f, 1.0f, 1.0f);
 		bool bByteModified = false;
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 7; i++)
 		{
 			if (i < pCodeInfo->ByteSize)
 				snprintf(tmp, 16, "%02X", state.ReadByte(item.AddressRef.GetAddress() + i));
