@@ -7,72 +7,60 @@
 
 #include "AssemblerExport.h"
 
-void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback) 
+void FAnalysisDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 {
 	if (outputCallback != nullptr)
 	{
-		ENumberDisplayMode dispMode = GetNumberDisplayMode();
+		const EOperandType opType = pCodeInfoItem->GetOperandType(OperandOutputCount);
 
-		if ((pCodeInfoItem->OperandType == EOperandType::Pointer || pCodeInfoItem->OperandType == EOperandType::JumpAddress)
-			&& pCodeInfoItem->OperandAddress.IsValid())
+		if ((opType == EOperandType::Pointer || opType == EOperandType::JumpAddress)
+			&& pCodeInfoItem->GetOperandAddress(OperandOutputCount).IsValid())
 		{
-			char pointerMarkup[16];
-			strcpy(pointerMarkup, "#OPERAND_ADDR#");
-			for (int i = 0; i < strlen(pointerMarkup); i++)
-				outputCallback(pointerMarkup[i], this);
+			char markup[24];
+			snprintf(markup, sizeof(markup), "#OPERAND_ADDR:%d#", OperandOutputCount);
+			PushString(markup, outputCallback);
+			OperandOutputCount++;
 			return;
 		}
 
-		if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-			dispMode = ENumberDisplayMode::Decimal;
-		else if (pCodeInfoItem->OperandType == EOperandType::Hex)
-			dispMode = ENumberDisplayMode::HexAitch;
-		else if (pCodeInfoItem->OperandType == EOperandType::Binary)
-			dispMode = ENumberDisplayMode::Binary;
-		else if (pCodeInfoItem->OperandType == EOperandType::SignedNumber)
-			dispMode = ENumberDisplayMode::Decimal;
-		else if (pCodeInfoItem->OperandType == EOperandType::Ascii)
-			dispMode = ENumberDisplayMode::Ascii;
+		ENumberDisplayMode dispMode = GetNumberDisplayMode();
+		if      (opType == EOperandType::Decimal)      dispMode = ENumberDisplayMode::Decimal;
+		else if (opType == EOperandType::Hex)          dispMode = ENumberDisplayMode::HexAitch;
+		else if (opType == EOperandType::Binary)       dispMode = ENumberDisplayMode::Binary;
+		else if (opType == EOperandType::SignedNumber) dispMode = ENumberDisplayMode::Decimal;
+		else if (opType == EOperandType::Ascii)        dispMode = ENumberDisplayMode::Ascii;
 
 		PushString("#IM:", outputCallback);
 		PushString(NumStr(val, dispMode), outputCallback);
 		PushString("#", outputCallback);
-		//const char* outStr = NumStr(val, dispMode);
-		//for (int i = 0; i < strlen(outStr); i++)
-		//	outputCallback(outStr[i], this);
+		OperandOutputCount++;
 	}
 }
 
-void FAnalysisDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback) 
+void FAnalysisDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 {
 	if (outputCallback)
 	{
-		ENumberDisplayMode dispMode = GetNumberDisplayMode();
+		const EOperandType opType = pCodeInfoItem->GetOperandType(OperandOutputCount);
 
-		if (pCodeInfoItem->OperandType == EOperandType::Pointer || pCodeInfoItem->OperandType == EOperandType::JumpAddress)
+		if (opType == EOperandType::Pointer || opType == EOperandType::JumpAddress)
 		{
-			char pointerMarkup[16];
-			//snprintf(pointerMarkup,16,"#ADDR:0x%04X#", val);
-			strcpy(pointerMarkup, "#OPERAND_ADDR#");
-			for (int i = 0; i < strlen(pointerMarkup); i++)
-				outputCallback(pointerMarkup[i], this);
+			char markup[24];
+			snprintf(markup, sizeof(markup), "#OPERAND_ADDR:%d#", OperandOutputCount);
+			PushString(markup, outputCallback);
+			OperandOutputCount++;
 			return;
 		}
 
-		if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-			dispMode = ENumberDisplayMode::Decimal;
-		else if (pCodeInfoItem->OperandType == EOperandType::Hex)
-			dispMode = ENumberDisplayMode::HexAitch;
-		else if (pCodeInfoItem->OperandType == EOperandType::Binary)
-			dispMode = ENumberDisplayMode::Binary;
+		ENumberDisplayMode dispMode = GetNumberDisplayMode();
+		if      (opType == EOperandType::Decimal) dispMode = ENumberDisplayMode::Decimal;
+		else if (opType == EOperandType::Hex)     dispMode = ENumberDisplayMode::HexAitch;
+		else if (opType == EOperandType::Binary)  dispMode = ENumberDisplayMode::Binary;
 
 		PushString("#IM:", outputCallback);
 		PushString(NumStr(val, dispMode), outputCallback);
 		PushString("#", outputCallback);
-
-		//const char* outStr = NumStr(val, dispMode);
-		//for (int i = 0; i < strlen(outStr); i++)
-		//	outputCallback(outStr[i], this);
+		OperandOutputCount++;
 	}
 }
 
@@ -121,22 +109,33 @@ void AnalysisOutputCB(char c, void* pUserData)
 
 // For Aseembler exporter
 
-void FExportDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback) 
+void FExportDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 {
 	if (outputCallback != nullptr)
 	{
-		ENumberDisplayMode dispMode = GetNumberDisplayMode();
+		const EOperandType opType = pCodeInfoItem->GetOperandType(OperandOutputCount);
 
-		if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-			dispMode = ENumberDisplayMode::Decimal;
-		if (pCodeInfoItem->OperandType == EOperandType::Hex)
-			dispMode = HexDisplayMode;
-		if (pCodeInfoItem->OperandType == EOperandType::Binary)
-			dispMode = ENumberDisplayMode::Binary;
+#if MULTIPLE_OPERANDS
+		if (opType == EOperandType::Pointer || opType == EOperandType::JumpAddress)
+		{
+			FAddressRef labelAddress = pCodeInfoItem->GetOperandAddress(OperandOutputCount);
+			if (labelAddress.IsValid())
+			{
+				pExporter->OutputOperandLabelAtAddress(labelAddress, val, outputCallback);
+				OperandOutputCount++;
+				return;
+			}
+		}
+#endif
+		ENumberDisplayMode dispMode = GetNumberDisplayMode();
+		if (opType == EOperandType::Decimal) dispMode = ENumberDisplayMode::Decimal;
+		if (opType == EOperandType::Hex)     dispMode = HexDisplayMode;
+		if (opType == EOperandType::Binary)  dispMode = ENumberDisplayMode::Binary;
 
 		const char* outStr = NumStr(val, dispMode);
 		for (int i = 0; i < strlen(outStr); i++)
 			outputCallback(outStr[i], this);
+		OperandOutputCount++;
 	}
 }
 
@@ -145,15 +144,16 @@ void FExportDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 // code for exporting physical memory. When we encounter a 16 bit value that is
 // an operand address, it is ambiguous which bank this belongs to. There are potentially
 // multiple banks that share the same physical address range.
-void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback) 
+void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 {
 	if (outputCallback)
 	{
-		const bool bOperandIsAddress = (pCodeInfoItem->OperandType == EOperandType::JumpAddress || pCodeInfoItem->OperandType == EOperandType::Pointer);
+		const EOperandType opType = pCodeInfoItem->GetOperandType(OperandOutputCount);
+		const bool bOperandIsAddress = (opType == EOperandType::JumpAddress || opType == EOperandType::Pointer);
 
 		if (bOperandIsAddress)
 		{
-			FAddressRef labelAddress = pCodeInfoItem->OperandAddress;
+			FAddressRef labelAddress = pCodeInfoItem->GetOperandAddress(OperandOutputCount);
 			const FLabelInfo* pLabel = nullptr;
 
 			if (labelAddress.IsValid())
@@ -164,7 +164,7 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 			{
 				// what to do here?
 				const FCodeAnalysisBank* pCurBank = CodeAnalysisState->GetBank(CurrentAddress.GetBankId());
-				pExporter->QueueWarning("'%s': 0x%04x. Found invalid operand address 0x%x. %s", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pCodeInfoItem->OperandAddress.GetAddress(), pCodeInfoItem->Text.c_str());
+				pExporter->QueueWarning("'%s': 0x%04x. Found invalid operand address 0x%x. %s", pCurBank->Name.c_str(), CurrentAddress.GetAddress(), pCodeInfoItem->GetOperandAddress(OperandOutputCount).GetAddress(), pCodeInfoItem->Text.c_str());
 			}
 
 			if (pLabel)
@@ -322,17 +322,15 @@ void FExportDasmState::OutputU16(uint16_t val, dasm_output_t outputCallback)
 		{
 			ENumberDisplayMode dispMode = GetNumberDisplayMode();
 
-			if (pCodeInfoItem->OperandType == EOperandType::Decimal)
-				dispMode = ENumberDisplayMode::Decimal;
-			if (pCodeInfoItem->OperandType == EOperandType::Hex)
-				dispMode = HexDisplayMode;
-			if (pCodeInfoItem->OperandType == EOperandType::Binary)
-				dispMode = ENumberDisplayMode::Binary;
+			if (opType == EOperandType::Decimal) dispMode = ENumberDisplayMode::Decimal;
+			if (opType == EOperandType::Hex)     dispMode = HexDisplayMode;
+			if (opType == EOperandType::Binary)  dispMode = ENumberDisplayMode::Binary;
 
 			const char* outStr = NumStr(val, dispMode);
 			for (int i = 0; i < strlen(outStr); i++)
 				outputCallback(outStr[i], this);
 		}
+		OperandOutputCount++;
 	}
 }
 

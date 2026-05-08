@@ -2671,10 +2671,13 @@ std::string ExpandTag(FCodeAnalysisState& state, const std::string& tag)
 		const FCodeInfo* pCodeInfo = g_CodeInfo;
 		if (pCodeInfo != nullptr)
 		{
-			if (g_CodeInfo->OperandAddress.IsValid())
-			{
-				return GenerateAddressLabelString(state, g_CodeInfo->OperandAddress);
-			}
+			//sam. added support for multiple operands
+			int operandIndex = 0;
+			if (!tagValue.empty())
+				operandIndex = atoi(tagValue.c_str());
+			const FAddressRef addr = pCodeInfo->GetOperandAddress(operandIndex);
+			if (addr.IsValid())
+				return GenerateAddressLabelString(state, addr);
 		}
 	}
 	else if (tagName == std::string("IM"))	// immediate
@@ -2707,11 +2710,16 @@ bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 		const FCodeInfo* pCodeInfo = g_CodeInfo;
 		if(pCodeInfo != nullptr)
 		{
+			//sam. added support for multiple operands
+			int operandIndex = 0;
+			if (!tagValue.empty())
+				operandIndex = atoi(tagValue.c_str());
 			uint32_t labelFlags = kAddressLabelFlag_NoBank | kAddressLabelFlag_NoBrackets;
 			//if(pCodeInfo->OperandType == EOperandType::Pointer)
-				labelFlags |= kAddressLabelFlag_White;
-			if(g_CodeInfo->OperandAddress.IsValid())
-				bShownToolTip = DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
+			labelFlags |= kAddressLabelFlag_White;
+			const FAddressRef addr = pCodeInfo->GetOperandAddress(operandIndex);
+			if(addr.IsValid())
+				bShownToolTip = DrawAddressLabel(state, viewState, addr, labelFlags);
 		}
 	}
 	else if (tagName == std::string("IM"))	// immediate

@@ -343,7 +343,7 @@ EInstructionType GetInstructionTypeHuC6280(FCodeAnalysisState& state, FAddressRe
 
 		
 		// JSR
-		case 0x20:	
+		case 0x20:
 		// BSR
 		case 0x44:
 			return EInstructionType::FunctionCall;
@@ -351,4 +351,119 @@ EInstructionType GetInstructionTypeHuC6280(FCodeAnalysisState& state, FAddressRe
 		default:
 			return EInstructionType::Unknown;
 	}
+}
+
+void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo)
+{
+	const FAddressRef pcAddrRef = state.GetCanonicalAddressRef(pc);
+	const uint8_t instrByte = state.ReadByte(pc);
+
+#if MULTIPLE_OPERANDS_SUPPORT
+	// BBR/BBS: 3-byte (opcode, zp, rel). Operand 0 = ZP pointer, operand 1 = branch target.
+	// Handled before standard jump path, which would otherwise overwrite operand 0.
+	if ((instrByte & 0x0F) == 0x0F)
+	{
+		const uint8_t zpAddr = state.ReadByte(pc + 1);
+		const int8_t relJump = (int8_t)state.ReadByte(pc + 2);
+		const uint16_t branchTarget = pc + 3 + relJump;
+		const FAddressRef zpAddrRef = state.GetCanonicalAddressRef(zpAddr);
+		const FAddressRef branchAddrRef = state.GetCanonicalAddressRef(branchTarget);
+
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::Pointer;
+		pCodeInfo->OperandAddress = zpAddrRef;
+
+		pCodeInfo->ExtraOperands[0].Type = EOperandType::JumpAddress;
+		pCodeInfo->ExtraOperands[0].Address = branchAddrRef;
+
+		pCodeInfo->bIsCall = false;
+		FLabelInfo* pBranchLabel = GenerateLabelForAddress(state, branchAddrRef, ELabelType::Code);
+		if (pBranchLabel)
+			pBranchLabel->References.RegisterAccess(pcAddrRef);
+		return;
+	}
+#endif
+
+	uint16_t jumpAddr;
+	if (CheckJumpInstructionHuC6280(state, pc, &jumpAddr))
+	{
+		pCodeInfo->bIsCall = CheckCallInstructionHuC6280(state, pc);
+		const FAddressRef jumpAddrRef = state.GetCanonicalAddressRef(jumpAddr);
+		pCodeInfo->OperandAddress = jumpAddrRef;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::JumpAddress;
+
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddrRef, pCodeInfo->bIsCall ? ELabelType::Function : ELabelType::Code);
+		if (pLabel)
+			pLabel->References.RegisterAccess(pcAddrRef);
+		return;
+	}
+
+	uint16_t ptr;
+	if (CheckPointerRefInstructionHuC6280(state, pc, &ptr))
+	{
+		const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
+		pCodeInfo->OperandAddress = ptrAddr;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::Pointer;
+	}
+	else if (CheckPointerIndirectionInstructionHuC6280(state, pc, &ptr))
+	{
+		const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
+		pCodeInfo->OperandAddress = ptrAddr;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::Pointer;
+
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
+		if (pLabel)
+			pLabel->References.RegisterAccess(pcAddrRef);
+	}
+
+#if MULTIPLE_OPERANDS_SUPPORT
+	// HuC6280 multi-operand instructions
+	switch (instrByte)
+	{
+		// Block transfers: opcode, src(16), dst(16), len(16)
+		case 0x73:	// TII
+		case 0xC3:	// TDD
+		case 0xD3:	// TIN
+		case 0xE3:	// TIA
+		case 0xF3:	// TAI
+		{
+			const uint16_t src = state.ReadWord(pc + 1);
+			const uint16_t dst = state.ReadWord(pc + 3);
+			if (pCodeInfo->OperandType == EOperandType::Unknown)
+				pCodeInfo->OperandType = EOperandType::Pointer;
+			pCodeInfo->OperandAddress = state.GetCanonicalAddressRef(src);
+			pCodeInfo->ExtraOperands[0].Type = EOperandType::Pointer;
+			pCodeInfo->ExtraOperands[0].Address = state.GetCanonicalAddressRef(dst);
+			pCodeInfo->ExtraOperands[1].Type = EOperandType::Hex;
+			break;
+		}
+
+		// TST imm,zp / imm,zp,X
+		case 0x83:
+		case 0xA3:
+		{
+			const uint16_t zpAddr = state.ReadByte(pc + 2);
+			pCodeInfo->OperandType = EOperandType::Hex;
+			pCodeInfo->OperandAddress = FAddressRef::Invalid();
+			pCodeInfo->ExtraOperands[0].Type = EOperandType::Pointer;
+			pCodeInfo->ExtraOperands[0].Address = state.GetCanonicalAddressRef(zpAddr);
+			break;
+		}
+
+		// TST imm,abs / imm,abs,X
+		case 0x93:
+		case 0xB3:
+		{
+			const uint16_t absAddr = state.ReadWord(pc + 2);
+			pCodeInfo->OperandType = EOperandType::Hex;
+			pCodeInfo->OperandAddress = FAddressRef::Invalid();
+			pCodeInfo->ExtraOperands[0].Type = EOperandType::Pointer;
+			pCodeInfo->ExtraOperands[0].Address = state.GetCanonicalAddressRef(absAddr);
+			break;
+		}
+	}
+#endif
 }

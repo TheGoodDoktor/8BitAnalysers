@@ -6,6 +6,7 @@ enum class EInstructionType;
 
 class ICPUInterface;
 class FCodeAnalysisState;
+struct FCodeInfo;
 
 bool CheckPointerIndirectionInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
 bool CheckPointerRefInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
@@ -13,5 +14,6 @@ bool CheckJumpInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint
 bool CheckCallInstruction6502(const FCodeAnalysisState& state, uint16_t pc);
 bool CheckStopInstruction6502(const FCodeAnalysisState& state, uint16_t pc);
 bool RegisterCodeExecuted6502(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc);
+void FillCodeInfoOperands6502(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo); // sam
 
 EInstructionType GetInstructionType6502(FCodeAnalysisState& state, FAddressRef addr);

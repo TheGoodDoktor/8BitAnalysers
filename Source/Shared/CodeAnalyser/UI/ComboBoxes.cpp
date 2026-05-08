@@ -101,6 +101,18 @@ bool DrawOperandTypeCombo(const char* pLabel, FCodeInfo* pCodeInfo)
 		[pCodeInfo](EOperandType operandType) { return IsOperandTypeSupported(operandType, pCodeInfo); });
 }
 
+//sam. added support for multiple operands
+bool DrawOperandInfoCombo(const char* pLabel, FOperandInfo& operandInfo)
+{
+	const bool bAddressTypes = operandInfo.Address.IsValid();
+	return DrawEnumCombo<EOperandType>(pLabel, operandInfo.Type, g_OperandTypes,
+		[bAddressTypes](EOperandType operandType) {
+			if (operandType == EOperandType::Pointer || operandType == EOperandType::JumpAddress)
+				return bAddressTypes;
+			return true;
+		});
+}
+
 bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysisState& state)
 {
 	switch (displayType)

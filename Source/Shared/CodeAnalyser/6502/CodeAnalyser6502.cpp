@@ -336,3 +336,44 @@ EInstructionType GetInstructionType6502(FCodeAnalysisState& state, FAddressRef a
 
 }
 
+// sam. 
+void FillCodeInfoOperands6502(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo)
+{
+	const FAddressRef pcAddrRef = state.GetCanonicalAddressRef(pc);
+
+	uint16_t jumpAddr;
+	if (CheckJumpInstruction6502(state, pc, &jumpAddr))
+	{
+		pCodeInfo->bIsCall = CheckCallInstruction6502(state, pc);
+		const FAddressRef jumpAddrRef = state.GetCanonicalAddressRef(jumpAddr);
+		pCodeInfo->OperandAddress = jumpAddrRef;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::JumpAddress;
+
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddrRef, pCodeInfo->bIsCall ? ELabelType::Function : ELabelType::Code);
+		if (pLabel)
+			pLabel->References.RegisterAccess(pcAddrRef);
+		return;
+	}
+
+	uint16_t ptr;
+	if (CheckPointerRefInstruction6502(state, pc, &ptr))
+	{
+		const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
+		pCodeInfo->OperandAddress = ptrAddr;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::Pointer;
+	}
+	else if (CheckPointerIndirectionInstruction6502(state, pc, &ptr))
+	{
+		const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
+		pCodeInfo->OperandAddress = ptrAddr;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::Pointer;
+
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
+		if (pLabel)
+			pLabel->References.RegisterAccess(pcAddrRef);
+	}
+}
+

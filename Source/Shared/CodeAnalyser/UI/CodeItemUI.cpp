@@ -340,6 +340,19 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	if (DrawOperandTypeCombo("Operand Type", pCodeInfo))
 		pCodeInfo->Text.clear();	// clear for a rewrite
 
+	//sam. added support for multiple operands
+	for (int i = 0; i < FCodeInfo::kMaxExtraOperands; i++)
+	{
+		FOperandInfo& extra = pCodeInfo->ExtraOperands[i];
+		if (extra.Type != EOperandType::Unknown)
+		{
+			char label[32];
+			snprintf(label, sizeof(label), "Operand %d Type", i + 1);
+			if (DrawOperandInfoCombo(label, extra))
+				pCodeInfo->Text.clear();
+		}
+	}
+
 	//if (pCodeInfo->OperandType == EOperandType::Struct)
 	if(GetInstructionByteOffset(state, item.AddressRef) != -1)
 	{

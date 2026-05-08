@@ -470,6 +470,7 @@ bool FASMExporter::ExportAddressRange(const std::vector<FCodeAnalysisItem>& item
 			DasmState.CurrentAddress = item.AddressRef;
 			DasmState.pCodeInfoItem = pCodeInfo;
 			DasmState.Text.clear();
+			DasmState.OperandOutputCount = 0;
 			DasmState.pCurrentScope = state.GetScopeForAddress(item.AddressRef);
 
 			GenerateDasmExportString(DasmState);

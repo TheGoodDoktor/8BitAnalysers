@@ -709,6 +709,17 @@ bool CheckCallInstruction(FCodeAnalysisState& state, uint16_t pc)
 	}
 }
 
+void FillCodeInfoOperands(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo)
+{
+	switch (state.CPUInterface->CPUType)
+	{
+		case ECPUType::Z80:		FillCodeInfoOperandsZ80(state, pc, pCodeInfo); break;
+		case ECPUType::M6502:	FillCodeInfoOperands6502(state, pc, pCodeInfo); break;
+		case ECPUType::HuC6280:	FillCodeInfoOperandsHuC6280(state, pc, pCodeInfo); break;
+		default: break;
+	}
+}
+
 // check if function should stop static analysis
 // this would be a function that unconditionally affects the PC
 bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc)
@@ -918,51 +929,12 @@ uint16_t WriteCodeInfoForAddress(FCodeAnalysisState &state, uint16_t pc)
 	{
 		pCodeInfo = FCodeInfo::Allocate();
 		state.SetCodeInfoForAddress(pcAddrRef, pCodeInfo);
-	}	
-
-	// does this function branch?
-	uint16_t jumpAddr;
-	if (CheckJumpInstruction(state, pc, &jumpAddr))
-	{
-		pCodeInfo->bIsCall = CheckCallInstruction(state, pc);
-		const FAddressRef jumpAddrRef = state.GetCanonicalAddressRef(jumpAddr);
-		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddrRef, pCodeInfo->bIsCall ? ELabelType::Function : ELabelType::Code);
-		pCodeInfo->OperandAddress = jumpAddrRef;
-		if(pLabel)
-			pLabel->References.RegisterAccess(pcAddrRef);
-		assert(state.IsAddressValid(pCodeInfo->OperandAddress));
-
-		if (pCodeInfo->OperandType == EOperandType::Unknown)
-			pCodeInfo->OperandType = EOperandType::JumpAddress;
 	}
-	else
-	{
-		uint16_t ptr;
-		if (CheckPointerRefInstruction(state, pc, &ptr))	// this is just a 16 bit number so don't assume a pointer
-		{
-			const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
-			pCodeInfo->OperandAddress = ptrAddr;
-			
-			// sam. this code is enabled in master but was commented out here. I've enabled it.
-			if(pCodeInfo->OperandType == EOperandType::Unknown)
-				pCodeInfo->OperandType = EOperandType::Pointer;
 
-			//FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
-			//if (pLabel)
-			//	pLabel->References.RegisterAccess(state.AddressRefFromPhysicalAddress(pc));
-		}
-		else if (CheckPointerIndirectionInstruction(state, pc, &ptr))
-		{
-			const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
-			pCodeInfo->OperandAddress = ptrAddr;
-			if (pCodeInfo->OperandType == EOperandType::Unknown)
-				pCodeInfo->OperandType = EOperandType::Pointer;
-			
-			FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
-			if (pLabel)
-				pLabel->References.RegisterAccess(pcAddrRef);
-		}
-	}
+	for (int i = 0; i < FCodeInfo::kMaxExtraOperands; i++)
+		pCodeInfo->ExtraOperands[i] = FOperandInfo();
+
+	FillCodeInfoOperands(state, pc, pCodeInfo); //sam
 
 	// generate disassembly
 	uint16_t newPC = pc;
@@ -1113,6 +1085,7 @@ void AnalyseFromPC(FCodeAnalysisState &state, uint16_t pc)
 	return;
 }
 
+// sam. note: oldpc is only used by z80
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc)
 {
 	AnalyseAtPC(state, pc);
