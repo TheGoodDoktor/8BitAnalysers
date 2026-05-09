@@ -128,20 +128,77 @@ void FASMExporter::Output(const char* pFormat, ...)
 	va_end(ap);
 }
 
-// sam
+FLabelInfo* FASMExporter::FindNearestLabel(FAddressRef addr, FAddressRef& labelAddress, int& offset) const
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisBank* pBank = state.GetBank(addr.GetBankId());
+	if (pBank == nullptr)
+		return nullptr;
+
+	offset = 0;
+	for (int addrVal = addr.GetAddress(); addrVal >= 0; addrVal--)
+	{
+		if (!pBank->AddressValid(addrVal))
+		{
+			pBank = state.GetBank(state.GetBankFromAddress(addrVal));
+			if (!pBank) break;
+		}
+		FLabelInfo* pLabel = state.GetLabelForAddress(FAddressRef(pBank->Id, addrVal));
+		if (pLabel != nullptr)
+		{
+			labelAddress = FAddressRef(pBank->Id, addrVal);
+			return pLabel;
+		}
+		offset++;
+	}
+	return nullptr;
+}
+
+void FASMExporter::OutputLabelWithOffsets(const FLabelInfo* pLabel, const FAddressRef& labelAddress, int searchOffset, uint16_t disassemblyValue, dasm_output_t outputCallback)
+{
+	const std::string labelName = pLabel->GetName();
+	for (char c : labelName)
+		outputCallback(c, &DasmState);
+
+	// bankMappingOffset accounts for the case where the bank containing the label
+	// was mapped to a different physical address when the instruction was encoded.
+	// searchOffset is the forward distance from the label to the target within the bank.
+	const int32_t bankMappingOffset = (int32_t)disassemblyValue - (int32_t)(labelAddress.GetAddress() + searchOffset);
+
+	if (bankMappingOffset != 0)
+	{
+		char buf[16];
+		snprintf(buf, sizeof(buf), "%+d", bankMappingOffset);
+		for (const char* p = buf; *p; p++)
+			outputCallback(*p, &DasmState);
+	}
+
+	if (searchOffset != 0)
+	{
+		char buf[16];
+		snprintf(buf, sizeof(buf), "+%d", searchOffset);
+		for (const char* p = buf; *p; p++)
+			outputCallback(*p, &DasmState);
+	}
+}
+
 FLabelInfo* FASMExporter::OutputOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t disassemblyValue, dasm_output_t outputCallback)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	FLabelInfo* pLabel = state.GetLabelForAddress(labelAddress);
 
-	if (pLabel != nullptr)
+	if (pLabel == nullptr)
 	{
-		const std::string labelName = pLabel->GetName();
-		for (int i = 0; i < labelName.size(); i++)
-		{
-			outputCallback(labelName[i], &DasmState);
-		}
+		int searchOffset = 0;
+		pLabel = FindNearestLabel(labelAddress, labelAddress, searchOffset);
+		if (pLabel != nullptr)
+			OutputLabelWithOffsets(pLabel, labelAddress, searchOffset, disassemblyValue, outputCallback);
+		return pLabel;
 	}
+
+	const std::string labelName = pLabel->GetName();
+	for (char c : labelName)
+		outputCallback(c, &DasmState);
 	return pLabel;
 }
 

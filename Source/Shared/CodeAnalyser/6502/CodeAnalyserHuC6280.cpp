@@ -423,8 +423,6 @@ void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeIn
 			pLabel->References.RegisterAccess(pcAddrRef);
 	}
 
-#if MULTIPLE_OPERANDS_SUPPORT
-	// HuC6280 multi-operand instructions
 	switch (instrByte)
 	{
 		// Block transfers: opcode, src(16), dst(16), len(16)
@@ -444,7 +442,11 @@ void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeIn
 			pCodeInfo->ExtraOperands[1].Type = EOperandType::Hex;
 			break;
 		}
-
+	}
+#if MULTIPLE_OPERANDS_SUPPORT
+	// HuC6280 multi-operand instructions
+	switch (instrByte)
+	{
 		// TST imm,zp / imm,zp,X
 		case 0x83:
 		case 0xA3:
