@@ -60,9 +60,8 @@ bool FAsmExportValidator::Validate(const std::vector<int16_t>& banksExported, co
 
 bool FAsmExportValidator::Assemble(const std::string& asmFname, bool bOutputListing)
 {
-	printf("--------------------------------------------------------------------------------------------------------\n");
-
-	const std::string validatorPath = pPCEEmu->GetPCEGlobalConfig()->ValidatorPath;
+	std::string validatorPath = pPCEEmu->GetPCEGlobalConfig()->ValidatorPath;
+	std::replace(validatorPath.begin(), validatorPath.end(), '/', '\\');
 	const std::string tmpFile = validatorPath + "tmp.txt";
 	const std::string logFile = validatorPath + "AssembleLog.txt";
 	const std::string logOldFile = validatorPath + "AssembleLogOld.txt";
@@ -77,33 +76,34 @@ bool FAsmExportValidator::Assemble(const std::string& asmFname, bool bOutputList
 	std::string cmd = "if exist \"" + logFile + "\" move /Y \"" + logFile + "\" \"" + logOldFile + "\" > nul";
 	std::system(cmd.c_str());
 
-	// create tmp.txt and output which file we are assembling
-	cmd = "echo Assembling " + pPCEEmu->GetProjectConfig()->Name + " > \"" + tmpFile + "\"";
-	std::system(cmd.c_str());
-
-	// echo blank line
-	cmd = "echo[ >> \"" + tmpFile + "\"";
-	std::system(cmd.c_str());
-
 	// This presumes pceas.exe is in your windows path.
 	char cmdTxt[512];
 
-	// append the results to tmp.txt
-	snprintf(cmdTxt, sizeof(cmdTxt), "pceas.exe --raw %s\"%s\" >> \"%s\"", bOutputListing ? "-l3 " : "", asmFname.c_str(), tmpFile.c_str());
+	// write the results to tmp.txt. (overwrite each time)
+	snprintf(cmdTxt, sizeof(cmdTxt), "pceas.exe --raw %s\"%s\" > \"%s\"", bOutputListing ? "-l3 " : "", asmFname.c_str(), tmpFile.c_str());
 	const int errorCode = std::system(cmdTxt);
 
-	// append to the batch log file
-	cmd = "type \"" + tmpFile + "\" >> \"" + logFile + "\"";
-	std::system(cmd.c_str());
+	// log output from PCEAS in the Debug log window
+	if (char* pText = LoadTextFile(tmpFile.c_str()))
+	{
+		// strip trailing lines
+		char* pEnd = pText + strlen(pText);
+		while (pEnd > pText && (pEnd[-1] == '\n' || pEnd[-1] == '\r' || pEnd[-1] == ' '))
+			*--pEnd = '\0';
 
-	// print the contents to std output so we can see the result in the PCEAnalyser command window
-	cmd = ("type \"" + tmpFile + "\"");
-	std::system(cmd.c_str());
+		LOGINFO("--------------------------------------------------------------------------------------------------------");
+		LOGINFO("%s", pText);
+		LOGINFO("--------------------------------------------------------------------------------------------------------");
+
+		if (FILE* pLog = fopen(logFile.c_str(), "a"))
+		{
+			fputs(pText, pLog);
+			fclose(pLog);
+		}
+		delete[] pText;
+	}
 
 	LOGINFO("Assembled '%s' : %s", pPCEEmu->GetProjectConfig()->Name.c_str(), errorCode ? "FAILURE" : "SUCCESS");
-
-	std::system(("echo -------------------------------------------------------------------------------------------------------- >> \"" + logFile + "\"").c_str());
-	printf("--------------------------------------------------------------------------------------------------------\n");
 
 	Results.bAssembledOk = errorCode == 0 ? true : false;
 

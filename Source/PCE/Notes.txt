@@ -11,6 +11,7 @@ TODO
 - add audio viewer: disable channels etc
 - hook up more events: audio, etc
 - add way to understand/visualise if interrupts are active?
+- improve Claude.md
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
