@@ -375,7 +375,8 @@ void FBanksViewer::DrawMappedBanks()
 	}
 
 	const float detailWidth = ImGui::GetFontSize() * 28.0f;
-	const float tableWidth = ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x;
+	const float minTableWidth = ImGui::GetFontSize() * 22.0f;
+	const float tableWidth = MAX(minTableWidth, ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x);
 
 	// todo default to sorting by mapped address
 	ImGui::BeginChild("##MappedBankTablePane", ImVec2(tableWidth, 0.0f), false);
@@ -425,7 +426,8 @@ void FBanksViewer::DrawAllBanks()
 	}
 
 	const float detailWidth = ImGui::GetFontSize() * 20.0f;
-	const float tableWidth = ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x;
+	const float minTableWidth = ImGui::GetFontSize() * 22.0f;
+	const float tableWidth = MAX(minTableWidth, ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x);
 
 	ImGui::BeginChild("##BankTablePane", ImVec2(tableWidth, 0.0f), false);
 	DrawBankTable(banksToView, bankSetsToView);
