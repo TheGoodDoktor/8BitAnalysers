@@ -62,32 +62,47 @@ bool FAsmExportValidator::Assemble(const std::string& asmFname, bool bOutputList
 {
 	printf("--------------------------------------------------------------------------------------------------------\n");
 
-	// todo: export to temp directory?
+	const std::string validatorPath = pPCEEmu->GetPCEGlobalConfig()->ValidatorPath;
+	const std::string tmpFile = validatorPath + "tmp.txt";
+	const std::string logFile = validatorPath + "AssembleLog.txt";
+	const std::string logOldFile = validatorPath + "AssembleLogOld.txt";
+
+	if (!EnsureDirectoryExists(validatorPath.c_str()))
+	{
+		LOGINFO("Could not create dir %s", validatorPath.c_str());
+		return false;
+	}
+
+	// rotate log: move previous log to old log
+	std::string cmd = "if exist \"" + logFile + "\" move /Y \"" + logFile + "\" \"" + logOldFile + "\" > nul";
+	std::system(cmd.c_str());
 
 	// create tmp.txt and output which file we are assembling
-	std::string echoCmd = "echo Assembling " + pPCEEmu->GetProjectConfig()->Name + " > tmp.txt";
-	std::system(echoCmd.c_str());
+	cmd = "echo Assembling " + pPCEEmu->GetProjectConfig()->Name + " > \"" + tmpFile + "\"";
+	std::system(cmd.c_str());
 
 	// echo blank line
-	std::system("echo[ >> tmp.txt");
+	cmd = "echo[ >> \"" + tmpFile + "\"";
+	std::system(cmd.c_str());
 
 	// This presumes pceas.exe is in your windows path.
-	char cmdTxt[256];
+	char cmdTxt[512];
 
-	// append the results to out.txt
-	snprintf(cmdTxt, 256, "pceas.exe --raw %s\"%s\" >> tmp.txt", bOutputListing ? "-l3 " : "", asmFname.c_str());
-
+	// append the results to tmp.txt
+	snprintf(cmdTxt, sizeof(cmdTxt), "pceas.exe --raw %s\"%s\" >> \"%s\"", bOutputListing ? "-l3 " : "", asmFname.c_str(), tmpFile.c_str());
 	const int errorCode = std::system(cmdTxt);
 
 	// append to the batch log file
-	std::system("type tmp.txt >> AssembleLog.txt");
+	cmd = "type \"" + tmpFile + "\" >> \"" + logFile + "\"";
+	std::system(cmd.c_str());
 
 	// print the contents to std output so we can see the result in the PCEAnalyser command window
-	std::system("type tmp.txt");
+	cmd = ("type \"" + tmpFile + "\"");
+	std::system(cmd.c_str());
 
-	LOGINFO("Assembled '%s' : %s", pPCEEmu->GetProjectConfig()->Name.c_str(), errorCode ? "FAILURE" : "SUCESS");
+	LOGINFO("Assembled '%s' : %s", pPCEEmu->GetProjectConfig()->Name.c_str(), errorCode ? "FAILURE" : "SUCCESS");
 
-	std::system("echo -------------------------------------------------------------------------------------------------------- >> AssembleLog.txt");
+	std::system(("echo -------------------------------------------------------------------------------------------------------- >> \"" + logFile + "\"").c_str());
 	printf("--------------------------------------------------------------------------------------------------------\n");
 
 	Results.bAssembledOk = errorCode == 0 ? true : false;
