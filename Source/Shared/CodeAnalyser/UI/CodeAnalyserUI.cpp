@@ -1997,6 +1997,14 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::SameLine();
 	DrawDebuggerButtons(state, viewState);
 	
+	{
+		// sam. Ensure the details pane on the right always remains at least partially visible
+		// when the code analysis window is resized horizontally.
+		const float kMinDetailsWidth = 150.0f;
+		const float availW = ImGui::GetContentRegionAvail().x;
+		ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(availW - kMinDetailsWidth, FLT_MAX));
+	}
+
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), /*true*/ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
 	//if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
 	{
