@@ -1452,12 +1452,17 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	{
 		const FAddressRef initialPC = GetPC();
 
-		// removed this for now. we can end up with operand addresses to labels in the UNUSED banks
+		// Removed this for now. We can end up with operand addresses to labels in the UNUSED banks
 		// in the initial code. this can prevent the exported asm from assembling.
-		// it is better to let the WriteCodeInfoForAddress() happen when the code is executed.
-		// this makes sure the operand addresses point to actual banks/roms in physical memory.
+		// It is better to let the WriteCodeInfoForAddress() happen when the code is executed.
+		// This makes sure the operand addresses point to actual banks/roms in physical memory.
 		//SetItemCode(CodeAnalysis, initialPC);
 		CodeAnalysis.Debugger.SetPC(initialPC);
+
+		// The initial PC needs to be in the address space of the only mapped ROM: ROM_00.
+		// If the PC is anything else something badly has gone wrong and the game won't work
+		// because it will be trying to execute undefined memory.
+		assert(initialPC.GetAddress() >= 0xe000);
 
 		// Make a label for the entry point.
 		// Without this an exported asm file may not assemble.
