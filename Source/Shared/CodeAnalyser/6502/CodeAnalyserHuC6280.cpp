@@ -353,6 +353,10 @@ EInstructionType GetInstructionTypeHuC6280(FCodeAnalysisState& state, FAddressRe
 	}
 }
 
+// sam. currently disabled. asm export is broken with this enabled.
+// also see ALLOW_U8_PTRS_JUMPS in Disassembler.cpp
+#define MULTIPLE_OPERANDS_SUPPORT 0
+
 void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo)
 {
 	const FAddressRef pcAddrRef = state.GetCanonicalAddressRef(pc);

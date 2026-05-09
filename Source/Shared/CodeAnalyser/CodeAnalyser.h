@@ -15,9 +15,6 @@
 #include "Commands/FormatDataCommand.h"
 #include "Debug/DebugLog.h"
 
-// sam. currently disabled. asm export is broken with this enabled.
-#define MULTIPLE_OPERANDS_SUPPORT 0
-
 // forward dec
 class FGraphicsView;
 class FCodeAnalysisState;

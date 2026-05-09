@@ -109,13 +109,22 @@ void AnalysisOutputCB(char c, void* pUserData)
 
 // For Aseembler exporter
 
+// sam. enabling this currently breaks the assembler.
+// it causes labels at physical addresses 0-255 to be used instead of raw 8 bit values.
+// this doesn't make sense and is wrong.
+// does this need awareness of the instruction's zero page addressing mode?
+// examples of lines that fail to assemble with "Error: Undefined symbol in operand field"
+//  LDA [data_HW_PAGE_001A],Y
+//  INC <data_HW_PAGE_00E1
+#define ALLOW_U8_PTRS_JUMPS 0
+
 void FExportDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 {
 	if (outputCallback != nullptr)
 	{
 		const EOperandType opType = pCodeInfoItem->GetOperandType(OperandOutputCount);
 
-#if MULTIPLE_OPERANDS
+#if ALLOW_U8_PTRS_JUMPS
 		if (opType == EOperandType::Pointer || opType == EOperandType::JumpAddress)
 		{
 			FAddressRef labelAddress = pCodeInfoItem->GetOperandAddress(OperandOutputCount);
@@ -127,6 +136,7 @@ void FExportDasmState::OutputU8(uint8_t val, dasm_output_t outputCallback)
 			}
 		}
 #endif
+
 		ENumberDisplayMode dispMode = GetNumberDisplayMode();
 		if (opType == EOperandType::Decimal) dispMode = ENumberDisplayMode::Decimal;
 		if (opType == EOperandType::Hex)     dispMode = HexDisplayMode;
