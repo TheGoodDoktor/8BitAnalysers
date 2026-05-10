@@ -80,6 +80,7 @@ file ( GLOB program_src CONFIGURE_DEPENDS
 	Viewers/*.cpp Viewers/*.h)
 
 add_executable (SpectrumAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
+target_precompile_headers( SpectrumAnalyser PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/../Shared/pch.h>" )
 
 # set up test
 if(${with_tests})
@@ -90,6 +91,7 @@ file ( GLOB shared_test_src
 	../Shared/CodeAnalyser/Tests/*.cpp ../Shared/CodeAnalyser/Tests/*.h)
 
 add_executable (SpectrumAnalyserTest MACOSX_BUNDLE ${test_src} ${shared_test_src} ${shared_src} ${program_src} ${vendor_src} )
+target_precompile_headers( SpectrumAnalyserTest REUSE_FROM SpectrumAnalyser )
 
 set_target_properties( SpectrumAnalyserTest PROPERTIES CXX_STANDARD 20 )
 set_target_properties( SpectrumAnalyserTest PROPERTIES C_STANDARD 11 )

@@ -26,6 +26,10 @@
 #include <time.h>
 #if defined(_WIN32)
 #include <direct.h>
+// sam. This allows us to use std::min and std::max without a compile error.
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #else
 #include <sys/stat.h>
