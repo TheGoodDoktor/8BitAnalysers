@@ -1939,6 +1939,8 @@ void FPCEEmu::Tick()
 	pPCEViewer->Tick();
 	if (pVRAMViewer)
 		pVRAMViewer->Tick();
+	if (pSpriteViewer)
+		pSpriteViewer->Tick();
 
 	UpdateDebugStats();
 

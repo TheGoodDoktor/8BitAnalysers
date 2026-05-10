@@ -68,10 +68,7 @@ public:
 	bool	MprBankIdsAreValid() const;
 
 	// Returns the primary bank ID for a given bank ID.
-	// Each PCE ROM bank has up to kNumBankSetIds FCodeAnalysisBank entries (one primary
-	// plus duplicates) so that the same logical bank can be simultaneously mapped to
-	// multiple MPR slots. Only the primary (index 0) is exported. This function lets
-	// shared code redirect any duplicate bank ID to the primary for label lookups.
+	// This allows shared code to redirect any duplicate bank ID to the primary for label lookups.
 	int16_t	GetCanonicalBankId(int16_t bankId) const override;
 	
 	// FEmuBase End
