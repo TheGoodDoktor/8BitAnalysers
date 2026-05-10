@@ -1,3 +1,4 @@
+#include "RegisterView6502.h"
 #include "../../CodeAnalyser.h"
 #include "../CodeAnalyserUI.h"
 
@@ -32,53 +33,37 @@ class FZeroPageGrid : public FMemoryAccessGrid
 		uint16_t ZeroPageAddr = 0;
 };
 
-struct F6502DisplayRegisters
+F6502DisplayRegisters::F6502DisplayRegisters(ICPUEmulator6502* pCPU)
 {
-	F6502DisplayRegisters() {}
-	F6502DisplayRegisters(ICPUEmulator6502* pCPU)
+	if (pCPU)
 	{
-		if (pCPU)
-		{
-			A = pCPU->GetA();
-			X = pCPU->GetX();
-			Y = pCPU->GetY();
-			S = pCPU->GetS();
-			P = pCPU->GetP();
-			PC = pCPU->GetPC();
-		}
-
-		// set flags
-		CarryFlag					= P & ICPUEmulator6502::kFlagCarry;
-		ZeroFlag						= P & ICPUEmulator6502::kFlagZero;
-		InterruptDisableFlag		= P & ICPUEmulator6502::kFlagInterrupt;
-		DecimalModeFlag			= P & ICPUEmulator6502::kFlagDecimal;
-		BreakFlag					= P & ICPUEmulator6502::kFlagBreak;
-		OverflowFlag				= P & ICPUEmulator6502::kFlagOverflow;
-		NegativeFlag				= P & ICPUEmulator6502::kFlagNegative;
+		A  = pCPU->GetA();
+		X  = pCPU->GetX();
+		Y  = pCPU->GetY();
+		S  = pCPU->GetS();
+		P  = pCPU->GetP();
+		PC = pCPU->GetPC();
 	}
 
-	uint8_t		A = 0;
-	uint8_t		X = 0;
-	uint8_t		Y = 0;
-	uint8_t		S = 0;
-	uint8_t		P = 0;
-	uint16_t		PC = 0;
-
-	// flags
-	bool	CarryFlag = false;
-	bool	ZeroFlag = false;
-	bool	InterruptDisableFlag = false;
-	bool	DecimalModeFlag = false;
-	bool	BreakFlag = false;
-	bool	OverflowFlag = false;
-	bool	NegativeFlag = false;
-};
+	CarryFlag            = P & ICPUEmulator6502::kFlagCarry;
+	ZeroFlag             = P & ICPUEmulator6502::kFlagZero;
+	InterruptDisableFlag = P & ICPUEmulator6502::kFlagInterrupt;
+	DecimalModeFlag      = P & ICPUEmulator6502::kFlagDecimal;
+	BreakFlag            = P & ICPUEmulator6502::kFlagBreak;
+	OverflowFlag         = P & ICPUEmulator6502::kFlagOverflow;
+	NegativeFlag         = P & ICPUEmulator6502::kFlagNegative;
+}
 
 static F6502DisplayRegisters g_OldRegs;
 
 void StoreRegisters_6502(FCodeAnalysisState& state)
 {
 	g_OldRegs = F6502DisplayRegisters((ICPUEmulator6502*)state.CPUInterface->GetCPUEmulator());
+}
+
+const F6502DisplayRegisters& GetStoredRegisters_6502()
+{
+	return g_OldRegs;
 }
 
 void DrawRegisters_6502(FCodeAnalysisState& state)

@@ -1,0 +1,279 @@
+Assembling 15-in-1 Mega Collection - Backtracking Ten Years (J) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling 1943 Kai (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling 21 Emon - Mezase Hotel Ou!! (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling 5-in-1 Fami Collection - NES Collection Nr 1 (J) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling 6-in-1 Fami Collection - NES Collection Nr 2 (J) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Adventure Island (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Aero Blasters (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Aero Blasters (USA) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling After Burner II (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Air Zonk (USA) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Air Zonk - PC Denjin - Punkic Cyborgs (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Alice in Wonderdream - Fushigi no Yume no Alice (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+#[1]   "c:\dev\PCEAnalyserProjects\Alice in Wonderdream - Fushigi no Yume no Alice (Japan)\Alice in Wonderdream - Fushigi no Yume no Alice (Japan).asm"
+26295    2F:4000             	
+       Warning: A 384KB ROM size may not work with emulators!
+
+Most emulators expect a 384KB HuCard ROM to be in a split-image layout.
+
+Unless you are patching an existing 384KB HuCard game image, you are
+almost-certainly not using that layout, and your ROM will crash.
+
+To avoid problems, add or remove enough data to avoid the 384KB size.
+
+
+-------------------------------------------------------------------------------------------------------- 
+Assembling Alien Crush (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Alien Crush (USA) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Andre' Panza Kick Boxing (USA) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Ankoku Densetsu (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Aoi Blink (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+#[1]   "c:\dev\PCEAnalyserProjects\Aoi Blink (Japan)\Aoi Blink (Japan).asm"
+27960    2F:6000             	
+       Warning: A 384KB ROM size may not work with emulators!
+
+Most emulators expect a 384KB HuCard ROM to be in a split-image layout.
+
+Unless you are patching an existing 384KB HuCard game image, you are
+almost-certainly not using that layout, and your ROM will crash.
+
+To avoid problems, add or remove enough data to avoid the 384KB size.
+
+
+-------------------------------------------------------------------------------------------------------- 
+Assembling Appare Gateball (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Armed F (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Artist Tool (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Atomic Robo-Kid Special (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Ballistix (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Ballistix (USA) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Bari Bari Densetsu (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+#[1]   "c:\dev\PCEAnalyserProjects\Bari Bari Densetsu (Japan)\Bari Bari Densetsu (Japan).asm"
+27395    2F:4000             	
+       Warning: A 384KB ROM size may not work with emulators!
+
+Most emulators expect a 384KB HuCard ROM to be in a split-image layout.
+
+Unless you are patching an existing 384KB HuCard game image, you are
+almost-certainly not using that layout, and your ROM will crash.
+
+To avoid problems, add or remove enough data to avoid the 384KB size.
+
+
+-------------------------------------------------------------------------------------------------------- 
+Assembling Mr 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Mr 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
+Assembling Narazumono Sentai Butai - Bloody Wolf (Japan) 
+ 
+PC Engine Assembler (v4.10.524.g2a5c51f, 2025-12-17)
+
+PCE_INCLUDE = "(null)"
+
+pass 1
+pass 2
+-------------------------------------------------------------------------------------------------------- 
