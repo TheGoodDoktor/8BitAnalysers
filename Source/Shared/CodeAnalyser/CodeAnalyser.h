@@ -472,7 +472,7 @@ public:
 		if (!IsBankIdCanonical(bankId))
 		{
 			const FCodeAnalysisBank* pBank = GetBank(bankId);
-			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+			LOGERROR("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
 		}
 		return FAddressRef(bankId, physAddr);
 #else
@@ -486,7 +486,7 @@ public:
 		if (!IsBankIdCanonical(bankId))
 		{
 			const FCodeAnalysisBank* pBank = GetBank(bankId);
-			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+			LOGERROR("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
 		}
 		return FAddressRef(bankId, physAddr);
 #else
@@ -500,7 +500,7 @@ public:
 		if (!IsBankIdCanonical(bankId))
 		{
 			const FCodeAnalysisBank* pBank = GetBank(bankId);
-			LOGINFO("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
+			LOGERROR("Getting address ref to %s at 0x%x", pBank->Name.c_str(), physAddr);
 		}
 		return FAddressRef(bankId, physAddr);
 #else
@@ -980,6 +980,7 @@ void RegisterCall(FCodeAnalysisState& state, const FCPUFunctionCall& callInfo);
 void RegisterReturn(FCodeAnalysisState& state, FAddressRef returnAddress);
 void ReAnalyseCode(FCodeAnalysisState &state);
 uint16_t WriteCodeInfoForAddress(FCodeAnalysisState& state, uint16_t pc);
+void FillCodeInfoOperands(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo); // sam
 void GenerateGlobalInfo(FCodeAnalysisState &state);
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr);
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc, uint16_t dataAddr, uint8_t value);

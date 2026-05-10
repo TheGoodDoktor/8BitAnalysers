@@ -97,7 +97,15 @@ class FPCEAsmExporterBase : public FASMExporter
 			FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 			FLabelInfo* pLabel = state.GetLabelForAddress(labelAddress);
 
-			if (pLabel != nullptr)
+			if (pLabel == nullptr)
+			{
+				int searchOffset = 0;
+				pLabel = FindNearestLabel(labelAddress, labelAddress, searchOffset);
+				if (pLabel != nullptr)
+					OutputLabelWithOffsets(pLabel, labelAddress, searchOffset, disassemblyValue, outputCallback);
+				return pLabel;
+			}
+
 			{
 				const uint16_t operandAddr = labelAddress.GetAddress();
 				const FDataInfo* pDataInfo = state.GetDataInfoForAddress(labelAddress);
@@ -120,29 +128,17 @@ class FPCEAsmExporterBase : public FASMExporter
 					return nullptr;
 				}
 
-				if (operandAddr != disassemblyValue)
+				// Bank remapping: the same bank can be mapped to different physical addresses at
+				// different times. The label's canonical address (operandAddr) may therefore differ
+				// from the value encoded in the instruction (disassemblyValue) by a multiple of
+				// the bank size.
+				const FCodeAnalysisBank* pOperandBank = state.GetBank(operandBankId);
+				const int bankSize = pOperandBank ? pOperandBank->GetSizeBytes() : 0;
+				const int32_t diff = (int32_t)disassemblyValue - (int32_t)operandAddr;
+				if (bankSize > 0 && diff != 0 && (diff % bankSize) == 0)
 				{
-					// todo check if bank has been mapped to val
-					// if not return null?
-					// if so, output the label and then the offset below
-
-					const std::string labelName = pLabel->GetName();
-
-					for (int i = 0; i < labelName.size(); i++)
-					{
-						outputCallback(labelName[i], &DasmState);
-					}
-
-					const int32_t offset = (int32_t)disassemblyValue - (int32_t)operandAddr;
-					char offsetStr[16];
-					if (offset > 0)
-						snprintf(offsetStr, sizeof(offsetStr), "+$%X", offset);
-					else
-						snprintf(offsetStr, sizeof(offsetStr), "-$%X", -offset);
-					for (const char* p = offsetStr; *p; p++)
-						outputCallback(*p, &DasmState);
-
-					QueueWarning("Fixed up label %s with offset %s$%x", pLabel->GetName(), offset > 0 ? "+" : "-", abs(offset));
+					OutputLabelWithOffsets(pLabel, labelAddress, 0, disassemblyValue, outputCallback);
+					QueueWarning("Fixed up label %s with offset %d", pLabel->GetName(), diff);
 				}
 				else if (pDataInfo != nullptr && pDataInfo->DataType == EDataType::InstructionOperand)
 				{
@@ -188,32 +184,6 @@ class FPCEAsmExporterBase : public FASMExporter
 			}
 			return pLabel;
 		}
-
-		/*const FLabelInfo* ResolveOperandLabel(const FLabelInfo* pLabel, const FAddressRef& operandAddress, uint16_t val, FAddressRef& outResolvedAddress) override
-		{
-			if (operandAddress.GetAddress() == val)
-			{
-				outResolvedAddress = operandAddress;
-				return pLabel;
-			}
-
-			FPCEEmu* pPCEEmu = static_cast<FPCEEmu*>(pEmulator);
-			FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-
-			const FBankSet* pBankSet = pPCEEmu->GetBankSetForBankId(operandAddress.GetBankId());
-			if (pBankSet == nullptr)
-				return nullptr;
-
-			// Check if this bank set has ever been mapped to the slot containing val
-			const int neededSlot = val / 0x2000;
-			if (!(pBankSet->MappedSlotsMask & (1 << neededSlot)))
-				return nullptr;
-
-			// Return the label at its primary address. The caller will emit an offset
-			// (e.g. "label + $2000") so the expression assembles to val correctly.
-			outResolvedAddress = operandAddress;
-			return pLabel;
-		}*/
 
 		void	ExportDidEnd() override
 		{

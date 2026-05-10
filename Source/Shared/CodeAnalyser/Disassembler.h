@@ -37,6 +37,7 @@ public:
 
 	FCodeAnalysisState*		CodeAnalysisState = nullptr;
 	std::string				Text;
+	int						OperandOutputCount = 0;	// incremented by OutputU8/OutputU16, used for per-operand type lookup
 };
 
 class FAnalysisDasmState : public FDasmStateBase

@@ -34,6 +34,7 @@ bool CheckJumpInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint1
 bool CheckCallInstructionZ80(const FCodeAnalysisState& state, uint16_t pc);
 bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc);
 bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc);
+void FillCodeInfoOperandsZ80(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo); // sam
 
 FMachineStateZ80* AllocateMachineStateZ80();
 void FreeMachineStatesZ80();

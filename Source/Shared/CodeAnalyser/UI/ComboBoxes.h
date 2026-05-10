@@ -10,6 +10,7 @@ class FCodeAnalysisState;
 
 bool DrawNumberTypeCombo(const char* pLabel, ENumberDisplayMode& numberMode);
 bool DrawOperandTypeCombo(const char* pLabel, FCodeInfo* pCodeInfo);
+bool DrawOperandInfoCombo(const char* pLabel, FOperandInfo& operandInfo); // sam
 bool DrawDataTypeCombo(const char* pLabel, EDataType& dataType);
 bool DrawDataTypeFilterCombo(const char* pLabel, EDataTypeFilter& filterType); 
 bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayType, const FCodeAnalysisState& state);

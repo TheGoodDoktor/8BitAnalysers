@@ -1997,6 +1997,14 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::SameLine();
 	DrawDebuggerButtons(state, viewState);
 	
+	{
+		// sam. Ensure the details pane on the right always remains at least partially visible
+		// when the code analysis window is resized horizontally.
+		const float kMinDetailsWidth = 150.0f;
+		const float availW = ImGui::GetContentRegionAvail().x;
+		ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(availW - kMinDetailsWidth, FLT_MAX));
+	}
+
 	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), /*true*/ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
 	//if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
 	{
@@ -2671,10 +2679,13 @@ std::string ExpandTag(FCodeAnalysisState& state, const std::string& tag)
 		const FCodeInfo* pCodeInfo = g_CodeInfo;
 		if (pCodeInfo != nullptr)
 		{
-			if (g_CodeInfo->OperandAddress.IsValid())
-			{
-				return GenerateAddressLabelString(state, g_CodeInfo->OperandAddress);
-			}
+			//sam. added support for multiple operands
+			int operandIndex = 0;
+			if (!tagValue.empty())
+				operandIndex = atoi(tagValue.c_str());
+			const FAddressRef addr = pCodeInfo->GetOperandAddress(operandIndex);
+			if (addr.IsValid())
+				return GenerateAddressLabelString(state, addr);
 		}
 	}
 	else if (tagName == std::string("IM"))	// immediate
@@ -2707,11 +2718,16 @@ bool ProcessTag(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,con
 		const FCodeInfo* pCodeInfo = g_CodeInfo;
 		if(pCodeInfo != nullptr)
 		{
+			//sam. added support for multiple operands
+			int operandIndex = 0;
+			if (!tagValue.empty())
+				operandIndex = atoi(tagValue.c_str());
 			uint32_t labelFlags = kAddressLabelFlag_NoBank | kAddressLabelFlag_NoBrackets;
 			//if(pCodeInfo->OperandType == EOperandType::Pointer)
-				labelFlags |= kAddressLabelFlag_White;
-			if(g_CodeInfo->OperandAddress.IsValid())
-				bShownToolTip = DrawAddressLabel(state, viewState, g_CodeInfo->OperandAddress, labelFlags);
+			labelFlags |= kAddressLabelFlag_White;
+			const FAddressRef addr = pCodeInfo->GetOperandAddress(operandIndex);
+			if(addr.IsValid())
+				bShownToolTip = DrawAddressLabel(state, viewState, addr, labelFlags);
 		}
 	}
 	else if (tagName == std::string("IM"))	// immediate

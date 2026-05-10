@@ -526,6 +526,13 @@ private:
 
 };
 
+// sam. support for multiple operands
+struct FOperandInfo
+{
+	EOperandType	Type    = EOperandType::Unknown;
+	FAddressRef		Address = FAddressRef::Invalid();
+};
+
 struct FCodeInfo : FItem
 {
 	static FCodeInfo* Allocate();
@@ -534,7 +541,26 @@ struct FCodeInfo : FItem
 	EOperandType	OperandType = EOperandType::Unknown;
 	int				StructId = -1;
 	std::string		Text;				// Disassembly text
-	FAddressRef		OperandAddress;	// optional operand address
+	FAddressRef		OperandAddress;	// optional operand address (operand 0)
+
+	// sam. Additional operands for multi-operand instructions (e.g. HuC6280 block transfers, TST, BBR/BBS) BEGIN
+	static constexpr int kMaxExtraOperands = 2;
+	FOperandInfo	ExtraOperands[kMaxExtraOperands];
+
+	EOperandType GetOperandType(int n) const
+	{
+		if (n == 0) return OperandType;
+		if (n <= kMaxExtraOperands) return ExtraOperands[n - 1].Type;
+		return EOperandType::Unknown;
+	}
+	FAddressRef GetOperandAddress(int n) const
+	{
+		if (n == 0) return OperandAddress;
+		if (n <= kMaxExtraOperands) return ExtraOperands[n - 1].Address;
+		return FAddressRef::Invalid();
+	}
+	// sam. support for multiple operands END
+
 	int				FrameLastExecuted = -1;
 	int				LastExecuted = -1;
 	int				ExecutionCount = 0;

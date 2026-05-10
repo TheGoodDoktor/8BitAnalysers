@@ -13,7 +13,11 @@
 static const int kMemoryViewImageWidth = 128;
 static const int kMemoryViewImageHeight = 512;
 
+static const float kTickLen = 6.0f;
+static const float kNameGap = 2.0f;
+
 void DrawHighlightBar(float x, float y, float width, float height);
+static void DrawVerticalText(ImDrawList* dl, ImVec2 pos, ImU32 col, const char* text);
 
 bool FOverviewViewer::Init(void)
 {
@@ -267,6 +271,8 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 
 	FGlobalConfig* pConfig = state.pGlobalConfig;
 
+	const float scale = ImGui_GetScaling() * (float)pConfig->OverviewScale;
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
 	ImGui::InputInt("Scale", &pConfig->OverviewScale, 1, 1);
 	pConfig->OverviewScale = std::max(1, pConfig->OverviewScale);	// clamp
 	
@@ -276,12 +282,17 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 		ImGui::Checkbox("Include ROM", &bShowROM);
 	}
 
-	const float scale = ImGui_GetScaling() * (float)pConfig->OverviewScale;
-
 	if (bNeedsRebuild)
 		MemoryViewImage->UpdateTexture();
 
+	const float kFontSize = ImGui::GetFontSize();
+	const float labelColumnWidth = bShowBankNames ? kFontSize + kTickLen + kNameGap : 0.0f;
+
 	ImGuiIO& io = ImGui::GetIO();
+
+	// Advance cursor right so the image starts labelColumnWidth in from the content
+	// left edge; the reserved space to the left stays within the content clip rect.
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + labelColumnWidth);
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
 	// Draw Image
@@ -301,7 +312,7 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 		DrawLegend();
 	}
 
-	ImDrawList* dl = ImGui::GetWindowDrawList();
+	DrawBankNames(pos, size, scale, labelColumnWidth);
 
 	if (bMapIsHovered)
 	{
@@ -325,6 +336,7 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	}
 
 	ImGui::Checkbox("Highlight Current Location", &bShowCurrentLocation);
+	ImGui::Checkbox("Show Bank Names", &bShowBankNames);
 
 	if (bShowCurrentLocation)
 	{
@@ -351,8 +363,28 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	}
 }
 
+// Note: this has a limitation that when the window width is reduced the text will get clipped
+// at the point it would get clipped if it was drawn horizontally.
+void DrawVerticalText(ImDrawList* dl, ImVec2 pos, ImU32 col, const char* text)
+{
+	const int vtxStart = dl->VtxBuffer.Size;
+	dl->AddText(pos, col, text);
+
+	// Rotate 90° CCW around pos so text reads top-to-bottom in the vertical column.
+	// Before rotation the text runs left→right from pos; after CCW rotation it runs top→bottom,
+	// occupying x=[pos.x - fontSize, pos.x], y=[pos.y, pos.y + textWidth].
+	for (int i = vtxStart; i < dl->VtxBuffer.Size; i++)
+	{
+		ImVec2& p = dl->VtxBuffer[i].pos;
+		const float dx = p.x - pos.x;
+		const float dy = p.y - pos.y;
+		p.x = pos.x - dy;
+		p.y = pos.y + dx;
+	}
+}
+
 // sam. Rewrote this for speed.
-// Currently limited to physical memory. 
+// Currently limited to physical memory.
 void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 {
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
@@ -470,6 +502,62 @@ void FOverviewViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pP
 
 			physicalAddress += pDataInfo->ByteSize;
 		}
+	}
+}
+
+void FOverviewViewer::DrawBankNames(ImVec2 pos, ImVec2 size, float scale, float columnWidth)
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	const float imageLeft  = pos.x;
+	const float imageRight = pos.x + size.x;
+	const float boxLeft    = imageLeft - columnWidth;
+	const ImU32 sepCol = IM_COL32(200, 200, 200, 180);
+
+	if (bShowBankNames)
+		dl->AddLine(ImVec2(boxLeft, pos.y), ImVec2(boxLeft, pos.y + size.y), sepCol, 1.0f);
+
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
+	{
+		const FCodeAnalysisBank& bank = state.GetBanks()[b];
+
+		if (!bank.IsMapped() || bank.PrimaryMappedPage < 0)
+			continue;
+		if (!bShowROM && bank.bMachineROM)
+			continue;
+
+		const uint16_t bankStart = bank.GetMappedAddress();
+
+		if (!bShowROM && bankStart < 0x4000)
+			continue;
+
+		const int visibleOffset = bShowROM ? bankStart : (bankStart - 0x4000);
+
+		const float bankHeight = (float(bank.GetSizeBytes()) / kMemoryViewImageWidth) * scale;
+		const float bankY      = pos.y + (float(visibleOffset) / kMemoryViewImageWidth) * scale;
+		const float bankBottom = std::min(bankY + bankHeight, pos.y + size.y);
+
+		if (bankY > pos.y + size.y)
+			continue;
+
+		if (bShowBankNames)
+		{
+			dl->AddLine(ImVec2(boxLeft, bankY),      ImVec2(imageLeft, bankY),      sepCol, 1.0f);
+			dl->AddLine(ImVec2(boxLeft, bankBottom), ImVec2(imageLeft, bankBottom), sepCol, 1.0f);
+
+			if (!bank.Name.empty())
+			{
+				const float textWidth = ImGui::CalcTextSize(bank.Name.c_str()).x;
+				const float textX = imageLeft - (kTickLen + kNameGap) * 0.5f;
+				const float textY = bankY + (bankHeight - textWidth) * 0.5f;
+				DrawVerticalText(dl, ImVec2(textX, textY), sepCol, bank.Name.c_str());
+			}
+		}
+
+		// Right-side tick separator (skip at the very top of the visible area)
+		if (visibleOffset > 0)
+			dl->AddLine(ImVec2(imageRight, bankY), ImVec2(imageRight + kTickLen, bankY), sepCol, 1.5f);
 	}
 }
 

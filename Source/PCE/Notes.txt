@@ -3,7 +3,7 @@ TODO
 - fix first code byte always being data
 - tidy tooltips for PCE related instructions
 - Restore asm export for physical memory
-- make sure export memory range works
+- get asm export for memory range working again
 - OnEnterEditMode() get working
 - make bank label be an offset instead of address
 - local labels asm export
@@ -14,6 +14,11 @@ TODO
 - trace button doesnt seem to work in code analysis view
 - make screen appear when loading a saved project
 - dupe bank issues in hello.pce project. "FAddressRef::SetVal on unmapped bank 62 ROM_01_3. ref will be invalid." followed by assert in FItemRefernceTracker::RegisterAccess
+- deal with multiple operands, such as block operations etc
+- add audio viewer: disable channels etc
+- hook up more events: audio, etc
+- add way to understand/visualise if interrupts are active?
+- improve Claude.md
 
 BUGS
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
@@ -24,6 +29,7 @@ IDEAS
 - [perf] reserve bank id instead of creating all the banks up front.
 - when hovering over PCE memory mapped registers, give a description what they do. or add comments for the memory location
 - lazily create dupe banks. it's possible now we redirect code analysis to primary bank. reduces banks from 700->150 banks 
+- override assert with our own that lets you recover
 
 DONE
 - dont display dupe banks in banks mapped view 

@@ -234,7 +234,9 @@ void OnMemoryRead(void* pContext, u16 dataAddr)
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	RegisterDataRead(pEmu->GetCodeAnalysis(), pEmu->PrevPC, dataAddr);
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	const uint16_t pc = state.Debugger.GetPC().GetAddress();
+	RegisterDataRead(state, pc, dataAddr);
 }
 
 void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
@@ -242,11 +244,11 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	RegisterDataWrite(pEmu->GetCodeAnalysis(), pEmu->PrevPC, dataAddr, value);
-
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	FDebugger& debugger = state.Debugger;
-	
+	const uint16_t pc = debugger.GetPC().GetAddress();
+	RegisterDataWrite(state, pc, dataAddr, value);
+
 	const FAddressRef addrRef = state.GetCanonicalAddressRef(dataAddr);
 
 	uint32_t bpMaskCheck = 0;
@@ -332,8 +334,7 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 {
 	if (pVRAMViewer)
 	{
-		const uint16_t curInstructionAddr = PrevPC;
-		pVRAMViewer->RegisterWrite(vramAddr, CodeAnalysis.GetCanonicalAddressRef(curInstructionAddr));
+		pVRAMViewer->RegisterWrite(vramAddr, CodeAnalysis.Debugger.GetPC());
 
 		if (CodeAnalysis.Debugger.GetStepMode() == EDebugStepMode::ScreenWrite)
 		{
@@ -383,56 +384,21 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 	return false;
 }*/
 
-// The PC passed in here is the address _after_ the instruction just executed.
+// pc is the address of the instruction that just executed.
 void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
 
-	// This caused breakpoints to fire on the next instruction after the breakpoint address.
-	//const FAddressRef instrAddr = state.AddressRefFromPhysicalAddress(PrevPC);
-	const FAddressRef nextInstrAddr = state.GetCanonicalAddressRef(pc);
-	
-	/*const int16_t exeBankId = nextInstrAddr.GetBankId();
-	if (GetCanonicalBankId(exeBankId) != exeBankId)
-	{
-		FCodeAnalysisBank* pExeBank = state.GetBank(exeBankId);
-		LOGINFO("Executing code in %s %x", pExeBank->Name.c_str(), nextInstrAddr.GetAddress());
-	}*/
+	// oldpc is unused on HuC6280 (RegisterCodeExecutedHuC6280 only reads opcode at pc).
+	RegisterCodeExecuted(state, pc, /* oldpc */ 0);
 
-	// Set the PC to the next instruction to be executed
-	// This is so evaluating breakpoints in FDebugger::OnInstructionExecuted()
-	// breaks _before_ the instruction is executed.
-	state.Debugger.SetPC(nextInstrAddr);
+	// Advance Debugger.PC to the next instruction _before_ the breakpoint check so:
+	//  - the exec breakpoint check below fires against the instruction about to run, not the one that just ran
+	//  - memory callbacks during the next RunInstruction attribute to the executing PC
+	const uint16_t nextPc = p6280State->PC->GetValue();
+	state.Debugger.SetPC(state.GetCanonicalAddressRef(nextPc));
 
-#if 0
-	// Break when code execution flow moves to a bank of a different type.
-	// eg going from BIOS to RAM
-	static int prevBank = -1;
-	const int curBank = pc >> 13;
-	const int prevBank = PrevPC >> 13;
-	if (curBank != prevBank)
-	{
-		const Memory::MemoryBankType curBankType = pMemory->GetBankType(pMemory->GetMpr(curBank));
-		const Memory::MemoryBankType prevBankType = pMemory->GetBankType(pMemory->GetMpr(prevBank));
-		if (curBankType != prevBankType)
-		{
-			const FAddressRef curAddr = state.GetCanonicalAddressRef(pc);
-			const uint16_t prevBankId = state.GetBankFromAddress(PrevPC);
-			const uint16_t curBankId = curAddr.GetBankId();
-			FCodeAnalysisBank* pPrevBank = state.GetBank(prevBankId);
-			FCodeAnalysisBank* pCurBank = state.GetBank(curBankId);
-
-			LOGINFO("%s -> %s", pPrevBank->Name.c_str(), pCurBank->Name.c_str());
-			state.Debugger.Break();
-		}
-	}
-#endif
-
-	RegisterCodeExecuted(state, pc, pc);
-
-	// do i need to call MemoryHandlerTrapFunction() here?
-	
-	// This is a hack. The pins value is chips specific so we pass in a dummy value.
+	// The pins value is chips specific so we pass in a dummy value.
 	const uint64_t dummyPins = 0;
 	const int trapId = state.Debugger.OnInstructionExecuted(dummyPins);
 
@@ -454,8 +420,6 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 			state.OnMachineFrameEnd();
 	}
 	lastVpos = vpos;
-
-	PrevPC = pc;
 }
 
 bool FPCEEmu::IsUnusedBank(int16_t bankId) const
@@ -495,8 +459,17 @@ void FPCEEmu::BuildCanonicalBankIdLookup()
 	for (int i = 0; i < kNumBanks; i++)
 	{
 		const FBankSet& bankSet = BankSets[i];
+
+		// Treat unused banks as canonical.
+		// Not 100% sure if this is the right thing to do.
+		// It stops the spam from AddressRefFromPhysicalAddress() when unused banks are mapped in the initial state 
+		// after a project is loaded (or we have just booted up without a game loaded).
+		if (i == kBankUnusedStart)
+			continue;
+
 		if (bankSet.Banks.size() <= 1)
 			continue;
+
 		const int16_t primaryId = bankSet.GetBankId(0);
 		for (int d = 1; d < (int)bankSet.Banks.size(); d++)
 		{
@@ -530,7 +503,7 @@ int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 	return bankId;
 }
 
-const char* FPCEEmu::GetBankName(uint8_t bankIndex) const
+/*const char* FPCEEmu::GetBankName(uint8_t bankIndex) const
 {
 	if (Banks[bankIndex] != nullptr)
 	{
@@ -539,7 +512,7 @@ const char* FPCEEmu::GetBankName(uint8_t bankIndex) const
 			return pBank->Name.c_str();
 	}
 	return nullptr;
-}
+}*/
 
 static void NullInstructionExecutedCallback(void*, uint16_t) {}
 static void NullMemoryReadCallback(void*, uint16_t) {}
@@ -1473,19 +1446,23 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		pDebugStats->InitForGame(this, pGameConfig->Name);
 
 	CodeAnalysis.Debugger.Break();
-	PrevPC = p6280State->PC->GetValue();
 
 	// some extra initialisation for creating new analysis from snapshot
 	if(bLoadGameData == false)
 	{
 		const FAddressRef initialPC = GetPC();
 
-		// removed this for now. we can end up with operand addresses to labels in the UNUSED banks
+		// Removed this for now. We can end up with operand addresses to labels in the UNUSED banks
 		// in the initial code. this can prevent the exported asm from assembling.
-		// it is better to let the WriteCodeInfoForAddress() happen when the code is executed.
-		// this makes sure the operand addresses point to actual banks/roms in physical memory.
+		// It is better to let the WriteCodeInfoForAddress() happen when the code is executed.
+		// This makes sure the operand addresses point to actual banks/roms in physical memory.
 		//SetItemCode(CodeAnalysis, initialPC);
 		CodeAnalysis.Debugger.SetPC(initialPC);
+
+		// The initial PC needs to be in the address space of the only mapped ROM: ROM_00.
+		// If the PC is anything else something badly has gone wrong and the game won't work
+		// because it will be trying to execute undefined memory.
+		assert(initialPC.GetAddress() >= 0xe000);
 
 		// Make a label for the entry point.
 		// Without this an exported asm file may not assemble.
@@ -2050,9 +2027,14 @@ void FPCEEmu::SoftResetMachine()
 
 	pCore->ResetMedia(false);
 
-	// todo: reset viewers
+	// todo: reset all viewers
+	pVRAMViewer->Reset();
 	 
 	memset(pFrameBuffer, 0, kFramebufferSize);
+
+	ResetReferenceInfo(CodeAnalysis, true, true);
+	ResetReadWriteCounts(CodeAnalysis, true, true);
+	ResetExecutionCounts(CodeAnalysis);
 
 	// MapMprBanks relies on the mpr registers being setup correctly before it is called.
 	ResetBanks();
@@ -2062,6 +2044,7 @@ void FPCEEmu::SoftResetMachine()
 	GenerateGlobalInfo(CodeAnalysis);
 
 	CodeAnalysis.Debugger.GetCallstack().clear();
+	CodeAnalysis.Debugger.SetPC(CodeAnalysis.GetCanonicalAddressRef(p6280State->PC->GetValue()));
 }
 
 void FPCEEmu::OnEnterEditMode(void)

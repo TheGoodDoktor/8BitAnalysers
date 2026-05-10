@@ -139,7 +139,6 @@ public:
 
 	FEmuDebugStats* pDebugStats = nullptr;
 
-	uint16_t PrevPC = 0;
 	int EmuFramesToRun = 1;
 
 	static const char* kPCERomGameListName;

@@ -2,6 +2,7 @@
 
 #include "ViewerBase.h"
 #include <cstdint>
+#include <imgui.h>
 
 class FSpectrumEmu;
 class FCodeAnalysisState;
@@ -61,6 +62,7 @@ public:
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
 	
 	void	DrawLegend(void);
+	void	DrawBankNames(ImVec2 pos, ImVec2 size, float scale, float columnWidth);
 
 	void	SetRomOptionEnabled(bool bEnabled)
 	{
@@ -77,6 +79,7 @@ private:
 	bool		bShowROMCheckBox = true;
 	bool		bShowROM = false;
 	bool		bShowCurrentLocation = true;
+	bool		bShowBankNames = true;
 
 	int			LastBuiltFrameNo = -1;
 	uint32_t	LastFlashColour = 0;

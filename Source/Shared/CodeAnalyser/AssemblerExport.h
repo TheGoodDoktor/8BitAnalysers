@@ -39,7 +39,7 @@ public:
 	virtual void	AddBankSection(const FCodeAnalysisBank* pBank);
 	virtual void	ProcessLabelsOutsideExportedRange(void){}
 
-	// Output operand label at labelAddress. Returns the label if was successful or nullptr if not.
+	// sam. Output operand label at labelAddress. Returns the label if was successful or nullptr if not.
 	// The labelAddress can be modified by the function.
 	virtual FLabelInfo* OutputOperandLabelAtAddress(FAddressRef& labelAddress, uint16_t disassemblyValue, dasm_output_t outputCallback); // sam
 
@@ -57,6 +57,15 @@ public:
 	std::vector<const FCodeAnalysisBank*> ExportBanks;
 
 protected:
+	// sam. Search backwards from addr for the nearest label in the same bank.
+	// On success, sets labelAddress to the label's address, sets offset to the
+	// distance from that label to addr, and returns the label. Returns nullptr if none found.
+	FLabelInfo*		FindNearestLabel(FAddressRef addr, FAddressRef& labelAddress, int& offset) const;
+	
+	// sam. Output labelName[+bankMappingOffset][+searchOffset]. bankMappingOffset is non-zero when
+	// the label's bank was mapped to a different address at encode time than at export time.
+	void			OutputLabelWithOffsets(const FLabelInfo* pLabel, const FAddressRef& labelAddress, int searchOffset, uint16_t disassemblyValue, dasm_output_t outputCallback);
+
 	void				OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo);
 	ENumberDisplayMode	GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo);
 

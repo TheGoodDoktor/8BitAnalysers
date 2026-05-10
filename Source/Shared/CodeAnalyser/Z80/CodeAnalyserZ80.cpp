@@ -564,3 +564,44 @@ EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef ad
 
 	return EInstructionType::Unknown;
 }
+
+//sam. added support for multiple operands
+void FillCodeInfoOperandsZ80(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo)
+{
+	const FAddressRef pcAddrRef = state.GetCanonicalAddressRef(pc);
+
+	uint16_t jumpAddr;
+	if (CheckJumpInstructionZ80(state, pc, &jumpAddr))
+	{
+		pCodeInfo->bIsCall = CheckCallInstructionZ80(state, pc);
+		const FAddressRef jumpAddrRef = state.GetCanonicalAddressRef(jumpAddr);
+		pCodeInfo->OperandAddress = jumpAddrRef;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::JumpAddress;
+
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, jumpAddrRef, pCodeInfo->bIsCall ? ELabelType::Function : ELabelType::Code);
+		if (pLabel)
+			pLabel->References.RegisterAccess(pcAddrRef);
+		return;
+	}
+
+	uint16_t ptr;
+	if (CheckPointerRefInstructionZ80(state, pc, &ptr))
+	{
+		const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
+		pCodeInfo->OperandAddress = ptrAddr;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::Pointer;
+	}
+	else if (CheckPointerIndirectionInstructionZ80(state, pc, &ptr))
+	{
+		const FAddressRef ptrAddr = state.GetCanonicalAddressRef(ptr);
+		pCodeInfo->OperandAddress = ptrAddr;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::Pointer;
+
+		FLabelInfo* pLabel = GenerateLabelForAddress(state, ptrAddr, ELabelType::Data);
+		if (pLabel)
+			pLabel->References.RegisterAccess(pcAddrRef);
+	}
+}
