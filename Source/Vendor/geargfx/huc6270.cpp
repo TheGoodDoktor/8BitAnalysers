@@ -36,6 +36,8 @@ HuC6270::HuC6270(HuC6280* huC6280)
 
     InitPointer(m_callback_context);
     InitPointer(m_vram_write_callback);
+    InitPointer(m_scanline_callback);
+    InitPointer(m_vblank_callback);
 }
 
 HuC6270::~HuC6270()
@@ -543,6 +545,8 @@ void HuC6270::NextHorizontalState()
 void HuC6270::VBlankIRQ()
 {
     HUC6270_DEBUG("  [!] VBLANK IRQ");
+    if (m_vblank_callback)
+        m_vblank_callback(m_callback_context);
     if (m_register[HUC6270_REG_CR] & HUC6270_CONTROL_VBLANK)
     {
         m_status_register |= HUC6270_STATUS_VBLANK;
@@ -559,6 +563,9 @@ void HuC6270::VBlankIRQ()
 
 void HuC6270::RenderLine()
 {
+    if (m_scanline_callback)
+        m_scanline_callback(m_callback_context, m_raster_line, m_latched_bxr, m_bg_offset_y, m_latched_mwr, m_latched_cr);
+
     int width = MIN(1024, (m_latched_hdw + 1) << 3);
 
     if((m_latched_cr & 0x80) == 0)
@@ -890,8 +897,10 @@ void HuC6270::LoadState(std::istream& stream)
     }
 }
 
-void HuC6270::SetCallback(GG_VRAM_Write_Callback callback, void* context)
+void HuC6270::SetCallbacks(GG_VRAM_Write_Callback vram_write_callback, GG_ScanlineDraw_Callback scanline_callback, GG_VBlank_Callback vblank_callback, void* context)
 {
-   m_vram_write_callback = callback;
-   m_callback_context = context;
+    m_vram_write_callback = vram_write_callback;
+    m_scanline_callback   = scanline_callback;
+    m_vblank_callback     = vblank_callback;
+    m_callback_context    = context;
 }

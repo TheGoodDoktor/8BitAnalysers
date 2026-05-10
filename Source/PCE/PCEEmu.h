@@ -110,6 +110,7 @@ public:
 	int16_t* GetAudioBuffer() const { return pAudioBuf; }
 
 	FSpriteViewer* GetSpriteViewer() const { return pSpriteViewer; }
+	FGraphicsViewer* GetGraphicsViewer() const { return pGraphicsViewer; }
 	FVRAMViewer* GetVRAMViewer() const { return pVRAMViewer; }
 	FBatchGameLoadViewer* GetBatchGameLoadViewer() const { return pBatchGameLoadViewer;	}
 	

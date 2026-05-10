@@ -13,6 +13,21 @@
 #include <geargrafx_core.h>
 
 
+void FPCEGraphicsViewer::OnFrameStart(const uint16_t* sat)
+{
+	memcpy(FrameSAT, sat, sizeof(FrameSAT));
+	LastRenderedScanline = -1;
+}
+
+void FPCEGraphicsViewer::OnScanlineDraw(int rasterLine, uint16_t bxr, int32_t byrEff, uint16_t mwr, uint16_t cr)
+{
+	if (rasterLine >= 0 && rasterLine < kMaxScanlines)
+	{
+		ScanlineSnapshots[rasterLine] = { bxr, byrEff, mwr, cr };
+		LastRenderedScanline = rasterLine;
+	}
+}
+
 bool FPCEGraphicsViewer::Init()
 {
 	pPCEEmu = (FPCEEmu*)pEmulator;
@@ -53,6 +68,10 @@ void FPCEGraphicsViewer::DrawUI(void)
 	ImGui::EndTabBar();
 }
 
+// Games that don't draw properly:
+// Ninja spirit. Dog in into sprite is wrong. Enemies that run from left have wrong sprite.
+// Rabio Lepus. Missing stars in intro starfield
+// Magical chase. Sprites drawn in front of background status window 
 void FPCEGraphicsViewer::DrawScreenViewer()
 {
 	GeargrafxCore* pCore = pPCEEmu->GetCore();
@@ -64,7 +83,6 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 	FCodeAnalysisViewState& viewState = codeAnalysis.GetFocussedViewState();
 
 	const u16* vram = huc6270->GetVRAM();
-	const u16* sat  = huc6270->GetSAT();
 	const u16* colorTable = huc6260->GetColorTable();
 	const FSpriteInfo* spriteInfo = pVRAMViewer->GetSpriteInfo();
 
@@ -85,16 +103,12 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 	if (TextureWidth == 0 || TextureHeight == 0)
 		return;
 
-	// VDC background registers
-	const int screen_reg = (pHWState->R[HUC6270_REG_MWR] >> 4) & 0x07;
-	const int bat_w      = k_huc6270_screen_size_x[screen_reg];
-	const int x_mask     = k_huc6270_screen_size_x_pixels_mask[screen_reg];
-	const int y_mask     = k_huc6270_screen_size_y_pixels_mask[screen_reg];
-	const int bxr        = pHWState->R[HUC6270_REG_BXR] & 0x3FF;
-	const int byr        = pHWState->R[HUC6270_REG_BYR] & 0x1FF;
-
-	// Sprite mode (affects bit-plane count)
+	// Sprite mode (affects bit-plane count) — use current register as fallback
 	const bool mode1 = ((pHWState->R[HUC6270_REG_MWR] >> 2) & 0x03) == 1;
+
+	// Use per-scanline snapshots when available, otherwise fall back to current registers
+	const bool bHaveSnapshots = LastRenderedScanline >= 0;
+	const uint16_t* satData = bHaveSnapshots ? FrameSAT : huc6270->GetSAT();
 
 	// Expand 3-bit PCE colour component to 8-bit
 	static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
@@ -106,28 +120,25 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 		for (int s = HUC6270_SPRITES - 1; s >= 0; s--)
 		{
 			const int  sprite_offset = s << 2;
-			const u16  flags         = sat[sprite_offset + 3] & 0xB98F;
+			const u16  flags         = satData[sprite_offset + 3] & 0xB98F;
 			if (((flags & 0x0080) == 0) != behindBG) continue;
 
 			const bool x_flip        = (flags & 0x0800) != 0;
 			const bool y_flip        = (flags & 0x8000) != 0;
 			const int  palette       = flags & 0x0F;
-			const int  mode1_offset  = mode1 ? (sat[sprite_offset + 2] & 1) << 5 : 0;
+			const int  mode1_offset  = mode1 ? (satData[sprite_offset + 2] & 1) << 5 : 0;
 
-			// Derive dimensions and VRAM address directly from sat so all sprite
-			// parameters come from one consistent snapshot, avoiding a one-frame
-			// glitch when a SATB DMA updates the SAT between VRAMViewer::Tick() and here.
 			const int cgx = (flags >> 8) & 0x01;
 			const int cgy = (flags >> 12) & 0x03;
 			const int width  = k_huc6270_sprite_width[cgx];
 			const int height = k_huc6270_sprite_height[cgy];
-			u16 pattern = (sat[sprite_offset + 2] >> 1) & 0x3FF;
+			u16 pattern = (satData[sprite_offset + 2] >> 1) & 0x3FF;
 			pattern &= k_huc6270_sprite_mask_width[cgx];
 			pattern &= k_huc6270_sprite_mask_height[cgy];
 			const uint16_t sprite_address = pattern << 6;
 
-			const int dest_y0 = (int)(sat[sprite_offset + 0] & 0x3FF) - 64;
-			const int dest_x0 = (int)(sat[sprite_offset + 1] & 0x3FF) - 32;
+			const int dest_y0 = (int)(satData[sprite_offset + 0] & 0x3FF) - 64;
+			const int dest_x0 = (int)(satData[sprite_offset + 1] & 0x3FF) - 32;
 
 			for (int py = 0; py < height; py++)
 			{
@@ -185,6 +196,7 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 		{ dst[0] = r; dst[1] = g; dst[2] = b; dst[3] = 255; }
 	}
 
+	// CR/BG-enable fallback when no snapshots are available yet
 	const bool bgEnabled  = (pHWState->R[HUC6270_REG_CR] & 0x0080) != 0;
 	const bool sprEnabled = (pHWState->R[HUC6270_REG_CR] & 0x0040) != 0;
 
@@ -192,11 +204,33 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 	if (sprEnabled && bDrawSprites)
 		DrawSpritePass(true);
 
-	// --- Pass 3: Background — skip color-0 (transparent) pixels ---
+	// --- Pass 3: Background — per-scanline scroll when snapshots are available ---
 	if (bgEnabled && bDrawBackground)
 	for (int sy = 0; sy < TextureHeight; sy++)
 	{
-		const int bg_y      = (sy + byr) & y_mask;
+		// Use the per-scanline latched values if we have them; fall back to current registers
+		uint16_t line_bxr, line_mwr;
+		int32_t  line_byr_eff;
+		if (bHaveSnapshots && sy <= LastRenderedScanline)
+		{
+			const FScanlineSnapshot& snap = ScanlineSnapshots[sy];
+			line_bxr     = snap.bxr;
+			line_byr_eff = snap.byr_eff;
+			line_mwr     = snap.mwr;
+		}
+		else
+		{
+			line_bxr     = pHWState->R[HUC6270_REG_BXR] & 0x3FF;
+			line_byr_eff = (pHWState->R[HUC6270_REG_BYR] & 0x1FF) + sy;
+			line_mwr     = pHWState->R[HUC6270_REG_MWR];
+		}
+
+		const int screen_reg = (line_mwr >> 4) & 0x07;
+		const int bat_w      = k_huc6270_screen_size_x[screen_reg];
+		const int x_mask     = k_huc6270_screen_size_x_pixels_mask[screen_reg];
+		const int y_mask     = k_huc6270_screen_size_y_pixels_mask[screen_reg];
+
+		const int bg_y      = line_byr_eff & y_mask;
 		const int tile_y    = bg_y >> 3;
 		const int pixel_row = bg_y & 7;
 
@@ -204,7 +238,7 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 
 		for (int sx = 0; sx < TextureWidth; sx++)
 		{
-			const int bg_x   = (sx + bxr) & x_mask;
+			const int bg_x   = (sx + line_bxr) & x_mask;
 			const int tile_x = bg_x >> 3;
 			const int bat_i  = tile_x + tile_y * bat_w;
 
@@ -254,6 +288,14 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
 	ImGui::Image(ScreenTexture, ImVec2(TextureWidth * scale, TextureHeight * scale));
 
+	// --- Scanline indicator: shows how far into the current frame the VDC has rendered ---
+	if (bHaveSnapshots && LastRenderedScanline >= 0 && LastRenderedScanline < TextureHeight)
+	{
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		const float lineY = pos.y + (LastRenderedScanline + 1) * scale;
+		dl->AddLine(ImVec2(pos.x, lineY), ImVec2(pos.x + TextureWidth * scale, lineY), 0x80ffffff);
+	}
+
 	// --- Hover tooltip ---
 	if (ImGui::IsItemHovered())
 	{
@@ -263,10 +305,21 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 
+		// Resolve scroll/size for the row under the cursor
+		const FScanlineSnapshot& tipSnap = (bHaveSnapshots && py <= LastRenderedScanline)
+		    ? ScanlineSnapshots[py]
+		    : FScanlineSnapshot{ (uint16_t)(pHWState->R[HUC6270_REG_BXR] & 0x3FF),
+		                         (int32_t)((pHWState->R[HUC6270_REG_BYR] & 0x1FF) + py),
+		                         pHWState->R[HUC6270_REG_MWR], pHWState->R[HUC6270_REG_CR] };
+		const int tip_screen_reg = (tipSnap.mwr >> 4) & 0x07;
+		const int tip_bat_w      = k_huc6270_screen_size_x[tip_screen_reg];
+		const int tip_x_mask     = k_huc6270_screen_size_x_pixels_mask[tip_screen_reg];
+		const int tip_y_mask     = k_huc6270_screen_size_y_pixels_mask[tip_screen_reg];
+
 		// Background tile under cursor
-		const int bg_x  = (px + bxr) & x_mask;
-		const int bg_y  = (py + byr) & y_mask;
-		const int bat_i = (bg_x >> 3) + (bg_y >> 3) * bat_w;
+		const int bg_x  = (px + tipSnap.bxr) & tip_x_mask;
+		const int bg_y  = tipSnap.byr_eff     & tip_y_mask;
+		const int bat_i = (bg_x >> 3) + (bg_y >> 3) * tip_bat_w;
 		const u16 bat_entry  = vram[bat_i];
 		const int tile_idx   = bat_entry & 0x07FF;
 		const int color_tbl  = (bat_entry >> 12) & 0x0F;
@@ -296,8 +349,8 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 		for (int s = 0; s < HUC6270_SPRITES; s++)
 		{
 			const int sprite_offset = s << 2;
-			const int spr_y0 = (int)(sat[sprite_offset + 0] & 0x3FF) - 64;
-			const int spr_x0 = (int)(sat[sprite_offset + 1] & 0x3FF) - 32;
+			const int spr_y0 = (int)(satData[sprite_offset + 0] & 0x3FF) - 64;
+			const int spr_x0 = (int)(satData[sprite_offset + 1] & 0x3FF) - 32;
 			const int w = spriteInfo[s].Width;
 			const int h = spriteInfo[s].Height;
 

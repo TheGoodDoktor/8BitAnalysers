@@ -407,19 +407,6 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 		// This signals to geargfx to stop exection
 		state.Debugger.Break();
 	}
-
-	static int lastVpos = -1;
-	const int vpos = GetVPos();
-	if (lastVpos != vpos)
-	{
-		if (vpos == 0)
-			state.OnMachineFrameStart();
-		// todo: Improve this. I think this won't be right at the end of the frame, but on the scanline before it.
-		// Maybe I need to use HuC6270::m_raster_line?
-		else if (vpos == pCore->GetHuC6260()->GetTotalLines() - 1)
-			state.OnMachineFrameEnd();
-	}
-	lastVpos = vpos;
 }
 
 bool FPCEEmu::IsUnusedBank(int16_t bankId) const
@@ -519,6 +506,30 @@ static void NullMemoryReadCallback(void*, uint16_t) {}
 static void NullMemoryWriteCallback(void*, uint16_t, uint8_t) {}
 static void NullMprCallback(void*, uint8_t, uint8_t, uint8_t) {}
 static void NullVRAMWriteCallback(void*, uint16_t, uint16_t) {}
+static void NullScanlineCallback(void*, int, u16, s32, u16, u16) {}
+static void NullVBlankCallback(void*) {}
+
+static void OnVBlank(void* pContext)
+{
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	pEmu->GetCodeAnalysis().OnMachineFrameEnd();
+}
+
+static void OnScanlineDraw(void* pContext, int rasterLine, u16 bxr, s32 byrEff, u16 mwr, u16 cr)
+{
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	FPCEGraphicsViewer* pGfxViewer = static_cast<FPCEGraphicsViewer*>(pEmu->GetGraphicsViewer());
+	if (pGfxViewer == nullptr)
+		return;
+
+	if (rasterLine == 0)
+	{
+		pGfxViewer->OnFrameStart(pEmu->GetCore()->GetHuC6270_1()->GetSAT());
+		pEmu->GetCodeAnalysis().OnMachineFrameStart();
+	}
+
+	pGfxViewer->OnScanlineDraw(rasterLine, bxr, byrEff, mwr, cr);
+}
 
 void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 {
@@ -526,15 +537,15 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 	{
 		pCore->SetInstructionExecutedCallback(::OnInstructionExecuted, this);
 		pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, BankChangeCallback, this);
-		pCore->GetHuC6270_1()->SetCallback(::OnVRAMWritten, this);
-		pCore->GetHuC6270_2()->SetCallback(NullVRAMWriteCallback, this);
+		pCore->GetHuC6270_1()->SetCallbacks(::OnVRAMWritten, ::OnScanlineDraw, ::OnVBlank, this);
+		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
 	}
 	else
 	{
 		pCore->SetInstructionExecutedCallback(NullInstructionExecutedCallback, this);
 		pMemory->SetMemoryCallbacks(NullMemoryReadCallback, NullMemoryWriteCallback, NullMprCallback, this);
-		pCore->GetHuC6270_1()->SetCallback(NullVRAMWriteCallback, this);
-		pCore->GetHuC6270_2()->SetCallback(NullVRAMWriteCallback, this);
+		pCore->GetHuC6270_1()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
+		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
 	}
 }
 
