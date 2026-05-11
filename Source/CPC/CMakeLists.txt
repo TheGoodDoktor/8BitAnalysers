@@ -52,6 +52,7 @@ file ( GLOB program_src
 	Viewers/*.cpp Viewers/*.h)
 
 add_executable (CPCAnalyser MACOSX_BUNDLE ${shared_src} ${program_src} ${platform_main} ${vendor_src} )
+target_precompile_headers( CPCAnalyser PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/../Shared/pch.h>" )
 
 # This is to make the filter folders in Visual Studio, we need cmake 3.10 for this
 source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR}/${vendor_dir} PREFIX Vendor FILES ${vendor_src} )

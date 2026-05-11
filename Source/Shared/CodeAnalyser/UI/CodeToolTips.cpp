@@ -2,6 +2,7 @@
 #include "../CodeAnalyser.h"
 #include "Z80/CodeToolTipsZ80.h"
 #include "6502/CodeToolTips6502.h"
+#include "6502/CodeToolTipsHuC6280.h"
 
 
 void ShowCodeToolTip(FCodeAnalysisState& state, uint16_t addr)
@@ -12,8 +13,10 @@ void ShowCodeToolTip(FCodeAnalysisState& state, uint16_t addr)
 			ShowCodeToolTipZ80(state, addr);
 			break;
 		case ECPUType::M6502:
-		case ECPUType::HuC6280:
 			ShowCodeToolTip6502(state, addr);
+			break;
+		case ECPUType::HuC6280:
+			ShowCodeToolTipHuC6280(state, addr);
 			break;
 	}
 }

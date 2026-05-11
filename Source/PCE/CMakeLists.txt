@@ -121,6 +121,8 @@ file (GLOB program_src CONFIGURE_DEPENDS
 add_executable(PCEAnalyser MACOSX_BUNDLE
     ${shared_src} ${program_src} ${platform_main} ${vendor_src})
 
+target_precompile_headers(PCEAnalyser PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/../Shared/pch.h>")
+
 target_link_libraries(PCEAnalyser PRIVATE geargfx)
 
 target_compile_definitions(PCEAnalyser PRIVATE
@@ -137,6 +139,7 @@ if(${with_tests})
 
     add_executable(PCEAnalyserTest MACOSX_BUNDLE
         ${test_src} ${shared_test_src} ${shared_src} ${program_src} ${vendor_src})
+    target_precompile_headers(PCEAnalyserTest REUSE_FROM PCEAnalyser)
 
     set_target_properties(PCEAnalyserTest PROPERTIES CXX_STANDARD 20 C_STANDARD 11)
     target_compile_definitions(PCEAnalyserTest PRIVATE TEST)

@@ -15,6 +15,9 @@ public:
 	virtual bool Init() override;
 	virtual void Shutdown() override {}
 	virtual void DrawUI() override;
+	void Tick();
+
+	ImTextureID GetSpriteTexture(int spriteIndex) const { return SpriteTextures[spriteIndex]; }
 
 	FPCEEmu* pPCEEmu = nullptr;
 public:

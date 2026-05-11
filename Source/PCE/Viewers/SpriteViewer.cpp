@@ -149,13 +149,21 @@ void FSpriteViewer::UpdateSpriteBuffers()
 	}
 }
 
+void FSpriteViewer::Tick()
+{
+	ResetScreenTexture();
+	UpdateSpriteBuffers();
+
+	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMViewer()->GetSpriteInfo();
+	for (int s = 0; s < kNumSprites; s++)
+		ImGui_UpdateTextureSubImageRGBA(SpriteTextures[s], SpriteBuffers[s], spriteInfo[s].Width, spriteInfo[s].Height);
+}
+
 static const ImVec4 cyan   = ImVec4(0.0f, 1.0f, 1.0f, 1.0f);
 static const ImVec4 yellow = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
 void FSpriteViewer::DrawUI()
 {
-	ResetScreenTexture();
-	UpdateSpriteBuffers();
 
 	GeargrafxCore* core = pPCEEmu->GetCore();
 	HuC6270* huc6270 = core->GetHuC6270_1();
@@ -211,7 +219,6 @@ void FSpriteViewer::DrawUI()
 
 				p[s] = ImGui::GetCursorScreenPos();
 
-				ImGui_UpdateTextureSubImageRGBA(SpriteTextures[s], SpriteBuffers[s], spriteInfo[s].Width, spriteInfo[s].Height);
 				ImGui::Image(SpriteTextures[s], ImVec2(fwidth, fheight), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
 
 				if (ImGui::IsItemClicked(0))
