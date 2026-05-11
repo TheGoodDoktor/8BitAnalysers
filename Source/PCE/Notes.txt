@@ -12,9 +12,12 @@ TODO
 - hook up more events: audio, etc
 - add way to understand/visualise if interrupts are active?
 - improve Claude.md
+- fix code analysis detail pane getting stuck off screen when fixed
+- add suport for <label> + <offset> to asm exporter?
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
+- asm export fails if you export right after reset, when UNUSED banks are mapped.
 
 IDEAS
 - [perf] Create code analysis pages on demand. would make creating banks trivial
