@@ -69,9 +69,9 @@ void FPCEGraphicsViewer::DrawUI(void)
 }
 
 // Games that don't draw properly:
-// Ninja spirit. Dog in into sprite is wrong. Enemies that run from left have wrong sprite.
-// Rabio Lepus. Missing stars in intro starfield
-// Magical chase. Sprites drawn in front of background status window 
+// Rabio Lepus. Missing stars in intro starfield. Missing SPECIAL sprites
+// Magical chase. Sprites drawn in front of background status window.
+// Atomic Robokid missing Special sprites
 void FPCEGraphicsViewer::DrawScreenViewer()
 {
 	GeargrafxCore* pCore = pPCEEmu->GetCore();
