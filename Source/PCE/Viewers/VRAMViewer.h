@@ -24,6 +24,7 @@ struct FSpriteInfo
 	uint16_t SizeInBytes = 0;
 	int Width = 0;
 	int Height = 0;
+	int Palette = -1;
 };
 
 class FVRAMViewer : public FViewerBase

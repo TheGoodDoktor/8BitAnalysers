@@ -4,6 +4,7 @@
 #include "imgui.h"
 
 #include "CodeAnalyser/UI/ViewerBase.h"
+#include "CodeAnalyser/CodeAnalyserTypes.h"
 
 class FPCEEmu;
 
@@ -40,4 +41,8 @@ private:
 
 	bool bShowMagnifier = true;
 	int BackgroundColour = 0;
+
+	FAddressRef FoundSpriteDataAddr;
+	bool        bFoundSpriteData = false;
+	int         LastSearchedSprite = -1;
 };

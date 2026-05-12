@@ -379,4 +379,51 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 	ImGui::Spacing();
 	ImGui::TextDisabled("SAT VRAM base: $%04X", satBase);
 	ImGui::TextDisabled("Raw: Y=$%04X  X=$%04X  Pat=$%04X  Flg=$%04X", yWord, xWord, patWord, flgWord);
+
+	ImGui::Spacing();
+	ImGui::Separator();
+
+	if (spriteIndex != LastSearchedSprite)
+	{
+		bFoundSpriteData = false;
+		LastSearchedSprite = spriteIndex;
+	}
+
+	if (ImGui::Button("Find in Memory"))
+	{
+		bFoundSpriteData = false;
+
+		const u16* pVRAM = huc6270->GetVRAM();
+		const uint16_t vramAddr = info.Address;
+
+		if (vramAddr < HUC6270_VRAM_SIZE && (vramAddr + 32) <= HUC6270_VRAM_SIZE)
+		{
+			const uint8_t* pBytes = reinterpret_cast<const uint8_t*>(pVRAM + vramAddr);
+			std::vector<FAddressRef> results = state.FindAllMemoryPatterns(pBytes, 64, true, false);
+			if (!results.empty())
+			{
+				FoundSpriteDataAddr = results[0];
+				bFoundSpriteData = true;
+			}
+		}
+	}
+
+	if (bFoundSpriteData)
+	{
+		ImGui::SameLine();
+		DrawAddressLabel(state, viewState, FoundSpriteDataAddr);
+
+		if (ImGui::Button("Format as Sprite"))
+		{
+			FDataFormattingOptions options;
+			options.DataType    = EDataType::Bitmap;
+			options.DisplayType = EDataItemDisplayType::Sprite4Bpp_PCE;
+			options.StartAddress = FoundSpriteDataAddr;
+			options.ItemSize    = info.Width / 2;
+			options.NoItems     = info.Height;
+			options.PaletteNo   = 16 + info.Palette;
+			FormatData(state, options);
+			state.SetCodeAnalysisDirty(options.StartAddress);
+		}
+	}
 }
