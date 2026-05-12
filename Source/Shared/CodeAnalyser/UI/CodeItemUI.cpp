@@ -347,7 +347,7 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 		if (extra.Type != EOperandType::Unknown)
 		{
 			char label[32];
-			snprintf(label, sizeof(label), "Operand %d Type", i + 1);
+			snprintf(label, sizeof(label), "Operand %d Type", i + 2);
 			if (DrawOperandInfoCombo(label, extra))
 				pCodeInfo->Text.clear();
 		}
