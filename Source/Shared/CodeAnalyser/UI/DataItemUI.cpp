@@ -239,9 +239,9 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 
 			const int widthBlocks = pDataInfo->ByteSize / (kBlockWidth >> 1);
 			const int blockIndex = offsetFromStart / kBlockSizeBytes;
-			
+
 			const int blockGroupIndex = blockIndex / widthBlocks;
-			const uint16_t blockGroupOffset = blockGroupIndex * gTest; 
+			const uint16_t blockGroupOffset = blockGroupIndex * gTest;
 
 			const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
 
@@ -249,7 +249,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 
 			for (int b = 0; b < widthBlocks; b++)
 			{
-				const uint16_t* pPlane0 = (uint16_t*)(pMemory + (b  * kBlockSizeBytes));
+				const uint16_t* pPlane0 = (uint16_t*)(pMemory + (b * kBlockSizeBytes));
 				const uint16_t* pPlane1 = pPlane0 + 16;
 				const uint16_t* pPlane2 = pPlane1 + 16;
 				const uint16_t* pPlane3 = pPlane2 + 16;
@@ -260,7 +260,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 				for (int x = 0; x < kBlockWidth; x++)
 				{
 					const int bit = (kBlockWidth - 1) - x;
-			
+
 					// get pixel colour 0-15
 					const int colIndex = ((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1) & 0xf;
 
@@ -269,9 +269,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 
 					uint32_t pixelCol;
 					if (colIndex != 0) // 0 is transparent
-					{
 						pixelCol = pPalette ? pPalette[colIndex] : 0xffffffff;
-					}
 					else
 						pixelCol = 0xff000000;
 
@@ -279,6 +277,65 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 					dl->AddRect(rectMin, rectMax, 0xffffffff);
 
 					pos.x += rectSize;
+				}
+			}
+
+			// Thumbnail tooltip: show the full sprite on hover over any scanline
+			const ImVec2 hoverMin(startPos.x, startPos.y);
+			const ImVec2 hoverMax(pos.x, startPos.y + rectSize);
+			if (ImGui::IsMouseHoveringRect(hoverMin, hoverMax))
+			{
+				// Count total sprite height by scanning forward while entries share FirstItemAddress
+				int spriteHeight = 0;
+				FAddressRef scanAddr = pDataInfo->FirstItemAddress;
+				while (spriteHeight < 64)
+				{
+					const FDataInfo* pScan = state.GetDataInfoForAddress(scanAddr);
+					if (!pScan || pScan->DisplayType != EDataItemDisplayType::Sprite4Bpp_PCE)
+						break;
+					if (pScan->FirstItemAddress.GetVal() != pDataInfo->FirstItemAddress.GetVal())
+						break;
+					spriteHeight++;
+					state.AdvanceAddressRef(scanAddr, pDataInfo->ByteSize);
+				}
+
+				if (spriteHeight > 0)
+				{
+					ImGui::BeginTooltip();
+					ImDrawList* tipDl = ImGui::GetWindowDrawList();
+					constexpr float kTipPixelSize = 4.0f;
+					const ImVec2 tipOrigin = ImGui::GetCursorScreenPos();
+
+					for (int scanLine = 0; scanLine < spriteHeight; scanLine++)
+					{
+						const int tipTileY = scanLine / 16;
+						const uint16_t tipBnkOffset = (firstItemAddr - mappedAddr) + (scanLine * 2);
+						const uint16_t tipBlockGroupOffset = (uint16_t)(tipTileY * gTest);
+						const uint8_t* pTipMem = pBank->Memory + tipBnkOffset + tipBlockGroupOffset;
+
+						for (int b = 0; b < widthBlocks; b++)
+						{
+							const uint16_t* pP0 = (uint16_t*)(pTipMem + (b * kBlockSizeBytes));
+							const uint16_t* pP1 = pP0 + 16;
+							const uint16_t* pP2 = pP1 + 16;
+							const uint16_t* pP3 = pP2 + 16;
+
+							for (int x = 0; x < kBlockWidth; x++)
+							{
+								const int bit = (kBlockWidth - 1) - x;
+								const int ci = ((*pP3 >> bit) & 1) << 3 | ((*pP2 >> bit) & 1) << 2 | ((*pP1 >> bit) & 1) << 1 | ((*pP0 >> bit) & 1) & 0xf;
+								const uint32_t col = (ci != 0) ? (pPalette ? pPalette[ci] : 0xffffffff) : 0xff000000;
+
+								const float px = tipOrigin.x + (b * kBlockWidth + x) * kTipPixelSize;
+								const float py = tipOrigin.y + scanLine * kTipPixelSize;
+								tipDl->AddRectFilled(ImVec2(px, py), ImVec2(px + kTipPixelSize, py + kTipPixelSize), col);
+							}
+						}
+					}
+
+					// Reserve the drawn area so the tooltip sizes correctly
+					ImGui::Dummy(ImVec2(widthBlocks * kBlockWidth * kTipPixelSize, spriteHeight * kTipPixelSize));
+					ImGui::EndTooltip();
 				}
 			}
 		}

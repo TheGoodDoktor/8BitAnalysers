@@ -21,6 +21,9 @@ TODO
 - improve Claude.md
 - fix code analysis detail pane getting stuck off screen when fixed
 - add suport for <label> + <offset> to asm exporter?
+- when formatting memory as sprite dont use current (transient) palette data. 
+- remove dupe banks from graphics viewer dropdown
+- get graphics view displaying sprites
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
@@ -34,6 +37,9 @@ IDEAS
 - when hovering over PCE memory mapped registers, give a description what they do. or add comments for the memory location
 - lazily create dupe banks. it's possible now we redirect code analysis to primary bank. reduces banks from 700->150 banks 
 - override assert with our own that lets you recover
+- add "Find sprite in memory" to sprite viewer
+- show unexplored bytes as array
+- preview format before format is pressed
 
 DONE
 - dont display dupe banks in banks mapped view 
