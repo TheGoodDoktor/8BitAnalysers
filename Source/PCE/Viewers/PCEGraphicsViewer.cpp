@@ -69,9 +69,9 @@ void FPCEGraphicsViewer::DrawUI(void)
 }
 
 // Games that don't draw properly:
-// Ninja spirit. Dog in into sprite is wrong. Enemies that run from left have wrong sprite.
-// Rabio Lepus. Missing stars in intro starfield
-// Magical chase. Sprites drawn in front of background status window 
+// Rabio Lepus. Missing stars in intro starfield. Missing SPECIAL sprites
+// Magical chase. Sprites drawn in front of background status window.
+// Atomic Robokid missing Special sprites
 void FPCEGraphicsViewer::DrawScreenViewer()
 {
 	bool bRecreateTexture = false;
@@ -173,7 +173,7 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 
 					const int flipped_x  = x_flip ? (width - 1 - px) : px;
 					const int tile_x_idx = flipped_x >> 4;
-					const int line = line_start + tile_x_idx * 64 + (x_flip && cgx == 0 ? 64 : 0) + mode1_offset;
+					const int line = line_start + tile_x_idx * 64 + mode1_offset;
 
 					if ((line + 48) >= HUC6270_VRAM_SIZE) continue;
 

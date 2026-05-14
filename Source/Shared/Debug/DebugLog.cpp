@@ -9,9 +9,10 @@
 
 #ifdef _WIN32
 
+// sam. increased kBufSizes so we could log assembler output.
 #define PLATFORM_FORMAT_LOG_MESSAGE(fn, level)  \
-    const int kBufSize = 16*1024; \
-    char buf[kBufSize]; \
+	static const int kBufSize = 64*1024; \
+    static char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
 	vsprintf_s(buf,kBufSize, fmt, ap); \
@@ -19,18 +20,18 @@
 	fn(buf); 
 
 #define PLATFORM_FORMAT_LOG_MESSAGE_LF(fn, level)  \
-    const int kBufSize = 16*1024; \
-    char buf[kBufSize]; \
+    static const int kBufSize = 64*1024; \
+    static char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
 	vsprintf_s(buf,kBufSize, fmt, ap); \
 	va_end(ap); \
-	strcat_s(buf,16*1024, "\n"); \
+	strcat_s(buf,kBufSize, "\n"); \
 	fn(buf); 
 #else
 #define PLATFORM_FORMAT_LOG_MESSAGE(fn, level)  \
-    const int kBufSize = 16*1024; \
-	char buf[kBufSize]; \
+    static const int kBufSize = 64*1024; \
+	static char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
 	vsnprintf(buf, kBufSize, fmt, ap); \
@@ -38,8 +39,8 @@
 	fn(buf); 
 
 #define PLATFORM_FORMAT_LOG_MESSAGE_LF(fn, level)  \
-    const int kBufSize = 16*1024; \
-	char buf[kBufSize]; \
+    static const int kBufSize = 64*1024; \
+	static char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
 	vsnprintf(buf,kBufSize, fmt, ap); \

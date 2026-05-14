@@ -1988,6 +1988,8 @@ void FPCEEmu::ResetProject()
 	GetGlobalsViewer()->Reset();
 	if (pVRAMViewer)
 		pVRAMViewer->Reset();
+	if (pSpriteViewer)
+		pSpriteViewer->ResetForGame();
 
 	CodeAnalysis.ViewState[0].Enabled = true;
 

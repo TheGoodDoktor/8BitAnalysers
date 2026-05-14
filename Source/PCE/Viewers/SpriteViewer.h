@@ -4,8 +4,26 @@
 #include "imgui.h"
 
 #include "CodeAnalyser/UI/ViewerBase.h"
+#include "CodeAnalyser/CodeAnalyserTypes.h"
+
+#include <vector>
 
 class FPCEEmu;
+
+struct FHistorySpriteEntry
+{
+	uint8_t*    PixelBuffer      = nullptr;  // RGBA snapshot (Width * Height * 4 bytes)
+	uint8_t*    VRAMSnapshot     = nullptr;  // raw VRAM bytes used for Find in Memory search
+	int         VRAMSnapshotSize = 0;
+	ImTextureID Texture          = 0;
+	int         Width            = 0;
+	int         Height           = 0;
+	int         Palette          = 0;
+	uint16_t    VRAMAddress      = 0;
+	uint32_t    DataHash         = 0;        // FNV-1a of VRAM bytes — dedup key
+	FAddressRef FoundDataAddr;
+	bool        bFormatted       = false;
+};
 
 class FSpriteViewer : public FViewerBase
 {
@@ -13,7 +31,8 @@ public:
 	FSpriteViewer(FEmuBase* pEmu);
 
 	virtual bool Init() override;
-	virtual void Shutdown() override {}
+	virtual void Shutdown() override;
+	virtual void ResetForGame() override;
 	virtual void DrawUI() override;
 	void Tick();
 
@@ -28,9 +47,15 @@ private:
 	void DrawSpriteDetails(int spriteIndex);
 	void ResetScreenTexture();
 	void UpdateSpriteBuffers();
+	void UpdateSpriteHistory();
+	void ClearHistory();
+	void DrawHistoryTab();
+	void DrawHistoryDetails(int index);
 
 private:
 	static const int kNumSprites = 64;
+	static const int kMaxHistoryEntries = 512;
+
 	ImTextureID	SpriteTextures[kNumSprites] = { 0 };
 	uint8_t* SpriteBuffers[kNumSprites];
 
@@ -40,4 +65,16 @@ private:
 
 	bool bShowMagnifier = true;
 	int BackgroundColour = 0;
+
+	FAddressRef FoundSpriteDataAddr;
+	bool        bFoundSpriteData = false;
+	int         LastSearchedSprite = -1;
+
+	// History tab
+	std::vector<FHistorySpriteEntry> SpriteHistory;
+	uint32_t SlotHash[kNumSprites] = {};
+	int HistorySelectedSprite = -1;
+	int FindFormatCursor = -1;
+	int FindFormatFound  = 0;
+	int FindFormatTotal  = 0;
 };
