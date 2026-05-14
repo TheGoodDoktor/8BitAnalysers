@@ -74,6 +74,22 @@ void FPCEGraphicsViewer::DrawUI(void)
 // Magical chase. Sprites drawn in front of background status window 
 void FPCEGraphicsViewer::DrawScreenViewer()
 {
+	bool bRecreateTexture = false;
+	static bool bDrawPass[4] = { true };
+#ifndef NDEBUG
+	if (ImGui::Checkbox("Pass 1", &bDrawPass[0]))
+		bRecreateTexture = true;
+
+	if (ImGui::Checkbox("Pass 2", &bDrawPass[1]))
+		bRecreateTexture = true;
+
+	if (ImGui::Checkbox("Pass 3", &bDrawPass[2]))
+		bRecreateTexture = true;
+
+	if (ImGui::Checkbox("Pass 4", &bDrawPass[3]))
+		bRecreateTexture = true;
+#endif
+
 	GeargrafxCore* pCore = pPCEEmu->GetCore();
 	HuC6270* huc6270 = pCore->GetHuC6270_1();
 	HuC6260* huc6260 = pCore->GetHuC6260();
@@ -89,7 +105,7 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 	// Recreate texture if screen resolution changed
 	GG_Runtime_Info info;
 	pCore->GetRuntimeInfo(info);
-	if (info.screen_width != TextureWidth || info.screen_height != TextureHeight)
+	if (bRecreateTexture || info.screen_width != TextureWidth || info.screen_height != TextureHeight)
 	{
 		TextureWidth  = info.screen_width;
 		TextureHeight = info.screen_height;
@@ -186,6 +202,7 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 	};
 
 	// --- Pass 1: Backdrop (global palette entry 0) ---
+	if (bDrawPass[0])
 	{
 		const u16 cv = colorTable[0];
 		const u8 r = kExpand3to8[(cv >> 3) & 0x07];
@@ -201,11 +218,12 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 	const bool sprEnabled = (pHWState->R[HUC6270_REG_CR] & 0x0040) != 0;
 
 	// --- Pass 2: Behind-BG sprites (priority flag set) ---
-	if (sprEnabled && bDrawSprites)
+	if (bDrawPass[1] &&sprEnabled && bDrawSprites)
 		DrawSpritePass(true);
 
 	// --- Pass 3: Background — per-scanline scroll when snapshots are available ---
-	if (bgEnabled && bDrawBackground)
+
+	if (bDrawPass[2] && bgEnabled && bDrawBackground)
 	for (int sy = 0; sy < TextureHeight; sy++)
 	{
 		// Use the per-scanline latched values if we have them; fall back to current registers
@@ -270,7 +288,7 @@ void FPCEGraphicsViewer::DrawScreenViewer()
 	}
 
 	// --- Pass 4: In-front-of-BG sprites (priority flag clear) ---
-	if (sprEnabled && bDrawSprites)
+	if (bDrawPass[3] && sprEnabled && bDrawSprites)
 		DrawSpritePass(false);
 
 	// --- Upload & display ---
