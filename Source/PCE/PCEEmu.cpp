@@ -1049,6 +1049,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	// set supported bitmap formats
 	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Bitmap_1Bpp] = true;
 	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Sprite4Bpp_PCE] = true;
+	CodeAnalysis.Config.bSupportedBitmapTypes[(int)EBitmapFormat::BGTile4Bpp_PCE] = true;
 	
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
 	{

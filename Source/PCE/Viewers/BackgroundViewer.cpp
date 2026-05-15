@@ -8,6 +8,7 @@
 
 #include "VRAMViewer.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "CodeAnalyser/Commands/FormatDataCommand.h"
 
 FBackgroundViewer::FBackgroundViewer(FEmuBase* pEmu)
 : FViewerBase(pEmu)
@@ -135,6 +136,8 @@ void FBackgroundViewer::DrawUI()
 			int i = (screen_size_x * y) + x;
 			if (i >= 0 && i < bat_size)
 			{
+				if (ImGui::IsMouseClicked(0))
+					SelectedTileIndex = i;
 				ImVec2 tile_pos = ImVec2(p.x + (x * 8.0f * scale), p.y + (y * 8.0f * scale));
 				ImVec2 tile_size = ImVec2(8.0f * scale, 8.0f * scale);
 				draw_list->AddRect(tile_pos, ImVec2(tile_pos.x + tile_size.x, tile_pos.y + tile_size.y), ImColor(cyan), 2.0f, ImDrawFlags_RoundCornersAll, 2.0f);
@@ -204,6 +207,9 @@ void FBackgroundViewer::DrawUI()
 	}
 
 	ImGui::EndChild();
+
+	if (SelectedTileIndex >= 0)
+		DrawTileDetails(SelectedTileIndex);
 }
 
 bool FBackgroundViewer::UpdateBackground()
@@ -322,4 +328,116 @@ bool FBackgroundViewer::UpdateBackground()
 
 	LastRenderedFrame = currentFrame;
 	return anyDirty;
+}
+
+void FBackgroundViewer::DrawTileDetails(int tileIndex)
+{
+	GeargrafxCore* core     = pPCEEmu->GetCore();
+	HuC6270*       huc6270  = core->GetHuC6270_1();
+	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
+	FVRAMViewer*   pVRAMViewer = pPCEEmu->GetVRAMViewer();
+	FCodeAnalysisState& state  = pPCEEmu->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+	const u16* vram = huc6270->GetVRAM();
+
+	const int screen_reg   = (huc6270_state->R[HUC6270_REG_MWR] >> 4) & 0x07;
+	const int screen_size_x = k_huc6270_screen_size_x[screen_reg];
+	const int screen_size_y = k_huc6270_screen_size_y[screen_reg];
+	const int bat_size      = screen_size_x * screen_size_y;
+
+	if (tileIndex < 0 || tileIndex >= bat_size)
+		return;
+
+	const u16 bat_entry   = vram[tileIndex];
+	const int tile_index  = bat_entry & 0x07FF;
+	const int color_table = (bat_entry >> 12) & 0x0F;
+	const int tile_base   = tile_index * 16;
+
+	const FAddressRef batWriter = pVRAMViewer ? pVRAMViewer->GetVRAMAccess(tileIndex).LastWriter : FAddressRef();
+
+	ImGui::Separator();
+	ImGui::Text("Tile %d  (BAT index %d)", tile_index, tileIndex);
+	ImGui::Separator();
+
+	char buf[64];
+	ImGuiTableFlags tblFlags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV;
+	if (ImGui::BeginTable("##tiledetails", 3, tblFlags))
+	{
+		ImGui::TableSetupColumn("Attribute",   ImGuiTableColumnFlags_WidthFixed,  100.0f);
+		ImGui::TableSetupColumn("Value",       ImGuiTableColumnFlags_WidthFixed,   80.0f);
+		ImGui::TableSetupColumn("Last Writer", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableHeadersRow();
+
+		auto Row = [&](const char* attr, const char* val, const FAddressRef& writer)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted(attr);
+			ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(val);
+			ImGui::TableSetColumnIndex(2);
+			if (writer.IsValid())
+				DrawAddressLabel(state, viewState, writer);
+			else
+				ImGui::TextDisabled("--");
+		};
+
+		snprintf(buf, sizeof(buf), "$%03X", tile_index);
+		Row("Tile Index", buf, batWriter);
+
+		snprintf(buf, sizeof(buf), "$%04X", tile_base);
+		Row("VRAM Address", buf, batWriter);
+
+		snprintf(buf, sizeof(buf), "$%X", color_table);
+		Row("Color Table", buf, batWriter);
+
+		ImGui::EndTable();
+	}
+
+	ImGui::Spacing();
+
+	if (tileIndex != LastSearchedTile)
+	{
+		bFoundTileData  = false;
+		LastSearchedTile = tileIndex;
+	}
+
+	if (ImGui::Button("Find in Memory"))
+	{
+		bFoundTileData = false;
+
+		if ((tile_base + 16) <= HUC6270_VRAM_SIZE)
+		{
+			// Convert 16 VRAM words to 32 bytes (little-endian word pairs)
+			uint8_t tileBytes[32];
+			for (int i = 0; i < 16; i++)
+			{
+				tileBytes[i * 2]     = (uint8_t)(vram[tile_base + i] & 0xFF);
+				tileBytes[i * 2 + 1] = (uint8_t)(vram[tile_base + i] >> 8);
+			}
+			std::vector<FAddressRef> results = state.FindAllMemoryPatterns(tileBytes, 32, true, false);
+			if (!results.empty())
+			{
+				FoundTileDataAddr = results[0];
+				bFoundTileData    = true;
+			}
+		}
+	}
+
+	if (bFoundTileData)
+	{
+		ImGui::SameLine();
+		DrawAddressLabel(state, viewState, FoundTileDataAddr);
+
+		if (ImGui::Button("Format as Background Tile"))
+		{
+			FDataFormattingOptions options;
+			options.DataType     = EDataType::Bitmap;
+			options.DisplayType  = EDataItemDisplayType::BGTile4Bpp_PCE;
+			options.StartAddress = FoundTileDataAddr;
+			options.ItemSize     = 4;
+			options.NoItems      = 8;
+			options.PaletteNo    = pPCEEmu->CreateUserPalette(color_table);
+			FormatData(state, options);
+			state.SetCodeAnalysisDirty(options.StartAddress);
+		}
+	}
 }

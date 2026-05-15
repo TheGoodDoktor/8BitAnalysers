@@ -4,6 +4,7 @@
 #include <vector>
 #include "imgui.h"
 #include "CodeAnalyser/UI/ViewerBase.h"
+#include "CodeAnalyser/CodeAnalyserTypes.h"
 
 class FPCEEmu;
 
@@ -19,6 +20,7 @@ public:
 	FPCEEmu* pPCEEmu = nullptr;
 private:
 	bool UpdateBackground();
+	void DrawTileDetails(int tileIndex);
 
 private:
 	uint8_t*              BackgroundBuffer  = nullptr;
@@ -29,4 +31,9 @@ private:
 	std::vector<uint16_t> ShadowBAT;
 	int                   LastRenderedFrame = -1;
 	uint16_t              ShadowColorTable[512] = {};
+
+	int          SelectedTileIndex  = -1;
+	int          LastSearchedTile   = -1;
+	bool         bFoundTileData     = false;
+	FAddressRef  FoundTileDataAddr;
 };

@@ -74,9 +74,6 @@ float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 
 }
 
-// shouldnt this be 256?
-// I think this will only work with sprites 32x32.
-int gTest = 224;
 
 // returns how much space it took
 float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDataInfo* pDataInfo, bool bEditMode)
@@ -241,7 +238,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 			const int blockIndex = offsetFromStart / kBlockSizeBytes;
 
 			const int blockGroupIndex = blockIndex / widthBlocks;
-			const uint16_t blockGroupOffset = blockGroupIndex * gTest;
+			const uint16_t blockGroupOffset = blockGroupIndex * (widthBlocks * kBlockSizeBytes);
 
 			const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
 
@@ -310,7 +307,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 					{
 						const int tipTileY = scanLine / 16;
 						const uint16_t tipBnkOffset = (firstItemAddr - mappedAddr) + (scanLine * 2);
-						const uint16_t tipBlockGroupOffset = (uint16_t)(tipTileY * gTest);
+						const uint16_t tipBlockGroupOffset = (uint16_t)(tipTileY * widthBlocks * kBlockSizeBytes);
 						const uint8_t* pTipMem = pBank->Memory + tipBnkOffset + tipBlockGroupOffset;
 
 						for (int b = 0; b < widthBlocks; b++)
@@ -341,6 +338,70 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 		}
 	}
 
+	break;
+	case EDataItemDisplayType::BGTile4Bpp_PCE:
+	{
+		if (pDataInfo->FirstItemAddress.IsValid())
+		{
+			const uint16_t firstItemAddr  = pDataInfo->FirstItemAddress.GetAddress();
+			const uint16_t firstBnkOffset = firstItemAddr - mappedAddr;
+			const int rowIndex = (addr.GetAddress() - firstItemAddr) / pDataInfo->ByteSize;
+
+			const uint8_t plane0 = pBank->Memory[firstBnkOffset + rowIndex * 2];
+			const uint8_t plane1 = pBank->Memory[firstBnkOffset + rowIndex * 2 + 1];
+			const uint8_t plane2 = pBank->Memory[firstBnkOffset + 16 + rowIndex * 2];
+			const uint8_t plane3 = pBank->Memory[firstBnkOffset + 16 + rowIndex * 2 + 1];
+
+			const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
+
+			for (int x = 0; x < 8; x++)
+			{
+				const int bit     = 7 - x;
+				const int colIndex = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1) | (((plane2 >> bit) & 1) << 2) | (((plane3 >> bit) & 1) << 3);
+
+				const uint32_t pixelCol = (colIndex != 0 && pPalette) ? pPalette[colIndex] : (colIndex ? 0xffffffff : 0xff000000);
+
+				const ImVec2 rectMin(pos.x, pos.y);
+				const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
+				dl->AddRectFilled(rectMin, rectMax, pixelCol);
+				dl->AddRect(rectMin, rectMax, 0xffffffff);
+				pos.x += rectSize;
+			}
+
+			// Hover tooltip: show full 8×8 tile
+			const ImVec2 hoverMin(startPos.x, startPos.y);
+			const ImVec2 hoverMax(pos.x, startPos.y + rectSize);
+			if (ImGui::IsMouseHoveringRect(hoverMin, hoverMax))
+			{
+				ImGui::BeginTooltip();
+				ImDrawList* tipDl = ImGui::GetWindowDrawList();
+				constexpr float kTipPixelSize = 8.0f;
+				const ImVec2 tipOrigin = ImGui::GetCursorScreenPos();
+
+				for (int row = 0; row < 8; row++)
+				{
+					const uint8_t p0 = pBank->Memory[firstBnkOffset + row * 2];
+					const uint8_t p1 = pBank->Memory[firstBnkOffset + row * 2 + 1];
+					const uint8_t p2 = pBank->Memory[firstBnkOffset + 16 + row * 2];
+					const uint8_t p3 = pBank->Memory[firstBnkOffset + 16 + row * 2 + 1];
+
+					for (int px = 0; px < 8; px++)
+					{
+						const int bit = 7 - px;
+						const int ci  = ((p0 >> bit) & 1) | (((p1 >> bit) & 1) << 1) | (((p2 >> bit) & 1) << 2) | (((p3 >> bit) & 1) << 3);
+						const uint32_t col = (ci && pPalette) ? pPalette[ci] : (ci ? 0xffffffff : 0xff000000);
+
+						const float tx = tipOrigin.x + px * kTipPixelSize;
+						const float ty = tipOrigin.y + row * kTipPixelSize;
+						tipDl->AddRectFilled(ImVec2(tx, ty), ImVec2(tx + kTipPixelSize, ty + kTipPixelSize), col);
+					}
+				}
+
+				ImGui::Dummy(ImVec2(8 * kTipPixelSize, 8 * kTipPixelSize));
+				ImGui::EndTooltip();
+			}
+		}
+	}
 	break;
     default:
         break;
