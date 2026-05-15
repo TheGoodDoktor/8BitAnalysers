@@ -8,19 +8,9 @@
 #include "Util/GraphicsView.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 
-ImVec4 Convert333PaletteToFloat(u16 color)
-{
-	ImVec4 ret;
-	ret.w = 0;
-	ret.z = (1.0f / 7.0f) * (color & 0x7);
-	ret.x = (1.0f / 7.0f) * ((color >> 3) & 0x7);
-	ret.y = (1.0f / 7.0f) * ((color >> 6) & 0x7);
-	return ret;
-}
-
 FPaletteViewer::FPaletteViewer(FEmuBase* pEmu)
-: FViewerBase(pEmu) 
-{ 
+: FViewerBase(pEmu)
+{
 	Name = "Palettes";
 	pPCEEmu = static_cast<FPCEEmu*>(pEmu);
 }
@@ -35,132 +25,70 @@ void FPaletteViewer::DrawUI()
 	ImGui::SetNextWindowPos(ImVec2(59, 70), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(526, 400), ImGuiCond_FirstUseEver);
 
-	GeargrafxCore* core = pPCEEmu->GetCore();
-	HuC6260* huc6260 = core->GetHuC6260();
-	u16* color_table = huc6260->GetColorTable();
-
 	if (ImGui::BeginTabBar("##palette_tabs", ImGuiTabBarFlags_None))
 	{
-		if (ImGui::BeginTabItem("Background", NULL, ImGuiTabItemFlags_None))
+		if (ImGui::BeginTabItem("Active", NULL, ImGuiTabItemFlags_None))
 		{
-			ImGui::BeginChild("background_palettes", ImVec2(0, 0.0f), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::BeginChild("active_palettes", ImVec2(0, 0.0f), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
 
-			ImGui::NewLine();
-
-			for (int row = 0; row < 16; row++)
+			ImGui::SeparatorText("Background");
+			for (int p = 0; p < 16; p++)
 			{
-				for (int col = 0; col < 16; col++)
-				{
-					int i = row * 16 + col;
-					if (col == 0)
-					{
-						ImGui::Text("%03X:", i); ImGui::SameLine();
-					}
-
-					u16 color = color_table[i];
-					ImVec4 float_color = Convert333PaletteToFloat(color);
-					char id[16];
-					snprintf(id, 16, "##bg_pal_%d_%d", row, col);
-					ImGui::ColorEdit3(id, (float*)&float_color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip);
-					if (col != 15)
-						ImGui::SameLine(0, 10);
-				}
-
-				/*ImGui::Text("     "); ImGui::SameLine(0, 0);
-
-				for (int col = 0; col < 16; col++)
-				{
-					u16 color = color_table[row * 16 + col];
-					u8 color_green = (color >> 6) & 0x07;
-					u8 color_red = (color >> 3) & 0x07;
-					u8 color_blue = color & 0x07;
-
-					ImGui::Text("%01X", color_green); ImGui::SameLine(0, 0);
-					ImGui::Text("%01X", color_red); ImGui::SameLine(0, 0);
-					ImGui::Text("%01X", color_blue); ImGui::SameLine();
-				}
-
-				ImGui::NewLine();*/
+				const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+				if (!pPalette)
+					continue;
+				ImGui::Text("BG %2d:", p);
+				ImGui::SameLine();
+				DrawPalette(pPalette, 16, ImGui::GetFrameHeight());
+				ImGui::SameLine();
+				char btnId[32];
+				snprintf(btnId, sizeof(btnId), "+##bg_%d", p);
+				if (ImGui::SmallButton(btnId))
+					pPCEEmu->CreateUserPalette(p);
 			}
 
-			ImGui::NewLine();
+			ImGui::SeparatorText("Sprites");
+			for (int p = 16; p < 32; p++)
+			{
+				const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+				if (!pPalette)
+					continue;
+				ImGui::Text("SP %2d:", p - 16);
+				ImGui::SameLine();
+				DrawPalette(pPalette, 16, ImGui::GetFrameHeight());
+				ImGui::SameLine();
+				char btnId[32];
+				snprintf(btnId, sizeof(btnId), "+##sp_%d", p);
+				if (ImGui::SmallButton(btnId))
+					pPCEEmu->CreateUserPalette(p);
+			}
 
 			ImGui::EndChild();
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Sprites", NULL, ImGuiTabItemFlags_None))
+		if (ImGui::BeginTabItem("User", NULL, ImGuiTabItemFlags_None))
 		{
-			ImGui::BeginChild("sprite_palettes", ImVec2(0, 0.0f), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::BeginChild("user_palettes", ImVec2(0, 0.0f), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
 
-			ImGui::NewLine();
-
-			for (int row = 16; row < 32; row++)
+			const int numPalettes = GetNoPaletteEntries();
+			int displayNo = 0;
+			for (int p = 32; p < numPalettes; p++)
 			{
-				for (int col = 0; col < 16; col++)
-				{
-					int i = row * 16 + col;
-					if (col == 0)
-					{
-						ImGui::Text("%03X:", i); ImGui::SameLine();
-					}
-
-					u16 color = color_table[i];
-					ImVec4 float_color = Convert333PaletteToFloat(color);
-					char id[16];
-					snprintf(id, 16, "##spr_pal_%d_%d", row, col);
-					ImGui::ColorEdit3(id, (float*)&float_color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip);
-					if (col != 15)
-						ImGui::SameLine(0, 10);
-				}
-
-				/*ImGui::Text("     "); ImGui::SameLine(0, 0);
-
-				for (int col = 0; col < 16; col++)
-				{
-					u16 color = color_table[row * 16 + col];
-					u8 color_green = (color >> 6) & 0x07;
-					u8 color_red = (color >> 3) & 0x07;
-					u8 color_blue = color & 0x07;
-
-					ImGui::Text("%01X", color_green); ImGui::SameLine(0, 0);
-					ImGui::Text("%01X", color_red); ImGui::SameLine(0, 0);
-					ImGui::Text("%01X", color_blue); ImGui::SameLine();
-				}
-
-				ImGui::NewLine();*/
+				const FPaletteEntry* pEntry = GetPaletteEntry(p);
+				if (!pEntry)
+					continue;
+				const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+				if (!pPalette)
+					continue;
+				ImGui::Text("User %d (idx %d):", displayNo, p);
+				ImGui::SameLine();
+				DrawPalette(pPalette, pEntry->NoColours, ImGui::GetFrameHeight());
+				displayNo++;
 			}
 
-			ImGui::NewLine();
-
-			ImGui::EndChild();
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("All Palettes", NULL, ImGuiTabItemFlags_None))
-		{
-			ImGui::BeginChild("all_palettes", ImVec2(0, 0.0f), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
-
-			const float scale = ImGui_GetScaling();
-
-			int numPalettes = GetNoPaletteEntries();
-			ImGui::Text("Palettes Stored: %d", GetNoPaletteEntries());
-
-			for (int p = 0; p < numPalettes; p++)
-			{
-				if (p == 0)
-					ImGui::SeparatorText("Background");
-				if (p == 16)
-					ImGui::SeparatorText("Sprites");
-
-				if (const FPaletteEntry* pEntry = GetPaletteEntry(p))
-				{
-					const uint32_t* palette = GetPaletteFromPaletteNo(p);
-					ImGui::Text("%02d: ", p);
-					ImGui::SameLine();
-					DrawPalette(palette, pEntry->NoColours, ImGui::GetFrameHeight());
-				}
-			}
+			if (displayNo == 0)
+				ImGui::TextDisabled("No user palettes. Use the '+' button in the Active tab to copy one.");
 
 			ImGui::EndChild();
 			ImGui::EndTabItem();

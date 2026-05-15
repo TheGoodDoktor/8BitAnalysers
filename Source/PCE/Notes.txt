@@ -1,6 +1,5 @@
 TODO
 - Show register value on tooltips
-- fix first code byte always being data
 - tidy tooltips for PCE related instructions
 - Restore asm export for physical memory
 - get asm export for memory range working again
@@ -14,13 +13,12 @@ TODO
 - trace button doesnt seem to work in code analysis view
 - make screen appear when loading a saved project
 - dupe bank issues in hello.pce project. "FAddressRef::SetVal on unmapped bank 62 ROM_01_3. ref will be invalid." followed by assert in FItemRefernceTracker::RegisterAccess
-- deal with multiple operands, such as block operations etc
+- deal with multiple operands, such as block operations etc [partially done]
 - add audio viewer: disable channels etc
 - hook up more events: audio, etc
 - add way to understand/visualise if interrupts are active?
 - improve Claude.md
 - fix code analysis detail pane getting stuck off screen when fixed
-- add suport for <label> + <offset> to asm exporter?
 - when formatting memory as sprite dont use current (transient) palette data. 
 - remove dupe banks from graphics viewer dropdown
 - get graphics view displaying sprites
@@ -37,12 +35,15 @@ IDEAS
 - when hovering over PCE memory mapped registers, give a description what they do. or add comments for the memory location
 - lazily create dupe banks. it's possible now we redirect code analysis to primary bank. reduces banks from 700->150 banks 
 - override assert with our own that lets you recover
+- create dupe banks lazily. only save state of the primary ones?
 - automatically mark memory as graphics when it gets transferred to vram
 - add "Find sprite in memory" to sprite viewer
 - show unexplored bytes as array
 - preview format before format is pressed
 
 DONE
+- add suport for <label> + <offset> to asm exporter?
+- fix first code byte always being data
 - dont display dupe banks in banks mapped view 
 - BRA instruction doesn't show label or branch lines
 - fail to load cd game if no bios was loaded

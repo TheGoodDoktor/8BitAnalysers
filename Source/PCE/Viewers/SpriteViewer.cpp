@@ -289,7 +289,7 @@ void FSpriteViewer::Tick()
 					options.StartAddress = e.FoundDataAddr;
 					options.ItemSize     = e.Width / 2;
 					options.NoItems      = e.Height;
-					options.PaletteNo    = 16 + e.Palette;
+					options.PaletteNo    = pPCEEmu->CreateUserPalette(16 + e.Palette);
 					FormatData(state, options);
 					state.SetCodeAnalysisDirty(options.StartAddress);
 					e.bFormatted = true;
@@ -609,7 +609,7 @@ void FSpriteViewer::DrawHistoryDetails(int index)
 			options.StartAddress = e.FoundDataAddr;
 			options.ItemSize     = e.Width / 2;
 			options.NoItems      = e.Height;
-			options.PaletteNo    = 16 + e.Palette;
+			options.PaletteNo    = pPCEEmu->CreateUserPalette(16 + e.Palette);
 			FormatData(state, options);
 			state.SetCodeAnalysisDirty(options.StartAddress);
 			e.bFormatted = true;
@@ -759,7 +759,7 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 			options.StartAddress = FoundSpriteDataAddr;
 			options.ItemSize    = info.Width / 2;
 			options.NoItems     = info.Height;
-			options.PaletteNo   = 16 + info.Palette;
+			options.PaletteNo   = pPCEEmu->CreateUserPalette(16 + info.Palette);
 			FormatData(state, options);
 			state.SetCodeAnalysisDirty(options.StartAddress);
 		}

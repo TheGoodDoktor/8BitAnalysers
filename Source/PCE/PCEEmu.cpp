@@ -2140,6 +2140,18 @@ void FPCEEmu::UpdatePalettes()
 	}
 }
 
+int FPCEEmu::CreateUserPalette(int dynamicPaletteIndex)
+{
+	const uint32_t* pPalette = GetPaletteFromPaletteNo(dynamicPaletteIndex);
+	if (!pPalette)
+		return dynamicPaletteIndex;
+	// Copy before calling AddNewPaletteEntry — push_back may reallocate g_PaletteColours,
+	// invalidating the pointer returned by GetPaletteFromPaletteNo.
+	uint32_t paletteCopy[16];
+	memcpy(paletteCopy, pPalette, 16 * sizeof(uint32_t));
+	return AddNewPaletteEntry(paletteCopy, 16);
+}
+
 void FPCEEmu::DetectDirtyBanks()
 {
 	if (!CodeAnalysis.Debugger.IsStopped())
