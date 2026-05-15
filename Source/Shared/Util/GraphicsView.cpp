@@ -263,7 +263,7 @@ void FGraphicsView::Draw4BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int
 	}
 }
 
-/*void FGraphicsView::Draw4bpp16x16PlanarSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols)
+void FGraphicsView::Draw4bpp16x16PlanarSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols)
 {
 	constexpr int blockWidth = 16;
 	constexpr int blockHeight = 16;
@@ -276,33 +276,23 @@ void FGraphicsView::Draw4BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int
 
 	const uint16_t* pPlane0 = (uint16_t*)pSrc;
 
-	for (int y = 0; y < height; y++)
+	for (int blockY = 0; blockY < height; blockY++)
 	{
-		for (int x = 0; x < width; x++)
+		for (int blockX = 0; blockX < width; blockX++)
 		{
 			uint32_t* pCurPixBuf = pPixBuf + (curXPos + (curYPos * viewWidth));
 			const uint16_t* pPlane1 = pPlane0 + 16;
 			const uint16_t* pPlane2 = pPlane1 + 16;
 			const uint16_t* pPlane3 = pPlane2 + 16;
 
-			// Draw 16x16 pixel square
-			for (int y = 0; y < blockHeight; y++)
+			for (int py = 0; py < blockHeight; py++)
 			{
-				// Draw 16 pixel horiz line
-				for (int x = 0; x < blockWidth; x++)
+				for (int px = 0; px < blockWidth; px++)
 				{
-					const int bit = (blockWidth - 1) - x;
-					// Get the 4 bit pixel colour index (0-15)
+					const int bit = (blockWidth - 1) - px;
 					const int colour = (((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1)) & 0xf;
 
-					if (colour != 0) // 0 is transparent
-					{
-						*pCurPixBuf = cols[colour];
-					}
-					else
-						*pCurPixBuf = 0xff000000;
-
-					pCurPixBuf++;
+					*pCurPixBuf++ = colour != 0 ? (cols ? cols[colour] : 0xffffffff) : 0xff000000;
 				}
 
 				pPlane0++;
@@ -320,7 +310,48 @@ void FGraphicsView::Draw4BppWideImageAt(const uint8_t* pSrc, int xp, int yp, int
 		curYPos += blockHeight;
 		curXPos = xp;
 	}
-}*/
+}
+
+// PCE BG tile: 8×8 pixels, 32 bytes per tile.
+// bytes 0–15:  plane0/plane1 row pairs (row*2=plane0, row*2+1=plane1)
+// bytes 16–31: plane2/plane3 row pairs
+void FGraphicsView::Draw4bpp8x8PlanarBGTileImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols)
+{
+	constexpr int blockWidth  = 8;
+	constexpr int blockHeight = 8;
+	constexpr int blockBytes  = 32;
+
+	int curXPos = xp;
+	int curYPos = yp;
+
+	for (int blockY = 0; blockY < height; blockY++)
+	{
+		for (int blockX = 0; blockX < width; blockX++)
+		{
+			const uint8_t* pBlock   = pSrc + (blockY * width + blockX) * blockBytes;
+			uint32_t*      pPixBuf  = PixelBuffer + curXPos + curYPos * Width;
+
+			for (int row = 0; row < blockHeight; row++)
+			{
+				const uint8_t plane0 = pBlock[row * 2];
+				const uint8_t plane1 = pBlock[row * 2 + 1];
+				const uint8_t plane2 = pBlock[16 + row * 2];
+				const uint8_t plane3 = pBlock[16 + row * 2 + 1];
+
+				for (int px = 0; px < blockWidth; px++)
+				{
+					const int bit    = 7 - px;
+					const int colour = ((plane0 >> bit) & 1) | (((plane1 >> bit) & 1) << 1) | (((plane2 >> bit) & 1) << 2) | (((plane3 >> bit) & 1) << 3);
+					pPixBuf[px] = cols ? cols[colour] : (colour ? 0xffffffff : 0xff000000);
+				}
+				pPixBuf += Width;
+			}
+			curXPos += blockWidth;
+		}
+		curYPos += blockHeight;
+		curXPos  = xp;
+	}
+}
 
 void FGraphicsView::Draw1BppImageFromCharsAt(const uint8_t* pSrc, int xp, int yp, int widthChars, int heightChars, const uint32_t* cols)
 {

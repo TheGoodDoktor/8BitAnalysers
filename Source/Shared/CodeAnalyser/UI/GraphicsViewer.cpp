@@ -238,6 +238,21 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int x
 	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 	const ICPUInterface* pCPUInterface = state.GetCPUInterface();
 
+	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
+	{
+		const uint8_t* pSrc = pCPUInterface->GetMemPtr(memAddr);
+		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, ycount, palette);
+		return;
+	}
+	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
+	{
+		const uint8_t* pSrc = pCPUInterface->GetMemPtr(memAddr);
+		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
+		pGraphicsView->Draw4bpp8x8PlanarBGTileImage(pSrc, xPos, 0, 1, ycount, palette);
+		return;
+	}
+
 	for (int y = 0; y < ycount * YSizePixels; y++)
 	{
 		for (int xChar = 0; xChar < columnWidth; xChar++)
@@ -307,6 +322,21 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumnChars(uint16_t memAddr, 
 	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 	const ICPUInterface* pCPUInterface = state.GetCPUInterface();
 
+	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
+	{
+		const uint8_t* pSrc = pCPUInterface->GetMemPtr(memAddr);
+		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, ycount / 2, palette);
+		return;
+	}
+	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
+	{
+		const uint8_t* pSrc = pCPUInterface->GetMemPtr(memAddr);
+		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
+		pGraphicsView->Draw4bpp8x8PlanarBGTileImage(pSrc, xPos, 0, 1, ycount, palette);
+		return;
+	}
+
 	for (int y = 0; y < ycount; y++)
 	{
 		for (int xChar = 0; xChar < columnWidth; xChar++)
@@ -365,6 +395,21 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 	const int scaledVDispPixCount = kVerticalDispPixCount / pConfig->GfxViewerScale;
 	const int ycount = scaledVDispPixCount / YSizePixels;
 	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+
+	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
+	{
+		const uint8_t* pSrc = &pBank->Memory[memAddr & bankSizeMask];
+		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, ycount, palette);
+		return;
+	}
+	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
+	{
+		const uint8_t* pSrc = &pBank->Memory[memAddr & bankSizeMask];
+		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
+		pGraphicsView->Draw4bpp8x8PlanarBGTileImage(pSrc, xPos, 0, 1, ycount, palette);
+		return;
+	}
 
 	for (int y = 0; y < ycount * YSizePixels; y++)
 	{
@@ -426,6 +471,21 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16
 	const int scaledVDispPixCount = kVerticalDispPixCount / pConfig->GfxViewerScale;
 	const int ycount = scaledVDispPixCount / 8;
 	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+
+	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
+	{
+		const uint8_t* pSrc = &pBank->Memory[memAddr & bankSizeMask];
+		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, ycount / 2, palette);
+		return;
+	}
+	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
+	{
+		const uint8_t* pSrc = &pBank->Memory[memAddr & bankSizeMask];
+		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
+		pGraphicsView->Draw4bpp8x8PlanarBGTileImage(pSrc, xPos, 0, 1, ycount, palette);
+		return;
+	}
 
 	for (int y = 0; y < ycount; y++)
 	{
@@ -638,6 +698,9 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	FCodeAnalysisState& state = GetCodeAnalysis();
 	FCodeAnalysisBank* pBank = state.GetBank(Bank);
+
+	if (pBank != nullptr && !bShowPhysicalMemory)
+		MemorySize = pBank->GetSizeBytes();
 
 	const int kHorizontalDispCharCount = kGraphicsViewerWidth / 8;
 	const int kVerticalDispPixCount = kGraphicsViewerHeight;
@@ -962,42 +1025,67 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			{
 				FAddressRef itemAddress = baseAddrRef;
 				state.AdvanceAddressRef(itemAddress, ItemNo * graphicsUnitSize);
-				for (int yp = 0; yp < YSizePixels; yp++)
+				if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 				{
-					for (int xp = 0; xp < xChars; xp++)
+					const FCodeAnalysisBank* pSprBank = state.GetBank(itemAddress.GetBankId());
+					if (pSprBank != nullptr)
 					{
-						switch (BitmapFormat)
+						const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+						pItemView->Draw4bpp16x16PlanarSpriteImage(
+							pSprBank->Memory + itemAddress.GetOffset(), 0, 0, 1, 1,
+							pPaletteColours ? pPaletteColours : GetCurrentPalette());
+					}
+				}
+				else if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
+				{
+					const FCodeAnalysisBank* pSprBank = state.GetBank(itemAddress.GetBankId());
+					if (pSprBank != nullptr)
+					{
+						const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+						pItemView->Draw4bpp8x8PlanarBGTileImage(
+							pSprBank->Memory + itemAddress.GetOffset(), 0, 0, 1, 1,
+							pPaletteColours ? pPaletteColours : GetCurrentPalette());
+					}
+				}
+				else
+				{
+					for (int yp = 0; yp < YSizePixels; yp++)
+					{
+						for (int xp = 0; xp < xChars; xp++)
 						{
-							case EBitmapFormat::Bitmap_1Bpp:
+							switch (BitmapFormat)
 							{
-								const uint8_t charLine = state.ReadByte(itemAddress);
-								pItemView->DrawCharLine(charLine, xp * 8, yp, 0xffffffff, 0);
-								state.AdvanceAddressRef(itemAddress, 1);
+								case EBitmapFormat::Bitmap_1Bpp:
+								{
+									const uint8_t charLine = state.ReadByte(itemAddress);
+									pItemView->DrawCharLine(charLine, xp * 8, yp, 0xffffffff, 0);
+									state.AdvanceAddressRef(itemAddress, 1);
+									break;
+								}
+								case EBitmapFormat::ColMap2Bpp_CPC:
+								{
+									const uint16_t charLine = state.ReadWord(itemAddress);
+									const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+									pItemView->Draw2BppImageAt((uint8_t*)&charLine, xp * 8, yp, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+									state.AdvanceAddressRef(itemAddress, 2);
+									break;
+								}
+								case EBitmapFormat::ColMap4Bpp_CPC:
+								{
+									const uint16_t charLine = state.ReadWord(itemAddress);
+									const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+									pItemView->Draw2BppImageAt((uint8_t*)&charLine, xp * 8, yp, 4, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
+									state.AdvanceAddressRef(itemAddress, 2);
+									break;
+								}
+								case EBitmapFormat::ColMapMulticolour_C64:
+								{
+									// todo
+									break;
+								}
+								default:
 								break;
 							}
-							case EBitmapFormat::ColMap2Bpp_CPC:
-							{
-								const uint16_t charLine = state.ReadWord(itemAddress);
-								const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
-								pItemView->Draw2BppImageAt((uint8_t*)&charLine, xp * 8, yp, 8, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
-								state.AdvanceAddressRef(itemAddress, 2);
-								break;
-							}
-							case EBitmapFormat::ColMap4Bpp_CPC:
-							{
-								const uint16_t charLine = state.ReadWord(itemAddress);
-								const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
-								pItemView->Draw2BppImageAt((uint8_t*)&charLine, xp * 8, yp, 4, 1, pPaletteColours ? pPaletteColours : GetCurrentPalette());
-								state.AdvanceAddressRef(itemAddress, 2);
-								break;
-							}
-							case EBitmapFormat::ColMapMulticolour_C64:
-							{
-								// todo
-								break;
-							}
-                            default:
-                            break;
 						}
 					}
 				}
@@ -1368,6 +1456,32 @@ void FGraphicsViewer::DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* 
 	FAddressRef itemAddress = set.Address;
 
 	state.AdvanceAddressRef(itemAddress, imageNo * graphicsUnitSize);
+
+	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
+	{
+		const FCodeAnalysisBank* pSprBank = state.GetBank(itemAddress.GetBankId());
+		if (pSprBank != nullptr)
+		{
+			const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+			pView->Draw4bpp16x16PlanarSpriteImage(
+				pSprBank->Memory + itemAddress.GetOffset(), x, y, 1, 1,
+				pPaletteColours ? pPaletteColours : GetCurrentPalette());
+		}
+		return;
+	}
+	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
+	{
+		const FCodeAnalysisBank* pSprBank = state.GetBank(itemAddress.GetBankId());
+		if (pSprBank != nullptr)
+		{
+			const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
+			pView->Draw4bpp8x8PlanarBGTileImage(
+				pSprBank->Memory + itemAddress.GetOffset(), x, y, 1, 1,
+				pPaletteColours ? pPaletteColours : GetCurrentPalette());
+		}
+		return;
+	}
+
 	for (int yp = 0; yp < set.YSizePixels; yp++)
 	{
 		for (int xp = 0; xp < xChars; xp++)
@@ -1393,8 +1507,8 @@ void FGraphicsViewer::DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* 
 				{
 					break;
 				}
-                default:
-                break;
+				default:
+				break;
 			}
 		}
 	}

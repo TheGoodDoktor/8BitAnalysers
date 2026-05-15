@@ -28,10 +28,17 @@ void FPCEGraphicsViewer::OnScanlineDraw(int rasterLine, uint16_t bxr, int32_t by
 	}
 }
 
+const uint32_t* FPCEGraphicsViewer::GetCurrentPalette() const
+{
+	// Return first BG palette as a sensible fallback
+	return GetPaletteFromPaletteNo(0);
+}
+
 bool FPCEGraphicsViewer::Init()
 {
 	pPCEEmu = (FPCEEmu*)pEmulator;
 	FGraphicsViewer::Init();
+	BitmapFormat = EBitmapFormat::Sprite4Bpp_PCE;
 
 #ifndef NDEBUG
 	// test view - REMOVE

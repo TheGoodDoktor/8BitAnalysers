@@ -31,6 +31,8 @@ public:
 	void	DrawUI() override;
 	bool	Init(void) override;
 
+	const uint32_t* GetCurrentPalette() const override;
+
 	void	OnScanlineDraw(int rasterLine, uint16_t bxr, int32_t byrEff, uint16_t mwr, uint16_t cr);
 	void	OnFrameStart(const uint16_t* sat);
 
