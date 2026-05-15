@@ -30,6 +30,7 @@ IDEAS
 - when hovering over PCE memory mapped registers, give a description what they do. or add comments for the memory location
 - lazily create dupe banks. it's possible now we redirect code analysis to primary bank. reduces banks from 700->150 banks 
 - override assert with our own that lets you recover
+- create dupe banks lazily. only save state of the primary ones?
 
 DONE
 - dont display dupe banks in banks mapped view 
