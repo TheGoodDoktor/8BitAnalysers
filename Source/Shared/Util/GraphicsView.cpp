@@ -850,6 +850,19 @@ uint32_t* GetPaletteFromPaletteNo(int index)
 	return nullptr;
 }
 
+// sam. Add new palette entry. Allows duplicate entries.
+int AddNewPaletteEntry(const uint32_t* palette, int noCols)
+{
+	FPaletteEntry newEntry;
+	newEntry.FirstColourIndex = (int)g_PaletteColours.size();
+	for (int colNo = 0; colNo < noCols; colNo++)
+		g_PaletteColours.push_back(palette[colNo]);
+	newEntry.NoColours = noCols;
+	const int newPaletteNo = (int)g_Palettes.size();
+	g_Palettes.push_back(newEntry);
+	return newPaletteNo;
+}
+
 int GetNoPaletteEntries(void)
 {
 	return (int)g_Palettes.size();

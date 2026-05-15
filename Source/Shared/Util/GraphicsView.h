@@ -178,5 +178,7 @@ int	GetPaletteNo(const uint32_t* palette, int noCols);
 uint32_t* GetPaletteFromPaletteNo(int index);
 int GetNoPaletteEntries(void);
 const FPaletteEntry* GetPaletteEntry(int paletteNo);
+// sam. Add new palette entry. Allows duplicate entries.
+int AddNewPaletteEntry(const uint32_t* palette, int noCols);
 void SavePalettesToJson(nlohmann::json& jsonDoc);
 void LoadPalettesFromJson(const nlohmann::json& jsonDoc);
