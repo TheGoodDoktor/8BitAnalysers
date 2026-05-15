@@ -1473,8 +1473,14 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		// The initial PC needs to be in the address space of the only mapped ROM: ROM_00.
 		// If the PC is anything else something badly has gone wrong and the game won't work
 		// because it will be trying to execute undefined memory.
-		assert(initialPC.GetAddress() >= 0xe000);
-
+		// todo: make sure this works for cd-rom games.
+		//assert(initialPC.GetAddress() >= 0xe000);
+		if (initialPC.GetAddress() < 0xe000)
+		{
+			SetLastError("Invalid initial PC $%x", initialPC.GetAddress());
+			return false;
+		}
+	
 		// Make a label for the entry point.
 		// Without this an exported asm file may not assemble.
 		char labelTxt[40];
@@ -1982,6 +1988,8 @@ void FPCEEmu::ResetProject()
 	GetGlobalsViewer()->Reset();
 	if (pVRAMViewer)
 		pVRAMViewer->Reset();
+	if (pSpriteViewer)
+		pSpriteViewer->ResetForGame();
 
 	CodeAnalysis.ViewState[0].Enabled = true;
 
@@ -2128,6 +2136,18 @@ void FPCEEmu::UpdatePalettes()
 			}
 		}
 	}
+}
+
+int FPCEEmu::CreateUserPalette(int dynamicPaletteIndex)
+{
+	const uint32_t* pPalette = GetPaletteFromPaletteNo(dynamicPaletteIndex);
+	if (!pPalette)
+		return dynamicPaletteIndex;
+	// Copy before calling AddNewPaletteEntry — push_back may reallocate g_PaletteColours,
+	// invalidating the pointer returned by GetPaletteFromPaletteNo.
+	uint32_t paletteCopy[16];
+	memcpy(paletteCopy, pPalette, 16 * sizeof(uint32_t));
+	return AddNewPaletteEntry(paletteCopy, 16);
 }
 
 void FPCEEmu::DetectDirtyBanks()

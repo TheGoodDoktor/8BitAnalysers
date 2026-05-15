@@ -1661,6 +1661,7 @@ void DrawHelpButton()
 		ImGui::BulletText("u : Set as Unknown");
 		ImGui::SeparatorText("Labels");
 		ImGui::BulletText("l : Add label");
+		ImGui::BulletText("Shift + l : Rename operand label");
 		ImGui::BulletText("r : Rename label");
 		ImGui::SeparatorText("Comments");
 		ImGui::BulletText("; : Add inline comment");

@@ -340,6 +340,7 @@ void FVRAMViewer::Tick()
 		SpriteInfo[i].Width = k_huc6270_sprite_width[cgx];
 		SpriteInfo[i].Height = k_huc6270_sprite_height[cgy];
 		SpriteInfo[i].SizeInBytes = (SpriteInfo[i].Width * SpriteInfo[i].Height) >> 2;
+		SpriteInfo[i].Palette = flags & 0x0F;
 
 		SpriteInfo[i].XPos = spriteSat[0];
 		SpriteInfo[i].YPos = spriteSat[1];

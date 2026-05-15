@@ -116,6 +116,8 @@ public:
 	
 	void EnableGeargrafxCallbacks(bool bEnabled);
 
+	int  CreateUserPalette(int dynamicPaletteIndex);
+
 	const FBankSet& GetBankSet(int index);
 
 	// Get the PCE bank index (0-255) for a given bank id.
