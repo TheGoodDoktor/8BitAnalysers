@@ -2107,7 +2107,9 @@ void FPCEEmu::InitPalettes()
 		{
 			palette[c] = i;
 		}
-		// this wont create a new palette if the colours are the same.
+		
+		// Get/create a palette.
+		// This wont create a new palette if the colours are the same.
 		const int p = GetPaletteNo(palette, 16);
 	}
 }
