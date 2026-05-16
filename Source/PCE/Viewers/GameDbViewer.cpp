@@ -14,6 +14,7 @@ enum EGameDbColumns
 	Col_RomStatus,
 	Col_TestMethodology,
 	Col_MaxDupeBanks,
+	Col_SpritesFoundInROM,
 	Col_Count
 };
 
@@ -76,6 +77,10 @@ static void SortGameDbTable(std::vector<std::pair<std::string, FGameDbEntry*>>& 
 
 			case Col_TestMethodology:
 				result = entryA.TestingMethodology - entryB.TestingMethodology;
+				break;
+
+			case Col_SpritesFoundInROM:
+				result = entryA.SpritesFoundInROM - entryB.SpritesFoundInROM;
 				break;
 			}
 
@@ -163,6 +168,7 @@ void FGameDbViewer::DrawGameDbTable()
 		ImGui::TableSetupColumn("ROM");
 		ImGui::TableSetupColumn("Test Method");
 		ImGui::TableSetupColumn("Max Dupe Banks");
+		ImGui::TableSetupColumn("Sprites In ROM");
 		ImGui::TableHeadersRow();
 
 		ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs();
@@ -238,6 +244,12 @@ void FGameDbViewer::DrawGameDbTable()
 
 			ImGui::TableSetColumnIndex(Col_MaxDupeBanks);
 			ImGui::Text("%d", entry.MaxDupeBanks);
+
+			ImGui::TableSetColumnIndex(Col_SpritesFoundInROM);
+			if (entry.SpritesInHistory > 0)
+				ImGui::Text("%d / %d", entry.SpritesFoundInROM, entry.SpritesInHistory);
+			else
+				ImGui::TextUnformatted("-");
 		}
 
 		ImGui::EndTable();

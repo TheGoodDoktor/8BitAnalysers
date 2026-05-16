@@ -6,8 +6,10 @@
 
 #include "../PCEEmu.h"
 #include "../DebugStats.h"
+#include "../GameDb.h"
 #include "Misc/GameConfig.h"
 #include "Util/FileUtil.h"
+#include "SpriteViewer.h"
 
 #include <geargrafx_core.h>
 
@@ -203,6 +205,16 @@ void FBatchGameLoadViewer::DrawUI()
 				}
 				else
 					bNextGame = true;
+
+				if (const FProjectConfig* pConfig = pPCEEmu->GetProjectConfig())
+				{
+					if (FGameDbEntry* pEntry = GetGameDbEntry(pConfig->Name))
+					{
+						int historySize = 0;
+						pEntry->SpritesFoundInROM = pPCEEmu->GetSpriteViewer()->CountSpritesFoundInMemory(historySize);
+						pEntry->SpritesInHistory = historySize;
+					}
+				}
 
 				if (bExportAsm)
 				{
