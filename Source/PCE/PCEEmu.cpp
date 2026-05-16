@@ -2141,6 +2141,8 @@ void FPCEEmu::UpdatePalettes()
 	}
 }
 
+// Create a static user palette.
+// Will be created as copy of a dynamic palette index.
 int FPCEEmu::CreateUserPalette(int dynamicPaletteIndex)
 {
 	const uint32_t* pPalette = GetPaletteFromPaletteNo(dynamicPaletteIndex);
