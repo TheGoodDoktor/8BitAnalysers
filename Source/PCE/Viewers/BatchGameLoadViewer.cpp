@@ -113,15 +113,15 @@ void FBatchGameLoadViewer::DrawUI()
 	
 	ImGui::Checkbox("Load existing project", &bLoadExistingProject);
 	
-	ImGui::SeparatorText("ASM");
+	/*ImGui::SeparatorText("ASM");
 	if (ImGui::Checkbox("Export ASM after game has run", &bExportAsm))
 	{
 		// make sure hack for correct asm export is turned on
-		//pPCEEmu->bWriteCodeInfoWhenCodeExecuted = bExportAsm;
+		pPCEEmu->bWriteCodeInfoWhenCodeExecuted = bExportAsm;
 	}
 
-	//if (bExportAsm)
-	//	ImGui::Text("THIS WILL AFFECT PERFORMANCE");
+	if (bExportAsm)
+		ImGui::Text("THIS WILL AFFECT PERFORMANCE");*/
 
 	ImGui::SeparatorText("Bank Mapping");
 	bool bMapped = false;

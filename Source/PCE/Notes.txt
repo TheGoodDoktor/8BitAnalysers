@@ -20,14 +20,16 @@ TODO
 - improve Claude.md
 - fix code analysis detail pane getting stuck off screen when fixed
 - when formatting memory as sprite dont use current (transient) palette data. 
-- remove dupe banks from graphics viewer dropdown
+- remove dupe banks from graphics viewer dropdown. also unused banks
 - get graphics view displaying sprites
+- change Current palette option in graphics viewer. doesnt make sense for PCE
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - asm export fails if you export right after reset, when UNUSED banks are mapped.
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
 - edit mode doesnt restore properly. emulation bugs afer restoring
+- 32 x 64 sprite gets formatted as 
 
 IDEAS
 - [perf] Create code analysis pages on demand. would make creating banks trivial
