@@ -227,6 +227,8 @@ struct FCodeAnalysisViewState
 	FBatchDataFormattingOptions	BatchFormattingOptions;
 
 	EBitmapFormat CurBitmapFormat = EBitmapFormat::None;
+	float DetailsPanelWidth = 0.0f;		// preferred width of right details panel; 0 = uninitialized
+	float PrevAvailW = 0.0f;			// availW from the previous frame, used to detect outer window resize
 
 private:
 	FCodeAnalysisItem			CursorItem;

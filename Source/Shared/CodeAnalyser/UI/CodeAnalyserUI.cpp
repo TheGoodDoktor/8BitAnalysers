@@ -2000,17 +2000,41 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	//ImGui::SameLine();
 	DrawDebuggerButtons(state, viewState);
 	
-	{
-		// sam. Ensure the details pane on the right always remains at least partially visible
-		// when the code analysis window is resized horizontally.
-		const float kMinDetailsWidth = 150.0f;
-		const float availW = ImGui::GetContentRegionAvail().x;
-		ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(availW - kMinDetailsWidth, FLT_MAX));
-	}
+	// Layout: analysis panel (left) + details panel (right, anchored to the right edge).
+	// We track the details panel's preferred pixel width (DetailsPanelWidth). When the outer
+	// window grows, the analysis panel is pushed wider from inside so the details panel stays
+	// anchored to the right. The ImGuiChildFlags_ResizeX handle lets the user adjust the split.
+	const float kMinDetailsWidth = 80.0f;
+	const float kMinAnalysisWidth = 200.0f;
+	const float availW = ImGui::GetContentRegionAvail().x;
 
-	if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), /*true*/ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
-	//if(ImGui::BeginChild("##analysis", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), true))
+	if (viewState.DetailsPanelWidth <= 0.0f)
+		viewState.DetailsPanelWidth = availW * 0.25f;
+
+	// Cap analysis width so the details panel always has at least kMinDetailsWidth.
+	// When the window is too narrow for both minimums, let the analysis panel shrink.
+	const float detailsMax = std::max(kMinDetailsWidth, availW - kMinAnalysisWidth);
+	viewState.DetailsPanelWidth = std::clamp(viewState.DetailsPanelWidth, kMinDetailsWidth, detailsMax);
+
+	ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(availW - kMinDetailsWidth, FLT_MAX));
+
+	if(ImGui::BeginChild("##analysis", ImVec2(availW * 0.75f, 0), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
 	{
+		// Track details panel width and push analysis wider when the outer window grows.
+		// SetNextWindowSize before BeginChild doesn't work here because BeginChild internally
+		// overrides it with the ResizeX stored size. Calling SetWindowSize from inside the child
+		// writes directly to SizeFull and takes effect next frame.
+		// We only force the growth when availW itself increased (outer window grew), so user
+		// drags on the resize handle (which keep availW constant) are not fought.
+		{
+			const float actualRightW = availW - ImGui::GetWindowSize().x;
+			const bool outerWindowGrew = availW > viewState.PrevAvailW + 1.0f;
+			if (outerWindowGrew && actualRightW > viewState.DetailsPanelWidth + 1.0f)
+				ImGui::SetWindowSize(ImVec2(availW - viewState.DetailsPanelWidth, ImGui::GetWindowHeight()));
+			viewState.DetailsPanelWidth = actualRightW;
+			viewState.PrevAvailW = availW;
+		}
+
 		// Determine if we want to switch tabs
 		const FAddressRef& goToAddress = viewState.GetGotoAddress();
 		int16_t showBank = -1;
