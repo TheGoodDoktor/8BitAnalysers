@@ -226,6 +226,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 		if (pDataInfo->FirstItemAddress.IsValid())
 		{
 			constexpr int kBlockWidth = 16;
+			constexpr int kBlockHeight = 16;
 			constexpr int kBlockSizeBytes = 128;
 
 			const uint16_t firstItemAddr = pDataInfo->FirstItemAddress.GetAddress();
@@ -238,7 +239,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 			const int blockIndex = offsetFromStart / kBlockSizeBytes;
 
 			const int blockGroupIndex = blockIndex / widthBlocks;
-			const uint16_t blockGroupOffset = blockGroupIndex * (widthBlocks * kBlockSizeBytes);
+			const uint16_t blockGroupOffset = blockGroupIndex * (widthBlocks * kBlockSizeBytes - kBlockHeight * 2);
 
 			const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
 
@@ -307,7 +308,7 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 					{
 						const int tipTileY = scanLine / 16;
 						const uint16_t tipBnkOffset = (firstItemAddr - mappedAddr) + (scanLine * 2);
-						const uint16_t tipBlockGroupOffset = (uint16_t)(tipTileY * widthBlocks * kBlockSizeBytes);
+						const uint16_t tipBlockGroupOffset = (uint16_t)(tipTileY * (widthBlocks * kBlockSizeBytes - kBlockHeight * 2));
 						const uint8_t* pTipMem = pBank->Memory + tipBnkOffset + tipBlockGroupOffset;
 
 						for (int b = 0; b < widthBlocks; b++)
