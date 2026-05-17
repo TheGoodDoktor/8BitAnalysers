@@ -2075,3 +2075,48 @@ bool FAddressRef::IsValid() const
 	return true;
 }
 #endif
+
+const FLabelInfo* FCodeAnalysisState::FindLabel(const char* pName, FAddressRef& outAddress) const
+{
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
+	{
+		const FCodeAnalysisBank& bank = Banks[b];
+		for (int p = 0; p < bank.NoPages; p++)
+		{
+			for (int offset = 0; offset < FCodeAnalysisPage::kPageSize; offset++)
+			{
+				const FLabelInfo* pLabel = bank.Pages[p].Labels[offset];
+				if (pLabel && strcmp(pLabel->GetName(), pName) == 0)
+				{
+					outAddress = FAddressRef((int16_t)b, (uint16_t)(p * FCodeAnalysisPage::kPageSize + offset));
+					return pLabel;
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+
+FFunctionInfo* FCodeAnalysisState::FindFunctionByName(const char* pName)
+{
+	for (auto& funcIt : pFunctions->GetFunctions())
+	{
+		FAddressRef addr = funcIt.first;
+		const FLabelInfo* pLabel = GetLabelForAddress(addr);
+		if (pLabel && strcmp(pLabel->GetName(), pName) == 0)
+			return const_cast<FFunctionInfo*>(&funcIt.second);
+	}
+	return nullptr;
+}
+
+const FFunctionInfo* FCodeAnalysisState::FindFunctionByName(const char* pName) const
+{
+	for (const auto& funcIt : pFunctions->GetFunctions())
+	{
+		FAddressRef addr = funcIt.first;
+		const FLabelInfo* pLabel = const_cast<FCodeAnalysisState*>(this)->GetLabelForAddress(addr);
+		if (pLabel && strcmp(pLabel->GetName(), pName) == 0)
+			return &funcIt.second;
+	}
+	return nullptr;
+}

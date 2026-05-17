@@ -6,6 +6,7 @@
 
 // forward decs
 class FEmuBase;
+class FGraphicsView;
 class FGraphicsViewer;
 class FCharacterMapViewer;
 class FFunctionViewer;
@@ -25,6 +26,7 @@ struct FEmulatorLaunchConfig
 	std::string		SpecificGame;
 
 	bool		bMultiWindow = true;
+	bool		bRunMCPServer = false;
 };
 
 
@@ -87,6 +89,7 @@ public:
 	FCodeAnalysisState&		GetCodeAnalysis() { return CodeAnalysis; }
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
 	const FProjectConfig*	GetProjectConfig() const { return pCurrentProjectConfig; }
+	virtual FGraphicsView*	GetScreen() const { return nullptr; }
 	bool					HasProjectLoaded() const { return pCurrentProjectConfig != nullptr; }
 
 	void	RequestQuit() { bQuitRequested = true; }
