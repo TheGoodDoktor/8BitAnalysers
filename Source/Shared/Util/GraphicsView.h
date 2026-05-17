@@ -175,6 +175,8 @@ struct FPaletteEntry
 	int NoColours = 0;
 };
 
+// sam. Add a way to clear all palettes
+void ClearPalettes();
 int	GetPaletteNo(const uint32_t* palette, int noCols);
 uint32_t* GetPaletteFromPaletteNo(int index);
 int GetNoPaletteEntries(void);

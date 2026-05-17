@@ -188,6 +188,9 @@ void FGameDbViewer::DrawGameDbTable()
 
 			for (auto& it : gameDb)
 				SortedEntries.push_back({ it.first, &it.second });
+
+			if (sortSpecs)
+				sortSpecs->SpecsDirty = true;
 		}
 
 		if (sortSpecs && sortSpecs->SpecsDirty)
