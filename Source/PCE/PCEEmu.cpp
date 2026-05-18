@@ -19,6 +19,7 @@
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
 #include "Viewers/PCEGraphicsViewer.h"
+#include "Viewers/MemoryViewer.h"
 #include "Viewers/GameDbViewer.h"
 #include "CodeAnalyser/AssemblerExport.h"
 #include "CodeAnalyser/UI/6502/RegisterView6502.h"
@@ -1078,6 +1079,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FBackgroundViewer(this));
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
+	AddViewer(new FMemoryViewer(this));
 	pGraphicsViewer = new FPCEGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
