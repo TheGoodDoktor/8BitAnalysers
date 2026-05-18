@@ -22,6 +22,7 @@ TODO
 - when formatting memory as sprite dont use current (transient) palette data. 
 - remove dupe banks from graphics viewer dropdown
 - get graphics view displaying sprites
+- eliminate all dupe bank bugs (some still exist)
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
