@@ -60,6 +60,8 @@ public:
 	void	DrawPhysicalMemoryOverview();
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
 	void	DrawLegend(void);
+	void	DrawBGTileView(void);
+	void	DrawSpriteView(void);
 
 	void	RegisterRead(uint16_t vramAddress, FAddressRef reader);
 	void	RegisterWrite(uint16_t vramAddress, FAddressRef writer);
@@ -74,7 +76,17 @@ public:
 
 private:
 
-	FGraphicsView*	MemoryViewImage = nullptr;
+	FGraphicsView*	MemoryViewImage  = nullptr;
+	FGraphicsView*	BGTileViewImage  = nullptr;
+	FGraphicsView*	SpriteViewImage  = nullptr;
+
+	int             BGTileOffset     = 0;   // starting tile index (0–2047)
+	int             BGTilePalette    = 0;   // BG palette 0–15
+	int             BGTileScale      = 1;
+
+	int             SpriteBlockOffset = 0;  // starting 64-word sprite block index
+	int             SpritePalette     = 0;  // sprite palette 0–15 (maps to colourTable[0x100+])
+	int             SpriteScale       = 1;
 
 	FVRAMAccess Access[HUC6270_VRAM_SIZE];
 	FSpriteInfo SpriteInfo[HUC6270_SPRITES];
