@@ -18,6 +18,11 @@ TODO
 - hook up more events: audio, etc
 - add way to understand/visualise if interrupts are active?
 - improve Claude.md
+- fix code analysis detail pane getting stuck off screen when fixed
+- when formatting memory as sprite dont use current (transient) palette data. 
+- remove dupe banks from graphics viewer dropdown
+- get graphics view displaying sprites
+- eliminate all dupe bank bugs (some still exist)
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - get graphics viewer displaying sprites
 - change Current palette option in graphics viewer. doesnt make sense for PCE
