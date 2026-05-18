@@ -21,6 +21,7 @@ class FCodeAnalysisState;
 class FEmuBase;
 class FDataTypes;
 class FFunctionInfoCollection;
+struct FFunctionInfo;
 class FDataRegionList;
 class FMemoryAnalyser;
 
@@ -227,6 +228,8 @@ struct FCodeAnalysisViewState
 	FBatchDataFormattingOptions	BatchFormattingOptions;
 
 	EBitmapFormat CurBitmapFormat = EBitmapFormat::None;
+	float DetailsPanelWidth = 0.0f;		// preferred width of right details panel; 0 = uninitialized
+	float PrevAvailW = 0.0f;			// availW from the previous frame, used to detect outer window resize
 
 private:
 	FCodeAnalysisItem			CursorItem;
@@ -643,7 +646,7 @@ public:
 	{
 		for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
 		{
-			Banks[b].bIsDirty;
+			Banks[b].bIsDirty = true;
 		}
 		bCodeAnalysisDataDirty = true;
 	}
@@ -780,6 +783,12 @@ public:
 	}
 	bool SetLabelForAddress(FAddressRef addrRef, FLabelInfo* pLabel);
 
+	// Find a label by name across all banks. Returns the label and sets outAddress if found.
+	const FLabelInfo* FindLabel(const char* pName, FAddressRef& outAddress) const;
+
+	// Find a function by its label name.
+	FFunctionInfo* FindFunctionByName(const char* pName);
+	const FFunctionInfo* FindFunctionByName(const char* pName) const;
 
 	//FCommentBlock* GetCommentBlockForAddress(uint16_t addr) const { return GetReadPage(addr)->CommentBlocks[addr & kPageMask]; }
 	FCommentBlock* GetCommentBlockForAddress(FAddressRef addrRef)

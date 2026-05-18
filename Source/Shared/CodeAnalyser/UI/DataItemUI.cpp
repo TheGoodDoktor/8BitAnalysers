@@ -17,6 +17,57 @@
 
 bool bLog2 = false;
 
+// PCE 4bpp planar sprite helpers -----------------------------------------------
+
+struct FPCESpriteCtx
+{
+	const uint8_t*  BankMemory;
+	uint16_t        FirstItemBankOffset; // firstItemAddr - mappedAddr
+	int             WidthBlocks;
+	const uint32_t* Palette;
+};
+
+// Returns pointer to plane-0 row data for sprite scanline s.
+static const uint8_t* GetPCESpriteScanLinePtr(const FPCESpriteCtx& ctx, int s)
+{
+	constexpr int kBlockHeight    = 16;
+	constexpr int kBlockSizeBytes = 128;
+	const uint16_t bOffset  = ctx.FirstItemBankOffset + (uint16_t)(s * 2);
+	const uint16_t bgOffset = (uint16_t)((s / kBlockHeight) * (ctx.WidthBlocks * kBlockSizeBytes - kBlockHeight * 2));
+	return ctx.BankMemory + bOffset + bgOffset;
+}
+
+// Draws one sprite scanline (WidthBlocks * 16 pixels) into drawList.
+static void DrawPCESpriteScanLine(ImDrawList* drawList, const FPCESpriteCtx& ctx, const uint8_t* pMem,
+                                   float startX, float startY, float pixSize, bool bOutline)
+{
+	constexpr int kBlockWidth     = 16;
+	constexpr int kBlockSizeBytes = 128;
+	for (int b = 0; b < ctx.WidthBlocks; b++)
+	{
+		const uint16_t* pP0 = (uint16_t*)(pMem + (b * kBlockSizeBytes));
+		const uint16_t* pP1 = pP0 + 16;
+		const uint16_t* pP2 = pP1 + 16;
+		const uint16_t* pP3 = pP2 + 16;
+
+		for (int x = 0; x < kBlockWidth; x++)
+		{
+			const int bit = (kBlockWidth - 1) - x;
+			const int ci  = ((*pP3 >> bit) & 1) << 3 | ((*pP2 >> bit) & 1) << 2 | ((*pP1 >> bit) & 1) << 1 | ((*pP0 >> bit) & 1) & 0xf;
+			const uint32_t col = ci != 0 ? (ctx.Palette ? ctx.Palette[ci] : 0xffffffff) : 0xff000000;
+
+			const float px = startX + (b * kBlockWidth + x) * pixSize;
+			const ImVec2 rMin(px, startY);
+			const ImVec2 rMax(px + pixSize, startY + pixSize);
+			drawList->AddRectFilled(rMin, rMax, col);
+			if (bOutline)
+				drawList->AddRect(rMin, rMax, 0xffffffff);
+		}
+	}
+}
+
+// ------------------------------------------------------------------------------
+
 float DrawDataCharMapLine(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, FAddressRef addr, const FDataInfo* pDataInfo)
 {
 	const float line_height = ImGui::GetTextLineHeight();
@@ -226,63 +277,27 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 		if (pDataInfo->FirstItemAddress.IsValid())
 		{
 			constexpr int kBlockWidth = 16;
-			constexpr int kBlockSizeBytes = 128;
 
-			const uint16_t firstItemAddr = pDataInfo->FirstItemAddress.GetAddress();
-			const uint16_t thisItemAddr = addr.GetAddress();
-			const uint16_t offsetFromStart = thisItemAddr - firstItemAddr;
-			const int lineIndex = offsetFromStart / pDataInfo->ByteSize;
-			const uint16_t bnkOffset = (firstItemAddr - mappedAddr) + (lineIndex * 2);
+			const uint16_t firstItemAddr  = pDataInfo->FirstItemAddress.GetAddress();
+			const int      offsetFromStart = addr.GetAddress() - firstItemAddr;
+			const int      lineIndex       = offsetFromStart / pDataInfo->ByteSize;
 
-			const int widthBlocks = pDataInfo->ByteSize / (kBlockWidth >> 1);
-			const int blockIndex = offsetFromStart / kBlockSizeBytes;
-
-			const int blockGroupIndex = blockIndex / widthBlocks;
-			const uint16_t blockGroupOffset = blockGroupIndex * (widthBlocks * kBlockSizeBytes);
-
-			const uint32_t* pPalette = GetPaletteFromPaletteNo(pDataInfo->PaletteNo);
-
-			const uint8_t* pMemory = pBank->Memory + bnkOffset + blockGroupOffset;
-
-			for (int b = 0; b < widthBlocks; b++)
+			const FPCESpriteCtx ctx =
 			{
-				const uint16_t* pPlane0 = (uint16_t*)(pMemory + (b * kBlockSizeBytes));
-				const uint16_t* pPlane1 = pPlane0 + 16;
-				const uint16_t* pPlane2 = pPlane1 + 16;
-				const uint16_t* pPlane3 = pPlane2 + 16;
+				pBank->Memory,
+				(uint16_t)(firstItemAddr - mappedAddr),
+				pDataInfo->ByteSize / (kBlockWidth >> 1),
+				GetPaletteFromPaletteNo(pDataInfo->PaletteNo)
+			};
 
-				if (bLog2)
-					LOGINFO("x %d y %d %x", b, lineIndex, pPlane0);
+			DrawPCESpriteScanLine(dl, ctx, GetPCESpriteScanLinePtr(ctx, lineIndex), startPos.x, pos.y, rectSize, true);
+			pos.x = startPos.x + ctx.WidthBlocks * kBlockWidth * rectSize;
 
-				for (int x = 0; x < kBlockWidth; x++)
-				{
-					const int bit = (kBlockWidth - 1) - x;
-
-					// get pixel colour 0-15
-					const int colIndex = ((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1) & 0xf;
-
-					const ImVec2 rectMin(pos.x, pos.y);
-					const ImVec2 rectMax(pos.x + rectSize, pos.y + rectSize);
-
-					uint32_t pixelCol;
-					if (colIndex != 0) // 0 is transparent
-						pixelCol = pPalette ? pPalette[colIndex] : 0xffffffff;
-					else
-						pixelCol = 0xff000000;
-
-					dl->AddRectFilled(rectMin, rectMax, pixelCol);
-					dl->AddRect(rectMin, rectMax, 0xffffffff);
-
-					pos.x += rectSize;
-				}
-			}
-
-			// Thumbnail tooltip: show the full sprite on hover over any scanline
-			const ImVec2 hoverMin(startPos.x, startPos.y);
-			const ImVec2 hoverMax(pos.x, startPos.y + rectSize);
-			if (ImGui::IsMouseHoveringRect(hoverMin, hoverMax))
+			// Thumbnail tooltip: suppress when a popup is open or another window is on top
+			if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel) &&
+				ImGui::IsWindowHovered() &&
+				ImGui::IsMouseHoveringRect(ImVec2(startPos.x, startPos.y), ImVec2(pos.x, startPos.y + rectSize)))
 			{
-				// Count total sprite height by scanning forward while entries share FirstItemAddress
 				int spriteHeight = 0;
 				FAddressRef scanAddr = pDataInfo->FirstItemAddress;
 				while (spriteHeight < 64)
@@ -303,35 +318,10 @@ float DrawDataBitmapLine(FCodeAnalysisState& state, FAddressRef addr, const FDat
 					constexpr float kTipPixelSize = 4.0f;
 					const ImVec2 tipOrigin = ImGui::GetCursorScreenPos();
 
-					for (int scanLine = 0; scanLine < spriteHeight; scanLine++)
-					{
-						const int tipTileY = scanLine / 16;
-						const uint16_t tipBnkOffset = (firstItemAddr - mappedAddr) + (scanLine * 2);
-						const uint16_t tipBlockGroupOffset = (uint16_t)(tipTileY * widthBlocks * kBlockSizeBytes);
-						const uint8_t* pTipMem = pBank->Memory + tipBnkOffset + tipBlockGroupOffset;
+					for (int s = 0; s < spriteHeight; s++)
+						DrawPCESpriteScanLine(tipDl, ctx, GetPCESpriteScanLinePtr(ctx, s), tipOrigin.x, tipOrigin.y + s * kTipPixelSize, kTipPixelSize, false);
 
-						for (int b = 0; b < widthBlocks; b++)
-						{
-							const uint16_t* pP0 = (uint16_t*)(pTipMem + (b * kBlockSizeBytes));
-							const uint16_t* pP1 = pP0 + 16;
-							const uint16_t* pP2 = pP1 + 16;
-							const uint16_t* pP3 = pP2 + 16;
-
-							for (int x = 0; x < kBlockWidth; x++)
-							{
-								const int bit = (kBlockWidth - 1) - x;
-								const int ci = ((*pP3 >> bit) & 1) << 3 | ((*pP2 >> bit) & 1) << 2 | ((*pP1 >> bit) & 1) << 1 | ((*pP0 >> bit) & 1) & 0xf;
-								const uint32_t col = (ci != 0) ? (pPalette ? pPalette[ci] : 0xffffffff) : 0xff000000;
-
-								const float px = tipOrigin.x + (b * kBlockWidth + x) * kTipPixelSize;
-								const float py = tipOrigin.y + scanLine * kTipPixelSize;
-								tipDl->AddRectFilled(ImVec2(px, py), ImVec2(px + kTipPixelSize, py + kTipPixelSize), col);
-							}
-						}
-					}
-
-					// Reserve the drawn area so the tooltip sizes correctly
-					ImGui::Dummy(ImVec2(widthBlocks * kBlockWidth * kTipPixelSize, spriteHeight * kTipPixelSize));
+					ImGui::Dummy(ImVec2(ctx.WidthBlocks * kBlockWidth * kTipPixelSize, spriteHeight * kTipPixelSize));
 					ImGui::EndTooltip();
 				}
 			}

@@ -23,6 +23,9 @@
 #include "CodeAnalyser/CodeAnalysisDot.h"
 #include <ImGuiSupport/ImGuiScaling.h>
 
+#define NOMINMAX
+#include "MCPServer/MCPManager.h"
+
 #include "optick/optick.h"
 
 void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
@@ -49,6 +52,10 @@ void FEmulatorLaunchConfig::ParseCommandline(int argc, char** argv)
 		else if (*argIt == std::string("-nomultiwindow"))
 		{
 			bMultiWindow = false;
+		}
+		else if (*argIt == std::string("-mcpserver"))
+		{
+			bRunMCPServer = true;
 		}
 
 		++argIt;
@@ -93,6 +100,9 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 	pStaticAnalysis = new FStaticAnalyser(this);
 	AddViewer(pStaticAnalysis);
 
+	if (launchConfig.bRunMCPServer)
+		InitMCPServer(this);
+
 	return true;
 }
 
@@ -100,12 +110,14 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 void FEmuBase::Shutdown()
 {
 	LuaSys::Shutdown();
+	ShutdownMCPServer();
 }
 
 void FEmuBase::Tick()
 {
 	Colours::Tick();
 	UpdateCharacterSets(CodeAnalysis);
+	UpdateMCPServer();
 }
 
 void FEmuBase::Reset()
@@ -244,8 +256,10 @@ void FEmuBase::DrawUI()
         ImPlot::ShowDemoWindow(&bShowImPlotDemo);
 
 	DrawEmulatorUI();
-    
+
     LuaSys::DrawUI();
+
+	DrawMCPServerUI(this);
 }
 
 void FEmuBase::FileMenu()

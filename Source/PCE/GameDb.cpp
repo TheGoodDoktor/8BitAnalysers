@@ -57,6 +57,8 @@ bool SaveGameDbEntry(const std::string& gameName, const std::string& fname)
 	jsonFile["EmulatorTestOk"] = entry.bEmulatorTestOk;
 
 	jsonFile["TestingMethodology"] = entry.TestingMethodology;
+	jsonFile["SpritesFoundInROM"] = entry.SpritesFoundInROM;
+	jsonFile["SpritesInHistory"] = entry.SpritesInHistory;
 
 	entry.NumDynamicBanks = 0;
 
@@ -101,6 +103,8 @@ bool LoadGameDbEntry(const std::string& gameName, const std::string& fname)
 	entry.bRomFileIdentical = jsonFile["RomFileIdentical"];
 	//entry.bEmulatorTestOk = jsonFile["EmulatorTestOk"];
 	entry.TestingMethodology = jsonFile["TestingMethodology"];
+	entry.SpritesFoundInROM = jsonFile.value("SpritesFoundInROM", 0);
+	entry.SpritesInHistory = jsonFile.value("SpritesInHistory", 0);
 	entry.MaxDupeBanks = jsonFile["MaxDupeBanks"];
 
 	entry.Banks.clear();

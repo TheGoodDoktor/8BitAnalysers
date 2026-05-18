@@ -624,6 +624,31 @@ void FSpriteViewer::DrawHistoryDetails(int index)
 	}
 }
 
+int FSpriteViewer::CountSpritesFoundInMemory(int& outHistorySize)
+{
+	outHistorySize = (int)SpriteHistory.size();
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+	int found = 0;
+	for (FHistorySpriteEntry& e : SpriteHistory)
+	{
+		if (e.FoundDataAddr.IsValid())
+		{
+			found++;
+			continue;
+		}
+		if (e.VRAMSnapshot && e.VRAMSnapshotSize >= 64)
+		{
+			std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, 64, true, false);
+			if (!results.empty())
+			{
+				e.FoundDataAddr = results[0];
+				found++;
+			}
+		}
+	}
+	return found;
+}
+
 void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 {
 	HuC6270* huc6270 = pPCEEmu->GetCore()->GetHuC6270_1();

@@ -37,6 +37,11 @@ struct FGameDbEntry
 	// If this is set to -1 it means the criteria wasn't valid or automation wasn't active.
 	int TestingMethodology = -1;
 
+	// Number of sprites whose VRAM data was found verbatim in ROM/RAM during automation.
+	// Arbitrary — depends on run length — but useful as a quick reversibility signal.
+	int SpritesFoundInROM = 0;
+	int SpritesInHistory = 0;
+
 	// Number of banks that do not have a fixed physical memory address.
 	// Note: this is not saved in the json file.
 	int NumDynamicBanks = 0;

@@ -81,7 +81,8 @@ enum class EDataItemDisplayType
 	YPos,
 	XCharPos,
 	YCharPos,
-	Sprite4Bpp_PCE, // rename?
+	Sprite4Bpp_PCE,
+	BGTile4Bpp_PCE,	// PCE 4bpp planar background tile format
 };
 
 // NOTE: only add to this enum at the end - there are loose dependencies on it (file format, combo box)
@@ -95,6 +96,7 @@ enum class EBitmapFormat
 	ColMapMulticolour_C64,	// C64 Multicolour format
 
 	Sprite4Bpp_PCE,	// PCE 4bpp planar sprite format
+	BGTile4Bpp_PCE,	// PCE 4bpp planar background tile format
 
 	Max,
 	None = Max

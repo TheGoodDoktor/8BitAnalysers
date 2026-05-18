@@ -23,12 +23,22 @@ TODO
 - remove dupe banks from graphics viewer dropdown
 - get graphics view displaying sprites
 - eliminate all dupe bank bugs (some still exist)
+- remove dupe banks from graphics viewer dropdown. also unused banks
+- get graphics viewer displaying sprites
+- change Current palette option in graphics viewer. doesnt make sense for PCE
+- tidy up sprites viewer detail pane
+- layout of background viewer clunky
+- palettes get added at index 67
+- history sprite palettes are not correct sometimes. rabio lepus intro.
+- sprites dont display correctly in code analysis view correctly. hero tonma clouds
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - asm export fails if you export right after reset, when UNUSED banks are mapped.
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
 - edit mode doesnt restore properly. emulation bugs afer restoring
+- sprites formatted by sprite viewer dont draw correctly.
+- code analysis view doesnt go to address that was last viewed after loading project.
 
 IDEAS
 - [perf] Create code analysis pages on demand. would make creating banks trivial
@@ -41,8 +51,11 @@ IDEAS
 - add "Find sprite in memory" to sprite viewer
 - show unexplored bytes as array
 - preview format before format is pressed
+- make graphics viewer texture smaller when viewing banks. it's too big for 8k banks.
+- add button to save all sprites in history view
 
 DONE
+- get BG data item working
 - add suport for <label> + <offset> to asm exporter?
 - fix first code byte always being data
 - dont display dupe banks in banks mapped view 
@@ -51,3 +64,5 @@ DONE
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - Allow you to edit register values.
 - add keyboard shortcut for changing font size
+- when formatting memory as sprite dont use current (transient) palette data. 
+- fix code analysis detail pane getting stuck off screen when fixed

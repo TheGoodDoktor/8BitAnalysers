@@ -37,6 +37,7 @@ public:
 	void Tick();
 
 	ImTextureID GetSpriteTexture(int spriteIndex) const { return SpriteTextures[spriteIndex]; }
+	int CountSpritesFoundInMemory(int& outHistorySize);
 
 	FPCEEmu* pPCEEmu = nullptr;
 public:

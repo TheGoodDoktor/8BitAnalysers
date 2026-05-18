@@ -6,8 +6,10 @@
 
 #include "../PCEEmu.h"
 #include "../DebugStats.h"
+#include "../GameDb.h"
 #include "Misc/GameConfig.h"
 #include "Util/FileUtil.h"
+#include "SpriteViewer.h"
 
 #include <geargrafx_core.h>
 
@@ -113,15 +115,15 @@ void FBatchGameLoadViewer::DrawUI()
 	
 	ImGui::Checkbox("Load existing project", &bLoadExistingProject);
 	
-	ImGui::SeparatorText("ASM");
+	/*ImGui::SeparatorText("ASM");
 	if (ImGui::Checkbox("Export ASM after game has run", &bExportAsm))
 	{
 		// make sure hack for correct asm export is turned on
-		//pPCEEmu->bWriteCodeInfoWhenCodeExecuted = bExportAsm;
+		pPCEEmu->bWriteCodeInfoWhenCodeExecuted = bExportAsm;
 	}
 
-	//if (bExportAsm)
-	//	ImGui::Text("THIS WILL AFFECT PERFORMANCE");
+	if (bExportAsm)
+		ImGui::Text("THIS WILL AFFECT PERFORMANCE");*/
 
 	ImGui::SeparatorText("Bank Mapping");
 	bool bMapped = false;
@@ -203,6 +205,16 @@ void FBatchGameLoadViewer::DrawUI()
 				}
 				else
 					bNextGame = true;
+
+				if (const FProjectConfig* pConfig = pPCEEmu->GetProjectConfig())
+				{
+					if (FGameDbEntry* pEntry = GetGameDbEntry(pConfig->Name))
+					{
+						int historySize = 0;
+						pEntry->SpritesFoundInROM = pPCEEmu->GetSpriteViewer()->CountSpritesFoundInMemory(historySize);
+						pEntry->SpritesInHistory = historySize;
+					}
+				}
 
 				if (bExportAsm)
 				{

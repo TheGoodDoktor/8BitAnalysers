@@ -1994,9 +1994,7 @@ void FPCEEmu::ResetProject()
 
 	CodeAnalysis.ViewState[0].Enabled = true;
 
-	// do we need to reset the palettes?
-	// this creates them
-	//InitPalettes();
+	InitPalettes();
 }
 
 // Reset the code analysis to a default state.
@@ -2041,6 +2039,9 @@ void FPCEEmu::Reset()
 	SetWindowTitle(windowTitle.c_str());
 }
 
+// Reset the emulation without losing reverse engineering progress.
+// Functions/labels are untouched.
+// Disassembly is untouched.
 void FPCEEmu::SoftResetMachine()
 {
 	assert(pCurrentProjectConfig);
@@ -2100,6 +2101,8 @@ void FPCEEmu::AppFocusCallback(int focused)
 
 void FPCEEmu::InitPalettes()
 {
+	ClearPalettes();
+
 	uint32_t palette[32] = { 0 };
 	// Create a palette entry for all the HW palettes
 	for (int i = 0; i < 32; i++)

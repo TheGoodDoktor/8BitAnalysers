@@ -62,7 +62,10 @@ void FPaletteViewer::DrawUI()
 				if (ImGui::SmallButton(btnId))
 					pPCEEmu->CreateUserPalette(p);
 			}
-
+#ifndef NDEBUG
+			ImGui::SeparatorText("Debug");
+			ImGui::Text("Num Palette Entries: %d", GetNoPaletteEntries());
+#endif
 			ImGui::EndChild();
 			ImGui::EndTabItem();
 		}

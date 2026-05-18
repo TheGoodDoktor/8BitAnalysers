@@ -168,6 +168,7 @@ if(${gfxapi} STREQUAL "DX11")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(PCEAnalyser PRIVATE ws2_32)
     set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/PCEAnalyser")
     if(${with_tests})
         set_property(TARGET PCEAnalyserTest PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../Data/PCEAnalyser")
