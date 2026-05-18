@@ -82,7 +82,7 @@ void FPCEGraphicsViewer::DrawUI(void)
 void FPCEGraphicsViewer::DrawScreenViewer()
 {
 	bool bRecreateTexture = false;
-	static bool bDrawPass[4] = { true };
+	static bool bDrawPass[4] = { true, true, true, true };
 #ifndef NDEBUG
 	if (ImGui::Checkbox("Pass 1", &bDrawPass[0]))
 		bRecreateTexture = true;

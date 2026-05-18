@@ -52,6 +52,8 @@ private:
 	void ClearHistory();
 	void DrawHistoryTab();
 	void DrawHistoryDetails(int index);
+	void DrawResultsTab();
+	void FormatEntry(FHistorySpriteEntry& e);
 
 private:
 	static const int kNumSprites = 64;
@@ -75,7 +77,7 @@ private:
 	std::vector<FHistorySpriteEntry> SpriteHistory;
 	uint32_t SlotHash[kNumSprites] = {};
 	int HistorySelectedSprite = -1;
-	int FindFormatCursor = -1;
-	int FindFormatFound  = 0;
-	int FindFormatTotal  = 0;
+	int FindCursor = -1;
+	int FindFound  = 0;
+	int FindTotal  = 0;
 };
