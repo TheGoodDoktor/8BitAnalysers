@@ -1550,15 +1550,21 @@ void FPCEEmu::AddLabels()
 	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x222d), "joytrg", ELabelType::Data, 5);
 	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2232), "joyold", ELabelType::Data, 5);
 
-	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
+	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank.
 	for (int i = 0; i < kDebugLabelCount; i++)
 	{
 		const FAddressRef addr = FAddressRef(BankSets[kBankHWPage].GetBankId(), kDebugLabels[i].Address);
 		// This causes AnalyseAtPC to be called on memory addresses that are not code.
 		// An example of this is hello.pce at address 0xe001
 		//SetItemCode(state, addr);
-		const std::string name = std::string("_") + kDebugLabels[i].Label;
 		AddLabel(state, addr, kDebugLabels[i].Label, ELabelType::Data);
+
+		if (kDebugLabels[i].Comment != nullptr)
+		{
+			FCommentBlock* pComment = AddCommentBlock(state, addr);
+			if (pComment->Comment.empty())
+				pComment->Comment = kDebugLabels[i].Comment;
+		}
 	}
 }
 
