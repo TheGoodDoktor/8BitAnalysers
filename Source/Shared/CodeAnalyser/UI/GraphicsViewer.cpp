@@ -398,9 +398,12 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 
 	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 	{
-		const uint8_t* pSrc = &pBank->Memory[memAddr & bankSizeMask];
+		const uint16_t bankOffset = memAddr & bankSizeMask;
+		const uint8_t * pSrc = &pBank->Memory[bankOffset];
 		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
-		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, ycount, palette);
+		const int bytesInBank = (bankSizeMask + 1) - bankOffset;
+		const int safeYCount = std::min(ycount, bytesInBank / 128);
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, safeYCount, palette);
 		return;
 	}
 	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
@@ -474,9 +477,12 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16
 
 	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 	{
-		const uint8_t* pSrc = &pBank->Memory[memAddr & bankSizeMask];
+		const uint16_t bankOffset = memAddr & bankSizeMask;
+		const uint8_t * pSrc = &pBank->Memory[bankOffset];
 		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
-		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, ycount / 2, palette);
+		const int bytesInBank = (bankSizeMask + 1) - bankOffset;
+		const int safeYCount = std::min(ycount / 2, bytesInBank / 128);
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, safeYCount, palette);
 		return;
 	}
 	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
