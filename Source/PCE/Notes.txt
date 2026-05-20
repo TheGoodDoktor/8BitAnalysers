@@ -16,7 +16,6 @@ TODO
 - add audio viewer: disable channels etc
 - hook up more events: audio, etc
 - improve Claude.md
-- when formatting memory as sprite dont use current (transient) palette data. 
 - remove dupe banks from graphics viewer dropdown
 - get graphics view displaying sprites
 - eliminate all dupe bank bugs (some still exist)
@@ -27,6 +26,7 @@ TODO
 - layout of background viewer clunky
 - history sprite palettes are not correct sometimes. rabio lepus intro.
 - sprites dont display correctly in code analysis view correctly. hero tonma clouds.
+- show which palettes are BG/sprites/user in palette dropdowns
 
 NICE TO HAVE
 - add way to understand/visualise if interrupts are active?
@@ -57,6 +57,7 @@ IDEAS
 - ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
 
 DONE
+- when formatting memory as sprite dont use current (transient) palette data. 
 - fix code analysis detail pane getting stuck off screen when fixed
 - palettes get added at index 67
 - add memory viewer (at least for vram). see https://github.com/ocornut/imgui_club
