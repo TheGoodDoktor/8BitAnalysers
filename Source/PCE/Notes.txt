@@ -39,6 +39,7 @@ BUGS
 - edit mode doesnt restore properly. emulation bugs afer restoring
 - sprites formatted by sprite viewer dont draw correctly.
 - code analysis view doesnt go to address that was last viewed after loading project.
+- crash in ImGui::DockContextEndFrame(). can happen on start up.
 
 IDEAS
 - [perf] Create code analysis pages on demand. would make creating banks trivial
@@ -53,6 +54,8 @@ IDEAS
 - preview format before format is pressed
 - make graphics viewer texture smaller when viewing banks. it's too big for 8k banks.
 - add button to save all sprites in history view
+- always collapse/hide bytes in HW page.
+- ctrl + arrow keys jumps to next/prev label
 - add scroll overlay on background view (like Mesen does)
 - ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
 
