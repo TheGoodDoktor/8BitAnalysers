@@ -90,6 +90,7 @@ public:
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
 	const FProjectConfig*	GetProjectConfig() const { return pCurrentProjectConfig; }
 	virtual FGraphicsView*	GetScreen() const { return nullptr; }
+	virtual const uint8_t*	GetScreenBuffer(int& width, int& height) const { width = 0; height = 0; return nullptr; } // sam
 	bool					HasProjectLoaded() const { return pCurrentProjectConfig != nullptr; }
 
 	void	RequestQuit() { bQuitRequested = true; }

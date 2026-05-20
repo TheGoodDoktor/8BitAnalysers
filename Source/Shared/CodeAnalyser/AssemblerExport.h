@@ -11,6 +11,7 @@
 
 class FCodeAnalysisState;
 struct FCodeAnalysisBank;
+struct FFunctionInfo;
 
 struct FAssemblerConfig
 {
@@ -28,6 +29,7 @@ class FASMExporter
 {
 public:
 	bool		Init(const char* pFilename, class FEmuBase* pEmu);
+	bool		Init(std::string* pOutStr, class FEmuBase* pEmu);
 	bool		Finish();
 	void		SetOutputToHeader(){OutputString = &HeaderText;}
 	void		SetOutputToBody(){OutputString = &BodyText;}
@@ -38,6 +40,7 @@ public:
 	virtual void	AddHeader(void) {}
 	virtual void	AddBankSection(const FCodeAnalysisBank* pBank);
 	virtual void	ProcessLabelsOutsideExportedRange(void){}
+	//void			OutputFunctionDescription(const FFunctionInfo* pFunctionInfo);
 
 	// sam. Output operand label at labelAddress. Returns the label if was successful or nullptr if not.
 	// The labelAddress can be modified by the function.
@@ -67,6 +70,7 @@ protected:
 	void			OutputLabelWithOffsets(const FLabelInfo* pLabel, const FAddressRef& labelAddress, int searchOffset, uint16_t disassemblyValue, dasm_output_t outputCallback);
 
 	void				OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataInfo);
+	int				OutputOpcodeBytes(FAddressRef addr, const FCodeInfo* pCodeInfo);
 	ENumberDisplayMode	GetNumberDisplayModeForDataItem(const FDataInfo* pDataInfo);
 
 	// sam. track line numbers
@@ -97,6 +101,8 @@ protected:
 	std::string		BodyText;
 	std::string*	OutputString = nullptr;
 
+	std::string*	ExportOutputString = nullptr;
+
 	FAssemblerConfig	Config;
 };
 
@@ -105,8 +111,14 @@ const std::map<std::string, FASMExporter*>&	GetAssemblerExporters();
 
 bool AddAssemblerExporter(const char* pName, FASMExporter* pExporter);
 
-// Export physical address range
+// Export physical address range to a file.
 bool ExportAssembler(class FEmuBase* pEmu, const char* pTextFileName, uint16_t startAddr, uint16_t endAddr);
 
-// Export selected banks. Passing in an empty bankList will export all banks. 
+// Export selected banks to a file. Passing in an empty bankList will export all banks. 
 bool ExportAssemblerForBanks(class FEmuBase* pEmu, const char* pTextFileName, const std::vector<int16_t>& bankList = std::vector<int16_t>());
+
+// Export physical address range to a string.
+bool ExportAssembler(FEmuBase* pEmu, std::string* pOutStr, uint16_t startAddr, uint16_t endAddr);
+
+// needed?
+//bool ExportFunctionStubs(FEmuBase* pEmu, const char* pTextFileName);

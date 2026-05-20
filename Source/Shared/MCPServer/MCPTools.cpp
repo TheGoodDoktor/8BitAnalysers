@@ -83,7 +83,7 @@ public:
 
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		std::string functionName = arguments["function_name"].get<std::string>();
-		FAddressRef funcAddress;
+		//FAddressRef funcAddress;
 		const FFunctionInfo* pFuncInfo = codeAnalysis.FindFunctionByName(functionName.c_str());
 		if (pFuncInfo)
 		{
@@ -179,7 +179,7 @@ public:
 
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		std::string functionName = arguments["function_name"].get<std::string>();
-		FAddressRef funcAddress;
+		//FAddressRef funcAddress;
 		const FFunctionInfo* pFuncInfo = codeAnalysis.FindFunctionByName(functionName.c_str());
 		if (pFuncInfo)
 		{
@@ -235,7 +235,9 @@ public:
 			return { {"error", "start_address must be <= end_address"} };
 
 		nlohmann::json result;
-		result["disassembly"] = "// Assembler export not yet wired up for this platform";
+		std::string outStr;
+		ExportAssembler(pEmu, &outStr, startAddress, endAddress);
+		result["disassembly"] = outStr;
 		return result;
 	}
 };

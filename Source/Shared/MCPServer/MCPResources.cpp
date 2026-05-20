@@ -234,8 +234,9 @@ public:
 
 	std::string Read(FEmuBase* pEmulator) override
 	{
-		FGraphicsView* pScreen = pEmulator->GetScreen();
-		if (!pScreen || !pScreen->GetPixelBuffer())
+		int width = 0, height = 0;
+		const uint8_t* pBuffer = pEmulator->GetScreenBuffer(width, height);
+		if (!pBuffer || width == 0 || height == 0)
 			return "";
 
 		std::vector<uint8_t> pngData;
@@ -247,11 +248,11 @@ public:
 				vec->insert(vec->end(), bytes, bytes + size);
 			},
 			&pngData,
-			pScreen->GetWidth(),
-			pScreen->GetHeight(),
+			width,
+			height,
 			4,
-			pScreen->GetPixelBuffer(),
-			pScreen->GetWidth() * (int)sizeof(uint32_t)
+			pBuffer,
+			width * 4
 		);
 
 		if (pngData.empty())

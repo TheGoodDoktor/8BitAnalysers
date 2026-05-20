@@ -2095,6 +2095,20 @@ void FPCEEmu::DrawEmulatorUI()
 {
 }
 
+FGraphicsView* FPCEEmu::GetScreen() const
+{
+	return nullptr;
+}
+
+const uint8_t* FPCEEmu::GetScreenBuffer(int& width, int& height) const
+{
+	GG_Runtime_Info info;
+	pCore->GetRuntimeInfo(info);
+	width  = info.screen_width;
+	height = info.screen_height;
+	return pFrameBuffer;
+}
+
 
 void FPCEEmu::AppFocusCallback(int focused)
 {
@@ -2185,9 +2199,9 @@ void FPCEEmu::DetectDirtyBanks()
 
 void FPCELaunchConfig::ParseCommandline(int argc, char** argv)
 {
-	/*
 	FEmulatorLaunchConfig::ParseCommandline(argc,argv);	// call base class
 
+	/*
 	std::vector<std::string> argList;
 	for (int arg = 0; arg < argc; arg++)
 	{

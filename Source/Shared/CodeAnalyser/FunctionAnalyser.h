@@ -105,6 +105,9 @@ struct FFunctionInfo : FMemoryRegion
 	std::string		Description;
 	bool bManualEdit = false;
 	bool bROMFunction = false;
+	bool bStubbedOut = false;
+	bool bStubImplemented = false;
+	bool bCommentedOut = false;
 
 	bool IsVisited() const { return StartAddress != EndAddress; }
 
@@ -147,6 +150,7 @@ struct FFunctionInfo : FMemoryRegion
 class FFunctionInfoCollection
 {
 public:
+	FFunctionInfoCollection(FCodeAnalysisState* pState) :pAnalyser(pState) {}
 
 	void Clear()
 	{
@@ -229,10 +233,13 @@ public:
 		return nullptr;
 	}
 
+	FFunctionInfo* FindFunctionByName(const char *name);
+
 	const std::map<FAddressRef, FFunctionInfo>& GetFunctions() const { return Functions; }
 
 private:
 	std::map<FAddressRef, FFunctionInfo> Functions;
+	FCodeAnalysisState* pAnalyser = nullptr;
 };
 
 // Data regions
