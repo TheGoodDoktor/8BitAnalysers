@@ -231,6 +231,7 @@ void FEmuBase::DrawUI()
 
 	// Code analysis views
 	CodeAnalysis.UpdateFocussedViewState();
+	ProcessDebuggerKeyCommands(CodeAnalysis);
 	for (int codeAnalysisNo = 0; codeAnalysisNo < FCodeAnalysisState::kNoViewStates; codeAnalysisNo++)
 	{
 		char name[32];
