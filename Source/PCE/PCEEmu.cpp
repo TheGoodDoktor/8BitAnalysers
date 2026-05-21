@@ -76,6 +76,12 @@ constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAn
 const char* FPCEEmu::kPCERomGameListName = "PCE ROM File";
 const char* FPCEEmu::kCDRomGameListName = "CD-ROM Image";
 
+constexpr uint16_t kVecReset = 0xfffe;
+constexpr uint16_t kVecNMI	 = 0xfffc;
+constexpr uint16_t kVecTimer = 0xfffa;
+constexpr uint16_t kVecIRQ1  = 0xfff8;
+constexpr uint16_t kVecIRQ2  = 0xfff6;
+
 #ifndef NDEBUG
 #define BANK_SWITCH_DEBUG 0
 #define BATCH_GAME_VIEWER 1
@@ -1518,6 +1524,17 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	return true;
 }
 
+void FormatMemoryAsPtr(FCodeAnalysisState& state, uint16_t addr)
+{
+	if (FDataInfo* pDataItem = state.GetReadDataInfoForAddress(addr))
+	{
+		pDataItem->DataType = EDataType::Word;
+		pDataItem->ByteSize = 2;
+		pDataItem->DisplayType = EDataItemDisplayType::Pointer;
+		state.SetCodeAnalysisDirty(addr);
+	}
+}
+
 void FPCEEmu::AddLabels()
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
@@ -1566,6 +1583,19 @@ void FPCEEmu::AddLabels()
 				pComment->Comment = kDebugLabels[i].Comment;
 		}
 	}
+
+	// todo make these all functions
+	FormatMemoryAsPtr(CodeAnalysis, kVecReset);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecReset), "ResetVector", ELabelType::Data);
+	FormatMemoryAsPtr(CodeAnalysis, kVecNMI);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecNMI), "NMIVector", ELabelType::Data);
+	FormatMemoryAsPtr(CodeAnalysis, kVecTimer);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecTimer), "TimerVector", ELabelType::Data);
+	FormatMemoryAsPtr(CodeAnalysis, kVecIRQ1);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecIRQ1), "IRQ1Vector", ELabelType::Data);
+	FormatMemoryAsPtr(CodeAnalysis, kVecIRQ2);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecIRQ2), "IRQ2Vector", ELabelType::Data);
+	
 }
 
 bool FPCEEmu::SaveMachineState(const char* path, int index /* = -1 */)
