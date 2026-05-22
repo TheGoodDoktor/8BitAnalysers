@@ -34,6 +34,7 @@ BUGS
 - edit mode doesnt restore properly. emulation bugs afer restoring
 - sprites formatted by sprite viewer dont draw correctly.
 - code analysis view doesnt go to address that was last viewed after loading project.
+- Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
 
 IDEAS
 - [perf] Create code analysis pages on demand. would make creating banks trivial
