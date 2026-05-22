@@ -2174,50 +2174,7 @@ void FPCEEmu::DetectDirtyBanks()
 
 void FPCELaunchConfig::ParseCommandline(int argc, char** argv)
 {
-	/*
 	FEmulatorLaunchConfig::ParseCommandline(argc,argv);	// call base class
-
-	std::vector<std::string> argList;
-	for (int arg = 0; arg < argc; arg++)
-	{
-		argList.emplace_back(argv[arg]);
-	}
-
-	auto argIt = argList.begin();
-	argIt++;	// skip exe name
-	while (argIt != argList.end())
-	{
-		if (*argIt == std::string("-128"))
-		{
-			Model = ESpectrumModel::Spectrum128K;
-		}
-		else if (*argIt == std::string("-game"))
-		{
-			if (++argIt == argList.end())
-			{
-				LOGERROR("-game : No game specified");
-				break;
-			}
-			SpecificGame = *argIt;
-		}
-		else if (*argIt == std::string("-skoolfile"))
-		{
-			if (SpecificGame.empty())
-			{
-				LOGERROR("-skoolfile : A game must be specified with the -game argument.");
-				break;
-			}
-
-			if (++argIt == argList.end())
-			{
-				LOGERROR("-skoolfile : No skoolkit file specified");
-				break;
-			}
-			SkoolkitImport = *argIt;
-		}
-
-		++argIt;
-	}*/
 }
 
 /*
