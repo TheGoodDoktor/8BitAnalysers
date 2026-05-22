@@ -12,8 +12,29 @@
 
 #include "Misc/EmuBase.h"
 
-static const int kMemoryViewImageWidth = 128;
+static const int kMemoryViewImageWidth  = 128;
 static const int kMemoryViewImageHeight = 256;
+
+static const int kVRAMTileViewWidth    = 256;   // 32 tiles across
+static const int kVRAMTileViewHeight   = 256;   // 32 tile rows = 1024 tiles visible
+static const int kVRAMSpriteViewWidth  = 256;   // 16 sprite blocks across
+static const int kVRAMSpriteViewHeight = 256;   // 16 sprite rows = 256 blocks visible
+
+static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
+
+// Build a 16-entry RGBA palette from the HuC6260 colour table.
+// paletteBase is the colour table index of colour 0 for this palette.
+static void BuildHWPalette(const u16* colorTable, int paletteBase, uint32_t* out)
+{
+	for (int i = 0; i < 16; i++)
+	{
+		const u16 cv = colorTable[paletteBase + i];
+		const u8 r = kExpand3to8[(cv >> 3) & 7];
+		const u8 g = kExpand3to8[(cv >> 6) & 7];
+		const u8 b = kExpand3to8[cv & 7];
+		out[i] = 0xFF000000u | ((uint32_t)b << 16) | ((uint32_t)g << 8) | r;
+	}
+}
 
 FVRAMViewer::FVRAMViewer(FEmuBase* pEmu)
 	: FViewerBase(pEmu)
@@ -25,7 +46,13 @@ FVRAMViewer::FVRAMViewer(FEmuBase* pEmu)
 bool FVRAMViewer::Init(void)
 {
 	MemoryViewImage = new FGraphicsView(kMemoryViewImageWidth, kMemoryViewImageHeight);
-	MemoryViewImage->Clear(0xff000000);	
+	MemoryViewImage->Clear(0xff000000);
+
+	BGTileViewImage = new FGraphicsView(kVRAMTileViewWidth, kVRAMTileViewHeight);
+	BGTileViewImage->Clear(0xff000000);
+
+	SpriteViewImage = new FGraphicsView(kVRAMSpriteViewWidth, kVRAMSpriteViewHeight);
+	SpriteViewImage->Clear(0xff000000);
 
 	return true;
 }
@@ -45,7 +72,114 @@ void FVRAMViewer::Reset(void)
 
 void FVRAMViewer::DrawUI(void)
 {
-	DrawPhysicalMemoryOverview();
+	if (ImGui::BeginTabBar("VRAMViewerTabs"))
+	{
+		if (ImGui::BeginTabItem("Map"))
+		{
+			DrawPhysicalMemoryOverview();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("BG Tiles"))
+		{
+			DrawBGTileView();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Sprites"))
+		{
+			DrawSpriteView();
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
+	}
+}
+
+void FVRAMViewer::DrawBGTileView()
+{
+	HuC6270* huc6270   = pPCEEmu->GetCore()->GetHuC6270_1();
+	HuC6260* huc6260   = pPCEEmu->GetCore()->GetHuC6260();
+	const u16* vram       = huc6270->GetVRAM();
+	const u16* colorTable = huc6260->GetColorTable();
+
+	ImGui::SliderInt("Palette##bgtile", &BGTilePalette, 0, 15);
+	ImGui::InputInt("Scale##bgtile",    &BGTileScale, 1, 1);
+	BGTileScale = MAX(1, BGTileScale);
+
+	constexpr int kTilesPerRow  = kVRAMTileViewWidth  / 8;  // 32
+	constexpr int kTileRowCount = kVRAMTileViewHeight / 8;  // 32
+	constexpr int kTilesVisible = kTilesPerRow * kTileRowCount;   // 1024
+	constexpr int kMaxTiles     = HUC6270_VRAM_SIZE / 16;         // 2048
+
+	BGTileOffset = MAX(0, MIN(BGTileOffset, kMaxTiles - kTilesVisible));
+
+	uint32_t palette[16];
+	BuildHWPalette(colorTable, BGTilePalette * 16, palette);
+
+	BGTileViewImage->Clear(0xFF000000);
+	const int tilesAvailable = MIN(kTilesVisible, kMaxTiles - BGTileOffset);
+	const int rowsToDraw     = tilesAvailable / kTilesPerRow;
+	if (rowsToDraw > 0)
+	{
+		const uint8_t* pSrc = reinterpret_cast<const uint8_t*>(vram + BGTileOffset * 16);
+		BGTileViewImage->Draw4bpp8x8PlanarBGTileImage(pSrc, 0, 0, kTilesPerRow, rowsToDraw, palette);
+	}
+	BGTileViewImage->UpdateTexture();
+
+	const float scale = ImGui_GetScaling() * (float)BGTileScale;
+	const ImVec2 imageSize(kVRAMTileViewWidth * scale, kVRAMTileViewHeight * scale);
+	ImGui::Image((void*)BGTileViewImage->GetTexture(), imageSize);
+
+	if (ImGui::IsItemHovered())
+	{
+		const float wheel = ImGui::GetIO().MouseWheel;
+		BGTileOffset = MAX(0, MIN(BGTileOffset - (int)wheel * kTilesPerRow, kMaxTiles - kTilesVisible));
+	}
+
+	ImGui::SliderInt("Tile##bgtileoffset", &BGTileOffset, 0, kMaxTiles - kTilesVisible);
+}
+
+void FVRAMViewer::DrawSpriteView()
+{
+	HuC6270* huc6270   = pPCEEmu->GetCore()->GetHuC6270_1();
+	HuC6260* huc6260   = pPCEEmu->GetCore()->GetHuC6260();
+	const u16* vram       = huc6270->GetVRAM();
+	const u16* colorTable = huc6260->GetColorTable();
+
+	ImGui::SliderInt("Palette##spr", &SpritePalette, 0, 15);
+	ImGui::InputInt("Scale##spr",    &SpriteScale, 1, 1);
+	SpriteScale = MAX(1, SpriteScale);
+
+	constexpr int kSpritesPerRow  = kVRAMSpriteViewWidth  / 16; // 16
+	constexpr int kSpriteRowCount = kVRAMSpriteViewHeight / 16; // 16
+	constexpr int kBlocksVisible  = kSpritesPerRow * kSpriteRowCount;  // 256
+	constexpr int kMaxBlocks      = HUC6270_VRAM_SIZE / 64;            // 512
+
+	SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset, kMaxBlocks - kBlocksVisible));
+
+	// Sprite palettes occupy the second half of the colour table (offset 0x100)
+	uint32_t palette[16];
+	BuildHWPalette(colorTable, 0x100 + SpritePalette * 16, palette);
+
+	SpriteViewImage->Clear(0xFF000000);
+	const int blocksAvailable = MIN(kBlocksVisible, kMaxBlocks - SpriteBlockOffset);
+	const int rowsToDraw      = blocksAvailable / kSpritesPerRow;
+	if (rowsToDraw > 0)
+	{
+		const uint8_t* pSrc = reinterpret_cast<const uint8_t*>(vram + SpriteBlockOffset * 64);
+		SpriteViewImage->Draw4bpp16x16PlanarSpriteImage(pSrc, 0, 0, kSpritesPerRow, rowsToDraw, palette);
+	}
+	SpriteViewImage->UpdateTexture();
+
+	const float scale = ImGui_GetScaling() * (float)SpriteScale;
+	const ImVec2 imageSize(kVRAMSpriteViewWidth * scale, kVRAMSpriteViewHeight * scale);
+	ImGui::Image((void*)SpriteViewImage->GetTexture(), imageSize);
+
+	if (ImGui::IsItemHovered())
+	{
+		const float wheel = ImGui::GetIO().MouseWheel;
+		SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset - (int)wheel * kSpritesPerRow, kMaxBlocks - kBlocksVisible));
+	}
+
+	ImGui::SliderInt("Block##sproffset", &SpriteBlockOffset, 0, kMaxBlocks - kBlocksVisible);
 }
 
 void	FVRAMViewer::DrawLegend()

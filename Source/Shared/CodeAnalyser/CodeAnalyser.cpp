@@ -1457,7 +1457,7 @@ FCodeAnalysisState::FCodeAnalysisState()
 	}
 
     pDataTypes = new FDataTypes;
-	pFunctions = new FFunctionInfoCollection;
+	pFunctions = new FFunctionInfoCollection(this);
 	pDataRegions = new FDataRegionList;
 }
 

@@ -70,7 +70,10 @@ public:
 	// Returns the primary bank ID for a given bank ID.
 	// This allows shared code to redirect any duplicate bank ID to the primary for label lookups.
 	int16_t	GetCanonicalBankId(int16_t bankId) const override;
+	bool IsBankIdCanonical(int16_t bankId) const { return GetCanonicalBankId(bankId) == bankId; };
 	
+	FGraphicsView*	GetScreen() const override;
+	const uint8_t*	GetScreenBuffer(int& width, int& height) const override;
 	// FEmuBase End
 
 	// disable copy & assign because this class is big!

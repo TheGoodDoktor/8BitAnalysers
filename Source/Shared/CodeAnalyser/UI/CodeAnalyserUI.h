@@ -56,6 +56,7 @@ EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat);
 void DrawSnippetToolTip(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FAddressRef addr, int noLines = 10);
 
 void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId);
+void ProcessDebuggerKeyCommands(FCodeAnalysisState& state); // sam
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
 
 float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo);

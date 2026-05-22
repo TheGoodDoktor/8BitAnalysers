@@ -13,6 +13,7 @@
 #include <CodeAnalyser/Z80/Z80Disassembler.h>
 #include "UI/CodeAnalyserUI.h"
 #include "Disassembler.h"
+#include "FunctionAnalyser.h"
 
 
 FAssemblerConfig g_DefaultConfig = {
@@ -49,6 +50,7 @@ bool FASMExporter::Init(const char* pFilename, FEmuBase* pEmu)
 {
 	pEmulator = pEmu;
 	FilePtr = fopen(pFilename, "wt");
+	ExportOutputString = nullptr;
 
 	if (FilePtr == nullptr)
 		return false;
@@ -77,6 +79,33 @@ bool FASMExporter::Init(const char* pFilename, FEmuBase* pEmu)
 	return true;
 }
 
+bool FASMExporter::Init(std::string* pOutStr, FEmuBase* pEmu)
+{
+	pEmulator = pEmu;
+	FilePtr = nullptr;
+	ExportOutputString = pOutStr;
+
+	HeaderText.clear();
+	BodyText.clear();
+	ExportRanges.clear();
+	DasmState.CodeAnalysisState = &pEmu->GetCodeAnalysis();
+	DasmState.HexDisplayMode = HexMode;
+	DasmState.LabelsOutsideRange.clear();
+	DasmState.NumRawValuesOutput = 0;
+
+	OldNumberMode = GetNumberDisplayMode();
+	SetNumberDisplayMode(HexMode);
+	bInitialised = true;
+
+	BodyLineNumber = 1;
+	HeaderLineNumber = 1;
+	DeferredWarnings.clear();
+
+	ExportDidBegin();
+
+	return true;
+}
+
 bool FASMExporter::Finish()
 {
 	// sam. log including line number
@@ -89,6 +118,10 @@ bool FASMExporter::Finish()
 		fwrite(HeaderText.c_str(), HeaderText.size(), 1, FilePtr);
 		fwrite(BodyText.c_str(), BodyText.size(),1,FilePtr);
 		fclose(FilePtr);
+	}
+	else if (ExportOutputString != nullptr)
+	{
+		*ExportOutputString = HeaderText + BodyText;
 	}
 
 	SetNumberDisplayMode(OldNumberMode);
@@ -230,13 +263,9 @@ void FASMExporter::AddBankSection(const FCodeAnalysisBank* pBank)
 
 bool FASMExporter::IsLabelStubbed(const char* pLabelName) const
 {
-	const FProjectConfig* pConfig = pEmulator->GetProjectConfig();
-	const std::string labelName(pLabelName);
-	for (const auto& stub : pConfig->StubOutFunctions)
-	{
-		if(stub == labelName)
+	FFunctionInfo* pFunc = pEmulator->GetCodeAnalysis().pFunctions->FindFunctionByName(pLabelName);
+	if (pFunc != nullptr && pFunc->bStubbedOut)
 			return true;
-	}
 
 	return false;
 }
@@ -288,6 +317,28 @@ void FASMExporter::OutputDataItemBytes(FAddressRef addr, const FDataInfo* pDataI
 		state.AdvanceAddressRef(byteAddress, 1);
 	}
 	Output("%s %s", Config.DataBytePrefix, textString.c_str());
+}
+
+int FASMExporter::OutputOpcodeBytes(FAddressRef addr, const FCodeInfo* pCodeInfo)
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	std::string textString;
+	FAddressRef byteAddress = addr;
+	for (int i = 0; i < pCodeInfo->ByteSize; i++)
+	{
+		const uint8_t val = state.ReadByte(byteAddress);
+		char valTxt[16];
+
+		snprintf(valTxt, 16, "%s", NumStr(val, HexMode));
+
+		textString += valTxt;
+		if (i < pCodeInfo->ByteSize - 1)
+			textString += ',';
+
+		state.AdvanceAddressRef(byteAddress, 1);
+	}
+	Output("%s %s", Config.DataBytePrefix, textString.c_str());
+	return (int)textString.size();
 }
 
 void FASMExporter::ExportDataInfoASM(FAddressRef addr)
@@ -396,6 +447,36 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	}
 }
 
+/*void FASMExporter::OutputFunctionDescription(const FFunctionInfo* pFunctionInfo)
+{
+	assert(pFunctionInfo != nullptr);
+	const FLabelInfo* pLabelInfo = pEmulator->GetCodeAnalysis().GetLabelForAddress(pFunctionInfo->StartAddress);
+	assert(pLabelInfo != nullptr);
+
+	Output("; Function: %s\n", pLabelInfo->GetName());
+	if (pFunctionInfo->Description.empty() == false)
+	{
+		Output("; Description: %s\n", pFunctionInfo->Description.c_str());
+	}
+	if (pFunctionInfo->Params.size() > 0)
+	{
+		Output("; Parameters:\n");
+		for (const FFunctionParam& param : pFunctionInfo->Params)
+		{
+			Output(";   %s\n", param.GenerateDescription(pEmulator->GetCodeAnalysis()).c_str());
+		}
+	}
+	if (pFunctionInfo->ReturnValues.size() > 0)
+	{
+		Output("; Returns:\n");
+		for (const FFunctionParam& retVal : pFunctionInfo->ReturnValues)
+		{
+			Output(";   %s\n", retVal.GenerateDescription(pEmulator->GetCodeAnalysis()).c_str());
+		}
+	}
+}*/
+
+// sam.
 bool FASMExporter::TryExportByteRun(FCodeAnalysisState& state, const std::vector<FCodeAnalysisItem>& itemList, int& itemIdx, uint16_t endAddr, uint16_t& nextAddr)
 {
 	const FCodeAnalysisItem& item = itemList[itemIdx];
@@ -663,6 +744,61 @@ bool ExportAssemblerForBanks(class FEmuBase* pEmu, const char* pTextFileName, co
 	pExporter->Finish();
 	return true;
 }
+
+bool ExportAssembler(FEmuBase* pEmu, std::string* pOutStr, uint16_t startAddr, uint16_t endAddr)
+{
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	FASMExporter* pExporter = GetAssemblerExporter(state.pGlobalConfig->ExportAssembler.c_str());
+	if (pExporter == nullptr)
+		return false;
+
+	if (pExporter->Init(pOutStr, pEmu) == false)
+		return false;
+
+	pExporter->SetOutputToHeader();
+	pExporter->AddHeader();
+
+	pExporter->SetOutputToBody();
+	const bool bSuccess = pExporter->ExportAddressRange(state.ItemList, startAddr, endAddr, true);
+
+	pExporter->Finish();
+	return bSuccess;
+}
+
+/*bool ExportFunctionStubs(FEmuBase* pEmu, const char* pTextFileName)
+{
+	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	FASMExporter* pExporter = GetAssemblerExporter(state.pGlobalConfig->ExportAssembler.c_str());
+	if (pExporter == nullptr)
+		return false;
+	if (pExporter->Init(pTextFileName, pEmu) == false)
+		return false;
+	pExporter->SetOutputToHeader();
+	pExporter->Output("; Function stubs\n");
+	pExporter->Output("; Functions marked as 'Stubbed out' in the function analyser\n");
+	pExporter->Output("; To implement the stub function, move to another file and mark function as 'Stub Implemented'\n");
+	pExporter->Output("; This file is machine generated and should NOT be edited.\n\n");
+	pExporter->AddHeader();
+	pExporter->SetOutputToBody();
+
+	// Export stubbed functions
+	for (const auto& funcIt : state.pFunctions->GetFunctions())
+	{
+		const FFunctionInfo& func = funcIt.second;
+		if (func.bStubbedOut && func.bStubImplemented == false)
+		{
+			const FLabelInfo* pLabelInfo = state.GetLabelForAddress(func.StartAddress);
+			assert(pLabelInfo != nullptr);
+			pExporter->Output("\n");
+			pExporter->OutputFunctionDescription(&func);
+			pExporter->Output("%s:\n", pLabelInfo->GetName());
+			pExporter->Output("\tJP %s_Stubbed ; Call original function\n", pLabelInfo->GetName());
+			//pExporter->Output("\t%s 0\n\n", pExporter->GetConfig().EQUText); // equ 0
+		}
+	}
+	pExporter->Finish();
+	return true;
+}*/
 
 // Util functions
 

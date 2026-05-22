@@ -587,6 +587,30 @@ void AddLabelAtAddressUI(FCodeAnalysisState& state,FAddressRef address)
 	}
 }
 
+// sam
+void ProcessDebuggerKeyCommands(FCodeAnalysisState& state)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantTextInput)
+		return;
+
+	if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::BreakContinue]))
+	{
+		if (state.Debugger.IsStopped())
+			state.Debugger.Continue();
+		else
+			state.Debugger.Break();
+	}
+	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepOver]))
+		state.Debugger.StepOver();
+	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepInto]))
+		state.Debugger.StepInto();
+	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepFrame]))
+		state.Debugger.StepFrame();
+	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepScreenWrite]))
+		state.Debugger.StepScreenWrite();
+}
+
 void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -789,35 +813,6 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		}
 	}
 
-	if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::BreakContinue]))
-	{
-		if (state.Debugger.IsStopped())
-		{
-			state.Debugger.Continue();
-			//viewState.TrackPCFrame = true;
-		}
-		else
-		{
-			state.Debugger.Break();
-		}
-	}
-	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepOver]))
-	{
-		state.Debugger.StepOver();
-	}
-	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepInto]))
-	{
-		state.Debugger.StepInto();
-	}
-	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepFrame]))
-	{
-		state.Debugger.StepFrame();
-	}
-	else if (ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::StepScreenWrite]))
-	{
-		state.Debugger.StepScreenWrite();
-	}
-
 	// navigation controls
 	if(io.KeyCtrl || io.KeyShift)
 	{
@@ -841,6 +836,61 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 		{
 			ImGui::OpenPopup("Goto Address");
 		}
+
+		// sam. make Ctrl + cursor up/down jump to the next/prev label 
+		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+		{
+			const std::vector<FCodeAnalysisItem>& itemList =
+				(viewState.ViewingBankId != -1 && state.GetBank(viewState.ViewingBankId) != nullptr)
+				? state.GetBank(viewState.ViewingBankId)->ItemList
+				: state.ItemList;
+
+			bool foundCursor = false;
+			for (int i = (int)itemList.size() - 1; i >= 0; i--)
+			{
+				const FCodeAnalysisItem& item = itemList[i];
+				if (!foundCursor)
+				{
+					if (item.AddressRef == cursorItem.AddressRef)
+						foundCursor = true;
+					continue;
+				}
+				if (item.AddressRef == cursorItem.AddressRef)
+					continue;
+				if (item.Item->Type == EItemType::Label)
+				{
+					viewState.GoToAddress(item.AddressRef, true);
+					break;
+				}
+			}
+		}
+		else if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+		{
+			const std::vector<FCodeAnalysisItem>& itemList =
+				(viewState.ViewingBankId != -1 && state.GetBank(viewState.ViewingBankId) != nullptr)
+				? state.GetBank(viewState.ViewingBankId)->ItemList
+				: state.ItemList;
+
+			bool foundCursor = false;
+			for (int i = 0; i < (int)itemList.size(); i++)
+			{
+				const FCodeAnalysisItem& item = itemList[i];
+				if (!foundCursor)
+				{
+					if (item.AddressRef == cursorItem.AddressRef)
+						foundCursor = true;
+					continue;
+				}
+				if (item.AddressRef == cursorItem.AddressRef)
+					continue;
+				if (item.Item->Type == EItemType::Label)
+				{
+					viewState.GoToAddress(item.AddressRef, true);
+					break;
+				}
+			}
+		}
+		// sam end
 	}
 }
 

@@ -11,21 +11,26 @@ TODO
 - Implement CodeAnalyserHuC6280.cpp
 - reset viewers on soft reset
 - trace button doesnt seem to work in code analysis view
-- make screen appear when loading a saved project
 - dupe bank issues in hello.pce project. "FAddressRef::SetVal on unmapped bank 62 ROM_01_3. ref will be invalid." followed by assert in FItemRefernceTracker::RegisterAccess
 - deal with multiple operands, such as block operations etc [partially done]
 - add audio viewer: disable channels etc
 - hook up more events: audio, etc
-- add way to understand/visualise if interrupts are active?
 - improve Claude.md
+- remove dupe banks from graphics viewer dropdown
+- get graphics view displaying sprites
+- eliminate all dupe bank bugs (some still exist)
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - get graphics viewer displaying sprites
 - change Current palette option in graphics viewer. doesnt make sense for PCE
 - tidy up sprites viewer detail pane
 - layout of background viewer clunky
-- palettes get added at index 67
 - history sprite palettes are not correct sometimes. rabio lepus intro.
-- sprites dont display correctly in code analysis view correctly. hero tonma clouds
+- sprites dont display correctly in code analysis view correctly. hero tonma clouds.
+- show which palettes are BG/sprites/user in palette dropdowns
+
+NICE TO HAVE
+- add way to understand/visualise if interrupts are active?
+- make screen appear when loading a saved project
 
 BUGS
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
@@ -35,6 +40,7 @@ BUGS
 - sprites formatted by sprite viewer dont draw correctly.
 - code analysis view doesnt go to address that was last viewed after loading project.
 - Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
+- crash in ImGui::DockContextEndFrame(). can happen on start up.
 
 IDEAS
 - [perf] Create code analysis pages on demand. would make creating banks trivial
@@ -49,8 +55,16 @@ IDEAS
 - preview format before format is pressed
 - make graphics viewer texture smaller when viewing banks. it's too big for 8k banks.
 - add button to save all sprites in history view
+- always collapse/hide bytes in HW page.
+- ctrl + arrow keys jumps to next/prev label
+- add scroll overlay on background view (like Mesen does)
+- ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
 
 DONE
+- when formatting memory as sprite dont use current (transient) palette data. 
+- fix code analysis detail pane getting stuck off screen when fixed
+- palettes get added at index 67
+- add memory viewer (at least for vram). see https://github.com/ocornut/imgui_club
 - get BG data item working
 - add suport for <label> + <offset> to asm exporter?
 - fix first code byte always being data

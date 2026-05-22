@@ -48,9 +48,9 @@ void FSpriteViewer::ClearHistory()
 	}
 	SpriteHistory.clear();
 	HistorySelectedSprite = -1;
-	FindFormatCursor = -1;
-	FindFormatFound  = 0;
-	FindFormatTotal  = 0;
+	FindCursor = -1;
+	FindFound  = 0;
+	FindTotal  = 0;
 	// SlotHash is deliberately NOT cleared here so sprites don't immediately
 	// re-enter history — they'll only be re-captured when their VRAM data changes.
 }
@@ -205,7 +205,7 @@ void FSpriteViewer::UpdateSpriteHistory()
 		if (pPCEEmu->GetVRAMViewer()->GetVRAMAccess(info.Address).FrameLastWritten == -1)
 			continue;
 
-		const int sizeWords = info.SizeInBytes < 32 ? info.SizeInBytes : 32;
+		const int sizeWords = info.SizeInBytes / 2;
 		if (info.Address + sizeWords > HUC6270_VRAM_SIZE)
 			continue;
 
@@ -257,21 +257,21 @@ void FSpriteViewer::Tick()
 
 	UpdateSpriteHistory();
 
-	// Find & Format All — process a batch of entries per frame
-	if (FindFormatCursor >= 0 && FindFormatCursor < (int)SpriteHistory.size())
+	// Find All — process a batch of entries per frame (search only, no formatting)
+	if (FindCursor >= 0 && FindCursor < (int)SpriteHistory.size())
 	{
 		const int kBatchSize = 8;
-		const int end = FindFormatCursor + kBatchSize < (int)SpriteHistory.size()
-		              ? FindFormatCursor + kBatchSize
+		const int end = FindCursor + kBatchSize < (int)SpriteHistory.size()
+		              ? FindCursor + kBatchSize
 		              : (int)SpriteHistory.size();
 		FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
-		for (int i = FindFormatCursor; i < end; i++)
+		for (int i = FindCursor; i < end; i++)
 		{
 			FHistorySpriteEntry& e = SpriteHistory[i];
 			if (e.FoundDataAddr.IsValid())
 			{
-				FindFormatFound++;
+				FindFound++;
 				continue;
 			}
 
@@ -281,23 +281,27 @@ void FSpriteViewer::Tick()
 				if (!results.empty())
 				{
 					e.FoundDataAddr = results[0];
-					FindFormatFound++;
-
-					FDataFormattingOptions options;
-					options.DataType     = EDataType::Bitmap;
-					options.DisplayType  = EDataItemDisplayType::Sprite4Bpp_PCE;
-					options.StartAddress = e.FoundDataAddr;
-					options.ItemSize     = e.Width / 2;
-					options.NoItems      = e.Height;
-					options.PaletteNo    = pPCEEmu->CreateUserPalette(16 + e.Palette);
-					FormatData(state, options);
-					state.SetCodeAnalysisDirty(options.StartAddress);
-					e.bFormatted = true;
+					FindFound++;
 				}
 			}
 		}
-		FindFormatCursor = end;
+		FindCursor = end;
 	}
+}
+
+void FSpriteViewer::FormatEntry(FHistorySpriteEntry& e)
+{
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+	FDataFormattingOptions options;
+	options.DataType     = EDataType::Bitmap;
+	options.DisplayType  = EDataItemDisplayType::Sprite4Bpp_PCE;
+	options.StartAddress = e.FoundDataAddr;
+	options.ItemSize     = e.Width / 2;
+	options.NoItems      = e.Height;
+	options.PaletteNo    = pPCEEmu->CreateUserPalette(16 + e.Palette);
+	FormatData(state, options);
+	state.SetCodeAnalysisDirty(options.StartAddress);
+	e.bFormatted = true;
 }
 
 static const ImVec4 cyan   = ImVec4(0.0f, 1.0f, 1.0f, 1.0f);
@@ -436,6 +440,12 @@ void FSpriteViewer::DrawUI()
 			ImGui::EndTabItem();
 		}
 
+		if (ImGui::BeginTabItem("Results"))
+		{
+			DrawResultsTab();
+			ImGui::EndTabItem();
+		}
+
 		ImGui::EndTabBar();
 	}
 }
@@ -452,25 +462,25 @@ void FSpriteViewer::DrawHistoryTab()
 		ClearHistory();
 	ImGui::SameLine();
 
-	if (FindFormatCursor < 0)
+	if (FindCursor < 0)
 	{
-		if (!SpriteHistory.empty() && ImGui::Button("Find & Format All"))
+		if (!SpriteHistory.empty() && ImGui::Button("Find All"))
 		{
-			FindFormatCursor = 0;
-			FindFormatFound  = 0;
-			FindFormatTotal  = (int)SpriteHistory.size();
+			FindCursor = 0;
+			FindFound  = 0;
+			FindTotal  = (int)SpriteHistory.size();
 		}
 	}
-	else if (FindFormatCursor < FindFormatTotal)
+	else if (FindCursor < FindTotal)
 	{
-		ImGui::Text("Finding... %d/%d  (%d found)", FindFormatCursor, FindFormatTotal, FindFormatFound);
+		ImGui::Text("Searching... %d/%d  (%d found)", FindCursor, FindTotal, FindFound);
 	}
 	else
 	{
-		ImGui::Text("Done: %d / %d found", FindFormatFound, FindFormatTotal);
+		ImGui::Text("Done: %d / %d found", FindFound, FindTotal);
 		ImGui::SameLine();
 		if (ImGui::Button("OK"))
-			FindFormatCursor = -1;
+			FindCursor = -1;
 	}
 
 	ImGui::Separator();
@@ -500,13 +510,11 @@ void FSpriteViewer::DrawHistoryTab()
 					const float fw = (float)e.Width  * scale;
 					const float fh = (float)e.Height * scale;
 
-					// Centre within cell
 					if (fw < colWidth)
 						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (colWidth - fw) * 0.5f);
 					if (fh < colHeight)
 						ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (colHeight - fh) * 0.5f);
 
-					// UV (1,1): texture is exactly Width×Height pixels, not MAX size
 					ImGui::Image(e.Texture, ImVec2(fw, fh), ImVec2(0, 0), ImVec2(1.0f, 1.0f));
 
 					if (ImGui::IsItemHovered())
@@ -527,7 +535,6 @@ void FSpriteViewer::DrawHistoryTab()
 					}
 					else if (e.bFormatted)
 					{
-						// Green tint border on already-formatted entries
 						const ImVec2 rmin = ImGui::GetItemRectMin();
 						const ImVec2 rmax = ImGui::GetItemRectMax();
 						ImGui::GetWindowDrawList()->AddRect(rmin, rmax, IM_COL32(0, 200, 0, 255), 0.f, 0, 1.f);
@@ -555,6 +562,90 @@ void FSpriteViewer::DrawHistoryTab()
 	ImGui::EndChild();
 }
 
+void FSpriteViewer::DrawResultsTab()
+{
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
+
+	int foundCount = 0;
+	for (const FHistorySpriteEntry& e : SpriteHistory)
+		if (e.FoundDataAddr.IsValid()) foundCount++;
+
+	ImGui::Text("%d result(s)", foundCount);
+
+	if (foundCount > 0)
+	{
+		ImGui::SameLine();
+		if (ImGui::Button("Format All Found"))
+		{
+			for (FHistorySpriteEntry& e : SpriteHistory)
+			{
+				if (e.FoundDataAddr.IsValid() && !e.bFormatted)
+					FormatEntry(e);
+			}
+		}
+	}
+
+	ImGui::Separator();
+
+	if (foundCount == 0)
+	{
+		ImGui::TextDisabled("Run 'Find All' in the History tab to populate results");
+		return;
+	}
+
+	ImGuiTableFlags tblFlags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg
+	                         | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY;
+	if (ImGui::BeginTable("##resultstable", 5, tblFlags))
+	{
+		ImGui::TableSetupScrollFreeze(0, 1);
+		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   36.0f);
+		ImGui::TableSetupColumn("Size",     ImGuiTableColumnFlags_WidthFixed,   52.0f);
+		ImGui::TableSetupColumn("Address",  ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("Status",   ImGuiTableColumnFlags_WidthFixed,   68.0f);
+		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   52.0f);
+		ImGui::TableHeadersRow();
+
+		for (int i = 0; i < (int)SpriteHistory.size(); i++)
+		{
+			FHistorySpriteEntry& e = SpriteHistory[i];
+			if (!e.FoundDataAddr.IsValid())
+				continue;
+
+			ImGui::TableNextRow();
+
+			ImGui::TableSetColumnIndex(0);
+			const float tw = (float)e.Width  * 0.5f;
+			const float th = (float)e.Height * 0.5f;
+			ImGui::Image(e.Texture, ImVec2(tw, th), ImVec2(0, 0), ImVec2(1.0f, 1.0f));
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text("%dx%d", e.Width, e.Height);
+
+			ImGui::TableSetColumnIndex(2);
+			DrawAddressLabel(state, viewState, e.FoundDataAddr);
+
+			ImGui::TableSetColumnIndex(3);
+			if (e.bFormatted)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 200, 0, 255));
+				ImGui::TextUnformatted("Formatted");
+				ImGui::PopStyleColor();
+			}
+
+			ImGui::TableSetColumnIndex(4);
+			if (!e.bFormatted)
+			{
+				ImGui::PushID(i);
+				if (ImGui::SmallButton("Format"))
+					FormatEntry(e);
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndTable();
+	}
+}
+
 void FSpriteViewer::DrawHistoryDetails(int index)
 {
 	FHistorySpriteEntry& e = SpriteHistory[index];
@@ -578,8 +669,8 @@ void FSpriteViewer::DrawHistoryDetails(int index)
 		};
 
 		char buf[32];
-		snprintf(buf, sizeof(buf), "$%04X", e.VRAMAddress);
-		Row("VRAM Addr", buf);
+		snprintf(buf, sizeof(buf), "$%04X", e.VRAMAddress); // this is a 16 bit address.
+		Row("VRAM Addr", buf); 
 		snprintf(buf, sizeof(buf), "%d", e.Width);
 		Row("Width", buf);
 		snprintf(buf, sizeof(buf), "%d", e.Height);
@@ -597,28 +688,12 @@ void FSpriteViewer::DrawHistoryDetails(int index)
 		DrawAddressLabel(state, viewState, e.FoundDataAddr);
 		ImGui::Spacing();
 
-		if (e.bFormatted)
-		{
-			ImGui::TextDisabled("[formatted]");
-		}
-		else if (ImGui::Button("Format as Sprite"))
-		{
-			FDataFormattingOptions options;
-			options.DataType     = EDataType::Bitmap;
-			options.DisplayType  = EDataItemDisplayType::Sprite4Bpp_PCE;
-			options.StartAddress = e.FoundDataAddr;
-			options.ItemSize     = e.Width / 2;
-			options.NoItems      = e.Height;
-			options.PaletteNo    = pPCEEmu->CreateUserPalette(16 + e.Palette);
-			FormatData(state, options);
-			state.SetCodeAnalysisDirty(options.StartAddress);
-			e.bFormatted = true;
-		}
+		if (ImGui::Button("Format as Sprite"))
+			FormatEntry(e);
 	}
 	else if (e.VRAMSnapshot && ImGui::Button("Find in Memory"))
 	{
-		const int searchSize = e.VRAMSnapshotSize < 64 ? e.VRAMSnapshotSize : 64;
-		std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, searchSize, true, false);
+		std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, e.VRAMSnapshotSize, true, false);
 		if (!results.empty())
 			e.FoundDataAddr = results[0];
 	}
@@ -636,9 +711,9 @@ int FSpriteViewer::CountSpritesFoundInMemory(int& outHistorySize)
 			found++;
 			continue;
 		}
-		if (e.VRAMSnapshot && e.VRAMSnapshotSize >= 64)
+		if (e.VRAMSnapshot && e.VRAMSnapshotSize > 0)
 		{
-			std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, 64, true, false);
+			std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, e.VRAMSnapshotSize, true, false);
 			if (!results.empty())
 			{
 				e.FoundDataAddr = results[0];

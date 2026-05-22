@@ -907,6 +907,12 @@ const FPaletteEntry* GetPaletteEntry(int paletteNo)
 	return nullptr;
 }
 
+void ClearPalettes()
+{
+	g_PaletteColours.clear();
+	g_Palettes.clear();
+}
+
 #include <json.hpp>
 
 const char* kPaletteColours = "PaletteColours";

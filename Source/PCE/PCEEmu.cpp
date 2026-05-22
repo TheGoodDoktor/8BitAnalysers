@@ -19,6 +19,7 @@
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
 #include "Viewers/PCEGraphicsViewer.h"
+#include "Viewers/MemoryViewer.h"
 #include "Viewers/GameDbViewer.h"
 #include "CodeAnalyser/AssemblerExport.h"
 #include "CodeAnalyser/UI/6502/RegisterView6502.h"
@@ -74,6 +75,12 @@ constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAn
 
 const char* FPCEEmu::kPCERomGameListName = "PCE ROM File";
 const char* FPCEEmu::kCDRomGameListName = "CD-ROM Image";
+
+constexpr uint16_t kVecReset = 0xfffe;
+constexpr uint16_t kVecNMI	 = 0xfffc;
+constexpr uint16_t kVecTimer = 0xfffa;
+constexpr uint16_t kVecIRQ1  = 0xfff8;
+constexpr uint16_t kVecIRQ2  = 0xfff6;
 
 #ifndef NDEBUG
 #define BANK_SWITCH_DEBUG 0
@@ -1078,6 +1085,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FBackgroundViewer(this));
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
+	AddViewer(new FMemoryViewer(this));
 	pGraphicsViewer = new FPCEGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
@@ -1516,6 +1524,17 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	return true;
 }
 
+void FormatMemoryAsPtr(FCodeAnalysisState& state, uint16_t addr)
+{
+	if (FDataInfo* pDataItem = state.GetReadDataInfoForAddress(addr))
+	{
+		pDataItem->DataType = EDataType::Word;
+		pDataItem->ByteSize = 2;
+		pDataItem->DisplayType = EDataItemDisplayType::Pointer;
+		state.SetCodeAnalysisDirty(addr);
+	}
+}
+
 void FPCEEmu::AddLabels()
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
@@ -1548,16 +1567,35 @@ void FPCEEmu::AddLabels()
 	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x222d), "joytrg", ELabelType::Data, 5);
 	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2232), "joyold", ELabelType::Data, 5);
 
-	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank. 
+	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank.
 	for (int i = 0; i < kDebugLabelCount; i++)
 	{
 		const FAddressRef addr = FAddressRef(BankSets[kBankHWPage].GetBankId(), kDebugLabels[i].Address);
 		// This causes AnalyseAtPC to be called on memory addresses that are not code.
 		// An example of this is hello.pce at address 0xe001
 		//SetItemCode(state, addr);
-		const std::string name = std::string("_") + kDebugLabels[i].Label;
 		AddLabel(state, addr, kDebugLabels[i].Label, ELabelType::Data);
+
+		if (kDebugLabels[i].Comment != nullptr)
+		{
+			FCommentBlock* pComment = AddCommentBlock(state, addr);
+			if (pComment->Comment.empty())
+				pComment->Comment = kDebugLabels[i].Comment;
+		}
 	}
+
+	// todo make these all functions
+	FormatMemoryAsPtr(CodeAnalysis, kVecReset);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecReset), "ResetVector", ELabelType::Data);
+	FormatMemoryAsPtr(CodeAnalysis, kVecNMI);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecNMI), "NMIVector", ELabelType::Data);
+	FormatMemoryAsPtr(CodeAnalysis, kVecTimer);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecTimer), "TimerVector", ELabelType::Data);
+	FormatMemoryAsPtr(CodeAnalysis, kVecIRQ1);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecIRQ1), "IRQ1Vector", ELabelType::Data);
+	FormatMemoryAsPtr(CodeAnalysis, kVecIRQ2);
+	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecIRQ2), "IRQ2Vector", ELabelType::Data);
+	
 }
 
 bool FPCEEmu::SaveMachineState(const char* path, int index /* = -1 */)
@@ -1994,9 +2032,7 @@ void FPCEEmu::ResetProject()
 
 	CodeAnalysis.ViewState[0].Enabled = true;
 
-	// do we need to reset the palettes?
-	// this creates them
-	//InitPalettes();
+	InitPalettes();
 }
 
 // Reset the code analysis to a default state.
@@ -2041,6 +2077,9 @@ void FPCEEmu::Reset()
 	SetWindowTitle(windowTitle.c_str());
 }
 
+// Reset the emulation without losing reverse engineering progress.
+// Functions/labels are untouched.
+// Disassembly is untouched.
 void FPCEEmu::SoftResetMachine()
 {
 	assert(pCurrentProjectConfig);
@@ -2086,6 +2125,20 @@ void FPCEEmu::DrawEmulatorUI()
 {
 }
 
+FGraphicsView* FPCEEmu::GetScreen() const
+{
+	return nullptr;
+}
+
+const uint8_t* FPCEEmu::GetScreenBuffer(int& width, int& height) const
+{
+	GG_Runtime_Info info;
+	pCore->GetRuntimeInfo(info);
+	width  = info.screen_width;
+	height = info.screen_height;
+	return pFrameBuffer;
+}
+
 
 void FPCEEmu::AppFocusCallback(int focused)
 {
@@ -2100,6 +2153,8 @@ void FPCEEmu::AppFocusCallback(int focused)
 
 void FPCEEmu::InitPalettes()
 {
+	ClearPalettes();
+
 	uint32_t palette[32] = { 0 };
 	// Create a palette entry for all the HW palettes
 	for (int i = 0; i < 32; i++)
@@ -2175,6 +2230,49 @@ void FPCEEmu::DetectDirtyBanks()
 void FPCELaunchConfig::ParseCommandline(int argc, char** argv)
 {
 	FEmulatorLaunchConfig::ParseCommandline(argc,argv);	// call base class
+
+	/*
+	std::vector<std::string> argList;
+	for (int arg = 0; arg < argc; arg++)
+	{
+		argList.emplace_back(argv[arg]);
+	}
+
+	auto argIt = argList.begin();
+	argIt++;	// skip exe name
+	while (argIt != argList.end())
+	{
+		if (*argIt == std::string("-128"))
+		{
+			Model = ESpectrumModel::Spectrum128K;
+		}
+		else if (*argIt == std::string("-game"))
+		{
+			if (++argIt == argList.end())
+			{
+				LOGERROR("-game : No game specified");
+				break;
+			}
+			SpecificGame = *argIt;
+		}
+		else if (*argIt == std::string("-skoolfile"))
+		{
+			if (SpecificGame.empty())
+			{
+				LOGERROR("-skoolfile : A game must be specified with the -game argument.");
+				break;
+			}
+
+			if (++argIt == argList.end())
+			{
+				LOGERROR("-skoolfile : No skoolkit file specified");
+				break;
+			}
+			SkoolkitImport = *argIt;
+		}
+
+		++argIt;
+	}*/
 }
 
 /*
