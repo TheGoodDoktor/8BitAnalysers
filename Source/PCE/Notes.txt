@@ -4,13 +4,12 @@ TODO
 - Restore asm export for physical memory
 - get asm export for memory range working again
 - OnEnterEditMode() get working
-- make bank label be an offset instead of address
+- make bank label be an offset instead of address. add toggle in UI.
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
 - hookup RegisterCodeExecutedHuC6280
 - Implement CodeAnalyserHuC6280.cpp
 - reset viewers on soft reset
-- trace button doesnt seem to work in code analysis view
 - dupe bank issues in hello.pce project. "FAddressRef::SetVal on unmapped bank 62 ROM_01_3. ref will be invalid." followed by assert in FItemRefernceTracker::RegisterAccess
 - deal with multiple operands, such as block operations etc [partially done]
 - add audio viewer: disable channels etc
@@ -27,12 +26,16 @@ TODO
 - history sprite palettes are not correct sometimes. rabio lepus intro.
 - sprites dont display correctly in code analysis view correctly. hero tonma clouds.
 - show which palettes are BG/sprites/user in palette dropdowns
+- perf of sprites results tab is really bad
+- add a way to display or goto the ROM address (in the cart's 2mb address space)
+- show bitmap format in code analysis view when cursor is on PCE sprite/BG
 
 NICE TO HAVE
 - add way to understand/visualise if interrupts are active?
 - make screen appear when loading a saved project
 
 BUGS
+- trace button doesnt seem to work in code analysis view
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - asm export fails if you export right after reset, when UNUSED banks are mapped.
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
@@ -42,6 +45,7 @@ BUGS
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
 
 IDEAS
+- minimap on scrollbar
 - [perf] Create code analysis pages on demand. would make creating banks trivial
 - [perf] reserve bank id instead of creating all the banks up front.
 - when hovering over PCE memory mapped registers, give a description what they do. or add comments for the memory location
