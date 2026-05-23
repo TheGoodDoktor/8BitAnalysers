@@ -24,11 +24,13 @@ TODO
 - tidy up sprites viewer detail pane
 - layout of background viewer clunky
 - history sprite palettes are not correct sometimes. rabio lepus intro.
-- sprites dont display correctly in code analysis view correctly. hero tonma clouds.
 - show which palettes are BG/sprites/user in palette dropdowns
 - perf of sprites results tab is really bad
 - add a way to display or goto the ROM address (in the cart's 2mb address space)
 - show bitmap format in code analysis view when cursor is on PCE sprite/BG
+- add read_bank mcp tool, to read bank not mapped in.
+- add label when formatting sprites in sprite viewer
+- results view in sprite viewer looks shit. thumbnails are too small.
 
 NICE TO HAVE
 - add way to understand/visualise if interrupts are active?
@@ -42,7 +44,9 @@ BUGS
 - edit mode doesnt restore properly. emulation bugs afer restoring
 - sprites formatted by sprite viewer dont draw correctly.
 - code analysis view doesnt go to address that was last viewed after loading project.
+- Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
+- palettes get added at index 67
 
 IDEAS
 - minimap on scrollbar
@@ -64,9 +68,9 @@ IDEAS
 - ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
 
 DONE
+- sprites dont display correctly in code analysis view correctly. hero tonma clouds.
 - when formatting memory as sprite dont use current (transient) palette data. 
 - fix code analysis detail pane getting stuck off screen when fixed
-- palettes get added at index 67
 - add memory viewer (at least for vram). see https://github.com/ocornut/imgui_club
 - get BG data item working
 - add suport for <label> + <offset> to asm exporter?
