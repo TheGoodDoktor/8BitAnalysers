@@ -32,6 +32,7 @@
 #include "DebugStats.h"
 
 #include "App.h"
+#include "PCEMCPTools.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
 #include <json.hpp>
@@ -990,7 +991,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 #endif
 
 	FEmuBase::Init(config);
-	
+	RegisterPCEMCPTools(this);
+
 	const FPCELaunchConfig& PCELaunchConfig = (const FPCELaunchConfig&)config;
  
 	const std::string windowTitle = kAppTitle + " - " + "No project loaded";
