@@ -37,7 +37,7 @@ void FPaletteViewer::DrawUI()
 				const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
 				if (!pPalette)
 					continue;
-				ImGui::Text("BG %2d:", p);
+				ImGui::Text("BGND %02d:", p);
 				ImGui::SameLine();
 				DrawPalette(pPalette, 16, ImGui::GetFrameHeight());
 				ImGui::SameLine();
@@ -53,7 +53,7 @@ void FPaletteViewer::DrawUI()
 				const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
 				if (!pPalette)
 					continue;
-				ImGui::Text("SP %2d:", p - 16);
+				ImGui::Text("SPRT %02d:", p - 16);
 				ImGui::SameLine();
 				DrawPalette(pPalette, 16, ImGui::GetFrameHeight());
 				ImGui::SameLine();
@@ -84,7 +84,7 @@ void FPaletteViewer::DrawUI()
 				const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
 				if (!pPalette)
 					continue;
-				ImGui::Text("User %d (idx %d):", displayNo, p);
+				ImGui::Text("USER %02d:", displayNo);
 				ImGui::SameLine();
 				DrawPalette(pPalette, pEntry->NoColours, ImGui::GetFrameHeight());
 				displayNo++;

@@ -404,8 +404,11 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 		const uint8_t * pSrc = &pBank->Memory[bankOffset];
 		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
 		const int bytesInBank = (bankSizeMask + 1) - bankOffset;
-		const int safeYCount = std::min(ycount, bytesInBank / 128);
-		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, safeYCount, palette);
+		const int spriteBlocksWide = XSizePixels / 16;
+		const int spriteBlocksTall = YSizePixels / 16;
+		const int bytesPerSprite = 128 * spriteBlocksWide * spriteBlocksTall;
+		const int safeYCount = std::min(ycount, bytesInBank / bytesPerSprite);
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, spriteBlocksWide, safeYCount * spriteBlocksTall, palette);
 		return;
 	}
 	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
@@ -483,8 +486,12 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16
 		const uint8_t * pSrc = &pBank->Memory[bankOffset];
 		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
 		const int bytesInBank = (bankSizeMask + 1) - bankOffset;
-		const int safeYCount = std::min(ycount / 2, bytesInBank / 128);
-		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, safeYCount, palette);
+		const int spriteBlocksWide = XSizePixels / 16;
+		const int spriteBlocksTall = YSizePixels / 16;
+		const int bytesPerSprite = 128 * spriteBlocksWide * spriteBlocksTall;
+		const int spriteRows = ycount / (YSizePixels / 8);
+		const int safeYCount = std::min(spriteRows, bytesInBank / bytesPerSprite);
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, spriteBlocksWide, safeYCount * spriteBlocksTall, palette);
 		return;
 	}
 	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
@@ -613,7 +620,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 	const int scaledHDispCharCount = kHorizontalDispCharCount / pConfig->GfxViewerScale;
 	const int scaledVDispPixCount = kVerticalDispPixCount / pConfig->GfxViewerScale;
 	
-	const int xcount = scaledHDispCharCount / (XSizePixels / 8);
+	int xcount = scaledHDispCharCount / (XSizePixels / 8);
 	const int ycount = scaledVDispPixCount / YSizePixels;
 
 	int address = AddressOffset;
@@ -623,6 +630,18 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 	GraphicColumnSizeBytes = xSizeChars * ycount * YSizePixels * bpp;
 	const int columnWidthPixels = XSizePixels * widthFactor;
 
+	if (!bShowPhysicalMemory)
+	{
+		const FCodeAnalysisBank* pBank = state.GetBank(Bank);
+		if (pBank != nullptr)
+		{
+			const int bankSize = pBank->GetSizeBytes();
+			const int columnBytes = GraphicColumnSizeBytes / widthFactor;
+			if (columnBytes > 0)
+				xcount = std::min(xcount, std::max(1, bankSize / columnBytes));
+		}
+	}
+
 	if (ViewMode == EGraphicsViewMode::Bitmap)
 	{
 		for (int x = 0; x < xcount; x++)
@@ -630,7 +649,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			if (bShowPhysicalMemory)
 				DrawPhysicalMemoryAsGraphicsColumn(address, x * columnWidthPixels, xSizeChars);
 			else
-				DrawMemoryBankAsGraphicsColumn(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
+				DrawMemoryBankAsGraphicsColumn(Bank, address, x * columnWidthPixels, xSizeChars);
 			
 			address += GraphicColumnSizeBytes / widthFactor;
 		}
@@ -642,7 +661,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			if (bShowPhysicalMemory)
 				DrawPhysicalMemoryAsGraphicsColumn(address, x * columnWidthPixels, xSizeChars);
 			else
-				DrawMemoryBankAsGraphicsColumn(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
+				DrawMemoryBankAsGraphicsColumn(Bank, address, x * columnWidthPixels, xSizeChars);
 
 			address += (GraphicColumnSizeBytes * 2) / widthFactor;
 		}
@@ -654,7 +673,7 @@ void FGraphicsViewer::UpdateCharacterGraphicsViewerImage(void)
 			if (bShowPhysicalMemory)
 				DrawPhysicalMemoryAsGraphicsColumnChars(address, x * columnWidthPixels, xSizeChars);
 			else
-				DrawMemoryBankAsGraphicsColumnChars(Bank, address & 0x3fff, x * columnWidthPixels, xSizeChars);
+				DrawMemoryBankAsGraphicsColumnChars(Bank, address, x * columnWidthPixels, xSizeChars);
 
 			address += GraphicColumnSizeBytes / widthFactor;
 		}
