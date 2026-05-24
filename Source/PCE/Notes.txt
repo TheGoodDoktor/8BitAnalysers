@@ -1,9 +1,18 @@
+TODO FOR FIRST RELEASE
+- eliminate all dupe bank bugs (some still exist)
+- OnEnterEditMode() get working
+- add audio viewer: disable channels etc
+- get graphics viewer displaying sprites
+- remove dupe banks from graphics viewer dropdown. also unused banks
+- tidy up sprites viewer detail pane
+- perf of sprites results tab is really bad
+- bank addresses should be offsets (including function labels)
+
 TODO
+- in graphics viewer, label which palette is currently selected 
+- change Current palette option in graphics viewer. doesnt make sense for PCE
 - Show register value on tooltips
 - tidy tooltips for PCE related instructions
-- Restore asm export for physical memory
-- get asm export for memory range working again
-- OnEnterEditMode() get working
 - make bank label be an offset instead of address. add toggle in UI.
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
@@ -12,29 +21,18 @@ TODO
 - reset viewers on soft reset
 - dupe bank issues in hello.pce project. "FAddressRef::SetVal on unmapped bank 62 ROM_01_3. ref will be invalid." followed by assert in FItemRefernceTracker::RegisterAccess
 - deal with multiple operands, such as block operations etc [partially done]
-- add audio viewer: disable channels etc
 - hook up more events: audio, etc
 - improve Claude.md
-- remove dupe banks from graphics viewer dropdown
-- get graphics view displaying sprites
-- eliminate all dupe bank bugs (some still exist)
-- remove dupe banks from graphics viewer dropdown. also unused banks
-- get graphics viewer displaying sprites
-- change Current palette option in graphics viewer. doesnt make sense for PCE
-- tidy up sprites viewer detail pane
 - layout of background viewer clunky
 - history sprite palettes are not correct sometimes. rabio lepus intro.
-- show which palettes are BG/sprites/user in palette dropdowns
-- perf of sprites results tab is really bad
 - add a way to display or goto the ROM address (in the cart's 2mb address space)
 - show bitmap format in code analysis view when cursor is on PCE sprite/BG
-- add read_bank mcp tool, to read bank not mapped in.
 - add label when formatting sprites in sprite viewer
-- results view in sprite viewer looks shit. thumbnails are too small.
 
 NICE TO HAVE
 - add way to understand/visualise if interrupts are active?
 - make screen appear when loading a saved project
+- add "view in memory viewer" in code analysis view
 
 BUGS
 - trace button doesnt seem to work in code analysis view
@@ -50,6 +48,7 @@ BUGS
 
 IDEAS
 - minimap on scrollbar
+- when capturing palette for history sprite, capture after some time has elpased.
 - [perf] Create code analysis pages on demand. would make creating banks trivial
 - [perf] reserve bank id instead of creating all the banks up front.
 - when hovering over PCE memory mapped registers, give a description what they do. or add comments for the memory location
@@ -68,6 +67,11 @@ IDEAS
 - ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
 
 DONE
+- results view in sprite viewer looks shit. thumbnails are too small.
+- add read_bank mcp tool, to read bank not mapped in.
+- show which palettes are BG/sprites/user in palette dropdowns
+- get asm export for memory range working again
+- Restore asm export for physical memory
 - sprites dont display correctly in code analysis view correctly. hero tonma clouds.
 - when formatting memory as sprite dont use current (transient) palette data. 
 - fix code analysis detail pane getting stuck off screen when fixed
