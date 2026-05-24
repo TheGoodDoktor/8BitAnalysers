@@ -19,6 +19,7 @@ struct FHistorySpriteEntry
 	int         Width            = 0;
 	int         Height           = 0;
 	int         Palette          = 0;
+	int         ColorCount       = 0;
 	uint16_t    VRAMAddress      = 0;
 	uint32_t    DataHash         = 0;        // FNV-1a of VRAM bytes — dedup key
 	FAddressRef FoundDataAddr = FAddressRef::Invalid();
@@ -50,6 +51,7 @@ private:
 	void UpdateSpriteBuffers();
 	void UpdateSpriteHistory();
 	void ClearHistory();
+	void DrawCurrentTab();
 	void DrawHistoryTab();
 	void DrawHistoryDetails(int index);
 	void DrawResultsTab();
@@ -61,6 +63,7 @@ private:
 
 	ImTextureID	SpriteTextures[kNumSprites] = { 0 };
 	uint8_t* SpriteBuffers[kNumSprites];
+	int SpriteColorCount[kNumSprites] = {};
 
 	ImTextureID	ScreenTexture = 0;
 	int TextureWidth = 0;
@@ -72,6 +75,10 @@ private:
 	FAddressRef FoundSpriteDataAddr;
 	bool        bFoundSpriteData = false;
 	int         LastSearchedSprite = -1;
+	int         FindSearchBytes = 0;
+
+	// Results tab
+	float ResultsRowHeight = 32.0f;
 
 	// History tab
 	std::vector<FHistorySpriteEntry> SpriteHistory;
