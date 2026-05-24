@@ -718,7 +718,8 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	if (BitmapFormatHasPalette(BitmapFormat))
 	{
 		const int numColours = GetNumColoursForBitmapFormat(BitmapFormat);
-		DrawPaletteCombo("Palette", "Current", PaletteNo, GetNumColoursForBitmapFormat(BitmapFormat));
+		// sam. PCE doesn't have a concept of Current palette.
+		DrawPaletteCombo("Palette", nullptr/*"Current"*/, PaletteNo, GetNumColoursForBitmapFormat(BitmapFormat));
 
 		if (PaletteNo == -1)
 		{
