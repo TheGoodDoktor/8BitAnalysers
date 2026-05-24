@@ -242,7 +242,9 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int x
 	{
 		const uint8_t* pSrc = pCPUInterface->GetMemPtr(memAddr);
 		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
-		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, ycount, palette);
+		const int bytesInBank = 0x2000 - (memAddr & 0x1FFF);
+		const int safeYCount = std::min(ycount, bytesInBank / 128);
+		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, 1, safeYCount, palette);
 		return;
 	}
 	if (BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE)
