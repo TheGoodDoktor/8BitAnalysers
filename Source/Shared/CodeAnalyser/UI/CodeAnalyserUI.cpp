@@ -1582,6 +1582,8 @@ EDataItemDisplayType GetDisplayTypeForBitmapFormat(EBitmapFormat bitmapFormat)
 		return  EDataItemDisplayType::ColMapMulticolour_C64;
 	case EBitmapFormat::Sprite4Bpp_PCE:
 		return EDataItemDisplayType::Sprite4Bpp_PCE;
+	case EBitmapFormat::Sprite3Bpp_PCE:
+		return EDataItemDisplayType::Sprite3Bpp_PCE;
 	case EBitmapFormat::BGTile4Bpp_PCE:
 		return EDataItemDisplayType::BGTile4Bpp_PCE;
 	default:
@@ -2656,6 +2658,8 @@ EBitmapFormat GetBitmapFormatForDisplayType(EDataItemDisplayType displayType)
 		return EBitmapFormat::ColMapMulticolour_C64;
 	case  EDataItemDisplayType::Sprite4Bpp_PCE:
 		return EBitmapFormat::Sprite4Bpp_PCE;
+	case  EDataItemDisplayType::Sprite3Bpp_PCE:
+		return EBitmapFormat::Sprite3Bpp_PCE;
 	case  EDataItemDisplayType::BGTile4Bpp_PCE:
 		return EBitmapFormat::BGTile4Bpp_PCE;
 	default:
@@ -2675,6 +2679,8 @@ int GetBppForBitmapFormat(EBitmapFormat bitmapFormat)
 		return 4;
 	case EBitmapFormat::ColMapMulticolour_C64:
 		return 1;	// it's a bit of a bodge because they're wide
+	case EBitmapFormat::Sprite3Bpp_PCE:
+		return 3;
 	case EBitmapFormat::Sprite4Bpp_PCE:
 	case EBitmapFormat::BGTile4Bpp_PCE:
 		return 4;
@@ -2693,6 +2699,7 @@ bool BitmapFormatHasPalette(EBitmapFormat bitmapFormat)
 	case EBitmapFormat::ColMap2Bpp_CPC:
 	case EBitmapFormat::ColMap4Bpp_CPC:
 	case EBitmapFormat::ColMapMulticolour_C64:
+	case EBitmapFormat::Sprite3Bpp_PCE:
 	case EBitmapFormat::Sprite4Bpp_PCE:
 	case EBitmapFormat::BGTile4Bpp_PCE:
 		return true;
@@ -2717,6 +2724,7 @@ bool IsBitmapFormatDoubleWidth(EBitmapFormat bitmapFormat)
 	case EBitmapFormat::ColMap2Bpp_CPC:
 	case EBitmapFormat::ColMapMulticolour_C64:
 	case EBitmapFormat::Sprite4Bpp_PCE:
+	case EBitmapFormat::Sprite3Bpp_PCE:
 	case EBitmapFormat::BGTile4Bpp_PCE:
 		return false;
 	case EBitmapFormat::ColMap4Bpp_CPC:

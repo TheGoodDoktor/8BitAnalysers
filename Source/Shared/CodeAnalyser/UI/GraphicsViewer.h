@@ -113,7 +113,7 @@ protected:
 	int				HeatmapThreshold = 4;
 
 	int				XSizePixels = 8;			// Image X Size in pixels
-	int				YSizePixels = 8;			// Image Y Size in pixels
+	int				YSizePixels = 16;			// Image Y Size in pixels
 	int				ImageCount = 0;	// how many images?
 	bool			bYSizePixelsFineCtrl = false;
 	bool			bVSliderFineControl = false;

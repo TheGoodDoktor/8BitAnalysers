@@ -238,6 +238,11 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumn(uint16_t memAddr, int x
 	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 	const ICPUInterface* pCPUInterface = state.GetCPUInterface();
 
+	if (BitmapFormat == EBitmapFormat::Sprite3Bpp_PCE)
+	{
+		// todo
+		return;
+	}
 	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 	{
 		const uint8_t* pSrc = pCPUInterface->GetMemPtr(memAddr);
@@ -324,6 +329,10 @@ void FGraphicsViewer::DrawPhysicalMemoryAsGraphicsColumnChars(uint16_t memAddr, 
 	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 	const ICPUInterface* pCPUInterface = state.GetCPUInterface();
 
+	if (BitmapFormat == EBitmapFormat::Sprite3Bpp_PCE)
+	{
+		return;
+	}
 	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 	{
 		const uint8_t* pSrc = pCPUInterface->GetMemPtr(memAddr);
@@ -398,6 +407,11 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 	const int ycount = scaledVDispPixCount / YSizePixels;
 	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 
+	if (BitmapFormat == EBitmapFormat::Sprite3Bpp_PCE)
+	{
+		// todo
+		return;
+	}
 	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 	{
 		const uint16_t bankOffset = memAddr & bankSizeMask;
@@ -480,6 +494,10 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16
 	const int ycount = scaledVDispPixCount / 8;
 	const uint32_t* pPaletteColours = GetPaletteFromPaletteNo(PaletteNo);
 
+	if (BitmapFormat == EBitmapFormat::Sprite3Bpp_PCE)
+	{
+		return;
+	}
 	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 	{
 		const uint16_t bankOffset = memAddr & bankSizeMask;
@@ -1053,7 +1071,11 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 			{
 				FAddressRef itemAddress = baseAddrRef;
 				state.AdvanceAddressRef(itemAddress, ItemNo * graphicsUnitSize);
-				if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
+				if (BitmapFormat == EBitmapFormat::Sprite3Bpp_PCE)
+				{
+					// todo
+				}
+				else if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 				{
 					const FCodeAnalysisBank* pSprBank = state.GetBank(itemAddress.GetBankId());
 					if (pSprBank != nullptr)
@@ -1485,6 +1507,11 @@ void FGraphicsViewer::DrawGraphicToView(const FGraphicsSet& set, FGraphicsView* 
 
 	state.AdvanceAddressRef(itemAddress, imageNo * graphicsUnitSize);
 
+	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
+	{
+		// todo
+		return;
+	}
 	if (BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE)
 	{
 		const FCodeAnalysisBank* pSprBank = state.GetBank(itemAddress.GetBankId());

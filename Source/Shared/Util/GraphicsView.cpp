@@ -688,6 +688,7 @@ void UpdateCharacterSetImage(FCodeAnalysisState& state, FCharacterSet& character
 	case EBitmapFormat::ColMapMulticolour_C64:
 		DrawCharacterSetImageMultiColourC64(state, characterSet, addr);
 		break;
+	case EBitmapFormat::Sprite3Bpp_PCE:
 	case EBitmapFormat::Sprite4Bpp_PCE:
 		// todo
 		break;

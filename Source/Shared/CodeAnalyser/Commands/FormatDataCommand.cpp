@@ -53,7 +53,9 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			pDataInfo->DataType = FormatOptions.DataType;
 			pDataInfo->DisplayType = FormatOptions.DisplayType;
 
+			// sam. todo: remove this PCE hack
 			if (pDataInfo->DisplayType == EDataItemDisplayType::Sprite4Bpp_PCE ||
+				pDataInfo->DisplayType == EDataItemDisplayType::Sprite3Bpp_PCE ||
 				pDataInfo->DisplayType == EDataItemDisplayType::BGTile4Bpp_PCE)
 				pDataInfo->FirstItemAddress = firstAddress;
 

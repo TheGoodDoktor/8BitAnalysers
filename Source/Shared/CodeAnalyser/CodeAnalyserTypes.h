@@ -82,6 +82,7 @@ enum class EDataItemDisplayType
 	XCharPos,
 	YCharPos,
 	Sprite4Bpp_PCE,
+	Sprite3Bpp_PCE,
 	BGTile4Bpp_PCE,	// PCE 4bpp planar background tile format
 };
 
@@ -96,6 +97,7 @@ enum class EBitmapFormat
 	ColMapMulticolour_C64,	// C64 Multicolour format
 
 	Sprite4Bpp_PCE,	// PCE 4bpp planar sprite format
+	Sprite3Bpp_PCE,	// PCE 3bpp planar sprite format. This is not supported by the hardware but games can store 3bpp sprites in ROM to save space.
 	BGTile4Bpp_PCE,	// PCE 4bpp planar background tile format
 
 	Max,

@@ -125,6 +125,8 @@ bool IsDisplayTypeSupported(EDataItemDisplayType displayType, const FCodeAnalysi
 		return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::ColMapMulticolour_C64];
 	case EDataItemDisplayType::Sprite4Bpp_PCE:
 		return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Sprite4Bpp_PCE];
+	case EDataItemDisplayType::Sprite3Bpp_PCE:
+		return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::Sprite3Bpp_PCE];
 	case EDataItemDisplayType::BGTile4Bpp_PCE:
 		return state.Config.bSupportedBitmapTypes[(int)EBitmapFormat::BGTile4Bpp_PCE];
 	default:
@@ -151,6 +153,7 @@ static const std::vector<std::pair<const char*, EDataItemDisplayType>> g_Display
 	{ "YPos",			EDataItemDisplayType::YPos},
 	{ "XCharPos",		EDataItemDisplayType::XCharPos},
 	{ "YCharPos",		EDataItemDisplayType::YCharPos},
+	{ "Sprite PCE 3bpp",		EDataItemDisplayType::Sprite3Bpp_PCE},
 	{ "Sprite PCE",		EDataItemDisplayType::Sprite4Bpp_PCE},
 	{ "BGTile PCE",		EDataItemDisplayType::BGTile4Bpp_PCE},
 };
@@ -248,6 +251,9 @@ bool DrawGraphicsViewModeCombo(const char* pLabel, EGraphicsViewMode& viewMode)
 
 }
 
+// Draws a combo with all registered palette entries.
+// pFirstItemLabel is an optional "none" entry mapped to index -1; numColours filters the list to palettes of that exact size (-1 shows all).
+// Passing null for pFirstItemLabel will omit an initial item. 
 bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& paletteEntryIndex, int numColours /* = -1 */)
 {
 	int index = paletteEntryIndex;
@@ -267,9 +273,16 @@ bool DrawPaletteCombo(const char* pLabel, const char* pFirstItemLabel, int& pale
 			{
 				if (numColours == -1 || pEntry->NoColours == numColours)
 				{
-					const std::string str = "Palette " + std::to_string(p);
+					char tmp[32];
+					if (p < 16)
+						sprintf(tmp, "BGND %02d ", p);
+					else if (p < 32)
+						sprintf(tmp, "SPRT %02d", p - 16);
+					else
+						sprintf(tmp, "USER %02d", p - 32);
+					
 					const bool isSelected = (index == p);
-					if (ImGui::Selectable(str.c_str(), isSelected))
+					if (ImGui::Selectable(tmp, isSelected))
 					{
 						paletteEntryIndex = p;
 						bChanged = true;

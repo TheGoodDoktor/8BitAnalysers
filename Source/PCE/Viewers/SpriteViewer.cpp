@@ -254,6 +254,24 @@ void FSpriteViewer::UpdateSpriteHistory()
 	}
 }
 
+// Build a byte buffer with plane 3 stripped from each 16x16 sub-block, for searching
+// ROMs that store only 3 bitplanes (96 bytes/block) with plane 3 always zero.
+// this is probably slow in debug builds. rewrite with POD buffer?
+static std::vector<uint8_t> BuildReducedBitplaneBuffer(const uint8_t* pVRAMBytes, int vramSizeBytes)
+{
+	static const int kVRAMBlockBytes = 128;  // 64 words, 4 planes
+	static const int kROMBlockBytes = 96;   // 48 words, planes 0-2 only
+	const int numBlocks = vramSizeBytes / kVRAMBlockBytes;
+	std::vector<uint8_t> buf;
+	buf.reserve(numBlocks * kROMBlockBytes);
+	for (int block = 0; block < numBlocks; ++block)
+	{
+		const uint8_t* pBlock = pVRAMBytes + block * kVRAMBlockBytes;
+		buf.insert(buf.end(), pBlock, pBlock + kROMBlockBytes);
+	}
+	return buf;
+}
+
 void FSpriteViewer::Tick()
 {
 	ResetScreenTexture();
@@ -283,9 +301,18 @@ void FSpriteViewer::Tick()
 				continue;
 			}
 
-			if (e.VRAMSnapshot && e.VRAMSnapshotSize >= 64)
+			if (e.VRAMSnapshot && e.VRAMSnapshotSize > 0)
 			{
-				std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, 64, true, false);
+				std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, e.VRAMSnapshotSize, true, false);
+				if (results.empty())
+				{
+					const std::vector<uint8_t> reducedBuf = BuildReducedBitplaneBuffer(e.VRAMSnapshot, e.VRAMSnapshotSize);
+					if (!reducedBuf.empty())
+					{
+						results = state.FindAllMemoryPatterns(reducedBuf.data(), (int)reducedBuf.size(), true, false);
+						e.bFoundAs3Bpp = !results.empty();
+					}
+				}
 				if (!results.empty())
 				{
 					e.FoundDataAddr = results[0];
@@ -302,11 +329,19 @@ void FSpriteViewer::FormatEntry(FHistorySpriteEntry& e)
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	FDataFormattingOptions options;
 	options.DataType     = EDataType::Bitmap;
-	options.DisplayType  = EDataItemDisplayType::Sprite4Bpp_PCE;
 	options.StartAddress = e.FoundDataAddr;
-	options.ItemSize     = e.Width / 2;
 	options.NoItems      = e.Height;
 	options.PaletteNo    = pPCEEmu->CreateUserPalette(16 + e.Palette);
+	if (e.bFoundAs3Bpp)
+	{
+		options.DisplayType = EDataItemDisplayType::Sprite3Bpp_PCE;
+		options.ItemSize    = e.Width * 3 / 8;
+	}
+	else
+	{
+		options.DisplayType = EDataItemDisplayType::Sprite4Bpp_PCE;
+		options.ItemSize    = e.Width / 2;
+	}
 	FormatData(state, options);
 	state.SetCodeAnalysisDirty(options.StartAddress);
 	e.bFormatted = true;
@@ -613,11 +648,12 @@ void FSpriteViewer::DrawResultsTab()
 
 	ImGuiTableFlags tblFlags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg
 	                         | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY;
-	if (ImGui::BeginTable("##resultstable", 5, tblFlags))
+	if (ImGui::BeginTable("##resultstable", 6, tblFlags))
 	{
 		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   thumbColWidth);
 		ImGui::TableSetupColumn("Size",     ImGuiTableColumnFlags_WidthFixed,   52.0f);
+		ImGui::TableSetupColumn("Bpp",      ImGuiTableColumnFlags_WidthFixed,   36.0f);
 		ImGui::TableSetupColumn("Address",  ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("Status",   ImGuiTableColumnFlags_WidthFixed,   68.0f);
 		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   52.0f);
@@ -647,9 +683,12 @@ void FSpriteViewer::DrawResultsTab()
 			ImGui::Text("%dx%d", e.Width, e.Height);
 
 			ImGui::TableSetColumnIndex(2);
-			DrawAddressLabel(state, viewState, e.FoundDataAddr);
+			ImGui::Text("%dbpp", e.bFoundAs3Bpp ? 3 : 4);
 
 			ImGui::TableSetColumnIndex(3);
+			DrawAddressLabel(state, viewState, e.FoundDataAddr);
+
+			ImGui::TableSetColumnIndex(4);
 			if (e.bFormatted)
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 200, 0, 255));
@@ -657,7 +696,7 @@ void FSpriteViewer::DrawResultsTab()
 				ImGui::PopStyleColor();
 			}
 
-			ImGui::TableSetColumnIndex(4);
+			ImGui::TableSetColumnIndex(5);
 			if (!e.bFormatted)
 			{
 				ImGui::PushID(i);
@@ -714,12 +753,22 @@ void FSpriteViewer::DrawHistoryDetails(int index)
 		DrawAddressLabel(state, viewState, e.FoundDataAddr);
 		ImGui::Spacing();
 
-		if (ImGui::Button("Format as Sprite"))
+		const char* formatLabel = e.bFoundAs3Bpp ? "Format as 3bpp Sprite" : "Format as 4bpp Sprite";
+		if (ImGui::Button(formatLabel))
 			FormatEntry(e);
 	}
 	else if (e.VRAMSnapshot && ImGui::Button("Find in Memory"))
 	{
 		std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, e.VRAMSnapshotSize, true, false);
+		if (results.empty())
+		{
+			const std::vector<uint8_t> reducedBuf = BuildReducedBitplaneBuffer(e.VRAMSnapshot, e.VRAMSnapshotSize);
+			if (!reducedBuf.empty())
+			{
+				results = state.FindAllMemoryPatterns(reducedBuf.data(), reducedBuf.size(), true, false);
+				e.bFoundAs3Bpp = !results.empty();
+			}
+		}
 		if (!results.empty())
 			e.FoundDataAddr = results[0];
 	}
@@ -740,6 +789,15 @@ int FSpriteViewer::CountSpritesFoundInMemory(int& outHistorySize)
 		if (e.VRAMSnapshot && e.VRAMSnapshotSize > 0)
 		{
 			std::vector<FAddressRef> results = state.FindAllMemoryPatterns(e.VRAMSnapshot, e.VRAMSnapshotSize, true, false);
+			if (results.empty())
+			{
+				const std::vector<uint8_t> reducedBuf = BuildReducedBitplaneBuffer(e.VRAMSnapshot, e.VRAMSnapshotSize);
+				if (!reducedBuf.empty())
+				{
+					results = state.FindAllMemoryPatterns(reducedBuf.data(), reducedBuf.size(), true, false);
+					e.bFoundAs3Bpp = !results.empty();
+				}
+			}
 			if (!results.empty())
 			{
 				e.FoundDataAddr = results[0];
@@ -853,6 +911,7 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 	if (spriteIndex != LastSearchedSprite)
 	{
 		bFoundSpriteData = false;
+		bFoundAs3Bpp     = false;
 		LastSearchedSprite = spriteIndex;
 		FindSearchBytes = info.SizeInBytes;
 	}
@@ -867,6 +926,7 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 	if (ImGui::Button("Find in Memory"))
 	{
 		bFoundSpriteData = false;
+		bFoundAs3Bpp     = false;
 
 		const u16* pVRAM = huc6270->GetVRAM();
 		const uint16_t vramAddr = info.Address;
@@ -876,6 +936,30 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 		{
 			const uint8_t* pBytes = reinterpret_cast<const uint8_t*>(pVRAM + vramAddr);
 			std::vector<FAddressRef> results = state.FindAllMemoryPatterns(pBytes, FindSearchBytes, true, false);
+
+			// If not found with all 4 planes, try with plane 3 omitted.
+			// Each 16x16 sub-block is 128 bytes in VRAM (4 planes x 16 rows x 2 bytes)
+			// but some ROMs store only 3 planes (96 bytes), with plane 3 always zero.
+			if (results.empty())
+			{
+				static const int kVRAMBlockBytes = 128;
+				static const int kROMBlockBytes  = 96;
+
+				const int numBlocks = FindSearchBytes / kVRAMBlockBytes;
+				if (numBlocks > 0)
+				{
+					std::vector<uint8_t> reducedBuf;
+					reducedBuf.reserve(numBlocks * kROMBlockBytes);
+					for (int block = 0; block < numBlocks; ++block)
+					{
+						const uint8_t* pBlock = pBytes + block * kVRAMBlockBytes;
+						reducedBuf.insert(reducedBuf.end(), pBlock, pBlock + kROMBlockBytes);
+					}
+					results = state.FindAllMemoryPatterns(reducedBuf.data(), reducedBuf.size(), true, false);
+					bFoundAs3Bpp = !results.empty();
+				}
+			}
+
 			if (!results.empty())
 			{
 				FoundSpriteDataAddr = results[0];
@@ -889,15 +973,24 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 		ImGui::SameLine();
 		DrawAddressLabel(state, viewState, FoundSpriteDataAddr);
 
-		if (ImGui::Button("Format as Sprite"))
+		const char* formatLabel = bFoundAs3Bpp ? "Format as 3bpp Sprite" : "Format as 4bpp Sprite";
+		if (ImGui::Button(formatLabel))
 		{
 			FDataFormattingOptions options;
-			options.DataType    = EDataType::Bitmap;
-			options.DisplayType = EDataItemDisplayType::Sprite4Bpp_PCE;
+			options.DataType     = EDataType::Bitmap;
 			options.StartAddress = FoundSpriteDataAddr;
-			options.ItemSize    = info.Width / 2;
-			options.NoItems     = info.Height;
-			options.PaletteNo   = pPCEEmu->CreateUserPalette(16 + info.Palette);
+			options.NoItems      = info.Height;
+			options.PaletteNo    = pPCEEmu->CreateUserPalette(16 + info.Palette);
+			if (bFoundAs3Bpp)
+			{
+				options.DisplayType = EDataItemDisplayType::Sprite3Bpp_PCE;
+				options.ItemSize    = info.Width * 3 / 8;  // 3 planes x 2 bytes per 16px column = 6 bytes per block-row
+			}
+			else
+			{
+				options.DisplayType = EDataItemDisplayType::Sprite4Bpp_PCE;
+				options.ItemSize    = info.Width / 2;
+			}
 			FormatData(state, options);
 			state.SetCodeAnalysisDirty(options.StartAddress);
 		}

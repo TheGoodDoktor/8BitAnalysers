@@ -23,6 +23,7 @@ struct FHistorySpriteEntry
 	uint16_t    VRAMAddress      = 0;
 	uint32_t    DataHash         = 0;        // FNV-1a of VRAM bytes — dedup key
 	FAddressRef FoundDataAddr = FAddressRef::Invalid();
+	bool        bFoundAs3Bpp     = false;
 	bool        bFormatted       = false;
 };
 
@@ -74,6 +75,7 @@ private:
 
 	FAddressRef FoundSpriteDataAddr;
 	bool        bFoundSpriteData = false;
+	bool        bFoundAs3Bpp     = false;
 	int         LastSearchedSprite = -1;
 	int         FindSearchBytes = 0;
 
