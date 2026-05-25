@@ -3,9 +3,11 @@
 
 #include <string.h>
 #include <imgui.h>
+
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "Util/GraphicsView.h"
 #include "ImGuiSupport/ImGuiScaling.h"
+#include <imgui_internal.h>
 #include "CodeAnalyser/UI/UIColours.h"
 #include "optick/optick.h"
 #include "../PCEEmu.h"
@@ -15,12 +17,12 @@
 static const int kMemoryViewImageWidth  = 128;
 static const int kMemoryViewImageHeight = 256;
 
-static const int kVRAMTileViewWidth    = 256;   // 32 tiles across
-static const int kVRAMTileViewHeight   = 256;   // 32 tile rows = 1024 tiles visible
-static const int kVRAMSpriteViewWidth  = 256;   // 16 sprite blocks across
-static const int kVRAMSpriteViewHeight = 256;   // 16 sprite rows = 256 blocks visible
+static const int kVRAMTileViewWidth   = 256;   // 32 tiles across
+static const int kVRAMSpriteViewWidth = 256;   // 16 sprite blocks across
 
 static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
+
+void DrawDataAcessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2);
 
 // Build a 16-entry RGBA palette from the HuC6260 colour table.
 // paletteBase is the colour table index of colour 0 for this palette.
@@ -48,10 +50,10 @@ bool FVRAMViewer::Init(void)
 	MemoryViewImage = new FGraphicsView(kMemoryViewImageWidth, kMemoryViewImageHeight);
 	MemoryViewImage->Clear(0xff000000);
 
-	BGTileViewImage = new FGraphicsView(kVRAMTileViewWidth, kVRAMTileViewHeight);
+	BGTileViewImage = new FGraphicsView(kVRAMTileViewWidth, BGTileViewRows * 8);
 	BGTileViewImage->Clear(0xff000000);
 
-	SpriteViewImage = new FGraphicsView(kVRAMSpriteViewWidth, kVRAMSpriteViewHeight);
+	SpriteViewImage = new FGraphicsView(kVRAMSpriteViewWidth, SpriteViewRows * 16);
 	SpriteViewImage->Clear(0xff000000);
 
 	return true;
@@ -59,15 +61,23 @@ bool FVRAMViewer::Init(void)
 
 void FVRAMViewer::Reset(void)
 {
+	ClearUsage();
+	memset(SpriteIndexLookup, -1, sizeof(SpriteIndexLookup));
+}
+
+void FVRAMViewer::ClearUsage(void)
+{
 	for (FVRAMAccess& access : Access)
 	{
 		access.FrameLastWritten = -1;
-		access.LastWriter = FAddressRef::Invalid();
+		access.FrameLastRead    = -1;
+		access.LastWriter       = FAddressRef::Invalid();
+		access.LastReader       = FAddressRef::Invalid();
 	}
-	memset(SpriteIndexLookup, -1, sizeof(SpriteIndexLookup));
-	memset(BGTileLookup,      -1, sizeof(BGTileLookup));
-	memset(BATLookup,         -1, sizeof(BATLookup));
-	memset(SATWordLookup,     -1, sizeof(SATWordLookup));
+	LastVRAMWriter     = FAddressRef::Invalid();
+	LastVRAMWriteFrame = -1;
+	LastVRAMReader     = FAddressRef::Invalid();
+	LastVRAMReadFrame  = -1;
 }
 
 void FVRAMViewer::DrawUI(void)
@@ -93,6 +103,89 @@ void FVRAMViewer::DrawUI(void)
 	}
 }
 
+// PCE-specific palette combo with hover-preview and restore-on-cancel.
+// Palette store indices 0-15 = BG palettes, 16-31 = sprite palettes.
+static bool DrawHWPaletteCombo(const char* pLabel, int& paletteIndex, bool bPreviewOnHover = true)
+{
+	static ImGuiID s_activeId   = 0;
+	static int     s_savedIndex = -1;
+	static bool    s_confirmed  = false;
+
+	const ImGuiID id = ImGui::GetID(pLabel);
+
+	// The button always shows the committed palette, not the hover preview
+	const int displayIdx = (s_activeId == id) ? s_savedIndex : paletteIndex;
+	char previewLabel[16];
+	if      (displayIdx < 16) snprintf(previewLabel, sizeof(previewLabel), "BGND %02d", displayIdx);
+	else if (displayIdx < 32) snprintf(previewLabel, sizeof(previewLabel), "SPRT %02d", displayIdx - 16);
+	else                      snprintf(previewLabel, sizeof(previewLabel), "USER %02d", displayIdx - 32);
+
+	bool       bChanged = false;
+	const bool bIsOpen  = ImGui::BeginCombo(pLabel, nullptr, ImGuiComboFlags_CustomPreview | ImGuiComboFlags_HeightLarge);
+
+	if (bIsOpen && s_activeId != id)
+	{
+		s_activeId   = id;
+		s_savedIndex = paletteIndex;
+		s_confirmed  = false;
+	}
+
+	if (!bIsOpen && s_activeId == id)
+	{
+		if (!s_confirmed)
+			paletteIndex = s_savedIndex;
+		s_activeId = 0;
+	}
+
+	if (bIsOpen)
+	{
+		const int numPalettes = GetNoPaletteEntries();
+		for (int p = 0; p < numPalettes; p++)
+		{
+			const FPaletteEntry* pEntry = GetPaletteEntry(p);
+			if (!pEntry || pEntry->NoColours != 16)
+				continue;
+
+			char tmp[16];
+			if      (p < 16) snprintf(tmp, sizeof(tmp), "BGND %02d", p);
+			else if (p < 32) snprintf(tmp, sizeof(tmp), "SPRT %02d", p - 16);
+			else             snprintf(tmp, sizeof(tmp), "USER %02d", p - 32);
+
+			if (ImGui::Selectable(tmp, paletteIndex == p))
+			{
+				paletteIndex = p;
+				s_confirmed  = true;
+				bChanged     = true;
+			}
+
+			if (bPreviewOnHover && ImGui::IsItemHovered())
+				paletteIndex = p;
+
+			const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+			if (pPalette)
+			{
+				ImGui::SameLine();
+				DrawPalette(pPalette, 16);
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::BeginComboPreview())
+	{
+		ImGui::TextUnformatted(previewLabel);
+		const uint32_t* pPalette = GetPaletteFromPaletteNo(displayIdx);
+		if (pPalette)
+		{
+			ImGui::SameLine();
+			DrawPalette(pPalette, 16);
+		}
+		ImGui::EndComboPreview();
+	}
+
+	return bChanged;
+}
+
 void FVRAMViewer::DrawBGTileView()
 {
 	HuC6270* huc6270   = pPCEEmu->GetCore()->GetHuC6270_1();
@@ -100,19 +193,29 @@ void FVRAMViewer::DrawBGTileView()
 	const u16* vram       = huc6270->GetVRAM();
 	const u16* colorTable = huc6260->GetColorTable();
 
-	ImGui::SliderInt("Palette##bgtile", &BGTilePalette, 0, 15);
-	ImGui::InputInt("Scale##bgtile",    &BGTileScale, 1, 1);
+	ImGui::InputInt("Scale##bgtile", &BGTileScale, 1, 1);
 	BGTileScale = MAX(1, BGTileScale);
+	
+	ImGui::InputInt("Rows##bgtile", &BGTileViewRows, 1, 8);
+	BGTileViewRows = MAX(8, MIN(BGTileViewRows, 64));
 
-	constexpr int kTilesPerRow  = kVRAMTileViewWidth  / 8;  // 32
-	constexpr int kTileRowCount = kVRAMTileViewHeight / 8;  // 32
-	constexpr int kTilesVisible = kTilesPerRow * kTileRowCount;   // 1024
-	constexpr int kMaxTiles     = HUC6270_VRAM_SIZE / 16;         // 2048
+	constexpr int kTilesPerRow = kVRAMTileViewWidth / 8;       // 32
+	constexpr int kMaxTiles    = HUC6270_VRAM_SIZE  / 16;      // 2048
+	const int kTileRowCount    = BGTileViewRows;
+	const int kTilesVisible    = kTilesPerRow * kTileRowCount;
+
+	// Recreate texture if row count changed
+	const int desiredHeight = BGTileViewRows * 8;
+	if (BGTileViewImage->GetHeight() != desiredHeight)
+	{
+		delete BGTileViewImage;
+		BGTileViewImage = new FGraphicsView(kVRAMTileViewWidth, desiredHeight);
+	}
 
 	BGTileOffset = MAX(0, MIN(BGTileOffset, kMaxTiles - kTilesVisible));
 
 	uint32_t palette[16];
-	BuildHWPalette(colorTable, BGTilePalette * 16, palette);
+	BuildHWPalette(colorTable, MAX(0, BGTilePalette) * 16, palette);
 
 	BGTileViewImage->Clear(0xFF000000);
 	const int tilesAvailable = MIN(kTilesVisible, kMaxTiles - BGTileOffset);
@@ -125,16 +228,41 @@ void FVRAMViewer::DrawBGTileView()
 	BGTileViewImage->UpdateTexture();
 
 	const float scale = ImGui_GetScaling() * (float)BGTileScale;
-	const ImVec2 imageSize(kVRAMTileViewWidth * scale, kVRAMTileViewHeight * scale);
+	const ImVec2 imageSize(kVRAMTileViewWidth * scale, (float)BGTileViewImage->GetHeight() * scale);
 	ImGui::Image((void*)BGTileViewImage->GetTexture(), imageSize);
 
 	if (ImGui::IsItemHovered())
 	{
-		const float wheel = ImGui::GetIO().MouseWheel;
+		const ImGuiIO& io    = ImGui::GetIO();
+		const ImVec2 imgMin  = ImGui::GetItemRectMin();
+
+		const float wheel = io.MouseWheel;
 		BGTileOffset = MAX(0, MIN(BGTileOffset - (int)wheel * kTilesPerRow, kMaxTiles - kTilesVisible));
+
+		const int tileCol = (int)((io.MousePos.x - imgMin.x) / imageSize.x * kTilesPerRow);
+		const int tileRow = (int)((io.MousePos.y - imgMin.y) / imageSize.y * kTileRowCount);
+		if (tileCol >= 0 && tileCol < kTilesPerRow && tileRow >= 0 && tileRow < kTileRowCount)
+		{
+			const int tileIndex       = BGTileOffset + tileRow * kTilesPerRow + tileCol;
+			const uint16_t vramAddr   = (uint16_t)(tileIndex * 16);
+			const float uvX0 = (float)tileCol       / kTilesPerRow;
+			const float uvY0 = (float)tileRow       / kTileRowCount;
+			const float uvX1 = (float)(tileCol + 1) / kTilesPerRow;
+			const float uvY1 = (float)(tileRow + 1) / kTileRowCount;
+
+			ImGui::BeginTooltip();
+			ImGui::Image((void*)BGTileViewImage->GetTexture(), ImVec2(64.0f, 64.0f), ImVec2(uvX0, uvY0), ImVec2(uvX1, uvY1));
+			ImGui::Text("Tile %d  VRAM $%04X", tileIndex, vramAddr);
+			ImGui::EndTooltip();
+		}
 	}
 
-	ImGui::SliderInt("Tile##bgtileoffset", &BGTileOffset, 0, kMaxTiles - kTilesVisible);
+	int bgAddr = BGTileOffset * 16;
+	if (ImGui::SliderInt("Address##bgtileoffset", &bgAddr, 0, (kMaxTiles - kTilesVisible) * 16, "$%04X"))
+		BGTileOffset = bgAddr / 16;
+	//ImGui::Checkbox("Preview##bgtile", &bPreviewPalette);
+	//ImGui::SameLine();
+	DrawHWPaletteCombo("Palette##bgtile", BGTilePalette, bPreviewPalette);
 }
 
 void FVRAMViewer::DrawSpriteView()
@@ -144,20 +272,29 @@ void FVRAMViewer::DrawSpriteView()
 	const u16* vram       = huc6270->GetVRAM();
 	const u16* colorTable = huc6260->GetColorTable();
 
-	ImGui::SliderInt("Palette##spr", &SpritePalette, 0, 15);
-	ImGui::InputInt("Scale##spr",    &SpriteScale, 1, 1);
+	ImGui::InputInt("Scale##spr", &SpriteScale, 1, 1);
 	SpriteScale = MAX(1, SpriteScale);
+	
+	ImGui::InputInt("Rows##spr", &SpriteViewRows, 1, 4);
+	SpriteViewRows = MAX(4, MIN(SpriteViewRows, 32));
 
-	constexpr int kSpritesPerRow  = kVRAMSpriteViewWidth  / 16; // 16
-	constexpr int kSpriteRowCount = kVRAMSpriteViewHeight / 16; // 16
-	constexpr int kBlocksVisible  = kSpritesPerRow * kSpriteRowCount;  // 256
-	constexpr int kMaxBlocks      = HUC6270_VRAM_SIZE / 64;            // 512
+	constexpr int kSpritesPerRow = kVRAMSpriteViewWidth / 16;  // 16
+	constexpr int kMaxBlocks     = HUC6270_VRAM_SIZE    / 64;  // 512
+	const int kSpriteRowCount    = SpriteViewRows;
+	const int kBlocksVisible     = kSpritesPerRow * kSpriteRowCount;
+
+	// Recreate texture if row count changed
+	const int desiredHeight = SpriteViewRows * 16;
+	if (SpriteViewImage->GetHeight() != desiredHeight)
+	{
+		delete SpriteViewImage;
+		SpriteViewImage = new FGraphicsView(kVRAMSpriteViewWidth, desiredHeight);
+	}
 
 	SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset, kMaxBlocks - kBlocksVisible));
 
-	// Sprite palettes occupy the second half of the colour table (offset 0x100)
 	uint32_t palette[16];
-	BuildHWPalette(colorTable, 0x100 + SpritePalette * 16, palette);
+	BuildHWPalette(colorTable, MAX(0, SpritePalette) * 16, palette);
 
 	SpriteViewImage->Clear(0xFF000000);
 	const int blocksAvailable = MIN(kBlocksVisible, kMaxBlocks - SpriteBlockOffset);
@@ -170,16 +307,41 @@ void FVRAMViewer::DrawSpriteView()
 	SpriteViewImage->UpdateTexture();
 
 	const float scale = ImGui_GetScaling() * (float)SpriteScale;
-	const ImVec2 imageSize(kVRAMSpriteViewWidth * scale, kVRAMSpriteViewHeight * scale);
+	const ImVec2 imageSize(kVRAMSpriteViewWidth * scale, (float)SpriteViewImage->GetHeight() * scale);
 	ImGui::Image((void*)SpriteViewImage->GetTexture(), imageSize);
 
 	if (ImGui::IsItemHovered())
 	{
-		const float wheel = ImGui::GetIO().MouseWheel;
+		const ImGuiIO& io   = ImGui::GetIO();
+		const ImVec2 imgMin = ImGui::GetItemRectMin();
+
+		const float wheel = io.MouseWheel;
 		SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset - (int)wheel * kSpritesPerRow, kMaxBlocks - kBlocksVisible));
+
+		const int blockCol = (int)((io.MousePos.x - imgMin.x) / imageSize.x * kSpritesPerRow);
+		const int blockRow = (int)((io.MousePos.y - imgMin.y) / imageSize.y * kSpriteRowCount);
+		if (blockCol >= 0 && blockCol < kSpritesPerRow && blockRow >= 0 && blockRow < kSpriteRowCount)
+		{
+			const int blockIndex      = SpriteBlockOffset + blockRow * kSpritesPerRow + blockCol;
+			const uint16_t vramAddr   = (uint16_t)(blockIndex * 64);
+			const float uvX0 = (float)blockCol       / kSpritesPerRow;
+			const float uvY0 = (float)blockRow       / kSpriteRowCount;
+			const float uvX1 = (float)(blockCol + 1) / kSpritesPerRow;
+			const float uvY1 = (float)(blockRow + 1) / kSpriteRowCount;
+
+			ImGui::BeginTooltip();
+			ImGui::Image((void*)SpriteViewImage->GetTexture(), ImVec2(64.0f, 64.0f), ImVec2(uvX0, uvY0), ImVec2(uvX1, uvY1));
+			ImGui::Text("Block %d  VRAM $%04X", blockIndex, vramAddr);
+			ImGui::EndTooltip();
+		}
 	}
 
-	ImGui::SliderInt("Block##sproffset", &SpriteBlockOffset, 0, kMaxBlocks - kBlocksVisible);
+	int sprAddr = SpriteBlockOffset * 64;
+	if (ImGui::SliderInt("Address##sproffset", &sprAddr, 0, (kMaxBlocks - kBlocksVisible) * 64, "$%04X"))
+		SpriteBlockOffset = sprAddr / 64;
+	ImGui::Checkbox("Preview##spr", &bPreviewPalette);
+	ImGui::SameLine();
+	DrawHWPaletteCombo("Palette##spr", SpritePalette, bPreviewPalette);
 }
 
 void	FVRAMViewer::DrawLegend()
@@ -192,25 +354,18 @@ void	FVRAMViewer::DrawLegend()
 	};
 
 	ImGui::BeginTooltip();
-
-	LegendRow("Unwritten",        kUnwrittenCol,         "Unwritten");
-	LegendRow("Write",            kUnknownWriteCol,      "Unknown write");
-	LegendRow("ActiveWrite",      kUnknownWriteActiveCol,"Unknown write (active)");
-	LegendRow("BATWrite",         kBATWriteCol,          "BAT (background attribute table)");
-	LegendRow("BATWriteActive",   kBATWriteActiveCol,    "BAT (active write)");
-	LegendRow("BGTileWrite",      kBGTileWriteCol,       "BG tile data");
-	LegendRow("BGTileWriteActive",kBGTileWriteActiveCol, "BG tile data (active write)");
-	LegendRow("SpriteWrite",      kSpriteWriteCol,       "Sprite pattern data");
-	LegendRow("SpriteWriteActive",kSpriteWriteActiveCol, "Sprite pattern data (active write)");
-	LegendRow("SATWrite",         kSATWriteCol,          "SAT (sprite attribute table)");
-	LegendRow("SATWriteActive",   kSATWriteActiveCol,    "SAT (active write)");
-
+	LegendRow("Unwritten",    kUnwrittenCol,          "Never accessed");
+	LegendRow("Write",        kUnknownWriteCol,        "Written");
+	LegendRow("WriteActive",  kUnknownWriteActiveCol,  "Written (active)");
+	LegendRow("Read",         kDataReadCol,            "Read");
+	LegendRow("ReadActive",   kDataReadActiveCol,      "Read (active)");
 	ImGui::EndTooltip();
 }
 
 void	FVRAMViewer::DrawPhysicalMemoryOverview()
 {
-	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisState& state     = pEmulator->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
 	MemoryViewImage->Clear(0xff808080);
 
@@ -223,6 +378,9 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 
 	ImGui::InputInt("Scale", &pConfig->VRAMViewerScale, 1, 1);
 	pConfig->VRAMViewerScale = MAX(1, pConfig->VRAMViewerScale);	// clamp
+	ImGui::SameLine();
+	if (ImGui::Button("Clear Usage"))
+		ClearUsage();
 	
 	const float scale = ImGui_GetScaling() * (float)pConfig->VRAMViewerScale;
 
@@ -245,147 +403,84 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 	ImGui::Button("?");
 
 	if (ImGui::IsItemHovered())
-	{
 		DrawLegend();
-	}
-
-	ImDrawList* dl = ImGui::GetWindowDrawList();
 
 	if (bMapIsHovered)
 	{
-		FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
-
 		const int xp = (int)((io.MousePos.x - pos.x) / scale);
 		const int yp = (int)((io.MousePos.y - pos.y) / scale);
 		const uint16_t addr = (uint16_t)(xp + yp * kMemoryViewImageWidth);
 
+		const FVRAMAccess& access = Access[addr];
+
+		ImGui::BeginTooltip();
 		ImGui::Text("VRAM: $%04X", addr);
-
-		GeargrafxCore*  pCore      = pPCEEmu->GetCore();
-		HuC6270*        huc6270    = pCore->GetHuC6270_1();
-		HuC6260*        huc6260    = pCore->GetHuC6260();
-		const u16*      vram       = huc6270->GetVRAM();
-		const u16*      colorTable = huc6260->GetColorTable();
-		const u16*      sat        = huc6270->GetSAT();
-		FSpriteViewer*  pSpriteViewer = pPCEEmu->GetSpriteViewer();
-
-		const FAddressRef& lastWriter  = Access[addr].LastWriter;
-		const int spriteIndex          = GetSpriteIndexForAddress(addr);
-		const int satWord              = GetSATWordForAddress(addr);
-		const int bgTileIndex          = GetBGTileIndexForAddress(addr);
-		const int batIndex             = GetBATIndexForAddress(addr);
-
-		// Helper: draw an 8x8 BG tile inline using ImDrawList (no texture needed).
-		// Each tile pixel is rendered as a kPixSz x kPixSz filled rectangle.
-		auto DrawTilePreview = [&](int tileIdx, int palette)
+		if (access.LastWriter.IsValid())
 		{
-			if (tileIdx < 0 || tileIdx * 16 + 15 >= HUC6270_VRAM_SIZE)
-				return;
-			static const u8 kE38[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
-			const float kPixSz = 12.0f;
-			const ImVec2 base  = ImGui::GetCursorScreenPos();
-			ImDrawList*  dl    = ImGui::GetWindowDrawList();
-			const int tile_base = tileIdx * 16;
-			for (int row = 0; row < 8; row++)
+			ImGui::Text("Writer:");
+			if (bShowWriterSnippet)
 			{
-				const u16 wa = vram[tile_base + row];
-				const u16 wb = vram[tile_base + row + 8];
-				const u8  b1 = (u8)(wa & 0xFF), b2 = (u8)(wa >> 8);
-				const u8  b3 = (u8)(wb & 0xFF), b4 = (u8)(wb >> 8);
-				for (int col = 0; col < 8; col++)
-				{
-					const int sh    = 7 - col;
-					const int color = ((b1 >> sh) & 1) | (((b2 >> sh) & 1) << 1) |
-					                  (((b3 >> sh) & 1) << 2) | (((b4 >> sh) & 1) << 3);
-					const u16 cv = colorTable[color == 0 ? 0 : palette * 16 + color];
-					const u8 r = kE38[(cv >> 3) & 7];
-					const u8 g = kE38[(cv >> 6) & 7];
-					const u8 b = kE38[cv & 7];
-					ImVec2 tl(base.x + col * kPixSz, base.y + row * kPixSz);
-					ImVec2 br(tl.x + kPixSz, tl.y + kPixSz);
-					dl->AddRectFilled(tl, br, IM_COL32(r, g, b, 255));
-				}
+				ImGui::NewLine();
+				ImGui::Separator();
+				DrawSnippetContent(state, viewState, access.LastWriter);
 			}
-			ImGui::Dummy(ImVec2(8 * kPixSz, 8 * kPixSz));
-		};
+			else
+			{ 
+				ImGui::SameLine(); 
+				DrawAddressLabel(state, viewState, access.LastWriter); 
+			}
+		}
+		if (access.LastReader.IsValid())
+		{
+			ImGui::Text("Read by:"); ImGui::SameLine();
+			DrawAddressLabel(state, viewState, access.LastReader);
+		}
+		ImGui::EndTooltip();
 
-		if (satWord != -1)
-		{
-			// SAT word — show which sprite and which attribute field
-			const int  spriteIdx = satWord >> 2;
-			const int  field     = satWord & 3;
-			static const char* kFieldName[] = { "Y Position", "X Position", "Pattern", "Flags" };
-			ImGui::BeginTooltip();
-			ImGui::Text("SAT — Sprite %d: %s", spriteIdx, kFieldName[field]);
-			ImGui::Text("Value: $%04X", sat[satWord]);
-			if (lastWriter.IsValid()) { ImGui::Text("Last writer:"); ImGui::SameLine(); DrawAddressLabel(state, viewState, lastWriter); }
-			ImGui::EndTooltip();
-			SpriteHighlight = spriteIdx;
-		}
-		else if (spriteIndex != -1)
-		{
-			// Sprite pattern data
-			ImGui::BeginTooltip();
-			ImGui::Text("Sprite %d pattern data", spriteIndex);
-			const FSpriteInfo& info = SpriteInfo[spriteIndex];
-			if (pSpriteViewer && info.Width > 0 && info.Height > 0)
-			{
-				const float uv_w = (float)info.Width  / HUC6270_MAX_SPRITE_WIDTH;
-				const float uv_h = (float)info.Height / HUC6270_MAX_SPRITE_HEIGHT;
-				ImGui::Image(pSpriteViewer->GetSpriteTexture(spriteIndex),
-				             ImVec2((float)info.Width * 4.0f, (float)info.Height * 4.0f),
-				             ImVec2(0, 0), ImVec2(uv_w, uv_h));
-			}
-			if (lastWriter.IsValid()) { ImGui::Text("Last writer:"); ImGui::SameLine(); DrawAddressLabel(state, viewState, lastWriter); }
-			ImGui::EndTooltip();
-			SpriteHighlight = spriteIndex;
-		}
-		else if (batIndex != -1)
-		{
-			// BAT entry — show tile and draw preview
-			const u16 batEntry  = vram[batIndex];
-			const int tileIndex = batEntry & 0x07FF;
-			const int palette   = (batEntry >> 12) & 0x0F;
-			ImGui::BeginTooltip();
-			ImGui::Text("BAT entry %d", batIndex);
-			DrawTilePreview(tileIndex, palette);
-			ImGui::Text("Tile $%03X  Palette %d  VRAM $%04X", tileIndex, palette, tileIndex * 16);
-			if (lastWriter.IsValid()) { ImGui::Text("Last writer:"); ImGui::SameLine(); DrawAddressLabel(state, viewState, lastWriter); }
-			ImGui::EndTooltip();
-		}
-		else if (bgTileIndex != -1)
-		{
-			// BG tile character data — find palette from first BAT entry that uses it
-			const int screen_reg = (huc6270->GetState()->R[HUC6270_REG_MWR] >> 4) & 0x07;
-			const int bat_size   = k_huc6270_screen_size_x[screen_reg] * k_huc6270_screen_size_y[screen_reg];
-			int palette = 0;
-			for (int i = 0; i < bat_size && i < HUC6270_VRAM_SIZE; i++)
-			{
-				if ((vram[i] & 0x07FF) == (u16)bgTileIndex) { palette = (vram[i] >> 12) & 0x0F; break; }
-			}
-			ImGui::BeginTooltip();
-			ImGui::Text("BG tile $%03X (VRAM $%04X)", bgTileIndex, bgTileIndex * 16);
-			DrawTilePreview(bgTileIndex, palette);
-			ImGui::Text("Palette %d  (first BAT reference)", palette);
-			if (lastWriter.IsValid()) { ImGui::Text("Last writer:"); ImGui::SameLine(); DrawAddressLabel(state, viewState, lastWriter); }
-			ImGui::EndTooltip();
-		}
-		else if (Access[addr].FrameLastWritten != -1)
-		{
-			// Unknown written region
-			ImGui::BeginTooltip();
-			ImGui::Text("VRAM $%04X  (unclassified write)", addr);
-			if (lastWriter.IsValid()) { ImGui::Text("Last writer:"); ImGui::SameLine(); DrawAddressLabel(state, viewState, lastWriter); }
-			ImGui::EndTooltip();
-		}
+		SpriteHighlight = GetSpriteIndexForAddress(addr);
 
-		if (ImGui::IsMouseDoubleClicked(0) && lastWriter.IsValid())
-			viewState.GoToAddress(lastWriter, false);
+		if (ImGui::IsMouseDoubleClicked(0) && access.LastWriter.IsValid())
+			viewState.GoToAddress(access.LastWriter, false);
 	}
-	else
+
+	// Last writer / reader activity rows
+	const float lineHeight = ImGui::GetTextLineHeight();
+	const float lh2        = (float)(int)(lineHeight / 2.0f);
+	const int   curFrame   = state.CurrentFrameNo;
+	const ImU32 brdCol     = 0xFF000000;
+
 	{
-		ImGui::NewLine();
+		const int framesSince = LastVRAMWriteFrame == -1 ? 255 : curFrame - LastVRAMWriteFrame;
+		const int brightness  = (255 - MIN(framesSince << 2, 255)) & 0xff;
+		const ImVec2 indPos   = ImGui::GetCursorScreenPos();
+		ImGui::Dummy(ImVec2(14.0f, lineHeight));
+		if (brightness > 0)
+			DrawDataAcessIndicator(indPos, 0xff000000 | brightness, brdCol, lineHeight, lh2);
+		ImGui::SameLine();
+		ImGui::Text("Last write:");
+		ImGui::SameLine();
+		if (LastVRAMWriter.IsValid())
+			DrawAddressLabel(state, viewState, LastVRAMWriter);
+		else
+			ImGui::TextDisabled("None");
 	}
+	{
+		const int framesSince = LastVRAMReadFrame == -1 ? 255 : curFrame - LastVRAMReadFrame;
+		const int brightness  = (255 - MIN(framesSince << 2, 255)) & 0xff;
+		const ImVec2 indPos   = ImGui::GetCursorScreenPos();
+		ImGui::Dummy(ImVec2(14.0f, lineHeight));
+		if (brightness > 0)
+			DrawDataAcessIndicator(indPos, 0xff000000 | (brightness << 8), brdCol, lineHeight, lh2);
+		ImGui::SameLine();
+		ImGui::Text("Last read: ");
+		ImGui::SameLine();
+		if (LastVRAMReader.IsValid())
+			DrawAddressLabel(state, viewState, LastVRAMReader);
+		else
+			ImGui::TextDisabled("None");
+	}
+
+	ImGui::Checkbox("Show Tooltip Writer Snippet", &bShowWriterSnippet);
 }
 
 void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
@@ -395,40 +490,26 @@ void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 
 	for (uint16_t addr = 0; addr < HUC6270_VRAM_SIZE; addr++)
 	{
-		const bool written     = Access[addr].FrameLastWritten != -1;
-		const bool activeWrite = written && (currentFrameNo - Access[addr].FrameLastWritten < frameThreshold);
-
-		const int  spriteIndex = GetSpriteIndexForAddress(addr);
-		const bool bIsSAT      = SATWordLookup[addr] != -1;
-		const bool bIsSprite   = spriteIndex != -1;
-		const bool bIsBGTile   = BGTileLookup[addr] != -1;
-		const bool bIsBAT      = BATLookup[addr] != -1;
+		const FVRAMAccess& access   = Access[addr];
+		const bool written          = access.FrameLastWritten != -1;
+		const bool activeWrite      = written    && (currentFrameNo - access.FrameLastWritten < frameThreshold);
+		const bool read             = access.FrameLastRead != -1;
+		const bool activeRead       = read       && (currentFrameNo - access.FrameLastRead    < frameThreshold);
+		const int  spriteIndex      = SpriteIndexLookup[addr];
 
 		uint32_t drawCol = kUnwrittenCol;
 
-		if (bIsSAT)
-		{
-			drawCol = activeWrite ? kSATWriteActiveCol : kSATWriteCol;
-		}
-		else if (bIsSprite)
-		{
-			if (SpriteHighlight == spriteIndex)
-				drawCol = Colours::GetFlashColour();
-			else
-				drawCol = activeWrite ? kSpriteWriteActiveCol : kSpriteWriteCol;
-		}
-		else if (bIsBGTile)
-		{
-			drawCol = activeWrite ? kBGTileWriteActiveCol : kBGTileWriteCol;
-		}
-		else if (bIsBAT)
-		{
-			drawCol = activeWrite ? kBATWriteActiveCol : kBATWriteCol;
-		}
+		if (activeWrite)
+			drawCol = kUnknownWriteActiveCol;
 		else if (written)
-		{
-			drawCol = activeWrite ? kUnknownWriteActiveCol : kUnknownWriteCol;
-		}
+			drawCol = kUnknownWriteCol;
+		else if (activeRead)
+			drawCol = kDataReadActiveCol;
+		else if (read)
+			drawCol = kDataReadCol;
+
+		if (SpriteHighlight != -1 && spriteIndex == SpriteHighlight)
+			drawCol = Colours::GetFlashColour();
 
 		*pPix++ = drawCol;
 	}
@@ -438,9 +519,12 @@ void FVRAMViewer::RegisterRead(uint16_t vramAddress, FAddressRef reader)
 {
 	if (vramAddress < HUC6270_VRAM_SIZE)
 	{
-		FVRAMAccess& access = Access[vramAddress];
-		access.FrameLastRead = pPCEEmu->GetCodeAnalysis().CurrentFrameNo;
-		access.LastReader = reader;
+		const int frameNo        = pPCEEmu->GetCodeAnalysis().CurrentFrameNo;
+		FVRAMAccess& access      = Access[vramAddress];
+		access.FrameLastRead     = frameNo;
+		access.LastReader        = reader;
+		LastVRAMReader           = reader;
+		LastVRAMReadFrame        = frameNo;
 	}
 }
 
@@ -448,9 +532,12 @@ void FVRAMViewer::RegisterWrite(uint16_t vramAddress, FAddressRef writer)
 {
 	if (vramAddress < HUC6270_VRAM_SIZE)
 	{
-		FVRAMAccess& access = Access[vramAddress];
-		access.FrameLastWritten = pPCEEmu->GetCodeAnalysis().CurrentFrameNo;
-		access.LastWriter = writer;
+		const int frameNo        = pPCEEmu->GetCodeAnalysis().CurrentFrameNo;
+		FVRAMAccess& access      = Access[vramAddress];
+		access.FrameLastWritten  = frameNo;
+		access.LastWriter        = writer;
+		LastVRAMWriter           = writer;
+		LastVRAMWriteFrame       = frameNo;
 	}
 }
 
@@ -495,36 +582,6 @@ void FVRAMViewer::Tick()
 			SpriteIndexLookup[addr] = (int16_t)i;
 	}
 
-	// Rebuild SAT lookup (256 words at the DVSSR base address)
-	memset(SATWordLookup, -1, sizeof(SATWordLookup));
-	const uint16_t satBase = huc6270->GetState()->R[HUC6270_REG_DVSSR];
-	for (int i = 0; i < HUC6270_SAT_SIZE; i++)
-	{
-		const uint16_t addr = satBase + (uint16_t)i;
-		if (addr < HUC6270_VRAM_SIZE)
-			SATWordLookup[addr] = (int16_t)i;
-	}
-
-	// Rebuild BAT and BG-tile lookups
-	memset(BATLookup,    -1, sizeof(BATLookup));
-	memset(BGTileLookup, -1, sizeof(BGTileLookup));
-	const int screen_reg = (huc6270->GetState()->R[HUC6270_REG_MWR] >> 4) & 0x07;
-	const int bat_w      = k_huc6270_screen_size_x[screen_reg];
-	const int bat_h      = k_huc6270_screen_size_y[screen_reg];
-	const int bat_size   = bat_w * bat_h;
-	for (int i = 0; i < bat_size && i < HUC6270_VRAM_SIZE; i++)
-	{
-		BATLookup[i] = (int16_t)i;
-
-		const int tile_index = vram[i] & 0x07FF;
-		const int tile_base  = tile_index * 16;
-		for (int w = 0; w < 16; w++)
-		{
-			const int addr = tile_base + w;
-			if (addr < HUC6270_VRAM_SIZE)
-				BGTileLookup[addr] = (int16_t)tile_index;
-		}
-	}
 }
 
 // todo: deal with the fact there can be multiple sprites sharing the same adddress.

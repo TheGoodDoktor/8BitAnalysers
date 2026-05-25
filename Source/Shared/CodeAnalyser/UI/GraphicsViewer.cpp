@@ -418,8 +418,8 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumn(int16_t bankId, uint16_t me
 		const uint8_t * pSrc = &pBank->Memory[bankOffset];
 		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
 		const int bytesInBank = (bankSizeMask + 1) - bankOffset;
-		const int spriteBlocksWide = XSizePixels / 16;
-		const int spriteBlocksTall = YSizePixels / 16;
+		const int spriteBlocksWide = std::max(1, XSizePixels / 16);
+		const int spriteBlocksTall = std::max(1, YSizePixels / 16);
 		const int bytesPerSprite = 128 * spriteBlocksWide * spriteBlocksTall;
 		const int safeYCount = std::min(ycount, bytesInBank / bytesPerSprite);
 		pGraphicsView->Draw4bpp16x16PlanarSpriteImage(pSrc, xPos, 0, spriteBlocksWide, safeYCount * spriteBlocksTall, palette);
@@ -504,8 +504,8 @@ void FGraphicsViewer::DrawMemoryBankAsGraphicsColumnChars(int16_t bankId, uint16
 		const uint8_t * pSrc = &pBank->Memory[bankOffset];
 		const uint32_t* palette = pPaletteColours ? pPaletteColours : GetCurrentPalette();
 		const int bytesInBank = (bankSizeMask + 1) - bankOffset;
-		const int spriteBlocksWide = XSizePixels / 16;
-		const int spriteBlocksTall = YSizePixels / 16;
+		const int spriteBlocksWide = std::max(1, XSizePixels / 16);
+		const int spriteBlocksTall = std::max(1, YSizePixels / 16);
 		const int bytesPerSprite = 128 * spriteBlocksWide * spriteBlocksTall;
 		const int spriteRows = ycount / (YSizePixels / 8);
 		const int safeYCount = std::min(spriteRows, bytesInBank / bytesPerSprite);
@@ -942,6 +942,8 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 
 	// draw 64 * 8 bytes
 	const float kNumSize = 80.0f * scale;	// size for number GUI widget
+	const bool bFixedSize = BitmapFormat == EBitmapFormat::Sprite4Bpp_PCE || BitmapFormat == EBitmapFormat::BGTile4Bpp_PCE;
+	ImGui::BeginDisabled(bFixedSize);
 	ImGui::SetNextItemWidth(kNumSize);
 	ImGui::InputInt("XSize", &XSizePixels, 8, 8);
 	//ImGui::SameLine();
@@ -949,6 +951,7 @@ void FGraphicsViewer::DrawCharacterGraphicsViewer(void)
 	ImGui::InputInt("YSize", &YSizePixels, bYSizePixelsFineCtrl ? 1 : 8, 8);
 	ImGui::SameLine();
 	ImGui::Checkbox("Pixel Adjust", &bYSizePixelsFineCtrl);
+	ImGui::EndDisabled();
 
 	// clamp sizes
 	XSizePixels = std::min(std::max(8, XSizePixels), kMaxImageSize);

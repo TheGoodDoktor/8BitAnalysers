@@ -16,6 +16,11 @@ TODO
 - in graphics viewer, label which palette is currently selected
 - get 3bpp, 2bpp sprite working in graphics viewer. 
 - tooltips on pce registers describing what they do
+- add ctrl + up/down to keyboard shortcuts display
+
+TODO
+- in sprites viewer make the Results tab a Search tab and move find all into it?
+- in graphics viewer, label which palette is currently selected 
 - change Current palette option in graphics viewer. doesnt make sense for PCE
 - Show register value on tooltips
 - tidy tooltips for PCE related instructions
