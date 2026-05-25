@@ -17,10 +17,8 @@ void DrawDataAcessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, floa
 static const int kMemoryViewImageWidth  = 128;
 static const int kMemoryViewImageHeight = 256;
 
-static const int kVRAMTileViewWidth    = 256;   // 32 tiles across
-static const int kVRAMTileViewHeight   = 256;   // 32 tile rows = 1024 tiles visible
-static const int kVRAMSpriteViewWidth  = 256;   // 16 sprite blocks across
-static const int kVRAMSpriteViewHeight = 256;   // 16 sprite rows = 256 blocks visible
+static const int kVRAMTileViewWidth   = 256;   // 32 tiles across
+static const int kVRAMSpriteViewWidth = 256;   // 16 sprite blocks across
 
 static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
 
@@ -50,10 +48,10 @@ bool FVRAMViewer::Init(void)
 	MemoryViewImage = new FGraphicsView(kMemoryViewImageWidth, kMemoryViewImageHeight);
 	MemoryViewImage->Clear(0xff000000);
 
-	BGTileViewImage = new FGraphicsView(kVRAMTileViewWidth, kVRAMTileViewHeight);
+	BGTileViewImage = new FGraphicsView(kVRAMTileViewWidth, BGTileViewRows * 8);
 	BGTileViewImage->Clear(0xff000000);
 
-	SpriteViewImage = new FGraphicsView(kVRAMSpriteViewWidth, kVRAMSpriteViewHeight);
+	SpriteViewImage = new FGraphicsView(kVRAMSpriteViewWidth, SpriteViewRows * 16);
 	SpriteViewImage->Clear(0xff000000);
 
 	return true;
@@ -111,13 +109,24 @@ void FVRAMViewer::DrawBGTileView()
 	const u16* colorTable = huc6260->GetColorTable();
 
 	ImGui::SliderInt("Palette##bgtile", &BGTilePalette, 0, 15);
-	ImGui::InputInt("Scale##bgtile",    &BGTileScale, 1, 1);
+	ImGui::InputInt("Scale##bgtile", &BGTileScale, 1, 1);
 	BGTileScale = MAX(1, BGTileScale);
+	
+	ImGui::InputInt("Rows##bgtile", &BGTileViewRows, 1, 8);
+	BGTileViewRows = MAX(8, MIN(BGTileViewRows, 64));
 
-	constexpr int kTilesPerRow  = kVRAMTileViewWidth  / 8;  // 32
-	constexpr int kTileRowCount = kVRAMTileViewHeight / 8;  // 32
-	constexpr int kTilesVisible = kTilesPerRow * kTileRowCount;   // 1024
-	constexpr int kMaxTiles     = HUC6270_VRAM_SIZE / 16;         // 2048
+	constexpr int kTilesPerRow = kVRAMTileViewWidth / 8;       // 32
+	constexpr int kMaxTiles    = HUC6270_VRAM_SIZE  / 16;      // 2048
+	const int kTileRowCount    = BGTileViewRows;
+	const int kTilesVisible    = kTilesPerRow * kTileRowCount;
+
+	// Recreate texture if row count changed
+	const int desiredHeight = BGTileViewRows * 8;
+	if (BGTileViewImage->GetHeight() != desiredHeight)
+	{
+		delete BGTileViewImage;
+		BGTileViewImage = new FGraphicsView(kVRAMTileViewWidth, desiredHeight);
+	}
 
 	BGTileOffset = MAX(0, MIN(BGTileOffset, kMaxTiles - kTilesVisible));
 
@@ -135,16 +144,38 @@ void FVRAMViewer::DrawBGTileView()
 	BGTileViewImage->UpdateTexture();
 
 	const float scale = ImGui_GetScaling() * (float)BGTileScale;
-	const ImVec2 imageSize(kVRAMTileViewWidth * scale, kVRAMTileViewHeight * scale);
+	const ImVec2 imageSize(kVRAMTileViewWidth * scale, (float)BGTileViewImage->GetHeight() * scale);
 	ImGui::Image((void*)BGTileViewImage->GetTexture(), imageSize);
 
 	if (ImGui::IsItemHovered())
 	{
-		const float wheel = ImGui::GetIO().MouseWheel;
+		const ImGuiIO& io    = ImGui::GetIO();
+		const ImVec2 imgMin  = ImGui::GetItemRectMin();
+
+		const float wheel = io.MouseWheel;
 		BGTileOffset = MAX(0, MIN(BGTileOffset - (int)wheel * kTilesPerRow, kMaxTiles - kTilesVisible));
+
+		const int tileCol = (int)((io.MousePos.x - imgMin.x) / imageSize.x * kTilesPerRow);
+		const int tileRow = (int)((io.MousePos.y - imgMin.y) / imageSize.y * kTileRowCount);
+		if (tileCol >= 0 && tileCol < kTilesPerRow && tileRow >= 0 && tileRow < kTileRowCount)
+		{
+			const int tileIndex       = BGTileOffset + tileRow * kTilesPerRow + tileCol;
+			const uint16_t vramAddr   = (uint16_t)(tileIndex * 16);
+			const float uvX0 = (float)tileCol       / kTilesPerRow;
+			const float uvY0 = (float)tileRow       / kTileRowCount;
+			const float uvX1 = (float)(tileCol + 1) / kTilesPerRow;
+			const float uvY1 = (float)(tileRow + 1) / kTileRowCount;
+
+			ImGui::BeginTooltip();
+			ImGui::Image((void*)BGTileViewImage->GetTexture(), ImVec2(64.0f, 64.0f), ImVec2(uvX0, uvY0), ImVec2(uvX1, uvY1));
+			ImGui::Text("Tile %d  VRAM $%04X", tileIndex, vramAddr);
+			ImGui::EndTooltip();
+		}
 	}
 
-	ImGui::SliderInt("Tile##bgtileoffset", &BGTileOffset, 0, kMaxTiles - kTilesVisible);
+	int bgAddr = BGTileOffset * 16;
+	if (ImGui::SliderInt("Address##bgtileoffset", &bgAddr, 0, (kMaxTiles - kTilesVisible) * 16, "$%04X"))
+		BGTileOffset = bgAddr / 16;
 }
 
 void FVRAMViewer::DrawSpriteView()
@@ -155,13 +186,24 @@ void FVRAMViewer::DrawSpriteView()
 	const u16* colorTable = huc6260->GetColorTable();
 
 	ImGui::SliderInt("Palette##spr", &SpritePalette, 0, 15);
-	ImGui::InputInt("Scale##spr",    &SpriteScale, 1, 1);
+	ImGui::InputInt("Scale##spr", &SpriteScale, 1, 1);
 	SpriteScale = MAX(1, SpriteScale);
+	
+	ImGui::InputInt("Rows##spr", &SpriteViewRows, 1, 4);
+	SpriteViewRows = MAX(4, MIN(SpriteViewRows, 32));
 
-	constexpr int kSpritesPerRow  = kVRAMSpriteViewWidth  / 16; // 16
-	constexpr int kSpriteRowCount = kVRAMSpriteViewHeight / 16; // 16
-	constexpr int kBlocksVisible  = kSpritesPerRow * kSpriteRowCount;  // 256
-	constexpr int kMaxBlocks      = HUC6270_VRAM_SIZE / 64;            // 512
+	constexpr int kSpritesPerRow = kVRAMSpriteViewWidth / 16;  // 16
+	constexpr int kMaxBlocks     = HUC6270_VRAM_SIZE    / 64;  // 512
+	const int kSpriteRowCount    = SpriteViewRows;
+	const int kBlocksVisible     = kSpritesPerRow * kSpriteRowCount;
+
+	// Recreate texture if row count changed
+	const int desiredHeight = SpriteViewRows * 16;
+	if (SpriteViewImage->GetHeight() != desiredHeight)
+	{
+		delete SpriteViewImage;
+		SpriteViewImage = new FGraphicsView(kVRAMSpriteViewWidth, desiredHeight);
+	}
 
 	SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset, kMaxBlocks - kBlocksVisible));
 
@@ -180,16 +222,38 @@ void FVRAMViewer::DrawSpriteView()
 	SpriteViewImage->UpdateTexture();
 
 	const float scale = ImGui_GetScaling() * (float)SpriteScale;
-	const ImVec2 imageSize(kVRAMSpriteViewWidth * scale, kVRAMSpriteViewHeight * scale);
+	const ImVec2 imageSize(kVRAMSpriteViewWidth * scale, (float)SpriteViewImage->GetHeight() * scale);
 	ImGui::Image((void*)SpriteViewImage->GetTexture(), imageSize);
 
 	if (ImGui::IsItemHovered())
 	{
-		const float wheel = ImGui::GetIO().MouseWheel;
+		const ImGuiIO& io   = ImGui::GetIO();
+		const ImVec2 imgMin = ImGui::GetItemRectMin();
+
+		const float wheel = io.MouseWheel;
 		SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset - (int)wheel * kSpritesPerRow, kMaxBlocks - kBlocksVisible));
+
+		const int blockCol = (int)((io.MousePos.x - imgMin.x) / imageSize.x * kSpritesPerRow);
+		const int blockRow = (int)((io.MousePos.y - imgMin.y) / imageSize.y * kSpriteRowCount);
+		if (blockCol >= 0 && blockCol < kSpritesPerRow && blockRow >= 0 && blockRow < kSpriteRowCount)
+		{
+			const int blockIndex      = SpriteBlockOffset + blockRow * kSpritesPerRow + blockCol;
+			const uint16_t vramAddr   = (uint16_t)(blockIndex * 64);
+			const float uvX0 = (float)blockCol       / kSpritesPerRow;
+			const float uvY0 = (float)blockRow       / kSpriteRowCount;
+			const float uvX1 = (float)(blockCol + 1) / kSpritesPerRow;
+			const float uvY1 = (float)(blockRow + 1) / kSpriteRowCount;
+
+			ImGui::BeginTooltip();
+			ImGui::Image((void*)SpriteViewImage->GetTexture(), ImVec2(64.0f, 64.0f), ImVec2(uvX0, uvY0), ImVec2(uvX1, uvY1));
+			ImGui::Text("Block %d  VRAM $%04X", blockIndex, vramAddr);
+			ImGui::EndTooltip();
+		}
 	}
 
-	ImGui::SliderInt("Block##sproffset", &SpriteBlockOffset, 0, kMaxBlocks - kBlocksVisible);
+	int sprAddr = SpriteBlockOffset * 64;
+	if (ImGui::SliderInt("Address##sproffset", &sprAddr, 0, (kMaxBlocks - kBlocksVisible) * 64, "$%04X"))
+		SpriteBlockOffset = sprAddr / 64;
 }
 
 void	FVRAMViewer::DrawLegend()
