@@ -71,11 +71,13 @@ private:
 	int             BGTilePalette    = 0;   // BG palette 0–15
 	int             BGTileScale      = 1;
 	int             BGTileViewRows   = 32;  // visible tile rows (8–64)
+	bool            bPreviewPalette  = true;
 
 	int             SpriteBlockOffset = 0;  // starting 64-word sprite block index
-	int             SpritePalette     = 0;  // sprite palette 0–15 (maps to colourTable[0x100+])
+	int             SpritePalette     = 16; // sprite palette store index 16–31
 	int             SpriteScale       = 1;
 	int             SpriteViewRows    = 16; // visible sprite block rows (4–32)
+	bool            bShowWriterSnippet = false;
 
 	FVRAMAccess Access[HUC6270_VRAM_SIZE];
 	FSpriteInfo SpriteInfo[HUC6270_SPRITES];

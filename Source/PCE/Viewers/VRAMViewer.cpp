@@ -4,10 +4,10 @@
 #include <string.h>
 #include <imgui.h>
 
-void DrawDataAcessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2);
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "Util/GraphicsView.h"
 #include "ImGuiSupport/ImGuiScaling.h"
+#include <imgui_internal.h>
 #include "CodeAnalyser/UI/UIColours.h"
 #include "optick/optick.h"
 #include "../PCEEmu.h"
@@ -21,6 +21,8 @@ static const int kVRAMTileViewWidth   = 256;   // 32 tiles across
 static const int kVRAMSpriteViewWidth = 256;   // 16 sprite blocks across
 
 static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
+
+void DrawDataAcessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2);
 
 // Build a 16-entry RGBA palette from the HuC6260 colour table.
 // paletteBase is the colour table index of colour 0 for this palette.
@@ -101,6 +103,89 @@ void FVRAMViewer::DrawUI(void)
 	}
 }
 
+// PCE-specific palette combo with hover-preview and restore-on-cancel.
+// Palette store indices 0-15 = BG palettes, 16-31 = sprite palettes.
+static bool DrawHWPaletteCombo(const char* pLabel, int& paletteIndex, bool bPreviewOnHover = true)
+{
+	static ImGuiID s_activeId   = 0;
+	static int     s_savedIndex = -1;
+	static bool    s_confirmed  = false;
+
+	const ImGuiID id = ImGui::GetID(pLabel);
+
+	// The button always shows the committed palette, not the hover preview
+	const int displayIdx = (s_activeId == id) ? s_savedIndex : paletteIndex;
+	char previewLabel[16];
+	if      (displayIdx < 16) snprintf(previewLabel, sizeof(previewLabel), "BGND %02d", displayIdx);
+	else if (displayIdx < 32) snprintf(previewLabel, sizeof(previewLabel), "SPRT %02d", displayIdx - 16);
+	else                      snprintf(previewLabel, sizeof(previewLabel), "USER %02d", displayIdx - 32);
+
+	bool       bChanged = false;
+	const bool bIsOpen  = ImGui::BeginCombo(pLabel, nullptr, ImGuiComboFlags_CustomPreview | ImGuiComboFlags_HeightLarge);
+
+	if (bIsOpen && s_activeId != id)
+	{
+		s_activeId   = id;
+		s_savedIndex = paletteIndex;
+		s_confirmed  = false;
+	}
+
+	if (!bIsOpen && s_activeId == id)
+	{
+		if (!s_confirmed)
+			paletteIndex = s_savedIndex;
+		s_activeId = 0;
+	}
+
+	if (bIsOpen)
+	{
+		const int numPalettes = GetNoPaletteEntries();
+		for (int p = 0; p < numPalettes; p++)
+		{
+			const FPaletteEntry* pEntry = GetPaletteEntry(p);
+			if (!pEntry || pEntry->NoColours != 16)
+				continue;
+
+			char tmp[16];
+			if      (p < 16) snprintf(tmp, sizeof(tmp), "BGND %02d", p);
+			else if (p < 32) snprintf(tmp, sizeof(tmp), "SPRT %02d", p - 16);
+			else             snprintf(tmp, sizeof(tmp), "USER %02d", p - 32);
+
+			if (ImGui::Selectable(tmp, paletteIndex == p))
+			{
+				paletteIndex = p;
+				s_confirmed  = true;
+				bChanged     = true;
+			}
+
+			if (bPreviewOnHover && ImGui::IsItemHovered())
+				paletteIndex = p;
+
+			const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+			if (pPalette)
+			{
+				ImGui::SameLine();
+				DrawPalette(pPalette, 16);
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::BeginComboPreview())
+	{
+		ImGui::TextUnformatted(previewLabel);
+		const uint32_t* pPalette = GetPaletteFromPaletteNo(displayIdx);
+		if (pPalette)
+		{
+			ImGui::SameLine();
+			DrawPalette(pPalette, 16);
+		}
+		ImGui::EndComboPreview();
+	}
+
+	return bChanged;
+}
+
 void FVRAMViewer::DrawBGTileView()
 {
 	HuC6270* huc6270   = pPCEEmu->GetCore()->GetHuC6270_1();
@@ -108,7 +193,6 @@ void FVRAMViewer::DrawBGTileView()
 	const u16* vram       = huc6270->GetVRAM();
 	const u16* colorTable = huc6260->GetColorTable();
 
-	ImGui::SliderInt("Palette##bgtile", &BGTilePalette, 0, 15);
 	ImGui::InputInt("Scale##bgtile", &BGTileScale, 1, 1);
 	BGTileScale = MAX(1, BGTileScale);
 	
@@ -131,7 +215,7 @@ void FVRAMViewer::DrawBGTileView()
 	BGTileOffset = MAX(0, MIN(BGTileOffset, kMaxTiles - kTilesVisible));
 
 	uint32_t palette[16];
-	BuildHWPalette(colorTable, BGTilePalette * 16, palette);
+	BuildHWPalette(colorTable, MAX(0, BGTilePalette) * 16, palette);
 
 	BGTileViewImage->Clear(0xFF000000);
 	const int tilesAvailable = MIN(kTilesVisible, kMaxTiles - BGTileOffset);
@@ -176,6 +260,9 @@ void FVRAMViewer::DrawBGTileView()
 	int bgAddr = BGTileOffset * 16;
 	if (ImGui::SliderInt("Address##bgtileoffset", &bgAddr, 0, (kMaxTiles - kTilesVisible) * 16, "$%04X"))
 		BGTileOffset = bgAddr / 16;
+	//ImGui::Checkbox("Preview##bgtile", &bPreviewPalette);
+	//ImGui::SameLine();
+	DrawHWPaletteCombo("Palette##bgtile", BGTilePalette, bPreviewPalette);
 }
 
 void FVRAMViewer::DrawSpriteView()
@@ -185,7 +272,6 @@ void FVRAMViewer::DrawSpriteView()
 	const u16* vram       = huc6270->GetVRAM();
 	const u16* colorTable = huc6260->GetColorTable();
 
-	ImGui::SliderInt("Palette##spr", &SpritePalette, 0, 15);
 	ImGui::InputInt("Scale##spr", &SpriteScale, 1, 1);
 	SpriteScale = MAX(1, SpriteScale);
 	
@@ -207,9 +293,8 @@ void FVRAMViewer::DrawSpriteView()
 
 	SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset, kMaxBlocks - kBlocksVisible));
 
-	// Sprite palettes occupy the second half of the colour table (offset 0x100)
 	uint32_t palette[16];
-	BuildHWPalette(colorTable, 0x100 + SpritePalette * 16, palette);
+	BuildHWPalette(colorTable, MAX(0, SpritePalette) * 16, palette);
 
 	SpriteViewImage->Clear(0xFF000000);
 	const int blocksAvailable = MIN(kBlocksVisible, kMaxBlocks - SpriteBlockOffset);
@@ -254,6 +339,9 @@ void FVRAMViewer::DrawSpriteView()
 	int sprAddr = SpriteBlockOffset * 64;
 	if (ImGui::SliderInt("Address##sproffset", &sprAddr, 0, (kMaxBlocks - kBlocksVisible) * 64, "$%04X"))
 		SpriteBlockOffset = sprAddr / 64;
+	ImGui::Checkbox("Preview##spr", &bPreviewPalette);
+	ImGui::SameLine();
+	DrawHWPaletteCombo("Palette##spr", SpritePalette, bPreviewPalette);
 }
 
 void	FVRAMViewer::DrawLegend()
@@ -323,28 +411,36 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 		const int yp = (int)((io.MousePos.y - pos.y) / scale);
 		const uint16_t addr = (uint16_t)(xp + yp * kMemoryViewImageWidth);
 
-		ImGui::Text("VRAM: $%04X", addr);
-
 		const FVRAMAccess& access = Access[addr];
+
+		ImGui::BeginTooltip();
+		ImGui::Text("VRAM: $%04X", addr);
 		if (access.LastWriter.IsValid())
 		{
-			ImGui::Text("Written by:"); ImGui::SameLine();
-			DrawAddressLabel(state, viewState, access.LastWriter);
+			ImGui::Text("Writer:");
+			if (bShowWriterSnippet)
+			{
+				ImGui::NewLine();
+				ImGui::Separator();
+				DrawSnippetContent(state, viewState, access.LastWriter);
+			}
+			else
+			{ 
+				ImGui::SameLine(); 
+				DrawAddressLabel(state, viewState, access.LastWriter); 
+			}
 		}
 		if (access.LastReader.IsValid())
 		{
 			ImGui::Text("Read by:"); ImGui::SameLine();
 			DrawAddressLabel(state, viewState, access.LastReader);
 		}
+		ImGui::EndTooltip();
 
 		SpriteHighlight = GetSpriteIndexForAddress(addr);
 
 		if (ImGui::IsMouseDoubleClicked(0) && access.LastWriter.IsValid())
 			viewState.GoToAddress(access.LastWriter, false);
-	}
-	else
-	{
-		ImGui::NewLine();
 	}
 
 	// Last writer / reader activity rows
@@ -383,6 +479,8 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 		else
 			ImGui::TextDisabled("None");
 	}
+
+	ImGui::Checkbox("Show Tooltip Writer Snippet", &bShowWriterSnippet);
 }
 
 void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
