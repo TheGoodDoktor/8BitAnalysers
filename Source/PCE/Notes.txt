@@ -7,9 +7,15 @@ TODO FOR FIRST RELEASE
 - tidy up sprites viewer detail pane
 - perf of sprites results tab is really bad
 - bank addresses should be offsets (including function labels)
+- Find in memory find address doesnt get reset when loading a new game - or when the sprite changes
+- divide by zero crash in graphics viewer when width is 8 viewing sprites
+- crash in graphics viewer when put invalid address in address field (AddressOffset)
 
 TODO
-- in graphics viewer, label which palette is currently selected 
+- display vram transfer address in vram viewer. MAWR. maybe with indicator
+- in graphics viewer, label which palette is currently selected
+- get 3bpp, 2bpp sprite working in graphics viewer. 
+- tooltips on pce registers describing what they do
 - change Current palette option in graphics viewer. doesnt make sense for PCE
 - Show register value on tooltips
 - tidy tooltips for PCE related instructions
@@ -28,6 +34,7 @@ TODO
 - add a way to display or goto the ROM address (in the cart's 2mb address space)
 - show bitmap format in code analysis view when cursor is on PCE sprite/BG
 - add label when formatting sprites in sprite viewer
+- figure out why some functions show up as data. see hero tonma data_wram_3bf2
 
 NICE TO HAVE
 - add way to understand/visualise if interrupts are active?
@@ -35,6 +42,8 @@ NICE TO HAVE
 - add "view in memory viewer" in code analysis view
 
 BUGS
+- vram seems to display sprite 63 pattern data at the start of vram.
+- TIA instruction lost it's self modifying code "Operand Data"  
 - trace button doesnt seem to work in code analysis view
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - asm export fails if you export right after reset, when UNUSED banks are mapped.
@@ -45,9 +54,14 @@ BUGS
 - Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
 - palettes get added at index 67
+- when hovering over first operand of TIA instruction that is a label, the middle operand disappears.
 
 IDEAS
 - minimap on scrollbar
+- copy instruction tooltip text from mesen?
+- on vram viewer, have a "write indicator" that lights up when vram transfer occurs
+- show r/w colouring in memory viewer
+- have different sprite display modes for when sprites are packed or bitplane reduced.
 - when capturing palette for history sprite, capture after some time has elpased.
 - [perf] Create code analysis pages on demand. would make creating banks trivial
 - [perf] reserve bank id instead of creating all the banks up front.
