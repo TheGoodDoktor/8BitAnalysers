@@ -30,23 +30,12 @@ struct FSpriteInfo
 class FVRAMViewer : public FViewerBase
 {
 public:
-	// constants
-	static const uint32_t kUnknownWriteActiveCol = 0xff0000ff;
-	static const uint32_t kUnknownWriteCol        = 0xff000080;
-
-	static const uint32_t kSpriteWriteActiveCol   = 0xffffff00;
-	static const uint32_t kSpriteWriteCol         = 0xff808000;
-
-	static const uint32_t kBGTileWriteActiveCol   = 0xff00c800;  // bright green
-	static const uint32_t kBGTileWriteCol         = 0xff006400;  // dark green
-
-	static const uint32_t kBATWriteActiveCol      = 0xff0080ff;  // bright orange
-	static const uint32_t kBATWriteCol            = 0xff004080;  // dark orange
-
-	static const uint32_t kSATWriteActiveCol      = 0xffc000c0;  // bright magenta
-	static const uint32_t kSATWriteCol            = 0xff600060;  // dark magenta
-
-	static const uint32_t kUnwrittenCol           = 0xff808080;
+	// colours match OverviewViewer scheme
+	static const uint32_t kUnwrittenCol          = 0xff808080;  // grey  - never accessed
+	static const uint32_t kUnknownWriteCol       = 0xff000080;  // dark red  - previous write
+	static const uint32_t kUnknownWriteActiveCol = 0xff0000ff;  // bright red - active write
+	static const uint32_t kDataReadCol           = 0xff008000;  // dark green - previous read
+	static const uint32_t kDataReadActiveCol     = 0xff00ff00;  // bright green - active read
 
 	FVRAMViewer(FEmuBase* pEmu);
 
@@ -56,6 +45,7 @@ public:
 	void	Tick();
 
 	void	Reset();
+	void	ClearUsage();
 	void	DrawBankOverview();
 	void	DrawPhysicalMemoryOverview();
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
@@ -68,9 +58,6 @@ public:
 
 	const FSpriteInfo* GetSpriteInfo() const { return SpriteInfo; }
 	int GetSpriteIndexForAddress(uint16_t addr) const;
-	int GetBGTileIndexForAddress(uint16_t addr) const { return BGTileLookup[addr]; }
-	int GetBATIndexForAddress(uint16_t addr) const    { return BATLookup[addr]; }
-	int GetSATWordForAddress(uint16_t addr) const     { return SATWordLookup[addr]; }
 	int GetSpriteHighlight() const { return SpriteHighlight; }
 	const FVRAMAccess& GetVRAMAccess(uint16_t vramAddr) const { return Access[vramAddr]; }
 
@@ -91,9 +78,11 @@ private:
 	FVRAMAccess Access[HUC6270_VRAM_SIZE];
 	FSpriteInfo SpriteInfo[HUC6270_SPRITES];
 	int16_t     SpriteIndexLookup[HUC6270_VRAM_SIZE];
-	int16_t     BGTileLookup[HUC6270_VRAM_SIZE];   // tile index (0-2047) or -1
-	int16_t     BATLookup[HUC6270_VRAM_SIZE];       // BAT entry index or -1
-	int16_t     SATWordLookup[HUC6270_VRAM_SIZE];   // sprite*4+field (0-255) or -1
+
+	FAddressRef LastVRAMWriter;
+	int         LastVRAMWriteFrame = -1;
+	FAddressRef LastVRAMReader;
+	int         LastVRAMReadFrame  = -1;
 
 	FPCEEmu* pPCEEmu = nullptr;
 

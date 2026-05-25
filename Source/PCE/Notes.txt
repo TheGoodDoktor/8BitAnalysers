@@ -7,8 +7,10 @@ TODO FOR FIRST RELEASE
 - tidy up sprites viewer detail pane
 - perf of sprites results tab is really bad
 - bank addresses should be offsets (including function labels)
+- add ctrl + up/down to keyboard shortcuts display
 
 TODO
+- in sprites viewer make the Results tab a Search tab and move find all into it?
 - in graphics viewer, label which palette is currently selected 
 - change Current palette option in graphics viewer. doesnt make sense for PCE
 - Show register value on tooltips
