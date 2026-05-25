@@ -1765,7 +1765,8 @@ void DrawDebuggerButtons(FCodeAnalysisState &state, FCodeAnalysisViewState& view
 		state.Debugger.StepFrame();
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Step Screen Write (F7)"))
+	// sam. changed "Step Screen Write". PCE doesnt have a memory mapped screen
+	if (ImGui::Button("Step VRAM Write (F7)"))
 	{
 		state.Debugger.StepScreenWrite();
 	}
@@ -2056,8 +2057,9 @@ void DrawCodeAnalysisData(FCodeAnalysisState &state, int windowId)
 	// We track the details panel's preferred pixel width (DetailsPanelWidth). When the outer
 	// window grows, the analysis panel is pushed wider from inside so the details panel stays
 	// anchored to the right. The ImGuiChildFlags_ResizeX handle lets the user adjust the split.
-	const float kMinDetailsWidth = 80.0f;
-	const float kMinAnalysisWidth = 200.0f;
+	const float fontCharWidth = ImGui_GetFontCharWidth();
+	const float kMinDetailsWidth = fontCharWidth * 16/*80.0f*/;
+	const float kMinAnalysisWidth = fontCharWidth * 32.f /*200.0f*/;
 	const float availW = ImGui::GetContentRegionAvail().x;
 
 	if (viewState.DetailsPanelWidth <= 0.0f)
