@@ -52,6 +52,7 @@ private:
 	void UpdateSpriteBuffers();
 	void UpdateSpriteHistory();
 	void ClearHistory();
+	void DrawSpriteGrid(float scale);
 	void DrawCurrentTab();
 	void DrawHistoryTab();
 	void DrawHistoryDetails(int index);
@@ -72,6 +73,7 @@ private:
 
 	bool bShowMagnifier = true;
 	int BackgroundColour = 0;
+	bool bGridHovered = false;
 
 	FAddressRef FoundSpriteDataAddr;
 	bool        bFoundSpriteData = false;

@@ -368,7 +368,7 @@ void FSpriteViewer::DrawUI()
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Results"))
+		if (ImGui::BeginTabItem("Search"))
 		{
 			DrawResultsTab();
 			ImGui::EndTabItem();
@@ -378,90 +378,112 @@ void FSpriteViewer::DrawUI()
 	}
 }
 
-void FSpriteViewer::DrawCurrentTab()
+void FSpriteViewer::DrawSpriteGrid(float scale)
 {
+	ImGuiIO& io = ImGui::GetIO();
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	bGridHovered = ImGui::IsWindowHovered();
+
 	GeargrafxCore* core = pPCEEmu->GetCore();
 	HuC6270* huc6270 = core->GetHuC6270_1();
 	const u16* sat = huc6270->GetSAT();
 
-	const FGlobalConfig* pConfig = pPCEEmu->GetGlobalConfig();
-	const float scale = (float)pConfig->ImageScale;
+	ImVec2 p[64];
 
+	const float colWidth = (float)HUC6270_MAX_SPRITE_WIDTH * scale;
+	const float colHeight = (float)HUC6270_MAX_SPRITE_HEIGHT * scale;
+	const float cellMinHeight = colHeight + style.CellPadding.y * 2.0f;
+
+	ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
+
+	if (ImGui::BeginTable("spritetable", 8, flags))
+	{
+		for (int col = 0; col < 8; col++)
+			ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, colWidth);
+
+		for (int s = 0; s < HUC6270_SPRITES; s++)
+		{
+			if (s % 8 == 0)
+				ImGui::TableNextRow(ImGuiTableRowFlags_None, cellMinHeight);
+
+			ImGui::TableNextColumn();
+
+			u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
+			float fwidth = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01] * scale;
+			float fheight = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03] * scale;
+			float tex_h = fwidth / 32.0f / scale;
+			float tex_v = fheight / 64.0f / scale;
+
+			if (fwidth < colWidth)
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (colWidth - fwidth) * 0.5f);
+			if (fheight < colHeight)
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (colHeight - fheight) * 0.5f);
+
+			p[s] = ImGui::GetCursorScreenPos();
+
+			ImGui::Image(SpriteTextures[s], ImVec2(fwidth, fheight), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
+
+			if (ImGui::IsItemClicked(0))
+				SelectedSprite = s;
+
+			if (ImGui::IsItemHovered() && bShowMagnifier)
+			{
+				ImGui::BeginTooltip();
+				const float magAmount = 4.0f;
+				ImGui::Image(SpriteTextures[s], ImVec2(fwidth * magAmount, fheight * magAmount), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
+				ImGui::EndTooltip();
+			}
+
+			float mouse_x = io.MousePos.x - p[s].x;
+			float mouse_y = io.MousePos.y - p[s].y;
+			const bool bHovered = bGridHovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight);
+			const bool bHighlight = pPCEEmu->GetVRAMViewer()->GetSpriteHighlight() == s;
+			const bool bSelected = (SelectedSprite == s);
+
+			if (bHighlight || bSelected || bHovered)
+			{
+				ImDrawList* draw_list = ImGui::GetWindowDrawList();
+				ImColor rectColor = bHighlight ? ImColor(Colours::GetFlashColour()) :
+					bSelected ? ImColor(yellow) :
+					ImColor(cyan);
+				draw_list->AddRect(ImVec2(p[s].x, p[s].y), ImVec2(p[s].x + fwidth, p[s].y + fheight), rectColor, 0.f, 0, 2.f);
+			}
+		}
+		ImGui::EndTable();
+	}
+
+	// Update HighlightSprite for cross-viewer communication (e.g. VRAMViewer map)
+	for (int s = 0; s < HUC6270_SPRITES; s++)
+	{
+		float mouse_x = io.MousePos.x - p[s].x;
+		float mouse_y = io.MousePos.y - p[s].y;
+		u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
+		float fwidth  = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01] * scale;
+		float fheight = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03] * scale;
+
+		if (bGridHovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight))
+		{
+			HighlightSprite = s;
+			break;
+		}
+	}
+}
+
+void FSpriteViewer::DrawCurrentTab()
+{
 	ImGuiIO& io = ImGui::GetIO();
 	ImGuiStyle& style = ImGui::GetStyle();
 
-	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMViewer()->GetSpriteInfo();
+	const FGlobalConfig* pConfig = pPCEEmu->GetGlobalConfig();
+	const float scale = (float)pConfig->ImageScale;
 
-	const float colWidth      = (float)HUC6270_MAX_SPRITE_WIDTH * scale;
-	const float colHeight     = (float)HUC6270_MAX_SPRITE_HEIGHT * scale;
-	const float cellMinHeight = colHeight + style.CellPadding.y * 2.0f;
-
+	const float colWidth = (float)HUC6270_MAX_SPRITE_WIDTH * scale;
 	const float leftPanelWidth = 8.0f * (colWidth + 2.0f * style.CellPadding.x) + 9.0f + style.WindowPadding.x * 2.0f;
-
-	ImVec2 p[64];
-	bool grid_hovered = false;
 
 	if (ImGui::BeginChild("##SpriteGrid", ImVec2(leftPanelWidth, 0.0f), false))
 	{
-		grid_hovered = ImGui::IsWindowHovered();
-
-		ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
-
-		if (ImGui::BeginTable("spritetable", 8, flags))
-		{
-			for (int col = 0; col < 8; col++)
-				ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, colWidth);
-
-			for (int s = 0; s < HUC6270_SPRITES; s++)
-			{
-				if (s % 8 == 0)
-					ImGui::TableNextRow(ImGuiTableRowFlags_None, cellMinHeight);
-
-				ImGui::TableNextColumn();
-
-				u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
-				float fwidth  = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01] * scale;
-				float fheight = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03] * scale;
-				float tex_h = fwidth / 32.0f / scale;
-				float tex_v = fheight / 64.0f / scale;
-
-				if (fwidth < colWidth)
-					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (colWidth - fwidth) * 0.5f);
-				if (fheight < colHeight)
-					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (colHeight - fheight) * 0.5f);
-
-				p[s] = ImGui::GetCursorScreenPos();
-
-				ImGui::Image(SpriteTextures[s], ImVec2(fwidth, fheight), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
-
-				if (ImGui::IsItemClicked(0))
-					SelectedSprite = s;
-
-				if (ImGui::IsItemHovered() && bShowMagnifier)
-				{
-					ImGui::BeginTooltip();
-					const float magAmount = 4.0f;
-					ImGui::Image(SpriteTextures[s], ImVec2(fwidth * magAmount, fheight * magAmount), ImVec2(0.0f, 0.0f), ImVec2(tex_h, tex_v));
-					ImGui::EndTooltip();
-				}
-
-				float mouse_x = io.MousePos.x - p[s].x;
-				float mouse_y = io.MousePos.y - p[s].y;
-				const bool bHovered   = grid_hovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight);
-				const bool bHighlight = pPCEEmu->GetVRAMViewer()->GetSpriteHighlight() == s;
-				const bool bSelected  = (SelectedSprite == s);
-
-				if (bHighlight || bSelected || bHovered)
-				{
-					ImDrawList* draw_list = ImGui::GetWindowDrawList();
-					ImColor rectColor = bHighlight ? ImColor(Colours::GetFlashColour()) :
-					                    bSelected  ? ImColor(yellow) :
-					                                 ImColor(cyan);
-					draw_list->AddRect(ImVec2(p[s].x, p[s].y), ImVec2(p[s].x + fwidth, p[s].y + fheight), rectColor, 0.f, 0, 2.f);
-				}
-			}
-			ImGui::EndTable();
-		}
+		DrawSpriteGrid(scale);
 
 		const char* colours[] = { "Grey", "Black", "Magenta" };
 		ImGui::Combo("Background", &BackgroundColour, colours, IM_ARRAYSIZE(colours));
@@ -479,22 +501,6 @@ void FSpriteViewer::DrawCurrentTab()
 			ImGui::TextDisabled("Click a sprite to see details");
 	}
 	ImGui::EndChild();
-
-	// Update HighlightSprite for cross-viewer communication (e.g. VRAMViewer map)
-	for (int s = 0; s < HUC6270_SPRITES; s++)
-	{
-		float mouse_x = io.MousePos.x - p[s].x;
-		float mouse_y = io.MousePos.y - p[s].y;
-		u16 sprite_flags = sat[(s * 4) + 3] & 0xB98F;
-		float fwidth  = k_huc6270_sprite_width[(sprite_flags >> 8) & 0x01] * scale;
-		float fheight = k_huc6270_sprite_height[(sprite_flags >> 12) & 0x03] * scale;
-
-		if (grid_hovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight))
-		{
-			HighlightSprite = s;
-			break;
-		}
-	}
 }
 
 void FSpriteViewer::DrawHistoryTab()
@@ -870,13 +876,13 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 		ImGui::TableSetColumnIndex(1); ImGui::Text("%d", spriteIndex);
 		ImGui::TableSetColumnIndex(2); ImGui::TextDisabled("--");
 
-		snprintf(buf, sizeof(buf), "$%03X  (%d)", info.XPos, info.XPos);
+		snprintf(buf, sizeof(buf), "%s", NumStr(info.XPos, ENumberDisplayMode::Decimal));
 		Row("X Position", buf, xWriter);
 
-		snprintf(buf, sizeof(buf), "$%03X  (%d)", info.YPos, info.YPos);
+		snprintf(buf, sizeof(buf), "%s", NumStr(info.YPos, ENumberDisplayMode::Decimal));
 		Row("Y Position", buf, yWriter);
 
-		snprintf(buf, sizeof(buf), "$%04X", info.Address);
+		snprintf(buf, sizeof(buf), "%s.w %s.b", NumStr(info.Address), NumStr((uint16_t)(info.Address * 2)));
 		Row("VRAM Address", buf, patWriter);
 
 		snprintf(buf, sizeof(buf), "%d", info.Width);
@@ -888,7 +894,7 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 		snprintf(buf, sizeof(buf), "%d", SpriteColorCount[spriteIndex]);
 		Row("Colours", buf, FAddressRef::Invalid());
 
-		snprintf(buf, sizeof(buf), "$%03X  (%d)", pattern, pattern);
+		snprintf(buf, sizeof(buf), "%s", NumStr(pattern));
 		Row("Pattern", buf, patWriter);
 
 		snprintf(buf, sizeof(buf), "%d", palette);
