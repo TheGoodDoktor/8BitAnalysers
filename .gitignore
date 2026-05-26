@@ -80,3 +80,4 @@
 build
 *.bin
 test-package/
+/.claude/settings.local.json
