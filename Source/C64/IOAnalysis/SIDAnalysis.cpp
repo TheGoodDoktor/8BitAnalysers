@@ -152,7 +152,8 @@ void AddSIDRegisterLabels(FC64Emulator* pEmulator)
 		{
 			const FAddressRef regAddr(pEmulator->GetBankIds().IOArea,0xD400 + reg + mirrorOffset);
 			FLabelInfo* pLabelInfo = GenerateLabelForAddress(pEmulator->GetCodeAnalysis(),regAddr, ELabelType::Data);
-			pLabelInfo->ChangeName(GetSIDLabelName(reg + mirrorOffset).c_str(), regAddr);
+			if(pLabelInfo != nullptr)
+				pLabelInfo->ChangeName(GetSIDLabelName(reg + mirrorOffset).c_str(), regAddr);
 			pEmulator->GetCodeAnalysis().GetDataInfoForAddress(regAddr)->DisplayType = regList[reg].DisplayType;
 			//IOPage.SetLabelAtAddress(GetSIDLabelName(addr).c_str(), ELabelType::Data, addr, true);
 			//IOPage.DataInfo[addr].DisplayType = regList[reg].DisplayType;

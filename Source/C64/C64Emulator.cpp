@@ -14,6 +14,9 @@
 #include <CodeAnalyser/CodeAnalysisState.h>
 #include "CodeAnalyser/UI/CharacterMapViewer.h"
 #include <Debug/DebugLog.h>
+#include <LuaScripting/LuaSys.h>
+#include <LuaScripting/LuaDocs.h>
+#include <LuaScripting/LuaCoreAPI.h>
 
 #include "FileLoaders/CRTFile.h"
 
@@ -210,6 +213,31 @@ bool FC64Emulator::Init(const FEmulatorLaunchConfig& launchConfig)
 	return true;
 }
 
+bool FC64Emulator::LoadLua()
+{
+	ClearLuaDocs();
+	AddCoreLibLuaDoc();
+	// TODO: Add C64 Lua Docs
+	
+	// Setup Lua - reinitialised for each game
+	const std::string gameRoot = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
+	if (LuaSys::Init(this))
+	{
+		//TODO: RegisterC64LuaAPI(LuaSys::GetGlobalState());
+
+		//LuaSys::LoadFile(GetBundlePath("Lua/ZXBase.lua"), pGlobalConfig->bEditLuaBaseFiles);
+
+		for (const auto& gameScript : pCurrentProjectConfig->LuaSourceFiles)
+		{
+			std::string luaScriptFName = gameRoot + gameScript;
+			LuaSys::LoadFile(luaScriptFName.c_str(), true);
+		}
+		return true;
+	}
+
+	return false;
+}
+
 void FC64Emulator::SetupCodeAnalysisLabels()
 {
 	// Add IO Labels to code analysis
@@ -219,7 +247,8 @@ void FC64Emulator::SetupCodeAnalysisLabels()
 	//old pIOBank->Pages[2].SetLabelAtAddress("ColourRAM", ELabelType::Data, 0x0000,true);    // Colour RAM $D800
 	FAddressRef colourRAMAddress(BankIds.IOArea, 0xD800);
 	FLabelInfo* pColourRAMLabel = GenerateLabelForAddress(CodeAnalysis, colourRAMAddress, ELabelType::Data);
-	pColourRAMLabel->ChangeName("ColourRAM", colourRAMAddress);
+	if(pColourRAMLabel != nullptr)
+		pColourRAMLabel->ChangeName("ColourRAM", colourRAMAddress);
 	AddCIARegisterLabels(this);  // Page $DC00-$Dfff
 
 	// Add Stack??
@@ -376,6 +405,8 @@ bool FC64Emulator::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameDat
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
 	CodeAnalysis.SetAddressRangeDirty();
+
+	LoadLua();
 
 	// Start in break mode so the memory will be in its initial state. 
 	CodeAnalysis.Debugger.Break();

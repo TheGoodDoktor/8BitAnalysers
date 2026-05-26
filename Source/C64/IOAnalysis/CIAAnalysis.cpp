@@ -321,7 +321,8 @@ void AddCIARegisterLabels(FC64Emulator* pEmulator)
 	{
 		FAddressRef regAddress(pEmulator->GetBankIds().IOArea, 0xDC00 + reg);
 		FLabelInfo* pRegLabel = GenerateLabelForAddress(pEmulator->GetCodeAnalysis(),regAddress, ELabelType::Data);
-		pRegLabel->ChangeName(GetCIALabelName(1, reg).c_str(),regAddress);
+		if(pRegLabel != nullptr)
+			pRegLabel->ChangeName(GetCIALabelName(1, reg).c_str(),regAddress);
 		//IOPage.SetLabelAtAddress(GetCIALabelName(1,reg).c_str(), ELabelType::Data, reg, true);
 	}
 
@@ -332,7 +333,8 @@ void AddCIARegisterLabels(FC64Emulator* pEmulator)
 	{
 		FAddressRef regAddress(pEmulator->GetBankIds().IOArea, 0xDD00 + reg);
 		FLabelInfo* pRegLabel = GenerateLabelForAddress(pEmulator->GetCodeAnalysis(), regAddress, ELabelType::Data);
-		pRegLabel->ChangeName(GetCIALabelName(2, reg).c_str(), regAddress);
+		if(pRegLabel != nullptr)
+			pRegLabel->ChangeName(GetCIALabelName(2, reg).c_str(), regAddress);
 		//IOPage.SetLabelAtAddress(GetCIALabelName(2, reg).c_str(), ELabelType::Data, reg + 0x100, true);	// offset by 256 bytes
 	}
 

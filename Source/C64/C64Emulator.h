@@ -98,6 +98,7 @@ public:
 	FC64Emulator() = default;
 
 	bool    Init(const FEmulatorLaunchConfig& launchConfig) override;
+	bool	LoadLua() override;
 	void    Shutdown() override;
 	void	DrawEmulatorUI() override;
 	void    Tick() override;

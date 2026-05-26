@@ -664,7 +664,8 @@ void AddVICRegisterLabels(FC64Emulator* pEmulator)
 	{
 		const FAddressRef regAddr(pEmulator->GetBankIds().IOArea, 0xD000 + reg);
 		FLabelInfo* pLabelInfo = GenerateLabelForAddress(pEmulator->GetCodeAnalysis(), regAddr, ELabelType::Data);
-		pLabelInfo->ChangeName(GetVICLabelName(reg).c_str(), regAddr);
+		if(pLabelInfo != nullptr)
+			pLabelInfo->ChangeName(GetVICLabelName(reg).c_str(), regAddr);
 		pEmulator->GetCodeAnalysis().GetDataInfoForAddress(regAddr)->DisplayType = g_VICRegDrawInfo[reg].DisplayType;
 
 		//IOPage.SetLabelAtAddress(GetVICLabelName(reg).c_str(), ELabelType::Data, reg, true);

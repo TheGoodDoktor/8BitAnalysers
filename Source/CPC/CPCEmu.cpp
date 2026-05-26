@@ -28,6 +28,7 @@
 #include "CodeAnalyser/UI/OverviewViewer.h"
 
 #include <sokol_audio.h>
+
 #include "cpc-roms.h"
 
 #include <ImGuiSupport/ImGuiTexture.h>
@@ -37,6 +38,8 @@
 #include "LuaScripting/LuaSys.h"
 #include "CPCLuaAPI.h"
 #include "SnapshotLoaders/SNALoader.h"
+
+bool InitCPCAsmExporters(FCPCEmu* pCPCEmu);
 
 #define EXPORT_ROM_ANALYSIS_JSON 0
 #define ENABLE_EXTERNAL_ROM_SUPPORT 0
@@ -997,6 +1000,8 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	debugger.RegisterEventType((int)EEventType::UpperROMSelect, "Upper ROM Select", 0xff3f0c90, IOPortEventShowAddress, UpperROMSelectShowValue);
 
 	pMemoryAnalyser->SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
+
+	InitCPCAsmExporters(this);
 
 #ifndef NDEBUG
 	LOGINFO("Init CPCEmu...Done");
