@@ -10,6 +10,12 @@ TODO FOR FIRST RELEASE
 - Find in memory find address doesnt get reset when loading a new game - or when the sprite changes
 - divide by zero crash in graphics viewer when width is 8 viewing sprites
 - crash in graphics viewer when put invalid address in address field (AddressOffset)
+- tidy tooltips for PCE related instructions
+- make bank label be an offset instead of address. add toggle in UI.
+
+BUGS TO FIX FOR FIRST RELEASE
+- trace button doesnt seem to work in code analysis view
+- edit mode doesnt restore properly. emulation bugs afer restoring
 
 TODO
 - display vram transfer address in vram viewer. MAWR. maybe with indicator
@@ -17,14 +23,9 @@ TODO
 - get 3bpp, 2bpp sprite working in graphics viewer. 
 - tooltips on pce registers describing what they do
 - add ctrl + up/down to keyboard shortcuts display
-
-TODO
 - in sprites viewer make the Results tab a Search tab and move find all into it?
-- in graphics viewer, label which palette is currently selected 
 - change Current palette option in graphics viewer. doesnt make sense for PCE
 - Show register value on tooltips
-- tidy tooltips for PCE related instructions
-- make bank label be an offset instead of address. add toggle in UI.
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
 - hookup RegisterCodeExecutedHuC6280
@@ -34,37 +35,29 @@ TODO
 - deal with multiple operands, such as block operations etc [partially done]
 - hook up more events: audio, etc
 - improve Claude.md
-- layout of background viewer clunky
+- tidy layout of background viewer. clunky
 - history sprite palettes are not correct sometimes. rabio lepus intro.
 - add a way to display or goto the ROM address (in the cart's 2mb address space)
 - show bitmap format in code analysis view when cursor is on PCE sprite/BG
-- add label when formatting sprites in sprite viewer
-- figure out why some functions show up as data. see hero tonma data_wram_3bf2
+- add optional label when formatting sprites in sprite viewer
 
-NICE TO HAVE
-- add way to understand/visualise if interrupts are active?
-- make screen appear when loading a saved project
-- add "view in memory viewer" in code analysis view
 
 BUGS
+- figure out why some functions show up as data. see hero tonma data_wram_3bf2
 - vram seems to display sprite 63 pattern data at the start of vram.
 - TIA instruction lost it's self modifying code "Operand Data"  
-- trace button doesnt seem to work in code analysis view
-- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - asm export fails if you export right after reset, when UNUSED banks are mapped.
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
-- edit mode doesnt restore properly. emulation bugs afer restoring
-- sprites formatted by sprite viewer dont draw correctly.
 - code analysis view doesnt go to address that was last viewed after loading project.
-- Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
-- crash in ImGui::DockContextEndFrame(). can happen on start up.
 - palettes get added at index 67
 - when hovering over first operand of TIA instruction that is a label, the middle operand disappears.
 
 IDEAS
+- add way to understand/visualise if interrupts are active?
+- make screen appear when loading a saved project
+- add "view in memory viewer" in code analysis view
 - minimap on scrollbar
 - copy instruction tooltip text from mesen?
-- on vram viewer, have a "write indicator" that lights up when vram transfer occurs
 - show r/w colouring in memory viewer
 - have different sprite display modes for when sprites are packed or bitplane reduced.
 - when capturing palette for history sprite, capture after some time has elpased.
@@ -75,17 +68,22 @@ IDEAS
 - override assert with our own that lets you recover
 - create dupe banks lazily. only save state of the primary ones?
 - automatically mark memory as graphics when it gets transferred to vram
-- add "Find sprite in memory" to sprite viewer
 - show unexplored bytes as array
 - preview format before format is pressed
 - make graphics viewer texture smaller when viewing banks. it's too big for 8k banks.
-- add button to save all sprites in history view
+- add button to save all sprites in history view to png
 - always collapse/hide bytes in HW page.
-- ctrl + arrow keys jumps to next/prev label
 - add scroll overlay on background view (like Mesen does)
-- ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
 
 DONE
+- ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
+- add "Find sprite in memory" to sprite viewer
+- ctrl + arrow keys jumps to next/prev label
+- on vram viewer, have a "write indicator" that lights up when vram transfer occurs
+- sprites formatted by sprite viewer dont draw correctly.
+- Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
+- crash in ImGui::DockContextEndFrame(). can happen on start up.
+- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - results view in sprite viewer looks shit. thumbnails are too small.
 - add read_bank mcp tool, to read bank not mapped in.
 - show which palettes are BG/sprites/user in palette dropdowns
