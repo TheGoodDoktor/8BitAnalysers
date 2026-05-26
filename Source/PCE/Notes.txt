@@ -10,15 +10,15 @@ TODO FOR FIRST RELEASE
 - Find in memory find address doesnt get reset when loading a new game - or when the sprite changes
 - divide by zero crash in graphics viewer when width is 8 viewing sprites
 - crash in graphics viewer when put invalid address in address field (AddressOffset)
+- get callstack working. sometimes it only shows 1 address.
 
 TODO
+- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 - display vram transfer address in vram viewer. MAWR. maybe with indicator
 - in graphics viewer, label which palette is currently selected
 - get 3bpp, 2bpp sprite working in graphics viewer. 
 - tooltips on pce registers describing what they do
 - add ctrl + up/down to keyboard shortcuts display
-
-TODO
 - in sprites viewer make the Results tab a Search tab and move find all into it?
 - in graphics viewer, label which palette is currently selected 
 - change Current palette option in graphics viewer. doesnt make sense for PCE
@@ -62,6 +62,7 @@ BUGS
 - when hovering over first operand of TIA instruction that is a label, the middle operand disappears.
 
 IDEAS
+- press delete to remove formatting
 - minimap on scrollbar
 - copy instruction tooltip text from mesen?
 - on vram viewer, have a "write indicator" that lights up when vram transfer occurs
