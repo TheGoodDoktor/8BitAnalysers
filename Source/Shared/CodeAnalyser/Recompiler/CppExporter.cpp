@@ -69,7 +69,10 @@ void FCppExporter::EmitCpuStateStruct(void)
 
 void FCppExporter::EmitRuntimeDeclarations(void)
 {
-	const char* pCpu = CpuArgDecl();
+	// Hooks (and the inline helpers) always take a Z80CpuState* so generated code can call
+	// them uniformly via CpuPtr() in both targets. Only the generated function *signatures*
+	// (Program/entry points) use the reference form in C++ - that boundary is the harness's.
+	const char* pCpu = "Z80CpuState* cpu";
 	Output("// ---- Runtime hooks (provided by the harness) ---------------------------\n");
 	Output("// Memory is the authoritative source of truth so that self-modifying code,\n");
 	Output("// banking and I/O all remain interception points rather than special cases.\n");
@@ -140,6 +143,41 @@ void FCppExporter::EmitRuntimeHelpers(void)
 	Output("static inline void z80_cp8 (Z80CpuState* c,uint8_t v){ uint32_t r=(uint32_t)((int)c->A-(int)v); c->F=z80_cpf(c->A,v,r); }\n");
 	Output("static inline uint8_t z80_inc8(Z80CpuState* c,uint8_t v){ uint8_t r=v+1; uint8_t f=z80_sz(r)|(r&(Z80_XF|Z80_YF))|((r^v)&Z80_HF); if(r==0x80)f|=Z80_VF; c->F=f|(c->F&Z80_CF); return r; }\n");
 	Output("static inline uint8_t z80_dec8(Z80CpuState* c,uint8_t v){ uint8_t r=v-1; uint8_t f=Z80_NF|z80_sz(r)|(r&(Z80_XF|Z80_YF))|((r^v)&Z80_HF); if(r==0x7F)f|=Z80_VF; c->F=f|(c->F&Z80_CF); return r; }\n\n");
+
+	// 16-bit register-pair accessors.
+	Output("static inline uint16_t z80_bc(Z80CpuState* c){ return (uint16_t)((c->B<<8)|c->C); }\n");
+	Output("static inline uint16_t z80_de(Z80CpuState* c){ return (uint16_t)((c->D<<8)|c->E); }\n");
+	Output("static inline uint16_t z80_hl(Z80CpuState* c){ return (uint16_t)((c->H<<8)|c->L); }\n");
+	Output("static inline uint16_t z80_af(Z80CpuState* c){ return (uint16_t)((c->A<<8)|c->F); }\n");
+	Output("static inline void z80_set_bc(Z80CpuState* c,uint16_t v){ c->B=(uint8_t)(v>>8); c->C=(uint8_t)v; }\n");
+	Output("static inline void z80_set_de(Z80CpuState* c,uint16_t v){ c->D=(uint8_t)(v>>8); c->E=(uint8_t)v; }\n");
+	Output("static inline void z80_set_hl(Z80CpuState* c,uint16_t v){ c->H=(uint8_t)(v>>8); c->L=(uint8_t)v; }\n");
+	Output("static inline void z80_set_af(Z80CpuState* c,uint16_t v){ c->A=(uint8_t)(v>>8); c->F=(uint8_t)v; }\n\n");
+
+	Output("static inline void z80_add16(Z80CpuState* c,uint16_t val){ uint16_t acc=z80_hl(c); uint32_t res=acc+val;\n");
+	Output("\tc->F=(c->F&(Z80_SF|Z80_ZF|Z80_VF))|(((acc^res^val)>>8)&Z80_HF)|((res>>16)&Z80_CF)|((res>>8)&(Z80_YF|Z80_XF)); z80_set_hl(c,(uint16_t)res); }\n\n");
+
+	// Accumulator rotates (RLCA/RRCA/RLA/RRA).
+	Output("static inline void z80_rlca(Z80CpuState* c){ uint8_t r=(uint8_t)((c->A<<1)|(c->A>>7)); c->F=((c->A>>7)&Z80_CF)|(c->F&(Z80_SF|Z80_ZF|Z80_PF))|(r&(Z80_YF|Z80_XF)); c->A=r; }\n");
+	Output("static inline void z80_rrca(Z80CpuState* c){ uint8_t r=(uint8_t)((c->A>>1)|(c->A<<7)); c->F=(c->A&Z80_CF)|(c->F&(Z80_SF|Z80_ZF|Z80_PF))|(r&(Z80_YF|Z80_XF)); c->A=r; }\n");
+	Output("static inline void z80_rla(Z80CpuState* c){ uint8_t r=(uint8_t)((c->A<<1)|(c->F&Z80_CF)); c->F=((c->A>>7)&Z80_CF)|(c->F&(Z80_SF|Z80_ZF|Z80_PF))|(r&(Z80_YF|Z80_XF)); c->A=r; }\n");
+	Output("static inline void z80_rra(Z80CpuState* c){ uint8_t r=(uint8_t)((c->A>>1)|((c->F&Z80_CF)<<7)); c->F=(c->A&Z80_CF)|(c->F&(Z80_SF|Z80_ZF|Z80_PF))|(r&(Z80_YF|Z80_XF)); c->A=r; }\n\n");
+
+	// DAA / CPL / SCF / CCF.
+	Output("static inline void z80_daa(Z80CpuState* c){ uint8_t r=c->A;\n");
+	Output("\tif(c->F&Z80_NF){ if(((c->A&0xF)>0x9)||(c->F&Z80_HF))r-=0x06; if((c->A>0x99)||(c->F&Z80_CF))r-=0x60; }\n");
+	Output("\telse          { if(((c->A&0xF)>0x9)||(c->F&Z80_HF))r+=0x06; if((c->A>0x99)||(c->F&Z80_CF))r+=0x60; }\n");
+	Output("\tc->F&=Z80_CF|Z80_NF; c->F|=(c->A>0x99)?Z80_CF:0; c->F|=(c->A^r)&Z80_HF; c->F|=z80_szp(r); c->A=r; }\n");
+	Output("static inline void z80_cpl(Z80CpuState* c){ c->A^=0xFF; c->F=(c->F&(Z80_SF|Z80_ZF|Z80_PF|Z80_CF))|Z80_HF|Z80_NF|(c->A&(Z80_YF|Z80_XF)); }\n");
+	Output("static inline void z80_scf(Z80CpuState* c){ c->F=(c->F&(Z80_SF|Z80_ZF|Z80_PF|Z80_CF))|Z80_CF|(c->A&(Z80_YF|Z80_XF)); }\n");
+	Output("static inline void z80_ccf(Z80CpuState* c){ c->F=((c->F&(Z80_SF|Z80_ZF|Z80_PF|Z80_CF))|((c->F&Z80_CF)<<4)|(c->A&(Z80_YF|Z80_XF)))^Z80_CF; }\n\n");
+
+	// Register exchanges.
+	Output("static inline void z80_ex_de_hl(Z80CpuState* c){ uint16_t t=z80_de(c); z80_set_de(c,z80_hl(c)); z80_set_hl(c,t); }\n");
+	Output("static inline void z80_ex_af(Z80CpuState* c){ uint8_t t; t=c->A;c->A=c->A_;c->A_=t; t=c->F;c->F=c->F_;c->F_=t; }\n");
+	Output("static inline void z80_exx(Z80CpuState* c){ uint8_t t;\n");
+	Output("\tt=c->B;c->B=c->B_;c->B_=t; t=c->C;c->C=c->C_;c->C_=t; t=c->D;c->D=c->D_;c->D_=t;\n");
+	Output("\tt=c->E;c->E=c->E_;c->E_=t; t=c->H;c->H=c->H_;c->H_=t; t=c->L;c->L=c->L_;c->L_=t; }\n\n");
 }
 
 // -------------------------------------------------------------------------------------
@@ -179,14 +217,18 @@ void FCppExporter::EmitInstruction(FAddressRef addr)
 		Output("\t/* TODO(Phase 1): semantics (non-Z80 CPU) */\n");
 }
 
-// Phase 1 vertical slice: NOP, LD r,r', LD r,n, INC/DEC r, 8-bit ALU A,r and A,n.
-// Decoded via the regular octal opcode structure (x/y/z fields, see z80.info/decoding.htm).
-// Anything outside the slice falls back to a clearly-marked TODO so output still builds.
+// Phase 1: the main (unprefixed) Z80 opcode page. Covers NOP; 8-bit loads (LD r,r'/r,n,
+// (HL) forms); 8-bit ALU A,r/A,n; INC/DEC r; 16-bit LD dd,nn, INC/DEC ss, ADD HL,ss;
+// A/HL <-> memory loads (LD (BC)/(DE)/(nn) etc.); PUSH/POP; accumulator rotates and
+// DAA/CPL/SCF/CCF; EX/EXX; LD SP,HL; IN/OUT (n); DI/EI. Decoded via the regular octal
+// opcode structure (x/y/z/p/q fields, see z80.info/decoding.htm). CB/DD/FD/ED prefixes
+// and ED block ops are NOT yet handled and fall back to a clearly-marked TODO.
 void FCppExporter::EmitInstructionSemanticsZ80(FAddressRef addr)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	const uint8_t op = state.ReadByte(addr);
 	const int x = op >> 6, y = (op >> 3) & 7, z = op & 7;
+	const int p = y >> 1, q = y & 1;	// register-pair / flag-group sub-fields
 
 	static const char* kRegName[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
 	static const char* kAlu[8]     = { "z80_add8", "z80_adc8", "z80_sub8", "z80_sbc8",
@@ -203,6 +245,23 @@ void FCppExporter::EmitInstructionSemanticsZ80(FAddressRef addr)
 			return buf;
 		}
 		return std::string(acc) + kRegName[r];
+	};
+
+	// 16-bit register-pair read expression for index pp (0..3 = BC,DE,HL,SP).
+	auto rpRead = [&](int pp) -> std::string
+	{
+		char buf[48];
+		if (pp == 3) { snprintf(buf, sizeof(buf), "%sSP", acc); return buf; }
+		static const char* nm[3] = { "bc", "de", "hl" };
+		snprintf(buf, sizeof(buf), "z80_%s(%s)", nm[pp], CpuPtr());
+		return buf;
+	};
+	// Emit an assignment of valExpr to register-pair pp.
+	auto rpWrite = [&](int pp, const std::string& valExpr)
+	{
+		if (pp == 3) { Output("\t%sSP = %s;\n", acc, valExpr.c_str()); return; }
+		static const char* nm[3] = { "bc", "de", "hl" };
+		Output("\tz80_set_%s(%s, %s);\n", nm[pp], CpuPtr(), valExpr.c_str());
 	};
 
 	if (op == 0x00) { Output("\t/* NOP */\n"); return; }
@@ -259,9 +318,91 @@ void FCppExporter::EmitInstructionSemanticsZ80(FAddressRef addr)
 				Output("\t%s%s = 0x%02X;\n", acc, kRegName[y], n);
 			return;
 		}
+		if (z == 1 && q == 0)	// LD dd,nn
+		{
+			char nbuf[16];
+			snprintf(nbuf, sizeof(nbuf), "0x%04X", state.ReadWord(addr.Address + 1));
+			rpWrite(p, nbuf);
+			return;
+		}
+		if (z == 1 && q == 1)	// ADD HL,ss
+		{
+			Output("\tz80_add16(%s, %s);\n", CpuPtr(), rpRead(p).c_str());
+			return;
+		}
+		if (z == 3)	// INC ss (q==0) / DEC ss (q==1) - 16-bit, no flags
+		{
+			rpWrite(p, rpRead(p) + (q == 0 ? " + 1" : " - 1"));
+			return;
+		}
+		if (z == 7)	// RLCA / RRCA / RLA / RRA / DAA / CPL / SCF / CCF
+		{
+			static const char* kAccOp[8] = { "z80_rlca","z80_rrca","z80_rla","z80_rra",
+			                                  "z80_daa","z80_cpl","z80_scf","z80_ccf" };
+			Output("\t%s(%s);\n", kAccOp[y], CpuPtr());
+			return;
+		}
+		if (op == 0x08) { Output("\tz80_ex_af(%s);\n", CpuPtr()); return; }	// EX AF,AF'
+		if (z == 2)	// indirect loads/stores between A/HL and memory
+		{
+			const uint16_t nn = state.ReadWord(addr.Address + 1);
+			const uint16_t nn1 = (uint16_t)(nn + 1);
+			switch (op)
+			{
+			case 0x02: Output("\tWrite8(%s, z80_bc(%s), %sA);\n", CpuPtr(), CpuPtr(), acc); return;	// LD (BC),A
+			case 0x12: Output("\tWrite8(%s, z80_de(%s), %sA);\n", CpuPtr(), CpuPtr(), acc); return;	// LD (DE),A
+			case 0x0A: Output("\t%sA = Read8(%s, z80_bc(%s));\n", acc, CpuPtr(), CpuPtr()); return;	// LD A,(BC)
+			case 0x1A: Output("\t%sA = Read8(%s, z80_de(%s));\n", acc, CpuPtr(), CpuPtr()); return;	// LD A,(DE)
+			case 0x22: Output("\tWrite8(%s, 0x%04X, %sL); Write8(%s, 0x%04X, %sH);\n", CpuPtr(), nn, acc, CpuPtr(), nn1, acc); return;	// LD (nn),HL
+			case 0x2A: Output("\t%sL = Read8(%s, 0x%04X); %sH = Read8(%s, 0x%04X);\n", acc, CpuPtr(), nn, acc, CpuPtr(), nn1); return;	// LD HL,(nn)
+			case 0x32: Output("\tWrite8(%s, 0x%04X, %sA);\n", CpuPtr(), nn, acc); return;	// LD (nn),A
+			case 0x3A: Output("\t%sA = Read8(%s, 0x%04X);\n", acc, CpuPtr(), nn); return;	// LD A,(nn)
+			}
+		}
 	}
 
-	// Outside the Phase 1 slice (16-bit ops, prefixes, I/O, stack, rotates, ...).
+	if (x == 3)
+	{
+		static const char* kHi[4] = { "B", "D", "H", "A" };	// PUSH/POP pair high byte
+		static const char* kLo[4] = { "C", "E", "L", "F" };	// ... low byte (AF = A:F)
+
+		if (z == 1 && q == 0)	// POP qq
+		{
+			Output("\t%s%s = Read8(%s, %sSP); %s%s = Read8(%s, %sSP+1); %sSP += 2;\n",
+				acc, kLo[p], CpuPtr(), acc, acc, kHi[p], CpuPtr(), acc, acc);
+			return;
+		}
+		if (z == 5 && q == 0)	// PUSH qq
+		{
+			Output("\t%sSP -= 2; Write8(%s, %sSP+1, %s%s); Write8(%s, %sSP, %s%s);\n",
+				acc, CpuPtr(), acc, acc, kHi[p], CpuPtr(), acc, acc, kLo[p]);
+			return;
+		}
+		if (z == 1 && q == 1)	// EXX (0xD9) / LD SP,HL (0xF9); RET / JP(HL) are terminators
+		{
+			if (op == 0xD9) { Output("\tz80_exx(%s);\n", CpuPtr()); return; }
+			if (op == 0xF9) { Output("\t%sSP = z80_hl(%s);\n", acc, CpuPtr()); return; }
+		}
+		if (z == 3)	// OUT/IN/EX/DI/EI (the z==3 control-flow forms are terminators)
+		{
+			const uint8_t n = state.ReadByte(addr.Address + 1);
+			switch (op)
+			{
+			case 0xD3: Output("\tOut(%s, (%sA<<8)|0x%02X, %sA);\n", CpuPtr(), acc, n, acc); return;	// OUT (n),A
+			case 0xDB: Output("\t%sA = In(%s, (%sA<<8)|0x%02X);\n", acc, CpuPtr(), acc, n); return;	// IN A,(n)
+			case 0xEB: Output("\tz80_ex_de_hl(%s);\n", CpuPtr()); return;	// EX DE,HL
+			case 0xF3: Output("\t%sIFF1 = %sIFF2 = false;\n", acc, acc); return;	// DI
+			case 0xFB: Output("\t%sIFF1 = %sIFF2 = true;\n", acc, acc); return;	// EI
+			case 0xE3:	// EX (SP),HL
+				Output("\t{ uint8_t lo = Read8(%s, %sSP), hi = Read8(%s, %sSP+1);\n", CpuPtr(), acc, CpuPtr(), acc);
+				Output("\t  Write8(%s, %sSP, %sL); Write8(%s, %sSP+1, %sH); %sL = lo; %sH = hi; }\n",
+					CpuPtr(), acc, acc, CpuPtr(), acc, acc, acc, acc);
+				return;
+			}
+		}
+	}
+
+	// Outside this batch (CB/DD/FD/ED-prefixed instructions, ED block ops, etc.).
 	Output("\t/* TODO(Phase 1): semantics for opcode 0x%02X */\n", op);
 }
 

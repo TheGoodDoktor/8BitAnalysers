@@ -254,3 +254,46 @@ TEST_F(FCFGTest, CppTargetUsesReferenceAccessors)
 	EXPECT_TRUE(contains("cpu.B = 0x05;"));			// '.' accessor
 	EXPECT_TRUE(contains("z80_dec8(&cpu, cpu.A)"));	// pointer passed to helper
 }
+
+// Phase 1 (broadened): 16-bit loads/ALU, stack ops, memory loads, rotates, EX, I/O.
+TEST_F(FCFGTest, EmitsCForMainPageOps)
+{
+	const uint8_t code[] = {
+		0x21, 0x00, 0x40,	// LD HL,0x4000
+		0x01, 0x34, 0x12,	// LD BC,0x1234
+		0x09,				// ADD HL,BC
+		0x23,				// INC HL
+		0xE5,				// PUSH HL
+		0xD1,				// POP DE
+		0x32, 0x00, 0x50,	// LD (0x5000),A
+		0x07,				// RLCA
+		0xEB,				// EX DE,HL
+		0xD3, 0xFE,			// OUT (0xFE),A
+		0xC9,				// RET
+	};
+	WriteAndAnalyse(0x8200, code, sizeof(code));
+
+	FCppExporter exporter;
+	std::string out;
+	ASSERT_TRUE(exporter.Init(&out, pEmu));
+	exporter.SetTargetLanguageC(true);
+	exporter.SetOutputToHeader();
+	exporter.AddHeader();
+	ASSERT_TRUE(exporter.ExportProgram(0x8200, 0x8211));
+	exporter.Finish();
+
+	auto contains = [&](const char* s) { return out.find(s) != std::string::npos; };
+
+	EXPECT_TRUE(contains("z80_set_hl(cpu, 0x4000);"));					// LD HL,nn
+	EXPECT_TRUE(contains("z80_set_bc(cpu, 0x1234);"));					// LD BC,nn
+	EXPECT_TRUE(contains("z80_add16(cpu, z80_bc(cpu));"));				// ADD HL,BC
+	EXPECT_TRUE(contains("z80_set_hl(cpu, z80_hl(cpu) + 1);"));			// INC HL
+	EXPECT_TRUE(contains("cpu->SP -= 2; Write8(cpu, cpu->SP+1, cpu->H);"));	// PUSH HL
+	EXPECT_TRUE(contains("cpu->E = Read8(cpu, cpu->SP);"));				// POP DE
+	EXPECT_TRUE(contains("Write8(cpu, 0x5000, cpu->A);"));				// LD (nn),A
+	EXPECT_TRUE(contains("z80_rlca(cpu);"));							// RLCA
+	EXPECT_TRUE(contains("z80_ex_de_hl(cpu);"));						// EX DE,HL
+	EXPECT_TRUE(contains("Out(cpu, (cpu->A<<8)|0xFE, cpu->A);"));		// OUT (n),A
+	// runtime helpers for the new ops are emitted
+	EXPECT_TRUE(contains("static inline void z80_add16"));
+}
