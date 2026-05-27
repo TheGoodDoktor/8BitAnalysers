@@ -223,18 +223,22 @@ TEST_F(FCFGTest, EmitsCForDjnzLoop)
 
 	auto contains = [&](const char* s) { return out.find(s) != std::string::npos; };
 
-	EXPECT_TRUE(contains("static inline void z80_add8"));	// flag/ALU runtime emitted
-	EXPECT_TRUE(contains("Z80_CF=1<<0"));					// flag constants
-	EXPECT_TRUE(contains("cpu->B = 0x05;"));				// LD B,5 (immediate baked in)
-	EXPECT_TRUE(contains("z80_dec8(cpu, cpu->A)"));			// DEC A via flag-correct helper
-	EXPECT_TRUE(contains("--cpu->B != 0"));					// DJNZ decrement-and-test
-	EXPECT_TRUE(contains("goto L_8002;"));					// DJNZ back-edge to loop head
-	EXPECT_TRUE(contains("cpu->F & Z80_ZF"));				// RET Z condition
-	EXPECT_TRUE(contains("goto L_8000;"));					// JP 8000
+	EXPECT_TRUE(contains("static inline void z80_add8"));		// flag/ALU runtime emitted
+	EXPECT_TRUE(contains("Z80_CF=1<<0"));						// flag constants
+	EXPECT_TRUE(contains("static void L_8000(Z80CpuState* cpu)"));	// per-block function
+	EXPECT_TRUE(contains("void z80_run(Z80CpuState* cpu)"));		// PC-dispatch engine
+	EXPECT_TRUE(contains("cpu->B = 0x05;"));					// LD B,5 (immediate baked in)
+	EXPECT_TRUE(contains("z80_dec8(cpu, cpu->A)"));				// DEC A via flag-correct helper
+	EXPECT_TRUE(contains("--cpu->B != 0"));						// DJNZ decrement-and-test
+	EXPECT_TRUE(contains("cpu->PC = 0x8002; return;"));			// DJNZ back-edge to loop head
+	EXPECT_TRUE(contains("cpu->F & Z80_ZF"));					// RET Z condition
+	EXPECT_TRUE(contains("cpu->PC = z80_pop16(cpu); return;"));	// RET (taken)
+	EXPECT_TRUE(contains("cpu->PC = 0x8000; return;"));			// JP 8000
 }
 
-// The C++ target differs only in accessor style: references + '.', and '&cpu' to helpers.
-TEST_F(FCFGTest, CppTargetUsesReferenceAccessors)
+// The C++ target differs from C only in the header set and struct declaration; the
+// translated code is identical (pointer access in both, for a uniform block-fn type).
+TEST_F(FCFGTest, CppTargetUsesCppHeaders)
 {
 	const uint8_t code[] = { 0x06, 0x05, 0x3D, 0xC9 };	// LD B,5; DEC A; RET
 	WriteAndAnalyse(0x8400, code, sizeof(code));
@@ -250,9 +254,10 @@ TEST_F(FCFGTest, CppTargetUsesReferenceAccessors)
 
 	auto contains = [&](const char* s) { return out.find(s) != std::string::npos; };
 
-	EXPECT_TRUE(contains("Z80CpuState& cpu"));		// reference parameter
-	EXPECT_TRUE(contains("cpu.B = 0x05;"));			// '.' accessor
-	EXPECT_TRUE(contains("z80_dec8(&cpu, cpu.A)"));	// pointer passed to helper
+	EXPECT_TRUE(contains("#include <cstdint>"));			// C++ header
+	EXPECT_TRUE(contains("struct Z80CpuState\n{"));			// struct (not typedef)
+	EXPECT_TRUE(contains("cpu->B = 0x05;"));				// pointer access in both targets
+	EXPECT_FALSE(contains("#include <stdint.h>"));			// not the C header
 }
 
 // Phase 1 (broadened): 16-bit loads/ALU, stack ops, memory loads, rotates, EX, I/O.
@@ -352,6 +357,36 @@ TEST_F(FCFGTest, EmitsRunnableHarness)
 	EXPECT_TRUE(contains("static uint8_t g_Z80Mem[0x10000];"));					// flat memory
 	EXPECT_TRUE(contains("uint8_t Read8 (Z80CpuState* cpu, uint16_t addr){"));	// hook definitions
 	EXPECT_TRUE(contains("void    Write8(Z80CpuState* cpu, uint16_t addr, uint8_t val){"));
-	EXPECT_TRUE(contains("void Program_9000("));								// the routine
+	EXPECT_TRUE(contains("static void L_9000(Z80CpuState* cpu)"));				// per-block function
+	EXPECT_TRUE(contains("void z80_call(Z80CpuState* cpu, uint16_t entry)"));	// engine entry
 	EXPECT_TRUE(contains("z80_add8(cpu, Read8(cpu, (cpu->H<<8)|cpu->L))"));		// ADD A,(HL)
+}
+
+// PC-dispatch: CALL/RET become push/pop + PC sets, and the callee is its own dispatch entry.
+TEST_F(FCFGTest, EmitsCForCall)
+{
+	const uint8_t code[] = {
+		0xCD, 0x04, 0x90,	// 9000: CALL 0x9004
+		0xC9,				// 9003: RET
+		0xC6, 0x05,			// 9004: ADD A,0x05  (callee)
+		0xC9,				// 9006: RET
+	};
+	WriteAndAnalyse(0x9000, code, sizeof(code));
+
+	FCppExporter exporter;
+	std::string out;
+	ASSERT_TRUE(exporter.Init(&out, pEmu));
+	exporter.SetTargetLanguageC(true);
+	exporter.SetOutputToHeader();
+	exporter.AddHeader();
+	ASSERT_TRUE(exporter.ExportProgram(0x9000, 0x9006));
+	exporter.Finish();
+
+	auto contains = [&](const char* s) { return out.find(s) != std::string::npos; };
+
+	EXPECT_TRUE(contains("z80_push16(cpu, 0x9003); cpu->PC = 0x9004; return;"));	// CALL: push ret, jump
+	EXPECT_TRUE(contains("cpu->PC = z80_pop16(cpu); return;"));					// RET: pop
+	EXPECT_TRUE(contains("z80_add8(cpu, 0x05);"));								// callee body
+	EXPECT_TRUE(contains("case 0x9004: return L_9004;"));							// callee is a dispatch entry
+	EXPECT_TRUE(contains("static void L_9004(Z80CpuState* cpu)"));
 }

@@ -7,9 +7,10 @@
 // ("Tier A") translation driven by the Phase 0 control-flow graph.
 //
 // Output language is selectable (see FRecompilerConfig): C99 (the default) or C++. The
-// translation model - flat memory + CPU-state struct + goto-labelled basic blocks + hook
-// calls - is identical for both; only the accessor style (pointer/`->` vs reference/`.`),
-// the header set, and the struct declaration differ.
+// translation model is a PC-dispatch engine: each basic block becomes a function, a
+// dispatcher loop (z80_run) invokes blocks keyed on cpu->PC, and control transfers set PC
+// and return; CALL/RET push/pop the return PC on the Z80 stack. C and C++ output differ
+// only in the header set and the struct declaration.
 //
 // What IS implemented here: the structural scaffolding - CPU-state struct + memory
 // runtime declarations, per-block functions with goto/return/dispatch control flow,
@@ -49,7 +50,8 @@ private:
 	void	EmitRuntimeDeclarations(void);
 	void	EmitRuntimeHelpers(void);	// inline Z80 flag/ALU primitives (mirrors chips z80.h)
 	void	EmitEntryPointDeclarations(void);
-	void	EmitHarness(void);			// self-contained memory/IO/dispatch definitions
+	void	EmitDispatcher(void);		// Z80BlockFn typedef + z80_lookup/z80_run/z80_call
+	void	EmitHarness(void);			// self-contained memory/IO definitions
 
 	void	EmitBasicBlock(const FBasicBlock& block);
 	// Emits one instruction's comment + semantics. Control-flow instructions emit no inline
@@ -66,10 +68,12 @@ private:
 	std::string	FunctionName(FAddressRef addr) const;	// label name or "func_AE5C"
 	std::string	DisassemblyText(FAddressRef addr);		// best-effort mnemonic for comments
 
-	// Target-language helpers - the only points where C and C++ output diverge.
-	const char*	CpuArgDecl(void) const { return RecompilerConfig.bEmitC ? "Z80CpuState* cpu" : "Z80CpuState& cpu"; }
-	const char*	Acc(void) const { return RecompilerConfig.bEmitC ? "cpu->" : "cpu."; }	// member-access prefix
-	const char*	CpuPtr(void) const { return RecompilerConfig.bEmitC ? "cpu" : "&cpu"; }	// pass-by-pointer to helpers
+	// In the PC-dispatch model every block is a function reached through a single
+	// function-pointer type, so block bodies take Z80CpuState* in both targets (pointer
+	// access throughout). The C vs C++ difference is now only headers + the struct decl.
+	const char*	CpuArgDecl(void) const { return "Z80CpuState* cpu"; }
+	const char*	Acc(void) const { return "cpu->"; }	// member-access prefix
+	const char*	CpuPtr(void) const { return "cpu"; }	// pass-by-pointer to helpers
 
 	FRecompilerConfig	RecompilerConfig;
 	FControlFlowGraph	CFG;

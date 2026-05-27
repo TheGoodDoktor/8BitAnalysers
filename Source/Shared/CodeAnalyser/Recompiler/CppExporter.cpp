@@ -80,18 +80,15 @@ void FCppExporter::EmitRuntimeDeclarations(void)
 	Output("void     Write8(%s, uint16_t addr, uint8_t val);\n", pCpu);
 	Output("uint8_t  In    (%s, uint16_t port);\n", pCpu);
 	Output("void     Out   (%s, uint16_t port, uint8_t val);\n\n", pCpu);
-	Output("// Control-flow helpers. Call/JumpTo/DispatchIndirect look up an address->handler\n");
-	Output("// map; unresolved indirect targets (jump tables) route through DispatchIndirect.\n");
-	Output("void     Call           (%s, uint16_t target);\n", pCpu);
-	Output("void     JumpTo         (%s, uint16_t target);\n", pCpu);
-	Output("void     DispatchIndirect(%s, uint16_t target);\n\n", pCpu);
+	// Control flow is internal in the PC-dispatch model (see EmitDispatcher) - no
+	// Call/JumpTo/DispatchIndirect hooks are needed.
 }
 
 void FCppExporter::EmitEntryPointDeclarations(void)
 {
-	Output("// ---- Entry points ------------------------------------------------------\n");
+	Output("// ---- Entry points (run via z80_call(cpu, addr)) ------------------------\n");
 	for (const FAddressRef& entry : CFG.EntryPoints)
-		Output("void %s(%s);   // 0x%04X\n", FunctionName(entry).c_str(), CpuArgDecl(), entry.Address);
+		Output("//   0x%04X  %s\n", entry.Address, FunctionName(entry).c_str());
 	Output("\n");
 }
 
@@ -105,10 +102,9 @@ void FCppExporter::AddHeader(void)
 	else
 		Output("#include <cstdint>\n\n");
 	EmitCpuStateStruct();
-	EmitRuntimeHelpers();
-	EmitRuntimeDeclarations();
-	// Entry-point declarations depend on the CFG, which is built in ExportProgram;
-	// they are appended there once CFG.EntryPoints is populated.
+	EmitRuntimeDeclarations();	// hook declarations first...
+	EmitRuntimeHelpers();		// ...so the inline helpers (push16/pop16) can call them
+	// Entry-point list depends on the CFG, which is built in ExportProgram.
 }
 
 // Inline Z80 flag/ALU primitives. These are transcribed from the chips Z80 core
@@ -193,6 +189,10 @@ void FCppExporter::EmitRuntimeHelpers(void)
 	// we use the operand value instead (correct for register operands; minor (HL) inaccuracy
 	// pending WZ modelling).
 	Output("static inline void z80_bit(Z80CpuState* c,uint8_t v,int n){ uint8_t r=(uint8_t)(v&(1<<n)); c->F=(c->F&Z80_CF)|Z80_HF|(r?(r&Z80_SF):(Z80_ZF|Z80_PF))|(v&(Z80_YF|Z80_XF)); }\n\n");
+
+	// 16-bit stack push/pop (used by CALL/RET and PUSH/POP); go through the memory hooks.
+	Output("static inline void z80_push16(Z80CpuState* c,uint16_t v){ c->SP-=2; Write8(c,(uint16_t)(c->SP+1),(uint8_t)(v>>8)); Write8(c,c->SP,(uint8_t)v); }\n");
+	Output("static inline uint16_t z80_pop16(Z80CpuState* c){ uint8_t lo=Read8(c,c->SP), hi=Read8(c,(uint16_t)(c->SP+1)); c->SP+=2; return (uint16_t)((hi<<8)|lo); }\n\n");
 }
 
 // -------------------------------------------------------------------------------------
@@ -207,22 +207,10 @@ void FCppExporter::EmitInstruction(FAddressRef addr)
 	// Provenance comment - always emitted so the generated code stays auditable.
 	Output("\t// %04X: %s\n", addr.Address, DisassemblyText(addr).c_str());
 
-	// Calls happen mid-block and must be emitted in stream order.
-	if (flow.bIsCall && flow.Target.IsValid())
-	{
-		if (flow.bConditional)
-			Output("\tif (%s) Call(%s, 0x%04X); // %s\n",
-				ConditionExpr(addr).c_str(), CpuPtr(), flow.Target.Address, FunctionName(flow.Target).c_str());
-		else
-			Output("\tCall(%s, 0x%04X); // %s\n", CpuPtr(), flow.Target.Address, FunctionName(flow.Target).c_str());
-		return;
-	}
-
-	// Control-flow instructions (JP/JR/RET/DJNZ/HALT/JP(HL)) carry no inline data
-	// semantics - their transfer is emitted by EmitTerminator. Note this is keyed off the
-	// instruction's own classification, NOT "is it the block's last instruction": a block
-	// that ends by fall-through (because the next address is a leader) still needs the
-	// semantics of its final, ordinary instruction emitted.
+	// Control-flow instructions (JP/JR/CALL/RET/DJNZ/RST/HALT/JP(HL)) carry no inline data
+	// semantics - their transfer is emitted by EmitTerminator. Keyed off the instruction's
+	// own classification, NOT "is it the block's last instruction": a block that ends by
+	// fall-through (next address is a leader) still needs its final instruction's semantics.
 	if (flow.bEndsBlock)
 		return;
 
@@ -496,76 +484,65 @@ std::string FCppExporter::ConditionExpr(FAddressRef addr)
 
 void FCppExporter::EmitTerminator(const FBasicBlock& block)
 {
-	auto findSuccessor = [&](EEdgeType type) -> const FFlowEdge*
-	{
-		for (const FFlowEdge& e : block.Successors)
-			if (e.Type == type)
-				return &e;
-		return nullptr;
-	};
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	const FInstructionFlow flow = ClassifyInstruction(state, block.LastInstruction);
 
-	auto emitGotoOrJump = [&](FAddressRef target)
-	{
-		if (CFG.GetBlockStartingAt(target) != nullptr)
-			Output("\tgoto %s;\n", BlockLabel(target).c_str());	// stays inside this TU
-		else
-			Output("\tJumpTo(cpu, 0x%04X); return;   // target outside translated range\n", target.Address);
-	};
+	// Every transfer is "set PC, return to the dispatcher". A target outside the
+	// translated code simply leaves PC there and z80_run stops (lookup fails).
+	const uint16_t nextAddr = (uint16_t)(block.LastInstruction.Address + flow.ByteSize);
+	const uint16_t target   = flow.Target.Address;
+	const std::string cond  = ConditionExpr(block.LastInstruction);
 
 	switch (block.Terminator)
 	{
 		case EBlockTerminator::FallThrough:
-		{
-			const FFlowEdge* pEdge = findSuccessor(EEdgeType::FallThrough);
-			if (pEdge != nullptr)
-				emitGotoOrJump(pEdge->To);
-			else
-				Output("\treturn;   // falls off translated range\n");	// keep the label statement-terminated
+			Output("\tcpu->PC = 0x%04X; return;\n", nextAddr);
 			break;
-		}
+
 		case EBlockTerminator::UncondBranch:
-		{
-			const FFlowEdge* pEdge = findSuccessor(EEdgeType::Jump);
-			if (pEdge != nullptr)
-				emitGotoOrJump(pEdge->To);
-			else
-				Output("\tDispatchIndirect(cpu, %sPC); return;   // unresolved jump\n", Acc());
+			Output("\tcpu->PC = 0x%04X; return;\n", target);
 			break;
-		}
+
 		case EBlockTerminator::CondBranch:
-		{
-			const FFlowEdge* pBranch = findSuccessor(EEdgeType::Branch);
-			const FFlowEdge* pFall   = findSuccessor(EEdgeType::FallThrough);
-			if (pBranch != nullptr)
-				Output("\tif (%s) goto %s;\n",
-					ConditionExpr(block.LastInstruction).c_str(), BlockLabel(pBranch->To).c_str());
-			if (pFall != nullptr)
-				emitGotoOrJump(pFall->To);
+			Output("\tif (%s) { cpu->PC = 0x%04X; return; }\n", cond.c_str(), target);
+			Output("\tcpu->PC = 0x%04X; return;\n", nextAddr);
 			break;
-		}
-		case EBlockTerminator::Return:
-		{
-			// A fall-through successor exists iff this was a *conditional* RET.
-			const FFlowEdge* pFall = findSuccessor(EEdgeType::FallThrough);
-			if (pFall != nullptr)
+
+		case EBlockTerminator::Call:
+			if (flow.bConditional)
 			{
-				Output("\tif (%s) return;\n", ConditionExpr(block.LastInstruction).c_str());
-				emitGotoOrJump(pFall->To);
+				Output("\tif (%s) { z80_push16(cpu, 0x%04X); cpu->PC = 0x%04X; return; }\n", cond.c_str(), nextAddr, target);
+				Output("\tcpu->PC = 0x%04X; return;\n", nextAddr);
 			}
 			else
 			{
-				Output("\treturn;\n");
+				Output("\tz80_push16(cpu, 0x%04X); cpu->PC = 0x%04X; return;\n", nextAddr, target);
 			}
 			break;
-		}
+
+		case EBlockTerminator::Return:
+			if (flow.bConditional)
+			{
+				Output("\tif (%s) { cpu->PC = z80_pop16(cpu); return; }\n", cond.c_str());
+				Output("\tcpu->PC = 0x%04X; return;\n", nextAddr);
+			}
+			else
+			{
+				Output("\tcpu->PC = z80_pop16(cpu); return;\n");
+			}
+			break;
+
 		case EBlockTerminator::IndirectJump:
-			// TODO(Phase 0 pass 4 / Phase 1): pass the real index register (HL/IX/IY).
-			Output("\tDispatchIndirect(cpu, /* TODO: index reg */ %sPC); return;\n", Acc());
+			// JP (HL) (unprefixed 0xE9). The DD/FD (IX/IY) variants are a later page.
+			Output("\tcpu->PC = z80_hl(cpu); return;   // JP (HL)\n");
 			break;
+
 		case EBlockTerminator::Halt:
-			Output("\t%sHalted = true; return;\n", Acc());
+			Output("\tcpu->Halted = true; return;\n");
 			break;
+
 		default:
+			Output("\tcpu->PC = 0x%04X; return;\n", nextAddr);
 			break;
 	}
 }
@@ -574,14 +551,14 @@ void FCppExporter::EmitBasicBlock(const FBasicBlock& block)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 
-	Output("%s:   // 0x%04X .. 0x%04X%s%s\n",
+	Output("static void %s(Z80CpuState* cpu)   // 0x%04X .. 0x%04X%s%s\n{\n",
 		BlockLabel(block.StartAddress).c_str(),
 		block.StartAddress.Address, block.EndAddress.Address,
 		block.bIsEntry ? "  [entry]" : "",
 		block.bContainsSelfModifyingCode ? "  [SMC]" : "");
 
 	if (block.bContainsSelfModifyingCode)
-		Output("\t// NOTE: self-modifying code in this block - route through fallback interpreter (Phase 1).\n");
+		Output("\t// NOTE: self-modifying code in this block - route through fallback interpreter (later).\n");
 
 	// Emit each instruction in the block in address order.
 	FAddressRef addr = block.StartAddress;
@@ -597,7 +574,7 @@ void FCppExporter::EmitBasicBlock(const FBasicBlock& block)
 	}
 
 	EmitTerminator(block);
-	Output("\n");
+	Output("}\n\n");
 }
 
 // -------------------------------------------------------------------------------------
@@ -614,31 +591,17 @@ bool FCppExporter::ExportProgram(uint16_t startAddr, uint16_t endAddr)
 	if (BuildCFGForAddressRange(state, start, end, CFG) == false)
 		return false;
 
-	// Entry-point forward declarations now that the CFG exists.
+	// Entry-point list (informational) in the header now that the CFG exists.
 	SetOutputToHeader();
 	EmitEntryPointDeclarations();
 
 	SetOutputToBody();
-	Output("// ---- Translated code ---------------------------------------------------\n");
-
-	// SKELETON: a single translation function with all blocks as goto labels. A later
-	// milestone splits this per entry point (each entry becomes its own function whose
-	// body is `goto L_<entry>;` into the shared label space, or its own block subset).
-	Output("void Program_%04X(%s)\n{\n", startAddr, CpuArgDecl());
+	Output("// ---- Translated blocks (one function per basic block) ------------------\n\n");
 
 	for (const auto& blockPair : CFG.Blocks)	// std::map => address order
 		EmitBasicBlock(blockPair.second);
 
-	Output("}\n");
-
-	// Report what still needs resolving so the user knows the output's limitations.
-	if (CFG.UnresolvedEdges.empty() == false)
-	{
-		Output("\n// %zu unresolved indirect jump(s) - resolve via runtime traces or annotation:\n",
-			CFG.UnresolvedEdges.size());
-		for (const FFlowEdge& e : CFG.UnresolvedEdges)
-			Output("//   from 0x%04X\n", e.From.Address);
-	}
+	EmitDispatcher();
 
 	if (RecompilerConfig.bEmitHarness)
 		EmitHarness();
@@ -646,25 +609,45 @@ bool FCppExporter::ExportProgram(uint16_t startAddr, uint16_t endAddr)
 	return true;
 }
 
-// Self-contained runtime so a generated translation unit compiles and runs standalone.
-// Defines a flat 64K memory plus the Read8/Write8/In/Out/Call/JumpTo/DispatchIndirect
-// hooks declared in the header. This iteration targets LEAF routines (no CALL / computed
-// jump): Call/JumpTo/DispatchIndirect just halt with an error flag, because resuming after
-// a call or following a runtime target needs the PC-dispatch execution model (next step).
+// The PC-dispatch execution engine: a PC->block-function table and the run loop. Control
+// transfers in block bodies just set cpu->PC and return here; CALL/RET push/pop the return
+// PC on the Z80 stack, so calls, returns and computed jumps all resolve through the loop.
+// When PC lands on an address with no block (e.g. RET to the caller, or a jump out of the
+// translated range) z80_run stops, leaving cpu->PC for the caller to inspect.
+void FCppExporter::EmitDispatcher(void)
+{
+	Output("// ---- PC-dispatch engine ------------------------------------------------\n");
+	Output("typedef void (*Z80BlockFn)(Z80CpuState*);\n\n");
+
+	Output("static Z80BlockFn z80_lookup(uint16_t pc)\n{\n\tswitch (pc)\n\t{\n");
+	for (const auto& blockPair : CFG.Blocks)
+		Output("\tcase 0x%04X: return %s;\n", blockPair.first.Address, BlockLabel(blockPair.first).c_str());
+	Output("\tdefault: return 0;\n\t}\n}\n\n");
+
+	Output("void z80_run(Z80CpuState* cpu)\n{\n");
+	Output("\twhile (!cpu->Halted)\n\t{\n");
+	Output("\t\tZ80BlockFn fn = z80_lookup(cpu->PC);\n");
+	Output("\t\tif (!fn) return;   // PC left the translated code\n");
+	Output("\t\tfn(cpu);\n\t}\n}\n\n");
+
+	Output("// Enter a routine: push a sentinel return address (unmapped, so the routine's\n");
+	Output("// final RET stops z80_run), set PC, and run.\n");
+	Output("void z80_call(Z80CpuState* cpu, uint16_t entry)\n{\n");
+	Output("\tz80_push16(cpu, 0xFFFF);\n\tcpu->PC = entry;\n\tz80_run(cpu);\n}\n");
+}
+
+// Self-contained runtime so a generated translation unit compiles and runs standalone:
+// a flat 64K memory and the Read8/Write8/In/Out hooks declared in the header. With the
+// PC-dispatch engine this runs full routines (calls/returns/computed jumps) - drive it via
+// z80_call(cpu, entry). Customise the memory map and IO for a real target.
 void FCppExporter::EmitHarness(void)
 {
-	Output("\n// ---- Minimal runtime harness (memory + IO + dispatch) ------------------\n");
-	Output("// Self-contained for leaf routines (no CALL / computed jump). Customise the\n");
-	Output("// memory map and IO for a real target; full call/jump support needs PC dispatch.\n");
-	Output("int g_Z80HarnessError = 0;   // set non-zero if an unsupported transfer was hit\n");
+	Output("\n// ---- Minimal runtime harness (memory + IO) -----------------------------\n");
 	Output("static uint8_t g_Z80Mem[0x10000];\n\n");
 	Output("uint8_t Read8 (Z80CpuState* cpu, uint16_t addr){ (void)cpu; return g_Z80Mem[addr]; }\n");
 	Output("void    Write8(Z80CpuState* cpu, uint16_t addr, uint8_t val){ (void)cpu; g_Z80Mem[addr] = val; }\n");
 	Output("uint8_t In    (Z80CpuState* cpu, uint16_t port){ (void)cpu; (void)port; return 0xFF; }\n");
 	Output("void    Out   (Z80CpuState* cpu, uint16_t port, uint8_t val){ (void)cpu; (void)port; (void)val; }\n");
-	Output("void    Call           (Z80CpuState* cpu, uint16_t target){ (void)target; g_Z80HarnessError = 1; cpu->Halted = true; }\n");
-	Output("void    JumpTo         (Z80CpuState* cpu, uint16_t target){ (void)target; g_Z80HarnessError = 1; cpu->Halted = true; }\n");
-	Output("void    DispatchIndirect(Z80CpuState* cpu, uint16_t target){ (void)target; g_Z80HarnessError = 1; cpu->Halted = true; }\n");
 }
 
 // -------------------------------------------------------------------------------------

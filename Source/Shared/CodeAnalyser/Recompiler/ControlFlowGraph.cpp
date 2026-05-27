@@ -56,22 +56,32 @@ FInstructionFlow ClassifyInstructionZ80(FCodeAnalysisState& state, FAddressRef a
 			flow.bFallsThrough = false;
 			break;
 
-		// --- Calls (do NOT end the block - control returns) --------------------------
+		// --- Calls (end the block: control goes to the callee; the return address is
+		//     the next instruction, which becomes a leader / dispatch resume point) ----
 		case 0xCD:	// CALL nn
+			flow.Terminator = EBlockTerminator::Call;
 			flow.bIsCall = true;
+			flow.bEndsBlock = true;
+			flow.bFallsThrough = false;
 			flow.Target = target;
 			break;
 		case 0xC4: case 0xCC: case 0xD4: case 0xDC:	// CALL cc,nn
 		case 0xE4: case 0xEC: case 0xF4: case 0xFC:
+			flow.Terminator = EBlockTerminator::Call;
 			flow.bIsCall = true;
 			flow.bConditional = true;
+			flow.bEndsBlock = true;
+			flow.bFallsThrough = true;	// the not-taken path continues at the next instruction
 			flow.Target = target;
 			break;
 
 		// --- RST p (call to a fixed page-0 address) ----------------------------------
 		case 0xC7: case 0xCF: case 0xD7: case 0xDF:
 		case 0xE7: case 0xEF: case 0xF7: case 0xFF:
+			flow.Terminator = EBlockTerminator::Call;
 			flow.bIsCall = true;
+			flow.bEndsBlock = true;
+			flow.bFallsThrough = false;
 			flow.Target = target.IsValid() ? target : state.AddressRefFromPhysicalAddress(op & 0x38);
 			break;
 
@@ -218,9 +228,12 @@ bool BuildCFGForAddressRange(FCodeAnalysisState& state, FAddressRef start, FAddr
 		if (IsEntryLabel(state, addr))
 			leaders.insert(addr);
 
-		// Leader: a (resolved) branch/jump target inside the range.
+		// Leader: a (resolved) branch / jump / call target inside the range. Call targets
+		// matter for the PC-dispatch model - the callee entry must be its own block so the
+		// dispatcher can resume there.
 		if ((rec.Flow.Terminator == EBlockTerminator::UncondBranch ||
-			 rec.Flow.Terminator == EBlockTerminator::CondBranch) &&
+			 rec.Flow.Terminator == EBlockTerminator::CondBranch ||
+			 rec.Flow.Terminator == EBlockTerminator::Call) &&
 			InRange(rec.Flow.Target, start, end))
 		{
 			leaders.insert(rec.Flow.Target);
@@ -271,13 +284,6 @@ bool BuildCFGForAddressRange(FCodeAnalysisState& state, FAddressRef start, FAddr
 		block.InstructionCount = count;
 		block.bContainsSelfModifyingCode = bSMC;
 
-		// Call edges for every CALL/RST inside the block (call-graph info).
-		for (size_t k = i; k <= termIdx; k++)
-		{
-			if (instrs[k].Flow.bIsCall && instrs[k].Flow.Target.IsValid())
-				block.Successors.emplace_back(instrs[k].Addr, instrs[k].Flow.Target, EEdgeType::Call, instrs[k].Flow.bConditional);
-		}
-
 		// Flow successors based on the terminator.
 		switch (block.Terminator)
 		{
@@ -291,6 +297,13 @@ bool BuildCFGForAddressRange(FCodeAnalysisState& state, FAddressRef start, FAddr
 			case EBlockTerminator::CondBranch:
 				if (term.Flow.Target.IsValid())
 					block.Successors.emplace_back(block.StartAddress, term.Flow.Target, EEdgeType::Branch, true);
+				block.Successors.emplace_back(block.StartAddress, term.NextAddr, EEdgeType::FallThrough, false);
+				break;
+
+			case EBlockTerminator::Call:
+				// Call edge to the callee; the return address (next instr) is the resume point.
+				if (term.Flow.Target.IsValid())
+					block.Successors.emplace_back(block.StartAddress, term.Flow.Target, EEdgeType::Call, term.Flow.bConditional);
 				block.Successors.emplace_back(block.StartAddress, term.NextAddr, EEdgeType::FallThrough, false);
 				break;
 
