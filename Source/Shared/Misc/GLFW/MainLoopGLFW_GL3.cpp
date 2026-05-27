@@ -285,11 +285,15 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
 
 void SetWindowTitle(const char* pTitle)
 {
+	if (g_AppState.MainWindow == nullptr)	// headless (e.g. tests): no window to title
+		return;
 	glfwSetWindowTitle(g_AppState.MainWindow, pTitle);
 }
 
 void SetWindowIcon(const char* pIconFile)
 {
+	if (g_AppState.MainWindow == nullptr)	// headless (e.g. tests): no window
+		return;
 	GLFWimage images[1];
 	unsigned char* iconPixels = stbi_load(pIconFile, &images[0].width, &images[0].height, 0, 4);
 	if (iconPixels)
