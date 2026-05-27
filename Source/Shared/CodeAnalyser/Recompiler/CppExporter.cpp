@@ -178,6 +178,21 @@ void FCppExporter::EmitRuntimeHelpers(void)
 	Output("static inline void z80_exx(Z80CpuState* c){ uint8_t t;\n");
 	Output("\tt=c->B;c->B=c->B_;c->B_=t; t=c->C;c->C=c->C_;c->C_=t; t=c->D;c->D=c->D_;c->D_=t;\n");
 	Output("\tt=c->E;c->E=c->E_;c->E_=t; t=c->H;c->H=c->H_;c->H_=t; t=c->L;c->L=c->L_;c->L_=t; }\n\n");
+
+	// CB-page rotates/shifts (return result, set S/Z/P/X/Y from result and CF from the
+	// shifted-out bit) and BIT (test only - no writeback).
+	Output("static inline uint8_t z80_rlc(Z80CpuState* c,uint8_t v){ uint8_t r=(uint8_t)((v<<1)|(v>>7)); c->F=z80_szp(r)|((v>>7)&Z80_CF); return r; }\n");
+	Output("static inline uint8_t z80_rrc(Z80CpuState* c,uint8_t v){ uint8_t r=(uint8_t)((v>>1)|(v<<7)); c->F=z80_szp(r)|(v&Z80_CF); return r; }\n");
+	Output("static inline uint8_t z80_rl (Z80CpuState* c,uint8_t v){ uint8_t r=(uint8_t)((v<<1)|(c->F&Z80_CF)); c->F=z80_szp(r)|((v>>7)&Z80_CF); return r; }\n");
+	Output("static inline uint8_t z80_rr (Z80CpuState* c,uint8_t v){ uint8_t r=(uint8_t)((v>>1)|((c->F&Z80_CF)<<7)); c->F=z80_szp(r)|(v&Z80_CF); return r; }\n");
+	Output("static inline uint8_t z80_sla(Z80CpuState* c,uint8_t v){ uint8_t r=(uint8_t)(v<<1); c->F=z80_szp(r)|((v>>7)&Z80_CF); return r; }\n");
+	Output("static inline uint8_t z80_sra(Z80CpuState* c,uint8_t v){ uint8_t r=(uint8_t)((v>>1)|(v&0x80)); c->F=z80_szp(r)|(v&Z80_CF); return r; }\n");
+	Output("static inline uint8_t z80_sll(Z80CpuState* c,uint8_t v){ uint8_t r=(uint8_t)((v<<1)|1); c->F=z80_szp(r)|((v>>7)&Z80_CF); return r; }\n");	// undocumented
+	Output("static inline uint8_t z80_srl(Z80CpuState* c,uint8_t v){ uint8_t r=(uint8_t)(v>>1); c->F=z80_szp(r)|(v&Z80_CF); return r; }\n");
+	// NOTE: for BIT n,(HL) the real Z80 takes the X/Y flags from the internal WZ register;
+	// we use the operand value instead (correct for register operands; minor (HL) inaccuracy
+	// pending WZ modelling).
+	Output("static inline void z80_bit(Z80CpuState* c,uint8_t v,int n){ uint8_t r=(uint8_t)(v&(1<<n)); c->F=(c->F&Z80_CF)|Z80_HF|(r?(r&Z80_SF):(Z80_ZF|Z80_PF))|(v&(Z80_YF|Z80_XF)); }\n\n");
 }
 
 // -------------------------------------------------------------------------------------
@@ -220,9 +235,10 @@ void FCppExporter::EmitInstruction(FAddressRef addr)
 // Phase 1: the main (unprefixed) Z80 opcode page. Covers NOP; 8-bit loads (LD r,r'/r,n,
 // (HL) forms); 8-bit ALU A,r/A,n; INC/DEC r; 16-bit LD dd,nn, INC/DEC ss, ADD HL,ss;
 // A/HL <-> memory loads (LD (BC)/(DE)/(nn) etc.); PUSH/POP; accumulator rotates and
-// DAA/CPL/SCF/CCF; EX/EXX; LD SP,HL; IN/OUT (n); DI/EI. Decoded via the regular octal
-// opcode structure (x/y/z/p/q fields, see z80.info/decoding.htm). CB/DD/FD/ED prefixes
-// and ED block ops are NOT yet handled and fall back to a clearly-marked TODO.
+// DAA/CPL/SCF/CCF; EX/EXX; LD SP,HL; IN/OUT (n); DI/EI; and the full CB page (rotates/
+// shifts, BIT/RES/SET, including (HL) forms). Decoded via the regular octal opcode
+// structure (x/y/z/p/q fields, see z80.info/decoding.htm). The DD/FD (IX/IY) and ED
+// prefixes are NOT yet handled and fall back to a clearly-marked TODO.
 void FCppExporter::EmitInstructionSemanticsZ80(FAddressRef addr)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
@@ -265,6 +281,51 @@ void FCppExporter::EmitInstructionSemanticsZ80(FAddressRef addr)
 	};
 
 	if (op == 0x00) { Output("\t/* NOP */\n"); return; }
+
+	if (op == 0xCB)	// CB prefix: the real opcode is the second byte (its own x/y/z are moot)
+	{
+		const uint8_t cb = state.ReadByte(addr.Address + 1);
+		const int cx = cb >> 6, cy = (cb >> 3) & 7, cz = cb & 7;
+		const bool bHL = (cz == 6);
+		static const char* kRot[8] = { "z80_rlc","z80_rrc","z80_rl","z80_rr",
+		                               "z80_sla","z80_sra","z80_sll","z80_srl" };
+		switch (cx)
+		{
+		case 0:	// rotate / shift (writes result back)
+			if (bHL)
+				Output("\tWrite8(%s, (%sH<<8)|%sL, %s(%s, Read8(%s, (%sH<<8)|%sL)));\n",
+					CpuPtr(), acc, acc, kRot[cy], CpuPtr(), CpuPtr(), acc, acc);
+			else
+				Output("\t%s%s = %s(%s, %s%s);\n", acc, kRegName[cz], kRot[cy], CpuPtr(), acc, kRegName[cz]);
+			return;
+		case 1:	// BIT n,r (flags only, no writeback)
+			if (bHL)
+				Output("\tz80_bit(%s, Read8(%s, (%sH<<8)|%sL), %d);\n", CpuPtr(), CpuPtr(), acc, acc, cy);
+			else
+				Output("\tz80_bit(%s, %s%s, %d);\n", CpuPtr(), acc, kRegName[cz], cy);
+			return;
+		case 2:	// RES n,r (no flags)
+		{
+			const uint8_t mask = (uint8_t)(0xFF & ~(1 << cy));
+			if (bHL)
+				Output("\tWrite8(%s, (%sH<<8)|%sL, (uint8_t)(Read8(%s, (%sH<<8)|%sL) & 0x%02X));\n",
+					CpuPtr(), acc, acc, CpuPtr(), acc, acc, mask);
+			else
+				Output("\t%s%s &= 0x%02X;\n", acc, kRegName[cz], mask);
+			return;
+		}
+		case 3:	// SET n,r (no flags)
+		{
+			const uint8_t bit = (uint8_t)(1 << cy);
+			if (bHL)
+				Output("\tWrite8(%s, (%sH<<8)|%sL, (uint8_t)(Read8(%s, (%sH<<8)|%sL) | 0x%02X));\n",
+					CpuPtr(), acc, acc, CpuPtr(), acc, acc, bit);
+			else
+				Output("\t%s%s |= 0x%02X;\n", acc, kRegName[cz], bit);
+			return;
+		}
+		}
+	}
 
 	if (x == 1)	// LD r[y], r[z]   (0x76 HALT is a terminator, never reaches here)
 	{

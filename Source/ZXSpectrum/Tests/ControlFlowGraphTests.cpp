@@ -297,3 +297,36 @@ TEST_F(FCFGTest, EmitsCForMainPageOps)
 	// runtime helpers for the new ops are emitted
 	EXPECT_TRUE(contains("static inline void z80_add16"));
 }
+
+// Phase 1 (CB page): rotates/shifts, BIT/RES/SET, including (HL) read-modify-write.
+TEST_F(FCFGTest, EmitsCForCbPage)
+{
+	const uint8_t code[] = {
+		0xCB, 0x00,	// RLC B
+		0xCB, 0x16,	// RL (HL)
+		0xCB, 0x7E,	// BIT 7,(HL)
+		0xCB, 0xC7,	// SET 0,A
+		0xCB, 0x9F,	// RES 3,A
+		0xC9,		// RET
+	};
+	WriteAndAnalyse(0x8300, code, sizeof(code));
+
+	FCppExporter exporter;
+	std::string out;
+	ASSERT_TRUE(exporter.Init(&out, pEmu));
+	exporter.SetTargetLanguageC(true);
+	exporter.SetOutputToHeader();
+	exporter.AddHeader();
+	ASSERT_TRUE(exporter.ExportProgram(0x8300, 0x830A));
+	exporter.Finish();
+
+	auto contains = [&](const char* s) { return out.find(s) != std::string::npos; };
+
+	EXPECT_TRUE(contains("cpu->B = z80_rlc(cpu, cpu->B);"));							// RLC B
+	EXPECT_TRUE(contains("z80_rl(cpu, Read8(cpu, (cpu->H<<8)|cpu->L))"));			// RL (HL)
+	EXPECT_TRUE(contains("z80_bit(cpu, Read8(cpu, (cpu->H<<8)|cpu->L), 7);"));		// BIT 7,(HL)
+	EXPECT_TRUE(contains("cpu->A |= 0x01;"));										// SET 0,A
+	EXPECT_TRUE(contains("cpu->A &= 0xF7;"));										// RES 3,A
+	EXPECT_TRUE(contains("static inline uint8_t z80_rlc"));							// CB helpers emitted
+	EXPECT_TRUE(contains("static inline void z80_bit"));
+}
