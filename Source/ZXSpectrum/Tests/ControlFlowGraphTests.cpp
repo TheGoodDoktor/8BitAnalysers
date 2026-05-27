@@ -330,3 +330,28 @@ TEST_F(FCFGTest, EmitsCForCbPage)
 	EXPECT_TRUE(contains("static inline uint8_t z80_rlc"));							// CB helpers emitted
 	EXPECT_TRUE(contains("static inline void z80_bit"));
 }
+
+// Phase 1 (harness): with bEmitHarness the output is a self-contained runnable program.
+TEST_F(FCFGTest, EmitsRunnableHarness)
+{
+	const uint8_t code[] = { 0x86, 0x23, 0x10, 0xFC, 0xC9 };	// loop: ADD A,(HL); INC HL; DJNZ loop; RET
+	WriteAndAnalyse(0x9000, code, sizeof(code));
+
+	FCppExporter exporter;
+	std::string out;
+	ASSERT_TRUE(exporter.Init(&out, pEmu));
+	exporter.SetTargetLanguageC(true);
+	exporter.SetEmitHarness(true);
+	exporter.SetOutputToHeader();
+	exporter.AddHeader();
+	ASSERT_TRUE(exporter.ExportProgram(0x9000, 0x9004));
+	exporter.Finish();
+
+	auto contains = [&](const char* s) { return out.find(s) != std::string::npos; };
+
+	EXPECT_TRUE(contains("static uint8_t g_Z80Mem[0x10000];"));					// flat memory
+	EXPECT_TRUE(contains("uint8_t Read8 (Z80CpuState* cpu, uint16_t addr){"));	// hook definitions
+	EXPECT_TRUE(contains("void    Write8(Z80CpuState* cpu, uint16_t addr, uint8_t val){"));
+	EXPECT_TRUE(contains("void Program_9000("));								// the routine
+	EXPECT_TRUE(contains("z80_add8(cpu, Read8(cpu, (cpu->H<<8)|cpu->L))"));		// ADD A,(HL)
+}

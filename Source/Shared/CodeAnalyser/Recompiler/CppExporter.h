@@ -27,7 +27,8 @@
 // Output configuration for the recompiler backend.
 struct FRecompilerConfig
 {
-	bool	bEmitC = true;	// true = C99, false = C++
+	bool	bEmitC = true;			// true = C99, false = C++
+	bool	bEmitHarness = false;	// also emit a self-contained runtime (memory/IO/dispatch)
 };
 
 class FCppExporter : public FASMExporter
@@ -37,6 +38,7 @@ public:
 	bool	ExportProgram(uint16_t startAddr, uint16_t endAddr);
 
 	void	SetTargetLanguageC(bool bEmitC) { RecompilerConfig.bEmitC = bEmitC; }
+	void	SetEmitHarness(bool bEmit) { RecompilerConfig.bEmitHarness = bEmit; }
 
 	// Emits the runtime preamble (CPU state struct + memory/IO hook declarations).
 	// Called via the base-class header mechanism (SetOutputToHeader + AddHeader).
@@ -47,6 +49,7 @@ private:
 	void	EmitRuntimeDeclarations(void);
 	void	EmitRuntimeHelpers(void);	// inline Z80 flag/ALU primitives (mirrors chips z80.h)
 	void	EmitEntryPointDeclarations(void);
+	void	EmitHarness(void);			// self-contained memory/IO/dispatch definitions
 
 	void	EmitBasicBlock(const FBasicBlock& block);
 	// Emits one instruction's comment + semantics. Control-flow instructions emit no inline
@@ -73,5 +76,6 @@ private:
 };
 
 // Entry point mirroring ExportAssembler(): builds, emits, and finishes a file.
-// bEmitC selects C99 (default) or C++ output.
-bool	ExportCpp(class FEmuBase* pEmu, const char* pFilename, uint16_t startAddr, uint16_t endAddr, bool bEmitC = true);
+// bEmitC selects C99 (default) or C++ output; bEmitHarness appends a self-contained
+// runtime so the file compiles and runs standalone (leaf routines).
+bool	ExportCpp(class FEmuBase* pEmu, const char* pFilename, uint16_t startAddr, uint16_t endAddr, bool bEmitC = true, bool bEmitHarness = false);

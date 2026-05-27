@@ -640,20 +640,45 @@ bool FCppExporter::ExportProgram(uint16_t startAddr, uint16_t endAddr)
 			Output("//   from 0x%04X\n", e.From.Address);
 	}
 
+	if (RecompilerConfig.bEmitHarness)
+		EmitHarness();
+
 	return true;
+}
+
+// Self-contained runtime so a generated translation unit compiles and runs standalone.
+// Defines a flat 64K memory plus the Read8/Write8/In/Out/Call/JumpTo/DispatchIndirect
+// hooks declared in the header. This iteration targets LEAF routines (no CALL / computed
+// jump): Call/JumpTo/DispatchIndirect just halt with an error flag, because resuming after
+// a call or following a runtime target needs the PC-dispatch execution model (next step).
+void FCppExporter::EmitHarness(void)
+{
+	Output("\n// ---- Minimal runtime harness (memory + IO + dispatch) ------------------\n");
+	Output("// Self-contained for leaf routines (no CALL / computed jump). Customise the\n");
+	Output("// memory map and IO for a real target; full call/jump support needs PC dispatch.\n");
+	Output("int g_Z80HarnessError = 0;   // set non-zero if an unsupported transfer was hit\n");
+	Output("static uint8_t g_Z80Mem[0x10000];\n\n");
+	Output("uint8_t Read8 (Z80CpuState* cpu, uint16_t addr){ (void)cpu; return g_Z80Mem[addr]; }\n");
+	Output("void    Write8(Z80CpuState* cpu, uint16_t addr, uint8_t val){ (void)cpu; g_Z80Mem[addr] = val; }\n");
+	Output("uint8_t In    (Z80CpuState* cpu, uint16_t port){ (void)cpu; (void)port; return 0xFF; }\n");
+	Output("void    Out   (Z80CpuState* cpu, uint16_t port, uint8_t val){ (void)cpu; (void)port; (void)val; }\n");
+	Output("void    Call           (Z80CpuState* cpu, uint16_t target){ (void)target; g_Z80HarnessError = 1; cpu->Halted = true; }\n");
+	Output("void    JumpTo         (Z80CpuState* cpu, uint16_t target){ (void)target; g_Z80HarnessError = 1; cpu->Halted = true; }\n");
+	Output("void    DispatchIndirect(Z80CpuState* cpu, uint16_t target){ (void)target; g_Z80HarnessError = 1; cpu->Halted = true; }\n");
 }
 
 // -------------------------------------------------------------------------------------
 // Free entry point (mirrors ExportAssembler)
 // -------------------------------------------------------------------------------------
 
-bool ExportCpp(FEmuBase* pEmu, const char* pFilename, uint16_t startAddr, uint16_t endAddr, bool bEmitC)
+bool ExportCpp(FEmuBase* pEmu, const char* pFilename, uint16_t startAddr, uint16_t endAddr, bool bEmitC, bool bEmitHarness)
 {
 	FCppExporter exporter;
 	if (exporter.Init(pFilename, pEmu) == false)
 		return false;
 
 	exporter.SetTargetLanguageC(bEmitC);	// must precede AddHeader (it emits language-specific preamble)
+	exporter.SetEmitHarness(bEmitHarness);
 	exporter.SetOutputToHeader();
 	exporter.AddHeader();
 
