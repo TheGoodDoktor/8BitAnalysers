@@ -6,6 +6,7 @@ file ( GLOB shared_base_src  DEPENDS
 	../Shared/CodeAnalyser/6502/*.cpp ../Shared/CodeAnalyser/6502/*.h
 	../Shared/CodeAnalyser/Z80/*.cpp ../Shared/CodeAnalyser/Z80/*.h
 	../Shared/CodeAnalyser/IODevices/*.cpp ../Shared/CodeAnalyser/IODevices/*.h
+	../Shared/CodeAnalyser/Recompiler/*.cpp ../Shared/CodeAnalyser/Recompiler/*.h
 	../Shared/CodeAnalyser/UI/*.cpp ../Shared/CodeAnalyser/UI/*.h
 	../Shared/CodeAnalyser/UI/6502/*.cpp ../Shared/CodeAnalyser/UI/6502/*.h
 	../Shared/CodeAnalyser/UI/Z80/*.cpp ../Shared/CodeAnalyser/UI/Z80/*.h
