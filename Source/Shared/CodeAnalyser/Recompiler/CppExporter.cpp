@@ -102,16 +102,51 @@ void FCppExporter::AddHeader(void)
 	else
 		Output("#include <cstdint>\n\n");
 	EmitCpuStateStruct();
+	EmitRuntimeHelpers();
 	EmitRuntimeDeclarations();
 	// Entry-point declarations depend on the CFG, which is built in ExportProgram;
 	// they are appended there once CFG.EntryPoints is populated.
+}
+
+// Inline Z80 flag/ALU primitives. These are transcribed from the chips Z80 core
+// (Source/Vendor/chips/chips/z80.h) so generated code is bit-accurate against the
+// emulator used for differential validation. Identical text in C and C++.
+void FCppExporter::EmitRuntimeHelpers(void)
+{
+	Output("// ---- Z80 flag/ALU runtime (mirrors Vendor/chips/chips/z80.h) -----------\n");
+	Output("enum { Z80_CF=1<<0, Z80_NF=1<<1, Z80_VF=1<<2, Z80_PF=Z80_VF,\n");
+	Output("       Z80_XF=1<<3, Z80_HF=1<<4, Z80_YF=1<<5, Z80_ZF=1<<6, Z80_SF=1<<7 };\n\n");
+
+	Output("static inline uint8_t z80_sz(uint8_t v){ return (v!=0)?(v&Z80_SF):Z80_ZF; }\n");
+	Output("static inline uint8_t z80_szp(uint8_t v){\n");
+	Output("\tuint8_t p=v; p^=p>>4; p^=p>>2; p^=p>>1;\n");
+	Output("\treturn z80_sz(v) | (v&(Z80_YF|Z80_XF)) | ((p&1)?0:Z80_PF);\n}\n");
+	Output("static inline uint8_t z80_szyxch(uint8_t a,uint8_t v,uint32_t r){\n");
+	Output("\treturn z80_sz((uint8_t)r)|(r&(Z80_YF|Z80_XF))|((r>>8)&Z80_CF)|((a^v^r)&Z80_HF);\n}\n");
+	Output("static inline uint8_t z80_addf(uint8_t a,uint8_t v,uint32_t r){\n");
+	Output("\treturn z80_szyxch(a,v,r)|((((v^a^0x80)&(v^r))>>5)&Z80_VF);\n}\n");
+	Output("static inline uint8_t z80_subf(uint8_t a,uint8_t v,uint32_t r){\n");
+	Output("\treturn Z80_NF|z80_szyxch(a,v,r)|((((v^a)&(r^a))>>5)&Z80_VF);\n}\n");
+	Output("static inline uint8_t z80_cpf(uint8_t a,uint8_t v,uint32_t r){\n");
+	Output("\treturn Z80_NF|z80_sz((uint8_t)r)|(v&(Z80_YF|Z80_XF))|((r>>8)&Z80_CF)|((a^v^r)&Z80_HF)|((((v^a)&(r^a))>>5)&Z80_VF);\n}\n\n");
+
+	Output("static inline void z80_add8(Z80CpuState* c,uint8_t v){ uint32_t r=c->A+v;            c->F=z80_addf(c->A,v,r); c->A=(uint8_t)r; }\n");
+	Output("static inline void z80_adc8(Z80CpuState* c,uint8_t v){ uint32_t r=c->A+v+(c->F&Z80_CF); c->F=z80_addf(c->A,v,r); c->A=(uint8_t)r; }\n");
+	Output("static inline void z80_sub8(Z80CpuState* c,uint8_t v){ uint32_t r=(uint32_t)((int)c->A-(int)v);              c->F=z80_subf(c->A,v,r); c->A=(uint8_t)r; }\n");
+	Output("static inline void z80_sbc8(Z80CpuState* c,uint8_t v){ uint32_t r=(uint32_t)((int)c->A-(int)v-(c->F&Z80_CF));c->F=z80_subf(c->A,v,r); c->A=(uint8_t)r; }\n");
+	Output("static inline void z80_and8(Z80CpuState* c,uint8_t v){ c->A&=v; c->F=z80_szp(c->A)|Z80_HF; }\n");
+	Output("static inline void z80_xor8(Z80CpuState* c,uint8_t v){ c->A^=v; c->F=z80_szp(c->A); }\n");
+	Output("static inline void z80_or8 (Z80CpuState* c,uint8_t v){ c->A|=v; c->F=z80_szp(c->A); }\n");
+	Output("static inline void z80_cp8 (Z80CpuState* c,uint8_t v){ uint32_t r=(uint32_t)((int)c->A-(int)v); c->F=z80_cpf(c->A,v,r); }\n");
+	Output("static inline uint8_t z80_inc8(Z80CpuState* c,uint8_t v){ uint8_t r=v+1; uint8_t f=z80_sz(r)|(r&(Z80_XF|Z80_YF))|((r^v)&Z80_HF); if(r==0x80)f|=Z80_VF; c->F=f|(c->F&Z80_CF); return r; }\n");
+	Output("static inline uint8_t z80_dec8(Z80CpuState* c,uint8_t v){ uint8_t r=v-1; uint8_t f=Z80_NF|z80_sz(r)|(r&(Z80_XF|Z80_YF))|((r^v)&Z80_HF); if(r==0x7F)f|=Z80_VF; c->F=f|(c->F&Z80_CF); return r; }\n\n");
 }
 
 // -------------------------------------------------------------------------------------
 // Instruction & block emission
 // -------------------------------------------------------------------------------------
 
-void FCppExporter::EmitInstruction(FAddressRef addr, bool bIsTerminator)
+void FCppExporter::EmitInstruction(FAddressRef addr)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
 	const FInstructionFlow flow = ClassifyInstruction(state, addr);
@@ -123,21 +158,138 @@ void FCppExporter::EmitInstruction(FAddressRef addr, bool bIsTerminator)
 	if (flow.bIsCall && flow.Target.IsValid())
 	{
 		if (flow.bConditional)
-			Output("\tif (/* TODO(Phase 1): call condition */ true) Call(cpu, 0x%04X); // %s\n",
-				flow.Target.Address, FunctionName(flow.Target).c_str());
+			Output("\tif (%s) Call(%s, 0x%04X); // %s\n",
+				ConditionExpr(addr).c_str(), CpuPtr(), flow.Target.Address, FunctionName(flow.Target).c_str());
 		else
-			Output("\tCall(cpu, 0x%04X); // %s\n", flow.Target.Address, FunctionName(flow.Target).c_str());
+			Output("\tCall(%s, 0x%04X); // %s\n", CpuPtr(), flow.Target.Address, FunctionName(flow.Target).c_str());
 		return;
 	}
 
-	// The terminator's control transfer is emitted by EmitTerminator, not here.
-	if (bIsTerminator)
+	// Control-flow instructions (JP/JR/RET/DJNZ/HALT/JP(HL)) carry no inline data
+	// semantics - their transfer is emitted by EmitTerminator. Note this is keyed off the
+	// instruction's own classification, NOT "is it the block's last instruction": a block
+	// that ends by fall-through (because the next address is a leader) still needs the
+	// semantics of its final, ordinary instruction emitted.
+	if (flow.bEndsBlock)
 		return;
 
-	// TODO(Phase 1): replace this stub with the opcode's real C++ semantics.
-	// The semantics table (register/flag/memory effects) is generated from / validated
-	// against Source/Vendor/chips/z80.h. Memory touches must go through Read8/Write8.
-	Output("\t/* TODO(Phase 1): semantics */\n");
+	if (state.CPUInterface->CPUType == ECPUType::Z80)
+		EmitInstructionSemanticsZ80(addr);
+	else
+		Output("\t/* TODO(Phase 1): semantics (non-Z80 CPU) */\n");
+}
+
+// Phase 1 vertical slice: NOP, LD r,r', LD r,n, INC/DEC r, 8-bit ALU A,r and A,n.
+// Decoded via the regular octal opcode structure (x/y/z fields, see z80.info/decoding.htm).
+// Anything outside the slice falls back to a clearly-marked TODO so output still builds.
+void FCppExporter::EmitInstructionSemanticsZ80(FAddressRef addr)
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	const uint8_t op = state.ReadByte(addr);
+	const int x = op >> 6, y = (op >> 3) & 7, z = op & 7;
+
+	static const char* kRegName[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+	static const char* kAlu[8]     = { "z80_add8", "z80_adc8", "z80_sub8", "z80_sbc8",
+	                                    "z80_and8", "z80_xor8", "z80_or8",  "z80_cp8" };
+	const char* acc = Acc();
+
+	// Read expression for register/(HL) operand index r (0..7).
+	auto regRead = [&](int r) -> std::string
+	{
+		if (r == 6)	// (HL)
+		{
+			char buf[64];
+			snprintf(buf, sizeof(buf), "Read8(%s, (%sH<<8)|%sL)", CpuPtr(), acc, acc);
+			return buf;
+		}
+		return std::string(acc) + kRegName[r];
+	};
+
+	if (op == 0x00) { Output("\t/* NOP */\n"); return; }
+
+	if (x == 1)	// LD r[y], r[z]   (0x76 HALT is a terminator, never reaches here)
+	{
+		const std::string src = regRead(z);
+		if (y == 6)	// LD (HL), r
+			Output("\tWrite8(%s, (%sH<<8)|%sL, %s);\n", CpuPtr(), acc, acc, src.c_str());
+		else
+			Output("\t%s%s = %s;\n", acc, kRegName[y], src.c_str());
+		return;
+	}
+
+	if (x == 2)	// ALU[y] A, r[z]
+	{
+		Output("\t%s(%s, %s);\n", kAlu[y], CpuPtr(), regRead(z).c_str());
+		return;
+	}
+
+	if (x == 3 && z == 6)	// ALU[y] A, n   (0xC6/0xCE/0xD6/.../0xFE)
+	{
+		const uint8_t n = state.ReadByte(addr.Address + 1);
+		Output("\t%s(%s, 0x%02X);\n", kAlu[y], CpuPtr(), n);
+		return;
+	}
+
+	if (x == 0)
+	{
+		if (z == 4)	// INC r[y]
+		{
+			if (y == 6)
+				Output("\tWrite8(%s, (%sH<<8)|%sL, z80_inc8(%s, Read8(%s, (%sH<<8)|%sL)));\n",
+					CpuPtr(), acc, acc, CpuPtr(), CpuPtr(), acc, acc);
+			else
+				Output("\t%s%s = z80_inc8(%s, %s%s);\n", acc, kRegName[y], CpuPtr(), acc, kRegName[y]);
+			return;
+		}
+		if (z == 5)	// DEC r[y]
+		{
+			if (y == 6)
+				Output("\tWrite8(%s, (%sH<<8)|%sL, z80_dec8(%s, Read8(%s, (%sH<<8)|%sL)));\n",
+					CpuPtr(), acc, acc, CpuPtr(), CpuPtr(), acc, acc);
+			else
+				Output("\t%s%s = z80_dec8(%s, %s%s);\n", acc, kRegName[y], CpuPtr(), acc, kRegName[y]);
+			return;
+		}
+		if (z == 6)	// LD r[y], n
+		{
+			const uint8_t n = state.ReadByte(addr.Address + 1);
+			if (y == 6)
+				Output("\tWrite8(%s, (%sH<<8)|%sL, 0x%02X);\n", CpuPtr(), acc, acc, n);
+			else
+				Output("\t%s%s = 0x%02X;\n", acc, kRegName[y], n);
+			return;
+		}
+	}
+
+	// Outside the Phase 1 slice (16-bit ops, prefixes, I/O, stack, rotates, ...).
+	Output("\t/* TODO(Phase 1): semantics for opcode 0x%02X */\n", op);
+}
+
+std::string FCppExporter::ConditionExpr(FAddressRef addr)
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	const uint8_t op = state.ReadByte(addr);
+	const char* acc = Acc();
+	char buf[64];
+
+	if (op == 0x10)	// DJNZ: decrement B and branch if non-zero (does not touch flags)
+	{
+		snprintf(buf, sizeof(buf), "(--%sB != 0)", acc);
+		return buf;
+	}
+
+	// Condition code: JR cc,d encodes it in bits 4..3 (NZ,Z,NC,C); JP/CALL/RET cc use bits 5..3.
+	int cc;
+	if (op == 0x20 || op == 0x28 || op == 0x30 || op == 0x38)
+		cc = (op >> 3) & 3;
+	else
+		cc = (op >> 3) & 7;
+
+	static const char* kFlag[8] = { "Z80_ZF", "Z80_ZF", "Z80_CF", "Z80_CF",
+	                                "Z80_PF", "Z80_PF", "Z80_SF", "Z80_SF" };
+	const bool bFlagSet = (cc & 1) != 0;	// odd cc tests "flag set", even tests "flag clear"
+	snprintf(buf, sizeof(buf), "%s(%sF & %s)", bFlagSet ? "" : "!", acc, kFlag[cc]);
+	return buf;
 }
 
 void FCppExporter::EmitTerminator(const FBasicBlock& block)
@@ -183,12 +335,8 @@ void FCppExporter::EmitTerminator(const FBasicBlock& block)
 			const FFlowEdge* pBranch = findSuccessor(EEdgeType::Branch);
 			const FFlowEdge* pFall   = findSuccessor(EEdgeType::FallThrough);
 			if (pBranch != nullptr)
-			{
-				// TODO(Phase 1/2): emit the real flag predicate (Z/C/PO/...) or, where the
-				// flag's only consumer is this branch, lift to a direct comparison (Phase 2).
-				Output("\tif (/* TODO(Phase 1): branch condition */ false) goto %s;\n",
-					BlockLabel(pBranch->To).c_str());
-			}
+				Output("\tif (%s) goto %s;\n",
+					ConditionExpr(block.LastInstruction).c_str(), BlockLabel(pBranch->To).c_str());
 			if (pFall != nullptr)
 				emitGotoOrJump(pFall->To);
 			break;
@@ -199,7 +347,7 @@ void FCppExporter::EmitTerminator(const FBasicBlock& block)
 			const FFlowEdge* pFall = findSuccessor(EEdgeType::FallThrough);
 			if (pFall != nullptr)
 			{
-				Output("\tif (/* TODO(Phase 1): return condition */ false) return;\n");
+				Output("\tif (%s) return;\n", ConditionExpr(block.LastInstruction).c_str());
 				emitGotoOrJump(pFall->To);
 			}
 			else
@@ -239,9 +387,8 @@ void FCppExporter::EmitBasicBlock(const FBasicBlock& block)
 	{
 		const FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(addr);
 		const uint16_t byteSize = (pCodeInfo != nullptr && pCodeInfo->ByteSize > 0) ? pCodeInfo->ByteSize : 1;
-		const bool bIsTerminator = (addr == block.LastInstruction);
 
-		EmitInstruction(addr, bIsTerminator);
+		EmitInstruction(addr);
 
 		if (state.AdvanceAddressRef(addr, byteSize) == false)
 			break;

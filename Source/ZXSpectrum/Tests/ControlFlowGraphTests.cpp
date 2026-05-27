@@ -14,6 +14,7 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "CodeAnalyser/FunctionAnalyser.h"
 #include "CodeAnalyser/Recompiler/ControlFlowGraph.h"
+#include "CodeAnalyser/Recompiler/CppExporter.h"
 
 #include <imgui.h>
 #include <gtest/gtest.h>
@@ -203,4 +204,53 @@ TEST_F(FCFGTest, FallThroughEntryChain)
 	EXPECT_EQ(pTail->Terminator, EBlockTerminator::Return);
 	EXPECT_EQ(pTail->EndAddress.Address, 0x9004);
 	EXPECT_FALSE(HasSuccessor(pTail, EEdgeType::FallThrough, 0x9005));
+}
+
+// Phase 1: the emitted C for the DJNZ-loop snippet contains the expected semantics.
+TEST_F(FCFGTest, EmitsCForDjnzLoop)
+{
+	const uint8_t code[] = { 0x06, 0x05, 0x3D, 0x10, 0xFD, 0xC8, 0xC3, 0x00, 0x80 };
+	WriteAndAnalyse(0x8000, code, sizeof(code));
+
+	FCppExporter exporter;
+	std::string out;
+	ASSERT_TRUE(exporter.Init(&out, pEmu));
+	exporter.SetTargetLanguageC(true);
+	exporter.SetOutputToHeader();
+	exporter.AddHeader();
+	ASSERT_TRUE(exporter.ExportProgram(0x8000, 0x8008));
+	exporter.Finish();
+
+	auto contains = [&](const char* s) { return out.find(s) != std::string::npos; };
+
+	EXPECT_TRUE(contains("static inline void z80_add8"));	// flag/ALU runtime emitted
+	EXPECT_TRUE(contains("Z80_CF=1<<0"));					// flag constants
+	EXPECT_TRUE(contains("cpu->B = 0x05;"));				// LD B,5 (immediate baked in)
+	EXPECT_TRUE(contains("z80_dec8(cpu, cpu->A)"));			// DEC A via flag-correct helper
+	EXPECT_TRUE(contains("--cpu->B != 0"));					// DJNZ decrement-and-test
+	EXPECT_TRUE(contains("goto L_8002;"));					// DJNZ back-edge to loop head
+	EXPECT_TRUE(contains("cpu->F & Z80_ZF"));				// RET Z condition
+	EXPECT_TRUE(contains("goto L_8000;"));					// JP 8000
+}
+
+// The C++ target differs only in accessor style: references + '.', and '&cpu' to helpers.
+TEST_F(FCFGTest, CppTargetUsesReferenceAccessors)
+{
+	const uint8_t code[] = { 0x06, 0x05, 0x3D, 0xC9 };	// LD B,5; DEC A; RET
+	WriteAndAnalyse(0x8400, code, sizeof(code));
+
+	FCppExporter exporter;
+	std::string out;
+	ASSERT_TRUE(exporter.Init(&out, pEmu));
+	exporter.SetTargetLanguageC(false);	// C++
+	exporter.SetOutputToHeader();
+	exporter.AddHeader();
+	ASSERT_TRUE(exporter.ExportProgram(0x8400, 0x8403));
+	exporter.Finish();
+
+	auto contains = [&](const char* s) { return out.find(s) != std::string::npos; };
+
+	EXPECT_TRUE(contains("Z80CpuState& cpu"));		// reference parameter
+	EXPECT_TRUE(contains("cpu.B = 0x05;"));			// '.' accessor
+	EXPECT_TRUE(contains("z80_dec8(&cpu, cpu.A)"));	// pointer passed to helper
 }

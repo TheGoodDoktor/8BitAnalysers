@@ -45,13 +45,19 @@ public:
 private:
 	void	EmitCpuStateStruct(void);
 	void	EmitRuntimeDeclarations(void);
+	void	EmitRuntimeHelpers(void);	// inline Z80 flag/ALU primitives (mirrors chips z80.h)
 	void	EmitEntryPointDeclarations(void);
 
 	void	EmitBasicBlock(const FBasicBlock& block);
-	// bIsTerminator: when true the control-transfer is emitted by EmitTerminator, so
-	// this only emits the instruction's comment/provenance (no duplicate transfer).
-	void	EmitInstruction(FAddressRef addr, bool bIsTerminator);
+	// Emits one instruction's comment + semantics. Control-flow instructions emit no inline
+	// transfer (EmitTerminator handles that); ordinary instructions emit their semantics.
+	void	EmitInstruction(FAddressRef addr);
+	void	EmitInstructionSemanticsZ80(FAddressRef addr);	// Phase 1 opcode subset
 	void	EmitTerminator(const FBasicBlock& block);
+
+	// C boolean expression for the condition of a conditional Z80 instruction at addr
+	// (JR/JP/CALL/RET cc, and DJNZ which also decrements B). Empty if unconditional.
+	std::string	ConditionExpr(FAddressRef addr);
 
 	std::string	BlockLabel(FAddressRef addr) const;	// e.g. "L_AE5C"
 	std::string	FunctionName(FAddressRef addr) const;	// label name or "func_AE5C"
@@ -60,6 +66,7 @@ private:
 	// Target-language helpers - the only points where C and C++ output diverge.
 	const char*	CpuArgDecl(void) const { return RecompilerConfig.bEmitC ? "Z80CpuState* cpu" : "Z80CpuState& cpu"; }
 	const char*	Acc(void) const { return RecompilerConfig.bEmitC ? "cpu->" : "cpu."; }	// member-access prefix
+	const char*	CpuPtr(void) const { return RecompilerConfig.bEmitC ? "cpu" : "&cpu"; }	// pass-by-pointer to helpers
 
 	FRecompilerConfig	RecompilerConfig;
 	FControlFlowGraph	CFG;
