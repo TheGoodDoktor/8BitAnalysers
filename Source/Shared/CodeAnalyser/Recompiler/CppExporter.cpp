@@ -193,6 +193,42 @@ void FCppExporter::EmitRuntimeHelpers(void)
 	// 16-bit stack push/pop (used by CALL/RET and PUSH/POP); go through the memory hooks.
 	Output("static inline void z80_push16(Z80CpuState* c,uint16_t v){ c->SP-=2; Write8(c,(uint16_t)(c->SP+1),(uint8_t)(v>>8)); Write8(c,c->SP,(uint8_t)v); }\n");
 	Output("static inline uint16_t z80_pop16(Z80CpuState* c){ uint8_t lo=Read8(c,c->SP), hi=Read8(c,(uint16_t)(c->SP+1)); c->SP+=2; return (uint16_t)((hi<<8)|lo); }\n\n");
+
+	// ---- ED-page helpers (transcribed from Vendor/chips/chips/z80.h) -----------
+	// NEG: A = -A; flag computation matches the SUB path.
+	Output("static inline void z80_neg(Z80CpuState* c){ uint32_t r=(uint32_t)(0-(int)c->A); c->F=z80_subf(0,c->A,r); c->A=(uint8_t)r; }\n");
+
+	// ADC HL,ss / SBC HL,ss - 16-bit. Flag formula is bespoke (V from sign-bit overflow,
+	// H from bit-12 carry, Z from full 16-bit result). Matches _z80_adc16 / _z80_sbc16.
+	Output("static inline void z80_adc16(Z80CpuState* c,uint16_t val){ uint16_t acc=z80_hl(c); uint32_t r=acc+val+(c->F&Z80_CF);\n");
+	Output("\tc->F=(uint8_t)((((val^acc^0x8000)&(val^r)&0x8000)>>13) | (((acc^r^val)>>8)&Z80_HF) | ((r>>16)&Z80_CF) | ((r>>8)&(Z80_SF|Z80_YF|Z80_XF)) | ((r&0xFFFF)?0:Z80_ZF));\n");
+	Output("\tz80_set_hl(c,(uint16_t)r); }\n");
+	Output("static inline void z80_sbc16(Z80CpuState* c,uint16_t val){ uint16_t acc=z80_hl(c); uint32_t r=acc-val-(c->F&Z80_CF);\n");
+	Output("\tc->F=(uint8_t)(Z80_NF | (((val^acc)&(acc^r)&0x8000)>>13) | (((acc^r^val)>>8)&Z80_HF) | ((r>>16)&Z80_CF) | ((r>>8)&(Z80_SF|Z80_YF|Z80_XF)) | ((r&0xFFFF)?0:Z80_ZF));\n");
+	Output("\tz80_set_hl(c,(uint16_t)r); }\n\n");
+
+	// Block-op helpers. Each updates flags + BC (LDI/LDD/CPI/CPD) or B (INI/IND/OUTI/OUTD)
+	// and returns whether the repeating variant should iterate again. HL/DE pointer arithmetic
+	// is emitted at the call site so the same helper serves both increment and decrement.
+	Output("static inline bool z80_ldi_ldd(Z80CpuState* c,uint8_t val){ uint8_t r=c->A+val; uint16_t bc=z80_bc(c)-1; z80_set_bc(c,bc);\n");
+	Output("\tc->F=(c->F&(Z80_SF|Z80_ZF|Z80_CF))|((r&2)?Z80_YF:0)|((r&8)?Z80_XF:0)|(bc?Z80_PF:0); return bc!=0; }\n");
+	Output("static inline bool z80_cpi_cpd(Z80CpuState* c,uint8_t val){ uint32_t r=(uint32_t)((int)c->A-(int)val); uint16_t bc=z80_bc(c)-1; z80_set_bc(c,bc);\n");
+	Output("\tuint8_t f=(c->F&Z80_CF)|Z80_NF|z80_sz((uint8_t)r);\n");
+	Output("\tif((r&0xF) > ((uint32_t)c->A&0xF)){ f|=Z80_HF; r--; }\n");
+	Output("\tif(r&2) f|=Z80_YF; if(r&8) f|=Z80_XF; if(bc) f|=Z80_PF; c->F=f; return (bc!=0) && !(f&Z80_ZF); }\n");
+	Output("static inline bool z80_ini_ind(Z80CpuState* c,uint8_t val,uint8_t cc){ uint8_t b=c->B; uint8_t f=z80_sz(b)|(b&(Z80_XF|Z80_YF));\n");
+	Output("\tif(val&Z80_SF) f|=Z80_NF; uint32_t t=(uint32_t)cc+val; if(t&0x100) f|=Z80_HF|Z80_CF;\n");
+	Output("\tuint8_t p=(uint8_t)((t&7)^b); p^=p>>4; p^=p>>2; p^=p>>1; if(!(p&1)) f|=Z80_PF; c->F=f; return b!=0; }\n");
+	Output("static inline bool z80_outi_outd(Z80CpuState* c,uint8_t val){ uint8_t b=c->B; uint8_t f=z80_sz(b)|(b&(Z80_XF|Z80_YF));\n");
+	Output("\tif(val&Z80_SF) f|=Z80_NF; uint32_t t=(uint32_t)c->L+val; if(t&0x100) f|=Z80_HF|Z80_CF;\n");
+	Output("\tuint8_t p=(uint8_t)((t&7)^b); p^=p>>4; p^=p>>2; p^=p>>1; if(!(p&1)) f|=Z80_PF; c->F=f; return b!=0; }\n\n");
+
+	// IN r,(C) flag side-effect: szp on the read byte, CF preserved.
+	Output("static inline uint8_t z80_in_flags(Z80CpuState* c,uint8_t val){ c->F=(c->F&Z80_CF)|z80_szp(val); return val; }\n");
+
+	// RRD / RLD - 4-bit rotate involving (HL) and A's low nibble. Flag formula: szp(A), CF preserved.
+	Output("static inline uint8_t z80_rrd(Z80CpuState* c,uint8_t val){ uint8_t alo=c->A&0x0F; c->A=(uint8_t)((c->A&0xF0)|(val&0x0F)); uint8_t v=(uint8_t)((val>>4)|(alo<<4)); c->F=(c->F&Z80_CF)|z80_szp(c->A); return v; }\n");
+	Output("static inline uint8_t z80_rld(Z80CpuState* c,uint8_t val){ uint8_t alo=c->A&0x0F; c->A=(uint8_t)((c->A&0xF0)|(val>>4)); uint8_t v=(uint8_t)((val<<4)|alo); c->F=(c->F&Z80_CF)|z80_szp(c->A); return v; }\n\n");
 }
 
 // -------------------------------------------------------------------------------------
@@ -451,8 +487,205 @@ void FCppExporter::EmitInstructionSemanticsZ80(FAddressRef addr)
 		}
 	}
 
-	// Outside this batch (CB/DD/FD/ED-prefixed instructions, ED block ops, etc.).
+	if (op == 0xED)
+	{
+		EmitInstructionSemanticsZ80_ED(addr);
+		return;
+	}
+
+	// Outside this batch (DD/FD-prefixed instructions etc.).
 	Output("\t/* TODO(Phase 1): semantics for opcode 0x%02X */\n", op);
+}
+
+// ED-prefixed opcodes: extended set covering NEG, IM, LD I/R/A swaps, ADC/SBC HL, 16-bit
+// LD (nn),rp / LD rp,(nn), IN r,(C) / OUT (C),r, RRD/RLD, and the block ops with their
+// repeating variants. RETI/RETN are flow-terminators and don't reach here. NOP-like and
+// duplicate-NEG / duplicate-IM encodings (the documented Z80 has eight NEGs, four IM 0s
+// etc.) are emitted as their primary form. Reference: z80.info/decoding.htm, ED page.
+void FCppExporter::EmitInstructionSemanticsZ80_ED(FAddressRef addr)
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	const uint8_t op2 = state.ReadByte(addr.Address + 1);
+	const int x = op2 >> 6, y = (op2 >> 3) & 7, z = op2 & 7;
+	const int p = y >> 1, q = y & 1;
+	const char* acc = Acc();
+
+	static const char* kReg[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+	static const char* kRp[4]  = { "bc", "de", "hl", "sp" };	// rp[3] handled as direct SP access
+
+	auto rpRead = [&](int pp) -> std::string {
+		char buf[32];
+		if (pp == 3) { snprintf(buf, sizeof(buf), "%sSP", acc); return buf; }
+		snprintf(buf, sizeof(buf), "z80_%s(%s)", kRp[pp], CpuPtr());
+		return buf;
+	};
+	auto rpWrite = [&](int pp, const std::string& expr) {
+		if (pp == 3) { Output("\t%sSP = %s;\n", acc, expr.c_str()); return; }
+		Output("\tz80_set_%s(%s, %s);\n", kRp[pp], CpuPtr(), expr.c_str());
+	};
+
+	// ---- 0x40-0x7F: the "main" ED range ----
+	if (x == 1)
+	{
+		const uint16_t nn = state.ReadWord(addr.Address + 2);
+
+		if (z == 0)	// IN r,(C)  (r=6 -> IN F,(C): flags only, no destination)
+		{
+			Output("\t{ uint8_t v = In(%s, z80_bc(%s)); z80_in_flags(%s, v);",
+				CpuPtr(), CpuPtr(), CpuPtr());
+			if (y != 6)
+				Output(" %s%s = v;", acc, kReg[y]);
+			Output(" }\n");
+			return;
+		}
+		if (z == 1)	// OUT (C),r  (r=6 -> OUT (C),0  on most Z80s)
+		{
+			if (y == 6)
+				Output("\tOut(%s, z80_bc(%s), 0);\n", CpuPtr(), CpuPtr());
+			else
+				Output("\tOut(%s, z80_bc(%s), %s%s);\n", CpuPtr(), CpuPtr(), acc, kReg[y]);
+			return;
+		}
+		if (z == 2)	// SBC HL,rp (q==0) / ADC HL,rp (q==1)
+		{
+			Output("\t%s(%s, %s);\n", q ? "z80_adc16" : "z80_sbc16", CpuPtr(), rpRead(p).c_str());
+			return;
+		}
+		if (z == 3)	// LD (nn),rp (q==0) / LD rp,(nn) (q==1)
+		{
+			if (q == 0)
+			{
+				if (p == 3)	// SP
+				{
+					Output("\tWrite8(%s, 0x%04X, (uint8_t)%sSP); Write8(%s, 0x%04X, (uint8_t)(%sSP>>8));\n",
+						CpuPtr(), nn, acc, CpuPtr(), (uint16_t)(nn + 1), acc);
+				}
+				else
+				{
+					static const char* lo[3] = { "C", "E", "L" };
+					static const char* hi[3] = { "B", "D", "H" };
+					Output("\tWrite8(%s, 0x%04X, %s%s); Write8(%s, 0x%04X, %s%s);\n",
+						CpuPtr(), nn, acc, lo[p], CpuPtr(), (uint16_t)(nn + 1), acc, hi[p]);
+				}
+			}
+			else
+			{
+				if (p == 3)
+				{
+					Output("\t%sSP = (uint16_t)(Read8(%s, 0x%04X) | (Read8(%s, 0x%04X) << 8));\n",
+						acc, CpuPtr(), nn, CpuPtr(), (uint16_t)(nn + 1));
+				}
+				else
+				{
+					static const char* lo[3] = { "C", "E", "L" };
+					static const char* hi[3] = { "B", "D", "H" };
+					Output("\t%s%s = Read8(%s, 0x%04X); %s%s = Read8(%s, 0x%04X);\n",
+						acc, lo[p], CpuPtr(), nn, acc, hi[p], CpuPtr(), (uint16_t)(nn + 1));
+				}
+			}
+			return;
+		}
+		if (z == 4) { Output("\tz80_neg(%s);\n", CpuPtr()); return; }	// NEG (and dup encodings)
+		// z == 5: RETI/RETN handled as terminator (bEndsBlock); never reaches here.
+		if (z == 6)	// IM n. y -> mode: 0,0,1,2,0,0,1,2.
+		{
+			static const uint8_t kImTable[8] = { 0, 0, 1, 2, 0, 0, 1, 2 };
+			Output("\t%sIM = %u;\n", acc, kImTable[y]);
+			return;
+		}
+		if (z == 7)	// LD I,A; LD R,A; LD A,I; LD A,R; RRD; RLD; NOP; NOP
+		{
+			switch (y)
+			{
+			case 0: Output("\t%sI = %sA;\n", acc, acc); return;
+			case 1: Output("\t%sR = %sA;\n", acc, acc); return;
+			case 2: // LD A,I - sets flags from I (sz + PV=IFF2), CF preserved, NF/HF cleared
+				Output("\t%sA = %sI; %sF = (%sF & Z80_CF) | z80_sz(%sA) | (%sA & (Z80_YF|Z80_XF)) | (%sIFF2 ? Z80_PF : 0);\n",
+					acc, acc, acc, acc, acc, acc, acc);
+				return;
+			case 3: // LD A,R - same flag effects as LD A,I
+				Output("\t%sA = %sR; %sF = (%sF & Z80_CF) | z80_sz(%sA) | (%sA & (Z80_YF|Z80_XF)) | (%sIFF2 ? Z80_PF : 0);\n",
+					acc, acc, acc, acc, acc, acc, acc);
+				return;
+			case 4: // RRD
+				Output("\t{ uint16_t hl = (%sH<<8)|%sL; Write8(%s, hl, z80_rrd(%s, Read8(%s, hl))); }\n",
+					acc, acc, CpuPtr(), CpuPtr(), CpuPtr());
+				return;
+			case 5: // RLD
+				Output("\t{ uint16_t hl = (%sH<<8)|%sL; Write8(%s, hl, z80_rld(%s, Read8(%s, hl))); }\n",
+					acc, acc, CpuPtr(), CpuPtr(), CpuPtr());
+				return;
+			case 6: case 7: Output("\t/* ED NOP (y=%d) */\n", y); return;
+			}
+		}
+	}
+
+	// ---- 0xA0-0xBF: block ops ----
+	// y = 4 inc/single, 5 dec/single, 6 inc/repeat, 7 dec/repeat. z selects family.
+	if (x == 2 && y >= 4 && z <= 3)
+	{
+		const bool bDec    = (y & 1) != 0;
+		const bool bRepeat = (y & 2) != 0;
+		const char* hlStep = bDec ? "-1" : "+1";
+
+		// For repeating variants we emit `do { ... } while (helper(...))`. The block-local
+		// `v` (byte just transferred / compared / I/O'd) must be visible to the while
+		// condition, so we declare it in the enclosing scope rather than inside the do-block.
+		if (z == 0)	// LDI / LDD / LDIR / LDDR
+		{
+			Output("\t{ uint8_t v; uint16_t hl, de;\n");
+			Output("\t  %s{ hl=z80_hl(%s); de=z80_de(%s); v=Read8(%s, hl); Write8(%s, de, v);\n",
+				bRepeat ? "do " : "", CpuPtr(), CpuPtr(), CpuPtr(), CpuPtr());
+			Output("\t    z80_set_hl(%s, (uint16_t)(hl%s)); z80_set_de(%s, (uint16_t)(de%s));\n",
+				CpuPtr(), hlStep, CpuPtr(), hlStep);
+			if (bRepeat)
+				Output("\t  } while (z80_ldi_ldd(%s, v)); }\n", CpuPtr());
+			else
+				Output("\t    z80_ldi_ldd(%s, v); } }\n", CpuPtr());
+			return;
+		}
+		if (z == 1)	// CPI / CPD / CPIR / CPDR
+		{
+			Output("\t{ uint8_t v; uint16_t hl;\n");
+			Output("\t  %s{ hl=z80_hl(%s); v=Read8(%s, hl); z80_set_hl(%s, (uint16_t)(hl%s));\n",
+				bRepeat ? "do " : "", CpuPtr(), CpuPtr(), CpuPtr(), hlStep);
+			if (bRepeat)
+				Output("\t  } while (z80_cpi_cpd(%s, v)); }\n", CpuPtr());
+			else
+				Output("\t    z80_cpi_cpd(%s, v); } }\n", CpuPtr());
+			return;
+		}
+		if (z == 2)	// INI / IND / INIR / INDR
+		{
+			Output("\t{ uint8_t v; uint16_t hl;\n");
+			Output("\t  %s{ hl=z80_hl(%s); v=In(%s, z80_bc(%s)); %sB--;\n",
+				bRepeat ? "do " : "", CpuPtr(), CpuPtr(), CpuPtr(), acc);
+			Output("\t    Write8(%s, hl, v); z80_set_hl(%s, (uint16_t)(hl%s));\n",
+				CpuPtr(), CpuPtr(), hlStep);
+			// chips passes C+/-1 as the helper's `c` arg (matches the WZ-based parity hack).
+			if (bRepeat)
+				Output("\t  } while (z80_ini_ind(%s, v, (uint8_t)(%sC%s))); }\n", CpuPtr(), acc, hlStep);
+			else
+				Output("\t    z80_ini_ind(%s, v, (uint8_t)(%sC%s)); } }\n", CpuPtr(), acc, hlStep);
+			return;
+		}
+		if (z == 3)	// OUTI / OUTD / OTIR / OTDR
+		{
+			Output("\t{ uint8_t v; uint16_t hl;\n");
+			Output("\t  %s{ hl=z80_hl(%s); v=Read8(%s, hl); %sB--;\n",
+				bRepeat ? "do " : "", CpuPtr(), CpuPtr(), acc);
+			Output("\t    Out(%s, z80_bc(%s), v); z80_set_hl(%s, (uint16_t)(hl%s));\n",
+				CpuPtr(), CpuPtr(), CpuPtr(), hlStep);
+			if (bRepeat)
+				Output("\t  } while (z80_outi_outd(%s, v)); }\n", CpuPtr());
+			else
+				Output("\t    z80_outi_outd(%s, v); } }\n", CpuPtr());
+			return;
+		}
+	}
+
+	// Undocumented / "invalid" ED-prefix opcodes act as 2-byte NOPs on the original Z80.
+	Output("\t/* ED 0x%02X: undocumented / acts as NOP */\n", op2);
 }
 
 std::string FCppExporter::ConditionExpr(FAddressRef addr)

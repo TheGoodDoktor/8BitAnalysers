@@ -229,3 +229,105 @@ TEST_F(FDiffExec, CbPageAndExchange)
 	RunAndCompare(image, kStart, kEnd, init, kStart,
 		0xA000, 0xB110);
 }
+
+// ED page: NEG + 16-bit ADC/SBC HL. Carry chain matters for HL arithmetic.
+TEST_F(FDiffExec, EdNegAndAdcSbcHl)
+{
+	const uint16_t kStart = 0xC000;
+	const std::vector<uint8_t> code = {
+		// LD A,5; NEG       -> A=0xFB, F=NF+HF+CF+SF
+		0x3E, 0x05, 0xED, 0x44,
+		// LD HL,0x1234; LD BC,0x0005
+		0x21, 0x34, 0x12,
+		0x01, 0x05, 0x00,
+		// AND A   (clear CF before ADC)
+		0xA7,
+		// ADC HL,BC -> 0x1239
+		0xED, 0x4A,
+		// SCF       (set CF)
+		0x37,
+		// SBC HL,BC -> 0x1239 - 5 - 1 = 0x1233
+		0xED, 0x42,
+		// RET
+		0xC9,
+	};
+	const uint16_t kEnd = (uint16_t)(kStart + code.size() - 1);
+
+	auto image = MakeImage(kStart, code);
+	FZ80State init;
+	init.SP = 0xFF00;
+	RunAndCompare(image, kStart, kEnd, init, kStart, 0xC000, kEnd);
+}
+
+// ED page: LDIR block move. Copy 8 bytes from one buffer to another.
+TEST_F(FDiffExec, EdLdir)
+{
+	const uint16_t kStart = 0xC100;
+	const std::vector<uint8_t> code = {
+		// LD HL,0xC400 (source)
+		0x21, 0x00, 0xC4,
+		// LD DE,0xC500 (destination)
+		0x11, 0x00, 0xC5,
+		// LD BC,0x0008 (count)
+		0x01, 0x08, 0x00,
+		// LDIR
+		0xED, 0xB0,
+		// RET
+		0xC9,
+	};
+	const uint16_t kEnd = (uint16_t)(kStart + code.size() - 1);
+
+	const std::vector<uint8_t> srcBytes = { 0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02, 0x03, 0x04 };
+	auto image = MakeImage(kStart, code, { { 0xC400, srcBytes } });
+	FZ80State init;
+	init.SP = 0xFF00;
+	RunAndCompare(image, kStart, kEnd, init, kStart, 0xC100, 0xC510);
+}
+
+// ED page: CPIR (search for A in [HL..HL+BC]). Tests the early-exit condition (ZF set).
+TEST_F(FDiffExec, EdCpir)
+{
+	const uint16_t kStart = 0xC200;
+	const std::vector<uint8_t> code = {
+		// LD A,0x42        (target byte)
+		0x3E, 0x42,
+		// LD HL,0xC600     (search start)
+		0x21, 0x00, 0xC6,
+		// LD BC,0x0010     (max length)
+		0x01, 0x10, 0x00,
+		// CPIR             (search until match or BC=0)
+		0xED, 0xB1,
+		// RET
+		0xC9,
+	};
+	const uint16_t kEnd = (uint16_t)(kStart + code.size() - 1);
+
+	// Place the target byte at offset 5 in the buffer.
+	const std::vector<uint8_t> buffer = { 0x10, 0x20, 0x30, 0x40, 0x41, 0x42, 0x99, 0x99 };
+	auto image = MakeImage(kStart, code, { { 0xC600, buffer } });
+	FZ80State init;
+	init.SP = 0xFF00;
+	RunAndCompare(image, kStart, kEnd, init, kStart, 0xC200, 0xC610);
+}
+
+// ED page: 16-bit memory loads/stores. Round-trips BC through (nn) and pulls DE out.
+TEST_F(FDiffExec, EdLdNnRpAndRpNn)
+{
+	const uint16_t kStart = 0xC300;
+	const std::vector<uint8_t> code = {
+		// LD BC,0xBEEF
+		0x01, 0xEF, 0xBE,
+		// LD (0xC700),BC
+		0xED, 0x43, 0x00, 0xC7,
+		// LD DE,(0xC700)   should pull 0xBEEF back
+		0xED, 0x5B, 0x00, 0xC7,
+		// RET
+		0xC9,
+	};
+	const uint16_t kEnd = (uint16_t)(kStart + code.size() - 1);
+
+	auto image = MakeImage(kStart, code);
+	FZ80State init;
+	init.SP = 0xFF00;
+	RunAndCompare(image, kStart, kEnd, init, kStart, 0xC300, 0xC710);
+}

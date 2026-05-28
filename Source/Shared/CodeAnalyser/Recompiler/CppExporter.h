@@ -58,6 +58,7 @@ private:
 	// transfer (EmitTerminator handles that); ordinary instructions emit their semantics.
 	void	EmitInstruction(FAddressRef addr);
 	void	EmitInstructionSemanticsZ80(FAddressRef addr);	// Phase 1 opcode subset
+	void	EmitInstructionSemanticsZ80_ED(FAddressRef addr);	// ED-prefixed (slice 7)
 	void	EmitTerminator(const FBasicBlock& block);
 
 	// C boolean expression for the condition of a conditional Z80 instruction at addr
