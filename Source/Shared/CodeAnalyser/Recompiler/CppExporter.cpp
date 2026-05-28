@@ -229,6 +229,26 @@ void FCppExporter::EmitRuntimeHelpers(void)
 	// RRD / RLD - 4-bit rotate involving (HL) and A's low nibble. Flag formula: szp(A), CF preserved.
 	Output("static inline uint8_t z80_rrd(Z80CpuState* c,uint8_t val){ uint8_t alo=c->A&0x0F; c->A=(uint8_t)((c->A&0xF0)|(val&0x0F)); uint8_t v=(uint8_t)((val>>4)|(alo<<4)); c->F=(c->F&Z80_CF)|z80_szp(c->A); return v; }\n");
 	Output("static inline uint8_t z80_rld(Z80CpuState* c,uint8_t val){ uint8_t alo=c->A&0x0F; c->A=(uint8_t)((c->A&0xF0)|(val>>4)); uint8_t v=(uint8_t)((val<<4)|alo); c->F=(c->F&Z80_CF)|z80_szp(c->A); return v; }\n\n");
+
+	// ---- DD/FD-page helpers ----------------------------------------------------
+	// IX/IY are uint16_t in Z80CpuState; the high/low halves are exposed as IXH/IXL/IYH/IYL
+	// via these inlines so the undocumented "LD IXH,r" / "ADD A,IXL" forms compile cleanly.
+	Output("static inline uint8_t z80_ixh(Z80CpuState* c){ return (uint8_t)(c->IX>>8); }\n");
+	Output("static inline uint8_t z80_ixl(Z80CpuState* c){ return (uint8_t)c->IX; }\n");
+	Output("static inline uint8_t z80_iyh(Z80CpuState* c){ return (uint8_t)(c->IY>>8); }\n");
+	Output("static inline uint8_t z80_iyl(Z80CpuState* c){ return (uint8_t)c->IY; }\n");
+	Output("static inline void z80_set_ixh(Z80CpuState* c,uint8_t v){ c->IX=(uint16_t)((c->IX&0x00FF)|((uint16_t)v<<8)); }\n");
+	Output("static inline void z80_set_ixl(Z80CpuState* c,uint8_t v){ c->IX=(uint16_t)((c->IX&0xFF00)|v); }\n");
+	Output("static inline void z80_set_iyh(Z80CpuState* c,uint8_t v){ c->IY=(uint16_t)((c->IY&0x00FF)|((uint16_t)v<<8)); }\n");
+	Output("static inline void z80_set_iyl(Z80CpuState* c,uint8_t v){ c->IY=(uint16_t)((c->IY&0xFF00)|v); }\n");
+
+	// (IX+d) effective-address compute - d is a signed 8-bit displacement (-128..+127).
+	Output("static inline uint16_t z80_idx(uint16_t base,int8_t d){ return (uint16_t)(base+(int16_t)d); }\n\n");
+
+	// ADD IX,ss / ADD IY,ss share the same flag formula as ADD HL,ss but write the index
+	// register. Take destination by uint16_t* so one helper covers both.
+	Output("static inline void z80_add16_to(Z80CpuState* c,uint16_t* dst,uint16_t val){ uint16_t acc=*dst; uint32_t res=acc+val;\n");
+	Output("\tc->F=(c->F&(Z80_SF|Z80_ZF|Z80_VF))|(((acc^res^val)>>8)&Z80_HF)|((res>>16)&Z80_CF)|((res>>8)&(Z80_YF|Z80_XF)); *dst=(uint16_t)res; }\n\n");
 }
 
 // -------------------------------------------------------------------------------------
@@ -492,8 +512,13 @@ void FCppExporter::EmitInstructionSemanticsZ80(FAddressRef addr)
 		EmitInstructionSemanticsZ80_ED(addr);
 		return;
 	}
+	if (op == 0xDD || op == 0xFD)
+	{
+		EmitInstructionSemanticsZ80_DDFD(addr, op == 0xFD);
+		return;
+	}
 
-	// Outside this batch (DD/FD-prefixed instructions etc.).
+	// Outside this batch (any opcode the analyser disassembled but we haven't translated).
 	Output("\t/* TODO(Phase 1): semantics for opcode 0x%02X */\n", op);
 }
 
@@ -688,6 +713,302 @@ void FCppExporter::EmitInstructionSemanticsZ80_ED(FAddressRef addr)
 	Output("\t/* ED 0x%02X: undocumented / acts as NOP */\n", op2);
 }
 
+// DD/FD-prefixed opcodes: HL is "renamed" to IX (DD) or IY (FD) throughout the next
+// instruction, and (HL) memory references become (IX+d)/(IY+d) with an extra signed
+// displacement byte. The undocumented IXH/IXL/IYH/IYL halves are also exposed - many real
+// games rely on them. DD CB d xx / FD CB d xx are handled at the bottom.
+//
+// We re-decode the byte after the prefix from scratch rather than dispatch back into the
+// main-page emitter, so the operand routing is explicit and easy to audit. NOTE: for
+// opcodes that don't reference HL/(HL)/H/L at all (e.g. LD A,B under DD), the substitution
+// has no observable effect and we emit identical semantics to the main page.
+void FCppExporter::EmitInstructionSemanticsZ80_DDFD(FAddressRef addr, bool bIY)
+{
+	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	const uint8_t op = state.ReadByte(addr.Address + 1);
+	const int x = op >> 6, y = (op >> 3) & 7, z = op & 7;
+	const int p = y >> 1, q = y & 1;
+	const char* acc = Acc();
+
+	const char* idxName  = bIY ? "IY"  : "IX";
+	const char* idxHi    = bIY ? "iyh" : "ixh";	// helper name lower-case
+	const char* idxLo    = bIY ? "iyl" : "ixl";
+
+	// 8-bit register name including the "would-be H/L" forms remapped to IXH/IXL/IYH/IYL.
+	// Index 6 -> (idx+d) is handled separately because it needs the displacement byte.
+	auto reg8Read = [&](int r) -> std::string {
+		static const char* kPlain[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+		char buf[32];
+		if (r == 4) { snprintf(buf, sizeof(buf), "z80_%s(%s)", idxHi, CpuPtr()); return buf; }
+		if (r == 5) { snprintf(buf, sizeof(buf), "z80_%s(%s)", idxLo, CpuPtr()); return buf; }
+		if (r == 6) return std::string("");	// caller must handle (idx+d)
+		return std::string(acc) + kPlain[r];
+	};
+	auto reg8Write = [&](int r, const std::string& valExpr) {
+		static const char* kPlain[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+		if (r == 4) { Output("\tz80_set_%s(%s, %s);\n", idxHi, CpuPtr(), valExpr.c_str()); return; }
+		if (r == 5) { Output("\tz80_set_%s(%s, %s);\n", idxLo, CpuPtr(), valExpr.c_str()); return; }
+		Output("\t%s%s = %s;\n", acc, kPlain[r], valExpr.c_str());
+	};
+
+	// 16-bit register-pair read for index pp (0..3 = BC, DE, IDX, SP).
+	auto rp16Read = [&](int pp) -> std::string {
+		char buf[32];
+		if (pp == 0) { snprintf(buf, sizeof(buf), "z80_bc(%s)", CpuPtr()); return buf; }
+		if (pp == 1) { snprintf(buf, sizeof(buf), "z80_de(%s)", CpuPtr()); return buf; }
+		if (pp == 2) { snprintf(buf, sizeof(buf), "%s%s", acc, idxName); return buf; }
+		snprintf(buf, sizeof(buf), "%sSP", acc); return buf;
+	};
+	auto rp16Write = [&](int pp, const std::string& valExpr) {
+		if (pp == 0) { Output("\tz80_set_bc(%s, %s);\n", CpuPtr(), valExpr.c_str()); return; }
+		if (pp == 1) { Output("\tz80_set_de(%s, %s);\n", CpuPtr(), valExpr.c_str()); return; }
+		if (pp == 2) { Output("\t%s%s = (uint16_t)(%s);\n", acc, idxName, valExpr.c_str()); return; }
+		Output("\t%sSP = (uint16_t)(%s);\n", acc, valExpr.c_str());
+	};
+
+	// Read the byte at addr+2 and format as int8_t literal (for (IX+d) displacements).
+	auto displacementLit = [&](int byteOffset) -> std::string {
+		const uint8_t d = state.ReadByte(addr.Address + (uint16_t)byteOffset);
+		char buf[16];
+		snprintf(buf, sizeof(buf), "(int8_t)0x%02X", d);
+		return buf;
+	};
+
+	// ---- DD CB d xx / FD CB d xx ----
+	if (op == 0xCB)
+	{
+		const std::string dLit = displacementLit(2);
+		const uint8_t cb = state.ReadByte(addr.Address + 3);
+		const int cx = cb >> 6, cy = (cb >> 3) & 7, cz = cb & 7;
+		static const char* kRot[8] = { "z80_rlc","z80_rrc","z80_rl","z80_rr",
+		                                "z80_sla","z80_sra","z80_sll","z80_srl" };
+		// Effective address: ea = idx + (signed)d. Used by all DD CB forms.
+		Output("\t{ uint16_t ea = z80_idx(%s%s, %s);\n", acc, idxName, dLit.c_str());
+		Output("\t  uint8_t v = Read8(%s, ea);\n", CpuPtr());
+		switch (cx)
+		{
+		case 0:	// rotate / shift - result written back to memory AND, for cz != 6, to register r[cz]
+			Output("\t  v = %s(%s, v);\n", kRot[cy], CpuPtr());
+			Output("\t  Write8(%s, ea, v);\n", CpuPtr());
+			if (cz != 6)
+			{
+				static const char* kPlain[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+				Output("\t  %s%s = v;\n", acc, kPlain[cz]);	// undocumented register copy
+			}
+			Output("\t}\n");
+			return;
+		case 1:	// BIT n,(idx+d) - flags only
+			Output("\t  z80_bit(%s, v, %d);\n", CpuPtr(), cy);
+			Output("\t}\n");
+			return;
+		case 2:	// RES n,(idx+d) - and optionally to r
+		{
+			const uint8_t mask = (uint8_t)(0xFF & ~(1 << cy));
+			Output("\t  v = (uint8_t)(v & 0x%02X);\n", mask);
+			Output("\t  Write8(%s, ea, v);\n", CpuPtr());
+			if (cz != 6)
+			{
+				static const char* kPlain[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+				Output("\t  %s%s = v;\n", acc, kPlain[cz]);
+			}
+			Output("\t}\n");
+			return;
+		}
+		case 3:	// SET n,(idx+d) - and optionally to r
+		{
+			const uint8_t bit = (uint8_t)(1 << cy);
+			Output("\t  v = (uint8_t)(v | 0x%02X);\n", bit);
+			Output("\t  Write8(%s, ea, v);\n", CpuPtr());
+			if (cz != 6)
+			{
+				static const char* kPlain[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+				Output("\t  %s%s = v;\n", acc, kPlain[cz]);
+			}
+			Output("\t}\n");
+			return;
+		}
+		}
+	}
+
+	// ---- 0x00-0x3F: 16-bit LD/ADD/INC/DEC/etc. plus (idx+d) loads ----
+	if (x == 0)
+	{
+		if (z == 1 && q == 0 && p == 2)	// LD IDX,nn
+		{
+			Output("\t%s%s = 0x%04X;\n", acc, idxName, state.ReadWord(addr.Address + 2));
+			return;
+		}
+		if (z == 1 && q == 1)	// ADD IDX,rp (rp[2] under prefix is IDX itself)
+		{
+			Output("\tz80_add16_to(%s, &%s%s, %s);\n", CpuPtr(), acc, idxName, rp16Read(p).c_str());
+			return;
+		}
+		if (z == 3 && p == 2)	// INC IDX (q==0) / DEC IDX (q==1)
+		{
+			Output("\t%s%s = (uint16_t)(%s%s %s 1);\n", acc, idxName, acc, idxName, q == 0 ? "+" : "-");
+			return;
+		}
+		if (z == 2)	// 22/2A: LD (nn),IDX / LD IDX,(nn) - the only z=2 cases that change under prefix
+		{
+			if (op == 0x22)
+			{
+				const uint16_t nn = state.ReadWord(addr.Address + 2);
+				Output("\tWrite8(%s, 0x%04X, (uint8_t)%s%s); Write8(%s, 0x%04X, (uint8_t)(%s%s>>8));\n",
+					CpuPtr(), nn, acc, idxName, CpuPtr(), (uint16_t)(nn + 1), acc, idxName);
+				return;
+			}
+			if (op == 0x2A)
+			{
+				const uint16_t nn = state.ReadWord(addr.Address + 2);
+				Output("\t%s%s = (uint16_t)(Read8(%s, 0x%04X) | (Read8(%s, 0x%04X) << 8));\n",
+					acc, idxName, CpuPtr(), nn, CpuPtr(), (uint16_t)(nn + 1));
+				return;
+			}
+			// Other z=2 (02/0A/12/1A/32/3A) don't reference HL/IX/IY - fall through to main.
+		}
+		if (z == 4 || z == 5)	// INC r / DEC r - if y==6 use (idx+d); y in {4,5} use IXH/IXL etc.
+		{
+			const char* fn = (z == 4) ? "z80_inc8" : "z80_dec8";
+			if (y == 6)
+			{
+				const std::string dLit = displacementLit(2);
+				Output("\t{ uint16_t ea = z80_idx(%s%s, %s); Write8(%s, ea, %s(%s, Read8(%s, ea))); }\n",
+					acc, idxName, dLit.c_str(), CpuPtr(), fn, CpuPtr(), CpuPtr());
+				return;
+			}
+			if (y == 4 || y == 5)	// IXH/IXL etc. (undocumented)
+			{
+				const char* half = (y == 4) ? idxHi : idxLo;
+				Output("\tz80_set_%s(%s, %s(%s, z80_%s(%s)));\n",
+					half, CpuPtr(), fn, CpuPtr(), half, CpuPtr());
+				return;
+			}
+			// y in {0,1,2,3,7}: B/C/D/E/A - not affected, emit as main page.
+		}
+		if (z == 6)	// LD r,n
+		{
+			if (y == 6)	// LD (idx+d),n
+			{
+				const std::string dLit = displacementLit(2);
+				const uint8_t n = state.ReadByte(addr.Address + 3);
+				Output("\tWrite8(%s, z80_idx(%s%s, %s), 0x%02X);\n",
+					CpuPtr(), acc, idxName, dLit.c_str(), n);
+				return;
+			}
+			if (y == 4 || y == 5)	// LD IXH,n / LD IXL,n
+			{
+				const char* half = (y == 4) ? idxHi : idxLo;
+				const uint8_t n = state.ReadByte(addr.Address + 2);
+				Output("\tz80_set_%s(%s, 0x%02X);\n", half, CpuPtr(), n);
+				return;
+			}
+			// LD B/C/D/E/A,n - prefix is a NOP, fall through to main.
+		}
+		// Anything else in x==0: prefix is ignored. Fall through to the main-page emitter so
+		// the un-affected encoding still produces correct semantics.
+	}
+
+	// ---- 0x40-0x7F: LD r,r' (including LD r,(idx+d) and LD (idx+d),r) ----
+	if (x == 1)
+	{
+		// HALT (0x76) at y=6,z=6 doesn't change semantics under prefix (still HALT). The
+		// classifier treats DD 76 as HALT so it ends a block; never reaches here.
+
+		if (y == 6 && z != 6)	// LD (idx+d),r where r is plain 8-bit (no IXH/IXL substitution per Z80 ref)
+		{
+			static const char* kPlain[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+			const std::string dLit = displacementLit(2);
+			Output("\tWrite8(%s, z80_idx(%s%s, %s), %s%s);\n",
+				CpuPtr(), acc, idxName, dLit.c_str(), acc, kPlain[z]);
+			return;
+		}
+		if (z == 6 && y != 6)	// LD r,(idx+d) - destination is r[y] (plain 8-bit)
+		{
+			static const char* kPlain[8] = { "B", "C", "D", "E", "H", "L", "(HL)", "A" };
+			const std::string dLit = displacementLit(2);
+			Output("\t%s%s = Read8(%s, z80_idx(%s%s, %s));\n",
+				acc, kPlain[y], CpuPtr(), acc, idxName, dLit.c_str());
+			return;
+		}
+		// LD r,r' where neither side is (HL): IXH/IXL substitutions for y or z in {4,5}.
+		if (y != 6 && z != 6)
+		{
+			const std::string src = reg8Read(z);
+			reg8Write(y, src);
+			return;
+		}
+	}
+
+	// ---- 0x80-0xBF: ALU A,r (including A,(idx+d)) ----
+	if (x == 2)
+	{
+		static const char* kAlu[8] = { "z80_add8","z80_adc8","z80_sub8","z80_sbc8",
+		                                "z80_and8","z80_xor8","z80_or8","z80_cp8" };
+		if (z == 6)	// ALU A,(idx+d)
+		{
+			const std::string dLit = displacementLit(2);
+			Output("\t%s(%s, Read8(%s, z80_idx(%s%s, %s)));\n",
+				kAlu[y], CpuPtr(), CpuPtr(), acc, idxName, dLit.c_str());
+			return;
+		}
+		// ALU A,r (with IXH/IXL substitutions when z in {4,5})
+		Output("\t%s(%s, %s);\n", kAlu[y], CpuPtr(), reg8Read(z).c_str());
+		return;
+	}
+
+	// ---- 0xC0-0xFF: stack ops, EX, JP (idx), LD SP,idx etc. ----
+	if (x == 3)
+	{
+		if (z == 1 && q == 0 && p == 2)	// POP IDX
+		{
+			Output("\t%s%s = (uint16_t)(Read8(%s, %sSP) | (Read8(%s, (uint16_t)(%sSP+1)) << 8));\n",
+				acc, idxName, CpuPtr(), acc, CpuPtr(), acc);
+			Output("\t%sSP += 2;\n", acc);
+			return;
+		}
+		if (z == 5 && q == 0 && p == 2)	// PUSH IDX
+		{
+			Output("\t%sSP -= 2; Write8(%s, (uint16_t)(%sSP+1), (uint8_t)(%s%s>>8)); Write8(%s, %sSP, (uint8_t)%s%s);\n",
+				acc, CpuPtr(), acc, acc, idxName, CpuPtr(), acc, acc, idxName);
+			return;
+		}
+		if (op == 0xF9)	// LD SP,IDX
+		{
+			Output("\t%sSP = %s%s;\n", acc, acc, idxName);
+			return;
+		}
+		if (op == 0xE3)	// EX (SP),IDX
+		{
+			Output("\t{ uint8_t lo = Read8(%s, %sSP), hi = Read8(%s, (uint16_t)(%sSP+1));\n",
+				CpuPtr(), acc, CpuPtr(), acc);
+			Output("\t  Write8(%s, %sSP, (uint8_t)%s%s); Write8(%s, (uint16_t)(%sSP+1), (uint8_t)(%s%s>>8));\n",
+				CpuPtr(), acc, acc, idxName, CpuPtr(), acc, acc, idxName);
+			Output("\t  %s%s = (uint16_t)(lo | (hi << 8)); }\n", acc, idxName);
+			return;
+		}
+		// JP (IDX) is a flow terminator handled in EmitTerminator.
+		// Other x=3 forms (CALL, JP, RET, RST, IN, OUT, EI, DI, etc.) don't reference HL -
+		// fall through to the main-page emitter.
+	}
+
+	// Fallback: prefix is treated as a no-op for any encoding not enumerated above. Emit the
+	// next byte's semantics directly. We can't trivially "advance addr by 1" without breaking
+	// the disassembly text we already printed, so re-run the main path with a synthetic addr.
+	// In practice the analyser computed ByteSize for the prefixed form, so emitting both
+	// the prefix-aware fall-through here and the main-page semantics keeps state consistent.
+	{
+		// Save the byte at +1 (the "real" opcode) by creating a synthetic single-byte addr.
+		// FAddressRef supports physical-addr construction; AdvanceAddressRef would change
+		// the bank too which is more invasive. Use raw byte read + manual delegation.
+		const uint8_t op2 = state.ReadByte(addr.Address + 1);
+		Output("\t/* DD/FD prefix on opcode 0x%02X has no effect; emitting unprefixed form */\n", op2);
+		// Re-invoke main-page semantics with the next address. The classifier already counted
+		// the prefix in ByteSize, so we just need the right byte stream.
+		FAddressRef innerAddr = state.AddressRefFromPhysicalAddress((uint16_t)(addr.Address + 1));
+		EmitInstructionSemanticsZ80(innerAddr);
+	}
+}
+
 std::string FCppExporter::ConditionExpr(FAddressRef addr)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
@@ -766,9 +1087,18 @@ void FCppExporter::EmitTerminator(const FBasicBlock& block)
 			break;
 
 		case EBlockTerminator::IndirectJump:
-			// JP (HL) (unprefixed 0xE9). The DD/FD (IX/IY) variants are a later page.
-			Output("\tcpu->PC = z80_hl(cpu); return;   // JP (HL)\n");
+		{
+			// JP (HL) is opcode 0xE9; DD E9 -> JP (IX), FD E9 -> JP (IY). Inspect the byte at
+			// the terminator address to pick the right register.
+			const uint8_t op = state.ReadByte(block.LastInstruction);
+			if (op == 0xDD)
+				Output("\tcpu->PC = cpu->IX; return;   // JP (IX)\n");
+			else if (op == 0xFD)
+				Output("\tcpu->PC = cpu->IY; return;   // JP (IY)\n");
+			else
+				Output("\tcpu->PC = z80_hl(cpu); return;   // JP (HL)\n");
 			break;
+		}
 
 		case EBlockTerminator::Halt:
 			Output("\tcpu->Halted = true; return;\n");

@@ -1,7 +1,7 @@
 # C/C++ Recompiler — Status & Continuation Guide
 
 **Branch:** `cpp-recompiler` (do not merge to `master` until it produces useful output for real programs).
-**As of:** Phase 1 slice 7 (ED opcode page). `master` base is `b004aceb`.
+**As of:** Phase 1 slice 8 (DD/FD opcode page). `master` base is `b004aceb`.
 **Goal:** statically translate an analysed 8-bit game (Z80 first) into compilable, bit-accurate **C (default C99)** or **C++**.
 
 Read alongside `Docs/CppRecompilationProposal.md` (feasibility/plan) and `Docs/Phase0_CFG_Design.md` (CFG design).
@@ -13,15 +13,16 @@ Read alongside `Docs/CppRecompilationProposal.md` (feasibility/plan) and `Docs/P
 A Z80 routine in the analyser can be exported to C/C++ that **compiles and runs** with correct, bit-accurate results.
 
 - **Phase 0 — CFG reconstruction:** done, golden-tested. Builds basic blocks + edges from the analyser's per-instruction data.
-- **Phase 1 — codegen:** the **entire unprefixed (main) page + the full CB page + the full ED page** are translated, with flag/ALU runtime helpers transcribed bit-for-bit from the vendored chips Z80 core (the differential-validation oracle).
+- **Phase 1 — codegen:** the **entire unprefixed (main) page + the full CB page + the full ED page + the DD/FD (IX/IY) page** are translated, with flag/ALU runtime helpers transcribed bit-for-bit from the vendored chips Z80 core (the differential-validation oracle).
 - **Execution model:** **PC-dispatch** — each basic block is a function; a `z80_run` loop invokes blocks keyed on `cpu->PC`; `CALL`/`RET` push/pop the return PC on the Z80 stack. Calls, returns and computed jumps all work; full routines run.
 - **Harness:** `bEmitHarness` makes a generated file self-contained (flat 64K memory + `Read8`/`Write8`/`In`/`Out`), runnable via `z80_call(cpu, entry)`.
-- **Tests:** 8 `FCFGTest` cases (CFG golden + codegen substring + C++ target) + **7 `FDiffExec` differential-execution cases** (sum/CALL/CB, plus ED NEG+ADC/SBC HL, LDIR, CPIR, 16-bit LD (nn),rp / LD rp,(nn)) that run the generated C through `cl` and compare register/memory state against the chips Z80 oracle. All pass.
+- **Tests:** 8 `FCFGTest` cases (CFG golden + codegen substring + C++ target) + **11 `FDiffExec` differential-execution cases** (sum/CALL/CB; ED NEG+ADC/SBC HL, LDIR, CPIR, 16-bit LD (nn),rp / LD rp,(nn); DD/FD memory ops, ADD IX + PUSH/POP, DD CB bit-ops, JP (IX)) that run the generated C through `cl` and compare register/memory state against the chips Z80 oracle. All pass.
 - **End-to-end automated:** the differential harness IS now the verification - any divergence between generated translation and the bit-accurate chips emulator fails a test. Adding more coverage is now just writing one more `FDiffExec` case per opcode family.
 
 ### Commits on the branch
 ```
-HEAD      slice 7: ED opcode page (NEG/IM/ADC HL/SBC HL/LD I,A/.../LDIR/CPIR/INI/OUTI/...)
+HEAD      slice 8: DD/FD opcode page (IX/IY incl. (IX+d), DD CB d xx, IXH/IXL halves)
+494fec94  slice 7: ED opcode page (NEG/IM/ADC HL/SBC HL/LD I,A/.../LDIR/CPIR/INI/OUTI/...)
 18642d1d  slice 6: differential execution harness (cl-compile + chips oracle)
 0bd5a8f8  status doc / continuation guide
 37ac3990  slice 5: PC-dispatch execution model
@@ -62,7 +63,9 @@ a8ec8f71  validate Phase 0 CFG with golden tests + headless-test fix
 
 **Done (ED page):** `NEG`, `IM 0/1/2`, `LD I/R,A` and `LD A,I/R`, `ADC HL,ss` / `SBC HL,ss`, 16-bit `LD (nn),rp` / `LD rp,(nn)`, `IN r,(C)` / `OUT (C),r`, `RRD`/`RLD`, block ops `LDI`/`LDD`/`CPI`/`CPD`/`INI`/`IND`/`OUTI`/`OUTD` and their repeating variants `LDIR`/`LDDR`/`CPIR`/`CPDR`/`INIR`/`INDR`/`OTIR`/`OTDR` (emitted as `do { ... } while(helper)` loops). `RETI`/`RETN` are flow terminators - they pop PC but don't restore IFF1 := IFF2 (interrupts aren't fully modelled - tracked under §4).
 
-**Not done:** `DD`/`FD` (IX/IY incl. `(IX+d)`, and `DD CB`/`FD CB`). 6502 codegen entirely. Unknown opcodes emit `/* TODO(Phase 1): semantics for opcode 0xNN */` and still build.
+**Done (DD/FD page):** every IX/IY 16-bit form (LD IX,nn / ADD IX,ss / INC IX / DEC IX / PUSH IX / POP IX / LD (nn),IX / LD IX,(nn) / EX (SP),IX / LD SP,IX / JP (IX), and the same family for IY); (IX+d) / (IY+d) memory-operand forms of LD r / LD (IX+d),n / 8-bit ALU / INC / DEC; the undocumented IXH/IXL/IYH/IYL register halves; the full `DD CB d xx` / `FD CB d xx` CB-page bit-ops on (IX+d) with the undocumented register-copy side effect. For opcodes whose effective semantics don't reference HL the prefix is treated as the documented "no-op + extra T-state".
+
+**Not done:** 6502 codegen entirely. Unknown opcodes emit `/* TODO(Phase 1): semantics for opcode 0xNN */` and still build.
 
 ---
 
@@ -112,10 +115,11 @@ vcvars64 here: `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\V
 ---
 
 ## 7. Recommended next steps (in priority order)
-1. **`DD`/`FD` page** *(next slice)*: IX/IY as HL with `(IX+d)`/`(IY+d)` displacement; the `DD CB`/`FD CB` bit-ops; `JP (IX)`/`(IY)` already classified as indirect. The same EmitInstructionSemanticsZ80 dispatch can route DD/FD through a helper that re-runs the main page with HL→IX (or IY) and the immediate displacement byte folded into memory accesses.
+1. **Translate a real game routine end-to-end** - pick a non-trivial routine from an existing analysis project, emit C, compile, run against the chips oracle. This is the "useful output" bar for the `cpp-recompiler -> master` PR. If anything diverges, add a focused `FDiffExec` case and fix.
 2. **Model `WZ`** to remove the XF/YF masking on F (and the `BIT (HL)` approximation); the differential harness already accepts strict mode for this.
 3. **Refine RETI/RETN**: copy `IFF2 -> IFF1` for RETN (currently identical to RET; matters only when interrupts get modelled).
-4. Then: SMC fallback interpreter, banking, interrupts/timing — as needed by real targets.
-5. Eventually: 6502 classifier + codegen (parallels the Z80 path; `ClassifyInstruction6502` stub exists).
+4. **`ResolveIndirectEdgesFromTraces`** to wire up `JP (HL)/(IX)/(IY)` targets observed by the analyser's execution history - removes the need for tests to manually promote target addresses to function entries.
+5. Then: SMC fallback interpreter, banking, interrupts/timing — as needed by real targets.
+6. Eventually: 6502 classifier + codegen (parallels the Z80 path; `ClassifyInstruction6502` stub exists).
 
 When the recompiler can translate and run a non-trivial real game routine end-to-end (ideally with the differential harness green), open the PR `cpp-recompiler` → `master`.

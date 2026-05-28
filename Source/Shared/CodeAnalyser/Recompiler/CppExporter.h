@@ -59,6 +59,7 @@ private:
 	void	EmitInstruction(FAddressRef addr);
 	void	EmitInstructionSemanticsZ80(FAddressRef addr);	// Phase 1 opcode subset
 	void	EmitInstructionSemanticsZ80_ED(FAddressRef addr);	// ED-prefixed (slice 7)
+	void	EmitInstructionSemanticsZ80_DDFD(FAddressRef addr, bool bIY);	// DD/FD (slice 8)
 	void	EmitTerminator(const FBasicBlock& block);
 
 	// C boolean expression for the condition of a conditional Z80 instruction at addr

@@ -20,6 +20,7 @@
 #include "DifferentialHarness.h"
 
 #include "CodeAnalyser/CodeAnalyser.h"
+#include "CodeAnalyser/FunctionAnalyser.h"
 #include "CodeAnalyser/Recompiler/ControlFlowGraph.h"
 #include "CodeAnalyser/Recompiler/CppExporter.h"
 
@@ -82,9 +83,12 @@ protected:
 
 	// Run the same image+entry through both sides and assert equivalence. memDiff* bound the
 	// memory range we care about - typically [code start, code end + data region end].
+	// extraEntries lets the test promote additional addresses to CFG block leaders - needed
+	// for indirect jumps (JP (IX) etc.) whose target is not statically known.
 	void RunAndCompare(const std::vector<uint8_t>& image, uint16_t loadAddr, uint16_t loadEnd,
 		const FZ80State& init, uint16_t entryPC,
-		uint16_t memDiffStart, uint16_t memDiffEnd)
+		uint16_t memDiffStart, uint16_t memDiffEnd,
+		const std::vector<uint16_t>& extraEntries = {})
 	{
 		// Mirror the bytes into the analyser's memory and run linear disassembly so each
 		// instruction has an FCodeInfo.
@@ -98,6 +102,17 @@ protected:
 			if (next <= pc)
 				break;
 			pc = next;
+		}
+
+		// Promote extra addresses to function entries so the CFG creates blocks at them.
+		// Needed when the test exercises indirect-jump targets (JP (IX)/(IY)/(HL)) which
+		// can't be resolved statically.
+		for (uint16_t addr : extraEntries)
+		{
+			FFunctionInfo fn;
+			fn.StartAddress = state.AddressRefFromPhysicalAddress(addr);
+			fn.EndAddress = fn.StartAddress;
+			state.pFunctions->AddFunction(fn);
 		}
 
 		// Emit C with the harness.
@@ -308,6 +323,120 @@ TEST_F(FDiffExec, EdCpir)
 	FZ80State init;
 	init.SP = 0xFF00;
 	RunAndCompare(image, kStart, kEnd, init, kStart, 0xC200, 0xC610);
+}
+
+// DD/FD page: IX immediate load, (IX+d) writes/reads, INC (IY+d).
+TEST_F(FDiffExec, DdFdMemoryOps)
+{
+	const uint16_t kStart = 0xD000;
+	const std::vector<uint8_t> code = {
+		// LD IX,0xD800
+		0xDD, 0x21, 0x00, 0xD8,
+		// LD (IX+4),0x42
+		0xDD, 0x36, 0x04, 0x42,
+		// LD A,(IX+4)
+		0xDD, 0x7E, 0x04,
+		// LD IY,0xD810
+		0xFD, 0x21, 0x10, 0xD8,
+		// INC (IY-2)        (touches D80E, offset of -2 from D810)
+		0xFD, 0x34, 0xFE,
+		// RET
+		0xC9,
+	};
+	const uint16_t kEnd = (uint16_t)(kStart + code.size() - 1);
+
+	// Pre-place a value at D80E so INC has something to bump.
+	auto image = MakeImage(kStart, code, { { 0xD80E, { 0x10 } } });
+	FZ80State init;
+	init.SP = 0xFF00;
+	RunAndCompare(image, kStart, kEnd, init, kStart, 0xD000, 0xD820);
+}
+
+// DD/FD page: 16-bit IX/IY arithmetic and push/pop. ADD IX,DE; PUSH IX then POP IY
+// should leave IY == IX.
+TEST_F(FDiffExec, DdFdAddAndPushPop)
+{
+	const uint16_t kStart = 0xD100;
+	const std::vector<uint8_t> code = {
+		// LD IX,0x1000
+		0xDD, 0x21, 0x00, 0x10,
+		// LD DE,0x0234
+		0x11, 0x34, 0x02,
+		// AND A     (clear CF; ADD IX,DE shares the ADD HL flag formula but CF is set
+		//            based on the carry-out, not the input CF - clearing here just keeps
+		//            the initial state deterministic.)
+		0xA7,
+		// ADD IX,DE  -> 0x1234
+		0xDD, 0x19,
+		// PUSH IX
+		0xDD, 0xE5,
+		// POP IY   -> IY = 0x1234
+		0xFD, 0xE1,
+		// RET
+		0xC9,
+	};
+	const uint16_t kEnd = (uint16_t)(kStart + code.size() - 1);
+
+	auto image = MakeImage(kStart, code);
+	FZ80State init;
+	init.SP = 0xFF00;
+	RunAndCompare(image, kStart, kEnd, init, kStart, 0xD100, 0xD120);
+}
+
+// DD CB d xx: CB-page bit ops on (IX+d) / (IY+d). Exercises the RES/SET/RLC paths.
+TEST_F(FDiffExec, DdFdCbBitOps)
+{
+	const uint16_t kStart = 0xD200;
+	const std::vector<uint8_t> code = {
+		// LD IX,0xD900
+		0xDD, 0x21, 0x00, 0xD9,
+		// LD IY,0xD910
+		0xFD, 0x21, 0x10, 0xD9,
+		// SET 4,(IX+2)        -> mem[D902] |= 0x10
+		0xDD, 0xCB, 0x02, 0xE6,
+		// RES 0,(IY+1)        -> mem[D911] &= 0xFE
+		0xFD, 0xCB, 0x01, 0x86,
+		// RLC (IX+0)          -> mem[D900] = rotate-left-with-wrap; CF from old bit 7
+		0xDD, 0xCB, 0x00, 0x06,
+		// RET
+		0xC9,
+	};
+	const uint16_t kEnd = (uint16_t)(kStart + code.size() - 1);
+
+	auto image = MakeImage(kStart, code, {
+		{ 0xD900, { 0x81, 0x00 } },		// IX+0 = 0x81 (RLC will produce 0x03, CF=1)
+		{ 0xD902, { 0x00 } },			// will become 0x10 after SET 4
+		{ 0xD911, { 0xFF } },			// will become 0xFE after RES 0
+	});
+	FZ80State init;
+	init.SP = 0xFF00;
+	RunAndCompare(image, kStart, kEnd, init, kStart, 0xD200, 0xD920);
+}
+
+// JP (IX): indirect-jump terminator. Caller sets IX to the target inside the same range
+// and jumps; the callee writes a marker and RETs back to the sentinel.
+TEST_F(FDiffExec, DdJpIx)
+{
+	const uint16_t kStart = 0xD300;
+	const std::vector<uint8_t> code = {
+		// LD IX,0xD308
+		0xDD, 0x21, 0x08, 0xD3,
+		// JP (IX)
+		0xDD, 0xE9,
+		// 0xD306: padding
+		0x00, 0x00,
+		// 0xD308: target - LD A,0x77 ; RET
+		0x3E, 0x77,
+		0xC9,
+	};
+	const uint16_t kEnd = (uint16_t)(kStart + code.size() - 1);
+
+	auto image = MakeImage(kStart, code);
+	FZ80State init;
+	init.SP = 0xFF00;
+	// JP (IX) target isn't statically resolvable; promote 0xD308 to an entry point so the
+	// CFG creates a block there and the dispatcher can land on it.
+	RunAndCompare(image, kStart, kEnd, init, kStart, 0xD300, 0xD320, { 0xD308 });
 }
 
 // ED page: 16-bit memory loads/stores. Round-trips BC through (nn) and pulls DE out.
