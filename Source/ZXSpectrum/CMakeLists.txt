@@ -47,7 +47,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	#set( gfxapi "DX11")
-	set( gfxapi "GLFWApi")	
+	set( gfxapi "GLFWApi")
 	set( with_tests false )
 endif()
 

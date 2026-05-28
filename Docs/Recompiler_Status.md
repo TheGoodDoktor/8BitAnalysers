@@ -1,7 +1,7 @@
 # C/C++ Recompiler — Status & Continuation Guide
 
 **Branch:** `cpp-recompiler` (do not merge to `master` until it produces useful output for real programs).
-**As of:** commit `37ac3990` (Phase 1 slice 5). `master` base is `b004aceb`.
+**As of:** Phase 1 slice 6 (differential execution harness). `master` base is `b004aceb`.
 **Goal:** statically translate an analysed 8-bit game (Z80 first) into compilable, bit-accurate **C (default C99)** or **C++**.
 
 Read alongside `Docs/CppRecompilationProposal.md` (feasibility/plan) and `Docs/Phase0_CFG_Design.md` (CFG design).
@@ -16,11 +16,13 @@ A Z80 routine in the analyser can be exported to C/C++ that **compiles and runs*
 - **Phase 1 — codegen:** the **entire unprefixed (main) page + the full CB page** are translated, with flag/ALU runtime helpers transcribed bit-for-bit from the vendored chips Z80 core (the differential-validation oracle).
 - **Execution model:** **PC-dispatch** — each basic block is a function; a `z80_run` loop invokes blocks keyed on `cpu->PC`; `CALL`/`RET` push/pop the return PC on the Z80 stack. Calls, returns and computed jumps all work; full routines run.
 - **Harness:** `bEmitHarness` makes a generated file self-contained (flat 64K memory + `Read8`/`Write8`/`In`/`Out`), runnable via `z80_call(cpu, entry)`.
-- **Tests:** 9 `FCFGTest` cases pass (CFG golden + codegen substring + C++ target).
-- **End-to-end verified** (MSVC `cl /TC`): a sum-bytes loop → `A=15 F=08` (bit-accurate); a `CALL` routine (callee adds 5, nested `RET`s) → `A=15 PC=FFFF`.
+- **Tests:** 8 `FCFGTest` cases (CFG golden + codegen substring + C++ target) + **3 `FDiffExec` differential-execution cases** that run the generated C through `cl` and compare register/memory state against the chips Z80 oracle. All pass.
+- **End-to-end automated:** the differential harness IS now the verification - any divergence between generated translation and the bit-accurate chips emulator fails a test. Adding more coverage is now just writing one more `FDiffExec` case per opcode family.
 
 ### Commits on the branch
 ```
+HEAD      slice 6: differential execution harness (cl-compile + chips oracle)
+0bd5a8f8  status doc / continuation guide
 37ac3990  slice 5: PC-dispatch execution model
 a57d4445  slice 4: self-contained runtime harness
 b0a3039d  slice 3: CB-prefixed opcode page
@@ -39,7 +41,9 @@ a8ec8f71  validate Phase 0 CFG with golden tests + headless-test fix
 | `Source/Shared/CodeAnalyser/Recompiler/ControlFlowGraph.{h,cpp}` | Phase 0: CFG model (`FControlFlowGraph`/`FBasicBlock`/`FFlowEdge`), Z80 instruction classifier `ClassifyInstructionZ80`, `BuildCFGForAddressRange`/`BuildCFGForFunction`. `ClassifyInstruction6502` and `ResolveIndirectEdgesFromTraces` are stubs. |
 | `Source/Shared/CodeAnalyser/Recompiler/CppExporter.{h,cpp}` | Codegen: `FCppExporter` (subclasses `FASMExporter`), opcode→C in `EmitInstructionSemanticsZ80`, flag/ALU runtime in `EmitRuntimeHelpers`, the PC-dispatch engine in `EmitDispatcher`, the standalone runtime in `EmitHarness`. Free entry `ExportCpp(pEmu, file, start, end, bEmitC=true, bEmitHarness=false)`. |
 | `Source/Shared/CMakeShared.txt` | Globs `CodeAnalyser/Recompiler/*` into the build (new files there need a CMake re-run). |
-| `Source/ZXSpectrum/Tests/ControlFlowGraphTests.cpp` | All recompiler tests (`FCFGTest` fixture). |
+| `Source/ZXSpectrum/Tests/ControlFlowGraphTests.cpp` | CFG / codegen substring tests (`FCFGTest` fixture). |
+| `Source/ZXSpectrum/Tests/DifferentialHarness.{h,cpp}` | Helpers: chips Z80 oracle runner, MSVC `cl` compile-and-run of generated C, gtest predicates for state/memory diffs (R skipped, F XF/YF masked - see §4). |
+| `Source/ZXSpectrum/Tests/DifferentialExecutionTests.cpp` | `FDiffExec` differential cases. Each one lays a Z80 program into RAM, runs it on both sides, asserts equivalence. Add one per new opcode family. |
 
 ### How the generated output is structured (per program)
 1. Header: includes + `Z80CpuState` struct + hook **declarations** (`Read8`/`Write8`/`In`/`Out`) + inline helpers (`z80_add8…`, rotates, `z80_push16`/`z80_pop16`, flag primitives) + an entry-point list comment.
@@ -60,7 +64,8 @@ a8ec8f71  validate Phase 0 CFG with golden tests + headless-test fix
 ---
 
 ## 4. Known limitations / approximations
-- **`BIT n,(HL)`** undocumented X/Y flags use the operand value, not the internal WZ register (WZ isn't modelled). Exact for register operands.
+- **`BIT n,(HL)`** undocumented X/Y flags use the operand value, not the internal WZ register (WZ isn't modelled). Exact for register operands. The differential harness masks XF/YF from F by default; flip `bStrict=true` on `ExpectRegistersMatch` to surface these.
+- **R (refresh) register** is not modelled in the generated code (no opcode-fetch loop - blocks are functions). The differential harness skips R by default, strict mode includes it.
 - **Self-modifying code:** detected and flagged in a block comment, but executed as fixed statements (no fallback interpreter yet).
 - **Interrupts:** `DI`/`EI` set `IFF1/IFF2`; no IRQ/NMI delivery, no `IM` handling.
 - **Timing:** no cycle counting (raster/contended-memory effects not modelled).
@@ -80,8 +85,10 @@ cmake --build Source/ZXSpectrum/build --config Debug --target SpectrumAnalyser
 1. Flip all three to `true` (e.g. `sed -i 's/set( with_tests false )/set( with_tests true )/g' Source/ZXSpectrum/CMakeLists.txt`).
 2. `cmake -S Source/ZXSpectrum -B Source/ZXSpectrum/build` (fetches GoogleTest via FetchContent — needs network).
 3. `cmake --build Source/ZXSpectrum/build --config Debug --target SpectrumAnalyserTest`
-4. From `Data/SpectrumAnalyser`: `..\..\Source\ZXSpectrum\build\bin\Debug\SpectrumAnalyserTest.exe --gtest_filter=FCFGTest.*`
+4. From `Data/SpectrumAnalyser`: `..\..\Source\ZXSpectrum\build\bin\Debug\SpectrumAnalyserTest.exe --gtest_filter=FCFGTest.*` (or `FDiffExec.*`, or both with `*.*`).
 5. **Revert `with_tests` to false** before committing (keeps CI/convention; the test file stays).
+
+**Differential tests need MSVC `cl`.** The harness probes for it (cl on PATH first, then a list of stock `vcvars64.bat` locations for VS 2022 BuildTools/Community/Pro/Enterprise; `RECOMPILER_VCVARS` env var overrides). When not found, `FDiffExec.*` tests `GTEST_SKIP()` rather than fail. The compile/run is ~3-5s per test (vcvars init dominates); add `/Od` or use `cl /Zi` for faster cycles when debugging.
 
 **End-to-end (compile & run generated C):** construct an `FCppExporter`, `Init(&std::string)`, `SetTargetLanguageC(true)`, `SetEmitHarness(true)`, `AddHeader()`, `ExportProgram(start,end)`, `Finish()`; append a `main()` that seeds memory/registers and calls `z80_call(&cpu, entry)`; compile with MSVC:
 ```
@@ -102,9 +109,9 @@ vcvars64 here: `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\V
 ---
 
 ## 7. Recommended next steps (in priority order)
-1. **Automated differential-execution harness** *(highest value, now unblocked)*: for a routine, run it on the chips emulator (oracle) and on the compiled generated C, then diff registers + memory. `cl` compilation at test time is proven to work. This turns correctness into continuous verification and de-risks all further opcode work.
-2. **`ED` page**: block ops (`LDIR`/`LDDR`/`CPIR`…), 16-bit `ADC`/`SBC HL`, `NEG`, `IM n`, `LD I/R,A`, `RRD`/`RLD`. Self-contained and regular.
-3. **`DD`/`FD` page**: IX/IY as HL with `(IX+d)`/`(IY+d)` displacement; the `DD CB`/`FD CB` bit-ops; `JP (IX)`/`(IY)` already classified as indirect.
+1. **`ED` page** *(next slice; now safety-netted)*: block ops (`LDIR`/`LDDR`/`CPIR`…), 16-bit `ADC`/`SBC HL`, `NEG`, `IM n`, `LD I/R,A`, `RRD`/`RLD`. Self-contained and regular. Pattern: implement helpers in `EmitRuntimeHelpers`, add cases in `EmitInstructionSemanticsZ80`, add a `FDiffExec` test per family.
+2. **`DD`/`FD` page**: IX/IY as HL with `(IX+d)`/`(IY+d)` displacement; the `DD CB`/`FD CB` bit-ops; `JP (IX)`/`(IY)` already classified as indirect.
+3. **Model `WZ`** to remove the XF/YF masking on F (and the `BIT (HL)` approximation); the differential harness already accepts strict mode for this.
 4. Then: SMC fallback interpreter, banking, interrupts/timing — as needed by real targets.
 5. Eventually: 6502 classifier + codegen (parallels the Z80 path; `ClassifyInstruction6502` stub exists).
 
