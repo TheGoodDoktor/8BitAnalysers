@@ -178,6 +178,7 @@ protected:
 	void DetectDirtyBanks();
 
 	void AddLabels();
+	void AddInterruptVectorFunctionLabels(int16_t bankId);
 
 	void SoftResetMachine();
 
