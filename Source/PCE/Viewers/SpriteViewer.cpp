@@ -1026,7 +1026,8 @@ void FSpriteViewer::ExportFoundSpritesAsPNGs()
 			continue;
 
 		char fname[64];
-		snprintf(fname, sizeof(fname), "Sprite_%04X.png", e.FoundDataAddr.GetAddress());
+		FCodeAnalysisBank* pBank = pPCEEmu->GetCodeAnalysis().GetBank(e.FoundDataAddr.GetBankId());
+		snprintf(fname, sizeof(fname), "Sprite_%s_%04X.png", pBank ? pBank->Name.c_str() : "UnknownBank", e.FoundDataAddr.GetAddress());
 		const std::string path = outDir + fname;
 		stbi_write_png(path.c_str(), e.Width, e.Height, 4, e.PixelBuffer, e.Width * 4);
 	}
