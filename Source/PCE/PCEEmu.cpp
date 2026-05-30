@@ -1616,7 +1616,25 @@ void FPCEEmu::AddLabels()
 	AddInterruptVectorFunctionLabels(rom0BankId);
 }
 
-// todo tidy up
+static void AddVectorFunctionLabel(FCodeAnalysisState& state, FCodeAnalysisBank* pBank, uint16_t routineAddr, uint8_t firstByte, const char* vecName)
+{
+	if (!pBank->AddressValid(routineAddr))
+		return;
+
+	char labelTxt[40];
+	const FAddressRef ref(pBank->Id, routineAddr);
+	if (firstByte == 0x40)
+	{
+		snprintf(labelTxt, 40, "func_ROM_00_%04X_DummyVector", routineAddr);
+		SetItemCode(state, ref);
+	}
+	else
+		snprintf(labelTxt, 40, "func_ROM_00_%04X_%sVector", routineAddr, vecName);
+
+	FLabelInfo* pLabel = AddLabel(state, ref, labelTxt, ELabelType::Function);
+	//LOGINFO("%s is %x. label %x", labelTxt, firstByte, pLabel);
+}
+
 void FPCEEmu::AddInterruptVectorFunctionLabels(int16_t bankId)
 {
 	// todo deal with non canonical banks.
@@ -1626,60 +1644,21 @@ void FPCEEmu::AddInterruptVectorFunctionLabels(int16_t bankId)
 		return;
 
 	FCodeAnalysisState& state = GetCodeAnalysis();
-
 	FCodeAnalysisBank* pBank = state.GetBank(bankId);
 	if (!pBank)
 		return;
 
-	char labelTxt[40];
-	FLabelInfo* pLabel = nullptr;
+	const uint16_t nmiAddr = ReadWord(kVecNMI);
+	AddVectorFunctionLabel(state, pBank, nmiAddr, ReadByte(nmiAddr), "NMI");
 
-	// todo what if this physical address isn't ROM 0?
-	// think we need to read it directly from bank ROM 0
-	const uint16_t nmiRoutineAddr = ReadWord(kVecNMI);
-	if (pBank->AddressValid(nmiRoutineAddr))
-	{
-		if (ReadByte(nmiRoutineAddr) == 0x40)
-			snprintf(labelTxt, 40, "func_ROM_00_%04X_DummyVector", nmiRoutineAddr);
-		else
-			snprintf(labelTxt, 40, "func_ROM_00_%04X_NMIVector", nmiRoutineAddr);
-		pLabel = AddLabel(CodeAnalysis, FAddressRef(bankId, nmiRoutineAddr), labelTxt, ELabelType::Function);
-		LOGINFO("%s is %x. label %x", labelTxt, ReadByte(nmiRoutineAddr), pLabel);
-	}
+	const uint16_t timerAddr = ReadWord(kVecTimer);
+	AddVectorFunctionLabel(state, pBank, timerAddr, ReadByte(timerAddr), "Timer");
 
-	const uint16_t timerRoutineAddr = ReadWord(kVecTimer);
-	if (pBank->AddressValid(nmiRoutineAddr))
-	{
-		if (ReadByte(timerRoutineAddr) == 0x40)
-			snprintf(labelTxt, 40, "func_ROM_00_%04X_DummyVector", timerRoutineAddr);
-		else
-			snprintf(labelTxt, 40, "func_ROM_00_%04X_TimerVector", timerRoutineAddr);
-		pLabel = AddLabel(CodeAnalysis, FAddressRef(bankId, timerRoutineAddr), labelTxt, ELabelType::Function);
-		LOGINFO("%s is %x. label %x", labelTxt, ReadByte(timerRoutineAddr), pLabel);
-	}
+	const uint16_t irq1Addr = ReadWord(kVecIRQ1);
+	AddVectorFunctionLabel(state, pBank, irq1Addr, ReadByte(irq1Addr), "IRQ1");
 
-	const uint16_t irq1RoutineAddr = ReadWord(kVecIRQ1);
-	if (pBank->AddressValid(irq1RoutineAddr))
-	{
-		if (ReadByte(irq1RoutineAddr) == 0x40)
-			snprintf(labelTxt, 40, "func_ROM_00_%04X_DummyVector", irq1RoutineAddr);
-		else
-			snprintf(labelTxt, 40, "func_ROM_00_%04X_IRQ1Vector", irq1RoutineAddr);
-		pLabel = AddLabel(CodeAnalysis, FAddressRef(bankId, irq1RoutineAddr), labelTxt, ELabelType::Function);
-		LOGINFO("%s is %x. label %x", labelTxt, ReadByte(irq1RoutineAddr), pLabel);
-	}
-
-	const uint16_t irq2RoutineAddr = ReadWord(kVecIRQ2);
-	if (pBank->AddressValid(irq2RoutineAddr))
-	{
-		const uint16_t irq2RoutineAddr = ReadWord(kVecIRQ2);
-		if (ReadByte(irq2RoutineAddr) == 0x40)
-			snprintf(labelTxt, 40, "func_ROM_00_%04X_DummyVector", irq2RoutineAddr);
-		else
-			snprintf(labelTxt, 40, "func_ROM_00_%04X_IRQ2Vector", irq2RoutineAddr);
-		pLabel = AddLabel(CodeAnalysis, FAddressRef(bankId, irq2RoutineAddr), labelTxt, ELabelType::Function);
-		LOGINFO("%s is %x label %x", labelTxt, ReadByte(irq2RoutineAddr), pLabel);
-	}
+	const uint16_t irq2Addr = ReadWord(kVecIRQ2);
+	AddVectorFunctionLabel(state, pBank, irq2Addr, ReadByte(irq2Addr), "IRQ2");
 }
 
 bool FPCEEmu::SaveMachineState(const char* path, int index /* = -1 */)
