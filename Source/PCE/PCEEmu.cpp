@@ -607,7 +607,25 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	state.MapBank(newBankId, pageNo, bankAccess);
 	pInBank->PrimaryMappedPage = pageNo;
 	MprBankId[mprIndex] = newBankId;
+
+	const bool bFirstTimeInThisSlot = !(Banks[newBankIndex]->MappedSlotsMask & (1 << mprIndex));
 	Banks[newBankIndex]->RecordSlotMapping(mprIndex);
+
+	// Case 1: first time this bank is in this slot — check if any current vectors point into it.
+	// Requires slot 7 to already be mapped so the vector reads are valid.
+	if (bFirstTimeInThisSlot && MprBankId[7] != -1)
+		AddInterruptVectorFunctionLabels(newBankId);
+
+	// Case 2: slot 7 just got new vectors for the first time — re-check all already-mapped
+	// banks in case their routines are now pointed to by the new vectors.
+	if (mprIndex == 7 && bFirstTimeInThisSlot)
+	{
+		for (int slot = 0; slot < 7; slot++)
+		{
+			if (MprBankId[slot] != -1)
+				AddInterruptVectorFunctionLabels(MprBankId[slot]);
+		}
+	}
 
 #if BANK_SWITCH_DEBUG
 	BANK_LOG("[PC=%04x] IN: '%s' OUT: '%s' 0x%x->0x%x", GetPC().GetAddress(), pInBank->Name.c_str(), pOutBank ? pOutBank->Name.c_str() : "None", oldMappedAddress, pInBank->GetMappedAddress());
