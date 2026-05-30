@@ -8,8 +8,11 @@
 #include <geargrafx_core.h>
 
 #include <ImGuiSupport/ImGuiTexture.h>
+#include <ImGuiSupport/ImGuiScaling.h>
 #include "CodeAnalyser/UI/UIColours.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "Util/FileUtil.h"
+#include "stb/stb_image_write.h"
 
 FSpriteViewer::FSpriteViewer(FEmuBase* pEmu)
 : FViewerBase(pEmu)
@@ -370,7 +373,7 @@ void FSpriteViewer::DrawUI()
 
 		if (ImGui::BeginTabItem("Search"))
 		{
-			DrawResultsTab();
+			DrawSearchTab();
 			ImGui::EndTabItem();
 		}
 
@@ -513,30 +516,8 @@ void FSpriteViewer::DrawHistoryTab()
 	ImGui::SameLine();
 	if (ImGui::Button("Clear"))
 		ClearHistory();
-	ImGui::SameLine();
 
-	if (FindCursor < 0)
-	{
-		if (!SpriteHistory.empty() && ImGui::Button("Find All"))
-		{
-			FindCursor = 0;
-			FindFound  = 0;
-			FindTotal  = (int)SpriteHistory.size();
-		}
-	}
-	else if (FindCursor < FindTotal)
-	{
-		ImGui::Text("Searching... %d/%d  (%d found)", FindCursor, FindTotal, FindFound);
-	}
-	else
-	{
-		ImGui::Text("Done: %d / %d found", FindFound, FindTotal);
-		ImGui::SameLine();
-		if (ImGui::Button("OK"))
-			FindCursor = -1;
-	}
-
-	ImGui::Separator();
+	//ImGui::Separator();
 
 	const float colWidth  = (float)HUC6270_MAX_SPRITE_WIDTH  * scale;
 	const float colHeight = (float)HUC6270_MAX_SPRITE_HEIGHT * scale;
@@ -615,8 +596,31 @@ void FSpriteViewer::DrawHistoryTab()
 	ImGui::EndChild();
 }
 
-void FSpriteViewer::DrawResultsTab()
+void FSpriteViewer::DrawSearchTab()
 {
+	if (FindCursor < 0)
+	{
+		char buf[32];
+		snprintf(buf, sizeof(buf), "Find All %d Captured Sprites", (int)SpriteHistory.size()); 
+		if (!SpriteHistory.empty() && ImGui::Button(buf))
+		{
+			FindCursor = 0;
+			FindFound = 0;
+			FindTotal = (int)SpriteHistory.size();
+		}
+	}
+	else if (FindCursor < FindTotal)
+	{
+		ImGui::Text("Searching... %d/%d  (%d found)", FindCursor, FindTotal, FindFound);
+	}
+	else
+	{
+		ImGui::Text("Done: %d / %d found", FindFound, FindTotal);
+		ImGui::SameLine();
+		if (ImGui::Button("OK"))
+			FindCursor = -1;
+	}
+
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
@@ -624,11 +628,9 @@ void FSpriteViewer::DrawResultsTab()
 	for (const FHistorySpriteEntry& e : SpriteHistory)
 		if (e.FoundDataAddr.IsValid()) foundCount++;
 
-	ImGui::Text("%d result(s)", foundCount);
-
 	if (foundCount > 0)
 	{
-		ImGui::SameLine();
+		//ImGui::SameLine();
 		if (ImGui::Button("Format All Found"))
 		{
 			for (FHistorySpriteEntry& e : SpriteHistory)
@@ -637,20 +639,22 @@ void FSpriteViewer::DrawResultsTab()
 					FormatEntry(e);
 			}
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Export PNGs"))
+			ExportFoundSpritesAsPNGs();
 	}
-
-	ImGui::SliderFloat("Row Height", &ResultsRowHeight, 16.0f, 128.0f, "%.0f px");
 
 	ImGui::Separator();
 
 	if (foundCount == 0)
 	{
-		ImGui::TextDisabled("Run 'Find All' in the History tab to populate results");
+		ImGui::TextDisabled("Capture some sprites by running the emulator then press 'Find All...' to populate results");
 		return;
 	}
 
 	// Thumbnail column is wide enough to show a 2:1 sprite (32x16) at the current row height
 	const float thumbColWidth = ResultsRowHeight * 2.0f;
+	const float fontCharWidth = ImGui_GetFontCharWidth();
 
 	ImGuiTableFlags tblFlags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg
 	                         | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY;
@@ -658,11 +662,11 @@ void FSpriteViewer::DrawResultsTab()
 	{
 		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   thumbColWidth);
-		ImGui::TableSetupColumn("Size",     ImGuiTableColumnFlags_WidthFixed,   52.0f);
-		ImGui::TableSetupColumn("Bpp",      ImGuiTableColumnFlags_WidthFixed,   36.0f);
+		ImGui::TableSetupColumn("Size",     ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 5);
+		ImGui::TableSetupColumn("Bpp",      ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 4);
 		ImGui::TableSetupColumn("Address",  ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Status",   ImGuiTableColumnFlags_WidthFixed,   68.0f);
-		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   52.0f);
+		ImGui::TableSetupColumn("Status",   ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 8);
+		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 7);
 		ImGui::TableHeadersRow();
 
 		for (int i = 0; i < (int)SpriteHistory.size(); i++)
@@ -713,6 +717,12 @@ void FSpriteViewer::DrawResultsTab()
 		}
 		ImGui::EndTable();
 	}
+
+	ImGui::Text("%d result(s)", foundCount);
+
+#ifndef NDEBUG
+	ImGui::SliderFloat("Row Height", &ResultsRowHeight, 16.0f, 128.0f, "%.0f px");
+#endif
 }
 
 void FSpriteViewer::DrawHistoryDetails(int index)
@@ -738,7 +748,7 @@ void FSpriteViewer::DrawHistoryDetails(int index)
 		};
 
 		char buf[32];
-		snprintf(buf, sizeof(buf), "$%04X", e.VRAMAddress); // this is a 16 bit address.
+		snprintf(buf, sizeof(buf), "%s.w", NumStr(e.VRAMAddress)); // this is a 16 bit address.
 		Row("VRAM Addr", buf); 
 		snprintf(buf, sizeof(buf), "%d", e.Width);
 		Row("Width", buf);
@@ -846,14 +856,16 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 	const FAddressRef patWriter = pVRAMViewer->GetVRAMAccess(patAddr).LastWriter;
 	const FAddressRef flgWriter = pVRAMViewer->GetVRAMAccess(flgAddr).LastWriter;
 
+	const float fontCharWidth = ImGui_GetFontCharWidth();
+
 	ImGui::Text("Sprite %d", spriteIndex);
 	ImGui::Separator();
 
 	ImGuiTableFlags tblFlags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV;
 	if (ImGui::BeginTable("##details", 3, tblFlags))
 	{
-		ImGui::TableSetupColumn("Attribute",   ImGuiTableColumnFlags_WidthFixed,   90.0f);
-		ImGui::TableSetupColumn("Value",       ImGuiTableColumnFlags_WidthFixed,  120.0f);
+		ImGui::TableSetupColumn("Attribute",   ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 10);
+		ImGui::TableSetupColumn("Value",       ImGuiTableColumnFlags_WidthFixed,  fontCharWidth * 8);
 		ImGui::TableSetupColumn("Last Writer", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableHeadersRow();
 
@@ -882,8 +894,8 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 		snprintf(buf, sizeof(buf), "%s", NumStr(info.YPos, ENumberDisplayMode::Decimal));
 		Row("Y Position", buf, yWriter);
 
-		snprintf(buf, sizeof(buf), "%s.w %s.b", NumStr(info.Address), NumStr((uint16_t)(info.Address * 2)));
-		Row("VRAM Address", buf, patWriter);
+		snprintf(buf, sizeof(buf), "%s.w", NumStr(info.Address));
+		Row("VRAM Addr.", buf, patWriter);
 
 		snprintf(buf, sizeof(buf), "%d", info.Width);
 		Row("Width", buf, flgWriter);
@@ -907,9 +919,9 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 		ImGui::EndTable();
 	}
 
-	ImGui::Spacing();
-	ImGui::TextDisabled("SAT VRAM base: $%04X", satBase);
-	ImGui::TextDisabled("Raw: Y=$%04X  X=$%04X  Pat=$%04X  Flg=$%04X", yWord, xWord, patWord, flgWord);
+	//ImGui::Spacing();
+	//ImGui::TextDisabled("SAT VRAM base: $%04X", satBase);
+	//ImGui::TextDisabled("Raw: Y=$%04X  X=$%04X  Pat=$%04X  Flg=$%04X", yWord, xWord, patWord, flgWord);
 
 	ImGui::Spacing();
 	ImGui::Separator();
@@ -1000,5 +1012,22 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 			FormatData(state, options);
 			state.SetCodeAnalysisDirty(options.StartAddress);
 		}
+	}
+}
+
+void FSpriteViewer::ExportFoundSpritesAsPNGs()
+{
+	const std::string outDir = pPCEEmu->GetGameWorkspaceRoot() + "Sprites/";
+	EnsureDirectoryExists(outDir.c_str());
+
+	for (const FHistorySpriteEntry& e : SpriteHistory)
+	{
+		if (!e.FoundDataAddr.IsValid() || e.PixelBuffer == nullptr)
+			continue;
+
+		char fname[64];
+		snprintf(fname, sizeof(fname), "Sprite_%04X.png", e.FoundDataAddr.GetAddress());
+		const std::string path = outDir + fname;
+		stbi_write_png(path.c_str(), e.Width, e.Height, 4, e.PixelBuffer, e.Width * 4);
 	}
 }
