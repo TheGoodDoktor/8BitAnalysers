@@ -56,6 +56,7 @@ BUGS
 
 IDEAS
 - press delete to remove formatting
+- label IRQ in callstack
 - add way to understand/visualise if interrupts are active?
 - make screen appear when loading a saved project
 - add "view in memory viewer" in code analysis view
