@@ -108,6 +108,7 @@ public:
 
 	void OnInstructionExecuted(uint16_t pc);
 	void OnVRAMWritten(uint16_t vramAddr, uint16_t value);
+	void OnIRQ(uint16_t vector, uint16_t interruptedPc, uint16_t routineAddr);
 
 	uint8_t* GetFrameBuffer() const { return pFrameBuffer; }
 	int16_t* GetAudioBuffer() const { return pAudioBuf; }

@@ -34,6 +34,7 @@ HuC6270::HuC6270(HuC6280* huC6280)
     m_state.V_STATE = &m_v_state;
     m_state.H_STATE = &m_h_state;
 
+    // sam
     InitPointer(m_callback_context);
     InitPointer(m_vram_write_callback);
     InitPointer(m_scanline_callback);

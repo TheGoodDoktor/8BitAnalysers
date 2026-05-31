@@ -291,7 +291,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		bIRQ = pM6502->brk_flags & M6502_BRK_IRQ;
 		break;
 	case ECPUType::HuC6280:	// M65C02 is a superset of M6502
-		// todo
+		// IRQ is handled in FPCEEmu::OnIRQ()
 		break;
 	}
 

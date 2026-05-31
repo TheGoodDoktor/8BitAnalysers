@@ -53,6 +53,8 @@ public:
     typedef void (*GG_Debug_Callback)();
     // sam. added function typedef for an "on instruction executed" callback.
     typedef void (*GG_Instruction_Executed_Callback)(void* context, uint16_t pc);
+    // sam. added function typedef for an "on IRQ" callback.
+    typedef void (*GG_IRQ_Callback)(void* context, uint16_t vector, uint16_t interruptedPc, uint16_t routineAddr);
 
 public:
     GeargrafxCore();
@@ -99,6 +101,8 @@ public:
     void SetDebugCallback(GG_Debug_Callback callback);
     // sam. added this.
     void SetInstructionExecutedCallback(GG_Instruction_Executed_Callback callback, void* context);
+    // sam. added this.
+    void SetIRQCallback(GG_IRQ_Callback callback, void* context);
 
 private:
     void Reset();

@@ -43,6 +43,10 @@ HuC6280::HuC6280()
     m_processor_state.TIMER_RELOAD = &m_timer_reload;
     m_processor_state.IDR = &m_interrupt_disable_register;
     m_processor_state.IRR = &m_interrupt_request_register;
+
+    // sam
+    InitPointer(m_irq_callback);
+    InitPointer(m_irq_callback_context);
 }
 
 HuC6280::~HuC6280()
@@ -54,6 +58,13 @@ void HuC6280::Init(Memory* memory, HuC6202* huc6202)
     m_memory = memory;
     m_huc6202 = huc6202;
     CreateZNFlagsTable();
+}
+
+// sam
+void HuC6280::SetIRQCallback(HuC6280_IRQ_Callback callback, void* context)
+{
+    m_irq_callback = callback;
+    m_irq_callback_context = context;
 }
 
 void HuC6280::Reset()
