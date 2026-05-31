@@ -211,12 +211,12 @@ void FSpriteViewer::UpdateSpriteHistory()
 		if (info.Width == 0 || info.Height == 0)
 			continue;
 
-		// Skip slots whose VRAM pattern area has never been written by game code
-		if (pPCEEmu->GetVRAMViewer()->GetVRAMAccess(info.Address).FrameLastWritten == -1)
-			continue;
-
 		const int sizeWords = info.SizeInBytes / 2;
 		if (info.Address + sizeWords > HUC6270_VRAM_SIZE)
+			continue;
+
+		// Skip slots whose VRAM pattern area has never been written by game code
+		if (pPCEEmu->GetVRAMViewer()->GetVRAMAccess(info.Address).FrameLastWritten == -1)
 			continue;
 
 		const uint32_t hash = HashSpriteVRAM(pVRAM, info.Address, sizeWords);
