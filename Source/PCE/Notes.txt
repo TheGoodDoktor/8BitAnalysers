@@ -1,25 +1,25 @@
 TODO FOR FIRST RELEASE
 - eliminate all dupe bank bugs (some still exist)
 - OnEnterEditMode() get working
-- add audio viewer: disable channels etc
+- edit mode doesnt restore properly. emulation bugs afer restoring
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - tidy up sprites viewer detail pane
 - perf of sprites results tab is really bad
 - bank addresses should be offsets (including function labels)
-- Find in memory find address doesnt get reset when loading a new game - or when the sprite changes
-- divide by zero crash in graphics viewer when width is 8 viewing sprites
-- crash in graphics viewer when put invalid address in address field (AddressOffset)
-- get callstack working. sometimes it only shows 1 address.
-- tidy tooltips for PCE related instructions
-- make bank label be an offset instead of address. add toggle in UI.
-
-BUGS TO FIX FOR FIRST RELEASE
-- trace button doesnt seem to work in code analysis view
-- edit mode doesnt restore properly. emulation bugs afer restoring
+- dont add cd bios labels in WRAM for joy/joyena etc
+- fix trace button in code analysis view
 
 TODO
-- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
+- IRQ vector has wrong label. hero tonma IRQ1 vector is in ROM 1 but has label func_ROM_00_433A_IRQ1Vector
+- get Word data item set to display as Pointer to work when outputting assembly
+- add audio viewer: disable channels etc
+- create new graphics viewer that removes all the stuff I dont need. off-screen buffers etc
+- in graphics viewer, label which palette is currently selected 
+- change Current palette option in graphics viewer. doesnt make sense for PCE
+- Show register value on tooltips
+- tidy tooltips for PCE related instructions
+- make bank label be an offset instead of address. add toggle in UI.
 - display vram transfer address in vram viewer. MAWR. maybe with indicator
 - in graphics viewer, label which palette is currently selected
 - get 3bpp, 2bpp sprite working in graphics viewer. 
@@ -60,6 +60,19 @@ IDEAS
 - add way to understand/visualise if interrupts are active?
 - make screen appear when loading a saved project
 - add "view in memory viewer" in code analysis view
+
+BUGS
+- trace button doesnt seem to work in code analysis view
+- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
+- asm export fails if you export right after reset, when UNUSED banks are mapped.
+- empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
+- edit mode doesnt restore properly. emulation bugs afer restoring
+- sprites formatted by sprite viewer dont draw correctly.
+- code analysis view doesnt go to address that was last viewed after loading project.
+- Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
+- palettes get added at index 67
+
+IDEAS
 - minimap on scrollbar
 - copy instruction tooltip text from mesen?
 - show r/w colouring in memory viewer
@@ -80,14 +93,10 @@ IDEAS
 - add scroll overlay on background view (like Mesen does)
 
 DONE
-- ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
-- add "Find sprite in memory" to sprite viewer
-- ctrl + arrow keys jumps to next/prev label
-- on vram viewer, have a "write indicator" that lights up when vram transfer occurs
-- sprites formatted by sprite viewer dont draw correctly.
-- Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
+- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
+- add ctrl + up/down to keyboard shortcuts display
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
-- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
+- in sprites viewer make the Results tab a Search tab and move find all into it?
 - results view in sprite viewer looks shit. thumbnails are too small.
 - add read_bank mcp tool, to read bank not mapped in.
 - show which palettes are BG/sprites/user in palette dropdowns

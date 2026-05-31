@@ -669,50 +669,61 @@ void FSpriteViewer::DrawSearchTab()
 		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 7);
 		ImGui::TableHeadersRow();
 
+		// Pre-collect indices of found entries so the clipper can work over a contiguous range
+		std::vector<int> foundIndices;
+		foundIndices.reserve(foundCount);
 		for (int i = 0; i < (int)SpriteHistory.size(); i++)
+			if (SpriteHistory[i].FoundDataAddr.IsValid())
+				foundIndices.push_back(i);
+
+		ImGuiListClipper clipper;
+		clipper.Begin((int)foundIndices.size(), ResultsRowHeight);
+		while (clipper.Step())
 		{
-			FHistorySpriteEntry& e = SpriteHistory[i];
-			if (!e.FoundDataAddr.IsValid())
-				continue;
-
-			ImGui::TableNextRow(ImGuiTableRowFlags_None, ResultsRowHeight);
-
-			ImGui::TableSetColumnIndex(0);
-			const float th = ResultsRowHeight;
-			const float tw = ResultsRowHeight * (float)e.Width / (float)e.Height;
-			ImGui::Image(e.Texture, ImVec2(tw, th), ImVec2(0, 0), ImVec2(1.0f, 1.0f));
-
-			if (ImGui::IsItemHovered())
+			for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
 			{
-				ImGui::BeginTooltip();
-				ImGui::Image(e.Texture, ImVec2((float)e.Width * 4.0f, (float)e.Height * 4.0f), ImVec2(0, 0), ImVec2(1.0f, 1.0f));
-				ImGui::EndTooltip();
-			}
+				const int i = foundIndices[row];
+				FHistorySpriteEntry& e = SpriteHistory[i];
 
-			ImGui::TableSetColumnIndex(1);
-			ImGui::Text("%dx%d", e.Width, e.Height);
+				ImGui::TableNextRow(ImGuiTableRowFlags_None, ResultsRowHeight);
 
-			ImGui::TableSetColumnIndex(2);
-			ImGui::Text("%dbpp", e.bFoundAs3Bpp ? 3 : 4);
+				ImGui::TableSetColumnIndex(0);
+				const float th = ResultsRowHeight;
+				const float tw = ResultsRowHeight * (float)e.Width / (float)e.Height;
+				ImGui::Image(e.Texture, ImVec2(tw, th), ImVec2(0, 0), ImVec2(1.0f, 1.0f));
 
-			ImGui::TableSetColumnIndex(3);
-			DrawAddressLabel(state, viewState, e.FoundDataAddr);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::BeginTooltip();
+					ImGui::Image(e.Texture, ImVec2((float)e.Width * 4.0f, (float)e.Height * 4.0f), ImVec2(0, 0), ImVec2(1.0f, 1.0f));
+					ImGui::EndTooltip();
+				}
 
-			ImGui::TableSetColumnIndex(4);
-			if (e.bFormatted)
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 200, 0, 255));
-				ImGui::TextUnformatted("Formatted");
-				ImGui::PopStyleColor();
-			}
+				ImGui::TableSetColumnIndex(1);
+				ImGui::Text("%dx%d", e.Width, e.Height);
 
-			ImGui::TableSetColumnIndex(5);
-			if (!e.bFormatted)
-			{
-				ImGui::PushID(i);
-				if (ImGui::SmallButton("Format"))
-					FormatEntry(e);
-				ImGui::PopID();
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text("%dbpp", e.bFoundAs3Bpp ? 3 : 4);
+
+				ImGui::TableSetColumnIndex(3);
+				DrawAddressLabel(state, viewState, e.FoundDataAddr);
+
+				ImGui::TableSetColumnIndex(4);
+				if (e.bFormatted)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 200, 0, 255));
+					ImGui::TextUnformatted("Formatted");
+					ImGui::PopStyleColor();
+				}
+
+				ImGui::TableSetColumnIndex(5);
+				if (!e.bFormatted)
+				{
+					ImGui::PushID(i);
+					if (ImGui::SmallButton("Format"))
+						FormatEntry(e);
+					ImGui::PopID();
+				}
 			}
 		}
 		ImGui::EndTable();
