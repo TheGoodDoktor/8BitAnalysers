@@ -675,7 +675,9 @@ void FSpriteViewer::DrawSearchTab()
 		for (int i = 0; i < (int)SpriteHistory.size(); i++)
 			if (SpriteHistory[i].FoundDataAddr.IsValid())
 				foundIndices.push_back(i);
-
+		
+		// Use a clipper because this table is expensive to draw.
+		// This is because DrawAddressLabel is expensive as it iterates through memory.
 		ImGuiListClipper clipper;
 		clipper.Begin((int)foundIndices.size(), ResultsRowHeight);
 		while (clipper.Step())

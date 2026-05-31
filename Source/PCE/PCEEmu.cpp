@@ -1643,11 +1643,11 @@ static void AddVectorFunctionLabel(FCodeAnalysisState& state, FCodeAnalysisBank*
 	const FAddressRef ref(pBank->Id, routineAddr);
 	if (firstByte == 0x40)
 	{
-		snprintf(labelTxt, 40, "func_ROM_00_%04X_DummyVector", routineAddr);
+		snprintf(labelTxt, 40, "func_%s_%04X_DummyVector", pBank->Name.c_str(), routineAddr);
 		SetItemCode(state, ref);
 	}
 	else
-		snprintf(labelTxt, 40, "func_ROM_00_%04X_%sVector", routineAddr, vecName);
+		snprintf(labelTxt, 40, "func_%s_%04X_%sVector", pBank->Name.c_str(), routineAddr, vecName);
 
 	FLabelInfo* pLabel = AddLabel(state, ref, labelTxt, ELabelType::Function);
 	//LOGINFO("%s is %x. label %x", labelTxt, firstByte, pLabel);
