@@ -340,7 +340,6 @@ EInstructionType GetInstructionTypeHuC6280(FCodeAnalysisState& state, FAddressRe
 		// Disable interrupts
 		case 0x58:	// CLI
 			return EInstructionType::DisableInterrupts;
-
 		
 		// JSR
 		case 0x20:
@@ -355,14 +354,14 @@ EInstructionType GetInstructionTypeHuC6280(FCodeAnalysisState& state, FAddressRe
 
 // sam. currently disabled. asm export is broken with this enabled.
 // also see ALLOW_U8_PTRS_JUMPS in Disassembler.cpp
-#define MULTIPLE_OPERANDS_SUPPORT 0
+#define MULTIPLE_OPERANDS_SUPPORT 1
 
 void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo)
 {
 	const FAddressRef pcAddrRef = state.GetCanonicalAddressRef(pc);
 	const uint8_t instrByte = state.ReadByte(pc);
 
-#if MULTIPLE_OPERANDS_SUPPORT
+//#if MULTIPLE_OPERANDS_SUPPORT
 	// BBR/BBS: 3-byte (opcode, zp, rel). Operand 0 = ZP pointer, operand 1 = branch target.
 	// Handled before standard jump path, which would otherwise overwrite operand 0.
 	if ((instrByte & 0x0F) == 0x0F)
@@ -370,7 +369,7 @@ void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeIn
 		const uint8_t zpAddr = state.ReadByte(pc + 1);
 		const int8_t relJump = (int8_t)state.ReadByte(pc + 2);
 		const uint16_t branchTarget = pc + 3 + relJump;
-		const FAddressRef zpAddrRef = state.GetCanonicalAddressRef(zpAddr);
+		const FAddressRef zpAddrRef = state.GetCanonicalAddressRef(0x2000 + zpAddr);
 		const FAddressRef branchAddrRef = state.GetCanonicalAddressRef(branchTarget);
 
 		if (pCodeInfo->OperandType == EOperandType::Unknown)
@@ -386,7 +385,7 @@ void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeIn
 			pBranchLabel->References.RegisterAccess(pcAddrRef);
 		return;
 	}
-#endif
+//#endif
 
 	uint16_t jumpAddr;
 	if (CheckJumpInstructionHuC6280(state, pc, &jumpAddr))
