@@ -480,7 +480,7 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 			ImGui::TextDisabled("None");
 	}
 
-	ImGui::Checkbox("Show Tooltip Writer Snippet", &bShowWriterSnippet);
+	//ImGui::Checkbox("Show Tooltip Writer Snippet", &bShowWriterSnippet);
 }
 
 void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)

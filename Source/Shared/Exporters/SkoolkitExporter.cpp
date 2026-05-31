@@ -164,25 +164,10 @@ public:
 		pLabelInfo = State.GetLabelForPhysicalAddress(addr);
 		if (pLabelInfo)
 		{
-			std::string labelName(pLabelInfo->GetName());
-			// todo warn if label already exists?
-			if (labelName.substr(0, 6) == "label_")
-			{
+			if (pLabelInfo->LabelType == ELabelType::Code)
 				bIsBranchDestination = true;
-				// todo make more robust. check address in string matches address in fitem
-			}
-			else if (labelName.substr(0, 9) == "function_")
-			{
-				// ignore
-			}
-			else if (labelName.substr(0, 5) == "data_")
-			{
-				// ignore
-			}
-			else
-			{
-				SkoolFile.AddLabel(addr, pLabelInfo->GetName());
-			}
+
+			SkoolFile.AddLabel(addr, pLabelInfo->GetName());
 		}
 	}
 

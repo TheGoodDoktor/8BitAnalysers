@@ -52,11 +52,13 @@ private:
 	void UpdateSpriteBuffers();
 	void UpdateSpriteHistory();
 	void ClearHistory();
+	void DrawSpriteGrid(float scale);
 	void DrawCurrentTab();
 	void DrawHistoryTab();
 	void DrawHistoryDetails(int index);
-	void DrawResultsTab();
+	void DrawSearchTab();
 	void FormatEntry(FHistorySpriteEntry& e);
+	void ExportFoundSpritesAsPNGs();
 
 private:
 	static const int kNumSprites = 64;
@@ -72,6 +74,7 @@ private:
 
 	bool bShowMagnifier = true;
 	int BackgroundColour = 0;
+	bool bGridHovered = false;
 
 	FAddressRef FoundSpriteDataAddr;
 	bool        bFoundSpriteData = false;

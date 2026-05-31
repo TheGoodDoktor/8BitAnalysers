@@ -52,6 +52,7 @@ Memory::Memory(HuC6260* huc6260, HuC6202* huc6202, HuC6280* huc6280, Media* medi
     m_card_ram_start = 0;
     m_card_ram_end = 0;
 
+    // sam
     InitPointer(m_callback_context);
     InitPointer(m_memory_read_callback);
     InitPointer(m_memory_write_callback);

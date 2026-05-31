@@ -17,6 +17,21 @@ TODO
 - Show register value on tooltips
 - tidy tooltips for PCE related instructions
 - make bank label be an offset instead of address. add toggle in UI.
+
+BUGS TO FIX FOR FIRST RELEASE
+- trace button doesnt seem to work in code analysis view
+- edit mode doesnt restore properly. emulation bugs afer restoring
+
+TODO
+- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
+- display vram transfer address in vram viewer. MAWR. maybe with indicator
+- in graphics viewer, label which palette is currently selected
+- get 3bpp, 2bpp sprite working in graphics viewer. 
+- tooltips on pce registers describing what they do
+- add ctrl + up/down to keyboard shortcuts display
+- in sprites viewer make the Results tab a Search tab and move find all into it?
+- change Current palette option in graphics viewer. doesnt make sense for PCE
+- Show register value on tooltips
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
 - hookup RegisterCodeExecutedHuC6280
@@ -26,7 +41,7 @@ TODO
 - deal with multiple operands, such as block operations etc [partially done]
 - hook up more events: audio, etc
 - improve Claude.md
-- layout of background viewer clunky
+- tidy layout of background viewer. clunky
 - history sprite palettes are not correct sometimes. rabio lepus intro.
 - add a way to display or goto the ROM address (in the cart's 2mb address space)
 - show bitmap format in code analysis view when cursor is on PCE sprite/BG
@@ -50,6 +65,9 @@ BUGS
 
 IDEAS
 - minimap on scrollbar
+- copy instruction tooltip text from mesen?
+- show r/w colouring in memory viewer
+- have different sprite display modes for when sprites are packed or bitplane reduced.
 - when capturing palette for history sprite, capture after some time has elpased.
 - [perf] Create code analysis pages on demand. would make creating banks trivial
 - [perf] reserve bank id instead of creating all the banks up front.
@@ -58,15 +76,12 @@ IDEAS
 - override assert with our own that lets you recover
 - create dupe banks lazily. only save state of the primary ones?
 - automatically mark memory as graphics when it gets transferred to vram
-- add "Find sprite in memory" to sprite viewer
 - show unexplored bytes as array
 - preview format before format is pressed
 - make graphics viewer texture smaller when viewing banks. it's too big for 8k banks.
-- add button to save all sprites in history view
+- add button to save all sprites in history view to png
 - always collapse/hide bytes in HW page.
-- ctrl + arrow keys jumps to next/prev label
 - add scroll overlay on background view (like Mesen does)
-- ask claude to look at huc equate files (and other pce docs) to add missing labels & comments for memory mapped HW regs.
 
 DONE
 - crash in ImGui::DockContextEndFrame(). can happen on start up.

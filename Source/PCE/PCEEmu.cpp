@@ -77,11 +77,13 @@ constexpr uint16_t kDefaultInitialBankAddr = kDefaultPrimaryMappedPage * FCodeAn
 const char* FPCEEmu::kPCERomGameListName = "PCE ROM File";
 const char* FPCEEmu::kCDRomGameListName = "CD-ROM Image";
 
-constexpr uint16_t kVecReset = 0xfffe;
-constexpr uint16_t kVecNMI	 = 0xfffc;
-constexpr uint16_t kVecTimer = 0xfffa;
-constexpr uint16_t kVecIRQ1  = 0xfff8;
+// Hardcoded addresses for system vectors. These are hardcoded addresses that contain 16 bit values.
+// The 16 bit values are pointers to the routines that will be called when servicing interrupts, timers or resetting the machine.
 constexpr uint16_t kVecIRQ2  = 0xfff6;
+constexpr uint16_t kVecIRQ1  = 0xfff8;
+constexpr uint16_t kVecTimer = 0xfffa;
+constexpr uint16_t kVecNMI	 = 0xfffc;
+constexpr uint16_t kVecReset = 0xfffe;
 
 #ifndef NDEBUG
 #define BANK_SWITCH_DEBUG 0
@@ -605,7 +607,25 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	state.MapBank(newBankId, pageNo, bankAccess);
 	pInBank->PrimaryMappedPage = pageNo;
 	MprBankId[mprIndex] = newBankId;
+
+	const bool bFirstTimeInThisSlot = !(Banks[newBankIndex]->MappedSlotsMask & (1 << mprIndex));
 	Banks[newBankIndex]->RecordSlotMapping(mprIndex);
+
+	// Case 1: first time this bank is in this slot — check if any current vectors point into it.
+	// Requires slot 7 to already be mapped so the vector reads are valid.
+	if (bFirstTimeInThisSlot && MprBankId[7] != -1)
+		AddInterruptVectorFunctionLabels(newBankId);
+
+	// Case 2: slot 7 just got new vectors for the first time — re-check all already-mapped
+	// banks in case their routines are now pointed to by the new vectors.
+	if (mprIndex == 7 && bFirstTimeInThisSlot)
+	{
+		for (int slot = 0; slot < 7; slot++)
+		{
+			if (MprBankId[slot] != -1)
+				AddInterruptVectorFunctionLabels(MprBankId[slot]);
+		}
+	}
 
 #if BANK_SWITCH_DEBUG
 	BANK_LOG("[PC=%04x] IN: '%s' OUT: '%s' 0x%x->0x%x", GetPC().GetAddress(), pInBank->Name.c_str(), pOutBank ? pOutBank->Name.c_str() : "None", oldMappedAddress, pInBank->GetMappedAddress());
@@ -1459,7 +1479,8 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 #endif
 	}
 
-	AddLabels();
+	if (bLoadGameData == false)
+		AddLabels();
 
 	ReAnalyseCode(CodeAnalysis);
 	GenerateGlobalInfo(CodeAnalysis);
@@ -1587,18 +1608,75 @@ void FPCEEmu::AddLabels()
 		}
 	}
 
-	// todo make these all functions
+
+	// Add labels for system vector list.
+	// These are the memory locations that hold the pointers to the routines - not the routines themselves.
+	const int16_t rom0BankId = BankSets[0].GetBankId();
 	FormatMemoryAsPtr(CodeAnalysis, kVecReset);
-	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecReset), "ResetVector", ELabelType::Data);
-	FormatMemoryAsPtr(CodeAnalysis, kVecNMI);
-	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecNMI), "NMIVector", ELabelType::Data);
-	FormatMemoryAsPtr(CodeAnalysis, kVecTimer);
-	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecTimer), "TimerVector", ELabelType::Data);
-	FormatMemoryAsPtr(CodeAnalysis, kVecIRQ1);
-	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecIRQ1), "IRQ1Vector", ELabelType::Data);
-	FormatMemoryAsPtr(CodeAnalysis, kVecIRQ2);
-	AddLabel(state, FAddressRef(BankSets[0].GetBankId(), kVecIRQ2), "IRQ2Vector", ELabelType::Data);
+	AddLabel(state, FAddressRef(rom0BankId, kVecReset), "ResetVector", ELabelType::Data);
 	
+	FLabelInfo* pLabel = nullptr;
+	FormatMemoryAsPtr(CodeAnalysis, kVecNMI);
+	AddLabel(state, FAddressRef(rom0BankId, kVecNMI), "NMIVector", ELabelType::Data);
+
+	FormatMemoryAsPtr(CodeAnalysis, kVecTimer);
+	AddLabel(state, FAddressRef(rom0BankId, kVecTimer), "TimerVector", ELabelType::Data);
+	
+	FormatMemoryAsPtr(CodeAnalysis, kVecIRQ1);
+	AddLabel(state, FAddressRef(rom0BankId, kVecIRQ1), "IRQ1Vector", ELabelType::Data);
+	
+	FormatMemoryAsPtr(CodeAnalysis, kVecIRQ2);
+	AddLabel(state, FAddressRef(rom0BankId, kVecIRQ2), "IRQ2Vector", ELabelType::Data);
+
+	// Create vector function labels - but only for routines in ROM 0.
+	// Some games have interrupt vectors in other banks.
+	// We need to create those function labels later - when the bank gets mapped in.
+	AddInterruptVectorFunctionLabels(rom0BankId);
+}
+
+static void AddVectorFunctionLabel(FCodeAnalysisState& state, FCodeAnalysisBank* pBank, uint16_t routineAddr, uint8_t firstByte, const char* vecName)
+{
+	if (!pBank->AddressValid(routineAddr))
+		return;
+
+	char labelTxt[40];
+	const FAddressRef ref(pBank->Id, routineAddr);
+	if (firstByte == 0x40)
+	{
+		snprintf(labelTxt, 40, "func_ROM_00_%04X_DummyVector", routineAddr);
+		SetItemCode(state, ref);
+	}
+	else
+		snprintf(labelTxt, 40, "func_ROM_00_%04X_%sVector", routineAddr, vecName);
+
+	FLabelInfo* pLabel = AddLabel(state, ref, labelTxt, ELabelType::Function);
+	//LOGINFO("%s is %x. label %x", labelTxt, firstByte, pLabel);
+}
+
+void FPCEEmu::AddInterruptVectorFunctionLabels(int16_t bankId)
+{
+	// todo deal with non canonical banks.
+	// call GetCanonicalBankId() before calling?
+
+	if (IsUnusedBank(bankId))
+		return;
+
+	FCodeAnalysisState& state = GetCodeAnalysis();
+	FCodeAnalysisBank* pBank = state.GetBank(bankId);
+	if (!pBank)
+		return;
+
+	const uint16_t nmiAddr = ReadWord(kVecNMI);
+	AddVectorFunctionLabel(state, pBank, nmiAddr, ReadByte(nmiAddr), "NMI");
+
+	const uint16_t timerAddr = ReadWord(kVecTimer);
+	AddVectorFunctionLabel(state, pBank, timerAddr, ReadByte(timerAddr), "Timer");
+
+	const uint16_t irq1Addr = ReadWord(kVecIRQ1);
+	AddVectorFunctionLabel(state, pBank, irq1Addr, ReadByte(irq1Addr), "IRQ1");
+
+	const uint16_t irq2Addr = ReadWord(kVecIRQ2);
+	AddVectorFunctionLabel(state, pBank, irq2Addr, ReadByte(irq2Addr), "IRQ2");
 }
 
 bool FPCEEmu::SaveMachineState(const char* path, int index /* = -1 */)
