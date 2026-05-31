@@ -98,7 +98,7 @@ bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, 
 	{
 	case EAddressMode::ZPIndirect_X:
 	case EAddressMode::ZPIndirect_Y:
-		*out_addr = state.ReadByte(pc + 1);
+		*out_addr = 0x2000 + state.ReadByte(pc + 1);
 		return true;
 
 	case EAddressMode::Absolute:
@@ -109,7 +109,7 @@ bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, 
 
 	case EAddressMode::ZP:
 	case EAddressMode::ZP_X:
-		*out_addr = state.ReadByte(pc + 1);
+		*out_addr = 0x2000 + state.ReadByte(pc + 1);
 		return true;
     default:
         return false;
@@ -454,7 +454,7 @@ void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeIn
 			pCodeInfo->OperandType = EOperandType::Hex;
 			pCodeInfo->OperandAddress = FAddressRef::Invalid();
 			pCodeInfo->ExtraOperands[0].Type = EOperandType::Pointer;
-			pCodeInfo->ExtraOperands[0].Address = state.GetCanonicalAddressRef(zpAddr);
+			pCodeInfo->ExtraOperands[0].Address = state.GetCanonicalAddressRef(0x2000 + zpAddr);
 			break;
 		}
 
