@@ -1,13 +1,14 @@
 TODO FOR FIRST RELEASE
 - eliminate all dupe bank bugs (some still exist)
 - OnEnterEditMode() get working
+- edit mode doesnt restore properly. emulation bugs afer restoring
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - tidy up sprites viewer detail pane
 - perf of sprites results tab is really bad
 - bank addresses should be offsets (including function labels)
-- add ctrl + up/down to keyboard shortcuts display
 - dont add cd bios labels in WRAM for joy/joyena etc
+- fix trace button in code analysis view
 
 TODO
 - add audio viewer: disable channels etc
@@ -17,13 +18,6 @@ TODO
 - Show register value on tooltips
 - tidy tooltips for PCE related instructions
 - make bank label be an offset instead of address. add toggle in UI.
-
-BUGS TO FIX FOR FIRST RELEASE
-- trace button doesnt seem to work in code analysis view
-- edit mode doesnt restore properly. emulation bugs afer restoring
-
-TODO
-- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 - display vram transfer address in vram viewer. MAWR. maybe with indicator
 - in graphics viewer, label which palette is currently selected
 - get 3bpp, 2bpp sprite working in graphics viewer. 
@@ -47,8 +41,6 @@ TODO
 - show bitmap format in code analysis view when cursor is on PCE sprite/BG
 - add label when formatting sprites in sprite viewer
 - add way to understand/visualise if interrupts are active?
-
-NICE TO HAVE
 - make screen appear when loading a saved project
 - add "view in memory viewer" in code analysis view
 
@@ -84,6 +76,8 @@ IDEAS
 - add scroll overlay on background view (like Mesen does)
 
 DONE
+- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
+- add ctrl + up/down to keyboard shortcuts display
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
 - in sprites viewer make the Results tab a Search tab and move find all into it?
 - results view in sprite viewer looks shit. thumbnails are too small.
