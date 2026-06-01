@@ -4,108 +4,344 @@
 
 enum class EAddressMode : uint8_t
 {
-	ZPIndirect_X,
-	ZP,
-	Immediate,
-	Absolute,
-	ZPIndirect_Y,
-	ZP_X,
-	Absolute_Y,
-	Absolute_X,
-	Accumulator,
-	ZPIndirect,
+	ZPIndirect_X,       // (zp,X)
+	ZP,                 // zp
+	Immediate,          // #
+	Absolute,           // abs
+	ZPIndirect_Y,       // (zp),Y
+	ZP_X,               // zp,X
+	Absolute_Y,         // abs,Y
+	Absolute_X,         // abs,X
+	Accumulator,        // A
+	ZPIndirect,         // (zp)
+	ZP_Y,               // zp,Y
+	Relative,           // rel
+	AbsoluteIndirect,   // (abs)
+	AbsoluteIndirect_X, // (abs,X)
+	ZPRelative,         // zp,rel  (BBR/BBS)
+	Block,              // src,dst,len
+	ImmZP,              // #,zp    (TST)
+	ImmAbs,             // #,abs   (TST)
+	ImmZPX,             // #,zp,X  (TST)
+	ImmAbsX,            // #,abs,X (TST)
+	Implied,
+	Invalid,
 	NA
 };
 
-static EAddressMode g_Group00_AddressModes[8] =
+static const char* g_AddrModeStrings[] =
 {
-	EAddressMode::Immediate,	// 000
-	EAddressMode::ZP,			// 001
-	EAddressMode::NA,			// 010 - missing
-	EAddressMode::Absolute,		// 011
-	EAddressMode::NA,			// 100 - missing
-	EAddressMode::ZP_X,			// 101
-	EAddressMode::NA,			// 110 - missing
-	EAddressMode::Absolute_X,	// 111
+	"(zp,X)",    // ZPIndirect_X
+	"zp",        // ZP
+	"#",         // Immediate
+	"abs",       // Absolute
+	"(zp),Y",    // ZPIndirect_Y
+	"zp,X",      // ZP_X
+	"abs,Y",     // Absolute_Y
+	"abs,X",     // Absolute_X
+	"A",         // Accumulator
+	"(zp)",      // ZPIndirect
+	"zp,Y",      // ZP_Y
+	"rel",       // Relative
+	"(abs)",     // AbsoluteIndirect
+	"(abs,X)",   // AbsoluteIndirect_X
+	"zp,rel",    // ZPRelative
+	"block",     // Block
+	"#,zp",      // ImmZP
+	"#,abs",     // ImmAbs
+	"#,zp,X",    // ImmZPX
+	"#,abs,X",   // ImmAbsX
+	"",          // Implied
+	"???",       // Invalid
+	"",          // NA
 };
 
-static EAddressMode g_Group01_AddressModes[8] =
+// One entry per opcode byte, derived from _huc6280dasm_ops[cc][bbb][aaa] in HuC6280Disassembler.cpp.
+static const EAddressMode g_HuC6280AddrModes[256] =
 {
-	EAddressMode::ZPIndirect_X,
-	EAddressMode::ZP,
-	EAddressMode::Immediate,
-	EAddressMode::Absolute,
-	EAddressMode::ZPIndirect_Y,
-	EAddressMode::ZP_X,
-	EAddressMode::Absolute_Y,
-	EAddressMode::Absolute_X,
+	/* 00 BRK       */ EAddressMode::Implied,
+	/* 01 ORA(zp,X) */ EAddressMode::ZPIndirect_X,
+	/* 02 SXY       */ EAddressMode::Implied,
+	/* 03 ST0 #     */ EAddressMode::Immediate,
+	/* 04 TSB zp    */ EAddressMode::ZP,
+	/* 05 ORA zp    */ EAddressMode::ZP,
+	/* 06 ASL zp    */ EAddressMode::ZP,
+	/* 07 RMB0 zp   */ EAddressMode::ZP,
+	/* 08 PHP       */ EAddressMode::Implied,
+	/* 09 ORA #     */ EAddressMode::Immediate,
+	/* 0A ASL A     */ EAddressMode::Accumulator,
+	/* 0B           */ EAddressMode::Invalid,
+	/* 0C TSB abs   */ EAddressMode::Absolute,
+	/* 0D ORA abs   */ EAddressMode::Absolute,
+	/* 0E ASL abs   */ EAddressMode::Absolute,
+	/* 0F BBR0      */ EAddressMode::ZPRelative,
+	/* 10 BPL rel   */ EAddressMode::Relative,
+	/* 11 ORA(zp),Y */ EAddressMode::ZPIndirect_Y,
+	/* 12 ORA (zp)  */ EAddressMode::ZPIndirect,
+	/* 13 ST1 #     */ EAddressMode::Immediate,
+	/* 14 TRB zp    */ EAddressMode::ZP,
+	/* 15 ORA zp,X  */ EAddressMode::ZP_X,
+	/* 16 ASL zp,X  */ EAddressMode::ZP_X,
+	/* 17 RMB1 zp   */ EAddressMode::ZP,
+	/* 18 CLC       */ EAddressMode::Implied,
+	/* 19 ORA abs,Y */ EAddressMode::Absolute_Y,
+	/* 1A INC A     */ EAddressMode::Implied,
+	/* 1B           */ EAddressMode::Absolute_Y,
+	/* 1C TRB abs   */ EAddressMode::Absolute,
+	/* 1D ORA abs,X */ EAddressMode::Absolute_X,
+	/* 1E ASL abs,X */ EAddressMode::Absolute_X,
+	/* 1F BBR1      */ EAddressMode::ZPRelative,
+	/* 20 JSR abs   */ EAddressMode::Absolute,
+	/* 21 AND(zp,X) */ EAddressMode::ZPIndirect_X,
+	/* 22 SAX       */ EAddressMode::Implied,
+	/* 23 ST2 #     */ EAddressMode::Immediate,
+	/* 24 BIT zp    */ EAddressMode::ZP,
+	/* 25 AND zp    */ EAddressMode::ZP,
+	/* 26 ROL zp    */ EAddressMode::ZP,
+	/* 27 RMB2 zp   */ EAddressMode::ZP,
+	/* 28 PLP       */ EAddressMode::Implied,
+	/* 29 AND #     */ EAddressMode::Immediate,
+	/* 2A ROL A     */ EAddressMode::Accumulator,
+	/* 2B           */ EAddressMode::Invalid,
+	/* 2C BIT abs   */ EAddressMode::Absolute,
+	/* 2D AND abs   */ EAddressMode::Absolute,
+	/* 2E ROL abs   */ EAddressMode::Absolute,
+	/* 2F BBR2      */ EAddressMode::ZPRelative,
+	/* 30 BMI rel   */ EAddressMode::Relative,
+	/* 31 AND(zp),Y */ EAddressMode::ZPIndirect_Y,
+	/* 32 AND (zp)  */ EAddressMode::ZPIndirect,
+	/* 33           */ EAddressMode::ZPIndirect_Y,
+	/* 34 BIT zp,X  */ EAddressMode::ZP_X,
+	/* 35 AND zp,X  */ EAddressMode::ZP_X,
+	/* 36 ROL zp,X  */ EAddressMode::ZP_X,
+	/* 37 RMB3 zp   */ EAddressMode::ZP,
+	/* 38 SEC       */ EAddressMode::Implied,
+	/* 39 AND abs,Y */ EAddressMode::Absolute_Y,
+	/* 3A DEC A     */ EAddressMode::Implied,
+	/* 3B           */ EAddressMode::Absolute_Y,
+	/* 3C BIT abs,X */ EAddressMode::Absolute_X,
+	/* 3D AND abs,X */ EAddressMode::Absolute_X,
+	/* 3E ROL abs,X */ EAddressMode::Absolute_X,
+	/* 3F BBR3      */ EAddressMode::ZPRelative,
+	/* 40 RTI       */ EAddressMode::Implied,
+	/* 41 EOR(zp,X) */ EAddressMode::ZPIndirect_X,
+	/* 42 SAY       */ EAddressMode::Implied,
+	/* 43 TMA #     */ EAddressMode::Immediate,
+	/* 44 BSR rel   */ EAddressMode::Relative,
+	/* 45 EOR zp    */ EAddressMode::ZP,
+	/* 46 LSR zp    */ EAddressMode::ZP,
+	/* 47 RMB4 zp   */ EAddressMode::ZP,
+	/* 48 PHA       */ EAddressMode::Implied,
+	/* 49 EOR #     */ EAddressMode::Immediate,
+	/* 4A LSR A     */ EAddressMode::Accumulator,
+	/* 4B           */ EAddressMode::Invalid,
+	/* 4C JMP abs   */ EAddressMode::Absolute,
+	/* 4D EOR abs   */ EAddressMode::Absolute,
+	/* 4E LSR abs   */ EAddressMode::Absolute,
+	/* 4F BBR4      */ EAddressMode::ZPRelative,
+	/* 50 BVC rel   */ EAddressMode::Relative,
+	/* 51 EOR(zp),Y */ EAddressMode::ZPIndirect_Y,
+	/* 52 EOR (zp)  */ EAddressMode::ZPIndirect,
+	/* 53 TAM #     */ EAddressMode::Immediate,
+	/* 54 CSL       */ EAddressMode::Implied,
+	/* 55 EOR zp,X  */ EAddressMode::ZP_X,
+	/* 56 LSR zp,X  */ EAddressMode::ZP_X,
+	/* 57 RMB5 zp   */ EAddressMode::ZP,
+	/* 58 CLI       */ EAddressMode::Implied,
+	/* 59 EOR abs,Y */ EAddressMode::Absolute_Y,
+	/* 5A PHY       */ EAddressMode::Implied,
+	/* 5B           */ EAddressMode::Absolute_Y,
+	/* 5C *NOP abs  */ EAddressMode::Absolute,
+	/* 5D EOR abs,X */ EAddressMode::Absolute_X,
+	/* 5E LSR abs,X */ EAddressMode::Absolute_X,
+	/* 5F BBR5      */ EAddressMode::ZPRelative,
+	/* 60 RTS       */ EAddressMode::Implied,
+	/* 61 ADC(zp,X) */ EAddressMode::ZPIndirect_X,
+	/* 62 CLA       */ EAddressMode::Implied,
+	/* 63           */ EAddressMode::ZPIndirect_X,
+	/* 64 STZ zp    */ EAddressMode::ZP,
+	/* 65 ADC zp    */ EAddressMode::ZP,
+	/* 66 ROR zp    */ EAddressMode::ZP,
+	/* 67 RMB6 zp   */ EAddressMode::ZP,
+	/* 68 PLA       */ EAddressMode::Implied,
+	/* 69 ADC #     */ EAddressMode::Immediate,
+	/* 6A ROR A     */ EAddressMode::Accumulator,
+	/* 6B           */ EAddressMode::Invalid,
+	/* 6C JMP (abs) */ EAddressMode::AbsoluteIndirect,
+	/* 6D ADC abs   */ EAddressMode::Absolute,
+	/* 6E ROR abs   */ EAddressMode::Absolute,
+	/* 6F BBR6      */ EAddressMode::ZPRelative,
+	/* 70 BVS rel   */ EAddressMode::Relative,
+	/* 71 ADC(zp),Y */ EAddressMode::ZPIndirect_Y,
+	/* 72 ADC (zp)  */ EAddressMode::ZPIndirect,
+	/* 73 TII block */ EAddressMode::Block,
+	/* 74 STZ zp,X  */ EAddressMode::ZP_X,
+	/* 75 ADC zp,X  */ EAddressMode::ZP_X,
+	/* 76 ROR zp,X  */ EAddressMode::ZP_X,
+	/* 77 RMB7 zp   */ EAddressMode::ZP,
+	/* 78 SEI       */ EAddressMode::Implied,
+	/* 79 ADC abs,Y */ EAddressMode::Absolute_Y,
+	/* 7A PLY       */ EAddressMode::Implied,
+	/* 7B           */ EAddressMode::Absolute_Y,
+	/* 7C JMP(a,X)  */ EAddressMode::AbsoluteIndirect_X,
+	/* 7D ADC abs,X */ EAddressMode::Absolute_X,
+	/* 7E ROR abs,X */ EAddressMode::Absolute_X,
+	/* 7F BBR7      */ EAddressMode::ZPRelative,
+	/* 80 BRA rel   */ EAddressMode::Relative,
+	/* 81 STA(zp,X) */ EAddressMode::ZPIndirect_X,
+	/* 82 CLX       */ EAddressMode::Implied,
+	/* 83 TST #,zp  */ EAddressMode::ImmZP,
+	/* 84 STY zp    */ EAddressMode::ZP,
+	/* 85 STA zp    */ EAddressMode::ZP,
+	/* 86 STX zp    */ EAddressMode::ZP,
+	/* 87 SMB0 zp   */ EAddressMode::ZP,
+	/* 88 DEY       */ EAddressMode::Implied,
+	/* 89 BIT #     */ EAddressMode::Immediate,
+	/* 8A TXA       */ EAddressMode::Implied,
+	/* 8B           */ EAddressMode::Invalid,
+	/* 8C STY abs   */ EAddressMode::Absolute,
+	/* 8D STA abs   */ EAddressMode::Absolute,
+	/* 8E STX abs   */ EAddressMode::Absolute,
+	/* 8F BBS0      */ EAddressMode::ZPRelative,
+	/* 90 BCC rel   */ EAddressMode::Relative,
+	/* 91 STA(zp),Y */ EAddressMode::ZPIndirect_Y,
+	/* 92 STA (zp)  */ EAddressMode::ZPIndirect,
+	/* 93 TST #,abs */ EAddressMode::ImmAbs,
+	/* 94 STY zp,X  */ EAddressMode::ZP_X,
+	/* 95 STA zp,X  */ EAddressMode::ZP_X,
+	/* 96 STX zp,Y  */ EAddressMode::ZP_Y,
+	/* 97 SMB1 zp   */ EAddressMode::ZP,
+	/* 98 TYA       */ EAddressMode::Implied,
+	/* 99 STA abs,Y */ EAddressMode::Absolute_Y,
+	/* 9A TXS       */ EAddressMode::Implied,
+	/* 9B           */ EAddressMode::Invalid,
+	/* 9C STZ abs   */ EAddressMode::Absolute,
+	/* 9D STA abs,X */ EAddressMode::Absolute_X,
+	/* 9E STZ abs,X */ EAddressMode::Absolute_X,
+	/* 9F BBS1      */ EAddressMode::ZPRelative,
+	/* A0 LDY #     */ EAddressMode::Immediate,
+	/* A1 LDA(zp,X) */ EAddressMode::ZPIndirect_X,
+	/* A2 LDX #     */ EAddressMode::Immediate,
+	/* A3 TST #,z,X */ EAddressMode::ImmZPX,
+	/* A4 LDY zp    */ EAddressMode::ZP,
+	/* A5 LDA zp    */ EAddressMode::ZP,
+	/* A6 LDX zp    */ EAddressMode::ZP,
+	/* A7 SMB2 zp   */ EAddressMode::ZP,
+	/* A8 TAY       */ EAddressMode::Implied,
+	/* A9 LDA #     */ EAddressMode::Immediate,
+	/* AA TAX       */ EAddressMode::Implied,
+	/* AB           */ EAddressMode::Invalid,
+	/* AC LDY abs   */ EAddressMode::Absolute,
+	/* AD LDA abs   */ EAddressMode::Absolute,
+	/* AE LDX abs   */ EAddressMode::Absolute,
+	/* AF BBS2      */ EAddressMode::ZPRelative,
+	/* B0 BCS rel   */ EAddressMode::Relative,
+	/* B1 LDA(zp),Y */ EAddressMode::ZPIndirect_Y,
+	/* B2 LDA (zp)  */ EAddressMode::ZPIndirect,
+	/* B3 TST #,a,X */ EAddressMode::ImmAbsX,
+	/* B4 LDY zp,X  */ EAddressMode::ZP_X,
+	/* B5 LDA zp,X  */ EAddressMode::ZP_X,
+	/* B6 LDX zp,Y  */ EAddressMode::ZP_Y,
+	/* B7 SMB3 zp   */ EAddressMode::ZP,
+	/* B8 CLV       */ EAddressMode::Implied,
+	/* B9 LDA abs,Y */ EAddressMode::Absolute_Y,
+	/* BA TSX       */ EAddressMode::Implied,
+	/* BB           */ EAddressMode::Invalid,
+	/* BC LDY abs,X */ EAddressMode::Absolute_X,
+	/* BD LDA abs,X */ EAddressMode::Absolute_X,
+	/* BE LDX abs,Y */ EAddressMode::Absolute_Y,
+	/* BF BBS3      */ EAddressMode::ZPRelative,
+	/* C0 CPY #     */ EAddressMode::Immediate,
+	/* C1 CMP(zp,X) */ EAddressMode::ZPIndirect_X,
+	/* C2 CLY       */ EAddressMode::Implied,
+	/* C3 TDD block */ EAddressMode::Block,
+	/* C4 CPY zp    */ EAddressMode::ZP,
+	/* C5 CMP zp    */ EAddressMode::ZP,
+	/* C6 DEC zp    */ EAddressMode::ZP,
+	/* C7 SMB4 zp   */ EAddressMode::ZP,
+	/* C8 INY       */ EAddressMode::Implied,
+	/* C9 CMP #     */ EAddressMode::Immediate,
+	/* CA DEX       */ EAddressMode::Implied,
+	/* CB           */ EAddressMode::Invalid,
+	/* CC CPY abs   */ EAddressMode::Absolute,
+	/* CD CMP abs   */ EAddressMode::Absolute,
+	/* CE DEC abs   */ EAddressMode::Absolute,
+	/* CF BBS4      */ EAddressMode::ZPRelative,
+	/* D0 BNE rel   */ EAddressMode::Relative,
+	/* D1 CMP(zp),Y */ EAddressMode::ZPIndirect_Y,
+	/* D2 CMP (zp)  */ EAddressMode::ZPIndirect,
+	/* D3 TIN block */ EAddressMode::Block,
+	/* D4 CSH       */ EAddressMode::Implied,
+	/* D5 CMP zp,X  */ EAddressMode::ZP_X,
+	/* D6 DEC zp,X  */ EAddressMode::ZP_X,
+	/* D7 SMB5 zp   */ EAddressMode::ZP,
+	/* D8 CLD       */ EAddressMode::Implied,
+	/* D9 CMP abs,Y */ EAddressMode::Absolute_Y,
+	/* DA PHX       */ EAddressMode::Implied,
+	/* DB           */ EAddressMode::Absolute_Y,
+	/* DC *NOP abs,X*/ EAddressMode::Absolute_X,
+	/* DD CMP abs,X */ EAddressMode::Absolute_X,
+	/* DE DEC abs,X */ EAddressMode::Absolute_X,
+	/* DF BBS5      */ EAddressMode::ZPRelative,
+	/* E0 CPX #     */ EAddressMode::Immediate,
+	/* E1 SBC(zp,X) */ EAddressMode::ZPIndirect_X,
+	/* E2 *NOP #    */ EAddressMode::Immediate,
+	/* E3 TIA block */ EAddressMode::Block,
+	/* E4 CPX zp    */ EAddressMode::ZP,
+	/* E5 SBC zp    */ EAddressMode::ZP,
+	/* E6 INC zp    */ EAddressMode::ZP,
+	/* E7 SMB6 zp   */ EAddressMode::ZP,
+	/* E8 INX       */ EAddressMode::Implied,
+	/* E9 SBC #     */ EAddressMode::Immediate,
+	/* EA NOP       */ EAddressMode::Implied,
+	/* EB *SBC #    */ EAddressMode::Immediate,
+	/* EC CPX abs   */ EAddressMode::Absolute,
+	/* ED SBC abs   */ EAddressMode::Absolute,
+	/* EE INC abs   */ EAddressMode::Absolute,
+	/* EF BBS6      */ EAddressMode::ZPRelative,
+	/* F0 BEQ rel   */ EAddressMode::Relative,
+	/* F1 SBC(zp),Y */ EAddressMode::ZPIndirect_Y,
+	/* F2 SBC (zp)  */ EAddressMode::ZPIndirect,
+	/* F3 TAI block */ EAddressMode::Block,
+	/* F4 SET       */ EAddressMode::Implied,
+	/* F5 SBC zp,X  */ EAddressMode::ZP_X,
+	/* F6 INC zp,X  */ EAddressMode::ZP_X,
+	/* F7 SMB7 zp   */ EAddressMode::ZP,
+	/* F8 SED       */ EAddressMode::Implied,
+	/* F9 SBC abs,Y */ EAddressMode::Absolute_Y,
+	/* FA PLX       */ EAddressMode::Implied,
+	/* FB           */ EAddressMode::Absolute_Y,
+	/* FC *NOP abs,X*/ EAddressMode::Absolute_X,
+	/* FD SBC abs,X */ EAddressMode::Absolute_X,
+	/* FE INC abs,X */ EAddressMode::Absolute_X,
+	/* FF BBS7      */ EAddressMode::ZPRelative,
 };
 
-static EAddressMode g_Group10_AddressModes[8] =
-{
-	EAddressMode::Immediate,
-	EAddressMode::ZP,
-	EAddressMode::Accumulator,
-	EAddressMode::Absolute,
-	EAddressMode::ZPIndirect,
-	EAddressMode::ZP_X,
-	EAddressMode::NA,	// 110 - missing
-	EAddressMode::Absolute_X,
-};
-
-static EAddressMode g_Group11_AddressModes[8] =
-{
-	EAddressMode::NA,
-	EAddressMode::ZP,
-	EAddressMode::NA,
-	EAddressMode::NA,
-	EAddressMode::NA,
-	EAddressMode::ZP,
-	EAddressMode::NA,
-	EAddressMode::NA,
-};
-
-// todo replace with 255 byte table lookup?
 EAddressMode GetInstructionAddressModeHuC6280(uint8_t opcode)
 {
-	const uint8_t instrGroup = opcode & 3;			// cc
-	const uint8_t addrMode = (opcode >> 2) & 7; // bbb
-
-	switch (instrGroup)
-	{
-		case 0x00:
-			return g_Group00_AddressModes[addrMode];
-		case 0x01:
-			return g_Group01_AddressModes[addrMode];
-		case 0x02:
-			return g_Group10_AddressModes[addrMode];
-		case 0x03:
-			return g_Group11_AddressModes[addrMode];
-	}
-
-	return EAddressMode::NA;
+	return g_HuC6280AddrModes[opcode];
 }
 
+const char* GetAddressModeStringHuC6280(uint8_t opcode)
+{
+	return g_AddrModeStrings[(int)g_HuC6280AddrModes[opcode]];
+}
+
+// Returns true if the instruction at pc reads/writes a memory address, outputting that address.
+// The address is used to generate a data label at the target location.
 bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
-
-	// Implied HuC6280-specific instructions that the address mode table misidentifies
-	switch (instrByte)
-	{
-	case 0x54:	// CSL - implied
-	case 0xD4:	// CSH - implied
-	case 0xF4:	// SET - implied
-		return false;
-	}
-
-	// otherwise decode addressing mode
 	const EAddressMode addrMode = GetInstructionAddressModeHuC6280(instrByte);
 
 	switch (addrMode)
 	{
 	case EAddressMode::ZPIndirect_X:
 	case EAddressMode::ZPIndirect_Y:
+	case EAddressMode::ZP:
+	case EAddressMode::ZP_X:
+	case EAddressMode::ZP_Y:
+	case EAddressMode::ZPIndirect:
 		*out_addr = 0x2000 + state.ReadByte(pc + 1);
 		return true;
 
@@ -115,25 +351,15 @@ bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, 
 		*out_addr = state.ReadWord(pc + 1);
 		return true;
 
-	case EAddressMode::ZP:
-	case EAddressMode::ZP_X:
-		*out_addr = 0x2000 + state.ReadByte(pc + 1);
-		return true;
-	case EAddressMode::ZPIndirect:
-		*out_addr = 0x2000 + state.ReadByte(pc + 1);
-		return true;
-    default:
-        return false;
+	default:
+		return false;
 	}
-
-	return false;
 }
 
+// Returns true if the instruction at pc references a memory address, outputting that address.
+// Unlike CheckPointerIndirectionInstruction, no data label is generated at the target location.
 bool CheckPointerRefInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	//const uint8_t instrByte = state.ReadByte(pc);
-
-	// todo decide if this is needed.
 	return false;
 }
 
