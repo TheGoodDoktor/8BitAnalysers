@@ -11,7 +11,14 @@ TODO FOR FIRST RELEASE
 - fix trace button in code analysis view
 
 TODO
-- STA zero page shows HW page label in code analysis view. opcode 85. 
+- RMBi doesnt show zp ptr in code analysis view.
+- AND (zp) [opcode $32] doesnt show zp ptr in code analysis view.
+- EOR (zp) [opcode $52] doesnt show zp ptr in code analysis view.
+- ADC (zp) [opcode $72] doesnt show zp ptr in code analysis view.
+- STA (zp) [opcode $92] doesnt show zp ptr in code analysis view.
+- LDA (zp) [opcode $B2] doesnt show zp ptr in code analysis view.
+- CMP (zp) [opcode $D2] doesnt show zp ptr in code analysis view.
+- SBC (zp) [opcode $F2] doesnt show zp ptr in code analysis view.
 - operand dropdowns dont work
 - get Word data item set to display as Pointer to work when outputting assembly
 - add audio viewer: disable channels etc
@@ -63,10 +70,6 @@ IDEAS
 - add way to understand/visualise if interrupts are active?
 - make screen appear when loading a saved project
 - add "view in memory viewer" in code analysis view
-
-BUGS
-
-IDEAS
 - minimap on scrollbar
 - copy instruction tooltip text from mesen?
 - show r/w colouring in memory viewer
@@ -87,6 +90,7 @@ IDEAS
 - add scroll overlay on background view (like Mesen does)
 
 DONE
+- STA zero page shows HW page label in code analysis view. opcode 85. 
 - IRQ vector has wrong label. hero tonma IRQ1 vector is in ROM 1 but has label func_ROM_00_433A_IRQ1Vector
 - BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 - add ctrl + up/down to keyboard shortcuts display
