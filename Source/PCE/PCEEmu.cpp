@@ -239,6 +239,12 @@ void OnInstructionExecuted(void* pContext, uint16_t pc)
 	pEmu->OnInstructionExecuted(pc);
 }
 
+void OnIRQ(void* pContext, uint16_t vector, uint16_t interruptedPc, uint16_t routineAddr)
+{
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	pEmu->OnIRQ(vector, interruptedPc, routineAddr);
+}
+
 void OnMemoryRead(void* pContext, u16 dataAddr)
 {
 	//OPTICK_EVENT();
@@ -419,6 +425,17 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 	}
 }
 
+void FPCEEmu::OnIRQ(uint16_t vector, uint16_t interruptedPC, uint16_t routineAddr)
+{
+	FCodeAnalysisState& state = GetCodeAnalysis();
+	FCPUFunctionCall callInfo;
+	const FAddressRef interruptedPCFixed = state.GetCanonicalAddressRef(interruptedPC);
+	callInfo.CallAddr = interruptedPCFixed;
+	callInfo.FunctionAddr = state.GetCanonicalAddressRef(routineAddr);
+	callInfo.ReturnAddr = interruptedPCFixed;
+	state.Debugger.GetCallstack().push_back(callInfo);
+}
+
 bool FPCEEmu::IsUnusedBank(int16_t bankId) const
 {
 	const FBankSet* pBankSet = GetBankSetFromBankId(bankId);
@@ -512,6 +529,7 @@ int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 }*/
 
 static void NullInstructionExecutedCallback(void*, uint16_t) {}
+static void NullIRQCallback(void*, uint16_t, uint16_t, uint16_t) {}
 static void NullMemoryReadCallback(void*, uint16_t) {}
 static void NullMemoryWriteCallback(void*, uint16_t, uint8_t) {}
 static void NullMprCallback(void*, uint8_t, uint8_t, uint8_t) {}
@@ -546,6 +564,7 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 	if (bEnabled)
 	{
 		pCore->SetInstructionExecutedCallback(::OnInstructionExecuted, this);
+		pCore->SetIRQCallback(::OnIRQ, this);
 		pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, BankChangeCallback, this);
 		pCore->GetHuC6270_1()->SetCallbacks(::OnVRAMWritten, ::OnScanlineDraw, ::OnVBlank, this);
 		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
@@ -553,6 +572,7 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 	else
 	{
 		pCore->SetInstructionExecutedCallback(NullInstructionExecutedCallback, this);
+		pCore->SetIRQCallback(NullIRQCallback, this);
 		pMemory->SetMemoryCallbacks(NullMemoryReadCallback, NullMemoryWriteCallback, NullMprCallback, this);
 		pCore->GetHuC6270_1()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
 		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
@@ -1643,11 +1663,11 @@ static void AddVectorFunctionLabel(FCodeAnalysisState& state, FCodeAnalysisBank*
 	const FAddressRef ref(pBank->Id, routineAddr);
 	if (firstByte == 0x40)
 	{
-		snprintf(labelTxt, 40, "func_ROM_00_%04X_DummyVector", routineAddr);
+		snprintf(labelTxt, 40, "func_%s_%04X_DummyVector", pBank->Name.c_str(), routineAddr);
 		SetItemCode(state, ref);
 	}
 	else
-		snprintf(labelTxt, 40, "func_ROM_00_%04X_%sVector", routineAddr, vecName);
+		snprintf(labelTxt, 40, "func_%s_%04X_%sVector", pBank->Name.c_str(), routineAddr, vecName);
 
 	FLabelInfo* pLabel = AddLabel(state, ref, labelTxt, ELabelType::Function);
 	//LOGINFO("%s is %x. label %x", labelTxt, firstByte, pLabel);

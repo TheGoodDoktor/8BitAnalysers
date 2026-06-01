@@ -211,12 +211,12 @@ void FSpriteViewer::UpdateSpriteHistory()
 		if (info.Width == 0 || info.Height == 0)
 			continue;
 
-		// Skip slots whose VRAM pattern area has never been written by game code
-		if (pPCEEmu->GetVRAMViewer()->GetVRAMAccess(info.Address).FrameLastWritten == -1)
-			continue;
-
 		const int sizeWords = info.SizeInBytes / 2;
 		if (info.Address + sizeWords > HUC6270_VRAM_SIZE)
+			continue;
+
+		// Skip slots whose VRAM pattern area has never been written by game code
+		if (pPCEEmu->GetVRAMViewer()->GetVRAMAccess(info.Address).FrameLastWritten == -1)
 			continue;
 
 		const uint32_t hash = HashSpriteVRAM(pVRAM, info.Address, sizeWords);
@@ -675,7 +675,9 @@ void FSpriteViewer::DrawSearchTab()
 		for (int i = 0; i < (int)SpriteHistory.size(); i++)
 			if (SpriteHistory[i].FoundDataAddr.IsValid())
 				foundIndices.push_back(i);
-
+		
+		// Use a clipper because this table is expensive to draw.
+		// This is because DrawAddressLabel is expensive as it iterates through memory.
 		ImGuiListClipper clipper;
 		clipper.Begin((int)foundIndices.size(), ResultsRowHeight);
 		while (clipper.Step())

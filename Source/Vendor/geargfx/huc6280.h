@@ -129,6 +129,9 @@ public:
     void SaveState(std::ostream& stream);
     void LoadState(std::istream& stream);
 
+    // sam
+    typedef void (*HuC6280_IRQ_Callback)(void* context, uint16_t vector, uint16_t interruptedPC, uint16_t routineAddr);
+    void SetIRQCallback(HuC6280_IRQ_Callback callback, void* context);
 private:
     typedef void (HuC6280::*opcodeptr) (void);
     opcodeptr m_opcodes[256];
@@ -168,6 +171,10 @@ private:
     bool m_run_to_breakpoint_requested;
     std::stack<GG_CallStackEntry> m_disassembler_call_stack;
     int m_reset_value;
+
+    // sam
+    HuC6280_IRQ_Callback m_irq_callback;
+    void* m_irq_callback_context;
 
 private:
 

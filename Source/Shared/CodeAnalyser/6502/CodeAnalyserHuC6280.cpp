@@ -13,6 +13,7 @@ enum class EAddressMode : uint8_t
 	Absolute_Y,
 	Absolute_X,
 	Accumulator,
+	ZPIndirect,
 	NA
 };
 
@@ -46,16 +47,29 @@ static EAddressMode g_Group10_AddressModes[8] =
 	EAddressMode::ZP,
 	EAddressMode::Accumulator,
 	EAddressMode::Absolute,
-	EAddressMode::NA,	// 100 - missing
+	EAddressMode::ZPIndirect,
 	EAddressMode::ZP_X,
 	EAddressMode::NA,	// 110 - missing
 	EAddressMode::Absolute_X,
 };
 
+static EAddressMode g_Group11_AddressModes[8] =
+{
+	EAddressMode::NA,
+	EAddressMode::ZP,
+	EAddressMode::NA,
+	EAddressMode::NA,
+	EAddressMode::NA,
+	EAddressMode::ZP,
+	EAddressMode::NA,
+	EAddressMode::NA,
+};
+
+// todo replace with 255 byte table lookup?
 EAddressMode GetInstructionAddressModeHuC6280(uint8_t opcode)
 {
-	const uint8_t instrGroup = opcode & 3;
-	const uint8_t addrMode = (opcode >> 2) & 7;
+	const uint8_t instrGroup = opcode & 3;			// cc
+	const uint8_t addrMode = (opcode >> 2) & 7; // bbb
 
 	switch (instrGroup)
 	{
@@ -65,6 +79,8 @@ EAddressMode GetInstructionAddressModeHuC6280(uint8_t opcode)
 			return g_Group01_AddressModes[addrMode];
 		case 0x02:
 			return g_Group10_AddressModes[addrMode];
+		case 0x03:
+			return g_Group11_AddressModes[addrMode];
 	}
 
 	return EAddressMode::NA;
@@ -73,14 +89,6 @@ EAddressMode GetInstructionAddressModeHuC6280(uint8_t opcode)
 bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
-
-	// use switch to catch specifics
-	/*switch (instrByte)
-	{
-	case 0x6C:	// JMP (addr)
-		*out_addr = pCPUInterface->ReadWord(pc + 1);
-		return true;
-	}*/
 
 	// Implied HuC6280-specific instructions that the address mode table misidentifies
 	switch (instrByte)
@@ -98,7 +106,7 @@ bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, 
 	{
 	case EAddressMode::ZPIndirect_X:
 	case EAddressMode::ZPIndirect_Y:
-		*out_addr = state.ReadByte(pc + 1);
+		*out_addr = 0x2000 + state.ReadByte(pc + 1);
 		return true;
 
 	case EAddressMode::Absolute:
@@ -109,108 +117,23 @@ bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, 
 
 	case EAddressMode::ZP:
 	case EAddressMode::ZP_X:
-		*out_addr = state.ReadByte(pc + 1);
+		*out_addr = 0x2000 + state.ReadByte(pc + 1);
+		return true;
+	case EAddressMode::ZPIndirect:
+		*out_addr = 0x2000 + state.ReadByte(pc + 1);
 		return true;
     default:
         return false;
 	}
-/*
-	switch (instrByte)
-	{
-	case 0x61:	// ADC (zp addr,X)
-	case 0x71:	// ADC (zp addr),Y
 
-	case 0xa1:	// LDA (zp addr,X)
-	case 0xb1:	// LDA (zp addr),Y
-	case 0x81:	// STA (zp addr,X)
-	case 0x91:	// STA (zp addr),Y
-		*out_addr = pCPUInterface->ReadByte(pc + 1);
-		return true;
-	}*/
 	return false;
 }
 
-
-
 bool CheckPointerRefInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
-	const uint8_t instrByte = state.ReadByte(pc);
+	//const uint8_t instrByte = state.ReadByte(pc);
 
-	//if (CheckPointerIndirectionInstruction6502(state, pc, out_addr))
-	//	return true;
-
-	// use switch to catch specifics
-	/*switch (instrByte)
-	{
-	}*/
-
-	// otherwise decode addressing mode
-#if 0
-	const EAddressMode addrMode = GetInstructionAddressMode(instrByte);
-
-	switch (addrMode)
-	{
-	case EAddressMode::Absolute:
-	case EAddressMode::Absolute_X:
-	case EAddressMode::Absolute_Y:
-		*out_addr = state.ReadWord(pc + 1);
-		return true;
-
-	case EAddressMode::ZP:
-	case EAddressMode::ZP_X:
-		*out_addr = state.ReadByte(pc + 1);
-		return true;
-	}
-#endif
-	/*switch (instrByte)
-	{
-		// full address
-	case 0x6d:	// ADC <addr>
-	case 0x7d:	// ADC <addr>,X
-	case 0x79:	// ADC <addr>,Y
-	case 0x2d:	// AND <addr>
-	case 0x3d:	// AND <addr>,X
-	case 0x39:	// AND <addr>,Y
-
-	case 0xad:	// LDA <addr>
-	case 0xbd:	// LDA <addr>,X
-	case 0xb9:	// LDA <addr>,Y
-	case 0xae:	// LDX <addr>
-	case 0xbe:	// LDX <addr>,Y
-	case 0xac:	// LDY <addr>
-	case 0xbc:	// LDY <addr>,X
-
-	case 0x8d:	// STA <addr>
-	case 0x9d:	// STA <addr>,X
-	case 0x99:	// STA <addr>,Y
-	case 0x8e:	// STX <addr>
-	case 0x8c:	// STY <addr>
-		*out_addr = pCPUInterface->ReadWord(pc + 1);
-		return true;
-
-		// zero page
-	case 0x65:	// ADC <zp addr>
-	case 0x75:	// ADC <zp addr>,X
-	case 0x25:	// AND <zp addr>
-	case 0x35:	// AND <zp addr>,X
-	
-	case 0xa5:	// LDA <zp addr>
-	case 0xb5:	// LDA <zp addr>,X
-	case 0xa6:	// LDX <zp addr>
-	case 0xb6:	// LDX <zp addr>,Y
-	case 0xa4:	// LDY <zp addr>
-	case 0xb4:	// LDY <zp addr>,X
-
-	case 0x85:	// STA <zp addr>
-	case 0x95:	// STA <zp addr>,X
-	case 0x86:	// STX <zp addr>
-	case 0x96:	// STX <zp addr>,Y
-	case 0x84:	// STY <zp addr>
-	case 0x94:	// STY <zp addr>,X
-		*out_addr = pCPUInterface->ReadByte(pc + 1);
-		return true;
-	}*/
-
+	// todo decide if this is needed.
 	return false;
 }
 
@@ -454,7 +377,7 @@ void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeIn
 			pCodeInfo->OperandType = EOperandType::Hex;
 			pCodeInfo->OperandAddress = FAddressRef::Invalid();
 			pCodeInfo->ExtraOperands[0].Type = EOperandType::Pointer;
-			pCodeInfo->ExtraOperands[0].Address = state.GetCanonicalAddressRef(zpAddr);
+			pCodeInfo->ExtraOperands[0].Address = state.GetCanonicalAddressRef(0x2000 + zpAddr);
 			break;
 		}
 

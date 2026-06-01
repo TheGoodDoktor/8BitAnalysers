@@ -86,6 +86,10 @@ inline void HuC6280::HandleIRQ()
     m_PC.SetLow(m_memory->Read(vector));
     m_PC.SetHigh(m_memory->Read(vector + 1));
 
+    // sam
+    if (m_irq_callback)
+        m_irq_callback(m_irq_callback_context, vector, pc, m_PC.GetValue());
+
     m_cycles += 8;
 
 #if !defined(GG_DISABLE_DISASSEMBLER)

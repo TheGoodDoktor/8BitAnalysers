@@ -165,10 +165,17 @@ void GeargrafxCore::SetDebugCallback(GG_Debug_Callback callback)
     m_debug_callback = callback;
 }
 
+// sam
 void GeargrafxCore::SetInstructionExecutedCallback(GG_Instruction_Executed_Callback callback, void* context)
 {
    m_instruction_executed_callback = callback;
    m_callback_context = context;
+}
+
+// sam
+void GeargrafxCore::SetIRQCallback(GG_IRQ_Callback callback, void* context)
+{
+    m_huc6280->SetIRQCallback(callback, context);
 }
 
 void GeargrafxCore::KeyPressed(GG_Controllers controller, GG_Keys key)

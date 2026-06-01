@@ -72,10 +72,6 @@ public:
         s32* H_STATE;
     };
 
-    // sam
-    typedef void (*GG_VRAM_Write_Callback)(void* context, u16 vramAddr, u16 value);
-    typedef void (*GG_ScanlineDraw_Callback)(void* context, int rasterLine, u16 latched_bxr, s32 bg_offset_y, u16 latched_mwr, u16 latched_cr);
-    typedef void (*GG_VBlank_Callback)(void* context);
 
 public:
     HuC6270(HuC6280* huC6280);
@@ -93,6 +89,11 @@ public:
     void SetNoSpriteLimit(bool no_sprite_limit);
     void SaveState(std::ostream& stream);
     void LoadState(std::istream& stream);
+
+    // sam
+    typedef void (*GG_VRAM_Write_Callback)(void* context, u16 vramAddr, u16 value);
+    typedef void (*GG_ScanlineDraw_Callback)(void* context, int rasterLine, u16 latched_bxr, s32 bg_offset_y, u16 latched_mwr, u16 latched_cr);
+    typedef void (*GG_VBlank_Callback)(void* context);
 
     // sam
     void SetCallbacks(GG_VRAM_Write_Callback vram_write_callback, GG_ScanlineDraw_Callback scanline_callback, GG_VBlank_Callback vblank_callback, void* context);

@@ -61,7 +61,7 @@ EntryPoint:
     PHP                         ; 08
     ORA #$10                    ; 09
     ASL                         ; 0A
-                                ; 0B missing
+    BRK                         ; 0B missing
     TSB data_FFF0               ; 0C
     ORA data_FFF0               ; 0D
     ASL data_FFF0               ; 0E
@@ -75,8 +75,8 @@ EntryPoint:
 
     BPL .label_10_1F            ; 10
     ORA [$10],Y                 ; 11
-    ORA data_FFF0               ; 12
-    ST1 #$10                    ; 013
+    ORA [<$10]                  ; 12
+    ST1 #$10                    ; 13
     TRB <$10                    ; 14
     ORA <$10,X                  ; 15
     ASL <$10,X                  ; 16
@@ -84,7 +84,7 @@ EntryPoint:
     CLC                         ; 18
     ORA data_FFF0,Y             ; 19
     INC                         ; 1A
-                                ; 1B missing
+    BRK                         ; 1B missing
     TRB data_FFF0               ; 1C
     ORA data_FFF0,X             ; 1D
     ASL data_FFF0,X             ; 1E
@@ -107,7 +107,7 @@ EntryPoint:
     PLP                         ; 28
     AND #$10                    ; 29
     ROL                         ; 2A
-                                ; 2B missing
+    BRK                         ; 2B missing
     BIT data_FFF0               ; 2C
     AND data_FFF0               ; 2D
     ROL data_FFF0               ; 2E
@@ -122,7 +122,7 @@ EntryPoint:
     BMI .label_30_3f            ; 30
     AND [$10],Y                 ; 31
     AND [<$10]                  ; 32
-                                ; 33 missing
+    BRK                         ; 33 missing
     BIT <$10,X                  ; 34
     AND <$10,X                  ; 35
     ROL <$10,X                  ; 36
@@ -130,7 +130,7 @@ EntryPoint:
     SEC                         ; 38
     AND data_FFF0,Y             ; 39
     DEC                         ; 3A
-                                ; 3B missing
+    BRK                         ; 3B missing
     BIT data_FFF0,X             ; 3C
     AND data_FFF0,X             ; 3D
     ROL data_FFF0,X             ; 3E
@@ -153,7 +153,7 @@ EntryPoint:
     PHA                         ; 48
     EOR #$10                    ; 49
     LSR                         ; 4A
-                                ; 4B missing
+    BRK                         ; 4B missing
     JMP data_FFF0               ; 4C
     EOR data_FFF0               ; 4D
     LSR data_FFF0               ; 4E
@@ -176,8 +176,8 @@ EntryPoint:
     CLI                         ; 58
     EOR data_FFF0,Y             ; 59
     PHY                         ; 5A
-                                ; 5B missing
-                                ; 5C missing
+    BRK                         ; 5B missing
+    BRK                         ; 5C missing
     EOR data_FFF0,X             ; 5D
     LSR data_FFF0,X             ; 5E
     BBR5 <$10,.label_50_5f      ; 5F
@@ -191,7 +191,7 @@ EntryPoint:
     RTS                         ; 60
     ADC [$10,X]                 ; 61
     CLA                         ; 62
-                                ; 63 missing
+    BRK                         ; 63 missing
     STZ <$10                    ; 64
     ADC <$10                    ; 65
     ROR <$10                    ; 66
@@ -199,7 +199,7 @@ EntryPoint:
     PLA                         ; 68
     ADC #$10                    ; 69
     ROR                         ; 6A
-                                ; 6B missing
+    BRK                         ; 6B missing
     JMP [data_FFF0]             ; 6C
     ADC data_FFF0               ; 6D
     ROR data_FFF0               ; 6E
@@ -222,7 +222,7 @@ EntryPoint:
     SEI                         ; 78
     ADC data_FFF0,Y             ; 79
     PLY                         ; 7A
-                                ; 7B missing
+    BRK                         ; 7B missing
     JMP [data_FFF0,X]           ; 7C
     ADC data_FFF0,X             ; 7D
     ROR data_FFF0,X             ; 7E
@@ -245,7 +245,7 @@ EntryPoint:
     DEY                         ; 88
     BIT #$10                    ; 89
     TXA                         ; 8A
-                                ; 8B missing
+    BRK                         ; 8B missing
     STY data_FFF0               ; 8C
     STA data_FFF0               ; 8D
     STX data_FFF0               ; 8E
@@ -268,7 +268,7 @@ EntryPoint:
     TYA                         ; 98
     STA data_FFF0,Y             ; 99
     TXS                         ; 9A
-                                ; 9B missing
+    BRK                         ; 9B missing
     STZ data_FFF0               ; 9C
     STA data_FFF0,X             ; 9D
     STZ data_FFF0,X             ; 9E
@@ -291,7 +291,7 @@ EntryPoint:
     TAY                         ; A8
     LDA #$10                    ; A9
     TAX                         ; AA
-                                ; AB missing
+    BRK                         ; AB missing
     LDY data_FFF0               ; AC
     LDA data_FFF0               ; AD
     LDX data_FFF0               ; AE
@@ -314,7 +314,7 @@ EntryPoint:
     CLV                         ; B8
     LDA data_FFF0,Y             ; B9
     TSX                         ; BA
-                                ; BB missing
+    BRK                         ; BB missing
     LDY data_FFF0,X             ; BC
     LDA data_FFF0,X             ; BD
     LDX data_FFF0,Y             ; BE
@@ -337,7 +337,7 @@ EntryPoint:
     INY                         ; C8
     CMP #$10                    ; C9
     DEX                         ; CA
-                                ; CB missing
+    BRK                         ; CB missing
     CPY data_FFF0               ; CC
     CMP data_FFF0               ; CD
     DEC data_FFF0               ; CE
@@ -360,8 +360,8 @@ EntryPoint:
     CLD                         ; D8
     CMP data_FFF0,Y             ; D9
     PHX                         ; DA
-                                ; DB missing
-                                ; DC missing
+    BRK                         ; DB missing
+    BRK                         ; DC missing
     CMP data_FFF0,X             ; DD
     DEC data_FFF0,X             ; DE
     BBS5 <$10,.label_d0_df      ; DF
@@ -374,7 +374,7 @@ EntryPoint:
 
     CPX #$10                    ; E0
     SBC [$10,X]                 ; E1
-                                ; E2 missing
+    BRK                         ; E2 missing
     TIA $1000,$2000,$0010       ; E3
     CPX <$10                    ; E4
     SBC <$10                    ; E5
@@ -383,7 +383,7 @@ EntryPoint:
     INX                         ; E8
     SBC #$10                    ; E9
     NOP                         ; EA
-                                ; EB missing
+    BRK                         ; EB missing
     CPX data_FFF0               ; EC
     SBC data_FFF0               ; ED
     INC data_FFF0               ; EE
@@ -406,8 +406,8 @@ EntryPoint:
     SED                         ; F8
     SBC data_FFF0,Y             ; F9
     PLX                         ; FA
-                                ; FB missing
-                                ; FC missing
+    BRK                         ; FB missing
+    BRK                         ; FC missing
     SBC data_FFF0,X             ; FD
     INC data_FFF0,X             ; FE
     BBS7 <$10,.label_f0_ff      ; FF

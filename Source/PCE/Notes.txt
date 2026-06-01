@@ -10,6 +10,8 @@ TODO FOR FIRST RELEASE
 - fix trace button in code analysis view
 
 TODO
+- operand dropdowns dont work
+- get Word data item set to display as Pointer to work when outputting assembly
 - add audio viewer: disable channels etc
 - create new graphics viewer that removes all the stuff I dont need. off-screen buffers etc
 - in graphics viewer, label which palette is currently selected 
@@ -21,10 +23,8 @@ TODO
 - in graphics viewer, label which palette is currently selected
 - get 3bpp, 2bpp sprite working in graphics viewer. 
 - tooltips on pce registers describing what they do
-- add ctrl + up/down to keyboard shortcuts display
 - in sprites viewer make the Results tab a Search tab and move find all into it?
 - change Current palette option in graphics viewer. doesnt make sense for PCE
-- Show register value on tooltips
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
 - hookup RegisterCodeExecutedHuC6280
@@ -38,23 +38,30 @@ TODO
 - history sprite palettes are not correct sometimes. rabio lepus intro.
 - add a way to display or goto the ROM address (in the cart's 2mb address space)
 - show bitmap format in code analysis view when cursor is on PCE sprite/BG
-- add label when formatting sprites in sprite viewer
-- add way to understand/visualise if interrupts are active?
-- make screen appear when loading a saved project
-- add "view in memory viewer" in code analysis view
+- add optional label when formatting sprites in sprite viewer
+- get claude to see if CheckPointerRefInstructionHuC6280 needs to be implemented
+- get claude to write unit test for GetInstructionAddressModeHuC6280 to compare against huc6280dasm_op
 
 BUGS
-- trace button doesnt seem to work in code analysis view
-- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
+- figure out why some functions show up as data. see hero tonma data_wram_3bf2
+- vram seems to display sprite 63 pattern data at the start of vram.
+- TIA instruction lost it's self modifying code "Operand Data"  
 - asm export fails if you export right after reset, when UNUSED banks are mapped.
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
-- edit mode doesnt restore properly. emulation bugs afer restoring
-- sprites formatted by sprite viewer dont draw correctly.
 - code analysis view doesnt go to address that was last viewed after loading project.
+- when hovering over first operand of TIA instruction that is a label, the middle operand disappears.
+- trace button doesnt seem to work in code analysis view
+- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
+- sprites formatted by sprite viewer dont draw correctly.
 - Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
 - palettes get added at index 67
 
 IDEAS
+- press delete to remove formatting
+- label IRQ in callstack
+- add way to understand/visualise if interrupts are active?
+- make screen appear when loading a saved project
+- add "view in memory viewer" in code analysis view
 - minimap on scrollbar
 - copy instruction tooltip text from mesen?
 - show r/w colouring in memory viewer
@@ -73,9 +80,12 @@ IDEAS
 - add button to save all sprites in history view to png
 - always collapse/hide bytes in HW page.
 - add scroll overlay on background view (like Mesen does)
+- ask claude to look at Mesen "draw partial frame" option to see how it does it.
 
 DONE
 - perf of sprites results tab is really bad. improved but DrawAddressLabel is expensive when called > once
+- STA zero page shows HW page label in code analysis view. opcode 85. 
+- IRQ vector has wrong label. hero tonma IRQ1 vector is in ROM 1 but has label func_ROM_00_433A_IRQ1Vector
 - BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 - add ctrl + up/down to keyboard shortcuts display
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
@@ -86,8 +96,6 @@ DONE
 - get asm export for memory range working again
 - Restore asm export for physical memory
 - sprites dont display correctly in code analysis view correctly. hero tonma clouds.
-- when formatting memory as sprite dont use current (transient) palette data. 
-- fix code analysis detail pane getting stuck off screen when fixed
 - add memory viewer (at least for vram). see https://github.com/ocornut/imgui_club
 - get BG data item working
 - add suport for <label> + <offset> to asm exporter?
@@ -100,3 +108,11 @@ DONE
 - add keyboard shortcut for changing font size
 - when formatting memory as sprite dont use current (transient) palette data. 
 - fix code analysis detail pane getting stuck off screen when fixed
+- AND (zp) [opcode $32] doesnt show zp ptr in code analysis view.
+- EOR (zp) [opcode $52] doesnt show zp ptr in code analysis view.
+- ADC (zp) [opcode $72] doesnt show zp ptr in code analysis view.
+- STA (zp) [opcode $92] doesnt show zp ptr in code analysis view.
+- LDA (zp) [opcode $B2] doesnt show zp ptr in code analysis view.
+- CMP (zp) [opcode $D2] doesnt show zp ptr in code analysis view.
+- SBC (zp) [opcode $F2] doesnt show zp ptr in code analysis view.
+- RMBi doesnt show zp ptr in code analysis view.
