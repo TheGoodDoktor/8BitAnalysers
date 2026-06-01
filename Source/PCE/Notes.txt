@@ -5,7 +5,6 @@ TODO FOR FIRST RELEASE
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - tidy up sprites viewer detail pane
-- perf of sprites results tab is really bad
 - bank addresses should be offsets (including function labels)
 - dont add cd bios labels in WRAM for joy/joyena etc
 - fix trace button in code analysis view
@@ -76,6 +75,7 @@ IDEAS
 - add scroll overlay on background view (like Mesen does)
 
 DONE
+- perf of sprites results tab is really bad. improved but DrawAddressLabel is expensive when called > once
 - BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 - add ctrl + up/down to keyboard shortcuts display
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
