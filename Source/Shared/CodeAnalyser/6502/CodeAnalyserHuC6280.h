@@ -8,6 +8,7 @@ class ICPUInterface;
 class FCodeAnalysisState;
 struct FCodeInfo;
 
+const char* GetAddressModeStringHuC6280(uint8_t opcode);
 bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
 bool CheckPointerRefInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
 bool CheckJumpInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);

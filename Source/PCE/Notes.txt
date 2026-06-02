@@ -5,13 +5,11 @@ TODO FOR FIRST RELEASE
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - tidy up sprites viewer detail pane
-- perf of sprites results tab is really bad
 - bank addresses should be offsets (including function labels)
 - dont add cd bios labels in WRAM for joy/joyena etc
 - fix trace button in code analysis view
 
 TODO
-- STA zero page shows HW page label in code analysis view. opcode 85. 
 - operand dropdowns dont work
 - get Word data item set to display as Pointer to work when outputting assembly
 - add audio viewer: disable channels etc
@@ -41,7 +39,8 @@ TODO
 - add a way to display or goto the ROM address (in the cart's 2mb address space)
 - show bitmap format in code analysis view when cursor is on PCE sprite/BG
 - add optional label when formatting sprites in sprite viewer
-
+- get claude to see if CheckPointerRefInstructionHuC6280 needs to be implemented
+- get claude to write unit test for GetInstructionAddressModeHuC6280 to compare against huc6280dasm_op
 
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
@@ -63,10 +62,6 @@ IDEAS
 - add way to understand/visualise if interrupts are active?
 - make screen appear when loading a saved project
 - add "view in memory viewer" in code analysis view
-
-BUGS
-
-IDEAS
 - minimap on scrollbar
 - copy instruction tooltip text from mesen?
 - show r/w colouring in memory viewer
@@ -85,8 +80,11 @@ IDEAS
 - add button to save all sprites in history view to png
 - always collapse/hide bytes in HW page.
 - add scroll overlay on background view (like Mesen does)
+- ask claude to look at Mesen "draw partial frame" option to see how it does it.
 
 DONE
+- perf of sprites results tab is really bad. improved but DrawAddressLabel is expensive when called > once
+- STA zero page shows HW page label in code analysis view. opcode 85. 
 - IRQ vector has wrong label. hero tonma IRQ1 vector is in ROM 1 but has label func_ROM_00_433A_IRQ1Vector
 - BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 - add ctrl + up/down to keyboard shortcuts display
@@ -110,3 +108,11 @@ DONE
 - add keyboard shortcut for changing font size
 - when formatting memory as sprite dont use current (transient) palette data. 
 - fix code analysis detail pane getting stuck off screen when fixed
+- AND (zp) [opcode $32] doesnt show zp ptr in code analysis view.
+- EOR (zp) [opcode $52] doesnt show zp ptr in code analysis view.
+- ADC (zp) [opcode $72] doesnt show zp ptr in code analysis view.
+- STA (zp) [opcode $92] doesnt show zp ptr in code analysis view.
+- LDA (zp) [opcode $B2] doesnt show zp ptr in code analysis view.
+- CMP (zp) [opcode $D2] doesnt show zp ptr in code analysis view.
+- SBC (zp) [opcode $F2] doesnt show zp ptr in code analysis view.
+- RMBi doesnt show zp ptr in code analysis view.
