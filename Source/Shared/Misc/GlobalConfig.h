@@ -23,6 +23,7 @@ struct FGlobalConfig
 	std::string			ExportAssembler;	// which assembler to exort to
 	std::string			DefaultAsmExportPath;	// default path for assembler export
 	std::string 		DefaultBinaryExportPath;		// default path for exporting binary files
+	bool				bExportAsmShowAddresses = false;	// prefix each line with address (e.g. ; $0100)
 
 	std::string			WorkspaceRoot = "./Workspace/";
 	std::string			SnapshotFolder = "./Games/";

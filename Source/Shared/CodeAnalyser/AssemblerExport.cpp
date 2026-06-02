@@ -336,6 +336,7 @@ void FASMExporter::OutputFunctionDescription(const FFunctionInfo* pFunctionInfo)
 bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
+	const bool bShowAddresses = state.pGlobalConfig->bExportAsmShowAddresses;
 
 	DasmState.ExportMin = startAddr;
 	DasmState.ExportMax = endAddr;
@@ -369,8 +370,11 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		nextAddr = addr + item.Item->ByteSize;
 
 		// show address ever page
-		if(nextAddr >> 8 != addr >> 8)
+		if(!bShowAddresses && nextAddr >> 8 != addr >> 8)
 			Output(";Address: 0x%04X\n", addr);
+
+		if (bShowAddresses && item.Item->Type != EItemType::Label)
+			Output("; $%04X\t", addr);
 
 		switch (item.Item->Type)
 		{
@@ -384,6 +388,9 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 				Output("%s_Stubbed:", pLabelInfo->GetName());
 			else
 				Output("%s:", pLabelInfo->GetName());
+
+			if (bShowAddresses)
+				Output("\t\t; $%04X", addr);
 		}
 		break;
 		case EItemType::Code:
