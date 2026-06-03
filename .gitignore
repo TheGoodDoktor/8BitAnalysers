@@ -31,6 +31,10 @@
 *.a
 *.lib
 
+# asm intermediate files
+*.sym
+*.lst
+
 # Executables and IDE files
 *.exe
 *.out
