@@ -8,6 +8,7 @@ TODO FOR FIRST RELEASE
 - bank addresses should be offsets (including function labels)
 - dont add cd bios labels in WRAM for joy/joyena etc
 - fix trace button in code analysis view
+- remove validatorpath from global config in release builds
 
 TODO
 - operand dropdowns dont work
