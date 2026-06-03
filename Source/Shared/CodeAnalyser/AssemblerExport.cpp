@@ -373,7 +373,7 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		if(!bShowAddresses && nextAddr >> 8 != addr >> 8)
 			Output(";Address: 0x%04X\n", addr);
 
-		if (bShowAddresses && item.Item->Type != EItemType::Label)
+		if (bShowAddresses && item.Item->Type != EItemType::Label && item.Item->Type != EItemType::CommentLine && item.Item->Type != EItemType::FunctionDescLine)
 			Output("; $%04X\t", addr);
 
 		switch (item.Item->Type)
@@ -388,9 +388,6 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 				Output("%s_Stubbed:", pLabelInfo->GetName());
 			else
 				Output("%s:", pLabelInfo->GetName());
-
-			if (bShowAddresses)
-				Output("\t\t; $%04X", addr);
 		}
 		break;
 		case EItemType::Code:
