@@ -222,7 +222,7 @@ FAddressRef	FPCEEmu::GetPC(void)
 
 uint16_t	FPCEEmu::GetSP(void)
 {
-	return 0x2000 + p6280State->S->GetValue();
+	return STACK_ADDR + p6280State->S->GetValue();
 }
 
 ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const

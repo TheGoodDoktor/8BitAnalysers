@@ -132,7 +132,7 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 
 	// Stack pointer
 	// Add 0x100 to give physical address
-	const uint16_t StackPtr = state.CPUInterface->CPUType == ECPUType::HuC6280 ? 0x2000 : 0 + curRegs.S + 0x100;
+	const uint16_t StackPtr = (state.CPUInterface->CPUType == ECPUType::HuC6280 ? 0x2000 : 0) + curRegs.S + 0x100;
 	ImGui::TextColored(curRegs.S != oldRegs.S ? regChangedCol : regNormalCol, "SP:%s", NumStr(StackPtr));
 	DrawAddressLabel(state, viewState, StackPtr);
 
