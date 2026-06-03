@@ -31,6 +31,10 @@
 *.a
 *.lib
 
+# asm intermediate files
+*.sym
+*.lst
+
 # Executables and IDE files
 *.exe
 *.out
@@ -79,3 +83,4 @@
 .vscode
 build
 *.bin
+/Data/PCEAnalyser/Validator

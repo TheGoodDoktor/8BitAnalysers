@@ -29,7 +29,7 @@ enum class EAddressMode : uint8_t
 	NA
 };
 
-static const char* g_AddrModeStrings[] =
+static const char* g_AddrModeShortStrings[] =
 {
 	"(zp,X)",    // ZPIndirect_X
 	"zp",        // ZP
@@ -54,6 +54,33 @@ static const char* g_AddrModeStrings[] =
 	"",          // Implied
 	"???",       // Invalid
 	"",          // NA
+};
+
+static const char* g_AddrModeDescriptiveStrings[] =
+{
+	"Zero Page Indexed Indirect",    // ZPIndirect_X
+	"Zero Page",                     // ZP
+	"Immediate",                     // Immediate
+	"Absolute",                      // Absolute
+	"Zero Page Indirect Indexed",    // ZPIndirect_Y
+	"Zero Page,X",                   // ZP_X
+	"Absolute,Y",                    // Absolute_Y
+	"Absolute,X",                    // Absolute_X
+	"Accumulator",                   // Accumulator
+	"Zero Page Indirect",            // ZPIndirect
+	"Zero Page,Y",                   // ZP_Y
+	"Relative",                      // Relative
+	"Absolute Indirect",             // AbsoluteIndirect
+	"Absolute Indexed Indirect",     // AbsoluteIndirect_X
+	"Zero Page Relative",            // ZPRelative
+	"Block",                         // Block
+	"Immediate Zero Page",           // ImmZP
+	"Immediate Absolute",            // ImmAbs
+	"Immediate Zero Page,X",         // ImmZPX
+	"Immediate Absolute Indexed",    // ImmAbsX
+	"",                              // Implied
+	"???",                           // Invalid
+	"",                              // NA
 };
 
 // One entry per opcode byte, derived from _huc6280dasm_ops[cc][bbb][aaa] in HuC6280Disassembler.cpp.
@@ -324,7 +351,7 @@ EAddressMode GetInstructionAddressModeHuC6280(uint8_t opcode)
 
 const char* GetAddressModeStringHuC6280(uint8_t opcode)
 {
-	return g_AddrModeStrings[(int)g_HuC6280AddrModes[opcode]];
+	return g_AddrModeShortStrings[(int)g_HuC6280AddrModes[opcode]];
 }
 
 // Returns true if the instruction at pc reads/writes a memory address, outputting that address.
