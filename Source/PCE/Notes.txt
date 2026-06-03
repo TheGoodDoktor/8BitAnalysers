@@ -50,7 +50,6 @@ BUGS
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
 - code analysis view doesnt go to address that was last viewed after loading project.
 - when hovering over first operand of TIA instruction that is a label, the middle operand disappears.
-- trace button doesnt seem to work in code analysis view
 - If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - sprites formatted by sprite viewer dont draw correctly.
 - Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
