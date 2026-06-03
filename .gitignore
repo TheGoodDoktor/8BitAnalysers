@@ -83,3 +83,4 @@
 .vscode
 build
 *.bin
+/Data/PCEAnalyser/Validator
