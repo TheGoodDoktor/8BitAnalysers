@@ -221,7 +221,7 @@ class FResetEmulatorTool : public FMCPTool
 public:
 	FResetEmulatorTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
 	{
-		Description = "Soft-reset emulated machine. Useful to get back to the title screen or to rerun the game startup code (the entry point).";
+		Description = "Resets the emulated PC Engine to its startup state, equivalent to pressing the Reset button. Useful to return to the title screen or to re-run game startup code from the entry point.";
 		InputSchema = {
 			{"type", "object"},
 			{"properties", nlohmann::json::object()},
@@ -233,8 +233,7 @@ public:
 	{
 		pPCEEmu->SoftResetMachine();
 		
-		// what to do here?
-		return { {"status", "unknown"} };
+		return { {"success", "true"} };
 	}
 
 private:
