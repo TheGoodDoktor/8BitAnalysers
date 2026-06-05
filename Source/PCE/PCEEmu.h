@@ -93,6 +93,8 @@ public:
 
 	bool ExportAsmForCurrentGame();
 
+	void SoftResetMachine();
+
 	const std::unordered_map<std::string, FGamesList>& GetGamesLists() const { return	GamesLists; }
 	const FPCEConfig* GetPCEGlobalConfig() { return (const FPCEConfig*)pGlobalConfig; }
 	FGameDebugStats* GetGameDebugStats() const { return pGameDebugStats; }
@@ -180,8 +182,6 @@ protected:
 
 	void AddLabels();
 	void AddInterruptVectorFunctionLabels(int16_t bankId);
-
-	void SoftResetMachine();
 
 protected:
 	GeargrafxCore* pCore = nullptr;

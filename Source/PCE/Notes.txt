@@ -42,6 +42,7 @@ TODO
 - add optional label when formatting sprites in sprite viewer
 - get claude to see if CheckPointerRefInstructionHuC6280 needs to be implemented
 - get claude to write unit test for GetInstructionAddressModeHuC6280 to compare against huc6280dasm_op
+- add mcp tool to reset emulation
 
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2

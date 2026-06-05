@@ -216,11 +216,39 @@ private:
 	FPCEEmu* pPCEEmu;
 };
 
+class FResetEmulatorTool : public FMCPTool
+{
+public:
+	FResetEmulatorTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
+	{
+		Description = "Soft-reset emulated machine. Useful to get back to the title screen or to rerun the game startup code (the entry point).";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		pPCEEmu->SoftResetMachine();
+		
+		// what to do here?
+		return { {"status", "unknown"} };
+	}
+
+private:
+	FPCEEmu* pPCEEmu;
+};
 // -----------------------------------------------------------------------
 
 void RegisterPCEMCPTools(FPCEEmu* pPCEEmu)
 {
+	// Memory tools
 	AddMCPTool("read_vram",          new FReadVRAMTool(pPCEEmu));
 	AddMCPTool("read_bank_by_name",  new FReadBankByNameTool(pPCEEmu));
 	AddMCPTool("read_bank_by_mpr",   new FReadBankByMprTool(pPCEEmu));
+
+	// Emulator control
+	AddMCPTool("reset_emulator",     new FResetEmulatorTool(pPCEEmu));
 }
