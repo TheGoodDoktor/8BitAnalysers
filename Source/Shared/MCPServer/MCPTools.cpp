@@ -179,14 +179,19 @@ public:
 
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		std::string functionName = arguments["function_name"].get<std::string>();
-		//FAddressRef funcAddress;
 		const FFunctionInfo* pFuncInfo = codeAnalysis.FindFunctionByName(functionName.c_str());
 		if (pFuncInfo)
 		{
 			nlohmann::json result;
 			result["name"] = functionName;
 
-			result["disassembly"] = "// Assembler export not yet wired up for this platform";
+			std::string outStr;
+			ExportAssembler(pEmu, &outStr, pFuncInfo->StartAddress.GetAddress(), pFuncInfo->EndAddress.GetAddress());
+			result["disassembly"] = outStr;
+			
+			// sam.
+			if (!pFuncInfo->IsVisited())
+				result["warning"] = "Function end address has not been traced; disassembly may be incomplete. Enable Trace Functions and execute this function to populate the full range.";
 
 			return result;
 		}
@@ -770,6 +775,53 @@ public:
 		FDebugger& debugger = pEmu->GetCodeAnalysis().Debugger;
 		debugger.Continue();
 		return { {"stopped", debugger.IsStopped()} };
+	}
+};
+
+// sam.
+class FRunUntilPCTool : public FMCPTool
+{
+public:
+	FRunUntilPCTool()
+	{
+		Description = "Run emulator execution until the program counter reaches the specified memory address.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"address", {
+					{"type", "integer"},
+					{"description", "Memory address for the PC to stop at within a 16-bit address space"}
+				}}
+			}},
+			{"required", {"address"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("address"))
+			return { {"error", "Missing required argument: address"} };
+
+		const uint32_t address = GetNumericalArgument("address", arguments);
+		if (address > 0xFFFF)
+			return { {"error", "Address out of range (must be 0x0000-0xFFFF)"} };
+
+		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+		FDebugger& debugger = codeAnalysis.Debugger;
+		const FAddressRef targetAddress = codeAnalysis.AddressRefFromPhysicalAddress(address);
+		if (!targetAddress.IsValid())
+			return { {"error", "Could not resolve address"} };
+
+		debugger.Continue(targetAddress);
+
+		char addressStr[8];
+		snprintf(addressStr, sizeof(addressStr), "$%04X", static_cast<uint16_t>(address));
+
+		return {
+			{"status", "running"},
+			{"target_pc", addressStr},
+			{"stopped", debugger.IsStopped()}
+		};
 	}
 };
 
@@ -1681,6 +1733,7 @@ void RegisterBaseTools(FMCPToolsRegistry& registry)
 	// Execution control
 	registry.RegisterTool("pause_emulator",  new FPauseEmulatorTool());
 	registry.RegisterTool("resume_emulator", new FResumeEmulatorTool());
+	registry.RegisterTool("run_until_pc",    new FRunUntilPCTool()); // sam.
 	registry.RegisterTool("step_into",       new FStepIntoTool());
 	registry.RegisterTool("step_over",       new FStepOverTool());
 	registry.RegisterTool("step_frame",      new FStepFrameTool());
