@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 #include "CPCEmu.h"
+#include "CPCConstants.h"
 
 #include "CPCConfig.h"
 #include "CPCGameConfig.h"
@@ -18,7 +19,6 @@
 #include <CodeAnalyser/AssemblerExport.h>
 #include "CodeAnalyser/CodeAnalysisJson.h"
 #include "CodeAnalyser/MemoryAnalyser.h"
-#include "CPCGameConfig.h"
 #include "Debug/DebugLog.h"
 #include "CPCChipsImpl.h"
 
@@ -1002,6 +1002,8 @@ bool FCPCEmu::Init(const FEmulatorLaunchConfig& launchConfig)
 	pMemoryAnalyser->SetScreenMemoryArea(Screen.GetScreenPage(), Screen.GetScreenMemSize());
 
 	InitCPCAsmExporters(this);
+	ExportStartAddress = kAddressSpaceStart;
+	ExportEndAddress = kAddressSpaceEnd;
 
 #ifndef NDEBUG
 	LOGINFO("Init CPCEmu...Done");
