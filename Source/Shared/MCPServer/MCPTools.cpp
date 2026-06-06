@@ -784,7 +784,7 @@ class FRunUntilPCTool : public FMCPTool
 public:
 	FRunUntilPCTool()
 	{
-		Description = "Run emulator execution until the program counter reaches the specified memory address.";
+		Description = "Run emulator execution until the program counter reaches the specified memory address. Returns immediately with status 'running' — the emulator continues in the background. Poll get_registers until stopped is true, then verify PC matches the target address to confirm the breakpoint was hit rather than the emulator having been stopped for another reason.";
 		InputSchema = {
 			{"type", "object"},
 			{"properties", {
@@ -808,7 +808,7 @@ public:
 
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		FDebugger& debugger = codeAnalysis.Debugger;
-		const FAddressRef targetAddress = codeAnalysis.AddressRefFromPhysicalAddress(address);
+		const FAddressRef targetAddress = codeAnalysis.GetCanonicalAddressRef(address);
 		if (!targetAddress.IsValid())
 			return { {"error", "Could not resolve address"} };
 
@@ -820,7 +820,7 @@ public:
 		return {
 			{"status", "running"},
 			{"target_pc", addressStr},
-			{"stopped", debugger.IsStopped()}
+			{"stopped", false}
 		};
 	}
 };
@@ -915,28 +915,47 @@ public:
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		FDebugger& debugger = codeAnalysis.Debugger;
 
-		static const char* kByteRegs[] = { "A", "F", "B", "C", "D", "E", "H", "L", "R", "I" };
-		static const char* kWordRegs[] = { "AF", "BC", "DE", "HL", "IX", "IY", "SP", "PC" };
+		static const char* kZ80ByteRegs[]      = { "A", "F", "B", "C", "D", "E", "H", "L", "R", "I" };
+		static const char* kZ80WordRegs[]       = { "AF", "BC", "DE", "HL", "IX", "IY", "SP", "PC" };
+
+		// sam. Added 6502 registers
+		static const char* k6502ByteRegs[]      = { "A", "X", "Y", "S", "P" };
+		static const char* k6502WordRegs[]      = { "PC" };
+
+		const char** byteRegs = kZ80ByteRegs;
+		const char** wordRegs = kZ80WordRegs;
+		int numByteRegs = (int)std::size(kZ80ByteRegs);
+		int numWordRegs = (int)std::size(kZ80WordRegs);
+
+		// sam. Added support for 6502/HuC6280
+		const ECPUType cpuType = codeAnalysis.GetCPUInterface()->CPUType;
+		if (cpuType == ECPUType::M6502 || cpuType == ECPUType::HuC6280)
+		{
+			byteRegs    = k6502ByteRegs;
+			wordRegs    = k6502WordRegs;
+			numByteRegs = (int)std::size(k6502ByteRegs);
+			numWordRegs = (int)std::size(k6502WordRegs);
+		}
 
 		nlohmann::json regs;
 		char valStr[8];
 		uint8_t byteVal;
 		uint16_t wordVal;
 
-		for (const char* reg : kByteRegs)
+		for (int i = 0; i < numByteRegs; i++)
 		{
-			if (debugger.GetRegisterByteValue(reg, byteVal))
+			if (debugger.GetRegisterByteValue(byteRegs[i], byteVal))
 			{
 				snprintf(valStr, sizeof(valStr), "$%02X", byteVal);
-				regs[reg] = valStr;
+				regs[byteRegs[i]] = valStr;
 			}
 		}
-		for (const char* reg : kWordRegs)
+		for (int i = 0; i < numWordRegs; i++)
 		{
-			if (debugger.GetRegisterWordValue(reg, wordVal))
+			if (debugger.GetRegisterWordValue(wordRegs[i], wordVal))
 			{
 				snprintf(valStr, sizeof(valStr), "$%04X", wordVal);
-				regs[reg] = valStr;
+				regs[wordRegs[i]] = valStr;
 			}
 		}
 

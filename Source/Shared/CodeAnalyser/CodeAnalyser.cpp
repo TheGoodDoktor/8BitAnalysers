@@ -2088,7 +2088,10 @@ const FLabelInfo* FCodeAnalysisState::FindLabel(const char* pName, FAddressRef& 
 				const FLabelInfo* pLabel = bank.Pages[p].Labels[offset];
 				if (pLabel && strcmp(pLabel->GetName(), pName) == 0)
 				{
-					outAddress = FAddressRef((int16_t)b, (uint16_t)(p * FCodeAnalysisPage::kPageSize + offset));
+					// sam. fixed bug here.
+					//outAddress = FAddressRef((int16_t)b, (uint16_t)(p * FCodeAnalysisPage::kPageSize + offset));
+					const uint16_t mappedAddress = (uint16_t)((bank.PrimaryMappedPage + p) * FCodeAnalysisPage::kPageSize + offset);
+					outAddress = FAddressRef((int16_t)b, mappedAddress);
 					return pLabel;
 				}
 			}
