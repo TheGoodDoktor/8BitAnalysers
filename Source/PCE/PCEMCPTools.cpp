@@ -6,6 +6,7 @@
 #include "PCEEmu.h"
 #include <geargrafx_core.h>
 #include "huc6270.h"
+#include "Util/FileUtil.h"
 
 // -----------------------------------------------------------------------
 // read_vram
@@ -239,7 +240,58 @@ public:
 private:
 	FPCEEmu* pPCEEmu;
 };
+
 // -----------------------------------------------------------------------
+// write_vram_to_binary_file
+// Dumps the full HuC6270 VRAM (0x8000 16-bit words = 64KB) to a raw binary
+// file on disk. Words are written little-endian.
+// -----------------------------------------------------------------------
+class FDumpVRAMTool : public FMCPTool
+{
+public:
+	FDumpVRAMTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
+	{
+		Description =
+			"Dumps the full HuC6270 VRAM (0x8000 16-bit words = 64KB) to a raw binary file on disk. "
+			"Words are written little-endian. "
+			"Useful for offline analysis: the output can be examined with a hex editor or tile viewer "
+			"to inspect CHR tile graphics, the BAT tile map, and sprite attribute tables without "
+			"issuing many individual read_vram calls.";
+
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"file_path", {
+					{"type", "string"},
+					{"description", "Absolute path of the output file (e.g. C:/temp/vram.bin)"}
+				}}
+			}},
+			{"required", {"file_path"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("file_path"))
+			return { {"error", "Missing required argument: file_path"} };
+
+		const std::string filePath = arguments["file_path"].get<std::string>();
+
+		const u16* pVRAM = pPCEEmu->GetCore()->GetHuC6270_1()->GetVRAM();
+
+		if (!SaveBinaryFile(filePath.c_str(), pVRAM, HUC6270_VRAM_SIZE * sizeof(u16)))
+			return { {"error", "Failed to write VRAM to: " + filePath} };
+
+		nlohmann::json result;
+		result["file_path"]    = filePath;
+		result["bytes_written"] = HUC6270_VRAM_SIZE * sizeof(u16);
+		result["words_written"] = HUC6270_VRAM_SIZE;
+		return result;
+	}
+
+private:
+	FPCEEmu* pPCEEmu;
+};
 
 void RegisterPCEMCPTools(FPCEEmu* pPCEEmu)
 {
@@ -247,7 +299,10 @@ void RegisterPCEMCPTools(FPCEEmu* pPCEEmu)
 	AddMCPTool("read_vram",          new FReadVRAMTool(pPCEEmu));
 	AddMCPTool("read_bank_by_name",  new FReadBankByNameTool(pPCEEmu));
 	AddMCPTool("read_bank_by_mpr",   new FReadBankByMprTool(pPCEEmu));
+	AddMCPTool("write_vram_to_binary_file", new FDumpVRAMTool(pPCEEmu));
 
+	// Graphics tools
+	
 	// Emulator control
 	AddMCPTool("reset_emulator",     new FResetEmulatorTool(pPCEEmu));
 }

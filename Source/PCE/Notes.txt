@@ -42,7 +42,7 @@ TODO
 - add optional label when formatting sprites in sprite viewer
 - get claude to see if CheckPointerRefInstructionHuC6280 needs to be implemented
 - get claude to write unit test for GetInstructionAddressModeHuC6280 to compare against huc6280dasm_op
-- add mcp tool to reset emulation
+- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
@@ -87,7 +87,6 @@ DONE
 - perf of sprites results tab is really bad. improved but DrawAddressLabel is expensive when called > once
 - STA zero page shows HW page label in code analysis view. opcode 85. 
 - IRQ vector has wrong label. hero tonma IRQ1 vector is in ROM 1 but has label func_ROM_00_433A_IRQ1Vector
-- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 - add ctrl + up/down to keyboard shortcuts display
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
 - in sprites viewer make the Results tab a Search tab and move find all into it?
@@ -117,3 +116,4 @@ DONE
 - CMP (zp) [opcode $D2] doesnt show zp ptr in code analysis view.
 - SBC (zp) [opcode $F2] doesnt show zp ptr in code analysis view.
 - RMBi doesnt show zp ptr in code analysis view.
+- add mcp tool to reset emulation

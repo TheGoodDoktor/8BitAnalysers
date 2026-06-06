@@ -22,7 +22,7 @@ static const int kVRAMSpriteViewWidth = 256;   // 16 sprite blocks across
 
 static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
 
-void DrawDataAcessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2);
+void DrawDataAccessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2);
 
 // Build a 16-entry RGBA palette from the HuC6260 colour table.
 // paletteBase is the colour table index of colour 0 for this palette.
@@ -455,7 +455,7 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 		const ImVec2 indPos   = ImGui::GetCursorScreenPos();
 		ImGui::Dummy(ImVec2(14.0f, lineHeight));
 		if (brightness > 0)
-			DrawDataAcessIndicator(indPos, 0xff000000 | brightness, brdCol, lineHeight, lh2);
+			DrawDataAccessIndicator(indPos, 0xff000000 | brightness, brdCol, lineHeight, lh2);
 		ImGui::SameLine();
 		ImGui::Text("Last write:");
 		ImGui::SameLine();
@@ -470,7 +470,7 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 		const ImVec2 indPos   = ImGui::GetCursorScreenPos();
 		ImGui::Dummy(ImVec2(14.0f, lineHeight));
 		if (brightness > 0)
-			DrawDataAcessIndicator(indPos, 0xff000000 | (brightness << 8), brdCol, lineHeight, lh2);
+			DrawDataAccessIndicator(indPos, 0xff000000 | (brightness << 8), brdCol, lineHeight, lh2);
 		ImGui::SameLine();
 		ImGui::Text("Last read: ");
 		ImGui::SameLine();
