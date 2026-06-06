@@ -336,7 +336,6 @@ void FASMExporter::OutputFunctionDescription(const FFunctionInfo* pFunctionInfo)
 bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 {
 	FCodeAnalysisState& state = pEmulator->GetCodeAnalysis();
-	const bool bShowAddresses = state.pGlobalConfig->bExportAsmShowAddresses;
 
 	DasmState.ExportMin = startAddr;
 	DasmState.ExportMax = endAddr;
@@ -370,11 +369,8 @@ bool FASMExporter::ExportAddressRange(uint16_t startAddr , uint16_t endAddr)
 		nextAddr = addr + item.Item->ByteSize;
 
 		// show address ever page
-		if(!bShowAddresses && nextAddr >> 8 != addr >> 8)
+		if(nextAddr >> 8 != addr >> 8)
 			Output(";Address: 0x%04X\n", addr);
-
-		if (bShowAddresses && item.Item->Type != EItemType::Label && item.Item->Type != EItemType::CommentLine && item.Item->Type != EItemType::FunctionDescLine)
-			Output("; $%04X\t", addr);
 
 		switch (item.Item->Type)
 		{

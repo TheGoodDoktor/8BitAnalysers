@@ -93,9 +93,6 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 
 	if (jsonConfigFile.contains("DefaultBinaryExportPath"))
 		DefaultBinaryExportPath = jsonConfigFile["DefaultBinaryExportPath"];
-
-	if (jsonConfigFile.contains("ExportAsmShowAddresses"))
-		bExportAsmShowAddresses = jsonConfigFile["ExportAsmShowAddresses"];
 	
 	if (jsonConfigFile.contains("ROMAnalysisPath"))	
 		ROMAnalysisPath = jsonConfigFile["ROMAnalysisPath"];
@@ -129,7 +126,6 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["ExportAssembler"] = ExportAssembler;	
 	jsonConfigFile["DefaultAsmExportPath"] = DefaultAsmExportPath;
 	jsonConfigFile["DefaultBinaryExportPath"] = DefaultBinaryExportPath;
-	jsonConfigFile["ExportAsmShowAddresses"] = bExportAsmShowAddresses;
 	jsonConfigFile["ROMAnalysisPath"] = ROMAnalysisPath;
 
 	for (const auto& luaSrc : LuaBaseFiles)

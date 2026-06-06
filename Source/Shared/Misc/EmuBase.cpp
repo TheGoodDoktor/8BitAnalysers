@@ -566,9 +566,6 @@ void FEmuBase::OptionsMenu()
 			}
 		}
 
-		ImGui::Separator();
-		ImGui::MenuItem("Show addresses in ASM export", 0, &CodeAnalysis.pGlobalConfig->bExportAsmShowAddresses);
-
 		ImGui::EndMenu();
 	}
 	//if(pActiveGame!=nullptr)
