@@ -69,3 +69,5 @@ private:
 };
 
 void RegisterBaseResources(FMCPResourceRegistry& registry);
+
+std::string Base64Encode(const uint8_t* data, size_t length);
