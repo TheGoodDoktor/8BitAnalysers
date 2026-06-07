@@ -31,26 +31,26 @@ enum class EAddressMode : uint8_t
 
 static const char* g_AddrModeShortStrings[] =
 {
-	"(zp,X)",    // ZPIndirect_X
-	"zp",        // ZP
+	"(ZP,X)",    // ZPIndirect_X
+	"ZP",        // ZP
 	"#",         // Immediate
-	"abs",       // Absolute
-	"(zp),Y",    // ZPIndirect_Y
-	"zp,X",      // ZP_X
-	"abs,Y",     // Absolute_Y
-	"abs,X",     // Absolute_X
+	"ABS",       // Absolute
+	"(ZP),Y",    // ZPIndirect_Y
+	"ZP,X",      // ZP_X
+	"ABS,Y",     // Absolute_Y
+	"ABS,X",     // Absolute_X
 	"A",         // Accumulator
-	"(zp)",      // ZPIndirect
-	"zp,Y",      // ZP_Y
-	"rel",       // Relative
-	"(abs)",     // AbsoluteIndirect
-	"(abs,X)",   // AbsoluteIndirect_X
-	"zp,rel",    // ZPRelative
-	"block",     // Block
-	"#,zp",      // ImmZP
-	"#,abs",     // ImmAbs
-	"#,zp,X",    // ImmZPX
-	"#,abs,X",   // ImmAbsX
+	"(ZP)",      // ZPIndirect
+	"ZP,Y",      // ZP_Y
+	"REL",       // Relative
+	"(ABS)",     // AbsoluteIndirect
+	"(ABS,X)",   // AbsoluteIndirect_X
+	"ZP,REL",    // ZPRelative
+	"",     // Block
+	"#,ZP",      // ImmZP
+	"#,ABS",     // ImmAbs
+	"#,ZP,X",    // ImmZPX
+	"#,ABS,X",   // ImmAbsX
 	"",          // Implied
 	"???",       // Invalid
 	"",          // NA
@@ -169,7 +169,7 @@ static const EAddressMode g_HuC6280AddrModes[256] =
 	/* 50 BVC rel   */ EAddressMode::Relative,
 	/* 51 EOR(zp),Y */ EAddressMode::ZPIndirect_Y,
 	/* 52 EOR (zp)  */ EAddressMode::ZPIndirect,
-	/* 53 TAM #     */ EAddressMode::Immediate,
+	/* 53 TAM #     */ EAddressMode::Implied,
 	/* 54 CSL       */ EAddressMode::Implied,
 	/* 55 EOR zp,X  */ EAddressMode::ZP_X,
 	/* 56 LSR zp,X  */ EAddressMode::ZP_X,
