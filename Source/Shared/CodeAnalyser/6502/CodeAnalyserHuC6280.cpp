@@ -354,7 +354,7 @@ const char* GetAddressModeStringHuC6280(uint8_t opcode)
 	return g_AddrModeShortStrings[(int)g_HuC6280AddrModes[opcode]];
 }
 
-// Returns true if the instruction at pc reads/writes a memory address, outputting that address.
+// Returns true if the instruction at pc reads/writes a memory address. Returns the address in question.
 // The address is used to generate a data label at the target location.
 bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
@@ -383,13 +383,17 @@ bool CheckPointerIndirectionInstructionHuC6280(const FCodeAnalysisState& state, 
 	}
 }
 
-// Returns true if the instruction at pc references a memory address, outputting that address.
+// Returns true if the instruction at pc references a memory address. Returns the address in question.
 // Unlike CheckPointerIndirectionInstruction, no data label is generated at the target location.
 bool CheckPointerRefInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	return false;
 }
 
+// Check if an instruction forces program execution to jump to a memory address that is not the following instruction. 
+// Returns the address encoded in the instruction's operand bytes.
+// For most jump / call instructions this is the destination. The exception is for JMP (indirect), opcode $6C. It returns
+// the address of the pointer that holds the destination — see the $6C handling in FillCodeInfoOperandsHuC6280 for destination resolution.
 bool CheckJumpInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
@@ -430,6 +434,20 @@ bool CheckJumpInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc, u
 			return true;
 	}
 	return false;
+}
+
+// Get the jump destination address for a 16 bit operand value. 
+// Given operandAddr - the address already extracted from the operand bytes by
+// CheckJumpInstructionHuC6280 - resolves the actual runtime destination address execution
+// will continue at.
+bool ResolveJumpDestinationAddressHuC6280(const FCodeAnalysisState& state, uint16_t pc, uint16_t operandAddr, uint16_t* out_addr)
+{
+	if (state.ReadByte(pc) == 0x6C)	// JMP (abs) - dereference the pointer to find the real destination
+		*out_addr = state.ReadWord(operandAddr);
+	else
+		*out_addr = operandAddr;
+
+	return true;
 }
 
 bool CheckCallInstructionHuC6280(const FCodeAnalysisState& state, uint16_t pc)
@@ -562,6 +580,34 @@ void FillCodeInfoOperandsHuC6280(FCodeAnalysisState& state, uint16_t pc, FCodeIn
 		return;
 	}
 //#endif
+
+	// JMP (ind) - indirect jump. The operand bytes are the address of the pointer that holds
+	// the destination, not the destination itself, so handle it before the generic jump check
+	// (which would otherwise label the pointer location as code rather than the real destination).
+	if (instrByte == 0x6C)
+	{
+		const uint16_t pointerAddr = state.ReadWord(pc + 1);
+		const FAddressRef pointerAddrRef = state.GetCanonicalAddressRef(pointerAddr);
+		const uint16_t destAddr = state.ReadWord(pointerAddr);
+		const FAddressRef destAddrRef = state.GetCanonicalAddressRef(destAddr);
+
+		pCodeInfo->bIsCall = false;
+		pCodeInfo->OperandAddress = pointerAddrRef;
+		if (pCodeInfo->OperandType == EOperandType::Unknown)
+			pCodeInfo->OperandType = EOperandType::Pointer;
+
+		// Label the pointer location (holds the 16-bit destination address) as data...
+		FLabelInfo* pPointerLabel = GenerateLabelForAddress(state, pointerAddrRef, ELabelType::Data);
+		if (pPointerLabel)
+			pPointerLabel->References.RegisterAccess(pcAddrRef);
+
+		// ...and label the actual destination that gets executed as code
+		FLabelInfo* pDestLabel = GenerateLabelForAddress(state, destAddrRef, ELabelType::Code);
+		if (pDestLabel)
+			pDestLabel->References.RegisterAccess(pcAddrRef);
+
+		return;
+	}
 
 	uint16_t jumpAddr;
 	if (CheckJumpInstructionHuC6280(state, pc, &jumpAddr))

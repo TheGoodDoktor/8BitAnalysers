@@ -241,6 +241,17 @@ bool CheckJumpInstruction6502(const FCodeAnalysisState& state, uint16_t pc, uint
 	return false;
 }
 
+// sam. Get the jump destination address for a 16 bit operand value. 
+// Given operandAddr - the address already extracted from the operand bytes by
+// CheckJumpInstruction6502 - resolves the actual runtime destination address. The standard
+// 6502's CheckJumpInstruction6502 doesn't dereference JMP (ind) here (see the commented-out
+// code there), so operandAddr is treated as already being the destination.
+bool ResolveJumpDestinationAddress6502(const FCodeAnalysisState& state, uint16_t pc, uint16_t operandAddr, uint16_t* out_addr)
+{
+	*out_addr = operandAddr;
+	return true;
+}
+
 bool CheckCallInstruction6502(const FCodeAnalysisState& state, uint16_t pc)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
