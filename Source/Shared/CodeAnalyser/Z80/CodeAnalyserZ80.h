@@ -31,6 +31,7 @@ struct FMachineStateZ80 : FMachineState
 bool CheckPointerIndirectionInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
 bool CheckPointerRefInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
 bool CheckJumpInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr);
+bool ResolveJumpDestinationAddressZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t operandAddr, uint16_t* out_addr);
 bool CheckCallInstructionZ80(const FCodeAnalysisState& state, uint16_t pc);
 bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc);
 bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc);

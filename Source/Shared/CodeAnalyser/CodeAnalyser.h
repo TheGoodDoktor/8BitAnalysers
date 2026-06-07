@@ -985,6 +985,7 @@ __forceinline uint16_t FAddressRef::GetAddress() const
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addrRef, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc);
+bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc);
 void RegisterCall(FCodeAnalysisState& state, const FCPUFunctionCall& callInfo);
 void RegisterReturn(FCodeAnalysisState& state, FAddressRef returnAddress);
 void ReAnalyseCode(FCodeAnalysisState &state);

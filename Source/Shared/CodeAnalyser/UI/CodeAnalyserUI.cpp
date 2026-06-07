@@ -1456,6 +1456,14 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 	}
 }
 
+// sam. Draw a thin grey line under a code line that ends a function/subroutine (RTS/RTI/RET/JMP etc.),
+void DrawFunctionEndSeparator(const ImVec2& lineMin, const ImVec2& lineMax)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	const ImU32 col = 0xff404040;	// dark grey
+	dl->AddLine(ImVec2(lineMin.x, lineMax.y), ImVec2(lineMax.x, lineMax.y), col);
+}
+
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	const uint16_t physAddr = item.AddressRef.GetAddress();
@@ -1492,6 +1500,9 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 	{
 		bNewlySelected = true;
 	}
+	// sam. For DrawFunctionEndSeparator.
+	const ImVec2 lineMin = ImGui::GetItemRectMin();
+	const ImVec2 lineMax = ImGui::GetItemRectMax();
 	if (bNewlySelected)
 	{
 		viewState.SetCursorItem(item);
@@ -1530,6 +1541,9 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		DrawCodeInfo(state, viewState, item);
 		if (bHighlight)
 			ImGui::PopStyleColor();
+		// sam. Draw grey dividing line underneath each function or code block. 
+		if (CheckStopInstruction(state, physAddr) && physAddr != state.CPUInterface->GetPC().GetAddress())
+			DrawFunctionEndSeparator(lineMin, lineMax);
 		break;
 	case EItemType::Data:
 		if (bHighlight)

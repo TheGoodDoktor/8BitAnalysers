@@ -137,6 +137,17 @@ bool CheckJumpInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint1
 	return false;
 }
 
+// Given operandAddr - the address already extracted from the operand bytes by
+// CheckJumpInstructionZ80 - resolves the actual runtime destination address. Z80 has no jump
+// instructions whose destination is encoded as a memory-indirect pointer (its indirect jumps -
+// JP (HL)/(IX)/(IY) - take the destination from a register at runtime and aren't statically
+// resolvable from memory), so operandAddr is always already the destination.
+bool ResolveJumpDestinationAddressZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t operandAddr, uint16_t* out_addr)
+{
+	*out_addr = operandAddr;
+	return true;
+}
+
 bool CheckCallInstructionZ80(const FCodeAnalysisState& state, uint16_t pc)
 {
 	const uint8_t instrByte = state.ReadByte(pc);
