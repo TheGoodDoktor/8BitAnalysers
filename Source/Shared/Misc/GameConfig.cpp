@@ -114,7 +114,9 @@ void FProjectConfig::SaveToJson(nlohmann::json & jsonConfigFile) const
 		const FCodeAnalysisViewConfig& viewConfig = ViewConfigs[i];
 		json viewConfigJson;
 		viewConfigJson["Enabled"] = viewConfig.bEnabled;
-		viewConfigJson["ViewAddress"] = viewConfig.ViewAddress.GetAddress();
+		
+		// sam. Store the bank-relative offset rather than the absolute address.
+		viewConfigJson["ViewAddress"] = viewConfig.ViewAddress.GetOffset();
 		viewConfigJson["ViewAddressBank"] = viewConfig.ViewAddress.GetBankId();
 
 		optionsJson["ViewConfigs"].push_back(viewConfigJson);
@@ -210,11 +212,19 @@ void FProjectConfig::LoadFromJson(const nlohmann::json & jsonConfigFile)
 				FCodeAnalysisViewConfig& viewConfig = ViewConfigs[i];
 				const json& viewConfigJson = optionsJson["ViewConfigs"][i];
 				viewConfig.bEnabled = viewConfigJson["Enabled"];
-				viewConfig.ViewAddress.SetAddress(viewConfigJson["ViewAddress"]);
+				
 				if (viewConfigJson.contains("ViewAddressBank"))
 					viewConfig.ViewAddress.SetBankId(viewConfigJson["ViewAddressBank"]);
 				else
 					viewConfig.ViewAddress.SetBankId(-1);
+
+				// sam. Use SetOffset() rather than SetAddress() - the latter requires the bank to
+				// already be mapped (to convert the absolute address to a bank-relative offset),
+				// which is not the case at config load time, before the game has loaded.
+				if (viewConfig.ViewAddress.GetBankId() != -1)
+				{
+					viewConfig.ViewAddress.SetOffset(viewConfigJson["ViewAddress"]);
+				}
 			}
 		}
 	}
