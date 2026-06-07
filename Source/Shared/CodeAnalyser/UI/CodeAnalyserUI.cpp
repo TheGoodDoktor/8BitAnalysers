@@ -790,6 +790,11 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				ImGui::SetWindowFocus("Enter Label Text");
 			}
 		}
+		// sam. Remove label by pressing Shift + Delete
+		else if (cursorItem.Item->Type == EItemType::Label && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Delete))
+		{
+			RemoveLabelAtAddress(state, cursorItem.AddressRef);
+		}
 		else if (io.KeyShift && ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::Comment]))
 		{
 			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef);
@@ -1723,6 +1728,7 @@ void DrawHelpButton()
 		ImGui::BulletText("l : Add label");
 		ImGui::BulletText("Shift + l : Rename operand label");
 		ImGui::BulletText("r : Rename label");
+		ImGui::BulletText("Shift + Delete : Remove label");
 		ImGui::SeparatorText("Comments");
 		ImGui::BulletText("; : Add inline comment");
 		ImGui::BulletText("Shift + ; : Add multi-line comment");
