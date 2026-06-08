@@ -1606,10 +1606,13 @@ void FPCEEmu::AddLabels()
 	}
 #endif
 
-	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2227), "joyena", ELabelType::Data, 1);
-	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2228), "joy", ELabelType::Data, 5);
-	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x222d), "joytrg", ELabelType::Data, 5);
-	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2232), "joyold", ELabelType::Data, 5);
+	if (pMedia->IsCDROM())
+	{
+		AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2227), "joyena", ELabelType::Data, 1);
+		AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2228), "joy", ELabelType::Data, 5);
+		AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x222d), "joytrg", ELabelType::Data, 5);
+		AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2232), "joyold", ELabelType::Data, 5);
+	}
 
 	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank.
 	for (int i = 0; i < kDebugLabelCount; i++)
