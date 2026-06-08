@@ -101,6 +101,11 @@ void DrawMCPSuggestionsUI(FEmuBase* pEmu, FMCPSuggestionQueue& queue)
 			ImGui::TableSetColumnIndex(4);
 			ImGui::TextWrapped("%s", s.Rationale.c_str());
 
+			if (ImGui::SmallButton("Copy"))
+			{
+				ImGui::SetClipboardText(s.Rationale.c_str());
+			}
+
 			ImGui::TableSetColumnIndex(5);
 			ImGui::PushID(i);
 			if (ImGui::SmallButton("Accept"))
