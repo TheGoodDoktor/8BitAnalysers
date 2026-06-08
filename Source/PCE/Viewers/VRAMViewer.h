@@ -58,7 +58,6 @@ public:
 
 	const FSpriteInfo* GetSpriteInfo() const { return SpriteInfo; }
 	int GetSpriteIndexForAddress(uint16_t addr) const;
-	int GetSpriteHighlight() const { return SpriteHighlight; }
 	const FVRAMAccess& GetVRAMAccess(uint16_t vramAddr) const { return Access[vramAddr]; }
 
 private:
@@ -72,23 +71,23 @@ private:
 	int             BGTileScale      = 1;
 	int             BGTileViewRows   = 32;  // visible tile rows (8–64)
 	bool            bPreviewPalette  = true;
+	bool            bBGTileGreyscale = false;
 
 	int             SpriteBlockOffset = 0;  // starting 64-word sprite block index
 	int             SpritePalette     = 16; // sprite palette store index 16–31
 	int             SpriteScale       = 1;
 	int             SpriteViewRows    = 16; // visible sprite block rows (4–32)
 	bool            bShowWriterSnippet = false;
+	bool            bSpriteGreyscale  = false;
 
 	FVRAMAccess Access[HUC6270_VRAM_SIZE];
 	FSpriteInfo SpriteInfo[HUC6270_SPRITES];
 	int16_t     SpriteIndexLookup[HUC6270_VRAM_SIZE];
 
-	FAddressRef LastVRAMWriter;
+	FAddressRef LastVRAMWriter = FAddressRef::Invalid();
 	int         LastVRAMWriteFrame = -1;
-	FAddressRef LastVRAMReader;
+	FAddressRef LastVRAMReader = FAddressRef::Invalid();
 	int         LastVRAMReadFrame  = -1;
 
 	FPCEEmu* pPCEEmu = nullptr;
-
-	int SpriteHighlight = -1;
 };

@@ -8,7 +8,6 @@
 #include "Util/GraphicsView.h"
 #include "ImGuiSupport/ImGuiScaling.h"
 #include <imgui_internal.h>
-#include "CodeAnalyser/UI/UIColours.h"
 #include "optick/optick.h"
 #include "../PCEEmu.h"
 
@@ -35,6 +34,15 @@ static void BuildHWPalette(const u16* colorTable, int paletteBase, uint32_t* out
 		const u8 g = kExpand3to8[(cv >> 6) & 7];
 		const u8 b = kExpand3to8[cv & 7];
 		out[i] = 0xFF000000u | ((uint32_t)b << 16) | ((uint32_t)g << 8) | r;
+	}
+}
+
+static void BuildGreyscalePalette(uint32_t* out)
+{
+	for (int i = 0; i < 16; i++)
+	{
+		const u8 v = (u8)(i * 17);
+		out[i] = 0xFF000000u | ((uint32_t)v << 16) | ((uint32_t)v << 8) | v;
 	}
 }
 
@@ -215,7 +223,10 @@ void FVRAMViewer::DrawBGTileView()
 	BGTileOffset = MAX(0, MIN(BGTileOffset, kMaxTiles - kTilesVisible));
 
 	uint32_t palette[16];
-	BuildHWPalette(colorTable, MAX(0, BGTilePalette) * 16, palette);
+	if (bBGTileGreyscale)
+		BuildGreyscalePalette(palette);
+	else
+		BuildHWPalette(colorTable, MAX(0, BGTilePalette) * 16, palette);
 
 	BGTileViewImage->Clear(0xFF000000);
 	const int tilesAvailable = MIN(kTilesVisible, kMaxTiles - BGTileOffset);
@@ -260,9 +271,11 @@ void FVRAMViewer::DrawBGTileView()
 	int bgAddr = BGTileOffset * 16;
 	if (ImGui::SliderInt("Address##bgtileoffset", &bgAddr, 0, (kMaxTiles - kTilesVisible) * 16, "$%04X"))
 		BGTileOffset = bgAddr / 16;
-	//ImGui::Checkbox("Preview##bgtile", &bPreviewPalette);
-	//ImGui::SameLine();
+	ImGui::Checkbox("Greyscale##bgtile", &bBGTileGreyscale);
+	ImGui::SameLine();
+	ImGui::BeginDisabled(bBGTileGreyscale);
 	DrawHWPaletteCombo("Palette##bgtile", BGTilePalette, bPreviewPalette);
+	ImGui::EndDisabled();
 }
 
 void FVRAMViewer::DrawSpriteView()
@@ -294,7 +307,10 @@ void FVRAMViewer::DrawSpriteView()
 	SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset, kMaxBlocks - kBlocksVisible));
 
 	uint32_t palette[16];
-	BuildHWPalette(colorTable, MAX(0, SpritePalette) * 16, palette);
+	if (bSpriteGreyscale)
+		BuildGreyscalePalette(palette);
+	else
+		BuildHWPalette(colorTable, MAX(0, SpritePalette) * 16, palette);
 
 	SpriteViewImage->Clear(0xFF000000);
 	const int blocksAvailable = MIN(kBlocksVisible, kMaxBlocks - SpriteBlockOffset);
@@ -339,9 +355,13 @@ void FVRAMViewer::DrawSpriteView()
 	int sprAddr = SpriteBlockOffset * 64;
 	if (ImGui::SliderInt("Address##sproffset", &sprAddr, 0, (kMaxBlocks - kBlocksVisible) * 64, "$%04X"))
 		SpriteBlockOffset = sprAddr / 64;
+	ImGui::Checkbox("Greyscale##spr", &bSpriteGreyscale);
+	ImGui::SameLine();
 	ImGui::Checkbox("Preview##spr", &bPreviewPalette);
 	ImGui::SameLine();
+	ImGui::BeginDisabled(bSpriteGreyscale);
 	DrawHWPaletteCombo("Palette##spr", SpritePalette, bPreviewPalette);
+	ImGui::EndDisabled();
 }
 
 void	FVRAMViewer::DrawLegend()
@@ -397,7 +417,6 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 	ImGui::Image((void*)MemoryViewImage->GetTexture(), size,uv0,uv1);
 
 	const bool bMapIsHovered = ImGui::IsItemHovered();
-	SpriteHighlight = -1;
 
 	ImGui::SameLine();
 	ImGui::Button("?");
@@ -436,8 +455,6 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 			DrawAddressLabel(state, viewState, access.LastReader);
 		}
 		ImGui::EndTooltip();
-
-		SpriteHighlight = GetSpriteIndexForAddress(addr);
 
 		if (ImGui::IsMouseDoubleClicked(0) && access.LastWriter.IsValid())
 			viewState.GoToAddress(access.LastWriter, false);
@@ -507,9 +524,6 @@ void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 			drawCol = kDataReadActiveCol;
 		else if (read)
 			drawCol = kDataReadCol;
-
-		if (SpriteHighlight != -1 && spriteIndex == SpriteHighlight)
-			drawCol = Colours::GetFlashColour();
 
 		*pPix++ = drawCol;
 	}

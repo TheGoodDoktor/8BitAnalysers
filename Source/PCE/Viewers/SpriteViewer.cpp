@@ -441,15 +441,12 @@ void FSpriteViewer::DrawSpriteGrid(float scale)
 			float mouse_x = io.MousePos.x - p[s].x;
 			float mouse_y = io.MousePos.y - p[s].y;
 			const bool bHovered = bGridHovered && (mouse_x >= 0.0f) && (mouse_x < fwidth) && (mouse_y >= 0.0f) && (mouse_y < fheight);
-			const bool bHighlight = pPCEEmu->GetVRAMViewer()->GetSpriteHighlight() == s;
 			const bool bSelected = (SelectedSprite == s);
 
-			if (bHighlight || bSelected || bHovered)
+			if (bSelected || bHovered)
 			{
 				ImDrawList* draw_list = ImGui::GetWindowDrawList();
-				ImColor rectColor = bHighlight ? ImColor(Colours::GetFlashColour()) :
-					bSelected ? ImColor(yellow) :
-					ImColor(cyan);
+				ImColor rectColor = 	bSelected ? ImColor(yellow) :	ImColor(cyan);
 				draw_list->AddRect(ImVec2(p[s].x, p[s].y), ImVec2(p[s].x + fwidth, p[s].y + fheight), rectColor, 0.f, 0, 2.f);
 			}
 		}
