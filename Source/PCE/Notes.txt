@@ -8,6 +8,7 @@ TODO FOR FIRST RELEASE
 - bank addresses should be offsets (including function labels)
 - fix trace button in code analysis view (sometimes works)
 - remove validatorpath from global config in release builds
+- remove BIOS checkbox on globals view for hucard games
 
 TODO
 - operand dropdowns dont work
