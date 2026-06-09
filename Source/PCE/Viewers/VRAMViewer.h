@@ -10,9 +10,9 @@ class FGraphicsView;
 
 struct FVRAMAccess
 {
-	FAddressRef LastWriter;
+	FAddressRef LastWriter          = FAddressRef::Invalid();
 	int FrameLastWritten = -1;
-	FAddressRef LastReader;
+	FAddressRef LastReader          = FAddressRef::Invalid();
 	int FrameLastRead = -1;
 };
 

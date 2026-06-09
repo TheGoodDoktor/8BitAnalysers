@@ -36,4 +36,5 @@ private:
 	int          LastSearchedTile   = -1;
 	bool         bFoundTileData     = false;
 	FAddressRef  FoundTileDataAddr;
+	FAddressRef  FoundTileDataAddr  = FAddressRef::Invalid();
 };

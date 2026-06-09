@@ -690,7 +690,7 @@ public:
 	FMemoryAnalyser	*		pMemoryAnalyser = nullptr;
 	FIOAnalyser				IOAnalyser;
 
-	FAddressRef				CopiedAddress;
+	FAddressRef				CopiedAddress = FAddressRef::Invalid();
 
 	int				XPosHighlight = -1;
 	int				YPosHighlight = -1;

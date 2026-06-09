@@ -168,8 +168,8 @@ public:
 	bool		bShowImPlotDemo = false;
 
 	// Coord viewer
-	FAddressRef	XCoordAddress;	// for debugging
-	FAddressRef	YCoordAddress;
+	FAddressRef	XCoordAddress = FAddressRef::Invalid();	// for debugging
+	FAddressRef	YCoordAddress = FAddressRef::Invalid();
 	bool		bInvertXCoord = false;
 	bool		bInvertYCoord = false;
 	bool		bXCoordChars = false;

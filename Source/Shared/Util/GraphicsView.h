@@ -97,8 +97,8 @@ struct FCharUVS
 struct FCharSetCreateParams
 {
 	std::string		Name;
-	FAddressRef		Address;
-	FAddressRef		AttribsAddress;
+	FAddressRef		Address         = FAddressRef::Invalid();
+	FAddressRef		AttribsAddress  = FAddressRef::Invalid();
 	EMaskInfo		MaskInfo = EMaskInfo::None;
 	EColourInfo		ColourInfo = EColourInfo::None;
 	const uint32_t* ColourLUT = nullptr;
@@ -128,11 +128,11 @@ struct FCharacterSet
 // Character Maps
 struct FCharMapCreateParams
 {
-	FAddressRef	Address;
+	FAddressRef	Address         = FAddressRef::Invalid();
 	int			Width = 0;
 	int			Height = 0;
 	int			Stride = 0;
-	FAddressRef	CharacterSet;
+	FAddressRef	CharacterSet    = FAddressRef::Invalid();
 	uint8_t		IgnoreCharacter = 0;
 	bool		bAddLabel = false;
 	int			FlagSet = -1;

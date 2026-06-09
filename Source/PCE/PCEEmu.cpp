@@ -1019,7 +1019,7 @@ void FPCEEmu::CreateBanks()
 	// Unused banks. One for each mpr slot.
 	for (int d = 0; d < kNumMprSlots; d++)
 	{
-		sprintf(bankName, "UNUSED_%02d", d);
+		sprintf(bankName, "UNMAPPED_%02d", d);
 		BankSets[kBankUnusedStart].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 }

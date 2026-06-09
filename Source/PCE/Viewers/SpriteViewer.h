@@ -76,7 +76,7 @@ private:
 	int BackgroundColour = 0;
 	bool bGridHovered = false;
 
-	FAddressRef FoundSpriteDataAddr;
+	FAddressRef FoundSpriteDataAddr = FAddressRef::Invalid();
 	bool        bFoundSpriteData = false;
 	bool        bFoundAs3Bpp     = false;
 	int         LastSearchedSprite = -1;
