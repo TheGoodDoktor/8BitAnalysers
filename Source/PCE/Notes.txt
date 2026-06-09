@@ -47,7 +47,6 @@ TODO
 - absolute X & Y instructions dont display absolute value in code analysis view. see LDY NNNN,X LDA NNNN,X CMP NNNN,Y (opcodes BC, BD & D9)
 - fix system vectors breaking asm output
 - auto-wrap multi-line comments
-- add grayscale palette so we can view vram tiles & sprites when no palettes are set. same for Screen view and Background view? see Mesen
  
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
@@ -127,3 +126,4 @@ DONE
 - code analysis view doesnt go to address that was last viewed after loading project.
 - dont add cd bios labels in WRAM for joy/joyena etc
 - make MCP Rationale text accessible (or make button to add as comment)
+- add grayscale palette so we can view vram tiles & sprites when no palettes are set. same for Screen view and Background view? see Mesen
