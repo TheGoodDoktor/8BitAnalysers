@@ -149,7 +149,7 @@ void GetBankName(GeargrafxCore* pCore, uint8_t mpr, uint8_t mpr_value, char* nam
 			}
 			else
 			{
-				snprintf(name, 16, "UNUSED");
+				snprintf(name, 16, "UNMAPPED");
 				//snprintf(tooltip, 128, "Range (CPU) $%04X-$%04X", cpu_address, cpu_address + 0x1FFF);
 			}
 		break;
