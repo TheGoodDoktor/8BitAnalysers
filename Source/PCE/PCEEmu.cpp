@@ -1075,7 +1075,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
-	
+	CodeAnalysis.Config.RomType = ESystemRom::None;
+
 	// todo: check this is system card 3.0.
 	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
 	bBiosLoaded = pCore->LoadBios(fullBiosPath.c_str(), true);
@@ -1497,9 +1498,14 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		if (FileExists(GetBundlePath(kBiosInfoJsonFile)))
 			ImportAnalysisJson(CodeAnalysis, GetBundlePath(kBiosInfoJsonFile));
 #endif
+		CodeAnalysis.Config.RomType = ESystemRom::Bios;
+	}
+	else
+	{
+		CodeAnalysis.Config.RomType = ESystemRom::None;
 	}
 
-	if (bLoadGameData == false)
+	//if (bLoadGameData == false)
 		AddLabels();
 
 	ReAnalyseCode(CodeAnalysis);
