@@ -40,7 +40,7 @@ std::string GetBankType(Memory* pMemory, int bankIndex)
 	case Memory::MEMORY_BANK_TYPE_CDROM_RAM:
 		return "CD ROM RAM";
 	case Memory::MEMORY_BANK_TYPE_UNUSED:
-		return "UNUSED RAM";
+		return "UNMAPPED RAM";
 	}
 	return "UNKNOWN";
 }

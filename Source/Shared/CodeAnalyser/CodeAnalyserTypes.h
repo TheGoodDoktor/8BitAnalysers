@@ -211,7 +211,7 @@ struct FAddressRef
 
 	// Explicit named constructor for an invalid address (BankId == -1).
 	// Use this instead of FAddressRef() wherever an "invalid" address ref is intended.
-	static FAddressRef Invalid() { return FAddressRef(-1, 0); }
+	static FAddressRef Invalid() { FAddressRef r = { -1, 0 }; return r; }
 	uint16_t GetAddress() const;
 	uint16_t GetOffset() const { return BankOffset; }
 	uint32_t GetVal() const;

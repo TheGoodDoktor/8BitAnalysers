@@ -35,5 +35,7 @@ private:
 	int          SelectedTileIndex  = -1;
 	int          LastSearchedTile   = -1;
 	bool         bFoundTileData     = false;
-	FAddressRef  FoundTileDataAddr;
+	FAddressRef  FoundTileDataAddr  = FAddressRef::Invalid();
+
+	bool         bGreyscale         = false;
 };

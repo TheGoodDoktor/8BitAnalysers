@@ -271,11 +271,11 @@ void FVRAMViewer::DrawBGTileView()
 	int bgAddr = BGTileOffset * 16;
 	if (ImGui::SliderInt("Address##bgtileoffset", &bgAddr, 0, (kMaxTiles - kTilesVisible) * 16, "$%04X"))
 		BGTileOffset = bgAddr / 16;
-	ImGui::Checkbox("Greyscale##bgtile", &bBGTileGreyscale);
-	ImGui::SameLine();
+	//ImGui::SameLine();
 	ImGui::BeginDisabled(bBGTileGreyscale);
 	DrawHWPaletteCombo("Palette##bgtile", BGTilePalette, bPreviewPalette);
 	ImGui::EndDisabled();
+	ImGui::Checkbox("Greyscale##bgtile", &bBGTileGreyscale);
 }
 
 void FVRAMViewer::DrawSpriteView()
@@ -355,13 +355,13 @@ void FVRAMViewer::DrawSpriteView()
 	int sprAddr = SpriteBlockOffset * 64;
 	if (ImGui::SliderInt("Address##sproffset", &sprAddr, 0, (kMaxBlocks - kBlocksVisible) * 64, "$%04X"))
 		SpriteBlockOffset = sprAddr / 64;
-	ImGui::Checkbox("Greyscale##spr", &bSpriteGreyscale);
-	ImGui::SameLine();
-	ImGui::Checkbox("Preview##spr", &bPreviewPalette);
-	ImGui::SameLine();
+	//ImGui::SameLine();
+	//ImGui::Checkbox("Preview##spr", &bPreviewPalette);
+	//ImGui::SameLine();
 	ImGui::BeginDisabled(bSpriteGreyscale);
 	DrawHWPaletteCombo("Palette##spr", SpritePalette, bPreviewPalette);
 	ImGui::EndDisabled();
+	ImGui::Checkbox("Greyscale##spr", &bSpriteGreyscale);
 }
 
 void	FVRAMViewer::DrawLegend()

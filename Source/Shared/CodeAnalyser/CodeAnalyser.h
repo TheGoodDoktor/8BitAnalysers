@@ -309,13 +309,18 @@ struct FCodeAnalysisBank
 	std::string			Name;
 	std::string			Description;	// where we can describe what the bank is used for
 	//bool				bReadOnly = false;
-	bool				bMachineROM = false;
-	bool				bFixed = false;	// bank is never remapped
-	bool				bIsDirty = false;
-	bool				bEverBeenMapped = false;
-	bool				bHidden = false;
-	bool				bHasCode = false; // sam. add flags for if bank contains code or data
-	bool				bHasData = false; // sam.
+	
+	// sam. Made these a bitfield and added bools for bank content.
+	bool				bMachineROM : 1 = false;
+	bool				bFixed : 1 = false;		// bank is never remapped
+	bool				bIsDirty : 1 = false;
+	bool				bEverBeenMapped : 1 = false;
+	bool				bHidden : 1 = false;
+
+	// sam. These are set to identify the bank content.
+	bool				bHasCode : 1 = false;
+	bool				bHasData : 1 = false;
+	bool				bHasGraphics : 1 = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
 
 	FCommentLine::FAllocator	CommentLineAllocator;
@@ -705,7 +710,7 @@ public:
 	FMemoryAnalyser	*		pMemoryAnalyser = nullptr;
 	FIOAnalyser				IOAnalyser;
 
-	FAddressRef				CopiedAddress;
+	FAddressRef				CopiedAddress = FAddressRef::Invalid();
 
 	int				XPosHighlight = -1;
 	int				YPosHighlight = -1;

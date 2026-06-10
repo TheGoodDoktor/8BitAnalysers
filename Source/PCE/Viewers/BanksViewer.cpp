@@ -22,6 +22,7 @@ enum class EBankContent : int
 	Data = 0,
 	Code,
 	Mixed,
+	Graphics,
 	Unknown,
 };
 
@@ -36,10 +37,15 @@ static const char* BankAccessToString(EBankAccess access)
 	}
 }
 
+// This is a crude way of doing it.
+// If a bank contains 90% graphics and 1 code item it will be marked as code.
+// Could be improved.
 static EBankContent GetBankContent(const FCodeAnalysisBank* pBank)
 {
 	if (pBank->bHasCode)
 		return EBankContent::Code;
+	if (pBank->bHasGraphics)
+		return EBankContent::Graphics;
 	if (pBank->bHasData)
 		return EBankContent::Data;
 	return EBankContent::Unknown;
@@ -52,9 +58,10 @@ static const char* BankContentToString(EBankContent content)
 		case EBankContent::Data:		return "Data";
 		case EBankContent::Code:		return "Code";
 		case EBankContent::Mixed:		return "Mixed";
+		case EBankContent::Graphics:	return "Gfx";
 
 		case EBankContent::Unknown:
-		default:								return "Unknown";
+		default:						return "Unknown";
 	}
 }
 

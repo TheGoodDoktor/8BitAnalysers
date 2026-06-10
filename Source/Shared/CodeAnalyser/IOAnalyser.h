@@ -77,7 +77,7 @@ private:
 struct FAYRegisterWrite
 {
 	ay38910_t	EmuState;
-	FAddressRef	PC;
+	FAddressRef	PC = FAddressRef::Invalid();
 	int			FrameNo;
 	uint8_t		Register;
 	uint8_t		Value;
@@ -100,7 +100,7 @@ public:
 
 private:
 
-	FAddressRef	SelectPC;
+	FAddressRef	SelectPC = FAddressRef::Invalid();
 	uint8_t		SelectedAYRegister = 255;
 	uint8_t		AYRegisters[16];
 
