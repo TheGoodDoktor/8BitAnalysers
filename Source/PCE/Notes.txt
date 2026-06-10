@@ -5,10 +5,13 @@ TODO FOR FIRST RELEASE
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - tidy up sprites viewer detail pane
-- bank addresses should be offsets (including function labels)
+- bank addresses should be offsets (including function labels)?
 - fix trace button in code analysis view (sometimes works)
 - remove validatorpath from global config in release builds
-- remove BIOS checkbox on globals view for hucard games
+- dont load cd BIOS
+- remove biospath from globalconfig
+- remove gamedb from globalconfig (think I did it already)
+- rename snapshotfolder in globalconfig?
 
 TODO
 - operand dropdowns dont work
@@ -127,3 +130,4 @@ DONE
 - code analysis view doesnt go to address that was last viewed after loading project.
 - dont add cd bios labels in WRAM for joy/joyena etc
 - make MCP Rationale text accessible (or make button to add as comment)
+- remove BIOS checkbox on globals view for hucard games

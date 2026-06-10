@@ -240,10 +240,25 @@ private:
 	FAddressRef					Bookmarks[kNoBookmarks] = { FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid() };
 };
 
+// sam. Add support for different system ROM configurations.
+// Spectrum, CPC & C64 have a Rom.
+// PC Engine Hu Cards have None.
+// PC Engine CD has a Bios.
+enum class ESystemRom
+{
+	None,
+	Rom,
+	Bios,
+};
+
 struct FCodeAnalysisConfig
 {
 	//bool				bShowOpcodeValues = false;
 	bool				bShowBanks = false;
+	
+	// sam. Does this machine have a fixed system ROM/BIOS?
+	ESystemRom		RomType = ESystemRom::Rom;
+
 	//int					BranchLinesDisplayMode = 1;
 	const uint32_t*		CharacterColourLUT = nullptr;
 
