@@ -2,10 +2,13 @@
 // MCP headers must come before PCEEmu.h: winsock2.h must be included before
 // windows.h (pulled in by geargfx/common.h), otherwise the winsock/winsock2 conflict fires.
 #include "MCPServer/MCPManager.h"
+#include "MCPServer/MCPResources.h"
 #include "MCPServer/MCPTools.h"
 #include "PCEEmu.h"
 #include <geargrafx_core.h>
 #include "huc6270.h"
+#include "Util/FileUtil.h"
+#include "Util/GraphicsView.h"
 
 // -----------------------------------------------------------------------
 // read_vram
@@ -216,11 +219,324 @@ private:
 	FPCEEmu* pPCEEmu;
 };
 
+class FResetEmulatorTool : public FMCPTool
+{
+public:
+	FResetEmulatorTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
+	{
+		Description = "Resets the emulated PC Engine to its startup state, equivalent to pressing the Reset button. Useful to return to the title screen or to re-run game startup code from the entry point.";
+		InputSchema = {
+			{"type", "object"},
+			{"properties", nlohmann::json::object()},
+			{"required", nlohmann::json::array()}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		pPCEEmu->SoftResetMachine();
+		
+		return { {"success", "true"} };
+	}
+
+private:
+	FPCEEmu* pPCEEmu;
+};
+
 // -----------------------------------------------------------------------
+// write_vram_to_binary_file
+// Dumps the full HuC6270 VRAM (0x8000 16-bit words = 64KB) to a raw binary
+// file on disk. Words are written little-endian.
+// -----------------------------------------------------------------------
+class FDumpVRAMTool : public FMCPTool
+{
+public:
+	FDumpVRAMTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
+	{
+		Description =
+			"Dumps the full HuC6270 VRAM (0x8000 16-bit words = 64KB) to a raw binary file on disk. "
+			"Words are written little-endian. "
+			"Useful for offline analysis: the output can be examined with a hex editor or tile viewer "
+			"to inspect CHR tile graphics, the BAT tile map, and sprite attribute tables without "
+			"issuing many individual read_vram calls.";
+
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"file_path", {
+					{"type", "string"},
+					{"description", "Absolute path of the output file (e.g. C:/temp/vram.bin)"}
+				}}
+			}},
+			{"required", {"file_path"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("file_path"))
+			return { {"error", "Missing required argument: file_path"} };
+
+		const std::string filePath = arguments["file_path"].get<std::string>();
+
+		const u16* pVRAM = pPCEEmu->GetCore()->GetHuC6270_1()->GetVRAM();
+
+		if (!SaveBinaryFile(filePath.c_str(), pVRAM, HUC6270_VRAM_SIZE * sizeof(u16)))
+			return { {"error", "Failed to write VRAM to: " + filePath} };
+
+		nlohmann::json result;
+		result["file_path"]    = filePath;
+		result["bytes_written"] = HUC6270_VRAM_SIZE * sizeof(u16);
+		result["words_written"] = HUC6270_VRAM_SIZE;
+		return result;
+	}
+
+private:
+	FPCEEmu* pPCEEmu;
+};
+
+// -----------------------------------------------------------------------
+// pce-analyser://vram
+// Full HuC6270 VRAM (64KB) as a base64-encoded binary resource.
+// -----------------------------------------------------------------------
+class FVRAMResource : public FMCPResource
+{
+public:
+	FVRAMResource(FPCEEmu* pEmu) : pPCEEmu(pEmu)
+	{
+		URI         = "pce-analyser://vram";
+		Title       = "VRAM";
+		Description = "Full HuC6270 VRAM contents (0x8000 16-bit words = 64KB) as raw binary. "
+		              "Words are in little-endian order. "
+		              "VRAM $0000–$0FFF typically contains the BAT (tile map). "
+		              "Tile CHR data follows the BAT; tile N starts at word address N*16. "
+		              "Use this instead of many read_vram calls when you need a broad view of VRAM layout.";
+		MimeType    = "application/octet-stream";
+		Category    = "graphics";
+	}
+
+	std::string Read(FEmuBase* pEmulator) override
+	{
+		const u16* pVRAM = pPCEEmu->GetCore()->GetHuC6270_1()->GetVRAM();
+		return Base64Encode(reinterpret_cast<const uint8_t*>(pVRAM), HUC6270_VRAM_SIZE * sizeof(u16));
+	}
+
+private:
+	FPCEEmu* pPCEEmu;
+};
+
+// -----------------------------------------------------------------------
+// render_bg_tiles_to_png
+// Renders PCE BG tiles (8x8, 4bpp planar) from VRAM to a PNG file.
+// -----------------------------------------------------------------------
+class FRenderBGTilesToPNGTool : public FMCPTool
+{
+public:
+	FRenderBGTilesToPNGTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
+	{
+		Description =
+			"Renders PCE background tiles from VRAM to a PNG file. "
+			"Each BG tile is 8x8 pixels, 4bpp planar (32 bytes / 16 VRAM words). "
+			"Tiles are laid out left-to-right, top-to-bottom in the output image. "
+			"vram_address and tile_count are in VRAM words. "
+			"palette_index selects one of the 32 VCE palettes (0-15 = BG palettes).";
+
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"vram_address", {
+					{"type", "integer"},
+					{"description", "Starting VRAM word address of the first tile (must be 16-word aligned)"}
+				}},
+				{"tile_count", {
+					{"type", "integer"},
+					{"description", "Number of tiles to render"}
+				}},
+				{"width_in_tiles", {
+					{"type", "integer"},
+					{"description", "Number of tile columns in the output image"}
+				}},
+				{"palette_index", {
+					{"type", "integer"},
+					{"description", "VCE palette index 0-31 (0-15 = BG, 16-31 = sprite). Default 0."}
+				}},
+				{"file_path", {
+					{"type", "string"},
+					{"description", "Absolute path for the output PNG file"}
+				}}
+			}},
+			{"required", {"vram_address", "tile_count", "width_in_tiles", "file_path"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("vram_address"))
+			return { {"error", "Missing required argument: vram_address"} };
+		if (!arguments.contains("tile_count"))
+			return { {"error", "Missing required argument: tile_count"} };
+		if (!arguments.contains("width_in_tiles"))
+			return { {"error", "Missing required argument: width_in_tiles"} };
+		if (!arguments.contains("file_path"))
+			return { {"error", "Missing required argument: file_path"} };
+
+		const uint32_t    vramAddress  = GetNumericalArgument("vram_address",   arguments);
+		const uint32_t    tileCount    = GetNumericalArgument("tile_count",      arguments);
+		const uint32_t    widthTiles   = GetNumericalArgument("width_in_tiles",  arguments);
+		const uint32_t    paletteIndex = arguments.contains("palette_index") ? GetNumericalArgument("palette_index", arguments) : 0;
+		const std::string filePath     = arguments["file_path"].get<std::string>();
+
+		if (widthTiles == 0)
+			return { {"error", "width_in_tiles must be greater than zero"} };
+		if (tileCount == 0)
+			return { {"error", "tile_count must be greater than zero"} };
+
+		const uint32_t wordsPerTile = 16;
+		if (vramAddress + tileCount * wordsPerTile > HUC6270_VRAM_SIZE)
+			return { {"error", "vram_address + tile_count * 16 exceeds VRAM bounds"} };
+
+		const uint32_t heightTiles = (tileCount + widthTiles - 1) / widthTiles;
+
+		const uint32_t* pPalette = GetPaletteFromPaletteNo(paletteIndex);
+
+		const u16* pVRAM = pPCEEmu->GetCore()->GetHuC6270_1()->GetVRAM();
+
+		FGraphicsView view(widthTiles * 8, heightTiles * 8);
+		view.Clear(0xff000000);
+		view.Draw4bpp8x8PlanarBGTileImage(
+			reinterpret_cast<const uint8_t*>(pVRAM + vramAddress),
+			0, 0,
+			(int)widthTiles, (int)heightTiles,
+			pPalette);
+
+		if (!view.SavePNG(filePath.c_str()))
+			return { {"error", "Failed to write PNG to: " + filePath} };
+
+		nlohmann::json result;
+		result["file_path"]      = filePath;
+		result["tile_count"]     = tileCount;
+		result["width_in_tiles"] = widthTiles;
+		result["height_in_tiles"] = heightTiles;
+		result["image_width"]    = widthTiles * 8;
+		result["image_height"]   = heightTiles * 8;
+		return result;
+	}
+
+private:
+	FPCEEmu* pPCEEmu;
+};
+
+// -----------------------------------------------------------------------
+// render_sprite_tiles_to_png
+// Renders PCE sprite tiles (16x16, 4bpp planar) from VRAM to a PNG file.
+// -----------------------------------------------------------------------
+class FRenderSpriteTilesToPNGTool : public FMCPTool
+{
+public:
+	FRenderSpriteTilesToPNGTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
+	{
+		Description =
+			"Renders PCE sprite tiles from VRAM to a PNG file. "
+			"Each sprite tile block is 16x16 pixels, 4bpp planar (64 VRAM words): "
+			"words 0-15 = plane 0, 16-31 = plane 1, 32-47 = plane 2, 48-63 = plane 3. "
+			"The output image contains width_in_sprites * height_in_sprites blocks. "
+			"palette_index selects one of the 32 VCE palettes (16-31 = sprite palettes).";
+
+		InputSchema = {
+			{"type", "object"},
+			{"properties", {
+				{"vram_address", {
+					{"type", "integer"},
+					{"description", "Starting VRAM word address of the first sprite tile block (must be 64-word aligned)"}
+				}},
+				{"width_in_sprites", {
+					{"type", "integer"},
+					{"description", "Number of sprite columns in the output image"}
+				}},
+				{"height_in_sprites", {
+					{"type", "integer"},
+					{"description", "Number of sprite rows in the output image"}
+				}},
+				{"palette_index", {
+					{"type", "integer"},
+					{"description", "VCE palette index 0-31 (16-31 = sprite palettes). Default 16."}
+				}},
+				{"file_path", {
+					{"type", "string"},
+					{"description", "Absolute path for the output PNG file"}
+				}}
+			}},
+			{"required", {"vram_address", "width_in_sprites", "height_in_sprites", "file_path"}}
+		};
+	}
+
+	nlohmann::json Execute(FEmuBase* pEmu, const nlohmann::json& arguments) override
+	{
+		if (!arguments.contains("vram_address"))
+			return { {"error", "Missing required argument: vram_address"} };
+		if (!arguments.contains("width_in_sprites"))
+			return { {"error", "Missing required argument: width_in_sprites"} };
+		if (!arguments.contains("height_in_sprites"))
+			return { {"error", "Missing required argument: height_in_sprites"} };
+		if (!arguments.contains("file_path"))
+			return { {"error", "Missing required argument: file_path"} };
+
+		const uint32_t    vramAddress     = GetNumericalArgument("vram_address",      arguments);
+		const uint32_t    widthSprites    = GetNumericalArgument("width_in_sprites",  arguments);
+		const uint32_t    heightSprites   = GetNumericalArgument("height_in_sprites", arguments);
+		const uint32_t    paletteIndex    = arguments.contains("palette_index") ? GetNumericalArgument("palette_index", arguments) : 16;
+		const std::string filePath        = arguments["file_path"].get<std::string>();
+
+		if (widthSprites == 0 || heightSprites == 0)
+			return { {"error", "width_in_sprites and height_in_sprites must be greater than zero"} };
+
+		const uint32_t wordsPerSprite = 64;
+		if (vramAddress + widthSprites * heightSprites * wordsPerSprite > HUC6270_VRAM_SIZE)
+			return { {"error", "Requested sprite range exceeds VRAM bounds"} };
+
+		const uint32_t* pPalette = GetPaletteFromPaletteNo(paletteIndex);
+
+		const u16* pVRAM = pPCEEmu->GetCore()->GetHuC6270_1()->GetVRAM();
+
+		FGraphicsView view(widthSprites * 16, heightSprites * 16);
+		view.Clear(0xff000000);
+		view.Draw4bpp16x16PlanarSpriteImage(
+			reinterpret_cast<const uint8_t*>(pVRAM + vramAddress),
+			0, 0,
+			(int)widthSprites, (int)heightSprites,
+			pPalette);
+
+		if (!view.SavePNG(filePath.c_str()))
+			return { {"error", "Failed to write PNG to: " + filePath} };
+
+		nlohmann::json result;
+		result["file_path"]         = filePath;
+		result["width_in_sprites"]  = widthSprites;
+		result["height_in_sprites"] = heightSprites;
+		result["image_width"]       = widthSprites * 16;
+		result["image_height"]      = heightSprites * 16;
+		return result;
+	}
+
+private:
+	FPCEEmu* pPCEEmu;
+};
 
 void RegisterPCEMCPTools(FPCEEmu* pPCEEmu)
 {
-	AddMCPTool("read_vram",          new FReadVRAMTool(pPCEEmu));
-	AddMCPTool("read_bank_by_name",  new FReadBankByNameTool(pPCEEmu));
-	AddMCPTool("read_bank_by_mpr",   new FReadBankByMprTool(pPCEEmu));
+	// Memory tools
+	AddMCPTool("read_vram",                 new FReadVRAMTool(pPCEEmu));
+	AddMCPTool("read_bank_by_name",         new FReadBankByNameTool(pPCEEmu));
+	AddMCPTool("read_bank_by_mpr",          new FReadBankByMprTool(pPCEEmu));
+	AddMCPTool("write_vram_to_binary_file", new FDumpVRAMTool(pPCEEmu));
+
+	// Graphics tools
+	AddMCPTool("render_bg_tiles_to_png",     new FRenderBGTilesToPNGTool(pPCEEmu));
+	AddMCPTool("render_sprite_tiles_to_png", new FRenderSpriteTilesToPNGTool(pPCEEmu));
+
+	// Resources
+	AddMCPResource(new FVRAMResource(pPCEEmu));
+
+	// Emulator control
+	AddMCPTool("reset_emulator", new FResetEmulatorTool(pPCEEmu));
 }

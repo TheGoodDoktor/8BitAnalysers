@@ -11,42 +11,42 @@
 
 // sam. increased kBufSizes so we could log assembler output.
 #define PLATFORM_FORMAT_LOG_MESSAGE(fn, level)  \
-	static const int kBufSize = 64*1024; \
-    static char buf[kBufSize]; \
+	const int kBufSize = 64*1024; \
+    char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
 	vsprintf_s(buf,kBufSize, fmt, ap); \
 	va_end(ap); \
-	fn(buf); 
+	fn(buf);
 
 #define PLATFORM_FORMAT_LOG_MESSAGE_LF(fn, level)  \
-    static const int kBufSize = 64*1024; \
-    static char buf[kBufSize]; \
+    const int kBufSize = 64*1024; \
+    char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
 	vsprintf_s(buf,kBufSize, fmt, ap); \
 	va_end(ap); \
 	strcat_s(buf,kBufSize, "\n"); \
-	fn(buf); 
+	fn(buf);
 #else
 #define PLATFORM_FORMAT_LOG_MESSAGE(fn, level)  \
-    static const int kBufSize = 64*1024; \
-	static char buf[kBufSize]; \
+    const int kBufSize = 64*1024; \
+	char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
 	vsnprintf(buf, kBufSize, fmt, ap); \
 	va_end(ap); \
-	fn(buf); 
+	fn(buf);
 
 #define PLATFORM_FORMAT_LOG_MESSAGE_LF(fn, level)  \
-    static const int kBufSize = 64*1024; \
-	static char buf[kBufSize]; \
+    const int kBufSize = 64*1024; \
+	char buf[kBufSize]; \
     va_list ap; \
     va_start(ap, fmt); \
 	vsnprintf(buf,kBufSize, fmt, ap); \
 	va_end(ap); \
 	strcat(buf, "\n"); \
-	fn(buf); 
+	fn(buf);
 #endif
 
 void LogFatal(const char* str)

@@ -11,9 +11,9 @@ struct FCodeInfo;
 
 struct FHuC6280DisassemblerConfig
 {
-	char BrOp;						// Bracket open character
-	char BrCl;						// Bracket close character
-	const char* ZpPr;			// Zero Page prefix
+	char BrOp;					// Bracket open character
+	char BrCl;					// Bracket close character
+	const char* ZpPr;			// Zero Page prefix. Only set when doing asm export.
 	bool MprIndexMode;		// Convert mpr bitfield to mpr index for TMA & TAM instructions.
 };
 

@@ -113,7 +113,9 @@ void FMemoryAccessGrid::DrawGrid(float x, float y)
 	// draw highlight rect
 	const float mousePosX = io.MousePos.x - pos.x;
 	const float mousePosY = io.MousePos.y - pos.y;
-	if (mousePosX >= 0 && mousePosY >= 0 && mousePosX < (GridSizeX * rectSize) && mousePosY < (GridSizeY * rectSize))
+	// sam. Fixed the tooltip displaying when the view was obscured by another view.
+	const ImVec2 gridMax(pos.x + (GridSizeX * rectSize), pos.y + (GridSizeY * rectSize));
+	if (mousePosX >= 0 && mousePosY >= 0 && mousePosX < (GridSizeX * rectSize) && mousePosY < (GridSizeY * rectSize) && ImGui::IsMouseHoveringRect(pos, gridMax))
 	{
 		const int xChar = (int)floor(mousePosX / rectSize);
 		const int yChar = (int)floor(mousePosY / rectSize);

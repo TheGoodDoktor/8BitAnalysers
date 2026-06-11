@@ -790,6 +790,11 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				ImGui::SetWindowFocus("Enter Label Text");
 			}
 		}
+		// sam. Remove label by pressing Shift + Delete
+		else if (cursorItem.Item->Type == EItemType::Label && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Delete))
+		{
+			RemoveLabelAtAddress(state, cursorItem.AddressRef);
+		}
 		else if (io.KeyShift && ImGui::IsKeyPressed((ImGuiKey)state.KeyConfig[(int)EKey::Comment]))
 		{
 			FCommentBlock* pCommentBlock = AddCommentBlock(state, cursorItem.AddressRef);
@@ -1139,9 +1144,10 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 	size_t oldSize = bank.ItemList.size();
 #endif
 
-	// sam. 
+	// sam.
 	bank.bHasCode = false;
 	bank.bHasData = false;
+	bank.bHasGraphics = false;
 
 	bank.CommentLineAllocator.FreeAll();
 	FItemListBuilder listBuilder(bank.ItemList);
@@ -1219,7 +1225,11 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 						nextItemAddress = bankAddr + 1;
 
 					listBuilder.AddItem(pDataInfo, listBuilder.BankId, listBuilder.CurrAddr);
-					bank.bHasData = true; // sam
+					
+					// sam
+					bank.bHasData = true; // This is probably a bit silly. All banks have data by default.
+					if (pDataInfo->DataType == EDataType::Bitmap)
+						bank.bHasGraphics = true;
 				}
 			}
 		}
@@ -1451,6 +1461,14 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 	}
 }
 
+// sam. Draw a thin grey line under a code line that ends a function/subroutine (RTS/RTI/RET/JMP etc.),
+void DrawFunctionEndSeparator(const ImVec2& lineMin, const ImVec2& lineMax)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	const ImU32 col = 0xff404040;	// dark grey
+	dl->AddLine(ImVec2(lineMin.x, lineMax.y), ImVec2(lineMax.x, lineMax.y), col);
+}
+
 void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item)
 {
 	const uint16_t physAddr = item.AddressRef.GetAddress();
@@ -1487,6 +1505,9 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 	{
 		bNewlySelected = true;
 	}
+	// sam. For DrawFunctionEndSeparator.
+	const ImVec2 lineMin = ImGui::GetItemRectMin();
+	const ImVec2 lineMax = ImGui::GetItemRectMax();
 	if (bNewlySelected)
 	{
 		viewState.SetCursorItem(item);
@@ -1525,6 +1546,9 @@ void DrawCodeAnalysisItem(FCodeAnalysisState& state, FCodeAnalysisViewState& vie
 		DrawCodeInfo(state, viewState, item);
 		if (bHighlight)
 			ImGui::PopStyleColor();
+		// sam. Draw grey dividing line underneath each function or code block. 
+		if (CheckStopInstruction(state, physAddr) && physAddr != state.CPUInterface->GetPC().GetAddress())
+			DrawFunctionEndSeparator(lineMin, lineMax);
 		break;
 	case EItemType::Data:
 		if (bHighlight)
@@ -1723,6 +1747,7 @@ void DrawHelpButton()
 		ImGui::BulletText("l : Add label");
 		ImGui::BulletText("Shift + l : Rename operand label");
 		ImGui::BulletText("r : Rename label");
+		ImGui::BulletText("Shift + Delete : Remove label");
 		ImGui::SeparatorText("Comments");
 		ImGui::BulletText("; : Add inline comment");
 		ImGui::BulletText("Shift + ; : Add multi-line comment");

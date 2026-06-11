@@ -8,7 +8,6 @@
 #include "Util/GraphicsView.h"
 #include "ImGuiSupport/ImGuiScaling.h"
 #include <imgui_internal.h>
-#include "CodeAnalyser/UI/UIColours.h"
 #include "optick/optick.h"
 #include "../PCEEmu.h"
 
@@ -22,7 +21,7 @@ static const int kVRAMSpriteViewWidth = 256;   // 16 sprite blocks across
 
 static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
 
-void DrawDataAcessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2);
+void DrawDataAccessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2);
 
 // Build a 16-entry RGBA palette from the HuC6260 colour table.
 // paletteBase is the colour table index of colour 0 for this palette.
@@ -35,6 +34,15 @@ static void BuildHWPalette(const u16* colorTable, int paletteBase, uint32_t* out
 		const u8 g = kExpand3to8[(cv >> 6) & 7];
 		const u8 b = kExpand3to8[cv & 7];
 		out[i] = 0xFF000000u | ((uint32_t)b << 16) | ((uint32_t)g << 8) | r;
+	}
+}
+
+static void BuildGreyscalePalette(uint32_t* out)
+{
+	for (int i = 0; i < 16; i++)
+	{
+		const u8 v = (u8)(i * 17);
+		out[i] = 0xFF000000u | ((uint32_t)v << 16) | ((uint32_t)v << 8) | v;
 	}
 }
 
@@ -215,7 +223,10 @@ void FVRAMViewer::DrawBGTileView()
 	BGTileOffset = MAX(0, MIN(BGTileOffset, kMaxTiles - kTilesVisible));
 
 	uint32_t palette[16];
-	BuildHWPalette(colorTable, MAX(0, BGTilePalette) * 16, palette);
+	if (bBGTileGreyscale)
+		BuildGreyscalePalette(palette);
+	else
+		BuildHWPalette(colorTable, MAX(0, BGTilePalette) * 16, palette);
 
 	BGTileViewImage->Clear(0xFF000000);
 	const int tilesAvailable = MIN(kTilesVisible, kMaxTiles - BGTileOffset);
@@ -260,9 +271,11 @@ void FVRAMViewer::DrawBGTileView()
 	int bgAddr = BGTileOffset * 16;
 	if (ImGui::SliderInt("Address##bgtileoffset", &bgAddr, 0, (kMaxTiles - kTilesVisible) * 16, "$%04X"))
 		BGTileOffset = bgAddr / 16;
-	//ImGui::Checkbox("Preview##bgtile", &bPreviewPalette);
 	//ImGui::SameLine();
+	ImGui::BeginDisabled(bBGTileGreyscale);
 	DrawHWPaletteCombo("Palette##bgtile", BGTilePalette, bPreviewPalette);
+	ImGui::EndDisabled();
+	ImGui::Checkbox("Greyscale##bgtile", &bBGTileGreyscale);
 }
 
 void FVRAMViewer::DrawSpriteView()
@@ -294,7 +307,10 @@ void FVRAMViewer::DrawSpriteView()
 	SpriteBlockOffset = MAX(0, MIN(SpriteBlockOffset, kMaxBlocks - kBlocksVisible));
 
 	uint32_t palette[16];
-	BuildHWPalette(colorTable, MAX(0, SpritePalette) * 16, palette);
+	if (bSpriteGreyscale)
+		BuildGreyscalePalette(palette);
+	else
+		BuildHWPalette(colorTable, MAX(0, SpritePalette) * 16, palette);
 
 	SpriteViewImage->Clear(0xFF000000);
 	const int blocksAvailable = MIN(kBlocksVisible, kMaxBlocks - SpriteBlockOffset);
@@ -339,9 +355,13 @@ void FVRAMViewer::DrawSpriteView()
 	int sprAddr = SpriteBlockOffset * 64;
 	if (ImGui::SliderInt("Address##sproffset", &sprAddr, 0, (kMaxBlocks - kBlocksVisible) * 64, "$%04X"))
 		SpriteBlockOffset = sprAddr / 64;
-	ImGui::Checkbox("Preview##spr", &bPreviewPalette);
-	ImGui::SameLine();
+	//ImGui::SameLine();
+	//ImGui::Checkbox("Preview##spr", &bPreviewPalette);
+	//ImGui::SameLine();
+	ImGui::BeginDisabled(bSpriteGreyscale);
 	DrawHWPaletteCombo("Palette##spr", SpritePalette, bPreviewPalette);
+	ImGui::EndDisabled();
+	ImGui::Checkbox("Greyscale##spr", &bSpriteGreyscale);
 }
 
 void	FVRAMViewer::DrawLegend()
@@ -397,7 +417,6 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 	ImGui::Image((void*)MemoryViewImage->GetTexture(), size,uv0,uv1);
 
 	const bool bMapIsHovered = ImGui::IsItemHovered();
-	SpriteHighlight = -1;
 
 	ImGui::SameLine();
 	ImGui::Button("?");
@@ -437,8 +456,6 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 		}
 		ImGui::EndTooltip();
 
-		SpriteHighlight = GetSpriteIndexForAddress(addr);
-
 		if (ImGui::IsMouseDoubleClicked(0) && access.LastWriter.IsValid())
 			viewState.GoToAddress(access.LastWriter, false);
 	}
@@ -455,7 +472,7 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 		const ImVec2 indPos   = ImGui::GetCursorScreenPos();
 		ImGui::Dummy(ImVec2(14.0f, lineHeight));
 		if (brightness > 0)
-			DrawDataAcessIndicator(indPos, 0xff000000 | brightness, brdCol, lineHeight, lh2);
+			DrawDataAccessIndicator(indPos, 0xff000000 | brightness, brdCol, lineHeight, lh2);
 		ImGui::SameLine();
 		ImGui::Text("Last write:");
 		ImGui::SameLine();
@@ -470,7 +487,7 @@ void	FVRAMViewer::DrawPhysicalMemoryOverview()
 		const ImVec2 indPos   = ImGui::GetCursorScreenPos();
 		ImGui::Dummy(ImVec2(14.0f, lineHeight));
 		if (brightness > 0)
-			DrawDataAcessIndicator(indPos, 0xff000000 | (brightness << 8), brdCol, lineHeight, lh2);
+			DrawDataAccessIndicator(indPos, 0xff000000 | (brightness << 8), brdCol, lineHeight, lh2);
 		ImGui::SameLine();
 		ImGui::Text("Last read: ");
 		ImGui::SameLine();
@@ -507,9 +524,6 @@ void FVRAMViewer::DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix)
 			drawCol = kDataReadActiveCol;
 		else if (read)
 			drawCol = kDataReadCol;
-
-		if (SpriteHighlight != -1 && spriteIndex == SpriteHighlight)
-			drawCol = Colours::GetFlashColour();
 
 		*pPix++ = drawCol;
 	}

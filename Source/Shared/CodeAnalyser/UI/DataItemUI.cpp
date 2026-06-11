@@ -684,7 +684,7 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 	ImGui::PopID();
 }
 
-void DrawDataAcessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2)
+void DrawDataAccessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2)
 {
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 
@@ -711,7 +711,7 @@ void ShowDataItemReadActivity(FCodeAnalysisState& state, FAddressRef addr)
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 
-		DrawDataAcessIndicator(pos, 0xff000000 | (rBrightVal << 8), brd_color, lineHeight, lh2);
+		DrawDataAccessIndicator(pos, 0xff000000 | (rBrightVal << 8), brd_color, lineHeight, lh2);
 	}
 }
 
@@ -730,7 +730,7 @@ void ShowDataItemWriteActivity(FCodeAnalysisState& state, FAddressRef addr)
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 
-		DrawDataAcessIndicator(pos, 0xff000000 | (wBrightVal << 0), brd_color, lineHeight, lh2);
+		DrawDataAccessIndicator(pos, 0xff000000 | (wBrightVal << 0), brd_color, lineHeight, lh2);
 	}
 }
 
@@ -755,14 +755,14 @@ void ShowDataItemActivity(FCodeAnalysisState& state, FAddressRef addr)
 
 		if (wBrightVal > 0)
 		{
-			DrawDataAcessIndicator(pos, 0xff000000 | (wBrightVal << 0), brd_color, lineHeight, lh2);
+			DrawDataAccessIndicator(pos, 0xff000000 | (wBrightVal << 0), brd_color, lineHeight, lh2);
 		}
 
 		pos.x += 10;
 
 		if (rBrightVal > 0)
 		{
-			DrawDataAcessIndicator(pos, 0xff000000 | (rBrightVal << 8), brd_color, lineHeight, lh2);
+			DrawDataAccessIndicator(pos, 0xff000000 | (rBrightVal << 8), brd_color, lineHeight, lh2);
 		}
 	}
 }

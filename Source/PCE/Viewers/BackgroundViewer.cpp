@@ -68,6 +68,8 @@ void FBackgroundViewer::DrawUI()
 
 		ImGui::Checkbox("Show Grid##grid_bg", &show_grid);
 		ImGui::Checkbox("Write Activity##writeact_bg", &show_write_activity);
+		if (ImGui::Checkbox("Greyscale##greyscale_bg", &bGreyscale))
+			LastRenderedFrame = -1;
 
 		ImGui::TableNextColumn();
 
@@ -265,13 +267,24 @@ bool FBackgroundViewer::UpdateBackground()
 	// instead of three kExpand3to8 lookups and four byte stores.
 	static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
 	uint32_t rgbaLUT[512];
-	for (int i = 0; i < 512; i++)
+	if (bGreyscale)
 	{
-		const u16 cv = colorTable[i];
-		const u32 r  = kExpand3to8[(cv >> 3) & 0x07];
-		const u32 g  = kExpand3to8[(cv >> 6) & 0x07];
-		const u32 b  = kExpand3to8[cv & 0x07];
-		rgbaLUT[i]   = 0xFF000000u | (b << 16) | (g << 8) | r;
+		for (int i = 0; i < 512; i++)
+		{
+			const u8 v = (u8)((i & 0x0F) * 17);
+			rgbaLUT[i] = 0xFF000000u | ((uint32_t)v << 16) | ((uint32_t)v << 8) | v;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < 512; i++)
+		{
+			const u16 cv = colorTable[i];
+			const u32 r  = kExpand3to8[(cv >> 3) & 0x07];
+			const u32 g  = kExpand3to8[(cv >> 6) & 0x07];
+			const u32 b  = kExpand3to8[cv & 0x07];
+			rgbaLUT[i]   = 0xFF000000u | (b << 16) | (g << 8) | r;
+		}
 	}
 
 	bool anyDirty = false;

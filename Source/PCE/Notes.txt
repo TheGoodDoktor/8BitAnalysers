@@ -5,9 +5,11 @@ TODO FOR FIRST RELEASE
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - tidy up sprites viewer detail pane
-- bank addresses should be offsets (including function labels)
-- dont add cd bios labels in WRAM for joy/joyena etc
-- fix trace button in code analysis view
+- bank addresses should be offsets (including function labels)? toggle in UI
+- fix trace button in code analysis view (sometimes works)
+- remove validatorpath from global config in release builds
+- remove gamedb from globalconfig (think I did it already)
+- rename snapshotfolder in globalconfig?
 
 TODO
 - operand dropdowns dont work
@@ -15,20 +17,15 @@ TODO
 - add audio viewer: disable channels etc
 - create new graphics viewer that removes all the stuff I dont need. off-screen buffers etc
 - in graphics viewer, label which palette is currently selected 
-- change Current palette option in graphics viewer. doesnt make sense for PCE
 - Show register value on tooltips
 - tidy tooltips for PCE related instructions
-- make bank label be an offset instead of address. add toggle in UI.
 - display vram transfer address in vram viewer. MAWR. maybe with indicator
-- in graphics viewer, label which palette is currently selected
 - get 3bpp, 2bpp sprite working in graphics viewer. 
 - tooltips on pce registers describing what they do
-- in sprites viewer make the Results tab a Search tab and move find all into it?
 - change Current palette option in graphics viewer. doesnt make sense for PCE
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
 - hookup RegisterCodeExecutedHuC6280
-- Implement CodeAnalyserHuC6280.cpp
 - reset viewers on soft reset
 - dupe bank issues in hello.pce project. "FAddressRef::SetVal on unmapped bank 62 ROM_01_3. ref will be invalid." followed by assert in FItemRefernceTracker::RegisterAccess
 - deal with multiple operands, such as block operations etc [partially done]
@@ -41,20 +38,25 @@ TODO
 - add optional label when formatting sprites in sprite viewer
 - get claude to see if CheckPointerRefInstructionHuC6280 needs to be implemented
 - get claude to write unit test for GetInstructionAddressModeHuC6280 to compare against huc6280dasm_op
-
+- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory. sometimes works.
+- add PCE palette display type.
+- get character map view working
+- absolute X & Y instructions dont display absolute value in code analysis view. see LDY NNNN,X LDA NNNN,X CMP NNNN,Y (opcodes BC, BD & D9)
+- fix system vectors breaking asm output
+- auto-wrap multi-line comments
+ 
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
 - vram seems to display sprite 63 pattern data at the start of vram.
 - TIA instruction lost it's self modifying code "Operand Data"  
 - asm export fails if you export right after reset, when UNUSED banks are mapped.
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
-- code analysis view doesnt go to address that was last viewed after loading project.
 - when hovering over first operand of TIA instruction that is a label, the middle operand disappears.
-- trace button doesnt seem to work in code analysis view
-- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - sprites formatted by sprite viewer dont draw correctly.
 - Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
 - palettes get added at index 67
+- code snippet tooltip shows all FF for opcode values sometimes
+- sprite search can break. shows no thumbnails and format button does nothing.
 
 IDEAS
 - press delete to remove formatting
@@ -86,7 +88,6 @@ DONE
 - perf of sprites results tab is really bad. improved but DrawAddressLabel is expensive when called > once
 - STA zero page shows HW page label in code analysis view. opcode 85. 
 - IRQ vector has wrong label. hero tonma IRQ1 vector is in ROM 1 but has label func_ROM_00_433A_IRQ1Vector
-- BBR0 instruction displayed wrong in code analysis. doesnt show ptr to zp memory
 - add ctrl + up/down to keyboard shortcuts display
 - crash in ImGui::DockContextEndFrame(). can happen on start up.
 - in sprites viewer make the Results tab a Search tab and move find all into it?
@@ -116,3 +117,14 @@ DONE
 - CMP (zp) [opcode $D2] doesnt show zp ptr in code analysis view.
 - SBC (zp) [opcode $F2] doesnt show zp ptr in code analysis view.
 - RMBi doesnt show zp ptr in code analysis view.
+- add mcp tool to reset emulation
+- make JMP (XXXX) create a label at the jump target. currently it doesn't create a label.
+- Implement CodeAnalyserHuC6280.cpp
+- code analysis view doesnt go to address that was last viewed after loading project.
+- dont add cd bios labels in WRAM for joy/joyena etc
+- make MCP Rationale text accessible (or make button to add as comment)
+- remove BIOS checkbox on globals view for hucard games
+- add grayscale palette so we can view vram tiles & sprites when no palettes are set. same for Screen view and Background view? see Mesen
+- TAI instruction shows UNUSED bank for tooltip on dest address label (hero tonma entry point). couldnt repro easily. setting to data and then code changes the dst pointer to a function. see rabio lepus f564
+- dont load cd BIOS
+- remove biospath from globalconfig

@@ -343,12 +343,12 @@ void DrawCodeDetails(FCodeAnalysisState& state, FCodeAnalysisViewState& viewStat
 	//sam. added support for multiple operands
 	for (int i = 0; i < FCodeInfo::kMaxExtraOperands; i++)
 	{
-		FOperandInfo& extra = pCodeInfo->ExtraOperands[i];
-		if (extra.Type != EOperandType::Unknown)
+		FOperandInfo& extraOperandInfo = pCodeInfo->ExtraOperands[i];
+		if (extraOperandInfo.Type != EOperandType::Unknown)
 		{
 			char label[32];
 			snprintf(label, sizeof(label), "Operand %d Type", i + 2);
-			if (DrawOperandInfoCombo(label, extra))
+			if (DrawOperandInfoCombo(label, extraOperandInfo))
 				pCodeInfo->Text.clear();
 		}
 	}

@@ -237,7 +237,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(PC);
 	int trapId = kTrapId_None;
 
-	if (StepToCursorAddr && PC == *StepToCursorAddr)
+	if (RunToAddress && PC == *RunToAddress)
 	{
 		trapId = kTrapId_Step;
 	}
@@ -569,14 +569,14 @@ void	FDebugger::SaveToFile(FILE* fp)
 
 void FDebugger::Break()
 { 
-    StepToCursorAddr = std::nullopt;
+    RunToAddress = std::nullopt; 
     StepMode = EDebugStepMode::None;
     bDebuggerStopped = true;
 }
 
-void FDebugger::Continue(std::optional<FAddressRef> stepToCursorAddr)
+void FDebugger::Continue(std::optional<FAddressRef> runToAddress)
 { 
-    StepToCursorAddr = stepToCursorAddr;
+    RunToAddress = runToAddress;
     StepMode = EDebugStepMode::None; 
     bDebuggerStopped = false; 
 

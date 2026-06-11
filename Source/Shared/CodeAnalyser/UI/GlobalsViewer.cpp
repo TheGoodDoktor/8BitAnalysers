@@ -437,13 +437,18 @@ void FGlobalsViewer::DrawGlobals()
 		bRebuildFilteredGlobalFunctions = true;
 		bRebuildFilteredGlobalDataItems = true;
 	}
-	ImGui::SameLine();
-	if (ImGui::Checkbox("BIOS", &ShowROMLabels))
+	// sam. Only show "ROM/BIOS" checkbox if the machine supports it.
+	if (state.Config.RomType != ESystemRom::None)
 	{
-		GlobalFunctionsFilter.bNoMachineRoms = !ShowROMLabels;
-		GlobalDataItemsFilter.bNoMachineRoms = !ShowROMLabels;
-		bRebuildFilteredGlobalFunctions = true;
-		bRebuildFilteredGlobalDataItems = true;
+		ImGui::SameLine();
+		// sam. Added support for differentiating machines that have BIOS or ROM
+		if (ImGui::Checkbox(state.Config.RomType == ESystemRom::Bios ? "BIOS" : "ROM", &ShowROMLabels))
+		{
+			GlobalFunctionsFilter.bNoMachineRoms = !ShowROMLabels;
+			GlobalDataItemsFilter.bNoMachineRoms = !ShowROMLabels;
+			bRebuildFilteredGlobalFunctions = true;
+			bRebuildFilteredGlobalDataItems = true;
+		}
 	}
 
 	if (ImGui::BeginTabBar("GlobalsTabBar"))

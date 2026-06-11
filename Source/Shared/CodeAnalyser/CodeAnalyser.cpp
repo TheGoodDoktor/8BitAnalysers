@@ -676,6 +676,27 @@ bool CheckJumpInstruction(FCodeAnalysisState& state, uint16_t pc, uint16_t* out_
 	}
 }
 
+// sam. Get the jump destination address for a 16 bit operand value. 
+// This was added to add support for the 6502 JMP (indirect) instruction ocode $6c. 
+// For every instruction other than JMP (ind) the jump destination address will be the 
+// the address from the 16 bit operand value. However for JMP (ind) we need to look up
+// the address indirectly using the 16 bit operand address.
+bool ResolveJumpDestinationAddress(FCodeAnalysisState& state, uint16_t pc, uint16_t operandAddr, uint16_t* out_addr)
+{
+	const ICPUInterface* pCPUInterface = state.CPUInterface;
+	switch (pCPUInterface->CPUType)
+	{
+		case ECPUType::Z80:
+			return ResolveJumpDestinationAddressZ80(state, pc, operandAddr, out_addr);
+		case ECPUType::M6502:
+			return ResolveJumpDestinationAddress6502(state, pc, operandAddr, out_addr);
+		case ECPUType::HuC6280:
+			return ResolveJumpDestinationAddressHuC6280(state, pc, operandAddr, out_addr);
+		default:
+			return false;	// unsupported CPU type
+	}
+}
+
 EInstructionType GetInstructionType(FCodeAnalysisState& state, FAddressRef addr)
 {
 	const ICPUInterface* pCPUInterface = state.CPUInterface;
@@ -993,12 +1014,34 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 		const FAddressRef jumpAddr = state.GetCanonicalAddressRef(jumpPhysAddr);
 		assert(state.IsAddressValid(jumpAddr));
 
+		const FAddressRef pcAddrRef = state.GetCanonicalAddressRef(pc);
+
 		FLabelInfo* pLabel = state.GetLabelForPhysicalAddress(jumpPhysAddr);
 		if (pLabel != nullptr)
-			pLabel->References.RegisterAccess(state.GetCanonicalAddressRef(pc));
+			pLabel->References.RegisterAccess(pcAddrRef);
 		if (pCodeInfo != nullptr)
 			pCodeInfo->OperandAddress = jumpAddr;
 
+		// sam. Added support for adding labels every time an indirect jump occurs.
+		// Without this, when an indirect jump instruction is executed (such as JMP (ind))
+		// we end up with code that gets jumped to that doesn't have a label.
+		// For memory-indirect jumps (e.g. HuC6280 JMP (ind)) jumpPhysAddr above is just
+		// where the pointer lives, not where execution actually lands - the real
+		// destination can only be known by reading the pointer's current value, which
+		// may not be valid/known at static analysis time (e.g. a vector table populated
+		// at runtime). Resolve it here so the destination gets labelled correctly even
+		// if it wasn't known (or has changed) since the instruction was first analysed.
+		uint16_t jumpDestPhysAddr;
+		if (ResolveJumpDestinationAddress(state, pc, jumpPhysAddr, &jumpDestPhysAddr) && jumpDestPhysAddr != jumpPhysAddr)
+		{
+			const FAddressRef jumpDestAddr = state.GetCanonicalAddressRef(jumpDestPhysAddr);
+			assert(state.IsAddressValid(jumpDestAddr));
+
+			const ELabelType destLabelType = CheckCallInstruction(state, pc) ? ELabelType::Function : ELabelType::Code;
+			FLabelInfo* pDestLabel = GenerateLabelForAddress(state, jumpDestAddr, destLabelType);
+			if (pDestLabel != nullptr)
+				pDestLabel->References.RegisterAccess(pcAddrRef);
+		}
 	}
 
 	// set pointer reference
@@ -2088,7 +2131,10 @@ const FLabelInfo* FCodeAnalysisState::FindLabel(const char* pName, FAddressRef& 
 				const FLabelInfo* pLabel = bank.Pages[p].Labels[offset];
 				if (pLabel && strcmp(pLabel->GetName(), pName) == 0)
 				{
-					outAddress = FAddressRef((int16_t)b, (uint16_t)(p * FCodeAnalysisPage::kPageSize + offset));
+					// sam. fixed bug here.
+					//outAddress = FAddressRef((int16_t)b, (uint16_t)(p * FCodeAnalysisPage::kPageSize + offset));
+					const uint16_t mappedAddress = (uint16_t)((bank.PrimaryMappedPage + p) * FCodeAnalysisPage::kPageSize + offset);
+					outAddress = FAddressRef((int16_t)b, mappedAddress);
 					return pLabel;
 				}
 			}

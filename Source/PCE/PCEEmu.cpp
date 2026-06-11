@@ -31,6 +31,7 @@
 #include "GameDb.h"
 #include "DebugStats.h"
 
+#include "ProjectDefines.h"
 #include "App.h"
 #include "PCEMCPTools.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
@@ -222,7 +223,7 @@ FAddressRef	FPCEEmu::GetPC(void)
 
 uint16_t	FPCEEmu::GetSP(void)
 {
-	return 0x2000 + p6280State->S->GetValue();
+	return STACK_ADDR + p6280State->S->GetValue();
 }
 
 ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
@@ -1019,7 +1020,7 @@ void FPCEEmu::CreateBanks()
 	// Unused banks. One for each mpr slot.
 	for (int d = 0; d < kNumMprSlots; d++)
 	{
-		sprintf(bankName, "UNUSED_%02d", d);
+		sprintf(bankName, "UNMAPPED_%02d", d);
 		BankSets[kBankUnusedStart].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 }
@@ -1075,11 +1076,14 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	CodeAnalysis.SetGlobalConfig(pGlobalConfig);
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
-	
+	CodeAnalysis.Config.RomType = ESystemRom::None;
+
+#if CDROM_SUPPORT
 	// todo: check this is system card 3.0.
 	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
 	bBiosLoaded = pCore->LoadBios(fullBiosPath.c_str(), true);
 	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", fullBiosPath.c_str());
+#endif
 
 	CreateBanks();
 	BuildCanonicalBankIdLookup();
@@ -1108,8 +1112,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	const FPCEConfig* pPCEConfig = GetPCEGlobalConfig();
 	AddGamesList(kPCERomGameListName, GetPCEGlobalConfig()->SnapshotFolder.c_str());
+#if CDROM_SUPPORT
 	AddGamesList(kCDRomGameListName, GetPCEGlobalConfig()->CdRomFolder.c_str());
-
+#endif
 	LoadFont();
 
 	// This is where we add the viewers we want
@@ -1497,9 +1502,14 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		if (FileExists(GetBundlePath(kBiosInfoJsonFile)))
 			ImportAnalysisJson(CodeAnalysis, GetBundlePath(kBiosInfoJsonFile));
 #endif
+		CodeAnalysis.Config.RomType = ESystemRom::Bios;
+	}
+	else
+	{
+		CodeAnalysis.Config.RomType = ESystemRom::None;
 	}
 
-	if (bLoadGameData == false)
+	//if (bLoadGameData == false)
 		AddLabels();
 
 	ReAnalyseCode(CodeAnalysis);
@@ -1606,10 +1616,13 @@ void FPCEEmu::AddLabels()
 	}
 #endif
 
-	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2227), "joyena", ELabelType::Data, 1);
-	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2228), "joy", ELabelType::Data, 5);
-	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x222d), "joytrg", ELabelType::Data, 5);
-	AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2232), "joyold", ELabelType::Data, 5);
+	if (pMedia->IsCDROM())
+	{
+		AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2227), "joyena", ELabelType::Data, 1);
+		AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2228), "joy", ELabelType::Data, 5);
+		AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x222d), "joytrg", ELabelType::Data, 5);
+		AddLabel(state, FAddressRef(BankSets[kBankWRAM0].GetBankId(), 0x2232), "joyold", ELabelType::Data, 5);
+	}
 
 	// Add labels for the memory mapped registers. These are locations in the hardware page memory bank.
 	for (int i = 0; i < kDebugLabelCount; i++)
@@ -1863,6 +1876,7 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 
 	switch (pSnapshot->Type)
 	{
+#if CDROM_SUPPORT
 	case EEmuFileType::CUE:
 		if (!bBiosLoaded)
 		{
@@ -1870,8 +1884,11 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 			SetLastError("Bios not loaded: '%s'", biosPath.c_str());
 			return false;
 		}
+#endif
 	case EEmuFileType::PCE:
+#if CDROM_SUPPORT
 	case EEmuFileType::ZIP:
+#endif
 		if (!pCore->LoadMedia(fileName.c_str()))
 		{
 			SetLastError("Failed to load '%s'", fileName.c_str());

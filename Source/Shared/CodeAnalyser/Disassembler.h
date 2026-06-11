@@ -73,7 +73,7 @@ public:
 	const FCodeInfo* pCodeInfoItem = nullptr;
 	ENumberDisplayMode	HexDisplayMode = ENumberDisplayMode::HexDollar;
 	struct FLabelInfo*	pCurrentScope = nullptr;
-	FAddressRef CurrentAddress;
+	FAddressRef CurrentAddress = FAddressRef::Invalid();
 
 	uint16_t	ExportMin = 0;
 	uint16_t	ExportMax = 0xffff;

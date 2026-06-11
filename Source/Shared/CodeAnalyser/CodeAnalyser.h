@@ -240,10 +240,25 @@ private:
 	FAddressRef					Bookmarks[kNoBookmarks] = { FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid(), FAddressRef::Invalid() };
 };
 
+// sam. Add support for different system ROM configurations.
+// Spectrum, CPC & C64 have a Rom.
+// PC Engine Hu Cards have None.
+// PC Engine CD has a Bios.
+enum class ESystemRom
+{
+	None,
+	Rom,
+	Bios,
+};
+
 struct FCodeAnalysisConfig
 {
 	//bool				bShowOpcodeValues = false;
 	bool				bShowBanks = false;
+	
+	// sam. Does this machine have a fixed system ROM/BIOS?
+	ESystemRom		RomType = ESystemRom::Rom;
+
 	//int					BranchLinesDisplayMode = 1;
 	const uint32_t*		CharacterColourLUT = nullptr;
 
@@ -294,13 +309,18 @@ struct FCodeAnalysisBank
 	std::string			Name;
 	std::string			Description;	// where we can describe what the bank is used for
 	//bool				bReadOnly = false;
-	bool				bMachineROM = false;
-	bool				bFixed = false;	// bank is never remapped
-	bool				bIsDirty = false;
-	bool				bEverBeenMapped = false;
-	bool				bHidden = false;
-	bool				bHasCode = false; // sam. add flags for if bank contains code or data
-	bool				bHasData = false; // sam.
+	
+	// sam. Made these a bitfield and added bools for bank content.
+	bool				bMachineROM : 1 = false;
+	bool				bFixed : 1 = false;		// bank is never remapped
+	bool				bIsDirty : 1 = false;
+	bool				bEverBeenMapped : 1 = false;
+	bool				bHidden : 1 = false;
+
+	// sam. These are set to identify the bank content.
+	bool				bHasCode : 1 = false;
+	bool				bHasData : 1 = false;
+	bool				bHasGraphics : 1 = false;
 	std::vector<FCodeAnalysisItem>		ItemList;
 
 	FCommentLine::FAllocator	CommentLineAllocator;
@@ -690,7 +710,7 @@ public:
 	FMemoryAnalyser	*		pMemoryAnalyser = nullptr;
 	FIOAnalyser				IOAnalyser;
 
-	FAddressRef				CopiedAddress;
+	FAddressRef				CopiedAddress = FAddressRef::Invalid();
 
 	int				XPosHighlight = -1;
 	int				YPosHighlight = -1;
@@ -985,6 +1005,7 @@ __forceinline uint16_t FAddressRef::GetAddress() const
 FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addrRef, ELabelType label);
 void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc);
 bool RegisterCodeExecuted(FCodeAnalysisState &state, uint16_t pc, uint16_t oldpc);
+bool CheckStopInstruction(FCodeAnalysisState& state, uint16_t pc);
 void RegisterCall(FCodeAnalysisState& state, const FCPUFunctionCall& callInfo);
 void RegisterReturn(FCodeAnalysisState& state, FAddressRef returnAddress);
 void ReAnalyseCode(FCodeAnalysisState &state);

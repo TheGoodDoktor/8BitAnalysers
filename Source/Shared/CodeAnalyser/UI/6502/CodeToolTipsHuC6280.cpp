@@ -1,5 +1,6 @@
 #include "CodeToolTipsHuC6280.h"
 #include "RegisterView6502.h"
+#include "../../6502/CodeAnalyserHuC6280.h"
 #include "../../CodeAnalyser.h"
 #include "../CodeAnalyserUI.h"
 #include <Misc/EmuBase.h>
@@ -12,311 +13,311 @@
 
 struct FHuCInstrInfo
 {
+	const char* Title;
 	const char* Desc;
-	const char* Operation;
 };
 
 static const std::unordered_map<uint8_t, FHuCInstrInfo> g_HuCOpcodes =
 {
 	// ---- Implied / single-byte (standard 6502) ----
-	{ 0x00, { "Software interrupt",                      "PC+2,P -> stack; [$FFF6] -> PC" }},
-	{ 0x08, { "Push processor status onto stack",        "P -> stack" }},
-	{ 0x18, { "Clear carry flag",                        "0 -> C" }},
-	{ 0x28, { "Pull processor status from stack",        "stack -> P" }},
-	{ 0x38, { "Set carry flag",                          "1 -> C" }},
-	{ 0x40, { "Return from interrupt",                   "stack -> P,PC" }},
-	{ 0x48, { "Push A onto stack",                       "A -> stack" }},
-	{ 0x58, { "Clear interrupt disable flag",            "0 -> I" }},
-	{ 0x60, { "Return from subroutine",                  "stack -> PC; PC+1 -> PC" }},
-	{ 0x68, { "Pull A from stack",                       "stack -> A" }},
-	{ 0x78, { "Set interrupt disable flag",              "1 -> I" }},
-	{ 0x88, { "Decrement Y",                             "Y - 1 -> Y" }},
-	{ 0x98, { "Transfer Y to A",                         "Y -> A" }},
-	{ 0xA8, { "Transfer A to Y",                         "A -> Y" }},
-	{ 0xB8, { "Clear overflow flag",                     "0 -> V" }},
-	{ 0xC8, { "Increment Y",                             "Y + 1 -> Y" }},
-	{ 0xCA, { "Decrement X",                             "X - 1 -> X" }},
-	{ 0xD8, { "Clear decimal flag",                      "0 -> D" }},
-	{ 0xE8, { "Increment X",                             "X + 1 -> X" }},
-	{ 0xEA, { "No operation",                            nullptr }},
-	{ 0xF8, { "Set decimal flag",                        "1 -> D" }},
-	{ 0x8A, { "Transfer X to A",                         "X -> A" }},
-	{ 0x9A, { "Transfer X to stack pointer",             "X -> SP" }},
-	{ 0xAA, { "Transfer A to X",                         "A -> X" }},
-	{ 0xBA, { "Transfer stack pointer to X",             "SP -> X" }},
+	{ 0x00, { "BRK", "Software interrupt" }},
+	{ 0x08, { "PHP", "Push processor status onto stack" }},
+	{ 0x18, { "CLC", "Clear carry flag" }},
+	{ 0x28, { "PLP", "Pull processor status from stack" }},
+	{ 0x38, { "SEC", "Set carry flag" }},
+	{ 0x40, { "RTI", "Return from interrupt" }},
+	{ 0x48, { "PHA", "Push A onto stack" }},
+	{ 0x58, { "CLI", "Clear interrupt disable flag" }},
+	{ 0x60, { "RTS", "Return from subroutine" }},
+	{ 0x68, { "PLA", "Pull A from stack" }},
+	{ 0x78, { "SEI", "Set interrupt disable flag" }},
+	{ 0x88, { "DEY", "Decrement Y" }},
+	{ 0x98, { "TYA", "Transfer Y to A" }},
+	{ 0xA8, { "TAY", "Transfer A to Y" }},
+	{ 0xB8, { "CLV", "Clear overflow flag" }},
+	{ 0xC8, { "INY", "Increment Y" }},
+	{ 0xCA, { "DEX", "Decrement X" }},
+	{ 0xD8, { "CLD", "Clear decimal flag" }},
+	{ 0xE8, { "INX", "Increment X" }},
+	{ 0xEA, { "NOP", "No operation" }},
+	{ 0xF8, { "SED", "Set decimal flag" }},
+	{ 0x8A, { "TXA", "Transfer X to A" }},
+	{ 0x9A, { "TXS", "Transfer X to stack pointer" }},
+	{ 0xAA, { "TAX", "Transfer A to X" }},
+	{ 0xBA, { "TSX", "Transfer stack pointer to X" }},
 
 	// ---- Implied (65C02 additions) ----
-	{ 0x1A, { "Increment A",                             "A + 1 -> A" }},
-	{ 0x3A, { "Decrement A",                             "A - 1 -> A" }},
-	{ 0x5A, { "Push Y onto stack",                       "Y -> stack" }},
-	{ 0x7A, { "Pull Y from stack",                       "stack -> Y" }},
-	{ 0xDA, { "Push X onto stack",                       "X -> stack" }},
-	{ 0xFA, { "Pull X from stack",                       "stack -> X" }},
+	{ 0x1A, { "INC", "Increment A" }},
+	{ 0x3A, { "DEC", "Decrement A" }},
+	{ 0x5A, { "PHY", "Push Y onto stack" }},
+	{ 0x7A, { "PLY", "Pull Y from stack" }},
+	{ 0xDA, { "PHX", "Push X onto stack" }},
+	{ 0xFA, { "PLX", "Pull X from stack" }},
 
 	// ---- Branches ----
-	{ 0x10, { "Branch if plus (N clear)",                "N=0: PC + rel -> PC" }},
-	{ 0x30, { "Branch if minus (N set)",                 "N=1: PC + rel -> PC" }},
-	{ 0x50, { "Branch if overflow clear",                "V=0: PC + rel -> PC" }},
-	{ 0x70, { "Branch if overflow set",                  "V=1: PC + rel -> PC" }},
-	{ 0x80, { "Branch always",                           "PC + rel -> PC" }},
-	{ 0x90, { "Branch if carry clear (unsigned <)",      "C=0: PC + rel -> PC" }},
-	{ 0xB0, { "Branch if carry set (unsigned >=)",       "C=1: PC + rel -> PC" }},
-	{ 0xD0, { "Branch if not equal (Z clear)",           "Z=0: PC + rel -> PC" }},
-	{ 0xF0, { "Branch if equal (Z set)",                 "Z=1: PC + rel -> PC" }},
+	{ 0x10, { "BPL", "Branch if plus (N clear)" }},
+	{ 0x30, { "BMI", "Branch if minus (N set)" }},
+	{ 0x50, { "BVC", "Branch if overflow clear" }},
+	{ 0x70, { "BVS", "Branch if overflow set" }},
+	{ 0x80, { "BRA", "Branch always" }},
+	{ 0x90, { "BCC", "Branch if carry clear (unsigned <)" }},
+	{ 0xB0, { "BCS", "Branch if carry set (unsigned >=)" }},
+	{ 0xD0, { "BNE", "Branch if not equal (Z clear)" }},
+	{ 0xF0, { "BEQ", "Branch if equal (Z set)" }},
 
 	// ---- ORA ----
-	{ 0x01, { "OR A with (zp,X)",                        "A | M -> A" }},
-	{ 0x05, { "OR A with zero page",                     "A | M -> A" }},
-	{ 0x09, { "OR A with immediate",                     "A | M -> A" }},
-	{ 0x0D, { "OR A with absolute",                      "A | M -> A" }},
-	{ 0x11, { "OR A with (zp),Y",                        "A | M -> A" }},
-	{ 0x12, { "OR A with (zp)",                          "A | M -> A" }},
-	{ 0x15, { "OR A with zp,X",                          "A | M -> A" }},
-	{ 0x19, { "OR A with abs,Y",                         "A | M -> A" }},
-	{ 0x1D, { "OR A with abs,X",                         "A | M -> A" }},
+	{ 0x01, { "ORA", "OR A with (zp,X)" }},
+	{ 0x05, { "ORA", "OR A with zero page" }},
+	{ 0x09, { "ORA", "OR A with immediate" }},
+	{ 0x0D, { "ORA", "OR A with absolute" }},
+	{ 0x11, { "ORA", "OR A with (zp),Y" }},
+	{ 0x12, { "ORA", "OR A with (zp)" }},
+	{ 0x15, { "ORA", "OR A with zp,X" }},
+	{ 0x19, { "ORA", "OR A with abs,Y" }},
+	{ 0x1D, { "ORA", "OR A with abs,X" }},
 
 	// ---- AND ----
-	{ 0x21, { "AND A with (zp,X)",                       "A & M -> A" }},
-	{ 0x25, { "AND A with zero page",                    "A & M -> A" }},
-	{ 0x29, { "AND A with immediate",                    "A & M -> A" }},
-	{ 0x2D, { "AND A with absolute",                     "A & M -> A" }},
-	{ 0x31, { "AND A with (zp),Y",                       "A & M -> A" }},
-	{ 0x32, { "AND A with (zp)",                         "A & M -> A" }},
-	{ 0x35, { "AND A with zp,X",                         "A & M -> A" }},
-	{ 0x39, { "AND A with abs,Y",                        "A & M -> A" }},
-	{ 0x3D, { "AND A with abs,X",                        "A & M -> A" }},
+	{ 0x21, { "AND", "AND A with (zp,X)" }},
+	{ 0x25, { "AND", "AND A with zero page" }},
+	{ 0x29, { "AND", "AND A with immediate" }},
+	{ 0x2D, { "AND", "AND A with absolute" }},
+	{ 0x31, { "AND", "AND A with (zp),Y" }},
+	{ 0x32, { "AND", "AND A with (zp)" }},
+	{ 0x35, { "AND", "AND A with zp,X" }},
+	{ 0x39, { "AND", "AND A with abs,Y" }},
+	{ 0x3D, { "AND", "AND A with abs,X" }},
 
 	// ---- EOR ----
-	{ 0x41, { "Exclusive OR A with (zp,X)",              "A ^ M -> A" }},
-	{ 0x45, { "Exclusive OR A with zero page",           "A ^ M -> A" }},
-	{ 0x49, { "Exclusive OR A with immediate",           "A ^ M -> A" }},
-	{ 0x4D, { "Exclusive OR A with absolute",            "A ^ M -> A" }},
-	{ 0x51, { "Exclusive OR A with (zp),Y",              "A ^ M -> A" }},
-	{ 0x52, { "Exclusive OR A with (zp)",                "A ^ M -> A" }},
-	{ 0x55, { "Exclusive OR A with zp,X",                "A ^ M -> A" }},
-	{ 0x59, { "Exclusive OR A with abs,Y",               "A ^ M -> A" }},
-	{ 0x5D, { "Exclusive OR A with abs,X",               "A ^ M -> A" }},
+	{ 0x41, { "EOR", "Exclusive OR A with (zp,X)" }},
+	{ 0x45, { "EOR", "Exclusive OR A with zero page" }},
+	{ 0x49, { "EOR", "Exclusive OR A with immediate" }},
+	{ 0x4D, { "EOR", "Exclusive OR A with absolute" }},
+	{ 0x51, { "EOR", "Exclusive OR A with (zp),Y" }},
+	{ 0x52, { "EOR", "Exclusive OR A with (zp)" }},
+	{ 0x55, { "EOR", "Exclusive OR A with zp,X" }},
+	{ 0x59, { "EOR", "Exclusive OR A with abs,Y" }},
+	{ 0x5D, { "EOR", "Exclusive OR A with abs,X" }},
 
 	// ---- ADC ----
-	{ 0x61, { "Add (zp,X) to A with carry",              "A + M + C -> A,C" }},
-	{ 0x65, { "Add zero page to A with carry",           "A + M + C -> A,C" }},
-	{ 0x69, { "Add immediate to A with carry",           "A + M + C -> A,C" }},
-	{ 0x6D, { "Add absolute to A with carry",            "A + M + C -> A,C" }},
-	{ 0x71, { "Add (zp),Y to A with carry",              "A + M + C -> A,C" }},
-	{ 0x72, { "Add (zp) to A with carry",                "A + M + C -> A,C" }},
-	{ 0x75, { "Add zp,X to A with carry",                "A + M + C -> A,C" }},
-	{ 0x79, { "Add abs,Y to A with carry",               "A + M + C -> A,C" }},
-	{ 0x7D, { "Add abs,X to A with carry",               "A + M + C -> A,C" }},
+	{ 0x61, { "ADC", "Add (zp,X) to A with carry" }},
+	{ 0x65, { "ADC", "Add zero page to A with carry" }},
+	{ 0x69, { "ADC", "Add immediate to A with carry" }},
+	{ 0x6D, { "ADC", "Add absolute to A with carry" }},
+	{ 0x71, { "ADC", "Add (zp),Y to A with carry" }},
+	{ 0x72, { "ADC", "Add (zp) to A with carry" }},
+	{ 0x75, { "ADC", "Add zp,X to A with carry" }},
+	{ 0x79, { "ADC", "Add abs,Y to A with carry" }},
+	{ 0x7D, { "ADC", "Add abs,X to A with carry" }},
 
 	// ---- STA ----
-	{ 0x81, { "Store A to (zp,X)",                       "A -> M" }},
-	{ 0x85, { "Store A to zero page",                    "A -> M" }},
-	{ 0x8D, { "Store A to absolute",                     "A -> M" }},
-	{ 0x91, { "Store A to (zp),Y",                       "A -> M" }},
-	{ 0x92, { "Store A to (zp)",                         "A -> M" }},
-	{ 0x95, { "Store A to zp,X",                         "A -> M" }},
-	{ 0x99, { "Store A to abs,Y",                        "A -> M" }},
-	{ 0x9D, { "Store A to abs,X",                        "A -> M" }},
+	{ 0x81, { "STA", "Store A to (zp,X)" }},
+	{ 0x85, { "STA", "Store A to zero page" }},
+	{ 0x8D, { "STA", "Store A to absolute" }},
+	{ 0x91, { "STA", "Store A to (zp),Y" }},
+	{ 0x92, { "STA", "Store A to (zp)" }},
+	{ 0x95, { "STA", "Store A to zp,X" }},
+	{ 0x99, { "STA", "Store A to abs,Y" }},
+	{ 0x9D, { "STA", "Store A to abs,X" }},
 
 	// ---- LDA ----
-	{ 0xA1, { "Load A from (zp,X)",                      "M -> A" }},
-	{ 0xA5, { "Load A from zero page",                   "M -> A" }},
-	{ 0xA9, { "Load A with immediate",                   "M -> A" }},
-	{ 0xAD, { "Load A from absolute",                    "M -> A" }},
-	{ 0xB1, { "Load A from (zp),Y",                      "M -> A" }},
-	{ 0xB2, { "Load A from (zp)",                        "M -> A" }},
-	{ 0xB5, { "Load A from zp,X",                        "M -> A" }},
-	{ 0xB9, { "Load A from abs,Y",                       "M -> A" }},
-	{ 0xBD, { "Load A from abs,X",                       "M -> A" }},
+	{ 0xA1, { "LDA", "Load A from (zp,X)" }},
+	{ 0xA5, { "LDA", "Load A from zero page" }},
+	{ 0xA9, { "LDA", "Load A with immediate" }},
+	{ 0xAD, { "LDA", "Load A from absolute" }},
+	{ 0xB1, { "LDA", "Load A from (zp),Y" }},
+	{ 0xB2, { "LDA", "Load A from (zp)" }},
+	{ 0xB5, { "LDA", "Load A from zp,X" }},
+	{ 0xB9, { "LDA", "Load A from abs,Y" }},
+	{ 0xBD, { "LDA", "Load A from abs,X" }},
 
 	// ---- CMP ----
-	{ 0xC1, { "Compare A with (zp,X)",                   "A - M" }},
-	{ 0xC5, { "Compare A with zero page",                "A - M" }},
-	{ 0xC9, { "Compare A with immediate",                "A - M" }},
-	{ 0xCD, { "Compare A with absolute",                 "A - M" }},
-	{ 0xD1, { "Compare A with (zp),Y",                   "A - M" }},
-	{ 0xD2, { "Compare A with (zp)",                     "A - M" }},
-	{ 0xD5, { "Compare A with zp,X",                     "A - M" }},
-	{ 0xD9, { "Compare A with abs,Y",                    "A - M" }},
-	{ 0xDD, { "Compare A with abs,X",                    "A - M" }},
+	{ 0xC1, { "CMP", "Compare A with (zp,X)" }},
+	{ 0xC5, { "CMP", "Compare A with zero page" }},
+	{ 0xC9, { "CMP", "Compare A with immediate" }},
+	{ 0xCD, { "CMP", "Compare A with absolute" }},
+	{ 0xD1, { "CMP", "Compare A with (zp),Y" }},
+	{ 0xD2, { "CMP", "Compare A with (zp)" }},
+	{ 0xD5, { "CMP", "Compare A with zp,X" }},
+	{ 0xD9, { "CMP", "Compare A with abs,Y" }},
+	{ 0xDD, { "CMP", "Compare A with abs,X" }},
 
 	// ---- SBC ----
-	{ 0xE1, { "Subtract (zp,X) from A with borrow",      "A - M - ~C -> A" }},
-	{ 0xE5, { "Subtract zero page from A with borrow",   "A - M - ~C -> A" }},
-	{ 0xE9, { "Subtract immediate from A with borrow",   "A - M - ~C -> A" }},
-	{ 0xED, { "Subtract absolute from A with borrow",    "A - M - ~C -> A" }},
-	{ 0xF1, { "Subtract (zp),Y from A with borrow",      "A - M - ~C -> A" }},
-	{ 0xF2, { "Subtract (zp) from A with borrow",        "A - M - ~C -> A" }},
-	{ 0xF5, { "Subtract zp,X from A with borrow",        "A - M - ~C -> A" }},
-	{ 0xF9, { "Subtract abs,Y from A with borrow",       "A - M - ~C -> A" }},
-	{ 0xFD, { "Subtract abs,X from A with borrow",       "A - M - ~C -> A" }},
+	{ 0xE1, { "SBC", "Subtract (zp,X) from A with borrow" }},
+	{ 0xE5, { "SBC", "Subtract zero page from A with borrow" }},
+	{ 0xE9, { "SBC", "Subtract immediate from A with borrow" }},
+	{ 0xED, { "SBC", "Subtract absolute from A with borrow" }},
+	{ 0xF1, { "SBC", "Subtract (zp),Y from A with borrow" }},
+	{ 0xF2, { "SBC", "Subtract (zp) from A with borrow" }},
+	{ 0xF5, { "SBC", "Subtract zp,X from A with borrow" }},
+	{ 0xF9, { "SBC", "Subtract abs,Y from A with borrow" }},
+	{ 0xFD, { "SBC", "Subtract abs,X from A with borrow" }},
 
 	// ---- ASL ----
-	{ 0x06, { "Arithmetic shift left zero page",         "C <- [76543210] <- 0" }},
-	{ 0x0A, { "Arithmetic shift left A",                 "C <- [76543210] <- 0" }},
-	{ 0x0E, { "Arithmetic shift left absolute",          "C <- [76543210] <- 0" }},
-	{ 0x16, { "Arithmetic shift left zp,X",              "C <- [76543210] <- 0" }},
-	{ 0x1E, { "Arithmetic shift left abs,X",             "C <- [76543210] <- 0" }},
+	{ 0x06, { "ASL", "Arithmetic shift left zero page" }},
+	{ 0x0A, { "ASL", "Arithmetic shift left A" }},
+	{ 0x0E, { "ASL", "Arithmetic shift left absolute" }},
+	{ 0x16, { "ASL", "Arithmetic shift left zp,X" }},
+	{ 0x1E, { "ASL", "Arithmetic shift left abs,X" }},
 
 	// ---- ROL ----
-	{ 0x26, { "Rotate left zero page",                   "C <- [76543210] <- C" }},
-	{ 0x2A, { "Rotate left A",                           "C <- [76543210] <- C" }},
-	{ 0x2E, { "Rotate left absolute",                    "C <- [76543210] <- C" }},
-	{ 0x36, { "Rotate left zp,X",                        "C <- [76543210] <- C" }},
-	{ 0x3E, { "Rotate left abs,X",                       "C <- [76543210] <- C" }},
+	{ 0x26, { "ROL", "Rotate left zero page" }},
+	{ 0x2A, { "ROL", "Rotate left A" }},
+	{ 0x2E, { "ROL", "Rotate left absolute" }},
+	{ 0x36, { "ROL", "Rotate left zp,X" }},
+	{ 0x3E, { "ROL", "Rotate left abs,X" }},
 
 	// ---- LSR ----
-	{ 0x46, { "Logical shift right zero page",           "0 -> [76543210] -> C" }},
-	{ 0x4A, { "Logical shift right A",                   "0 -> [76543210] -> C" }},
-	{ 0x4E, { "Logical shift right absolute",            "0 -> [76543210] -> C" }},
-	{ 0x56, { "Logical shift right zp,X",                "0 -> [76543210] -> C" }},
-	{ 0x5E, { "Logical shift right abs,X",               "0 -> [76543210] -> C" }},
+	{ 0x46, { "LSR", "Logical shift right zero page" }},
+	{ 0x4A, { "LSR", "Logical shift right A" }},
+	{ 0x4E, { "LSR", "Logical shift right absolute" }},
+	{ 0x56, { "LSR", "Logical shift right zp,X" }},
+	{ 0x5E, { "LSR", "Logical shift right abs,X" }},
 
 	// ---- ROR ----
-	{ 0x66, { "Rotate right zero page",                  "C -> [76543210] -> C" }},
-	{ 0x6A, { "Rotate right A",                          "C -> [76543210] -> C" }},
-	{ 0x6E, { "Rotate right absolute",                   "C -> [76543210] -> C" }},
-	{ 0x76, { "Rotate right zp,X",                       "C -> [76543210] -> C" }},
-	{ 0x7E, { "Rotate right abs,X",                      "C -> [76543210] -> C" }},
+	{ 0x66, { "ROR", "Rotate right zero page" }},
+	{ 0x6A, { "ROR", "Rotate right A" }},
+	{ 0x6E, { "ROR", "Rotate right absolute" }},
+	{ 0x76, { "ROR", "Rotate right zp,X" }},
+	{ 0x7E, { "ROR", "Rotate right abs,X" }},
 
 	// ---- STX / LDX ----
-	{ 0x86, { "Store X to zero page",                    "X -> M" }},
-	{ 0x8E, { "Store X to absolute",                     "X -> M" }},
-	{ 0x96, { "Store X to zp,Y",                         "X -> M" }},
-	{ 0xA2, { "Load X with immediate",                   "M -> X" }},
-	{ 0xA6, { "Load X from zero page",                   "M -> X" }},
-	{ 0xAE, { "Load X from absolute",                    "M -> X" }},
-	{ 0xB6, { "Load X from zp,Y",                        "M -> X" }},
-	{ 0xBE, { "Load X from abs,Y",                       "M -> X" }},
+	{ 0x86, { "STX", "Store X to zero page" }},
+	{ 0x8E, { "STX", "Store X to absolute" }},
+	{ 0x96, { "STX", "Store X to zp,Y" }},
+	{ 0xA2, { "LDX", "Load X with immediate" }},
+	{ 0xA6, { "LDX", "Load X from zero page" }},
+	{ 0xAE, { "LDX", "Load X from absolute" }},
+	{ 0xB6, { "LDX", "Load X from zp,Y" }},
+	{ 0xBE, { "LDX", "Load X from abs,Y" }},
 
 	// ---- STY / LDY ----
-	{ 0x84, { "Store Y to zero page",                    "Y -> M" }},
-	{ 0x8C, { "Store Y to absolute",                     "Y -> M" }},
-	{ 0x94, { "Store Y to zp,X",                         "Y -> M" }},
-	{ 0xA0, { "Load Y with immediate",                   "M -> Y" }},
-	{ 0xA4, { "Load Y from zero page",                   "M -> Y" }},
-	{ 0xAC, { "Load Y from absolute",                    "M -> Y" }},
-	{ 0xB4, { "Load Y from zp,X",                        "M -> Y" }},
-	{ 0xBC, { "Load Y from abs,X",                       "M -> Y" }},
+	{ 0x84, { "STY", "Store Y to zero page" }},
+	{ 0x8C, { "STY", "Store Y to absolute" }},
+	{ 0x94, { "STY", "Store Y to zp,X" }},
+	{ 0xA0, { "LDY", "Load Y with immediate" }},
+	{ 0xA4, { "LDY", "Load Y from zero page" }},
+	{ 0xAC, { "LDY", "Load Y from absolute" }},
+	{ 0xB4, { "LDY", "Load Y from zp,X" }},
+	{ 0xBC, { "LDY", "Load Y from abs,X" }},
 
 	// ---- DEC / INC ----
-	{ 0xC6, { "Decrement zero page",                     "M - 1 -> M" }},
-	{ 0xCE, { "Decrement absolute",                      "M - 1 -> M" }},
-	{ 0xD6, { "Decrement zp,X",                          "M - 1 -> M" }},
-	{ 0xDE, { "Decrement abs,X",                         "M - 1 -> M" }},
-	{ 0xE6, { "Increment zero page",                     "M + 1 -> M" }},
-	{ 0xEE, { "Increment absolute",                      "M + 1 -> M" }},
-	{ 0xF6, { "Increment zp,X",                          "M + 1 -> M" }},
-	{ 0xFE, { "Increment abs,X",                         "M + 1 -> M" }},
+	{ 0xC6, { "DEC", "Decrement zero page" }},
+	{ 0xCE, { "DEC", "Decrement absolute" }},
+	{ 0xD6, { "DEC", "Decrement zp,X" }},
+	{ 0xDE, { "DEC", "Decrement abs,X" }},
+	{ 0xE6, { "INC", "Increment zero page" }},
+	{ 0xEE, { "INC", "Increment absolute" }},
+	{ 0xF6, { "INC", "Increment zp,X" }},
+	{ 0xFE, { "INC", "Increment abs,X" }},
 
 	// ---- CPX / CPY ----
-	{ 0xE0, { "Compare X with immediate",                "X - M" }},
-	{ 0xE4, { "Compare X with zero page",                "X - M" }},
-	{ 0xEC, { "Compare X with absolute",                 "X - M" }},
-	{ 0xC0, { "Compare Y with immediate",                "Y - M" }},
-	{ 0xC4, { "Compare Y with zero page",                "Y - M" }},
-	{ 0xCC, { "Compare Y with absolute",                 "Y - M" }},
+	{ 0xE0, { "CPX", "Compare X with immediate" }},
+	{ 0xE4, { "CPX", "Compare X with zero page" }},
+	{ 0xEC, { "CPX", "Compare X with absolute" }},
+	{ 0xC0, { "CPY", "Compare Y with immediate" }},
+	{ 0xC4, { "CPY", "Compare Y with zero page" }},
+	{ 0xCC, { "CPY", "Compare Y with absolute" }},
 
 	// ---- BIT ----
-	{ 0x24, { "Test bits in zero page",                  "A & M; M7->N, M6->V" }},
-	{ 0x2C, { "Test bits in absolute",                   "A & M; M7->N, M6->V" }},
-	{ 0x34, { "Test bits in zp,X",                       "A & M; M7->N, M6->V" }},
-	{ 0x3C, { "Test bits in abs,X",                      "A & M; M7->N, M6->V" }},
-	{ 0x89, { "Test bits with immediate",                "A & imm; sets Z only (N,V unchanged)" }},
+	{ 0x24, { "BIT", "Test bits in zero page" }},
+	{ 0x2C, { "BIT", "Test bits in absolute" }},
+	{ 0x34, { "BIT", "Test bits in zp,X" }},
+	{ 0x3C, { "BIT", "Test bits in abs,X" }},
+	{ 0x89, { "BIT", "Test bits with immediate" }},
 
 	// ---- JMP / JSR ----
-	{ 0x20, { "Jump to subroutine",                      "PC+2 -> stack; addr -> PC" }},
-	{ 0x44, { "Branch to subroutine (relative)",         "PC+2 -> stack; PC + rel -> PC" }},
-	{ 0x4C, { "Jump to absolute address",                "addr -> PC" }},
-	{ 0x6C, { "Jump to indirect address",                "[addr] -> PC" }},
-	{ 0x7C, { "Jump to (abs,X) address",                 "[addr+X] -> PC" }},
+	{ 0x20, { "JSR", "Jump to subroutine" }},
+	{ 0x44, { "BSR", "Branch to subroutine (relative)" }},
+	{ 0x4C, { "JMP", "Jump to absolute address" }},
+	{ 0x6C, { "JMP", "Jump to indirect address" }},
+	{ 0x7C, { "JMP", "Jump to (abs,X) address" }},
 
 	// ---- STZ / TSB / TRB (65C02) ----
-	{ 0x64, { "Store zero to zero page",                 "0 -> M" }},
-	{ 0x74, { "Store zero to zp,X",                      "0 -> M" }},
-	{ 0x9C, { "Store zero to absolute",                  "0 -> M" }},
-	{ 0x9E, { "Store zero to abs,X",                     "0 -> M" }},
-	{ 0x04, { "Test and set bits in zero page",          "A | M -> M; ~(A & M) -> Z" }},
-	{ 0x0C, { "Test and set bits in absolute",           "A | M -> M; ~(A & M) -> Z" }},
-	{ 0x14, { "Test and reset bits in zero page",        "~A & M -> M; ~(A & M) -> Z" }},
-	{ 0x1C, { "Test and reset bits in absolute",         "~A & M -> M; ~(A & M) -> Z" }},
+	{ 0x64, { "STZ", "Store zero to zero page" }},
+	{ 0x74, { "STZ", "Store zero to zp,X" }},
+	{ 0x9C, { "STZ", "Store zero to absolute" }},
+	{ 0x9E, { "STZ", "Store zero to abs,X" }},
+	{ 0x04, { "TSB", "Test and set bits in zero page" }},
+	{ 0x0C, { "TSB", "Test and set bits in absolute" }},
+	{ 0x14, { "TRB", "Test and reset bits in zero page" }},
+	{ 0x1C, { "TRB", "Test and reset bits in absolute" }},
 
 	// ---- HuC6280: register swap ----
-	{ 0x02, { "Swap X and Y",                            "X <-> Y" }},
-	{ 0x22, { "Swap A and X",                            "A <-> X" }},
-	{ 0x42, { "Swap A and Y",                            "A <-> Y" }},
+	{ 0x02, { "SXY", "Swap X and Y" }},
+	{ 0x22, { "SAX", "Swap A and X" }},
+	{ 0x42, { "SAY", "Swap A and Y" }},
 
 	// ---- HuC6280: register clear ----
-	{ 0x62, { "Clear A",                                 "0 -> A" }},
-	{ 0x82, { "Clear X",                                 "0 -> X" }},
-	{ 0xC2, { "Clear Y",                                 "0 -> Y" }},
+	{ 0x62, { "CLA", "Clear A" }},
+	{ 0x82, { "CLX", "Clear X" }},
+	{ 0xC2, { "CLY", "Clear Y" }},
 
 	// ---- HuC6280: speed / T flag ----
-	{ 0x54, { "CPU speed low (1.79 MHz)",                nullptr }},
-	{ 0xD4, { "CPU speed high (7.16 MHz)",               nullptr }},
-	{ 0xF4, { "Set T flag",                              "1 -> T; next ALU op uses [zp] as source" }},
+	{ 0x54, { "CSL", "CPU speed low (1.79 MHz)" }},
+	{ 0xD4, { "CSH", "CPU speed high (7.16 MHz)" }},
+	{ 0xF4, { "SET", "Set T flag" }},
 
 	// ---- HuC6280: MPR (memory page register / bank mapping) ----
-	{ 0x43, { "Transfer MPR to A",                       "MPR[n] -> A" }},
-	{ 0x53, { "Transfer A to MPR",                       "A -> MPR[n]" }},
+	{ 0x43, { "TMA", "Transfer MPR to A" }},
+	{ 0x53, { "TAM", "Transfer A to MPR" }},
 
 	// ---- HuC6280: VDC I/O ----
-	{ 0x03, { "Store to VDC address register (ST0)",     "#imm -> VDC AR (selects VDC register)" }},
-	{ 0x13, { "Store to VDC data register low (ST1)",    "#imm -> VDC DL" }},
-	{ 0x23, { "Store to VDC data register high (ST2)",   "#imm -> VDC DH" }},
+	{ 0x03, { "ST0", "Store to VDC address register (ST0)" }},
+	{ 0x13, { "ST1", "Store to VDC data register low (ST1)" }},
+	{ 0x23, { "ST2", "Store to VDC data register high (ST2)" }},
 
 	// ---- HuC6280: block transfer ----
-	{ 0x73, { "Block transfer: source++, dest++",        "M[src++] -> M[dst++]; len-- until 0" }},
-	{ 0xC3, { "Block transfer: source--, dest--",        "M[src--] -> M[dst--]; len-- until 0" }},
-	{ 0xD3, { "Block transfer: source++, dest fixed",    "M[src++] -> M[dst]; len-- until 0" }},
-	{ 0xF3, { "Block transfer: alternating source",      "alternates src/src+1 each byte; dst++" }},
-	{ 0xE3, { "Block transfer: alternating dest",        "src++; alternates dst/dst+1 each byte" }},
+	{ 0x73, { "TII", "Block transfer: source++, dest++" }},
+	{ 0xC3, { "TDD", "Block transfer: source--, dest--" }},
+	{ 0xD3, { "TIN", "Block transfer: source++, dest fixed" }},
+	{ 0xF3, { "TAI", "Block transfer: alternating source" }},
+	{ 0xE3, { "TIA", "Block transfer: alternating dest" }},
 
 	// ---- HuC6280: TST ----
-	{ 0x83, { "Test bits: imm & zp",                     "imm & M[zp]; sets N,Z" }},
-	{ 0x93, { "Test bits: imm & zp,X",                   "imm & M[zp+X]; sets N,Z" }},
-	{ 0xA3, { "Test bits: imm & abs",                    "imm & M[abs]; sets N,Z" }},
-	{ 0xB3, { "Test bits: imm & abs,X",                  "imm & M[abs+X]; sets N,Z" }},
+	{ 0x83, { "TST", "Test bits: imm & zp" }},
+	{ 0x93, { "TST", "Test bits: imm & zp,X" }},
+	{ 0xA3, { "TST", "Test bits: imm & abs" }},
+	{ 0xB3, { "TST", "Test bits: imm & abs,X" }},
 
 	// ---- HuC6280: RMB (reset memory bit) ----
-	{ 0x07, { "Reset memory bit 0",                      "M &= ~(1<<0)" }},
-	{ 0x17, { "Reset memory bit 1",                      "M &= ~(1<<1)" }},
-	{ 0x27, { "Reset memory bit 2",                      "M &= ~(1<<2)" }},
-	{ 0x37, { "Reset memory bit 3",                      "M &= ~(1<<3)" }},
-	{ 0x47, { "Reset memory bit 4",                      "M &= ~(1<<4)" }},
-	{ 0x57, { "Reset memory bit 5",                      "M &= ~(1<<5)" }},
-	{ 0x67, { "Reset memory bit 6",                      "M &= ~(1<<6)" }},
-	{ 0x77, { "Reset memory bit 7",                      "M &= ~(1<<7)" }},
+	{ 0x07, { "RMB", "Reset memory bit 0" }},
+	{ 0x17, { "RMB", "Reset memory bit 1" }},
+	{ 0x27, { "RMB", "Reset memory bit 2" }},
+	{ 0x37, { "RMB", "Reset memory bit 3" }},
+	{ 0x47, { "RMB", "Reset memory bit 4" }},
+	{ 0x57, { "RMB", "Reset memory bit 5" }},
+	{ 0x67, { "RMB", "Reset memory bit 6" }},
+	{ 0x77, { "RMB", "Reset memory bit 7" }},
 
 	// ---- HuC6280: SMB (set memory bit) ----
-	{ 0x87, { "Set memory bit 0",                        "M |= (1<<0)" }},
-	{ 0x97, { "Set memory bit 1",                        "M |= (1<<1)" }},
-	{ 0xA7, { "Set memory bit 2",                        "M |= (1<<2)" }},
-	{ 0xB7, { "Set memory bit 3",                        "M |= (1<<3)" }},
-	{ 0xC7, { "Set memory bit 4",                        "M |= (1<<4)" }},
-	{ 0xD7, { "Set memory bit 5",                        "M |= (1<<5)" }},
-	{ 0xE7, { "Set memory bit 6",                        "M |= (1<<6)" }},
-	{ 0xF7, { "Set memory bit 7",                        "M |= (1<<7)" }},
+	{ 0x87, { "SMB", "Set memory bit 0" }},
+	{ 0x97, { "SMB", "Set memory bit 1" }},
+	{ 0xA7, { "SMB", "Set memory bit 2" }},
+	{ 0xB7, { "SMB", "Set memory bit 3" }},
+	{ 0xC7, { "SMB", "Set memory bit 4" }},
+	{ 0xD7, { "SMB", "Set memory bit 5" }},
+	{ 0xE7, { "SMB", "Set memory bit 6" }},
+	{ 0xF7, { "SMB", "Set memory bit 7" }},
 
 	// ---- HuC6280: BBR (branch on bit reset) ----
-	{ 0x0F, { "Branch if bit 0 of zp is reset",          "M[zp].0=0: PC + rel -> PC" }},
-	{ 0x1F, { "Branch if bit 1 of zp is reset",          "M[zp].1=0: PC + rel -> PC" }},
-	{ 0x2F, { "Branch if bit 2 of zp is reset",          "M[zp].2=0: PC + rel -> PC" }},
-	{ 0x3F, { "Branch if bit 3 of zp is reset",          "M[zp].3=0: PC + rel -> PC" }},
-	{ 0x4F, { "Branch if bit 4 of zp is reset",          "M[zp].4=0: PC + rel -> PC" }},
-	{ 0x5F, { "Branch if bit 5 of zp is reset",          "M[zp].5=0: PC + rel -> PC" }},
-	{ 0x6F, { "Branch if bit 6 of zp is reset",          "M[zp].6=0: PC + rel -> PC" }},
-	{ 0x7F, { "Branch if bit 7 of zp is reset",          "M[zp].7=0: PC + rel -> PC" }},
+	{ 0x0F, { "BBR", "Branch if bit 0 of zp is reset" }},
+	{ 0x1F, { "BBR", "Branch if bit 1 of zp is reset" }},
+	{ 0x2F, { "BBR", "Branch if bit 2 of zp is reset" }},
+	{ 0x3F, { "BBR", "Branch if bit 3 of zp is reset" }},
+	{ 0x4F, { "BBR", "Branch if bit 4 of zp is reset" }},
+	{ 0x5F, { "BBR", "Branch if bit 5 of zp is reset" }},
+	{ 0x6F, { "BBR", "Branch if bit 6 of zp is reset" }},
+	{ 0x7F, { "BBR", "Branch if bit 7 of zp is reset" }},
 
 	// ---- HuC6280: BBS (branch on bit set) ----
-	{ 0x8F, { "Branch if bit 0 of zp is set",            "M[zp].0=1: PC + rel -> PC" }},
-	{ 0x9F, { "Branch if bit 1 of zp is set",            "M[zp].1=1: PC + rel -> PC" }},
-	{ 0xAF, { "Branch if bit 2 of zp is set",            "M[zp].2=1: PC + rel -> PC" }},
-	{ 0xBF, { "Branch if bit 3 of zp is set",            "M[zp].3=1: PC + rel -> PC" }},
-	{ 0xCF, { "Branch if bit 4 of zp is set",            "M[zp].4=1: PC + rel -> PC" }},
-	{ 0xDF, { "Branch if bit 5 of zp is set",            "M[zp].5=1: PC + rel -> PC" }},
-	{ 0xEF, { "Branch if bit 6 of zp is set",            "M[zp].6=1: PC + rel -> PC" }},
-	{ 0xFF, { "Branch if bit 7 of zp is set",            "M[zp].7=1: PC + rel -> PC" }},
+	{ 0x8F, { "BBS", "Branch if bit 0 of zp is set" }},
+	{ 0x9F, { "BBS", "Branch if bit 1 of zp is set" }},
+	{ 0xAF, { "BBS", "Branch if bit 2 of zp is set" }},
+	{ 0xBF, { "BBS", "Branch if bit 3 of zp is set" }},
+	{ 0xCF, { "BBS", "Branch if bit 4 of zp is set" }},
+	{ 0xDF, { "BBS", "Branch if bit 5 of zp is set" }},
+	{ 0xEF, { "BBS", "Branch if bit 6 of zp is set" }},
+	{ 0xFF, { "BBS", "Branch if bit 7 of zp is set" }},
 };
 
 // ============================================================
@@ -911,17 +912,26 @@ void ShowCodeToolTipHuC6280(FCodeAnalysisState& state, uint16_t addr)
 
 	ImGui::BeginTooltip();
 
-	// Description + operation string
+	// Title + description
 	const auto it = g_HuCOpcodes.find(op);
 	if (it != g_HuCOpcodes.end())
 	{
 		const FHuCInstrInfo& info = it->second;
+		const ImVec2 pos = ImGui::GetCursorScreenPos();
+		const ImVec2 itemRectMax = ImGui::GetItemRectSize();
+		ImGui::GetWindowDrawList()->AddRectFilled(
+			ImVec2(pos.x - 20, pos.y - 4),
+			ImVec2(pos.x + itemRectMax.x, pos.y + ImGui::GetTextLineHeightWithSpacing()),
+			IM_COL32(64, 64, 64, 255));
+
+		ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
+		ImGui::TextUnformatted(info.Title);
+		ImGui::PopStyleColor();
+		ImGui::Separator();
 		ImGui::TextUnformatted(info.Desc);
-		if (info.Operation)
-		{
-			ImGui::Separator();
-			ImGui::TextUnformatted(info.Operation);
-		}
+		const char* addressMode = GetAddressModeStringHuC6280(op);
+		if (addressMode && addressMode[0] != '\0')
+			ImGui::Text("Addressing: %s", addressMode);
 	}
 	else
 	{

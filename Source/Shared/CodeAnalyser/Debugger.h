@@ -174,7 +174,7 @@ public:
 
 	// Actions
 	void	Break();
-	void	Continue(std::optional<FAddressRef> stepToCursorAddr = std::nullopt);
+	void	Continue(std::optional<FAddressRef> runToAddress = std::nullopt); // sam. renamed stepToCursorAddr -> RunToAddress
 	void	StepInto();
 	void	StepOver();
 	void	StepFrame();
@@ -262,7 +262,7 @@ private:
 
 	std::vector<FBreakpoint>	Breakpoints;
 	uint32_t					BreakpointMask = 0;
-	std::optional<FAddressRef>	StepToCursorAddr;
+	std::optional<FAddressRef>	RunToAddress; // sam. renamed stepToCursorAddr -> RunToAddress
 	int							ScanlineBreakpoint = -1;
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;

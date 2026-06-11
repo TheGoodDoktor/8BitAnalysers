@@ -14,7 +14,7 @@ class FCodeAnalysisState;
 struct FCodeAnalysisViewConfig
 {
 	bool		bEnabled = false;
-	FAddressRef	ViewAddress;
+	FAddressRef	ViewAddress = FAddressRef::Invalid();
 };
 
 struct FProjectConfig
