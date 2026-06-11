@@ -546,6 +546,30 @@ void WriteCodeInfoToJson(uint16_t addr, const FCodeInfo* pCodeInfoItem, json& js
 		codeInfoJson["Flags"] = pCodeInfoItem->Flags;
 	if (pCodeInfoItem->Comment.empty() == false)
 		codeInfoJson["Comment"] = pCodeInfoItem->Comment;
+	
+	// sam. This was missing
+	if (pCodeInfoItem->OperandAddress.IsValid())
+		codeInfoJson["OperandAddress"] = pCodeInfoItem->OperandAddress.GetVal();
+
+	// sam. Serialise extra operands for multi-operand instructions
+	bool bHasExtraOperands = false;
+	for (const FOperandInfo& extraOperand : pCodeInfoItem->ExtraOperands)
+	{
+		if (extraOperand.Type != EOperandType::Unknown || extraOperand.Address.IsValid())
+			bHasExtraOperands = true;
+	}
+	if (bHasExtraOperands)
+	{
+		for (const FOperandInfo& extraOperand : pCodeInfoItem->ExtraOperands)
+		{
+			json extraOperandJson;
+			if (extraOperand.Type != EOperandType::Unknown)
+				extraOperandJson["Type"] = (int)extraOperand.Type;
+			if (extraOperand.Address.IsValid())
+				extraOperandJson["Address"] = extraOperand.Address.GetVal();
+			codeInfoJson["ExtraOperands"].push_back(extraOperandJson);
+		}
+	}
 
 	jsonDoc["CodeInfo"].push_back(codeInfoJson);
 }
@@ -611,6 +635,24 @@ FCodeInfo* CreateCodeInfoFromJson(const json& codeInfoJson)
 
 	if (codeInfoJson.contains("Comment"))
 		pCodeInfo->Comment = codeInfoJson["Comment"];
+
+	// sam. This was missing
+	if (codeInfoJson.contains("OperandAddress"))
+		pCodeInfo->OperandAddress = FAddressRef((uint32_t)codeInfoJson["OperandAddress"]);
+
+	// sam. Deserialise extra operands for multi-operand instructions
+	if (codeInfoJson.contains("ExtraOperands"))
+	{
+		const auto& extraOperandsJson = codeInfoJson["ExtraOperands"];
+		for (int i = 0; i < (int)extraOperandsJson.size() && i < FCodeInfo::kMaxExtraOperands; i++)
+		{
+			const auto& extraOperandJson = extraOperandsJson[i];
+			if (extraOperandJson.contains("Type"))
+				pCodeInfo->ExtraOperands[i].Type = extraOperandJson["Type"];
+			if (extraOperandJson.contains("Address"))
+				pCodeInfo->ExtraOperands[i].Address = FAddressRef((uint32_t)extraOperandJson["Address"]);
+		}
+	}
 
 	return pCodeInfo;
 }
