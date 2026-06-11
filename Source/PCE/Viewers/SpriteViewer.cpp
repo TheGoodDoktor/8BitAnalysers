@@ -335,6 +335,15 @@ void FSpriteViewer::FormatEntry(FHistorySpriteEntry& e)
 	options.StartAddress = e.FoundDataAddr;
 	options.NoItems      = e.Height;
 	options.PaletteNo    = pPCEEmu->CreateUserPalette(16 + e.Palette);
+	options.AddLabelAtStart = bAddLabel;
+	if (bAddLabel)
+	{
+		char buf[32];
+		// todo add bank name
+		snprintf(buf, sizeof(buf), "sprite_%dx%d_%s", e.Width, e.Height, NumStr(e.FoundDataAddr.GetAddress()));
+		options.LabelName = buf;
+	}
+
 	if (e.bFoundAs3Bpp)
 	{
 		options.DisplayType = EDataItemDisplayType::Sprite3Bpp_PCE;
@@ -374,6 +383,12 @@ void FSpriteViewer::DrawUI()
 		if (ImGui::BeginTabItem("Search"))
 		{
 			DrawSearchTab();
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Options"))
+		{
+			ImGui::Checkbox("Add Label When Formatting", &bAddLabel);
 			ImGui::EndTabItem();
 		}
 
@@ -618,6 +633,8 @@ void FSpriteViewer::DrawSearchTab()
 			FindCursor = -1;
 	}
 
+	//ImGui::Checkbox("Add Label", &bAddLabel);
+
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
@@ -655,14 +672,14 @@ void FSpriteViewer::DrawSearchTab()
 
 	ImGuiTableFlags tblFlags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg
 	                         | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY;
-	if (ImGui::BeginTable("##resultstable", 6, tblFlags))
+	if (ImGui::BeginTable("##resultstable", 5, tblFlags))
 	{
 		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   thumbColWidth);
 		ImGui::TableSetupColumn("Size",     ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 5);
 		ImGui::TableSetupColumn("Bpp",      ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 4);
 		ImGui::TableSetupColumn("Address",  ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Status",   ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 8);
+		//ImGui::TableSetupColumn("Status",   ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 8);
 		ImGui::TableSetupColumn("",         ImGuiTableColumnFlags_WidthFixed,   fontCharWidth * 7);
 		ImGui::TableHeadersRow();
 
@@ -707,16 +724,16 @@ void FSpriteViewer::DrawSearchTab()
 				ImGui::TableSetColumnIndex(3);
 				DrawAddressLabel(state, viewState, e.FoundDataAddr);
 
-				ImGui::TableSetColumnIndex(4);
+				/*ImGui::TableSetColumnIndex(4);
 				if (e.bFormatted)
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 200, 0, 255));
 					ImGui::TextUnformatted("Formatted");
 					ImGui::PopStyleColor();
-				}
+				}*/
 
-				ImGui::TableSetColumnIndex(5);
-				if (!e.bFormatted)
+				ImGui::TableSetColumnIndex(4);
+				//if (!e.bFormatted)
 				{
 					ImGui::PushID(i);
 					if (ImGui::SmallButton("Format"))

@@ -77,10 +77,11 @@ private:
 	bool bGridHovered = false;
 
 	FAddressRef FoundSpriteDataAddr = FAddressRef::Invalid();
-	bool        bFoundSpriteData = false;
-	bool        bFoundAs3Bpp     = false;
-	int         LastSearchedSprite = -1;
-	int         FindSearchBytes = 0;
+	bool				bFoundSpriteData = false;
+	bool				bFoundAs3Bpp = false;
+	int					LastSearchedSprite = -1;
+	int					FindSearchBytes = 0;
+	bool				bAddLabel = true;
 
 	// Results tab
 	float ResultsRowHeight = 32.0f;
