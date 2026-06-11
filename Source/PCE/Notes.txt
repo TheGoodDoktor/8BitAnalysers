@@ -5,7 +5,7 @@ TODO FOR FIRST RELEASE
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
 - tidy up sprites viewer detail pane
-- bank addresses should be offsets (including function labels)?
+- bank addresses should be offsets (including function labels)? toggle in UI
 - fix trace button in code analysis view (sometimes works)
 - remove validatorpath from global config in release builds
 - dont load cd BIOS
@@ -19,15 +19,11 @@ TODO
 - add audio viewer: disable channels etc
 - create new graphics viewer that removes all the stuff I dont need. off-screen buffers etc
 - in graphics viewer, label which palette is currently selected 
-- change Current palette option in graphics viewer. doesnt make sense for PCE
 - Show register value on tooltips
 - tidy tooltips for PCE related instructions
-- make bank label be an offset instead of address. add toggle in UI.
 - display vram transfer address in vram viewer. MAWR. maybe with indicator
-- in graphics viewer, label which palette is currently selected
 - get 3bpp, 2bpp sprite working in graphics viewer. 
 - tooltips on pce registers describing what they do
-- in sprites viewer make the Results tab a Search tab and move find all into it?
 - change Current palette option in graphics viewer. doesnt make sense for PCE
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
@@ -58,11 +54,11 @@ BUGS
 - asm export fails if you export right after reset, when UNUSED banks are mapped.
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
 - when hovering over first operand of TIA instruction that is a label, the middle operand disappears.
-- If you do Reset via the option menu it loses all the labels we added in FPCEEmu::LoadProject() (entry point and HW labels)
 - sprites formatted by sprite viewer dont draw correctly.
 - Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
 - palettes get added at index 67
 - code snippet tooltip shows all FF for opcode values sometimes
+- sprite search can break. shows no thumbnails and format button does nothing.
 
 IDEAS
 - press delete to remove formatting
