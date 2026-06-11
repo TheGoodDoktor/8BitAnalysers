@@ -186,8 +186,9 @@ public:
 			nlohmann::json result;
 			result["name"] = functionName;
 
-			result["disassembly"] = "// Assembler export not yet wired up for this platform";
-
+			std::string outStr;
+			ExportAssembler(pEmu, &outStr, pFuncInfo->StartAddress.GetAddress(), pFuncInfo->EndAddress.GetAddress());
+			result["disassembly"] = outStr;
 			return result;
 		}
 		else
@@ -708,7 +709,7 @@ public:
 		suggestion.Type = EMCPSuggestionType::AddComment;
 		suggestion.AddressRef = addrRef;
 		suggestion.TargetName = pCodeInfo ? pCodeInfo->Text : "";
-		suggestion.OldValue = pCodeInfo ? pCodeInfo->Comment : "";
+		suggestion.OldValue = pCodeInfo ? pCodeInfo->Comment.c_str() : "";
 		suggestion.NewValue = comment;
 		suggestion.Rationale = arguments.contains("rationale") ? arguments["rationale"].get<std::string>() : "";
 
@@ -964,7 +965,7 @@ public:
 					out << "; " << pLabel->GetName()
 					    << "  [" << GetLabelTypeStr(pLabel->LabelType) << "]";
 					if (!pLabel->Comment.empty())
-						out << "  ; " << pLabel->Comment;
+						out << "  ; " << pLabel->Comment.c_str();
 					out << "\n";
 				}
 			}
