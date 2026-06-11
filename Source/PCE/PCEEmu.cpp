@@ -31,6 +31,7 @@
 #include "GameDb.h"
 #include "DebugStats.h"
 
+#include "ProjectDefines.h"
 #include "App.h"
 #include "PCEMCPTools.h"
 #include <CodeAnalyser/CodeAnalysisState.h>
@@ -1077,10 +1078,12 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	CodeAnalysis.Config.RomType = ESystemRom::None;
 
+#if CDROM_SUPPORT
 	// todo: check this is system card 3.0.
 	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
 	bBiosLoaded = pCore->LoadBios(fullBiosPath.c_str(), true);
 	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", fullBiosPath.c_str());
+#endif
 
 	CreateBanks();
 	BuildCanonicalBankIdLookup();
@@ -1109,8 +1112,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	const FPCEConfig* pPCEConfig = GetPCEGlobalConfig();
 	AddGamesList(kPCERomGameListName, GetPCEGlobalConfig()->SnapshotFolder.c_str());
+#if CDROM_SUPPORT
 	AddGamesList(kCDRomGameListName, GetPCEGlobalConfig()->CdRomFolder.c_str());
-
+#endif
 	LoadFont();
 
 	// This is where we add the viewers we want
@@ -1872,6 +1876,7 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 
 	switch (pSnapshot->Type)
 	{
+#if CDROM_SUPPORT
 	case EEmuFileType::CUE:
 		if (!bBiosLoaded)
 		{
@@ -1879,8 +1884,11 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 			SetLastError("Bios not loaded: '%s'", biosPath.c_str());
 			return false;
 		}
+#endif
 	case EEmuFileType::PCE:
+#if CDROM_SUPPORT
 	case EEmuFileType::ZIP:
+#endif
 		if (!pCore->LoadMedia(fileName.c_str()))
 		{
 			SetLastError("Failed to load '%s'", fileName.c_str());
