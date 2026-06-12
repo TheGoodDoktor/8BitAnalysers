@@ -66,6 +66,9 @@ void FFormatDataCommand::Do(FCodeAnalysisState& state)
 			else if (FormatOptions.DataType == EDataType::Word)
 			{
 				pDataInfo->ByteSize = 2;
+
+				if (pDataInfo->DisplayType == EDataItemDisplayType::Pointer || pDataInfo->DisplayType == EDataItemDisplayType::JumpAddress) // sam
+					pDataInfo->PointerAddress = state.GetCanonicalAddressRef(state.ReadWord(addressRef));
 			}
 			else if (FormatOptions.DataType == EDataType::CharacterMap)
 			{

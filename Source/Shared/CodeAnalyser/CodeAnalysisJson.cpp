@@ -507,8 +507,10 @@ bool WriteDataInfoToJson(uint16_t addr, const FDataInfo* pDataInfo, json& jsonDo
 		dataInfoJson["PaletteNo"] = pDataInfo->PaletteNo;
 	if(pDataInfo->StructByteOffset!=0)
 		dataInfoJson["StructByteOffset"] = pDataInfo->StructByteOffset;
-	if (pDataInfo->FirstItemAddress.IsValid())
+	if (pDataInfo->FirstItemAddress.IsValid()) // sam
 		dataInfoJson["FirstItemAddress"] = pDataInfo->FirstItemAddress.GetVal();
+	if (pDataInfo->PointerAddress.IsValid()) // sam
+		dataInfoJson["PointerAddressRef"] = pDataInfo->PointerAddress.GetVal();
 
 	// Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)
@@ -705,8 +707,10 @@ void LoadDataInfoFromJson(FCodeAnalysisState& state, FDataInfo* pDataInfo, const
 		pDataInfo->PaletteNo = dataInfoJson["PaletteNo"];
 	if(dataInfoJson.contains("StructByteOffset"))
 		pDataInfo->StructByteOffset = dataInfoJson["StructByteOffset"];
-	if (dataInfoJson.contains("FirstItemAddress"))
+	if (dataInfoJson.contains("FirstItemAddress")) // sam
 		pDataInfo->FirstItemAddress.SetVal(dataInfoJson["FirstItemAddress"]);
+	if (dataInfoJson.contains("PointerTargetAddressRef")) // sam
+		pDataInfo->PointerAddress.SetVal(dataInfoJson["PointerTargetAddressRef"]);
 
 // Charmap specific
 	if (pDataInfo->DataType == EDataType::CharacterMap)

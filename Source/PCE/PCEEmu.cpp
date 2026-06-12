@@ -1585,6 +1585,7 @@ void FormatMemoryAsPtr(FCodeAnalysisState& state, uint16_t addr)
 		pDataItem->DataType = EDataType::Word;
 		pDataItem->ByteSize = 2;
 		pDataItem->DisplayType = EDataItemDisplayType::Pointer;
+		pDataItem->PointerAddress = state.GetCanonicalAddressRef(state.ReadWord(addr));
 		state.SetCodeAnalysisDirty(addr);
 	}
 }

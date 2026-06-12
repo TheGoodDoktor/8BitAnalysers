@@ -668,6 +668,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 				pDataItem->DataType = EDataType::Word;
 				pDataItem->ByteSize = 2;
 				pDataItem->DisplayType = EDataItemDisplayType::Pointer;
+				pDataItem->PointerAddress = state.GetCanonicalAddressRef(state.ReadWord(cursorItem.AddressRef)); // sam
 				state.SetCodeAnalysisDirty(cursorItem.AddressRef);
 			}
 			else if (cursorItem.Item->Type == EItemType::Code)
@@ -689,6 +690,7 @@ void ProcessKeyCommands(FCodeAnalysisState& state, FCodeAnalysisViewState& viewS
 
 				// Mark address as function & set as code
 				const FAddressRef jumpAddress = state.AddressRefFromPhysicalAddress(state.ReadWord(cursorItem.AddressRef));
+				pDataItem->PointerAddress = jumpAddress; // sam
 				GenerateLabelForAddress(state,jumpAddress,ELabelType::Function);
 				// maybe we should only do this if it's 'unknown'?
 				FDataInfo* pJumpAddressData = state.GetDataInfoForAddress(jumpAddress);

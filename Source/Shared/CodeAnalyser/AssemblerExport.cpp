@@ -375,13 +375,13 @@ void FASMExporter::ExportDataInfoASM(FAddressRef addr)
 	case EDataType::Word:
 	{
 		const uint16_t val = state.ReadWord(addr);
-
-		const FLabelInfo* pLabel = (bOperandIsAddress && val != 0) ? state.GetLabelForAddress(addr) : nullptr;
+		// sam. Added support for pointers to memory banks that can exist in non physical banks.
+		const FLabelInfo* pLabel = (bOperandIsAddress && val != 0 && pDataInfo->PointerAddress.IsValid()) ? state.GetLabelForAddress(pDataInfo->PointerAddress) : nullptr;
 
 		if (pLabel != nullptr)
 		{
-			// todo: replace this physical address call
-			const FLabelInfo* pScopeLabel = pLabel->Global == false ? state.GetScopeLabelForPhysicalAddress(val) : nullptr;
+			// sam. Added support for pointers to memory banks that can exist in non physical banks.
+			const FLabelInfo* pScopeLabel = pLabel->Global == false ? state.GetScopeForAddress(pDataInfo->PointerAddress) : nullptr;
 			const FLabelInfo* pCurrentScope = state.GetScopeForAddress(addr);
 
 			if (pScopeLabel != nullptr && pScopeLabel != pCurrentScope)

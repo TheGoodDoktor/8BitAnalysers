@@ -636,7 +636,8 @@ void EditByteDataItem(FCodeAnalysisState& state, uint16_t address)
 	ImGui::PopID();
 }
 
-void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
+// sam. Pass pDataInfo so we can set PointerAddress
+void EditWordDataItem(FCodeAnalysisState& state, FDataInfo* pDataInfo, uint16_t address)
 {
 	const ENumberDisplayMode numMode = GetNumberDisplayMode();
 	uint16_t val = state.CPUInterface->ReadWord(address);
@@ -673,6 +674,10 @@ void EditWordDataItem(FCodeAnalysisState& state, uint16_t address)
 		// Write value
 		state.CPUInterface->WriteByte(address, val & 255);
 		state.CPUInterface->WriteByte(address + 1, val >> 8);
+
+		// sam. Set pointer address to match value edited.
+		if (pDataInfo->DisplayType == EDataItemDisplayType::Pointer || pDataInfo->DisplayType == EDataItemDisplayType::JumpAddress)
+			pDataInfo->PointerAddress = state.GetCanonicalAddressRef(val);
 	}
 	if (numMode == ENumberDisplayMode::HexAitch)
 	{
@@ -769,7 +774,8 @@ void ShowDataItemActivity(FCodeAnalysisState& state, FAddressRef addr)
 
 void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item, bool bDrawLabel, bool bEdit)
 {
-	const FDataInfo* const pDataInfo = static_cast<const FDataInfo*>(item.Item);
+	//FDataInfo* pDataInfo = static_cast<const FDataInfo*>(item.Item);
+	FDataInfo* pDataInfo = static_cast<FDataInfo*>(item.Item);
 	const float line_height = ImGui::GetTextLineHeight();
 	const float glyph_width = ImGui_GetFontCharWidth();
 	const float cell_width = 3 * glyph_width;
@@ -954,14 +960,14 @@ void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, 
 		ImGui::Text("dw");
 		ImGui::SameLine();
 		if (bEdit)
-			EditWordDataItem(state, physAddr);
+			EditWordDataItem(state, pDataInfo, physAddr);
 		else
 			ImGui::Text("%s ", NumStr(val));
 
 		if (bShowItemLabel)
 		{
 			ImGui::SameLine();
-			DrawAddressLabel(state, viewState, val);
+			DrawAddressLabel(state, viewState, pDataInfo->PointerAddress);
 		}
 	}
 	break;

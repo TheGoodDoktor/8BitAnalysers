@@ -673,6 +673,10 @@ struct FDataInfo : FItem
 	// sam. This is a hack. For PCE planar sprite data, we need to know the address of the first item we are part of.
 	FAddressRef				FirstItemAddress = FAddressRef::Invalid();
 
+	// sam. Target address for Pointer/JumpAddress display types, resolved at the point the display type was set
+	// (when the target bank was mapped). Avoids physical-memory lookups at export/display time.
+	FAddressRef				PointerAddress = FAddressRef::Invalid();
+
 	union 
 	{
 		uint8_t		EmptyCharNo = 0;

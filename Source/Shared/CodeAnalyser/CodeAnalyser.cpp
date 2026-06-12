@@ -1684,6 +1684,7 @@ void FCodeAnalysisState::FixupBankAddressRefs()
 				// Because InstructionAddress is part of a union, it will also fixup GraphicsSetRef and CharSetAddress
 				FixupAddressRef(*this, pDataInfo->InstructionAddress);
 				FixupAddressRef(*this, pDataInfo->LastWriter);
+				FixupAddressRef(*this, pDataInfo->PointerAddress);
 				FixupAddressRefList(*this, pDataInfo->Reads.GetReferences());
 				FixupAddressRefList(*this, pDataInfo->Writes.GetReferences());
 
@@ -1716,6 +1717,7 @@ void FixupDataInfoAddressRefs(const FCodeAnalysisState& state, FDataInfo* pDataI
 	// Because this is a union, it will also fixup GraphicsSetRef and CharSetAddress
 	FixupAddressRef(state, pDataInfo->InstructionAddress);
 	FixupAddressRef(state, pDataInfo->LastWriter);
+	FixupAddressRef(state, pDataInfo->PointerAddress);
 	FixupAddressRefList(state, pDataInfo->Reads.GetReferences());
 	FixupAddressRefList(state, pDataInfo->Writes.GetReferences());
 }
