@@ -525,9 +525,12 @@ void FSpriteViewer::DrawHistoryTab()
 
 	// Toolbar
 	ImGui::Text("%d sprites captured", (int)SpriteHistory.size());
-	ImGui::SameLine();
-	if (ImGui::Button("Clear"))
-		ClearHistory();
+	if (!SpriteHistory.empty())
+	{
+		ImGui::SameLine();
+		if (ImGui::Button("Clear"))
+			ClearHistory();
+	}
 
 	//ImGui::Separator();
 
@@ -598,14 +601,17 @@ void FSpriteViewer::DrawHistoryTab()
 
 	ImGui::SameLine();
 
-	if (ImGui::BeginChild("##HistoryDetail", ImVec2(0.0f, 0.0f), true))
+	if (!SpriteHistory.empty())
 	{
-		if (HistorySelectedSprite >= 0 && HistorySelectedSprite < (int)SpriteHistory.size())
-			DrawHistoryDetails(HistorySelectedSprite);
-		else
-			ImGui::TextDisabled("Click a sprite to see details");
+		if (ImGui::BeginChild("##HistoryDetail", ImVec2(0.0f, 0.0f), true))
+		{
+			if (HistorySelectedSprite >= 0 && HistorySelectedSprite < (int)SpriteHistory.size())
+				DrawHistoryDetails(HistorySelectedSprite);
+			else
+				ImGui::TextDisabled("Click a sprite to see details");
+		}
+		ImGui::EndChild();
 	}
-	ImGui::EndChild();
 }
 
 void FSpriteViewer::DrawSearchTab()
