@@ -1144,9 +1144,10 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 	size_t oldSize = bank.ItemList.size();
 #endif
 
-	// sam. 
+	// sam.
 	bank.bHasCode = false;
 	bank.bHasData = false;
+	bank.bHasGraphics = false;
 
 	bank.CommentLineAllocator.FreeAll();
 	FItemListBuilder listBuilder(bank.ItemList);
@@ -1224,7 +1225,11 @@ void UpdateItemListForBank(FCodeAnalysisState& state, FCodeAnalysisBank& bank, i
 						nextItemAddress = bankAddr + 1;
 
 					listBuilder.AddItem(pDataInfo, listBuilder.BankId, listBuilder.CurrAddr);
-					bank.bHasData = true; // sam
+					
+					// sam
+					bank.bHasData = true; // This is probably a bit silly. All banks have data by default.
+					if (pDataInfo->DataType == EDataType::Bitmap)
+						bank.bHasGraphics = true;
 				}
 			}
 		}

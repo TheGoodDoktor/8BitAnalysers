@@ -8,8 +8,6 @@ TODO FOR FIRST RELEASE
 - bank addresses should be offsets (including function labels)? toggle in UI
 - fix trace button in code analysis view (sometimes works)
 - remove validatorpath from global config in release builds
-- dont load cd BIOS
-- remove biospath from globalconfig
 - remove gamedb from globalconfig (think I did it already)
 - rename snapshotfolder in globalconfig?
 
@@ -127,3 +125,6 @@ DONE
 - make MCP Rationale text accessible (or make button to add as comment)
 - remove BIOS checkbox on globals view for hucard games
 - add grayscale palette so we can view vram tiles & sprites when no palettes are set. same for Screen view and Background view? see Mesen
+- TAI instruction shows UNUSED bank for tooltip on dest address label (hero tonma entry point). couldnt repro easily. setting to data and then code changes the dst pointer to a function. see rabio lepus f564
+- dont load cd BIOS
+- remove biospath from globalconfig
