@@ -19,6 +19,7 @@
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
 #include "Viewers/PCEGraphicsViewer.h"
+#include "Viewers/PCENewGraphicsViewer.h"
 #include "Viewers/MemoryViewer.h"
 #include "Viewers/GameDbViewer.h"
 #include "CodeAnalyser/AssemblerExport.h"
@@ -544,20 +545,20 @@ static void OnVBlank(void* pContext)
 	pEmu->GetCodeAnalysis().OnMachineFrameEnd();
 }
 
-static void OnScanlineDraw(void* pContext, int rasterLine, u16 bxr, s32 byrEff, u16 mwr, u16 cr)
+static void OnScanlineDraw(void* pContext, int rasterLine, uint16_t bxr, int32_t byrEff, uint16_t mwr, uint16_t cr)
 {
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	FPCEGraphicsViewer* pGfxViewer = static_cast<FPCEGraphicsViewer*>(pEmu->GetGraphicsViewer());
-	if (pGfxViewer == nullptr)
-		return;
+	//FPCEGraphicsViewer* pGfxViewer = static_cast<FPCEGraphicsViewer*>(pEmu->GetGraphicsViewer());
+	//if (pGfxViewer == nullptr)
+	//	return;
 
 	if (rasterLine == 0)
 	{
-		pGfxViewer->OnFrameStart(pEmu->GetCore()->GetHuC6270_1()->GetSAT());
+		//pGfxViewer->OnFrameStart(pEmu->GetCore()->GetHuC6270_1()->GetSAT());
 		pEmu->GetCodeAnalysis().OnMachineFrameStart();
 	}
 
-	pGfxViewer->OnScanlineDraw(rasterLine, bxr, byrEff, mwr, cr);
+	//pGfxViewer->OnScanlineDraw(rasterLine, bxr, byrEff, mwr, cr);
 }
 
 void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
@@ -1134,7 +1135,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
 	AddViewer(new FMemoryViewer(this));
-	pGraphicsViewer = new FPCEGraphicsViewer(this);
+	AddViewer(new FPCEGraphicsViewer(this));
+	
+	pGraphicsViewer = new FPCENewGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
 #if BATCH_GAME_VIEWER

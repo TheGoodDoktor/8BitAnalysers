@@ -1,0 +1,52 @@
+#pragma once
+
+#include <vector>
+
+#include <CodeAnalyser/UI/GraphicsViewer.h>
+
+class FPCEEmu;
+class FGraphicsView;
+class FCodeAnalysisState;
+
+enum class EPCEGraphicsViewMode
+{
+	Sprites,
+	BGTiles,
+};
+
+// New PCE-specific memory-as-graphics viewer.
+// Will eventually replace the GFX tab of FPCEGraphicsViewer.
+class FPCENewGraphicsViewer : public FGraphicsViewerBase
+{
+public:
+	FPCENewGraphicsViewer(FEmuBase* pEmu);
+
+	bool	Init(void) override;
+	void	Shutdown(void) override;
+	void	DrawUI(void) override;
+
+	void	GoToAddress(FAddressRef address) override;
+
+private:
+	void	UpdateGraphicView();
+	void	PopulateBankList(const FCodeAnalysisState& state);
+
+	// Get the address corresponding to a pixel position in the graphic view
+	FAddressRef	GetAddressFromPos(int xp, int yp) const;
+
+	FPCEEmu*		pPCEEmu = nullptr;
+
+	FGraphicsView*	pGraphicView = nullptr;
+	EPCEGraphicsViewMode	ViewMode = EPCEGraphicsViewMode::Sprites;
+	int16_t			SelectedBankId = -1;
+	int				SelectedBankIndex = -1;	// index into BankIdsForBankCombo
+	bool			bGraphicViewDirty = false;
+	int				GraphicViewScale = 1;
+	int				ViewWidth = 128;
+	int				ViewHeight = 128;
+
+	// Canonical WRAM & ROM bank ids available for selection in the bank combo
+	std::vector<int16_t>	BankIdsForBankCombo;
+
+	uint32_t		GreyscalePalette[16] = {};
+};

@@ -3,147 +3,47 @@
 #include <geargrafx_core.h>
 #include "../PCEEmu.h"
 
-// Monochrome sprites. Pass in as flag to Draw4bppSpriteImage()? Probably useless though.
-bool gPCEGraphicsViewMonoSprites = false;
-
-void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, const uint32_t* cols)
+// Converts a 16-entry PCE palette (333 colour) to RGB, with colour 0 forced transparent.
+static void ConvertPCEPaletteToCols(const u16* pPalette, uint32_t* cols)
 {
-	constexpr int blockWidth = 16;
-	constexpr int blockHeight = 16;
+	cols[0] = 0xff000000; // colour 0 is transparent
 
-	int curXPos = xp;
-	int curYPos = yp;
-
-	const int viewWidth = GetWidth();
-	uint32_t* pPixBuf = GetPixelBuffer();
-
-	const uint16_t* pPlane0 = (uint16_t*)pSrc;
-
-	for (int y = 0; y < height; y++)
+	for (int i = 1; i < 16; i++)
 	{
-		for (int x = 0; x < width; x++)
-		{
-			uint32_t* pCurPixBuf = pPixBuf + (curXPos + (curYPos * viewWidth));
-			const uint16_t* pPlane1 = pPlane0 + 16;
-			const uint16_t* pPlane2 = pPlane1 + 16;
-			const uint16_t* pPlane3 = pPlane2 + 16;
-
-			// Draw 16x16 pixel square
-			for (int y = 0; y < blockHeight; y++)
-			{
-				// Draw 16 pixel horiz line
-				for (int x = 0; x < blockWidth; x++)
-				{
-					const int bit = (blockWidth - 1) - x;
-					// Get the 4 bit pixel colour index (0-15)
-					const int colour = ((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1) & 0xf;
-
-					if (colour != 0) // 0 is transparent
-					{
-						*pCurPixBuf = cols[colour];
-					}
-					else
-						*pCurPixBuf = 0xff000000;
-
-					pCurPixBuf++;
-				}
-
-				pPlane0++;
-				pPlane1++;
-				pPlane2++;
-				pPlane3++;
-
-				pCurPixBuf += viewWidth - blockWidth;
-			}
-			curXPos += blockWidth;
-			pPlane0 = pPlane3;
-		}
-		curYPos += blockHeight;
-		curXPos = xp;
+		const int colour333 = pPalette[i];
+		const uint8_t g = ((colour333 >> 6) & 0x07) * 255 / 7;
+		const uint8_t r = ((colour333 >> 3) & 0x07) * 255 / 7;
+		const uint8_t b = (colour333 & 0x07) * 255 / 7;
+		cols[i] = (0xff << 24) | (b << 16) | (g << 8) | r;
 	}
 }
-
-bool bLog = false;
 
 // height and width are in 16x16 sprite character blocks.
 // paletteIndex is sprite palette index 0-15
 void FPCEGraphicsView::Draw4bppSpriteImage(const uint8_t* pSrc, int xp, int yp, int width, int height, int paletteIndex)
 {
-	GeargrafxCore* pCore = pPCEEmu->GetCore();
-
-	HuC6260* huc6260 = pCore->GetHuC6260();
+	HuC6260* huc6260 = pPCEEmu->GetCore()->GetHuC6260();
 	u16* colorTable = huc6260->GetColorTable();
 	constexpr int paletteBaseIndex = 0x100;
 	const u16* pPalette = &colorTable[paletteBaseIndex + ((paletteIndex & 0xf) * 16)];
 
-	constexpr int blockWidth = 16;
-	constexpr int blockHeight = 16;
+	uint32_t cols[16];
+	ConvertPCEPaletteToCols(pPalette, cols);
 
-	int curXPos = xp;
-	int curYPos = yp;
+	Draw4bpp16x16PlanarSpriteImage(pSrc, xp, yp, width, height, cols);
+}
 
-	const int viewWidth = GetWidth();
-	uint32_t* pPixBuf = GetPixelBuffer();
+// height and width are in 8x8 BG tile blocks.
+// paletteIndex is BG palette index 0-15
+void FPCEGraphicsView::Draw4bppBGTileImage(const uint8_t* pSrc, int xp, int yp, int width, int height, int paletteIndex)
+{
+	HuC6260* huc6260 = pPCEEmu->GetCore()->GetHuC6260();
+	u16* colorTable = huc6260->GetColorTable();
+	constexpr int paletteBaseIndex = 0x000;
+	const u16* pPalette = &colorTable[paletteBaseIndex + ((paletteIndex & 0xf) * 16)];
 
-	const uint16_t* pPlane0 = (uint16_t*)pSrc;
+	uint32_t cols[16];
+	ConvertPCEPaletteToCols(pPalette, cols);
 
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			uint32_t* pCurPixBuf = pPixBuf + (curXPos + (curYPos * viewWidth));
-			const uint16_t* pPlane1 = pPlane0 + 16;
-			const uint16_t* pPlane2 = pPlane1 + 16;
-			const uint16_t* pPlane3 = pPlane2 + 16;
-
-			// Draw 16x16 pixel square
-			for (int y = 0; y < blockHeight; y++)
-			{
-				if (bLog)
-					LOGINFO("x %d y %d %x", x, y, pPlane0);
-
-				// Draw 16 pixel horiz line
-				for (int x = 0; x < blockWidth; x++)
-				{
-					const int bit = (blockWidth - 1) - x;  
-					// Get the 4 bit pixel colour index (0-15)
-					const int colour = ((*pPlane3 >> bit) & 1) << 3 | ((*pPlane2 >> bit) & 1) << 2 | ((*pPlane1 >> bit) & 1) << 1 | ((*pPlane0 >> bit) & 1) & 0xf;
-
-					if (colour != 0) // 0 is transparent
-					{
-						if (gPCEGraphicsViewMonoSprites)
-						{
-							*pCurPixBuf = 0xffffffff;
-						}
-						else
-						{
-							// Convert from 333 colour to u32 RGB
-							constexpr int paletteBaseIndex = 0x100;
-							const int colour333 = pPalette[colour];
-							const uint8_t g = ((colour333 >> 6) & 0x07) * 255 / 7;
-							const uint8_t r = ((colour333 >> 3) & 0x07) * 255 / 7;
-							const uint8_t b = (colour333 & 0x07) * 255 / 7;
-							*pCurPixBuf = (0xff << 24) | (b << 16) | (g << 8) | r;
-						}
-					}
-					else
-						*pCurPixBuf = 0xff000000;
-
-					pCurPixBuf++;
-				}
-
-				pPlane0++;
-				pPlane1++;
-				pPlane2++;
-				pPlane3++;
-
-				pCurPixBuf += viewWidth - blockWidth;
-			}
-			curXPos += blockWidth;
-			pPlane0 = pPlane3;
-		}
-		curYPos += blockHeight;
-		curXPos = xp;
-	}
-	bLog = false;
+	Draw4bpp8x8PlanarBGTileImage(pSrc, xp, yp, width, height, cols);
 }

@@ -1176,7 +1176,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 	ResetMemoryStats(MemStats);
 	// sam todo
 	//FrameTraceViewer.Reset();
-	pGraphicsViewer->Reset();
+	static_cast<FGraphicsViewer*>(pGraphicsViewer)->Reset();
 	Screen.Reset();
 
 	// Clear the cpc frame buffer with a single colour. Otherwise we may see the framebuffer from the previous game.
@@ -1252,7 +1252,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 			ImportAnalysisState(CodeAnalysis, analysisStateFName.c_str());
 		}
 
-		pGraphicsViewer->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
+		static_cast<FGraphicsViewer*>(pGraphicsViewer)->LoadGraphicsSets(graphicsSetsJsonFName.c_str());
 
 		// sam. Maybe don't need to do this here if we are doing it below.
 		FixupAddressRefs();
@@ -1324,7 +1324,7 @@ bool FCPCEmu::LoadProject(FProjectConfig* pProjectConfig, bool bLoadGameData)
 		CodeAnalysis.Debugger.SetPC(initialPC);
 	}
 	
-	pGraphicsViewer->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "/" + pProjectConfig->Name + "/GraphicsSets/").c_str());
+	static_cast<FGraphicsViewer*>(pGraphicsViewer)->SetImagesRoot((pGlobalConfig->WorkspaceRoot + "/" + pProjectConfig->Name + "/GraphicsSets/").c_str());
 
 	pCurrentProjectConfig = pProjectConfig;
 
@@ -1484,7 +1484,7 @@ bool FCPCEmu::SaveProject(void)
 #endif // EXPORT_ROM_ANALYSIS_JSON
 
 		//ExportGameJson(this, analysisJsonFName.c_str());
-		pGraphicsViewer->SaveGraphicsSets(graphicsSetsJsonFName.c_str());
+		static_cast<FGraphicsViewer*>(pGraphicsViewer)->SaveGraphicsSets(graphicsSetsJsonFName.c_str());
 	}
 
 	return true;

@@ -8,6 +8,7 @@
 class FEmuBase;
 class FGraphicsView;
 class FGraphicsViewer;
+class FGraphicsViewerBase;
 class FCharacterMapViewer;
 class FFunctionViewer;
 class FViewerBase;
@@ -144,7 +145,7 @@ protected:
 	FCodeAnalysisState  CodeAnalysis;
 	//FGamesList			GamesList;
 	std::unordered_map<std::string, FGamesList>	GamesLists;
-	FGraphicsViewer*	pGraphicsViewer = nullptr;
+	FGraphicsViewerBase*	pGraphicsViewer = nullptr; // sam. Changed this to FGraphicsViewerBase
 	FCharacterMapViewer* pCharacterMapViewer = nullptr;
 	FFunctionViewer*	pFunctionViewer = nullptr;
 	FGlobalsViewer*		pGlobalsViewer = nullptr;

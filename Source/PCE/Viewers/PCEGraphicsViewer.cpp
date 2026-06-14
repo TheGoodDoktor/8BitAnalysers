@@ -58,12 +58,6 @@ void FPCEGraphicsViewer::DrawUI(void)
 			ImGui::EndTabItem();
 		}
 		
-		if (ImGui::BeginTabItem("Screen"))
-		{
-			DrawScreenViewer();
-			ImGui::EndTabItem();
-		}
-
 #ifndef NDEBUG
 		if (ImGui::BeginTabItem("Test"))
 		{
@@ -418,7 +412,6 @@ int gXSize = 2;
 int gYSize = 2;
 int gOffset = 0;
 int gPalette = 0;
-extern bool gPCEGraphicsViewMonoSprites;
 #endif
 
 void FPCEGraphicsViewer::DrawTest()
@@ -430,7 +423,6 @@ void FPCEGraphicsViewer::DrawTest()
 	ImGui::SliderInt("y", &gPosY, 0, 256 - 16);
 	ImGui::SliderInt("memory offset", &gOffset, 0, 0x2000);
 	ImGui::InputInt("palette", &gPalette);
-	ImGui::Checkbox("monochrome", &gPCEGraphicsViewMonoSprites);
 
 	// rabio lepus rom 17 offset 0x1200
 	FCodeAnalysisBank* pBank = pPCEEmu->GetCodeAnalysis().GetBank(100);

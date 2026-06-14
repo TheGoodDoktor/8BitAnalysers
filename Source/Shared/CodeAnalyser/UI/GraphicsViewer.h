@@ -56,16 +56,26 @@ struct FOffScreenBuffer
 	uint16_t	GetByteSize() const { return (XSizePixels/8) * YSizePixels;}
 };
 
-// Graphics Viewer
-class FGraphicsViewer : public FViewerBase
+// sam. Added base class for graphics viewer. Allows platforms to provide their own
+// graphics viewer without deriving from FGraphicsViewer.
+class FGraphicsViewerBase : public FViewerBase
 {
 public:
-					FGraphicsViewer(FEmuBase* pEmu) : FViewerBase(pEmu) { Name = "Graphics View";}
+					FGraphicsViewerBase(FEmuBase* pEmu) : FViewerBase(pEmu) {}
+
+	virtual void	GoToAddress(FAddressRef address) = 0;
+};
+
+// Graphics Viewer
+class FGraphicsViewer : public FGraphicsViewerBase
+{
+public:
+					FGraphicsViewer(FEmuBase* pEmu) : FGraphicsViewerBase(pEmu) { Name = "Graphics View";}
 	bool			Init(void) override;
 	void			Shutdown(void) override;
 	void			Reset();
 
-	void			GoToAddress(FAddressRef address);
+	void			GoToAddress(FAddressRef address) override;
 
 	void			DrawUI() override;
 	
