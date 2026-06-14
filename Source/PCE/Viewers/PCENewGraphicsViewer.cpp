@@ -1,5 +1,6 @@
 #include "PCENewGraphicsViewer.h"
 
+#include <cstdio>
 #include <imgui.h>
 
 #include "CodeAnalyser/CodeAnalyser.h"
@@ -93,11 +94,15 @@ void FPCENewGraphicsViewer::UpdateGraphicView()
 		pGraphicView = new FGraphicsView(width, height);
 	}
 
+	const uint32_t* pPalette = GetPaletteFromPaletteNo(SelectedPaletteIndex);
+	if (pPalette == nullptr)
+		pPalette = GreyscalePalette;
+
 	pGraphicView->Clear(0xFF000000);
 	if (ViewMode == EPCEGraphicsViewMode::Sprites)
-		pGraphicView->Draw4bpp16x16PlanarSpriteImage(pSrc, 0, 0, blocksPerRow, rows, GreyscalePalette);
+		pGraphicView->Draw4bpp16x16PlanarSpriteImage(pSrc, 0, 0, blocksPerRow, rows, pPalette);
 	else
-		pGraphicView->Draw4bpp8x8PlanarBGTileImage(pSrc, 0, 0, blocksPerRow, rows, GreyscalePalette);
+		pGraphicView->Draw4bpp8x8PlanarBGTileImage(pSrc, 0, 0, blocksPerRow, rows, pPalette);
 	pGraphicView->UpdateTexture();
 }
 
@@ -302,6 +307,8 @@ void FPCENewGraphicsViewer::DrawUI(void)
 	ImGui::InputInt("Scale", &GraphicViewScale, 1, 1);
 	GraphicViewScale = MAX(1, GraphicViewScale);
 
+	DrawPaletteListBox();
+
 	if (pGraphicView != nullptr)
 	{
 		const float scale = ImGui_GetScaling() * (float)GraphicViewScale;
@@ -338,6 +345,44 @@ void FPCENewGraphicsViewer::DrawUI(void)
 				}
 			}
 		}
+	}
+
+}
+
+void FPCENewGraphicsViewer::DrawPaletteListBox()
+{
+	if (ImGui::BeginListBox("Palette", ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 8)))
+	{
+		const int numPalettes = GetNoPaletteEntries();
+		for (int p = 0; p < numPalettes; p++)
+		{
+			const FPaletteEntry* pEntry = GetPaletteEntry(p);
+			if (pEntry == nullptr || pEntry->NoColours != 16)
+				continue;
+
+			const uint32_t* pPalette = GetPaletteFromPaletteNo(p);
+			if (pPalette == nullptr)
+				continue;
+
+			char paletteName[16];
+			if (p < 16)
+				snprintf(paletteName, sizeof(paletteName), "BGND %02d", p);
+			else if (p < 32)
+				snprintf(paletteName, sizeof(paletteName), "SPRT %02d", p - 16);
+			else
+				snprintf(paletteName, sizeof(paletteName), "USER %02d", p - 32);
+
+			if (ImGui::Selectable(paletteName, p == SelectedPaletteIndex))
+			{
+				SelectedPaletteIndex = p;
+				bGraphicViewDirty = true;
+			}
+
+			ImGui::SameLine();
+			DrawPalette(pPalette, 16);
+		}
+
+		ImGui::EndListBox();
 	}
 }
 

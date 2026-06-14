@@ -37,6 +37,7 @@ public:
 private:
 	void	UpdateGraphicView();
 	void	PopulateBankList(const FCodeAnalysisState& state);
+	void	DrawPaletteListBox();
 
 	// Get the address corresponding to a pixel position in the graphic view (ROM/WRAM sources)
 	FAddressRef	GetAddressFromPos(int xp, int yp) const;
@@ -56,6 +57,7 @@ private:
 	int				GraphicViewScale = 1;
 	int				ViewWidth = 128;
 	int				ViewHeight = 128;
+	int				SelectedPaletteIndex = 0;	// index into the palette store (see GetPaletteFromPaletteNo)
 
 	// Canonical ROM bank ids available for selection in the bank combo
 	std::vector<int16_t>	BankIdsForBankCombo;
