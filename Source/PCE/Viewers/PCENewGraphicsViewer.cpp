@@ -48,13 +48,31 @@ void FPCENewGraphicsViewer::Shutdown(void)
 	pGraphicView = nullptr;
 }
 
-// todo: update the graphic view when a new game is loaded
+// todo: update the graphic view when a new game is loaded.
+// todo: update the graphic view for RW memory on a new frame.
 void FPCENewGraphicsViewer::UpdateGraphicView()
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
-	const FCodeAnalysisBank* pBank = state.GetBank(SelectedBankId);
-	if (pBank == nullptr || pBank->Memory == nullptr)
-		return;
+
+	const uint8_t* pSrc = nullptr;
+	int sizeBytes = 0;
+
+	if (MemorySource == EPCEMemorySource::VRAM)
+	{
+		HuC6270* huc6270 = pPCEEmu->GetCore()->GetHuC6270_1();
+		pSrc = reinterpret_cast<const uint8_t*>(huc6270->GetVRAM());
+		sizeBytes = HUC6270_VRAM_SIZE * sizeof(u16);
+	}
+	else
+	{
+		const int16_t bankId = (MemorySource == EPCEMemorySource::WRAM) ? WRAMBankId : SelectedBankId;
+		const FCodeAnalysisBank* pBank = state.GetBank(bankId);
+		if (pBank == nullptr || pBank->Memory == nullptr)
+			return;
+
+		pSrc = pBank->Memory;
+		sizeBytes = pBank->GetSizeBytes();
+	}
 
 	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
 	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
@@ -62,7 +80,7 @@ void FPCENewGraphicsViewer::UpdateGraphicView()
 	int blocksPerRow = std::max(1, ViewWidth / blockSizePixels);
 	int rows = std::max(1, ViewHeight / blockSizePixels);
 
-	const int maxBlocks = pBank->GetSizeBytes() / blockBytes;
+	const int maxBlocks = sizeBytes / blockBytes;
 	if (blocksPerRow * rows > maxBlocks)
 		rows = std::max(1, maxBlocks / blocksPerRow);
 
@@ -77,17 +95,21 @@ void FPCENewGraphicsViewer::UpdateGraphicView()
 
 	pGraphicView->Clear(0xFF000000);
 	if (ViewMode == EPCEGraphicsViewMode::Sprites)
-		pGraphicView->Draw4bpp16x16PlanarSpriteImage(pBank->Memory, 0, 0, blocksPerRow, rows, GreyscalePalette);
+		pGraphicView->Draw4bpp16x16PlanarSpriteImage(pSrc, 0, 0, blocksPerRow, rows, GreyscalePalette);
 	else
-		pGraphicView->Draw4bpp8x8PlanarBGTileImage(pBank->Memory, 0, 0, blocksPerRow, rows, GreyscalePalette);
+		pGraphicView->Draw4bpp8x8PlanarBGTileImage(pSrc, 0, 0, blocksPerRow, rows, GreyscalePalette);
 	pGraphicView->UpdateTexture();
 }
 
 FAddressRef FPCENewGraphicsViewer::GetAddressFromPos(int xp, int yp) const
 {
+	if (MemorySource == EPCEMemorySource::VRAM)
+		return FAddressRef();
+
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
-	const FCodeAnalysisBank* pBank = state.GetBank(SelectedBankId);
-	if (pBank == nullptr || pGraphicView == nullptr/* || pBank->PrimaryMappedPage == -1*/)
+	const int16_t bankId = (MemorySource == EPCEMemorySource::WRAM) ? WRAMBankId : SelectedBankId;
+	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
+	if (pBank == nullptr || pGraphicView == nullptr)
 		return FAddressRef();
 
 	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
@@ -99,9 +121,24 @@ FAddressRef FPCENewGraphicsViewer::GetAddressFromPos(int xp, int yp) const
 	const int blockIndex = (blockRow * blocksPerRow) + blockCol;
 	const int byteOffset = blockIndex * blockBytes;
 
-	FAddressRef addr(SelectedBankId, pBank->GetMappedAddress());
+	FAddressRef addr(bankId, pBank->GetMappedAddress());
 	state.AdvanceAddressRef(addr, byteOffset);
 	return addr;
+}
+
+int FPCENewGraphicsViewer::GetVRAMOffsetFromPos(int xp, int yp) const
+{
+	if (pGraphicView == nullptr)
+		return -1;
+
+	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
+	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
+	const int blocksPerRow = pGraphicView->GetWidth() / blockSizePixels;
+
+	const int blockCol = xp / blockSizePixels;
+	const int blockRow = yp / blockSizePixels;
+	const int blockIndex = (blockRow * blocksPerRow) + blockCol;
+	return blockIndex * blockBytes;
 }
 
 void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
@@ -123,12 +160,7 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 	// WRAM
 	{
 		FBankSet* pBankSet = pPCEEmu->Banks[kBankWRAM0];
-		const int16_t bankId = pBankSet->GetBankId(0);
-		if (std::find(BankIdsForBankCombo.begin(), BankIdsForBankCombo.end(), bankId) == BankIdsForBankCombo.end())
-		{
-			if (state.GetBank(bankId) != nullptr)
-				BankIdsForBankCombo.emplace_back(bankId);
-		}
+		WRAMBankId = pBankSet->GetBankId(0);
 	}
 
 	if (!BankIdsForBankCombo.empty())
@@ -161,8 +193,20 @@ void FPCENewGraphicsViewer::DrawUI(void)
 		bGraphicViewDirty = true;
 	}
 
+	static const char* kMemorySourceNames[] = { "ROM", "WRAM", "VRAM" };
+	int memorySourceIndex = (int)MemorySource;
+	if (ImGui::Combo("Memory", &memorySourceIndex, kMemorySourceNames, IM_ARRAYSIZE(kMemorySourceNames)))
+	{
+		MemorySource = (EPCEMemorySource)memorySourceIndex;
+		bGraphicViewDirty = true;
+	}
+
+	const bool bBankSelectable = (MemorySource == EPCEMemorySource::ROM);
+
 	const FCodeAnalysisBank* pSelectedBank = state.GetBank(SelectedBankId);
 	const char* pSelectedName = pSelectedBank != nullptr ? pSelectedBank->Name.c_str() : "None";
+
+	ImGui::BeginDisabled(!bBankSelectable);
 
 	//ImGui::SetNextItemWidth(200);
 	if (ImGui::BeginCombo("Bank", pSelectedName))
@@ -210,9 +254,24 @@ void FPCENewGraphicsViewer::DrawUI(void)
 	}
 	ImGui::PopButtonRepeat();
 
+	ImGui::EndDisabled();
+
 	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
 	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
-	const int maxBlocks = (pSelectedBank != nullptr) ? pSelectedBank->GetSizeBytes() / blockBytes : 0;
+
+	int sourceSizeBytes = 0;
+	if (MemorySource == EPCEMemorySource::VRAM)
+		sourceSizeBytes = HUC6270_VRAM_SIZE * sizeof(u16);
+	else if (MemorySource == EPCEMemorySource::WRAM)
+	{
+		const FCodeAnalysisBank* pWRAMBank = state.GetBank(WRAMBankId);
+		sourceSizeBytes = (pWRAMBank != nullptr) ? pWRAMBank->GetSizeBytes() : 0;
+	}
+	else
+	{
+		sourceSizeBytes = (pSelectedBank != nullptr) ? pSelectedBank->GetSizeBytes() : 0;
+	}
+	const int maxBlocks = sourceSizeBytes / blockBytes;
 
 	if (ImGui::InputInt("View Width", &ViewWidth, blockSizePixels, blockSizePixels))
 		bGraphicViewDirty = true;
@@ -256,14 +315,27 @@ void FPCENewGraphicsViewer::DrawUI(void)
 			const int xp = (int)((mousePos.x - pos.x) / scale);
 			const int yp = (int)((mousePos.y - pos.y) / scale);
 
-			const FAddressRef addr = GetAddressFromPos(xp, yp);
-			if (addr.IsValid())
+			if (MemorySource == EPCEMemorySource::VRAM)
 			{
-				ImGui::BeginTooltip();
-				ImGui::Text("%s", NumStr(addr.GetAddress()));
-				ImGui::SameLine();
-				DrawAddressLabel(state, state.GetFocussedViewState(), addr);
-				ImGui::EndTooltip();
+				const int vramOffset = GetVRAMOffsetFromPos(xp, yp);
+				if (vramOffset >= 0)
+				{
+					ImGui::BeginTooltip();
+					ImGui::Text("VRAM: %s", NumStr((uint16_t)vramOffset));
+					ImGui::EndTooltip();
+				}
+			}
+			else
+			{
+				const FAddressRef addr = GetAddressFromPos(xp, yp);
+				if (addr.IsValid())
+				{
+					ImGui::BeginTooltip();
+					ImGui::Text("%s", NumStr(addr.GetAddress()));
+					ImGui::SameLine();
+					DrawAddressLabel(state, state.GetFocussedViewState(), addr);
+					ImGui::EndTooltip();
+				}
 			}
 		}
 	}

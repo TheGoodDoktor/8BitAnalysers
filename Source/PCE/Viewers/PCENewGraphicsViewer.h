@@ -14,6 +14,13 @@ enum class EPCEGraphicsViewMode
 	BGTiles,
 };
 
+enum class EPCEMemorySource
+{
+	ROM,
+	WRAM,
+	VRAM,
+};
+
 // New PCE-specific memory-as-graphics viewer.
 // Will eventually replace the GFX tab of FPCEGraphicsViewer.
 class FPCENewGraphicsViewer : public FGraphicsViewerBase
@@ -31,21 +38,26 @@ private:
 	void	UpdateGraphicView();
 	void	PopulateBankList(const FCodeAnalysisState& state);
 
-	// Get the address corresponding to a pixel position in the graphic view
+	// Get the address corresponding to a pixel position in the graphic view (ROM/WRAM sources)
 	FAddressRef	GetAddressFromPos(int xp, int yp) const;
+
+	// Get the VRAM byte offset corresponding to a pixel position in the graphic view
+	int		GetVRAMOffsetFromPos(int xp, int yp) const;
 
 	FPCEEmu*		pPCEEmu = nullptr;
 
 	FGraphicsView*	pGraphicView = nullptr;
 	EPCEGraphicsViewMode	ViewMode = EPCEGraphicsViewMode::Sprites;
+	EPCEMemorySource	MemorySource = EPCEMemorySource::ROM;
 	int16_t			SelectedBankId = -1;
 	int				SelectedBankIndex = -1;	// index into BankIdsForBankCombo
+	int16_t			WRAMBankId = -1;
 	bool			bGraphicViewDirty = false;
 	int				GraphicViewScale = 1;
 	int				ViewWidth = 128;
 	int				ViewHeight = 128;
 
-	// Canonical WRAM & ROM bank ids available for selection in the bank combo
+	// Canonical ROM bank ids available for selection in the bank combo
 	std::vector<int16_t>	BankIdsForBankCombo;
 
 	uint32_t		GreyscalePalette[16] = {};
