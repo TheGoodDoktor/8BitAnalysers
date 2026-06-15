@@ -82,6 +82,9 @@ public:
     void SaveState(std::ostream& stream);
     void LoadState(std::istream& stream);
 
+    // sam. Renders the pixels accumulated so far this frame into dest_buffer.
+    void RenderPartialFrame(u8* dest_buffer, bool show_previous_frame = false);
+
 private:
     void InitPalettes();
     void AdjustForMultipleDividers();

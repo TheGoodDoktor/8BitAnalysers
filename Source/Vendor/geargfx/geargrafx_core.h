@@ -62,6 +62,8 @@ public:
     // sam. added bool* to control emulation paused state.
     void Init(bool* bCorePausedPtr, GG_Pixel_Format pixel_format = GG_PIXEL_RGBA8888);
     bool RunToVBlank(u8* frame_buffer, s16* sample_buffer, int* sample_count, GG_Debug_Run* debug = NULL);
+    // sam. Renders the current (in-progress) frame into dest_buffer for debugger preview purposes.
+    void RenderPartialFrame(u8* dest_buffer, bool show_previous_frame = false);
     bool LoadMedia(const char* file_path);
     bool LoadHuCardFromBuffer(const u8* buffer, int size, const char* path = NULL);
     bool LoadBios(const char* file_path, bool syscard);

@@ -548,17 +548,9 @@ static void OnVBlank(void* pContext)
 static void OnScanlineDraw(void* pContext, int rasterLine, uint16_t bxr, int32_t byrEff, uint16_t mwr, uint16_t cr)
 {
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	//FPCEGraphicsViewer* pGfxViewer = static_cast<FPCEGraphicsViewer*>(pEmu->GetGraphicsViewer());
-	//if (pGfxViewer == nullptr)
-	//	return;
 
 	if (rasterLine == 0)
-	{
-		//pGfxViewer->OnFrameStart(pEmu->GetCore()->GetHuC6270_1()->GetSAT());
 		pEmu->GetCodeAnalysis().OnMachineFrameStart();
-	}
-
-	//pGfxViewer->OnScanlineDraw(rasterLine, bxr, byrEff, mwr, cr);
 }
 
 void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)

@@ -151,6 +151,12 @@ bool GeargrafxCore::LoadBios(const char* file_path, bool syscard)
     return m_media->LoadBios(file_path, syscard);
 }
 
+// sam
+void GeargrafxCore::RenderPartialFrame(u8* dest_buffer, bool show_previous_frame)
+{
+    m_huc6260->RenderPartialFrame(dest_buffer, show_previous_frame);
+}
+
 bool GeargrafxCore::GetRuntimeInfo(GG_Runtime_Info& runtime_info)
 {
     runtime_info.screen_width = m_huc6260->GetCurrentWidth();

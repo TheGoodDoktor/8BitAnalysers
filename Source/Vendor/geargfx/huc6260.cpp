@@ -290,6 +290,33 @@ void HuC6260::AdjustForMultipleDividers()
     memcpy(m_frame_buffer, m_scale_buffer, dominant_width * 242 * bytes_per_pixel);
 }
 
+// sam
+void HuC6260::RenderPartialFrame(u8* dest_buffer, bool show_previous_frame)
+{
+    int bytes_per_pixel = (m_pixel_format == GG_PIXEL_RGB565) ? 2 : 4;
+    u8* palette = (m_pixel_format == GG_PIXEL_RGB565) ? &m_rgb565_palette[m_palette][0][0] : &m_rgba888_palette[m_palette][0][0];
+
+    int frame_buffer_index = 0;
+    for (int i = 0; i < m_pixel_index; i++)
+    {
+        u8* src = palette + (m_vce_buffer_1[i] * bytes_per_pixel);
+        memcpy(dest_buffer + frame_buffer_index, src, bytes_per_pixel);
+        frame_buffer_index += bytes_per_pixel;
+    }
+
+    int total_pixels = GetCurrentWidth() * GetCurrentHeight();
+    int remaining_pixels = total_pixels - m_pixel_index;
+    if (remaining_pixels > 0)
+    {
+        // m_frame_buffer still holds the previous frame's completed image at this point,
+        // since it's only overwritten once per frame at the end of vsync.
+        if (show_previous_frame && m_frame_buffer)
+            memcpy(dest_buffer + frame_buffer_index, m_frame_buffer + frame_buffer_index, remaining_pixels * bytes_per_pixel);
+        else
+            memset(dest_buffer + frame_buffer_index, 0, remaining_pixels * bytes_per_pixel);
+    }
+}
+
 void HuC6260::SaveState(std::ostream& stream)
 {
     using namespace std;
