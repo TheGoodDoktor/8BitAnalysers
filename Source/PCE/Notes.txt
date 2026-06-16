@@ -57,6 +57,7 @@ BUGS
 - palettes get added at index 67
 - code snippet tooltip shows all FF for opcode values sometimes
 - sprite search can break. shows no thumbnails and format button does nothing.
+- look into callstack in magical chase. it seems too large? ROM_62 $60a8
 
 IDEAS
 - press delete to remove formatting

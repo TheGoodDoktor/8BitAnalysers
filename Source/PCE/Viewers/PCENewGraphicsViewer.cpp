@@ -94,7 +94,7 @@ void FPCENewGraphicsViewer::UpdateGraphicView()
 		pGraphicView = new FGraphicsView(width, height);
 	}
 
-	const uint32_t* pPalette = GetPaletteFromPaletteNo(SelectedPaletteIndex);
+	const uint32_t* pPalette = bGreyscale ? GreyscalePalette : GetPaletteFromPaletteNo(SelectedPaletteIndex);
 	if (pPalette == nullptr)
 		pPalette = GreyscalePalette;
 
@@ -351,6 +351,10 @@ void FPCENewGraphicsViewer::DrawUI(void)
 
 void FPCENewGraphicsViewer::DrawPaletteListBox()
 {
+	if (ImGui::Checkbox("Greyscale", &bGreyscale))
+		bGraphicViewDirty = true;
+
+	ImGui::BeginDisabled(bGreyscale);
 	if (ImGui::BeginListBox("Palette", ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 8)))
 	{
 		const int numPalettes = GetNoPaletteEntries();
@@ -384,8 +388,32 @@ void FPCENewGraphicsViewer::DrawPaletteListBox()
 
 		ImGui::EndListBox();
 	}
+	ImGui::EndDisabled();
 }
 
 void FPCENewGraphicsViewer::GoToAddress(FAddressRef address)
 {
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+
+	// Populate bank lists so WRAMBankId and BankIdsForBankCombo are current.
+	PopulateBankList(state);
+
+	const int16_t bankId = address.GetBankId();
+
+	if (bankId == WRAMBankId)
+	{
+		MemorySource = EPCEMemorySource::WRAM;
+	}
+	else
+	{
+		const auto it = std::find(BankIdsForBankCombo.begin(), BankIdsForBankCombo.end(), bankId);
+		if (it != BankIdsForBankCombo.end())
+		{
+			MemorySource = EPCEMemorySource::ROM;
+			SelectedBankId = bankId;
+			SelectedBankIndex = (int)(it - BankIdsForBankCombo.begin());
+		}
+	}
+
+	bGraphicViewDirty = true;
 }
