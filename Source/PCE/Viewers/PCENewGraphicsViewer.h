@@ -59,6 +59,7 @@ private:
 	int				ViewHeight = 128;
 	int				SelectedPaletteIndex = 0;	// index into the palette store (see GetPaletteFromPaletteNo)
 	bool			bGreyscale = false;
+	int				AddressOffset = 0;
 
 	// Canonical ROM bank ids available for selection in the bank combo
 	std::vector<int16_t>	BankIdsForBankCombo;

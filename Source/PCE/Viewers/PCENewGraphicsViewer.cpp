@@ -78,6 +78,10 @@ void FPCENewGraphicsViewer::UpdateGraphicView()
 	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
 	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
 
+	AddressOffset = std::max(0, std::min(AddressOffset, sizeBytes - blockBytes));
+	pSrc += AddressOffset;
+	sizeBytes -= AddressOffset;
+
 	int blocksPerRow = std::max(1, ViewWidth / blockSizePixels);
 	int rows = std::max(1, ViewHeight / blockSizePixels);
 
@@ -124,7 +128,7 @@ FAddressRef FPCENewGraphicsViewer::GetAddressFromPos(int xp, int yp) const
 	const int blockCol = xp / blockSizePixels;
 	const int blockRow = yp / blockSizePixels;
 	const int blockIndex = (blockRow * blocksPerRow) + blockCol;
-	const int byteOffset = blockIndex * blockBytes;
+	const int byteOffset = AddressOffset + blockIndex * blockBytes;
 
 	FAddressRef addr(bankId, pBank->GetMappedAddress());
 	state.AdvanceAddressRef(addr, byteOffset);
@@ -143,7 +147,7 @@ int FPCENewGraphicsViewer::GetVRAMOffsetFromPos(int xp, int yp) const
 	const int blockCol = xp / blockSizePixels;
 	const int blockRow = yp / blockSizePixels;
 	const int blockIndex = (blockRow * blocksPerRow) + blockCol;
-	return blockIndex * blockBytes;
+	return AddressOffset + blockIndex * blockBytes;
 }
 
 void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
@@ -203,6 +207,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 	if (ImGui::Combo("Memory", &memorySourceIndex, kMemorySourceNames, IM_ARRAYSIZE(kMemorySourceNames)))
 	{
 		MemorySource = (EPCEMemorySource)memorySourceIndex;
+		AddressOffset = 0;
 		bGraphicViewDirty = true;
 	}
 
@@ -228,6 +233,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 			{
 				SelectedBankId = bankId;
 				SelectedBankIndex = i;
+				AddressOffset = 0;
 				bGraphicViewDirty = true;
 			}
 		}
@@ -244,6 +250,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 		{
 			SelectedBankIndex--;
 			SelectedBankId = BankIdsForBankCombo[SelectedBankIndex];
+			AddressOffset = 0;
 			bGraphicViewDirty = true;
 		}
 	}
@@ -254,12 +261,19 @@ void FPCENewGraphicsViewer::DrawUI(void)
 		{
 			SelectedBankIndex++;
 			SelectedBankId = BankIdsForBankCombo[SelectedBankIndex];
+			AddressOffset = 0;
 			bGraphicViewDirty = true;
 		}
 	}
 	ImGui::PopButtonRepeat();
 
 	ImGui::EndDisabled();
+
+	if (ImGui::InputInt("Address", &AddressOffset, 1, 16))
+	{
+		AddressOffset = std::max(0, AddressOffset);
+		bGraphicViewDirty = true;
+	}
 
 	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
 	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
@@ -276,7 +290,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 	{
 		sourceSizeBytes = (pSelectedBank != nullptr) ? pSelectedBank->GetSizeBytes() : 0;
 	}
-	const int maxBlocks = sourceSizeBytes / blockBytes;
+	const int maxBlocks = std::max(0, sourceSizeBytes - AddressOffset) / blockBytes;
 
 	if (ImGui::InputInt("View Width", &ViewWidth, blockSizePixels, blockSizePixels))
 		bGraphicViewDirty = true;
