@@ -92,11 +92,12 @@ public:
 
     // sam
     typedef void (*GG_VRAM_Write_Callback)(void* context, u16 vramAddr, u16 value);
+    typedef void (*GG_VRAM_Read_Callback)(void* context, u16 vramAddr, u16 value);
     typedef void (*GG_ScanlineDraw_Callback)(void* context, int rasterLine, u16 latched_bxr, s32 bg_offset_y, u16 latched_mwr, u16 latched_cr);
     typedef void (*GG_VBlank_Callback)(void* context);
 
     // sam
-    void SetCallbacks(GG_VRAM_Write_Callback vram_write_callback, GG_ScanlineDraw_Callback scanline_callback, GG_VBlank_Callback vblank_callback, void* context);
+    void SetCallbacks(GG_VRAM_Write_Callback vram_write_callback, GG_VRAM_Read_Callback vram_read_callback, GG_ScanlineDraw_Callback scanline_callback, GG_VBlank_Callback vblank_callback, void* context);
     s32  GetRasterLine() const { return m_raster_line; }
 
 private:
@@ -163,6 +164,7 @@ private:
 
     // sam
     GG_VRAM_Write_Callback   m_vram_write_callback;
+    GG_VRAM_Read_Callback    m_vram_read_callback;
     GG_ScanlineDraw_Callback m_scanline_callback;
     GG_VBlank_Callback       m_vblank_callback;
     void* m_callback_context;

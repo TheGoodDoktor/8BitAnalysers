@@ -6,7 +6,7 @@
 #include "../PCEEmu.h"
 #include <geargrafx_core.h>
 
-#include "VRAMViewer.h"
+#include "../VRAMAnalyser.h"
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "CodeAnalyser/Commands/FormatDataCommand.h"
 
@@ -34,7 +34,7 @@ void FBackgroundViewer::DrawUI()
 	GeargrafxCore* core = pPCEEmu->GetCore();
 	HuC6270* huc6270 = core->GetHuC6270_1();
 	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
-	FVRAMViewer* pVRAMViewer = pPCEEmu->GetVRAMViewer();
+	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
@@ -92,12 +92,12 @@ void FBackgroundViewer::DrawUI()
 		if (BackgroundTexture)
 			ImGui::Image(BackgroundTexture, ImVec2(size_h, size_v));
 
-		if (show_write_activity && pVRAMViewer)
+		if (show_write_activity && pVRAMState)
 		{
 			const int currentFrame = state.CurrentFrameNo;
 			for (int tile_i = 0; tile_i < bat_size; tile_i++)
 			{
-				const FVRAMAccess& access = pVRAMViewer->GetVRAMAccess(tile_i);
+				const FVRAMAccess& access = pVRAMState->GetVRAMAccess(tile_i);
 				if (access.FrameLastWritten == -1)
 					continue;
 
@@ -148,7 +148,7 @@ void FBackgroundViewer::DrawUI()
 				int tile_index = bat_entry & 0x07FF;
 				int color_table = (bat_entry >> 12) & 0x0F;
 
-				const FAddressRef batWriter = pVRAMViewer ? pVRAMViewer->GetVRAMAccess(i).LastWriter : FAddressRef();
+				const FAddressRef batWriter = pVRAMState ? pVRAMState->GetVRAMAccess(i).LastWriter : FAddressRef();
 				if (batWriter.IsValid() && ImGui::IsMouseDoubleClicked(0))
 				{
 					if (ImGui::GetIO().KeyShift)
@@ -220,7 +220,7 @@ bool FBackgroundViewer::UpdateBackground()
 	HuC6270* huc6270 = pCore->GetHuC6270_1();
 	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
 	HuC6260* huc6260 = pCore->GetHuC6260();
-	FVRAMViewer* pVRAMViewer = pPCEEmu->GetVRAMViewer();
+	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
 	const u16* vram        = huc6270->GetVRAM();
@@ -303,7 +303,7 @@ bool FBackgroundViewer::UpdateBackground()
 			{
 				for (int w = 0; w < 16 && !dirty; w++)
 				{
-					if (pVRAMViewer->GetVRAMAccess(tile_base + w).FrameLastWritten >= LastRenderedFrame)
+					if (pVRAMState->GetVRAMAccess(tile_base + w).FrameLastWritten >= LastRenderedFrame)
 						dirty = true;
 				}
 			}
@@ -348,7 +348,7 @@ void FBackgroundViewer::DrawTileDetails(int tileIndex)
 	GeargrafxCore* core     = pPCEEmu->GetCore();
 	HuC6270*       huc6270  = core->GetHuC6270_1();
 	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
-	FVRAMViewer*   pVRAMViewer = pPCEEmu->GetVRAMViewer();
+	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
 	FCodeAnalysisState& state  = pPCEEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 	const u16* vram = huc6270->GetVRAM();
@@ -366,7 +366,7 @@ void FBackgroundViewer::DrawTileDetails(int tileIndex)
 	const int color_table = (bat_entry >> 12) & 0x0F;
 	const int tile_base   = tile_index * 16;
 
-	const FAddressRef batWriter = pVRAMViewer ? pVRAMViewer->GetVRAMAccess(tileIndex).LastWriter : FAddressRef();
+	const FAddressRef batWriter = pVRAMState ? pVRAMState->GetVRAMAccess(tileIndex).LastWriter : FAddressRef();
 
 	ImGui::Separator();
 	ImGui::Text("Tile %d  (BAT index %d)", tile_index, tileIndex);

@@ -1,31 +1,11 @@
 #pragma once
 
 #include "CodeAnalyser/UI/ViewerBase.h"
-#include "huc6270_defines.h"
-#include "CodeAnalyser/CodeAnalyserTypes.h"
+#include "../VRAMAnalyser.h"
 
 class FPCEEmu;
 class FCodeAnalysisState;
 class FGraphicsView;
-
-struct FVRAMAccess
-{
-	FAddressRef LastWriter          = FAddressRef::Invalid();
-	int FrameLastWritten = -1;
-	FAddressRef LastReader          = FAddressRef::Invalid();
-	int FrameLastRead = -1;
-};
-
-struct FSpriteInfo
-{
-	uint16_t XPos = 0;
-	uint16_t YPos = 0;
-	uint16_t Address = 0;
-	uint16_t SizeInBytes = 0;
-	int Width = 0;
-	int Height = 0;
-	int Palette = -1;
-};
 
 class FVRAMViewer : public FViewerBase
 {
@@ -42,10 +22,7 @@ public:
 	bool	Init(void) override;
 	void	Shutdown() override {}
 	void	DrawUI(void) override;
-	void	Tick();
 
-	void	Reset();
-	void	ClearUsage();
 	void	DrawBankOverview();
 	void	DrawPhysicalMemoryOverview();
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
@@ -53,12 +30,7 @@ public:
 	void	DrawBGTileView(void);
 	void	DrawSpriteView(void);
 
-	void	RegisterRead(uint16_t vramAddress, FAddressRef reader);
-	void	RegisterWrite(uint16_t vramAddress, FAddressRef writer);
-
-	const FSpriteInfo* GetSpriteInfo() const { return SpriteInfo; }
-	int GetSpriteIndexForAddress(uint16_t addr) const;
-	const FVRAMAccess& GetVRAMAccess(uint16_t vramAddr) const { return Access[vramAddr]; }
+	void	ClearUsage();
 
 private:
 
@@ -79,15 +51,6 @@ private:
 	int             SpriteViewRows    = 16; // visible sprite block rows (4–32)
 	bool            bShowWriterSnippet = false;
 	bool            bSpriteGreyscale  = false;
-
-	FVRAMAccess Access[HUC6270_VRAM_SIZE];
-	FSpriteInfo SpriteInfo[HUC6270_SPRITES];
-	int16_t     SpriteIndexLookup[HUC6270_VRAM_SIZE];
-
-	FAddressRef LastVRAMWriter = FAddressRef::Invalid();
-	int         LastVRAMWriteFrame = -1;
-	FAddressRef LastVRAMReader = FAddressRef::Invalid();
-	int         LastVRAMReadFrame  = -1;
 
 	FPCEEmu* pPCEEmu = nullptr;
 };

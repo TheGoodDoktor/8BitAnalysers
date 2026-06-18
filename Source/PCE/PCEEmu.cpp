@@ -18,6 +18,7 @@
 #include "Viewers/PaletteViewer.h"
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
+#include "VRAMAnalyser.h"
 #include "Viewers/PCEGraphicsViewer.h"
 #include "Viewers/PCENewGraphicsViewer.h"
 #include "Viewers/MemoryViewer.h"
@@ -345,14 +346,25 @@ void OnVRAMWritten(void* pContext, u16 vramAddr, u16 value)
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	pEmu->OnVRAMWritten(vramAddr, value);
+}
 
+void OnVRAMRead(void* pContext, u16 vramAddr, u16 value)
+{
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+	pEmu->OnVRAMRead(vramAddr, value);
+}
+
+void FPCEEmu::OnVRAMRead(uint16_t vramAddr, uint16_t value)
+{
+	if (pVRAMState)
+		pVRAMState->RegisterRead(vramAddr, CodeAnalysis.Debugger.GetPC());
 }
 
 void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 {
-	if (pVRAMViewer)
+	if (pVRAMState)
 	{
-		pVRAMViewer->RegisterWrite(vramAddr, CodeAnalysis.Debugger.GetPC());
+		pVRAMState->RegisterWrite(vramAddr, CodeAnalysis.Debugger.GetPC());
 
 		if (CodeAnalysis.Debugger.GetStepMode() == EDebugStepMode::ScreenWrite)
 		{
@@ -536,6 +548,7 @@ static void NullMemoryReadCallback(void*, uint16_t) {}
 static void NullMemoryWriteCallback(void*, uint16_t, uint8_t) {}
 static void NullMprCallback(void*, uint8_t, uint8_t, uint8_t) {}
 static void NullVRAMWriteCallback(void*, uint16_t, uint16_t) {}
+static void NullVRAMReadCallback(void*, uint16_t, uint16_t) {}
 static void NullScanlineCallback(void*, int, u16, s32, u16, u16) {}
 static void NullVBlankCallback(void*) {}
 
@@ -560,16 +573,16 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 		pCore->SetInstructionExecutedCallback(::OnInstructionExecuted, this);
 		pCore->SetIRQCallback(::OnIRQ, this);
 		pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, BankChangeCallback, this);
-		pCore->GetHuC6270_1()->SetCallbacks(::OnVRAMWritten, ::OnScanlineDraw, ::OnVBlank, this);
-		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
+		pCore->GetHuC6270_1()->SetCallbacks(::OnVRAMWritten, ::OnVRAMRead, ::OnScanlineDraw, ::OnVBlank, this);
+		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullVRAMReadCallback, NullScanlineCallback, NullVBlankCallback, this);
 	}
 	else
 	{
 		pCore->SetInstructionExecutedCallback(NullInstructionExecutedCallback, this);
 		pCore->SetIRQCallback(NullIRQCallback, this);
 		pMemory->SetMemoryCallbacks(NullMemoryReadCallback, NullMemoryWriteCallback, NullMprCallback, this);
-		pCore->GetHuC6270_1()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
-		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullScanlineCallback, NullVBlankCallback, this);
+		pCore->GetHuC6270_1()->SetCallbacks(NullVRAMWriteCallback, NullVRAMReadCallback, NullScanlineCallback, NullVBlankCallback, this);
+		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullVRAMReadCallback, NullScanlineCallback, NullVBlankCallback, this);
 	}
 }
 
@@ -1124,6 +1137,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pSpriteViewer = new FSpriteViewer(this);
 	AddViewer(pSpriteViewer);
 	AddViewer(new FBackgroundViewer(this));
+	pVRAMState = new FVRAMAnalysisState(this);
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
 	AddViewer(new FMemoryViewer(this));
@@ -2084,8 +2098,8 @@ void FPCEEmu::Tick()
 	FEmuBase::Tick();
 
 	pPCEViewer->Tick();
-	if (pVRAMViewer)
-		pVRAMViewer->Tick();
+	if (pVRAMState)
+		pVRAMState->Tick();
 	if (pSpriteViewer)
 		pSpriteViewer->Tick();
 
@@ -2139,8 +2153,8 @@ void FPCEEmu::ResetProject()
 		pAsmExportValidator->Reset(GetPCEGlobalConfig()->bUseAsmExportValidator);
 
 	GetGlobalsViewer()->Reset();
-	if (pVRAMViewer)
-		pVRAMViewer->Reset();
+	if (pVRAMState)
+		pVRAMState->Reset();
 	if (pSpriteViewer)
 		pSpriteViewer->ResetForGame();
 
@@ -2200,8 +2214,8 @@ void FPCEEmu::SoftResetMachine()
 
 	pCore->ResetMedia(false);
 
-	// todo: reset all viewers
-	pVRAMViewer->Reset();
+	if (pVRAMState)
+		pVRAMState->Reset();
 	 
 	memset(pFrameBuffer, 0, kFramebufferSize);
 

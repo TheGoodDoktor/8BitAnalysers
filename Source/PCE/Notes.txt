@@ -44,6 +44,7 @@ TODO
 - absolute X & Y instructions dont display absolute value in code analysis view. see LDY NNNN,X LDA NNNN,X CMP NNNN,Y (opcodes BC, BD & D9)
 - fix system vectors breaking asm output
 - auto-wrap multi-line comments
+- create VramAnalysis class and move all the vram analysis code out of vram viewer (SpriteInfo, VRAMAccess etc)
  
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
@@ -53,7 +54,6 @@ BUGS
 - empty JMP address in disassembly that causes the asm exporter to think the jmp destination is address 0. saw it on rabio lepus at location e019 after loading project.
 - when hovering over first operand of TIA instruction that is a label, the middle operand disappears.
 - sprites formatted by sprite viewer dont draw correctly.
-- Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
 - palettes get added at index 67
 - code snippet tooltip shows all FF for opcode values sometimes
 - sprite search can break. shows no thumbnails and format button does nothing.
@@ -83,7 +83,6 @@ IDEAS
 - add button to save all sprites in history view to png
 - always collapse/hide bytes in HW page.
 - add scroll overlay on background view (like Mesen does)
-- ask claude to look at Mesen "draw partial frame" option to see how it does it.
 
 DONE
 - perf of sprites results tab is really bad. improved but DrawAddressLabel is expensive when called > once
@@ -129,3 +128,5 @@ DONE
 - TAI instruction shows UNUSED bank for tooltip on dest address label (hero tonma entry point). couldnt repro easily. setting to data and then code changes the dst pointer to a function. see rabio lepus f564
 - dont load cd BIOS
 - remove biospath from globalconfig
+- Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
+- ask claude to look at Mesen "draw partial frame" option to see how it does it.

@@ -37,6 +37,7 @@ HuC6270::HuC6270(HuC6280* huC6280)
     // sam
     InitPointer(m_callback_context);
     InitPointer(m_vram_write_callback);
+    InitPointer(m_vram_read_callback);
     InitPointer(m_scanline_callback);
     InitPointer(m_vblank_callback);
 }
@@ -224,6 +225,8 @@ void HuC6270::WriteRegister(u16 address, u8 value)
                     if (msb)
                     {
                         m_read_buffer = ReadVRAM(m_register[HUC6270_REG_MARR]);
+                        if (m_vram_read_callback)
+                            m_vram_read_callback(m_callback_context, m_register[HUC6270_REG_MARR], m_read_buffer);
                         m_register[HUC6270_REG_MARR] += k_huc6270_read_write_increment[(m_register[HUC6270_REG_CR] >> 11) & 0x03];
                     }
                     break;
@@ -898,9 +901,10 @@ void HuC6270::LoadState(std::istream& stream)
     }
 }
 
-void HuC6270::SetCallbacks(GG_VRAM_Write_Callback vram_write_callback, GG_ScanlineDraw_Callback scanline_callback, GG_VBlank_Callback vblank_callback, void* context)
+void HuC6270::SetCallbacks(GG_VRAM_Write_Callback vram_write_callback, GG_VRAM_Read_Callback vram_read_callback, GG_ScanlineDraw_Callback scanline_callback, GG_VBlank_Callback vblank_callback, void* context)
 {
     m_vram_write_callback = vram_write_callback;
+    m_vram_read_callback  = vram_read_callback;
     m_scanline_callback   = scanline_callback;
     m_vblank_callback     = vblank_callback;
     m_callback_context    = context;

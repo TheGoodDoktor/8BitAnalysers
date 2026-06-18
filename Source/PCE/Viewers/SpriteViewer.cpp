@@ -96,8 +96,9 @@ void FSpriteViewer::UpdateSpriteBuffers()
 	u16* sat = huc6270->GetSAT();
 	u16* color_table = huc6260->GetColorTable();
 
-	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMViewer()->GetSpriteInfo();
-	for (int i = 0; i < HUC6270_SPRITES; i++)
+	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
+	const FSpriteInfo* spriteInfo = pVRAMState->GetSpriteInfo();
+	for (int i = 0; i < pVRAMState->GetSpriteCount(); i++)
 	{
 		const int sprite_offset = i << 2;
 		const u16 flags = sat[sprite_offset + 3] & 0xB98F;
@@ -203,7 +204,8 @@ void FSpriteViewer::UpdateSpriteHistory()
 		return;
 
 	const u16* pVRAM = pPCEEmu->GetCore()->GetHuC6270_1()->GetVRAM();
-	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMViewer()->GetSpriteInfo();
+	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
+	const FSpriteInfo* spriteInfo = pVRAMState->GetSpriteInfo();
 
 	for (int s = 0; s < kNumSprites && (int)SpriteHistory.size() < kMaxHistoryEntries; s++)
 	{
@@ -216,7 +218,7 @@ void FSpriteViewer::UpdateSpriteHistory()
 			continue;
 
 		// Skip slots whose VRAM pattern area has never been written by game code
-		if (pPCEEmu->GetVRAMViewer()->GetVRAMAccess(info.Address).FrameLastWritten == -1)
+		if (pVRAMState->GetVRAMAccess(info.Address).FrameLastWritten == -1)
 			continue;
 
 		const uint32_t hash = HashSpriteVRAM(pVRAM, info.Address, sizeWords);
@@ -280,7 +282,7 @@ void FSpriteViewer::Tick()
 	ResetScreenTexture();
 	UpdateSpriteBuffers();
 
-	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMViewer()->GetSpriteInfo();
+	const FSpriteInfo* spriteInfo = pPCEEmu->GetVRAMAnalysisState()->GetSpriteInfo();
 	for (int s = 0; s < kNumSprites; s++)
 		ImGui_UpdateTextureSubImageRGBA(SpriteTextures[s], SpriteBuffers[s], spriteInfo[s].Width, spriteInfo[s].Height);
 
@@ -406,6 +408,7 @@ void FSpriteViewer::DrawSpriteGrid(float scale)
 	GeargrafxCore* core = pPCEEmu->GetCore();
 	HuC6270* huc6270 = core->GetHuC6270_1();
 	const u16* sat = huc6270->GetSAT();
+	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
 
 	ImVec2 p[64];
 
@@ -420,7 +423,7 @@ void FSpriteViewer::DrawSpriteGrid(float scale)
 		for (int col = 0; col < 8; col++)
 			ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, colWidth);
 
-		for (int s = 0; s < HUC6270_SPRITES; s++)
+		for (int s = 0; s < pVRAMState->GetSpriteCount(); s++)
 		{
 			if (s % 8 == 0)
 				ImGui::TableNextRow(ImGuiTableRowFlags_None, cellMinHeight);
@@ -469,7 +472,7 @@ void FSpriteViewer::DrawSpriteGrid(float scale)
 	}
 
 	// Update HighlightSprite for cross-viewer communication (e.g. VRAMViewer map)
-	for (int s = 0; s < HUC6270_SPRITES; s++)
+	for (int s = 0; s < pVRAMState->GetSpriteCount(); s++)
 	{
 		float mouse_x = io.MousePos.x - p[s].x;
 		float mouse_y = io.MousePos.y - p[s].y;
@@ -861,8 +864,8 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 {
 	HuC6270* huc6270 = pPCEEmu->GetCore()->GetHuC6270_1();
 	const u16* sat = huc6270->GetSAT();
-	FVRAMViewer* pVRAMViewer = pPCEEmu->GetVRAMViewer();
-	const FSpriteInfo& info = pVRAMViewer->GetSpriteInfo()[spriteIndex];
+	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
+	const FSpriteInfo& info = pVRAMState->GetSpriteInfo()[spriteIndex];
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
 
@@ -884,10 +887,10 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 	const uint16_t patAddr = satBase + spriteIndex * 4 + 2;
 	const uint16_t flgAddr = satBase + spriteIndex * 4 + 3;
 
-	const FAddressRef yWriter   = pVRAMViewer->GetVRAMAccess(yAddr).LastWriter;
-	const FAddressRef xWriter   = pVRAMViewer->GetVRAMAccess(xAddr).LastWriter;
-	const FAddressRef patWriter = pVRAMViewer->GetVRAMAccess(patAddr).LastWriter;
-	const FAddressRef flgWriter = pVRAMViewer->GetVRAMAccess(flgAddr).LastWriter;
+	const FAddressRef yWriter   = pVRAMState->GetVRAMAccess(yAddr).LastWriter;
+	const FAddressRef xWriter   = pVRAMState->GetVRAMAccess(xAddr).LastWriter;
+	const FAddressRef patWriter = pVRAMState->GetVRAMAccess(patAddr).LastWriter;
+	const FAddressRef flgWriter = pVRAMState->GetVRAMAccess(flgAddr).LastWriter;
 
 	const float fontCharWidth = ImGui_GetFontCharWidth();
 

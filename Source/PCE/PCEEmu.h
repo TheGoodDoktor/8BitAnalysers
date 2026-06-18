@@ -23,6 +23,7 @@ class FPCEViewer;
 class FBatchGameLoadViewer;
 class FSpriteViewer;
 class FVRAMViewer;
+class FVRAMAnalysisState;
 class FPCEEmu;
 struct FGameDbEntry;
 struct FEmuDebugStats;
@@ -110,6 +111,7 @@ public:
 
 	void OnInstructionExecuted(uint16_t pc);
 	void OnVRAMWritten(uint16_t vramAddr, uint16_t value);
+	void OnVRAMRead(uint16_t vramAddr, uint16_t value);
 	void OnIRQ(uint16_t vector, uint16_t interruptedPc, uint16_t routineAddr);
 
 	uint8_t* GetFrameBuffer() const { return pFrameBuffer; }
@@ -119,7 +121,8 @@ public:
 	FGraphicsViewerBase* GetGraphicsViewer() const { return pGraphicsViewer; }
 	FVRAMViewer* GetVRAMViewer() const { return pVRAMViewer; }
 	FBatchGameLoadViewer* GetBatchGameLoadViewer() const { return pBatchGameLoadViewer;	}
-	
+	FVRAMAnalysisState* GetVRAMAnalysisState() const { return pVRAMState; }
+
 	void EnableGeargrafxCallbacks(bool bEnabled);
 
 	int  CreateUserPalette(int dynamicPaletteIndex);
@@ -193,6 +196,7 @@ protected:
 	int* pVPos = nullptr; // HuC6270 vertical position, cached for speed.
 	HuC6280::HuC6280_State* p6280State = nullptr;
 	HuC6270::HuC6270_State* p6270State = nullptr;
+	FVRAMAnalysisState* pVRAMState = nullptr;
 
 	FPCECPUEmulator6502* pPCE6502CPU;
 
