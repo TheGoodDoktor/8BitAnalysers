@@ -43,13 +43,15 @@ private:
 	// Get the VRAM byte offset corresponding to a pixel position in the graphic view
 	int		GetVRAMOffsetFromPos(int xp, int yp) const;
 
+	void	DrawBlockThumbnail(int xp, int yp) const;
+
 	FPCEEmu*		pPCEEmu = nullptr;
 
 	FGraphicsView*	pGraphicView = nullptr;
 	EPCEGraphicsViewMode	ViewMode = EPCEGraphicsViewMode::Sprites;
 	EPCEMemorySource	MemorySource = EPCEMemorySource::ROM;
 	int16_t			SelectedBankId = -1;
-	int				SelectedBankIndex = -1;	// index into BankIdsForBankCombo
+	int				SelectedBankIndex = -1;	// index into ComboBankIds
 	int16_t			WRAMBankId = -1;
 	bool				bGraphicViewDirty = false;
 	int				GraphicViewScale = 1;
@@ -59,8 +61,7 @@ private:
 	bool				bGreyscale = false;
 	int				DisplayAddress = 0;
 
-	// Canonical ROM bank ids available for selection in the bank combo
-	std::vector<int16_t>	BankIdsForBankCombo;
+	std::vector<int16_t>	ComboBankIds;
 
 	uint32_t		GreyscalePalette[16] = {};
 };

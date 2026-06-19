@@ -35,7 +35,7 @@ FPCENewGraphicsViewer::FPCENewGraphicsViewer(FEmuBase* pEmu)
 
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	
-	BankIdsForBankCombo.reserve(128);
+	ComboBankIds.reserve(128);
 }
 
 bool FPCENewGraphicsViewer::Init(void)
@@ -147,6 +147,26 @@ FAddressRef FPCENewGraphicsViewer::GetAddressFromPos(int xp, int yp) const
 	return addr;
 }
 
+void FPCENewGraphicsViewer::DrawBlockThumbnail(int xp, int yp) const
+{
+	if (pGraphicView == nullptr)
+		return;
+
+	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
+	const int blocksPerRow    = pGraphicView->GetWidth()  / blockSizePixels;
+	const int blockRows       = pGraphicView->GetHeight() / blockSizePixels;
+
+	const int blockCol = xp / blockSizePixels;
+	const int blockRow = yp / blockSizePixels;
+
+	const float uvX0 = (float)blockCol       / blocksPerRow;
+	const float uvY0 = (float)blockRow       / blockRows;
+	const float uvX1 = (float)(blockCol + 1) / blocksPerRow;
+	const float uvY1 = (float)(blockRow + 1) / blockRows;
+
+	ImGui::Image((void*)pGraphicView->GetTexture(), ImVec2(64.0f, 64.0f), ImVec2(uvX0, uvY0), ImVec2(uvX1, uvY1));
+}
+
 int FPCENewGraphicsViewer::GetVRAMOffsetFromPos(int xp, int yp) const
 {
 	if (pGraphicView == nullptr)
@@ -164,17 +184,17 @@ int FPCENewGraphicsViewer::GetVRAMOffsetFromPos(int xp, int yp) const
 
 void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 {
-	BankIdsForBankCombo.clear();
+	ComboBankIds.clear();
 
 	// ROM banks
 	for (int i = 0; i < FPCEEmu::kNumRomBanks; i++)
 	{
 		FBankSet* pBankSet = pPCEEmu->Banks[i];
 		const int16_t bankId = pBankSet->GetBankId(0);
-		if (std::find(BankIdsForBankCombo.begin(), BankIdsForBankCombo.end(), bankId) == BankIdsForBankCombo.end())
+		if (std::find(ComboBankIds.begin(), ComboBankIds.end(), bankId) == ComboBankIds.end())
 		{
 			if (state.GetBank(bankId) != nullptr)
-				BankIdsForBankCombo.emplace_back(bankId);
+				ComboBankIds.emplace_back(bankId);
 		}
 	}
 
@@ -184,12 +204,12 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 		WRAMBankId = pBankSet->GetBankId(0);
 	}
 
-	if (!BankIdsForBankCombo.empty())
+	if (!ComboBankIds.empty())
 	{
-		if (SelectedBankIndex < 0 || SelectedBankIndex >= BankIdsForBankCombo.size())
+		if (SelectedBankIndex < 0 || SelectedBankIndex >= ComboBankIds.size())
 		{
 			SelectedBankIndex = 0;
-			SelectedBankId = BankIdsForBankCombo[0];
+			SelectedBankId = ComboBankIds[0];
 			bGraphicViewDirty = true;
 		}
 	}
@@ -233,9 +253,9 @@ void FPCENewGraphicsViewer::DrawUI(void)
 	//ImGui::SetNextItemWidth(ImGui_GetFontCharWidth() * 16);
 	if (ImGui::BeginCombo("##Bank", pSelectedName))
 	{
-		for (int i = 0; i < (int)BankIdsForBankCombo.size(); i++)
+		for (int i = 0; i < (int)ComboBankIds.size(); i++)
 		{
-			const int16_t bankId = BankIdsForBankCombo[i];
+			const int16_t bankId = ComboBankIds[i];
 			const FCodeAnalysisBank* pBank = state.GetBank(bankId);
 			if (pBank == nullptr)
 				continue;
@@ -269,7 +289,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 	ImGui::SameLine();
 	if (ImGui::Button("Next"))
 	{
-		if (SelectedBankIndex >= 0 && SelectedBankIndex < (int)BankIdsForBankCombo.size() - 1)
+		if (SelectedBankIndex >= 0 && SelectedBankIndex < (int)ComboBankIds.size() - 1)
 		{
 			SelectedBankIndex++;
 			SelectedBankId = BankIdsForBankCombo[SelectedBankIndex];
@@ -356,6 +376,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 				if (vramOffset >= 0)
 				{
 					ImGui::BeginTooltip();
+					DrawBlockThumbnail(xp, yp);
 					ImGui::Text("VRAM: %s", NumStr((uint16_t)vramOffset));
 					ImGui::EndTooltip();
 				}
@@ -366,6 +387,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 				if (addr.IsValid())
 				{
 					ImGui::BeginTooltip();
+					DrawBlockThumbnail(xp, yp);
 					ImGui::Text("%s", NumStr(addr.GetAddress()));
 					ImGui::SameLine();
 					DrawAddressLabel(state, state.GetFocussedViewState(), addr);
@@ -435,8 +457,8 @@ void FPCENewGraphicsViewer::GoToAddress(FAddressRef address)
 	}
 	else
 	{
-		const auto it = std::find(BankIdsForBankCombo.begin(), BankIdsForBankCombo.end(), bankId);
-		if (it != BankIdsForBankCombo.end())
+		const auto it = std::find(ComboBankIds.begin(), ComboBankIds.end(), bankId);
+		if (it != ComboBankIds.end())
 		{
 			MemorySource = EPCEMemorySource::ROM;
 			SelectedBankId = bankId;
