@@ -281,7 +281,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 		if (SelectedBankIndex > 0)
 		{
 			SelectedBankIndex--;
-			SelectedBankId = BankIdsForBankCombo[SelectedBankIndex];
+			SelectedBankId = ComboBankIds[SelectedBankIndex];
 			DisplayAddress = 0;
 			bGraphicViewDirty = true;
 		}
@@ -292,7 +292,7 @@ void FPCENewGraphicsViewer::DrawUI(void)
 		if (SelectedBankIndex >= 0 && SelectedBankIndex < (int)ComboBankIds.size() - 1)
 		{
 			SelectedBankIndex++;
-			SelectedBankId = BankIdsForBankCombo[SelectedBankIndex];
+			SelectedBankId = ComboBankIds[SelectedBankIndex];
 			DisplayAddress = 0;
 			bGraphicViewDirty = true;
 		}
@@ -462,7 +462,7 @@ void FPCENewGraphicsViewer::GoToAddress(FAddressRef address)
 		{
 			MemorySource = EPCEMemorySource::ROM;
 			SelectedBankId = bankId;
-			SelectedBankIndex = (int)(it - BankIdsForBankCombo.begin());
+			SelectedBankIndex = (int)(it - ComboBankIds.begin());
 			DisplayAddress = address.GetAddress();
 		}
 	}
