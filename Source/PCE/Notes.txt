@@ -45,6 +45,7 @@ TODO
 - fix system vectors breaking asm output
 - auto-wrap multi-line comments
 - create VramAnalysis class and move all the vram analysis code out of vram viewer (SpriteInfo, VRAMAccess etc)
+- remove Save & quit popup
  
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
