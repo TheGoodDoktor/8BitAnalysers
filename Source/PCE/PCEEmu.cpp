@@ -1091,6 +1091,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", biosFilePath.c_str());
 #endif
 
+	// This needs to happen or GetCanonicalAddressRef() & GetPC() won't work
+	CodeAnalysis.Init(this);
+
 	CreateBanks();
 	BuildCanonicalBankIdLookup();
 	BuildBankSetLookup();
@@ -1175,8 +1178,6 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	if (!bLoadedGame)
 	{
-		CodeAnalysis.Init(this);
-		
 		CodeAnalysis.Debugger.SetPC(FAddressRef(MprBankId[0], 0));
 		CodeAnalysis.Debugger.Break();
 	}
@@ -1528,7 +1529,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	{
 		const FAddressRef initialPC = GetPC();
 
-		// Removed this for now. We can end up with operand addresses to labels in the UNUSED banks
+		// Removed this for now. We can end up with operand addresses to labels in the UNMAPPED banks
 		// in the initial code. this can prevent the exported asm from assembling.
 		// It is better to let the WriteCodeInfoForAddress() happen when the code is executed.
 		// This makes sure the operand addresses point to actual banks/roms in physical memory.
@@ -1549,7 +1550,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		// Make a label for the entry point.
 		// Without this an exported asm file may not assemble.
 		char labelTxt[40];
-		snprintf(labelTxt, 40, "func_ROM_00_%04X_entry_point", initialPC.GetAddress());
+		snprintf(labelTxt, 40, "func_%s_%04X_entry_point", pMedia->IsCDROM() ? "BIOS_00" : "ROM_00", initialPC.GetAddress());
 		AddLabel(CodeAnalysis, initialPC, labelTxt, ELabelType::Function);
 	}
 
@@ -1592,6 +1593,14 @@ void FormatMemoryAsPtr(FCodeAnalysisState& state, uint16_t addr)
 	}
 }
 
+void AddCodeLabel(FCodeAnalysisState& state, uint16_t addr, std::string name)
+{
+	const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
+	UpdateCodeInfoForAddress(state, addr);
+	state.SetCodeAnalysisDirty(addr);
+	AddLabel(state, addrRef, name.c_str(), ELabelType::Function);
+}
+
 void FPCEEmu::AddLabels()
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
@@ -1602,19 +1611,14 @@ void FPCEEmu::AddLabels()
 		// Add labels for the jump table. This will be the same for all system card revisions.
 		for (int i = 0; i < kBiosSymbolCount; i++)
 		{
-			const FAddressRef addr = state.AddressRefFromPhysicalAddress(kBiosJmpSymbols[i].Address);
-			SetItemCode(state, addr);
-			AddLabel(state, addr, kBiosJmpSymbols[i].Label, ELabelType::Function);
+			AddCodeLabel(state, kBiosJmpSymbols[i].Address, kBiosJmpSymbols[i].Label);
 		}
 
 		// Add labels for the routines themselves.
 		// Games shouldn't call these directly.
 		for (int i = 0; i < kBiosSymbolCount; i++)
 		{
-			const FAddressRef addr = state.AddressRefFromPhysicalAddress(kBiosRoutineSymbols[i].Address);
-			SetItemCode(state, addr);
-			const std::string name = std::string("_") + kBiosRoutineSymbols[i].Label;
-			AddLabel(state, addr, name.c_str(), ELabelType::Function);
+			AddCodeLabel(state, kBiosRoutineSymbols[i].Address, kBiosRoutineSymbols[i].Label);
 		}
 	}
 #endif
