@@ -16,13 +16,11 @@ TODO
 - get Word data item set to display as Pointer to work when outputting assembly
 - add audio viewer: disable channels etc
 - create new graphics viewer that removes all the stuff I dont need. off-screen buffers etc
-- in graphics viewer, label which palette is currently selected 
 - Show register value on tooltips
 - tidy tooltips for PCE related instructions
 - display vram transfer address in vram viewer. MAWR. maybe with indicator
 - get 3bpp, 2bpp sprite working in graphics viewer. 
 - tooltips on pce registers describing what they do
-- change Current palette option in graphics viewer. doesnt make sense for PCE
 - local labels asm export
 - if FBankSet::GetMappedAddressFromUsage() doesnt have enough usage fallback to other means?
 - hookup RegisterCodeExecutedHuC6280
@@ -130,3 +128,5 @@ DONE
 - remove biospath from globalconfig
 - Exception thrown at 0x00007FFF2C77AB5E (atio6axx.dll) in PCEAnalyser.exe: 0xC0000005: Access violation reading location 0xFFFFFFFFFFFFFFFF. started happening when including mcp server. 
 - ask claude to look at Mesen "draw partial frame" option to see how it does it.
+- in graphics viewer, label which palette is currently selected 
+- change Current palette option in graphics viewer. doesnt make sense for PCE
