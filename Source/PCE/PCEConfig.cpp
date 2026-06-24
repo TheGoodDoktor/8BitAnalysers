@@ -29,18 +29,15 @@ void FPCEConfig::ReadFromJson(const nlohmann::json& jsonConfigFile)
 	if (jsonConfigFile.contains("CdRomFolder"))
 		CdRomFolder = jsonConfigFile["CdRomFolder"];
 
-	if (jsonConfigFile.contains("BiosPath"))
-		BiosPath = jsonConfigFile["BiosPath"];
-
-	if (jsonConfigFile.contains("BiosFilename"))
-		BiosFilename = jsonConfigFile["BiosFilename"];
+	if (jsonConfigFile.contains("BiosFilePath"))
+		BiosFilePath = jsonConfigFile["BiosFilePath"];
 #endif
 
 	if (jsonConfigFile.contains("GameDbPath"))
-		GameDbPath = jsonConfigFile["GameDbPath"];
+		GameDbFolder = jsonConfigFile["GameDbPath"];
 
-	if (jsonConfigFile.contains("ValidatorPath"))
-		ValidatorPath = jsonConfigFile["ValidatorPath"];
+	if (jsonConfigFile.contains("ValidatorFolder"))
+		ValidatorFolder = jsonConfigFile["ValidatorFolder"];
 	
 	if (jsonConfigFile.contains("AsmExportValidator"))
 		bUseAsmExportValidator = jsonConfigFile["AsmExportValidator"];
@@ -54,13 +51,12 @@ void FPCEConfig::WriteToJson(nlohmann::json& jsonConfigFile) const
 
 #if CDROM_SUPPORT
 	jsonConfigFile["CdRomFolder"] = CdRomFolder;
-	jsonConfigFile["BiosPath"] = BiosPath;
-	jsonConfigFile["BiosFilename"] = BiosFilename;
+	jsonConfigFile["BiosFilePath"] = BiosFilePath;
 #endif
-	jsonConfigFile["GameDbPath"] = GameDbPath;
+	jsonConfigFile["GameDbFolder"] = GameDbFolder;
 
 #ifndef NDEBUG
-	jsonConfigFile["ValidatorPath"] = ValidatorPath;
+	jsonConfigFile["ValidatorFolder"] = ValidatorFolder;
 	jsonConfigFile["AsmExportValidator"] = bUseAsmExportValidator;
 #endif
 }
@@ -72,13 +68,10 @@ void FPCEConfig::FixupPaths(void)
 #if CDROM_SUPPORT
 	if (CdRomFolder.back() != '/')
 		CdRomFolder += "/";
-
-	if (BiosPath.back() != '/')
-		BiosPath += "/";
 #endif
-	if (ValidatorPath.back() != '/')
-		ValidatorPath += "/";
+	if (ValidatorFolder.back() != '/')
+		ValidatorFolder += "/";
 
-	if (GameDbPath.back() != '/')
-		GameDbPath += "/";
+	if (GameDbFolder.back() != '/')
+		GameDbFolder += "/";
 }

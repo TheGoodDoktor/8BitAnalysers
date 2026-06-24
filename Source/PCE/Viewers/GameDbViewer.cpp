@@ -138,7 +138,7 @@ void FGameDbViewer::DrawGameDbTable()
 			for (int i = 0; i < gamesList.GetNoGames(); i++)
 			{
 				const FEmulatorFile& emuFile = gamesList.GetGame(i);
-				const std::string fname = pPCEEmu->GetPCEGlobalConfig()->GameDbPath + emuFile.DisplayName + ".json";
+				const std::string fname = pPCEEmu->GetPCEGlobalConfig()->GameDbFolder + emuFile.DisplayName + ".json";
 				LoadGameDbEntry(emuFile.DisplayName, fname);
 			}
 		}

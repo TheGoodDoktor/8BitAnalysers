@@ -1086,9 +1086,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 #if CDROM_SUPPORT
 	// todo: check this is system card 3.0.
-	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
-	bBiosLoaded = pCore->LoadBios(fullBiosPath.c_str(), true);
-	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", fullBiosPath.c_str());
+	const std::string& biosFilePath = GetPCEGlobalConfig()->BiosFilePath;
+	bBiosLoaded = pCore->LoadBios(biosFilePath.c_str(), true);
+	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", biosFilePath.c_str());
 #endif
 
 	CreateBanks();
@@ -1479,17 +1479,10 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		const bool bHasSnapshot = pGameConfig->EmulatorFile.FileName.empty() == false;
 		if (bHasSnapshot)
 		{
-			/*/const FGameSnapshot* snapshot = &CurrentGameSnapshot;//GamesList.GetGame(RemoveFileExtension(pGameConfig->SnapshotFile.c_str()).c_str());
-			if (snapshot == nullptr)
-			{
-				SetLastError("Could not find '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pGameConfig->SnapshotFile.c_str());
-				return false;
-			}*/
 			LOGINFO("LoadEmulatorFile '%s'", pGameConfig->EmulatorFile.FileName.c_str());
 
 			if (!LoadEmulatorFile(&pGameConfig->EmulatorFile))
 			{
-				SetLastError("Could not load '%s'", pGameConfig->EmulatorFile.FileName.c_str());
 				return false;
 			}
 		}
@@ -1568,7 +1561,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 	if (!pMedia->IsCDROM())
 	{
-		const std::string fname = GetPCEGlobalConfig()->GameDbPath + pGameConfig->Name + ".json";
+		const std::string fname = GetPCEGlobalConfig()->GameDbFolder + pGameConfig->Name + ".json";
 		if (!LoadGameDbEntry(pGameConfig->Name, fname.c_str()))
 		{
 			// Create new bank mappings if no file exists
@@ -1826,7 +1819,7 @@ void FPCEEmu::SaveGameDbEntry()
 {
 	if (pCurrentProjectConfig && !pMedia->IsCDROM())
 	{
-		const std::string gameDbPath = GetPCEGlobalConfig()->GameDbPath;
+		const std::string gameDbPath = GetPCEGlobalConfig()->GameDbFolder;
 		const std::string fname = gameDbPath + pCurrentProjectConfig->Name + ".json";
 		EnsureDirectoryExists(gameDbPath.c_str());
 		::SaveGameDbEntry(pCurrentProjectConfig->Name, fname);
@@ -1873,10 +1866,27 @@ bool FPCEEmu::SaveProject()
 	return true;
 }
 
+bool IsFileTypeSupported(EEmuFileType fileType)
+{
+	switch (fileType)
+	{
+#if CDROM_SUPPORT
+	case EEmuFileType::CUE:
+#endif
+	case EEmuFileType::PCE:
+#if CDROM_SUPPORT
+	case EEmuFileType::ZIP:
+#endif
+		return true;
+	default:
+		return false;
+	}
+}
+
 bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 {
 	auto findIt = GamesLists.find(pSnapshot->ListName);
-	if(findIt == GamesLists.end())
+	if (findIt == GamesLists.end())
 	{
 		SetLastError("Games list '%s' not found", pSnapshot->ListName.c_str());
 		return false;
@@ -1884,31 +1894,29 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 
 	const std::string fileName = findIt->second.GetRootDir() + pSnapshot->FileName;
 
-	switch (pSnapshot->Type)
+	if (!IsFileTypeSupported(pSnapshot->Type))
 	{
-#if CDROM_SUPPORT
-	case EEmuFileType::CUE:
-		if (!bBiosLoaded)
-		{
-			const std::string biosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
-			SetLastError("Bios not loaded: '%s'", biosPath.c_str());
-			return false;
-		}
-#endif
-	case EEmuFileType::PCE:
-#if CDROM_SUPPORT
-	case EEmuFileType::ZIP:
-#endif
-		if (!pCore->LoadMedia(fileName.c_str()))
-		{
-			SetLastError("Failed to load '%s'", fileName.c_str());
-			return false;
-		}
-		return true;
-	default:
 		SetLastError("Unsupported file type for '%s'", pSnapshot->FileName.c_str());
 		return false;
 	}
+
+	const bool bMediaLoadedOk = pCore->LoadMedia(fileName.c_str());
+	
+	if (!bMediaLoadedOk)
+	{
+		SetLastError("Failed to load '%s'", fileName.c_str());
+		return false;
+	}
+
+	if (pSnapshot->Type == EEmuFileType::CUE || pCore->GetMedia()->IsCDROM())
+	{
+		if (!bBiosLoaded)
+		{
+			SetLastError("Bios not loaded: '%s'", GetPCEGlobalConfig()->BiosFilePath.c_str());
+			return false;
+		}
+	}
+	return true;
 }
 
 bool FPCEEmu::NewProjectFromEmulatorFile(const FEmulatorFile& snapshot)
