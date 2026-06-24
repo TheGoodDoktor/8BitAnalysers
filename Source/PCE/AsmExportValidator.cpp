@@ -60,7 +60,7 @@ bool FAsmExportValidator::Validate(const std::vector<int16_t>& banksExported, co
 
 bool FAsmExportValidator::Assemble(const std::string& asmFname, bool bOutputListing)
 {
-	std::string validatorPath = pPCEEmu->GetPCEGlobalConfig()->ValidatorPath;
+	std::string validatorPath = pPCEEmu->GetPCEGlobalConfig()->ValidatorFolder;
 	std::replace(validatorPath.begin(), validatorPath.end(), '/', '\\');
 	const std::string tmpFile = validatorPath + "tmp.txt";
 	const std::string logFile = validatorPath + "AssembleLog.txt";
