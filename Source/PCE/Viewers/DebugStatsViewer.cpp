@@ -347,7 +347,7 @@ void FDebugStatsViewer::DrawGeneralStats()
 		}
 	}
 
-	const int romSize = pPCEEmu->GetMedia()->IsCDROM() ? GG_BIOS_SYSCARD_SIZE : pPCEEmu->GetMedia()->GetROMSize();
+	const int romSize = pPCEEmu->IsCDROM() ? GG_BIOS_SYSCARD_SIZE : pPCEEmu->GetMedia()->GetROMSize();
 	const int romBankCount = (romSize / 0x2000) + (romSize % 0x2000 ? 1 : 0);
 
 	ImGui::SeparatorText("Banks");
@@ -459,7 +459,7 @@ void FDebugStatsViewer::DrawGeneralStats()
 	ImGui::Text("Global functions items size: %d", state.GlobalFunctions.size());
 
 	ImGui::SeparatorText("Rom/Bios");
-	ImGui::Text("Type : %s", pPCEEmu->GetMedia()->IsCDROM() ? "BIOS" : "ROM");
+	ImGui::Text("Type : %s", pPCEEmu->IsCDROM() ? "BIOS" : "ROM");
 	ImGui::Text("Bank count : %d", romBankCount);
 
 	ImGui::SeparatorText("Debugger");

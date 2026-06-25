@@ -18,6 +18,7 @@
 #include "Viewers/PaletteViewer.h"
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
+#include "Viewers/CDROMViewer.h"
 #include "VRAMAnalyser.h"
 #include "Viewers/PCEGraphicsViewer.h"
 #include "Viewers/PCENewGraphicsViewer.h"
@@ -1145,7 +1146,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(pVRAMViewer);
 	AddViewer(new FMemoryViewer(this));
 	AddViewer(new FPCEGraphicsViewer(this));
-	
+#if CDROM_SUPPORT
+	AddViewer(new FCDROMViewer(this));
+#endif
 	pGraphicsViewer = new FPCENewGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
@@ -1536,10 +1539,9 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		//SetItemCode(CodeAnalysis, initialPC);
 		CodeAnalysis.Debugger.SetPC(initialPC);
 
-		// The initial PC needs to be in the address space of the only mapped ROM: ROM_00.
+		// The initial PC needs to be in the address space of the only mapped ROM: ROM_00/BIOS_00.
 		// If the PC is anything else something badly has gone wrong and the game won't work
 		// because it will be trying to execute undefined memory.
-		// todo: make sure this works for cd-rom games.
 		//assert(initialPC.GetAddress() >= 0xe000);
 		if (initialPC.GetAddress() < 0xe000)
 		{
@@ -1776,6 +1778,12 @@ bool FPCEEmu::MprBankIdsAreValid() const
 
 	return true;
 }
+
+bool FPCEEmu::IsCDROM() const
+{
+	return pMedia->IsCDROM();
+}
+
 
 // Restore the MPR bank mappings to what they were when the project was saved to disk
 bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
