@@ -1595,6 +1595,8 @@ void FormatMemoryAsPtr(FCodeAnalysisState& state, uint16_t addr)
 
 void AddCodeLabel(FCodeAnalysisState& state, uint16_t addr, std::string name)
 {
+	// Purposefully not calling SetItemCode because we dont want to run static analysis
+	// when UNMAPPED_* banks are mapped in.
 	const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
 	UpdateCodeInfoForAddress(state, addr);
 	state.SetCodeAnalysisDirty(addr);
