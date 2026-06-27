@@ -44,6 +44,8 @@ TODO
 - auto-wrap multi-line comments
 - create VramAnalysis class and move all the vram analysis code out of vram viewer (SpriteInfo, VRAMAccess etc)
 - remove Save & quit popup
+- run rondo cd image through etripator disassembler (it has an option to disassemble a cd rom image)
+- add detection of bios calls to static analysis
  
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
@@ -82,6 +84,9 @@ IDEAS
 - add button to save all sprites in history view to png
 - always collapse/hide bytes in HW page.
 - add scroll overlay on background view (like Mesen does)
+- add cd image to PCE graphics viewer
+- add cd image to memory viewer
+- make cd image appear in the code analysis view so we can annotate it and see reads?
 
 DONE
 - perf of sprites results tab is really bad. improved but DrawAddressLabel is expensive when called > once

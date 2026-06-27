@@ -24,6 +24,7 @@ class FBatchGameLoadViewer;
 class FSpriteViewer;
 class FVRAMViewer;
 class FVRAMAnalysisState;
+class FCDROMViewer;
 class FPCEEmu;
 struct FGameDbEntry;
 struct FEmuDebugStats;
@@ -190,7 +191,7 @@ protected:
 
 protected:
 	GeargrafxCore* pCore = nullptr;
-	bool bBiosLoaded = false;
+	//bool bBiosLoaded = false;
 	Media* pMedia = nullptr;
 	Memory* pMemory = nullptr;
 	uint8_t* pFrameBuffer = nullptr;
@@ -206,6 +207,7 @@ protected:
 	FBatchGameLoadViewer* pBatchGameLoadViewer = nullptr;
 	FSpriteViewer* pSpriteViewer = nullptr;
 	FVRAMViewer* pVRAMViewer = nullptr;
+	FCDROMViewer* pCDROMViewer = nullptr;
 
 	// used for #ifdef BANK_SWITCH_DEBUG
 	bool bDoneInitialBankMapping = false;

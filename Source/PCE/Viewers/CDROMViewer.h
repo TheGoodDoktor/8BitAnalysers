@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CodeAnalyser/UI/ViewerBase.h"
+#include <vector>
 
 class FPCEEmu;
 class FCodeAnalysisState;
@@ -23,11 +24,16 @@ public:
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
 	void	DrawLegend(void);
 
+	void	Tick();
 	void	ClearUsage();
+	void	DetectDataReads();
 
 private:
 
 	FGraphicsView*	MemoryViewImage  = nullptr;
 
 	FPCEEmu* pPCEEmu = nullptr;
+
+	int SelectedTrackIndex = -1;
+	std::vector<int> TrackLastReadFrame;
 };

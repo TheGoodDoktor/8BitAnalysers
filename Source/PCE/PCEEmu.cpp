@@ -1088,7 +1088,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 #if CDROM_SUPPORT
 	// todo: check this is system card 3.0.
 	const std::string& biosFilePath = GetPCEGlobalConfig()->BiosFilePath;
-	bBiosLoaded = pCore->LoadBios(biosFilePath.c_str(), true);
+	bool bBiosLoaded = pCore->LoadBios(biosFilePath.c_str(), true);
 	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", biosFilePath.c_str());
 #endif
 
@@ -1147,7 +1147,8 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FMemoryViewer(this));
 	AddViewer(new FPCEGraphicsViewer(this));
 #if CDROM_SUPPORT
-	AddViewer(new FCDROMViewer(this));
+	pCDROMViewer = new FCDROMViewer(this);
+	AddViewer(pCDROMViewer);
 #endif
 	pGraphicsViewer = new FPCENewGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
@@ -1924,7 +1925,8 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 
 	if (pSnapshot->Type == EEmuFileType::CUE || pCore->GetMedia()->IsCDROM())
 	{
-		if (!bBiosLoaded)
+		// todo: check bios is valid
+		if (!pMedia->IsLoadedBios())
 		{
 			SetLastError("Bios not loaded: '%s'", GetPCEGlobalConfig()->BiosFilePath.c_str());
 			return false;
@@ -2124,6 +2126,8 @@ void FPCEEmu::Tick()
 		pVRAMState->Tick();
 	if (pSpriteViewer)
 		pSpriteViewer->Tick();
+	if (pCDROMViewer)
+		pCDROMViewer->Tick();
 
 	UpdateDebugStats();
 
