@@ -3,6 +3,8 @@
 #include <imgui.h>
 #include "../PCEEmu.h"
 #include <geargrafx_core.h>
+#include <scsi_controller.h>
+#include <cdrom_audio.h>
 
 #include "SpriteViewer.h"
 #include "../DebugStats.h"
@@ -41,7 +43,15 @@ void FPCEViewer::DrawUI()
 	ImGui::Text("Screen Size = %d x %d", TextureWidth, TextureHeight);
 
 	if (pPCEEmu->IsCDROM())
-		ImGui::Text("CD state: %s", *pPCEEmu->GetCore()->GetScsiController()->GetState()->NEXT_LOAD_CYCLES > 0 ? "Loading" : "Idle");
+	{
+		GeargrafxCore* pCore = pPCEEmu->GetCore();
+		const char* cdStateStr = "Idle";
+		if (*pCore->GetScsiController()->GetState()->LOAD_SECTOR_COUNT > 0)
+			cdStateStr = "Reading Data";
+		else if (*pCore->GetCDROMAudio()->GetState()->CURRENT_STATE == CdRomAudio::CD_AUDIO_STATE_PLAYING)
+			cdStateStr = "Reading Audio";
+		ImGui::Text("CD state: %s", cdStateStr);
+	}
 
 	const ImVec2 pos = ImGui::GetCursorScreenPos();
 
