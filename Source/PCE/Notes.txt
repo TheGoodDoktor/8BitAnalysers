@@ -46,6 +46,7 @@ TODO
 - remove Save & quit popup
 - run rondo cd image through etripator disassembler (it has an option to disassemble a cd rom image)
 - add detection of bios calls to static analysis
+- add RW indicators to banks viewer so we can see when the banks are being read or written
  
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
