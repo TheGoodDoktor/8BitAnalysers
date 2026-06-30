@@ -1062,7 +1062,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	EnableGeargrafxCallbacks(true);
 
 	pMedia = pCore->GetMedia();
-	//pMedia->PreloadCdRom(true);
+	pMedia->PreloadCdRom(true);
 
 	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
 
