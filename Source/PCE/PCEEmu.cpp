@@ -255,6 +255,7 @@ void OnMemoryRead(void* pContext, u16 dataAddr)
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	// todo: why not use PC from geargrafx here?
 	const uint16_t pc = state.Debugger.GetPC().GetAddress();
 	RegisterDataRead(state, pc, dataAddr);
 }
@@ -266,6 +267,7 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	FDebugger& debugger = state.Debugger;
+	// todo: why not use PC from geargrafx here?
 	const uint16_t pc = debugger.GetPC().GetAddress();
 	RegisterDataWrite(state, pc, dataAddr, value);
 
@@ -419,6 +421,20 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
+
+#if CDROM_SUPPORT
+	if (IsCDROM())
+	{
+		const FAddressRef pcAddrRef = GetPC();
+		if (pcAddrRef.GetBankId() == BankSets[0].GetBankId())
+		{
+			if (pcAddrRef.GetAddress() == 0xE009)
+			{
+				LOGINFO("CD_READ bios function");
+			}
+		}
+	}
+#endif
 
 	// oldpc is unused on HuC6280 (RegisterCodeExecutedHuC6280 only reads opcode at pc).
 	RegisterCodeExecuted(state, pc, /* oldpc */ 0);
