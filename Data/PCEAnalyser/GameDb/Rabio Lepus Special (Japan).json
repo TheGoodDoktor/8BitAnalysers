@@ -1,0 +1,209 @@
+{
+    "AssemblesOk": false,
+    "EmulatorTestOk": false,
+    "Mappings": [
+        {
+            "Fixed": true,
+            "MprSlots": [
+                7
+            ]
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        },
+        {
+            "Fixed": true,
+            "MprSlots": []
+        }
+    ],
+    "MaxDupeBanks": 0,
+    "Name": "Rabio Lepus Special (Japan)",
+    "NumBanks": 48,
+    "RomFileIdentical": false,
+    "RomFilePartialMatch": false,
+    "SpritesFoundInROM": 0,
+    "SpritesInHistory": 0,
+    "TestingMethodology": -1,
+    "Validated": false
+}

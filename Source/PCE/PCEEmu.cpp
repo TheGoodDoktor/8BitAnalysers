@@ -255,6 +255,7 @@ void OnMemoryRead(void* pContext, u16 dataAddr)
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	// todo: why not use PC from geargrafx here?
 	const uint16_t pc = state.Debugger.GetPC().GetAddress();
 	RegisterDataRead(state, pc, dataAddr);
 }
@@ -266,6 +267,7 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	FDebugger& debugger = state.Debugger;
+	// todo: why not use PC from geargrafx here?
 	const uint16_t pc = debugger.GetPC().GetAddress();
 	RegisterDataWrite(state, pc, dataAddr, value);
 
@@ -415,10 +417,69 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 	return false;
 }*/
 
+#define _al 0xF8
+#define _ah 0xF9
+#define _bl 0xFA
+#define _bh 0xFB
+#define _cl 0xFC
+#define _ch 0xFD
+#define _dl 0xFE
+#define _dh 0xFF
+
+#define _ax 0xF8
+#define _bx 0xFA
+#define _cx 0xFC
+#define _dx 0xFE
+
 // pc is the address of the instruction that just executed.
 void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
+
+#if CDROM_SUPPORT
+	// todo move somewhere else
+	if (IsCDROM())
+	{
+		const FAddressRef pcAddrRef = GetPC();
+		if (pcAddrRef.GetBankId() == BankSets[0].GetBankId())
+		{
+			if (pcAddrRef.GetAddress() == 0xE009)
+			{
+				const uint16_t zipBaseAddr = 0x2000;
+				uint8_t mode = ReadByte(zipBaseAddr + _dh);
+				//uint32_t nb_to_read = get_8bit_zp(_al);
+				uint16_t offset = ReadWord(zipBaseAddr + _bx);
+
+				switch (mode)
+				{
+					case 0: // Local: size in bytes
+						break;
+					case 1: // Local: size in sectors
+						break;
+					case 2: // MPR num
+					case 3:
+					case 4:
+					case 5:
+					case 6:
+						break;
+					case 0xfe: // VRAM
+						break;
+					case 0xff: // VRAM
+						break;
+				}
+				/*pce_cd_sectoraddy = (get_8bit_zp(_cl) << 16) +
+				(get_8bit_zp(_ch) << 8) +
+				(get_8bit_zp(_dl));
+
+				pce_cd_sectoraddy += (get_8bit_addr(0x2274 + 3 * get_8bit_addr(0x2273)) << 16) +
+					(get_8bit_addr(0x2275 + 3 * get_8bit_addr(0x2273)) << 8) +
+					(get_8bit_addr(0x2276 + 3 * get_8bit_addr(0x2273)));*/
+
+				LOGINFO("CD_READ mode %d offset %d", mode, offset);
+			}
+		}
+	}
+#endif
 
 	// oldpc is unused on HuC6280 (RegisterCodeExecutedHuC6280 only reads opcode at pc).
 	RegisterCodeExecuted(state, pc, /* oldpc */ 0);
@@ -1063,7 +1124,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	EnableGeargrafxCallbacks(true);
 
 	pMedia = pCore->GetMedia();
-	//pMedia->PreloadCdRom(true);
+	pMedia->PreloadCdRom(true);
 
 	pVPos = pCore->GetHuC6270_1()->GetState()->VPOS;
 
