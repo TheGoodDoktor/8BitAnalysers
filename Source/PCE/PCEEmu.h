@@ -109,6 +109,8 @@ public:
 	HuC6280::HuC6280_State* Get6280State() const { return p6280State; }
 	HuC6270::HuC6270_State* Get6270State() const { return p6270State; }
 
+	bool IsCDROM() const;
+
 	void OnInstructionExecuted(uint16_t pc);
 	void OnVRAMWritten(uint16_t vramAddr, uint16_t value);
 	void OnVRAMRead(uint16_t vramAddr, uint16_t value);
@@ -212,7 +214,6 @@ protected:
 	int16_t MprBankIdPrev[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
 	FBankSet BankSets[kNumBanks];
-	//int16_t NullBankId = -1;
 
 	// Fast lookup: maps each bankId to its canonical (primary) bankId.
 	// Built once after all banks are created. Indexed directly by bankId.

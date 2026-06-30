@@ -21,8 +21,6 @@ enum class EPCEMemorySource
 	VRAM,
 };
 
-// New PCE-specific memory-as-graphics viewer.
-// Will eventually replace the GFX tab of FPCEGraphicsViewer.
 class FPCENewGraphicsViewer : public FGraphicsViewerBase
 {
 public:
@@ -55,13 +53,13 @@ private:
 	int16_t			SelectedBankId = -1;
 	int				SelectedBankIndex = -1;	// index into ComboBankIds
 	int16_t			WRAMBankId = -1;
-	bool			bGraphicViewDirty = false;
+	bool				bGraphicViewDirty = false;
 	int				GraphicViewScale = 1;
 	int				ViewWidth = 128;
 	int				ViewHeight = 128;
 	int				SelectedPaletteIndex = 0;	// index into the palette store (see GetPaletteFromPaletteNo)
-	bool			bGreyscale = false;
-	int				AddressOffset = 0;
+	bool				bGreyscale = false;
+	int				DisplayAddress = 0;
 
 	std::vector<int16_t>	ComboBankIds;
 

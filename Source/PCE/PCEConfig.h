@@ -5,18 +5,17 @@
 // PCE specific config
 struct FPCEConfig : public FGlobalConfig
 {
-    bool Init(void) override;
+	bool Init(void) override;
 
-	 std::string BiosPath = "./Bios/";
-	 std::string BiosFilename = "Bios.pce";
+	std::string BiosFilePath = "./Bios/Bios.pce";
 
-	 bool bUseAsmExportValidator = false;
+	bool bUseAsmExportValidator = false;
 
-	 std::string CdRomFolder = "./CdRomGames/";
-	 std::string GameDbPath = "./GameDb/";
-	 
-	 // asm export validator temporary output path
-	 std::string ValidatorPath = "./Validator/";
+	std::string CdRomFolder = "./CdRomGames/";
+	std::string GameDbFolder = "./GameDb/";
+	
+	// asm export validator temporary output path
+	std::string ValidatorFolder = "./Validator/";
 
 protected:
 

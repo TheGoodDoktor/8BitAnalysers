@@ -18,6 +18,7 @@
 #include "Viewers/PaletteViewer.h"
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
+#include "Viewers/CDROMViewer.h"
 #include "VRAMAnalyser.h"
 #include "Viewers/PCEGraphicsViewer.h"
 #include "Viewers/PCENewGraphicsViewer.h"
@@ -254,6 +255,7 @@ void OnMemoryRead(void* pContext, u16 dataAddr)
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
+	// todo: why not use PC from geargrafx here?
 	const uint16_t pc = state.Debugger.GetPC().GetAddress();
 	RegisterDataRead(state, pc, dataAddr);
 }
@@ -265,6 +267,7 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	FDebugger& debugger = state.Debugger;
+	// todo: why not use PC from geargrafx here?
 	const uint16_t pc = debugger.GetPC().GetAddress();
 	RegisterDataWrite(state, pc, dataAddr, value);
 
@@ -418,6 +421,20 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
+
+#if CDROM_SUPPORT
+	if (IsCDROM())
+	{
+		const FAddressRef pcAddrRef = GetPC();
+		if (pcAddrRef.GetBankId() == BankSets[0].GetBankId())
+		{
+			if (pcAddrRef.GetAddress() == 0xE009)
+			{
+				LOGINFO("CD_READ bios function");
+			}
+		}
+	}
+#endif
 
 	// oldpc is unused on HuC6280 (RegisterCodeExecutedHuC6280 only reads opcode at pc).
 	RegisterCodeExecuted(state, pc, /* oldpc */ 0);
@@ -1086,10 +1103,13 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 #if CDROM_SUPPORT
 	// todo: check this is system card 3.0.
-	const std::string fullBiosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
-	bBiosLoaded = pCore->LoadBios(fullBiosPath.c_str(), true);
-	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", fullBiosPath.c_str());
+	const std::string& biosFilePath = GetPCEGlobalConfig()->BiosFilePath;
+	bBiosLoaded = pCore->LoadBios(biosFilePath.c_str(), true);
+	LOGINFO("%s Bios '%s'", bBiosLoaded ? "Loaded" : "Failed to load", biosFilePath.c_str());
 #endif
+
+	// This needs to happen or GetCanonicalAddressRef() & GetPC() won't work
+	CodeAnalysis.Init(this);
 
 	CreateBanks();
 	BuildCanonicalBankIdLookup();
@@ -1142,7 +1162,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(pVRAMViewer);
 	AddViewer(new FMemoryViewer(this));
 	AddViewer(new FPCEGraphicsViewer(this));
-	
+#if CDROM_SUPPORT
+	AddViewer(new FCDROMViewer(this));
+#endif
 	pGraphicsViewer = new FPCENewGraphicsViewer(this);
 	AddViewer(pGraphicsViewer);
 
@@ -1175,8 +1197,6 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	if (!bLoadedGame)
 	{
-		CodeAnalysis.Init(this);
-		
 		CodeAnalysis.Debugger.SetPC(FAddressRef(MprBankId[0], 0));
 		CodeAnalysis.Debugger.Break();
 	}
@@ -1479,17 +1499,10 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		const bool bHasSnapshot = pGameConfig->EmulatorFile.FileName.empty() == false;
 		if (bHasSnapshot)
 		{
-			/*/const FGameSnapshot* snapshot = &CurrentGameSnapshot;//GamesList.GetGame(RemoveFileExtension(pGameConfig->SnapshotFile.c_str()).c_str());
-			if (snapshot == nullptr)
-			{
-				SetLastError("Could not find '%s%s'",pGlobalConfig->SnapshotFolder.c_str(), pGameConfig->SnapshotFile.c_str());
-				return false;
-			}*/
 			LOGINFO("LoadEmulatorFile '%s'", pGameConfig->EmulatorFile.FileName.c_str());
 
 			if (!LoadEmulatorFile(&pGameConfig->EmulatorFile))
 			{
-				SetLastError("Could not load '%s'", pGameConfig->EmulatorFile.FileName.c_str());
 				return false;
 			}
 		}
@@ -1535,17 +1548,16 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	{
 		const FAddressRef initialPC = GetPC();
 
-		// Removed this for now. We can end up with operand addresses to labels in the UNUSED banks
+		// Removed this for now. We can end up with operand addresses to labels in the UNMAPPED banks
 		// in the initial code. this can prevent the exported asm from assembling.
 		// It is better to let the WriteCodeInfoForAddress() happen when the code is executed.
 		// This makes sure the operand addresses point to actual banks/roms in physical memory.
 		//SetItemCode(CodeAnalysis, initialPC);
 		CodeAnalysis.Debugger.SetPC(initialPC);
 
-		// The initial PC needs to be in the address space of the only mapped ROM: ROM_00.
+		// The initial PC needs to be in the address space of the only mapped ROM: ROM_00/BIOS_00.
 		// If the PC is anything else something badly has gone wrong and the game won't work
 		// because it will be trying to execute undefined memory.
-		// todo: make sure this works for cd-rom games.
 		//assert(initialPC.GetAddress() >= 0xe000);
 		if (initialPC.GetAddress() < 0xe000)
 		{
@@ -1556,7 +1568,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		// Make a label for the entry point.
 		// Without this an exported asm file may not assemble.
 		char labelTxt[40];
-		snprintf(labelTxt, 40, "func_ROM_00_%04X_entry_point", initialPC.GetAddress());
+		snprintf(labelTxt, 40, "func_%s_%04X_entry_point", pMedia->IsCDROM() ? "BIOS_00" : "ROM_00", initialPC.GetAddress());
 		AddLabel(CodeAnalysis, initialPC, labelTxt, ELabelType::Function);
 	}
 
@@ -1568,7 +1580,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 
 	if (!pMedia->IsCDROM())
 	{
-		const std::string fname = GetPCEGlobalConfig()->GameDbPath + pGameConfig->Name + ".json";
+		const std::string fname = GetPCEGlobalConfig()->GameDbFolder + pGameConfig->Name + ".json";
 		if (!LoadGameDbEntry(pGameConfig->Name, fname.c_str()))
 		{
 			// Create new bank mappings if no file exists
@@ -1599,6 +1611,16 @@ void FormatMemoryAsPtr(FCodeAnalysisState& state, uint16_t addr)
 	}
 }
 
+void AddCodeLabel(FCodeAnalysisState& state, uint16_t addr, std::string name)
+{
+	// Purposefully not calling SetItemCode because we dont want to run static analysis
+	// when UNMAPPED_* banks are mapped in.
+	const FAddressRef addrRef = state.AddressRefFromPhysicalAddress(addr);
+	UpdateCodeInfoForAddress(state, addr);
+	state.SetCodeAnalysisDirty(addr);
+	AddLabel(state, addrRef, name.c_str(), ELabelType::Function);
+}
+
 void FPCEEmu::AddLabels()
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
@@ -1609,19 +1631,14 @@ void FPCEEmu::AddLabels()
 		// Add labels for the jump table. This will be the same for all system card revisions.
 		for (int i = 0; i < kBiosSymbolCount; i++)
 		{
-			const FAddressRef addr = state.AddressRefFromPhysicalAddress(kBiosJmpSymbols[i].Address);
-			SetItemCode(state, addr);
-			AddLabel(state, addr, kBiosJmpSymbols[i].Label, ELabelType::Function);
+			AddCodeLabel(state, kBiosJmpSymbols[i].Address, kBiosJmpSymbols[i].Label);
 		}
 
 		// Add labels for the routines themselves.
 		// Games shouldn't call these directly.
 		for (int i = 0; i < kBiosSymbolCount; i++)
 		{
-			const FAddressRef addr = state.AddressRefFromPhysicalAddress(kBiosRoutineSymbols[i].Address);
-			SetItemCode(state, addr);
-			const std::string name = std::string("_") + kBiosRoutineSymbols[i].Label;
-			AddLabel(state, addr, name.c_str(), ELabelType::Function);
+			AddCodeLabel(state, kBiosRoutineSymbols[i].Address, kBiosRoutineSymbols[i].Label);
 		}
 	}
 #endif
@@ -1778,6 +1795,12 @@ bool FPCEEmu::MprBankIdsAreValid() const
 	return true;
 }
 
+bool FPCEEmu::IsCDROM() const
+{
+	return pMedia->IsCDROM();
+}
+
+
 // Restore the MPR bank mappings to what they were when the project was saved to disk
 bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 {
@@ -1826,7 +1849,7 @@ void FPCEEmu::SaveGameDbEntry()
 {
 	if (pCurrentProjectConfig && !pMedia->IsCDROM())
 	{
-		const std::string gameDbPath = GetPCEGlobalConfig()->GameDbPath;
+		const std::string gameDbPath = GetPCEGlobalConfig()->GameDbFolder;
 		const std::string fname = gameDbPath + pCurrentProjectConfig->Name + ".json";
 		EnsureDirectoryExists(gameDbPath.c_str());
 		::SaveGameDbEntry(pCurrentProjectConfig->Name, fname);
@@ -1873,10 +1896,27 @@ bool FPCEEmu::SaveProject()
 	return true;
 }
 
+bool IsFileTypeSupported(EEmuFileType fileType)
+{
+	switch (fileType)
+	{
+#if CDROM_SUPPORT
+	case EEmuFileType::CUE:
+#endif
+	case EEmuFileType::PCE:
+#if CDROM_SUPPORT
+	case EEmuFileType::ZIP:
+#endif
+		return true;
+	default:
+		return false;
+	}
+}
+
 bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 {
 	auto findIt = GamesLists.find(pSnapshot->ListName);
-	if(findIt == GamesLists.end())
+	if (findIt == GamesLists.end())
 	{
 		SetLastError("Games list '%s' not found", pSnapshot->ListName.c_str());
 		return false;
@@ -1884,31 +1924,29 @@ bool FPCEEmu::LoadEmulatorFile(const FEmulatorFile* pSnapshot)
 
 	const std::string fileName = findIt->second.GetRootDir() + pSnapshot->FileName;
 
-	switch (pSnapshot->Type)
+	if (!IsFileTypeSupported(pSnapshot->Type))
 	{
-#if CDROM_SUPPORT
-	case EEmuFileType::CUE:
-		if (!bBiosLoaded)
-		{
-			const std::string biosPath = GetPCEGlobalConfig()->BiosPath + GetPCEGlobalConfig()->BiosFilename;
-			SetLastError("Bios not loaded: '%s'", biosPath.c_str());
-			return false;
-		}
-#endif
-	case EEmuFileType::PCE:
-#if CDROM_SUPPORT
-	case EEmuFileType::ZIP:
-#endif
-		if (!pCore->LoadMedia(fileName.c_str()))
-		{
-			SetLastError("Failed to load '%s'", fileName.c_str());
-			return false;
-		}
-		return true;
-	default:
 		SetLastError("Unsupported file type for '%s'", pSnapshot->FileName.c_str());
 		return false;
 	}
+
+	const bool bMediaLoadedOk = pCore->LoadMedia(fileName.c_str());
+	
+	if (!bMediaLoadedOk)
+	{
+		SetLastError("Failed to load '%s'", fileName.c_str());
+		return false;
+	}
+
+	if (pSnapshot->Type == EEmuFileType::CUE || pCore->GetMedia()->IsCDROM())
+	{
+		if (!bBiosLoaded)
+		{
+			SetLastError("Bios not loaded: '%s'", GetPCEGlobalConfig()->BiosFilePath.c_str());
+			return false;
+		}
+	}
+	return true;
 }
 
 bool FPCEEmu::NewProjectFromEmulatorFile(const FEmulatorFile& snapshot)
