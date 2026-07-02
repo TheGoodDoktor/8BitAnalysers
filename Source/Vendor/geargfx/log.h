@@ -29,19 +29,25 @@
 extern retro_log_printf_t log_cb;
 #endif
 
-#if defined(GG_DEBUG)
+// sam. Function to pipe debug log through 8BA logging function
+extern void GGLogFunc(int level, const char* str);
+
+// sam. Only enable debug logs in debug build config.
+//#if defined(GG_DEBUG)
+#ifndef NDEBUG 
     #if defined(__ANDROID__)
         #include <android/log.h>
         #define printf(...) __android_log_print(ANDROID_LOG_DEBUG, GG_TITLE, __VA_ARGS__);
     #endif
-    #define Debug(msg, ...) (Log_func(msg, ##__VA_ARGS__))
+    #define Debug(msg, ...) (Log_func(1, msg, ##__VA_ARGS__))
 #else
     #define Debug(msg, ...)
 #endif
 
-#define Log(msg, ...) (Log_func(msg, ##__VA_ARGS__))
+#define Log(msg, ...) (Log_func(0, msg, ##__VA_ARGS__))
 
-inline void Log_func(const char* const msg, ...)
+// sam. reworked to add log level
+inline void Log_func(int level, const char* const msg, ...)
 {
     char buffer[512];
     va_list args;
@@ -57,14 +63,9 @@ inline void Log_func(const char* const msg, ...)
     }
 #endif
 
-//#if defined(GG_DEBUG)
-#if 0
-    static int count = 1;
-    printf("%d: %s\n", count, buffer);
-    count++;
-#else
+		GGLogFunc(level, buffer);
+
     printf("%s\n", buffer);
-#endif
 
     fflush(stdout);
 }

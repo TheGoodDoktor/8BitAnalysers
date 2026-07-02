@@ -2501,3 +2501,16 @@ bool WriteScreenshot(FPCEEmu* pEmu, const char* pFilename)
 	stbi_write_png(pFilename, width, height, 4, pEmu->GetFrameBuffer(), width * 4);
 }
 */
+
+bool bGGDebugLogsEnabled = false;
+
+// A function to pipe geargrafx logs through our debug logger
+// 0 : INFO
+// 1 : DEBUG
+void GGLogFunc(int level, const char* str)
+{
+	if (level == 0)
+		LOGINFO("[GG] %s", str);
+	else if (level == 1 && bGGDebugLogsEnabled)
+		LOGDEBUG("[GG] %s", str);
+}
