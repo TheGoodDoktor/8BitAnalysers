@@ -417,19 +417,20 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 	return false;
 }*/
 
-const uint8_t _al = 0xF8;
-const uint8_t _ah = 0xF9;
-const uint8_t _bl = 0xFA;
-const uint8_t _bh = 0xFB;
-const uint8_t _cl = 0xFC;
-const uint8_t _ch = 0xFD;
-const uint8_t _dl = 0xFE;
-const uint8_t _dh = 0xFF;
+const uint16_t zipBaseAddr = 0x2000;
+const uint16_t _al = zipBaseAddr + 0xF8;
+const uint16_t _ah = zipBaseAddr + 0xF9;
+const uint16_t _bl = zipBaseAddr + 0xFA;
+const uint16_t _bh = zipBaseAddr + 0xFB;
+const uint16_t _cl = zipBaseAddr + 0xFC;
+const uint16_t _ch = zipBaseAddr + 0xFD;
+const uint16_t _dl = zipBaseAddr + 0xFE;
+const uint16_t _dh = zipBaseAddr + 0xFF;
 
-const uint8_t _ax = 0xF8;
-const uint8_t _bx = 0xFA;
-const uint8_t _cx = 0xFC;
-const uint8_t _dx = 0xFE;
+const uint16_t _ax = zipBaseAddr + 0xF8;
+const uint16_t _bx = zipBaseAddr + 0xFA;
+const uint16_t _cx = zipBaseAddr + 0xFC;
+const uint16_t _dx = zipBaseAddr + 0xFE;
 
 // pc is the address of the instruction that just executed.
 void FPCEEmu::OnInstructionExecuted(uint16_t pc)
@@ -446,9 +447,13 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 			if (pcAddrRef.GetAddress() == 0xE009)
 			{
 				const uint16_t zipBaseAddr = 0x2000;
-				const uint8_t mode = ReadByte(zipBaseAddr + _dh);
-				uint32_t numToRead = ReadByte(zipBaseAddr + _al);
-				const uint16_t addr = ReadWord(zipBaseAddr + _bx);
+				const uint8_t mode = ReadByte(_dh);
+				uint32_t numToRead = ReadByte(_al);
+				const uint16_t addr = ReadWord(_bx);
+
+				const uint8_t clByte = ReadByte(_cl);
+				const uint8_t chByte = ReadByte(_ch);
+				const uint8_t dlByte = ReadByte(_dl);
 
 				switch (mode)
 				{
@@ -468,15 +473,9 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 					case 0xff: // VRAM
 						break;
 				}
-				/*pce_cd_sectoraddy = (get_8bit_zp(_cl) << 16) +
-				(get_8bit_zp(_ch) << 8) +
-				(get_8bit_zp(_dl));
 
-				pce_cd_sectoraddy += (get_8bit_addr(0x2274 + 3 * get_8bit_addr(0x2273)) << 16) +
-					(get_8bit_addr(0x2275 + 3 * get_8bit_addr(0x2273)) << 8) +
-					(get_8bit_addr(0x2276 + 3 * get_8bit_addr(0x2273)));*/
-
-				LOGINFO("CD_READ mode %d addr 0x%x bytes to read %d", mode, addr, numToRead);
+				uint32_t cdOffset = (dlByte + (chByte << 8) + (clByte << 16)) * 2048;
+				LOGINFO("CD_READ mode %d addr 0x%x bytes to read %d. cl %x ch %x dl %x. cd byte offset %d", mode, addr, numToRead, clByte, chByte, dlByte, cdOffset);
 			}
 		}
 	}
@@ -2502,7 +2501,8 @@ bool WriteScreenshot(FPCEEmu* pEmu, const char* pFilename)
 }
 */
 
-bool bGGDebugLogsEnabled = false;
+// todo wire this up to a menu option (debug only)
+bool bGGDebugLogsEnabled = true;
 
 // A function to pipe geargrafx logs through our debug logger
 // 0 : INFO
