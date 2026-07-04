@@ -30,6 +30,7 @@ struct FGameDbEntry;
 struct FEmuDebugStats;
 struct FGameDebugStats;
 struct FAsmExportValidator;
+class FCDROMAnalyser;
 
 struct FPCELaunchConfig : public FEmulatorLaunchConfig
 {
@@ -199,7 +200,7 @@ protected:
 	HuC6280::HuC6280_State* p6280State = nullptr;
 	HuC6270::HuC6270_State* p6270State = nullptr;
 	FVRAMAnalysisState* pVRAMState = nullptr;
-
+	FCDROMAnalyser* pCDROMAnalyser = nullptr;
 	FPCECPUEmulator6502* pPCE6502CPU;
 
 	FPCEViewer* pPCEViewer = nullptr;

@@ -20,6 +20,7 @@
 #include "Viewers/VRAMViewer.h"
 #include "Viewers/CDROMViewer.h"
 #include "VRAMAnalyser.h"
+#include "CDROMAnalyser.h"
 #include "Viewers/PCEGraphicsViewer.h"
 #include "Viewers/PCENewGraphicsViewer.h"
 #include "Viewers/MemoryViewer.h"
@@ -417,20 +418,6 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 	return false;
 }*/
 
-const uint16_t zipBaseAddr = 0x2000;
-const uint16_t _al = zipBaseAddr + 0xF8;
-const uint16_t _ah = zipBaseAddr + 0xF9;
-const uint16_t _bl = zipBaseAddr + 0xFA;
-const uint16_t _bh = zipBaseAddr + 0xFB;
-const uint16_t _cl = zipBaseAddr + 0xFC;
-const uint16_t _ch = zipBaseAddr + 0xFD;
-const uint16_t _dl = zipBaseAddr + 0xFE;
-const uint16_t _dh = zipBaseAddr + 0xFF;
-
-const uint16_t _ax = zipBaseAddr + 0xF8;
-const uint16_t _bx = zipBaseAddr + 0xFA;
-const uint16_t _cx = zipBaseAddr + 0xFC;
-const uint16_t _dx = zipBaseAddr + 0xFE;
 
 // pc is the address of the instruction that just executed.
 void FPCEEmu::OnInstructionExecuted(uint16_t pc)
@@ -441,6 +428,12 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 	// todo move somewhere else
 	if (IsCDROM())
 	{
+		FBiosCDReadArgs cdReadArgs;
+		if (GetBiosCDReadArgs(this, cdReadArgs))
+		{
+			// register read here
+		}
+#if 0
 		const FAddressRef pcAddrRef = GetPC();
 		if (pcAddrRef.GetBankId() == BankSets[0].GetBankId())
 		{
@@ -478,6 +471,7 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 				LOGINFO("CD_READ mode %d addr 0x%x bytes to read %d. cl %x ch %x dl %x. cd byte offset %d", mode, addr, numToRead, clByte, chByte, dlByte, cdOffset);
 			}
 		}
+#endif
 	}
 #endif
 
@@ -1188,6 +1182,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 #endif
 	LoadFont();
 
+	pVRAMState = new FVRAMAnalysisState(this);
+	pCDROMAnalyser = new FCDROMAnalyser(this);
+
 	// This is where we add the viewers we want
 	pPCEViewer = new FPCEViewer(this);
 	AddViewer(pPCEViewer);
@@ -1202,7 +1199,6 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pSpriteViewer = new FSpriteViewer(this);
 	AddViewer(pSpriteViewer);
 	AddViewer(new FBackgroundViewer(this));
-	pVRAMState = new FVRAMAnalysisState(this);
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
 	AddViewer(new FMemoryViewer(this));

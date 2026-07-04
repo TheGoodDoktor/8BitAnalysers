@@ -35,9 +35,9 @@
 "  \\____|\\___|\\__,_|_|  \\__, |_|  \\__,_|_| /_/\\_\\\n" \
 "                       |___/                    \n"
 
-#if defined(DEBUG)
+//#if defined(DEBUG)
     #define GG_DEBUG 1
-#endif
+//#endif
 
 #define GG_MASTER_CLOCK_RATE 21477273
 
