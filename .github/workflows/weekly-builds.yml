@@ -69,7 +69,7 @@ jobs:
           mkdir build
           cd build
           cmake .. -DBUILD_SHARED_LIBS=OFF
-          msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} SpectrumAnalyser.sln
+          cmake --build . --config ${{ env.BUILD_CONFIGURATION }}
 
       # Build C64 Analyser
       - name: Build C64 Analyser (Linux/macOS)
@@ -89,7 +89,7 @@ jobs:
           mkdir build
           cd build
           cmake .. -DBUILD_SHARED_LIBS=OFF
-          msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} C64Analyser.sln
+          cmake --build . --config ${{ env.BUILD_CONFIGURATION }}
 
       # Build CPC Analyser
       - name: Build CPC Analyser (Linux/macOS)
@@ -109,7 +109,7 @@ jobs:
           mkdir build
           cd build
           cmake .. -DBUILD_SHARED_LIBS=OFF
-          msbuild /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} CPCAnalyser.sln
+          cmake --build . --config ${{ env.BUILD_CONFIGURATION }}
 
       # Package builds (Linux/macOS)
       - name: Package builds (Linux/macOS)
