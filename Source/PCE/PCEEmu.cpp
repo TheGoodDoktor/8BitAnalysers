@@ -428,50 +428,18 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 	// todo move somewhere else
 	if (IsCDROM())
 	{
-		FBiosCDReadArgs cdReadArgs;
-		if (GetBiosCDReadArgs(this, cdReadArgs))
-		{
-			// register read here
-		}
-#if 0
 		const FAddressRef pcAddrRef = GetPC();
 		if (pcAddrRef.GetBankId() == BankSets[0].GetBankId())
 		{
 			if (pcAddrRef.GetAddress() == 0xE009)
 			{
-				const uint16_t zipBaseAddr = 0x2000;
-				const uint8_t mode = ReadByte(_dh);
-				uint32_t numToRead = ReadByte(_al);
-				const uint16_t addr = ReadWord(_bx);
-
-				const uint8_t clByte = ReadByte(_cl);
-				const uint8_t chByte = ReadByte(_ch);
-				const uint8_t dlByte = ReadByte(_dl);
-
-				switch (mode)
+				FBiosCDReadArgs cdReadArgs;
+				if (GetBiosCDReadArgs(this, cdReadArgs))
 				{
-					case 0: // Local: size in bytes
-						break;
-					case 1: // Local: size in sectors
-						numToRead *= 2048;
-						break;
-					case 2: // MPR num
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-						break;
-					case 0xfe: // VRAM
-						break;
-					case 0xff: // VRAM
-						break;
+					pCDROMAnalyser->RegisterCDRead(cdReadArgs);
 				}
-
-				uint32_t cdOffset = (dlByte + (chByte << 8) + (clByte << 16)) * 2048;
-				LOGINFO("CD_READ mode %d addr 0x%x bytes to read %d. cl %x ch %x dl %x. cd byte offset %d", mode, addr, numToRead, clByte, chByte, dlByte, cdOffset);
 			}
 		}
-#endif
 	}
 #endif
 
@@ -2498,7 +2466,7 @@ bool WriteScreenshot(FPCEEmu* pEmu, const char* pFilename)
 */
 
 // todo wire this up to a menu option (debug only)
-bool bGGDebugLogsEnabled = true;
+bool bGGDebugLogsEnabled = false;
 
 // A function to pipe geargrafx logs through our debug logger
 // 0 : INFO

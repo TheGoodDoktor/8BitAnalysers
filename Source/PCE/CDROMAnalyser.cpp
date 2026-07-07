@@ -2,10 +2,36 @@
 #include "PCEEmu.h"
 
 #include <geargrafx_core.h>
+#include <cdrom_media.h>
 
 FCDROMAnalyser::FCDROMAnalyser(FPCEEmu* pEmu)
 	: pPCEEmu(pEmu)
 {
+}
+
+void FCDROMAnalyser::RegisterCDRead(const FBiosCDReadArgs& args)
+{
+	const uint32_t lba = args.CDByteOffset / 2048;
+	CdRomMedia* pMedia = pPCEEmu->GetCore()->GetCDROMMedia();
+	const s32 trackIndex = pMedia->GetTrackFromLBA(lba);
+	if (trackIndex < 0)
+		return;
+
+	if ((int)TrackTransfers.size() <= trackIndex)
+		TrackTransfers.resize(trackIndex + 1);
+
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+	const FAddressRef destAddr = state.AddressRefFromPhysicalAddress(args.PhysicalAddr);
+
+	FCDROMTransfer transfer;
+	transfer.CDByteOffset = args.CDByteOffset;
+	transfer.DestAddr     = destAddr;
+	transfer.SizeInBytes  = static_cast<uint16_t>(args.TransferSizeBytes);
+	transfer.TrackIndex   = trackIndex;
+
+	TrackTransfers[trackIndex].push_back(transfer);
+
+	LOGINFO("CD_READ [Track %d] %d bytes from %x -> %x", trackIndex, transfer.SizeInBytes, transfer.CDByteOffset, transfer.DestAddr.GetAddress());
 }
 
 const uint16_t zipBaseAddr = 0x2000;
@@ -37,11 +63,12 @@ bool GetBiosCDReadArgs(FPCEEmu* pEmu, FBiosCDReadArgs& args)
 	{
 		case 0: // Physical memory: size in bytes
 			// todo
+			LOGINFO("CD_READ mode %d unsupported (Physical - size in bytes)", mode);
 			return false;
 		case 1: // Physical memory: size in sectors
 			args.Destination = EBiosCDReadDest::PhysicalMemory;
 			args.PhysicalAddr = pEmu->ReadWord(_bx);
-			numToRead *= 2048;
+			args.TransferSizeBytes = numToRead * 2048;
 			return true;
 		case 2: // MPR num
 		case 3:
@@ -49,10 +76,12 @@ bool GetBiosCDReadArgs(FPCEEmu* pEmu, FBiosCDReadArgs& args)
 		case 5:
 		case 6:
 			// todo
+			LOGINFO("CD_READ mode %d unsupported (MPR mode)", mode);
 			return false;
 		case 0xfe: // VRAM
 		case 0xff: // VRAM
 			// todo
+			LOGINFO("CD_READ mode %d unsupported (VRAM)", mode);
 			return false;
 	}
 
