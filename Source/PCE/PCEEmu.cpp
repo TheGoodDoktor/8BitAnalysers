@@ -431,7 +431,7 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 		const FAddressRef pcAddrRef = GetPC();
 		if (pcAddrRef.GetBankId() == BankSets[0].GetBankId())
 		{
-			if (pcAddrRef.GetAddress() == 0xE009)
+			if (pcAddrRef.GetAddress() == 0xEC05/*0xE009*/)
 			{
 				FBiosCDReadArgs cdReadArgs;
 				if (GetBiosCDReadArgs(this, cdReadArgs))

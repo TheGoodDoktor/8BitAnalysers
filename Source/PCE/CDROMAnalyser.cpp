@@ -11,9 +11,23 @@ FCDROMAnalyser::FCDROMAnalyser(FPCEEmu* pEmu)
 
 void FCDROMAnalyser::RegisterCDRead(const FBiosCDReadArgs& args)
 {
-	const uint32_t lba = args.CDByteOffset / 2048;
 	CdRomMedia* pMedia = pPCEEmu->GetCore()->GetCDROMMedia();
-	const s32 trackIndex = pMedia->GetTrackFromLBA(lba);
+
+	// The BIOS sector number is relative to the first data track, not an absolute disc LBA.
+	// Find the first data track's start LBA so we can convert to absolute.
+	const auto& tracks = pMedia->GetTracks();
+	uint32_t firstDataTrackLBA = 0;
+	for (const auto& track : tracks)
+	{
+		if (track.type != GG_CDROM_AUDIO_TRACK)
+		{
+			firstDataTrackLBA = track.start_lba;
+			break;
+		}
+	}
+
+	const uint32_t absoluteLBA = (args.CDByteOffset / 2048) + firstDataTrackLBA;
+	const s32 trackIndex = pMedia->GetTrackFromLBA(absoluteLBA);
 	if (trackIndex < 0)
 		return;
 
@@ -31,7 +45,8 @@ void FCDROMAnalyser::RegisterCDRead(const FBiosCDReadArgs& args)
 
 	TrackTransfers[trackIndex].push_back(transfer);
 
-	LOGINFO("CD_READ [Track %d] %d bytes from %x -> %x", trackIndex, transfer.SizeInBytes, transfer.CDByteOffset, transfer.DestAddr.GetAddress());
+	const FCodeAnalysisBank* pBank = state.GetBank(destAddr.GetBankId());
+	LOGINFO("CD_READ [Track %d] %d bytes from %x -> %s %x", trackIndex, transfer.SizeInBytes, transfer.CDByteOffset, pBank ? pBank->Name.c_str() : "UNKNOWN", transfer.DestAddr.GetAddress());
 }
 
 const uint16_t zipBaseAddr = 0x2000;
@@ -86,6 +101,4 @@ bool GetBiosCDReadArgs(FPCEEmu* pEmu, FBiosCDReadArgs& args)
 	}
 
 	return false;
-	//const uint32_t cdOffset = (dlByte + (chByte << 8) + (clByte << 16)) * 2048;
-	//LOGINFO("CD_READ mode %d addr 0x%x bytes to read %d. cl %x ch %x dl %x. cd byte offset %d", mode, addr, numToRead, clByte, chByte, dlByte, cdOffset);
 }
