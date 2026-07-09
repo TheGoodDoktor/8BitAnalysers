@@ -112,6 +112,7 @@ public:
 	HuC6270::HuC6270_State* Get6270State() const { return p6270State; }
 
 	bool IsCDROM() const;
+	const FCDROMAnalyser* GetCDROMAnalyser() const { return pCDROMAnalyser; }
 
 	void OnInstructionExecuted(uint16_t pc);
 	void OnVRAMWritten(uint16_t vramAddr, uint16_t value);

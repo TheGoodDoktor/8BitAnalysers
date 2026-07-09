@@ -5,6 +5,7 @@
 #include <imgui.h>
 
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
+#include "../CDROMAnalyser.h"
 #include "Util/GraphicsView.h"
 #include "ImGuiSupport/ImGuiScaling.h"
 //#include <imgui_internal.h>
@@ -92,6 +93,24 @@ void FCDROMViewer::DrawUI(void)
 		trackCount, pCdRomMedia->GetSectorCount(), pCdRomMedia->GetCurrentSector());
 	ImGui::Separator();
 
+	if (ImGui::BeginTabBar("##cdromtabs"))
+	{
+		if (ImGui::BeginTabItem("Tracks"))
+		{
+			DrawTracksTab(tracks, trackCount);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Transfer Log"))
+		{
+			DrawTransferLogTab();
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
+	}
+}
+
+void FCDROMViewer::DrawTracksTab(const std::vector<CdRomImage::Track>& tracks, int trackCount)
+{
 	const ImGuiTableFlags tableFlags =
 		ImGuiTableFlags_SizingFixedFit |
 		ImGuiTableFlags_RowBg |
@@ -154,6 +173,64 @@ void FCDROMViewer::DrawUI(void)
 
 			ImGui::TableSetColumnIndex(4);
 			ImGui::Text("%u", (track.sector_count * track.sector_size) / 1024);
+		}
+
+		ImGui::EndTable();
+	}
+}
+
+void FCDROMViewer::DrawTransferLogTab()
+{
+	FCodeAnalysisState& state           = pPCEEmu->GetCodeAnalysis();
+	FCodeAnalysisViewState& viewState   = state.GetFocussedViewState();
+	const FCDROMAnalyser* pCDROMAnalyser = pPCEEmu->GetCDROMAnalyser();
+	if (pCDROMAnalyser == nullptr)
+	{
+		ImGui::TextDisabled("No CDROM analyser.");
+		return;
+	}
+
+	const std::vector<TCDTransferList>& trackTransfers = pCDROMAnalyser->GetTrackTransfers();
+
+	const ImGuiTableFlags tableFlags =
+		ImGuiTableFlags_SizingFixedFit |
+		ImGuiTableFlags_RowBg |
+		ImGuiTableFlags_BordersInnerV |
+		ImGuiTableFlags_BordersOuter |
+		ImGuiTableFlags_ScrollY;
+
+	const float fontWidth = ImGui_GetFontCharWidth();
+
+	if (ImGui::BeginTable("##cdtransfers", 4, tableFlags))
+	{
+		ImGui::TableSetupScrollFreeze(0, 1);
+		ImGui::TableSetupColumn("Track",       ImGuiTableColumnFlags_WidthFixed,   fontWidth * 6.0f);
+		ImGui::TableSetupColumn("CD Offset",   ImGuiTableColumnFlags_WidthFixed,   fontWidth * 10.0f);
+		ImGui::TableSetupColumn("Size",        ImGuiTableColumnFlags_WidthFixed,   fontWidth * 8.0f);
+		ImGui::TableSetupColumn("Destination", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableHeadersRow();
+
+		for (const TCDTransferList& transferList : trackTransfers)
+		{
+			for (const FCDROMTransfer& transfer : transferList)
+			{
+				ImGui::TableNextRow();
+
+				ImGui::TableSetColumnIndex(0);
+				ImGui::Text("%d", transfer.TrackIndex + 1);
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::Text("%08X", transfer.CDByteOffset);
+
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text("%u", transfer.SizeInBytes);
+
+				ImGui::TableSetColumnIndex(3);
+				if (transfer.DestAddr.IsValid())
+					DrawAddressLabel(state, viewState, transfer.DestAddr);
+				else
+					ImGui::TextDisabled("--");
+			}
 		}
 
 		ImGui::EndTable();

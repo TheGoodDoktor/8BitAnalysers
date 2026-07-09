@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CodeAnalyser/UI/ViewerBase.h"
+#include "cdrom_image.h"
 #include <vector>
 
 class FPCEEmu;
@@ -20,6 +21,9 @@ public:
 	bool	Init(void) override;
 	void	Shutdown() override {}
 	void	DrawUI(void) override;
+
+	void	DrawTracksTab(const std::vector<CdRomImage::Track>& tracks, int trackCount);
+	void	DrawTransferLogTab();
 
 	void	DrawUtilisationMap(FCodeAnalysisState& state, uint32_t* pPix);
 	void	DrawLegend(void);

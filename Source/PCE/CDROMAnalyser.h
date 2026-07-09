@@ -36,6 +36,7 @@ public:
 	FCDROMAnalyser(FPCEEmu* pEmu);
 
 	void RegisterCDRead(const FBiosCDReadArgs& args);
+	const std::vector<TCDTransferList>& GetTrackTransfers() const { return TrackTransfers; }
 
 private:
 	std::vector<TCDTransferList> TrackTransfers; // one list per data track, indexed by track number
