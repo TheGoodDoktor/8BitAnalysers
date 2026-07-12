@@ -6,6 +6,7 @@
 #include "CodeAnalyser/UI/CodeAnalyserUI.h"
 #include "../GameDb.h"
 #include <Misc/GameConfig.h>
+#include "ImGuiSupport/ImGuiScaling.h"
 
 enum class EBankTableColumn : int
 {
@@ -136,16 +137,23 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 		ImGuiTableFlags_Hideable |
 		ImGuiTableFlags_ScrollY;
 
+	// test
+	//flags |= ImGuiTableFlags_NoSavedSettings;
+
 	if (ImGui::BeginTable("MemoryBanksTable", 6, flags))
 	{
+		const float squareSize = ImGui::GetTextLineHeight() - 2.0f;
+
 		ImGui::TableSetupScrollFreeze(0, 1);
 
-		ImGui::TableSetupColumn("Mapping State", ImGuiTableColumnFlags_PreferSortDescending | ImGuiTableColumnFlags_WidthFixed, 10.f, (int)EBankTableColumn::EverMapped);
-		ImGui::TableSetupColumn("Access",	ImGuiTableColumnFlags_PreferSortDescending,	0.0f,	(int)EBankTableColumn::Access);
-		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_DefaultSort, 0.0f, (int)EBankTableColumn::Name);
-		ImGui::TableSetupColumn("Mapped Address",	ImGuiTableColumnFlags_PreferSortDescending,	0.0f,	(int)EBankTableColumn::Address);
-		ImGui::TableSetupColumn("Content", ImGuiTableColumnFlags_PreferSortDescending, 0.0f, (int)EBankTableColumn::Content);
-		ImGui::TableSetupColumn("MPR Slots", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, (int)EBankTableColumn::MprSlots);
+		const float fontWidth = ImGui_GetFontCharWidth();
+		ImGuiTableColumnFlags defaultFlags = ImGuiTableColumnFlags_PreferSortDescending | ImGuiTableColumnFlags_WidthFixed;
+		ImGui::TableSetupColumn("Mapping State", defaultFlags, fontWidth, (int)EBankTableColumn::EverMapped);
+		ImGui::TableSetupColumn("RW", defaultFlags, fontWidth * 3.5f,	(int)EBankTableColumn::Access);
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, fontWidth * 17.f, (int)EBankTableColumn::Name);
+		ImGui::TableSetupColumn("Addr", defaultFlags, fontWidth * 8.f,	(int)EBankTableColumn::Address);
+		ImGui::TableSetupColumn("Content", defaultFlags, fontWidth * 12.5f, (int)EBankTableColumn::Content);
+		ImGui::TableSetupColumn("MPR Slots", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed, squareSize * 16.f, (int)EBankTableColumn::MprSlots);
 		ImGui::TableHeadersRow();
 
 		// Handle sorting
@@ -248,7 +256,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 			ImGui::TableSetColumnIndex(5);
 			{
 				const FBankSet* pBankSet = BankSets[idx];
-				const float squareSize = ImGui::GetTextLineHeight() - 2.0f;
+				//const float squareSize = ImGui::GetTextLineHeight() - 2.0f;
 				const float gap = 2.0f;
 				const ImVec2 startPos = ImGui::GetCursorScreenPos();
 				ImDrawList* pDrawList = ImGui::GetWindowDrawList();
