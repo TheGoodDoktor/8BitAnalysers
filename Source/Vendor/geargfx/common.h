@@ -132,6 +132,19 @@ inline char* strncat_fit(char* dest, const char* src, size_t dest_size)
     return strncat(dest, src, dest_size);
 }
 
+// sam. Added this function
+inline bool file_exists(const char* path)
+{
+    struct stat st;
+    if (stat(path, &st) != 0)
+        return false;
+#if defined(_WIN32)
+    return (st.st_mode & _S_IFDIR) == 0;
+#else
+    return !S_ISDIR(st.st_mode);
+#endif
+}
+
 inline bool create_directory_if_not_exists(const char* path)
 {
 #if defined(_WIN32)

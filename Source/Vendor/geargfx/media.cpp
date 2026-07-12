@@ -388,9 +388,16 @@ bool Media::LoadMediaFromZipFile(const char* path)
             Debug("Loading CD-ROM Media from ZIP file: %s", path);
             Debug("Temporary path: %s", temppath.c_str());
 
-            if (extract_zip_to_folder(path, temppath.c_str()))
+            string cue_path = temppath + "/" + fn;
+
+            // sam. This optimisation can be twice as fast.
+            if (file_exists(cue_path.c_str()))
             {
-                string cue_path = temppath + "/" + fn;
+                Debug("Using previously extracted files in: %s", temppath.c_str());
+                return LoadCueFromFile(cue_path.c_str());
+            } // sam end.
+            else if (extract_zip_to_folder(path, temppath.c_str()))
+            {
                 return LoadCueFromFile(cue_path.c_str());
             }
             else
