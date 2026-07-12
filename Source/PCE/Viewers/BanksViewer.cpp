@@ -400,14 +400,12 @@ void FBanksViewer::DrawMappedBanks()
 	ImGui::EndChild();
 }
 
-void FBanksViewer::DrawAllBanks()
+void FBanksViewer::BuildBankList(std::vector<FCodeAnalysisBank*>& banksToView, std::vector<FBankSet*>& bankSetsToView)
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
-	std::vector<FCodeAnalysisBank*> banksToView;
-	std::vector<FBankSet*> bankSetsToView;
-
-	for (int i = 0; i < 0x80; i++)
+	int bankEnd = (pPCEEmu->IsCDROM()) ? 0x88 : 0x80;
+	for (int i = 0; i < bankEnd; i++)
 	{
 		FBankSet* pBankSet = pPCEEmu->Banks[i];
 		const int16_t bankId = pBankSet->GetBankId(0);
@@ -431,6 +429,14 @@ void FBanksViewer::DrawAllBanks()
 			bankSetsToView.push_back(pBankSet);
 		}
 	}
+}
+
+void FBanksViewer::DrawAllBanks()
+{
+	std::vector<FCodeAnalysisBank*> banksToView;
+	std::vector<FBankSet*> bankSetsToView;
+
+	BuildBankList(banksToView, bankSetsToView);
 
 	const float detailWidth = ImGui::GetFontSize() * 20.0f;
 	const float minTableWidth = ImGui::GetFontSize() * 22.0f;

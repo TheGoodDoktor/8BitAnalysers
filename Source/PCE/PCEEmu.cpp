@@ -1243,7 +1243,10 @@ void FPCEEmu::ResetBanks()
 #if BANK_SWITCH_DEBUG
 	const int romSize = bIsCdRom ? GG_BIOS_SYSCARD_SIZE : pMedia->GetROMSize();
 	BANK_LOG("ResetBanks()");
-	BANK_LOG("Rom size is %d bytes. Bank count is %d", romSize, romBankCount);
+	if (bIsCdRom)
+		BANK_LOG("BIOS size is %d bytes (%d Kb). BIOS bank count is %d", romSize, romSize / 1024, romBankCount);
+	else
+		BANK_LOG("Rom size is %d bytes (%d Kb). Bank count is %d", romSize, romSize / 1024, romBankCount);
 #endif
 
 	for (int bankNo = 0; bankNo < kNumBanks; bankNo++)
@@ -1257,26 +1260,6 @@ void FPCEEmu::ResetBanks()
 		Banks[kBankSaveRAM] = &BankSets[kBankSaveRAM];
 	}
 	
-	std::string bankPostFix[8] = { "", "_2", "_3", "_4", "_5", "_6", "_7", "_8" };
-	char bankName[32];
-	
-	if (bIsCdRom)
-	{
-		// Set cd rom ram banks
-		constexpr int kNumCdRomRamEnd = kBankCdRomRamStart + kNumCdRomRamBanks;
-		for (int i = 0, b = kBankCdRomRamStart; i < kNumCdRomRamBanks; i++, b++)
-		{
-			Banks[b] = &BankSets[b];
-			uint8_t* pBankMemory = pMemory->GetCDROMRAM() + i * 0x2000;
-
-			for (int d = 0; d < kNumBankSetIds; d++)
-			{
-				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId(d));
-				pBank->Memory = pBankMemory;
-			}
-		}
-	}
-
 	Banks[kBankHWPage] = &BankSets[kBankHWPage];
 	Banks[kBankWRAM0] = &BankSets[kBankWRAM0];
 	Banks[kBankWRAM1] = &BankSets[kBankWRAM0];
@@ -1288,26 +1271,6 @@ void FPCEEmu::ResetBanks()
 	{
 		const int bankIndex = romBankCount ? pCore->GetMedia()->GetRomBankIndex(bankNo) : bankNo;
 		Banks[bankNo] = &BankSets[bankIndex];
-	}
-
-	if (pMemory->GetCardRAMSize())
-	{
-		// Set card ram banks
-		const uint8_t cardRamStart = pMemory->GetCardRAMStart();
-		const uint8_t cardRamEnd = pMemory->GetCardRAMEnd();
-		for (uint8_t r = cardRamStart; r <= cardRamEnd; r++)
-		{
-			uint8_t* pBankMemory = pMemory->GetMemoryMap()[r];
-			for (int d = 0; d < kNumBankSetIds; d++)
-			{
-				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[r].GetBankId(d));
-				pBank->Memory = pBankMemory;
-				
-				sprintf(bankName, "CARD_RAM_%02d%s", r - cardRamStart, bankPostFix[d].c_str());
-				pBank->Name = bankName;
-			}
-			Banks[r] = &BankSets[r];
-		}
 	}
 
 	// Unmap the banks from the mpr slots.
@@ -1322,7 +1285,7 @@ void FPCEEmu::ResetBanks()
 		MprBankSet[mprNum] = -1;
 	}
 
-	// Reset banks for re-use.
+	// Reset all code analysis banks for re-use.
 	// I am using PrimaryMappedPage being -1 as a way to mark a bank as unused.
 	// I know this is not great but it's the best I could do without changing the code analysis code.
 	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
@@ -1336,16 +1299,17 @@ void FPCEEmu::ResetBanks()
 		bank.bEverBeenMapped = false;
 	}
 
-	// todo: if any code analysis banks are marked as in use then set their primarymappedpage to the default
-	
-	// Set banks primary mapped page to mark them as in use.
+	// Set ROM/BIOS banks primary mapped page to mark them as in use.
 	// They will get their actual mapped address set when they are mapped in.
 	// We do this because we can't have any banks in use with PrimaryMappedPage of -1.
 	BankSets[kBankHWPage].SetPrimaryMappedPage(CodeAnalysis, 0, 0);
 	BankSets[kBankWRAM0].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 	BankSets[kBankSaveRAM].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
-	// Patch in the rom memory into the rom banks.
+	std::string bankPostFix[8] = { "", "_2", "_3", "_4", "_5", "_6", "_7", "_8" };
+	char bankName[32];
+
+	// Patch in the rom memory into the rom banks and set their primary mapped page.
 	for (int b = 0; b < romBankCount; b++)
 	{
 		BankSets[b].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
@@ -1362,6 +1326,52 @@ void FPCEEmu::ResetBanks()
 
 			pBank->bMachineROM = bIsCdRom;
 		}
+	}
+
+	if (bIsCdRom)
+	{
+		// Set cd rom ram banks
+		for (int i = 0, b = kBankCdRomRamStart; i < kNumCdRomRamBanks; i++, b++)
+		{
+			Banks[b] = &BankSets[b];
+			uint8_t* pBankMemory = pMemory->GetCDROMRAM() + i * 0x2000;
+
+			BankSets[b].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
+
+			for (int d = 0; d < kNumBankSetIds; d++)
+			{
+				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId(d));
+				pBank->Memory = pBankMemory;
+			}
+		}
+	}
+
+	int cardRAMSize = pMemory->GetCardRAMSize();
+	if (cardRAMSize)
+	{
+		BANK_LOG("Card RAM size is %d bytes (%d kb).", cardRAMSize, cardRAMSize / 1024);
+
+		// Set card ram banks
+		const uint8_t cardRamStart = pMemory->GetCardRAMStart();
+		const uint8_t cardRamEnd = pMemory->GetCardRAMEnd();
+		for (uint8_t r = cardRamStart; r <= cardRamEnd; r++)
+		{
+			uint8_t* pBankMemory = pMemory->GetMemoryMap()[r];
+
+			BankSets[r].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
+
+			for (int d = 0; d < kNumBankSetIds; d++)
+			{
+				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[r].GetBankId(d));
+				pBank->Memory = pBankMemory;
+
+				sprintf(bankName, "CARD_RAM_%02d%s", r - cardRamStart, bankPostFix[d].c_str());
+				pBank->Name = bankName;
+			}
+			Banks[r] = &BankSets[r];	
+		}
+
+		BANK_LOG("Num card RAM banks = %d.", (cardRamEnd - cardRamStart) + 1);
 	}
 }
 

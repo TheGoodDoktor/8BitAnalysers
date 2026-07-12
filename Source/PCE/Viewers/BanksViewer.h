@@ -21,6 +21,7 @@ public:
 	void DrawBankDetail(const FBankSet* pBankSet, const FCodeAnalysisBank* pBank);
 	void DrawMappedBanks();
 	void DrawAllBanks();
+	void BuildBankList(std::vector<FCodeAnalysisBank*>& banksToView, std::vector<FBankSet*>& bankSetsToView);
 
 	FPCEEmu*	pPCEEmu = nullptr;
 	int			SelectedBankIdx = -1;
