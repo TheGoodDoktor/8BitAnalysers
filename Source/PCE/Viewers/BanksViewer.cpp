@@ -153,7 +153,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, fontWidth * 17.f, (int)EBankTableColumn::Name);
 		ImGui::TableSetupColumn("Addr", defaultFlags, fontWidth * 8.f,	(int)EBankTableColumn::Address);
 		ImGui::TableSetupColumn("Content", defaultFlags, fontWidth * 12.5f, (int)EBankTableColumn::Content);
-		ImGui::TableSetupColumn("MPR Slots", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed, squareSize * 16.f, (int)EBankTableColumn::MprSlots);
+		ImGui::TableSetupColumn("MPR Slots", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed, squareSize * 9.f, (int)EBankTableColumn::MprSlots);
 		ImGui::TableHeadersRow();
 
 		// Handle sorting
@@ -389,7 +389,7 @@ void FBanksViewer::DrawMappedBanks()
 		}
 	}
 
-	const float detailWidth = ImGui::GetFontSize() * 28.0f;
+	const float detailWidth = ImGui::GetFontSize() * 24.0f;
 	const float minTableWidth = ImGui::GetFontSize() * 22.0f;
 	const float tableWidth = MAX(minTableWidth, ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x);
 
@@ -447,7 +447,7 @@ void FBanksViewer::DrawAllBanks()
 	BuildBankList(banksToView, bankSetsToView);
 
 	const float detailWidth = ImGui::GetFontSize() * 20.0f;
-	const float minTableWidth = ImGui::GetFontSize() * 22.0f;
+	const float minTableWidth = ImGui::GetFontSize() * 26.0f;
 	const float tableWidth = MAX(minTableWidth, ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x);
 
 	ImGui::BeginChild("##BankTablePane", ImVec2(tableWidth, 0.0f), false);
