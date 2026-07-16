@@ -47,6 +47,8 @@ TODO
 - run rondo cd image through etripator disassembler (it has an option to disassemble a cd rom image)
 - add detection of bios calls to static analysis
 - add RW indicators to banks viewer so we can see when the banks are being read or written
+- regenerate disassembly text when soft reset. if you reset rondo the memory is all 0 but it still shows disassembly from before reset.
+- when break execution mark each line of disassembly in the callstack (like in visual studio when you break execution)
  
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
