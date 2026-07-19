@@ -24,6 +24,7 @@
 #include "Viewers/PCEGraphicsViewer.h"
 #include "Viewers/PCENewGraphicsViewer.h"
 #include "Viewers/MemoryViewer.h"
+#include "Viewers/ZeroPageViewer.h"
 #include "Viewers/GameDbViewer.h"
 #include "CodeAnalyser/AssemblerExport.h"
 #include "CodeAnalyser/UI/6502/RegisterView6502.h"
@@ -1170,6 +1171,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
 	AddViewer(new FMemoryViewer(this));
+	AddViewer(new FZeroPageViewer(this));
 	AddViewer(new FPCEGraphicsViewer(this));
 #if CDROM_SUPPORT
 	pCDROMViewer = new FCDROMViewer(this);
