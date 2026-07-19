@@ -4,6 +4,9 @@
 
 class FPCEEmu;
 
+// todo:
+// deal with non byte data items?
+
 class FZeroPageViewer : public FViewerBase
 {
 public:
