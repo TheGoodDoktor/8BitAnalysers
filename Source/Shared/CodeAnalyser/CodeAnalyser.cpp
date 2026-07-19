@@ -1620,10 +1620,12 @@ void	FCodeAnalysisState::OnMachineFrameStart()
 }
 void	FCodeAnalysisState::OnMachineFrameEnd()
 {
+	// sam. Modified this to increment the current frame when stepping a frame.
+	const bool bWasStopped = Debugger.IsStopped();
 	IOAnalyser.OnMachineFrameEnd();
 	Debugger.OnMachineFrameEnd();
-    if (Debugger.IsStopped() == false)
-        CurrentFrameNo++;
+	if (bWasStopped == false)
+		CurrentFrameNo++;
 }
 
 void FCodeAnalysisState::OnCPUTick(uint64_t pins)
