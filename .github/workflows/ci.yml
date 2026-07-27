@@ -68,7 +68,7 @@ jobs:
                     mkdir build
                     cd build
                     cmake .. -DBUILD_SHARED_LIBS=OFF
-                    msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} SpectrumAnalyser.sln
+                    cmake --build . --config ${{ env.BUILD_CONFIGURATION }}
                     
             
 
