@@ -1,5 +1,6 @@
 #include "MCPTransport.h"
 #include <chrono>
+#include <cstring>
 
 #define MCP_HTTP_ENDPOINT_PATH "/mcp"
 
