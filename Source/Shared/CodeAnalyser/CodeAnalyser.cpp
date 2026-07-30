@@ -845,10 +845,15 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 				snprintf(label, kLabelSize, "data_%s_%04X", pBank ? pBank->Name.c_str() : "unknown", address.GetAddress());
 
 			// zero page labels for 6502
-			if ((state.CPUInterface->CPUType == ECPUType::M6502 && address.GetAddress() < 256) ||
-			   (state.CPUInterface->CPUType == ECPUType::HuC6280 && address.GetAddress() >= 0x2000 && address.GetAddress() < 0x2100))
+			if (state.CPUInterface->CPUType == ECPUType::M6502)
 			{
-				snprintf(label, kLabelSize, "zp_%02X", address.GetAddress());
+				if (address.GetAddress() < 256)
+					snprintf(label, kLabelSize, "zp_%02X", address.GetAddress());
+			}
+			else if (state.CPUInterface->CPUType == ECPUType::HuC6280)
+			{
+				if (address.GetAddress() >= 0x2000 && address.GetAddress() < 0x2100)
+					snprintf(label, kLabelSize, "zp_%02X", address.GetAddress() - 0x2000);
 			}
 			if (bLabelOnOperand == false)
 				pLabel->Global = true;	// operand labels should be local
@@ -1622,10 +1627,12 @@ void	FCodeAnalysisState::OnMachineFrameStart()
 }
 void	FCodeAnalysisState::OnMachineFrameEnd()
 {
+	// sam. Modified this to increment the current frame when stepping a frame.
+	const bool bWasStopped = Debugger.IsStopped();
 	IOAnalyser.OnMachineFrameEnd();
 	Debugger.OnMachineFrameEnd();
-    if (Debugger.IsStopped() == false)
-        CurrentFrameNo++;
+	if (bWasStopped == false)
+		CurrentFrameNo++;
 }
 
 void FCodeAnalysisState::OnCPUTick(uint64_t pins)
